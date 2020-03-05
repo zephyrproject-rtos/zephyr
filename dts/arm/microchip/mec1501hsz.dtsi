@@ -29,6 +29,14 @@
 		reg = <0x00118000 0x8000>;
 	};
 
+	aliases {
+		i2c-smb-0 = &i2c_smb_0;
+		i2c-smb-1 = &i2c_smb_1;
+		i2c-smb-2 = &i2c_smb_2;
+		i2c-smb-3 = &i2c_smb_3;
+		i2c-smb-4 = &i2c_smb_4;
+	};
+
 	soc {
 		rtimer: timer@40007400 {
 			compatible = "microchip,xec-rtos-timer";
@@ -117,55 +125,61 @@
 			label="GPIO240_276";
 			#gpio-cells=<2>;
 		};
-		i2c0: i2c@40004000 {
+
+		i2c_smb_0: i2c@40004000 {
 			compatible = "microchip,xec-i2c";
 			reg = <0x40004000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
-			label = "I2C_0";
+			label = "I2C_SMB_0";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		i2c1: i2c@40004400 {
+
+		i2c_smb_1: i2c@40004400 {
 			compatible = "microchip,xec-i2c";
 			reg = <0x40004400 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
-			label = "I2C_1";
+			label = "I2C_SMB_1";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		i2c2: i2c@40004800 {
+
+		i2c_smb_2: i2c@40004800 {
 			compatible = "microchip,xec-i2c";
 			reg = <0x40004800 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
-			label = "I2C_2";
+			label = "I2C_SMB_2";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		i2c3: i2c@40004c00 {
+
+		i2c_smb_3: i2c@40004c00 {
 			compatible = "microchip,xec-i2c";
 			reg = <0x40004C00 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
-			label = "I2C_3";
+			label = "I2C_SMB_3";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
-		i2c4: i2c@40005000 {
+
+		i2c_smb_4: i2c@40005000 {
 			compatible = "microchip,xec-i2c";
 			reg = <0x40005000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
-			label = "I2C_4";
+			label = "I2C_SMB_4";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
 		espi0: espi@400f3400 {
 			compatible = "microchip,xec-espi";
 			reg = <0x400f3400 0x400>;
-			interrupts = <11 0>, <15 0>, <7 0>;
+			interrupts = <11 3>, <15 3>, <7 3>;
 			label = "ESPI_0";
 			#address-cells = <1>;
 			#size-cells = <0>;

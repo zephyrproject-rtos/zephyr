@@ -15,4 +15,4 @@ common:
 tests:
   sample.smp.pi:
     tags: introduction
-    platform_whitelist: nsim_hs_smp qemu_x86_64
+    filter: (CONFIG_MP_NUM_CPUS > 1)

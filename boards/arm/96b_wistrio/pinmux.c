@@ -5,10 +5,10 @@
  */
 
 #include <device.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 #include <init.h>
 #include <kernel.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <sys/sys_io.h>
 
 #include <pinmux/stm32/pinmux_stm32.h>
@@ -62,17 +62,17 @@ static int pinmux_stm32_init(struct device *port)
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(gpioa, 4, GPIO_DIR_OUT);
-	gpio_pin_write(gpioa, 4, 1);
+	gpio_pin_configure(gpioa, 4, GPIO_OUTPUT);
+	gpio_pin_set(gpioa, 4, 1);
 
-	gpio_pin_configure(gpiob, 6, GPIO_DIR_OUT);
-	gpio_pin_write(gpiob, 6, 1);
+	gpio_pin_configure(gpiob, 6, GPIO_OUTPUT);
+	gpio_pin_set(gpiob, 6, 1);
 
-	gpio_pin_configure(gpiob, 7, GPIO_DIR_OUT);
-	gpio_pin_write(gpiob, 7, 0);
+	gpio_pin_configure(gpiob, 7, GPIO_OUTPUT);
+	gpio_pin_set(gpiob, 7, 0);
 
-	gpio_pin_configure(gpioh, 1, GPIO_DIR_OUT);
-	gpio_pin_write(gpioh, 1, 1);
+	gpio_pin_configure(gpioh, 1, GPIO_OUTPUT);
+	gpio_pin_set(gpioh, 1, 1);
 
 	return 0;
 }

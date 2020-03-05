@@ -22,6 +22,7 @@
 #include <init.h>
 #include <syscall_handler.h>
 #include <kernel_internal.h>
+#include <sys/check.h>
 
 struct alloc_node {
 	sys_sfnode_t node;
@@ -102,8 +103,8 @@ static inline void z_vrfy_k_queue_init(struct k_queue *queue)
 #if !defined(CONFIG_POLL)
 static void prepare_thread_to_run(struct k_thread *thread, void *data)
 {
-	z_ready_thread(thread);
 	z_thread_return_value_set_with_data(thread, 0, data);
+	z_ready_thread(thread);
 }
 #endif /* CONFIG_POLL */
 
@@ -229,9 +230,12 @@ static inline s32_t z_vrfy_k_queue_alloc_prepend(struct k_queue *queue,
 #include <syscalls/k_queue_alloc_prepend_mrsh.c>
 #endif
 
-void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
+int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 {
-	__ASSERT(head && tail, "invalid head or tail");
+	/* invalid head or tail of list */
+	CHECKIF(head == NULL || tail == NULL) {
+		return -EINVAL;
+	}
 
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 #if !defined(CONFIG_POLL)
@@ -257,11 +261,18 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 #endif /* !CONFIG_POLL */
 
 	z_reschedule(&queue->lock, key);
+
+	return 0;
 }
 
-void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
+int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 {
-	__ASSERT(!sys_slist_is_empty(list), "list must not be empty");
+	int ret;
+
+	/* list must not be empty */
+	CHECKIF(sys_slist_is_empty(list)) {
+		return -EINVAL;
+	}
 
 	/*
 	 * note: this works as long as:
@@ -272,8 +283,13 @@ void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 	 *   flag bytes in the lower order bits of the data pointer
 	 * - source list is really an slist and not an sflist with flags set
 	 */
-	k_queue_append_list(queue, list->head, list->tail);
+	ret = k_queue_append_list(queue, list->head, list->tail);
+	CHECKIF(ret != 0) {
+		return ret;
+	}
 	sys_slist_init(list);
+
+	return 0;
 }
 
 #if defined(CONFIG_POLL)

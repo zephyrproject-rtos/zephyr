@@ -75,8 +75,6 @@ config ARMV7_SYS_STACK_SIZE
 	help
 	  This option specifies the size of the stack used by the system mode.
 
-if CPU_CORTEX_R
-
 config RUNTIME_NMI
 	default y
 
@@ -85,7 +83,5 @@ config GEN_ISR_TABLES
 
 config GEN_IRQ_VECTOR_TABLE
 	default n
-
-endif # CPU_CORTEX_R
 
 endif # CPU_CORTEX_R

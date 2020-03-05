@@ -70,7 +70,7 @@
 
 	eeprom0: eeprom {
 		status = "okay";
-		compatible = "zephyr,native-posix-eeprom";
+		compatible = "zephyr,sim-eeprom";
 		label = "EEPROM_0";
 		size = <DT_SIZE_K(32)>;
 	};

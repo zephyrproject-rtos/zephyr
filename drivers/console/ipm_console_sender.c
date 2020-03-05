@@ -11,7 +11,7 @@
 #include <kernel.h>
 #include <sys/printk.h>
 #include <drivers/ipm.h>
-#include <console/ipm_console.h>
+#include <drivers/console/ipm_console.h>
 
 static struct device *ipm_console_device;
 

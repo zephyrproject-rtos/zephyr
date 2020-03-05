@@ -23,10 +23,11 @@
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <init.h>
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 #include <string.h>
 #include <stdbool.h>
 #include <irq_offload.h>
+#include <sys/check.h>
 
 static struct k_spinlock lock;
 
@@ -280,7 +281,7 @@ const char *k_thread_state_str(k_tid_t thread_id)
 		return "pending";
 		break;
 	case _THREAD_PRESTART:
-		return "restart";
+		return "prestart";
 		break;
 	case _THREAD_DEAD:
 		return "dead";
@@ -369,16 +370,7 @@ void z_check_stack_sentinel(void)
 #ifdef CONFIG_MULTITHREADING
 void z_impl_k_thread_start(struct k_thread *thread)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock); /* protect kernel queues */
-
-	if (z_has_thread_started(thread)) {
-		k_spin_unlock(&lock, key);
-		return;
-	}
-
-	z_mark_thread_as_started(thread);
-	z_ready_thread(thread);
-	z_reschedule(&lock, key);
+	z_sched_start(thread);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -524,6 +516,15 @@ void z_setup_new_thread(struct k_thread *new_thread,
 
 	arch_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options);
+
+#ifdef CONFIG_USE_SWITCH
+	/* switch_handle must be non-null except when inside z_swap()
+	 * for synchronization reasons.  Historically some notional
+	 * USE_SWITCH architectures have actually ignored the field
+	 */
+	__ASSERT(new_thread->switch_handle != NULL,
+		 "arch layer failed to initialize switch_handle");
+#endif
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 #ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
@@ -671,28 +672,13 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_MULTITHREADING */
 
-void z_thread_single_suspend(struct k_thread *thread)
-{
-	if (z_is_thread_ready(thread)) {
-		z_remove_thread_from_ready_q(thread);
-	}
-
-	(void)z_abort_thread_timeout(thread);
-
-	z_mark_thread_as_suspended(thread);
-
-	if (thread == _current) {
-		z_reschedule_unlocked();
-	}
-}
+extern void z_thread_single_suspend(struct k_thread *thread);
 
 void z_impl_k_thread_suspend(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	z_thread_single_suspend(thread);
-
-	sys_trace_thread_suspend(thread);
 
 	if (thread == _current) {
 		z_reschedule(&lock, key);
@@ -722,7 +708,6 @@ void z_impl_k_thread_resume(struct k_thread *thread)
 
 	z_thread_single_resume(thread);
 
-	sys_trace_thread_resume(thread);
 	z_reschedule(&lock, key);
 }
 
@@ -734,43 +719,6 @@ static inline void z_vrfy_k_thread_resume(struct k_thread *thread)
 }
 #include <syscalls/k_thread_resume_mrsh.c>
 #endif
-
-void z_thread_single_abort(struct k_thread *thread)
-{
-	if (thread->fn_abort != NULL) {
-		thread->fn_abort();
-	}
-
-	if (IS_ENABLED(CONFIG_SMP)) {
-		z_sched_abort(thread);
-	}
-
-	if (z_is_thread_ready(thread)) {
-		z_remove_thread_from_ready_q(thread);
-	} else {
-		if (z_is_thread_pending(thread)) {
-			z_unpend_thread_no_timeout(thread);
-		}
-		if (z_is_thread_timeout_active(thread)) {
-			(void)z_abort_thread_timeout(thread);
-		}
-	}
-
-	thread->base.thread_state |= _THREAD_DEAD;
-
-	sys_trace_thread_abort(thread);
-
-#ifdef CONFIG_USERSPACE
-	/* Clear initialized state so that this thread object may be re-used
-	 * and triggers errors if API calls are made on it from user threads
-	 */
-	z_object_uninit(thread->stack_obj);
-	z_object_uninit(thread);
-
-	/* Revoke permissions on thread's ID so that it may be recycled */
-	z_thread_perms_all_clear(thread);
-#endif
-}
 
 #ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_USERSPACE
@@ -939,3 +887,90 @@ void irq_offload(irq_offload_routine_t routine, void *parameter)
 	k_sem_give(&offload_sem);
 }
 #endif
+
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
+#ifdef CONFIG_STACK_GROWS_UP
+#error "Unsupported configuration for stack analysis"
+#endif
+
+int z_impl_k_thread_stack_space_get(const struct k_thread *thread,
+				    size_t *unused_ptr)
+{
+	const u8_t *start = (u8_t *)thread->stack_info.start;
+	size_t size = thread->stack_info.size;
+	size_t unused = 0;
+	const u8_t *checked_stack = start;
+	/* Take the address of any local variable as a shallow bound for the
+	 * stack pointer.  Addresses above it are guaranteed to be
+	 * accessible.
+	 */
+	const u8_t *stack_pointer = (const u8_t *)&start;
+
+	/* If we are currently running on the stack being analyzed, some
+	 * memory management hardware will generate an exception if we
+	 * read unused stack memory.
+	 *
+	 * This never happens when invoked from user mode, as user mode
+	 * will always run this function on the privilege elevation stack.
+	 */
+	if ((stack_pointer > start) && (stack_pointer <= (start + size)) &&
+	    IS_ENABLED(CONFIG_NO_UNUSED_STACK_INSPECTION)) {
+		/* TODO: We could add an arch_ API call to temporarily
+		 * disable the stack checking in the CPU, but this would
+		 * need to be properly managed wrt context switches/interrupts
+		 */
+		return -ENOTSUP;
+	}
+
+	if (IS_ENABLED(CONFIG_STACK_SENTINEL)) {
+		/* First 4 bytes of the stack buffer reserved for the
+		 * sentinel value, it won't be 0xAAAAAAAA for thread
+		 * stacks.
+		 *
+		 * FIXME: thread->stack_info.start ought to reflect
+		 * this!
+		 */
+		checked_stack += 4;
+		size -= 4;
+	}
+
+	for (size_t i = 0; i < size; i++) {
+		if ((checked_stack[i]) == 0xaaU) {
+			unused++;
+		} else {
+			break;
+		}
+	}
+
+	*unused_ptr = unused;
+
+	return 0;
+}
+
+#ifdef CONFIG_USERSPACE
+int z_vrfy_k_thread_stack_space_get(const struct k_thread *thread,
+				    size_t *unused_ptr)
+{
+	size_t unused;
+	int ret;
+
+	ret = Z_SYSCALL_OBJ(thread, K_OBJ_THREAD);
+	CHECKIF(ret != 0) {
+		return ret;
+	}
+
+	ret = z_impl_k_thread_stack_space_get(thread, &unused);
+	CHECKIF(ret != 0) {
+		return ret;
+	}
+
+	ret = z_user_to_copy(unused_ptr, &unused, sizeof(size_t));
+	CHECKIF(ret != 0) {
+		return ret;
+	}
+
+	return 0;
+}
+#include <syscalls/k_thread_stack_space_get_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_INIT_STACKS && CONFIG_THREAD_STACK_INFO */

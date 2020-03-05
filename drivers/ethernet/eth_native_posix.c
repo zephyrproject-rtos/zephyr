@@ -375,6 +375,7 @@ static void eth_rx(struct eth_context *ctx)
 		if (net_if_is_up(ctx->iface)) {
 			while (!eth_wait_data(ctx->dev_fd)) {
 				read_data(ctx, ctx->dev_fd);
+				k_yield();
 			}
 		}
 
@@ -396,7 +397,12 @@ static void eth_iface_init(struct net_if *iface)
 	struct eth_context *ctx = net_if_get_device(iface)->driver_data;
 	struct net_linkaddr *ll_addr = eth_get_mac(ctx);
 
-	ctx->iface = iface;
+	/* The iface pointer in context should contain the main interface
+	 * if the VLANs are enabled.
+	 */
+	if (ctx->iface == NULL) {
+		ctx->iface = iface;
+	}
 
 	ethernet_init(iface);
 

@@ -89,30 +89,25 @@ struct stm32_exti_data {
 	struct __exti_cb cb[ARRAY_SIZE(exti_irq_table)];
 };
 
-int stm32_exti_enable(int line)
+void stm32_exti_enable(int line)
 {
 	int irqnum = 0;
 
-	/* Enable requested line interrupt */
-	if (line < 32) {
-		LL_EXTI_EnableIT_0_31(1 << line);
-	} else {
+	if (line >= ARRAY_SIZE(exti_irq_table)) {
 		__ASSERT_NO_MSG(line);
 	}
 
-	/* Get matching exti irq mathcing provided line thanks to irq_table */
-	if (line < ARRAY_SIZE(exti_irq_table)) {
-		irqnum = exti_irq_table[line];
-		if (irqnum == 0xFF)
-			return 0;
-	} else {
-		return -ENOTSUP;
+	/* Get matching exti irq provided line thanks to irq_table */
+	irqnum = exti_irq_table[line];
+	if (irqnum == 0xFF) {
+		__ASSERT_NO_MSG(line);
 	}
+
+	/* Enable requested line interrupt */
+	LL_EXTI_EnableIT_0_31(1 << line);
 
 	/* Enable exti irq interrupt */
 	irq_enable(irqnum);
-
-	return 0;
 }
 
 void stm32_exti_disable(int line)
@@ -120,9 +115,7 @@ void stm32_exti_disable(int line)
 	if (line < 32) {
 		LL_EXTI_DisableIT_0_31(1 << line);
 	} else {
-
 		__ASSERT_NO_MSG(line);
-
 	}
 }
 
@@ -167,20 +160,30 @@ static inline void stm32_exti_clear_pending(int line)
 
 void stm32_exti_trigger(int line, int trigger)
 {
-	if (trigger & STM32_EXTI_TRIG_RISING) {
-		if (line < 32) {
-			LL_EXTI_EnableRisingTrig_0_31(1 << line);
-		} else {
-			__ASSERT_NO_MSG(line);
-		}
+
+	if (line >= 32) {
+		__ASSERT_NO_MSG(line);
 	}
 
-	if (trigger & STM32_EXTI_TRIG_FALLING) {
-		if (line < 32) {
-			LL_EXTI_EnableFallingTrig_0_31(1 << line);
-		} else {
-			__ASSERT_NO_MSG(line);
-		}
+	switch (trigger) {
+	case STM32_EXTI_TRIG_NONE:
+		LL_EXTI_DisableRisingTrig_0_31(1 << line);
+		LL_EXTI_DisableFallingTrig_0_31(1 << line);
+		break;
+	case STM32_EXTI_TRIG_RISING:
+		LL_EXTI_EnableRisingTrig_0_31(1 << line);
+		LL_EXTI_DisableFallingTrig_0_31(1 << line);
+		break;
+	case STM32_EXTI_TRIG_FALLING:
+		LL_EXTI_EnableFallingTrig_0_31(1 << line);
+		LL_EXTI_DisableRisingTrig_0_31(1 << line);
+		break;
+	case STM32_EXTI_TRIG_BOTH:
+		LL_EXTI_EnableRisingTrig_0_31(1 << line);
+		LL_EXTI_EnableFallingTrig_0_31(1 << line);
+		break;
+	default:
+		__ASSERT_NO_MSG(trigger);
 	}
 }
 
@@ -380,8 +383,7 @@ DEVICE_INIT(exti_stm32, STM32_EXTI_NAME, stm32_exti_init,
 /**
  * @brief set & unset for the interrupt callbacks
  */
-int stm32_exti_set_callback(int line, int port, stm32_exti_callback_t cb,
-				void *arg)
+int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 {
 	struct device *dev = DEVICE_GET(exti_stm32);
 	struct stm32_exti_data *data = dev->driver_data;

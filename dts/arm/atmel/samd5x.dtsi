@@ -238,9 +238,10 @@
 			label = "USB0";
 		};
 
-		rng: rng@42002800 {
-			compatible = "atmel,sam0-trng";
+		trng: random@42002800 {
+			compatible = "atmel,sam-trng";
 			reg = <0x42002800 0x1e>;
+			peripheral-id = <0>;
 			interrupts = <131 0>;
 			label = "ENTROPY_0";
 		};

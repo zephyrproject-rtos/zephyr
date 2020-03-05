@@ -198,6 +198,6 @@ References
 .. target-notes::
 
 .. _IDAU:
-   https://developer.arm.com/products/architecture/cpu-architecture/m-profile/docs/100690/latest/attribution-units-sau-and-idau
+   https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
 .. _nRF91 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF9160-DK
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com

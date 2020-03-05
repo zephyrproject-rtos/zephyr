@@ -140,4 +140,3 @@ void _sys_pm_power_state_exit_post_ops(enum power_states state)
 		break;
 	}
 }
-

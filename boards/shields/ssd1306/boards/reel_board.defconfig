@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_REEL_BOARD
-
 choice I2C_0_NRF_TYPE
 	default I2C_0_NRF_TWI
+	depends on BOARD_REEL_BOARD
 endchoice
-
-endif # BOARD_REEL_BOARD

@@ -2,3 +2,4 @@ tests:
   kernel.threads.dynamic:
     tags: kernel threads userspace ignore_faults
     filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude: x86 # see GitHub #17893

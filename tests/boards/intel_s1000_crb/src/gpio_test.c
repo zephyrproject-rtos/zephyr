@@ -62,16 +62,13 @@ void setup_gpio(struct device *gpio_dev)
 	int ret;
 
 	/* Setup GPIO output */
-	ret = gpio_pin_configure(gpio_dev, GPIO_OUT_PIN, (GPIO_DIR_OUT));
+	ret = gpio_pin_configure(gpio_dev, GPIO_OUT_PIN, GPIO_OUTPUT_LOW);
 	if (ret) {
 		printk("Error configuring " GPIO_NAME "%d!\n", GPIO_OUT_PIN);
 	}
 
 	/* Setup GPIO input, and triggers on rising edge. */
-	ret = gpio_pin_configure(gpio_dev, GPIO_INT_PIN,
-				 (GPIO_DIR_IN | GPIO_INT |
-				  GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH |
-				  GPIO_INT_DEBOUNCE));
+	ret = gpio_pin_configure(gpio_dev, GPIO_INT_PIN, GPIO_INPUT);
 	if (ret) {
 		printk("Error configuring " GPIO_NAME "%d!\n", GPIO_INT_PIN);
 	}
@@ -83,9 +80,11 @@ void setup_gpio(struct device *gpio_dev)
 		printk("Cannot setup callback!\n");
 	}
 
-	ret = gpio_pin_enable_callback(gpio_dev, GPIO_INT_PIN);
+	ret = gpio_pin_interrupt_configure(gpio_dev, GPIO_INT_PIN,
+					   GPIO_INT_EDGE_RISING);
 	if (ret) {
-		printk("Error enabling callback!\n");
+		printk("Error configuring interrupt on " GPIO_NAME "%d!\n",
+		       GPIO_INT_PIN);
 	}
 
 	/* Disable the GPIO interrupt. It is enabled by default */
@@ -97,8 +96,6 @@ void gpio_thread(void *dummy1, void *dummy2, void *dummy3)
 {
 	struct device *gpio_dev;
 	int ret;
-	int toggle = 1;
-	u32_t read_val = 0U;
 
 	ARG_UNUSED(dummy1);
 	ARG_UNUSED(dummy2);
@@ -116,19 +113,20 @@ void gpio_thread(void *dummy1, void *dummy2, void *dummy3)
 		/* take semaphore */
 		k_sem_take(&thread_sem, K_FOREVER);
 
-		if (toggle) {
-			toggle = 0;
-		} else {
-			toggle = 1;
-		}
-
-		ret = gpio_pin_write(gpio_dev, GPIO_OUT_PIN, toggle);
+		ret = gpio_pin_toggle(gpio_dev, GPIO_OUT_PIN);
 		if (ret) {
-			printk("Error set " GPIO_NAME "%d!\n", GPIO_OUT_PIN);
+			printk("Cannot toggle " GPIO_NAME "%d!\n",
+			       GPIO_OUT_PIN);
 		}
 
-		gpio_pin_read(gpio_dev, GPIO_INT_PIN, &read_val);
-		printk("Reading "GPIO_NAME"%d = %d\n", GPIO_INT_PIN, read_val);
+		ret = gpio_pin_get(gpio_dev, GPIO_INT_PIN);
+		if (ret < 0) {
+			printk("Error getting " GPIO_NAME "%d!\n",
+			       GPIO_OUT_PIN);
+		} else {
+			printk("Reading "GPIO_NAME"%d = %d\n", GPIO_INT_PIN,
+			       ret);
+		}
 
 		/* let other threads have a turn */
 		k_sem_give(&thread_sem);

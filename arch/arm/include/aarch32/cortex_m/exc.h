@@ -85,9 +85,12 @@ static ALWAYS_INLINE bool arch_is_in_nested_exception(const z_arch_esf_t *esf)
  */
 static ALWAYS_INLINE void z_arm_exc_setup(void)
 {
-	NVIC_SetPriority(PendSV_IRQn, 0xff);
+	NVIC_SetPriority(PendSV_IRQn, _EXC_PENDSV_PRIO);
 
 #ifdef CONFIG_CPU_CORTEX_M_HAS_BASEPRI
+	/* Note: SVCall IRQ priority level is left to default (0)
+	 * for Cortex-M variants without BASEPRI (e.g. ARMv6-M).
+	 */
 	NVIC_SetPriority(SVCall_IRQn, _EXC_SVC_PRIO);
 #endif
 

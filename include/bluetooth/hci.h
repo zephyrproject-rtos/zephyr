@@ -101,6 +101,25 @@ struct bt_hci_cmd_hdr {
 #define BT_LE_FEAT_BIT_CHAN_SEL_ALGO_2          14
 #define BT_LE_FEAT_BIT_PWR_CLASS_1              15
 #define BT_LE_FEAT_BIT_MIN_USED_CHAN_PROC       16
+#define BT_LE_FEAT_BIT_CONN_CTE_REQ             17
+#define BT_LE_FEAT_BIT_CONN_CTE_RESP            18
+#define BT_LE_FEAT_BIT_CONNECTIONLESS_CTE_TX    19
+#define BT_LE_FEAT_BIT_CONNECTIONLESS_CTE_RX    20
+#define BT_LE_FEAT_BIT_ANT_SWITCH_TX_AOD        21
+#define BT_LE_FEAT_BIT_ANT_SWITCH_RX_AOA        22
+#define BT_LE_FEAT_BIT_RX_CTE                   23
+#define BT_LE_FEAT_BIT_PERIODIC_SYNC_XFER_SEND  24
+#define BT_LE_FEAT_BIT_PERIODIC_SYNC_XFER_RECV  25
+#define BT_LE_FEAT_BIT_SCA_UPDATE               26
+#define BT_LE_FEAT_BIT_REMOTE_PUB_KEY_VALIDATE  27
+#define BT_LE_FEAT_BIT_CIS_MASTER               28
+#define BT_LE_FEAT_BIT_CIS_SLAVE                29
+#define BT_LE_FEAT_BIT_ISO_BROADCASTER          30
+#define BT_LE_FEAT_BIT_SYNC_RECEIVER            31
+#define BT_LE_FEAT_BIT_ISO_CHANNELS             32
+#define BT_LE_FEAT_BIT_PWR_CTRL_REQ             33
+#define BT_LE_FEAT_BIT_PWR_CHG_IND              34
+#define BT_LE_FEAT_BIT_PATH_LOSS_MONITOR        35
 
 #define BT_LE_FEAT_TEST(feat, n)                (feat[(n) >> 3] & \
 						 BIT((n) & 7))
@@ -1567,7 +1586,7 @@ struct bt_hci_evt_le_phy_update_complete {
 
 #define BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT    0x0d
 struct bt_hci_evt_le_ext_advertising_info {
-	u8_t         evt_type;
+	u16_t        evt_type;
 	bt_addr_le_t addr;
 	u8_t         prim_phy;
 	u8_t         sec_phy;

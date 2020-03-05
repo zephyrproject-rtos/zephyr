@@ -233,8 +233,10 @@ Flashing
 ========
 
 Nucleo WB55RG board includes an ST-LINK/V2-1 embedded debug tool
-interface.  This interface is not yet supported by the openocd version.
-Instead, support can be enabled on pyocd by adding "pack" support with
+interface.  This interface is supported by the openocd version included in the
+Zephyr SDK since v0.11.0.
+
+If you prefer, you can use pyocd, but it requires to enable "pack" support with
 the following pyocd command:
 
 .. code-block:: console

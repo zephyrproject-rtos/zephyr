@@ -32,7 +32,8 @@ static int send_udp_data(struct data *data)
 
 	do {
 		data->udp.expecting = sys_rand32_get() % ipsum_len;
-	} while (data->udp.expecting == 0U);
+	} while (data->udp.expecting == 0U ||
+		 data->udp.expecting > data->udp.mtu);
 
 	ret = send(data->udp.sock, lorem_ipsum, data->udp.expecting, 0);
 
@@ -252,7 +253,7 @@ void stop_udp(void)
 		k_delayed_work_cancel(&conf.ipv6.udp.recv);
 		k_delayed_work_cancel(&conf.ipv6.udp.transmit);
 
-		if (conf.ipv6.udp.sock > 0) {
+		if (conf.ipv6.udp.sock >= 0) {
 			(void)close(conf.ipv6.udp.sock);
 		}
 	}
@@ -261,7 +262,7 @@ void stop_udp(void)
 		k_delayed_work_cancel(&conf.ipv4.udp.recv);
 		k_delayed_work_cancel(&conf.ipv4.udp.transmit);
 
-		if (conf.ipv4.udp.sock > 0) {
+		if (conf.ipv4.udp.sock >= 0) {
 			(void)close(conf.ipv4.udp.sock);
 		}
 	}

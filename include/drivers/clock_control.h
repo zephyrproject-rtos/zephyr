@@ -34,7 +34,6 @@ enum clock_control_status {
 	CLOCK_CONTROL_STATUS_UNKNOWN
 };
 
-typedef void (*clock_control_cb_t)(struct device *dev, void *user_data);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -47,6 +46,23 @@ typedef void (*clock_control_cb_t)(struct device *dev, void *user_data);
 /**
  * INTERNAL_HIDDEN @endcond
  */
+
+/**
+ * clock_control_subsys_t is a type to identify a clock controller sub-system.
+ * Such data pointed is opaque and relevant only to the clock controller
+ * driver instance being used.
+ */
+typedef void *clock_control_subsys_t;
+
+/** @brief Callback called on clock started.
+ *
+ * @param dev		Device structure whose driver controls the clock.
+ * @param subsys	Opaque data representing the clock.
+ * @param user_data	User data.
+ */
+typedef void (*clock_control_cb_t)(struct device *dev,
+				   clock_control_subsys_t subsys,
+				   void *user_data);
 
 /**
  * Define and initialize clock_control async data.
@@ -71,13 +87,6 @@ struct clock_control_async_data {
 	clock_control_cb_t cb;
 	void *user_data;
 };
-
-/**
- * clock_control_subsys_t is a type to identify a clock controller sub-system.
- * Such data pointed is opaque and relevant only to the clock controller
- * driver instance being used.
- */
-typedef void *clock_control_subsys_t;
 
 typedef int (*clock_control)(struct device *dev, clock_control_subsys_t sys);
 

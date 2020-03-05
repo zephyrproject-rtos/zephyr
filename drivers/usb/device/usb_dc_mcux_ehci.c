@@ -6,7 +6,7 @@
 
 #include <soc.h>
 #include <string.h>
-#include <usb/usb_dc.h>
+#include <drivers/usb/usb_dc.h>
 #include <soc.h>
 #include <device.h>
 #include "usb_dc_mcux.h"
@@ -232,7 +232,7 @@ int usb_dc_ep_enable(const u8_t ep)
 	}
 	if (s_Device.eps[ep_abs_idx].ep_occupied) {
 		LOG_WRN("endpoint 0x%x already enabled", ep);
-		return -EBUSY;
+		return -EALREADY;
 	}
 
 	if ((EP_ADDR2IDX(ep) != USB_CONTROL_ENDPOINT) && (EP_ADDR2DIR(ep) == USB_EP_DIR_OUT)) {

@@ -8,6 +8,7 @@ menuconfig BT_MESH
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
+	select BT_HOST_CCM
 	depends on BT_OBSERVER && BT_BROADCASTER
 	help
 	  This option enables Bluetooth Mesh support. The specific
@@ -36,17 +37,36 @@ config BT_MESH_PROVISIONER
 	help
 	  Enable this option to have support for provisioning remote devices.
 
-if BT_MESH_PROVISIONER
+config BT_MESH_CDB
+	bool "Mesh Configuration Database [EXPERIMENTAL]"
 
-config BT_MESH_NODE_COUNT
-	int "Maximum number of saved nodes per network"
+if BT_MESH_CDB
+
+config BT_MESH_CDB_NODE_COUNT
+	int "Maximum number of nodes in the database"
 	default 1
 	range 1 4096
 	help
 	  This option specifies how many nodes each network can at most
-	  save in the provisioning database.
+	  save in the configuration database.
 
-endif # BT_MESH_PROVISIONER
+config BT_MESH_CDB_SUBNET_COUNT
+	int "Maximum number of subnets in the database"
+	default 1
+	range 1 4096
+	help
+	  This option specifies how many subnets that can at most be
+	  saved in the configuration database.
+
+config BT_MESH_CDB_APP_KEY_COUNT
+	int "Maximum number of application keys in the database"
+	default 1
+	range 1 4096
+	help
+	  This option specifies how many application keys that can at most
+	  be saved in the configuration database.
+
+endif # BT_MESH_CDB
 
 if BT_CONN
 
@@ -83,18 +103,15 @@ config BT_MESH_NODE_ID_TIMEOUT
 	  be the appropriate value as well, so just leaving this as the
 	  default is the safest option.
 
-if BT_MESH_PROXY
-
 config BT_MESH_PROXY_FILTER_SIZE
 	int "Maximum number of filter entries per Proxy Client"
 	default 3 if BT_MESH_GATT_PROXY
 	default 1
 	range 1 32767
+	depends on BT_MESH_PROXY
 	help
 	  This option specifies how many Proxy Filter entries the local
 	  node supports.
-
-endif # BT_MESH_PROXY
 
 endif # BT_CONN
 
@@ -589,6 +606,12 @@ config BT_MESH_DEBUG_SETTINGS
 	depends on BT_SETTINGS
 	help
 	  Use this option to enable persistent settings debug logs.
+
+config BT_MESH_DEBUG_CDB
+	bool "Configuration database debug"
+	depends on BT_MESH_CDB
+	help
+	  Use this option to enable configuration database debug logs.
 
 endif # BT_MESH_DEBUG
 

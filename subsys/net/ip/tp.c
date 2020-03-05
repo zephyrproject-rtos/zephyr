@@ -165,6 +165,24 @@ struct net_buf *tp_nbuf_alloc(struct net_buf_pool *pool, size_t len,
 	return nbuf;
 }
 
+struct net_buf *tp_nbuf_clone(struct net_buf *buf, const char *file, int line,
+				const char *func)
+{
+	struct net_buf *clone = net_buf_clone(buf, K_NO_WAIT);
+	struct tp_nbuf *tb = k_malloc(sizeof(struct tp_nbuf));
+
+	tp_dbg("size=%d %p %s:%d %s()", clone->size, clone, file, line, func);
+
+	tb->nbuf = clone;
+	tb->file = file;
+	tb->line = line;
+
+	sys_slist_append(&tp_nbufs, &tb->next);
+
+	return clone;
+
+}
+
 void tp_nbuf_unref(struct net_buf *nbuf, const char *file, int line,
 			const char *func)
 {
@@ -417,15 +435,25 @@ void _tp_output(struct net_if *iface, void *data, size_t data_len,
 		const char *file, int line)
 {
 	struct net_pkt *pkt = tp_make(file, line);
-	struct net_buf *buf = net_pkt_get_frag(pkt, K_NO_WAIT);
+	size_t total = data_len, len;
+	struct net_buf *buf;
 
-	memcpy(net_buf_add(buf, data_len), data, data_len);
+	for ( ; total; total -= len, data = (u8_t *)data + len) {
 
-	net_pkt_frag_add(pkt, buf);
+		buf = net_pkt_get_frag(pkt, K_NO_WAIT);
+
+		len = MIN(buf->size, total);
+
+		memcpy(net_buf_add(buf, len), data, len);
+
+		net_pkt_frag_add(pkt, buf);
+	}
 
 	tp_pkt_adj(pkt, data_len);
 
 	pkt->iface = iface;
+
+	NET_ASSERT(net_pkt_get_len(pkt) <= net_if_get_mtu(pkt->iface));
 
 	tp_pkt_send(pkt);
 }

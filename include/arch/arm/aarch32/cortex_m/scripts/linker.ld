@@ -13,24 +13,24 @@
 
 #include <autoconf.h>
 #include <linker/sections.h>
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
 /* physical address of RAM */
 #ifdef CONFIG_XIP
-  #define ROMABLE_REGION FLASH
-  #define RAMABLE_REGION SRAM
+#define ROMABLE_REGION FLASH
+#define RAMABLE_REGION SRAM
 #else
-  #define ROMABLE_REGION SRAM
-  #define RAMABLE_REGION SRAM
+#define ROMABLE_REGION SRAM
+#define RAMABLE_REGION SRAM
 #endif
 
 #if defined(CONFIG_XIP)
-  #define _DATA_IN_ROM __data_rom_start
+#define _DATA_IN_ROM __data_rom_start
 #else
-  #define _DATA_IN_ROM
+#define _DATA_IN_ROM
 #endif
 
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
@@ -39,31 +39,31 @@
 #define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
-#ifdef CONFIG_TI_CCFG_PRESENT
-  #define CCFG_SIZE 88
-  #define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET - \
-		    CCFG_SIZE)
-  #define CCFG_ADDR (ROM_ADDR + ROM_SIZE)
+#ifdef CONFIG_HAS_TI_CCFG
+#define CCFG_SIZE 88
+#define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET - \
+	CCFG_SIZE)
+#define CCFG_ADDR (ROM_ADDR + ROM_SIZE)
 #else
 #if CONFIG_FLASH_LOAD_SIZE > 0
-  #define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
+#define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
 #else
-  #define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET)
+#define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET)
 #endif
 #endif
 
 #if defined(CONFIG_XIP)
-	#if defined(CONFIG_IS_BOOTLOADER)
-		#define RAM_SIZE (CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-		#define RAM_ADDR (CONFIG_SRAM_BASE_ADDRESS + \
-			(CONFIG_SRAM_SIZE * 1K - RAM_SIZE))
-	#else
-		#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
-		#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
-	#endif
+#if defined(CONFIG_IS_BOOTLOADER)
+#define RAM_SIZE (CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
+#define RAM_ADDR (CONFIG_SRAM_BASE_ADDRESS + \
+	(CONFIG_SRAM_SIZE * 1K - RAM_SIZE))
 #else
-	#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K - CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-	#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
+#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
+#endif
+#else
+#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K - CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
+#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
 #endif
 
 #if defined(CONFIG_CUSTOM_SECTION_ALIGN)
@@ -92,7 +92,7 @@ _region_min_align = 4;
 MEMORY
     {
     FLASH                 (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
-#ifdef CONFIG_TI_CCFG_PRESENT
+#ifdef CONFIG_HAS_TI_CCFG
     FLASH_CCFG            (rwx): ORIGIN = CCFG_ADDR, LENGTH = CCFG_SIZE
 #endif
 #ifdef DT_CCM_BASE_ADDRESS
@@ -135,13 +135,14 @@ SECTIONS
 
 	_image_rom_start = ROM_ADDR;
 
-    SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
+    SECTION_PROLOGUE(rom_start,,)
 	{
 
-/* Located in generated directory. This file is populated by the
- * zephyr_linker_sources() Cmake function.
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_START ...). This typically contains the vector
+ * table and debug information.
  */
-#include <snippets-text-start.ld>
+#include <snippets-rom-start.ld>
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
@@ -151,7 +152,7 @@ SECTIONS
 
 #endif /* CONFIG_CODE_DATA_RELOCATION */
 
-    SECTION_PROLOGUE(_TEXT_SECTION_NAME_2,,)
+    SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
 	_image_text_start = .;
 
@@ -245,7 +246,7 @@ SECTIONS
     GROUP_END(ROMABLE_REGION)
 
 /* Some TI SoCs have a special configuration footer, at the end of flash. */
-#ifdef CONFIG_TI_CCFG_PRESENT
+#ifdef CONFIG_HAS_TI_CCFG
     SECTION_PROLOGUE(.ti_ccfg,,)
     {
     KEEP(*(TI_CCFG))

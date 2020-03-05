@@ -116,10 +116,10 @@ int bma280_init(struct device *dev)
 	struct bma280_data *drv_data = dev->driver_data;
 	u8_t id = 0U;
 
-	drv_data->i2c = device_get_binding(CONFIG_BMA280_I2C_MASTER_DEV_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_0_BOSCH_BMA280_BUS_NAME);
 	if (drv_data->i2c == NULL) {
 		LOG_DBG("Could not get pointer to %s device",
-			    CONFIG_BMA280_I2C_MASTER_DEV_NAME);
+			    DT_INST_0_BOSCH_BMA280_BUS_NAME);
 		return -EINVAL;
 	}
 
@@ -160,6 +160,7 @@ int bma280_init(struct device *dev)
 
 struct bma280_data bma280_driver;
 
-DEVICE_AND_API_INIT(bma280, CONFIG_BMA280_NAME, bma280_init, &bma280_driver,
+DEVICE_AND_API_INIT(bma280, DT_INST_0_BOSCH_BMA280_LABEL,
+		    bma280_init, &bma280_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &bma280_driver_api);

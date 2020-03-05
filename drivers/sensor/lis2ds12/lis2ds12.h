@@ -84,6 +84,11 @@
 struct lis2ds12_config {
 	char *comm_master_dev_name;
 	int (*bus_init)(struct device *dev);
+#ifdef CONFIG_LIS2DS12_TRIGGER
+	const char *irq_port;
+	gpio_pin_t irq_pin;
+	gpio_dt_flags_t irq_flags;
+#endif
 };
 
 struct lis2ds12_data;

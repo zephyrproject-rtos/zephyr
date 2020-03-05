@@ -15,8 +15,13 @@
  *   are missing; the below inclusion fills this gap
  */
 #include <hal/nrf_gpio.h>
-
-/* Temporary workaround for missing NRF_WDT0 definition. */
+/*
+ * Provide translation of symbols for peripherals that for some SoCs got names
+ * without the index.
+ */
+#ifndef NRF_PDM0
+#define NRF_PDM0 NRF_PDM
+#endif
 #ifndef NRF_WDT0
 #define NRF_WDT0 NRF_WDT
 #endif
@@ -96,7 +101,7 @@ CHECK_ADDRESS(DT_INST_0_NORDIC_NRF91_FLASH_CONTROLLER_BASE_ADDRESS, NRF_NVMC);
 #endif
 
 #if defined(DT_NORDIC_NRF_PDM_PDM_0_BASE_ADDRESS)
-CHECK_ADDRESS(DT_NORDIC_NRF_PDM_PDM_0_BASE_ADDRESS, NRF_PDM);
+CHECK_ADDRESS(DT_NORDIC_NRF_PDM_PDM_0_BASE_ADDRESS, NRF_PDM0);
 #endif
 
 #if defined(DT_INST_0_NORDIC_NRF_POWER_BASE_ADDRESS)
@@ -163,6 +168,9 @@ CHECK_ADDRESS(DT_NORDIC_NRF_SPIM_SPI_2_BASE_ADDRESS, NRF_SPIM2);
 #endif
 #if defined(DT_NORDIC_NRF_SPIM_SPI_3_BASE_ADDRESS)
 CHECK_ADDRESS(DT_NORDIC_NRF_SPIM_SPI_3_BASE_ADDRESS, NRF_SPIM3);
+#endif
+#if defined(DT_NORDIC_NRF_SPIM_SPI_4_BASE_ADDRESS)
+CHECK_ADDRESS(DT_NORDIC_NRF_SPIM_SPI_4_BASE_ADDRESS, NRF_SPIM4);
 #endif
 
 #if defined(DT_NORDIC_NRF_SPIS_SPI_0_BASE_ADDRESS)

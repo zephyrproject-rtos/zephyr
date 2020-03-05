@@ -64,7 +64,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	bl read_timer_start_of_isr
 #endif
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_enter
 #endif
 
@@ -77,7 +77,15 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	 * state is not interrupted.  In each case, z_sys_power_save_idle_exit
 	 * is called with interrupts disabled.
 	 */
+
+     /*
+      * FIXME: Remove the Cortex-M conditional compilation checks for `cpsid i`
+      *        and `cpsie i` after the Cortex-R port is updated to support
+      *        interrupt nesting.  For more details, refer to the issue #21758.
+      */
+#if defined(CONFIG_CPU_CORTEX_M)
 	cpsid i  /* PRIMASK = 1 */
+#endif
 
 	/* is this a wakeup from idle ? */
 	ldr r2, =_kernel
@@ -110,8 +118,11 @@ _idle_state_cleared:
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
+#if defined(CONFIG_CPU_CORTEX_M)
 	cpsie i		/* re-enable interrupts (PRIMASK = 0) */
 #endif
+
+#endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
 #if defined(CONFIG_CPU_CORTEX_M)
 	mrs r0, IPSR	/* get exception number */
@@ -151,7 +162,7 @@ _idle_state_cleared:
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 	blx r3		/* call ISR */
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_exit
 #endif
 

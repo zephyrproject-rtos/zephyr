@@ -90,10 +90,10 @@ void change_led(struct zcan_frame *msg, void *led_dev_param)
 
 	switch (msg->data[0]) {
 	case SET_LED:
-		gpio_pin_write(led_dev, DT_ALIAS_LED0_GPIOS_PIN, 1);
+		gpio_pin_set(led_dev, DT_ALIAS_LED0_GPIOS_PIN, 1);
 		break;
 	case RESET_LED:
-		gpio_pin_write(led_dev, DT_ALIAS_LED0_GPIOS_PIN, 0);
+		gpio_pin_set(led_dev, DT_ALIAS_LED0_GPIOS_PIN, 0);
 		break;
 	}
 #else
@@ -195,13 +195,7 @@ void main(void)
 	k_tid_t rx_tid, get_state_tid;
 	int ret;
 
-	/* Usually the CAN device is either called CAN_0 or CAN_1, depending
-	 * on the SOC. Let's check both and take the first valid one.
-	 */
-	can_dev = device_get_binding("CAN_0");
-	if (!can_dev) {
-		can_dev = device_get_binding("CAN_1");
-	}
+	can_dev = device_get_binding(DT_ALIAS_CAN_PRIMARY_LABEL);
 
 	if (!can_dev) {
 		printk("CAN: Device driver not found.\n");
@@ -220,7 +214,7 @@ void main(void)
 	}
 
 	ret = gpio_pin_configure(led_gpio_dev, DT_ALIAS_LED0_GPIOS_PIN,
-				 GPIO_DIR_OUT);
+				 GPIO_OUTPUT_HIGH | DT_ALIAS_LED0_GPIOS_FLAGS);
 	if (ret < 0) {
 		printk("Error setting LED pin to output mode [%d]", ret);
 	}

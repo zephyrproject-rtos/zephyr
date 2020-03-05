@@ -9,12 +9,9 @@ menuconfig AMS_IAQ_CORE
 	help
 	  Enable driver for iAQ-core Digital VOC sensor.
 
-if AMS_IAQ_CORE
-
 config IAQ_CORE_MAX_READ_RETRIES
 	int "Number of read retries"
 	default 4
+	depends on AMS_IAQ_CORE
 	help
 	  Number of retries when reading failed or device not ready.
-
-endif # AMS_IAQ_CORE

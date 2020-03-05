@@ -9,7 +9,7 @@
 LOG_MODULE_REGISTER(spi_oc_simple);
 
 #include <sys/sys_io.h>
-#include <spi.h>
+#include <drivers/spi.h>
 
 #include "spi_context.h"
 #include "spi_oc_simple.h"

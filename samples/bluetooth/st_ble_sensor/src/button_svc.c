@@ -64,18 +64,32 @@ void button_pressed(struct device *gpiob, struct gpio_callback *cb,
 
 int button_init(void)
 {
+	int ret;
+
 	button_dev = device_get_binding(BUT_PORT);
 	if (!button_dev) {
 		return (-EOPNOTSUPP);
 	}
 
-	gpio_pin_configure(button_dev, BUT_PIN,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_PUD_PULL_UP | GPIO_INT_DEBOUNCE |
-			   GPIO_INT_ACTIVE_LOW);
-	gpio_init_callback(&gpio_cb, button_pressed, BIT(BUT_PIN));
+	ret = gpio_pin_configure(button_dev, BUT_PIN,
+				 DT_ALIAS_SW0_GPIOS_FLAGS | GPIO_INPUT);
+	if (ret != 0) {
+		LOG_ERR("Error %d: failed to configure pin %d '%s'\n",
+			ret, BUT_PIN, DT_ALIAS_SW0_LABEL);
+		return ret;
+
+	}
+
+	gpio_init_callback(&gpio_cb, button_pressed,
+			   BIT(BUT_PIN));
 	gpio_add_callback(button_dev, &gpio_cb);
-	gpio_pin_enable_callback(button_dev, BUT_PIN);
+	ret = gpio_pin_interrupt_configure(button_dev, BUT_PIN,
+					   GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret != 0) {
+		LOG_ERR("Error %d: failed to configure interrupt on pin "
+			"%d '%s'\n", ret, BUT_PIN, DT_ALIAS_SW0_LABEL);
+		return ret;
+	}
 	but_val = 0;
 	return 0;
 }

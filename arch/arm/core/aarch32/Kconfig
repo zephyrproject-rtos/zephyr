@@ -3,6 +3,8 @@
 # Copyright (c) 2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+if !ARM64
+
 config CPU_CORTEX
 	bool
 	help
@@ -267,9 +269,11 @@ config FP_SOFTABI
 
 endchoice
 
-source "arch/arm/core/aarch32/cortex_m/Kconfig"
-source "arch/arm/core/aarch32/cortex_r/Kconfig"
+rsource "cortex_m/Kconfig"
+rsource "cortex_r/Kconfig"
 
-source "arch/arm/core/aarch32/cortex_m/mpu/Kconfig"
+rsource "cortex_m/mpu/Kconfig"
 
-source "arch/arm/core/aarch32/cortex_m/tz/Kconfig"
+rsource "cortex_m/tz/Kconfig"
+
+endif # !ARM64

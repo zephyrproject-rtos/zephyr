@@ -14,7 +14,11 @@
 #include "flash_priv.h"
 
 #include "fsl_common.h"
+#ifdef CONFIG_HAS_MCUX_IAP
+#include "fsl_iap.h"
+#else
 #include "fsl_flash.h"
+#endif
 
 struct flash_priv {
 	flash_config_t config;
@@ -136,7 +140,11 @@ static const struct flash_driver_api flash_mcux_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_mcux_pages_layout,
 #endif
+#ifdef DT_FLASH_WRITE_BLOCK_SIZE
+	.write_block_size = DT_FLASH_WRITE_BLOCK_SIZE,
+#else
 	.write_block_size = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE,
+#endif
 };
 
 static int flash_mcux_init(struct device *dev)
@@ -149,8 +157,13 @@ static int flash_mcux_init(struct device *dev)
 
 	rc = FLASH_Init(&priv->config);
 
+#ifdef CONFIG_HAS_MCUX_IAP
+	FLASH_GetProperty(&priv->config, kFLASH_PropertyPflashBlockBaseAddr,
+			  &pflash_block_base);
+#else
 	FLASH_GetProperty(&priv->config, kFLASH_PropertyPflash0BlockBaseAddr,
 			  &pflash_block_base);
+#endif
 	priv->pflash_block_base = (u32_t) pflash_block_base;
 
 	return (rc == kStatus_Success) ? 0 : -EIO;

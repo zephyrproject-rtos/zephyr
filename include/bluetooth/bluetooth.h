@@ -363,11 +363,14 @@ struct bt_le_adv_param {
  *  @param sd_len Number of elements in sd
  *
  *  @return Zero on success or (negative) error code otherwise.
+ *  @return -ENOMEM No free connection objects available for connectable
+ *                  advertiser.
  *  @return -ECONNREFUSED When connectable advertising is requested and there
- *			  is already maximum number of connections established.
- *			  This error code is only guaranteed when using Zephyr
- *			  controller, for other controllers code returned in
- *			  this case may be -EIO.
+ *                        is already maximum number of connections established
+ *                        in the controller.
+ *                        This error code is only guaranteed when using Zephyr
+ *                        controller, for other controllers code returned in
+ *                        this case may be -EIO.
  */
 int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
@@ -443,6 +446,32 @@ struct bt_le_scan_param {
 	u16_t window;
 };
 
+/** LE advertisement packet information */
+struct bt_le_scan_recv_info {
+	/** Advertiser LE address and type */
+	const bt_addr_le_t *addr;
+
+	/** Strength of advertiser signal */
+	s8_t rssi;
+
+	/** Advertising packet type */
+	u8_t adv_type;
+};
+
+/** Listener context for (LE) scanning. */
+struct bt_le_scan_cb {
+
+	/** @brief Advertisement packet received callback.
+	 *
+	 *  @param info Advertiser packet information.
+	 *  @param buf  Buffer containing advertiser data.
+	 */
+	void (*recv)(const struct bt_le_scan_recv_info *info,
+		     struct net_buf_simple *buf);
+
+	sys_snode_t node;
+};
+
 /** Helper to declare scan parameters inline
   *
   * @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
@@ -480,8 +509,16 @@ struct bt_le_scan_param {
  *  Start LE scanning with given parameters and provide results through
  *  the specified callback.
  *
+ *  Note: The LE scanner by default does not use the Identity Address of the
+ *        local device when :option:`CONFIG_BT_PRIVACY` is disabled. This is to
+ *        prevent the active scanner from disclosing the identity information
+ *        when requesting additional information from advertisers.
+ *        In order to enable directed advertiser reports then
+ *        :option:`CONFIG_BT_SCAN_WITH_IDENTITY` must be enabled.
+ *
  *  @param param Scan parameters.
- *  @param cb Callback to notify scan results.
+ *  @param cb Callback to notify scan results. May be NULL if callback
+ *            registration through @ref bt_le_scan_cb_register is preferred.
  *
  *  @return Zero on success or error code otherwise, positive in case
  *  of protocol error or negative (POSIX) in case of stack internal error
@@ -496,6 +533,18 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  *  of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_le_scan_stop(void);
+
+/** @brief Register scanner packet callbacks.
+ *
+ *  Adds the callback structure to the list of callback structures that monitors
+ *  scanner activity.
+ *
+ *  This callback will be called for all scanner activity, regardless of what
+ *  API was used to start the scanner.
+ *
+ *  @param cb Callback struct. Must point to static memory.
+ */
+void bt_le_scan_cb_register(struct bt_le_scan_cb *cb);
 
 /** @brief Add device (LE) to whitelist.
  *

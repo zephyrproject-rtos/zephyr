@@ -146,6 +146,7 @@ static const struct amg88xx_config amg88xx_config = {
 #ifdef CONFIG_AMG88XX_TRIGGER
 	.gpio_name = DT_INST_0_PANASONIC_AMG88XX_INT_GPIOS_CONTROLLER,
 	.gpio_pin = DT_INST_0_PANASONIC_AMG88XX_INT_GPIOS_PIN,
+	.gpio_flags = DT_INST_0_PANASONIC_AMG88XX_INT_GPIOS_FLAGS,
 #endif
 };
 

@@ -69,6 +69,10 @@
 			status = "disabled";
 			label= "USB";
 		};
+
+		eeprom: eeprom@8080000{
+			reg = <0x08080000 DT_SIZE_K(6)>;
+		};
 	};
 
 	otgfs_phy: otgfs_phy {

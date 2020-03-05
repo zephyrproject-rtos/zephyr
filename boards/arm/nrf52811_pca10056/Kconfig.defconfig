@@ -11,32 +11,24 @@ config BOARD
 config BT_CTLR
 	default BT
 
-if ADC
-
 config ADC_0
 	default y
-
-endif # ADC
-
-if I2C
+	depends on ADC
 
 config I2C_0
 	default y
-
-endif # I2C
-
-if SPI
+	depends on I2C
 
 config SPI_0
 	default y
-
-endif # SPI
-
-if PWM
+	depends on SPI
 
 config PWM_0
 	default y
+	depends on PWM
 
-endif # PWM
+config IEEE802154_NRF5
+	default y
+	depends on IEEE802154
 
 endif # BOARD_NRF52811_PCA10056

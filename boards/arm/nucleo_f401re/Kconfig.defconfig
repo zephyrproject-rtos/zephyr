@@ -9,19 +9,13 @@ if BOARD_NUCLEO_F401RE
 config BOARD
 	default "nucleo_f401re"
 
-if UART_CONSOLE
-
 config UART_2
 	default y
-
-endif # UART_CONSOLE
-
-if I2C
+	depends on UART_CONSOLE
 
 config I2C_1
 	default y
-
-endif # I2C
+	depends on I2C
 
 if SPI
 
@@ -36,12 +30,9 @@ config SPI_STM32_INTERRUPT
 
 endif # SPI
 
-if PWM
-
 config PWM_STM32_2
 	default y
-
-endif # PWM
+	depends on PWM
 
 if WATCHDOG
 
@@ -52,5 +43,9 @@ config IWDG_STM32
 	default n
 
 endif # WATCHDOG
+
+config ADC_1
+	default y
+	depends on ADC
 
 endif # BOARD_NUCLEO_F401RE

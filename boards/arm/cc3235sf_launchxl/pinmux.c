@@ -32,7 +32,7 @@
 
 #include <init.h>
 
-#include "pinmux.h"
+#include <drivers/pinmux.h>
 
 #include <inc/hw_types.h>
 #include <inc/hw_memmap.h>

@@ -120,7 +120,7 @@ subdirectories which are not described here.
     Device driver code.
 
 :file:`dts`
-    :ref:`device-tree` source files used to describe non-discoverable
+    :ref:`devicetree` source files used to describe non-discoverable
     board-specific hardware details.
 
 :file:`ext`
@@ -272,7 +272,7 @@ should know about.
   overlay files. Multiple filenames can be separated with either spaces or
   semicolons. Each file includes devicetree values that override the default
   DT values. See :ref:`application_dt` below for details on devicetree
-  overlays, and :ref:`device-tree` for an overview on devicetree and Zephyr.
+  overlays, and :ref:`devicetree` for an overview on devicetree and Zephyr.
 
 * :makevar:`ZEPHYR_MODULES`: A CMake list containing absolute paths of
   additional directories with source code, Kconfig, etc. that should be used in
@@ -1199,6 +1199,7 @@ See :ref:`setting_configuration_values` for detailed documentation on setting
 Kconfig configuration values. The :ref:`initial-conf` section on the same page
 explains how the initial configuration is derived. See
 :ref:`configuration_options` for a complete list of configuration options.
+See :ref:`hardening` for security information related with Kconfig options.
 
 The other pages in the :ref:`Kconfig section of the manual <kconfig>` are also
 worth going through, especially if you planning to add new configuration
@@ -1209,7 +1210,7 @@ options.
 Devicetree Overlays
 ===================
 
-As described in :ref:`device-tree`, Zephyr uses devicetree to describe the
+As described in :ref:`devicetree`, Zephyr uses devicetree to describe the
 hardware it runs on. This section describes how you can modify an application
 build's devicetree using overlay files. For additional information regarding
 the relationship between devicetree and Kconfig see :ref:`dt_vs_kconfig`. For

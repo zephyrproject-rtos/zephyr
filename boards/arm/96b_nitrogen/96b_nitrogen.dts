@@ -49,7 +49,7 @@
 		compatible = "gpio-keys";
 		button0: button_0 {
 			/* gpio flags need validation */
-			gpios = <&gpio0 27 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
 			label = "User Push Button";
 		};
 	};
@@ -118,7 +118,7 @@
 		/*
 		 * The flash starting at 0x0007a000 and ending at
 		 * 0x0007ffff (sectors 122-127) is reserved for use
-		 * by the application. If enabled, partition for FCB/NFFS
+		 * by the application. If enabled, partition for FCB/LittleFS
 		 * will be created in this area.
 		 */
 		storage_partition: partition@7a000 {

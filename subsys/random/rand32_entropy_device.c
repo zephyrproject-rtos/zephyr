@@ -46,7 +46,7 @@ u32_t sys_rand32_get(void)
 }
 #endif /* CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR */
 
-static void rand_get(u8_t *dst, size_t outlen)
+static int rand_get(u8_t *dst, size_t outlen, bool csrand)
 {
 	struct device *dev = entropy_driver;
 	u32_t random_num;
@@ -67,6 +67,14 @@ static void rand_get(u8_t *dst, size_t outlen)
 	ret = entropy_get_entropy(dev, dst, outlen);
 
 	if (unlikely(ret < 0)) {
+		/* Don't try to fill the buffer in case of
+		 * cryptographically secure random numbers, just
+		 * propagate the driver error.
+		 */
+		if (csrand) {
+			return ret;
+		}
+
 		/* Use system timer in case the entropy device couldn't deliver
 		 * 32-bit of data.  There's not much that can be done in this
 		 * situation.  An __ASSERT() isn't used here as the HWRNG might
@@ -89,12 +97,14 @@ static void rand_get(u8_t *dst, size_t outlen)
 			len += blocksize;
 		}
 	}
+
+	return 0;
 }
 
 #if defined(CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR)
 void sys_rand_get(void *dst, size_t outlen)
 {
-	return rand_get(dst, outlen);
+	rand_get(dst, outlen, false);
 }
 #endif /* CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR */
 
@@ -102,11 +112,13 @@ void sys_rand_get(void *dst, size_t outlen)
 
 int sys_csrand_get(void *dst, size_t outlen)
 {
-	rand_get(dst, outlen);
-	/* need deeper inspection on hardware based RNG error cases. Right
-	 * now the assumption is that the HW will continue providing a stream
-	 * of RNG values
-	 */
+	if (rand_get(dst, outlen, true) != 0) {
+		/* Is it the only error it should return ? entropy_sam
+		 * can return -ETIMEDOUT for example
+		 */
+		return -EIO;
+	}
+
 	return 0;
 }
 

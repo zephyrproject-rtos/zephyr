@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
 
@@ -13,9 +12,8 @@
 #include <usb/usb_common.h>
 #include <usb_descriptor.h>
 
-#define LOG_LEVEL LOG_LEVEL_DBG
 #include <logging/log.h>
-LOG_MODULE_REGISTER(test_main);
+LOG_MODULE_REGISTER(test_main, LOG_LEVEL_DBG);
 
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 #error Do not use composite configuration

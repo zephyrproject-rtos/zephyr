@@ -214,11 +214,19 @@ static void supported_commands(u8_t *data, u16_t len)
 
 static int register_service(void)
 {
+	int err;
+
 	server_svcs[svc_count].attrs = server_db +
 				       (attr_count - svc_attr_count);
 	server_svcs[svc_count].attr_count = svc_attr_count;
 
-	return bt_gatt_service_register(&server_svcs[svc_count]);
+	err = bt_gatt_service_register(&server_svcs[svc_count]);
+	if (!err) {
+		/* Service registered, reset the counter */
+		svc_attr_count = 0U;
+	}
+
+	return err;
 }
 
 static void add_service(u8_t *data, u16_t len)
@@ -237,14 +245,13 @@ static void add_service(u8_t *data, u16_t len)
 							sizeof(uuid.u128);
 
 	/* Register last defined service */
-	if (svc_count) {
+	if (svc_attr_count) {
 		if (register_service()) {
 			goto fail;
 		}
 	}
 
 	svc_count++;
-	svc_attr_count = 0U;
 
 	switch (cmd->type) {
 	case GATT_SERVICE_PRIMARY:
@@ -809,7 +816,7 @@ static void start_server(u8_t *data, u16_t len)
 	struct gatt_start_server_rp rp;
 
 	/* Register last defined service */
-	if (svc_count) {
+	if (svc_attr_count) {
 		if (register_service()) {
 			tester_rsp(BTP_SERVICE_ID_GATT, GATT_START_SERVER,
 				   CONTROLLER_INDEX, BTP_STATUS_FAILED);
@@ -1858,7 +1865,7 @@ static void get_attrs(u8_t *data, u16_t len)
 
 		bt_uuid_to_str(&uuid.uuid, uuid_str, sizeof(uuid_str));
 		LOG_DBG("start 0x%04x end 0x%04x, uuid %s", start_handle,
-			end_handle, uuid_str);
+			end_handle, log_strdup(uuid_str));
 
 		foreach.uuid = &uuid.uuid;
 	} else {

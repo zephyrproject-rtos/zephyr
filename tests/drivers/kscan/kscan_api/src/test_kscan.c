@@ -14,7 +14,7 @@
 #define KSCAN_DEV_NAME DT_KSCAN_0_NAME
 #endif
 
-static void kb_callback(struct device *dev, u8_t row, u8_t col, bool pressed)
+static void kb_callback(struct device *dev, u32_t row, u32_t col, bool pressed)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(row);

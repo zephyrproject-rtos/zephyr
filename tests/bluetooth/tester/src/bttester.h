@@ -144,7 +144,7 @@ struct gap_set_discoverable_rp {
 
 #define GAP_SET_BONDABLE		0x09
 struct gap_set_bondable_cmd {
-	u8_t gap_set_bondable_cmd;
+	u8_t bondable;
 } __packed;
 struct gap_set_bondable_rp {
 	u32_t current_settings;
@@ -171,6 +171,7 @@ struct gap_stop_advertising_rp {
 #define GAP_DISCOVERY_FLAG_LIMITED		0x04
 #define GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN	0x08
 #define GAP_DISCOVERY_FLAG_LE_OBSERVE		0x10
+#define GAP_DISCOVERY_FLAG_OWN_ID_ADDR		0x20
 
 #define GAP_START_DISCOVERY		0x0c
 struct gap_start_discovery_cmd {
@@ -228,6 +229,17 @@ struct gap_passkey_confirm_cmd {
 	u8_t match;
 } __packed;
 
+#define GAP_START_DIRECTED_ADV		0x15
+struct gap_start_directed_adv_cmd {
+	u8_t address_type;
+	u8_t address[6];
+	u8_t high_duty;
+	u8_t own_id_addr;
+} __packed;
+struct gap_start_directed_adv_rp {
+	u32_t current_settings;
+} __packed;
+
 #define GAP_CONN_PARAM_UPDATE		0x16
 struct gap_conn_param_update_cmd {
 	u8_t address_type;
@@ -236,6 +248,35 @@ struct gap_conn_param_update_cmd {
 	u16_t interval_max;
 	u16_t latency;
 	u16_t timeout;
+} __packed;
+
+#define GAP_PAIRING_CONSENT		0x17
+struct gap_pairing_consent_cmd {
+	u8_t address_type;
+	u8_t address[6];
+	u8_t consent;
+} __packed;
+
+#define GAP_OOB_LEGACY_SET_DATA		0x18
+struct gap_oob_legacy_set_data_cmd {
+	u8_t oob_data[16];
+} __packed;
+
+#define GAP_OOB_SC_GET_LOCAL_DATA	0x19
+struct gap_oob_sc_get_local_data_rp {
+	u8_t rand[16];
+	u8_t conf[16];
+} __packed;
+
+#define GAP_OOB_SC_SET_REMOTE_DATA	0x1a
+struct gap_oob_sc_set_remote_data_cmd {
+	u8_t rand[16];
+	u8_t conf[16];
+} __packed;
+
+#define GAP_SET_MITM			0x1b
+struct gap_set_mitm {
+	u8_t mitm;
 } __packed;
 
 /* events */
@@ -310,6 +351,23 @@ struct gap_conn_param_update_ev {
 	u16_t timeout;
 } __packed;
 
+#define GAP_SEC_LEVEL_UNAUTH_ENC	0x01
+#define GAP_SEC_LEVEL_AUTH_ENC		0x02
+#define GAP_SEC_LEVEL_AUTH_SC		0x03
+
+#define GAP_EV_SEC_LEVEL_CHANGED	0x89
+struct gap_sec_level_changed_ev {
+	u8_t address_type;
+	u8_t address[6];
+	u8_t sec_level;
+} __packed;
+
+#define GAP_EV_PAIRING_CONSENT_REQ	0x8a
+struct gap_pairing_consent_req_ev {
+	u8_t address_type;
+	u8_t address[6];
+} __packed;
+
 /* GATT Service */
 /* commands */
 #define GATT_READ_SUPPORTED_COMMANDS	0x01
@@ -374,6 +432,8 @@ struct gatt_start_server_rp {
 	u8_t db_attr_cnt;
 } __packed;
 
+#define GATT_RESET_SERVER		0x08
+
 #define GATT_SET_ENC_KEY_SIZE		0x09
 struct gatt_set_enc_key_size_cmd {
 	u16_t attr_id;
@@ -408,11 +468,19 @@ struct gatt_descriptor {
 } __packed;
 
 #define GATT_EXCHANGE_MTU		0x0a
+struct gatt_exchange_mtu_cmd {
+	u8_t address_type;
+	u8_t address[6];
+} __packed;
 
 #define GATT_DISC_ALL_PRIM		0x0b
 struct gatt_disc_all_prim_cmd {
 	u8_t address_type;
 	u8_t address[6];
+} __packed;
+struct gatt_disc_all_prim_rp {
+	u8_t services_count;
+	struct gatt_service services[0];
 } __packed;
 
 #define GATT_DISC_PRIM_UUID		0x0c
@@ -494,6 +562,11 @@ struct gatt_read_uuid_cmd {
 	u8_t uuid_length;
 	u8_t uuid[0];
 } __packed;
+struct gatt_read_uuid_rp {
+	u8_t att_response;
+	u16_t data_length;
+	u8_t data[0];
+} __packed;
 
 #define GATT_READ_LONG			0x13
 struct gatt_read_long_cmd {
@@ -502,6 +575,11 @@ struct gatt_read_long_cmd {
 	u16_t handle;
 	u16_t offset;
 } __packed;
+struct gatt_read_long_rp {
+	u8_t att_response;
+	u16_t data_length;
+	u8_t data[0];
+} __packed;
 
 #define GATT_READ_MULTIPLE		0x14
 struct gatt_read_multiple_cmd {
@@ -509,6 +587,11 @@ struct gatt_read_multiple_cmd {
 	u8_t address[6];
 	u8_t handles_count;
 	u16_t handles[0];
+} __packed;
+struct gatt_read_multiple_rp {
+	u8_t att_response;
+	u16_t data_length;
+	u8_t data[0];
 } __packed;
 
 #define GATT_WRITE_WITHOUT_RSP		0x15
@@ -537,6 +620,9 @@ struct gatt_write_cmd {
 	u16_t data_length;
 	u8_t data[0];
 } __packed;
+struct gatt_write_rp {
+	u8_t att_response;
+} __packed;
 
 #define GATT_WRITE_LONG			0x18
 struct gatt_write_long_cmd {
@@ -546,6 +632,22 @@ struct gatt_write_long_cmd {
 	u16_t offset;
 	u16_t data_length;
 	u8_t data[0];
+} __packed;
+struct gatt_write_long_rp {
+	u8_t att_response;
+} __packed;
+
+#define GATT_RELIABLE_WRITE		0x19
+struct gatt_reliable_write_cmd {
+	u8_t address_type;
+	u8_t address[6];
+	u16_t handle;
+	u16_t offset;
+	u16_t data_length;
+	u8_t data[0];
+} __packed;
+struct gatt_reliable_write_rp {
+	u8_t att_response;
 } __packed;
 
 #define GATT_CFG_NOTIFY			0x1a
@@ -585,6 +687,12 @@ struct gatt_get_attribute_value_rp {
 	u8_t att_response;
 	u16_t value_length;
 	u8_t value[0];
+} __packed;
+
+#define GATT_CHANGE_DB			0x1e
+struct gatt_change_db_cmd {
+	u16_t start_handle;
+	u8_t visibility;
 } __packed;
 
 /* GATT events */
@@ -632,7 +740,6 @@ struct l2cap_connect_cmd {
 	u8_t address[6];
 	u16_t psm;
 } __packed;
-
 struct l2cap_connect_rp {
 	u8_t chan_id;
 } __packed;

@@ -85,6 +85,14 @@ static int stm32h7_init(struct device *arg)
 	/* At reset, system core clock is set to 64 MHz from HSI */
 	SystemCoreClock = 64000000;
 
+	/* Power Configuration */
+#ifdef SMPS
+	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
+#endif
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+	}
+
 	return 0;
 }
 

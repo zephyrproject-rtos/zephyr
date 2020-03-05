@@ -38,7 +38,7 @@ config CONSOLE_HAS_DRIVER
 
 config CONSOLE_HANDLER
 	bool "Enable console input handler"
-	depends on UART_CONSOLE
+	depends on UART_CONSOLE && SERIAL_SUPPORT_INTERRUPT
 	select UART_INTERRUPT_DRIVEN
 	help
 	  This option enables console input handler allowing to write simple

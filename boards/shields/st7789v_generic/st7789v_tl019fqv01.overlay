@@ -13,8 +13,8 @@
 		label = "ST7789V";
 		spi-max-frequency = <20000000>;
 		reg = <0>;
-		cmd-data-gpios = <&arduino_header 15 0>;	/* D9 */
-		reset-gpios = <&arduino_header 14 0>;	/* D8 */
+		cmd-data-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+		reset-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>;	/* D8 */
 		width = <320>;
 		height = <170>;
 		x-offset = <0>;

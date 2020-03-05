@@ -5,6 +5,7 @@
 
 config SOC_SERIES_LPC54XXX
 	bool "LPC LPC54xxx Series MCU"
+	select ARM
 	select HAS_MCUX
 	select HAS_MCUX_FLEXCOMM
 	select SOC_FAMILY_LPC

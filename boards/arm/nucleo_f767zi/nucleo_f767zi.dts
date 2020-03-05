@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2019 Roland Ma
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f7/stm32f767Xi.dtsi>
+#include "arduino_r3_connector.dtsi"
+
+/ {
+	model = "STMicroelectronics STM32F767ZI-NUCLEO board";
+	compatible = "st,stm32f767zi-nucleo", "st,stm32f767";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,shell-uart = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,dtcm = &dtcm;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_0 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		blue_led: led_1 {
+			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+		red_led: led_2 {
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led;
+		led1 = &blue_led;
+		led2 = &red_led;
+		sw0 = &user_button;
+		can-primary = &can1;
+	};
+};
+
+&usart3 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart6 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usbotg_fs {
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&timers1 {
+	status = "okay";
+
+	pwm {
+		status = "okay";
+	};
+};
+
+&spi1 {
+	/*
+	 * WARNING: The pin PA7 will conflict on selection of SPI_1 and
+	 *          ETH_STM32_HAL. See pinmux.c for further details.
+	 */
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&can1 {
+	bus-speed = <125000>;
+	sjw = <1>;
+	prop-seg = <0>;
+	phase-seg1 = <6>;
+	phase-seg2 = <5>;
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+};

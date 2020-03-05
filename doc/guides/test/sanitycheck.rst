@@ -91,7 +91,6 @@ required for best test coverage for this specific board:
     - gpio
     - usb_device
     - watchdog
-    - hwinfo
     - can
     - pwm
   testing:

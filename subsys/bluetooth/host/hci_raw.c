@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <sys/atomic.h>
 
-#include <bluetooth/hci_driver.h>
+#include <drivers/bluetooth/hci_driver.h>
 #include <bluetooth/hci_raw.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)

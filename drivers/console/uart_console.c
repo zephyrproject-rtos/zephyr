@@ -33,7 +33,9 @@
 #ifdef CONFIG_UART_CONSOLE_MCUMGR
 #include "mgmt/serial.h"
 #endif
+#ifdef CONFIG_USB_UART_CONSOLE
 #include <usb/usb_device.h>
+#endif
 
 static struct device *uart_console_dev;
 

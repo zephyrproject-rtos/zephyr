@@ -11,8 +11,8 @@ supported:
   - arduino_gpio
   - arduino_i2c
   - can
+  - counter
   - gpio
-  - hwinfo
   - i2c
   - netif:eth
   - nvs

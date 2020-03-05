@@ -8,33 +8,21 @@ if BOARD_NRF52840_PCA10056
 config BOARD
 	default "nrf52840_pca10056"
 
-if ADC
-
 config ADC_0
 	default y
-
-endif # ADC
-
-if I2C
+	depends on ADC
 
 config I2C_0
 	default y
-
-endif # I2C
-
-if PWM
+	depends on I2C
 
 config PWM_0
 	default y
-
-endif # PWM
+	depends on PWM
 
 if SPI
 
 config SPI_1
-	default y
-
-config SPI_2
 	default y
 
 config SPI_3
@@ -52,12 +40,9 @@ config USB_DEVICE_STACK
 
 endif # USB
 
-if IEEE802154
-
 config IEEE802154_NRF5
 	default y
-
-endif # IEEE802154
+	depends on IEEE802154
 
 config BT_CTLR
 	default BT

@@ -8,12 +8,9 @@ if BOARD_SENSORTILE_BOX
 config BOARD
 	default "sensortile_box"
 
-if UART_CONSOLE
-
 config UART_1
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 if I2C
 
@@ -36,12 +33,9 @@ config SPI_3
 config SPI_STM32_INTERRUPT
 	default y
 
-if LIS2MDL
-
 config LIS2MDL_SPI_FULL_DUPLEX
 	default y
-
-endif # LIS2MDL
+	depends on LIS2MDL
 
 endif # SPI
 

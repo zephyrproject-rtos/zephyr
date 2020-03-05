@@ -37,6 +37,12 @@ u64_t arch_timing_value_swap_temp;
 #define TIMING_INFO_GET_TIMER_VALUE()  (TIMING_INFO_OS_GET_TIME())
 #define SUBTRACT_CLOCK_CYCLES(val)     (val)
 
+#elif CONFIG_ARM64
+#define TIMING_INFO_PRE_READ()
+#define TIMING_INFO_OS_GET_TIME()      (k_cycle_get_32())
+#define TIMING_INFO_GET_TIMER_VALUE()  (k_cycle_get_32())
+#define SUBTRACT_CLOCK_CYCLES(val)     ((u32_t)val)
+
 #elif CONFIG_ARM
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 #define TIMING_INFO_PRE_READ()

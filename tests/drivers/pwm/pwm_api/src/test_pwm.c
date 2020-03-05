@@ -86,19 +86,19 @@ static int test_task(u32_t port, u32_t period, u32_t pulse, u8_t unit)
 
 	if (unit == UNIT_CYCLES) {
 		/* Verify pwm_pin_set_cycles() */
-		if (pwm_pin_set_cycles(pwm_dev, port, period, pulse)) {
+		if (pwm_pin_set_cycles(pwm_dev, port, period, pulse, 0)) {
 			TC_PRINT("Fail to set the period and pulse width\n");
 			return TC_FAIL;
 		}
 	} else if (unit == UNIT_USECS) {
 		/* Verify pwm_pin_set_usec() */
-		if (pwm_pin_set_usec(pwm_dev, port, period, pulse)) {
+		if (pwm_pin_set_usec(pwm_dev, port, period, pulse, 0)) {
 			TC_PRINT("Fail to set the period and pulse width\n");
 			return TC_FAIL;
 		}
 	} else { /* unit == UNIT_NSECS */
 		/* Verify pwm_pin_set_nsec() */
-		if (pwm_pin_set_nsec(pwm_dev, port, period, pulse)) {
+		if (pwm_pin_set_nsec(pwm_dev, port, period, pulse, 0)) {
 			TC_PRINT("Fail to set the period and pulse width\n");
 			return TC_FAIL;
 		}

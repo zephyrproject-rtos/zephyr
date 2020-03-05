@@ -73,7 +73,6 @@ zephyr_library_named(zephyr)
 
 zephyr_include_directories(
   include
-  include/drivers
   ${PROJECT_BINARY_DIR}/include/generated
   ${USERINCLUDE}
   ${STDINCLUDE}
@@ -141,6 +140,13 @@ elseif(CONFIG_SIZE_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default in kconfig
 else()
   assert(0 "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
+endif()
+
+if(NOT CONFIG_ARCH_IS_SET)
+  message(WARNING "\
+None of the CONFIG_<arch> (e.g. CONFIG_X86) symbols are set. \
+Select one of them from the SOC_SERIES_* symbol or, lacking that, from the \
+SOC_* symbol.")
 endif()
 
 # Apply the final optimization flag(s)
@@ -402,11 +408,11 @@ set_ifndef(  DTS_BOARD_FIXUP_FILE                                   ${BOARD_DIR}
 set_ifndef(    DTS_SOC_FIXUP_FILE                 ${SOC_DIR}/${ARCH}/${SOC_PATH}/dts_fixup.h)
 set(           DTS_APP_FIXUP_FILE                      ${APPLICATION_SOURCE_DIR}/dts_fixup.h)
 
-set_ifndef(DTS_CAT_OF_FIXUP_FILES ${ZEPHYR_BINARY_DIR}/include/generated/generated_dts_board_fixups.h)
+set_ifndef(DTS_CAT_OF_FIXUP_FILES ${ZEPHYR_BINARY_DIR}/include/generated/devicetree_fixups.h)
 
 # Concatenate the fixups into a single header file for easy
 # #include'ing
-file(WRITE ${DTS_CAT_OF_FIXUP_FILES} "/* May only be included by generated_dts_board.h */\n\n")
+file(WRITE ${DTS_CAT_OF_FIXUP_FILES} "/* May only be included by devicetree.h */\n\n")
 foreach(fixup_file
     ${DTS_BOARD_FIXUP_FILE}
     ${DTS_SOC_FIXUP_FILE}
@@ -480,7 +486,7 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
     # https://cmake.org/pipermail/cmake/2019-June/069547.html
     string(TOUPPER ${module_name} MODULE_NAME_UPPER)
     set(ZEPHYR_CURRENT_MODULE_DIR ${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR})
-    add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/modules/${module_name})
+    add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} ${CMAKE_BINARY_DIR}/modules/${module_name})
   endforeach()
   # Done processing modules, clear ZEPHYR_CURRENT_MODULE_DIR.
   set(ZEPHYR_CURRENT_MODULE_DIR)
@@ -561,15 +567,20 @@ else()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${syscalls_subdirs_txt})
 endif()
 
-# SYSCALL_INCLUDE_DIRECTORY will include the directories that needs to be
-# searched for syscall declarations if CONFIG_APPLICATION_DEFINED_SYSCALL is set
+# syscall declarations are searched for in the SYSCALL_INCLUDE_DIRS
 if(CONFIG_APPLICATION_DEFINED_SYSCALL)
-  set(SYSCALL_INCLUDE_DIRECTORY --include ${APPLICATION_SOURCE_DIR})
+  list(APPEND SYSCALL_INCLUDE_DIRS ${APPLICATION_SOURCE_DIR})
 endif()
 
 if(CONFIG_ZTEST)
-  set(SYSCALL_ZTEST_DIRECTORY --include ${ZEPHYR_BASE}/subsys/testsuite/ztest/include)
+  list(APPEND SYSCALL_INCLUDE_DIRS ${ZEPHYR_BASE}/subsys/testsuite/ztest/include)
 endif()
+
+foreach(d ${SYSCALL_INCLUDE_DIRS})
+  list(APPEND parse_syscalls_include_args
+    --include ${d}
+    )
+endforeach()
 
 add_custom_command(
   OUTPUT
@@ -578,8 +589,7 @@ add_custom_command(
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/parse_syscalls.py
    --include          ${ZEPHYR_BASE}/include        # Read files from this dir
-  ${SYSCALL_INCLUDE_DIRECTORY}
-  ${SYSCALL_ZTEST_DIRECTORY}
+  ${parse_syscalls_include_args}                    # Read files from these dirs also
   --json-file        ${syscalls_json}              # Write this file
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )
@@ -623,6 +633,14 @@ add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
 include($ENV{ZEPHYR_BASE}/cmake/kobj.cmake)
 gen_kobj(KOBJ_INCLUDE_PATH)
 
+# Add a pseudo-target that is up-to-date when all generated headers
+# are up-to-date.
+
+add_custom_target(zephyr_generated_headers)
+add_dependencies(zephyr_generated_headers
+  offsets_h
+  )
+
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 
@@ -665,7 +683,7 @@ get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
 
 foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   # TODO: Could this become an INTERFACE property of zephyr_interface?
-  add_dependencies(${zephyr_lib} ${OFFSETS_H_TARGET})
+  add_dependencies(${zephyr_lib} zephyr_generated_headers)
 endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
@@ -680,7 +698,7 @@ configure_linker_script(
   ${PRIV_STACK_DEP}
   ${APP_SMEM_ALIGNED_DEP}
   ${CODE_RELOCATION_DEP}
-  ${OFFSETS_H_TARGET}
+  zephyr_generated_headers
   )
 
 add_custom_target(
@@ -793,6 +811,10 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(priv_stacks DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS})
+
+  if(${GPERF} STREQUAL GPERF-NOTFOUND)
+    message(FATAL_ERROR "Unable to find gperf")
+  endif()
 
   # Use gperf to generate C code (PRIV_STACKS_OUTPUT_SRC_PRE) which implements a
   # perfect hashtable based on PRIV_STACKS
@@ -1085,7 +1107,7 @@ if(CONFIG_USERSPACE)
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_UNALIGNED_DEP}
     ${APP_SMEM_UNALIGNED_LD}
-    ${OFFSETS_H_TARGET}
+    zephyr_generated_headers
     )
 
   add_custom_target(
@@ -1139,7 +1161,7 @@ if(CONFIG_USERSPACE AND CONFIG_ARM)
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_ALIGNED_DEP}
     ${APP_SMEM_ALIGNED_LD}
-    ${OFFSETS_H_TARGET}
+    zephyr_generated_headers
     )
 
   add_custom_target(
@@ -1197,7 +1219,7 @@ else()
     ${PRIV_STACK_DEP}
     ${CODE_RELOCATION_DEP}
     ${ZEPHYR_PREBUILT_EXECUTABLE}
-    ${OFFSETS_H_TARGET}
+    zephyr_generated_headers
     )
 
   set(LINKER_PASS_FINAL_SCRIPT_TARGET linker_pass_final_script_target)
@@ -1499,16 +1521,28 @@ add_subdirectory(cmake/flash)
 add_subdirectory(cmake/usage)
 add_subdirectory(cmake/reports)
 
+add_subdirectory_ifdef(
+  CONFIG_MAKEFILE_EXPORTS
+  cmake/makefile_exports
+  )
+
 if(NOT CONFIG_TEST)
 if(CONFIG_ASSERT AND (NOT CONFIG_FORCE_NO_ASSERT))
   message(WARNING "__ASSERT() statements are globally ENABLED")
 endif()
 endif()
 
-if(CONFIG_BOARD_DEPRECATED)
+if(CONFIG_BOARD_DEPRECATED_RELEASE)
   message(WARNING "
       WARNING:  The board '${BOARD}' is deprecated and will be
-      removed in version ${CONFIG_BOARD_DEPRECATED}"
+      removed in version ${CONFIG_BOARD_DEPRECATED_RELEASE}"
+  )
+endif()
+
+if(CONFIG_SOC_DEPRECATED_RELEASE)
+  message(WARNING "
+      WARNING:  The SoC '${SOC_NAME}' is deprecated and will be
+      removed in version ${CONFIG_SOC_DEPRECATED_RELEASE}"
   )
 endif()
 

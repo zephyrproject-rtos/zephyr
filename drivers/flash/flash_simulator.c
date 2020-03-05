@@ -357,6 +357,9 @@ static const struct flash_driver_api flash_sim_api = {
 
 static int flash_mock_init(struct device *dev)
 {
+	struct stat f_stat;
+	int rc;
+
 	if (flash_file_path == NULL) {
 		flash_file_path = default_flash_file_path;
 	}
@@ -364,6 +367,14 @@ static int flash_mock_init(struct device *dev)
 	flash_fd = open(flash_file_path, O_RDWR | O_CREAT, (mode_t)0600);
 	if (flash_fd == -1) {
 		posix_print_warning("Failed to open flash device file "
+				    "%s: %s\n",
+				    flash_file_path, strerror(errno));
+		return -EIO;
+	}
+
+	rc = fstat(flash_fd, &f_stat);
+	if (rc) {
+		posix_print_warning("Failed to get status of flash device file "
 				    "%s: %s\n",
 				    flash_file_path, strerror(errno));
 		return -EIO;
@@ -383,6 +394,11 @@ static int flash_mock_init(struct device *dev)
 				    "%s: %s\n",
 				    flash_file_path, strerror(errno));
 		return -EIO;
+	}
+
+	if (f_stat.st_size == 0) {
+		/* erase the memory unit by pulling all bits to one */
+		(void)memset(mock_flash, 0xff, FLASH_SIMULATOR_FLASH_SIZE);
 	}
 
 	return 0;

@@ -1,0 +1,56 @@
+# Xtensa board configuration
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_INTEL_APL_ADSP
+
+config SOC
+	string
+	default "intel_apl_adsp"
+
+config IRQ_OFFLOAD_INTNUM
+	default 0
+
+# S1000 does not have MISC0.
+# Since EXCSAVE2 is unused by Zephyr, use it instead.
+config XTENSA_KERNEL_CPU_PTR_SR
+	default "EXCSAVE2"
+
+config KERNEL_ENTRY
+	default "_MainEntry"
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config DYNAMIC_INTERRUPTS
+	default y
+
+config LOG
+	default y
+
+# To prevent test uses TEST_LOGGING_MINIMAL
+config TEST_LOGGING_DEFAULTS
+	default n
+	depends on TEST
+
+if LOG
+
+config LOG_PRINTK
+	default y
+
+config LOG_BACKEND_ADSP
+	default y
+
+config LOG_BACKEND_ADSP_RINGBUF_BASE
+	default "0xBE008000"
+
+config LOG_BACKEND_ADSP_RINGBUF_SIZE
+	default "0x2000"
+
+endif # LOG
+
+endif

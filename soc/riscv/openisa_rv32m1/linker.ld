@@ -12,7 +12,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <generated_dts_board.h>
+#include <devicetree.h>
 #include <autoconf.h>
 
 #include <linker/sections.h>
@@ -56,8 +56,8 @@
 
 #endif
 
-#define RAM_BASE DT_SRAM_BASE_ADDRESS
-#define RAM_SIZE KB(DT_SRAM_SIZE)
+#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define RAM_SIZE KB(CONFIG_SRAM_SIZE)
 
 MEMORY
     {
@@ -104,10 +104,11 @@ SECTIONS
     SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
 
-/* Located in generated directory. This file is populated by the
- * zephyr_linker_sources() Cmake function.
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_START ...). This typically contains the vector
+ * table and debug information.
  */
-#include <snippets-text-start.ld>
+#include <snippets-rom-start.ld>
 
 	_image_text_start = .;
 

@@ -15,7 +15,7 @@ Zephyr will then include the toolchain cmake files located in the
 
 - :file:`cmake/toolchain/generic.cmake`: configures the toolchain for "generic"
   use, which mostly means running the C preprocessor on the generated
-  :ref:`device-tree` file.
+  :ref:`devicetree` file.
 - :file:`cmake/toolchain/target.cmake`: configures the toolchain for "target"
   use, i.e. building Zephyr and your application's source code.
 

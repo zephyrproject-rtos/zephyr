@@ -26,11 +26,8 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 
 endif # RTOS_TIMER
 
-if !RTOS_TIMER
-
 config CORTEX_M_SYSTICK
 	default y
-
-endif # RTOS_TIMER
+	depends on !RTOS_TIMER
 
 endif # SOC_SERIES_MEC1501X

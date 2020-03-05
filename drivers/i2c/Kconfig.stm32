@@ -34,6 +34,7 @@ config I2C_STM32_V2
 config I2C_STM32_INTERRUPT
 	bool "STM32 MCU I2C Interrupt Support"
 	depends on I2C_STM32_V1 || I2C_STM32_V2
+	default y
 	help
 	  Enable Interrupt support for the I2C Driver
 

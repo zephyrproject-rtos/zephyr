@@ -147,6 +147,9 @@ config HAS_HW_NRF_SPIM2
 config HAS_HW_NRF_SPIM3
 	bool
 
+config HAS_HW_NRF_SPIM4
+	bool
+
 config HAS_HW_NRF_SPIS0
 	bool
 
@@ -244,6 +247,9 @@ config HAS_HW_NRF_UARTE3
 	bool
 
 config HAS_HW_NRF_USBD
+	bool
+
+config HAS_HW_NRF_USBREG
 	bool
 
 config HAS_HW_NRF_WDT

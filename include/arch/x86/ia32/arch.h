@@ -15,7 +15,6 @@
 #define ZEPHYR_INCLUDE_ARCH_X86_IA32_ARCH_H_
 
 #include "sys_io.h"
-#include <drivers/interrupt_controller/sysapic.h>
 #include <stdbool.h>
 #include <kernel_structs.h>
 #include <arch/common/ffs.h>
@@ -239,7 +238,9 @@ static inline void arch_irq_direct_pm(void)
 #define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
 #define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
 
-/* FIXME: debug/tracing.h cannot be included here due to circular dependency */
+/* FIXME:
+ * tracing/tracing.h cannot be included here due to circular dependency
+ */
 #if defined(CONFIG_TRACING)
 extern void sys_trace_isr_enter(void);
 extern void sys_trace_isr_exit(void);
@@ -410,17 +411,15 @@ extern void k_float_enable(struct k_thread *thread, unsigned int options);
 extern struct task_state_segment _main_tss;
 #endif
 
-#if CONFIG_X86_KERNEL_OOPS
 #define ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile( \
 		"push %[reason]\n\t" \
 		"int %[vector]\n\t" \
 		: \
-		: [vector] "i" (CONFIG_X86_KERNEL_OOPS_VECTOR), \
+		: [vector] "i" (Z_X86_OOPS_VECTOR), \
 		  [reason] "i" (reason_p)); \
 	CODE_UNREACHABLE; \
 } while (false)
-#endif
 
 #ifdef __cplusplus
 }

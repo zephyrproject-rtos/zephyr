@@ -12,7 +12,6 @@ supported:
   - adc
   - can
   - counter
-  - hwinfo
   - i2c
   - pwm
   - spi

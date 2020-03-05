@@ -34,7 +34,8 @@ struct mcux_ftm_data {
 };
 
 static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
-			    u32_t period_cycles, u32_t pulse_cycles)
+			    u32_t period_cycles, u32_t pulse_cycles,
+			    pwm_flags_t flags)
 {
 	const struct mcux_ftm_config *config = dev->config->config_info;
 	struct mcux_ftm_data *data = dev->driver_data;
@@ -54,8 +55,14 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 	duty_cycle = pulse_cycles * 100U / period_cycles;
 	data->channel[pwm].dutyCyclePercent = duty_cycle;
 
-	LOG_DBG("pulse_cycles=%d, period_cycles=%d, duty_cycle=%d",
-		    pulse_cycles, period_cycles, duty_cycle);
+	if ((flags & PWM_POLARITY_INVERTED) == 0) {
+		data->channel[pwm].level = kFTM_HighTrue;
+	} else {
+		data->channel[pwm].level = kFTM_LowTrue;
+	}
+
+	LOG_DBG("pulse_cycles=%d, period_cycles=%d, duty_cycle=%d, flags=%d",
+		pulse_cycles, period_cycles, duty_cycle, flags);
 
 	if (period_cycles != data->period_cycles) {
 		u32_t pwm_freq;
@@ -98,6 +105,8 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 	} else {
 		FTM_UpdatePwmDutycycle(config->base, pwm, config->mode,
 				       duty_cycle);
+		FTM_UpdateChnlEdgeLevelSelect(config->base, pwm,
+					      data->channel[pwm].level);
 		FTM_SetSoftwareTrigger(config->base, true);
 	}
 
@@ -143,7 +152,7 @@ static int mcux_ftm_init(struct device *dev)
 
 	for (i = 0; i < config->channel_count; i++) {
 		channel->chnlNumber = i;
-		channel->level = kFTM_LowTrue;
+		channel->level = kFTM_NoPwmSignal;
 		channel->dutyCyclePercent = 0;
 		channel->firstEdgeDelayPercent = 0;
 		channel++;

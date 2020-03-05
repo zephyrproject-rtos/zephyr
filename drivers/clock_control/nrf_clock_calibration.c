@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <drivers/clock_control.h>
 #include "nrf_clock_calibration.h"
 #include <drivers/clock_control/nrf_clock_control.h>
@@ -45,7 +45,9 @@ static int total_cnt; /* Total number of calibrations. */
 static int total_skips_cnt; /* Total number of skipped calibrations. */
 
 /* Callback called on hfclk started. */
-static void cal_hf_on_callback(struct device *dev, void *user_data);
+static void cal_hf_on_callback(struct device *dev,
+				clock_control_subsys_t subsys,
+				void *user_data);
 static struct clock_control_async_data cal_hf_on_data = {
 	.cb = cal_hf_on_callback
 };
@@ -238,7 +240,9 @@ out:
 /* Called when HFCLK XTAL is on. Schedules temperature measurement or triggers
  * calibration.
  */
-static void cal_hf_on_callback(struct device *dev, void *user_data)
+static void cal_hf_on_callback(struct device *dev,
+				clock_control_subsys_t subsys,
+				void *user_data)
 {
 	int key = irq_lock();
 

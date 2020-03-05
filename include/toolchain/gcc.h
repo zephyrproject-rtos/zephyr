@@ -206,16 +206,31 @@ do {                                                                    \
 #define HAS_BUILTIN___builtin_ctzll 1
 #endif
 
-/* Be *very* careful with this, you cannot filter out with -wno-deprecated,
- * which has implications for -Werror
+/*
+ * Be *very* careful with these. You cannot filter out __DEPRECATED_MACRO with
+ * -wno-deprecated, which has implications for -Werror.
  */
-#define __DEPRECATED_MACRO _Pragma("GCC warning \"Macro is deprecated\"")
+
+/*
+ * Expands to nothing and generates a warning. Used like
+ *
+ *   #define FOO __WARN("Please use BAR instead") ...
+ *
+ * The warning points to the location where the macro is expanded.
+ */
+#define __WARN(msg) __WARN1(GCC warning msg)
+#define __WARN1(s) _Pragma(#s)
+
+/* Generic message */
+#ifndef __DEPRECATED_MACRO
+#define __DEPRECATED_MACRO __WARN("Macro is deprecated")
+#endif
 
 /* These macros allow having ARM asm functions callable from thumb */
 
 #if defined(_ASMLANGUAGE)
 
-#ifdef CONFIG_ARM
+#if defined(CONFIG_ARM) && !defined(CONFIG_ARM64)
 
 #if defined(CONFIG_ISA_THUMB2)
 
@@ -368,7 +383,7 @@ do {                                                                    \
 
 #define GEN_ABS_SYM_END }
 
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM) && !defined(CONFIG_ARM64)
 
 /*
  * GNU/ARM backend does not have a proper operand modifier which does not
@@ -383,7 +398,14 @@ do {                                                                    \
 		",%B0"                              \
 		"\n\t.type\t" #name ",%%object" :  : "n"(~(value)))
 
-#elif defined(CONFIG_X86) || defined(CONFIG_ARC)
+#elif defined(CONFIG_X86)
+
+#define GEN_ABSOLUTE_SYM(name, value)               \
+	__asm__(".globl\t" #name "\n\t.equ\t" #name \
+		",%p0"                              \
+		"\n\t.type\t" #name ",@object" :  : "n"(value))
+
+#elif defined(CONFIG_ARC) || defined(CONFIG_ARM64)
 
 #define GEN_ABSOLUTE_SYM(name, value)               \
 	__asm__(".globl\t" #name "\n\t.equ\t" #name \

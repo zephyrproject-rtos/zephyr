@@ -222,7 +222,6 @@ enum {
 	BT_MESH_CFG_PENDING,
 	BT_MESH_MOD_PENDING,
 	BT_MESH_VA_PENDING,
-	BT_MESH_NODES_PENDING,
 
 	/* Don't touch - intentionally last */
 	BT_MESH_FLAG_COUNT,
@@ -254,10 +253,6 @@ struct bt_mesh_net {
 	struct k_delayed_work ivu_timer;
 
 	u8_t dev_key[16];
-
-#if defined(CONFIG_BT_MESH_PROVISIONER)
-	struct bt_mesh_node nodes[CONFIG_BT_MESH_NODE_COUNT];
-#endif
 
 	struct bt_mesh_app_key app_keys[CONFIG_BT_MESH_APP_KEY_COUNT];
 

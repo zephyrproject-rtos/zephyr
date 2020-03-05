@@ -58,7 +58,6 @@ def create_redirect_pages(app, docname):
     for (old_url, new_url) in app.config.html_redirect_pages:
         if old_url.startswith('/'):
             old_url = old_url[1:]
-        print("Creating redirect: %s.html to %s.html" % (old_url, new_url))
 
         new_url = app.builder.get_relative_uri(old_url, new_url)
         out_file = app.builder.get_outfilename(old_url)

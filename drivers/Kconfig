@@ -13,6 +13,8 @@ source "drivers/lora/Kconfig"
 
 source "drivers/console/Kconfig"
 
+source "drivers/debug/Kconfig"
+
 source "drivers/ethernet/Kconfig"
 
 source "drivers/net/Kconfig"

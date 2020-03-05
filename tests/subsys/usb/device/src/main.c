@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
 
@@ -187,7 +186,7 @@ static void test_usb_dc_api_read_write(void)
 			  TC_PASS, "usb_write(INVALID_EP)");
 }
 
-/*test case main entry*/
+/* test case main entry */
 void test_main(void)
 {
 	int ret;

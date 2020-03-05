@@ -3,4 +3,5 @@
 
 config SOC_RISCV32_LITEX_VEXRISCV
 	bool "LiteX VexRiscv system implementation"
+	select RISCV
 	select ATOMIC_OPERATIONS_C

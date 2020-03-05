@@ -30,12 +30,9 @@ config SPI_NOR
 
 endif # FXOS8700
 
-if FXOS8700
-
 config FXOS8700_DRDY_INT1
 	default y
-
-endif # FXOS8700
+	depends on FXOS8700
 
 if GPIO_MCUX
 
@@ -56,12 +53,9 @@ config GPIO_MCUX_PORTE
 
 endif # GPIO_MCUX
 
-if I2C
-
 config I2C_3
 	default y
-
-endif # I2C
+	depends on I2C
 
 if PINMUX_MCUX
 
@@ -82,25 +76,16 @@ config PINMUX_MCUX_PORTE
 
 endif # PINMUX_MCUX
 
-if PWM_MCUX_FTM
-
 config PWM_3
 	default y
-
-endif # PWM_MCUX_FTM
-
-if SPI
+	depends on PWM_MCUX_FTM
 
 config SPI_1
 	default y
-
-endif # SPI
-
-if UART_MCUX_LPUART
+	depends on SPI
 
 config UART_MCUX_LPUART_4
 	default y if UART_CONSOLE
-
-endif # UART_MCUX_LPUART
+	depends on UART_MCUX_LPUART
 
 endif # BOARD_FRDM_K82F

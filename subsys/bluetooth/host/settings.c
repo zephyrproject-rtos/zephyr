@@ -21,7 +21,7 @@
 
 #if defined(CONFIG_BT_SETTINGS_USE_PRINTK)
 void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
-			    bt_addr_le_t *addr, const char *key)
+			    const bt_addr_le_t *addr, const char *key)
 {
 	if (key) {
 		snprintk(path, path_size,
@@ -41,7 +41,7 @@ void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 }
 #else
 void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
-			    bt_addr_le_t *addr, const char *key)
+			    const bt_addr_le_t *addr, const char *key)
 {
 	size_t len = 3;
 

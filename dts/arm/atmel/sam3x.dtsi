@@ -35,6 +35,17 @@
 	};
 
 	soc {
+		/* Only used for HWINFO device ID */
+		flash-controller@400e0a00 {
+			compatible = "atmel,sam-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x400e0a00 0x200>;
+			peripheral-id = <6>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
 		wdog: watchdog@400e1a50 {
 			compatible = "atmel,sam-watchdog";
 			reg = <0x400e1a50 0xc>;

@@ -9,7 +9,6 @@
 #include <device.h>
 #include <init.h>
 
-#include <arch/cpu.h>
 /**
  *
  * @brief Perform basic hardware initialization
@@ -29,3 +28,15 @@ static int soc_init(struct device *arg)
 }
 
 SYS_INIT(soc_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+void z_platform_init(void)
+{
+	/*
+	 * Use normal exception vectors address range (0x0-0x1C).
+	 */
+	__asm__ volatile(
+		"mrc p15, 0, r0, c1, c0, 0;"		/* SCTLR */
+		"bic r0, r0, #" TOSTR(HIVECS) ";"	/* Clear HIVECS */
+		"mcr p15, 0, r0, c1, c0, 0;"
+		: : : "memory");
+}

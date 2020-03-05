@@ -200,7 +200,7 @@
 			interrupts = <42 0>;
 			label = "FTM_0";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm2: pwm@40039000 {
@@ -209,7 +209,7 @@
 			interrupts = <43 0>;
 			label = "FTM_1";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm3: pwm@4003a000 {
@@ -218,7 +218,7 @@
 			interrupts = <53 0>;
 			label = "FTM_2";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm4: pwm@40026000 {
@@ -227,7 +227,7 @@
 			interrupts = <71 0>;
 			label = "FTM_3";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		spi0: spi@4002c000 {

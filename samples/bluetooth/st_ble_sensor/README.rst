@@ -23,6 +23,11 @@ Building and Running
 This sample can be found under :zephyr_file:`samples/bluetooth/st_ble_sensor` in the
 Zephyr tree.
 
+Open ST BLE Sensor app and click on "CONNECT TO A DEVICE" button to scan BLE devices.
+To connect click on the device shown in the Device List.
+After connected, tap LED image on Android to test LED service.
+Push SW0 button on embedded device to test button service.
+
 See :ref:`bluetooth samples section <bluetooth-samples>` for details.
 
 .. _ST BLE Sensor app:

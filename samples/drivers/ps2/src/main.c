@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <sys/printk.h>
-#include <ps2.h>
+#include <drivers/ps2.h>
 #include <soc.h>
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <logging/log.h>

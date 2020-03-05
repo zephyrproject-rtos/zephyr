@@ -153,6 +153,12 @@ static int flash_nrf_write(struct device *dev, off_t addr,
 		return -EINVAL;
 	}
 
+#if !IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
+	if (!is_aligned_32(addr) || (len % sizeof(u32_t))) {
+		return -EINVAL;
+	}
+#endif
+
 	if (!len) {
 		return 0;
 	}
@@ -241,7 +247,11 @@ static const struct flash_driver_api flash_nrf_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_nrf_pages_layout,
 #endif
+#if IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	.write_block_size = 1,
+#else
+	.write_block_size = 4,
+#endif
 };
 
 static int nrf_flash_init(struct device *dev)
@@ -479,7 +489,6 @@ static void shift_write_context(u32_t shift, struct flash_context *w_ctx)
 static int write_op(void *context)
 {
 	struct flash_context *w_ctx = context;
-	u32_t count;
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 	u32_t ticks_begin = 0U;
@@ -490,10 +499,11 @@ static int write_op(void *context)
 		ticks_begin = ticker_ticks_now_get();
 	}
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
-
+#if IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	/* If not aligned, write unaligned beginning */
 	if (!is_aligned_32(w_ctx->flash_addr)) {
-		count = sizeof(u32_t) - (w_ctx->flash_addr & 0x3);
+		u32_t count = sizeof(u32_t) - (w_ctx->flash_addr & 0x3);
+
 		if (count > w_ctx->len) {
 			count = w_ctx->len;
 		}
@@ -517,7 +527,7 @@ static int write_op(void *context)
 		}
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
 	}
-
+#endif /* CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS */
 	/* Write all the 4-byte aligned data */
 	while (w_ctx->len >= sizeof(u32_t)) {
 		nrfx_nvmc_word_write(w_ctx->flash_addr,
@@ -540,7 +550,7 @@ static int write_op(void *context)
 		}
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
 	}
-
+#if IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	/* Write remaining unaligned data */
 	if (w_ctx->len) {
 		nrfx_nvmc_bytes_write(w_ctx->flash_addr,
@@ -549,7 +559,7 @@ static int write_op(void *context)
 
 		shift_write_context(w_ctx->len, w_ctx);
 	}
-
+#endif /* CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS */
 	nvmc_wait_ready();
 
 	return FLASH_OP_DONE;

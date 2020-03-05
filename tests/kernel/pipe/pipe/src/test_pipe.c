@@ -813,22 +813,16 @@ void test_pipe_get_timeout(void)
  * @ingroup kernel_pipe_tests
  * @see k_pipe_get()
  */
-#ifdef CONFIG_USERSPACE
-/* userspace invalid size */
 void test_pipe_get_invalid_size(void)
 {
 	size_t read;
+	int ret;
 
 	valid_fault = true;
-	k_pipe_get(&test_pipe, &rx_buffer,
+	ret = k_pipe_get(&test_pipe, &rx_buffer,
 		   0, &read,
 		   1, TIMEOUT_200MSEC);
 
-	zassert_unreachable("fault didn't occur for min_xfer <= bytes_to_read");
+	zassert_equal(ret, -EINVAL,
+		      "fault didn't occur for min_xfer <= bytes_to_read");
 }
-#else
-void test_pipe_get_invalid_size(void)
-{
-	ztest_test_skip();
-}
-#endif

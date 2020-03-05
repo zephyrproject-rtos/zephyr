@@ -3,7 +3,7 @@
 # Copyright (c) 2019 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig ENTROPY_LITEX_RNG
+config ENTROPY_LITEX_RNG
 	bool "PRBS RNG driver"
 	depends on SOC_RISCV32_LITEX_VEXRISCV
 	select ENTROPY_HAS_DRIVER

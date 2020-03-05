@@ -1,11 +1,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Zephyr Kernel Configuration
-CONFIG_ARM=y
 CONFIG_SOC_SERIES_STM32L0X=y
 
 # Platform Configuration
-CONFIG_SOC_FAMILY_STM32=y
 CONFIG_SOC_STM32L072XX=y
 CONFIG_BOARD_B_L072Z_LRWAN1=y
 

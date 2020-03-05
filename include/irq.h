@@ -197,6 +197,10 @@ irq_connect_dynamic(unsigned int irq, unsigned int priority,
  * acquired. (That is, each call to irq_lock() must be balanced by
  * a corresponding call to irq_unlock().)
  *
+ * This routine can only be invoked from supervisor mode. Some architectures
+ * (for example, ARM) will fail silently if invoked from user mode instead
+ * of generating an exception.
+ *
  * @note
  * This routine can be called by ISRs or by threads. If it is called by a
  * thread, the interrupt lock is thread-specific; this means that interrupts
@@ -230,6 +234,10 @@ unsigned int z_smp_global_lock(void);
  * the associated lock-out key. The caller must call the routine once for
  * each time it called irq_lock(), supplying the keys in the reverse order
  * they were acquired, before interrupts are enabled.
+ *
+ * This routine can only be invoked from supervisor mode. Some architectures
+ * (for example, ARM) will fail silently if invoked from user mode instead
+ * of generating an exception.
  *
  * @note Can be called by ISRs.
  *

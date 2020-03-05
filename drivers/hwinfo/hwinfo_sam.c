@@ -73,7 +73,13 @@ static int hwinfo_sam_init(struct device *arg)
 
 	/* Disable code loop optimization and sequential code optimization. */
 	fmr = efc->EEFC_FMR;
+
+#ifndef CONFIG_SOC_SERIES_SAM3X
 	efc->EEFC_FMR = (fmr & (~EEFC_FMR_CLOE)) | EEFC_FMR_SCOD;
+#else
+	/* SAM3x does not have loop optimization (EEFC_FMR_CLOE) */
+	efc->EEFC_FMR |= EEFC_FMR_SCOD;
+#endif
 
 	/* Read the device ID using code in RAM */
 	hwinfo_sam_read_device_id();

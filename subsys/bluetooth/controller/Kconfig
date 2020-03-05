@@ -38,6 +38,15 @@ config BT_CTLR_ADV_EXT_SUPPORT
 config BT_CTLR_CHAN_SEL_2_SUPPORT
 	bool
 
+config BT_CTLR_MIN_USED_CHAN_SUPPORT
+	bool
+
+config BT_CTLR_DTM_HCI_SUPPORT
+	bool
+
+config BT_CTLR_SMI_SUPPORT
+	bool
+
 config BT_CTLR_XTAL_ADVANCED_SUPPORT
 	bool
 
@@ -90,6 +99,8 @@ config BT_LL_SW_LEGACY
 					      BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
+	select BT_CTLR_MIN_USED_CHAN_SUPPORT
+	select BT_CTLR_DTM_HCI_SUPPORT
 
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
@@ -120,10 +131,16 @@ config BT_LLL_VENDOR_NORDIC
 					      BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
+	select BT_CTLR_MIN_USED_CHAN_SUPPORT
+	select BT_CTLR_DTM_HCI_SUPPORT
 
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
 	select BT_CTLR_TIFS_HW_SUPPORT
+
+	# Until ticker resolve collision is fixed for skipped ticker catch-up
+	# issue, use the old compatibility mode
+	select BT_TICKER_COMPATIBILITY_MODE
 
 	default y
 	help
@@ -133,6 +150,7 @@ config BT_LLL_VENDOR_OPENISA
 	bool "Use OpenISA LLL"
 	depends on BT_LL_SW_SPLIT && SOC_OPENISA_RV32M1_RISCV32
 	select BT_HAS_HCI_VS
+	select BT_CTLR_LE_ENC_SUPPORT if !BT_CTLR_DATA_LENGTH_CLEAR
 	default y
 	help
 	  Use OpenISA Lower Link Layer implementation.
@@ -142,6 +160,7 @@ comment "BLE Controller configuration"
 config BT_CTLR_CRYPTO
 	bool "Enable crypto functions in Controller"
 	default y
+	select ENTROPY_GENERATOR
 	help
 	  Use random number generation and AES encryption support functions
 	  provided by the controller.
@@ -217,15 +236,15 @@ config BT_CTLR_TX_BUFFERS
 
 config BT_CTLR_TX_BUFFER_SIZE
 	int "Tx buffer size"
-	range 27 16384
+	range 27 251
 	default 27
 	help
 	  Size of the Tx buffers and the value returned in HCI LE Read Buffer
 	  Size command response. If this size if greater than effective PDU size
 	  then controller will perform fragmentation before transmitting on the
 	  the packet on air.
-	  Maximum is set to 16384 due to implementation limitations (use of
-	  u16_t for size/length variables).
+	  Maximum is set to 251 due to implementation limitations (use of
+	  u8_t for length field in PDU buffer structure).
 
 choice
 	prompt "Tx Power"
@@ -299,7 +318,7 @@ config BT_CTLR_TX_PWR_DYNAMIC_CONTROL
 
 config BT_CTLR_SETTINGS
 	bool "Settings System"
-	depends on BT_SETTINGS
+	depends on SETTINGS
 	help
 	  Enable use of settings system in controller.
 
@@ -332,16 +351,6 @@ config BT_CTLR_SUBVERSION_NUMBER
 comment "BLE Controller features"
 
 if BT_CONN
-
-config BT_CTLR_LLCP_CONN
-	int "Number of connections with worst-case overlapping procedures"
-	default 1
-	range 1 BT_MAX_CONN
-	help
-	  Set the number connections for which worst-case buffer requirements
-	  for LLCP procedures must be met. Executing LLCP procedures on
-	  more than this number of connections simultaneously may cause
-	  instabilities.
 
 config BT_CTLR_LE_ENC
 	bool "LE Encryption"
@@ -387,7 +396,7 @@ config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
 	depends on BT_CTLR_PRIVACY_SUPPORT
 	default y
-	select BT_CTLR_FILTER
+	select BT_CTLR_FILTER if (BT_LL_SW_SPLIT || BT_LL_SW_LEGACY)
 	select BT_RPA
 	help
 	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature
@@ -401,21 +410,6 @@ config BT_CTLR_RL_SIZE
 	help
 	  Set the size of the Resolving List for LE Controller-based Privacy.
 	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
-
-config BT_CTLR_SW_DEFERRED_PRIVACY
-	bool "LE Controller-based Software Privacy"
-	depends on BT_CTLR_PRIVACY
-	help
-	  Enable support for software based deferred privacy calculations.
-
-config BT_CTLR_RPA_CACHE_SIZE
-	int "LE Controller-based Software Privacy Resolving List size"
-	depends on BT_CTLR_SW_DEFERRED_PRIVACY
-	default 8
-	range 1 64
-	help
-	  Set the size of the Known Unknown Resolving List for LE
-	  Controller-based Software deferred Privacy.
 
 config BT_CTLR_EXT_SCAN_FP
 	bool "LE Extended Scanner Filter Policies"
@@ -450,6 +444,7 @@ config BT_CTLR_PHY
 
 config BT_CTLR_MIN_USED_CHAN
 	bool "Minimum Number of Used Channels"
+	depends on BT_CTLR_MIN_USED_CHAN_SUPPORT
 	default y
 	help
 	  Enable support for Bluetooth 5.0 Minimum Number of Used Channels
@@ -488,9 +483,30 @@ config BT_CTLR_DTM
 
 config BT_CTLR_DTM_HCI
 	bool "Direct Test Mode over HCI"
+	depends on BT_CTLR_DTM_HCI_SUPPORT
 	select BT_CTLR_DTM
 	help
 	  Enable support for Direct Test Mode over the HCI transport.
+
+config BT_CTLR_SMI_RX
+	bool "Stable modulation index - Receiver"
+	depends on BT_CTLR_SMI_SUPPORT
+	help
+	  Enable support for Bluetooth 5.0 SMI RX in the Controller.
+
+config BT_CTLR_SMI_TX
+	bool "Stable modulation index - Transmitter"
+	depends on BT_CTLR_SMI_SUPPORT
+	help
+	  Enable support for Bluetooth 5.0 SMI TX in the Controller.
+
+config BT_CTLR_SMI_TX_SETTING
+	bool "Stable modulation index - Transmitter as setting"
+	depends on BT_CTLR_SMI_TX && BT_CTLR_SETTINGS
+	help
+	  Enable support for Bluetooth 5.0 SMI TX through a system setting.
+
+if BT_LL_SW_SPLIT || BT_LL_SW_LEGACY
 
 config BT_CTLR_ADVANCED_FEATURES
 	bool "Show advanced features"
@@ -505,6 +521,21 @@ config BT_CTLR_FILTER
 	default y
 	help
 	  Enable support for controller device whitelist feature
+
+config BT_CTLR_SW_DEFERRED_PRIVACY
+	bool "LE Controller-based Software Privacy"
+	depends on BT_CTLR_PRIVACY
+	help
+	  Enable support for software based deferred privacy calculations.
+
+config BT_CTLR_RPA_CACHE_SIZE
+	int "LE Controller-based Software Privacy Resolving List size"
+	depends on BT_CTLR_SW_DEFERRED_PRIVACY
+	default 8
+	range 1 64
+	help
+	  Set the size of the Known Unknown Resolving List for LE
+	  Controller-based Software deferred Privacy.
 
 config BT_CTLR_DATA_LENGTH_CLEAR
 	bool "Data Length Support (Cleartext only)"
@@ -544,6 +575,12 @@ config BT_CTLR_ZLI
 	  Enable support for use of Zero Latency IRQ feature. Note, applications
 	  shall not use Zero Latency IRQ themselves when this option is selected,
 	  else will impact controller stability.
+
+config BT_CTLR_OPTIMIZE_FOR_SPEED
+	bool "Optimize for Speed"
+	default y if BT_CTLR_LE_ENC
+	help
+	  Optimize compilation of controller for execution speed.
 
 if BT_LL_SW_LEGACY
 
@@ -728,6 +765,16 @@ config BT_CTLR_FAST_ENC
 	  Maximum CPU time in Radio ISR will increase if this feature is
 	  selected.
 
+config BT_CTLR_LLCP_CONN
+	int "Number of connections with worst-case overlapping procedures"
+	default 1
+	range 1 BT_MAX_CONN
+	help
+	  Set the number connections for which worst-case buffer requirements
+	  for LLCP procedures must be met. Executing LLCP procedures on
+	  more than this number of connections simultaneously may cause
+	  instabilities.
+
 config BT_CTLR_LLID_DATA_START_EMPTY
 	bool "Handle zero length L2CAP start frame"
 	default y if BT_HCI_RAW
@@ -802,6 +849,16 @@ config BT_TICKER_COMPATIBILITY_MODE
 	  ticker node timeouts and thereby prevents ticker interrupts during
 	  radio RX/TX. Enabling this option disables the ticker priority- and
 	  'must expire' features.
+
+config BT_TICKER_EXT
+	bool "Ticker extensions"
+	depends on !BT_TICKER_COMPATIBILITY_MODE
+	default y
+	help
+	  This option enables ticker extensions such as re-scheduling of
+	  ticker nodes with slot_window set to non-zero. Ticker extensions
+	  are invoked by using available '_ext' versions of ticker interface
+	  functions.
 
 config BT_CTLR_USER_EXT
 	prompt "Enable proprietary extensions in Controller"
@@ -906,15 +963,6 @@ config BT_CTLR_PA_LNA_GPIOTE_CHAN
 
 comment "BLE Controller debug configuration"
 
-config BT_CTLR_ASSERT_HANDLER
-	bool "Application Defined Assertion Handler"
-	help
-	  This option enables an application-defined sink for the
-	  controller assertion mechanism. This must be defined in
-	  application code as void \"bt_ctlr_assert_handle(char \*, int)\"
-	  and will be invoked whenever the controller code encounters
-	  an unrecoverable error.
-
 config BT_CTLR_PROFILE_ISR
 	bool "Profile radio ISR"
 	help
@@ -930,5 +978,16 @@ config BT_CTLR_DEBUG_PINS
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of
 	  the code.
+
+endif # BT_LL_SW_SPLIT || BT_LL_SW_LEGACY
+
+config BT_CTLR_ASSERT_HANDLER
+	bool "Application Defined Assertion Handler"
+	help
+	  This option enables an application-defined sink for the
+	  controller assertion mechanism. This must be defined in
+	  application code as void \"bt_ctlr_assert_handle(char \*, int)\"
+	  and will be invoked whenever the controller code encounters
+	  an unrecoverable error.
 
 endif # BT_CTLR

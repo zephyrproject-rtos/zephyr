@@ -135,11 +135,13 @@ static int __set_one_port(struct device *dev, u32_t pwm,
  * @param pwm Which PWM pin to set
  * @param period_cycles Period in clock cycles of the pwm.
  * @param pulse_cycles PWM width in clock cycles
+ * @param flags Flags for pin configuration (polarity).
  *
  * @return 0
  */
 static int pwm_dw_pin_set_cycles(struct device *dev,
-			     u32_t pwm, u32_t period_cycles, u32_t pulse_cycles)
+				 u32_t pwm, u32_t period_cycles,
+				 u32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_dw_config * const cfg =
 	    (struct pwm_dw_config *)dev->config->config_info;
@@ -149,6 +151,11 @@ static int pwm_dw_pin_set_cycles(struct device *dev,
 	/* make sure the PWM port exists */
 	if (pwm >= cfg->num_ports) {
 		return -EIO;
+	}
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
 	}
 
 	if (period_cycles == 0U || pulse_cycles > period_cycles) {

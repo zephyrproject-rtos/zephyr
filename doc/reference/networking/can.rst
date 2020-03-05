@@ -7,3 +7,4 @@ Controller Area Network
    :maxdepth: 1
 
    can_api.rst
+   can_isotp.rst

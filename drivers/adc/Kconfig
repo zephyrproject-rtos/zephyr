@@ -57,4 +57,6 @@ source "drivers/adc/Kconfig.stm32"
 
 source "drivers/adc/Kconfig.xec"
 
+source "drivers/adc/Kconfig.lmp90xxx"
+
 endif # ADC

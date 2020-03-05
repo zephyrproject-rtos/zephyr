@@ -182,7 +182,6 @@ struct cdc_acm_dev_data_t {
 	bool tx_irq_ena;			/* Tx interrupt enable status */
 	bool rx_irq_ena;			/* Rx interrupt enable status */
 	u8_t rx_buf[CDC_ACM_BUFFER_SIZE];	/* Internal RX buffer */
-	u8_t tx_buf[CDC_ACM_BUFFER_SIZE];	/* Internal TX buffer */
 	struct ring_buf *rx_ringbuf;
 	struct ring_buf *tx_ringbuf;
 	/* Interface data buffer */
@@ -291,6 +290,7 @@ static void tx_work_handler(struct k_work *work)
 	struct device *dev = dev_data->common.dev;
 	struct usb_cfg_data *cfg = (void *)dev->config->config_info;
 	u8_t ep = cfg->endpoint[ACM_IN_EP_IDX].ep_addr;
+	u8_t *data;
 	size_t len;
 
 	if (usb_transfer_is_busy(ep)) {
@@ -298,13 +298,30 @@ static void tx_work_handler(struct k_work *work)
 		return;
 	}
 
-	len = ring_buf_get(dev_data->tx_ringbuf, dev_data->tx_buf,
-			   sizeof(dev_data->tx_buf));
+	len = ring_buf_get_claim(dev_data->tx_ringbuf, &data,
+				 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);
+
+	if (!len) {
+		LOG_DBG("Nothing to send");
+		return;
+	}
+
+	/*
+	 * Transfer less data to avoid zero-length packet. The application
+	 * running on the host may conclude that there is no more data to be
+	 * received (i.e. the transaction has completed), hence not triggering
+	 * another I/O Request Packet (IRP).
+	 */
+	if (!(len % CONFIG_CDC_ACM_BULK_EP_MPS)) {
+		len -= 1;
+	}
 
 	LOG_DBG("Got %d bytes from ringbuffer send to ep %x", len, ep);
 
-	usb_transfer(ep, dev_data->tx_buf, len, USB_TRANS_WRITE,
+	usb_transfer(ep, data, len, USB_TRANS_WRITE,
 		     cdc_acm_write_cb, dev_data);
+
+	ring_buf_get_finish(dev_data->tx_ringbuf, len);
 }
 
 static void cdc_acm_read_cb(u8_t ep, int size, void *priv)

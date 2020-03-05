@@ -35,12 +35,9 @@ config UART_INTERRUPT_DRIVEN
 
 endif # SERIAL
 
-if WATCHDOG
-
 config WDOG_CMSDK_APB
 	default y
-
-endif # WATCHDOG
+	depends on WATCHDOG
 
 if COUNTER
 
@@ -52,11 +49,11 @@ config TIMER_DTMR_CMSDK_APB
 
 endif # COUNTER
 
-if I2C
-
 config I2C_SBCON
 	default y
+	depends on I2C
 
-endif # I2C
+config ZTEST_STACKSIZE
+	default 4096 if ZTEST
 
 endif

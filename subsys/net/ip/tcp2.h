@@ -12,7 +12,7 @@
  * - net_tcp_listen()/net_tcp_accept() listen/accept
  * - At the reception of SYN on the listening net_context, a new pair
  *   of net_context/struct tcp registers a new net_conn handle
- *   with the tcp_pkt_received() as a callback
+ *   with the tcp_recv() as a callback
  * - net_tcp_queue() queues the data for the transmission
  * - The incoming data is delivered up through the context->recv_cb
  * - net_tcp_put() closes the connection

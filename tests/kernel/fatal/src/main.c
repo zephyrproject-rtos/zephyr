@@ -82,7 +82,7 @@ void alt_thread1(void)
 	 * and xtensa
 	 */
 	{
-		long illegal = 0;
+		volatile long illegal = 0;
 		((void(*)(void))&illegal)();
 	}
 #endif

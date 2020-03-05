@@ -198,7 +198,7 @@ out_fp_endif:
     cpsie i
 _thread_irq_disabled:
 
-#if defined(CONFIG_ARM_MPU)
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
     /* Re-program dynamic memory map */
     push {r2,lr}
     mov r0, r2
@@ -278,7 +278,7 @@ in_fp_endif:
     isb
 #endif
 
-#if defined (CONFIG_ARM_MPU)
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
     /* Re-program dynamic memory map */
     push {r2,lr}
     mov r0, r2 /* _current thread */
@@ -321,12 +321,6 @@ _thread_irq_disabled:
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-
-#ifdef CONFIG_BUILTIN_STACK_GUARD
-    /* clear stack pointer limit before setting the PSP */
-    mov r0, #0
-    msr PSPLIM, r0
-#endif /* CONFIG_BUILTIN_STACK_GUARD */
 
 #if defined(CONFIG_CPU_CORTEX_M)
     msr PSP, ip
@@ -554,6 +548,16 @@ valid_syscall_id:
      * instructions with the previous privilege.
      */
     isb
+
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+    /* Thread is now in privileged mode; after returning from SCVall it
+     * will use the default (user) stack before switching to the privileged
+     * stack to execute the system call. We need to protect the user stack
+     * against stack overflows until this stack transition.
+     */
+    ldr r1, [r0, #_thread_offset_to_stack_info_start]    /* stack_info.start */
+    msr PSPLIM, r1
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 
     /* return from SVC to the modified LR - z_arm_do_syscall */
     bx lr

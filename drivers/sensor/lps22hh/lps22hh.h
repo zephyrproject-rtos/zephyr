@@ -15,7 +15,7 @@
 #include <drivers/i2c.h>
 #include <drivers/spi.h>
 #include <drivers/gpio.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <zephyr/types.h>
 #include <sys/util.h>
 #include "lps22hh_reg.h"
@@ -36,6 +36,7 @@ struct lps22hh_config {
 #ifdef CONFIG_LPS22HH_TRIGGER
 	const char *drdy_port;
 	u8_t drdy_pin;
+	u8_t drdy_flags;
 #endif
 #ifdef DT_ST_LPS22HH_BUS_I2C
 	u16_t i2c_slv_addr;

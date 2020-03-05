@@ -16,7 +16,7 @@
 #include <zephyr/types.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
-#include <can.h>
+#include <drivers/can.h>
 
 #ifdef __cplusplus
 extern "C" {

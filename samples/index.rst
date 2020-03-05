@@ -23,8 +23,8 @@ Samples and Demos
    shields/*
    portability/*
    posix/*
-   gui/*
    video/*
+   scheduler/*
    smp/*
 
 .. comment

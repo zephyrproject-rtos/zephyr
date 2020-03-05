@@ -1,6 +1,6 @@
 # Bluetooth LE stack configuration options
 
-# Copyright (c) 2016-2017 Nordic Semiconductor ASA
+# Copyright (c) 2016-2020 Nordic Semiconductor ASA
 # Copyright (c) 2015-2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
@@ -60,6 +60,16 @@ config BT_DISCARDABLE_BUF_COUNT
 	  it will not cause the allocation for other critical events to
 	  block and may even eliminate deadlocks in some cases.
 
+config BT_DISCARDABLE_BUF_SIZE
+	int "Size of discardable event buffers"
+	range 45 257
+	default 257 if BT_BREDR
+	default 45
+	help
+	  Size of buffers in the separate discardable event buffer pool.
+	  The minimum size is set based on the Advertising Report. Setting
+	  the buffer size different than BT_RX_BUF_LEN can save memory.
+
 config BT_HCI_TX_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be
 	# changed if required by architecture
@@ -103,6 +113,7 @@ config BT_HCI_RESERVE
 	int
 	default 0 if BT_H4
 	default 1 if BT_H5
+	default 1 if BT_RPMSG
 	default 1 if BT_SPI
 	default 1 if BT_STM32_IPM
 	default 1 if BT_USERCHAN
@@ -230,16 +241,15 @@ config BT_WHITELIST
 
 if BT_CONN
 
-if BT_HCI_ACL_FLOW_CONTROL
 config BT_ACL_RX_COUNT
 	int "Number of incoming ACL data buffers"
 	default BT_CTLR_RX_BUFFERS if BT_CTLR
 	default NET_BUF_RX_COUNT if NET_L2_BT
 	default 6
 	range 1 64
+	depends on BT_HCI_ACL_FLOW_CONTROL
 	help
 	  Number of buffers available for incoming ACL data.
-endif # BT_HCI_ACL_FLOW_CONTROL
 
 config BT_CONN_TX_MAX
 	int "Maximum number of pending TX buffers with a callback"
@@ -310,6 +320,16 @@ config BT_SIGNING
 	  This option enables data signing which is used for transferring
 	  authenticated data in an unencrypted connection.
 
+config BT_SMP_APP_PAIRING_ACCEPT
+	bool "Accept or reject pairing initiative"
+	help
+	  When receiving pairing request or pairing response query the
+	  application whether to accept to proceed with pairing or not. This is
+	  for pairing over SMP and does not affect SSP, which will continue
+	  pairing without querying the application.
+	  The application can return an error code, which is translated into
+	  a SMP return value if the pairing is not allowed.
+
 config BT_SMP_SC_PAIR_ONLY
 	bool "Disable legacy pairing"
 	help
@@ -339,6 +359,19 @@ config BT_SMP_ALLOW_UNAUTH_OVERWRITE
 	  to replace the existing bond. When this option is disabled in order
 	  to create a new bond the old bond has to be explicitly deleted with
 	  bt_unpair.
+
+config BT_SMP_USB_HCI_CTLR_WORKAROUND
+	bool "Workaround for USB HCI controller out-of-order events"
+	depends on BT_TESTING
+	help
+	  This option enables support for USB HCI controllers that sometimes
+	  send out-of-order HCI events and ACL Data due to using different USB
+	  endpoints.
+	  Enabling this option will make the master role not require the
+	  encryption-change event to be received before accepting key-distribution
+	  data.
+	  It opens up for a potential vulnerability as the master cannot detect
+	  if the keys are distributed over an encrypted link.
 
 config BT_FIXED_PASSKEY
 	bool "Use a fixed passkey for pairing"
@@ -430,6 +463,7 @@ config BT_MAX_PAIRED
 config BT_CREATE_CONN_TIMEOUT
 	int "Timeout for pending LE Create Connection command in seconds"
 	default 3
+	range 1 BT_RPA_TIMEOUT if BT_PRIVACY
 	range 1 65535
 
 config BT_CONN_PARAM_UPDATE_TIMEOUT
@@ -463,8 +497,10 @@ config BT_SCAN_WITH_IDENTITY
 	  Enable this if you want to perform active scanning using the local
 	  identity address as the scanner address. By default the stack will
 	  always use a non-resolvable private address (NRPA) in order to avoid
-	  disclosing local identity information. However, if the use case
-	  requires disclosing it then enable this option.
+	  disclosing local identity information. By not scanning with the
+	  identity address the scanner will receive directed advertise reports
+	  for for the local identity. If this use case is required, then enable
+	  this option.
 
 config BT_DEVICE_NAME_DYNAMIC
 	bool "Allow to set Bluetooth device name on runtime"
@@ -529,6 +565,13 @@ config BT_TINYCRYPT_ECC
 	  Connections so that Hosts can make use of those. The option defaults
 	  to enabled for a combined build with Zephyr's own controller, since it
 	  does not have any special ECC support itself (at least not currently).
+
+config BT_HOST_CCM
+	bool "Enable host side AES-CCM module"
+	help
+	  Enables the software based AES-CCM engine in the host. Will use the
+	  controller's AES encryption functions if available, or BT_HOST_CRYPTO
+	  otherwise.
 
 if BT_DEBUG
 config BT_DEBUG_SETTINGS

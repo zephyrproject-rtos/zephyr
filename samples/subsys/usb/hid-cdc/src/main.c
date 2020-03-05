@@ -542,12 +542,14 @@ int callbacks_configure(struct device *gpio, u32_t pin, int flags,
 		LOG_ERR("Could not find PORT");
 		return -ENXIO;
 	}
+
 	gpio_pin_configure(gpio, pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_DEBOUNCE |
-			   GPIO_INT_EDGE | flags);
+			   GPIO_INPUT | GPIO_INT_DEBOUNCE | flags);
+
 	gpio_init_callback(callback, handler, BIT(pin));
 	gpio_add_callback(gpio, callback);
-	gpio_pin_enable_callback(gpio, pin);
+	gpio_pin_interrupt_configure(gpio, pin, GPIO_INT_EDGE_TO_ACTIVE);
+
 	return 0;
 }
 

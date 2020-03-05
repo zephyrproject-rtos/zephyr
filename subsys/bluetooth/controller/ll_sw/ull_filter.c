@@ -51,35 +51,11 @@ u8_t wl_anon;
 #include "common/rpa.h"
 
 /* Whitelist peer list */
-static struct {
-	u8_t      taken:1;
-	u8_t      id_addr_type:1;
-	u8_t      rl_idx;
-	bt_addr_t id_addr;
-} wl[WL_SIZE];
+static struct lll_whitelist wl[WL_SIZE];
 
 static u8_t rl_enable;
 
-static struct rl_dev {
-	u8_t      taken:1;
-	u8_t      rpas_ready:1;
-	u8_t      pirk:1;
-	u8_t      lirk:1;
-	u8_t      dev:1;
-	u8_t      wl:1;
-
-	u8_t      id_addr_type:1;
-	bt_addr_t id_addr;
-
-	u8_t      local_irk[IRK_SIZE];
-	u8_t      pirk_idx;
-	bt_addr_t curr_rpa;
-	bt_addr_t peer_rpa;
-	bt_addr_t *local_rpa;
-#if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
-	bt_addr_t target_rpa;
-#endif
-} rl[CONFIG_BT_CTLR_RL_SIZE];
+static struct lll_resolvelist rl[CONFIG_BT_CTLR_RL_SIZE];
 
 #if defined(CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY)
 /* Cache of known unknown peer RPAs */
@@ -494,8 +470,9 @@ void ull_filter_adv_update(u8_t adv_fp)
 	filter_clear(&wl_filter);
 
 	/* enabling advertising */
-	if (IS_ENABLED(CONFIG_BT_OBSERVER) &&
-	    adv_fp && !(ull_scan_filter_pol_get(0) & 0x1)) {
+	if (adv_fp &&
+	    (!IS_ENABLED(CONFIG_BT_OBSERVER) ||
+	     !(ull_scan_filter_pol_get(0) & 0x1))) {
 		/* whitelist not in use, update whitelist */
 		wl_update();
 	}
@@ -504,7 +481,7 @@ void ull_filter_adv_update(u8_t adv_fp)
 	filter_clear(&rl_filter);
 
 	if (rl_enable &&
-	    IS_ENABLED(CONFIG_BT_OBSERVER) && !ull_scan_is_enabled(0)) {
+	    (!IS_ENABLED(CONFIG_BT_OBSERVER) || !ull_scan_is_enabled(0))) {
 		/* rl not in use, update resolving list LUT */
 		rl_update();
 	}
@@ -517,7 +494,8 @@ void ull_filter_scan_update(u8_t scan_fp)
 
 	/* enabling advertising */
 	if ((scan_fp & 0x1) &&
-	    (IS_ENABLED(CONFIG_BT_BROADCASTER) && !ull_adv_filter_pol_get(0))) {
+	    (!IS_ENABLED(CONFIG_BT_BROADCASTER) ||
+	     !ull_adv_filter_pol_get(0))) {
 		/* whitelist not in use, update whitelist */
 		wl_update();
 	}
@@ -526,7 +504,7 @@ void ull_filter_scan_update(u8_t scan_fp)
 	filter_clear(&rl_filter);
 
 	if (rl_enable &&
-	    (IS_ENABLED(CONFIG_BT_BROADCASTER) && !ull_adv_is_enabled(0))) {
+	    (!IS_ENABLED(CONFIG_BT_BROADCASTER) || !ull_adv_is_enabled(0))) {
 		/* rl not in use, update resolving list LUT */
 		rl_update();
 	}
@@ -748,6 +726,16 @@ struct lll_filter *ull_filter_lll_get(bool whitelist)
 }
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
+struct lll_whitelist *ull_filter_lll_whitelist_get(void)
+{
+	return wl;
+}
+
+struct lll_resolvelist *ull_filter_lll_resolvelist_get(void)
+{
+	return rl;
+}
+
 bool ull_filter_lll_rl_idx_allowed(u8_t irkmatch_ok, u8_t rl_idx)
 {
 	/* If AR is disabled or we don't know the device or we matched an IRK
@@ -855,6 +843,11 @@ u8_t ull_filter_deferred_targeta_resolve(bt_addr_t *rpa, u8_t rl_idx,
 static void wl_clear(void)
 {
 	for (int i = 0; i < WL_SIZE; i++) {
+		u8_t j = wl[i].rl_idx;
+
+		if (j < ARRAY_SIZE(rl)) {
+			rl[j].wl = 0U;
+		}
 		wl[i].taken = 0U;
 	}
 }
@@ -1239,4 +1232,3 @@ static u8_t prpa_cache_find(bt_addr_t *rpa)
 	return FILTER_IDX_NONE;
 }
 #endif /* !CONFIG_BT_CTLR_SW_DEFERRED_PRIVACY */
-

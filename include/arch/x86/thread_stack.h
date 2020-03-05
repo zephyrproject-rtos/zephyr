@@ -55,10 +55,10 @@
 /* Define a range [Z_X86_PT_START, Z_X86_PT_END) which is the memory range
  * covered by all the page tables needed for system RAM
  */
-#define Z_X86_PT_START	((u32_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, Z_X86_PT_AREA))
-#define Z_X86_PT_END	((u32_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
-					 (DT_RAM_SIZE * 1024UL), \
-					 Z_X86_PT_AREA))
+#define Z_X86_PT_START	((uintptr_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, Z_X86_PT_AREA))
+#define Z_X86_PT_END	((uintptr_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
+					     (DT_RAM_SIZE * 1024UL), \
+					     Z_X86_PT_AREA))
 
 /* Number of page tables needed to cover system RAM. Depends on the specific
  * bounds of system RAM, but roughly 1 page table per 2MB of RAM
@@ -68,10 +68,10 @@
 /* Same semantics as above, but for the page directories needed to cover
  * system RAM.
  */
-#define Z_X86_PD_START	((u32_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, Z_X86_PD_AREA))
-#define Z_X86_PD_END	((u32_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
-					 (DT_RAM_SIZE * 1024UL), \
-					 Z_X86_PD_AREA))
+#define Z_X86_PD_START	((uintptr_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, Z_X86_PD_AREA))
+#define Z_X86_PD_END	((uintptr_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
+					     (DT_RAM_SIZE * 1024UL), \
+					     Z_X86_PD_AREA))
 /* Number of page directories needed to cover system RAM. Depends on the
  * specific bounds of system RAM, but roughly 1 page directory per 1GB of RAM
  */
@@ -81,11 +81,11 @@
 /* Same semantics as above, but for the page directory pointer tables needed
  * to cover system RAM. On 32-bit there is just one 4-entry PDPT.
  */
-#define Z_X86_PDPT_START	((u32_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, \
-						   Z_X86_PD_AREA))
-#define Z_X86_PDPT_END	((u32_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
-					 (DT_RAM_SIZE * 1024UL), \
-					 Z_X86_PDPT_AREA))
+#define Z_X86_PDPT_START	((uintptr_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, \
+						       Z_X86_PDPT_AREA))
+#define Z_X86_PDPT_END	((uintptr_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
+					     (DT_RAM_SIZE * 1024UL), \
+					     Z_X86_PDPT_AREA))
 /* Number of PDPTs needed to cover system RAM. Depends on the
  * specific bounds of system RAM, but roughly 1 PDPT per 512GB of RAM
  */
@@ -196,7 +196,7 @@ struct z_x86_thread_stack_header {
 } __packed __aligned(Z_X86_STACK_BASE_ALIGN);
 
 #define ARCH_THREAD_STACK_RESERVED \
-	((u32_t)sizeof(struct z_x86_thread_stack_header))
+	sizeof(struct z_x86_thread_stack_header)
 
 #define ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit \

@@ -75,7 +75,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Zephyr Project'
-copyright = u'2015-2019 Zephyr Project members and individual contributors'
+copyright = u'2015-2020 Zephyr Project members and individual contributors'
 author = u'The Zephyr Project'
 
 # The following code tries to extract the information by reading the Makefile,
@@ -316,7 +316,6 @@ html_redirect_pages = [
 		('boards/arm/arduino_zero/doc/arduino_zero', 'boards/arm/arduino_zero/doc/index'),
 		('boards/arm/atsamd20_xpro/doc/atsamd20_xpro', 'boards/arm/atsamd20_xpro/doc/index'),
 		('boards/arm/bbc_microbit/doc/board', 'boards/arm/bbc_microbit/doc/index'),
-		('boards/arm/cc2650_sensortag/doc/cc2650_sensortag', 'boards/arm/cc2650_sensortag/doc/index'),
 		('boards/arm/cc3220sf_launchxl/doc/cc3220sf_launchxl', 'boards/arm/cc3220sf_launchxl/doc/index'),
 		('boards/arm/colibri_imx7d_m4/doc/colibri_imx7d_m4', 'boards/arm/colibri_imx7d_m4/doc/index'),
 		('boards/arm/disco_l475_iot1/doc/disco_l475_iot1', 'boards/arm/disco_l475_iot1/doc/index'),

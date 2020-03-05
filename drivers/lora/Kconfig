@@ -8,6 +8,7 @@
 
 menuconfig LORA
 	bool "LoRa support"
+	depends on NEWLIB_LIBC
 	help
 	  Include LoRa drivers in the system configuration.
 

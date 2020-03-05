@@ -21,6 +21,10 @@
 
 	aliases {
 		pwm-0 = &pwm0;
+
+		i2c0 = &i2c_smb_0;
+		i2c1 = &i2c_smb_1;
+		i2c7 = &i2c_smb_2;
 	};
 };
 
@@ -33,18 +37,21 @@
 	status = "okay";
 };
 
-&i2c0 {
+&i2c_smb_0 {
 	status = "okay";
+	label = "I2C0";
 	port_sel = <0>;
 };
 
-&i2c1 {
+&i2c_smb_1 {
 	status = "okay";
+	label = "I2C1";
 	port_sel = <1>;
 };
 
-&i2c2 {
+&i2c_smb_2 {
 	status = "okay";
+	label = "I2C7";
 	port_sel = <7>;
 };
 

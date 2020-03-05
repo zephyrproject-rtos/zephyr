@@ -5,7 +5,7 @@
  */
 
 #include <init.h>
-#include <pinmux.h>
+#include <drivers/pinmux.h>
 #include <fsl_port.h>
 
 static int frdm_k82f_pinmux_init(struct device *dev)
@@ -33,7 +33,7 @@ static int frdm_k82f_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
 #endif
 
-#ifdef DT_NXP_KINETIS_FTM_PWM_3_BASE_ADDRESS
+#ifdef CONFIG_PWM_3
 	/* Red, green, blue LEDs as PWM channels */
 	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));

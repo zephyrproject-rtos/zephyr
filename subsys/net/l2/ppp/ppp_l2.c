@@ -341,9 +341,9 @@ static void echo_reply_handler(void *user_data, size_t user_data_len)
 {
 	struct ppp_context *ctx = user_data;
 	u32_t end_time = k_cycle_get_32();
-	int time_diff;
+	u32_t time_diff;
 
-	time_diff = abs(end_time - ctx->shell.echo_req_data);
+	time_diff = end_time - ctx->shell.echo_req_data;
 	ctx->shell.echo_req_data =
 		k_cyc_to_ns_floor64(time_diff) / 1000;
 

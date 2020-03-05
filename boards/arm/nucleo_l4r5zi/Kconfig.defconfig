@@ -8,28 +8,18 @@ if BOARD_NUCLEO_L4R5ZI
 config BOARD
 	default "nucleo_l4r5zi"
 
-if STM32_LPTIM_TIMER
-
 choice STM32_LPTIM_CLOCK
 	default STM32_LPTIM_CLOCK_LSI
-
+	depends on STM32_LPTIM_TIMER
 endchoice
-
-endif #STM32_LPTIM_TIMER
-
-if UART_CONSOLE
 
 config LPUART_1
 	default y
-
-endif # UART_CONSOLE
-
-if I2C
+	depends on UART_CONSOLE
 
 config I2C_1
 	default y
-
-endif # I2C
+	depends on I2C
 
 if SPI
 
@@ -41,12 +31,9 @@ config SPI_STM32_INTERRUPT
 
 endif # SPI
 
-if PWM
-
 config PWM_STM32_2
 	default y
-
-endif # PWM
+	depends on PWM
 
 if NETWORKING
 

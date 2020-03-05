@@ -237,61 +237,6 @@ static void log_exception(uintptr_t vector, uintptr_t code)
 	}
 }
 
-#ifdef CONFIG_X86_MMU
-static bool dump_entry_flags(const char *name, u64_t flags)
-{
-	if ((flags & Z_X86_MMU_P) == 0) {
-		LOG_ERR("%s: Non-present", name);
-		return false;
-	} else {
-		LOG_ERR("%s: 0x%016llx %s, %s, %s", name, flags,
-			flags & MMU_ENTRY_WRITE ?
-			"Writable" : "Read-only",
-			flags & MMU_ENTRY_USER ?
-			"User" : "Supervisor",
-			flags & MMU_ENTRY_EXECUTE_DISABLE ?
-			"Execute Disable" : "Execute Enabled");
-		return true;
-	}
-}
-
-static void dump_mmu_flags(struct x86_page_tables *ptables, uintptr_t addr)
-{
-	u64_t entry;
-
-#ifdef CONFIG_X86_64
-	entry = *z_x86_get_pml4e(ptables, addr);
-	if (!dump_entry_flags("PML4E", entry)) {
-		return;
-	}
-
-	entry = *z_x86_pdpt_get_pdpte(z_x86_pml4e_get_pdpt(entry), addr);
-	if (!dump_entry_flags("PDPTE", entry)) {
-		return;
-	}
-#else
-	/* 32-bit doesn't have anything interesting in the PDPTE except
-	 * the present bit
-	 */
-	entry = *z_x86_get_pdpte(ptables, addr);
-	if ((entry & Z_X86_MMU_P) == 0) {
-		LOG_ERR("PDPTE: Non-present");
-		return;
-	}
-#endif
-
-	entry = *z_x86_pd_get_pde(z_x86_pdpte_get_pd(entry), addr);
-	if (!dump_entry_flags("  PDE", entry)) {
-		return;
-	}
-
-	entry = *z_x86_pt_get_pte(z_x86_pde_get_pt(entry), addr);
-	if (!dump_entry_flags("  PTE", entry)) {
-		return;
-	}
-}
-#endif /* CONFIG_X86_MMU */
-
 /* Page fault error code flags */
 #define PRESENT	BIT(0)
 #define WR	BIT(1)
@@ -329,14 +274,7 @@ static void dump_page_fault(z_arch_esf_t *esf)
 	}
 
 #ifdef CONFIG_X86_MMU
-#ifdef CONFIG_USERSPACE
-	if (err & US) {
-		dump_mmu_flags(z_x86_thread_page_tables_get(_current), cr2);
-	} else
-#endif /* CONFIG_USERSPACE */
-	{
-		dump_mmu_flags(&z_x86_kernel_ptables, cr2);
-	}
+	z_x86_dump_mmu_flags(z_x86_thread_page_tables_get(_current), cr2);
 #endif /* CONFIG_X86_MMU */
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
@@ -378,11 +316,19 @@ void z_x86_page_fault_handler(z_arch_esf_t *esf)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(exceptions); i++) {
+#ifdef CONFIG_X86_64
+		if ((void *)esf->rip >= exceptions[i].start &&
+		    (void *)esf->rip < exceptions[i].end) {
+			esf->rip = (u64_t)(exceptions[i].fixup);
+			return;
+		}
+#else
 		if ((void *)esf->eip >= exceptions[i].start &&
 		    (void *)esf->eip < exceptions[i].end) {
 			esf->eip = (unsigned int)(exceptions[i].fixup);
 			return;
 		}
+#endif /* CONFIG_X86_64 */
 	}
 #endif
 #ifdef CONFIG_EXCEPTION_DEBUG
@@ -395,4 +341,29 @@ void z_x86_page_fault_handler(z_arch_esf_t *esf)
 #endif
 	z_x86_fatal_error(K_ERR_CPU_EXCEPTION, esf);
 	CODE_UNREACHABLE;
+}
+
+void z_x86_do_kernel_oops(const z_arch_esf_t *esf)
+{
+	uintptr_t reason;
+
+#ifdef CONFIG_X86_64
+	reason = esf->rax;
+#else
+	uintptr_t *stack_ptr = (uintptr_t *)esf->esp;
+
+	reason = *stack_ptr;
+#endif
+
+#ifdef CONFIG_USERSPACE
+	/* User mode is only allowed to induce oopses and stack check
+	 * failures via this software interrupt
+	 */
+	if ((esf->cs & 0x3) != 0 && !(reason == K_ERR_KERNEL_OOPS ||
+				      reason == K_ERR_STACK_CHK_FAIL)) {
+		reason = K_ERR_KERNEL_OOPS;
+	}
+#endif
+
+	z_x86_fatal_error(reason, esf);
 }

@@ -60,7 +60,7 @@ These debug host tools are compatible with the following debug probes:
 Check if your SoC is listed in `OpenOCD Supported Devices`_.
 
 .. note:: On Linux, openocd is available though the `Zephyr SDK
-   <https://www.zephyrproject.org/developers/#downloads>`_.
+   <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_.
    Windows users should use the following steps to install
    openocd:
 

@@ -315,7 +315,7 @@ static bool check_interface(struct net_if *iface)
 	return false;
 }
 #else
-static void check_interface(struct net_if *iface)
+static bool check_interface(struct net_if *iface)
 {
 	k_sem_reset(&counter);
 	k_sem_give(&waiter);

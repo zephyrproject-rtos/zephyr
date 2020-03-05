@@ -8,12 +8,9 @@ if BOARD_96B_ARGONKEY
 config BOARD
 	default "96b_argonkey"
 
-if UART_CONSOLE
-
 config UART_1
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 if I2C
 
@@ -24,9 +21,6 @@ config I2C_2
 	default y
 
 config I2C_3
-	default y
-
-config I2C_STM32_INTERRUPT
 	default y
 
 endif # I2C

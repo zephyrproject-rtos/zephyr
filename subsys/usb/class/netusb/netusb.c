@@ -140,10 +140,9 @@ static void netusb_init(struct net_if *iface)
 	netusb.iface = iface;
 
 	ethernet_init(iface);
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
 	net_if_set_link_addr(iface, mac, sizeof(mac), NET_LINK_ETHERNET);
-
-	net_if_down(iface);
 
 	LOG_INF("netusb initialized");
 }

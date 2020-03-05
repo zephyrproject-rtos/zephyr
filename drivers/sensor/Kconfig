@@ -22,6 +22,8 @@ config SENSOR_INIT_PRIORITY
 
 config SENSOR_SHELL
 	bool "Enable sensor shell"
+	depends on SHELL
+	default y
 	help
 	  This shell provides access to basic sensor data.
 
@@ -146,5 +148,7 @@ source "drivers/sensor/tmp112/Kconfig"
 source "drivers/sensor/tmp116/Kconfig"
 
 source "drivers/sensor/vl53l0x/Kconfig"
+
+source "drivers/sensor/nxp_kinetis_temp/Kconfig"
 
 endif # SENSOR

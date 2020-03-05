@@ -8,19 +8,13 @@ if BOARD_NUCLEO_F103RB
 config BOARD
 	default "nucleo_f103rb"
 
-if UART_CONSOLE
-
 config UART_2
 	default y
-
-endif # UART_CONSOLE
-
-if PWM
+	depends on UART_CONSOLE
 
 config PWM_STM32_1
 	default y
-
-endif # PWM
+	depends on PWM
 
 if SPI
 
@@ -31,5 +25,9 @@ config SPI_2
 	default y
 
 endif
+
+config ADC_1
+	default y
+	depends on ADC
 
 endif # BOARD_NUCLEO_F103RB

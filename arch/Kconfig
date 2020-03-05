@@ -11,50 +11,75 @@
 # Note: $ARCH might be a glob pattern
 source "$(ARCH_DIR)/$(ARCH)/Kconfig"
 
-choice ARCH_CHOICE
-	prompt "Architecture"
-	default X86
+# Architecture symbols
+#
+# Should be 'select'ed by low-level symbols like SOC_SERIES_* or, lacking that,
+# by SOC_*.
 
 config ARC
-	bool "ARC architecture"
+	bool
+	select ARCH_IS_SET
 	select HAS_DTS
+	help
+	  ARC architecture
 
 config ARM
-	bool "ARM architecture"
+	bool
+	select ARCH_IS_SET
 	select HAS_DTS
+	help
+	  ARM architecture
 
 config X86
-	bool "x86 architecture"
+	bool
+	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
+	help
+	  x86 architecture
 
 config NIOS2
-	bool "Nios II Gen 2 architecture"
+	bool
+	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_C
 	select HAS_DTS
+	help
+	  Nios II Gen 2 architecture
 
 config RISCV
-	bool "RISCV architecture"
+	bool
+	select ARCH_IS_SET
 	select HAS_DTS
+	help
+	  RISCV architecture
 
 config XTENSA
-	bool "Xtensa architecture"
+	bool
+	select ARCH_IS_SET
 	select HAS_DTS
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select XTENSA_HAL if "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc"
+	help
+	  Xtensa architecture
 
 config ARCH_POSIX
-	bool "POSIX (native) architecture"
+	bool
+	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
 	select ARCH_HAS_THREAD_ABORT
 	select NATIVE_APPLICATION
 	select HAS_COVERAGE_SUPPORT
+	help
+	  POSIX (native) architecture
 
-endchoice
-
+config ARCH_IS_SET
+	bool
+	help
+	  Helper symbol to detect SoCs forgetting to select one of the arch
+	  symbols above. See the top-level CMakeLists.txt.
 
 menu "General Architecture Options"
 
@@ -85,8 +110,6 @@ config 64BIT
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally
 	  avoid modifying it.
 
-if ARC || ARM || NIOS2 || X86
-
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_SRAM := zephyr,sram
 
@@ -94,17 +117,19 @@ config SRAM_SIZE
 	int "SRAM Size in kB"
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 	help
-	  This option specifies the size of the SRAM in kB.  It is normally set by
-	  the board's defconfig file and the user should generally avoid modifying
-	  it via the menu configuration.
+	  The SRAM size in kB. The default value comes from /chosen/zephyr,sram in
+	  devicetree. The user should generally avoid changing it via menuconfig or
+	  in configuration files.
 
 config SRAM_BASE_ADDRESS
 	hex "SRAM Base Address"
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	help
-	  This option specifies the base address of the SRAM on the board.  It is
-	  normally set by the board's defconfig file and the user should generally
-	  avoid modifying it via the menu configuration.
+	  The SRAM base address. The default value comes from from
+	  /chosen/zephyr,sram in devicetree. The user should generally avoid
+	  changing it via menuconfig or in configuration files.
+
+if ARC || ARM || NIOS2 || X86
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
@@ -172,6 +197,7 @@ config HW_STACK_PROTECTION
 config USERSPACE
 	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
+	depends on RUNTIME_ERROR_CHECKS
 	help
 	  When enabled, threads may be created or dropped down to user mode,
 	  which has significantly restricted permissions and must interact
@@ -217,6 +243,14 @@ config STACK_GROWS_UP
 	  Select this option if the architecture has upward growing thread
 	  stacks. This is not common.
 
+config NO_UNUSED_STACK_INSPECTION
+	bool
+	help
+	  Selected if the architecture will generate a fault if unused stack
+	  memory is examined, which is the region between the current stack
+	  pointer and the deepest available address in the current stack
+	  region.
+
 config MAX_THREAD_BYTES
 	int "Bytes to use when tracking object thread permissions"
 	default 2
@@ -240,17 +274,14 @@ config DYNAMIC_OBJECTS
 	  API call, or when the number of references to that object drops to
 	  zero.
 
-if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
-
 config NOCACHE_MEMORY
 	bool "Support for uncached memory"
+	depends on ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	help
 	  Add a "nocache" read-write memory section that is configured to
 	  not be cached. This memory section can be used to perform DMA
 	  transfers when cache coherence issues are not optimal or can not
 	  be solved using cache maintenance operations.
-
-endif # ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 
 menu "Interrupt Configuration"
 
@@ -414,6 +445,12 @@ config CPU_HAS_TEE
 	  Execution Environment (e.g. when it has a security attribution
 	  unit).
 
+config CPU_HAS_DCLS
+	bool
+	help
+	  This option is enabled when the processor hardware is configured in
+	  Dual-redundant Core Lock-step (DCLS) topology.
+
 config CPU_HAS_FPU
 	bool
 	help
@@ -480,15 +517,12 @@ menuconfig FLOAT
 	  Disabling this option means that any thread that uses a
 	  floating point register will get a fatal exception.
 
-if FLOAT
-
 config FP_SHARING
 	bool "Floating point register sharing"
+	depends on FLOAT
 	help
 	  This option allows multiple threads to use the floating point
 	  registers.
-
-endif # FLOAT
 
 config ARCH
 	string

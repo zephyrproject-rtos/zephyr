@@ -11,10 +11,9 @@ config ENTROPY_NRF_FORCE_ALT
 	  This option can be enabled to force an alternative implementation
 	  of the entropy driver.
 
-if !ENTROPY_NRF_FORCE_ALT
-
 menuconfig ENTROPY_NRF5_RNG
 	bool "nRF5 RNG driver"
+	depends on !ENTROPY_NRF_FORCE_ALT
 	depends on HAS_HW_NRF_RNG
 	select ENTROPY_HAS_DRIVER
 	default y
@@ -78,5 +77,3 @@ config ENTROPY_NRF5_PRI
 	  nRF5X RNG IRQ priority.
 
 endif # ENTROPY_NRF5_RNG
-
-endif # !ENTROPY_NRF_FORCE_ALT

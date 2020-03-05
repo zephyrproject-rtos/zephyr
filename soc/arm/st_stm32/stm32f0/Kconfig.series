@@ -5,6 +5,7 @@
 
 config SOC_SERIES_STM32F0X
 	bool "STM32F0x Series MCU"
+	select ARM
 	select CPU_CORTEX_M0
 	select CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 	select SOC_FAMILY_STM32

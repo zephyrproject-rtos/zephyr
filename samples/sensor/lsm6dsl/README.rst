@@ -48,6 +48,17 @@ Building on disco_l475_iot1 board
    :goals: build
    :compact:
 
+Building on nrf52840_pca10056 board with x-nucleo-iks01a2 shield
+================================================================
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/lsm6dsl
+   :host-os: unix
+   :board: nrf52840_pca10056
+   :shield: x_nucleo_iks01a2
+   :goals: build
+   :compact:
+
 Sample Output
 =============
 

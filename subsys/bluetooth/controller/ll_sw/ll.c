@@ -39,6 +39,7 @@
 #include "ll.h"
 #include "ll_feat.h"
 #include "ll_filter.h"
+#include "ll_settings.h"
 
 /* Global singletons */
 

@@ -42,12 +42,12 @@ static unsigned int get_page(off_t offset)
 static int write_dword(struct device *dev, off_t offset, u64_t val)
 {
 	volatile u32_t *flash = (u32_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
-	struct stm32g4x_flash *regs = FLASH_STM32_REGS(dev);
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	u32_t tmp;
 	int rc;
 
 	/* if the control register is locked, do not fail silently */
-	if (regs->cr & FLASH_CR_LOCK) {
+	if (regs->CR & FLASH_CR_LOCK) {
 		return -EIO;
 	}
 
@@ -64,10 +64,10 @@ static int write_dword(struct device *dev, off_t offset, u64_t val)
 	}
 
 	/* Set the PG bit */
-	regs->cr |= FLASH_CR_PG;
+	regs->CR |= FLASH_CR_PG;
 
 	/* Flush the register write */
-	tmp = regs->cr;
+	tmp = regs->CR;
 
 	/* Perform the data write operation at the desired memory address */
 	flash[0] = (u32_t)val;
@@ -77,19 +77,19 @@ static int write_dword(struct device *dev, off_t offset, u64_t val)
 	rc = flash_stm32_wait_flash_idle(dev);
 
 	/* Clear the PG bit */
-	regs->cr &= (~FLASH_CR_PG);
+	regs->CR &= (~FLASH_CR_PG);
 
 	return rc;
 }
 
 static int erase_page(struct device *dev, unsigned int page)
 {
-	struct stm32g4x_flash *regs = FLASH_STM32_REGS(dev);
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	u32_t tmp;
 	int rc;
 
 	/* if the control register is locked, do not fail silently */
-	if (regs->cr & FLASH_CR_LOCK) {
+	if (regs->CR & FLASH_CR_LOCK) {
 		return -EIO;
 	}
 
@@ -100,20 +100,20 @@ static int erase_page(struct device *dev, unsigned int page)
 	}
 
 	/* Set the PER bit and select the page you wish to erase */
-	regs->cr |= FLASH_CR_PER;
-	regs->cr &= ~FLASH_CR_PNB_Msk;
-	regs->cr |= ((page % 256) << 3);
+	regs->CR |= FLASH_CR_PER;
+	regs->CR &= ~FLASH_CR_PNB_Msk;
+	regs->CR |= ((page % 256) << 3);
 
 	/* Set the STRT bit */
-	regs->cr |= FLASH_CR_STRT;
+	regs->CR |= FLASH_CR_STRT;
 
 	/* flush the register write */
-	tmp = regs->cr;
+	tmp = regs->CR;
 
 	/* Wait for the BSY bit */
 	rc = flash_stm32_wait_flash_idle(dev);
 
-	regs->cr &= ~FLASH_CR_PER;
+	regs->CR &= ~FLASH_CR_PER;
 
 	return rc;
 }

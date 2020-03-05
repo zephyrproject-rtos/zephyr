@@ -69,6 +69,10 @@ The efr32_slwstk6061a board configuration supports the following hardware featur
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| SPI(M)    | on-chip    | spi port-polling                    |
++-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -102,6 +106,14 @@ means Pin number 2 on PORTA, as used in the board's datasheets and manuals.
 | PA0   | USART0_TX   | UART Console EFM_BC_TX US0_TX #0    |
 +-------+-------------+-------------------------------------+
 | PA1   | USART0_RX   | UART Console EFM_BC_RX US0_RX #0    |
++-------+-------------+-------------------------------------+
+| PC6   | SPI_MOSI    | Flash MOSI US1_TX #11               |
++-------+-------------+-------------------------------------+
+| PC7   | SPI_MISO    | Flash MISO US1_RX #11               |
++-------+-------------+-------------------------------------+
+| PC8   | SPI_SCLK    | Flash SCLK US1_CLK #11              |
++-------+-------------+-------------------------------------+
+| PA4   | SPI_CS      | Flash Chip Select (GPIO)            |
 +-------+-------------+-------------------------------------+
 
 System Clock

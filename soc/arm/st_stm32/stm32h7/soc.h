@@ -60,6 +60,10 @@
 #include <stm32h7xx_ll_usart.h>
 #endif /* CONFIG_SERIAL_HAS_DRIVER */
 
+#ifdef CONFIG_HWINFO_STM32
+#include <stm32h7xx_ll_utils.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F7_SOC_H7_ */

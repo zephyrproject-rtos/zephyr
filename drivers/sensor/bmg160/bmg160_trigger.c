@@ -18,6 +18,20 @@ extern struct bmg160_device_data bmg160_data;
 #include <logging/log.h>
 LOG_MODULE_DECLARE(BMG160, CONFIG_SENSOR_LOG_LEVEL);
 
+static inline void setup_int(struct device *dev,
+			      bool enable)
+{
+	struct bmg160_device_data *data = dev->driver_data;
+	const struct bmg160_device_config *const cfg =
+		dev->config->config_info;
+
+	gpio_pin_interrupt_configure(data->gpio,
+				     cfg->int_pin,
+				     enable
+				     ? GPIO_INT_EDGE_TO_ACTIVE
+				     : GPIO_INT_DISABLE);
+}
+
 static void bmg160_gpio_callback(struct device *port, struct gpio_callback *cb,
 				 u32_t pin)
 {
@@ -244,12 +258,11 @@ int bmg160_trigger_init(struct device *dev)
 #endif
 
 	gpio_pin_configure(bmg160->gpio, cfg->int_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
+			   cfg->int_flags | GPIO_INT_EDGE_TO_ACTIVE);
 	gpio_init_callback(&bmg160->gpio_cb, bmg160_gpio_callback,
 			   BIT(cfg->int_pin));
 	gpio_add_callback(bmg160->gpio, &bmg160->gpio_cb);
-	gpio_pin_enable_callback(bmg160->gpio, cfg->int_pin);
+	setup_int(dev, true);
 
 	return 0;
 }

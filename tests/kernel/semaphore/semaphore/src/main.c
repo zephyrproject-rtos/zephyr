@@ -151,8 +151,11 @@ void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
  */
 void test_sema_thread2thread(void)
 {
+	int ret;
 	/**TESTPOINT: test k_sem_init sema*/
-	k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	ret = k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+
+	zassert_equal(ret, 0, NULL);
 
 	tsema_thread_thread(&sema);
 
@@ -166,8 +169,11 @@ void test_sema_thread2thread(void)
  */
 void test_sema_thread2isr(void)
 {
+	int ret;
 	/**TESTPOINT: test k_sem_init sema*/
-	k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	ret = k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+
+	zassert_equal(ret, 0, NULL);
 	tsema_thread_isr(&sema);
 
 	/**TESTPOINT: test K_SEM_DEFINE sema*/
@@ -175,12 +181,38 @@ void test_sema_thread2isr(void)
 }
 
 /**
+ * @brief Test k_sem_init() API
+ *
+ */
+void test_k_sema_init(void)
+{
+	int ret;
+
+	ret = k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	zassert_equal(ret, 0, NULL);
+
+	k_sem_reset(&sema);
+
+	ret = k_sem_init(&sema, SEM_INIT_VAL, 0);
+	zassert_equal(ret, -EINVAL, NULL);
+
+	ret = k_sem_init(&sema, SEM_MAX_VAL + 1, SEM_MAX_VAL);
+	zassert_equal(ret, -EINVAL, NULL);
+
+}
+
+
+/**
  * @brief Test k_sem_reset() API
  * @see k_sem_reset()
  */
 void test_sema_reset(void)
 {
-	k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	int ret;
+
+	ret = k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	zassert_equal(ret, 0, NULL);
+
 	k_sem_give(&sema);
 	k_sem_reset(&sema);
 	zassert_false(k_sem_count_get(&sema), NULL);
@@ -198,7 +230,11 @@ void test_sema_reset(void)
  */
 void test_sema_count_get(void)
 {
-	k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	int ret;
+
+	ret = k_sem_init(&sema, SEM_INIT_VAL, SEM_MAX_VAL);
+	zassert_equal(ret, 0, NULL);
+
 	/**TESTPOINT: sem count get upon init*/
 	zassert_equal(k_sem_count_get(&sema), SEM_INIT_VAL, NULL);
 	k_sem_give(&sema);
@@ -861,6 +897,7 @@ void test_main(void)
 			      &tstack, &tdata);
 
 	ztest_test_suite(test_semaphore,
+			 ztest_user_unit_test(test_k_sema_init),
 			 ztest_user_unit_test(test_sema_thread2thread),
 			 ztest_unit_test(test_sema_thread2isr),
 			 ztest_user_unit_test(test_sema_reset),

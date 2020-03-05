@@ -597,7 +597,10 @@ struct k_thread {
 	struct _mem_domain_info mem_domain_info;
 	/** Base address of thread stack */
 	k_thread_stack_t *stack_obj;
+	/** current syscall frame pointer */
+	void *syscall_frame;
 #endif /* CONFIG_USERSPACE */
+
 
 #if defined(CONFIG_USE_SWITCH)
 	/* When using __switch() a few previously arch-specific items
@@ -833,6 +836,31 @@ static inline void k_thread_resource_pool_assign(struct k_thread *thread,
 {
 	thread->resource_pool = pool;
 }
+
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
+/**
+ * @brief Obtain stack usage information for the specified thread
+ *
+ * User threads will need to have permission on the target thread object.
+ *
+ * Some hardware may prevent inspection of a stack buffer currently in use.
+ * If this API is called from supervisor mode, on the currently running thread,
+ * on a platform which selects CONFIG_NO_UNUSED_STACK_INSPECTION, an error
+ * will be generated.
+ *
+ * @param thread Thread to inspect stack information
+ * @param unused_ptr Output parameter, filled in with the unused stack space
+ *	of the target thread in bytes.
+ * @return 0 on success
+ * @return -EBADF Bad thread object (user mode only)
+ * @return -EPERM No permissions on thread object (user mode only)
+ * #return -ENOTSUP Forbidden by hardware policy
+ * @return -EINVAL Thread is uninitialized or exited (user mode only)
+ * @return -EFAULT Bad memory address for unused_ptr (user mode only)
+ */
+__syscall int k_thread_stack_space_get(const struct k_thread *thread,
+				       size_t *unused_ptr);
+#endif
 
 #if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
 /**
@@ -2073,9 +2101,11 @@ extern void k_queue_insert(struct k_queue *queue, void *prev, void *data);
  * @param head Pointer to first node in singly-linked list.
  * @param tail Pointer to last node in singly-linked list.
  *
- * @return N/A
+ * @retval 0 on success
+ * @retval -EINVAL on invalid supplied data
+ *
  */
-extern void k_queue_append_list(struct k_queue *queue, void *head, void *tail);
+extern int k_queue_append_list(struct k_queue *queue, void *head, void *tail);
 
 /**
  * @brief Atomically add a list of elements to a queue.
@@ -2089,9 +2119,10 @@ extern void k_queue_append_list(struct k_queue *queue, void *head, void *tail);
  * @param queue Address of the queue.
  * @param list Pointer to sys_slist_t object.
  *
- * @return N/A
+ * @retval 0 on success
+ * @retval -EINVAL on invalid data
  */
-extern void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
+extern int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
 
 /**
  * @brief Get an element from a queue.
@@ -2708,9 +2739,11 @@ __syscall s32_t k_stack_alloc_init(struct k_stack *stack,
  * if the buffer wasn't dynamically allocated.
  *
  * @param stack Address of the stack.
+ * @retval 0 on success
+ * @retval -EAGAIN when object is still in use
  * @req K-STACK-001
  */
-void k_stack_cleanup(struct k_stack *stack);
+int k_stack_cleanup(struct k_stack *stack);
 
 /**
  * @brief Push an element onto a stack.
@@ -2722,10 +2755,11 @@ void k_stack_cleanup(struct k_stack *stack);
  * @param stack Address of the stack.
  * @param data Value to push onto the stack.
  *
- * @return N/A
+ * @retval 0 on success
+ * @retval -ENOMEM if stack is full
  * @req K-STACK-001
  */
-__syscall void k_stack_push(struct k_stack *stack, stack_data_t data);
+__syscall int k_stack_push(struct k_stack *stack, stack_data_t data);
 
 /**
  * @brief Pop an element from a stack.
@@ -3080,7 +3114,8 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
  * @param work Address of delayed work item.
  *
  * @retval 0 Work item countdown canceled.
- * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EINVAL Work item is being processed.
+ * @retval -EALREADY Work item has already been completed.
  * @req K-DWORK-001
  */
 extern int k_delayed_work_cancel(struct k_delayed_work *work);
@@ -3346,10 +3381,12 @@ struct k_mutex {
  *
  * @param mutex Address of the mutex.
  *
- * @return N/A
+ * @retval 0 Mutex object created
+ *
  * @req K-MUTEX-002
  */
-__syscall void k_mutex_init(struct k_mutex *mutex);
+__syscall int k_mutex_init(struct k_mutex *mutex);
+
 
 /**
  * @brief Lock a mutex.
@@ -3385,10 +3422,13 @@ __syscall int k_mutex_lock(struct k_mutex *mutex, s32_t timeout);
  *
  * @param mutex Address of the mutex.
  *
- * @return N/A
+ * @retval 0 Mutex unlocked.
+ * @retval -EPERM The current thread does not own the mutex
+ * @retval -EINVAL The mutex is not locked
+ *
  * @req K-MUTEX-002
  */
-__syscall void k_mutex_unlock(struct k_mutex *mutex);
+__syscall int k_mutex_unlock(struct k_mutex *mutex);
 
 /**
  * @}
@@ -3438,10 +3478,12 @@ struct k_sem {
  * @param initial_count Initial semaphore count.
  * @param limit Maximum permitted semaphore count.
  *
- * @return N/A
+ * @retval 0 Semaphore created successfully
+ * @retval -EINVAL Invalid values
+ *
  * @req K-SEM-001
  */
-__syscall void k_sem_init(struct k_sem *sem, unsigned int initial_count,
+__syscall int k_sem_init(struct k_sem *sem, unsigned int initial_count,
 			  unsigned int limit);
 
 /**
@@ -3691,8 +3733,10 @@ __syscall int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
  *
  * @param msgq message queue to cleanup
  *
+ * @retval 0 on success
+ * @retval -EBUSY Queue not empty
  */
-void k_msgq_cleanup(struct k_msgq *msgq);
+int k_msgq_cleanup(struct k_msgq *msgq);
 
 /**
  * @brief Send a message to a message queue.
@@ -4148,9 +4192,11 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size);
  * if the buffer wasn't dynamically allocated.
  *
  * @param pipe Address of the pipe.
+ * @retval 0 on success
+ * @retval -EAGAIN nothing to cleanup
  * @req K-PIPE-002
  */
-void k_pipe_cleanup(struct k_pipe *pipe);
+int k_pipe_cleanup(struct k_pipe *pipe);
 
 /**
  * @brief Initialize a pipe and allocate a buffer for it
@@ -4209,6 +4255,7 @@ __syscall int k_pipe_put(struct k_pipe *pipe, void *data,
  *                and K_FOREVER.
  *
  * @retval 0 At least @a min_xfer bytes of data were read.
+ * @retval -EINVAL invalid parameters supplied
  * @retval -EIO Returned without waiting; zero data bytes were read.
  * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
  *                 minus one data bytes were read.
@@ -4323,10 +4370,12 @@ struct k_mem_slab {
  * @param block_size Size of each memory block (in bytes).
  * @param num_blocks Number of memory blocks.
  *
- * @return N/A
+ * @retval 0 on success
+ * @retval -EINVAL invalid data supplied
+ *
  * @req K-MSLAB-002
  */
-extern void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
+extern int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 			   size_t block_size, u32_t num_blocks);
 
 /**
@@ -4344,6 +4393,7 @@ extern void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  *         is set to the starting address of the memory block.
  * @retval -ENOMEM Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
+ * @retval -EINVAL Invalid data supplied
  * @req K-MSLAB-002
  */
 extern int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
@@ -4930,6 +4980,12 @@ extern void z_sys_power_save_idle_exit(s32_t ticks);
 #define z_except_reason(reason)	ARCH_EXCEPT(reason)
 #else
 
+#if !defined(CONFIG_ASSERT_NO_FILE_INFO)
+#define __EXCEPT_LOC() __ASSERT_PRINT("@ %s:%d\n", __FILE__, __LINE__)
+#else
+#define __EXCEPT_LOC()
+#endif
+
 /* NOTE: This is the implementation for arches that do not implement
  * ARCH_EXCEPT() to generate a real CPU exception.
  *
@@ -4938,7 +4994,7 @@ extern void z_sys_power_save_idle_exit(s32_t ticks);
  * the fatal error handler.
  */
 #define z_except_reason(reason) do { \
-		printk("@ %s:%d:\n", __FILE__,  __LINE__); \
+		__EXCEPT_LOC();              \
 		z_fatal_error(reason, NULL); \
 	} while (false)
 
@@ -5330,7 +5386,7 @@ __syscall int k_float_disable(struct k_thread *thread);
 }
 #endif
 
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 #include <syscalls/kernel.h>
 
 #endif /* !_ASMLANGUAGE */

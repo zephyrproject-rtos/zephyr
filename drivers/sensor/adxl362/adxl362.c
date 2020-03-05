@@ -794,6 +794,7 @@ static const struct adxl362_config adxl362_config = {
 #if defined(CONFIG_ADXL362_TRIGGER)
 	.gpio_port = DT_INST_0_ADI_ADXL362_INT1_GPIOS_CONTROLLER,
 	.int_gpio = DT_INST_0_ADI_ADXL362_INT1_GPIOS_PIN,
+	.int_flags = DT_INST_0_ADI_ADXL362_INT1_GPIOS_FLAGS,
 #endif
 };
 

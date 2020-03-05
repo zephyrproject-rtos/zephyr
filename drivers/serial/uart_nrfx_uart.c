@@ -49,7 +49,7 @@ static struct {
 	size_t rx_secondary_buffer_length;
 	volatile size_t rx_counter;
 	volatile size_t rx_offset;
-	size_t rx_timeout;
+	s32_t rx_timeout;
 	struct k_delayed_work rx_timeout_work;
 	bool rx_enabled;
 
@@ -59,7 +59,7 @@ static struct {
 	volatile size_t tx_counter;
 #if defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
 		defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
-	size_t tx_timeout;
+	s32_t tx_timeout;
 	struct k_delayed_work tx_timeout_work;
 #endif
 } uart0_cb;
@@ -353,7 +353,7 @@ static int uart_nrfx_callback_set(struct device *dev, uart_callback_t callback,
 }
 
 static int uart_nrfx_tx(struct device *dev, const u8_t *buf, size_t len,
-			u32_t timeout)
+			s32_t timeout)
 {
 	if (uart0_cb.tx_buffer_length != 0) {
 		return -EBUSY;
@@ -384,7 +384,9 @@ static int uart_nrfx_tx_abort(struct device *dev)
 	}
 #if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
 	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
-	k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
+	if (uart0_cb.tx_timeout != K_FOREVER) {
+		k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
+	}
 #endif
 	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPTX);
 
@@ -403,7 +405,7 @@ static int uart_nrfx_tx_abort(struct device *dev)
 }
 
 static int uart_nrfx_rx_enable(struct device *dev, u8_t *buf, size_t len,
-			       u32_t timeout)
+			       s32_t timeout)
 {
 	if (uart0_cb.rx_buffer_length != 0) {
 		return -EBUSY;
@@ -447,7 +449,9 @@ static int uart_nrfx_rx_disable(struct device *dev)
 	}
 
 	uart0_cb.rx_enabled = 0;
-	k_delayed_work_cancel(&uart0_cb.rx_timeout_work);
+	if (uart0_cb.rx_timeout != K_FOREVER) {
+		k_delayed_work_cancel(&uart0_cb.rx_timeout_work);
+	}
 	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPRX);
 
 	return 0;
@@ -524,7 +528,9 @@ static void rx_isr(struct device *dev)
 	}
 
 	if (uart0_cb.rx_buffer_length == uart0_cb.rx_counter) {
-		k_delayed_work_cancel(&uart0_cb.rx_timeout_work);
+		if (uart0_cb.rx_timeout != K_FOREVER) {
+			k_delayed_work_cancel(&uart0_cb.rx_timeout_work);
+		}
 		rx_rdy_evt();
 
 		if (uart0_cb.rx_secondary_buffer_length) {
@@ -552,8 +558,10 @@ static void tx_isr(void)
 	    !uart0_cb.tx_abort) {
 #if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
 		defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
-		k_delayed_work_submit(&uart0_cb.tx_timeout_work,
-				uart0_cb.tx_timeout);
+		if (uart0_cb.tx_timeout != K_FOREVER) {
+			k_delayed_work_submit(&uart0_cb.tx_timeout_work,
+					      uart0_cb.tx_timeout);
+		}
 #endif
 		nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
 
@@ -563,7 +571,10 @@ static void tx_isr(void)
 	} else {
 #if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
 		defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
-		k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
+
+		if (uart0_cb.tx_timeout != K_FOREVER) {
+			k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
+		}
 #endif
 		nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_TXDRDY);
 		uart0_cb.tx_buffer_length = 0;
@@ -586,7 +597,9 @@ static void tx_isr(void)
 
 static void error_isr(struct device *dev)
 {
-	k_delayed_work_cancel(&uart0_cb.rx_timeout_work);
+	if (uart0_cb.rx_timeout != K_FOREVER) {
+		k_delayed_work_cancel(&uart0_cb.rx_timeout_work);
+	}
 	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_ERROR);
 
 	if (!uart0_cb.rx_enabled) {
@@ -653,13 +666,16 @@ static void rx_timeout(struct k_work *work)
 {
 	rx_rdy_evt();
 }
+
 #if	defined(DT_NORDIC_NRF_UART_UART_0_RTS_PIN) && \
 	defined(DT_NORDIC_NRF_UART_UART_0_CTS_PIN)
 static void tx_timeout(struct k_work *work)
 {
 	struct uart_event evt;
 
-	k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
+	if (uart0_cb.tx_timeout != K_FOREVER) {
+		k_delayed_work_cancel(&uart0_cb.tx_timeout_work);
+	}
 	nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPTX);
 	evt.type = UART_TX_ABORTED;
 	evt.data.tx.buf = uart0_cb.tx_buffer;

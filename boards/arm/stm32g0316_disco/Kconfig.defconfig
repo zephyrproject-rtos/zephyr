@@ -8,11 +8,8 @@ if BOARD_STM32G0316_DISCO
 config BOARD
 	default "stm32g0316_disco"
 
-if UART_CONSOLE
-
 config UART_1
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 endif # BOARD_STM32G0316_DISCO

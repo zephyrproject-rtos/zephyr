@@ -8,12 +8,9 @@ if BOARD_STM32L1_DISCO
 config BOARD
 	default "stm32l1_disco"
 
-if UART_CONSOLE
-
 config UART_1
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 if I2C
 
@@ -34,6 +31,5 @@ config SPI_2
 	default y
 
 endif # SPI
-
 
 endif # BOARD_STM32L1_DISCO

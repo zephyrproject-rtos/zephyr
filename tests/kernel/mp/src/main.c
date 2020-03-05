@@ -33,10 +33,8 @@ volatile int cpu_running;
  * @{
  * @}
  */
-void cpu1_fn(int key, void *arg)
+FUNC_NORETURN void cpu1_fn(void *arg)
 {
-	ARG_UNUSED(key);
-
 	zassert_true(arg == &cpu_arg && *(int *)arg == 12345, "wrong arg");
 
 	cpu_running = 1;

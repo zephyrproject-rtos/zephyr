@@ -26,15 +26,7 @@ extern struct k_mutex settings_lock;
 
 void settings_src_register(struct settings_store *cs)
 {
-	sys_snode_t *prev, *cur;
-
-	prev = NULL;
-
-	SYS_SLIST_FOR_EACH_NODE(&settings_load_srcs, cur) {
-		prev = cur;
-	}
-
-	sys_slist_insert(&settings_load_srcs, prev, &cs->cs_next);
+	sys_slist_append(&settings_load_srcs, &cs->cs_next);
 }
 
 void settings_dst_register(struct settings_store *cs)

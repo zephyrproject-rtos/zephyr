@@ -52,6 +52,9 @@ static int allocate_vector(unsigned int priority)
 			continue;
 		}
 #endif
+		if (vector == Z_X86_OOPS_VECTOR) {
+			continue;
+		}
 		if (x86_irq_funcs[vector - IV_IRQS] == NULL) {
 			return vector;
 		}

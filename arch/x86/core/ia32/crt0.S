@@ -240,7 +240,6 @@ __csSet:
 #endif
 
 	pushl	%ebx		/* pointer to multiboot info, or NULL */
-	pushl	%eax		/* junk, unused argument */
 	call	z_x86_prep_c	/* enter kernel; never returns */
 
 _x86_bss_zero:

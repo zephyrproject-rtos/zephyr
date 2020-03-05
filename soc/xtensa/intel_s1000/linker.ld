@@ -13,7 +13,7 @@
 
 OUTPUT_ARCH(xtensa)
 
-#include <generated_dts_board.h>
+#include <devicetree.h>
 #include "memory.h"
 #include <autoconf.h>
 #include <linker/sections.h>

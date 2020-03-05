@@ -16,7 +16,7 @@ config ARM_MPU
 	  MCU implements Memory Protection Unit.
 
 	  Notes:
-	  The ARMv6-M and ARMv8-M MPU architecture requires a power-of-two
+	  The ARMv6-M and ARMv7-M MPU architecture requires a power-of-two
 	  alignment of MPU region base address and size.
 
 	  The NXP MPU as well as the ARMv8-M MPU do not require MPU regions
@@ -60,10 +60,9 @@ config MPU_STACK_GUARD
 	help
 	  Enable Thread Stack Guards via MPU
 
-if MPU_STACK_GUARD
-
 config MPU_STACK_GUARD_MIN_SIZE_FLOAT
 	int
+	depends on MPU_STACK_GUARD
 	depends on FP_SHARING
 	default 128
 	help
@@ -75,8 +74,6 @@ config MPU_STACK_GUARD_MIN_SIZE_FLOAT
 	  is only stacked in sharing FP registers mode, therefore, the
 	  option is applicable only when FP_SHARING is selected.
 
-endif # MPU_STACK_GUARD
-
 config MPU_ALLOW_FLASH_WRITE
 	bool "Add MPU access to write to flash"
 	help
@@ -84,7 +81,6 @@ config MPU_ALLOW_FLASH_WRITE
 
 config CUSTOM_SECTION_ALIGN
 	bool "Custom Section Align"
-	depends on ARM_MPU
 	help
 	  MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT(ARMv7-M) sometimes cause memory
 	  wasting in linker scripts defined memory sections. Use this symbol

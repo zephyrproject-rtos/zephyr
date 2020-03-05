@@ -141,12 +141,6 @@ export functionality, for example, writing to the shell console).
 
     static int8 foo_val = DEFAULT_FOO_VAL_VALUE;
 
-    struct settings_handler my_conf = {
-        .name = "foo",
-        .h_set = foo_settings_set,
-        .h_export = foo_settings_export
-    };
-
     static int foo_settings_set(const char *name, size_t len,
                                 settings_read_cb read_cb, void *cb_arg)
     {
@@ -179,6 +173,12 @@ export functionality, for example, writing to the shell console).
         return storage_func("foo/bar", &foo_val, sizeof(foo_val));
     }
 
+    struct settings_handler my_conf = {
+        .name = "foo",
+        .h_set = foo_settings_set,
+        .h_export = foo_settings_export
+    };
+
 Example: Persist Runtime State
 ******************************
 
@@ -196,11 +196,6 @@ up from where it was before restart.
     #define DEFAULT_FOO_VAL_VALUE 0
 
     static int8 foo_val = DEFAULT_FOO_VAL_VALUE;
-
-    struct settings_handler my_conf = {
-        .name = "foo",
-        .h_set = foo_settings_set
-    };
 
     static int foo_settings_set(const char *name, size_t len,
                                 settings_read_cb read_cb, void *cb_arg)
@@ -235,6 +230,11 @@ up from where it was before restart.
         k_sleep(1000);
         sys_reboot(SYS_REBOOT_COLD);
     }
+
+    struct settings_handler my_conf = {
+        .name = "foo",
+        .h_set = foo_settings_set
+    };
 
 Example: Custom Backend Implementation
 **************************************
@@ -279,5 +279,22 @@ API Reference
 
 The Settings subsystem APIs are provided by ``settings.h``:
 
+API for general settings usage
+==============================
 .. doxygengroup:: settings
+   :project: Zephyr
+
+API for key-name processing
+===========================
+.. doxygengroup:: settings_name_proc
+   :project: Zephyr
+
+API for runtime settings manipulation
+=====================================
+.. doxygengroup:: settings_rt
+   :project: Zephyr
+
+API of backend interface
+========================
+..  doxygengroup:: settings_backend
    :project: Zephyr

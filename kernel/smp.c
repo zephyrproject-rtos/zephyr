@@ -65,7 +65,7 @@ extern k_thread_stack_t _interrupt_stack2[];
 extern k_thread_stack_t _interrupt_stack3[];
 
 #if CONFIG_MP_NUM_CPUS > 1
-static void smp_init_top(int key, void *arg)
+static FUNC_NORETURN void smp_init_top(void *arg)
 {
 	atomic_t *start_flag = arg;
 
@@ -109,6 +109,15 @@ void z_smp_init(void)
 #endif
 
 	(void)atomic_set(&start_flag, 1);
+}
+
+bool z_smp_cpu_mobile(void)
+{
+	unsigned int k = arch_irq_lock();
+	bool pinned = arch_is_in_isr() || !arch_irq_unlocked(k);
+
+	arch_irq_unlock(k);
+	return !pinned;
 }
 
 #endif /* CONFIG_SMP */

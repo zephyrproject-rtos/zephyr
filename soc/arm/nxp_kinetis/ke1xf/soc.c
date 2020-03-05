@@ -273,8 +273,15 @@ void z_arm_watchdog_init(void)
 	 * Watchdog reconfiguration only takes effect after writing to
 	 * both TOVAL and CS registers.
 	 */
+#ifdef CONFIG_WDOG_ENABLE_AT_BOOT
+	WDOG->TOVAL = CONFIG_WDOG_INITIAL_TIMEOUT >> 1;
+	WDOG->CS = WDOG_CS_PRES(1) | WDOG_CS_CLK(1) | WDOG_CS_WAIT(1) |
+		   WDOG_CS_EN(1) | WDOG_CS_UPDATE(1);
+#else /* !CONFIG_WDOG_ENABLE_AT_BOOT */
 	WDOG->TOVAL = 1024;
 	WDOG->CS = WDOG_CS_EN(0) | WDOG_CS_UPDATE(1);
+#endif /* !CONFIG_WDOG_ENABLE_AT_BOOT */
+
 	while (!(WDOG->CS & WDOG_CS_RCS_MASK)) {
 		;
 	}

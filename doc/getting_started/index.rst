@@ -79,7 +79,7 @@ We'll also install Zephyr's multi-purpose west tool.
             sudo apt install --no-install-recommends git cmake ninja-build gperf \
               ccache dfu-util device-tree-compiler wget \
               python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
-              make gcc gcc-multilib
+              make gcc gcc-multilib g++-multilib libsdl2-dev
 
       #. Verify the version of cmake installed on your system using::
 
@@ -246,6 +246,8 @@ directory using west:
          cd zephyrproject
          west update
 
+.. _install_py_requirements:
+
 .. rst-class:: numbered-step
 
 Install needed Python packages
@@ -286,7 +288,7 @@ A toolchain includes necessary tools used to build Zephyr applications
 including: compiler, assembler, linker, and their dependencies.
 
 
-.. _Zephyr Downloads: https://www.zephyrproject.org/developers/#downloads
+.. _Zephyr SDK Downloads: https://github.com/zephyrproject-rtos/sdk-ng/releases
 
 .. tabs::
 
@@ -304,15 +306,15 @@ including: compiler, assembler, linker, and their dependencies.
          .. code-block:: bash
 
             cd ~
-            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.10.3/zephyr-sdk-0.10.3-setup.run
+            wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.11.2/zephyr-sdk-0.11.2-setup.run
 
       #. Run the installation binary, installing the SDK in your home
-         folder :file:`~/zephyr-sdk-0.10.3`:
+         folder :file:`~/zephyr-sdk-0.11.2`:
 
          .. code-block:: bash
 
-            chmod +x zephyr-sdk-0.10.3-setup.run
-            ./zephyr-sdk-0.10.3-setup.run -- -d ~/zephyr-sdk-0.10.3
+            chmod +x zephyr-sdk-0.11.2-setup.run
+            ./zephyr-sdk-0.11.2-setup.run -- -d ~/zephyr-sdk-0.11.2
 
       #. Set environment variables to let the build system know where to
          find the toolchain programs:
@@ -320,7 +322,7 @@ including: compiler, assembler, linker, and their dependencies.
          .. code-block:: bash
 
             export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-            export ZEPHYR_SDK_INSTALL_DIR=~/zephyr-sdk-0.10.3
+            export ZEPHYR_SDK_INSTALL_DIR=~/zephyr-sdk-0.11.2
 
       The SDK contains a udev rules file that provides information
       needed to identify boards and grant hardware access permission to flash
@@ -358,6 +360,12 @@ Build the Blinky Application
 The sample :ref:`blinky-sample` blinks an LED on the target board.  By
 building and running it, we can verify that the environment and tools
 are properly set up for Zephyr development.
+
+   .. note:: This sample is compatible with most boards supported by
+      Zephyr, but not all of them. See the :ref:`blinky sample requirements
+      <blinky-sample-requirements>` for more information. If this sample is not
+      compatible with your board, a good alternative to try is the
+      :ref:`Hello World sample <hello_world>`.
 
 #. Set build environment variables:
 

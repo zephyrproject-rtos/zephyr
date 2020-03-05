@@ -146,7 +146,8 @@ static bool is_rodata(const void *addr)
  */
 static void detect_missed_strdup(struct log_msg *msg)
 {
-#define ERR_MSG	"argument %d in log message \"%s\" missing log_strdup()."
+#define ERR_MSG	"argument %d in source %s log message \"%s\" missing" \
+		"log_strdup()."
 	u32_t idx;
 	const char *str;
 	const char *msg_str;
@@ -164,10 +165,14 @@ static void detect_missed_strdup(struct log_msg *msg)
 		str = (const char *)log_msg_arg_get(msg, idx);
 		if (!is_rodata(str) && !log_is_strdup(str) &&
 			(str != log_strdup_fail_msg)) {
+			const char *src_name =
+				log_source_name_get(CONFIG_LOG_DOMAIN_ID,
+						    log_msg_source_id_get(msg));
+
 			if (IS_ENABLED(CONFIG_ASSERT)) {
-				__ASSERT(0, ERR_MSG, idx, msg_str);
+				__ASSERT(0, ERR_MSG, idx, src_name, msg_str);
 			} else {
-				LOG_ERR(ERR_MSG, idx, msg_str);
+				LOG_ERR(ERR_MSG, idx, src_name, msg_str);
 			}
 		}
 

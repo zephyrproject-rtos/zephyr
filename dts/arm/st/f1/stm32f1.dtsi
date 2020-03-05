@@ -265,7 +265,6 @@
 			reg = <0x40020000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
 			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
-			st,mem2mem;
 			status = "disabled";
 			label = "DMA_1";
 		};

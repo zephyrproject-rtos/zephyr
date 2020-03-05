@@ -15,4 +15,5 @@ properties:
     ngpios:
       type: int
       required: false
+      default: 32
       description: Number of gpios supported

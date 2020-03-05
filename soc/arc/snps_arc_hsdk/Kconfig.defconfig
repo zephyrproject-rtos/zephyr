@@ -36,19 +36,15 @@ config ARC_CONNECT
 config MP_NUM_CPUS
 	default 4
 
-if SMP
 # When SMP is enabled, use gfrc as wall clock, so sloppy
 # idle should be y
 config SYSTEM_CLOCK_SLOPPY_IDLE
 	default y
-endif
-
-if SERIAL
+	depends on SMP
 
 config UART_NS16550
 	default y
-
-endif # SERIAL
+	depends on SERIAL
 
 if UART_CONSOLE
 

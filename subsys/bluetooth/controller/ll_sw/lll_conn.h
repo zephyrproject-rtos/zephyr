@@ -134,7 +134,7 @@ void lll_conn_isr_abort(void *param);
 void lll_conn_rx_pkt_set(struct lll_conn *lll);
 void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx);
 void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx);
-void lll_conn_flush(struct lll_conn *lll);
+void lll_conn_flush(u16_t handle, struct lll_conn *lll);
 
 extern void ull_conn_lll_ack_enqueue(u16_t handle, struct node_tx *tx);
 extern u16_t ull_conn_lll_max_tx_octets_get(struct lll_conn *lll);

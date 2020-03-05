@@ -654,8 +654,7 @@ static void access_other_memdomain(void)
 			(k_thread_entry_t)shared_mem_thread, NULL,
 			NULL, NULL, -1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
-	k_thread_abort(k_current_get());
-
+	k_yield(); /* Let other thread run */
 }
 
 
@@ -788,7 +787,7 @@ static void spawn_user(void)
 
 	k_thread_create(&kthread_thread, kthread_stack, STACKSIZE,
 			user_ctx_switch_half, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(1), K_INHERIT_PERMS | K_USER,
+			-1, K_INHERIT_PERMS | K_USER,
 			K_NO_WAIT);
 
 	k_sem_take(&uthread_end_sem, K_FOREVER);
@@ -932,10 +931,11 @@ static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
 
 void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 {
-	size_t stack_size;
+	size_t stack_size, unused;
 	u8_t val;
 	char *stack_start, *stack_ptr, *stack_end, *obj_start, *obj_end;
 	volatile char *pos;
+	int ret, expected;
 
 	expect_fault = false;
 
@@ -1017,6 +1017,18 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 			      stack_size);
 	}
 
+	ret = k_thread_stack_space_get(k_current_get(), &unused);
+	if (!arch_is_user_context() &&
+	    IS_ENABLED(CONFIG_NO_UNUSED_STACK_INSPECTION)) {
+		expected = -ENOTSUP;
+	} else {
+		expected = 0;
+	}
+
+	zassert_equal(ret, expected, "unexpected return value %d", ret);
+	if (ret == 0) {
+		printk("self-reported unused stack space: %zu\n", unused);
+	}
 
 	k_sem_give(&uthread_end_sem);
 }
@@ -1036,14 +1048,18 @@ void stest_thread_entry(void *p1, void *p2, void *p3)
 void stest_thread_launch(void *stack_obj, size_t obj_size, u32_t flags,
 			 bool drop)
 {
+	int ret;
+	size_t unused;
+
 	k_thread_create(&uthread_thread, stack_obj, STEST_STACKSIZE,
 			stest_thread_entry, stack_obj, (void *)obj_size,
 			(void *)drop,
 			-1, flags, K_NO_WAIT);
 	k_sem_take(&uthread_end_sem, K_FOREVER);
 
-	stack_analyze("test_thread", (char *)uthread_thread.stack_info.start,
-		      uthread_thread.stack_info.size);
+	ret = k_thread_stack_space_get(&uthread_thread, &unused);
+	zassert_equal(ret, 0, "failed to calculate unused stack space\n");
+	printk("target thread unused stack space: %zu\n", unused);
 }
 
 void scenario_entry(void *stack_obj, size_t obj_size)
@@ -1152,6 +1168,32 @@ void test_oops_stackcheck(void)
 	test_oops(K_ERR_STACK_CHK_FAIL, K_ERR_STACK_CHK_FAIL);
 }
 
+void z_impl_check_syscall_context(void)
+{
+	int key = irq_lock();
+
+	irq_unlock(key);
+
+	/* Make sure that interrupts aren't locked when handling system calls;
+	 * key has the previous locking state before the above irq_lock() call.
+	 */
+	zassert_true(arch_irq_unlocked(key), "irqs locked during syscall");
+
+	/* The kernel should not think we are in ISR context either */
+	zassert_false(k_is_in_isr(), "kernel reports irq context");
+}
+
+static inline void z_vrfy_check_syscall_context(void)
+{
+	return z_impl_check_syscall_context();
+}
+#include <syscalls/check_syscall_context_mrsh.c>
+
+void test_syscall_context(void)
+{
+	check_syscall_context();
+}
+
 void test_main(void)
 {
 	struct k_mem_partition *parts[] = {&part0, &part1,
@@ -1190,14 +1232,14 @@ void test_main(void)
 			 ztest_user_unit_test(pass_user_object),
 			 ztest_user_unit_test(pass_noperms_object),
 			 ztest_user_unit_test(start_kernel_thread),
-			 ztest_user_unit_test(read_other_stack),
-			 ztest_user_unit_test(write_other_stack),
+			 ztest_1cpu_user_unit_test(read_other_stack),
+			 ztest_1cpu_user_unit_test(write_other_stack),
 			 ztest_user_unit_test(revoke_noperms_object),
 			 ztest_user_unit_test(access_after_revoke),
 			 ztest_unit_test(user_mode_enter),
 			 ztest_user_unit_test(write_kobject_user_pipe),
 			 ztest_user_unit_test(read_kobject_user_pipe),
-			 ztest_unit_test(access_other_memdomain),
+			 ztest_1cpu_unit_test(access_other_memdomain),
 			 ztest_unit_test(domain_add_thread_drop_to_user),
 			 ztest_unit_test(domain_add_part_drop_to_user),
 			 ztest_unit_test(domain_remove_part_drop_to_user),
@@ -1206,7 +1248,7 @@ void test_main(void)
 			 ztest_unit_test(domain_add_part_context_switch),
 			 ztest_unit_test(domain_remove_part_context_switch),
 			 ztest_unit_test(domain_remove_thread_context_switch),
-			 ztest_unit_test(test_stack_buffer),
+			 ztest_1cpu_unit_test(test_stack_buffer),
 			 ztest_user_unit_test(test_unimplemented_syscall),
 			 ztest_user_unit_test(test_bad_syscall),
 			 ztest_user_unit_test(test_oops_panic),
@@ -1214,7 +1256,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_oops_exception),
 			 ztest_user_unit_test(test_oops_maxint),
 			 ztest_user_unit_test(test_oops_stackcheck),
-			 ztest_unit_test(test_object_recycle)
+			 ztest_unit_test(test_object_recycle),
+			 ztest_user_unit_test(test_syscall_context)
 			 );
 	ztest_run_test_suite(userspace);
 }

@@ -3,6 +3,58 @@
 
 config HAS_NORDIC_DRIVERS
 	bool
+	default y if HAS_HW_NRF_RADIO_IEEE802154
+
+menu "Nordic drivers"
+	depends on HAS_NORDIC_DRIVERS
+
+menuconfig NRF_802154_RADIO_DRIVER
+	bool "Enable nRF IEEE 802.15.4 radio driver"
+	depends on HAS_HW_NRF_RADIO_IEEE802154
+
+if NRF_802154_RADIO_DRIVER
+
+choice NRF_802154_CCA_MODE
+	prompt "nRF IEEE 802.15.4 CCA mode"
+	default NRF_802154_CCA_MODE_ED
+	help
+	  CCA mode
+
+config NRF_802154_CCA_MODE_ED
+	bool "Energy Above Threshold"
+
+config NRF_802154_CCA_MODE_CARRIER
+	bool "Carrier Seen"
+
+config NRF_802154_CCA_MODE_CARRIER_AND_ED
+	bool "Energy Above Threshold AND Carrier Seen"
+
+config NRF_802154_CCA_MODE_CARRIER_OR_ED
+	bool "Energy Above Threshold OR Carrier Seen"
+
+endchoice
+
+config NRF_802154_CCA_ED_THRESHOLD
+	int "nRF IEEE 802.15.4 CCA Energy Detection threshold"
+	default 45
+	help
+	  If energy detected in a given channel is above the value then the
+	  channel is deemed busy. The unit is defined as per 802.15.4-2006 spec.
+
+config NRF_802154_CCA_CORR_THRESHOLD
+	int "nRF IEEE 802.15.4 CCA Correlator threshold"
+	default 45
+
+config NRF_802154_CCA_CORR_LIMIT
+	int "nRF IEEE 802.15.4 CCA Correlator limit"
+	default 2
+	help
+	  Limit for occurrences above correlator threshold. When not equal to
+	  zero the correlator based signal detect is enabled.
+
+endif # NRF_802154_RADIO_DRIVER
+
+endmenu
 
 config HAS_NRFX
 	bool
@@ -181,7 +233,7 @@ config NRFX_SPI2
 config NRFX_SPIM
 	bool "Enable SPIM driver"
 	depends on HAS_HW_NRF_SPIM0 || HAS_HW_NRF_SPIM1 || \
-		   HAS_HW_NRF_SPIM2 || HAS_HW_NRF_SPIM3
+		   HAS_HW_NRF_SPIM2 || HAS_HW_NRF_SPIM3 || HAS_HW_NRF_SPIM4
 
 config NRFX_SPIM0
 	bool "Enable SPIM0 instance"
@@ -201,6 +253,11 @@ config NRFX_SPIM2
 config NRFX_SPIM3
 	bool "Enable SPIM3 instance"
 	depends on HAS_HW_NRF_SPIM3
+	select NRFX_SPIM
+
+config NRFX_SPIM4
+	bool "Enable SPIM4 instance"
+	depends on HAS_HW_NRF_SPIM4
 	select NRFX_SPIM
 
 config NRFX_SPIS
@@ -369,6 +426,10 @@ config NRFX_USBD
 	bool "Enable USBD driver"
 	depends on HAS_HW_NRF_USBD
 	select NRFX_SYSTICK
+
+config NRFX_USBREG
+	bool "Enable USBREG driver"
+	depends on HAS_HW_NRF_USBREG
 
 config NRFX_WDT
 	bool "Enable WDT driver"

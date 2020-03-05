@@ -174,7 +174,7 @@ def main():
     parser.add_argument('-m', '--modules', nargs='+',
                         help="""List of modules to parse instead of using `west
                              list`""")
-    parser.add_argument('-x', '--extra-modules', nargs='+',
+    parser.add_argument('-x', '--extra-modules', nargs='+', default=[],
                         help='List of extra modules to parse')
     parser.add_argument('-w', '--west-path', default='west',
                         help='Path to west executable')
@@ -188,10 +188,14 @@ def main():
         if p.returncode == 0:
             projects = out.decode(sys.getdefaultencoding()).splitlines()
         elif re.match((r'Error: .* is not in a west installation\.'
-                       '|FATAL ERROR: no west installation found from .*'),
+                       '|FATAL ERROR: no west installation found from .*'
+                       '|FATAL ERROR: no west workspace.*'),
                       err.decode(sys.getdefaultencoding())):
-            # Only accept the error from bootstrapper in the event we are
-            # outside a west managed project.
+            # Only accept the error the event we are outside a west
+            # workspace.
+            #
+            # TODO: we can just use "west topdir" instead if we can
+            # depend on west 0.7.0 or later.
             projects = []
         else:
             print(err.decode(sys.getdefaultencoding()))
@@ -201,9 +205,8 @@ def main():
     else:
         projects = args.modules
 
-    if args.extra_modules is not None:
-        projects += args.extra_modules
-
+    projects += args.extra_modules
+    extra_modules = set(args.extra_modules)
 
     kconfig = ""
     cmake = ""
@@ -219,6 +222,9 @@ def main():
             kconfig += process_kconfig(project, meta)
             cmake += process_cmake(project, meta)
             sanitycheck += process_sanitycheck(project, meta)
+        elif project in extra_modules:
+            sys.exit(f'{project}, given in ZEPHYR_EXTRA_MODULES, '
+                     'is not a valid zephyr module')
 
     if args.kconfig_out:
         with open(args.kconfig_out, 'w', encoding="utf-8") as fp:

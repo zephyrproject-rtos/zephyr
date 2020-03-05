@@ -48,19 +48,13 @@ endif # I2C_DW
 
 endif # I2C
 
-if SERIAL
-
 config UART_NS16550
 	default y
-
-endif # SERIAL
-
-if UART_CONSOLE
+	depends on SERIAL
 
 config UART_NS16550_PORT_1
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 if SPI
 

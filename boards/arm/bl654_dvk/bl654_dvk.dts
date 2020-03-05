@@ -26,19 +26,19 @@
 	leds {
 		compatible = "gpio-leds";
 		led1: led_1 {
-			gpios = <&gpio0 13 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 1";
 		};
 		led2: led_2 {
-			gpios = <&gpio0 14 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 2";
 		};
 		led3: led_3 {
-			gpios = <&gpio0 15 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 3";
 		};
 		led4: led_4 {
-			gpios = <&gpio0 16 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 			label = "Blue LED 4";
 		};
 	};
@@ -46,19 +46,19 @@
 	buttons {
 		compatible = "gpio-keys";
 		button1: button_1 {
-			gpios = <&gpio0 11 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 11 GPIO_PULL_UP>;
 			label = "Push button switch 1 (SW1)";
 		};
 		button2: button_2 {
-			gpios = <&gpio0 12 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 12 GPIO_PULL_UP>;
 			label = "Push button switch 2 (SW2)";
 		};
 		button3: button_3 {
-			gpios = <&gpio0 24 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 24 GPIO_PULL_UP>;
 			label = "Push button switch 3 (SW9)";
 		};
 		button4: button_4 {
-			gpios = <&gpio0 25 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 25 GPIO_PULL_UP>;
 			label = "Push button switch 4 (SW10)";
 		};
 	};
@@ -174,7 +174,10 @@
 		 * 0x000fffff is reserved for use by the application.
 		 */
 
-		/* Storage partition will be used by FCB/NFFS/NVS if enabled. */
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
 		storage_partition: partition@f8000 {
 			label = "storage";
 			reg = <0x000f8000 0x00008000>;

@@ -122,6 +122,15 @@ struct zsock_pollfd {
 
 /** @} */
 
+/* Valid values for TLS_PEER_VERIFY option */
+#define TLS_PEER_VERIFY_NONE 0 /**< Peer verification disabled. */
+#define TLS_PEER_VERIFY_OPTIONAL 1 /**< Peer verification optional. */
+#define TLS_PEER_VERIFY_REQUIRED 2 /**< Peer verification required. */
+
+/* Valid values for TLS_DTLS_ROLE option */
+#define TLS_DTLS_ROLE_CLIENT 0 /**< Client role in a DTLS session. */
+#define TLS_DTLS_ROLE_SERVER 1 /**< Server role in a DTLS session. */
+
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
 	int ai_flags;
@@ -498,10 +507,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
  * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
  * @endrst
  */
-static inline void zsock_freeaddrinfo(struct zsock_addrinfo *ai)
-{
-	free(ai);
-}
+void zsock_freeaddrinfo(struct zsock_addrinfo *ai);
 
 /**
  * @brief Convert zsock_getaddrinfo() error code to textual message
@@ -555,7 +561,6 @@ int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 
 #define pollfd zsock_pollfd
 
-#if !defined(CONFIG_NET_SOCKETS_OFFLOAD)
 static inline int socket(int family, int type, int proto)
 {
 	return zsock_socket(family, type, proto);
@@ -684,41 +689,11 @@ static inline int inet_pton(sa_family_t family, const char *src, void *dst)
 	return zsock_inet_pton(family, src, dst);
 }
 
-#else
-
-struct addrinfo {
-	int ai_flags;
-	int ai_family;
-	int ai_socktype;
-	int ai_protocol;
-	socklen_t ai_addrlen;
-	struct sockaddr *ai_addr;
-	char *ai_canonname;
-	struct addrinfo *ai_next;
-};
-
-/* Legacy case: retain containing extern "C" with C++
- *
- * This header requires aliases defined within this file, and can't
- * easily be moved to the top.
- */
-#include <net/socket_offload.h>
-
-static inline int inet_pton(sa_family_t family, const char *src, void *dst)
+static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
+			      size_t size)
 {
-	if ((family != AF_INET) && (family != AF_INET6)) {
-		errno = EAFNOSUPPORT;
-		return -1;
-	}
-
-	if (net_addr_pton(family, src, dst) == 0) {
-		return 1;
-	} else {
-		return 0;
-	}
+	return zsock_inet_ntop(family, src, dst, size);
 }
-
-#endif /* !defined(CONFIG_NET_SOCKETS_OFFLOAD) */
 
 #define POLLIN ZSOCK_POLLIN
 #define POLLOUT ZSOCK_POLLOUT
@@ -732,12 +707,6 @@ static inline int inet_pton(sa_family_t family, const char *src, void *dst)
 #define SHUT_RD ZSOCK_SHUT_RD
 #define SHUT_WR ZSOCK_SHUT_WR
 #define SHUT_RDWR ZSOCK_SHUT_RDWR
-
-static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
-			      size_t size)
-{
-	return zsock_inet_ntop(family, src, dst, size);
-}
 
 #define EAI_BADFLAGS DNS_EAI_BADFLAGS
 #define EAI_NONAME DNS_EAI_NONAME

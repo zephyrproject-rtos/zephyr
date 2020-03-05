@@ -113,13 +113,18 @@ static void clear_fds(void)
 	nfds = 0;
 }
 
-static void wait(int timeout)
+static int wait(int timeout)
 {
+	int ret = 0;
+
 	if (nfds > 0) {
-		if (poll(fds, nfds, timeout) < 0) {
+		ret = poll(fds, nfds, timeout);
+		if (ret < 0) {
 			LOG_ERR("poll error: %d", errno);
 		}
 	}
+
+	return ret;
 }
 
 void mqtt_evt_handler(struct mqtt_client *const client,
@@ -304,7 +309,7 @@ static void client_init(struct mqtt_client *client)
 
 	struct mqtt_sec_config *tls_config = &client->transport.tls.config;
 
-	tls_config->peer_verify = 2;
+	tls_config->peer_verify = TLS_PEER_VERIFY_REQUIRED;
 	tls_config->cipher_list = NULL;
 	tls_config->sec_tag_list = m_sec_tags;
 	tls_config->sec_tag_count = ARRAY_SIZE(m_sec_tags);
@@ -357,8 +362,9 @@ static int try_to_connect(struct mqtt_client *client)
 
 		prepare_fds(client);
 
-		wait(APP_SLEEP_MSECS);
-		mqtt_input(client);
+		if (wait(APP_SLEEP_MSECS)) {
+			mqtt_input(client);
+		}
 
 		if (!connected) {
 			mqtt_abort(client);
@@ -379,18 +385,24 @@ static int process_mqtt_and_sleep(struct mqtt_client *client, int timeout)
 	int rc;
 
 	while (remaining > 0 && connected) {
-		wait(remaining);
-
-		rc = mqtt_live(client);
-		if (rc != 0) {
-			PRINT_RESULT("mqtt_live", rc);
-			return rc;
+		if (wait(remaining)) {
+			rc = mqtt_input(client);
+			if (rc != 0) {
+				PRINT_RESULT("mqtt_input", rc);
+				return rc;
+			}
 		}
 
-		rc = mqtt_input(client);
-		if (rc != 0) {
-			PRINT_RESULT("mqtt_input", rc);
+		rc = mqtt_live(client);
+		if (rc != 0 && rc != -EAGAIN) {
+			PRINT_RESULT("mqtt_live", rc);
 			return rc;
+		} else if (rc == 0) {
+			rc = mqtt_input(client);
+			if (rc != 0) {
+				PRINT_RESULT("mqtt_input", rc);
+				return rc;
+			}
 		}
 
 		remaining = timeout + start_time - k_uptime_get();
@@ -444,10 +456,6 @@ static void publisher(void)
 
 	rc = mqtt_disconnect(&client_ctx);
 	PRINT_RESULT("mqtt_disconnect", rc);
-
-	wait(APP_SLEEP_MSECS);
-	rc = mqtt_input(&client_ctx);
-	PRINT_RESULT("mqtt_input", rc);
 
 	LOG_INF("Bye!");
 }

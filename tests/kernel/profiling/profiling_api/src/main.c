@@ -19,8 +19,7 @@ static struct k_sem sync_sema;
 /**TESTPOINT: stack analyze*/
 static void tdata_dump_callback(const struct k_thread *thread, void *user_data)
 {
-	stack_analyze("Test", (char *)thread->stack_info.start,
-						thread->stack_info.size);
+	log_stack_usage(thread);
 }
 
 /*

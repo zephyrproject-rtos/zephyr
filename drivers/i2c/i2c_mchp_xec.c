@@ -406,42 +406,6 @@ static const struct i2c_driver_api i2c_xec_driver_api = {
 #endif
 };
 
-#ifdef CONFIG_I2C_XEC_0
-static struct i2c_xec_data i2c_xec_data_0;
-static const struct i2c_xec_config i2c_xec_config_0 = {
-	.base_addr = DT_INST_0_MICROCHIP_XEC_I2C_BASE_ADDRESS,
-	.port_sel = DT_INST_0_MICROCHIP_XEC_I2C_PORT_SEL,
-};
-DEVICE_AND_API_INIT(i2c_xec_0, DT_INST_0_MICROCHIP_XEC_I2C_LABEL,
-			&i2c_xec_init, &i2c_xec_data_0, &i2c_xec_config_0,
-			POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
-			&i2c_xec_driver_api);
-#endif /* CONFIG_I2C_XEC_0 */
-
-#ifdef CONFIG_I2C_XEC_1
-static struct i2c_xec_data i2c_xec_data_1;
-static const struct i2c_xec_config i2c_xec_config_1 = {
-	.base_addr	= DT_INST_1_MICROCHIP_XEC_I2C_BASE_ADDRESS,
-	.port_sel = DT_INST_1_MICROCHIP_XEC_I2C_PORT_SEL,
-};
-DEVICE_AND_API_INIT(i2c_xec_1, DT_INST_1_MICROCHIP_XEC_I2C_LABEL,
-			&i2c_xec_init, &i2c_xec_data_1, &i2c_xec_config_1,
-			POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
-			&i2c_xec_driver_api);
-#endif /* CONFIG_I2C_XEC_1 */
-
-#ifdef CONFIG_I2C_XEC_2
-static struct i2c_xec_data i2c_xec_data_2;
-static const struct i2c_xec_config i2c_xec_config_2 = {
-	.base_addr	= DT_INST_2_MICROCHIP_XEC_I2C_BASE_ADDRESS,
-	.port_sel = DT_INST_2_MICROCHIP_XEC_I2C_PORT_SEL,
-};
-DEVICE_AND_API_INIT(i2c_xec_2, DT_INST_2_MICROCHIP_XEC_I2C_LABEL,
-			&i2c_xec_init, &i2c_xec_data_2, &i2c_xec_config_2,
-			POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
-			&i2c_xec_driver_api);
-#endif /* CONFIG_I2C_XEC_2 */
-
 static int i2c_xec_init(struct device *dev)
 {
 	struct i2c_xec_data *data =
@@ -449,3 +413,36 @@ static int i2c_xec_init(struct device *dev)
 	data->pending_stop = 0;
 	return 0;
 }
+
+#define I2C_XEC_DEVICE(n)						\
+	static struct i2c_xec_data i2c_xec_data_##n;			\
+	static const struct i2c_xec_config i2c_xec_config_##n = {	\
+		.base_addr =						\
+			DT_INST_##n##_MICROCHIP_XEC_I2C_BASE_ADDRESS,	\
+		.port_sel = DT_INST_##n##_MICROCHIP_XEC_I2C_PORT_SEL,	\
+	};								\
+	DEVICE_AND_API_INIT(i2c_xec_##n,				\
+		DT_INST_##n##_MICROCHIP_XEC_I2C_LABEL,			\
+		&i2c_xec_init, &i2c_xec_data_##n, &i2c_xec_config_##n,	\
+		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
+		&i2c_xec_driver_api)
+
+#ifdef DT_INST_0_MICROCHIP_XEC_I2C
+I2C_XEC_DEVICE(0);
+#endif
+
+#ifdef DT_INST_1_MICROCHIP_XEC_I2C
+I2C_XEC_DEVICE(1);
+#endif
+
+#ifdef DT_INST_2_MICROCHIP_XEC_I2C
+I2C_XEC_DEVICE(2);
+#endif
+
+#ifdef DT_INST_3_MICROCHIP_XEC_I2C
+I2C_XEC_DEVICE(3);
+#endif
+
+#ifdef DT_INST_4_MICROCHIP_XEC_I2C
+I2C_XEC_DEVICE(4);
+#endif

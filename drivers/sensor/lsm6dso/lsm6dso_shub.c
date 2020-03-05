@@ -14,7 +14,7 @@
 #include <sys/__assert.h>
 #include <sys/util.h>
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <logging/log.h>
 
 #include "lsm6dso.h"

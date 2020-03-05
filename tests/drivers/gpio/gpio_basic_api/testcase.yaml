@@ -1,6 +1,7 @@
 tests:
-  drivers.gpio:
+  drivers.gpio.2pin:
     tags: drivers gpio
     depends_on: gpio
-    harness: loopback # see documentation
-    filter: dt_alias_exists("gpio-0") or dt_alias_exists("gpio-1")
+    harness: console
+    min_flash: 34
+    filter: dt_compat_enabled("test,gpio_basic_api")

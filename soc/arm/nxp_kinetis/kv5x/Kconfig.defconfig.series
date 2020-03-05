@@ -12,71 +12,44 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 121
 
-if ADC
-
 config ADC_MCUX_ADC16
 	default y
-
-endif # ADC
-
-if CLOCK_CONTROL
+	depends on ADC
 
 config CLOCK_CONTROL_MCUX_SIM
 	default y
-
-endif # CLOCK_CONTROL
-
-if FLASH
+	depends on CLOCK_CONTROL
 
 config SOC_FLASH_MCUX
 	default y
-
-endif # FLASH
+	depends on FLASH
 
 config GPIO
 	default y
 
-if GPIO
-
 config GPIO_MCUX
 	default y
-
-endif # GPIO
-
-if I2C
+	depends on GPIO
 
 config I2C_MCUX
 	default y
-
-endif # I2C
-
-if PINMUX
+	depends on I2C
 
 config PINMUX_MCUX
 	default y
-
-endif # PINMUX
-
-if PWM
+	depends on PINMUX
 
 config PWM_MCUX_FTM
 	default y
-
-endif # PWM
-
-if SERIAL
+	depends on PWM
 
 config UART_MCUX
 	default y
-
-endif # SERIAL
-
-if SPI
+	depends on SERIAL
 
 config SPI_MCUX_DSPI
 	default y
-
-endif # SPI
+	depends on SPI
 
 source "soc/arm/nxp_kinetis/kv5x/Kconfig.defconfig.mkv*"
 

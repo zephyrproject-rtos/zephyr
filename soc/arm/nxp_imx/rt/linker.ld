@@ -5,7 +5,7 @@
  */
 
  #include <autoconf.h>
- #include <generated_dts_board.h>
+ #include <devicetree.h>
 
 MEMORY
      {

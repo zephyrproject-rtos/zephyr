@@ -12,19 +12,13 @@ config CORTEX_M_SYSTICK
 	default n if STM32_LPTIM_TIMER
 	default y if !STM32_LPTIM_TIMER
 
-if CLOCK_CONTROL
-
 config CLOCK_CONTROL_STM32_CUBE
 	default y
-
-endif # CLOCK_CONTROL
-
-if SERIAL
+	depends on CLOCK_CONTROL
 
 config UART_STM32
 	default y
-
-endif # SERIAL
+	depends on SERIAL
 
 if GPIO
 
@@ -42,12 +36,9 @@ config GPIO_STM32_PORTC
 
 endif # GPIO
 
-if PINMUX
-
 config PINMUX_STM32
 	default y
-
-endif # PINMUX
+	depends on PINMUX
 
 if WATCHDOG
 
@@ -59,59 +50,41 @@ config WWDG_STM32
 
 endif # WATCHDOG
 
-if PWM
-
 config PWM_STM32
 	default y
-
-endif # PWM
-
-if SPI
+	depends on PWM
 
 config SPI_STM32
 	default y
-
-endif # SPI
-
-if I2C
+	depends on SPI
 
 config I2C_STM32
 	default y
-
-endif
-
-if USB
+	depends on I2C
 
 config USB_DC_STM32
 	default y
-
-endif # USB
-
-if COUNTER
+	depends on USB
 
 config COUNTER_RTC_STM32
 	default y
-
-endif # COUNTER
-
-if CAN
+	depends on COUNTER
 
 config CAN_STM32
 	default y
-
-endif
-
-if ADC
+	depends on CAN
 
 config ADC_STM32
 	default y
-
-endif # ADC
+	depends on ADC
 
 if DMA
 
 config DMA_STM32
 	default y
+
+config HEAP_MEM_POOL_SIZE
+	default 1024
 
 endif # DMA
 

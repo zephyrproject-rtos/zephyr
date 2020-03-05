@@ -19,6 +19,11 @@
 /* get the defines from dt (based on alias 'pwm-led0') */
 #define PWM_DRIVER	DT_ALIAS_PWM_LED0_PWMS_CONTROLLER
 #define PWM_CHANNEL	DT_ALIAS_PWM_LED0_PWMS_CHANNEL
+#ifdef DT_ALIAS_PWM_LED0_PWMS_FLAGS
+#define PWM_FLAGS	DT_ALIAS_PWM_LED0_PWMS_FLAGS
+#else
+#define PWM_FLAGS	0
+#endif
 #else
 #error "Choose supported PWM driver"
 #endif
@@ -48,7 +53,7 @@ void main(void)
 
 	while (1) {
 		if (pwm_pin_set_usec(pwm_dev, PWM_CHANNEL,
-					PERIOD, pulse_width)) {
+					PERIOD, pulse_width, PWM_FLAGS)) {
 			printk("pwm pin set fails\n");
 			return;
 		}

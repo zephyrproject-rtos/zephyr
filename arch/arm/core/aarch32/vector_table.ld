@@ -12,7 +12,7 @@ KEEP(*(IRQ_VECTOR_TABLE))
 
 KEEP(*(.vectors))
 
+_vector_end = .;
+
 KEEP(*(.openocd_dbg))
 KEEP(*(".openocd_dbg.*"))
-
-_vector_end = .;

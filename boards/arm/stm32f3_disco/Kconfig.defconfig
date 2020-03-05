@@ -8,12 +8,9 @@ if BOARD_STM32F3_DISCO
 config BOARD
 	default "stm32f3_disco"
 
-if UART_CONSOLE
-
 config UART_1
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 if I2C
 
@@ -34,5 +31,9 @@ config SPI_2
 	default y
 
 endif # SPI
+
+config CAN_1
+	default y
+	depends on CAN
 
 endif # BOARD_STM32F3_DISCO

@@ -48,6 +48,10 @@ static struct k_sem contexts_lock;
 extern const struct socket_op_vtable sock_fd_op_vtable;
 static const struct socket_op_vtable websocket_fd_op_vtable;
 
+#if defined(CONFIG_NET_TEST)
+int verify_sent_and_received_msg(struct msghdr *msg, bool split_msg);
+#endif
+
 static const char *opcode2str(enum websocket_opcode opcode)
 {
 	switch (opcode) {
@@ -386,9 +390,9 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	NET_DBG("[%p] WS connection to peer established (fd %d)", ctx, fd);
 
 	/* We will re-use the temp buffer in receive function if needed but
-	 * in order that to work the length must be set to 0
+	 * in order that to work the amount of data in buffer must be set to 0
 	 */
-	ctx->tmp_buf_len = 0;
+	ctx->tmp_buf_pos = 0;
 
 	return fd;
 
@@ -442,16 +446,6 @@ static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
 }
 
-static void websocket_mask_payload(u8_t *payload, size_t payload_len,
-				   u32_t masking_value)
-{
-	int i;
-
-	for (i = 0; i < payload_len; i++) {
-		payload[i] ^= masking_value >> (8 * (3 - i % 4));
-	}
-}
-
 static int websocket_prepare_and_send(struct websocket_context *ctx,
 				      u8_t *header, size_t header_len,
 				      u8_t *payload, size_t payload_len,
@@ -475,8 +469,15 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 		LOG_HEXDUMP_DBG(payload, payload_len, "Payload");
 	}
 
+#if defined(CONFIG_NET_TEST)
+	/* Simulate a case where the payload is split to two. The unit test
+	 * does not set mask bit in this case.
+	 */
+	return verify_sent_and_received_msg(&msg, !(header[1] & BIT(7)));
+#else
 	return sendmsg(ctx->real_sock, &msg,
 		       timeout == K_NO_WAIT ? MSG_DONTWAIT : 0);
+#endif /* CONFIG_NET_TEST */
 }
 
 int websocket_send_msg(int ws_sock, const u8_t *payload, size_t payload_len,
@@ -497,6 +498,12 @@ int websocket_send_msg(int ws_sock, const u8_t *payload, size_t payload_len,
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_NET_TEST)
+	/* Websocket unit test does not use socket layer but feeds
+	 * the data directly here when testing this function.
+	 */
+	ctx = INT_TO_POINTER(ws_sock);
+#else
 	ctx = z_get_fd_obj(ws_sock, NULL, 0);
 	if (ctx == NULL) {
 		return -EBADF;
@@ -505,6 +512,7 @@ int websocket_send_msg(int ws_sock, const u8_t *payload, size_t payload_len,
 	if (!PART_OF_ARRAY(contexts, ctx)) {
 		return -ENOENT;
 	}
+#endif /* CONFIG_NET_TEST */
 
 	NET_DBG("[%p] Len %zd %s/%d/%s", ctx, payload_len, opcode2str(opcode),
 		mask, final ? "final" : "more");
@@ -542,6 +550,8 @@ int websocket_send_msg(int ws_sock, const u8_t *payload, size_t payload_len,
 
 	/* Add masking value if needed */
 	if (mask) {
+		int i;
+
 		ctx->masking_value = sys_rand32_get();
 
 		header[hdr_len++] |= ctx->masking_value >> 24;
@@ -556,8 +566,10 @@ int websocket_send_msg(int ws_sock, const u8_t *payload, size_t payload_len,
 
 		memcpy(data_to_send, payload, payload_len);
 
-		websocket_mask_payload(data_to_send, payload_len,
-				       ctx->masking_value);
+		for (i = 0; i < payload_len; i++) {
+			data_to_send[i] ^=
+				ctx->masking_value >> (8 * (3 - i % 4));
+		}
 	}
 
 	ret = websocket_prepare_and_send(ctx, header, hdr_len,
@@ -643,10 +655,25 @@ int websocket_recv_msg(int ws_sock, u8_t *buf, size_t buf_len,
 		       u32_t *message_type, u64_t *remaining, s32_t timeout)
 {
 	struct websocket_context *ctx;
-	size_t header_len, pos_to_write = 0;
+	size_t header_len = 0;
 	int recv_len = 0;
+	size_t can_copy, left;
 	int ret;
 
+#if defined(CONFIG_NET_TEST)
+	/* Websocket unit test does not use socket layer but feeds
+	 * the data directly here when testing this function.
+	 */
+	struct test_data {
+		u8_t *input_buf;
+		size_t input_len;
+		struct websocket_context *ctx;
+	};
+
+	struct test_data *test_data = INT_TO_POINTER(ws_sock);
+
+	ctx = test_data->ctx;
+#else
 	ctx = z_get_fd_obj(ws_sock, NULL, 0);
 	if (ctx == NULL) {
 		return -EBADF;
@@ -655,60 +682,43 @@ int websocket_recv_msg(int ws_sock, u8_t *buf, size_t buf_len,
 	if (!PART_OF_ARRAY(contexts, ctx)) {
 		return -ENOENT;
 	}
+#endif /* CONFIG_NET_TEST */
 
 	/* If we have not received the websocket header yet, read it first */
 	if (!ctx->header_received) {
-		/* If we have the header or part of it saved in tmp buf,
-		 * then use that
-		 */
-		if (ctx->tmp_buf_len > 0) {
-			int header_left, bytes_to_mv;
+#if defined(CONFIG_NET_TEST)
+		size_t input_len = MIN(ctx->tmp_buf_len - ctx->tmp_buf_pos,
+				       test_data->input_len);
 
-			header_left = sizeof(ctx->header) - ctx->pos;
-			bytes_to_mv = MIN(header_left, ctx->tmp_buf_len);
+		memcpy(&ctx->tmp_buf[ctx->tmp_buf_pos], test_data->input_buf,
+		       input_len);
+		test_data->input_buf += input_len;
+		ret = input_len;
+#else
+		ret = recv(ctx->real_sock, &ctx->tmp_buf[ctx->tmp_buf_pos],
+			   ctx->tmp_buf_len - ctx->tmp_buf_pos,
+			   timeout == K_NO_WAIT ? MSG_DONTWAIT : 0);
+#endif /* CONFIG_NET_TEST */
 
-			NET_DBG("Saving %d bytes to header / data",
-				bytes_to_mv);
-
-			memmove(&ctx->header[ctx->pos],
-				ctx->tmp_buf, bytes_to_mv);
-
-			if (ctx->tmp_buf_len > bytes_to_mv) {
-				ctx->tmp_buf_len -= bytes_to_mv;
-
-				NET_DBG("Left %zd bytes data",
-					ctx->tmp_buf_len);
-
-				memmove(ctx->tmp_buf,
-					&ctx->tmp_buf[bytes_to_mv],
-					ctx->tmp_buf_len);
-			}
-
-			recv_len = bytes_to_mv;
-		} else {
-			recv_len = recv(ctx->real_sock, &ctx->header[ctx->pos],
-				sizeof(ctx->header) - ctx->pos,
-				timeout == K_NO_WAIT ? MSG_DONTWAIT : 0);
-			if (recv_len < 0) {
-				return -errno;
-			}
-
-			if (recv_len == 0) {
-				/* Socket closed */
-				return 0;
-			}
+		if (ret < 0) {
+			return -errno;
 		}
 
-		ctx->pos += recv_len;
+		if (ret == 0) {
+			/* Socket closed */
+			return 0;
+		}
 
-		if (ctx->pos >= MIN_HEADER_LEN) {
+		ctx->tmp_buf_pos += ret;
+
+		if (ctx->tmp_buf_pos >= MIN_HEADER_LEN) {
 			bool masked;
 
 			/* Now we will be able to figure out what is the
 			 * actual size of the header.
 			 */
-			if (websocket_parse_header(ctx->header,
-						   ctx->pos,
+			if (websocket_parse_header(&ctx->tmp_buf[0],
+						   ctx->tmp_buf_pos,
 						   &masked,
 						   &ctx->masking_value,
 						   &ctx->message_len,
@@ -726,110 +736,122 @@ int websocket_recv_msg(int ws_sock, u8_t *buf, size_t buf_len,
 			return -EAGAIN;
 		}
 
-		if (ctx->pos < sizeof(ctx->header) &&
-		    ctx->pos < ctx->message_len) {
-			ctx->pos += recv_len;
+		if (ctx->tmp_buf_pos < header_len) {
 			return -EAGAIN;
 		}
 
-		/* All the header is now received, we can read the payload
+		/* All of the header is now received, we can read the payload
 		 * data next.
 		 */
 		ctx->header_received = true;
 
-		/* If there is any data in the header, then move it to the
-		 * data buffer.
-		 */
-		if (header_len < sizeof(ctx->header)) {
-			NET_ASSERT(ctx->pos <= sizeof(ctx->header));
-
-			memmove(buf, &ctx->header[header_len],
-				ctx->pos - header_len);
-			pos_to_write = ctx->pos - header_len;
-		}
-
 		if (HEXDUMP_RECV_PACKETS) {
-			LOG_HEXDUMP_DBG(ctx->header, header_len, "Header");
+			LOG_HEXDUMP_DBG(&ctx->tmp_buf[0], header_len,
+					"Header");
 			NET_DBG("[%p] masked %d mask 0x%04x hdr %zd msg %zd",
-				ctx, ctx->masked, ctx->masking_value, header_len,
-				(size_t)ctx->message_len);
+				ctx, ctx->masked,
+				ctx->masked ? ctx->masking_value : 0,
+				header_len, (size_t)ctx->message_len);
 		}
 
-		ctx->total_read = pos_to_write;
-		ctx->pos = 0;
-	}
+		ctx->total_read = 0;
 
-	if (ctx->total_read < ctx->message_len) {
-		if (ctx->tmp_buf_len > 0) {
-			NET_DBG("Using %zd bytes from tmp buf",
-				ctx->tmp_buf_len);
+		memmove(ctx->tmp_buf, &ctx->tmp_buf[header_len],
+			ctx->tmp_buf_len - header_len);
+		ctx->tmp_buf_pos -= header_len;
 
-			memmove(&buf[pos_to_write],
-				ctx->tmp_buf,
-				ctx->tmp_buf_len);
-			recv_len = ctx->tmp_buf_len;
-		} else {
-			recv_len = recv(ctx->real_sock, &buf[pos_to_write],
-				buf_len - pos_to_write,
-				timeout == K_NO_WAIT ? MSG_DONTWAIT : 0);
-			if (recv_len < 0) {
-				return -errno;
-			}
-
-			if (recv_len == 0) {
-				return 0;
-			}
+		if (ctx->tmp_buf_pos == 0) {
+			/* No data after the header, let the caller call
+			 * this function again to get the payload.
+			 */
+			return -EAGAIN;
 		}
 
-		ctx->total_read += recv_len;
-		recv_len += pos_to_write;
+		NET_DBG("There is %zd bytes of data", ctx->tmp_buf_pos);
 	}
+
+	/* Now read the whole payload or parts of it */
+
+	if (ctx->tmp_buf_pos == 0) {
+		/* Read more data into temp buffer */
+#if defined(CONFIG_NET_TEST)
+		size_t input_len = MIN(ctx->tmp_buf_len, test_data->input_len);
+
+		memcpy(ctx->tmp_buf, test_data->input_buf, input_len);
+		test_data->input_buf += input_len;
+
+		ret = input_len;
+#else
+		ret = recv(ctx->real_sock, ctx->tmp_buf, ctx->tmp_buf_len,
+			   timeout == K_NO_WAIT ? MSG_DONTWAIT : 0);
+#endif /* CONFIG_NET_TEST */
+
+		if (ret < 0) {
+			return -errno;
+		}
+
+		if (ret == 0) {
+			return 0;
+		}
+
+		ctx->tmp_buf_pos = ret;
+	}
+
+	if (ctx->tmp_buf_pos <= buf_len) {
+		/* Is there already any data in the temp buffer? If yes,
+		 * just return it to the caller.
+		 */
+		can_copy = MIN(ctx->message_len - ctx->total_read,
+			       ctx->tmp_buf_pos);
+	} else {
+		/* We have more data in tmp buffer that will fit into
+		 * user buffer.
+		 */
+		can_copy = MIN(ctx->message_len - ctx->total_read, buf_len);
+	}
+
+	left = ctx->tmp_buf_pos - can_copy;
+
+	NET_ASSERT(ctx->tmp_buf_pos >= can_copy);
+
+	memmove(buf, ctx->tmp_buf, can_copy);
+	recv_len = can_copy;
+
+	if (left > 0) {
+		memmove(ctx->tmp_buf, &ctx->tmp_buf[can_copy], left);
+	}
+
+	ctx->tmp_buf_pos = left;
+	ctx->total_read += recv_len;
 
 	/* Unmask the data */
 	if (ctx->masked) {
-		websocket_mask_payload(buf, ctx->total_read,
-				       ctx->masking_value);
+		/* As we might have less than 4 received bytes, we must select
+		 * which byte from masking value to take. The mask_shift will
+		 * tell that.
+		 */
+		int mask_shift = (ctx->total_read - recv_len) % sizeof(u32_t);
+		int i;
+
+		for (i = 0; i < recv_len; i++) {
+			buf[i] ^= ctx->masking_value >>
+				(8 * (3 - (i + mask_shift) % 4));
+		}
 	}
 
 #if HEXDUMP_RECV_PACKETS
-	LOG_HEXDUMP_DBG(buf, ctx->total_read, "Payload");
+	LOG_HEXDUMP_DBG(buf, recv_len, "Payload");
 #endif
 
-	/* If we receive the end of the message and there is still data left,
-	 * move the extra data to temp buffer so that we can get it from there
-	 * in next call.
-	 */
-	if (ctx->total_read >= ctx->message_len) {
-		ret = ctx->total_read - ctx->message_len;
-		if (ret > 0) {
-			if ((recv_len - ret) < 0) {
-				NET_DBG("Pkt failure (%d)", recv_len - ret);
-			} else {
-				memmove(ctx->tmp_buf, &buf[recv_len - ret],
-					ret);
-				ctx->tmp_buf_len = ret;
+	if (remaining) {
+		*remaining = ctx->message_len - ctx->total_read;
+	}
 
-				NET_DBG("[%p] Saving new header with %d "
-					"bytes data", ctx, ret);
-			}
-		} else {
-			NET_DBG("[%p] Received total %u bytes", ctx,
-				(u32_t)ctx->message_len);
-			ctx->tmp_buf_len = 0;
-		}
-
-		recv_len = ctx->message_len;
+	/* Start to read the header again if all the data has been received */
+	if (ctx->message_len == ctx->total_read) {
 		ctx->header_received = false;
-
-		if (remaining) {
-			*remaining = 0;
-		}
-	} else {
-		if (remaining) {
-			*remaining = ctx->message_len - ctx->total_read;
-		}
-
-		ctx->tmp_buf_len = 0;
+		ctx->message_len = 0;
+		ctx->total_read = 0;
 	}
 
 	return recv_len;

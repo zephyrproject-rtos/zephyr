@@ -16,15 +16,19 @@
 #define X86_KERNEL_DS_32	0x10	/* 32-bit kernel data */
 #define X86_KERNEL_CS		0x18	/* 64-bit kernel code */
 #define X86_KERNEL_DS		0x20	/* 64-bit kernel data */
+#define X86_USER_CS_32		0x28	/* 32-bit user data (unused) */
+#define X86_USER_DS		0x30	/* 64-bit user mode data */
+#define X86_USER_CS		0x38	/* 64-bit user mode code */
 
-#define X86_KERNEL_CPU0_GS	0x30	/* data selector covering TSS */
+/* Value programmed into bits 63:32 of STAR MSR with proper segment
+ * descriptors for implementing user mode with syscall/sysret
+ */
+#define X86_STAR_UPPER		((X86_USER_CS_32 << 16) | X86_KERNEL_CS)
+
 #define X86_KERNEL_CPU0_TR	0x40	/* 64-bit task state segment */
-#define X86_KERNEL_CPU1_GS	0x50	/* data selector covering TSS */
-#define X86_KERNEL_CPU1_TR	0x60	/* 64-bit task state segment */
-#define X86_KERNEL_CPU2_GS	0x70	/* data selector covering TSS */
-#define X86_KERNEL_CPU2_TR	0x80	/* 64-bit task state segment */
-#define X86_KERNEL_CPU3_GS	0x90	/* data selector covering TSS */
-#define X86_KERNEL_CPU3_TR	0xA0	/* 64-bit task state segment */
+#define X86_KERNEL_CPU1_TR	0x50	/* 64-bit task state segment */
+#define X86_KERNEL_CPU2_TR	0x60	/* 64-bit task state segment */
+#define X86_KERNEL_CPU3_TR	0x70	/* 64-bit task state segment */
 
 /*
  * Some SSE definitions. Ideally these will ultimately be shared with 32-bit.
@@ -74,6 +78,13 @@ struct x86_tss64 {
 	 */
 
 	struct _cpu *cpu;
+#ifdef CONFIG_USERSPACE
+	/* Privilege mode stack pointer value when doing a system call */
+	char *psp;
+
+	/* Storage area for user mode stack pointer when doing a syscall */
+	char *usp;
+#endif /* CONFIG_USERSPACE */
 } __packed __aligned(8);
 
 typedef struct x86_tss64 x86_tss64_t;
@@ -101,6 +112,23 @@ typedef struct _callee_saved _callee_saved_t;
 
 struct _thread_arch {
 	u8_t flags;
+
+#ifdef CONFIG_USERSPACE
+	/* Pointer to page tables used by this thread. Supervisor threads
+	 * always use the kernel's page table, user thread use per-thread
+	 * tables stored in the stack object
+	 */
+	struct x86_page_tables *ptables;
+
+	/* Initial privilege mode stack pointer when doing a system call.
+	 * Un-set for supervisor threads.
+	 */
+	char *psp;
+
+	/* SS and CS selectors for this thread when restoring context */
+	u64_t ss;
+	u64_t cs;
+#endif
 
 	u64_t rax;
 	u64_t rcx;

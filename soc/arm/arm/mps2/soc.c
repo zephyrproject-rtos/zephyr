@@ -8,7 +8,7 @@
  */
 
 #include <arch/cpu.h>
-#include <gpio/gpio_mmio32.h>
+#include <drivers/gpio/gpio_mmio32.h>
 #include <init.h>
 #include <soc.h>
 

@@ -43,14 +43,15 @@ static void ms5607_compensate(struct ms5607_data *data,
 	 * SECOND ORDER TEMPERATURE COMPENSATION
 	 */
 
-	temp_sq = (data->temperature - 2000) * (data->temperature - 2000);
+	temp_sq = (s64_t)(data->temperature - 2000) *
+		  (s64_t)(data->temperature - 2000);
 	if (data->temperature < 2000) {
 		Ti = (dT * dT) / (1ll << 31);
 		OFFi = (61ll * temp_sq) / (1ll << 4);
 		SENSi = 2ll * temp_sq;
 		if (data->temperature < -1500) {
-			temp_sq = (data->temperature + 1500) *
-				  (data->temperature + 1500);
+			temp_sq = (s64_t)(data->temperature + 1500) *
+				  (s64_t)(data->temperature + 1500);
 			OFFi += 15ll * temp_sq;
 			SENSi += 8ll * temp_sq;
 		}

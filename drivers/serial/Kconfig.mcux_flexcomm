@@ -11,11 +11,8 @@ menuconfig UART_MCUX_FLEXCOMM
 	help
 	  Enable the MCUX USART driver.
 
-if UART_MCUX_FLEXCOMM
-
 config UART_MCUX_FLEXCOMM_0
 	bool "USART 0"
+	depends on UART_MCUX_FLEXCOMM
 	help
 	  Enable USART 0.
-
-endif # UART_MCUX_FLEXCOMM

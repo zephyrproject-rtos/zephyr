@@ -15,7 +15,7 @@
 #include <device.h>
 #include <fs/fs.h>
 #include "fs_mgmt/fs_mgmt.h"
-#include <nffs/nffs.h>
+#include <fs/littlefs.h>
 #endif
 #ifdef CONFIG_MCUMGR_CMD_OS_MGMT
 #include "os_mgmt/os_mgmt.h"
@@ -48,16 +48,18 @@ STATS_NAME_END(smp_svr_stats);
 STATS_SECT_DECL(smp_svr_stats) smp_svr_stats;
 
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
-static struct nffs_flash_desc flash_desc;
-
-static struct fs_mount_t nffs_mnt = {
-	.type = FS_NFFS,
-	.mnt_point = "/nffs",
-	.fs_data = &flash_desc
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
+static struct fs_mount_t littlefs_mnt = {
+	.type = FS_LITTLEFS,
+	.fs_data = &cstorage,
+	.storage_dev = (void *)DT_FLASH_AREA_STORAGE_ID,
+	.mnt_point = "/lfs"
 };
 #endif
 
 #ifdef CONFIG_MCUMGR_SMP_BT
+static struct k_work advertise_work;
+
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL,
@@ -65,7 +67,7 @@ static const struct bt_data ad[] = {
 		      0xd3, 0x4c, 0xb7, 0x1d, 0x1d, 0xdc, 0x53, 0x8d),
 };
 
-static void advertise(void)
+static void advertise(struct k_work *work)
 {
 	int rc;
 
@@ -92,7 +94,7 @@ static void connected(struct bt_conn *conn, u8_t err)
 static void disconnected(struct bt_conn *conn, u8_t reason)
 {
 	printk("Disconnected (reason 0x%02x)\n", reason);
-	advertise();
+	k_work_submit(&advertise_work);
 }
 
 static struct bt_conn_cb conn_callbacks = {
@@ -109,15 +111,12 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	advertise();
+	k_work_submit(&advertise_work);
 }
 #endif
 
 void main(void)
 {
-#ifdef CONFIG_MCUMGR_CMD_FS_MGMT
-	struct device *flash_dev;
-#endif
 	int rc;
 
 	rc = STATS_INIT_AND_REG(smp_svr_stats, STATS_SIZE_32, "smp_svr_stats");
@@ -125,17 +124,9 @@ void main(void)
 
 	/* Register the built-in mcumgr command handlers. */
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
-	flash_dev = device_get_binding(CONFIG_FS_NFFS_FLASH_DEV_NAME);
-	if (!flash_dev) {
-		printk("Error getting NFFS flash device binding\n");
-	} else {
-		/* set backend storage dev */
-		nffs_mnt.storage_dev = flash_dev;
-
-		rc = fs_mount(&nffs_mnt);
-		if (rc < 0) {
-			printk("Error mounting nffs [%d]\n", rc);
-		}
+	rc = fs_mount(&littlefs_mnt);
+	if (rc < 0) {
+		printk("Error mounting littlefs [%d]\n", rc);
 	}
 
 	fs_mgmt_register_group();
@@ -151,6 +142,8 @@ void main(void)
 #endif
 
 #ifdef CONFIG_MCUMGR_SMP_BT
+	k_work_init(&advertise_work, advertise);
+
 	/* Enable Bluetooth. */
 	rc = bt_enable(bt_ready);
 	if (rc != 0) {

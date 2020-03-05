@@ -8,7 +8,7 @@
  * https://www.st.com/resource/en/datasheet/stts751.pdf
  */
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
@@ -200,6 +200,7 @@ static const struct stts751_config stts751_config = {
 #ifdef CONFIG_STTS751_TRIGGER
 	.event_port	= DT_INST_0_ST_STTS751_DRDY_GPIOS_CONTROLLER,
 	.event_pin	= DT_INST_0_ST_STTS751_DRDY_GPIOS_PIN,
+	.int_flags	= DT_INST_0_ST_STTS751_DRDY_GPIOS_FLAGS,
 #endif
 #if defined(DT_ST_STTS751_BUS_I2C)
 	.bus_init = stts751_i2c_init,

@@ -11,51 +11,18 @@
  *        implemented in dma_stm32_v*.c
  */
 
+#include <soc.h>
+#include <init.h>
+#include <drivers/dma.h>
+#include <drivers/clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
+
 #include "dma_stm32.h"
 
-#define LOG_LEVEL CONFIG_DMA_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(dma_stm32);
+LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 
-#include <clock_control/stm32_clock_control.h>
-
-static u32_t table_m_size[] = {
-	LL_DMA_MDATAALIGN_BYTE,
-	LL_DMA_MDATAALIGN_HALFWORD,
-	LL_DMA_MDATAALIGN_WORD,
-};
-
-static u32_t table_p_size[] = {
-	LL_DMA_PDATAALIGN_BYTE,
-	LL_DMA_PDATAALIGN_HALFWORD,
-	LL_DMA_PDATAALIGN_WORD,
-};
-
-struct dma_stm32_stream {
-	u32_t direction;
-	bool source_periph;
-	bool busy;
-	u32_t src_size;
-	u32_t dst_size;
-	void *callback_arg;
-	void (*dma_callback)(void *arg, u32_t id,
-			     int error_code);
-};
-
-struct dma_stm32_data {
-	int max_streams;
-	struct dma_stm32_stream *streams;
-};
-
-struct dma_stm32_config {
-	struct stm32_pclken pclken;
-	void (*config_irq)(struct device *dev);
-	bool support_m2m;
-	u32_t base;
-};
-
-/* Maximum data sent in single transfer (Bytes) */
-#define DMA_STM32_MAX_DATA_ITEMS		0xffff
+#include <drivers/clock_control/stm32_clock_control.h>
 
 static void dma_stm32_dump_stream_irq(struct device *dev, u32_t id)
 {
@@ -117,7 +84,7 @@ static void dma_stm32_irq_handler(void *arg)
 	}
 }
 
-static u32_t dma_stm32_width_config(struct dma_config *config,
+static int dma_stm32_width_config(struct dma_config *config,
 				    bool source_periph,
 				    DMA_TypeDef *dma,
 				    LL_DMA_InitTypeDef *DMA_InitStruct,
@@ -257,12 +224,14 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_DMA_STM32_V1
 	if ((stream->direction == MEMORY_TO_MEMORY) &&
 		(!dev_config->support_m2m)) {
 		LOG_ERR("Memcopy not supported for device %s",
 			dev->config->name);
 		return -ENOTSUP;
 	}
+#endif /* CONFIG_DMA_STM32_V1 */
 
 	if (config->source_data_size != 4U &&
 	    config->source_data_size != 2U &&
@@ -310,7 +279,7 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 					config->head_block->dest_address;
 	}
 
-	u16_t memory_addr_adj, periph_addr_adj;
+	u16_t memory_addr_adj = 0, periph_addr_adj = 0;
 
 	ret = dma_stm32_get_priority(config->channel_priority,
 				     &DMA_InitStruct.Priority);
@@ -603,14 +572,17 @@ static void dma_stm32_config_irq_0(struct device *dev)
 	IRQ_INIT(0, 4);
 #ifdef DT_INST_0_ST_STM32_DMA_IRQ_5
 	IRQ_INIT(0, 5);
+#ifdef DT_INST_0_ST_STM32_DMA_IRQ_6
 	IRQ_INIT(0, 6);
 #ifdef DT_INST_0_ST_STM32_DMA_IRQ_7
 	IRQ_INIT(0, 7);
-#endif
-#endif
-/* Either 5 or 7 or 8 channels for DMA1 across all stm32 series. */
+#endif /* DT_INST_0_ST_STM32_DMA_IRQ_5 */
+#endif /* DT_INST_0_ST_STM32_DMA_IRQ_6 */
+#endif /* DT_INST_0_ST_STM32_DMA_IRQ_7 */
+/* Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
 }
-#endif
+#endif /* DT_INST_0_ST_STM32_DMA */
+
 
 #ifdef DT_INST_1_ST_STM32_DMA
 DMA_INIT(1);
@@ -619,7 +591,6 @@ static void dma_stm32_config_irq_1(struct device *dev)
 {
 	struct dma_stm32_data *data = dev->driver_data;
 
-#ifdef DT_INST_1_ST_STM32_DMA_IRQ_0
 	IRQ_INIT(1, 0);
 	IRQ_INIT(1, 1);
 	IRQ_INIT(1, 2);
@@ -627,12 +598,13 @@ static void dma_stm32_config_irq_1(struct device *dev)
 	IRQ_INIT(1, 4);
 #ifdef DT_INST_1_ST_STM32_DMA_IRQ_5
 	IRQ_INIT(1, 5);
+#ifdef DT_INST_1_ST_STM32_DMA_IRQ_6
 	IRQ_INIT(1, 6);
 #ifdef DT_INST_1_ST_STM32_DMA_IRQ_7
 	IRQ_INIT(1, 7);
-#endif
-#endif
-#endif
-/* Either 0 or 5 or 7 or 8 channels for DMA1 across all stm32 series. */
+#endif /* DT_INST_1_ST_STM32_DMA_IRQ_5 */
+#endif /* DT_INST_1_ST_STM32_DMA_IRQ_6 */
+#endif /* DT_INST_1_ST_STM32_DMA_IRQ_7 */
+/* Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
 }
-#endif
+#endif /* DT_INST_1_ST_STM32_DMA */

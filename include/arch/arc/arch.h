@@ -16,7 +16,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARC_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_ARC_ARCH_H_
 
-#include <generated_dts_board.h>
+#include <devicetree.h>
 #include <sw_isr_table.h>
 #include <arch/arc/thread.h>
 #ifdef CONFIG_CPU_ARCV2

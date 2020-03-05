@@ -9,7 +9,7 @@
 #include <soc.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
 
 /* Macros to fill up prescaler values */
@@ -350,11 +350,13 @@ static int stm32_clock_control_init(struct device *dev)
 	LL_RCC_MSI_Disable();
 
 #elif CONFIG_CLOCK_STM32_PLL_SRC_HSE
-	int hse_bypass = LL_UTILS_HSEBYPASS_OFF;
+	int hse_bypass;
 
-#ifdef CONFIG_CLOCK_STM32_HSE_BYPASS
-	hse_bypass = LL_UTILS_HSEBYPASS_ON;
-#endif /* CONFIG_CLOCK_STM32_HSE_BYPASS */
+	if (IS_ENABLED(CONFIG_CLOCK_STM32_HSE_BYPASS)) {
+		hse_bypass = LL_UTILS_HSEBYPASS_ON;
+	} else {
+		hse_bypass = LL_UTILS_HSEBYPASS_OFF;
+	}
 
 	/* Switch to PLL with HSE as clock source */
 	LL_PLL_ConfigSystemClock_HSE(
@@ -376,11 +378,11 @@ static int stm32_clock_control_init(struct device *dev)
 	/* Enable HSE if not enabled */
 	if (LL_RCC_HSE_IsReady() != 1) {
 		/* Check if need to enable HSE bypass feature or not */
-#ifdef CONFIG_CLOCK_STM32_HSE_BYPASS
-		LL_RCC_HSE_EnableBypass();
-#else
-		LL_RCC_HSE_DisableBypass();
-#endif /* CONFIG_CLOCK_STM32_HSE_BYPASS */
+		if (IS_ENABLED(CONFIG_CLOCK_STM32_HSE_BYPASS)) {
+			LL_RCC_HSE_EnableBypass();
+		} else {
+			LL_RCC_HSE_DisableBypass();
+		}
 
 		/* Enable HSE */
 		LL_RCC_HSE_Enable();

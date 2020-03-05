@@ -448,7 +448,7 @@ serial port:
    https://developer.arm.com/products/system-design/subsystems/corelink-sse-200-subsystem
 
 .. _IDAU:
-   https://developer.arm.com/products/architecture/cpu-architecture/m-profile/docs/100690/latest/attribution-units-sau-and-idau
+   https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
 
 .. _AMBA®:
    https://developer.arm.com/products/architecture/system-architectures/amba

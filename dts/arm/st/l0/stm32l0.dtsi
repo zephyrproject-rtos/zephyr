@@ -186,9 +186,14 @@
 			reg = <0x40020000 0x400>;
 			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0 11 0>;
 			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
-			st,mem2mem;
 			status = "disabled";
 			label = "DMA_1";
+		};
+
+		eeprom: eeprom@8080000{
+			compatible = "st,stm32-eeprom";
+			status = "disabled";
+			label = "EEPROM_0";
 		};
 	};
 };

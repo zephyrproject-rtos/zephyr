@@ -90,39 +90,6 @@ struct mcux_flexcan_data {
 	can_state_change_isr_t state_change_isr;
 };
 
-#if (!defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595) || \
-	!FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595)
-static void mcux_flexcan_freeze(struct device *dev)
-{
-	const struct mcux_flexcan_config *config = dev->config->config_info;
-
-	/*
-	 * Simple freeze implementation without support for
-	 * FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595.
-	 *
-	 * This can be removed once the MCUX FlexCAN driver supports
-	 * setting the MCR->LOM and CTRL1->SRXDIS bits or exposes its
-	 * internal freeze/unfreeze functions through the API.
-	 */
-	config->base->MCR |= CAN_MCR_FRZ_MASK;
-	config->base->MCR |= CAN_MCR_HALT_MASK;
-
-	while ((config->base->MCR & CAN_MCR_FRZACK_MASK) == 0U)	{
-	}
-}
-
-static void mcux_flexcan_thaw(struct device *dev)
-{
-	const struct mcux_flexcan_config *config = dev->config->config_info;
-
-	config->base->MCR &= ~CAN_MCR_HALT_MASK;
-	config->base->MCR &= ~CAN_MCR_FRZ_MASK;
-
-	while ((config->base->MCR & CAN_MCR_FRZACK_MASK) != 0U)	{
-	}
-}
-#endif
-
 static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 				  u32_t bitrate)
 {
@@ -130,13 +97,6 @@ static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 	flexcan_config_t flexcan_config;
 	struct device *clock_dev;
 	u32_t clock_freq;
-
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595) && \
-	FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595)
-	if (mode == CAN_SILENT_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
-		return -ENOTSUP;
-	}
-#endif
 
 	clock_dev = device_get_binding(config->clock_name);
 	if (clock_dev == NULL) {
@@ -151,7 +111,6 @@ static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 	FLEXCAN_GetDefaultConfig(&flexcan_config);
 	flexcan_config.clkSrc = config->clk_source;
 	flexcan_config.baudRate = bitrate ? bitrate : config->bitrate;
-	flexcan_config.enableLoopBack = (mode == CAN_LOOPBACK_MODE);
 	flexcan_config.enableIndividMask = true;
 
 	flexcan_config.timingConfig.rJumpwidth = config->sjw;
@@ -159,20 +118,18 @@ static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 	flexcan_config.timingConfig.phaseSeg1 = config->phase_seg1;
 	flexcan_config.timingConfig.phaseSeg2 = config->phase_seg2;
 
-	FLEXCAN_Init(config->base, &flexcan_config, clock_freq);
-
-#if (!defined(FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595) || \
-	!FSL_FEATURE_FLEXCAN_HAS_ERRATA_9595)
-	mcux_flexcan_freeze(dev);
-	if (mode == CAN_SILENT_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
-		config->base->CTRL1 |= CAN_CTRL1_LOM(1);
-	}
-	if (mode != CAN_LOOPBACK_MODE && mode != CAN_SILENT_LOOPBACK_MODE) {
+	if (mode == CAN_LOOPBACK_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
+		flexcan_config.enableLoopBack = true;
+	} else {
 		/* Disable self-reception unless loopback is requested */
-		config->base->MCR |= CAN_MCR_SRXDIS(1);
+		flexcan_config.disableSelfReception = true;
 	}
-	mcux_flexcan_thaw(dev);
-#endif
+
+	if (mode == CAN_SILENT_MODE || mode == CAN_SILENT_LOOPBACK_MODE) {
+		flexcan_config.enableListenOnlyMode = true;
+	}
+
+	FLEXCAN_Init(config->base, &flexcan_config, clock_freq);
 
 	return 0;
 }
@@ -763,6 +720,39 @@ static void mcux_flexcan_config_func_0(struct device *dev)
 		    mcux_flexcan_isr, DEVICE_GET(can_mcux_flexcan_0), 0);
 	irq_enable(DT_INST_0_NXP_KINETIS_FLEXCAN_IRQ_MB_0_15);
 }
+
+#if defined(CONFIG_NET_SOCKETS_CAN)
+
+#include "socket_can_generic.h"
+
+static int socket_can_init_0(struct device *dev)
+{
+	struct device *can_dev = DEVICE_GET(can_mcux_flexcan_0);
+	struct socket_can_context *socket_context = dev->driver_data;
+
+	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
+		dev, dev->config->name, can_dev, can_dev->config->name);
+
+	socket_context->can_dev = can_dev;
+	socket_context->msgq = &socket_can_msgq;
+
+	socket_context->rx_tid =
+		k_thread_create(&socket_context->rx_thread_data,
+				rx_thread_stack,
+				K_THREAD_STACK_SIZEOF(rx_thread_stack),
+				rx_thread, socket_context, NULL, NULL,
+				RX_THREAD_PRIORITY, 0, K_NO_WAIT);
+
+	return 0;
+}
+
+NET_DEVICE_INIT(socket_can_flexcan_0, SOCKET_CAN_NAME_1, socket_can_init_0,
+		&socket_can_context_1, NULL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		&socket_can_api,
+		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
+
+#endif /* CONFIG_NET_SOCKETS_CAN */
 
 #endif /* CONFIG_CAN_0 */
 

@@ -32,6 +32,7 @@
 #include "pdu.h"
 #include "ll.h"
 #include "ll_feat.h"
+#include "ll_settings.h"
 #include "lll.h"
 #include "lll_adv.h"
 #include "lll_scan.h"
@@ -828,29 +829,16 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_TERMINATE:
 		{
 			struct ll_conn *conn;
-			struct lll_conn *lll;
 			memq_link_t *link;
 
-			/* Get the connection context */
 			conn = ll_conn_get(rx_free->handle);
-			lll = &conn->lll;
 
-			/* Invalidate the connection context */
-			lll->handle = 0xFFFF;
-
-			/* Demux and flush Tx PDUs that remain enqueued in
-			 * thread context
-			 */
-			ull_conn_tx_demux(UINT8_MAX);
-
-			/* De-initialize tx memq and release the used link */
-			LL_ASSERT(!lll->link_tx_free);
-			link = memq_deinit(&lll->memq_tx.head,
-					   &lll->memq_tx.tail);
+			LL_ASSERT(!conn->lll.link_tx_free);
+			link = memq_deinit(&conn->lll.memq_tx.head,
+					   &conn->lll.memq_tx.tail);
 			LL_ASSERT(link);
-			lll->link_tx_free = link;
+			conn->lll.link_tx_free = link;
 
-			/* Release the connection context to free pool */
 			ll_conn_release(conn);
 		}
 		break;
@@ -1035,13 +1023,18 @@ int ull_disable(void *lll)
 	u32_t ret;
 
 	hdr = HDR_ULL(((struct lll_hdr *)lll)->parent);
-	if (!hdr || !hdr->ref) {
+	if (!hdr) {
 		return ULL_STATUS_SUCCESS;
 	}
 
 	k_sem_init(&sem, 0, 1);
+
 	hdr->disabled_param = &sem;
 	hdr->disabled_cb = disabled_cb;
+
+	if (!hdr->ref) {
+		return ULL_STATUS_SUCCESS;
+	}
 
 	mfy.param = lll;
 	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0,

@@ -15,6 +15,13 @@
 #include <stdbool.h>
 #include <kernel_internal.h>
 
+/* Maximum time between the time a self-aborting thread flags itself
+ * DEAD and the last read or write to its stack memory (i.e. the time
+ * of its next swap()).  In theory this might be tuned per platform,
+ * but in practice this conservative value should be safe.
+ */
+#define THREAD_ABORT_DELAY_US 500
+
 #if defined(CONFIG_SCHED_DUMB)
 #define _priq_run_add		z_priq_dumb_add
 #define _priq_run_remove	z_priq_dumb_remove
@@ -190,6 +197,16 @@ static ALWAYS_INLINE struct k_thread *next_up(void)
 	}
 #endif
 
+	/* If the current thread is marked aborting, mark it
+	 * dead so it will not be scheduled again.
+	 */
+	if (_current->base.thread_state & _THREAD_ABORTING) {
+		_current->base.thread_state |= _THREAD_DEAD;
+#ifdef CONFIG_SMP
+		_current_cpu->swap_ok = true;
+#endif
+	}
+
 #ifndef CONFIG_SMP
 	/* In uniprocessor mode, we can leave the current thread in
 	 * the queue (actually we have to, otherwise the assembly
@@ -359,15 +376,23 @@ static void update_cache(int preempt_ok)
 #endif
 }
 
-void z_add_thread_to_ready_q(struct k_thread *thread)
+static void ready_thread(struct k_thread *thread)
 {
-	LOCKED(&sched_spinlock) {
+	if (z_is_thread_ready(thread)) {
+		sys_trace_thread_ready(thread);
 		_priq_run_add(&_kernel.ready_q.runq, thread);
 		z_mark_thread_as_queued(thread);
 		update_cache(0);
 #if defined(CONFIG_SMP) &&  defined(CONFIG_SCHED_IPI_SUPPORTED)
 		arch_sched_ipi();
 #endif
+	}
+}
+
+void z_ready_thread(struct k_thread *thread)
+{
+	LOCKED(&sched_spinlock) {
+		ready_thread(thread);
 	}
 }
 
@@ -383,32 +408,134 @@ void z_move_thread_to_end_of_prio_q(struct k_thread *thread)
 	}
 }
 
-void z_remove_thread_from_ready_q(struct k_thread *thread)
+void z_sched_start(struct k_thread *thread)
 {
+	k_spinlock_key_t key = k_spin_lock(&sched_spinlock);
+
+	if (z_has_thread_started(thread)) {
+		k_spin_unlock(&sched_spinlock, key);
+		return;
+	}
+
+	z_mark_thread_as_started(thread);
+	ready_thread(thread);
+	z_reschedule(&sched_spinlock, key);
+}
+
+void z_thread_single_suspend(struct k_thread *thread)
+{
+	(void)z_abort_thread_timeout(thread);
+
 	LOCKED(&sched_spinlock) {
 		if (z_is_thread_queued(thread)) {
 			_priq_run_remove(&_kernel.ready_q.runq, thread);
 			z_mark_thread_as_not_queued(thread);
 		}
+		z_mark_thread_as_suspended(thread);
 		update_cache(thread == _current);
+	}
+
+	if (thread == _current) {
+		z_reschedule_unlocked();
+	}
+}
+
+static _wait_q_t *pended_on(struct k_thread *thread)
+{
+	__ASSERT_NO_MSG(thread->base.pended_on);
+
+	return thread->base.pended_on;
+}
+
+void z_thread_single_abort(struct k_thread *thread)
+{
+	if (thread->fn_abort != NULL) {
+		thread->fn_abort();
+	}
+
+	(void)z_abort_thread_timeout(thread);
+
+	if (IS_ENABLED(CONFIG_SMP)) {
+		z_sched_abort(thread);
+	}
+
+	LOCKED(&sched_spinlock) {
+		if (z_is_thread_ready(thread)) {
+			if (z_is_thread_queued(thread)) {
+				_priq_run_remove(&_kernel.ready_q.runq,
+						 thread);
+				z_mark_thread_as_not_queued(thread);
+			}
+			update_cache(thread == _current);
+		} else {
+			if (z_is_thread_pending(thread)) {
+				_priq_wait_remove(&pended_on(thread)->waitq,
+						  thread);
+				z_mark_thread_as_not_pending(thread);
+				thread->base.pended_on = NULL;
+			}
+		}
+
+		u32_t mask = _THREAD_DEAD;
+
+		/* If the abort is happening in interrupt context,
+		 * that means that execution will never return to the
+		 * thread's stack and that the abort is known to be
+		 * complete.  Otherwise the thread still runs a bit
+		 * until it can swap, requiring a delay.
+		 */
+		if (IS_ENABLED(CONFIG_SMP) && arch_is_in_isr()) {
+			mask |= _THREAD_ABORTED_IN_ISR;
+		}
+
+		thread->base.thread_state |= mask;
+	}
+
+	sys_trace_thread_abort(thread);
+
+#ifdef CONFIG_USERSPACE
+	/* Clear initialized state so that this thread object may be re-used
+	 * and triggers errors if API calls are made on it from user threads
+	 */
+	z_object_uninit(thread->stack_obj);
+	z_object_uninit(thread);
+
+	/* Revoke permissions on thread's ID so that it may be recycled */
+	z_thread_perms_all_clear(thread);
+#endif
+}
+
+static void unready_thread(struct k_thread *thread)
+{
+	if (z_is_thread_queued(thread)) {
+		_priq_run_remove(&_kernel.ready_q.runq, thread);
+		z_mark_thread_as_not_queued(thread);
+	}
+	update_cache(thread == _current);
+}
+
+void z_remove_thread_from_ready_q(struct k_thread *thread)
+{
+	LOCKED(&sched_spinlock) {
+		unready_thread(thread);
 	}
 }
 
 static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 {
-	z_remove_thread_from_ready_q(thread);
-	z_mark_thread_as_pending(thread);
+	LOCKED(&sched_spinlock) {
+		unready_thread(thread);
+		z_mark_thread_as_pending(thread);
+		sys_trace_thread_pend(thread);
 
-	if (wait_q != NULL) {
-		thread->base.pended_on = wait_q;
-		z_priq_wait_add(&wait_q->waitq, thread);
+		if (wait_q != NULL) {
+			thread->base.pended_on = wait_q;
+			z_priq_wait_add(&wait_q->waitq, thread);
+		}
 	}
 
 	if (timeout != K_FOREVER) {
 		s32_t ticks;
-
-		__ASSERT(timeout >= 0,
-			"Only non-negative values are accepted.");
 
 		if (timeout < 0) {
 			timeout = 0;
@@ -418,21 +545,12 @@ static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 
 		z_add_thread_timeout(thread, ticks);
 	}
-
-	sys_trace_thread_pend(thread);
 }
 
 void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 {
 	__ASSERT_NO_MSG(thread == _current || is_thread_dummy(thread));
 	pend(thread, wait_q, timeout);
-}
-
-static _wait_q_t *pended_on(struct k_thread *thread)
-{
-	__ASSERT_NO_MSG(thread->base.pended_on);
-
-	return thread->base.pended_on;
 }
 
 ALWAYS_INLINE struct k_thread *z_find_first_thread_to_unpend(_wait_q_t *wait_q,
@@ -454,9 +572,8 @@ ALWAYS_INLINE void z_unpend_thread_no_timeout(struct k_thread *thread)
 	LOCKED(&sched_spinlock) {
 		_priq_wait_remove(&pended_on(thread)->waitq, thread);
 		z_mark_thread_as_not_pending(thread);
+		thread->base.pended_on = NULL;
 	}
-
-	thread->base.pended_on = NULL;
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -554,10 +671,9 @@ void z_thread_priority_set(struct k_thread *thread, int prio)
 {
 	bool need_sched = z_set_prio(thread, prio);
 
-	if (IS_ENABLED(CONFIG_SMP) &&
-	    !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
-		z_sched_ipi();
-	}
+#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
+	arch_sched_ipi();
+#endif
 
 	if (need_sched && _current->base.sched_locked == 0) {
 		z_reschedule_unlocked();
@@ -601,10 +717,10 @@ void k_sched_lock(void)
 void k_sched_unlock(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
-	__ASSERT(_current->base.sched_locked != 0, "");
-	__ASSERT(!arch_is_in_isr(), "");
-
 	LOCKED(&sched_spinlock) {
+		__ASSERT(_current->base.sched_locked != 0, "");
+		__ASSERT(!arch_is_in_isr(), "");
+
 		++_current->base.sched_locked;
 		update_cache(0);
 	}
@@ -632,7 +748,7 @@ struct k_thread *z_get_next_ready_thread(void)
 /* Just a wrapper around _current = xxx with tracing */
 static inline void set_current(struct k_thread *new_thread)
 {
-	_current = new_thread;
+	_current_cpu->current = new_thread;
 }
 
 #ifdef CONFIG_USE_SWITCH
@@ -668,14 +784,7 @@ void *z_get_next_switch_handle(void *interrupted)
 	set_current(z_get_next_ready_thread());
 #endif
 
-	/* Some architectures don't have a working IPI, so the best we
-	 * can do there is check the abort status of the current
-	 * thread here on ISR exit
-	 */
-	if (IS_ENABLED(CONFIG_SMP) &&
-	    !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
-		z_sched_ipi();
-	}
+	wait_for_switch(_current);
 	return _current->switch_handle;
 }
 #endif
@@ -1078,31 +1187,21 @@ void z_impl_k_wakeup(k_tid_t thread)
 	z_mark_thread_as_not_suspended(thread);
 	z_ready_thread(thread);
 
+#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
+	arch_sched_ipi();
+#endif
+
 	if (!arch_is_in_isr()) {
 		z_reschedule_unlocked();
-	}
-
-	if (IS_ENABLED(CONFIG_SMP) &&
-	    !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
-		z_sched_ipi();
 	}
 }
 
 #ifdef CONFIG_SMP
-/* Called out of the scheduler interprocessor interrupt.  All it does
- * is flag the current thread as dead if it needs to abort, so the ISR
- * return into something else and the other thread which called
- * k_thread_abort() can finish its work knowing the thing won't be
- * rescheduled.
- */
 void z_sched_ipi(void)
 {
-	LOCKED(&sched_spinlock) {
-		if (_current->base.thread_state & _THREAD_ABORTING) {
-			_current->base.thread_state |= _THREAD_DEAD;
-			_current_cpu->swap_ok = true;
-		}
-	}
+	/* NOTE: When adding code to this, make sure this is called
+	 * at appropriate location when !CONFIG_SCHED_IPI_SUPPORTED.
+	 */
 }
 
 void z_sched_abort(struct k_thread *thread)
@@ -1118,7 +1217,9 @@ void z_sched_abort(struct k_thread *thread)
 	 * it locally.  Not all architectures support that, alas.  If
 	 * we don't have it, we need to wait for some other interrupt.
 	 */
+	key = k_spin_lock(&sched_spinlock);
 	thread->base.thread_state |= _THREAD_ABORTING;
+	k_spin_unlock(&sched_spinlock, key);
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 	arch_sched_ipi();
 #endif
@@ -1142,6 +1243,16 @@ void z_sched_abort(struct k_thread *thread)
 			k_busy_wait(100);
 		}
 	}
+
+	/* If the thread self-aborted (e.g. its own exit raced with
+	 * this external abort) then even though it is flagged DEAD,
+	 * it's still running until its next swap and thus the thread
+	 * object is still in use.  We have to resort to a fallback
+	 * delay in that circumstance.
+	 */
+	if ((thread->base.thread_state & _THREAD_ABORTED_IN_ISR) == 0U) {
+		k_busy_wait(THREAD_ABORT_DELAY_US);
+	}
 }
 #endif
 
@@ -1156,7 +1267,20 @@ static inline void z_vrfy_k_wakeup(k_tid_t thread)
 
 k_tid_t z_impl_k_current_get(void)
 {
-	return _current;
+#ifdef CONFIG_SMP
+	/* In SMP, _current is a field read from _current_cpu, which
+	 * can race with preemption before it is read.  We must lock
+	 * local interrupts when reading it.
+	 */
+	unsigned int k = arch_irq_lock();
+#endif
+
+	k_tid_t ret = _current_cpu->current;
+
+#ifdef CONFIG_SMP
+	arch_irq_unlock(k);
+#endif
+	return ret;
 }
 
 #ifdef CONFIG_USERSPACE

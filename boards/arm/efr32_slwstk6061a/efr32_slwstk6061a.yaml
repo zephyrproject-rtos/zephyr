@@ -11,6 +11,8 @@ toolchain:
 supported:
   - gpio
   - nvs
+  - spi
+  - watchdog
 testing:
   ignore_tags:
     - net

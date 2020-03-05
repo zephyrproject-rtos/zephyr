@@ -686,7 +686,7 @@ static int uart_sam0_callback_set(struct device *dev, uart_callback_t callback,
 }
 
 static int uart_sam0_tx(struct device *dev, const u8_t *buf, size_t len,
-			u32_t timeout)
+			s32_t timeout)
 {
 	struct uart_sam0_dev_data *const dev_data = DEV_DATA(dev);
 	const struct uart_sam0_dev_cfg *const cfg = DEV_CFG(dev);
@@ -744,7 +744,7 @@ static int uart_sam0_tx_abort(struct device *dev)
 }
 
 static int uart_sam0_rx_enable(struct device *dev, u8_t *buf, size_t len,
-			       u32_t timeout)
+			       s32_t timeout)
 {
 	struct uart_sam0_dev_data *const dev_data = DEV_DATA(dev);
 	const struct uart_sam0_dev_cfg *const cfg = DEV_CFG(dev);

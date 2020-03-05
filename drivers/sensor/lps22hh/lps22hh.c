@@ -8,7 +8,7 @@
  * https://www.st.com/resource/en/datasheet/lps22hh.pdf
  */
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
@@ -203,6 +203,7 @@ static const struct lps22hh_config lps22hh_config = {
 #ifdef CONFIG_LPS22HH_TRIGGER
 	.drdy_port	= DT_INST_0_ST_LPS22HH_DRDY_GPIOS_CONTROLLER,
 	.drdy_pin	= DT_INST_0_ST_LPS22HH_DRDY_GPIOS_PIN,
+	.drdy_flags	= DT_INST_0_ST_LPS22HH_DRDY_GPIOS_FLAGS,
 #endif
 #if defined(DT_ST_LPS22HH_BUS_SPI)
 	.bus_init = lps22hh_spi_init,

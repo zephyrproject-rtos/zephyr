@@ -1,0 +1,8 @@
+# Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_CORTEX_A53
+	bool "Cortex-A53 Emulation (QEMU)"
+	depends on SOC_QEMU_CORTEX_A53
+	select ARM64
+	select QEMU_TARGET

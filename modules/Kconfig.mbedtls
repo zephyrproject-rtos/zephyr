@@ -38,9 +38,7 @@ config MBEDTLS_CFG_FILE
 	  special TLS usage, use available Kconfig options, or select an
 	  alternative config.
 
-if MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
 rsource "Kconfig.tls-generic"
-endif
 
 config MBEDTLS_SSL_MAX_CONTENT_LEN
 	int "Max payload size for TLS protocol message"

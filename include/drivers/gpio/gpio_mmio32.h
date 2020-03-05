@@ -12,13 +12,16 @@
 #include <zephyr/types.h>
 
 struct gpio_mmio32_config {
+	/* gpio_driver_config needs to be first */
+	struct gpio_driver_config common;
 	volatile u32_t *reg;
 	u32_t mask;
 };
 
 struct gpio_mmio32_context {
+	/* gpio_driver_data needs to be first */
+	struct gpio_driver_data common;
 	const struct gpio_mmio32_config *config;
-	u32_t invert; /* Mask of 'reg' bits that should be inverted */
 };
 
 int gpio_mmio32_init(struct device *dev);
@@ -43,7 +46,10 @@ int gpio_mmio32_init(struct device *dev);
 static struct gpio_mmio32_context _dev_name##_dev_data;			\
 									\
 static const struct gpio_mmio32_config _dev_name##_dev_cfg = {		\
-	.reg	= (volatile u32_t *)_address,			\
+	.common = {							\
+		 .port_pin_mask = _mask,				\
+	},								\
+	.reg	= (volatile u32_t *)_address,				\
 	.mask	= _mask,						\
 };									\
 									\

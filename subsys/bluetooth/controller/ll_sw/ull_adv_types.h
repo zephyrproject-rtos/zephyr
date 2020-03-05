@@ -25,7 +25,6 @@ struct ll_adv_set {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	u8_t  own_addr_type:2;
 	u8_t  id_addr_type:1;
-	u8_t  rl_idx;
 	u8_t  id_addr[BDADDR_SIZE];
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 };

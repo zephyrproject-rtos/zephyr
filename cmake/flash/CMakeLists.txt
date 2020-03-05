@@ -1,22 +1,112 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# Save runner state in a YAML file, and put that YAML file's location
+# in the cache.
+function(create_runners_yaml)
+  set(runners ${ARGV})
+
+  set(runners_yaml "${PROJECT_BINARY_DIR}/runners.yaml")
+
+  set(yaml_contents "# Available runners configured by board.cmake.
+runners:
+")
+  foreach(runner ${runners})
+    string(APPEND yaml_contents "\
+- ${runner}
+")
+  endforeach()
+
+  if(DEFINED BOARD_FLASH_RUNNER)
+    string(APPEND yaml_contents "\
+
+# Default flash runner if --runner is not given.
+flash-runner: ${BOARD_FLASH_RUNNER}
+")
+  endif()
+  if(DEFINED BOARD_DEBUG_RUNNER)
+    string(APPEND yaml_contents "\
+
+# Default debug runner if --runner is not given.
+debug-runner: ${BOARD_DEBUG_RUNNER}
+")
+  endif()
+
+  string(APPEND yaml_contents "\
+
+# Default command line arguments. The ones in \"common\" are always given.
+# The other sub-keys give runner-specific arguments.
+args:
+  common:
+")
+
+  # Get default settings for common arguments.
+  #
+  # TODO: clean up the host tools arguments. These are really runner
+  # specific; they only continue to exist here out of inertia.
+  string(APPEND yaml_contents "\
+  - --board-dir=${BOARD_DIR}
+  - --elf-file=${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}
+  - --hex-file=${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}
+  - --bin-file=${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}
+")
+  if (DEFINED CMAKE_GDB)
+    string(APPEND yaml_contents "\
+  - --gdb=${CMAKE_GDB}
+")
+  endif()
+  if (DEFINED OPENOCD)
+    string(APPEND yaml_contents "\
+  - --openocd=${OPENOCD}
+")
+  endif()
+  if(DEFINED OPENOCD_DEFAULT_PATH)
+    string(APPEND yaml_contents "\
+  - --openocd-search=${OPENOCD_DEFAULT_PATH}
+")
+  endif()
+
+  # Get runner-specific arguments set in the board files.
+  foreach(runner ${runners})
+    string(MAKE_C_IDENTIFIER ${runner} runner_id)
+    string(APPEND yaml_contents "\
+  ${runner}:")
+    get_property(args GLOBAL PROPERTY "BOARD_RUNNER_ARGS_${runner_id}")
+    if(args)
+      # Usually, the runner has arguments. Append them to runners.yaml,
+      # one per line.
+      string(APPEND yaml_contents "\n")
+      foreach(arg ${args})
+        string(APPEND yaml_contents "\
+    - ${arg}
+")
+      endforeach()
+    else()
+      # If the runner doesn't need any arguments, just use an empty list.
+      string(APPEND yaml_contents " []\n")
+    endif()
+  endforeach()
+
+  # Write the final contents and set its location in the cache.
+  file(WRITE "${runners_yaml}" "${yaml_contents}")
+  set(ZEPHYR_RUNNERS_YAML "${runners_yaml}" CACHE INTERNAL
+    "a configuration file for the runners Python package")
+endfunction()
+
 get_property(RUNNERS GLOBAL PROPERTY ZEPHYR_RUNNERS)
 
-# Enable verbose output, if requested.
-if(CMAKE_VERBOSE_MAKEFILE)
-  set(RUNNER_VERBOSE "--verbose")
-else()
-  set(RUNNER_VERBOSE)
-endif()
-
-# Persist the runner-related state in the cache.  Everything except
-# the list of available runners is configurable, but the set of
-# pre-configured runners is internal, since they must be configured through
-# the board files.
+# Persist the runner-related state.
+#
+# Available runners and their arguments are configured in board.cmake
+# files.
 #
 # Everything is marked with FORCE so that re-running CMake updates the
 # configuration if the board files change.
+#
+# TODO: drop the hack in sign.py that uses cached_runner_config to
+# guess the .bin and .hex files, then delete the cache variables.
 if(RUNNERS)
+  create_runners_yaml(${RUNNERS})
+
   set(ZEPHYR_RUNNERS ${RUNNERS} CACHE INTERNAL "Available runners")
 
   # Runner configuration. This is provided to all runners, and is
@@ -100,6 +190,13 @@ foreach(target flash debug debugserver attach)
 
   list(APPEND FLASH_DEPS ${logical_target_for_zephyr_elf})
 
+  # Enable verbose output, if requested.
+  if(CMAKE_VERBOSE_MAKEFILE)
+    set(RUNNER_VERBOSE "--verbose")
+  else()
+    set(RUNNER_VERBOSE)
+  endif()
+
   # We pass --skip-rebuild here because the DEPENDS value ensures the
   # build is already up to date before west is run.
   if(WEST)
@@ -123,8 +220,7 @@ foreach(target flash debug debugserver attach)
   else()
     add_custom_target(${target}
       COMMAND ${CMAKE_COMMAND} -E echo \"West was not found in path. To support
-          '${CMAKE_MAKE_PROGRAM} ${target}', please install west bootstrapper with:
-          'pip install west --user', and thereafter 'west init'.\"
+          '${CMAKE_MAKE_PROGRAM} ${target}', please create a west workspace.\"
       USES_TERMINAL
       )
   endif(WEST)

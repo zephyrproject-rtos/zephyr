@@ -1,0 +1,15 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys Designware USB Controller node
+
+compatible: "snps,designware-usb"
+
+include: usb-ep.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true

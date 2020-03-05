@@ -8,26 +8,17 @@ if BOARD_STM32F769I_DISCO
 config BOARD
 	default "stm32f769i_disco"
 
-if UART_CONSOLE
-
 config UART_1
 	default y
-
-endif # UART_CONSOLE
-
-if SERIAL
+	depends on UART_CONSOLE
 
 config UART_6
 	default y
-
-endif # SERIAL
-
-if I2C
+	depends on SERIAL
 
 config I2C_1
 	default y
-
-endif # I2C
+	depends on I2C
 
 if SPI
 

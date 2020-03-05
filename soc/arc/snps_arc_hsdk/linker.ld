@@ -8,7 +8,7 @@
  * @brief Linker script for the HS Development Kit
  */
 
-#include <generated_dts_board.h>
+#include <devicetree.h>
 #include <autoconf.h>
 
 /*

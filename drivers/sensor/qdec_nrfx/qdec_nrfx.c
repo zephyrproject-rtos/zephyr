@@ -185,7 +185,7 @@ static int qdec_nrfx_init(struct device *dev)
 #endif
 		.ledpre             = DT_NORDIC_NRF_QDEC_QDEC_0_LED_PRE,
 		.ledpol             = NRF_QDEC_LEPOL_ACTIVE_HIGH,
-		.interrupt_priority = NRFX_QDEC_CONFIG_IRQ_PRIORITY,
+		.interrupt_priority = NRFX_QDEC_DEFAULT_CONFIG_IRQ_PRIORITY,
 		.dbfen              = 0, /* disabled */
 		.sample_inten       = 0, /* disabled */
 	};

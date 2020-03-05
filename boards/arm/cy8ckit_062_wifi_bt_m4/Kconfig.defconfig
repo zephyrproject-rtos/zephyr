@@ -8,15 +8,8 @@ if BOARD_CY8CKIT_062_WIFI_BT_M4
 config BOARD
 	default "cy8ckit_062_wifi_bt_m4"
 
-if GPIO
-
-endif # GPIO
-
-if UART_PSOC6
-
 config UART_PSOC6_UART_5
 	default y
-
-endif # UART_PSOC6
+	depends on UART_PSOC6
 
 endif # BOARD_CY8CKIT_062_WIFI_BT_M4

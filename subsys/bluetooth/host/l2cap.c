@@ -16,7 +16,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
-#include <bluetooth/hci_driver.h>
+#include <drivers/bluetooth/hci_driver.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_L2CAP)
 #define LOG_MODULE_NAME bt_l2cap
@@ -257,7 +257,6 @@ destroy:
 		chan->destroy(chan);
 	}
 
-	atomic_clear(chan->status);
 }
 
 static void l2cap_rtx_timeout(struct k_work *work)
@@ -315,6 +314,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	}
 
 	k_delayed_work_init(&chan->rtx_work, l2cap_rtx_timeout);
+	atomic_clear(chan->status);
 
 	bt_l2cap_chan_add(conn, chan, destroy);
 
@@ -354,7 +354,7 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		ch->rx.cid = fchan->cid;
 		ch->tx.cid = fchan->cid;
 
-		if (!l2cap_chan_add(conn, chan, NULL)) {
+		if (!l2cap_chan_add(conn, chan, fchan->destroy)) {
 			return;
 		}
 
@@ -1919,7 +1919,7 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
-BT_L2CAP_CHANNEL_DEFINE(le_fixed_chan, BT_L2CAP_CID_LE_SIG, l2cap_accept);
+BT_L2CAP_CHANNEL_DEFINE(le_fixed_chan, BT_L2CAP_CID_LE_SIG, l2cap_accept, NULL);
 
 void bt_l2cap_init(void)
 {
@@ -2038,8 +2038,11 @@ int bt_l2cap_chan_send(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return bt_l2cap_br_chan_send(chan, buf);
 	}
 
-	/* Queue if there pending segments left from previous packets */
-	if (ch->tx_buf || !k_fifo_is_empty(&ch->tx_queue)) {
+	/* Queue if there are pending segments left from previous packet or
+	 * there are no credits available.
+	 */
+	if (ch->tx_buf || !k_fifo_is_empty(&ch->tx_queue) ||
+	    !atomic_get(&ch->tx.credits)) {
 		data_sent(buf)->len = 0;
 		net_buf_put(&ch->tx_queue, buf);
 		k_work_submit(&ch->tx_work);

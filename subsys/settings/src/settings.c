@@ -38,16 +38,15 @@ void settings_init(void)
 #if defined(CONFIG_SETTINGS_DYNAMIC_HANDLERS)
 int settings_register(struct settings_handler *handler)
 {
-	int rc;
-
-	k_mutex_lock(&settings_lock, K_FOREVER);
+	int rc = 0;
 
 	Z_STRUCT_SECTION_FOREACH(settings_handler_static, ch) {
 		if (strcmp(handler->name, ch->name) == 0) {
-			rc = -EEXIST;
-			goto end;
+			return -EEXIST;
 		}
 	}
+
+	k_mutex_lock(&settings_lock, K_FOREVER);
 
 	struct settings_handler *ch;
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
@@ -57,7 +56,7 @@ int settings_register(struct settings_handler *handler)
 		}
 	}
 	sys_slist_append(&settings_handlers, &handler->node);
-	rc = 0;
+
 end:
 	k_mutex_unlock(&settings_lock);
 	return rc;

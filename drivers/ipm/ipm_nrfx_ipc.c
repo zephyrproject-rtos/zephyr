@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include <ipm.h>
+#include <drivers/ipm.h>
 #include <nrfx_ipc.h>
 #include "ipm_nrfx_ipc.h"
 

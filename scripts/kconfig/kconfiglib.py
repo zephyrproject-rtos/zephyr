@@ -554,7 +554,7 @@ from glob import iglob
 from os.path import dirname, exists, expandvars, islink, join, realpath
 
 
-VERSION = (13, 5, 0)
+VERSION = (14, 1, 0)
 
 
 # File layout:
@@ -947,7 +947,7 @@ class Kconfig(object):
             self._init(filename, warn, warn_to_stderr, encoding)
         except (EnvironmentError, KconfigError) as e:
             if suppress_traceback:
-                cmd = sys.argv[0]  # Empty string if missisng
+                cmd = sys.argv[0]  # Empty string if missing
                 if cmd:
                     cmd += ": "
                 # Some long exception messages have extra newlines for better
@@ -1080,8 +1080,9 @@ class Kconfig(object):
         self._readline = self._open(join(self.srctree, filename), "r").readline
 
         try:
-            # Parse the Kconfig files
-            self._parse_block(None, self.top_node, self.top_node)
+            # Parse the Kconfig files. Returns the last node, which we
+            # terminate with '.next = None'.
+            self._parse_block(None, self.top_node, self.top_node).next = None
             self.top_node.list = self.top_node.next
             self.top_node.next = None
         except UnicodeDecodeError as e:
@@ -1443,12 +1444,18 @@ class Kconfig(object):
           KCONFIG_AUTOHEADER_HEADER had when the Kconfig instance was created
           will be used if it was set, and no header otherwise. See the
           Kconfig.header_header attribute.
+
+        Returns a string with a message saying that the header got saved, or
+        that there were no changes to it. This is meant to reduce boilerplate
+        in tools, which can do e.g. print(kconf.write_autoconf()).
         """
         if filename is None:
             filename = os.getenv("KCONFIG_AUTOHEADER",
                                  "include/generated/autoconf.h")
 
-        self._write_if_changed(filename, self._autoconf_contents(header))
+        if self._write_if_changed(filename, self._autoconf_contents(header)):
+            return "Kconfig header saved to '{}'".format(filename)
+        return "No change to Kconfig header in '{}'".format(filename)
 
     def _autoconf_contents(self, header):
         # write_autoconf() helper. Returns the contents to write as a string,
@@ -1563,7 +1570,7 @@ class Kconfig(object):
 
         contents = self._config_contents(header)
         if self._contents_eq(filename, contents):
-            return "No change to '{}'".format(filename)
+            return "No change to configuration in '{}'".format(filename)
 
         if save_old:
             _save_old(filename)
@@ -1676,18 +1683,14 @@ class Kconfig(object):
           be used if it was set, and no header otherwise. See the
           Kconfig.config_header attribute.
 
-        Returns a string with a message saying which file got saved. This is
-        meant to reduce boilerplate in tools, which can do e.g.
+        Returns a string with a message saying the minimal configuration got
+        saved, or that there were no changes to it. This is meant to reduce
+        boilerplate in tools, which can do e.g.
         print(kconf.write_min_config()).
         """
-        contents = self._min_config_contents(header)
-        if self._contents_eq(filename, contents):
-            return "No change to '{}'".format(filename)
-
-        with self._open(filename, "w") as f:
-            f.write(contents)
-
-        return "Minimal configuration saved to '{}'".format(filename)
+        if self._write_if_changed(filename, self._min_config_contents(header)):
+            return "Minimal configuration saved to '{}'".format(filename)
+        return "No change to minimal configuration in '{}'".format(filename)
 
     def _min_config_contents(self, header):
         # write_min_config() helper. Returns the contents to write as a string,
@@ -2263,10 +2266,15 @@ class Kconfig(object):
         # differs, but it breaks stuff like write_config("/dev/null"), which is
         # used out there to force evaluation-related warnings to be generated.
         # This simple version is pretty failsafe and portable.
+        #
+        # Returns True if the file has changed and is updated, and False
+        # otherwise.
 
-        if not self._contents_eq(filename, contents):
-            with self._open(filename, "w") as f:
-                f.write(contents)
+        if self._contents_eq(filename, contents):
+            return False
+        with self._open(filename, "w") as f:
+            f.write(contents)
+        return True
 
     def _contents_eq(self, filename, contents):
         # Returns True if the contents of 'filename' is 'contents' (a string),
@@ -2894,7 +2902,7 @@ class Kconfig(object):
         #
         # prev:
         #   The previous menu node. New nodes will be added after this one (by
-        #   modifying their 'next' pointer).
+        #   modifying 'next' pointers).
         #
         #   'prev' is reused to parse a list of child menu nodes (for a menu or
         #   Choice): After parsing the children, the 'next' pointer is assigned
@@ -3086,17 +3094,16 @@ class Kconfig(object):
                     "no corresponding 'menu'"   if t0 is _T_ENDMENU else
                     "unrecognized construct")
 
-        # End of file reached. Terminate the final node and return it.
+        # End of file reached. Return the last node.
 
         if end_token:
             raise KconfigError(
-                "expected '{}' at end of '{}'"
+                "error: expected '{}' at end of '{}'"
                 .format("endchoice" if end_token is _T_ENDCHOICE else
                         "endif"     if end_token is _T_ENDIF else
                         "endmenu",
                         self.filename))
 
-        prev.next = None
         return prev
 
     def _parse_cond(self):
@@ -6772,8 +6779,7 @@ def _error_if_fn(kconf, _, cond, msg):
 
 
 def _shell_fn(kconf, _, command):
-    # Only import as needed, to save some startup time
-    import subprocess
+    import subprocess  # Only import as needed, to save some startup time
 
     stdout, stderr = subprocess.Popen(
         command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE

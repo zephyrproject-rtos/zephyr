@@ -18,7 +18,7 @@ config SSD1306_DEFAULT_CONTRAST
 	help
 	  SSD16XX default contrast.
 
-choice
+choice SSD1306_CONTROLLER_TYPE
 	prompt "Display controller type"
 	default SSD1306_DEFAULT
 	help

@@ -23,10 +23,16 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <device.h>
+#include <dt-bindings/pwm/pwm.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Provides a type to hold PWM configuration flags.
+ */
+typedef u8_t pwm_flags_t;
 
 /**
  * @typedef pwm_pin_set_t
@@ -34,7 +40,8 @@ extern "C" {
  * See @a pwm_pin_set_cycles() for argument description
  */
 typedef int (*pwm_pin_set_t)(struct device *dev, u32_t pwm,
-			     u32_t period_cycles, u32_t pulse_cycles);
+			     u32_t period_cycles, u32_t pulse_cycles,
+			     pwm_flags_t flags);
 
 /**
  * @typedef pwm_get_cycles_per_sec_t
@@ -57,20 +64,22 @@ struct pwm_driver_api {
  * @param pwm PWM pin.
  * @param period Period (in clock cycle) set to the PWM. HW specific.
  * @param pulse Pulse width (in clock cycle) set to the PWM. HW specific.
+ * @param flags Flags for pin configuration (polarity).
  *
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
 __syscall int pwm_pin_set_cycles(struct device *dev, u32_t pwm,
-				 u32_t period, u32_t pulse);
+				 u32_t period, u32_t pulse, pwm_flags_t flags);
 
 static inline int z_impl_pwm_pin_set_cycles(struct device *dev, u32_t pwm,
-					   u32_t period, u32_t pulse)
+					    u32_t period, u32_t pulse,
+					    pwm_flags_t flags)
 {
 	struct pwm_driver_api *api;
 
 	api = (struct pwm_driver_api *)dev->driver_api;
-	return api->pin_set(dev, pwm, period, pulse);
+	return api->pin_set(dev, pwm, period, pulse, flags);
 }
 
 /**
@@ -104,12 +113,14 @@ static inline int z_impl_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
  * @param pwm PWM pin.
  * @param period Period (in microseconds) set to the PWM.
  * @param pulse Pulse width (in microseconds) set to the PWM.
+ * @param flags Flags for pin configuration (polarity).
  *
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
 static inline int pwm_pin_set_usec(struct device *dev, u32_t pwm,
-				   u32_t period, u32_t pulse)
+				   u32_t period, u32_t pulse,
+				   pwm_flags_t flags)
 {
 	u64_t period_cycles, pulse_cycles, cycles_per_sec;
 
@@ -128,7 +139,7 @@ static inline int pwm_pin_set_usec(struct device *dev, u32_t pwm,
 	}
 
 	return pwm_pin_set_cycles(dev, pwm, (u32_t)period_cycles,
-				  (u32_t)pulse_cycles);
+				  (u32_t)pulse_cycles, flags);
 }
 
 /**
@@ -138,12 +149,14 @@ static inline int pwm_pin_set_usec(struct device *dev, u32_t pwm,
  * @param pwm PWM pin.
  * @param period Period (in nanoseconds) set to the PWM.
  * @param pulse Pulse width (in nanoseconds) set to the PWM.
+ * @param flags Flags for pin configuration (polarity).
  *
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
 static inline int pwm_pin_set_nsec(struct device *dev, u32_t pwm,
-				   u32_t period, u32_t pulse)
+				   u32_t period, u32_t pulse,
+				   pwm_flags_t flags)
 {
 	u64_t period_cycles, pulse_cycles, cycles_per_sec;
 
@@ -162,7 +175,7 @@ static inline int pwm_pin_set_nsec(struct device *dev, u32_t pwm,
 	}
 
 	return pwm_pin_set_cycles(dev, pwm, (u32_t)period_cycles,
-				  (u32_t)pulse_cycles);
+				  (u32_t)pulse_cycles, flags);
 }
 
 #ifdef __cplusplus

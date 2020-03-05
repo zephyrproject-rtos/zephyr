@@ -59,8 +59,11 @@
 /* Thread is being aborted (SMP only) */
 #define _THREAD_ABORTING (BIT(5))
 
+/* Thread was aborted in interrupt context (SMP only) */
+#define _THREAD_ABORTED_IN_ISR (BIT(6))
+
 /* Thread is present in the ready queue */
-#define _THREAD_QUEUED (BIT(6))
+#define _THREAD_QUEUED (BIT(7))
 
 /* end - states */
 
@@ -106,11 +109,6 @@ struct _cpu {
 
 	/* one assigned idle thread per CPU */
 	struct k_thread *idle_thread;
-
-#ifdef CONFIG_USERSPACE
-	/* current syscall frame pointer */
-	void *syscall_frame;
-#endif
 
 #if (CONFIG_NUM_METAIRQ_PRIORITIES > 0) && (CONFIG_NUM_COOP_PRIORITIES > 0)
 	/* Coop thread preempted by current metairq, or NULL */
@@ -192,8 +190,16 @@ typedef struct z_kernel _kernel_t;
 extern struct z_kernel _kernel;
 
 #ifdef CONFIG_SMP
-#define _current_cpu (arch_curr_cpu())
-#define _current (arch_curr_cpu()->current)
+
+/* True if the current context can be preempted and migrated to
+ * another SMP CPU.
+ */
+bool z_smp_cpu_mobile(void);
+
+#define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
+			arch_curr_cpu(); })
+#define _current k_current_get()
+
 #else
 #define _current_cpu (&_kernel.cpus[0])
 #define _current _kernel.current

@@ -140,8 +140,7 @@ int adxl362_init_interrupt(struct device *dev)
 	}
 
 	gpio_pin_configure(drv_data->gpio, cfg->int_gpio,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+			   GPIO_INPUT | cfg->int_flags);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   adxl362_gpio_callback,
@@ -165,7 +164,8 @@ int adxl362_init_interrupt(struct device *dev)
 	drv_data->dev = dev;
 #endif
 
-	gpio_pin_enable_callback(drv_data->gpio, cfg->int_gpio);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_gpio,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }

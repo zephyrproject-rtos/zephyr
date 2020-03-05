@@ -14,11 +14,10 @@ menuconfig LORA_SX1276
 	help
 	  Enable LoRa driver for Semtech SX1276.
 
-if LORA_SX1276
-
 choice
 	prompt "SX1276 PA Output pin"
 	default PA_BOOST_PIN
+	depends on LORA_SX1276
 	help
 	  Antenna connection type.
 
@@ -33,5 +32,3 @@ config PA_BOOST_PIN
 	  Antenna connected to PA_BOOST pin.
 
 endchoice
-
-endif # LORA_SX1276

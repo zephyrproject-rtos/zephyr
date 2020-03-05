@@ -13,17 +13,13 @@
 extern "C" {
 #endif
 
-typedef void (*dw_ictl_config_irq_t)(struct device *port);
+typedef void (*dw_ictl_config_irq_t)(struct device *dev);
 
 struct dw_ictl_config {
-	u32_t irq_num;
+	u32_t base_addr;
 	u32_t numirqs;
 	u32_t isr_table_offset;
 	dw_ictl_config_irq_t config_func;
-};
-
-struct dw_ictl_runtime {
-	u32_t base_addr;
 };
 
 struct dw_ictl_registers {

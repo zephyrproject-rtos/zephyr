@@ -27,6 +27,9 @@ include($ENV{ZEPHYR_BASE}/samples/net/common/common.cmake)
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 
 foreach(inc_file
+	ca.der
+	server.der
+	server_privkey.der
 	echo-apps-cert.der
 	echo-apps-key.der
     )

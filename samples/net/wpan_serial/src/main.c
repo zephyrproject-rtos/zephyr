@@ -15,7 +15,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(wpan_serial, CONFIG_USB_DEVICE_LOG_LEVEL);
 
-#include <uart.h>
+#include <drivers/uart.h>
 #include <zephyr.h>
 
 #include <net/buf.h>
@@ -447,7 +447,7 @@ static bool init_ieee802154(void)
 
 	ieee802154_dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
 	if (!ieee802154_dev) {
-		LOG_ERR("Cannot get CC250 device");
+		LOG_ERR("Cannot get ieee 802.15.4 device");
 		return false;
 	}
 

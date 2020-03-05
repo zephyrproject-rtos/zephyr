@@ -574,6 +574,10 @@ static void isr_cleanup(void *param)
 	int err;
 
 	radio_isr_set(isr_race, param);
+	if (!radio_is_idle()) {
+		radio_disable();
+	}
+
 	radio_tmr_stop();
 
 	err = lll_clk_off();

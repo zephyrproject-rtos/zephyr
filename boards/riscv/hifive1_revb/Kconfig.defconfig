@@ -18,19 +18,16 @@ config FLASH_LOAD_OFFSET
 config SYS_CLOCK_TICKS_PER_SEC
 	default 128
 
-if PWM
 config PWM_SIFIVE
 	default y
-endif
+	depends on PWM
 
-if SPI
 config SPI_SIFIVE
 	default y
-endif
+	depends on SPI
 
-if I2C
 config I2C_SIFIVE
 	default y
-endif
+	depends on I2C
 
 endif

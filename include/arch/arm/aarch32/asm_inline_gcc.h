@@ -22,6 +22,10 @@
 #include <arch/arm/aarch32/exc.h>
 #include <irq.h>
 
+#if defined(CONFIG_CPU_CORTEX_R)
+#include <arch/arm/cortex_r/cpu.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -58,8 +62,10 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 		: "i"(_EXC_IRQ_DEFAULT_PRIO)
 		: "memory");
 #elif defined(CONFIG_ARMV7_R)
-	__asm__ volatile("mrs %0, cpsr;"
-		"cpsid i"
+	__asm__ volatile(
+		"mrs %0, cpsr;"
+		"and %0, #" TOSTR(I_BIT) ";"
+		"cpsid i;"
 		: "=r" (key)
 		:
 		: "memory", "cc");
@@ -91,10 +97,12 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 		"isb;"
 		:  : "r"(key) : "memory");
 #elif defined(CONFIG_ARMV7_R)
-	__asm__ volatile("msr cpsr_c, %0"
-			:
-			: "r" (key)
-			: "memory", "cc");
+	if (key) {
+		return;
+	}
+	__asm__ volatile(
+		"cpsie i;"
+		: : : "memory", "cc");
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */

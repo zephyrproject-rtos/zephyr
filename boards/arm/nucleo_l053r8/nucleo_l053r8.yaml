@@ -13,5 +13,6 @@ supported:
   - gpio
   - i2c
   - spi
+  - eeprom
 ram: 8
 flash: 64

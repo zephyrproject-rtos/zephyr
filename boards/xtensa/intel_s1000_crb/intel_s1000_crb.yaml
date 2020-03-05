@@ -4,3 +4,9 @@ type: mcu
 arch: xtensa
 toolchain:
   - xcc
+  - xtools
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

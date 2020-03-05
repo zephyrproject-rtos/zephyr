@@ -9,12 +9,9 @@ config BOARD
 	default "lpcxpresso54114_m4" if BOARD_LPCXPRESSO54114_M4
 	default "lpcxpresso54114_m0" if BOARD_LPCXPRESSO54114_M0
 
-if UART_MCUX_FLEXCOMM
-
 config UART_MCUX_FLEXCOMM_0
 	default y if UART_CONSOLE
-
-endif # UART_MCUX_FLEXCOMM
+	depends on UART_MCUX_FLEXCOMM
 
 if PINMUX_MCUX_LPC
 
@@ -36,11 +33,8 @@ config GPIO_MCUX_LPC_PORT1
 
 endif # GPIO_MCUX_LPC
 
-if SPI
-
 config SPI_5
 	default y
-
-endif # SPI
+	depends on SPI
 
 endif # BOARD_LPCXPRESSO54114_M4 || BOARD_LPCXPRESSO54114_M0

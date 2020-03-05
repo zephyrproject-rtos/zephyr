@@ -15,6 +15,7 @@ config SOC_LPC55S69_CPU0
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select ARM_SECURE_FIRMWARE
+	select HAS_MCUX_IAP
 
 config SOC_LPC55S69_CPU1
 	bool "SOC_LPC55S69 M33 [CPU 1]"

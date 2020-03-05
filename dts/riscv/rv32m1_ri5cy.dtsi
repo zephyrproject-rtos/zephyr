@@ -195,3 +195,23 @@
 	interrupt-parent = <&intmux0_ch1>;
 	interrupts = <29>;
 };
+
+&pwm0 {
+	interrupt-parent = <&event0>;
+	interrupts = <19>;
+};
+
+&pwm1 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <9>;
+};
+
+&pwm2 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <10>;
+};
+
+&pwm3 {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <23>;
+};

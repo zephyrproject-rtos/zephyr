@@ -228,6 +228,18 @@ static struct clock_control_async_data *list_get(sys_slist_t *list)
 	return async_data;
 }
 
+static inline void anomaly_132_workaround(void)
+{
+#if (CONFIG_NRF52_ANOMALY_132_DELAY_US - 0)
+	static bool once;
+
+	if (!once) {
+		k_busy_wait(CONFIG_NRF52_ANOMALY_132_DELAY_US);
+		once = true;
+	}
+#endif
+}
+
 static int clock_async_start(struct device *dev,
 			     clock_control_subsys_t subsys,
 			     struct clock_control_async_data *data)
@@ -269,7 +281,7 @@ static int clock_async_start(struct device *dev,
 		clock_irqs_enable();
 
 		if (already_started) {
-			data->cb(dev, data->user_data);
+			data->cb(dev, subsys, data->user_data);
 		}
 	}
 
@@ -280,6 +292,12 @@ static int clock_async_start(struct device *dev,
 				config->start_handler(dev) : true;
 		if (do_start) {
 			DBG(dev, subsys, "Triggering start task");
+
+			if (IS_ENABLED(CONFIG_NRF52_ANOMALY_132_WORKAROUND) &&
+			    (subsys == CLOCK_CONTROL_NRF_SUBSYS_LF)) {
+				anomaly_132_workaround();
+			}
+
 			nrf_clock_task_trigger(NRF_CLOCK,
 					       config->start_tsk);
 		} else {
@@ -385,7 +403,8 @@ static void clkstarted_handle(struct device *dev,
 	sub_data->started = true;
 
 	while ((async_data = list_get(&sub_data->list)) != NULL) {
-		async_data->cb(dev, async_data->user_data);
+		async_data->cb(dev, (clock_control_subsys_t)type,
+				async_data->user_data);
 	}
 }
 

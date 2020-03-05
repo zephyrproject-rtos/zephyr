@@ -8,6 +8,8 @@
 #include <init.h>
 #include <logging/log.h>
 
+#include <soc.h>
+
 LOG_MODULE_REGISTER(nrf5340_dk_nrf5340_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)

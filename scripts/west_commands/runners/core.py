@@ -358,8 +358,7 @@ class ZephyrBinaryRunner(abc.ABC):
 
         When choosing a name, pick something short and lowercase,
         based on the name of the tool (like openocd, jlink, etc.) or
-        the target architecture/board (like xtensa, em-starterkit,
-        etc.).'''
+        the target architecture/board (like xtensa etc.).'''
 
     @classmethod
     def capabilities(cls):

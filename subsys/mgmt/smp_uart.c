@@ -12,7 +12,7 @@
 #include <zephyr.h>
 #include <init.h>
 #include "net/buf.h"
-#include "console/uart_mcumgr.h"
+#include <drivers/console/uart_mcumgr.h>
 #include "mgmt/mgmt.h"
 #include <mgmt/serial.h>
 #include "mgmt/buf.h"

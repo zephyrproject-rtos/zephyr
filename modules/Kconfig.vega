@@ -20,6 +20,11 @@ config HAS_RV32M1_LPSPI
 	help
 	  Set if the low power spi (LPSPI) module is present in the SoC.
 
+config HAS_RV32M1_TPM
+	bool
+	help
+	  Set if the Timer/PWM (TPM) module is present in the SoC.
+
 config HAS_RV32M1_FTFX
 	bool
 	help

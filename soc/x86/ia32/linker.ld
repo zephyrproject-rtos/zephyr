@@ -15,7 +15,7 @@
  */
 
 #include <autoconf.h>
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 /* physical address where the kernel is loaded */
 /* physical address of RAM */

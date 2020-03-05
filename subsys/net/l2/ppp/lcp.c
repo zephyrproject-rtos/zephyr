@@ -114,27 +114,12 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 			count_nack++;
 			goto ignore_option;
 
-		case LCP_OPTION_AUTH_PROTO:
-			count_nack++;
-			goto ignore_option;
-
-		case LCP_OPTION_QUALITY_PROTO:
-			count_rej++;
-			goto ignore_option;
-
 		case LCP_OPTION_MAGIC_NUMBER:
 			count_nack++;
 			goto ignore_option;
 
-		case LCP_OPTION_PROTO_COMPRESS:
-			count_rej++;
-			goto ignore_option;
-
-		case LCP_OPTION_ADDR_CTRL_COMPRESS:
-			count_rej++;
-			goto ignore_option;
-
 		default:
+			count_rej++;
 		ignore_option:
 			nack_options[nack_idx].type.lcp = options[i].type.lcp;
 			nack_options[nack_idx].len = options[i].len;
@@ -199,10 +184,6 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 		out_of_mem:
 			if (nack) {
 				net_buf_unref(nack);
-			} else {
-				if (nack_buf) {
-					net_buf_unref(nack_buf);
-				}
 			}
 
 			return -ENOMEM;

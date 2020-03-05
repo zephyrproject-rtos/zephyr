@@ -12,6 +12,8 @@
 #include <init.h>
 #include <ctype.h>
 #include <string.h>
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
 
 /* Despite our use of PAE page tables, we do not (and will never) actually
  * support PAE. Use a 64-bit x86 target if you have that much RAM.
@@ -116,6 +118,59 @@ static inline void pte_update_addr(u64_t *pte, uintptr_t addr)
  * Not trying to capture every flag, just the most interesting stuff,
  * Present, write, XD, user, in typically encountered combinations.
  */
+static bool dump_entry_flags(const char *name, u64_t flags)
+{
+	if ((flags & Z_X86_MMU_P) == 0) {
+		LOG_ERR("%s: Non-present", name);
+		return false;
+	}
+
+	LOG_ERR("%s: 0x%016llx %s, %s, %s", name, flags,
+		flags & MMU_ENTRY_WRITE ?
+		"Writable" : "Read-only",
+		flags & MMU_ENTRY_USER ?
+		"User" : "Supervisor",
+		flags & MMU_ENTRY_EXECUTE_DISABLE ?
+		"Execute Disable" : "Execute Enabled");
+	return true;
+}
+
+void z_x86_dump_mmu_flags(struct x86_page_tables *ptables, uintptr_t addr)
+{
+	u64_t entry;
+
+#ifdef CONFIG_X86_64
+	entry = *z_x86_get_pml4e(ptables, addr);
+	if (!dump_entry_flags("PML4E", entry)) {
+		return;
+	}
+
+	entry = *z_x86_pdpt_get_pdpte(z_x86_pml4e_get_pdpt(entry), addr);
+	if (!dump_entry_flags("PDPTE", entry)) {
+		return;
+	}
+#else
+	/* 32-bit doesn't have anything interesting in the PDPTE except
+	 * the present bit
+	 */
+	entry = *z_x86_get_pdpte(ptables, addr);
+	if ((entry & Z_X86_MMU_P) == 0) {
+		LOG_ERR("PDPTE: Non-present");
+		return;
+	}
+#endif
+
+	entry = *z_x86_pd_get_pde(z_x86_pdpte_get_pd(entry), addr);
+	if (!dump_entry_flags("  PDE", entry)) {
+		return;
+	}
+
+	entry = *z_x86_pt_get_pte(z_x86_pde_get_pt(entry), addr);
+	if (!dump_entry_flags("  PTE", entry)) {
+		return;
+	}
+}
+
 static char get_entry_code(u64_t value)
 {
 	char ret;
@@ -608,8 +663,13 @@ extern char z_shared_kernel_page_start[];
 
 static inline bool is_within_system_ram(uintptr_t addr)
 {
+#ifdef CONFIG_X86_64
+	/* FIXME: locore not included in CONFIG_SRAM_BASE_ADDRESS */
+	return addr < (DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024U));
+#else
 	return (addr >= DT_PHYS_RAM_ADDR) &&
 		(addr < (DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024U)));
+#endif
 }
 
 /* Ignored bit posiition at all levels */
@@ -703,9 +763,17 @@ static void add_mmu_region_page(struct x86_page_tables *ptables,
 
 #ifdef CONFIG_X86_KPTI
 	if (user_table && (flags & Z_X86_MMU_US) == 0 &&
+#ifdef CONFIG_X86_64
+	    addr >= (uintptr_t)&_lodata_start &&
+#endif
 	    addr != (uintptr_t)(&z_shared_kernel_page_start)) {
 		/* All non-user accessible pages except the shared page
 		 * are marked non-present in the page table.
+		 *
+		 * For x86_64 we also make the locore text/rodata areas
+		 * present even though they don't have user mode access,
+		 * they contain necessary tables and program text for
+		 * successfully handling exceptions and interrupts.
 		 */
 		return;
 	}
@@ -783,6 +851,35 @@ int arch_buffer_validate(void *addr, size_t size, int write)
 				  size, write != 0);
 }
 
+#ifdef CONFIG_X86_64
+static uintptr_t thread_pdpt_create(uintptr_t pages,
+				    struct x86_page_tables *thread_ptables,
+				    struct x86_page_tables *master_ptables)
+{
+	uintptr_t pos = pages, phys_addr = Z_X86_PDPT_START;
+
+	for (int i = 0; i < Z_X86_NUM_PDPT; i++, phys_addr += Z_X86_PDPT_AREA) {
+		u64_t *pml4e;
+		struct x86_mmu_pdpt *master_pdpt, *dest_pdpt;
+
+		/* obtain master PDPT tables for the address range and copy
+		 * into per-thread PDPT for this range
+		 */
+		master_pdpt = z_x86_get_pdpt(master_ptables, phys_addr);
+		dest_pdpt = (struct x86_mmu_pdpt *)pos;
+		(void)memcpy(dest_pdpt, master_pdpt,
+			     sizeof(struct x86_mmu_pdpt));
+
+		/* And then wire this up to the relevant per-thread PML4E */
+		pml4e = z_x86_get_pml4e(thread_ptables, phys_addr);
+		pml4e_update_pdpt(pml4e, dest_pdpt);
+		pos += MMU_PAGE_SIZE;
+	}
+
+	return pos;
+}
+#endif /* CONFIG_X86_64 */
+
 static uintptr_t thread_pd_create(uintptr_t pages,
 				  struct x86_page_tables *thread_ptables,
 				  struct x86_page_tables *master_ptables)
@@ -845,13 +942,71 @@ static uintptr_t thread_pt_create(uintptr_t pages,
 /* Initialize the page tables for a thread. This will contain, once done,
  * the boot-time configuration for a user thread page tables. There are
  * no pre-conditions on the existing state of the per-thread tables.
+ *
+ * pos represents the page we are working with in the reserved area
+ * in the stack buffer for per-thread tables. As we create tables in
+ * this area, pos is incremented to the next free page.
+ *
+ * The layout of the stack object, when this is done:
+ *
+ * For 32-bit:
+ *
+ * +---------------------------+  <- thread->stack_obj
+ * | PDE(0)                    |
+ * +---------------------------+
+ * | ...                       |
+ * +---------------------------+
+ * | PDE(Z_X86_NUM_PD - 1)     |
+ * +---------------------------+
+ * | PTE(0)                    |
+ * +---------------------------+
+ * | ...                       |
+ * +---------------------------+
+ * | PTE(Z_X86_NUM_PT - 1)     |
+ * +---------------------------+ <- pos once this logic completes
+ * | Stack guard               |
+ * +---------------------------+
+ * | Privilege elevation stack |
+ * | PDPT                      |
+ * +---------------------------+ <- thread->stack_info.start
+ * | Thread stack              |
+ * | ...                       |
+ *
+ * For 64-bit:
+ *
+ * +---------------------------+ <- thread->stack_obj
+ * | PML4		       |
+ * +---------------------------|
+ * | PDPT(0)		       |
+ * +---------------------------|
+ * | ...                       |
+ * +---------------------------|
+ * | PDPT(Z_X86_NUM_PDPT - 1)  |
+ * +---------------------------+
+ * | PDE(0)                    |
+ * +---------------------------+
+ * | ...                       |
+ * +---------------------------+
+ * | PDE(Z_X86_NUM_PD - 1)     |
+ * +---------------------------+
+ * | PTE(0)                    |
+ * +---------------------------+
+ * | ...                       |
+ * +---------------------------+
+ * | PTE(Z_X86_NUM_PT - 1)     |
+ * +---------------------------+ <- pos once this logic completes
+ * | Stack guard               |
+ * +---------------------------+
+ * | Privilege elevation stack |
+ * +---------------------------+ <- thread->stack_info.start
+ * | Thread stack              |
+ * | ...                       |
  */
 static void copy_page_tables(struct k_thread *thread,
+			     struct x86_page_tables *thread_ptables,
 			     struct x86_page_tables *master_ptables)
 {
 	uintptr_t pos, start;
-	struct x86_page_tables *thread_ptables =
-		z_x86_thread_page_tables_get(thread);
 	struct z_x86_thread_stack_header *header =
 		(struct z_x86_thread_stack_header *)thread->stack_obj;
 
@@ -864,36 +1019,14 @@ static void copy_page_tables(struct k_thread *thread,
 	(void)memcpy(thread_ptables, master_ptables,
 		     sizeof(struct x86_page_tables));
 
-	/* pos represents the page we are working with in the reserved area
-	 * in the stack buffer for per-thread tables. As we create tables in
-	 * this area, pos is incremented to the next free page.
-	 *
-	 * The layout of the stack object, when this is done:
-	 *
-	 * +---------------------------+  <- thread->stack_obj
-	 * | PDE(0)                    |
-	 * +---------------------------+
-	 * | ...                       |
-	 * +---------------------------+
-	 * | PDE(Z_X86_NUM_PD - 1)     |
-	 * +---------------------------+
-	 * | PTE(0)                    |
-	 * +---------------------------+
-	 * | ...                       |
-	 * +---------------------------+
-	 * | PTE(Z_X86_NUM_PT - 1)     |
-	 * +---------------------------+ <- pos once this logic completes
-	 * | Stack guard               |
-	 * +---------------------------+
-	 * | Privilege elevation stack |
-	 * | PDPT                      |
-	 * +---------------------------+ <- thread->stack_info.start
-	 * | Thread stack              |
-	 * | ...                       |
-	 *
-	 */
 	start = (uintptr_t)(&header->page_tables);
-	pos = thread_pd_create(start, thread_ptables, master_ptables);
+#ifdef CONFIG_X86_64
+	pos = start + sizeof(struct x86_mmu_pml4);
+	pos = thread_pdpt_create(pos, thread_ptables, master_ptables);
+#else
+	pos = start;
+#endif
+	pos = thread_pd_create(pos, thread_ptables, master_ptables);
 	pos = thread_pt_create(pos, thread_ptables, master_ptables);
 
 	__ASSERT(pos == (start + Z_X86_THREAD_PT_AREA),
@@ -970,11 +1103,21 @@ void z_x86_apply_mem_domain(struct x86_page_tables *ptables,
  * user mode.
  *
  * Sets up the per-thread page tables, such that when they are activated on
- * context switch, everything is ready to go.
+ * context switch, everything is ready to go. thread->arch.ptables is updated
+ * to the thread-level tables instead of the kernel's page tbales.
  */
 void z_x86_thread_pt_init(struct k_thread *thread)
 {
-	struct x86_page_tables *ptables = z_x86_thread_page_tables_get(thread);
+	struct x86_page_tables *ptables;
+	struct z_x86_thread_stack_header *header =
+		(struct z_x86_thread_stack_header *)thread->stack_obj;
+
+#ifdef CONFIG_X86_64
+	ptables = (struct x86_page_tables *)(&header->page_tables);
+#else
+	ptables = &header->kernel_data.ptables;
+#endif
+	thread->arch.ptables = ptables;
 
 	/* USER_PDPT contains the page tables with the boot time memory
 	 * policy. We use it as a template to set up the per-thread page
@@ -985,7 +1128,7 @@ void z_x86_thread_pt_init(struct k_thread *thread)
 	 * accessible pages except the trampoline page marked as non-present.
 	 * Without KPTI, they are the same object.
 	 */
-	copy_page_tables(thread, &USER_PTABLES);
+	copy_page_tables(thread, ptables, &USER_PTABLES);
 
 	/* Enable access to the thread's own stack buffer */
 	z_x86_mmu_set_flags(ptables, (void *)thread->stack_info.start,

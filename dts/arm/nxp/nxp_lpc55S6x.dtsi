@@ -9,6 +9,15 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	aliases{
+		gpio-0 = &gpio0;
+		gpio-1 = &gpio1;
+		gpio-2 = &gpio2;
+		gpio-3 = &gpio3;
+		spi-8 = &spi8;
+		usart-0 = &usart0;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -43,16 +52,45 @@
 		reg = <0x30030000 DT_SIZE_K(64)>;
 	};
 
+	sram4:memory@30040000 {
+		/* Conencted to USB bus*/
+		compatible = "mmio-sram";
+		reg = <0x30040000 DT_SIZE_K(16)>;
+	};
+
 	sramx:memory@14000000{
+		/* connected to code bus */
 		compatible = "mmio-sram";
 		reg = <0x14000000 DT_SIZE_K(32)>;
 	};
 
 	soc {
 
-		flash0:flash@10000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x10000000 DT_SIZE_K(630)>;
+		flash-controller@50034000 {
+			compatible = "nxp,lpc-iap";
+			label = "FLASH_IAP";
+			reg = <0x50034000 0x18>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@10000000 {
+				compatible = "soc-nv-flash";
+				label = "MCUX_FLASH";
+				reg = <0x10000000 DT_SIZE_K(630)>;
+				erase-block-size = <512>;
+				write-block-size = <512>;
+			};
+
+			flash_reserved:flash@1009D800 {
+				compatible = "soc-nv-flash";
+				reg = <0x1009D800 DT_SIZE_K(10)>;
+				status = "disabled";
+			};
+
+			boot_rom:flash@13000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x13000000 DT_SIZE_K(128)>;
+			};
 		};
 
 		usart0:usart@50086000 {

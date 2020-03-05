@@ -239,7 +239,9 @@ steps:
 
     Tagging needs to be done via explicit git commands and not via GitHub's release
     interface.  The GitHub release interface does not generate annotated tags (it
-    generates 'lightweight' tags regardless of release or pre-release).
+    generates 'lightweight' tags regardless of release or pre-release). You should
+    also upload your gpg public key to your GitHub account, since the instructions
+    below involve creating signed tags.
 
 .. tabs::
 
@@ -263,8 +265,7 @@ steps:
         #. Tag and push the version, using an annotated tag::
 
             $ git pull
-            $ git tag -a v1.11.0-rc1
-            <Use "Zephyr 1.11.0-rc1" as the tag annotation>
+            $ git tag -m "Zephyr 1.11.0-rc1" -s v1.11.0-rc1
             $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0-rc1
 
         #. Create a shortlog of changes between the previous release (use
@@ -273,7 +274,7 @@ steps:
             $ git shortlog v1.10.0..v1.11.0-rc1
 
         #. Find the new tag at the top of the releases page and edit the release
-           with the ``Edit`` button with the following:
+           with the ``Draft a new release`` button with the following:
 
             * Name it ``Zephyr 1.11.0-rc1``
             * Copy the shortlog into the release notes textbox (*don't forget
@@ -306,16 +307,14 @@ steps:
         #. Tag and push the version, using two annotated tags::
 
             $ git pull
-            $ git tag -a v1.11.0
-            <Use "Zephyr 1.11.0" as the tag annotation>
+            $ git tag -m "Zephyr 1.11.0" -s v1.11.0
             $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0
 
-            $ git tag -a zephyr-v1.11.0
-            <Use "Zephyr 1.11.0" as the tag annotation>
+            $ git tag -m "Zephyr 1.11.0" -s zephyr-v1.11.0
             $ git push git@github.com:zephyrproject-rtos/zephyr.git zephyr-v1.11.0
 
         #. Find the new tag at the top of the releases page and edit the release
-           with the ``Edit`` button with the following:
+           with the ``Draft a new release`` button with the following:
 
             * Name it ``Zephyr 1.11.0``
             * Copy the full content of ``docs/releases/release-notes-1.11.rst``

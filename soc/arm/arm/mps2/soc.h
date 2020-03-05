@@ -15,7 +15,7 @@
 #define __DSP_PRESENT             1U        /* DSP extension present */
 #endif
 
-#include <generated_dts_board.h>
+#include <devicetree.h>
 #include <soc_registers.h>
 
 extern void wakeup_cpu1(void);

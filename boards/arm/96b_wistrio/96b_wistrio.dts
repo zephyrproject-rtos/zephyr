@@ -22,11 +22,11 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_0: led_0 {
-			gpios = <&gpioa 12 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioa 12 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 		blue_led_0: led_1 {
-			gpios = <&gpiob 4 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiob 4 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};
 	};
@@ -65,9 +65,12 @@
 		compatible = "semtech,sx1276";
 		reg = <0>;
 		label = "sx1276";
-		reset-gpios = <&gpiob 13 0>;
-		dio-gpios = <&gpioa 11 0 &gpiob 1 0 &gpioa 3 0
-			     &gpioh 0 0 &gpioc 13 0>;
+		reset-gpios = <&gpiob 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		dio-gpios = <&gpioa 11 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			<&gpiob 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			<&gpioa 3 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			<&gpioh 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>,
+			<&gpioc 13 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
 		spi-max-frequency = <1000000>;
 	};
 };

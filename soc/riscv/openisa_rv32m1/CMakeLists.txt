@@ -19,4 +19,4 @@ zephyr_sources(
   soc.c
 )
 
-zephyr_linker_sources(TEXT_START SORT_KEY 0x0vectors vector_table.ld)
+zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors vector_table.ld)

@@ -5,9 +5,6 @@
 
 source "soc/arm/atmel_sam/*/Kconfig.defconfig.series"
 
-if SOC_FAMILY_SAM
-
 config WATCHDOG
 	default y
-
-endif
+	depends on SOC_FAMILY_SAM

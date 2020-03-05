@@ -16,9 +16,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(sx1276);
 
-#define SX1276_MAX_DIO		5
-
 #define GPIO_RESET_PIN		DT_INST_0_SEMTECH_SX1276_RESET_GPIOS_PIN
+#define GPIO_RESET_FLAGS	DT_INST_0_SEMTECH_SX1276_RESET_GPIOS_FLAGS
 #define GPIO_CS_PIN		DT_INST_0_SEMTECH_SX1276_CS_GPIOS_PIN
 
 #define SX1276_REG_PA_CONFIG			0x09
@@ -27,21 +26,20 @@ LOG_MODULE_REGISTER(sx1276);
 
 extern DioIrqHandler *DioIrq[];
 
-int sx1276_dio_pins[SX1276_MAX_DIO] = {
-	DT_INST_0_SEMTECH_SX1276_DIO_GPIOS_PIN_0,
-	DT_INST_0_SEMTECH_SX1276_DIO_GPIOS_PIN_1,
-	DT_INST_0_SEMTECH_SX1276_DIO_GPIOS_PIN_2,
-	DT_INST_0_SEMTECH_SX1276_DIO_GPIOS_PIN_3,
-	DT_INST_0_SEMTECH_SX1276_DIO_GPIOS_PIN_4,
+struct sx1276_dio {
+	const char *port;
+	gpio_pin_t pin;
+	gpio_dt_flags_t flags;
 };
 
-static char sx1276_dio_ports[SX1276_MAX_DIO][6] = {
-	DT_INST_0_SEMTECH_SX1276_DIO_GPIOS_CONTROLLER_0,
-	DT_INST_0_SEMTECH_SX1276_DIO_GPIOS_CONTROLLER_1,
-	DT_INST_0_SEMTECH_SX1276_DIO_GPIOS_CONTROLLER_2,
-	DT_INST_0_SEMTECH_SX1276_DIO_GPIOS_CONTROLLER_3,
-	DT_INST_0_SEMTECH_SX1276_DIO_GPIOS_CONTROLLER_4,
-};
+static struct sx1276_dio sx1276_dios[] =
+#ifdef DT_INST_0_SEMTECH_SX1276_DIO_GPIOS_PIN_0
+	DT_INST_0_SEMTECH_SX1276_DIO_GPIOS
+#else
+	{DT_INST_0_SEMTECH_SX1276_DIO_GPIOS}
+#endif
+	;
+#define SX1276_MAX_DIO ARRAY_SIZE(sx1276_dios)
 
 struct sx1276_data {
 	struct device *counter;
@@ -53,6 +51,8 @@ struct sx1276_data {
 	RadioEvents_t sx1276_event;
 	u8_t *rx_buf;
 	u8_t rx_len;
+	s8_t snr;
+	s16_t rssi;
 } dev_data;
 
 bool SX1276CheckRfFrequency(uint32_t frequency)
@@ -84,13 +84,12 @@ void SX1276SetAntSw(u8_t opMode)
 void SX1276Reset(void)
 {
 	gpio_pin_configure(dev_data.reset, GPIO_RESET_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_NORMAL);
-	gpio_pin_write(dev_data.reset, GPIO_RESET_PIN, 0);
+			   GPIO_OUTPUT_ACTIVE | GPIO_RESET_FLAGS);
 
 	k_sleep(1);
 
-	gpio_pin_configure(dev_data.reset, GPIO_RESET_PIN,
-			   GPIO_DIR_IN | GPIO_PUD_NORMAL);
+	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 0);
+
 	k_sleep(6);
 }
 
@@ -106,7 +105,16 @@ void BoardCriticalSectionEnd(uint32_t *mask)
 
 uint32_t RtcGetTimerElapsedTime(void)
 {
-	return counter_read(dev_data.counter);
+	u32_t ticks;
+	int err;
+
+	err = counter_get_value(dev_data.counter, &ticks);
+	if (err) {
+		LOG_ERR("Failed to read counter value (err %d)", err);
+		return 0;
+	}
+
+	return ticks;
 }
 
 u32_t RtcGetMinimumTimeout(void)
@@ -148,7 +156,7 @@ static void sx1276_irq_callback(struct device *dev,
 	pin = find_lsb_set(pins) - 1;
 
 	for (i = 0; i < SX1276_MAX_DIO; i++) {
-		if (pin == sx1276_dio_pins[i]) {
+		if (pin == sx1276_dios[i].pin) {
 			(*DioIrq[i])(NULL);
 		}
 	}
@@ -161,27 +169,28 @@ void SX1276IoIrqInit(DioIrqHandler **irqHandlers)
 
 	/* Setup DIO gpios */
 	for (i = 0; i < SX1276_MAX_DIO; i++) {
-		dev_data.dio_dev[i] = device_get_binding(sx1276_dio_ports[i]);
+		dev_data.dio_dev[i] = device_get_binding(sx1276_dios[i].port);
 		if (dev_data.dio_dev[i] == NULL) {
 			LOG_ERR("Cannot get pointer to %s device",
-				sx1276_dio_ports[i]);
+				sx1276_dios[i].port);
 			return;
 		}
 
-		gpio_pin_configure(dev_data.dio_dev[i], sx1276_dio_pins[i],
-				   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-				   GPIO_INT_DEBOUNCE | GPIO_INT_ACTIVE_HIGH);
+		gpio_pin_configure(dev_data.dio_dev[i], sx1276_dios[i].pin,
+				   GPIO_INPUT | GPIO_INT_DEBOUNCE
+				   | sx1276_dios[i].flags);
 
 		gpio_init_callback(&callbacks[i],
 				   sx1276_irq_callback,
-				   BIT(sx1276_dio_pins[i]));
+				   BIT(sx1276_dios[i].pin));
 
 		if (gpio_add_callback(dev_data.dio_dev[i], &callbacks[i]) < 0) {
 			LOG_ERR("Could not set gpio callback.");
 			return;
 		}
-		gpio_pin_enable_callback(dev_data.dio_dev[i],
-					 sx1276_dio_pins[i]);
+		gpio_pin_interrupt_configure(dev_data.dio_dev[i],
+					     sx1276_dios[i].pin,
+					     GPIO_INT_EDGE_TO_ACTIVE);
 	}
 
 }
@@ -338,12 +347,14 @@ static void sx1276_rx_done(u8_t *payload, u16_t size, int16_t rssi, int8_t snr)
 
 	dev_data.rx_buf = payload;
 	dev_data.rx_len = size;
+	dev_data.rssi = rssi;
+	dev_data.snr = snr;
 
 	k_sem_give(&dev_data.data_sem);
 }
 
 static int sx1276_lora_recv(struct device *dev, u8_t *data, u8_t size,
-			    s32_t timeout)
+			    s32_t timeout, s16_t *rssi, s8_t *snr)
 {
 	int ret;
 
@@ -371,6 +382,14 @@ static int sx1276_lora_recv(struct device *dev, u8_t *data, u8_t size,
 	 * wise method to fix this!
 	 */
 	memcpy(data, dev_data.rx_buf, dev_data.rx_len);
+
+	if (rssi != NULL) {
+		*rssi = dev_data.rssi;
+	}
+
+	if (snr != NULL) {
+		*snr = dev_data.snr;
+	}
 
 	return dev_data.rx_len;
 }
@@ -458,12 +477,12 @@ static int sx1276_lora_init(struct device *dev)
 		return -EIO;
 	}
 
-	ret = gpio_pin_configure(dev_data.reset, GPIO_RESET_PIN, GPIO_DIR_OUT);
-
 	/* Perform soft reset */
-	gpio_pin_write(dev_data.reset, GPIO_RESET_PIN, 0);
+	ret = gpio_pin_configure(dev_data.reset, GPIO_RESET_PIN,
+				 GPIO_OUTPUT_ACTIVE | GPIO_RESET_FLAGS);
+
 	k_sleep(100);
-	gpio_pin_write(dev_data.reset, GPIO_RESET_PIN, 1);
+	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 0);
 	k_sleep(100);
 
 	ret = sx1276_read(SX1276_REG_VERSION, &regval, 1);

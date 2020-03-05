@@ -41,6 +41,9 @@ static int stm32g4_init(struct device *arg)
 	/* At reset, system core clock is set to 16 MHz from HSI */
 	SystemCoreClock = 16000000;
 
+	/* allow reflashing board */
+	LL_DBGMCU_EnableDBGSleepMode();
+
 	return 0;
 }
 

@@ -83,13 +83,6 @@ struct bt_mesh_net bt_mesh = {
 			.net_idx = BT_MESH_KEY_UNUSED,
 		}
 	},
-#if defined(CONFIG_BT_MESH_PROVISIONER)
-	.nodes = {
-		[0 ... (CONFIG_BT_MESH_NODE_COUNT - 1)] = {
-			.net_idx = BT_MESH_KEY_UNUSED,
-		}
-	},
-#endif
 };
 
 static u32_t dup_cache[4];
@@ -703,6 +696,10 @@ do_update:
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_BT_MESH_CDB)) {
+		bt_mesh_cdb_iv_update(iv_index, iv_update);
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_store_iv(false);
 	}
@@ -776,7 +773,8 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
-	    bt_mesh_proxy_relay(&buf->b, dst)) {
+	    bt_mesh_proxy_relay(&buf->b, dst) &&
+	    BT_MESH_ADDR_IS_UNICAST(dst)) {
 		send_cb_finalize(cb, cb_data);
 	} else {
 		bt_mesh_adv_send(buf, cb, cb_data);
@@ -1309,13 +1307,19 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 	/* Save the state so the buffer can later be relayed */
 	net_buf_simple_save(&buf, &state);
 
+	rx.local_match = (bt_mesh_fixed_group_match(rx.ctx.recv_dst) ||
+			  bt_mesh_elem_find(rx.ctx.recv_dst));
+
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
 	    net_if == BT_MESH_NET_IF_PROXY) {
 		bt_mesh_proxy_addr_add(data, rx.ctx.addr);
-	}
 
-	rx.local_match = (bt_mesh_fixed_group_match(rx.ctx.recv_dst) ||
-			  bt_mesh_elem_find(rx.ctx.recv_dst));
+		if (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_DISABLED &&
+		    !rx.local_match) {
+			BT_INFO("Proxy is disabled; ignoring message");
+			return;
+		}
+	}
 
 	/* The transport layer has indicated that it has rejected the message,
 	 * but would like to see it again if it is received in the future.

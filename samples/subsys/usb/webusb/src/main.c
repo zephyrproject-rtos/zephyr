@@ -299,4 +299,3 @@ void main(void)
 	usb_bos_register_cap((void *)&bos_cap_webusb);
 	usb_bos_register_cap((void *)&bos_cap_msosv2);
 }
-

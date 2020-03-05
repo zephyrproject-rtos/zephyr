@@ -33,12 +33,9 @@ config GPIO_IMX_PORT_7
 
 endif # GPIO_IMX
 
-if UART_IMX
-
 config UART_IMX_UART_2
 	default y
-
-endif # UART_IMX
+	depends on UART_IMX
 
 if I2C_IMX
 
@@ -56,12 +53,9 @@ config I2C_4
 
 endif # I2C_IMX
 
-if PWM_IMX
-
 config PWM_1
 	default y
-
-endif # PWM_IMX
+	depends on PWM_IMX
 
 if !XIP
 config FLASH_SIZE

@@ -372,7 +372,7 @@ static struct net_can_api net_can_api_inst = {
 
 static int net_can_init(struct device *dev)
 {
-	struct device *can_dev = device_get_binding(DT_CAN_1_NAME);
+	struct device *can_dev = device_get_binding(DT_ALIAS_CAN_PRIMARY_LABEL);
 	struct net_can_context *ctx = dev->driver_data;
 
 	ctx->recv_filter_id = CAN_NET_FILTER_NOT_SET;
@@ -382,7 +382,8 @@ static int net_can_init(struct device *dev)
 #endif /*CONFIG_NET_L2_CANBUS_ETH_TRANSLATOR*/
 
 	if (!can_dev) {
-		NET_ERR("Can't get binding to CAN device %s", DT_CAN_1_NAME);
+		NET_ERR("Can't get binding to CAN device %s",
+			DT_ALIAS_CAN_PRIMARY_LABEL);
 		return -EIO;
 	}
 

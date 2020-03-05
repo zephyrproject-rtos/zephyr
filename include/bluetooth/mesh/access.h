@@ -396,7 +396,8 @@ struct bt_mesh_model_pub {
 
 	u16_t addr;         /**< Publish Address. */
 	u16_t key:12,       /**< Publish AppKey Index. */
-	      cred:1;       /**< Friendship Credentials Flag. */
+	      cred:1,       /**< Friendship Credentials Flag. */
+	      send_rel:1;   /**< Force reliable sending (segment acks) */
 
 	u8_t  ttl;          /**< Publish Time to Live. */
 	u8_t  retransmit;   /**< Retransmit Count & Interval Steps. */
@@ -423,6 +424,9 @@ struct bt_mesh_model_pub {
 	 *  will be called periodically and is expected to update
 	 *  @ref bt_mesh_model_pub.msg with a valid publication
 	 *  message.
+	 *
+	 *  If the callback returns non-zero, the publication is skipped
+	 *  and will resume on the next periodic publishing interval.
 	 *
 	 *  @param mod The Model the Publication Context belogs to.
 	 *
@@ -467,18 +471,19 @@ struct bt_mesh_model_cb {
 				  size_t len_rd, settings_read_cb read_cb,
 				  void *cb_arg);
 
-	/** @brief Callback called when all settings have been loaded.
+	/** @brief Callback called when the mesh is started.
 	 *
-	 *  This handler gets called after the settings have been loaded in
-	 *  full.
+	 *  This handler gets called after the node has been provisioned, or
+	 *  after all mesh data has been loaded from persistent storage.
 	 *
-	 *  @sa settings_handler::h_commit
+	 *  When this callback fires, the mesh model may start its behavior,
+	 *  and all Access APIs are ready for use.
 	 *
-	 *  @param model Model this callback belongs to.
+	 *  @param model      Model this callback belongs to.
 	 *
 	 *  @return 0 on success, error otherwise.
 	 */
-	int (*const settings_commit)(struct bt_mesh_model *model);
+	int (*const start)(struct bt_mesh_model *model);
 
 	/** @brief Model init callback.
 	 *

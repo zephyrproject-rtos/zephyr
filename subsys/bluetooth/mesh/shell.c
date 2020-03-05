@@ -26,6 +26,7 @@
 #include "net.h"
 #include "transport.h"
 #include "foundation.h"
+#include "settings.h"
 
 #define CID_NVAL   0xffff
 
@@ -217,7 +218,8 @@ static void prov_complete(u16_t net_idx, u16_t addr)
 	net.dst = addr;
 }
 
-static void prov_node_added(u16_t net_idx, u16_t addr, u8_t num_elem)
+static void prov_node_added(u16_t net_idx, u8_t uuid[16], u16_t addr,
+			    u8_t num_elem)
 {
 	shell_print(ctx_shell, "Node provisioned, net_idx 0x%04x address "
 		    "0x%04x elements %d", net_idx, addr, num_elem);
@@ -792,6 +794,33 @@ static int cmd_beacon(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	shell_print(shell, "Beacon state is 0x%02x", status);
+
+	return 0;
+}
+
+static void print_unprovisioned_beacon(u8_t uuid[16],
+				       bt_mesh_prov_oob_info_t oob_info,
+				       u32_t *uri_hash)
+{
+	char uuid_hex_str[32 + 1];
+
+	bin2hex(uuid, 16, uuid_hex_str, sizeof(uuid_hex_str));
+
+	shell_print(ctx_shell, "UUID %s, OOB Info 0x%04x, URI Hash 0x%x",
+		    uuid_hex_str, oob_info,
+		    (uri_hash == NULL ? 0 : *uri_hash));
+}
+
+static int cmd_beacon_listen(const struct shell *shell, size_t argc,
+			     char *argv[])
+{
+	u8_t val = str2u8(argv[1]);
+
+	if (val) {
+		prov.unprovisioned_beacon = print_unprovisioned_beacon;
+	} else {
+		prov.unprovisioned_beacon = NULL;
+	}
 
 	return 0;
 }
@@ -1954,6 +1983,313 @@ static int cmd_del_fault(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_MESH_CDB)
+static int cmd_cdb_create(const struct shell *shell, size_t argc,
+			  char *argv[])
+{
+	u8_t net_key[16];
+	size_t len;
+	int err;
+
+	if (argc < 2) {
+		bt_rand(net_key, 16);
+	} else {
+		len = hex2bin(argv[1], strlen(argv[1]), net_key,
+			      sizeof(net_key));
+		memset(net_key + len, 0, sizeof(net_key) - len);
+	}
+
+	err = bt_mesh_cdb_create(net_key);
+	if (err < 0) {
+		shell_print(shell, "Failed to create CDB (err %d)", err);
+	}
+
+	return 0;
+}
+
+static int cmd_cdb_clear(const struct shell *shell, size_t argc,
+			 char *argv[])
+{
+	bt_mesh_cdb_clear();
+
+	shell_print(shell, "Cleared CDB");
+
+	return 0;
+}
+
+static void cdb_print_nodes(const struct shell *shell)
+{
+	char key_hex_str[32 + 1], uuid_hex_str[32 + 1];
+	struct bt_mesh_cdb_node *node;
+	int i, total = 0;
+	bool configured;
+
+	shell_print(shell, "Address  Elements  Flags  %-32s  DevKey", "UUID");
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh_cdb.nodes); ++i) {
+		node = &bt_mesh_cdb.nodes[i];
+		if (node->addr == BT_MESH_ADDR_UNASSIGNED) {
+			continue;
+		}
+
+		configured = atomic_test_bit(node->flags,
+					     BT_MESH_CDB_NODE_CONFIGURED);
+
+		total++;
+		bin2hex(node->uuid, 16, uuid_hex_str, sizeof(uuid_hex_str));
+		bin2hex(node->dev_key, 16, key_hex_str, sizeof(key_hex_str));
+		shell_print(shell, "0x%04x   %-8d  %-5s  %s  %s", node->addr,
+			    node->num_elem, configured ? "C" : "-",
+			    uuid_hex_str, key_hex_str);
+	}
+
+	shell_print(shell, "> Total nodes: %d", total);
+}
+
+static void cdb_print_subnets(const struct shell *shell)
+{
+	struct bt_mesh_cdb_subnet *subnet;
+	char key_hex_str[32 + 1];
+	int i, total = 0;
+
+	shell_print(shell, "NetIdx  NetKey");
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh_cdb.subnets); ++i) {
+		subnet = &bt_mesh_cdb.subnets[i];
+		if (subnet->net_idx == BT_MESH_KEY_UNUSED) {
+			continue;
+		}
+
+		total++;
+		bin2hex(subnet->keys[0].net_key, 16, key_hex_str,
+			sizeof(key_hex_str));
+		shell_print(shell, "0x%03x   %s", subnet->net_idx,
+			    key_hex_str);
+	}
+
+	shell_print(shell, "> Total subnets: %d", total);
+}
+
+static void cdb_print_app_keys(const struct shell *shell)
+{
+	struct bt_mesh_cdb_app_key *app_key;
+	char key_hex_str[32 + 1];
+	int i, total = 0;
+
+	shell_print(shell, "NetIdx  AppIdx  AppKey");
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh_cdb.app_keys); ++i) {
+		app_key = &bt_mesh_cdb.app_keys[i];
+		if (app_key->net_idx == BT_MESH_KEY_UNUSED) {
+			continue;
+		}
+
+		total++;
+		bin2hex(app_key->keys[0].app_key, 16, key_hex_str,
+			sizeof(key_hex_str));
+		shell_print(shell, "0x%03x   0x%03x   %s",
+			    app_key->net_idx, app_key->app_idx, key_hex_str);
+	}
+
+	shell_print(shell, "> Total app-keys: %d", total);
+}
+
+static int cmd_cdb_show(const struct shell *shell, size_t argc,
+			char *argv[])
+{
+	if (!atomic_test_bit(bt_mesh_cdb.flags, BT_MESH_CDB_VALID)) {
+		shell_print(shell, "No valid networks");
+		return 0;
+	}
+
+	shell_print(shell, "Mesh Network Information");
+	shell_print(shell, "========================");
+
+	cdb_print_nodes(shell);
+	shell_print(shell, "---");
+	cdb_print_subnets(shell);
+	shell_print(shell, "---");
+	cdb_print_app_keys(shell);
+
+	return 0;
+}
+
+static int cmd_cdb_node_add(const struct shell *shell, size_t argc,
+			    char *argv[])
+{
+	struct bt_mesh_cdb_node *node;
+	u8_t uuid[16], dev_key[16];
+	u16_t addr, net_idx;
+	u8_t num_elem;
+	size_t len;
+
+	len = hex2bin(argv[1], strlen(argv[1]), uuid, sizeof(uuid));
+	memset(uuid + len, 0, sizeof(uuid) - len);
+
+	addr = strtoul(argv[2], NULL, 0);
+	num_elem = strtoul(argv[3], NULL, 0);
+	net_idx = strtoul(argv[4], NULL, 0);
+
+	if (argc < 6) {
+		bt_rand(dev_key, 16);
+	} else {
+		len = hex2bin(argv[5], strlen(argv[5]), dev_key,
+			      sizeof(dev_key));
+		memset(dev_key + len, 0, sizeof(dev_key) - len);
+	}
+
+	node = bt_mesh_cdb_node_alloc(uuid, addr, num_elem, net_idx);
+	if (node == NULL) {
+		shell_print(shell, "Failed to allocate node");
+		return 0;
+	}
+
+	memcpy(node->dev_key, dev_key, 16);
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		bt_mesh_store_cdb_node(node);
+	}
+
+	shell_print(shell, "Added node 0x%04x", addr);
+
+	return 0;
+}
+
+static int cmd_cdb_node_del(const struct shell *shell, size_t argc,
+			    char *argv[])
+{
+	struct bt_mesh_cdb_node *node;
+	u16_t addr;
+
+	addr = strtoul(argv[1], NULL, 0);
+
+	node = bt_mesh_cdb_node_get(addr);
+	if (node == NULL) {
+		shell_print(shell, "No node with address 0x%04x", addr);
+		return 0;
+	}
+
+	bt_mesh_cdb_node_del(node, true);
+
+	shell_print(shell, "Deleted node 0x%04x", addr);
+
+	return 0;
+}
+
+static int cmd_cdb_subnet_add(const struct shell *shell, size_t argc,
+			     char *argv[])
+{
+	struct bt_mesh_cdb_subnet *sub;
+	u8_t net_key[16];
+	u16_t net_idx;
+	size_t len;
+
+	net_idx = strtoul(argv[1], NULL, 0);
+
+	if (argc < 3) {
+		bt_rand(net_key, 16);
+	} else {
+		len = hex2bin(argv[2], strlen(argv[2]), net_key,
+			      sizeof(net_key));
+		memset(net_key + len, 0, sizeof(net_key) - len);
+	}
+
+	sub = bt_mesh_cdb_subnet_alloc(net_idx);
+	if (sub == NULL) {
+		shell_print(shell, "Could not add subnet");
+		return 0;
+	}
+
+	memcpy(sub->keys[0].net_key, net_key, 16);
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		bt_mesh_store_cdb_subnet(sub);
+	}
+
+	shell_print(shell, "Added Subnet 0x%03x", net_idx);
+
+	return 0;
+}
+
+static int cmd_cdb_subnet_del(const struct shell *shell, size_t argc,
+			     char *argv[])
+{
+	struct bt_mesh_cdb_subnet *sub;
+	u16_t net_idx;
+
+	net_idx = strtoul(argv[1], NULL, 0);
+
+	sub = bt_mesh_cdb_subnet_get(net_idx);
+	if (sub == NULL) {
+		shell_print(shell, "No subnet with NetIdx 0x%03x", net_idx);
+		return 0;
+	}
+
+	bt_mesh_cdb_subnet_del(sub, true);
+
+	shell_print(shell, "Deleted subnet 0x%03x", net_idx);
+
+	return 0;
+}
+
+static int cmd_cdb_app_key_add(const struct shell *shell, size_t argc,
+			      char *argv[])
+{
+	struct bt_mesh_cdb_app_key *key;
+	u16_t net_idx, app_idx;
+	u8_t app_key[16];
+	size_t len;
+
+	net_idx = strtoul(argv[1], NULL, 0);
+	app_idx = strtoul(argv[2], NULL, 0);
+
+	if (argc < 4) {
+		bt_rand(app_key, 16);
+	} else {
+		len = hex2bin(argv[3], strlen(argv[3]), app_key,
+			      sizeof(app_key));
+		memset(app_key + len, 0, sizeof(app_key) - len);
+	}
+
+	key = bt_mesh_cdb_app_key_alloc(net_idx, app_idx);
+	if (key == NULL) {
+		shell_print(shell, "Could not add AppKey");
+		return 0;
+	}
+
+	memcpy(key->keys[0].app_key, app_key, 16);
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		bt_mesh_store_cdb_app_key(key);
+	}
+
+	shell_print(shell, "Added AppKey 0x%03x", app_idx);
+
+	return 0;
+}
+
+static int cmd_cdb_app_key_del(const struct shell *shell, size_t argc,
+			      char *argv[])
+{
+	struct bt_mesh_cdb_app_key *key;
+	u16_t app_idx;
+
+	app_idx = strtoul(argv[1], NULL, 0);
+
+	key = bt_mesh_cdb_app_key_get(app_idx);
+	if (key == NULL) {
+		shell_print(shell, "No AppKey 0x%03x", app_idx);
+		return 0;
+	}
+
+	bt_mesh_cdb_app_key_del(key, true);
+
+	shell_print(shell, "Deleted AppKey 0x%03x", app_idx);
+
+	return 0;
+}
+#endif
+
 SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
 	SHELL_CMD_ARG(timeout, NULL, "[timeout in seconds]", cmd_timeout, 1, 1),
@@ -1998,6 +2334,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	/* Configuration Client Model operations */
 	SHELL_CMD_ARG(get-comp, NULL, "[page]", cmd_get_comp, 1, 1),
 	SHELL_CMD_ARG(beacon, NULL, "[val: off, on]", cmd_beacon, 2, 1),
+	SHELL_CMD_ARG(beacon-listen, NULL, "[val: off, on]", cmd_beacon_listen,
+		      2, 0),
 	SHELL_CMD_ARG(ttl, NULL, "[ttl: 0x00, 0x02-0x7f]", cmd_ttl, 1, 1),
 	SHELL_CMD_ARG(friend, NULL, "[val: off, on]", cmd_friend, 1, 1),
 	SHELL_CMD_ARG(gatt-proxy, NULL, "[val: off, on]", cmd_gatt_proxy, 1, 1),
@@ -2052,6 +2390,24 @@ SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	/* Health Server Model Operations */
 	SHELL_CMD_ARG(add-fault, NULL, "<Fault ID>", cmd_add_fault, 2, 0),
 	SHELL_CMD_ARG(del-fault, NULL, "[Fault ID]", cmd_del_fault, 1, 1),
+
+#if defined(CONFIG_BT_MESH_CDB)
+	/* Mesh Configuration Database Operations */
+	SHELL_CMD_ARG(cdb-create, NULL, "[NetKey]", cmd_cdb_create, 1, 1),
+	SHELL_CMD_ARG(cdb-clear, NULL, NULL, cmd_cdb_clear, 1, 0),
+	SHELL_CMD_ARG(cdb-show, NULL, NULL, cmd_cdb_show, 1, 0),
+	SHELL_CMD_ARG(cdb-node-add, NULL, "<UUID> <addr> <num-elem> "
+		      "<NetKeyIdx> [DevKey]", cmd_cdb_node_add, 5, 1),
+	SHELL_CMD_ARG(cdb-node-del, NULL, "<addr>", cmd_cdb_node_del, 2, 0),
+	SHELL_CMD_ARG(cdb-subnet-add, NULL, "<NeyKeyIdx> [<NetKey>]",
+		      cmd_cdb_subnet_add, 2, 1),
+	SHELL_CMD_ARG(cdb-subnet-del, NULL, "<NetKeyIdx>", cmd_cdb_subnet_del,
+		      2, 0),
+	SHELL_CMD_ARG(cdb-app-key-add, NULL, "<NetKeyIdx> <AppKeyIdx> "
+		      "[<AppKey>]", cmd_cdb_app_key_add, 3, 1),
+	SHELL_CMD_ARG(cdb-app-key-del, NULL, "<AppKeyIdx>", cmd_cdb_app_key_del,
+		      2, 0),
+#endif
 
 	SHELL_SUBCMD_SET_END
 );

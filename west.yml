@@ -26,10 +26,13 @@ manifest:
   # Please add items below based on alphabetical order
   projects:
     - name: hal_atmel
-      revision: 5690f5b84495c8b657ff204c5c827df1ab9e12e3
+      revision: 5a44c9d54dffd685fb6664a646922cfe41c5cf8e
       path: modules/hal/atmel
+    - name: canopennode
+      path: modules/lib/canopennode
+      revision: 5c6b0566d56264efd4bf23ed58bc7cb8b32fe063
     - name: ci-tools
-      revision: 081d80d6e25366a311015f00418898a94bff6b64
+      revision: 0706b1e8be917b80e50be6e8cd86befe5e9deccf
       path: tools/ci-tools
     - name: civetweb
       revision: 99129c5efc907ea613c4b73ccff07581feb58a7a
@@ -38,31 +41,31 @@ manifest:
       revision: 6835bfc741bf15e98fb7971293913f770df6081f
       path: modules/hal/esp-idf
     - name: fatfs
-      revision: 0c1288bb817c1976388e0f55e8483f671ae437ab
+      revision: 9ee6b9b9511151d0d64a74d532d39c6f2bbd4f16
       path: modules/fs/fatfs
     - name: hal_cypress
       revision: a12d92816a53a521d79cefcf5c38b9dc8a4fed6e
       path: modules/hal/cypress
     - name: hal_nordic
-      revision: 8506c348b6da91a9f53bcbb181ecd82b752b9eed
+      revision: 12d7647870888e4cb0e421f2b26884c2e76915ac
       path: modules/hal/nordic
     - name: hal_openisa
-      revision: 6416140c00f7e663752bd420ba89e3caefc1d70e
+      revision: 3b54187649cc9b37161d49918f1ad28ff7c7f830
       path: modules/hal/openisa
     - name: hal_microchip
       revision: 85302959c0c659311cf90ac51d133e5ce19c9288
       path: modules/hal/microchip
     - name: hal_silabs
-      revision: 9151e614c23997074acd1096a3e8a9e5c255d5b9
+      revision: 9a3fe1af3a14bf88c86b9cda3bf2a0921d5a97a1
       path: modules/hal/silabs
     - name: hal_st
       revision: fa481784b3c49780f18d50bafe00390ccb62b2ec
       path: modules/hal/st
     - name: hal_stm32
-      revision: 92bdc131f915e53c19c03c65ae275fb0c9c7ee91
+      revision: dee4413253623ec575bb8b58abd56f91afe903bb
       path: modules/hal/stm32
     - name: hal_ti
-      revision: 879c7d08ffc6cd18737847030b906cffe3b0a8fb
+      revision: b25d4b83b16e52f501f8cd360f4efb8c31ffb578
       path: modules/hal/ti
     - name: libmetal
       revision: 45e630d6152824f807d3f919958605c4626cbdff
@@ -71,22 +74,19 @@ manifest:
       revision: 74fc2e753a997bd71cefa34dd9c56dcb954b42e2
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 3776c158fe138a72c97c187e4d31c81c37884be9
+      revision: cf7020eb4c7ef93319f2d6d2403a21e12a879bf6
       path: modules/crypto/mbedtls
     - name: mcuboot
-      revision: c2bd757332bfde11c27019f937b0c61d5e9b9fd9
+      revision: v1.5.0
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: b18b3d16441f40cf983aa034258e8f7c97bfe9bf
+      revision: d4e97cd4fc80ff949415062b1c83fd42929e8fe4
       path: modules/lib/mcumgr
     - name: net-tools
-      revision: 30b7efa827b04d2e47840716b0372737fe7d6c92
+      revision: 4bff01084d225996e4aae84b98be5969e2f9f33d
       path: tools/net-tools
-    - name: nffs
-      revision: 00dd4fab1a00f2f6e995ef3f2e7c3814689f8885
-      path: modules/fs/nffs
     - name: hal_nxp
-      revision: ef000ff5d902c938e3d4763155b0511b043017c8
+      revision: 3e3f20e7de7606d735cdeefe21d5f2a51bf06095
       path: modules/hal/nxp
     - name: open-amp
       revision: 9b591b289e1f37339bd038b5a1f0e6c8ad39c63a
@@ -95,7 +95,7 @@ manifest:
       revision: 29e516ec585b1a909af2b5f1c60d83e7d4d563e3
       path: modules/lib/loramac-node
     - name: openthread
-      revision: 05aaccc6e0db0fe17ac4beed2a2aacc9a9af167c
+      revision: 3c6191eb4e8ca44b5f4eeaa696837bce14e83c69
       path: modules/lib/openthread
     - name: segger
       revision: 6fcf61606d6012d2c44129edc033f59331e268bc
@@ -115,6 +115,9 @@ manifest:
     - name: hal_xtensa
       revision: 382b309b481adc85dd517d50b8a458bcb86f15d4
       path: modules/hal/xtensa
+    - name: edtt
+      path: tools/edtt
+      revision: 8d3ebb28863b252731b0813dff45a3d71b31a6e7
 
   self:
     path: zephyr

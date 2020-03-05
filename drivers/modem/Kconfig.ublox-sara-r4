@@ -77,4 +77,21 @@ config MODEM_UBLOX_SARA_R4_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
+config MODEM_UBLOX_SARA_R4_NET_STATUS
+	bool "Enable support for network status indication"
+	help
+	  Choose this setting to use a modem GPIO pin as network indication.
+
+if MODEM_UBLOX_SARA_R4_NET_STATUS
+
+config MODEM_UBLOX_SARA_R4_NET_STATUS_PIN
+	int "Network status indication GPIO ID"
+	default 16
+	help
+	  This setting is used to configure one of the modem's GPIO pins
+	  as a network status indication.  See the manual for the gpio ids
+	  and how they map to pin numbers.
+
+endif # MODEM_UBLOX_SARA_R4_NET_STATUS
+
 endif # MODEM_UBLOX_SARA

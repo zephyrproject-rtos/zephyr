@@ -33,6 +33,7 @@ struct lis2mdl_config {
 #ifdef CONFIG_LIS2MDL_TRIGGER
 	char *gpio_name;
 	u32_t gpio_pin;
+	u8_t gpio_flags;
 #endif  /* CONFIG_LIS2MDL_TRIGGER */
 #ifdef DT_ST_LIS2MDL_BUS_I2C
 	u16_t i2c_slv_addr;

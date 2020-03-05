@@ -36,13 +36,14 @@ enum {
 	BT_DEV_ADVERTISING,
 	BT_DEV_ADVERTISING_NAME,
 	BT_DEV_ADVERTISING_CONNECTABLE,
+	BT_DEV_ADVERTISING_IDENTITY,
 	BT_DEV_KEEP_ADVERTISING,
 	BT_DEV_SCANNING,
 	BT_DEV_EXPLICIT_SCAN,
 	BT_DEV_ACTIVE_SCAN,
 	BT_DEV_SCAN_FILTER_DUP,
 	BT_DEV_SCAN_WL,
-	BT_DEV_AUTO_CONN,
+	BT_DEV_INITIATING,
 
 	BT_DEV_RPA_VALID,
 
@@ -181,12 +182,14 @@ extern struct bt_dev bt_dev;
 extern const struct bt_conn_auth_cb *bt_auth;
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
+int bt_hci_disconnect(u16_t handle, u8_t reason);
+
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 
 int bt_le_scan_update(bool fast_scan);
 
-int bt_le_auto_conn(const struct bt_le_conn_param *conn_param);
-int bt_le_auto_conn_cancel(void);
+int bt_le_create_conn(const struct bt_conn *conn);
+int bt_le_create_conn_cancel(void);
 
 bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr);
 const bt_addr_le_t *bt_lookup_id_addr(u8_t id, const bt_addr_le_t *addr);
@@ -207,3 +210,5 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 			     const struct bt_data *ad, size_t ad_len,
 			     const struct bt_data *sd, size_t sd_len,
 			     const bt_addr_le_t *peer);
+void bt_le_adv_resume(void);
+bool bt_le_scan_random_addr_check(void);

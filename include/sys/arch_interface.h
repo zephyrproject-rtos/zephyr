@@ -160,6 +160,13 @@ void arch_cpu_atomic_idle(unsigned int key);
  */
 
 /**
+ * Per-cpu entry function
+ *
+ * @param context parameter, implementation specific
+ */
+typedef FUNC_NORETURN void (*arch_cpustart_t)(void *data);
+
+/**
  * @brief Start a numbered CPU on a MP-capable system
  *
  * This starts and initializes a specific CPU.  The main thread on startup is
@@ -176,12 +183,11 @@ void arch_cpu_atomic_idle(unsigned int key);
  * @param cpu_num Integer number of the CPU
  * @param stack Stack memory for the CPU
  * @param sz Stack buffer size, in bytes
- * @param fn Function to begin running on the CPU.  First argument is
- *        an irq_unlock() key.
+ * @param fn Function to begin running on the CPU.
  * @param arg Untyped argument to be passed to "fn"
  */
 void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
-		    void (*fn)(int key, void *data), void *arg);
+		    arch_cpustart_t fn, void *arg);
 /** @} */
 
 
@@ -632,6 +638,27 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf);
  */
 size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err);
 #endif /* CONFIG_USERSPACE */
+
+/** @} */
+
+/**
+ * @defgroup arch-benchmarking Architecture-specific benchmarking globals
+ * @ingroup arch-interface
+ * @{
+ */
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+extern u64_t arch_timing_swap_start;
+extern u64_t arch_timing_swap_end;
+extern u64_t arch_timing_irq_start;
+extern u64_t arch_timing_irq_end;
+extern u64_t arch_timing_tick_start;
+extern u64_t arch_timing_tick_end;
+extern u64_t arch_timing_user_mode_end;
+extern u32_t arch_timing_value_swap_end;
+extern u64_t arch_timing_value_swap_common;
+extern u64_t arch_timing_value_swap_temp;
+#endif /* CONFIG_EXECUTION_BENCHMARKING */
 
 /** @} */
 

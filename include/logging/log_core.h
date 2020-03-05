@@ -308,7 +308,8 @@ static inline char z_log_minimal_level_to_char(int level)
 		if (Z_LOG_CONST_LEVEL_CHECK(_level)) {			       \
 			if (IS_ENABLED(CONFIG_LOG_MINIMAL)) {		       \
 				Z_LOG_TO_PRINTK(_level, "%s", _str);	       \
-				log_minimal_hexdump_print(_level, _data,       \
+				log_minimal_hexdump_print(_level,	       \
+							  (const char *)_data, \
 							  _length);	       \
 			} else if (is_user_context ||			       \
 				   (_level <= LOG_RUNTIME_FILTER(_filter))) {  \
@@ -320,12 +321,15 @@ static inline char z_log_minimal_level_to_char(int level)
 									       \
 				if (is_user_context) {			       \
 					log_hexdump_from_user(src_level, _str, \
-							      _data, _length); \
+							      (const char *)_data, \
+							      _length);	       \
 				} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) { \
 					log_hexdump_sync(src_level, _str,      \
-							 _data, _length);      \
+							 (const char *)_data,  \
+							  _length);	       \
 				} else {				       \
-					log_hexdump(_str, _data, _length,      \
+					log_hexdump(_str, (const char *)_data, \
+						    _length,		       \
 						    src_level);		       \
 				}					       \
 			}						       \
@@ -334,7 +338,7 @@ static inline char z_log_minimal_level_to_char(int level)
 
 #define Z_LOG_HEXDUMP(_level, _data, _length, _str)	       \
 	__LOG_HEXDUMP(_level,				       \
-		      LOG_CURRENT_MODULE_ID(),		       \
+		      (u16_t)LOG_CURRENT_MODULE_ID(),	       \
 		      LOG_CURRENT_DYNAMIC_DATA_ADDR(),	       \
 		      _data, _length, _str)
 

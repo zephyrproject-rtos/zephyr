@@ -40,12 +40,6 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1306_PANEL_VCOM_DESEL_LEVEL	0x20
 #define SSD1306_PANEL_PUMP_VOLTAGE	SSD1306_SET_PUMP_VOLTAGE_90
 
-#if defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
-#define SSD1306_PANEL_NUMOF_COLUMS	132
-#else
-#define SSD1306_PANEL_NUMOF_COLUMS	128
-#endif
-
 #ifndef SSD1306_ADDRESSING_MODE
 #define SSD1306_ADDRESSING_MODE		(SSD1306_SET_MEM_ADDRESSING_HORIZONTAL)
 #endif
@@ -185,48 +179,11 @@ static int ssd1306_suspend(const struct device *dev)
 				 SSD1306_DISPLAY_OFF);
 }
 
-#if defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
-static int ssd1306_write_page(const struct device *dev, u8_t page,
-			      void const *data, size_t length)
-{
-	struct ssd1306_data *driver = dev->driver_data;
-	u8_t cmd_buf[] = {
-		SSD1306_CONTROL_BYTE_CMD,
-		SSD1306_SET_LOWER_COL_ADDRESS |
-		(DT_INST_0_SOLOMON_SSD1306FB_SEGMENT_OFFSET &
-		 SSD1306_SET_LOWER_COL_ADDRESS_MASK),
-		SSD1306_CONTROL_BYTE_CMD,
-		SSD1306_SET_HIGHER_COL_ADDRESS |
-		((DT_INST_0_SOLOMON_SSD1306FB_SEGMENT_OFFSET  >> 4) &
-		 SSD1306_SET_LOWER_COL_ADDRESS_MASK),
-		SSD1306_CONTROL_LAST_BYTE_CMD,
-		SSD1306_SET_PAGE_START_ADDRESS | page
-	};
-
-	if (page >= SSD1306_PANEL_NUMOF_PAGES) {
-		return -1;
-	}
-
-	if (length > SSD1306_PANEL_NUMOF_COLUMS) {
-		return -1;
-	}
-
-	if (i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-		      DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS)) {
-		return -1;
-	}
-
-	return i2c_burst_write(driver->i2c,
-			       DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
-			       SSD1306_CONTROL_LAST_BYTE_DATA,
-			       data, length);
-}
-#endif
-
 static int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 			 const struct display_buffer_descriptor *desc,
 			 const void *buf)
 {
+	struct ssd1306_data *driver = dev->driver_data;
 	size_t buf_len;
 
 	if (desc->pitch < desc->width) {
@@ -245,14 +202,15 @@ static int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 		return -1;
 	}
 
-#if defined(CONFIG_SSD1306_DEFAULT)
-	struct ssd1306_data *driver = dev->driver_data;
-
 	if ((y & 0x7) != 0U) {
 		LOG_ERR("Unsupported origin");
 		return -1;
 	}
 
+	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u",
+		x, y, desc->pitch, desc->width, desc->height, buf_len);
+
+#if defined(CONFIG_SSD1306_DEFAULT)
 	u8_t cmd_buf[] = {
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_MEM_ADDRESSING_MODE,
@@ -284,22 +242,41 @@ static int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 			       (u8_t *)buf, buf_len);
 
 #elif defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
-	if (x != 0U && y != 0U) {
-		LOG_ERR("Unsupported origin");
-		return -1;
-	}
+	u8_t x_offset = x + DT_INST_0_SOLOMON_SSD1306FB_SEGMENT_OFFSET;
+	u8_t cmd_buf[] = {
+		SSD1306_CONTROL_BYTE_CMD,
+		SSD1306_SET_LOWER_COL_ADDRESS |
+			(x_offset & SSD1306_SET_LOWER_COL_ADDRESS_MASK),
+		SSD1306_CONTROL_BYTE_CMD,
+		SSD1306_SET_HIGHER_COL_ADDRESS |
+			((x_offset >> 4) & SSD1306_SET_LOWER_COL_ADDRESS_MASK),
+		SSD1306_CONTROL_LAST_BYTE_CMD,
+		SSD1306_SET_PAGE_START_ADDRESS | (y / 8)
+	};
+	u8_t *buf_ptr = (u8_t *)buf;
 
-	if (desc->buf_size !=
-	    (SSD1306_PANEL_NUMOF_PAGES * DT_INST_0_SOLOMON_SSD1306FB_WIDTH)) {
-		return -1;
-	}
+	for (u8_t n = 0; n < desc->height / 8; n++) {
+		cmd_buf[sizeof(cmd_buf) - 1] =
+			SSD1306_SET_PAGE_START_ADDRESS | (n + (y / 8));
+		LOG_HEXDUMP_DBG(cmd_buf, sizeof(cmd_buf), "cmd_buf");
 
-	for (size_t pidx = 0; pidx < SSD1306_PANEL_NUMOF_PAGES; pidx++) {
-		if (ssd1306_write_page(dev, pidx, buf,
-		    DT_INST_0_SOLOMON_SSD1306FB_WIDTH)) {
+		if (i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
+			      DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS)) {
 			return -1;
 		}
-		buf = (u8_t *)buf + DT_INST_0_SOLOMON_SSD1306FB_WIDTH;
+
+		if (i2c_burst_write(driver->i2c,
+				    DT_INST_0_SOLOMON_SSD1306FB_BASE_ADDRESS,
+				    SSD1306_CONTROL_LAST_BYTE_DATA,
+				    buf_ptr, desc->width)) {
+			return -1;
+		}
+
+		buf_ptr = buf_ptr + desc->width;
+		if (buf_ptr > ((u8_t *)buf + buf_len)) {
+			LOG_ERR("Exceeded buffer length");
+			return -1;
+		}
 	}
 #endif
 
@@ -387,14 +364,12 @@ static int ssd1306_init_device(struct device *dev)
 	};
 
 #ifdef DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_CONTROLLER
-	gpio_pin_write(driver->reset,
-		       DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 1);
 	k_sleep(SSD1306_RESET_DELAY);
-	gpio_pin_write(driver->reset,
-		       DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 0);
+	gpio_pin_set(driver->reset,
+		     DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 1);
 	k_sleep(SSD1306_RESET_DELAY);
-	gpio_pin_write(driver->reset,
-		       DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 1);
+	gpio_pin_set(driver->reset,
+		     DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN, 0);
 #endif
 
 	/* Turn display off */
@@ -457,7 +432,8 @@ static int ssd1306_init(struct device *dev)
 
 	gpio_pin_configure(driver->reset,
 			   DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_PIN,
-			   GPIO_DIR_OUT);
+			   GPIO_OUTPUT_INACTIVE |
+			   DT_INST_0_SOLOMON_SSD1306FB_RESET_GPIOS_FLAGS);
 #endif
 
 	if (ssd1306_init_device(dev)) {

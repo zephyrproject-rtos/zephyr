@@ -9,30 +9,7 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
-	cpus {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		cpu@0 {
-			device_type = "cpu";
-			compatible = "arm,cortex-r4";
-			reg = <0>;
-		};
-	};
-
 	soc {
-		interrupt-parent = <&gic>;
-
-		gic: interrupt-controller@f9010000  {
-			compatible = "arm,gic";
-			reg = <0xf9010000 0x1000>,
-					<0xf9020000 0x100>;
-			interrupt-controller;
-			#interrupt-cells = <4>;
-			label = "GIC";
-			status = "okay";
-		};
-
 		flash0: flash@c0000000 {
 			compatible = "soc-nv-flash";
 			reg = <0xc0000000 DT_SIZE_K(64)>;

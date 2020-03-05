@@ -6,7 +6,7 @@
 
 #include <init.h>
 #include <device.h>
-#include <entropy.h>
+#include <drivers/entropy.h>
 #include <kernel.h>
 #include <string.h>
 
@@ -82,7 +82,11 @@ static int ctr_drbg_initialize(void)
 
 	u8_t entropy[TC_AES_KEY_SIZE + TC_AES_BLOCK_SIZE];
 
-	entropy_get_entropy(entropy_driver, (void *)&entropy, sizeof(entropy));
+	ret = entropy_get_entropy(entropy_driver, (void *)&entropy,
+				  sizeof(entropy));
+	if (ret != 0) {
+		return -EIO;
+	}
 
 	ret = tc_ctr_prng_init(&ctr_ctx,
 			       (uint8_t *)&entropy,

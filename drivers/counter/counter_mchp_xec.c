@@ -23,7 +23,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(counter_mchp_xec, CONFIG_COUNTER_LOG_LEVEL);
 
-#include <counter.h>
+#include <drivers/counter.h>
 #include <soc.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -96,11 +96,12 @@ static int counter_xec_stop(struct device *dev)
 	return 0;
 }
 
-static u32_t counter_xec_read(struct device *dev)
+static int counter_xec_get_value(struct device *dev, u32_t *ticks)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 
-	return counter->CNT;
+	*ticks = counter->CNT;
+	return 0;
 }
 
 static int counter_xec_set_alarm(struct device *dev, u8_t chan_id,
@@ -275,7 +276,7 @@ static void counter_xec_isr(struct device *dev)
 static const struct counter_driver_api counter_xec_api = {
 		.start = counter_xec_start,
 		.stop = counter_xec_stop,
-		.read = counter_xec_read,
+		.get_value = counter_xec_get_value,
 		.set_alarm = counter_xec_set_alarm,
 		.cancel_alarm = counter_xec_cancel_alarm,
 		.set_top_value = counter_xec_set_top_value,

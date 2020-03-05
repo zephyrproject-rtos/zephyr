@@ -128,6 +128,8 @@ void tp_mem_stat(void);
 
 struct net_buf *tp_nbuf_alloc(struct net_buf_pool *pool, size_t len,
 				const char *file, int line, const char *func);
+struct net_buf *tp_nbuf_clone(struct net_buf *buf, const char *file, int line,
+				const char *func);
 void tp_nbuf_unref(struct net_buf *nbuf, const char *file, int line,
 			const char *func);
 void tp_nbuf_stat(void);

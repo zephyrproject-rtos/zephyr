@@ -101,7 +101,7 @@ int usb_transport_init(usb_transport_receive_callback_t callback)
 	ret = usb_enable(NULL);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable USB");
-		return;
+		return -EIO;
 	}
 
 	/* initialize USB interface and HID class */

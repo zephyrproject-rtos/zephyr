@@ -3,9 +3,9 @@
 
 config EEPROM_STM32
 	bool "STM32 EEPROM driver"
-	depends on SOC_SERIES_STM32L1X
+	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L1X
 	default y
 	select USE_STM32_HAL_FLASH
 	select USE_STM32_HAL_FLASH_EX
 	help
-	  Enable EEPROM support on the STM32 L1 family of processors.
+	  Enable EEPROM support on the STM32 L0, L1 family of processors.

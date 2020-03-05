@@ -118,7 +118,7 @@ References
 .. target-notes::
 
 .. _IDAU:
-   https://developer.arm.com/products/architecture/cpu-architecture/m-profile/docs/100690/latest/attribution-units-sau-and-idau
+   https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
 
 .. _Icarus Product Website:
    https://www.actinius.com/icarus

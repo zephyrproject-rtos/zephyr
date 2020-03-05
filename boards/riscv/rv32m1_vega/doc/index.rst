@@ -90,6 +90,8 @@ the following hardware features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| TPM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 | SENSOR    | off-chip   | fxos8700 polling;                   |
 |           |            | fxos8700 trigger;                   |
 +-----------+------------+-------------------------------------+
@@ -113,6 +115,8 @@ supports the following hardware features:
 | UART      | on-chip    | serial                              |
 +-----------+------------+-------------------------------------+
 | I2C(M)    | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| TPM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 | SENSOR    | off-chip   | fxos8700 polling;                   |
 |           |            | fxos8700 trigger;                   |
@@ -138,6 +142,7 @@ with this board:
 - peripheral_esp (Environmental Sensing Service)
 - peripheral_hr (Heart Rate)
 - peripheral_ht (Health Thermometer)
+- peripheral
 - scan_adv
 
 .. note::
@@ -146,9 +151,7 @@ with this board:
 
    - **no 2 Mbps PHY**
    - no 512/256 Kbps PHY
-   - **no controller-based cryptographic services (neither RPA nor LL encryption
-     or decryption)**
-   - no mesh support
+   - **no LL Privacy**
    - **no power-save**
    - no TX power adjustment
 

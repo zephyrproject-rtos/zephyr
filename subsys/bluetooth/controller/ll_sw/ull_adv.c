@@ -24,6 +24,7 @@
 #include "pdu.h"
 #include "ll.h"
 #include "ll_feat.h"
+#include "ll_settings.h"
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_clock.h"
@@ -49,6 +50,8 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+#define ULL_ADV_RANDOM_DELAY HAL_TICKER_US_TO_TICKS(10000)
+
 inline struct ll_adv_set *ull_adv_set_get(u16_t handle);
 inline u16_t ull_adv_handle_get(struct ll_adv_set *adv);
 
@@ -69,6 +72,10 @@ static inline void conn_release(struct ll_adv_set *adv);
 static inline u8_t disable(u16_t handle);
 
 static struct ll_adv_set ll_adv[BT_CTLR_ADV_MAX];
+
+#if defined(CONFIG_BT_TICKER_EXT)
+static struct ticker_ext ll_adv_ticker_ext[BT_CTLR_ADV_MAX];
+#endif /* CONFIG_BT_TICKER_EXT */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 u8_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
@@ -468,10 +475,10 @@ u8_t ll_adv_enable(u8_t enable)
 
 		/* AdvA, fill here at enable */
 		if (h->adv_addr) {
-			/* TODO: Privacy */
 			u8_t *tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
 
-			if (!mem_nz(tx_addr, BDADDR_SIZE)) {
+			/* TODO: Privacy check */
+			if (pdu_adv->tx_addr && !mem_nz(tx_addr, BDADDR_SIZE)) {
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
@@ -518,7 +525,8 @@ u8_t ll_adv_enable(u8_t enable)
 		 * found the fallback address was used instead, check
 		 * that a valid address has been set.
 		 */
-		if (!mem_nz(&pdu_adv->adv_ind.addr[0], BDADDR_SIZE)) {
+		if (pdu_adv->tx_addr &&
+		    !mem_nz(pdu_adv->adv_ind.addr, BDADDR_SIZE)) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 	}
@@ -699,7 +707,7 @@ u8_t ll_adv_enable(u8_t enable)
 #endif /* CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	adv->rl_idx = rl_idx;
+	lll->rl_idx = rl_idx;
 #else
 	ARG_UNUSED(rl_idx);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
@@ -865,7 +873,17 @@ u8_t ll_adv_enable(u8_t enable)
 	} else
 #endif /* CONFIG_BT_PERIPHERAL */
 	{
-		ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
+		const u32_t ticks_slot = adv->evt.ticks_slot +
+					 ticks_slot_overhead;
+#if defined(CONFIG_BT_TICKER_EXT)
+		ll_adv_ticker_ext[handle].ticks_slot_window =
+			ULL_ADV_RANDOM_DELAY + ticks_slot;
+
+		ret = ticker_start_ext(
+#else
+		ret = ticker_start(
+#endif /* CONFIG_BT_TICKER_EXT */
+				   TICKER_INSTANCE_ID_CTLR,
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
 				   ticks_anchor, 0,
@@ -879,9 +897,15 @@ u8_t ll_adv_enable(u8_t enable)
 #else
 				   TICKER_NULL_LAZY,
 #endif
-				   (adv->evt.ticks_slot + ticks_slot_overhead),
+				   ticks_slot,
 				   ticker_cb, adv,
-				   ull_ticker_status_give, (void *)&ret_cb);
+				   ull_ticker_status_give,
+				   (void *)&ret_cb
+#if defined(CONFIG_BT_TICKER_EXT)
+				   ,
+				   &ll_adv_ticker_ext[handle]
+#endif /* CONFIG_BT_TICKER_EXT */
+				   );
 	}
 
 	ret = ull_ticker_status_take(ret, &ret_cb);
@@ -1062,7 +1086,7 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		u32_t ret;
 
 		lll_entropy_get(sizeof(random_delay), &random_delay);
-		random_delay %= HAL_TICKER_US_TO_TICKS(10000);
+		random_delay %= ULL_ADV_RANDOM_DELAY;
 		random_delay += 1;
 
 		ret = ticker_update(TICKER_INSTANCE_ID_CTLR,

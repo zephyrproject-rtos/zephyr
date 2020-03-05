@@ -6,6 +6,7 @@
 
 config SOC_SERIES_STM32G0X
 	bool "STM32G0x Series MCU"
+	select ARM
 	select CPU_CORTEX_M0PLUS
 	select CPU_CORTEX_M_HAS_VTOR
 	select CPU_HAS_ARM_MPU

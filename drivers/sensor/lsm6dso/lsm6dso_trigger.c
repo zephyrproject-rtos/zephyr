@@ -9,7 +9,7 @@
  */
 
 #include <kernel.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <drivers/gpio.h>
 #include <logging/log.h>
 
@@ -198,7 +198,8 @@ static void lsm6dso_handle_interrupt(void *arg)
 #endif
 	}
 
-	gpio_pin_enable_callback(lsm6dso->gpio, cfg->int_gpio_pin);
+	gpio_pin_interrupt_configure(lsm6dso->gpio, cfg->int_gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void lsm6dso_gpio_callback(struct device *dev,
@@ -210,7 +211,8 @@ static void lsm6dso_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, cfg->int_gpio_pin);
+	gpio_pin_interrupt_configure(lsm6dso->gpio, cfg->int_gpio_pin,
+				     GPIO_INT_DISABLE);
 
 #if defined(CONFIG_LSM6DSO_TRIGGER_OWN_THREAD)
 	k_sem_give(&lsm6dso->gpio_sem);
@@ -272,8 +274,7 @@ int lsm6dso_init_interrupt(struct device *dev)
 #endif /* CONFIG_LSM6DSO_TRIGGER_OWN_THREAD */
 
 	ret = gpio_pin_configure(lsm6dso->gpio, cfg->int_gpio_pin,
-				 GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-				 GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+				 GPIO_INPUT | cfg->int_gpio_flags);
 	if (ret < 0) {
 		LOG_DBG("Could not configure gpio");
 		return ret;
@@ -295,5 +296,6 @@ int lsm6dso_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
-	return gpio_pin_enable_callback(lsm6dso->gpio, cfg->int_gpio_pin);
+	return gpio_pin_interrupt_configure(lsm6dso->gpio, cfg->int_gpio_pin,
+					    GPIO_INT_EDGE_TO_ACTIVE);
 }

@@ -6,12 +6,9 @@ if BOARD_MEC1501MODULAR_ASSY6885
 config BOARD
 	default "mec1501modular_assy6885"
 
-if UART_NS16550
-
 config UART_NS16550_PORT_1
 	default y if UART_CONSOLE
-
-endif
+	depends on UART_NS16550
 
 if PINMUX_XEC
 
@@ -58,26 +55,10 @@ config GPIO_XEC_GPIO240_276
 
 endif # GPIO_XEC
 
-if I2C_XEC
-
-config I2C_XEC_0
-	default y
-
-config I2C_XEC_1
-	default y
-
-config I2C_XEC_2
-	default n
-
-endif # I2C
-
-if ESPI_XEC
-
 #PS/2 driver is compiled in terms of this flag.
 config ESPI_PERIPHERAL_8042_KBC
 	default y
-
-endif #ESPI_XEC
+	depends on ESPI_XEC
 
 if RTOS_TIMER
 

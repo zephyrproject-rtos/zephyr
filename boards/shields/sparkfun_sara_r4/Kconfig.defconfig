@@ -18,6 +18,9 @@ choice MODEM_UBLOX_SARA_VARIANT
 	default MODEM_UBLOX_SARA_R4
 endchoice
 
+config MODEM_UBLOX_SARA_R4_NET_STATUS
+	default y
+
 config UART_INTERRUPT_DRIVEN
 	default y
 

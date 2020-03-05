@@ -183,7 +183,7 @@ PVT SPI, SHD SPI and LED0-2 respectively.
 |          |          |        | 17-18     | 20-21    |         |
 +----------+----------+--------+-----------+----------+---------+
 
-.. note:: An additional setting for UART2 is to make sure JP39 does not have any jumper.
+.. note:: For UART2 make sure JP39 have jumpers connected 1-2, 3-4.
 
 To receive UART2 serial output, please refer to the picture below
 to make sure that JP9 configured for UART2 output.
@@ -236,6 +236,22 @@ Programming and Debugging
 
 Setup
 =====
+#. If you use Dediprog SF100 programmer, then setup it.
+
+   Windows version can be found at the `SF100 Product page`_.
+
+   Linux version source code can be found at `SF100 Linux GitHub`_.
+   Follow the `SF100 Linux manual`_ to complete setup of the SF100 programmer.
+   For Linux please make sure that you copied ``60-dediprog.rules``
+   from the ``SF100Linux`` folder to the :code:`/etc/udev/rules.s` (or rules.d)
+   then restart service using:
+
+   .. code-block:: console
+
+      $ udevadm control --reload
+
+   Add directory with program ``dpcmd`` (on Linux)
+   or ``dpcmd.exe`` (on Windows) to your ``PATH``.
 
 #. Clone the `SPI Image Gen`_ repository or download the files within
    that directory.
@@ -256,15 +272,6 @@ Setup
    .. code-block:: console
 
       export EVERGLADES_SPI_CFG=custom_spi_cfg.txt
-
-Building
-========
-
-#. Build :ref:`hello_world` application as you would normally do.
-
-#. The file :file:`spi_image.bin` will be created if the build system
-   can find the image generation tool. This binary image can be used
-   to flash the SPI chip.
 
 Wiring
 ========
@@ -323,37 +330,38 @@ Wiring
     |    MOSI    |       5       |
     +------------+---------------+
 
+#. Connect UART2 port of the MEC15xxEVB_ASSY_6853 board
+   to your host computer using the RS232 cable.
+
+#. Apply power to the board via a micro-USB cable.
+   Configure this option by using a jumper between ``JP88 7-8``.
+
+   .. image:: ./jp88_power_options.png
+        :width: 400px
+        :align: center
+        :alt: SPI DONGLE ASSY 6791 Connected
+
+#. Final wiring for the board should look like this:
+
+   .. image:: ./mec_board_setup.png
+        :width: 600px
+        :align: center
+        :alt: SPI DONGLE ASSY 6791 Connected
+
+Building
+========
+#. Build :ref:`hello_world` application as you would normally do.
+
+#. The file :file:`spi_image.bin` will be created if the build system
+   can find the image generation tool. This binary image can be used
+   to flash the SPI chip.
 
 Flashing
 ========
-#. Flash your board using west.
+#. Run your favorite terminal program to listen for output.
+   Under Linux the terminal should be :code:`/dev/ttyUSB0`. Do not close it.
 
-   .. code-block:: console
-
-      $ west flash
-
-   .. note:: When west process started press Reset button and do not release it
-    till the whole west process will not be finished successfully.
-
-    .. image:: ./reset_button_1.png
-         :width: 400px
-         :align: center
-         :alt: SPI DONGLE ASSY 6791 Connected
-
-#. If you use Dediprog SF100 do an additional setup. Please make sure that the program ``dpcmd`` (on Linux)
-   or ``dpcmd.exe`` (on Windows) can be found in your ``PATH``.
-   The Windows version is installed with your DediProg software.
-   The source code of the Linux version can be found at `SF100 Linux GitHub`_.
-   For Linux please make sure that you copied ``60-dediprog.rules`` from the SF100Linux
-   folder to the :code:`/etc/udev/rules.s` then restart service using:
-
-   .. code-block:: console
-
-      $ udevadm control --reload:
-
-
-#. Run your favorite terminal program to listen for output. Under Linux the
-   terminal should be :code:`/dev/ttyUSB0`. For example:
+   For example:
 
    .. code-block:: console
 
@@ -367,28 +375,30 @@ Flashing
    - Parity: None
    - Stop bits: 1
 
-#. Connect the MEC15xxEVB_ASSY_6853 board to your host computer using the
-   UART2 port.
+#. Flash your board using ``west`` from the second terminal window.
+   Split first and second terminal windows to view both of them.
 
-#. An easy option to apply power to the board is via a micro-USB cable.
-   Configure this option by using a jumper between ``JP88 7-8``.
+   .. code-block:: console
 
-   .. image:: ./jp88_power_options.png
-        :width: 400px
-        :align: center
-        :alt: SPI DONGLE ASSY 6791 Connected
+      $ west flash
 
-   You should see ``"Hello World! mec15xxevb_assy6853"`` in your terminal.
-   If you don't see this message on the serial terminal, press the Reset button
-   and the message should appear.
+   .. note:: When west process started press Reset button and do not release it
+    till the whole west process will not be finished successfully.
 
-#. Final wiring for the board should look like this:
+    .. image:: ./reset_button_1.png
+         :width: 400px
+         :align: center
+         :alt: SPI DONGLE ASSY 6791 Connected
 
-   .. image:: ./mec_board_setup.png
-        :width: 600px
-        :align: center
-        :alt: SPI DONGLE ASSY 6791 Connected
 
+   .. note:: If you dont't want to press Reset button every time, you can disconnect
+    SPI Dongle ASSY 6791 from the EVB during the west flash programming.
+    Then connect it back to the ``J44`` header and apply power to the EVB.
+    Result will be the same.
+
+
+#. You should see ``"Hello World! mec15xxevb_assy6853"`` in the first terminal window.
+   If you don't see this message, press the Reset button and the message should appear.
 
 Debugging
 =========
@@ -426,3 +436,7 @@ References
     https://github.com/MicrochipTech/CPGZephyrDocs/tree/master/MEC1501/SPI_image_gen
 .. _SF100 Linux GitHub:
     https://github.com/DediProgSW/SF100Linux
+.. _SF100 Product page:
+    https://www.dediprog.com/product/SF100
+.. _SF100 Linux manual:
+    https://www.dediprog.com/download/save/727.pdf

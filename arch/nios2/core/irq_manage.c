@@ -18,7 +18,7 @@
 #include <sw_isr_table.h>
 #include <ksched.h>
 #include <kswap.h>
-#include <debug/tracing.h>
+#include <tracing/tracing.h>
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
@@ -87,7 +87,9 @@ void _enter_irq(u32_t ipending)
 	while (ipending) {
 		struct _isr_table_entry *ite;
 
+#ifdef CONFIG_TRACING_ISR
 		sys_trace_isr_enter();
+#endif
 
 		index = find_lsb_set(ipending) - 1;
 		ipending &= ~BIT(index);
@@ -99,7 +101,9 @@ void _enter_irq(u32_t ipending)
 		read_timer_end_of_isr();
 #endif
 		ite->isr(ite->arg);
+#ifdef CONFIG_TRACING_ISR
 		sys_trace_isr_exit();
+#endif
 	}
 
 	_kernel.nested--;

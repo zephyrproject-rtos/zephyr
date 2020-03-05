@@ -8,7 +8,7 @@
  * https://www.st.com/resource/en/datasheet/lsm6dso.pdf
  */
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
@@ -774,6 +774,7 @@ static const struct lsm6dso_config lsm6dso_config = {
 #ifdef CONFIG_LSM6DSO_TRIGGER
 	.int_gpio_port = DT_INST_0_ST_LSM6DSO_IRQ_GPIOS_CONTROLLER,
 	.int_gpio_pin = DT_INST_0_ST_LSM6DSO_IRQ_GPIOS_PIN,
+	.int_gpio_flags = DT_INST_0_ST_LSM6DSO_IRQ_GPIOS_FLAGS,
 #if defined(CONFIG_LSM6DSO_INT_PIN_1)
 	.int_pin = 1,
 #elif defined(CONFIG_LSM6DSO_INT_PIN_2)

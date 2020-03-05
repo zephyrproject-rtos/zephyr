@@ -13,7 +13,7 @@
 #include <soc.h>
 #include <errno.h>
 #include <drivers/gpio.h>
-#include <gpio/gpio_esp32.h>
+#include <drivers/gpio/gpio_esp32.h>
 #include <drivers/i2c.h>
 #include <sys/util.h>
 #include <string.h>
@@ -98,9 +98,9 @@ struct i2c_esp32_config {
 
 static int i2c_esp32_configure_pins(int pin, int matrix_out, int matrix_in)
 {
-	const int pin_mode = GPIO_DIR_OUT |
-			     GPIO_DS_DISCONNECT_LOW |
-			     GPIO_PUD_PULL_UP;
+	const int pin_mode = GPIO_OUTPUT_HIGH |
+			     GPIO_OPEN_DRAIN  |
+			     GPIO_PULL_UP;
 	const char *device_name = gpio_esp32_get_gpio_for_pin(pin);
 	struct device *gpio;
 	int ret;
@@ -114,11 +114,6 @@ static int i2c_esp32_configure_pins(int pin, int matrix_out, int matrix_in)
 	}
 
 	ret = gpio_pin_configure(gpio, pin, pin_mode);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = gpio_pin_write(gpio, pin, 1);
 	if (ret < 0) {
 		return ret;
 	}

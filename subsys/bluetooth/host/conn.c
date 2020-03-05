@@ -20,7 +20,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
-#include <bluetooth/hci_driver.h>
+#include <drivers/bluetooth/hci_driver.h>
 #include <bluetooth/att.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_CONN)
@@ -47,8 +47,8 @@ NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
 
 #if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
 
-#if defined(BT_CTLR_TX_BUFFER_SIZE)
-#define FRAG_SIZE BT_L2CAP_BUF_SIZE(BT_CTLR_TX_BUFFER_SIZE - 4)
+#if defined(CONFIG_BT_CTLR_TX_BUFFER_SIZE)
+#define FRAG_SIZE BT_L2CAP_BUF_SIZE(CONFIG_BT_CTLR_TX_BUFFER_SIZE - 4)
 #else
 #define FRAG_SIZE BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU)
 #endif
@@ -117,6 +117,10 @@ static inline const char *state2str(bt_conn_state_t state)
 		return "connect-scan";
 	case BT_CONN_CONNECT_DIR_ADV:
 		return "connect-dir-adv";
+	case BT_CONN_CONNECT_ADV:
+		return "connect-adv";
+	case BT_CONN_CONNECT_AUTO:
+		return "connect-auto";
 	case BT_CONN_CONNECT:
 		return "connect";
 	case BT_CONN_CONNECTED:
@@ -335,6 +339,16 @@ static void conn_update_timeout(struct k_work *work)
 		 * state transition.
 		 */
 		bt_conn_unref(conn);
+
+		/* A new reference likely to have been released here,
+		 * Resume advertising.
+		 */
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+		    atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING) &&
+		    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+			bt_le_adv_resume();
+		}
+
 		return;
 	}
 
@@ -348,7 +362,7 @@ static void conn_update_timeout(struct k_work *work)
 		 * auto connect flag if it was set, instead just cancel
 		 * connection directly
 		 */
-		bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL);
+		bt_le_create_conn_cancel();
 		return;
 	}
 
@@ -1678,11 +1692,20 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			k_poll_signal_raise(&conn_change, 0);
 			/* The last ref will be dropped during cleanup */
 		} else if (old_state == BT_CONN_CONNECT) {
-			/* conn->err will be set in this case */
-			notify_connected(conn);
+			/* LE Create Connection command failed. This might be
+			 * directly from the API, don't notify application in
+			 * this case.
+			 */
+			if (conn->err) {
+				notify_connected(conn);
+			}
 			bt_conn_unref(conn);
 		} else if (old_state == BT_CONN_CONNECT_SCAN) {
-			/* this indicate LE Create Connection failed */
+			/* this indicate LE Create Connection with peer address
+			 * has been stopped. This could either be triggered by
+			 * the application through bt_conn_disconnect or by
+			 * timeout set by CONFIG_BT_CREATE_CONN_TIMEOUT.
+			 */
 			if (conn->err) {
 				notify_connected(conn);
 			}
@@ -1695,8 +1718,22 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			}
 
 			bt_conn_unref(conn);
+		} else if (old_state == BT_CONN_CONNECT_AUTO) {
+			/* this indicates LE Create Connection with filter
+			 * policy has been stopped. This can only be triggered
+			 * by the application, so don't notify.
+			 */
+			bt_conn_unref(conn);
+		} else if (old_state == BT_CONN_CONNECT_ADV) {
+			/* This can only happen when application stops the
+			 * advertiser, conn->err is never set in this case.
+			 */
+			bt_conn_unref(conn);
 		}
-
+		break;
+	case BT_CONN_CONNECT_AUTO:
+		break;
+	case BT_CONN_CONNECT_ADV:
 		break;
 	case BT_CONN_CONNECT_SCAN:
 		break;
@@ -1766,19 +1803,24 @@ struct bt_conn *bt_conn_lookup_handle(u16_t handle)
 	return NULL;
 }
 
-int bt_conn_addr_le_cmp(const struct bt_conn *conn, const bt_addr_le_t *peer)
+bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, u8_t id,
+			     const bt_addr_le_t *peer)
 {
+	if (id != conn->id) {
+		return false;
+	}
+
 	/* Check against conn dst address as it may be the identity address */
 	if (!bt_addr_le_cmp(peer, &conn->le.dst)) {
-		return 0;
+		return true;
 	}
 
 	/* Check against initial connection address */
 	if (conn->role == BT_HCI_ROLE_MASTER) {
-		return bt_addr_le_cmp(peer, &conn->le.resp_addr);
+		return bt_addr_le_cmp(peer, &conn->le.resp_addr) == 0;
 	}
 
-	return bt_addr_le_cmp(peer, &conn->le.init_addr);
+	return bt_addr_le_cmp(peer, &conn->le.init_addr) == 0;
 }
 
 struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer)
@@ -1794,8 +1836,7 @@ struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer)
 			continue;
 		}
 
-		if (conns[i].id == id &&
-		    !bt_conn_addr_le_cmp(&conns[i], peer)) {
+		if (bt_conn_is_peer_addr_le(&conns[i], id, peer)) {
 			return bt_conn_ref(&conns[i]);
 		}
 	}
@@ -1803,7 +1844,7 @@ struct bt_conn *bt_conn_lookup_addr_le(u8_t id, const bt_addr_le_t *peer)
 	return NULL;
 }
 
-struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
+struct bt_conn *bt_conn_lookup_state_le(u8_t id, const bt_addr_le_t *peer,
 					const bt_conn_state_t state)
 {
 	int i;
@@ -1817,11 +1858,11 @@ struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
 			continue;
 		}
 
-		if (peer && bt_conn_addr_le_cmp(&conns[i], peer)) {
+		if (peer && !bt_conn_is_peer_addr_le(&conns[i], id, peer)) {
 			continue;
 		}
 
-		if (conns[i].state == state) {
+		if (conns[i].state == state && conns[i].id == id) {
 			return bt_conn_ref(&conns[i]);
 		}
 	}
@@ -1946,22 +1987,11 @@ int bt_conn_get_remote_info(struct bt_conn *conn,
 	}
 }
 
-static int bt_hci_disconnect(struct bt_conn *conn, u8_t reason)
+static int conn_disconnect(struct bt_conn *conn, u8_t reason)
 {
-	struct net_buf *buf;
-	struct bt_hci_cp_disconnect *disconn;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_DISCONNECT, sizeof(*disconn));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	disconn = net_buf_add(buf, sizeof(*disconn));
-	disconn->handle = sys_cpu_to_le16(conn->handle);
-	disconn->reason = reason;
-
-	err = bt_hci_cmd_send(BT_HCI_OP_DISCONNECT, buf);
+	err = bt_hci_disconnect(conn->handle, reason);
 	if (err) {
 		return err;
 	}
@@ -2050,13 +2080,12 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 
 		if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
 			k_delayed_work_cancel(&conn->update_work);
-			return bt_hci_cmd_send(BT_HCI_OP_LE_CREATE_CONN_CANCEL,
-					       NULL);
+			return bt_le_create_conn_cancel();
 		}
 
 		return 0;
 	case BT_CONN_CONNECTED:
-		return bt_hci_disconnect(conn, reason);
+		return conn_disconnect(conn, reason);
 	case BT_CONN_DISCONNECT:
 		return 0;
 	case BT_CONN_DISCONNECTED:
@@ -2082,57 +2111,83 @@ int bt_conn_create_auto_le(const struct bt_le_conn_param *param)
 	int err;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
-		return -EINVAL;
+		return -EAGAIN;
 	}
 
 	if (!bt_le_conn_params_valid(param)) {
 		return -EINVAL;
 	}
 
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
-		return -EINVAL;
-	}
-
-	if (atomic_test_bit(bt_dev.flags, BT_DEV_AUTO_CONN)) {
+	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, BT_ADDR_LE_NONE,
+				       BT_CONN_CONNECT_AUTO);
+	if (conn) {
+		bt_conn_unref(conn);
 		return -EALREADY;
 	}
 
-	/* Don't start initiator if we have general discovery procedure. */
-	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
-	if (conn) {
-		bt_conn_unref(conn);
+	/* Scanning either to connect or explicit scan, either case scanner was
+	 * started by application and should not be stopped.
+	 */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
 		return -EINVAL;
 	}
 
-	/* Don't start initiator if we have direct discovery procedure. */
-	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
-	if (conn) {
-		bt_conn_unref(conn);
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
 		return -EINVAL;
 	}
 
-	err = bt_le_auto_conn(param);
+	if (!bt_le_scan_random_addr_check()) {
+		return -EINVAL;
+	}
+
+	conn = bt_conn_add_le(BT_ID_DEFAULT, BT_ADDR_LE_NONE);
+	if (!conn) {
+		return -ENOMEM;
+	}
+
+	atomic_set_bit(conn->flags, BT_CONN_AUTO_CONNECT);
+	bt_conn_set_param_le(conn, param);
+	bt_conn_set_state(conn, BT_CONN_CONNECT_AUTO);
+
+	err = bt_le_create_conn(conn);
 	if (err) {
 		BT_ERR("Failed to start whitelist scan");
+		conn->err = 0;
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		bt_conn_unref(conn);
 		return err;
 	}
 
+	/* Since we don't give the application a reference to manage in
+	 * this case, we need to release this reference here.
+	 */
+	bt_conn_unref(conn);
 	return 0;
 }
 
 int bt_conn_create_auto_stop(void)
 {
+	struct bt_conn *conn;
 	int err;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EINVAL;
 	}
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_AUTO_CONN)) {
+	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, BT_ADDR_LE_NONE,
+				       BT_CONN_CONNECT_AUTO);
+	if (!conn) {
 		return -EINVAL;
 	}
 
-	err = bt_le_auto_conn_cancel();
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
+		return -EINVAL;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	bt_conn_unref(conn);
+
+	err = bt_le_create_conn_cancel();
 	if (err) {
 		BT_ERR("Failed to stop initiator");
 		return err;
@@ -2160,27 +2215,28 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		return NULL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_WHITELIST) &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_AUTO_CONN)) {
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
+		return NULL;
+	}
+
+	if (!bt_le_scan_random_addr_check()) {
 		return NULL;
 	}
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, peer);
 	if (conn) {
-		switch (conn->state) {
-		case BT_CONN_CONNECT_SCAN:
-			bt_conn_set_param_le(conn, param);
-			return conn;
-		case BT_CONN_CONNECT:
-		case BT_CONN_CONNECTED:
-			return conn;
-		case BT_CONN_DISCONNECTED:
-			BT_WARN("Found valid but disconnected conn object");
-			goto start_scan;
-		default:
-			bt_conn_unref(conn);
-			return NULL;
-		}
+		/* Connection object already exists.
+		 * If the connection state is "connect" or "connected" then
+		 * this connection object was created using this API but has not
+		 * yet been disconnected.
+		 * If the connection state is "disconnected" then the connection
+		 * still has valid references. The last reference of the stack
+		 * is released after the disconnected callback.
+		 */
+		BT_WARN("Found valid connection in %s state",
+			state2str(conn->state));
+		bt_conn_unref(conn);
+		return NULL;
 	}
 
 	if (peer->type == BT_ADDR_LE_PUBLIC_ID ||
@@ -2197,12 +2253,33 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 		return NULL;
 	}
 
-start_scan:
 	bt_conn_set_param_le(conn, param);
 
-	bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+#if defined(CONFIG_BT_SMP)
+	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
+		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 
-	bt_le_scan_update(true);
+		if (bt_le_scan_update(true)) {
+			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+			bt_conn_unref(conn);
+
+			return NULL;
+		}
+
+		return conn;
+	}
+#endif
+
+	bt_conn_set_state(conn, BT_CONN_CONNECT);
+
+	if (bt_le_create_conn(conn)) {
+		conn->err = 0;
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		bt_conn_unref(conn);
+
+		bt_le_scan_update(false);
+		return NULL;
+	}
 
 	return conn;
 }
@@ -2218,6 +2295,10 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 	}
 
 	if (param && !bt_le_conn_params_valid(param)) {
+		return -EINVAL;
+	}
+
+	if (!bt_le_scan_random_addr_check()) {
 		return -EINVAL;
 	}
 
@@ -2276,30 +2357,18 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 
 	conn = bt_conn_lookup_addr_le(param->id, peer);
 	if (conn) {
-		switch (conn->state) {
-		case BT_CONN_CONNECT_DIR_ADV:
-			/* Handle the case when advertising is stopped with
-			 * bt_le_adv_stop function
-			 */
-			err = bt_le_adv_start_internal(&param_int, NULL, 0,
-						       NULL, 0, peer);
-			if (err && (err != -EALREADY)) {
-				BT_WARN("Directed advertising could not be"
-					" started: %d", err);
-				bt_conn_unref(conn);
-				return NULL;
-			}
-
-		case BT_CONN_CONNECT:
-		case BT_CONN_CONNECTED:
-			return conn;
-		case BT_CONN_DISCONNECTED:
-			BT_WARN("Found valid but disconnected conn object");
-			goto start_adv;
-		default:
-			bt_conn_unref(conn);
-			return NULL;
-		}
+		/* Connection object already exists.
+		 * If the connection state is "connect-dir-adv" or "connected"
+		 * then this connection object was created using this API but
+		 * has not yet been disconnected.
+		 * If the connection state is "disconnected" then the connection
+		 * still has valid references. The last reference of the stack
+		 * is released after the disconnected callback.
+		 */
+		BT_WARN("Found valid connection in %s state",
+			state2str(conn->state));
+		bt_conn_unref(conn);
+		return NULL;
 	}
 
 	conn = bt_conn_add_le(param->id, peer);
@@ -2307,7 +2376,6 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 		return NULL;
 	}
 
-start_adv:
 	bt_conn_set_state(conn, BT_CONN_CONNECT_DIR_ADV);
 
 	err = bt_le_adv_start_internal(&param_int, NULL, 0, NULL, 0, peer);
@@ -2568,15 +2636,15 @@ u8_t bt_conn_index(struct bt_conn *conn)
 	return index;
 }
 
-struct bt_conn *bt_conn_lookup_id(u8_t id)
+struct bt_conn *bt_conn_lookup_index(u8_t index)
 {
 	struct bt_conn *conn;
 
-	if (id >= ARRAY_SIZE(conns)) {
+	if (index >= ARRAY_SIZE(conns)) {
 		return NULL;
 	}
 
-	conn = &conns[id];
+	conn = &conns[index];
 
 	if (!atomic_get(&conn->ref)) {
 		return NULL;
@@ -2611,12 +2679,14 @@ int bt_conn_init(void)
 				continue;
 			}
 
+#if !defined(CONFIG_BT_WHITELIST)
 			if (atomic_test_bit(conn->flags,
 					    BT_CONN_AUTO_CONNECT)) {
 				/* Only the default identity is supported */
 				conn->id = BT_ID_DEFAULT;
 				bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
 			}
+#endif /* !defined(CONFIG_BT_WHITELIST) */
 		}
 	}
 

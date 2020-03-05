@@ -8,12 +8,9 @@ if BOARD_NUCLEO_F207ZG
 config BOARD
 	default "nucleo_f207zg"
 
-if UART_CONSOLE
-
 config UART_3
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 if NETWORKING
 
@@ -25,11 +22,12 @@ config ETH_STM32_HAL
 
 endif # NETWORKING
 
-if SERIAL
-
 config UART_6
 	default y
+	depends on SERIAL
 
-endif # SERIAL
+config ADC_1
+	default y
+	depends on ADC
 
 endif # BOARD_NUCLEO_F207ZG

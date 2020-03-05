@@ -13,14 +13,6 @@
 	compatible = "nxp,mimxrt1015";
 
 	aliases {
-		gpio-1= &gpio1;
-		gpio-2= &gpio2;
-		gpio-3= &gpio3;
-		gpio-4= &gpio4;
-		gpio-5= &gpio5;
-		i2c-1 = &i2c1;
-		uart-1 = &uart1;
-		uart-4 = &uart4;
 		led0 = &green_led;
 		sw0 = &user_button;
 	};
@@ -33,7 +25,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led-1 {
-			gpios = <&gpio3 21 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio3 21 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
 		};
 	};
@@ -42,7 +34,7 @@
 		compatible = "gpio-keys";
 		user_button: button-1 {
 			label = "User SW4";
-			gpios = <&gpio2 9 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
 		};
 	};
 

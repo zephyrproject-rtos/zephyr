@@ -12,15 +12,12 @@ config MICROBIT_DISPLAY
 	  Enable this to be able to display images and text on the 5x5
 	  LED matrix display on the BBC micro:bit.
 
-if MICROBIT_DISPLAY
-
 config MICROBIT_DISPLAY_STR_MAX
 	int "Maximum length of strings that can be shown on the display"
 	range 3 255
 	default 40
+	depends on MICROBIT_DISPLAY
 	help
 	  This value specifies the maximum length of strings that can
 	  be displayed using the mb_display_string() and mb_display_print()
 	  APIs.
-
-endif # MICROBIT_DISPLAY

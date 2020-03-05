@@ -868,7 +868,7 @@ static void le_rand(struct net_buf *buf, struct net_buf **evt)
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
 
-	bt_rand(rp->rand, count);
+	util_rand(rp->rand, count);
 }
 
 static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt)
@@ -1341,8 +1341,8 @@ static void le_read_max_data_len(struct net_buf *buf, struct net_buf **evt)
 
 	rp->max_tx_octets = sys_cpu_to_le16(max_tx_octets);
 	rp->max_tx_time = sys_cpu_to_le16(max_tx_time);
-	rp->max_tx_octets = sys_cpu_to_le16(max_tx_octets);
-	rp->max_tx_time = sys_cpu_to_le16(max_tx_time);
+	rp->max_rx_octets = sys_cpu_to_le16(max_rx_octets);
+	rp->max_rx_time = sys_cpu_to_le16(max_rx_time);
 	rp->status = 0x00;
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */

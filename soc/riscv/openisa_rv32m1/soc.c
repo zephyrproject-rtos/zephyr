@@ -190,6 +190,27 @@ static void rv32m1_switch_to_sirc(void)
 }
 
 /**
+ * @brief Setup peripheral clocks
+ *
+ * Setup the peripheral clock sources.
+ */
+static void rv32m1_setup_peripheral_clocks(void)
+{
+#ifdef DT_OPENISA_RV32M1_TPM_PWM_0_BASE_ADDRESS
+	CLOCK_SetIpSrc(kCLOCK_Tpm0, kCLOCK_IpSrcFircAsync);
+#endif
+#ifdef DT_OPENISA_RV32M1_TPM_PWM_1_BASE_ADDRESS
+	CLOCK_SetIpSrc(kCLOCK_Tpm1, kCLOCK_IpSrcFircAsync);
+#endif
+#ifdef DT_OPENISA_RV32M1_TPM_PWM_2_BASE_ADDRESS
+	CLOCK_SetIpSrc(kCLOCK_Tpm2, kCLOCK_IpSrcFircAsync);
+#endif
+#ifdef DT_OPENISA_RV32M1_TPM_PWM_3_BASE_ADDRESS
+	CLOCK_SetIpSrc(kCLOCK_Tpm3, kCLOCK_IpSrcFircAsync);
+#endif
+}
+
+/**
  * @brief Perform basic hardware initialization
  *
  * Initializes the base clocks and LPFLL using helpers provided by the HAL.
@@ -213,6 +234,9 @@ static int soc_rv32m1_init(struct device *arg)
 
 	/* Initialize LPFLL */
 	CLOCK_InitLpFll(&rv32m1_lpfll_cfg);
+
+	/* Initialize peripheral clocks */
+	rv32m1_setup_peripheral_clocks();
 
 	irq_unlock(key);
 

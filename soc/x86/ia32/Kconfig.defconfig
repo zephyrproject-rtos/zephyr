@@ -20,22 +20,16 @@ if UART_NS16550
 config UART_NS16550_PORT_0
 	default y
 
-if UART_NS16550_PORT_0
-
 config UART_NS16550_PORT_0_OPTIONS
 	default 0
-
-endif # UART_NS16550_PORT_0
+	depends on UART_NS16550_PORT_0
 
 config UART_NS16550_PORT_1
 	default y
 
-if UART_NS16550_PORT_1
-
 config UART_NS16550_PORT_1_OPTIONS
 	default 0
-
-endif # UART_NS16550_PORT_1
+	depends on UART_NS16550_PORT_1
 
 endif # UART_NS16550
 

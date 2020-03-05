@@ -8,27 +8,16 @@ if BOARD_STEVAL_FCU001V1
 config BOARD
 	default "steval_fcu001v1"
 
-if UART_CONSOLE
-
 config UART_1
 	default y
-
-endif # UART_CONSOLE
-
-if I2C
+	depends on UART_CONSOLE
 
 config I2C_2
 	default y
-
-endif # I2C
-
-
-if PWM
+	depends on I2C
 
 config PWM_STM32_2
 	default y
-
-endif # PWM
-
+	depends on PWM
 
 endif # BOARD_STEVAL_FCU001V1

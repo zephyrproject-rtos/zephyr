@@ -97,6 +97,12 @@ static u32_t read(struct device *dev)
 	return nrf_rtc_counter_get(get_nrfx_config(dev)->rtc);
 }
 
+static int get_value(struct device *dev, u32_t *ticks)
+{
+	*ticks = read(dev);
+	return 0;
+}
+
 /* Return true if value equals 2^n - 1 */
 static inline bool is_bit_mask(u32_t val)
 {
@@ -516,7 +522,7 @@ static u32_t get_pending_int(struct device *dev)
 	return 0;
 }
 
-static int init_rtc(struct device *dev, u8_t prescaler)
+static int init_rtc(struct device *dev, u32_t prescaler)
 {
 	struct device *clock;
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
@@ -637,7 +643,7 @@ static void irq_handler(struct device *dev)
 static const struct counter_driver_api counter_nrfx_driver_api = {
 	.start = start,
 	.stop = stop,
-	.read = read,
+	.get_value = get_value,
 	.set_alarm = set_channel_alarm,
 	.cancel_alarm = cancel_alarm,
 	.set_top_value = set_top_value,

@@ -62,7 +62,7 @@ static K_THREAD_STACK_DEFINE(prio_recv_thread_stack,
 struct k_thread recv_thread_data;
 static K_THREAD_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 
-#if defined(CONFIG_INIT_STACKS)
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 static u32_t prio_ts;
 static u32_t rx_ts;
 #endif
@@ -154,10 +154,9 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 		/* Now, ULL mayfly has something to give to us */
 		BT_DBG("sem taken");
 
-#if defined(CONFIG_INIT_STACKS)
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 		if (k_uptime_get_32() - prio_ts > K_SECONDS(5)) {
-			STACK_ANALYZE("prio recv thread stack",
-				      prio_recv_thread_stack);
+			log_stack_usage(&prio_recv_thread_data);
 			prio_ts = k_uptime_get_32();
 		}
 #endif
@@ -399,9 +398,9 @@ static void recv_thread(void *p1, void *p2, void *p3)
 
 		k_yield();
 
-#if defined(CONFIG_INIT_STACKS)
+#if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 		if (k_uptime_get_32() - rx_ts > K_SECONDS(5)) {
-			STACK_ANALYZE("recv thread stack", recv_thread_stack);
+			log_stack_usage(&recv_thread_data);
 			rx_ts = k_uptime_get_32();
 		}
 #endif

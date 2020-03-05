@@ -639,11 +639,10 @@ static void mcp2515_handle_interrupts(struct device *dev)
 {
 	const struct mcp2515_config *dev_cfg = DEV_CFG(dev);
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
-	u32_t pin;
 	int ret;
 	u8_t canintf;
 
-	/* Loop until INT pin is high (all interrupt flags handled) */
+	/* Loop until INT pin is inactive (all interrupt flags handled) */
 	while (1) {
 		ret = mcp2515_cmd_read_reg(dev, MCP2515_ADDR_CANINTF,
 				&canintf, 1);
@@ -693,11 +692,11 @@ static void mcp2515_handle_interrupts(struct device *dev)
 					canintf, ~canintf);
 		}
 
-		/* Break from loop if INT pin is no longer low */
-		ret = gpio_pin_read(dev_data->int_gpio, dev_cfg->int_pin, &pin);
-		if (ret != 0) {
+		/* Break from loop if INT pin is inactive */
+		ret = gpio_pin_get(dev_data->int_gpio, dev_cfg->int_pin);
+		if (ret < 0) {
 			LOG_ERR("Couldn't read INT pin");
-		} else if (pin != 0) {
+		} else if (ret == 0) {
 			/* All interrupt flags handled */
 			break;
 		}
@@ -790,8 +789,8 @@ static int mcp2515_init(struct device *dev)
 	}
 
 	if (gpio_pin_configure(dev_data->int_gpio, dev_cfg->int_pin,
-			       (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE
-				| GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE))) {
+			       (GPIO_INPUT |
+				DT_INST_0_MICROCHIP_MCP2515_INT_GPIOS_FLAGS))) {
 		LOG_ERR("Unable to configure GPIO pin %u", dev_cfg->int_pin);
 		return -EINVAL;
 	}
@@ -803,7 +802,8 @@ static int mcp2515_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (gpio_pin_enable_callback(dev_data->int_gpio, dev_cfg->int_pin)) {
+	if (gpio_pin_interrupt_configure(dev_data->int_gpio, dev_cfg->int_pin,
+					 GPIO_INT_EDGE_TO_ACTIVE)) {
 		return -EINVAL;
 	}
 

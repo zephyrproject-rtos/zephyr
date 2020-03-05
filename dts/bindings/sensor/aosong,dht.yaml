@@ -1,9 +1,9 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Aosong DHT Digital-output Humidity and Temperature Sensor
-
 description: |
+    Aosong DHT (Digital-output Humidity and Temperature Sensor)
+
     The Aosong DHT family of sensors provide temperature and humidity
     measurements through a bidirectional serial digital signal.  The
     DHT11 uses a polymer humidity capacitor with NTC thermistor; the
@@ -21,6 +21,9 @@ properties:
     required: true
     description: |
       Pin on which sensor communication will be performed.
+
+      Control and data are encoded by the duration of active low
+      signals.  A pull up may be appropriate.
 
   dht22:
     type: boolean

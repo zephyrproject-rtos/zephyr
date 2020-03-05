@@ -1,9 +1,10 @@
 # Copyright (c) 2018 Open Source Foundries Limited.
 # Copyright 2019 Foundries.io
+# Copyright (c) 2020 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
-'''west "debug" and "debugserver" commands.'''
+'''west "debug", "debugserver", and "attach" commands.'''
 
 from textwrap import dedent
 
@@ -20,17 +21,18 @@ class Debug(WestCommand):
             # Keep this in sync with the string in west-commands.yml.
             'flash and interactively debug a Zephyr application',
             dedent('''
-            Connect to the board, program the flash, and start a
-            debugging session.\n\n''') +
+            Connect to the board, flash the program, and start a
+            debugging session. Use "west attach" instead to attach
+            a debugger without reflashing.\n\n''') +
             desc_common('debug'),
             accepts_unknown_args=True)
+        self.runner_key = 'debug-runner'  # in runners.yaml
 
     def do_add_parser(self, parser_adder):
-        return add_parser_common(parser_adder, self)
+        return add_parser_common(self, parser_adder)
 
     def do_run(self, my_args, runner_args):
-        do_run_common(self, my_args, runner_args,
-                      'ZEPHYR_BOARD_DEBUG_RUNNER')
+        do_run_common(self, my_args, runner_args)
 
 
 class DebugServer(WestCommand):
@@ -49,13 +51,13 @@ class DebugServer(WestCommand):
             Zephyr image.\n\n''') +
             desc_common('debugserver'),
             accepts_unknown_args=True)
+        self.runner_key = 'debug-runner'  # in runners.yaml
 
     def do_add_parser(self, parser_adder):
-        return add_parser_common(parser_adder, self)
+        return add_parser_common(self, parser_adder)
 
     def do_run(self, my_args, runner_args):
-        do_run_common(self, my_args, runner_args,
-                      'ZEPHYR_BOARD_DEBUG_RUNNER')
+        do_run_common(self, my_args, runner_args)
 
 
 class Attach(WestCommand):
@@ -65,15 +67,13 @@ class Attach(WestCommand):
             'attach',
             # Keep this in sync with the string in west-commands.yml.
             'interactively debug a board',
-            dedent('''
-            Like 'debug', this connects to the board and starts a debugging
-            session, but it doesn't reflash the program on the board.\n\n''') +
+            "Like \"west debug\", but doesn't reflash the program.\n\n" +
             desc_common('attach'),
             accepts_unknown_args=True)
+        self.runner_key = 'debug-runner'  # in runners.yaml
 
     def do_add_parser(self, parser_adder):
-        return add_parser_common(parser_adder, self)
+        return add_parser_common(self, parser_adder)
 
     def do_run(self, my_args, runner_args):
-        do_run_common(self, my_args, runner_args,
-                      'ZEPHYR_BOARD_DEBUG_RUNNER')
+        do_run_common(self, my_args, runner_args)

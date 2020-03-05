@@ -56,6 +56,9 @@ Current supported displays
 | Good Display | E029A01         | IL3820 /     | waveshare_epaper_gdeh029a1   |
 | GDEH029A1    |                 | ssd16xx      |                              |
 +--------------+-----------------+--------------+------------------------------+
+| Good Display | WFT0583CZ61     | GD7965 /     | waveshare_epaper_gdew075t7   |
+| GDEW075T7    |                 | gd7965       |                              |
++--------------+-----------------+--------------+------------------------------+
 
 
 Requirements

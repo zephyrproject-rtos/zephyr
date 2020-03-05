@@ -20,7 +20,8 @@ struct dht_data {
 
 struct dht_config {
 	const char *ctrl;
-	u8_t pin;
+	gpio_dt_flags_t flags;
+	gpio_pin_t pin;
 };
 
 #endif

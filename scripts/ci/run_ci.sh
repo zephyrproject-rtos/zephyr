@@ -20,12 +20,14 @@
 
 set -xe
 
-sanitycheck_options=" --inline-logs -N --timestamps -v"
+sanitycheck_options=" --inline-logs -N -v"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
 if [ ! -d "${BSIM_OUT_PATH}" ]; then
         unset BSIM_OUT_PATH
 fi
 export BSIM_COMPONENTS_PATH="${BSIM_OUT_PATH}/components/"
+export EDTT_PATH="${EDTT_PATH:-../tools/edtt}"
+
 bsim_bt_test_results_file="./bsim_bt_out/bsim_results.xml"
 west_commands_results_file="./pytest_out/west_commands.xml"
 
@@ -108,11 +110,6 @@ function on_complete() {
 		cp ${bsim_bt_test_results_file} shippable/testresults/
 	fi
 
-	if [ -e ${west_commands_results_file} ]; then
-		echo "Copy ${west_commands_results_file}"
-		cp ${west_commands_results_file} shippable/testresults
-	fi
-
 	if [ "$matrix" = "1" ]; then
 		echo "Skip handling coverage data..."
 		#handle_coverage
@@ -124,7 +121,7 @@ function on_complete() {
 function run_bsim_bt_tests() {
 	WORK_DIR=${ZEPHYR_BASE}/bsim_bt_out tests/bluetooth/bsim_bt/compile.sh
 	RESULTS_FILE=${ZEPHYR_BASE}/${bsim_bt_test_results_file} \
-	SEARCH_PATH=tests/bluetooth/bsim_bt/bsim_test_app/tests_scripts \
+	SEARCH_PATH=tests/bluetooth/bsim_bt/ \
 	tests/bluetooth/bsim_bt/run_parallel.sh
 }
 
@@ -241,20 +238,6 @@ if [ -n "$main_ci" ]; then
 		fi
 	else
 		echo "Skipping BT simulator tests"
-	fi
-
-	if [ "$matrix" = "1" ]; then
-		# Run pytest-based testing for Python in matrix
-		# builder 1.  For now, this is just done for the west
-		# extension commands, but additional directories which
-		# run pytest could go here too.
-		pytest=$(type -p pytest-3 || echo "pytest")
-		mkdir -p $(dirname ${west_commands_results_file})
-		PYTHONPATH=./scripts/west_commands "${pytest}" \
-			  --junitxml=${west_commands_results_file} \
-			  ./scripts/west_commands/tests
-	else
-		echo "Skipping west command tests"
 	fi
 
 	# cleanup

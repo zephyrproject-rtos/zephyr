@@ -58,6 +58,6 @@ target_include_directories(kernel PRIVATE
   ${ZEPHYR_BASE}/arch/${ARCH}/include
   )
 
-add_dependencies(kernel ${OFFSETS_H_TARGET})
+add_dependencies(kernel zephyr_generated_headers)
 
 target_link_libraries(kernel zephyr_interface)

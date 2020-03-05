@@ -27,6 +27,7 @@
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_adv.h"
+#include "lll_conn.h"
 #include "lll_chan.h"
 #include "lll_filter.h"
 

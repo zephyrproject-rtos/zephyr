@@ -111,6 +111,15 @@ config ARCV2_TIMER_IRQ_PRIORITY
 	  This option specifies the IRQ priority used by the ARC timer. Lower
 	  values have higher priority.
 
+config ARM_ARCH_TIMER
+	bool "ARM architected timer"
+	depends on GIC
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the ARM architected
+	  timer which provides per-cpu timers attached to a GIC to deliver its
+	  per-processor interrupts via PPIs.
+
 config CORTEX_M_SYSTICK
 	bool "Cortex-M SYSTICK timer"
 	depends on CPU_CORTEX_M_HAS_SYSTICK

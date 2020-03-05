@@ -8,12 +8,9 @@ if BOARD_NRF52_PCA20020
 config BOARD
 	default "nrf52_pca20020"
 
-if ADC
-
 config ADC_0
 	default y
-
-endif # ADC
+	depends on ADC
 
 config I2C
 	default y
@@ -26,20 +23,15 @@ config I2C_0
 config I2C_1
 	default y
 
-if I2C_0
-
 choice I2C_0_NRF_TYPE
 	default I2C_0_NRF_TWIM
-
+	depends on I2C_0
 endchoice
-
-endif # I2C_0
 
 if I2C_1
 
 choice I2C_1_NRF_TYPE
 	default I2C_1_NRF_TWIM
-
 endchoice
 
 config GPIO_SX1509B

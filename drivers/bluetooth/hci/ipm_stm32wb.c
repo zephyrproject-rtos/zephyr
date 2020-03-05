@@ -10,7 +10,7 @@
 #include <init.h>
 #include <sys/util.h>
 #include <bluetooth/hci.h>
-#include <bluetooth/hci_driver.h>
+#include <drivers/bluetooth/hci_driver.h>
 #include "bluetooth/addr.h"
 
 #include "app_conf.h"

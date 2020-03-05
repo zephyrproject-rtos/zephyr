@@ -8,91 +8,55 @@ if SOC_MK22F51212
 config SOC
 	default "mk22f51212"
 
-if ADC
-
 config ADC_MCUX_ADC16
 	default y
-
-endif # ADC
-
-if CLOCK_CONTROL
+	depends on ADC
 
 config CLOCK_CONTROL_MCUX_SIM
 	default y
-
-endif # CLOCK_CONTROL
-
-if PINMUX
+	depends on CLOCK_CONTROL
 
 config PINMUX_MCUX
 	default y
-
-endif # PINMUX
+	depends on PINMUX
 
 config GPIO
 	default y
 
-if GPIO
-
 config GPIO_MCUX
 	default y
-
-endif # GPIO
-
-if I2C
+	depends on GPIO
 
 config I2C_MCUX
 	default y
-
-endif # I2C
-
-if PWM
+	depends on I2C
 
 config PWM_MCUX_FTM
 	default y
-
-endif # PWM
-
-if SPI
+	depends on PWM
 
 config SPI_MCUX_DSPI
 	default y
-
-endif # SPI
-
-if ENTROPY_GENERATOR
+	depends on SPI
 
 config ENTROPY_MCUX_RNGA
 	default y
-
-endif # ENTROPY_GENERATOR
-
-if FLASH
+	depends on ENTROPY_GENERATOR
 
 config SOC_FLASH_MCUX
 	default y
-
-endif # FLASH
-
-if SERIAL
+	depends on FLASH
 
 config UART_MCUX
 	default y
-
-endif # SERIAL
-
-if USB
+	depends on SERIAL
 
 config USB_KINETIS
 	default y
-
-endif # USB
-
-if WATCHDOG
+	depends on USB
 
 config WDT_MCUX_WDOG
 	default y
-
-endif # WATCHDOG
+	depends on WATCHDOG
 
 endif # SOC_MK22F12

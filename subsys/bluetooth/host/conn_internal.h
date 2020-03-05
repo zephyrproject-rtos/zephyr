@@ -10,6 +10,8 @@
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
 	BT_CONN_CONNECT_SCAN,
+	BT_CONN_CONNECT_AUTO,
+	BT_CONN_CONNECT_ADV,
 	BT_CONN_CONNECT_DIR_ADV,
 	BT_CONN_CONNECT,
 	BT_CONN_CONNECTED,
@@ -198,21 +200,21 @@ void bt_conn_disconnect_all(u8_t id);
 /* Look up an existing connection */
 struct bt_conn *bt_conn_lookup_handle(u16_t handle);
 
-/* Compare an address with bt_conn destination address */
-int bt_conn_addr_le_cmp(const struct bt_conn *conn, const bt_addr_le_t *peer);
-
+/* Check if the connection is with the given peer. */
+bool bt_conn_is_peer_addr_le(const struct bt_conn *conn, u8_t id,
+			     const bt_addr_le_t *peer);
 
 /* Helpers for identifying & looking up connections based on the the index to
  * the connection list. This is useful for O(1) lookups, but can't be used
  * e.g. as the handle since that's assigned to us by the controller.
  */
-#define BT_CONN_ID_INVALID 0xff
-struct bt_conn *bt_conn_lookup_id(u8_t id);
+#define BT_CONN_INDEX_INVALID 0xff
+struct bt_conn *bt_conn_lookup_index(u8_t index);
 
 /* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection
  * with the specific state
  */
-struct bt_conn *bt_conn_lookup_state_le(const bt_addr_le_t *peer,
+struct bt_conn *bt_conn_lookup_state_le(u8_t id, const bt_addr_le_t *peer,
 					const bt_conn_state_t state);
 
 /* Set connection object in certain state and perform action related to state */

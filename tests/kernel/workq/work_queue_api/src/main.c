@@ -55,23 +55,30 @@ static void new_work_handler(struct k_work *w)
 	k_sem_give(&sync_sema);
 }
 
+static void twork_submit_1(struct k_work_q *work_q, struct k_work *w,
+			   k_work_handler_t handler)
+{
+	/**TESTPOINT: init via k_work_init*/
+	k_work_init(w, handler);
+	/**TESTPOINT: check pending after work init*/
+	zassert_false(k_work_pending(w), NULL);
+
+	if (work_q) {
+		/**TESTPOINT: work submit to queue*/
+		zassert_false(k_work_submit_to_user_queue(work_q, w),
+			      "failed to submit to queue");
+	} else {
+		/**TESTPOINT: work submit to system queue*/
+		k_work_submit(w);
+	}
+}
+
 static void twork_submit(void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
 
 	for (int i = 0; i < NUM_OF_WORK; i++) {
-		/**TESTPOINT: init via k_work_init*/
-		k_work_init(&work[i], work_handler);
-		/**TESTPOINT: check pending after work init*/
-		zassert_false(k_work_pending(&work[i]), NULL);
-		if (work_q) {
-			/**TESTPOINT: work submit to queue*/
-			zassert_false(k_work_submit_to_user_queue(work_q, &work[i]),
-				      "failed to submit to queue");
-		} else {
-			/**TESTPOINT: work submit to system queue*/
-			k_work_submit(&work[i]);
-		}
+		twork_submit_1(work_q, &work[i], work_handler);
 	}
 }
 
@@ -112,42 +119,54 @@ static void twork_resubmit(void *data)
 	k_sem_give(&sync_sema);
 }
 
+#define TIMEOUT_MS(_timeout) \
+	k_ticks_to_ms_floor64(_timeout)
+
+static void tdelayed_work_submit_1(struct k_work_q *work_q,
+				   struct k_delayed_work *w,
+				   k_work_handler_t handler)
+{
+	s32_t time_remaining;
+	s32_t timeout_ticks;
+
+	/**TESTPOINT: init via k_delayed_work_init*/
+	k_delayed_work_init(w, handler);
+	/**TESTPOINT: check pending after delayed work init*/
+	zassert_false(k_work_pending((struct k_work *)w), NULL);
+	/**TESTPOINT: check remaining timeout before submit*/
+	zassert_equal(k_delayed_work_remaining_get(w), 0, NULL);
+
+	if (work_q) {
+		/**TESTPOINT: delayed work submit to queue*/
+		zassert_true(k_delayed_work_submit_to_queue(work_q, w, TIMEOUT)
+			     == 0, NULL);
+	} else {
+		/**TESTPOINT: delayed work submit to system queue*/
+		zassert_true(k_delayed_work_submit(w, TIMEOUT) == 0, NULL);
+	}
+
+	time_remaining = k_delayed_work_remaining_get(w);
+	timeout_ticks = z_ms_to_ticks(TIMEOUT);
+
+	/**TESTPOINT: check remaining timeout after submit */
+	zassert_true(time_remaining <= k_ticks_to_ms_floor64(timeout_ticks +
+		     _TICK_ALIGN), NULL);
+
+	timeout_ticks -= z_ms_to_ticks(15);
+
+	zassert_true(time_remaining >= k_ticks_to_ms_floor64(timeout_ticks),
+		     NULL);
+
+	/**TESTPOINT: check pending after delayed work submit*/
+	zassert_true(k_work_pending((struct k_work *)w) == 0, NULL);
+}
 
 static void tdelayed_work_submit(void *data)
 {
 	struct k_work_q *work_q = (struct k_work_q *)data;
-	s32_t time_remaining;
 
 	for (int i = 0; i < NUM_OF_WORK; i++) {
-		/**TESTPOINT: init via k_delayed_work_init*/
-		k_delayed_work_init(&delayed_work[i], work_handler);
-		/**TESTPOINT: check pending after delayed work init*/
-		zassert_false(k_work_pending((struct k_work *)&delayed_work[i]),
-			      NULL);
-		/**TESTPOINT: check remaining timeout before submit*/
-		zassert_equal(k_delayed_work_remaining_get(&delayed_work[i]), 0,
-			      NULL);
-		if (work_q) {
-			/**TESTPOINT: delayed work submit to queue*/
-			zassert_true(k_delayed_work_submit_to_queue(work_q,
-								    &delayed_work[i], TIMEOUT) == 0, NULL);
-		} else {
-			/**TESTPOINT: delayed work submit to system queue*/
-			zassert_true(k_delayed_work_submit(&delayed_work[i],
-							   TIMEOUT) == 0, NULL);
-		}
-
-		time_remaining = k_delayed_work_remaining_get(&delayed_work[i]);
-
-		/**TESTPOINT: check remaining timeout after submit */
-		zassert_true(
-		    time_remaining <= k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(TIMEOUT)
-						    + _TICK_ALIGN) &&
-		    time_remaining >= k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(TIMEOUT) -
-						    k_ms_to_ticks_ceil32(15)), NULL);
-		/**TESTPOINT: check pending after delayed work submit*/
-		zassert_true(k_work_pending((struct k_work *)&delayed_work[i])
-			     == 0, NULL);
+		tdelayed_work_submit_1(work_q, &delayed_work[i], work_handler);
 	}
 }
 
@@ -205,7 +224,7 @@ static void tdelayed_work_cancel(void *data)
 				      (struct k_work *)&delayed_work_sleepy), NULL);
 		/**TESTPOINT: delayed work cancel when completed*/
 		ret = k_delayed_work_cancel(&delayed_work_sleepy);
-		zassert_equal(ret, 0, NULL);
+		zassert_not_equal(ret, 0, NULL);
 	}
 	/*work items not cancelled: delayed_work[1], delayed_work_sleepy*/
 }
@@ -506,6 +525,32 @@ void test_work_submit_isr(void)
 	}
 }
 
+static void work_handler_resubmit(struct k_work *w)
+{
+	k_sem_give(&sync_sema);
+
+	if (k_sem_count_get(&sync_sema) < NUM_OF_WORK) {
+		k_work_submit(w);
+	}
+}
+
+/**
+ * @brief Test work submission to queue from handler context
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_init(), k_work_pending(), k_work_submit_to_queue(),
+ * k_work_submit()
+ */
+void test_work_submit_handler(void)
+{
+	k_sem_reset(&sync_sema);
+	twork_submit_1(NULL, &work[0], work_handler_resubmit);
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+}
+
 /**
  * @brief Test delayed work submission to queue
  *
@@ -576,6 +621,37 @@ void test_delayed_work_submit_isr(void)
 	for (int i = 0; i < NUM_OF_WORK; i++) {
 		k_sem_take(&sync_sema, K_FOREVER);
 	}
+}
+
+static void delayed_work_handler_resubmit(struct k_work *w)
+{
+	struct k_delayed_work *delayed_w = (struct k_delayed_work *)w;
+
+	k_sem_give(&sync_sema);
+
+	if (k_sem_count_get(&sync_sema) < NUM_OF_WORK) {
+		k_delayed_work_submit(delayed_w, TIMEOUT);
+	}
+}
+
+/**
+ * @brief Test delayed work submission to queue from handler context
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_delayed_work_init(), k_work_pending(),
+ * k_delayed_work_remaining_get(), k_delayed_work_submit_to_queue(),
+ * k_delayed_work_submit()
+ */
+void test_delayed_work_submit_handler(void)
+{
+	k_sem_reset(&sync_sema);
+	tdelayed_work_submit_1(NULL, &delayed_work[0],
+			       delayed_work_handler_resubmit);
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+	k_delayed_work_cancel(&delayed_work[0]);
 }
 
 /**
@@ -809,11 +885,13 @@ void test_main(void)
 			 ztest_1cpu_unit_test(test_work_submit_to_queue_isr),
 			 ztest_1cpu_unit_test(test_work_submit_thread),
 			 ztest_1cpu_unit_test(test_work_submit_isr),
+			 ztest_1cpu_unit_test(test_work_submit_handler),
 			 ztest_1cpu_user_unit_test(test_user_work_submit_to_queue_thread),
 			 ztest_1cpu_unit_test(test_delayed_work_submit_to_queue_thread),
 			 ztest_1cpu_unit_test(test_delayed_work_submit_to_queue_isr),
 			 ztest_1cpu_unit_test(test_delayed_work_submit_thread),
 			 ztest_1cpu_unit_test(test_delayed_work_submit_isr),
+			 ztest_1cpu_unit_test(test_delayed_work_submit_handler),
 			 ztest_1cpu_unit_test(test_delayed_work_cancel_from_queue_thread),
 			 ztest_1cpu_unit_test(test_delayed_work_cancel_from_queue_isr),
 			 ztest_1cpu_unit_test(test_delayed_work_cancel_thread),

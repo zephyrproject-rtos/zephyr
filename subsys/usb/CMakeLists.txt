@@ -6,6 +6,7 @@ if(CONFIG_USB_DEVICE_STACK)
   zephyr_sources(
     usb_device.c
     usb_descriptor.c
+    usb_transfer.c
     )
 
   add_subdirectory(class)

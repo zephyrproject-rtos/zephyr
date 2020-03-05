@@ -4,16 +4,14 @@
 # Copyright (c) 2017 RnDity Sp. z o.o.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_STM32
-
 menuconfig CLOCK_CONTROL_STM32_CUBE
 	bool "STM32 Reset & Clock Control"
+	depends on SOC_FAMILY_STM32
 	select USE_STM32_LL_UTILS
 	select USE_STM32_LL_RCC if SOC_SERIES_STM32MP1X
 	help
 	  Enable driver for Reset & Clock Control subsystem found
 	  in STM32 family of MCUs
-
 
 if CLOCK_CONTROL_STM32_CUBE
 
@@ -274,4 +272,3 @@ config CLOCK_STM32_MCO2_DIV
 	  allowed values: 1, 2, 3, 4, 5
 
 endif # CLOCK_CONTROL_STM32_CUBE
-endif # SOC_FAMILY_STM32

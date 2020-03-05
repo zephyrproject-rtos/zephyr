@@ -4,5 +4,6 @@
 
 config SOC_ARC_IOT
 	bool "Synopsys ARC IoT SoC"
+	select ARC
 	select CPU_HAS_MPU
 	select CPU_HAS_FPU

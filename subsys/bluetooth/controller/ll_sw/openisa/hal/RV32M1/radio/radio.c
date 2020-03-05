@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 - 2019 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
- * Copyright 2019 NXP
+ * Copyright 2019 - 2020 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <sys/dlist.h>
 #include <sys/mempool_base.h>
 #include <toolchain.h>
+#include <irq.h>
 
 #include "util/mem.h"
 #include "hal/ccm.h"
@@ -17,15 +18,21 @@
 #include "ll_sw/pdu.h"
 
 #include "fsl_xcvr.h"
-#include "irq.h"
 #include "hal/cntr.h"
 #include "hal/ticker.h"
 #include "hal/swi.h"
+#include "fsl_cau3_ble.h"	/* must be after irq.h */
 
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_openisa_radio
+#include "common/log.h"
+#include <soc.h>
+#include "hal/debug.h"
 
 static radio_isr_cb_t isr_cb;
 static void *isr_cb_param;
 
+#define RADIO_AESCCM_HDR_MASK 0xE3 /* AES-CCM: NESN, SN, MD bits masked to 0 */
 #define RADIO_PDU_LEN_MAX (BIT(8) - 1)
 
 /* us values */
@@ -43,6 +50,9 @@ static void *isr_cb_param;
 #define PB_TX_PDU 2		/* Tx PDU offset (in halfwords) in packet
 				 * buffer
 				 */
+
+#define RADIO_ACTIVE_MASK 0x1fff
+#define RADIO_DISABLE_TMR 4		/* us */
 
 static u32_t rtc_start;
 static u32_t rtc_diff_start_us;
@@ -77,6 +87,16 @@ static u8_t MALIGN(4) _pkt_scratch[
 
 static s8_t rssi;
 
+static struct {
+	union {
+		u64_t counter;
+		u8_t bytes[CAU3_AES_BLOCK_SIZE - 1 - 2];
+	} nonce;	/* used by the B0 format but not in-situ */
+	struct pdu_data *rx_pkt_out;
+	struct pdu_data *rx_pkt_in;
+	u8_t auth_mic_valid;
+	u8_t empty_pdu_rxed;
+} ctx_ccm;
 
 static void tmp_cb(void *param)
 {
@@ -139,15 +159,24 @@ static void pkt_rx(void)
 	if (next_radio_cmd) {
 		/* Start Rx/Tx in TIFS */
 		idx = isr_tmr_end + tmr_tifs - next_wu;
+		GENFSK->XCVR_CTRL = next_radio_cmd;
 		GENFSK->T1_CMP = GENFSK_T1_CMP_T1_CMP(idx) |
 				 GENFSK_T1_CMP_T1_CMP_EN(1);
-		GENFSK->XCVR_CTRL = next_radio_cmd;
 		next_radio_cmd = 0;
 	}
 
 	/* Can't rely on data read from packet buffer while in Rx */
 	/* Wait for Rx to finish */
 	while (*sts & GENFSK_XCVR_STS_RX_IN_PROGRESS_MASK) {
+	}
+
+	if (ctx_ccm.rx_pkt_out) {
+		*(u16_t *)ctx_ccm.rx_pkt_out = pb[0];
+		if (len < CAU3_BLE_MIC_SIZE) {
+			ctx_ccm.rx_pkt_out = 0;
+			ctx_ccm.rx_pkt_in = 0;
+			ctx_ccm.empty_pdu_rxed = 1;
+		}
 	}
 
 	/* Copy the PDU */
@@ -173,8 +202,17 @@ void isr_radio(void *arg)
 
 	u32_t tmr = GENFSK->EVENT_TMR & GENFSK_EVENT_TMR_EVENT_TMR_MASK;
 	u32_t irq = GENFSK->IRQ_CTRL;
+	u32_t valid = 0;
+	/* We need to check for a valid IRQ source.
+	 * In theory, we could get to this ISR after the IRQ source was cleared.
+	 * This could happen due to the way LLL interacts with IRQs
+	 * (radio_isr_set(), radio_disable()) and their propagation path:
+	 * GENFSK -> INTMUX(does not latch pending source interrupts)
+	 * INTMUX -> EVENT_UNIT
+	 */
 
 	if (irq & GENFSK_IRQ_CTRL_TX_IRQ_MASK) {
+		valid = 1;
 		GENFSK->IRQ_CTRL &= (IRQ_MASK | GENFSK_IRQ_CTRL_TX_IRQ_MASK);
 		GENFSK->T1_CMP &= ~GENFSK_T1_CMP_T1_CMP_EN_MASK;
 
@@ -186,6 +224,7 @@ void isr_radio(void *arg)
 	}
 
 	if (irq & GENFSK_IRQ_CTRL_RX_WATERMARK_IRQ_MASK) {
+		valid = 1;
 		/* Disable Rx timeout */
 		/* 0b1010..RX Cancel -- Cancels pending RX events but do not
 		 *			abort a RX-in-progress
@@ -213,6 +252,7 @@ void isr_radio(void *arg)
 	}
 
 	if (irq & GENFSK_IRQ_CTRL_T2_IRQ_MASK) {
+		valid = 1;
 		GENFSK->IRQ_CTRL &= (IRQ_MASK | GENFSK_IRQ_CTRL_T2_IRQ_MASK);
 		/* Disable both comparators */
 		GENFSK->T1_CMP &= ~GENFSK_T1_CMP_T1_CMP_EN_MASK;
@@ -222,24 +262,30 @@ void isr_radio(void *arg)
 	if (radio_trx && next_radio_cmd) {
 		/* Start Rx/Tx in TIFS */
 		tmr = isr_tmr_end + tmr_tifs - next_wu;
+		GENFSK->XCVR_CTRL = next_radio_cmd;
 		GENFSK->T1_CMP = GENFSK_T1_CMP_T1_CMP(tmr) |
 				 GENFSK_T1_CMP_T1_CMP_EN(1);
-		GENFSK->XCVR_CTRL = next_radio_cmd;
 		next_radio_cmd = 0;
 	}
 
-	isr_cb(isr_cb_param);
+	if (valid) {
+		isr_cb(isr_cb_param);
+	}
 }
 
 void radio_isr_set(radio_isr_cb_t cb, void *param)
 {
 	irq_disable(LL_RADIO_IRQn_2nd_lvl);
+	irq_disable(LL_RADIO_IRQn);
 
 	isr_cb_param = param;
 	isr_cb = cb;
 
 	/* Clear pending interrupts */
 	GENFSK->IRQ_CTRL &= 0xffffffff;
+	EVENT_UNIT->INTPTPENDCLEAR = (u32_t)(1U << LL_RADIO_IRQn);
+
+	irq_enable(LL_RADIO_IRQn);
 	irq_enable(LL_RADIO_IRQn_2nd_lvl);
 }
 
@@ -318,6 +364,12 @@ static void hpmcal_disable(void)
 
 void radio_setup(void)
 {
+	XCVR_Reset();
+
+#if defined(CONFIG_BT_CTLR_PRIVACY) || defined(CONFIG_BT_CTLR_LE_ENC)
+	CAU3_Init(CAU3);
+#endif /* CONFIG_BT_CTLR_PRIVACY || CONFIG_BT_CTLR_LE_ENC */
+
 	XCVR_Init(GFSK_BT_0p5_h_0p5, DR_1MBPS);
 	XCVR_SetXtalTrim(41);
 
@@ -571,7 +623,7 @@ u32_t radio_rx_chain_delay_get(u8_t phy, u8_t flags)
 void radio_rx_enable(void)
 {
 	/* Wait for idle state */
-	while (GENFSK->XCVR_CTRL & GENFSK_XCVR_CTRL_XCVR_BUSY_MASK) {
+	while (GENFSK->XCVR_STS & RADIO_ACTIVE_MASK) {
 	}
 
 	/* 0b0101..RX Start Now */
@@ -581,7 +633,7 @@ void radio_rx_enable(void)
 void radio_tx_enable(void)
 {
 	/* Wait for idle state */
-	while (GENFSK->XCVR_CTRL & GENFSK_XCVR_CTRL_XCVR_BUSY_MASK) {
+	while (GENFSK->XCVR_STS & RADIO_ACTIVE_MASK) {
 	}
 
 	/* 0b0001..TX Start Now */
@@ -590,14 +642,29 @@ void radio_tx_enable(void)
 
 void radio_disable(void)
 {
+	/* Disable both comparators */
+	GENFSK->T1_CMP = 0;
+	GENFSK->T2_CMP = 0;
+
 	/*
 	 * 0b1011..Abort All - Cancels all pending events and abort any
 	 * sequence-in-progress
 	 */
 	GENFSK->XCVR_CTRL = GENFSK_XCVR_CTRL_SEQCMD(0xb);
 
+	/* Wait for idle state */
+	while (GENFSK->XCVR_STS & RADIO_ACTIVE_MASK) {
+	}
+
+	/* Clear pending interrupts */
+	GENFSK->IRQ_CTRL &= 0xffffffff;
+	EVENT_UNIT->INTPTPENDCLEAR = (u32_t)(1U << LL_RADIO_IRQn);
+
+	next_radio_cmd = 0;
+	radio_trx = 0;
+
 	/* generate T2 interrupt to get into isr_radio() */
-	u32_t tmr = GENFSK->EVENT_TMR + 8;
+	u32_t tmr = GENFSK->EVENT_TMR + RADIO_DISABLE_TMR;
 
 	GENFSK->T2_CMP = GENFSK_T2_CMP_T2_CMP(tmr) | GENFSK_T2_CMP_T2_CMP_EN(1);
 }
@@ -782,6 +849,10 @@ static u32_t radio_tmr_start_hlp(u8_t trx, u32_t ticks_start, u32_t remainder)
 {
 	u32_t radio_start_now_cmd = 0;
 
+	/* Disable both comparators */
+	GENFSK->T1_CMP = 0;
+	GENFSK->T2_CMP = 0;
+
 	/* Save it for later */
 	rtc_start = ticks_start;
 
@@ -895,11 +966,11 @@ void radio_tmr_hcto_configure(u32_t hcto)
 		return;
 	}
 
+	/* 0b1001..RX Stop @ T2 Timer Compare Match (EVENT_TMR = T2_CMP) */
+	GENFSK->XCVR_CTRL = GENFSK_XCVR_CTRL_SEQCMD(0x9);
 	GENFSK->T2_CMP = GENFSK_T2_CMP_T2_CMP(hcto) |
 			 GENFSK_T2_CMP_T2_CMP_EN(1);
 
-	/* 0b1001..RX Stop @ T2 Timer Compare Match (EVENT_TMR = T2_CMP) */
-	GENFSK->XCVR_CTRL = GENFSK_XCVR_CTRL_SEQCMD(0x9);
 }
 
 void radio_tmr_aa_capture(void)
@@ -955,28 +1026,250 @@ u32_t radio_tmr_sample_get(void)
 	return 0;
 }
 
+void *radio_ccm_rx_pkt_set_ut(struct ccm *ccm, u8_t phy, void *pkt)
+{
+	/* Saved by LL as MSO to LSO in the ccm->key
+	 * SK (LSO to MSO)
+	 * :0x66:0xC6:0xC2:0x27:0x8E:0x3B:0x8E:0x05
+	 * :0x3E:0x7E:0xA3:0x26:0x52:0x1B:0xAD:0x99
+	 */
+	u8_t key_local[16] __aligned(4) = {
+		0x99, 0xad, 0x1b, 0x52, 0x26, 0xa3, 0x7e, 0x3e,
+		0x05, 0x8e, 0x3b, 0x8e, 0x27, 0xc2, 0xc6, 0x66
+	};
+	void *result;
+
+	/* ccm.key[16] is stored in MSO format, as retrieved from e function */
+	memcpy(ccm->key, key_local, sizeof(key_local));
+
+	/* Input std sample data, vol 6, part C, ch 1 */
+	_pkt_scratch[0] = 0x0f;
+	_pkt_scratch[1] = 0x05;
+	_pkt_scratch[2] = 0x9f; /* cleartext = 0x06*/
+	_pkt_scratch[3] = 0xcd;
+	_pkt_scratch[4] = 0xa7;
+	_pkt_scratch[5] = 0xf4;
+	_pkt_scratch[6] = 0x48;
+
+	/* IV std sample data, vol 6, part C, ch 1, stored in LL in LSO format
+	 * IV (LSO to MSO)      :0x24:0xAB:0xDC:0xBA:0xBE:0xBA:0xAF:0xDE
+	 */
+	ccm->iv[0] = 0x24;
+	ccm->iv[1] = 0xAB;
+	ccm->iv[2] = 0xDC;
+	ccm->iv[3] = 0xBA;
+	ccm->iv[4] = 0xBE;
+	ccm->iv[5] = 0xBA;
+	ccm->iv[6] = 0xAF;
+	ccm->iv[7] = 0xDE;
+
+	result = radio_ccm_rx_pkt_set(ccm, phy, pkt);
+	radio_ccm_is_done();
+
+	if (ctx_ccm.auth_mic_valid == 1 && ((u8_t *)pkt)[2] == 0x06) {
+		BT_INFO("Passed decrypt\n");
+	} else {
+		BT_INFO("Failed decrypt\n");
+	}
+
+	return result;
+}
+
 void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 {
-	printk("%s\n", __func__);
-	return NULL;
+	u8_t key_local[16] __aligned(4);
+	status_t status;
+	cau3_handle_t handle = {
+			.keySlot = kCAU3_KeySlot2,
+			.taskDone = kCAU3_TaskDonePoll
+	};
+	ARG_UNUSED(phy);
+
+	/* ccm.key[16] is stored in MSO format, as retrieved from e function */
+	memcpy(key_local, ccm->key, sizeof(key_local));
+	ctx_ccm.auth_mic_valid = 0;
+	ctx_ccm.empty_pdu_rxed = 0;
+	ctx_ccm.rx_pkt_in = (struct pdu_data *)_pkt_scratch;
+	ctx_ccm.rx_pkt_out = (struct pdu_data *)pkt;
+	ctx_ccm.nonce.counter = ccm->counter;	/* LSO to MSO, counter is LE */
+	/* The directionBit set to 1 for Data Physical Chan PDUs sent by
+	 * the master and set to 0 for Data Physical Chan PDUs sent by the slave
+	 */
+	ctx_ccm.nonce.bytes[4] |= ccm->direction << 7;
+	memcpy(&ctx_ccm.nonce.bytes[5], ccm->iv, 8); /* LSO to MSO */
+
+	/* Loads the key into CAU3's DMEM and expands the AES key schedule. */
+	status = CAU3_AES_SetKey(CAU3, &handle, key_local, 16);
+	if (status != kStatus_Success) {
+		BT_ERR("CAUv3 AES key set failed %d", status);
+		return NULL;
+	}
+
+	return _pkt_scratch;
+}
+
+void *radio_ccm_tx_pkt_set_ut(struct ccm *ccm, void *pkt)
+{
+	/* Clear:
+	 * 06 1b 17 00 37 36 35 34 33 32 31 30 41 42 43
+	 * 44 45 46 47 48 49 4a 4b 4c 4d 4e 4f 50 51
+	 */
+	u8_t data_in[29] = {
+		0x06, 0x1b, 0x17, 0x00, 0x37, 0x36, 0x35, 0x34,
+		0x33, 0x32, 0x31, 0x30, 0x41, 0x42, 0x43, 0x44,
+		0x45, 0x46, 0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c,
+		0x4d, 0x4e, 0x4f, 0x50, 0x51
+	};
+	/* LL_DATA2:
+	 * 06 1f f3 88 81 e7 bd 94 c9 c3 69 b9 a6 68 46
+	 * dd 47 86 aa 8c 39 ce 54 0d 0d ae 3a dc df 89 b9 60 88
+	 */
+	u8_t data_ref_out[33] = {
+		0x06, 0x1f, 0xf3, 0x88, 0x81, 0xe7, 0xbd, 0x94,
+		0xc9, 0xc3, 0x69, 0xb9, 0xa6, 0x68, 0x46, 0xdd,
+		0x47, 0x86, 0xaa, 0x8c, 0x39, 0xce, 0x54, 0x0d,
+		0x0d, 0xae, 0x3a, 0xdc, 0xdf,
+		0x89, 0xb9, 0x60, 0x88
+	};
+	/* Saved by LL as MSO to LSO in the ccm->key
+	 * SK (LSO to MSO)
+	 * :0x66:0xC6:0xC2:0x27:0x8E:0x3B:0x8E:0x05
+	 * :0x3E:0x7E:0xA3:0x26:0x52:0x1B:0xAD:0x99
+	 */
+	u8_t key_local[16] __aligned(4) = {
+		0x99, 0xad, 0x1b, 0x52, 0x26, 0xa3, 0x7e, 0x3e,
+		0x05, 0x8e, 0x3b, 0x8e, 0x27, 0xc2, 0xc6, 0x66
+	};
+	void *result;
+
+	/* ccm.key[16] is stored in MSO format, as retrieved from e function */
+	memcpy(ccm->key, key_local, sizeof(key_local));
+	memcpy(pkt, data_in, sizeof(data_in));
+	/* IV std sample data, vol 6, part C, ch 1, stored in LL in LSO format
+	 * IV (LSO to MSO)      :0x24:0xAB:0xDC:0xBA:0xBE:0xBA:0xAF:0xDE
+	 */
+	ccm->iv[0] = 0x24;
+	ccm->iv[1] = 0xAB;
+	ccm->iv[2] = 0xDC;
+	ccm->iv[3] = 0xBA;
+	ccm->iv[4] = 0xBE;
+	ccm->iv[5] = 0xBA;
+	ccm->iv[6] = 0xAF;
+	ccm->iv[7] = 0xDE;
+	/* 4. Data packet2 (packet 1, S --> M) */
+	ccm->counter = 1;
+	ccm->direction = 0;
+
+	result = radio_ccm_tx_pkt_set(ccm, pkt);
+
+	if (memcmp(result, data_ref_out, sizeof(data_ref_out))) {
+		BT_INFO("Failed encrypt\n");
+	} else {
+		BT_INFO("Passed encrypt\n");
+	}
+
+	return result;
 }
 
 void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 {
-	printk("%s\n", __func__);
-	return NULL;
+	u8_t key_local[16] __aligned(4);
+	u8_t aad;
+	u8_t *auth_mic;
+	status_t status;
+	cau3_handle_t handle = {
+			.keySlot = kCAU3_KeySlot2,
+			.taskDone = kCAU3_TaskDonePoll
+	};
+
+	/* Test for Empty PDU and bypass encryption */
+	if (((struct pdu_data *)pkt)->len == 0) {
+		return pkt;
+	}
+
+	/* ccm.key[16] is stored in MSO format, as retrieved from e function */
+	memcpy(key_local, ccm->key, sizeof(key_local));
+	ctx_ccm.nonce.counter = ccm->counter;	/* LSO to MSO, counter is LE */
+	/* The directionBit set to 1 for Data Physical Chan PDUs sent by
+	 * the master and set to 0 for Data Physical Chan PDUs sent by the slave
+	 */
+	ctx_ccm.nonce.bytes[4] |= ccm->direction << 7;
+	memcpy(&ctx_ccm.nonce.bytes[5], ccm->iv, 8); /* LSO to MSO */
+
+	/* Loads the key into CAU3's DMEM and expands the AES key schedule. */
+	status = CAU3_AES_SetKey(CAU3, &handle, key_local, 16);
+	if (status != kStatus_Success) {
+		BT_ERR("CAUv3 AES key set failed %d", status);
+		return NULL;
+	}
+
+	auth_mic = _pkt_scratch + 2 + ((struct pdu_data *)pkt)->len;
+	aad = *(u8_t *)pkt & RADIO_AESCCM_HDR_MASK;
+
+	status = CAU3_AES_CCM_EncryptTag(CAU3, &handle,
+				 (u8_t *)pkt + 2, ((struct pdu_data *)pkt)->len,
+				 _pkt_scratch + 2,
+				 ctx_ccm.nonce.bytes, 13,
+				 &aad, 1, auth_mic, CAU3_BLE_MIC_SIZE);
+	if (status != kStatus_Success) {
+		BT_ERR("CAUv3 AES CCM decrypt failed %d", status);
+		return 0;
+	}
+
+	_pkt_scratch[0] = *(u8_t *)pkt;
+	_pkt_scratch[1] = ((struct pdu_data *)pkt)->len + CAU3_BLE_MIC_SIZE;
+
+	return _pkt_scratch;
 }
 
 u32_t radio_ccm_is_done(void)
 {
-	printk("%s\n", __func__);
-	return 0;
+	status_t status;
+	u8_t *auth_mic;
+	u8_t aad;
+	cau3_handle_t handle = {
+			.keySlot = kCAU3_KeySlot2,
+			.taskDone = kCAU3_TaskDonePoll
+	};
+
+	if (ctx_ccm.rx_pkt_in->len > CAU3_BLE_MIC_SIZE) {
+		auth_mic = (u8_t *)ctx_ccm.rx_pkt_in + 2 +
+				ctx_ccm.rx_pkt_in->len - CAU3_BLE_MIC_SIZE;
+		aad = *(u8_t *)ctx_ccm.rx_pkt_in & RADIO_AESCCM_HDR_MASK;
+		status = CAU3_AES_CCM_DecryptTag(CAU3, &handle,
+				(u8_t *)ctx_ccm.rx_pkt_in + 2,
+				(u8_t *)ctx_ccm.rx_pkt_out + 2,
+				ctx_ccm.rx_pkt_in->len - CAU3_BLE_MIC_SIZE,
+				ctx_ccm.nonce.bytes, 13,
+				&aad, 1, auth_mic, CAU3_BLE_MIC_SIZE);
+		if (status != kStatus_Success) {
+			BT_ERR("CAUv3 AES CCM decrypt failed %d", status);
+			return 0;
+		}
+
+		ctx_ccm.auth_mic_valid = handle.micPassed;
+		ctx_ccm.rx_pkt_out->len -= 4;
+
+	} else if (ctx_ccm.rx_pkt_in->len == 0) {
+		/* Just copy input into output */
+		*ctx_ccm.rx_pkt_out = *ctx_ccm.rx_pkt_in;
+		ctx_ccm.auth_mic_valid = 1;
+		ctx_ccm.empty_pdu_rxed = 1;
+	} else {
+		return 0;   /* length only allowed 0, not 1,2,3,4 */
+	}
+
+	return 1;
 }
 
 u32_t radio_ccm_mic_is_valid(void)
 {
-	printk("%s\n", __func__);
-	return 0;
+	return ctx_ccm.auth_mic_valid;
+}
+
+u32_t radio_ccm_is_available(void)
+{
+	return ctx_ccm.empty_pdu_rxed;
 }
 
 void radio_ar_configure(u32_t nirk, void *irk)

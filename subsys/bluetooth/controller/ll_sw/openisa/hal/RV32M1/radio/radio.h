@@ -96,6 +96,7 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt);
 void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt);
 u32_t radio_ccm_is_done(void);
 u32_t radio_ccm_mic_is_valid(void);
+u32_t radio_ccm_is_available(void);
 
 void radio_ar_configure(u32_t nirk, void *irk);
 u32_t radio_ar_match_get(void);

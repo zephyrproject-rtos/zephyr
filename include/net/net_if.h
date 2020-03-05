@@ -550,7 +550,7 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt);
  */
 static inline const struct net_l2 * const net_if_l2(struct net_if *iface)
 {
-	if (!iface) {
+	if (!iface || !iface->if_dev) {
 		return NULL;
 	}
 

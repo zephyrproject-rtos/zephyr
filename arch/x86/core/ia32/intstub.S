@@ -130,7 +130,7 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	pushl	%edi
 
 
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_TRACING_ISR)
 
 	/* Save these as we are using to keep track of isr and isr_param */
 	pushl	%eax
@@ -196,7 +196,7 @@ alreadyOnIntStack:
 	sti			/* re-enable interrupts */
 #endif
 	/* Now call the interrupt handler */
-	INDIRECT_CALL(%edx)
+	call	*%edx
 	/* Discard ISR argument */
 	addl	$0x4, %esp
 #ifdef CONFIG_NESTED_INTERRUPTS

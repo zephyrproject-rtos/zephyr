@@ -901,6 +901,7 @@ const struct bmi160_device_config bmi160_config = {
 #if defined(CONFIG_BMI160_TRIGGER)
 	.gpio_port = DT_INST_0_BOSCH_BMI160_INT_GPIOS_CONTROLLER,
 	.int_pin = DT_INST_0_BOSCH_BMI160_INT_GPIOS_PIN,
+	.int_flags = DT_INST_0_BOSCH_BMI160_INT_GPIOS_FLAGS,
 #endif
 };
 

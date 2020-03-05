@@ -9,10 +9,7 @@ menuconfig PINMUX_SIFIVE
 	help
 	  Enable driver for the SiFive Freedom SOC pinmux driver
 
-if PINMUX_SIFIVE
-
 config PINMUX_SIFIVE_0_NAME
 	string "SIFIVE pinmux 0 driver name"
 	default "pinmux0"
-
-endif # PINMUX_SIFIVE
+	depends on PINMUX_SIFIVE

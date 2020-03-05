@@ -42,13 +42,6 @@ static int nordicsemi_nrf53_init(struct device *arg)
 
 	ARG_UNUSED(arg);
 
-#if defined(CONFIG_SOC_NRF5340_CPUAPP)
-	/* Temporary workaround for incorrect SystemCoreClock initialization.
-	 * To be removed when system_nrf5340_application.c is corrected.
-	 */
-	SystemCoreClockUpdate();
-#endif
-
 	key = irq_lock();
 
 #ifdef CONFIG_NRF_ENABLE_CACHE

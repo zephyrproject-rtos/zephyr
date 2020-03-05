@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
 #include <string.h>
@@ -20,6 +20,10 @@ LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
 #define CAN_BOFF_RECOVER_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
+
+#if defined(CONFIG_CAN_1) && defined(CONFIG_CAN_2)
+#error Simultaneous use of CAN_1 and CAN_2 not supported yet
+#endif
 
 /*
  * Translation tables
@@ -341,13 +345,16 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 			    bitrate);
 	}
 
-	__ASSERT(cfg->sjw <= 0x03,      "SJW maximum is 3");
-	__ASSERT(cfg->prop_ts1 <= 0x0F, "PROP_BS1 maximum is 15");
-	__ASSERT(cfg->ts2 <= 0x07,      "BS2 maximum is 7");
+	__ASSERT(cfg->sjw >= 1,      "SJW minimum is 1");
+	__ASSERT(cfg->sjw <= 4,      "SJW maximum is 4");
+	__ASSERT(cfg->prop_ts1 >= 1, "PROP_TS1 minimum is 1");
+	__ASSERT(cfg->prop_ts1 <= 16, "PROP_TS1 maximum is 16");
+	__ASSERT(cfg->ts2 >= 1,      "TS2 minimum is 1");
+	__ASSERT(cfg->ts2 <= 8,      "TS2 maximum is 8");
 
-	ts1 = ((cfg->prop_ts1 & 0x0F) - 1) << CAN_BTR_TS1_Pos;
-	ts2 = ((cfg->ts2      & 0x07) - 1) << CAN_BTR_TS2_Pos;
-	sjw = ((cfg->sjw      & 0x07) - 1) << CAN_BTR_SJW_Pos;
+	ts1 = ((cfg->prop_ts1 - 1) & 0x0F) << CAN_BTR_TS1_Pos;
+	ts2 = ((cfg->ts2      - 1) & 0x07) << CAN_BTR_TS2_Pos;
+	sjw = ((cfg->sjw      - 1) & 0x07) << CAN_BTR_SJW_Pos;
 
 	reg_mode =  (mode == CAN_NORMAL_MODE)   ? 0U   :
 		    (mode == CAN_LOOPBACK_MODE) ? CAN_BTR_LBKM :
@@ -381,6 +388,9 @@ static int can_stm32_init(struct device *dev)
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
 	CAN_TypeDef *can = cfg->can;
+#ifdef CONFIG_CAN_2
+	CAN_TypeDef *master_can = cfg->master_can;
+#endif
 	struct device *clock;
 	int ret;
 
@@ -418,6 +428,10 @@ static int can_stm32_init(struct device *dev)
 		LOG_ERR("Failed to enter init mode");
 		return ret;
 	}
+
+#ifdef CONFIG_CAN_2
+	master_can->FMR &= ~CAN_FMR_CAN2SB; /* Assign all filters to CAN2 */
+#endif
 
 	/* Set TX priority to chronological order */
 	can->MCR |= CAN_MCR_TXFP;
@@ -942,7 +956,7 @@ static inline int can_stm32_attach(struct device *dev, can_rx_callback_t cb,
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
-	CAN_TypeDef *can = cfg->can;
+	CAN_TypeDef *can = cfg->master_can;
 	int filter_index = 0;
 	int filter_nr;
 
@@ -972,7 +986,7 @@ void can_stm32_detach(struct device *dev, int filter_nr)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
-	CAN_TypeDef *can = cfg->can;
+	CAN_TypeDef *can = cfg->master_can;
 	int bank_nr;
 	int filter_index;
 	u32_t bank_bit;
@@ -1036,6 +1050,7 @@ static void config_can_1_irq(CAN_TypeDef *can);
 
 static const struct can_stm32_config can_stm32_cfg_1 = {
 	.can = (CAN_TypeDef *)DT_CAN_1_BASE_ADDRESS,
+	.master_can = (CAN_TypeDef *)DT_CAN_1_BASE_ADDRESS,
 	.bus_speed = DT_CAN_1_BUS_SPEED,
 	.sjw = DT_CAN_1_SJW,
 	.prop_ts1 = DT_CAN_1_PROP_SEG + DT_CAN_1_PHASE_SEG1,
@@ -1112,3 +1127,81 @@ NET_DEVICE_INIT(socket_can_stm32_1, SOCKET_CAN_NAME_1, socket_can_init_1,
 #endif /* CONFIG_NET_SOCKETS_CAN */
 
 #endif /*CONFIG_CAN_1*/
+
+#ifdef CONFIG_CAN_2
+
+static void config_can_2_irq(CAN_TypeDef *can);
+
+static const struct can_stm32_config can_stm32_cfg_2 = {
+	.can = (CAN_TypeDef *)DT_CAN_2_BASE_ADDRESS,
+	.master_can = (CAN_TypeDef *)DT_CAN_1_BASE_ADDRESS,
+	.bus_speed = DT_CAN_2_BUS_SPEED,
+	.sjw = DT_CAN_2_SJW,
+	.prop_ts1 = DT_CAN_2_PROP_SEG + DT_CAN_2_PHASE_SEG1,
+	.ts2 = DT_CAN_2_PHASE_SEG2,
+	.pclken = {
+		.enr = DT_CAN_2_CLOCK_BITS,
+		.bus = DT_CAN_2_CLOCK_BUS,
+	},
+	.config_irq = config_can_2_irq
+};
+
+static struct can_stm32_data can_stm32_dev_data_2;
+
+DEVICE_AND_API_INIT(can_stm32_2, DT_CAN_2_NAME, &can_stm32_init,
+		    &can_stm32_dev_data_2, &can_stm32_cfg_2,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &can_api_funcs);
+
+static void config_can_2_irq(CAN_TypeDef *can)
+{
+	LOG_DBG("Enable CAN2 IRQ");
+	IRQ_CONNECT(DT_CAN_2_IRQ_RX0, DT_CAN_2_IRQ_PRIORITY,
+		    can_stm32_rx_isr, DEVICE_GET(can_stm32_2), 0);
+	irq_enable(DT_CAN_2_IRQ_RX0);
+
+	IRQ_CONNECT(DT_CAN_2_IRQ_TX, DT_CAN_2_IRQ_PRIORITY,
+		    can_stm32_tx_isr, DEVICE_GET(can_stm32_2), 0);
+	irq_enable(DT_CAN_2_IRQ_TX);
+
+	IRQ_CONNECT(DT_CAN_2_IRQ_SCE, DT_CAN_2_IRQ_PRIORITY,
+		    can_stm32_state_change_isr, DEVICE_GET(can_stm32_2), 0);
+	irq_enable(DT_CAN_2_IRQ_SCE);
+	can->IER |= CAN_IER_TMEIE | CAN_IER_ERRIE | CAN_IER_FMPIE0 |
+		    CAN_IER_FMPIE1 | CAN_IER_BOFIE;
+}
+
+#if defined(CONFIG_NET_SOCKETS_CAN)
+
+#include "socket_can_generic.h"
+
+static int socket_can_init_2(struct device *dev)
+{
+	struct device *can_dev = DEVICE_GET(can_stm32_2);
+	struct socket_can_context *socket_context = dev->driver_data;
+
+	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
+		dev, dev->config->name, can_dev, can_dev->config->name);
+
+	socket_context->can_dev = can_dev;
+	socket_context->msgq = &socket_can_msgq;
+
+	socket_context->rx_tid =
+		k_thread_create(&socket_context->rx_thread_data,
+				rx_thread_stack,
+				K_THREAD_STACK_SIZEOF(rx_thread_stack),
+				rx_thread, socket_context, NULL, NULL,
+				RX_THREAD_PRIORITY, 0, K_NO_WAIT);
+
+	return 0;
+}
+
+NET_DEVICE_INIT(socket_can_stm32_2, SOCKET_CAN_NAME_2, socket_can_init_2,
+		&socket_can_context_2, NULL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		&socket_can_api,
+		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
+
+#endif /* CONFIG_NET_SOCKETS_CAN */
+
+#endif /*CONFIG_CAN_2*/

@@ -8,6 +8,9 @@ toolchain:
   - xtools
 supported:
   - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
   - usb_device
   - ble
   - gpio
