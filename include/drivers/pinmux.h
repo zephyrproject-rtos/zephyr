@@ -34,6 +34,14 @@ extern "C" {
 #define PINMUX_FUNC_F		5
 #define PINMUX_FUNC_G		6
 #define PINMUX_FUNC_H		7
+#define PINMUX_FUNC_I		8
+#define PINMUX_FUNC_J		9
+#define PINMUX_FUNC_K		10
+#define PINMUX_FUNC_L		11
+#define PINMUX_FUNC_M		12
+#define PINMUX_FUNC_N		13
+#define PINMUX_FUNC_O		14
+#define PINMUX_FUNC_P		15
 
 #define PINMUX_PULLUP_ENABLE	(0x1)
 #define PINMUX_PULLUP_DISABLE	(0x0)
