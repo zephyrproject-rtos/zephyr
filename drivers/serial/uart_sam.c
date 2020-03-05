@@ -315,9 +315,9 @@ static int uart_sam_irq_is_pending(struct device *dev)
 
 static int uart_sam_irq_update(struct device *dev)
 {
-	volatile Uart * const uart = DEV_CFG(dev)->regs;
+	ARG_UNUSED(dev);
 
-	return (uart->UART_SR & UART_SR_TXEMPTY);
+	return 1;
 }
 
 static void uart_sam_irq_callback_set(struct device *dev,
