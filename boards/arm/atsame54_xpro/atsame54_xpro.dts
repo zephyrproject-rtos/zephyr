@@ -81,3 +81,7 @@
 &usb0 {
 	status = "okay";
 };
+
+&gmac {
+	status = "okay";
+};
