@@ -298,6 +298,10 @@ static int rtc_stm32_init(struct device *dev)
 	* && !CONFIG_SOC_SERIES_STM32L1X
 	*/
 
+#if defined(CONFIG_COUNTER_RTC_STM32_LSE_BYPASS)
+	LL_RCC_LSE_EnableBypass();
+#endif /* CONFIG_COUNTER_RTC_STM32_LSE_BYPASS */
+
 	LL_RCC_LSE_Enable();
 
 	/* Wait until LSE is ready */
