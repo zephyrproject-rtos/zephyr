@@ -1573,6 +1573,7 @@ int usb_dc_ep_enable(const u8_t ep)
 		return -EINVAL;
 	}
 
+	nrfx_usbd_ep_dtoggle_clear(ep_addr_to_nrfx(ep));
 	if (ep_ctx->cfg.en) {
 		return -EALREADY;
 	}
