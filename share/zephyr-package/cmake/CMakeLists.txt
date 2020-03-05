@@ -25,5 +25,9 @@ else()
   message("~/.cmake/packages/ZephyrUnitTest")
 endif()
 
+add_custom_target(pristine
+                  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_LIST_DIR}/pristine.cmake
+)
+
 export(PACKAGE Zephyr)
 export(PACKAGE ZephyrUnittest)
