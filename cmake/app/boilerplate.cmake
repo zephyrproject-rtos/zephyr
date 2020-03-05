@@ -63,6 +63,8 @@ set(__build_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
 
 set(PROJECT_BINARY_DIR ${__build_dir})
 
+message(STATUS "Application: ${APPLICATION_SOURCE_DIR}")
+
 add_custom_target(code_data_relocation_target)
 
 # CMake's 'project' concept has proven to not be very useful for Zephyr
@@ -177,7 +179,7 @@ else()
 endif()
 
 assert(BOARD "BOARD not set")
-message(STATUS "Selected BOARD ${BOARD}")
+message(STATUS "Board: ${BOARD}")
 
 # Store the selected board in the cache
 set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")

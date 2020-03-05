@@ -361,16 +361,6 @@ class Build(Forceable):
                 self._sanity_check_source_dir()
 
     def _run_cmake(self, board, origin, cmake_opts):
-        _banner(
-            '''build configuration:
-       source directory: {}
-       build directory: {}{}
-       BOARD: {}'''.
-            format(self.source_dir, self.build_dir,
-                   ' (created)' if self.created_build_dir else '',
-                   ('{} (origin: {})'.format(board, origin) if board
-                    else 'UNKNOWN')))
-
         if board is None and config_getboolean('board_warn', True):
             log.wrn('This looks like a fresh build and BOARD is unknown;',
                     "so it probably won't work. To fix, use",
@@ -379,7 +369,6 @@ class Build(Forceable):
                     "'west config build.board_warn false'")
 
         if not self.run_cmake:
-            log.dbg('Not generating a build system; one is present.')
             return
 
         _banner('generating a build system')
@@ -427,7 +416,7 @@ class Build(Forceable):
     def _run_build(self, target):
         if target:
             _banner('running target {}'.format(target))
-        else:
+        elif self.run_cmake:
             _banner('building application')
         extra_args = ['--target', target] if target else []
         if self.args.build_opt:
