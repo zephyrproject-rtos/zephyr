@@ -116,6 +116,7 @@ enum {
 	RP_ENC_STATE_WAIT_NTF_LTK_REQ,
 	RP_ENC_STATE_WAIT_LTK_REPLY,
 	RP_ENC_STATE_WAIT_TX_START_ENC_REQ,
+	RP_ENC_STATE_WAIT_TX_REJECT_IND,
 	RP_ENC_STATE_WAIT_RX_START_ENC_RSP,
 	RP_ENC_STATE_WAIT_NTF,
 	RP_ENC_STATE_WAIT_TX_START_ENC_RSP,
@@ -218,6 +219,14 @@ struct proc_ctx {
 
 	/* Procedure pause */
 	int pause;
+
+	/* Procedure data */
+	union {
+		/* Used by Encryption Procedure */
+		struct {
+			u8_t error;
+		} enc;
+	} data;
 };
 
 /* LLCP Memory Pool Descriptor */
@@ -520,6 +529,23 @@ static void pdu_encode_start_enc_rsp(struct pdu_data *pdu)
 	/* TODO(thoh): Fill in PDU with correct data */
 }
 
+static void pdu_encode_reject_ind(struct pdu_data *pdu, u8_t error_code)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, reject_ind) + sizeof(struct pdu_data_llctrl_reject_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
+	pdu->llctrl.reject_ind.error_code = error_code;
+}
+
+static void pdu_encode_reject_ext_ind(struct pdu_data *pdu, u8_t reject_opcode, u8_t error_code)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, reject_ext_ind) + sizeof(struct pdu_data_llctrl_reject_ext_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
+	pdu->llctrl.reject_ext_ind.reject_opcode = reject_opcode;
+	pdu->llctrl.reject_ext_ind.error_code = error_code;
+}
+
 /*
  * LLCP Local Procedure Common FSM
  */
@@ -734,8 +760,12 @@ static void lp_enc_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 
 	pdu = (struct pdu_data *) ntf->pdu;
 
-	/* TODO(thoh): is this correct? */
-	pdu_encode_start_enc_rsp(pdu);
+	if (ctx->data.enc.error == BT_HCI_ERR_SUCCESS) {
+		/* TODO(thoh): is this correct? */
+		pdu_encode_start_enc_rsp(pdu);
+	} else {
+		pdu_encode_reject_ind(pdu, ctx->data.enc.error);
+	}
 
 	/* Enqueue notification towards LL */
 	ll_rx_enqueue(ntf);
@@ -850,9 +880,15 @@ static void lp_enc_st_wait_rx_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx 
 static void lp_enc_st_wait_rx_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	/* TODO */
+	struct pdu_data *pdu = (struct pdu_data *) param;
+
 	switch (evt) {
 	case LP_ENC_EVT_START_ENC_REQ:
 		lp_enc_send_start_enc_rsp(conn, ctx, evt, param);
+		break;
+	case LP_ENC_EVT_REJECT:
+		ctx->data.enc.error = pdu->llctrl.reject_ext_ind.error_code;
+		lp_enc_complete(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -877,6 +913,7 @@ static void lp_enc_st_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct pro
 	/* TODO */
 	switch (evt) {
 	case LP_ENC_EVT_START_ENC_RSP:
+		ctx->data.enc.error = BT_HCI_ERR_SUCCESS;
 		lp_enc_complete(conn, ctx, evt, param);
 		break;
 	default:
@@ -944,6 +981,9 @@ static void lp_enc_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct nod
 		break;
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_START_ENC_RSP, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
+		lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_REJECT, pdu);
 		break;
 	default:
 		/* Unknown opcode */
@@ -1280,6 +1320,10 @@ static void rp_enc_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcod
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		pdu_encode_start_enc_rsp(pdu);
 		break;
+	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
+		/* TODO(thoh): Select between LL_REJECT_IND and LL_REJECT_EXT_IND */
+		pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_ENC_REQ, BT_HCI_ERR_PIN_OR_KEY_MISSING);
+		break;
 	default:
 		LL_ASSERT(0);
 	}
@@ -1372,6 +1416,17 @@ static void rp_enc_send_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx 
 	}
 }
 
+static void rp_enc_send_reject_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!tx_alloc_is_available()) {
+		ctx->state = RP_ENC_STATE_WAIT_TX_REJECT_IND;
+	} else {
+		rp_enc_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
+		rr_complete(conn);
+		ctx->state = RP_ENC_STATE_IDLE;
+	}
+}
+
 static void rp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	if (!tx_alloc_is_available()) {
@@ -1451,7 +1506,7 @@ static void rp_enc_state_wait_ltk_reply(struct ull_cp_conn *conn, struct proc_ct
 		rp_enc_send_start_enc_req(conn, ctx, evt, param);
 		break;
 	case RP_ENC_EVT_LTK_REQ_NEG_REPLY:
-		/* TODO */
+		rp_enc_send_reject_ind(conn, ctx, evt, param);
 		break;
 	default:
 		/* Ignore other evts */
@@ -1471,6 +1526,20 @@ static void rp_enc_state_wait_tx_start_enc_req(struct ull_cp_conn *conn, struct 
 		break;
 	}
 }
+
+static void rp_enc_state_wait_tx_reject_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	switch (evt) {
+	case RP_ENC_EVT_RUN:
+		rp_enc_send_reject_ind(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
 
 static void rp_enc_state_wait_rx_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
@@ -1535,6 +1604,9 @@ static void rp_enc_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 		break;
 	case RP_ENC_STATE_WAIT_TX_START_ENC_REQ:
 		rp_enc_state_wait_tx_start_enc_req(conn, ctx, evt, param);
+		break;
+	case RP_ENC_STATE_WAIT_TX_REJECT_IND:
+		rp_enc_state_wait_tx_reject_ind(conn, ctx, evt, param);
 		break;
 	case RP_ENC_STATE_WAIT_RX_START_ENC_RSP:
 		rp_enc_state_wait_rx_start_enc_rsp(conn, ctx, evt, param);
@@ -1797,6 +1869,10 @@ void ull_cp_conn_init(struct ull_cp_conn *conn)
 
 	/* Reset the cached version Information (PROC_VERSION_EXCHANGE) */
 	memset(&conn->vex, 0, sizeof(conn->vex));
+
+	/* Reset encryption related state */
+	conn->enc_tx = 0U;
+	conn->enc_rx = 0U;
 }
 
 void ull_cp_release_tx(struct node_tx *tx)
