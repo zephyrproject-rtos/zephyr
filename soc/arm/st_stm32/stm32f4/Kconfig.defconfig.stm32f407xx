@@ -3,6 +3,20 @@
 # Copyright (c) 2016 Linaro Limited.
 # SPDX-License-Identifier: Apache-2.0
 
+if SOC_STM32F407XE
+
+config SOC
+	default "stm32f407xx"
+
+config NUM_IRQS
+	default 82
+
+config ENTROPY_STM32_RNG
+	default y
+	depends on ENTROPY_GENERATOR
+
+endif # SOC_STM32F407XE
+
 if SOC_STM32F407XG
 
 config SOC
