@@ -577,7 +577,8 @@ config BT_CTLR_ZLI
 	  else will impact controller stability.
 
 config BT_CTLR_OPTIMIZE_FOR_SPEED
-	bool "Optimize for Speed"
+	prompt "Optimize for Speed" if !(SOC_SERIES_NRF51X && BT_CTLR_LE_ENC)
+	bool
 	default y if BT_CTLR_LE_ENC
 	help
 	  Optimize compilation of controller for execution speed.
