@@ -89,7 +89,7 @@ void z_clock_set_timeout(s32_t n, bool idle)
 
 	if (n < 1) {
 		full_ticks = 0;
-	} else if ((n == K_FOREVER) || (n > MAX_TICKS)) {
+	} else if ((n == K_TICKS_FOREVER) || (n > MAX_TICKS)) {
 		full_ticks = MAX_TICKS - 1;
 	} else {
 		full_ticks = n - 1;

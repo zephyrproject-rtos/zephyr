@@ -28,6 +28,59 @@
 extern "C" {
 #endif
 
+/**
+ * @addtogroup clock_apis
+ * @{
+ */
+
+typedef u32_t k_ticks_t;
+
+#define K_TICKS_FOREVER ((k_ticks_t) -1)
+
+#ifndef CONFIG_LEGACY_TIMEOUT_API
+
+typedef struct {
+	k_ticks_t ticks;
+} k_timeout_t;
+
+/**
+ * @brief Compare timeouts for equality
+ *
+ * The k_timeout_t object is an opaque struct that should not be
+ * inspected by application code.  This macro exists so that users can
+ * test timeout objects for equality with known constants
+ * (e.g. K_NO_WAIT and K_FOREVER) when implementing their own APIs in
+ * terms of Zephyr timeout constants.
+ *
+ * @return True if the timeout objects are identical
+ */
+#define K_TIMEOUT_EQ(a, b) ((a).ticks == (b).ticks)
+
+#define Z_TIMEOUT_NO_WAIT ((k_timeout_t) {})
+#define Z_TIMEOUT_TICKS(t) ((k_timeout_t) { .ticks = (t) })
+#define Z_FOREVER Z_TIMEOUT_TICKS(K_TICKS_FOREVER)
+#define Z_TIMEOUT_MS(t) Z_TIMEOUT_TICKS(k_ms_to_ticks_ceil32(MAX(t, 0)))
+#define Z_TIMEOUT_US(t) Z_TIMEOUT_TICKS(k_us_to_ticks_ceil32(MAX(t, 0)))
+#define Z_TIMEOUT_NS(t) Z_TIMEOUT_TICKS(k_ns_to_ticks_ceil32(MAX(t, 0)))
+#define Z_TIMEOUT_CYC(t) Z_TIMEOUT_TICKS(k_cyc_to_ticks_ceil32(MAX(t, 0)))
+
+#else
+
+/* Legacy timeout API */
+typedef s32_t k_timeout_t;
+#define K_TIMEOUT_EQ(a, b) ((a) == (b))
+#define Z_TIMEOUT_NO_WAIT 0
+#define Z_TIMEOUT_TICKS(t) k_ticks_to_ms_ceil32(t)
+#define Z_FOREVER K_TICKS_FOREVER
+#define Z_TIMEOUT_MS(t) (t)
+#define Z_TIMEOUT_US(t) ((t) * 1000)
+#define Z_TIMEOUT_NS(t) ((t) * 1000000)
+#define Z_TIMEOUT_CYC(t) k_cyc_to_ms_ceil32(MAX((t), 0))
+
+#endif
+
+/** @} */
+
 #ifdef CONFIG_TICKLESS_KERNEL
 extern int _sys_clock_always_on;
 extern void z_enable_sys_clock(void);
@@ -53,8 +106,6 @@ extern void z_enable_sys_clock(void);
 /* number of nanoseconds per second */
 #define NSEC_PER_SEC ((NSEC_PER_USEC) * (USEC_PER_MSEC) * (MSEC_PER_SEC))
 
-#define k_msleep(ms) k_sleep(ms)
-#define K_TIMEOUT_EQ(a, b) ((a) == (b))
 
 /* kernel clocks */
 
@@ -131,6 +182,8 @@ s64_t z_tick_get(void);
 #define z_tick_get() (0)
 #define z_tick_get_32() (0)
 #endif
+
+u64_t z_timeout_end_calc(k_timeout_t timeout);
 
 /* timeouts */
 

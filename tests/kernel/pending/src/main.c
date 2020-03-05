@@ -116,7 +116,7 @@ static void sync_threads(struct k_work *work)
 
 static void fifo_tests(s32_t timeout, volatile int *state,
 		       void *(*get)(struct k_fifo *, s32_t),
-		       int (*sem_take)(struct k_sem *, s32_t))
+		       int (*sem_take)(struct k_sem *, k_timeout_t))
 {
 	struct fifo_data *data;
 
@@ -154,7 +154,7 @@ static void fifo_tests(s32_t timeout, volatile int *state,
 
 static void lifo_tests(s32_t timeout, volatile int *state,
 		       void *(*get)(struct k_lifo *, s32_t),
-		       int (*sem_take)(struct k_sem *, s32_t))
+		       int (*sem_take)(struct k_sem *, k_timeout_t))
 {
 	struct lifo_data *data;
 

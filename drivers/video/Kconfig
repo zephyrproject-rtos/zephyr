@@ -8,6 +8,7 @@
 #
 menuconfig VIDEO
 	bool "VIDEO hardware support"
+	select LEGACY_TIMEOUT_API
 	help
 	  Enable support for the VIDEO.
 

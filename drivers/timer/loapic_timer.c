@@ -390,7 +390,7 @@ void z_timer_idle_enter(s32_t ticks /* system ticks */
 				)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
-	if (ticks != K_FOREVER) {
+	if (ticks != K_TICKS_FOREVER) {
 		/* Need to reprogram only if current program is smaller */
 		if (ticks > programmed_full_ticks) {
 			z_set_time(ticks);
@@ -417,7 +417,7 @@ void z_timer_idle_enter(s32_t ticks /* system ticks */
 
 	cycles = current_count_register_get();
 
-	if ((ticks == K_FOREVER) || (ticks > max_system_ticks)) {
+	if ((ticks == K_TICKS_FOREVER) || (ticks > max_system_ticks)) {
 		/*
 		 * The number of cycles until the timer must fire next might not fit
 		 * in the 32-bit counter register. To work around this, program

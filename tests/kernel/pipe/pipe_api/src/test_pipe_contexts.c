@@ -42,7 +42,7 @@ K_SEM_DEFINE(end_sema, 0, 1);
 #endif
 K_MEM_POOL_DEFINE(test_pool, SZ, SZ, 4, 4);
 
-static void tpipe_put(struct k_pipe *ppipe, s32_t timeout)
+static void tpipe_put(struct k_pipe *ppipe, k_timeout_t timeout)
 {
 	size_t to_wt, wt_byte = 0;
 
@@ -57,7 +57,7 @@ static void tpipe_put(struct k_pipe *ppipe, s32_t timeout)
 }
 
 static void tpipe_block_put(struct k_pipe *ppipe, struct k_sem *sema,
-			    s32_t timeout)
+			    k_timeout_t timeout)
 {
 	struct k_mem_block block;
 
@@ -73,7 +73,7 @@ static void tpipe_block_put(struct k_pipe *ppipe, struct k_sem *sema,
 	}
 }
 
-static void tpipe_get(struct k_pipe *ppipe, s32_t timeout)
+static void tpipe_get(struct k_pipe *ppipe, k_timeout_t timeout)
 {
 	unsigned char rx_data[PIPE_LEN];
 	size_t to_rd, rd_byte = 0;

@@ -161,7 +161,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	cycles = read_count();
 
 	/* Calculate timeout counter value */
-	if (ticks == K_FOREVER) {
+	if (ticks == K_TICKS_FOREVER) {
 		next_cycles = cycles + CYCLES_NEXT_MAX;
 	} else {
 		next_cycles = cycles + ((u32_t)ticks * CYCLES_PER_TICK);

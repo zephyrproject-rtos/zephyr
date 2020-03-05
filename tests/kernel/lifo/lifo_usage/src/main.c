@@ -35,7 +35,7 @@ struct reply_packet {
 struct timeout_order_data {
 	void *link_in_lifo;
 	struct k_lifo *klifo;
-	s32_t timeout;
+	k_ticks_t timeout;
 	s32_t timeout_order;
 	s32_t q_order;
 };
