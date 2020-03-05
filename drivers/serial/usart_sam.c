@@ -300,9 +300,9 @@ static int usart_sam_irq_is_pending(struct device *dev)
 
 static int usart_sam_irq_update(struct device *dev)
 {
-	volatile Usart * const usart = DEV_CFG(dev)->regs;
+	ARG_UNUSED(dev);
 
-	return (usart->US_CSR & US_CSR_TXEMPTY);
+	return 1;
 }
 
 static void usart_sam_irq_callback_set(struct device *dev,
