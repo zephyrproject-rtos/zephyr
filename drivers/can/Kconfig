@@ -8,6 +8,7 @@
 #
 menuconfig CAN
 	bool "CAN Drivers"
+	select LEGACY_TIMEOUT_API
 	help
 	  Enable CAN Driver Configuration
 

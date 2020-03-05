@@ -27,7 +27,8 @@ static inline void z_init_timeout(struct _timeout *t)
 	sys_dnode_init(&t->node);
 }
 
-void z_add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks);
+void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
+		   k_timeout_t timeout);
 
 int z_abort_timeout(struct _timeout *to);
 
@@ -43,7 +44,7 @@ static inline void z_init_thread_timeout(struct _thread_base *thread_base)
 
 extern void z_thread_timeout(struct _timeout *to);
 
-static inline void z_add_thread_timeout(struct k_thread *th, s32_t ticks)
+static inline void z_add_thread_timeout(struct k_thread *th, k_timeout_t ticks)
 {
 	z_add_timeout(&th->base.timeout, z_thread_timeout, ticks);
 }
@@ -63,11 +64,16 @@ s32_t z_timeout_remaining(struct _timeout *timeout);
 
 /* Stubs when !CONFIG_SYS_CLOCK_EXISTS */
 #define z_init_thread_timeout(t) do {} while (false)
-#define z_add_thread_timeout(th, to) do {} while (false && to && (void *)th)
 #define z_abort_thread_timeout(t) (0)
 #define z_is_inactive_timeout(t) 0
-#define z_get_next_timeout_expiry() (K_FOREVER)
+#define z_get_next_timeout_expiry() (K_TICKS_FOREVER)
 #define z_set_timeout_expiry(t, i) do {} while (false)
+
+static inline void z_add_thread_timeout(struct k_thread *th, k_timeout_t ticks)
+{
+	ARG_UNUSED(th);
+	ARG_UNUSED(ticks);
+}
 
 #endif
 

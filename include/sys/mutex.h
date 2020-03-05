@@ -19,6 +19,7 @@
 #ifdef CONFIG_USERSPACE
 #include <sys/atomic.h>
 #include <zephyr/types.h>
+#include <sys_clock.h>
 
 struct sys_mutex {
 	/* Currently unused, but will be used to store state for fast mutexes
@@ -54,7 +55,8 @@ static inline void sys_mutex_init(struct sys_mutex *mutex)
 	 */
 }
 
-__syscall int z_sys_mutex_kernel_lock(struct sys_mutex *mutex, s32_t timeout);
+__syscall int z_sys_mutex_kernel_lock(struct sys_mutex *mutex,
+				      k_timeout_t timeout);
 
 __syscall int z_sys_mutex_kernel_unlock(struct sys_mutex *mutex);
 
@@ -69,7 +71,7 @@ __syscall int z_sys_mutex_kernel_unlock(struct sys_mutex *mutex);
  * completes immediately and the lock count is increased by 1.
  *
  * @param mutex Address of the mutex, which may reside in user memory
- * @param timeout Waiting period to lock the mutex (in milliseconds),
+ * @param timeout Waiting period to lock the mutex,
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
  * @retval 0 Mutex locked.
@@ -78,7 +80,7 @@ __syscall int z_sys_mutex_kernel_unlock(struct sys_mutex *mutex);
  * @retval -EACCESS Caller has no access to provided mutex address
  * @retval -EINVAL Provided mutex not recognized by the kernel
  */
-static inline int sys_mutex_lock(struct sys_mutex *mutex, s32_t timeout)
+static inline int sys_mutex_lock(struct sys_mutex *mutex, k_timeout_t timeout)
 {
 	/* For now, make the syscall unconditionally */
 	return z_sys_mutex_kernel_lock(mutex, timeout);
@@ -126,7 +128,7 @@ static inline void sys_mutex_init(struct sys_mutex *mutex)
 	k_mutex_init(&mutex->kernel_mutex);
 }
 
-static inline int sys_mutex_lock(struct sys_mutex *mutex, s32_t timeout)
+static inline int sys_mutex_lock(struct sys_mutex *mutex, k_timeout_t timeout)
 {
 	return k_mutex_lock(&mutex->kernel_mutex, timeout);
 }

@@ -34,7 +34,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	if (idle) {
 		z_timer_idle_enter(ticks);
 	} else {
-		z_set_time(ticks == K_FOREVER ? 0 : ticks);
+		z_set_time(ticks == K_TICKS_FOREVER ? 0 : ticks);
 	}
 #endif
 }

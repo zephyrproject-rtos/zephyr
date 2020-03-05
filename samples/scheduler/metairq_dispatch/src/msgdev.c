@@ -77,7 +77,11 @@ static void timeout_reset(void)
 {
 	u32_t ticks = rand32() % MAX_EVENT_DELAY_TICKS;
 
+#ifdef CONFIG_LEGACY_TIMEOUT_API
 	z_add_timeout(&timeout, dev_timer_expired, ticks);
+#else
+	z_add_timeout(&timeout, dev_timer_expired, Z_TIMEOUT_TICKS(ticks));
+#endif
 }
 
 void message_dev_init(void)

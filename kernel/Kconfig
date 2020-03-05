@@ -570,6 +570,15 @@ config SYS_CLOCK_EXISTS
 	  this is disabled.  Obviously timeout-related APIs will not
 	  work.
 
+config LEGACY_TIMEOUT_API
+	bool "Support legacy k_timeout_t API"
+	help
+	  The k_timeout_t API has changed to become an opaque type
+	  that must be initialized with macros.  Older applications
+	  can choose this to continue using the old style of timeouts
+	  (which were s32_t counts of milliseconds), at the cost of
+	  not being able to use new features.
+
 config XIP
 	bool "Execute in place"
 	help

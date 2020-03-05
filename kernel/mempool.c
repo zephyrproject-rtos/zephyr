@@ -47,16 +47,14 @@ int init_static_pools(struct device *unused)
 SYS_INIT(init_static_pools, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
-		     size_t size, s32_t timeout)
+		     size_t size, k_timeout_t timeout)
 {
 	int ret;
-	s64_t end = 0;
+	u64_t end = 0;
 
-	__ASSERT(!(arch_is_in_isr() && timeout != K_NO_WAIT), "");
+	__ASSERT(!(arch_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
 
-	if (timeout > 0) {
-		end = k_uptime_get() + timeout;
-	}
+	end = z_timeout_end_calc(timeout);
 
 	while (true) {
 		u32_t level_num, block_num;
@@ -68,18 +66,20 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 		block->id.level = level_num;
 		block->id.block = block_num;
 
-		if (ret == 0 || timeout == K_NO_WAIT ||
+		if (ret == 0 || K_TIMEOUT_EQ(timeout, K_NO_WAIT) ||
 		    ret != -ENOMEM) {
 			return ret;
 		}
 
 		z_pend_curr_unlocked(&p->wait_q, timeout);
 
-		if (timeout != K_FOREVER) {
-			timeout = end - k_uptime_get();
-			if (timeout <= 0) {
+		if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+			s64_t remaining = end - z_tick_get();
+
+			if (remaining <= 0) {
 				break;
 			}
+			timeout = Z_TIMEOUT_TICKS(remaining);
 		}
 	}
 

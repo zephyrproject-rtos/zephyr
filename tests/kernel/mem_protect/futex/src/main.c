@@ -64,7 +64,8 @@ void futex_wait_task(void *p1, void *p2, void *p3)
 	s32_t ret_value;
 	int time_val = *(int *)p1;
 
-	zassert_true(time_val >= (int)K_FOREVER, "invalid timeout parameter");
+	zassert_true(time_val >= (int)K_TICKS_FOREVER,
+		     "invalid timeout parameter");
 
 	ret_value = k_futex_wait(&simple_futex,
 			atomic_get(&simple_futex.val), time_val);

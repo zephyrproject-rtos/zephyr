@@ -582,31 +582,28 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 	}
 }
 
-static void add_thread_timeout_ms(struct k_thread *thread, s32_t timeout)
+static void add_thread_timeout(struct k_thread *thread, k_timeout_t timeout)
 {
-	if (timeout != K_FOREVER) {
-		s32_t ticks;
-
-		if (timeout < 0) {
-			timeout = 0;
-		}
-
-		ticks = _TICK_ALIGN + k_ms_to_ticks_ceil32(timeout);
-
-		z_add_thread_timeout(thread, ticks);
+	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+#ifdef CONFIG_LEGACY_TIMEOUT_API
+		timeout = _TICK_ALIGN + k_ms_to_ticks_ceil32(timeout);
+#endif
+		z_add_thread_timeout(thread, timeout);
 	}
 }
 
-static void pend(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
+static void pend(struct k_thread *thread, _wait_q_t *wait_q,
+		 k_timeout_t timeout)
 {
 	LOCKED(&sched_spinlock) {
 		add_to_waitq_locked(thread, wait_q);
 	}
 
-	add_thread_timeout_ms(thread, timeout);
+	add_thread_timeout(thread, timeout);
 }
 
-void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
+void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
+		   k_timeout_t timeout)
 {
 	__ASSERT_NO_MSG(thread == _current || is_thread_dummy(thread));
 	pend(thread, wait_q, timeout);
@@ -651,7 +648,7 @@ void z_thread_timeout(struct _timeout *timeout)
 }
 #endif
 
-int z_pend_curr_irqlock(u32_t key, _wait_q_t *wait_q, s32_t timeout)
+int z_pend_curr_irqlock(u32_t key, _wait_q_t *wait_q, k_timeout_t timeout)
 {
 	pend(_current, wait_q, timeout);
 
@@ -671,7 +668,7 @@ int z_pend_curr_irqlock(u32_t key, _wait_q_t *wait_q, s32_t timeout)
 }
 
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
-	       _wait_q_t *wait_q, s32_t timeout)
+	       _wait_q_t *wait_q, k_timeout_t timeout)
 {
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
@@ -1159,7 +1156,15 @@ static s32_t z_tick_sleep(s32_t ticks)
 		return 0;
 	}
 
+	k_timeout_t timeout;
+
+#ifndef CONFIG_LEGACY_TIMEOUT_API
+	timeout = Z_TIMEOUT_TICKS(ticks);
+#else
 	ticks += _TICK_ALIGN;
+	timeout = (k_ticks_t) ticks;
+#endif
+
 	expected_wakeup_time = ticks + z_tick_get_32();
 
 	/* Spinlock purely for local interrupt locking to prevent us
@@ -1173,7 +1178,7 @@ static s32_t z_tick_sleep(s32_t ticks)
 	pending_current = _current;
 #endif
 	z_remove_thread_from_ready_q(_current);
-	z_add_thread_timeout(_current, ticks);
+	z_add_thread_timeout(_current, timeout);
 	z_mark_thread_as_suspended(_current);
 
 	(void)z_swap(&local_lock, key);
@@ -1189,26 +1194,31 @@ static s32_t z_tick_sleep(s32_t ticks)
 	return 0;
 }
 
-s32_t z_impl_k_sleep(int ms)
+s32_t z_impl_k_sleep(k_timeout_t timeout)
 {
-	s32_t ticks;
+	k_ticks_t ticks;
 
 	__ASSERT(!arch_is_in_isr(), "");
 
-	if (ms == K_FOREVER) {
+	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		k_thread_suspend(_current);
-		return K_FOREVER;
+		return K_TICKS_FOREVER;
 	}
 
-	ticks = k_ms_to_ticks_ceil32(ms);
+#ifdef CONFIG_LEGACY_TIMEOUT_API
+	ticks = k_ms_to_ticks_ceil32(timeout);
+#else
+	ticks = timeout.ticks;
+#endif
+
 	ticks = z_tick_sleep(ticks);
 	return k_ticks_to_ms_floor64(ticks);
 }
 
 #ifdef CONFIG_USERSPACE
-static inline s32_t z_vrfy_k_sleep(int ms)
+static inline s32_t z_vrfy_k_sleep(k_timeout_t timeout)
 {
-	return z_impl_k_sleep(ms);
+	return z_impl_k_sleep(timeout);
 }
 #include <syscalls/k_sleep_mrsh.c>
 #endif
@@ -1407,12 +1417,13 @@ int k_thread_cpu_mask_disable(k_tid_t thread, int cpu)
 
 #endif /* CONFIG_SCHED_CPU_MASK */
 
-int z_impl_k_thread_join(struct k_thread *thread, s32_t timeout)
+int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 {
 	k_spinlock_key_t key;
 	int ret;
 
-	__ASSERT(((arch_is_in_isr() == false) || (timeout == K_NO_WAIT)), "");
+	__ASSERT(((arch_is_in_isr() == false) ||
+		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
 
 	key = k_spin_lock(&sched_spinlock);
 
@@ -1427,7 +1438,7 @@ int z_impl_k_thread_join(struct k_thread *thread, s32_t timeout)
 		goto out;
 	}
 
-	if (timeout == K_NO_WAIT) {
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		ret = -EBUSY;
 		goto out;
 	}
@@ -1436,7 +1447,7 @@ int z_impl_k_thread_join(struct k_thread *thread, s32_t timeout)
 	pending_current = _current;
 #endif
 	add_to_waitq_locked(_current, &thread->base.join_waiters);
-	add_thread_timeout_ms(_current, timeout);
+	add_thread_timeout(_current, timeout);
 
 	return z_swap(&sched_spinlock, key);
 out:
@@ -1472,7 +1483,8 @@ static bool thread_obj_validate(struct k_thread *thread)
 	CODE_UNREACHABLE;
 }
 
-static inline int z_vrfy_k_thread_join(struct k_thread *thread, s32_t timeout)
+static inline int z_vrfy_k_thread_join(struct k_thread *thread,
+				       k_timeout_t timeout)
 {
 	if (thread_obj_validate(thread)) {
 		return 0;

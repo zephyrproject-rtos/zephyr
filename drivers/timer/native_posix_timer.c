@@ -90,7 +90,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	/* Note that we treat INT_MAX literally as anyhow the maximum amount of
 	 * ticks we can report with z_clock_announce() is INT_MAX
 	 */
-	if (ticks == K_FOREVER) {
+	if (ticks == K_TICKS_FOREVER) {
 		silent_ticks = INT64_MAX;
 	} else if (ticks > 0) {
 		silent_ticks = ticks - 1;

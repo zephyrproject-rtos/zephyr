@@ -251,7 +251,7 @@ static void forever_thread_entry(void *p1, void *p2, void *p3)
 	s32_t ret;
 
 	ret = k_sleep(K_FOREVER);
-	zassert_equal(ret, K_FOREVER, "unexpected return value");
+	zassert_equal(ret, K_TICKS_FOREVER, "unexpected return value");
 	k_sem_give(&test_thread_sem);
 }
 

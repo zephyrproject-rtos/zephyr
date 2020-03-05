@@ -480,7 +480,7 @@ static void test_triggered_init(void)
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
-static void test_triggered_submit(s32_t timeout)
+static void test_triggered_submit(k_timeout_t timeout)
 {
 	int i;
 

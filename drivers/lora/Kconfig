@@ -9,6 +9,7 @@
 menuconfig LORA
 	bool "LoRa support"
 	depends on NEWLIB_LIBC
+	select LEGACY_TIMEOUT_API
 	help
 	  Include LoRa drivers in the system configuration.
 
