@@ -2677,12 +2677,10 @@ static bool sec_level_reachable(struct bt_conn *conn)
 		return true;
 	case BT_SECURITY_L3:
 		return get_io_capa() != BT_SMP_IO_NO_INPUT_OUTPUT ||
-		       (bt_auth && bt_auth->oob_data_request && oobd_present);
+		       (bt_auth && bt_auth->oob_data_request);
 	case BT_SECURITY_L4:
 		return (get_io_capa() != BT_SMP_IO_NO_INPUT_OUTPUT ||
-			(bt_auth && bt_auth->oob_data_request &&
-			 oobd_present)) &&
-		       sc_supported;
+			(bt_auth && bt_auth->oob_data_request)) && sc_supported;
 	default:
 		return false;
 	}
