@@ -29,6 +29,7 @@
 
 #include "sercom_fixup_samd5x.h"
 #include "tc_fixup_samd5x.h"
+#include "gmac_fixup_samd5x.h"
 
 #define SOC_ATMEL_SAM0_OSC32K_FREQ_HZ 32768
 
