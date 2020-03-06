@@ -1,0 +1,193 @@
+/*
+ * Copyright (c) 2016-2018 Nordic Semiconductor ASA
+ * Copyright (c) 2016 Vinayak Kariappa Chettimada
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/** \defgroup Timer API return codes.
+ *
+ * @{
+ */
+
+#include <stdbool.h>
+#include <ztest.h>
+
+#define TICKER_STATUS_SUCCESS 0 /**< Success. */
+#define TICKER_STATUS_FAILURE 1 /**< Failure. */
+#define TICKER_STATUS_BUSY    2 /**< Busy, requested feature will
+				  * complete later in time as job is
+				  * disabled or at lower execution
+				  * priority than the caller.
+				  */
+/**
+ * @}
+ */
+
+/** \defgroup Timer API common defaults parameter values.
+ *
+ * @{
+ */
+#define TICKER_NULL             ((u8_t)((u8_t)0 - 1))
+#define TICKER_NULL_REMAINDER   0
+#define TICKER_NULL_PERIOD      0
+#define TICKER_NULL_SLOT        0
+#define TICKER_NULL_LAZY        0
+#define TICKER_NULL_MUST_EXPIRE 0
+/**
+ * @}
+ */
+
+/** \brief Timer node type size.
+ */
+#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+#define TICKER_NODE_T_SIZE      40
+#else
+#if defined(CONFIG_BT_TICKER_EXT)
+#define TICKER_NODE_T_SIZE      48
+#else
+#define TICKER_NODE_T_SIZE      44
+#endif /* CONFIG_BT_TICKER_EXT */
+#endif /* CONFIG_BT_TICKER_COMPATIBILITY_MODE*/
+
+/** \brief Timer user type size.
+ */
+#define TICKER_USER_T_SIZE      8
+
+/** \brief Timer user operation type size.
+ */
+#if defined(CONFIG_BT_TICKER_EXT)
+#define TICKER_USER_OP_T_SIZE   52
+#else
+#define TICKER_USER_OP_T_SIZE   48
+#endif /* CONFIG_BT_TICKER_EXT */
+
+#define TICKER_CALL_ID_NONE     0
+#define TICKER_CALL_ID_ISR      1
+#define TICKER_CALL_ID_TRIGGER  2
+#define TICKER_CALL_ID_WORKER   3
+#define TICKER_CALL_ID_JOB      4
+#define TICKER_CALL_ID_PROGRAM  5
+
+/* Use to ensure callback is invoked in all intervals, even when latencies
+ * occur
+ */
+#define TICKER_LAZY_MUST_EXPIRE 0xFFFF
+
+/* Set this priority to ensure ticker node is always scheduled. Only one
+ * ticker node can have priority TICKER_PRIORITY_CRITICAL at a time
+ */
+#define TICKER_PRIORITY_CRITICAL -128
+
+typedef u8_t (*ticker_caller_id_get_cb_t)(u8_t user_id);
+typedef void (*ticker_sched_cb_t)(u8_t caller_id, u8_t callee_id, u8_t chain,
+				  void *instance);
+typedef void (*ticker_trigger_set_cb_t)(u32_t value);
+
+/** \brief Timer timeout function type.
+ */
+typedef void (*ticker_timeout_func) (u32_t ticks_at_expire, u32_t remainder,
+				     u16_t lazy, void *context);
+
+/** \brief Timer operation complete function type.
+ */
+typedef void (*ticker_op_func) (u32_t status, void *op_context);
+
+#if defined(CONFIG_BT_TICKER_EXT)
+struct ticker_ext {
+	u32_t ticks_slot_window; /* Window in which the slot
+				  * reservation may be re-scheduled
+				  * to avoid collision
+				  */
+	s32_t ticks_drift;	 /* Applied drift since last expiry */
+	u8_t  reschedule_state;	 /* State of re-scheduling of the
+				  * node. See defines
+				  * TICKER_RESCHEDULE_STATE_XXX
+				  */
+};
+#endif /* CONFIG_BT_TICKER_EXT */
+
+u32_t ticker_init(u8_t instance_index, u8_t count_node, void *node,
+			u8_t count_user, void *user, u8_t count_op,
+		  void *user_op,
+			ticker_caller_id_get_cb_t caller_id_get_cb,
+			ticker_sched_cb_t sched_cb,
+			ticker_trigger_set_cb_t trigger_set_cb)
+{
+	return 0;
+}
+
+bool ticker_is_initialized(u8_t instance_index)
+{
+	return 0;
+}
+
+u32_t ticker_start(u8_t instance_index, u8_t user_id, u8_t ticker_id,
+		   u32_t ticks_anchor, u32_t ticks_first,
+		   u32_t ticks_periodic,
+		   u32_t remainder_periodic, u16_t lazy, u32_t ticks_slot,
+		   ticker_timeout_func fp_timeout_func, void *context,
+		   ticker_op_func fp_op_func, void *op_context)
+{
+	return 0;
+}
+
+u32_t ticker_update(u8_t instance_index, u8_t user_id, u8_t ticker_id,
+		    u32_t ticks_drift_plus, u32_t ticks_drift_minus,
+		    u32_t ticks_slot_plus, u32_t ticks_slot_minus, u16_t lazy,
+		    u8_t force, ticker_op_func fp_op_func, void *op_context)
+{
+	return 0;
+}
+
+u32_t ticker_stop(u8_t instance_index, u8_t user_id, u8_t ticker_id,
+			ticker_op_func fp_op_func, void *op_context)
+{
+	return 0;
+}
+
+u32_t ticker_next_slot_get(u8_t instance_index, u8_t user_id,
+			   u8_t *ticker_id_head, u32_t *ticks_current,
+			   u32_t *ticks_to_expire,
+			   ticker_op_func fp_op_func, void *op_context)
+{
+	return 0;
+}
+
+u32_t ticker_job_idle_get(u8_t instance_index, u8_t user_id,
+				ticker_op_func fp_op_func, void *op_context)
+{
+	return 0;
+}
+
+u32_t ticker_ticks_now_get(void)
+{
+	return 0;
+}
+
+u32_t ticker_ticks_diff_get(u32_t ticks_now, u32_t ticks_old)
+{
+	return 0;
+}
+
+#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+u32_t ticker_priority_set(u8_t instance_index, u8_t user_id, u8_t ticker_id,
+				s8_t priority, ticker_op_func fp_op_func,
+				void *op_context)
+{
+	return 0;
+}
+
+#if defined(CONFIG_BT_TICKER_EXT)
+u32_t ticker_start_ext(u8_t instance_index, u8_t user_id, u8_t ticker_id,
+		       u32_t ticks_anchor, u32_t ticks_first,
+		       u32_t ticks_periodic, u32_t remainder_periodic,
+		       u16_t lazy, u32_t ticks_slot,
+		       ticker_timeout_func fp_timeout_func, void *context,
+		       ticker_op_func fp_op_func, void *op_context,
+		       struct ticker_ext *ext_data)
+{
+	return 0;
+}
+#endif /* CONFIG_BT_TICKER_EXT */
+#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
