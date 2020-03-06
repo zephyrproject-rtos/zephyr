@@ -769,7 +769,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 					   src_addr, *addrlen);
 		if (rv < 0) {
 			errno = -rv;
-			return -1;
+			goto fail;
 		}
 
 		/* addrlen is a value-result argument, set to actual
@@ -781,7 +781,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 			*addrlen = sizeof(struct sockaddr_in6);
 		} else {
 			errno = ENOTSUP;
-			return -1;
+			goto fail;
 		}
 	}
 
@@ -792,7 +792,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 
 	if (net_pkt_read(pkt, buf, recv_len)) {
 		errno = ENOBUFS;
-		return -1;
+		goto fail;
 	}
 
 	net_stats_update_tc_rx_time(net_pkt_iface(pkt),
@@ -807,6 +807,13 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 	}
 
 	return recv_len;
+
+fail:
+	if (!(flags & ZSOCK_MSG_PEEK)) {
+		net_pkt_unref(pkt);
+	}
+
+	return -1;
 }
 
 static inline ssize_t zsock_recv_stream(struct net_context *ctx,
