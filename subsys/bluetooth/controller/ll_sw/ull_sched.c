@@ -7,11 +7,12 @@
 #include <stddef.h>
 
 #include <zephyr/types.h>
+#include <sys/byteorder.h>
 #include <toolchain.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
-#include <hal/ticker.h>
+#include "hal/ticker.h"
 
 #include "util/memq.h"
 #include "util/mayfly.h"
@@ -180,9 +181,7 @@ void ull_sched_mfy_win_offset_use(void *param)
 
 	win_offset = conn->llcp_cu.win_offset_us / 1250;
 
-	/* TODO: endianness */
-	memcpy(conn->llcp.conn_upd.pdu_win_offset, &win_offset,
-	       sizeof(uint16_t));
+	sys_put_le16(win_offset, (void *)conn->llcp.conn_upd.pdu_win_offset);
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
@@ -232,9 +231,9 @@ void ull_sched_mfy_win_offset_select(void *param)
 	while (offset_index_s < OFFSET_S_MAX) {
 		uint8_t offset_index_m = 0U;
 
-		memcpy((uint8_t *)&win_offset_s,
-		       ((uint8_t *)&conn->llcp_conn_param.offset0 +
-			(sizeof(uint16_t) * offset_index_s)), sizeof(uint16_t));
+		win_offset_s =
+			sys_get_le16((uint8_t *)&conn->llcp_conn_param.offset0 +
+				     (sizeof(uint16_t) * offset_index_s));
 
 		while (offset_index_m < offset_m_max) {
 			if (win_offset_s != 0xffff) {
@@ -258,12 +257,12 @@ void ull_sched_mfy_win_offset_select(void *param)
 
 	if (offset_index_s < OFFSET_S_MAX) {
 		conn->llcp_cu.win_offset_us = win_offset_s * 1250;
-		memcpy(conn->llcp.conn_upd.pdu_win_offset, &win_offset_s,
-		       sizeof(uint16_t));
+		sys_put_le16(win_offset_s,
+			     (void *)conn->llcp.conn_upd.pdu_win_offset);
 	} else if (!has_offset_s) {
 		conn->llcp_cu.win_offset_us = win_offset_m[0] * 1250;
-		memcpy(conn->llcp.conn_upd.pdu_win_offset, &win_offset_m[0],
-		       sizeof(uint16_t));
+		sys_put_le16(win_offset_m[0],
+			     (void *)conn->llcp.conn_upd.pdu_win_offset);
 	} else {
 		struct pdu_data *pdu_ctrl_tx;
 
@@ -465,9 +464,10 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 						break;
 					}
 
-					memcpy(win_offset + (sizeof(uint16_t) *
-							     offset_index),
-					       &offset, sizeof(uint16_t));
+					sys_put_le16(offset,
+						     (win_offset +
+						      (sizeof(uint16_t) *
+						       offset_index)));
 					offset_index++;
 
 					ticks_to_expire_prev +=
@@ -503,8 +503,8 @@ static void win_offset_calc(struct ll_conn *conn_curr, uint8_t is_select,
 				break;
 			}
 
-			memcpy(win_offset + (sizeof(uint16_t) * offset_index),
-			       &offset, sizeof(uint16_t));
+			sys_put_le16(offset, (win_offset + (sizeof(uint16_t) *
+							    offset_index)));
 			offset_index++;
 
 			ticks_to_expire_prev += HAL_TICKER_US_TO_TICKS(1250);
