@@ -56,3 +56,7 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+&rtc {
+	status = "okay";
+};
