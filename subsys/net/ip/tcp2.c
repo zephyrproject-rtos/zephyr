@@ -993,7 +993,7 @@ err:
 /* TCP state machine, everything happens here */
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 {
-	struct tcphdr *th = th_get(pkt);
+	struct tcphdr *th = pkt ? th_get(pkt) : NULL;
 	u8_t next = 0, fl = th ? th->th_flags : 0;
 	size_t len;
 
