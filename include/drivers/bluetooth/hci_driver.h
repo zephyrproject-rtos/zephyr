@@ -194,6 +194,47 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv);
  */
 int bt_hci_transport_setup(struct device *dev);
 
+/** Allocate an HCI event buffer.
+ *
+ * This function allocates a new buffer for an HCI event. It is given the
+ * avent code and the total length of the parameters. Upon successful return
+ * the buffer is ready to have the parameters encoded into it.
+ *
+ * @param evt        Event OpCode.
+ * @param len        Length of event parameters.
+ *
+ * @return Newly allocated buffer.
+ */
+struct net_buf *bt_hci_evt_create(u8_t evt, u8_t len);
+
+/** Allocate an HCI Command Complete event buffer.
+ *
+ * This function allocates a new buffer for HCI Command Complete event.
+ * It is given the OpCode (encoded e.g. using the BT_OP macro) and the total
+ * length of the parameters. Upon successful return the buffer is ready to have
+ * the parameters encoded into it.
+ *
+ * @param op         Command OpCode.
+ * @param plen       Length of command parameters.
+ *
+ * @return Newly allocated buffer.
+ */
+struct net_buf *bt_hci_cmd_complete_create(u16_t op, u8_t plen);
+
+/** Allocate an HCI Command Status event buffer.
+ *
+ * This function allocates a new buffer for HCI Command Status event.
+ * It is given the OpCode (encoded e.g. using the BT_OP macro) and the status
+ * code. Upon successful return the buffer is ready to have the parameters
+ * encoded into it.
+ *
+ * @param op         Command OpCode.
+ * @param status     Status code.
+ *
+ * @return Newly allocated buffer.
+ */
+struct net_buf *bt_hci_cmd_status_create(u16_t op, u8_t status);
+
 #ifdef __cplusplus
 }
 #endif
