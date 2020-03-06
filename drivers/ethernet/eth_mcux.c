@@ -72,6 +72,7 @@ static const char *phy_state_name(enum eth_mcux_phy_state state)
 
 struct eth_context {
 	ENET_Type *base;
+	void (*config_func)(void);
 	/* If VLAN is enabled, there can be multiple VLAN interfaces related to
 	 * this physical device. In that case, this pointer value is not really
 	 * used for anything.
@@ -109,8 +110,6 @@ struct eth_context {
 	 */
 	u8_t frame_buf[NET_ETH_MAX_FRAME_SIZE]; /* Max MTU + ethernet header */
 };
-
-static void eth_0_config_func(void);
 
 #ifdef CONFIG_HAS_MCUX_CACHE
 static __nocache enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
@@ -951,7 +950,7 @@ static void eth_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
-	eth_0_config_func();
+	context->config_func();
 }
 
 static enum ethernet_hw_caps eth_mcux_get_capabilities(struct device *dev)
@@ -1055,8 +1054,11 @@ static void eth_mcux_error_isr(void *p)
 }
 #endif
 
+static void eth_0_config_func(void);
+
 static struct eth_context eth_0_context = {
 	.base = ENET,
+	.config_func = eth_0_config_func,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
 #if defined(CONFIG_ETH_MCUX_0_MANUAL_MAC)
