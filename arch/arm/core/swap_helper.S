@@ -514,7 +514,10 @@ _do_syscall:
     ldr ip, =K_SYSCALL_LIMIT
     cmp r6, ip
 #endif
-    blt valid_syscall_id
+    /* The supplied syscall_id must be lower than the limit
+     * (Requires unsigned integer comparison)
+     */
+    blo valid_syscall_id
 
     /* bad syscall id.  Set arg1 to bad id and set call_id to SYSCALL_BAD */
     str r6, [r0]
