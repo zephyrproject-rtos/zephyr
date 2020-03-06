@@ -3,16 +3,16 @@
 TSC Project Roles
 *****************
 
-Overview
-########
+Main Roles
+##########
 
 TSC projects generally will involve *Maintainers*, *Collaborators*, and
 *Contributors*:
 
 **Maintainer**: lead Collaborators on an area identified by the TSC (e.g.
 Architecture, code subsystems, etc.). Maintainers shall also serve as the
-area’s representative on the TSC as needed.  Maintainers may become voting
-members of the TSC by approval of the existing TSC voting members.
+area’s representative on the TSC as needed. Maintainers may become voting
+members of the TSC under the guidelines stated in the project Charter.
 
 **Collaborator**: A highly involved Contributor in one or more areas.
 May become a Maintainer with approval of existing TSC voting members.
