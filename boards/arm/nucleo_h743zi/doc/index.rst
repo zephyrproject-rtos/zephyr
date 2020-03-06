@@ -107,6 +107,8 @@ features:
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -126,6 +128,7 @@ and a ST morpho connector. Board is configured as follows:
 - LD1 : PB0
 - LD2 : PB7
 - LD3 : PB14
+- I2C : PB8, PB9
 
 System Clock
 ------------

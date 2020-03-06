@@ -10,6 +10,8 @@ ram: 512
 flash: 2048
 supported:
   - arduino_gpio
+  - arduino_i2c
   - uart
   - gpio
   - counter
+  - i2c
