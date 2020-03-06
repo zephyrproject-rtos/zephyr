@@ -121,35 +121,55 @@ void hci_evt_create(struct net_buf *buf, u8_t evt, u8_t len)
 	hdr->len = len;
 }
 
-void *hci_cmd_complete(struct net_buf **buf, u8_t plen)
+struct net_buf *bt_hci_evt_create(u8_t evt, u8_t len)
 {
+	struct net_buf *buf;
+
+	buf = bt_buf_get_evt(evt, false, K_FOREVER);
+	hci_evt_create(buf, evt, len);
+
+	return buf;
+}
+
+struct net_buf *bt_hci_cmd_complete_create(u16_t op, u8_t plen)
+{
+	struct net_buf *buf;
 	struct bt_hci_evt_cmd_complete *cc;
 
-	*buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_FOREVER);
+	buf = bt_hci_evt_create(BT_HCI_EVT_CMD_COMPLETE, sizeof(*cc) + plen);
 
-	hci_evt_create(*buf, BT_HCI_EVT_CMD_COMPLETE, sizeof(*cc) + plen);
-
-	cc = net_buf_add(*buf, sizeof(*cc));
+	cc = net_buf_add(buf, sizeof(*cc));
 	cc->ncmd = 1U;
-	cc->opcode = sys_cpu_to_le16(_opcode);
+	cc->opcode = sys_cpu_to_le16(op);
+
+	return buf;
+}
+
+struct net_buf *bt_hci_cmd_status_create(u16_t op, u8_t status)
+{
+	struct net_buf *buf;
+	struct bt_hci_evt_cmd_status *cs;
+
+	buf = bt_hci_evt_create(BT_HCI_EVT_CMD_STATUS, sizeof(*cs));
+
+	cs = net_buf_add(buf, sizeof(*cs));
+	cs->status = status;
+	cs->ncmd = 1U;
+	cs->opcode = sys_cpu_to_le16(op);
+
+	return buf;
+}
+
+void *hci_cmd_complete(struct net_buf **buf, u8_t plen)
+{
+	*buf = bt_hci_cmd_complete_create(_opcode, plen);
 
 	return net_buf_add(*buf, plen);
 }
 
 static struct net_buf *cmd_status(u8_t status)
 {
-	struct bt_hci_evt_cmd_status *cs;
-	struct net_buf *buf;
-
-	buf = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
-	hci_evt_create(buf, BT_HCI_EVT_CMD_STATUS, sizeof(*cs));
-
-	cs = net_buf_add(buf, sizeof(*cs));
-	cs->status = status;
-	cs->ncmd = 1U;
-	cs->opcode = sys_cpu_to_le16(_opcode);
-
-	return buf;
+	return bt_hci_cmd_status_create(_opcode, status);
 }
 
 static void *meta_evt(struct net_buf *buf, u8_t subevt, u8_t melen)
