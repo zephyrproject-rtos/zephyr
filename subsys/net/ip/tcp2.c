@@ -256,8 +256,8 @@ static void tcp_send_queue_flush(struct tcp *conn)
 {
 	struct net_pkt *pkt;
 
-	if (is_timer_subscribed(&conn->send_timer)) {
-		k_timer_stop(&conn->send_timer);
+	if (k_delayed_work_remaining_get(&conn->send_timer)) {
+		k_delayed_work_cancel(&conn->send_timer);
 	}
 
 	while ((pkt = tcp_slist(&conn->send_queue, get,
@@ -341,9 +341,9 @@ int net_tcp_unref(struct net_context *context)
 	return ref_count;
 }
 
-static void tcp_send_process(struct k_timer *timer)
+static void tcp_send_process(struct k_work *work)
 {
-	struct tcp *conn = k_timer_user_data_get(timer);
+	struct tcp *conn = CONTAINER_OF(work, struct tcp, send_timer);
 	struct net_pkt *pkt = tcp_slist(&conn->send_queue, peek_head,
 					struct net_pkt, next);
 
@@ -367,15 +367,15 @@ static void tcp_send_process(struct k_timer *timer)
 						next) : tcp_pkt_clone(pkt);
 		tcp_send(pkt);
 
-		if (forget == false && is_timer_subscribed(
-				&conn->send_timer) == false) {
+		if (forget == false && !k_delayed_work_remaining_get(
+				&conn->send_timer)) {
 			conn->send_retries = tcp_retries;
 			conn->in_retransmission = true;
 		}
 	}
 
 	if (conn && conn->in_retransmission) {
-		k_timer_start(&conn->send_timer, K_MSEC(tcp_rto), K_NO_WAIT);
+		k_delayed_work_submit(&conn->send_timer, K_MSEC(tcp_rto));
 	}
 }
 
@@ -383,7 +383,7 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 {
 	NET_ASSERT(conn->in_retransmission == true, "Not in retransmission");
 
-	k_timer_stop(&conn->send_timer);
+	k_delayed_work_cancel(&conn->send_timer);
 
 	{
 		struct net_pkt *pkt = tcp_slist(&conn->send_queue, get,
@@ -396,7 +396,7 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 		conn->in_retransmission = false;
 	} else {
 		conn->send_retries = tcp_retries;
-		k_timer_start(&conn->send_timer, K_MSEC(tcp_rto), K_NO_WAIT);
+		k_delayed_work_submit(&conn->send_timer, K_MSEC(tcp_rto));
 	}
 }
 
@@ -752,7 +752,7 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 
 	sys_slist_append(&conn->send_queue, &pkt->next);
 
-	tcp_send_process(&conn->send_timer);
+	tcp_send_process((struct k_work *)&conn->send_timer);
 out:
 	return;
 }
@@ -787,8 +787,7 @@ static struct tcp *tcp_conn_alloc(void)
 
 	sys_slist_init(&conn->rsv_bufs);
 
-	k_timer_init(&conn->send_timer, tcp_send_process, NULL);
-	k_timer_user_data_set(&conn->send_timer, conn);
+	k_delayed_work_init(&conn->send_timer, tcp_send_process);
 
 	tcp_conn_ref(conn);
 

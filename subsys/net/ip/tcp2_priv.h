@@ -7,7 +7,6 @@
 #include "tp.h"
 
 #define is(_a, _b) (strcmp((_a), (_b)) == 0)
-#define is_timer_subscribed(_t) (k_timer_remaining_get(_t))
 
 #define th_seq(_x) ntohl((_x)->th_seq)
 #define th_ack(_x) ntohl((_x)->th_ack)
@@ -156,7 +155,7 @@ struct tcp { /* TCP connection */
 	u16_t win;
 	struct tcp_win *rcv;
 	struct tcp_win *snd;
-	struct k_timer send_timer;
+	struct k_delayed_work send_timer;
 	sys_slist_t send_queue;
 	bool in_retransmission;
 	size_t send_retries;
