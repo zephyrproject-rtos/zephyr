@@ -226,6 +226,16 @@
 			status = "disabled";
 			label = "UART_8";
 		};
+
+		rtc: rtc@58004000 {
+			compatible = "st,stm32-rtc";
+			reg = <0x58004000 0x400>;
+			interrupts = <41 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB4 0x00010000>;
+			prescaler = <32768>;
+			status = "disabled";
+			label = "RTC_0";
+		};
 	};
 };
 
