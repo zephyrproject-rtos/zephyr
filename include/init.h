@@ -48,9 +48,9 @@ extern "C" {
  * @param prio Priority within the selected initialization level. See
  * DEVICE_AND_API_INIT for details.
  */
-#define SYS_INIT(init_fn, level, prio) \
-	DEVICE_AND_API_INIT(Z_SYS_NAME(init_fn), "", init_fn, NULL, NULL, level,\
-	prio, NULL)
+#define SYS_INIT(init_fn, level, prio)					\
+	DEVICE_AND_API_INIT(Z_SYS_NAME(init_fn), "", init_fn,		\
+			    NULL, NULL, level, prio, NULL)
 
 /**
  * @def SYS_DEVICE_DEFINE
