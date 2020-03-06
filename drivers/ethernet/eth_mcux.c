@@ -91,6 +91,7 @@ struct eth_context {
 	phy_duplex_t phy_duplex;
 	phy_speed_t phy_speed;
 	u8_t mac_addr[6];
+	void (*generate_mac)(u8_t *);
 	struct k_work phy_work;
 	struct k_delayed_work delayed_phy_work;
 	/* TODO: FIXME. This Ethernet frame sized buffer is used for
@@ -763,7 +764,7 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 }
 
 #if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
-static void generate_mac(u8_t *mac_addr)
+static void generate_random_mac(u8_t *mac_addr)
 {
 	u32_t entropy;
 
@@ -776,7 +777,7 @@ static void generate_mac(u8_t *mac_addr)
 	mac_addr[5] = entropy >> 0;
 }
 #elif defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC)
-static void generate_mac(u8_t *mac_addr)
+static void generate_unique_mac(u8_t *mac_addr)
 {
 	/* Trivially "hash" up to 128 bits of MCU unique identifier */
 #ifdef CONFIG_SOC_SERIES_IMX_RT
@@ -846,10 +847,9 @@ static int eth_0_init(struct device *dev)
 	context->mac_addr[0] = FREESCALE_OUI_B0;
 	context->mac_addr[1] = FREESCALE_OUI_B1;
 	context->mac_addr[2] = FREESCALE_OUI_B2;
-#if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC) || \
-    defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
-	generate_mac(context->mac_addr);
-#endif
+	if (context->generate_mac) {
+		context->generate_mac(context->mac_addr);
+	}
 
 #if defined(CONFIG_NET_VLAN)
 	enet_config.macSpecialConfig |= kENET_ControlVLANTagEnable;
@@ -1061,8 +1061,15 @@ static struct eth_context eth_0_context = {
 	.config_func = eth_0_config_func,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
+#if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC)
+	.generate_mac = generate_unique_mac,
+#endif
+#if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
+	.generate_mac = generate_random_mac,
+#endif
 #if defined(CONFIG_ETH_MCUX_0_MANUAL_MAC)
 	.mac_addr = DT_ETH_MCUX_0_MAC,
+	.generate_mac = NULL,
 #endif
 };
 
