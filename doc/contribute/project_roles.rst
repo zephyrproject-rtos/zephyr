@@ -128,7 +128,13 @@ Release Engineering Team
 ########################
 
 A team of active Maintainers involved in multiple areas.
-The team is appointed by the TSC and reports directly into the TSC.
+
+* The members of the Release Engineering team are expected to fill
+  the Release Manager role based on a defined cadence and selection process.
+* The cadence and selection process are defined by the Release Engineering
+  team and are approved by the TSC.
+* The team reports directly into the TSC.
+
 Release Engineering team has the following rights and responsibilities:
 
 * Right to merge code changes to the zephyr tree following the project rules.
@@ -142,6 +148,18 @@ Release Engineering team has the following rights and responsibilities:
 * Responsibility to keep the Zephyr code base in a working and passing state
   (as per CI)
 
+Joining the Release Engineering team
+
+* Maintainers highly involved in the project may be nominated
+  by a TSC voting member to join the Release Engineering team.
+  Nominees may become members of the team by approval of the
+  existing TSC voting members.
+* To ensure a functional Release Engineering team the TSC shall
+  periodically review the team’s followed processes,
+  the appropriate size, and the membership
+  composition (ensure, for example, that team members are
+  geographically distributed across multiple locations and
+  time-zones).
 
 Release Activity
 ################
@@ -265,7 +283,7 @@ project for this specific release.
 
 * TSC has to approve a release manager.
 
-A Release Manager joins the release engineering team and has
+A Release Manager is a member of the Release Engineering team and has
 the rights and responsibilities of that team in addition to
 the following:
 
