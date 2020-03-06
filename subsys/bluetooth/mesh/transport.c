@@ -1017,8 +1017,8 @@ static inline s32_t ack_timeout(struct seg_rx *rx)
 }
 
 static int ctl_send_unseg(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
-			  size_t data_len, u64_t *seq_auth,
-			  const struct bt_mesh_send_cb *cb, void *cb_data)
+			  size_t data_len, const struct bt_mesh_send_cb *cb,
+			  void *cb_data)
 {
 	struct net_buf *buf;
 
@@ -1035,7 +1035,7 @@ static int ctl_send_unseg(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 	net_buf_add_mem(buf, data, data_len);
 	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
 		if (bt_mesh_friend_enqueue_tx(tx, BT_MESH_FRIEND_PDU_SINGLE,
-					      seq_auth, 1, &buf->b) &&
+					      NULL, 1, &buf->b) &&
 		    BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
 			/* PDUs for a specific Friend should only go
 			 * out through the Friend Queue.
@@ -1048,9 +1048,9 @@ static int ctl_send_unseg(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 	return bt_mesh_net_send(tx, buf, cb, cb_data);
 }
 
-static int ctl_send_seg(struct bt_mesh_net_tx *tx, u8_t ctl_op,
-			void *data, size_t data_len, u64_t *seq_auth,
-			const struct bt_mesh_send_cb *cb, void *cb_data)
+static int ctl_send_seg(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
+			size_t data_len, const struct bt_mesh_send_cb *cb,
+			void *cb_data)
 {
 	u8_t seg_o = 0;
 	u16_t seq_zero;
@@ -1129,7 +1129,7 @@ static int ctl_send_seg(struct bt_mesh_net_tx *tx, u8_t ctl_op,
 }
 
 int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
-		     size_t data_len, u64_t *seq_auth,
+		     size_t data_len,
 		     const struct bt_mesh_send_cb *cb, void *cb_data)
 {
 	BT_DBG("src 0x%04x dst 0x%04x ttl 0x%02x ctl 0x%02x", tx->src,
@@ -1137,10 +1137,10 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 	BT_DBG("len %zu: %s", data_len, bt_hex(data, data_len));
 
 	if (data_len <= 11) {
-		return ctl_send_unseg(tx, ctl_op, data, data_len, seq_auth,
+		return ctl_send_unseg(tx, ctl_op, data, data_len,
 				      cb, cb_data);
 	} else {
-		return ctl_send_seg(tx, ctl_op, data, data_len, seq_auth,
+		return ctl_send_seg(tx, ctl_op, data, data_len,
 				    cb, cb_data);
 	}
 }
@@ -1182,7 +1182,7 @@ static int send_ack(struct bt_mesh_subnet *sub, u16_t src, u16_t dst,
 	sys_put_be32(block, &buf[2]);
 
 	return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_ACK, buf, sizeof(buf),
-				NULL, NULL, NULL);
+				NULL, NULL);
 }
 
 static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
@@ -1745,7 +1745,7 @@ void bt_mesh_heartbeat_send(void)
 	BT_DBG("InitTTL %u feat 0x%04x", cfg->hb_pub.ttl, feat);
 
 	bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
-			 NULL, NULL, NULL);
+			 NULL, NULL);
 }
 
 int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, u16_t app_idx,
