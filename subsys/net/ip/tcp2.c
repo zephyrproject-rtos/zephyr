@@ -1247,7 +1247,6 @@ int net_tcp_connect(struct net_context *context,
 	struct tcp *conn;
 	int ret;
 
-	net_tcp_get(context);
 	conn = context->tcp;
 	conn->iface = net_context_get_iface(context);
 
