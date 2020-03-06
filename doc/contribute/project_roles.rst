@@ -89,6 +89,21 @@ in addition to those listed for Contributors and Collaborators:
 * Responsibility to enforce the code of conduct.
 
 
+Role Retirement
+###############
+
+* Individuals elected to the following Project roles, including, Maintainer,
+  Release Engineering Team member, Release Manager, but are no longer engaged
+  in the project as described by the rights and responsibilities of that role,
+  may be requested by the TSC to retire from the role they are elected.
+* Such a request needs to be raised as a motion in the TSC and be
+  approved by the TSC voting members.
+  By approval of the TSC the individual is considered to be retired
+  from the role they have been elected.
+* The above applies to elected TSC Project roles that may be defined
+  in addition.
+
+
 Teams and Supporting Activities
 *******************************
 
