@@ -573,7 +573,7 @@ static void le_update_private_addr(void)
 	/* If both advertiser and scanner is running then the advertiser ID must
 	 * be BT_ID_DEFAULT, this will update the RPA address for both roles.
 	 */
-	err = le_set_private_addr(bt_dev.adv_id);
+	err = le_set_private_addr(adv_enabled ? bt_dev.adv_id : BT_ID_DEFAULT);
 	if (err) {
 		BT_WARN("Failed to update RPA address (%d)", err);
 		return;
@@ -875,6 +875,17 @@ static void hci_num_completed_packets(struct net_buf *buf)
 	}
 }
 
+static inline bool rpa_timeout_valid_check(void)
+{
+#if defined(CONFIG_BT_PRIVACY)
+	/* Check if create conn timeout will happen before RPA timeout. */
+	return k_delayed_work_remaining_get(&bt_dev.rpa_update) >
+	       K_SECONDS(CONFIG_BT_CREATE_CONN_TIMEOUT);
+#else
+	return true;
+#endif
+}
+
 #if defined(CONFIG_BT_CENTRAL)
 int bt_le_create_conn(const struct bt_conn *conn)
 {
@@ -890,8 +901,8 @@ int bt_le_create_conn(const struct bt_conn *conn)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		if (use_filter) {
-			err = le_set_private_addr(bt_dev.adv_id);
+		if (use_filter || rpa_timeout_valid_check()) {
+			err = le_set_private_addr(BT_ID_DEFAULT);
 			if (err) {
 				return err;
 			}
