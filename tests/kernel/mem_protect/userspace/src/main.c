@@ -1112,6 +1112,10 @@ void test_bad_syscall(void)
 
 	arch_syscall_invoke0(INT_MAX);
 
+	expect_fault = true;
+	expected_reason = K_ERR_KERNEL_OOPS;
+
+	arch_syscall_invoke0(UINT_MAX);
 }
 
 static struct k_sem recycle_sem;
