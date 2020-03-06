@@ -232,7 +232,7 @@ end:
 
 static void tcp_send(struct net_pkt *pkt)
 {
-	NET_DBG("%s", tcp_th(pkt));
+	NET_DBG("%s", log_strdup(tcp_th(pkt)));
 
 	tcp_pkt_ref(pkt);
 
@@ -347,7 +347,7 @@ static void tcp_send_process(struct k_work *work)
 	struct net_pkt *pkt = tcp_slist(&conn->send_queue, peek_head,
 					struct net_pkt, next);
 
-	NET_DBG("%s %s", tcp_th(pkt), conn->in_retransmission ?
+	NET_DBG("%s %s", log_strdup(tcp_th(pkt)), conn->in_retransmission ?
 		"in_retransmission" : "");
 
 	if (conn->in_retransmission) {
@@ -388,7 +388,7 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 	{
 		struct net_pkt *pkt = tcp_slist(&conn->send_queue, get,
 						struct net_pkt, next);
-		NET_DBG("%s", tcp_th(pkt));
+		NET_DBG("%s", log_strdup(tcp_th(pkt)));
 		tcp_pkt_unref(pkt);
 	}
 
@@ -743,7 +743,7 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 
 	net_tcp_finalize(pkt);
 
-	NET_DBG("%s", tcp_th(pkt));
+	NET_DBG("%s", log_strdup(tcp_th(pkt)));
 
 	if (tcp_send_cb) {
 		tcp_send_cb(pkt);
@@ -816,8 +816,9 @@ out:
 	irq_unlock(key);
 
 	NET_DBG("context: %p (local: %s, remote: %s), conn: %p", context,
-		tcp_endpoint_to_string((void *)&context->local),
-		tcp_endpoint_to_string((void *)&context->remote), conn);
+		log_strdup(tcp_endpoint_to_string((void *)&context->local)),
+		log_strdup(tcp_endpoint_to_string((void *)&context->remote)),
+		conn);
 
 	return ret;
 }
@@ -960,8 +961,9 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 	conn->dst = tcp_endpoint_new(pkt, SRC);
 	conn->src = tcp_endpoint_new(pkt, DST);
 
-	NET_DBG("conn: src: %s, dst: %s", tcp_endpoint_to_string(conn->src),
-		tcp_endpoint_to_string(conn->dst));
+	NET_DBG("conn: src: %s, dst: %s",
+		log_strdup(tcp_endpoint_to_string(conn->src)),
+		log_strdup(tcp_endpoint_to_string(conn->dst)));
 
 	memcpy(&context->remote, conn->dst, sizeof(context->remote));
 	context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
@@ -969,8 +971,8 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 	((struct sockaddr_in *)&context->local)->sin_family = af;
 
 	NET_DBG("context: local: %s, remote: %s",
-		tcp_endpoint_to_string((void *)&context->local),
-		tcp_endpoint_to_string((void *)&context->remote));
+		log_strdup(tcp_endpoint_to_string((void *)&context->local)),
+		log_strdup(tcp_endpoint_to_string((void *)&context->remote)));
 
 	ret = net_conn_register(IPPROTO_TCP, af,
 				&context->remote, (void *)&context->local,
@@ -995,7 +997,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	u8_t next = 0, fl = th ? th->th_flags : 0;
 	size_t len;
 
-	NET_DBG("%s", tcp_conn_state(conn, pkt));
+	NET_DBG("%s", log_strdup(tcp_conn_state(conn, pkt)));
 
 	if (th && th->th_off < 5) {
 		tcp_out(conn, RST);
@@ -1153,7 +1155,7 @@ int net_tcp_put(struct net_context *context)
 {
 	struct tcp *conn = context->tcp;
 
-	NET_DBG("%s", conn ? tcp_conn_state(conn, NULL) : "");
+	NET_DBG("%s", conn ? log_strdup(tcp_conn_state(conn, NULL)) : "");
 
 	if (conn) {
 		conn->state = TCP_CLOSE_WAIT;
