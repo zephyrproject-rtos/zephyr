@@ -36,6 +36,8 @@ static inline int z_vrfy_gpio_read(struct device *port, int access_op,
 static inline int z_vrfy_gpio_enable_callback(struct device *port,
 					     int access_op, u32_t pin)
 {
+	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, enable_callback));
+
 	return z_impl_gpio_enable_callback((struct device *)port, access_op,
 					  pin);
 }
@@ -44,6 +46,8 @@ static inline int z_vrfy_gpio_enable_callback(struct device *port,
 static inline int z_vrfy_gpio_disable_callback(struct device *port,
 					      int access_op, u32_t pin)
 {
+	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, disable_callback));
+
 	return z_impl_gpio_disable_callback((struct device *)port, access_op,
 					   pin);
 }
@@ -51,6 +55,8 @@ static inline int z_vrfy_gpio_disable_callback(struct device *port,
 
 static inline int z_vrfy_gpio_get_pending_int(struct device *dev)
 {
+	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(dev, get_pending_int));
+
 	return z_impl_gpio_get_pending_int((struct device *)dev);
 }
 #include <syscalls/gpio_get_pending_int_mrsh.c>
