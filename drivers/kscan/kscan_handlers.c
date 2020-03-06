@@ -19,12 +19,16 @@ static inline int z_vrfy_kscan_config(struct device *dev,
 
 static inline int z_vrfy_kscan_disable_callback(struct device *dev);
 {
+	Z_OOPS(Z_SYSCALL_DRIVER_KSCAN(dev, disable_callback));
+
 	return z_impl_kscan_disable_callback((struct device *)dev);
 }
 #include <syscalls/kscan_disable_callback_mrsh.c>
 
 static int z_vrfy_kscan_enable_callback(struct device *dev);
 {
+	Z_OOPS(Z_SYSCALL_DRIVER_KSCAN(dev, enable_callback));
+
 	return z_impl_kscan_enable_callback((struct device *)dev);
 }
 #include <syscalls/kscan_enable_callback_mrsh.c>
