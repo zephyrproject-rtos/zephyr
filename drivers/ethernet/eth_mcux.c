@@ -400,21 +400,23 @@ static void eth_mcux_phy_setup(void)
 #ifdef CONFIG_SOC_SERIES_IMX_RT
 	const u32_t phy_addr = 0U;
 	status_t res;
-	u32_t status_reg;
+	u32_t oms_override;
 
 	/* Disable MII interrupts to prevent triggering PHY events. */
 	ENET_DisableInterrupts(ENET, ENET_EIR_MII_MASK);
 
-	/* Prevent PHY entering NAND Tree mode override*/
-	res = PHY_Read(ENET, phy_addr, PHY_OMS_STATUS_REG, &status_reg);
+	/* Prevent PHY entering NAND Tree mode override. */
+	res = PHY_Read(ENET, phy_addr, PHY_OMS_OVERRIDE_REG, &oms_override);
 	if (res != kStatus_Success) {
-		LOG_WRN("Reading PHY register failed with status 0x%x", res);
+		LOG_WRN("Reading PHY reg failed (status 0x%x)", res);
 	} else {
-		if (status_reg & PHY_OMS_NANDTREE_MASK) {
-			status_reg &= ~PHY_OMS_NANDTREE_MASK;
-			res = PHY_Write(ENET, phy_addr, PHY_OMS_OVERRIDE_REG, status_reg);
+		if (oms_override & PHY_OMS_NANDTREE_MASK) {
+			oms_override &= ~PHY_OMS_NANDTREE_MASK;
+			res = PHY_Write(ENET, phy_addr, PHY_OMS_OVERRIDE_REG,
+					oms_override);
 			if (res != kStatus_Success) {
-				LOG_WRN("Writing PHY register failed with status 0x%x", res);
+				LOG_WRN("Writing PHY reg failed (status 0x%x)",
+					res);
 			}
 		}
 	}
