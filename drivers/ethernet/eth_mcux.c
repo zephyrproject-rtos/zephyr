@@ -88,6 +88,7 @@ struct eth_context {
 	enum eth_mcux_phy_state phy_state;
 	bool enabled;
 	bool link_up;
+	u32_t phy_addr;
 	phy_duplex_t phy_duplex;
 	phy_speed_t phy_speed;
 	u8_t mac_addr[6];
@@ -196,10 +197,9 @@ static inline struct net_if *get_iface(struct eth_context *ctx, u16_t vlan_tag)
 
 static void eth_mcux_phy_enter_reset(struct eth_context *context)
 {
-	const u32_t phy_addr = 0U;
-
 	/* Reset the PHY. */
-	ENET_StartSMIWrite(context->base, phy_addr, PHY_BASICCONTROL_REG,
+	ENET_StartSMIWrite(context->base, context->phy_addr,
+			   PHY_BASICCONTROL_REG,
 			   kENET_MiiWriteValidFrame,
 			   PHY_BCTL_RESET_MASK);
 	context->phy_state = eth_mcux_phy_state_reset;
@@ -207,7 +207,6 @@ static void eth_mcux_phy_enter_reset(struct eth_context *context)
 
 static void eth_mcux_phy_start(struct eth_context *context)
 {
-	const u32_t phy_addr = 0U;
 #ifdef CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG
 	LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
 #endif
@@ -218,9 +217,10 @@ static void eth_mcux_phy_start(struct eth_context *context)
 	case eth_mcux_phy_state_initial:
 		ENET_ActiveRead(context->base);
 		/* Reset the PHY. */
-		ENET_StartSMIWrite(context->base, phy_addr, PHY_BASICCONTROL_REG,
-			   kENET_MiiWriteValidFrame,
-			   PHY_BCTL_RESET_MASK);
+		ENET_StartSMIWrite(context->base, context->phy_addr,
+				   PHY_BASICCONTROL_REG,
+				   kENET_MiiWriteValidFrame,
+				   PHY_BCTL_RESET_MASK);
 #ifdef CONFIG_SOC_SERIES_IMX_RT
 		context->phy_state = eth_mcux_phy_state_initial;
 #else
@@ -277,7 +277,6 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	bool link_up;
 	phy_duplex_t phy_duplex = kPHY_FullDuplex;
 	phy_speed_t phy_speed = kPHY_Speed100M;
-	const u32_t phy_addr = 0U;
 
 #ifdef CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG
 	LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
@@ -285,10 +284,11 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
 #ifdef CONFIG_SOC_SERIES_IMX_RT
-		ENET_StartSMIRead(context->base, phy_addr, PHY_CONTROL2_REG,
-			kENET_MiiReadValidFrame);
-		ENET_StartSMIWrite(context->base, phy_addr, PHY_CONTROL2_REG,
-			kENET_MiiWriteValidFrame, PHY_CTL2_REFCLK_SELECT_MASK);
+		ENET_StartSMIRead(context->base, context->phy_addr,
+				  PHY_CONTROL2_REG, kENET_MiiReadValidFrame);
+		ENET_StartSMIWrite(context->base, context->phy_addr,
+				   PHY_CONTROL2_REG, kENET_MiiWriteValidFrame,
+				   PHY_CTL2_REFCLK_SELECT_MASK);
 		context->phy_state = eth_mcux_phy_state_reset;
 #endif
 		break;
@@ -302,7 +302,8 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		break;
 	case eth_mcux_phy_state_reset:
 		/* Setup PHY autonegotiation. */
-		ENET_StartSMIWrite(context->base, phy_addr, PHY_AUTONEG_ADVERTISE_REG,
+		ENET_StartSMIWrite(context->base, context->phy_addr,
+				   PHY_AUTONEG_ADVERTISE_REG,
 				   kENET_MiiWriteValidFrame,
 				   (PHY_100BASETX_FULLDUPLEX_MASK |
 				    PHY_100BASETX_HALFDUPLEX_MASK |
@@ -312,7 +313,8 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		break;
 	case eth_mcux_phy_state_autoneg:
 		/* Setup PHY autonegotiation. */
-		ENET_StartSMIWrite(context->base, phy_addr, PHY_BASICCONTROL_REG,
+		ENET_StartSMIWrite(context->base, context->phy_addr,
+				   PHY_BASICCONTROL_REG,
 				   kENET_MiiWriteValidFrame,
 				   (PHY_BCTL_AUTONEG_MASK |
 				    PHY_BCTL_RESTART_AUTONEG_MASK));
@@ -321,7 +323,8 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	case eth_mcux_phy_state_wait:
 	case eth_mcux_phy_state_restart:
 		/* Start reading the PHY basic status. */
-		ENET_StartSMIRead(context->base, phy_addr, PHY_BASICSTATUS_REG,
+		ENET_StartSMIRead(context->base, context->phy_addr,
+				  PHY_BASICSTATUS_REG,
 				  kENET_MiiReadValidFrame);
 		context->phy_state = eth_mcux_phy_state_read_status;
 		break;
@@ -331,7 +334,8 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		link_up =  status & PHY_BSTATUS_LINKSTATUS_MASK;
 		if (link_up && !context->link_up) {
 			/* Start reading the PHY control register. */
-			ENET_StartSMIRead(context->base, phy_addr, PHY_CONTROL1_REG,
+			ENET_StartSMIRead(context->base, context->phy_addr,
+					  PHY_CONTROL1_REG,
 					  kENET_MiiReadValidFrame);
 			context->link_up = link_up;
 			context->phy_state = eth_mcux_phy_state_read_duplex;
@@ -396,25 +400,25 @@ static void eth_mcux_delayed_phy_work(struct k_work *item)
 	eth_mcux_phy_event(context);
 }
 
-static void eth_mcux_phy_setup(ENET_Type *base)
+static void eth_mcux_phy_setup(struct eth_context *context)
 {
 #ifdef CONFIG_SOC_SERIES_IMX_RT
-	const u32_t phy_addr = 0U;
 	status_t res;
 	u32_t oms_override;
 
 	/* Disable MII interrupts to prevent triggering PHY events. */
-	ENET_DisableInterrupts(base, ENET_EIR_MII_MASK);
+	ENET_DisableInterrupts(context->base, ENET_EIR_MII_MASK);
 
 	/* Prevent PHY entering NAND Tree mode override. */
-	res = PHY_Read(base, phy_addr, PHY_OMS_OVERRIDE_REG, &oms_override);
+	res = PHY_Read(context->base, context->phy_addr,
+		       PHY_OMS_OVERRIDE_REG, &oms_override);
 	if (res != kStatus_Success) {
 		LOG_WRN("Reading PHY reg failed (status 0x%x)", res);
 	} else {
 		if (oms_override & PHY_OMS_NANDTREE_MASK) {
 			oms_override &= ~PHY_OMS_NANDTREE_MASK;
-			res = PHY_Write(base, phy_addr, PHY_OMS_OVERRIDE_REG,
-					oms_override);
+			res = PHY_Write(context->base, context->phy_addr,
+					PHY_OMS_OVERRIDE_REG, oms_override);
 			if (res != kStatus_Success) {
 				LOG_WRN("Writing PHY reg failed (status 0x%x)",
 					res);
@@ -422,7 +426,7 @@ static void eth_mcux_phy_setup(ENET_Type *base)
 		}
 	}
 
-	ENET_EnableInterrupts(base, ENET_EIR_MII_MASK);
+	ENET_EnableInterrupts(context->base, ENET_EIR_MII_MASK);
 #endif
 }
 
@@ -541,8 +545,8 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 				context->enet_handle.txBdCurrent[0];
 #endif
 
-	status = ENET_SendFrame(context->base, &context->enet_handle, context->frame_buf,
-				total_len);
+	status = ENET_SendFrame(context->base, &context->enet_handle,
+				context->frame_buf, total_len);
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 	timestamped_frame = eth_get_ptp_data(net_pkt_iface(pkt), pkt, NULL,
@@ -891,7 +895,7 @@ static int eth_0_init(struct device *dev)
 	ENET_SetSMI(context->base, sys_clock, false);
 
 	/* handle PHY setup after SMI initialization */
-	eth_mcux_phy_setup(context->base);
+	eth_mcux_phy_setup(context);
 
 	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
 		context->mac_addr[0], context->mac_addr[1],
@@ -1059,6 +1063,7 @@ static void eth_0_config_func(void);
 static struct eth_context eth_0_context = {
 	.base = ENET,
 	.config_func = eth_0_config_func,
+	.phy_addr = 0U,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
 #if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC)
