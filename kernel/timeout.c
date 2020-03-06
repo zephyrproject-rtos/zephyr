@@ -157,7 +157,7 @@ s32_t z_timeout_remaining(struct _timeout *timeout)
 
 s32_t z_get_next_timeout_expiry(void)
 {
-	s32_t ret = K_TICKS_FOREVER;
+	s32_t ret = (s32_t) K_TICKS_FOREVER;
 
 	LOCKED(&timeout_lock) {
 		ret = next_timeout();

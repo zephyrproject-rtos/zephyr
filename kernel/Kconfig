@@ -579,6 +579,16 @@ config LEGACY_TIMEOUT_API
 	  (which were s32_t counts of milliseconds), at the cost of
 	  not being able to use new features.
 
+config TIMEOUT_64BIT
+	bool
+	depends on !LEGACY_TIMEOUT_API
+	default y
+	help
+	  When this option is true, the k_ticks_t values passed to
+	  kernel APIs will be a 64 bit quantity, allowing the use of
+	  larger values (and higher precision tick rates) without fear
+	  of overflowing the 32 bit word.
+
 config XIP
 	bool "Execute in place"
 	help

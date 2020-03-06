@@ -134,7 +134,8 @@ static int test_multiple_threads_pending(struct timeout_order_data *test_data,
 
 		if (data->timeout_order == ii) {
 			TC_PRINT(" thread (q order: %d, t/o: %d, lifo %p)\n",
-				data->q_order, data->timeout, data->klifo);
+				 data->q_order, (int) data->timeout,
+				 data->klifo);
 		} else {
 			zassert_equal(data->timeout_order, ii, " *** thread %d "
 				      "woke up, expected %d\n",

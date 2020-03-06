@@ -33,7 +33,20 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief Tick precision used in timeout APIs
+ *
+ * This type defines the word size of the timeout values used in
+ * k_timeout_t objects, and thus defines an upper bound on maximum
+ * timeout length (or equivalently minimum tick duration).  Note that
+ * this does not affect the size of the system uptime counter, which
+ * is always a 64 bit count of ticks.
+ */
+#ifdef CONFIG_TIMEOUT_64BIT
+typedef s64_t k_ticks_t;
+#else
 typedef u32_t k_ticks_t;
+#endif
 
 #define K_TICKS_FOREVER ((k_ticks_t) -1)
 

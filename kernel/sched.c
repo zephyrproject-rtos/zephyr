@@ -1202,7 +1202,7 @@ s32_t z_impl_k_sleep(k_timeout_t timeout)
 
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		k_thread_suspend(_current);
-		return K_TICKS_FOREVER;
+		return (s32_t) K_TICKS_FOREVER;
 	}
 
 #ifdef CONFIG_LEGACY_TIMEOUT_API
