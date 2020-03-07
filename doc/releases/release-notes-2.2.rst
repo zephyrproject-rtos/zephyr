@@ -176,7 +176,7 @@ Architectures
 
 * ARC:
 
-  * <TBD>
+  * Fixed several irq-handling related issues
 
 * ARM:
 
