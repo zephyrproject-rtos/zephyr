@@ -290,6 +290,258 @@
 			status = "disabled";
 			label = "I2C_4";
 		};
+
+		timers1: timers@40010000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40010000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000001>;
+			interrupts = <24 0>, <25 0>, <26 0>, <27 0>;
+			interrupt-names = "brk", "up", "trgcom", "cc";
+			status = "disabled";
+			label = "TIMERS_1";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_1";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers2: timers@40000000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40000000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000001>;
+			interrupts = <28 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_2";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <0>;
+				label = "PWM_2";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers3: timers@40000400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40000400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000002>;
+			interrupts = <29 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_3";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_3";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers4: timers@40000800 {
+			compatible = "st,stm32-timers";
+			reg = <0x40000800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000004>;
+			interrupts = <30 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_4";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_4";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers5: timers@40000c00 {
+			compatible = "st,stm32-timers";
+			reg = <0x40000c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000008>;
+			interrupts = <50 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_5";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <0>;
+				label = "PWM_5";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers6: timers@40001000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
+			interrupts = <54 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_6";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_6";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers7: timers@40001400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000020>;
+			interrupts = <55 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_7";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_7";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers8: timers@40010400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40010400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000002>;
+			interrupts = <43 0>, <44 0>, <45 0>, <46 0>;
+			interrupt-names = "brk", "up", "trgcom", "cc";
+			status = "disabled";
+			label = "TIMERS_8";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_8";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers12: timers@40001800 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000040>;
+			interrupts = <43 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_12";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_12";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers13: timers@40001c00 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000080>;
+			interrupts = <44 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_13";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_13";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers14: timers@40002000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40002000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000100>;
+			interrupts = <45 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_14";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_14";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers15: timers@40014000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40014000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00010000>;
+			interrupts = <116 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_15";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_15";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers16: timers@40014400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40014400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00020000>;
+			interrupts = <117 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_16";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_16";
+				#pwm-cells = <2>;
+			};
+		};
+
+		timers17: timers@40014800 {
+			compatible = "st,stm32-timers";
+			reg = <0x40014800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00040000>;
+			interrupts = <118 0>;
+			interrupt-names = "global";
+			status = "disabled";
+			label = "TIMERS_17";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_17";
+				#pwm-cells = <2>;
+			};
+		};
 	};
 };
 
