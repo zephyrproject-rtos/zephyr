@@ -208,7 +208,7 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	/* do sys_call */
 	mov_s ilink, K_SYSCALL_LIMIT
 	cmp r6, ilink
-	blt valid_syscall_id
+	blo valid_syscall_id
 
 	mov_s r0, r6
 	mov_s r6, K_SYSCALL_BAD
