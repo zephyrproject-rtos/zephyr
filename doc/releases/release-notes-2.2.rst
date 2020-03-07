@@ -627,7 +627,6 @@ Build and Infrastructure
   :file:`devicetree.h` and :file:`devicetree.conf`, along with various related
   identifiers. Including :file:`generated_dts_board.h` now generates a warning
   saying to include :file:`devicetree.h` instead.
-* <Other items TBD>
 
 Libraries / Subsystems
 ***********************
