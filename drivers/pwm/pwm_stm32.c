@@ -37,6 +37,40 @@ static u32_t __get_tim_clk(u32_t bus_clk,
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	u32_t tim_clk, apb_psc;
 
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
+		apb_psc = CONFIG_CLOCK_STM32_D2PPRE1;
+	} else {
+		apb_psc = CONFIG_CLOCK_STM32_D2PPRE2;
+	}
+
+	/*
+	 * Depending on pre-scaler selection (TIMPRE), timer clock frequency
+	 * is defined as follows:
+	 *
+	 * - TIMPRE=0: If the APB prescaler (PPRE1, PPRE2) is configured to a
+	 *   division factor of 1 then the timer clock equals to APB bus clock.
+	 *   Otherwise the timer clock is set to twice the frequency of APB bus
+	 *   clock.
+	 * - TIMPRE=1: If the APB prescaler (PPRE1, PPRE2) is configured to a
+	 *   division factor of 1, 2 or 4, then the timer clock equals to HCLK.
+	 *   Otherwise, the timer clock frequencies are set to four times to
+	 *   the frequency of the APB domain.
+	 */
+	if (LL_RCC_GetTIMPrescaler() == LL_RCC_TIM_PRESCALER_TWICE) {
+		if (apb_psc == 1U) {
+			tim_clk = bus_clk;
+		} else {
+			tim_clk = bus_clk * 2U;
+		}
+	} else {
+		if (apb_psc == 1U || apb_psc == 2U || apb_psc == 4U) {
+			tim_clk = SystemCoreClock;
+		} else {
+			tim_clk = bus_clk * 4U;
+		}
+	}
+#else
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
 		apb_psc = CONFIG_CLOCK_STM32_APB1_PRESCALER;
 	}
@@ -57,6 +91,7 @@ static u32_t __get_tim_clk(u32_t bus_clk,
 	} else	{
 		tim_clk = bus_clk * 2U;
 	}
+#endif
 
 	return tim_clk;
 }
