@@ -54,6 +54,3 @@ enum {
 #endif
 
 #endif  /* ZEPHYR_DRIVERS_SENSOR_VL53L0X_VL53L0X_PLATFORM_LOG_H_ */
-
-
-

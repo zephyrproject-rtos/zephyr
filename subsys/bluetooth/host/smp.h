@@ -123,12 +123,11 @@ struct bt_smp_dhkey_check {
 	u8_t e[16];
 } __packed;
 
-int bt_smp_send_pairing_req(struct bt_conn *conn);
-int bt_smp_send_security_req(struct bt_conn *conn);
+int bt_smp_start_security(struct bt_conn *conn);
+bool bt_smp_request_ltk(struct bt_conn *conn, u64_t rand, u16_t ediv,
+			u8_t *ltk);
+
 void bt_smp_update_keys(struct bt_conn *conn);
-bool bt_smp_get_tk(struct bt_conn *conn, u8_t *tk);
-bool bt_smp_keys_check(struct bt_conn *conn);
-void bt_smp_keys_reject(struct bt_conn *conn);
 
 int bt_smp_br_send_pairing_req(struct bt_conn *conn);
 
@@ -147,11 +146,6 @@ int bt_smp_le_oob_get_sc_data(struct bt_conn *conn,
 			      const struct bt_le_oob_sc_data **oobd_local,
 			      const struct bt_le_oob_sc_data **oobd_remote);
 
-
-void smp_ident_sent(struct bt_conn *conn, void *user_data);
-void smp_id_sent(struct bt_conn *conn, void *user_data);
-void smp_sign_info_sent(struct bt_conn *conn, void *user_data);
-
 /** brief Verify signed message
  *
  *  @param conn Bluetooth connection
@@ -169,3 +163,6 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf);
  *  @return 0 in success, error code otherwise
  */
 int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf);
+
+/** Generate IRK from Identity Root (IR) */
+int bt_smp_irk_get(u8_t *ir, u8_t *irk);

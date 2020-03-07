@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2015 Intel Corporation.
  *
@@ -25,7 +24,6 @@ extern "C" {
 #define _SYS_INIT_LEVEL_PRE_KERNEL_2	1
 #define _SYS_INIT_LEVEL_POST_KERNEL	2
 #define _SYS_INIT_LEVEL_APPLICATION	3
-
 
 /* A counter is used to avoid issues when two or more system devices
  * are declared in the same C file with the same init function.

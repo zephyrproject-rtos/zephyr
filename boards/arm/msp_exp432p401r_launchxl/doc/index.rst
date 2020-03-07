@@ -12,9 +12,7 @@ developing on the SimpleLink MSP432 low-power + performance ARM |reg| 32-bit Cor
 microcontroller (MCU).
 
 .. figure:: img/msp_exp432p401r_launchxl.jpg
-     :width: 1032px
      :align: center
-     :height: 1663px
      :alt: MSP-EXP432P401R LaunchXL development board
 
 Features:

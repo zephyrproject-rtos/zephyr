@@ -1,29 +1,28 @@
-# Kconfig - ST Microelectronics STM32H7 MCU series
-#
+# ST Microelectronics STM32H7 MCU series
+
 # Copyright (c) 2019 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_STM32H7X
 	bool "STM32H7x Series MCU"
+	select ARM
+	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 	select SOC_FAMILY_STM32
 	select HAS_STM32CUBE
 	select CPU_HAS_ARM_MPU
-	select CLOCK_CONTROL_STM32_CUBE if CLOCK_CONTROL
-	select NEWLIB_LIBC
+	select REQUIRES_FULL_LIBC
 	select USE_STM32_HAL_RCC_EX if CPU_CORTEX_M4
 	help
-	 Enable support for STM32H7 MCU series
+	  Enable support for STM32H7 MCU series
 
 config STM32H7_DUAL_CORE
 	bool "Enable Dual Core"
 	depends on SOC_SERIES_STM32H7X
 
 choice STM32H7_DUAL_CORE_BOOT
-prompt "STM32H7x Boot type selection"
-depends on STM32H7_DUAL_CORE
+	prompt "STM32H7x Boot type selection"
+	depends on STM32H7_DUAL_CORE
 
 config STM32H7_BOOT_CM4_CM7
 	bool "Boot both CM4 and CM7"
@@ -40,6 +39,6 @@ config STM32H7_BOOT_CM7_CM4GATED
 	  Cortex-M7 and Cortex-M4 running from the flash (each from a bank)
 	  Cortex-M7 boots , performs the System configuration then enable the
 	  Cortex-M4 boot using RCC.
-	  This mode requires option byte setting update (BCM4 uncheked)
+	  This mode requires option byte setting update (BCM4 unchecked)
 
 endchoice

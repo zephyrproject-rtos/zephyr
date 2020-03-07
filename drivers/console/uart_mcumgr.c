@@ -14,7 +14,7 @@
 #include <kernel.h>
 #include <drivers/uart.h>
 #include <mgmt/serial.h>
-#include <console/uart_mcumgr.h>
+#include <drivers/console/uart_mcumgr.h>
 
 static struct device *uart_mcumgr_dev;
 

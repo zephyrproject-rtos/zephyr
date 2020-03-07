@@ -19,38 +19,42 @@ BOARD_ROOT="${BOARD_ROOT:-${ZEPHYR_BASE}}"
 mkdir -p ${WORK_DIR}
 
 function compile(){
-  local APP_ROOT="${APP_ROOT:-${ZEPHYR_BASE}}"
-  local CONF_FILE="${CONF_FILE:-prj.conf}"
-  local CMAKE_ARGS="${CMAKE_ARGS:-"-DCONFIG_COVERAGE=y"}"
-  local NINJA_ARGS="${NINJA_ARGS:-""}"
+  local app_root="${app_root:-${ZEPHYR_BASE}}"
+  local conf_file="${conf_file:-prj.conf}"
+  local cmake_args="${cmake_args:-"-DCONFIG_COVERAGE=y"}"
+  local ninja_args="${ninja_args:-""}"
 
-  local EXE_NAME="${EXE_NAME:-bs_${BOARD}_${APP}_${CONF_FILE}}"
-  local EXE_NAME=${EXE_NAME//\//_}
-  local EXE_NAME=${EXE_NAME//./_}
-  local EXE_NAME=${BSIM_OUT_PATH}/bin/$EXE_NAME
-  local MAP_FILE_NAME=${EXE_NAME}.Tsymbols
+  local exe_name="${exe_name:-bs_${BOARD}_${app}_${conf_file}}"
+  local exe_name=${exe_name//\//_}
+  local exe_name=${exe_name//./_}
+  local exe_name=${BSIM_OUT_PATH}/bin/$exe_name
+  local map_file_name=${exe_name}.Tsymbols
 
-  local THIS_DIR=${WORK_DIR}/${APP}/${CONF_FILE}
+  local this_dir=${WORK_DIR}/${app}/${conf_file}
 
-  echo "Building $EXE_NAME"
+  echo "Building $exe_name"
 
-  #Set INCR_BUILD when calling to only do an incremental build
-  if [ ! -v INCR_BUILD ] || [ ! -d "${THIS_DIR}" ]; then
-      [ -d "${THIS_DIR}" ] && rm ${THIS_DIR} -rf
-      mkdir -p ${THIS_DIR} && cd ${THIS_DIR}
+  # Set INCR_BUILD when calling to only do an incremental build
+  if [ ! -v INCR_BUILD ] || [ ! -d "${this_dir}" ]; then
+      [ -d "${this_dir}" ] && rm ${this_dir} -rf
+      mkdir -p ${this_dir} && cd ${this_dir}
       cmake -GNinja -DBOARD_ROOT=${BOARD_ROOT} -DBOARD=${BOARD} \
-            -DCONF_FILE=${CONF_FILE} ${CMAKE_ARGS} ${APP_ROOT}/${APP} \
+            -DCONF_FILE=${conf_file} ${cmake_args} ${app_root}/${app} \
             &> cmake.out || { cat cmake.out && return 0; }
   else
-      cd ${THIS_DIR}
+      cd ${this_dir}
   fi
-  ninja ${NINJA_ARGS} &> ninja.out || { cat ninja.out && return 0; }
-  cp ${THIS_DIR}/zephyr/zephyr.exe ${EXE_NAME}
+  ninja ${ninja_args} &> ninja.out || { cat ninja.out && return 0; }
+  cp ${this_dir}/zephyr/zephyr.exe ${exe_name}
 
-  nm ${EXE_NAME} | grep -v " [U|w] " | sort | cut -d" " -f1,3 > ${MAP_FILE_NAME}
-  sed -i "1i $(wc -l ${MAP_FILE_NAME} | cut -d" " -f1)" ${MAP_FILE_NAME}
+  nm ${exe_name} | grep -v " [U|w] " | sort | cut -d" " -f1,3 > ${map_file_name}
+  sed -i "1i $(wc -l ${map_file_name} | cut -d" " -f1)" ${map_file_name}
 }
 
-APP=tests/bluetooth/bsim_bt/bsim_test_app compile
-APP=tests/bluetooth/bsim_bt/bsim_test_app CONF_FILE=prj_split.conf \
+app=tests/bluetooth/bsim_bt/bsim_test_app compile
+app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split.conf \
 	compile
+app=tests/bluetooth/bsim_bt/bsim_test_app conf_file=prj_split_privacy.conf \
+  compile
+app=tests/bluetooth/bsim_bt/edtt_ble_test_app/hci_test_app compile
+app=tests/bluetooth/bsim_bt/edtt_ble_test_app/gatt_test_app compile

@@ -1,11 +1,9 @@
-# Kconfig - Gecko SDK UART
-#
-# Copyright (c) 2017, Christian Taedcke
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# Gecko SDK UART
 
-menuconfig UART_GECKO
+# Copyright (c) 2017, Christian Taedcke
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_GECKO
 	bool "Gecko UART/USART driver"
 	depends on HAS_SILABS_GECKO
 	depends on GPIO_GECKO
@@ -14,7 +12,3 @@ menuconfig UART_GECKO
 	select SOC_GECKO_USART
 	help
 	  Enable the Gecko uart driver.
-
-if UART_GECKO
-
-endif # UART_GECKO

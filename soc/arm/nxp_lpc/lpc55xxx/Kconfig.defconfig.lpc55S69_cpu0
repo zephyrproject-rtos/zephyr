@@ -1,35 +1,27 @@
-# Kconfig - NXP LPC55XXX CPU0 platform configuration options
-#
+# NXP LPC55XXX CPU0 platform configuration options
+
 # Copyright (c) 2019, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_LPC55S69_CPU0
 
 config SOC
-	string
 	default "lpc55S69_cpu0"
-
-if PINMUX
 
 config PINMUX_MCUX_LPC
 	default y
-
-endif # PINMUX
-
-if GPIO
+	depends on PINMUX
 
 config GPIO_MCUX_LPC
 	default y
+	depends on GPIO
 
-endif # GPIO
-
-if SERIAL
-
-config USART_MCUX_LPC
+config UART_MCUX_FLEXCOMM
 	default y
+	depends on SERIAL
 
-endif # SERIAL
+config SOC_FLASH_MCUX
+	default y
+	depends on FLASH
 
 endif # SOC_LPC55S69_CPU0

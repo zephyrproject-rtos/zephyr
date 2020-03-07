@@ -10,5 +10,5 @@ common:
       regex:
         - "Hello World! (.*)"
 tests:
-  sample.helloworld:
+  sample.basic.helloworld:
     tags: introduction

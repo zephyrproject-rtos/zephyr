@@ -17,8 +17,7 @@
 
 #include "amg88xx.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(AMG88XX);
+LOG_MODULE_REGISTER(AMG88XX, CONFIG_SENSOR_LOG_LEVEL);
 
 static int amg88xx_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -147,6 +146,7 @@ static const struct amg88xx_config amg88xx_config = {
 #ifdef CONFIG_AMG88XX_TRIGGER
 	.gpio_name = DT_INST_0_PANASONIC_AMG88XX_INT_GPIOS_CONTROLLER,
 	.gpio_pin = DT_INST_0_PANASONIC_AMG88XX_INT_GPIOS_PIN,
+	.gpio_flags = DT_INST_0_PANASONIC_AMG88XX_INT_GPIOS_FLAGS,
 #endif
 };
 

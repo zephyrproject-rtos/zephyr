@@ -18,28 +18,24 @@
 static struct drv_data data;
 static int cb_cnt;
 
-static int pin_num(u32_t pins)
-{
-	int ret = 0;
-
-	while (pins >>= 1) {
-		ret++;
-	}
-	return ret;
-}
-
 static void callback(struct device *dev,
 		     struct gpio_callback *gpio_cb, u32_t pins)
 {
+	const struct drv_data *dd = CONTAINER_OF(gpio_cb,
+						 struct drv_data, gpio_cb);
+
 	/*= checkpoint: pins should be marked with correct pin number bit =*/
-	zassert_true(pin_num(pins) == PIN_IN, NULL);
-	TC_PRINT("callback triggered: %d\n", ++cb_cnt);
+	zassert_equal(pins, BIT(PIN_IN),
+		      "unexpected pins %x", pins);
+	++cb_cnt;
+	TC_PRINT("callback triggered: %d\n", cb_cnt);
+	if ((cb_cnt == 1)
+	    && (dd->mode == GPIO_INT_EDGE_BOTH)) {
+		gpio_pin_toggle(dev, PIN_OUT);
+	}
 	if (cb_cnt >= MAX_INT_CNT) {
-		struct drv_data *drv_data = CONTAINER_OF(gpio_cb,
-							 struct drv_data, gpio_cb);
-		gpio_pin_write(dev, PIN_OUT,
-			       (drv_data->mode & GPIO_INT_ACTIVE_HIGH) ? 0 : 1);
-		gpio_pin_configure(dev, PIN_IN, GPIO_DIR_IN);
+		gpio_pin_set(dev, PIN_OUT, 0);
+		gpio_pin_interrupt_configure(dev, PIN_IN, GPIO_INT_DISABLE);
 	}
 }
 
@@ -48,54 +44,74 @@ static int test_callback(int mode)
 	struct device *dev = device_get_binding(DEV_NAME);
 	struct drv_data *drv_data = &data;
 
-	gpio_pin_disable_callback(dev, PIN_IN);
-	gpio_pin_disable_callback(dev, PIN_OUT);
+	gpio_pin_interrupt_configure(dev, PIN_IN, GPIO_INT_DISABLE);
+	gpio_pin_interrupt_configure(dev, PIN_OUT, GPIO_INT_DISABLE);
 
-	/* 1. set PIN_OUT to initial state */
-	if (gpio_pin_configure(dev, PIN_OUT, GPIO_DIR_OUT) != 0) {
-		TC_ERROR("PIN_OUT config fail\n");
-		return TC_FAIL;
+	/* 1. set PIN_OUT to logical initial state inactive */
+	u32_t out_flags = GPIO_OUTPUT_LOW;
+
+	if ((mode & GPIO_INT_LOW_0) != 0) {
+		out_flags = GPIO_OUTPUT_HIGH | GPIO_ACTIVE_LOW;
 	}
-	if (gpio_pin_write(dev, PIN_OUT,
-			   (mode & GPIO_INT_ACTIVE_HIGH) ? 0 : 1) != 0) {
-		TC_ERROR("set PIN_OUT init voltage fail\n");
+
+	int rc = gpio_pin_configure(dev, PIN_OUT, out_flags);
+
+	if (rc != 0) {
+		TC_ERROR("PIN_OUT config fail: %d", rc);
 		return TC_FAIL;
 	}
 
 	/* 2. configure PIN_IN callback and trigger condition */
-	if (gpio_pin_configure(dev, PIN_IN,
-			       GPIO_DIR_IN | GPIO_INT | mode | GPIO_INT_DEBOUNCE) != 0) {
-		TC_ERROR("config PIN_IN fail");
+	rc = gpio_pin_configure(dev, PIN_IN, GPIO_INPUT | GPIO_INT_DEBOUNCE);
+	if (rc != 0) {
+		TC_ERROR("config PIN_IN fail: %d\n", rc);
 		goto err_exit;
 	}
 
 	drv_data->mode = mode;
 	gpio_init_callback(&drv_data->gpio_cb, callback, BIT(PIN_IN));
-	if (gpio_add_callback(dev, &drv_data->gpio_cb) != 0) {
-		TC_ERROR("set PIN_IN callback fail\n");
+	rc = gpio_add_callback(dev, &drv_data->gpio_cb);
+	if (rc == -ENOTSUP) {
+		TC_PRINT("interrupts not supported\n");
+		return TC_PASS;
+	} else if (rc != 0) {
+		TC_ERROR("set PIN_IN callback fail: %d\n", rc);
 		return TC_FAIL;
 	}
 
 	/* 3. enable callback, trigger PIN_IN interrupt by operate PIN_OUT */
 	cb_cnt = 0;
-	gpio_pin_enable_callback(dev, PIN_IN);
-	k_sleep(100);
-	gpio_pin_write(dev, PIN_OUT, (mode & GPIO_INT_ACTIVE_HIGH) ? 1 : 0);
-	k_sleep(1000);
+	rc = gpio_pin_interrupt_configure(dev, PIN_IN, mode);
+	if (rc == -ENOTSUP) {
+		TC_PRINT("Mode %x not supported\n", mode);
+		goto pass_exit;
+	} else if (rc != 0) {
+		TC_ERROR("config PIN_IN interrupt fail: %d\n", rc);
+		goto err_exit;
+	}
+	k_sleep(K_MSEC(100));
+	gpio_pin_set(dev, PIN_OUT, 1);
+	k_sleep(K_MSEC(1000));
+	(void)gpio_pin_interrupt_configure(dev, PIN_IN, GPIO_INT_DISABLE);
 
 	/*= checkpoint: check callback is triggered =*/
-	TC_PRINT("check enabled callback\n");
-	if ((mode & GPIO_INT_EDGE) == GPIO_INT_EDGE) {
-		if (cb_cnt != 1) {
-			TC_ERROR("not trigger callback correctly\n");
+	TC_PRINT("OUT init %x, IN cfg %x, cnt %d\n", out_flags, mode, cb_cnt);
+	if (mode == GPIO_INT_EDGE_BOTH) {
+		if (cb_cnt != 2) {
+			TC_ERROR("double edge not detected\n");
 			goto err_exit;
 		}
 		goto pass_exit;
 	}
-
-	if ((mode & GPIO_INT_EDGE) == GPIO_INT_LEVEL) {
+	if ((mode & GPIO_INT_EDGE) == GPIO_INT_EDGE) {
+		if (cb_cnt != 1) {
+			TC_ERROR("edge not trigger callback correctly\n");
+			goto err_exit;
+		}
+		goto pass_exit;
+	} else {
 		if (cb_cnt != MAX_INT_CNT) {
-			TC_ERROR("not trigger callback correctly\n");
+			TC_ERROR("level not trigger callback correctly\n");
 			goto err_exit;
 		}
 	}
@@ -110,30 +126,24 @@ err_exit:
 }
 
 /* export test cases */
-void test_gpio_callback_edge_high(void)
+void test_gpio_callback_variants(void)
 {
-	zassert_true(
-		test_callback(GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH) == TC_PASS,
-		NULL);
-}
-
-void test_gpio_callback_edge_low(void)
-{
-	zassert_true(
-		test_callback(GPIO_INT_EDGE | GPIO_INT_ACTIVE_LOW) == TC_PASS,
-		NULL);
-}
-
-void test_gpio_callback_level_high(void)
-{
-	zassert_true(
-		test_callback(GPIO_INT_LEVEL | GPIO_INT_ACTIVE_HIGH) == TC_PASS,
-		NULL);
-}
-
-void test_gpio_callback_level_low(void)
-{
-	zassert_true(
-		test_callback(GPIO_INT_LEVEL | GPIO_INT_ACTIVE_LOW) == TC_PASS,
-		NULL);
+	zassert_equal(test_callback(GPIO_INT_EDGE_FALLING), TC_PASS,
+		      "falling edge failed");
+	zassert_equal(test_callback(GPIO_INT_EDGE_RISING), TC_PASS,
+		      "rising edge failed");
+	zassert_equal(test_callback(GPIO_INT_EDGE_TO_ACTIVE), TC_PASS,
+		      "edge active failed");
+	zassert_equal(test_callback(GPIO_INT_EDGE_TO_INACTIVE), TC_PASS,
+		      "edge inactive failed");
+	zassert_equal(test_callback(GPIO_INT_LEVEL_HIGH), TC_PASS,
+		      "level high failed");
+	zassert_equal(test_callback(GPIO_INT_LEVEL_LOW), TC_PASS,
+		      "level low failed");
+	zassert_equal(test_callback(GPIO_INT_LEVEL_ACTIVE), TC_PASS,
+		      "level active failed");
+	zassert_equal(test_callback(GPIO_INT_LEVEL_INACTIVE), TC_PASS,
+		      "level inactive failed");
+	zassert_equal(test_callback(GPIO_INT_EDGE_BOTH), TC_PASS,
+		      "edge both failed");
 }

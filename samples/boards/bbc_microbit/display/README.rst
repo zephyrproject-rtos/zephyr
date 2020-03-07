@@ -15,7 +15,7 @@ This project outputs various things on the BBC micro:bit display. It can
 be built as follows:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/microbit/display
+   :zephyr-app: samples/boards/bbc_microbit/display
    :board: bbc_microbit
    :goals: build
    :compact:

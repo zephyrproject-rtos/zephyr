@@ -1,9 +1,8 @@
-# Kconfig - DesignWare ARC nSIM simulated platform configuration
-#
+# DesignWare ARC nSIM simulated platform configuration
+
 # Copyright (c) 2016, 2019 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 config BOARD_NSIM
 	bool "ARC nSIM simulator"
 	depends on SOC_NSIM

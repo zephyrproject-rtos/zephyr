@@ -81,6 +81,7 @@ wdog0: wdog@81000 {
 	compatible = "arm,cmsdk-watchdog";
 	reg = <0x81000 0x1000>;
 	clocks = <&sysclk>;
+	label = "WATCHDOG";
 };
 
 uart0: uart@200000 {
@@ -167,4 +168,34 @@ i2c_shield1: i2c@20d000 {
 	#size-cells = <0>;
 	reg = <0x20d000 0x1000>;
 	label = "I2C_SHIELD1";
+};
+
+gpio_led0: mps2_fpgaio@302000 {
+	compatible = "arm,mps2-fpgaio-gpio";
+
+	reg = <0x302000 0x4>;
+	gpio-controller;
+	#gpio-cells = <1>;
+	ngpios = <2>;
+	label = "FPGA_LED0";
+};
+
+gpio_button: mps2_fpgaio@302008 {
+	compatible = "arm,mps2-fpgaio-gpio";
+
+	reg = <0x302008 0x4>;
+	gpio-controller;
+	#gpio-cells = <1>;
+	ngpios = <2>;
+	label = "FPGA_BUTTON";
+};
+
+gpio_misc: mps2_fpgaio@30204c {
+	compatible = "arm,mps2-fpgaio-gpio";
+
+	reg = <0x30204c 0x4>;
+	gpio-controller;
+	#gpio-cells = <1>;
+	ngpios = <10>;
+	label = "FPGA_MISC";
 };

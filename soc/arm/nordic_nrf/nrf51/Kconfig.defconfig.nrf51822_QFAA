@@ -1,18 +1,9 @@
-# Kconfig.defconfig.nrf51822_QFAA - Nordic Semiconductor nRF51822 MCU
-#
+# Nordic Semiconductor nRF51822 MCU
+
 # Copyright (c) 2016 Linaro Limited
 # Copyright (c) 2016 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
-if SOC_NRF51822_QFAA
 
 config SOC
-	string
 	default "nRF51822_QFAA"
-
-config ISR_STACK_SIZE
-	default 640
-
-endif # SOC_NRF51822_QFAA
+	depends on SOC_NRF51822_QFAA

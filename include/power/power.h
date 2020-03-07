@@ -146,16 +146,18 @@ static inline void _sys_pm_idle_exit_notification_disable(void)
 /**
  * @brief Force usage of given power state.
  *
- * This function overrides decision made by PM policy
- * forcing usage of given power state in all subsequent
- * suspend operations. Forcing the SYS_POWER_STATE_AUTO
- * state restores normal operation.
+ * This function overrides decision made by PM policy forcing
+ * usage of given power state in the ongoing suspend operation.
+ * And before the end of suspend, the state of forced_pm_state
+ * is cleared with interrupt disabled.
  *
- * @param state Power state which should be used in all
- *		subsequent suspend operations or
- *		SYS_POWER_STATE_AUTO.
+ * If enabled SYS_PM_DIRECT_FORCE_MODE, this function can only
+ * run in thread context.
+ *
+ * @param state Power state which should be used in the ongoing
+ *		suspend operation or SYS_POWER_STATE_AUTO.
  */
-extern void sys_pm_force_power_state(enum power_states state);
+void sys_pm_force_power_state(enum power_states state);
 
 /**
  * @brief Put processor into a power state.
@@ -163,7 +165,7 @@ extern void sys_pm_force_power_state(enum power_states state);
  * This function implements the SoC specific details necessary
  * to put the processor into available power states.
  */
-extern void sys_set_power_state(enum power_states state);
+void sys_set_power_state(enum power_states state);
 
 #ifdef CONFIG_SYS_PM_DEBUG
 /**
@@ -171,7 +173,7 @@ extern void sys_set_power_state(enum power_states state);
  *
  * Dump Low Power states debug info like LPS entry count and residencies.
  */
-extern void sys_pm_dump_debug_info(void);
+void sys_pm_dump_debug_info(void);
 
 #endif /* CONFIG_SYS_PM_DEBUG */
 
@@ -186,7 +188,7 @@ extern void sys_pm_dump_debug_info(void);
  *
  * @param [in] state Power state to be disabled.
  */
-extern void sys_pm_ctrl_disable_state(enum power_states state);
+void sys_pm_ctrl_disable_state(enum power_states state);
 
 /**
  * @brief Enable particular power state
@@ -199,7 +201,7 @@ extern void sys_pm_ctrl_disable_state(enum power_states state);
  *
  * @param [in] state Power state to be enabled.
  */
-extern void sys_pm_ctrl_enable_state(enum power_states state);
+void sys_pm_ctrl_enable_state(enum power_states state);
 
 /**
  * @brief Check if particular power state is enabled
@@ -208,7 +210,7 @@ extern void sys_pm_ctrl_enable_state(enum power_states state);
  *
  * @param [in] state Power state.
  */
-extern bool sys_pm_ctrl_is_state_enabled(enum power_states state);
+bool sys_pm_ctrl_is_state_enabled(enum power_states state);
 
 #endif /* CONFIG_SYS_PM_STATE_LOCK */
 
@@ -283,7 +285,7 @@ void _sys_resume(void);
  * @return Power state which was entered or SYS_POWER_STATE_ACTIVE if SoC was
  *         kept in the active state.
  */
-extern enum power_states _sys_suspend(s32_t ticks);
+enum power_states _sys_suspend(s32_t ticks);
 
 /**
  * @brief Do any SoC or architecture specific post ops after sleep state exits.
@@ -293,7 +295,7 @@ extern enum power_states _sys_suspend(s32_t ticks);
  * interrupts after resuming from sleep state. In future, the enabling
  * of interrupts may be moved into the kernel.
  */
-extern void _sys_pm_power_state_exit_post_ops(enum power_states state);
+void _sys_pm_power_state_exit_post_ops(enum power_states state);
 
 /**
  * @brief Application defined function for power state entry
@@ -301,7 +303,7 @@ extern void _sys_pm_power_state_exit_post_ops(enum power_states state);
  * Application defined function for doing any target specific operations
  * for power state entry.
  */
-extern void sys_pm_notify_power_state_entry(enum power_states state);
+void sys_pm_notify_power_state_entry(enum power_states state);
 
 /**
  * @brief Application defined function for sleep state exit
@@ -309,7 +311,7 @@ extern void sys_pm_notify_power_state_entry(enum power_states state);
  * Application defined function for doing any target specific operations
  * for sleep state exit.
  */
-extern void sys_pm_notify_power_state_exit(enum power_states state);
+void sys_pm_notify_power_state_exit(enum power_states state);
 
 /**
  * @}

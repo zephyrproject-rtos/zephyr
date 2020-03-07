@@ -13,12 +13,7 @@
 	compatible = "nxp,mcimx7d_m4";
 
 	aliases {
-		gpio-7 = &gpio7;
-		uart-2 = &uart2;
-		uart-6 = &uart6;
 		sw0    = &user_switch_1;
-		i2c-4  = &i2c4;
-		mu-b   = &mub;
 	};
 
 	chosen {
@@ -31,7 +26,7 @@
 	gpio_keys {
 		compatible = "gpio-keys";
 		user_switch_1: user_sw_1 {
-			gpios = <&gpio7 1 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpio7 1 GPIO_ACTIVE_LOW>;
 			label = "User SW1";
 		};
 	};
@@ -60,14 +55,14 @@
 		compatible = "nxp,fxos8700";
 		reg = <0x1e>;
 		label = "FXOS8700";
-		int1-gpios = <&gpio7 0 0>;
+		int1-gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
 	};
 
 	fxas21002@20 {
 		compatible = "nxp,fxas21002";
 		reg = <0x20>;
 		label = "FXAS21002";
-		int1-gpios = <&gpio7 0 0>;
+		int1-gpios = <&gpio7 0 GPIO_ACTIVE_LOW>;
 	};
 
 };

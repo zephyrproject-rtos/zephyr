@@ -1,7 +1,6 @@
-# Kconfig - Native posix ethernet driver configuration options
+# Native posix ethernet driver configuration options
 
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_NATIVE_POSIX
@@ -102,18 +101,15 @@ config ETH_NATIVE_POSIX_VLAN_TAG_STRIP
 	  Rx Ethernet frames and sets tag information in net packet
 	  metadata.
 
-if ! ETH_NATIVE_POSIX_RANDOM_MAC
-
-config	ETH_NATIVE_POSIX_MAC_ADDR
+config ETH_NATIVE_POSIX_MAC_ADDR
 	string "MAC address for the interface"
 	default ""
+	depends on !ETH_NATIVE_POSIX_RANDOM_MAC
 	help
 	  Specify a MAC address for the ethernet interface in the form of
 	  six hex 8-bit chars separated by colons (e.g.:
 	  aa:33:cc:22:e2:c0).  The default is an empty string, which
 	  means the code will make 00:00:5E:00:53:XX, where XX will be
 	  random.
-
-endif
 
 endif # ETH_NATIVE_POSIX

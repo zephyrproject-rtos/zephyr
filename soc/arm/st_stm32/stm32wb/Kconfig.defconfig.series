@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32WB MCU line
-#
+# ST Microelectronics STM32WB MCU line
+
 # Copyright (c) 2019 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_STM32WBX
 
@@ -25,11 +23,8 @@ config GPIO_STM32_PORTH
 
 endif # GPIO_STM32
 
-if I2C_STM32
-
 config I2C_STM32_V2
 	default y
-
-endif # I2C_STM32
+	depends on I2C_STM32
 
 endif # SOC_SERIES_STM32WBX

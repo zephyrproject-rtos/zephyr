@@ -1,43 +1,28 @@
-# Kconfig - NUCLEO-144 F413ZH board configuration
-#
+# NUCLEO-144 F413ZH board configuration
+
 # Copyright (c) 2017 Florian Vaussard, HEIG-VD
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_NUCLEO_F413ZH
 
 config BOARD
 	default "nucleo_f413zh"
 
-
-if UART_CONSOLE
-
 config UART_3
 	default y
-
-endif # UART_CONSOLE
-
-if SERIAL
+	depends on UART_CONSOLE
 
 config UART_6
 	default y
-
-endif # SERIAL
-
-if I2C
+	depends on SERIAL
 
 config I2C_1
 	default y
-
-endif # I2C
-
-if SPI
+	depends on I2C
 
 config SPI_1
 	default y
-
-endif # SPI
+	depends on SPI
 
 if NETWORKING
 
@@ -52,11 +37,8 @@ config USB_DEVICE_NETWORK_ECM
 
 endif # NETWORKING
 
-if PWM
-
 config PWM_STM32_2
 	default y
-
-endif # PWM
+	depends on PWM
 
 endif # BOARD_NUCLEO_F413ZH

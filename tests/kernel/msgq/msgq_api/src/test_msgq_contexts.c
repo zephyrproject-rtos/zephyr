@@ -96,7 +96,7 @@ static void msgq_thread(struct k_msgq *pmsgq)
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, pmsgq, NULL, NULL,
 				      K_PRIO_PREEMPT(0),
-				      K_USER | K_INHERIT_PERMS, 0);
+				      K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	put_msgq(pmsgq);
 	k_sem_take(&end_sema, K_FOREVER);
 	k_thread_abort(tid);
@@ -134,7 +134,7 @@ static void msgq_thread_overflow(struct k_msgq *pmsgq)
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry_overflow, pmsgq, NULL, NULL,
 				      K_PRIO_PREEMPT(0),
-				      K_USER | K_INHERIT_PERMS, 0);
+				      K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	ret = k_msgq_put(pmsgq, (void *)&data[1], K_FOREVER);
 
@@ -184,11 +184,11 @@ static void msgq_thread_data_passing(struct k_msgq *pmsgq)
 
 	k_tid_t tid = k_thread_create(&tdata2, tstack2, STACK_SIZE,
 					pend_thread_entry, pmsgq, NULL,
-					NULL, K_PRIO_PREEMPT(0), 0, 0);
+					NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 
 	k_tid_t tid1 = k_thread_create(&tdata1, tstack1, STACK_SIZE,
 					thread_entry_get_data, pmsgq, NULL,
-					NULL, K_PRIO_PREEMPT(1), 0, 0);
+					NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 
 	k_sem_take(&end_sema, K_FOREVER);
 	k_thread_abort(tid);

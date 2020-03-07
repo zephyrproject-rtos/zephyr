@@ -1,10 +1,7 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic nRF timer
-
-description: >
-    This is a representation of the Nordic nRF timer node
+description: Nordic nRF timer node
 
 compatible: "nordic,nrf-timer"
 

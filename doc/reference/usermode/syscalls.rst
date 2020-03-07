@@ -26,9 +26,10 @@ Components
 
 All system calls have the following components:
 
-* A **C prototype** for the API, declared in some header under ``include/`` and
-  prefixed with :c:macro:`__syscall`.  This prototype is never implemented
-  manually, instead it gets created by the ``scripts/gen_syscalls.py`` script.
+* A **C prototype** prefixed with :c:macro:`__syscall` for the API. It
+  will be declared in some header under ``include/`` or in another
+  ``SYSCALL_INCLUDE_DIRS`` directory. This prototype is never implemented
+  manually, instead it gets created by the :ref:`gen_syscalls.py` script.
   What gets generated is an inline function which either calls the
   implementation function directly (if called from supervisor mode) or goes
   through privilege elevation and validation steps (if called from user
@@ -57,8 +58,8 @@ supervisor mode. For example, to initialize a semaphore:
 
 The :c:macro:`__syscall` attribute is very special. To the C compiler, it
 simply expands to 'static inline'. However to the post-build
-``parse_syscalls.py`` script, it indicates that this API is a system call.
-The ``parse_syscalls.py`` script does some parsing of the function prototype,
+:ref:`parse_syscalls.py` script, it indicates that this API is a system call.
+The :ref:`parse_syscalls.py` script does some parsing of the function prototype,
 to determine the data types of its return value and arguments, and has some
 limitations:
 
@@ -87,6 +88,15 @@ bottom of ``include/sensor.h``:
 .. code-block:: c
 
     #include <syscalls/sensor.h>
+
+C prototype functions must be declared in one of the directories
+listed in the CMake variable ``SYSCALL_INCLUDE_DIRS``. This list
+always contains ``${ZEPHYR_BASE}/include``, but will also contain
+``APPLICATION_SOURCE_DIR`` when ``CONFIG_APPLICATION_DEFINED_SYSCALL``
+is set, or ``${ZEPHYR_BASE}/subsys/testsuite/ztest/include`` when
+``CONFIG_ZTEST`` is set. Additional paths can be added to the list
+through the CMake command line or in CMake code that is run before
+``${ZEPHYR_BASE}/cmake/app/boilerplate.cmake`` is run.
 
 Invocation Context
 ==================
@@ -118,7 +128,7 @@ Implementation Details
 ======================
 
 Declaring an API with :c:macro:`__syscall` causes some code to be generated in
-C and header files by ``scripts/gen_syscalls.py``, all of which can be found in
+C and header files by the :ref:`gen_syscalls.py` script, all of which can be found in
 the project out directory under ``include/generated/``:
 
 * The system call is added to the enumerated type of system call IDs,
@@ -149,7 +159,7 @@ Inside this header is the body of :c:func:`k_sem_init()`::
     {
     #ifdef CONFIG_USERSPACE
             if (z_syscall_trap()) {
-                    z_arch_syscall_invoke3(*(u32_t *)&sem, *(u32_t *)&initial_count, *(u32_t *)&limit, K_SYSCALL_K_SEM_INIT);
+                    arch_syscall_invoke3(*(uintptr_t *)&sem, *(uintptr_t *)&initial_count, *(uintptr_t *)&limit, K_SYSCALL_K_SEM_INIT);
                     return;
             }
             compiler_barrier();
@@ -169,6 +179,13 @@ functions marshal arguments into designated CPU registers and perform the
 necessary privilege elevation. In this layer, all arguments are treated as an
 unsigned 32-bit type. There is always a 32-bit unsigned return value, which
 may or may not be used.
+
+.. figure:: syscall_flow.png
+   :alt: System Call execution flow
+   :width: 80%
+   :align: center
+
+   System Call execution flow
 
 Some system calls may have more than six arguments. The number of
 arguments passed via registers is limited to six for all
@@ -348,4 +365,3 @@ Functions for invoking system calls are defined in
 * :c:func:`_arch_syscall_invoke4`
 * :c:func:`_arch_syscall_invoke5`
 * :c:func:`_arch_syscall_invoke6`
-

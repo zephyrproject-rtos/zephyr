@@ -6,10 +6,9 @@
  */
 
 #include "fxos8700.h"
-
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(FXOS8700);
+
+LOG_MODULE_DECLARE(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
 
 static void fxos8700_gpio_callback(struct device *dev,
 				   struct gpio_callback *cb,
@@ -22,7 +21,8 @@ static void fxos8700_gpio_callback(struct device *dev,
 		return;
 	}
 
-	gpio_pin_disable_callback(dev, data->gpio_pin);
+	gpio_pin_interrupt_configure(data->gpio, data->gpio_pin,
+				     GPIO_INT_DISABLE);
 
 #if defined(CONFIG_FXOS8700_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->trig_sem);
@@ -148,7 +148,8 @@ static void fxos8700_handle_int(void *arg)
 	}
 #endif
 
-	gpio_pin_enable_callback(data->gpio, config->gpio_pin);
+	gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 #ifdef CONFIG_FXOS8700_TRIGGER_OWN_THREAD
@@ -388,15 +389,15 @@ int fxos8700_trigger_init(struct device *dev)
 	data->gpio_pin = config->gpio_pin;
 
 	gpio_pin_configure(data->gpio, config->gpio_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
+			   GPIO_INPUT | config->gpio_flags);
 
 	gpio_init_callback(&data->gpio_cb, fxos8700_gpio_callback,
 			   BIT(config->gpio_pin));
 
 	gpio_add_callback(data->gpio, &data->gpio_cb);
 
-	gpio_pin_enable_callback(data->gpio, config->gpio_pin);
+	gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }

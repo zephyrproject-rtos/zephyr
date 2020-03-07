@@ -1,20 +1,15 @@
-# Kconfig - STM32L476G DISCOVERY board configuration
-#
+# STM32L476G DISCOVERY board configuration
+
 # Copyright (c) 2017 Arthur Sfez
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_STM32L476G_DISCO
 
 config BOARD
 	default "stm32l476g_disco"
 
-if UART_CONSOLE
-
 config UART_2
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 endif # BOARD_STM32L476G_DISCO

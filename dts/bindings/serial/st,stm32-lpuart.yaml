@@ -1,7 +1,4 @@
-title: STM32 LPUART
-
-description: >
-    This binding gives a base representation of the STM32 LPUART
+description: STM32 LPUART
 
 compatible: "st,stm32-lpuart"
 
@@ -16,4 +13,3 @@ properties:
 
     clocks:
       required: true
-

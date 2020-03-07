@@ -281,4 +281,3 @@ Parameter Name	Selected	Description
 TSPC_GATT_8_1	False (*)	Support for Multiple ATT bearers from same
 				device (C.1)
 ==============	===========	============================================
-

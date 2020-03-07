@@ -1,21 +1,21 @@
-#
 # Copyright (c) 2018, Cypress
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "Cypress PSoC6 MCU Selection"
-depends on SOC_SERIES_PSOC62
+	prompt "Cypress PSoC6 MCU Selection"
+	depends on SOC_SERIES_PSOC62
 
 config SOC_PSOC6_M0
 	bool "SOC_PSOC6_M0"
 	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_CORTEX_M_HAS_VTOR
 
 config SOC_PSOC6_M4
 	bool "SOC_PSOC6_M4"
 	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_CORTEX_M_HAS_SYSTICK
 
 endchoice
 

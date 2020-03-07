@@ -141,4 +141,3 @@ API Reference
 
 .. doxygengroup:: stack_apis
    :project: Zephyr
-

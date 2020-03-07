@@ -7,8 +7,8 @@ Overview
 ********
 This feature will allow relocating .text, .rodata, .data, and .bss sections from
 required files and place them in the required memory region. The memory region
-and file are given to this python script in the form of a string. This script is
-always invoked from inside cmake.
+and file are given to the :ref:`gen_relocate_app.py` script in the form
+of a string. This script is always invoked from inside cmake.
 
 This script provides a robust way to re-order the memory contents without
 actually having to modify the code.  In simple terms this script will do the job
@@ -16,7 +16,7 @@ of ``__attribute__((section("name")))`` for a bunch of files together.
 
 Details
 *******
-The memory region and file are given to this python script in the form of a string.
+The memory region and file are given to the :ref:`gen_relocate_app.py` script in the form of a string.
 
 An example of such a string is:
 ``SRAM2:/home/xyz/zephyr/samples/hello_world/src/main.c,SRAM1:/home/xyz/zephyr/samples/hello_world/src/main2.c``
@@ -99,4 +99,4 @@ A sample showcasing this feature is provided at
 This is an example of using the code relocation feature.
 
 This example will place .text, .data, .bss from 3 files to various parts in the SRAM
-using a custom linker file derived from ``include/arch/arm/cortex_m/scripts/linker.ld``
+using a custom linker file derived from ``include/arch/arm/aarch32/cortex_m/scripts/linker.ld``

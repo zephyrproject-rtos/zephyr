@@ -194,7 +194,7 @@ static ssize_t tty_read_unbuf(struct tty_serial *tty, void *buf, size_t size)
 		 * of data without extra delays.
 		 */
 		if (res == -1) {
-			k_sleep(1);
+			k_sleep(K_MSEC(1));
 		}
 	}
 

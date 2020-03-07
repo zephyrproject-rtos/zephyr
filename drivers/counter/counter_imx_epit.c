@@ -86,14 +86,13 @@ static int imx_epit_stop(struct device *dev)
 	return 0;
 }
 
-static u32_t imx_epit_read(struct device *dev)
+static int imx_epit_get_value(struct device *dev, u32_t *ticks)
 {
 	EPIT_Type *base = get_epit_config(dev)->base;
-	u32_t value;
 
-	value = EPIT_GetCounterLoadValue(base) - EPIT_ReadCounter(base);
+	*ticks = EPIT_GetCounterLoadValue(base) - EPIT_ReadCounter(base);
 
-	return value;
+	return 0;
 }
 
 static int imx_epit_set_top_value(struct device *dev,
@@ -143,7 +142,7 @@ static u32_t imx_epit_get_max_relative_alarm(struct device *dev)
 static const struct counter_driver_api imx_epit_driver_api = {
 	.start = imx_epit_start,
 	.stop = imx_epit_stop,
-	.read = imx_epit_read,
+	.get_value = imx_epit_get_value,
 	.set_top_value = imx_epit_set_top_value,
 	.get_pending_int = imx_epit_get_pending_int,
 	.get_top_value = imx_epit_get_top_value,

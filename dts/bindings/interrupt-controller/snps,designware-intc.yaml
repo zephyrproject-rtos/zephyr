@@ -1,7 +1,4 @@
-title: DesignWare Interrupt Controller
-
-description: >
-    This binding describes DesignWare Programmable Interrupt controller
+description: DesignWare programmable interrupt controller
 
 compatible: "snps,designware-intc"
 
@@ -17,7 +14,12 @@ properties:
   "#interrupt-cells":
       const: 3
 
-"#cells":
+  num-irqs:
+      type: int
+      required: true
+      description: Number of irq the controller manages
+
+interrupt-cells:
   - irq
   - sense
   - priority

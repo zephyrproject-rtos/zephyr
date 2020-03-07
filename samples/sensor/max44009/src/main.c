@@ -43,6 +43,6 @@ void main(void)
 		lum = val.val1;
 		printk("sensor: lum reading: %d\n", lum);
 
-		k_sleep(4000);
+		k_sleep(K_MSEC(4000));
 	}
 }

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2012-2014 Wind River Systems, Inc.
  *
@@ -16,7 +15,7 @@
 #include <tc_util.h>
 #include <arch/x86/ia32/segmentation.h>
 
-#include <kernel_structs.h>
+#include <kernel_internal.h>
 #if defined(__GNUC__)
 #include "test_asm_inline_gcc.h"
 #else

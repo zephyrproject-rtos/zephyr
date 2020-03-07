@@ -21,7 +21,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_2: led_2 {
-			gpios = <&gpiob 13 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
@@ -30,23 +30,23 @@
 		compatible = "gpio-keys";
 		joy_sel: joystick_select {
 			label = "joystick select";
-			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 		};
 		joy_down: joystick_down {
 			label = "joystick down";
-			gpios = <&gpioi 10 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioi 10 GPIO_ACTIVE_LOW>;
 		};
 		joy_up: joystick_up {
 			label = "joystick up";
-			gpios = <&gpioi 8 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
 		};
 		joy_left: joystick_left {
 			label = "joystick left";
-			gpios = <&gpioi 9 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioi 9 GPIO_ACTIVE_LOW>;
 		};
 		joy_right: joystick_right {
 			label = "joystick right";
-			gpios = <&gpiof 11 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiof 11 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -62,22 +62,16 @@ arduino_serial: &lpuart1 {};
 
 &usart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart1_pins_c>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart2 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart2_pins_c>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &lpuart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&lpuart1_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 

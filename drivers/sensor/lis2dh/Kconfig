@@ -1,10 +1,7 @@
-# Kconfig - LIS2DH Three Axis Accelerometer configuration options
+# LIS2DH Three Axis Accelerometer configuration options
 
-#
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LIS2DH
 	bool "LIS2DH Three Axis Accelerometer"

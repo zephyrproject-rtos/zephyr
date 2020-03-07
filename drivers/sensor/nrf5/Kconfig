@@ -1,23 +1,10 @@
-# Kconfig - nRF5 temperature sensor configuration options
+# nRF5 temperature sensor configuration options
 
-#
 # Copyright (c) 2016 ARM Ltd.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-menuconfig TEMP_NRF5
+config TEMP_NRF5
 	bool "nRF5 Temperature Sensor"
 	depends on SOC_FAMILY_NRF
 	help
 	  Enable driver for nRF5 temperature sensor.
-
-if TEMP_NRF5
-
-config TEMP_NRF5_NAME
-	string "Driver name"
-	default "TEMP_0"
-	help
-	  Device name with which the nRF5 temperature sensor is identified.
-
-endif # TEMP_NRF5

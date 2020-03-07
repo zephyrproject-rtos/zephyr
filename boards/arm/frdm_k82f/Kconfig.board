@@ -1,7 +1,6 @@
-# Kconfig - FRDM-K82F board configuration
-#
+# FRDM-K82F board configuration
+
 # Copyright (c) 2019 SEAL AG
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_FRDM_K82F

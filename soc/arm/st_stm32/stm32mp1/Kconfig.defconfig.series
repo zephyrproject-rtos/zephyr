@@ -1,9 +1,7 @@
-# Kconfig - ST Microelectronics STM32MP1 MCU/MPU line
-#
+# ST Microelectronics STM32MP1 MCU/MPU line
+
 # Copyright (c) 2019 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_STM32MP1X
 
@@ -40,18 +38,12 @@ config GPIO_STM32_PORTK
 
 endif # GPIO_STM32
 
-if IPM
-
 config IPM_STM32_IPCC
 	default y
-
-endif # IPM
-
-if I2C_STM32
+	depends on IPM
 
 config I2C_STM32_V2
 	default y
-
-endif # I2C_STM32
+	depends on I2C_STM32
 
 endif # SOC_SERIES_STM32MP1X

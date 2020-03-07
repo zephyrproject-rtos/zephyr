@@ -3,40 +3,26 @@
 Board Porting Guide
 ###################
 
-When building an application you must specify the target hardware and
-the exact board or model. Specifying the board name results in a binary that
-is suited for the target hardware by selecting the right Zephyr features and
-components and setting the right Zephyr configuration for that specific target
-hardware.
+To add Zephyr support for a new :term:`board`, you at least need a *board
+directory* with various files in it. Files in the board directory inherit
+support for at least one SoC and all of its features. Therefore, Zephyr must
+support your :term:`SoC` as well.
 
-A board is defined as a special configuration of an SoC with possible additional
-components.
-For example, a board might have sensors and flash memory implemented as
-additional features on top of what the SoC provides. Such additional hardware is
-configured and referenced in the Zephyr board configuration.
+Boards, SoCs, etc.
+******************
 
-The board implements at least one SoC and thus inherits all of the features
-that are provided by the SoC. When porting a board to Zephyr, you should
-first make sure the SoC is implemented in Zephyr.
+Zephyr's hardware support hierarchy has these layers, from most to least
+specific:
 
-Hardware Configuration Hierarchy
-********************************
+- Board: a particular CPU instance and its peripherals in a concrete hardware
+  specification
+- SoC: the exact system on a chip the board's CPU is part of
+- SoC series: a smaller group of tightly related SoCs
+- SoC family: a wider group of SoCs with similar characteristics
+- CPU core: a particular CPU in an architecture
+- Architecture: an instruction set architecture
 
-Hardware definitions in Zephyr follow a well-defined hierarchy of configurations
-and layers, below are the layers from top to bottom:
-
-- Board
-- SoC
-- SoC Series
-- SoC Family
-- CPU Core
-- Architecture
-
-This design contributes to code reuse and implementation of device drivers and
-features at the bottom of the hierarchy making a board configuration as simple
-as a selection of features that are implemented by the underlying layers. The
-figures below shows this hierarchy with a few example of boards currently
-available in the source tree:
+You can visualize the hierarchy like this:
 
 .. figure:: board/hierarchy.png
    :width: 500px
@@ -45,444 +31,429 @@ available in the source tree:
 
    Configuration Hierarchy
 
+Here are some examples. Notice how the SoC series and family levels are
+not always used.
 
-Hierarchy Example
+.. list-table::
+   :header-rows: 1
 
-+------------+-----------+--------------+------------+--------------+---------+
-|Board       |FRDM K64F  |nRF52 NITROGEN|nRF51XX     |Quark SE C1000|Arduino  |
-|            |           |              |            |Devboard      |101      |
-+============+===========+==============+============+==============+=========+
-|SOC         |MK64F12    |nRF52832      |nRF51XX     |Quark SE C1000|Curie    |
-+------------+-----------+--------------+------------+--------------+---------+
-|SOC Series  |Kinetis K6x|Nordic NRF52  |Nordic NRF51|Quark SE      |Quark SE |
-|            |Series     |              |            |              |         |
-+------------+-----------+--------------+------------+--------------+---------+
-|SOC Family  |NXP Kinetis|Nordic NRF5   |Nordic NRF5 |Quark         |Quark    |
-+------------+-----------+--------------+------------+--------------+---------+
-|CPU Core    |Cortex-M4  |Cortex-M4     |Cortex-M0   |Lakemont      |Lakemont |
-+------------+-----------+--------------+------------+--------------+---------+
-|Architecture|ARM        |ARM           |ARM         |x86           |x86      |
-+------------+-----------+--------------+------------+--------------+---------+
+   * - Board
+     - SoC
+     - SoC series
+     - SoC family
+     - CPU core
+     - Architecture
+   * - :ref:`nrf52_pca10040 <nrf52_pca10040>`
+     - nRF52832
+     - nRF52
+     - Nordic nRF5
+     - Arm Cortex-M4
+     - Arm
+   * - :ref:`frdm_k64f <frdm_k64f>`
+     - MK64F12
+     - Kinetis K6x
+     - NXP Kinetis
+     - Arm Cortex-M4
+     - Arm
+   * - :ref:`stm32h474i_disco <stm32h747i_disco_board>`
+     - STM32H747XI
+     - STM32H7
+     - STMicro STM32
+     - Arm Cortex-M7
+     - Arm
+   * - :ref:`rv32m1_vega_ri5cy <rv32m1_vega>`
+     - RV32M1
+     - (Not used)
+     - (Not used)
+     - RI5CY
+     - RISC-V
 
+Make sure your SoC is supported
+*******************************
+
+Start by making sure your SoC is supported by Zephyr. If it is, it's time to
+:ref:`create-your-board-directory`. If you don't know, try:
+
+- checking :ref:`boards` for names that look relevant, and reading individual
+  board documentation to find out for sure.
+- asking your SoC vendor
+
+If you need to add SoC, CPU core, or even architecture support, this is the
+wrong page, but here is some general advice.
 
 Architecture
 ============
-If your CPU architecture is already supported by Zephyr, there is no
-architecture work involved in porting to your board.  If your CPU architecture
-is not supported by the Zephyr kernel, you can add support by following the
-instructions available at :ref:`architecture_porting_guide`.
+
+See :ref:`architecture_porting_guide`.
 
 CPU Core
 ========
 
-Some OS code depends on the CPU core that your board is using. For
-example, a given CPU core has a specific assembly language instruction set, and
-may require special cross compiler or compiler settings to use the appropriate
-instruction set.
+CPU core support files go in ``core`` subdirectories under :zephyr_file:`arch`,
+e.g. :zephyr_file:`arch/x86/core`.
 
-If your CPU architecture is already supported by Zephyr, there is no CPU core
-work involved in porting to your platform or board. You need only to select the
-appropriate CPU in your configuration and the rest will be taken care of by the
-configuration system in Zephyr which will select the features implemented
-by the corresponding CPU.
-
-Platform
-========
-
-This layer implements most of the features that need porting and is split into
-three layers to allow for code reuse when dealing with implementations with
-slight differences.
-
-SoC Family
-----------
-
-This layer is a container of all SoCs of the same class that, for example
-implement one single type of CPU core but differ in peripherals and features.
-The base hardware will in most cases be the same across all SoCs and MCUs of
-this family.
-
-SoC Series
-----------
-
-Moving closer to the SoC, the series is derived from an SoC family. A series is
-defined by a feature set that serves the purpose of distinguishing different
-SoCs belonging to the same family.
+See :ref:`gs_toolchain` for information about toolchains (compiler, linker,
+etc.) supported by Zephyr. If you need to support a new toolchain,
+:ref:`build_overview` is a good place to start learning about the build system.
+Please reach out to the community if you are looking for advice or want to
+collaborate on toolchain support.
 
 SoC
----
+===
 
-Finally, an SoC is actual hardware component that is physically available on a
-board.
+Zephyr SoC support files are in architecture-specific subdirectories of
+:zephyr_file:`soc`. They are generally grouped by SoC family.
 
-Board
-=====
+When adding a new SoC family or series for a vendor that already has SoC
+support within Zephyr, please try to extract common functionality into shared
+files to avoid duplication. If there is no support for your vendor yet, you can
+add it in a new directory ``zephyr/soc/<YOUR-ARCH>/<YOUR-SOC>``; please use
+self-explanatory directory names.
 
-A board implements an SoC with all its features, together with peripherals
-available on the board that differentiates the board with additional interfaces
-and features not available in the SoC.
+.. _create-your-board-directory:
 
-Default board configuration
+Create your board directory
 ***************************
 
-When porting Zephyr to a board, you must provide the board's default
-Kconfig configuration, which is used in application builds unless explicitly
-overridden.
+Once you've found an existing board that uses your SoC, you can usually start
+by copy/pasting its board directory and changing its contents for your
+hardware.
 
-.. note::
+You need to give your board a unique name. Run ``west boards`` for a list of
+names that are already taken, and pick something new. Let's say your board is
+called ``plank`` (please don't actually use that name).
 
-   See the :ref:`kconfig_tips_and_tricks` page for some best practices and tips
-   when writing Kconfig files.
+Start by creating the board directory ``zephyr/boards/<ARCH>/plank``, where
+``<ARCH>`` is your SoC's architecture subdirectory. (You don't have to put your
+board directory in the zephyr repository, but it's the easiest way to get
+started. See :ref:`custom_board_definition` for documentation on moving your
+board directory to a separate repository once it's working.)
 
-In order to provide consistency across the various boards and ease the work of
-users providing applications that are not board specific, the following
-guidelines should be followed when porting a board:
+Your board directory should look like this:
+
+.. code-block:: none
+
+   boards/<ARCH>/plank
+   ├── board.cmake
+   ├── CMakeLists.txt
+   ├── doc
+   │   ├── plank.png
+   │   └── index.rst
+   ├── Kconfig.board
+   ├── Kconfig.defconfig
+   ├── plank_defconfig
+   ├── plank.dts
+   └── plank.yaml
+
+Replace ``plank`` with your board's name, of course.
+
+The mandatory files are:
+
+#. :file:`plank.dts`: a hardware description in :ref:`devicetree` format. This
+   declares your SoC, connectors, and any other hardware components such as
+   LEDs, buttons, sensors, or communication peripherals (USB, BLE controller,
+   etc).
+
+#. :file:`Kconfig.board`, :file:`Kconfig.defconfig`, :file:`plank_defconfig`:
+   software configuration in :ref:`kconfig` formats. This provides default
+   settings for software features and peripheral drivers.
+
+The optional files are:
+
+- :file:`board.cmake`: used for :ref:`flash-and-debug-support`
+- :file:`CMakeLists.txt`: if you need to add additional source files to
+  your build.
+
+  One common use for this file is to add a :file:`pinmux.c` file in your board
+  directory to the build, which configures pin controllers at boot time. In
+  that case, :file:`CMakeLists.txt` usually looks like this:
+
+  .. code-block:: cmake
+
+     if(CONFIG_PINMUX)
+       zephyr_library()
+       zephyr_library_sources(pinmux.c)
+       zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
+     endif()
+
+- :file:`doc/index.rst`, :file:`doc/plank.png`: documentation for and a picture
+  of your board. You only need this if you're :ref:`contributing-your-board` to
+  Zephyr.
+- :file:`plank.yaml`: a YAML file with miscellaneous metadata used by the
+  :ref:`sanitycheck_script`.
+
+.. _default_board_configuration:
+
+Write your devicetree
+*********************
+
+The devicetree file :file:`boards/<ARCH>/plank/plank.dts` describes your board
+hardware in the Devicetree Source (DTS) format (as usual, change ``plank`` to
+your board's name). If you're new to devicetree, see :ref:`devicetree-intro`.
+
+In general, :file:`plank.dts` should look like this:
+
+.. code-block:: none
+
+   /dts-v1/;
+   #include <your_soc_vendor/your_soc.dtsi>
+
+   / {
+   	model = "A human readable name";
+   	compatible = "yourcompany,plank";
+
+   	chosen {
+   		zephyr,console = &your_uart_console;
+   		zephyr,sram = &your_memory_node;
+   		/* other chosen settings  for your hardware */
+   	};
+
+   	/*
+   	 * Your board-specific hardware: buttons, LEDs, sensors, etc.
+   	 */
+
+   	leds {
+   		compatible = "gpio-leds";
+   		led0: led_0 {
+   			gpios = < /* GPIO your LED is hooked up to */ >;
+   			label = "LED 0";
+   		};
+   		/* ... other LEDs ... */
+   	};
+
+   	buttons {
+   		compatible = "gpio-keys";
+   		/* ... your button definitions ... */
+   	};
+
+   	/* These aliases are provided for compatibility with samples */
+   	aliases {
+   		led0 = &led0; /* now you support the blinky sample! */
+   		/* other aliases go here */
+   	};
+   };
+
+   &some_peripheral_you_want_to_enable { /* like a GPIO or SPI controller */
+   	status = "okay";
+   };
+
+   &another_peripheral_you_want {
+   	status = "okay";
+   };
+
+If you're in a hurry, simple hardware can usually be supported by copy/paste
+followed by trial and error. If you want to understand details, you will need
+to read the rest of the devicetree documentation and the devicetree
+specification.
+
+Write Kconfig files
+*******************
+
+Zephyr uses the Kconfig language to configure software features. Your board
+needs to provide some Kconfig settings before you can compile a Zephyr
+application for it.
+
+Setting Kconfig configuration values is documented in detail in
+:ref:`setting_configuration_values`.
+
+There are three mandatory Kconfig files in the board directory for a board
+named ``plank``:
+
+.. code-block:: none
+
+   boards/<ARCH>/plank
+   ├── Kconfig.board
+   ├── Kconfig.defconfig
+   └── plank_defconfig
+
+:file:`Kconfig.board`
+  Included by :zephyr_file:`boards/Kconfig` to include your board
+  in the list of options.
+
+  This should at least contain a definition for a ``BOARD_PLANK`` option,
+  which looks something like this:
+
+  .. code-block:: none
+
+     config BOARD_PLANK
+     	bool "Plank board"
+     	depends on SOC_SERIES_YOUR_SOC_SERIES_HERE
+     	select SOC_PART_NUMBER_ABCDEFGH
+
+:file:`Kconfig.defconfig`
+  Board-specific default values for Kconfig options.
+
+  The entire file should be inside an ``if BOARD_PLANK`` / ``endif`` pair of
+  lines, like this:
+
+  .. code-block:: none
+
+     if BOARD_PLANK
+
+     # Always set CONFIG_BOARD here. This isn't meant to be customized,
+     # but is set as a "default" due to Kconfig language restrictions.
+     config BOARD
+     	default "plank"
+
+     # Other options you want enabled by default go next. Examples:
+
+     config FOO
+     	default y
+
+     if NETWORKING
+     config SOC_ETHERNET_DRIVER
+     	default y
+     endif # NETWORKING
+
+     endif # BOARD_PLANK
+
+:file:`plank_defconfig`
+  A Kconfig fragment that is merged as-is into the final build directory
+  :file:`.config` whenever an application is compiled for your board.
+
+  You should at least select your board's SOC and do any mandatory settings for
+  your system clock, console, etc. The results are architecture-specific, but
+  typically look something like this:
+
+  .. code-block:: none
+
+     CONFIG_SOC_${VENDOR_XYZ3000}=y                      /* select your SoC */
+     CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=120000000   /* set up your clock, etc */
+     CONFIG_SERIAL=y
+
+Build, test, and fix
+********************
+
+Now it's time to build and test the application(s) you want to run on your
+board until you're satisfied.
+
+For example:
+
+.. code-block:: console
+
+   west build -b plank samples/hello_world
+   west flash
+
+For ``west flash`` to work, see :ref:`flash-and-debug-support` below. You can
+also just flash :file:`build/zephyr/zephyr.elf`, :file:`zephyr.hex`, or
+:file:`zephyr.bin` with any other tools you prefer.
+
+.. _porting-general-recommendations:
+
+General recommendations
+***********************
+
+For consistency and to make it easier for users to build generic applications
+that are not board specific for your board, please follow these guidelines
+while porting.
+
+- Unless explicitly recommended otherwise by this section, leave peripherals
+  and their drivers disabled by default.
+
+- Configure and enable a system clock, along with a tick source.
 
 - Provide pin and driver configuration that matches the board's valuable
   components such as sensors, buttons or LEDs, and communication interfaces
   such as USB, Ethernet connector, or Bluetooth/Wi-Fi chip.
 
-- When a well-known connector is present (such as used on an Arduino or
-  96board), configure pins to fit this connector.
+- If your board uses a well-known connector standard (like Arduino, Mikrobus,
+  Grove, or 96Boards connectors), add connector nodes to your DTS and configure
+  pin muxes accordingly.
 
 - Configure components that enable the use of these pins, such as
-  configuring an SPI instance for Arduino SPI.
+  configuring an SPI instance to use the usual Arduino SPI pins.
 
-- Configure an output for the console.
+- If available, configure and enable a serial output for the console
+  using the ``zephyr,console`` chosen node in the devicetree.
 
-- Propose and configure a default network interface.
+- If your board supports networking, configure a default interface.
 
-- Enable all GPIO ports.
+- Enable all GPIO ports connected to peripherals or expansion connectors.
 
-.. _setting_configuration_values:
+- If available, enable pinmux and interrupt controller drivers.
 
-Setting configuration values
-============================
+.. _flash-and-debug-support:
 
-Kconfig symbols can be set to their ``BOARD``-specific values in one of two
-ways. The right method to use depends on whether the symbol is *visible* or
-not.
+Flash and debug support
+***********************
 
+Zephyr supports :ref:`west-build-flash-debug` via west extension commands.
 
-Visible and invisible Kconfig symbols
--------------------------------------
+To add ``west flash`` and ``west debug`` support for your board, you need to
+create a :file:`board.cmake` file in your board directory. This file's job is
+to configure a "runner" for your board. (There's nothing special you need to
+do to get ``west build`` support for your board.)
 
-Kconfig symbols come in two varieties:
+"Runners" are Zephyr-specific Python classes that wrap :ref:`flash and debug
+host tools <debug-host-tools>` and integrate with west and the zephyr build
+system to support ``west flash`` and related commands. Each runner supports
+flashing, debugging, or both. You need to configure the arguments to these
+Python scripts in your :file:`board.cmake` to support those commands like this
+example :file:`board.cmake`:
 
-- A Kconfig symbol defined with a prompt is *visible*, and can be configured from
-  the ``menuconfig`` configuration interface.
+.. code-block:: cmake
 
-- A Kconfig symbol defined without a prompt is *invisible*. The user has no
-  direct control over its value.
+   board_runner_args(nrfjprog "--nrf-family=NRF52")
+   board_runner_args(jlink "--device=nrf52" "--speed=4000")
+   board_runner_args(pyocd "--target=nrf52" "--frequency=4000000")
 
-Here are some examples of visible and invisible symbols:
+   include(${ZEPHYR_BASE}/boards/common/nrfjprog.board.cmake)
+   include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+   include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
 
-.. code-block:: none
+This example configures the ``nrfjprog``, ``jlink``, and ``pyocd`` runners.
 
-    config NOT_VISIBLE
-    	bool
-    	default FOO
+.. warning::
 
-    config VISIBLE_1
-    	string
-    	prompt "Foo value"
+   Runners usually have names which match the tools they wrap, so the ``jlink``
+   runner wraps Segger's J-Link tools, and so on. But the runner command line
+   options like ``--speed`` etc. are specific to the Python scripts.
 
-    config VISIBLE_2
-    	# Shorthand for giving a type and a prompt at the same time. This is
-    	# the preferred style in Zephyr.
-    	bool "Enable stuff"
+For more details:
 
+- Run ``west flash --context`` to see a list of available runners which support
+  flashing, and ``west flash --context -r <RUNNER>`` to view the specific options
+  available for an individual runner.
+- Run ``west debug --context`` and ``west debug --context <RUNNER>`` to get
+  the same output for runners which support debugging.
+- Run ``west flash --help`` and ``west debug --help`` for top-level options
+  for flashing and debugging.
+- See :ref:`west-runner` for Python APIs.
+- Look for :file:`board.cmake` files for other boards similar to your own for
+  more examples.
 
-Configuring visible Kconfig symbols
------------------------------------
+To see what a ``west flash`` or ``west debug`` command is doing exactly, run it
+in verbose mode:
 
-Default ``BOARD``-specific configuration values for visible Kconfig symbols
-*should* be given in :file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig`, which
-uses the standard Kconfig :file:`.config` file syntax.
+.. code-block:: sh
 
+   west --verbose flash
+   west --verbose debug
 
-Configuring invisible Kconfig symbols
--------------------------------------
+Verbose mode prints any host tool commands the runner uses.
 
-``BOARD``-specific configuration values for invisible Kconfig symbols *must* be
-given in :file:`boards/ARCHITECTURE/BOARD/Kconfig.defconfig`, which uses
-Kconfig syntax.
+The order of the ``include()`` calls in your :file:`board.cmake` matters. The
+first ``include`` sets the default runner if it's not already set. For example,
+including ``nrfjprog.board.cmake`` first means that ``nrjfprog`` is the default
+flash runner for this board. Since ``nrfjprog`` does not support debugging,
+``jlink`` is the default debug runner.
 
-.. note::
+.. _contributing-your-board:
 
-    Assignments in :file:`.config` files have no effect on invisible symbols,
-    so this scheme is not just an organizational issue.
+Contributing your board
+***********************
 
-Assigning values in :file:`Kconfig.defconfig` relies on being able to define a
-Kconfig symbol in multiple locations. As an example, say we want to set
-``FOO_WIDTH`` below to 32:
+If you want to contribute your board to Zephyr, first -- thanks!
 
-.. code-block:: none
+There are some extra things you'll need to do:
 
-    config FOO_WIDTH
-    	int
+#. Make sure you've followed all the :ref:`porting-general-recommendations`.
+   They are requirements for boards included with Zephyr.
 
-To do this, we extend the definition of ``FOO_WIDTH`` as follows, in
-:file:`Kconfig.defconfig`:
+#. Add documentation for your board using the template file
+   :zephyr_file:`doc/templates/board.tmpl`. See :ref:`zephyr_doc` for
+   information on how to build your documentation before submitting
+   your pull request.
 
-.. code-block:: none
-
-    if BOARD_MY_BOARD
-
-    config FOO_WIDTH
-    	default 32
-
-    endif
-
-.. note::
-
-    Since the type of the symbol (``int``) has already been given at the first
-    definition location, it does not need to be repeated here.
-
-``default`` values in :file:`Kconfig.defconfig` files have priority over
-``default`` values given on the "base" definition of a symbol. Internally, this
-is implemented by including the :file:`Kconfig.defconfig` files first. Kconfig
-uses the first ``default`` with a satisfied condition, where an empty condition
-works like ``if y`` (is always satisfied).
-
-.. note::
-
-    ``range`` properties on ``int`` and ``hex`` symbols work the same way, and
-    can also be added or overridden in :file:`Kconfig.defconfig` files.
-
-If you want a symbol to only be user-configurable on some boards, make its base
-definition have no prompt, and then add a prompt to it in the
-:file:`Kconfig.defconfig` files of the boards where it should be configurable.
-
-.. note::
-
-    Prompts added in :file:`Kconfig.defconfig` files show up at the location of
-    the :file:`Kconfig.defconfig` file in the ``menuconfig`` interface, rather
-    than at the location of the base definition of the symbol.
-
-
-Configuring choices
--------------------
-
-There are two ways to configure a Kconfig ``choice``:
-
-1. By setting one of the choice symbols to ``y`` in :file:`BOARD_defconfig`.
-
-   .. note::
-
-       Setting one choice symbol to ``y`` automatically gives all other choice
-       symbols the value ``n``.
-
-       If multiple choice symbols are set to ``y``, only the last one set to
-       ``y`` will be honored (and the rest will get the value ``n``). This
-       allows a choice selection from a board :file:`defconfig` file to be
-       overridden from an application :file:`prj.conf` file.
-
-2. By changing the ``default`` of the choice in :file:`Kconfig.defconfig`.
-
-   As with symbols, changing the default for a choice is done by defining the
-   choice in multiple locations. For this to work, the choice must have a name.
-
-   As an example, assume that a choice has the following base definition (here,
-   the name of the choice is ``FOO``):
-
-   .. code-block:: none
-
-       choice FOO
-           bool "Foo choice"
-           default B
-
-       config A
-           bool "A"
-
-       config B
-           bool "B"
-
-       endchoice
-
-   To change the default symbol of ``FOO`` to ``A``, you would add the
-   following definition to :file:`Kconfig.defconfig`:
-
-   .. code-block:: none
-
-       choice FOO
-           default A
-       endchoice
-
-The :file:`Kconfig.defconfig` method should be used when the dependencies of
-the choice might not be satisfied. In that case, you're setting the default
-selection whenever the user makes the choice visible.
-
-
-Motivation
-----------
-
-One motivation for this configuration scheme is to avoid making fixed
-``BOARD``-specific settings configurable in the ``menuconfig`` interface. If
-all configuration were done via :file:`BOARD_defconfig`, all symbols would have
-to be visible, as values given in :file:`BOARD_defconfig` have no effect on
-invisible symbols.
-
-Having fixed settings be user-configurable might be confusing, and would allow
-the user to create broken configurations.
-
-.. _kconfig_extensions:
-
-Kconfig extensions
-==================
-
-Zephyr uses the `Kconfiglib <https://github.com/ulfalizer/Kconfiglib>`_
-implementation of `Kconfig
-<https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt>`_, which
-includes some Kconfig extensions.
-
-Environment variables in ``source`` statements are expanded directly in
-Kconfiglib, meaning no ``option env="ENV_VAR"`` "bounce" symbols need to be
-defined. If you need compatibility with the C Kconfig tools for an out-of-tree
-Kconfig tree, you can still add such symbols, but they must have the same name
-as the corresponding environment variables.
-
-.. note::
-
-    ``option env`` has been removed from the C tools in Linux 4.18 as well.
-
-    The recommended syntax for referencing environment variables is now
-    ``$(FOO)`` rather than ``$FOO``. This uses the new `Kconfig preprocessor
-    <https://raw.githubusercontent.com/torvalds/linux/master/Documentation/kbuild/kconfig-macro-language.txt>`_.
-
-The following Kconfig extensions are available:
-
-- The ``source`` statement supports glob patterns and includes each matching
-  file. A pattern is required to match at least one file.
-
-  Consider the following example:
-
-  .. code-block:: none
-
-      source "foo/bar/*/Kconfig"
-
-  If the pattern ``foo/bar/*/Kconfig`` matches the files
-  :file:`foo/bar/baz/Kconfig` and :file:`foo/bar/qaz/Kconfig`, the statement
-  above is equivalent to the following two ``source`` statements:
-
-  .. code-block:: none
-
-      source "foo/bar/baz/Kconfig"
-      source "foo/bar/qaz/Kconfig"
-
-  .. note::
-
-      The wildcard patterns accepted are the same as for the Python `glob
-      <https://docs.python.org/3/library/glob.html>`_ module.
-
-  If no files match the pattern, an error is generated.
-
-  For cases where it's okay for a pattern to match no files (or for a plain
-  filename to not exist), a separate ``osource`` (*optional source*) statement
-  is available. ``osource`` is a no-op in case of no matches.
-
-  .. note::
-
-      ``source`` and ``osource`` are analogous to ``include`` and
-      ``-include`` in Make.
-
-- An ``rsource`` statement is available for including files specified with a
-  relative path. The path is relative to the directory of the :file:`Kconfig`
-  file that contains the ``rsource`` statement.
-
-  As an example, assume that :file:`foo/Kconfig` is the top-level
-  :file:`Kconfig` file, and that :file:`foo/bar/Kconfig` has the following
-  statements:
-
-  .. code-block:: none
-
-      source "qaz/Kconfig1"
-      rsource "qaz/Kconfig2"
-
-  This will include the two files :file:`foo/qaz/Kconfig1` and
-  :file:`foo/bar/qaz/Kconfig2`.
-
-  ``rsource`` can be used to create :file:`Kconfig` "subtrees" that can be
-  moved around freely.
-
-  .. note::
-
-     ``rsource`` also supports glob patterns.
-
-- An ``orsource`` statement, which combines ``osource`` and ``rsource``.
-
-  For example, the following statement will include :file:`Kconfig1` and
-  :file:`Kconfig2` from the current directory (if they exist):
-
-  .. code-block:: none
-
-      orsource "Kconfig[12]"
-
-- ``def_int``, ``def_hex``, and ``def_string`` keywords, which are analogous to
-  ``def_bool``. These set the type and add a ``default`` at the same time.
-
-
-Old Zephyr Kconfig behavior for defaults
-========================================
-
-Prior to early August 2018 (during development of Zephyr 1.13), Zephyr used a
-custom patch that made Kconfig prefer the last ``default`` with a satisfied
-condition, instead of the first one. This patch has been removed.
-
-Consider this example:
-
-.. code-block:: none
-
-    config FOO
-        string
-        default "first" if n
-        default "second"
-        default "third" if n
-        default "fourth"
-        default "fifth" if n
-
-With the old custom behavior, ``FOO`` got the value ``"fourth"``, from the last
-``default`` with a satisfied condition.
-
-With the new behavior, ``FOO`` gets the value ``"second"``, from the first
-``default`` with a satisfied condition. This is standard Kconfig behavior.
-
-There are two issues with the old behavior:
-
-1. It's inconsistent with how Kconfig works in other projects, which is
-   confusing.
-
-2. Due to oversights, earlier ``range`` properties were still preferred, as
-   well as earlier ``default`` properties on choices.
-
-   In addition to being inconsistent, this made it impossible to override
-   ``range`` properties and ``default`` properties on choices if the base
-   definition of the symbol/choice already had ``range``/``default``
-   properties.
-
-.. note::
-
-    If you're maintaining an external project that has symbols with multiple
-    ``default`` properties, you will need to swap the order of the ``default``
-    properties to get the same behavior as before.
-
-    If your external project is modifying symbols in the base Zephyr
-    configuration by sourcing ``Kconfig.zephyr`` and adding additional symbol
-    definitions, you might need to move the ``source`` from before the extra
-    symbol definitions to after them.
-
-
-More Kconfig resources
-======================
-
-The official documentation for Kconfig is `kconfig-language.txt
-<https://raw.githubusercontent.com/torvalds/linux/master/Documentation/kbuild/kconfig-language.txt>`_
-and `kconfig-macro-language.txt
-<https://raw.githubusercontent.com/torvalds/linux/master/Documentation/kbuild/kconfig-macro-language.txt>`_.
-
-The :ref:`kconfig_tips_and_tricks` page has some best practices and
-tips for writing Kconfig files.
-
-The `kconfiglib.py
-<https://raw.githubusercontent.com/zephyrproject-rtos/zephyr/master/scripts/kconfig/kconfiglib.py>`_
-docstring (at the top of the file) goes over how symbol values are calculated
-in detail.
+#. Prepare a pull request adding your board which follows the
+   :ref:`contribute_guidelines`.

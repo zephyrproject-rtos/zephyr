@@ -49,7 +49,7 @@ void z_sys_device_do_config_level(s32_t level)
 	for (info = config_levels[level]; info < config_levels[level+1];
 								info++) {
 		int retval;
-		struct device_config *device_conf = info->config;
+		const struct device_config *device_conf = info->config;
 
 		retval = device_conf->init(info);
 		if (retval != 0) {

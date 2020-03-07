@@ -1,9 +1,7 @@
-# Kconfig - Atmel SAM I2S bus driver configuration options
-#
+# Atmel SAM I2S bus driver configuration options
+
 # Copyright (c) 2017 Piotr Mienkowski
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig I2S_SAM_SSC
 	bool "Atmel SAM MCU family I2S (SSC) Bus Driver"

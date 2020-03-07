@@ -1,0 +1,37 @@
+# Copyright (c) 2019, Song Qiang <songqiang1304521@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 DMA controller
+
+compatible: "st,stm32-dma"
+
+include: dma-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    st,mem2mem:
+      type: boolean
+      description: If the DMA controller V1 supports memory to memory transfer
+
+    "#dma-cells":
+      const: 4
+
+# Parameter syntax of stm32 follows the dma client dts syntax
+# in the Linux kernel declared in
+# https://git.kernel.org/pub/scm/linux/kernel/git/devicetree/devicetree-rebasing.git/plain/Bindings/dma/stm32-dma.txt
+#
+# channel: DMA channel
+# slot: DMA stream of the DMA channel for DMA V1 or for DMA V2 with MUX peripheral request else NA
+# channel-config: configuration of the selected DMA channel
+# features: fifo threshold if relevant for DMA V1 or TBD for DMA V2
+
+dma-cells:
+  - channel
+  - slot
+  - channel-config
+  - features

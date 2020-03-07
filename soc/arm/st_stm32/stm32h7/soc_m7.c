@@ -14,7 +14,7 @@
 #include <init.h>
 #include <soc.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 #if defined(CONFIG_STM32H7_DUAL_CORE)
 static int stm32h7_m4_wakeup(struct device *arg)
@@ -84,6 +84,14 @@ static int stm32h7_init(struct device *arg)
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
 	/* At reset, system core clock is set to 64 MHz from HSI */
 	SystemCoreClock = 64000000;
+
+	/* Power Configuration */
+#ifdef SMPS
+	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
+#endif
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+	while (LL_PWR_IsActiveFlag_VOS() == 0) {
+	}
 
 	return 0;
 }

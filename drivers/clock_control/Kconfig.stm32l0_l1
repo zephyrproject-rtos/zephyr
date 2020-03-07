@@ -1,9 +1,7 @@
-# Kconfig - STM32L0 and STM32L1 PLL configuration options
-#
+# STM32L0 and STM32L1 PLL configuration options
+
 # Copyright (c) 2019 Linaro
-#
-#  SPDX-License-Identifier: Apache-2.0
-#
+# SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_STM32L0X || SOC_SERIES_STM32L1X
 
@@ -13,8 +11,8 @@ config CLOCK_STM32_PLL_MULTIPLIER
 	default 4
 	range 3 48
 	help
-	 PLL multiplier, allowed values: 3, 4, 6, 8, 12, 16, 24, 32, 48.
-	 PLL output must not exceed 96MHz(1.8V)/48MHz(1.5V)/24MHz(1.2V).
+	  PLL multiplier, allowed values: 3, 4, 6, 8, 12, 16, 24, 32, 48.
+	  PLL output must not exceed 96MHz(1.8V)/48MHz(1.5V)/24MHz(1.2V).
 
 config CLOCK_STM32_PLL_DIVISOR
 	int "PLL divisor"

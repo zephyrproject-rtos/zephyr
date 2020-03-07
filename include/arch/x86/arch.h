@@ -6,7 +6,12 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_ARCH_H_
 
-#include <generated_dts_board.h>
+#include <devicetree.h>
+
+/* Changing this value will require manual changes to exception and IDT setup
+ * in locore.S for intel64
+ */
+#define Z_X86_OOPS_VECTOR	32
 
 #if !defined(_ASMLANGUAGE)
 
@@ -15,8 +20,10 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include <irq.h>
+#include <arch/x86/mmustructs.h>
+#include <arch/x86/thread_stack.h>
 
-static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
+static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	if ((key & 0x00000200U) != 0U) { /* 'IF' bit */
 		__asm__ volatile ("sti" ::: "memory");
@@ -197,7 +204,9 @@ extern unsigned char _irq_to_interrupt_vector[];
 
 #endif /* _ASMLANGUAGE */
 
-#ifdef CONFIG_X86_LONGMODE
+#include <drivers/interrupt_controller/sysapic.h>
+
+#ifdef CONFIG_X86_64
 #include <arch/x86/intel64/arch.h>
 #else
 #include <arch/x86/ia32/arch.h>
@@ -207,17 +216,17 @@ extern unsigned char _irq_to_interrupt_vector[];
 
 #ifndef _ASMLANGUAGE
 
-extern void z_arch_irq_enable(unsigned int irq);
-extern void z_arch_irq_disable(unsigned int irq);
+extern void arch_irq_enable(unsigned int irq);
+extern void arch_irq_disable(unsigned int irq);
 
 extern u32_t z_timer_cycle_get_32(void);
-#define z_arch_k_cycle_get_32() z_timer_cycle_get_32()
 
-/**
- * Returns true if interrupts were unlocked prior to the
- * z_arch_irq_lock() call that produced the key argument.
- */
-static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
+static inline u32_t arch_k_cycle_get_32(void)
+{
+	return z_timer_cycle_get_32();
+}
+
+static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
 	return (key & 0x200) != 0;
 }

@@ -612,7 +612,7 @@ static void prov_ccc_changed(const struct bt_gatt_attr *attr, u16_t value)
 	BT_DBG("value 0x%04x", value);
 }
 
-static bool prov_ccc_write(struct bt_conn *conn,
+static ssize_t prov_ccc_write(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, u16_t value)
 {
 	struct bt_mesh_proxy_client *client;
@@ -621,7 +621,7 @@ static bool prov_ccc_write(struct bt_conn *conn,
 
 	if (value != BT_GATT_CCC_NOTIFY) {
 		BT_WARN("Client wrote 0x%04x instead enabling notify", value);
-		return false;
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
 	/* If a connection exists there must be a client */
@@ -633,7 +633,7 @@ static bool prov_ccc_write(struct bt_conn *conn,
 		bt_mesh_pb_gatt_open(conn);
 	}
 
-	return true;
+	return sizeof(value);
 }
 
 /* Mesh Provisioning Service Declaration */
@@ -731,8 +731,8 @@ static void proxy_ccc_changed(const struct bt_gatt_attr *attr, u16_t value)
 	BT_DBG("value 0x%04x", value);
 }
 
-static bool proxy_ccc_write(struct bt_conn *conn,
-			    const struct bt_gatt_attr *attr, u16_t value)
+static ssize_t proxy_ccc_write(struct bt_conn *conn,
+			       const struct bt_gatt_attr *attr, u16_t value)
 {
 	struct bt_mesh_proxy_client *client;
 
@@ -740,7 +740,7 @@ static bool proxy_ccc_write(struct bt_conn *conn,
 
 	if (value != BT_GATT_CCC_NOTIFY) {
 		BT_WARN("Client wrote 0x%04x instead enabling notify", value);
-		return false;
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 	}
 
 	/* If a connection exists there must be a client */
@@ -752,7 +752,7 @@ static bool proxy_ccc_write(struct bt_conn *conn,
 		k_work_submit(&client->send_beacons);
 	}
 
-	return true;
+	return sizeof(value);
 }
 
 /* Mesh Proxy Service Declaration */
@@ -862,16 +862,6 @@ static bool client_filter_match(struct bt_mesh_proxy_client *client,
 
 	BT_DBG("filter_type %u addr 0x%04x", client->filter_type, addr);
 
-	if (client->filter_type == WHITELIST) {
-		for (i = 0; i < ARRAY_SIZE(client->filter); i++) {
-			if (client->filter[i] == addr) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
 	if (client->filter_type == BLACKLIST) {
 		for (i = 0; i < ARRAY_SIZE(client->filter); i++) {
 			if (client->filter[i] == addr) {
@@ -880,6 +870,18 @@ static bool client_filter_match(struct bt_mesh_proxy_client *client,
 		}
 
 		return true;
+	}
+
+	if (addr == BT_MESH_ADDR_ALL_NODES) {
+		return true;
+	}
+
+	if (client->filter_type == WHITELIST) {
+		for (i = 0; i < ARRAY_SIZE(client->filter); i++) {
+			if (client->filter[i] == addr) {
+				return true;
+			}
+		}
 	}
 
 	return false;
@@ -1093,7 +1095,7 @@ static bool advertise_subnet(struct bt_mesh_subnet *sub)
 	}
 
 	return (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING ||
-		bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED);
+		bt_mesh_gatt_proxy_get() != BT_MESH_GATT_PROXY_NOT_SUPPORTED);
 }
 
 static struct bt_mesh_subnet *next_sub(void)
@@ -1136,7 +1138,7 @@ static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 	BT_DBG("");
 
 	if (conn_count == CONFIG_BT_MAX_CONN) {
-		BT_WARN("Connectable advertising deferred (max connections)");
+		BT_DBG("Connectable advertising deferred (max connections)");
 		return remaining;
 	}
 
@@ -1160,11 +1162,7 @@ static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 	}
 
 	if (sub->node_id == BT_MESH_NODE_IDENTITY_STOPPED) {
-		if (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
-			net_id_adv(sub);
-		} else {
-			return gatt_proxy_advertise(next_sub());
-		}
+		net_id_adv(sub);
 	}
 
 	subnet_count = sub_count();

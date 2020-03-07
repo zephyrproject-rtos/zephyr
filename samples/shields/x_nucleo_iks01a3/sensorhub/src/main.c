@@ -6,7 +6,7 @@
 
 #include <zephyr.h>
 #include <device.h>
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <stdio.h>
 #include <sys/util.h>
 
@@ -290,6 +290,6 @@ void main(void)
 #endif
 
 		cnt++;
-		k_sleep(2000);
+		k_sleep(K_MSEC(2000));
 	}
 }

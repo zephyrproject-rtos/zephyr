@@ -1,0 +1,42 @@
+# STM32 LPTIM configuration options
+
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STM32_LPTIM_TIMER
+	bool "STM32 Low Power Timer"
+	depends on (SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX)
+	depends on CLOCK_CONTROL
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the LowPower Timer
+	  and provides the standard "system clock driver" interfaces.
+
+if STM32_LPTIM_TIMER
+
+choice STM32_LPTIM_CLOCK
+	prompt "LPTIM clock value configuration"
+
+config STM32_LPTIM_CLOCK_LSI
+	bool "LSI"
+	help
+	  Use LSI as LPTIM clock
+
+config STM32_LPTIM_CLOCK_LSE
+	bool "LSE"
+	help
+	  Use LSE as LPTIM clock
+
+endchoice
+
+config STM32_LPTIM_CLOCK
+	int "LPTIM clock value"
+	default 32000 if STM32_LPTIM_CLOCK_LSI
+	default 32768 if STM32_LPTIM_CLOCK_LSE
+
+config STM32_LPTIM_TIMEBASE
+	hex "LPTIM AutoReload value"
+	default 0xF9FF if STM32_LPTIM_CLOCK_LSI
+	default 0xFFFF if STM32_LPTIM_CLOCK_LSE
+
+endif # STM32_LPTIM_TIMER

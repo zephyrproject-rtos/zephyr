@@ -303,7 +303,9 @@ def main():
                     table_index = irq1 - offset
 
             if swt[table_index] != (0, spurious_handler):
-                error("multiple registrations at table_index %d for irq %d (0x%x)" % (table_index, irq, irq))
+                error(f"multiple registrations at table_index {table_index} for irq {irq} (0x{irq:x})"
+                      + "\nHas IRQ_CONNECT or IRQ_DIRECT_CONNECT accidentally been invoked on the same irq multiple times?"
+                )
 
             swt[table_index] = (param, func)
 

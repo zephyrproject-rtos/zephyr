@@ -19,6 +19,7 @@
 #include <zephyr.h>
 #include <sys/ring_buffer.h>
 
+#include <usb/usb_device.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(cdc_acm_echo, LOG_LEVEL_INF);
 
@@ -81,29 +82,35 @@ void main(void)
 		return;
 	}
 
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
+
 	ring_buf_init(&ringbuf, sizeof(ring_buffer), ring_buffer);
 
 	LOG_INF("Wait for DTR");
 
 	while (true) {
-		uart_line_ctrl_get(dev, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		} else {
 			/* Give CPU resources to low priority threads. */
-			k_sleep(100);
+			k_sleep(K_MSEC(100));
 		}
 	}
 
 	LOG_INF("DTR set");
 
 	/* They are optional, we use them to test the interrupt endpoint */
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DCD, 1);
+	ret = uart_line_ctrl_set(dev, UART_LINE_CTRL_DCD, 1);
 	if (ret) {
 		LOG_WRN("Failed to set DCD, ret code %d", ret);
 	}
 
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DSR, 1);
+	ret = uart_line_ctrl_set(dev, UART_LINE_CTRL_DSR, 1);
 	if (ret) {
 		LOG_WRN("Failed to set DSR, ret code %d", ret);
 	}
@@ -111,7 +118,7 @@ void main(void)
 	/* Wait 1 sec for the host to do all settings */
 	k_busy_wait(1000000);
 
-	ret = uart_line_ctrl_get(dev, LINE_CTRL_BAUD_RATE, &baudrate);
+	ret = uart_line_ctrl_get(dev, UART_LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret) {
 		LOG_WRN("Failed to get baudrate, ret code %d", ret);
 	} else {

@@ -8,7 +8,7 @@
  * https://www.st.com/resource/en/datasheet/stts751.pdf
  */
 
-#include <sensor.h>
+#include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
@@ -18,8 +18,7 @@
 
 #include "stts751.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(STTS751);
+LOG_MODULE_REGISTER(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int stts751_set_odr_raw(struct device *dev, u8_t odr)
 {
@@ -32,7 +31,7 @@ static int stts751_sample_fetch(struct device *dev,
 				enum sensor_channel chan)
 {
 	struct stts751_data *data = dev->driver_data;
-	axis1bit16_t raw_temp;
+	union axis1bit16_t raw_temp;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -201,6 +200,7 @@ static const struct stts751_config stts751_config = {
 #ifdef CONFIG_STTS751_TRIGGER
 	.event_port	= DT_INST_0_ST_STTS751_DRDY_GPIOS_CONTROLLER,
 	.event_pin	= DT_INST_0_ST_STTS751_DRDY_GPIOS_PIN,
+	.int_flags	= DT_INST_0_ST_STTS751_DRDY_GPIOS_FLAGS,
 #endif
 #if defined(DT_ST_STTS751_BUS_I2C)
 	.bus_init = stts751_i2c_init,

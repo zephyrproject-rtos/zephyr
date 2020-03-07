@@ -41,6 +41,8 @@
 extern void net_if_init(void);
 extern void net_if_post_init(void);
 extern void net_if_carrier_down(struct net_if *iface);
+extern void net_if_stats_reset(struct net_if *iface);
+extern void net_if_stats_reset_all(void);
 
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
 extern void net_context_init(void);
@@ -88,7 +90,34 @@ char *net_sprint_addr(sa_family_t af, const void *addr);
 int net_context_get_timestamp(struct net_context *context,
 			      struct net_pkt *pkt,
 			      struct net_ptp_time *timestamp);
+#else
+static inline int net_context_get_timestamp(struct net_context *context,
+					    struct net_pkt *pkt,
+					    struct net_ptp_time *timestamp)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(timestamp);
+
+	return -ENOTSUP;
+}
 #endif
+
+#if defined(CONFIG_COAP)
+/**
+ * @brief CoAP init function declaration. It belongs here because we don't want
+ * to expose it as a public API -- it should only be called once, and only by
+ * net_core.
+ */
+extern void net_coap_init(void);
+#else
+static inline void net_coap_init(void)
+{
+	return;
+}
+#endif
+
+
 
 #if defined(CONFIG_NET_GPTP)
 /**
@@ -120,6 +149,19 @@ extern char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
 				    char *buf, int buflen);
 extern u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto);
 
+/**
+ * @brief Deliver the incoming packet through the recv_cb of the net_context
+ *        to the upper layers
+ *
+ * @param conn		Network connection
+ * @param pkt		Network packet
+ * @param ip_hdr	Pointer to IP header, optional
+ * @param proto_hdr	Pointer to transport layer protocol header, optional
+ * @param user_data	User data passed as an argument
+ *
+ * @return NET_OK	if the packet is consumed through the recv_cb
+ *         NET_DROP	if the recv_cb isn't set
+ */
 enum net_verdict net_context_packet_received(struct net_conn *conn,
 					     struct net_pkt *pkt,
 					     union net_ip_header *ip_hdr,

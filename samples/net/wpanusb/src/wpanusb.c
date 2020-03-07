@@ -401,6 +401,7 @@ out:
 
 void main(void)
 {
+	int ret;
 	LOG_INF("Starting wpanusb");
 
 	ieee802154_dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
@@ -417,6 +418,11 @@ void main(void)
 
 	radio_api = (struct ieee802154_radio_api *)ieee802154_dev->driver_api;
 
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
 	/* TODO: Initialize more */
 
 	LOG_DBG("radio_api %p initialized", radio_api);

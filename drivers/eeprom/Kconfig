@@ -1,0 +1,82 @@
+# EEPROM driver configuration options
+
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig EEPROM
+	bool "EEPROM hardware support"
+	help
+	  Enable support for EEPROM hardware.
+
+if EEPROM
+
+module = EEPROM
+module-str = eeprom
+source "subsys/logging/Kconfig.template.log_config"
+
+config EEPROM_SHELL
+	bool "Enable EEPROM shell"
+	depends on SHELL
+	help
+	  Enable the EEPROM shell with EEPROM related commands.
+
+config EEPROM_SHELL_BUFFER_SIZE
+	int "EEPROM shell buffer size"
+	default 256
+	depends on EEPROM_SHELL
+	help
+	  Size of the buffer used for EEPROM read/write commands in
+	  the EEPROM shell.
+
+config EEPROM_AT2X
+	bool
+	help
+	  Enable support for Atmel AT2x (and compatible) I2C/SPI
+	  EEPROMs.
+
+config EEPROM_AT24
+	bool "Atmel AT24 (and compatible) I2C EEPROM support"
+	depends on (I2C && HAS_DTS_I2C)
+	select EEPROM_AT2X
+	help
+	  Enable support for Atmel AT24 (and compatible) I2C EEPROMs.
+
+config EEPROM_AT25
+	bool "Atmel AT25 (and compatible) SPI EEPROM support"
+	depends on SPI
+	select EEPROM_AT2X
+	help
+	  Enable support for Atmel AT25 (and compatible) SPI EEPROMs.
+
+source "drivers/eeprom/Kconfig.stm32"
+
+config EEPROM_SIMULATOR
+	bool "Simulated EEPROM driver"
+	select STATS
+	select STATS_NAMES
+	help
+	  Enable Simulated EEPROM driver.
+
+config EEPROM_SIMULATOR_SIMULATE_TIMING
+	bool "Enable hardware timing simulation"
+	depends on EEPROM_SIMULATOR
+	help
+	  Enable Simulated hardware timing.
+
+if EEPROM_SIMULATOR_SIMULATE_TIMING
+
+config EEPROM_SIMULATOR_MIN_READ_TIME_US
+	int
+	prompt "Minimum read time (µS)"
+	default 2
+	range 1 1000000
+
+config EEPROM_SIMULATOR_MIN_WRITE_TIME_US
+	int
+	prompt "Minimum write time (µS)"
+	default 100
+	range 1 1000000
+
+endif # EEPROM_SIMULATOR_SIMULATE_TIMING
+
+endif # EEPROM

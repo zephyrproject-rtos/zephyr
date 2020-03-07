@@ -11,7 +11,7 @@ your application and allows enabled backends to visualize the inner-working of
 the kernel and various subsystems.
 
 Applications and tracing tools can create a backend that redefines the
-macros declared in :zephyr_file:`include/debug/tracing.h` that are called
+macros declared in :zephyr_file:`include/tracing/tracing.h` that are called
 across the kernel in key spots.
 
 .. doxygengroup:: tracing_apis
@@ -133,8 +133,7 @@ internally and statically at compile-time in the bottom-layer.
 How to Activate?
 ================
 
-Make sure :option:`CONFIG_TRACING_CTF` is set to ``y`` (:option:`CONFIG_TRACING_CTF_BOTTOM_POSIX`
-is selected by default when using ``BOARD_NATIVE_POSIX``).
+Make sure :option:`CONFIG_TRACING_CTF` is set to ``y``
 
 
 How to Use?
@@ -147,7 +146,7 @@ The resulting CTF output can be visualized using babeltrace or TraceCompass:
 
 - Create a new empty directory and copy into it:
 
-  - The TSDL file (``subsys/debug/tracing/ctf/tsdl/metadata``)
+  - The TSDL file (``subsys/tracing/ctf/tsdl/metadata``)
 
   - The CTF output file renaming it to ``channel0_0``
 
@@ -278,6 +277,3 @@ Locking may not be needed if multiple independent channels are available.
         E.g. native_posix or board with multi-channel DMA. Lock-free.
 
         ``emit(a ## b ## c, thread_id);``
-
-
-

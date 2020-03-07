@@ -30,7 +30,7 @@ Hardware
 
 General information about the board can be found at the `UP Squared`_ website.
 
-.. include:: ../../../../soc/x86/apollo_lake/doc/supported_features.rst
+.. include:: ../../../../soc/x86/apollo_lake/doc/supported_features.txt
 
 GPIO
 ----

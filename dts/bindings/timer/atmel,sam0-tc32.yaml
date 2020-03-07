@@ -1,11 +1,7 @@
 # Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
 # SPDX-License-Identifier: Apache-2.0
 
-title: Atmel SAM0 32-bit Basic Timer
-
-description: >
-    This binding gives a base representation of the Atmel SAM0 timer
-    counter (TC) operating in 32-bit wide mode.
+description: Atmel SAM0 basic timer counter (TC) operating in 32-bit wide mode
 
 compatible: "atmel,sam0-tc32"
 

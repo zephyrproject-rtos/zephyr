@@ -1,14 +1,8 @@
-# Kconfig - Kinetis K82F25615 configuration options
-#
-# Copyright (c) 2019 SEAL AG
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# Kinetis K82F25615 configuration options
 
-if SOC_MK82F25615
+# Copyright (c) 2019 SEAL AG
+# SPDX-License-Identifier: Apache-2.0
 
 config SOC
-	string
 	default "mk82f25615"
-
-endif # SOC_MK82F25615
+	depends on SOC_MK82F25615

@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic Control Interface for ARM TrustZone CryptoCell 310
-
-description: >
-    This is a representation of the Nordic Control Interface for ARM TrustZone CryptoCell 310
+description: Nordic Control Interface for ARM TrustZone CryptoCell 310
 
 compatible: "nordic,nrf-cc310"
 

@@ -15,6 +15,7 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_IRQ_OFFLOAD
 typedef void (*irq_offload_routine_t)(void *parameter);
 
 /**
@@ -30,6 +31,7 @@ typedef void (*irq_offload_routine_t)(void *parameter);
  * interrupt
  */
 void irq_offload(irq_offload_routine_t routine, void *parameter);
+#endif
 
 #ifdef __cplusplus
 }

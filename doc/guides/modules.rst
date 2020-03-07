@@ -1,4 +1,3 @@
-
 .. _modules:
 
 Modules (External projects)
@@ -30,8 +29,10 @@ If you have :ref:`west <west>` installed, you don't need to worry about how
 this variable is defined unless you are adding a new module. The build system
 knows how to use west to set :makevar:`ZEPHYR_MODULES`. You can add additional
 modules to this list by setting the :makevar:`ZEPHYR_EXTRA_MODULES` CMake
-variable. This can be useful if you want to keep the list of modules found with
-west and also add your own.
+variable or by adding a :makevar:`ZEPHYR_EXTRA_MODULES` line to ``.zephyrrc``
+(See the section on :ref:`env_vars` for more details). This can be
+useful if you want to keep the list of modules found with west and also add
+your own.
 
 See the section about :ref:`west-multi-repo` for more details.
 
@@ -80,6 +81,26 @@ Each project in the ``west list`` output is tested like this:
      build:
        cmake: .
        kconfig: Kconfig
+
+- To execute both tests and samples available in modules, the Zephyr test runner
+  (sanitycheck) should be pointed to the directories containing those samples and
+  tests. This can be done by specifying the path to both samples and tests in the
+  :file:`zephyr/module.yml` file.  Additionally, if a module defines out of tree
+  boards, the module file can point sanitycheck to the path where those files
+  are maintained in the module. For example:
+
+
+  .. code-block:: yaml
+
+      build:
+        cmake: .
+      samples:
+        - samples
+      tests:
+        - tests
+      boards:
+        - boards
+
 
 - Otherwise (i.e. if the project has no :file:`zephyr/module.yml`), the
   build system looks for :file:`zephyr/CMakeLists.txt` and

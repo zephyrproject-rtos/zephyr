@@ -1,12 +1,6 @@
-#
 # Copyright (c) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
-if SOC_POSIX
 
 config SOC
 	default "inf_clock"
-
-endif
+	depends on SOC_POSIX

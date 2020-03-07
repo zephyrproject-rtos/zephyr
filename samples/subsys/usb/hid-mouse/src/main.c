@@ -76,10 +76,11 @@ LOG_MODULE_REGISTER(main);
 
 #define LED_PORT	DT_ALIAS_LED0_GPIOS_CONTROLLER
 #define LED		DT_ALIAS_LED0_GPIOS_PIN
+#define LED_FLAGS	DT_ALIAS_LED0_GPIOS_FLAGS
 
 static const u8_t hid_report_desc[] = HID_MOUSE_REPORT_DESC(2);
 
-static u32_t def_val[4];
+static u8_t def_val[4];
 static volatile u8_t status[4];
 static K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
 static struct gpio_callback callback[4];
@@ -103,7 +104,7 @@ static void status_cb(enum usb_dc_status_code status, const u8_t *param)
 static void left_button(struct device *gpio, struct gpio_callback *cb,
 			u32_t pins)
 {
-	u32_t cur_val;
+	int ret;
 	u8_t state = status[MOUSE_BTN_REPORT_POS];
 
 	if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
@@ -113,8 +114,14 @@ static void left_button(struct device *gpio, struct gpio_callback *cb,
 		}
 	}
 
-	gpio_pin_read(gpio, PIN0, &cur_val);
-	if (def_val[0] != cur_val) {
+	ret = gpio_pin_get(gpio, PIN0);
+	if (ret < 0) {
+		LOG_ERR("Failed to get the state of pin %u, error: %d",
+			PIN0, ret);
+		return;
+	}
+
+	if (def_val[0] != (u8_t)ret) {
 		state |= MOUSE_BTN_LEFT;
 	} else {
 		state &= ~MOUSE_BTN_LEFT;
@@ -130,7 +137,7 @@ static void left_button(struct device *gpio, struct gpio_callback *cb,
 static void right_button(struct device *gpio, struct gpio_callback *cb,
 			 u32_t pins)
 {
-	u32_t cur_val;
+	int ret;
 	u8_t state = status[MOUSE_BTN_REPORT_POS];
 
 	if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
@@ -140,8 +147,14 @@ static void right_button(struct device *gpio, struct gpio_callback *cb,
 		}
 	}
 
-	gpio_pin_read(gpio, PIN1, &cur_val);
-	if (def_val[0] != cur_val) {
+	ret = gpio_pin_get(gpio, PIN1);
+	if (ret < 0) {
+		LOG_ERR("Failed to get the state of pin %u, error: %d",
+			PIN1, ret);
+		return;
+	}
+
+	if (def_val[1] != (u8_t)ret) {
 		state |= MOUSE_BTN_RIGHT;
 	} else {
 		state &= ~MOUSE_BTN_RIGHT;
@@ -157,12 +170,17 @@ static void right_button(struct device *gpio, struct gpio_callback *cb,
 #ifdef DT_ALIAS_SW2_GPIOS_PIN
 static void x_move(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 {
-	u32_t cur_val;
+	int ret;
 	u8_t state = status[MOUSE_X_REPORT_POS];
 
-	gpio_pin_read(gpio, PIN2, &cur_val);
+	ret = gpio_pin_get(gpio, PIN2);
+	if (ret < 0) {
+		LOG_ERR("Failed to get the state of pin %u, error: %d",
+			PIN2, ret);
+		return;
+	}
 
-	if (def_val[2] != cur_val) {
+	if (def_val[2] != (u8_t)ret) {
 		state += 10U;
 	}
 
@@ -176,12 +194,17 @@ static void x_move(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 #ifdef DT_ALIAS_SW3_GPIOS_PIN
 static void y_move(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 {
-	u32_t cur_val;
+	int ret;
 	u8_t state = status[MOUSE_Y_REPORT_POS];
 
-	gpio_pin_read(gpio, PIN3, &cur_val);
+	ret = gpio_pin_get(gpio, PIN3);
+	if (ret < 0) {
+		LOG_ERR("Failed to get the state of pin %u, error: %d",
+			PIN3, ret);
+		return;
+	}
 
-	if (def_val[3] != cur_val) {
+	if (def_val[3] != (u8_t)ret) {
 		state += 10U;
 	}
 
@@ -193,28 +216,54 @@ static void y_move(struct device *gpio, struct gpio_callback *cb, u32_t pins)
 #endif
 
 int callbacks_configure(struct device *gpio, u32_t pin, int flags,
-			void (*handler)(struct device*, struct gpio_callback*,
-			u32_t), struct gpio_callback *callback, u32_t *val)
+			gpio_callback_handler_t handler,
+			struct gpio_callback *callback, u8_t *val)
 {
+	int ret;
+
 	if (!gpio) {
 		LOG_ERR("Could not find PORT");
 		return -ENXIO;
 	}
-	gpio_pin_configure(gpio, pin,
-			   GPIO_DIR_IN | GPIO_INT |
-			   GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE |
-			   flags);
-	gpio_pin_read(gpio, pin, val);
+
+	ret = gpio_pin_configure(gpio, pin, GPIO_INPUT | flags);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure pin %u, error: %d",
+			pin, ret);
+		return ret;
+	}
+
+	ret = gpio_pin_get(gpio, pin);
+	if (ret < 0) {
+		LOG_ERR("Failed to get the state of pin %u, error: %d",
+			pin, ret);
+		return ret;
+	}
+
+	*val = (u8_t)ret;
+
 	gpio_init_callback(callback, handler, BIT(pin));
-	gpio_add_callback(gpio, callback);
-	gpio_pin_enable_callback(gpio, pin);
+	ret = gpio_add_callback(gpio, callback);
+	if (ret < 0) {
+		LOG_ERR("Failed to add the callback for pin %u, error: %d",
+			pin, ret);
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure(gpio, pin, GPIO_INT_EDGE_BOTH);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure interrupt for pin %u, error: %d",
+			pin, ret);
+		return ret;
+	}
+
 	return 0;
 }
 
 void main(void)
 {
+	int ret;
 	u8_t report[4] = { 0x00 };
-	u8_t toggle = 0U;
 	struct device *led_dev, *hid_dev;
 
 	led_dev = device_get_binding(LED_PORT);
@@ -229,7 +278,11 @@ void main(void)
 		return;
 	}
 
-	gpio_pin_configure(led_dev, LED, GPIO_DIR_OUT);
+	ret = gpio_pin_configure(led_dev, LED, GPIO_OUTPUT | LED_FLAGS);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure the LED pin, error: %d", ret);
+		return;
+	}
 
 	if (callbacks_configure(device_get_binding(PORT0), PIN0, PIN0_FLAGS,
 				&left_button, &callback[0], &def_val[0])) {
@@ -261,13 +314,17 @@ void main(void)
 	}
 #endif
 
-	static const struct hid_ops ops = {
-			.status_cb = status_cb
-	};
 	usb_hid_register_device(hid_dev,
 				hid_report_desc, sizeof(hid_report_desc),
-				&ops);
+				NULL);
+
 	usb_hid_init(hid_dev);
+
+	ret = usb_enable(status_cb);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
 
 	while (true) {
 		k_sem_take(&sem, K_FOREVER);
@@ -280,7 +337,9 @@ void main(void)
 		hid_int_ep_write(hid_dev, report, sizeof(report), NULL);
 
 		/* Toggle LED on sent report */
-		gpio_pin_write(led_dev, LED, toggle);
-		toggle = !toggle;
+		ret = gpio_pin_toggle(led_dev, LED);
+		if (ret < 0) {
+			LOG_ERR("Failed to toggle the LED pin, error: %d", ret);
+		}
 	}
 }

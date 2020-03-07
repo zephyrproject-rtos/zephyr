@@ -275,6 +275,7 @@
 struct enc424j600_config {
 	const char *gpio_port;
 	u8_t gpio_pin;
+	gpio_dt_flags_t gpio_flags;
 	const char *spi_port;
 	u8_t spi_cs_pin;
 	const char *spi_cs_port;
@@ -300,7 +301,8 @@ struct enc424j600_runtime {
 	struct k_sem tx_rx_sem;
 	struct k_sem int_sem;
 	u16_t next_pkt_ptr;
-	bool suspended;
+	bool suspended : 1;
+	bool iface_initialized : 1;
 };
 
 #endif /*_ENC424J600_*/

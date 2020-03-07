@@ -2,8 +2,8 @@
 
 .. _zephyr_2.0:
 
-Zephyr RTOS 2.0.0
-###################
+Zephyr 2.0.0
+############
 
 We are pleased to announce the release of Zephyr RTOS version 2.0.0.
 

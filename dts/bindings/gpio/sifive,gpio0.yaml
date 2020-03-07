@@ -1,10 +1,7 @@
 # Copyright (c) 2018, SiFive Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-title: SiFive GPIO
-
-description: >
-    This is a representation of the SiFive GPIO nodes
+description: SiFive GPIO node
 
 compatible: "sifive,gpio0"
 
@@ -23,6 +20,6 @@ properties:
     "#gpio-cells":
       const: 2
 
-"#cells":
+gpio-cells:
   - pin
   - flags

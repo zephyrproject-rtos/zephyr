@@ -21,19 +21,19 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_0: led_0 {
-			gpios = <&gpiob 12 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
 			label = "USR0 LED";
 		};
 		green_led_1: led_1 {
-			gpios = <&gpiob 13 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
 			label = "USR1 LED";
 		};
 		green_led_2: led_2 {
-			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
 			label = "USR2 LED";
 		};
 		green_led_3: led_3 {
-			gpios = <&gpiob 15 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
 			label = "USR3 LED";
 		};
 	};
@@ -42,7 +42,7 @@
 		compatible = "gpio-keys";
 		user_button: button_0 {
 			label = "User";
-			gpios = <&gpiob 2 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
 		};
 	};
 
@@ -57,8 +57,6 @@
 
 &usart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart1_pins_b>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 

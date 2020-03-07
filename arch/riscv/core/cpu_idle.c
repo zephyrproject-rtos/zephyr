@@ -9,47 +9,20 @@
 /*
  * In RISC-V there is no conventional way to handle CPU power save.
  * Each RISC-V SOC handles it in its own way.
- * Hence, by default, k_cpu_idle and k_cpu_atomic_idle functions just
+ * Hence, by default, arch_cpu_idle and arch_cpu_atomic_idle functions just
  * unlock interrupts and return to the caller, without issuing any CPU power
  * saving instruction.
  *
- * Nonetheless, define the default k_cpu_idle and k_cpu_atomic_idle
+ * Nonetheless, define the default arch_cpu_idle and arch_cpu_atomic_idle
  * functions as weak functions, so that they can be replaced at the SOC-level.
  */
 
-/**
- *
- * @brief Power save idle routine
- *
- * This function will be called by the kernel idle loop or possibly within
- * an implementation of _sys_power_save_idle in the kernel when the
- * '_sys_power_save_flag' variable is non-zero.
- *
- * @return N/A
- */
-void __weak k_cpu_idle(void)
+void __weak arch_cpu_idle(void)
 {
-	irq_unlock(SOC_MSTATUS_IEN);
+	irq_unlock(MSTATUS_IEN);
 }
 
-/**
- *
- * @brief Atomically re-enable interrupts and enter low power mode
- *
- * INTERNAL
- * The requirements for k_cpu_atomic_idle() are as follows:
- * 1) The enablement of interrupts and entering a low-power mode needs to be
- *    atomic, i.e. there should be no period of time where interrupts are
- *    enabled before the processor enters a low-power mode.  See the comments
- *    in k_lifo_get(), for example, of the race condition that
- *    occurs if this requirement is not met.
- *
- * 2) After waking up from the low-power mode, the interrupt lockout state
- *    must be restored as indicated in the 'imask' input parameter.
- *
- * @return N/A
- */
-void __weak k_cpu_atomic_idle(unsigned int key)
+void __weak arch_cpu_atomic_idle(unsigned int key)
 {
 	irq_unlock(key);
 }

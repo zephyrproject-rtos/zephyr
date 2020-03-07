@@ -1,10 +1,7 @@
-# Kconfig - VL53L0X time of flight sensor configuration options
+# VL53L0X time of flight sensor configuration options
 
-#
 # Copyright (c) 2017 STMicroelectronics
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig VL53L0X
 	bool "VL53L0X time of flight sensor"
@@ -13,33 +10,9 @@ menuconfig VL53L0X
 	help
 	  Enable driver for VL53L0X I2C-based time of flight sensor.
 
-if VL53L0X
-
-config VL53L0X_XSHUT_CONTROL_ENABLE
-	bool "Enable XSHUT pin control"
-	help
-	    Enable it if XSHUT pin is controlled by host.
-
-config VL53L0X_XSHUT_GPIO_DEV_NAME
-	string "GPIO device"
-	default "GPIO_6"
-	depends on VL53L0X_XSHUT_CONTROL_ENABLE
-	help
-	  The device name of the GPIO device to which the VL53L0X xshut pin
-	  is connected.
-
-config VL53L0X_XSHUT_GPIO_PIN_NUM
-	int "Interrupt GPIO pin number"
-	default 6
-	depends on VL53L0X_XSHUT_CONTROL_ENABLE
-	help
-	  The number of the GPIO on which the xshut signal from the VL53L0X
-	  is connected.
-
 config VL53L0X_PROXIMITY_THRESHOLD
 	int "Proximity threshold in millimeters"
 	default 100
+	depends on VL53L0X
 	help
 	  Threshold used for proximity detection when sensor is used with SENSOR_CHAN_PROX.
-
-endif # VL53L0X

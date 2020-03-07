@@ -28,7 +28,6 @@
 
 #define SHELL_INIT_OPTION_PRINTER	(NULL)
 
-
 static inline void receive_state_change(const struct shell *shell,
 					enum shell_receive_state state)
 {
@@ -440,6 +439,8 @@ static u16_t common_beginning_find(const struct shell *shell,
 
 	shell_cmd_get(shell, cmd ? cmd->subcmd : NULL, cmd ? 1 : 0,
 		      first, &match, &dynamic_entry);
+	strncpy(shell->ctx->temp_buff, match->syntax,
+			sizeof(shell->ctx->temp_buff) - 1);
 
 	*str = match->syntax;
 
@@ -455,7 +456,7 @@ static u16_t common_beginning_find(const struct shell *shell,
 			break;
 		}
 
-		curr_common = str_common(match->syntax, match2->syntax,
+		curr_common = str_common(shell->ctx->temp_buff, match2->syntax,
 					 UINT16_MAX);
 		if ((arg_len == 0U) || (curr_common >= arg_len)) {
 			--cnt;
@@ -1070,13 +1071,6 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	__ASSERT_NO_MSG((shell->shell_flag == SHELL_FLAG_CRLF_DEFAULT) ||
 			(shell->shell_flag == SHELL_FLAG_OLF_CRLF));
 
-	int err = shell->iface->api->init(shell->iface, p_config,
-					  transport_evt_handler,
-					  (void *) shell);
-	if (err != 0) {
-		return err;
-	}
-
 	memset(shell->ctx, 0, sizeof(*shell->ctx));
 	shell->ctx->prompt = shell->default_prompt;
 
@@ -1106,7 +1100,9 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	shell->ctx->vt100_ctx.cons.name_len = shell_strlen(shell->ctx->prompt);
 	flag_use_colors_set(shell, IS_ENABLED(CONFIG_SHELL_VT100_COLORS));
 
-	return 0;
+	return shell->iface->api->init(shell->iface, p_config,
+				       transport_evt_handler,
+				       (void *) shell);
 }
 
 static int instance_uninit(const struct shell *shell)
@@ -1120,7 +1116,7 @@ static int instance_uninit(const struct shell *shell)
 		return -EBUSY;
 	}
 
-	if (IS_ENABLED(CONFIG_LOG)) {
+	if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
 		/* todo purge log queue */
 		shell_log_backend_disable(shell->log_backend);
 	}
@@ -1174,7 +1170,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 		return;
 	}
 
-	if (log_backend && IS_ENABLED(CONFIG_LOG)) {
+	if (log_backend && IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
 		shell_log_backend_enable(shell->log_backend, (void *)shell,
 					 log_level);
 	}
@@ -1204,7 +1200,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 
 		shell_signal_handle(shell, SHELL_SIGNAL_KILL, kill_handler);
 		shell_signal_handle(shell, SHELL_SIGNAL_RXRDY, shell_process);
-		if (IS_ENABLED(CONFIG_LOG)) {
+		if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
 			shell_signal_handle(shell, SHELL_SIGNAL_LOG_MSG,
 					    shell_log_process);
 		}

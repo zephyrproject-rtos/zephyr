@@ -2,7 +2,7 @@
 
 menuconfig UART_STELLARIS
 	bool "Stellaris serial driver"
-	depends on SOC_TI_LM3S6965 || SOC_CC2650
+	depends on SOC_TI_LM3S6965
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
@@ -14,7 +14,7 @@ if UART_STELLARIS
 
 # ---------- Port 0 ----------
 
-menuconfig UART_STELLARIS_PORT_0
+config UART_STELLARIS_PORT_0
 	bool "Enable Stellaris UART Port 0"
 	help
 	  This tells the driver to configure the UART port at boot, depending on
@@ -22,7 +22,7 @@ menuconfig UART_STELLARIS_PORT_0
 
 # ---------- Port 1 ----------
 
-menuconfig UART_STELLARIS_PORT_1
+config UART_STELLARIS_PORT_1
 	bool "Enable Stellaris UART Port 1"
 	help
 	  This tells the driver to configure the UART port at boot, depending on
@@ -30,7 +30,7 @@ menuconfig UART_STELLARIS_PORT_1
 
 # ---------- Port 2 ----------
 
-menuconfig UART_STELLARIS_PORT_2
+config UART_STELLARIS_PORT_2
 	bool "Enable Stellaris UART Port 2"
 	help
 	  This tells the driver to configure the UART port at boot, depending on

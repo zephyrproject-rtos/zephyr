@@ -80,12 +80,21 @@ void sys_pm_force_power_state(enum power_states state)
 		 state <  SYS_POWER_STATE_MAX,
 		 "Invalid power state %d!", state);
 
+#ifdef CONFIG_SYS_PM_DIRECT_FORCE_MODE
+	(void)arch_irq_lock();
 	forced_pm_state = state;
+	_sys_suspend(K_FOREVER);
+#else
+	forced_pm_state = state;
+#endif
 }
 
 enum power_states _sys_suspend(s32_t ticks)
 {
 	bool deep_sleep;
+#if CONFIG_DEVICE_POWER_MANAGEMENT
+	bool low_power = false;
+#endif
 
 	pm_state = (forced_pm_state == SYS_POWER_STATE_AUTO) ?
 		   sys_pm_policy_next_state(ticks) : forced_pm_state;
@@ -105,7 +114,8 @@ enum power_states _sys_suspend(s32_t ticks)
 #if CONFIG_DEVICE_POWER_MANAGEMENT
 		/* Suspend peripherals. */
 		if (sys_pm_suspend_devices()) {
-			LOG_ERR("System level device suspend failed!");
+			LOG_DBG("Some devices didn't enter suspend state!");
+			sys_pm_resume_devices();
 			sys_pm_notify_power_state_exit(pm_state);
 			pm_state = SYS_POWER_STATE_ACTIVE;
 			return pm_state;
@@ -116,6 +126,21 @@ enum power_states _sys_suspend(s32_t ticks)
 		 * in deep sleep mode.
 		 */
 		_sys_pm_idle_exit_notification_disable();
+#if CONFIG_DEVICE_POWER_MANAGEMENT
+	} else {
+		if (sys_pm_policy_low_power_devices(pm_state)) {
+			/* low power peripherals. */
+			if (sys_pm_low_power_devices()) {
+				LOG_DBG("Someone didn't enter low power state");
+				sys_pm_resume_devices();
+				sys_pm_notify_power_state_exit(pm_state);
+				pm_state = SYS_POWER_STATE_ACTIVE;
+				return pm_state;
+			}
+
+			low_power = true;
+		}
+#endif
 	}
 
 	/* Enter power state */
@@ -124,7 +149,7 @@ enum power_states _sys_suspend(s32_t ticks)
 	sys_pm_debug_stop_timer();
 
 #if CONFIG_DEVICE_POWER_MANAGEMENT
-	if (deep_sleep) {
+	if (deep_sleep || low_power) {
 		/* Turn on peripherals and restore device states as necessary */
 		sys_pm_resume_devices();
 	}
@@ -133,6 +158,8 @@ enum power_states _sys_suspend(s32_t ticks)
 
 	if (!post_ops_done) {
 		post_ops_done = 1;
+		/* clear forced_pm_state */
+		forced_pm_state = SYS_POWER_STATE_AUTO;
 		sys_pm_notify_power_state_exit(pm_state);
 		_sys_pm_power_state_exit_post_ops(pm_state);
 	}

@@ -1,9 +1,9 @@
 tests:
-  peripheral.dma:
+  drivers.dma:
     min_ram: 16
     depends_on: dma
     tags: drivers dma
-  peripheral.dma.interactive:
+  drivers.dma.interactive:
     depends_on: dma
     extra_args: CONF_FILE=prj_shell.conf
     min_ram: 16

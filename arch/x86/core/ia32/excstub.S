@@ -14,7 +14,6 @@
  * and exiting a C exception handler.
  */
 
-#include <kernel_structs.h>
 #include <arch/x86/ia32/asm.h>
 #include <arch/x86/ia32/arch.h> /* For MK_ISR_NAME */
 #include <offsets_short.h>
@@ -26,7 +25,7 @@
 	GTEXT(_kernel_oops_handler)
 
 	/* externs (internal APIs) */
-	GTEXT(z_do_kernel_oops)
+	GTEXT(z_x86_do_kernel_oops)
 
 /**
  *
@@ -162,7 +161,7 @@ SECTION_FUNC(TEXT, _exception_enter)
 
 allDone:
 	pushl	%esp			/* push z_arch_esf_t * parameter */
-	INDIRECT_CALL(%ecx)		/* call exception handler */
+	call	*%ecx			/* call exception handler */
 	addl	$0x4, %esp
 
 #if defined(CONFIG_LAZY_FP_SHARING)
@@ -220,9 +219,7 @@ nestedException:
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
 	KPTI_IRET
 
-#if CONFIG_X86_KERNEL_OOPS
 SECTION_FUNC(TEXT, _kernel_oops_handler)
 	push $0 /* dummy error code */
-	push $z_do_kernel_oops
+	push $z_x86_do_kernel_oops
 	jmp _exception_enter
-#endif

@@ -8,9 +8,6 @@
  * @brief Common parts of the linker scripts for the ARCv2/EM targets.
  */
 
-#define _LINKER
-#define _ASMLANGUAGE
-
 #include <linker/sections.h>
 
 #if defined(CONFIG_UART_NSIM)
@@ -90,11 +87,11 @@ SECTIONS {
 		_image_rom_start = .;
 		_image_text_start = .;
 
-/* when !XIP, .text is in RAM, and vector table must be at its very start */
-
-		KEEP(*(.exc_vector_table))
-		KEEP(*(".exc_vector_table.*"))
-		KEEP(*(IRQ_VECTOR_TABLE))
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_START ...). This typically contains the vector
+ * table and debug information.
+ */
+#include <snippets-rom-start.ld>
 
 		*(.text)
 		*(".text.*")

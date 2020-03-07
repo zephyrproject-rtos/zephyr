@@ -1,3 +1,4 @@
-if(CONFIG_HAS_CMSIS)
-  zephyr_include_directories(Include)
-endif()
+# SPDX-License-Identifier: Apache-2.0
+
+add_subdirectory_ifdef(CONFIG_HAS_CMSIS_CORE_M Core)
+add_subdirectory_ifdef(CONFIG_HAS_CMSIS_CORE_R Core_R)

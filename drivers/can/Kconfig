@@ -1,10 +1,7 @@
-# Kconfig - CAN configuration options
+# CAN configuration options
 
-#
 # Copyright (c) 2018 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # CAN options
@@ -50,6 +47,15 @@ config CAN_RX_TIMESTAMP
 	  The value is incremented every bit time and starts when the controller
 	  is initialized.
 
+config CAN_AUTO_BUS_OFF_RECOVERY
+	bool "Enable automatic recovery from bus-off"
+	default y
+	help
+	  This option enables the automatic bus-off recovery according to
+	  ISO 11898-1 (recovery after 128 occurrences of 11 consecutive
+	  recessive bits). When this option is enabled, the recovery API is not
+	  available.
+
 config CAN_0
 	bool "Enable CAN 0"
 	help
@@ -59,6 +65,13 @@ config CAN_1
 	bool "Enable CAN 1"
 	help
 	  Enable CAN controller 1
+
+config CAN_2
+	bool "Enable CAN 2"
+	depends on SOC_SERIES_STM32F4X
+	help
+	  Enable CAN controller 2 on the STM32F4 series of processors.
+	  (Tested on the STM32F4 series, may also work on F7, F1, F2 and L4)
 
 source "drivers/can/Kconfig.stm32"
 source "drivers/can/Kconfig.mcux"

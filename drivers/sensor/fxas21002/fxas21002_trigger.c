@@ -8,9 +8,7 @@
 
 #include "fxas21002.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(FXAS21002);
+LOG_MODULE_DECLARE(FXAS21002, CONFIG_SENSOR_LOG_LEVEL);
 
 static void fxas21002_gpio_callback(struct device *dev,
 				   struct gpio_callback *cb,
@@ -23,7 +21,8 @@ static void fxas21002_gpio_callback(struct device *dev,
 		return;
 	}
 
-	gpio_pin_disable_callback(dev, data->gpio_pin);
+	gpio_pin_interrupt_configure(data->gpio, data->gpio_pin,
+				     GPIO_INT_DISABLE);
 
 #if defined(CONFIG_FXAS21002_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->trig_sem);
@@ -70,7 +69,8 @@ static void fxas21002_handle_int(void *arg)
 		fxas21002_handle_drdy_int(dev);
 	}
 
-	gpio_pin_enable_callback(data->gpio, config->gpio_pin);
+	gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 #ifdef CONFIG_FXAS21002_TRIGGER_OWN_THREAD
@@ -208,15 +208,15 @@ int fxas21002_trigger_init(struct device *dev)
 	data->gpio_pin = config->gpio_pin;
 
 	gpio_pin_configure(data->gpio, config->gpio_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
+			   GPIO_INPUT | config->gpio_flags);
 
 	gpio_init_callback(&data->gpio_cb, fxas21002_gpio_callback,
 			   BIT(config->gpio_pin));
 
 	gpio_add_callback(data->gpio, &data->gpio_cb);
 
-	gpio_pin_enable_callback(data->gpio, config->gpio_pin);
+	gpio_pin_interrupt_configure(data->gpio, config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }

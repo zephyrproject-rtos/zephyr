@@ -20,6 +20,8 @@ LOG_MODULE_REGISTER(net_sock_packet, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <syscall_handler.h>
 #include <sys/fdtable.h>
 
+#include "../../ip/net_stats.h"
+
 #include "sockets_internal.h"
 
 extern const struct socket_op_vtable sock_fd_op_vtable;
@@ -221,6 +223,11 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 		errno = ENOBUFS;
 		return -1;
 	}
+
+	net_stats_update_tc_rx_time(net_pkt_iface(pkt),
+				    net_pkt_priority(pkt),
+				    net_pkt_timestamp(pkt)->nanosecond,
+				    k_cycle_get_32());
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
 		net_pkt_unref(pkt);

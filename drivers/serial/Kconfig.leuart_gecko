@@ -1,9 +1,7 @@
-# Kconfig - Gecko SDK LEUART
-#
+# Gecko SDK LEUART
+
 # Copyright (c) 2018, Diego Sueiro
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config LEUART_GECKO
 	bool "Gecko leuart driver"

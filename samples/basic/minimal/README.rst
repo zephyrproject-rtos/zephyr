@@ -89,4 +89,3 @@ following combinations are suggested:
        :conf: "common.conf no-mt.conf no-timers.conf arm.conf"
        :goals: rom_report
        :compact:
-

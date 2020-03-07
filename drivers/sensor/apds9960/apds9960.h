@@ -216,6 +216,7 @@ struct apds9960_config {
 	char *i2c_name;
 	char *gpio_name;
 	u8_t gpio_pin;
+	unsigned int gpio_flags;
 	u8_t i2c_address;
 	u8_t pgain;
 	u8_t again;
@@ -240,6 +241,18 @@ struct apds9960_data {
 	struct k_sem data_sem;
 #endif
 };
+
+static inline void apds9960_setup_int(struct apds9960_data *drv_data,
+				      bool enable)
+{
+	unsigned int flags = enable
+		? GPIO_INT_EDGE_TO_ACTIVE
+		: GPIO_INT_DISABLE;
+
+	gpio_pin_interrupt_configure(drv_data->gpio,
+				     drv_data->gpio_pin,
+				     flags);
+}
 
 #ifdef CONFIG_APDS9960_TRIGGER
 void apds9960_work_cb(struct k_work *work);

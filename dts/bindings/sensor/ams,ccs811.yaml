@@ -1,12 +1,31 @@
 # Copyright (c) 2018, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: AMS (Austria Mikro Systeme) Digital Air Quality Sensor CCS811
-
-description: >
-    This binding gives a base representation of CCS811 digital air quality
-    sensor
+description: CCS811 digital air quality sensor
 
 compatible: "ams,ccs811"
 
 include: i2c-device.yaml
+
+properties:
+    wake-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The WAKEn pin is asserted to communicate with the sensor.  The
+        sensor receives this as an active-low signal.
+
+    reset-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The RESETn pin is asserted to disable the sensor causing a hard
+        reset.  The sensor receives this as an active-low signal.
+
+    irq-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        The INTn pin signals that a new reading is available.  The
+        sensor generates an active-low level signal which remains
+        asserted until the data is read.

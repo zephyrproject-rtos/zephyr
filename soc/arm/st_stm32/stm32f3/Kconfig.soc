@@ -1,13 +1,11 @@
-# Kconfig - ST Microelectronics STM32F3 MCU line
-#
+# ST Microelectronics STM32F3 MCU line
+
 # Copyright (c) 2016 RnDity Sp. z o.o.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "STM32F3x MCU Selection"
-depends on SOC_SERIES_STM32F3X
+	prompt "STM32F3x MCU Selection"
+	depends on SOC_SERIES_STM32F3X
 
 config SOC_STM32F302X8
 	bool "STM32F302X8"

@@ -17,6 +17,7 @@
 #include <kernel_structs.h>
 #include <offsets_short.h>
 #include <toolchain.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 #include <swap_macros.h>
 
@@ -63,7 +64,7 @@ PRE-CONTEXT-SWITCH STACK
 
          --------------------------------------
   SP ->  | Return address; PC (Program Counter), in fact value taken from
-         | BLINK register in z_arch_switch()
+         | BLINK register in arch_switch()
          --------------------------------------
          | STATUS32 value, we explicitly save it here for later usage, read-on
          --------------------------------------
@@ -265,10 +266,8 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	bl z_check_stack_sentinel
 #endif
 
-#ifdef CONFIG_PREEMPT_ENABLED
-
 #ifdef CONFIG_SMP
-	bl z_arch_smp_switch_in_isr
+	bl z_arc_smp_switch_in_isr
 	/* r0 points to new thread, r1 points to old thread */
 	cmp_s r0, 0
 	beq _rirq_no_reschedule
@@ -300,6 +299,15 @@ _rirq_reschedule:
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	/* here need to remember SEC_STAT.IRM bit */
 	lr r3, [_ARC_V2_SEC_STAT]
+	push_s r3
+#endif
+
+#if defined(CONFIG_USERSPACE)
+/*
+ * need to remember the user/kernel status of interrupted thread
+ */
+	lr r3, [_ARC_V2_AUX_IRQ_ACT]
+	and r3, r3, 0x80000000
 	push_s r3
 #endif
 	/* _save_callee_saved_regs expects outgoing thread in r2 */
@@ -394,11 +402,18 @@ _rirq_return_from_coop:
 	/* rtie will pop the rest from the stack */
 	rtie
 
-#endif /* CONFIG_PREEMPT_ENABLED */
-
 .balign 4
 _rirq_return_from_firq:
 _rirq_return_from_rirq:
+#if defined(CONFIG_USERSPACE)
+/*
+ * need to recover the user/kernel status of interrupted thread
+ */
+	pop_s r3
+	lr r2, [_ARC_V2_AUX_IRQ_ACT]
+	or r2, r2, r3
+	sr r2, [_ARC_V2_AUX_IRQ_ACT]
+#endif
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	/* here need to recover SEC_STAT.IRM bit */
 	pop_s r3

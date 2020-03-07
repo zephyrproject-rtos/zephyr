@@ -119,7 +119,7 @@ static enum sound_state {
 
 static inline void beep(int period)
 {
-	pwm_pin_set_usec(pwm, SOUND_PIN, period, period / 2);
+	pwm_pin_set_usec(pwm, SOUND_PIN, period, period / 2, 0);
 }
 
 static void sound_set(enum sound_state state)
@@ -483,23 +483,27 @@ void pong_remote_lost(void)
 
 static void configure_buttons(void)
 {
-	static struct gpio_callback button_cb;
+	static struct gpio_callback button_cb_data;
 	struct device *gpio;
 
 	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
 
 	gpio_pin_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_INT_ACTIVE_LOW));
+			   DT_ALIAS_SW0_GPIOS_FLAGS | GPIO_INPUT);
 	gpio_pin_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
-			   (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			    GPIO_INT_ACTIVE_LOW));
-	gpio_init_callback(&button_cb, button_pressed,
-			   BIT(DT_ALIAS_SW0_GPIOS_PIN) | BIT(DT_ALIAS_SW1_GPIOS_PIN));
-	gpio_add_callback(gpio, &button_cb);
+			   DT_ALIAS_SW1_GPIOS_FLAGS | GPIO_INPUT);
 
-	gpio_pin_enable_callback(gpio, DT_ALIAS_SW0_GPIOS_PIN);
-	gpio_pin_enable_callback(gpio, DT_ALIAS_SW1_GPIOS_PIN);
+	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+
+	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
+				     GPIO_INT_EDGE_TO_ACTIVE);
+
+	gpio_init_callback(&button_cb_data, button_pressed,
+			   BIT(DT_ALIAS_SW0_GPIOS_PIN) |
+			   BIT(DT_ALIAS_SW1_GPIOS_PIN));
+
+	gpio_add_callback(gpio, &button_cb_data);
 }
 
 void main(void)
@@ -510,7 +514,7 @@ void main(void)
 
 	k_delayed_work_init(&refresh, game_refresh);
 
-	pwm = device_get_binding(CONFIG_PWM_NRF5_SW_0_DEV_NAME);
+	pwm = device_get_binding(DT_INST_0_NORDIC_NRF_SW_PWM_LABEL);
 
 	ble_init();
 

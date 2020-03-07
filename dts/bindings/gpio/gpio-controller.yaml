@@ -12,3 +12,8 @@ properties:
       type: int
       required: true
       description: Number of items to expect in a GPIO specifier
+    ngpios:
+      type: int
+      required: false
+      default: 32
+      description: Number of gpios supported

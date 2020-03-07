@@ -1,7 +1,4 @@
-title: EFR32MG GPIO
-
-description: >
-    This is a representation of the EFR32MG GPIO nodes
+description: EFR32MG GPIO node
 
 compatible: "silabs,efr32mg-gpio"
 

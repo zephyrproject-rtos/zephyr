@@ -1,55 +1,10 @@
-# Kconfig - DHT Temperature and Himidity Sensor configuration options
+# DHT Temperature and Himidity Sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-menuconfig DHT
+config DHT
 	bool "DHT Temperature and Humidity Sensor"
 	depends on GPIO
 	help
 	  Enable driver for the DHT temperature and humidity sensor family.
-
-if DHT
-
-choice
-	prompt "Chip type"
-	default DHT_CHIP_DHT11
-	help
-	  Choose desired chip type from the DHT family.
-
-config DHT_CHIP_DHT11
-	bool "DHT11"
-	help
-	  Choose this option to enable the DHT11 chip.
-
-config DHT_CHIP_DHT22
-	bool "DHT22"
-	help
-	  Choose this option to enable the DHT22 chip.
-
-endchoice
-
-config DHT_NAME
-	string "Driver name"
-	default "DHT11" if DHT_CHIP_DHT11
-	default "DHT22" if DHT_CHIP_DHT22
-	help
-	  Device name with which the sensor is identified.
-
-config DHT_GPIO_DEV_NAME
-	string "GPIO device"
-	default "GPIO_0"
-	help
-	  The device name of the GPIO device to which the chip's data pin
-	  is connected.
-
-config DHT_GPIO_PIN_NUM
-	int "Interrupt GPIO pin number"
-	default 0
-	help
-	  The number of the GPIO on which the chip's data pin is connected.
-
-endif # DHT

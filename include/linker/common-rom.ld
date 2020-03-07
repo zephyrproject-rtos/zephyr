@@ -160,3 +160,10 @@
 		KEEP(*(SORT_BY_NAME("._cfb_font.*")))
 		__font_entry_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
+
+	SECTION_DATA_PROLOGUE(tracing_backends_sections,,)
+	{
+		_tracing_backend_list_start = .;
+		KEEP(*("._tracing_backend.*"));
+		_tracing_backend_list_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)

@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <init.h>
 #include <soc.h>
-#include <clock_control/arm_clock_control.h>
+#include <drivers/clock_control/arm_clock_control.h>
 
 #include "dualtimer_cmsdk_apb.h"
 
@@ -59,13 +59,14 @@ static int dtmr_cmsdk_apb_stop(struct device *dev)
 	return 0;
 }
 
-static u32_t dtmr_cmsdk_apb_read(struct device *dev)
+static int dtmr_cmsdk_apb_get_value(struct device *dev, u32_t *ticks)
 {
 	const struct dtmr_cmsdk_apb_cfg * const cfg =
 						dev->config->config_info;
 	struct dtmr_cmsdk_apb_dev_data *data = dev->driver_data;
 
-	return data->load - cfg->dtimer->timer1value;
+	*ticks = data->load - cfg->dtimer->timer1value;
+	return 0;
 }
 
 static int dtmr_cmsdk_apb_set_top_value(struct device *dev,
@@ -123,7 +124,7 @@ static u32_t dtmr_cmsdk_apb_get_pending_int(struct device *dev)
 static const struct counter_driver_api dtmr_cmsdk_apb_api = {
 	.start = dtmr_cmsdk_apb_start,
 	.stop = dtmr_cmsdk_apb_stop,
-	.read = dtmr_cmsdk_apb_read,
+	.get_value = dtmr_cmsdk_apb_get_value,
 	.set_top_value = dtmr_cmsdk_apb_set_top_value,
 	.get_pending_int = dtmr_cmsdk_apb_get_pending_int,
 	.get_top_value = dtmr_cmsdk_apb_get_top_value,

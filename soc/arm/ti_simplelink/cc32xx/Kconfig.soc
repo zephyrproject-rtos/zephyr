@@ -1,11 +1,10 @@
+# Texas Instruments CC32XX
+
 # SPDX-License-Identifier: Apache-2.0
 
-# Kconfig.soc - Texas Instruments CC32XX
-#
-
 choice
-prompt "TI SimpleLink MCU Selection"
-depends on SOC_SERIES_CC32XX
+	prompt "TI SimpleLink MCU Selection"
+	depends on SOC_SERIES_CC32XX
 
 config SOC_CC3220SF
 	bool "CC3220SF"
@@ -17,19 +16,12 @@ config SOC_CC3235SF
 
 endchoice
 
-
-if SOC_CC3220SF
-
 config CC3220SF_DEBUG
 	bool "Prepend debug header, disabling flash verification" if XIP
 	default XIP
-
-endif # SOC_CC3220SF
-
-if SOC_CC3235SF
+	depends on SOC_CC3220SF
 
 config CC3235SF_DEBUG
 	bool "Prepend debug header, disabling flash verification" if XIP
 	default XIP
-
-endif # SOC_CC3235SF
+	depends on SOC_CC3235SF

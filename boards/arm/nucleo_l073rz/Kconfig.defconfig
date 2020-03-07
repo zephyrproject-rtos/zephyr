@@ -1,28 +1,20 @@
-# Kconfig - STM32 Nucleo-64 development board with STM32L073RZ MCU
-#
+# STM32 Nucleo-64 development board with STM32L073RZ MCU
+
 # Copyright (c) 2018 Ilya Tagunov <tagunil@gmail.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_NUCLEO_L073RZ
 
 config BOARD
 	default "nucleo_l073rz"
 
-if UART_CONSOLE
-
 config UART_2
 	default y
-
-endif # UART_CONSOLE
-
-if I2C
+	depends on UART_CONSOLE
 
 config I2C_1
 	default y
-
-endif # I2C
+	depends on I2C
 
 if SPI
 
@@ -33,5 +25,9 @@ config SPI_STM32_INTERRUPT
 	default y
 
 endif # SPI
+
+config ADC_1
+	default y
+	depends on ADC
 
 endif # BOARD_NUCLEO_L073RZ

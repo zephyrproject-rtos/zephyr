@@ -41,7 +41,7 @@
 		uart-3 = &lpuart3;
 		uart-4 = &lpuart4;
 		usbd-0 = &usbd;
-		wdt-0 = &wdog;
+		watchdog0 = &wdog;
 	};
 
 	cpus {
@@ -276,7 +276,7 @@
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			label = "PWM_0";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm1: pwm@40039000 {
@@ -286,7 +286,7 @@
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			label = "PWM_1";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm2: pwm@4003a000 {
@@ -296,7 +296,7 @@
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			label = "PWM_2";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		pwm3: pwm@400b9000 {
@@ -306,7 +306,7 @@
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			label = "PWM_3";
 			status = "disabled";
-			#pwm-cells = <2>;
+			#pwm-cells = <3>;
 		};
 
 		rtc: rtc@4003d000 {

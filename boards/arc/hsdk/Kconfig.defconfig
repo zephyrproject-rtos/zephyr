@@ -1,6 +1,4 @@
-#
 # Copyright (c) 2019 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_HSDK
@@ -13,12 +11,9 @@ if GPIO
 config GPIO_DW
 	default y
 
-if GPIO_DW
-
 config GPIO_DW_0
 	default y
-
-endif # GPIO_DW
+	depends on GPIO_DW
 
 endif # GPIO
 

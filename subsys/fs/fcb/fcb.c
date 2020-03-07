@@ -290,6 +290,7 @@ fcb_offset_last_n(struct fcb *fcb, u8_t entries,
 {
 	struct fcb_entry loc;
 	int i;
+	int rc;
 
 	/* assure a minimum amount of entries */
 	if (!entries) {
@@ -305,7 +306,14 @@ fcb_offset_last_n(struct fcb *fcb, u8_t entries,
 		}
 		/* Update last_n_entry after n entries and keep updating */
 		else if (i > (entries - 1)) {
-			fcb_getnext(fcb, last_n_entry);
+			rc = fcb_getnext(fcb, last_n_entry);
+
+			if (rc) {
+				/* A fcb history must have been erased,
+				 * wanted entry doesn't exist anymore.
+				 */
+				return -ENOENT;
+			}
 		}
 		i++;
 	}

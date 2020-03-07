@@ -1,10 +1,7 @@
 # Copyright (c) 2018 SiFive Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-title: SiFive Freedom I2C
-
-description: >
-    This is a binding for the SiFive Freedom I2C interface
+description: SiFive Freedom I2C interface
 
 compatible: "sifive,i2c0"
 

@@ -1,10 +1,7 @@
 # Copyright (c) 2018, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: MAX30101 heart rate sensor
-
-description: >
-    This is a representation of the MAX30101 heart rate sensor
+description: MAX30101 heart rate sensor
 
 compatible: "max,max30101"
 

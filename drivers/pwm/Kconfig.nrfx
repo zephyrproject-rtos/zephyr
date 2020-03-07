@@ -1,9 +1,7 @@
 # Copyright (c) 2018, Cue Health Inc
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-menuconfig PWM_NRFX
+config PWM_NRFX
 	bool "nRF PWM nrfx driver"
 	default y
 	depends on HAS_HW_NRF_PWM0 || HAS_HW_NRF_PWM1 || \

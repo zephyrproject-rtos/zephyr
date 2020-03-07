@@ -1,21 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Zephyr Kernel Configuration
-CONFIG_ARM=y
 CONFIG_SOC_SERIES_STM32F3X=y
 
 # Platform Configuration
 CONFIG_SOC_STM32F373XC=y
-CONFIG_BOARD_STM32373C_EVAL=y
-
-# ARM Options
-CONFIG_CPU_HAS_FPU=y
 
 # Floating Point Options
 CONFIG_FLOAT=y
 
 # General Kernel Options
-CONFIG_CORTEX_M_SYSTICK=y
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=72000000
 
 # Serial Drivers

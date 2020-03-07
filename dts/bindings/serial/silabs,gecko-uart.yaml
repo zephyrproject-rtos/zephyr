@@ -1,7 +1,4 @@
-title: GECKO UART
-
-description: >
-    This binding gives a base representation of the GECKO UART
+description: Gecko UART
 
 compatible: "silabs,gecko-uart"
 
@@ -13,6 +10,11 @@ properties:
 
     interrupts:
       required: true
+
+    peripheral-id:
+      type: int
+      required: true
+      description: peripheral ID
 
     # Note: Not all SoC series support setting individual pin location. If this
     # is a case all location-* properties need to have identical value.

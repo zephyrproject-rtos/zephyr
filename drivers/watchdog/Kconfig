@@ -1,27 +1,16 @@
-# Kconfig - Watchdog configuration options
-#
+# Watchdog configuration options
+
 # Copyright (c) 2015 Intel Corporation
 # Copyright (c) 2017 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig WATCHDOG
 	bool "Watchdog Support"
+	select HAS_DTS_WDT
 	help
 	  Include support for watchdogs.
 
 if WATCHDOG
-
-if !HAS_DTS_WDT
-
-config WDT_0_NAME
-	string "Watchdog driver instance name"
-	default "WATCHDOG_0"
-	help
-	  Set the name used by the watchdog device during registration.
-
-endif # HAS_DTS_WDT
 
 config WDT_DISABLE_AT_BOOT
 	bool "Disable at boot"
@@ -56,5 +45,7 @@ source "drivers/watchdog/Kconfig.nrfx"
 source "drivers/watchdog/Kconfig.mcux"
 
 source "drivers/watchdog/Kconfig.xec"
+
+source "drivers/watchdog/Kconfig.gecko"
 
 endif

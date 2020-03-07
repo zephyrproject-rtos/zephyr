@@ -1,9 +1,7 @@
-# Kconfig - MIMXRT1064-EVK board
-#
+# MIMXRT1064-EVK board
+
 # Copyright (c) 2018, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_MIMXRT1064_EVK
 
@@ -28,19 +26,29 @@ config GPIO_MCUX_IGPIO_5
 
 endif # GPIO_MCUX_IGPIO
 
-if I2C_MCUX_LPI2C
+config I2C
+	default y if LVGL
 
 config I2C_1
 	default y
-
-endif # I2C_MCUX_LPI2C
-
-if UART_MCUX_LPUART
+	depends on I2C_MCUX_LPI2C
 
 config UART_MCUX_LPUART_1
 	default y
+	depends on UART_MCUX_LPUART
 
-endif # UART_MCUX_LPUART
+config KSCAN
+	default y if LVGL
+
+if KSCAN
+
+config KSCAN_FT5336
+	default y
+
+config KSCAN_INIT_PRIORITY
+	default 60
+
+endif # KSCAN
 
 if NETWORKING
 
@@ -57,6 +65,12 @@ if LVGL
 config LVGL_DISPLAY_DEV_NAME
 	default "ELCDIF_1"
 
+config LVGL_POINTER_KSCAN
+	default y
+
+config LVGL_POINTER_KSCAN_DEV_NAME
+	default "FT5336"
+
 config LVGL_HOR_RES
 	default 480
 
@@ -69,20 +83,14 @@ config LVGL_VDB_SIZE
 config LVGL_DPI
 	default 128
 
-config LVGL_BITS_PER_PIXEL
-	default 0
-
 choice LVGL_COLOR_DEPTH
 	default LVGL_COLOR_DEPTH_16
 endchoice
 
 endif # LVGL
 
-if PWM_MCUX
-
 config FLEXPWM2_PWM3
 	default y
-
-endif
+	depends on PWM_MCUX
 
 endif # BOARD_MIMXRT1064_EVK

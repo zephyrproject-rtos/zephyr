@@ -4,5 +4,5 @@ tests:
   sample.usb.hid-mouse:
     depends_on: usb_device gpio
     harness: button
-    filter: DT_ALIAS_SW0_GPIOS_PIN
+    filter: dt_alias_exists("sw0")
     tags: usb

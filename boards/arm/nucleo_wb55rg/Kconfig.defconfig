@@ -1,28 +1,28 @@
-# Kconfig - STM32LWB55RG Nucleo board configuration
-#
+# STM32LWB55RG Nucleo board configuration
+
 # Copyright (c) 2019 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_NUCLEO_WB55RG
 
 config BOARD
 	default "nucleo_wb55rg"
 
-if UART_CONSOLE
+config CLOCK_STM32_LSE
+	default y
+
+choice STM32_LPTIM_CLOCK
+	default STM32_LPTIM_CLOCK_LSE
+	depends on STM32_LPTIM_TIMER
+endchoice
 
 config UART_1
 	default y
-
-endif # UART_CONSOLE
-
-if SERIAL
+	depends on UART_CONSOLE
 
 config LPUART_1
 	default y
-
-endif # SERIAL
+	depends on SERIAL
 
 if I2C
 
@@ -32,39 +32,23 @@ config I2C_1
 config I2C_3
 	default y
 
-config I2C_STM32_INTERRUPT
-	default y
-
 endif # I2C
-
-if SPI
 
 config SPI_1
 	default y
-
-endif # SPI
-
-if ADC
+	depends on SPI
 
 config ADC_1
 	default y
-
-endif # ADC
-
-if BT_DEBUG_MONITOR
+	depends on ADC
 
 config LPUART_1
 	default y
-
-endif # BT_DEBUG_MONITOR
-
-if BT
+	depends on BT_DEBUG_MONITOR
 
 choice BT_HCI_BUS_TYPE
 	default BT_STM32_IPM
-
+	depends on BT
 endchoice
-
-endif # BT
 
 endif # BOARD_NUCLEO_WB55RG

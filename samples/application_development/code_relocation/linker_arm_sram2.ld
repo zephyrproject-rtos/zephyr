@@ -11,12 +11,9 @@
  * Linker script for the Cortex-M platforms.
  */
 
-#define _LINKER
-#define _ASMLANGUAGE
-
 #include <autoconf.h>
 #include <linker/sections.h>
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
@@ -40,4 +37,4 @@ MEMORY
 #endif
     }
 
-#include <arch/arm/cortex_m/scripts/linker.ld>
+#include <arch/arm/aarch32/cortex_m/scripts/linker.ld>

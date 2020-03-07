@@ -1,9 +1,7 @@
-# Kconfig - EFR32MG SLTB004A board
-#
+# EFR32MG SLTB004A board
+
 # Copyright (c) 2018, Diego Sueiro
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_EFR32MG_SLTB004A
 
@@ -27,13 +25,13 @@ config GPIO_GECKO_PORTD
 config GPIO_GECKO_PORTF
 	default y
 
-endif # GPIO_GECKO
+config GPIO_GECKO_PORTK
+	default y
 
-if COUNTER
+endif # GPIO_GECKO
 
 config COUNTER_GECKO_RTCC
 	default y
-
-endif # COUNTER
+	depends on COUNTER
 
 endif # BOARD_EFR32MG_SLTB004A

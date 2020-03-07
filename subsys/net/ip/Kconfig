@@ -1,10 +1,7 @@
-# Kconfig - IP stack config
+# IP stack config
 
-#
 # Copyright (c) 2016 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "IP stack"
 
@@ -52,7 +49,6 @@ module-help = Enables offload layer to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_OFFLOAD
 
-# Hidden option
 config NET_RAW_MODE
 	bool
 	help
@@ -189,11 +185,19 @@ config NET_TC_MAPPING_SR_CLASS_B_ONLY
 endchoice
 
 config NET_TX_DEFAULT_PRIORITY
-	int "Default network packet priority if none have been set"
+	int "Default network TX packet priority if none have been set"
 	default 1
 	range 0 7
 	help
 	  What is the default network packet priority if user has not specified
+	  one. The value 0 means lowest priority and 7 is the highest.
+
+config NET_RX_DEFAULT_PRIORITY
+	int "Default network RX packet priority if none have been set"
+	default 0
+	range 0 7
+	help
+	  What is the default network RX packet priority if user has not set
 	  one. The value 0 means lowest priority and 7 is the highest.
 
 config NET_IP_ADDR_CHECK
@@ -230,14 +234,14 @@ config NET_ROUTING
 	  would need to populate the routing table. RPL used to do that
 	  earlier but currently there is no RPL support in Zephyr.
 
-config	NET_MAX_ROUTES
+config NET_MAX_ROUTES
 	int "Max number of routing entries stored."
 	default NET_IPV6_MAX_NEIGHBORS
 	depends on NET_ROUTE
 	help
 	  This determines how many entries can be stored in routing table.
 
-config	NET_MAX_NEXTHOPS
+config NET_MAX_NEXTHOPS
 	int "Max number of next hop entries stored."
 	default NET_MAX_ROUTES
 	depends on NET_ROUTE
@@ -248,7 +252,7 @@ config NET_ROUTE_MCAST
 	bool
 	depends on NET_ROUTE
 
-config	NET_MAX_MCAST_ROUTES
+config NET_MAX_MCAST_ROUTES
 	int "Max number of multicast routing entries stored."
 	default 1
 	depends on NET_ROUTE_MCAST
@@ -285,6 +289,17 @@ config NET_TCP_BACKLOG_SIZE
 	help
 	  The number of simultaneous TCP connection attempts, i.e. outstanding
 	  TCP connections waiting for initial ACK.
+
+config NET_TCP_AUTO_ACCEPT
+	bool "Auto accept incoming TCP data"
+	depends on NET_TCP
+	help
+	  Automatically accept incoming TCP data packet to the valid
+	  connection even if the application has not yet called accept().
+	  This speeds up incoming data processing and is done like in Linux.
+	  Drawback is that we allocate data for the incoming packets even if
+	  the application has not yet accepted the connection. If the peer
+	  sends lot of packets, we might run out of memory in this case.
 
 config NET_TCP_TIME_WAIT_DELAY
 	int "How long to wait in TIME_WAIT state (in milliseconds)"
@@ -343,6 +358,30 @@ config NET_TCP_RETRY_COUNT
 	  below 9, though.
 	  Should a retransmission timeout occur, the receive callback is
 	  called with -ECONNRESET error code and the context is dereferenced.
+
+choice
+	prompt "Select TCP stack"
+	depends on NET_TCP
+	default NET_TCP1
+	help
+	  Select the TCP stack implementation to use.
+
+config NET_TCP1
+	bool "Current stable TCP stack"
+	help
+	  The current TCP stack that has been in use since Zephyr 1.0.
+
+config NET_TCP2
+	bool "Experimental TCP stack"
+	help
+	  Enable experimental TCP which is under development.
+
+endchoice
+
+config NET_TEST_PROTOCOL
+	bool "Enable JSON based test protocol (UDP)"
+	help
+	  Enable JSON based test protocol (UDP).
 
 config NET_UDP
 	bool "Enable UDP"
@@ -541,8 +580,8 @@ config NET_BUF_DATA_POOL_SIZE
 	default 2048
 	depends on NET_BUF_VARIABLE_DATA_SIZE
 	help
-	 This value tell what is the size of the memory pool where each
-	 network buffer is allocated from.
+	  This value tell what is the size of the memory pool where each
+	  network buffer is allocated from.
 
 config NET_HEADERS_ALWAYS_CONTIGUOUS
 	bool
@@ -603,6 +642,9 @@ config NET_DEFAULT_IF_CANBUS_RAW
 	bool "Socket CAN interface"
 	depends on NET_L2_CANBUS_RAW
 
+config NET_DEFAULT_IF_PPP
+	bool "PPP interface"
+	depends on NET_L2_PPP
 
 endchoice
 
@@ -639,6 +681,36 @@ config NET_PKT_TXTIME
 	  Enable network packet TX time support. This is needed for
 	  when the application wants to set the exact time when the network
 	  packet should be sent.
+
+config NET_PKT_RXTIME_STATS
+	bool "Enable network packet RX time statistics"
+	select NET_PKT_TIMESTAMP
+	select NET_STATISTICS
+	depends on (NET_UDP || NET_TCP)
+	help
+	  Enable network packet RX time statistics support. This is used to
+	  calculate how long on average it takes for a packet to travel from
+	  device driver to just before it is given to application. The RX
+	  timing information can then be seen in network interface statistics
+	  in net-shell.
+	  The RX statistics are only calculated for UDP and TCP packets.
+
+config NET_PKT_TXTIME_STATS
+	bool "Enable network packet TX time statistics"
+	select NET_PKT_TIMESTAMP
+	select NET_STATISTICS
+	depends on (NET_UDP || NET_TCP) && !NET_PKT_TXTIME
+	help
+	  Enable network packet TX time statistics support. This is used to
+	  calculate how long on average it takes for a packet to travel from
+	  application to just before it is sent to network. The TX timing
+	  information can then be seen in network interface statistics in
+	  net-shell.
+	  The RX calculation is done only for UDP or TCP packets, but for TX
+	  we do not know the protocol so the TX packet timing is done for all
+	  network protocol packets.
+	  Note that CONFIG_NET_PKT_TXTIME cannot be set at the same time
+	  because net_pkt shares the time variable for statistics and TX time.
 
 config NET_PROMISCUOUS_MODE
 	bool "Enable promiscuous mode support [EXPERIMENTAL]"

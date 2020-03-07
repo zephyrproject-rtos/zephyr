@@ -223,7 +223,7 @@ u64_t z_arc_connect_gfrc_read(void)
 	 * sub-components. For GFRC, HW allows simultaneously accessing to
 	 * counters. So an irq lock is enough.
 	 */
-	key = z_arch_irq_lock();
+	key = arch_irq_lock();
 
 	z_arc_connect_cmd(ARC_CONNECT_CMD_GFRC_READ_LO, 0);
 	low = z_arc_connect_cmd_readback();
@@ -231,7 +231,7 @@ u64_t z_arc_connect_gfrc_read(void)
 	z_arc_connect_cmd(ARC_CONNECT_CMD_GFRC_READ_HI, 0);
 	high = z_arc_connect_cmd_readback();
 
-	z_arch_irq_unlock(key);
+	arch_irq_unlock(key);
 
 	return (((u64_t)high) << 32) | low;
 }

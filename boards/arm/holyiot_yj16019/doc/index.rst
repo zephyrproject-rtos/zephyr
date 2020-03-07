@@ -28,7 +28,7 @@ Semiconductor nRF52832 ARM Cortex-M4 CPU and the following devices:
      Holyiot YJ-16019 (Credit: Holyiot)
 
 The board is equipped with one LED, one push button, and is powered by
-a CR2032 coin cell. The `Nordic Semiconductor Documentation library`_
+a CR2032 coin cell. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
 Hardware
@@ -146,4 +146,4 @@ References
 .. target-notes::
 
 .. _Holyiot: http://www.holyiot.com
-.. _Nordic Semiconductor Documentation library: https://www.nordicsemi.com/DocLib
+.. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com

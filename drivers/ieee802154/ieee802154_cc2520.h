@@ -13,7 +13,21 @@
 #include <sys/atomic.h>
 #include <drivers/spi.h>
 
-#include <ieee802154/cc2520.h>
+enum cc2520_gpio_index {
+	CC2520_GPIO_IDX_VREG_EN	= 0,
+	CC2520_GPIO_IDX_RESET,
+	CC2520_GPIO_IDX_FIFO,
+	CC2520_GPIO_IDX_CCA,
+	CC2520_GPIO_IDX_SFD,
+	CC2520_GPIO_IDX_FIFOP,
+
+	CC2520_GPIO_IDX_MAX,
+};
+
+struct cc2520_gpio_configuration {
+	struct device *dev;
+	u32_t pin;
+};
 
 /* Runtime context structure
  ***************************
@@ -21,7 +35,7 @@
 struct cc2520_context {
 	struct net_if *iface;
 	/**************************/
-	struct cc2520_gpio_configuration *gpios;
+	struct cc2520_gpio_configuration gpios[CC2520_GPIO_IDX_MAX];
 	struct gpio_callback sfd_cb;
 	struct gpio_callback fifop_cb;
 	struct device *spi;

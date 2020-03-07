@@ -1,33 +1,19 @@
-# Copyright (c) 2018 Nordic Semiconductor ASA
+# Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic nRF Family SPI Master node
-
-description: >
-    This is a representation of the Nordic nRF SPI node
+description: Nordic nRF family SPI (SPI master)
 
 compatible: "nordic,nrf-spi"
 
-include: spi-controller.yaml
+include: nordic,nrf-spi-common.yaml
 
 properties:
-    reg:
-      required: true
+    miso-pull-up:
+      type: boolean
+      required: false
+      description: Enable pull-up on MISO line
 
-    interrupts:
-      required: true
-
-    sck-pin:
-      type: int
-      required: true
-      description: SCK pin
-
-    mosi-pin:
-      type: int
-      required: true
-      description: MOSI pin
-
-    miso-pin:
-      type: int
-      required: true
-      description: MISO pin
+    miso-pull-down:
+      type: boolean
+      required: false
+      description: Enable pull-down on MISO line

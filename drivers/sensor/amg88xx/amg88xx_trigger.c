@@ -15,9 +15,20 @@
 
 extern struct amg88xx_data amg88xx_driver;
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(AMG88XX);
+LOG_MODULE_DECLARE(AMG88XX, CONFIG_SENSOR_LOG_LEVEL);
+
+static inline void amg88xx_setup_int(struct amg88xx_data *drv_data,
+				     bool enable)
+{
+	unsigned int flags = enable
+		? GPIO_INT_EDGE_TO_ACTIVE
+		: GPIO_INT_DISABLE;
+
+	gpio_pin_interrupt_configure(drv_data->gpio,
+				     drv_data->gpio_pin,
+				     flags);
+}
 
 int amg88xx_attr_set(struct device *dev,
 		     enum sensor_channel chan,
@@ -67,9 +78,8 @@ static void amg88xx_gpio_callback(struct device *dev,
 {
 	struct amg88xx_data *drv_data =
 		CONTAINER_OF(cb, struct amg88xx_data, gpio_cb);
-	const struct amg88xx_config *config = dev->config->config_info;
 
-	gpio_pin_disable_callback(dev, config->gpio_pin);
+	amg88xx_setup_int(drv_data, false);
 
 #if defined(CONFIG_AMG88XX_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -98,7 +108,7 @@ static void amg88xx_thread_cb(void *arg)
 		drv_data->th_handler(dev, &drv_data->th_trigger);
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, config->gpio_pin);
+	amg88xx_setup_int(drv_data, true);
 }
 
 #ifdef CONFIG_AMG88XX_TRIGGER_OWN_THREAD
@@ -132,9 +142,12 @@ int amg88xx_trigger_set(struct device *dev,
 	struct amg88xx_data *drv_data = dev->driver_data;
 	const struct amg88xx_config *config = dev->config->config_info;
 
-	i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
-			   AMG88XX_INTC, AMG88XX_INTC_DISABLED);
-	gpio_pin_disable_callback(drv_data->gpio, config->gpio_pin);
+	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+			       AMG88XX_INTC, AMG88XX_INTC_DISABLED)) {
+		return -EIO;
+	}
+
+	amg88xx_setup_int(drv_data, false);
 
 	if (trig->type == SENSOR_TRIG_THRESHOLD) {
 		drv_data->th_handler = handler;
@@ -144,9 +157,13 @@ int amg88xx_trigger_set(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, config->gpio_pin);
-	i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
-			   AMG88XX_INTC, AMG88XX_INTC_ABS_MODE);
+	amg88xx_setup_int(drv_data, true);
+
+	if (i2c_reg_write_byte(drv_data->i2c, config->i2c_address,
+			       AMG88XX_INTC, AMG88XX_INTC_ABS_MODE)) {
+		return -EIO;
+	}
+
 	return 0;
 }
 
@@ -163,9 +180,10 @@ int amg88xx_init_interrupt(struct device *dev)
 		return -EINVAL;
 	}
 
+	drv_data->gpio_pin = config->gpio_pin;
+
 	gpio_pin_configure(drv_data->gpio, config->gpio_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE);
+			   GPIO_INPUT | config->gpio_flags);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   amg88xx_gpio_callback,
@@ -183,11 +201,12 @@ int amg88xx_init_interrupt(struct device *dev)
 			CONFIG_AMG88XX_THREAD_STACK_SIZE,
 			(k_thread_entry_t)amg88xx_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_AMG88XX_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_AMG88XX_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = amg88xx_work_cb;
 	drv_data->dev = dev;
 #endif
+	amg88xx_setup_int(drv_data, true);
 
 	return 0;
 }

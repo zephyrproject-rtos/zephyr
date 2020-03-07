@@ -6,15 +6,17 @@ menuconfig IPM
 	  Include interrupt-based inter-processor mailboxes
 	  drivers in system configuration
 
+if IPM
+
 config IPM_MCUX
 	bool "MCUX IPM driver"
-	depends on IPM && HAS_MCUX
+	depends on HAS_MCUX
 	help
 	  Driver for MCUX mailbox
 
 config IPM_IMX
 	bool "IMX IPM driver"
-	depends on IPM && HAS_IMX_HAL
+	depends on HAS_IMX_HAL
 	help
 	  Driver for NXP i.MX messaging unit
 
@@ -48,7 +50,6 @@ endchoice
 config IPM_IMX_MAX_DATA_SIZE
 	int
 	range 4 16
-	# omit prompt to signify a "hidden" option
 	default 4 if IPM_IMX_MAX_DATA_SIZE_4
 	default 8 if IPM_IMX_MAX_DATA_SIZE_8
 	default 16 if IPM_IMX_MAX_DATA_SIZE_16
@@ -57,7 +58,6 @@ config IPM_IMX_MAX_DATA_SIZE
 config IPM_IMX_MAX_ID_VAL
 	int
 	range 0 3
-	# omit prompt to signify a "hidden" option
 	default 3 if IPM_IMX_MAX_DATA_SIZE_4
 	default 1 if IPM_IMX_MAX_DATA_SIZE_8
 	default 0 if IPM_IMX_MAX_DATA_SIZE_16
@@ -65,13 +65,28 @@ config IPM_IMX_MAX_ID_VAL
 
 config IPM_MHU
 	bool "IPM MHU driver"
-	depends on IPM
 	help
 	  Driver for SSE 200 MHU (Message Handling Unit)
 
+config IPM_NRFX
+	bool "IPM NRF driver"
+	depends on HAS_HW_NRF_IPC
+	select NRFX_IPC
+	help
+	  Driver for Nordic nRF messaging unit, based
+	  on nRF IPC peripheral HW.
+
+config IPM_NRF_SINGLE_INSTANCE
+	bool "Single instance of IPM device"
+	help
+	  Enable this option if the IPM device should have
+	  a single instance, instead of one per IPC
+	  message channel.
+
+source "drivers/ipm/Kconfig.nrfx"
+
 config IPM_STM32_IPCC
 	bool "STM32 IPCC controller"
-	depends on IPM
 	select USE_STM32_LL_IPCC
 	help
 	  Driver for stm32 IPCC mailboxes
@@ -87,3 +102,5 @@ config IPM_STM32_IPCC_PROCID
 module = IPM
 module-str = ipm
 source "subsys/logging/Kconfig.template.log_config"
+
+endif #IPM

@@ -10,6 +10,8 @@ ram: 256
 flash: 1024
 supported:
   - arduino_i2c
+  - arduino_gpio
+  - arduino_spi
   - uart
   - gpio
   - netif:eth

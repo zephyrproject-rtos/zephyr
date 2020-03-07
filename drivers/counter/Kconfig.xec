@@ -1,9 +1,7 @@
-# Kconfig.xec - XEC counter configuration options
-#
+# XEC counter configuration options
+
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config COUNTER_XEC
 	bool "Microchip XEC series counter driver"

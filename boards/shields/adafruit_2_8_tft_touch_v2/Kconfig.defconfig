@@ -1,0 +1,35 @@
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2
+
+if DISPLAY
+
+config SPI
+	default y
+
+config ILI9340
+	default y
+
+if LVGL
+
+config LVGL_DISPLAY_DEV_NAME
+	default "ILI9340"
+
+config LVGL_HOR_RES
+	default 320
+
+config LVGL_VER_RES
+	default 240
+
+config LVGL_VDB_SIZE
+	default 64
+
+config LVGL_BITS_PER_PIXEL
+	default 24
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # SHIELD_ADAFRUIT_2_8_TFT_TOUCH_V2

@@ -1,10 +1,7 @@
-# Kconfig - iMX7 M4 UART
-#
-# Copyright (c) 2018, NXP
-#
-# SPDX-License-Identifier: Apache-2.0
-#
+# iMX7 M4 UART
 
+# Copyright (c) 2018, NXP
+# SPDX-License-Identifier: Apache-2.0
 
 menuconfig UART_IMX
 	bool "NXP i.MX7 family processor UART driver"

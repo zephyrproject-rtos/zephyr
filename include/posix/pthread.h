@@ -17,6 +17,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum pthread_state {
 	/* The thread structure is unallocated and available for reuse. */
 	PTHREAD_TERMINATED = 0,
@@ -517,5 +521,9 @@ int pthread_key_create(pthread_key_t *key,
 int pthread_key_delete(pthread_key_t key);
 int pthread_setspecific(pthread_key_t key, const void *value);
 void *pthread_getspecific(pthread_key_t key);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_POSIX_PTHREAD_H_ */

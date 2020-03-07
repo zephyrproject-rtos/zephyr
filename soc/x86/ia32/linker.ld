@@ -15,7 +15,7 @@
  */
 
 #include <autoconf.h>
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 /* physical address where the kernel is loaded */
 /* physical address of RAM */
@@ -45,7 +45,7 @@ MEMORY
     IDT_LIST        : ORIGIN = 0xFFFF1000, LENGTH = 2K
     }
 
-#ifdef CONFIG_X86_LONGMODE
+#ifdef CONFIG_X86_64
 #include <arch/x86/intel64/linker.ld>
 #else
 #include <arch/x86/ia32/linker.ld>

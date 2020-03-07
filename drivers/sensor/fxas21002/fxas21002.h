@@ -61,6 +61,7 @@ struct fxas21002_config {
 #ifdef CONFIG_FXAS21002_TRIGGER
 	char *gpio_name;
 	u8_t gpio_pin;
+	gpio_dt_flags_t gpio_flags;
 #endif
 	u8_t i2c_address;
 	u8_t whoami;

@@ -1,4 +1,3 @@
-
 .. _nrf52_bsim:
 
 NRF52 simulated board (BabbleSim)
@@ -53,7 +52,7 @@ Building and running
    does not support native 32-bit binaries.
 
 To target this board you need to have `BabbleSim`_ compiled in your system.
-If you do not have it yet, in `its webpage <https://BabbleSim.github.io>`_
+If you do not have it yet, in `its web page <https://BabbleSim.github.io>`_
 you can find instructions on how to
 `fetch <https://babblesim.github.io/fetching.html>`_ and
 `build <https://babblesim.github.io/building.html>`_ it.
@@ -63,7 +62,7 @@ In short, you can do:
 
    mkdir -p ${HOME}/bsim && cd ${HOME}/bsim
    curl https://storage.googleapis.com/git-repo-downloads/repo > ./repo  && chmod a+x ./repo
-   ./repo init -u git@github.com:BabbleSim/manifest.git -m everything.xml -b master
+   ./repo init -u https://github.com/BabbleSim/manifest.git -m everything.xml -b master
    ./repo sync
    make everything -j 8
 

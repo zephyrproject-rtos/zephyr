@@ -37,9 +37,6 @@
  * order when programming the MMU.
  */
 
-#define _LINKER
-
-#define _ASMLANGUAGE
 #include <linker/linker-defs.h>
 #include <offsets.h>
 #include <sys/util.h>
@@ -88,7 +85,13 @@ SECTIONS
 	_image_text_start = PHYS_LOAD_ADDR;
 	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
-	. = CONFIG_TEXT_SECTION_OFFSET;
+
+/* Located in generated directory. This file is populated by calling
+ * zephyr_linker_sources(ROM_START ...). This typically contains the vector
+ * table and debug information.
+ */
+#include <snippets-rom-start.ld>
+
 	*(.text_start)
 	*(".text_start.*")
 	*(.text)
@@ -121,9 +124,9 @@ SECTIONS
 
 #ifdef CONFIG_X86_MMU
 	. = ALIGN(4);
-	z_x86_mmulist_start = .;
-	KEEP(*(.mmulist))
-	z_x86_mmulist_end = .;
+	_mmu_region_list_start = .;
+	KEEP(*("._mmu_region.static.*"))
+	_mmu_region_list_end = .;
 #endif /* CONFIG_X86_MMU */
 
 #ifndef CONFIG_DYNAMIC_INTERRUPTS

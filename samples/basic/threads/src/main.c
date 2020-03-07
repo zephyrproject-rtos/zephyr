@@ -17,22 +17,6 @@
 /* scheduling priority used by each thread */
 #define PRIORITY 7
 
-/* Change this if you have an LED connected to a custom port */
-#ifndef DT_ALIAS_LED0_GPIOS_CONTROLLER
-#define DT_ALIAS_LED0_GPIOS_CONTROLLER 	LED0_GPIO_PORT
-#endif
-#ifndef DT_ALIAS_LED1_GPIOS_CONTROLLER
-#define DT_ALIAS_LED1_GPIOS_CONTROLLER 	LED1_GPIO_PORT
-#endif
-
-#define PORT0	 DT_ALIAS_LED0_GPIOS_CONTROLLER
-#define PORT1	 DT_ALIAS_LED1_GPIOS_CONTROLLER
-
-
-/* Change this if you have an LED connected to a custom pin */
-#define LED0    DT_ALIAS_LED0_GPIOS_PIN
-#define LED1    DT_ALIAS_LED1_GPIOS_PIN
-
 struct printk_data_t {
 	void *fifo_reserved; /* 1st word reserved for use by fifo */
 	u32_t led;
@@ -41,18 +25,40 @@ struct printk_data_t {
 
 K_FIFO_DEFINE(printk_fifo);
 
-void blink(const char *port, u32_t sleep_ms, u32_t led, u32_t id)
+#ifndef DT_ALIAS_LED0_GPIOS_FLAGS
+#define DT_ALIAS_LED0_GPIOS_FLAGS 0
+#endif
+
+#ifndef DT_ALIAS_LED1_GPIOS_FLAGS
+#define DT_ALIAS_LED1_GPIOS_FLAGS 0
+#endif
+
+struct led {
+	const char *gpio_dev_name;
+	const char *gpio_pin_name;
+	unsigned int gpio_pin;
+	unsigned int gpio_flags;
+};
+
+void blink(const struct led *led, u32_t sleep_ms, u32_t id)
 {
-	int cnt = 0;
 	struct device *gpio_dev;
+	int cnt = 0;
+	int ret;
 
-	gpio_dev = device_get_binding(port);
-	__ASSERT_NO_MSG(gpio_dev != NULL);
+	gpio_dev = device_get_binding(led->gpio_dev_name);
+	__ASSERT(gpio_dev != NULL, "Error: didn't find %s device\n",
+			led->gpio_dev_name);
 
-	gpio_pin_configure(gpio_dev, led, GPIO_DIR_OUT);
+	ret = gpio_pin_configure(gpio_dev, led->gpio_pin, led->gpio_flags);
+	if (ret != 0) {
+		printk("Error %d: failed to configure pin %d '%s'\n",
+			ret, led->gpio_pin, led->gpio_pin_name);
+		return;
+	}
 
 	while (1) {
-		gpio_pin_write(gpio_dev, led, cnt % 2);
+		gpio_pin_set(gpio_dev, led->gpio_pin, cnt % 2);
 
 		struct printk_data_t tx_data = { .led = id, .cnt = cnt };
 
@@ -71,12 +77,26 @@ void blink(const char *port, u32_t sleep_ms, u32_t led, u32_t id)
 
 void blink1(void)
 {
-	blink(PORT0, 100, LED0, 0);
+	const struct led led1 = {
+		.gpio_dev_name = DT_ALIAS_LED0_GPIOS_CONTROLLER,
+		.gpio_pin_name = DT_ALIAS_LED0_LABEL,
+		.gpio_pin = DT_ALIAS_LED0_GPIOS_PIN,
+		.gpio_flags = GPIO_OUTPUT | DT_ALIAS_LED0_GPIOS_FLAGS,
+	};
+
+	blink(&led1, 100, 0);
 }
 
 void blink2(void)
 {
-	blink(PORT1, 1000, LED1, 1);
+	const struct led led2 = {
+		.gpio_dev_name = DT_ALIAS_LED1_GPIOS_CONTROLLER,
+		.gpio_pin_name = DT_ALIAS_LED1_LABEL,
+		.gpio_pin = DT_ALIAS_LED1_GPIOS_PIN,
+		.gpio_flags = GPIO_OUTPUT | DT_ALIAS_LED1_GPIOS_FLAGS,
+	};
+
+	blink(&led2, 1000, 1);
 }
 
 void uart_out(void)

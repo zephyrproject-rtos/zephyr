@@ -1,0 +1,8 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF family TWIM (TWI master with EasyDMA)
+
+compatible: "nordic,nrf-twim"
+
+include: nordic,nrf-twi-common.yaml

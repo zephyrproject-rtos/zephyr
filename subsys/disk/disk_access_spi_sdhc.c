@@ -28,6 +28,7 @@ struct sdhc_spi_data {
 	struct spi_config cfg;
 	struct device *cs;
 	u32_t pin;
+	gpio_dt_flags_t flags;
 
 	bool high_capacity;
 	u32_t sector_count;
@@ -71,7 +72,7 @@ static int sdhc_spi_trace(struct sdhc_spi_data *data, int dir, int err,
 /* Asserts or deasserts chip select */
 static void sdhc_spi_set_cs(struct sdhc_spi_data *data, int value)
 {
-	gpio_pin_write(data->cs, data->pin, value);
+	gpio_pin_set(data->cs, data->pin, value);
 }
 
 /* Receives a fixed number of bytes */
@@ -563,11 +564,6 @@ static int sdhc_spi_detect(struct sdhc_spi_data *data)
 				break;
 			}
 		} while (sdhc_retry_ok(&retry));
-
-		if (err != 0) {
-			/* Card never finished power-up */
-			return -ETIMEDOUT;
-		}
 	}
 
 	if ((ocr & SDHC_CCS) != 0U) {
@@ -780,10 +776,12 @@ static int sdhc_spi_init(struct device *dev)
 	__ASSERT_NO_MSG(data->cs != NULL);
 
 	data->pin = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_PIN;
+	data->flags = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_FLAGS;
 
 	disk_spi_sdhc_init(dev);
 
-	return gpio_pin_configure(data->cs, data->pin, GPIO_DIR_OUT);
+	return gpio_pin_configure(data->cs, data->pin,
+				  GPIO_OUTPUT_INACTIVE | data->flags);
 }
 
 static int disk_spi_sdhc_access_status(struct disk_info *disk)
@@ -866,11 +864,6 @@ static int disk_spi_sdhc_access_init(struct disk_info *disk)
 	struct device *dev = disk->dev;
 	struct sdhc_spi_data *data = dev->driver_data;
 	int err;
-
-	if (data->status == DISK_STATUS_OK) {
-		/* Called twice, don't re-init. */
-		return 0;
-	}
 
 	err = sdhc_spi_detect(data);
 	sdhc_spi_set_cs(data, 1);

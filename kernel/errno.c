@@ -12,7 +12,7 @@
  * context switching.
  */
 
-#include <kernel_structs.h>
+#include <kernel.h>
 #include <syscall_handler.h>
 
 /*

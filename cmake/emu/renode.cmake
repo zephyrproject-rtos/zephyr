@@ -7,6 +7,7 @@ find_program(
 
 set(RENODE_FLAGS
   --disable-xwt
+  --port -2
   --pid-file renode.pid
   )
 

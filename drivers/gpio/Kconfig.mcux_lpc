@@ -1,13 +1,12 @@
-# Kconfig.mcux_lpc - MCUX LPC GPIO configuration options
-#
+# MCUX LPC GPIO configuration options
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_MCUX_LPC
 	bool "MCUX LPC GPIO driver"
 	depends on HAS_MCUX
+	select HAS_DTS_GPIO
 	help
 	  Enable the MCUX LPC pinmux driver.
 

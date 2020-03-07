@@ -1,11 +1,7 @@
 # Copyright (c) 2018, Alexander Wachter
 # SPDX-License-Identifier: Apache-2.0
 
-title: AMS (Austria Mikro Systeme) Indoor Air Quality Sensor iAQ-core
-
-description: >
-    This binding gives a base representation of iAQ-core indoor air quality
-    sensor
+description: iAQ-core indoor air quality sensor
 
 compatible: "ams,iaqcore"
 

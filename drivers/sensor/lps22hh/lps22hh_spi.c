@@ -17,8 +17,7 @@
 
 #define LPS22HH_SPI_READ		(1 << 7)
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(LPS22HH);
+LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
 static int lps22hh_spi_read(struct device *dev, u8_t reg_addr,
 			    u8_t *value, u8_t len)
@@ -100,13 +99,13 @@ int lps22hh_spi_init(struct device *dev)
 {
 	struct lps22hh_data *data = dev->driver_data;
 
-	data->ctx_spi.read_reg = (lps22hh_read_ptr) lps22hh_spi_read;
-	data->ctx_spi.write_reg = (lps22hh_write_ptr) lps22hh_spi_write;
+	data->ctx_spi.read_reg = (stmdev_read_ptr) lps22hh_spi_read;
+	data->ctx_spi.write_reg = (stmdev_write_ptr) lps22hh_spi_write;
 
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = dev;
 
-#if defined(DT_INST_0_ST_LPS22HH_CS_GPIO_CONTROLLER)
+#if defined(DT_INST_0_ST_LPS22HH_CS_GPIOS_CONTROLLER)
 	const struct lps22hh_config *cfg = dev->config->config_info;
 
 	/* handle SPI CS thru GPIO if it is the case */

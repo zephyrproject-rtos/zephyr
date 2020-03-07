@@ -14,11 +14,10 @@
 #include <logging/log.h>
 #include "ens210.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(ENS210);
+LOG_MODULE_REGISTER(ENS210, CONFIG_SENSOR_LOG_LEVEL);
 
-#ifdef ENS210_CRC_CHECK
-u32_t ens210_crc7(u32_t bitstream)
+#ifdef CONFIG_ENS210_CRC_CHECK
+static u32_t ens210_crc7(u32_t bitstream)
 {
 	u32_t polynomial = (ENS210_CRC7_POLY << (ENS210_CRC7_DATA_WIDTH - 1));
 	u32_t bit = ENS210_CRC7_DATA_MSB << ENS210_CRC7_WIDTH;
@@ -35,7 +34,7 @@ u32_t ens210_crc7(u32_t bitstream)
 
 	return val;
 }
-#endif /*ENS210_CRC_CHECK*/
+#endif /* CONFIG_ENS210_CRC_CHECK */
 
 static int ens210_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
@@ -43,9 +42,9 @@ static int ens210_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct ens210_value_data data[2];
 	int ret, cnt;
 
-#ifdef ENS210_CRC_CHECK
+#ifdef CONFIG_ENS210_CRC_CHECK
 	u32_t temp_valid, humidity_valid;
-#endif /*ENS210_CRC_CHECK*/
+#endif /* CONFIG_ENS210_CRC_CHECK */
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
@@ -67,7 +66,7 @@ static int ens210_sample_fetch(struct device *dev, enum sensor_channel chan)
 			continue;
 		}
 
-#ifdef ENS210_CRC_CHECK
+#ifdef CONFIG_ENS210_CRC_CHECK
 		temp_valid =      data[0].val |
 				  (data[0].valid << (sizeof(data[0].val) * 8));
 		humidity_valid =  data[1].val |
@@ -82,7 +81,7 @@ static int ens210_sample_fetch(struct device *dev, enum sensor_channel chan)
 			LOG_WRN("Humidity CRC error");
 			continue;
 		}
-#endif /*ENS210_CRC_CHECK*/
+#endif /* CONFIG_ENS210_CRC_CHECK */
 
 		drv_data->temp = data[0];
 		drv_data->humidity = data[1];
@@ -108,13 +107,13 @@ static int ens210_channel_get(struct device *dev,
 		temp_frac -= 273150000;
 
 		val->val1 = temp_frac / 1000000;
-		val->val2 = temp_frac - val->val1;
+		val->val2 = temp_frac % 1000000;
 		break;
 	case  SENSOR_CHAN_HUMIDITY:
 		humidity_frac = sys_le16_to_cpu(drv_data->humidity.val) *
 				(1000000 / 512);
 		val->val1 = humidity_frac / 1000000;
-		val->val2 = humidity_frac - val->val1;
+		val->val2 = humidity_frac % 1000000;
 
 		break;
 	default:
@@ -162,7 +161,7 @@ static int ens210_wait_boot(struct device *i2c_dev)
 					 (u8_t *)&sys_stat);
 
 		if (ret < 0) {
-			k_sleep(1);
+			k_sleep(K_MSEC(1));
 			continue;
 		}
 
@@ -176,7 +175,7 @@ static int ens210_wait_boot(struct device *i2c_dev)
 
 		ens210_sys_enable(i2c_dev);
 
-		k_sleep(2);
+		k_sleep(K_MSEC(2));
 	}
 
 	if (ret < 0) {

@@ -1,6 +1,7 @@
 tests:
-  peripheral.counter:
+  drivers.counter:
     tags: drivers
     depends_on: counter
     min_ram: 16
     platform_exclude: nucleo_f302r8
+    timeout: 400

@@ -27,8 +27,8 @@ LOG_MODULE_REGISTER(net_ppp, LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_core.h>
-#include <console/uart_pipe.h>
-#include <crc.h>
+#include <drivers/console/uart_pipe.h>
+#include <sys/crc.h>
 
 #include "../../subsys/net/ip/net_stats.h"
 #include "../../subsys/net/ip/net_private.h"
@@ -64,6 +64,11 @@ struct ppp_driver_context {
 #endif
 
 	enum ppp_driver_state state;
+
+#if defined(CONFIG_PPP_CLIENT_CLIENTSERVER)
+	/* correctly received CLIENT bytes */
+	u8_t client_index;
+#endif
 
 	u8_t init_done : 1;
 	u8_t next_escaped : 1;
@@ -168,6 +173,65 @@ static void ppp_change_state(struct ppp_driver_context *ctx,
 	ctx->state = new_state;
 }
 
+static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
+{
+	if (!IS_ENABLED(CONFIG_NET_TEST)) {
+		uart_pipe_send(ppp->send_buf, off);
+	}
+
+	return 0;
+}
+
+static int ppp_send_bytes(struct ppp_driver_context *ppp,
+			  const u8_t *data, int len, int off)
+{
+	int i;
+
+	for (i = 0; i < len; i++) {
+		ppp->send_buf[off++] = data[i];
+
+		if (off >= sizeof(ppp->send_buf)) {
+			off = ppp_send_flush(ppp, off);
+		}
+	}
+
+	return off;
+}
+
+#if defined(CONFIG_PPP_CLIENT_CLIENTSERVER)
+
+#define CLIENT "CLIENT"
+#define CLIENTSERVER "CLIENTSERVER"
+
+static void ppp_handle_client(struct ppp_driver_context *ppp, u8_t byte)
+{
+	static const char *client = CLIENT;
+	static const char *clientserver = CLIENTSERVER;
+	int offset;
+
+	if (ppp->client_index >= (sizeof(CLIENT) - 1)) {
+		ppp->client_index = 0;
+	}
+
+	if (byte != client[ppp->client_index]) {
+		ppp->client_index = 0;
+		if (byte != client[ppp->client_index]) {
+			return;
+		}
+	}
+
+	++ppp->client_index;
+	if (ppp->client_index >= (sizeof(CLIENT) - 1)) {
+		LOG_DBG("Received complete CLIENT string");
+		offset = ppp_send_bytes(ppp, clientserver,
+					sizeof(CLIENTSERVER) - 1, 0);
+		(void)ppp_send_flush(ppp, offset);
+		ppp->client_index = 0;
+	}
+
+}
+#endif
+
 static int ppp_input_byte(struct ppp_driver_context *ppp, u8_t byte)
 {
 	int ret = -EAGAIN;
@@ -179,6 +243,10 @@ static int ppp_input_byte(struct ppp_driver_context *ppp, u8_t byte)
 			/* Note that we do not save the sync flag */
 			LOG_DBG("Sync byte (0x%02x) start", byte);
 			ppp_change_state(ppp, STATE_HDLC_FRAME_ADDRESS);
+#if defined(CONFIG_PPP_CLIENT_CLIENTSERVER)
+		} else {
+			ppp_handle_client(ppp, byte);
+#endif
 		}
 
 		break;
@@ -434,31 +502,6 @@ static bool calc_fcs(struct net_pkt *pkt, u16_t *fcs, u16_t protocol)
 	return true;
 }
 
-static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
-{
-	if (!IS_ENABLED(CONFIG_NET_TEST)) {
-		uart_pipe_send(ppp->send_buf, off);
-	}
-
-	return 0;
-}
-
-static int ppp_send_bytes(struct ppp_driver_context *ppp,
-			  const u8_t *data, int len, int off)
-{
-	int i;
-
-	for (i = 0; i < len; i++) {
-		ppp->send_buf[off++] = data[i];
-
-		if (off >= sizeof(ppp->send_buf)) {
-			off = ppp_send_flush(ppp, off);
-		}
-	}
-
-	return off;
-}
-
 static u16_t ppp_escape_byte(u8_t byte, int *offset)
 {
 	if (byte == 0x7e || byte == 0x7d || byte < 0x20) {
@@ -574,6 +617,9 @@ static int ppp_driver_init(struct device *dev)
 
 	ppp->pkt = NULL;
 	ppp_change_state(ppp, STATE_HDLC_FRAME_START);
+#if defined(CONFIG_PPP_CLIENT_CLIENTSERVER)
+	ppp->client_index = 0;
+#endif
 
 	return 0;
 }

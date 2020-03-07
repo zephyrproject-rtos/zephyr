@@ -1,7 +1,4 @@
-title: ns16550
-
-description: >
-    This binding gives a base representation of the ns16550 UART
+description: ns16550 UART
 
 compatible: "ns16550"
 

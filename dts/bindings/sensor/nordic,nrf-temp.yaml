@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic nRF Family TEMP node
-
-description: >
-    This is a representation of the Nordic nRF TEMP node
+description: Nordic nRF family TEMP node
 
 compatible: "nordic,nrf-temp"
 
@@ -15,4 +12,7 @@ properties:
       required: true
 
     interrupts:
+      required: true
+
+    label:
       required: true

@@ -1,10 +1,7 @@
-# Kconfig - Audio Codec configuration options
+# Audio Codec configuration options
 
-#
 # Copyright (c) 2018 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig AUDIO
 	bool "Support for Audio"

@@ -1,10 +1,7 @@
-# Kconfig -HW Info driver configuration options
+# HW Info driver configuration options
 
-#
 # Copyright (c) 2019 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig HWINFO
 	bool "Hardware Information driver"
@@ -12,6 +9,9 @@ menuconfig HWINFO
 	  Enable hwinfo driver.
 
 if HWINFO
+
+config HWINFO_HAS_DRIVER
+	bool
 
 config HWINFO_SHELL
 	bool "Enable HWINFO Shell"
@@ -23,14 +23,15 @@ config HWINFO_STM32
 	bool "STM32 hwinfo"
 	default y
 	depends on SOC_FAMILY_STM32
-	select USE_STM32_LL_UTILS
+	select HWINFO_HAS_DRIVER
 	help
 	  Enable STM32 hwinfo driver.
 
 config HWINFO_NRF
 	bool "NRF device ID"
 	default y
-	depends on (SOC_SERIES_NRF52X || SOC_SERIES_NRF51X)
+	depends on SOC_FAMILY_NRF && !TRUSTED_EXECUTION_NONSECURE
+	select HWINFO_HAS_DRIVER
 	help
 	  Enable Nordic NRF hwinfo driver.
 
@@ -38,6 +39,7 @@ config HWINFO_MCUX_SIM
 	bool "NXP kinetis device ID"
 	default y
 	depends on HAS_MCUX_SIM
+	select HWINFO_HAS_DRIVER
 	help
 	  Enable NXP kinetis mcux hwinfo driver.
 
@@ -45,6 +47,7 @@ config HWINFO_IMXRT
 	bool "NXP i.mx RT device ID"
 	default y
 	depends on SOC_SERIES_IMX_RT
+	select HWINFO_HAS_DRIVER
 	help
 	  Enable NXP i.mx RT hwinfo driver.
 
@@ -52,6 +55,7 @@ config HWINFO_SAM
 	bool "Atmel SAM device ID"
 	default y
 	depends on SOC_FAMILY_SAM
+	select HWINFO_HAS_DRIVER
 	help
 	  Enable Atmel SAM hwinfo driver.
 
@@ -59,6 +63,7 @@ config HWINFO_SAM0
 	bool "Atmel SAM0 device ID"
 	default y
 	depends on SOC_FAMILY_SAM0
+	select HWINFO_HAS_DRIVER
 	help
 	  Enable Atmel SAM0 hwinfo driver.
 
@@ -66,6 +71,7 @@ config HWINFO_ESP32
 	bool "ESP32 device ID"
 	default y
 	depends on SOC_ESP32
+	select HWINFO_HAS_DRIVER
 	help
 	  Enable ESP32 hwinfo driver.
 
@@ -73,6 +79,7 @@ config HWINFO_LITEX
 	bool "LiteX device ID"
 	default y
 	depends on SOC_RISCV32_LITEX_VEXRISCV
+	select HWINFO_HAS_DRIVER
 	help
 	  Enable LiteX hwinfo driver
 endif

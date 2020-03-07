@@ -1,0 +1,19 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF family SPIM (SPI master with EasyDMA)
+
+compatible: "nordic,nrf-spim"
+
+include: nordic,nrf-spi-common.yaml
+
+properties:
+    miso-pull-up:
+      type: boolean
+      required: false
+      description: Enable pull-up on MISO line
+
+    miso-pull-down:
+      type: boolean
+      required: false
+      description: Enable pull-down on MISO line

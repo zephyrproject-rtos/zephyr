@@ -1,0 +1,18 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Semtech SX9500 capacitive proximity/button. See more info at
+    https://www.semtech.com/products/smart-sensing/touch-proximity-devices/sx9500
+
+compatible: "semtech,sx9500"
+
+include: i2c-device.yaml
+
+properties:
+    int-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Connection for the NIRQ signal.  This signal is active-low when
+        produced by the sensor.

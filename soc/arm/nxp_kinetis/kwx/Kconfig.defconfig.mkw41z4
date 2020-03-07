@@ -1,96 +1,61 @@
-# Kconfig - Kinetis KWx SoC configuration options
-#
+# Kinetis KWx SoC configuration options
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MKW41Z4
 
 config SOC
-	string
 	default "mkw41z4"
 
 config NUM_IRQS
-	int
 	default 32
-
-if ADC
 
 config ADC_MCUX_ADC16
 	default y
-
-endif # ADC
-
-if CLOCK_CONTROL
+	depends on ADC
 
 config CLOCK_CONTROL_MCUX_SIM
 	default y
-
-endif # CLOCK_CONTROL
-
-if COUNTER
+	depends on CLOCK_CONTROL
 
 config COUNTER_MCUX_RTC
 	default y
-
-endif # COUNTER
-
-if PINMUX
+	depends on COUNTER
 
 config PINMUX_MCUX
 	default y
-
-endif # PINMUX
-
-if GPIO
+	depends on PINMUX
 
 config GPIO_MCUX
 	default y
-
-endif # GPIO
-
-if SERIAL
+	depends on GPIO
 
 config UART_MCUX_LPUART
 	default y
-
-endif # SERIAL
-
-if I2C
+	depends on SERIAL
 
 config I2C_MCUX
 	default y
-
-endif # I2C
-
-if SPI
+	depends on I2C
 
 config SPI_MCUX_DSPI
 	default y
-
-endif # SPI
-
-if ENTROPY_GENERATOR
+	depends on SPI
 
 config ENTROPY_MCUX_TRNG
 	default y
-
-endif # ENTROPY_GENERATOR
-
-if FLASH
+	depends on ENTROPY_GENERATOR
 
 config SOC_FLASH_MCUX
 	default y
-
-endif # FLASH
+	depends on FLASH
 
 if NETWORKING
 
-if !NET_L2_OPENTHREAD
 config NET_L2_IEEE802154
 	default y
-endif # NET_L2_OPENTHREAD
+	depends on !NET_L2_OPENTHREAD
 
 config IEEE802154_KW41Z
 	default y
@@ -99,5 +64,25 @@ config NET_CONFIG_IEEE802154_DEV_NAME
 	default IEEE802154_KW41Z_DRV_NAME
 
 endif # NETWORKING
+
+choice CSPRNG_GENERATOR_CHOICE
+	default CTR_DRBG_CSPRNG_GENERATOR
+endchoice
+
+#
+# MBEDTLS is larger but much faster than TinyCrypt so choose wisely
+#
+#config MBEDTLS
+config TINYCRYPT
+	default y
+	depends on ENTROPY_GENERATOR
+
+#
+# KW41Z TRNG entropy source cannot be used as a Hardware RNG source so
+# use XOROSHIRO for PRNG
+#
+choice RNG_GENERATOR_CHOICE
+	default XOROSHIRO_RANDOM_GENERATOR
+endchoice
 
 endif # SOC_MKW41Z4

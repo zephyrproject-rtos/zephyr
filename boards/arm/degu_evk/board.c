@@ -5,7 +5,7 @@
  */
 
 #include <init.h>
-#include <gpio.h>
+#include <drivers/gpio.h>
 
 static int board_degu_evk_init(struct device *dev)
 {
@@ -18,20 +18,17 @@ static int board_degu_evk_init(struct device *dev)
 	 * Degu Evaluation Kit has a TPS22916C power switch.
 	 * It is connected to GPIO0_26 so we must enable it.
 	 */
-	gpio_pin_configure(gpio0, 26, GPIO_DIR_OUT);
-	gpio_pin_write(gpio0, 26, 1);
+	gpio_pin_configure(gpio0, 26, GPIO_OUTPUT_HIGH);
 
 	/*
 	 * We must enable GPIO1_2 to use Secure Element.
 	 */
-	gpio_pin_configure(gpio1, 2, GPIO_DIR_OUT);
-	gpio_pin_write(gpio1, 2, 1);
+	gpio_pin_configure(gpio1, 2, GPIO_OUTPUT_HIGH);
 
 	/*
 	 * We must enable GPIO1_6 to read Vin voltage.
 	 */
-	gpio_pin_configure(gpio1, 6, GPIO_DIR_OUT);
-	gpio_pin_write(gpio1, 6, 1);
+	gpio_pin_configure(gpio1, 6, GPIO_OUTPUT_HIGH);
 
 	return 0;
 }

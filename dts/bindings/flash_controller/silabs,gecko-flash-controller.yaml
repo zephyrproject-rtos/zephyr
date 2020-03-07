@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
 
-title: Silicon Labs Gecko Flash Controller
-
-description: >
-    This binding gives a base representation of the Silicon Labs Gecko Flash Controller
+description: Silicon Labs Gecko flash controller
 
 compatible: "silabs,gecko-flash-controller"
 

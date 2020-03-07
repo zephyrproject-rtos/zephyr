@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <soc.h>
 #include <sys/printk.h>
 #include <drivers/clock_control.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 #include "eth_stm32_hal_priv.h"
 
@@ -87,7 +87,7 @@ static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 	 * at least four TX_CLK/RX_CLK clock cycles
 	 */
 	tmp = heth->Instance->MACFFR;
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 	heth->Instance->MACFFR = tmp;
 }
 

@@ -17,7 +17,6 @@
 		led0 = &yellow_led_1;
 		led1 = &yellow_led_2;
 		sw0 = &user_button;
-		wdog = &wdog;
 	};
 
 	chosen {
@@ -30,11 +29,11 @@
 	leds {
 		compatible = "gpio-leds";
 		yellow_led_1: led_1 {
-			gpios = <&portc 10 0>;
+			gpios = <&portc 10 GPIO_ACTIVE_LOW>;
 			label = "LED 1";
 		};
 		yellow_led_2: led_2 {
-			gpios = <&portc 17 0>;
+			gpios = <&portc 17 GPIO_ACTIVE_LOW>;
 			label = "LED 2";
 		};
 	};
@@ -43,8 +42,7 @@
 		compatible = "gpio-keys";
 		user_button: button_1 {
 			label = "User Button";
-			gpios = <&porta 5 (GPIO_PUD_PULL_UP |
-					   GPIO_INT_ACTIVE_LOW)>;
+			gpios = <&porta 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 	};
 };
@@ -54,6 +52,10 @@
 };
 
 &i2c0 {
+	status = "okay";
+};
+
+&spi0 {
 	status = "okay";
 };
 

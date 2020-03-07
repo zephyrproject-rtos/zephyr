@@ -439,10 +439,11 @@ struct usdhc_client_info {
 struct usdhc_board_config {
 	struct device *pwr_gpio;
 	u32_t pwr_pin;
-	int pwr_flags;
+	gpio_dt_flags_t pwr_flags;
 
 	struct device *detect_gpio;
 	u32_t detect_pin;
+	gpio_dt_flags_t detect_flags;
 	struct gpio_callback detect_cb;
 };
 
@@ -711,8 +712,6 @@ enum usdhc_reset {
 		USDHC_RESET_TUNING),
 	/*!< All reset types */
 };
-
-#define HOST_CARD_INSERT_CD_LEVEL (0U)
 
 static void usdhc_millsec_delay(unsigned int cycles_to_wait)
 {
@@ -2226,17 +2225,17 @@ static void usdhc_cd_gpio_cb(struct device *dev,
 	struct usdhc_board_config *board_cfg =
 		CONTAINER_OF(cb, struct usdhc_board_config, detect_cb);
 
-	gpio_pin_disable_callback(dev, board_cfg->detect_pin);
-
+	gpio_pin_interrupt_configure(dev, board_cfg->detect_pin,
+				     GPIO_INT_DISABLE);
 }
 
 static int usdhc_cd_gpio_init(struct device *detect_gpio,
-	u32_t pin, struct gpio_callback *callback)
+	u32_t pin, gpio_dt_flags_t flags,
+	struct gpio_callback *callback)
 {
 	int ret;
 
-	ret = gpio_pin_configure(detect_gpio, pin,
-		GPIO_DIR_IN | GPIO_INT_DOUBLE_EDGE);
+	ret = gpio_pin_configure(detect_gpio, pin, GPIO_INPUT | flags);
 	if (ret)
 		return ret;
 
@@ -2616,6 +2615,8 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 		}
 		priv->board_cfg.detect_pin =
 			DT_INST_0_NXP_IMX_USDHC_CD_GPIOS_PIN;
+		priv->board_cfg.detect_flags =
+			DT_INST_0_NXP_IMX_USDHC_CD_GPIOS_FLAGS;
 #endif
 
 	} else if (priv->nusdhc == 1) {
@@ -2641,6 +2642,8 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 		}
 		priv->board_cfg.detect_pin =
 			DT_INST_1_NXP_IMX_USDHC_CD_GPIOS_PIN;
+		priv->board_cfg.detect_flags =
+			DT_INST_1_NXP_IMX_USDHC_CD_GPIOS_FLAGS;
 #endif
 	} else {
 		return -ENODEV;
@@ -2649,6 +2652,7 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 	if (priv->board_cfg.pwr_gpio) {
 		ret = gpio_pin_configure(priv->board_cfg.pwr_gpio,
 				priv->board_cfg.pwr_pin,
+				GPIO_OUTPUT_ACTIVE |
 				priv->board_cfg.pwr_flags);
 		if (ret) {
 			return ret;
@@ -2658,13 +2662,6 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 		 * maybe could be shorter
 		 */
 		k_busy_wait(100000);
-		if (priv->board_cfg.pwr_flags & (GPIO_DIR_OUT)) {
-			ret = gpio_pin_write(priv->board_cfg.pwr_gpio,
-				priv->board_cfg.pwr_pin, 1);
-			if (ret) {
-				return ret;
-			}
-		}
 	}
 
 	if (!priv->board_cfg.detect_gpio) {
@@ -2674,18 +2671,20 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 
 	ret = usdhc_cd_gpio_init(priv->board_cfg.detect_gpio,
 			priv->board_cfg.detect_pin,
+			priv->board_cfg.detect_flags,
 			&priv->board_cfg.detect_cb);
 	if (ret) {
 		return ret;
 	}
-	ret = gpio_pin_read(priv->board_cfg.detect_gpio,
-			priv->board_cfg.detect_pin,
-			&gpio_level);
-	if (ret) {
+	ret = gpio_pin_get(priv->board_cfg.detect_gpio,
+			   priv->board_cfg.detect_pin);
+	if (ret < 0) {
 		return ret;
 	}
 
-	if (gpio_level != HOST_CARD_INSERT_CD_LEVEL) {
+	gpio_level = ret;
+
+	if (gpio_level == 0) {
 		priv->inserted = false;
 		LOG_ERR("NO SD inserted!\r\n");
 
@@ -2900,4 +2899,3 @@ DEVICE_AND_API_INIT(usdhc_dev2,
 #error No USDHC2 slot on board.
 #endif
 #endif
-

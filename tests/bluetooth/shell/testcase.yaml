@@ -1,5 +1,5 @@
 tests:
-  bluetooth.shell:
+  bluetooth.shell.main:
     extra_configs:
       - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
     platform_whitelist: qemu_cortex_m3 qemu_x86 native_posix native_posix_64 nrf52840_pca10056
@@ -7,7 +7,7 @@ tests:
     tags: bluetooth
     harness: keyboard
     min_flash: 145
-  bluetooth.shell_br:
+  bluetooth.shell.shell_br:
     extra_configs:
       - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
     extra_args: CONF_FILE="prj_br.conf"

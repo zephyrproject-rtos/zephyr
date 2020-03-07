@@ -10,4 +10,3 @@ Protocols
    coap
    lwm2m
    mqtt
-

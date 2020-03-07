@@ -1,7 +1,4 @@
-title: ARM CMSDK DUALTIMER
-
-description: >
-    This binding gives a base representation of the ARM CMSDK DUALTIMER
+description: ARM CMSDK dual timer
 
 compatible: "arm,cmsdk-dtimer"
 

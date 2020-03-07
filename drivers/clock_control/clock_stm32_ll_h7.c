@@ -6,9 +6,9 @@
  */
 
 #include <soc.h>
-#include <clock_control.h>
-#include <misc/util.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control.h>
+#include <sys/util.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 
 /* Macros to fill up prescaler values */
 #define z_sysclk_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
@@ -217,19 +217,14 @@ static int stm32_clock_control_init(struct device *dev)
 #if !defined(CONFIG_CPU_CORTEX_M4)
 
 #ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
-	/* Power Configuration */
-	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
-	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
-	while (LL_PWR_IsActiveFlag_VOS() == 0) {
-	}
 
 #ifdef CONFIG_CLOCK_STM32_PLL_SRC_HSE
 
-#ifdef CONFIG_CLOCK_STM32_HSE_BYPASS
-	LL_RCC_HSE_EnableBypass();
-#else
-	LL_RCC_HSE_DisableBypass();
-#endif /* CONFIG_CLOCK_STM32_HSE_BYPASS */
+	if (IS_ENABLED(CONFIG_CLOCK_STM32_HSE_BYPASS)) {
+		LL_RCC_HSE_EnableBypass();
+	} else {
+		LL_RCC_HSE_DisableBypass();
+	}
 
 	/* Enable HSE oscillator */
 	LL_RCC_HSE_Enable();

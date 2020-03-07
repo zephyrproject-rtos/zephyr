@@ -1,7 +1,4 @@
-title: Atmel SAM0 SERCOM UART driver
-
-description: >
-    This binding gives a base representation of the Atmel SAM0 SERCOM UART driver
+description: Atmel SAM0 SERCOM UART driver
 
 compatible: "atmel,sam0-uart"
 

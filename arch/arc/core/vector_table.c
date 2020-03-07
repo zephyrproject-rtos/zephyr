@@ -64,4 +64,3 @@ struct vector_table _VectorTable Z_GENERIC_SECTION(.exc_vector_table) = {
 	0,
 	0
 };
-

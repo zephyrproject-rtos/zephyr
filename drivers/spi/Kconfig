@@ -1,10 +1,7 @@
-# Kconfig - SPI driver configuration options
+# SPI driver configuration options
 
-#
 # Copyright (c) 2015-2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # SPI Drivers
@@ -39,17 +36,16 @@ module-str = spi
 source "subsys/logging/Kconfig.template.log_config"
 
 
-config	SPI_0
+config SPI_0
 	bool "SPI port 0"
 	help
 	  Enable SPI controller port 0.
-
-if SPI_0
 
 config SPI_0_OP_MODES
 	int "Port 0 supported operation modes (master/slave/both)"
 	default 1
 	range 1 3
+	depends on SPI_0
 	help
 	  This sets the supported operation modes at runtime, by the SPI
 	  port 0, where:
@@ -57,19 +53,16 @@ config SPI_0_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
-endif # SPI_0
-
 config SPI_1
 	bool "SPI port 1"
 	help
 	  Enable SPI controller port 1.
 
-if SPI_1
-
 config SPI_1_OP_MODES
 	int "Port 1 supported operation modes (master/slave/both)"
 	default 1
 	range 1 3
+	depends on SPI_1
 	help
 	  This sets the supported operation modes at runtime, by the SPI
 	  port 1, where:
@@ -77,19 +70,16 @@ config SPI_1_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
-endif # SPI_1
-
 config SPI_2
 	bool "SPI port 2"
 	help
 	  Enable SPI controller port 2.
 
-if SPI_2
-
 config SPI_2_OP_MODES
 	int "Port 2 supported operation modes (master/slave/both)"
 	default 1
 	range 1 3
+	depends on SPI_2
 	help
 	  This sets the supported operation modes at runtime, by the SPI
 	  port 2, where:
@@ -97,19 +87,16 @@ config SPI_2_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
-endif # SPI_2
-
 config SPI_3
 	bool "SPI port 3"
 	help
 	  Enable SPI controller port 3.
 
-if SPI_3
-
 config SPI_3_OP_MODES
 	int "Port 3 supported operation modes (master/slave/both)"
 	default 1
 	range 1 3
+	depends on SPI_3
 	help
 	  This sets the supported operation modes at runtime, by the SPI
 	  port 3, where:
@@ -117,19 +104,16 @@ config SPI_3_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
-endif # SPI_3
-
 config SPI_4
 	bool "SPI port 4"
 	help
 	  Enable SPI controller port 4.
 
-if SPI_4
-
 config SPI_4_OP_MODES
 	int "Port 4 supported operation modes (master/slave/both)"
 	default 1
 	range 1 3
+	depends on SPI_4
 	help
 	  This sets the supported operation modes at runtime, by the SPI
 	  port 4, where:
@@ -137,19 +121,16 @@ config SPI_4_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
-endif # SPI_4
-
 config SPI_5
 	bool "SPI port 5"
 	help
 	  Enable SPI controller port 5.
 
-if SPI_5
-
 config SPI_5_OP_MODES
 	int "Port 5 supported operation modes (master/slave/both)"
 	default 1
 	range 1 3
+	depends on SPI_5
 	help
 	  This sets the supported operation modes at runtime, by the SPI
 	  port 5, where:
@@ -157,19 +138,16 @@ config SPI_5_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
-endif # SPI_5
-
 config SPI_6
 	bool "SPI port 6"
 	help
 	  Enable SPI controller port 6.
 
-if SPI_6
-
 config SPI_6_OP_MODES
 	int "Port 6 supported operation modes (master/slave/both)"
 	default 1
 	range 1 3
+	depends on SPI_6
 	help
 	  This sets the supported operation modes at runtime, by the SPI
 	  port 6, where:
@@ -177,7 +155,39 @@ config SPI_6_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
-endif # SPI_6
+config SPI_7
+	bool "SPI port 7"
+	help
+	  Enable SPI controller port 7.
+
+config SPI_7_OP_MODES
+	int "Port 7 supported operation modes (master/slave/both)"
+	default 1
+	range 1 3
+	depends on SPI_7
+	help
+	  This sets the supported operation modes at runtime, by the SPI
+	  port 7, where:
+	  1 is MASTER mode only (default)
+	  2 is SLAVE mode only
+	  3 is both modes are available.
+
+config SPI_8
+	bool "SPI port 8"
+	help
+	  Enable SPI controller port 8.
+
+config SPI_8_OP_MODES
+	int "Port 8 supported operation modes (master/slave/both)"
+	default 1
+	range 1 3
+	depends on SPI_8
+	help
+	  This sets the supported operation modes at runtime, by the SPI
+	  port 8, where:
+	  1 is MASTER mode only (default)
+	  2 is SLAVE mode only
+	  3 is both modes are available.
 
 source "drivers/spi/Kconfig.stm32"
 
@@ -185,7 +195,11 @@ source "drivers/spi/Kconfig.dw"
 
 source "drivers/spi/Kconfig.mcux_dspi"
 
+source "drivers/spi/Kconfig.mcux_flexcomm"
+
 source "drivers/spi/Kconfig.mcux_lpspi"
+
+source "drivers/spi/Kconfig.rv32m1_lpspi"
 
 source "drivers/spi/Kconfig.sam"
 
@@ -196,5 +210,13 @@ source "drivers/spi/Kconfig.sifive"
 source "drivers/spi/Kconfig.nrfx"
 
 source "drivers/spi/Kconfig.cc13xx_cc26xx"
+
+source "drivers/spi/Kconfig.litex"
+
+source "drivers/spi/Kconfig.oc_simple"
+
+source "drivers/spi/Kconfig.xec_qmspi"
+
+source "drivers/spi/Kconfig.gecko"
 
 endif # SPI

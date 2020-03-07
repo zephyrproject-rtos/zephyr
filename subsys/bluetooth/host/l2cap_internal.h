@@ -202,12 +202,14 @@ struct bt_l2cap_le_credits {
 struct bt_l2cap_fixed_chan {
 	u16_t		cid;
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
+	bt_l2cap_chan_destroy_t destroy;
 };
 
-#define BT_L2CAP_CHANNEL_DEFINE(_name, _cid, _accept)		\
+#define BT_L2CAP_CHANNEL_DEFINE(_name, _cid, _accept, _destroy)         \
 	const Z_STRUCT_SECTION_ITERABLE(bt_l2cap_fixed_chan, _name) = { \
-				.cid = _cid,			\
-				.accept = _accept,		\
+				.cid = _cid,                            \
+				.accept = _accept,                      \
+				.destroy = _destroy,                    \
 			}
 
 /* Need a name different than bt_l2cap_fixed_chan for a different section */
@@ -221,8 +223,6 @@ struct bt_l2cap_br_fixed_chan {
 				.cid = _cid,			\
 				.accept = _accept,		\
 			}
-
-void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data);
 
 /* Notify L2CAP channels of a new connection */
 void bt_l2cap_connected(struct bt_conn *conn);
@@ -269,9 +269,16 @@ struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
 /* Prepare a L2CAP Response PDU to be sent over a connection */
 struct net_buf *bt_l2cap_create_rsp(struct net_buf *buf, size_t reserve);
 
-/* Send L2CAP PDU over a connection */
-void bt_l2cap_send_cb(struct bt_conn *conn, u16_t cid, struct net_buf *buf,
-		      bt_conn_tx_cb_t cb, void *user_data);
+/* Send L2CAP PDU over a connection
+ *
+ * Buffer ownership is transferred to stack so either in case of success
+ * or error the buffer will be unref internally.
+ *
+ * Calling this from RX thread is assumed to never fail so the return can be
+ * ignored.
+ */
+int bt_l2cap_send_cb(struct bt_conn *conn, u16_t cid, struct net_buf *buf,
+		     bt_conn_tx_cb_t cb, void *user_data);
 
 static inline void bt_l2cap_send(struct bt_conn *conn, u16_t cid,
 				 struct net_buf *buf)

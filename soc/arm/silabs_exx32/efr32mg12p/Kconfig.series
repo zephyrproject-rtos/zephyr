@@ -1,14 +1,15 @@
-# Kconfig - EFR32MG12P MCU line
-#
+# EFR32MG12P MCU line
+
 # Copyright (c) 2018 Diego Sueiro
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config SOC_SERIES_EFR32MG12P
 	bool "EFR32MG12P Series MCU"
+	select ARM
 	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
 	select SOC_FAMILY_EXX32
 	select HAS_SILABS_GECKO
 	select HAS_SWO

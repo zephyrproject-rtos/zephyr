@@ -1,28 +1,20 @@
-# Kconfig - STM32F469I-DISCO board configuration
-#
+# STM32F469I-DISCO board configuration
+
 # Copyright (c) 2016 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_STM32F469I_DISCO
 
 config BOARD
 	default "stm32f469i_disco"
 
-if UART_CONSOLE
-
 config UART_3
 	default y
-
-endif # UART_CONSOLE
-
-if SERIAL
+	depends on UART_CONSOLE
 
 config UART_6
 	default y
-
-endif # SERIAL
+	depends on SERIAL
 
 if SPI
 
@@ -34,11 +26,8 @@ config SPI_2
 
 endif # SPI
 
-if I2C
-
 config I2C_1
 	default y
-
-endif # I2C
+	depends on I2C
 
 endif # BOARD_STM32F469I_DISCO

@@ -1,10 +1,7 @@
 # Copyright (c) 2018, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: NXP DSPI
-
-description: >
-    This binding gives a base representation of the NXP Kinetis DSPI controller
+description: NXP Kinetis DSPI controller
 
 compatible: "nxp,kinetis-dspi"
 

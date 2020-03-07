@@ -18,7 +18,7 @@
  * Variables
  ******************************************************************************/
 
-static ALWAYS_INLINE void clkInit(void)
+static ALWAYS_INLINE void clock_init(void)
 {
    /*
     * Core clock: 48MHz
@@ -81,11 +81,8 @@ static int kl2x_init(struct device *arg)
 	/* disable interrupts */
 	oldLevel = irq_lock();
 
-	/* Disable the watchdog */
-	SIM->COPC = 0;
-
 	/* Initialize system clock to 48 MHz */
-	clkInit();
+	clock_init();
 
 	/*
 	 * install default handler that simply resets the CPU
@@ -96,6 +93,12 @@ static int kl2x_init(struct device *arg)
 	/* restore interrupt state */
 	irq_unlock(oldLevel);
 	return 0;
+}
+
+void z_arm_watchdog_init(void)
+{
+	/* Disable the watchdog */
+	SIM->COPC = 0;
 }
 
 SYS_INIT(kl2x_init, PRE_KERNEL_1, 0);

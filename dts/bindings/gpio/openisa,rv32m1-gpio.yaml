@@ -1,7 +1,4 @@
-title: OpenISA GPIO
-
-description: >
-    This is a representation of the OpenISA GPIO nodes
+description: OpenISA GPIO node
 
 compatible: "openisa,rv32m1-gpio"
 
@@ -20,6 +17,6 @@ properties:
     "#gpio-cells":
       const: 2
 
-"#cells":
+gpio-cells:
   - pin
   - flags

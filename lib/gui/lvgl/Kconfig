@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2018-2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LVGL
 	bool "LittlevGL GUI library"
@@ -20,6 +17,28 @@ config LVGL_DISPLAY_DEV_NAME
 	default "DISPLAY"
 	help
 	  Name of the display device to use for rendering.
+
+config LVGL_POINTER_KSCAN
+	bool "Keyboard scan pointer input"
+	depends on KSCAN
+	help
+	  Enable keyboard scan pointer input
+
+if LVGL_POINTER_KSCAN
+
+config LVGL_POINTER_KSCAN_DEV_NAME
+	string "Keyboard scan device name for pointer input"
+	default "KSCAN"
+	help
+	  Name of the keyboard scan device to use for pointer input.
+
+config LVGL_POINTER_KSCAN_MSGQ_COUNT
+	int "Keyboard scan message queue count maximum"
+	default 10
+	help
+	  Maximum number of items in the keyboard scan message queue.
+
+endif # LVGL_POINTER_KSCAN
 
 config LVGL_HOR_RES
 	int "Horizontal Screen Resolution"
@@ -67,23 +86,17 @@ config LVGL_BITS_PER_PIXEL
 	help
 	  Number of bits per pixel.
 
-if LVGL_COLOR_DEPTH_16
-
 config LVGL_COLOR_16_SWAP
 	bool "RGB565 byte swap"
+	depends on LVGL_COLOR_DEPTH_16
 	help
 	  Swap the 2 bytes of a RGB565 pixel.
 
-endif
-
-if LVGL_COLOR_DEPTH_32
-
 config LVGL_COLOR_SCREEN_TRANSP
 	bool "Transparency support"
+	depends on LVGL_COLOR_DEPTH_32
 	help
 	  Enable screen transparency. Useful for OSD or other overlapping GUISs.
-
-endif
 
 choice
 	prompt "Chroma key color"
@@ -143,7 +156,7 @@ choice
 
 	config LVGL_MEM_POOL_HEAP_LIB_C
 	  bool "C library Heap"
-	  depends on NEWLIB_LIBC || (MINIMAL_LIBC_MALLOC_ARENA_SIZE != 0)
+	  depends on !MINIMAL_LIBC || (MINIMAL_LIBC_MALLOC_ARENA_SIZE != 0)
 	  help
 		Use C library malloc and free to allocate objects on the C library heap
 
@@ -276,6 +289,61 @@ config LVGL_TEXT_BREAK_CHARACTERS
 	help
 	  Characters on which a text break can take place
 
+config LVGL_TEXT_LINE_BREAK_LONG_LEN
+	int "Minimal word length for line break"
+	default 12
+	help
+	  If a word is at least this long, a line break is allowed in the word.
+
+	  If the length is 0, no line break is allowed in the middle of a word.
+
+config LVGL_TEXT_LINE_BREAK_LONG_PRE_MIN_LEN
+	int "Minimal number of characters on line before line break"
+	default 3
+	help
+	  Minimal number of characters to place on a line before a line break
+	  in the middle of a word can occur.
+
+config LVGL_TEXT_LINE_BREAK_LONG_POST_MIN_LEN
+	int "Minimal number of characters on line after line break"
+	default 3
+	help
+	  Minimal number of characters to place on a line after a line break
+	  occurred in the middle of a word.
+
+config LVGL_TEXT_COLOR_CMD
+	string "Text recoloring control character"
+	default "#"
+	help
+	  Control character to use for signalling text recoloring
+
+config LVGL_TEXT_USE_BIDI
+	bool "Enable bidirectional text support"
+	help
+	  Enable bidirectional text support
+
+	  The direction of the text will be processed according to the
+	  Unicode Bidirectional Algorithm:
+	  https://www.w3.org/International/articles/inline-bidi-markup/uba-basics*/
+
+choice LVGL_TEXT_BIDI_MODE
+	prompt "Bidirectional text processing direction"
+	default LVGL_TEXT_BIDI_DIR_AUTO
+	depends on LVGL_TEXT_USE_BIDI
+	help
+	  Direction of bidirectional text processing
+
+	config LVGL_TEXT_BIDI_DIR_AUTO
+		bool "Automatically detect direction"
+
+	config LVGL_TEXT_BIDI_DIR_LTR
+		bool "Left-to-right"
+
+	config LVGL_TEXT_BIDI_DIR_RTL
+		bool "Right-to-left"
+
+endchoice
+
 config LVGL_ANTIALIAS
 	bool "Enable anti-aliasing"
 	help
@@ -314,6 +382,11 @@ config LVGL_IMG_CF_ALPHA
 	help
 	  Enable support for alpha indexed images
 
+config LVGL_IMG_INDEXED_CHROMA
+	bool "Enable chroma keying for indexed images"
+	help
+	  Enable chroma keying for indexed images
+
 config LVGL_FILESYSTEM
 	bool "Enable file system"
 	depends on FILE_SYSTEM
@@ -330,6 +403,68 @@ config LVGL_IMG_CACHE_DEF_SIZE
 	  advantage of caching. With complex image decoders (e.g. PNG or JPG)
 	  caching can save the continuous decoding of images. However the
 	  opened images might consume additional RAM.
+
+config LVGL_USE_DEBUG
+	bool "Enable debug support"
+	default y if TEST
+	help
+	  Enable debug support.
+
+	  If debug support is enabled LVGL will validate the parameters of
+	  any function call made and if an invalid parameter is found __ASSERT
+	  is called.
+
+if LVGL_USE_DEBUG
+
+config LVGL_USE_ASSERT_NULL
+	bool "Enable null pointer assertion"
+	default y if TEST
+	help
+	  Enable null pointer assertion
+
+	  Check if a null pointer is passed as a parameter (Quite fast)
+
+config LVGL_USE_ASSERT_MEM
+	bool "Enable memory allocation assertion"
+	default y if TEST
+	help
+	  Enable memory allocation assertion
+
+	  Check if memory allocation is successful (Quite fast)
+
+config LVGL_USE_ASSERT_STR
+	bool "Enable string assertion"
+	default y if TEST
+	help
+	  Enable string assertion
+
+	  Check if the string is not a NULL pointer, unusually long string,
+	  contains invalid characters or contains unusual repetitions. (Slow)
+
+	  If this option is disabled and NULL pointer checking is enabled, the
+	  NULL pointer check is executed instead.
+
+config LVGL_USE_ASSERT_OBJ
+	bool "Enable object assertion"
+	default y if TEST
+	help
+	  Enable object assertion
+
+	  Check if an object is not a NULL pointer, has the correct type and
+	  does exists. (Quite Slow)
+
+	  If this option is disabled and NULL pointer checking is enabled, the
+	  NULL pointer check is executed instead.
+
+config LVGL_USE_ASSERT_STYLE
+	bool "Enable style assertion"
+	default y if TEST
+	help
+	  Enable style assertion
+
+	  Check if a used style is correctly initialized. (Fast)
+
+endif
 
 rsource "Kconfig.themes"
 rsource "Kconfig.fonts"

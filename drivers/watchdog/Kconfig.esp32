@@ -1,9 +1,7 @@
-# Kconfig - ESP32 WDT configuration
-#
+# ESP32 WDT configuration
+
 # Copyright (C) 2017 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig WDT_ESP32
 	bool "ESP32 Watchdog (WDT) Driver"
@@ -12,10 +10,18 @@ menuconfig WDT_ESP32
 	help
 	  Enable WDT driver for ESP32.
 
-config WDT_ESP32_IRQ
+config WDT0_ESP32_IRQ
 	int "IRQ line for watchdog interrupt"
 	depends on WDT_ESP32
 	default 24
+	help
+	  Set the IRQ line used by the WDT device.  Very few lines can be
+	  chosen here, as it must be a level 4 interrupt.
+
+config WDT1_ESP32_IRQ
+	int "IRQ line for watchdog interrupt"
+	depends on WDT_ESP32
+	default 25
 	help
 	  Set the IRQ line used by the WDT device.  Very few lines can be
 	  chosen here, as it must be a level 4 interrupt.

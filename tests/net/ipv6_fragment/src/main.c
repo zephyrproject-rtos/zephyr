@@ -1501,7 +1501,7 @@ static void test_find_last_ipv6_fragment_udp(void)
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_alloc_with_buffer(iface1, 0, AF_INET6,
+	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(ipv6_udp), AF_INET6,
 					IPPROTO_UDP, ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "packet");
 
@@ -1535,7 +1535,8 @@ static void test_find_last_ipv6_fragment_hbho_udp(void)
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(ipv6_hbho),
+	pkt = net_pkt_alloc_with_buffer(iface1, sizeof(ipv6_hbho) +
+					sizeof(struct net_ipv6_hdr) + 6,
 					AF_UNSPEC, 0, ALLOC_TIMEOUT);
 	zassert_not_null(pkt, "packet");
 

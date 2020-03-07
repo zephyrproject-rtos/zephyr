@@ -1,14 +1,10 @@
-# Kconfig - BL652 DVK board configuration
-#
-# Copyright (c) 2019 Laird Connectivity
-#
-# SPDX-License-Identifier: Apache-2.0
+# BL652 DVK board configuration
 
-if BOARD_BL652_DVK
+# Copyright (c) 2019 Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ENABLE_DCDC
 	bool "Enable DCDC mode"
 	select SOC_DCDC_NRF52X
 	default y
-
-endif # BOARD_BL652_DVK
+	depends on BOARD_BL652_DVK

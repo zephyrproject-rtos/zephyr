@@ -1,74 +1,46 @@
-# Kconfig - Kinetis KL2x SoC configuration options
-#
+# Kinetis KL2x SoC configuration options
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MKL25Z4
 
 config SOC
-	string
 	default "mkl25z4"
 
 config NUM_IRQS
-	int
 	default 32
-
-if ADC
 
 config ADC_MCUX_ADC16
 	default y
-
-endif # ADC
-
-if CLOCK_CONTROL
+	depends on ADC
 
 config CLOCK_CONTROL_MCUX_SIM
 	default y
-
-endif # CLOCK_CONTROL
-
-if PINMUX
+	depends on CLOCK_CONTROL
 
 config PINMUX_MCUX
 	default y
-
-endif # PINMUX
-
-if GPIO
+	depends on PINMUX
 
 config GPIO_MCUX
 	default y
-
-endif # GPIO
-
-if SERIAL
+	depends on GPIO
 
 config UART_MCUX_LPSCI
 	default y
-
-endif # SERIAL
-
-if I2C
+	depends on SERIAL
 
 config I2C_MCUX
 	default y
-
-endif # I2C
-
-if FLASH
+	depends on I2C
 
 config SOC_FLASH_MCUX
 	default y
-
-endif # FLASH
-
-if USB
+	depends on FLASH
 
 config USB_KINETIS
 	default y
-
-endif # USB
+	depends on USB
 
 endif # SOC_MKL25Z

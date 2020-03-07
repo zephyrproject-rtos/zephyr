@@ -5,11 +5,11 @@ if BOARD_HIFIVE1
 config BOARD
 	default "hifive1"
 
-if PWM
+config SYS_CLOCK_TICKS_PER_SEC
+	default 128
 
 config PWM_SIFIVE
 	default y
-
-endif
+	depends on PWM
 
 endif

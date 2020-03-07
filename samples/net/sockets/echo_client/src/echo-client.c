@@ -198,6 +198,8 @@ static void event_handler(struct net_mgmt_event_callback *cb,
 		LOG_INF("Network connected");
 
 		connected = true;
+		conf.ipv4.udp.mtu = net_if_get_mtu(iface);
+		conf.ipv6.udp.mtu = conf.ipv4.udp.mtu;
 		k_sem_give(&run_app);
 
 		return;
@@ -227,6 +229,23 @@ static void init_app(void)
 	}
 #endif
 
+#if defined(CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED)
+	err = tls_credential_add(PSK_TAG,
+				TLS_CREDENTIAL_PSK,
+				psk,
+				sizeof(psk));
+	if (err < 0) {
+		LOG_ERR("Failed to register PSK: %d", err);
+	}
+	err = tls_credential_add(PSK_TAG,
+				TLS_CREDENTIAL_PSK_ID,
+				psk_id,
+				sizeof(psk_id) - 1);
+	if (err < 0) {
+		LOG_ERR("Failed to register PSK ID: %d", err);
+	}
+#endif
+
 	if (IS_ENABLED(CONFIG_NET_CONNECTION_MANAGER)) {
 		net_mgmt_init_event_callback(&mgmt_cb,
 					     event_handler, EVENT_MASK);
@@ -240,7 +259,8 @@ static void init_app(void)
 
 void main(void)
 {
-	int ret;
+	int ret = 0, i = 0;
+	int iterations = CONFIG_NET_SAMPLE_SEND_ITERATIONS;
 
 	init_app();
 
@@ -252,7 +272,7 @@ void main(void)
 		k_sem_give(&run_app);
 	}
 
-	while (true) {
+	while (iterations == 0 || i < iterations) {
 		/* Wait for the connection. */
 		k_sem_take(&run_app, K_FOREVER);
 
@@ -260,8 +280,18 @@ void main(void)
 
 		while (connected && (ret == 0)) {
 			ret = run_udp_and_tcp();
+
+			if (iterations > 0) {
+				i++;
+				if (i >= iterations) {
+					break;
+
+				}
+			}
 		}
 
 		stop_udp_and_tcp();
 	}
+
+	exit(ret);
 }

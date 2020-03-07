@@ -18,6 +18,7 @@
 #include <drivers/timer/system_timer.h>
 #include <kernel.h>
 #include <sys/atomic.h>
+#include <string.h>
 
 #if defined(__GNUC__)
 
@@ -45,4 +46,36 @@ u32_t sys_rand32_get(void)
 	return k_cycle_get_32() + atomic_add(&_rand32_counter, _RAND32_INC);
 }
 
+/**
+ *
+ * @brief Fill destination buffer with random numbers
+ *
+ * The non-random number generator returns values that are based off the
+ * target's clock counter, which means that successive calls will return
+ * different values.
+ *
+ * @param dst destination buffer to fill
+ * @param outlen size of destination buffer to fill
+ *
+ * @return N/A
+ */
+
+void sys_rand_get(void *dst, size_t outlen)
+{
+	u32_t len = 0;
+	u32_t blocksize = 4;
+	u32_t ret;
+	u32_t *udst = (u32_t *)dst;
+
+	while (len < outlen) {
+		ret = sys_rand32_get();
+		if ((outlen-len) < sizeof(ret)) {
+			blocksize = len;
+			(void)memcpy(udst, &ret, blocksize);
+		} else {
+			(*udst++) = ret;
+		}
+		len += blocksize;
+	}
+}
 #endif /* __GNUC__ */

@@ -18,8 +18,7 @@
 
 #include "lsm9ds0_gyro.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(LSM9DS0_GYRO);
+LOG_MODULE_REGISTER(LSM9DS0_GYRO, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lsm9ds0_gyro_power_ctrl(struct device *dev, int power,
 					  int x_en, int y_en, int z_en)
@@ -350,6 +349,7 @@ static const struct lsm9ds0_gyro_config lsm9ds0_gyro_config = {
 #if defined(CONFIG_LSM9DS0_GYRO_TRIGGER_DRDY)
 	.gpio_drdy_dev_name = DT_INST_0_ST_LSM9DS0_GYRO_IRQ_GPIOS_CONTROLLER,
 	.gpio_drdy_int_pin = DT_INST_0_ST_LSM9DS0_GYRO_IRQ_GPIOS_PIN,
+	.gpio_drdy_int_flags = DT_INST_0_ST_LSM9DS0_GYRO_IRQ_GPIOS_FLAGS,
 #endif
 };
 

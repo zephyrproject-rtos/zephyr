@@ -1,35 +1,20 @@
-# Kconfig - Silicon Labs EFM32HG-SLSTK3400A platform configuration options
+# Silicon Labs EFM32HG-SLSTK3400A platform configuration options
 
-#
 # Copyright (c) 2018 Marcio Montenegro
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
-if GPIO
 
 config GPIO_GECKO
 	default y
-
-endif # GPIO
-
-if SERIAL
+	depends on GPIO
 
 config UART_GECKO
 	default y
-
-endif # SERIAL
-
-if I2C
+	depends on SERIAL
 
 config I2C_GECKO
 	default y
-
-endif # I2C
-
-if FLASH
+	depends on I2C
 
 config SOC_FLASH_GECKO
 	default y
-
-endif # FLASH
+	depends on FLASH

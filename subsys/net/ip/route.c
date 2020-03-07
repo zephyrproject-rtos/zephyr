@@ -59,8 +59,8 @@ static inline struct net_route_nexthop *net_nexthop_data(struct net_nbr *nbr)
 
 static inline struct net_nbr *get_nexthop_nbr(struct net_nbr *start, int idx)
 {
-	NET_ASSERT_INFO(idx < CONFIG_NET_MAX_NEXTHOPS, "idx %d >= max %d",
-			idx, CONFIG_NET_MAX_NEXTHOPS);
+	NET_ASSERT(idx < CONFIG_NET_MAX_NEXTHOPS, "idx %d >= max %d",
+		   idx, CONFIG_NET_MAX_NEXTHOPS);
 
 	return (struct net_nbr *)((u8_t *)start +
 			((sizeof(struct net_nbr) + start->size) * idx));
@@ -212,9 +212,9 @@ static struct net_nbr *nbr_nexthop_get(struct net_if *iface,
 		return NULL;
 	}
 
-	NET_ASSERT_INFO(nbr->idx != NET_NBR_LLADDR_UNKNOWN,
-			"Nexthop %s not in neighbor cache!",
-			log_strdup(net_sprint_ipv6_addr(addr)));
+	NET_ASSERT(nbr->idx != NET_NBR_LLADDR_UNKNOWN,
+		   "Nexthop %s not in neighbor cache!",
+		   log_strdup(net_sprint_ipv6_addr(addr)));
 
 	net_nbr_ref(nbr);
 
@@ -242,7 +242,7 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 	if (CONFIG_NET_ROUTE_LOG_LEVEL >= LOG_LEVEL_DBG) {		\
 		struct in6_addr *naddr = net_route_get_nexthop(route);	\
 									\
-		NET_ASSERT_INFO(naddr, "Unknown nexthop address");	\
+		NET_ASSERT(naddr, "Unknown nexthop address");	\
 									\
 		NET_DBG("%s route to %s via %s (iface %p)", str,	\
 			log_strdup(net_sprint_ipv6_addr(dst)),		\
@@ -695,9 +695,9 @@ bool net_route_mcast_del(struct net_route_entry_mcast *route)
 		return false;
 	}
 
-	NET_ASSERT_INFO(route->is_used,
-			"Multicast route %p to %s was already removed", route,
-			log_strdup(net_sprint_ipv6_addr(&route->group)));
+	NET_ASSERT(route->is_used,
+		   "Multicast route %p to %s was already removed", route,
+		   log_strdup(net_sprint_ipv6_addr(&route->group)));
 
 	route->is_used = false;
 
@@ -821,6 +821,24 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 	net_pkt_lladdr_dst(pkt)->len = lladdr->len;
 
 	net_pkt_set_iface(pkt, nbr->iface);
+
+	return net_send_data(pkt);
+}
+
+int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface)
+{
+	/* The destination is reachable via iface. But since no valid nexthop
+	 * is known, net_pkt_lladdr_dst(pkt) cannot be set here.
+	 */
+
+	net_pkt_set_orig_iface(pkt, net_pkt_iface(pkt));
+	net_pkt_set_iface(pkt, iface);
+
+	net_pkt_set_forwarding(pkt, true);
+
+	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
+	net_pkt_lladdr_src(pkt)->type = net_pkt_lladdr_if(pkt)->type;
+	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
 
 	return net_send_data(pkt);
 }

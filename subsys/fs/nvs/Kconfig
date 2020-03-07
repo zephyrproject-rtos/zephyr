@@ -1,10 +1,7 @@
-# Kconfig - Non-volatile Storage NVS
+# Non-volatile Storage NVS
 
-#
 # Copyright (c) 2018 Laczen
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config NVS
 	bool "Non-volatile Storage"
@@ -16,14 +13,5 @@ if NVS
 module = NVS
 module-str = nvs
 source "subsys/logging/Kconfig.template.log_config"
-
-config NVS_PROTECT_FLASH
-	bool "Non-volatile Storage extra flash protection"
-	help
-	  Enable extra protection against unnecessary writes to flash. This
-	  enables a extra read check, if data is not changed no write is
-	  performed. If this check is already performed (e.g. no writes unless
-	  data is changed) you can disable this operation.
-
 
 endif # NVS

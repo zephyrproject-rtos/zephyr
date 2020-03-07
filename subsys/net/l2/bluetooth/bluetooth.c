@@ -114,6 +114,8 @@ static int net_bt_send(struct net_if *iface, struct net_pkt *pkt)
 
 	ret = bt_l2cap_chan_send(&conn->ipsp_chan.chan, buffer);
 	if (ret < 0) {
+		NET_ERR("Unable to send packet: %d", ret);
+		bt_l2cap_chan_disconnect(&conn->ipsp_chan.chan);
 		return ret;
 	}
 
@@ -250,10 +252,10 @@ static struct net_buf *ipsp_alloc_buf(struct bt_l2cap_chan *chan)
 {
 	NET_DBG("Channel %p requires buffer", chan);
 
-	return net_pkt_get_reserve_rx_data(K_FOREVER);
+	return net_pkt_get_reserve_rx_data(BUF_TIMEOUT);
 }
 
-static struct bt_l2cap_chan_ops ipsp_ops = {
+static const struct bt_l2cap_chan_ops ipsp_ops = {
 	.alloc_buf	= ipsp_alloc_buf,
 	.recv		= ipsp_recv,
 	.connected	= ipsp_connected,

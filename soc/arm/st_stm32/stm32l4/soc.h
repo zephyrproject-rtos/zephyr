@@ -27,7 +27,7 @@
 #include <stm32l4xx.h>
 
 /* Add include for DTS generated information */
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 #ifdef CONFIG_EXTI_STM32
 #include <stm32l4xx_ll_exti.h>
@@ -55,7 +55,7 @@
 #include <stm32l4xx_ll_spi.h>
 #endif
 
-#ifdef CONFIG_I2C
+#ifdef CONFIG_I2C_STM32
 #include <stm32l4xx_ll_i2c.h>
 #endif
 
@@ -88,6 +88,15 @@
 
 #ifdef CONFIG_ADC_STM32
 #include <stm32l4xx_ll_adc.h>
+#endif
+
+#ifdef CONFIG_DMA_STM32
+#include <stm32l4xx_ll_dma.h>
+#endif
+
+#ifdef CONFIG_STM32_LPTIM_TIMER
+#include <stm32l4xx_ll_lptim.h>
+#include <stm32l4xx_ll_system.h>
 #endif
 
 #endif /* !_ASMLANGUAGE */

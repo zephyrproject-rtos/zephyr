@@ -23,7 +23,7 @@ void test_main(void)
 			 ztest_unit_test(test_mslab_kdefine_extern),
 			 ztest_unit_test(test_mslab_alloc_free_thread),
 			 ztest_unit_test(test_mslab_alloc_align),
-			 ztest_unit_test(test_mslab_alloc_timeout),
+			 ztest_1cpu_unit_test(test_mslab_alloc_timeout),
 			 ztest_unit_test(test_mslab_used_get));
 	ztest_run_test_suite(mslab_api);
 }

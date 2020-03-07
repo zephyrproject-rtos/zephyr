@@ -1,0 +1,9 @@
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# Copyright (c) 2017,2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_MCUX_FLEXCOMM
+	bool "MCUX FLEXCOMM SPI driver"
+	depends on HAS_MCUX_FLEXCOMM
+	help
+	  Enable support for mcux flexcomm spi driver.

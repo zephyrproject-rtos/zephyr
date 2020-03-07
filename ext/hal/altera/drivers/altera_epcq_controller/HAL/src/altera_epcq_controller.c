@@ -791,5 +791,3 @@ alt_32 static alt_epcq_poll_for_write_in_progress(alt_epcq_controller_dev* epcq_
 
 	return 0;
 }
-
-

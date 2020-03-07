@@ -1,21 +1,16 @@
-# Kconfig - STM32 Nucleo-64 development board with STM32F091RC MCU
-#
+# STM32 Nucleo-64 development board with STM32F091RC MCU
+
 # Copyright (c) 2017 Bobby Noelte
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_NUCLEO_F091RC
 
 config BOARD
 	default "nucleo_f091rc"
 
-if UART_CONSOLE
-
 config UART_2
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 if I2C
 
@@ -39,5 +34,9 @@ config SPI_STM32_INTERRUPT
 	default y
 
 endif # SPI
+
+config ADC_1
+	default y
+	depends on ADC
 
 endif # BOARD_NUCLEO_F091RC

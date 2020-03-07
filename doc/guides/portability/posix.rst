@@ -1,5 +1,3 @@
-
-
 POSIX Support
 #############
 
@@ -353,7 +351,7 @@ POSIX_SIGNALS
 +++++++++++++
 
 Signal services are a basic mechanism within POSIX-based systems and are
-required for error and eventhandling.
+required for error and event handling.
 
 .. csv-table:: POSIX_SIGNALS
    :header: API, Supported

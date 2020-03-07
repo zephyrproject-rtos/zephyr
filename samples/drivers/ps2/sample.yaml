@@ -1,7 +1,7 @@
 sample:
   name: PS2 driver  sample
 tests:
-  sample.driver.espi:
+  sample.drivers.espi.ps2:
     tags: drivers
     harness: console
     harness_config:

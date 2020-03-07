@@ -1,10 +1,7 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic nRF Real Time Counter
-
-description: >
-    This is a representation of the Nordic nRF RTC node
+description: Nordic nRF RTC (Real-Time Counter)
 
 compatible: "nordic,nrf-rtc"
 
@@ -21,4 +18,12 @@ properties:
     ppi-wrap:
       type: boolean
       description: Enable wrapping with PPI
-      required: true
+      required: false
+
+   # If enabled then counter based on nRF RTC peripheral supports only maximal
+   # top value. That results in code optimizations and availability of one more
+   # channel
+    fixed-top:
+      type: boolean
+      description: Enable fixed top value
+      required: false

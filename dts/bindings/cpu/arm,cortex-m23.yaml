@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: ARM Cortex-M23 CPU
-
-description: >
-    This binding gives a base representation for ARM Cortex-M23 CPU.
+description: ARM Cortex-M23 CPU
 
 compatible: "arm,cortex-m23"
 

@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <kernel.h>
 #include <cmsis_os.h>
+#include <string.h>
 
 #define TIME_OUT	100
 

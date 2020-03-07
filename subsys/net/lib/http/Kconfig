@@ -1,7 +1,5 @@
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config HTTP_PARSER
 	bool "HTTP Parser support"
@@ -23,3 +21,16 @@ config HTTP_PARSER_STRICT
 	depends on (HTTP_PARSER || HTTP_PARSER_URL)
 	help
 	  This option enables the strict parsing option
+
+config HTTP_CLIENT
+	bool "HTTP client API [EXPERIMENTAL]"
+	select HTTP_PARSER
+	select HTTP_PARSER_URL
+	help
+	  HTTP client API
+
+module = NET_HTTP
+module-dep = NET_LOG
+module-str = Log level for HTTP client library
+module-help = Enables HTTP client code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"

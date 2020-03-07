@@ -29,8 +29,8 @@
 #include <init.h>
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <uart.h>
-#include <sys_io.h>
+#include <drivers/uart.h>
+#include <sys/sys_io.h>
 
 #define XUARTPS_CR_OFFSET	0x0000U  /**< Control Register [8:0] */
 #define XUARTPS_MR_OFFSET	0x0004U  /**< Mode Register [9:0] */
@@ -705,5 +705,3 @@ UART_XLNX_PS_DEV_DATA(1);
 UART_XLNX_PS_DEV_CFG(1);
 UART_XLNX_PS_INIT(1);
 #endif
-
-

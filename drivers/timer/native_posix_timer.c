@@ -17,7 +17,7 @@
 #include "sys_clock.h"
 #include "timer_model.h"
 #include "soc.h"
-#include "posix_trace.h"
+#include <arch/posix/posix_trace.h>
 
 static u64_t tick_period; /* System tick period in microseconds */
 /* Time (microseconds since boot) of the last timer tick interrupt */
@@ -122,13 +122,27 @@ u32_t z_clock_elapsed(void)
  *
  * Note that interrupts may be received in the meanwhile and that therefore this
  * thread may loose context
+ *
+ * This special arch_busy_wait() is necessary due to how the POSIX arch/SOC INF
+ * models a CPU. Conceptually it could be thought as if the MCU was running
+ * at an infinitely high clock, and therefore no simulated time passes while
+ * executing instructions(*1).
+ * Therefore to be able to busy wait this function does the equivalent of
+ * programming a dedicated timer which will raise a non-maskable interrupt,
+ * and halting the CPU.
+ *
+ * (*1) In reality simulated time is simply not advanced just due to the "MCU"
+ * running. Meaning, the SW running on the MCU is assumed to take 0 time.
  */
-void z_arch_busy_wait(u32_t usec_to_wait)
+void arch_busy_wait(u32_t usec_to_wait)
 {
 	u64_t time_end = hwm_get_time() + usec_to_wait;
 
 	while (hwm_get_time() < time_end) {
-		/*There may be wakes due to other interrupts*/
+		/*
+		 * There may be wakes due to other interrupts including
+		 * other threads calling arch_busy_wait
+		 */
 		hwtimer_wake_in_time(time_end);
 		posix_halt_cpu();
 	}

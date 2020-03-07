@@ -10,8 +10,10 @@ set_property(SOURCE intel64/locore.S PROPERTY LANGUAGE ASM)
 
 zephyr_library_sources(
   intel64/locore.S
-  intel64/tss.c
+  intel64/cpu.c
   intel64/irq.c
   intel64/thread.c
   intel64/fatal.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_USERSPACE	intel64/userspace.S)

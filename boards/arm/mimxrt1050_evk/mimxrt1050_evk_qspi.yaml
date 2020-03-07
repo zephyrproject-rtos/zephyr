@@ -15,7 +15,12 @@ toolchain:
 ram: 32768
 flash: 8192
 supported:
-  - spi
-  - netif:eth
-  - hwinfo
+  - arduino_gpio
   - counter
+  - display
+  - gpio
+  - i2c
+  - netif:eth
+  - sdhc
+  - spi
+  - usb_device

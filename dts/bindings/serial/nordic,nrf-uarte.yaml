@@ -1,7 +1,4 @@
-title: Nordic UARTE
-
-description: >
-    This binding gives a base representation of the Nordic UARTE
+description: Nordic UARTE
 
 compatible: "nordic,nrf-uarte"
 
@@ -25,7 +22,7 @@ properties:
     rx-pin:
       type: int
       description: RX pin
-      required: true
+      required: false
 
     rts-pin:
       type: int

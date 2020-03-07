@@ -1,0 +1,88 @@
+# Kinetis KV5x series MCU
+
+# Copyright (c) 2019 SEAL AG
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Kinetis KV5x MCU Selection"
+	depends on SOC_SERIES_KINETIS_KV5X
+
+config SOC_MKV56F24
+	bool "MKV56F24"
+
+config SOC_MKV58F24
+	bool "MKV58F24"
+
+endchoice
+
+if SOC_SERIES_KINETIS_KV5X
+
+config SOC_PART_NUMBER_MKV56F512VLL24
+	bool
+
+config SOC_PART_NUMBER_MKV56F512VLQ24
+	bool
+
+config SOC_PART_NUMBER_MKV56F1M0VLL24
+	bool
+
+config SOC_PART_NUMBER_MKV56F1M0VLQ24
+	bool
+
+config SOC_PART_NUMBER_MKV58F512VLL24
+	bool
+
+config SOC_PART_NUMBER_MKV58F512VLQ24
+	bool
+
+config SOC_PART_NUMBER_MKV58F1M0VLL24
+	bool
+
+config SOC_PART_NUMBER_MKV58F1M0VLQ24
+	bool
+
+config SOC_PART_NUMBER_KINETIS_KV5X
+	string
+	default "MKV56F512VLL24" if SOC_PART_NUMBER_MKV56F512VLL24
+	default "MKV56F512VLQ24" if SOC_PART_NUMBER_MKV56F512VLQ24
+	default "MKV56F1M0VLL24" if SOC_PART_NUMBER_MKV56F1M0VLL24
+	default "MKV56F1M0VLQ24" if SOC_PART_NUMBER_MKV56F1M0VLQ24
+	default "MKV58F512VLL24" if SOC_PART_NUMBER_MKV58F512VLL24
+	default "MKV58F512VLQ24" if SOC_PART_NUMBER_MKV58F512VLQ24
+	default "MKV58F1M0VLL24" if SOC_PART_NUMBER_MKV58F1M0VLL24
+	default "MKV58F1M0VLQ24" if SOC_PART_NUMBER_MKV58F1M0VLQ24
+	help
+	  This string holds the full part number of the SoC. It is a
+	  hidden option that you should not set directly. The part
+	  number selection choice defines the default value for this
+	  string.
+
+config KV5X_CORE_CLOCK_DIVIDER
+	int "Freescale KV5x core clock divider"
+	default 1
+	help
+	  This option specifies the divide value for the KV5X processor core clock
+	  from the system clock.
+
+config KV5X_BUS_CLOCK_DIVIDER
+	int "Freescale KV5x bus clock divider"
+	default 2
+	help
+	  This option specifies the divide value for the KV5X bus clock from the
+	  system clock.
+
+config KV5X_FLEXBUS_CLOCK_DIVIDER
+	int "Freescale KV5x FlexBus clock divider"
+	default 4
+	help
+	  This option specifies the divide value for the KV5X FlexBus clock from the
+	  system clock.
+
+config KV5X_FLASH_CLOCK_DIVIDER
+	int "Freescale KV5x flash clock divider"
+	default 10
+	help
+	  This option specifies the divide value for the KV5X flash clock from the
+	  system clock.
+
+endif # SOC_SERIES_KINETIS_KV5X

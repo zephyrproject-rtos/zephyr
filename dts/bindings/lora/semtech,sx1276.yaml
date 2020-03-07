@@ -1,0 +1,26 @@
+# Copyright (c) 2019, Manivannan Sadhasivam
+# SPDX-License-Identifier: Apache-2.0
+
+description: Semtech SX1276 LoRa Modem
+
+compatible: "semtech,sx1276"
+
+include: spi-device.yaml
+
+properties:
+    reset-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        GPIO connected to the sensor NRST signal.
+
+        This signal is open-drain, active-low as interpreted by the
+        modem.
+
+    dio-gpios:
+      type: phandle-array
+      required: true
+      description: |
+        Up to six pins that produce service interrupts from the modem.
+
+        These signals are normally active-high.

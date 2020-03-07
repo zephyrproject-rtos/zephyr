@@ -1,13 +1,14 @@
-# Kconfig.soc - ST Microelectronics STM32F4 MCU line
-#
+# ST Microelectronics STM32F4 MCU line
+
 # Copyright (c) 2016 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "STM32F4x MCU Selection"
-depends on SOC_SERIES_STM32F4X
+	prompt "STM32F4x MCU Selection"
+	depends on SOC_SERIES_STM32F4X
+
+config SOC_STM32F401XC
+	bool "STM32F401XC"
 
 config SOC_STM32F401XE
 	bool "STM32F401XE"

@@ -6,9 +6,9 @@
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
-void z_ExcExit(void);
+void z_arm_exc_exit(void);
 
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
@@ -29,57 +29,89 @@ void z_ExcExit(void);
  */
 #define MIN_DELAY MAX(1024, (CYC_PER_TICK/16))
 
-#define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL) &&			\
-		  !IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND))
-
-/* VAL value above which we assume that a subsequent COUNTFLAG
- * overflow seen in CTRL is real and not an artifact of wraparound
- * timing.
- */
-#define VAL_ABOUT_TO_WRAP 8
+#define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL))
 
 static struct k_spinlock lock;
 
 static u32_t last_load;
 
+/*
+ * This local variable holds the amount of SysTick HW cycles elapsed
+ * and it is updated in z_clock_isr() and z_clock_set_timeout().
+ *
+ * Note:
+ *  At an arbitrary point in time the "current" value of the SysTick
+ *  HW timer is calculated as:
+ *
+ * t = cycle_counter + elapsed();
+ */
 static u32_t cycle_count;
 
+/*
+ * This local variable holds the amount of elapsed SysTick HW cycles
+ * that have been announced to the kernel.
+ */
 static u32_t announced_cycles;
 
+/*
+ * This local variable holds the amount of elapsed HW cycles due to
+ * SysTick timer wraps ('overflows') and is used in the calculation
+ * in elapsed() function, as well as in the updates to cycle_count.
+ *
+ * Note:
+ * Each time cycle_count is updated with the value from overflow_cyc,
+ * the overflow_cyc must be reset to zero.
+ */
 static volatile u32_t overflow_cyc;
 
+/* This internal function calculates the amount of HW cycles that have
+ * elapsed since the last time the absolute HW cycles counter has been
+ * updated. 'cycle_count' may be updated either by the ISR, or when we
+ * re-program the SysTick.LOAD register, in z_clock_set_timeout().
+ *
+ * Additionally, the function updates the 'overflow_cyc' counter, that
+ * holds the amount of elapsed HW cycles due to (possibly) multiple
+ * timer wraps (overflows).
+ *
+ * Prerequisites:
+ * - reprogramming of SysTick.LOAD must be clearing the SysTick.COUNTER
+ *   register and the 'overflow_cyc' counter.
+ * - ISR must be clearing the 'overflow_cyc' counter.
+ * - no more than one counter-wrap has occurred between
+ *     - the timer reset or the last time the function was called
+ *     - and until the current call of the function is completed.
+ * - the function is invoked with interrupts disabled.
+ */
 static u32_t elapsed(void)
 {
-	u32_t val, ctrl1, ctrl2;
+	u32_t val1 = SysTick->VAL;	/* A */
+	u32_t ctrl = SysTick->CTRL;	/* B */
+	u32_t val2 = SysTick->VAL;	/* C */
 
-	/* SysTick is infuriatingly racy.  The counter wraps at zero
-	 * automatically, setting a 1 in the COUNTFLAG bit of the CTRL
-	 * register when it does.  But reading the control register
-	 * automatically resets that bit, so we need to save it for
-	 * future calls.  And ordering is critical and race-prone: if
-	 * we read CTRL first, then it is possible for VAL to wrap
-	 * after that read but before we read VAL and we'll miss the
-	 * overflow.  If we read VAL first, then it can wrap after we
-	 * read it and we'll see an "extra" overflow in CTRL.  And we
-	 * want to handle multiple overflows, so we effectively must
-	 * read CTRL first otherwise there will be no way to detect
-	 * the double-overflow if called at the end of a cycle.  There
-	 * is no safe algorithm here, so we split the difference by
-	 * reading CTRL twice, suppressing the second overflow bit if
-	 * VAL was "about to overflow".
+	/* SysTick behavior: The counter wraps at zero automatically,
+	 * setting the COUNTFLAG field of the CTRL register when it
+	 * does.  Reading the control register automatically clears
+	 * that field.
+	 *
+	 * If the count wrapped...
+	 * 1) Before A then COUNTFLAG will be set and val1 >= val2
+	 * 2) Between A and B then COUNTFLAG will be set and val1 < val2
+	 * 3) Between B and C then COUNTFLAG will be clear and val1 < val2
+	 * 4) After C we'll see it next time
+	 *
+	 * So the count in val2 is post-wrap and last_load needs to be
+	 * added if and only if COUNTFLAG is set or val1 < val2.
 	 */
-	ctrl1 = SysTick->CTRL;
-	val = SysTick->VAL & COUNTER_MAX;
-	ctrl2 = SysTick->CTRL;
+	if ((ctrl & SysTick_CTRL_COUNTFLAG_Msk)
+	    || (val1 < val2)) {
+		overflow_cyc += last_load;
 
-	overflow_cyc += (ctrl1 & SysTick_CTRL_COUNTFLAG_Msk) ? last_load : 0;
-	if (val > VAL_ABOUT_TO_WRAP) {
-		int wrap = ctrl2 & SysTick_CTRL_COUNTFLAG_Msk;
-
-		overflow_cyc += (wrap != 0) ? last_load : 0;
+		/* We know there was a wrap, but we might not have
+		 * seen it in CTRL, so clear it. */
+		(void)SysTick->CTRL;
 	}
 
-	return (last_load - val) + overflow_cyc;
+	return (last_load - val2) + overflow_cyc;
 }
 
 /* Callout out of platform assembly, not hooked via IRQ_CONNECT... */
@@ -88,15 +120,35 @@ void z_clock_isr(void *arg)
 	ARG_UNUSED(arg);
 	u32_t dticks;
 
-	cycle_count += last_load;
-	dticks = (cycle_count - announced_cycles) / CYC_PER_TICK;
-	announced_cycles += dticks * CYC_PER_TICK;
+	/* Update overflow_cyc and clear COUNTFLAG by invoking elapsed() */
+	elapsed();
 
-	overflow_cyc = SysTick->CTRL; /* Reset overflow flag */
-	overflow_cyc = 0U;
+	/* Increment the amount of HW cycles elapsed (complete counter
+	 * cycles) and announce the progress to the kernel.
+	 */
+	cycle_count += overflow_cyc;
+	overflow_cyc = 0;
 
-	z_clock_announce(TICKLESS ? dticks : 1);
-	z_ExcExit();
+	if (TICKLESS) {
+		/* In TICKLESS mode, the SysTick.LOAD is re-programmed
+		 * in z_clock_set_timeout(), followed by resetting of
+		 * the counter (VAL = 0).
+		 *
+		 * If a timer wrap occurs right when we re-program LOAD,
+		 * the ISR is triggered immediately after z_clock_set_timeout()
+		 * returns; in that case we shall not increment the cycle_count
+		 * because the value has been updated before LOAD re-program.
+		 *
+		 * We can assess if this is the case by inspecting COUNTFLAG.
+		 */
+
+		dticks = (cycle_count - announced_cycles) / CYC_PER_TICK;
+		announced_cycles += dticks * CYC_PER_TICK;
+		z_clock_announce(dticks);
+	} else {
+		z_clock_announce(1);
+	}
+	z_arm_exc_exit();
 }
 
 int z_clock_driver_init(struct device *device)
@@ -126,24 +178,45 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 		return;
 	}
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
+#if defined(CONFIG_TICKLESS_KERNEL)
 	u32_t delay;
 
-	ticks = MIN(MAX_TICKS, MAX(ticks - 1, 0));
-
-	/* Desired delay in the future */
-	delay = (ticks == 0) ? MIN_DELAY : ticks * CYC_PER_TICK;
+	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
+	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	cycle_count += elapsed();
+	u32_t pending = elapsed();
 
-	/* Round delay up to next tick boundary */
-	delay = delay + (cycle_count - announced_cycles);
-	delay = ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
-	last_load = delay - (cycle_count - announced_cycles);
-
+	cycle_count += pending;
 	overflow_cyc = 0U;
+
+	u32_t unannounced = cycle_count - announced_cycles;
+
+	if ((s32_t)unannounced < 0) {
+		/* We haven't announced for more than half the 32-bit
+		 * wrap duration, because new timeouts keep being set
+		 * before the existing one fires.  Force an announce
+		 * to avoid loss of a wrap event, making sure the
+		 * delay is at least the minimum delay possible.
+		 */
+		last_load = MIN_DELAY;
+	} else {
+		/* Desired delay in the future */
+		delay = ticks * CYC_PER_TICK;
+
+		/* Round delay up to next tick boundary */
+		delay += unannounced;
+		delay =
+		 ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
+		delay -= unannounced;
+		delay = MAX(delay, MIN_DELAY);
+		if (delay > MAX_CYCLES) {
+			last_load = MAX_CYCLES;
+		} else {
+			last_load = delay;
+		}
+	}
 	SysTick->LOAD = last_load - 1;
 	SysTick->VAL = 0; /* resets timer to last_load */
 

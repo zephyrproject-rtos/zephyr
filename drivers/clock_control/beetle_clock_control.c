@@ -15,7 +15,7 @@
 #include <soc.h>
 #include <drivers/clock_control.h>
 #include <sys/util.h>
-#include <clock_control/arm_clock_control.h>
+#include <drivers/clock_control/arm_clock_control.h>
 
 #define MAINCLK_BASE_FREQ 24000000
 

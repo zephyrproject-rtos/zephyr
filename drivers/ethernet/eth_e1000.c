@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation.
+ * Copyright (c) 2018-2019 Intel Corporation.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,11 +9,26 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#include <sys/types.h>
 #include <zephyr.h>
 #include <net/ethernet.h>
 #include <ethernet/eth_stats.h>
 #include <drivers/pcie/pcie.h>
 #include "eth_e1000_priv.h"
+
+#if defined(CONFIG_ETH_E1000_VERBOSE_DEBUG)
+#define hexdump(_buf, _len, fmt, args...)				\
+({									\
+	const size_t STR_SIZE = 80;					\
+	char _str[STR_SIZE];						\
+									\
+	snprintk(_str, STR_SIZE, "%s: " fmt, __func__, ## args);	\
+									\
+	LOG_HEXDUMP_DBG(_buf, _len, log_strdup(_str));			\
+})
+#else
+#define hexdump(args...)
+#endif
 
 static const char *e1000_reg_to_string(enum e1000_reg_t r)
 {
@@ -50,10 +65,12 @@ static enum ethernet_hw_caps e1000_caps(struct device *dev)
 		ETHERNET_LINK_1000BASE_T;
 }
 
-static int e1000_tx(struct e1000_dev *dev, void *data, size_t data_len)
+static int e1000_tx(struct e1000_dev *dev, void *buf, size_t len)
 {
-	dev->tx.addr = POINTER_TO_INT(data);
-	dev->tx.len = data_len;
+	hexdump(buf, len, "%zu byte(s)", len);
+
+	dev->tx.addr = POINTER_TO_INT(buf);
+	dev->tx.len = len;
 	dev->tx.cmd = TDESC_EOP | TDESC_RS;
 
 	iow32(dev, TDT, 1);
@@ -82,6 +99,8 @@ static int e1000_send(struct device *device, struct net_pkt *pkt)
 static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 {
 	struct net_pkt *pkt = NULL;
+	void *buf;
+	ssize_t len;
 
 	LOG_DBG("rx.sta: 0x%02hx", dev->rx.sta);
 
@@ -90,15 +109,24 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 		goto out;
 	}
 
-	pkt = net_pkt_rx_alloc_with_buffer(dev->iface, dev->rx.len - 4,
-					   AF_UNSPEC, 0, K_NO_WAIT);
+	buf = INT_TO_POINTER((u32_t)dev->rx.addr);
+	len = dev->rx.len - 4;
+
+	if (len <= 0) {
+		LOG_ERR("Invalid RX descriptor length: %hu", dev->rx.len);
+		goto out;
+	}
+
+	hexdump(buf, len, "%zd byte(s)", len);
+
+	pkt = net_pkt_rx_alloc_with_buffer(dev->iface, len, AF_UNSPEC, 0,
+					   K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Out of buffers");
 		goto out;
 	}
 
-	if (net_pkt_write(pkt, INT_TO_POINTER((u32_t) dev->rx.addr),
-			  dev->rx.len - 4)) {
+	if (net_pkt_write(pkt, buf, len)) {
 		LOG_ERR("Out of memory for received frame");
 		net_pkt_unref(pkt);
 		pkt = NULL;

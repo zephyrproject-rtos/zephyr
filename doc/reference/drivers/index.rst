@@ -38,13 +38,17 @@ are listed below.
 * **Serial communication**: This device driver is used by the kernel's
   system console subsystem.
 
-* **Random number generator**: This device driver provides a source of random
-  numbers.
+* **Entropy**: This device driver provides a source of entropy numbers
+  for the random number generator subsystem.
 
   .. important::
 
-    Certain implementations of the random number generator device driver
-    do not generate sequences of values that are truly random.
+    Use the :ref:`random API functions <random_api>` for random
+    values. :ref:`Entropy functions <entropy_interface>` should not be
+    directly used as a random number generator source as some hardware
+    implementations are designed to be an entropy seed source for random
+    number generators and will not provide cryptographically secure
+    random number streams.
 
 Synchronous Calls
 *****************
@@ -80,6 +84,8 @@ applications.
 
 :c:func:`DEVICE_DECLARE()`
    Declare a device object.
+
+.. _device_struct:
 
 Driver Data Structures
 **********************
@@ -355,6 +361,9 @@ leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
 ``\#define MY_INIT_PRIO 32``); symbolic expressions are *not* permitted (e.g.
 ``CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5``).
 
+Drivers and other system utilities can determine whether startup is
+still in pre-kernel states by using the :cpp:func:`k_is_pre_kernel()`
+function.
 
 System Drivers
 **************

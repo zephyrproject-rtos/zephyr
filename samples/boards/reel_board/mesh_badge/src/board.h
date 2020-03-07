@@ -5,16 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-enum led_periph_device {
-	DEV_IDX_LED0 = 0,
-	DEV_IDX_LED1,
-	DEV_IDX_LED2,
-	DEV_IDX_LED3,
-};
-
 enum periph_device {
-	DEV_IDX_BUTTON = 0,
-	DEV_IDX_HDC1010,
+	DEV_IDX_HDC1010 = 0,
 	DEV_IDX_MMA8652,
 	DEV_IDX_APDS9960,
 	DEV_IDX_EPD,

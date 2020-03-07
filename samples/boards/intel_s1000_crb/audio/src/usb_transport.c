@@ -82,6 +82,8 @@ static struct device *hid_device;
 
 int usb_transport_init(usb_transport_receive_callback_t callback)
 {
+	int ret;
+
 	hid_device = device_get_binding("HID_0");
 
 	if (hid_device == NULL) {
@@ -95,6 +97,12 @@ int usb_transport_init(usb_transport_receive_callback_t callback)
 			&usb_transport_callbacks);
 
 	receive_data_cb = callback;
+
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return -EIO;
+	}
 
 	/* initialize USB interface and HID class */
 	return usb_hid_init(hid_device);

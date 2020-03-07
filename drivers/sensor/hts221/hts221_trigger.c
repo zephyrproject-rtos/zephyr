@@ -10,78 +10,101 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <drivers/sensor.h>
-
+#include <logging/log.h>
 #include "hts221.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(HTS221);
+LOG_MODULE_DECLARE(HTS221, CONFIG_SENSOR_LOG_LEVEL);
+
+static inline void setup_drdy(struct device *dev,
+			      bool enable)
+{
+	struct hts221_data *data = dev->driver_data;
+	const struct hts221_config *cfg = dev->config->config_info;
+	unsigned int flags = enable
+		? GPIO_INT_EDGE_TO_ACTIVE
+		: GPIO_INT_DISABLE;
+
+	gpio_pin_interrupt_configure(data->drdy_dev, cfg->drdy_pin, flags);
+}
+
+static inline void handle_drdy(struct device *dev)
+{
+	struct hts221_data *data = dev->driver_data;
+
+	setup_drdy(dev, false);
+
+#if defined(CONFIG_HTS221_TRIGGER_OWN_THREAD)
+	k_sem_give(&data->drdy_sem);
+#elif defined(CONFIG_HTS221_TRIGGER_GLOBAL_THREAD)
+	k_work_submit(&data->work);
+#endif
+}
+
+static void process_drdy(struct device *dev)
+{
+	struct hts221_data *data = dev->driver_data;
+
+	if (data->data_ready_handler != NULL) {
+		data->data_ready_handler(dev, &data->data_ready_trigger);
+	}
+
+	if (data->data_ready_handler != NULL) {
+		setup_drdy(dev, true);
+	}
+}
 
 int hts221_trigger_set(struct device *dev,
-			const struct sensor_trigger *trig,
-			sensor_trigger_handler_t handler)
+		       const struct sensor_trigger *trig,
+		       sensor_trigger_handler_t handler)
 {
-	struct hts221_data *drv_data = dev->driver_data;
+	struct hts221_data *data = dev->driver_data;
+	const struct hts221_config *cfg = dev->config->config_info;
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
-	gpio_pin_disable_callback(drv_data->gpio,
-				  DT_INST_0_ST_HTS221_DRDY_GPIOS_PIN);
+	setup_drdy(dev, false);
 
-	drv_data->data_ready_handler = handler;
+	data->data_ready_handler = handler;
 	if (handler == NULL) {
 		return 0;
 	}
 
-	drv_data->data_ready_trigger = *trig;
+	data->data_ready_trigger = *trig;
 
-	gpio_pin_enable_callback(drv_data->gpio,
-				 DT_INST_0_ST_HTS221_DRDY_GPIOS_PIN);
+	setup_drdy(dev, true);
+
+	/* If DRDY is active we probably won't get the rising edge, so
+	 * invoke the callback manually.
+	 */
+	if (gpio_pin_get(data->drdy_dev, cfg->drdy_pin) > 0) {
+		handle_drdy(dev);
+	}
 
 	return 0;
 }
 
-static void hts221_gpio_callback(struct device *dev,
-				  struct gpio_callback *cb, u32_t pins)
+static void hts221_drdy_callback(struct device *dev,
+				 struct gpio_callback *cb, u32_t pins)
 {
-	struct hts221_data *drv_data =
-		CONTAINER_OF(cb, struct hts221_data, gpio_cb);
+	struct hts221_data *data =
+		CONTAINER_OF(cb, struct hts221_data, drdy_cb);
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, DT_INST_0_ST_HTS221_DRDY_GPIOS_PIN);
-
-#if defined(CONFIG_HTS221_TRIGGER_OWN_THREAD)
-	k_sem_give(&drv_data->gpio_sem);
-#elif defined(CONFIG_HTS221_TRIGGER_GLOBAL_THREAD)
-	k_work_submit(&drv_data->work);
-#endif
-}
-
-static void hts221_thread_cb(void *arg)
-{
-	struct device *dev = arg;
-	struct hts221_data *drv_data = dev->driver_data;
-
-	if (drv_data->data_ready_handler != NULL) {
-		drv_data->data_ready_handler(dev,
-					     &drv_data->data_ready_trigger);
-	}
-
-	gpio_pin_enable_callback(drv_data->gpio, DT_INST_0_ST_HTS221_DRDY_GPIOS_PIN);
+	handle_drdy(data->dev);
 }
 
 #ifdef CONFIG_HTS221_TRIGGER_OWN_THREAD
 static void hts221_thread(int dev_ptr, int unused)
 {
 	struct device *dev = INT_TO_POINTER(dev_ptr);
-	struct hts221_data *drv_data = dev->driver_data;
+	struct hts221_data *data = dev->driver_data;
 
 	ARG_UNUSED(unused);
 
 	while (1) {
-		k_sem_take(&drv_data->gpio_sem, K_FOREVER);
-		hts221_thread_cb(dev);
+		k_sem_take(&data->drdy_sem, K_FOREVER);
+		process_drdy(dev);
 	}
 }
 #endif
@@ -89,60 +112,59 @@ static void hts221_thread(int dev_ptr, int unused)
 #ifdef CONFIG_HTS221_TRIGGER_GLOBAL_THREAD
 static void hts221_work_cb(struct k_work *work)
 {
-	struct hts221_data *drv_data =
+	struct hts221_data *data =
 		CONTAINER_OF(work, struct hts221_data, work);
 
-	hts221_thread_cb(drv_data->dev);
+	process_drdy(data->dev);
 }
 #endif
 
 int hts221_init_interrupt(struct device *dev)
 {
-	struct hts221_data *drv_data = dev->driver_data;
+	struct hts221_data *data = dev->driver_data;
+	const struct hts221_config *cfg = dev->config->config_info;
+
+	data->dev = dev;
 
 	/* setup data ready gpio interrupt */
-	drv_data->gpio =
-		device_get_binding(DT_INST_0_ST_HTS221_DRDY_GPIOS_CONTROLLER);
-	if (drv_data->gpio == NULL) {
+	data->drdy_dev = device_get_binding(cfg->drdy_controller);
+	if (data->drdy_dev == NULL) {
 		LOG_ERR("Cannot get pointer to %s device.",
-			    DT_INST_0_ST_HTS221_DRDY_GPIOS_CONTROLLER);
+			cfg->drdy_controller);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, DT_INST_0_ST_HTS221_DRDY_GPIOS_PIN,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+	gpio_pin_configure(data->drdy_dev, cfg->drdy_pin,
+			   GPIO_INPUT | cfg->drdy_flags);
 
-	gpio_init_callback(&drv_data->gpio_cb,
-			   hts221_gpio_callback,
-			   BIT(DT_INST_0_ST_HTS221_DRDY_GPIOS_PIN));
+	gpio_init_callback(&data->drdy_cb, hts221_drdy_callback,
+			   BIT(cfg->drdy_pin));
 
-	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
+	if (gpio_add_callback(data->drdy_dev, &data->drdy_cb) < 0) {
 		LOG_ERR("Could not set gpio callback.");
 		return -EIO;
 	}
 
 	/* enable data-ready interrupt */
-	if (i2c_reg_write_byte(drv_data->i2c, DT_INST_0_ST_HTS221_BASE_ADDRESS,
+	if (i2c_reg_write_byte(data->i2c, cfg->i2c_addr,
 			       HTS221_REG_CTRL3, HTS221_DRDY_EN) < 0) {
 		LOG_ERR("Could not enable data-ready interrupt.");
 		return -EIO;
 	}
 
 #if defined(CONFIG_HTS221_TRIGGER_OWN_THREAD)
-	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
+	k_sem_init(&data->drdy_sem, 0, UINT_MAX);
 
-	k_thread_create(&drv_data->thread, drv_data->thread_stack,
+	k_thread_create(&data->thread, data->thread_stack,
 			CONFIG_HTS221_THREAD_STACK_SIZE,
 			(k_thread_entry_t)hts221_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_HTS221_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_HTS221_TRIGGER_GLOBAL_THREAD)
-	drv_data->work.handler = hts221_work_cb;
-	drv_data->dev = dev;
+	data->work.handler = hts221_work_cb;
 #endif
 
-	gpio_pin_enable_callback(drv_data->gpio, DT_INST_0_ST_HTS221_DRDY_GPIOS_PIN);
+	setup_drdy(dev, true);
 
 	return 0;
 }

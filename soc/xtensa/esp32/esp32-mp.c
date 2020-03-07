@@ -24,7 +24,7 @@
 
 struct cpustart_rec {
 	int cpu;
-	void (*fn)(int, void *);
+	arch_cpustart_t fn;
 	char *stack_top;
 	void *arg;
 	int vecbase;
@@ -93,7 +93,7 @@ static void appcpu_entry2(void)
 	__asm__ volatile("wsr.MISC0 %0" : : "r"(cpu));
 
 	*start_rec->alive = 1;
-	start_rec->fn(ps, start_rec->arg);
+	start_rec->fn(start_rec->arg);
 }
 
 /* Defines a locally callable "function" named _stack-switch().  The
@@ -190,8 +190,8 @@ static void appcpu_start(void)
 	smp_log("ESP32: APPCPU start sequence complete");
 }
 
-void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
-		     void (*fn)(int, void *), void *arg)
+void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+		    arch_cpustart_t fn, void *arg)
 {
 	volatile struct cpustart_rec sr;
 	int vb;

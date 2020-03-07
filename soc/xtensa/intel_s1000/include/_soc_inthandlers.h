@@ -254,4 +254,3 @@ static inline int _xtensa_handle_one_int6(unsigned int mask)
 {
 	return 0;
 }
-

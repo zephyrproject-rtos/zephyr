@@ -20,7 +20,7 @@
  * @param child       HT16K33 keyscan child device.
  * @param keyscan_idx Index of the keyscan line handled by the keyscan
  *		      child device (0, 1, or 2).
- * @return 0 if successful, negative errne code on failure.
+ * @return 0 if successful, negative errno code on failure.
  */
 int ht16k33_register_keyscan_device(struct device *parent,
 				    struct device *child,

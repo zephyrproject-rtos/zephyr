@@ -17,7 +17,7 @@
  */
 
 #ifdef CONFIG_ARM_MPU
-#include <arch/arm/cortex_m/cmsis.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 void disable_mpu_rasr_xn(void)
 {
 	u32_t index;

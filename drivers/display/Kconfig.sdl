@@ -1,10 +1,7 @@
-# Kconfig - SDL based emulated display configuration options
+# SDL based emulated display configuration options
 
-#
 # Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SDL_DISPLAY
 	bool "SDL based emulated display"
@@ -44,6 +41,12 @@ choice SDL_DISPLAY_DEFAULT_PIXEL_FORMAT
 
 	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10
 		bool "Mono Black=1"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565
+		bool "RGB 565"
+
+	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565
+		bool "BGR 565"
 
 endchoice
 

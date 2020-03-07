@@ -26,10 +26,7 @@ Caveats
 *******
 
 * The Zephyr port of ``smp_svr`` is configured to run on a Nordic nRF52x MCU. The
-  application should build and run for other platforms without modification, but
-  the file system management commands will not work.  To enable file system
-  management for a different platform, adjust the
-  :option:`CONFIG_FS_NFFS_FLASH_DEV_NAME` setting in :file:`prj.conf` accordingly.
+  application should build and run for other platforms without modification.
 
 * The MCUboot bootloader is required for ``img_mgmt`` to function
   properly. More information about the Device Firmware Upgrade subsystem and
@@ -281,4 +278,3 @@ new image and make the swap permanent by using this command:
 Note that if you try to send the very same image that is already flashed in
 slot-0 then the procedure will not complete successfully since the hash values
 for both slots will be identical.
-

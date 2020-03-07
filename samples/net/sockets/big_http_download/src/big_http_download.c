@@ -214,7 +214,7 @@ error:
 	(void)close(sock);
 }
 
-int main(void)
+void main(void)
 {
 	static struct addrinfo hints;
 	struct addrinfo *res;
@@ -314,6 +314,4 @@ int main(void)
 	}
 
 	mbedtls_md_free(&hash_ctx);
-
-	return 0;
 }

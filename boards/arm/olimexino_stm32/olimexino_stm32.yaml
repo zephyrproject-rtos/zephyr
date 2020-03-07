@@ -14,3 +14,4 @@ supported:
   - spi
   - usb_device
   - watchdog
+  - can

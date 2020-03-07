@@ -18,8 +18,7 @@
 
 #include "lsm6ds0.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(LSM6DS0);
+LOG_MODULE_REGISTER(LSM6DS0, CONFIG_SENSOR_LOG_LEVEL);
 
 static inline int lsm6ds0_reboot(struct device *dev)
 {

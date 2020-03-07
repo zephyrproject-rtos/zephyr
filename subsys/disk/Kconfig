@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig DISK_ACCESS
 	bool "Disk Interface"
@@ -10,12 +7,6 @@ menuconfig DISK_ACCESS
 	  Enable disk access over a supported media backend like FLASH or RAM
 
 if DISK_ACCESS
-
-config DISK_ACCESS_MAX_VOLUMES
-	int "Maximum Disk Interfaces"
-	default 8
-	help
-	  Maximum number of disk access interfaces supported
 
 module = DISK
 module-str = disk
@@ -134,6 +125,7 @@ endif # DISK_ACCESS_USDHC
 
 config DISK_SDHC_VOLUME_NAME
 	string "SDHC Disk mount point or drive name"
+	default "SD" if FAT_FILESYSTEM_ELM
 	default "SDHC"
 	help
 	  Disk name as per file system naming guidelines.

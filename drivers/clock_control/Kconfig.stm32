@@ -1,21 +1,17 @@
-# Kconfig - STM32 MCU clock control driver config
-#
+# STM32 MCU clock control driver config
+
 # Copyright (c) 2017 Linaro
 # Copyright (c) 2017 RnDity Sp. z o.o.
-#
-#  SPDX-License-Identifier: Apache-2.0
-#
-
-if SOC_FAMILY_STM32
+# SPDX-License-Identifier: Apache-2.0
 
 menuconfig CLOCK_CONTROL_STM32_CUBE
 	bool "STM32 Reset & Clock Control"
+	depends on SOC_FAMILY_STM32
 	select USE_STM32_LL_UTILS
 	select USE_STM32_LL_RCC if SOC_SERIES_STM32MP1X
 	help
 	  Enable driver for Reset & Clock Control subsystem found
 	  in STM32 family of MCUs
-
 
 if CLOCK_CONTROL_STM32_CUBE
 
@@ -29,7 +25,7 @@ config CLOCK_CONTROL_STM32_DEVICE_INIT_PRIORITY
 	  at default value 1
 
 choice CLOCK_STM32_SYSCLK_SRC
-prompt "STM32 System Clock Source"
+	prompt "STM32 System Clock Source"
 
 config CLOCK_STM32_SYSCLK_SRC_HSE
 	bool "HSE"
@@ -87,9 +83,9 @@ config CLOCK_STM32_MSI_RANGE
 	  Range 11: 48 MHz
 
 choice
-prompt "STM32 PLL Clock Source"
-depends on CLOCK_STM32_SYSCLK_SRC_PLL
-default CLOCK_STM32_PLL_SRC_HSI
+	prompt "STM32 PLL Clock Source"
+	default CLOCK_STM32_PLL_SRC_HSI
+	depends on CLOCK_STM32_SYSCLK_SRC_PLL
 
 config CLOCK_STM32_PLL_SRC_MSI
 	bool "MSI"
@@ -111,8 +107,8 @@ config CLOCK_STM32_PLL_SRC_PLL2
 	bool "PLL2"
 	depends on SOC_STM32F10X_CONNECTIVITY_LINE_DEVICE
 	help
-	 Use PLL2 as source of main PLL. This is equivalent of defining
-	 PLL2 as source PREDIV1SCR. If not selected, default source is HSE.
+	  Use PLL2 as source of main PLL. This is equivalent of defining
+	  PLL2 as source PREDIV1SCR. If not selected, default source is HSE.
 
 endchoice
 
@@ -126,6 +122,7 @@ source "drivers/clock_control/Kconfig.stm32h7"
 source "drivers/clock_control/Kconfig.stm32l0_l1"
 source "drivers/clock_control/Kconfig.stm32l4_wb"
 source "drivers/clock_control/Kconfig.stm32g0"
+source "drivers/clock_control/Kconfig.stm32g4"
 
 # Bus clocks configuration options
 
@@ -189,8 +186,8 @@ endif # !SOC_SERIES_STM32H7X
 # Micro-controller Clock output configuration options
 
 choice
-prompt "STM32 MCO1 Clock Source"
-default CLOCK_STM32_MCO1_SRC_NOCLOCK
+	prompt "STM32 MCO1 Clock Source"
+	default CLOCK_STM32_MCO1_SRC_NOCLOCK
 
 config CLOCK_STM32_MCO1_SRC_NOCLOCK
 	bool "NOCLOCK"
@@ -232,8 +229,8 @@ config CLOCK_STM32_MCO1_DIV
 	  allowed values: 1, 2, 3, 4, 5
 
 choice
-prompt "STM32 MCO2 Clock Source"
-default CLOCK_STM32_MCO2_SRC_NOCLOCK
+	prompt "STM32 MCO2 Clock Source"
+	default CLOCK_STM32_MCO2_SRC_NOCLOCK
 
 config CLOCK_STM32_MCO2_SRC_NOCLOCK
 	bool "NOCLOCK"
@@ -275,4 +272,3 @@ config CLOCK_STM32_MCO2_DIV
 	  allowed values: 1, 2, 3, 4, 5
 
 endif # CLOCK_CONTROL_STM32_CUBE
-endif # SOC_FAMILY_STM32

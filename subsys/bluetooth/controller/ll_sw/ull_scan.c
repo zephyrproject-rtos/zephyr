@@ -10,6 +10,7 @@
 
 #include "hal/ccm.h"
 #include "hal/ticker.h"
+#include "hal/radio.h"
 
 #include "util/util.h"
 #include "util/mem.h"
@@ -37,7 +38,8 @@
 #include "ull_scan_internal.h"
 #include "ull_sched_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_ull_scan
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_ull_scan
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
@@ -173,6 +175,10 @@ u8_t ull_scan_enable(struct ll_scan_set *scan)
 	lll->chan = 0;
 	lll->init_addr_type = scan->own_addr_type;
 	ll_addr_get(lll->init_addr_type, lll->init_addr);
+
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	lll->tx_pwr_lvl = RADIO_TXP_DEFAULT;
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	ull_hdr_init(&scan->ull);
 	lll_hdr_init(lll, scan);

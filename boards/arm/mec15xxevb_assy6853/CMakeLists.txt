@@ -36,11 +36,18 @@ else()
 endif()
 
 if(DEFINED EVERGLADES_SPI_GEN)
+  if(DEFINED ENV{EVERGLADES_SPI_CFG})
+    set(EVERGLADES_SPI_CFG $ENV{EVERGLADES_SPI_CFG})
+  else()
+    set(EVERGLADES_SPI_CFG ${BOARD_DIR}/support/spi_cfg.txt)
+  endif()
+
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${EVERGLADES_SPI_GEN}
-    -i ${BOARD_DIR}/support/spi_cfg.txt
-    -o ${PROJECT_BINARY_DIR}/spi_image.bin
+    -i ${EVERGLADES_SPI_CFG}
+    -o ${PROJECT_BINARY_DIR}/${SPI_IMAGE_NAME}
   )
 
   unset(EVERGLADES_SPI_GEN)
+  unset(EVERGLADES_SPI_CFG)
 endif()

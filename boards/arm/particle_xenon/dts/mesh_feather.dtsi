@@ -32,19 +32,19 @@
 	leds {
 		compatible = "gpio-leds";
 		user_led: led_0 {
-			gpios = <&gpio1 12 0>;
+			gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 			label = "User LED";
 		};
 		status_red: led_1 {
-			gpios = <&gpio0 13 0>;
+			gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
 			label = "Red LED";
 		};
 		status_green: led_2 {
-			gpios = <&gpio0 14 0>;
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
 			label = "Green LED";
 		};
 		status_blue: led_3 {
-			gpios = <&gpio0 15 0>;
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 			label = "Blue LED";
 		};
 	};
@@ -52,12 +52,12 @@
 	gpio_keys {
 		compatible = "gpio-keys";
 		mode_button: button_0 {
-			gpios = <&gpio0 11 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Mode Button";
 		};
 
 		reset_button: button_1 {
-			gpios = <&gpio0 18 GPIO_PUD_PULL_UP>;
+			gpios = <&gpio0 18 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Reset Button";
 		};
 	};
@@ -66,7 +66,6 @@
 &adc { /* feather ADC */
 	status = "okay";
 };
-
 
 &flash0 {
 	partitions {
@@ -96,7 +95,10 @@
 		 * 0x000fffff is reserved for use by the application.
 		 */
 
-		/* Storage partition will be used by FCB/NFFS/NVS if enabled. */
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
 		storage_partition: partition@f8000 {
 			label = "storage";
 			reg = <0x000f8000 0x00008000>;
@@ -117,6 +119,7 @@
 };
 
 &i2c0 { /* feather I2C */
+	compatible = "nordic,nrf-twi";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <26>;
@@ -126,6 +129,7 @@
 /* TWI1 used on Boron; also see mesh_feather_spi1_spi1.dtsi */
 
 &spi2 { /* dedicated MX25L */
+	compatible = "nordic,nrf-spi";
 	status = "okay";
 	sck-pin = <19>;
 	mosi-pin = <20>;
@@ -136,10 +140,13 @@
 		label = "MX25L3233F";
 		reg = <0>;
 		spi-max-frequency = <80000000>;
-		wp-gpios = <&gpio0 22 0>;
-		hold-gpios = <&gpio0 23 0>;
+		wp-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
+		hold-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 		size = <0x2000000>;
 		has-be32k;
+		has-dpd;
+		t-enter-dpd = <10000>;
+		t-exit-dpd = <100000>;
 		jedec-id = [c2 20 16];
 	};
 };

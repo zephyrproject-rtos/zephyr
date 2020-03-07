@@ -1,16 +1,12 @@
-# Kconfig - DesignWare ARC EM Starter Kit board configuration options
+# DesignWare ARC EM Starter Kit board configuration options
 
-#
 # Copyright (c) 2017 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
-if BOARD_EM_STARTERKIT
 
 choice
 	prompt "Board Firmware Version"
 	default BOARD_EM_STARTERKIT_R23
+	depends on BOARD_EM_STARTERKIT
 
 	config BOARD_EM_STARTERKIT_R22
 		bool "2.2"
@@ -19,5 +15,3 @@ choice
 		bool "2.3"
 
 endchoice
-
-endif

@@ -1,10 +1,7 @@
-# Kconfig - Options for networking configuration
+# Options for networking configuration
 
-#
 # Copyright (c) 2017 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config NET_CONFIG_AUTO_INIT
 	bool "Init networking support automatically during device startup"
@@ -119,14 +116,11 @@ config NET_CONFIG_PEER_IPV4_ADDR
 
 endif # NET_IPV4
 
-if NET_L2_IEEE802154 || IEEE802154_RAW_MODE || NET_L2_OPENTHREAD
-
 config NET_CONFIG_IEEE802154_DEV_NAME
 	string "IEEE 802.15.4 device name"
+	depends on NET_L2_IEEE802154 || IEEE802154_RAW_MODE || NET_L2_OPENTHREAD
 	help
 	  The device name to get bindings from in the sample application.
-
-endif # NET_L2_IEEE802154 || IEEE802154_RAW_MODE || NET_L2_OPENTHREAD
 
 if NET_L2_IEEE802154 || IEEE802154_RAW_MODE
 
@@ -183,15 +177,40 @@ config NET_CONFIG_IEEE802154_SECURITY_LEVEL
 
 endif # NET_L2_IEEE802154 || IEEE802154_RAW_MODE
 
-if NET_L2_BT
-
 config NET_CONFIG_BT_NODE
 	bool "Enable Bluetooth node support"
+	depends on NET_L2_BT
 	select NET_L2_BT_MGMT
 	help
 	  Enables application to operate in node mode which requires GATT
 	  service to be registered and start advertising as peripheral.
 
-endif # NET_L2_BT
-
 endif # NET_CONFIG_SETTINGS
+
+config NET_CONFIG_CLOCK_SNTP_INIT
+	bool "Initialize system clock using SNTP on application startup"
+	depends on SNTP && POSIX_CLOCK
+	help
+	  Perform an SNTP request over networking to get and absolute
+	  wall clock time, and initialize system time from it, so
+	  functions like time(), gettimeofday(), etc. returned the
+	  correct absolute time (no just time since system startup).
+	  Requires networking.
+
+if NET_CONFIG_CLOCK_SNTP_INIT
+
+config NET_CONFIG_SNTP_INIT_SERVER
+	string "SNTP server to use for system clock init"
+	default ""
+	help
+	  Zephyr does not provide default setting for this option. Each
+	  application and vendor should choose a suitable setting based
+	  on their locality, needs, and server's terms of service. See
+	  e.g. server information at
+	  https://support.ntp.org/bin/view/Servers/NTPPoolServers
+
+config NET_CONFIG_SNTP_INIT_TIMEOUT
+	int "SNTP timeout to init system clock (ms)"
+	default 3000
+
+endif # NET_CONFIG_CLOCK_SNTP_INIT

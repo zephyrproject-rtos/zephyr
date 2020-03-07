@@ -1,10 +1,7 @@
-# Kconfig - PCIe/new PCI configuration options
+# PCIe/new PCI configuration options
 
-#
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PCIE
 	bool "Enable new PCI/PCIe support"
@@ -16,7 +13,6 @@ if PCIE
 
 config PCIE_MSI
 	bool "Enable support for PCI(e) MSI"
-	default n
 	help
 	  Use Message-Signaled Interrupts where possible. With this option
 	  enabled, PCI(e) devices which support MSI will be configured (at
@@ -25,10 +21,8 @@ config PCIE_MSI
 
 config PCIE_SHELL
 	bool "Enable PCIe/new PCI Shell"
-	default n
 	depends on SHELL
 	help
 	  Enable commands for debugging PCI(e) using the built-in shell.
 
 endif # PCIE
-

@@ -1,10 +1,7 @@
-# Kconfig - STM32 SPI driver configuration options
+# STM32 SPI driver configuration options
 
-#
 # Copyright (c) 2015-2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SPI_STM32
 	bool "STM32 MCU SPI controller driver"
@@ -19,7 +16,7 @@ config SPI_STM32_HAS_FIFO
 	bool
 	depends on (SOC_SERIES_STM32L4X || SOC_SERIES_STM32F0X || \
 	SOC_SERIES_STM32F3X || SOC_SERIES_STM32F7X || SOC_SERIES_STM32MP1X || \
-	SOC_SERIES_STM32WBX)
+	SOC_SERIES_STM32WBX || SOC_SERIES_STM32G4X)
 	default y
 
 config SPI_STM32_INTERRUPT

@@ -30,11 +30,16 @@ LOG_MODULE_REGISTER(flash_sam0);
  * Number of lock regions.  The number is fixed and the region size
  * grows with the flash size.
  */
-#define LOCK_REGIONS 16
+#define LOCK_REGIONS DT_INST_0_ATMEL_SAM0_NVMCTRL_LOCK_REGIONS
 #define LOCK_REGION_SIZE (FLASH_SIZE / LOCK_REGIONS)
 
-#define PAGES_PER_ROW 4
-#define ROW_SIZE (FLASH_PAGE_SIZE * PAGES_PER_ROW)
+#if defined(NVMCTRL_BLOCK_SIZE)
+#define ROW_SIZE NVMCTRL_BLOCK_SIZE
+#elif defined(NVMCTRL_ROW_SIZE)
+#define ROW_SIZE NVMCTRL_ROW_SIZE
+#endif
+
+#define PAGES_PER_ROW (ROW_SIZE / FLASH_PAGE_SIZE)
 
 #define FLASH_MEM(_a) ((u32_t *)((u8_t *)((_a) + CONFIG_FLASH_BASE_ADDRESS)))
 
@@ -84,19 +89,30 @@ static int flash_sam0_valid_range(off_t offset, size_t len)
 
 static void flash_sam0_wait_ready(void)
 {
+#ifdef NVMCTRL_STATUS_READY
+	while (NVMCTRL->STATUS.bit.READY == 0) {
+	}
+#else
 	while (NVMCTRL->INTFLAG.bit.READY == 0) {
 	}
+#endif
 }
 
 static int flash_sam0_check_status(off_t offset)
 {
-	NVMCTRL_STATUS_Type status;
-
 	flash_sam0_wait_ready();
 
-	status = NVMCTRL->STATUS;
+#ifdef NVMCTRL_INTFLAG_PROGE
+	NVMCTRL_INTFLAG_Type status = NVMCTRL->INTFLAG;
+
+	/* Clear any flags */
+	NVMCTRL->INTFLAG.reg = status.reg;
+#else
+	NVMCTRL_STATUS_Type status = NVMCTRL->STATUS;
+
 	/* Clear any flags */
 	NVMCTRL->STATUS = status;
+#endif
 
 	if (status.bit.PROGE) {
 		LOG_ERR("programming error at 0x%lx", (long)offset);
@@ -120,7 +136,11 @@ static int flash_sam0_write_page(struct device *dev, off_t offset,
 	u32_t *dst = FLASH_MEM(offset);
 	int err;
 
+#ifdef NVMCTRL_CTRLA_CMD_PBC
 	NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_PBC | NVMCTRL_CTRLA_CMDEX_KEY;
+#else
+	NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_PBC | NVMCTRL_CTRLB_CMDEX_KEY;
+#endif
 	flash_sam0_wait_ready();
 
 	/* Ensure writes happen 32 bits at a time. */
@@ -128,7 +148,11 @@ static int flash_sam0_write_page(struct device *dev, off_t offset,
 		*dst = *src;
 	}
 
+#ifdef NVMCTRL_CTRLA_CMD_WP
 	NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_WP | NVMCTRL_CTRLA_CMDEX_KEY;
+#else
+	NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_WP | NVMCTRL_CTRLB_CMDEX_KEY;
+#endif
 
 	err = flash_sam0_check_status(offset);
 	if (err != 0) {
@@ -146,8 +170,11 @@ static int flash_sam0_write_page(struct device *dev, off_t offset,
 static int flash_sam0_erase_row(struct device *dev, off_t offset)
 {
 	*FLASH_MEM(offset) = 0U;
+#ifdef NVMCTRL_CTRLA_CMD_ER
 	NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_ER | NVMCTRL_CTRLA_CMDEX_KEY;
-
+#else
+	NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_EB | NVMCTRL_CTRLB_CMDEX_KEY;
+#endif
 	return flash_sam0_check_status(offset);
 }
 
@@ -318,8 +345,9 @@ static int flash_sam0_write_protection(struct device *dev, bool enable)
 
 	for (offset = 0; offset < CONFIG_FLASH_SIZE * 1024;
 	     offset += LOCK_REGION_SIZE) {
-		*FLASH_MEM(offset) = 0U;
+		NVMCTRL->ADDR.reg = offset + CONFIG_FLASH_BASE_ADDRESS;
 
+#ifdef NVMCTRL_CTRLA_CMD_LR
 		if (enable) {
 			NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_LR |
 					     NVMCTRL_CTRLA_CMDEX_KEY;
@@ -327,6 +355,15 @@ static int flash_sam0_write_protection(struct device *dev, bool enable)
 			NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_UR |
 					     NVMCTRL_CTRLA_CMDEX_KEY;
 		}
+#else
+		if (enable) {
+			NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_LR |
+					     NVMCTRL_CTRLB_CMDEX_KEY;
+		} else {
+			NVMCTRL->CTRLB.reg = NVMCTRL_CTRLB_CMD_UR |
+					     NVMCTRL_CTRLB_CMDEX_KEY;
+		}
+#endif
 		err = flash_sam0_check_status(offset);
 		if (err != 0) {
 			goto done;
@@ -355,10 +392,17 @@ static int flash_sam0_init(struct device *dev)
 
 	k_sem_init(&ctx->sem, 1, 1);
 
+#ifdef PM_APBBMASK_NVMCTRL
 	/* Ensure the clock is on. */
 	PM->APBBMASK.bit.NVMCTRL_ = 1;
+#else
+	MCLK->APBBMASK.reg |= MCLK_APBBMASK_NVMCTRL;
+#endif
+
+#ifdef NVMCTRL_CTRLB_MANW
 	/* Require an explicit write command */
 	NVMCTRL->CTRLB.bit.MANW = 1;
+#endif
 
 	return flash_sam0_write_protection(dev, false);
 }

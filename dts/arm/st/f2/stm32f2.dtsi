@@ -6,7 +6,6 @@
  */
 
 #include <arm/armv7-m.dtsi>
-#include <st/f2/stm32f2-pinctrl.dtsi>
 #include <dt-bindings/clock/stm32_clock.h>
 #include <dt-bindings/gpio/gpio.h>
 
@@ -231,6 +230,27 @@
 			status = "disabled";
 			label = "ADC_1";
 			#io-channel-cells = <1>;
+		};
+
+		dma1: dma@40026000 {
+			compatible = "st,stm32-dma";
+			#dma-cells = <4>;
+			reg = <0x40026000 0x400>;
+			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0 47 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x200000>;
+			status = "disabled";
+			label = "DMA_1";
+		};
+
+		dma2: dma@40026400 {
+			compatible = "st,stm32-dma";
+			#dma-cells = <4>;
+			reg = <0x40026400 0x400>;
+			interrupts = <56 0 57 0 58 0 59 0 60 0 68 0 69 0 70 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x400000>;
+			st,mem2mem;
+			status = "disabled";
+			label = "DMA_2";
 		};
 	};
 

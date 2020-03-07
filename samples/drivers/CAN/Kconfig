@@ -1,10 +1,7 @@
-# Kconfig - Private config options for can sample app
+# Private config options for can sample app
 
-#
 # Copyright (c) 2018 Alexander Wachter
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 mainmenu "Controller Area Network sample application"
 

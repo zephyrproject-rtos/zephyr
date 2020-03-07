@@ -1,0 +1,9 @@
+# Common fields for Texas Instruments LMP90xxx AFEs with current sources
+
+include: ti,lmp90xxx-base.yaml
+
+properties:
+    rtd-current:
+      type: int
+      required: false
+      description: RTD current in microampere

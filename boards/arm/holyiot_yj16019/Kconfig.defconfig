@@ -1,7 +1,6 @@
-# Kconfig - Holyiot YJ-16019 board configuration
-#
+# Holyiot YJ-16019 board configuration
+
 # Copyright (c) 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_HOLYIOT_YJ16019
@@ -15,19 +14,13 @@ config GPIO_AS_PINRESET
 config UART_NRFX
 	default n
 
-if PWM
-
 config PWM_0
 	default y
-
-endif # PWM
-
-if IEEE802154
+	depends on PWM
 
 config IEEE802154_NRF5
 	default y
-
-endif # IEEE802154
+	depends on IEEE802154
 
 config BT_CTLR
 	default BT

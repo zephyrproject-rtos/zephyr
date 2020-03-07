@@ -15,8 +15,7 @@
 
 #include "iis3dhhc.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(IIS3DHHC);
+LOG_MODULE_DECLARE(IIS3DHHC, CONFIG_SENSOR_LOG_LEVEL);
 
 /**
  * iis3dhhc_enable_int - enable selected int pin to generate interrupt
@@ -41,7 +40,7 @@ int iis3dhhc_trigger_set(struct device *dev,
 			 sensor_trigger_handler_t handler)
 {
 	struct iis3dhhc_data *iis3dhhc = dev->driver_data;
-	axis3bit16_t raw;
+	union axis3bit16_t raw;
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		iis3dhhc->handler_drdy = handler;
@@ -74,7 +73,8 @@ static void iis3dhhc_handle_interrupt(void *arg)
 		iis3dhhc->handler_drdy(dev, &drdy_trigger);
 	}
 
-	gpio_pin_enable_callback(iis3dhhc->gpio, cfg->int_pin);
+	gpio_pin_interrupt_configure(iis3dhhc->gpio, cfg->int_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void iis3dhhc_gpio_callback(struct device *dev,
@@ -86,7 +86,8 @@ static void iis3dhhc_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, cfg->int_pin);
+	gpio_pin_interrupt_configure(iis3dhhc->gpio, cfg->int_pin,
+				     GPIO_INT_DISABLE);
 
 #if defined(CONFIG_IIS3DHHC_TRIGGER_OWN_THREAD)
 	k_sem_give(&iis3dhhc->gpio_sem);
@@ -147,8 +148,7 @@ int iis3dhhc_init_interrupt(struct device *dev)
 #endif /* CONFIG_IIS3DHHC_TRIGGER_OWN_THREAD */
 
 	ret = gpio_pin_configure(iis3dhhc->gpio, cfg->int_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+				 GPIO_INPUT | cfg->int_flags);
 	if (ret < 0) {
 		LOG_DBG("Could not configure gpio");
 		return ret;
@@ -168,5 +168,6 @@ int iis3dhhc_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
-	return gpio_pin_enable_callback(iis3dhhc->gpio, cfg->int_pin);
+	return gpio_pin_interrupt_configure(iis3dhhc->gpio, cfg->int_pin,
+					    GPIO_INT_EDGE_TO_ACTIVE);
 }

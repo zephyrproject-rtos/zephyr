@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
 # SPDX-License-Identifier: Apache-2.0
 
-title: Atmel SAM0 series SERCOM I2C controller
-
-description: >
-    This is a representation of the Atmel SAM0 series SERCOM I2C nodes
+description: Atmel SAM0 series SERCOM I2C node
 
 compatible: "atmel,sam0-i2c"
 

@@ -1,4 +1,4 @@
 tests:
-  net.tcp:
+  net.tcp.simple:
     depends_on: netif
     tags: net tcp

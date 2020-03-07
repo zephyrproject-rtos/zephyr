@@ -232,70 +232,96 @@ created.
 Tagging
 =======
 
-.. note::
-
-    This section uses tagging 1.11.0-rc1 as an example, replace with the
-    appropriate version.
-
-Every time a release candidate (or the final release) needs to be tagged, the
-following steps need to be followed:
+The final release and each release candidate shall be tagged using the following
+steps:
 
 .. note::
 
     Tagging needs to be done via explicit git commands and not via GitHub's release
     interface.  The GitHub release interface does not generate annotated tags (it
-    generates 'lightweight' tags regardless of release or pre-release).
+    generates 'lightweight' tags regardless of release or pre-release). You should
+    also upload your gpg public key to your GitHub account, since the instructions
+    below involve creating signed tags.
 
-#. Update the :zephyr_file:`VERSION` file in the root of the Git repository. If it's a
-release candidate, use ``EXTRAVERSION`` variable::
+.. tabs::
 
-    EXTRAVERSION = rc1
+    .. tab:: Release Candidate
 
-#. Commit the update to the :zephyr_file:`VERSION` file, use ``release:`` as a commit
-   tag.
-#. Check that CI has completed successfully before tagging.
-#. Tag and push the version, using annotated tags:
+        .. note::
 
-   * If it's a release candidate::
+            This section uses tagging 1.11.0-rc1 as an example, replace with
+            the appropriate release candidate version.
 
-      $ git tag -a v1.11.0-rc1
-      <Use "Zephyr 1.11.0-rc1" as the tag annotation>
-      $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0-rc1
+        #. Update the version variables in the :zephyr_file:`VERSION` file
+           located in the root of the Git repository to match the version for
+           this release candidate. The ``EXTRAVERSION`` variable is used to
+           identify the rc[RC Number] value for this candidate::
 
-  * If it's a release::
+            EXTRAVERSION = rc1
 
-      $ git tag -a v1.11.0
-      <Use "Zephyr 1.11.0" as the tag annotation>
-      $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0
+        #. Post a PR with the updated :zephyr_file:`VERSION` file using
+           ``release: Zephyr 1.11.0-rc1`` as the commit subject. Merge
+           the PR after successful CI.
+        #. Tag and push the version, using an annotated tag::
 
-      $ git tag -a zephyr-v1.11.0
-      <Use "Zephyr 1.11.0" as the tag annotation>
-      $ git push git@github.com:zephyrproject-rtos/zephyr.git zephyr-v1.11.0
+            $ git pull
+            $ git tag -m "Zephyr 1.11.0-rc1" -s v1.11.0-rc1
+            $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0-rc1
 
-#. If it's a release candidate, create a shortlog of changes between the
-   previous release::
+        #. Create a shortlog of changes between the previous release (use
+           rc1..rc2 between release candidates)::
 
-    $ git shortlog v1.10.0..v.1.11.0-rc1
+            $ git shortlog v1.10.0..v1.11.0-rc1
 
-#. Find the new tag at the top of the releases page, edit the release with the
-   ``Edit`` button and then do the following:
+        #. Find the new tag at the top of the releases page and edit the release
+           with the ``Draft a new release`` button with the following:
 
-  * If it's a release candidate:
+            * Name it ``Zephyr 1.11.0-rc1``
+            * Copy the shortlog into the release notes textbox (*don't forget
+              to quote it properly so it shows as unformatted text in Markdown*)
+            * Check the "This is a pre-release" checkbox
 
-    * Name it ``Zephyr 1.11.0-rc1``
-    * Copy the shortlog into the release notes textbox (don't forget to quote it
-      properly so it shows as unformatted text in Markdown)
-    * Check the "This is a pre-release" checkbox
-  * If it's a release:
+        #. Send an email to the mailing lists (``announce`` and ``devel``)
+           with a link to the release
 
-    * Name it ``Zephyr 1.11.0``
-    * Copy the full content of ``docs/release-notes-1.11.rst`` into the the
-      release notes textbox
-    * Copy the full list of GitHub issues closed with this release into the
-      release notes textbox (see below on how to generate this list)
+    .. tab:: Final Release
 
-#. Send an email to the mailing lists (``announce`` and ``devel``) with a link
-   to the release
+        .. note::
+
+            This section uses tagging 1.11.0 as an example, replace with the
+            appropriate final release version.
+
+        When all final release criteria has been met and the final release notes
+        have been approved and merged into the repository, the final release version
+        will be set and repository tagged using the following procedure:
+
+        #. Update the version variables in the :zephyr_file:`VERSION` file
+           located in the root of the Git repository. Set ``EXTRAVERSION``
+           variable to zero to indicate final release::
+
+            EXTRAVERSION = 0
+
+        #. Post a PR with the updated :zephyr_file:`VERSION` file using
+           ``release: Zephyr 1.11.0`` as the commit subject. Merge
+           the PR after successful CI.
+        #. Tag and push the version, using two annotated tags::
+
+            $ git pull
+            $ git tag -m "Zephyr 1.11.0" -s v1.11.0
+            $ git push git@github.com:zephyrproject-rtos/zephyr.git v1.11.0
+
+            $ git tag -m "Zephyr 1.11.0" -s zephyr-v1.11.0
+            $ git push git@github.com:zephyrproject-rtos/zephyr.git zephyr-v1.11.0
+
+        #. Find the new tag at the top of the releases page and edit the release
+           with the ``Draft a new release`` button with the following:
+
+            * Name it ``Zephyr 1.11.0``
+            * Copy the full content of ``docs/releases/release-notes-1.11.rst``
+              into the release notes textbox
+
+        #. Send an email to the mailing lists (``announce`` and ``devel``) with a link
+           to the release
 
 Listing all closed GitHub issues
 =================================
@@ -309,10 +335,12 @@ cycle you can do the following:
 #. Look for the last release before the current one and find the day it was
    tagged::
 
-    $ git show zephyr-v1.10.0
+    $ git show -s --format=%ci zephyr-v1.10.0
     tag zephyr-v1.10.0
     Tagger: Kumar Gala <kumar.gala@linaro.org>
-    Date:   Fri Dec 8 14:26:35 2017 -0600
+
+    Zephyr 1.10.0
+    2017-12-08 13:32:22 -0600
 
 
 #. Use available release tools to list all the issues that have been closed

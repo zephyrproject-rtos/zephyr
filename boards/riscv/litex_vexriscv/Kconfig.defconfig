@@ -1,12 +1,6 @@
-#
 # Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
-if BOARD_LITEX_VEXRISCV
 
 config BOARD
 	default "litex_vexriscv"
-
-endif
+	depends on BOARD_LITEX_VEXRISCV

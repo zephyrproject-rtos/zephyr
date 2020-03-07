@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_stats, NET_LOG_LEVEL);
 #include <net/net_core.h>
 
 #include "net_stats.h"
+#include "net_private.h"
 
 /* Global network statistics.
  *
@@ -338,3 +339,14 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_TCP,
 #endif
 
 #endif /* CONFIG_NET_STATISTICS_USER_API */
+
+void net_stats_reset(struct net_if *iface)
+{
+	if (iface) {
+		net_if_stats_reset(iface);
+		return;
+	}
+
+	net_if_stats_reset_all();
+	memset(&net_stats, 0, sizeof(net_stats));
+}

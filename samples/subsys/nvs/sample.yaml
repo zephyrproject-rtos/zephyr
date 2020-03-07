@@ -2,9 +2,10 @@ sample:
   name: NVS Sample
 
 tests:
-  sample.subsys.nvs:
+  sample.nvs:
     tags: settings
     depends_on: nvs
+    platform_exclude: qemu_x86
     harness: console
     harness_config:
       type: multi_line

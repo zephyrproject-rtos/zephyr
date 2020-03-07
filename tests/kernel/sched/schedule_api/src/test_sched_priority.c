@@ -41,10 +41,10 @@ void test_priority_cooperative(void)
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, NULL, NULL, NULL,
-				      spawn_prio, 0, 0);
+				      spawn_prio, 0, K_NO_WAIT);
 	/* checkpoint: current thread shouldn't preempted by higher thread */
 	zassert_true(last_prio == k_thread_priority_get(k_current_get()), NULL);
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	/* checkpoint: spawned thread get executed */
 	zassert_true(last_prio == spawn_prio, NULL);
 	k_thread_abort(tid);
@@ -76,17 +76,17 @@ void test_priority_preemptible(void)
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, NULL, NULL, NULL,
-				      spawn_prio, 0, 0);
+				      spawn_prio, 0, K_NO_WAIT);
 	/* checkpoint: thread is preempted by higher thread */
 	zassert_true(last_prio == spawn_prio, NULL);
 
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	k_thread_abort(tid);
 
 	spawn_prio = last_prio + 1;
 	tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			      thread_entry, NULL, NULL, NULL,
-			      spawn_prio, 0, 0);
+			      spawn_prio, 0, K_NO_WAIT);
 	/* checkpoint: thread is not preempted by lower thread */
 	zassert_false(last_prio == spawn_prio, NULL);
 	k_thread_abort(tid);
@@ -131,4 +131,3 @@ void test_bad_priorities(void)
 			      testcases[i].result, "failed check %d", i);
 	}
 }
-

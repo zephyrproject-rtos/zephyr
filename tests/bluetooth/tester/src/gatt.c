@@ -214,11 +214,19 @@ static void supported_commands(u8_t *data, u16_t len)
 
 static int register_service(void)
 {
+	int err;
+
 	server_svcs[svc_count].attrs = server_db +
 				       (attr_count - svc_attr_count);
 	server_svcs[svc_count].attr_count = svc_attr_count;
 
-	return bt_gatt_service_register(&server_svcs[svc_count]);
+	err = bt_gatt_service_register(&server_svcs[svc_count]);
+	if (!err) {
+		/* Service registered, reset the counter */
+		svc_attr_count = 0U;
+	}
+
+	return err;
 }
 
 static void add_service(u8_t *data, u16_t len)
@@ -237,14 +245,13 @@ static void add_service(u8_t *data, u16_t len)
 							sizeof(uuid.u128);
 
 	/* Register last defined service */
-	if (svc_count) {
+	if (svc_attr_count) {
 		if (register_service()) {
 			goto fail;
 		}
 	}
 
 	svc_count++;
-	svc_attr_count = 0U;
 
 	switch (cmd->type) {
 	case GATT_SERVICE_PRIMARY:
@@ -809,7 +816,7 @@ static void start_server(u8_t *data, u16_t len)
 	struct gatt_start_server_rp rp;
 
 	/* Register last defined service */
-	if (svc_count) {
+	if (svc_attr_count) {
 		if (register_service()) {
 			tester_rsp(BTP_SERVICE_ID_GATT, GATT_START_SERVER,
 				   CONTROLLER_INDEX, BTP_STATUS_FAILED);
@@ -1650,14 +1657,14 @@ static u8_t notify_func(struct bt_conn *conn,
 			   const void *data, u16_t length)
 {
 	struct gatt_notification_ev *ev = (void *) ev_buf;
-	const bt_addr_le_t *addr = bt_conn_get_dst(conn);
+	const bt_addr_le_t *addr;
 
-	if (!data) {
+	if (!conn || !data) {
 		LOG_DBG("Unsubscribed");
 		(void)memset(params, 0, sizeof(*params));
 		return BT_GATT_ITER_STOP;
 	}
-
+	addr = bt_conn_get_dst(conn);
 	ev->type = (u8_t) subscribe_params.value;
 	ev->handle = sys_cpu_to_le16(subscribe_params.value_handle);
 	ev->data_length = sys_cpu_to_le16(length);
@@ -1850,12 +1857,15 @@ static void get_attrs(u8_t *data, u16_t len)
 	end_handle = sys_le16_to_cpu(cmd->end_handle);
 
 	if (cmd->type_length) {
+		char uuid_str[BT_UUID_STR_LEN];
+
 		if (btp2bt_uuid(cmd->type, cmd->type_length, &uuid.uuid)) {
 			goto fail;
 		}
 
+		bt_uuid_to_str(&uuid.uuid, uuid_str, sizeof(uuid_str));
 		LOG_DBG("start 0x%04x end 0x%04x, uuid %s", start_handle,
-			end_handle, bt_uuid_str(&uuid.uuid));
+			end_handle, log_strdup(uuid_str));
 
 		foreach.uuid = &uuid.uuid;
 	} else {

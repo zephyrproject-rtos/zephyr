@@ -29,7 +29,27 @@ void z_smp_release_global_lock(struct k_thread *thread);
 /* context switching and scheduling-related routines */
 #ifdef CONFIG_USE_SWITCH
 
-/* New style context switching.  z_arch_switch() is a lower level
+/* There is an unavoidable SMP race when threads swap -- their thread
+ * record is in the queue (and visible to other CPUs) before
+ * arch_switch() finishes saving state.  We must spin for the switch
+ * handle before entering a new thread.  See docs on arch_switch().
+ *
+ * Note: future SMP architectures may need a fence/barrier or cache
+ * invalidation here.  Current ones don't, and sadly Zephyr doesn't
+ * have a framework for that yet.
+ */
+static inline void wait_for_switch(struct k_thread *thread)
+{
+#ifdef CONFIG_SMP
+	volatile void **shp = (void *)&thread->switch_handle;
+
+	while (*shp == NULL) {
+		k_busy_wait(1);
+	}
+#endif
+}
+
+/* New style context switching.  arch_switch() is a lower level
  * primitive that doesn't know about the scheduler or return value.
  * Needed for SMP, where the scheduler requires spinlocking that we
  * don't want to have to do in per-architecture assembly.
@@ -53,39 +73,55 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 	z_check_stack_sentinel();
 
-#ifdef CONFIG_TRACING
-	sys_trace_thread_switched_out();
-#endif
-
 	if (is_spinlock) {
 		k_spin_release(lock);
 	}
 
+#ifdef CONFIG_SMP
+	/* Null out the switch handle, see wait_for_switch() above.
+	 * Note that we set it back to a non-null value if we are not
+	 * switching!  The value itself doesn't matter, because by
+	 * definition _current is running and has no saved state.
+	 */
+	volatile void **shp = (void *)&old_thread->switch_handle;
+
+	*shp = NULL;
+#endif
+
 	new_thread = z_get_next_ready_thread();
 
+#ifdef CONFIG_SMP
+	if (new_thread == old_thread) {
+		*shp = old_thread;
+	}
+#endif
+
 	if (new_thread != old_thread) {
+		sys_trace_thread_switched_out();
+#ifdef CONFIG_TIMESLICING
+		z_reset_time_slice();
+#endif
+
 		old_thread->swap_retval = -EAGAIN;
 
 #ifdef CONFIG_SMP
 		_current_cpu->swap_ok = 0;
 
-		new_thread->base.cpu = z_arch_curr_cpu()->id;
+		new_thread->base.cpu = arch_curr_cpu()->id;
 
 		if (!is_spinlock) {
 			z_smp_release_global_lock(new_thread);
 		}
 #endif
-		_current = new_thread;
-		z_arch_switch(new_thread->switch_handle,
+		_current_cpu->current = new_thread;
+		wait_for_switch(new_thread);
+		arch_switch(new_thread->switch_handle,
 			     &old_thread->switch_handle);
+		sys_trace_thread_switched_in();
 	}
 
-#ifdef CONFIG_TRACING
-	sys_trace_thread_switched_in();
-#endif
-
 	if (is_spinlock) {
-		z_arch_irq_unlock(key);
+		arch_irq_unlock(key);
 	} else {
 		irq_unlock(key);
 	}
@@ -113,25 +149,19 @@ static inline void z_swap_unlocked(void)
 
 #else /* !CONFIG_USE_SWITCH */
 
-extern int __swap(unsigned int key);
+extern int arch_swap(unsigned int key);
 
 static inline int z_swap_irqlock(unsigned int key)
 {
 	int ret;
 	z_check_stack_sentinel();
-
 #ifndef CONFIG_ARM
-#ifdef CONFIG_TRACING
 	sys_trace_thread_switched_out();
 #endif
-#endif
-	ret = __swap(key);
+	ret = arch_swap(key);
 #ifndef CONFIG_ARM
-#ifdef CONFIG_TRACING
 	sys_trace_thread_switched_in();
 #endif
-#endif
-
 	return ret;
 }
 
@@ -147,7 +177,7 @@ static ALWAYS_INLINE int z_swap(struct k_spinlock *lock, k_spinlock_key_t key)
 
 static inline void z_swap_unlocked(void)
 {
-	(void) z_swap_irqlock(z_arch_irq_lock());
+	(void) z_swap_irqlock(arch_irq_lock());
 }
 
 #endif

@@ -55,9 +55,8 @@ void usb_bos_register_cap(struct usb_bos_platform_descriptor *desc)
 int usb_handle_bos(struct usb_setup_packet *setup,
 		   s32_t *len, u8_t **data)
 {
-	LOG_DBG("wValue 0x%x", setup->wValue);
-
 	if (GET_DESC_TYPE(setup->wValue) == DESCRIPTOR_TYPE_BOS) {
+		LOG_DBG("Read BOS descriptor");
 		*data = (u8_t *)usb_bos_get_header();
 		*len = usb_bos_get_length();
 

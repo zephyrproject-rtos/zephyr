@@ -62,6 +62,8 @@
 
 #if defined CONFIG_BOARD_SAM_E70_XPLAINED
 #define DEFAULT_PWM_PORT 2 /* PWM on EXT2 connector, pin 8 */
+#elif defined CONFIG_PWM_NRFX
+#define DEFAULT_PWM_PORT DT_ALIAS_PWM_0_CH0_PIN
 #else
 #define DEFAULT_PWM_PORT 0
 #endif
@@ -84,19 +86,19 @@ static int test_task(u32_t port, u32_t period, u32_t pulse, u8_t unit)
 
 	if (unit == UNIT_CYCLES) {
 		/* Verify pwm_pin_set_cycles() */
-		if (pwm_pin_set_cycles(pwm_dev, port, period, pulse)) {
+		if (pwm_pin_set_cycles(pwm_dev, port, period, pulse, 0)) {
 			TC_PRINT("Fail to set the period and pulse width\n");
 			return TC_FAIL;
 		}
 	} else if (unit == UNIT_USECS) {
 		/* Verify pwm_pin_set_usec() */
-		if (pwm_pin_set_usec(pwm_dev, port, period, pulse)) {
+		if (pwm_pin_set_usec(pwm_dev, port, period, pulse, 0)) {
 			TC_PRINT("Fail to set the period and pulse width\n");
 			return TC_FAIL;
 		}
 	} else { /* unit == UNIT_NSECS */
 		/* Verify pwm_pin_set_nsec() */
-		if (pwm_pin_set_nsec(pwm_dev, port, period, pulse)) {
+		if (pwm_pin_set_nsec(pwm_dev, port, period, pulse, 0)) {
 			TC_PRINT("Fail to set the period and pulse width\n");
 			return TC_FAIL;
 		}
@@ -110,17 +112,17 @@ void test_pwm_usec(void)
 	/* Period : Pulse (2000 : 1000), unit (usec). Voltage : 1.65V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_USEC,
 				DEFAULT_PULSE_USEC, UNIT_USECS) == TC_PASS, NULL);
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 
 	/* Period : Pulse (2000 : 2000), unit (usec). Voltage : 3.3V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_USEC,
 				DEFAULT_PERIOD_USEC, UNIT_USECS) == TC_PASS, NULL);
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 
 	/* Period : Pulse (2000 : 0), unit (usec). Voltage : 0V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_USEC,
 				0, UNIT_USECS) == TC_PASS, NULL);
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 }
 
 void test_pwm_nsec(void)
@@ -128,17 +130,17 @@ void test_pwm_nsec(void)
 	/* Period : Pulse (2000000 : 1000000), unit (nsec). Voltage : 1.65V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_NSEC,
 				DEFAULT_PULSE_NSEC, UNIT_NSECS) == TC_PASS, NULL);
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 
 	/* Period : Pulse (2000000 : 2000000), unit (nsec). Voltage : 3.3V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_NSEC,
 				DEFAULT_PERIOD_NSEC, UNIT_NSECS) == TC_PASS, NULL);
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 
 	/* Period : Pulse (2000000 : 0), unit (nsec). Voltage : 0V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_NSEC,
 				0, UNIT_NSECS) == TC_PASS, NULL);
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 }
 
 void test_pwm_cycle(void)
@@ -146,12 +148,12 @@ void test_pwm_cycle(void)
 	/* Period : Pulse (64000 : 32000), unit (cycle). Voltage : 1.65V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_CYCLE,
 				DEFAULT_PULSE_CYCLE, UNIT_CYCLES) == TC_PASS, NULL);
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 
 	/* Period : Pulse (64000 : 64000), unit (cycle). Voltage : 3.3V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_CYCLE,
 				DEFAULT_PERIOD_CYCLE, UNIT_CYCLES) == TC_PASS, NULL);
-	k_sleep(1000);
+	k_sleep(K_MSEC(1000));
 
 	/* Period : Pulse (64000 : 0), unit (cycle). Voltage : 0V */
 	zassert_true(test_task(DEFAULT_PWM_PORT, DEFAULT_PERIOD_CYCLE,

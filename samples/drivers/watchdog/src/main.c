@@ -15,8 +15,8 @@
 #define WDT_FEED_TRIES 5
 
 
-#ifdef CONFIG_WDT_0_NAME
-#define WDT_DEV_NAME CONFIG_WDT_0_NAME
+#ifdef DT_ALIAS_WATCHDOG0_LABEL
+#define WDT_DEV_NAME DT_ALIAS_WATCHDOG0_LABEL
 #else
 #ifdef CONFIG_WWDG_STM32
 #define WDT_DEV_NAME DT_WWDT_0_NAME
@@ -86,7 +86,7 @@ void main(void)
 	for (int i = 0; i < WDT_FEED_TRIES; ++i) {
 		printk("Feeding watchdog...\n");
 		wdt_feed(wdt, wdt_channel_id);
-		k_sleep(50);
+		k_sleep(K_MSEC(50));
 	}
 
 	/* Waiting for the SoC reset. */

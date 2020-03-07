@@ -1,10 +1,8 @@
-# Kconfig - Bluetooth common configuration options
-#
+# Bluetooth common configuration options
+
 # Copyright (c) 2017 Nordic Semiconductor ASA
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config BT_HAS_HCI_VS
 	bool
@@ -14,8 +12,8 @@ config BT_HAS_HCI_VS
 
 config BT_HCI_VS
 	bool "Zephyr HCI Vendor-Specific Commands"
-	depends on BT_HAS_HCI_VS
-	default y
+	depends on BT_HAS_HCI_VS || !BT_CTLR
+	default y if BT_HAS_HCI_VS
 	help
 	  Enable support for the Zephyr HCI Vendor-Specific Commands in the
 	  Host and/or Controller. This enables Set Version Information,
@@ -54,7 +52,6 @@ config BT_WAIT_NOP
 	  ready to receive commands.
 
 config BT_RPA
-	# Virtual/hidden option
 	bool
 	select TINYCRYPT
 	select TINYCRYPT_AES
@@ -64,8 +61,7 @@ config BT_ASSERT
 	default y
 	help
 	  Use a custom Bluetooth assert implementation instead of the
-	  kernel-wide __ASSERT(), which is enabled by CONFIG_ASSERT and is
-	  disabled by default.
+	  kernel-wide __ASSERT() when CONFIG_ASSERT is disabled.
 
 if BT_ASSERT
 
@@ -85,7 +81,7 @@ config BT_ASSERT_PANIC
 endif # BT_ASSERT
 
 config BT_DEBUG
-	# Virtual/hidden option to make the conditions more intuitive
+	# Hidden option to make the conditions more intuitive
 	bool
 
 choice
@@ -135,8 +131,8 @@ config BT_MONITOR_ON_DEV_NAME
 	default "$(dt_chosen_label,$(DT_CHOSEN_Z_BT_MON_UART))" if HAS_DTS
 	default "UART_0"
 	help
-	 This option specifies the name of UART device to be used
-	 for the Bluetooth monitor logging.
+	  This option specifies the name of UART device to be used
+	  for the Bluetooth monitor logging.
 
 config BT_DEBUG_HCI_DRIVER
 	bool "Bluetooth HCI driver debug"

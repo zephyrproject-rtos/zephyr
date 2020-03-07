@@ -214,7 +214,7 @@ The Zephyr console output is assigned by default to the RAM console to be dumped
 by the Linux Remoteproc Framework on Cortex®-A7 core. In order to keep the UART7
 free for future serial interactions with Arduino shield, the Zephyr UART console
 output is USART3 and is disabled by default. UART console can be enable through
-board's device tree and stm32mp157c_dk2_defconfig board file (or prj.conf
+board's devicetree and stm32mp157c_dk2_defconfig board file (or prj.conf
 project files), and will disable existing RAM console output. Default UART
 console settings are 115200 8N1.
 
@@ -270,7 +270,7 @@ install `stm32mp1 developer package`_.
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
-      :board: stm32mp157_dk2
+      :board: stm32mp157c_dk2
       :goals: debug
 
 .. _STM32P157C Discovery website:

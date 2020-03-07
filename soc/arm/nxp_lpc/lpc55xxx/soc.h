@@ -20,13 +20,16 @@
 #include <fsl_common.h>
 
 /* Add include for DTS generated information */
-#include <generated_dts_board.h>
+#include <devicetree.h>
 
 #endif /* !_ASMLANGUAGE */
 
 #define IOCON_PIO_DIGITAL_EN 0x0100u  /*!<@brief Enables digital function */
 #define IOCON_PIO_FUNC0 0x00u         /*!<@brief Selects pin function 0 */
 #define IOCON_PIO_FUNC1 0x01u         /*!<@brief Selects pin function 1 */
+#define IOCON_PIO_FUNC5 0x05u         /*!<@brief Selects pin function 5 */
+#define IOCON_PIO_FUNC6 0x06u         /*!<@brief Selects pin function 6 */
+#define IOCON_PIO_FUNC9 0x09u         /*!<@brief Selects pin function 9 */
 #define IOCON_PIO_FUNC10 0x0Au        /*!<@brief Selects pin function 10 */
 #define IOCON_PIO_INV_DI 0x00u        /*!<@brief Input function not inverted */
 #define IOCON_PIO_MODE_INACT 0x00u    /*!<@brief No addition pin function */

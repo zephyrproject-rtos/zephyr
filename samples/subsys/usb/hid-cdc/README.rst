@@ -87,4 +87,3 @@ Buttons have following functions:
 - Button 1 is a left HID mouse button
 - Button 2 types the string sent with CDC ACM 1 using HID keyboard
 - Button 3 is a CAPS LOCK on HID keyboard
-

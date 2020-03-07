@@ -18,4 +18,10 @@ struct dht_data {
 	u8_t sample[4];
 };
 
+struct dht_config {
+	const char *ctrl;
+	gpio_dt_flags_t flags;
+	gpio_pin_t pin;
+};
+
 #endif

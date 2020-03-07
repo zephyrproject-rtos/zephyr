@@ -1,0 +1,19 @@
+# Nordic Semiconductor nRF52833 MCU
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF52833_QIAA
+
+config SOC
+	string
+	default "nRF52833_QIAA"
+
+config NUM_IRQS
+	int
+	default 48
+
+config NET_CONFIG_IEEE802154_DEV_NAME
+	default IEEE802154_NRF5_DRV_NAME
+
+endif # SOC_NRF52833_QIAA

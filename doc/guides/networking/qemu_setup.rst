@@ -216,7 +216,7 @@ Terminal #2:
 ============
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/echo_client
+   :zephyr-app: samples/net/sockets/echo_client
    :host-os: unix
    :board: qemu_x86
    :goals: build

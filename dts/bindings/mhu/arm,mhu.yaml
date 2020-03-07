@@ -1,10 +1,7 @@
 # Copyright (c) 2019, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: ARM MHU
-
-description: >
-    This binding gives a base representation of the ARM MHU
+description: ARM MHU (Message Handling Unit)
 
 compatible: "arm,mhu"
 

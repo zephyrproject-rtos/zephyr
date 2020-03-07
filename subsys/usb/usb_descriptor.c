@@ -14,6 +14,7 @@
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include "usb_descriptor.h"
+#include <drivers/hwinfo.h>
 
 #define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <logging/log.h>
@@ -59,7 +60,11 @@ USBD_DEVICE_DESCR_DEFINE(primary) struct common_descriptor common_desc = {
 	.device_descriptor = {
 		.bLength = sizeof(struct usb_device_descriptor),
 		.bDescriptorType = USB_DEVICE_DESC,
+#ifdef CONFIG_USB_DEVICE_BOS
+		.bcdUSB = sys_cpu_to_le16(USB_2_1),
+#else
 		.bcdUSB = sys_cpu_to_le16(USB_2_0),
+#endif
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 		.bDeviceClass = MISC_CLASS,
 		.bDeviceSubClass = 0x02,
@@ -88,7 +93,7 @@ USBD_DEVICE_DESCR_DEFINE(primary) struct common_descriptor common_desc = {
 		.bConfigurationValue = 1,
 		.iConfiguration = 0,
 		.bmAttributes = USB_CONFIGURATION_ATTRIBUTES,
-		.bMaxPower = MAX_LOW_POWER,
+		.bMaxPower = CONFIG_USB_MAX_POWER,
 	},
 };
 
@@ -290,16 +295,29 @@ static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 }
 
 /*
- * Default USB SN string descriptor is CONFIG_USB_DEVICE_SN, but sometimes
- * we want use another string as SN descriptor such as the chip's unique
- * ID. So user can implement this function return a string thats will be
- * replaced the default SN.
- * Please note that the new SN descriptor you changed must has same length
- * as CONFIG_USB_DEVICE_SN.
+ * Default USB Serial Number string descriptor will be derived from
+ * Hardware Information Driver (HWINFO). User can implement own variant
+ * of this function. Please note that the length of the new Serial Number
+ * descriptor may not exceed the length of the CONFIG_USB_DEVICE_SN.
  */
 __weak u8_t *usb_update_sn_string_descriptor(void)
 {
-	return NULL;
+	u8_t hwid[sizeof(CONFIG_USB_DEVICE_SN) / 2];
+	static u8_t sn[sizeof(CONFIG_USB_DEVICE_SN) + 1];
+	const char hex[] = "0123456789ABCDEF";
+
+	memset(hwid, 0, sizeof(hwid));
+	memset(sn, 0, sizeof(sn));
+
+	if (hwinfo_get_device_id(hwid, sizeof(hwid)) > 0) {
+		LOG_HEXDUMP_DBG(hwid, sizeof(hwid), "Serial Number");
+		for (int i = 0; i < sizeof(hwid); i++) {
+			sn[i * 2] = hex[hwid[(sizeof(hwid) - 1) - i] >> 4];
+			sn[i * 2 + 1] = hex[hwid[(sizeof(hwid) - 1) - i] & 0xF];
+		}
+	}
+
+	return sn;
 }
 
 static void usb_fix_ascii_sn_string_descriptor(struct usb_sn_descriptor *sn)
@@ -312,10 +330,14 @@ static void usb_fix_ascii_sn_string_descriptor(struct usb_sn_descriptor *sn)
 	}
 
 	runtime_sn_len = strlen(runtime_sn);
+	if (!runtime_sn_len) {
+		return;
+	}
+
 	default_sn_len = strlen(CONFIG_USB_DEVICE_SN);
 
 	if (runtime_sn_len != default_sn_len) {
-		LOG_ERR("the new SN descriptor doesn't has the same "
+		LOG_ERR("the new SN descriptor doesn't have the same "
 			"length as CONFIG_USB_DEVICE_SN");
 		return;
 	}

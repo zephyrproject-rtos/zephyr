@@ -17,7 +17,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <kernel.h>
-#include <usb/usb_dc.h>
+#include <drivers/usb/usb_dc.h>
 #include <usb/usb_device.h>
 #include <drivers/clock_control.h>
 #include <hal/nrf_power.h>
@@ -452,7 +452,7 @@ static inline struct usbd_event *usbd_evt_alloc(void)
 	if (ret < 0) {
 		LOG_ERR("USBD event allocation failed!");
 
-		/* This should NOT happen in a properly designed system.
+		/*
 		 * Allocation may fail if workqueue thread is starved or event
 		 * queue size is too small (CONFIG_USB_NRFX_EVT_QUEUE_SIZE).
 		 * Wipe all events, free the space and schedule
@@ -464,9 +464,6 @@ static inline struct usbd_event *usbd_evt_alloc(void)
 					       sizeof(struct usbd_event),
 					       K_NO_WAIT);
 		if (ret < 0) {
-			/* This should never fail in a properly
-			 * operating system.
-			 */
 			LOG_ERR("USBD event memory corrupted");
 			__ASSERT_NO_MSG(0);
 			return NULL;
@@ -539,7 +536,7 @@ static int hf_clock_enable(bool on, bool blocking)
 	struct device *clock;
 	static bool clock_requested;
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL "_16M");
+	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
 	if (!clock) {
 		LOG_ERR("NRF HF Clock device not found!");
 		return ret;
@@ -550,7 +547,12 @@ static int hf_clock_enable(bool on, bool blocking)
 			/* Do not request HFCLK multiple times. */
 			return 0;
 		}
-		ret = clock_control_on(clock, (void *)blocking);
+		ret = clock_control_on(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
+		while (blocking &&
+			clock_control_get_status(clock,
+						 CLOCK_CONTROL_NRF_SUBSYS_HF) !=
+					CLOCK_CONTROL_STATUS_ON) {
+		}
 	} else {
 		if (!clock_requested) {
 			/* Cancel the operation if clock has not
@@ -558,14 +560,7 @@ static int hf_clock_enable(bool on, bool blocking)
 			 */
 			return 0;
 		}
-		ret = clock_control_off(clock, (void *)blocking);
-		if (ret == -EBUSY) {
-			/* This is an expected behaviour.
-			 * -EBUSY means that some other module has also
-			 * requested the clock to run.
-			 */
-			ret = 0;
-		}
+		ret = clock_control_off(clock, CLOCK_CONTROL_NRF_SUBSYS_HF);
 	}
 
 	if (ret && (blocking || (ret != -EINPROGRESS))) {
@@ -837,11 +832,11 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 	 */
 	usbd_setup = (struct usb_setup_packet *)ep_ctx->buf.data;
 	memset(usbd_setup, 0, sizeof(struct usb_setup_packet));
-	usbd_setup->bmRequestType = nrf_usbd_setup_bmrequesttype_get();
-	usbd_setup->bRequest = nrf_usbd_setup_brequest_get();
-	usbd_setup->wValue = nrf_usbd_setup_wvalue_get();
-	usbd_setup->wIndex = nrf_usbd_setup_windex_get();
-	usbd_setup->wLength = nrf_usbd_setup_wlength_get();
+	usbd_setup->bmRequestType = nrf_usbd_setup_bmrequesttype_get(NRF_USBD);
+	usbd_setup->bRequest = nrf_usbd_setup_brequest_get(NRF_USBD);
+	usbd_setup->wValue = nrf_usbd_setup_wvalue_get(NRF_USBD);
+	usbd_setup->wIndex = nrf_usbd_setup_windex_get(NRF_USBD);
+	usbd_setup->wLength = nrf_usbd_setup_wlength_get(NRF_USBD);
 	ep_ctx->buf.len = sizeof(struct usb_setup_packet);
 
 	LOG_DBG("SETUP: r:%d rt:%d v:%d i:%d l:%d",
@@ -1095,7 +1090,7 @@ static void usbd_event_transfer_data(nrfx_usbd_evt_t const *const p_event)
 				return;
 			}
 
-			ep_ctx->buf.len = nrf_usbd_ep_amount_get(
+			ep_ctx->buf.len = nrf_usbd_ep_amount_get(NRF_USBD,
 				p_event->data.eptransfer.ep);
 
 			LOG_DBG("read complete, ep 0x%02x, len %d",
@@ -1249,6 +1244,7 @@ static void usbd_work_handler(struct k_work *item)
 	while ((ev = usbd_evt_get()) != NULL) {
 		if (!dev_ready() && ev->evt_type != USBD_EVT_POWER) {
 			/* Drop non-power events when cable is detached. */
+			usbd_evt_free(ev);
 			continue;
 		}
 
@@ -1334,7 +1330,7 @@ int usb_dc_attach(void)
 		usbd_work_schedule();
 	}
 
-	if (nrf_power_usbregstatus_vbusdet_get()) {
+	if (nrf_power_usbregstatus_vbusdet_get(NRF_POWER)) {
 		/* USBDETECTED event is be generated on cable attachment and
 		 * when cable is already attached during reset, but not when
 		 * the peripheral is re-enabled.

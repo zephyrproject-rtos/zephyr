@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Brett Witherspoon
 # SPDX-License-Identifier: Apache-2.0
 
-title: TI SimpleLink CC13xx / CC26xx True Random Number Generator (TRNG)
-
-description: >
-    This is a representation of the TI SimpleLink CC13xx / CC26xx TRNG node
+description: TI SimpleLink CC13xx / CC26xx TRNG (True Random Number Generator)
 
 compatible: "ti,cc13xx-cc26xx-trng"
 

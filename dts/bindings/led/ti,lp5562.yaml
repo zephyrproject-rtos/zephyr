@@ -1,6 +1,4 @@
-title: TI LP5562 LED Driver
-
-description: TI LP5562 LED binding
+description: TI LP5562 LED
 
 compatible: "ti,lp5562"
 

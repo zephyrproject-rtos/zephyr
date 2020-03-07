@@ -23,7 +23,7 @@ struct settings_io_cb_s {
 	int (*write_cb)(void *ctx, off_t off, char const *buf, size_t len);
 	size_t (*get_len_cb)(void *ctx);
 	u8_t rwbs;
-} settings_io_cb;
+} static settings_io_cb;
 
 #define MAX_ENC_BLOCK_SIZE 4
 
@@ -227,6 +227,10 @@ static int settings_line_raw_read_until(off_t seek, char *out, size_t len_req,
 	u8_t rbs = settings_io_cb.rwbs;
 	off_t off;
 	int rc;
+
+	if (len_req == 0) {
+		return -EINVAL;
+	}
 
 	rem_size = len_req;
 
@@ -472,6 +476,10 @@ static int settings_line_cmp(char const *val, size_t val_len,
 	char buf[16];
 	int rc;
 	off_t off = 0;
+
+	if (val_len == 0) {
+		return -EINVAL;
+	}
 
 	for (rem = val_len; rem > 0; rem -= len_read) {
 		len_read = exp_len = MIN(sizeof(buf), rem);

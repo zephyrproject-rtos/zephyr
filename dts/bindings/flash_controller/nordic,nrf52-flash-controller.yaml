@@ -1,7 +1,4 @@
-title: Nordic NVMC
-
-description: >
-    This binding gives a base representation of the Nordic NVMC
+description: Nordic NVMC (Non-Volatile Memory Controller)
 
 compatible: "nordic,nrf52-flash-controller"
 

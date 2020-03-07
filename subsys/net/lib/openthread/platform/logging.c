@@ -54,4 +54,3 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion,
 		break;
 	}
 }
-

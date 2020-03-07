@@ -1,10 +1,7 @@
-# Kconfig - SHT3xD temperature and humidity sensor configuration options
+# SHT3xD temperature and humidity sensor configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SHT3XD
 	bool "SHT3xD Temperature and Humidity Sensor"
@@ -82,11 +79,10 @@ config SHT3XD_PERIODIC_MODE
 
 endchoice
 
-if SHT3XD_PERIODIC_MODE
-
 choice
 	prompt "Measurements per second"
 	default SHT3XD_MPS_1
+	depends on SHT3XD_PERIODIC_MODE
 	help
 	  Number of measurements per second.
 
@@ -106,7 +102,5 @@ config SHT3XD_MPS_10
 	bool "10"
 
 endchoice
-
-endif # SHT3XD_PERIODIC_MODE
 
 endif # SHT3XD

@@ -18,49 +18,10 @@ zephyr_library_sources_ifdef(
   crypto/crypto.c
   )
 
-if(CONFIG_BT_LL_SW_LEGACY)
-  zephyr_library_sources(
-    ll_sw/ctrl.c
-    ll_sw/ll.c
-    )
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_BROADCASTER
-    ll_sw/ll_adv.c
-    )
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_OBSERVER
-    ll_sw/ll_scan.c
-    )
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_CTLR_FILTER
-    ll_sw/ll_filter.c
-    )
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_CENTRAL
-    ll_sw/ll_master.c
-    )
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_CTLR_ADV_EXT
-    ll_sw/ll_adv_aux.c
-    )
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_HCI_MESH_EXT
-    ll_sw/ll_mesh.c
-    )
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_CTLR_DTM
-    ll_sw/ll_test.c
-    )
-endif()
-
 if(CONFIG_BT_LL_SW_SPLIT)
   zephyr_library_sources(
     ll_sw/ull.c
     ll_sw/lll_chan.c
-    )
-  zephyr_library_sources_ifdef(
-    CONFIG_BT_LLL_VENDOR_NORDIC
-    ll_sw/nordic/lll/lll.c
     )
   if(CONFIG_BT_BROADCASTER)
     zephyr_library_sources(
@@ -70,45 +31,24 @@ if(CONFIG_BT_LL_SW_SPLIT)
       CONFIG_BT_CTLR_ADV_EXT
       ll_sw/ull_adv_aux.c
       )
-    zephyr_library_sources_ifdef(
-      CONFIG_BT_LLL_VENDOR_NORDIC
-      ll_sw/nordic/lll/lll_adv.c
-      )
   endif()
   if(CONFIG_BT_OBSERVER)
     zephyr_library_sources(
       ll_sw/ull_scan.c
       )
-    zephyr_library_sources_ifdef(
-      CONFIG_BT_LLL_VENDOR_NORDIC
-      ll_sw/nordic/lll/lll_scan.c
-      )
   endif()
   if(CONFIG_BT_CONN)
     zephyr_library_sources(
       ll_sw/ull_conn.c
-    )
-    zephyr_library_sources_ifdef(
-      CONFIG_BT_LLL_VENDOR_NORDIC
-      ll_sw/nordic/lll/lll_clock.c
-      ll_sw/nordic/lll/lll_conn.c
       )
     if(CONFIG_BT_PERIPHERAL)
       zephyr_library_sources(
         ll_sw/ull_slave.c
       )
-      zephyr_library_sources_ifdef(
-        CONFIG_BT_LLL_VENDOR_NORDIC
-        ll_sw/nordic/lll/lll_slave.c
-        )
     endif()
     if(CONFIG_BT_CENTRAL)
       zephyr_library_sources(
         ll_sw/ull_master.c
-      )
-      zephyr_library_sources_ifdef(
-        CONFIG_BT_LLL_VENDOR_NORDIC
-        ll_sw/nordic/lll/lll_master.c
         )
     endif()
     if(CONFIG_BT_CTLR_SCHED_ADVANCED)
@@ -125,19 +65,12 @@ if(CONFIG_BT_LL_SW_SPLIT)
     CONFIG_BT_HCI_MESH_EXT
     ll_sw/ll_mesh.c
     )
-  if(CONFIG_BT_LLL_VENDOR_NORDIC)
-    zephyr_library_include_directories(
-      ll_sw/nordic/lll
-      )
-    zephyr_library_sources_ifdef(
-      CONFIG_BT_CTLR_DTM
-      ll_sw/nordic/lll/lll_test.c
-      )
-    zephyr_library_sources_ifdef(
-      CONFIG_BT_CTLR_PROFILE_ISR
-      ll_sw/nordic/lll/lll_prof.c
-      )
-  endif()
+endif()
+
+if(CONFIG_SOC_COMPATIBLE_NRF)
+  include(ll_sw/nrf.cmake)
+elseif(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
+  include(ll_sw/openisa.cmake)
 endif()
 
 zephyr_library_sources_ifdef(
@@ -145,30 +78,14 @@ zephyr_library_sources_ifdef(
   ll_sw/ll_settings.c
 )
 
-zephyr_library_sources_ifdef(
-  CONFIG_SOC_COMPATIBLE_NRF
-  ll_sw/nordic/hal/nrf5/cntr.c
-  ll_sw/nordic/hal/nrf5/ecb.c
-  ll_sw/nordic/hal/nrf5/radio/radio.c
-  ll_sw/nordic/hal/nrf5/mayfly.c
-  ll_sw/nordic/hal/nrf5/ticker.c
-  )
-
 zephyr_library_include_directories(
   .
   include
   ll_sw
   )
 
-if(CONFIG_SOC_COMPATIBLE_NRF)
-  zephyr_library_include_directories(
-    ll_sw/nordic
-    hci/nordic
-    )
-endif()
-
 zephyr_library_compile_options_ifdef(
-  CONFIG_BT_CTLR_FAST_ENC
+  CONFIG_BT_CTLR_OPTIMIZE_FOR_SPEED
   ${OPTIMIZE_FOR_SPEED_FLAG}
   )
 

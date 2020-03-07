@@ -1,9 +1,13 @@
 sample:
-  description: TBD
-  name: TBD
+  description: Test wpan_serial sample
+  name: wpan_serial
+common:
+    depends_on: usb_device
+    harness: net
+    tags: usb ieee802154
 tests:
   sample.net.wpan.serial:
-    harness: net
-    depends_on: usb_device
-    tags: usb
-    skip: true # Needs to be adapted to another board with 15.4
+    depends_on: ieee802154
+  sample.net.wpan_serial.frdm_cr20a:
+    extra_args: SHIELD=frdm_cr20a
+    platform_whitelist: frdm_k64f

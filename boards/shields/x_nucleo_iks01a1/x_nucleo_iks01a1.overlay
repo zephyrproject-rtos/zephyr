@@ -22,6 +22,7 @@
 	lis3mdl-magn@1e {
 		compatible = "st,lis3mdl-magn";
 		reg = <0x1e>;
+		irq-gpios = <&arduino_header 5 GPIO_ACTIVE_HIGH>; /* DRDY on A5 */
 		label = "LIS3MDL";
 	};
 

@@ -345,7 +345,7 @@ void test_mutex(void)
 	k_thread_create(&thread_12_thread_data, thread_12_stack_area, STACKSIZE,
 			(k_thread_entry_t)thread_12, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(12), thread_flags, K_NO_WAIT);
-	k_sleep(1);     /* Give thread_12 a chance to block on the mutex */
+	k_sleep(K_MSEC(1));     /* Give thread_12 a chance to block on the mutex */
 
 	sys_mutex_unlock(&private_mutex);
 	sys_mutex_unlock(&private_mutex); /* thread_12 should now have lock */
@@ -444,14 +444,14 @@ void test_main(void)
 	 */
 #ifdef CONFIG_USERSPACE
 	ztest_test_suite(mutex_complex,
-			 ztest_user_unit_test(test_mutex),
+			 ztest_1cpu_user_unit_test(test_mutex),
 			 ztest_user_unit_test(test_user_access),
 			 ztest_unit_test(test_supervisor_access));
 
 	ztest_run_test_suite(mutex_complex);
 #else
 	ztest_test_suite(mutex_complex,
-			 ztest_unit_test(test_mutex),
+			 ztest_1cpu_unit_test(test_mutex),
 			 ztest_unit_test(test_user_access),
 			 ztest_unit_test(test_supervisor_access));
 

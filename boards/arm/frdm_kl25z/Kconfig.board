@@ -1,9 +1,7 @@
-# Kconfig - FRDM-KL25Z board
-#
+# FRDM-KL25Z board
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config BOARD_FRDM_KL25Z
 	bool "NXP FRDM-KL25Z"

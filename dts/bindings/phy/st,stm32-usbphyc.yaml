@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Yannis Damigos
 # SPDX-License-Identifier: Apache-2.0
 
-title: STM32 USB HS PHY
-
-description: >
-    This binding gives a base representation of the STM32 USB HS PHY controller
+description: STM32 USB HS PHY controller
 
 compatible: "st,stm32-usbphyc"
 

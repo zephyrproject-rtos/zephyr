@@ -21,8 +21,18 @@
 
 #include "apds9960.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(APDS9960);
+LOG_MODULE_REGISTER(APDS9960, CONFIG_SENSOR_LOG_LEVEL);
+
+static void apds9960_handle_cb(struct apds9960_data *drv_data)
+{
+	apds9960_setup_int(drv_data, false);
+
+#ifdef CONFIG_APDS9960_TRIGGER
+	k_work_submit(&drv_data->work);
+#else
+	k_sem_give(&drv_data->data_sem);
+#endif
+}
 
 static void apds9960_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
@@ -30,13 +40,7 @@ static void apds9960_gpio_callback(struct device *dev,
 	struct apds9960_data *drv_data =
 		CONTAINER_OF(cb, struct apds9960_data, gpio_cb);
 
-	gpio_pin_disable_callback(dev, drv_data->gpio_pin);
-
-#ifdef CONFIG_APDS9960_TRIGGER
-	k_work_submit(&drv_data->work);
-#else
-	k_sem_give(&drv_data->data_sem);
-#endif
+	apds9960_handle_cb(drv_data);
 }
 
 static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
@@ -51,7 +55,7 @@ static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 #ifndef CONFIG_APDS9960_TRIGGER
-	gpio_pin_enable_callback(data->gpio, config->gpio_pin);
+	apds9960_setup_int(data, true);
 
 #ifdef CONFIG_APDS9960_ENABLE_ALS
 	tmp = APDS9960_ENABLE_PON | APDS9960_ENABLE_AIEN;
@@ -366,9 +370,7 @@ static int apds9960_init_interrupt(struct device *dev)
 	drv_data->gpio_pin = config->gpio_pin;
 
 	gpio_pin_configure(drv_data->gpio, config->gpio_pin,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE |
-			   GPIO_PUD_PULL_UP);
+			   GPIO_INPUT | config->gpio_flags);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   apds9960_gpio_callback,
@@ -393,6 +395,12 @@ static int apds9960_init_interrupt(struct device *dev)
 #else
 	k_sem_init(&drv_data->data_sem, 0, UINT_MAX);
 #endif
+	apds9960_setup_int(drv_data, true);
+
+	if (gpio_pin_get(drv_data->gpio, drv_data->gpio_pin) > 0) {
+		apds9960_handle_cb(drv_data);
+	}
+
 	return 0;
 }
 
@@ -447,7 +455,7 @@ static int apds9960_init(struct device *dev)
 	struct apds9960_data *data = dev->driver_data;
 
 	/* Initialize time 5.7ms */
-	k_sleep(6);
+	k_sleep(K_MSEC(6));
 	data->i2c = device_get_binding(config->i2c_name);
 
 	if (data->i2c == NULL) {
@@ -486,6 +494,7 @@ static const struct apds9960_config apds9960_config = {
 	.i2c_address = DT_INST_0_AVAGO_APDS9960_BASE_ADDRESS,
 	.gpio_name = DT_INST_0_AVAGO_APDS9960_INT_GPIOS_CONTROLLER,
 	.gpio_pin = DT_INST_0_AVAGO_APDS9960_INT_GPIOS_PIN,
+	.gpio_flags = DT_INST_0_AVAGO_APDS9960_INT_GPIOS_FLAGS,
 #if CONFIG_APDS9960_PGAIN_8X
 	.pgain = APDS9960_PGAIN_8X,
 #elif CONFIG_APDS9960_PGAIN_4X

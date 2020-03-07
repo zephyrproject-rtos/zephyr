@@ -146,6 +146,6 @@ void main(void)
 		       sensor_value_to_double(&magn[1]),
 		       sensor_value_to_double(&magn[2]));
 
-		k_sleep(2000);
+		k_sleep(K_MSEC(2000));
 	}
 }

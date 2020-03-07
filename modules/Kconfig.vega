@@ -1,7 +1,7 @@
 # Copyright (c) 2018 Foundries.io
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig VEGA_SDK_HAL
+config VEGA_SDK_HAL
 	bool "RV32M1 VEGA SDK support"
 	depends on SOC_OPENISA_RV32M1_RISCV32
 
@@ -14,6 +14,16 @@ config HAS_RV32M1_LPI2C
 	bool
 	help
 	  Set if the low power i2c (LPI2C) module is present in the SoC.
+
+config HAS_RV32M1_LPSPI
+	bool
+	help
+	  Set if the low power spi (LPSPI) module is present in the SoC.
+
+config HAS_RV32M1_TPM
+	bool
+	help
+	  Set if the Timer/PWM (TPM) module is present in the SoC.
 
 config HAS_RV32M1_FTFX
 	bool

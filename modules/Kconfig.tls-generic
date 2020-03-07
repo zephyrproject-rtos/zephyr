@@ -1,10 +1,11 @@
-# Kconfig.tls - TLS/DTLS related options
+# TLS/DTLS related options
 
 # Copyright (c) 2018 Intel Corporation
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 menu "TLS configuration"
+	depends on MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
 
 menu "Supported TLS version"
 
@@ -292,7 +293,7 @@ config MBEDTLS_HAVE_ASM
 	default y if !ARM
 	help
 	  Enable use of assembly code in mbedTLS. This improves the performances
-	  of asymetric cryptography, however this might have an impact on the
+	  of asymmetric cryptography, however this might have an impact on the
 	  code size.
 
 config MBEDTLS_ENTROPY_ENABLED

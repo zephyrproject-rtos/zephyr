@@ -41,11 +41,7 @@
 
 static struct bt_mesh_cfg_srv *conf;
 
-static struct label {
-	u16_t ref;
-	u16_t addr;
-	u8_t  uuid[16];
-} labels[CONFIG_BT_MESH_LABEL_COUNT];
+static struct label labels[CONFIG_BT_MESH_LABEL_COUNT];
 
 static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
 			 bool primary)
@@ -54,7 +50,7 @@ static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
 	int i;
 
 	if (net_buf_simple_tailroom(buf) <
-	    4 + (elem->model_count * 2U) + (elem->vnd_model_count * 2U)) {
+	    4 + (elem->model_count * 2U) + (elem->vnd_model_count * 4U)) {
 		BT_ERR("Too large device composition");
 		return -E2BIG;
 	}
@@ -133,7 +129,7 @@ static void dev_comp_data_get(struct bt_mesh_model *model,
 
 	page = net_buf_simple_pull_u8(buf);
 	if (page != 0U) {
-		BT_WARN("Composition page %u not available", page);
+		BT_DBG("Composition page %u not available", page);
 		page = 0U;
 	}
 
@@ -435,7 +431,7 @@ static void app_key_add(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 4 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_APP_KEY_STATUS, 4);
 	u16_t key_net_idx, key_app_idx;
 	u8_t status;
 
@@ -460,7 +456,7 @@ static void app_key_update(struct bt_mesh_model *model,
 			   struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 4 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_APP_KEY_STATUS, 4);
 	u16_t key_net_idx, key_app_idx;
 	u8_t status;
 
@@ -514,7 +510,7 @@ static void app_key_del(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 4 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_APP_KEY_STATUS, 4);
 	u16_t key_net_idx, key_app_idx;
 	struct bt_mesh_app_key *key;
 	u8_t status;
@@ -564,8 +560,8 @@ static void app_key_get(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 3 + 4 +
-			      IDX_LEN(CONFIG_BT_MESH_APP_KEY_COUNT));
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_APP_KEY_LIST,
+				 3 + IDX_LEN(CONFIG_BT_MESH_APP_KEY_COUNT));
 	u16_t get_idx, i, prev;
 	u8_t status;
 
@@ -623,8 +619,7 @@ static void beacon_get(struct bt_mesh_model *model,
 		       struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_BEACON_STATUS, 1);
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -642,8 +637,7 @@ static void beacon_set(struct bt_mesh_model *model,
 		       struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_BEACON_STATUS, 1);
 	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
@@ -683,8 +677,7 @@ static void default_ttl_get(struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_DEFAULT_TTL_STATUS, 1);
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -702,8 +695,7 @@ static void default_ttl_set(struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_DEFAULT_TTL_STATUS, 1);
 	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
@@ -736,8 +728,7 @@ static void default_ttl_set(struct bt_mesh_model *model,
 static void send_gatt_proxy_status(struct bt_mesh_model *model,
 				   struct bt_mesh_msg_ctx *ctx)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_GATT_PROXY_STATUS, 1);
 
 	bt_mesh_model_msg_init(&msg, OP_GATT_PROXY_STATUS);
 	net_buf_simple_add_u8(&msg, bt_mesh_gatt_proxy_get());
@@ -795,30 +786,6 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
 		bt_mesh_store_cfg();
 	}
 
-	if (cfg->gatt_proxy == BT_MESH_GATT_PROXY_DISABLED) {
-		int i;
-
-		/* Section 4.2.11.1: "When the GATT Proxy state is set to
-		 * 0x00, the Node Identity state for all subnets shall be set
-		 * to 0x00 and shall not be changed."
-		 */
-		for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-			struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
-
-			if (sub->net_idx != BT_MESH_KEY_UNUSED) {
-				bt_mesh_proxy_identity_stop(sub);
-			}
-		}
-
-		/* Section 4.2.11: "Upon transition from GATT Proxy state 0x01
-		 * to GATT Proxy state 0x00 the GATT Bearer Server shall
-		 * disconnect all GATT Bearer Clients.
-		 */
-		bt_mesh_proxy_gatt_disconnect();
-	}
-
-	bt_mesh_adv_update();
-
 	if (cfg->hb_pub.feat & BT_MESH_FEAT_PROXY) {
 		bt_mesh_heartbeat_send();
 	}
@@ -831,8 +798,7 @@ static void net_transmit_get(struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NET_TRANSMIT_STATUS, 1);
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -850,8 +816,7 @@ static void net_transmit_set(struct bt_mesh_model *model,
 			     struct bt_mesh_msg_ctx *ctx,
 			     struct net_buf_simple *buf)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NET_TRANSMIT_STATUS, 1);
 	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
@@ -884,8 +849,7 @@ static void relay_get(struct bt_mesh_model *model,
 		      struct bt_mesh_msg_ctx *ctx,
 		      struct net_buf_simple *buf)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 2 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_RELAY_STATUS, 2);
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -904,8 +868,7 @@ static void relay_set(struct bt_mesh_model *model,
 		      struct bt_mesh_msg_ctx *ctx,
 		      struct net_buf_simple *buf)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 2 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_RELAY_STATUS, 2);
 	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
@@ -958,8 +921,7 @@ static void send_mod_pub_status(struct bt_mesh_model *cfg_mod,
 				bool vnd, struct bt_mesh_model *mod,
 				u8_t status, u8_t *mod_id)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 14 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_PUB_STATUS, 14);
 
 	bt_mesh_model_msg_init(&msg, OP_MOD_PUB_STATUS);
 
@@ -1100,23 +1062,59 @@ send_status:
 			    status, mod_id);
 }
 
-#if CONFIG_BT_MESH_LABEL_COUNT > 0
-static u8_t va_add(u8_t *label_uuid, u16_t *addr)
+struct label *get_label(u16_t index)
 {
-	struct label *free_slot = NULL;
+	if (index >= ARRAY_SIZE(labels)) {
+		return NULL;
+	}
+
+	return &labels[index];
+}
+
+#if CONFIG_BT_MESH_LABEL_COUNT > 0
+static inline void va_store(struct label *store)
+{
+	atomic_set_bit(store->flags, BT_MESH_VA_CHANGED);
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_store_label();
+	}
+}
+
+static struct label *va_find(const u8_t *label_uuid,
+				struct label **free_slot)
+{
+	struct label *match = NULL;
 	int i;
 
+	if (free_slot != NULL) {
+		*free_slot = NULL;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(labels); i++) {
-		if (!labels[i].ref) {
-			free_slot = &labels[i];
+		if (labels[i].ref == 0) {
+			if (free_slot != NULL) {
+				*free_slot = &labels[i];
+			}
 			continue;
 		}
 
 		if (!memcmp(labels[i].uuid, label_uuid, 16)) {
-			*addr = labels[i].addr;
-			labels[i].ref++;
-			return STATUS_SUCCESS;
+			match = &labels[i];
 		}
+	}
+
+	return match;
+}
+
+static u8_t va_add(u8_t *label_uuid, u16_t *addr)
+{
+	struct label *update, *free_slot = NULL;
+
+	update = va_find(label_uuid, &free_slot);
+	if (update) {
+		update->ref++;
+		va_store(update);
+		return STATUS_SUCCESS;
 	}
 
 	if (!free_slot) {
@@ -1130,23 +1128,25 @@ static u8_t va_add(u8_t *label_uuid, u16_t *addr)
 	free_slot->ref = 1U;
 	free_slot->addr = *addr;
 	memcpy(free_slot->uuid, label_uuid, 16);
+	va_store(free_slot);
 
 	return STATUS_SUCCESS;
 }
 
 static u8_t va_del(u8_t *label_uuid, u16_t *addr)
 {
-	int i;
+	struct label *update;
 
-	for (i = 0; i < ARRAY_SIZE(labels); i++) {
-		if (!memcmp(labels[i].uuid, label_uuid, 16)) {
-			if (addr) {
-				*addr = labels[i].addr;
-			}
+	update = va_find(label_uuid, NULL);
+	if (update) {
+		update->ref--;
 
-			labels[i].ref--;
-			return STATUS_SUCCESS;
+		if (addr) {
+			*addr = update->addr;
 		}
+
+		va_store(update);
+		return STATUS_SUCCESS;
 	}
 
 	if (addr) {
@@ -1324,8 +1324,7 @@ static void send_mod_sub_status(struct bt_mesh_model *model,
 				u16_t elem_addr, u16_t sub_addr, u8_t *mod_id,
 				bool vnd)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 9 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_SUB_STATUS, 9);
 
 	BT_DBG("status 0x%02x elem_addr 0x%04x sub_addr 0x%04x", status,
 	       elem_addr, sub_addr);
@@ -1356,8 +1355,8 @@ static void mod_sub_add(struct bt_mesh_model *model,
 	struct bt_mesh_elem *elem;
 	u8_t *mod_id;
 	u8_t status;
+	u16_t *entry;
 	bool vnd;
-	int i;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
@@ -1390,33 +1389,30 @@ static void mod_sub_add(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (bt_mesh_model_find_group(mod, sub_addr)) {
+	if (bt_mesh_model_find_group(&mod, sub_addr)) {
 		/* Tried to add existing subscription */
 		BT_DBG("found existing subscription");
 		status = STATUS_SUCCESS;
 		goto send_status;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(mod->groups); i++) {
-		if (mod->groups[i] == BT_MESH_ADDR_UNASSIGNED) {
-			mod->groups[i] = sub_addr;
-			break;
-		}
-	}
-
-	if (i == ARRAY_SIZE(mod->groups)) {
+	entry = bt_mesh_model_find_group(&mod, BT_MESH_ADDR_UNASSIGNED);
+	if (!entry) {
 		status = STATUS_INSUFF_RESOURCES;
-	} else {
-		status = STATUS_SUCCESS;
-
-		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			bt_mesh_store_mod_sub(mod);
-		}
-
-		if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
-			bt_mesh_lpn_group_add(sub_addr);
-		}
+		goto send_status;
 	}
+
+	*entry = sub_addr;
+	status = STATUS_SUCCESS;
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_store_mod_sub(mod);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		bt_mesh_lpn_group_add(sub_addr);
+	}
+
 
 send_status:
 	send_mod_sub_status(model, ctx, status, elem_addr, sub_addr,
@@ -1475,7 +1471,7 @@ static void mod_sub_del(struct bt_mesh_model *model,
 		bt_mesh_lpn_group_del(&sub_addr, 1);
 	}
 
-	match = bt_mesh_model_find_group(mod, sub_addr);
+	match = bt_mesh_model_find_group(&mod, sub_addr);
 	if (match) {
 		*match = BT_MESH_ADDR_UNASSIGNED;
 
@@ -1487,6 +1483,18 @@ static void mod_sub_del(struct bt_mesh_model *model,
 send_status:
 	send_mod_sub_status(model, ctx, status, elem_addr, sub_addr,
 			    mod_id, vnd);
+}
+
+static enum bt_mesh_walk mod_sub_clear_visitor(struct bt_mesh_model *mod,
+					       u32_t depth, void *user_data)
+{
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		bt_mesh_lpn_group_del(mod->groups, ARRAY_SIZE(mod->groups));
+	}
+
+	mod_sub_list_clear(mod);
+
+	return BT_MESH_WALK_CONTINUE;
 }
 
 static void mod_sub_overwrite(struct bt_mesh_model *model,
@@ -1531,13 +1539,11 @@ static void mod_sub_overwrite(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
-		bt_mesh_lpn_group_del(mod->groups, ARRAY_SIZE(mod->groups));
-	}
-
-	mod_sub_list_clear(mod);
 
 	if (ARRAY_SIZE(mod->groups) > 0) {
+		bt_mesh_model_tree_walk(bt_mesh_model_root(mod),
+					mod_sub_clear_visitor, NULL);
+
 		mod->groups[0] = sub_addr;
 		status = STATUS_SUCCESS;
 
@@ -1593,11 +1599,8 @@ static void mod_sub_del_all(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
-		bt_mesh_lpn_group_del(mod->groups, ARRAY_SIZE(mod->groups));
-	}
-
-	mod_sub_list_clear(mod);
+	bt_mesh_model_tree_walk(bt_mesh_model_root(mod), mod_sub_clear_visitor,
+				NULL);
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		bt_mesh_store_mod_sub(mod);
@@ -1610,16 +1613,52 @@ send_status:
 			    BT_MESH_ADDR_UNASSIGNED, mod_id, vnd);
 }
 
+struct mod_sub_list_ctx {
+	u16_t elem_idx;
+	struct net_buf_simple *msg;
+};
+
+static enum bt_mesh_walk mod_sub_list_visitor(struct bt_mesh_model *mod,
+					      u32_t depth, void *ctx)
+{
+	struct mod_sub_list_ctx *visit = ctx;
+	int count = 0;
+	int i;
+
+	if (mod->elem_idx != visit->elem_idx) {
+		return BT_MESH_WALK_CONTINUE;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(mod->groups); i++) {
+		if (mod->groups[i] == BT_MESH_ADDR_UNASSIGNED) {
+			continue;
+		}
+
+		if (net_buf_simple_tailroom(visit->msg) <
+		    2 + BT_MESH_MIC_SHORT) {
+			BT_WARN("No room for all groups");
+			return BT_MESH_WALK_STOP;
+		}
+
+		net_buf_simple_add_le16(visit->msg, mod->groups[i]);
+		count++;
+	}
+
+	BT_DBG("sublist: model %u:%x: %u groups", mod->elem_idx, mod->id,
+	       count);
+
+	return BT_MESH_WALK_CONTINUE;
+}
+
 static void mod_sub_get(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 5 + 4 +
-			      CONFIG_BT_MESH_MODEL_GROUP_COUNT * 2);
+	NET_BUF_SIMPLE_DEFINE(msg, BT_MESH_TX_SDU_MAX);
+	struct mod_sub_list_ctx visit_ctx;
 	struct bt_mesh_model *mod;
 	struct bt_mesh_elem *elem;
 	u16_t addr, id;
-	int i;
 
 	addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(addr)) {
@@ -1654,11 +1693,10 @@ static void mod_sub_get(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(&msg, addr);
 	net_buf_simple_add_le16(&msg, id);
 
-	for (i = 0; i < ARRAY_SIZE(mod->groups); i++) {
-		if (mod->groups[i] != BT_MESH_ADDR_UNASSIGNED) {
-			net_buf_simple_add_le16(&msg, mod->groups[i]);
-		}
-	}
+	visit_ctx.msg = &msg;
+	visit_ctx.elem_idx = mod->elem_idx;
+	bt_mesh_model_tree_walk(bt_mesh_model_root(mod), mod_sub_list_visitor,
+				&visit_ctx);
 
 send_list:
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
@@ -1670,12 +1708,10 @@ static void mod_sub_get_vnd(struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 7 + 4 +
-			      CONFIG_BT_MESH_MODEL_GROUP_COUNT * 2);
+	NET_BUF_SIMPLE_DEFINE(msg, BT_MESH_TX_SDU_MAX);
 	struct bt_mesh_model *mod;
 	struct bt_mesh_elem *elem;
 	u16_t company, addr, id;
-	int i;
 
 	addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(addr)) {
@@ -1714,11 +1750,8 @@ static void mod_sub_get_vnd(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(&msg, company);
 	net_buf_simple_add_le16(&msg, id);
 
-	for (i = 0; i < ARRAY_SIZE(mod->groups); i++) {
-		if (mod->groups[i] != BT_MESH_ADDR_UNASSIGNED) {
-			net_buf_simple_add_le16(&msg, mod->groups[i]);
-		}
-	}
+	bt_mesh_model_tree_walk(bt_mesh_model_root(mod), mod_sub_list_visitor,
+				&msg);
 
 send_list:
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
@@ -1736,9 +1769,9 @@ static void mod_sub_va_add(struct bt_mesh_model *model,
 	struct bt_mesh_elem *elem;
 	u8_t *label_uuid;
 	u8_t *mod_id;
+	u16_t *entry;
 	u8_t status;
 	bool vnd;
-	int i;
 
 	elem_addr = net_buf_simple_pull_le16(buf);
 	if (!BT_MESH_ADDR_IS_UNICAST(elem_addr)) {
@@ -1772,32 +1805,30 @@ static void mod_sub_va_add(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (bt_mesh_model_find_group(mod, sub_addr)) {
+	if (bt_mesh_model_find_group(&mod, sub_addr)) {
 		/* Tried to add existing subscription */
 		status = STATUS_SUCCESS;
 		goto send_status;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(mod->groups); i++) {
-		if (mod->groups[i] == BT_MESH_ADDR_UNASSIGNED) {
-			mod->groups[i] = sub_addr;
-			break;
-		}
-	}
 
-	if (i == ARRAY_SIZE(mod->groups)) {
+	entry = bt_mesh_model_find_group(&mod, BT_MESH_ADDR_UNASSIGNED);
+	if (!entry) {
 		status = STATUS_INSUFF_RESOURCES;
-	} else {
-		if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
-			bt_mesh_lpn_group_add(sub_addr);
-		}
-
-		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			bt_mesh_store_mod_sub(mod);
-		}
-
-		status = STATUS_SUCCESS;
+		goto send_status;
 	}
+
+	*entry = sub_addr;
+
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		bt_mesh_lpn_group_add(sub_addr);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_store_mod_sub(mod);
+	}
+
+	status = STATUS_SUCCESS;
 
 send_status:
 	send_mod_sub_status(model, ctx, status, elem_addr, sub_addr,
@@ -1854,7 +1885,7 @@ static void mod_sub_va_del(struct bt_mesh_model *model,
 		bt_mesh_lpn_group_del(&sub_addr, 1);
 	}
 
-	match = bt_mesh_model_find_group(mod, sub_addr);
+	match = bt_mesh_model_find_group(&mod, sub_addr);
 	if (match) {
 		*match = BT_MESH_ADDR_UNASSIGNED;
 
@@ -1910,13 +1941,11 @@ static void mod_sub_va_overwrite(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
-		bt_mesh_lpn_group_del(mod->groups, ARRAY_SIZE(mod->groups));
-	}
-
-	mod_sub_list_clear(mod);
 
 	if (ARRAY_SIZE(mod->groups) > 0) {
+		bt_mesh_model_tree_walk(bt_mesh_model_root(mod),
+					mod_sub_clear_visitor, NULL);
+
 		status = va_add(label_uuid, &sub_addr);
 		if (status == STATUS_SUCCESS) {
 			mod->groups[0] = sub_addr;
@@ -2063,8 +2092,7 @@ static void send_net_key_status(struct bt_mesh_model *model,
 				struct bt_mesh_msg_ctx *ctx,
 				u16_t idx, u8_t status)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 3 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NET_KEY_STATUS, 3);
 
 	bt_mesh_model_msg_init(&msg, OP_NET_KEY_STATUS);
 
@@ -2276,8 +2304,8 @@ static void net_key_get(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	NET_BUF_SIMPLE_DEFINE(msg,
-			      2 + 4 + IDX_LEN(CONFIG_BT_MESH_SUBNET_COUNT));
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NET_KEY_LIST,
+				 IDX_LEN(CONFIG_BT_MESH_SUBNET_COUNT));
 	u16_t prev, i;
 
 	bt_mesh_model_msg_init(&msg, OP_NET_KEY_LIST);
@@ -2312,8 +2340,7 @@ static void node_identity_get(struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 4 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NODE_IDENTITY_STATUS, 4);
 	struct bt_mesh_subnet *sub;
 	u8_t node_id;
 	u16_t idx;
@@ -2351,8 +2378,7 @@ static void node_identity_set(struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 4 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NODE_IDENTITY_STATUS, 4);
 	struct bt_mesh_subnet *sub;
 	u8_t node_id;
 	u16_t idx;
@@ -2384,12 +2410,7 @@ static void node_identity_set(struct bt_mesh_model *model,
 		net_buf_simple_add_u8(&msg, STATUS_SUCCESS);
 		net_buf_simple_add_le16(&msg, idx);
 
-		/* Section 4.2.11.1: "When the GATT Proxy state is set to
-		 * 0x00, the Node Identity state for all subnets shall be set
-		 * to 0x00 and shall not be changed."
-		 */
-		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
-		    bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
+		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 			if (node_id) {
 				bt_mesh_proxy_identity_start(sub);
 			} else {
@@ -2428,7 +2449,7 @@ static void mod_app_bind(struct bt_mesh_model *model,
 			 struct bt_mesh_msg_ctx *ctx,
 			 struct net_buf_simple *buf)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 9 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_APP_STATUS, 9);
 	u16_t elem_addr, key_app_idx;
 	struct bt_mesh_model *mod;
 	struct bt_mesh_elem *elem;
@@ -2485,7 +2506,7 @@ static void mod_app_unbind(struct bt_mesh_model *model,
 			   struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 9 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_MOD_APP_STATUS, 9);
 	u16_t elem_addr, key_app_idx;
 	struct bt_mesh_model *mod;
 	struct bt_mesh_elem *elem;
@@ -2537,7 +2558,11 @@ static void mod_app_get(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 9 + KEY_LIST_LEN + 4);
+	NET_BUF_SIMPLE_DEFINE(msg,
+			      MAX(BT_MESH_MODEL_BUF_LEN(OP_VND_MOD_APP_LIST,
+							9 + KEY_LIST_LEN),
+				  BT_MESH_MODEL_BUF_LEN(OP_SIG_MOD_APP_LIST,
+							9 + KEY_LIST_LEN)));
 	struct bt_mesh_model *mod;
 	struct bt_mesh_elem *elem;
 	u8_t *mod_id, status;
@@ -2605,8 +2630,7 @@ static void node_reset(struct bt_mesh_model *model,
 		       struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 0 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_NODE_RESET_STATUS, 0);
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -2628,8 +2652,7 @@ static void node_reset(struct bt_mesh_model *model,
 static void send_friend_status(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_FRIEND_STATUS, 1);
 	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	bt_mesh_model_msg_init(&msg, OP_FRIEND_STATUS);
@@ -2701,8 +2724,7 @@ static void lpn_timeout_get(struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    struct net_buf_simple *buf)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 5 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_LPN_TIMEOUT_STATUS, 5);
 	struct bt_mesh_friend *frnd;
 	u16_t lpn_addr;
 	s32_t timeout;
@@ -2734,9 +2756,7 @@ static void lpn_timeout_get(struct bt_mesh_model *model,
 	timeout = k_delayed_work_remaining_get(&frnd->timer) / 100;
 
 send_rsp:
-	net_buf_simple_add_u8(&msg, timeout);
-	net_buf_simple_add_u8(&msg, timeout >> 8);
-	net_buf_simple_add_u8(&msg, timeout >> 16);
+	net_buf_simple_add_le24(&msg, timeout);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		BT_ERR("Unable to send LPN PollTimeout Status");
@@ -2747,8 +2767,7 @@ static void send_krp_status(struct bt_mesh_model *model,
 			    struct bt_mesh_msg_ctx *ctx,
 			    u16_t idx, u8_t phase, u8_t status)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 4 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_KRP_STATUS, 4);
 
 	bt_mesh_model_msg_init(&msg, OP_KRP_STATUS);
 
@@ -2885,8 +2904,7 @@ static void hb_pub_send_status(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx, u8_t status,
 			       struct hb_pub_param *orig_msg)
 {
-	/* Needed size: opcode (1 byte) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 1 + 10 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEARTBEAT_PUB_STATUS, 10);
 	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	BT_DBG("src 0x%04x status 0x%02x", ctx->addr, status);
@@ -3009,8 +3027,7 @@ failed:
 static void hb_sub_send_status(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx, u8_t status)
 {
-	/* Needed size: opcode (2 bytes) + msg + MIC */
-	NET_BUF_SIMPLE_DEFINE(msg, 2 + 9 + 4);
+	BT_MESH_MODEL_BUF_DEFINE(msg, OP_HEARTBEAT_SUB_STATUS, 9);
 	struct bt_mesh_cfg_srv *cfg = model->user_data;
 	u16_t period;
 	s64_t uptime;
@@ -3252,8 +3269,11 @@ static int cfg_srv_init(struct bt_mesh_model *model)
 		return -EINVAL;
 	}
 
-	/* Configuration Model security is device-key based */
-	model->keys[0] = BT_MESH_KEY_DEV;
+	/*
+	 * Configuration Model security is device-key based and only the local
+	 * device-key is allowed to access this model.
+	 */
+	model->keys[0] = BT_MESH_KEY_DEV_LOCAL;
 
 	if (!IS_ENABLED(CONFIG_BT_MESH_RELAY)) {
 		cfg->relay = BT_MESH_RELAY_NOT_SUPPORTED;
@@ -3396,7 +3416,8 @@ u8_t bt_mesh_relay_get(void)
 
 u8_t bt_mesh_friend_get(void)
 {
-	BT_DBG("conf %p conf->frnd 0x%02x", conf, conf->frnd);
+	BT_DBG("conf %p conf->frnd 0x%02x", conf,
+	       conf ? conf->frnd : BT_MESH_FRIEND_NOT_SUPPORTED);
 
 	if (conf) {
 		return conf->frnd;

@@ -7,8 +7,8 @@ config BOARD_QEMU_X86
 	select CPU_HAS_FPU
 	select HAS_COVERAGE_SUPPORT
 
-config BOARD_QEMU_X86_LONG
-	bool "QEMU x86 (64-bit long mode)"
+config BOARD_QEMU_X86_64
+	bool "QEMU x86_64"
 	depends on SOC_IA32
 	select QEMU_TARGET
-	select X86_LONGMODE
+	select X86_64

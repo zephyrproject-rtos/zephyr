@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: NXP Kinetis Ethernet
-
-description: >
-    This binding gives a base representation of the NXP Kinetis Ethernet
+description: NXP Kinetis Ethernet
 
 compatible: "nxp,kinetis-ethernet"
 

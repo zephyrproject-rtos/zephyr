@@ -165,7 +165,7 @@ static int build_reply(const char *name,
 	int reply_len = net_pkt_remaining_data(pkt);
 	int ret;
 
-	LOG_DBG("%s received %d bytes", name, reply_len);
+	LOG_DBG("%s received %d bytes", log_strdup(name), reply_len);
 
 	ret = net_pkt_read(pkt, buf, reply_len);
 	if (ret < 0) {
@@ -173,9 +173,9 @@ static int build_reply(const char *name,
 		return ret;
 	}
 
-	LOG_DBG("sending %d bytes", ret);
+	LOG_DBG("sending %d bytes", reply_len);
 
-	return ret;
+	return reply_len;
 }
 
 static inline void pkt_sent(struct net_context *context,
@@ -291,6 +291,8 @@ static void tcp_accepted(struct net_context *context,
 
 	NET_DBG("Accept called, context %p error %d", context, error);
 
+	net_context_set_accepting(context, false);
+
 	ret = net_context_recv(context, tcp_received, 0, NULL);
 	if (ret < 0) {
 		LOG_ERR("Cannot receive TCP packet (family %d)",
@@ -339,5 +341,5 @@ void main(void)
 
 	k_thread_create(&thread_data, thread_stack, STACKSIZE,
 			(k_thread_entry_t)listen,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 }

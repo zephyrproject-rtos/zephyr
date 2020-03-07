@@ -1,10 +1,7 @@
 # Copyright (c) 2018 omSquare s.r.o.
 # SPDX-License-Identifier: Apache-2.0
 
-title: Atmel SAM0 RTC
-
-description: >
-    This binding gives a base representation of the Atmel SAM0 RTC
+description: Atmel SAM0 RTC
 
 compatible: "atmel,sam0-rtc"
 

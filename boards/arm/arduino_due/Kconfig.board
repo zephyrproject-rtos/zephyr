@@ -1,8 +1,7 @@
-# Kconfig - Arduino Due Board configuration
-#
+# Arduino Due Board configuration
+
 # Copyright (c) 2017 Justin Watson
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config BOARD_ARDUINO_DUE
 	bool "Arduino Due Board"

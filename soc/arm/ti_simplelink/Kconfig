@@ -1,16 +1,22 @@
-# SPDX-License-Identifier: Apache-2.0
+# Texas Instruments SimpleLink Family
 
-# Kconfig - Texas Instruments SimpleLink Family
-#
+# SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_TISIMPLELINK
 	bool
-	# omit prompt to signify a "hidden" option
 
 if SOC_FAMILY_TISIMPLELINK
+
 config SOC_FAMILY
 	string
 	default "ti_simplelink"
 
 source "soc/arm/ti_simplelink/*/Kconfig.soc"
+
+config HAS_TI_CCFG
+	bool
+	help
+	  Selected when CCFG (Customer Configuration) registers
+	  appear at the end of flash
+
 endif # SOC_FAMILY_TISIMPLELINK

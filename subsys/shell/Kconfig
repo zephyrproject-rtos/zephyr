@@ -1,12 +1,9 @@
-# Kconfig - Shell configuration options
+# Shell configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Intel Corporation
 # Copyright (c) 2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig SHELL
 	bool "Shell"
@@ -104,22 +101,12 @@ config SHELL_HISTORY
 	  Enable commands history. History can be accessed using up and down
 	  arrows.
 
-if SHELL_HISTORY
-
 config SHELL_HISTORY_BUFFER
 	int "History buffer in bytes"
 	default 512
+	depends on SHELL_HISTORY
 	help
 	  Number of bytes dedicated for storing executed commands.
-
-endif #SHELL_HISTORY
-
-config SHELL_MAX_LOG_MSG_BUFFERED
-	int "Maximal number of  log messages in FIFO"
-	default 8
-	help
-	  When amount of buffered log messages exceeds this threshold oldest
-	  messages are discarded.
 
 config SHELL_STATS
 	bool "Enable shell statistics"
@@ -150,8 +137,8 @@ config SHELL_CMDS_SELECT
 
 config SHELL_LOG_BACKEND
 	bool
+	depends on !LOG_MINIMAL
 	default y if LOG
-	default n if !LOG
 
 source "subsys/shell/modules/Kconfig"
 

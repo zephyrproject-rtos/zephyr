@@ -1,17 +1,16 @@
-# Kconfig - LPC LPC54XXX MCU line
-#
+# LPC LPC54XXX MCU line
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "LPC LPC54XXX MCU Selection"
-depends on SOC_SERIES_LPC54XXX
+	prompt "LPC LPC54XXX MCU Selection"
+	depends on SOC_SERIES_LPC54XXX
 
 config SOC_LPC54114_M4
 	bool "SOC_LPC54114_M4"
 	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_ARM_MPU
 	select PLATFORM_SPECIFIC_INIT
 

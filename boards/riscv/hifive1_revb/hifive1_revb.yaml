@@ -9,3 +9,8 @@ testing:
   ignore_tags:
     - net
     - bluetooth
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - gpio
+  - i2c

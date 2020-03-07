@@ -1,11 +1,11 @@
-# Kconfig - MCUXpresso SDK
-#
+# MCUXpresso SDK
+
 # Copyright (c) 2016, Freescale Semiconductor, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config HAS_MCUX
 	bool
-	select HAS_CMSIS
+	select HAS_CMSIS_CORE
 	depends on SOC_FAMILY_KINETIS || SOC_FAMILY_IMX || SOC_FAMILY_LPC
 
 if HAS_MCUX
@@ -52,6 +52,11 @@ config HAS_MCUX_FLEXCAN
 	help
 	  Set if the FlexCAN module is presents in the SoC.
 
+config HAS_MCUX_FLEXCOMM
+	bool
+	help
+	  Set if the flexcomm (FLEXCOMM) module is present in the SoC.
+
 config HAS_MCUX_FTFX
 	bool
 	help
@@ -62,6 +67,12 @@ config HAS_MCUX_FTM
 	bool
 	help
 	  Set if the FlexTimer (FTM) module is present in the SoC.
+
+config HAS_MCUX_IAP
+	bool
+	help
+	  Set if the flash memory In Applcation Programming is present in
+	  the LPC family SoCs.
 
 config HAS_MCUX_IGPIO
 	bool
@@ -146,5 +157,15 @@ config HAS_MCUX_PWM
 	bool
 	help
 	  Set if the PWM  module is present in the SoC.
+
+config HAS_MCUX_SMC
+	bool
+	help
+	  Set if the SMC  module is present in the SoC.
+
+config HAS_MCUX_CSI
+	bool
+	help
+	  Set if the CMOS Sensor Interface module is present in the SoC.
 
 endif # HAS_MCUX

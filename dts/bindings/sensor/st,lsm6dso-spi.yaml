@@ -1,11 +1,9 @@
 # Copyright (c) 2019 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-title: STMicroelectronics MEMS sensors LSM6DSO SPI
-
-description: >
-    This binding gives a base representation of LSM6DSO 6-axis IMU
-    sensor accessed through SPI bus
+description: |
+    STMicroelectronics LSM6DSO 6-axis IMU (Inertial Measurement Unit) sensor
+    accessed through SPI bus
 
 compatible: "st,lsm6dso"
 
@@ -15,3 +13,8 @@ properties:
     irq-gpios:
       type: phandle-array
       required: false
+      description: DRDY pin
+
+        This pin defaults to active high when produced by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.

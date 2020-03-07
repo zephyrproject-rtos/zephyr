@@ -75,4 +75,3 @@ extern void altera_nios2_gen2_irq_init( void );
 #endif /* __cplusplus */
 
 #endif /* __ALT_NIOS2_ULTRA_IRQ_H__ */
-

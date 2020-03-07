@@ -3,12 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <timeout_q.h>
-#include <drivers/timer/system_timer.h>
-#include <sys_clock.h>
+
+#include <kernel.h>
 #include <spinlock.h>
 #include <ksched.h>
+#include <timeout_q.h>
 #include <syscall_handler.h>
+#include <drivers/timer/system_timer.h>
+#include <sys_clock.h>
 
 #define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
 					  __key = k_spin_lock(lck);	\
@@ -168,8 +170,12 @@ void z_set_timeout_expiry(s32_t ticks, bool idle)
 		 * one is about to expire: drivers have internal logic
 		 * that will bump the timeout to the "next" tick if
 		 * it's not considered to be settable as directed.
+		 * SMP can't use this optimization though: we don't
+		 * know when context switches happen until interrupt
+		 * exit and so can't get the timeslicing clamp folded
+		 * in.
 		 */
-		if (sooner && !imminent) {
+		if (!imminent && (sooner || IS_ENABLED(CONFIG_SMP))) {
 			z_clock_set_timeout(ticks, idle);
 		}
 	}
@@ -232,7 +238,7 @@ u32_t z_tick_get_32(void)
 
 s64_t z_impl_k_uptime_get(void)
 {
-	return __ticks_to_ms(z_tick_get());
+	return k_ticks_to_ms_floor64(z_tick_get());
 }
 
 #ifdef CONFIG_USERSPACE

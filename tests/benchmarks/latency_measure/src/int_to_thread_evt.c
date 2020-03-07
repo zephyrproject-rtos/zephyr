@@ -92,6 +92,6 @@ int int_to_thread_evt(void)
 	k_sem_take(&WORKSEMA, K_FOREVER);
 
 	PRINT_FORMAT(" switch time is %u tcs = %u nsec",
-		     timestamp, SYS_CLOCK_HW_CYCLES_TO_NS(timestamp));
+		     timestamp, (u32_t)k_cyc_to_ns_floor64(timestamp));
 	return 0;
 }

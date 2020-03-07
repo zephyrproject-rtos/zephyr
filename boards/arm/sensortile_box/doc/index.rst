@@ -61,7 +61,7 @@ SensorTile.box provides the following hardware components:
   - Microphone / audio sensor (MP23ABS1)
   - Humidity sensor (HTS221)
 
-- HCP602535ZC LI-ion rechargable battery (3.7V 500mAh)
+- HCP602535ZC LI-ion rechargeable battery (3.7V 500mAh)
 - FTSH107 connector for SWD debugging and UART Tx/Rx
 
 Supported Features
@@ -203,4 +203,3 @@ References
 
 .. _DFU-UTIL website:
    http://dfu-util.sourceforge.net/
-

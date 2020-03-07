@@ -48,7 +48,7 @@ static u32_t driver_uptime;
 
 u32_t z_clock_elapsed(void)
 {
-#ifdef TICKLESS_KERNEL
+#ifdef CONFIG_TICKLESS_KERNEL
 	return (u32_t)(z_clock_uptime() - driver_uptime);
 #else
 	return 0;

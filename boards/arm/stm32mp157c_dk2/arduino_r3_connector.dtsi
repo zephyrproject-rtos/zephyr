@@ -8,6 +8,8 @@
 	arduino_header: connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
 		gpio-map = <0 0 &gpiof 14 0>,	/* A0 */
 			   <1 0 &gpiof 13 0>,	/* A1 */
 			   /* ANA0 is not a GPIO   A2 */

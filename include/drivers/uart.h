@@ -31,6 +31,7 @@ extern "C" {
 
 /** @brief Line control signals. */
 enum uart_line_ctrl {
+	UART_LINE_CTRL_BAUD_RATE = BIT(0),
 	UART_LINE_CTRL_RTS = BIT(1),
 	UART_LINE_CTRL_DTR = BIT(2),
 	UART_LINE_CTRL_DCD = BIT(3),
@@ -157,13 +158,14 @@ enum uart_rx_stop_reason {
 	UART_BREAK = (1 << 3),
 };
 
+
 /** @brief Backward compatibility defines, deprecated */
-#define UART_ERROR_BREAK UART_BREAK
-#define LINE_CTRL_BAUD_RATE (1 << 0)
-#define LINE_CTRL_RTS UART_LINE_CTRL_RTS
-#define LINE_CTRL_DTR UART_LINE_CTRL_DTR
-#define LINE_CTRL_DCD UART_LINE_CTRL_DCD
-#define LINE_CTRL_DSR UART_LINE_CTRL_DSR
+#define UART_ERROR_BREAK __DEPRECATED_MACRO UART_BREAK
+#define LINE_CTRL_BAUD_RATE __DEPRECATED_MACRO UART_LINE_CTRL_BAUD_RATE
+#define LINE_CTRL_RTS __DEPRECATED_MACRO UART_LINE_CTRL_RTS
+#define LINE_CTRL_DTR __DEPRECATED_MACRO UART_LINE_CTRL_DTR
+#define LINE_CTRL_DCD __DEPRECATED_MACRO UART_LINE_CTRL_DCD
+#define LINE_CTRL_DSR __DEPRECATED_MACRO UART_LINE_CTRL_DSR
 
 
 /** @brief UART TX event data. */
@@ -348,11 +350,11 @@ struct uart_driver_api {
 			    void *user_data);
 
 	int (*tx)(struct device *dev, const u8_t *buf, size_t len,
-		  u32_t timeout);
+		  s32_t timeout);
 	int (*tx_abort)(struct device *dev);
 
 	int (*rx_enable)(struct device *dev, u8_t *buf, size_t len,
-			 u32_t timeout);
+			 s32_t timeout);
 	int (*rx_buf_rsp)(struct device *dev, u8_t *buf, size_t len);
 	int (*rx_disable)(struct device *dev);
 
@@ -458,15 +460,17 @@ static inline int uart_callback_set(struct device *dev,
  * @param dev     UART device structure.
  * @param buf     Pointer to transmit buffer.
  * @param len     Length of transmit buffer.
- * @param timeout Timeout in milliseconds. Valid only if flow control is enabled
+ * @param timeout Timeout in milliseconds. Valid only if flow control is
+ *		  enabled. K_FOREVER disables timeout.
  *
  * @retval -EBUSY There is already an ongoing transfer.
  * @retval 0	  If successful, negative errno code otherwise.
  */
-static inline int uart_tx(struct device *dev,
-			  const u8_t *buf,
-			  size_t len,
-			  u32_t timeout)
+__syscall int uart_tx(struct device *dev, const u8_t *buf, size_t len,
+		      s32_t timeout);
+
+static inline int z_impl_uart_tx(struct device *dev, const u8_t *buf,
+				 size_t len, s32_t timeout)
 
 {
 	const struct uart_driver_api *api =
@@ -485,7 +489,9 @@ static inline int uart_tx(struct device *dev,
  * @retval -EFAULT There is no active transmission.
  * @retval 0	   If successful, negative errno code otherwise.
  */
-static inline int uart_tx_abort(struct device *dev)
+__syscall int uart_tx_abort(struct device *dev);
+
+static inline int z_impl_uart_tx_abort(struct device *dev)
 {
 	const struct uart_driver_api *api =
 			(const struct uart_driver_api *)dev->driver_api;
@@ -503,14 +509,17 @@ static inline int uart_tx_abort(struct device *dev)
  * @param dev     UART device structure.
  * @param buf     Pointer to receive buffer.
  * @param len     Buffer length.
- * @param timeout Timeout in milliseconds.
+ * @param timeout Timeout in milliseconds. K_FOREVER disables timeout.
  *
  * @retval -EBUSY RX already in progress.
  * @retval 0	  If successful, negative errno code otherwise.
  *
  */
-static inline int uart_rx_enable(struct device *dev, u8_t *buf, size_t len,
-				 u32_t timeout)
+__syscall int uart_rx_enable(struct device *dev, u8_t *buf, size_t len,
+			     s32_t timeout);
+
+static inline int z_impl_uart_rx_enable(struct device *dev, u8_t *buf,
+					size_t len, s32_t timeout)
 {
 	const struct uart_driver_api *api =
 				(const struct uart_driver_api *)dev->driver_api;
@@ -555,7 +564,9 @@ static inline int uart_rx_buf_rsp(struct device *dev, u8_t *buf, size_t len)
  * @retval -EFAULT There is no active reception.
  * @retval 0	   If successful, negative errno code otherwise.
  */
-static inline int uart_rx_disable(struct device *dev)
+__syscall int uart_rx_disable(struct device *dev);
+
+static inline int z_impl_uart_rx_disable(struct device *dev)
 {
 	const struct uart_driver_api *api =
 			(const struct uart_driver_api *)dev->driver_api;
@@ -1069,7 +1080,7 @@ static inline void uart_irq_callback_set(struct device *dev,
  * @brief Manipulate line control for UART.
  *
  * @param dev UART device structure.
- * @param ctrl The line control to manipulate.
+ * @param ctrl The line control to manipulate (see enum uart_line_ctrl).
  * @param val Value to set to the line control.
  *
  * @retval 0 If successful.
@@ -1095,8 +1106,8 @@ static inline int z_impl_uart_line_ctrl_set(struct device *dev,
  * @brief Retrieve line control for UART.
  *
  * @param dev UART device structure.
- * @param ctrl The line control to manipulate.
- * @param val Value to get for the line control.
+ * @param ctrl The line control to retrieve (see enum uart_line_ctrl).
+ * @param val Pointer to variable where to store the line control value.
  *
  * @retval 0 If successful.
  * @retval failed Otherwise.

@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic REGULATORS
-
-description: >
-    Binding for the Nordic REGULATORS (voltage regulators control module)
+description: Nordic REGULATORS (voltage regulators control module)
 
 compatible: "nordic,nrf-regulators"
 

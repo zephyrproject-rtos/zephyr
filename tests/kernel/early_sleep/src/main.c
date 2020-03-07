@@ -58,10 +58,10 @@ static int ticks_to_sleep(int ticks)
 	u32_t stop_time;
 
 	start_time = k_cycle_get_32();
-	k_sleep(__ticks_to_ms(ticks));
+	k_sleep(k_ticks_to_ms_floor64(ticks));
 	stop_time = k_cycle_get_32();
 
-	return (stop_time - start_time) / sys_clock_hw_cycles_per_tick();
+	return (stop_time - start_time) / k_ticks_to_cyc_floor32(1);
 }
 
 
@@ -103,8 +103,8 @@ static void test_early_sleep(void)
 	k_thread_priority_set(k_current_get(), 0);
 
 	TC_PRINT("msec per tick: %lld.%03lld, ticks to sleep: %d\n",
-			__ticks_to_ms(1000) / 1000U,
-			__ticks_to_ms(1000) % 1000,
+			k_ticks_to_ms_floor64(1000) / 1000U,
+			k_ticks_to_ms_floor64(1000) % 1000,
 			TEST_TICKS_TO_SLEEP);
 
 	/* Create a lower priority thread */
@@ -112,7 +112,7 @@ static void test_early_sleep(void)
 				   helper_tstack, THREAD_STACK,
 				   helper_thread, NULL, NULL, NULL,
 				   k_thread_priority_get(k_current_get()) + 1,
-				   K_INHERIT_PERMS, 0);
+				   K_INHERIT_PERMS, K_NO_WAIT);
 
 	TC_PRINT("k_sleep() ticks at POST_KERNEL level: %d\n",
 					actual_post_kernel_sleep_ticks);
@@ -137,6 +137,6 @@ static void test_early_sleep(void)
 void test_main(void)
 {
 	ztest_test_suite(test_earlysleep,
-			ztest_unit_test(test_early_sleep));
+			ztest_1cpu_unit_test(test_early_sleep));
 	ztest_run_test_suite(test_earlysleep);
 }

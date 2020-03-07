@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <soc.h>
-#include <kernel_structs.h>
+#include <kernel_arch_func.h>
 #include <device.h>
 #include <drivers/dma.h>
 

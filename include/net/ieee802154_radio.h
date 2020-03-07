@@ -154,6 +154,11 @@ struct ieee802154_radio_api {
 #endif /* CONFIG_NET_L2_OPENTHREAD */
 };
 
+/* Make sure that the network interface API is properly setup inside
+ * IEEE 802154 radio API struct (it is the first one).
+ */
+BUILD_ASSERT(offsetof(struct ieee802154_radio_api, iface_api) == 0);
+
 #define IEEE802154_AR_FLAG_SET (0x20)
 
 /**

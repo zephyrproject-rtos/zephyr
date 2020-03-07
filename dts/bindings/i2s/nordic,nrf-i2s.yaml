@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic I2S
-
-description: >
-    Binding for the Nordic I2S (Inter-IC sound interface)
+description: Nordic I2S (Inter-IC sound interface)
 
 compatible: "nordic,nrf-i2s"
 

@@ -38,7 +38,7 @@ the sample. The default upper threshold value is 27 |deg| Celsius
 (80.6 |deg| Fahrenheit).
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/amg88xx
+   :zephyr-app: samples/sensor/amg88xx
    :board: reel_board
    :goals: build flash
 

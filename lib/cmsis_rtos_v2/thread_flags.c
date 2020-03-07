@@ -89,7 +89,7 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 	struct cv2_thread *tid;
 	int retval, key;
 	u32_t sig;
-	u32_t time_delta_ms, timeout_ms = __ticks_to_ms(timeout);
+	u32_t time_delta_ms, timeout_ms = k_ticks_to_ms_floor64(timeout);
 	u64_t time_stamp_start, hwclk_cycles_delta, time_delta_ns;
 
 	if (k_is_in_isr()) {
@@ -155,7 +155,7 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 				(u64_t)k_cycle_get_32() - time_stamp_start;
 
 			time_delta_ns =
-				(u32_t)SYS_CLOCK_HW_CYCLES_TO_NS(hwclk_cycles_delta);
+				(u32_t)k_cyc_to_ns_floor64(hwclk_cycles_delta);
 
 			time_delta_ms = (u32_t)time_delta_ns / NSEC_PER_MSEC;
 

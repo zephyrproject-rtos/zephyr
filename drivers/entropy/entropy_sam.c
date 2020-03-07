@@ -18,6 +18,25 @@ struct trng_sam_dev_cfg {
 #define DEV_CFG(dev) \
 	((const struct trng_sam_dev_cfg *const)(dev)->config->config_info)
 
+static inline bool _ready(Trng * const trng)
+{
+#ifdef TRNG_ISR_DATRDY
+	return trng->TRNG_ISR & TRNG_ISR_DATRDY;
+#else
+	return trng->INTFLAG.bit.DATARDY;
+#endif
+}
+
+static inline uint32_t _data(Trng * const trng)
+{
+#ifdef REG_TRNG_DATA
+	(void) trng;
+	return TRNG->DATA.reg;
+#else
+	return trng->TRNG_ODATA;
+#endif
+}
+
 static int entropy_sam_wait_ready(Trng * const trng, u32_t flags)
 {
 	/* According to the reference manual, the generator provides
@@ -31,7 +50,7 @@ static int entropy_sam_wait_ready(Trng * const trng, u32_t flags)
 	 */
 	int timeout = 1000000;
 
-	while (!(trng->TRNG_ISR & TRNG_ISR_DATRDY)) {
+	while (!_ready(trng)) {
 		if (timeout-- == 0) {
 			return -ETIMEDOUT;
 		}
@@ -66,7 +85,7 @@ static int entropy_sam_get_entropy_internal(struct device *dev, u8_t *buffer,
 			return res;
 		}
 
-		value = trng->TRNG_ODATA;
+		value = _data(trng);
 		to_copy = MIN(length, sizeof(value));
 
 		memcpy(buffer, &value, to_copy);
@@ -99,13 +118,13 @@ static int entropy_sam_get_entropy_isr(struct device *dev, u8_t *buffer,
 			size_t to_copy;
 			u32_t value;
 
-			if (!(trng->TRNG_ISR & TRNG_ISR_DATRDY)) {
+			if (!_ready(trng)) {
 
 				/* Data not ready */
 				break;
 			}
 
-			value = trng->TRNG_ODATA;
+			value = _data(trng);
 			to_copy = MIN(length, sizeof(value));
 
 			memcpy(buffer, &value, to_copy);
@@ -135,12 +154,19 @@ static int entropy_sam_init(struct device *dev)
 {
 	Trng *const trng = DEV_CFG(dev)->regs;
 
+#ifdef MCLK
+	/* Enable the MCLK */
+	MCLK->APBCMASK.bit.TRNG_ = 1;
+
+	/* Enable the TRNG */
+	trng->CTRLA.bit.ENABLE = 1;
+#else
 	/* Enable the user interface clock */
 	soc_pmc_peripheral_enable(DT_ENTROPY_SAM_TRNG_PERIPHERAL_ID);
 
 	/* Enable the TRNG */
 	trng->TRNG_CR = TRNG_CR_KEY_PASSWD | TRNG_CR_ENABLE;
-
+#endif
 	return 0;
 }
 
@@ -150,7 +176,7 @@ static const struct entropy_driver_api entropy_sam_api = {
 };
 
 static const struct trng_sam_dev_cfg trng_sam_cfg = {
-	.regs = (Trng *)DT_ENTROPY_SAM_TRNG_BASE_ADDRESS,
+	.regs = (Trng *)DT_INST_0_ATMEL_SAM_TRNG_BASE_ADDRESS,
 };
 
 DEVICE_AND_API_INIT(entropy_sam, CONFIG_ENTROPY_NAME,

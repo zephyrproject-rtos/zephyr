@@ -21,6 +21,7 @@ struct mcux_lpi2c_config {
 	clock_control_subsys_t clock_subsys;
 	void (*irq_config_func)(struct device *dev);
 	u32_t bitrate;
+	u32_t bus_idle_timeout_ns;
 };
 
 struct mcux_lpi2c_data {
@@ -193,6 +194,7 @@ static int mcux_lpi2c_init(struct device *dev)
 	}
 
 	LPI2C_MasterGetDefaultConfig(&master_config);
+	master_config.busIdleTimeout_ns = config->bus_idle_timeout_ns;
 	LPI2C_MasterInit(base, &master_config, clock_freq);
 	LPI2C_MasterTransferCreateHandle(base, &data->handle,
 			mcux_lpi2c_master_transfer_callback, dev);
@@ -218,27 +220,32 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 static void mcux_lpi2c_config_func_0(struct device *dev);
 
 static const struct mcux_lpi2c_config mcux_lpi2c_config_0 = {
-	.base = (LPI2C_Type *)DT_I2C_MCUX_LPI2C_0_BASE_ADDRESS,
-	.clock_name = DT_I2C_MCUX_LPI2C_0_CLOCK_NAME,
+	.base = (LPI2C_Type *)DT_NXP_IMX_LPI2C_I2C_0_BASE_ADDRESS,
+	.clock_name = DT_NXP_IMX_LPI2C_I2C_0_CLOCK_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t) DT_I2C_MCUX_LPI2C_0_CLOCK_SUBSYS,
+		(clock_control_subsys_t) DT_NXP_IMX_LPI2C_I2C_0_CLOCK_NAME,
 	.irq_config_func = mcux_lpi2c_config_func_0,
-	.bitrate = DT_I2C_MCUX_LPI2C_0_BITRATE,
+	.bitrate = DT_NXP_IMX_LPI2C_I2C_0_CLOCK_FREQUENCY,
+#if DT_NXP_IMX_LPI2C_I2C_0_BUS_IDLE_TIMEOUT
+	.bus_idle_timeout_ns = DT_NXP_IMX_LPI2C_I2C_0_BUS_IDLE_TIMEOUT,
+#endif
 };
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_0;
 
-DEVICE_AND_API_INIT(mcux_lpi2c_0, CONFIG_I2C_0_NAME, &mcux_lpi2c_init,
+DEVICE_AND_API_INIT(mcux_lpi2c_0, DT_NXP_IMX_LPI2C_I2C_0_LABEL,
+		    &mcux_lpi2c_init,
 		    &mcux_lpi2c_data_0, &mcux_lpi2c_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_lpi2c_driver_api);
 
 static void mcux_lpi2c_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_I2C_MCUX_LPI2C_0_IRQ, DT_I2C_MCUX_LPI2C_0_IRQ_PRI,
+	IRQ_CONNECT(DT_NXP_IMX_LPI2C_I2C_0_IRQ_0,
+		    DT_NXP_IMX_LPI2C_I2C_0_IRQ_0_PRIORITY,
 		    mcux_lpi2c_isr, DEVICE_GET(mcux_lpi2c_0), 0);
 
-	irq_enable(DT_I2C_MCUX_LPI2C_0_IRQ);
+	irq_enable(DT_NXP_IMX_LPI2C_I2C_0_IRQ_0);
 }
 #endif /* CONFIG_I2C_0 */
 
@@ -246,27 +253,32 @@ static void mcux_lpi2c_config_func_0(struct device *dev)
 static void mcux_lpi2c_config_func_1(struct device *dev);
 
 static const struct mcux_lpi2c_config mcux_lpi2c_config_1 = {
-	.base = (LPI2C_Type *)DT_I2C_MCUX_LPI2C_1_BASE_ADDRESS,
-	.clock_name = DT_I2C_MCUX_LPI2C_1_CLOCK_NAME,
+	.base = (LPI2C_Type *)DT_NXP_IMX_LPI2C_I2C_1_BASE_ADDRESS,
+	.clock_name = DT_NXP_IMX_LPI2C_I2C_1_CLOCK_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t) DT_I2C_MCUX_LPI2C_1_CLOCK_SUBSYS,
+		(clock_control_subsys_t) DT_NXP_IMX_LPI2C_I2C_1_CLOCK_NAME,
 	.irq_config_func = mcux_lpi2c_config_func_1,
-	.bitrate = DT_I2C_MCUX_LPI2C_1_BITRATE,
+	.bitrate = DT_NXP_IMX_LPI2C_I2C_1_CLOCK_FREQUENCY,
+#if DT_NXP_IMX_LPI2C_I2C_1_BUS_IDLE_TIMEOUT
+	.bus_idle_timeout_ns = DT_NXP_IMX_LPI2C_I2C_1_BUS_IDLE_TIMEOUT,
+#endif
 };
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_1;
 
-DEVICE_AND_API_INIT(mcux_lpi2c_1, CONFIG_I2C_1_NAME, &mcux_lpi2c_init,
+DEVICE_AND_API_INIT(mcux_lpi2c_1, DT_NXP_IMX_LPI2C_I2C_1_LABEL,
+		    &mcux_lpi2c_init,
 		    &mcux_lpi2c_data_1, &mcux_lpi2c_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_lpi2c_driver_api);
 
 static void mcux_lpi2c_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(DT_I2C_MCUX_LPI2C_1_IRQ, DT_I2C_MCUX_LPI2C_1_IRQ_PRI,
+	IRQ_CONNECT(DT_NXP_IMX_LPI2C_I2C_1_IRQ_0,
+		    DT_NXP_IMX_LPI2C_I2C_1_IRQ_0_PRIORITY,
 		    mcux_lpi2c_isr, DEVICE_GET(mcux_lpi2c_1), 0);
 
-	irq_enable(DT_I2C_MCUX_LPI2C_1_IRQ);
+	irq_enable(DT_NXP_IMX_LPI2C_I2C_1_IRQ_0);
 }
 #endif /* CONFIG_I2C_1 */
 
@@ -274,27 +286,32 @@ static void mcux_lpi2c_config_func_1(struct device *dev)
 static void mcux_lpi2c_config_func_2(struct device *dev);
 
 static const struct mcux_lpi2c_config mcux_lpi2c_config_2 = {
-	.base = (LPI2C_Type *)DT_I2C_MCUX_LPI2C_2_BASE_ADDRESS,
-	.clock_name = DT_I2C_MCUX_LPI2C_2_CLOCK_NAME,
+	.base = (LPI2C_Type *)DT_NXP_IMX_LPI2C_I2C_2_BASE_ADDRESS,
+	.clock_name = DT_NXP_IMX_LPI2C_I2C_2_CLOCK_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t) DT_I2C_MCUX_LPI2C_2_CLOCK_SUBSYS,
+		(clock_control_subsys_t) DT_NXP_IMX_LPI2C_I2C_2_CLOCK_NAME,
 	.irq_config_func = mcux_lpi2c_config_func_2,
-	.bitrate = DT_I2C_MCUX_LPI2C_2_BITRATE,
+	.bitrate = DT_NXP_IMX_LPI2C_I2C_2_CLOCK_FREQUENCY,
+#if DT_NXP_IMX_LPI2C_I2C_2_BUS_IDLE_TIMEOUT
+	.bus_idle_timeout_ns = DT_NXP_IMX_LPI2C_I2C_2_BUS_IDLE_TIMEOUT,
+#endif
 };
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_2;
 
-DEVICE_AND_API_INIT(mcux_lpi2c_2, CONFIG_I2C_2_NAME, &mcux_lpi2c_init,
+DEVICE_AND_API_INIT(mcux_lpi2c_2, DT_NXP_IMX_LPI2C_I2C_2_LABEL,
+		    &mcux_lpi2c_init,
 		    &mcux_lpi2c_data_2, &mcux_lpi2c_config_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_lpi2c_driver_api);
 
 static void mcux_lpi2c_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(DT_I2C_MCUX_LPI2C_2_IRQ, DT_I2C_MCUX_LPI2C_2_IRQ_PRI,
+	IRQ_CONNECT(DT_NXP_IMX_LPI2C_I2C_2_IRQ_0,
+		    DT_NXP_IMX_LPI2C_I2C_2_IRQ_0_PRIORITY,
 		    mcux_lpi2c_isr, DEVICE_GET(mcux_lpi2c_2), 0);
 
-	irq_enable(DT_I2C_MCUX_LPI2C_2_IRQ);
+	irq_enable(DT_NXP_IMX_LPI2C_I2C_2_IRQ_0);
 }
 #endif /* CONFIG_I2C_2 */
 
@@ -302,27 +319,32 @@ static void mcux_lpi2c_config_func_2(struct device *dev)
 static void mcux_lpi2c_config_func_3(struct device *dev);
 
 static const struct mcux_lpi2c_config mcux_lpi2c_config_3 = {
-	.base = (LPI2C_Type *)DT_I2C_MCUX_LPI2C_3_BASE_ADDRESS,
-	.clock_name = DT_I2C_MCUX_LPI2C_3_CLOCK_NAME,
+	.base = (LPI2C_Type *)DT_NXP_IMX_LPI2C_I2C_3_BASE_ADDRESS,
+	.clock_name = DT_NXP_IMX_LPI2C_I2C_3_CLOCK_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t) DT_I2C_MCUX_LPI2C_3_CLOCK_SUBSYS,
+		(clock_control_subsys_t) DT_NXP_IMX_LPI2C_I2C_3_CLOCK_NAME,
 	.irq_config_func = mcux_lpi2c_config_func_3,
-	.bitrate = DT_I2C_MCUX_LPI2C_3_BITRATE,
+	.bitrate = DT_NXP_IMX_LPI2C_I2C_3_CLOCK_FREQUENCY,
+#if DT_NXP_IMX_LPI2C_I2C_3_BUS_IDLE_TIMEOUT
+	.bus_idle_timeout_ns = DT_NXP_IMX_LPI2C_I2C_3_BUS_IDLE_TIMEOUT,
+#endif
 };
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_3;
 
-DEVICE_AND_API_INIT(mcux_lpi2c_3, CONFIG_I2C_3_NAME, &mcux_lpi2c_init,
+DEVICE_AND_API_INIT(mcux_lpi2c_3, DT_NXP_IMX_LPI2C_I2C_3_LABEL,
+		    &mcux_lpi2c_init,
 		    &mcux_lpi2c_data_3, &mcux_lpi2c_config_3,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_lpi2c_driver_api);
 
 static void mcux_lpi2c_config_func_3(struct device *dev)
 {
-	IRQ_CONNECT(DT_I2C_MCUX_LPI2C_3_IRQ, DT_I2C_MCUX_LPI2C_3_IRQ_PRI,
+	IRQ_CONNECT(DT_NXP_IMX_LPI2C_I2C_3_IRQ_0,
+		    DT_NXP_IMX_LPI2C_I2C_3_IRQ_0_PRIORITY,
 		    mcux_lpi2c_isr, DEVICE_GET(mcux_lpi2c_3), 0);
 
-	irq_enable(DT_I2C_MCUX_LPI2C_3_IRQ);
+	irq_enable(DT_NXP_IMX_LPI2C_I2C_3_IRQ_0);
 }
 #endif /* CONFIG_I2C_3 */
 
@@ -330,26 +352,31 @@ static void mcux_lpi2c_config_func_3(struct device *dev)
 static void mcux_lpi2c_config_func_4(struct device *dev);
 
 static const struct mcux_lpi2c_config mcux_lpi2c_config_4 = {
-	.base = (LPI2C_Type *)DT_I2C_MCUX_LPI2C_4_BASE_ADDRESS,
-	.clock_name = DT_I2C_MCUX_LPI2C_4_CLOCK_NAME,
+	.base = (LPI2C_Type *)DT_NXP_IMX_LPI2C_I2C_4_BASE_ADDRESS,
+	.clock_name = DT_NXP_IMX_LPI2C_I2C_4_CLOCK_CONTROLLER,
 	.clock_subsys =
-		(clock_control_subsys_t) DT_I2C_MCUX_LPI2C_4_CLOCK_SUBSYS,
+		(clock_control_subsys_t) DT_NXP_IMX_LPI2C_I2C_4_CLOCK_NAME,
 	.irq_config_func = mcux_lpi2c_config_func_4,
-	.bitrate = DT_I2C_MCUX_LPI2C_4_BITRATE,
+	.bitrate = DT_NXP_IMX_LPI2C_I2C_4_CLOCK_FREQUENCY,
+#if DT_NXP_IMX_LPI2C_I2C_4_BUS_IDLE_TIMEOUT
+	.bus_idle_timeout_ns = DT_NXP_IMX_LPI2C_I2C_4_BUS_IDLE_TIMEOUT,
+#endif
 };
 
 static struct mcux_lpi2c_data mcux_lpi2c_data_4;
 
-DEVICE_AND_API_INIT(mcux_lpi2c_4, CONFIG_I2C_4_NAME, &mcux_lpi2c_init,
+DEVICE_AND_API_INIT(mcux_lpi2c_4, DT_NXP_IMX_LPI2C_I2C_4_LABEL,
+		    &mcux_lpi2c_init,
 		    &mcux_lpi2c_data_4, &mcux_lpi2c_config_4,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_lpi2c_driver_api);
 
 static void mcux_lpi2c_config_func_4(struct device *dev)
 {
-	IRQ_CONNECT(DT_I2C_MCUX_LPI2C_4_IRQ, DT_I2C_MCUX_LPI2C_4_IRQ_PRI,
+	IRQ_CONNECT(DT_NXP_IMX_LPI2C_I2C_4_IRQ_0,
+		    DT_NXP_IMX_LPI2C_I2C_4_IRQ_0_PRIORITY,
 		    mcux_lpi2c_isr, DEVICE_GET(mcux_lpi2c_4), 0);
 
-	irq_enable(DT_I2C_MCUX_LPI2C_4_IRQ);
+	irq_enable(DT_NXP_IMX_LPI2C_I2C_4_IRQ_0);
 }
 #endif /* CONFIG_I2C_4 */

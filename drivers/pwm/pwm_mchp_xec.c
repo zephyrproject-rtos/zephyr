@@ -7,9 +7,9 @@
  */
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(counter_mchp_xec, CONFIG_PWM_LOG_LEVEL);
+LOG_MODULE_REGISTER(pwm_mchp_xec, CONFIG_PWM_LOG_LEVEL);
 
-#include <pwm.h>
+#include <drivers/pwm.h>
 #include <soc.h>
 #include <errno.h>
 
@@ -59,7 +59,9 @@ struct xec_params {
 	u8_t div;
 };
 
-u32_t max_freq_high_on_div[16] = {
+#define NUM_DIV_ELEMS		16
+
+u32_t max_freq_high_on_div[NUM_DIV_ELEMS] = {
 	48000000,
 	24000000,
 	16000000,
@@ -78,7 +80,7 @@ u32_t max_freq_high_on_div[16] = {
 	3000000
 };
 
-u32_t max_freq_low_on_div[16] = {
+u32_t max_freq_low_on_div[NUM_DIV_ELEMS] = {
 	100000,
 	50000,
 	33333,
@@ -124,7 +126,7 @@ static u16_t xec_select_div(u32_t freq, u32_t max_freq[16])
 static void xec_compute_on_off(u32_t freq, u32_t dc, u32_t clk,
 			       u32_t *on, u32_t *off)
 {
-	u32_t on_off;
+	u64_t on_off;
 
 	on_off = (clk * 10) / freq;
 
@@ -136,7 +138,8 @@ static u32_t xec_compute_dc(u32_t on, u32_t off)
 {
 	int dc = (on + 1) + (off + 1);
 
-	dc = (((on + 1) * XEC_PWM_DC_PF) / dc);
+	/* Make calculation in u64_t since XEC_PWM_DC_PF is large */
+	dc = (((u64_t)(on + 1) * XEC_PWM_DC_PF) / dc);
 
 	return (u32_t)dc;
 }
@@ -199,21 +202,22 @@ static struct xec_params *xec_compare_params(u32_t target_freq,
 	u32_t freq_h = 0;
 	u32_t freq_l = 0;
 
-	if (hc_params->div < UINT8_MAX) {
+	if (hc_params->div < NUM_DIV_ELEMS) {
 		freq_h = xec_compute_frequency(
 				max_freq_high_on_div[hc_params->div],
 				hc_params->on,
 				hc_params->off);
 	}
 
-	if (lc_params->div < UINT8_MAX) {
+	if (lc_params->div < NUM_DIV_ELEMS) {
 		freq_l = xec_compute_frequency(
 				max_freq_low_on_div[lc_params->div],
 				lc_params->on,
 				lc_params->off);
 	}
 
-	if (abs(target_freq - freq_h) < abs(target_freq - freq_l)) {
+	if (abs((int)target_freq - (int)freq_h) <
+	    abs((int)target_freq - (int)freq_l)) {
 		params = hc_params;
 	} else {
 		params = lc_params;
@@ -301,7 +305,8 @@ done:
 }
 
 static int pwm_xec_pin_set(struct device *dev, u32_t pwm,
-			   u32_t period_cycles, u32_t pulse_cycles)
+			   u32_t period_cycles, u32_t pulse_cycles,
+			   pwm_flags_t flags)
 {
 	PWM_Type *pwm_regs = PWM_XEC_REG_BASE(dev);
 	u32_t target_freq;
@@ -313,6 +318,11 @@ static int pwm_xec_pin_set(struct device *dev, u32_t pwm,
 
 	if (pulse_cycles > period_cycles) {
 		return -EINVAL;
+	}
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
 	}
 
 	on = pulse_cycles;
@@ -339,7 +349,7 @@ static int pwm_xec_pin_set(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int pwm_xec_get_cyclet_per_sec(struct device *dev, u32_t pwm,
+static int pwm_xec_get_cycles_per_sec(struct device *dev, u32_t pwm,
 				      u64_t *cycles)
 {
 	ARG_UNUSED(dev);
@@ -367,7 +377,7 @@ static int pwm_xec_init(struct device *dev)
 
 static struct pwm_driver_api pwm_xec_api = {
 	.pin_set = pwm_xec_pin_set,
-	.get_cycles_per_sec = pwm_xec_get_cyclet_per_sec
+	.get_cycles_per_sec = pwm_xec_get_cycles_per_sec
 };
 
 #if defined(DT_INST_0_MICROCHIP_XEC_PWM)

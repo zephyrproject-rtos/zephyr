@@ -1,0 +1,8 @@
+# STM32G431RB Nucleo board configuration
+
+# Copyright (c) 2019 Richard Osterloh <richard.osterloh@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_G431RB
+	bool "Nucleo G431RB Development Board"
+	depends on SOC_STM32G431XX

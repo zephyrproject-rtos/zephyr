@@ -9,12 +9,14 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_CPU_H_
 #define ZEPHYR_INCLUDE_ARCH_CPU_H_
 
+#include <sys/arch_interface.h>
+
 #if defined(CONFIG_X86)
 #include <arch/x86/arch.h>
-#elif defined(CONFIG_X86_64)
-#include <arch/x86_64/arch.h>
+#elif defined(CONFIG_ARM64)
+#include <arch/arm/aarch64/arch.h>
 #elif defined(CONFIG_ARM)
-#include <arch/arm/arch.h>
+#include <arch/arm/aarch32/arch.h>
 #elif defined(CONFIG_ARC)
 #include <arch/arc/arch.h>
 #elif defined(CONFIG_NIOS2)

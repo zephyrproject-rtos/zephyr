@@ -1,10 +1,7 @@
-# Kconfig - BMA280 Three Axis Accelerometer configuration options
+# BMA280 Three Axis Accelerometer configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig BMA280
 	bool "BMA280 Three Axis Accelerometer Family"
@@ -14,50 +11,6 @@ menuconfig BMA280
 	  family.
 
 if BMA280
-
-choice
-	prompt "Chip type"
-	default BMA280_CHIP_BMA280
-	help
-	  Choose desired chip type from the BMA280 family.
-
-config BMA280_CHIP_BMA280
-	bool "BMA280"
-	help
-	  Choose this option to enable the BMA280 chip.
-
-config BMA280_CHIP_BMC150_ACCEL
-	bool "BMC150_ACCEL"
-	help
-	  Choose this option to enable the accelerometer of the BMC150 chip.
-
-endchoice
-
-config BMA280_NAME
-	string "Driver name"
-	default "BMA280" if BMA280_CHIP_BMA280
-	default "BMC150_ACCEL" if BMA280_CHIP_BMC150_ACCEL
-	help
-	  Device name with which the sensor is identified.
-
-config BMA280_I2C_ADDR
-	hex "BMA280 I2C address"
-	default 0x18 if BMA280_CHIP_BMA280
-	default 0x10 if BMA280_CHIP_BMC150_ACCEL
-	help
-	  I2C address of the BMA280 sensor.
-
-	  0x10: Use if the SDO pin is pulled to GND.
-	  0x10: Use if the SDO pin is pulled to VDDIO.
-	  0x18: Use if the SDO pin is pulled to GND.
-	  0x19: Use if the SDO pin is pulled to VDDIO.
-
-config BMA280_I2C_MASTER_DEV_NAME
-	string "I2C master device name"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which chip is
-	  connected.
 
 choice
 	prompt "Trigger mode"
@@ -82,22 +35,6 @@ endchoice
 
 config BMA280_TRIGGER
 	bool
-
-config BMA280_GPIO_DEV_NAME
-	string "GPIO device"
-	default "GPIO_0"
-	depends on BMA280_TRIGGER
-	help
-	  The device name of the GPIO device to which the chip's interrupt pins
-	  are connected.
-
-config BMA280_GPIO_PIN_NUM
-	int "Interrupt GPIO pin number"
-	default 0
-	depends on BMA280_TRIGGER
-	help
-	  The number of the GPIO on which the interrupt signal from the chip
-	  will be received.
 
 config BMA280_THREAD_PRIORITY
 	int "Thread priority"

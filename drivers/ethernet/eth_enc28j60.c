@@ -647,6 +647,7 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 			     sizeof(context->mac_address),
 			     NET_LINK_ETHERNET);
 	context->iface = iface;
+	ethernet_init(iface);
 }
 
 static const struct ethernet_api api_funcs = {
@@ -693,10 +694,8 @@ static int eth_enc28j60_init(struct device *dev)
 	}
 
 	if (gpio_pin_configure(context->gpio, config->gpio_pin,
-			       (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE
-			       | GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE))) {
-		LOG_ERR("Unable to configure GPIO pin %u",
-			    config->gpio_pin);
+			       GPIO_INPUT | config->gpio_flags)) {
+		LOG_ERR("Unable to configure GPIO pin %u", config->gpio_pin);
 		return -EINVAL;
 	}
 
@@ -707,9 +706,9 @@ static int eth_enc28j60_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (gpio_pin_enable_callback(context->gpio, config->gpio_pin)) {
-		return -EINVAL;
-	}
+	gpio_pin_interrupt_configure(context->gpio,
+				     config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	if (eth_enc28j60_soft_reset(dev)) {
 		LOG_ERR("Soft-reset failed");
@@ -762,6 +761,7 @@ static struct eth_enc28j60_runtime eth_enc28j60_0_runtime = {
 static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.gpio_port = DT_INST_0_MICROCHIP_ENC28J60_INT_GPIOS_CONTROLLER,
 	.gpio_pin = DT_INST_0_MICROCHIP_ENC28J60_INT_GPIOS_PIN,
+	.gpio_flags = DT_INST_0_MICROCHIP_ENC28J60_INT_GPIOS_FLAGS,
 	.spi_port = DT_INST_0_MICROCHIP_ENC28J60_BUS_NAME,
 	.spi_freq  = DT_INST_0_MICROCHIP_ENC28J60_SPI_MAX_FREQUENCY,
 	.spi_slave = DT_INST_0_MICROCHIP_ENC28J60_BASE_ADDRESS,

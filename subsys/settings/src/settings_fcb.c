@@ -6,8 +6,10 @@
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <fs/fcb.h>
 #include <string.h>
+#include <assert.h>
 
 #include "settings/settings.h"
 #include "settings/settings_fcb.h"
@@ -18,10 +20,8 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 #define SETTINGS_FCB_VERS		1
 
-struct settings_fcb_load_cb_arg {
-	line_load_cb cb;
-	void *cb_arg;
-};
+int settings_backend_init(void);
+void settings_mount_fcb_backend(struct settings_fcb *cf);
 
 static int settings_fcb_load(struct settings_store *cs,
 			     const struct settings_load_arg *arg);
@@ -79,41 +79,88 @@ int settings_fcb_dst(struct settings_fcb *cf)
 	return 0;
 }
 
-static int settings_fcb_load_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
+/**
+ * @brief Check if there is any duplicate of the current setting
+ *
+ * This function checks if there is any duplicated data further in the buffer.
+ *
+ * @param cf        FCB handler
+ * @param entry_ctx Current entry context
+ * @param name      The name of the current entry
+ *
+ * @retval false No duplicates found
+ * @retval true  Duplicate found
+ */
+static bool settings_fcb_check_duplicate(struct settings_fcb *cf,
+					const struct fcb_entry_ctx *entry_ctx,
+					const char * const name)
 {
-	struct settings_fcb_load_cb_arg *argp;
-	char buf[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
-	int rc;
+	struct fcb_entry_ctx entry2_ctx = *entry_ctx;
 
-	argp = (struct settings_fcb_load_cb_arg *)arg;
+	while (fcb_getnext(&cf->cf_fcb, &entry2_ctx.loc) == 0) {
+		char name2[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+		size_t name2_len;
 
-	size_t len_read;
-
-	rc = settings_line_name_read(buf, sizeof(buf), &len_read,
-				     (void *)&entry_ctx->loc);
-	if (rc) {
-		return 0;
+		if (settings_line_name_read(name2, sizeof(name2), &name2_len,
+					    &entry2_ctx)) {
+			LOG_ERR("failed to load line");
+			continue;
+		}
+		name2[name2_len] = '\0';
+		if (!strcmp(name, name2)) {
+			return true;
+		}
 	}
-	buf[len_read] = '\0';
-
-	/*name, val-read_cb-ctx, val-off*/
-	/* take into account '=' separator after the name */
-	argp->cb(buf, (void *)&entry_ctx->loc, len_read + 1, argp->cb_arg);
-	return 0;
+	return false;
 }
 
-static int settings_fcb_load_priv(struct settings_store *cs, line_load_cb cb,
-				  void *cb_arg)
+static int read_entry_len(const struct fcb_entry_ctx *entry_ctx, off_t off)
+{
+	if (off >= entry_ctx->loc.fe_data_len) {
+		return 0;
+	}
+	return entry_ctx->loc.fe_data_len - off;
+}
+
+static int settings_fcb_load_priv(struct settings_store *cs,
+				  line_load_cb cb,
+				  void *cb_arg,
+				  bool filter_duplicates)
 {
 	struct settings_fcb *cf = (struct settings_fcb *)cs;
-	struct settings_fcb_load_cb_arg arg;
+	struct fcb_entry_ctx entry_ctx = {
+		{.fe_sector = NULL, .fe_elem_off = 0},
+		.fap = cf->cf_fcb.fap
+	};
 	int rc;
 
-	arg.cb = cb;
-	arg.cb_arg = cb_arg;
-	rc = fcb_walk(&cf->cf_fcb, 0, settings_fcb_load_cb, &arg);
-	if (rc) {
-		return -EINVAL;
+	while ((rc = fcb_getnext(&cf->cf_fcb, &entry_ctx.loc)) == 0) {
+		char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+		size_t name_len;
+		int rc;
+		bool pass_entry = true;
+
+		rc = settings_line_name_read(name, sizeof(name), &name_len,
+					     (void *)&entry_ctx);
+		if (rc) {
+			LOG_ERR("Failed to load line name: %d", rc);
+			continue;
+		}
+		name[name_len] = '\0';
+
+		if (filter_duplicates &&
+		    (!read_entry_len(&entry_ctx, name_len+1) ||
+		     settings_fcb_check_duplicate(cf, &entry_ctx, name))) {
+			pass_entry = false;
+		}
+		/*name, val-read_cb-ctx, val-off*/
+		/* take into account '=' separator after the name */
+		if (pass_entry) {
+			cb(name, &entry_ctx, name_len + 1, cb_arg);
+		}
+	}
+	if (rc == -ENOTSUP) {
+		rc = 0;
 	}
 	return 0;
 }
@@ -121,9 +168,12 @@ static int settings_fcb_load_priv(struct settings_store *cs, line_load_cb cb,
 static int settings_fcb_load(struct settings_store *cs,
 			     const struct settings_load_arg *arg)
 {
-	return settings_fcb_load_priv(cs, settings_line_load_cb, (void *)arg);
+	return settings_fcb_load_priv(
+		cs,
+		settings_line_load_cb,
+		(void *)arg,
+		true);
 }
-
 
 static int read_handler(void *ctx, off_t off, char *buf, size_t *len)
 {
@@ -307,7 +357,7 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 	cdca.val = (char *)value;
 	cdca.is_dup = 0;
 	cdca.val_len = val_len;
-	settings_fcb_load_priv(cs, settings_line_dup_check_cb, &cdca);
+	settings_fcb_load_priv(cs, settings_line_dup_check_cb, &cdca, false);
 	if (cdca.is_dup == 1) {
 		return 0;
 	}
@@ -321,4 +371,59 @@ void settings_mount_fcb_backend(struct settings_fcb *cf)
 	rbs = cf->cf_fcb.f_align;
 
 	settings_line_io_init(read_handler, write_handler, get_len_cb, rbs);
+}
+
+int settings_backend_init(void)
+{
+	static struct flash_sector
+		settings_fcb_area[CONFIG_SETTINGS_FCB_NUM_AREAS + 1];
+	static struct settings_fcb config_init_settings_fcb = {
+		.cf_fcb.f_magic = CONFIG_SETTINGS_FCB_MAGIC,
+		.cf_fcb.f_sectors = settings_fcb_area,
+	};
+	u32_t cnt = sizeof(settings_fcb_area) /
+		    sizeof(settings_fcb_area[0]);
+	int rc;
+	const struct flash_area *fap;
+
+	rc = flash_area_get_sectors(DT_FLASH_AREA_STORAGE_ID, &cnt,
+				    settings_fcb_area);
+	if (rc == -ENODEV) {
+		return rc;
+	} else if (rc != 0 && rc != -ENOMEM) {
+		k_panic();
+	}
+
+	config_init_settings_fcb.cf_fcb.f_sector_cnt = cnt;
+
+	rc = settings_fcb_src(&config_init_settings_fcb);
+
+	if (rc != 0) {
+		rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
+
+		if (rc == 0) {
+			rc = flash_area_erase(fap, 0, fap->fa_size);
+			flash_area_close(fap);
+		}
+
+		if (rc != 0) {
+			k_panic();
+		} else {
+			rc = settings_fcb_src(&config_init_settings_fcb);
+		}
+	}
+
+	if (rc != 0) {
+		k_panic();
+	}
+
+	rc = settings_fcb_dst(&config_init_settings_fcb);
+
+	if (rc != 0) {
+		k_panic();
+	}
+
+	settings_mount_fcb_backend(&config_init_settings_fcb);
+
+	return rc;
 }

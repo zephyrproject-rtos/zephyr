@@ -1,15 +1,9 @@
-# Kconfig.defconfig.nrf51822_QFAC - Nordic Semiconductor nRF51822 MCU
-#
+# Nordic Semiconductor nRF51822 MCU
+
 # Copyright (c) 2016 Linaro Limited
 # Copyright (c) 2016 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
-if SOC_NRF51822_QFAC
 
 config SOC
-	string
 	default "nRF51822_QFAC"
-
-endif # SOC_NRF51822_QFAC
+	depends on SOC_NRF51822_QFAC

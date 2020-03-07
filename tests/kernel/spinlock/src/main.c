@@ -9,9 +9,12 @@
 #include <kernel.h>
 #include <spinlock.h>
 
+BUILD_ASSERT(CONFIG_MP_NUM_CPUS > 1);
+
 #define CPU1_STACK_SIZE 1024
 
 K_THREAD_STACK_DEFINE(cpu1_stack, CPU1_STACK_SIZE);
+struct k_thread cpu1_thread;
 
 static struct k_spinlock bounce_lock;
 
@@ -91,10 +94,11 @@ void bounce_once(int id)
 	k_spin_unlock(&bounce_lock, key);
 }
 
-void cpu1_fn(int key, void *arg)
+void cpu1_fn(void *p1, void *p2, void *p3)
 {
-	ARG_UNUSED(key);
-	ARG_UNUSED(arg);
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	while (1) {
 		bounce_once(4321);
@@ -106,13 +110,15 @@ void cpu1_fn(int key, void *arg)
  *
  * @ingroup kernel_spinlock_tests
  *
- * @see z_arch_start_cpu()
+ * @see arch_start_cpu()
  */
 void test_spinlock_bounce(void)
 {
 	int i;
 
-	z_arch_start_cpu(1, cpu1_stack, CPU1_STACK_SIZE, cpu1_fn, 0);
+	k_thread_create(&cpu1_thread, cpu1_stack, CPU1_STACK_SIZE,
+			cpu1_fn, NULL, NULL, NULL,
+			0, 0, K_NO_WAIT);
 
 	k_busy_wait(10);
 

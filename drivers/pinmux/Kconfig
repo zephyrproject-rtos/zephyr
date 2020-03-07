@@ -1,10 +1,7 @@
-# Kconfig - Pinmux configuration options
+# Pinmux configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # PinMux options
@@ -44,8 +41,6 @@ source "drivers/pinmux/Kconfig.beetle"
 source "drivers/pinmux/Kconfig.sifive"
 
 source "drivers/pinmux/Kconfig.cc13xx_cc26xx"
-
-source "drivers/pinmux/Kconfig.cc2650"
 
 source "drivers/pinmux/Kconfig.esp32"
 

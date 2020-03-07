@@ -6,7 +6,14 @@
 
 #include <init.h>
 #include <drivers/pinmux.h>
+#include <drivers/gpio.h>
 #include <fsl_port.h>
+
+#ifdef CONFIG_BT_CTLR_DEBUG_PINS
+struct device *vega_debug_portb;
+struct device *vega_debug_portc;
+struct device *vega_debug_portd;
+#endif
 
 static int rv32m1_vega_pinmux_init(struct device *dev)
 {
@@ -61,6 +68,67 @@ static int rv32m1_vega_pinmux_init(struct device *dev)
 	pinmux_pin_set(porte, 1, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porte, 22, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porte, 27, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+#ifdef CONFIG_SPI_0
+	/* LPSPI0 SCK, SOUT, PCS2, SIN */
+	pinmux_pin_set(portb,  4, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portb,  5, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portb,  6, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portb,  7, PORT_PCR_MUX(kPORT_MuxAlt2));
+#endif
+
+#if CONFIG_SPI_1
+	/* LPSPI1 SCK, SIN, SOUT, CS */
+	pinmux_pin_set(portb, 20, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portb, 21, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portb, 24, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portb, 22, PORT_PCR_MUX(kPORT_MuxAlt2));
+#endif
+
+#ifdef CONFIG_PWM_2
+	/* RGB LEDs as PWM */
+	pinmux_pin_set(porta, 22, PORT_PCR_MUX(kPORT_MuxAlt6));
+	pinmux_pin_set(porta, 23, PORT_PCR_MUX(kPORT_MuxAlt6));
+	pinmux_pin_set(porta, 24, PORT_PCR_MUX(kPORT_MuxAlt6));
+#else
+	/* RGB LEDs as GPIO */
+	pinmux_pin_set(porta, 22, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(porta, 23, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(porta, 24, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
+
+#ifdef CONFIG_BT_CTLR_DEBUG_PINS
+
+	pinmux_pin_set(portb, 29, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+	pinmux_pin_set(portc, 28, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc, 29, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portc, 30, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+	pinmux_pin_set(portd, 0, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portd, 1, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portd, 2, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portd, 4, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portd, 5, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
+	struct device *gpio_dev = device_get_binding(DT_ALIAS_GPIO_B_LABEL);
+
+	gpio_pin_configure(gpio_dev, 29, GPIO_OUTPUT);
+
+	gpio_dev = device_get_binding(DT_ALIAS_GPIO_C_LABEL);
+	gpio_pin_configure(gpio_dev, 28, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 29, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 30, GPIO_OUTPUT);
+
+	gpio_dev = device_get_binding(DT_ALIAS_GPIO_D_LABEL);
+	gpio_pin_configure(gpio_dev, 0, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 1, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 2, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 3, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 4, GPIO_OUTPUT);
+	gpio_pin_configure(gpio_dev, 5, GPIO_OUTPUT);
+#endif
 
 	return 0;
 }

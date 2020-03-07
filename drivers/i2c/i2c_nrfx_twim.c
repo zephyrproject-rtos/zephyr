@@ -218,13 +218,13 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 #define I2C_NRFX_TWIM_DEVICE(idx)					       \
 	BUILD_ASSERT_MSG(						       \
 		I2C_NRFX_TWIM_FREQUENCY(				       \
-			DT_NORDIC_NRF_I2C_I2C_##idx##_CLOCK_FREQUENCY)	       \
+			DT_NORDIC_NRF_TWIM_I2C_##idx##_CLOCK_FREQUENCY)	       \
 		!= I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
 		"Wrong I2C " #idx " frequency setting in dts");		       \
 	static int twim_##idx##_init(struct device *dev)		       \
 	{								       \
-		IRQ_CONNECT(DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ_0,	       \
-			    DT_NORDIC_NRF_I2C_I2C_##idx##_IRQ_0_PRIORITY,      \
+		IRQ_CONNECT(DT_NORDIC_NRF_TWIM_I2C_##idx##_IRQ_0,	       \
+			    DT_NORDIC_NRF_TWIM_I2C_##idx##_IRQ_0_PRIORITY,     \
 			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);       \
 		return init_twim(dev);					       \
 	}								       \
@@ -237,14 +237,14 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {      \
 		.twim = NRFX_TWIM_INSTANCE(idx),			       \
 		.config = {						       \
-			.scl       = DT_NORDIC_NRF_I2C_I2C_##idx##_SCL_PIN,    \
-			.sda       = DT_NORDIC_NRF_I2C_I2C_##idx##_SDA_PIN,    \
+			.scl       = DT_NORDIC_NRF_TWIM_I2C_##idx##_SCL_PIN,   \
+			.sda       = DT_NORDIC_NRF_TWIM_I2C_##idx##_SDA_PIN,   \
 			.frequency = I2C_NRFX_TWIM_FREQUENCY(		       \
-				DT_NORDIC_NRF_I2C_I2C_##idx##_CLOCK_FREQUENCY) \
+				DT_NORDIC_NRF_TWIM_I2C_##idx##_CLOCK_FREQUENCY)\
 		}							       \
 	};								       \
 	DEVICE_DEFINE(twim_##idx,					       \
-		      DT_NORDIC_NRF_I2C_I2C_##idx##_LABEL,		       \
+		      DT_NORDIC_NRF_TWIM_I2C_##idx##_LABEL,		       \
 		      twim_##idx##_init,				       \
 		      twim_nrfx_pm_control,				       \
 		      &twim_##idx##_data,				       \

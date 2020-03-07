@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: ARM Serial Configuration Control
-
-description: >
-    This binding gives a base representation of the ARM SCC
+description: ARM Serial Configuration Control (SCC)
 
 compatible: "arm,scc"
 

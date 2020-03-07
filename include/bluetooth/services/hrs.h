@@ -25,7 +25,7 @@ extern "C" {
  *
  * This will send a GATT notification to all current subscribers.
  *
- *  @param heartrate The heartrate measuremennt in beats per minute.
+ *  @param heartrate The heartrate measurement in beats per minute.
  *
  *  @return Zero in case of success and error code in case of error.
  */

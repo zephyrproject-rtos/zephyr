@@ -1,10 +1,7 @@
 # Copyright (c) 2018 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: i.MX I2C Controller
-
-description: >
-    This is a representation of the i.MX I2C nodes
+description: i.MX I2C node
 
 compatible: "fsl,imx7d-i2c"
 

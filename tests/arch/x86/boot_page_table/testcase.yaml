@@ -1,0 +1,4 @@
+tests:
+  kernel.memory_protection.x86.bootpage.validation:
+    platform_whitelist: qemu_x86
+    tags: mmu

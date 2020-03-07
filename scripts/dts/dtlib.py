@@ -8,7 +8,7 @@
 # pylint: disable=undefined-variable
 
 """
-A library for extracting information from .dts (Device Tree) files. See the
+A library for extracting information from .dts (devicetree) files. See the
 documentation for the DT and Node classes for more information.
 
 The top-level entry point of the library is the DT class. DT.__init__() takes a
@@ -23,14 +23,17 @@ import re
 import sys
 import textwrap
 
-# NOTE: testdtlib.py is the test suite for this library. It can be run directly.
+# NOTE: testdtlib.py is the test suite for this library. It can be run directly
+# as a script:
+#
+#   ./testdtlib.py
 
 
 class DT:
     """
-    Represents a device tree parsed from a .dts file (or from many files, if
-    the .dts file /include/s other files). Creating many instances of this
-    class is fine. The library has no global state.
+    Represents a devicetree parsed from a .dts file (or from many files, if the
+    .dts file /include/s other files). Creating many instances of this class is
+    fine. The library has no global state.
 
     These attributes are available on DT instances:
 
@@ -160,7 +163,7 @@ class DT:
 
     def node_iter(self):
         """
-        Returns a generator for iterating over all nodes in the device tree.
+        Returns a generator for iterating over all nodes in the devicetree.
 
         For example, this will print the name of each node that has a property
         called 'foo':
@@ -173,8 +176,8 @@ class DT:
 
     def __str__(self):
         """
-        Returns a DTS representation of the device tree. Called automatically
-        if the DT instance is print()ed.
+        Returns a DTS representation of the devicetree. Called automatically if
+        the DT instance is print()ed.
         """
         s = "/dts-v1/;\n\n"
 
@@ -1165,7 +1168,7 @@ class DT:
 
 class Node:
     r"""
-    Represents a node in the device tree ('node-name { ... };').
+    Represents a node in the devicetree ('node-name { ... };').
 
     These attributes are available on Node instances:
 
@@ -1180,9 +1183,9 @@ class Node:
       integer.
 
     props:
-      A dictionary that maps the properties defined on the node to their
-      values. 'props' is indexed by property name (a string), and values are
-      represented as 'bytes' arrays.
+      A collections.OrderedDict that maps the properties defined on the node to
+      their values. 'props' is indexed by property name (a string), and values
+      are represented as 'bytes' arrays.
 
       To convert property values to Python numbers or strings, use
       dtlib.to_num(), dtlib.to_nums(), or dtlib.to_string().
@@ -1196,7 +1199,8 @@ class Node:
       stored in big-endian format.
 
     nodes:
-      A dictionary containing the subnodes of the node, indexed by name.
+      A collections.OrderedDict containing the subnodes of the node, indexed by
+      name.
 
     labels:
       A list with all labels pointing to the node, in the same order as the
@@ -1227,8 +1231,8 @@ class Node:
         self.parent = parent
         self.dt = dt
 
-        self.props = {}
-        self.nodes = {}
+        self.props = collections.OrderedDict()
+        self.nodes = collections.OrderedDict()
         self.labels = []
         self._omit_if_no_ref = False
         self._is_referenced = False
@@ -1721,7 +1725,7 @@ class Property:
 def to_num(data, length=None, signed=False):
     """
     Converts the 'bytes' array 'data' to a number. The value is expected to be
-    in big-endian format, which is standard in Device Tree.
+    in big-endian format, which is standard in devicetree.
 
     length (default: None):
       The expected length of the value in bytes, as a simple type check. If
@@ -1743,7 +1747,7 @@ def to_num(data, length=None, signed=False):
 def to_nums(data, length=4, signed=False):
     """
     Like Property.to_nums(), but takes an arbitrary 'bytes' array. The values
-    are assumed to be in big-endian format, which is standard in Device Tree.
+    are assumed to be in big-endian format, which is standard in devicetree.
     """
     _check_is_bytes(data)
     _check_length_positive(length)
@@ -1844,7 +1848,7 @@ _escape_table = str.maketrans({
 
 
 class DTError(Exception):
-    "Exception raised for Device Tree-related errors"
+    "Exception raised for devicetree-related errors"
 
 
 _Token = collections.namedtuple("Token", "id val")

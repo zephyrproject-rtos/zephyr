@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-title: MICROCHIP ESPI
-
-description: >
-    This binding gives a base representation of ESPI controller for Microchip
+description: Microchip ESPI controller
 
 compatible: "microchip,xec-espi"
 

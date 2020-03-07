@@ -1,0 +1,11 @@
+# ODROID-GO Game Kit configuration
+
+# Copyright (c) 2019 Yannis Damigos
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD
+	default "odroid-go"
+	depends on BOARD_ODROID_GO
+
+config ENTROPY_ESP32_RNG
+	default y if ENTROPY_GENERATOR

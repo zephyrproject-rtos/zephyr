@@ -262,6 +262,16 @@ bool net_route_get_info(struct net_if *iface,
  */
 int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop);
 
+/**
+ * @brief Send the network packet to network via the given interface.
+ *
+ * @param pkt Network packet to send.
+ * @param iface The network interface the packet should be sent on.
+ *
+ * @return 0 if there was no error, <0 if the packet could not be sent.
+ */
+int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface);
+
 #if defined(CONFIG_NET_ROUTE) && defined(CONFIG_NET_NATIVE)
 void net_route_init(void);
 #else

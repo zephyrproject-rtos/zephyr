@@ -1,13 +1,11 @@
-# Kconfig.soc - ST Microelectronics STM32H7 MCU line
-#
+# ST Microelectronics STM32H7 MCU line
+
 # Copyright (c) 2019 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
-prompt "STM32H7x MCU Selection"
-depends on SOC_SERIES_STM32H7X
+	prompt "STM32H7x MCU Selection"
+	depends on SOC_SERIES_STM32H7X
 
 config SOC_STM32H747XX
 	bool "STM32H747XX"

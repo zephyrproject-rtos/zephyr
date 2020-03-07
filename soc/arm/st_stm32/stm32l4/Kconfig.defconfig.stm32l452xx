@@ -1,18 +1,14 @@
-# Kconfig - ST Microelectronics STM32L452XX MCU
-#
+# ST Microelectronics STM32L452XX MCU
+
 # Copyright (c) 2018 Georgij Cernysiov
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_STM32L452XX
 
 config SOC
-	string
 	default "stm32l452xx"
 
 config NUM_IRQS
-	int
 	default 85
 
 if GPIO_STM32

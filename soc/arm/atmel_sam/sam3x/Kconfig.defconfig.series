@@ -1,19 +1,16 @@
-# Kconfig - Atmel SAM3X MCU series configuration options
-#
+# Atmel SAM3X MCU series configuration options
+
 # Copyright (c) 2017 Justin Watson
 # Copyright (c) 2016 Intel Corporation.
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_SAM3X
 
 config SOC_SERIES
-	string
 	default "sam3x"
 
 config SOC_PART_NUMBER
-	string
 	default "sam3x4c" if SOC_PART_NUMBER_SAM3X4C
 	default "sam3x4e" if SOC_PART_NUMBER_SAM3X4E
 	default "sam3x8c" if SOC_PART_NUMBER_SAM3X8C
@@ -25,11 +22,9 @@ config SOC_PART_NUMBER
 # generating interrupts.
 #
 config NUM_IRQS
-	int
 	default 45
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 84000000
 
 endif # SOC_SERIES_SAM3X

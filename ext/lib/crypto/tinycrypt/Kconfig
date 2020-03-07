@@ -1,26 +1,22 @@
-# Kconfig - Cryptography primitive options for TinyCrypt version 2.0
+# Cryptography primitive options for TinyCrypt version 2.0
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config TINYCRYPT
 	bool "TinyCrypt Support"
 	help
 	  This option enables the TinyCrypt cryptography library.
 
+if TINYCRYPT
 config TINYCRYPT_CTR_PRNG
 	bool "PRNG in counter mode"
-	depends on TINYCRYPT
 	help
 	  This option enables support for the pseudo-random number
 	  generator in counter mode.
 
 config TINYCRYPT_SHA256
 	bool "SHA-256 Hash function support"
-	depends on TINYCRYPT
 	help
 	  This option enables support for SHA-256
 	  hash function primitive.
@@ -41,8 +37,6 @@ config TINYCRYPT_SHA256_HMAC_PRNG
 
 config TINYCRYPT_ECC_DH
 	bool "ECC_DH anonymous key agreement protocol"
-	depends on TINYCRYPT
-	select ENTROPY_GENERATOR
 	help
 	  This option enables support for the Elliptic curve
 	  Diffie-Hellman anonymous key agreement protocol.
@@ -52,8 +46,6 @@ config TINYCRYPT_ECC_DH
 
 config TINYCRYPT_ECC_DSA
 	bool "ECC_DSA digital signature algorithm"
-	depends on TINYCRYPT
-	select ENTROPY_GENERATOR
 	help
 	  This option enables support for the Elliptic Curve Digital
 	  Signature Algorithm (ECDSA).
@@ -63,7 +55,6 @@ config TINYCRYPT_ECC_DSA
 
 config TINYCRYPT_AES
 	bool "AES-128 decrypt/encrypt"
-	depends on TINYCRYPT
 	help
 	  This option enables support for AES-128 decrypt and encrypt.
 
@@ -90,3 +81,4 @@ config TINYCRYPT_AES_CMAC
 	depends on TINYCRYPT_AES
 	help
 	  This option enables support for AES-128 CMAC mode.
+endif

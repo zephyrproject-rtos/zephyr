@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-title: NXP Kinetis ADC12
-
-description: >
-    This binding gives a base representation of the NXP Kinetis ADC12
+description: NXP Kinetis ADC12
 
 compatible: "nxp,kinetis-adc12"
 
@@ -40,5 +37,5 @@ properties:
     "#io-channel-cells":
       const: 1
 
-"#cells":
+io-channel-cells:
     - input

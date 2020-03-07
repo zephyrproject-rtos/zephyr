@@ -258,7 +258,7 @@
 	 * The pc and status32 values will still be on the stack. We cannot
 	 * pop them yet because the callers of _pop_irq_stack_frame must reload
 	 * status32 differently depending on the execution context they are
-	 * running in (z_arch_switch(), firq or exception).
+	 * running in (arch_switch(), firq or exception).
 	 */
 	add_s sp, sp, ___isf_t_SIZEOF
 
@@ -363,6 +363,18 @@
 	mov \irq_sp, _kernel
 	ld \irq_sp, [\irq_sp, _kernel_offset_to_irq_stack]
 #endif
+.endm
+
+/* macro to push aux reg through reg */
+.macro PUSHAX reg aux
+	lr \reg, [\aux]
+	st.a \reg, [sp, -4]
+.endm
+
+/* macro to pop aux reg through reg */
+.macro POPAX reg aux
+	ld.ab \reg, [sp, 4]
+	sr \reg, [\aux]
 .endm
 
 #endif /* _ASMLANGUAGE */

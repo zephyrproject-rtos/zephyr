@@ -9,8 +9,7 @@
 #include <sys/__assert.h>
 #include <logging/log.h>
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(FXAS21002);
+LOG_MODULE_REGISTER(FXAS21002, CONFIG_SENSOR_LOG_LEVEL);
 
 /* Sample period in microseconds, indexed by output data rate encoding (DR) */
 static const u32_t sample_period[] = {
@@ -294,9 +293,11 @@ static const struct fxas21002_config fxas21002_config = {
 #ifdef CONFIG_FXAS21002_DRDY_INT1
 	.gpio_name = DT_INST_0_NXP_FXAS21002_INT1_GPIOS_CONTROLLER,
 	.gpio_pin = DT_INST_0_NXP_FXAS21002_INT1_GPIOS_PIN,
+	.gpio_flags = DT_INST_0_NXP_FXAS21002_INT1_GPIOS_FLAGS,
 #else
 	.gpio_name = DT_INST_0_NXP_FXAS21002_INT2_GPIOS_CONTROLLER,
 	.gpio_pin = DT_INST_0_NXP_FXAS21002_INT2_GPIOS_PIN,
+	.gpio_flags = DT_INST_0_NXP_FXAS21002_INT2_GPIOS_FLAGS,
 #endif
 #endif
 };

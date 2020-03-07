@@ -1,10 +1,7 @@
 # Copyright (c) 2018, I-SENSE group of ICCS
 # SPDX-License-Identifier: Apache-2.0
 
-title: STM32 SPI
-
-description: >
-    This binding gives a base representation of the STM32 SPI controller
+description: STM32 SPI controller
 
 compatible: "st,stm32-spi"
 

@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Intel Corporation.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menu "Link layer options"
 
@@ -85,7 +82,7 @@ config NET_L2_WIFI_MGMT
 	select NET_MGMT_EVENT
 	select NET_MGMT_EVENT_INFO
 	help
-	Add support for Wi-Fi Management interface.
+	  Add support for Wi-Fi Management interface.
 
 if NET_L2_WIFI_MGMT
 module = NET_L2_WIFI_MGMT

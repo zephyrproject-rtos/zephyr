@@ -1,7 +1,4 @@
-title: Kinetis LPSCI UART
-
-description: >
-    This binding gives a base representation of the LPSCI UART
+description: Kinetis LPSCI UART
 
 compatible: "nxp,kinetis-lpsci"
 

@@ -3,23 +3,17 @@
 if BOARD_QEMU_X86
 
 config BUILD_OUTPUT_BIN
-        default n
+	default n
 
 config BOARD
 	default "qemu_x86"
 
-if FLASH
-
 config FLASH_SIMULATOR
 	default y
-
-endif
+	depends on FLASH
 
 endif # BOARD_QEMU_X86
 
-if BOARD_QEMU_X86_LONG
-
 config BOARD
-	default "qemu_x86_long"
-
-endif # BOARD_QEMU_X86_LONG
+	default "qemu_x86_64"
+	depends on BOARD_QEMU_X86_64

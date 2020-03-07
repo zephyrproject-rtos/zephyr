@@ -10,32 +10,28 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
-void z_x86_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
+void z_x86_exception(z_arch_esf_t *esf)
 {
-	if (esf != NULL) {
-		LOG_ERR("RIP=%016lx RSP=%016lx RFLAGS=%016lx\n",
-			esf->rip, esf->rsp, esf->rflags);
-
-		LOG_ERR("RAX=%016lx RBX=%016lx RCX=%016lx RDX=%016lx\n",
-			esf->rax, esf->rbx, esf->rcx, esf->rdx);
-
-		LOG_ERR("RSI=%016lx RDI=%016lx RBP=%016lx RSP=%016lx\n",
-			esf->rsi, esf->rdi, esf->rbp, esf->rsp);
-
-		LOG_ERR("R8=%016lx R9=%016lx R10=%016lx R11=%016lx\n",
-			esf->r8, esf->r9, esf->r10, esf->r11);
-
-		LOG_ERR("R12=%016lx R13=%016lx R14=%016lx R15=%016lx\n",
-			esf->r12, esf->r13, esf->r14, esf->r15);
+	switch (esf->vector) {
+	case Z_X86_OOPS_VECTOR:
+		z_x86_do_kernel_oops(esf);
+		break;
+	case IV_PAGE_FAULT:
+		z_x86_page_fault_handler(esf);
+		break;
+	default:
+		z_x86_unhandled_cpu_exception(esf->vector, esf);
+		CODE_UNREACHABLE;
 	}
-
-	z_fatal_error(reason, esf);
 }
 
-void z_x86_exception(const z_arch_esf_t *esf)
+#ifdef CONFIG_USERSPACE
+void arch_syscall_oops(void *ssf_ptr)
 {
-	LOG_ERR("** CPU Exception %ld (code %ld/0x%lx) **\n",
-		esf->vector, esf->code, esf->code);
+	struct x86_ssf *ssf = ssf_ptr;
 
-	z_x86_fatal_error(K_ERR_CPU_EXCEPTION, esf);
+	LOG_ERR("Bad system call from RIP 0x%lx", ssf->rip);
+
+	z_x86_fatal_error(K_ERR_KERNEL_OOPS, NULL);
 }
+#endif /* CONFIG_USERSPACE */

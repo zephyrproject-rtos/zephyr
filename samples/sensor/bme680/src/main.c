@@ -17,7 +17,7 @@ void main(void)
 	printf("Device %p name is %s\n", dev, dev->config->name);
 
 	while (1) {
-		k_sleep(3000);
+		k_sleep(K_MSEC(3000));
 
 		sensor_sample_fetch(dev);
 		sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);

@@ -1,10 +1,7 @@
-# Kconfig - ADC configuration options
+# ADC configuration options
 
-#
 # Copyright (c) 2015 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config ADC_MCUX_ADC12
 	bool "MCUX ADC12 driver"
@@ -38,7 +35,7 @@ config ADC_MCUX_ADC16_CLK_DIV_RATIO_8
 
 endchoice
 
-choice
+choice ADC_MCUX_ADC16_VREF
 	prompt "Voltage Reference Selection"
 	default ADC_MCUX_ADC16_VREF_DEFAULT
 

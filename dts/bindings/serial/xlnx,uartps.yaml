@@ -1,7 +1,4 @@
-title: Xilinx PS UART
-
-description: >
-    This binding gives a base representation of the Xilinx PS UART
+description: Xilinx PS UART
 
 compatible: "xlnx,xuartps"
 

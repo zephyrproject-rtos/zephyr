@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
 
-title: NXP FlexCAN
-
-description: >
-    This binding gives a base representation of the NXP FlexCAN controller
+description: NXP FlexCAN controller
 
 compatible: "nxp,kinetis-flexcan"
 

@@ -12,75 +12,22 @@ Concepts
 The scheduler determines which thread is allowed to execute
 at any point in time; this thread is known as the **current thread**.
 
+There are various points in time when the scheduler is given an
+opportunity to change the identity of the current thread.  These points
+are called **reschedule points**. Some potential reschedule points are:
+
+- transition of a thread to the :ref:`ready state <thread_states>`, for
+  example by :cpp:func:`k_sem_give` or :cpp:func:`k_thread_start`
+- transition of a thread from running state to a suspended or waiting
+  state, for example by :cpp:func:`k_sem_take` or :cpp:func:`k_sleep`
+- return to thread context after processing an interrupt
+- when a running thread invokes :cpp:func:`k_yield()`
+
 Whenever the scheduler changes the identity of the current thread,
-or when execution of the current thread is supplanted by an ISR,
+or when execution of the current thread is replaced by an ISR,
 the kernel first saves the current thread's CPU register values.
 These register values get restored when the thread later resumes execution.
 
-Thread States
-=============
-
-A thread that has no factors that prevent its execution is deemed
-to be **ready**, and is eligible to be selected as the current thread.
-
-A thread that has one or more factors that prevent its execution
-is deemed to be **unready**, and cannot be selected as the current thread.
-
-The following factors make a thread unready:
-
-* The thread has not been started.
-* The thread is waiting on for a kernel object to complete an operation.
-  (For example, the thread is taking a semaphore that is unavailable.)
-* The thread is waiting for a timeout to occur.
-* The thread has been suspended.
-* The thread has terminated or aborted.
-
-Thread Priorities
-=================
-
-A thread's priority is an integer value, and can be either negative or
-non-negative.
-Numerically lower priorities takes precedence over numerically higher values.
-For example, the scheduler gives thread A of priority 4 *higher* priority
-over thread B of priority 7; likewise thread C of priority -2 has higher
-priority than both thread A and thread B.
-
-The scheduler distinguishes between two classes of threads,
-based on each thread's priority.
-
-* A :dfn:`cooperative thread` has a negative priority value.
-  Once it becomes the current thread, a cooperative thread remains
-  the current thread until it performs an action that makes it unready.
-
-  .. image:: cooperative.svg
-     :align: center
-
-* A :dfn:`preemptible thread` has a non-negative priority value.
-  Once it becomes the current thread, a preemptible thread may be supplanted
-  at any time if a cooperative thread, or a preemptible thread of higher
-  or equal priority, becomes ready.
-
-  .. image:: preemptive.svg
-     :align: center
-
-A thread's initial priority value can be altered up or down after the thread
-has been started. Thus it possible for a preemptible thread to become
-a cooperative thread, and vice versa, by changing its priority.
-
-The kernel supports a virtually unlimited number of thread priority levels.
-The configuration options :option:`CONFIG_NUM_COOP_PRIORITIES` and
-:option:`CONFIG_NUM_PREEMPT_PRIORITIES` specify the number of priority
-levels for each class of thread, resulting the following usable priority
-ranges:
-
-* cooperative threads: (-:option:`CONFIG_NUM_COOP_PRIORITIES`) to -1
-* preemptive threads: 0 to (:option:`CONFIG_NUM_PREEMPT_PRIORITIES` - 1)
-
-.. image:: priorities.svg
-   :align: center
-
-For example, configuring 5 cooperative priorities and 10 preemptive priorities
-results in the ranges -5 to -1 and 0 to 9, respectively.
 
 Scheduling Algorithm
 ====================
@@ -91,9 +38,73 @@ exist, the scheduler chooses the one that has been waiting longest.
 
 .. note::
     Execution of ISRs takes precedence over thread execution,
-    so the execution of the current thread may be supplanted by an ISR
+    so the execution of the current thread may be replaced by an ISR
     at any time unless interrupts have been masked. This applies to both
     cooperative threads and preemptive threads.
+
+
+The kernel can be built with one of several choices for the ready queue
+implementation, offering different choices between code size, constant factor
+runtime overhead and performance scaling when many threads are added.
+
+* Simple linked-list ready queue (:option:`CONFIG_SCHED_DUMB`)
+
+  The scheduler ready queue will be implemented as a simple unordered list, with
+  very fast constant time performance for single threads and very low code size.
+  This implementation should be selected on systems with constrained code size
+  that will never see more than a small number (3, maybe) of runnable threads in
+  the queue at any given time.  On most platforms (that are not otherwise using
+  the red/black tree) this results in a savings of ~2k of code size.
+
+* Red/black tree ready queue (:option:`CONFIG_SCHED_SCALABLE`)
+
+  The scheduler ready queue will be implemented as a red/black tree.  This has
+  rather slower constant-time insertion and removal overhead, and on most
+  platforms (that are not otherwise using the red/black tree somewhere) requires
+  an extra ~2kb of code. The resulting behavior will scale cleanly and
+  quickly into the many thousands of threads.
+
+  Use this for applications needing many concurrent runnable threads (> 20 or
+  so).  Most applications won't need this ready queue implementation.
+
+* Traditional multi-queue ready queue (:option:`CONFIG_SCHED_MULTIQ`)
+
+  When selected, the scheduler ready queue will be implemented as the
+  classic/textbook array of lists, one per priority (max 32 priorities).
+
+  This corresponds to the scheduler algorithm used in Zephyr versions prior to
+  1.12.
+
+  It incurs only a tiny code size overhead vs. the "dumb" scheduler and runs in
+  O(1) time in almost all circumstances with very low constant factor.  But it
+  requires a fairly large RAM budget to store those list heads, and the limited
+  features make it incompatible with features like deadline scheduling that
+  need to sort threads more finely, and SMP affinity which need to traverse the
+  list of threads.
+
+  Typical applications with small numbers of runnable threads probably want the
+  DUMB scheduler.
+
+
+The wait_q abstraction used in IPC primitives to pend threads for later wakeup
+shares the same backend data structure choices as the scheduler, and can use
+the same options.
+
+* Scalable wait_q implementation (:option:`CONFIG_WAITQ_SCALABLE`)
+
+  When selected, the wait_q will be implemented with a balanced tree.  Choose
+  this if you expect to have many threads waiting on individual primitives.
+  There is a ~2kb code size increase over :option:`CONFIG_WAITQ_DUMB` (which may
+  be shared with :option:`CONFIG_SCHED_SCALABLE`) if the red/black tree is not
+  used elsewhere in the application, and pend/unpend operations on "small"
+  queues will be somewhat slower (though this is not generally a performance
+  path).
+
+* Simple linked-list wait_q (:option:`CONFIG_WAITQ_DUMB`)
+
+  When selected, the wait_q will be implemented with a doubly-linked list.
+  Choose this if you expect to have only a few threads blocked on any single
+  IPC primitive.
 
 Cooperative Time Slicing
 ========================
@@ -103,6 +114,10 @@ the current thread until it performs an action that makes it unready.
 Consequently, if a cooperative thread performs lengthy computations,
 it may cause an unacceptable delay in the scheduling of other threads,
 including those of higher priority and equal priority.
+
+
+  .. image:: cooperative.svg
+     :align: center
 
 To overcome such problems, a cooperative thread can voluntarily relinquish
 the CPU from time to time to permit other threads to execute.
@@ -130,6 +145,10 @@ or until the thread performs an action that makes it unready.
 Consequently, if a preemptive thread performs lengthy computations,
 it may cause an unacceptable delay in the scheduling of other threads,
 including those of equal priority.
+
+
+  .. image:: preemptive.svg
+     :align: center
 
 To overcome such problems, a preemptive thread can perform cooperative
 time slicing (as described above), or the scheduler's time slicing capability
@@ -181,7 +200,7 @@ becomes the current thread, its non-preemptible status is maintained.
 
 .. note::
     Locking out the scheduler is a more efficient way for a preemptible thread
-    to inhibit preemption than changing its priority level to a negative value.
+    to prevent preemption than changing its priority level to a negative value.
 
 .. _metairq_priorities:
 
@@ -257,4 +276,3 @@ for a kernel object, such as a mutex.
 
 Use preemptive threads to give priority to time-sensitive processing
 over less time-sensitive processing.
-

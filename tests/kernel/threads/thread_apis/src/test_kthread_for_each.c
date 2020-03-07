@@ -8,13 +8,10 @@
 #include <irq_offload.h>
 #include <debug/stack.h>
 
+#include "tests_thread_apis.h"
+
 #define SLEEP_MS 100
 #define TEST_STRING "TEST"
-
-#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
-
-K_THREAD_STACK_EXTERN(tstack);
-extern struct k_thread tdata;
 
 static int tcount;
 static bool thread_flag;
@@ -64,9 +61,9 @@ void test_k_thread_foreach(void)
 
 	/* Create new thread which should add a new entry to the thread list */
 	k_tid_t tid = k_thread_create(&tdata, tstack,
-			STACKSIZE, (k_thread_entry_t)thread_entry, NULL,
-			NULL, NULL, K_PRIO_PREEMPT(0), 0, 0);
-	k_sleep(1);
+			STACK_SIZE, (k_thread_entry_t)thread_entry, NULL,
+			NULL, NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+	k_sleep(K_MSEC(1));
 
 	/* Call k_thread_foreach() and check
 	 * thread_callback is getting called for
@@ -80,4 +77,3 @@ void test_k_thread_foreach(void)
 					"thread_callback() not getting called");
 	k_thread_abort(tid);
 }
-

@@ -96,7 +96,8 @@ static int pwm_sifive_init(struct device *dev)
 static int pwm_sifive_pin_set(struct device *dev,
 			      u32_t pwm,
 			      u32_t period_cycles,
-			      u32_t pulse_cycles)
+			      u32_t pulse_cycles,
+			      pwm_flags_t flags)
 {
 	const struct pwm_sifive_cfg *config = NULL;
 	u32_t count_max = 0U;
@@ -110,6 +111,11 @@ static int pwm_sifive_pin_set(struct device *dev,
 	if (dev->config == NULL) {
 		LOG_ERR("The device config pointer was NULL\n");
 		return -EFAULT;
+	}
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
 	}
 
 	config = dev->config->config_info;
@@ -249,4 +255,3 @@ PWM_SIFIVE_INIT(1);
 #ifdef DT_INST_2_SIFIVE_PWM0_LABEL
 PWM_SIFIVE_INIT(2);
 #endif /* DT_INST_2_SIFIVE_PWM0_LABEL */
-

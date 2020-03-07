@@ -41,6 +41,8 @@ macro(configure_linker_script linker_script_gen linker_pass_define)
     -x assembler-with-cpp
     ${NOSYSDEF_CFLAG}
     -MD -MF ${linker_script_gen}.dep -MT ${base_name}/${linker_script_gen}
+    -D_LINKER
+    -D_ASMLANGUAGE
     ${current_includes}
     ${current_defines}
     ${linker_pass_define}
@@ -55,7 +57,7 @@ endmacro()
 # Force symbols to be entered in the output file as undefined symbols
 function(toolchain_ld_force_undefined_symbols)
   foreach(symbol ${ARGN})
-    zephyr_link_libraries(-u${symbol})
+    zephyr_link_libraries(${LINKERFLAGPREFIX},-u,${symbol})
   endforeach()
 endfunction()
 

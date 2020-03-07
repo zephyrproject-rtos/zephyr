@@ -1,7 +1,4 @@
-title: Atmel SAM0 External Interrupt Controller
-
-description: >
-    This binding describes the Atmel SAM0 series External Interrupt Controller
+description: Atmel SAM0 series External Interrupt Controller
 
 compatible: "atmel,sam0-eic"
 

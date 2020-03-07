@@ -1,10 +1,7 @@
 # Copyright (c) 2019, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: NXP Enhanced LCD Interface (eLCDIF) controller
-
-description: >
-    This binding gives a base representation of the NXP i.MX eLCDIF controller
+description: NXP i.MX eLCDIF (Enhanced LCD Interface) controller
 
 compatible: "fsl,imx6sx-lcdif"
 

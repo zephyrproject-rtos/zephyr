@@ -1,7 +1,5 @@
-title: Atmel Device ID (Serial Number) binding
-
-description: >
-    Binding for locating the Device ID (serial number) on Atmel SAM0 devices.
+description: |
+    For locating the Device ID (serial number) on Atmel SAM0 devices
 
 compatible: "atmel,sam0-id"
 

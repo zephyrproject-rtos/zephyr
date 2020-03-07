@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: SPI NOR FLASH
-
-description: >
-    This binding gives a base representation of SPI slave NOR FLASH
+description: SPI slave NOR FLASH
 
 compatible: "winbond,w25q16"
 

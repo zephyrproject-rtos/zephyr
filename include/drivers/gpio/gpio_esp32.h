@@ -9,14 +9,14 @@ static const char *gpio_esp32_get_gpio_for_pin(int pin)
 {
 	if (pin < 32) {
 #if defined(CONFIG_GPIO_ESP32_0)
-		return CONFIG_GPIO_ESP32_0_NAME;
+		return DT_INST_0_ESPRESSIF_ESP32_GPIO_LABEL;
 #else
 		return NULL;
 #endif /* CONFIG_GPIO_ESP32_0 */
 	}
 
 #if defined(CONFIG_GPIO_ESP32_1)
-	return CONFIG_GPIO_ESP32_1_NAME;
+	return DT_INST_1_ESPRESSIF_ESP32_GPIO_LABEL;
 #else
 	return NULL;
 #endif /* CONFIG_GPIO_ESP32_1 */

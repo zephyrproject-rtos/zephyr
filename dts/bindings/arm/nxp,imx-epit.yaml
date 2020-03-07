@@ -1,10 +1,7 @@
 # Copyright (c) 2018, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: IMX EPIT COUNTER
-
-description: >
-    This binding gives a base representation of the i.MX Enhanced Periodic Interrupt Timer (EPIT)
+description: i.MX Enhanced Periodic Interrupt Timer (EPIT)
 
 compatible: "nxp,imx-epit"
 

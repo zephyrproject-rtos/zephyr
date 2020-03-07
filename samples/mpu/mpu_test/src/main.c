@@ -166,5 +166,3 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_mpu,
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 SHELL_CMD_REGISTER(mpu, &sub_mpu, "MPU related commands.", NULL);
-
-

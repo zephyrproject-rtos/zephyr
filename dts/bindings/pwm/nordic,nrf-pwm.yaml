@@ -1,18 +1,17 @@
-title: nRF PWM
-
-description: >
-    This binding gives a base representation of the nRF PWM
+description: nRF PWM
 
 compatible: "nordic,nrf-pwm"
 
-include: base.yaml
+include: [pwm-controller.yaml, base.yaml]
 
 properties:
     reg:
       required: true
 
-    label:
-      required: true
+    center-aligned:
+      type: boolean
+      description: Use center-aligned (up and down) counter mode
+      required: false
 
     ch0-pin:
       type: int
@@ -53,3 +52,9 @@ properties:
       type: boolean
       description: Channel 3 inverted
       required: false
+
+    "#pwm-cells":
+      const: 1
+
+pwm-cells:
+  - channel

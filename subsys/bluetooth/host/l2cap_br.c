@@ -16,7 +16,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
-#include <bluetooth/hci_driver.h>
+#include <drivers/bluetooth/hci_driver.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_L2CAP)
 #define LOG_MODULE_NAME bt_l2cap_br
@@ -81,9 +81,8 @@ static sys_slist_t br_servers;
 
 
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
-NET_BUF_POOL_DEFINE(br_sig_pool, CONFIG_BT_MAX_CONN,
-		    BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU),
-		    BT_BUF_USER_DATA_MIN, NULL);
+NET_BUF_POOL_FIXED_DEFINE(br_sig_pool, CONFIG_BT_MAX_CONN,
+			  BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU), NULL);
 
 /* BR/EDR L2CAP signalling channel specific context */
 struct bt_l2cap_br {
@@ -1050,7 +1049,7 @@ static struct bt_l2cap_br_chan *l2cap_br_remove_tx_cid(struct bt_conn *conn,
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
-		if (BR_CHAN(chan)->rx.cid == cid) {
+		if (BR_CHAN(chan)->tx.cid == cid) {
 			sys_slist_remove(&conn->channels, prev, &chan->node);
 			return BR_CHAN(chan);
 		}
@@ -1516,7 +1515,7 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 static int l2cap_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	int i;
-	static struct bt_l2cap_chan_ops ops = {
+	static const struct bt_l2cap_chan_ops ops = {
 		.connected = l2cap_br_connected,
 		.disconnected = l2cap_br_disconnected,
 		.recv = l2cap_br_recv,

@@ -1,4 +1,4 @@
 tests:
-  libraries.libc:
+  libraries.libc.sprintf:
     filter: not CONFIG_SOC_MCIMX7_M4
     tags: libc

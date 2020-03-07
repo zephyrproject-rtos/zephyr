@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 
 #ifndef __ZEPHYR__
@@ -23,7 +24,7 @@
 
 #define PORT 4242
 
-int main(void)
+void main(void)
 {
 	int serv;
 	struct sockaddr_in bind_addr;

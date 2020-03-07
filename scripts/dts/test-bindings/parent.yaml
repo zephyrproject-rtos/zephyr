@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-title: Parent binding
 description: Parent binding
 
 compatible: "binding-include-test"

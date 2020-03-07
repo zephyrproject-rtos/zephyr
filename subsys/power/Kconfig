@@ -8,6 +8,14 @@ config SYS_PM_STATE_LOCK
 	  Power States while doing any critical work or needs quick
 	  response from hardware resources.
 
+config SYS_PM_DIRECT_FORCE_MODE
+	bool "Enable system power management direct force trigger mode"
+	help
+	  Enable system power management direct force trigger mode. In
+	  this mode application thread can directly put system in sleep
+	  or deep sleep mode instead of waiting for idle thread to do
+	  it, so that it can reduce latency to enter low power mode.
+
 config SYS_PM_DEBUG
 	bool "Enable System Power Management debug hooks"
 	help

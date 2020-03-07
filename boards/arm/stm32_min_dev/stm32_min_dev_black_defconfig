@@ -1,15 +1,12 @@
-# Kconfig - STM32 Minimum Development Board Configuration
+# STM32 Minimum Development Board Configuration
 #
 # Copyright (c) 2019, embedjournal.com
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-CONFIG_ARM=y
-CONFIG_BOARD_STM32_MIN_DEV_BLACK=y
 CONFIG_SOC_SERIES_STM32F1X=y
 CONFIG_SOC_STM32F103X8=y
-CONFIG_CORTEX_M_SYSTICK=y
 
 # 72MHz system clock
 CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=72000000

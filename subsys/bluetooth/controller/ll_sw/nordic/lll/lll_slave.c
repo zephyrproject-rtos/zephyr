@@ -27,7 +27,8 @@
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 
-#define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll_slave
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define LOG_MODULE_NAME bt_ctlr_lll_slave
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
@@ -159,8 +160,11 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 	/* Start setting up Radio h/w */
 	radio_reset();
-	/* TODO: other Tx Power settings */
+#if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
+	radio_tx_power_set(lll->tx_pwr_lvl);
+#else
 	radio_tx_power_set(RADIO_TXP_DEFAULT);
+#endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 
 	lll_conn_rx_pkt_set(lll);
 

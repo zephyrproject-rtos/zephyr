@@ -325,7 +325,7 @@ static int enc424j600_tx(struct device *dev, struct net_pkt *pkt)
 	enc424j600_write_sbc(dev, ENC424J600_1BC_SETTXRTS);
 
 	do {
-		k_sleep(1);
+		k_sleep(K_MSEC(1));
 		enc424j600_read_sfru(dev, ENC424J600_SFRX_ECON1L, &tmp);
 	} while (tmp & ENC424J600_ECON1_TXRTS);
 
@@ -374,6 +374,11 @@ static int enc424j600_rx(struct device *dev)
 		context->next_pkt_ptr, frm_len, status);
 	/* frame length without FCS */
 	frm_len -= 4;
+	if (frm_len > NET_ETH_MAX_FRAME_SIZE) {
+		LOG_ERR("Maximum frame length exceeded");
+		eth_stats_update_errors_rx(context->iface);
+		goto done;
+	}
 
 	/* Get the frame from the buffer */
 	pkt = net_pkt_rx_alloc_with_buffer(context->iface, frm_len,
@@ -467,8 +472,13 @@ static void enc424j600_rx_thread(struct device *dev)
 			if (estat & ENC424J600_ESTAT_PHYLNK) {
 				LOG_INF("Link up");
 				enc424j600_setup_mac(dev);
+				net_eth_carrier_on(context->iface);
 			} else {
 				LOG_INF("Link down");
+
+				if (context->iface_initialized) {
+					net_eth_carrier_off(context->iface);
+				}
 			}
 			goto done;
 		}
@@ -497,6 +507,10 @@ static void enc424j600_iface_init(struct net_if *iface)
 			     sizeof(context->mac_address),
 			     NET_LINK_ETHERNET);
 	context->iface = iface;
+	ethernet_init(iface);
+
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	context->iface_initialized = true;
 }
 
 static int enc424j600_start_device(struct device *dev)
@@ -545,12 +559,12 @@ static int enc424j600_stop_device(struct device *dev)
 			      ENC424J600_ECON1_RXEN);
 
 	do {
-		k_sleep(10U);
+		k_sleep(K_MSEC(10U));
 		enc424j600_read_sfru(dev, ENC424J600_SFRX_ESTATL, &tmp);
 	} while (tmp & ENC424J600_ESTAT_RXBUSY);
 
 	do {
-		k_sleep(10U);
+		k_sleep(K_MSEC(10U));
 		enc424j600_read_sfru(dev, ENC424J600_SFRX_ECON1L, &tmp);
 	} while (tmp & ENC424J600_ECON1_TXRTS);
 
@@ -616,10 +630,8 @@ static int enc424j600_init(struct device *dev)
 	}
 
 	if (gpio_pin_configure(context->gpio, config->gpio_pin,
-			       (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE
-			       | GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE))) {
-		LOG_ERR("Unable to configure GPIO pin %u",
-			    config->gpio_pin);
+			       GPIO_INPUT | config->gpio_flags)) {
+		LOG_ERR("Unable to configure GPIO pin %u", config->gpio_pin);
 		return -EINVAL;
 	}
 
@@ -630,9 +642,9 @@ static int enc424j600_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (gpio_pin_enable_callback(context->gpio, config->gpio_pin)) {
-		return -EINVAL;
-	}
+	gpio_pin_interrupt_configure(context->gpio,
+				     config->gpio_pin,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* Check SPI connection */
 	do {
@@ -742,6 +754,7 @@ static struct enc424j600_runtime enc424j600_0_runtime = {
 static const struct enc424j600_config enc424j600_0_config = {
 	.gpio_port = DT_INST_0_MICROCHIP_ENC424J600_INT_GPIOS_CONTROLLER,
 	.gpio_pin = DT_INST_0_MICROCHIP_ENC424J600_INT_GPIOS_PIN,
+	.gpio_flags = DT_INST_0_MICROCHIP_ENC424J600_INT_GPIOS_FLAGS,
 	.spi_port = DT_INST_0_MICROCHIP_ENC424J600_BUS_NAME,
 	.spi_freq  = DT_INST_0_MICROCHIP_ENC424J600_SPI_MAX_FREQUENCY,
 	.spi_slave = DT_INST_0_MICROCHIP_ENC424J600_BASE_ADDRESS,

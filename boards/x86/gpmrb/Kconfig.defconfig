@@ -1,10 +1,9 @@
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_GPMRB
 
-config X86_MULTIBOOT
+config MULTIBOOT
 	default n
 
 config BOARD

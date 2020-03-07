@@ -19,6 +19,7 @@
 #include <zephyr.h>
 #include <sys/ring_buffer.h>
 
+#include <usb/usb_device.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(cdc_acm_composite, LOG_LEVEL_INF);
 
@@ -88,12 +89,12 @@ static void uart_line_set(struct device *dev)
 	int ret;
 
 	/* They are optional, we use them to test the interrupt endpoint */
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DCD, 1);
+	ret = uart_line_ctrl_set(dev, UART_LINE_CTRL_DCD, 1);
 	if (ret) {
 		LOG_DBG("Failed to set DCD, ret code %d", ret);
 	}
 
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DSR, 1);
+	ret = uart_line_ctrl_set(dev, UART_LINE_CTRL_DSR, 1);
 	if (ret) {
 		LOG_DBG("Failed to set DSR, ret code %d", ret);
 	}
@@ -101,7 +102,7 @@ static void uart_line_set(struct device *dev)
 	/* Wait 1 sec for the host to do all settings */
 	k_busy_wait(1000000);
 
-	ret = uart_line_ctrl_get(dev, LINE_CTRL_BAUD_RATE, &baudrate);
+	ret = uart_line_ctrl_get(dev, UART_LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret) {
 		LOG_DBG("Failed to get baudrate, ret code %d", ret);
 	} else {
@@ -111,6 +112,8 @@ static void uart_line_set(struct device *dev)
 
 void main(void)
 {
+	int ret;
+
 	struct serial_data *dev_data0 = &peers[0];
 	struct serial_data *dev_data1 = &peers[1];
 	struct device *dev0, *dev1;
@@ -128,24 +131,30 @@ void main(void)
 		return;
 	}
 
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
+
 	LOG_INF("Wait for DTR");
 
 	while (1) {
-		uart_line_ctrl_get(dev0, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(dev0, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}
 
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 	}
 
 	while (1) {
-		uart_line_ctrl_get(dev1, LINE_CTRL_DTR, &dtr);
+		uart_line_ctrl_get(dev1, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
 		}
 
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 	}
 
 	LOG_INF("DTR set, start test");

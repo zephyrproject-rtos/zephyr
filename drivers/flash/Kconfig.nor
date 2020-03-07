@@ -1,9 +1,5 @@
-#
 # Copyright (c) 2018 Savoir-Faire Linux.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
 
 menuconfig SPI_NOR
 	bool "SPI NOR Flash"
@@ -24,7 +20,7 @@ config SPI_NOR_CS_WAIT_DELAY
 	int "Delay time in us"
 	default 0
 	help
-	This is the wait delay (in us) to allow for CS switching to take effect
+	  This is the wait delay (in us) to allow for CS switching to take effect
 
 config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	int "Page size to use for FLASH_LAYOUT feature"
@@ -33,20 +29,19 @@ config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
 	  When CONFIG_FLASH_PAGE_LAYOUT is used this driver will support
 	  that API.  By default the page size corresponds to the block
 	  size (65536).  Other options include the 32K-byte erase size
-	  (32768), and the sector size (4096).
+	  (32768), the sector size (4096), or any non-zero multiple of the
+	  sector size.
 
-config SPI_NOR_PAGE_SIZE
-	int "Page size of SPI flash"
-	default 0
+config SPI_NOR_IDLE_IN_DPD
+	bool "Use Deep Power-Down mode when flash is not being accessed."
 	help
-	  Note: This option is deprecated and is ignored.  Page size is
-	  always 256.
+	  Where supported deep power-down mode can reduce current draw
+	  to as little as 0.1% of standby current.  However it takes
+	  some milliseconds to enter and exit from this mode.
 
-config SPI_NOR_SECTOR_SIZE
-	int "Sector size of SPI flash"
-	default 0
-	help
-	  Note: This option is deprecated and is ignored.  Sector size
-	  is always 4096.
+	  Select this option for applications where device power
+	  management is not enabled, the flash remains inactive for
+	  long periods, and when used the impact of waiting for mode
+	  enter and exit delays is acceptable.
 
 endif # SPI_NOR

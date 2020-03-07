@@ -413,10 +413,6 @@ static int test_disconnect(void)
 	}
 
 	wait(APP_SLEEP_MSECS);
-	rc = mqtt_input(&client_ctx);
-	if (rc != 0) {
-		return TC_FAIL;
-	}
 
 	if (connected) {
 		return TC_FAIL;

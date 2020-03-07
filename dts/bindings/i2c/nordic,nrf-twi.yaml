@@ -1,0 +1,8 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF family TWI (TWI master)
+
+compatible: "nordic,nrf-twi"
+
+include: nordic,nrf-twi-common.yaml

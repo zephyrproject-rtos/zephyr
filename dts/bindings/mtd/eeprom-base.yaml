@@ -1,0 +1,18 @@
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for EEPROM devices
+
+include: base.yaml
+
+properties:
+    size:
+      type: int
+      required: false
+      description: Total EEPROM size in bytes
+    read-only:
+      type: boolean
+      required: false
+      description: Disable writes to the EEPROM
+    label:
+      required: true

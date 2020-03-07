@@ -18,7 +18,7 @@ This sample application uses an APDS9960 sensor connected to a board
 `Sparkfun APDS9960 tutorial`_).
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/apds9960
+   :zephyr-app: samples/sensor/apds9960
    :board: reel_board
    :goals: flash
    :compact:

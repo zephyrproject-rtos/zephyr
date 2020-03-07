@@ -1,14 +1,10 @@
-# Kconfig - reel board configuration
-#
-# Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
-#
-# SPDX-License-Identifier: Apache-2.0
+# reel board configuration
 
-if BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2
+# Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ENABLE_DCDC
 	bool "Enable DCDC mode"
 	select SOC_DCDC_NRF52X
 	default y
-
-endif # BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2
+	depends on BOARD_REEL_BOARD || BOARD_REEL_BOARD_V2

@@ -110,8 +110,8 @@ struct z_app_region {
 	extern char Z_APP_START(name)[]; \
 	extern char Z_APP_SIZE(name)[]; \
 	struct k_mem_partition name = { \
-		.start = (u32_t) &Z_APP_START(name), \
-		.size = (u32_t) &Z_APP_SIZE(name), \
+		.start = (uintptr_t) &Z_APP_START(name), \
+		.size = (size_t) &Z_APP_SIZE(name), \
 		.attr = K_MEM_PARTITION_P_RW_U_RW \
 	}; \
 	extern char Z_APP_BSS_START(name)[]; \

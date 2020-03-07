@@ -63,7 +63,10 @@ LOG_OUTPUT_DEFINE(log_output, char_out, buf, sizeof(buf));
 static void log_backend_swo_put(const struct log_backend *const backend,
 		struct log_msg *msg)
 {
-	log_backend_std_put(&log_output, 0, msg);
+	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
+		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
+
+	log_backend_std_put(&log_output, flag, msg);
 }
 
 static void log_backend_swo_init(void)
@@ -107,7 +110,10 @@ static void log_backend_swo_sync_string(const struct log_backend *const backend,
 		struct log_msg_ids src_level, u32_t timestamp,
 		const char *fmt, va_list ap)
 {
-	log_backend_std_sync_string(&log_output, 0, src_level,
+	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
+		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
+
+	log_backend_std_sync_string(&log_output, flag, src_level,
 				    timestamp, fmt, ap);
 }
 
@@ -116,7 +122,10 @@ static void log_backend_swo_sync_hexdump(
 		struct log_msg_ids src_level, u32_t timestamp,
 		const char *metadata, const u8_t *data, u32_t length)
 {
-	log_backend_std_sync_hexdump(&log_output, 0, src_level,
+	u32_t flag = IS_ENABLED(CONFIG_LOG_BACKEND_SWO_SYST_ENABLE) ?
+		LOG_OUTPUT_FLAG_FORMAT_SYST : 0;
+
+	log_backend_std_sync_hexdump(&log_output, flag, src_level,
 				     timestamp, metadata, data, length);
 }
 

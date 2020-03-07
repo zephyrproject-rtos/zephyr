@@ -1,10 +1,7 @@
-# Kconfig - Beetle MCU clock control driver config
-#
-#
+# Beetle MCU clock control driver config
+
 # Copyright (c) 2016 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_FAMILY_ARM
 
@@ -13,18 +10,18 @@ menuconfig CLOCK_CONTROL_BEETLE
 	depends on SOC_SERIES_BEETLE
 	default y if SOC_SERIES_BEETLE
 	help
-	 Enable driver for Reset & Clock Control subsystem found
-	 in STM32F4 family of MCUs
+	  Enable driver for Reset & Clock Control subsystem found
+	  in STM32F4 family of MCUs
 
 config CLOCK_CONTROL_BEETLE_DEVICE_INIT_PRIORITY
 	int "Clock Control Device Priority"
 	default 1
 	depends on CLOCK_CONTROL_BEETLE
 	help
-	 This option controls the priority of clock control
-	 device initialization. Higher priority ensures that the device
-	 is initialized earlier in the startup cycle. If unsure, leave
-	 at default value 1
+	  This option controls the priority of clock control
+	  device initialization. Higher priority ensures that the device
+	  is initialized earlier in the startup cycle. If unsure, leave
+	  at default value 1
 
 config ARM_CLOCK_CONTROL_DEV_NAME
 	string "Clock Config Device name"

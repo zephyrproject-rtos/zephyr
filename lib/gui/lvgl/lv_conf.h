@@ -7,6 +7,11 @@
 #ifndef ZEPHYR_LIB_GUI_LVGL_LV_CONF_H_
 #define ZEPHYR_LIB_GUI_LVGL_LV_CONF_H_
 
+#ifdef CONFIG_LVGL_USE_DEBUG
+#include <sys/__assert.h>
+#define LV_DEBUG_ASSERT(expr, msg, value) __ASSERT(expr, msg)
+#endif
+
 /* Graphical settings */
 
 #define LV_HOR_RES_MAX	CONFIG_LVGL_HOR_RES
@@ -44,6 +49,12 @@
 #define LV_COLOR_TRANSP LV_COLOR_MAKE(CONFIG_LVGL_CUSTOM_CHROMA_KEY_RED, \
 		CONFIG_LVGL_CUSTOM_CHROMA_KEY_GREEN, \
 		CONFIG_LVGL_CUSTOM_CHROMA_KEY_BLUE)
+#endif
+
+#ifdef CONFIG_LVGL_IMG_INDEXED_CHROMA
+#define LV_INDEXED_CHROMA 1
+#else
+#define LV_INDEXED_CHROMA 0
 #endif
 
 #ifdef CONFIG_LVGL_ANTIALIAS
@@ -171,6 +182,8 @@ typedef void *lv_img_decoder_user_data_t;
 
 #define LV_ATTRIBUTE_LARGE_CONST
 
+#define LV_EXPORT_CONST_INT(int_value)
+
 /* HAL settings */
 
 #define LV_TICK_CUSTOM			1
@@ -199,6 +212,48 @@ typedef void *lv_indev_drv_user_data_t;
 
 #define LV_LOG_PRINTF 0
 #endif
+
+/* Debug settings */
+
+#ifdef CONFIG_LVGL_USE_DEBUG
+#define LV_USE_DEBUG 1
+#else
+#define LV_USE_DEBUG 0
+#endif
+
+#if LV_USE_DEBUG
+
+#ifdef CONFIG_LVGL_USE_ASSERT_NULL
+#define LV_USE_ASSERT_NULL 1
+#else
+#define LV_USE_ASSERT_NULL 0
+#endif
+
+#ifdef CONFIG_LVGL_USE_ASSERT_MEM
+#define LV_USE_ASSERT_MEM 1
+#else
+#define LV_USE_ASSERT_MEM 0
+#endif
+
+#ifdef CONFIG_LVGL_USE_ASSERT_STR
+#define LV_USE_ASSERT_STR 1
+#else
+#define LV_USE_ASSERT_STR 0
+#endif
+
+#ifdef CONFIG_LVGL_USE_ASSERT_OBJ
+#define LV_USE_ASSERT_OBJ 1
+#else
+#define LV_USE_ASSERT_OBJ 0
+#endif
+
+#ifdef CONFIG_LVGL_USE_ASSERT_STYLE
+#define LV_USE_ASSERT_STYLE 1
+#else
+#define LV_USE_ASSERT_STYLE 0
+#endif
+
+#endif /* LV_USE_DEBUG */
 
 /* THEME USAGE */
 
@@ -267,6 +322,12 @@ typedef void *lv_indev_drv_user_data_t;
 
 /* FONT USAGE */
 
+#ifdef CONFIG_LVGL_FONT_SUBPX_BGR
+#define LV_FONT_SUBPX_BGR 1
+#else
+#define LV_FONT_SUBPX_BGR 0
+#endif
+
 #ifdef CONFIG_LVGL_BUILD_IN_FONT_ROBOTO_12
 #define LV_FONT_ROBOTO_12 1
 #else
@@ -297,6 +358,18 @@ typedef void *lv_indev_drv_user_data_t;
 #define LV_FONT_UNSCII_8 0
 #endif
 
+#ifdef CONFIG_LVGL_BUILD_IN_FONT_ROBOTO_28_COMPRESSED
+#define LV_FONT_ROBOTO_28_COMPRESSED 1
+#else
+#define LV_FONT_ROBOTO_28_COMPRESSED 0
+#endif
+
+#ifdef CONFIG_LVGL_BUILD_IN_FONT_ROBOTO_12_SUBPX
+#define LV_FONT_ROBOTO_12_SUBPX 1
+#else
+#define LV_FONT_ROBOTO_12_SUBPX 0
+#endif
+
 #define LV_FONT_CUSTOM_DECLARE
 
 #ifdef CONFIG_LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_12
@@ -309,6 +382,10 @@ typedef void *lv_indev_drv_user_data_t;
 #define LV_FONT_DEFAULT		(&lv_font_roboto_28)
 #elif defined(CONFIG_LVGL_DEFAULT_FONT_BUILD_IN_UNSCII_8)
 #define LV_FONT_DEFAULT		(&lv_font_unscii_8)
+#elif defined(CONFIG_LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_28_COMPRESSED)
+#define LV_FONT_DEFAULT		(&lv_font_roboto_28_compressed)
+#elif defined(CONFIG_LVGL_DEFAULT_FONT_BUILD_IN_ROBOTO_12_SUBPX)
+#define LV_FONT_DEFAULT		(&lv_font_roboto_12_subpx)
 #elif defined(CONFIG_LVGL_DEFAULT_FONT_CUSTOM)
 extern void *lv_default_font_custom_ptr;
 #define LV_FONT_DEFAULT ((lv_font_t *) lv_default_font_custom_ptr)
@@ -324,7 +401,43 @@ typedef void *lv_font_user_data_t;
 #define LV_TXT_ENC LV_TXT_ENC_UTF8
 #endif
 
-#define LV_TXT_BREAK_CHARS	CONFIG_LVGL_TEXT_BREAK_CHARACTERS
+#define LV_TXT_BREAK_CHARS CONFIG_LVGL_TEXT_BREAK_CHARACTERS
+
+#define LV_TXT_LINE_BREAK_LONG_LEN CONFIG_LVGL_TEXT_LINE_BREAK_LONG_LEN
+
+#define LV_TXT_LINE_BREAK_LONG_PRE_MIN_LEN  \
+	CONFIG_LVGL_TEXT_LINE_BREAK_LONG_PRE_MIN_LEN
+
+#define LV_TXT_LINE_BREAK_LONG_POST_MIN_LEN \
+	CONFIG_LVGL_TEXT_LINE_BREAK_LONG_POST_MIN_LEN
+
+#define LV_TXT_COLOR_CMD CONFIG_LVGL_TEXT_COLOR_CMD
+
+#ifdef CONFIG_LVGL_TEXT_USE_BIDI
+#define LV_USE_BIDI 1
+#else
+#define LV_USE_BIDI 0
+#endif
+
+#if LV_USE_BIDI
+
+#ifdef CONFIG_LVGL_TEXT_BIDI_DIR_LTR
+#define LV_BIDI_BASE_DIR_DEF LV_BIDI_DIR_LTR
+#elif defined(CONFIG_LVGL_TEXT_BIDI_DIR_RTL)
+#define LV_BIDI_BASE_DIR_DEF LV_BIDI_DIR_RTL
+#else
+#define LV_BIDI_BASE_DIR_DEF LV_BIDI_DIR_AUTO
+#endif
+
+#endif
+
+#define LV_SPRINTF_CUSTOM 1
+
+#if LV_SPRINTF_CUSTOM
+#define LV_SPRINTF_INCLUDE "stdio.h"
+#define lv_snprintf snprintf
+#define lv_vsnprintf vsnprintf
+#endif
 
 /* LV_OBJ SETTINGS */
 
@@ -412,6 +525,12 @@ typedef void *lv_obj_user_data_t;
 #define LV_USE_CONT 1
 #else
 #define LV_USE_CONT 0
+#endif
+
+#ifdef CONFIG_LVGL_OBJ_COLOR_PICKER
+#define LV_USE_CPICKER 1
+#else
+#define LV_USE_CPICKER 0
 #endif
 
 #ifdef CONFIG_LVGL_OBJ_DROP_DOWN_LIST
@@ -534,10 +653,10 @@ typedef void *lv_obj_user_data_t;
 #if LV_USE_PRELOAD != 0
 #define LV_PRELOAD_DEF_ARC_LENGTH CONFIG_LVGL_OBJ_PRELOAD_DEF_ARC_LENGTH
 #define LV_PRELOAD_DEF_SPIN_TIME CONFIG_LVGL_OBJ_PRELOAD_DEF_SPIN_TIME
-#ifdef LVGL_OBJ_PRELOAD_DEF_ANIMATION_SPIN_ARC
+#ifdef CONFIG_LVGL_OBJ_PRELOAD_DEF_ANIMATION_SPIN_ARC
 #define LV_PRELOAD_DEF_ANIM LV_PRELOAD_TYPE_SPINNING_ARC
 #endif
-#ifdef LVGL_OBJ_PRELOAD_DEF_ANIMATION_FILL
+#ifdef CONFIG_LVGL_OBJ_PRELOAD_DEF_ANIMATION_FILL
 #define LV_PRELOAD_DEF_ANIM LV_PRELOAD_TYPE_FILLSPIN_ARC
 #endif
 #endif
@@ -614,7 +733,7 @@ typedef void *lv_obj_user_data_t;
 #define LV_TILEVIEW_DEF_ANIM_TIME CONFIG_LVGL_OBJ_TILE_VIEW_ANIMATION_TIME
 #endif
 
-#ifdef CONFIGLVGL_OBJ_WINDOW
+#ifdef CONFIG_LVGL_OBJ_WINDOW
 #define LV_USE_WIN 1
 #else
 #define LV_USE_WIN 0

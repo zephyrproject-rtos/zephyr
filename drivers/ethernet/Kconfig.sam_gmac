@@ -1,8 +1,7 @@
-# Kconfig - Atmel SAM Ethernet (GMAC) driver configuration options
-#
+# Atmel SAM Ethernet (GMAC) driver configuration options
+
 # Copyright (c) 2016 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig ETH_SAM_GMAC
 	bool "Atmel SAM Ethernet driver"
@@ -21,9 +20,14 @@ config ETH_SAM_GMAC_NAME
 	  required by all driver API functions. Device name has to be unique.
 
 config ETH_SAM_GMAC_QUEUES
-	int "Number of hardware TX and RX queues"
+	int "Number of active hardware TX and RX queues"
 	default 1
-	range 1 3
+	range 1 1 if SOC_SERIES_SAM4E
+	range 1 3 if !SOC_SERIES_SAM4E && \
+		     !SOC_ATMEL_SAME70_REVB && \
+		     !SOC_ATMEL_SAMV71_REVB
+	range 1 6 if SOC_ATMEL_SAME70_REVB || \
+		     SOC_ATMEL_SAMV71_REVB
 	help
 	  Select the number of hardware queues used by the driver. Packets will be
 	  routed to appropriate queues based on their priority.
@@ -45,6 +49,9 @@ config ETH_SAM_GMAC_FORCED_QUEUE
 	default 0
 	range 0 1 if ETH_SAM_GMAC_QUEUES = 2
 	range 0 2 if ETH_SAM_GMAC_QUEUES = 3
+	range 0 3 if ETH_SAM_GMAC_QUEUES = 4
+	range 0 4 if ETH_SAM_GMAC_QUEUES = 5
+	range 0 5 if ETH_SAM_GMAC_QUEUES = 6
 	help
 	  Which queue to force the routing to. This affects both the TX and RX queues
 	  setup.

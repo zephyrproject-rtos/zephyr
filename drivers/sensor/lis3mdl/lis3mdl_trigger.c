@@ -10,22 +10,27 @@
 #include <sys/util.h>
 #include <kernel.h>
 #include <drivers/sensor.h>
-
+#include <logging/log.h>
 #include "lis3mdl.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-#include <logging/log.h>
-LOG_MODULE_DECLARE(LIS3MDL);
+LOG_MODULE_DECLARE(LIS3MDL, CONFIG_SENSOR_LOG_LEVEL);
 
 int lis3mdl_trigger_set(struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
 	struct lis3mdl_data *drv_data = dev->driver_data;
+	s16_t buf[3];
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
-	gpio_pin_disable_callback(drv_data->gpio, CONFIG_LIS3MDL_GPIO_PIN_NUM);
+	/* dummy read: re-trigger interrupt */
+	i2c_burst_read(drv_data->i2c, DT_INST_0_ST_LIS3MDL_MAGN_BASE_ADDRESS,
+			   LIS3MDL_REG_SAMPLE_START, (u8_t *)buf, 6);
+
+	gpio_pin_interrupt_configure(drv_data->gpio,
+			DT_INST_0_ST_LIS3MDL_MAGN_IRQ_GPIOS_PIN,
+			GPIO_INT_DISABLE);
 
 	drv_data->data_ready_handler = handler;
 	if (handler == NULL) {
@@ -34,7 +39,9 @@ int lis3mdl_trigger_set(struct device *dev,
 
 	drv_data->data_ready_trigger = *trig;
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_LIS3MDL_GPIO_PIN_NUM);
+	gpio_pin_interrupt_configure(drv_data->gpio,
+			DT_INST_0_ST_LIS3MDL_MAGN_IRQ_GPIOS_PIN,
+			GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }
@@ -47,7 +54,9 @@ static void lis3mdl_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, CONFIG_LIS3MDL_GPIO_PIN_NUM);
+	gpio_pin_interrupt_configure(dev,
+				     DT_INST_0_ST_LIS3MDL_MAGN_IRQ_GPIOS_PIN,
+				     GPIO_INT_DISABLE);
 
 #if defined(CONFIG_LIS3MDL_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -66,7 +75,9 @@ static void lis3mdl_thread_cb(void *arg)
 					     &drv_data->data_ready_trigger);
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_LIS3MDL_GPIO_PIN_NUM);
+	gpio_pin_interrupt_configure(drv_data->gpio,
+			DT_INST_0_ST_LIS3MDL_MAGN_IRQ_GPIOS_PIN,
+			GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 #ifdef CONFIG_LIS3MDL_TRIGGER_OWN_THREAD
@@ -99,20 +110,22 @@ int lis3mdl_init_interrupt(struct device *dev)
 	struct lis3mdl_data *drv_data = dev->driver_data;
 
 	/* setup data ready gpio interrupt */
-	drv_data->gpio = device_get_binding(CONFIG_LIS3MDL_GPIO_DEV_NAME);
+	drv_data->gpio =
+		device_get_binding(DT_INST_0_ST_LIS3MDL_MAGN_IRQ_GPIOS_CONTROLLER);
 	if (drv_data->gpio == NULL) {
 		LOG_DBG("Cannot get pointer to %s device.",
-			    CONFIG_LIS3MDL_GPIO_DEV_NAME);
+			    DT_INST_0_ST_LIS3MDL_MAGN_IRQ_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, CONFIG_LIS3MDL_GPIO_PIN_NUM,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+	gpio_pin_configure(drv_data->gpio,
+			   DT_INST_0_ST_LIS3MDL_MAGN_IRQ_GPIOS_PIN,
+			   GPIO_INPUT |
+			   DT_INST_0_ST_LIS3MDL_MAGN_IRQ_GPIOS_FLAGS);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   lis3mdl_gpio_callback,
-			   BIT(CONFIG_LIS3MDL_GPIO_PIN_NUM));
+			   BIT(DT_INST_0_ST_LIS3MDL_MAGN_IRQ_GPIOS_PIN));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Could not set gpio callback.");
@@ -125,27 +138,22 @@ int lis3mdl_init_interrupt(struct device *dev)
 		return -EIO;
 	}
 
-	/* enable interrupt */
-	if (i2c_reg_write_byte(drv_data->i2c, DT_INST_0_ST_LIS3MDL_MAGN_BASE_ADDRESS,
-			       LIS3MDL_REG_INT_CFG, LIS3MDL_INT_XYZ_EN) < 0) {
-		LOG_DBG("Could not enable interrupt.");
-		return -EIO;
-	}
-
 #if defined(CONFIG_LIS3MDL_TRIGGER_OWN_THREAD)
 	k_sem_init(&drv_data->gpio_sem, 0, UINT_MAX);
 
 	k_thread_create(&drv_data->thread, drv_data->thread_stack,
 			CONFIG_LIS3MDL_THREAD_STACK_SIZE,
-			(k_thread_entry_t)lis3mdl_thread, POINTER_TO_INT(dev),
+			(k_thread_entry_t)lis3mdl_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_LIS3MDL_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_LIS3MDL_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = lis3mdl_work_cb;
 	drv_data->dev = dev;
 #endif
 
-	gpio_pin_enable_callback(drv_data->gpio, CONFIG_LIS3MDL_GPIO_PIN_NUM);
+	gpio_pin_interrupt_configure(drv_data->gpio,
+			DT_INST_0_ST_LIS3MDL_MAGN_IRQ_GPIOS_PIN,
+			GPIO_INT_EDGE_TO_ACTIVE);
 
 	return 0;
 }

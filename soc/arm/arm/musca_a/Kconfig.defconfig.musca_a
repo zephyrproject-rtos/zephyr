@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2018 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_V2M_MUSCA_A
 
@@ -10,7 +7,6 @@ config SOC
 	default "musca_a"
 
 config NUM_IRQS
-	int
 	default 96
 
 endif

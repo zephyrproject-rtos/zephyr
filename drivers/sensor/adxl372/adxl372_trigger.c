@@ -11,9 +11,8 @@
 #include <drivers/sensor.h>
 #include "adxl372.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(ADXL372);
+LOG_MODULE_DECLARE(ADXL372, CONFIG_SENSOR_LOG_LEVEL);
 
 static void adxl372_thread_cb(void *arg)
 {
@@ -46,7 +45,8 @@ static void adxl372_thread_cb(void *arg)
 		drv_data->drdy_handler(dev, &drv_data->drdy_trigger);
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, cfg->int_gpio);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_gpio,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
 static void adxl372_gpio_callback(struct device *dev,
@@ -56,7 +56,8 @@ static void adxl372_gpio_callback(struct device *dev,
 		CONTAINER_OF(cb, struct adxl372_data, gpio_cb);
 	const struct adxl372_dev_config *cfg = dev->config->config_info;
 
-	gpio_pin_disable_callback(dev, cfg->int_gpio);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_gpio,
+				     GPIO_INT_DISABLE);
 
 #if defined(CONFIG_ADXL372_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -98,7 +99,8 @@ int adxl372_trigger_set(struct device *dev,
 	u8_t int_mask, int_en, status1, status2;
 	int ret;
 
-	gpio_pin_disable_callback(drv_data->gpio, cfg->int_gpio);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_gpio,
+				     GPIO_INT_DISABLE);
 
 	switch (trig->type) {
 	case SENSOR_TRIG_THRESHOLD:
@@ -128,7 +130,8 @@ int adxl372_trigger_set(struct device *dev,
 
 	adxl372_get_status(dev, &status1, &status2, NULL); /* Clear status */
 out:
-	gpio_pin_enable_callback(drv_data->gpio, cfg->int_gpio);
+	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_gpio,
+				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	return ret;
 }
@@ -146,8 +149,7 @@ int adxl372_init_interrupt(struct device *dev)
 	}
 
 	gpio_pin_configure(drv_data->gpio, cfg->int_gpio,
-			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
+			   GPIO_INPUT | cfg->int_flags);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   adxl372_gpio_callback,
@@ -165,7 +167,7 @@ int adxl372_init_interrupt(struct device *dev)
 			CONFIG_ADXL372_THREAD_STACK_SIZE,
 			(k_thread_entry_t)adxl372_thread, dev,
 			0, NULL, K_PRIO_COOP(CONFIG_ADXL372_THREAD_PRIORITY),
-			0, 0);
+			0, K_NO_WAIT);
 #elif defined(CONFIG_ADXL372_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl372_work_cb;
 	drv_data->dev = dev;

@@ -31,6 +31,8 @@
 #define IV_ALIGNMENT_CHECK 17
 #define IV_MACHINE_CHECK 18
 #define IV_SIMD_FP 19
+#define IV_VIRT_EXCEPTION 20
+#define IV_SECURITY_EXCEPTION 30
 
 #define IV_IRQS 32		/* start of vectors available for IRQs */
 #define IV_NR_VECTORS 256	/* total number of vectors */
@@ -39,19 +41,22 @@
  * EFLAGS/RFLAGS definitions. (RFLAGS is just zero-extended EFLAGS.)
  */
 
-#define EFLAGS_IF	0x00000200U	/* interrupts enabled */
-#define EFLAGS_INITIAL	(EFLAGS_IF)
+#define EFLAGS_IF	BIT(9)	/* interrupts enabled */
+#define EFLAGS_DF	BIT(10)	/* Direction flag */
 
+#define EFLAGS_INITIAL	(EFLAGS_IF)
+#define EFLAGS_SYSCALL	(EFLAGS_IF | EFLAGS_DF)
 /*
  * Control register definitions.
  */
 
-#define CR0_PG		0x80000000	/* enable paging */
-#define CR0_WP		0x00010000	/* honor W bit even when supervisor */
-#define CR4_PAE		0x00000020	/* enable PAE */
-#define CR4_OSFXSR	0x00000200	/* enable SSE (OS FXSAVE/RSTOR) */
+#define CR0_PG		BIT(31)		/* enable paging */
+#define CR0_WP		BIT(16)		/* honor W bit even when supervisor */
 
-#ifdef CONFIG_X86_LONGMODE
+#define CR4_PAE		BIT(5)		/* enable PAE */
+#define CR4_OSFXSR	BIT(9)		/* enable SSE (OS FXSAVE/RSTOR) */
+
+#ifdef CONFIG_X86_64
 #include <intel64/kernel_arch_data.h>
 #else
 #include <ia32/kernel_arch_data.h>

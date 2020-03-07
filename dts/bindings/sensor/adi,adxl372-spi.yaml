@@ -2,11 +2,7 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: ADXL372 Three Axis High-g I2C/SPI accelerometer
-
-description: >
-    This is a representation of the ADXL372 Three Axis High-g accelerometer,
-    accessed through SPI bus
+description: ADXL372 3-axis high-g accelerometer, accessed through SPI bus
 
 compatible: "adi,adxl372"
 
@@ -16,3 +12,7 @@ properties:
     int1-gpios:
       type: phandle-array
       required: false
+      description: |
+        The INT1 signal defaults to active high as produced by the
+        sensor.  The property value should ensure the flags properly
+        describe the signal that is presented to the driver.

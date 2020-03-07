@@ -17,7 +17,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
-#include <bluetooth/hci_driver.h>
+#include <drivers/bluetooth/hci_driver.h>
 #include <bluetooth/l2cap.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_RFCOMM)
@@ -244,7 +244,7 @@ static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;
 
-	STACK_ANALYZE("dlc stack", dlc->stack);
+	log_stack_usage(&dlc->tx_thread);
 
 	if (dlc->ops && dlc->ops->disconnected) {
 		dlc->ops->disconnected(dlc);
@@ -1431,7 +1431,7 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		hdr = net_buf_push(buf, sizeof(*hdr) + 1);
 		len = (u16_t *)&hdr->length;
 		*len = BT_RFCOMM_SET_LEN_16(sys_cpu_to_le16(buf->len -
-							    sizeof(*hdr) + 1));
+							    sizeof(*hdr) - 1));
 	} else {
 		hdr = net_buf_push(buf, sizeof(*hdr));
 		hdr->length = BT_RFCOMM_SET_LEN_8(buf->len - sizeof(*hdr));
@@ -1567,7 +1567,7 @@ static void rfcomm_session_rtx_timeout(struct k_work *work)
 static struct bt_rfcomm_session *rfcomm_session_new(bt_rfcomm_role_t role)
 {
 	int i;
-	static struct bt_l2cap_chan_ops ops = {
+	static const struct bt_l2cap_chan_ops ops = {
 		.connected = rfcomm_connected,
 		.disconnected = rfcomm_disconnected,
 		.recv = rfcomm_recv,

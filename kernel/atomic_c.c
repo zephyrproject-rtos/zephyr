@@ -39,15 +39,15 @@ static struct k_spinlock lock;
 #include <syscall_handler.h>
 
 #define ATOMIC_SYSCALL_HANDLER_TARGET(name) \
-	static inline atomic_val_t z_vrfy_##name(atomic_t target) \
+	static inline atomic_val_t z_vrfy_##name(atomic_t *target) \
 	{								\
 		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_t))); \
 		return z_impl_##name((atomic_t *)target); \
 	}
 
 #define ATOMIC_SYSCALL_HANDLER_TARGET_VALUE(name) \
-	static inline atomic_val_t z_vrfy_##name(atomic_t target, \
-						 u32_t value)		\
+	static inline atomic_val_t z_vrfy_##name(atomic_t *target, \
+						 atomic_val_t value) \
 	{								\
 		Z_OOPS(Z_SYSCALL_MEMORY_WRITE(target, sizeof(atomic_t))); \
 		return z_impl_##name((atomic_t *)target, value); \
@@ -332,7 +332,7 @@ atomic_val_t z_impl_atomic_nand(atomic_t *target, atomic_val_t value)
 
 ATOMIC_SYSCALL_HANDLER_TARGET_VALUE(atomic_nand);
 
-#ifdef USERSPACE
+#ifdef CONFIG_USERSPACE
 #include <syscalls/atomic_add_mrsh.c>
 #include <syscalls/atomic_sub_mrsh.c>
 #include <syscalls/atomic_set_mrsh.c>

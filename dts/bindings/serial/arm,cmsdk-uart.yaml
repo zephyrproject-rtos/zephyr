@@ -1,7 +1,4 @@
-title: ARM CMSDK UART
-
-description: >
-    This binding gives a base representation of the ARM CMSDK UART
+description: ARM CMSDK UART
 
 compatible: "arm,cmsdk-uart"
 

@@ -1,13 +1,7 @@
-#
 # Copyright (c) 2019, Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
-title: Microchip XEC basic timer
-
-description: >
-    This binding gives a base representation of the Microchip XEC basic timer
+description: Microchip XEC basic timer
 
 compatible: "microchip,xec-timer"
 

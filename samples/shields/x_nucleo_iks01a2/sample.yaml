@@ -1,7 +1,7 @@
 sample:
   name: X-NUCLEO-IKS01A2 sensor shield
 tests:
-  sample.shields.x_nucleo_iks01a2:
+  sample.shields..x_nucleo_iks01a2:
     harness: shield
     tags: shield
     depends_on: arduino_i2c arduino_gpio

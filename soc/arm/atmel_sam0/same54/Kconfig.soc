@@ -1,0 +1,22 @@
+# Atmel SAME MCU series
+
+# Copyright (c) 2019 ML!PA Consulting GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Atmel SAME54 MCU Selection"
+	depends on SOC_SERIES_SAME54
+
+config SOC_PART_NUMBER_SAME54N19A
+	bool "SAME54N19A"
+
+config SOC_PART_NUMBER_SAME54N20A
+	bool "SAME54N20A"
+
+config SOC_PART_NUMBER_SAME54P19A
+	bool "SAME54P19A"
+
+config SOC_PART_NUMBER_SAME54P20A
+	bool "SAME54P20A"
+
+endchoice

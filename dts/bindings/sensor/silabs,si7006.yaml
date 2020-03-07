@@ -1,10 +1,7 @@
 # Copyright (c) 2019, Electronut Labs
 # SPDX-License-Identifier: Apache-2.0
 
-title: Si7006 Temperature and Humidity sensor
-
-description: >
-    This is a representation of Si7006 Temperature and Humidity sensor
+description: Si7006 temperature and humidity sensor
 
 compatible: "silabs,si7006"
 

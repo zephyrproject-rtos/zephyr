@@ -1,10 +1,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic PDM
-
-description: >
-    Binding for the Nordic PDM (pulse density modulation interface)
+description: Nordic PDM (Pulse Density Modulation interface)
 
 compatible: "nordic,nrf-pdm"
 

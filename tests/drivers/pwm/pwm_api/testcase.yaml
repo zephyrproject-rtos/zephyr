@@ -1,5 +1,8 @@
 tests:
-  peripheral.pwm:
+  drivers.pwm:
     tags: drivers pwm
-    filter: DT_ALIAS_PWM_0_LABEL or DT_ALIAS_PWM_1_LABEL or DT_ALIAS_PWM_2_LABEL or DT_ALIAS_PWM_3_LABEL
+    filter: dt_alias_exists("pwm-0") or
+            dt_alias_exists("pwm-1") or
+            dt_alias_exists("pwm-2") or
+            dt_alias_exists("pwm-3")
     depends_on: pwm

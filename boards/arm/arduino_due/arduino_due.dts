@@ -9,7 +9,6 @@
 	compatible = "arduino,due", "atmel,sam3x8e", "atmel,sam3x";
 
 	aliases {
-		wdog = &wdog;
 		uart-0 = &uart0;
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
@@ -40,7 +39,6 @@
 &wdog {
 	status = "okay";
 };
-
 
 &i2c0 {
 	status = "okay";

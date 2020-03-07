@@ -3,10 +3,10 @@
 if (CONFIG_64BIT)
 	# some gcc versions fail to build without -fPIC
 	zephyr_compile_options(-m64 -fPIC)
-	zephyr_ld_options(-m64)
+	zephyr_link_libraries(-m64)
 else ()
 	zephyr_compile_options(-m32)
-	zephyr_ld_options(-m32)
+	zephyr_link_libraries(-m32)
 endif ()
 
 zephyr_compile_options(
@@ -24,9 +24,11 @@ if (CONFIG_COVERAGE)
 endif ()
 
 if (CONFIG_ASAN)
-	zephyr_compile_options(-fsanitize=address)
-	zephyr_link_libraries(-lasan)
-	zephyr_ld_options(-fsanitize=address)
+  toolchain_cc_asan()
+endif ()
+
+if (CONFIG_UBSAN)
+  toolchain_cc_ubsan()
 endif ()
 
 zephyr_compile_definitions(_POSIX_C_SOURCE=200809 _XOPEN_SOURCE=600 _XOPEN_SOURCE_EXTENDED)

@@ -5,7 +5,7 @@
 
 include: base.yaml
 
-child-bus: espi
+bus: espi
 
 properties:
     label:

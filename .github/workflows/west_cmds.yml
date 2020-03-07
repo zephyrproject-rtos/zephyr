@@ -1,0 +1,65 @@
+# Copyright (c) 2020 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Zephyr West Command Tests
+
+on:
+  push:
+    paths:
+    - 'scripts/west-commands.yml'
+    - 'scripts/west_commands/**'
+  pull_request:
+    paths:
+    - 'scripts/west-commands.yml'
+    - 'scripts/west_commands/**'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: cache-pip-linux
+      if: startsWith(runner.os, 'Linux')
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}
+    - name: cache-pip-mac
+      if: startsWith(runner.os, 'macOS')
+      uses: actions/cache@v1
+      with:
+        path: ~/Library/Caches/pip
+        # Trailing '-' was just to get a different cache name
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+    - name: cache-pip-win
+      if: startsWith(runner.os, 'Windows')
+      uses: actions/cache@v1
+      with:
+        path: ~\AppData\Local\pip\Cache
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}
+    - name: install pytest
+      run: |
+        pip3 install pytest west pyelftools
+    - name: run pytest-win
+      if: runner.os == 'Windows'
+      run: |
+        cmd /C "set PYTHONPATH=.\scripts\west_commands && pytest ./scripts/west_commands/tests/"
+    - name: run pytest-mac-linux
+      if: runner.os != 'Windows'
+      run: |
+        PYTHONPATH=./scripts/west_commands pytest ./scripts/west_commands/tests/

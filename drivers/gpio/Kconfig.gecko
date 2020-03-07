@@ -1,9 +1,7 @@
-# Kconfig.gecko - Gecko GPIO configuration options
-#
+# Gecko GPIO configuration options
+
 # Copyright (c) 2017 Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig GPIO_GECKO
 	bool "Gecko GPIO driver"
@@ -48,5 +46,30 @@ config GPIO_GECKO_PORTF
 	bool "Port F"
 	help
 	  Enable Port F.
+
+config GPIO_GECKO_PORTG
+	bool "Port G"
+	help
+	  Enable Port G.
+
+config GPIO_GECKO_PORTH
+	bool "Port H"
+	help
+	  Enable Port H.
+
+config GPIO_GECKO_PORTI
+	bool "Port I"
+	help
+	  Enable Port I.
+
+config GPIO_GECKO_PORTJ
+	bool "Port J"
+	help
+	  Enable Port J.
+
+config GPIO_GECKO_PORTK
+	bool "Port K"
+	help
+	  Enable Port K.
 
 endif # GPIO_GECKO

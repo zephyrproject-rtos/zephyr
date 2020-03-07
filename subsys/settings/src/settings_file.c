@@ -6,6 +6,7 @@
  */
 
 #include <string.h>
+#include <stdbool.h>
 #include <zephyr.h>
 
 #include <fs/fs.h>
@@ -13,6 +14,13 @@
 #include "settings/settings.h"
 #include "settings/settings_file.h"
 #include "settings_priv.h"
+
+#include <logging/log.h>
+
+LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
+
+int settings_backend_init(void);
+void settings_mount_fs_backend(struct settings_file *cf);
 
 static int settings_file_load(struct settings_store *cs,
 			      const struct settings_load_arg *arg);
@@ -38,6 +46,9 @@ int settings_file_src(struct settings_file *cf)
 	return 0;
 }
 
+/*
+ * Register a file to be a destination of configuration.
+ */
 int settings_file_dst(struct settings_file *cf)
 {
 	if (!cf->cf_name) {
@@ -49,18 +60,60 @@ int settings_file_dst(struct settings_file *cf)
 	return 0;
 }
 
+/**
+ * @brief Check if there is any duplicate of the current setting
+ *
+ * This function checks if there is any duplicated data further in the buffer.
+ *
+ * @param entry_ctx Current entry context
+ * @param name      The name of the current entry
+ *
+ * @retval false No duplicates found
+ * @retval true  Duplicate found
+ */
+static bool settings_file_check_duplicate(
+				  const struct line_entry_ctx *entry_ctx,
+				  const char * const name)
+{
+	struct line_entry_ctx entry2_ctx = *entry_ctx;
+
+	/* Searching the duplicates */
+	while (settings_next_line_ctx(&entry2_ctx) == 0) {
+		char name2[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+		size_t name2_len;
+
+		if (entry2_ctx.len == 0) {
+			break;
+		}
+
+		if (settings_line_name_read(name2, sizeof(name2), &name2_len,
+					    &entry2_ctx)) {
+			continue;
+		}
+		name2[name2_len] = '\0';
+
+		if (!strcmp(name, name2)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static int read_entry_len(const struct line_entry_ctx *entry_ctx, off_t off)
+{
+	if (off >= entry_ctx->len) {
+		return 0;
+	}
+	return entry_ctx->len - off;
+}
 
 static int settings_file_load_priv(struct settings_store *cs, line_load_cb cb,
-				   void *cb_arg)
+				   void *cb_arg, bool filter_duplicates)
 {
 	struct settings_file *cf = (struct settings_file *)cs;
-	char buf[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
-	struct fs_dirent file_info;
-	struct fs_file_t  file;
-	size_t len_read;
+	struct fs_file_t file;
 	int lines;
 	int rc;
-
 
 	struct line_entry_ctx entry_ctx = {
 		.stor_ctx = (void *)&file,
@@ -70,34 +123,39 @@ static int settings_file_load_priv(struct settings_store *cs, line_load_cb cb,
 
 	lines = 0;
 
-	rc = fs_stat(cf->cf_name, &file_info);
-	if (rc) {
-		return rc;
-	}
-
 	rc = fs_open(&file, cf->cf_name);
 	if (rc != 0) {
 		return -EINVAL;
 	}
 
 	while (1) {
-		rc = settings_next_line_ctx(&entry_ctx);
+		char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+		size_t name_len;
+		bool pass_entry = true;
 
+		rc = settings_next_line_ctx(&entry_ctx);
 		if (rc || entry_ctx.len == 0) {
 			break;
 		}
 
-		rc = settings_line_name_read(buf, sizeof(buf), &len_read,
-					     (void *)&entry_ctx);
+		rc = settings_line_name_read(name, sizeof(name), &name_len,
+					     &entry_ctx);
 
-		if (rc || len_read == 0) {
+		if (rc || name_len == 0) {
 			break;
 		}
-		buf[len_read] = '\0';
+		name[name_len] = '\0';
 
+		if (filter_duplicates &&
+		    (!read_entry_len(&entry_ctx, name_len+1) ||
+		     settings_file_check_duplicate(&entry_ctx, name))) {
+			pass_entry = false;
+		}
 		/*name, val-read_cb-ctx, val-off*/
 		/* take into account '=' separator after the name */
-		cb(buf, (void *)&entry_ctx, len_read + 1, cb_arg);
+		if (pass_entry) {
+			cb(name, (void *)&entry_ctx, name_len + 1, cb_arg);
+		}
 		lines++;
 	}
 
@@ -113,7 +171,10 @@ static int settings_file_load_priv(struct settings_store *cs, line_load_cb cb,
 static int settings_file_load(struct settings_store *cs,
 			      const struct settings_load_arg *arg)
 {
-	return settings_file_load_priv(cs, settings_line_load_cb, (void *)arg);
+	return settings_file_load_priv(cs,
+				       settings_line_load_cb,
+				       (void *)arg,
+				       true);
 }
 
 static void settings_tmpfile(char *dst, const char *src, char *pfx)
@@ -152,8 +213,9 @@ static int settings_file_create_or_replace(struct fs_file_t *zfp,
 /*
  * Try to compress configuration file by keeping unique names only.
  */
-int settings_file_save_and_compress(struct settings_file *cf, const char *name,
-			      const char *value, size_t val_len)
+static int settings_file_save_and_compress(struct settings_file *cf,
+			   const char *name, const char *value,
+			   size_t val_len)
 {
 	int rc, rc2;
 	struct fs_file_t rf;
@@ -323,9 +385,9 @@ static int settings_file_save_priv(struct settings_store *cs, const char *name,
 		rc = fs_seek(&file, 0, FS_SEEK_END);
 		if (rc == 0) {
 			entry_ctx.stor_ctx = &file;
-			rc2 = settings_line_write(name, value, val_len, 0,
+			rc = settings_line_write(name, value, val_len, 0,
 						  (void *)&entry_ctx);
-			if (rc2 == 0) {
+			if (rc == 0) {
 				cf->cf_lines++;
 			}
 		}
@@ -359,7 +421,7 @@ static int settings_file_save(struct settings_store *cs, const char *name,
 	cdca.val = (char *)value;
 	cdca.is_dup = 0;
 	cdca.val_len = val_len;
-	settings_file_load_priv(cs, settings_line_dup_check_cb, &cdca);
+	settings_file_load_priv(cs, settings_line_dup_check_cb, &cdca, false);
 	if (cdca.is_dup == 1) {
 		return 0;
 	}
@@ -432,4 +494,40 @@ static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
 void settings_mount_fs_backend(struct settings_file *cf)
 {
 	settings_line_io_init(read_handler, write_handler, get_len_cb, 1);
+}
+
+int settings_backend_init(void)
+{
+	static struct settings_file config_init_settings_file = {
+		.cf_name = CONFIG_SETTINGS_FS_FILE,
+		.cf_maxlines = CONFIG_SETTINGS_FS_MAX_LINES
+	};
+	int rc;
+
+
+	rc = settings_file_src(&config_init_settings_file);
+	if (rc) {
+		k_panic();
+	}
+
+	rc = settings_file_dst(&config_init_settings_file);
+	if (rc) {
+		k_panic();
+	}
+
+	settings_mount_fs_backend(&config_init_settings_file);
+
+	/*
+	 * Must be called after root FS has been initialized.
+	 */
+	rc = fs_mkdir(CONFIG_SETTINGS_FS_DIR);
+
+	/*
+	 * The following lines mask the file exist error.
+	 */
+	if (rc == -EEXIST) {
+		rc = 0;
+	}
+
+	return rc;
 }

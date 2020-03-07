@@ -1,10 +1,7 @@
-# Kconfig - BSD Sockets compatible API
+# BSD Sockets compatible API
 
-#
 # Copyright (c) 2017 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig NET_SOCKETS
 	bool "BSD Sockets compatible API"
@@ -35,9 +32,9 @@ config NET_SOCKETS_CONNECT_TIMEOUT
 	default 3000
 	range 0 60000
 	help
-	 This variable specifies time in milliseconds after connect()
-	 API call will timeout if we have not received SYN-ACK from
-	 peer.
+	  This variable specifies time in milliseconds after connect()
+	  API call will timeout if we have not received SYN-ACK from
+	  peer.
 
 config NET_SOCKETS_DNS_TIMEOUT
 	int "Timeout value in milliseconds for DNS queries"
@@ -51,7 +48,8 @@ config NET_SOCKETS_DNS_TIMEOUT
 
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "Enable TCP TLS socket option support [EXPERIMENTAL]"
-	select TLS_CREDENTIALS
+	imply TLS_CREDENTIALS
+	select MBEDTLS if NET_NATIVE
 	help
 	  Enable TLS socket option support which automatically establishes
 	  a TLS connection to the remote host.
@@ -59,7 +57,7 @@ config NET_SOCKETS_SOCKOPT_TLS
 config NET_SOCKETS_ENABLE_DTLS
 	bool "Enable DTLS socket support [EXPERIMENTAL]"
 	depends on NET_SOCKETS_SOCKOPT_TLS
-	select MBEDTLS_DTLS
+	select MBEDTLS_DTLS if NET_NATIVE
 	help
 	  Enable DTLS socket support. By default only TLS over TCP is supported.
 
@@ -142,7 +140,7 @@ config NET_SOCKETS_CAN_RECEIVERS
 	  Socket-CAN interface.
 
 config NET_SOCKETS_NET_MGMT
-	bool "Enable network mangement socket support [EXPERIMENTAL]"
+	bool "Enable network management socket support [EXPERIMENTAL]"
 	depends on NET_MGMT_EVENT
 	select NET_MGMT_EVENT_INFO
 	help

@@ -10,6 +10,7 @@ from runners.core import ZephyrBinaryRunner, RunnerCaps, \
     BuildConfiguration
 
 DEFAULT_PYOCD_GDB_PORT = 3333
+DEFAULT_PYOCD_TELNET_PORT = 4444
 
 
 class PyOcdBinaryRunner(ZephyrBinaryRunner):
@@ -18,8 +19,9 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, target,
                  pyocd='pyocd',
                  flash_addr=0x0, flash_opts=None,
-                 gdb_port=DEFAULT_PYOCD_GDB_PORT, tui=False,
-                 board_id=None, daparg=None, frequency=None):
+                 gdb_port=DEFAULT_PYOCD_GDB_PORT,
+                 telnet_port=DEFAULT_PYOCD_TELNET_PORT, tui=False,
+                 board_id=None, daparg=None, frequency=None, tool_opt=None):
         super(PyOcdBinaryRunner, self).__init__(cfg)
 
         self.target_args = ['-t', target]
@@ -27,6 +29,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.flash_addr_args = ['-a', hex(flash_addr)] if flash_addr else []
         self.gdb_cmd = [cfg.gdb] if cfg.gdb is not None else None
         self.gdb_port = gdb_port
+        self.telnet_port = telnet_port
         self.tui_args = ['-tui'] if tui else []
         self.hex_name = cfg.hex_file
         self.bin_name = cfg.bin_file
@@ -46,6 +49,11 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         if frequency is not None:
             frequency_args = ['-f', frequency]
         self.frequency_args = frequency_args
+
+        tool_opt_args = []
+        if tool_opt is not None:
+            tool_opt_args = [tool_opt]
+        self.tool_opt_args = tool_opt_args
 
         self.flash_extra = flash_opts if flash_opts else []
 
@@ -75,10 +83,16 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--gdb-port', default=DEFAULT_PYOCD_GDB_PORT,
                             help='pyocd gdb port, defaults to {}'.format(
                                 DEFAULT_PYOCD_GDB_PORT))
+        parser.add_argument('--telnet-port', default=DEFAULT_PYOCD_TELNET_PORT,
+                            help='pyocd telnet port, defaults to {}'.format(
+                                DEFAULT_PYOCD_TELNET_PORT))
         parser.add_argument('--tui', default=False, action='store_true',
                             help='if given, GDB uses -tui')
         parser.add_argument('--board-id',
                             help='ID of board to flash, default is to prompt')
+        parser.add_argument('--tool-opt',
+                            help='''Additional options for pyocd Commander,
+                            e.g. \'--script=user.py\' ''')
 
     @classmethod
     def create(cls, cfg, args):
@@ -89,9 +103,10 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             cfg, args.target,
             pyocd=args.pyocd,
             flash_addr=flash_addr, flash_opts=args.flash_opt,
-            gdb_port=args.gdb_port, tui=args.tui,
+            gdb_port=args.gdb_port, telnet_port=args.telnet_port, tui=args.tui,
             board_id=args.board_id, daparg=args.daparg,
-            frequency=args.frequency)
+            frequency=args.frequency,
+            tool_opt=args.tool_opt)
 
         daparg = os.environ.get('PYOCD_DAPARG')
         if not ret.daparg_args and daparg:
@@ -102,7 +117,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         return ret
 
     def port_args(self):
-        return ['-p', str(self.gdb_port)]
+        return ['-p', str(self.gdb_port), '-T', str(self.telnet_port)]
 
     def do_run(self, command, **kwargs):
         self.require(self.pyocd)
@@ -133,6 +148,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                self.target_args +
                self.board_args +
                self.frequency_args +
+               self.tool_opt_args +
                self.flash_extra +
                [fname])
 
@@ -150,7 +166,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                       self.port_args() +
                       self.target_args +
                       self.board_args +
-                      self.frequency_args)
+                      self.frequency_args +
+                      self.tool_opt_args)
 
         if command == 'debugserver':
             self.log_gdbserver_message()

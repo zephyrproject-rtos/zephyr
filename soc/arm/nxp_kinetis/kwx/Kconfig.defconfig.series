@@ -1,9 +1,7 @@
-# Kconfig - Kinetis KWx series configuration options
-#
+# Kinetis KWx series configuration options
+
 # Copyright (c) 2017, NXP
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_SERIES_KINETIS_KWX
 

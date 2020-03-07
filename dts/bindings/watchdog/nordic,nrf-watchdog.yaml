@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic Semiconductor NRF watchdog driver
-
-description: >
-    This is a representation of the NRF watchdog
+description: Nordic Semiconductor nRF watchdog
 
 compatible: "nordic,nrf-watchdog"
 

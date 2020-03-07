@@ -8,8 +8,8 @@
 #include <syscall_handler.h>
 
 #ifdef CONFIG_USERSPACE
-#define SYS_SEM_MINIMUN      0
-#define SYS_SEM_CONTENDED    (SYS_SEM_MINIMUN - 1)
+#define SYS_SEM_MINIMUM      0
+#define SYS_SEM_CONTENDED    (SYS_SEM_MINIMUM - 1)
 
 static inline atomic_t bounded_dec(atomic_t *val, atomic_t minimum)
 {
@@ -28,7 +28,7 @@ static inline atomic_t bounded_dec(atomic_t *val, atomic_t minimum)
 }
 
 static inline atomic_t bounded_inc(atomic_t *val, atomic_t minimum,
-		atomic_t maximum)
+				   atomic_t maximum)
 {
 	atomic_t old_value, new_value;
 
@@ -39,16 +39,16 @@ static inline atomic_t bounded_inc(atomic_t *val, atomic_t minimum,
 		}
 
 		new_value = old_value < minimum ?
-				minimum + 1 : old_value + 1;
+			    minimum + 1 : old_value + 1;
 	} while (atomic_cas(val, old_value, new_value) == 0);
 
 	return old_value;
 }
 
 int sys_sem_init(struct sys_sem *sem, unsigned int initial_count,
-		unsigned int limit)
+		 unsigned int limit)
 {
-	if (sem == NULL || limit == SYS_SEM_MINIMUN ||
+	if (sem == NULL || limit == SYS_SEM_MINIMUM ||
 	    initial_count > limit || limit > INT_MAX) {
 		return -EINVAL;
 	}
@@ -65,7 +65,7 @@ int sys_sem_give(struct sys_sem *sem)
 	atomic_t old_value;
 
 	old_value = bounded_inc(&sem->futex.val,
-				SYS_SEM_MINIMUN, sem->limit);
+				SYS_SEM_MINIMUM, sem->limit);
 	if (old_value < 0) {
 		ret = k_futex_wake(&sem->futex, true);
 
@@ -86,13 +86,13 @@ int sys_sem_take(struct sys_sem *sem, s32_t timeout)
 
 	do {
 		old_value = bounded_dec(&sem->futex.val,
-					SYS_SEM_MINIMUN);
+					SYS_SEM_MINIMUM);
 		if (old_value > 0) {
 			return 0;
 		}
 
 		ret = k_futex_wait(&sem->futex,
-				SYS_SEM_CONTENDED, timeout);
+				   SYS_SEM_CONTENDED, timeout);
 	} while (ret == 0 || ret == -EAGAIN);
 
 	return ret;
@@ -102,11 +102,11 @@ unsigned int sys_sem_count_get(struct sys_sem *sem)
 {
 	int value = atomic_get(&sem->futex.val);
 
-	return value > SYS_SEM_MINIMUN ? value : SYS_SEM_MINIMUN;
+	return value > SYS_SEM_MINIMUM ? value : SYS_SEM_MINIMUM;
 }
 #else
 int sys_sem_init(struct sys_sem *sem, unsigned int initial_count,
-		unsigned int limit)
+		 unsigned int limit)
 {
 	k_sem_init(&sem->kernel_sem, initial_count, limit);
 

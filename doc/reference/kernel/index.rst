@@ -32,10 +32,13 @@ synchronization.
 
    threads/index.rst
    scheduling/index.rst
+   threads/system_threads.rst
+   threads/workqueue.rst
    other/interrupts.rst
    other/polling.rst
    synchronization/semaphores.rst
    synchronization/mutexes.rst
+   smp/smp.rst
 
 Data Passing
 ************
@@ -113,6 +116,7 @@ These pages cover other kernel services.
    other/atomic.rst
    other/float.rst
    other/ring_buffers.rst
+   other/resource_mgmt.rst
    other/cxx_support.rst
    other/version.rst
    other/fatal.rst

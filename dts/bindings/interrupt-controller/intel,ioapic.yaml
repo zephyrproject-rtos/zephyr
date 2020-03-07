@@ -1,8 +1,4 @@
-title: Intel I/O Advanced Programmable Interrupt Controller
-
-description: >
-    This binding describes the Intel I/O Advanced Programmable Interrupt
-    controller
+description: Intel I/O Advanced Programmable Interrupt Controller (APIC)
 
 compatible: "intel,ioapic"
 
@@ -15,7 +11,7 @@ properties:
   "#interrupt-cells":
       const: 3
 
-"#cells":
+interrupt-cells:
   - irq
   - sense
   - priority

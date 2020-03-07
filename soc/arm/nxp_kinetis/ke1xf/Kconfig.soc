@@ -1,9 +1,7 @@
-# Kconfig - Kinetis KE1xF MCU line
-#
+# Kinetis KE1xF MCU line
+
 # Copyright (c) 2019 Vestas Wind Systems A/S
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
 	prompt "Kinetis KE1xF MCU Selection"
@@ -80,17 +78,27 @@ config SOC_PART_NUMBER_KINETIS_KE1XF
 	  number selection choice defines the default value for this
 	  string.
 
-config WDOG_INIT
-	def_bool y
-	# omit prompt to signify a "hidden" option
+config WDOG_ENABLE_AT_BOOT
+	bool "Keep watchdog timer enabled at boot"
+	depends on WDOG_INIT
 	help
-	  This processor enables the watchdog timer with a short
-	  window for configuration upon reset. Therefore, this
-	  requires that the watchdog be configured during reset
-	  handling.
+	  Keep the watchdog timer enabled at boot with the internal
+	  128kHz LPO clock (and a prescaler of 256) as clock
+	  source. The application can take over control of the
+	  watchdog timer after boot and install a different timeout,
+	  if needed.
+
+config WDOG_INITIAL_TIMEOUT
+	int "Initial timeout for the watchdog timer in milliseconds"
+	depends on WDOG_ENABLE_AT_BOOT
+	range 2 131070
+	default 2048
+	help
+	  Initial timeout value for the watchdog timer in
+	  milliseconds.
 
 config KINETIS_KE1XF_ENABLE_CODE_CACHE
-        bool "Enable the code cache"
-        default y
+	bool "Enable the code cache"
+	default y
 
 endif # SOC_SERIES_KINETIS_KE1XF

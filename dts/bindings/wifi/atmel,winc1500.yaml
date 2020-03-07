@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: Atmel WINC1500 Wifi module
-
-description: >
-    This binding gives the base representation of the Atmel WINC1500 Wifi module
+description: Atmel WINC1500 WiFi module
 
 compatible: "atmel,winc1500"
 

@@ -13,6 +13,7 @@
 
 	aliases {
 		uart-0 = &uart0;
+		i2c-0 = &i2c0;
 	};
 
 	chosen {
@@ -55,4 +56,21 @@
 	rts-pin = <7>;
 	cts-pin = <8>;
 	hw-flow-control;
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-pin = <21>;
+	scl-pin = <22>;
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	sda-pin = <18>;
+	scl-pin = <5>;
+};
+
+&trng0 {
+	status = "okay";
 };

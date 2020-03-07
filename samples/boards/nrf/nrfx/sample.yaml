@@ -1,0 +1,6 @@
+sample:
+  name: nrfx usage sample
+tests:
+  sample.board.nrf91.nrfx:
+    platform_whitelist: nrf9160_pca10090
+    tags: board

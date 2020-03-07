@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
 
@@ -13,9 +12,8 @@
 #include <usb/usb_common.h>
 #include <usb_descriptor.h>
 
-#define LOG_LEVEL LOG_LEVEL_DBG
 #include <logging/log.h>
-LOG_MODULE_REGISTER(test_main);
+LOG_MODULE_REGISTER(test_main, LOG_LEVEL_DBG);
 
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 #error Do not use composite configuration
@@ -37,6 +35,7 @@ struct usb_test_config {
 } __packed;
 
 #define TEST_BULK_EP_MPS		64
+#define TEST_DESCRIPTOR_TABLE_SPAN	157
 
 #define INITIALIZER_IF							\
 	{								\
@@ -233,7 +232,7 @@ static void test_desc_sections(void)
 	zassert_not_null(head, NULL);
 
 	zassert_equal(SYMBOL_SPAN(__usb_descriptor_end, __usb_descriptor_start),
-		      133, NULL);
+		      TEST_DESCRIPTOR_TABLE_SPAN, NULL);
 
 	/* Calculate number of structures */
 	zassert_equal(__usb_data_end - __usb_data_start, NUM_INSTANCES, NULL);

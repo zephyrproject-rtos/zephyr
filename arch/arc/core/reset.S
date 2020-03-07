@@ -17,7 +17,7 @@
 #include <swap_macros.h>
 
 GDATA(_interrupt_stack)
-GDATA(_main_stack)
+GDATA(z_main_stack)
 GDATA(_VectorTable)
 
 /* use one of the available interrupt stacks during init */
@@ -126,7 +126,7 @@ done_cache_invalidate:
         jl @_sys_resume_from_deep_sleep
 #endif
 
-#ifdef CONFIG_SMP
+#if CONFIG_MP_NUM_CPUS  > 1
 	_get_cpu_id r0
 	breq r0, 0, _master_core_startup
 
@@ -137,13 +137,14 @@ _slave_core_wait:
 	ld r1, [arc_cpu_wake_flag]
 	brne r0, r1, _slave_core_wait
 
+	ld sp, [arc_cpu_sp]
 	/* signal master core that slave core runs */
 	st 0, [arc_cpu_wake_flag]
 
-	/* get sp set by master core */
-	_get_curr_cpu_irq_stack sp
-
-	j z_arch_slave_start
+#if defined(CONFIG_ARC_FIRQ_STACK)
+	jl z_arc_firq_stack_set
+#endif
+	j z_arc_slave_start
 
 _master_core_startup:
 #endif
@@ -154,7 +155,7 @@ _master_core_startup:
 	 * FIRQ stack when CONFIG_INIT_STACKS is enabled before switching to
 	 * one of them for the rest of the early boot
 	 */
-	mov_s sp, _main_stack
+	mov_s sp, z_main_stack
 	add sp, sp, CONFIG_MAIN_STACK_SIZE
 
 	mov_s r0, _interrupt_stack
@@ -166,5 +167,9 @@ _master_core_startup:
 
 	mov_s sp, INIT_STACK
 	add sp, sp, INIT_STACK_SIZE
+
+#if defined(CONFIG_ARC_FIRQ_STACK)
+	jl z_arc_firq_stack_set
+#endif
 
 	j @_PrepC

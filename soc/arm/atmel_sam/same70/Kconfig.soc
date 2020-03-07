@@ -1,8 +1,7 @@
-# Kconfig - Atmel SAM E70 MCU series
-#
+# Atmel SAM E70 MCU series
+
 # Copyright (c) 2016 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
-#
 
 choice
 	prompt "Atmel SAME70 MCU Selection"
@@ -159,7 +158,6 @@ config SOC_ATMEL_SAME70_WAIT_MODE
 
 config SOC_ATMEL_SAME70_DISABLE_ERASE_PIN
 	bool "Disable ERASE pin"
-	default 0
 	help
 	  At reset ERASE pin is configured in System IO mode. Asserting the ERASE
 	  pin at '1' will completely erase Flash memory. Setting this option will

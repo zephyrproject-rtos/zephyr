@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2017 Linaro Limited
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig LWM2M
 	bool "OMA LWM2M protocol stack"
@@ -26,13 +23,17 @@ config LWM2M_DTLS_SUPPORT
 	select NET_SOCKETS_SOCKOPT_TLS
 	select NET_SOCKETS_ENABLE_DTLS
 
+config LWM2M_DNS_SUPPORT
+	bool "Enable DNS support in the LWM2M client"
+	default y if DNS_RESOLVER
+
 config LWM2M_ENGINE_STACK_SIZE
 	int "LWM2M engine stack size"
 	default 2560 if NET_LOG
 	default 2048
 	help
-	 Set the stack size for the LWM2M library engine (used for handling
-	 OBSERVE and NOTIFY events)
+	  Set the stack size for the LWM2M library engine (used for handling
+	  OBSERVE and NOTIFY events)
 
 config LWM2M_ENGINE_MAX_MESSAGES
 	int "LWM2M engine max. message object"
@@ -81,14 +82,6 @@ config LWM2M_ENGINE_DEFAULT_LIFETIME
 	range 15 65535
 	help
 	  Set the default lifetime (in seconds) for the LWM2M library engine
-
-config LWM2M_LOCAL_PORT
-	int "LWM2M client port"
-	default 0
-	help
-	  This is the client port for LWM2M communication.  The default
-	  setting of 0 sets a random port for the client to be used for
-	  outgoing communication.
 
 config LWM2M_RD_CLIENT_SUPPORT
 	bool "support for LWM2M client bootstrap/registration state machine"
@@ -190,15 +183,6 @@ config LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	  block transfer and "FIRMWARE PACKAGE URI" resource.  This option
 	  adds another UDP context and packet handling.
 
-config LWM2M_FIRMWARE_UPDATE_PULL_LOCAL_PORT
-	int "LWM2M client firmware pull local port"
-	default 0
-	depends on LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
-	help
-	  This is the client port for LWM2M firmware download.  The default
-	  setting of 0 sets a random port for the client to be used for
-	  outgoing communication.
-
 config LWM2M_NUM_BLOCK1_CONTEXT
 	int "Maximum # of LWM2M block1 contexts"
 	default 3
@@ -212,14 +196,11 @@ config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
 	help
 	  Include support for pulling firmware file via a CoAP-CoAP/HTTP proxy.
 
-if LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
-
 config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR
 	string "CoAP proxy network address"
+	depends on LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
 	help
 	  Network address of the CoAP proxy server.
-
-endif # LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
 
 config LWM2M_RW_JSON_SUPPORT
 	bool "support for JSON writer"

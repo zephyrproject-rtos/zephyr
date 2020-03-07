@@ -7,6 +7,7 @@
  */
 
 #define BT_ATT_DEFAULT_LE_MTU	23
+#define BT_ATT_TIMEOUT		K_SECONDS(30)
 
 #if BT_L2CAP_RX_MTU < CONFIG_BT_L2CAP_TX_MTU
 #define BT_ATT_MTU BT_L2CAP_RX_MTU
@@ -236,18 +237,36 @@ struct bt_att_signed_write_cmd {
 	u8_t  value[0];
 } __packed;
 
-void att_pdu_sent(struct bt_conn *conn, void *user_data);
+typedef void (*bt_att_func_t)(struct bt_conn *conn, u8_t err,
+			      const void *pdu, u16_t length,
+			      void *user_data);
+typedef void (*bt_att_destroy_t)(void *user_data);
 
-void att_cfm_sent(struct bt_conn *conn, void *user_data);
+/* ATT request context */
+struct bt_att_req {
+	sys_snode_t node;
+	bt_att_func_t func;
+	bt_att_destroy_t destroy;
+	struct net_buf_simple_state state;
+	struct net_buf *buf;
+#if defined(CONFIG_BT_SMP)
+	bool retrying;
+#endif /* CONFIG_BT_SMP */
+	void *user_data;
+};
 
-void att_rsp_sent(struct bt_conn *conn, void *user_data);
-
-void att_req_sent(struct bt_conn *conn, void *user_data);
+void att_sent(struct bt_conn *conn, void *user_data);
 
 void bt_att_init(void);
 u16_t bt_att_get_mtu(struct bt_conn *conn);
 struct net_buf *bt_att_create_pdu(struct bt_conn *conn, u8_t op,
 				  size_t len);
+
+/* Allocate a new request */
+struct bt_att_req *bt_att_req_alloc(s32_t timeout);
+
+/* Free a request */
+void bt_att_req_free(struct bt_att_req *req);
 
 /* Send ATT PDU over a connection */
 int bt_att_send(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t cb,

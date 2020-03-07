@@ -104,7 +104,7 @@ void pollfds_del(int fd)
 	}
 }
 
-int main(void)
+void main(void)
 {
 	int res;
 	static int counter;

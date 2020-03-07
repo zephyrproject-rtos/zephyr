@@ -16,8 +16,7 @@
 
 #define IIS3DHHC_SPI_READ		(1 << 7)
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_DECLARE(IIS3DHHC);
+LOG_MODULE_DECLARE(IIS3DHHC, CONFIG_SENSOR_LOG_LEVEL);
 
 static struct spi_config iis3dhhc_spi_conf = {
 	.frequency = DT_INST_0_ST_IIS3DHHC_SPI_MAX_FREQUENCY,
@@ -90,9 +89,9 @@ static int iis3dhhc_spi_write(struct iis3dhhc_data *ctx, u8_t reg,
 	return 0;
 }
 
-iis3dhhc_ctx_t iis3dhhc_spi_ctx = {
-	.read_reg = (iis3dhhc_read_ptr) iis3dhhc_spi_read,
-	.write_reg = (iis3dhhc_write_ptr) iis3dhhc_spi_write,
+stmdev_ctx_t iis3dhhc_spi_ctx = {
+	.read_reg = (stmdev_read_ptr) iis3dhhc_spi_read,
+	.write_reg = (stmdev_write_ptr) iis3dhhc_spi_write,
 };
 
 int iis3dhhc_spi_init(struct device *dev)

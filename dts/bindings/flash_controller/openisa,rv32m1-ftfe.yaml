@@ -1,7 +1,4 @@
-title: OpenISA Flash Memory Module (FTFE)
-
-description: >
-    This binding gives for the OpenISA Flash Memory Module E (FTFE)
+description: OpenISA Flash Memory Module E (FTFE)
 
 compatible: "openisa,rv32m1-ftfe"
 

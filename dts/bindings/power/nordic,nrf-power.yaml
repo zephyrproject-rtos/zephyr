@@ -1,10 +1,7 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-title: Nordic nRF power control
-
-description: >
-    This is a representation of the Nordic nRF power control node
+description: Nordic nRF power control node
 
 compatible: "nordic,nrf-power"
 

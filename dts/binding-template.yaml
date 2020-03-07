@@ -1,8 +1,8 @@
-title: Short description of the node
+description: |
+    Free-form description of the device/node. Can have multiple
+    lines/paragraphs.
 
-description: >
-    Longer free-form description of the node.
-    Can go over multiple lines.
+    See https://yaml-multiline.info/ for formatting help.
 
 # Used to map nodes to bindings
 compatible: "manufacturer,device"
@@ -27,38 +27,51 @@ compatible: "manufacturer,device"
 #
 # If more than one binding for a compatible is found, an error is raised.
 
-# Many bindings have common fields. These are stored in files given in
-# 'include', which are merged into the binding (with a recursive dictionary
-# merge).
+# Bindings can include other files, which can be used to share common
+# definitions between bindings.
 #
-# If a key appears both in the binding and in a file it includes, then the
-# value in the binding takes precedence. This can be used to change a
-# 'required: false' from an inherited file to a 'required: true' (see the
-# 'properties' description below).
+# Included files are merged into bindings with a simple recursive dictionary
+# merge. It is up to the binding author to make sure that the final merged
+# binding is well-formed, though it is checked by the code as well.
 #
-# An error is raised if this binding has 'required: false' for some property
-# for which the included file(s) have 'required: true'. Bindings can only
-# "strengthen" requirements from files they include. This is meant to keep the
+# It is an error if a key appears with a different value in a binding and in a
+# file it includes, with one exception: A binding can have 'required: true' for
+# some property for which the included file has 'required: false' (see the
+# description of 'properties' below). The 'required: true' from the binding
+# takes precedence, allowing bindings to strengthen requirements from included
+# files.
+#
+# Note that weakening requirements by having 'required: false' where the
+# included file has 'required: true' is an error. This is meant to keep the
 # organization clean.
+#
+# The file base.yaml contains definitions for many common properties. When
+# writing a new binding, it is a good idea to check if base.yaml already
+# defines some of the needed properties, and including it in that case. Note
+# that you can make a property defined in base.yaml obligatory like this
+# (taking 'reg' as an example):
+#
+#     reg:
+#         required: true
+#
+# This relies on the dictionary merge to fill in the other keys for 'reg', like
+# 'type'.
 #
 # When including multiple files, any overlapping 'required' keys on properties
 # in the included files are ORed together. This makes sure that a
 # 'required: true' is always respected.
 include: other.yaml # or [other1.yaml, other2.yaml]
 
-# If the node describes a bus, then the bus type should be given, like below.
-# The name has "child" in it since it describes the bus children of the node
-# appear on.
-child-bus: <string describing bus type, e.g. "i2c">
+# If the node describes a bus, then the bus type should be given, like below
+bus: <string describing bus type, e.g. "i2c">
 
 # If the node appears on a bus, then the bus type should be given, like below.
 #
 # When looking for a binding for a node, the code checks if the binding for the
-# parent node contains 'child-bus: <bus type>'. If it does, then only bindings
-# with a matching 'parent-bus: <bus type>' are considered. This allows the same
-# type of device to have different bindings depending on what bus it appears
-# on.
-parent-bus: <string describing bus type, e.g. "i2c">
+# parent node contains 'bus: <bus type>'. If it does, then only bindings with a
+# matching 'on-bus: <bus type>' are considered. This allows the same type of
+# device to have different bindings depending on what bus it appears on.
+on-bus: <string describing bus type, e.g. "i2c">
 
 # 'properties' describes properties on the node, e.g.
 #
@@ -76,7 +89,7 @@ parent-bus: <string describing bus type, e.g. "i2c">
 #   <property name>:
 #     required: <true | false>
 #     type: <string | int | boolean | array | uint8-array | string-array |
-#            phandle | phandles | phandle-array | compound>
+#            phandle | phandles | phandle-array | path | compound>
 #     description: <description of the property>
 #     enum:
 #       - <item1>
@@ -86,45 +99,110 @@ parent-bus: <string describing bus type, e.g. "i2c">
 #     const: <string | int>
 #     default: <default>
 #
-# 'type: boolean' is for properties used as flags that don't take a value, e.g.
-# 'hw-flow-control;'. The macro generated for the property gets set to 1 if the
-# property exists on the node, and to 0 otherwise. When combined with
-# 'required: true', this type just forces the flag to appear on the node,
-# though the output will always be the same in that case (1).
+# These types are available:
 #
-# 'type: uint8-array' is for what the device tree specification calls
-# 'bytestring'. Properties of type 'uint8-array' should be set like this:
+#   - 'type: string' is for properties that are assigned a single string, like
 #
-#   foo = [89 AB CD];
+#         ident = "foo";
 #
-# Each value is a byte in hex.
+#   - 'type: int' is for properties that are assigned a single 32-bit value,
+#     like
 #
-# 'type: phandle' is for properties that are assigned a single phandle, like
-# this:
+#         frequency = <100>;
 #
-#   foo = <&label>;
+#   - 'type: boolean' is for properties used as flags that don't take a value,
+#     like
 #
-# 'type: phandles' is for properties that are assigned a list of (just)
-# phandles, like this:
+#         hw-flow-control;
 #
-#   foo = <&label1 &label2 ...>;
+#     The macro generated for the property gets set to 1 if the property exists
+#     on the node, and to 0 otherwise. When combined with 'required: true',
+#     this type just forces the flag to appear on the node. The output will
+#     always be 1 in that case.
 #
-# 'type: phandle-array' is for properties that are assigned a list of phandles
-# and (possibly) 32-bit numbers, like this:
+#     Warning: Since a macro is always generated for 'type: boolean'
+#     properties, don't use #ifdef in tests. Do this instead:
 #
-#   foo = <&label1 1 2 &label2 3 4 ...>;
+#         #if DT_SOME_BOOLEAN_PROP == 1
 #
-# 'type: compound' is a catch-all for more complex types, e.g.
+#   - 'type: array' is for properties that are assigned zero or more 32-bit
+#     values, like
 #
-#   foo = <&label1>, [01 02];
+#         pin-config = <1 2 3>;
+#
+#   - 'type: uint8-array' is for properties that are assigned zero or more
+#     bytes with the [] syntax, like
+#
+#         lookup-table = [89 AB CD EF];
+#
+#     Each byte is given in hex.
+#
+#     This type is called 'bytestring' in the Devicetree specification.
+#
+#   - 'type: string-array' if for properties that are assigned zero or more
+#     strings, like
+#
+#         idents = "foo", "bar", "baz";
+#
+#   - 'type: phandle' is for properties that are assigned a single phandle,
+#     like
+#
+#         foo = <&label>;
+#
+#   - 'type: phandles' is for properties that are assigned zero or more
+#     phandles, like
+#
+#         foo = <&label1 &label2 ...>;
+#
+#   - 'type: phandle-array' is for properties that take a list of phandles and
+#     (possibly) 32-bit numbers, like
+#
+#         pwms = <&ctrl-1 1 2 &ctrl-2 3 4>;
+#
+#     This type requires that the property works in the standard way that
+#     devicetree properties like pwms, clocks, *-gpios, and io-channels work.
+#     Taking 'pwms' as an example, the final -s is stripped from the property
+#     name, and #pwm-cells is looked up in the node for the controller
+#     (&ctrl-1/&ctrl-2) to determine the number of data values after the
+#     phandle. The binding for each controller must also have a *-cells key
+#     (e.g. pwm-cells), giving names to data values. See below for an
+#     explanation of *-cells.
+#
+#     A *-names (e.g. pwm-names) property can appear on the node as well,
+#     giving a name to each entry (the 'pwms' example above has two entries,
+#     <&ctrl-1 1 2> and <&ctrl-2 3 4>).
+#
+#     Because other property names are derived from the name of the property by
+#     removing the final -s, the property name must end in -s. An error is
+#     raised if it doesn't.
+#
+#     *-gpios properties are special-cased so that e.g. foo-gpios resolves to
+#     #gpio-cells rather than #foo-gpio-cells.
+#
+#     All phandle-array properties support mapping through *-map properties,
+#     e.g. gpio-map. See the devicetree spec.
+#
+#   - 'type: path' is for properties that are assigned a path. Usually, this
+#     would be done with a path reference:
+#
+#         foo = &label;
+#
+#     Plain strings are accepted too, and are verified to be a path to an
+#     existing node:
+#
+#         foo = "/path/to/some/node";
+#
+#   - 'type: compound' is a catch-all for more complex types, e.g.
+#
+#         foo = <&label>, [01 02];
 #
 # 'type: array' and the other array types also allow splitting the value into
 # several <> blocks, e.g. like this:
 #
-#   foo = <1 2>, <3 4>;                         // Okay for 'type: array'
-#   foo = <&label1 &label2>, <&label3 &label4>; // Okay for 'type: phandles'
-#   foo = <&label1 1 2>, <&label2 3 4>;         // Okay for 'type: phandle-array'
-#   etc.
+#     foo = <1 2>, <3 4>;                         // Okay for 'type: array'
+#     foo = <&label1 &label2>, <&label3 &label4>; // Okay for 'type: phandles'
+#     foo = <&label1 1 2>, <&label2 3 4>;         // Okay for 'type: phandle-array'
+#     etc.
 #
 # The optional 'default:' setting gives a value that will be used if the
 # property is missing from the device tree node. If 'default: <default>' is
@@ -256,29 +334,42 @@ child-binding:
                 required: true
 
 # If the binding describes an interrupt controller, GPIO controller, pinmux
-# device, or any other node referenced by other nodes, then #cells should be
-# given.
+# device, or any other node referenced by other nodes via 'phandle-array'
+# properties, then *-cells should be given.
 #
-# To understand the purpose of #cells, assume that some node has
+# To understand the purpose of *-cells, assume that some node has
 #
-#     foo-gpios = <&gpio-ctrl 1 2>;
+#     pwms = <&pwm-ctrl 1 2>;
 #
-# , where &gpio-ctrl refers to a node whose binding is this file.
+# , where &pwm-ctrl refers to a node whose binding is this file.
 #
 # The <1 2> part of the property value is called a *specifier* (this
 # terminology is from the devicetree specification), and contains additional
 # data associated with the GPIO. Here, the specifier has two cells, and the
-# node pointed at by &gpio-ctrl is expected to have '#gpio-cells = <2>'.
+# node pointed at by &gpio-ctrl is expected to have '#pwm-cells = <2>'.
 #
-# #cells gives a name to each cell in the specifier. These names are used
-# when generating identifiers.
+# *-cells gives a name to each cell in the specifier. These names are used when
+# generating identifiers.
 #
 # In this example, assume that 1 refers to a pin and that 2 is a flag value.
-# This gives a #cells assignment like below.
-"#cells":
-    - pin  # name of first cell
-    - flag # name of second cell
+# This gives a *-cells assignment like below.
+pwm-cells:
+    - channel # name of first cell
+    - period  # name of second cell
 
-# If the specifier is empty (e.g. '#clock-cells = <0>'), then #cells can either
-# be omitted (recommended) or set to an empty array. Note that an empty array
-# is specified as '"#cells": []' in YAML.
+# If the specifier is empty (e.g. '#clock-cells = <0>'), then *-cells can
+# either be omitted (recommended) or set to an empty array. Note that an empty
+# array is specified as e.g. 'clock-cells: []' in YAML.
+
+# As a special case, all *-gpio properties map to the key 'gpio-cells',
+# regardless of prefix
+gpio-cells:
+    - pin
+    - flags
+
+# This older syntax is deprecated and will generate a warning when used. It
+# works as a catch-all, where the name of the referencing 'phandle-array'
+# property doesn't matter.
+"#cells":
+    - pin
+    - flags

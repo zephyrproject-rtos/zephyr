@@ -25,27 +25,18 @@ config ETH_NATIVE_POSIX
 
 endif # NETWORKING
 
-if ENTROPY_GENERATOR
-
 config FAKE_ENTROPY_NATIVE_POSIX
 	default y
-
-endif # ENTROPY_GENERATOR
-
-if BT_HCI
+	depends on ENTROPY_GENERATOR
 
 choice BT_HCI_BUS_TYPE
 	default BT_USERCHAN
+	depends on BT_HCI
 endchoice
-
-endif # BT_HCI
-
-if SERIAL
 
 config UART_NATIVE_POSIX
 	default y
-
-endif # SERIAL
+	depends on SERIAL
 
 if LOG
 
@@ -72,34 +63,22 @@ config NATIVE_POSIX_CONSOLE
 config UART_CONSOLE
 	default y if SERIAL
 
-endif #CONSOLE
-
-if DISPLAY
+endif # CONSOLE
 
 config SDL_DISPLAY
 	default y
+	depends on DISPLAY
 
-endif # DISPLAY
-
-if TRACING_CTF
-
-config TRACING_CTF_BOTTOM_POSIX
+config FLASH_SIMULATOR
 	default y
-
-endif # TRACING_CTF
-
-if FLASH
-
-config FLASH_NATIVE_POSIX
-	default y
-
-endif # FLASH
-
-endif # BOARD_NATIVE_POSIX
-
-if USB
+	depends on FLASH
 
 config USB_NATIVE_POSIX
 	default y
+	depends on USB
 
-endif # USB
+config EEPROM_SIMULATOR
+	default y
+	depends on EEPROM
+
+endif # BOARD_NATIVE_POSIX

@@ -22,7 +22,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_1: led_1 {
-			gpios = <&gpioi 1 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioi 1 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 	};
@@ -31,7 +31,7 @@
 		compatible = "gpio-keys";
 		user_button: button {
 			label = "User";
-			gpios = <&gpioi 11 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioi 11 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
@@ -56,13 +56,11 @@ arduino_serial: &usart6 {};
 
 &usart1 {
 	current-speed = <115200>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart6 {
 	current-speed = <115200>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 

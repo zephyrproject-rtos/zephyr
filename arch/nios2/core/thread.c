@@ -5,10 +5,7 @@
  */
 
 #include <kernel.h>
-#include <kernel_internal.h>
-#include <kernel_structs.h>
-#include <wait_q.h>
-#include <string.h>
+#include <ksched.h>
 
 /* forward declaration to asm function to adjust setup the arguments
  * to z_thread_entry() since this arch puts the first four arguments
@@ -31,10 +28,10 @@ struct init_stack_frame {
 };
 
 
-void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		 size_t stack_size, k_thread_entry_t thread_func,
-		 void *arg1, void *arg2, void *arg3,
-		 int priority, unsigned int options)
+void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		     size_t stack_size, k_thread_entry_t thread_func,
+		     void *arg1, void *arg2, void *arg3,
+		     int priority, unsigned int options)
 {
 	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
 	Z_ASSERT_VALID_PRIO(priority, thread_func);

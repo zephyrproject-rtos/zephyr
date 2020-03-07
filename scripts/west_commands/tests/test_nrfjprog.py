@@ -113,6 +113,43 @@ EXPECTED_COMMANDS = {
      ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF52', '--snr', TEST_OVR_SNR],  # noqa: E501
      ['nrfjprog', '--reset', '-f', 'NRF52', '--snr', TEST_OVR_SNR]),
 
+    # NRF53:
+    '3NNN':
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_DEF_SNR, '--sectorerase'],  # noqa: E501
+     ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
+
+    '3NNY':
+    (['nrfjprog', '--eraseall', '-f', 'NRF53', '--snr', TEST_DEF_SNR],
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_DEF_SNR],  # noqa: E501
+     ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
+
+    '3NYN':
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_OVR_SNR, '--sectorerase'],  # noqa: E501
+     ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_OVR_SNR]),
+
+    '3NYY':
+    (['nrfjprog', '--eraseall', '-f', 'NRF53', '--snr', TEST_OVR_SNR],
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_OVR_SNR],  # noqa: E501
+     ['nrfjprog', '--pinreset', '-f', 'NRF53', '--snr', TEST_OVR_SNR]),
+
+    '3YNN':
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_DEF_SNR, '--sectorerase'],  # noqa: E501
+     ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
+
+    '3YNY':
+    (['nrfjprog', '--eraseall', '-f', 'NRF53', '--snr', TEST_DEF_SNR],
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_DEF_SNR],  # noqa: E501
+     ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_DEF_SNR]),
+
+    '3YYN':
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_OVR_SNR, '--sectorerase'],  # noqa: E501
+     ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_OVR_SNR]),
+
+    '3YYY':
+    (['nrfjprog', '--eraseall', '-f', 'NRF53', '--snr', TEST_OVR_SNR],
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF53', '--snr', TEST_OVR_SNR],  # noqa: E501
+     ['nrfjprog', '--reset', '-f', 'NRF53', '--snr', TEST_OVR_SNR]),
+
     # NRF91:
     '9NNN':
     (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_DEF_SNR, '--sectorerase'],  # noqa: E501
@@ -164,7 +201,7 @@ def expected_commands(family, softreset, snr, erase):
     - erase: boolean, whether to do a full chip erase or not
     '''
     expected_key = '{}{}{}{}'.format(
-        '1' if family == 'NRF51' else '2' if family == 'NRF52' else '9',
+        '1' if family == 'NRF51' else '2' if family == 'NRF52' else '3' if family == 'NRF53' else '9',  # noqa: E501
         'Y' if softreset else 'N',
         'Y' if snr else 'N',
         'Y' if erase else 'N')
@@ -177,15 +214,13 @@ def expected_commands(family, softreset, snr, erase):
 #
 
 TEST_CASES = [(f, sr, snr, e)
-              for f in ('NRF51', 'NRF52', 'NRF91')
+              for f in ('NRF51', 'NRF52', 'NRF53', 'NRF91')
               for sr in (False, True)
               for snr in (TEST_OVR_SNR, None)
               for e in (False, True)]
 
-
 def get_board_snr_patch():
     return TEST_DEF_SNR
-
 
 def require_patch(program):
     assert program == 'nrfjprog'
@@ -198,16 +233,15 @@ def os_path_isfile_patch(filename):
 def id_fn(test_case):
     ret = ''
     for x in test_case:
-        if x in ('NRF51', 'NRF52'):
+        if x in ('NRF51', 'NRF52', 'NRF53'):
             ret += x[-1:]
         else:
             ret += 'Y' if x else 'N'
     return ret
 
-
 @pytest.mark.parametrize('test_case', TEST_CASES, ids=id_fn)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
-@patch('runners.nrfjprog.NrfJprogBinaryRunner.get_board_snr_from_user',
+@patch('runners.nrfjprog.NrfJprogBinaryRunner.get_board_snr',
        side_effect=get_board_snr_patch)
 @patch('runners.nrfjprog.NrfJprogBinaryRunner.check_call')
 def test_nrfjprog_init(cc, get_snr, req, test_case, runner_config):
@@ -215,22 +249,20 @@ def test_nrfjprog_init(cc, get_snr, req, test_case, runner_config):
 
     runner = NrfJprogBinaryRunner(runner_config, family, softreset, snr,
                                   erase=erase)
-    if snr is None:
-        with pytest.raises(ValueError) as e:
-            runner.run('flash')
-        assert 'snr must not be None' in str(e.value)
-    else:
-        with patch('os.path.isfile', side_effect=os_path_isfile_patch):
-            runner.run('flash')
-        assert req.called
-        assert cc.call_args_list == [call(x) for x in
-                                     expected_commands(*test_case)]
-        get_snr.assert_not_called()
+    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+        runner.run('flash')
+    assert req.called
+    assert cc.call_args_list == [call(x) for x in
+                                 expected_commands(*test_case)]
 
+    if snr is None:
+        get_snr.assert_called_once_with()
+    else:
+        get_snr.assert_not_called()
 
 @pytest.mark.parametrize('test_case', TEST_CASES, ids=id_fn)
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
-@patch('runners.nrfjprog.NrfJprogBinaryRunner.get_board_snr_from_user',
+@patch('runners.nrfjprog.NrfJprogBinaryRunner.get_board_snr',
        side_effect=get_board_snr_patch)
 @patch('runners.nrfjprog.NrfJprogBinaryRunner.check_call')
 def test_nrfjprog_create(cc, get_snr, req, test_case, runner_config):

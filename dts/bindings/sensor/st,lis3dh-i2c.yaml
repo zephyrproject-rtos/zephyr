@@ -1,10 +1,7 @@
 # Copyright (c) 2018 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-title: STMicroelectronics MEMS sensors LIS3DH
-
-description: >
-    This binding gives a base representation of LIS3DH 3-axis accelerometer
+description: STMicroelectronics LIS3DH 3-axis accelerometer
 
 compatible: "st,lis3dh"
 

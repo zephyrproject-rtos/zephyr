@@ -1,13 +1,11 @@
-# SPDX-License-Identifier: Apache-2.0
+# RISCV32_MIV implementation
 
-# Kconfig - RISCV32_MIV implementation
-#
 # Copyright (c) 2018 Antmicro <www.antmicro.com>
-#
+# SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_RISCV32_MIV
 	bool "Microsemi Mi-V implementation"
-	depends on RISCV
+	select RISCV
 	select SOC_FAMILY_RISCV_PRIVILEGE
 	help
-	Enable support for Microsemi Mi-V
+	  Enable support for Microsemi Mi-V

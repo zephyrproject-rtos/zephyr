@@ -16,7 +16,7 @@
 #include <zephyr/types.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
-#include <can.h>
+#include <drivers/can.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -109,6 +109,11 @@ struct net_can_api {
 	/** Enable or disable the reception of frames for net CAN */
 	int (*enable)(struct device *dev, bool enable);
 };
+
+/* Make sure that the network interface API is properly setup inside
+ * net_can_api struct (it is the first one).
+ */
+BUILD_ASSERT(offsetof(struct net_can_api, iface_api) == 0);
 
 /** @cond INTERNAL_HIDDEN */
 

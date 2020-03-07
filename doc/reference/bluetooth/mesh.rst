@@ -1,59 +1,21 @@
 .. _bluetooth_mesh:
 
-
-
 Bluetooth Mesh Profile
 ######################
 
+The Bluetooth Mesh Profile adds secure wireless multi-hop communication for
+Bluetooth Low Energy. This module implements the
+`Bluetooth Mesh Profile Specification v1.0.1 <https://www.bluetooth.com/specifications/mesh-specifications/>`_.
 
+Read more about Bluetooth Mesh on the
+`Bluetooth SIG Website <https://www.bluetooth.com/bluetooth-resources/?tags=mesh>`_.
 
-API Reference
-**************
+.. toctree::
+   :maxdepth: 1
 
-Mesh Profile
-============
+   mesh/core.rst
+   mesh/access.rst
+   mesh/models.rst
+   mesh/provisioning.rst
+   mesh/proxy.rst
 
-.. doxygengroup:: bt_mesh
-   :project: Zephyr
-
-Bluetooth Mesh Access Layer
-===========================
-
-.. doxygengroup:: bt_mesh_access
-   :project: Zephyr
-
-Bluetooth Mesh Configuration Client Model
-=========================================
-
-.. doxygengroup:: bt_mesh_cfg_cli
-   :project: Zephyr
-
-Bluetooth Mesh Configuration Server Model
-=========================================
-
-.. doxygengroup:: bt_mesh_cfg_srv
-   :project: Zephyr
-
-Bluetooth Mesh Health Client Model
-==================================
-
-.. doxygengroup:: bt_mesh_health_cli
-   :project: Zephyr
-
-Bluetooth Mesh Health Server Model
-==================================
-
-.. doxygengroup:: bt_mesh_health_srv
-   :project: Zephyr
-
-Bluetooth Mesh Provisioning
-===========================
-
-.. doxygengroup:: bt_mesh_prov
-   :project: Zephyr
-
-Bluetooth Mesh Proxy
-====================
-
-.. doxygengroup:: bt_mesh_proxy
-   :project: Zephyr

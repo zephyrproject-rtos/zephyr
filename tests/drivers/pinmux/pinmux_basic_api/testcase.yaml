@@ -1,7 +1,0 @@
-tests:
-  peripheral.pinmux:
-    tags: drivers
-    harness: loopback
-    filter: DT_ALIAS_GPIO_0_LABEL or DT_ALIAS_GPIO_1_LABEL
-    depends_on: gpio
-

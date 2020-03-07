@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 #include <drivers/spi.h>
 #include <toolchain.h>
 
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <drivers/clock_control.h>
 
 #include "spi_ll_stm32.h"
@@ -73,28 +73,12 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 	return 0;
 }
 
-static inline u16_t spi_stm32_next_tx(struct spi_stm32_data *data)
-{
-	u16_t tx_frame = SPI_STM32_TX_NOP;
-
-	if (spi_context_tx_buf_on(&data->ctx)) {
-		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
-			tx_frame = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
-		} else {
-			tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
-		}
-	}
-
-	return tx_frame;
-}
-
 /* Shift a SPI frame as master. */
 static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	u16_t tx_frame;
+	u16_t tx_frame = SPI_STM32_TX_NOP;
 	u16_t rx_frame;
 
-	tx_frame = spi_stm32_next_tx(data);
 	while (!ll_func_tx_is_empty(spi)) {
 		/* NOP */
 	}
@@ -112,10 +96,16 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 #endif
 
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+		if (spi_context_tx_buf_on(&data->ctx)) {
+			tx_frame = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
+		}
 		LL_SPI_TransmitData8(spi, tx_frame);
 		/* The update is ignored if TX is off. */
 		spi_context_update_tx(&data->ctx, 1, 1);
 	} else {
+		if (spi_context_tx_buf_on(&data->ctx)) {
+			tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
+		}
 		LL_SPI_TransmitData16(spi, tx_frame);
 		/* The update is ignored if TX is off. */
 		spi_context_update_tx(&data->ctx, 2, 1);
@@ -144,12 +134,14 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 	if (ll_func_tx_is_empty(spi) && spi_context_tx_on(&data->ctx)) {
-		u16_t tx_frame = spi_stm32_next_tx(data);
+		u16_t tx_frame;
 
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			tx_frame = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
 			LL_SPI_TransmitData8(spi, tx_frame);
 			spi_context_update_tx(&data->ctx, 1, 1);
 		} else {
+			tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
 			LL_SPI_TransmitData16(spi, tx_frame);
 			spi_context_update_tx(&data->ctx, 2, 1);
 		}
@@ -281,8 +273,11 @@ static int spi_stm32_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
-			       (clock_control_subsys_t) &cfg->pclken, &clock);
+	if (clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
+			(clock_control_subsys_t) &cfg->pclken, &clock) < 0) {
+		LOG_ERR("Failed call clock_control_get_rate");
+		return -EIO;
+	}
 
 	for (br = 1 ; br <= ARRAY_SIZE(scaler) ; ++br) {
 		u32_t clk = clock >> br;
@@ -503,230 +498,68 @@ static int spi_stm32_init(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_SPI_1
-
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_1(struct device *port);
-#endif
-
-static const struct spi_stm32_config spi_stm32_cfg_1 = {
-	.spi = (SPI_TypeDef *) DT_SPI_1_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_SPI_1_CLOCK_BITS,
-		.bus = DT_SPI_1_CLOCK_BUS
-	},
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	.irq_config = spi_stm32_irq_config_func_1,
-#endif
-};
-
-static struct spi_stm32_data spi_stm32_dev_data_1 = {
-	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_1, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_1, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_stm32_1, DT_SPI_1_NAME, &spi_stm32_init,
-		    &spi_stm32_dev_data_1, &spi_stm32_cfg_1,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &api_funcs);
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_1(struct device *dev)
-{
-	IRQ_CONNECT(DT_SPI_1_IRQ, DT_SPI_1_IRQ_PRI,
-		    spi_stm32_isr, DEVICE_GET(spi_stm32_1), 0);
-	irq_enable(DT_SPI_1_IRQ);
+#define STM32_SPI_IRQ_HANDLER_DECL(id)					\
+	static void spi_stm32_irq_config_func_##id(struct device *dev)
+#define STM32_SPI_IRQ_HANDLER_FUNC(id)					\
+	.irq_config = spi_stm32_irq_config_func_##id,
+#define STM32_SPI_IRQ_HANDLER(id)					\
+static void spi_stm32_irq_config_func_##id(struct device *dev)		\
+{									\
+	IRQ_CONNECT(DT_SPI_##id##_IRQ, DT_SPI_##id##_IRQ_PRI,		\
+		    spi_stm32_isr, DEVICE_GET(spi_stm32_##id), 0);	\
+	irq_enable(DT_SPI_##id##_IRQ);					\
 }
+#else
+#define STM32_SPI_IRQ_HANDLER_DECL(id)
+#define STM32_SPI_IRQ_HANDLER_FUNC(id)
+#define STM32_SPI_IRQ_HANDLER(id)
 #endif
 
-#endif /* CONFIG_SPI_1 */
+#define STM32_SPI_INIT(id)						\
+STM32_SPI_IRQ_HANDLER_DECL(id);						\
+									\
+static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
+	.spi = (SPI_TypeDef *) DT_SPI_##id##_BASE_ADDRESS,		\
+	.pclken = {							\
+		.enr = DT_SPI_##id##_CLOCK_BITS,			\
+		.bus = DT_SPI_##id##_CLOCK_BUS				\
+	},								\
+	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
+};									\
+									\
+static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
+	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_##id, ctx),		\
+	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_##id, ctx),		\
+};									\
+									\
+DEVICE_AND_API_INIT(spi_stm32_##id, DT_SPI_##id##_NAME, &spi_stm32_init, \
+		    &spi_stm32_dev_data_##id, &spi_stm32_cfg_##id,	\
+		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		\
+		    &api_funcs);					\
+									\
+STM32_SPI_IRQ_HANDLER(id)
+
+#ifdef CONFIG_SPI_1
+STM32_SPI_INIT(1)
+#endif
 
 #ifdef CONFIG_SPI_2
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_2(struct device *port);
+STM32_SPI_INIT(2)
 #endif
-
-static const struct spi_stm32_config spi_stm32_cfg_2 = {
-	.spi = (SPI_TypeDef *) DT_SPI_2_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_SPI_2_CLOCK_BITS,
-		.bus = DT_SPI_2_CLOCK_BUS
-	},
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	.irq_config = spi_stm32_irq_config_func_2,
-#endif
-};
-
-static struct spi_stm32_data spi_stm32_dev_data_2 = {
-	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_2, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_2, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_stm32_2, DT_SPI_2_NAME, &spi_stm32_init,
-		    &spi_stm32_dev_data_2, &spi_stm32_cfg_2,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &api_funcs);
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_2(struct device *dev)
-{
-	IRQ_CONNECT(DT_SPI_2_IRQ, DT_SPI_2_IRQ_PRI,
-		    spi_stm32_isr, DEVICE_GET(spi_stm32_2), 0);
-	irq_enable(DT_SPI_2_IRQ);
-}
-#endif
-
-#endif /* CONFIG_SPI_2 */
 
 #ifdef CONFIG_SPI_3
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_3(struct device *port);
+STM32_SPI_INIT(3)
 #endif
-
-static const  struct spi_stm32_config spi_stm32_cfg_3 = {
-	.spi = (SPI_TypeDef *) DT_SPI_3_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_SPI_3_CLOCK_BITS,
-		.bus = DT_SPI_3_CLOCK_BUS
-	},
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	.irq_config = spi_stm32_irq_config_func_3,
-#endif
-};
-
-static struct spi_stm32_data spi_stm32_dev_data_3 = {
-	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_3, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_3, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_stm32_3, DT_SPI_3_NAME, &spi_stm32_init,
-		    &spi_stm32_dev_data_3, &spi_stm32_cfg_3,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &api_funcs);
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_3(struct device *dev)
-{
-	IRQ_CONNECT(DT_SPI_3_IRQ, DT_SPI_3_IRQ_PRI,
-		    spi_stm32_isr, DEVICE_GET(spi_stm32_3), 0);
-	irq_enable(DT_SPI_3_IRQ);
-}
-#endif
-
-#endif /* CONFIG_SPI_3 */
 
 #ifdef CONFIG_SPI_4
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_4(struct device *port);
+STM32_SPI_INIT(4)
 #endif
-
-static const  struct spi_stm32_config spi_stm32_cfg_4 = {
-	.spi = (SPI_TypeDef *) DT_SPI_4_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_SPI_4_CLOCK_BITS,
-		.bus = DT_SPI_4_CLOCK_BUS
-	},
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	.irq_config = spi_stm32_irq_config_func_4,
-#endif
-};
-
-static struct spi_stm32_data spi_stm32_dev_data_4 = {
-	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_4, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_4, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_stm32_4, DT_SPI_4_NAME, &spi_stm32_init,
-		    &spi_stm32_dev_data_4, &spi_stm32_cfg_4,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &api_funcs);
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_4(struct device *dev)
-{
-	IRQ_CONNECT(DT_SPI_4_IRQ, DT_SPI_4_IRQ_PRI,
-		    spi_stm32_isr, DEVICE_GET(spi_stm32_4), 0);
-	irq_enable(DT_SPI_4_IRQ);
-}
-#endif
-
-#endif /* CONFIG_SPI_4 */
 
 #ifdef CONFIG_SPI_5
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_5(struct device *port);
+STM32_SPI_INIT(5)
 #endif
-
-static const  struct spi_stm32_config spi_stm32_cfg_5 = {
-	.spi = (SPI_TypeDef *) DT_SPI_5_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_SPI_5_CLOCK_BITS,
-		.bus = DT_SPI_5_CLOCK_BUS
-	},
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	.irq_config = spi_stm32_irq_config_func_5,
-#endif
-};
-
-static struct spi_stm32_data spi_stm32_dev_data_5 = {
-	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_5, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_5, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_stm32_5, DT_SPI_5_NAME, &spi_stm32_init,
-		    &spi_stm32_dev_data_5, &spi_stm32_cfg_5,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &api_funcs);
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_5(struct device *dev)
-{
-	IRQ_CONNECT(DT_SPI_5_IRQ, DT_SPI_5_IRQ_PRI,
-		    spi_stm32_isr, DEVICE_GET(spi_stm32_5), 0);
-	irq_enable(DT_SPI_5_IRQ);
-}
-#endif
-
-#endif /* CONFIG_SPI_5 */
 
 #ifdef CONFIG_SPI_6
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_6(struct device *port);
+STM32_SPI_INIT(6)
 #endif
-
-static const  struct spi_stm32_config spi_stm32_cfg_6 = {
-	.spi = (SPI_TypeDef *) DT_SPI_6_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_SPI_6_CLOCK_BITS,
-		.bus = DT_SPI_6_CLOCK_BUS
-	},
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	.irq_config = spi_stm32_irq_config_func_6,
-#endif
-};
-
-static struct spi_stm32_data spi_stm32_dev_data_6 = {
-	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_6, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_6, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_stm32_6, DT_SPI_6_NAME, &spi_stm32_init,
-		    &spi_stm32_dev_data_6, &spi_stm32_cfg_6,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &api_funcs);
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_6(struct device *dev)
-{
-	IRQ_CONNECT(DT_SPI_6_IRQ, DT_SPI_6_IRQ_PRI,
-		    spi_stm32_isr, DEVICE_GET(spi_stm32_6), 0);
-	irq_enable(DT_SPI_6_IRQ);
-}
-#endif
-
-#endif /* CONFIG_SPI_6 */

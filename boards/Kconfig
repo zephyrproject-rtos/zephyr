@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_DEPRECATED
+config BOARD_DEPRECATED_RELEASE
 	string
 	help
 	  This hidden option is set in the board configuration and indicates
@@ -17,10 +17,15 @@ config QEMU_TARGET
 # Note: $BOARD_DIR might be a glob pattern
 
 choice
-prompt "Board Selection"
+	prompt "Board Selection"
+
 source "$(BOARD_DIR)/Kconfig.board"
+
 endchoice
 
+# Parse shields references
+# Don't do it as a menuconfig, as shield selection is a CMake feature.
+rsource "shields/*/Kconfig.shield"
 
 menu "Board Options"
 # There might not be any board options, hence the optional source

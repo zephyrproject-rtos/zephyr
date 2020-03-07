@@ -62,6 +62,11 @@ struct ppp_api {
 #endif
 };
 
+/* Make sure that the network interface API is properly setup inside
+ * PPP API struct (it is the first one).
+ */
+BUILD_ASSERT(offsetof(struct ppp_api, iface_api) == 0);
+
 /**
  * PPP protocol types.
  * See https://www.iana.org/assignments/ppp-numbers/ppp-numbers.xhtml

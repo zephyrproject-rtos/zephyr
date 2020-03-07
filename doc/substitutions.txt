@@ -2,6 +2,10 @@
 
    <br />
 
+.. |p|     raw:: html        .. force a blank line in HTML output (blank lines needed here)
+
+   <p></p>
+
 .. These are replacement strings for non-ASCII characters used within the project
    using the same name as the html entity names (e.g., &copy;) for that character
 

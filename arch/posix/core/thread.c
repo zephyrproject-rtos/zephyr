@@ -15,36 +15,19 @@
 
 #include <toolchain.h>
 #include <kernel_structs.h>
+#include <ksched.h>
 #include <wait_q.h>
 
 #include "posix_core.h"
-#include "posix_soc_if.h"
+#include <arch/posix/posix_soc_if.h>
 
-
-/**
- * @brief Create a new kernel execution thread
- *
- * Initializes the k_thread object and sets up initial stack frame.
- *
- * @param thread pointer to thread struct memory, including any space needed
- *		for extra coprocessor context
- * @param stack the pointer to aligned stack memory
- * @param stack_size the stack size in bytes
- * @param entry thread entry point routine
- * @param arg1 first param to entry point
- * @param arg2 second param to entry point
- * @param arg3 third param to entry point
- * @param priority thread priority
- * @param options thread options: K_ESSENTIAL, K_FP_REGS, K_SSE_REGS
- *
- * Note that in this arch we cheat quite a bit: we use as stack a normal
+/* Note that in this arch we cheat quite a bit: we use as stack a normal
  * pthreads stack and therefore we ignore the stack size
- *
  */
-void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		size_t stack_size, k_thread_entry_t thread_func,
-		void *arg1, void *arg2, void *arg3,
-		int priority, unsigned int options)
+void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		     size_t stack_size, k_thread_entry_t thread_func,
+		     void *arg1, void *arg2, void *arg3,
+		     int priority, unsigned int options)
 {
 
 	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);

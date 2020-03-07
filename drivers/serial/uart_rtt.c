@@ -79,10 +79,10 @@ static const struct uart_driver_api uart_rtt_driver_api = {
 
 #if CONFIG_UART_RTT_0
 
-DEVICE_DEFINE(uart_rtt0, "RTT_0", uart_rtt_init, NULL, NULL, NULL,
-	      /* Initialize UART device after RTT init. */
-	      PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-	      &uart_rtt_driver_api);
+DEVICE_AND_API_INIT(uart_rtt0, "RTT_0", uart_rtt_init, NULL, NULL,
+		    /* Initialize UART device after RTT init. */
+		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &uart_rtt_driver_api);
 
 #endif
 
@@ -102,10 +102,10 @@ DEVICE_DEFINE(uart_rtt0, "RTT_0", uart_rtt_init, NULL, NULL, NULL,
 		.down_size = sizeof(uart_rtt##n##_rx_buffer),                  \
 	};                                                                     \
 									       \
-	DEVICE_DEFINE(uart_rtt##n, uart_rtt##n##_name, uart_rtt_init, NULL,    \
-		      NULL, &uart_rtt##n##_config, PRE_KERNEL_2,               \
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                      \
-		      &uart_rtt_driver_api)
+	DEVICE_AND_API_INIT(uart_rtt##n, uart_rtt##n##_name, uart_rtt_init,    \
+			    NULL, &uart_rtt##n##_config, PRE_KERNEL_2,         \
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,                \
+			    &uart_rtt_driver_api)
 
 #if CONFIG_UART_RTT_1
 UART_RTT_CHANNEL(1);

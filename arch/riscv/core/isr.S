@@ -7,8 +7,8 @@
 
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <kernel_structs.h>
 #include <offsets_short.h>
+#include <arch/cpu.h>
 
 /* imports */
 GDATA(_sw_isr_table)
@@ -25,8 +25,8 @@ GTEXT(_is_next_thread_current)
 GTEXT(z_get_next_ready_thread)
 
 #ifdef CONFIG_TRACING
-GTEXT(z_sys_trace_thread_switched_in)
-GTEXT(z_sys_trace_isr_enter)
+GTEXT(sys_trace_thread_switched_in)
+GTEXT(sys_trace_isr_enter)
 #endif
 
 #ifdef CONFIG_IRQ_OFFLOAD
@@ -98,7 +98,7 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	RV_OP_STOREREG t0, __z_arch_esf_t_mepc_OFFSET(sp)
 
 	/* Save SOC-specific MSTATUS register */
-	csrr t0, SOC_MSTATUS_REG
+	csrr t0, mstatus
 	RV_OP_STOREREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 
 #ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
@@ -211,6 +211,7 @@ on_irq_stack:
 	addi t3, t3, 1
 	sw t3, _kernel_offset_to_nested(t2)
 
+#ifdef CONFIG_IRQ_OFFLOAD
 	/*
 	 * If we are here due to a system call, t1 register should != 0.
 	 * In this case, perform IRQ offloading, otherwise jump to call_irq
@@ -226,8 +227,9 @@ on_irq_stack:
 	tail z_irq_do_offload
 
 call_irq:
-#ifdef CONFIG_TRACING
-	call z_sys_trace_isr_enter
+#endif /* CONFIG_IRQ_OFFLOAD */
+#ifdef CONFIG_TRACING_ISR
+	call sys_trace_isr_enter
 #endif
 
 	/* Get IRQ causing interrupt */
@@ -305,7 +307,7 @@ on_thread_stack:
 
 reschedule:
 #if CONFIG_TRACING
-	call z_sys_trace_thread_switched_in
+	call sys_trace_thread_switched_in
 #endif
 	/* Get reference to _kernel */
 	la t0, _kernel
@@ -424,7 +426,7 @@ no_reschedule:
 
 	/* Restore SOC-specific MSTATUS register */
 	RV_OP_LOADREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
-	csrw SOC_MSTATUS_REG, t0
+	csrw mstatus, t0
 
 	/* Restore caller-saved registers from thread stack */
 	RV_OP_LOADREG ra, __z_arch_esf_t_ra_OFFSET(sp)

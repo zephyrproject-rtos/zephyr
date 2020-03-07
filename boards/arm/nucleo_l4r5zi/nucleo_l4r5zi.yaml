@@ -8,6 +8,8 @@ toolchain:
   - xtools
 supported:
   - arduino_i2c
+  - arduino_gpio
+  - arduino_spi
   - pwm
   - spi
   - i2c

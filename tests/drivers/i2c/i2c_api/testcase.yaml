@@ -1,6 +1,8 @@
 tests:
-  peripheral.i2c:
+  drivers.i2c:
     depends_on: i2c
     tags: drivers i2c
     harness: sensor
-    filter: DT_ALIAS_I2C_0_LABEL or DT_ALIAS_I2C_1_LABEL or DT_ALIAS_I2C_2_LABEL
+    filter: dt_alias_exists("i2c-0") or
+            dt_alias_exists("i2c-1") or
+            dt_alias_exists("i2c-2")

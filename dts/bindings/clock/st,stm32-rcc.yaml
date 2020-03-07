@@ -1,7 +1,4 @@
-title: STM32 RCC
-
-description: >
-    This binding gives a base representation of the STM32 Clock control
+description: STM32 RCC (Reset and Clock Controller)
 
 compatible: "st,stm32-rcc"
 
@@ -14,6 +11,6 @@ properties:
     "#clock-cells":
       const: 2
 
-"#cells":
+clock-cells:
   - bus
   - bits

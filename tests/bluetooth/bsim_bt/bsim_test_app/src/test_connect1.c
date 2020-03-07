@@ -223,7 +223,7 @@ static void connected(struct bt_conn *conn, u8_t conn_err)
 	}
 
 	if (encrypt_link) {
-		k_sleep(500);
+		k_sleep(K_MSEC(500));
 		bt_conn_auth_cb_register(&auth_cb_success);
 		err = bt_conn_set_security(conn, BT_SECURITY_L2);
 		if (err) {

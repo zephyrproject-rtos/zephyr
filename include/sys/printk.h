@@ -47,13 +47,6 @@ extern "C" {
 #ifdef CONFIG_PRINTK
 extern __printf_like(1, 2) void printk(const char *fmt, ...);
 extern __printf_like(1, 0) void vprintk(const char *fmt, va_list ap);
-extern __printf_like(3, 4) int snprintk(char *str, size_t size,
-					const char *fmt, ...);
-extern __printf_like(3, 0) int vsnprintk(char *str, size_t size,
-					  const char *fmt, va_list ap);
-
-extern __printf_like(3, 0) void z_vprintk(int (*out)(int f, void *c), void *ctx,
-					 const char *fmt, va_list ap);
 #else
 static inline __printf_like(1, 2) void printk(const char *fmt, ...)
 {
@@ -65,27 +58,15 @@ static inline __printf_like(1, 0) void vprintk(const char *fmt, va_list ap)
 	ARG_UNUSED(fmt);
 	ARG_UNUSED(ap);
 }
-
-static inline __printf_like(3, 4) int snprintk(char *str, size_t size,
-					       const char *fmt, ...)
-{
-	ARG_UNUSED(str);
-	ARG_UNUSED(size);
-	ARG_UNUSED(fmt);
-	return 0;
-}
-
-static inline __printf_like(3, 0) int vsnprintk(char *str, size_t size,
-						const char *fmt, va_list ap)
-{
-	ARG_UNUSED(str);
-	ARG_UNUSED(size);
-	ARG_UNUSED(fmt);
-	ARG_UNUSED(ap);
-
-	return 0;
-}
 #endif
+
+extern __printf_like(3, 4) int snprintk(char *str, size_t size,
+					const char *fmt, ...);
+extern __printf_like(3, 0) int vsnprintk(char *str, size_t size,
+					  const char *fmt, va_list ap);
+
+extern __printf_like(3, 0) void z_vprintk(int (*out)(int f, void *c), void *ctx,
+					 const char *fmt, va_list ap);
 
 #ifdef __cplusplus
 }

@@ -21,12 +21,12 @@
 	leds {
 		compatible = "gpio-leds";
 		blue_led: led {
-			gpios = <&gpiob 15 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
 			label = "User LD1";
 		};
 
 		green_led: led_2 {
-			gpios = <&gpiof 2 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiof 2 GPIO_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
 	};
@@ -39,15 +39,11 @@
 
 &usart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart1_pins_b>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart2 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart2_pins_a>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 
@@ -59,14 +55,14 @@
 		compatible = "st,hts221";
 		reg = <0x5f>;
 		label = "HTS221";
-		drdy-gpios = <&gpiod 13 GPIO_INT_ACTIVE_LOW>;
+		drdy-gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
 	};
 
 	lps22hh@5d {
 		compatible = "st,lps22hh";
 		reg = <0x5d>;
 		label = "LPS22HH";
-		drdy-gpios = <&gpiod 15 GPIO_INT_ACTIVE_LOW>;
+		drdy-gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -77,7 +73,7 @@
 	stts751@38 {
 		compatible = "st,stts751";
 		reg = <0x38>;
-		drdy-gpios = <&gpiog 5 GPIO_INT_ACTIVE_LOW>;
+		drdy-gpios = <&gpiog 5 GPIO_ACTIVE_LOW>;
 		label = "STTS751";
 	};
 };
@@ -91,7 +87,7 @@
 		compatible = "st,lis2dw12";
 		spi-max-frequency = <1000000>;
 		reg = <0>;
-		irq-gpios = <&gpioc 5 0>;
+		irq-gpios = <&gpioc 5 GPIO_ACTIVE_HIGH>;
 		label = "LIS2DW12";
 	};
 
@@ -99,7 +95,7 @@
 		compatible = "st,lsm6dso";
 		spi-max-frequency = <1000000>;
 		reg = <1>;
-		irq-gpios = <&gpioa 2 0>;
+		irq-gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
 		label = "LSM6DSO";
 	};
 
@@ -107,7 +103,7 @@
 		compatible = "st,iis3dhhc";
 		spi-max-frequency = <1000000>;
 		reg = <2>;
-		irq-gpios = <&gpioc 13 0>, <&gpioe 6 0>;
+		irq-gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>, <&gpioe 6 GPIO_ACTIVE_HIGH>;
 		label = "IIS3DHHC";
 	};
 };
@@ -121,7 +117,6 @@
 		compatible = "st,lis2mdl";
 		spi-max-frequency = <1000000>;
 		reg = <0>;
-		irq-gpios = <&gpiod 12 0>;
 		label = "LIS2MDL";
 	};
 };
@@ -181,6 +176,4 @@
 			reg = <0x000fc000 0x00004000>;
 		};
 	};
-
-
 };

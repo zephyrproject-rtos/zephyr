@@ -11,10 +11,7 @@
  * Linker script for the Xtensa platform.
  */
 
-#define _LINKER
-#define _ASMLANGUAGE
-
-#include <generated_dts_board.h>
+#include <devicetree.h>
 #include <autoconf.h>
 #include <linker/sections.h>
 #include <linker/linker-defs.h>

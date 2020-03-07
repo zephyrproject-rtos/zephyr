@@ -17,7 +17,7 @@ sensor, which is present on the :ref:`hexiwear_k64` board. It does not work on
 QEMU.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensors/fxas21002
+   :zephyr-app: samples/sensor/fxas21002
    :board: hexiwear_k64
    :goals: build
    :compact:

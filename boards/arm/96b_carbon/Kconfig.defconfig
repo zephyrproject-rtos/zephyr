@@ -1,21 +1,16 @@
-# Kconfig - 96boards Carbon board configuration
-#
+# 96boards Carbon board configuration
+
 # Copyright (c) 2016 Linaro Limited.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_96B_CARBON
 
 config BOARD
 	default "96b_carbon"
 
-if UART_CONSOLE
-
 config UART_1
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 if SERIAL
 

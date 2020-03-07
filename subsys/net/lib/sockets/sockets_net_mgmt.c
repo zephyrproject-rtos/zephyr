@@ -11,10 +11,10 @@
 LOG_MODULE_REGISTER(net_sock_mgmt, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <kernel.h>
-#include <misc/util.h>
+#include <sys/util.h>
 #include <net/socket.h>
 #include <syscall_handler.h>
-#include <misc/fdtable.h>
+#include <sys/fdtable.h>
 #include <net/socket_net_mgmt.h>
 #include <net/ethernet_mgmt.h>
 

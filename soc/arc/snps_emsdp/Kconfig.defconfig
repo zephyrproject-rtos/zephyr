@@ -1,13 +1,9 @@
-#
 # Copyright (c) 2019 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_ARC_EMSDP
 
 config SOC
-	string
 	default "snps_emsdp"
 
 config NUM_IRQ_PRIO_LEVELS

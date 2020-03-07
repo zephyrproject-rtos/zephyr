@@ -1,7 +1,4 @@
-title: Kinetis Pinmux
-
-description: >
-    This is a representation of the Kinetis Pinmux node
+description: Kinetis pinmux node
 
 compatible: "nxp,kinetis-pinmux"
 
@@ -14,6 +11,6 @@ properties:
     clocks:
       required: true
 
-"#cells":
+pinmux-cells:
   - pin
   - function

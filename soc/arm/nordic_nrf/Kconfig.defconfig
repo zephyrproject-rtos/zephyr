@@ -1,29 +1,27 @@
-# Kconfig.defconfig - Nordic Semiconductor nRFx MCU line
-#
+# Nordic Semiconductor nRFx MCU line
+
 # Copyright (c) 2016-2018 Nordic Semiconductor ASA
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_FAMILY_NRF
 
 source "soc/arm/nordic_nrf/*/Kconfig.defconfig.series"
 
-if SYS_CLOCK_EXISTS
 # If the kernel has timer support, enable both clock control and timer
+if SYS_CLOCK_EXISTS
+
 config CLOCK_CONTROL
-       default y
+	default y
 
 config NRF_RTC_TIMER
-       default y
+	default y
+
 endif # SYS_CLOCK_EXISTS
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 32768
 
 config SYS_CLOCK_TICKS_PER_SEC
-	int
 	default 32768
 
 config ARCH_HAS_CUSTOM_BUSY_WAIT
@@ -35,11 +33,8 @@ config SYS_POWER_MANAGEMENT
 config BUILD_OUTPUT_HEX
 	default y
 
-if SPI
-
 config GPIO
 	default y
-
-endif # SPI
+	depends on SPI
 
 endif # SOC_FAMILY_NRF

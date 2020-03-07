@@ -47,8 +47,6 @@ struct font_info {
 
 #define STAT_COUNT 128
 
-#define EDGE (GPIO_INT_EDGE | GPIO_INT_DOUBLE_EDGE)
-
 #ifdef DT_ALIAS_SW0_GPIOS_FLAGS
 #define PULL_UP DT_ALIAS_SW0_GPIOS_FLAGS
 #else
@@ -66,12 +64,15 @@ static char str_buf[256];
 static struct {
 	struct device *dev;
 	const char *name;
-	u32_t pin;
+	gpio_pin_t pin;
+	gpio_flags_t flags;
 } leds[] = {
-	{ .name = DT_ALIAS_LED0_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED0_GPIOS_PIN, },
-	{ .name = DT_ALIAS_LED1_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED1_GPIOS_PIN, },
-	{ .name = DT_ALIAS_LED2_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED2_GPIOS_PIN, },
-	{ .name = DT_ALIAS_LED3_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED3_GPIOS_PIN, },
+	{ .name = DT_ALIAS_LED0_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED0_GPIOS_PIN,
+	  .flags = DT_ALIAS_LED0_GPIOS_FLAGS},
+	{ .name = DT_ALIAS_LED1_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED1_GPIOS_PIN,
+	  .flags = DT_ALIAS_LED1_GPIOS_FLAGS},
+	{ .name = DT_ALIAS_LED2_GPIOS_CONTROLLER, .pin = DT_ALIAS_LED2_GPIOS_PIN,
+	  .flags = DT_ALIAS_LED2_GPIOS_FLAGS}
 };
 
 struct k_delayed_work led_timer;
@@ -445,11 +446,7 @@ static void long_press(struct k_work *work)
 
 static bool button_is_pressed(void)
 {
-	u32_t val;
-
-	gpio_pin_read(gpio, DT_ALIAS_SW0_GPIOS_PIN, &val);
-
-	return !val;
+	return gpio_pin_get(gpio, DT_ALIAS_SW0_GPIOS_PIN) > 0;
 }
 
 static void button_interrupt(struct device *dev, struct gpio_callback *cb,
@@ -518,14 +515,22 @@ static int configure_button(void)
 	}
 
 	gpio_pin_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-			   (GPIO_DIR_IN | GPIO_INT |  PULL_UP | EDGE));
+			   GPIO_INPUT | DT_ALIAS_SW0_GPIOS_FLAGS);
 
-	gpio_init_callback(&button_cb, button_interrupt, BIT(DT_ALIAS_SW0_GPIOS_PIN));
+	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
+				     GPIO_INT_EDGE_BOTH);
+
+	gpio_init_callback(&button_cb, button_interrupt,
+			   BIT(DT_ALIAS_SW0_GPIOS_PIN));
+
 	gpio_add_callback(gpio, &button_cb);
 
-	gpio_pin_enable_callback(gpio, DT_ALIAS_SW0_GPIOS_PIN);
-
 	return 0;
+}
+
+int set_led_state(u8_t id, bool state)
+{
+	return gpio_pin_set(leds[id].dev, leds[id].pin, state);
 }
 
 static void led_timeout(struct k_work *work)
@@ -535,7 +540,7 @@ static void led_timeout(struct k_work *work)
 
 	/* Disable all LEDs */
 	for (i = 0; i < ARRAY_SIZE(leds); i++) {
-		gpio_pin_write(leds[i].dev, leds[i].pin, 1);
+		set_led_state(i, 0);
 	}
 
 	/* Stop after 5 iterations */
@@ -546,7 +551,7 @@ static void led_timeout(struct k_work *work)
 
 	/* Select and enable current LED */
 	i = led_cntr++ % ARRAY_SIZE(leds);
-	gpio_pin_write(leds[i].dev, leds[i].pin, 0);
+	set_led_state(i, 1);
 
 	k_delayed_work_submit(&led_timer, K_MSEC(100));
 }
@@ -562,9 +567,9 @@ static int configure_leds(void)
 			return -ENODEV;
 		}
 
-		gpio_pin_configure(leds[i].dev, leds[i].pin, GPIO_DIR_OUT);
-		gpio_pin_write(leds[i].dev, leds[i].pin, 1);
-
+		gpio_pin_configure(leds[i].dev, leds[i].pin,
+				   leds[i].flags |
+				   GPIO_OUTPUT_INACTIVE);
 	}
 
 	k_delayed_work_init(&led_timer, led_timeout);

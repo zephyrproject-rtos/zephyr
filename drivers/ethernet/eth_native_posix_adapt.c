@@ -25,7 +25,7 @@
 #include <sys/select.h>
 #include <net/if.h>
 #include <time.h>
-#include "posix_trace.h"
+#include <arch/posix/posix_trace.h>
 
 #ifdef __linux
 #include <linux/if_tun.h>

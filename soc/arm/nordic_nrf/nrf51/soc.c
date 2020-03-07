@@ -20,8 +20,8 @@
 #include <logging/log.h>
 
 #ifdef CONFIG_RUNTIME_NMI
-extern void z_NmiInit(void);
-#define NMI_INIT() z_NmiInit()
+extern void z_arm_nmi_init(void);
+#define NMI_INIT() z_arm_nmi_init()
 #else
 #define NMI_INIT()
 #endif
@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(soc);
    Set general purpose retention register and reboot */
 void sys_arch_reboot(int type)
 {
-	nrf_power_gpregret_set((uint8_t)type);
+	nrf_power_gpregret_set(NRF_POWER, (uint8_t)type);
 	NVIC_SystemReset();
 }
 
@@ -58,7 +58,7 @@ static int nordicsemi_nrf51_init(struct device *arg)
 
 #define DELAY_CALL_OVERHEAD_US 2
 
-void z_arch_busy_wait(u32_t time_us)
+void arch_busy_wait(u32_t time_us)
 {
 	if (time_us <= DELAY_CALL_OVERHEAD_US) {
 		return;

@@ -21,6 +21,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
 
+#ifdef CONFIG_LWM2M_IPSO_ACCELEROMETER_TIMESTAMP
+#define ADD_TIMESTAMPS 1
+#else
+#define ADD_TIMESTAMPS 0
+#endif
 /* Server resource IDs */
 #define ACCEL_X_VALUE_ID			5702
 #define ACCEL_Y_VALUE_ID			5703
@@ -28,8 +33,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ACCEL_SENSOR_UNITS_ID			5701
 #define ACCEL_MIN_RANGE_VALUE_ID		5603
 #define ACCEL_MAX_RANGE_VALUE_ID		5604
+#if ADD_TIMESTAMPS
+#define ACCEL_TIMESTAMP_ID			5518
 
+#define ACCEL_MAX_ID		7
+#else
 #define ACCEL_MAX_ID		6
+#endif
 
 #define MAX_INSTANCE_COUNT	CONFIG_LWM2M_IPSO_ACCELEROMETER_INSTANCE_COUNT
 
@@ -58,6 +68,9 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(ACCEL_SENSOR_UNITS_ID, R_OPT, STRING),
 	OBJ_FIELD_DATA(ACCEL_MIN_RANGE_VALUE_ID, R_OPT, FLOAT32),
 	OBJ_FIELD_DATA(ACCEL_MAX_RANGE_VALUE_ID, R_OPT, FLOAT32),
+#if ADD_TIMESTAMPS
+	OBJ_FIELD_DATA(ACCEL_TIMESTAMP_ID, RW_OPT, TIME),
+#endif
 };
 
 static struct lwm2m_engine_obj_inst inst[MAX_INSTANCE_COUNT];
@@ -116,6 +129,10 @@ static struct lwm2m_engine_obj_inst *accel_create(u16_t obj_inst_id)
 			  res_inst[avail], j,
 			  &accel_data[avail].max_range,
 			  sizeof(accel_data[avail].max_range));
+#if ADD_TIMESTAMPS
+	INIT_OBJ_RES_OPTDATA(ACCEL_TIMESTAMP_ID, res[avail], i,
+			     res_inst[avail], j);
+#endif
 
 	inst[avail].resources = res[avail];
 	inst[avail].resource_count = i;

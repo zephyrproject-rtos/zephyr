@@ -608,7 +608,7 @@ void gptp_handle_sync(int port, struct net_pkt *pkt)
 	duration = (upstream_sync_itv / 1000000U);
 
 	/* Start timeout timer. */
-	k_timer_start(&state->follow_up_discard_timer, duration, 0);
+	k_timer_start(&state->follow_up_discard_timer, duration, K_NO_WAIT);
 }
 
 int gptp_handle_follow_up(int port, struct net_pkt *pkt)

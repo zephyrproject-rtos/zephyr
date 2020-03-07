@@ -348,7 +348,7 @@ static int bme680_chip_init(struct device *dev)
 	}
 
 	if (data->chip_id == BME680_CHIP_ID) {
-		LOG_ERR("BME680 chip detected");
+		LOG_DBG("BME680 chip detected");
 	} else {
 		LOG_ERR("Bad BME680 chip id 0x%x", data->chip_id);
 		return -ENOTSUP;

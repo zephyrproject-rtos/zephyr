@@ -1,5 +1,4 @@
 tests:
-  misc.app_dev.cpp:
-    arch_exclude: posix
-    build_only: true
+  application_development.cpp.main:
+    platform_exclude: qemu_x86_coverage
     tags: cpp

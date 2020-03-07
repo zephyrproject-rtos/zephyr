@@ -16,6 +16,7 @@
 #include <spinlock.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <sys/check.h>
 
 #define WORKQUEUE_THREAD_NAME	"workqueue"
 
@@ -30,7 +31,7 @@ void k_work_q_start(struct k_work_q *work_q, k_thread_stack_t *stack,
 {
 	k_queue_init(&work_q->queue);
 	(void)k_thread_create(&work_q->thread, stack, stack_size, z_work_q_main,
-			work_q, NULL, NULL, prio, 0, 0);
+			work_q, NULL, NULL, prio, 0, K_NO_WAIT);
 
 	k_thread_name_set(&work_q->thread, WORKQUEUE_THREAD_NAME);
 }
@@ -48,13 +49,15 @@ static void work_timeout(struct _timeout *t)
 void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 {
 	k_work_init(&work->work, handler);
-	z_init_timeout(&work->timeout, work_timeout);
+	z_init_timeout(&work->timeout);
 	work->work_q = NULL;
 }
 
 static int work_cancel(struct k_delayed_work *work)
 {
-	__ASSERT(work->work_q != NULL, "");
+	CHECKIF(work->work_q == NULL) {
+		return -EALREADY;
+	}
 
 	if (k_work_pending(&work->work)) {
 		/* Remove from the queue if already submitted */
@@ -62,7 +65,11 @@ static int work_cancel(struct k_delayed_work *work)
 			return -EINVAL;
 		}
 	} else {
-		(void)z_abort_timeout(&work->timeout);
+		int err = z_abort_timeout(&work->timeout);
+
+		if (err) {
+			return -EALREADY;
+		}
 	}
 
 	/* Detach from workqueue */
@@ -89,7 +96,12 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	/* Cancel if work has been submitted */
 	if (work->work_q == work_q) {
 		err = work_cancel(work);
-		if (err < 0) {
+		/* -EALREADY indicates the work has already completed so this
+		 * is likely a recurring work.
+		 */
+		if (err == -EALREADY) {
+			err = 0;
+		} else if (err < 0) {
 			goto done;
 		}
 	}
@@ -108,7 +120,7 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 
 	/* Add timeout */
 	z_add_timeout(&work->timeout, work_timeout,
-		     _TICK_ALIGN + z_ms_to_ticks(delay));
+		     _TICK_ALIGN + k_ms_to_ticks_ceil32(delay));
 
 done:
 	k_spin_unlock(&lock, key);

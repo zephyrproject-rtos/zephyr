@@ -1,7 +1,6 @@
-# Kconfig - BL654 DVK board configuration
-#
+# BL654 DVK board configuration
+
 # Copyright (c) 2019 Laird Connectivity
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_BL654_DVK
@@ -9,26 +8,17 @@ if BOARD_BL654_DVK
 config BOARD
 	default "bl654_dvk"
 
-if ADC
-
 config ADC_0
 	default y
-
-endif # ADC
-
-if I2C
+	depends on ADC
 
 config I2C_0
 	default y
-
-endif # I2C
-
-if PWM
+	depends on I2C
 
 config PWM_0
 	default y
-
-endif # PWM
+	depends on PWM
 
 if SPI
 
@@ -42,7 +32,7 @@ endif # SPI
 
 if USB
 
-config USB_NRF52840
+config USB_NRFX
 	default y
 
 config USB_DEVICE_STACK
@@ -50,12 +40,9 @@ config USB_DEVICE_STACK
 
 endif # USB
 
-if IEEE802154
-
 config IEEE802154_NRF5
 	default y
-
-endif # IEEE802154
+	depends on IEEE802154
 
 config BT_CTLR
 	default BT

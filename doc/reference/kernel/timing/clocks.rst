@@ -129,7 +129,7 @@ between two points in time.
 
     /* compute how long the work took (assumes no counter rollover) */
     cycles_spent = stop_time - start_time;
-    nanoseconds_spent = SYS_CLOCK_HW_CYCLES_TO_NS(cycles_spent);
+    nanoseconds_spent = (u32_t)k_cyc_to_ns_floor64(cycles_spent);
 
 Suggested Uses
 **************

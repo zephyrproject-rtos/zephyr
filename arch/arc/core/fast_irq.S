@@ -16,6 +16,7 @@
 #include <kernel_structs.h>
 #include <offsets_short.h>
 #include <toolchain.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 #include <swap_macros.h>
 
@@ -101,20 +102,25 @@ firq_nest:
 	 * save original value of _ARC_V2_USER_SP and ilink into
 	 * the stack of interrupted context first, then restore them later
 	 */
-	st ilink, [sp]
-	lr ilink, [_ARC_V2_USER_SP]
-	st ilink, [sp, -4]
+	push ilink
+	PUSHAX ilink, _ARC_V2_USER_SP
+
 	/* sp here is the sp of interrupted context */
 	sr sp, [_ARC_V2_USER_SP]
+	/* here, bank 0 sp must go back to the value before push and
+	 * PUSHAX as we will switch to bank1, the pop and POPAX later will
+	 * change bank1's sp, not bank0's sp
+	 */
+	add sp, sp, 8
 
 	/* switch back to banked reg, only ilink can be used */
 	lr ilink, [_ARC_V2_STATUS32]
 	or ilink, ilink, _ARC_V2_STATUS32_RB(1)
 	kflag ilink
 	lr sp, [_ARC_V2_USER_SP]
-	ld ilink, [sp, -4]
-	sr ilink, [_ARC_V2_USER_SP]
-	ld ilink, [sp]
+
+	POPAX ilink, _ARC_V2_USER_SP
+	pop ilink
 firq_nest_1:
 #else
 firq_nest:
@@ -149,10 +155,8 @@ SECTION_FUNC(TEXT, _firq_exit)
 	bl z_check_stack_sentinel
 #endif
 
-#ifdef CONFIG_PREEMPT_ENABLED
-
 #ifdef CONFIG_SMP
-	bl z_arch_smp_switch_in_isr
+	bl z_arc_smp_switch_in_isr
 	/* r0 points to new thread, r1 points to old thread */
 	brne r0, 0, _firq_reschedule
 #else
@@ -164,8 +168,6 @@ SECTION_FUNC(TEXT, _firq_exit)
 	brne r0, r2, _firq_reschedule
 #endif
 	/* fall to no rescheduling */
-
-#endif /* CONFIG_PREEMPT_ENABLED */
 
 .balign 4
 _firq_no_reschedule:
@@ -179,8 +181,6 @@ _firq_no_reschedule:
 	_pop_irq_stack_frame
 #endif
 	rtie
-
-#ifdef CONFIG_PREEMPT_ENABLED
 
 .balign 4
 _firq_reschedule:
@@ -201,12 +201,36 @@ _firq_reschedule:
 	 * point, so when switching back to register bank 0, it will contain the
 	 * registers from the interrupted thread.
 	 */
-
+#if defined(CONFIG_USERSPACE)
+/* when USERSPACE is configured, here need to consider the case where firq comes
+ * out in user mode, according to ARCv2 ISA and nsim, the following micro ops
+ * will be executed:
+ *	sp<-reg bank1'sp
+ *      switch between sp and _ARC_V2_USER_SP
+ * then:
+ *      sp is the sp of kernel stack of interrupted thread
+ *      _ARC_V2_USER_SP is reg bank1'sp
+ *      the sp of user stack of interrupted thread is reg bank0'sp
+ * if firq comes out in kernel mode, the following micro ops will be executed:
+ *      sp<-reg bank'sp
+ * so, sw needs to do necessary handling to set up the correct sp
+ */
+	lr r0, [_ARC_V2_AUX_IRQ_ACT]
+	bbit0 r0, 31, _firq_from_kernel
+	aex sp, [_ARC_V2_USER_SP]
+	lr r0, [_ARC_V2_STATUS32]
+	and r0, r0, ~_ARC_V2_STATUS32_RB(7)
+	kflag r0
+	aex sp, [_ARC_V2_USER_SP]
+	b _firq_create_irq_stack_frame
+_firq_from_kernel:
+#endif
 	/* chose register bank #0 */
 	lr r0, [_ARC_V2_STATUS32]
 	and r0, r0, ~_ARC_V2_STATUS32_RB(7)
 	kflag r0
 
+_firq_create_irq_stack_frame:
 	/* we're back on the outgoing thread's stack */
 	_create_irq_stack_frame
 
@@ -219,6 +243,7 @@ _firq_reschedule:
 	st_s r0, [sp, ___isf_t_status32_OFFSET]
 
 	st ilink, [sp, ___isf_t_pc_OFFSET] /* ilink into pc */
+
 #ifdef CONFIG_SMP
 /*
  * load r0, r1 from irq stack
@@ -227,6 +252,16 @@ _firq_reschedule:
 	ld r0, [r2, -4]
 	ld r1, [r2, -8]
 #endif
+#endif
+
+#if defined(CONFIG_USERSPACE)
+/*
+ * need to remember the user/kernel status of interrupted thread, will be
+ * restored when thread switched back
+ */
+	lr r3, [_ARC_V2_AUX_IRQ_ACT]
+	and r3, r3, 0x80000000
+	push_s r3
 #endif
 
 #ifdef CONFIG_SMP
@@ -294,6 +329,16 @@ _firq_return_from_coop:
 _firq_return_from_rirq:
 _firq_return_from_firq:
 
+#if defined(CONFIG_USERSPACE)
+/*
+ * need to recover the user/kernel status of interrupted thread
+ */
+	pop_s r3
+	lr r2, [_ARC_V2_AUX_IRQ_ACT]
+	or r2, r2, r3
+	sr r2, [_ARC_V2_AUX_IRQ_ACT]
+#endif
+
 	_pop_irq_stack_frame
 
 	ld ilink, [sp, -4] /* status32 into ilink */
@@ -302,5 +347,3 @@ _firq_return_from_firq:
 
 	/* LP registers are already restored, just switch back to bank 0 */
 	rtie
-
-#endif /* CONFIG_PREEMPT_ENABLED */

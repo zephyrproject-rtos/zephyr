@@ -9,6 +9,7 @@
 #include <logging/log_msg.h>
 #include <stdarg.h>
 #include <sys/__assert.h>
+#include <sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,8 +76,8 @@ extern const struct log_backend __log_backends_end[0];
 #define LOG_BACKEND_DEFINE(_name, _api, _autostart)			       \
 	static struct log_backend_control_block UTIL_CAT(backend_cb_, _name) = \
 	{								       \
-		.active = false,					       \
 		.id = 0,						       \
+		.active = false,					       \
 	};								       \
 	static const Z_STRUCT_SECTION_ITERABLE(log_backend, _name) =	       \
 	{								       \

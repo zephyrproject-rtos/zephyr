@@ -1041,7 +1041,3 @@ void alt_avalon_i2c_tfr_cmd_fifo_threshold_set(ALT_AVALON_I2C_DEV_t *i2c_dev,
 {
   IORMW_ALT_AVALON_I2C_CTRL(i2c_dev->i2c_base,threshold << ALT_AVALON_I2C_CTRL_TFR_CMD_FIFO_THD_OFST,ALT_AVALON_I2C_CTRL_TFR_CMD_FIFO_THD_MSK);
 }
-  
-
-
-

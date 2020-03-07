@@ -19,8 +19,9 @@
 #include "hci_core.h"
 #include "settings.h"
 
+#if defined(CONFIG_BT_SETTINGS_USE_PRINTK)
 void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
-			    bt_addr_le_t *addr, const char *key)
+			    const bt_addr_le_t *addr, const char *key)
 {
 	if (key) {
 		snprintk(path, path_size,
@@ -38,12 +39,59 @@ void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 
 	BT_DBG("Encoded path %s", log_strdup(path));
 }
+#else
+void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
+			    const bt_addr_le_t *addr, const char *key)
+{
+	size_t len = 3;
+
+	/* Skip if path_size is less than 3; strlen("bt/") */
+	if (len < path_size) {
+		/* Key format:
+		 *  "bt/<subsys>/<addr><type>/<key>", "/<key>" is optional
+		 */
+		strcpy(path, "bt/");
+		strncpy(&path[len], subsys, path_size - len);
+		len = strlen(path);
+		if (len < path_size) {
+			path[len] = '/';
+			len++;
+		}
+
+		for (s8_t i = 5; i >= 0 && len < path_size; i--) {
+			len += bin2hex(&addr->a.val[i], 1, &path[len],
+				       path_size - len);
+		}
+
+		if (len < path_size) {
+			/* Type can be either BT_ADDR_LE_PUBLIC or
+			 * BT_ADDR_LE_RANDOM (value 0 or 1)
+			 */
+			path[len] = '0' + addr->type;
+			len++;
+		}
+
+		if (key && len < path_size) {
+			path[len] = '/';
+			len++;
+			strncpy(&path[len], key, path_size - len);
+			len += strlen(&path[len]);
+		}
+
+		if (len >= path_size) {
+			/* Truncate string */
+			path[path_size - 1] = '\0';
+		}
+	} else if (path_size > 0) {
+		*path = '\0';
+	}
+
+	BT_DBG("Encoded path %s", log_strdup(path));
+}
+#endif
 
 int bt_settings_decode_key(const char *key, bt_addr_le_t *addr)
 {
-	bool high;
-	int i;
-
 	if (settings_name_next(key, NULL) != 13) {
 		return -EINVAL;
 	}
@@ -56,25 +104,8 @@ int bt_settings_decode_key(const char *key, bt_addr_le_t *addr)
 		return -EINVAL;
 	}
 
-	for (i = 5, high = true; i >= 0; key++) {
-		u8_t nibble;
-
-		if (*key >= '0' && *key <= '9') {
-			nibble = *key - '0';
-		} else if (*key >= 'a' && *key <= 'f') {
-			nibble = *key - 'a' + 10;
-		} else {
-			return -EINVAL;
-		}
-
-		if (high) {
-			addr->a.val[i] = nibble << 4;
-			high = false;
-		} else {
-			addr->a.val[i] |= nibble;
-			high = true;
-			i--;
-		}
+	for (u8_t i = 0; i < 6; i++) {
+		hex2bin(&key[i * 2], 2, &addr->a.val[5 - i], 1);
 	}
 
 	BT_DBG("Decoded %s as %s", log_strdup(key), bt_addr_le_str(addr));
@@ -137,7 +168,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		} else {
 			bt_dev.name[len] = '\0';
 
-			BT_DBG("Name set to %s", bt_dev.name);
+			BT_DBG("Name set to %s", log_strdup(bt_dev.name));
 		}
 		return 0;
 	}
@@ -208,23 +239,29 @@ static int commit(void)
 	}
 #endif
 	if (!bt_dev.id_count) {
+		bt_setup_public_id_addr();
+	}
+
+	if (!bt_dev.id_count) {
 		int err;
 
-		err = bt_setup_id_addr();
+		err = bt_setup_random_id_addr();
 		if (err) {
 			BT_ERR("Unable to setup an identity address");
 			return err;
 		}
 	}
 
-	/* Make sure that the identities created by bt_id_create after
-	 * bt_enable is saved to persistent storage. */
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_PRESET_ID)) {
-		bt_settings_save_id();
-	}
-
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		bt_finalize_init();
+	}
+
+	/* If any part of the Identity Information of the device has been
+	 * generated this Identity needs to be saved persistently.
+	 */
+	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_STORE_ID)) {
+		BT_DBG("Storing Identity Information");
+		bt_settings_save_id();
 	}
 
 	return 0;

@@ -1,4 +1,6 @@
 tests:
-  section.subsection:
+  # section.subsection
+  testing.ztest:
     build_only: true
-    tags: my_tags
+    platform_whitelist: native_posix
+    tags: testing

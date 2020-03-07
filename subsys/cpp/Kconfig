@@ -1,10 +1,7 @@
-# Kconfig - C++ configuration options
+# C++ configuration options
 
-#
 # Copyright (c) 2018 B. Leforestier
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig CPLUSPLUS
 	bool "C++ support for the application"
@@ -49,20 +46,22 @@ endchoice
 
 config LIB_CPLUSPLUS
 	bool "Link with STD C++ library"
+	depends on !MINIMAL_LIBC
 	help
 	  Link with STD C++ Library.
 
+if LIB_CPLUSPLUS
+
 config EXCEPTIONS
 	bool "Enable C++ exceptions support"
-	select LIB_CPLUSPLUS
-	depends on NEWLIB_LIBC
 	help
 	  This option enables support of C++ exceptions.
 
 config RTTI
 	bool "Enable C++ RTTI support"
-	select LIB_CPLUSPLUS
 	help
 	  This option enables support of C++ RTTI.
+
+endif # LIB_CPLUSPLUS
 
 endif # CPLUSPLUS

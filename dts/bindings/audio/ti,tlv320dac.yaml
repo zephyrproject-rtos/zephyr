@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-title: Texas Instruments TLV320DAC Audio DAC
-
-description: >
-    This binding gives a base representation of TLV320DAC310x Audio DAC
+description: Texas Instruments TLV320DAC310x Audio DAC
 
 compatible: "ti,tlv320dac"
 

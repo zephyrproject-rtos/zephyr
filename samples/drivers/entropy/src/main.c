@@ -50,6 +50,6 @@ void main(void)
 
 		printf("\n");
 
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 	}
 }

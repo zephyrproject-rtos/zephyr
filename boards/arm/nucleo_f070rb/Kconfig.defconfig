@@ -1,21 +1,16 @@
-# Kconfig -  NUCLEO_F070RB board configuration
-#
+# NUCLEO_F070RB board configuration
+
 # Copyright (c) 2018 qianfan Zhao
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if BOARD_NUCLEO_F070RB
 
 config BOARD
 	default "nucleo_f070rb"
 
-if UART_CONSOLE
-
 config UART_2
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_CONSOLE
 
 if I2C
 

@@ -19,8 +19,17 @@ BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
 #define BUSY_MS (SLICE_SIZE + 20)
 /* a half timeslice*/
 #define HALF_SLICE_SIZE (SLICE_SIZE >> 1)
-#define HALF_SLICE_SIZE_CYCLES \
-	((u64_t)(HALF_SLICE_SIZE) * sys_clock_hw_cycles_per_sec() / 1000)
+#define HALF_SLICE_SIZE_CYCLES                                                 \
+	((u64_t)(HALF_SLICE_SIZE)*sys_clock_hw_cycles_per_sec() / 1000)
+
+/* Task switch tolerance ... */
+#if CONFIG_SYS_CLOCK_TICKS_PER_SEC >= 1000
+/* ... will not take more than 1 ms. */
+#define TASK_SWITCH_TOLERANCE (1)
+#else
+/* ... 1ms is faster than a tick, loosen tolerance to 1 tick */
+#define TASK_SWITCH_TOLERANCE (1000 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#endif
 
 K_SEM_DEFINE(sema, 0, NUM_THREAD);
 /*elapsed_slice taken by last thread*/
@@ -45,28 +54,33 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 
 	if (thread_idx == 0) {
 		/*
-		 * Thread number 0 releases CPU after HALF_SLICE_SIZE,
-		 * and we expect that task switch will not take more than 1 ms.
+		 * Thread number 0 releases CPU after HALF_SLICE_SIZE, and
+		 * expected to switch in less than the switching tolerance.
 		 */
-		expected_slice_min = (u64_t)(HALF_SLICE_SIZE - 1) *
-				     sys_clock_hw_cycles_per_sec() / 1000;
-		expected_slice_max = (u64_t)(HALF_SLICE_SIZE + 1) *
-				     sys_clock_hw_cycles_per_sec() / 1000;
+		expected_slice_min =
+			(u64_t)(HALF_SLICE_SIZE - TASK_SWITCH_TOLERANCE) *
+			sys_clock_hw_cycles_per_sec() / 1000;
+		expected_slice_max =
+			(u64_t)(HALF_SLICE_SIZE + TASK_SWITCH_TOLERANCE) *
+			sys_clock_hw_cycles_per_sec() / 1000;
 	} else {
 		/*
-		 * Other threads are sliced with tick granulity. Here, we
-		 * also expecting task switch time below 1 ms.
+		 * Other threads are sliced with tick granularity. Here, we
+		 * also expecting task switch below the switching tolerance.
 		 */
-		expected_slice_min = (z_ms_to_ticks(SLICE_SIZE) - 1) *
-				     sys_clock_hw_cycles_per_tick();
-		expected_slice_max = (z_ms_to_ticks(SLICE_SIZE) *
-				     sys_clock_hw_cycles_per_tick()) +
-				     (sys_clock_hw_cycles_per_sec() / 1000);
+		expected_slice_min =
+			(k_ms_to_ticks_ceil32(SLICE_SIZE)
+			 - TASK_SWITCH_TOLERANCE)
+			* k_ticks_to_cyc_floor32(1);
+		expected_slice_max =
+			(k_ms_to_ticks_ceil32(SLICE_SIZE)
+			 + TASK_SWITCH_TOLERANCE)
+			* k_ticks_to_cyc_floor32(1);
 	}
 
 #ifdef CONFIG_DEBUG
 	TC_PRINT("thread[%d] elapsed slice: %d, expected: <%d, %d>\n",
-		thread_idx, t, expected_slice_min, expected_slice_max);
+		 thread_idx, t, expected_slice_min, expected_slice_max);
 #endif
 
 	/** TESTPOINT: timeslice should be reset for each preemptive thread*/
@@ -123,8 +137,9 @@ void test_slice_reset(void)
 		/* create delayed threads with equal preemptive priority*/
 		for (int i = 0; i < NUM_THREAD; i++) {
 			tid[i] = k_thread_create(&t[i], tstacks[i], STACK_SIZE,
-						 thread_time_slice, NULL, NULL, NULL,
-						 K_PRIO_PREEMPT(j), 0, 0);
+						 thread_time_slice, NULL, NULL,
+						 NULL, K_PRIO_PREEMPT(j), 0,
+						 K_NO_WAIT);
 		}
 		/* enable time slice*/
 		k_sched_time_slice_set(SLICE_SIZE, K_PRIO_PREEMPT(0));

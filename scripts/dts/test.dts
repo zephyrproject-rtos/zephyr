@@ -124,94 +124,6 @@
 	};
 
 	//
-	// GPIOS
-	//
-
-	gpio-test {
-		controller-1 {
-			compatible = "gpio-two-cell";
-			#gpio-cells = <2>;
-			gpio-controller;
-		};
-		node {
-			gpios = <&{/gpio-test/controller-0} 1
-				 &{/gpio-test/controller-1} 2 3>;
-			foo-gpios = <&{/gpio-test/controller-1} 4 5>;
-			bar-gpios = <&{/gpio-test/controller-1} 6 7>;
-		};
-		// Putting this controller last gives us some coverage for ordering
-		// issues during initialization
-		controller-0 {
-			compatible = "gpio-one-cell";
-			#gpio-cells = <1>;
-			gpio-controller;
-		};
-	};
-
-	//
-	// Clocks
-	//
-
-	clock-test {
-		fixed-clock {
-			// 'fixed-clock' is currently special-cased in the code
-			compatible = "fixed-clock";
-			#clock-cells = <0>;
-			clock-frequency = <123>;
-		};
-		clock-1 {
-			compatible = "clock-one-cell";
-			#clock-cells = <1>;
-		};
-		clock-2 {
-			compatible = "clock-two-cell";
-			#clock-cells = <2>;
-		};
-		node {
-			clocks = <&{/clock-test/fixed-clock}
-				  &{/clock-test/clock-1} 1
-				  &{/clock-test/clock-2} 1 2>;
-			clock-names = "fixed", "one-cell", "two-cell";
-		};
-	};
-
-	//
-	// PWMs
-	//
-
-	pwm-test {
-		pwm-0 {
-			compatible = "pwm-zero-cell";
-			#pwm-cells = <0>;
-		};
-		pwm-1 {
-			compatible = "pwm-one-cell";
-			#pwm-cells = <1>;
-		};
-		node {
-			pwms = <&{/pwm-test/pwm-0}
-				&{/pwm-test/pwm-1} 1>;
-			pwm-names = "zero-cell", "one-cell";
-		};
-	};
-
-	//
-	// IO channels
-	//
-
-	// Lots of common code with PWMs and clocks, so just test the basics
-	io-channel-test {
-		io-channel {
-			compatible = "io-channel";
-			#io-channel-cells = <1>;
-		};
-		node {
-			io-channels = <&{/io-channel-test/io-channel} 1>;
-			io-channel-names = "io-channel";
-		};
-	};
-
-	//
 	// 'reg'
 	//
 
@@ -274,7 +186,27 @@
 	};
 
 	//
-	// For testing Device.parent and Device.children
+	// 'pinctrl-<index>'
+	//
+
+	pinctrl {
+		dev {
+			pinctrl-0 = <>;
+			pinctrl-1 = <&{/pinctrl/pincontroller/state-1}>;
+			pinctrl-2 = <&{/pinctrl/pincontroller/state-1}
+				     &{/pinctrl/pincontroller/state-2}>;
+			pinctrl-names = "zero", "one", "two";
+		};
+		pincontroller {
+			state-1 {
+			};
+			state-2 {
+			};
+		};
+	};
+
+	//
+	// For testing Node.parent and Node.children
 	//
 
 	parent {
@@ -299,7 +231,7 @@
 	};
 
 	//
-	// For testing Device.props (derived from 'properties:' in the binding)
+	// For testing Node.props (derived from 'properties:' in the binding)
 	//
 
 	props {
@@ -310,19 +242,50 @@
 		uint8-array = [ 12 34 ];
 		string = "foo";
 		string-array = "foo", "bar", "baz";
-		phandle-ref = < &{/props/node} >;
-		phandle-refs = < &{/props/node} &{/props/node2} >;
-		phandle-refs-and-vals = < &{/props/node} 1 &{/props/node2} 2 >;
+		phandle-ref = < &{/props/ctrl-1} >;
+		phandle-refs = < &{/props/ctrl-1} &{/props/ctrl-2} >;
+		phandle-array-foos = < &{/props/ctrl-1} 1 &{/props/ctrl-2} 2 3 >;
+		foo-gpios = < &{/props/ctrl-1} 1 >;
+		path = &{/props/ctrl-1};
 
-		node {
+		ctrl-1 {
+			compatible = "phandle-array-controller-1";
+			#phandle-array-foo-cells = <1>;
+			#gpio-cells = <1>;
 		};
 
-		node2 {
+		ctrl-2 {
+			compatible = "phandle-array-controller-2";
+			#phandle-array-foo-cells = <2>;
 		};
 	};
 
 	//
-	// For testing Device.props with 'default:' values in binding
+	// Test <prefix>-map, via gpio-map
+	//
+
+	gpio-map {
+		source {
+			compatible = "gpio-src";
+			foo-gpios = <&{/gpio-map/connector} 3 4
+				     &{/gpio-map/connector} 1 2>;
+		};
+		connector {
+			#gpio-cells = <2>;
+			// Use different data lengths for source and
+			// destination to make it a bit trickier
+			gpio-map = <1 2 &{/gpio-map/destination} 5
+				    3 4 &{/gpio-map/destination} 6>;
+		};
+		destination {
+			compatible = "gpio-dst";
+			gpio-controller;
+			#gpio-cells = <1>;
+		};
+	};
+
+	//
+	// For testing Node.props with 'default:' values in binding
 	//
 
 	defaults {
@@ -332,16 +295,44 @@
 	};
 
 	//
-	// For testing 'child-bus:' and 'parent-bus:'
+	// For testing EDT.compat2enabled
+	//
+
+	compat2enabled {
+		foo-1 {
+			status = "okay";
+			compatible = "compat2enabled";
+		};
+		foo-disabled {
+			status = "disabled";
+			compatible = "compat2enabled";
+		};
+		foo-2 {
+			// No 'status', which is also treated as enabled
+			compatible = "compat2enabled";
+		};
+		// Should not create an entry in compat2enabled, since all nodes
+		// with the compatible are disabled
+		bar {
+			status = "disabled";
+			compatible = "compat2enabled-disabled";
+		};
+	};
+
+	//
+	// For testing 'bus:' and 'on-bus:'
 	//
 
 	buses {
-		// The nodes below will map to different bindings since they
-		// appear on different buses
+		// The 'node' nodes below will map to different bindings since
+		// they appear on different buses
 		foo-bus {
 			compatible = "foo-bus";
 			node {
 				compatible = "on-bus";
+				nested {
+					compatible = "on-bus";
+				};
 			};
 		};
 		bar-bus {
@@ -395,8 +386,9 @@
 		compatible = "deprecated";
 		required = <1>;
 		required-2 = <2>;
+		#foo-cells = <2>;
 		sub-node {
-			child-prop = <3>;
+			foos = <&{/deprecated} 1 2>;
 		};
 	};
 };

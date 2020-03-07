@@ -26,8 +26,7 @@ Building
 ********
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/boards/microbit/pong
+   :zephyr-app: samples/boards/bbc_microbit/pong
    :board: bbc_microbit
    :goals: build
    :compact:
-

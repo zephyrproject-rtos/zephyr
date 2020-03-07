@@ -13,8 +13,7 @@
 
 #include "sht3xd.h"
 
-#define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
-LOG_MODULE_REGISTER(SHT3XD);
+LOG_MODULE_REGISTER(SHT3XD, CONFIG_SENSOR_LOG_LEVEL);
 
 #ifdef CONFIG_SHT3XD_SINGLE_SHOT_MODE
 static const u16_t measure_cmd[3] = {
@@ -233,6 +232,7 @@ static const struct sht3xd_config sht3xd0_cfg = {
 	.base_address = DT_INST_0_SENSIRION_SHT3XD_BASE_ADDRESS,
 #ifdef CONFIG_SHT3XD_TRIGGER
 	.alert_pin = DT_INST_0_SENSIRION_SHT3XD_ALERT_GPIOS_PIN,
+	.alert_flags = DT_INST_0_SENSIRION_SHT3XD_ALERT_GPIOS_FLAGS,
 #endif
 };
 

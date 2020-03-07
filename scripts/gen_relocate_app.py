@@ -5,22 +5,32 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# This script will relocate .text, .rodata, .data and .bss sections from required files
-# and places it in the required memory region. This memory region and file
-# are given to this python script in the form of a string.
-# Example of such a string would be:
-# SRAM2:/home/xyz/zephyr/samples/hello_world/src/main.c,\
-# SRAM1:/home/xyz/zephyr/samples/hello_world/src/main2.c
-# To invoke this script:
-# python3 gen_relocate_app.py -i input_string -o generated_linker -c generated_code
-# Configuration that needs to be sent to the python script.
-# if the memory is like SRAM1/SRAM2/CCD/AON then place full object in
-# the sections
-# if the memory type is appended with _DATA / _TEXT/ _RODATA/ _BSS only the
-# selected memory is placed in the required memory region. Others are
-# ignored.
-# NOTE: multiple regions can be appended together like SRAM2_DATA_BSS
-# this will place data and bss inside SRAM2
+"""
+This script will relocate .text, .rodata, .data and .bss sections from required files
+and places it in the required memory region. This memory region and file
+are given to this python script in the form of a string.
+
+Example of such a string would be::
+
+   SRAM2:/home/xyz/zephyr/samples/hello_world/src/main.c,\
+   SRAM1:/home/xyz/zephyr/samples/hello_world/src/main2.c
+
+To invoke this script::
+
+   python3 gen_relocate_app.py -i input_string -o generated_linker -c generated_code
+
+Configuration that needs to be sent to the python script.
+
+- If the memory is like SRAM1/SRAM2/CCD/AON then place full object in
+  the sections
+- If the memory type is appended with _DATA / _TEXT/ _RODATA/ _BSS only the
+  selected memory is placed in the required memory region. Others are
+  ignored.
+
+Multiple regions can be appended together like SRAM2_DATA_BSS
+this will place data and bss inside SRAM2.
+"""
+
 
 import sys
 import argparse
@@ -99,6 +109,7 @@ SOURCE_CODE_INCLUDES = """
 #include <zephyr.h>
 #include <linker/linker-defs.h>
 #include <kernel_structs.h>
+#include <string.h>
 """
 
 EXTERN_LINKER_VAR_DECLARATION = """

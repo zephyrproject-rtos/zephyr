@@ -1,10 +1,7 @@
 # Copyright (c) 2019, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: NXP LPI2C
-
-description: >
-    This binding gives a base representation of the NXP i.MX LPI2C controller
+description: NXP i.MX LPI2C controller
 
 compatible: "nxp,imx-lpi2c"
 
@@ -16,3 +13,8 @@ properties:
 
     interrupts:
       required: true
+
+    bus-idle-timeout:
+      required: false
+      type: int
+      description: Bus idle timeout in nanoseconds

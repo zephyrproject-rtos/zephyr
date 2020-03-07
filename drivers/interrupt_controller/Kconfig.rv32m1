@@ -1,7 +1,6 @@
-# Kconfig - RV32M1 INTMUX config
-#
+# RV32M1 INTMUX config
+
 # Copyright (c) 2018 Foundries.io
-#
 # SPDX-License-Identifier: Apache-2.0
 
 config RV32M1_INTMUX
@@ -32,7 +31,7 @@ config RV32M1_INTMUX_CHANNEL_1
 	bool "INTMUX channel 1"
 	help
 	  Enable support for INTMUX channel 1.
-
+if !BT
 config RV32M1_INTMUX_CHANNEL_2
 	bool "INTMUX channel 2"
 	help
@@ -42,7 +41,7 @@ config RV32M1_INTMUX_CHANNEL_3
 	bool "INTMUX channel 3"
 	help
 	  Enable support for INTMUX channel 3.
-
+endif # BT
 config RV32M1_INTMUX_CHANNEL_4
 	bool "INTMUX channel 4"
 	help

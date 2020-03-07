@@ -22,6 +22,8 @@
 
 #if !defined(_ASMLANGUAGE)
 
+#include <kernel_arch_data.h>
+
 #ifdef CONFIG_CPU_ARCV2
 #include <v2/cache.h>
 #include <v2/irq.h>
@@ -31,20 +33,7 @@
 extern "C" {
 #endif
 
-static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
-{
-#ifdef CONFIG_SMP
-	u32_t core;
-
-	core = z_arc_v2_core_id();
-
-	return &_kernel.cpus[core];
-#else
-	return &_kernel.cpus[0];
-#endif
-}
-
-static ALWAYS_INLINE void kernel_arch_init(void)
+static ALWAYS_INLINE void arch_kernel_init(void)
 {
 	z_irq_setup();
 	_current_cpu->irq_stack =
@@ -66,7 +55,10 @@ static ALWAYS_INLINE int Z_INTERRUPT_CAUSE(void)
 	return irq_num;
 }
 
-#define z_is_in_isr	z_arc_v2_irq_unit_is_in_isr
+static inline bool arch_is_in_isr(void)
+{
+	return z_arc_v2_irq_unit_is_in_isr();
+}
 
 extern void z_thread_entry_wrapper(void);
 extern void z_user_thread_entry_wrapper(void);
@@ -75,10 +67,10 @@ extern void z_arc_userspace_enter(k_thread_entry_t user_entry, void *p1,
 		 void *p2, void *p3, u32_t stack, u32_t size);
 
 
-extern void z_arch_switch(void *switch_to, void **switched_from);
+extern void arch_switch(void *switch_to, void **switched_from);
 extern void z_arc_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 
-extern void z_arch_sched_ipi(void);
+extern void arch_sched_ipi(void);
 
 #ifdef __cplusplus
 }

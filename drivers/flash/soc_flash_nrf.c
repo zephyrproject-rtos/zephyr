@@ -78,7 +78,6 @@ static struct k_sem sem_lock;
 #define SYNC_UNLOCK()
 #endif
 
-static bool write_protect;
 
 static int write(off_t addr, const void *data, size_t len);
 static int erase(u32_t addr, u32_t size);
@@ -95,7 +94,7 @@ static inline bool is_regular_addr_valid(off_t addr, size_t len)
 	if (addr >= flash_size ||
 	    addr < 0 ||
 	    len > flash_size ||
-	    addr + len > flash_size) {
+	    (addr) + len > flash_size) {
 		return false;
 	}
 
@@ -119,12 +118,6 @@ static inline bool is_uicr_addr_valid(off_t addr, size_t len)
 #endif /* CONFIG_SOC_FLASH_NRF_UICR */
 }
 
-static inline bool is_addr_valid(off_t addr, size_t len)
-{
-	return is_regular_addr_valid(addr, len) ||
-	       is_uicr_addr_valid(addr, len);
-}
-
 static void nvmc_wait_ready(void)
 {
 	while (!nrfx_nvmc_write_done_check()) {
@@ -134,7 +127,9 @@ static void nvmc_wait_ready(void)
 static int flash_nrf_read(struct device *dev, off_t addr,
 			    void *data, size_t len)
 {
-	if (!is_addr_valid(addr, len)) {
+	if (is_regular_addr_valid(addr, len)) {
+		addr += DT_FLASH_BASE_ADDRESS;
+	} else if (!is_uicr_addr_valid(addr, len)) {
 		return -EINVAL;
 	}
 
@@ -152,13 +147,17 @@ static int flash_nrf_write(struct device *dev, off_t addr,
 {
 	int ret;
 
-	if (write_protect) {
-		return -EACCES;
-	}
-
-	if (!is_addr_valid(addr, len)) {
+	if (is_regular_addr_valid(addr, len)) {
+		addr += DT_FLASH_BASE_ADDRESS;
+	} else if (!is_uicr_addr_valid(addr, len)) {
 		return -EINVAL;
 	}
+
+#if !IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
+	if (!is_aligned_32(addr) || (len % sizeof(u32_t))) {
+		return -EINVAL;
+	}
+#endif
 
 	if (!len) {
 		return 0;
@@ -186,10 +185,6 @@ static int flash_nrf_erase(struct device *dev, off_t addr, size_t size)
 	u32_t n_pages = size / pg_size;
 	int ret;
 
-	if (write_protect) {
-		return -EACCES;
-	}
-
 	if (is_regular_addr_valid(addr, size)) {
 		/* Erase can only be done per page */
 		if (((addr % pg_size) != 0) || ((size % pg_size) != 0)) {
@@ -199,6 +194,8 @@ static int flash_nrf_erase(struct device *dev, off_t addr, size_t size)
 		if (!n_pages) {
 			return 0;
 		}
+
+		addr += DT_FLASH_BASE_ADDRESS;
 #ifdef CONFIG_SOC_FLASH_NRF_UICR
 	} else if (addr != (off_t)NRF_UICR || size != sizeof(*NRF_UICR)) {
 		return -EINVAL;
@@ -227,9 +224,6 @@ static int flash_nrf_erase(struct device *dev, off_t addr, size_t size)
 
 static int flash_nrf_write_protection(struct device *dev, bool enable)
 {
-	/* virtual write-erase protection */
-	write_protect = enable;
-
 	return 0;
 }
 
@@ -253,7 +247,11 @@ static const struct flash_driver_api flash_nrf_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_nrf_pages_layout,
 #endif
+#if IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	.write_block_size = 1,
+#else
+	.write_block_size = 4,
+#endif
 };
 
 static int nrf_flash_init(struct device *dev)
@@ -268,7 +266,6 @@ static int nrf_flash_init(struct device *dev)
 	dev_layout.pages_count = nrfx_nvmc_flash_page_count_get();
 	dev_layout.pages_size = nrfx_nvmc_flash_page_size_get();
 #endif
-	write_protect = true;
 
 	return 0;
 }
@@ -492,7 +489,6 @@ static void shift_write_context(u32_t shift, struct flash_context *w_ctx)
 static int write_op(void *context)
 {
 	struct flash_context *w_ctx = context;
-	u32_t count;
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 	u32_t ticks_begin = 0U;
@@ -503,10 +499,11 @@ static int write_op(void *context)
 		ticks_begin = ticker_ticks_now_get();
 	}
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
-
+#if IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	/* If not aligned, write unaligned beginning */
 	if (!is_aligned_32(w_ctx->flash_addr)) {
-		count = sizeof(u32_t) - (w_ctx->flash_addr & 0x3);
+		u32_t count = sizeof(u32_t) - (w_ctx->flash_addr & 0x3);
+
 		if (count > w_ctx->len) {
 			count = w_ctx->len;
 		}
@@ -530,7 +527,7 @@ static int write_op(void *context)
 		}
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
 	}
-
+#endif /* CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS */
 	/* Write all the 4-byte aligned data */
 	while (w_ctx->len >= sizeof(u32_t)) {
 		nrfx_nvmc_word_write(w_ctx->flash_addr,
@@ -553,7 +550,7 @@ static int write_op(void *context)
 		}
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
 	}
-
+#if IS_ENABLED(CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS)
 	/* Write remaining unaligned data */
 	if (w_ctx->len) {
 		nrfx_nvmc_bytes_write(w_ctx->flash_addr,
@@ -562,7 +559,7 @@ static int write_op(void *context)
 
 		shift_write_context(w_ctx->len, w_ctx);
 	}
-
+#endif /* CONFIG_SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS */
 	nvmc_wait_ready();
 
 	return FLASH_OP_DONE;

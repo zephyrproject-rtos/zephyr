@@ -51,7 +51,7 @@
 #include <stm32f0xx_ll_wwdg.h>
 #endif
 
-#ifdef CONFIG_I2C_STM32_V2
+#ifdef CONFIG_I2C_STM32
 #include <stm32f0xx_ll_i2c.h>
 #endif
 
@@ -65,6 +65,14 @@
 
 #ifdef CONFIG_ADC_STM32
 #include <stm32f0xx_ll_adc.h>
+#endif
+
+#ifdef CONFIG_DMA_STM32
+#include <stm32f0xx_ll_dma.h>
+#endif
+
+#ifdef CONFIG_HWINFO_STM32
+#include <stm32f0xx_ll_utils.h>
 #endif
 
 #endif /* !_ASMLANGUAGE */

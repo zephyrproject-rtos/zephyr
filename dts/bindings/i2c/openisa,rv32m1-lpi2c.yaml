@@ -1,10 +1,7 @@
 # Copyright (c) 2019, Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
-title: OpenISA LPI2C
-
-description: >
-    This binding gives a base representation of the OpenISA LPI2C controller
+description: OpenISA LPI2C controller
 
 compatible: "openisa,rv32m1-lpi2c"
 

@@ -1,6 +1,4 @@
-title: Atmel SAM0 USB device
-
-description: >
+description: |
     Atmel SAM0 USB in device mode
 
 compatible: "atmel,sam0-usb"

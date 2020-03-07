@@ -8,6 +8,7 @@
 #include <drivers/flash.h>
 #include <device.h>
 #include <stdio.h>
+#include <string.h>
 
 #if (CONFIG_SPI_FLASH_W25QXXDV - 0)
 /* NB: W25Q16DV is a JEDEC spi-nor device, but has a separate driver. */
@@ -16,20 +17,23 @@
 #elif (CONFIG_SPI_NOR - 0) || defined(DT_INST_0_JEDEC_SPI_NOR_LABEL)
 #define FLASH_DEVICE DT_INST_0_JEDEC_SPI_NOR_LABEL
 #define FLASH_NAME "JEDEC SPI-NOR"
+#elif (CONFIG_NORDIC_QSPI_NOR - 0) || defined(DT_INST_0_NORDIC_QSPI_NOR_LABEL)
+#define FLASH_DEVICE DT_INST_0_NORDIC_QSPI_NOR_LABEL
+#define FLASH_NAME "JEDEC QSPI-NOR"
 #else
 #error Unsupported flash driver
 #endif
 
 #define FLASH_TEST_REGION_OFFSET 0xff000
 #define FLASH_SECTOR_SIZE        4096
-#define TEST_DATA_BYTE_0         0x55
-#define TEST_DATA_BYTE_1         0xaa
-#define TEST_DATA_LEN            2
 
 void main(void)
 {
+	const u8_t expected[] = { 0x55, 0xaa, 0x66, 0x99 };
+	const size_t len = sizeof(expected);
+	u8_t buf[sizeof(expected)];
 	struct device *flash_dev;
-	u8_t buf[TEST_DATA_LEN];
+	int rc;
 
 	printf("\n" FLASH_NAME " SPI flash testing\n");
 	printf("==========================\n");
@@ -37,7 +41,8 @@ void main(void)
 	flash_dev = device_get_binding(FLASH_DEVICE);
 
 	if (!flash_dev) {
-		printf("SPI flash driver %s was not found!\n", FLASH_DEVICE);
+		printf("SPI flash driver %s was not found!\n",
+		       FLASH_DEVICE);
 		return;
 	}
 
@@ -48,36 +53,46 @@ void main(void)
 	 */
 	printf("\nTest 1: Flash erase\n");
 	flash_write_protection_set(flash_dev, false);
-	if (flash_erase(flash_dev,
-			FLASH_TEST_REGION_OFFSET,
-			FLASH_SECTOR_SIZE) != 0) {
-		printf("   Flash erase failed!\n");
+
+	rc = flash_erase(flash_dev, FLASH_TEST_REGION_OFFSET,
+			 FLASH_SECTOR_SIZE);
+	if (rc != 0) {
+		printf("Flash erase failed! %d\n", rc);
 	} else {
-		printf("   Flash erase succeeded!\n");
+		printf("Flash erase succeeded!\n");
 	}
 
 	printf("\nTest 2: Flash write\n");
 	flash_write_protection_set(flash_dev, false);
 
-	buf[0] = TEST_DATA_BYTE_0;
-	buf[1] = TEST_DATA_BYTE_1;
-	printf("   Attempted to write %x %x\n", buf[0], buf[1]);
-	if (flash_write(flash_dev, FLASH_TEST_REGION_OFFSET, buf,
-	    TEST_DATA_LEN) != 0) {
-		printf("   Flash write failed!\n");
+	printf("Attempting to write %u bytes\n", len);
+	rc = flash_write(flash_dev, FLASH_TEST_REGION_OFFSET, expected, len);
+	if (rc != 0) {
+		printf("Flash write failed! %d\n", rc);
 		return;
 	}
 
-	if (flash_read(flash_dev, FLASH_TEST_REGION_OFFSET, buf,
-	    TEST_DATA_LEN) != 0) {
-		printf("   Flash read failed!\n");
+	memset(buf, 0, len);
+	rc = flash_read(flash_dev, FLASH_TEST_REGION_OFFSET, buf, len);
+	if (rc != 0) {
+		printf("Flash read failed! %d\n", rc);
 		return;
 	}
-	printf("   Data read %x %x\n", buf[0], buf[1]);
 
-	if ((buf[0] == TEST_DATA_BYTE_0) && (buf[1] == TEST_DATA_BYTE_1)) {
-		printf("   Data read matches with data written. Good!!\n");
+	if (memcmp(expected, buf, len) == 0) {
+		printf("Data read matches data written. Good!!\n");
 	} else {
-		printf("   Data read does not match with data written!!\n");
+		const u8_t *wp = expected;
+		const u8_t *rp = buf;
+		const u8_t *rpe = rp + len;
+
+		printf("Data read does not match data written!!\n");
+		while (rp < rpe) {
+			printf("%08x wrote %02x read %02x %s\n",
+			       FLASH_TEST_REGION_OFFSET + (rp - buf),
+			       *wp, *rp, (*rp == *wp) ? "match" : "MISMATCH");
+			++rp;
+			++wp;
+		}
 	}
 }

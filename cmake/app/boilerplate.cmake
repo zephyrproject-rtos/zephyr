@@ -408,12 +408,22 @@ the configuration settings specified in an alternate .conf file using this param
 These settings will override the settings in the application’s .config file or its default .conf file.\
 Multiple files may be listed, e.g. CONF_FILE=\"prj1.conf prj2.conf\"")
 
+if(ZEPHYR_EXTRA_MODULES)
+  # ZEPHYR_EXTRA_MODULES has either been specified on the cmake CLI or is
+  # already in the CMakeCache.txt. This has precedence over the environment
+  # variable ZEPHYR_EXTRA_MODULES
+elseif(DEFINED ENV{ZEPHYR_EXTRA_MODULES})
+  set(ZEPHYR_EXTRA_MODULES $ENV{ZEPHYR_EXTRA_MODULES})
+endif()
+
 if(DTC_OVERLAY_FILE)
   # DTC_OVERLAY_FILE has either been specified on the cmake CLI or is already
   # in the CMakeCache.txt. This has precedence over the environment
   # variable DTC_OVERLAY_FILE
 elseif(DEFINED ENV{DTC_OVERLAY_FILE})
   set(DTC_OVERLAY_FILE $ENV{DTC_OVERLAY_FILE})
+elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.overlay)
+  set(DTC_OVERLAY_FILE ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.overlay)
 elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/${BOARD}.overlay)
   set(DTC_OVERLAY_FILE ${APPLICATION_SOURCE_DIR}/${BOARD}.overlay)
 elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/app.overlay)
@@ -431,6 +441,9 @@ set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
 
 include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
+
+# Include board specific device-tree flags before parsing.
+include(${BOARD_DIR}/pre_dt_board.cmake OPTIONAL)
 
 # DTS should be close to kconfig because CONFIG_ variables from
 # kconfig and dts should be available at the same time.
@@ -461,6 +474,15 @@ else()
 endif()
 
 include(${ZEPHYR_BASE}/cmake/target_toolchain.cmake)
+
+project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
+enable_language(C CXX ASM)
+
+# 'project' sets PROJECT_BINARY_DIR to ${CMAKE_CURRENT_BINARY_DIR},
+# but for legacy reasons we need it to be set to
+# ${CMAKE_CURRENT_BINARY_DIR}/zephyr
+set(PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
+set(PROJECT_SOURCE_DIR ${ZEPHYR_BASE})
 
 set(KERNEL_NAME ${CONFIG_KERNEL_BIN_NAME})
 
@@ -505,6 +527,13 @@ if(CONFIG_QEMU_TARGET)
     )
   endif()
 endif()
+
+# General purpose Zephyr target.
+# This target can be used for custom zephyr settings that needs to be used elsewhere in the build system
+#
+# Currently used properties:
+# - COMPILES_OPTIONS: Used by application memory partition feature
+add_custom_target(zephyr_property_target)
 
 # "app" is a CMake library containing all the application code and is
 # modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt

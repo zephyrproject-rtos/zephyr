@@ -6,10 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_
 
-#include <kernel_arch_thread.h>
-
-#define STACK_ALIGN 16
-#define STACK_SIZE_ALIGN 16
+#include <arch/x86/intel64/thread.h>
+#include <arch/x86/thread_stack.h>
 
 #if CONFIG_ISR_STACK_SIZE != (CONFIG_ISR_SUBSTACK_SIZE * CONFIG_ISR_DEPTH)
 #error "Check ISR stack configuration (CONFIG_ISR_*)"
@@ -20,23 +18,7 @@
 #endif
 
 #ifndef _ASMLANGUAGE
-
-#define Z_ARCH_THREAD_STACK_LEN(size) (ROUND_UP((size), STACK_SIZE_ALIGN))
-
-#define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit \
-		__aligned(STACK_ALIGN) \
-		sym[Z_ARCH_THREAD_STACK_LEN(size)]
-
-#define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit \
-		__aligned(STACK_ALIGN) \
-		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
-
-#define Z_ARCH_THREAD_STACK_SIZEOF(sym)	sizeof(sym)
-#define Z_ARCH_THREAD_STACK_BUFFER(sym) ((char *) sym)
-
-static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned long key;
 
@@ -50,21 +32,32 @@ static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
  */
 
 struct x86_esf {
-	unsigned long rax;
+#ifdef CONFIG_EXCEPTION_DEBUG
+	/* callee-saved */
 	unsigned long rbx;
+	unsigned long rbp;
+	unsigned long r12;
+	unsigned long r13;
+	unsigned long r14;
+	unsigned long r15;
+#endif /* CONFIG_EXCEPTION_DEBUG */
+
+	/* Caller-saved regs */
+	unsigned long rax;
 	unsigned long rcx;
 	unsigned long rdx;
-	unsigned long rbp;
 	unsigned long rsi;
 	unsigned long rdi;
 	unsigned long r8;
 	unsigned long r9;
 	unsigned long r10;
+	/* Must be aligned 16 bytes from the end of this struct due to
+	 * requirements of 'fxsave (%rsp)'
+	 */
+	char fxsave[X86_FXSAVE_SIZE];
 	unsigned long r11;
-	unsigned long r12;
-	unsigned long r13;
-	unsigned long r14;
-	unsigned long r15;
+
+	/* Pushed by CPU or assembly stub */
 	unsigned long vector;
 	unsigned long code;
 	unsigned long rip;
@@ -76,12 +69,34 @@ struct x86_esf {
 
 typedef struct x86_esf z_arch_esf_t;
 
+struct x86_ssf {
+	unsigned long rip;
+	unsigned long rflags;
+	unsigned long r10;
+	unsigned long r9;
+	unsigned long r8;
+	unsigned long rdx;
+	unsigned long rsi;
+	char fxsave[X86_FXSAVE_SIZE];
+	unsigned long rdi;
+	unsigned long rsp;
+};
+
+#define ARCH_EXCEPT(reason_p) do { \
+	__asm__ volatile( \
+		"movq %[reason], %%rax\n\t" \
+		"int $32\n\t" \
+		: \
+		: [reason] "i" (reason_p)); \
+	CODE_UNREACHABLE; \
+} while (false)
+
 #endif /* _ASMLANGUAGE */
 
 /*
  * All Intel64 interrupts are dynamically connected.
  */
 
-#define Z_ARCH_IRQ_CONNECT z_arch_irq_connect_dynamic
+#define ARCH_IRQ_CONNECT arch_irq_connect_dynamic
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_INTEL64_ARCH_H_ */

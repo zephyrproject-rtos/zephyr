@@ -172,10 +172,14 @@ static void transfer_next_chunk(struct device *dev)
 static int transceive(struct device *dev,
 		      const struct spi_config *spi_cfg,
 		      const struct spi_buf_set *tx_bufs,
-		      const struct spi_buf_set *rx_bufs)
+		      const struct spi_buf_set *rx_bufs,
+		      bool asynchronous,
+		      struct k_poll_signal *signal)
 {
 	struct spi_nrfx_data *dev_data = get_dev_data(dev);
 	int error;
+
+	spi_context_lock(&dev_data->ctx, asynchronous, signal);
 
 	error = configure(dev, spi_cfg);
 	if (error == 0) {
@@ -199,8 +203,7 @@ static int spi_nrfx_transceive(struct device *dev,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
 {
-	spi_context_lock(&get_dev_data(dev)->ctx, false, NULL);
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, false, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -210,8 +213,7 @@ static int spi_nrfx_transceive_async(struct device *dev,
 				     const struct spi_buf_set *rx_bufs,
 				     struct k_poll_signal *async)
 {
-	spi_context_lock(&get_dev_data(dev)->ctx, true, async);
-	return transceive(dev, spi_cfg, tx_bufs, rx_bufs);
+	return transceive(dev, spi_cfg, tx_bufs, rx_bufs, true, async);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
@@ -321,8 +323,26 @@ static int spi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 }
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
+#define SPI_NRFX_MISO_PULL_DOWN(idx) \
+	IS_ENABLED(DT_NORDIC_NRF_SPI_SPI_##idx##_MISO_PULL_DOWN)
+
+#define SPI_NRFX_MISO_PULL_UP(idx) \
+	IS_ENABLED(DT_NORDIC_NRF_SPI_SPI_##idx##_MISO_PULL_UP)
+
+#define SPI_NRFX_MISO_PULL(idx)				\
+	(SPI_NRFX_MISO_PULL_UP(idx)			\
+		? SPI_NRFX_MISO_PULL_DOWN(idx)		\
+			? -1 /* invalid configuration */\
+			: NRF_GPIO_PIN_PULLUP		\
+		: SPI_NRFX_MISO_PULL_DOWN(idx)		\
+			? NRF_GPIO_PIN_PULLDOWN		\
+			: NRF_GPIO_PIN_NOPULL)
 
 #define SPI_NRFX_SPI_DEVICE(idx)					       \
+	BUILD_ASSERT_MSG(						       \
+		!SPI_NRFX_MISO_PULL_UP(idx) || !SPI_NRFX_MISO_PULL_DOWN(idx),  \
+		"SPI"#idx						       \
+		": cannot enable both pull-up and pull-down on MISO line");    \
 	static int spi_##idx##_init(struct device *dev)			       \
 	{								       \
 		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPI##idx),		       \
@@ -346,6 +366,7 @@ static int spi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			.frequency = NRF_SPI_FREQ_4M,			       \
 			.mode      = NRF_SPI_MODE_0,			       \
 			.bit_order = NRF_SPI_BIT_ORDER_MSB_FIRST,	       \
+			.miso_pull = SPI_NRFX_MISO_PULL(idx),		       \
 		}							       \
 	};								       \
 	DEVICE_DEFINE(spi_##idx, DT_NORDIC_NRF_SPI_SPI_##idx##_LABEL,	       \

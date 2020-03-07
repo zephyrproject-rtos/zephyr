@@ -27,11 +27,6 @@
 				arm,num-mpu-regions = <8>;
 			};
 		};
-		cpu@1 {
-			device_type = "cpu";
-			compatible = "arm,cortex-m4f";
-			reg = <1>;
-		};
 	};
 
 	soc {

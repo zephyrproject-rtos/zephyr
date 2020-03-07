@@ -1,10 +1,7 @@
 # Copyright (c) 2018, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: ADXL362 Three Axis SPI accelerometer
-
-description: >
-    This is a representation of the ADXL362 Three Axis SPI accelerometer
+description: ADXL362 3-axis SPI accelerometer
 
 compatible: "adi,adxl362"
 
@@ -14,3 +11,7 @@ properties:
     int1-gpios:
       type: phandle-array
       required: false
+      description: |
+        The INT1 signal defaults to active high as produced by the
+        sensor.  The property value should ensure the flags properly
+        describe the signal that is presented to the driver.

@@ -1,10 +1,7 @@
-# Kconfig - MPU6050 Six-Axis Motion Tracking device configuration options
+# MPU6050 Six-Axis Motion Tracking device configuration options
 
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig MPU6050
 	bool "MPU6050 Six-Axis Motion Tracking Device"
@@ -13,28 +10,6 @@ menuconfig MPU6050
 	  Enable driver for MPU6050 I2C-based six-axis motion tracking device.
 
 if MPU6050
-
-config MPU6050_NAME
-	string "Driver name"
-	default "MPU6050"
-	help
-	  Device name with which the MPU6050 sensor is identified.
-
-config MPU6050_I2C_ADDR
-	hex "I2C address"
-	default 0x68
-	range 0x68 0x69
-	help
-	  I2C address of the MPU6050 sensor.
-	  Choose 0x68 if the AD0 pin is pulled to GND or 0x69 if the AD0 pin
-	  is pulled to VDD.
-
-config MPU6050_I2C_MASTER_DEV_NAME
-	string "I2C master where MPU6050 is connected"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which MPU6050 is
-	  connected.
 
 choice
 	prompt "Trigger mode"
@@ -59,22 +34,6 @@ endchoice
 
 config MPU6050_TRIGGER
 	bool
-
-config MPU6050_GPIO_DEV_NAME
-	string "GPIO device"
-	default "GPIO_0"
-	depends on MPU6050_TRIGGER
-	help
-	  The device name of the GPIO device to which the MPU6050 interrupt pin
-	  is connected.
-
-config MPU6050_GPIO_PIN_NUM
-	int "Interrupt GPIO pin number"
-	default 0
-	depends on MPU6050_TRIGGER
-	help
-	  The number of the GPIO on which the interrupt signal from the MPU6050
-	  chip will be received.
 
 config MPU6050_THREAD_PRIORITY
 	int "Thread priority"

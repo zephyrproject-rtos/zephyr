@@ -44,7 +44,7 @@
 #include <stm32f3xx_ll_system.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
-#ifdef CONFIG_I2C
+#ifdef CONFIG_I2C_STM32
 #include <stm32f3xx_ll_i2c.h>
 #endif
 
@@ -72,6 +72,14 @@
 
 #ifdef CONFIG_ADC_STM32
 #include <stm32f3xx_ll_adc.h>
+#endif
+
+#ifdef CONFIG_DMA_STM32
+#include <stm32f3xx_ll_dma.h>
+#endif
+
+#ifdef CONFIG_HWINFO_STM32
+#include <stm32f3xx_ll_utils.h>
 #endif
 
 #endif /* !_ASMLANGUAGE */

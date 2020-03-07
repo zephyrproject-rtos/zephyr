@@ -968,6 +968,7 @@ static int winc1500_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 
 	if (m2m_wifi_request_scan(M2M_WIFI_CH_ALL)) {
 		w1500_data.scan_cb = NULL;
+		LOG_ERR("Failed to request scan");
 		return -EIO;
 	}
 
@@ -1069,25 +1070,35 @@ static int winc1500_init(struct device *dev)
 	w1500_data.connected = false;
 
 	ret = m2m_wifi_init(&param);
-	if (ret) {
+	if (ret != M2M_SUCCESS) {
 		LOG_ERR("m2m_wifi_init return error!(%d)", ret);
 		return -EIO;
 	}
 
-	m2m_wifi_set_scan_region(WINC1500_REGION);
-
 	socketInit();
 	registerSocketCallback(winc1500_socket_cb, NULL);
 
-	m2m_wifi_get_otp_mac_address(w1500_data.mac, &is_valid);
+	if (m2m_wifi_get_otp_mac_address(w1500_data.mac, &is_valid) != M2M_SUCCESS) {
+		LOG_ERR("Failed to get MAC address");
+	}
+
 	LOG_DBG("WINC1500 MAC Address from OTP (%d) "
 		"%02X:%02X:%02X:%02X:%02X:%02X",
 		is_valid,
 		w1500_data.mac[0], w1500_data.mac[1], w1500_data.mac[2],
 		w1500_data.mac[3], w1500_data.mac[4], w1500_data.mac[5]);
 
-	m2m_wifi_set_power_profile(PWR_LOW1);
-	m2m_wifi_set_tx_power(TX_PWR_LOW);
+	if (m2m_wifi_set_scan_region(WINC1500_REGION) != M2M_SUCCESS) {
+		LOG_ERR("Failed set scan region");
+	}
+
+	if (m2m_wifi_set_power_profile(PWR_LOW1) != M2M_SUCCESS) {
+		LOG_ERR("Failed set power profile");
+	}
+
+	if (m2m_wifi_set_tx_power(TX_PWR_LOW) != M2M_SUCCESS) {
+		LOG_ERR("Failed set tx power");
+	}
 
 	/* monitoring thread for winc wifi callbacks */
 	k_thread_create(&winc1500_thread_data, winc1500_stack,

@@ -13,30 +13,31 @@ common:
       - ".*THINKING.*"
       - ".*EATING.*"
 tests:
-  sample.philosopher:
+  sample.kernel.philosopher:
     tags: introduction
-  sample.philosopher.tracing:
+  sample.kernel.philosopher.tracing:
     min_ram: 32
     extra_configs:
       - CONFIG_SEGGER_SYSTEMVIEW=y
-  sample.philosopher.same_prio:
+  sample.kernel.philosopher.same_prio:
     extra_args: "-DSAME_PRIO=1"
-  sample.philosopher.static:
+  sample.kernel.philosopher.static:
     extra_args: "-DSTATIC_OBJS=1"
-  sample.philosopher.semaphores:
+  sample.kernel.philosopher.semaphores:
     extra_args: "-DFORKS=SEMAPHORES"
-  sample.philosopher.stacks:
+  sample.kernel.philosopher.stacks:
     extra_args: "-DFORKS=STACKS"
-  sample.philosopher.fifos:
+  sample.kernel.philosopher.fifos:
     extra_args: "-DFORKS=FIFOS"
-  sample.philosopher.lifos:
+  sample.kernel.philosopher.lifos:
     extra_args: "-DFORKS=LIFOS"
-  sample.philosopher.preempt_only:
+  sample.kernel.philosopher.preempt_only:
     extra_configs:
       - CONFIG_NUM_PREEMPT_PRIORITIES=6
       - CONFIG_NUM_COOP_PRIORITIES=0
       - CONFIG_BT=n
-  sample.philosopher.coop_only:
+      - CONFIG_NETWORKING=n
+  sample.kernel.philosopher.coop_only:
     extra_configs:
       - CONFIG_NUM_PREEMPT_PRIORITIES=0
       - CONFIG_NUM_COOP_PRIORITIES=6

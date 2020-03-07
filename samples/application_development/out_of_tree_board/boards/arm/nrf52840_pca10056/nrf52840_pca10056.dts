@@ -75,7 +75,10 @@
 		 * 0x000fffff is reserved for use by the application.
 		 */
 
-		/* Storage partition will be used by FCB/NFFS/NVS if enabled. */
+		/*
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
 		storage_partition: partition@f8000 {
 			label = "storage";
 			reg = <0x000f8000 0x00008000>;

@@ -1,12 +1,13 @@
 tests:
-  misc.app_dev.libcxx:
-    arch_exclude: posix
-    platform_exclude: qemu_x86_coverage qemu_x86_64
+  application_development.cpp.libcxx:
+    platform_exclude: qemu_x86_coverage
+    toolchain_exclude: xcc
+    min_flash: 54
     tags: cpp
-  misc.app_dev.libcxx.exceptions:
-    arch_exclude: posix
-    platform_exclude: qemu_x86_coverage qemu_x86_64 96b_meerkat96
-        colibri_imx7d_m4 warp7_m4 pico_pi_m4 qemu_x86_long
+  application_development.cpp.libcxx.exceptions:
+    platform_exclude: qemu_x86_coverage
+    toolchain_exclude: xcc
+    min_flash: 54
     tags: cpp
     extra_configs:
         - CONFIG_EXCEPTIONS=y

@@ -1,0 +1,5 @@
+description: Texas Instruments LMP90100 AFE binding
+
+compatible: "ti,lmp90100"
+
+include: ti,lmp90xxx-current.yaml

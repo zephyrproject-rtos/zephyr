@@ -7,7 +7,7 @@ separate_arguments(EXTRA_CXXFLAGS_AS_LIST UNIX_COMMAND ${EXTRA_CXXFLAGS})
 separate_arguments(EXTRA_AFLAGS_AS_LIST   UNIX_COMMAND ${EXTRA_AFLAGS})
 
 if(EXTRA_CPPFLAGS)
-  zephyr_compile_definitions(${EXTRA_CPPFLAGS_AS_LIST})
+  zephyr_compile_options(${EXTRA_CPPFLAGS_AS_LIST})
 endif()
 if(EXTRA_LDFLAGS)
   zephyr_link_libraries(${EXTRA_LDFLAGS_AS_LIST})

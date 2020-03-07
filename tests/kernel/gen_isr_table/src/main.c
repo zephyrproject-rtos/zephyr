@@ -11,7 +11,7 @@
 
 extern u32_t _irq_vector_table[];
 
-#if defined(Z_ARCH_IRQ_DIRECT_CONNECT) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
+#if defined(ARCH_IRQ_DIRECT_CONNECT) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
 #define HAS_DIRECT_IRQS
 #endif
 
@@ -44,8 +44,8 @@ extern u32_t _irq_vector_table[];
 
 static volatile int trigger_check[TRIG_CHECK_SIZE];
 
-#if defined(CONFIG_ARM)
-#include <arch/arm/cortex_m/cmsis.h>
+#if defined(CONFIG_CPU_CORTEX_M)
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 void trigger_irq(int irq)
 {

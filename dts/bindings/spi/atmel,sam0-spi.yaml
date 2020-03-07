@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Google LLC.
 # SPDX-License-Identifier: Apache-2.0
 
-title: Atmel SAM0 SERCOM SPI driver
-
-description: >
-    This binding gives a base representation of the Atmel SAM0 SERCOM SPI controller
+description: Atmel SAM0 SERCOM SPI controller
 
 compatible: "atmel,sam0-spi"
 

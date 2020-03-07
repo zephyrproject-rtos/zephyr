@@ -1,10 +1,7 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-title: Kinetis FTM
-
-description: >
-    This binding gives a base representation of the Kinetis FTM
+description: Kinetis FTM
 
 compatible: "nxp,kinetis-ftm"
 
@@ -18,9 +15,10 @@ properties:
       required: true
 
     "#pwm-cells":
-      const: 2
+      const: 3
 
-"#cells":
+pwm-cells:
   - channel
 # period in terms of nanoseconds
   - period
+  - flags

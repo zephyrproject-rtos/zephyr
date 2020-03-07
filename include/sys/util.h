@@ -50,7 +50,10 @@
 
 #if defined(__cplusplus)
 template < class T, size_t N >
-constexpr size_t ARRAY_SIZE(T(&)[N]) { return N; }
+#if __cplusplus >= 201103L
+constexpr
+#endif /* >= C++11 */
+size_t ARRAY_SIZE(T(&)[N]) { return N; }
 
 #else
 /* Evaluates to number of elements in an array; compile error if not
@@ -89,10 +92,20 @@ constexpr size_t ARRAY_SIZE(T(&)[N]) { return N; }
 #define INLINE
 #endif
 
+/** @brief Return larger value of two provided expressions.
+ *
+ * @note Arguments are evaluated twice. See Z_MAX for GCC only, single
+ * evaluation version.
+ */
 #ifndef MAX
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
+/** @brief Return smaller value of two provided expressions.
+ *
+ * @note Arguments are evaluated twice. See Z_MIN for GCC only, single
+ * evaluation version.
+ */
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
@@ -170,6 +183,21 @@ size_t bin2hex(const u8_t *buf, size_t buflen, char *hex, size_t hexlen);
  */
 size_t hex2bin(const char *hex, size_t hexlen, u8_t *buf, size_t buflen);
 
+/**
+ * @brief      Convert a u8_t into decimal string representation.
+ *
+ * Convert a u8_t value into ASCII decimal string representation.
+ * The string is terminated if there is enough space in buf.
+ *
+ * @param[out] buf     Address of where to store the string representation.
+ * @param[in]  buflen  Size of the storage area for string representation.
+ * @param[in]  value   The value to convert to decimal string
+ *
+ * @return     The length of the converted string (excluding terminator if
+ *             any), or 0 if an error occurred.
+ */
+u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
+
 #endif /* !_ASMLANGUAGE */
 
 /* KB, MB, GB */
@@ -188,6 +216,9 @@ size_t hex2bin(const char *hex, size_t hexlen, u8_t *buf, size_t buflen);
 #define BIT(n)  (1UL << (n))
 #endif
 #endif
+
+/** 64-bit unsigned integer with bit position _n set */
+#define BIT64(_n) (1ULL << (_n))
 
 /**
  * @brief Macro sets or clears bit depending on boolean value
@@ -292,6 +323,25 @@ size_t hex2bin(const char *hex, size_t hexlen, u8_t *buf, size_t buflen);
 #define Z_COND_CODE_1(_flag, _if_1_code, _else_code) \
 	__COND_CODE(_XXXX##_flag, _if_1_code, _else_code)
 
+/**
+ * @brief Insert code if flag is defined and equals 1.
+ *
+ * Usage example:
+ *
+ * IF_ENABLED(CONFIG_FLAG, (u32_t foo;))
+ *
+ * It can be considered as more compact alternative to:
+ *
+ * \#if defined(CONFIG_FLAG) && (CONFIG_FLAG == 1)
+ *	u32_t foo;
+ * \#endif
+ *
+ * @param _flag		Evaluated flag
+ * @param _code		Code used if flag exists and equal 1. Argument must be
+ *			in brackets.
+ */
+#define IF_ENABLED(_flag, _code) \
+	COND_CODE_1(_flag, _code, ())
 /**
  * @brief Insert code depending on result of flag evaluation.
  *

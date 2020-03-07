@@ -229,6 +229,7 @@ linaro	Linaro Limited
 linksys	Belkin International, Inc. (Linksys)
 linux	Linux-specific binding
 linx	Linx Technologies
+litex	LiteX SoC builder
 lltc	Linear Technology Corporation
 logicpd	Logic PD, Inc.
 lsi	LSI Corp. (LSI Logic)
@@ -298,6 +299,7 @@ onnn	ON Semiconductor Corp.
 ontat	On Tat Industrial Company
 opalkelly	Opal Kelly Incorporated
 opencores	OpenCores.org
+openisa	open-isa.org
 openrisc	OpenRISC.io
 option	Option NV
 oranth	Shenzhen Oranth Technology Co., Ltd.

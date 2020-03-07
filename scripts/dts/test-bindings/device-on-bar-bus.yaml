@@ -1,8 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
-title: Device on bar bus
 description: Device on bar bus
 
 compatible: "on-bus"
 
-parent-bus: "bar"
+on-bus: "bar"

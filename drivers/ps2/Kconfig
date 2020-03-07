@@ -1,10 +1,7 @@
-# Kconfig - PS/2 configuration options
+# PS/2 configuration options
 
-#
 # Copyright (c) 2019 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 menuconfig PS2
 	bool "PS/2 Drivers"
@@ -27,4 +24,4 @@ config PS2_INIT_PRIORITY
 	  There isn't any critical component relying on this priority at
 	  the moment.
 
-endif #PS2
+endif # PS2

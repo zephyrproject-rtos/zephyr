@@ -24,4 +24,3 @@ static inline int z_vrfy_dma_stop(struct device *dev, u32_t channel)
 	return z_impl_dma_stop((struct device *)dev, channel);
 }
 #include <syscalls/dma_stop_mrsh.c>
-

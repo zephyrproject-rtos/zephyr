@@ -32,6 +32,17 @@ u16_t ll_settings_subversion_number(void)
 
 #endif /* CONFIG_BT_CTLR_VERSION_SETTINGS */
 
+#if defined(CONFIG_BT_CTLR_SMI_TX_SETTING)
+
+static u8_t smi_tx;
+
+bool ll_settings_smi_tx(void)
+{
+	return smi_tx;
+}
+
+#endif /* CONFIG_BT_CTLR_SMI_TX_SETTING */
+
 static int ctlr_set(const char *name, size_t len_rd,
 		    settings_read_cb read_cb, void *store)
 {
@@ -62,6 +73,19 @@ static int ctlr_set(const char *name, size_t len_rd,
 		return 0;
 	}
 #endif /* CONFIG_BT_CTLR_VERSION_SETTINGS */
+
+#if defined(CONFIG_BT_CTLR_SMI_TX_SETTING)
+	if (!strncmp(name, "smi_tx", nlen)) {
+		len = read_cb(store, &smi_tx, sizeof(smi_tx));
+		if (len < 0) {
+			BT_ERR("Failed to read SMI TX flag from storage"
+			       " (err %d)", len);
+		} else {
+			BT_DBG("SMI TX flag set to %04x", smi_tx);
+		}
+		return 0;
+	}
+#endif /* CONFIG_BT_CTLR_SMI_TX_SETTING */
 
 	return 0;
 }

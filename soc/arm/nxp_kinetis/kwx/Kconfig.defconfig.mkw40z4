@@ -1,81 +1,60 @@
-# Kconfig - Kinetis KWx SoC configuration options
-#
-# Copyright (c) 2017, NXP
-#
+# Kinetis KWx SoC configuration options
+
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_MKW40Z4
 
 config SOC
-	string
 	default "mkw40z4"
 
 config NUM_IRQS
-	int
 	default 32
-
-if ADC
 
 config ADC_MCUX_ADC16
 	default y
-
-endif # ADC
-
-if CLOCK_CONTROL
+	depends on ADC
 
 config CLOCK_CONTROL_MCUX_SIM
 	default y
-
-endif # CLOCK_CONTROL
-
-if PINMUX
+	depends on CLOCK_CONTROL
 
 config PINMUX_MCUX
 	default y
-
-endif # PINMUX
-
-if GPIO
+	depends on PINMUX
 
 config GPIO_MCUX
 	default y
-
-endif # GPIO
-
-if SERIAL
+	depends on GPIO
 
 config UART_MCUX_LPUART
 	default y
-
-endif # SERIAL
-
-if I2C
+	depends on SERIAL
 
 config I2C_MCUX
 	default y
-
-endif # I2C
-
-if SPI
+	depends on I2C
 
 config SPI_MCUX_DSPI
 	default y
-
-endif # SPI
-
-if ENTROPY_GENERATOR
+	depends on SPI
 
 config ENTROPY_MCUX_TRNG
 	default y
+	depends on ENTROPY_GENERATOR
 
-endif # ENTROPY_GENERATOR
+choice CSPRNG_GENERATOR_CHOICE
+	default CTR_DRBG_CSPRNG_GENERATOR
+endchoice
 
-if FLASH
+choice RNG_GENERATOR_CHOICE
+	default XOROSHIRO_RANDOM_GENERATOR
+endchoice
+
+config TINYCRYPT
+	default y
 
 config SOC_FLASH_MCUX
 	default y
-
-endif # FLASH
+	depends on FLASH
 
 endif # SOC_MKW40Z4

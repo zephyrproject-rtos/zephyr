@@ -1,11 +1,9 @@
 # Copyright (c) 2019 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-title: STMicroelectronics MEMS sensors LPS22HH
-
-description: >
-    This binding gives a base representation of LPS22HH pressure and
-    temperature sensor connected to SPI bus
+description: |
+    STMicroelectronics LPS22HH pressure and temperature sensor connected to SPI
+    bus
 
 compatible: "st,lps22hh"
 
@@ -16,3 +14,7 @@ properties:
       type: phandle-array
       required: false
       description: DRDY pin
+
+        This pin defaults to active high when produced by the sensor.
+        The property value should ensure the flags properly describe
+        the signal that is presented to the driver.

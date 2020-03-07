@@ -1,35 +1,24 @@
-# Kconfig - Silicon Labs EFR32FG1P platform configuration options
+# Silicon Labs EFR32FG1P platform configuration options
 
-#
 # Copyright (c) 2018 Christian Taedcke
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
-if GPIO || LOG_BACKEND_SWO
 
 config GPIO_GECKO
 	default y
-
-endif # GPIO || LOG_BACKEND_SWO
-
-if SERIAL
+	depends on GPIO
 
 config UART_GECKO
 	default y
-
-endif # SERIAL
-
-if I2C
+	depends on SERIAL
 
 config I2C_GECKO
 	default y
-
-endif # I2C
-
-if FLASH
+	depends on I2C
 
 config SOC_FLASH_GECKO
 	default y
+	depends on FLASH
 
-endif # FLASH
+config SPI_GECKO
+	default y
+	depends on SPI

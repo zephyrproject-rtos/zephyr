@@ -1,10 +1,7 @@
 # Copyright (c) 2018, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: STMicroelectronics MEMS sensors LPS25HB
-
-description: >
-    This binding gives a base representation of LPS25HB pressure sensor
+description: STMicroelectronics LPS25HB pressure sensor
 
 compatible: "st,lps25hb-press"
 

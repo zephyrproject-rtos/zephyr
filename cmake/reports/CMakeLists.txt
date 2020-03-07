@@ -14,5 +14,6 @@ foreach(report ram_report rom_report)
     --nm      ${CMAKE_NM}
     -o ${PROJECT_BINARY_DIR}
     DEPENDS ${logical_target_for_zephyr_elf}
+            $<TARGET_PROPERTY:zephyr_property_target,${report}_DEPENDENCIES>
     )
 endforeach()

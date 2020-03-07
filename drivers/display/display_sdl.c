@@ -9,6 +9,7 @@
 #include <SDL.h>
 #include <string.h>
 #include <soc.h>
+#include <sys/byteorder.h>
 
 #define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
 #include <logging/log.h>
@@ -40,6 +41,10 @@ static int sdl_display_init(struct device *dev)
 		PIXEL_FORMAT_MONO01
 #elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10)
 		PIXEL_FORMAT_MONO10
+#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565)
+		PIXEL_FORMAT_RGB_565
+#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565)
+		PIXEL_FORMAT_BGR_565
 #else /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
 		PIXEL_FORMAT_ARGB_8888
 #endif /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
@@ -106,6 +111,56 @@ static void sdl_display_write_rgb888(u8_t *disp_buf,
 			pixel = *byte_ptr << 16;
 			pixel |= *(byte_ptr + 1) << 8;
 			pixel |= *(byte_ptr + 2);
+			*((u32_t *)disp_buf) = pixel;
+			disp_buf += 4;
+		}
+	}
+}
+
+static void sdl_display_write_rgb565(u8_t *disp_buf,
+		const struct display_buffer_descriptor *desc, const void *buf)
+{
+	u32_t w_idx;
+	u32_t h_idx;
+	u32_t pixel;
+	const u16_t *pix_ptr;
+	u16_t rgb565;
+
+	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size,
+			"Input buffer to small");
+
+	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
+		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
+			pix_ptr = (const u16_t *)buf +
+				((h_idx * desc->pitch) + w_idx);
+			rgb565 = sys_be16_to_cpu(*pix_ptr);
+			pixel = (((rgb565 >> 11) & 0x1F) * 255 / 31) << 16;
+			pixel |= (((rgb565 >> 5) & 0x3F) * 255 / 63) << 8;
+			pixel |= (rgb565 & 0x1F) * 255 / 31;
+			*((u32_t *)disp_buf) = pixel;
+			disp_buf += 4;
+		}
+	}
+}
+
+static void sdl_display_write_bgr565(u8_t *disp_buf,
+		const struct display_buffer_descriptor *desc, const void *buf)
+{
+	u32_t w_idx;
+	u32_t h_idx;
+	u32_t pixel;
+	const u16_t *pix_ptr;
+
+	__ASSERT((desc->pitch * 2U * desc->height) <= desc->buf_size,
+			"Input buffer to small");
+
+	for (h_idx = 0U; h_idx < desc->height; ++h_idx) {
+		for (w_idx = 0U; w_idx < desc->width; ++w_idx) {
+			pix_ptr = (const u16_t *)buf +
+				((h_idx * desc->pitch) + w_idx);
+			pixel = (((*pix_ptr >> 11) & 0x1F) * 255 / 31) << 16;
+			pixel |= (((*pix_ptr >> 5) & 0x3F) * 255 / 63) << 8;
+			pixel |= (*pix_ptr & 0x1F) * 255 / 31;
 			*((u32_t *)disp_buf) = pixel;
 			disp_buf += 4;
 		}
@@ -179,6 +234,10 @@ static int sdl_display_write(const struct device *dev, const u16_t x,
 		sdl_display_write_mono(disp_data->buf, desc, buf, true);
 	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_MONO01) {
 		sdl_display_write_mono(disp_data->buf, desc, buf, false);
+	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_RGB_565) {
+		sdl_display_write_rgb565(disp_data->buf, desc, buf);
+	} else if (disp_data->current_pixel_format == PIXEL_FORMAT_BGR_565) {
+		sdl_display_write_bgr565(disp_data->buf, desc, buf);
 	}
 
 	rect.x = x;
@@ -283,7 +342,9 @@ static void sdl_display_get_capabilities(
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |
 		PIXEL_FORMAT_RGB_888 |
 		PIXEL_FORMAT_MONO01 |
-		PIXEL_FORMAT_MONO10;
+		PIXEL_FORMAT_MONO10 |
+		PIXEL_FORMAT_RGB_565 |
+		PIXEL_FORMAT_BGR_565;
 	capabilities->current_pixel_format = disp_data->current_pixel_format;
 	capabilities->screen_info = SCREEN_INFO_MONO_VTILED |
 		SCREEN_INFO_MONO_MSB_FIRST;
@@ -300,6 +361,8 @@ static int sdl_display_set_pixel_format(const struct device *dev,
 	case PIXEL_FORMAT_RGB_888:
 	case PIXEL_FORMAT_MONO01:
 	case PIXEL_FORMAT_MONO10:
+	case PIXEL_FORMAT_RGB_565:
+	case PIXEL_FORMAT_BGR_565:
 		disp_data->current_pixel_format = pixel_format;
 		return 0;
 	default:

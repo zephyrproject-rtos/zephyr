@@ -5,7 +5,7 @@
  */
 
  #include <autoconf.h>
- #include <generated_dts_board.h>
+ #include <devicetree.h>
 
 MEMORY
      {
@@ -23,4 +23,4 @@ MEMORY
 #endif
      }
 
-#include <arch/arm/cortex_m/scripts/linker.ld>
+#include <arch/arm/aarch32/cortex_m/scripts/linker.ld>

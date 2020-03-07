@@ -92,14 +92,14 @@ static const char *esp32_get_gpio_for_pin(int pin)
 {
 	if (pin < 32) {
 #if defined(CONFIG_GPIO_ESP32_0)
-		return CONFIG_GPIO_ESP32_0_NAME;
+		return DT_INST_0_ESPRESSIF_ESP32_GPIO_LABEL;
 #else
 		return NULL;
 #endif /* CONFIG_GPIO_ESP32_0 */
 	}
 
 #if defined(CONFIG_GPIO_ESP32_1)
-	return CONFIG_GPIO_ESP32_1_NAME;
+	return DT_INST_1_ESPRESSIF_ESP32_GPIO_LABEL;
 #else
 	return NULL;
 #endif /* CONFIG_GPIO_ESP32_1 */
@@ -208,7 +208,7 @@ static void pwm_led_esp32_bind_channel_timer(int speed_mode,
 static int pwm_led_esp32_channel_set(int pin, bool speed_mode, int channel,
 				     int duty, int timer)
 {
-	const int pin_mode = GPIO_DIR_OUT;
+	const int pin_mode = GPIO_OUTPUT;
 
 	const char *device_name;
 	struct device *gpio;
@@ -311,7 +311,7 @@ static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 /* period_cycles is not used, set frequency on menuconfig instead. */
 static int pwm_led_esp32_pin_set_cycles(struct device *dev,
 					u32_t pwm, u32_t period_cycles,
-					u32_t pulse_cycles)
+					u32_t pulse_cycles, pwm_flags_t flags)
 {
 	int speed_mode;
 	int channel;
@@ -321,6 +321,11 @@ static int pwm_led_esp32_pin_set_cycles(struct device *dev,
 		(struct pwm_led_esp32_config *) dev->config->config_info;
 
 	ARG_UNUSED(period_cycles);
+
+	if (flags) {
+		/* PWM polarity not supported (yet?) */
+		return -ENOTSUP;
+	}
 
 	channel = pwm_led_esp32_get_gpio_config(pwm, config->ch_cfg);
 	if (channel < 0) {

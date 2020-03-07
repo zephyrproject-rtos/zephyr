@@ -444,6 +444,11 @@ struct net_if_dev {
 
 	/** The hardware MTU */
 	u16_t mtu;
+
+#if defined(CONFIG_NET_SOCKETS_OFFLOAD)
+	/** Indicate whether interface is offloaded at socket level. */
+	bool offloaded;
+#endif /* CONFIG_NET_SOCKETS_OFFLOAD */
 };
 
 /**
@@ -545,6 +550,10 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt);
  */
 static inline const struct net_l2 * const net_if_l2(struct net_if *iface)
 {
+	if (!iface || !iface->if_dev) {
+		return NULL;
+	}
+
 	return iface->if_dev->l2;
 }
 
@@ -621,6 +630,24 @@ static inline struct net_offload *net_if_offload(struct net_if *iface)
 	return iface->if_dev->offload;
 #else
 	return NULL;
+#endif
+}
+
+/**
+ * @brief Return the socket offload status
+ *
+ * @param iface Network interface
+ *
+ * @return True if socket offloading is active, false otherwise.
+ */
+static inline bool net_if_is_socket_offloaded(struct net_if *iface)
+{
+#if defined(CONFIG_NET_SOCKETS_OFFLOAD)
+	return iface->if_dev->offloaded;
+#else
+	ARG_UNUSED(iface);
+
+	return false;
 #endif
 }
 

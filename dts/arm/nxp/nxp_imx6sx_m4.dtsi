@@ -9,6 +9,25 @@
 #include <dt-bindings/rdc/imx_rdc.h>
 
 / {
+	aliases {
+		epit-1 = &epit1;
+		epit-2 = &epit2;
+		gpio-1 = &gpio1;
+		gpio-2 = &gpio2;
+		gpio-3 = &gpio3;
+		gpio-4 = &gpio4;
+		gpio-5 = &gpio5;
+		gpio-6 = &gpio6;
+		gpio-7 = &gpio7;
+		mu-b = &mub;
+		uart-1 = &uart1;
+		uart-2 = &uart2;
+		uart-3 = &uart3;
+		uart-4 = &uart4;
+		uart-5 = &uart5;
+		uart-6 = &uart6;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -201,7 +220,7 @@
 		gpio5:gpio@420ac000 {
 			compatible = "nxp,imx-gpio";
 			reg = <0x420ac000 0x4000>;
-			interrupts = <74 0>, <74 0>;
+			interrupts = <74 0>, <75 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
 					       RDC_DOMAIN_PERM_RW)|\
 			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\

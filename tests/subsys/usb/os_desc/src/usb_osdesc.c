@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
 
@@ -95,7 +94,7 @@ static void test_handle_os_desc(void)
 	u8_t *data = NULL;
 	int ret;
 
-	setup.wValue = (DESC_STRING & 0xFF) << 8;
+	setup.wValue = (USB_STRING_DESC & 0xFF) << 8;
 	setup.wValue |= USB_OSDESC_STRING_DESC_INDEX;
 
 	ret = usb_handle_os_desc(&setup, &len, &data);
@@ -140,7 +139,7 @@ static void test_osdesc_feature(void)
 	test_handle_os_desc_feature();
 }
 
-/*test case main entry*/
+/* test case main entry */
 void test_main(void)
 {
 	ztest_test_suite(test_osdesc,

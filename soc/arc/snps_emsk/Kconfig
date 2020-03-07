@@ -1,15 +1,11 @@
-#
 # Copyright (c) 2014 Wind River Systems, Inc.
 # Copyright (c) 2018 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
-if SOC_EMSK
 
 choice
-prompt "ARC EM Starter Kit Core Selection"
-default SOC_EMSK_EM7D
+	prompt "ARC EM Starter Kit Core Selection"
+	default SOC_EMSK_EM7D
+	depends on SOC_EMSK
 
 config SOC_EMSK_EM7D
 	bool "Synopsys ARC EM7D of EMSK"
@@ -24,5 +20,3 @@ config SOC_EMSK_EM9D
 	select CPU_HAS_FPU
 
 endchoice
-
-endif #SOC_EMSK

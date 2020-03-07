@@ -12,7 +12,23 @@ def test_runner_imports():
     # tree-wide refactorings for runners that don't have their own
     # test suites.
     runner_names = set(r.name() for r in ZephyrBinaryRunner.get_runners())
-    expected = set(('arc-nsim', 'bossac', 'dfu-util', 'em-starterkit', 'esp32',
-                    'hifive1', 'jlink', 'nios2', 'nrfjprog', 'openocd', 'pyocd',
-                    'qemu', 'xtensa', 'intel_s1000', 'blackmagicprobe'))
+
+    # Please keep this sorted alphabetically.
+    expected = set(('arc-nsim',
+                    'blackmagicprobe',
+                    'bossac',
+                    'dediprog',
+                    'dfu-util',
+                    'esp32',
+                    'hifive1',
+                    'intel_s1000',
+                    'jlink',
+                    'misc-flasher',
+                    'nios2',
+                    'nrfjprog',
+                    'openocd',
+                    'pyocd',
+                    'qemu',
+                    'stm32flash',
+                    'xtensa'))
     assert runner_names == expected

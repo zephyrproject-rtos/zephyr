@@ -48,10 +48,10 @@
 GTEXT(z_arc_userspace_enter)
 GTEXT(_arc_do_syscall)
 GTEXT(z_user_thread_entry_wrapper)
-GTEXT(z_arch_user_string_nlen)
-GTEXT(z_arch_user_string_nlen_fault_start)
-GTEXT(z_arch_user_string_nlen_fault_end)
-GTEXT(z_arch_user_string_nlen_fixup)
+GTEXT(arch_user_string_nlen)
+GTEXT(z_arc_user_string_nlen_fault_start)
+GTEXT(z_arc_user_string_nlen_fault_end)
+GTEXT(z_arc_user_string_nlen_fixup)
 /*
  * @brief Wrapper for z_thread_entry in the case of user thread
  * The init parameters are in privileged stack
@@ -202,50 +202,55 @@ return_loc_userspace_enter:
  *
  */
 SECTION_FUNC(TEXT, _arc_do_syscall)
-	/* r0-r5: arg1-arg6, r6 is call id */
-	/* the call id is already checked in trap_s handler */
-	push_s blink
+	/*
+	 * r0-r5: arg1-arg6, r6 is call id which is already checked in
+	 * trap_s handler, r7 is the system call stack frame pointer
+	 * need to recover r0, r1, r2 because they will be modified in
+	 * _create_irq_stack_frame. If a specific syscall frame (different
+	 * with irq stack frame) is defined, the cover of r0, r1, r2 can be
+	 * optimized.
+	 */
+	ld_s r0, [sp, ___isf_t_r0_OFFSET]
+	ld_s r1, [sp, ___isf_t_r1_OFFSET]
+	ld_s r2, [sp, ___isf_t_r2_OFFSET]
+
+	mov r7, sp
 
 	mov_s blink, _k_syscall_table
 	ld.as r6, [blink, r6]
 
 	jl [r6]
 
-	/*
-	 * no need to clear callee regs, as they will be saved and restored
-	 * automatically
-	 */
-	clear_scratch_regs
+	/* save return value */
+	st_s r0, [sp, ___isf_t_r0_OFFSET]
 
 	mov_s r29, 0
 	mov_s r30, 0
 
-	pop_s blink
-
 	/* through fake exception return, go back to the caller */
-	lr r6, [_ARC_V2_STATUS32]
-	bclr r6, r6, _ARC_V2_STATUS32_AE_BIT
-	kflag r6
+	lr r0, [_ARC_V2_STATUS32]
+	bset r0, r0, _ARC_V2_STATUS32_AE_BIT
+	kflag r0
 
-	/* the status and return address are saved in trap_s handler */
-	pop r6
-	sr r6, [_ARC_V2_ERSTATUS]
-	pop r6
-	sr r6, [_ARC_V2_ERET]
+
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
-	pop r6
-	sr r6, [_ARC_V2_ERSEC_STAT]
+	ld_s r0, [sp, ___isf_t_sec_stat_OFFSET]
+	sr r0,[_ARC_V2_ERSEC_STAT]
 #endif
+	ld_s r0, [sp, ___isf_t_status32_OFFSET]
+	sr r0,[_ARC_V2_ERSTATUS]
 
-	mov_s r6, 0
+	ld_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
+	sr r0,[_ARC_V2_ERET]
+
+	_pop_irq_stack_frame
 
 	rtie
 
-
 /*
- * size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
+ * size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
  */
-SECTION_FUNC(TEXT, z_arch_user_string_nlen)
+SECTION_FUNC(TEXT, arch_user_string_nlen)
 	/* int err; */
 	sub_s sp,sp,0x4
 
@@ -264,11 +269,11 @@ SECTION_FUNC(TEXT, z_arch_user_string_nlen)
 	mov lp_count, r1
 
 strlen_loop:
-z_arch_user_string_nlen_fault_start:
+z_arc_user_string_nlen_fault_start:
 	/* is the byte at ++r12 a NULL? if so, we're done. Might fault! */
 	ldb.aw r1, [r12, 1]
 
-z_arch_user_string_nlen_fault_end:
+z_arc_user_string_nlen_fault_end:
 	brne_s r1, 0, not_null
 
 strlen_done:
@@ -276,7 +281,7 @@ strlen_done:
 	mov_s r1, 0
 	st_s r1, [sp, 0]
 
-z_arch_user_string_nlen_fixup:
+z_arc_user_string_nlen_fixup:
 	/* *err_arg = err; Pop stack and return */
 	ld_s r1, [sp, 0]
 	add_s sp, sp, 4

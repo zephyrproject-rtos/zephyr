@@ -18,10 +18,19 @@
 
 /* Internal helpers only used by the sys_* APIs further below */
 #define __bswap_16(x) ((u16_t) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8)))
+#define __bswap_24(x) ((u32_t) ((((x) >> 16) & 0xff) | \
+				   (((x)) & 0xff00) | \
+				   (((x) & 0xff) << 16)))
 #define __bswap_32(x) ((u32_t) ((((x) >> 24) & 0xff) | \
 				   (((x) >> 8) & 0xff00) | \
 				   (((x) & 0xff00) << 8) | \
 				   (((x) & 0xff) << 24)))
+#define __bswap_48(x) ((u64_t) ((((x) >> 40) & 0xff) | \
+				   (((x) >> 24) & 0xff00) | \
+				   (((x) >> 8) & 0xff0000) | \
+				   (((x) & 0xff0000) << 8) | \
+				   (((x) & 0xff00) << 24) | \
+				   (((x) & 0xff) << 40)))
 #define __bswap_64(x) ((u64_t) ((((x) >> 56) & 0xff) | \
 				   (((x) >> 40) & 0xff00) | \
 				   (((x) >> 24) & 0xff0000) | \
@@ -47,20 +56,20 @@
  *  @return 16-bit integer in little-endian format.
  */
 
-/** @def sys_be16_to_cpu
- *  @brief Convert 16-bit integer from big-endian to host endianness.
+/** @def sys_le24_to_cpu
+ *  @brief Convert 24-bit integer from little-endian to host endianness.
  *
- *  @param val 16-bit integer in big-endian format.
+ *  @param val 24-bit integer in little-endian format.
  *
- *  @return 16-bit integer in host endianness.
+ *  @return 24-bit integer in host endianness.
  */
 
-/** @def sys_cpu_to_be16
- *  @brief Convert 16-bit integer from host endianness to big-endian.
+/** @def sys_cpu_to_le24
+ *  @brief Convert 24-bit integer from host endianness to little-endian.
  *
- *  @param val 16-bit integer in host endianness.
+ *  @param val 24-bit integer in host endianness.
  *
- *  @return 16-bit integer in big-endian format.
+ *  @return 24-bit integer in little-endian format.
  */
 
 /** @def sys_le32_to_cpu
@@ -79,6 +88,54 @@
  *  @return 32-bit integer in little-endian format.
  */
 
+/** @def sys_le48_to_cpu
+ *  @brief Convert 48-bit integer from little-endian to host endianness.
+ *
+ *  @param val 48-bit integer in little-endian format.
+ *
+ *  @return 48-bit integer in host endianness.
+ */
+
+/** @def sys_cpu_to_le48
+ *  @brief Convert 48-bit integer from host endianness to little-endian.
+ *
+ *  @param val 48-bit integer in host endianness.
+ *
+ *  @return 48-bit integer in little-endian format.
+ */
+
+/** @def sys_be16_to_cpu
+ *  @brief Convert 16-bit integer from big-endian to host endianness.
+ *
+ *  @param val 16-bit integer in big-endian format.
+ *
+ *  @return 16-bit integer in host endianness.
+ */
+
+/** @def sys_cpu_to_be16
+ *  @brief Convert 16-bit integer from host endianness to big-endian.
+ *
+ *  @param val 16-bit integer in host endianness.
+ *
+ *  @return 16-bit integer in big-endian format.
+ */
+
+/** @def sys_be24_to_cpu
+ *  @brief Convert 24-bit integer from big-endian to host endianness.
+ *
+ *  @param val 24-bit integer in big-endian format.
+ *
+ *  @return 24-bit integer in host endianness.
+ */
+
+/** @def sys_cpu_to_be24
+ *  @brief Convert 24-bit integer from host endianness to big-endian.
+ *
+ *  @param val 24-bit integer in host endianness.
+ *
+ *  @return 24-bit integer in big-endian format.
+ */
+
 /** @def sys_be32_to_cpu
  *  @brief Convert 32-bit integer from big-endian to host endianness.
  *
@@ -95,30 +152,62 @@
  *  @return 32-bit integer in big-endian format.
  */
 
+/** @def sys_be48_to_cpu
+ *  @brief Convert 48-bit integer from big-endian to host endianness.
+ *
+ *  @param val 48-bit integer in big-endian format.
+ *
+ *  @return 48-bit integer in host endianness.
+ */
+
+/** @def sys_cpu_to_be48
+ *  @brief Convert 48-bit integer from host endianness to big-endian.
+ *
+ *  @param val 48-bit integer in host endianness.
+ *
+ *  @return 48-bit integer in big-endian format.
+ */
+
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define sys_le16_to_cpu(val) (val)
 #define sys_cpu_to_le16(val) (val)
-#define sys_be16_to_cpu(val) __bswap_16(val)
-#define sys_cpu_to_be16(val) __bswap_16(val)
+#define sys_le24_to_cpu(val) (val)
+#define sys_cpu_to_le24(val) (val)
 #define sys_le32_to_cpu(val) (val)
 #define sys_cpu_to_le32(val) (val)
+#define sys_le48_to_cpu(val) (val)
+#define sys_cpu_to_le48(val) (val)
 #define sys_le64_to_cpu(val) (val)
 #define sys_cpu_to_le64(val) (val)
+#define sys_be16_to_cpu(val) __bswap_16(val)
+#define sys_cpu_to_be16(val) __bswap_16(val)
+#define sys_be24_to_cpu(val) __bswap_24(val)
+#define sys_cpu_to_be24(val) __bswap_24(val)
 #define sys_be32_to_cpu(val) __bswap_32(val)
 #define sys_cpu_to_be32(val) __bswap_32(val)
+#define sys_be48_to_cpu(val) __bswap_48(val)
+#define sys_cpu_to_be48(val) __bswap_48(val)
 #define sys_be64_to_cpu(val) __bswap_64(val)
 #define sys_cpu_to_be64(val) __bswap_64(val)
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #define sys_le16_to_cpu(val) __bswap_16(val)
 #define sys_cpu_to_le16(val) __bswap_16(val)
-#define sys_be16_to_cpu(val) (val)
-#define sys_cpu_to_be16(val) (val)
+#define sys_le24_to_cpu(val) __bswap_24(val)
+#define sys_cpu_to_le24(val) __bswap_24(val)
 #define sys_le32_to_cpu(val) __bswap_32(val)
 #define sys_cpu_to_le32(val) __bswap_32(val)
+#define sys_le48_to_cpu(val) __bswap_48(val)
+#define sys_cpu_to_le48(val) __bswap_48(val)
 #define sys_le64_to_cpu(val) __bswap_64(val)
 #define sys_cpu_to_le64(val) __bswap_64(val)
+#define sys_be16_to_cpu(val) (val)
+#define sys_cpu_to_be16(val) (val)
+#define sys_be24_to_cpu(val) (val)
+#define sys_cpu_to_be24(val) (val)
 #define sys_be32_to_cpu(val) (val)
 #define sys_cpu_to_be32(val) (val)
+#define sys_be48_to_cpu(val) (val)
+#define sys_cpu_to_be48(val) (val)
 #define sys_be64_to_cpu(val) (val)
 #define sys_cpu_to_be64(val) (val)
 #else
@@ -141,6 +230,21 @@ static inline void sys_put_be16(u16_t val, u8_t dst[2])
 }
 
 /**
+ *  @brief Put a 24-bit integer as big-endian to arbitrary location.
+ *
+ *  Put a 24-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in big-endian format.
+ *
+ *  @param val 24-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_be24(u32_t val, u8_t dst[3])
+{
+	dst[0] = val >> 16;
+	sys_put_be16(val, &dst[1]);
+}
+
+/**
  *  @brief Put a 32-bit integer as big-endian to arbitrary location.
  *
  *  Put a 32-bit integer, originally in host endianness, to a
@@ -153,6 +257,21 @@ static inline void sys_put_be32(u32_t val, u8_t dst[4])
 {
 	sys_put_be16(val >> 16, dst);
 	sys_put_be16(val, &dst[2]);
+}
+
+/**
+ *  @brief Put a 48-bit integer as big-endian to arbitrary location.
+ *
+ *  Put a 48-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in big-endian format.
+ *
+ *  @param val 48-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_be48(u64_t val, u8_t dst[6])
+{
+	sys_put_be16(val >> 32, dst);
+	sys_put_be32(val, &dst[2]);
 }
 
 /**
@@ -186,6 +305,21 @@ static inline void sys_put_le16(u16_t val, u8_t dst[2])
 }
 
 /**
+ *  @brief Put a 24-bit integer as little-endian to arbitrary location.
+ *
+ *  Put a 24-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in littel-endian format.
+ *
+ *  @param val 24-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_le24(u32_t val, u8_t dst[3])
+{
+	sys_put_le16(val, dst);
+	dst[2] = val >> 16;
+}
+
+/**
  *  @brief Put a 32-bit integer as little-endian to arbitrary location.
  *
  *  Put a 32-bit integer, originally in host endianness, to a
@@ -198,6 +332,21 @@ static inline void sys_put_le32(u32_t val, u8_t dst[4])
 {
 	sys_put_le16(val, dst);
 	sys_put_le16(val >> 16, &dst[2]);
+}
+
+/**
+ *  @brief Put a 48-bit integer as little-endian to arbitrary location.
+ *
+ *  Put a 48-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in little-endian format.
+ *
+ *  @param val 48-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_le48(u64_t val, u8_t dst[6])
+{
+	sys_put_le32(val, dst);
+	sys_put_le16(val >> 32, &dst[4]);
 }
 
 /**
@@ -231,6 +380,21 @@ static inline u16_t sys_get_be16(const u8_t src[2])
 }
 
 /**
+ *  @brief Get a 24-bit integer stored in big-endian format.
+ *
+ *  Get a 24-bit integer, stored in big-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the big-endian 24-bit integer to get.
+ *
+ *  @return 24-bit integer in host endianness.
+ */
+static inline u32_t sys_get_be24(const u8_t src[3])
+{
+	return ((u32_t)src[0] << 16) | sys_get_be16(&src[1]);
+}
+
+/**
  *  @brief Get a 32-bit integer stored in big-endian format.
  *
  *  Get a 32-bit integer, stored in big-endian format in a potentially
@@ -243,6 +407,21 @@ static inline u16_t sys_get_be16(const u8_t src[2])
 static inline u32_t sys_get_be32(const u8_t src[4])
 {
 	return ((u32_t)sys_get_be16(&src[0]) << 16) | sys_get_be16(&src[2]);
+}
+
+/**
+ *  @brief Get a 48-bit integer stored in big-endian format.
+ *
+ *  Get a 48-bit integer, stored in big-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the big-endian 48-bit integer to get.
+ *
+ *  @return 48-bit integer in host endianness.
+ */
+static inline u64_t sys_get_be48(const u8_t src[6])
+{
+	return ((u64_t)sys_get_be32(&src[0]) << 32) | sys_get_be16(&src[4]);
 }
 
 /**
@@ -276,6 +455,21 @@ static inline u16_t sys_get_le16(const u8_t src[2])
 }
 
 /**
+ *  @brief Get a 24-bit integer stored in big-endian format.
+ *
+ *  Get a 24-bit integer, stored in big-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the big-endian 24-bit integer to get.
+ *
+ *  @return 24-bit integer in host endianness.
+ */
+static inline u32_t sys_get_le24(const u8_t src[3])
+{
+	return ((u32_t)src[2] << 16) | sys_get_le16(&src[0]);
+}
+
+/**
  *  @brief Get a 32-bit integer stored in little-endian format.
  *
  *  Get a 32-bit integer, stored in little-endian format in a potentially
@@ -288,6 +482,21 @@ static inline u16_t sys_get_le16(const u8_t src[2])
 static inline u32_t sys_get_le32(const u8_t src[4])
 {
 	return ((u32_t)sys_get_le16(&src[2]) << 16) | sys_get_le16(&src[0]);
+}
+
+/**
+ *  @brief Get a 48-bit integer stored in little-endian format.
+ *
+ *  Get a 48-bit integer, stored in little-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the little-endian 48-bit integer to get.
+ *
+ *  @return 48-bit integer in host endianness.
+ */
+static inline u64_t sys_get_le48(const u8_t src[6])
+{
+	return ((u64_t)sys_get_le32(&src[2]) << 32) | sys_get_le16(&src[0]);
 }
 
 /**

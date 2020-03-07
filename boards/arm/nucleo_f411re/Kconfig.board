@@ -1,9 +1,7 @@
-# Kconfig - NUCLEO-64 F411RE board configuration
-#
+# NUCLEO-64 F411RE board configuration
+
 # Copyright (c) 2016 Matthias Boesl
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config BOARD_NUCLEO_F411RE
 	bool "NUCLEO-64 F411RE Development Board"

@@ -7,7 +7,7 @@
 #include <device.h>
 #include <init.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 #include "cy_syslib.h"
 #include "cy_gpio.h"

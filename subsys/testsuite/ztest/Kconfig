@@ -1,8 +1,5 @@
-#
 # Copyright (c) 2016 Intel Corporation
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config ZTEST
 	bool "Zephyr testing framework"
@@ -65,12 +62,9 @@ config ZTEST_MOCKING
 	  Enable mocking support for Ztest. This allows the test to set
 	  return values and expected parameters to functions.
 
-if ZTEST_MOCKING
-
 config ZTEST_PARAMETER_COUNT
 	int "Count of parameters or return values reserved"
 	default 1
+	depends on ZTEST_MOCKING
 	help
 	  Maximum amount of concurrent return values / expected parameters.
-
-endif # ZTEST_MOCKING

@@ -21,7 +21,7 @@
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <arch/cpu.h>
-#include <cortex_m/exc.h>
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 #define PLLFLLSEL_MCGFLLCLK	(0)
 #define PLLFLLSEL_MCGPLLCLK	(1)
@@ -87,7 +87,7 @@ static const sim_clock_config_t simConfig = {
  * @return N/A
  *
  */
-static ALWAYS_INLINE void clkInit(void)
+static ALWAYS_INLINE void clock_init(void)
 {
 	CLOCK_SetSimSafeDivs();
 
@@ -135,6 +135,11 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	/* release I/O power hold to allow normal run state */
 	PMC->REGSC |= PMC_REGSC_ACKISO_MASK;
 
+#ifdef CONFIG_TEMP_KINETIS
+	/* enable bandgap buffer */
+	PMC->REGSC |= PMC_REGSC_BGBE_MASK;
+#endif /* CONFIG_TEMP_KINETIS */
+
 #if !defined(CONFIG_ARM_MPU)
 	/*
 	 * Disable memory protection and clear slave port errors.
@@ -149,7 +154,7 @@ static int fsl_frdm_k64f_init(struct device *arg)
 #endif /* !CONFIG_ARM_MPU */
 
 	/* Initialize PLL/system clock to 120 MHz */
-	clkInit();
+	clock_init();
 
 	/*
 	 * install default handler that simply resets the CPU

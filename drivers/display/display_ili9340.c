@@ -29,8 +29,8 @@ struct ili9340_data {
 #endif
 };
 
-#define ILI9340_CMD_DATA_PIN_COMMAND 0
-#define ILI9340_CMD_DATA_PIN_DATA 1
+#define ILI9340_CMD_DATA_PIN_COMMAND 1
+#define ILI9340_CMD_DATA_PIN_DATA 0
 
 /* The number of bytes taken by a RGB pixel */
 #ifdef CONFIG_ILI9340_RGB565
@@ -42,7 +42,7 @@ struct ili9340_data {
 static void ili9340_exit_sleep(struct ili9340_data *data)
 {
 	ili9340_transmit(data, ILI9340_CMD_EXIT_SLEEP, NULL, 0);
-	k_sleep(120);
+	k_sleep(K_MSEC(120));
 }
 
 static int ili9340_init(struct device *dev)
@@ -80,7 +80,8 @@ static int ili9340_init(struct device *dev)
 	}
 
 	gpio_pin_configure(data->reset_gpio, DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN,
-			   GPIO_DIR_OUT);
+			   GPIO_OUTPUT_INACTIVE |
+			   DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_FLAGS);
 #endif
 
 	data->command_data_gpio =
@@ -91,16 +92,18 @@ static int ili9340_init(struct device *dev)
 	}
 
 	gpio_pin_configure(data->command_data_gpio, DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN,
-			   GPIO_DIR_OUT);
+			   GPIO_OUTPUT |
+			   DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_FLAGS);
 
 #ifdef DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_CONTROLLER
 	LOG_DBG("Resetting display driver");
-	gpio_pin_write(data->reset_gpio, DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN, 1);
-	k_sleep(1);
-	gpio_pin_write(data->reset_gpio, DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN, 0);
-	k_sleep(1);
-	gpio_pin_write(data->reset_gpio, DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN, 1);
-	k_sleep(5);
+	k_sleep(K_MSEC(1));
+	gpio_pin_set(data->reset_gpio,
+		     DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN, 1);
+	k_sleep(K_MSEC(1));
+	gpio_pin_set(data->reset_gpio,
+		     DT_INST_0_ILITEK_ILI9340_RESET_GPIOS_PIN, 0);
+	k_sleep(K_MSEC(5));
 #endif
 
 	LOG_DBG("Initializing LCD");
@@ -266,16 +269,17 @@ void ili9340_transmit(struct ili9340_data *data, u8_t cmd, void *tx_data,
 	struct spi_buf tx_buf = { .buf = &cmd, .len = 1 };
 	struct spi_buf_set tx_bufs = { .buffers = &tx_buf, .count = 1 };
 
-	gpio_pin_write(data->command_data_gpio, DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN,
-		       ILI9340_CMD_DATA_PIN_COMMAND);
+	gpio_pin_set(data->command_data_gpio,
+		     DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN,
+		     ILI9340_CMD_DATA_PIN_COMMAND);
 	spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 
 	if (tx_data != NULL) {
 		tx_buf.buf = tx_data;
 		tx_buf.len = tx_len;
-		gpio_pin_write(data->command_data_gpio,
-			       DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN,
-			       ILI9340_CMD_DATA_PIN_DATA);
+		gpio_pin_set(data->command_data_gpio,
+			     DT_INST_0_ILITEK_ILI9340_CMD_DATA_GPIOS_PIN,
+			     ILI9340_CMD_DATA_PIN_DATA);
 		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
 	}
 }

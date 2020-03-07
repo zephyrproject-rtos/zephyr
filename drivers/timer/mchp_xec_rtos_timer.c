@@ -269,7 +269,7 @@ u32_t z_clock_elapsed(void)
 /*
  * Warning RTOS timer resolution is 30.5 us.
  * This is called by two code paths:
- * 1. Kernel call to k_cycle_get_32() -> z_arch_k_cycle_get_32() -> here.
+ * 1. Kernel call to k_cycle_get_32() -> arch_k_cycle_get_32() -> here.
  *    The kernel is casting return to (int) and using it uncasted in math
  *    expressions with int types. Expression result is stored in an int.
  * 2. If CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT is not defined then
@@ -359,7 +359,7 @@ int z_clock_driver_init(struct device *device)
  * 32-bit basic timer 0 configured for 1MHz count up, auto-reload,
  * and no interrupt generation.
  */
-void z_arch_busy_wait(u32_t usec_to_wait)
+void arch_busy_wait(u32_t usec_to_wait)
 {
 	if (usec_to_wait == 0) {
 		return;

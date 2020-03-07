@@ -1,18 +1,19 @@
-# Kconfig - ARM architecture configuration options
+# ARM architecture configuration options
 
-#
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
-
 
 menu "ARM Options"
 	depends on ARM
 
-source "arch/arm/core/Kconfig"
+rsource "core/aarch32/Kconfig"
+rsource "core/aarch64/Kconfig"
 
 config ARCH
 	default "arm"
+
+config ARM64
+	bool
+	select 64BIT
 
 endmenu

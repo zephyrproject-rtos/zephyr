@@ -17,6 +17,7 @@
 #include <zephyr.h>
 #include <sys/util.h>
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/uuid.h>
 #include <bluetooth/hci.h>
 
 const char *bt_hex_real(const void *buf, size_t len)
@@ -52,6 +53,15 @@ const char *bt_addr_le_str_real(const bt_addr_le_t *addr)
 	static char str[BT_ADDR_LE_STR_LEN];
 
 	bt_addr_le_to_str(addr, str, sizeof(str));
+
+	return str;
+}
+
+const char *bt_uuid_str_real(const struct bt_uuid *uuid)
+{
+	static char str[BT_UUID_STR_LEN];
+
+	bt_uuid_to_str(uuid, str, sizeof(str));
 
 	return str;
 }

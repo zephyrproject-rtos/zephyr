@@ -1,6 +1,4 @@
-title: APA102 SPI LED strip
-
-description: APA102 SPI LED strip binding
+description: APA102 SPI LED strip
 
 compatible: "apa,apa102"
 

@@ -1,18 +1,15 @@
-# Kconfig.defconfig: RV32M1 SoC RISC-V core default configuration values
-#
+# RV32M1 SoC RISC-V core default configuration values
+
 # Copyright (c) 2018 Foundries.io Ltd
-#
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_OPENISA_RV32M1_RISCV32
 
 config SOC
-	string
 	default "openisa_rv32m1"
 
 # 32 from event unit + 32 * (1 + max enabled INTMUX channel)
 config NUM_IRQS
-	int
 	default 288 if RV32M1_INTMUX_CHANNEL_7
 	default 256 if RV32M1_INTMUX_CHANNEL_6
 	default 224 if RV32M1_INTMUX_CHANNEL_5
@@ -24,24 +21,19 @@ config NUM_IRQS
 	default 32
 
 config XIP
-	bool
 	default y
 
 config RISCV_GENERIC_TOOLCHAIN
-	bool
 	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
 	default n
 
 config RISCV_SOC_CONTEXT_SAVE
-	bool
 	default y if SOC_OPENISA_RV32M1_RI5CY
 
 config RISCV_SOC_OFFSETS
-	bool
 	default y
 
 config RISCV_SOC_INTERRUPT_INIT
-	bool
 	default y
 
 # We need to disable the watchdog out of reset, as it's enabled by
@@ -49,36 +41,21 @@ config RISCV_SOC_INTERRUPT_INIT
 config WDOG_INIT
 	def_bool y
 
-# The event unit looks for vector tables at the end of each core's
-# flash space. These vector tables are not relocatable.
-config RISCV_RV32M1_VECTOR_BASE_ADDR
-	hex
-	default 0x000FFF00 if SOC_OPENISA_RV32M1_RI5CY
-	default 0x0103FF00 if SOC_OPENISA_RV32M1_ZERO_RISCY
-
-config RISCV_RV32M1_VECTOR_SIZE
-	hex
-	default 0x100
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	int
 	default 8000000
 
 if MULTI_LEVEL_INTERRUPTS
 
 config MAX_IRQ_PER_AGGREGATOR
-	int
 	default 32
 
 config 2ND_LEVEL_INTERRUPTS
 	default y
 
 config 2ND_LVL_ISR_TBL_OFFSET
-	int
 	default 32
 
 config NUM_2ND_LEVEL_AGGREGATORS
-	int
 	default 8 if RV32M1_INTMUX_CHANNEL_7
 	default 7 if RV32M1_INTMUX_CHANNEL_6
 	default 6 if RV32M1_INTMUX_CHANNEL_5
@@ -89,7 +66,6 @@ config NUM_2ND_LEVEL_AGGREGATORS
 	default 1		# just channel 0
 
 config 2ND_LVL_INTR_00_OFFSET
-	int
 	default 24
 
 config 2ND_LVL_INTR_01_OFFSET
@@ -152,26 +128,25 @@ endif # MULTI_LEVEL_INTERRUPTS
 config PINMUX_RV32M1
 	default y
 
-if GPIO
-
 config GPIO_RV32M1
 	default y
-
-endif # GPIO
-
-if SERIAL
+	depends on GPIO
 
 config UART_RV32M1_LPUART
-	def_bool y
-
-endif # SERIAL
-
-if I2C
+	default y
+	depends on SERIAL
 
 config I2C_RV32M1_LPI2C
-	def_bool y
+	default y
+	depends on I2C
 
-endif # I2C
+config SPI_RV32M1_LPSPI
+	default y
+	depends on SPI
+
+config PWM_RV32M1_TPM
+	default y
+	depends on PWM
 
 if FLASH
 
@@ -182,8 +157,12 @@ config SOC_FLASH_RV32M1
 DT_CHOSEN_Z_FLASH := zephyr,flash
 
 config FLASH_BASE_ADDRESS
-	default $(dt_chosen_reg_addr,$(DT_CHOSEN_Z_FLASH))
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 endif # FLASH
+
+config ENTROPY_RV32M1_TRNG
+	default y
+	depends on ENTROPY_GENERATOR
 
 endif # SOC_OPENISA_RV32M1_RISCV32

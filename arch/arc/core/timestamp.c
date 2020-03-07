@@ -33,7 +33,7 @@ u64_t z_tsc_read(void)
 	t = (u64_t)z_tick_get();
 	count = z_arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT);
 	irq_unlock(key);
-	t *= (u64_t)sys_clock_hw_cycles_per_tick();
+	t *= k_ticks_to_cyc_floor64(1);
 	t += (u64_t)count;
 	return t;
 }

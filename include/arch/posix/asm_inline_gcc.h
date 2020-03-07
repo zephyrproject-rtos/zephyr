@@ -25,7 +25,7 @@
 #include <zephyr/types.h>
 #include <arch/common/sys_io.h>
 #include <arch/common/ffs.h>
-#include "posix_soc_if.h"
+#include <arch/posix/posix_soc_if.h>
 
 #endif /* _ASMLANGUAGE */
 

@@ -202,7 +202,7 @@ static const u8_t msos1_compatid_descriptor[] = {
 int custom_handle_req(struct usb_setup_packet *pSetup,
 		      s32_t *len, u8_t **data)
 {
-	if (GET_DESC_TYPE(pSetup->wValue) == DESC_STRING &&
+	if (GET_DESC_TYPE(pSetup->wValue) == USB_STRING_DESC &&
 	    GET_DESC_INDEX(pSetup->wValue) == 0xEE) {
 		*data = (u8_t *)(&msos1_string_descriptor);
 		*len = sizeof(msos1_string_descriptor);
@@ -283,10 +283,18 @@ static struct webusb_req_handlers req_handlers = {
 
 void main(void)
 {
+	int ret;
+
 	LOG_DBG("");
 
 	/* Set the custom and vendor request handlers */
 	webusb_register_request_handlers(&req_handlers);
+
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
+		return;
+	}
 
 	usb_bos_register_cap((void *)&bos_cap_webusb);
 	usb_bos_register_cap((void *)&bos_cap_msosv2);

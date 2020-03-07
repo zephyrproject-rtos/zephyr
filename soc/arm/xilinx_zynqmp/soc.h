@@ -8,12 +8,12 @@
 #ifndef _BOARD__H_
 #define _BOARD__H_
 
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifndef _ASMLANGUAGE
 
 #include <device.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #endif /* !_ASMLANGUAGE */
 

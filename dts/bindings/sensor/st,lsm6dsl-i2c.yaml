@@ -1,11 +1,7 @@
 # Copyright (c) 2017, Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-title: STMicroelectronics MEMS sensors LSM6DSL
-
-description: >
-    This binding gives a base representation of LSM6DSL 6-axis accelerometer
-    and gyrometer
+description: STMicroelectronics LSM6DSL 6-axis accelerometer and gyrometer
 
 compatible: "st,lsm6dsl"
 
@@ -13,5 +9,6 @@ include: i2c-device.yaml
 
 properties:
     irq-gpios:
+      # This signal is active high when produced by the sensor
       type: phandle-array
       required: false

@@ -1,13 +1,10 @@
-#
 # Copyright (c) 2018 Synopsys, Inc. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 if SOC_NSIM_SEM
 
 config CPU_EM4_FPUDA
-	def_bool y
+	default y
 
 config NUM_IRQ_PRIO_LEVELS
 	# This processor supports 4 priority levels:
@@ -36,4 +33,4 @@ config ARC_FIRQ
 config CACHE_FLUSHING
 	default y
 
-endif #SOC_NSIM_SEM
+endif # SOC_NSIM_SEM

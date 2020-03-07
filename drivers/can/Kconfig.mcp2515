@@ -1,24 +1,16 @@
-# Kconfig.mcp2515 - MCP2515 CAN configuration options
+# MCP2515 CAN configuration options
 
-#
 # Copyright (c) 2018 Karsten Koenig
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config CAN_MCP2515
 	bool "MCP2515 CAN Driver"
 	depends on SPI
+	select CAN_AUTO_BUS_OFF_RECOVERY
 	help
 	  Enable MCP2515 CAN Driver
 
 if CAN_MCP2515
-
-config CAN_MCP2515_OSC_FREQ
-	int "Oscillator frequency"
-	default 8000000
-	help
-	  Specify the frequency of the oscillator connected to the MCP2515.
 
 config CAN_MCP2515_INT_THREAD_STACK_SIZE
 	int "Stack size for interrupt handler"

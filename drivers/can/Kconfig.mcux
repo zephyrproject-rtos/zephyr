@@ -1,10 +1,7 @@
-# Kconfig.mcux - MCUX CAN configuration options
+# MCUX CAN configuration options
 
-#
 # Copyright (c) 2019 Vestas Wind Systems A/S
-#
 # SPDX-License-Identifier: Apache-2.0
-#
 
 config CAN_MCUX_FLEXCAN
 	bool "MCUX FlexCAN driver"

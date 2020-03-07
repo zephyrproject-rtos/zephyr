@@ -1,0 +1,46 @@
+# MM-SWIFTIO board
+
+# Copyright (c) 2019, MADMACHINE LIMITED
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MM_SWIFTIO
+
+config BOARD
+	default "mm_swiftio"
+
+choice CODE_LOCATION
+	default CODE_FLEXSPI
+endchoice
+
+choice DATA_LOCATION
+	default DATA_SEMC
+endchoice
+
+config DISK_ACCESS_USDHC1
+	default y
+	depends on DISK_ACCESS_USDHC
+
+if GPIO_MCUX_IGPIO
+
+config GPIO_MCUX_IGPIO_1
+	default y
+
+config GPIO_MCUX_IGPIO_2
+	default y if DISK_ACCESS_USDHC1
+
+config GPIO_MCUX_IGPIO_3
+	default n
+
+config GPIO_MCUX_IGPIO_4
+	default n
+
+config GPIO_MCUX_IGPIO_5
+	default y
+
+endif # GPIO_MCUX_IGPIO
+
+config UART_MCUX_LPUART_1
+	default y
+	depends on UART_MCUX_LPUART
+
+endif # BOARD_MM_SWIFTIO

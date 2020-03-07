@@ -1,0 +1,12 @@
+# Gecko SPI configuration option
+
+# Copyright (c) 2019 Christian Taedcke <hacking@taedcke.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_GECKO
+	bool "Gecko SPI controller driver"
+	depends on HAS_SILABS_GECKO
+	depends on GPIO_GECKO
+	select SOC_GECKO_USART
+	help
+	  Enable the SPI peripherals on Gecko

@@ -1,10 +1,7 @@
 # Copyright (c) 2018, marc-cpdesign
 # SPDX-License-Identifier: Apache-2.0
 
-title: NRF5 GPIOTE
-
-description: >
-    This is a representation of the NRF GPIOTE node
+description: NRF5 GPIOTE node
 
 compatible: "nordic,nrf-gpiote"
 
