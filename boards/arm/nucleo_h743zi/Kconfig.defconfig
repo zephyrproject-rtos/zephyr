@@ -16,4 +16,8 @@ config I2C_1
 	default y
 	depends on I2C
 
+config PWM_STM32_12
+	default y
+	depends on PWM
+
 endif # BOARD_NUCLEO_H743ZI
