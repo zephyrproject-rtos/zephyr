@@ -924,19 +924,17 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 };
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
-#define DT_ATMEL_SAM0_UART_SERCOM_IRQ(n, m) DT_ATMEL_SAM0_UART_SERCOM_ ## n ## _IRQ_ ## m
-#define DT_ATMEL_SAM0_UART_SERCOM_IRQ_PRIORITY(n, m) DT_ATMEL_SAM0_UART_SERCOM_ ## n ## _IRQ_ ## m ## _PRIORITY
-
 #define SAM0_UART_IRQ_CONNECT(n, m)					\
 	do {								\
-	IRQ_CONNECT(DT_ATMEL_SAM0_UART_SERCOM_IRQ(n, m),		\
-		    DT_ATMEL_SAM0_UART_SERCOM_IRQ_PRIORITY(n, m),	\
+	IRQ_CONNECT(DT_INST_##n##_ATMEL_SAM0_UART_IRQ_##m,		\
+		    DT_INST_##n##_ATMEL_SAM0_UART_IRQ_##m##_PRIORITY,	\
 		    uart_sam0_isr, DEVICE_GET(uart_sam0_##n), 0);	\
-	irq_enable(DT_ATMEL_SAM0_UART_SERCOM_IRQ(n, m));		\
+	irq_enable(DT_INST_##n##_ATMEL_SAM0_UART_IRQ_##m);		\
 	} while (0)
 
 #define UART_SAM0_IRQ_HANDLER_DECL(n)					\
 	static void uart_sam0_irq_config_##n(struct device *dev)
+
 #define UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	.irq_config_func = uart_sam0_irq_config_##n,
 
@@ -963,120 +961,132 @@ static void uart_sam0_irq_config_##n(struct device *dev)		\
 #endif
 
 #if CONFIG_UART_ASYNC_API
-#ifndef DT_ATMEL_SAM0_UART_SERCOM_0_TXDMA
-#define DT_ATMEL_SAM0_UART_SERCOM_0_TXDMA 0xFFU
+#ifndef DT_INST_0_ATMEL_SAM0_UART_TXDMA
+#define DT_INST_0_ATMEL_SAM0_UART_TXDMA 0xFFU
 #endif
-#ifndef DT_ATMEL_SAM0_UART_SERCOM_0_RXDMA
-#define DT_ATMEL_SAM0_UART_SERCOM_0_RXDMA 0xFFU
+#ifndef DT_INST_0_ATMEL_SAM0_UART_RXDMA
+#define DT_INST_0_ATMEL_SAM0_UART_RXDMA 0xFFU
 #endif
-#ifndef DT_ATMEL_SAM0_UART_SERCOM_1_TXDMA
-#define DT_ATMEL_SAM0_UART_SERCOM_1_TXDMA 0xFFU
+#ifndef DT_INST_1_ATMEL_SAM0_UART_TXDMA
+#define DT_INST_1_ATMEL_SAM0_UART_TXDMA 0xFFU
 #endif
-#ifndef DT_ATMEL_SAM0_UART_SERCOM_1_RXDMA
-#define DT_ATMEL_SAM0_UART_SERCOM_1_RXDMA 0xFFU
+#ifndef DT_INST_1_ATMEL_SAM0_UART_RXDMA
+#define DT_INST_1_ATMEL_SAM0_UART_RXDMA 0xFFU
 #endif
-#ifndef DT_ATMEL_SAM0_UART_SERCOM_2_TXDMA
-#define DT_ATMEL_SAM0_UART_SERCOM_2_TXDMA 0xFFU
+#ifndef DT_INST_2_ATMEL_SAM0_UART_TXDMA
+#define DT_INST_2_ATMEL_SAM0_UART_TXDMA 0xFFU
 #endif
-#ifndef DT_ATMEL_SAM0_UART_SERCOM_2_RXDMA
-#define DT_ATMEL_SAM0_UART_SERCOM_2_RXDMA 0xFFU
+#ifndef DT_INST_2_ATMEL_SAM0_UART_RXDMA
+#define DT_INST_2_ATMEL_SAM0_UART_RXDMA 0xFFU
 #endif
-#ifndef DT_ATMEL_SAM0_UART_SERCOM_3_TXDMA
-#define DT_ATMEL_SAM0_UART_SERCOM_3_TXDMA 0xFFU
+#ifndef DT_INST_3_ATMEL_SAM0_UART_TXDMA
+#define DT_INST_3_ATMEL_SAM0_UART_TXDMA 0xFFU
 #endif
-#ifndef DT_ATMEL_SAM0_UART_SERCOM_3_RXDMA
-#define DT_ATMEL_SAM0_UART_SERCOM_3_RXDMA 0xFFU
+#ifndef DT_INST_3_ATMEL_SAM0_UART_RXDMA
+#define DT_INST_3_ATMEL_SAM0_UART_RXDMA 0xFFU
 #endif
-#ifndef DT_ATMEL_SAM0_UART_SERCOM_4_TXDMA
-#define DT_ATMEL_SAM0_UART_SERCOM_4_TXDMA 0xFFU
+#ifndef DT_INST_4_ATMEL_SAM0_UART_TXDMA
+#define DT_INST_4_ATMEL_SAM0_UART_TXDMA 0xFFU
 #endif
-#ifndef DT_ATMEL_SAM0_UART_SERCOM_4_RXDMA
-#define DT_ATMEL_SAM0_UART_SERCOM_4_RXDMA 0xFFU
+#ifndef DT_INST_4_ATMEL_SAM0_UART_RXDMA
+#define DT_INST_4_ATMEL_SAM0_UART_RXDMA 0xFFU
 #endif
-#ifndef DT_ATMEL_SAM0_UART_SERCOM_5_TXDMA
-#define DT_ATMEL_SAM0_UART_SERCOM_5_TXDMA 0xFFU
+#ifndef DT_INST_5_ATMEL_SAM0_UART_TXDMA
+#define DT_INST_5_ATMEL_SAM0_UART_TXDMA 0xFFU
 #endif
-#ifndef DT_ATMEL_SAM0_UART_SERCOM_5_RXDMA
-#define DT_ATMEL_SAM0_UART_SERCOM_5_RXDMA 0xFFU
+#ifndef DT_INST_5_ATMEL_SAM0_UART_RXDMA
+#define DT_INST_5_ATMEL_SAM0_UART_RXDMA 0xFFU
+#endif
+#ifndef DT_INST_6_ATMEL_SAM0_UART_TXDMA
+#define DT_INST_6_ATMEL_SAM0_UART_TXDMA 0xFFU
+#endif
+#ifndef DT_INST_6_ATMEL_SAM0_UART_RXDMA
+#define DT_INST_6_ATMEL_SAM0_UART_RXDMA 0xFFU
+#endif
+#ifndef DT_INST_7_ATMEL_SAM0_UART_TXDMA
+#define DT_INST_7_ATMEL_SAM0_UART_TXDMA 0xFFU
+#endif
+#ifndef DT_INST_7_ATMEL_SAM0_UART_RXDMA
+#define DT_INST_7_ATMEL_SAM0_UART_RXDMA 0xFFU
 #endif
 
-#define UART_SAM0_DMA_CHANNELS(n)				 \
-	.tx_dma_request = SERCOM##n##_DMAC_ID_TX,		 \
-	.tx_dma_channel = DT_ATMEL_SAM0_UART_SERCOM_##n##_TXDMA, \
-	.rx_dma_request = SERCOM##n##_DMAC_ID_RX,		 \
-	.rx_dma_channel = DT_ATMEL_SAM0_UART_SERCOM_##n##_RXDMA
+#define UART_SAM0_DMA_CHANNELS(n, m)					\
+	.tx_dma_request = SERCOM##m##_DMAC_ID_TX,			\
+	.tx_dma_channel = DT_INST_##n##_ATMEL_SAM0_UART_TXDMA,		\
+	.rx_dma_request = SERCOM##m##_DMAC_ID_RX,			\
+	.rx_dma_channel = DT_INST_##n##_ATMEL_SAM0_UART_RXDMA,
 #else
-#define UART_SAM0_DMA_CHANNELS(n)
+#define UART_SAM0_DMA_CHANNELS(n, m)
 #endif
 
-#define UART_SAM0_SERCOM_PADS(n) \
-	(DT_ATMEL_SAM0_UART_SERCOM_##n##_RXPO << SERCOM_USART_CTRLA_RXPO_Pos) |	\
-	(DT_ATMEL_SAM0_UART_SERCOM_##n##_TXPO << SERCOM_USART_CTRLA_TXPO_Pos)
+#define UART_SAM0_SERCOM_PADS(n)					      \
+	(DT_INST_##n##_ATMEL_SAM0_UART_RXPO << SERCOM_USART_CTRLA_RXPO_Pos) | \
+	(DT_INST_##n##_ATMEL_SAM0_UART_TXPO << SERCOM_USART_CTRLA_TXPO_Pos)
 
 #ifdef MCLK
-#define UART_SAM0_CONFIG_DEFN(n)						\
-static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {			\
-	.regs = (SercomUsart *)DT_ATMEL_SAM0_UART_SERCOM_##n##_BASE_ADDRESS,	\
-	.baudrate = DT_ATMEL_SAM0_UART_SERCOM_##n##_CURRENT_SPEED,		\
-	.mclk = MCLK_SERCOM##n,							\
-	.mclk_mask = MCLK_SERCOM##n##_MASK,					\
-	.gclk_core_id = SERCOM##n##_GCLK_ID_CORE,				\
-	.pads = UART_SAM0_SERCOM_PADS(n),					\
-	UART_SAM0_IRQ_HANDLER_FUNC(n)						\
-	UART_SAM0_DMA_CHANNELS(n)						\
+#define UART_SAM0_CONFIG_DEFN(n, m)					   \
+static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		   \
+	.regs = (SercomUsart *)DT_INST_##n##_ATMEL_SAM0_UART_BASE_ADDRESS, \
+	.baudrate = DT_INST_##n##_ATMEL_SAM0_UART_CURRENT_SPEED,	   \
+	.mclk = MCLK_SERCOM##m,						   \
+	.mclk_mask = MCLK_SERCOM##m##_MASK,				   \
+	.gclk_core_id = SERCOM##m##_GCLK_ID_CORE,			   \
+	.pads = UART_SAM0_SERCOM_PADS(n),				   \
+	UART_SAM0_IRQ_HANDLER_FUNC(n)					   \
+	UART_SAM0_DMA_CHANNELS(n, m)					   \
 }
 #else
-#define UART_SAM0_CONFIG_DEFN(n)						\
-static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {			\
-	.regs = (SercomUsart *)DT_ATMEL_SAM0_UART_SERCOM_##n##_BASE_ADDRESS,	\
-	.baudrate = DT_ATMEL_SAM0_UART_SERCOM_##n##_CURRENT_SPEED,		\
-	.pm_apbcmask = PM_APBCMASK_SERCOM##n,					\
-	.gclk_clkctrl_id = GCLK_CLKCTRL_ID_SERCOM##n##_CORE,			\
-	.pads = UART_SAM0_SERCOM_PADS(n),					\
-	UART_SAM0_IRQ_HANDLER_FUNC(n)						\
-	UART_SAM0_DMA_CHANNELS(n)						\
+#define UART_SAM0_CONFIG_DEFN(n, m)					   \
+static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		   \
+	.regs = (SercomUsart *)DT_INST_##n##_ATMEL_SAM0_UART_BASE_ADDRESS, \
+	.baudrate = DT_INST_##n##_ATMEL_SAM0_UART_CURRENT_SPEED,	   \
+	.pm_apbcmask = PM_APBCMASK_SERCOM##m,				   \
+	.gclk_clkctrl_id = GCLK_CLKCTRL_ID_SERCOM##m##_CORE,		   \
+	.pads = UART_SAM0_SERCOM_PADS(n),				   \
+	UART_SAM0_IRQ_HANDLER_FUNC(n)					   \
+	UART_SAM0_DMA_CHANNELS(n, m)					   \
 }
 #endif
 
-#define UART_SAM0_DEVICE_INIT(n)						\
-static struct uart_sam0_dev_data uart_sam0_data_##n;				\
-UART_SAM0_IRQ_HANDLER_DECL(n);							\
-UART_SAM0_CONFIG_DEFN(n);							\
-DEVICE_AND_API_INIT(uart_sam0_##n, DT_ATMEL_SAM0_UART_SERCOM_##n##_LABEL,	\
-		    uart_sam0_init, &uart_sam0_data_##n,			\
-		    &uart_sam0_config_##n, PRE_KERNEL_1,			\
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,				\
-		    &uart_sam0_driver_api);					\
+#define UART_SAM0_DEVICE_INIT(n, m)				        \
+static struct uart_sam0_dev_data uart_sam0_data_##n;		        \
+UART_SAM0_IRQ_HANDLER_DECL(n);					        \
+UART_SAM0_CONFIG_DEFN(n, m);					        \
+DEVICE_AND_API_INIT(uart_sam0_##n, DT_INST_##n##_ATMEL_SAM0_UART_LABEL,\
+		    uart_sam0_init, &uart_sam0_data_##n,	        \
+		    &uart_sam0_config_##n, PRE_KERNEL_1,	        \
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		        \
+		    &uart_sam0_driver_api);			        \
 UART_SAM0_IRQ_HANDLER(n)
 
-#if DT_ATMEL_SAM0_UART_SERCOM_0_BASE_ADDRESS
-UART_SAM0_DEVICE_INIT(0)
+#if DT_INST_0_ATMEL_SAM0_UART
+UART_SAM0_DEVICE_INIT(0, DT_INST_0_ATMEL_SAM0_UART_ID);
 #endif
 
-#if DT_ATMEL_SAM0_UART_SERCOM_1_BASE_ADDRESS
-UART_SAM0_DEVICE_INIT(1)
+#if DT_INST_1_ATMEL_SAM0_UART
+UART_SAM0_DEVICE_INIT(1, DT_INST_1_ATMEL_SAM0_UART_ID);
 #endif
 
-#if DT_ATMEL_SAM0_UART_SERCOM_2_BASE_ADDRESS
-UART_SAM0_DEVICE_INIT(2)
+#if DT_INST_2_ATMEL_SAM0_UART
+UART_SAM0_DEVICE_INIT(2, DT_INST_2_ATMEL_SAM0_UART_ID);
 #endif
 
-#if DT_ATMEL_SAM0_UART_SERCOM_3_BASE_ADDRESS
-UART_SAM0_DEVICE_INIT(3)
+#if DT_INST_3_ATMEL_SAM0_UART
+UART_SAM0_DEVICE_INIT(3, DT_INST_3_ATMEL_SAM0_UART_ID);
 #endif
 
-#if DT_ATMEL_SAM0_UART_SERCOM_4_BASE_ADDRESS
-UART_SAM0_DEVICE_INIT(4)
+#if DT_INST_4_ATMEL_SAM0_UART
+UART_SAM0_DEVICE_INIT(4, DT_INST_4_ATMEL_SAM0_UART_ID);
 #endif
 
-#if DT_ATMEL_SAM0_UART_SERCOM_5_BASE_ADDRESS
-UART_SAM0_DEVICE_INIT(5)
+#if DT_INST_5_ATMEL_SAM0_UART
+UART_SAM0_DEVICE_INIT(5, DT_INST_5_ATMEL_SAM0_UART_ID);
 #endif
 
-#if DT_ATMEL_SAM0_UART_SERCOM_6_BASE_ADDRESS
-UART_SAM0_DEVICE_INIT(6)
+#if DT_INST_6_ATMEL_SAM0_UART
+UART_SAM0_DEVICE_INIT(6, DT_INST_6_ATMEL_SAM0_UART_ID);
 #endif
 
-#if DT_ATMEL_SAM0_UART_SERCOM7_BASE_ADDRESS
-UART_SAM0_DEVICE_INIT(7)
+#if DT_INST_7_ATMEL_SAM0_UART
+UART_SAM0_DEVICE_INIT(7, DT_INST_7_ATMEL_SAM0_UART_ID);
 #endif
