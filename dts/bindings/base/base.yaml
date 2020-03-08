@@ -18,6 +18,11 @@ properties:
         required: true
         description: compatible strings
 
+    id:
+        type: int
+        description: hardware instance identificator
+        required: false
+
     reg:
         type: array
         description: register space
