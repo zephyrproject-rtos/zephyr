@@ -80,6 +80,7 @@
 
 		uart0: uart@400e0600 {
 			compatible = "atmel,sam-uart";
+			id = <0>;
 			reg = <0x400e0600 0x200>;
 			interrupts = <8 1>;
 			peripheral-id = <8>;
@@ -89,6 +90,7 @@
 
 		uart1: uart@400e0800 {
 			compatible = "atmel,sam-uart";
+			id = <1>;
 			reg = <0x400e0800 0x200>;
 			interrupts = <9 1>;
 			peripheral-id = <9>;
