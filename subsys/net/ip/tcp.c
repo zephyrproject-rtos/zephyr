@@ -231,19 +231,33 @@ static void tcp_retry_expired(struct k_work *work)
 		pkt = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_pkt, sent_list);
 
-		if (net_pkt_sent(pkt)) {
-			do_ref_if_needed(tcp, pkt);
-			net_pkt_set_sent(pkt, false);
+		if (k_work_pending(net_pkt_work(pkt))) {
+			/* If the packet is still pending in TX queue, then do
+			 * not try to resend it again. This can happen if the
+			 * device is so busy that the TX thread has not yet
+			 * finished previous sending of this packet.
+			 */
+			NET_DBG("[%p] pkt %p still pending in TX queue",
+				tcp, pkt);
+			return;
 		}
 
 		net_pkt_set_queued(pkt, true);
+		net_pkt_set_tcp_1st_msg(pkt, false);
+
+		/* The ref here is for the initial reference which was lost
+		 * when the pkt was sent. Typically the ref count should be 2
+		 * at this point if the pkt is being sent by the driver.
+		 */
+		if (!is_6lo_technology(pkt)) {
+			net_pkt_ref(pkt);
+		}
 
 		if (net_tcp_send_pkt(pkt) < 0 && !is_6lo_technology(pkt)) {
 			NET_DBG("retry %u: [%p] pkt %p send failed",
 				tcp->retry_timeout_shift, tcp, pkt);
-			if (net_pkt_sent(pkt)) {
-				net_pkt_unref(pkt);
-			}
+			/* Undo the ref done above */
+			net_pkt_unref(pkt);
 		} else {
 			NET_DBG("retry %u: [%p] sent pkt %p",
 				tcp->retry_timeout_shift, tcp, pkt);
@@ -327,12 +341,6 @@ int net_tcp_release(struct net_tcp *tcp)
 		return -EINVAL;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp->sent_list, pkt, tmp,
-					  sent_list) {
-		sys_slist_remove(&tcp->sent_list, NULL, &pkt->sent_list);
-		net_pkt_unref(pkt);
-	}
-
 	retry_timer_cancel(tcp);
 	k_sem_reset(&tcp->connect_wait);
 
@@ -341,6 +349,43 @@ int net_tcp_release(struct net_tcp *tcp)
 	timewait_timer_cancel(tcp);
 
 	net_tcp_change_state(tcp, NET_TCP_CLOSED);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp->sent_list, pkt, tmp,
+					  sent_list) {
+		int refcount;
+
+		sys_slist_remove(&tcp->sent_list, NULL, &pkt->sent_list);
+
+		/* The packet might get freed when sending it, so if that is
+		 * so, just skip it.
+		 */
+		if (atomic_get(&pkt->atomic_ref) == 0) {
+			continue;
+		}
+
+		/* Make sure we undo the reference done in net_tcp_queue_pkt()
+		 */
+		net_pkt_unref(pkt);
+
+		/* Release the packet fully unless it is still pending */
+		refcount = atomic_get(&pkt->atomic_ref);
+		if (refcount > 0) {
+			/* If the pkt was already placed to TX queue, let
+			 * it go as it will be released by L2 after it is
+			 * sent.
+			 */
+			if (k_work_pending(net_pkt_work(pkt)) ||
+			    net_pkt_sent(pkt)) {
+				refcount--;
+			}
+
+			while (refcount) {
+				net_pkt_unref(pkt);
+				refcount--;
+			}
+		}
+	}
+
 	tcp->context = NULL;
 
 	key = irq_lock();
@@ -410,6 +455,9 @@ static int prepare_segment(struct net_tcp *tcp,
 		net_pkt_set_context(pkt, context);
 		pkt_allocated = true;
 	}
+
+	net_pkt_set_tcp_1st_msg(pkt, true);
+	net_pkt_set_sent(pkt, false);
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_pkt_family(pkt) == AF_INET) {
@@ -851,6 +899,12 @@ static int net_tcp_queue_pkt(struct net_context *context, struct net_pkt *pkt)
 				      retry_timeout(context->tcp));
 	}
 
+	/* Increase the ref count so that we do not lose the packet and
+	 * can resend later if needed. The pkt will be released after we
+	 * have received the ACK or the TCP stream is removed. This is only
+	 * done for non-6lo technologies that will keep the data until ACK
+	 * is received or timeout happens.
+	 */
 	do_ref_if_needed(context->tcp, pkt);
 
 	return 0;
@@ -862,6 +916,7 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 	struct net_context *ctx = net_pkt_context(pkt);
 	struct net_tcp_hdr *tcp_hdr;
 	bool calc_chksum = false;
+	int ret;
 
 	if (!ctx || !ctx->tcp) {
 		NET_ERR("%scontext is not set on pkt %p",
@@ -932,7 +987,6 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 	 */
 	if (is_6lo_technology(pkt)) {
 		struct net_pkt *new_pkt, *check_pkt;
-		int ret;
 		bool pkt_in_slist = false;
 
 		/*
@@ -965,13 +1019,19 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 			} else {
 				net_stats_update_tcp_seg_rexmit(
 							net_pkt_iface(pkt));
+				net_pkt_set_sent(pkt, true);
 			}
 
 			return ret;
 		}
 	}
 
-	return net_send_data(pkt);
+	ret = net_send_data(pkt);
+	if (ret == 0) {
+		net_pkt_set_sent(pkt, true);
+	}
+
+	return ret;
 }
 
 static void flush_queue(struct net_context *context)
@@ -1003,6 +1063,7 @@ int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
 		      void *user_data)
 {
 	struct net_pkt *pkt;
+	int ret;
 
 	/* For now, just send all queued data synchronously.  Need to
 	 * add window handling and retry/ACK logic.
@@ -1015,21 +1076,36 @@ int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
 			continue;
 		}
 
-		if (!net_pkt_sent(pkt)) {
-			int ret;
+		/* If this pkt is the first one (not a resend), then we do
+		 * not need to increase the ref count as it is 1 already.
+		 * For a resent packet, the ref count is only 1 atm, and
+		 * the packet would be freed in driver if we do not increase
+		 * it here. This is only done for non-6lo technologies where
+		 * we keep the original packet (by referencing it) for possible
+		 * re-send (if ACK is not received on time).
+		 */
+		if (!is_6lo_technology(pkt)) {
+			if (!net_pkt_tcp_1st_msg(pkt)) {
+				net_pkt_ref(pkt);
+			}
+		}
 
-			NET_DBG("[%p] Sending pkt %p (%zd bytes)", context->tcp,
-				pkt, net_pkt_get_len(pkt));
+		NET_DBG("[%p] Sending pkt %p (%zd bytes)", context->tcp,
+			pkt, net_pkt_get_len(pkt));
 
-			ret = net_tcp_send_pkt(pkt);
-			if (ret < 0 && !is_6lo_technology(pkt)) {
-				NET_DBG("[%p] pkt %p not sent (%d)",
-					context->tcp, pkt, ret);
+		ret = net_tcp_send_pkt(pkt);
+		if (ret < 0) {
+			NET_DBG("[%p] pkt %p not sent (%d)",
+				context->tcp, pkt, ret);
+			if (!is_6lo_technology(pkt)) {
 				net_pkt_unref(pkt);
 			}
 
-			net_pkt_set_queued(pkt, true);
+			return ret;
 		}
+
+		net_pkt_set_queued(pkt, true);
+		net_pkt_set_tcp_1st_msg(pkt, false);
 	}
 
 	/* Just make the callback synchronously even if it didn't
@@ -1129,7 +1205,15 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		}
 
 		sys_slist_remove(list, NULL, head);
+
+		/* If we receive a valid ACK, then we need to undo the ref
+		 * set in net_tcp_queue_pkt() (when using non-6lo technology)
+		 * or the ref set in packet creation (for 6lo packet) in order
+		 * to release the pkt.
+		 */
+		net_pkt_set_sent(pkt, false);
 		net_pkt_unref(pkt);
+
 		valid_ack = true;
 	}
 
@@ -1845,6 +1929,7 @@ static inline int send_syn_segment(struct net_context *context,
 		return ret;
 	}
 
+	net_pkt_set_sent(pkt, true);
 	context->tcp->send_seq++;
 
 	return ret;
@@ -1914,6 +1999,7 @@ static int send_reset(struct net_context *context,
 		net_pkt_unref(pkt);
 	}
 
+	net_pkt_set_sent(pkt, true);
 	return ret;
 }
 
