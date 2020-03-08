@@ -9,8 +9,9 @@
 #include <spinlock.h>
 #include <soc.h>
 
-#define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
-			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+#define CYC_PER_TICK ((uint32_t)((uint64_t) (sys_clock_hw_cycles_per_sec()			 \
+					     >> CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER) \
+				 / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 #define MAX_CYC INT_MAX
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
@@ -135,12 +136,12 @@ uint32_t sys_clock_elapsed(void)
 
 uint32_t sys_clock_cycle_get_32(void)
 {
-	return (uint32_t)mtime();
+	return (uint32_t)(mtime() << CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER);
 }
 
 uint64_t sys_clock_cycle_get_64(void)
 {
-	return mtime();
+	return (mtime() << CONFIG_RISCV_MACHINE_TIMER_SYSTEM_CLOCK_DIVIDER);
 }
 
 static int sys_clock_driver_init(const struct device *dev)
