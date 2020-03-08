@@ -5,6 +5,9 @@ compatible: "atmel,sam0-sercom"
 include: base.yaml
 
 properties:
+    id:
+      required: true
+
     reg:
       required: true
 
