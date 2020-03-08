@@ -11,11 +11,6 @@ properties:
     required: true
     description: JEDEC ID as manufacturer ID, memory type, memory density
 
-  has-be32k:
-    type: boolean
-    required: false
-    description: Indicates the device supports the BE32K (0xD8) command
-
   requires-ulbpr:
     type: boolean
     required: false

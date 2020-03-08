@@ -24,3 +24,29 @@ properties:
     type: phandle-array
     required: false
     description: RESETn pin
+  sfdp-basic-8:
+    type: int
+    required: false
+    default: 0xD810200C
+    description: |
+      Corresponds to the 8th DWORD of the JEDEC Basic Flash Parameter Table,
+      providing erase type 1 and 2 size and instruction.
+  sfdp-basic-9:
+    type: int
+    required: false
+    default: 0x0000520F
+    description: |
+      Corresponds to the 9th DWORD of the JEDEC Basic Flash Parameter Table,
+      providing erase type 3 and 4 size and instruction.
+  sfdp-basic-11:
+    type: int
+    required: false
+    default: 0x00000080
+    description: |
+      Corresponds to the 11th DWORD of the JEDEC Basic Flash Parameter Table,
+      providing page size. Only bits 7:4 are respected, setting the other bits
+      has no effect.
+  has-no-chip-erase:
+    type: boolean
+    required: false
+    description: Indicates device does no support chip erase

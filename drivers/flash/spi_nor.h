@@ -15,11 +15,21 @@ struct spi_nor_config {
 	/* JEDEC id from devicetree */
 	u8_t id[SPI_NOR_MAX_ID_LEN];
 
-	/* Indicates support for BE32K */
-	bool has_be32k;
-
 	/* Size from devicetree, in bytes */
 	u32_t size;
+
+	/* Page size, in bytes */
+	u16_t page_size;
+
+	/* Indicates if device has chip erase capability */
+	bool has_chip_erase;
+
+	/* Erase size exponent and instruction as in JESD216, Basic Flash
+	 * Parameter Table Dword 8 and 9
+	 */
+	const u8_t erase_size_exp[4];
+	const u8_t erase_cmd[4];
+
 };
 
 /* Status register bits */
@@ -33,29 +43,30 @@ struct spi_nor_config {
 #define SPI_NOR_CMD_WREN        0x06    /* Write enable */
 #define SPI_NOR_CMD_WRDI        0x04    /* Write disable */
 #define SPI_NOR_CMD_PP          0x02    /* Page program */
-#define SPI_NOR_CMD_SE          0x20    /* Sector erase */
-#define SPI_NOR_CMD_BE_32K      0x52    /* Block erase 32KB */
-#define SPI_NOR_CMD_BE          0xD8    /* Block erase */
 #define SPI_NOR_CMD_CE          0xC7    /* Chip erase */
 #define SPI_NOR_CMD_RDID        0x9F    /* Read JEDEC ID */
 #define SPI_NOR_CMD_ULBPR       0x98    /* Global Block Protection Unlock */
 #define SPI_NOR_CMD_DPD         0xB9    /* Deep Power Down */
 #define SPI_NOR_CMD_RDPD        0xAB    /* Release from Deep Power Down */
 
-/* Page, sector, and block size are standard, not configurable. */
-#define SPI_NOR_PAGE_SIZE    0x0100U
 #define SPI_NOR_SECTOR_SIZE  0x1000U
 #define SPI_NOR_BLOCK_SIZE   0x10000U
 
-/* Some devices support erase operations on 32 KiBy blocks.
- * Support is indicated by the has-be32k property.
- */
-#define SPI_NOR_BLOCK32_SIZE 0x8000
+/* SFDP Basic Flash Parameters. See JESD216 for documentation*/
+#define SFDP_GET_FIELD(reg, h, l) ((reg & GENMASK(h, l)) >> l)
+#define SFDP_B8_ERASE_SIZE_2(dword)	SFDP_GET_FIELD(dword, 23, 16)
+#define SFDP_B8_ERASE_SIZE_1(dword)	SFDP_GET_FIELD(dword,  7,  0)
+#define SFDP_B8_ERASE_CMD_2(dword)	SFDP_GET_FIELD(dword, 31, 24)
+#define SFDP_B8_ERASE_CMD_1(dword)	SFDP_GET_FIELD(dword, 15,  8)
+#define SFDP_B9_ERASE_SIZE_4(dword)	SFDP_GET_FIELD(dword, 23, 16)
+#define SFDP_B9_ERASE_SIZE_3(dword)	SFDP_GET_FIELD(dword,  7,  0)
+#define SFDP_B9_ERASE_CMD_4(dword)	SFDP_GET_FIELD(dword, 31, 24)
+#define SFDP_B9_ERASE_CMD_3(dword)	SFDP_GET_FIELD(dword, 15,  8)
+#define SFDP_B11_PAGE_SIZE(dword)	SFDP_GET_FIELD(dword,  7,  4)
 
 /* Test whether offset is aligned. */
-#define SPI_NOR_IS_PAGE_ALIGNED(_ofs) (((_ofs) & (SPI_NOR_PAGE_SIZE - 1U)) == 0)
+#define SPI_NOR_IS_ALIGNED(_ofs, _size) (((_ofs) & (_size - 1U)) == 0)
 #define SPI_NOR_IS_SECTOR_ALIGNED(_ofs) (((_ofs) & (SPI_NOR_SECTOR_SIZE - 1U)) == 0)
-#define SPI_NOR_IS_BLOCK_ALIGNED(_ofs) (((_ofs) & (SPI_NOR_BLOCK_SIZE - 1U)) == 0)
-#define SPI_NOR_IS_BLOCK32_ALIGNED(_ofs) (((_ofs) & (SPI_NOR_BLOCK32_SIZE - 1U)) == 0)
+
 
 #endif /*__SPI_NOR_H__*/
