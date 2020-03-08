@@ -11,7 +11,9 @@ pyelftools>=0.24
 PyYAML>=5.1
 
 # used by west_commands
+canopen
 packaging
+progress
 
 # intelhex used by mergehex.py
 intelhex

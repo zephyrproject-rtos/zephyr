@@ -17,6 +17,7 @@ def test_runner_imports():
     expected = set(('arc-nsim',
                     'blackmagicprobe',
                     'bossac',
+                    'canopen',
                     'dediprog',
                     'dfu-util',
                     'esp32',
