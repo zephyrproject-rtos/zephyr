@@ -100,6 +100,7 @@
 
 		usart0: usart@40024000 {
 			compatible = "atmel,sam-usart";
+			id = <0>;
 			reg = <0x40024000 0x130>;
 			interrupts = <14 1>;
 			peripheral-id = <14>;
@@ -109,6 +110,7 @@
 
 		usart1: usart@40028000 {
 			compatible = "atmel,sam-usart";
+			id = <1>;
 			reg = <0x40028000 0x130>;
 			interrupts = <15 1>;
 			peripheral-id = <15>;
