@@ -351,14 +351,15 @@ static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 		size_t to_write = size;
 
 		/* Don't write more than a page. */
-		if (to_write >= SPI_NOR_PAGE_SIZE) {
-			to_write = SPI_NOR_PAGE_SIZE;
+		if (to_write >= params->page_size) {
+			to_write = params->page_size;
 		}
 
 		/* Don't write across a page boundary */
-		if (((addr + to_write - 1U) / SPI_NOR_PAGE_SIZE)
-		    != (addr / SPI_NOR_PAGE_SIZE)) {
-			to_write = SPI_NOR_PAGE_SIZE - (addr % SPI_NOR_PAGE_SIZE);
+		if (((addr + to_write - 1U) / params->page_size)
+		    != (addr / params->page_size)) {
+			to_write = params->page_size -
+				   (addr % params->page_size);
 		}
 
 		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
@@ -380,9 +381,34 @@ out:
 	return ret;
 }
 
+#define GET_ERASE_SIZE(config, idx) (1U << config->erase_size_exp[idx])
+
+static int spi_nor_select_erase_type(struct device *dev, off_t addr,
+				     size_t size)
+{
+	const struct spi_nor_config *params = dev->config_info;
+	int idx = -1;
+
+	for (int i = 0; i < ARRAY_SIZE(params->erase_cmd); i++) {
+		if (params->erase_size_exp[i] == 0 ||
+		    GET_ERASE_SIZE(params, i) > size ||
+		    !SPI_NOR_IS_ALIGNED(addr, size)) {
+			continue;
+		}
+
+		if (idx == -1 ||
+		    GET_ERASE_SIZE(params, i) > GET_ERASE_SIZE(params, idx)) {
+			idx = i;
+		}
+	}
+
+	return idx;
+}
+
 static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 {
 	const struct spi_nor_config *params = dev->config_info;
+	const uint8_t *erase_cmd = params->erase_cmd;
 	int ret = 0;
 
 	/* erase area must be subregion of device */
@@ -402,44 +428,29 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 
 	acquire_device(dev);
 
-	while (size) {
-		/* write enable */
+	/* chip erase */
+	if (size == params->size && params->has_chip_erase) {
 		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+		spi_nor_cmd_write(dev, SPI_NOR_CMD_CE);
+		spi_nor_wait_until_ready(dev);
+		goto out;
+	}
 
-		if (size == params->size) {
-			/* chip erase */
-			spi_nor_cmd_write(dev, SPI_NOR_CMD_CE);
-			size -= params->size;
-		} else if ((size >= SPI_NOR_BLOCK_SIZE)
-			   && SPI_NOR_IS_BLOCK_ALIGNED(addr)) {
-			/* 64 KiB block erase */
-			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_BE, addr,
-			NULL, 0);
-			addr += SPI_NOR_BLOCK_SIZE;
-			size -= SPI_NOR_BLOCK_SIZE;
-		} else if ((size >= SPI_NOR_BLOCK32_SIZE)
-			   && SPI_NOR_IS_BLOCK32_ALIGNED(addr)
-			   && params->has_be32k) {
-			/* 32 KiB block erase */
-			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_BE_32K, addr,
-					       NULL, 0);
-			addr += SPI_NOR_BLOCK32_SIZE;
-			size -= SPI_NOR_BLOCK32_SIZE;
-		} else if ((size >= SPI_NOR_SECTOR_SIZE)
-			   && SPI_NOR_IS_SECTOR_ALIGNED(addr)) {
-			/* sector erase */
-			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_SE, addr,
-					       NULL, 0);
-			addr += SPI_NOR_SECTOR_SIZE;
-			size -= SPI_NOR_SECTOR_SIZE;
-		} else {
-			/* minimal erase size is at least a sector size */
-			LOG_DBG("unsupported at 0x%lx size %zu", (long)addr,
-				size);
+	/* block erase */
+	while (size) {
+		int idx = spi_nor_select_erase_type(dev, addr, size);
+
+		if (idx == -1) {
+			/* too small or misaligned */
 			ret = -EINVAL;
 			goto out;
 		}
 
+		spi_nor_cmd_write(dev, SPI_NOR_CMD_WREN);
+		spi_nor_cmd_addr_write(dev, erase_cmd[idx],
+					addr, NULL, 0);
+		addr += GET_ERASE_SIZE(params, idx);
+		size -= GET_ERASE_SIZE(params, idx);
 		spi_nor_wait_until_ready(dev);
 	}
 
@@ -581,10 +592,19 @@ static const struct flash_driver_api spi_nor_api = {
 
 static const struct spi_nor_config flash_id = {
 	.id = DT_INST_PROP(0, jedec_id),
-#if DT_INST_NODE_HAS_PROP(0, has_be32k)
-	.has_be32k = true,
-#endif /* DT_INST_NODE_HAS_PROP(0, has_be32k) */
 	.size = DT_INST_PROP(0, size) / 8,
+
+	.page_size = (1 << SFDP_B11_PAGE_SIZE(DT_INST_PROP(0, sfdp_basic_11))),
+	.has_chip_erase = !DT_INST_PROP(0, has_no_chip_erase),
+	.erase_size_exp = { SFDP_B8_ERASE_SIZE_1(DT_INST_PROP(0, sfdp_basic_8)),
+			    SFDP_B8_ERASE_SIZE_2(DT_INST_PROP(0, sfdp_basic_8)),
+			    SFDP_B9_ERASE_SIZE_3(DT_INST_PROP(0, sfdp_basic_9)),
+			    SFDP_B9_ERASE_SIZE_4(DT_INST_PROP(0, sfdp_basic_9))
+			  },
+	.erase_cmd = { SFDP_B8_ERASE_CMD_1(DT_INST_PROP(0, sfdp_basic_8)),
+		       SFDP_B8_ERASE_CMD_2(DT_INST_PROP(0, sfdp_basic_8)),
+		       SFDP_B9_ERASE_CMD_3(DT_INST_PROP(0, sfdp_basic_9)),
+		       SFDP_B9_ERASE_CMD_4(DT_INST_PROP(0, sfdp_basic_9)) },
 };
 
 static struct spi_nor_data spi_nor_memory_data;

@@ -86,7 +86,6 @@
 		reg = <0>;
 		spi-max-frequency = <80000000>;
 		size = <0x800000>;
-		has-be32k;
 		jedec-id = [c2 28 14];
 	};
 };
