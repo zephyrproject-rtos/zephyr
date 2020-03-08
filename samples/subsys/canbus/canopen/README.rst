@@ -73,14 +73,29 @@ python-can backend as follows:
 
    pip3 install --user canopen python-can
 
-Next, bring up the CAN interface on the test PC. On GNU/Linux, this
+Next, configure python-can to use your CAN adapter through its
+configuration file. On GNU/Linux, the configuration looks similar to
+this:
+
+.. code-block:: console
+
+   cat << EOF > ~/.canrc
+   [default]
+   interface = socketcan
+   channel = can0
+   bitrate = 125000
+   EOF
+
+Please refer to the `python-can`_ documentation for further details
+and instructions.
+
+Finally, bring up the CAN interface on the test PC. On GNU/Linux, this
 can be done as follows:
 
 .. code-block:: console
 
    sudo ip link set can0 type can bitrate 125000 restart-ms 100
    sudo ip link set up can0
-
 
 To better understand the communication taking place in the following
 examples, you can monitor the CAN traffic from the host PC. On
@@ -109,8 +124,7 @@ accomplished using the following Python code:
 
    network = canopen.Network()
 
-   # 'can0' and 'socketcan' is for GNU/Linux, please see the python-can documentation for other platforms:
-   network.connect(channel='can0', bustype='socketcan')
+   network.connect()
 
    node = network.add_node(NODEID, EDS)
 
@@ -157,8 +171,7 @@ name) can be accomplished using the following Python code:
 
    network = canopen.Network()
 
-   # 'can0' and 'socketcan' is for GNU/Linux, please see the python-can documentation for other platforms:
-   network.connect(channel='can0', bustype='socketcan')
+   network.connect()
 
    node = network.add_node(NODEID, EDS)
    name = node.sdo['Manufacturer device name']
@@ -191,8 +204,7 @@ can be accomplished using the following Python code:
 
    network = canopen.Network()
 
-   # 'can0' and 'socketcan' is for GNU/Linux, please see the python-can documentation for other platforms:
-   network.connect(channel='can0', bustype='socketcan')
+   network.connect()
 
    node = network.add_node(NODEID, EDS)
    heartbeat = node.sdo['Producer heartbeat time']
@@ -265,8 +277,7 @@ press counter) can be accomplished using the following Python code:
 
    network = canopen.Network()
 
-   # 'can0' and 'socketcan' is for GNU/Linux, please see the python-can documentation for other platforms:
-   network.connect(channel='can0', bustype='socketcan')
+   network.connect()
 
    node = network.add_node(NODEID, EDS)
    button = node.sdo['Button press counter']
@@ -345,6 +356,9 @@ Sheet (EDS) file
 
 .. _CANopen for Python:
    https://github.com/christiansandberg/canopen
+
+.. _python-can:
+   https://python-can.readthedocs.io/
 
 .. _can-utils:
    https://github.com/linux-can/can-utils
