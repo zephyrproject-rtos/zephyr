@@ -251,7 +251,6 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 				net_eth_carrier_on(dev_data->iface);
 			}
 			while ((pkt = eth_rx(dev)) != NULL) {
-				net_pkt_print_frags(pkt);
 				res = net_recv_data(dev_data->iface, pkt);
 				if (res < 0) {
 					eth_stats_update_errors_rx(dev_data->iface);
