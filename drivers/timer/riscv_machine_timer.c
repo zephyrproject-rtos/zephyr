@@ -8,8 +8,15 @@
 #include <spinlock.h>
 #include <soc.h>
 
+#if CONFIG_RISCV_MACHINE_TIMER_CLOCK_FREQUENCY == 0
 #define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+#else
+#define CYC_PER_TICK ((uint32_t)((uint64_t) \
+				 CONFIG_RISCV_MACHINE_TIMER_CLOCK_FREQUENCY \
+				 / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+#endif
+
 #define MAX_CYC INT_MAX
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
@@ -145,5 +152,16 @@ uint32_t sys_clock_elapsed(void)
 
 uint32_t sys_clock_cycle_get_32(void)
 {
+#if CONFIG_RISCV_MACHINE_TIMER_CLOCK_FREQUENCY == 0
 	return (uint32_t)mtime();
+#else
+	/* Convert mtime() to system clock cycle count.          */
+	/* Calculating with consideration for avoiding overflow. */
+	return (uint32_t)
+		((mtime() / CONFIG_RISCV_MACHINE_TIMER_CLOCK_FREQUENCY
+			  * sys_clock_hw_cycles_per_sec()) +
+		 (mtime() % CONFIG_RISCV_MACHINE_TIMER_CLOCK_FREQUENCY)
+			  * sys_clock_hw_cycles_per_sec()
+			  / CONFIG_RISCV_MACHINE_TIMER_CLOCK_FREQUENCY);
+#endif
 }
