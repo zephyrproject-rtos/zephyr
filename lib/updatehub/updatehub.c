@@ -687,6 +687,12 @@ enum updatehub_response updatehub_probe(void)
 			goto cleanup;
 		}
 
+		if (metadata_any_boards.objects[1].objects.sha256sum >
+		    TC_SHA256_BLOCK_SIZE) {
+			ctx.code_status = UPDATEHUB_METADATA_ERROR;
+			goto cleanup;
+		}
+
 		memcpy(update_info.sha256sum_image,
 		       metadata_any_boards.objects[1].objects.sha256sum,
 		       strlen(metadata_any_boards.objects[1].objects.sha256sum));
@@ -698,6 +704,13 @@ enum updatehub_response updatehub_probe(void)
 				UPDATEHUB_INCOMPATIBLE_HARDWARE;
 			goto cleanup;
 		}
+
+		if (metadata_some_boards.objects[1].objects.sha256sum >
+		    TC_SHA256_BLOCK_SIZE) {
+			ctx.code_status = UPDATEHUB_METADATA_ERROR;
+			goto cleanup;
+		}
+
 		memcpy(update_info.sha256sum_image,
 		       metadata_some_boards.objects[1].objects.sha256sum,
 		       strlen(metadata_some_boards.objects[1]
