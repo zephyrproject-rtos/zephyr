@@ -116,7 +116,7 @@ static inline u32_t ll_func_spi_is_busy(SPI_TypeDef *spi)
 /* Header is compiled first, this switch avoid the compiler to lookup for
  * non-existing LL FIFO functions for SoC without SPI FIFO
  */
-#ifdef CONFIG_SPI_STM32_HAS_FIFO
+#ifdef DT_COMPAT_ST_STM32_SPI_FIFO
 static inline void ll_func_set_fifo_threshold_8bit(SPI_TypeDef *spi)
 {
 #ifdef CONFIG_SOC_SERIES_STM32MP1X

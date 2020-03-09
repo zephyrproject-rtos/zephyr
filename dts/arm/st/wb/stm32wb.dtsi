@@ -168,7 +168,7 @@
 		};
 
 		spi1: spi@40013000 {
-			compatible = "st,stm32-spi-fifo";
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
@@ -179,7 +179,7 @@
 		};
 
 		spi2: spi@40003800 {
-			compatible = "st,stm32-spi-fifo";
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
