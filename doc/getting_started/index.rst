@@ -42,7 +42,7 @@ tools. First, make sure your development system OS is updated:
 
    .. group-tab:: macOS
 
-      On macOS Mojave, you can manually check for updates by choosing
+      On macOS Mojave or later, you can manually check for updates by choosing
       System Preferences from the Apple menu, then clicking Software Update (and
       click Update Now if there are). For other macOS versions, see the
       `Update macOS topic in Apple support
