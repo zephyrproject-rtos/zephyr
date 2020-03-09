@@ -36,13 +36,11 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 if(CONFIG_UART_NS16550)
   zephyr_library_sources(uart_ns16550.c)
   foreach(NUM RANGE 0 3)
-    if (CONFIG_UART_NS16550_PORT_${NUM})
-      configure_file(
-        uart_ns16550_port_x.h
-        ${PROJECT_BINARY_DIR}/include/generated/uart_ns16550_port_${NUM}.h
-        @ONLY
-        )
-    endif()
+    configure_file(
+      uart_ns16550_port_x.h
+      ${PROJECT_BINARY_DIR}/include/generated/uart_ns16550_port_${NUM}.h
+      @ONLY
+      )
   endforeach(NUM)
 endif()
 

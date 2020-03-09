@@ -158,7 +158,7 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(portf, MCHP_GPIO_250, MCHP_GPIO_CTRL_MUX_F0);
 
 	/* See table 2-4 from the data sheet for pin multiplexing*/
-#ifdef CONFIG_UART_NS16550_PORT_1
+#ifdef DT_NS16550_400F2800_BASE_ADDRESS
 	/* Set muxing, for UART 1 TX/RX and power up */
 	mchp_pcr_periph_slp_ctrl(PCR_UART1, MCHP_PCR_SLEEP_DIS);
 

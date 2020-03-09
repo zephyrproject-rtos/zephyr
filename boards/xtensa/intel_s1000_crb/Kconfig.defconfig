@@ -85,19 +85,12 @@ config USB_DEVICE_PRODUCT
 
 endif # USB
 
-if UART_NS16550
-
-config UART_NS16550_PORT_0
-	default y
-
-if UART_NS16550_PORT_0
+if SERIAL
 
 config UART_INTERRUPT_DRIVEN
 	default y
 
-endif # UART_NS16550_PORT_0
-
-endif # UART_NS16550
+endif # SERIAL
 
 if I2C
 

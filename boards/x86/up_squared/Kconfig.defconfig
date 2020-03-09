@@ -8,16 +8,6 @@ config BOARD
 config BUILD_OUTPUT_STRIPPED
 	default y
 
-if UART_NS16550
-
-config UART_NS16550_PORT_0
-	default y
-
-config UART_NS16550_PORT_1
-	default y
-
-endif # UART_NS16550
-
 if I2C
 
 config I2C_0

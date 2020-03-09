@@ -23,11 +23,4 @@ config ALTERA_AVALON_MSGDMA
 	def_bool y
 	depends on DMA_NIOS2_MSGDMA
 
-if UART_NS16550
-
-config UART_NS16550_PORT_0
-	default y
-
-endif # UART_NS16550
-
 endif # SOC_NIOS2F_ZEPHYR

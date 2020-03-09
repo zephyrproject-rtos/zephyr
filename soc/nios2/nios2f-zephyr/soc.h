@@ -10,8 +10,7 @@
 
 #include <system.h>
 
-#define DT_UART_NS16550_PORT_0_BASE_ADDR	A_16550_UART_0_BASE
-#define DT_UART_NS16550_PORT_0_IRQ		A_16550_UART_0_IRQ
-#define DT_UART_NS16550_PORT_0_CLK_FREQ	A_16550_UART_0_FREQ
+/* Move to DTS once interrupt controller is defined there */
+#define DT_INST_0_NS16550_IRQ_0		A_16550_UART_0_IRQ
 
 #endif

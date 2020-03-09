@@ -18,14 +18,14 @@ static int uart_ns16550_init(struct device *dev)
 	/* On ARC EM Starter kit board,
 	 * send the UART the command to clear the interrupt
 	 */
-#ifdef CONFIG_UART_NS16550_PORT_0
-	sys_write32(0, DT_UART_NS16550_PORT_0_BASE_ADDR+0x4);
-	sys_write32(0, DT_UART_NS16550_PORT_0_BASE_ADDR+0x10);
-#endif /* CONFIG_UART_NS16550_PORT_0 */
-#ifdef CONFIG_UART_NS16550_PORT_1
-	sys_write32(0, DT_UART_NS16550_PORT_1_BASE_ADDR+0x4);
-	sys_write32(0, DT_UART_NS16550_PORT_1_BASE_ADDR+0x10);
-#endif /* CONFIG_UART_NS16550_PORT_1 */
+#ifdef DT_INST_0_NS16650
+	sys_write32(0, DT_INST_0_NS16550_BASE_ADDRESS+0x4);
+	sys_write32(0, DT_INST_0_NS16550_BASE_ADDRESS+0x10);
+#endif /* DT_INST_0_NS16650 */
+#ifdef DT_INST_1_NS16650
+	sys_write32(0, DT_INST_1_NS16550_BASE_ADDRESS+0x4);
+	sys_write32(0, DT_INST_1_NS16550_BASE_ADDRESS+0x10);
+#endif /* DT_INST_1_NS16650 */
 
 	return 0;
 }
