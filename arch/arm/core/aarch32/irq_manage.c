@@ -142,6 +142,8 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 
 #endif
 
+void z_arm_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
+
 /**
  *
  * @brief Spurious interrupt handler
@@ -149,14 +151,13 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
  * Installed in all _sw_isr_table slots at boot time. Throws an error if
  * called.
  *
- * See z_arm_reserved().
- *
  * @return N/A
  */
 void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
-	z_arm_reserved();
+
+	z_arm_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
 }
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
