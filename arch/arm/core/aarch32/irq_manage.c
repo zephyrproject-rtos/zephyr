@@ -146,7 +146,7 @@ void z_arm_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
  *
  * @brief Spurious interrupt handler
  *
- * Installed in all dynamic interrupt slots at boot time. Throws an error if
+ * Installed in all _sw_isr_table slots at boot time. Throws an error if
  * called.
  *
  * See z_arm_reserved().
