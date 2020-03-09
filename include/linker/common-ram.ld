@@ -1,10 +1,5 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
-	SECTION_DATA_PROLOGUE(initlevel,,)
-	{
-		DEVICE_INIT_SECTIONS()
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_DATA_PROLOGUE(sw_isr_table,,)
 	{
@@ -18,12 +13,10 @@
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
-	/* verify we don't have rogue .init_<something> initlevel sections */
-	SECTION_DATA_PROLOGUE(initlevel_error,,)
+	SECTION_DATA_PROLOGUE(devices,,)
 	{
-		DEVICE_INIT_UNDEFINED_SECTION()
-	}
-	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
+		DEVICE_SECTIONS()
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(initshell,,)
 	{

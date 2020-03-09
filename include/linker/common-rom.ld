@@ -1,5 +1,10 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+	SECTION_PROLOGUE(initlevel,,)
+	{
+		INIT_SECTIONS()
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_PROLOGUE(sw_isr_table,,)
 	{
@@ -12,6 +17,14 @@
 		*(_SW_ISR_TABLE_SECTION_NAME)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
+
+	/* verify we don't have rogue .init_<something> initlevel sections */
+	SECTION_PROLOGUE(initlevel_error,,)
+	{
+		INIT_UNDEFINED_SECTION()
+	}
+	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
+
 #ifdef CONFIG_CPLUSPLUS
 	SECTION_PROLOGUE(_CTOR_SECTION_NAME,,)
 	{
@@ -64,14 +77,6 @@
 		__app_shmem_regions_start = .;
 		KEEP(*(SORT(".app_regions.*")));
 		__app_shmem_regions_end = .;
-	} GROUP_LINK_IN(ROMABLE_REGION)
-
-	SECTION_PROLOGUE (devconfig,,)
-	{
-		__devconfig_start = .;
-		*(".devconfig.*")
-		KEEP(*(SORT_BY_NAME(".devconfig*")))
-		__devconfig_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	SECTION_PROLOGUE(net_l2,,)

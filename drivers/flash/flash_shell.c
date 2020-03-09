@@ -17,8 +17,8 @@
 #define BUF_ARRAY_CNT 16
 #define TEST_ARR_SIZE 0x1000
 
-extern struct device __device_init_start[];
-extern struct device __device_init_end[];
+extern struct device __device_start[];
+extern struct device __device_end[];
 
 static u8_t test_arr[TEST_ARR_SIZE];
 
@@ -229,7 +229,7 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->help  = NULL;
 	entry->subcmd = &dsub_device_name;
 
-	for (dev = __device_init_start; dev != __device_init_end; dev++) {
+	for (dev = __device_start; dev != __device_end; dev++) {
 		if ((dev->driver_api != NULL) &&
 		strcmp(dev->config->name, "") && (dev->config->name != NULL)) {
 			if (idx == device_idx) {

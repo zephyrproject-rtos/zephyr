@@ -9,16 +9,19 @@
 #include <sys/atomic.h>
 #include <syscall_handler.h>
 
-extern struct device __device_init_start[];
-extern struct device __device_PRE_KERNEL_1_start[];
-extern struct device __device_PRE_KERNEL_2_start[];
-extern struct device __device_POST_KERNEL_start[];
-extern struct device __device_APPLICATION_start[];
-extern struct device __device_init_end[];
+extern const struct init_entry __init_start[];
+extern const struct init_entry __init_PRE_KERNEL_1_start[];
+extern const struct init_entry __init_PRE_KERNEL_2_start[];
+extern const struct init_entry __init_POST_KERNEL_start[];
+extern const struct init_entry __init_APPLICATION_start[];
+extern const struct init_entry __init_end[];
 
 #ifdef CONFIG_SMP
-extern struct device __device_SMP_start[];
+extern const struct init_entry __init_SMP_start[];
 #endif
+
+extern struct device __device_start[];
+extern struct device __device_end[];
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 extern u32_t __device_busy_start[];
@@ -27,71 +30,72 @@ extern u32_t __device_busy_end[];
 #endif
 
 /**
- * @brief Execute all the device initialization functions at a given level
+ * @brief Execute all the init entry initialization functions at a given level
  *
- * @details Invokes the initialization routine for each device object
- * created by the DEVICE_INIT() macro using the specified level.
- * The linker script places the device objects in memory in the order
+ * @details Invokes the initialization routine for each init entry object
+ * created by the INIT_ENTRY_DEFINE() macro using the specified level.
+ * The linker script places the init entry objects in memory in the order
  * they need to be invoked, with symbols indicating where one level leaves
  * off and the next one begins.
  *
  * @param level init level to run.
  */
-void z_sys_device_do_config_level(s32_t level)
+void z_sys_init_run_level(s32_t level)
 {
-	struct device *info;
-	static struct device *config_levels[] = {
-		__device_PRE_KERNEL_1_start,
-		__device_PRE_KERNEL_2_start,
-		__device_POST_KERNEL_start,
-		__device_APPLICATION_start,
+	static const struct init_entry *levels[] = {
+		__init_PRE_KERNEL_1_start,
+		__init_PRE_KERNEL_2_start,
+		__init_POST_KERNEL_start,
+		__init_APPLICATION_start,
 #ifdef CONFIG_SMP
-		__device_SMP_start,
+		__init_SMP_start,
 #endif
 		/* End marker */
-		__device_init_end,
+		__init_end,
 	};
+	const struct init_entry *entry;
 
-	for (info = config_levels[level]; info < config_levels[level+1];
-								info++) {
+	for (entry = levels[level]; entry < levels[level+1]; entry++) {
+		struct device *dev = entry->dev;
 		int retval;
-		const struct device_config *device_conf = info->config;
 
-		retval = device_conf->init(info);
+		if (dev != NULL) {
+			z_object_init(dev);
+		}
+
+		retval = entry->init(dev);
 		if (retval != 0) {
-			/* Initialization failed. Clear the API struct so that
-			 * device_get_binding() will not succeed for it.
-			 */
-			info->driver_api = NULL;
-		} else {
-			z_object_init(info);
+			if (dev) {
+				/* Initialization failed. Clear the API struct
+				 * so that device_get_binding() will not succeed
+				 * for it.
+				 */
+				dev->driver_api = NULL;
+			}
 		}
 	}
 }
 
 struct device *z_impl_device_get_binding(const char *name)
 {
-	struct device *info;
+	struct device *dev;
 
 	/* Split the search into two loops: in the common scenario, where
 	 * device names are stored in ROM (and are referenced by the user
 	 * with CONFIG_* macros), only cheap pointer comparisons will be
-	 * performed.  Reserve string comparisons for a fallback.
+	 * performed. Reserve string comparisons for a fallback.
 	 */
-	for (info = __device_init_start; info != __device_init_end; info++) {
-		if ((info->driver_api != NULL) &&
-		    (info->config->name == name)) {
-			return info;
+	for (dev = __device_start; dev != __device_end; dev++) {
+		if ((dev->driver_api != NULL) &&
+		    (dev->name == name)) {
+			return dev;
 		}
 	}
 
-	for (info = __device_init_start; info != __device_init_end; info++) {
-		if (info->driver_api == NULL) {
-			continue;
-		}
-
-		if (strcmp(name, info->config->name) == 0) {
-			return info;
+	for (dev = __device_start; dev != __device_end; dev++) {
+		if ((dev->driver_api != NULL) &&
+		    (strcmp(name, dev->name) == 0)) {
+			return dev;
 		}
 	}
 
@@ -126,8 +130,8 @@ int device_pm_control_nop(struct device *unused_device,
 void device_list_get(struct device **device_list, int *device_count)
 {
 
-	*device_list = __device_init_start;
-	*device_count = __device_init_end - __device_init_start;
+	*device_list = __device_start;
+	*device_count = __device_end - __device_start;
 }
 
 
@@ -146,7 +150,7 @@ int device_any_busy_check(void)
 int device_busy_check(struct device *chk_dev)
 {
 	if (atomic_test_bit((const atomic_t *)__device_busy_start,
-				 (chk_dev - __device_init_start))) {
+			    (chk_dev - __device_start))) {
 		return -EBUSY;
 	}
 	return 0;
@@ -158,7 +162,7 @@ void device_busy_set(struct device *busy_dev)
 {
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	atomic_set_bit((atomic_t *) __device_busy_start,
-				 (busy_dev - __device_init_start));
+		       (busy_dev - __device_start));
 #else
 	ARG_UNUSED(busy_dev);
 #endif
@@ -168,7 +172,7 @@ void device_busy_clear(struct device *busy_dev)
 {
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	atomic_clear_bit((atomic_t *) __device_busy_start,
-				 (busy_dev - __device_init_start));
+			 (busy_dev - __device_start));
 #else
 	ARG_UNUSED(busy_dev);
 #endif
