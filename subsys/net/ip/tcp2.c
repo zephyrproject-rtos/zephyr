@@ -883,40 +883,20 @@ next_state:
 		break;
 	case TCP_ESTABLISHED:
 		/* full-close */
-		if (FL(&fl, ==, (FIN | ACK), th_seq(th) == conn->ack)) {
+		if (th && FL(&fl, ==, (FIN | ACK), th_seq(th) == conn->ack)) {
 			conn_ack(conn, + 1);
 			tcp_out(conn, ACK);
 			next = TCP_CLOSE_WAIT;
 			break;
 		}
-		if (FL(&fl, &, PSH, th_seq(th) < conn->ack)) {
-			tcp_out(conn, ACK); /* peer has resent */
-			break;
-		}
-		if (FL(&fl, &, PSH, th_seq(th) > conn->ack)) {
-			tcp_out(conn, RST);
-			next = TCP_CLOSED;
-			break;
-		}
-		/* Non piggybacking version for clarity now */
-		if (FL(&fl, &, PSH, th_seq(th) == conn->ack)) {
-			ssize_t len = tcp_data_get(conn, pkt);
-
-			if (len) {
+		if (len) {
+			if (th_seq(th) == conn->ack) {
+				tcp_data_get(conn, pkt);
 				conn_ack(conn, + len);
 				tcp_out(conn, ACK);
-
-				if (tcp_echo) { /* TODO: Out of the loop? */
-					tcp_out(conn, PSH, &len);
-					conn_seq(conn, + len);
-				}
-			} else {
-				tcp_out(conn, RST);
-				next = TCP_CLOSED;
-				break;
+			} else if (th_seq(th) < conn->ack) {
+				tcp_out(conn, ACK); /* peer has resent */
 			}
-		}
-		if (FL(&fl, ==, ACK, th_ack(th) == conn->seq)) {
 		}
 		break; /* TODO: Catch all the rest here */
 	case TCP_CLOSE_WAIT:
