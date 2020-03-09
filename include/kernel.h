@@ -1054,6 +1054,43 @@ __syscall void k_thread_abort(k_tid_t thread);
  */
 __syscall void k_thread_start(k_tid_t thread);
 
+extern k_ticks_t z_timeout_expires(struct _timeout *timeout);
+extern k_ticks_t z_timeout_remaining(struct _timeout *timeout);
+
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+
+/**
+ * @brief Get time when a thread wakes up, in ticks
+ *
+ * This routine computes the system uptime when a waiting thread next
+ * executes, in units of system ticks.  If the thread is not waiting,
+ * it returns current system time.
+ */
+__syscall k_ticks_t k_thread_timeout_expires_ticks(struct k_thread *t);
+
+static inline k_ticks_t z_impl_k_thread_timeout_expires_ticks(
+						struct k_thread *t)
+{
+	return z_timeout_expires(&t->base.timeout);
+}
+
+/**
+ * @brief Get time remaining before a thread wakes up, in ticks
+ *
+ * This routine computes the time remaining before a waiting thread
+ * next executes, in units of system ticks.  If the thread is not
+ * waiting, it returns zero.
+ */
+__syscall k_ticks_t k_thread_timeout_remaining_ticks(struct k_thread *t);
+
+static inline k_ticks_t z_impl_k_thread_timeout_remaining_ticks(
+						struct k_thread *t)
+{
+	return z_timeout_remaining(&t->base.timeout);
+}
+
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
+
 /**
  * @cond INTERNAL_HIDDEN
  */
@@ -1924,7 +1961,38 @@ __syscall u32_t k_timer_status_get(struct k_timer *timer);
  */
 __syscall u32_t k_timer_status_sync(struct k_timer *timer);
 
-extern s32_t z_timeout_remaining(struct _timeout *timeout);
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+
+/**
+ * @brief Get next expiration time of a timer, in ticks
+ *
+ * This routine returns the future system uptime reached at the next
+ * time of expiration of the timer, in units of system ticks.  If the
+ * timer is not running, current system time is returned.
+ *
+ * @param timer The timer object
+ * @return Uptime of expiration, in ticks
+ */
+__syscall k_ticks_t k_timer_expires_ticks(struct k_timer *timer);
+
+static inline k_ticks_t z_impl_k_timer_expires_ticks(struct k_timer *timer)
+{
+	return z_timeout_expires(&timer->timeout);
+}
+
+/**
+ * @brief Get time remaining before a timer next expires, in ticks
+ *
+ * This routine computes the time remaining before a running timer
+ * next expires, in units of system ticks.  If the timer is not
+ * running, it returns zero.
+ */
+__syscall k_ticks_t k_timer_remaining_ticks(struct k_timer *timer);
+
+static inline k_ticks_t z_impl_k_timer_remaining_ticks(struct k_timer *timer)
+{
+	return z_timeout_remaining(&timer->timeout);
+}
 
 /**
  * @brief Get time remaining before a timer next expires.
@@ -1936,13 +2004,12 @@ extern s32_t z_timeout_remaining(struct _timeout *timeout);
  *
  * @return Remaining time (in milliseconds).
  */
-__syscall u32_t k_timer_remaining_get(struct k_timer *timer);
-
-static inline u32_t z_impl_k_timer_remaining_get(struct k_timer *timer)
+static inline u32_t k_timer_remaining_get(struct k_timer *timer)
 {
-	const s32_t ticks = z_timeout_remaining(&timer->timeout);
-	return (ticks > 0) ? (u32_t)k_ticks_to_ms_floor64(ticks) : 0U;
+	return k_ticks_to_ms_floor32(k_timer_remaining_ticks(timer));
 }
+
+#endif /* CONFIG_SYS_CLOCK_EXISTS */
 
 /**
  * @brief Associate user-specific data with a timer.
@@ -3380,6 +3447,42 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
 }
 
 /**
+ * @brief Get time when a delayed work will be scheduled
+ *
+ * This routine computes the system uptime when a delayed work gets
+ * executed. If the delayed work is not waiting to be scheduled, it
+ * returns current system time.
+ *
+ * @param work     Delayed work item.
+ *
+ * @return Uptime of execution (in ticks).
+ * @req K-DWORK-001
+ */
+static inline k_ticks_t k_delayed_work_expires_ticks(
+				       struct k_delayed_work *work)
+{
+	return z_timeout_expires(&work->timeout);
+}
+
+/**
+ * @brief Get time remaining before a delayed work gets scheduled, in ticks
+ *
+ * This routine computes the time remaining before a delayed work gets
+ * executed. If the delayed work is not waiting to be scheduled, it
+ * returns zero.
+ *
+ * @param work     Delayed work item.
+ *
+ * @return Remaining time (in ticks).
+ * @req K-DWORK-001
+ */
+static inline k_ticks_t k_delayed_work_remaining_ticks(
+				       struct k_delayed_work *work)
+{
+	return z_timeout_remaining(&work->timeout);
+}
+
+/**
  * @brief Get time remaining before a delayed work gets scheduled.
  *
  * This routine computes the (approximate) time remaining before a
@@ -3393,7 +3496,7 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
  */
 static inline s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 {
-	return k_ticks_to_ms_floor64(z_timeout_remaining(&work->timeout));
+	return k_ticks_to_ms_floor32(z_timeout_remaining(&work->timeout));
 }
 
 /**

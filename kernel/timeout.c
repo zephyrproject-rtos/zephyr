@@ -139,24 +139,45 @@ int z_abort_timeout(struct _timeout *to)
 	return ret;
 }
 
-s32_t z_timeout_remaining(struct _timeout *timeout)
+/* must be locked */
+static k_ticks_t timeout_rem(struct _timeout *timeout)
 {
-	s32_t ticks = 0;
+	k_ticks_t ticks = 0;
 
 	if (z_is_inactive_timeout(timeout)) {
 		return 0;
 	}
 
-	LOCKED(&timeout_lock) {
-		for (struct _timeout *t = first(); t != NULL; t = next(t)) {
-			ticks += t->dticks;
-			if (timeout == t) {
-				break;
-			}
+	for (struct _timeout *t = first(); t != NULL; t = next(t)) {
+		ticks += t->dticks;
+		if (timeout == t) {
+			break;
 		}
 	}
 
 	return ticks - elapsed();
+}
+
+k_ticks_t z_timeout_remaining(struct _timeout *timeout)
+{
+	k_ticks_t ticks = 0;
+
+	LOCKED(&timeout_lock) {
+		ticks = timeout_rem(timeout);
+	}
+
+	return ticks;
+}
+
+k_ticks_t z_timeout_expires(struct _timeout *timeout)
+{
+	k_ticks_t ticks = 0;
+
+	LOCKED(&timeout_lock) {
+		ticks = curr_tick + timeout_rem(timeout);
+	}
+
+	return ticks;
 }
 
 s32_t z_get_next_timeout_expiry(void)

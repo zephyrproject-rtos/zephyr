@@ -58,7 +58,7 @@ s32_t z_get_next_timeout_expiry(void);
 
 void z_set_timeout_expiry(s32_t ticks, bool idle);
 
-s32_t z_timeout_remaining(struct _timeout *timeout);
+k_ticks_t z_timeout_remaining(struct _timeout *timeout);
 
 #else
 

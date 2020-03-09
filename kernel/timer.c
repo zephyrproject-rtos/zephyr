@@ -236,12 +236,19 @@ static inline u32_t z_vrfy_k_timer_status_sync(struct k_timer *timer)
 }
 #include <syscalls/k_timer_status_sync_mrsh.c>
 
-static inline u32_t z_vrfy_k_timer_remaining_get(struct k_timer *timer)
+static inline k_ticks_t z_vrfy_k_timer_remaining_ticks(struct k_timer *timer)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(timer, K_OBJ_TIMER));
-	return z_impl_k_timer_remaining_get(timer);
+	return z_impl_k_timer_remaining_ticks(timer);
 }
-#include <syscalls/k_timer_remaining_get_mrsh.c>
+#include <syscalls/k_timer_remaining_ticks_mrsh.c>
+
+static inline k_ticks_t z_vrfy_k_timer_expires_ticks(struct k_timer *timer)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(timer, K_OBJ_TIMER));
+	return z_impl_k_timer_expires_ticks(timer);
+}
+#include <syscalls/k_timer_expires_ticks_mrsh.c>
 
 static inline void *z_vrfy_k_timer_user_data_get(struct k_timer *timer)
 {
