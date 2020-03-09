@@ -83,10 +83,10 @@ manifest:
       revision: cf7020eb4c7ef93319f2d6d2403a21e12a879bf6
       path: modules/crypto/mbedtls
     - name: mcuboot
-      revision: fab12e052437a68487b647fcfba7069801657c1b
+      revision: 1084100cf4d3c17c4e212f167e3fc0199aa898de
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: dd3b98f28842ecafaa9ae9c9a3ab365cdc8ea6d5
+      revision: dcf32c7f340a10e6e6482feb311cb4fa71953fd3
       path: modules/lib/mcumgr
     - name: net-tools
       revision: 1080094bc246357c6c35e80e8b2d5d0ce7e0d963
@@ -108,7 +108,7 @@ manifest:
       path: modules/debug/segger
     - name: tinycbor
       path: modules/lib/tinycbor
-      revision: 3cb8555348358d437893d3ab8e8de4e3b916afae
+      revision: 40daca97b478989884bffb5226e9ab73ca54b8c4
     - name: tinycrypt
       path: modules/crypto/tinycrypt
       revision: 3e9a49d2672ec01435ffbf0d788db6d95ef28de0
