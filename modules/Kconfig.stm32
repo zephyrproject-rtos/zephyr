@@ -127,6 +127,11 @@ config USE_STM32_HAL_ETH
 	help
 	  Enable STM32Cube Ethernet (ETH) HAL module driver
 
+config USE_STM32_HAL_ETH_EX
+	bool
+	help
+	  Enable STM32Cube Extended Ethernet (ETH) HAL module driver
+
 config USE_STM32_HAL_EXTI
 	bool
 	help
