@@ -1549,6 +1549,58 @@ const char *k_thread_state_str(k_tid_t thread_id);
 #define K_NO_WAIT Z_TIMEOUT_NO_WAIT
 
 /**
+ * @brief Generate timeout delay from nanoseconds.
+ *
+ * This macro generates a timeout delay that instructs a kernel API to
+ * wait up to @a t nanoseconds to perform the requested operation.
+ * Note that timer precision is limited to the tick rate, not the
+ * requested value.
+ *
+ * @paramt Duration in nanoseconds.
+ *
+ * @return Timeout delay value.
+ */
+#define K_NSEC(t)     Z_TIMEOUT_NS(t)
+
+/**
+ * @brief Generate timeout delay from microseconds.
+ *
+ * This macro generates a timeout delay that instructs a kernel API
+ * to wait up to @a t microseconds to perform the requested operation.
+ * Note that timer precision is limited to the tick rate, not the
+ * requested value.
+ *
+ * @paramt Duration in microseconds.
+ *
+ * @return Timeout delay value.
+ */
+#define K_USEC(t)     Z_TIMEOUT_US(t)
+
+/**
+ * @brief Generate timeout delay from cycles.
+ *
+ * This macro generates a timeout delay that instructs a kernel API
+ * to wait up to @a t cycles to perform the requested operation.
+ *
+ * @paramt Duration in cycles.
+ *
+ * @return Timeout delay value.
+ */
+#define K_CYC(t)     Z_TIMEOUT_CYC(t)
+
+/**
+ * @brief Generate timeout delay from system ticks.
+ *
+ * This macro generates a timeout delay that instructs a kernel API
+ * to wait up to @a t ticks to perform the requested operation.
+ *
+ * @paramt Duration in system ticks.
+ *
+ * @return Timeout delay value.
+ */
+#define K_TICKS(t)     Z_TIMEOUT_TICKS(t)
+
+/**
  * @brief Generate timeout delay from milliseconds.
  *
  * This macro generates a timeout delay that instructs a kernel API
@@ -1606,6 +1658,8 @@ const char *k_thread_state_str(k_tid_t thread_id);
  */
 #define K_FOREVER Z_FOREVER
 
+#ifdef CONFIG_TIMEOUT_64BIT
+
 /**
  * @brief Generates an absolute/uptime timeout value in ticks
  *
@@ -1631,6 +1685,50 @@ const char *k_thread_state_str(k_tid_t thread_id);
  * @return Timeout delay value
  */
 #define K_TIMEOUT_ABS_MS(t) K_TIMEOUT_ABS_TICKS(k_ms_to_ticks_ceil64(t))
+
+/**
+ * @brief Generates an absolute/uptime timeout value in us
+ *
+ * This macro generates a timeout delay that represents an expiration
+ * at the absolute uptime value specified, in microseconds.  That is,
+ * the timeout will expire immediately after the system uptime reaches
+ * the specified time.  Note that timer precision is limited by the
+ * system tick rate and not the requested timeout value.
+ *
+ * @param t Microsecond uptime value
+ * @return Timeout delay value
+ */
+#define K_TIMEOUT_ABS_US(t) K_TIMEOUT_ABS_TICKS(k_us_to_ticks_ceil64(t))
+
+/**
+ * @brief Generates an absolute/uptime timeout value in ns
+ *
+ * This macro generates a timeout delay that represents an expiration
+ * at the absolute uptime value specified, in nanoseconds.  That is,
+ * the timeout will expire immediately after the system uptime reaches
+ * the specified time.  Note that timer precision is limited by the
+ * system tick rate and not the requested timeout value.
+ *
+ * @param t Nanosecond uptime value
+ * @return Timeout delay value
+ */
+#define K_TIMEOUT_ABS_NS(t) K_TIMEOUT_ABS_TICKS(k_ns_to_ticks_ceil64(t))
+
+/**
+ * @brief Generates an absolute/uptime timeout value in cycles
+ *
+ * This macro generates a timeout delay that represents an expiration
+ * at the absolute uptime value specified, in cycles.  That is, the
+ * timeout will expire immediately after the system uptime reaches the
+ * specified time.  Note that timer precision is limited by the system
+ * tick rate and not the requested timeout value.
+ *
+ * @param t Cycle uptime value
+ * @return Timeout delay value
+ */
+#define K_TIMEOUT_ABS_CYC(t) K_TIMEOUT_ABS_TICKS(k_cyc_to_ticks_ceil64(t))
+
+#endif
 
 /**
  * @}
