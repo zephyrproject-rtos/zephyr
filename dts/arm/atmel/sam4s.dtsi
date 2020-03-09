@@ -71,6 +71,7 @@
 			compatible = "atmel,sam-spi";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			id = <0>;
 			reg = <0x40008000 0x4000>;
 			interrupts = <21 0>;
 			peripheral-id = <21>;
