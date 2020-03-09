@@ -499,6 +499,45 @@ static int uart_ns16550_init(struct device *dev)
 }
 
 /**
+ * @brief Determine if CTS/RTS emulation is needed.
+ *
+ * @param dev UART device struct
+ *
+ * @return 1 if emulation is active, 0 if no emulation needed.
+ */
+static int uart_ns16550_cts_rts_emul(struct device *dev)
+{
+#ifdef CONFIG_UART_NS16750
+	/* Automatic hardware flow control supported */
+	return 0;
+#else
+	return DEV_DATA(dev)->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS;
+#endif
+}
+
+/**
+ * @brief Determine if TX FIFO can be written to.
+ *
+ * @param dev UART device struct
+ *
+ * @return 1 if write is allowed, 0 if FIFO does not have space,
+ * or CTS emulation prevents it.
+ */
+static int uart_ns16550_can_tx(struct device *dev)
+{
+	/* Wait for transmitter to be ready to accept a character */
+	if ((INBYTE(LSR(dev)) & LSR_THRE) == 0) {
+		return 0;
+	}
+	/* Manual CTS check when hardware does not do it */
+	if (uart_ns16550_cts_rts_emul(dev) &&
+	    (INBYTE(MSR(dev)) & MSR_CTS) == 0) {
+		return 0;
+	}
+	return 1;
+}
+
+/**
  * @brief Poll the device for input.
  *
  * @param dev UART device struct
@@ -539,7 +578,7 @@ static void uart_ns16550_poll_out(struct device *dev,
 {
 	k_spinlock_key_t key = k_spin_lock(&DEV_DATA(dev)->lock);
 
-	while ((INBYTE(LSR(dev)) & LSR_THRE) == 0) {
+	while (!uart_ns16550_can_tx(dev)) {
 	}
 
 	OUTBYTE(THR(dev), c);
