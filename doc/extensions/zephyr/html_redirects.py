@@ -24,12 +24,19 @@ import os.path
 
 from sphinx.builders.html import StandaloneHTMLBuilder
 
-REDIRECT_TEMPLATE = """
+REDIRECT_TEMPLATE = r"""
 <html>
   <head>
     <meta http-equiv="refresh" content="0; url=$NEWURL" />
     <script>
-      window.location.href = "$NEWURL"
+     var id=window.location.href.split("#")[1];
+
+     if (id && (/^[a-zA-Z\:\/0-9\_\-\.]+$/.test(id))) {
+        window.location.href = "$NEWURL"+"#"+id;
+        }
+     else {
+        window.location.href = "$NEWURL";
+     };
     </script>
   </head>
   <body>
