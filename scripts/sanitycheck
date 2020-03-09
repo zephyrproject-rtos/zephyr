@@ -2654,7 +2654,7 @@ class TestSuite:
             instance_list = []
             for row in cr:
                 total_tests += 1
-                if row["passed"] == "True":
+                if row["status"] in ["passed", "skipped"]:
                     continue
                 test = row["test"]
                 platform = self.get_platform(row["platform"])
@@ -3170,7 +3170,7 @@ class TestSuite:
 
     def csv_report(self, filename):
         with open(filename, "wt") as csvfile:
-            fieldnames = ["test", "arch", "platform", "passed", "status",
+            fieldnames = ["test", "arch", "platform", "status",
                           "extra_args", "handler", "handler_time", "ram_size",
                           "rom_size"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
@@ -3182,11 +3182,8 @@ class TestSuite:
                            "extra_args": " ".join(instance.testcase.extra_args),
                            "handler": instance.platform.simulation}
 
-                if instance.status in ["failed", "timeout"]:
-                    rowdict["passed"] = False
-                    rowdict["status"] = instance.reason
-                else:
-                    rowdict["passed"] = True
+                rowdict["status"] = instance.status
+                if instance.status not in ["failed", "timeout"]:
                     if instance.handler:
                         rowdict["handler_time"] = instance.metrics.get("handler_time", 0)
                     ram_size = instance.metrics.get("ram_size", 0)
