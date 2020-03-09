@@ -208,7 +208,8 @@ static void eth_mcux_phy_enter_reset(struct eth_context *context)
 static void eth_mcux_phy_start(struct eth_context *context)
 {
 #ifdef CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG
-	LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
+	LOG_DBG("[%p] phy_state=%s", context->base,
+		phy_state_name(context->phy_state));
 #endif
 
 	context->enabled = true;
@@ -243,7 +244,8 @@ static void eth_mcux_phy_start(struct eth_context *context)
 void eth_mcux_phy_stop(struct eth_context *context)
 {
 #ifdef CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG
-	LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
+	LOG_DBG("[%p] phy_state=%s", context->base,
+		phy_state_name(context->phy_state));
 #endif
 
 	context->enabled = false;
@@ -279,7 +281,8 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	phy_speed_t phy_speed = kPHY_Speed100M;
 
 #ifdef CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG
-	LOG_DBG("phy_state=%s", phy_state_name(context->phy_state));
+	LOG_DBG("[%p] phy_state=%s", context->base,
+	phy_state_name(context->phy_state));
 #endif
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
@@ -767,7 +770,8 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 	}
 }
 
-#if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
+#if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC) || \
+    defined(CONFIG_ETH_MCUX_1_RANDOM_MAC)
 static void generate_random_mac(u8_t *mac_addr)
 {
 	u32_t entropy;
@@ -780,8 +784,11 @@ static void generate_random_mac(u8_t *mac_addr)
 	mac_addr[4] = entropy >> 16;
 	mac_addr[5] = entropy >> 0;
 }
-#elif defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC)
-static void generate_unique_mac(u8_t *mac_addr)
+#endif
+
+#if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC) || \
+    defined(CONFIG_ETH_MCUX_1_UNIQUE_MAC)
+static void generate_eth0_unique_mac(u8_t *mac_addr)
 {
 	/* Trivially "hash" up to 128 bits of MCU unique identifier */
 #ifdef CONFIG_SOC_SERIES_IMX_RT
@@ -799,7 +806,15 @@ static void generate_unique_mac(u8_t *mac_addr)
 }
 #endif
 
-static int eth_0_init(struct device *dev)
+#if defined(CONFIG_ETH_MCUX_1_UNIQUE_MAC)
+static void generate_eth1_unique_mac(u8_t *mac_addr)
+{
+	generate_eth0_unique_mac(mac_addr);
+	mac_addr[5]++;
+}
+#endif
+
+static int eth_init(struct device *dev)
 {
 	struct eth_context *context = dev->driver_data;
 	enet_config_t enet_config;
@@ -897,7 +912,7 @@ static int eth_0_init(struct device *dev)
 	/* handle PHY setup after SMI initialization */
 	eth_mcux_phy_setup(context);
 
-	LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
+	LOG_DBG("[%p] MAC %02x:%02x:%02x:%02x:%02x:%02x", context->base,
 		context->mac_addr[0], context->mac_addr[1],
 		context->mac_addr[2], context->mac_addr[3],
 		context->mac_addr[4], context->mac_addr[5]);
@@ -1067,7 +1082,7 @@ static struct eth_context eth_0_context = {
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
 #if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC)
-	.generate_mac = generate_unique_mac,
+	.generate_mac = generate_eth0_unique_mac,
 #endif
 #if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
 	.generate_mac = generate_random_mac,
@@ -1078,7 +1093,7 @@ static struct eth_context eth_0_context = {
 #endif
 };
 
-ETH_NET_DEVICE_INIT(eth_mcux_0, DT_ETH_MCUX_0_NAME, eth_0_init,
+ETH_NET_DEVICE_INIT(eth_mcux_0, DT_ETH_MCUX_0_NAME, eth_init,
 		    &eth_0_context, NULL, CONFIG_ETH_INIT_PRIORITY,
 		    &api_funcs, NET_ETH_MTU);
 
@@ -1114,6 +1129,47 @@ static void eth_0_config_func(void)
 	irq_enable(DT_IRQ_ETH_IEEE1588_TMR);
 #endif
 }
+
+#if defined(CONFIG_ETH_MCUX_1)
+static void eth_1_config_func(void);
+
+static struct eth_context eth_1_context = {
+	.base = ENET,
+	.config_func = eth_1_config_func,
+	.phy_addr = 0U,
+	.phy_duplex = kPHY_FullDuplex,
+	.phy_speed = kPHY_Speed100M,
+#if defined(CONFIG_ETH_MCUX_1_UNIQUE_MAC)
+	.generate_mac = generate_eth1_unique_mac,
+#endif
+#if defined(CONFIG_ETH_MCUX_1_RANDOM_MAC)
+	.generate_mac = generate_random_mac,
+#endif
+#if defined(CONFIG_ETH_MCUX_1_MANUAL_MAC)
+	.mac_addr = DT_ETH_MCUX_1_MAC,
+	.generate_mac = NULL,
+#endif
+};
+
+ETH_NET_DEVICE_INIT(eth_mcux_1, DT_ETH_MCUX_1_NAME, eth_init,
+		    &eth_1_context, NULL, CONFIG_ETH_INIT_PRIORITY,
+		    &api_funcs, NET_ETH_MTU);
+
+static void eth_1_config_func(void)
+{
+#if defined(DT_IRQ_ETH1_COMMON)
+	IRQ_CONNECT(DT_IRQ_ETH1_COMMON, DT_ETH_MCUX_1_IRQ_PRI,
+		    eth_mcux_dispacher_isr, DEVICE_GET(eth_mcux_1), 0);
+	irq_enable(DT_IRQ_ETH1_COMMON);
+#endif
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	IRQ_CONNECT(DT_IRQ_ETH1_IEEE1588_TMR, DT_ETH_MCUX_1_IRQ_PRI,
+		    eth_mcux_ptp_isr, DEVICE_GET(eth_mcux_1), 0);
+	irq_enable(DT_IRQ_ETH1_IEEE1588_TMR);
+#endif
+}
+#endif /* CONFIG_ETH_MCUX_1 */
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 struct ptp_context {
