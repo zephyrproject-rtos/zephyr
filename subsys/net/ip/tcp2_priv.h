@@ -153,7 +153,6 @@ struct tcp { /* TCP connection */
 	union tcp_endpoint *src;
 	union tcp_endpoint *dst;
 	u16_t win;
-	struct tcp_win *snd;
 	struct k_delayed_work send_timer;
 	sys_slist_t send_queue;
 	bool in_retransmission;
