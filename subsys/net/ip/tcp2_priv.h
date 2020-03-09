@@ -153,7 +153,6 @@ struct tcp { /* TCP connection */
 	union tcp_endpoint *src;
 	union tcp_endpoint *dst;
 	u16_t win;
-	struct tcp_win *rcv;
 	struct tcp_win *snd;
 	struct k_delayed_work send_timer;
 	sys_slist_t send_queue;
@@ -162,8 +161,6 @@ struct tcp { /* TCP connection */
 	struct net_if *iface;
 	net_tcp_accept_cb_t accept_cb;
 	atomic_t ref_count;
-	sys_slist_t rsv_bufs;
-	size_t rsv_bytes;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\
@@ -197,14 +194,7 @@ extern struct net_buf_pool tcp_nbufs;
 #else
 static struct net_buf *tcp_nbuf_alloc(struct tcp *conn, size_t len)
 {
-	struct net_buf *buf;
-
-	if (conn->rsv_bytes >= len) {
-		buf = tcp_slist(&conn->rsv_bufs, get, struct net_buf, node);
-		conn->rsv_bytes -= buf->size;
-	} else {
-		buf = net_buf_alloc_len(&tcp_nbufs, len, K_NO_WAIT);
-	}
+	struct net_buf *buf = net_buf_alloc_len(&tcp_nbufs, len, K_NO_WAIT);
 
 	NET_ASSERT(buf && buf->size >= len);
 
