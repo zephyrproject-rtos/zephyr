@@ -20,6 +20,12 @@ GNU ARM Embedded
       Windows, we'll assume you install into the directory
       :file:`C:\\gnu_arm_embedded`.
 
+   .. warning::
+
+      On macOS Catalina or later you might need to :ref:`change a security
+      policy <mac-gatekeeper>` for the toolchain to be able to run from the
+      terminal.
+
 #. :ref:`Set these environment variables <env_vars>`:
 
    - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``gnuarmemb``.
