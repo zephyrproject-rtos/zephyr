@@ -22,8 +22,13 @@ Security Vulnerability Related
 The following security vulnerabilities (CVEs) were addressed in this release:
 
   * Fix CVE-2020-10019
-  * Fix CVE-2020-10020
   * Fix CVE-2020-10021
+  * Fix CVE-2020-10023
+  * Fix CVE-2020-10024
+  * Fix CVE-2020-10026
+  * Fix CVE-2020-10027
+  * Fix CVE-2020-10028
+  * Fix CVE-2020-10058
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
