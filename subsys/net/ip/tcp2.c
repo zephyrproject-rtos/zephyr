@@ -223,18 +223,6 @@ static void tcp_send_queue_flush(struct tcp *conn)
 	}
 }
 
-static void tcp_win_free(struct tcp_win *w, const char *name)
-{
-	struct net_buf *buf;
-
-	while ((buf = tcp_slist(&w->bufs, get, struct net_buf, user_data))) {
-		NET_DBG("%s %p len=%d", name, buf, buf->len);
-		tcp_nbuf_unref(buf);
-	}
-
-	tcp_free(w);
-}
-
 static int tcp_conn_unref(struct tcp *conn)
 {
 	int ref_count = atomic_dec(&conn->ref_count) - 1;
@@ -352,15 +340,6 @@ static void tcp_send_timer_cancel(struct tcp *conn)
 	}
 }
 
-static struct tcp_win *tcp_win_new(void)
-{
-	struct tcp_win *w = tcp_calloc(1, sizeof(struct tcp_win));
-
-	sys_slist_init(&w->bufs);
-
-	return w;
-}
-
 static const char *tcp_state_to_str(enum tcp_state state, bool prefix)
 {
 	const char *s = NULL;
@@ -382,62 +361,6 @@ static const char *tcp_state_to_str(enum tcp_state state, bool prefix)
 	NET_ASSERT(s, "Invalid TCP state: %u", state);
 out:
 	return prefix ? s : (s + 4);
-}
-
-static void tcp_win_append(struct tcp *conn, struct tcp_win *win,
-			   const char *name, const void *buf, size_t len)
-{
-	ssize_t total = len, prev_len = win->len, size;
-	size_t off = 0;
-	struct net_buf *nb;
-
-	NET_ASSERT(total);
-
-	while (total) {
-		size = MIN(total, CONFIG_NET_BUF_DATA_SIZE);
-
-		nb = tcp_nbuf_alloc(conn, size);
-
-		memcpy(net_buf_add(nb, size), (u8_t *)buf + off, size);
-
-		sys_slist_append(&win->bufs, (void *)&nb->user_data);
-
-		total -= size;
-		win->len += size;
-		off += size;
-	}
-
-	NET_DBG("%s %zu->%zu byte(s)", name, prev_len, win->len);
-}
-
-static struct net_buf *tcp_win_peek(struct tcp *conn, struct tcp_win *w,
-					const char *name, size_t len)
-{
-	size_t total = len;
-	struct net_buf *in, *out;
-	sys_slist_t list;
-
-	sys_slist_init(&list);
-
-	in = tcp_slist(&w->bufs, peek_head, struct net_buf, user_data);
-
-	while (in && total > 0) {
-
-		out = tcp_nbuf_clone(in);
-
-		sys_slist_append(&list, (void *)out);
-
-		total -= out->len;
-
-		NET_DBG("total: %zd, out->len: %hu", total, out->len);
-
-		in = tcp_slist((sys_snode_t *)&in->user_data, peek_next,
-				struct net_buf, user_data);
-	}
-
-	NET_ASSERT(total == 0);
-
-	return (void *)sys_slist_peek_head(&list);
 }
 
 static const char *tcp_conn_state(struct tcp *conn, struct net_pkt *pkt)
@@ -613,31 +536,6 @@ static void ip_header_add(struct tcp *conn, struct net_pkt *pkt)
 		break;
 	}
 	}
-}
-
-static void tcp_chain_free(struct net_buf *head)
-{
-	struct net_buf *next;
-
-	for ( ; head; head = next) {
-		next = head->frags;
-		head->frags = NULL;
-		tcp_nbuf_unref(head);
-	}
-}
-
-static void tcp_chain(struct net_pkt *pkt, struct net_buf *head)
-{
-	struct net_buf *buf;
-
-	for ( ; head; head = head->frags) {
-		buf = net_pkt_get_frag(pkt, K_NO_WAIT);
-		memcpy(net_buf_add(buf, head->len), head->data, head->len);
-		NET_DBG("+%hu", head->len);
-		net_pkt_frag_add(pkt, buf);
-	}
-
-	NET_DBG("len=%zu byte(s)", net_pkt_get_len(pkt));
 }
 
 static void tcp_out(struct tcp *conn, u8_t flags, ...)
@@ -1019,8 +917,6 @@ next_state:
 			}
 		}
 		if (FL(&fl, ==, ACK, th_ack(th) == conn->seq)) {
-			tcp_win_free(conn->snd, "SND");
-			conn->snd = tcp_win_new();
 		}
 		break; /* TODO: Catch all the rest here */
 	case TCP_CLOSE_WAIT:
@@ -1053,20 +949,6 @@ next_state:
 		next = 0;
 		goto next_state;
 	}
-}
-
-static ssize_t _tcp_send(struct tcp *conn, const void *buf, size_t len,
-				int flags)
-{
-	int x = irq_lock();
-
-	tcp_win_append(conn, conn->snd, "SND", buf, len);
-
-	tcp_in(conn, NULL);
-
-	irq_unlock(x);
-
-	return len;
 }
 
 /* close() has been called on the socket */
@@ -1357,70 +1239,9 @@ drop:
 }
 
 #if defined(CONFIG_NET_TEST_PROTOCOL)
-static sys_slist_t tp_q = SYS_SLIST_STATIC_INIT(&tp_q);
-
-static struct net_buf *tcp_win_pop(struct tcp_win *w, const char *name,
-				   size_t len)
-{
-	struct net_buf *buf, *out = NULL;
-	size_t req_len = len;
-
-	while (len && (buf = tcp_slist(&w->bufs, peek_head, struct net_buf,
-				       user_data))) {
-		if (len >= buf->len) {
-			buf = tcp_slist(&w->bufs, get, struct net_buf,
-					user_data);
-		} else {
-			struct net_buf *old = buf;
-
-			buf = tcp_nbuf_clone(buf);
-
-			buf->len = len;
-
-			net_buf_pull(old, buf->len);
-		}
-
-		w->len -= buf->len;
-
-		out = out ? net_buf_frag_add(out, buf) : buf;
-
-		len -= buf->len;
-	}
-
-	NET_DBG("%s len=%zu (req_len=%zu)", name, net_buf_frags_len(out),
-		req_len);
-
-	return out;
-}
-
 static ssize_t tp_tcp_recv(int fd, void *buf, size_t len, int flags)
 {
-	struct tcp *conn = (void *)sys_slist_peek_head(&tcp_conns);
-	ssize_t bytes_received = conn->rcv->len;
-	struct net_buf *data = tcp_win_pop(conn->rcv, "RCV", bytes_received);
-
-	NET_ASSERT(bytes_received <= len, "Unimplemented");
-
-	net_buf_linearize(buf, len, data, 0, net_buf_frags_len(data));
-
-	tcp_chain_free(data);
-
-	return bytes_received;
-}
-
-static void tcp_step(void)
-{
-	struct net_pkt *pkt = (void *) sys_slist_get(&tp_q);
-
-	if (pkt) {
-		struct tcp *conn = tcp_conn_search(pkt);
-
-		if (conn == NULL) {
-			/* conn = tcp_conn_new(pkt); */
-		}
-
-		tcp_in(conn, pkt);
-	}
+	return 0;
 }
 
 static void tp_init(struct tcp *conn, struct tp *tp)
@@ -1496,12 +1317,8 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 	switch (type) {
 	case TP_COMMAND:
 		if (is("CONNECT", tp->op)) {
-			u8_t data_to_send[CONFIG_NET_BUF_DATA_SIZE];
-			size_t len = tp_str_to_hex(data_to_send,
-						sizeof(data_to_send), tp->data);
 			tp_output(pkt->family, pkt->iface, buf, 1);
 			responded = true;
-
 			{
 				struct net_context *context = tcp_calloc(1,
 						sizeof(struct net_context));
@@ -1514,10 +1331,6 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 				tcp_conn_ref(conn);
 			}
 			conn->seq = tp->seq;
-			if (len > 0) {
-				tcp_win_append(conn, conn->snd, "SND",
-						data_to_send, len);
-			}
 			tcp_in(conn, NULL);
 		}
 		if (is("CLOSE", tp->op)) {
@@ -1561,7 +1374,6 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 			tp_output(pkt->family, pkt->iface, buf, 1);
 			responded = true;
 			NET_DBG("tcp_send(\"%s\")", tp->data);
-			_tcp_send(conn, buf, len, 0);
 		}
 		break;
 	case TP_CONFIG_REQUEST:
@@ -1580,9 +1392,6 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 		break;
 	case TP_DEBUG_STOP: case TP_DEBUG_CONTINUE:
 		tp_state = tp->type;
-		break;
-	case TP_DEBUG_STEP:
-		tcp_step();
 		break;
 	default:
 		NET_ASSERT(false, "Unimplemented tp command: %s", tp->msg);
