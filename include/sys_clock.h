@@ -77,6 +77,16 @@ typedef struct {
 #define Z_TIMEOUT_NS(t) Z_TIMEOUT_TICKS(k_ns_to_ticks_ceil32(MAX(t, 0)))
 #define Z_TIMEOUT_CYC(t) Z_TIMEOUT_TICKS(k_cyc_to_ticks_ceil32(MAX(t, 0)))
 
+/* Converts between absolute timeout expiration values (packed into
+ * the negative space below K_TICKS_FOREVER) and (non-negative) delta
+ * timeout values.  If the result of Z_TICK_ABS(t) is >= 0, then the
+ * value was an absolute timeout with the returend expiration time.
+ * Note that this macro is bidirectional: Z_TICK_ABS(Z_TICK_ABS(t)) ==
+ * t for all inputs, and that the representation of K_TICKS_FOREVER is
+ * the same value in both spaces!  Clever, huh?
+ */
+#define Z_TICK_ABS(t) (K_TICKS_FOREVER - 1 - (t))
+
 #else
 
 /* Legacy timeout API */

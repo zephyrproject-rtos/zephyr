@@ -90,6 +90,10 @@ void z_add_timeout(struct _timeout *to, _timeout_func_t fn,
 	k_ticks_t ticks = timeout;
 #else
 	k_ticks_t ticks = timeout.ticks + 1;
+
+	if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) && Z_TICK_ABS(ticks) >= 0) {
+		ticks = Z_TICK_ABS(ticks) - (curr_tick + elapsed());
+	}
 #endif
 
 	__ASSERT(!sys_dnode_is_linked(&to->node), "");
@@ -257,7 +261,9 @@ static inline s64_t z_vrfy_k_uptime_get(void)
 #endif
 
 /* Returns the uptime expiration (relative to an unlocked "now"!) of a
- * timeout object.
+ * timeout object.  When used correctly, this should be called once,
+ * synchronously with the user passing a new timeout value.  It should
+ * not be used iteratively to adjust a timeout.
  */
 u64_t z_timeout_end_calc(k_timeout_t timeout)
 {
@@ -273,6 +279,10 @@ u64_t z_timeout_end_calc(k_timeout_t timeout)
 	dt = k_ms_to_ticks_ceil32(timeout);
 #else
 	dt = timeout.ticks;
+
+	if (IS_ENABLED(CONFIG_TIMEOUT_64BIT) && Z_TICK_ABS(dt) >= 0) {
+		return Z_TICK_ABS(dt);
+	}
 #endif
 	return z_tick_get() + MAX(1, dt);
 }

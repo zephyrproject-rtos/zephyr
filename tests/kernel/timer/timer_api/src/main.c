@@ -518,14 +518,21 @@ void test_timer_user_data(void)
  * k_timer_remaining_get()
  */
 
-void test_timer_remaining_get(void)
+void test_timer_remaining(void)
 {
-	u32_t remaining;
+	u32_t dur_ticks = k_ms_to_ticks_ceil32(DURATION);
+	u32_t rem_ms, rem_ticks, exp_ticks;
+	u64_t now;
+
+	k_usleep(1); /* align to tick */
 
 	init_timer_data();
 	k_timer_start(&remain_timer, K_MSEC(DURATION), K_NO_WAIT);
 	busy_wait_ms(DURATION / 2);
-	remaining = k_timer_remaining_get(&remain_timer);
+	now = k_uptime_ticks();
+	rem_ms = k_timer_remaining_get(&remain_timer);
+	rem_ticks = k_timer_remaining_ticks(&remain_timer);
+	exp_ticks = k_timer_expires_ticks(&remain_timer);
 	k_timer_stop(&remain_timer);
 
 	/*
@@ -534,7 +541,47 @@ void test_timer_remaining_get(void)
 	 * the value obtained through k_timer_remaining_get() could be larger
 	 * than actual remaining time with maximum error equal to one tick.
 	 */
-	zassert_true(remaining <= (DURATION / 2) + k_ticks_to_ms_floor64(1), NULL);
+	zassert_true(rem_ms <= (DURATION / 2) + k_ticks_to_ms_floor64(1),
+		     NULL);
+
+	zassert_true(rem_ticks <= dur_ticks / 2, NULL);
+	zassert_true((exp_ticks - now) <= dur_ticks / 2, NULL);
+}
+
+void test_timeout_abs(void)
+{
+#ifdef CONFIG_TIMEOUT_64BIT
+	const int expiration = 10000000; /* 10M ticks */
+	k_timeout_t t = K_TIMEOUT_ABS_TICKS(10000000), t2;
+
+	/* Check the other generator macros to make sure they produce
+	 * the same (whiteboxed) converted values
+	 */
+	t2 = K_TIMEOUT_ABS_MS(k_ticks_to_ms_ceil64(expiration));
+	zassert_true(t2.ticks == t.ticks, NULL);
+
+	t2 = K_TIMEOUT_ABS_US(k_ticks_to_us_ceil64(expiration));
+	zassert_true(t2.ticks == t.ticks, NULL);
+
+	t2 = K_TIMEOUT_ABS_NS(k_ticks_to_ns_ceil64(expiration));
+	zassert_true(t2.ticks == t.ticks, NULL);
+
+	t2 = K_TIMEOUT_ABS_CYC(k_ticks_to_cyc_ceil64(expiration));
+	zassert_true(t2.ticks == t.ticks, NULL);
+
+	/* Now set the timeout and make sure the expiration time is
+	 * correct vs. current time.  Tick units and tick alignment
+	 * makes this math exact: remember to add one to match the
+	 * convention (i.e. a timer of "1 tick" will expire at "now
+	 * plus 2 ticks", because "now plus one" will always be
+	 * somewhat less than a tick).
+	 */
+	k_usleep(1); /* align to tick */
+	k_timer_start(&remain_timer, t, K_FOREVER);
+	zassert_true(k_timer_remaining_ticks(&remain_timer)
+		     + k_uptime_ticks() + 1 == expiration, NULL);
+	k_timer_stop(&remain_timer);
+#endif
 }
 
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
@@ -570,6 +617,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_timer_status_sync),
 			 ztest_user_unit_test(test_timer_k_define),
 			 ztest_user_unit_test(test_timer_user_data),
-			 ztest_user_unit_test(test_timer_remaining_get));
+			 ztest_user_unit_test(test_timer_remaining),
+			 ztest_user_unit_test(test_timeout_abs));
 	ztest_run_test_suite(timer_api);
 }

@@ -587,7 +587,9 @@ config TIMEOUT_64BIT
 	  When this option is true, the k_ticks_t values passed to
 	  kernel APIs will be a 64 bit quantity, allowing the use of
 	  larger values (and higher precision tick rates) without fear
-	  of overflowing the 32 bit word.
+	  of overflowing the 32 bit word.  This feature also gates the
+	  availability of absolute timeout values (which require the
+	  extra precision).
 
 config XIP
 	bool "Execute in place"

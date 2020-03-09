@@ -127,7 +127,9 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	 * timer_api test relies on this behavior.
 	 */
 	period.ticks = MAX(period.ticks - 1, 0);
-	duration.ticks = MAX(duration.ticks - 1, 0);
+	if (Z_TICK_ABS(duration.ticks) < 0) {
+		duration.ticks = MAX(duration.ticks - 1, 0);
+	}
 #endif
 
 	(void)z_abort_timeout(&timer->timeout);
