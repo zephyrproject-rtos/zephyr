@@ -38,49 +38,6 @@ int net_tcp_finalize(struct net_pkt *pkt);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 
-/* TODO: Add mutex/irq lock */
-static bool tcp_nbufs_reserve(struct tcp *conn, size_t len)
-{
-	size_t rsv_bytes = 0, rsv_bytes_old = conn->rsv_bytes;
-	bool result = false;
-	struct net_buf *buf;
-
-	while (rsv_bytes < len) {
-
-		buf = tcp_nbuf_alloc(conn, CONFIG_NET_BUF_DATA_SIZE);
-
-		NET_ASSERT(buf);
-
-		sys_slist_append(&conn->rsv_bufs, &buf->node);
-
-		rsv_bytes += buf->size;
-	}
-
-	if (rsv_bytes >= len) {
-		result = true;
-	}
-
-	conn->rsv_bytes += rsv_bytes;
-
-	NET_DBG("%zu->%zu", rsv_bytes_old, conn->rsv_bytes);
-
-	return result;
-}
-
-static void tcp_nbufs_unreserve(struct tcp *conn)
-{
-	size_t rsv_bytes_old = conn->rsv_bytes;
-	struct net_buf *buf;
-
-	while ((buf = tcp_slist(&conn->rsv_bufs, get, struct net_buf, node))) {
-		conn->rsv_bytes -= buf->size;
-		buf->frags = NULL;
-		tcp_nbuf_unref(buf);
-	}
-
-	NET_DBG("%zu->%zu", rsv_bytes_old, conn->rsv_bytes);
-}
-
 static struct tcphdr *th_get(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(th_access, struct tcphdr);
@@ -307,12 +264,9 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	net_context_unref(conn->context);
 
-	tcp_nbufs_unreserve(conn);
-
 	tcp_send_queue_flush(conn);
 
 	tcp_win_free(conn->snd, "SND");
-	tcp_win_free(conn->rcv, "RCV");
 
 	tcp_free(conn->src);
 	tcp_free(conn->dst);
@@ -565,31 +519,9 @@ static size_t tcp_data_len(struct net_pkt *pkt)
 
 static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 {
-	struct tcphdr *th = th_get(pkt);
 	ssize_t len = tcp_data_len(pkt);
 
 	if (len > 0) {
-		void *buf;
-
-		if (tcp_nbufs_reserve(conn, len) == false) {
-			len = 0;
-			goto out;
-		}
-
-		buf = tcp_malloc(len);
-
-		net_pkt_skip(pkt, th->th_off * 4);
-
-		net_pkt_read(pkt, buf, len);
-
-		tcp_win_append(conn, conn->rcv, "RCV", buf, len);
-
-		if (tcp_echo) {
-			tcp_win_append(conn, conn->snd, "SND", buf, len);
-		}
-
-		tcp_free(buf);
-
 		if (conn->context->recv_cb) {
 			struct net_pkt *up = net_pkt_clone(pkt, K_NO_WAIT);
 
@@ -603,7 +535,7 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 				up, NULL, NULL, conn->recv_user_data);
 		}
 	}
-out:
+
 	return len;
 }
 
@@ -780,12 +712,9 @@ static struct tcp *tcp_conn_alloc(void)
 
 	conn->win = tcp_window;
 
-	conn->rcv = tcp_win_new();
 	conn->snd = tcp_win_new();
 
 	sys_slist_init(&conn->send_queue);
-
-	sys_slist_init(&conn->rsv_bufs);
 
 	k_delayed_work_init(&conn->send_timer, tcp_send_process);
 
