@@ -31,6 +31,7 @@
 
 		portc: gpio@41004500 {
 			compatible = "atmel,sam0-gpio";
+			id = <2>;
 			reg = <0x41004500 0x80>;
 			label = "PORTC";
 			gpio-controller;

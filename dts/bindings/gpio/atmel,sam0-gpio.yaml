@@ -5,6 +5,9 @@ compatible: "atmel,sam0-gpio"
 include: [gpio-controller.yaml, base.yaml]
 
 properties:
+    id:
+      required: true
+
     reg:
       required: true
 

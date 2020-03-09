@@ -149,6 +149,7 @@
 
 		porta: gpio@41004400 {
 			compatible = "atmel,sam0-gpio";
+			id = <0>;
 			reg = <0x41004400 0x80>;
 			label = "PORTA";
 			gpio-controller;
@@ -158,6 +159,7 @@
 		portb: gpio@41004480 {
 			compatible = "atmel,sam0-gpio";
 			reg = <0x41004480 0x80>;
+			id = <1>;
 			label = "PORTB";
 			gpio-controller;
 			#gpio-cells = <2>;
