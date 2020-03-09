@@ -10,8 +10,6 @@
 # Set Zephyr base to environment setting.
 # It will be empty if not set in environment.
 
-include(${CMAKE_CURRENT_LIST_DIR}/zephyr_package_search.cmake)
-
 macro(include_boilerplate location)
   if(ZEPHYR_UNITTEST)
     set(ZephyrUnittest_FOUND True)
@@ -46,6 +44,8 @@ endif()
 # If ZEPHYR_CANDIDATE is set, it means this file was include instead of called via find_package directly.
 if(ZEPHYR_CANDIDATE)
   set(IS_INCLUDED TRUE)
+else()
+  include(${CMAKE_CURRENT_LIST_DIR}/zephyr_package_search.cmake)
 endif()
 
 # Find out the current Zephyr base.
@@ -82,13 +82,17 @@ if(NOT IS_INCLUDED)
     # version checking.
     check_zephyr_package(CURRENT_WORKSPACE_DIR ${CURRENT_WORKSPACE_DIR})
 
+    if(ZEPHYR_PREFER)
+      check_zephyr_package(SEARCH_PARENTS CANDIDATES_PREFERENCE_LIST ${ZEPHYR_PREFER})
+    endif()
+
     # We are the best candidate, so let's include boiler plate.
     set(ZEPHYR_BASE ${CURRENT_ZEPHYR_DIR} CACHE PATH "Zephyr base")
     include_boilerplate("Zephyr workspace")
     return()
   endif()
 
-  check_zephyr_package(SEARCH_PARENTS)
+  check_zephyr_package(SEARCH_PARENTS CANDIDATES_PREFERENCE_LIST ${ZEPHYR_PREFER})
 
   # Ending here means there were no candidates in workspace of the app.
   # Thus, the app is built as a Zephyr Freestanding application.
