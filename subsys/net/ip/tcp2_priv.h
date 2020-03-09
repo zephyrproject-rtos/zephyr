@@ -132,11 +132,6 @@ enum tcp_state {
 	TCP_CLOSED
 };
 
-struct tcp_win { /* TCP window */
-	size_t len;
-	sys_slist_t bufs;
-};
-
 union tcp_endpoint {
 	struct sockaddr sa;
 	struct sockaddr_in sin;
