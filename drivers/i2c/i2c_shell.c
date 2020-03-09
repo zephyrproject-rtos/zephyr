@@ -15,8 +15,8 @@ LOG_MODULE_REGISTER(i2c_shell, CONFIG_LOG_DEFAULT_LEVEL);
 
 #define I2C_DEVICE_PREFIX "I2C_"
 
-extern struct device __device_init_start[];
-extern struct device __device_init_end[];
+extern struct device __device_start[];
+extern struct device __device_end[];
 
 static int cmd_i2c_scan(const struct shell *shell,
 			size_t argc, char **argv)
@@ -80,7 +80,7 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->help  = NULL;
 	entry->subcmd = &dsub_device_name;
 
-	for (dev = __device_init_start; dev != __device_init_end; dev++) {
+	for (dev = __device_start; dev != __device_end; dev++) {
 		if ((dev->driver_api != NULL) &&
 		strstr(dev->config->name, I2C_DEVICE_PREFIX) != NULL &&
 		strcmp(dev->config->name, "") && (dev->config->name != NULL)) {
