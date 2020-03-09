@@ -172,9 +172,9 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 	for (dev = __device_start; dev != __device_end; dev++) {
 		if ((dev->driver_api != NULL) &&
-		strcmp(dev->config->name, "") && (dev->config->name != NULL)) {
+		strcmp(dev->name, "") && (dev->name != NULL)) {
 			if (idx == device_idx) {
-				entry->syntax = dev->config->name;
+				entry->syntax = dev->name;
 				break;
 			}
 			device_idx++;

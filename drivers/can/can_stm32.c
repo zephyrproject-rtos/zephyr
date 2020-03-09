@@ -378,7 +378,7 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 		goto done;
 	}
 
-	LOG_DBG("Runtime configure of %s done", dev->config->name);
+	LOG_DBG("Runtime configure of %s done", dev->name);
 	ret = 0;
 done:
 	k_mutex_unlock(&data->inst_mutex);
@@ -456,7 +456,7 @@ static int can_stm32_init(struct device *dev)
 
 	cfg->config_irq(can);
 	can->IER |= CAN_IER_TMEIE;
-	LOG_INF("Init of %s done", dev->config->name);
+	LOG_INF("Init of %s done", dev->name);
 	return 0;
 }
 
@@ -558,7 +558,7 @@ int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
 		    "Id: 0x%x, "
 		    "ID type: %s, "
 		    "Remote Frame: %s"
-		    , msg->dlc, dev->config->name
+		    , msg->dlc, dev->name
 		    , msg->id_type == CAN_STANDARD_IDENTIFIER ?
 				      msg->std_id :  msg->ext_id
 		    , msg->id_type == CAN_STANDARD_IDENTIFIER ?
@@ -1112,7 +1112,7 @@ static int socket_can_init_1(struct device *dev)
 	struct socket_can_context *socket_context = dev->driver_data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
-		dev, dev->config->name, can_dev, can_dev->config->name);
+		dev, dev->name, can_dev, can_dev->name);
 
 	socket_context->can_dev = can_dev;
 	socket_context->msgq = &socket_can_msgq;
@@ -1196,7 +1196,7 @@ static int socket_can_init_2(struct device *dev)
 	struct socket_can_context *socket_context = dev->driver_data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
-		dev, dev->config->name, can_dev, can_dev->config->name);
+		dev, dev->name, can_dev, can_dev->name);
 
 	socket_context->can_dev = can_dev;
 	socket_context->msgq = &socket_can_msgq;

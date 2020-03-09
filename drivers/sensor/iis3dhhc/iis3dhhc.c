@@ -191,7 +191,7 @@ static int iis3dhhc_init_chip(struct device *dev)
 
 static int iis3dhhc_init(struct device *dev)
 {
-	const struct iis3dhhc_config * const config = dev->config->config_info;
+	const struct iis3dhhc_config * const config = dev->config_info;
 	struct iis3dhhc_data *data = dev->driver_data;
 
 	data->bus = device_get_binding(config->master_dev_name);

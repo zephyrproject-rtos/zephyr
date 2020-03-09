@@ -47,7 +47,7 @@ static inline struct uart_cc13xx_cc26xx_data *get_dev_data(struct device *dev)
 
 static inline const struct uart_device_config *get_dev_conf(struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config_info;
 }
 
 static int uart_cc13xx_cc26xx_poll_in(struct device *dev, unsigned char *c)

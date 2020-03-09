@@ -64,7 +64,7 @@ static struct ws2812_spi_data *dev_data(struct device *dev)
 
 static const struct ws2812_spi_cfg *dev_cfg(struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config_info;
 }
 
 /*

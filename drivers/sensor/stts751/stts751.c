@@ -169,7 +169,7 @@ static int stts751_init_chip(struct device *dev)
 
 static int stts751_init(struct device *dev)
 {
-	const struct stts751_config * const config = dev->config->config_info;
+	const struct stts751_config * const config = dev->config_info;
 	struct stts751_data *data = dev->driver_data;
 
 	data->bus = device_get_binding(config->master_dev_name);

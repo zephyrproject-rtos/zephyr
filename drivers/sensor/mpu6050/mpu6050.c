@@ -112,7 +112,7 @@ static int mpu6050_channel_get(struct device *dev,
 static int mpu6050_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct mpu6050_data *drv_data = dev->driver_data;
-	const struct mpu6050_config *cfg = dev->config->config_info;
+	const struct mpu6050_config *cfg = dev->config_info;
 	s16_t buf[7];
 
 	if (i2c_burst_read(drv_data->i2c, cfg->i2c_addr,
@@ -143,7 +143,7 @@ static const struct sensor_driver_api mpu6050_driver_api = {
 int mpu6050_init(struct device *dev)
 {
 	struct mpu6050_data *drv_data = dev->driver_data;
-	const struct mpu6050_config *cfg = dev->config->config_info;
+	const struct mpu6050_config *cfg = dev->config_info;
 	u8_t id, i;
 
 	drv_data->i2c = device_get_binding(cfg->i2c_label);

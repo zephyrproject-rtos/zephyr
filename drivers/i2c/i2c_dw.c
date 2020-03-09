@@ -600,7 +600,7 @@ static const struct i2c_driver_api funcs = {
 
 static int i2c_dw_initialize(struct device *dev)
 {
-	const struct i2c_dw_rom_config * const rom = dev->config->config_info;
+	const struct i2c_dw_rom_config * const rom = dev->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	volatile struct i2c_dw_registers *regs;
 

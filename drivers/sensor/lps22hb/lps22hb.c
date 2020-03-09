@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(LPS22HB, CONFIG_SENSOR_LOG_LEVEL);
 static inline int lps22hb_set_odr_raw(struct device *dev, u8_t odr)
 {
 	struct lps22hb_data *data = dev->driver_data;
-	const struct lps22hb_config *config = dev->config->config_info;
+	const struct lps22hb_config *config = dev->config_info;
 
 	return i2c_reg_update_byte(data->i2c_master, config->i2c_slave_addr,
 				   LPS22HB_REG_CTRL_REG1,
@@ -35,7 +35,7 @@ static int lps22hb_sample_fetch(struct device *dev,
 				enum sensor_channel chan)
 {
 	struct lps22hb_data *data = dev->driver_data;
-	const struct lps22hb_config *config = dev->config->config_info;
+	const struct lps22hb_config *config = dev->config_info;
 	u8_t out[5];
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -98,7 +98,7 @@ static const struct sensor_driver_api lps22hb_api_funcs = {
 static int lps22hb_init_chip(struct device *dev)
 {
 	struct lps22hb_data *data = dev->driver_data;
-	const struct lps22hb_config *config = dev->config->config_info;
+	const struct lps22hb_config *config = dev->config_info;
 	u8_t chip_id;
 
 	if (i2c_reg_read_byte(data->i2c_master, config->i2c_slave_addr,
@@ -133,7 +133,7 @@ err_poweroff:
 
 static int lps22hb_init(struct device *dev)
 {
-	const struct lps22hb_config * const config = dev->config->config_info;
+	const struct lps22hb_config * const config = dev->config_info;
 	struct lps22hb_data *data = dev->driver_data;
 
 	data->i2c_master = device_get_binding(config->i2c_master_dev_name);

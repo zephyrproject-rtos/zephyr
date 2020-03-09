@@ -344,7 +344,7 @@ static int enc424j600_tx(struct device *dev, struct net_pkt *pkt)
 static int enc424j600_rx(struct device *dev)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
-	const struct enc424j600_config *config = dev->config->config_info;
+	const struct enc424j600_config *config = dev->config_info;
 	u8_t info[ENC424J600_RSV_SIZE + ENC424J600_PTR_NXP_PKT_SIZE];
 	struct net_buf *pkt_buf = NULL;
 	struct net_pkt *pkt;
@@ -596,7 +596,7 @@ static const struct ethernet_api api_funcs = {
 
 static int enc424j600_init(struct device *dev)
 {
-	const struct enc424j600_config *config = dev->config->config_info;
+	const struct enc424j600_config *config = dev->config_info;
 	struct enc424j600_runtime *context = dev->driver_data;
 	u8_t retries = ENC424J600_DEFAULT_NUMOF_RETRIES;
 	u16_t tmp;

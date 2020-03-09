@@ -25,7 +25,7 @@ LOG_MODULE_DECLARE(ISM330DHCX, CONFIG_SENSOR_LOG_LEVEL);
  */
 static int ism330dhcx_enable_t_int(struct device *dev, int enable)
 {
-	const struct ism330dhcx_config *cfg = dev->config->config_info;
+	const struct ism330dhcx_config *cfg = dev->config_info;
 	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
 	ism330dhcx_pin_int2_route_t int2_route;
 
@@ -53,7 +53,7 @@ static int ism330dhcx_enable_t_int(struct device *dev, int enable)
  */
 static int ism330dhcx_enable_xl_int(struct device *dev, int enable)
 {
-	const struct ism330dhcx_config *cfg = dev->config->config_info;
+	const struct ism330dhcx_config *cfg = dev->config_info;
 	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
 
 	if (enable) {
@@ -89,7 +89,7 @@ static int ism330dhcx_enable_xl_int(struct device *dev, int enable)
  */
 static int ism330dhcx_enable_g_int(struct device *dev, int enable)
 {
-	const struct ism330dhcx_config *cfg = dev->config->config_info;
+	const struct ism330dhcx_config *cfg = dev->config_info;
 	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
 
 	if (enable) {
@@ -168,7 +168,7 @@ static void ism330dhcx_handle_interrupt(void *arg)
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
-	const struct ism330dhcx_config *cfg = dev->config->config_info;
+	const struct ism330dhcx_config *cfg = dev->config_info;
 	ism330dhcx_status_reg_t status;
 
 	while (1) {
@@ -209,7 +209,7 @@ static void ism330dhcx_gpio_callback(struct device *dev,
 {
 	struct ism330dhcx_data *ism330dhcx =
 		CONTAINER_OF(cb, struct ism330dhcx_data, gpio_cb);
-	const struct ism330dhcx_config *cfg = dev->config->config_info;
+	const struct ism330dhcx_config *cfg = dev->config_info;
 
 	ARG_UNUSED(pins);
 
@@ -251,7 +251,7 @@ static void ism330dhcx_work_cb(struct k_work *work)
 int ism330dhcx_init_interrupt(struct device *dev)
 {
 	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
-	const struct ism330dhcx_config *cfg = dev->config->config_info;
+	const struct ism330dhcx_config *cfg = dev->config_info;
 	int ret;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */

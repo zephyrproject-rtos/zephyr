@@ -58,7 +58,7 @@ struct wdt_esp32_config {
 };
 
 #define DEV_CFG(dev) \
-	((const struct wdt_esp32_config *const)(dev)->config->config_info)
+	((const struct wdt_esp32_config *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct wdt_esp32_data *)(dev)->driver_data)
 #define DEV_BASE(dev) \

@@ -35,8 +35,8 @@ struct eeprom_sim_config {
 	bool readonly;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
-#define DEV_CONFIG(dev) ((dev)->config->config_info)
+#define DEV_NAME(dev) ((dev)->name)
+#define DEV_CONFIG(dev) ((dev)->config_info)
 
 #define EEPROM(addr) (mock_eeprom + (addr))
 

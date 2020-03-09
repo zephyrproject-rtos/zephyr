@@ -24,7 +24,7 @@ struct pinmux_mcux_lpc_config {
 
 static int pinmux_mcux_lpc_set(struct device *dev, u32_t pin, u32_t func)
 {
-	const struct pinmux_mcux_lpc_config *config = dev->config->config_info;
+	const struct pinmux_mcux_lpc_config *config = dev->config_info;
 	IOCON_Type *base = config->base;
 	u32_t port = config->port_no;
 
@@ -35,7 +35,7 @@ static int pinmux_mcux_lpc_set(struct device *dev, u32_t pin, u32_t func)
 
 static int pinmux_mcux_lpc_get(struct device *dev, u32_t pin, u32_t *func)
 {
-	const struct pinmux_mcux_lpc_config *config = dev->config->config_info;
+	const struct pinmux_mcux_lpc_config *config = dev->config_info;
 	IOCON_Type *base = config->base;
 	u32_t port = config->port_no;
 
@@ -56,7 +56,7 @@ static int pinmux_mcux_lpc_input(struct device *dev, u32_t pin, u8_t func)
 
 static int pinmux_mcux_lpc_init(struct device *dev)
 {
-	const struct pinmux_mcux_lpc_config *config = dev->config->config_info;
+	const struct pinmux_mcux_lpc_config *config = dev->config_info;
 
 	CLOCK_EnableClock(config->clock_ip_name);
 

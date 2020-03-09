@@ -95,7 +95,7 @@ struct mcux_flexcan_data {
 static int mcux_flexcan_configure(struct device *dev, enum can_mode mode,
 				  u32_t bitrate)
 {
-	const struct mcux_flexcan_config *config = dev->config->config_info;
+	const struct mcux_flexcan_config *config = dev->config_info;
 	flexcan_config_t flexcan_config;
 	struct device *clock_dev;
 	u32_t clock_freq;
@@ -249,7 +249,7 @@ static int mcux_flexcan_send(struct device *dev, const struct zcan_frame *msg,
 			     k_timeout_t timeout,
 			     can_tx_callback_t callback_isr, void *callback_arg)
 {
-	const struct mcux_flexcan_config *config = dev->config->config_info;
+	const struct mcux_flexcan_config *config = dev->config_info;
 	struct mcux_flexcan_data *data = dev->driver_data;
 	flexcan_mb_transfer_t xfer;
 	status_t status;
@@ -299,7 +299,7 @@ static int mcux_flexcan_attach_isr(struct device *dev, can_rx_callback_t isr,
 				   void *callback_arg,
 				   const struct zcan_filter *filter)
 {
-	const struct mcux_flexcan_config *config = dev->config->config_info;
+	const struct mcux_flexcan_config *config = dev->config_info;
 	struct mcux_flexcan_data *data = dev->driver_data;
 	flexcan_mb_transfer_t xfer;
 	status_t status;
@@ -361,7 +361,7 @@ static void mcux_flexcan_register_state_change_isr(struct device *dev,
 static enum can_state mcux_flexcan_get_state(struct device *dev,
 					     struct can_bus_err_cnt *err_cnt)
 {
-	const struct mcux_flexcan_config *config = dev->config->config_info;
+	const struct mcux_flexcan_config *config = dev->config_info;
 	u32_t status_flags;
 
 	if (err_cnt) {
@@ -386,7 +386,7 @@ static enum can_state mcux_flexcan_get_state(struct device *dev,
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 int mcux_flexcan_recover(struct device *dev, k_timeout_t timeout)
 {
-	const struct mcux_flexcan_config *config = dev->config->config_info;
+	const struct mcux_flexcan_config *config = dev->config_info;
 	int ret = 0;
 	u64_t start_time;
 
@@ -414,7 +414,7 @@ int mcux_flexcan_recover(struct device *dev, k_timeout_t timeout)
 
 static void mcux_flexcan_detach(struct device *dev, int filter_id)
 {
-	const struct mcux_flexcan_config *config = dev->config->config_info;
+	const struct mcux_flexcan_config *config = dev->config_info;
 	struct mcux_flexcan_data *data = dev->driver_data;
 
 	if (filter_id >= MCUX_FLEXCAN_MAX_RX) {
@@ -443,7 +443,7 @@ static void mcux_flexcan_detach(struct device *dev, int filter_id)
 static inline void mcux_flexcan_transfer_error_status(struct device *dev,
 						      u32_t error)
 {
-	const struct mcux_flexcan_config *config = dev->config->config_info;
+	const struct mcux_flexcan_config *config = dev->config_info;
 	struct mcux_flexcan_data *data = dev->driver_data;
 	can_tx_callback_t function;
 	int status = CAN_TX_OK;
@@ -545,7 +545,7 @@ static inline void mcux_flexcan_transfer_tx_idle(struct device *dev,
 static inline void mcux_flexcan_transfer_rx_idle(struct device *dev,
 						 u32_t mb)
 {
-	const struct mcux_flexcan_config *config = dev->config->config_info;
+	const struct mcux_flexcan_config *config = dev->config_info;
 	struct mcux_flexcan_data *data = dev->driver_data;
 	can_rx_callback_t function;
 	flexcan_mb_transfer_t xfer;
@@ -606,7 +606,7 @@ static void mcux_flexcan_transfer_callback(CAN_Type *base,
 static void mcux_flexcan_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct mcux_flexcan_config *config = dev->config->config_info;
+	const struct mcux_flexcan_config *config = dev->config_info;
 	struct mcux_flexcan_data *data = dev->driver_data;
 
 	FLEXCAN_TransferHandleIRQ(config->base, &data->handle);
@@ -614,7 +614,7 @@ static void mcux_flexcan_isr(void *arg)
 
 static int mcux_flexcan_init(struct device *dev)
 {
-	const struct mcux_flexcan_config *config = dev->config->config_info;
+	const struct mcux_flexcan_config *config = dev->config_info;
 	struct mcux_flexcan_data *data = dev->driver_data;
 	int err;
 	int i;
@@ -733,7 +733,7 @@ static int socket_can_init_0(struct device *dev)
 	struct socket_can_context *socket_context = dev->driver_data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
-		dev, dev->config->name, can_dev, can_dev->config->name);
+		dev, dev->name, can_dev, can_dev->name);
 
 	socket_context->can_dev = can_dev;
 	socket_context->msgq = &socket_can_msgq;

@@ -62,7 +62,7 @@ struct gpio_cc32xx_data {
 };
 
 #define DEV_CFG(dev) \
-	((const struct gpio_cc32xx_config *)(dev)->config->config_info)
+	((const struct gpio_cc32xx_config *)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct gpio_cc32xx_data *)(dev)->driver_data)
 

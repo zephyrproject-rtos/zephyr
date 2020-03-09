@@ -80,7 +80,7 @@ struct uart_stellaris_dev_data_t {
 /* convenience defines */
 
 #define DEV_CFG(dev) \
-	((const struct uart_device_config * const)(dev)->config->config_info)
+	((const struct uart_device_config * const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct uart_stellaris_dev_data_t * const)(dev)->driver_data)
 #define UART_STRUCT(dev) \

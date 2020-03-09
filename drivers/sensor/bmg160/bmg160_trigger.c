@@ -23,7 +23,7 @@ static inline void setup_int(struct device *dev,
 {
 	struct bmg160_device_data *data = dev->driver_data;
 	const struct bmg160_device_config *const cfg =
-		dev->config->config_info;
+		dev->config_info;
 
 	gpio_pin_interrupt_configure(data->gpio,
 				     cfg->int_pin,
@@ -208,7 +208,7 @@ static void bmg160_work_cb(struct k_work *work)
 
 int bmg160_trigger_init(struct device *dev)
 {
-	const struct bmg160_device_config *cfg = dev->config->config_info;
+	const struct bmg160_device_config *cfg = dev->config_info;
 	struct bmg160_device_data *bmg160 = dev->driver_data;
 
 	/* set INT1 pin to: push-pull, active low */

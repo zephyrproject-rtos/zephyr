@@ -25,7 +25,7 @@ struct imx_epit_data {
 
 static inline const struct imx_epit_config *get_epit_config(struct device *dev)
 {
-	return CONTAINER_OF(dev->config->config_info, struct imx_epit_config,
+	return CONTAINER_OF(dev->config_info, struct imx_epit_config,
 			    info);
 }
 

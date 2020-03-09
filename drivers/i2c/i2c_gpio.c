@@ -110,7 +110,7 @@ static struct i2c_driver_api api = {
 static int i2c_gpio_init(struct device *dev)
 {
 	struct i2c_gpio_context *context = dev->driver_data;
-	const struct i2c_gpio_config *config = dev->config->config_info;
+	const struct i2c_gpio_config *config = dev->config_info;
 	u32_t bitrate_cfg;
 	int err;
 

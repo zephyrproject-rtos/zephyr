@@ -42,8 +42,7 @@ static bool device_get_config_level(const struct shell *shell, int level)
 		if (dev->driver_api != NULL) {
 			devices = true;
 
-			shell_fprintf(shell, SHELL_NORMAL, "- %s\n",
-				      dev->config->name);
+			shell_fprintf(shell, SHELL_NORMAL, "- %s\n", dev->name);
 		}
 	}
 	return devices;
@@ -97,7 +96,7 @@ static int cmd_device_list(const struct shell *shell,
 			continue;
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, "- %s", dev->config->name);
+		shell_fprintf(shell, SHELL_NORMAL, "- %s", dev->name);
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 		u32_t state = DEVICE_PM_ACTIVE_STATE;

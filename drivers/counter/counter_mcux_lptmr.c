@@ -28,7 +28,7 @@ struct mcux_lptmr_data {
 
 static int mcux_lptmr_start(struct device *dev)
 {
-	const struct mcux_lptmr_config *config = dev->config->config_info;
+	const struct mcux_lptmr_config *config = dev->config_info;
 
 	LPTMR_EnableInterrupts(config->base,
 			       kLPTMR_TimerInterruptEnable);
@@ -39,7 +39,7 @@ static int mcux_lptmr_start(struct device *dev)
 
 static int mcux_lptmr_stop(struct device *dev)
 {
-	const struct mcux_lptmr_config *config = dev->config->config_info;
+	const struct mcux_lptmr_config *config = dev->config_info;
 
 	LPTMR_DisableInterrupts(config->base,
 				kLPTMR_TimerInterruptEnable);
@@ -50,7 +50,7 @@ static int mcux_lptmr_stop(struct device *dev)
 
 static int mcux_lptmr_get_value(struct device *dev, u32_t *ticks)
 {
-	const struct mcux_lptmr_config *config = dev->config->config_info;
+	const struct mcux_lptmr_config *config = dev->config_info;
 
 	*ticks = LPTMR_GetCurrentTimerCount(config->base);
 
@@ -60,7 +60,7 @@ static int mcux_lptmr_get_value(struct device *dev, u32_t *ticks)
 static int mcux_lptmr_set_top_value(struct device *dev,
 				  const struct counter_top_cfg *cfg)
 {
-	const struct mcux_lptmr_config *config = dev->config->config_info;
+	const struct mcux_lptmr_config *config = dev->config_info;
 	struct mcux_lptmr_data *data = dev->driver_data;
 
 	if (cfg->ticks == 0) {
@@ -87,7 +87,7 @@ static int mcux_lptmr_set_top_value(struct device *dev,
 
 static u32_t mcux_lptmr_get_pending_int(struct device *dev)
 {
-	const struct mcux_lptmr_config *config = dev->config->config_info;
+	const struct mcux_lptmr_config *config = dev->config_info;
 	u32_t mask = LPTMR_CSR_TCF_MASK | LPTMR_CSR_TIE_MASK;
 	u32_t flags;
 
@@ -98,7 +98,7 @@ static u32_t mcux_lptmr_get_pending_int(struct device *dev)
 
 static u32_t mcux_lptmr_get_top_value(struct device *dev)
 {
-	const struct mcux_lptmr_config *config = dev->config->config_info;
+	const struct mcux_lptmr_config *config = dev->config_info;
 
 	return (config->base->CMR & LPTMR_CMR_COMPARE_MASK) + 1U;
 }
@@ -114,7 +114,7 @@ static u32_t mcux_lptmr_get_max_relative_alarm(struct device *dev)
 static void mcux_lptmr_isr(void *arg)
 {
 	struct device *dev = arg;
-	const struct mcux_lptmr_config *config = dev->config->config_info;
+	const struct mcux_lptmr_config *config = dev->config_info;
 	struct mcux_lptmr_data *data = dev->driver_data;
 	u32_t flags;
 
@@ -128,7 +128,7 @@ static void mcux_lptmr_isr(void *arg)
 
 static int mcux_lptmr_init(struct device *dev)
 {
-	const struct mcux_lptmr_config *config = dev->config->config_info;
+	const struct mcux_lptmr_config *config = dev->config_info;
 	lptmr_config_t lptmr_config;
 
 	LPTMR_GetDefaultConfig(&lptmr_config);

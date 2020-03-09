@@ -168,7 +168,7 @@ static u32_t qmspi_config_get_lines(const struct spi_config *config)
 static int qmspi_configure(struct device *dev,
 			   const struct spi_config *config)
 {
-	const struct spi_qmspi_config *cfg = dev->config->config_info;
+	const struct spi_qmspi_config *cfg = dev->config_info;
 	struct spi_qmspi_data *data = dev->driver_data;
 	QMSPI_Type *regs = cfg->regs;
 	u32_t smode;
@@ -508,7 +508,7 @@ static int qmspi_transceive(struct device *dev,
 			    const struct spi_buf_set *tx_bufs,
 			    const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_qmspi_config *cfg = dev->config->config_info;
+	const struct spi_qmspi_config *cfg = dev->config_info;
 	struct spi_qmspi_data *data = dev->driver_data;
 	QMSPI_Type *regs = cfg->regs;
 	const struct spi_buf *ptx;
@@ -593,7 +593,7 @@ static int qmspi_release(struct device *dev,
 			 const struct spi_config *config)
 {
 	struct spi_qmspi_data *data = dev->driver_data;
-	const struct spi_qmspi_config *cfg = dev->config->config_info;
+	const struct spi_qmspi_config *cfg = dev->config_info;
 	QMSPI_Type *regs = cfg->regs;
 
 	/* Force CS# to de-assert on next unit boundary */
@@ -616,7 +616,7 @@ static int qmspi_release(struct device *dev,
  */
 static int qmspi_init(struct device *dev)
 {
-	const struct spi_qmspi_config *cfg = dev->config->config_info;
+	const struct spi_qmspi_config *cfg = dev->config_info;
 	struct spi_qmspi_data *data = dev->driver_data;
 	QMSPI_Type *regs = cfg->regs;
 

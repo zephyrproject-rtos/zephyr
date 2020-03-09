@@ -269,7 +269,7 @@ static const struct sensor_driver_api lis2dh_driver_api = {
 int lis2dh_init(struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
-	const struct lis2dh_config *cfg = dev->config->config_info;
+	const struct lis2dh_config *cfg = dev->config_info;
 	int status;
 	u8_t id;
 	u8_t raw[6];

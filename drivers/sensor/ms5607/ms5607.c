@@ -228,7 +228,7 @@ static const struct ms5607_config ms5607_config = {
 
 static int ms5607_init(struct device *dev)
 {
-	const struct ms5607_config *const config = dev->config->config_info;
+	const struct ms5607_config *const config = dev->config_info;
 	struct ms5607_data *data = dev->driver_data;
 	struct sensor_value val;
 	int err;

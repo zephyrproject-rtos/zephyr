@@ -32,11 +32,11 @@ struct tach_xec_data {
 #define TACH_XEC_REG_BASE(_dev)				\
 	((TACH_Type *)					\
 	 ((const struct tach_xec_config * const)	\
-	  _dev->config->config_info)->base_address)
+	  _dev->config_info)->base_address)
 
 #define TACH_XEC_CONFIG(_dev)				\
 	(((const struct counter_xec_config * const)	\
-	  _dev->config->config_info))
+	  _dev->config_info))
 
 #define TACH_XEC_DATA(_dev)				\
 	((struct tach_xec_data *)dev->driver_data)

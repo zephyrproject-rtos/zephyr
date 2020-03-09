@@ -2706,7 +2706,7 @@ static int usdhc_access_init(const struct device *dev)
 
 	memset((char *)priv, 0, sizeof(struct usdhc_priv));
 #if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, nxp_imx_usdhc))
-	if (!strcmp(dev->config->name, DT_LABEL(DT_INST(0, nxp_imx_usdhc)))) {
+	if (!strcmp(dev->name, DT_LABEL(DT_INST(0, nxp_imx_usdhc)))) {
 		priv->host_config.base =
 			(USDHC_Type *)DT_REG_ADDR(DT_INST(0, nxp_imx_usdhc));
 		priv->nusdhc = 0;
@@ -2722,7 +2722,7 @@ static int usdhc_access_init(const struct device *dev)
 #endif
 
 #if DT_HAS_NODE_STATUS_OKAY(DT_INST(1, nxp_imx_usdhc))
-	if (!strcmp(dev->config->name, DT_LABEL(DT_INST(1, nxp_imx_usdhc)))) {
+	if (!strcmp(dev->name, DT_LABEL(DT_INST(1, nxp_imx_usdhc)))) {
 		priv->host_config.base =
 			(USDHC_Type *)DT_REG_ADDR(DT_INST(1, nxp_imx_usdhc));
 		priv->nusdhc = 1;

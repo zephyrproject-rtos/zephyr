@@ -31,7 +31,7 @@ struct gpio_stellaris_runtime {
 
 #define DEV_CFG(dev)                                     \
 	((const struct gpio_stellaris_config *const)     \
-	(dev)->config->config_info)
+	(dev)->config_info)
 
 #define DEV_DATA(dev)					 \
 	((struct gpio_stellaris_runtime *const)          \

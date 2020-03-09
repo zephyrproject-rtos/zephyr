@@ -399,7 +399,7 @@ As shown above, the driver uses additional information from
 :file:`devicetree.h` to create :ref:`struct device <device_struct>` instances
 than just the node label. Devicetree property values used to configure the
 device at boot time are stored in ROM in the value pointed to by a
-``device->config->config_info`` field. This allows users to configure your
+``device->config_info`` field. This allows users to configure your
 driver using overlays.
 
 The Zephyr convention is to name each ``struct device`` using its devicetree

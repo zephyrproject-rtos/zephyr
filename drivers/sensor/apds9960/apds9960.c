@@ -47,7 +47,7 @@ static void apds9960_gpio_callback(struct device *dev,
 
 static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
-	const struct apds9960_config *config = dev->config->config_info;
+	const struct apds9960_config *config = dev->config_info;
 	struct apds9960_data *data = dev->driver_data;
 	u8_t tmp;
 
@@ -151,7 +151,7 @@ static int apds9960_channel_get(struct device *dev,
 
 static int apds9960_proxy_setup(struct device *dev)
 {
-	const struct apds9960_config *config = dev->config->config_info;
+	const struct apds9960_config *config = dev->config_info;
 	struct apds9960_data *data = dev->driver_data;
 
 	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
@@ -223,7 +223,7 @@ static int apds9960_proxy_setup(struct device *dev)
 #ifdef CONFIG_APDS9960_ENABLE_ALS
 static int apds9960_ambient_setup(struct device *dev)
 {
-	const struct apds9960_config *config = dev->config->config_info;
+	const struct apds9960_config *config = dev->config_info;
 	struct apds9960_data *data = dev->driver_data;
 	u16_t th;
 
@@ -273,7 +273,7 @@ static int apds9960_ambient_setup(struct device *dev)
 
 static int apds9960_sensor_setup(struct device *dev)
 {
-	const struct apds9960_config *config = dev->config->config_info;
+	const struct apds9960_config *config = dev->config_info;
 	struct apds9960_data *data = dev->driver_data;
 	u8_t chip_id;
 
@@ -358,7 +358,7 @@ static int apds9960_sensor_setup(struct device *dev)
 
 static int apds9960_init_interrupt(struct device *dev)
 {
-	const struct apds9960_config *config = dev->config->config_info;
+	const struct apds9960_config *config = dev->config_info;
 	struct apds9960_data *drv_data = dev->driver_data;
 
 	/* setup gpio interrupt */
@@ -410,7 +410,7 @@ static int apds9960_init_interrupt(struct device *dev)
 static int apds9960_device_ctrl(struct device *dev, u32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
-	const struct apds9960_config *config = dev->config->config_info;
+	const struct apds9960_config *config = dev->config_info;
 	struct apds9960_data *data = dev->driver_data;
 	int ret = 0;
 
@@ -453,7 +453,7 @@ static int apds9960_device_ctrl(struct device *dev, u32_t ctrl_command,
 
 static int apds9960_init(struct device *dev)
 {
-	const struct apds9960_config *config = dev->config->config_info;
+	const struct apds9960_config *config = dev->config_info;
 	struct apds9960_data *data = dev->driver_data;
 
 	/* Initialize time 5.7ms */

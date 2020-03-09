@@ -36,7 +36,7 @@ struct i2c_eeprom_slave_config {
 /* convenience defines */
 #define DEV_CFG(dev)							\
 	((const struct i2c_eeprom_slave_config * const)			\
-		(dev)->config->config_info)
+		(dev)->config_info)
 #define DEV_DATA(dev)							\
 	((struct i2c_eeprom_slave_data * const)(dev)->driver_data)
 

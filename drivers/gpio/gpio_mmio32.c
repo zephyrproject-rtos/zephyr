@@ -166,7 +166,7 @@ static const struct gpio_driver_api gpio_mmio32_api = {
 int gpio_mmio32_init(struct device *dev)
 {
 	struct gpio_mmio32_context *context = dev->driver_data;
-	const struct gpio_mmio32_config *config = dev->config->config_info;
+	const struct gpio_mmio32_config *config = dev->config_info;
 
 	context->config = config;
 	dev->driver_api = &gpio_mmio32_api;

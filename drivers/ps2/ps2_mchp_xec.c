@@ -32,7 +32,7 @@ struct ps2_xec_data {
 
 static int ps2_xec_configure(struct device *dev, ps2_callback_t callback_isr)
 {
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 
@@ -69,7 +69,7 @@ static int ps2_xec_configure(struct device *dev, ps2_callback_t callback_isr)
 
 static int ps2_xec_write(struct device *dev, u8_t value)
 {
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 	int i = 0;
@@ -118,7 +118,7 @@ static int ps2_xec_write(struct device *dev, u8_t value)
 
 static int ps2_xec_inhibit_interface(struct device *dev)
 {
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 
@@ -137,7 +137,7 @@ static int ps2_xec_inhibit_interface(struct device *dev)
 
 static int ps2_xec_enable_interface(struct device *dev)
 {
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 
@@ -151,7 +151,7 @@ static int ps2_xec_enable_interface(struct device *dev)
 static void ps2_xec_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 	u32_t status;

@@ -721,7 +721,7 @@ static int adxl362_chip_init(struct device *dev)
  */
 static int adxl362_init(struct device *dev)
 {
-	const struct adxl362_config *config = dev->config->config_info;
+	const struct adxl362_config *config = dev->config_info;
 	struct adxl362_data *data = dev->driver_data;
 	u8_t value;
 	int err;

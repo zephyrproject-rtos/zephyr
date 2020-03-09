@@ -46,7 +46,7 @@ struct wdt_sam_dev_data {
 static struct wdt_sam_dev_data wdt_sam_data = { 0 };
 
 #define DEV_CFG(dev) \
-	((const struct wdt_sam_dev_cfg *const)(dev)->config->config_info)
+	((const struct wdt_sam_dev_cfg *const)(dev)->config_info)
 
 static void wdt_sam_isr(struct device *dev)
 {

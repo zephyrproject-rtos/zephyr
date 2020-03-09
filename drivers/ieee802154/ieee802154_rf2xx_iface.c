@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 void rf2xx_iface_phy_rst(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config->config_info;
+	const struct rf2xx_config *conf = dev->config_info;
 	const struct rf2xx_context *ctx = dev->driver_data;
 
 	/* Ensure control lines have correct levels. */
@@ -41,7 +41,7 @@ void rf2xx_iface_phy_rst(struct device *dev)
 }
 void rf2xx_iface_phy_tx_start(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config->config_info;
+	const struct rf2xx_config *conf = dev->config_info;
 	const struct rf2xx_context *ctx = dev->driver_data;
 
 	/* Start TX transmission at rise edge */

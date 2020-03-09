@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(MAX30101, CONFIG_SENSOR_LOG_LEVEL);
 static int max30101_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct max30101_data *data = dev->driver_data;
-	const struct max30101_config *config = dev->config->config_info;
+	const struct max30101_config *config = dev->config_info;
 	u8_t buffer[MAX30101_MAX_BYTES_PER_SAMPLE];
 	u32_t fifo_data;
 	int fifo_chan;
@@ -93,7 +93,7 @@ static const struct sensor_driver_api max30101_driver_api = {
 
 static int max30101_init(struct device *dev)
 {
-	const struct max30101_config *config = dev->config->config_info;
+	const struct max30101_config *config = dev->config_info;
 	struct max30101_data *data = dev->driver_data;
 	u8_t part_id;
 	u8_t mode_cfg;

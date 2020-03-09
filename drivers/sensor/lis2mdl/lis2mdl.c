@@ -243,7 +243,7 @@ static const struct sensor_driver_api lis2mdl_driver_api = {
 static int lis2mdl_init_interface(struct device *dev)
 {
 	const struct lis2mdl_config *const config =
-						dev->config->config_info;
+						dev->config_info;
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
 
 	lis2mdl->bus = device_get_binding(config->master_dev_name);

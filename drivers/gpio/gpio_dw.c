@@ -99,7 +99,7 @@ static inline void gpio_dw_clock_config(struct device *port)
 
 static inline void gpio_dw_clock_on(struct device *port)
 {
-	const struct gpio_dw_config *config = port->config->config_info;
+	const struct gpio_dw_config *config = port->config_info;
 	struct gpio_dw_runtime *context = port->driver_data;
 
 	clock_control_on(context->clock, config->clock_data);
@@ -107,7 +107,7 @@ static inline void gpio_dw_clock_on(struct device *port)
 
 static inline void gpio_dw_clock_off(struct device *port)
 {
-	const struct gpio_dw_config *config = port->config->config_info;
+	const struct gpio_dw_config *config = port->config_info;
 	struct gpio_dw_runtime *context = port->driver_data;
 
 	clock_control_off(context->clock, config->clock_data);
@@ -211,7 +211,7 @@ static int gpio_dw_pin_interrupt_configure(struct device *port,
 		enum gpio_int_trig trig)
 {
 	struct gpio_dw_runtime *context = port->driver_data;
-	const struct gpio_dw_config *config = port->config->config_info;
+	const struct gpio_dw_config *config = port->config_info;
 	u32_t base_addr = dw_base_to_block_base(context->base_addr);
 	u32_t port_base_addr = context->base_addr;
 	u32_t dir_port = dw_get_dir_port(port_base_addr);
@@ -275,7 +275,7 @@ static inline void dw_pin_config(struct device *port,
 				 u32_t pin, int flags)
 {
 	struct gpio_dw_runtime *context = port->driver_data;
-	const struct gpio_dw_config *config = port->config->config_info;
+	const struct gpio_dw_config *config = port->config_info;
 	u32_t base_addr = dw_base_to_block_base(context->base_addr);
 	u32_t port_base_addr = context->base_addr;
 	u32_t dir_port = dw_get_dir_port(port_base_addr);
@@ -307,7 +307,7 @@ static inline int gpio_dw_config(struct device *port,
 				 gpio_pin_t pin,
 				 gpio_flags_t flags)
 {
-	const struct gpio_dw_config *config = port->config->config_info;
+	const struct gpio_dw_config *config = port->config_info;
 	u32_t io_flags;
 
 	/* Check for invalid pin number */
@@ -555,7 +555,7 @@ static const struct gpio_driver_api api_funcs = {
 static int gpio_dw_initialize(struct device *port)
 {
 	struct gpio_dw_runtime *context = port->driver_data;
-	const struct gpio_dw_config *config = port->config->config_info;
+	const struct gpio_dw_config *config = port->config_info;
 	u32_t base_addr;
 
 	if (dw_interrupt_support(config)) {
@@ -626,7 +626,7 @@ DEVICE_AND_API_INIT(gpio_dw_0, DT_INST_LABEL(0),
 static void gpio_config_0_irq(struct device *port)
 {
 #if (DT_INST_IRQN(0) > 0)
-	const struct gpio_dw_config *config = port->config->config_info;
+	const struct gpio_dw_config *config = port->config_info;
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
 	IRQ_CONNECT(DT_INST_IRQN(0),
@@ -696,7 +696,7 @@ DEVICE_AND_API_INIT(gpio_dw_1, DT_INST_LABEL(1),
 static void gpio_config_1_irq(struct device *port)
 {
 #if (DT_INST_IRQN(1) > 0)
-	const struct gpio_dw_config *config = port->config->config_info;
+	const struct gpio_dw_config *config = port->config_info;
 
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
 	IRQ_CONNECT(DT_INST_IRQN(1),
@@ -764,7 +764,7 @@ DEVICE_AND_API_INIT(gpio_dw_2, DT_INST_LABEL(2),
 static void gpio_config_2_irq(struct device *port)
 {
 #if (DT_INST_IRQN(2) > 0)
-	const struct gpio_dw_config *config = port->config->config_info;
+	const struct gpio_dw_config *config = port->config_info;
 
 #ifdef CONFIG_GPIO_DW_2_IRQ_DIRECT
 	IRQ_CONNECT(DT_INST_IRQN(2),
@@ -832,7 +832,7 @@ DEVICE_AND_API_INIT(gpio_dw_3, DT_INST_LABEL(3),
 static void gpio_config_3_irq(struct device *port)
 {
 #if (DT_INST_IRQN(3) > 0)
-	const struct gpio_dw_config *config = port->config->config_info;
+	const struct gpio_dw_config *config = port->config_info;
 
 #ifdef CONFIG_GPIO_DW_3_IRQ_DIRECT
 	IRQ_CONNECT(DT_INST_IRQN(3),

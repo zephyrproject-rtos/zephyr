@@ -628,7 +628,7 @@ static int littlefs_mount(struct fs_mount_t *mountp)
 	lfs_size_t block_count = fs->area->fa_size / block_size;
 
 	LOG_INF("FS at %s:0x%x is %u 0x%x-byte blocks with %u cycle",
-		dev->config->name, (u32_t)fs->area->fa_off,
+		dev->name, (u32_t)fs->area->fa_off,
 		block_count, block_size, block_cycles);
 	LOG_INF("sizes: rd %u ; pr %u ; ca %u ; la %u",
 		read_size, prog_size, cache_size, lookahead_size);

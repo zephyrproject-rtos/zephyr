@@ -14,7 +14,7 @@ void main(void)
 	struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, bosch_bme680)));
 	struct sensor_value temp, press, humidity, gas_res;
 
-	printf("Device %p name is %s\n", dev, dev->config->name);
+	printf("Device %p name is %s\n", dev, dev->name);
 
 	while (1) {
 		k_sleep(K_MSEC(3000));

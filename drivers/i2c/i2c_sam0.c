@@ -58,9 +58,9 @@ struct i2c_sam0_dev_data {
 #endif
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct i2c_sam0_dev_config *const)(dev)->config->config_info)
+	((const struct i2c_sam0_dev_config *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct i2c_sam0_dev_data *const)(dev)->driver_data)
 

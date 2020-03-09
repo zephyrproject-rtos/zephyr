@@ -24,9 +24,9 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(neural_net);
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((struct intel_gna_config *const)(dev)->config->config_info)
+	((struct intel_gna_config *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct intel_gna_data *const)(dev)->driver_data)
 

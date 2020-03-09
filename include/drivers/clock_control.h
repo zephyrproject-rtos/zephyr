@@ -232,7 +232,7 @@ static inline int clock_control_get_rate(struct device *dev,
 		(const struct clock_control_driver_api *)dev->driver_api;
 
 	__ASSERT(api->get_rate != NULL, "%s not implemented for device %s",
-		__func__, dev->config->name);
+		__func__, dev->name);
 
 	return api->get_rate(dev, sys, rate);
 }

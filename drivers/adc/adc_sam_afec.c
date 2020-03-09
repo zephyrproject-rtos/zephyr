@@ -63,7 +63,7 @@ struct adc_sam_cfg {
 };
 
 #define DEV_CFG(dev) \
-	((const struct adc_sam_cfg *const)(dev)->config->config_info)
+	((const struct adc_sam_cfg *const)(dev)->config_info)
 
 #define DEV_DATA(dev) \
 	((struct adc_sam_data *)(dev)->driver_data)

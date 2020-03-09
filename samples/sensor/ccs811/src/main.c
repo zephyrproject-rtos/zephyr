@@ -121,7 +121,7 @@ void main(void)
 		return;
 	}
 
-	printk("device is %p, name is %s\n", dev, dev->config->name);
+	printk("device is %p, name is %s\n", dev, dev->name);
 
 	rc = ccs811_configver_fetch(dev, &cfgver);
 	if (rc == 0) {

@@ -13,7 +13,7 @@ struct pinmux_sam0_config {
 
 static int pinmux_sam0_set(struct device *dev, u32_t pin, u32_t func)
 {
-	const struct pinmux_sam0_config *cfg = dev->config->config_info;
+	const struct pinmux_sam0_config *cfg = dev->config_info;
 	bool odd_pin = pin & 1;
 	int idx = pin / 2U;
 
@@ -33,7 +33,7 @@ static int pinmux_sam0_set(struct device *dev, u32_t pin, u32_t func)
 
 static int pinmux_sam0_get(struct device *dev, u32_t pin, u32_t *func)
 {
-	const struct pinmux_sam0_config *cfg = dev->config->config_info;
+	const struct pinmux_sam0_config *cfg = dev->config_info;
 	bool odd_pin = pin & 1;
 	int idx = pin / 2U;
 

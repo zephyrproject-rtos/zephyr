@@ -172,7 +172,7 @@ static int lps22hh_init_chip(struct device *dev)
 
 static int lps22hh_init(struct device *dev)
 {
-	const struct lps22hh_config * const config = dev->config->config_info;
+	const struct lps22hh_config * const config = dev->config_info;
 	struct lps22hh_data *data = dev->driver_data;
 
 	data->bus = device_get_binding(config->master_dev_name);

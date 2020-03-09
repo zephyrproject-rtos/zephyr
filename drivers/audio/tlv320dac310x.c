@@ -51,7 +51,7 @@ static struct codec_driver_config codec_device_config = {
 static struct codec_driver_data codec_device_data;
 
 #define DEV_CFG(dev) \
-	((struct codec_driver_config *const)(dev)->config->config_info)
+	((struct codec_driver_config *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct codec_driver_data *const)(dev)->driver_data)
 

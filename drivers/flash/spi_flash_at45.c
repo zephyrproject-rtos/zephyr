@@ -83,7 +83,7 @@ static struct spi_flash_at45_data *get_dev_data(struct device *dev)
 
 static const struct spi_flash_at45_config *get_dev_config(struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config_info;
 }
 
 static void acquire(struct device *dev)

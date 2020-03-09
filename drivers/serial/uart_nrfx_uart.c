@@ -63,7 +63,7 @@ static inline struct uart_nrfx_data *get_dev_data(struct device *dev)
 
 static inline const struct uart_nrfx_config *get_dev_config(struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config_info;
 }
 
 #ifdef CONFIG_UART_0_ASYNC

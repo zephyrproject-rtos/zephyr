@@ -95,9 +95,9 @@ struct i2s_sam_dev_data {
 	struct stream tx;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct i2s_sam_dev_cfg *const)(dev)->config->config_info)
+	((const struct i2s_sam_dev_cfg *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct i2s_sam_dev_data *const)(dev)->driver_data)
 

@@ -66,9 +66,9 @@ struct i2c_sam_twihs_dev_data {
 	struct twihs_msg msg;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct i2c_sam_twihs_dev_cfg *const)(dev)->config->config_info)
+	((const struct i2c_sam_twihs_dev_cfg *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct i2c_sam_twihs_dev_data *const)(dev)->driver_data)
 

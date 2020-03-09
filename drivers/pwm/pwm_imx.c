@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(pwm_imx);
 				<<PWM_PWMCR_SWR_SHIFT))&PWM_PWMCR_SWR_MASK)
 
 #define DEV_CFG(dev) \
-	((const struct imx_pwm_config * const)(dev)->config->config_info)
+	((const struct imx_pwm_config * const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct imx_pwm_data * const)(dev)->driver_data)
 #define DEV_BASE(dev) \
@@ -128,7 +128,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 	if (data->period_cycles != period_cycles) {
 		LOG_WRN("Changing period cycles from %d to %d in %s",
 			    data->period_cycles, period_cycles,
-			    dev->config->name);
+			    dev->name);
 
 		data->period_cycles = period_cycles;
 		PWM_PWMPR_REG(base) = period_cycles;

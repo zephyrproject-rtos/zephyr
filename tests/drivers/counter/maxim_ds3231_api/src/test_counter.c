@@ -109,7 +109,7 @@ static bool set_top_value_capable(const char *dev_name)
 static void top_handler(struct device *dev, void *user_data)
 {
 	zassert_true(user_data == exp_user_data,
-		     "%s: Unexpected callback", dev->config->name);
+		     "%s: Unexpected callback", dev->name);
 	k_sem_give(&top_cnt_sem);
 }
 
@@ -216,26 +216,26 @@ static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
 
 	err = counter_get_value(dev, &now);
 	zassert_true(err == 0, "%s: Counter read failed (err: %d)",
-		     dev->config->name, err);
+		     dev->name, err);
 
 	if (counter_is_counting_up(dev)) {
 		zassert_true(now >= counter,
 			     "%s: Alarm (%d) too early now: %d (counting up).",
-			     dev->config->name, counter, now);
+			     dev->name, counter, now);
 	} else {
 		zassert_true(now <= counter,
 			     "%s: Alarm (%d) too early now: %d (counting down).",
-			     dev->config->name, counter, now);
+			     dev->name, counter, now);
 	}
 
 	if (user_data) {
 		zassert_true(&alarm_cfg == user_data,
-			     "%s: Unexpected callback", dev->config->name);
+			     "%s: Unexpected callback", dev->name);
 	}
 
 	/* DS3231 does not invoke callbacks from interrupt context. */
 	zassert_false(k_is_in_isr(), "%s: Unexpected interrupt context",
-		      dev->config->name);
+		      dev->name);
 	k_sem_give(&alarm_cnt_sem);
 }
 

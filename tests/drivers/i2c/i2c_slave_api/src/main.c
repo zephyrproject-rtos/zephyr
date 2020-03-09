@@ -48,7 +48,7 @@ static void run_full_read(struct device *i2c, u8_t addr, u8_t *comp_buffer)
 	int ret;
 
 	LOG_INF("Start full read. Master: %s, address: 0x%x",
-		    i2c->config->name, addr);
+		    i2c->name, addr);
 
 	/* Read EEPROM from I2C Master requests, then compare */
 	ret = i2c_burst_read(i2c, addr,
@@ -75,7 +75,7 @@ static void run_partial_read(struct device *i2c, u8_t addr, u8_t *comp_buffer,
 	int ret;
 
 	LOG_INF("Start partial read. Master: %s, address: 0x%x, off=%d",
-		    i2c->config->name, addr, offset);
+		    i2c->name, addr, offset);
 
 	ret = i2c_burst_read(i2c, addr,
 			     offset, i2c_buffer, TEST_DATA_SIZE-offset);
@@ -100,7 +100,7 @@ static void run_program_read(struct device *i2c, u8_t addr, unsigned int offset)
 	int ret, i;
 
 	LOG_INF("Start program. Master: %s, address: 0x%x, off=%d",
-		    i2c->config->name, addr, offset);
+		    i2c->name, addr, offset);
 
 	for (i = 0 ; i < TEST_DATA_SIZE-offset ; ++i) {
 		i2c_buffer[i] = i;

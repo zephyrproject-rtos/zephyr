@@ -28,7 +28,7 @@ struct crypto_stm32_session {
 };
 
 #define CRYPTO_STM32_CFG(dev) \
-	((const struct crypto_stm32_config *const)(dev)->config->config_info)
+	((const struct crypto_stm32_config *const)(dev)->config_info)
 
 #define CRYPTO_STM32_DATA(dev) \
 	((struct crypto_stm32_data *const)(dev)->driver_data)

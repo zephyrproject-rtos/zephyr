@@ -176,7 +176,7 @@ void main(void)
 		return;
 	}
 
-	printf("device is %p, name is %s\n", dev, dev->config->name);
+	printf("device is %p, name is %s\n", dev, dev->name);
 
 	process(dev);
 }

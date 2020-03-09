@@ -49,7 +49,7 @@ struct ft5336_data {
 
 static int ft5336_read(struct device *dev)
 {
-	const struct ft5336_config *config = dev->config->config_info;
+	const struct ft5336_config *config = dev->config_info;
 	struct ft5336_data *data = dev->driver_data;
 	u8_t buffer[FT5406_DATA_SIZE];
 	u8_t event;
@@ -102,7 +102,7 @@ static void ft5336_work_handler(struct k_work *work)
 static void ft5336_isr_handler(struct device *dev, struct gpio_callback *cb,
 		    u32_t pins)
 {
-	const struct ft5336_config *config = dev->config->config_info;
+	const struct ft5336_config *config = dev->config_info;
 	struct ft5336_data *drv_data =
 		CONTAINER_OF(cb, struct ft5336_data, int_gpio_cb);
 
@@ -155,7 +155,7 @@ static int ft5336_disable_callback(struct device *dev)
 
 static int ft5336_init(struct device *dev)
 {
-	const struct ft5336_config *config = dev->config->config_info;
+	const struct ft5336_config *config = dev->config_info;
 	struct ft5336_data *data = dev->driver_data;
 
 	data->i2c = device_get_binding(config->i2c_name);
