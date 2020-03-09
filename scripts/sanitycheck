@@ -2639,66 +2639,35 @@ class TestSuite:
                 break
         return selected_platform
 
-    def get_last_failed(self):
-        last_run = os.path.join(self.outdir, "sanitycheck.csv")
+    def load_from_file(self, file, filter_status=[]):
         try:
-            if not os.path.exists(last_run):
-                raise SanityRuntimeError("Couldn't find last sanitycheck run.: %s" % last_run)
-        except Exception as e:
-            print(str(e))
+            total_tests = 0
+            with open(file, "r") as fp:
+                cr = csv.DictReader(fp)
+                instance_list = []
+                for row in cr:
+                    if row["status"] in filter_status:
+                        continue
+                    test = row["test"]
+
+                    platform = self.get_platform(row["platform"])
+                    instance = TestInstance(self.testcases[test], platform, self.outdir)
+                    instance.check_build_or_run(
+                        self.build_only,
+                        self.enable_slow,
+                        self.device_testing,
+                        self.fixture
+                    )
+                    instance.create_overlay(platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
+                    instance_list.append(instance)
+                self.add_instances(instance_list)
+
+            tests_to_run = len(self.instances)
+            logger.info("%d tests passed already, retrying %d tests" % (total_tests - tests_to_run, tests_to_run))
+
+        except Exception:
+            logger.error("Couldn't find input file with list of tests.")
             sys.exit(2)
-
-        total_tests = 0
-        with open(last_run, "r") as fp:
-            cr = csv.DictReader(fp)
-            instance_list = []
-            for row in cr:
-                total_tests += 1
-                if row["status"] in ["passed", "skipped"]:
-                    continue
-                test = row["test"]
-                platform = self.get_platform(row["platform"])
-                instance = TestInstance(self.testcases[test], platform, self.outdir)
-                instance.check_build_or_run(
-                    self.build_only,
-                    self.enable_slow,
-                    self.device_testing,
-                    self.fixture
-                )
-                instance.create_overlay(platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
-                instance_list.append(instance)
-            self.add_instances(instance_list)
-
-        tests_to_run = len(self.instances)
-        logger.info("%d tests passed already, retrying %d tests" % (total_tests - tests_to_run, tests_to_run))
-
-    def load_from_file(self, file):
-        try:
-            if not os.path.exists(file):
-                raise SanityRuntimeError(
-                    "Couldn't find input file with list of tests.")
-        except Exception as e:
-            print(str(e))
-            sys.exit(2)
-
-        with open(file, "r") as fp:
-            cr = csv.DictReader(fp)
-            instance_list = []
-            for row in cr:
-                if row["arch"] == "arch":
-                    continue
-                test = row["test"]
-                platform = self.get_platform(row["platform"])
-                instance = TestInstance(self.testcases[test], platform, self.outdir)
-                instance.check_build_or_run(
-                    self.build_only,
-                    self.enable_slow,
-                    self.device_testing,
-                    self.fixture
-                )
-                instance.create_overlay(platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
-                instance_list.append(instance)
-            self.add_instances(instance_list)
 
     def apply_filters(self, **kwargs):
 
@@ -4224,14 +4193,14 @@ def main():
 
     discards = []
 
+    last_run = os.path.join(options.outdir, "sanitycheck.csv")
     if options.only_failed:
-        suite.get_last_failed()
+        suite.load_from_file(last_run, filter_status=['skipped', 'passed'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
     elif options.load_tests:
         suite.load_from_file(options.load_tests)
     elif options.test_only:
-        last_run = os.path.join(options.outdir, "sanitycheck.csv")
-        suite.load_from_file(last_run)
+        suite.load_from_file(last_run, filter_status=['skipped'])
     else:
         discards = suite.apply_filters(
             build_only=options.build_only,
