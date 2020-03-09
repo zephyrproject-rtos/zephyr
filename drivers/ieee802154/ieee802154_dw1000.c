@@ -954,7 +954,7 @@ static int dwt_configure(struct device *dev, enum ieee802154_config_type type,
 static int dwt_hw_reset(struct device *dev)
 {
 	struct dwt_context *ctx = dev->driver_data;
-	const struct dwt_hi_cfg *hi_cfg = dev->config->config_info;
+	const struct dwt_hi_cfg *hi_cfg = dev->config_info;
 
 	if (gpio_pin_configure(ctx->rst_gpio, hi_cfg->rst_pin,
 			       GPIO_OUTPUT_ACTIVE | hi_cfg->rst_flags)) {
@@ -1488,7 +1488,7 @@ static int dwt_configure_rf_phy(struct dwt_context *ctx)
 static int dw1000_init(struct device *dev)
 {
 	struct dwt_context *ctx = dev->driver_data;
-	const struct dwt_hi_cfg *hi_cfg = dev->config->config_info;
+	const struct dwt_hi_cfg *hi_cfg = dev->config_info;
 
 	LOG_INF("Initialize DW1000 Transceiver");
 	k_sem_init(&ctx->phy_sem, 0, 1);

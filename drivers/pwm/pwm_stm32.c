@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(pwm_stm32);
 
 /* convenience defines */
 #define DEV_CFG(dev)							\
-	((const struct pwm_stm32_config * const)(dev)->config->config_info)
+	((const struct pwm_stm32_config * const)(dev)->config_info)
 #define DEV_DATA(dev)							\
 	((struct pwm_stm32_data * const)(dev)->driver_data)
 #define PWM_STRUCT(dev)					\

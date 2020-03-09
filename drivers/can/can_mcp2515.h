@@ -15,7 +15,7 @@
 #define MCP2515_FRAME_LEN               13
 
 #define DEV_CFG(dev) \
-	((const struct mcp2515_config *const)(dev)->config->config_info)
+	((const struct mcp2515_config *const)(dev)->config_info)
 #define DEV_DATA(dev) ((struct mcp2515_data *const)(dev)->driver_data)
 
 struct mcp2515_tx_cb {

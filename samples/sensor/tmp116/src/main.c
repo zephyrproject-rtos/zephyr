@@ -19,7 +19,7 @@ void main(void)
 	dev = device_get_binding(DT_LABEL(DT_INST(0, ti_tmp116)));
 	__ASSERT(dev != NULL, "Failed to get TMP116 device binding");
 
-	printk("Device %s - %p is ready\n", dev->config->name, dev);
+	printk("Device %s - %p is ready\n", dev->name, dev);
 
 	while (1) {
 		ret = sensor_sample_fetch(dev);

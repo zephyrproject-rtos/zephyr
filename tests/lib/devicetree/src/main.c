@@ -1190,7 +1190,7 @@ static inline struct test_gpio_data *to_data(struct device *dev)
 
 static inline const struct test_gpio_info *to_info(struct device *dev)
 {
-	return (struct test_gpio_info *)dev->config->config_info;
+	return (struct test_gpio_info *)dev->config_info;
 }
 
 static void test_devices(void)

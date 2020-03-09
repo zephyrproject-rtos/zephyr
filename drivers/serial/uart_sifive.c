@@ -66,7 +66,7 @@ struct uart_sifive_data {
 
 #define DEV_CFG(dev)						\
 	((const struct uart_sifive_device_config * const)	\
-	 (dev)->config->config_info)
+	 (dev)->config_info)
 #define DEV_UART(dev)						\
 	((struct uart_sifive_regs_t *)(DEV_CFG(dev))->port)
 #define DEV_DATA(dev)						\

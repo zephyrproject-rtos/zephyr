@@ -26,7 +26,7 @@ struct i2c_litex_cfg {
 };
 
 #define GET_I2C_CFG(dev)						     \
-	((const struct i2c_litex_cfg *) dev->config->config_info)
+	((const struct i2c_litex_cfg *) dev->config_info)
 
 #define GET_I2C_BITBANG(dev)						     \
 	((struct i2c_bitbang *) dev->driver_data)

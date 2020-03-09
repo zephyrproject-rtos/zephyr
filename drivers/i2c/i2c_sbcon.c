@@ -101,7 +101,7 @@ static struct i2c_driver_api api = {
 static int i2c_sbcon_init(struct device *dev)
 {
 	struct i2c_sbcon_context *context = dev->driver_data;
-	const struct i2c_sbcon_config *config = dev->config->config_info;
+	const struct i2c_sbcon_config *config = dev->config_info;
 
 	i2c_bitbang_init(&context->bitbang, &io_fns, config->sbcon);
 

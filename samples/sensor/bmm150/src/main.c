@@ -63,7 +63,7 @@ void main(void)
 	dev = sensor_search();
 	if (dev) {
 		printk("Found device is %p, name is %s\n",
-				dev, dev->config->name);
+				dev, dev->name);
 		do_main(dev);
 	} else {
 		printk("There is no available Geomagnetic device.\n");

@@ -68,7 +68,7 @@ static void wait_synchronization(SercomSpi *regs)
 static int spi_sam0_configure(struct device *dev,
 			      const struct spi_config *config)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	SercomSpi *regs = cfg->regs;
 	SERCOM_SPI_CTRLA_Type ctrla = {.reg = 0};
@@ -296,7 +296,7 @@ static void spi_sam0_fast_transceive(struct device *dev,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	size_t tx_count = 0;
 	size_t rx_count = 0;
 	SercomSpi *regs = cfg->regs;
@@ -387,7 +387,7 @@ static int spi_sam0_transceive(struct device *dev,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	SercomSpi *regs = cfg->regs;
 	int err;
@@ -438,7 +438,7 @@ static void spi_sam0_dma_rx_done(void *arg, u32_t id, int error_code);
 static int spi_sam0_dma_rx_load(struct device *dev, u8_t *buf,
 				size_t len)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	SercomSpi *regs = cfg->regs;
 	struct dma_config dma_cfg = { 0 };
@@ -480,7 +480,7 @@ static int spi_sam0_dma_rx_load(struct device *dev, u8_t *buf,
 static int spi_sam0_dma_tx_load(struct device *dev, const u8_t *buf,
 				size_t len)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	SercomSpi *regs = cfg->regs;
 	struct dma_config dma_cfg = { 0 };
@@ -582,7 +582,7 @@ static int spi_sam0_dma_advance_buffers(struct device *dev)
 static void spi_sam0_dma_rx_done(void *arg, u32_t id, int error_code)
 {
 	struct device *dev = arg;
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	int retval;
 
@@ -616,7 +616,7 @@ static int spi_sam0_transceive_async(struct device *dev,
 				     const struct spi_buf_set *rx_bufs,
 				     struct k_poll_signal *async)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	int retval;
 
@@ -675,7 +675,7 @@ static int spi_sam0_release(struct device *dev,
 
 static int spi_sam0_init(struct device *dev)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	SercomSpi *regs = cfg->regs;
 

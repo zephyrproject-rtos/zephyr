@@ -47,7 +47,7 @@ struct flash_sam_dev_data {
 };
 
 #define DEV_CFG(dev) \
-	((const struct flash_sam_dev_cfg *const)(dev)->config->config_info)
+	((const struct flash_sam_dev_cfg *const)(dev)->config_info)
 
 #define DEV_DATA(dev) \
 	((struct flash_sam_dev_data *const)(dev)->driver_data)

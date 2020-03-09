@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(ADT7420, CONFIG_SENSOR_LOG_LEVEL);
 static int adt7420_temp_reg_read(struct device *dev, u8_t reg, s16_t *val)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config->config_info;
+	const struct adt7420_dev_config *cfg = dev->config_info;
 
 	if (i2c_burst_read(drv_data->i2c, cfg->i2c_addr,
 			   reg, (u8_t *) val, 2) < 0) {
@@ -37,7 +37,7 @@ static int adt7420_temp_reg_read(struct device *dev, u8_t reg, s16_t *val)
 static int adt7420_temp_reg_write(struct device *dev, u8_t reg, s16_t val)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config->config_info;
+	const struct adt7420_dev_config *cfg = dev->config_info;
 	u8_t buf[3] = {reg, val >> 8, val & 0xFF};
 
 	return i2c_write(drv_data->i2c, buf, sizeof(buf), cfg->i2c_addr);
@@ -49,7 +49,7 @@ static int adt7420_attr_set(struct device *dev,
 			   const struct sensor_value *val)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config->config_info;
+	const struct adt7420_dev_config *cfg = dev->config_info;
 	u8_t val8, reg = 0U;
 	u16_t rate;
 	s64_t value;
@@ -157,7 +157,7 @@ static const struct sensor_driver_api adt7420_driver_api = {
 static int adt7420_probe(struct device *dev)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config->config_info;
+	const struct adt7420_dev_config *cfg = dev->config_info;
 	u8_t value;
 	int ret;
 
@@ -203,7 +203,7 @@ static int adt7420_probe(struct device *dev)
 static int adt7420_init(struct device *dev)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config->config_info;
+	const struct adt7420_dev_config *cfg = dev->config_info;
 
 	drv_data->i2c = device_get_binding(cfg->i2c_port);
 	if (drv_data->i2c == NULL) {

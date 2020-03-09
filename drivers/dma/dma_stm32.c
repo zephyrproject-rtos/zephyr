@@ -38,7 +38,7 @@ static u32_t table_p_size[] = {
 
 static void dma_stm32_dump_stream_irq(struct device *dev, u32_t id)
 {
-	const struct dma_stm32_config *config = dev->config->config_info;
+	const struct dma_stm32_config *config = dev->config_info;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 
 	stm32_dma_dump_stream_irq(dma, id);
@@ -46,7 +46,7 @@ static void dma_stm32_dump_stream_irq(struct device *dev, u32_t id)
 
 static void dma_stm32_clear_stream_irq(struct device *dev, u32_t id)
 {
-	const struct dma_stm32_config *config = dev->config->config_info;
+	const struct dma_stm32_config *config = dev->config_info;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 
 	func_ll_clear_tc[id](dma);
@@ -58,7 +58,7 @@ static void dma_stm32_irq_handler(void *arg)
 {
 	struct device *dev = arg;
 	struct dma_stm32_data *data = dev->driver_data;
-	const struct dma_stm32_config *config = dev->config->config_info;
+	const struct dma_stm32_config *config = dev->config_info;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_stream *stream;
 	int id;
@@ -243,7 +243,7 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 	struct dma_stm32_data *data = dev->driver_data;
 	struct dma_stm32_stream *stream = &data->streams[id - STREAM_OFFSET];
 	const struct dma_stm32_config *dev_config =
-					dev->config->config_info;
+					dev->config_info;
 	DMA_TypeDef *dma = (DMA_TypeDef *)dev_config->base;
 	LL_DMA_InitTypeDef DMA_InitStruct;
 	u32_t msize;
@@ -275,7 +275,7 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 	if ((config->channel_direction == MEMORY_TO_MEMORY) &&
 		(!dev_config->support_m2m)) {
 		LOG_ERR("Memcopy not supported for device %s",
-			dev->config->name);
+			dev->name);
 		return -ENOTSUP;
 	}
 #endif /* CONFIG_DMA_STM32_V1 */
@@ -477,7 +477,7 @@ static int dma_stm32_reload(struct device *dev, u32_t id,
 			    u32_t src, u32_t dst, size_t size)
 #endif /* CONFIG_DMAMUX_STM32 */
 {
-	const struct dma_stm32_config *config = dev->config->config_info;
+	const struct dma_stm32_config *config = dev->config_info;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_data *data = dev->driver_data;
 	struct dma_stm32_stream *stream = &data->streams[id - STREAM_OFFSET];
@@ -524,7 +524,7 @@ int dma_stm32_start(struct device *dev, u32_t id)
 static int dma_stm32_start(struct device *dev, u32_t id)
 #endif /* CONFIG_DMAMUX_STM32 */
 {
-	const struct dma_stm32_config *config = dev->config->config_info;
+	const struct dma_stm32_config *config = dev->config_info;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 	struct dma_stm32_data *data = dev->driver_data;
 
@@ -552,7 +552,7 @@ static int dma_stm32_stop(struct device *dev, u32_t id)
 	struct dma_stm32_data *data = dev->driver_data;
 	struct dma_stm32_stream *stream = &data->streams[id - STREAM_OFFSET];
 	const struct dma_stm32_config *config =
-				dev->config->config_info;
+				dev->config_info;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
 
 	/* give channel from index 0 */
@@ -583,7 +583,7 @@ struct k_mem_block block;
 static int dma_stm32_init(struct device *dev)
 {
 	struct dma_stm32_data *data = dev->driver_data;
-	const struct dma_stm32_config *config = dev->config->config_info;
+	const struct dma_stm32_config *config = dev->config_info;
 	struct device *clk =
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);
 

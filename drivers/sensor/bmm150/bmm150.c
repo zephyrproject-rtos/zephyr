@@ -41,7 +41,7 @@ static int bmm150_set_power_mode(struct device *dev,
 				 int state)
 {
 	struct bmm150_data *data = dev->driver_data;
-	const struct bmm150_config *config = dev->config->config_info;
+	const struct bmm150_config *config = dev->config_info;
 
 	switch (mode) {
 	case BMM150_POWER_MODE_SUSPEND:
@@ -80,7 +80,7 @@ static int bmm150_set_power_mode(struct device *dev,
 static int bmm150_set_odr(struct device *dev, u8_t val)
 {
 	struct bmm150_data *data = dev->driver_data;
-	const struct bmm150_config *config = dev->config->config_info;
+	const struct bmm150_config *config = dev->config_info;
 	u8_t i;
 
 	for (i = 0U; i < ARRAY_SIZE(bmm150_samp_freq_table); ++i) {
@@ -101,7 +101,7 @@ static int bmm150_set_odr(struct device *dev, u8_t val)
 static int bmm150_read_rep_xy(struct device *dev)
 {
 	struct bmm150_data *data = dev->driver->data;
-	const struct bmm150_config *config = dev->config->config_info;
+	const struct bmm150_config *config = dev->config_info;
 	u8_t reg_val;
 
 	if (i2c_reg_read_byte(data->i2c, config->i2c_slave_addr,
@@ -117,7 +117,7 @@ static int bmm150_read_rep_xy(struct device *dev)
 static int bmm150_read_rep_z(struct device *dev)
 {
 	struct bmm150_data *data = dev->driver_data;
-	const struct bmm150_config *config = dev->config->config_info;
+	const struct bmm150_config *config = dev->config_info;
 	u8_t reg_val;
 
 	if (i2c_reg_read_byte(data->i2c, config->i2c_slave_addr,
@@ -164,7 +164,7 @@ static int bmm150_compute_max_odr(struct device *dev, int rep_xy,
 static int bmm150_read_odr(struct device *dev)
 {
 	struct bmm150_data *data = dev->driver_data;
-	const struct bmm150_config *config = dev->config->config_info;
+	const struct bmm150_config *config = dev->config_info;
 	u8_t i, odr_val, reg_val;
 
 	if (i2c_reg_read_byte(data->i2c, config->i2c_slave_addr,
@@ -189,7 +189,7 @@ static int bmm150_read_odr(struct device *dev)
 static int bmm150_write_rep_xy(struct device *dev, int val)
 {
 	struct bmm150_data *data = dev->driver_data;
-	const struct bmm150_config *config = dev->config->config_info;
+	const struct bmm150_config *config = dev->config_info;
 
 	if (i2c_reg_update_byte(data->i2c, config->i2c_slave_addr,
 				BMM150_REG_REP_XY,
@@ -208,7 +208,7 @@ static int bmm150_write_rep_xy(struct device *dev, int val)
 static int bmm150_write_rep_z(struct device *dev, int val)
 {
 	struct bmm150_data *data = dev->driver_data;
-	const struct bmm150_config *config = dev->config->config_info;
+	const struct bmm150_config *config = dev->config_info;
 
 	if (i2c_reg_update_byte(data->i2c, config->i2c_slave_addr,
 				BMM150_REG_REP_Z,
@@ -292,7 +292,7 @@ static int bmm150_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 
 	struct bmm150_data *drv_data = dev->driver_data;
-	const struct bmm150_config *config = dev->config->config_info;
+	const struct bmm150_config *config = dev->config_info;
 	u16_t values[BMM150_AXIS_XYZR_MAX];
 	s16_t raw_x, raw_y, raw_z;
 	u16_t rhall;
@@ -489,7 +489,7 @@ static const struct sensor_driver_api bmm150_api_funcs = {
 static int bmm150_init_chip(struct device *dev)
 {
 	struct bmm150_data *data = dev->driver_data;
-	const struct bmm150_config *config = dev->config->config_info;
+	const struct bmm150_config *config = dev->config_info;
 	u8_t chip_id;
 	struct bmm150_preset preset;
 
@@ -581,7 +581,7 @@ err_poweroff:
 static int bmm150_init(struct device *dev)
 {
 	const struct bmm150_config *const config =
-		dev->config->config_info;
+		dev->config_info;
 	struct bmm150_data *data = dev->driver_data;
 
 	data->i2c = device_get_binding(config->i2c_master_dev_name);

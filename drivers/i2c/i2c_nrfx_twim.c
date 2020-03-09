@@ -35,7 +35,7 @@ static inline struct i2c_nrfx_twim_data *get_dev_data(struct device *dev)
 static inline
 const struct i2c_nrfx_twim_config *get_dev_config(struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config_info;
 }
 
 static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
@@ -149,7 +149,7 @@ static int init_twim(struct device *dev)
 					   dev);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
-			dev->config->name);
+			dev->name);
 		return -EBUSY;
 	}
 

@@ -316,7 +316,7 @@ static int spi_nor_wait_until_ready(struct device *dev)
 static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 			size_t size)
 {
-	const struct spi_nor_config *params = dev->config->config_info;
+	const struct spi_nor_config *params = dev->config_info;
 	int ret;
 
 	/* should be between 0 and flash size */
@@ -337,7 +337,7 @@ static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 			 size_t size)
 {
-	const struct spi_nor_config *params = dev->config->config_info;
+	const struct spi_nor_config *params = dev->config_info;
 	int ret = 0;
 
 	/* should be between 0 and flash size */
@@ -382,7 +382,7 @@ out:
 
 static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 {
-	const struct spi_nor_config *params = dev->config->config_info;
+	const struct spi_nor_config *params = dev->config_info;
 	int ret = 0;
 
 	/* should be between 0 and flash size */
@@ -471,7 +471,7 @@ static int spi_nor_write_protection_set(struct device *dev, bool write_protect)
 static int spi_nor_configure(struct device *dev)
 {
 	struct spi_nor_data *data = dev->driver_data;
-	const struct spi_nor_config *params = dev->config->config_info;
+	const struct spi_nor_config *params = dev->config_info;
 
 	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!data->spi) {

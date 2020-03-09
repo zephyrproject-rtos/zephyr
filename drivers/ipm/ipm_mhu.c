@@ -12,7 +12,7 @@
 #include "ipm_mhu.h"
 
 #define DEV_CFG(dev) \
-	((const struct ipm_mhu_device_config * const)(dev)->config->config_info)
+	((const struct ipm_mhu_device_config * const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct ipm_mhu_data *)(dev)->driver_data)
 #define IPM_MHU_REGS(dev) \

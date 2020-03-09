@@ -261,7 +261,7 @@ In the implementation of the common init function:
 
   int my_driver_init(struct device *device)
   {
-        const struct my_driver_config *config = device->config->config_info;
+        const struct my_driver_config *config = device->config_info;
 
         /* Do other initialization stuff */
         ...

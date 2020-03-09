@@ -788,7 +788,7 @@ static const struct lsm6dso_config lsm6dso_config = {
 
 static int lsm6dso_init(struct device *dev)
 {
-	const struct lsm6dso_config * const config = dev->config->config_info;
+	const struct lsm6dso_config * const config = dev->config_info;
 	struct lsm6dso_data *data = dev->driver_data;
 
 	data->bus = device_get_binding(config->bus_name);

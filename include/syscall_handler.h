@@ -460,7 +460,7 @@ static inline int z_obj_validation_check(struct z_object *ko,
 	({ \
 		struct device *_dev = (struct device *)_device; \
 		Z_SYSCALL_OBJ(_dev, _dtype) || \
-			Z_SYSCALL_VERIFY_MSG(_dev->config->init == _init_fn, \
+			Z_SYSCALL_VERIFY_MSG(_dev->init == _init_fn, \
 					     "init function mismatch"); \
 	})
 

@@ -132,7 +132,7 @@ static int adxl345_init(struct device *dev)
 {
 	int rc;
 	struct adxl345_dev_data *data = dev->driver_data;
-	const struct adxl345_dev_config *cfg = dev->config->config_info;
+	const struct adxl345_dev_config *cfg = dev->config_info;
 	u8_t dev_id;
 
 	data->sample_number = 0;

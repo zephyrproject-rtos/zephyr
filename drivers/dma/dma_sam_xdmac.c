@@ -45,9 +45,9 @@ struct sam_xdmac_dev_data {
 	struct sam_xdmac_channel_cfg dma_channels[DMA_CHANNELS_NO];
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct sam_xdmac_dev_cfg *const)(dev)->config->config_info)
+	((const struct sam_xdmac_dev_cfg *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct sam_xdmac_dev_data *const)(dev)->driver_data)
 

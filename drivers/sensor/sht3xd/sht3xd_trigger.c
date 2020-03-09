@@ -86,7 +86,7 @@ static inline void setup_alert(struct device *dev,
 {
 	struct sht3xd_data *data = (struct sht3xd_data *)dev->driver_data;
 	const struct sht3xd_config *cfg =
-		(const struct sht3xd_config *)dev->config->config_info;
+		(const struct sht3xd_config *)dev->config_info;
 	unsigned int flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
@@ -115,7 +115,7 @@ int sht3xd_trigger_set(struct device *dev,
 {
 	struct sht3xd_data *data = (struct sht3xd_data *)dev->driver_data;
 	const struct sht3xd_config *cfg =
-		(const struct sht3xd_config *)dev->config->config_info;
+		(const struct sht3xd_config *)dev->config_info;
 
 	setup_alert(dev, false);
 
@@ -191,7 +191,7 @@ static void sht3xd_work_cb(struct k_work *work)
 int sht3xd_init_interrupt(struct device *dev)
 {
 	struct sht3xd_data *data = dev->driver_data;
-	const struct sht3xd_config *cfg = dev->config->config_info;
+	const struct sht3xd_config *cfg = dev->config_info;
 	struct device *gpio = device_get_binding(cfg->alert_gpio_name);
 	int rc;
 

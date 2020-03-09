@@ -320,7 +320,7 @@ static int qspi_erase(struct device *dev, u32_t addr, u32_t size)
 	}
 
 	int rv = -EIO;
-	const struct qspi_nor_config *params = dev->config->config_info;
+	const struct qspi_nor_config *params = dev->config_info;
 
 	while (size) {
 		nrfx_err_t res = !NRFX_SUCCESS;
@@ -504,7 +504,7 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 		return -EINVAL;
 	}
 
-	const struct qspi_nor_config *params = dev->config->config_info;
+	const struct qspi_nor_config *params = dev->config_info;
 
 	/* should be between 0 and flash size */
 	if (addr >= params->size ||
@@ -543,7 +543,7 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 	}
 
 	struct qspi_nor_data *const driver_data = dev->driver_data;
-	const struct qspi_nor_config *params = dev->config->config_info;
+	const struct qspi_nor_config *params = dev->config_info;
 
 	if (driver_data->write_protection) {
 		return -EACCES;
@@ -572,7 +572,7 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 static int qspi_nor_erase(struct device *dev, off_t addr, size_t size)
 {
 	struct qspi_nor_data *const driver_data = dev->driver_data;
-	const struct qspi_nor_config *params = dev->config->config_info;
+	const struct qspi_nor_config *params = dev->config_info;
 
 	if (driver_data->write_protection) {
 		return -EACCES;
@@ -622,7 +622,7 @@ static int qspi_nor_write_protection_set(struct device *dev,
  */
 static int qspi_nor_configure(struct device *dev)
 {
-	const struct qspi_nor_config *params = dev->config->config_info;
+	const struct qspi_nor_config *params = dev->config_info;
 
 	int ret = qspi_nrfx_configure(dev);
 

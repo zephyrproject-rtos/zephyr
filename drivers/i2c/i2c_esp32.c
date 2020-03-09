@@ -172,7 +172,7 @@ static int i2c_esp32_configure_speed(const struct i2c_esp32_config *config,
 
 static int i2c_esp32_configure(struct device *dev, u32_t dev_config)
 {
-	const struct i2c_esp32_config *config = dev->config->config_info;
+	const struct i2c_esp32_config *config = dev->config_info;
 	struct i2c_esp32_data *data = dev->driver_data;
 	unsigned int key = irq_lock();
 	u32_t v = 0U;
@@ -280,7 +280,7 @@ static int i2c_esp32_spin_yield(int *counter)
 
 static int i2c_esp32_transmit(struct device *dev)
 {
-	const struct i2c_esp32_config *config = dev->config->config_info;
+	const struct i2c_esp32_config *config = dev->config_info;
 	struct i2c_esp32_data *data = dev->driver_data;
 	u32_t status;
 
@@ -304,7 +304,7 @@ static int i2c_esp32_transmit(struct device *dev)
 static int i2c_esp32_wait(struct device *dev,
 			  volatile struct i2c_esp32_cmd *wait_cmd)
 {
-	const struct i2c_esp32_config *config = dev->config->config_info;
+	const struct i2c_esp32_config *config = dev->config_info;
 	int counter = 0;
 	int ret;
 
@@ -347,7 +347,7 @@ i2c_esp32_write_addr(struct device *dev,
 		     struct i2c_msg *msg,
 		     u16_t addr)
 {
-	const struct i2c_esp32_config *config = dev->config->config_info;
+	const struct i2c_esp32_config *config = dev->config_info;
 	struct i2c_esp32_data *data = dev->driver_data;
 	u32_t addr_len = 1U;
 
@@ -376,7 +376,7 @@ i2c_esp32_write_addr(struct device *dev,
 static int i2c_esp32_read_msg(struct device *dev, u16_t addr,
 			      struct i2c_msg msg)
 {
-	const struct i2c_esp32_config *config = dev->config->config_info;
+	const struct i2c_esp32_config *config = dev->config_info;
 	volatile struct i2c_esp32_cmd *cmd =
 		(void *)I2C_COMD0_REG(config->index);
 	u32_t i;
@@ -458,7 +458,7 @@ static int i2c_esp32_read_msg(struct device *dev, u16_t addr,
 static int i2c_esp32_write_msg(struct device *dev, u16_t addr,
 			       struct i2c_msg msg)
 {
-	const struct i2c_esp32_config *config = dev->config->config_info;
+	const struct i2c_esp32_config *config = dev->config_info;
 	volatile struct i2c_esp32_cmd *cmd =
 		(void *)I2C_COMD0_REG(config->index);
 
@@ -543,7 +543,7 @@ static void i2c_esp32_isr(void *arg)
 				   I2C_TRANS_COMPLETE_INT_ST |
 				   I2C_ARBITRATION_LOST_INT_ST;
 	struct device *device = arg;
-	const struct i2c_esp32_config *config = device->config->config_info;
+	const struct i2c_esp32_config *config = device->config_info;
 
 	if (sys_read32(I2C_INT_STATUS_REG(config->index)) & fifo_give_mask) {
 		struct i2c_esp32_data *data = device->driver_data;
@@ -664,7 +664,7 @@ DEVICE_AND_API_INIT(i2c_esp32_1, DT_INST_LABEL(1), &i2c_esp32_init,
 
 static int i2c_esp32_init(struct device *dev)
 {
-	const struct i2c_esp32_config *config = dev->config->config_info;
+	const struct i2c_esp32_config *config = dev->config_info;
 	struct i2c_esp32_data *data = dev->driver_data;
 	u32_t bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 	unsigned int key = irq_lock();

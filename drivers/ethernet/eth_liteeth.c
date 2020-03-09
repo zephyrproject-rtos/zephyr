@@ -72,7 +72,7 @@ struct eth_liteeth_config {
 
 static int eth_initialize(struct device *dev)
 {
-	const struct eth_liteeth_config *config = dev->config->config_info;
+	const struct eth_liteeth_config *config = dev->config_info;
 
 	config->config_func();
 

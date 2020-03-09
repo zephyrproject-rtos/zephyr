@@ -24,7 +24,7 @@ static void lis2ds12_gpio_callback(struct device *dev,
 {
 	struct lis2ds12_data *data =
 		CONTAINER_OF(cb, struct lis2ds12_data, gpio_cb);
-	const struct lis2ds12_config *cfg = dev->config->config_info;
+	const struct lis2ds12_config *cfg = dev->config_info;
 
 	ARG_UNUSED(pins);
 
@@ -51,7 +51,7 @@ static void lis2ds12_handle_int(void *arg)
 {
 	struct device *dev = arg;
 	struct lis2ds12_data *data = dev->driver_data;
-	const struct lis2ds12_config *cfg = dev->config->config_info;
+	const struct lis2ds12_config *cfg = dev->config_info;
 	u8_t status;
 
 	if (data->hw_tf->read_reg(data, LIS2DS12_REG_STATUS, &status) < 0) {
@@ -120,7 +120,7 @@ static int lis2ds12_init_interrupt(struct device *dev)
 int lis2ds12_trigger_init(struct device *dev)
 {
 	struct lis2ds12_data *data = dev->driver_data;
-	const struct lis2ds12_config *cfg = dev->config->config_info;
+	const struct lis2ds12_config *cfg = dev->config_info;
 
 	/* setup data ready gpio interrupt */
 	data->gpio = device_get_binding(cfg->irq_port);
@@ -165,7 +165,7 @@ int lis2ds12_trigger_set(struct device *dev,
 			sensor_trigger_handler_t handler)
 {
 	struct lis2ds12_data *data = dev->driver_data;
-	const struct lis2ds12_config *cfg = dev->config->config_info;
+	const struct lis2ds12_config *cfg = dev->config_info;
 	u8_t buf[6];
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);

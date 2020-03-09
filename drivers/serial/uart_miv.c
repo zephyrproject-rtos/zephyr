@@ -146,7 +146,7 @@ struct uart_miv_data {
 
 #define DEV_CFG(dev)						\
 	((const struct uart_miv_device_config * const)		\
-	 (dev)->config->config_info)
+	 (dev)->config_info)
 #define DEV_UART(dev)						\
 	((struct uart_miv_regs_t *)(DEV_CFG(dev))->uart_addr)
 #define DEV_DATA(dev)						\

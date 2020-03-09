@@ -138,7 +138,7 @@ static int gpio_lmp90xxx_pin_interrupt_configure(struct device *dev,
 
 static int gpio_lmp90xxx_init(struct device *dev)
 {
-	const struct gpio_lmp90xxx_config *config = dev->config->config_info;
+	const struct gpio_lmp90xxx_config *config = dev->config_info;
 	struct gpio_lmp90xxx_data *data = dev->driver_data;
 
 	data->parent = device_get_binding(config->parent_dev_name);

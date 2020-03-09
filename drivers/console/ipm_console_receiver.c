@@ -28,7 +28,7 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 
 	d = (struct device *)arg1;
 	driver_data = d->driver_data;
-	config_info = d->config->config_info;
+	config_info = d->config_info;
 	ARG_UNUSED(arg2);
 	size32 = 0U;
 	pos = 0;
@@ -54,11 +54,11 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 				config_info->line_buf[pos + 1] = '\0';
 			}
 			if (config_info->flags & IPM_CONSOLE_PRINTK) {
-				printk("%s: '%s'\n", d->config->name,
+				printk("%s: '%s'\n", d->name,
 				       config_info->line_buf);
 			}
 			if (config_info->flags & IPM_CONSOLE_STDOUT) {
-				printf("%s: '%s'\n", d->config->name,
+				printf("%s: '%s'\n", d->name,
 				       config_info->line_buf);
 			}
 			pos = 0;
@@ -118,7 +118,7 @@ static void ipm_console_receive_callback(void *context, u32_t id,
 int ipm_console_receiver_init(struct device *d)
 {
 	const struct ipm_console_receiver_config_info *config_info =
-		d->config->config_info;
+		d->config_info;
 	struct ipm_console_receiver_runtime_data *driver_data = d->driver_data;
 	struct device *ipm;
 

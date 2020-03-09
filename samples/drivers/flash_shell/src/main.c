@@ -570,7 +570,7 @@ static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 	}
 	if (flash_device) {
 		PR_SHELL(shell, "Leaving behind device %s\n",
-			 flash_device->config->name);
+			 flash_device->name);
 	}
 	flash_device = dev;
 

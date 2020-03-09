@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(lsm303dlhc_magn, CONFIG_SENSOR_LOG_LEVEL);
 static int lsm303dlhc_sample_fetch(struct device *dev,
 				   enum sensor_channel chan)
 {
-	const struct lsm303dlhc_magn_config *config = dev->config->config_info;
+	const struct lsm303dlhc_magn_config *config = dev->config_info;
 	struct lsm303dlhc_magn_data *drv_data = dev->driver_data;
 	u8_t magn_buf[6];
 	u8_t status;
@@ -93,7 +93,7 @@ static const struct sensor_driver_api lsm303dlhc_magn_driver_api = {
 
 static int lsm303dlhc_magn_init(struct device *dev)
 {
-	const struct lsm303dlhc_magn_config *config = dev->config->config_info;
+	const struct lsm303dlhc_magn_config *config = dev->config_info;
 	struct lsm303dlhc_magn_data *drv_data = dev->driver_data;
 
 	drv_data->i2c = device_get_binding(config->i2c_name);

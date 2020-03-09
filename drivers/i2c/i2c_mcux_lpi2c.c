@@ -34,7 +34,7 @@ struct mcux_lpi2c_data {
 
 static int mcux_lpi2c_configure(struct device *dev, u32_t dev_config_raw)
 {
-	const struct mcux_lpi2c_config *config = dev->config->config_info;
+	const struct mcux_lpi2c_config *config = dev->config_info;
 	LPI2C_Type *base = config->base;
 	struct device *clock_dev;
 	u32_t clock_freq;
@@ -108,7 +108,7 @@ static u32_t mcux_lpi2c_convert_flags(int msg_flags)
 static int mcux_lpi2c_transfer(struct device *dev, struct i2c_msg *msgs,
 		u8_t num_msgs, u16_t addr)
 {
-	const struct mcux_lpi2c_config *config = dev->config->config_info;
+	const struct mcux_lpi2c_config *config = dev->config_info;
 	struct mcux_lpi2c_data *data = dev->driver_data;
 	LPI2C_Type *base = config->base;
 	lpi2c_master_transfer_t transfer;
@@ -169,7 +169,7 @@ static int mcux_lpi2c_transfer(struct device *dev, struct i2c_msg *msgs,
 static void mcux_lpi2c_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct mcux_lpi2c_config *config = dev->config->config_info;
+	const struct mcux_lpi2c_config *config = dev->config_info;
 	struct mcux_lpi2c_data *data = dev->driver_data;
 	LPI2C_Type *base = config->base;
 
@@ -178,7 +178,7 @@ static void mcux_lpi2c_isr(void *arg)
 
 static int mcux_lpi2c_init(struct device *dev)
 {
-	const struct mcux_lpi2c_config *config = dev->config->config_info;
+	const struct mcux_lpi2c_config *config = dev->config_info;
 	struct mcux_lpi2c_data *data = dev->driver_data;
 	LPI2C_Type *base = config->base;
 	struct device *clock_dev;

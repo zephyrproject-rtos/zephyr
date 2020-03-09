@@ -179,7 +179,7 @@ static inline int i2c_reg_write_byte_be(struct device *dev, u16_t dev_addr,
 static int sx1509b_handle_interrupt(void *arg)
 {
 	struct device *dev = (struct device *) arg;
-	const struct sx1509b_config *cfg = dev->config->config_info;
+	const struct sx1509b_config *cfg = dev->config_info;
 	struct sx1509b_drv_data *drv_data = dev->driver_data;
 	int ret = 0;
 	u16_t int_source;
@@ -235,7 +235,7 @@ static int sx1509b_config(struct device *dev,
 			  gpio_pin_t pin,
 			  gpio_flags_t flags)
 {
-	const struct sx1509b_config *cfg = dev->config->config_info;
+	const struct sx1509b_config *cfg = dev->config_info;
 	struct sx1509b_drv_data *drv_data = dev->driver_data;
 	struct sx1509b_pin_state *pins = &drv_data->pin_state;
 	struct {
@@ -373,7 +373,7 @@ out:
 static int port_get(struct device *dev,
 		    gpio_port_value_t *value)
 {
-	const struct sx1509b_config *cfg = dev->config->config_info;
+	const struct sx1509b_config *cfg = dev->config_info;
 	struct sx1509b_drv_data *drv_data = dev->driver_data;
 	u16_t pin_data;
 	int rc = 0;
@@ -412,7 +412,7 @@ static int port_write(struct device *dev,
 		return -EWOULDBLOCK;
 	}
 
-	const struct sx1509b_config *cfg = dev->config->config_info;
+	const struct sx1509b_config *cfg = dev->config_info;
 	struct sx1509b_drv_data *drv_data = dev->driver_data;
 	u16_t *outp = &drv_data->pin_state.data;
 
@@ -476,7 +476,7 @@ static int pin_interrupt_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	const struct sx1509b_config *cfg = dev->config->config_info;
+	const struct sx1509b_config *cfg = dev->config_info;
 	struct sx1509b_drv_data *drv_data = dev->driver_data;
 	struct sx1509b_irq_state *irq = &drv_data->irq_state;
 	struct {
@@ -537,13 +537,13 @@ static int pin_interrupt_configure(struct device *dev,
  */
 static int sx1509b_init(struct device *dev)
 {
-	const struct sx1509b_config *cfg = dev->config->config_info;
+	const struct sx1509b_config *cfg = dev->config_info;
 	struct sx1509b_drv_data *drv_data = dev->driver_data;
 	int rc;
 
 	drv_data->i2c_master = device_get_binding(cfg->i2c_master_dev_name);
 	if (!drv_data->i2c_master) {
-		LOG_ERR("%s: no bus %s", dev->config->name,
+		LOG_ERR("%s: no bus %s", dev->name,
 			cfg->i2c_master_dev_name);
 		rc = -EINVAL;
 		goto out;
@@ -577,7 +577,7 @@ static int sx1509b_init(struct device *dev)
 	rc = i2c_reg_write_byte(drv_data->i2c_master, cfg->i2c_slave_addr,
 				SX1509B_REG_RESET, SX1509B_REG_RESET_MAGIC0);
 	if (rc != 0) {
-		LOG_ERR("%s: reset m0 failed: %d\n", dev->config->name, rc);
+		LOG_ERR("%s: reset m0 failed: %d\n", dev->name, rc);
 		goto out;
 	}
 	rc = i2c_reg_write_byte(drv_data->i2c_master, cfg->i2c_slave_addr,
@@ -621,9 +621,9 @@ static int sx1509b_init(struct device *dev)
 
 out:
 	if (rc != 0) {
-		LOG_ERR("%s init failed: %d", dev->config->name, rc);
+		LOG_ERR("%s init failed: %d", dev->name, rc);
 	} else {
-		LOG_INF("%s init ok", dev->config->name);
+		LOG_INF("%s init ok", dev->name);
 	}
 	k_sem_give(&drv_data->lock);
 	return rc;

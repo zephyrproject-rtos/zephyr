@@ -390,7 +390,7 @@ static int net_can_init(struct device *dev)
 	}
 
 	NET_DBG("Init net CAN device %p (%s) for dev %p (%s)",
-		dev, dev->config->name, can_dev, can_dev->config->name);
+		dev, dev->name, can_dev, can_dev->name);
 
 	ctx->can_dev = can_dev;
 

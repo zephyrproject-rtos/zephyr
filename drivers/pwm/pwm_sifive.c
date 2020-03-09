@@ -70,7 +70,7 @@ static inline void sys_set_mask(mem_addr_t addr, u32_t mask, u32_t value)
 
 static int pwm_sifive_init(struct device *dev)
 {
-	const struct pwm_sifive_cfg *config = dev->config->config_info;
+	const struct pwm_sifive_cfg *config = dev->config_info;
 
 	/* When pwms == pwmcmp0, reset the counter */
 	sys_set_bit(PWM_REG(config, REG_PWMCFG), SF_PWMZEROCMP);
@@ -110,17 +110,13 @@ static int pwm_sifive_pin_set(struct device *dev,
 		LOG_ERR("The device instance pointer was NULL\n");
 		return -EFAULT;
 	}
-	if (dev->config == NULL) {
-		LOG_ERR("The device config pointer was NULL\n");
-		return -EFAULT;
-	}
 
 	if (flags) {
 		/* PWM polarity not supported (yet?) */
 		return -ENOTSUP;
 	}
 
-	config = dev->config->config_info;
+	config = dev->config_info;
 	if (config == NULL) {
 		LOG_ERR("The device configuration is NULL\n");
 		return -EFAULT;
@@ -202,12 +198,8 @@ static int pwm_sifive_get_cycles_per_sec(struct device *dev,
 		LOG_ERR("The device instance pointer was NULL\n");
 		return -EFAULT;
 	}
-	if (dev->config == NULL) {
-		LOG_ERR("The device config pointer was NULL\n");
-		return -EFAULT;
-	}
 
-	config = dev->config->config_info;
+	config = dev->config_info;
 	if (config == NULL) {
 		LOG_ERR("The device configuration is NULL\n");
 		return -EFAULT;

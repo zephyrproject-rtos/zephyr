@@ -100,7 +100,7 @@ static int ht16k33_led_blink(struct device *dev, u32_t led,
 	/* The HT16K33 blinks all LEDs at the same frequency */
 	ARG_UNUSED(led);
 
-	const struct ht16k33_cfg *config = dev->config->config_info;
+	const struct ht16k33_cfg *config = dev->config_info;
 	struct ht16k33_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
 	u32_t period;
@@ -135,7 +135,7 @@ static int ht16k33_led_set_brightness(struct device *dev, u32_t led,
 {
 	ARG_UNUSED(led);
 
-	const struct ht16k33_cfg *config = dev->config->config_info;
+	const struct ht16k33_cfg *config = dev->config_info;
 	struct ht16k33_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
 	u8_t dim;
@@ -159,7 +159,7 @@ static int ht16k33_led_set_brightness(struct device *dev, u32_t led,
 
 static int ht16k33_led_set_state(struct device *dev, u32_t led, bool on)
 {
-	const struct ht16k33_cfg *config = dev->config->config_info;
+	const struct ht16k33_cfg *config = dev->config_info;
 	struct ht16k33_data *data = dev->driver_data;
 	u8_t cmd[2];
 	u8_t addr;
@@ -206,7 +206,7 @@ static int ht16k33_led_off(struct device *dev, u32_t led)
 #ifdef CONFIG_HT16K33_KEYSCAN
 u32_t ht16k33_get_pending_int(struct device *dev)
 {
-	const struct ht16k33_cfg *config = dev->config->config_info;
+	const struct ht16k33_cfg *config = dev->config_info;
 	struct ht16k33_data *data = dev->driver_data;
 	u8_t cmd;
 	u8_t flag;
@@ -225,7 +225,7 @@ u32_t ht16k33_get_pending_int(struct device *dev)
 
 static bool ht16k33_process_keyscan_data(struct device *dev)
 {
-	const struct ht16k33_cfg *config = dev->config->config_info;
+	const struct ht16k33_cfg *config = dev->config_info;
 	struct ht16k33_data *data = dev->driver_data;
 	u8_t keys[HT16K33_KEYSCAN_DATA_SIZE];
 	bool pressed = false;
@@ -321,7 +321,7 @@ int ht16k33_register_keyscan_device(struct device *parent,
 
 static int ht16k33_init(struct device *dev)
 {
-	const struct ht16k33_cfg *config = dev->config->config_info;
+	const struct ht16k33_cfg *config = dev->config_info;
 	struct ht16k33_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
 	u8_t cmd[1 + HT16K33_DISP_DATA_SIZE]; /* 1 byte command + data */

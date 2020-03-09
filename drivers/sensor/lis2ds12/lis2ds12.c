@@ -256,7 +256,7 @@ static const struct sensor_driver_api lis2ds12_api_funcs = {
 
 static int lis2ds12_init(struct device *dev)
 {
-	const struct lis2ds12_config * const config = dev->config->config_info;
+	const struct lis2ds12_config * const config = dev->config_info;
 	struct lis2ds12_data *data = dev->driver_data;
 	u8_t chip_id;
 

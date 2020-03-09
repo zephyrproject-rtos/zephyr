@@ -58,7 +58,7 @@ void main(void)
 		return;
 	}
 
-	printk("device: %p, name: %s\n", dev, dev->config->name);
+	printk("device: %p, name: %s\n", dev, dev->name);
 
 #ifdef CONFIG_AMG88XX_TRIGGER
 	struct sensor_value attr = {

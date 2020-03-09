@@ -54,7 +54,7 @@ static int dac_stm32_write_value(struct device *dev,
 					u8_t channel, u32_t value)
 {
 	struct dac_stm32_data *data = dev->driver_data;
-	const struct dac_stm32_cfg *cfg = dev->config->config_info;
+	const struct dac_stm32_cfg *cfg = dev->config_info;
 
 	if (channel - STM32_FIRST_CHANNEL >= data->channel_count ||
 					channel < STM32_FIRST_CHANNEL) {
@@ -77,7 +77,7 @@ static int dac_stm32_channel_setup(struct device *dev,
 				   const struct dac_channel_cfg *channel_cfg)
 {
 	struct dac_stm32_data *data = dev->driver_data;
-	const struct dac_stm32_cfg *cfg = dev->config->config_info;
+	const struct dac_stm32_cfg *cfg = dev->config_info;
 
 	if ((channel_cfg->channel_id - STM32_FIRST_CHANNEL >=
 			data->channel_count) ||
@@ -109,7 +109,7 @@ static int dac_stm32_channel_setup(struct device *dev,
 
 static int dac_stm32_init(struct device *dev)
 {
-	const struct dac_stm32_cfg *cfg = dev->config->config_info;
+	const struct dac_stm32_cfg *cfg = dev->config_info;
 
 	/* enable clock for subsystem */
 	struct device *clk =

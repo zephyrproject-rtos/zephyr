@@ -55,7 +55,7 @@ static void iis2mdc_handle_interrupt(void *arg)
 	struct device *dev = arg;
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
 	const struct iis2mdc_config *const config =
-						dev->config->config_info;
+						dev->config_info;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
@@ -73,7 +73,7 @@ static void iis2mdc_gpio_callback(struct device *dev,
 {
 	struct iis2mdc_data *iis2mdc =
 		CONTAINER_OF(cb, struct iis2mdc_data, gpio_cb);
-	const struct iis2mdc_config *const config = dev->config->config_info;
+	const struct iis2mdc_config *const config = dev->config_info;
 
 	ARG_UNUSED(pins);
 
@@ -114,7 +114,7 @@ static void iis2mdc_work_cb(struct k_work *work)
 int iis2mdc_init_interrupt(struct device *dev)
 {
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
-	const struct iis2mdc_config *const config = dev->config->config_info;
+	const struct iis2mdc_config *const config = dev->config_info;
 
 	/* setup data ready gpio interrupt */
 	iis2mdc->gpio = device_get_binding(config->drdy_port);

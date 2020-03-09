@@ -349,7 +349,7 @@ static void eth_enc28j60_init_buffers(struct device *dev)
 
 static void eth_enc28j60_init_mac(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	u8_t data_macon;
 
@@ -399,7 +399,7 @@ static void eth_enc28j60_init_mac(struct device *dev)
 
 static void eth_enc28j60_init_phy(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config_info;
 
 	if (config->full_duplex) {
 		eth_enc28j60_write_phy(dev, ENC28J60_PHY_PHCON1,
@@ -506,7 +506,7 @@ static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt)
 
 static int eth_enc28j60_rx(struct device *dev, u16_t *vlan_tag)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	u16_t lengthfr;
 	u8_t counter;
@@ -717,7 +717,7 @@ static const struct ethernet_api api_funcs = {
 
 static int eth_enc28j60_init(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 
 	/* SPI config */

@@ -53,7 +53,7 @@ static void cavs_ictl_isr(void *arg)
 	struct device *port = (struct device *)arg;
 	struct cavs_ictl_runtime *context = port->driver_data;
 
-	const struct cavs_ictl_config *config = port->config->config_info;
+	const struct cavs_ictl_config *config = port->config_info;
 
 	volatile struct cavs_registers * const regs =
 					get_base_address(context);

@@ -24,7 +24,7 @@ static int ism330dhcx_i2c_read(struct device *dev, u8_t reg_addr,
 			    u8_t *value, u8_t len)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
-	const struct ism330dhcx_config *cfg = dev->config->config_info;
+	const struct ism330dhcx_config *cfg = dev->config_info;
 
 	return i2c_burst_read(data->bus, cfg->i2c_slv_addr,
 			      reg_addr, value, len);
@@ -34,7 +34,7 @@ static int ism330dhcx_i2c_write(struct device *dev, u8_t reg_addr,
 			     u8_t *value, u8_t len)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
-	const struct ism330dhcx_config *cfg = dev->config->config_info;
+	const struct ism330dhcx_config *cfg = dev->config_info;
 
 	return i2c_burst_write(data->bus, cfg->i2c_slv_addr,
 			       reg_addr, value, len);

@@ -17,7 +17,7 @@ LOG_MODULE_DECLARE(MCP9808, CONFIG_SENSOR_LOG_LEVEL);
 static int mcp9808_reg_write(struct device *dev, u8_t reg, u16_t val)
 {
 	const struct mcp9808_data *data = dev->driver_data;
-	const struct mcp9808_config *cfg = dev->config->config_info;
+	const struct mcp9808_config *cfg = dev->config_info;
 	u8_t buf[3] = {
 		reg,
 		val >> 8,	/* big-endian register storage */
@@ -61,7 +61,7 @@ static inline void setup_int(struct device *dev,
 			     bool enable)
 {
 	const struct mcp9808_data *data = dev->driver_data;
-	const struct mcp9808_config *cfg = dev->config->config_info;
+	const struct mcp9808_config *cfg = dev->config_info;
 	unsigned int flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
@@ -100,7 +100,7 @@ int mcp9808_trigger_set(struct device *dev,
 			sensor_trigger_handler_t handler)
 {
 	struct mcp9808_data *data = dev->driver_data;
-	const struct mcp9808_config *cfg = dev->config->config_info;
+	const struct mcp9808_config *cfg = dev->config_info;
 	int rv = 0;
 
 	setup_int(dev, false);
@@ -163,7 +163,7 @@ static void mcp9808_gpio_thread_cb(struct k_work *work)
 int mcp9808_setup_interrupt(struct device *dev)
 {
 	struct mcp9808_data *data = dev->driver_data;
-	const struct mcp9808_config *cfg = dev->config->config_info;
+	const struct mcp9808_config *cfg = dev->config_info;
 	struct device *gpio;
 	int rc = mcp9808_reg_write(dev, MCP9808_REG_CRITICAL,
 				   MCP9808_TEMP_ABS_MASK);
