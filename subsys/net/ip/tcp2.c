@@ -1006,21 +1006,26 @@ int net_tcp_connect(struct net_context *context,
 	struct tcp *conn;
 	int ret;
 
+	NET_DBG("context: %p, local: %s, remote: %s", context,
+		log_strdup(tcp_endpoint_to_string((void *)local_addr)),
+		log_strdup(tcp_endpoint_to_string((void *)remote_addr)));
+
 	conn = context->tcp;
 	conn->iface = net_context_get_iface(context);
 
 	switch (net_context_get_family(context)) {
 		const struct in_addr *ip4;
+		const struct in6_addr *ip6;
 
 	case AF_INET:
 		conn->src = tcp_calloc(1, tcp_endpoint_len(AF_INET));
 		conn->dst = tcp_calloc(1, tcp_endpoint_len(AF_INET));
 
-		net_sin(&conn->dst->sa)->sin_port = remote_port;
-		net_sin(&conn->src->sa)->sin_port = local_port;
+		conn->src->sa.sa_family = AF_INET;
+		conn->dst->sa.sa_family = AF_INET;
 
-		net_sin(&conn->dst->sa)->sin_addr =
-			net_sin(remote_addr)->sin_addr;
+		conn->dst->sin.sin_port = remote_port;
+		conn->src->sin.sin_port = local_port;
 
 		/* we have to select the source address here as
 		 * net_context_create_ipv4_new() is not called in the packet
@@ -1028,20 +1033,36 @@ int net_tcp_connect(struct net_context *context,
 		 */
 		ip4 = net_if_ipv4_select_src_addr(net_context_get_iface(context),
 						  (struct in_addr *)remote_addr);
-		net_sin(&conn->src->sa)->sin_addr.s_addr = ip4->s_addr;
+		conn->src->sin.sin_addr = *ip4;
+		conn->dst->sa = *remote_addr;
 		break;
 
 	case AF_INET6:
 		conn->src = tcp_calloc(1, tcp_endpoint_len(AF_INET6));
 		conn->dst = tcp_calloc(1, tcp_endpoint_len(AF_INET6));
 
-		net_sin6(&conn->src->sa)->sin6_port = local_port;
-		net_sin6(&conn->dst->sa)->sin6_port = remote_port;
+		memset(conn->src, 0, tcp_endpoint_len(AF_INET6));
+		memset(conn->dst, 0, tcp_endpoint_len(AF_INET6));
+
+		conn->src->sin6.sin6_family = AF_INET6;
+		conn->dst->sin6.sin6_family = AF_INET6;
+
+		conn->dst->sin6.sin6_port = remote_port;
+		conn->src->sin6.sin6_port = local_port;
+
+		ip6 = net_if_ipv6_select_src_addr(net_context_get_iface(context),
+						  (struct in6_addr *)remote_addr);
+		conn->src->sin6.sin6_addr = *ip6;
+		conn->dst->sin6.sin6_addr = ((struct sockaddr_in6 *)remote_addr)->sin6_addr;
 		break;
 
 	default:
 		return -EPROTONOSUPPORT;
 	}
+
+	NET_DBG("conn: %p, local: %s, remote: %s", conn,
+		log_strdup(tcp_endpoint_to_string(conn->src)),
+		log_strdup(tcp_endpoint_to_string(conn->dst)));
 
 	net_context_set_state(context, NET_CONTEXT_CONNECTING);
 
