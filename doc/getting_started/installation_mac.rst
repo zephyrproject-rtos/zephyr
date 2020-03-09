@@ -1,51 +1,7 @@
-.. _installing_zephyr_mac:
+.. _mac-setup-alts:
 
-Install macOS Host Dependencies
-###############################
-
-This section describes how to set up a Zephyr development environment on macOS.
-
-These instructions have been tested on the following macOS versions:
-
-* macOS 10.14 Mojave
-* macOS 10.15 Catalina
-
-Update Your Operating System
-****************************
-
-Before proceeding with the build, ensure your OS is up to date.
-
-.. _mac_requirements:
-
-Install Requirements and Dependencies
-*************************************
-
-.. NOTE FOR DOCS AUTHORS: DO NOT PUT DOCUMENTATION BUILD DEPENDENCIES HERE.
-
-   This section is for dependencies to build Zephyr binaries, *NOT* this
-   documentation. If you need to add a dependency only required for building
-   the docs, add it to doc/README.rst. (This change was made following the
-   introduction of LaTeX->PDF support for the docs, as the texlive footprint is
-   massive and not needed by users not building PDF documentation.)
-
-Zephyr requires Python 3, while macOS only provides a Python 2
-installation. After following these instructions, the version of Python 2
-provided by macOS in ``/usr/bin/`` will sit alongside the Python 3 installation
-from Homebrew in ``/usr/local/bin``.
-
-First, install :program:`Homebrew` by following instructions on the `Homebrew
-site`_. Homebrew is a free and open-source package management system that
-simplifies the installation of software on macOS.  While installing Homebrew,
-you may be prompted to install additional missing dependencies; please follow
-any such instructions as well.
-
-Now install these host dependencies with the ``brew`` command:
-
-.. code-block:: console
-
-   brew install cmake ninja gperf ccache dfu-util qemu dtc python3
-
-.. _Homebrew site: https://brew.sh/
+macOS alternative setup instructions
+####################################
 
 .. _mac-gatekeeper:
 
