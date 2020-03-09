@@ -493,30 +493,30 @@ static const struct spi_driver_api spi_sam_driver_api = {
 
 #define PINS_SPI1_CS { PIN_SPI1_CS0, PIN_SPI1_CS1, PIN_SPI1_CS2, PIN_SPI1_CS3 }
 
-#define SPI_SAM_DEFINE_CONFIG(n)					\
+#define SPI_SAM_DEFINE_CONFIG(n, m)					\
 	static const struct spi_sam_config spi_sam_config_##n = {	\
-		.regs = (Spi *)DT_SPI_##n##_BASE_ADDRESS,		\
-		.periph_id = DT_SPI_##n##_PERIPHERAL_ID,		\
+		.regs = (Spi *)DT_INST_##n##_ATMEL_SAM_SPI_BASE_ADDRESS,\
+		.periph_id = DT_INST_##n##_ATMEL_SAM_SPI_PERIPHERAL_ID,	\
 		.pins = PINS_SPI##n,					\
 		.cs = PINS_SPI##n##_CS,					\
 	}
 
-#define SPI_SAM_DEVICE_INIT(n)						\
-	SPI_SAM_DEFINE_CONFIG(n);					\
+#define SPI_SAM_DEVICE_INIT(n, m)					\
+	SPI_SAM_DEFINE_CONFIG(n, m);					\
 	static struct spi_sam_data spi_sam_dev_data_##n = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_sam_dev_data_##n, ctx),	\
 		SPI_CONTEXT_INIT_SYNC(spi_sam_dev_data_##n, ctx),	\
 	};								\
 	DEVICE_AND_API_INIT(spi_sam_##n,				\
-			    DT_SPI_##n##_NAME,				\
+			    DT_INST_##n##_ATMEL_SAM_SPI_LABEL,		\
 			    &spi_sam_init, &spi_sam_dev_data_##n,	\
 			    &spi_sam_config_##n, POST_KERNEL,		\
 			    CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api)
 
-#if DT_SPI_0_BASE_ADDRESS
-SPI_SAM_DEVICE_INIT(0);
+#if DT_INST_0_ATMEL_SAM_SPI
+SPI_SAM_DEVICE_INIT(0, DT_INST_0_ATMEL_SAM_SPI_ID);
 #endif
 
-#if DT_SPI_1_BASE_ADDRESS
-SPI_SAM_DEVICE_INIT(1);
+#if DT_INST_1_ATMEL_SAM_SPI
+SPI_SAM_DEVICE_INIT(1, DT_INST_0_ATMEL_SAM_SPI_ID);
 #endif
