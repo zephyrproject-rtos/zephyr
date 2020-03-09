@@ -282,10 +282,4 @@ typedef enum IRQn {
 #define __MPU_PRESENT           1
 #define __NVIC_PRIO_BITS        DT_NUM_IRQ_PRIO_BITS
 
-/* CRMU UART */
-#define DT_UART_NS16550_PORT_0_IRQ_FLAGS 0
-
-/* CHIP COMMON UART 0 */
-#define DT_UART_NS16550_PORT_1_IRQ_FLAGS 0
-
 #endif

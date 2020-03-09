@@ -40,24 +40,24 @@
  * Ditto for DLF and PCI(e).
  */
 
-#if defined(DT_UART_NS16550_PORT_0_PCP) || \
-	defined(DT_UART_NS16550_PORT_1_PCP) || \
-	defined(DT_UART_NS16550_PORT_2_PCP) || \
-	defined(DT_UART_NS16550_PORT_3_PCP)
+#if defined(DT_INST_0_NS16550_PCP) || \
+	defined(DT_INST_1_NS16550_PCP) || \
+	defined(DT_INST_2_NS16550_PCP) || \
+	defined(DT_INST_3_NS16550_PCP)
 #define UART_NS16550_PCP_ENABLED
 #endif
 
-#if defined(DT_UART_NS16550_PORT_0_DLF) || \
-	defined(DT_UART_NS16550_PORT_1_DLF) || \
-	defined(DT_UART_NS16550_PORT_2_DLF) || \
-	defined(DT_UART_NS16550_PORT_3_DLF)
+#if defined(DT_INST_0_NS16550_DLF) || \
+	defined(DT_INST_1_NS16550_DLF) || \
+	defined(DT_INST_2_NS16550_DLF) || \
+	defined(DT_INST_3_NS16550_DLF)
 #define UART_NS16550_DLF_ENABLED
 #endif
 
-#if DT_UART_NS16550_PORT_0_PCIE || \
-	DT_UART_NS16550_PORT_1_PCIE || \
-	DT_UART_NS16550_PORT_2_PCIE || \
-	DT_UART_NS16550_PORT_3_PCIE
+#if DT_INST_0_NS16550_PCIE || \
+	DT_INST_1_NS16550_PCIE || \
+	DT_INST_2_NS16550_PCIE || \
+	DT_INST_3_NS16550_PCIE
 BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define UART_NS16550_PCIE_ENABLED
 #include <drivers/pcie/pcie.h>
@@ -222,8 +222,8 @@ BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 
 #define IIRC(dev) (DEV_DATA(dev)->iir_cache)
 
-#ifdef DT_NS16550_REG_SHIFT
-#define UART_REG_ADDR_INTERVAL (1<<DT_NS16550_REG_SHIFT)
+#ifdef DT_INST_0_NS16550_REG_SHIFT
+#define UART_REG_ADDR_INTERVAL (1<<DT_INST_0_NS16550_REG_SHIFT)
 #endif
 
 #ifdef UART_NS16550_ACCESS_IOPORT
@@ -319,6 +319,7 @@ static int uart_ns16550_configure(struct device *dev,
 	unsigned int old_level;     /* old interrupt lock level */
 	u8_t mdc = 0U;
 
+	ARG_UNUSED(dev_data);
 	ARG_UNUSED(dev_cfg);
 
 #ifdef UART_NS16550_PCIE_ENABLED
@@ -843,18 +844,7 @@ static const struct uart_driver_api uart_ns16550_driver_api = {
 #endif
 };
 
-#ifdef CONFIG_UART_NS16550_PORT_0
 #include <uart_ns16550_port_0.h>
-#endif
-
-#ifdef CONFIG_UART_NS16550_PORT_1
 #include <uart_ns16550_port_1.h>
-#endif
-
-#ifdef CONFIG_UART_NS16550_PORT_2
 #include <uart_ns16550_port_2.h>
-#endif
-
-#ifdef CONFIG_UART_NS16550_PORT_3
 #include <uart_ns16550_port_3.h>
-#endif
