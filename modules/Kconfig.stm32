@@ -342,6 +342,12 @@ config USE_STM32_HAL_PCD_EX
 	  Enable STM32Cube Extended USB Peripheral Controller (PCD) HAL module
 	  driver
 
+config USE_STM32_HAL_PSSI
+	bool
+	help
+	  Enable STM32Cube Parallel Synchronous Slave Interface (PSSI)
+	  HAL module driver
+
 config USE_STM32_HAL_PWR
 	bool
 	help
