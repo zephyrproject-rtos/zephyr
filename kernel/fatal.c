@@ -163,6 +163,14 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 				arch_irq_unlock(key);
 				return;
 #endif /* CONFIG_STACK_SENTINEL */
+			} else {
+				/* Abort the thread only if the fault is not due to
+				 * a spurious ISR handler triggered.
+				 */
+				if (reason == K_ERR_SPURIOUS_IRQ) {
+					arch_irq_unlock(key);
+					return;
+				}
 			}
 #endif /*CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
 	}
