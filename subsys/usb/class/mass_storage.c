@@ -44,6 +44,8 @@
 #include <usb/usb_common.h>
 #include <usb_descriptor.h>
 
+#include "msc_scsi.h"
+
 #define LOG_LEVEL CONFIG_USB_MASS_STORAGE_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_msc);
@@ -274,7 +276,7 @@ static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
 	return 0;
 }
 
-static void testUnitReady(void)
+static void test_unit_ready_cmd(void)
 {
 	if (cbw.DataLength != 0U) {
 		if ((cbw.Flags & 0x80) != 0U) {
@@ -290,74 +292,98 @@ static void testUnitReady(void)
 	sendCSW();
 }
 
-static bool requestSense(void)
-{
-	u8_t request_sense[] = {
-		0x70,
-		0x00,
-		0x05,   /* Sense Key: illegal request */
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		0x0A,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-		0x30,
-		0x01,
-		0x00,
-		0x00,
-		0x00,
-		0x00,
-	};
+static struct fixed_format_sense_data sense_data = {
+	.code = SDRC_CURRENT_ERRORS,
+	.sense_key = SK_ILLEGAL_REQUEST,
+	.as_length = sizeof(struct additional_sense_data),
+	.asd = {
+		.asc_ascq = {0x30, 0x01},
+	},
+};
 
-	return write(request_sense, sizeof(request_sense));
+static void update_sense_data_ascq(u16_t ascq)
+{
+	sys_put_be16(ascq, sense_data.asd.asc_ascq);
 }
 
-static bool inquiryRequest(void)
+static bool req_sense_cmd(void)
 {
-	u8_t inquiry[] = { 0x00, 0x80, 0x00, 0x01,
-	36 - 4, 0x80, 0x00, 0x00,
-	'Z', 'E', 'P', 'H', 'Y', 'R', ' ', ' ',
-	'Z', 'E', 'P', 'H', 'Y', 'R', ' ', 'U', 'S', 'B', ' ',
-	'D', 'I', 'S', 'K', ' ',
-	'0', '.', '0', '1',
-	};
+	struct cdb6 *cmd = (struct cdb6 *)&cbw.CB[0];
 
-	return write(inquiry, sizeof(inquiry));
+	return write((u8_t *)&sense_data,
+		     MIN(cdb6_get_length(cmd), sizeof(sense_data)));
 }
 
-static bool modeSense6(void)
-{
-	u8_t sense6[] = { 0x03, 0x00, 0x00, 0x00 };
+static struct dabc_inquiry_data inq_data = {
+	.type = DIRECT_ACCESS_BLOCK_DEVICE,
+	.qualifier = 0,
+	.rmb = 1,	/* Medium is not removable */
+	.version = 0,
+	.rdf = 2,
+	.length = sizeof(struct dabc_inquiry_data) - 5,
+	.sccs = 0,
+	.t10_vid = {'Z', 'E', 'P', 'H', 'Y', 'R', ' ', ' '},
+	.product_id = {'Z', 'E', 'P', 'H', 'Y', 'R', ' ', 'U', 'S', 'B', ' ',
+		       'D', 'I', 'S', 'K', ' '},
+	.product_rev = {'0', '.', '0', '1'},
+};
 
-	return write(sense6, sizeof(sense6));
+static bool inquiry_cmd(void)
+{
+	struct cdb_inquiry *cmd = (struct cdb_inquiry *)&cbw.CB[0];
+
+	if (cmd->evpd) {
+		update_sense_data_ascq(ASCQ_INVALID_FIELD_IN_CDB);
+		csw.Status = CSW_FAILED;
+		sendCSW();
+		return false;
+	}
+
+	return write((u8_t *)&inq_data,
+		     MIN(sys_get_be16(&cmd->length[0]), sizeof(inq_data)));
 }
 
-static bool readFormatCapacity(void)
+static struct mode_parameter6 sense6_param = {
+	.hdr = {
+		.data_length = sizeof(struct mode_parameter6) - 1,
+		.medium_type = DIRECT_ACCESS_BLOCK_DEVICE,
+		.wp = 0,
+		.bd_length = 0,
+	},
+};
+
+static bool mode_sense6_cmd(void)
 {
-	u8_t capacity[] = { 0x00, 0x00, 0x00, 0x08,
-			(u8_t)((block_count >> 24) & 0xff),
-			(u8_t)((block_count >> 16) & 0xff),
-			(u8_t)((block_count >> 8) & 0xff),
-			(u8_t)((block_count >> 0) & 0xff),
+	struct cdb6 *cmd = (struct cdb6 *)&cbw.CB[0];
 
-			0x02,
-			(u8_t)((BLOCK_SIZE >> 16) & 0xff),
-			(u8_t)((BLOCK_SIZE >> 8) & 0xff),
-			(u8_t)((BLOCK_SIZE >> 0) & 0xff),
-	};
-
-	return write(capacity, sizeof(capacity));
+	return write((u8_t *)&sense6_param,
+		     MIN(cdb6_get_length(cmd), sizeof(sense6_param)));
 }
 
-static bool readCapacity(void)
+static bool read_format_capacities_cmd(void)
+{
+	struct capacity_descriptor capacity;
+	struct cdb10 *cmd = (struct cdb10 *)&cbw.CB[0];
+
+	memset(&capacity, 0, sizeof(struct capacity_descriptor));
+	capacity.clh.length = sizeof(capacity.ccd);
+	capacity.ccd.type = DESCRIPTOR_TYPE_FORMATTED_MEDIA;
+	sys_put_be32(block_count, capacity.ccd.numof_blocks);
+	sys_put_be24(BLOCK_SIZE, capacity.ccd.block_length);
+
+	LOG_ERR("rfcc %u", MIN(cdb10_get_length(cmd), sizeof(capacity)));
+
+	return write((u8_t *)&capacity,
+		     MIN(cdb10_get_length(cmd), sizeof(capacity)));
+}
+
+static bool read_capacity_cmd(void)
 {
 	u8_t capacity[8];
 
+	/* Last logical block */
 	sys_put_be32(block_count - 1, &capacity[0]);
+	/* Block length in bytes */
 	sys_put_be32(BLOCK_SIZE, &capacity[4]);
 
 	return write(capacity, sizeof(capacity));
@@ -448,6 +474,7 @@ static bool infoTransfer(void)
 	LOG_DBG("LBA (block) : 0x%x ", n);
 	if ((n * BLOCK_SIZE) >= memory_size) {
 		LOG_ERR("LBA out of range");
+		update_sense_data_ascq(ASCQ_CANNOT_RM_UNKNOWN_FORMAT);
 		csw.Status = CSW_FAILED;
 		sendCSW();
 		return false;
@@ -481,6 +508,7 @@ static bool infoTransfer(void)
 			usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
 		}
 
+		update_sense_data_ascq(ASCQ_CANNOT_RM_UNKNOWN_FORMAT);
 		csw.Status = CSW_FAILED;
 		sendCSW();
 		return false;
@@ -518,41 +546,42 @@ static void CBWDecode(u8_t *buf, u16_t size)
 
 	if ((cbw.CBLength <  1) || (cbw.CBLength > 16) || (cbw.LUN != 0U)) {
 		LOG_WRN("cbw.CBLength %d", cbw.CBLength);
+		update_sense_data_ascq(ASCQ_CANNOT_RM_UNKNOWN_FORMAT);
 		fail();
 	} else {
 		switch (cbw.CB[0]) {
 		case TEST_UNIT_READY:
 			LOG_DBG(">> TUR");
-			testUnitReady();
+			test_unit_ready_cmd();
 			break;
 		case REQUEST_SENSE:
-			LOG_DBG(">> REQ_SENSE");
+			LOG_DBG("opcode: REQUEST SENSE");
 			if (check_cbw_data_length()) {
-				requestSense();
+				req_sense_cmd();
 			}
 			break;
 		case INQUIRY:
-			LOG_DBG(">> INQ");
+			LOG_DBG("opcode: INQUIRY");
 			if (check_cbw_data_length()) {
-				inquiryRequest();
+				inquiry_cmd();
 			}
 			break;
 		case MODE_SENSE6:
-			LOG_DBG(">> MODE_SENSE6");
+			LOG_DBG("opcode: MODE SENSE 6");
 			if (check_cbw_data_length()) {
-				modeSense6();
+				mode_sense6_cmd();
 			}
 			break;
 		case READ_FORMAT_CAPACITIES:
-			LOG_DBG(">> READ_FORMAT_CAPACITY");
+			LOG_INF("opcode: READ FORMAT CAPACITIES");
 			if (check_cbw_data_length()) {
-				readFormatCapacity();
+				read_format_capacities_cmd();
 			}
 			break;
 		case READ_CAPACITY:
-			LOG_DBG(">> READ_CAPACITY");
+			LOG_DBG("opcode: READ CAPACITY 10");
 			if (check_cbw_data_length()) {
-				readCapacity();
+				read_capacity_cmd();
 			}
 			break;
 		case READ10:
@@ -612,11 +641,12 @@ static void CBWDecode(u8_t *buf, u16_t size)
 			sendCSW();
 			break;
 		default:
-			LOG_WRN(">> default CB[0] %x", cbw.CB[0]);
+			LOG_WRN("Unsupported opcode 0x%02x", cbw.CB[0]);
+			update_sense_data_ascq(ASCQ_INVALID_CMD_OPCODE);
 			fail();
 			break;
-		}		/*switch(cbw.CB[0])*/
-	}		/* else */
+		}
+	}
 
 }
 
@@ -736,6 +766,7 @@ static void mass_storage_bulk_out(u8_t ep,
 	/*an error has occurred: stall endpoint and send CSW*/
 	default:
 		LOG_WRN("Stall OUT endpoint, stage: %d", stage);
+		update_sense_data_ascq(ASCQ_CANNOT_RM_UNKNOWN_FORMAT);
 		usb_ep_set_stall(ep);
 		csw.Status = CSW_ERROR;
 		sendCSW();
