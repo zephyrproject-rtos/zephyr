@@ -1607,6 +1607,32 @@ const char *k_thread_state_str(k_tid_t thread_id);
 #define K_FOREVER Z_FOREVER
 
 /**
+ * @brief Generates an absolute/uptime timeout value in ticks
+ *
+ * This macro generates a timeout delay that represents an expiration
+ * at the absolute uptime value specified, in ticks.  That is, the
+ * timeout will expire immediately after the system uptime reaches the
+ * specified tick count.
+ *
+ * @param t Tick uptime value
+ * @return Timeout delay value
+ */
+#define K_TIMEOUT_ABS_TICKS(t) Z_TIMEOUT_TICKS(Z_TICK_ABS(MAX(t, 0)))
+
+/**
+ * @brief Generates an absolute/uptime timeout value in ms
+ *
+ * This macro generates a timeout delay that represents an expiration
+ * at the absolute uptime value specified, in milliseconds.  That is,
+ * the timeout will expire immediately after the system uptime reaches
+ * the specified tick count.
+ *
+ * @param t Millisecond uptime value
+ * @return Timeout delay value
+ */
+#define K_TIMEOUT_ABS_MS(t) K_TIMEOUT_ABS_TICKS(k_ms_to_ticks_ceil64(t))
+
+/**
  * @}
  */
 
