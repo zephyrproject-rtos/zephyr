@@ -44,6 +44,10 @@ config I2C_INIT_PRIORITY
 	help
 	  I2C device driver initialization priority.
 
+config I2C_ASYNC
+	bool "Enable I2C asynchronous API"
+	default n
+
 
 module = I2C
 module-str = i2c
