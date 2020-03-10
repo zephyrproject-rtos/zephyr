@@ -17,6 +17,8 @@
 #include "vector_table.h"
 #include "macro.h"
 
+_ASM_FILE_PROLOGUE
+
 /**
  *
  * @brief Reset vector

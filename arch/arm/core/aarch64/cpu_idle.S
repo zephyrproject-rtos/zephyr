@@ -13,6 +13,8 @@
 #include <linker/sections.h>
 #include <arch/cpu.h>
 
+_ASM_FILE_PROLOGUE
+
 GTEXT(arch_cpu_idle)
 SECTION_FUNC(TEXT, arch_cpu_idle)
 #ifdef CONFIG_TRACING
