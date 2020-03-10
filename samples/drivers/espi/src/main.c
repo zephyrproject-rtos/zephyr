@@ -17,6 +17,7 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 #define DEST_SLV_ADDR  0x02
 #define SRC_SLV_ADDR   0x21
 #define OOB_CMDCODE    0x01
+#define MAX_RESP_SIZE  20
 
 struct oob_header {
 	u8_t dest_slave_addr;
@@ -24,6 +25,12 @@ struct oob_header {
 	u8_t byte_cnt;
 	u8_t src_slave_addr;
 };
+
+struct oob_response {
+	struct oob_header hdr;
+	u8_t buf[MAX_RESP_SIZE];
+};
+
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
 static struct device *gpio_dev0;
@@ -235,8 +242,10 @@ int get_pch_temp(struct device *dev)
 	struct espi_oob_packet req_pckt;
 	struct espi_oob_packet resp_pckt;
 	struct oob_header oob_hdr;
-	struct oob_header rsp;
+	struct oob_response rsp;
 	int ret;
+
+	LOG_INF("%s", __func__);
 
 	oob_hdr.dest_slave_addr = DEST_SLV_ADDR;
 	oob_hdr.oob_cmd_code = OOB_CMDCODE;
@@ -247,18 +256,22 @@ int get_pch_temp(struct device *dev)
 	req_pckt.buf = (u8_t *)&oob_hdr;
 	req_pckt.len = sizeof(struct oob_header);
 	resp_pckt.buf = (u8_t *)&rsp;
-	resp_pckt.len = 0;
+	resp_pckt.len = MAX_RESP_SIZE;
 
 	ret = espi_send_oob(dev, req_pckt);
 	if (ret) {
-		LOG_WRN("espi_send_oob failed %d\n", ret);
+		LOG_ERR("OOB Tx failed %d", ret);
 		return ret;
 	}
 
 	ret = espi_receive_oob(dev, resp_pckt);
 	if (ret) {
-		LOG_WRN("espi_receive_oob failed %d\n", ret);
+		LOG_ERR("OOB Rx failed %d", ret);
 		return ret;
+	}
+
+	for (int i = 0; i < resp_pckt.len; i++) {
+		LOG_INF("%x ", rsp.buf[i]);
 	}
 
 	return 0;
