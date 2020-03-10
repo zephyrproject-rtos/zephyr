@@ -6,6 +6,7 @@
 
 
 #include <arm/armv8-m.dtsi>
+#include <dt-bindings/clock/stm32_clock.h>
 
 / {
 	cpus {
@@ -45,6 +46,14 @@
 				compatible = "soc-nv-flash";
 				label = "FLASH_STM32";
 			};
+		};
+
+		rcc: rcc@40021000 {
+			compatible = "st,stm32-rcc";
+			clocks-controller;
+			#clock-cells = <2>;
+			reg = <0x40021000 0x400>;
+			label = "STM32_CLK_RCC";
 		};
 	};
 };
