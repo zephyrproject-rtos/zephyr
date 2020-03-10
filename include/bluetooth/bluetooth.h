@@ -145,8 +145,8 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  *              identity. If set to all zeroes or NULL, the stack will
  *              generate a random IRK for the identity and copy it back
  *              to the parameter upon return from this function (in case
- *              the parameter was non-NULL). If privacy support
- *              (CONFIG_BT_PRIVACY) is not enabled this parameter must
+ *              the parameter was non-NULL). If privacy
+ *              :option:`CONFIG_BT_PRIVACY` is not enabled this parameter must
  *              be NULL.
  *
  *  @return Identity identifier (>= 0) in case of success, or a negative
@@ -178,8 +178,8 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk);
  *              identity. If set to all zeroes or NULL, the stack will
  *              generate a random IRK for the identity and copy it back
  *              to the parameter upon return from this function (in case
- *              the parameter was non-NULL). If privacy support
- *              (CONFIG_BT_PRIVACY) is not enabled this parameter must
+ *              the parameter was non-NULL). If privacy
+ *              :option:`CONFIG_BT_PRIVACY` is not enabled this parameter must
  *              be NULL.
  *
  *  @return Identity identifier (>= 0) in case of success, or a negative
@@ -249,8 +249,10 @@ enum {
 	/** Convenience value when no options are specified. */
 	BT_LE_ADV_OPT_NONE = 0,
 
-	/** Advertise as connectable. Type of advertising is determined by
-	 * providing SCAN_RSP data and/or enabling local privacy support.
+	/** Advertise as connectable. If not connectable then the type of
+	 *  advertising is determined by providing scan response data.
+	 *  The advertiser address is determined by the type of advertising
+	 *  and/or enabling privacy :option:`CONFIG_BT_PRIVACY`.
 	 */
 	BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
 
@@ -264,9 +266,12 @@ enum {
 	 */
 	BT_LE_ADV_OPT_ONE_TIME = BIT(1),
 
-	/** Advertise using the identity address as the own address.
+	/** Advertise using the identity address as the advertiser address.
 	 *  @warning This will compromise the privacy of the device, so care
 	 *           must be taken when using this option.
+	 *  @note The address used for advertising will not be the same as
+	 *         returned by @ref bt_le_oob_get_local, instead @ref bt_id_get
+	 *         should be used to get the LE address.
 	 */
 	BT_LE_ADV_OPT_USE_IDENTITY = BIT(2),
 
@@ -280,7 +285,8 @@ enum {
 	BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY = BIT(4),
 
 	/** Enable use of Resolvable Private Address (RPA) as the target address
-	 *  in directed advertisements when CONFIG_BT_PRIVACY is not enabled.
+	 *  in directed advertisements when :option:`CONFIG_BT_PRIVACY` is not
+	 *  enabled.
 	 *  This is required if the remote device is privacy-enabled and
 	 *  supports address resolution of the target address in directed
 	 *  advertisement.
@@ -616,7 +622,7 @@ void bt_data_parse(struct net_buf_simple *ad,
 		   bool (*func)(struct bt_data *data, void *user_data),
 		   void *user_data);
 
-/** OOB data that is specific for LE SC pairing method. */
+/** LE Secure Connections pairing Out of Band data. */
 struct bt_le_oob_sc_data {
 	/** Random Number. */
 	u8_t r[16];
@@ -625,32 +631,32 @@ struct bt_le_oob_sc_data {
 	u8_t c[16];
 };
 
-/** General OOB data. */
+/** LE Out of Band information. */
 struct bt_le_oob {
-	/** LE address. If local privacy is enabled this is Resolvable Private
+	/** LE address. If privacy is enabled this is a Resolvable Private
 	 *  Address.
 	 */
 	bt_addr_le_t addr;
 
-	/** OOB data that are relevant for LESC pairing. */
+	/** LE Secure Connections pairing Out of Band data. */
 	struct bt_le_oob_sc_data le_sc_data;
 };
 
-/**
- * @brief Get LE local Out Of Band information
+/** @brief Get local LE Out of Band (OOB) information.
  *
- * This function allows to get local information that are useful for Out Of Band
- * pairing or connection creation process.
+ *  This function allows to get local information that are useful for
+ *  Out of Band pairing or connection creation.
  *
- * If privacy is enabled this will result in generating new Resolvable Private
- * Address that is valid for CONFIG_BT_RPA_TIMEOUT seconds. This address
- * will be used for advertising, active scanning and connection creation.
+ *  If privacy :option:`CONFIG_BT_PRIVACY` is enabled this will result in
+ *  generating new Resolvable Private Address (RPA) that is valid for
+ *  :option:`CONFIG_BT_RPA_TIMEOUT` seconds. This address will be used for
+ *  advertising, active scanning and connection creation.
  *
- * @param id  Local identity, in most cases BT_ID_DEFAULT.
- * @param oob LE related information
+ *  @param[in]  id  Local identity, in most cases BT_ID_DEFAULT.
+ *  @param[out] oob LE OOB information
  *
  *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error
+ *  of protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_oob_get_local(u8_t id, struct bt_le_oob *oob);
 

@@ -633,7 +633,7 @@ void bt_set_oob_data_flag(bool enable);
 int bt_le_oob_set_legacy_tk(struct bt_conn *conn, const u8_t *tk);
 
 /**
- * @brief Set OOB data during LE SC pairing procedure
+ * @brief Set OOB data during LE Secure Connections (SC) pairing procedure
  *
  * This function allows to set OOB data during the LE SC pairing procedure. The
  * function should only be called in response to the oob_data_request() callback
@@ -656,7 +656,7 @@ int bt_le_oob_set_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data *oobd_remote);
 
 /**
- * @brief Get OOB data used for LE SC pairing procedure
+ * @brief Get OOB data used for LE Secure Connections (SC) pairing procedure
  *
  * This function allows to get OOB data during the LE SC pairing procedure that
  * were set by the bt_le_oob_set_sc_data() API.
@@ -709,7 +709,7 @@ struct bt_conn_oob_info {
 	} type;
 
 	union {
-		/** LESC OOB pairing parameters */
+		/** LE Secure Connections OOB pairing parameters */
 		struct {
 			/** OOB data configuration */
 			enum {
@@ -858,14 +858,15 @@ struct bt_conn_auth_cb {
 	 */
 	void (*passkey_confirm)(struct bt_conn *conn, unsigned int passkey);
 
-	/** @brief Request the user to provide OOB data.
+	/** @brief Request the user to provide Out of Band (OOB) data.
 	 *
 	 *  When called the user is expected to provide OOB data. The required
 	 *  data are indicated by the information structure.
 	 *
-	 *  For LESC OOB pairing method, the user should provide local OOB data,
-	 *  remote OOB data or both depending on their availability. Their value
-	 *  should be given to the stack using the bt_le_oob_set_sc_data() API.
+	 *  For LE Secure Connections OOB pairing, the user should provide
+	 *  local OOB data, remote OOB data or both depending on their
+	 *  availability. Their value should be given to the stack using the
+	 *  bt_le_oob_set_sc_data() API.
 	 *
 	 *  This callback must be set to non-NULL in order to support OOB
 	 *  pairing.
