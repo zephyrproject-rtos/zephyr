@@ -3150,61 +3150,43 @@ static inline void event_ping_prep(struct ll_conn *conn)
 static inline void dle_max_time_get(const struct ll_conn *conn,
 				    u16_t *max_rx_time, u16_t *max_tx_time)
 {
-	u32_t feature_coded_phy = 0;
-	u32_t feature_phy_2m = 0;
 	u16_t rx_time = 0;
 	u16_t tx_time = 0;
+	u16_t bit = 0;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	feature_coded_phy = (conn->llcp_feature.features &
-			     BIT(BT_LE_FEAT_BIT_PHY_CODED));
-#else
-	feature_coded_phy = 0;
-#endif
-
+	if (conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_PHY_CODED)) {
+		bit = BIT(2);
+	}
+#else /* CONFIG_BT_CTLR_PHY_CODED */
 #if defined(CONFIG_BT_CTLR_PHY_2M)
-	feature_phy_2m = (conn->llcp_feature.features &
-			  BIT(BT_LE_FEAT_BIT_PHY_2M));
-#else
-	feature_phy_2m = 0;
+	if (conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_PHY_2M)) {
+		bit = BIT(1);
+	}
 #endif
-#else
-	feature_coded_phy = 0;
-	feature_phy_2m = 0;
-#endif
-
-	if (!conn->common.fex_valid ||
-	    (!feature_coded_phy && !feature_phy_2m)) {
-		rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0);
-#if defined(CONFIG_BT_CTLR_PHY)
-		tx_time = MAX(MIN(PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0),
-				  conn->default_tx_time),
-			      PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0));
-#else /* !CONFIG_BT_CTLR_PHY */
-		tx_time = PKT_US(conn->default_tx_octets, 0);
-#endif /* !CONFIG_BT_CTLR_PHY */
-
-#if defined(CONFIG_BT_CTLR_PHY)
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-	} else if (feature_coded_phy) {
-		rx_time = MAX(PKT_US(LL_LENGTH_OCTETS_RX_MAX, BIT(2)),
-			      PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, BIT(2)));
-		tx_time = MIN(PKT_US(LL_LENGTH_OCTETS_RX_MAX, BIT(2)),
-			      conn->default_tx_time);
-		tx_time = MAX(PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0), tx_time);
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 
-#if defined(CONFIG_BT_CTLR_PHY_2M)
-	} else if (feature_phy_2m) {
-		rx_time = MAX(PKT_US(LL_LENGTH_OCTETS_RX_MAX, BIT(1)),
-			      PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, BIT(1)));
-		tx_time = MAX(PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0),
-			      MIN(PKT_US(LL_LENGTH_OCTETS_RX_MAX, BIT(1)),
-				  conn->default_tx_time));
-#endif /* CONFIG_BT_CTLR_PHY_2M */
-#endif /* CONFIG_BT_CTLR_PHY */
+	if (!conn->common.fex_valid) {
+		bit = 0;
 	}
+
+	if (bit == 0) {
+		rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0);
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		tx_time = MIN(PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0),
+			      conn->default_tx_time);
+#else /* CONFIG_BT_CTLR_PHY */
+		tx_time = PKT_US(conn->default_tx_octets, 0);
+#endif /* CONFIG_BT_CTLR_PHY */
+	} else {
+		rx_time = MAX(PKT_US(LL_LENGTH_OCTETS_RX_MAX, bit),
+			      PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, bit));
+		tx_time = MIN(PKT_US(LL_LENGTH_OCTETS_RX_MAX, bit),
+			      conn->default_tx_time);
+	}
+#endif /* CONFIG_BT_CTLR_PHY */
 
 	/*
 	 * see Vol. 6 Part B chapter 4.5.10
