@@ -20,7 +20,9 @@
  */
 
 #include <zephyr/types.h>
+#include <sys/notify.h>
 #include <device.h>
+#include <sys/queued_operation.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -121,6 +123,13 @@ struct i2c_msg {
 	uint8_t		flags;
 };
 
+#define I2C_MSG_INITIALIZER(_buf, _len, _flags) \
+	{ \
+		.buf = (uint8_t *)_buf, \
+		.len = _len, \
+		.flags = _flags \
+	}
+
 /**
  * @cond INTERNAL_HIDDEN
  *
@@ -163,24 +172,41 @@ struct i2c_slave_config {
 	const struct i2c_slave_callbacks *callbacks;
 };
 
+/** @brief Signature of completion callback for transfer of single transfer.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param res Result. Negative means error.
+ */
+typedef void (*i2c_transfer_callback_t)(struct device *dev,
+					struct sys_notify *notify,
+					int res);
+
 typedef int (*i2c_api_configure_t)(struct device *dev,
 				   uint32_t dev_config);
 typedef int (*i2c_api_full_io_t)(struct device *dev,
 				 struct i2c_msg *msgs,
 				 uint8_t num_msgs,
 				 uint16_t addr);
+typedef int (*i2c_api_single_io_t)(struct device *dev,
+				   const struct i2c_msg *msg,
+				   uint16_t addr,
+				   struct sys_notify *notify);
 typedef int (*i2c_api_slave_register_t)(struct device *dev,
 					struct i2c_slave_config *cfg);
 typedef int (*i2c_api_slave_unregister_t)(struct device *dev,
 					  struct i2c_slave_config *cfg);
 typedef int (*i2c_api_recover_bus_t)(struct device *dev);
+typedef struct queued_operation_manager *(*i2c_api_get_qop_mgr_t)(
+							struct device *dev);
 
 __subsystem struct i2c_driver_api {
 	i2c_api_configure_t configure;
 	i2c_api_full_io_t transfer;
+	i2c_api_single_io_t single_transfer;
 	i2c_api_slave_register_t slave_register;
 	i2c_api_slave_unregister_t slave_unregister;
 	i2c_api_recover_bus_t recover_bus;
+	i2c_api_get_qop_mgr_t get_qop_mgr;
 };
 
 typedef int (*i2c_slave_api_register_t)(struct device *dev);
@@ -213,6 +239,52 @@ static inline int z_impl_i2c_configure(struct device *dev, uint32_t dev_config)
 		(const struct i2c_driver_api *)dev->driver_api;
 
 	return api->configure(dev, dev_config);
+}
+
+/** @brief Perform asynchronous data transfer to another device.
+ *
+ * This routine provides a generic interface to perform asynchronous transfer of
+ * single message to another I2C device. Function can be called from interrupt
+ * context.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param msg Message to transfer.
+ * @param addr Address of the I2C target device.
+ * @param callback Callback called on transfer completion.
+ * @param user_data User data passed to the callback.
+ *
+ * @retval Non-negative on successful transfer scheduling.
+ * @retval -EBUSY if device is currently performing a transfer.
+ * @retval -EINVAL if any parameter is invalid.
+ */
+static inline int i2c_single_transfer(struct device *dev,
+					const struct i2c_msg *msg, uint16_t addr,
+					struct sys_notify *notify)
+{
+	const struct i2c_driver_api *api =
+		(const struct i2c_driver_api *)dev->driver_api;
+
+	return api->single_transfer(dev, msg, addr, notify);
+}
+
+/** @brief Synchronous transfer using i2c_async API.
+ */
+int z_i2c_async_sync_transfer(struct device *dev, struct i2c_msg *msgs,
+			    uint8_t num_msgs, uint16_t addr);
+
+/** @brief Get handle to the queued operation manager
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return Manager or NULL if not supported.
+ */
+static inline struct queued_operation_manager *i2c_get_queued_operation_manager(
+							struct device *dev)
+{
+	const struct i2c_driver_api *api =
+		(const struct i2c_driver_api *)dev->driver_api;
+
+	return IS_ENABLED(CONFIG_I2C_ASYNC) ? api->get_qop_mgr(dev) : NULL;
 }
 
 /**
@@ -251,6 +323,10 @@ static inline int z_impl_i2c_transfer(struct device *dev,
 {
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->driver_api;
+
+	if (IS_ENABLED(CONFIG_I2C_ASYNC)) {
+		return z_i2c_async_sync_transfer(dev, msgs, num_msgs, addr);
+	}
 
 	return api->transfer(dev, msgs, num_msgs, addr);
 }
