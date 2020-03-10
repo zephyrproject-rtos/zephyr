@@ -2558,7 +2558,7 @@ class TestSuite:
 
         return toolchain
 
-    def add_testcases(self):
+    def add_testcases(self, testcase_filter=[]):
         for root in self.roots:
             root = os.path.abspath(root)
 
@@ -2577,60 +2577,59 @@ class TestSuite:
 
                 dirnames[:] = []
                 tc_path = os.path.join(dirpath, filename)
-                self.add_testcase(tc_path, root)
 
-    def add_testcase(self, tc_data_file, root):
-        try:
-            parsed_data = SanityConfigParser(tc_data_file, self.tc_schema)
-            parsed_data.load()
+                try:
+                    parsed_data = SanityConfigParser(tc_path, self.tc_schema)
+                    parsed_data.load()
 
-            tc_path = os.path.dirname(tc_data_file)
-            workdir = os.path.relpath(tc_path, root)
+                    tc_path = os.path.dirname(tc_path)
+                    workdir = os.path.relpath(tc_path, root)
 
-            for name in parsed_data.tests.keys():
-                tc = TestCase()
-                tc.name = tc.get_unique(root, workdir, name)
+                    for name in parsed_data.tests.keys():
+                        tc = TestCase()
+                        tc.name = tc.get_unique(root, workdir, name)
 
-                tc_dict = parsed_data.get_test(name, testcase_valid_keys)
+                        tc_dict = parsed_data.get_test(name, testcase_valid_keys)
 
-                tc.source_dir = tc_path
-                tc.yamlfile = tc_data_file
+                        tc.source_dir = tc_path
+                        tc.yamlfile = tc_path
 
-                tc.id = name
-                tc.type = tc_dict["type"]
-                tc.tags = tc_dict["tags"]
-                tc.extra_args = tc_dict["extra_args"]
-                tc.extra_configs = tc_dict["extra_configs"]
-                tc.arch_whitelist = tc_dict["arch_whitelist"]
-                tc.arch_exclude = tc_dict["arch_exclude"]
-                tc.skip = tc_dict["skip"]
-                tc.platform_exclude = tc_dict["platform_exclude"]
-                tc.platform_whitelist = tc_dict["platform_whitelist"]
-                tc.toolchain_exclude = tc_dict["toolchain_exclude"]
-                tc.toolchain_whitelist = tc_dict["toolchain_whitelist"]
-                tc.tc_filter = tc_dict["filter"]
-                tc.timeout = tc_dict["timeout"]
-                tc.harness = tc_dict["harness"]
-                tc.harness_config = tc_dict["harness_config"]
-                tc.build_only = tc_dict["build_only"]
-                tc.build_on_all = tc_dict["build_on_all"]
-                tc.slow = tc_dict["slow"]
-                tc.min_ram = tc_dict["min_ram"]
-                tc.depends_on = tc_dict["depends_on"]
-                tc.min_flash = tc_dict["min_flash"]
-                tc.extra_sections = tc_dict["extra_sections"]
+                        tc.id = name
+                        tc.type = tc_dict["type"]
+                        tc.tags = tc_dict["tags"]
+                        tc.extra_args = tc_dict["extra_args"]
+                        tc.extra_configs = tc_dict["extra_configs"]
+                        tc.arch_whitelist = tc_dict["arch_whitelist"]
+                        tc.arch_exclude = tc_dict["arch_exclude"]
+                        tc.skip = tc_dict["skip"]
+                        tc.platform_exclude = tc_dict["platform_exclude"]
+                        tc.platform_whitelist = tc_dict["platform_whitelist"]
+                        tc.toolchain_exclude = tc_dict["toolchain_exclude"]
+                        tc.toolchain_whitelist = tc_dict["toolchain_whitelist"]
+                        tc.tc_filter = tc_dict["filter"]
+                        tc.timeout = tc_dict["timeout"]
+                        tc.harness = tc_dict["harness"]
+                        tc.harness_config = tc_dict["harness_config"]
+                        tc.build_only = tc_dict["build_only"]
+                        tc.build_on_all = tc_dict["build_on_all"]
+                        tc.slow = tc_dict["slow"]
+                        tc.min_ram = tc_dict["min_ram"]
+                        tc.depends_on = tc_dict["depends_on"]
+                        tc.min_flash = tc_dict["min_flash"]
+                        tc.extra_sections = tc_dict["extra_sections"]
 
-                tc.parse_subcases(tc_path)
+                        tc.parse_subcases(tc_path)
 
-                if tc.name:
-                    self.testcases[tc.name] = tc
+                        if testcase_filter:
+                            if tc.name and tc.name in testcase_filter:
+                                self.testcases[tc.name] = tc
+                        else:
+                            self.testcases[tc.name] = tc
 
-        except Exception as e:
-            logger.error("%s: can't load (skipping): %s" % (tc_data_file, e))
-            self.load_errors += 1
-            return False
+                except Exception as e:
+                    logger.error("%s: can't load (skipping): %s" % (tc_path, e))
+                    self.load_errors += 1
 
-        return True
 
     def get_platform(self, name):
         selected_platform = None
@@ -4109,7 +4108,12 @@ def main():
         suite.jobs = multiprocessing.cpu_count()
     logger.info("JOBS: %d" % suite.jobs)
 
-    suite.add_testcases()
+    run_individual_tests = []
+
+    if options.test:
+        run_individual_tests = options.test
+
+    suite.add_testcases(testcase_filter=run_individual_tests)
     suite.add_configurations()
 
     if options.device_testing:
@@ -4148,11 +4152,6 @@ def main():
         tests = suite.get_all_tests()
         export_tests(options.export_tests, tests)
         return
-
-    run_individual_tests = []
-
-    if options.test:
-        run_individual_tests = options.test
 
     if options.list_tests or options.test_tree or options.list_test_duplicates or options.sub_test:
         cnt = 0
