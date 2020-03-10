@@ -268,17 +268,17 @@ u32_t z_tick_get_32(void)
 #endif
 }
 
-s64_t z_impl_k_uptime_get(void)
+s64_t z_impl_k_uptime_ticks(void)
 {
-	return k_ticks_to_ms_floor64(z_tick_get());
+	return z_tick_get();
 }
 
 #ifdef CONFIG_USERSPACE
-static inline s64_t z_vrfy_k_uptime_get(void)
+static inline s64_t z_vrfy_k_uptime_ticks(void)
 {
-	return z_impl_k_uptime_get();
+	return z_impl_k_uptime_ticks();
 }
-#include <syscalls/k_uptime_get_mrsh.c>
+#include <syscalls/k_uptime_ticks_mrsh.c>
 #endif
 
 /* Returns the uptime expiration (relative to an unlocked "now"!) of a
