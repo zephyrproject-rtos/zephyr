@@ -652,6 +652,14 @@ struct bt_le_oob {
  *  :option:`CONFIG_BT_RPA_TIMEOUT` seconds. This address will be used for
  *  advertising, active scanning and connection creation.
  *
+ *  @note If privacy is enabled the RPA cannot be refreshed in the following
+ *        cases:
+ *        - Creating a connection in progress, wait for the connected callback.
+ *        - Advertiser is enabled using a Random Static Identity Address for a
+ *          different local identity.
+ *        - The local identity conflicts with the local identity used by other
+ *          roles.
+ *
  *  @param[in]  id  Local identity, in most cases BT_ID_DEFAULT.
  *  @param[out] oob LE OOB information
  *
