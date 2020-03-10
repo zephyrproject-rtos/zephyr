@@ -13,6 +13,8 @@
 #include <linker/sections.h>
 #include "vector_table.h"
 
+_ASM_FILE_PROLOGUE
+
 /*
  * Four types of exceptions:
  * - synchronous: aborts from MMU, SP/CP alignment checking, unallocated
