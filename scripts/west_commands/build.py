@@ -400,17 +400,12 @@ class Build(Forceable):
 
     def _run_pristine(self):
         _banner('making build dir {} pristine'.format(self.build_dir))
-
-        zb = os.environ.get('ZEPHYR_BASE')
-        if not zb:
-            log.die('Internal error: ZEPHYR_BASE not set in the environment, '
-                    'and should have been by the main script')
-
         if not is_zephyr_build(self.build_dir):
             log.die('Refusing to run pristine on a folder that is not a '
                     'Zephyr build system')
 
-        cmake_args = ['-P', '{}/cmake/pristine.cmake'.format(zb)]
+        cache = CMakeCache.from_build_dir(self.build_dir)
+        cmake_args = ['-P', cache['ZEPHYR_BASE'] + '/cmake/pristine.cmake']
         run_cmake(cmake_args, cwd=self.build_dir, dry_run=self.args.dry_run)
 
     def _run_build(self, target):
