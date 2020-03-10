@@ -192,6 +192,10 @@ void mqtt_evt_handler(struct mqtt_client *const client,
 
 		break;
 
+	case MQTT_EVT_PINGRESP:
+		LOG_INF("PINGRESP packet");
+		break;
+
 	default:
 		break;
 	}
