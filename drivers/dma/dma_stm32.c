@@ -399,10 +399,17 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 		DMA_InitStruct.NbData = config->head_block->block_size /
 					config->dest_data_size;
 	}
-
+#if defined(CONFIG_DMA_STM32_V2)
+	/*
+	 * the with dma V2,
+	 * the request ID is stored in the dma_slot
+	 */
+	DMA_InitStruct.PeriphRequest = config->dma_slot;
+#endif
 	LL_DMA_Init(dma, table_ll_stream[id], &DMA_InitStruct);
 
 	LL_DMA_EnableIT_TC(dma, table_ll_stream[id]);
+	/* Half-Transfer irq is not handled */
 
 #if defined(CONFIG_DMA_STM32_V1)
 	if (DMA_InitStruct.FIFOMode == LL_DMA_FIFOMODE_ENABLE) {
