@@ -178,6 +178,13 @@ struct net_pkt {
 					     * AF_UNSPEC.
 					     */
 		u8_t ppp_msg           : 1; /* This is a PPP message */
+
+		u8_t tcp_first_msg     : 1; /* Is this the first time this
+					     * pkt is sent, or is this resend
+					     * of a TCP message.
+					     * Used only if
+					     * defined(CONFIG_NET_TCP)
+					     */
 	};
 
 	union {
@@ -352,6 +359,16 @@ static inline u8_t net_pkt_queued(struct net_pkt *pkt)
 static inline void net_pkt_set_queued(struct net_pkt *pkt, bool send)
 {
 	pkt->pkt_queued = send;
+}
+
+static inline u8_t net_pkt_tcp_1st_msg(struct net_pkt *pkt)
+{
+	return pkt->tcp_first_msg;
+}
+
+static inline void net_pkt_set_tcp_1st_msg(struct net_pkt *pkt, bool is_1st)
+{
+	pkt->tcp_first_msg = is_1st;
 }
 
 #if defined(CONFIG_NET_SOCKETS)
