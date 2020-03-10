@@ -2058,6 +2058,17 @@ static inline void *z_impl_k_timer_user_data_get(struct k_timer *timer)
  */
 
 /**
+ * @brief Get system uptime, in ticks.
+ *
+ * This routine returns the elapsed time since the system booted, in
+ * ticks (c.f. :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC`), which is the
+ * fundamental unit of resolution of kernel timekeeping.
+ *
+ * @return Current uptime in ticks.
+ */
+__syscall s64_t k_uptime_ticks(void);
+
+/**
  * @brief Get system uptime.
  *
  * This routine returns the elapsed time since the system booted,
@@ -2072,7 +2083,10 @@ static inline void *z_impl_k_timer_user_data_get(struct k_timer *timer)
  *
  * @return Current uptime in milliseconds.
  */
-__syscall s64_t k_uptime_get(void);
+static inline s64_t k_uptime_get(void)
+{
+	return k_ticks_to_ms_floor64(k_uptime_ticks());
+}
 
 /**
  * @brief Enable clock always on in tickless kernel
