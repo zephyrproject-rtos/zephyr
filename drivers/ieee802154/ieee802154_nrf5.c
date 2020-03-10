@@ -184,6 +184,7 @@ static int nrf5_set_channel(struct device *dev, u16_t channel)
 	return 0;
 }
 
+#ifdef CONFIG_NET_L2_OPENTHREAD
 static int nrf5_energy_scan_start(struct device *dev,
 				  u16_t duration,
 				  energy_scan_done_cb_t done_cb)
@@ -205,6 +206,7 @@ static int nrf5_energy_scan_start(struct device *dev,
 
 	return err;
 }
+#endif /* CONFIG_NET_L2_OPENTHREAD */
 
 static int nrf5_set_pan_id(struct device *dev, u16_t pan_id)
 {
