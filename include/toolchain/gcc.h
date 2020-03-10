@@ -363,7 +363,9 @@ do {                                                                    \
 #else
 #define _ASM_FILE_PROLOGUE .text; .code 32
 #endif /* CONFIG_ASSEMBLER_ISA_THUMB2 */
-#endif /* CONFIG_ARM && !CONFIG_ARM64 */
+#elif defined(CONFIG_ARM64)
+#define _ASM_FILE_PROLOGUE .text
+#endif /* CONFIG_ARM64 || (CONFIG_ARM && !CONFIG_ARM64)*/
 #endif /* _ASMLANGUAGE */
 
 /*

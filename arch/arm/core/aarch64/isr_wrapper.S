@@ -15,6 +15,8 @@
 #include <arch/cpu.h>
 #include <sw_isr_table.h>
 
+_ASM_FILE_PROLOGUE
+
 GDATA(_sw_isr_table)
 
 /**
