@@ -18,9 +18,9 @@ from build_helpers import find_build_dir, is_zephyr_build, \
 from runners.core import BuildConfiguration
 from zcmake import CMakeCache
 from zephyr_ext_common import Forceable, cached_runner_config, \
-    zephyr_scripts_path
+    ZEPHYR_SCRIPTS
 
-sys.path.append(os.path.join(zephyr_scripts_path(), 'dts'))
+sys.path.append(str(ZEPHYR_SCRIPTS / 'dts'))
 
 import edtlib
 

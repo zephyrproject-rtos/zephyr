@@ -95,18 +95,17 @@ if(CMAKE_SCRIPT_MODE_FILE AND NOT CMAKE_PARENT_LIST_FILE)
 # some other script
 
 # The options available are:
-# BOARD_ROOT_SPACE_SEPARATED: Space-separated board roots
+# BOARD_ROOT: Semi-colon separated board roots
 # FILE_OUT: Set to a file path to save the boards to a file. If not defined the
 #           the contents will be printed to stdout
-if(NOT DEFINED ZEPHYR_BASE)
-  message(FATAL_ERROR "ZEPHYR_BASE not set")
-endif()
+cmake_minimum_required(VERSION 3.13.1)
 
-if (NOT BOARD_ROOT_SPACE_SEPARATED)
-  message(FATAL_ERROR "BOARD_ROOT_SPACE_SEPARATED not defined")
-endif()
+set(NO_BOILERPLATE TRUE)
+find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 
-string(REPLACE " " ";" BOARD_ROOT "${BOARD_ROOT_SPACE_SEPARATED}")
+# Appending Zephyr base to list of board roots, as this is also done in boilerplate.cmake.
+# But as this file was executed in script mode, it must also be done here, to give same output.
+list(APPEND BOARD_ROOT ${ZEPHYR_BASE})
 
 if (NOT FILE_OUT)
   set(FILE_OUT FALSE)
