@@ -1204,6 +1204,9 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 			}
 		}
 
+		NET_DBG("[%p] Received ACK pkt %p (len %zd bytes)", ctx->tcp,
+			pkt, net_pkt_get_len(pkt));
+
 		sys_slist_remove(list, NULL, head);
 
 		/* If we receive a valid ACK, then we need to undo the ref
