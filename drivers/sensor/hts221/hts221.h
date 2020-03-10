@@ -11,6 +11,7 @@
 #include <sys/util.h>
 #include <zephyr/types.h>
 #include <drivers/gpio.h>
+#include <sys/queued_seq.h>
 
 #define HTS221_AUTOINCREMENT_ADDR	BIT(7)
 
@@ -28,11 +29,9 @@
 #define HTS221_REG_DATA_START		0x28
 #define HTS221_REG_CONVERSION_START	0x30
 
-struct hts221_data {
-	struct device *i2c;
-	int16_t rh_sample;
-	int16_t t_sample;
+#define HTS221_CONV_DATA_SIZE		16
 
+struct hts221_conv_data {
 	uint8_t h0_rh_x2;
 	uint8_t h1_rh_x2;
 	uint16_t t0_degc_x8;
@@ -41,6 +40,31 @@ struct hts221_data {
 	int16_t h1_t0_out;
 	int16_t t0_out;
 	int16_t t1_out;
+};
+
+struct hts221_data {
+	struct queued_operation_manager *qop_mgr;
+	struct queued_seq op;
+	struct k_sem *tmp_sem;
+	struct device *i2c;
+
+	union {
+		struct {
+			union data {
+				struct samples {
+					int16_t rh_sample;
+					int16_t t_sample;
+				} samples;
+				uint8_t buf[4];
+			} data;
+			struct hts221_conv_data conv_data;
+		} active;
+		struct {
+			uint8_t who_i_am;
+			uint8_t conv_data[HTS221_CONV_DATA_SIZE];
+		} init;
+	} data;
+
 
 #ifdef CONFIG_HTS221_TRIGGER
 	struct device *dev;

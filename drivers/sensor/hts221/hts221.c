@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT st_hts221
 
 #include <drivers/i2c.h>
+#include <drivers/i2c_async.h>
 #include <init.h>
 #include <sys/__assert.h>
 #include <sys/byteorder.h>
@@ -18,15 +19,39 @@
 
 LOG_MODULE_REGISTER(HTS221, CONFIG_SENSOR_LOG_LEVEL);
 
-static const char * const hts221_odr_strings[] = {
-	"1", "7", "12.5"
-};
+static struct hts221_data hts221_driver;
+
+static int who_i_am_validate(struct sys_seq_mgr *mgr, void *item);
+
+SYS_SEQ_DEFINE(static const, read_data_seq,
+	I2C_SEQ_ACTION_ADDRESS_SET(static const, DT_INST_REG_ADDR(0)),
+	I2C_SEQ_ACTION_TXV_RX(static const,
+			    (HTS221_REG_DATA_START | HTS221_AUTOINCREMENT_ADDR),
+			    hts221_driver.data.active.data.buf, 4)
+);
+
+SYS_SEQ_DEFINE(static const, init_seq,
+	I2C_SEQ_ACTION_ADDRESS_SET(static const, DT_INST_REG_ADDR(0)),
+	I2C_SEQ_ACTION_TXV_RX(static const,
+			(HTS221_REG_WHO_AM_I),
+			&hts221_driver.data.init.who_i_am, 1),
+	SYS_SEQ_ACTION_PAUSE(who_i_am_validate,
+			   &hts221_driver.data.init.who_i_am),
+	I2C_SEQ_ACTION_TXV((HTS221_REG_CTRL1,
+		(1) << HTS221_ODR_SHIFT | HTS221_BDU_BIT | HTS221_PD_BIT)),
+	SYS_SEQ_ACTION_MS_DELAY(2),
+	I2C_SEQ_ACTION_TXV_RX(static const,
+		(HTS221_REG_CONVERSION_START | HTS221_AUTOINCREMENT_ADDR),
+		hts221_driver.data.init.conv_data,
+		sizeof(hts221_driver.data.init.conv_data))
+);
 
 static int hts221_channel_get(struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct hts221_data *data = dev->driver_data;
+	struct hts221_conv_data *cd = &data->data.active.conv_data;
 	int32_t conv_val;
 
 	/*
@@ -34,19 +59,18 @@ static int hts221_channel_get(struct device *dev,
 	 * for more details
 	 */
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
-		conv_val = (int32_t)(data->t1_degc_x8 - data->t0_degc_x8) *
-			   (data->t_sample - data->t0_out) /
-			   (data->t1_out - data->t0_out) +
-			   data->t0_degc_x8;
+		conv_val = (int32_t)(cd->t1_degc_x8 - cd->t0_degc_x8) *
+			(data->data.active.data.samples.t_sample - cd->t0_out) /
+			(cd->t1_out - cd->t0_out) + cd->t0_degc_x8;
 
 		/* convert temperature x8 to degrees Celsius */
 		val->val1 = conv_val / 8;
 		val->val2 = (conv_val % 8) * (1000000 / 8);
 	} else if (chan == SENSOR_CHAN_HUMIDITY) {
-		conv_val = (int32_t)(data->h1_rh_x2 - data->h0_rh_x2) *
-			   (data->rh_sample - data->h0_t0_out) /
-			   (data->h1_t0_out - data->h0_t0_out) +
-			   data->h0_rh_x2;
+		conv_val = (int32_t)(cd->h1_rh_x2 - cd->h0_rh_x2) *
+			   (data->data.active.data.samples.rh_sample -
+			   cd->h0_t0_out) /
+			   (cd->h1_t0_out - cd->h0_t0_out) + cd->h0_rh_x2;
 
 		/* convert humidity x2 to percent */
 		val->val1 = conv_val / 2;
@@ -61,45 +85,41 @@ static int hts221_channel_get(struct device *dev,
 static int hts221_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct hts221_data *data = dev->driver_data;
-	const struct hts221_config *cfg = dev->config_info;
-	uint8_t buf[4];
+	uint8_t *buf = data->data.active.data.buf;
+	int err;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	if (i2c_burst_read(data->i2c, cfg->i2c_addr,
-			   HTS221_REG_DATA_START | HTS221_AUTOINCREMENT_ADDR,
-			   buf, 4) < 0) {
-		LOG_ERR("Failed to fetch data sample.");
-		return -EIO;
+	data->op.seq = &read_data_seq;
+	err = queued_operation_sync_submit(data->qop_mgr, &data->op.qop,
+					   QUEUED_OPERATION_PRIORITY_APPEND);
+	if (err < 0) {
+		return err;
 	}
 
-	data->rh_sample = sys_le16_to_cpu(buf[0] | (buf[1] << 8));
-	data->t_sample = sys_le16_to_cpu(buf[2] | (buf[3] << 8));
+	data->data.active.data.samples.rh_sample =
+			sys_le16_to_cpu(buf[0] | (buf[1] << 8));
+	data->data.active.data.samples.t_sample =
+			sys_le16_to_cpu(buf[2] | (buf[3] << 8));
 
 	return 0;
 }
 
-static int hts221_read_conversion_data(struct device *dev)
+static int hts221_process_conversion_data(struct device *dev)
 {
 	struct hts221_data *data = dev->driver_data;
-	const struct hts221_config *cfg = dev->config_info;
-	uint8_t buf[16];
+	struct hts221_conv_data *cd = &data->data.active.conv_data;
+	uint8_t buf[HTS221_CONV_DATA_SIZE];
 
-	if (i2c_burst_read(data->i2c, cfg->i2c_addr,
-			   HTS221_REG_CONVERSION_START |
-			   HTS221_AUTOINCREMENT_ADDR, buf, 16) < 0) {
-		LOG_ERR("Failed to read conversion data.");
-		return -EIO;
-	}
-
-	data->h0_rh_x2 = buf[0];
-	data->h1_rh_x2 = buf[1];
-	data->t0_degc_x8 = sys_le16_to_cpu(buf[2] | ((buf[5] & 0x3) << 8));
-	data->t1_degc_x8 = sys_le16_to_cpu(buf[3] | ((buf[5] & 0xC) << 6));
-	data->h0_t0_out = sys_le16_to_cpu(buf[6] | (buf[7] << 8));
-	data->h1_t0_out = sys_le16_to_cpu(buf[10] | (buf[11] << 8));
-	data->t0_out = sys_le16_to_cpu(buf[12] | (buf[13] << 8));
-	data->t1_out = sys_le16_to_cpu(buf[14] | (buf[15] << 8));
+	memcpy(buf, data->data.init.conv_data, HTS221_CONV_DATA_SIZE);
+	cd->h0_rh_x2 = buf[0];
+	cd->h1_rh_x2 = buf[1];
+	cd->t0_degc_x8 = sys_le16_to_cpu(buf[2] | ((buf[5] & 0x3) << 8));
+	cd->t1_degc_x8 = sys_le16_to_cpu(buf[3] | ((buf[5] & 0xC) << 6));
+	cd->h0_t0_out = sys_le16_to_cpu(buf[6] | (buf[7] << 8));
+	cd->h1_t0_out = sys_le16_to_cpu(buf[10] | (buf[11] << 8));
+	cd->t0_out = sys_le16_to_cpu(buf[12] | (buf[13] << 8));
+	cd->t1_out = sys_le16_to_cpu(buf[14] | (buf[15] << 8));
 
 	return 0;
 }
@@ -112,57 +132,39 @@ static const struct sensor_driver_api hts221_driver_api = {
 	.channel_get = hts221_channel_get,
 };
 
+static int who_i_am_validate(struct sys_seq_mgr *mgr, void *item)
+{
+	uint8_t **who_i_am = item;
+	bool res = (**who_i_am == HTS221_CHIP_ID);
+
+	sys_seq_finalize(mgr, res ? 0 : -EINVAL, 0);
+
+	return 0;
+}
+
 int hts221_init(struct device *dev)
 {
 	const struct hts221_config *cfg = dev->config_info;
+	struct device *i2c_dev;
 	struct hts221_data *data = dev->driver_data;
-	uint8_t id, idx;
+	int err;
 
-	data->i2c = device_get_binding(cfg->i2c_bus);
-	if (data->i2c == NULL) {
+	i2c_dev = device_get_binding(cfg->i2c_bus);
+	if (i2c_dev == NULL) {
 		LOG_ERR("Could not get pointer to %s device.", cfg->i2c_bus);
 		return -EINVAL;
 	}
 
-	/* check chip ID */
-	if (i2c_reg_read_byte(data->i2c, cfg->i2c_addr,
-			      HTS221_REG_WHO_AM_I, &id) < 0) {
-		LOG_ERR("Failed to read chip ID.");
-		return -EIO;
+	data->qop_mgr = i2c_get_queued_operation_manager(i2c_dev);
+	data->op.seq = &init_seq;
+
+	err = queued_operation_sync_submit(data->qop_mgr, &data->op.qop,
+					   QUEUED_OPERATION_PRIORITY_APPEND);
+	if (err < 0) {
+		return err;
 	}
 
-	if (id != HTS221_CHIP_ID) {
-		LOG_ERR("Invalid chip ID.");
-		return -EINVAL;
-	}
-
-	/* check if CONFIG_HTS221_ODR is valid */
-	for (idx = 0U; idx < ARRAY_SIZE(hts221_odr_strings); idx++) {
-		if (!strcmp(hts221_odr_strings[idx], CONFIG_HTS221_ODR)) {
-			break;
-		}
-	}
-
-	if (idx == ARRAY_SIZE(hts221_odr_strings)) {
-		LOG_ERR("Invalid ODR value.");
-		return -EINVAL;
-	}
-
-	if (i2c_reg_write_byte(data->i2c, cfg->i2c_addr,
-			       HTS221_REG_CTRL1,
-			       (idx + 1) << HTS221_ODR_SHIFT | HTS221_BDU_BIT |
-			       HTS221_PD_BIT) < 0) {
-		LOG_ERR("Failed to configure chip.");
-		return -EIO;
-	}
-
-	/*
-	 * the device requires about 2.2 ms to download the flash content
-	 * into the volatile mem
-	 */
-	k_sleep(K_MSEC(3));
-
-	if (hts221_read_conversion_data(dev) < 0) {
+	if (hts221_process_conversion_data(dev) < 0) {
 		LOG_ERR("Failed to read conversion data.");
 		return -EINVAL;
 	}
@@ -177,7 +179,6 @@ int hts221_init(struct device *dev)
 	return 0;
 }
 
-static struct hts221_data hts221_driver;
 static const struct hts221_config hts221_cfg = {
 	.i2c_bus = DT_INST_BUS_LABEL(0),
 	.i2c_addr = DT_INST_REG_ADDR(0),
