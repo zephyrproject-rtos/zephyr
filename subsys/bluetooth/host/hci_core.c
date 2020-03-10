@@ -537,6 +537,22 @@ static int le_set_private_addr(u8_t id)
 
 	return err;
 }
+#else
+static int le_set_private_addr(u8_t id)
+{
+	bt_addr_t nrpa;
+	int err;
+
+	err = bt_rand(nrpa.val, sizeof(nrpa.val));
+	if (err) {
+		return err;
+	}
+
+	nrpa.val[5] &= 0x3f;
+
+	return set_random_address(&nrpa);
+}
+#endif /* defined(CONFIG_BT_PRIVACY) */
 
 static void le_update_private_addr(void)
 {
@@ -590,6 +606,7 @@ static void le_update_private_addr(void)
 #endif
 }
 
+#if defined(CONFIG_BT_PRIVACY)
 static void rpa_timeout(struct k_work *work)
 {
 	BT_DBG("");
@@ -618,21 +635,6 @@ static void rpa_timeout(struct k_work *work)
 	}
 
 	le_update_private_addr();
-}
-#else
-static int le_set_private_addr(u8_t id)
-{
-	bt_addr_t nrpa;
-	int err;
-
-	err = bt_rand(nrpa.val, sizeof(nrpa.val));
-	if (err) {
-		return err;
-	}
-
-	nrpa.val[5] &= 0x3f;
-
-	return set_random_address(&nrpa);
 }
 #endif /* defined(CONFIG_BT_PRIVACY) */
 
@@ -911,9 +913,7 @@ int bt_le_create_conn(const struct bt_conn *conn)
 			 * triggered while direct initiator is active.
 			 */
 			atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
-#if defined(CONFIG_BT_PRIVACY)
 			le_update_private_addr();
-#endif
 		}
 
 		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
@@ -6850,14 +6850,48 @@ int bt_le_oob_get_local(u8_t id, struct bt_le_oob *oob)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+	    !(atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING) &&
+	      atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING_IDENTITY) &&
+	      bt_dev.adv_id == id &&
+	      bt_dev.id_addr[id].type == BT_ADDR_LE_RANDOM)) {
+		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+		    atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
+			struct bt_conn *conn;
+
+			conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL,
+						       BT_CONN_CONNECT_SCAN);
+			if (conn) {
+				/* Cannot set new RPA while creating
+				 * connections.
+				 */
+				bt_conn_unref(conn);
+				return -EINVAL;
+			}
+		}
+
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING) &&
+		    atomic_test_bit(bt_dev.flags,
+				    BT_DEV_ADVERTISING_IDENTITY) &&
+		    (bt_dev.id_addr[id].type == BT_ADDR_LE_RANDOM)) {
+			/* Cannot set a new RPA address while advertising with
+			 * random static identity address for a different
+			 * identity.
+			 */
+			return -EINVAL;
+		}
+
+		if (IS_ENABLED(CONFIG_BT_OBSERVER) &&
+		    id != BT_ID_DEFAULT &&
+		    (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) ||
+		     atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING))) {
+			/* Cannot switch identity of scanner or initiator */
+			return -EINVAL;
+		}
+
 		/* Invalidate RPA so a new one is generated */
 		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
-
-		err = le_set_private_addr(id);
-		if (err) {
-			return err;
-		}
+		le_update_private_addr();
 
 		bt_addr_le_copy(&oob->addr, &bt_dev.random_addr);
 	} else {
