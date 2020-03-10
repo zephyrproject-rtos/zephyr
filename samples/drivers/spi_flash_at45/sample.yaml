@@ -1,0 +1,6 @@
+sample:
+  name: SPI Flash AT45 Sample
+tests:
+  sample.drivers.spi.flash.at45:
+    tags: spi flash
+    platform_whitelist: nrf9160_pca10090
