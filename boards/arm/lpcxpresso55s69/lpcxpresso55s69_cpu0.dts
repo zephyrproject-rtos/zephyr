@@ -21,6 +21,9 @@
 		sw0 = &user_button_1;
 		sw1 = &user_button_2;
 		sw2 = &user_button_3;
+		led0 = &user_blue_led;
+		led1 = &user_red_led;
+		led2 = &user_green_led;
 	};
 
 	chosen {
@@ -44,6 +47,18 @@
 			label = "User SW3";
 			gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
 		};
+		user_blue_led: led_blue {
+			label = "User Blue LED";
+			gpios = <&gpio1 4 GPIO_ACTIVE_LOW>;
+		};
+		user_red_led: led_red {
+			label = "User Red LED";
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+		};
+		user_green_led: led_green {
+			label = "User Green LED";
+			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		};
 	};
 };
 
@@ -57,18 +72,6 @@
 };
 
 &gpio1 {
-	status = "okay";
-};
-
-&green_led {
-	status = "okay";
-};
-
-&blue_led {
-	status = "okay";
-};
-
-&red_led {
 	status = "okay";
 };
 
