@@ -75,7 +75,10 @@ enum mqtt_evt_type {
 	MQTT_EVT_SUBACK,
 
 	/** Acknowledgment to a unsubscribe request. */
-	MQTT_EVT_UNSUBACK
+	MQTT_EVT_UNSUBACK,
+
+	/** Ping Response from server. */
+	MQTT_EVT_PINGRESP,
 };
 
 /** @brief MQTT version protocol level. */
