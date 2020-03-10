@@ -300,13 +300,6 @@ void tp_pkt_stat(void)
 		(_seq)->req >= 0 ? "+" : "", (_seq)->req,		\
 		(_seq)->file, (_seq)->line, (_seq)->func,		\
 		(_seq)->of ? "OF" : "");				\
-									\
-	tp_assert(is("tcp_in", (_seq)->func),				\
-			"Out of state machine sequence access");	\
-									\
-	tp_assert((_seq)->req == 0 ||					\
-			(_seq)->old_value != (_seq)->value,		\
-			"Sequence nop");				\
 }
 
 u32_t tp_seq_track(int kind, u32_t *pvalue, int req,
