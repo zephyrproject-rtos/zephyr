@@ -6,29 +6,31 @@ Blinky sample
 Overview
 ********
 
-The Blinky example shows how to configure GPIO pins as outputs which can also be
-used to drive LEDs on the hardware usually delivered as "User LEDs" on many of
-the supported boards in Zephyr.
+Blinky is a simple application which blinks an LED forever.
+
+The source code shows how to configure GPIO pins as outputs, then turn them on
+and off.
 
 .. _blinky-sample-requirements:
 
 Requirements
 ************
 
-The demo assumes that an LED is connected to one of GPIO lines. The
-sample code is configured to work on boards that have defined the ``led0``
-alias in their :ref:`board's devicetree description file
-<devicetree-in-out-files>`, :file:`<board>.dts`.
-Doing so will generate these variables:
+The board must have an LED connected via a GPIO pin. These are called "User
+LEDs" on many of Zephyr's :ref:`boards`. The LED must be configured using the
+``led0`` :ref:`dt-guide` alias in the :ref:`BOARD.dts file
+<devicetree-in-out-files>`.
 
-- ``DT_ALIAS_LED0_GPIOS_CONTROLLER``
-- ``DT_ALIAS_LED0_GPIOS_PIN``
+You will see this error if you try to build Blinky for an unsupported board:
+
+.. code-block:: none
+
+   Unsupported board: led0 devicetree alias is not defined
 
 Building and Running
 ********************
 
-This sample does not output anything to the console. It can be built and
-flashed to a board as follows:
+Build and flash Blinky as follows, changing ``reel_board`` for your board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
@@ -36,5 +38,4 @@ flashed to a board as follows:
    :goals: build flash
    :compact:
 
-After flashing the image to the board, the user LED on the board should start to
-blink.
+After flashing, the LED starts to blink. Blinky does not print to the console.
