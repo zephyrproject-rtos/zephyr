@@ -171,32 +171,3 @@ struct tcp { /* TCP connection */
 
 #define FL(_fl, _op, _mask, _args...)					\
 	_flags(_fl, _op, _mask, strlen("" #_args) ? _args : true)
-
-
-extern struct net_buf_pool tcp_nbufs;
-
-#if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
-#define tcp_nbuf_alloc(_conn, _len) \
-	tp_nbuf_alloc(&tcp_nbufs, _len, tp_basename(__FILE__), \
-			__LINE__, __func__)
-
-#define tcp_nbuf_clone(_buf) \
-	tp_nbuf_clone((_buf), tp_basename(__FILE__), __LINE__, __func__)
-
-#define tcp_nbuf_unref(_nbuf) \
-	tp_nbuf_unref(_nbuf, tp_basename(__FILE__), __LINE__, __func__)
-#else
-static struct net_buf *tcp_nbuf_alloc(struct tcp *conn, size_t len)
-{
-	struct net_buf *buf = net_buf_alloc_len(&tcp_nbufs, len, K_NO_WAIT);
-
-	NET_ASSERT(buf && buf->size >= len);
-
-	NET_DBG("len: %zu, buf->size: %hu", len, buf->size);
-
-	return buf;
-}
-
-#define tcp_nbuf_clone(_buf) net_buf_clone(_buf, K_NO_WAIT)
-#define tcp_nbuf_unref(_nbuf) net_buf_unref(_nbuf)
-#endif

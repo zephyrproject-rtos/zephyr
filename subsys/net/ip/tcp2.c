@@ -23,20 +23,18 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 static int tcp_rto = CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 static int tcp_retries = 3;
 static int tcp_window = NET_IPV6_MTU;
-static bool tcp_echo;
 
 static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
 
 static K_MEM_SLAB_DEFINE(tcp_conns_slab, sizeof(struct tcp),
 				CONFIG_NET_MAX_CONTEXTS, 4);
 
-NET_BUF_POOL_DEFINE(tcp_nbufs, 64/*count*/, CONFIG_NET_BUF_DATA_SIZE, 0, NULL);
-
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
 static size_t tcp_data_len(struct net_pkt *pkt);
 int net_tcp_finalize(struct net_pkt *pkt);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
+size_t (*tcp_recv_cb)(struct tcp *conn, struct net_pkt *pkt) = NULL;
 
 static struct tcphdr *th_get(struct net_pkt *pkt)
 {
@@ -442,6 +440,11 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 {
 	ssize_t len = tcp_data_len(pkt);
 
+	if (tcp_recv_cb) {
+		tcp_recv_cb(conn, pkt);
+		goto out;
+	}
+
 	if (len > 0) {
 		if (conn->context->recv_cb) {
 			struct net_pkt *up = net_pkt_clone(pkt, K_NO_WAIT);
@@ -456,7 +459,7 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 				up, NULL, NULL, conn->recv_user_data);
 		}
 	}
-
+ out:
 	return len;
 }
 
@@ -684,40 +687,6 @@ static struct tcp *tcp_conn_search(struct net_pkt *pkt)
 	}
 
 	return found ? conn : NULL;
-}
-
-static enum net_verdict tcp_input(struct net_conn *net_conn,
-				  struct net_pkt *pkt,
-				  union net_ip_header *ip,
-				  union net_proto_header *proto,
-				  void *user_data)
-{
-	struct tcphdr *th = th_get(pkt);
-
-	if (th) {
-		struct tcp *conn = tcp_conn_search(pkt);
-
-		if (conn == NULL && SYN == th->th_flags) {
-			struct net_context *context =
-				tcp_calloc(1, sizeof(struct net_context));
-			net_tcp_get(context);
-			net_context_set_family(context, pkt->family);
-			conn = context->tcp;
-			conn->dst = tcp_endpoint_new(pkt, SRC);
-			conn->src = tcp_endpoint_new(pkt, DST);
-			/* Make an extra reference, the sanity check suite
-			 * will delete the connection explicitly
-			 */
-			tcp_conn_ref(conn);
-		}
-
-		if (conn) {
-			conn->iface = pkt->iface;
-			tcp_in(conn, pkt);
-		}
-	}
-
-	return NET_DROP;
 }
 
 static struct tcp *tcp_conn_new(struct net_pkt *pkt);
@@ -1167,37 +1136,6 @@ int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
 	return 0;
 }
 
-void test_cb_register(sa_family_t family, u8_t proto, u16_t remote_port,
-		      u16_t local_port, net_conn_cb_t cb)
-{
-	struct net_conn_handle *conn_handle = NULL;
-	const struct sockaddr addr = { .sa_family = family, };
-
-	int ret = net_conn_register(proto,
-				    family,
-				    &addr,	/* remote address */
-				    &addr,	/* local address */
-				    local_port,
-				    remote_port,
-				    cb,
-				    NULL,	/* user_data */
-				    &conn_handle);
-	if (ret < 0) {
-		NET_ERR("net_conn_register(): %d", ret);
-	}
-}
-
-void net_tcp_init(void)
-{
-#if defined(CONFIG_NET_TEST_PROTOCOL)
-	/* Register inputs for TTCN-3 based TCP2 sanity check */
-	test_cb_register(AF_INET,  IPPROTO_TCP, 4242, 4242, tcp_input);
-	test_cb_register(AF_INET6, IPPROTO_TCP, 4242, 4242, tcp_input);
-	test_cb_register(AF_INET,  IPPROTO_UDP, 4242, 4242, tp_input);
-	test_cb_register(AF_INET6, IPPROTO_UDP, 4242, 4242, tp_input);
-#endif
-}
-
 int net_tcp_finalize(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
@@ -1240,6 +1178,57 @@ drop:
 }
 
 #if defined(CONFIG_NET_TEST_PROTOCOL)
+static enum net_verdict tcp_input(struct net_conn *net_conn,
+				  struct net_pkt *pkt,
+				  union net_ip_header *ip,
+				  union net_proto_header *proto,
+				  void *user_data)
+{
+	struct tcphdr *th = th_get(pkt);
+
+	if (th) {
+		struct tcp *conn = tcp_conn_search(pkt);
+
+		if (conn == NULL && SYN == th->th_flags) {
+			struct net_context *context =
+				tcp_calloc(1, sizeof(struct net_context));
+			net_tcp_get(context);
+			net_context_set_family(context, pkt->family);
+			conn = context->tcp;
+			conn->dst = tcp_endpoint_new(pkt, SRC);
+			conn->src = tcp_endpoint_new(pkt, DST);
+			/* Make an extra reference, the sanity check suite
+			 * will delete the connection explicitly
+			 */
+			tcp_conn_ref(conn);
+		}
+
+		if (conn) {
+			conn->iface = pkt->iface;
+			tcp_in(conn, pkt);
+		}
+	}
+
+	return NET_DROP;
+}
+
+static size_t tp_tcp_recv_cb(struct tcp *conn, struct net_pkt *pkt)
+{
+	ssize_t len = tcp_data_len(pkt);
+	struct net_pkt *up = tcp_pkt_clone(pkt);
+
+	NET_DBG("pkt: %p, len: %zu", pkt, net_pkt_get_len(pkt));
+
+	net_pkt_cursor_init(up);
+	net_pkt_set_overwrite(up, true);
+
+	net_pkt_pull(up, net_pkt_get_len(up) - len);
+
+	net_tcp_queue_data(conn->context, up);
+
+	return len;
+}
+
 static ssize_t tp_tcp_recv(int fd, void *buf, size_t len, int flags)
 {
 	return 0;
@@ -1375,6 +1364,14 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 			tp_output(pkt->family, pkt->iface, buf, 1);
 			responded = true;
 			NET_DBG("tcp_send(\"%s\")", tp->data);
+			{
+				struct net_pkt *pkt = tcp_pkt_alloc(0);
+				struct net_buf *nb =
+					net_pkt_get_frag(pkt, K_NO_WAIT);
+				memcpy(net_buf_add(nb, len), buf, len);
+				net_pkt_frag_insert(pkt, nb);
+				net_tcp_queue_data(conn->context, pkt);
+			}
 		}
 		break;
 	case TP_CONFIG_REQUEST:
@@ -1384,7 +1381,6 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 		tp_new_find_and_apply(tp_new, "tcp_window", &tcp_window,
 					TP_INT);
 		tp_new_find_and_apply(tp_new, "tp_trace", &tp_trace, TP_BOOL);
-		tp_new_find_and_apply(tp_new, "tcp_echo", &tcp_echo, TP_BOOL);
 		break;
 	case TP_INTROSPECT_REQUEST:
 		json_len = sizeof(buf);
@@ -1407,4 +1403,37 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 
 	return NET_DROP;
 }
-#endif /* end of IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) */
+
+static void test_cb_register(sa_family_t family, u8_t proto, u16_t remote_port,
+			     u16_t local_port, net_conn_cb_t cb)
+{
+	struct net_conn_handle *conn_handle = NULL;
+	const struct sockaddr addr = { .sa_family = family, };
+
+	int ret = net_conn_register(proto,
+				    family,
+				    &addr,	/* remote address */
+				    &addr,	/* local address */
+				    local_port,
+				    remote_port,
+				    cb,
+				    NULL,	/* user_data */
+				    &conn_handle);
+	if (ret < 0) {
+		NET_ERR("net_conn_register(): %d", ret);
+	}
+}
+#endif /* CONFIG_NET_TEST_PROTOCOL */
+
+void net_tcp_init(void)
+{
+#if defined(CONFIG_NET_TEST_PROTOCOL)
+	/* Register inputs for TTCN-3 based TCP2 sanity check */
+	test_cb_register(AF_INET,  IPPROTO_TCP, 4242, 4242, tcp_input);
+	test_cb_register(AF_INET6, IPPROTO_TCP, 4242, 4242, tcp_input);
+	test_cb_register(AF_INET,  IPPROTO_UDP, 4242, 4242, tp_input);
+	test_cb_register(AF_INET6, IPPROTO_UDP, 4242, 4242, tp_input);
+
+	tcp_recv_cb = tp_tcp_recv_cb;
+#endif
+}
