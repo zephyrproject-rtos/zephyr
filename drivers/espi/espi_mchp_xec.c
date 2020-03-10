@@ -417,16 +417,17 @@ static int espi_xec_send_oob(struct device *dev, struct espi_oob_packet pckt)
 	LOG_DBG("%s\n", __func__);
 
 	if (!(ESPI_OOB_REGS->TX_STS & MCHP_ESPI_OOB_TX_STS_CHEN)) {
-		LOG_WRN("OOB channel is disabled\n");
+		LOG_ERR("OOB channel is disabled");
 		return -EIO;
 	}
 
 	if (ESPI_OOB_REGS->TX_STS & MCHP_ESPI_OOB_TX_STS_BUSY) {
-		LOG_WRN("OOB channel is busy\n");
+		LOG_ERR("OOB channel is busy");
 		return -EBUSY;
 	}
 
 	if (pckt.len > MAX_OOB_BUFFER_SIZE) {
+		LOG_ERR("insufficient space");
 		return -EINVAL;
 	}
 
@@ -434,7 +435,7 @@ static int espi_xec_send_oob(struct device *dev, struct espi_oob_packet pckt)
 
 	ESPI_OOB_REGS->TX_LEN = pckt.len;
 	ESPI_OOB_REGS->TX_CTRL = MCHP_ESPI_OOB_TX_CTRL_START;
-	LOG_DBG("%s %d\n", __func__, ESPI_OOB_REGS->TX_LEN);
+	LOG_DBG("%s %d", __func__, ESPI_OOB_REGS->TX_LEN);
 
 	/* Wait until ISR or timeout */
 	ret = k_sem_take(&data->tx_lock, MAX_OOB_TIMEOUT);
@@ -457,9 +458,6 @@ static int espi_xec_receive_oob(struct device *dev,
 			MCHP_ESPI_OOB_RX_STS_OVRUN;
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
 
-	LOG_DBG("%s\n", __func__);
-
-
 	if (ESPI_OOB_REGS->TX_STS & err_mask) {
 		return -EIO;
 	}
@@ -470,12 +468,15 @@ static int espi_xec_receive_oob(struct device *dev,
 		return -ETIMEDOUT;
 	}
 
-	/* Check if buffer passed to driver can fit the received packet */
-	if (ESPI_OOB_REGS->RX_LEN > pckt.len) {
+	/* Check if buffer passed to driver can fit the received buffer */
+	u32_t rcvd_len = ESPI_OOB_REGS->RX_LEN & ESPI_XEC_OOB_RX_LEN_MASK;
+
+	if (rcvd_len > pckt.len) {
+		LOG_ERR("space rcvd %d vs %d", rcvd_len, pckt.len);
 		return -EIO;
 	}
 
-	pckt.len = ESPI_OOB_REGS->RX_LEN;
+	pckt.len = rcvd_len;
 	memcpy(pckt.buf, slave_rx_mem, pckt.len);
 
 	return 0;
