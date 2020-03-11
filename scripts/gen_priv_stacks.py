@@ -27,7 +27,7 @@ import struct
 from elf_helper import ElfHelper
 
 kobjects = {
-        "_k_thread_stack_element": (None, False)
+        "z_thread_stack_element": (None, False)
 }
 
 

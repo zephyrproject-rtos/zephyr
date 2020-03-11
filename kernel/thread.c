@@ -648,7 +648,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
 	stack_object = z_object_find(stack);
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(z_obj_validation_check(stack_object, stack,
-						K_OBJ__THREAD_STACK_ELEMENT,
+						K_OBJ_THREAD_STACK_ELEMENT,
 						_OBJ_INIT_FALSE) == 0,
 				    "bad stack object"));
 

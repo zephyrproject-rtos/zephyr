@@ -174,7 +174,7 @@ union z_object_data {
 	/* Numerical thread ID for K_OBJ_THREAD */
 	unsigned int thread_id;
 
-	/* Stack buffer size for K_OBJ__THREAD_STACK_ELEMENT */
+	/* Stack buffer size for K_OBJ_THREAD_STACK_ELEMENT */
 	size_t stack_size;
 
 	/* Futex wait queue and spinlock for K_OBJ_FUTEX */
@@ -403,15 +403,15 @@ static inline void k_obj_free(void *obj)
  *
  * Stacks should always be created with K_THREAD_STACK_DEFINE().
  */
-struct __packed _k_thread_stack_element {
+struct __packed z_thread_stack_element {
 	char data;
 };
 
 /**
  * @typedef k_thread_stack_t
- * @brief Typedef of struct _k_thread_stack_element
+ * @brief Typedef of struct z_thread_stack_element
  *
- * @see _k_thread_stack_element
+ * @see z_thread_stack_element
  */
 
 /**
@@ -5155,7 +5155,7 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * @req K-TSTACK-001
  */
 #define K_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) sym[size]
+	struct z_thread_stack_element __noinit __aligned(STACK_ALIGN) sym[size]
 
 /**
  * @brief Calculate size of stacks to be allocated in a stack array
@@ -5185,7 +5185,7 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * @req K-TSTACK-001
  */
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit \
+	struct z_thread_stack_element __noinit \
 		__aligned(STACK_ALIGN) sym[nmemb][K_THREAD_STACK_LEN(size)]
 
 /**
@@ -5202,7 +5202,7 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * @req K-TSTACK-001
  */
 #define K_THREAD_STACK_MEMBER(sym, size) \
-	struct _k_thread_stack_element __aligned(STACK_ALIGN) sym[size]
+	struct z_thread_stack_element __aligned(STACK_ALIGN) sym[size]
 
 /**
  * @brief Return the size in bytes of a stack memory region
