@@ -63,6 +63,24 @@ static void dma_stm32_irq_handler(void *arg)
 	struct dma_stm32_stream *stream;
 	int id;
 
+#ifdef CONFIG_DMA_STM32_V2
+	/* retrieve the dma mux interrupt from the global flag */
+	for (id = 0; id < data->max_streams; id++) {
+		if (func_ll_is_active_gi[id](dma)) {
+			break;
+		}
+	}
+
+	if (func_ll_is_active_ht[id](dma)) {
+		/* half transfer was not enabled, just clear and ignore */
+		func_ll_clear_ht[id](dma);
+		return;
+	}
+
+	/* do not clear the global interrupt yet,
+	 * first handle the specific ones : te or tc
+	 */
+#else
 	for (id = 0; id < data->max_streams; id++) {
 		if (func_ll_is_active_tc[id](dma)) {
 			break;
@@ -71,6 +89,7 @@ static void dma_stm32_irq_handler(void *arg)
 			break;
 		}
 	}
+#endif /* CONFIG_DMA_STM32_V2 */
 
 	if (id == data->max_streams) {
 		LOG_ERR("Unknown interrupt happened.");
@@ -84,19 +103,26 @@ static void dma_stm32_irq_handler(void *arg)
 	if (func_ll_is_active_tc[id](dma)) {
 		func_ll_clear_tc[id](dma);
 		stream->dma_callback(stream->callback_arg, id + STREAM_OFFSET,
-					0);
+		       0);
 	} else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
 		LOG_ERR("Unexpected irq happened.");
 		stream->dma_callback(stream->callback_arg, id + STREAM_OFFSET,
-					-EIO);
+		       -EIO);
 	} else {
 		LOG_ERR("Transfer Error.");
 		dma_stm32_dump_stream_irq(dev, id);
 		dma_stm32_clear_stream_irq(dev, id);
 
 		stream->dma_callback(stream->callback_arg, id + STREAM_OFFSET,
-					-EIO);
+		       -EIO);
 	}
+
+#ifdef CONFIG_DMA_STM32_V2
+	if (func_ll_is_active_gi[id](dma)) {
+		/* clear the global interrupt afterwards */
+		func_ll_clear_gi[id](dma);
+	}
+#endif /* CONFIG_DMA_STM32_V2 */
 }
 
 static int dma_stm32_width_config(struct dma_config *config,

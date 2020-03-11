@@ -169,7 +169,7 @@ void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, u32_t id)
 
 bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, u32_t id)
 {
-	if (func_ll_is_active_fe[id](dma)) {
+	if (func_ll_is_active_fe[id](dma) && LL_DMA_IsEnabledIT_FE(dma, id)) {
 		return true;
 	}
 
@@ -178,7 +178,7 @@ bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, u32_t id)
 
 bool stm32_dma_is_unexpected_irq_happened(DMA_TypeDef *dma, u32_t id)
 {
-	if (func_ll_is_active_fe[id](dma)) {
+	if (func_ll_is_active_fe[id](dma) && LL_DMA_IsEnabledIT_FE(dma, id)) {
 		LOG_ERR("FiFo error.");
 		stm32_dma_dump_stream_irq(dma, id);
 		stm32_dma_clear_stream_irq(dma, id);
