@@ -275,11 +275,8 @@ static inline int z_impl_i2c_transfer(struct device *dev,
  * @retval -EIO General input / output error.
  * @retval -ENOTSUP If slave mode is not supported
  */
-__syscall int i2c_slave_register(struct device *dev,
-				 struct i2c_slave_config *cfg);
-
-static inline int z_impl_i2c_slave_register(struct device *dev,
-					   struct i2c_slave_config *cfg)
+static inline int i2c_slave_register(struct device *dev,
+				     struct i2c_slave_config *cfg)
 {
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->driver_api;
@@ -306,11 +303,8 @@ static inline int z_impl_i2c_slave_register(struct device *dev,
  * @retval -EINVAL If parameters are invalid
  * @retval -ENOTSUP If slave mode is not supported
  */
-__syscall int i2c_slave_unregister(struct device *dev,
-				   struct i2c_slave_config *cfg);
-
-static inline int z_impl_i2c_slave_unregister(struct device *dev,
-					     struct i2c_slave_config *cfg)
+static inline int i2c_slave_unregister(struct device *dev,
+				       struct i2c_slave_config *cfg)
 {
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->driver_api;
