@@ -699,7 +699,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 
 static void grant_static_access(void)
 {
-	Z_STRUCT_SECTION_FOREACH(_k_object_assignment, pos) {
+	Z_STRUCT_SECTION_FOREACH(z_object_assignment, pos) {
 		for (int i = 0; pos->objects[i] != NULL; i++) {
 			k_object_access_grant(pos->objects[i],
 					      pos->thread);
