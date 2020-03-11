@@ -24,7 +24,11 @@
 #error Unsupported flash driver
 #endif
 
+#if defined(CONFIG_BOARD_ADAFRUIT_FEATHER_STM32F405)
+#define FLASH_TEST_REGION_OFFSET 0xf000
+#else
 #define FLASH_TEST_REGION_OFFSET 0xff000
+#endif
 #define FLASH_SECTOR_SIZE        4096
 
 void main(void)

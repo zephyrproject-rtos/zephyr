@@ -88,6 +88,9 @@ SPI Port
 The STM32F405 SPI2 peripheral is available on the SCK (PB13), MI
 (PB14) and MO (PB15) pins.
 
+SPI1 uses SCK (PB3), MI (PB4), MO (PB5) and SS (PA15) pins and is
+dedicated to the 2 MB SPI Flash chip.
+
 Programming and Debugging
 *************************
 

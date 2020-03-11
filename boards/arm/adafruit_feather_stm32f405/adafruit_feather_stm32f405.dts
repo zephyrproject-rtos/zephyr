@@ -42,6 +42,23 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
+&spi1 {
+	status = "okay";
+	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+	gd25q16: gd25q16c@0 {
+		compatible = "jedec,spi-nor";
+		label = "GD25Q16C";
+		reg = <0>;
+		spi-max-frequency = <80000000>;
+		size = <0x200000>;
+		has-be32k;
+		has-dpd;
+		t-enter-dpd = <20000>;
+		t-exit-dpd = <100000>;
+		jedec-id = [c8 40 15];
+	};
+};
+
 &spi2 {
 	status = "okay";
 };
