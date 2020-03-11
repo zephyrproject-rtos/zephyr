@@ -70,6 +70,20 @@ static const char *phy_state_name(enum eth_mcux_phy_state state)
 	return name[state];
 }
 
+static const char *eth_name(ENET_Type *base)
+{
+	switch ((int)base) {
+	case (int)ENET:
+		return DT_ETH_MCUX_0_NAME;
+#if defined(CONFIG_ETH_MCUX_1)
+	case (int)ENET2:
+		return DT_ETH_MCUX_1_NAME;
+#endif
+	default:
+		return "unknown";
+	}
+}
+
 struct eth_context {
 	ENET_Type *base;
 	void (*config_func)(void);
@@ -208,7 +222,7 @@ static void eth_mcux_phy_enter_reset(struct eth_context *context)
 static void eth_mcux_phy_start(struct eth_context *context)
 {
 #ifdef CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG
-	LOG_DBG("[%p] phy_state=%s", context->base,
+	LOG_DBG("%s phy_state=%s", eth_name(context->base),
 		phy_state_name(context->phy_state));
 #endif
 
@@ -244,7 +258,7 @@ static void eth_mcux_phy_start(struct eth_context *context)
 void eth_mcux_phy_stop(struct eth_context *context)
 {
 #ifdef CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG
-	LOG_DBG("[%p] phy_state=%s", context->base,
+	LOG_DBG("%s phy_state=%s", eth_name(context->base),
 		phy_state_name(context->phy_state));
 #endif
 
@@ -281,8 +295,8 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	phy_speed_t phy_speed = kPHY_Speed100M;
 
 #ifdef CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG
-	LOG_DBG("[%p] phy_state=%s", context->base,
-	phy_state_name(context->phy_state));
+	LOG_DBG("%s phy_state=%s", eth_name(context->base),
+		phy_state_name(context->phy_state));
 #endif
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
@@ -912,7 +926,8 @@ static int eth_init(struct device *dev)
 	/* handle PHY setup after SMI initialization */
 	eth_mcux_phy_setup(context);
 
-	LOG_DBG("[%p] MAC %02x:%02x:%02x:%02x:%02x:%02x", context->base,
+	LOG_DBG("%s MAC %02x:%02x:%02x:%02x:%02x:%02x",
+		eth_name(context->base),
 		context->mac_addr[0], context->mac_addr[1],
 		context->mac_addr[2], context->mac_addr[3],
 		context->mac_addr[4], context->mac_addr[5]);
