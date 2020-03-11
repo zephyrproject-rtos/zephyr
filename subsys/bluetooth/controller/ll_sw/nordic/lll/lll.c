@@ -62,6 +62,7 @@ static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 static void ticker_start_op_cb(u32_t status, void *param);
+static void preempt_ticker_start(struct lll_prepare_param *prepare_param);
 static void preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
 			      u16_t lazy, void *param);
 static void preempt(void *param);
@@ -464,11 +465,7 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 
 	/* Current event active or another prepare is ready in the pipeline */
 	if (event.curr.abort_cb || (p && is_resume)) {
-#if !defined(CONFIG_BT_CTLR_LOW_LAT)
-		u32_t preempt_anchor;
-		struct evt_hdr *evt;
-		u32_t preempt_to;
-#else /* CONFIG_BT_CTLR_LOW_LAT */
+#if defined(CONFIG_BT_CTLR_LOW_LAT)
 		lll_prepare_cb_t resume_cb;
 		struct lll_event *next;
 		int resume_prio;
@@ -489,28 +486,7 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 			return -EINPROGRESS;
 		}
 
-		/* Calc the preempt timeout */
-		evt = HDR_LLL2EVT(prepare_param->param);
-		preempt_anchor = prepare_param->ticks_at_expire;
-		preempt_to = MAX(evt->ticks_active_to_start,
-				 evt->ticks_xtal_to_start) -
-				 evt->ticks_preempt_to_start;
-
-		/* Setup pre empt timeout */
-		ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
-				   TICKER_USER_ID_LLL,
-				   TICKER_ID_LLL_PREEMPT,
-				   preempt_anchor,
-				   preempt_to,
-				   TICKER_NULL_PERIOD,
-				   TICKER_NULL_REMAINDER,
-				   TICKER_NULL_LAZY,
-				   TICKER_NULL_SLOT,
-				   preempt_ticker_cb, NULL,
-				   ticker_start_op_cb, NULL);
-		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-			  (ret == TICKER_STATUS_FAILURE) ||
-			  (ret == TICKER_STATUS_BUSY));
+		preempt_ticker_start(prepare_param);
 
 #else /* CONFIG_BT_CTLR_LOW_LAT */
 		next = NULL;
@@ -553,12 +529,9 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 
 	err = prepare_cb(prepare_param);
 
-	/* Stop running pre-empt timer, if any */
-	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
-			  TICKER_ID_LLL_PREEMPT, NULL, NULL);
-	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-		  (ret == TICKER_STATUS_FAILURE) ||
-		  (ret == TICKER_STATUS_BUSY));
+	/* NOTE: Should the preempt timeout be stopped, check for any more
+	 *       in pipeline?
+	 */
 
 	return err;
 }
@@ -586,6 +559,37 @@ static void ticker_start_op_cb(u32_t status, void *param)
 		  (status == TICKER_STATUS_FAILURE));
 }
 
+static void preempt_ticker_start(struct lll_prepare_param *prepare_param)
+{
+	u32_t preempt_anchor;
+	struct evt_hdr *evt;
+	u32_t preempt_to;
+	int ret;
+
+	/* Calc the preempt timeout */
+	evt = HDR_LLL2EVT(prepare_param->param);
+	preempt_anchor = prepare_param->ticks_at_expire;
+	preempt_to = MAX(evt->ticks_active_to_start,
+			 evt->ticks_xtal_to_start) -
+			 evt->ticks_preempt_to_start;
+
+	/* Setup pre empt timeout */
+	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
+			   TICKER_USER_ID_LLL,
+			   TICKER_ID_LLL_PREEMPT,
+			   preempt_anchor,
+			   preempt_to,
+			   TICKER_NULL_PERIOD,
+			   TICKER_NULL_REMAINDER,
+			   TICKER_NULL_LAZY,
+			   TICKER_NULL_SLOT,
+			   preempt_ticker_cb, NULL,
+			   ticker_start_op_cb, NULL);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_FAILURE) ||
+		  (ret == TICKER_STATUS_BUSY));
+}
+
 static void preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
 			       u16_t lazy, void *param)
 {
@@ -606,8 +610,12 @@ static void preempt(void *param)
 	int resume_prio;
 	int ret;
 
+	if (!event.curr.abort_cb || !event.curr.param) {
+		return;
+	}
+
 	next = ull_prepare_dequeue_iter(&idx);
-	if (!next || !event.curr.abort_cb || !event.curr.param) {
+	if (!next) {
 		return;
 	}
 
@@ -627,16 +635,16 @@ static void preempt(void *param)
 		next->is_aborted = 1;
 		next->abort_cb(&next->prepare_param, next->prepare_param.param);
 
-		return;
+		goto preempt_next;
 	}
 
 	event.curr.abort_cb(NULL, event.curr.param);
 
 	if (ret == -EAGAIN) {
 		struct lll_event *iter;
-		u8_t idx = UINT8_MAX;
+		u8_t iter_idx = UINT8_MAX;
 
-		iter = ull_prepare_dequeue_iter(&idx);
+		iter = ull_prepare_dequeue_iter(&iter_idx);
 		while (iter) {
 			if (!iter->is_aborted &&
 			    event.curr.param == iter->prepare_param.param) {
@@ -645,7 +653,7 @@ static void preempt(void *param)
 					       iter->prepare_param.param);
 			}
 
-			iter = ull_prepare_dequeue_iter(&idx);
+			iter = ull_prepare_dequeue_iter(&iter_idx);
 		}
 
 		ret = resume_enqueue(resume_cb, resume_prio);
@@ -653,6 +661,16 @@ static void preempt(void *param)
 	} else {
 		LL_ASSERT(ret == -ECANCELED);
 	}
+
+preempt_next:
+	do {
+		next = ull_prepare_dequeue_iter(&idx);
+		if (!next) {
+			return;
+		}
+	} while (next->is_aborted || next->is_resume);
+
+	preempt_ticker_start(&next->prepare_param);
 }
 #else /* CONFIG_BT_CTLR_LOW_LAT */
 
