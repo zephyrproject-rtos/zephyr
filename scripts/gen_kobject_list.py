@@ -144,6 +144,12 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 #endif
 """
 
+metadata_names = {
+    "K_OBJ_THREAD" : "thread_id",
+    "K_OBJ__THREAD_STACK_ELEMENT" : "stack_size",
+    "K_OBJ_SYS_MUTEX" : "mutex",
+    "K_OBJ_FUTEX" : "futex_data"
+}
 
 def write_gperf_table(fp, eh, objs, static_begin, static_end):
     fp.write(header)
@@ -204,7 +210,13 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
         if is_driver:
             flags += " | K_OBJ_FLAG_DRIVER"
 
-        fp.write("\", {}, %s, %s, %s\n" % (obj_type, flags, str(ko.data)))
+        if ko.type_name in metadata_names:
+            tname = metadata_names[ko.type_name]
+        else:
+            tname = "unused"
+
+        fp.write("\", {}, %s, %s, { .%s = %s }\n" % (obj_type, flags,
+		tname, str(ko.data)))
 
         if obj_type == "K_OBJ_THREAD":
             idx = math.floor(ko.data / 8)

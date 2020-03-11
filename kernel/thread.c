@@ -664,9 +664,9 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	/* Testing less-than-or-equal since additional room may have been
 	 * allocated for alignment constraints
 	 */
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
-				    "stack size %zu is too big, max is %lu",
-				    total_size, stack_object->data));
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(total_size <= stack_object->data.stack_size,
+				    "stack size %zu is too big, max is %zu",
+				    total_size, stack_object->data.stack_size));
 
 	/* User threads may only create other user threads and they can't
 	 * be marked as essential
