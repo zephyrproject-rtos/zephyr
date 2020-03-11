@@ -209,8 +209,8 @@ Some objects will be implicitly initialized at boot:
 * Device driver objects are considered initialized after their init function
   is run by the kernel early in the boot process.
 
-If a kernel object is initialized with a private static initializer, the
-object must have :c:func:`_k_object_init()` called on it at some point by a supervisor
+If a kernel object is initialized with a private static initializer, the object
+must have :c:func:`z_object_init()` called on it at some point by a supervisor
 thread, otherwise the kernel will consider the object uninitialized if accessed
 by a user thread. This is very uncommon, typically only for kernel objects that
 are embedded within some larger struct and initialized statically.
@@ -228,7 +228,7 @@ are embedded within some larger struct and initialized statically.
     };
 
     ...
-    _k_object_init(&my_foo.sem);
+    z_object_init(&my_foo.sem);
     ...
 
 
