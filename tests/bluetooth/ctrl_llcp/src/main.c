@@ -308,26 +308,19 @@ void test_api_disconnect(void)
 	zassert_equal(conn.remote.state, RR_STATE_DISCONNECT, NULL);
 }
 
-void helper_pdu_encode_version_ind(struct pdu_data *pdu, u8_t version_number, u16_t company_id, u16_t sub_version_number)
+void helper_pdu_encode_version_ind(struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_version_ind *p = param;
+
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, version_ind) + sizeof(struct pdu_data_llctrl_version_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
-	pdu->llctrl.version_ind.version_number = version_number;
-	pdu->llctrl.version_ind.company_id = company_id;
-	pdu->llctrl.version_ind.sub_version_number = sub_version_number;
+	pdu->llctrl.version_ind.version_number = p->version_number;
+	pdu->llctrl.version_ind.company_id = p->company_id;
+	pdu->llctrl.version_ind.sub_version_number = p->sub_version_number;
 }
 
-void helper_pdu_verify_version_ind(struct pdu_data *pdu, u8_t version_number, u16_t company_id, u16_t sub_version_number)
-{
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_VERSION_IND, NULL);
-	zassert_equal(pdu->llctrl.version_ind.version_number, version_number, NULL);
-	zassert_equal(pdu->llctrl.version_ind.company_id, company_id, NULL);
-	zassert_equal(pdu->llctrl.version_ind.sub_version_number, sub_version_number, NULL);
-}
-
-void helper_pdu_encode_enc_req(struct pdu_data *pdu)
+void helper_pdu_encode_enc_req(struct pdu_data *pdu, void *param)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, enc_req) + sizeof(struct pdu_data_llctrl_enc_req);
@@ -335,7 +328,7 @@ void helper_pdu_encode_enc_req(struct pdu_data *pdu)
 	/* TODO(thoh): Fill in correct data */
 }
 
-void helper_pdu_encode_enc_rsp(struct pdu_data *pdu)
+void helper_pdu_encode_enc_rsp(struct pdu_data *pdu, void *param)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, enc_rsp) + sizeof(struct pdu_data_llctrl_enc_rsp);
@@ -343,7 +336,7 @@ void helper_pdu_encode_enc_rsp(struct pdu_data *pdu)
 	/* TODO(thoh): Fill in correct data */
 }
 
-void helper_pdu_encode_start_enc_req(struct pdu_data *pdu)
+void helper_pdu_encode_start_enc_req(struct pdu_data *pdu, void *param)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, start_enc_req) + sizeof(struct pdu_data_llctrl_start_enc_req);
@@ -351,7 +344,7 @@ void helper_pdu_encode_start_enc_req(struct pdu_data *pdu)
 	/* TODO(thoh): Fill in correct data */
 }
 
-void helper_pdu_encode_start_enc_rsp(struct pdu_data *pdu)
+void helper_pdu_encode_start_enc_rsp(struct pdu_data *pdu, void *param)
 {
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, start_enc_rsp) + sizeof(struct pdu_data_llctrl_start_enc_rsp);
@@ -359,54 +352,159 @@ void helper_pdu_encode_start_enc_rsp(struct pdu_data *pdu)
 	/* TODO(thoh): Fill in correct data */
 }
 
-void helper_pdu_encode_reject_ext_ind(struct pdu_data *pdu, u8_t reject_opcode, u8_t error_code)
+void helper_pdu_encode_reject_ext_ind(struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_reject_ext_ind *p = param;
+
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, reject_ext_ind) + sizeof(struct pdu_data_llctrl_reject_ext_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
-	pdu->llctrl.reject_ext_ind.reject_opcode = reject_opcode;
-	pdu->llctrl.reject_ext_ind.error_code = error_code;
+	pdu->llctrl.reject_ext_ind.reject_opcode = p->reject_opcode;
+	pdu->llctrl.reject_ext_ind.error_code = p->error_code;
 }
 
-void helper_pdu_verify_enc_req(struct pdu_data *pdu)
+void helper_pdu_verify_version_ind(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_version_ind *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_VERSION_IND, NULL);
+	zassert_equal(pdu->llctrl.version_ind.version_number, p->version_number, NULL);
+	zassert_equal(pdu->llctrl.version_ind.company_id, p->company_id, NULL);
+	zassert_equal(pdu->llctrl.version_ind.sub_version_number, p->sub_version_number, NULL);
+}
+
+void helper_pdu_verify_enc_req(struct pdu_data *pdu, void *param)
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_ENC_REQ, NULL);
 }
 
-void helper_pdu_verify_enc_rsp(struct pdu_data *pdu)
+void helper_pdu_verify_enc_rsp(struct pdu_data *pdu, void *param)
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_ENC_RSP, NULL);
 }
 
-void helper_pdu_verify_start_enc_req(struct pdu_data *pdu)
+void helper_pdu_verify_start_enc_req(struct pdu_data *pdu, void *param)
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_START_ENC_REQ, NULL);
 }
 
-void helper_pdu_verify_start_enc_rsp(struct pdu_data *pdu)
+void helper_pdu_verify_start_enc_rsp(struct pdu_data *pdu, void *param)
 {
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_START_ENC_RSP, NULL);
 }
 
-void helper_pdu_verify_reject_ind(struct pdu_data *pdu, u8_t error_code)
+void helper_pdu_verify_reject_ind(struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_reject_ind *p = param;
+
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, reject_ind) + sizeof(struct pdu_data_llctrl_reject_ind), NULL);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_REJECT_IND, NULL);
-	zassert_equal(pdu->llctrl.reject_ind.error_code, error_code, NULL);
+	zassert_equal(pdu->llctrl.reject_ind.error_code, p->error_code, NULL);
 }
 
-void helper_pdu_verify_reject_ext_ind(struct pdu_data *pdu, u8_t reject_opcode, u8_t error_code)
+void helper_pdu_verify_reject_ext_ind(struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_reject_ext_ind *p = param;
+
 	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
 	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, reject_ext_ind) + sizeof(struct pdu_data_llctrl_reject_ext_ind), NULL);
 	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND, NULL);
-	zassert_equal(pdu->llctrl.reject_ext_ind.reject_opcode, reject_opcode, NULL);
-	zassert_equal(pdu->llctrl.reject_ext_ind.error_code, error_code, NULL);
+	zassert_equal(pdu->llctrl.reject_ext_ind.reject_opcode, p->reject_opcode, NULL);
+	zassert_equal(pdu->llctrl.reject_ext_ind.error_code, p->error_code, NULL);
+}
+
+typedef enum {
+	LL_VERSION_IND,
+	LL_REJECT_IND,
+	LL_REJECT_EXT_IND,
+	LL_ENC_REQ,
+	LL_ENC_RSP,
+	LL_START_ENC_REQ,
+	LL_START_ENC_RSP,
+} helper_opcode_t;
+
+typedef void (helper_func_t) (struct pdu_data * data, void *param);
+
+helper_func_t * const helper_pdu_encode[] = {
+	helper_pdu_encode_version_ind,
+	NULL,
+	helper_pdu_encode_reject_ext_ind,
+	helper_pdu_encode_enc_req,
+	helper_pdu_encode_enc_rsp,
+	helper_pdu_encode_start_enc_req,
+	helper_pdu_encode_start_enc_rsp
+};
+
+helper_func_t * const helper_pdu_verify[] = {
+	helper_pdu_verify_version_ind,
+	helper_pdu_verify_reject_ind,
+	helper_pdu_verify_reject_ext_ind,
+	helper_pdu_verify_enc_req,
+	helper_pdu_verify_enc_rsp,
+	helper_pdu_verify_start_enc_req,
+	helper_pdu_verify_start_enc_rsp
+};
+
+void lt_tx(helper_opcode_t opcode, struct ull_cp_conn *conn, void *param)
+{
+	struct pdu_data *pdu;
+	u8_t node_rx_pdu_buf[PDU_RX_NODE_SIZE];
+	struct node_rx_pdu *rx;
+
+	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
+	pdu = (struct pdu_data *) rx->pdu;
+	helper_pdu_encode[opcode](pdu, param);
+	ull_cp_rx(conn, rx);
+}
+
+void lt_rx(helper_opcode_t opcode, struct ull_cp_conn *conn, struct node_tx **tx_ref, void *param)
+{
+	struct node_tx *tx;
+	struct pdu_data *pdu;
+
+	tx = ull_tx_q_dequeue(&tx_q);
+	zassert_not_null(tx, NULL);
+
+	pdu = (struct pdu_data *)tx->pdu;
+	helper_pdu_verify[opcode](pdu, param);
+
+	*tx_ref = tx;
+}
+
+void lt_rx_q_is_empty()
+{
+	struct node_tx *tx;
+
+	tx = ull_tx_q_dequeue(&tx_q);
+	zassert_is_null(tx, NULL);
+}
+
+void ut_rx(helper_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
+{
+	struct pdu_data *pdu;
+	struct node_rx_pdu *ntf;
+
+	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
+	zassert_not_null(ntf, NULL);
+
+	pdu = (struct pdu_data *) ntf->pdu;
+	helper_pdu_verify[opcode](pdu, param);
+
+	*ntf_ref = ntf;
+}
+
+void ut_rx_q_is_empty()
+{
+	struct node_rx_pdu *ntf;
+
+	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
+	zassert_is_null(ntf, NULL);
 }
 
 /* +-----+                     +-------+            +-----+
@@ -432,13 +530,19 @@ void test_api_local_version_exchange(void)
 {
 	u8_t err;
 	struct node_tx *tx;
-	struct pdu_data *pdu;
-	u16_t cid;
-	u16_t svn;
-
-	u8_t node_rx_pdu_buf[PDU_RX_NODE_SIZE];
-	struct node_rx_pdu *rx;
 	struct node_rx_pdu *ntf;
+
+	struct pdu_data_llctrl_version_ind local_version_ind = {
+		.version_number = LL_VERSION_NUMBER,
+		.company_id = CONFIG_BT_CTLR_COMPANY_ID,
+		.sub_version_number = CONFIG_BT_CTLR_SUBVERSION_NUMBER,
+	};
+
+	struct pdu_data_llctrl_version_ind remote_version_ind = {
+		.version_number = 0x55,
+		.company_id = 0xABCD,
+		.sub_version_number = 0x1234,
+	};
 
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
@@ -458,38 +562,15 @@ void test_api_local_version_exchange(void)
 	ull_cp_run(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
+	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
+	lt_rx_q_is_empty();
 
-	/* The PDU should be a LL_VERSION_IND */
-	pdu = (struct pdu_data *)tx->pdu;
-	cid = sys_cpu_to_le16(CONFIG_BT_CTLR_COMPANY_ID);
-	svn = sys_cpu_to_le16(CONFIG_BT_CTLR_SUBVERSION_NUMBER);
-	helper_pdu_verify_version_ind(pdu, LL_VERSION_NUMBER, cid, svn);
+	/* Rx */
+	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
 
-	/* Tx Queue is now empty */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_is_null(tx, NULL);
-
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_version_ind(pdu, 0x55, 0xABCD, 0x1234);
-
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
-
-	/* There should be a host notification */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_not_null(ntf, NULL);
-
-	/* The PDU should be a LL_VERSION_IND */
-	pdu = (struct pdu_data *) ntf->pdu;
-	helper_pdu_verify_version_ind(pdu, 0x55, 0xABCD, 0x1234);
-
-	/* There should be no more host notifications */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(ntf, NULL);
+	/* There should be one host notification */
+	ut_rx(LL_VERSION_IND, &ntf, &remote_version_ind);
+	ut_rx_q_is_empty();
 }
 
 void test_api_local_version_exchange_2(void)
@@ -525,13 +606,18 @@ void test_api_local_version_exchange_2(void)
 void test_api_remote_version_exchange(void)
 {
 	struct node_tx *tx;
-	struct pdu_data *pdu;
-	u16_t cid;
-	u16_t svn;
 
-	u8_t node_rx_pdu_buf[PDU_RX_NODE_SIZE];
-	struct node_rx_pdu *rx;
-	struct node_rx_pdu *ntf;
+	struct pdu_data_llctrl_version_ind local_version_ind = {
+		.version_number = LL_VERSION_NUMBER,
+		.company_id = CONFIG_BT_CTLR_COMPANY_ID,
+		.sub_version_number = CONFIG_BT_CTLR_SUBVERSION_NUMBER,
+	};
+
+	struct pdu_data_llctrl_version_ind remote_version_ind = {
+		.version_number = 0x55,
+		.company_id = 0xABCD,
+		.sub_version_number = 0x1234,
+	};
 
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
@@ -543,34 +629,19 @@ void test_api_remote_version_exchange(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_version_ind(pdu, 0x55, 0xABCD, 0x1234);
-
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
+	/* Rx */
+	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
 
 	/* Run */
 	ull_cp_run(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
-
-	/* The PDU should be a LL_VERSION_IND */
-	pdu = (struct pdu_data *)tx->pdu;
-	cid = sys_cpu_to_le16(CONFIG_BT_CTLR_COMPANY_ID);
-	svn = sys_cpu_to_le16(CONFIG_BT_CTLR_SUBVERSION_NUMBER);
-	helper_pdu_verify_version_ind(pdu, LL_VERSION_NUMBER, cid, svn);
-
-	/* Tx Queue is now empty */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_is_null(tx, NULL);
+	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
+	lt_rx_q_is_empty();
 
 	/* There should not be a host notifications */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(ntf, NULL);
+	ut_rx_q_is_empty();
+
 }
 
 /* +-----+                     +-------+            +-----+
@@ -596,13 +667,19 @@ void test_api_both_version_exchange(void)
 {
 	u8_t err;
 	struct node_tx *tx;
-	struct pdu_data *pdu;
-	u16_t cid;
-	u16_t svn;
-
-	u8_t node_rx_pdu_buf[PDU_RX_NODE_SIZE];
-	struct node_rx_pdu *rx;
 	struct node_rx_pdu *ntf;
+
+	struct pdu_data_llctrl_version_ind local_version_ind = {
+		.version_number = LL_VERSION_NUMBER,
+		.company_id = CONFIG_BT_CTLR_COMPANY_ID,
+		.sub_version_number = CONFIG_BT_CTLR_SUBVERSION_NUMBER,
+	};
+
+	struct pdu_data_llctrl_version_ind remote_version_ind = {
+		.version_number = 0x55,
+		.company_id = 0xABCD,
+		.sub_version_number = 0x1234,
+	};
 
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
@@ -614,13 +691,8 @@ void test_api_both_version_exchange(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_version_ind(pdu, 0x55, 0xABCD, 0x1234);
-
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
+	/* Rx */
+	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
 
 	/* Initiate a Version Exchange Procedure */
 	err = ull_cp_version_exchange(&conn);
@@ -630,31 +702,14 @@ void test_api_both_version_exchange(void)
 	ull_cp_run(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
+	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
+	lt_rx_q_is_empty();
 
-	/* The PDU should be a LL_VERSION_IND */
-	pdu = (struct pdu_data *)tx->pdu;
-	cid = sys_cpu_to_le16(CONFIG_BT_CTLR_COMPANY_ID);
-	svn = sys_cpu_to_le16(CONFIG_BT_CTLR_SUBVERSION_NUMBER);
-	helper_pdu_verify_version_ind(pdu, LL_VERSION_NUMBER, cid, svn);
-
-	/* Tx Queue is now empty */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_is_null(tx, NULL);
-
-	/* There should be a host notification */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_not_null(ntf, NULL);
-
-	/* The PDU should be a LL_VERSION_IND */
-	pdu = (struct pdu_data *) ntf->pdu;
-	helper_pdu_verify_version_ind(pdu, 0x55, 0xABCD, 0x1234);
-
-	/* There should be no more host notifications */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(ntf, NULL);
+	/* There should be one host notification */
+	ut_rx(LL_VERSION_IND, &ntf, &remote_version_ind);
+	ut_rx_q_is_empty();
 }
+
 
 /* +-----+                     +-------+              +-----+
  * | UT  |                     | LL_A  |              | LT  |
@@ -695,9 +750,6 @@ void test_api_local_encryption_start(void)
 {
 	u8_t err;
 	struct node_tx *tx;
-	struct pdu_data *pdu;
-	u8_t node_rx_pdu_buf[PDU_RX_NODE_SIZE];
-	struct node_rx_pdu *rx;
 	struct node_rx_pdu *ntf;
 
 	/* Setup */
@@ -718,63 +770,34 @@ void test_api_local_encryption_start(void)
 	ull_cp_run(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
+	lt_rx(LL_ENC_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
 
-	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify_enc_req(pdu);
-
-	/* Release tx */
+	/* Release Tx */
 	ull_cp_release_tx(tx);
 
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_enc_rsp(pdu);
+	/* Rx */
+	lt_tx(LL_ENC_RSP, &conn, NULL);
 
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
-
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_start_enc_req(pdu);
-
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
+	/* Rx */
+	lt_tx(LL_START_ENC_REQ, &conn, NULL);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
+	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
 
-	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify_start_enc_rsp(pdu);
-
-	/* Release tx */
+	/* Release Tx */
 	ull_cp_release_tx(tx);
 
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_start_enc_rsp(pdu);
+	/* Rx */
+	lt_tx(LL_START_ENC_RSP, &conn, NULL);
 
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
+	/* There should be one host notification */
+	ut_rx(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_q_is_empty();
 
-	/* There should be a host notification */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_not_null(ntf, NULL);
-
-	/* The PDU should be a LL_START_ENC_RSP */
-	pdu = (struct pdu_data *) ntf->pdu;
-	helper_pdu_verify_start_enc_rsp(pdu);
-
-	/* Release ntf */
+	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-
-	/* There should be no more host notifications */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(ntf, NULL);
 
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.enc_tx, 1U, NULL);
@@ -826,12 +849,7 @@ void test_api_local_encryption_start_limited_memory(void)
 {
 	u8_t err;
 	struct node_tx *tx;
-	struct pdu_data *pdu;
-	struct node_tx *peek_tx;
-	u8_t node_rx_pdu_buf[PDU_RX_NODE_SIZE];
-	struct node_rx_pdu *rx;
 	struct node_rx_pdu *ntf;
-	struct node_rx_pdu *peek_ntf;
 
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
@@ -863,90 +881,58 @@ void test_api_local_encryption_start_limited_memory(void)
 	ull_cp_run(&conn);
 
 	/* Tx Queue should have no LL Control PDU */
-	peek_tx = ull_tx_q_dequeue(&tx_q);
-	zassert_is_null(peek_tx, NULL);
+	lt_rx_q_is_empty();
 
-	/* Release tx */
+	/* Release Tx */
 	ull_cp_release_tx(tx);
 
 	/* Run */
 	ull_cp_run(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
+	lt_rx(LL_ENC_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
 
-	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify_enc_req(pdu);
+	/* Rx */
+	lt_tx(LL_ENC_RSP, &conn, NULL);
 
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_enc_rsp(pdu);
-
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
-
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_start_enc_req(pdu);
-
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
+	/* Rx */
+	lt_tx(LL_START_ENC_REQ, &conn, NULL);
 
 	/* Tx Queue should have no LL Control PDU */
-	peek_tx = ull_tx_q_dequeue(&tx_q);
-	zassert_is_null(peek_tx, NULL);
+	lt_rx_q_is_empty();
 
-	/* Release tx */
+	/* Release Tx */
 	ull_cp_release_tx(tx);
 
 	/* Run */
 	ull_cp_run(&conn);
 
-	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
+	/* Tx Queue should have no LL Control PDU */
+	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
 
-	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify_start_enc_rsp(pdu);
-
-	/* Release tx */
+	/* Release Tx */
 	ull_cp_release_tx(tx);
 
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_start_enc_rsp(pdu);
+	/* Rx */
+	lt_tx(LL_START_ENC_RSP, &conn, NULL);
 
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
+	/* There should be no host notifications */
+	ut_rx_q_is_empty();
 
-	/* There should be no more host notifications */
-	peek_ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(peek_ntf, NULL);
-
-	/* Release ntf */
+	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
 	/* Run */
 	ull_cp_run(&conn);
 
-	/* There should be a host notification */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_not_null(ntf, NULL);
+	/* There should be one host notification */
+	ut_rx(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_q_is_empty();
 
-	/* The PDU should be a LL_START_ENC_RSP */
-	pdu = (struct pdu_data *) ntf->pdu;
-	helper_pdu_verify_start_enc_rsp(pdu);
-
-	/* Release ntf */
+	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-
-	/* There should be no more host notifications */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(ntf, NULL);
 
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.enc_tx, 1U, NULL);
@@ -984,10 +970,16 @@ void test_api_local_encryption_start_no_ltk(void)
 {
 	u8_t err;
 	struct node_tx *tx;
-	struct pdu_data *pdu;
-	u8_t node_rx_pdu_buf[PDU_RX_NODE_SIZE];
-	struct node_rx_pdu *rx;
 	struct node_rx_pdu *ntf;
+
+	struct pdu_data_llctrl_reject_ind reject_ind = {
+		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
+	};
+
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ,
+		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
+	};
 
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
@@ -1007,45 +999,24 @@ void test_api_local_encryption_start_no_ltk(void)
 	ull_cp_run(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
+	lt_rx(LL_ENC_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
 
-	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify_enc_req(pdu);
-
-	/* Release tx */
+	/* Release Tx */
 	ull_cp_release_tx(tx);
 
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_enc_rsp(pdu);
+	/* Rx */
+	lt_tx(LL_ENC_RSP, &conn, NULL);
 
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
+	/* Rx */
+	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
 
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_ENC_REQ, BT_HCI_ERR_PIN_OR_KEY_MISSING);
+	/* There should be one host notification */
+	ut_rx(LL_REJECT_IND, &ntf, &reject_ind);
+	ut_rx_q_is_empty();
 
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
-
-	/* There should be a host notification */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_not_null(ntf, NULL);
-
-	/* The PDU should be a LL_REJECT_IND */
-	pdu = (struct pdu_data *) ntf->pdu;
-	helper_pdu_verify_reject_ind(pdu, BT_HCI_ERR_PIN_OR_KEY_MISSING);
-
-	/* Release ntf */
+	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-
-	/* There should be no more host notifications */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(ntf, NULL);
 
 	/* Tx Encryption should be disabled */
 	zassert_equal(conn.enc_tx, 0U, NULL);
@@ -1095,9 +1066,6 @@ void test_api_local_encryption_start_no_ltk(void)
 void test_api_remote_encryption_start(void)
 {
 	struct node_tx *tx;
-	struct pdu_data *pdu;
-	u8_t node_rx_pdu_buf[PDU_RX_NODE_SIZE];
-	struct node_rx_pdu *rx;
 	struct node_rx_pdu *ntf;
 
 	/* Setup */
@@ -1110,85 +1078,48 @@ void test_api_remote_encryption_start(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_enc_req(pdu);
-
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
+	/* Rx */
+	lt_tx(LL_ENC_REQ, &conn, NULL);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
+	lt_rx(LL_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
 
-	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify_enc_rsp(pdu);
-
-	/* Release tx */
+	/* Release Tx */
 	ull_cp_release_tx(tx);
 
 	/* There should be a host notification */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_not_null(ntf, NULL);
+	ut_rx(LL_ENC_REQ, &ntf, NULL);
+	ut_rx_q_is_empty();
 
-	/* The PDU should be a LL_START_ENC_RSP */
-	pdu = (struct pdu_data *) ntf->pdu;
-	helper_pdu_verify_enc_req(pdu);
-
-	/* Release ntf */
+	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-
-	/* There should be no more host notifications */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(ntf, NULL);
 
 	/* LTK request reply */
 	ull_cp_ltk_req_reply(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
+	lt_rx(LL_START_ENC_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
 
-	/* The PDU should be a LL_START_ENC_REQ */
-	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify_start_enc_req(pdu);
-
-	/* Release tx */
+	/* Release Tx */
 	ull_cp_release_tx(tx);
 
 	/* Rx Decryption should be enabled */
 	zassert_equal(conn.enc_rx, 1U, NULL);
 
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_start_enc_rsp(pdu);
-
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
+	/* Rx */
+	lt_tx(LL_START_ENC_RSP, &conn, NULL);
 
 	/* There should be a host notification */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_not_null(ntf, NULL);
-
-	/* The PDU should be a LL_START_ENC_RSP */
-	pdu = (struct pdu_data *) ntf->pdu;
-	helper_pdu_verify_start_enc_rsp(pdu);
-
-	/* There should be no more host notifications */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(ntf, NULL);
+	ut_rx(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_q_is_empty();
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
+	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
 
-	/* The PDU should be a LL_START_ENC_RSP */
-	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify_start_enc_rsp(pdu);
-
-	/* Release tx */
+	/* Release Tx */
 	ull_cp_release_tx(tx);
 
 	/* Tx Encryption should be enabled */
@@ -1240,12 +1171,7 @@ void test_api_remote_encryption_start(void)
 void test_api_remote_encryption_start_limited_memory(void)
 {
 	struct node_tx *tx;
-	struct pdu_data *pdu;
-	struct node_tx *peek_tx;
-	u8_t node_rx_pdu_buf[PDU_RX_NODE_SIZE];
-	struct node_rx_pdu *rx;
 	struct node_rx_pdu *ntf;
-	struct node_rx_pdu *peek_ntf;
 
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
@@ -1269,17 +1195,11 @@ void test_api_remote_encryption_start_limited_memory(void)
 		zassert_not_null(ntf, NULL);
 	}
 
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_enc_req(pdu);
+	/* Rx */
+	lt_tx(LL_ENC_REQ, &conn, NULL);
 
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
-
-	/* Tx Queue should not have one LL Control PDU */
-	peek_tx = ull_tx_q_dequeue(&tx_q);
-	zassert_is_null(peek_tx, NULL);
+	/* Tx Queue should not have a LL Control PDU */
+	lt_rx_q_is_empty();
 
 	/* Release tx */
 	ull_cp_release_tx(tx);
@@ -1288,15 +1208,11 @@ void test_api_remote_encryption_start_limited_memory(void)
 	ull_cp_run(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
-
-	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify_enc_rsp(pdu);
+	lt_rx(LL_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
 
 	/* There should not be a host notification */
-	peek_ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(peek_ntf, NULL);
+	ut_rx_q_is_empty();
 
 	/* Release ntf */
 	ull_cp_release_ntf(ntf);
@@ -1304,24 +1220,15 @@ void test_api_remote_encryption_start_limited_memory(void)
 	/* Run */
 	ull_cp_run(&conn);
 
-	/* There should be a host notification */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_not_null(ntf, NULL);
-
-	/* The PDU should be a LL_START_ENC_RSP */
-	pdu = (struct pdu_data *) ntf->pdu;
-	helper_pdu_verify_enc_req(pdu);
-
-	/* There should be no more host notifications */
-	peek_ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(peek_ntf, NULL);
+	/* There should be one host notification */
+	ut_rx(LL_ENC_REQ, &ntf, NULL);
+	ut_rx_q_is_empty();
 
 	/* LTK request reply */
 	ull_cp_ltk_req_reply(&conn);
 
 	/* Tx Queue should not have one LL Control PDU */
-	peek_tx = ull_tx_q_dequeue(&tx_q);
-	zassert_is_null(peek_tx, NULL);
+	lt_rx_q_is_empty();
 
 	/* Release tx */
 	ull_cp_release_tx(tx);
@@ -1330,27 +1237,17 @@ void test_api_remote_encryption_start_limited_memory(void)
 	ull_cp_run(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
-
-	/* The PDU should be a LL_START_ENC_REQ */
-	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify_start_enc_req(pdu);
+	lt_rx(LL_START_ENC_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
 
 	/* Rx Decryption should be enabled */
 	zassert_equal(conn.enc_rx, 1U, NULL);
 
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_start_enc_rsp(pdu);
-
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
+	/* Rx */
+	lt_tx(LL_START_ENC_RSP, &conn, NULL);
 
 	/* There should not be a host notification */
-	peek_ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(peek_ntf, NULL);
+	ut_rx_q_is_empty();
 
 	/* Release ntf */
 	ull_cp_release_ntf(ntf);
@@ -1358,21 +1255,12 @@ void test_api_remote_encryption_start_limited_memory(void)
 	/* Run */
 	ull_cp_run(&conn);
 
-	/* There should be a host notification */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_not_null(ntf, NULL);
+	/* There should be one host notification */
+	ut_rx(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_q_is_empty();
 
-	/* The PDU should be a LL_START_ENC_RSP */
-	pdu = (struct pdu_data *) ntf->pdu;
-	helper_pdu_verify_start_enc_rsp(pdu);
-
-	/* There should be no more host notifications */
-	peek_ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(peek_ntf, NULL);
-
-	/* Tx Queue should not have one LL Control PDU */
-	peek_tx = ull_tx_q_dequeue(&tx_q);
-	zassert_is_null(peek_tx, NULL);
+	/* Tx Queue should not have a LL Control PDU */
+	lt_rx_q_is_empty();
 
 	/* Release tx */
 	ull_cp_release_tx(tx);
@@ -1381,12 +1269,8 @@ void test_api_remote_encryption_start_limited_memory(void)
 	ull_cp_run(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
-
-	/* The PDU should be a LL_START_ENC_RSP */
-	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify_start_enc_rsp(pdu);
+	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
 
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.enc_tx, 1U, NULL);
@@ -1417,10 +1301,12 @@ void test_api_remote_encryption_start_limited_memory(void)
 void test_api_remote_encryption_start_no_ltk(void)
 {
 	struct node_tx *tx;
-	struct pdu_data *pdu;
-	u8_t node_rx_pdu_buf[PDU_RX_NODE_SIZE];
-	struct node_rx_pdu *rx;
 	struct node_rx_pdu *ntf;
+
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ,
+		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
+	};
 
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
@@ -1432,56 +1318,35 @@ void test_api_remote_encryption_start_no_ltk(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	/* Encode RX PDU */
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
-	pdu = (struct pdu_data *) rx->pdu;
-	helper_pdu_encode_enc_req(pdu);
-
-	/* Handle RX */
-	ull_cp_rx(&conn, rx);
+	/* Rx */
+	lt_tx(LL_ENC_REQ, &conn, NULL);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
+	lt_rx(LL_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
 
-	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify_enc_rsp(pdu);
-
-	/* Release tx */
+	/* Release Tx */
 	ull_cp_release_tx(tx);
 
 	/* There should be a host notification */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_not_null(ntf, NULL);
+	ut_rx(LL_ENC_REQ, &ntf, NULL);
+	ut_rx_q_is_empty();
 
-	/* The PDU should be a LL_START_ENC_RSP */
-	pdu = (struct pdu_data *) ntf->pdu;
-	helper_pdu_verify_enc_req(pdu);
-
-	/* Release ntf */
+	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
-
-	/* There should be no more host notifications */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(ntf, NULL);
 
 	/* LTK request reply */
 	ull_cp_ltk_req_neq_reply(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
-	tx = ull_tx_q_dequeue(&tx_q);
-	zassert_not_null(tx, NULL);
+	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &reject_ext_ind);
+	lt_rx_q_is_empty();
 
-	/* The PDU should be a LL_REJECT_EXT_IND */
-	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify_reject_ext_ind(pdu, PDU_DATA_LLCTRL_TYPE_ENC_REQ, BT_HCI_ERR_PIN_OR_KEY_MISSING);
-
-	/* Release tx */
+	/* Release Tx */
 	ull_cp_release_tx(tx);
 
 	/* There should not be a host notification */
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
-	zassert_is_null(ntf, NULL);
+	ut_rx_q_is_empty();
 
 	/* Tx Encryption should be disabled */
 	zassert_equal(conn.enc_tx, 0U, NULL);
