@@ -120,6 +120,12 @@ class EDT:
                 ...
         };
 
+    chosen_nodes:
+      A collections.OrderedDict that maps the properties defined on the
+      devicetree's /chosen node to their values. 'chosen' is indexed by
+      property name (a string), and values are converted to Node objects.
+      Note that properties of the /chosen node which can't be converted
+      to a Node are not included in the value.
 
     dts_path:
       The .dts path passed to __init__()
@@ -179,22 +185,32 @@ class EDT:
         except DTError as e:
             _err(e)
 
+    @property
+    def chosen_nodes(self):
+        ret = OrderedDict()
+
+        try:
+            chosen = self._dt.get_node("/chosen")
+        except DTError:
+            return ret
+
+        for name, prop in chosen.props.items():
+            try:
+                node = prop.to_path()
+            except DTError:
+                # DTS value is not phandle or string, or path doesn't exist
+                continue
+
+            ret[name] = self._node2enode[node]
+
+        return ret
+
     def chosen_node(self, name):
         """
         Returns the Node pointed at by the property named 'name' in /chosen, or
         None if the property is missing
         """
-        try:
-            chosen = self._dt.get_node("/chosen")
-        except DTError:
-            # No /chosen node
-            return None
-
-        if name not in chosen.props:
-            return None
-
-        # to_path() checks that the node exists
-        return self._node2enode[chosen.props[name].to_path()]
+        return self.chosen_nodes.get(name)
 
     @property
     def dts_source(self):
