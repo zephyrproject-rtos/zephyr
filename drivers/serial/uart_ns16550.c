@@ -397,6 +397,8 @@ static int uart_ns16550_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
+	dev_data->uart_config = *cfg;
+
 	/* data bits, stop bits, parity, clear DLAB */
 	OUTBYTE(LCR(dev),
 		uart_cfg.data_bits | uart_cfg.stop_bits | uart_cfg.parity);
