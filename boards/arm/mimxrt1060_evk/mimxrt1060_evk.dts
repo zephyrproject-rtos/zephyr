@@ -82,6 +82,8 @@
 			};
 		};
 	};
+
+	/delete-node/ eth1;
 };
 
 arduino_serial: &uart3 {};
