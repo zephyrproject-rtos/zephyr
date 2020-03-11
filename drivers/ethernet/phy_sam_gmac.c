@@ -187,6 +187,22 @@ u32_t phy_sam_gmac_id_get(const struct phy_sam_gmac_dev *phy)
 	return phy_id;
 }
 
+bool phy_sam_gmac_link_status_get(const struct phy_sam_gmac_dev *phy)
+{
+	Gmac * const gmac = phy->regs;
+	u32_t bmsr;
+
+	mdio_bus_enable(gmac);
+
+	if (phy_read(phy, MII_BMSR, &bmsr) < 0) {
+		return false;
+	}
+
+	mdio_bus_disable(gmac);
+
+	return (bmsr & MII_BMSR_LINK_STATUS) != 0;
+}
+
 int phy_sam_gmac_auto_negotiate(const struct phy_sam_gmac_dev *phy,
 				u32_t *status)
 {
