@@ -11,7 +11,7 @@
 
 static struct k_mutex *get_k_mutex(struct sys_mutex *mutex)
 {
-	struct _k_object *obj;
+	struct z_object *obj;
 
 	obj = z_object_find(mutex);
 	if (obj == NULL || obj->type != K_OBJ_SYS_MUTEX) {

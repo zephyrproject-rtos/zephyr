@@ -1455,7 +1455,7 @@ out:
  */
 static bool thread_obj_validate(struct k_thread *thread)
 {
-	struct _k_object *ko = z_object_find(thread);
+	struct z_object *ko = z_object_find(thread);
 	int ret = z_object_validate(ko, K_OBJ_THREAD, _OBJ_INIT_TRUE);
 
 	switch (ret) {

@@ -325,7 +325,7 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 {
 #ifdef CONFIG_THREAD_NAME
 	size_t len;
-	struct _k_object *ko = z_object_find(thread);
+	struct z_object *ko = z_object_find(thread);
 
 	/* Special case: we allow reading the names of initialized threads
 	 * even if we don't have permission on them
@@ -642,7 +642,7 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 			       int prio, u32_t options, s32_t delay)
 {
 	size_t total_size;
-	struct _k_object *stack_object;
+	struct z_object *stack_object;
 
 	/* The thread and stack objects *must* be in an uninitialized state */
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
