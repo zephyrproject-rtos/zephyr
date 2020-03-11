@@ -356,7 +356,7 @@ static int queue_init(Gmac *gmac, struct gmac_queue *queue)
 	return nonpriority_queue_init(gmac, queue);
 }
 
-#define disable_all_queue_interrupt(gmac)
+#define disable_all_priority_queue_interrupt(gmac)
 
 #endif
 
