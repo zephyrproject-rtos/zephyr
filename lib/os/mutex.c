@@ -18,7 +18,7 @@ static struct k_mutex *get_k_mutex(struct sys_mutex *mutex)
 		return NULL;
 	}
 
-	return (struct k_mutex *)obj->data;
+	return obj->data.mutex;
 }
 
 static bool check_sys_mutex_addr(struct sys_mutex *addr)
