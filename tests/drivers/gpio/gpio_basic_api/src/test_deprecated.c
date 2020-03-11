@@ -21,6 +21,7 @@ static int cb_cnt;
 static void callback(struct device *dev,
 		     struct gpio_callback *gpio_cb, u32_t pins)
 {
+	int rc;
 	const struct drv_data *dd = CONTAINER_OF(gpio_cb,
 						 struct drv_data, gpio_cb);
 
@@ -43,8 +44,10 @@ static void callback(struct device *dev,
 		 * level interrupts to repeat forever.  To prevent hangs
 		 * it's necessary to explicitly disable the interrupt.
 		 */
-		gpio_pin_configure(dev, PIN_IN, GPIO_DIR_IN
-				   | GPIO_INT_DISABLE);
+		rc = gpio_pin_configure(dev, PIN_IN, GPIO_DIR_IN
+					| GPIO_INT_DISABLE);
+		zassert_equal(rc, 0,
+			      "disable interrupts failed: %d", rc);
 	}
 }
 
