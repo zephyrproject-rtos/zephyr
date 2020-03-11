@@ -27,6 +27,9 @@ config ARM
 	bool
 	select ARCH_IS_SET
 	select HAS_DTS
+	# FIXME: current state of the code for all ARM requires this, but
+	# is really only necessary for Cortex-M with ARM MPU!
+	select GEN_PRIV_STACKS
 	help
 	  ARM architecture
 
@@ -218,15 +221,8 @@ config PRIVILEGED_STACK_SIZE
 	  This option sets the privileged stack region size that will be used
 	  in addition to the user mode thread stack.  During normal execution,
 	  this region will be inaccessible from user mode.  During system calls,
-	  this region will be utilized by the system call.
-
-config PRIVILEGED_STACK_TEXT_AREA
-	int "Privileged stacks text area"
-	default 512 if COVERAGE_GCOV
-	default 256
-	depends on ARCH_HAS_USERSPACE
-	help
-	  Stack text area size for privileged stacks.
+	  this region will be utilized by the system call. This value must be
+	  a multiple of the minimum stack alignment.
 
 config KOBJECT_TEXT_AREA
 	int "Size if kobject text area"
@@ -236,6 +232,17 @@ config KOBJECT_TEXT_AREA
 	depends on ARCH_HAS_USERSPACE
 	help
 	  Size of kernel object text area. Used in linker script.
+
+config GEN_PRIV_STACKS
+	bool
+	help
+	  Selected if the architecture requires that privilege elevation stacks
+	  be allocated in a separate memory area. This is typical of arches
+	  whose MPUs require regions to be power-of-two aligned/sized.
+
+	  FIXME: This should be removed and replaced with checks against
+	  CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT, but both ARM and ARC
+	  changes will be necessary for this.
 
 config STACK_GROWS_UP
 	bool "Stack grows towards higher memory addresses"

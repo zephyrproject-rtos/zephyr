@@ -383,7 +383,6 @@
 /arch/x86/gen_gdt.py                      @andrewboie
 /arch/x86/gen_idt.py                      @andrewboie
 /scripts/gen_kobject_list.py              @andrewboie
-/scripts/gen_priv_stacks.py               @andrewboie @agross-oss @ioannisg
 /scripts/gen_syscalls.py                  @andrewboie
 /scripts/net/                             @jukkar @pfl
 /scripts/process_gperf.py                 @andrewboie

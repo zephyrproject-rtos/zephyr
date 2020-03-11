@@ -16,10 +16,6 @@
 #include <ksched.h>
 #include <wait_q.h>
 
-#ifdef CONFIG_USERSPACE
-extern u8_t *z_priv_stack_find(void *obj);
-#endif
-
 /* An initial context, to be "restored" by z_arm_pendsv(), is put at the other
  * end of the stack, and thus reusable by the stack when not needed anymore.
  *

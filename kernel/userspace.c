@@ -90,6 +90,25 @@ struct perm_ctx {
 	struct k_thread *parent;
 };
 
+#ifdef CONFIG_GEN_PRIV_STACKS
+/* See write_gperf_table() in scripts/gen_kobject_list.py. The privilege
+ * mode stacks are allocated as an array. The base of the array is
+ * aligned to Z_PRIVILEGE_STACK_ALIGN, and all members must be as well.
+ */
+BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_PRIVILEGE_STACK_ALIGN == 0);
+
+u8_t *z_priv_stack_find(k_thread_stack_t *stack)
+{
+	struct z_object *obj = z_object_find(stack);
+
+	__ASSERT(obj != NULL, "stack object not found");
+	__ASSERT(obj->type == K_OBJ_THREAD_STACK_ELEMENT,
+		 "bad stack object");
+
+	return obj->data.stack_data->priv;
+}
+#endif /* CONFIG_GEN_PRIV_STACKS */
+
 #ifdef CONFIG_DYNAMIC_OBJECTS
 struct dyn_obj {
 	struct z_object kobj;
