@@ -46,6 +46,8 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 #ifdef DT_INST_0_JEDEC_SPI_NOR_T_ENTER_DPD
 #define T_DP_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_T_ENTER_DPD, NSEC_PER_MSEC)
+#else /* T_ENTER_DPD */
+#define T_DP_MS 0
 #endif /* T_ENTER_DPD */
 #ifdef DT_INST_0_JEDEC_SPI_NOR_T_EXIT_DPD
 #define T_RES1_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_T_EXIT_DPD, NSEC_PER_MSEC)
@@ -54,6 +56,8 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define T_DPDD_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE_0, NSEC_PER_MSEC)
 #define T_CRDP_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE_1, NSEC_PER_MSEC)
 #define T_RDP_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE_2, NSEC_PER_MSEC)
+#else /* DPD_WAKEUP_SEQUENCE */
+#define T_DPDD_MS 0
 #endif /* DPD_WAKEUP_SEQUENCE */
 
 /**
@@ -100,17 +104,15 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
 	/* If the time is negative the 32-bit counter has wrapped,
 	 * which is certainly long enough no further delay is
 	 * required.  Otherwise we have to check whether it's been
-	 * long enough.
+	 * long enough taking into account necessary delays for
+	 * entering and exiting DPD.
 	 */
 	if (since >= 0) {
-#ifdef DT_INST_0_JEDEC_SPI_NOR_T_ENTER_DPD
 		/* Subtract time required for DPD to be reached */
 		since -= T_DP_MS;
-#endif /* T_ENTER_DPD */
-#ifdef DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE
+
 		/* Subtract time required in DPD before exit */
 		since -= T_DPDD_MS;
-#endif /* DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE */
 
 		/* If the adjusted time is negative we have to wait
 		 * until it reaches zero before we can proceed.
