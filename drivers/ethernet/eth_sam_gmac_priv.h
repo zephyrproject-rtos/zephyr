@@ -257,6 +257,8 @@ struct eth_sam_dev_data {
 	struct device *ptp_clock;
 #endif
 	u8_t mac_addr[6];
+	struct k_delayed_work monitor_work;
+	bool link_up;
 	struct gmac_queue queue_list[GMAC_QUEUE_NUM];
 };
 

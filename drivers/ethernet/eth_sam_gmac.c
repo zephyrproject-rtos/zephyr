@@ -1141,8 +1141,6 @@ static void link_configure(Gmac *gmac, u32_t flags)
 {
 	u32_t val;
 
-	gmac->GMAC_NCR &= ~(GMAC_NCR_RXEN | GMAC_NCR_TXEN);
-
 	val = gmac->GMAC_NCFGR;
 
 	val &= ~(GMAC_NCFGR_FD | GMAC_NCFGR_SPD);
@@ -1806,6 +1804,49 @@ static void generate_mac(u8_t mac_addr[6])
 #endif
 }
 
+static void monitor_work_handler(struct k_work *work)
+{
+	struct eth_sam_dev_data *const dev_data =
+		CONTAINER_OF(work, struct eth_sam_dev_data, monitor_work);
+	struct device *const dev = net_if_get_device(dev_data->iface);
+	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
+	bool link_status;
+	u32_t link_config;
+	int result;
+
+	/* Poll PHY link status */
+	link_status = phy_sam_gmac_link_status_get(&cfg->phy);
+
+	if (link_status && !dev_data->link_up) {
+		LOG_INF("Link up");
+
+		/* Announce link up status */
+		dev_data->link_up = true;
+		net_eth_carrier_on(dev_data->iface);
+
+		/* PHY auto-negotiate link parameters */
+		result = phy_sam_gmac_auto_negotiate(&cfg->phy, &link_config);
+		if (result < 0) {
+			LOG_ERR("ETH PHY auto-negotiate sequence failed");
+			goto finally;
+		}
+
+		/* Set up link parameters */
+		link_configure(cfg->regs, link_config);
+	} else if (!link_status && dev_data->link_up) {
+		LOG_INF("Link down");
+
+		/* Announce link down status */
+		dev_data->link_up = false;
+		net_eth_carrier_off(dev_data->iface);
+	}
+
+finally:
+	/* Submit delayed work */
+	k_delayed_work_submit(&dev_data->monitor_work,
+			      CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD);
+}
+
 static void eth0_iface_init(struct net_if *iface)
 {
 	struct device *const dev = net_if_get_device(iface);
@@ -1813,7 +1854,6 @@ static void eth0_iface_init(struct net_if *iface)
 	const struct eth_sam_dev_cfg *const cfg = DEV_CFG(dev);
 	static bool init_done;
 	u32_t gmac_ncfgr_val;
-	u32_t link_status;
 	int result;
 	int i;
 
@@ -1918,15 +1958,14 @@ static void eth0_iface_init(struct net_if *iface)
 		LOG_ERR("ETH PHY Initialization Error");
 		return;
 	}
-	/* PHY auto-negotiate link parameters */
-	result = phy_sam_gmac_auto_negotiate(&cfg->phy, &link_status);
-	if (result < 0) {
-		LOG_ERR("ETH PHY auto-negotiate sequence failed");
-		return;
-	}
 
-	/* Set up link parameters */
-	link_configure(cfg->regs, link_status);
+	/* Initialise monitor */
+	k_delayed_work_init(&dev_data->monitor_work, monitor_work_handler);
+	k_delayed_work_submit(&dev_data->monitor_work,
+			      CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD);
+
+	/* Do not start the interface until PHY link is up */
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
 	init_done = true;
 }
