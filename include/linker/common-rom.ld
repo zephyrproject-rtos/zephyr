@@ -53,9 +53,9 @@
 	 */
 	SECTION_PROLOGUE(object_access,,)
 	{
-		__k_object_assignment_list_start = .;
-		KEEP(*(".__k_object_assignment.*"))
-		__k_object_assignment_list_end = .;
+		_z_object_assignment_list_start = .;
+		KEEP(*("._z_object_assignment.*"))
+		_z_object_assignment_list_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
 
