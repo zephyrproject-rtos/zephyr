@@ -275,7 +275,6 @@ static void acl_read_cb(u8_t ep, int size, void *priv)
 	}
 
 	buf = net_buf_alloc(&acl_rx_pool, K_FOREVER);
-	__ASSERT_NO_MSG(buf);
 
 	net_buf_reserve(buf, BT_BUF_RESERVE);
 
