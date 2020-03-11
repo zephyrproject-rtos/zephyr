@@ -1,0 +1,14 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr generic UART console service
+
+include: [service.yaml]
+
+compatible: "zephyr,uart-console"
+
+properties:
+    uart:
+        type: phandle
+        required: true
+        description: phandle to uart node
