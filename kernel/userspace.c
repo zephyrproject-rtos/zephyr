@@ -242,7 +242,7 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 	 * to request memory that is aligned
 	 */
 	__ASSERT(otype > K_OBJ_ANY && otype < K_OBJ_LAST &&
-		 otype != K_OBJ__THREAD_STACK_ELEMENT,
+		 otype != K_OBJ_THREAD_STACK_ELEMENT,
 		 "bad object type requested");
 
 	dyn_obj = z_thread_malloc(sizeof(*dyn_obj) + obj_size_get(otype));

@@ -199,7 +199,7 @@ struct z_x86_thread_stack_header {
 	sizeof(struct z_x86_thread_stack_header)
 
 #define ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit \
+	struct z_thread_stack_element __noinit \
 		__aligned(Z_X86_STACK_BASE_ALIGN) \
 		sym[ROUND_UP((size), Z_X86_STACK_SIZE_ALIGN) + \
 			ARCH_THREAD_STACK_RESERVED]
@@ -211,12 +211,12 @@ struct z_x86_thread_stack_header {
 		ARCH_THREAD_STACK_RESERVED)
 
 #define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit \
+	struct z_thread_stack_element __noinit \
 		__aligned(Z_X86_STACK_BASE_ALIGN) \
 		sym[nmemb][ARCH_THREAD_STACK_LEN(size)]
 
 #define ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct _k_thread_stack_element __aligned(Z_X86_STACK_BASE_ALIGN) \
+	struct z_thread_stack_element __aligned(Z_X86_STACK_BASE_ALIGN) \
 		sym[ROUND_UP((size), Z_X86_STACK_SIZE_ALIGN) + \
 			ARCH_THREAD_STACK_RESERVED]
 

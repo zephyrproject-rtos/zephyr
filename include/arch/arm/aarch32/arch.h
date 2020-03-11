@@ -198,11 +198,11 @@ extern "C" {
 #if defined(CONFIG_USERSPACE) && \
 	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
 #define ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit \
+	struct z_thread_stack_element __noinit \
 		__aligned(POW2_CEIL(size)) sym[POW2_CEIL(size)]
 #else
 #define ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
+	struct z_thread_stack_element __noinit __aligned(STACK_ALIGN) \
 		sym[size+MPU_GUARD_ALIGN_AND_SIZE]
 #endif
 
@@ -216,12 +216,12 @@ extern "C" {
 #if defined(CONFIG_USERSPACE) && \
 	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
 #define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit \
+	struct z_thread_stack_element __noinit \
 		__aligned(POW2_CEIL(size)) \
 		sym[nmemb][ARCH_THREAD_STACK_LEN(size)]
 #else
 #define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit \
+	struct z_thread_stack_element __noinit \
 		__aligned(STACK_ALIGN) \
 		sym[nmemb][ARCH_THREAD_STACK_LEN(size)]
 #endif
@@ -229,11 +229,11 @@ extern "C" {
 #if defined(CONFIG_USERSPACE) && \
 	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
 #define ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct _k_thread_stack_element __aligned(POW2_CEIL(size)) \
+	struct z_thread_stack_element __aligned(POW2_CEIL(size)) \
 		sym[POW2_CEIL(size)]
 #else
 #define ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
+	struct z_thread_stack_element __aligned(STACK_ALIGN) \
 		sym[size+MPU_GUARD_ALIGN_AND_SIZE]
 #endif
 

@@ -24,7 +24,7 @@ def subsystem_to_enum(subsys):
 
 
 def kobject_to_enum(kobj):
-    if kobj.startswith("k_") or kobj.startswith("_k_"):
+    if kobj.startswith("k_") or kobj.startswith("z_"):
         name = kobj[2:]
     else:
         name = kobj
@@ -34,7 +34,7 @@ def kobject_to_enum(kobj):
 
 DW_OP_addr = 0x3
 DW_OP_fbreg = 0x91
-STACK_TYPE = "_k_thread_stack_element"
+STACK_TYPE = "z_thread_stack_element"
 thread_counter = 0
 sys_mutex_counter = 0
 futex_counter = 0

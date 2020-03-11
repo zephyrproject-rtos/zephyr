@@ -85,7 +85,7 @@ kobjects = OrderedDict([
     ("k_stack", (None, False)),
     ("k_thread", (None, False)),
     ("k_timer", (None, False)),
-    ("_k_thread_stack_element", (None, False)),
+    ("z_thread_stack_element", (None, False)),
     ("device", (None, False)),
     ("sys_mutex", (None, True)),
     ("k_futex", (None, True))
@@ -146,7 +146,7 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 
 metadata_names = {
     "K_OBJ_THREAD" : "thread_id",
-    "K_OBJ__THREAD_STACK_ELEMENT" : "stack_size",
+    "K_OBJ_THREAD_STACK_ELEMENT" : "stack_size",
     "K_OBJ_SYS_MUTEX" : "mutex",
     "K_OBJ_FUTEX" : "futex_data"
 }
@@ -312,7 +312,7 @@ def write_kobj_size_output(fp):
         dep, _ = obj_info
         # device handled by default case. Stacks are not currently handled,
         # if they eventually are it will be a special case.
-        if kobj in {"device", "_k_thread_stack_element"}:
+        if kobj in {"device", "z_thread_stack_element"}:
             continue
 
         if dep:
