@@ -986,7 +986,7 @@ if(CONFIG_USERSPACE)
     ${PROCESS_GPERF}
     -i ${OUTPUT_SRC_PRE}
     -o ${OUTPUT_SRC}
-    -p "struct _k_object"
+    -p "struct z_object"
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS output_src_pre ${OUTPUT_SRC_PRE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
