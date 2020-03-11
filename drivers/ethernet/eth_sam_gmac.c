@@ -1150,7 +1150,6 @@ static void link_configure(Gmac *gmac, u32_t flags)
 
 	gmac->GMAC_NCFGR = val;
 
-	gmac->GMAC_UR = 0;  /* Select RMII mode */
 	gmac->GMAC_NCR |= (GMAC_NCR_RXEN | GMAC_NCR_TXEN);
 }
 
