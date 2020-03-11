@@ -144,14 +144,10 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 #endif
 """
 
-metadata_names = {
-    "K_OBJ_THREAD" : "thread_id",
-    "K_OBJ_THREAD_STACK_ELEMENT" : "stack_size",
-    "K_OBJ_SYS_MUTEX" : "mutex",
-    "K_OBJ_FUTEX" : "futex_data"
-}
 
 def write_gperf_table(fp, eh, objs, static_begin, static_end):
+    syms = eh.get_symbols()
+
     fp.write(header)
     num_mutexes = eh.get_sys_mutex_counter()
     if num_mutexes != 0:
@@ -171,9 +167,46 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
                 fp.write(", ")
         fp.write("};\n")
 
+    metadata_names = {
+        "K_OBJ_THREAD" : "thread_id",
+        "K_OBJ_SYS_MUTEX" : "mutex",
+        "K_OBJ_FUTEX" : "futex_data"
+    }
+
+    if "CONFIG_GEN_PRIV_STACKS" in syms:
+        metadata_names["K_OBJ_THREAD_STACK_ELEMENT"] = "stack_data"
+        num_stack = eh.get_stack_counter()
+        if num_stack != 0:
+            fp.write("static u8_t Z_GENERIC_SECTION(.priv_stacks.noinit) "
+                     " __aligned(Z_PRIVILEGE_STACK_ALIGN)"
+                     " priv_stacks[%d][CONFIG_PRIVILEGED_STACK_SIZE];\n"
+                     % num_stack);
+
+            fp.write("static struct z_stack_data stack_data[%d] = {\n"
+                     % num_stack)
+            counter = 0
+            for _, ko in objs.items():
+                if ko.type_name != "K_OBJ_THREAD_STACK_ELEMENT":
+                    continue
+
+                # ko.data currently has the stack size. fetch the value to
+                # populate the appropriate entry in stack_data, and put
+                # a reference to the entry in stack_data into the data value
+                # instead
+                size = ko.data
+                ko.data = "&stack_data[%d]" % counter
+                fp.write("\t{ %d, (u8_t *)(&priv_stacks[%d]) }"
+                         % (size, counter))
+                if counter != (num_stack - 1):
+                    fp.write(",")
+                fp.write("\n")
+                counter += 1
+            fp.write("};\n")
+    else:
+        metadata_names["K_OBJ_THREAD_STACK_ELEMENT"] = "stack_size"
+
     fp.write("%%\n")
     # Setup variables for mapping thread indexes
-    syms = eh.get_symbols()
     thread_max_bytes = syms["CONFIG_MAX_THREAD_BYTES"]
     thread_idx_map = {}
 

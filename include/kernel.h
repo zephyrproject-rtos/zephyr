@@ -166,6 +166,17 @@ enum k_objects {
  */
 
 #ifdef CONFIG_USERSPACE
+#ifdef CONFIG_GEN_PRIV_STACKS
+/* Metadata struct for K_OBJ_THREAD_STACK_ELEMENT */
+struct z_stack_data {
+	/* Size of the entire stack object, including reserved areas */
+	size_t size;
+
+	/* Stack buffer for privilege mode elevations */
+	u8_t *priv;
+};
+#endif /* CONFIG_GEN_PRIV_STACKS */
+
 /* Object extra data. Only some objects use this, determined by object type */
 union z_object_data {
 	/* Backing mutex for K_OBJ_SYS_MUTEX */
@@ -174,8 +185,13 @@ union z_object_data {
 	/* Numerical thread ID for K_OBJ_THREAD */
 	unsigned int thread_id;
 
+#ifdef CONFIG_GEN_PRIV_STACKS
+	/* Metadata for K_OBJ_THREAD_STACK_ELEMENT */
+	struct z_stack_data *stack_data;
+#else
 	/* Stack buffer size for K_OBJ_THREAD_STACK_ELEMENT */
 	size_t stack_size;
+#endif /* CONFIG_GEN_PRIV_STACKS */
 
 	/* Futex wait queue and spinlock for K_OBJ_FUTEX */
 	struct z_futex_data *futex_data;

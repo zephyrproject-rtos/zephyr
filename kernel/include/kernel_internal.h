@@ -124,6 +124,10 @@ extern struct k_thread z_idle_threads[CONFIG_MP_NUM_CPUS];
 extern K_THREAD_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
 
+#ifdef CONFIG_GEN_PRIV_STACKS
+extern u8_t *z_priv_stack_find(k_thread_stack_t *stack);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

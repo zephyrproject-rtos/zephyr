@@ -230,15 +230,6 @@ The following is a detailed description of the scripts used during the build pro
    :start-after: """
    :end-before: """
 
-.. _gen_priv_stacks.py:
-
-:zephyr_file:`scripts/gen_priv_stacks.py`
-==========================================
-
-.. include:: ../../../scripts/gen_priv_stacks.py
-   :start-after: """
-   :end-before: """
-
 .. _gen_idt.py:
 
 :zephyr_file:`arch/x86/gen_idt.py`

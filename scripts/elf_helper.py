@@ -38,6 +38,7 @@ STACK_TYPE = "z_thread_stack_element"
 thread_counter = 0
 sys_mutex_counter = 0
 futex_counter = 0
+stack_counter = 0
 
 # Global type environment. Populated by pass 1.
 type_env = {}
@@ -57,6 +58,7 @@ class KobjectInstance:
         global thread_counter
         global sys_mutex_counter
         global futex_counter
+        global stack_counter
 
         self.addr = addr
         self.type_obj = type_obj
@@ -76,6 +78,8 @@ class KobjectInstance:
         elif self.type_obj.name == "k_futex":
             self.data = "&futex_data[%d]" % futex_counter
             futex_counter += 1
+        elif self.type_obj.name == STACK_TYPE:
+            stack_counter += 1
         else:
             self.data = 0
 
@@ -604,3 +608,8 @@ class ElfHelper:
     @staticmethod
     def get_futex_counter():
         return futex_counter
+
+    @staticmethod
+    def get_stack_counter():
+        return stack_counter
+

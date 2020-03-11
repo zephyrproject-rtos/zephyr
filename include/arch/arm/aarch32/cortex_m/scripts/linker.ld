@@ -156,7 +156,6 @@ SECTIONS
 	{
 	_image_text_start = .;
 
-#include <linker/priv_stacks-text.ld>
 #include <linker/kobject-text.ld>
 
 	*(.text)
@@ -221,7 +220,6 @@ SECTIONS
 #include <custom-rodata.ld>
 #endif
 
-#include <linker/priv_stacks-rom.ld>
 #include <linker/kobject-rom.ld>
 
 	/*
@@ -373,10 +371,8 @@ SECTIONS
     __data_rom_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
-#include <linker/priv_stacks.ld>
 #include <linker/kobject.ld>
 
-#include <linker/priv_stacks-noinit.ld>
 #include <linker/cplusplus-ram.ld>
 
     __data_ram_end = .;
