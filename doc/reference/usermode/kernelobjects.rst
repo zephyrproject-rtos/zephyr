@@ -116,7 +116,7 @@ be prevented. When a device struct is found, its API pointer is examined to
 determine what subsystem the driver belongs to.
 
 The table itself maps kernel object memory addresses to instances of
-:c:type:`struct _k_object`, which has all the metadata for that object. This
+:c:type:`struct z_object`, which has all the metadata for that object. This
 includes:
 
 * A bitfield indicating permissions on that object. All threads have a
