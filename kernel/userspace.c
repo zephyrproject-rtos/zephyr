@@ -263,7 +263,7 @@ void *z_impl_k_object_alloc(enum k_objects otype)
 			return NULL;
 		}
 
-		dyn_obj->kobj.data = tidx;
+		dyn_obj->kobj.data.thread_id = tidx;
 	}
 
 	/* The allocating thread implicitly gets permission on kernel objects
@@ -297,7 +297,7 @@ void k_object_free(void *obj)
 		sys_dlist_remove(&dyn_obj->obj_list);
 
 		if (dyn_obj->kobj.type == K_OBJ_THREAD) {
-			thread_idx_free(dyn_obj->kobj.data);
+			thread_idx_free(dyn_obj->kobj.data.thread_id);
 		}
 	}
 	k_spin_unlock(&objfree_lock, key);
@@ -340,7 +340,7 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 }
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
-static int thread_index_get(struct k_thread *thread)
+static unsigned int thread_index_get(struct k_thread *thread)
 {
 	struct _k_object *ko;
 
@@ -350,7 +350,7 @@ static int thread_index_get(struct k_thread *thread)
 		return -1;
 	}
 
-	return ko->data;
+	return ko->data.thread_id;
 }
 
 static void unref_check(struct _k_object *ko, uintptr_t index)

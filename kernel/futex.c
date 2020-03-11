@@ -21,7 +21,7 @@ static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
 		return NULL;
 	}
 
-	return (struct z_futex_data *)obj->data;
+	return obj->data.futex_data;
 }
 
 int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)

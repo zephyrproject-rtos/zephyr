@@ -128,9 +128,8 @@ includes:
   instance of :cpp:enum:`k_objects`.
 * A set of flags for that object. This is currently used to track
   initialization state and whether an object is public or not.
-* An extra data field. This is currently used for thread stack objects
-  to denote how large the stack is, and for thread objects to indicate
-  the thread's index in kernel object permission bitfields.
+* An extra data field. The semantics of this field vary by object type, see
+  the definition of :c:type:`union z_object_data`.
 
 Dynamic objects allocated at runtime are tracked in a runtime red/black tree
 which is used in parallel to the gperf table when validating object pointers.
