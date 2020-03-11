@@ -91,6 +91,8 @@
 			};
 		};
 	};
+
+	/delete-node/ eth1;
 };
 
 arduino_i2c: &i2c1 {};
