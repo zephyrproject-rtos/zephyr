@@ -16,6 +16,10 @@ config I2C_1
 	default y
 	depends on I2C
 
+config SPI_1
+	default y
+	depends on SPI
+
 config SPI_2
 	default y
 	depends on SPI
