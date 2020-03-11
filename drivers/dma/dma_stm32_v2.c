@@ -117,7 +117,7 @@ static void (*func_ll_clear_te[])(DMA_TypeDef *DMAx) = {
 #endif /* LL_DMA_IFCR_CTEIF8 */
 };
 
-static void (*func_ll_clear_gi[])(DMA_TypeDef *DMAx) = {
+void (*func_ll_clear_gi[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_ClearFlag_GI1,
 	LL_DMA_ClearFlag_GI2,
 	LL_DMA_ClearFlag_GI3,
@@ -152,7 +152,7 @@ static u32_t (*func_ll_is_active_te[])(DMA_TypeDef *DMAx) = {
 };
 
 
-static u32_t (*func_ll_is_active_gi[])(DMA_TypeDef *DMAx) = {
+u32_t (*func_ll_is_active_gi[])(DMA_TypeDef *DMAx) = {
 	LL_DMA_IsActiveFlag_GI1,
 	LL_DMA_IsActiveFlag_GI2,
 	LL_DMA_IsActiveFlag_GI3,
@@ -182,7 +182,6 @@ void stm32_dma_dump_stream_irq(DMA_TypeDef *dma, u32_t id)
 void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, u32_t id)
 {
 	func_ll_clear_te[id](dma);
-	func_ll_clear_gi[id](dma);
 }
 
 bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, u32_t id)
@@ -207,7 +206,6 @@ void stm32_dma_enable_stream(DMA_TypeDef *dma, u32_t id)
 
 int stm32_dma_disable_stream(DMA_TypeDef *dma, u32_t id)
 {
-
 	if (!LL_DMA_IsEnabledChannel(dma, table_ll_stream[id])) {
 		return 0;
 	}
