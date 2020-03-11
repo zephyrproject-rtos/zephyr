@@ -26,18 +26,33 @@
 #define FLASH_RADIO_ABORT_DELAY_US 1500
 #define FLASH_RADIO_WORK_DELAY_US  200
 
-#define FLASH_SLOT_ERASE     FLASH_PAGE_ERASE_MAX_TIME_US
+
 #define FLASH_INTERVAL_ERASE (FLASH_RADIO_ABORT_DELAY_US + \
 			      FLASH_RADIO_WORK_DELAY_US + \
 			      FLASH_SLOT_ERASE)
 
-#define FLASH_INTERVAL_WRITE 7500
 #define FLASH_SLOT_WRITE     (FLASH_INTERVAL_WRITE - \
 			      FLASH_RADIO_ABORT_DELAY_US - \
 			      FLASH_RADIO_WORK_DELAY_US)
+#define FLASH_INTERVAL_WRITE 7500
 
-#define FLASH_TIMEOUT_MS ((FLASH_PAGE_ERASE_MAX_TIME_US)\
-			* (FLASH_PAGE_MAX_CNT) / 1000)
+#if defined(CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE)
+
+/* The timeout is multiplied by 1.5 because switching tasks may take
+ * significant portion of time.
+ */
+#define FLASH_TIMEOUT_MS ((FLASH_PAGE_ERASE_MAX_TIME_US) * \
+			  (FLASH_PAGE_MAX_CNT) / 1000 * 15 / 10)
+#define FLASH_SLOT_ERASE (MAX(CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE_MS * 1000, \
+			      7500))
+#else
+
+#define FLASH_TIMEOUT_MS ((FLASH_PAGE_ERASE_MAX_TIME_US) * \
+			  (FLASH_PAGE_MAX_CNT) / 1000)
+#define FLASH_SLOT_ERASE FLASH_PAGE_ERASE_MAX_TIME_US
+
+#endif /* CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE */
+
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
 
 #define FLASH_OP_DONE    (0) /* 0 for compliance with the driver API. */
@@ -52,6 +67,9 @@ struct flash_context {
 	u32_t interval;   /* timeslot interval. */
 	u32_t slot;       /* timeslot length. */
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
+#if defined(CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE)
+	u32_t flash_addr_next;
+#endif /* CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE */
 }; /*< Context type for f. @ref write_op @ref erase_op */
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
@@ -426,7 +444,10 @@ static int erase_in_timeslice(u32_t addr, u32_t size)
 		.len = size,
 		.enable_time_limit = 1, /* enable time limit */
 		.interval = FLASH_INTERVAL_ERASE,
-		.slot = FLASH_SLOT_ERASE
+		.slot = FLASH_SLOT_ERASE,
+#if defined(CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE)
+		.flash_addr_next = addr
+#endif
 	};
 
 	struct flash_op_desc flash_op_desc = {
@@ -481,10 +502,23 @@ static int erase_op(void *context)
 #endif
 
 	do {
-		(void)nrfx_nvmc_page_erase(e_ctx->flash_addr);
 
+#if defined(CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE)
+		if (e_ctx->flash_addr == e_ctx->flash_addr_next) {
+			nrfx_nvmc_page_partial_erase_init(e_ctx->flash_addr,
+				CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE_MS);
+			e_ctx->flash_addr_next += pg_size;
+		}
+
+		if (nrfx_nvmc_page_partial_erase_continue()) {
+			e_ctx->len -= pg_size;
+			e_ctx->flash_addr += pg_size;
+		}
+#else
+		(void)nrfx_nvmc_page_erase(e_ctx->flash_addr);
 		e_ctx->len -= pg_size;
 		e_ctx->flash_addr += pg_size;
+#endif /* CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE */
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 		i++;
@@ -597,8 +631,11 @@ static int erase(u32_t addr, u32_t size)
 		.flash_addr = addr,
 		.len = size,
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
-		.enable_time_limit = 0 /* disable time limit */
+		.enable_time_limit = 0, /* disable time limit */
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
+#if defined(CONFIG_SOC_FLASH_NRF_PARTIAL_ERASE)
+		.flash_addr_next = addr
+#endif
 	};
 
 	return	erase_op(&context);

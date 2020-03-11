@@ -15,6 +15,7 @@ config SOC_NRF52810
 	select HAS_HW_NRF_EGU1
 	select HAS_HW_NRF_GPIO0
 	select HAS_HW_NRF_GPIOTE
+	select HAS_HW_NRF_NVMC_PE
 	select HAS_HW_NRF_PDM
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PPI
@@ -56,6 +57,7 @@ config SOC_NRF52811
 	select HAS_HW_NRF_EGU1
 	select HAS_HW_NRF_GPIO0
 	select HAS_HW_NRF_GPIOTE
+	select HAS_HW_NRF_NVMC_PE
 	select HAS_HW_NRF_PDM
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PPI
@@ -179,6 +181,7 @@ config SOC_NRF52833
 	select HAS_HW_NRF_LPCOMP
 	select HAS_HW_NRF_MWU
 	select HAS_HW_NRF_NFCT
+	select HAS_HW_NRF_NVMC_PE
 	select HAS_HW_NRF_PDM
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PPI
@@ -252,6 +255,7 @@ config SOC_NRF52840
 	select HAS_HW_NRF_LPCOMP
 	select HAS_HW_NRF_MWU
 	select HAS_HW_NRF_NFCT
+	select HAS_HW_NRF_NVMC_PE
 	select HAS_HW_NRF_PDM
 	select HAS_HW_NRF_POWER
 	select HAS_HW_NRF_PPI
