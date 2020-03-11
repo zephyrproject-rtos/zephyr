@@ -48,7 +48,6 @@ enum eth_mcux_phy_state {
 	eth_mcux_phy_state_read_duplex,
 	eth_mcux_phy_state_wait,
 	eth_mcux_phy_state_closing
-
 };
 
 static const char *
@@ -291,6 +290,10 @@ static void eth_mcux_phy_event(struct eth_context *context)
 {
 	u32_t status;
 	bool link_up;
+#ifdef CONFIG_SOC_SERIES_IMX_RT
+	status_t res;
+	u32_t ctrl2;
+#endif
 	phy_duplex_t phy_duplex = kPHY_FullDuplex;
 	phy_speed_t phy_speed = kPHY_Speed100M;
 
@@ -301,11 +304,20 @@ static void eth_mcux_phy_event(struct eth_context *context)
 	switch (context->phy_state) {
 	case eth_mcux_phy_state_initial:
 #ifdef CONFIG_SOC_SERIES_IMX_RT
-		ENET_StartSMIRead(context->base, context->phy_addr,
-				  PHY_CONTROL2_REG, kENET_MiiReadValidFrame);
-		ENET_StartSMIWrite(context->base, context->phy_addr,
-				   PHY_CONTROL2_REG, kENET_MiiWriteValidFrame,
-				   PHY_CTL2_REFCLK_SELECT_MASK);
+		ENET_DisableInterrupts(context->base, ENET_EIR_MII_MASK);
+		res = PHY_Read(context->base, context->phy_addr,
+			       PHY_CONTROL2_REG, &ctrl2);
+		ENET_EnableInterrupts(context->base, ENET_EIR_MII_MASK);
+		if (res != kStatus_Success) {
+			LOG_WRN("Reading PHY reg failed (status 0x%x)", res);
+			k_work_submit(&context->phy_work);
+		} else {
+			ctrl2 |= PHY_CTL2_REFCLK_SELECT_MASK;
+			ENET_StartSMIWrite(context->base, context->phy_addr,
+					   PHY_CONTROL2_REG,
+					   kENET_MiiWriteValidFrame,
+					   ctrl2);
+		}
 		context->phy_state = eth_mcux_phy_state_reset;
 #endif
 		break;
