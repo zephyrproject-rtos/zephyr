@@ -3,16 +3,16 @@
 Devicetree bindings
 ###################
 
-A :ref:`devicetree` on its own is only half the story for describing the
-available hardware devices. The tree itself doesn't tell the :ref:`build system
-<build_overview>` which pieces of information are useful to :ref:`device
-drivers <device_model_api>`, or what :ref:`C macros <dt-macros>` to generate from
-the devicetree itself.
+A devicetree on its own is only half the story for describing hardware. The
+devicetree format itself is relatively unstructured, and doesn't tell the
+:ref:`build system <build_overview>` which pieces of information in a
+particular devicetree are useful to :ref:`device drivers <device_model_api>` or
+:ref:`applications <application>`.
 
 *Devicetree bindings* provide the other half of this information. Zephyr
-devicetree bindings are files in YAML format. Each binding describes the
-contents of a devicetree node in a way that lets the build system decide which
-macros to generate for it.
+devicetree bindings are YAML files in a custom format (Zephyr does not use the
+dt-schema tools used by the Linux kernel). The build system uses bindings
+when generating code for :ref:`dt-from-c`.
 
 .. _dt-binding-compat:
 

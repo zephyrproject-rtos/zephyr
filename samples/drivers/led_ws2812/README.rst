@@ -48,7 +48,7 @@ To make sure the sample is set up properly for building, you must:
   which case it will be :option:`CONFIG_WS2812_STRIP_GPIO`.
 
 - create a ``led-strip`` :ref:`devicetree alias <dt-alias-chosen>`, which
-  refers to a node in your :ref:`devicetree <devicetree>` with a
+  refers to a node in your :ref:`devicetree <dt-guide>` with a
   ``worldsemi,ws2812-spi`` or ``worldsemi,ws2812-gpio`` compatible. The node
   must be properly configured for the driver backend (SPI or GPIO) and daisy
   chain length (number of WS2812 chips).

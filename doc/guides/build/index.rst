@@ -51,7 +51,7 @@ Devicetree
    from ``dtc`` is unused otherwise.
 
    The above is just a brief overview. For more information on devicetree, see
-   :ref:`devicetree`.
+   :ref:`dt-guide`.
 
 Devicetree fixups
    Files named :file:`dts_fixup.h` from the target’s architecture, SoC, board,

@@ -120,7 +120,7 @@ subdirectories which are not described here.
     Device driver code.
 
 :file:`dts`
-    :ref:`devicetree` source files used to describe non-discoverable
+    :ref:`devicetree <dt-guide>` source files used to describe non-discoverable
     board-specific hardware details.
 
 :file:`ext`
@@ -225,8 +225,8 @@ Follow these steps to create a new application directory. (Refer to
 
 #. Set Kconfig configuration options. See :ref:`application-kconfig`.
 
-#. Optionally, you can also configure any devicetree overlays needed by your
-   application. See :ref:`application_dt` below for details.
+#. Configure any devicetree overlays needed by your application.
+   See :ref:`set-devicetree-overlays`.
 
 .. _important-build-vars:
 
@@ -268,11 +268,10 @@ should know about.
 
   See :ref:`initial-conf` for more information.
 
-* :makevar:`DTC_OVERLAY_FILE`: Indicates the name of one or more devicetree
-  overlay files. Multiple filenames can be separated with either spaces or
-  semicolons. Each file includes devicetree values that override the default
-  DT values. See :ref:`application_dt` below for details on devicetree
-  overlays, and :ref:`devicetree` for an overview on devicetree and Zephyr.
+* :makevar:`DTC_OVERLAY_FILE`: One or more devicetree overlay files to use.
+  Multiple files can be separated with spaces or semicolons.
+  See :ref:`set-devicetree-overlays` for examples and :ref:`devicetree-intro`
+  for information about devicetree and Zephyr.
 
 * :makevar:`ZEPHYR_MODULES`: A CMake list containing absolute paths of
   additional directories with source code, Kconfig, etc. that should be used in
@@ -721,6 +720,8 @@ Zephyr binary into your application directory.
 You can also define the ``SOC_ROOT`` variable in the application
 :file:`CMakeLists.txt` file.
 
+.. _dts_root:
+
 DeviceTree Definitions
 ======================
 
@@ -1085,11 +1086,9 @@ Make sure to follow these steps in order.
 
    See :ref:`initial-conf` for more information.
 
-#. If your application uses a devicetree overlay file or files other than
-   the usual :file:`<board>.overlay`, add lines setting the
-   :makevar:`DTC_OVERLAY_FILE` variable to these files appropriately.
-
-   More details are available below in :ref:`application_dt`.
+#. If your application uses devicetree overlays, you may need to set
+   :ref:`DTC_OVERLAY_FILE <important-build-vars>`.
+   See :ref:`set-devicetree-overlays`.
 
 #. If your application has its own kernel configuration options,
    create a :file:`Kconfig` file in the same directory as your
@@ -1205,59 +1204,10 @@ The other pages in the :ref:`Kconfig section of the manual <kconfig>` are also
 worth going through, especially if you planning to add new configuration
 options.
 
-.. _application_dt:
-
 Devicetree Overlays
 ===================
 
-As described in :ref:`devicetree`, Zephyr uses devicetree to describe the
-hardware it runs on. This section describes how you can modify an application
-build's devicetree using overlay files. For additional information regarding
-the relationship between devicetree and Kconfig see :ref:`dt_vs_kconfig`. For
-an example of how to use custom overlays with ``west build``, see
-:ref:`west-building-cmake-args`.
-
-In some cases the information contained in devicetree files is closely
-connected to the software and might need to be modified using the overlay file
-concept. This can be relevant for many of the different devicetree nodes, but
-is particularly useful for :ref:`certain types of nodes <dt-alias-chosen>`.
-
-Overlay files, which customarily have the :file:`.overlay` extension,
-contain devicetree fragments which add to or modify the devicetree
-used while building a Zephyr application. To add an overlay file or
-files to the build, set the CMake variable :makevar:`DTC_OVERLAY_FILE`
-to a whitespace-separated list of your overlay files.
-
-The Zephyr build system begins creation of a devicetree by running
-the C preprocessor on a file which includes the following:
-
-#. The board's devicetree source file, which by default is the Zephyr
-   file :file:`boards/<ARCHITECTURE>/<BOARD>/<BOARD>.dts`. (This location
-   can be overridden by setting the :makevar:`DTS_SOURCE` CMake
-   variable.)
-
-#. Any file or files given by the :makevar:`DTC_OVERLAY_FILE` CMake
-   variable.
-
-The Zephyr build system determines the ``DTC_OVERLAY_FILE`` value by
-looking at these potential definition locations, in order, until a value
-is determined, and then stops looking:
-
-1. the cmake command line (``-DDTC_OVERLAY_FILE=filename``)
-#. the cmake variable cache (from a previous cmake run)
-#. a ``CMakeLists.txt`` file in your application folder
-#. a ``DTC_OVERLAY_FILE`` environment variable (deprecated)
-#. a ``boards/<BOARD>.overlay`` file in your application folder,
-   for your specified ``<BOARD>``
-#. a ``<BOARD>.overlay`` file in your application folder, for
-   your specified ``<BOARD>``
-
-If :makevar:`DTC_OVERLAY_FILE` specifies multiple files, they are
-included in order by the C preprocessor.
-
-After running the preprocessor, the final devicetree used in the
-build is created by running the devicetree compiler, ``dtc``, on the
-preprocessor output.
+See :ref:`set-devicetree-overlays`.
 
 Application-Specific Code
 *************************
