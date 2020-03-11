@@ -24,8 +24,8 @@ under :zephyr_file:`/boards/shields`:
 These files provides shield configuration as follows:
 
 * **<shield>.overlay**: This file provides a shield description in devicetree
-  format that is merged with the board's :ref:`devicetree` before
-  compilation.
+  format that is merged with the board's :ref:`devicetree <dt-guide>`
+  before compilation.
 
 * **Kconfig.shield**: This file defines shield Kconfig symbols that will be
   used for default shield configuration. To ease use with applications,
@@ -49,10 +49,11 @@ This should be done at two different level:
 
 * Pinmux: Connector pins should be correctly configured to match shield pins
 
-* Devicetree: A board :ref:`devicetree` file should define a node alias for
-  each connector interface. For example, for Arduino I2C:
+* Devicetree: A board :ref:`devicetree <dt-guide>` file,
+  :file:`BOARD.dts` should define a node alias for each connector interface.
+  For example, for Arduino I2C:
 
-.. code-block:: none
+.. code-block:: DTS
 
         #define arduino_i2c i2c1
 
@@ -63,7 +64,7 @@ This should be done at two different level:
 Note: With support of dtc v1.4.2, above will be replaced with the recently
 introduced overriding node element:
 
-.. code-block:: none
+.. code-block:: DTS
 
         arduino_i2c:i2c1{};
 

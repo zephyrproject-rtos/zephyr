@@ -1,479 +1,548 @@
+.. _dt-howtos:
+
 Devicetree HOWTOs
 #################
 
-This page has advice for getting things done with :ref:`devicetree` in
-Zephyr.
+This page has step-by-step advice for getting things done with devicetree.
 
-.. This page could use some more love, especially giving advice to
-   driver writers about how to allocate their struct devices.
+.. _get-devicetree-outputs:
 
-Adding support for a board
-**************************
+Get your devicetree and generated header
+****************************************
 
-Devicetree is currently supported on all embedded targets except posix
-(boards/posix).
+A board's devicetree (:ref:`BOARD.dts <devicetree-in-out-files>`) pulls in
+common node definitions via ``#include`` preprocessor directives. This at least
+includes the SoC's ``.dtsi``. One way to figure out the devicetree's contents
+is by opening these files, e.g. by looking in
+``dts/<ARCH>/<vendor>/<soc>.dtsi``, but this can be time consuming.
 
-Adding devicetree support for a given board requires adding a number of files.
-These files will contain the DTS information that describes a platform, the
-bindings in YAML format, and any fixup files required to support the platform.
+Furthermore, you might want to see the actual generated header file. You might
+also be working with a board definition outside of the zephyr repository,
+making it unclear where ``BOARD.dts`` is in the first place.
 
-It is best practice to separate common peripheral information that could be
-used across multiple cores, SoC families, or boards in :file:`.dtsi` files,
-reserving the :file:`.dts` suffix for the primary DTS file for a given board.
+Luckily, there is an easy way to do both: build your application.
 
-.. _dt_k6x_example:
+For example, using west and the :ref:`qemu_cortex_m3` board to build
+:ref:`hello_world`, forcing CMake to re-run:
 
-Example: FRDM-K64F and Hexiwear K64
-===================================
+.. code-block:: sh
 
-.. Give the filenames instead of the full paths below, as it's easier to read.
-   The cramped 'foo.dts<path>' style avoids extra spaces before commas.
+   west build -b qemu_cortex_m3 -s samples/hello_world --cmake
 
-The FRDM-K64F and Hexiwear K64 board devicetrees are defined in
-:zephyr_file:`frdm_k64fs.dts <boards/arm/frdm_k64f/frdm_k64f.dts>` and
-:zephyr_file:`hexiwear_k64.dts <boards/arm/hexiwear_k64/hexiwear_k64.dts>`
-respectively. Both boards have NXP SoCs from the same Kinetis SoC family, the
-K6X.
-
-Common devicetree definitions for K6X are stored in :zephyr_file:`nxp_k6x.dtsi
-<dts/arm/nxp/nxp_k6x.dtsi>`, which is included by both board :file:`.dts`
-files. :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/nxp_k6x.dtsi>` in turn includes
-:zephyr_file:`armv7-m.dtsi<dts/arm/armv7-m.dtsi>`, which has common definitions
-for Arm v7-M cores.
-
-Since :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/nxp_k6x.dtsi>` is meant to be
-generic across K6X-based boards, it leaves many devices disabled by default
-using ``status`` properties.  For example, there is a CAN controller defined as
-follows (with unimportant parts skipped):
+The build system prints the output file locations:
 
 .. code-block:: none
 
-   can0: can@40024000 {
-   	...
-   	status = "disabled";
-   	...
-   };
+   -- Found BOARD.dts: .../zephyr/boards/arm/qemu_cortex_m3/qemu_cortex_m3.dts
+   -- Generated zephyr.dts: .../zephyr/build/zephyr/zephyr.dts
+   -- Generated devicetree_unfixed.h: .../zephyr/build/zephyr/include/generated/devicetree_unfixed.h
 
-It is up to the board :file:`.dts` or application overlay files to enable these
-devices as desired, by setting ``status = "okay"``. The board :file:`.dts`
-files are also responsible for any board-specific configuration of the device,
-such as adding nodes for on-board sensors, LEDs, buttons, etc.
+Change ``qemu_cortex_m3`` to the board you are using, of course.
 
-For example, FRDM-K64 (but not Hexiwear K64) :file:`.dts` enables the CAN
-controller and sets the bus speed:
+.. _dt-get-device:
 
-.. code-block:: none
+Get a struct device from a devicetree node
+******************************************
 
-   &can0 {
-   	status = "okay";
-   	bus-speed = <125000>;
-   };
+When writing Zephyr applications, you'll often want to get a driver-level
+:ref:`struct device <device_model_api>` corresponding to a devicetree node.
 
-The ``&can0 { ... };`` syntax adds/overrides properties on the node with label
-``can0``, i.e. the ``can@4002400`` node defined in the :file:`.dtsi` file.
+For example, with this devicetree fragment, you might want the struct device
+for ``serial@40002000``:
 
-Other examples of board-specific customization is pointing properties in
-``aliases`` and ``chosen`` to the right nodes (see :ref:`dt-alias-chosen`), and
-making GPIO/pinmux assignments.
-
-Devicetree Source File Template
-===============================
-
-A board's :file:`.dts` file contains at least a version line, optional
-includes, and a root node definition with ``model`` and ``compatible``
-properties. These property values denote the particular board.
-
-.. code-block:: none
-
-   /dts-v1/;
-
-   #include <vendor/soc.dtsi>
+.. code-block:: DTS
 
    / {
-           model = "Human readable board name";
-           compatible = "vendor,soc-on-your-board's-mcu";
-           /* rest of file */
+           soc {
+                   serial0: serial@40002000 {
+                           status = "okay";
+                           current-speed = <115200>;
+                           /* ... */
+                   };
+           };
+
+           aliases {
+                   my-serial = &serial0;
+           };
+
+           chosen {
+                   zephyr,console = &serial0;
+           };
    };
 
-You can use other board :file:`.dts` files as a starting point.
-
-The following is a more precise list of required files:
-
-* Base architecture support
-
-  * Add architecture-specific DTS directory, if not already present.
-    Example: dts/arm for Arm.
-  * Add target specific devicetree files for base SoC.  These should be
-    .dtsi files to be included in the board-specific devicetree files.
-  * Add target specific YAML binding files in the dts/bindings/ directory.
-    Create the yaml directory if not present.
-
-* SoC family support
-
-  * Add one or more SoC family .dtsi files that describe the hardware
-    for a set of devices.  The file should contain all the relevant
-    nodes and base configuration that would be applicable to all boards
-    utilizing that SoC family.
-  * Add SoC family YAML binding files that describe the nodes present in the .dtsi file.
-
-* Board specific support
-
-  * Add a board level .dts file that includes the SoC family .dtsi files
-    and enables the nodes required for that specific board.
-  * Board .dts file should specify the SRAM and FLASH devices, if present.
-
-    * Flash device node might specify flash partitions. For more details see
-      :ref:`flash_partitions`
-
-  * Add board-specific YAML binding files, if required.  This would occur if the
-    board has additional hardware that is not covered by the SoC family
-    .dtsi/.yaml files.
-
-* Fixup files
-
-  * Fixup files contain mappings from existing Kconfig options to the actual
-    underlying DTS derived configuration #defines.  Fixup files are temporary
-    artifacts until additional DTS changes are made to make them unnecessary.
-
-* Overlay Files (optional)
-
-  * Overlay files contain tweaks or changes to the SoC and Board support files
-    described above. They can be used to modify devicetree configurations
-    without having to change the SoC and Board files. See
-    :ref:`application_dt` for more information on overlay files and the Zephyr
-    build system.
-
-.. _dt-alias-chosen:
-
-``aliases`` and ``chosen`` nodes
-================================
-
-Using an alias with a common name for a particular node makes it easier for you
-to write board-independent source code. Devicetree ``aliases`` nodes  are used
-for this purpose, by mapping certain generic, commonly used names to specific
-hardware resources:
-
-.. code-block:: yaml
-
-   aliases {
-      led0 = &led0;
-      sw0 = &button0;
-      sw1 = &button1;
-      uart-0 = &uart0;
-      uart-1 = &uart1;
-   };
-
-Certain software subsystems require a specific hardware resource to bind to in
-order to function properly. Some of those subsystems are used with many
-different boards, which makes using the devicetree ``chosen`` nodes very
-convenient. By doing, so the software subsystem can rely on having the specific
-hardware peripheral assigned to it. In the following example we bind the shell
-to ``uart1`` in this board:
-
-.. code-block:: yaml
-
-   chosen {
-      zephyr,shell-uart = &uart1;
-   };
-
-The table below lists Zephyr-specific ``chosen`` properties. The macro
-identifiers that start with ``CONFIG_*`` are generated from Kconfig symbols
-that reference devicetree data via the :ref:`Kconfig preprocessor
-<kconfig-functions>`.
-
-.. note::
-
-   Since the particular devicetree isn't known while generating Kconfig
-   documentation, the Kconfig symbol reference pages linked below do not
-   include information derived from devicetree. Instead, you might see e.g. an
-   empty default:
-
-   .. code-block:: none
-
-      default "" if HAS_DTS
-
-   To see how the preprocessor is used for a symbol, look it up directly in the
-   :file:`Kconfig` file where it is defined instead. The reference page for the
-   symbol gives the definition location.
-
-.. list-table::
-   :header-rows: 1
-
-   * - ``chosen`` node name
-     - Generated macros
-
-   * - ``zephyr,flash``
-     - ``DT_FLASH_BASE_ADDRESS``/``DT_FLASH_SIZE``/``DT_FLASH_ERASE_BLOCK_SIZE``/``DT_FLASH_WRITE_BLOCK_SIZE``
-   * - ``zephyr,code-partition``
-     - ``DT_CODE_PARTITION_OFFSET``/``DT_CODE_PARTITION_SIZE``
-   * - ``zephyr,sram``
-     - :option:`CONFIG_SRAM_BASE_ADDRESS`/:option:`CONFIG_SRAM_SIZE`
-   * - ``zephyr,ccm``
-     - ``DT_CCM_BASE_ADDRESS``/``DT_CCM_SIZE``
-   * - ``zephyr,dtcm``
-     - ``DT_DTCM_BASE_ADDRESS``/``DT_DTCM_SIZE``
-   * - ``zephyr,ipc_shm``
-     - ``DT_IPC_SHM_BASE_ADDRESS``/``DT_IPC_SHM_SIZE``
-   * - ``zephyr,console``
-     - :option:`CONFIG_UART_CONSOLE_ON_DEV_NAME`
-   * - ``zephyr,shell-uart``
-     - :option:`CONFIG_UART_SHELL_ON_DEV_NAME`
-   * - ``zephyr,bt-uart``
-     - :option:`CONFIG_BT_UART_ON_DEV_NAME`
-   * - ``zephyr,uart-pipe``
-     - :option:`CONFIG_UART_PIPE_ON_DEV_NAME`
-   * - ``zephyr,bt-mon-uart``
-     - :option:`CONFIG_BT_MONITOR_ON_DEV_NAME`
-   * - ``zephyr,bt-c2h-uart``
-     - :option:`CONFIG_BT_CTLR_TO_HOST_UART_DEV_NAME`
-   * - ``zephyr,uart-mcumgr``
-     - :option:`CONFIG_UART_MCUMGR_ON_DEV_NAME`
-
-Adding support for a device driver
-**********************************
-
-Zephyr device drivers typically use information from :file:`devicetree.h` to
-statically allocate and initialize :ref:`struct device <device_struct>`
-instances. :ref:`dt-macros` are usually included via :file:`devicetree.h`, then
-stored in ROM in the value pointed to by a ``device->config->config_info``
-field. For example, a ``struct device`` corresponding to an I2C peripheral
-would store the peripheral address in its ``reg`` property there.
-
-Application source code with a pointer to the ``struct device`` can then pass
-it to driver APIs in :zephyr_file:`include/drivers/`. These API functions
-usually take a ``struct device*`` as their first argument. This allows the
-driver API to use information from devicetree to interact with the device
-hardware.
-
-Driver writers should allocate a struct device for each enabled instance of a
-particular compatible using ``DT_INST_<instance-number>_<compatible>``
-:ref:`dt-existence-macros`.
-
-.. _flash_partitions:
-
-Managing flash partitions
-*************************
-
-Devicetree can be used to describe a partition layout for any flash
-device in the system.
-
-Two important uses for this mechanism are:
-
-#. To force the Zephyr image to be linked into a specific area on
-   Flash.
-
-   This is useful, for example, if the Zephyr image must be linked at
-   some offset from the flash device's start, to be loaded by a
-   bootloader at runtime.
-
-#. To generate compile-time definitions for the partition layout,
-   which can be shared by Zephyr subsystems and applications to
-   operate on specific areas in flash.
-
-   This is useful, for example, to create areas for storing file
-   systems or other persistent state.  These defines only describe the
-   boundaries of each partition. They don't, for example, initialize a
-   partition's flash contents with a file system.
-
-Partitions are generally managed using device tree overlays. Refer to
-:ref:`application_dt` for details on using overlay files.
-
-Defining Partitions
-===================
-
-The partition layout for a flash device is described inside the
-``partitions`` child node of the flash device's node in the device
-tree.
-
-You can define partitions for any flash device on the system.
-
-Most Zephyr-supported SoCs with flash support in device tree
-will define a label ``flash0``.   This label refers to the primary
-on-die flash programmed to run Zephyr. To generate partitions
-for this device, add the following snippet to a device tree overlay
-file:
-
-.. We can't highlight dts at time of writing:
-.. https://github.com/zephyrproject-rtos/zephyr/issues/6029
-.. code-block:: none
-
-	&flash0 {
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			/* Define your partitions here; see below */
-		};
-	};
-
-To define partitions for another flash device, modify the above to
-either use its label or provide a complete path to the flash device
-node in the device tree.
-
-The content of the ``partitions`` node looks like this:
-
-.. code-block:: none
-
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		partition1_label: partition@START_OFFSET_1 {
-			label = "partition1_name";
-			reg = <0xSTART_OFFSET_1 0xSIZE_1>;
-		};
-
-		/* ... */
-
-		partitionN_label: partition@START_OFFSET_N {
-			label = "partitionN_name";
-			reg = <0xSTART_OFFSET_N 0xSIZE_N>;
-		};
-	};
-
-Where:
-
-- ``partitionX_label`` are device tree labels that can be used
-  elsewhere in the device tree to refer to the partition
-
-- ``partitionX_name`` controls how defines generated by the Zephyr
-  build system for this partition will be named
-
-- ``START_OFFSET_x`` is the start offset in hexadecimal notation of
-  the partition from the beginning of the flash device
-
-- ``SIZE_x`` is the hexadecimal size, in bytes, of the flash partition
-
-The partitions do not have to cover the entire flash device. The
-device tree compiler currently does not check if partitions overlap;
-you must ensure they do not when defining them.
-
-Example Primary Flash Partition Layout
-======================================
-
-Here is a complete (but hypothetical) example device tree overlay
-snippet illustrating these ideas. Notice how the partitions do not
-overlap, but also do not cover the entire device.
-
-.. code-block:: none
-
-	&flash0 {
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			code_dts_label: partition@8000 {
-				label = "zephyr-code";
-				reg = <0x00008000 0x34000>;
-			};
-
-			data_dts_label: partition@70000 {
-				label = "application-data";
-				reg = <0x00070000 0xD000>;
-			};
-		};
-	};
-
-Linking Zephyr Within a Partition
-=================================
-
-To force the linker to output a Zephyr image within a given flash
-partition, add this to a device tree overlay:
-
-.. code-block:: none
-
-	/ {
-		chosen {
-			zephyr,code-partition = &slot0_partition;
-		};
-	};
-
-Then, enable the :option:`CONFIG_USE_DT_CODE_PARTITION` Kconfig option.
-
-Flash Partition Macros
-======================
-
-The Zephyr build system generates definitions for each flash device
-partition. These definitions are available to any files which
-include ``<zephyr.h>``.
-
-Consider this flash partition:
-
-.. code-block:: none
-
-	dts_label: partition@START_OFFSET {
-		label = "def-name";
-		reg = <0xSTART_OFFSET 0xSIZE>;
-	};
-
-The build system will generate the following corresponding defines:
+Start by making a :ref:`node identifier <dt-node-identifiers>` for the device
+you are interested in. There are different ways to do this; pick whichever one
+works best for your requirements. Here are some examples:
 
 .. code-block:: c
 
-   #define FLASH_AREA_DEF_NAME_LABEL        "def-name"
-   #define FLASH_AREA_DEF_NAME_OFFSET_0     0xSTART_OFFSET
-   #define FLASH_AREA_DEF_NAME_SIZE_0       0xSIZE
-   #define FLASH_AREA_DEF_NAME_OFFSET       FLASH_AREA_MCUBOOT_OFFSET_0
-   #define FLASH_AREA_DEF_NAME_SIZE         FLASH_AREA_MCUBOOT_SIZE_0
+   /* Option 1: by node label */
+   #define MY_SERIAL DT_NODELABEL(serial0)
 
-As you can see, the ``label`` property is capitalized when forming the
-macro names. Other simple conversions to ensure it is a valid C
-identifier, such as converting "-" to "_", are also performed. The
-offsets and sizes are available as well.
+   /* Option 2: by alias */
+   #define MY_SERIAL DT_ALIAS(my_serial)
 
-.. _mcuboot_partitions:
+   /* Option 3: by chosen node */
+   #define MY_SERIAL DT_CHOSEN(zephyr_console)
 
-MCUboot Partitions
-==================
+   /* Option 4: by path */
+   #define MY_SERIAL DT_PATH(soc, serial_40002000)
 
-`MCUboot`_ is a secure bootloader for 32-bit microcontrollers.
+Once you have a node identifier, get the ``struct device`` by combining
+:c:func:`DT_LABEL` with :c:func:`device_get_binding`:
 
-Some Zephyr boards provide definitions for the flash partitions which
-are required to build MCUboot itself, as well as any applications
-which must be chain-loaded by MCUboot.
+.. code-block:: c
 
-The device tree labels for these partitions are:
+   struct device *uart_dev = device_get_binding(DT_LABEL(MY_SERIAL));
 
-**boot_partition**
-  This is the partition where the bootloader is expected to be
-  placed. MCUboot's build system will attempt to link the MCUboot
-  image into this partition.
+You can then use ``uart_dev`` with :ref:`uart_api` API functions like
+:c:func:`uart_configure`. Similar code will work for other device types; just
+make sure you use the correct API for the device.
 
-**slot0_partition**
-  MCUboot loads the executable application image from this
-  partition. Any application bootable by MCUboot must be linked to run
-  from this partition.
+There's no need to override the ``label`` property to something else: just make
+a node identifier and pass it to ``DT_LABEL`` to get the right string to pass
+to ``device_get_binding()``.
 
-**slot1_partition**
-  This is the partition which stores firmware upgrade images. Zephyr
-  applications which receive firmware updates must ensure the upgrade
-  images are placed in this partition (the Zephyr DFU subsystem can be
-  used for this purpose). MCUboot checks for upgrade images in this
-  partition, and can move them to ``slot0_partition`` for execution.
-  The ``slot0_partition`` and ``slot1_partition`` must be the same
-  size.
+If you're having trouble, see :ref:`dt-trouble`. The first thing to check is
+that the node is enabled (``status = "okay"``) and has a matching binding, like
+this:
 
-**scratch_partition**
-  This partition is used as temporary storage while swapping the
-  contents of ``slot0_partition`` and ``slot1_partition``.
+.. code-block:: c
+
+   #define MY_SERIAL DT_NODELABEL(my_serial)
+
+   #if DT_HAS_NODE(MY_SERIAL)
+   struct device *uart_dev = device_get_binding(DT_LABEL(MY_SERIAL));
+   #else
+   #error "Node is disabled or has no matching binding"
+   #endif
+
+If you see the ``#error`` output, something is wrong with either your
+devicetree or bindings.
+
+.. _dts-find-binding:
+
+Find a devicetree binding
+*************************
+
+Devicetree binding YAML files document what you can do with the nodes they
+describe, so it's critical to be able to find them for the nodes you are using.
+
+If you don't have them already, :ref:`get-devicetree-outputs`. To find a node's
+binding, open the generated header file, which starts with a list of nodes in a
+block comment:
+
+.. code-block:: c
+
+   /*
+    * [...]
+    * Nodes in dependency order (ordinal and path):
+    *   0   /
+    *   1   /aliases
+    *   2   /chosen
+    *   3   /flash@0
+    *   4   /memory@20000000
+    *          (etc.)
+    * [...]
+    */
+
+Make note of the path to the node you want to find, like ``/flash@0``. Search
+for the node's output in the file, which starts with something like this if the
+node has a matching binding:
+
+.. code-block:: c
+
+   /*
+    * Devicetree node:
+    *   /flash@0
+    *
+    * Binding (compatible = soc-nv-flash):
+    *   $ZEPHYR_BASE/dts/bindings/mtd/soc-nv-flash.yaml
+    * [...]
+    */
+
+See :ref:`missing-dt-binding` for troubleshooting.
+
+.. _set-devicetree-overlays:
+
+Set devicetree overlays
+***********************
+
+Devicetree overlays are explained in :ref:`devicetree-intro`. The CMake
+variable :makevar:`DTC_OVERLAY_FILE` contains a space- or colon-separated list
+of overlays. If :makevar:`DTC_OVERLAY_FILE` specifies multiple files, they are
+included in that order by the C preprocessor.
+
+Here are some ways to set it:
+
+1. on the cmake build command line
+   (``-DDTC_OVERLAY_FILE=file1.overlay;file2.overlay``)
+#. with the CMake ``set()`` command in the application ``CMakeLists.txt``,
+   before including zephyr's :file:`boilerplate.cmake` file
+#. using a ``DTC_OVERLAY_FILE`` environment variable (deprecated)
+#. create a ``boards/<BOARD>.overlay`` file in the application
+   folder, for the current board
+#. create a ``<BOARD>.overlay`` file in the application folder
+
+Here is an example :ref:`using west build <west-building-dtc-overlay-file>`.
+However you set the value, it is saved in the CMake cache between builds.
+
+The :ref:`build system <build_overview>` prints all the devicetree overlays it
+finds in the configuration phase, like this:
+
+.. code-block:: none
+
+   -- Found devicetree overlay: .../some/file.overlay
+
+.. _use-dt-overlays:
+
+Use devicetree overlays
+***********************
+
+See :ref:`set-devicetree-overlays` for how to add an overlay to the build.
+
+Overlays can override node property values in multiple ways.
+For example, if your BOARD.dts contains this node:
+
+.. code-block:: DTS
+
+   / {
+           soc {
+                   serial0: serial@40002000 {
+                           status = "okay";
+                           current-speed = <115200>;
+                           /* ... */
+                   };
+           };
+   };
+
+These are equivalent ways to override the ``current-speed`` value in an
+overlay:
+
+.. code-block:: none
+
+   /* Option 1 */
+   &serial0 {
+   	current-speed = <9600>;
+   };
+
+   /* Option 2 */
+   &{/soc/serial@40002000} {
+   	current-speed = <9600>;
+   };
+
+We'll use the ``&serial0`` style for the rest of these examples.
+
+You can add aliases to your devicetree using overlays: an alias is just a
+property of the ``/aliases`` node. For example:
+
+.. code-block:: none
+
+   / {
+   	aliases {
+   		my-serial = &serial0;
+   	};
+   };
+
+Chosen nodes work the same way. For example:
+
+.. code-block:: none
+
+   / {
+   	chosen {
+   		zephyr,console = &serial0;
+   	};
+   };
+
+To delete a property (this is how you override a true boolean property to a
+false value):
+
+.. code-block:: none
+
+   /* Option 1 */
+   &serial0 {
+   	/delete-property/ some-unwanted-property;
+   };
+
+You can add subnodes using overlays. For example, to configure a SPI or I2C
+child device on an existing bus node, do something like this:
+
+.. code-block:: none
+
+   /* SPI device example */
+   &spi1 {
+	my_spi_device: temp-sensor@0 {
+		compatible = "...";
+		label = "TEMP_SENSOR_0";
+		/* reg is the chip select number, if needed;
+		 * If present, it must match the node's unit address. */
+		reg = <0>;
+
+		/* Configure other SPI device properties as needed.
+		 * Find your device's DT binding for details. */
+		spi-max-frequency = <4000000>;
+	};
+   };
+
+   /* I2C device example */
+   &i2c2 {
+	my_i2c_device: touchscreen@76 {
+		compatible = "...";
+		label = "TOUCHSCREEN";
+		/* reg is the I2C device address.
+		 * It must match the node's unit address. */
+		reg = <76>;
+
+		/* Configure other I2C device properties as needed.
+		 * Find your device's DT binding for details. */
+	};
+   };
+
+Other bus devices can be configured similarly:
+
+- create the device as a subnode of the parent bus
+- set its properties according to its binding
+
+Assuming you have a suitable device driver associated with the
+``my_spi_device`` and ``my_i2c_device`` compatibles, you should now be able to
+enable the driver via Kconfig and :ref:`get the struct device <dt-get-device>`
+for your newly added bus node, then use it with that driver API.
+
+.. _dt-driver-howto:
+
+Create struct devices in a driver
+*********************************
+
+If you're writing a device driver, it should be devicetree aware so that
+applications can configure it and access devices as described above. In short,
+you must create a ``struct device`` for every enabled instance of the
+compatible that the device driver supports, and set each device's name to the
+``DT_LABEL()`` of its devicetree node.
+
+The :file:`devicetree.h` API has helpers for writing device drivers based on
+:ref:`DT_INST node identifiers <dt-node-identifiers>` for each of the possible
+instance numbers on your SoC.
+
+Assuming you're using instances, start by defining ``DT_DRV_COMPAT`` at the top
+of the file to the lowercase-and-underscores version of the :ref:`compatible
+<dt-important-props>` that the device driver is handling. For example, if your
+driver is handling nodes with compatible ``"vnd,my-device"``, you should put
+this at the top of your driver:
+
+.. code-block:: c
+
+   #define DT_DRV_COMPAT vnd_my_device
 
 .. important::
 
-   Upgrade images are only temporarily stored in ``slot1_partition``.
-   They must be linked to execute of out of ``slot0_partition``.
+   The DT_DRV_COMPAT macro should have neither quotes nor special characters.
+   Remove quotes and convert special characters to underscores.
 
-See the  `MCUboot documentation`_ for more details on these partitions.
+The typical pattern after that is to define the API functions, then define a
+macro which creates the device by instance number, and then call it for each
+enabled instance. Currently, this looks like this:
 
-.. _MCUboot: https://mcuboot.com/
+.. code-block:: c
 
-.. _MCUboot documentation:
-   https://github.com/runtimeco/mcuboot/blob/master/docs/design.md#image-slots
+   #include <drivers/some_api.h>
 
-File System Partitions
-======================
+   #include <devicetree.h>
+   #define DT_DRV_COMPAT vnd_my_device
 
-**storage_partition**
-  This is the area where e.g. LittleFS or NVS or FCB expects its partition.
+   /*
+    * Define RAM and ROM structures:
+    */
+
+   struct my_dev_data {
+	/* per-device values to store in RAM */
+   };
+
+   struct my_dev_cfg {
+	u32_t freq; /* Just an example: clock frequency in Hz */
+	/* other device configuration to store in ROM */
+   };
+
+   /*
+    * Implement some_api.h callbacks:
+    */
+
+   struct some_api my_api_funcs = { /* ... */ };
+
+   /*
+    * Now use DT_INST APIs to create a struct device for each enabled node:
+    */
+
+   #define CREATE_MY_DEVICE(inst)                                       \
+	static struct my_dev_data my_dev_data_##inst = {                \
+		/* initialize RAM values as needed */                   \
+	};                                                              \
+	static const struct my_dev_cfg my_dev_cfg_##inst = {            \
+		/* initialize ROM values, usually from devicetree */    \
+		.freq = DT_INST_PROP(inst, clock_frequency),            \
+		/* ... */                                               \
+	};                                                              \
+	DEVICE_AND_API_INIT(my_dev_##inst,                              \
+			    DT_INST_LABEL(inst),                        \
+			    my_dev_init_function,                       \
+			    &my_dev_data_##inst,                        \
+			    &my_dev_cfg_##inst,                         \
+			    MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,    \
+			    &my_api_funcs)
+
+   #if DT_HAS_NODE(DT_DRV_INST(0))
+   CREATE_MY_DEVICE(0);
+   #endif
+
+   #if DT_HAS_NODE(DT_DRV_INST(1))
+   CREATE_MY_DEVICE(1);
+   #endif
+
+   /* And so on, for all "possible" instance numbers you need to support. */
+
+Notice the use of :c:func:`DT_INST_PROP` and :c:func:`DT_DRV_INST`. These are
+helpers which rely on ``DT_DRV_COMPAT`` to choose devicetree nodes of a chosen
+compatible at a given index.
+
+As shown above, the driver uses additional information from
+:file:`devicetree.h` to create :ref:`struct device <device_struct>` instances
+than just the node label. Devicetree property values used to configure the
+device at boot time are stored in ROM in the value pointed to by a
+``device->config->config_info`` field. This allows users to configure your
+driver using overlays.
+
+The Zephyr convention is to name each ``struct device`` using its devicetree
+node's ``label`` property using ``DT_INST_LABEL()``. This allows applications
+to :ref:`dt-get-device`.
+
+.. _dt-trouble:
+
+Troubleshoot devicetree issues
+******************************
+
+Here are some tips for fixing misbehaving devicetree code.
+
+Try again with a pristine build directory
+=========================================
+
+See :ref:`west-building-pristine` for examples, or just delete the build
+directory completely and retry.
+
+This is general advice which is especially applicable to debugging devicetree
+issues, because the outputs are created at CMake configuration time, and are
+not always regenerated when one of their inputs changes.
+
+Make sure <devicetree.h> is included
+====================================
+
+Unlike Kconfig symbols, the :file:`devicetree.h` header must be included
+explicitly.
+
+Many Zephyr header files rely on information from devicetree, so including some
+other API may transitively include :file:`devicetree.h`, but that's not
+guaranteed.
+
+.. _dt-use-the-right-names:
+
+Make sure you're using the right names
+======================================
+
+Remember that:
+
+- In C/C++, devicetree names must be lowercased and special characters must be
+  converted to underscores. Zephyr's generated devicetree header has DTS names
+  converted in this way into the C tokens used by the preprocessor-based
+  ``<devicetree.h>`` API.
+- In overlays, use devicetree node and property names the same way they
+  would appear in any DTS file. Zephyr overlays are just DTS fragments.
+
+For example, if you're trying to **get** the ``clock-frequency`` property of a
+node with path ``/soc/i2c@12340000`` in a C/C++ file:
+
+.. code-block:: c
+
+   /*
+    * foo.c: lowercase-and-underscores names
+    */
+
+   /* Don't do this: */
+   #define MY_CLOCK_FREQ DT_PROP(DT_PATH(soc, i2c@1234000), clock-frequency)
+   /*                                           ^               ^
+    *                                        @ should be _     - should be _  */
+
+   /* Do this instead: */
+   #define MY_CLOCK_FREQ DT_PROP(DT_PATH(soc, i2c_1234000), clock_frequency)
+   /*                                           ^               ^           */
+
+And if you're trying to **set** that property in a devicetree overlay:
+
+.. code-block:: DTS
+
+   /*
+    * foo.overlay: DTS names with special characters, etc.
+    */
+
+   /* Don't do this; you'll get devicetree errors. */
+   &{/soc/i2c_12340000/} {
+   	clock_frequency = <115200>;
+   };
+
+   /* Do this instead. Overlays are just DTS fragments. */
+   &{/soc/i2c@12340000/} {
+   	clock-frequency = <115200>;
+   };
+
+Validate properties
+===================
+
+If you're getting a compile error reading a node property, remember
+:ref:`not-all-dt-nodes`, then check your node identifier and property.
+For example, if you get a build error on a line that looks like this:
+
+.. code-block:: c
+
+   int baud_rate = DT_PROP(DT_NODELABEL(my_serial), current_speed);
+
+Try checking the node by adding this to the file and recompiling:
+
+.. code-block:: c
+
+   #if DT_HAS_NODE(DT_NODELABEL(my_serial)) == 0
+   #error "whoops"
+   #endif
+
+If you see the "whoops" error message when you rebuild, the node identifier
+isn't referring to a valid node. :ref:`get-devicetree-outputs` and debug from
+there.
+
+Some hints:
+
+- :ref:`dt-use-the-right-names`
+- Is the node's ``status`` property set to ``"okay"``? If not, it's disabled.
+  The generated header will tell you if the node is disabled.
+- Does the node have a matching binding? The generated header also tells you
+  this information for each node; see :ref:`dts-find-binding`.
+- Does the property exist? See :ref:`dt-checking-property-exists`.
+
+If you're sure the property is defined but ``DT_NODE_HAS_PROP()`` disagrees,
+check for a missing binding.
+
+.. _missing-dt-binding:
+
+Check for missing bindings
+==========================
+
+If the build fails to :ref:`dts-find-binding` for a node, then either the
+node's ``compatible`` property is missing, or its value has no matching
+binding. If the property is set, check for typos in its name. In a devicetree
+source file, ``compatible`` should look like ``"vnd,some-device"`` --
+:ref:`dt-use-the-right-names`.
+
+If your binding file is not under :file:`zephyr/dts`, you may need to set
+:ref:`DTS_ROOT <dts_root>`.
+
+Errors with DT_INST_() APIs
+===========================
+
+If you're using an API like :c:func:`DT_INST_PROP`, you must define
+``DT_DRV_COMPAT`` to the lowercase-and-underscores version of the compatible
+you are interested in. See :ref:`dt-driver-howto`.

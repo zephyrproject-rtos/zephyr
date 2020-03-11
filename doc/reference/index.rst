@@ -12,6 +12,7 @@ API Reference
    bluetooth/index.rst
    kconfig/index.rst
    crypto/index.rst
+   devicetree/index.rst
    drivers/index.rst
    display/index.rst
    file_system/index.rst

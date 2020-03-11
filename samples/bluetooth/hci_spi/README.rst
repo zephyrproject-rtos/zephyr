@@ -21,8 +21,8 @@ In order to use this application, you need a board with a Bluetooth
 controller and SPI slave drivers, and a spare GPIO to use as an
 interrupt line to the SPI master.
 
-You then need to ensure that your :ref:`devicetree` settings provide a
-definition for the slave HCI SPI device::
+You then need to ensure that your :ref:`devicetree <dt-guide>`
+settings provide a definition for the slave HCI SPI device::
 
 	bt-hci@0 {
 		compatible = "zephyr,bt-hci-spi-slave";

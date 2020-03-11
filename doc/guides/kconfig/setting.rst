@@ -261,7 +261,7 @@ interfaces and make them harder to understand, and would make it easier to
 accidentally create broken configurations.
 
 When dealing with fixed board-specific settings, also consider whether they
-should be handled via :ref:`devicetree` instead.
+should be handled via :ref:`devicetree <dt-guide>` instead.
 
 
 Configuring choices
