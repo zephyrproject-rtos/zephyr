@@ -43,6 +43,8 @@
 			reg = <0x40007400 0x10>;
 			interrupts = <111 0>;
 			label = "RTIMER";
+			girq = <23>;
+			girq-bit = <10>;
 		};
 		wdog: watchdog@40000400 {
 			compatible = "microchip,xec-watchdog";
