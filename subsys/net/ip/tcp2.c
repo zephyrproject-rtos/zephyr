@@ -608,6 +608,8 @@ static struct tcp *tcp_conn_alloc(void)
 
 	memset(conn, 0, sizeof(*conn));
 
+	k_mutex_init(&conn->lock);
+
 	conn->state = TCP_LISTEN;
 
 	conn->win = tcp_window;
@@ -790,6 +792,8 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	u8_t next = 0, fl = th ? th->th_flags : 0;
 	size_t len;
 
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
 	NET_DBG("%s", log_strdup(tcp_conn_state(conn, pkt)));
 
 	if (th && th->th_off < 5) {
@@ -898,6 +902,8 @@ next_state:
 		next = 0;
 		goto next_state;
 	}
+
+	k_mutex_unlock(&conn->lock);
 }
 
 /* close() has been called on the socket */
