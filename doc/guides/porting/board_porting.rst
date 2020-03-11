@@ -372,6 +372,10 @@ while porting.
 
 - If available, enable pinmux and interrupt controller drivers.
 
+- It is recommended to enable the MPU by default, if there is support for it
+  in hardware. For boards with limited memory resources it is acceptable to
+  disable it.
+
 .. _flash-and-debug-support:
 
 Flash and debug support
