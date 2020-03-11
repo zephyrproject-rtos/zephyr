@@ -77,6 +77,14 @@ config ETH_SAM_GMAC_IRQ_PRI
 	help
 	  IRQ priority of Ethernet device
 
+config ETH_SAM_GMAC_MONITOR_PERIOD
+	int "Monitor task execution period"
+	default 1000
+	help
+	  Monitor task execution period in milliseconds. The monitor task is
+	  periodically executed to detect and report any changes in the PHY
+	  link status to the operating system.
+
 choice ETH_SAM_GMAC_MAC_SELECT
 	prompt "MAC address"
 	help
