@@ -8,6 +8,15 @@
 #include <irq_offload.h>
 #include <sys/mutex.h>
 
+
+/**
+ * @brief Tests for Kernel Futex objects
+ * @defgroup kernel_futex_tests Futex
+ * @ingroup all_tests
+ * @{
+ * @}
+ */
+
 /* Macro declarations */
 #define TOTAL_THREADS_WAITING (3)
 #define PRIO_WAIT (CONFIG_ZTEST_THREAD_PRIORITY - 1)
@@ -150,7 +159,7 @@ void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 }
 
 /**
- * @ingroup futex_tests
+ * @ingroup kernel_futex_tests
  * @{
  */
 
