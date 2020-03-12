@@ -4,6 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+
+/**
+ * @defgroup CAN CAN BUS
+ * @{
+ * @}
+ */
+
 /**
  * @brief CANopen Network Stack
  * @defgroup canopen CANopen Network Stack
