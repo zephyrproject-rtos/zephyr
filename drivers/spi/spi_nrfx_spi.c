@@ -343,7 +343,7 @@ static int spi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			: NRF_GPIO_PIN_NOPULL)
 
 #define SPI_NRFX_SPI_DEVICE(idx)					       \
-	BUILD_ASSERT_MSG(						       \
+	BUILD_ASSERT(						       \
 		!SPI_NRFX_MISO_PULL_UP(idx) || !SPI_NRFX_MISO_PULL_DOWN(idx),  \
 		"SPI"#idx						       \
 		": cannot enable both pull-up and pull-down on MISO line");    \

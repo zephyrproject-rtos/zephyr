@@ -260,7 +260,7 @@ extern const struct nxp_mpu_config mpu_config;
 #endif /* _ASMLANGUAGE */
 
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
-	BUILD_ASSERT_MSG((size) % \
+	BUILD_ASSERT((size) % \
 		CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0 && \
 		(size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE && \
 		(u32_t)(start) % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0, \

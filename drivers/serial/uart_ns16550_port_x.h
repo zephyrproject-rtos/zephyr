@@ -69,8 +69,8 @@ static void irq_config_func_@NUM@(struct device *dev)
 
 	/* PCI(e) with auto IRQ detection */
 
-	BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),
-		"NS16550 PCI auto-IRQ needs CONFIG_DYNAMIC_INTERRUPTS");
+	BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),
+		     "NS16550 PCI auto-IRQ needs CONFIG_DYNAMIC_INTERRUPTS");
 
 	unsigned int irq;
 

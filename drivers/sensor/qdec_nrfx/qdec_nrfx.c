@@ -90,10 +90,10 @@ static int qdec_nrfx_channel_get(struct device       *dev,
 	data->acc = 0;
 	irq_unlock(key);
 
-	BUILD_ASSERT_MSG(DT_NORDIC_NRF_QDEC_QDEC_0_STEPS > 0,
-			 "only positive number valid");
-	BUILD_ASSERT_MSG(DT_NORDIC_NRF_QDEC_QDEC_0_STEPS <= 2148,
-			 "overflow possible");
+	BUILD_ASSERT(DT_NORDIC_NRF_QDEC_QDEC_0_STEPS > 0,
+		     "only positive number valid");
+	BUILD_ASSERT(DT_NORDIC_NRF_QDEC_QDEC_0_STEPS <= 2148,
+		     "overflow possible");
 
 	val->val1 = (acc * FULL_ANGLE) / DT_NORDIC_NRF_QDEC_QDEC_0_STEPS;
 	val->val2 = (acc * FULL_ANGLE)

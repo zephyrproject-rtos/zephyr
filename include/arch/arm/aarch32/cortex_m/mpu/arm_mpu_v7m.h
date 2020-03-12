@@ -265,7 +265,7 @@ typedef struct {
 #endif /* _ASMLANGUAGE */
 
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
-	BUILD_ASSERT_MSG(!(((size) & ((size) - 1))) && \
+	BUILD_ASSERT(!(((size) & ((size) - 1))) && \
 		(size) >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE && \
 		!((u32_t)(start) & ((size) - 1)), \
 		"the size of the partition must be power of 2" \
