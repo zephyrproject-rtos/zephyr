@@ -667,7 +667,7 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
  */
 #define NRFX_PPI_CHANNELS_USED_BY_PWM_SW  0
 #endif
-BUILD_ASSERT_MSG(
+BUILD_ASSERT(
 	(HAL_USED_PPI_CHANNELS & NRFX_PPI_CHANNELS_USED_BY_PWM_SW) == 0,
 	"PPI channels used by the Bluetooth controller overlap with those "
 	"assigned to the pwm_nrf5_sw driver.");
@@ -1217,22 +1217,22 @@ static inline void hal_radio_sw_switch_setup(
 	 * - Group Enable
 	 *  tasks are all going to be subscribed on the same PPI.
 	 */
-	BUILD_ASSERT_MSG(
+	BUILD_ASSERT(
 		&HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_EVT ==
 			&HAL_SW_SWITCH_TIMER_CLEAR_PPI_REGISTER_EVT,
 		"SW SWitch Timer Clear and Group Disable"
 		" not on the same PPI channel.");
-	BUILD_ASSERT_MSG(
+	BUILD_ASSERT(
 		HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT ==
 			HAL_SW_SWITCH_TIMER_CLEAR_PPI_EVT,
 		"SW SWitch Timer Clear and Group Disable"
 		" not on the same PPI channel.");
-	BUILD_ASSERT_MSG(
+	BUILD_ASSERT(
 		&HAL_RADIO_END_TIME_CAPTURE_PPI_REGISTER_EVT ==
 			&HAL_SW_SWITCH_TIMER_CLEAR_PPI_REGISTER_EVT,
 		"Radio End Timer Capture and Group Disable"
 		" not on the same PPI channel.");
-	BUILD_ASSERT_MSG(
+	BUILD_ASSERT(
 		HAL_RADIO_END_TIME_CAPTURE_PPI_EVT ==
 			HAL_SW_SWITCH_TIMER_CLEAR_PPI_EVT,
 		"Radio End Timer Capture and Group Disable"
@@ -1364,19 +1364,19 @@ static inline void hal_radio_sw_switch_ppi_group_setup(void)
 	/* Sanity build-time check that RADIO Enable and Group Disable
 	 * tasks are going to be subscribed on the same PPIs.
 	 */
-	BUILD_ASSERT_MSG(
+	BUILD_ASSERT(
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_0_INCLUDE ==
 			BIT(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(0)),
 		"Radio enable and Group disable not on the right PPI channel.");
-	BUILD_ASSERT_MSG(
+	BUILD_ASSERT(
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_1_INCLUDE ==
 			BIT(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(1)),
 		"Radio enable and Group disable not on the right PPI channel.");
-	BUILD_ASSERT_MSG(
+	BUILD_ASSERT(
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_0_INCLUDE ==
 			HAL_SW_SWITCH_RADIO_ENABLE_PPI_0_INCLUDE,
 		"Radio enable and Group disable not on the same PPI channel.");
-	BUILD_ASSERT_MSG(
+	BUILD_ASSERT(
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_1_INCLUDE ==
 			HAL_SW_SWITCH_RADIO_ENABLE_PPI_1_INCLUDE,
 		"Radio enable and Group disable not on the same PPI channel.");

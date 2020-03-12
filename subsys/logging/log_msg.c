@@ -11,21 +11,21 @@
 #include <string.h>
 #include <assert.h>
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_ids) == sizeof(u16_t)),
-		  "Structure must fit in 2 bytes");
+BUILD_ASSERT((sizeof(struct log_msg_ids) == sizeof(u16_t)),
+	     "Structure must fit in 2 bytes");
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_generic_hdr) == sizeof(u16_t)),
-		 "Structure must fit in 2 bytes");
+BUILD_ASSERT((sizeof(struct log_msg_generic_hdr) == sizeof(u16_t)),
+	     "Structure must fit in 2 bytes");
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_std_hdr) == sizeof(u16_t)),
-		 "Structure must fit in 2 bytes");
+BUILD_ASSERT((sizeof(struct log_msg_std_hdr) == sizeof(u16_t)),
+	     "Structure must fit in 2 bytes");
 
-BUILD_ASSERT_MSG((sizeof(struct log_msg_hexdump_hdr) == sizeof(u16_t)),
-		 "Structure must fit in 2 bytes");
+BUILD_ASSERT((sizeof(struct log_msg_hexdump_hdr) == sizeof(u16_t)),
+	     "Structure must fit in 2 bytes");
 
-BUILD_ASSERT_MSG((sizeof(union log_msg_head_data) ==
-		  sizeof(struct log_msg_ext_head_data)),
-		  "Structure must be same size");
+BUILD_ASSERT((sizeof(union log_msg_head_data) ==
+	      sizeof(struct log_msg_ext_head_data)),
+	     "Structure must be same size");
 
 #ifndef CONFIG_LOG_BUFFER_SIZE
 #define CONFIG_LOG_BUFFER_SIZE 0
