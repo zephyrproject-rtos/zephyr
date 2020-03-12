@@ -55,7 +55,7 @@ void z_impl_test_arm_user_syscall(void)
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 	zassert_true(__get_PSPLIM() == _current->arch.priv_stack_start,
 	"PSPLIM not guarding the thread's privileged stack\n");
-	zassert_true(__get_MSPLIM() == (u32_t)_interrupt_stack,
+	zassert_true(__get_MSPLIM() == (u32_t)z_interrupt_stacks,
 	"MSPLIM not guarding the interrupt stack\n");
 #endif
 }
@@ -108,7 +108,7 @@ void arm_isr_handler(void *args)
 		 */
 		zassert_true(__get_PSPLIM() == 0,
 		"PSPLIM not clear\n");
-		zassert_true(__get_MSPLIM() == (u32_t)_interrupt_stack,
+		zassert_true(__get_MSPLIM() == (u32_t)z_interrupt_stacks,
 		"MSPLIM not guarding the interrupt stack\n");
 #endif
 	}
@@ -176,7 +176,7 @@ void test_arm_syscalls(void)
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 	zassert_true(__get_PSPLIM() == _current->stack_info.start,
 	"PSPLIM not guarding the default stack\n");
-	zassert_true(__get_MSPLIM() == (u32_t)_interrupt_stack,
+	zassert_true(__get_MSPLIM() == (u32_t)z_interrupt_stacks,
 	"MSPLIM not guarding the interrupt stack\n");
 #endif
 

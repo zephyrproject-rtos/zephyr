@@ -36,8 +36,6 @@ extern "C" {
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
 	z_irq_setup();
-	_current_cpu->irq_stack =
-		Z_THREAD_STACK_BUFFER(_interrupt_stack) + CONFIG_ISR_STACK_SIZE;
 }
 
 

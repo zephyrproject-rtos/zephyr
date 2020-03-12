@@ -21,7 +21,7 @@
 _ASM_FILE_PROLOGUE
 
 GTEXT(z_arm_reset)
-GDATA(_interrupt_stack)
+GDATA(z_interrupt_stacks)
 GDATA(z_arm_svc_stack)
 GDATA(z_arm_sys_stack)
 GDATA(z_arm_fiq_stack)
@@ -156,7 +156,7 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
 
     /* IRQ mode stack */
     msr CPSR_c, #(MODE_IRQ | I_BIT | F_BIT)
-    ldr sp, =(_interrupt_stack + CONFIG_ISR_STACK_SIZE)
+    ldr sp, =(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE)
 
     /* ABT mode stack */
     msr CPSR_c, #(MODE_ABT | I_BIT | F_BIT)

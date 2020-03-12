@@ -91,11 +91,15 @@ static inline bool z_is_idle_thread_entry(void *entry_point)
 
 static inline bool z_is_idle_thread_object(struct k_thread *thread)
 {
+#ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_SMP
 	return thread->base.is_idle;
 #else
-	return thread == &z_idle_thread;
+	return thread == &z_idle_threads[0];
 #endif
+#else
+	return false;
+#endif /* CONFIG_MULTITHREADING */
 }
 
 static inline bool z_is_thread_pending(struct k_thread *thread)

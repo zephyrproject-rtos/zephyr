@@ -10,6 +10,7 @@
 #define ZEPHYR_ARCH_XTENSA_INCLUDE_KERNEL_ARCH_FUNC_H_
 
 #ifndef _ASMLANGUAGE
+#include <kernel_internal.h>
 #include <kernel_arch_data.h>
 #include <string.h>
 
@@ -29,15 +30,14 @@ extern void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 /* Defined in xtensa_context.S */
 extern void z_xt_coproc_init(void);
 
-extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
+extern K_THREAD_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+				   CONFIG_ISR_STACK_SIZE);
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
 	_cpu_t *cpu0 = &_kernel.cpus[0];
 
 	cpu0->nested = 0;
-	cpu0->irq_stack = (Z_THREAD_STACK_BUFFER(_interrupt_stack) +
-			   CONFIG_ISR_STACK_SIZE);
 
 	/* The asm2 scheme keeps the kernel pointer in MISC0 for easy
 	 * access.  That saves 4 bytes of immediate value to store the
@@ -48,7 +48,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	WSR(CONFIG_XTENSA_KERNEL_CPU_PTR_SR, cpu0);
 
 #ifdef CONFIG_INIT_STACKS
-	memset(Z_THREAD_STACK_BUFFER(_interrupt_stack), 0xAA,
+	memset(Z_THREAD_STACK_BUFFER(z_interrupt_stacks[0]), 0xAA,
 	       CONFIG_ISR_STACK_SIZE);
 #endif
 }

@@ -16,14 +16,14 @@
 #include <arch/cpu.h>
 #include <swap_macros.h>
 
-GDATA(_interrupt_stack)
+GDATA(z_interrupt_stacks)
 GDATA(z_main_stack)
 GDATA(_VectorTable)
 
 /* use one of the available interrupt stacks during init */
 
 
-#define INIT_STACK _interrupt_stack
+#define INIT_STACK z_interrupt_stacks
 #define INIT_STACK_SIZE CONFIG_ISR_STACK_SIZE
 
 GTEXT(__reset)
@@ -161,7 +161,7 @@ _master_core_startup:
 	mov_s sp, z_main_stack
 	add sp, sp, CONFIG_MAIN_STACK_SIZE
 
-	mov_s r0, _interrupt_stack
+	mov_s r0, z_interrupt_stacks
 	mov_s r1, 0xaa
 	mov_s r2, CONFIG_ISR_STACK_SIZE
 	jl memset

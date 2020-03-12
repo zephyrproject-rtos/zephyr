@@ -126,9 +126,13 @@ extern u32_t z_timestamp_idle; /* timestamp when CPU goes idle */
 #endif
 
 extern struct k_thread z_main_thread;
-extern struct k_thread z_idle_thread;
-extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
-extern K_THREAD_STACK_DEFINE(z_idle_stack, CONFIG_IDLE_STACK_SIZE);
+
+
+#ifdef CONFIG_MULTITHREADING
+extern struct k_thread z_idle_threads[CONFIG_MP_NUM_CPUS];
+#endif
+extern K_THREAD_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+				   CONFIG_ISR_STACK_SIZE);
 
 #ifdef __cplusplus
 }

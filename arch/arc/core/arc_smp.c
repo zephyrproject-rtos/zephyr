@@ -114,9 +114,6 @@ static int arc_smp_init(struct device *dev)
 	struct arc_connect_bcr bcr;
 
 	/* necessary master core init */
-	_kernel.cpus[0].id = 0;
-	_kernel.cpus[0].irq_stack = Z_THREAD_STACK_BUFFER(_interrupt_stack)
-		+ CONFIG_ISR_STACK_SIZE;
 	_curr_cpu[0] = &(_kernel.cpus[0]);
 
 	bcr.val = z_arc_v2_aux_reg_read(_ARC_V2_CONNECT_BCR);
