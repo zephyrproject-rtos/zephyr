@@ -19,20 +19,28 @@
 
 #include <device.h>
 #include <sys/util.h>
+/**
+ * @addtogroup crypto_cipher
+ * @{
+ */
 
+
+/** Cipher Algorithm */
 enum cipher_algo {
 	CRYPTO_CIPHER_ALGO_AES = 1,
 };
 
+/** Cipher Operation */
 enum cipher_op {
 	CRYPTO_CIPHER_OP_DECRYPT = 0,
 	CRYPTO_CIPHER_OP_ENCRYPT = 1,
 };
 
-/* Possible cipher mode options. More to be
- * added as required.
+/**
+ * Possible cipher mode options.
+ *
+ * More to be added as required.
  */
-
 enum cipher_mode {
 	CRYPTO_CIPHER_MODE_ECB = 1,
 	CRYPTO_CIPHER_MODE_CBC = 2,
@@ -93,19 +101,21 @@ struct gcm_params {
 	u16_t nonce_len;
 };
 
-/* Structure encoding session parameters. Refer to comments for individual
- * fields to know the contract in terms of who fills what and when w.r.t
- * begin_session() call.
+/**
+ * Structure encoding session parameters.
+ *
+ * Refer to comments for individual fields to know the contract
+ * in terms of who fills what and when w.r.t begin_session() call.
  */
 struct cipher_ctx {
 
-	/* Place for driver to return function pointers to be invoked per
+	/** Place for driver to return function pointers to be invoked per
 	 * cipher operation. To be populated by crypto driver on return from
 	 * begin_session() based on the algo/mode chosen by the app.
 	 */
 	struct cipher_ops ops;
 
-	/* To be populated by the app before calling begin_session() */
+	/** To be populated by the app before calling begin_session() */
 	union {
 		/* Cryptographic key to be used in this session */
 		u8_t *bit_stream;
@@ -115,12 +125,12 @@ struct cipher_ctx {
 		void *handle;
 	} key;
 
-	/* The device driver instance this crypto context relates to. Will be
+	/** The device driver instance this crypto context relates to. Will be
 	 * populated by the begin_session() API.
 	 */
 	struct device *device;
 
-	/* If the driver supports multiple simultaneously crypto sessions, this
+	/** If the driver supports multiple simultaneously crypto sessions, this
 	 * will identify the specific driver state this crypto session relates
 	 * to. Since dynamic memory allocation is not possible, it is
 	 * suggested that at build time drivers allocate space for the
@@ -129,13 +139,13 @@ struct cipher_ctx {
 	 */
 	void *drv_sessn_state;
 
-	/* Place for the user app to put info relevant stuff for resuming when
+	/** Place for the user app to put info relevant stuff for resuming when
 	 * completion callback happens for async ops. Totally managed by the
 	 * app.
 	 */
 	void *app_sessn_state;
 
-	/* Cypher mode parameters, which remain constant for all ops
+	/** Cypher mode parameters, which remain constant for all ops
 	 * in a session. To be populated by the app before calling
 	 * begin_session().
 	 */
@@ -145,12 +155,12 @@ struct cipher_ctx {
 		struct gcm_params gcm_info;
 	} mode_params;
 
-	/* Cryptographic keylength in bytes. To be populated by the app
+	/** Cryptographic keylength in bytes. To be populated by the app
 	 * before calling begin_session()
 	 */
 	u16_t  keylen;
 
-	/* How certain fields are to be interpreted for this session.
+	/** How certain fields are to be interpreted for this session.
 	 * (A bitmask of CAP_* below.)
 	 * To be populated by the app before calling begin_session().
 	 * An app can obtain the capability flags supported by a hw/driver
@@ -170,76 +180,84 @@ struct cipher_ctx {
 /* TBD to define */
 #define CAP_KEY_LOADING_API		BIT(2)
 
-/* Whether the output is placed in separate buffer or not */
+/** Whether the output is placed in separate buffer or not */
 #define CAP_INPLACE_OPS			BIT(3)
 #define CAP_SEPARATE_IO_BUFS		BIT(4)
 
-/* These denotes if the output (completion of a cipher_xxx_op) is conveyed
+/**
+ * These denotes if the output (completion of a cipher_xxx_op) is conveyed
  * by the op function returning, or it is conveyed by an async notification
  */
 #define CAP_SYNC_OPS			BIT(5)
 #define CAP_ASYNC_OPS			BIT(6)
 
-/* Whether the hardware/driver supports autononce feature */
+/** Whether the hardware/driver supports autononce feature */
 #define CAP_AUTONONCE			BIT(7)
 
-/* Don't prefix IV to cipher blocks */
+/** Don't prefix IV to cipher blocks */
 #define CAP_NO_IV_PREFIX		BIT(8)
 
 /* More flags to be added as necessary */
 
 
-/* Structure encoding IO parameters of one cryptographic
- * operation like encrypt/decrypt. The fields which has not been explicitly
- * called out has to be filled up by the app before making the cipher_xxx_op()
+/**
+ * Structure encoding IO parameters of one cryptographic
+ * operation like encrypt/decrypt.
+ *
+ * The fields which has not been explicitly called out has to
+ * be filled up by the app before making the cipher_xxx_op()
  * call.
  */
 struct cipher_pkt {
 
-	/* Start address of input buffer */
+	/** Start address of input buffer */
 	u8_t *in_buf;
 
-	/* Bytes to be operated upon */
+	/** Bytes to be operated upon */
 	int  in_len;
 
-	/* Start of the output buffer, to be allocated by
+	/** Start of the output buffer, to be allocated by
 	 * the application. Can be NULL for in-place ops. To be populated
 	 * with contents by the driver on return from op / async callback.
 	 */
 	u8_t *out_buf;
 
-	/* Size of the out_buf area allocated by the application. Drivers should
-	 * not write past the size of output buffer.
+	/** Size of the out_buf area allocated by the application. Drivers
+	 * should not write past the size of output buffer.
 	 */
 	int out_buf_max;
 
-	/* To be populated by driver on return from cipher_xxx_op() and
+	/** To be populated by driver on return from cipher_xxx_op() and
 	 * holds the size of the actual result.
 	 */
 	int out_len;
 
-	/* Context this packet relates to. This can be useful to get the
+	/** Context this packet relates to. This can be useful to get the
 	 * session details, especially for async ops. Will be populated by the
 	 * cipher_xxx_op() API based on the ctx parameter.
 	 */
 	struct cipher_ctx *ctx;
 };
 
-/* Structure encoding IO parameters in AEAD (Authenticated Encryption
- * with Associated Data) scenario like in CCM. App has to furnish valid
- * contents prior to making cipher_ccm_op() call.
+/**
+ * Structure encoding IO parameters in AEAD (Authenticated Encryption
+ * with Associated Data) scenario like in CCM.
+ *
+ * App has to furnish valid contents prior to making cipher_ccm_op() call.
  */
 struct cipher_aead_pkt {
 	/* IO buffers for encryption. This has to be supplied by the app. */
 	struct cipher_pkt *pkt;
 
-	/* Start address for Associated Data. This has to be supplied by app. */
+	/**
+	 * Start address for Associated Data. This has to be supplied by app.
+	 */
 	u8_t *ad;
 
-	/* Size of  Associated Data. This has to be supplied by the app. */
+	/** Size of  Associated Data. This has to be supplied by the app. */
 	u32_t ad_len;
 
-	/* Start address for the auth hash. For an encryption op this will
+	/** Start address for the auth hash. For an encryption op this will
 	 * be populated by the driver when it returns from cipher_ccm_op call.
 	 * For a decryption op this has to be supplied by the app.
 	 */
@@ -254,4 +272,7 @@ struct cipher_aead_pkt {
  */
 typedef void (*crypto_completion_cb)(struct cipher_pkt *completed, int status);
 
+/**
+ * @}
+ */
 #endif /* ZEPHYR_INCLUDE_CRYPTO_CIPHER_STRUCTS_H_ */
