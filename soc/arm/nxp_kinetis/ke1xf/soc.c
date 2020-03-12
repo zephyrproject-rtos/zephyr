@@ -16,11 +16,11 @@
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 #define ASSERT_WITHIN_RANGE(val, min, max, str) \
-	BUILD_ASSERT_MSG(val >= min && val <= max, str)
+	BUILD_ASSERT(val >= min && val <= max, str)
 
 #define ASSERT_ASYNC_CLK_DIV_VALID(val, str) \
-	BUILD_ASSERT_MSG(val == 0 || val == 1 || val == 2 || val == 4 || \
-			 val == 8 || val == 16 || val == 2 || val == 64, str)
+	BUILD_ASSERT(val == 0 || val == 1 || val == 2 || val == 4 ||	\
+		     val == 8 || val == 16 || val == 2 || val == 64, str)
 
 #define TO_SYS_CLK_DIV(val) _DO_CONCAT(kSCG_SysClkDivBy, val)
 

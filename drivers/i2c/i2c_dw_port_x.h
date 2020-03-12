@@ -44,8 +44,8 @@ static void i2c_config_@NUM@(struct device *port)
 
 	/* PCI(e) with auto IRQ detection */
 
-	BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),
-		"DW I2C PCI auto-IRQ needs CONFIG_DYNAMIC_INTERRUPTS");
+	BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),
+		     "DW I2C PCI auto-IRQ needs CONFIG_DYNAMIC_INTERRUPTS");
 
 	unsigned int irq;
 

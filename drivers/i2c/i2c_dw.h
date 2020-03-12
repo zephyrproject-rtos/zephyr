@@ -21,7 +21,7 @@
 	DT_INST_PROP(5, pcie) || \
 	DT_INST_PROP(6, pcie) || \
 	DT_INST_PROP(7, pcie)
-BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "DW I2C in DT needs CONFIG_PCIE");
+BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "DW I2C in DT needs CONFIG_PCIE");
 #define I2C_DW_PCIE_ENABLED
 #include <drivers/pcie/pcie.h>
 #endif

@@ -333,8 +333,8 @@ static void test_log_strdup_gc(void)
 
 	log_setup(false);
 
-	BUILD_ASSERT_MSG(CONFIG_LOG_STRDUP_BUF_COUNT == 1,
-			"Test assumes certain configuration");
+	BUILD_ASSERT(CONFIG_LOG_STRDUP_BUF_COUNT == 1,
+		     "Test assumes certain configuration");
 	backend1_cb.check_strdup = true;
 	backend1_cb.exp_strdup[0] = true;
 	backend1_cb.exp_strdup[1] = false;
@@ -419,8 +419,8 @@ static void test_strdup_trimming(void)
 {
 	char test_str[] = "123456789";
 
-	BUILD_ASSERT_MSG(CONFIG_LOG_STRDUP_MAX_STRING == 8,
-			"Test assumes certain configuration");
+	BUILD_ASSERT(CONFIG_LOG_STRDUP_MAX_STRING == 8,
+		     "Test assumes certain configuration");
 
 	log_setup(false);
 

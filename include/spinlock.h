@@ -19,7 +19,7 @@ struct k_spinlock;
 bool z_spin_lock_valid(struct k_spinlock *l);
 bool z_spin_unlock_valid(struct k_spinlock *l);
 void z_spin_lock_set_owner(struct k_spinlock *l);
-BUILD_ASSERT_MSG(CONFIG_MP_NUM_CPUS < 4, "Too many CPUs for mask");
+BUILD_ASSERT(CONFIG_MP_NUM_CPUS < 4, "Too many CPUs for mask");
 #endif /* CONFIG_SPIN_VALIDATE */
 
 struct k_spinlock_key {

@@ -159,10 +159,10 @@ static int temp_kinetis_init(struct device *dev)
 }
 
 #ifdef DT_INST_0_NXP_KINETIS_TEMPERATURE
-BUILD_ASSERT_MSG(DT_INST_0_NXP_KINETIS_TEMPERATURE_SENSOR_IO_CHANNELS_INPUT <
-		 DT_INST_0_NXP_KINETIS_TEMPERATURE_BANDGAP_IO_CHANNELS_INPUT,
-		 "This driver assumes sensor ADC channel to come before "
-		 "bandgap ADC channel");
+BUILD_ASSERT(DT_INST_0_NXP_KINETIS_TEMPERATURE_SENSOR_IO_CHANNELS_INPUT <
+	     DT_INST_0_NXP_KINETIS_TEMPERATURE_BANDGAP_IO_CHANNELS_INPUT,
+	     "This driver assumes sensor ADC channel to come before "
+	     "bandgap ADC channel");
 
 static struct temp_kinetis_data temp_kinetis_data_0;
 
