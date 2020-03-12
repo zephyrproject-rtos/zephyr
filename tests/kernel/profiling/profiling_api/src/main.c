@@ -77,7 +77,7 @@ static void work_handler(struct k_work *w)
  *
  * @ingroup kernel_profiling_tests
  *
- * @see k_thread_foreach(), stack_analyze()
+ * @see k_thread_foreach(), log_stack_usage()
  */
 void test_call_stacks_analyze_main(void)
 {
@@ -94,7 +94,7 @@ void test_call_stacks_analyze_main(void)
  * @ingroup kernel_profiling_tests
  *
  * @see k_thread_foreach(), _sys_suspend(), _sys_resume(),
- * stack_analyze()
+ * log_stack_usage()
  */
 void test_call_stacks_analyze_idle(void)
 {
@@ -111,7 +111,7 @@ void test_call_stacks_analyze_idle(void)
  * @ingroup kernel_profiling_tests
  *
  * @see k_thread_foreach(), k_work_init(), k_work_submit(),
- * stack_analyze()
+ * log_stack_usage()
  */
 void test_call_stacks_analyze_workq(void)
 {
