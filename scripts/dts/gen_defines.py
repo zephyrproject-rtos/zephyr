@@ -790,8 +790,6 @@ def write_phandle_val_list_entry(node, entry, i, ident):
 def write_clocks(node):
     # Writes clock information.
     #
-    # Like write_regs(), but for clocks.
-    #
     # Most of this ought to be handled in write_props(), but the identifiers
     # that get generated for 'clocks' are inconsistent with the with other
     # 'phandle-array' properties.
@@ -801,87 +799,30 @@ def write_clocks(node):
     if "clocks" not in node.props:
         return
 
-    # Maps a clock_i to (primary_controller, primary_data,
-    # primary_frequency) macros for that clock index
-    clock_i2primary_cdf = {}
-
-    def write_clocks_for_ident(node, ident):
-        clocks = node.props["clocks"].val
-        for clock_i, clock in enumerate(clocks):
-            primary_cdf = clock_i2primary_cdf.get(clock_i)
-            if primary_cdf is None:
-                # Print the primary macros and save them for future use
-                clock_i2primary_cdf[clock_i] = primary_cdf = \
-                    write_clock_primary(ident, clock_i, clock)
-            else:
-                # Print other macros in terms of primary macros
-                write_clock_other(ident, clock_i, clock, primary_cdf)
-
-    def write_clock_primary(ident, clock_i, clock):
-        # Write clock macros for the primary identifier 'ident'.
-        # Return a (primary_controller, primary_data,
-        # primary_frequency) tuple to use for other idents.
-
+    for clock_i, clock in enumerate(node.props["clocks"].val):
         controller = clock.controller
-        # If the clock controller has a label property:
-        # DT_<IDENT>_CLOCK_CONTROLLER <LABEL_PROPERTY>
-        if controller.label:
-            # FIXME this is replicating previous behavior that didn't
-            # generate an indexed controller bug-for-bug. There's a
-            # missing _{clock_i} at the end of the f-string.
-            prim_controller = out_s(f"{ident}_CLOCK_CONTROLLER",
-                                    controller.label)
-        else:
-            prim_controller = None
 
-        # For each additional cell in the controller + data:
-        # DT_<IDENT>_CLOCK_<CELL_NAME>_<clock_i> <CELL_VALUE>
-        #
-        # Cell names are from the controller binding's "clock-cells".
-        prim_data = []
+        if controller.label is not None:
+            out_node_s(node, "CLOCK_CONTROLLER", controller.label)
+
         for name, val in clock.data.items():
-            prim_macro = out(f"{ident}_CLOCK_{str2ident(name)}_{clock_i}", val)
-            prim_data.append(prim_macro)
             if clock_i == 0:
-                out(f"{ident}_CLOCK_{str2ident(name)}", prim_macro)
+                clk_name_alias = "CLOCK_" + str2ident(name)
+            else:
+                clk_name_alias = None
 
-        # If the clock has a "fixed-clock" compat:
-        # DT_<IDENT>_CLOCKS_CLOCK_FREQUENCY_{clock_i} <CLOCK'S_FREQ>
-        if "fixed-clock" in controller.compats:
-            if "clock-frequency" not in controller.props:
-                err(f"{controller!r} is a 'fixed-clock' but lacks a "
-                    "'clock-frequency' property")
-            # FIXME like the CLOCK_CONTROLLER, this is missing a clock_i.
-            # We need to go bug-for-bug with the previous implementation
-            # to make sure there are no differences before fixing.
-            prim_freq = out(f"{ident}_CLOCKS_CLOCK_FREQUENCY",
-                            controller.props["clock-frequency"].val)
-        else:
-            prim_freq = None
+            out_node(node, f"CLOCK_{str2ident(name)}_{clock_i}", val,
+                     name_alias=clk_name_alias)
 
-        return (prim_controller, prim_data, prim_freq)
+        if "fixed-clock" not in controller.compats:
+            continue
 
-    def write_clock_other(ident, clock_i, clock, primary_cdf):
-        # Write clock macros for a secondary identifier 'ident'
+        if "clock-frequency" not in controller.props:
+            err(f"{controller!r} is a 'fixed-clock' but lacks a "
+                "'clock-frequency' property")
 
-        prim_controller, prim_data, prim_freq = primary_cdf
-        if prim_controller is not None:
-            # FIXME this is replicating previous behavior that didn't
-            # generate an indexed controller bug-for-bug. There's a
-            # missing _{clock_i} at the end of the f-string.
-            out(f"{ident}_CLOCK_CONTROLLER", prim_controller)
-        for name_i, name in enumerate(clock.data.keys()):
-            out(f"{ident}_CLOCK_{str2ident(name)}_{clock_i}", prim_data[name_i])
-            if clock_i == 0:
-                out(f"{ident}_CLOCK_{str2ident(name)}", prim_data[name_i])
-        if prim_freq is not None:
-            # FIXME this is also a bug-for-bug match with the previous
-            # implementation.
-            out(f"{ident}_CLOCKS_CLOCK_FREQUENCY", prim_freq)
-
-    out_comment("Clock gate macros from the 'clocks' property",
-                blank_before=False)
-    for_each_ident(node, write_clocks_for_ident)
+        out_node(node, "CLOCKS_CLOCK_FREQUENCY",
+                 controller.props["clock-frequency"].val)
 
 
 def str2ident(s):
