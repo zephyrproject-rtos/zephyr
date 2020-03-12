@@ -16,5 +16,6 @@ supported:
   - ble
   - ieee802154
   - pwm
+  - spi
   - watchdog
   - counter
