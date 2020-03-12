@@ -36,11 +36,11 @@ extern int arch_irq_is_enabled(unsigned int irq);
 extern void z_arm_int_exit(void);
 
 #if defined(CONFIG_ARMV7_R)
-static ALWAYS_INLINE void z_arm_int_lib_init(void)
+static ALWAYS_INLINE void z_arm_interrupt_init(void)
 {
 }
 #else
-extern void z_arm_int_lib_init(void);
+extern void z_arm_interrupt_init(void);
 #endif
 
 /* macros convert value of it's argument to a string */
