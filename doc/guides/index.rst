@@ -31,3 +31,4 @@ User and Developer Guides
    tracing/index
    west/index
    optimizations/index
+   zephyr_cmake_package.rst

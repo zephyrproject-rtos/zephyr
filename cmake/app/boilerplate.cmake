@@ -1,10 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # This file must be included into the toplevel CMakeLists.txt file of
-# Zephyr applications, e.g. zephyr/samples/hello_world/CMakeLists.txt
-# must start with the line:
+# Zephyr applications.
+# Zephyr CMake package automatically includes this file when CMake function
+# find_package() is used.
 #
-# include(${ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+# To ensure this file is loaded in a Zephyr application it must start with
+# one of those lines:
+#
+# find_package(Zephyr)
+# find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+#
+# The `HINTS $ENV{ZEPHYR_BASE}` variant is required for any application inside
+# the Zephyr repository.
 #
 # It exists to reduce boilerplate code that Zephyr expects to be in
 # application CMakeLists.txt code.

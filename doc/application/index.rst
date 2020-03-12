@@ -162,6 +162,10 @@ subdirectories which are not described here.
 :file:`tests`
     Test code and benchmarks for Zephyr features.
 
+:file:`share`
+    Additional architecture independent data. Currently containing Zephyr CMake
+    package.
+
 
 Creating an Application
 ***********************
@@ -206,27 +210,35 @@ Follow these steps to create a new application directory. (Refer to
 
    .. code-block:: cmake
 
-      # Boilerplate code, which pulls in the Zephyr build system.
+      # Find Zephyr. This also loads Zephyr's build system.
       cmake_minimum_required(VERSION 3.13.1)
-      include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+      find_package(Zephyr)
       project(my_zephyr_app)
 
       # Add your source file to the "app" target. This must come after
-      # the boilerplate code, which defines the target.
+      # find_package(Zephyr) which defines the target.
       target_sources(app PRIVATE src/main.c)
 
-   The boilerplate code sets the minimum CMake version and pulls in the Zephyr
-   build system, which creates a CMake target named ``app``. Adding sources
-   to this target is how you include them in the build.
+   ``find_package(Zephyr)`` sets the minimum CMake version and pulls in the
+   Zephyr build system, which creates a CMake target named ``app`` (see
+   :ref:`cmake_pkg`). Adding sources to this target is how you include them in
+   the build.
 
-   .. note:: ``cmake_minimum_required()`` is also invoked from
-             :file:`boilerplate.cmake`. The most recent of the two
-             versions will be enforced by CMake.
+   .. note:: ``cmake_minimum_required()`` is also invoked by the Zephyr package.
+              The most recent of the two versions will be enforced by CMake.
 
 #. Set Kconfig configuration options. See :ref:`application-kconfig`.
 
 #. Configure any devicetree overlays needed by your application.
    See :ref:`set-devicetree-overlays`.
+
+.. note::
+
+   ``include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)``
+   is still supported for backward compatibility with older applications.
+   Including ``boilerplate.cmake`` directly in the sample still requires to run
+   ``source zephyr-env.sh`` or execute ``zephyr-env.cmd`` before building the
+   application.
 
 .. _important-build-vars:
 
@@ -248,13 +260,10 @@ should know about.
    * As :ref:`env_vars`.
    * As a ``set(<VARIABLE> <VALUE>)`` statement in your :file:`CMakeLists.txt`
 
-* :makevar:`ZEPHYR_BASE`: Sets the path to the directory containing Zephyr,
-  which is needed by the build system's boilerplate file.  This is an
-  environment variable set by the :file:`zephyr-env.sh` script on Linux/macOS
-  or :file:`zephyr-env.cmd` on Windows, as you learned when getting started
-  with Zephyr in :ref:`getting_started_run_sample`. You can also set
-  :makevar:`ZEPHYR_BASE` explicitly, but then you won't get the other features
-  provided by those scripts.
+* :makevar:`ZEPHYR_BASE`: Zephyr base variable used by the build system.
+  ``find_package(Zephyr)`` will automatically set this as a cached CMake
+  variable. But ``ZEPHYR_BASE`` can also be set as an environment variable in
+  order to force CMake to use a specific Zephyr installation.
 
 * :makevar:`BOARD`: Selects the board that the application's build
   will use for the default configuration.  See :ref:`boards` for
@@ -411,6 +420,8 @@ described above.)
 * :file:`zephyr.elf`, which contains the final combined application and
   kernel binary. Other binary output formats, such as :file:`.hex` and
   :file:`.bin`, are also supported.
+
+.. _application_rebuild:
 
 Rebuilding an Application
 =========================
@@ -1122,14 +1133,19 @@ Make sure to follow these steps in order.
    found elsewhere if the CMake variable :makevar:`KCONFIG_ROOT` is
    set with an absolute path.
 
-#. Now include the mandatory boilerplate that integrates the
-   application with the Zephyr build system on a new line, **after any
+#. Specify that the application requires Zephyr on a new line, **after any
    lines added from the steps above**:
 
    .. code-block:: cmake
 
-      include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+      find_package(Zephyr)
       project(my_zephyr_app)
+
+   .. note:: ``find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})`` can be used if
+             enforcing a specific Zephyr installation by explicitly
+             setting the ``ZEPHYR_BASE`` environment variable should be
+             supported. All samples in Zephyr supports the ``ZEPHYR_BASE``
+             environment variable.
 
 #. Now add any application source files to the 'app' target
    library, each on their own line, like so:
@@ -1144,7 +1160,7 @@ Below is a simple example :file:`CMakeList.txt`:
 
    set(BOARD qemu_x86)
 
-   include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+   find_package(Zephyr)
    project(my_zephyr_app)
 
    target_sources(app PRIVATE src/main.c)

@@ -122,6 +122,12 @@ repo.
    repository, switch branches in it, or perform a ``git bisect`` inside of
    it.
 
+Export Zephyr CMake package
+***************************
+
+The :ref:`cmake_pkg` can be exported to CMake's user package registry if it has
+not already been done as part of :ref:`getting_started`.
+
 Build and Run an Application
 ****************************
 
@@ -148,16 +154,6 @@ a list of supported boards.
    .. code-block:: console
 
       cd zephyrproject/zephyr
-
-#. Set up your build environment variables:
-
-   .. code-block:: console
-
-      # Linux and macOS
-      source zephyr-env.sh
-
-      # Windows
-      zephyr-env.cmd
 
 #. Build the blinky sample for the ``reel_board``:
 
