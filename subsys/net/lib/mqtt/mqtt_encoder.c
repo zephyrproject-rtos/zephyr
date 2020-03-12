@@ -15,25 +15,11 @@ LOG_MODULE_REGISTER(net_mqtt_enc, CONFIG_MQTT_LOG_LEVEL);
 #include "mqtt_internal.h"
 #include "mqtt_os.h"
 
-#define MQTT_3_1_0_PROTO_DESC_LEN 6
-#define MQTT_3_1_1_PROTO_DESC_LEN 4
+static const struct mqtt_utf8 mqtt_3_1_0_proto_desc =
+	MQTT_UTF8_LITERAL("MQIsdp");
 
-static const u8_t mqtt_3_1_0_proto_desc_str[MQTT_3_1_0_PROTO_DESC_LEN] = {
-	'M', 'Q', 'I', 's', 'd', 'p'
-};
-static const u8_t mqtt_3_1_1_proto_desc_str[MQTT_3_1_1_PROTO_DESC_LEN] = {
-	'M', 'Q', 'T', 'T'
-};
-
-static const struct mqtt_utf8 mqtt_3_1_0_proto_desc = {
-	.utf8 = (u8_t *)mqtt_3_1_0_proto_desc_str,
-	.size = MQTT_3_1_0_PROTO_DESC_LEN
-};
-
-static const struct mqtt_utf8 mqtt_3_1_1_proto_desc = {
-	.utf8 = (u8_t *)mqtt_3_1_1_proto_desc_str,
-	.size = MQTT_3_1_1_PROTO_DESC_LEN
-};
+static const struct mqtt_utf8 mqtt_3_1_1_proto_desc =
+	MQTT_UTF8_LITERAL("MQTT");
 
 /** Never changing ping request, needed for Keep Alive. */
 static const u8_t ping_packet[MQTT_FIXED_HEADER_MIN_SIZE] = {
