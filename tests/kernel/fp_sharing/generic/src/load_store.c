@@ -56,6 +56,12 @@
 #else
 #include "float_regs_arc_other.h"
 #endif /* __GNUC__ */
+#elif defined(CONFIG_RISCV)
+#if defined(__GNUC__)
+#include "float_regs_riscv_gcc.h"
+#else
+#include "float_regs_riscv_other.h"
+#endif /* __GNUC__ */
 #endif
 
 #include "float_context.h"

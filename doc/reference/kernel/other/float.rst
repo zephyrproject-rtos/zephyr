@@ -144,6 +144,38 @@ context of threads that are not using the FP registers. An extra 16 bytes
 (single floating point hardware) or 32 bytes (double floating point hardware)
 of stack space is required to load and store floating point registers.
 
+RISC-V architecture
+-------------------
+
+On the RISC-V architecture, the kernel treats each thread as a non-user
+or FPU user and the thread must be tagged by one of the
+following techniques:
+
+* A statically-created RISC-V thread can be tagged by passing the
+  :c:macro:`K_FP_REGS` option to :c:macro:`K_THREAD_DEFINE`.
+
+* A dynamically-created RISC-V thread can be tagged by passing the
+  :c:macro:`K_FP_REGS` to :cpp:func:`k_thread_create()`.
+
+* A running RISC-V thread can be tagged by calling :cpp:func:`k_float_enable()`.
+  This function can only be called from the thread itself.
+
+If a RISC-V thread no longer requires the use of the floating point registers,
+it can call :cpp:func:`k_float_disable()`. This instructs the kernel not to
+save or restore its FP context during thread context switching. This function
+can only be called from the thread itself.
+
+During thread context switching the RISC-V kernel saves the *callee-saved*
+floating point registers, if the switched-out thread is tagged with
+:c:macro:`K_FP_REGS`. Additionally, the *caller-saved* floating point
+registers are saved on the thread's stack. If the switched-in thread has been
+tagged with :c:macro:`K_FP_REGS`, then the kernel restores the *callee-saved*
+FP registers of the switched-in thread and the *caller-saved* FP context is
+restored from the thread's stack. Thus, the kernel does not save or restore the
+FP context of threads that are not using the FP registers. An extra 84 bytes
+(single floating point hardware) or 164 bytes (double floating point hardware)
+of stack space is required to load and store floating point registers.
+
 x86 architecture
 ----------------
 

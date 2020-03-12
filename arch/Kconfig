@@ -516,7 +516,7 @@ config MPU_GAP_FILLING
 menuconfig FLOAT
 	bool "Floating point"
 	depends on CPU_HAS_FPU
-	depends on ARM || X86 || ARC
+	depends on ARC || ARM || RISCV || X86
 	help
 	  This option allows threads to use the floating point registers.
 	  By default, only a single thread may use the registers.
@@ -530,6 +530,13 @@ config FP_SHARING
 	help
 	  This option allows multiple threads to use the floating point
 	  registers.
+
+config FLOAT_64BIT
+	bool "Double precision floating point"
+	depends on FLOAT
+	depends on RISCV
+	help
+	  This option means that floating point registers are 64bit width.
 
 config ARCH
 	string
