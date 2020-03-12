@@ -891,12 +891,10 @@ def write_flash_partition_prefix(prefix, partition_node, index):
     for i, reg in enumerate(partition_node.regs):
         # Also add aliases that point to the first sector (TODO: get rid of the
         # aliases?)
-        offset = out(f"{prefix}_OFFSET_{i}", reg.addr)
-        if i == 0:
-            out(f"{prefix}_OFFSET", offset)
-        size = out(f"{prefix}_SIZE_{i}", reg.size)
-        if i == 0:
-            out(f"{prefix}_SIZE", size)
+        out(f"{prefix}_OFFSET_{i}", reg.addr,
+            aliases=[f"{prefix}_OFFSET"] if i == 0 else [])
+        out(f"{prefix}_SIZE_{i}", reg.size,
+            aliases=[f"{prefix}_SIZE"] if i == 0 else [])
 
     controller = partition_node.flash_controller
     if controller.label is not None:
@@ -1112,9 +1110,13 @@ def out_s(ident, val):
     return out(ident, quote_str(val))
 
 
-def out(ident, val, deprecation_msg=None):
+def out(ident, val, aliases=(), deprecation_msg=None):
     # Writes '#define <ident> <val>' to the header and '<ident>=<val>' to the
     # the configuration file.
+    #
+    # Also writes any aliases listed in 'aliases' (an iterable). For the
+    # header, these look like '#define <alias> <ident>'. For the configuration
+    # file, the value is just repeated as '<alias>=<val>' for each alias.
     #
     # If a 'deprecation_msg' string is passed, the generated identifiers will
     # generate a warning if used, via __WARN(<deprecation_msg>)).
@@ -1131,6 +1133,14 @@ def out(ident, val, deprecation_msg=None):
     output_to_conf = not (isinstance(val, str) and val.startswith("{"))
     if output_to_conf:
         print(f"{primary_ident}={val}", file=conf_file)
+
+    for alias in aliases:
+        if alias != ident:
+            out_define(alias, "DT_" + ident, deprecation_msg, header_file)
+            if output_to_conf:
+                # For the configuration file, the value is just repeated for all
+                # the aliases
+                print(f"DT_{alias}={val}", file=conf_file)
 
     return primary_ident
 
