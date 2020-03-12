@@ -45,6 +45,15 @@ struct dma_stm32_config {
 	u32_t base;
 };
 
+#ifdef CONFIG_DMA_STM32_V1
+/* from DTS the dma stream id is in range 0..<dma-requests>-1 */
+#define STREAM_OFFSET 0
+#else
+/* from DTS the dma stream id is in range 1..<dma-requests> */
+/* so decrease to set range from 0 from now on */
+#define STREAM_OFFSET 1
+#endif /* CONFIG_DMA_STM32_V1 */
+
 extern u32_t table_ll_stream[];
 extern u32_t (*func_ll_is_active_tc[])(DMA_TypeDef *DMAx);
 extern void (*func_ll_clear_tc[])(DMA_TypeDef *DMAx);
