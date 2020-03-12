@@ -180,7 +180,7 @@ void z_arm_prep_c(void)
 #if defined(CONFIG_ARMV7_R) && defined(CONFIG_INIT_STACKS)
 	z_arm_init_stacks();
 #endif
-	z_arm_int_lib_init();
+	z_arm_interrupt_init();
 	z_cstart();
 	CODE_UNREACHABLE;
 }
