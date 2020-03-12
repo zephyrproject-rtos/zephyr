@@ -122,6 +122,30 @@ def subsystem_to_enum(subsys):
 
 scr = os.path.basename(sys.argv[0])
 
+def debug(text):
+    if not args.verbose:
+        return
+    sys.stdout.write(scr + ": " + text + "\n")
+
+def error(text):
+    sys.exit("%s ERROR: %s" % (scr, text))
+
+def debug_die(die, text):
+    lp_header = die.dwarfinfo.line_program_for_CU(die.cu).header
+    files = lp_header["file_entry"]
+    includes = lp_header["include_directory"]
+
+    fileinfo = files[die.attributes["DW_AT_decl_file"].value - 1]
+    filename = fileinfo.name.decode("utf-8")
+    filedir = includes[fileinfo.dir_index - 1].decode("utf-8")
+
+    path = os.path.join(filedir, filename)
+    lineno = die.attributes["DW_AT_decl_line"].value
+
+    debug(str(die))
+    debug("File '%s', line %d:" % (path, lineno))
+    debug("    %s" % text)
+
 # -- ELF processing
 
 DW_OP_addr = 0x3
@@ -135,8 +159,6 @@ stack_counter = 0
 # Global type environment. Populated by pass 1.
 type_env = {}
 extern_env = {}
-elh_kobjects = {}
-elh_subsystems = {}
 
 class KobjectInstance:
     def __init__(self, type_obj, addr):
@@ -373,9 +395,9 @@ def analyze_die_struct(die):
     if not size:
         return
 
-    if name in elh_kobjects:
+    if name in kobjects:
         type_env[offset] = KobjectType(offset, name, size)
-    elif name in elh_subsystems:
+    elif name in subsystems:
         type_env[offset] = KobjectType(offset, name, size, api=True)
     else:
         at = AggregateType(offset, name, size)
@@ -474,229 +496,166 @@ def device_get_api_addr(elf, addr):
     return addr_deref(elf, addr + offset)
 
 
-def get_filename_lineno(die):
-    lp_header = die.dwarfinfo.line_program_for_CU(die.cu).header
-    files = lp_header["file_entry"]
-    includes = lp_header["include_directory"]
+def find_kobjects(elf, syms):
+    if not elf.has_dwarf_info():
+        sys.exit("ELF file has no DWARF information")
 
-    fileinfo = files[die.attributes["DW_AT_decl_file"].value - 1]
-    filename = fileinfo.name.decode("utf-8")
-    filedir = includes[fileinfo.dir_index - 1].decode("utf-8")
+    app_smem_start = syms["_app_smem_start"]
+    app_smem_end = syms["_app_smem_end"]
 
-    path = os.path.join(filedir, filename)
-    lineno = die.attributes["DW_AT_decl_line"].value
-    return (path, lineno)
+    di = elf.get_dwarf_info()
 
+    variables = []
 
-class ElfHelper:
+    # Step 1: collect all type information.
+    for CU in di.iter_CUs():
+        for die in CU.iter_DIEs():
+            # Unions are disregarded, kernel objects should never be union
+            # members since the memory is not dedicated to that object and
+            # could be something else
+            if die.tag == "DW_TAG_structure_type":
+                analyze_die_struct(die)
+            elif die.tag == "DW_TAG_const_type":
+                analyze_die_const(die)
+            elif die.tag == "DW_TAG_array_type":
+                analyze_die_array(die)
+            elif die.tag == "DW_TAG_typedef":
+                analyze_typedef(die)
+            elif die.tag == "DW_TAG_variable":
+                variables.append(die)
 
-    def __init__(self, filename, verbose, kobjs, subs):
-        self.verbose = verbose
-        self.fp = open(filename, "rb")
-        self.elf = ELFFile(self.fp)
-        self.little_endian = self.elf.little_endian
-        global elh_kobjects
-        global elh_subsystems
-        elh_kobjects = kobjs
-        elh_subsystems = subs
+    # Step 2: filter type_env to only contain kernel objects, or structs
+    # and arrays of kernel objects
+    bad_offsets = []
+    for offset, type_object in type_env.items():
+        if not type_object.has_kobject():
+            bad_offsets.append(offset)
 
-    def find_kobjects(self, syms):
-        if not self.elf.has_dwarf_info():
-            sys.exit("ELF file has no DWARF information")
+    for offset in bad_offsets:
+        del type_env[offset]
 
-        app_smem_start = syms["_app_smem_start"]
-        app_smem_end = syms["_app_smem_end"]
+    # Step 3: Now that we know all the types we are looking for, examine
+    # all variables
+    all_objs = {}
 
-        di = self.elf.get_dwarf_info()
+    for die in variables:
+        name = die_get_name(die)
+        if not name:
+            continue
 
-        variables = []
+        if name.startswith("__device_sys_init"):
+            # Boot-time initialization function; not an actual device
+            continue
 
-        # Step 1: collect all type information.
-        for CU in di.iter_CUs():
-            for die in CU.iter_DIEs():
-                # Unions are disregarded, kernel objects should never be union
-                # members since the memory is not dedicated to that object and
-                # could be something else
-                if die.tag == "DW_TAG_structure_type":
-                    analyze_die_struct(die)
-                elif die.tag == "DW_TAG_const_type":
-                    analyze_die_const(die)
-                elif die.tag == "DW_TAG_array_type":
-                    analyze_die_array(die)
-                elif die.tag == "DW_TAG_typedef":
-                    analyze_typedef(die)
-                elif die.tag == "DW_TAG_variable":
-                    variables.append(die)
+        type_offset = die_get_type_offset(die)
 
-        # Step 2: filter type_env to only contain kernel objects, or structs
-        # and arrays of kernel objects
-        bad_offsets = []
-        for offset, type_object in type_env.items():
-            if not type_object.has_kobject():
-                bad_offsets.append(offset)
+        # Is this a kernel object, or a structure containing kernel
+        # objects?
+        if type_offset not in type_env:
+            continue
 
-        for offset in bad_offsets:
-            del type_env[offset]
+        if "DW_AT_declaration" in die.attributes:
+            # Extern declaration, only used indirectly
+            extern_env[die.offset] = die
+            continue
 
-        # Step 3: Now that we know all the types we are looking for, examine
-        # all variables
-        all_objs = {}
+        if "DW_AT_location" not in die.attributes:
+            debug_die(die,
+                      "No location information for object '%s'; possibly stack allocated"
+                      % name)
+            continue
 
-        for die in variables:
-            name = die_get_name(die)
-            if not name:
-                continue
+        loc = die.attributes["DW_AT_location"]
+        if loc.form != "DW_FORM_exprloc" and \
+           loc.form != "DW_FORM_block1":
+            debug_die(die, "kernel object '%s' unexpected location format" %
+                      name)
+            continue
 
-            if name.startswith("__device_sys_init"):
-                # Boot-time initialization function; not an actual device
-                continue
+        opcode = loc.value[0]
+        if opcode != DW_OP_addr:
 
-            type_offset = die_get_type_offset(die)
+            # Check if frame pointer offset DW_OP_fbreg
+            if opcode == DW_OP_fbreg:
+                debug_die(die, "kernel object '%s' found on stack" % name)
+            else:
+                debug_die(die,
+                          "kernel object '%s' unexpected exprloc opcode %s" %
+                          (name, hex(opcode)))
+            continue
 
-            # Is this a kernel object, or a structure containing kernel
-            # objects?
-            if type_offset not in type_env:
-                continue
+        addr = (loc.value[1] | (loc.value[2] << 8) |
+                (loc.value[3] << 16) | (loc.value[4] << 24))
 
-            if "DW_AT_declaration" in die.attributes:
-                # Extern declaration, only used indirectly
-                extern_env[die.offset] = die
-                continue
+        if addr == 0:
+            # Never linked; gc-sections deleted it
+            continue
 
-            if "DW_AT_location" not in die.attributes:
-                self.debug_die(
-                    die,
-                    "No location information for object '%s'; possibly"
-                    " stack allocated" % name)
-                continue
+        type_obj = type_env[type_offset]
+        objs = type_obj.get_kobjects(addr)
+        all_objs.update(objs)
 
-            loc = die.attributes["DW_AT_location"]
-            if loc.form != "DW_FORM_exprloc" and \
-               loc.form != "DW_FORM_block1":
-                self.debug_die(
-                    die,
-                    "kernel object '%s' unexpected location format" %
-                    name)
-                continue
+        debug("symbol '%s' at %s contains %d object(s)"
+              % (name, hex(addr), len(objs)))
 
-            opcode = loc.value[0]
-            if opcode != DW_OP_addr:
+    # Step 4: objs is a dictionary mapping variable memory addresses to
+    # their associated type objects. Now that we have seen all variables
+    # and can properly look up API structs, convert this into a dictionary
+    # mapping variables to the C enumeration of what kernel object type it
+    # is.
+    ret = {}
+    for addr, ko in all_objs.items():
+        # API structs don't get into the gperf table
+        if ko.type_obj.api:
+            continue
 
-                # Check if frame pointer offset DW_OP_fbreg
-                if opcode == DW_OP_fbreg:
-                    self.debug_die(die, "kernel object '%s' found on stack" %
-                                   name)
-                else:
-                    self.debug_die(
-                        die,
-                        "kernel object '%s' unexpected exprloc opcode %s" %
-                        (name, hex(opcode)))
-                continue
+        _, user_ram_allowed = kobjects[ko.type_obj.name]
+        if not user_ram_allowed and app_smem_start <= addr < app_smem_end:
+            debug_die(die, "object '%s' found in invalid location %s"
+                      % (name, hex(addr)))
+            continue
 
-            addr = (loc.value[1] | (loc.value[2] << 8) |
-                    (loc.value[3] << 16) | (loc.value[4] << 24))
-
-            if addr == 0:
-                # Never linked; gc-sections deleted it
-                continue
-
-            type_obj = type_env[type_offset]
-            objs = type_obj.get_kobjects(addr)
-            all_objs.update(objs)
-
-            self.debug("symbol '%s' at %s contains %d object(s)"
-                       % (name, hex(addr), len(objs)))
-
-        # Step 4: objs is a dictionary mapping variable memory addresses to
-        # their associated type objects. Now that we have seen all variables
-        # and can properly look up API structs, convert this into a dictionary
-        # mapping variables to the C enumeration of what kernel object type it
-        # is.
-        ret = {}
-        for addr, ko in all_objs.items():
-            # API structs don't get into the gperf table
-            if ko.type_obj.api:
-                continue
-
-            _, user_ram_allowed = elh_kobjects[ko.type_obj.name]
-            if not user_ram_allowed and app_smem_start <= addr < app_smem_end:
-                self.debug_die(die,
-                               "object '%s' found in invalid location %s"
-                               % (name, hex(addr)))
-                continue
-
-            if ko.type_obj.name != "device":
-                # Not a device struct so we immediately know its type
-                ko.type_name = kobject_to_enum(ko.type_obj.name)
-                ret[addr] = ko
-                continue
-
-            # Device struct. Need to get the address of its API struct,
-            # if it has one.
-            apiaddr = device_get_api_addr(self.elf, addr)
-            if apiaddr not in all_objs:
-                if apiaddr == 0:
-                    self.debug("device instance at 0x%x has no associated subsystem"
-                            % addr)
-                else:
-                    self.debug("device instance at 0x%x has unknown API 0x%x"
-                            % (addr, apiaddr))
-                # API struct does not correspond to a known subsystem, skip it
-                continue
-
-            apiobj = all_objs[apiaddr]
-            ko.type_name = subsystem_to_enum(apiobj.type_obj.name)
+        if ko.type_obj.name != "device":
+            # Not a device struct so we immediately know its type
+            ko.type_name = kobject_to_enum(ko.type_obj.name)
             ret[addr] = ko
+            continue
 
-        self.debug("found %d kernel object instances total" % len(ret))
+        # Device struct. Need to get the address of its API struct,
+        # if it has one.
+        apiaddr = device_get_api_addr(elf, addr)
+        if apiaddr not in all_objs:
+            if apiaddr == 0:
+                debug("device instance at 0x%x has no associated subsystem"
+                      % addr)
+            else:
+                debug("device instance at 0x%x has unknown API 0x%x"
+                      % (addr, apiaddr))
+            # API struct does not correspond to a known subsystem, skip it
+            continue
 
-        # 1. Before python 3.7 dict order is not guaranteed. With Python
-        #    3.5 it doesn't seem random with *integer* keys but can't
-        #    rely on that.
-        # 2. OrderedDict means _insertion_ order, so not enough because
-        #    built from other (random!) dicts: need to _sort_ first.
-        # 3. Sorting memory address looks good.
-        return OrderedDict(sorted(ret.items()))
+        apiobj = all_objs[apiaddr]
+        ko.type_name = subsystem_to_enum(apiobj.type_obj.name)
+        ret[addr] = ko
 
-    def get_symbols(self):
-        for section in self.elf.iter_sections():
-            if isinstance(section, SymbolTableSection):
-                return {sym.name: sym.entry.st_value
-                        for sym in section.iter_symbols()}
+    debug("found %d kernel object instances total" % len(ret))
 
-        raise LookupError("Could not find symbol table")
+    # 1. Before python 3.7 dict order is not guaranteed. With Python
+    #    3.5 it doesn't seem random with *integer* keys but can't
+    #    rely on that.
+    # 2. OrderedDict means _insertion_ order, so not enough because
+    #    built from other (random!) dicts: need to _sort_ first.
+    # 3. Sorting memory address looks good.
+    return OrderedDict(sorted(ret.items()))
 
-    def debug(self, text):
-        if not self.verbose:
-            return
-        sys.stdout.write(scr + ": " + text + "\n")
+def get_symbols(elf):
+    for section in elf.iter_sections():
+        if isinstance(section, SymbolTableSection):
+            return {sym.name: sym.entry.st_value
+                    for sym in section.iter_symbols()}
 
-    @staticmethod
-    def error(text):
-        sys.exit("%s ERROR: %s" % (scr, text))
+    raise LookupError("Could not find symbol table")
 
-    def debug_die(self, die, text):
-        fn, ln = get_filename_lineno(die)
-
-        self.debug(str(die))
-        self.debug("File '%s', line %d:" % (fn, ln))
-        self.debug("    %s" % text)
-
-    @staticmethod
-    def get_thread_counter():
-        return thread_counter
-
-    @staticmethod
-    def get_sys_mutex_counter():
-        return sys_mutex_counter
-
-    @staticmethod
-    def get_futex_counter():
-        return futex_counter
-
-    @staticmethod
-    def get_stack_counter():
-        return stack_counter
 
 # -- GPERF generation logic
 
@@ -745,25 +704,23 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 """
 
 
-def write_gperf_table(fp, eh, objs, static_begin, static_end):
-    syms = eh.get_symbols()
-
+def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
     fp.write(header)
-    num_mutexes = eh.get_sys_mutex_counter()
-    if num_mutexes != 0:
-        fp.write("static struct k_mutex kernel_mutexes[%d] = {\n" % num_mutexes)
-        for i in range(num_mutexes):
+    if sys_mutex_counter != 0:
+        fp.write("static struct k_mutex kernel_mutexes[%d] = {\n"
+                 % sys_mutex_counter)
+        for i in range(sys_mutex_counter):
             fp.write("_K_MUTEX_INITIALIZER(kernel_mutexes[%d])" % i)
-            if i != num_mutexes - 1:
+            if i != sys_mutex_counter - 1:
                 fp.write(", ")
         fp.write("};\n")
 
-    num_futex = eh.get_futex_counter()
-    if num_futex != 0:
-        fp.write("static struct z_futex_data futex_data[%d] = {\n" % num_futex)
-        for i in range(num_futex):
+    if futex_counter != 0:
+        fp.write("static struct z_futex_data futex_data[%d] = {\n"
+                 % futex_counter)
+        for i in range(futex_counter):
             fp.write("Z_FUTEX_DATA_INITIALIZER(futex_data[%d])" % i)
-            if i != num_futex - 1:
+            if i != futex_counter - 1:
                 fp.write(", ")
         fp.write("};\n")
 
@@ -775,15 +732,14 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
 
     if "CONFIG_GEN_PRIV_STACKS" in syms:
         metadata_names["K_OBJ_THREAD_STACK_ELEMENT"] = "stack_data"
-        num_stack = eh.get_stack_counter()
-        if num_stack != 0:
+        if stack_counter != 0:
             fp.write("static u8_t Z_GENERIC_SECTION(.priv_stacks.noinit) "
                      " __aligned(Z_PRIVILEGE_STACK_ALIGN)"
                      " priv_stacks[%d][CONFIG_PRIVILEGED_STACK_SIZE];\n"
-                     % num_stack);
+                     % stack_counter)
 
             fp.write("static struct z_stack_data stack_data[%d] = {\n"
-                     % num_stack)
+                     % stack_counter)
             counter = 0
             for _, ko in objs.items():
                 if ko.type_name != "K_OBJ_THREAD_STACK_ELEMENT":
@@ -797,7 +753,7 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
                 ko.data = "&stack_data[%d]" % counter
                 fp.write("\t{ %d, (u8_t *)(&priv_stacks[%d]) }"
                          % (size, counter))
-                if counter != (num_stack - 1):
+                if counter != (stack_counter - 1):
                     fp.write(",")
                 fp.write("\n")
                 counter += 1
@@ -826,7 +782,7 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
         else:
             format_code = "I"
 
-        if eh.little_endian:
+        if little_endian:
             endian = "<"
         else:
             endian = ">"
@@ -945,7 +901,7 @@ def write_kobj_size_output(fp):
         dep, _ = obj_info
         # device handled by default case. Stacks are not currently handled,
         # if they eventually are it will be a special case.
-        if kobj in {"device", "z_thread_stack_element"}:
+        if kobj in {"device", STACK_TYPE}:
             continue
 
         if dep:
@@ -1007,22 +963,21 @@ def main():
 
     if args.gperf_output:
         assert args.kernel, "--kernel ELF required for --gperf-output"
-        eh = ElfHelper(args.kernel, args.verbose, kobjects, subsystems)
-        syms = eh.get_symbols()
+        elf = ELFFile(open(args.kernel, "rb"))
+        syms = get_symbols(elf)
         max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
-        objs = eh.find_kobjects(syms)
+        objs = find_kobjects(elf, syms)
         if not objs:
             sys.stderr.write("WARNING: zero kobject found in %s\n"
                              % args.kernel)
 
-        thread_counter = eh.get_thread_counter()
         if thread_counter > max_threads:
             sys.exit("Too many thread objects ({})\n"
                      "Increase CONFIG_MAX_THREAD_BYTES to {}"
                      .format(thread_counter, -(-thread_counter // 8)))
 
         with open(args.gperf_output, "w") as fp:
-            write_gperf_table(fp, eh, objs,
+            write_gperf_table(fp, syms, objs, elf.little_endian,
                               syms["_static_kernel_objects_begin"],
                               syms["_static_kernel_objects_end"])
 
