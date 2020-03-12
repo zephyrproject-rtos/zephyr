@@ -660,9 +660,7 @@ static void cc2520_rx(int arg)
 			goto out;
 		}
 
-		net_analyze_stack("CC2520 Rx Fiber stack",
-				Z_THREAD_STACK_BUFFER(cc2520->cc2520_rx_stack),
-				K_THREAD_STACK_SIZEOF(cc2520->cc2520_rx_stack));
+		log_stack_usage(&cc2520->cc2520_rx_thread);
 		continue;
 flush:
 		cc2520_print_exceptions(cc2520);
@@ -1105,6 +1103,7 @@ static int cc2520_init(struct device *dev)
 			CONFIG_IEEE802154_CC2520_RX_STACK_SIZE,
 			(k_thread_entry_t)cc2520_rx,
 			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
+	k_thread_name_set(&cc2520->cc2520_rx_thread, "cc2520_rx");
 
 	LOG_INF("CC2520 initialized");
 

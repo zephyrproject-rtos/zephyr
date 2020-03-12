@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <sys/byteorder.h>
 #include <string.h>
 #include <random/rand32.h>
+#include <debug/stack.h>
 
 #include <drivers/gpio.h>
 
@@ -578,9 +579,7 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 		goto out;
 	}
 
-	net_analyze_stack("MCR20A Rx Fiber stack",
-			  Z_THREAD_STACK_BUFFER(mcr20a->mcr20a_rx_stack),
-			  K_THREAD_STACK_SIZEOF(mcr20a->mcr20a_rx_stack));
+	log_stack_usage(&mcr20a->mcr20a_rx_thread);
 	return;
 out:
 	if (pkt) {
@@ -1429,6 +1428,7 @@ static int mcr20a_init(struct device *dev)
 			CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE,
 			(k_thread_entry_t)mcr20a_thread_main,
 			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
+	k_thread_name_set(&mcr20a->mcr20a_rx_thread, "mcr20a_rx");
 
 	return 0;
 }
