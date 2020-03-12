@@ -106,6 +106,23 @@ struct fp_non_volatile_register_set {
 #define SIZEOF_FP_VOLATILE_REGISTER_SET sizeof(struct fp_volatile_register_set)
 #define SIZEOF_FP_NON_VOLATILE_REGISTER_SET 0
 
+#elif defined(CONFIG_RISCV)
+
+struct fp_volatile_register_set {
+#ifdef CONFIG_FLOAT_64BIT
+	u64_t fp[32];
+#else
+	u32_t fp[32];
+#endif
+};
+
+struct fp_non_volatile_register_set {
+	/* No non-volatile floating point registers */
+};
+
+#define SIZEOF_FP_VOLATILE_REGISTER_SET sizeof(struct fp_volatile_register_set)
+#define SIZEOF_FP_NON_VOLATILE_REGISTER_SET 0
+
 #else
 
 #error  "Architecture must provide the following definitions:\n"

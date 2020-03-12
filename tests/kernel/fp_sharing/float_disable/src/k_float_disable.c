@@ -14,7 +14,7 @@
  */
 #define PRIORITY  K_PRIO_COOP(0)
 
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
 #define K_FP_OPTS K_FP_REGS
 #elif defined(CONFIG_X86)
 #define K_FP_OPTS (K_FP_REGS | K_SSE_REGS)
@@ -32,7 +32,7 @@ static void usr_fp_thread_entry_1(void)
 	k_yield();
 }
 
-#if defined(CONFIG_ARM) || \
+#if defined(CONFIG_ARM) || defined(CONFIG_RISCV) || \
 	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FP_SHARING))
 #define K_FLOAT_DISABLE_SYSCALL_RETVAL 0
 #else
@@ -78,7 +78,7 @@ void test_k_float_disable_common(void)
 		"usr_fp_thread FP options not set (0x%0x)",
 		usr_fp_thread.base.user_options);
 
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM) || defined(RISCV)
 	/* Verify FP mode can only be disabled for current thread */
 	zassert_true((k_float_disable(&usr_fp_thread) == -EINVAL),
 		"k_float_disable() successful on thread other than current!");
@@ -130,7 +130,7 @@ void test_k_float_disable_syscall(void)
 	/* Yield will swap-in usr_fp_thread */
 	k_yield();
 
-#if defined(CONFIG_ARM) || \
+#if defined(CONFIG_ARM) || defined(CONFIG_RISCV) || \
 	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FP_SHARING))
 
 	/* Verify K_FP_OPTS are now cleared by the user thread itself */

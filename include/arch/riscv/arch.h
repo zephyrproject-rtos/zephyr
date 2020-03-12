@@ -40,13 +40,24 @@
 #define RV_REGSHIFT 2
 #endif
 
+#ifdef CONFIG_FLOAT_64BIT
+#define RV_OP_LOADFPREG fld
+#define RV_OP_STOREFPREG fsd
+#else
+#define RV_OP_LOADFPREG flw
+#define RV_OP_STOREFPREG fsw
+#endif
+
 /* Common mstatus bits. All supported cores today have the same
  * layouts.
  */
 
-#define MSTATUS_IEN	(1UL << 3)
-#define MSTATUS_MPP_M	(3UL << 11)
+#define MSTATUS_IEN     (1UL << 3)
+#define MSTATUS_MPP_M   (3UL << 11)
 #define MSTATUS_MPIE_EN (1UL << 7)
+#define MSTATUS_FS_INIT (1UL << 13)
+#define MSTATUS_FS_MASK ((1UL << 13) | (1UL << 14))
+
 
 /* This comes from openisa_rv32m1, but doesn't seem to hurt on other
  * platforms:
