@@ -62,7 +62,6 @@ def main():
             flash_area_num += 1
 
         if node.enabled and node.matching_compat:
-            augment_node(node)
             write_regs(node)
             write_irqs(node)
             write_props(node)
@@ -108,86 +107,6 @@ def parse_args():
                              "as a debugging aid)")
 
     return parser.parse_args()
-
-
-def augment_node(node):
-    # Augment an EDT node with these zephyr-specific attributes, which
-    # are used to generate macros from it:
-    #
-    # - z_primary_ident: a primary node identifier based on the node's
-    #   compatible, plus information from its unit address (or its
-    #   parent's unit address) or its name, and/or its bus.
-    #
-    # - z_other_idents: a list of other identifiers for the node,
-    #   besides z_primary_ident.
-    #
-    # - z_idents: a list of all identifiers, containing the primary and other
-    #   identifiers in that order.
-    #
-    # The z_other_idents list contains the following other attributes,
-    # concatenated in this order:
-    #
-    # - z_inst_idents: node identifiers based on the index of the node
-    #   within the EDT list of nodes for each compatible, e.g.:
-    #   ["INST_3_<NODE's_COMPAT>",
-    #    "INST_2_<NODE's_OTHER_COMPAT>"]
-    #
-    # - z_alias_idents: node identifiers based on any /aliases pointing to
-    #   the node in the devicetree source, e.g.:
-    #   ["DT_ALIAS_<NODE's_ALIAS_NAME>"]
-
-    # Add the <COMPAT>_<UNIT_ADDRESS> style legacy identifier.
-    node.z_primary_ident = node_ident(node)
-
-    # Add z_instances, which are used to create these macros:
-    #
-    # #define DT_INST_<N>_<COMPAT>_<DEFINE> <VAL>
-    inst_idents = []
-    for compat in node.compats:
-        instance_no = node.edt.compat2enabled[compat].index(node)
-        inst_idents.append(f"INST_{instance_no}_{str2ident(compat)}")
-    node.z_inst_idents = inst_idents
-
-    # Add z_aliases, which are used to create these macros:
-    #
-    # #define DT_ALIAS_<ALIAS>_<DEFINE> <VAL>
-    # #define DT_<COMPAT>_<ALIAS>_<DEFINE> <VAL>
-    #
-    # TODO: See if we can remove or deprecate the second form.
-    compat_s = str2ident(node.matching_compat)
-    alias_idents = []
-    for alias in node.aliases:
-        alias_ident = str2ident(alias)
-        alias_idents.append(f"ALIAS_{alias_ident}")
-        # NOTE: in some cases (e.g. PWM_LEDS_BLUE_PWM_LET for
-        # hexiwear_k64) this is a collision with node.z_primary_ident,
-        # making the all_idents checking below necessary.
-        alias_idents.append(f"{compat_s}_{alias_ident}")
-    node.z_alias_idents = alias_idents
-
-    # z_other_idents are all the other identifiers for the node. We
-    # use the term "other" instead of "alias" here because that
-    # overlaps with the node's true aliases in the DTS, which is just
-    # part of what makes up z_other_idents.
-    all_idents = set()
-    all_idents.add(node.z_primary_ident)
-    other_idents = []
-    for ident in node.z_inst_idents + node.z_alias_idents:
-        if ident not in all_idents:
-            other_idents.append(ident)
-            all_idents.add(ident)
-    node.z_other_idents = other_idents
-
-    node.z_idents = [node.z_primary_ident] + node.z_other_idents
-
-
-def for_each_ident(node, function):
-    # Call "function" on node.z_primary_ident, then on each of the
-    # identifiers in node.z_other_idents, in that order.
-
-    function(node, node.z_primary_ident)
-    for ident in node.z_other_idents:
-        function(node, ident)
 
 
 def write_top_comment(edt):
