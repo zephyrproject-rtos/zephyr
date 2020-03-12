@@ -24,8 +24,6 @@ extern "C" {
 
 #else
 
-extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
-
 extern void z_arm_init_stacks(void);
 
 /**

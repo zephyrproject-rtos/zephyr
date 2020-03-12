@@ -140,7 +140,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 	/* Switch to SP_ELn and setup the stack */
 	msr	spsel, #1
-	ldr	x0, =(_interrupt_stack)
+	ldr	x0, =(z_interrupt_stacks)
 	add	x0, x0, #(CONFIG_ISR_STACK_SIZE)
 	mov	sp, x0
 

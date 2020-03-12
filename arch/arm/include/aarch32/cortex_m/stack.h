@@ -26,7 +26,8 @@
 extern "C" {
 #endif
 
-extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
+extern K_THREAD_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+				   CONFIG_ISR_STACK_SIZE);
 
 /**
  *
@@ -39,13 +40,13 @@ extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
  */
 static ALWAYS_INLINE void z_arm_interrupt_stack_setup(void)
 {
-	u32_t msp = (u32_t)(Z_THREAD_STACK_BUFFER(_interrupt_stack)) +
-			    K_THREAD_STACK_SIZEOF(_interrupt_stack);
+	u32_t msp = (u32_t)(Z_THREAD_STACK_BUFFER(z_interrupt_stacks[0])) +
+			    K_THREAD_STACK_SIZEOF(z_interrupt_stacks[0]);
 
 	__set_MSP(msp);
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 #if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
-	__set_MSPLIM((u32_t)_interrupt_stack);
+	__set_MSPLIM((u32_t)z_interrupt_stacks[0]);
 #else
 #error "Built-in MSP limit checks not supported by HW"
 #endif
