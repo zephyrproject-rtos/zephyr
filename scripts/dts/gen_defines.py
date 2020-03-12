@@ -1005,20 +1005,56 @@ def write_spi_dev(node):
     # Writes SPI device GPIO chip select data if there is any
 
     cs_gpio = node.spi_cs_gpio
-    if cs_gpio is None:
-        return
+    if cs_gpio is not None:
+        write_phandle_val_list_entry(node, cs_gpio, None, "CS_GPIOS")
 
-    primary_macros = None
-    def write_spi_dev_for_ident(node, ident):
-        nonlocal primary_macros
-        if primary_macros is None:
-            primary_macros = write_controller_and_data_primary(ident,
-                                                               "CS_GPIOS", cs_gpio, "")
+
+def write_phandle_val_list_entry(node, entry, i, ident):
+    # write_spi_dev() helper.
+    #
+    # Adds 'i' as an index to identifiers unless it's None.
+    #
+    # 'entry' is an edtlib.ControllerAndData instance.
+    #
+    # Returns the identifier for the macro that provides the
+    # initializer for the entire entry.
+
+    initializer_vals = []
+    if entry.controller.label is not None:
+        ctrl_ident = ident + "_CONTROLLER"  # e.g. PWMS_CONTROLLER
+        if entry.name:
+            name_alias = f"{str2ident(entry.name)}_{ctrl_ident}"
         else:
-            write_controller_and_data_other(ident, "CS_GPIOS", cs_gpio, "",
-                                            primary_macros)
+            name_alias = None
+        # Ugly backwards compatibility hack. Only add the index if there's
+        # more than one entry.
+        if i is not None:
+            ctrl_ident += f"_{i}"
+        initializer_vals.append(quote_str(entry.controller.label))
+        out_node_s(node, ctrl_ident, entry.controller.label, name_alias)
 
-    for_each_ident(node, write_spi_dev_for_ident)
+    for cell, val in entry.data.items():
+        cell_ident = f"{ident}_{str2ident(cell)}"  # e.g. PWMS_CHANNEL
+        if entry.name:
+            # From e.g. 'pwm-names = ...'
+            name_alias = f"{str2ident(entry.name)}_{cell_ident}"
+        else:
+            name_alias = None
+        # Backwards compatibility (see above)
+        if i is not None:
+            cell_ident += f"_{i}"
+        out_node(node, cell_ident, val, name_alias)
+
+    initializer_vals += entry.data.values()
+
+    initializer_ident = ident
+    if entry.name:
+        name_alias = f"{initializer_ident}_{str2ident(entry.name)}"
+    else:
+        name_alias = None
+    if i is not None:
+        initializer_ident += f"_{i}"
+    return out_node_init(node, initializer_ident, initializer_vals, name_alias)
 
 
 def write_clocks(node):
@@ -1169,6 +1205,16 @@ def out_node_s(node, ident, s, name_alias=None, deprecation_msg=None):
     # Returns the generated macro name for 'ident'.
 
     return out_node(node, ident, quote_str(s), name_alias, deprecation_msg)
+
+
+def out_node_init(node, ident, elms, name_alias=None, deprecation_msg=None):
+    # Like out_node(), but generates an {e1, e2, ...} initializer with the
+    # elements in the iterable 'elms'.
+    #
+    # Returns the generated macro name for 'ident'.
+
+    return out_node(node, ident, "{" + ", ".join(map(str, elms)) + "}",
+                    name_alias, deprecation_msg)
 
 
 def out_s(ident, val):
