@@ -17,8 +17,15 @@
 extern "C" {
 #endif
 
+
 /**
- * @defgroup settings Settings subsystem
+ * @defgroup file_system_storage File System Storage
+ * @{
+ * @}
+ */
+
+/**
+ * @defgroup settings Settings
  * @ingroup file_system_storage
  * @{
  */
@@ -351,7 +358,7 @@ int settings_commit_subtree(const char *subtree);
 
 /**
  * @defgroup settings_backend Settings backend interface
- * @ingroup file_system_storage
+ * @ingroup settings
  * @{
  */
 
