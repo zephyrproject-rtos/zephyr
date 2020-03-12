@@ -1139,7 +1139,7 @@ def out_define(ident, val, deprecation_msg, out_file):
     # out() helper for writing a #define. See out() for the meaning of
     # 'deprecation_msg'.
 
-    s = f"#define DT_{ident:60}"
+    s = f"#define DT_{ident:40}"
     if deprecation_msg:
         s += fr' __WARN("{deprecation_msg}")'
     s += f" {val}"
