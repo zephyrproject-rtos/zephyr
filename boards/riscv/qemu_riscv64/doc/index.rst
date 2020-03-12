@@ -19,7 +19,7 @@ Get the Toolchain and QEMU
 **************************
 
 The minimum version of the `Zephyr SDK tools
-<https://www.zephyrproject.org/developers/#downloads>`_
+<https://github.com/zephyrproject-rtos/sdk-ng/releases>`_
 with toolchain and QEMU support for the RISV64 architecture is v0.10.2.
 Please see the :ref:`installation instructions <install-required-tools>`
 for more details.
