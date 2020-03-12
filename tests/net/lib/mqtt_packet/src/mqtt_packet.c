@@ -9,18 +9,12 @@
 #include <sys/util.h>	/* for ARRAY_SIZE */
 #include <ztest.h>
 
-#define CLIENTID	"zephyr"
-#define CLIENTID_LEN	6
-#define TOPIC		"sensors"
-#define TOPIC_LEN	7
-#define WILL_TOPIC	"quitting"
-#define WILL_TOPIC_LEN	8
-#define WILL_MSG	"bye"
-#define WILL_MSG_LEN	3
-#define USERNAME	"zephyr1"
-#define USERNAME_LEN	7
-#define PASSWORD	"password"
-#define PASSWORD_LEN	8
+#define CLIENTID	MQTT_UTF8_LITERAL("zephyr")
+#define TOPIC		MQTT_UTF8_LITERAL("sensors")
+#define WILL_TOPIC	MQTT_UTF8_LITERAL("quitting")
+#define WILL_MSG	MQTT_UTF8_LITERAL("bye")
+#define USERNAME	MQTT_UTF8_LITERAL("zephyr1")
+#define PASSWORD	MQTT_UTF8_LITERAL("password")
 
 #define BUFFER_SIZE 128
 
@@ -30,41 +24,27 @@ static ZTEST_DMEM struct mqtt_client client;
 
 static ZTEST_DMEM struct mqtt_topic topic_qos_0 = {
 	.qos = 0,
-	.topic.utf8 = TOPIC,
-	.topic.size = TOPIC_LEN
+	.topic = TOPIC,
 };
 static ZTEST_DMEM struct mqtt_topic topic_qos_1 = {
 	.qos = 1,
-	.topic.utf8 = TOPIC,
-	.topic.size = TOPIC_LEN
+	.topic = TOPIC,
 };
 static ZTEST_DMEM struct mqtt_topic topic_qos_2 = {
 	.qos = 2,
-	.topic.utf8 = TOPIC,
-	.topic.size = TOPIC_LEN
+	.topic = TOPIC,
 };
 static ZTEST_DMEM struct mqtt_topic will_topic_qos_0 = {
 	.qos = 0,
-	.topic.utf8 = WILL_TOPIC,
-	.topic.size = WILL_TOPIC_LEN
+	.topic = WILL_TOPIC,
 };
 static ZTEST_DMEM struct mqtt_topic will_topic_qos_1 = {
 	.qos = 1,
-	.topic.utf8 = WILL_TOPIC,
-	.topic.size = WILL_TOPIC_LEN
+	.topic = WILL_TOPIC,
 };
-static ZTEST_DMEM struct mqtt_utf8 will_msg = {
-	.utf8 = WILL_MSG,
-	.size = WILL_MSG_LEN
-};
-static ZTEST_DMEM struct mqtt_utf8 username = {
-	.utf8 = USERNAME,
-	.size = USERNAME_LEN
-};
-static ZTEST_DMEM struct mqtt_utf8 password = {
-	.utf8 = PASSWORD,
-	.size = PASSWORD_LEN
-};
+static ZTEST_DMEM struct mqtt_utf8 will_msg = WILL_MSG;
+static ZTEST_DMEM struct mqtt_utf8 username = USERNAME;
+static ZTEST_DMEM struct mqtt_utf8 password = PASSWORD;
 
 /**
  * @brief MQTT test structure
@@ -225,8 +205,7 @@ u8_t connect1[] = {0x10, 0x12, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		   0x70, 0x68, 0x79, 0x72};
 
 static ZTEST_DMEM struct mqtt_client client_connect1 = {
-	.clean_session = 1, .client_id.utf8 = CLIENTID,
-	.client_id.size = CLIENTID_LEN,
+	.clean_session = 1, .client_id = CLIENTID,
 	.will_retain = 0, .will_topic = NULL,
 	.will_message = NULL, .user_name = NULL,
 	.password = NULL
@@ -250,8 +229,7 @@ u8_t connect2[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		   0x62, 0x79, 0x65};
 
 static ZTEST_DMEM struct mqtt_client client_connect2 = {
-	.clean_session = 1, .client_id.utf8 = CLIENTID,
-	.client_id.size = CLIENTID_LEN,
+	.clean_session = 1, .client_id = CLIENTID,
 	.will_retain = 0, .will_topic = &will_topic_qos_0,
 	.will_message = &will_msg, .user_name = NULL,
 	.password = NULL
@@ -273,8 +251,7 @@ u8_t connect3[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		   0x62, 0x79, 0x65};
 
 static ZTEST_DMEM struct mqtt_client client_connect3 = {
-	.clean_session = 1, .client_id.utf8 = CLIENTID,
-	.client_id.size = CLIENTID_LEN,
+	.clean_session = 1, .client_id = CLIENTID,
 	.will_retain = 1, .will_topic = &will_topic_qos_0,
 	.will_message = &will_msg, .user_name = NULL,
 	.password = NULL
@@ -296,8 +273,7 @@ u8_t connect4[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		   0x62, 0x79, 0x65};
 
 static ZTEST_DMEM struct mqtt_client client_connect4 = {
-	.clean_session = 1, .client_id.utf8 = CLIENTID,
-	.client_id.size = CLIENTID_LEN,
+	.clean_session = 1, .client_id = CLIENTID,
 	.will_retain = 0, .will_topic = &will_topic_qos_1,
 	.will_message = &will_msg, .user_name = NULL,
 	.password = NULL
@@ -319,8 +295,7 @@ u8_t connect5[] = {0x10, 0x21, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		   0x62, 0x79, 0x65};
 
 static ZTEST_DMEM struct mqtt_client client_connect5 = {
-	.clean_session = 1, .client_id.utf8 = CLIENTID,
-	.client_id.size = CLIENTID_LEN,
+	.clean_session = 1, .client_id = CLIENTID,
 	.will_retain = 1, .will_topic = &will_topic_qos_1,
 	.will_message = &will_msg, .user_name = NULL,
 	.password = NULL
@@ -344,8 +319,7 @@ u8_t connect6[] = {0x10, 0x34, 0x00, 0x04, 0x4d, 0x51, 0x54, 0x54,
 		  0x73, 0x73, 0x77, 0x6f, 0x72, 0x64};
 
 static ZTEST_DMEM struct mqtt_client client_connect6 = {
-	.clean_session = 1, .client_id.utf8 = CLIENTID,
-	.client_id.size = CLIENTID_LEN,
+	.clean_session = 1, .client_id = CLIENTID,
 	.will_retain = 1, .will_topic = &will_topic_qos_1,
 	.will_message = &will_msg, .user_name = &username,
 	.password = &password
@@ -368,8 +342,7 @@ u8_t publish1[] = {0x30, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 static ZTEST_DMEM struct mqtt_publish_param msg_publish1 = {
 	.dup_flag = 0, .retain_flag = 0, .message_id = 0,
 	.message.topic.qos = 0,
-	.message.topic.topic.utf8 = TOPIC,
-	.message.topic.topic.size = TOPIC_LEN,
+	.message.topic.topic = TOPIC,
 	.message.payload.data = (u8_t *)"OK",
 	.message.payload.len = 2,
 };
@@ -388,8 +361,7 @@ u8_t publish2[] = {0x31, 0x0b, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 static ZTEST_DMEM struct mqtt_publish_param msg_publish2 = {
 	.dup_flag = 0, .retain_flag = 1, .message_id = 0,
 	.message.topic.qos = 0,
-	.message.topic.topic.utf8 = TOPIC,
-	.message.topic.topic.size = TOPIC_LEN,
+	.message.topic.topic = TOPIC,
 	.message.payload.data = (u8_t *)"OK",
 	.message.payload.len = 2,
 };
@@ -408,8 +380,7 @@ u8_t publish3[] = {0x33, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 static ZTEST_DMEM struct mqtt_publish_param msg_publish3 = {
 	.dup_flag = 0, .retain_flag = 1, .message_id = 1,
 	.message.topic.qos = 1,
-	.message.topic.topic.utf8 = TOPIC,
-	.message.topic.topic.size = TOPIC_LEN,
+	.message.topic.topic = TOPIC,
 	.message.payload.data = (u8_t *)"OK",
 	.message.payload.len = 2,
 };
@@ -427,8 +398,7 @@ u8_t publish4[] = {0x34, 0x0d, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
 static ZTEST_DMEM struct mqtt_publish_param msg_publish4 = {
 	.dup_flag = 0, .retain_flag = 0, .message_id = 1,
 	.message.topic.qos = 2,
-	.message.topic.topic.utf8 = TOPIC,
-	.message.topic.topic.size = TOPIC_LEN,
+	.message.topic.topic = TOPIC,
 	.message.payload.data = (u8_t *)"OK",
 	.message.payload.len = 2,
 };
