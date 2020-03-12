@@ -300,17 +300,16 @@ static void game_ended(bool won)
 
 static void game_stack_dump(const struct k_thread *thread, void *user_data)
 {
-#if defined(CONFIG_THREAD_STACK_INFO)
-	stack_analyze((char *)user_data, (char *)thread->stack_info.start,
-						thread->stack_info.size);
-#endif
+	ARG_UNUSED(user_data);
+
+	log_stack_usage(thread);
 }
 
 static void game_refresh(struct k_work *work)
 {
 	if (sound_state != SOUND_IDLE) {
 		sound_set(SOUND_IDLE);
-		k_thread_foreach(game_stack_dump, "Test");
+		k_thread_foreach(game_stack_dump, NULL);
 	}
 
 	if (state == INIT) {
