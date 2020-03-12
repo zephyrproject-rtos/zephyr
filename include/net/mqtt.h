@@ -154,6 +154,18 @@ struct mqtt_utf8 {
 	u32_t size;             /**< Size of UTF string, in bytes. */
 };
 
+/**
+ * @brief Initialize UTF-8 encoded string from C literal string.
+ *
+ * Use it as follows:
+ *
+ * struct mqtt_utf8 password = MQTT_UTF8_LITERAL("my_pass");
+ *
+ * @param[in] literal Literal string from which to generate mqtt_utf8 object.
+ */
+#define MQTT_UTF8_LITERAL(literal)				\
+	((struct mqtt_utf8) {literal, sizeof(literal) - 1})
+
 /** @brief Abstracts binary strings. */
 struct mqtt_binstr {
 	u8_t *data;             /**< Pointer to binary stream. */
