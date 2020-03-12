@@ -60,7 +60,7 @@
 	DT_INST_PROP(1, pcie) || \
 	DT_INST_PROP(2, pcie) || \
 	DT_INST_PROP(3, pcie)
-BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
+BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define UART_NS16550_PCIE_ENABLED
 #include <drivers/pcie/pcie.h>
 #endif

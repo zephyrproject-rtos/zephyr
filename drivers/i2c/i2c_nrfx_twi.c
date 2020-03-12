@@ -245,7 +245,7 @@ static int twi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 					  : I2C_NRFX_TWI_INVALID_FREQUENCY)
 
 #define I2C_NRFX_TWI_DEVICE(idx)					       \
-	BUILD_ASSERT_MSG(						       \
+	BUILD_ASSERT(						       \
 		I2C_NRFX_TWI_FREQUENCY(					       \
 			DT_NORDIC_NRF_TWI_I2C_##idx##_CLOCK_FREQUENCY)	       \
 		!= I2C_NRFX_TWI_INVALID_FREQUENCY,			       \

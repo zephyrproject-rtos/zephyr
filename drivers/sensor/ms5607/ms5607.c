@@ -240,7 +240,7 @@ static int ms5607_init(struct device *dev)
 #ifdef DT_MEAS_MS5607_BUS_SPI
 	ms5607_spi_init(dev);
 #else
-	BUILD_ASSERT_MSG(1, "I2c interface not implemented yet");
+	BUILD_ASSERT(1, "I2c interface not implemented yet");
 #endif
 
 	data->pressure = 0;

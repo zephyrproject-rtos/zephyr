@@ -20,14 +20,14 @@
 /* The customized solution for nRF51X-based and nRF52X-based
  * platforms requires that the POWER_CLOCK_IRQn line equals 0.
  */
-BUILD_ASSERT_MSG(POWER_CLOCK_IRQn == 0,
+BUILD_ASSERT(POWER_CLOCK_IRQn == 0,
 	"POWER_CLOCK_IRQn != 0. Consider rework manual vector table.");
 
 /* The customized solution for nRF51X-based and nRF52X-based
  * platforms requires that the RTC1 IRQ line equals 17.
  */
-BUILD_ASSERT_MSG(RTC1_IRQn == 17,
-	 "RTC1_IRQn != 17. Consider rework manual vector table.");
+BUILD_ASSERT(RTC1_IRQn == 17,
+	     "RTC1_IRQn != 17. Consider rework manual vector table.");
 
 #undef _ISR_OFFSET
 #if !defined(CONFIG_BOARD_QEMU_CORTEX_M0)
@@ -37,8 +37,8 @@ BUILD_ASSERT_MSG(RTC1_IRQn == 17,
 /* The customized solution for nRF51-based QEMU Cortex-M0 platform
  * requires that the TIMER0 IRQ line equals 8.
  */
-BUILD_ASSERT_MSG(TIMER0_IRQn == 8,
-	 "TIMER0_IRQn != 8. Consider rework manual vector table.");
+BUILD_ASSERT(TIMER0_IRQn == 8,
+	     "TIMER0_IRQn != 8. Consider rework manual vector table.");
 /* Interrupt lines 9-11 is the first set of consecutive interrupts implemented
  * in QEMU Cortex M0.
  */
@@ -50,23 +50,23 @@ BUILD_ASSERT_MSG(TIMER0_IRQn == 8,
 /* The customized solution for nRF91X-based and nRF53X-based
  * platforms requires that the POWER_CLOCK_IRQn line equals 5.
  */
-BUILD_ASSERT_MSG(CLOCK_POWER_IRQn == 5,
-	"POWER_CLOCK_IRQn != 5."
-	"Consider rework manual vector table.");
+BUILD_ASSERT(CLOCK_POWER_IRQn == 5,
+	     "POWER_CLOCK_IRQn != 5."
+	     "Consider rework manual vector table.");
 
 #if !defined(CONFIG_SOC_NRF5340_CPUNET)
 /* The customized solution for nRF91X-based platforms
  * requires that the RTC1 IRQ line equals 21.
  */
-BUILD_ASSERT_MSG(RTC1_IRQn == 21,
-	 "RTC1_IRQn != 21. Consider rework manual vector table.");
+BUILD_ASSERT(RTC1_IRQn == 21,
+	     "RTC1_IRQn != 21. Consider rework manual vector table.");
 
 #else /* CONFIG_SOC_NRF5340_CPUNET */
 /* The customized solution for nRF5340_CPUNET
  * requires that the RTC1 IRQ line equals 22.
  */
-BUILD_ASSERT_MSG(RTC1_IRQn == 22,
-	 "RTC1_IRQn != 22. Consider rework manual vector table.");
+BUILD_ASSERT(RTC1_IRQn == 22,
+	     "RTC1_IRQn != 22. Consider rework manual vector table.");
 #endif
 #undef _ISR_OFFSET
 /* Interrupt lines 8-10 is the first set of consecutive interrupts implemented

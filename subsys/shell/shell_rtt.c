@@ -9,9 +9,9 @@
 #include <SEGGER_RTT.h>
 #include <logging/log.h>
 
-BUILD_ASSERT_MSG(!(IS_ENABLED(CONFIG_LOG_BACKEND_RTT) &&
-		 COND_CODE_0(CONFIG_LOG_BACKEND_RTT_BUFFER, (1), (0))),
-		 "Conflicting log RTT backend enabled on the same channel");
+BUILD_ASSERT(!(IS_ENABLED(CONFIG_LOG_BACKEND_RTT) &&
+	       COND_CODE_0(CONFIG_LOG_BACKEND_RTT_BUFFER, (1), (0))),
+	     "Conflicting log RTT backend enabled on the same channel");
 
 SHELL_RTT_DEFINE(shell_transport_rtt);
 SHELL_DEFINE(shell_rtt, CONFIG_SHELL_PROMPT_RTT, &shell_transport_rtt,
