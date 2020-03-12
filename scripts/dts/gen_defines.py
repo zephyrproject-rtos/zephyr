@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2019 - 2020 Nordic Semiconductor ASA
+# Copyright (c) 2019 Nordic Semiconductor ASA
 # Copyright (c) 2019 Linaro Limited
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -278,74 +278,25 @@ def relativize(path):
 
 
 def write_regs(node):
-    # Writes address/size output for the registers in the node's 'reg'
-    # property. This is where the BASE_ADDRESS and SIZE macros come from.
+    # Writes address/size output for the registers in the node's 'reg' property
 
-    if not node.regs:
-        return
-
-    # This maps a reg_i (see below) to the "primary" BASE_ADDRESS and SIZE
-    # macros used to identify it, which look like:
-    #
-    #   DT_<PRIMARY_NODE_IDENTIFIER>_BASE_ADDRESS_<reg_i>
-    #   DT_<PRIMARY_NODE_IDENTIFIER>_SIZE_<reg_i>
-    #
-    # Or, for backwards compatibility if there's only one reg:
-    #
-    #   DT_<IDENT>_BASE_ADDRESS
-    #   DT_<IDENT>_SIZE
-    #
-    # It's up to augment_node() to decide which identifier for the
-    # node is its "primary" identifier, and which identifiers are
-    # "other" identifiers. The "other" identifier BASE_ADDRESS and
-    # SIZE macros are defined in terms of the "primary" ones.
-    reg_i2primary_addr_size = {}
-
-    def write_regs_for_ident(node, ident):
-        # Write BASE_ADDRESS and SIZE macros for a given identifier
-        # 'ident'. If we have already generated primary address and
-        # size macros and saved in them in primary_addrs and
-        # primary_sizes, we just reuse those. Otherwise (i.e. the
-        # first time this is called), they are generated from the
-        # actual reg.addr and reg.size attributes, and the names of
-        # the primary macros are saved.
-
-        for reg_i, reg in enumerate(node.regs):
-            # DT_<IDENT>_BASE_ADDRESS_<reg_i>
-            # DT_<IDENT>_SIZE_<reg_i>
-            prim_addr, prim_size = reg_i2primary_addr_size.get(reg_i,
-                                                               (None, None))
-            suffix = f"_{reg_i}" if len(node.regs) > 1 else ""
-
-            if prim_addr is not None:
-                write_reg(ident, reg, prim_addr, prim_size,
-                          "", suffix)
-            else:
-                prim_addr, prim_size = write_reg(ident, reg, None, None,
-                                                 "", suffix)
-                reg_i2primary_addr_size[reg_i] = (prim_addr, prim_size)
-
-            # DT_<IDENT>_<reg.name>_BASE_ADDRESS
-            # DT_<IDENT>_<reg.name>_SIZE
-            if reg.name:
-                write_reg(ident, reg, prim_addr, prim_size,
-                          f"{str2ident(reg.name)}_", "")
-
-    def write_reg(ident, reg, prim_addr, prim_size, prefix, suffix):
-        addr = hex(reg.addr) if prim_addr is None else prim_addr
-        size = reg.size if prim_size is None else prim_size
-
-        addr_ret = out(f"{ident}_{prefix}BASE_ADDRESS{suffix}", addr)
-        if size is not None and size != 0:
-            size_ret = out(f"{ident}_{prefix}SIZE{suffix}", size)
+    def write_reg(reg, base_ident, val):
+        # Drop '_0' from the identifier if there's a single register, for
+        # backwards compatibility
+        if len(reg.node.regs) > 1:
+            ident = f"{base_ident}_{reg.node.regs.index(reg)}"
         else:
-            size_ret = None
+            ident = base_ident
 
-        return (addr_ret, size_ret)
+        out_node(node, ident, val,
+                 # Name alias from 'reg-names = ...'
+                 f"{str2ident(reg.name)}_{base_ident}" if reg.name else None)
 
-    out_comment("BASE_ADDRESS and SIZE macros from the 'reg' property",
-                blank_before=False)
-    for_each_ident(node, write_regs_for_ident)
+    for reg in node.regs:
+        write_reg(reg, "BASE_ADDRESS", hex(reg.addr))
+        if reg.size:
+            write_reg(reg, "SIZE", reg.size)
+
 
 def write_props(node):
     # Writes any properties defined in the "properties" section of the binding
