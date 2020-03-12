@@ -51,6 +51,10 @@ config KSCAN_XEC
 	default y
 	depends on KSCAN
 
+config PECI_XEC
+	default y
+	depends on PECI
+
 config SPI_XEC_QMSPI
 	default y
 	depends on SPI
