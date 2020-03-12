@@ -46,6 +46,20 @@ loop_slave_core:
 
 boot_master_core:
 
+#ifdef CONFIG_FLOAT
+	/*
+	 * Enable floating-point.
+	 */
+	li  t0, MSTATUS_FS_INIT
+	csrrs x0, mstatus, t0
+
+	/*
+	 * Floating-point rounding mode set to IEEE-754 default, and clear
+	 * all exception flags.
+	 */
+	fscsr x0, x0
+#endif
+
 #ifdef CONFIG_INIT_STACKS
 	/* Pre-populate all bytes in z_interrupt_stacks with 0xAA */
 	la t0, z_interrupt_stacks

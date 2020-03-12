@@ -8,9 +8,9 @@
 #include <ksched.h>
 
 void z_thread_entry_wrapper(k_thread_entry_t thread,
-			   void *arg1,
-			   void *arg2,
-			   void *arg3);
+			    void *arg1,
+			    void *arg2,
+			    void *arg3);
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     size_t stack_size, k_thread_entry_t thread_func,
@@ -25,8 +25,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	/* Initial stack frame for thread */
 	stack_init = (struct __esf *)
-		Z_STACK_PTR_ALIGN(stack_memory +
-				 stack_size - sizeof(struct __esf));
+		     Z_STACK_PTR_ALIGN(stack_memory +
+				       stack_size - sizeof(struct __esf));
 
 	/* Setup the initial stack frame */
 	stack_init->a0 = (ulong_t)thread_func;
@@ -57,7 +57,78 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *    thread stack.
 	 */
 	stack_init->mstatus = MSTATUS_DEF_RESTORE;
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	if ((thread->base.user_options & K_FP_REGS) != 0) {
+		stack_init->mstatus |= MSTATUS_FS_INIT;
+	}
+	stack_init->fp_state = 0;
+#endif
 	stack_init->mepc = (ulong_t)z_thread_entry_wrapper;
 
 	thread->callee_saved.sp = (ulong_t)stack_init;
 }
+
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+int arch_float_disable(struct k_thread *thread)
+{
+	unsigned int key;
+
+	if (thread != _current) {
+		return -EINVAL;
+	}
+
+	if (arch_is_in_isr()) {
+		return -EINVAL;
+	}
+
+	/* Ensure a preemptive context switch does not occur */
+	key = irq_lock();
+
+	/* Disable all floating point capabilities for the thread */
+	thread->base.user_options &= ~K_FP_REGS;
+
+	/* Clear the FS bits to disable the FPU. */
+	__asm__ volatile (
+		"mv t0, %0\n"
+		"csrrc x0, mstatus, t0\n"
+		:
+		: "r" (MSTATUS_FS_MASK)
+		);
+
+	irq_unlock(key);
+
+	return 0;
+}
+
+
+int arch_float_enable(struct k_thread *thread)
+{
+	unsigned int key;
+
+	if (thread != _current) {
+		return -EINVAL;
+	}
+
+	if (arch_is_in_isr()) {
+		return -EINVAL;
+	}
+
+	/* Ensure a preemptive context switch does not occur */
+	key = irq_lock();
+
+	/* Enable all floating point capabilities for the thread. */
+	thread->base.user_options |= K_FP_REGS;
+
+	/* Set the FS bits to Initial to enable the FPU. */
+	__asm__ volatile (
+		"mv t0, %0\n"
+		"csrrs x0, mstatus, t0\n"
+		:
+		: "r" (MSTATUS_FS_INIT)
+		);
+
+	irq_unlock(key);
+
+	return 0;
+}
+#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
