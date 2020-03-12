@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(net_mgmt, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 #include <sys/util.h>
 #include <sys/slist.h>
 #include <net/net_mgmt.h>
+#include <debug/stack.h>
 
 #include "net_private.h"
 
@@ -35,8 +36,7 @@ struct mgmt_event_wait {
 static K_SEM_DEFINE(network_event, 0, UINT_MAX);
 static K_SEM_DEFINE(net_mgmt_lock, 1, 1);
 
-NET_STACK_DEFINE(MGMT, mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE,
-		 CONFIG_NET_MGMT_EVENT_STACK_SIZE);
+K_THREAD_STACK_DEFINE(mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE);
 static struct k_thread mgmt_thread_data;
 static struct mgmt_event_entry events[CONFIG_NET_MGMT_EVENT_QUEUE_SIZE];
 static u32_t global_event_mask;
@@ -216,9 +216,7 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 	}
 
 #ifdef CONFIG_NET_DEBUG_MGMT_EVENT_STACK
-	net_analyze_stack("Net MGMT event stack",
-			  Z_THREAD_STACK_BUFFER(mgmt_stack),
-			  K_THREAD_STACK_SIZEOF(mgmt_stack));
+	log_stack_usage(&mgmt_thread_data);
 #endif
 }
 

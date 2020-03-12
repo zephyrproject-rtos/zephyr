@@ -91,10 +91,6 @@ struct net_shell_user_data {
 	void *user_data;
 };
 
-/* net_stack dedicated section limiters */
-extern struct net_stack_info __net_stack_start[];
-extern struct net_stack_info __net_stack_end[];
-
 static inline const char *addrtype2str(enum net_addr_type addr_type)
 {
 	switch (addr_type) {
@@ -3307,82 +3303,14 @@ static int cmd_net_route(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_INIT_STACKS)
-extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
-extern K_THREAD_STACK_DEFINE(sys_work_q_stack,
-			     CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);
-#endif
-
 static int cmd_net_stacks(const struct shell *shell, size_t argc,
 			  char *argv[])
 {
-#if defined(CONFIG_INIT_STACKS)
-	unsigned int pcnt, unused;
-#endif
-	struct net_stack_info *info;
-
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	for (info = __net_stack_start; info != __net_stack_end; info++) {
-		net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(info->stack),
-					     info->size, &pcnt, &unused);
-
-#if defined(CONFIG_INIT_STACKS)
-		/* If the index is <0, then this stack is not part of stack
-		 * array so do not print the index value in this case.
-		 */
-		if (info->idx >= 0) {
-			PR("%s-%d [%s-%d] stack size %zu/%zu bytes "
-			   "unused %u usage %zu/%zu (%u %%)\n",
-			   info->pretty_name, info->prio, info->name,
-			   info->idx, info->orig_size,
-			   info->size, unused,
-			   info->size - unused, info->size, pcnt);
-		} else {
-			PR("%s [%s] stack size %zu/%zu bytes unused %u "
-			   "usage %zu/%zu (%u %%)\n",
-			   info->pretty_name, info->name, info->orig_size,
-			   info->size, unused,
-			   info->size - unused, info->size, pcnt);
-		}
+#if !defined(CONFIG_KERNEL_SHELL)
+	PR("Enable CONFIG_KERNEL_SHELL and type \"kernel stacks\" to see stack information.\n");
 #else
-		PR("%s [%s] stack size %zu usage not available\n",
-		   info->pretty_name, info->name, info->orig_size);
+	PR("Type \"kernel stacks\" to see stack information.\n");
 #endif
-	}
-
-#if defined(CONFIG_INIT_STACKS)
-	net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(z_main_stack),
-				     K_THREAD_STACK_SIZEOF(z_main_stack),
-				     &pcnt, &unused);
-	PR("%s [%s] stack size %d/%d bytes unused %u usage %d/%d (%u %%)\n",
-	   "main", "z_main_stack", CONFIG_MAIN_STACK_SIZE,
-	   CONFIG_MAIN_STACK_SIZE, unused,
-	   CONFIG_MAIN_STACK_SIZE - unused, CONFIG_MAIN_STACK_SIZE, pcnt);
-
-	net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(_interrupt_stack),
-				     K_THREAD_STACK_SIZEOF(_interrupt_stack),
-				     &pcnt, &unused);
-	PR("%s [%s] stack size %d/%d bytes unused %u usage %d/%d (%u %%)\n",
-	   "ISR", "_interrupt_stack", CONFIG_ISR_STACK_SIZE,
-	   CONFIG_ISR_STACK_SIZE, unused,
-	   CONFIG_ISR_STACK_SIZE - unused, CONFIG_ISR_STACK_SIZE, pcnt);
-
-	net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(sys_work_q_stack),
-				     K_THREAD_STACK_SIZEOF(sys_work_q_stack),
-				     &pcnt, &unused);
-	PR("%s [%s] stack size %d/%d bytes unused %u usage %d/%d (%u %%)\n",
-	   "WORKQ", "system workqueue",
-	   CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE,
-	   CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE, unused,
-	   CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE - unused,
-	   CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE, pcnt);
-#else
-	PR_INFO("Set %s to enable %s support.\n", "CONFIG_INIT_STACKS",
-		"stack information");
-#endif
-
 	return 0;
 }
 
