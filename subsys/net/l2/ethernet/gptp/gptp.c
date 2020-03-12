@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 #error Maximum number of ports exceeded. (Max is 32).
 #endif
 
-NET_STACK_DEFINE(GPTP, gptp_stack, NET_GPTP_STACK_SIZE, NET_GPTP_STACK_SIZE);
+K_THREAD_STACK_DEFINE(gptp_stack, NET_GPTP_STACK_SIZE);
 K_FIFO_DEFINE(gptp_rx_queue);
 
 static k_tid_t tid;
