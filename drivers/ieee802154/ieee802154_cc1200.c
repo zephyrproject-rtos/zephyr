@@ -496,9 +496,7 @@ static void cc1200_rx(struct device *dev)
 			goto out;
 		}
 
-		net_analyze_stack("CC1200 Rx Fiber stack",
-				  Z_THREAD_STACK_BUFFER(cc1200->rx_stack),
-				  K_THREAD_STACK_SIZEOF(cc1200->rx_stack));
+		log_stack_usage(&cc1200->rx_thread);
 		continue;
 flush:
 		LOG_DBG("Flushing RX");
@@ -810,6 +808,7 @@ static int cc1200_init(struct device *dev)
 			CONFIG_IEEE802154_CC1200_RX_STACK_SIZE,
 			(k_thread_entry_t)cc1200_rx,
 			dev, NULL, NULL, K_PRIO_COOP(2), 0, K_NO_WAIT);
+	k_thread_name_set(&cc1200->rx_thread, "cc1200_rx");
 
 	LOG_INF("CC1200 initialized");
 

@@ -203,9 +203,7 @@ static void rf2xx_trx_rx(struct device *dev)
 	}
 
 	if (LOG_LEVEL >= LOG_LEVEL_DBG) {
-		net_analyze_stack("RF2XX Rx stack",
-				Z_THREAD_STACK_BUFFER(ctx->trx_stack),
-				K_THREAD_STACK_SIZEOF(ctx->trx_stack));
+		log_stack_usage(&ctx->trx_thread);
 	}
 }
 

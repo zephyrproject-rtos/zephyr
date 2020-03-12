@@ -122,10 +122,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		rx_frame->psdu = NULL;
 
 		if (LOG_LEVEL >= LOG_LEVEL_DBG) {
-			net_analyze_stack(
-				"nRF5 rx stack",
-				Z_THREAD_STACK_BUFFER(nrf5_radio->rx_stack),
-				K_THREAD_STACK_SIZEOF(nrf5_radio->rx_stack));
+			log_stack_usage(&nrf5_radio->rx_thread);
 		}
 
 		continue;
