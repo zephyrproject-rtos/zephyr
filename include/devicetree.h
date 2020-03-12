@@ -1332,6 +1332,22 @@
 	(UTIL_LISTIFY(DT_NUM_INST(DT_DRV_COMPAT), DT_INST_ON_BUS_OR, bus) 0)
 
 /**
+ * @def DT_INST_FOREACH
+ *
+ * @brief Call specified macro for all nodes with compatible DT_DRV_COMPAT
+ *
+ * @details This macro will scan for all DT_INST_ device nodes for that driver.
+ * The macro then calls the supplied macro with the instance number.
+ * This macro can be used for example to call the init macro of a driver
+ * for each device specified in the device tree.
+ *
+ * @param inst_expr Macro or function that is called for each device node.
+ * Has to accept instance_number as only parameter.
+ */
+#define DT_INST_FOREACH(inst_expr) \
+	UTIL_LISTIFY(DT_NUM_INST(DT_DRV_COMPAT), DT_CALL_WITH_ARG, inst_expr)
+
+/**
  * @brief Does a DT_DRV_COMPAT instance have a property?
  * Equivalent to DT_NODE_HAS_PROP(DT_DRV_INST(inst), prop)
  * @param inst instance number
@@ -1431,5 +1447,7 @@
 #define DT_DASH_PREFIX(name) _##name
 /** @internal DT_ANY_INST_ON_BUS helper */
 #define DT_INST_ON_BUS_OR(inst, bus) DT_ON_BUS(DT_DRV_INST(inst), bus) ||
+/** @internal DT_INST_FOREACH helper */
+#define DT_CALL_WITH_ARG(arg, expr) expr(arg);
 
 #endif /* DEVICETREE_H */
