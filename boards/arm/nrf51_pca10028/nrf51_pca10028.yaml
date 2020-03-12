@@ -12,6 +12,7 @@ supported:
   - ble
   - nvs
   - pwm
+  - spi
   - watchdog
   - counter
 testing:
