@@ -313,6 +313,16 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 	stream->src_size	= config->source_data_size;
 	stream->dst_size	= config->dest_data_size;
 
+	if ((&config->head_block->source_address == NULL)
+	     || (!config->head_block->source_address)) {
+		LOG_WRN("source_buffer address is null.");
+	}
+
+	if ((&config->head_block->dest_address == NULL)
+	     || (!config->head_block->dest_address)) {
+		LOG_WRN("dest_buffer address is null.");
+	}
+
 	if (stream->direction == MEMORY_TO_PERIPHERAL) {
 		DMA_InitStruct.MemoryOrM2MDstAddress =
 					config->head_block->source_address;
