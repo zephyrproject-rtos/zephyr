@@ -31,6 +31,8 @@ comment "Device Drivers"
 
 source "drivers/sensor/adt7420/Kconfig"
 
+source "drivers/sensor/adxl345/Kconfig"
+
 source "drivers/sensor/adxl362/Kconfig"
 
 source "drivers/sensor/adxl372/Kconfig"
