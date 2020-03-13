@@ -19,8 +19,8 @@ u8_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
 		       u8_t direct_addr_type, u8_t const *const direct_addr,
 		       u8_t chan_map, u8_t filter_policy, u8_t *tx_pwr,
 		       u8_t phy_p, u8_t skip, u8_t phy_s, u8_t sid, u8_t sreq);
-u8_t ll_adv_data_set(u16_t handle, u8_t len, u8_t const *const p_data);
-u8_t ll_adv_scan_rsp_set(u16_t handle, u8_t len, u8_t const *const p_data);
+u8_t ll_adv_data_set(u8_t handle, u8_t len, u8_t const *const p_data);
+u8_t ll_adv_scan_rsp_set(u8_t handle, u8_t len, u8_t const *const p_data);
 u8_t ll_adv_aux_random_addr_set(u8_t handle, u8_t *addr);
 u8_t *ll_adv_aux_random_addr_get(u8_t handle, u8_t *addr);
 u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
@@ -31,6 +31,10 @@ u16_t ll_adv_aux_max_data_length_get(void);
 u8_t ll_adv_aux_set_count_get(void);
 u8_t ll_adv_aux_set_remove(u8_t handle);
 u8_t ll_adv_aux_set_clear(void);
+u8_t ll_adv_sync_param_set(u8_t handle, u16_t interval, u16_t flags);
+u8_t ll_adv_sync_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
+			     u8_t *data);
+u8_t ll_adv_sync_enable(u8_t handle, u8_t enable);
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 		       u8_t own_addr_type, u8_t direct_addr_type,
@@ -42,11 +46,11 @@ u8_t ll_adv_scan_rsp_set(u8_t len, u8_t const *const p_data);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-u8_t ll_adv_enable(u16_t handle, u8_t enable,
+u8_t ll_adv_enable(u8_t handle, u8_t enable,
 		   u8_t at_anchor, u32_t ticks_anchor, u8_t retry,
 		   u8_t scan_window, u8_t scan_delay);
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-u8_t ll_adv_enable(u16_t handle, u8_t enable);
+u8_t ll_adv_enable(u8_t handle, u8_t enable);
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 #else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 u8_t ll_adv_enable(u8_t enable);

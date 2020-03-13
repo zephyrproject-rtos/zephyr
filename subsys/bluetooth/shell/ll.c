@@ -119,7 +119,6 @@ int cmd_test_end(const struct shell *shell, size_t  argc, char *argv[])
 #endif /* CONFIG_BT_CTLR_DTM */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-#include "../controller/ll_sw/ll_adv_aux.h"
 #include "../controller/ll_sw/lll.h"
 
 #if defined(CONFIG_BT_BROADCASTER)
@@ -137,9 +136,11 @@ int cmd_test_end(const struct shell *shell, size_t  argc, char *argv[])
 #define AD_OP 0x03
 #define AD_FRAG_PREF 0x00
 
+#if defined(CONFIG_BT_LL_SW_SPLIT)
 static const struct bt_data adv_data[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 	};
+#endif
 
 int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 {
