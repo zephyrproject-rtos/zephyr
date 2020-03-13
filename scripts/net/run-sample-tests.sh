@@ -315,6 +315,19 @@ docker_exec ()
 	    stop_zephyr
 	    ;;
 
+	mqtt_publisher)
+	    start_configuration || return $?
+	    start_docker "/usr/local/sbin/mosquitto -v -p 1883
+			  -c /usr/local/etc/mosquitto.conf" || return $?
+
+	    start_zephyr -DOVERLAY_CONFIG=overlay-sample.conf "$overlay"
+
+	    wait_zephyr
+	    result=$?
+
+	    stop_docker
+	    ;;
+
 	*)
 	    echo "No sample test corresponding to directory '$1' found" >&2
 	    return 1
