@@ -5877,8 +5877,11 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 		ticks_slot_abs = ticks_prepare_to_start;
 	}
 
-	ticks_slot_abs += conn_curr->hdr.ticks_slot +
-			  HAL_TICKER_US_TO_TICKS(RADIO_TIES_US + 1250);
+	ticks_slot_abs += conn_curr->hdr.ticks_slot;
+
+	if (conn_curr->role) {
+		ticks_slot_abs += HAL_TICKER_US_TO_TICKS(RADIO_TIES_US);
+	}
 
 	ticker_id = ticker_id_prev = ticker_id_other = 0xFF;
 	ticks_to_expire = ticks_to_expire_prev = ticks_anchor =
@@ -5945,6 +5948,7 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 		if ((conn != conn_curr) && (is_select || !conn->role)) {
 			u32_t ticks_to_expire_normal =
 				ticks_to_expire + ticks_prepare_reduced;
+			u32_t ticks_slot_margin = 0U;
 			u32_t ticks_slot_abs_curr;
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
@@ -5969,12 +5973,18 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 				ticks_slot_abs_curr = ticks_prepare_to_start;
 			}
 
-			ticks_slot_abs_curr +=
-				conn->hdr.ticks_slot +
-				HAL_TICKER_US_TO_TICKS(RADIO_TIES_US + 1250);
+			ticks_slot_abs_curr += conn->hdr.ticks_slot +
+					       HAL_TICKER_US_TO_TICKS(1250);
+
+			if (conn->role) {
+				ticks_slot_margin =
+					HAL_TICKER_US_TO_TICKS(RADIO_TIES_US);
+				ticks_slot_abs_curr += ticks_slot_margin;
+			}
 
 			if (*ticks_to_offset_next < ticks_to_expire_normal) {
-				if (ticks_to_expire_prev < *ticks_to_offset_next) {
+				if (ticks_to_expire_prev <
+				    *ticks_to_offset_next) {
 					ticks_to_expire_prev =
 						*ticks_to_offset_next;
 				}
@@ -5983,8 +5993,8 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 				       (ticker_ticks_diff_get(
 							ticks_to_expire_normal,
 							ticks_to_expire_prev) >=
-					(ticks_slot_abs_prev +
-					 ticks_slot_abs))) {
+					(ticks_slot_abs_prev + ticks_slot_abs +
+					 ticks_slot_margin))) {
 					_win_offset = HAL_TICKER_TICKS_TO_US(
 						ticks_to_expire_prev +
 						ticks_slot_abs_prev) / 1250;
