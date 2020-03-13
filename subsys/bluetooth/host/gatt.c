@@ -4358,6 +4358,7 @@ static int db_hash_commit(void)
 	if (!memcmp(stored_hash, db_hash, sizeof(stored_hash))) {
 		BT_DBG("Database Hash matches");
 		k_delayed_work_cancel(&gatt_sc.work);
+		atomic_clear_bit(gatt_sc.flags, SC_RANGE_CHANGED);
 		return 0;
 	}
 
