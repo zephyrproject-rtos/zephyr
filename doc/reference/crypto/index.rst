@@ -1,4 +1,4 @@
-.. _crypto_cipher:
+.. _crypto_api:
 
 
 Crypto
@@ -6,8 +6,6 @@ Crypto
 
 Overview
 ********
-
-.. _crypto_cipher_api:
 
 API Reference
 *************

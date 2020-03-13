@@ -1,7 +1,7 @@
-.. _device_drivers:
+.. _device_model_api:
 
 Device Driver Model
-###############################
+###################
 
 Introduction
 ************
@@ -44,7 +44,7 @@ are listed below.
   .. important::
 
     Use the :ref:`random API functions <random_api>` for random
-    values. :ref:`Entropy functions <entropy_interface>` should not be
+    values. :ref:`Entropy functions <entropy_api>` should not be
     directly used as a random number generator source as some hardware
     implementations are designed to be an entropy seed source for random
     number generators and will not provide cryptographically secure
@@ -376,7 +376,7 @@ to later get a device pointer by name. The same policies for initialization
 level and priority apply.
 
 For ``SYS_DEVICE_DEFINE()`` you can obtain pointers by name, see
-:ref:`power management <power_management>` section.
+:ref:`power management <power_management_api>` section.
 
 :c:func:`SYS_INIT()`
 

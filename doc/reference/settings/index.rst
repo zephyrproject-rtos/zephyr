@@ -1,10 +1,15 @@
-.. _settings:
+.. _settings_api:
 
 Settings
 ########
 
-The settings subsystem gives modules a way to store persistent
-per-device configuration and runtime state.
+The settings subsystem gives modules a way to store persistent per-device
+configuration and runtime state.  A variety of storage implementations are
+provided behind a common API using FCB, NVS, or a file system.  These different
+implementations give the application developer flexibility to select an
+appropriate storage medium, and even change it later as needs change.  This
+subsystem is used by various Zephyr components and can be used simultaneously by
+user applications.
 
 Settings items are stored as key-value pair strings.  By convention,
 the keys can be organized by the package and subtree defining the key,
@@ -13,6 +18,9 @@ element for the package ``id``.
 
 Convenience routines are provided for converting a key value to
 and from a string type.
+
+For an example of the settings subsystem refer to
+:ref:`the sample <settings_subsys_sample>`.
 
 Handlers
 ********

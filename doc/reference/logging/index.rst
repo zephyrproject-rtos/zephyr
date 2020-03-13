@@ -1,4 +1,4 @@
-.. _logger:
+.. _logging_api:
 
 Logging
 #######

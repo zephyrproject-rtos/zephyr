@@ -1,4 +1,4 @@
-.. _watchdog_interface:
+.. _watchdog_api:
 
 Watchdog
 ########

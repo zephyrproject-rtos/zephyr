@@ -1,4 +1,4 @@
-.. _flash_interface:
+.. _flash_api:
 
 Flash
 #####

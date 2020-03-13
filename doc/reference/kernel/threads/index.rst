@@ -43,7 +43,7 @@ A thread has the following key properties:
   By default, threads run in supervisor mode and allow access to
   privileged CPU instructions, the entire memory address space, and
   peripherals. User mode threads have a reduced set of privileges.
-  This depends on the :option:`CONFIG_USERSPACE` option. See :ref:`usermode`.
+  This depends on the :option:`CONFIG_USERSPACE` option. See :ref:`usermode_api`.
 
 .. _lifecycle_v2:
 
@@ -236,13 +236,13 @@ The following thread options are supported.
 
 :c:macro:`K_USER`
     If :option:`CONFIG_USERSPACE` is enabled, this thread will be created in
-    user mode and will have reduced privileges. See :ref:`usermode`. Otherwise
+    user mode and will have reduced privileges. See :ref:`usermode_api`. Otherwise
     this flag does nothing.
 
 :c:macro:`K_INHERIT_PERMS`
     If :option:`CONFIG_USERSPACE` is enabled, this thread will inherit all
     kernel object permissions that the parent thread had, except the parent
-    thread object.  See :ref:`usermode`.
+    thread object.  See :ref:`usermode_api`.
 
 
 .. _custom_data_v2:
