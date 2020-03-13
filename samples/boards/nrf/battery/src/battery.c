@@ -57,13 +57,10 @@ struct divider_config {
 };
 
 static const struct divider_config divider_config = {
+#if DT_HAS_NODE(VBATT)
 	.io_channel = {
-#if DT_NODE_HAS_PROP(VBATT, io_channels)
 		DT_IO_CHANNELS_LABEL(VBATT),
 		DT_IO_CHANNELS_INPUT(VBATT),
-#else
-		DT_LABEL(DT_ALIAS(adc_0)),
-#endif
 	},
 #if DT_NODE_HAS_PROP(VBATT, power_gpios)
 	.power_gpios = {
@@ -74,6 +71,11 @@ static const struct divider_config divider_config = {
 #endif
 	.output_ohm = DT_PROP(VBATT, output_ohms),
 	.full_ohm = DT_PROP(VBATT, full_ohms),
+#else /* /vbatt exists */
+	.io_channel = {
+		DT_LABEL(DT_ALIAS(adc_0)),
+	},
+#endif /* /vbatt exists */
 };
 
 struct divider_data {
