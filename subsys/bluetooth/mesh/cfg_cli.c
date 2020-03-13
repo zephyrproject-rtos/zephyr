@@ -47,8 +47,8 @@ static int comp_data_status(struct bt_mesh_model *model,
 			    struct net_buf_simple *buf)
 {
 	struct comp_data *param;
-	uint8_t page;
 	size_t to_copy;
+	uint8_t page;
 
 	LOG_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s", ctx->net_idx, ctx->app_idx,
 		ctx->addr, buf->len, bt_hex(buf->data, buf->len));
