@@ -7,7 +7,7 @@ Overview
 ********
 
 This sample app demonstrates use of Zephyr's :ref:`file system API
-<file_system>` over `littlefs`_, using a file system with a file that
+<file_system_api>` over `littlefs`_, using a file system with a file that
 counts the number of times the system has booted.  Other information
 about the file system is also displayed.
 

@@ -1,4 +1,4 @@
-.. _counter_interface:
+.. _counter_api:
 
 Counter
 #######

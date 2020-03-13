@@ -6,7 +6,7 @@ Devicetree bindings
 A :ref:`devicetree` on its own is only half the story for describing the
 available hardware devices. The tree itself doesn't tell the :ref:`build system
 <build_overview>` which pieces of information are useful to :ref:`device
-drivers <device_drivers>`, or what :ref:`C macros <dt-macros>` to generate from
+drivers <device_model_api>`, or what :ref:`C macros <dt-macros>` to generate from
 the devicetree itself.
 
 *Devicetree bindings* provide the other half of this information. Zephyr

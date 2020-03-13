@@ -1,4 +1,4 @@
-.. _usb_device_stack:
+.. _usb_api:
 
 USB device stack
 ################

@@ -1,4 +1,4 @@
-.. _random_reference:
+.. _random_api:
 
 Random
 ######
@@ -85,8 +85,6 @@ to make the initialization of the CTR-DRBG as unique as possible.
 
 :option:`CONFIG_CS_CTR_DRBG_PERSONALIZATION`
  CTR-DRBG Initialization Personalization string
-
-.. _random_api:
 
 API Reference
 *************

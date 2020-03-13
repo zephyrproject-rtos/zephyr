@@ -607,7 +607,7 @@ Networking
   ``getnameinfo()``, ``getsockopt()``, ``select()``, ``setsockopt()``,
   ``shutdown()``
 * Converted BSD socket code to use global file descriptor numbers.
-* Network subsystem converted to use new :ref:`logging system <logger>`.
+* Network subsystem converted to use new :ref:`logging system <logging_api>`.
 * Added support for disabling IPv4, IPv6, UDP, and TCP simultaneously.
 * Added support for :ref:`BSD socket offloading <net_socket_offloading>`.
 * Added support for long lifetime IPv6 prefixes.
@@ -751,7 +751,7 @@ Libraries / Subsystems
 
 * Shell:
 
-  - Added new implementation of the shell sub-system. See :ref:`shell_label`
+  - Added new implementation of the shell sub-system. See :ref:`shell_api`
   - Added shell backends:
 
     - UART

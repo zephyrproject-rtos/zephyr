@@ -1,4 +1,4 @@
-.. _pinmux_interface:
+.. _pinmux_api:
 
 Pinmux
 ######

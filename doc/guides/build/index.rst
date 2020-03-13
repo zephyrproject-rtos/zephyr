@@ -153,7 +153,7 @@ Final binary
 
 In some configurations, the binary from the previous stage is
 incomplete, with empty and/or placeholder sections that must be filled
-in by, essentially, reflection. When :ref:`usermode` is enabled:
+in by, essentially, reflection. When :ref:`usermode_api` is enabled:
 
 Kernel object hashing
    The *gen_kobject_list.py* scans the *ELF DWARF*

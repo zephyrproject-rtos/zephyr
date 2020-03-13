@@ -1,4 +1,4 @@
-.. _video:
+.. _video_api:
 
 
 Video
