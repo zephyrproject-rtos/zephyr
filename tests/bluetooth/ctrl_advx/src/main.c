@@ -219,6 +219,16 @@ void main(void)
 		goto exit;
 	}
 	printk("success.\n");
+
+	k_sleep(K_MSEC(400));
+
+	printk("Disabling periodic...");
+	err = ll_adv_sync_enable(handle, 0);
+	if (err) {
+		goto exit;
+	}
+	printk("success.\n");
+
 	return;
 
 exit:
