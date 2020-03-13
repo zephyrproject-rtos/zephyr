@@ -48,7 +48,12 @@ struct nrf5_802154_config {
 
 static struct nrf5_802154_data nrf5_data;
 
-#define ACK_TIMEOUT K_MSEC(10)
+/* Increase ACK timeout to cover the maximum CSMA CA time in default
+ * configuration. 40ms is enough time to cover worst-case CSMA/CA scenario in
+ * default configuration (CSMA/CA + transmit + ACK delay).
+ * TODO Switch to ACK timeout at driver level.
+ */
+#define ACK_TIMEOUT K_MSEC(40)
 
 /* Convenience defines for RADIO */
 #define NRF5_802154_DATA(dev) \
@@ -143,11 +148,10 @@ drop:
 
 static enum ieee802154_hw_caps nrf5_get_capabilities(struct device *dev)
 {
-	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ |
-	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_FILTER |
-	       IEEE802154_HW_ENERGY_SCAN;
+	return IEEE802154_HW_FCS | IEEE802154_HW_FILTER |
+	       IEEE802154_HW_CSMA | IEEE802154_HW_2_4_GHZ |
+	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_ENERGY_SCAN;
 }
-
 
 static int nrf5_cca(struct device *dev)
 {
@@ -329,11 +333,7 @@ static int nrf5_tx(struct device *dev,
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
 	u8_t payload_len = frag->len;
 	u8_t *payload = frag->data;
-
-	if (mode != IEEE802154_TX_MODE_DIRECT) {
-		NET_ERR("TX mode %d not supported", mode);
-		return -ENOTSUP;
-	}
+	bool ret = true;
 
 	LOG_DBG("%p (%u)", payload, payload_len);
 
@@ -343,7 +343,24 @@ static int nrf5_tx(struct device *dev,
 	/* Reset semaphore in case ACK was received after timeout */
 	k_sem_reset(&nrf5_radio->tx_wait);
 
-	if (!nrf_802154_transmit_raw(nrf5_radio->tx_psdu, false)) {
+	switch (mode) {
+	case IEEE802154_TX_MODE_DIRECT:
+		ret = nrf_802154_transmit_raw(nrf5_radio->tx_psdu, false);
+		break;
+	case IEEE802154_TX_MODE_CCA:
+		ret = nrf_802154_transmit_raw(nrf5_radio->tx_psdu, true);
+		break;
+	case IEEE802154_TX_MODE_CSMA_CA:
+		nrf_802154_transmit_csma_ca_raw(nrf5_radio->tx_psdu);
+		break;
+	case IEEE802154_TX_MODE_TXTIME:
+	case IEEE802154_TX_MODE_TXTIME_CCA:
+	default:
+		NET_ERR("TX mode %d not supported", mode);
+		return -ENOTSUP;
+	}
+
+	if (!ret) {
 		LOG_ERR("Cannot send frame");
 		return -EIO;
 	}
