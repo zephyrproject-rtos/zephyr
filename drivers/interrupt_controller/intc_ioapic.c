@@ -100,7 +100,7 @@ static void IoApicRedUpdateLo(unsigned int irq, u32_t value,
  *
  * @return N/A
  */
-int _ioapic_init(struct device *unused)
+int ioapic_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 #ifdef CONFIG_IOAPIC_MASK_RTE
@@ -439,8 +439,8 @@ static void IoApicRedUpdateLo(unsigned int irq,
 
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-SYS_DEVICE_DEFINE("ioapic", _ioapic_init, ioapic_device_ctrl, PRE_KERNEL_1,
+SYS_DEVICE_DEFINE("ioapic", ioapic_init, ioapic_device_ctrl, PRE_KERNEL_1,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else
-SYS_INIT(_ioapic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(ioapic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
