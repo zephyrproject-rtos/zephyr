@@ -1067,7 +1067,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 			    CONFIG_USB_CDC_ACM_DEVICE_NAME "_" #x,	\
 			    &cdc_acm_init, &cdc_acm_dev_data_##x,	\
 			    &cdc_acm_config_##x,			\
-			    APPLICATION,				\
+			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &cdc_acm_driver_api);
 

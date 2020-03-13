@@ -500,6 +500,8 @@ struct _thread_base {
 	/* this thread's entry in a timeout queue */
 	struct _timeout timeout;
 #endif
+
+	_wait_q_t join_waiters;
 };
 
 typedef struct _thread_base _thread_base_t;
@@ -878,6 +880,26 @@ __syscall int k_thread_stack_space_get(const struct k_thread *thread,
  */
 void k_thread_system_pool_assign(struct k_thread *thread);
 #endif /* (CONFIG_HEAP_MEM_POOL_SIZE > 0) */
+
+/**
+ * @brief Sleep until a thread exits
+ *
+ * The caller will be put to sleep until the target thread exits, either due
+ * to being aborted, self-exiting, or taking a fatal error. This API returns
+ * immediately if the thread isn't running.
+ *
+ * This API may only be called from ISRs with a K_NO_WAIT timeout.
+ *
+ * @param thread Thread to wait to exit
+ * @param timeout non-negative upper bound time in ms to wait for the thread
+ *	  to exit.
+ * @retval 0 success, target thread has exited or wasn't running
+ * @retval -EBUSY returned without waiting
+ * @retval -EAGAIN waiting period timed out
+ * @retval -EDEADLK target thread is joining on the caller, or target thread
+ *                  is the caller
+ */
+__syscall int k_thread_join(struct k_thread *thread, s32_t timeout);
 
 /**
  * @brief Put the current thread to sleep.

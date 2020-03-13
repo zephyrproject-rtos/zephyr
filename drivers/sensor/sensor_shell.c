@@ -103,6 +103,7 @@ static int cmd_get_sensor(const struct shell *shell, size_t argc, char *argv[])
 	dev = device_get_binding(argv[1]);
 	if (dev == NULL) {
 		shell_error(shell, "Device unknown (%s)", argv[1]);
+		return -ENODEV;
 	}
 
 	err = sensor_sample_fetch(dev);

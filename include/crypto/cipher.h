@@ -24,7 +24,7 @@
 #include "cipher_structs.h"
 
 /* The API a crypto driver should implement */
-struct crypto_driver_api {
+__subsystem struct crypto_driver_api {
 	int (*query_hw_caps)(struct device *dev);
 
 	/* Setup a crypto session */

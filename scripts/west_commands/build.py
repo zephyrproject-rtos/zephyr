@@ -4,6 +4,7 @@
 
 import argparse
 import os
+import pathlib
 import shlex
 
 from west import log
@@ -303,16 +304,19 @@ class Build(Forceable):
         cached_abs = os.path.abspath(cached_app) if cached_app else None
 
         log.dbg('pristine:', self.auto_pristine, level=log.VERBOSE_EXTREME)
+
         # If the build directory specifies a source app, make sure it's
         # consistent with --source-dir.
         apps_mismatched = (source_abs and cached_abs and
-                           source_abs != cached_abs)
+            pathlib.PurePath(source_abs) != pathlib.PurePath(cached_abs))
+
         self.check_force(
             not apps_mismatched or self.auto_pristine,
             'Build directory "{}" is for application "{}", but source '
             'directory "{}" was specified; please clean it, use --pristine, '
             'or use --build-dir to set another build directory'.
             format(self.build_dir, cached_abs, source_abs))
+
         if apps_mismatched:
             self.run_cmake = True  # If they insist, we need to re-run cmake.
 
@@ -357,16 +361,6 @@ class Build(Forceable):
                 self._sanity_check_source_dir()
 
     def _run_cmake(self, board, origin, cmake_opts):
-        _banner(
-            '''build configuration:
-       source directory: {}
-       build directory: {}{}
-       BOARD: {}'''.
-            format(self.source_dir, self.build_dir,
-                   ' (created)' if self.created_build_dir else '',
-                   ('{} (origin: {})'.format(board, origin) if board
-                    else 'UNKNOWN')))
-
         if board is None and config_getboolean('board_warn', True):
             log.wrn('This looks like a fresh build and BOARD is unknown;',
                     "so it probably won't work. To fix, use",
@@ -375,7 +369,6 @@ class Build(Forceable):
                     "'west config build.board_warn false'")
 
         if not self.run_cmake:
-            log.dbg('Not generating a build system; one is present.')
             return
 
         _banner('generating a build system')
@@ -423,7 +416,7 @@ class Build(Forceable):
     def _run_build(self, target):
         if target:
             _banner('running target {}'.format(target))
-        else:
+        elif self.run_cmake:
             _banner('building application')
         extra_args = ['--target', target] if target else []
         if self.args.build_opt:

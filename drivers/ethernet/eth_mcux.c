@@ -399,18 +399,29 @@ static void eth_mcux_phy_setup(void)
 {
 #ifdef CONFIG_SOC_SERIES_IMX_RT
 	const u32_t phy_addr = 0U;
-	u32_t status;
+	status_t res;
+	u32_t oms_override;
 
-	/* Prevent PHY entering NAND Tree mode override*/
-	ENET_StartSMIRead(ENET, phy_addr, PHY_OMS_STATUS_REG,
-		kENET_MiiReadValidFrame);
-	status = ENET_ReadSMIData(ENET);
+	/* Disable MII interrupts to prevent triggering PHY events. */
+	ENET_DisableInterrupts(ENET, ENET_EIR_MII_MASK);
 
-	if (status & PHY_OMS_NANDTREE_MASK) {
-		status &= ~PHY_OMS_NANDTREE_MASK;
-		ENET_StartSMIWrite(ENET, phy_addr, PHY_OMS_OVERRIDE_REG,
-			kENET_MiiWriteValidFrame, status);
+	/* Prevent PHY entering NAND Tree mode override. */
+	res = PHY_Read(ENET, phy_addr, PHY_OMS_OVERRIDE_REG, &oms_override);
+	if (res != kStatus_Success) {
+		LOG_WRN("Reading PHY reg failed (status 0x%x)", res);
+	} else {
+		if (oms_override & PHY_OMS_NANDTREE_MASK) {
+			oms_override &= ~PHY_OMS_NANDTREE_MASK;
+			res = PHY_Write(ENET, phy_addr, PHY_OMS_OVERRIDE_REG,
+					oms_override);
+			if (res != kStatus_Success) {
+				LOG_WRN("Writing PHY reg failed (status 0x%x)",
+					res);
+			}
+		}
 	}
+
+	ENET_EnableInterrupts(ENET, ENET_EIR_MII_MASK);
 #endif
 }
 

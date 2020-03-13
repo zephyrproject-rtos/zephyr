@@ -67,15 +67,12 @@ SECTION_FUNC(TEXT, arch_switch)
 #endif
 	/*
 	 * r0 = new_thread->switch_handle = switch_to thread,
-	 * r1 = &old_thread->switch_handle = &switch_from thread
+	 * r1 = &old_thread->switch_handle
+	 * get old_thread from r1
 	 */
 
-	ld_s r2, [r1]
-	/*
-	 * r2 may be dummy_thread in z_cstart, dummy_thread->switch_handle
-	 * must be 0
-	 */
-	breq r2, 0, _switch_to_target_thread
+	sub r2, r1, ___thread_t_switch_handle_OFFSET
+
 
 	st _CAUSE_COOP, [r2, _thread_offset_to_relinquish_cause]
 
@@ -97,39 +94,16 @@ SECTION_FUNC(TEXT, arch_switch)
 
 	push_s blink
 
-	_save_callee_saved_regs
+	_store_old_thread_callee_regs
 
-#ifdef CONFIG_ARC_STACK_CHECKING
 /* disable stack checking here, as sp will be changed to target
  * thread'sp
  */
-#if defined(CONFIG_ARC_HAS_SECURE) && defined(CONFIG_ARC_SECURE_FIRMWARE)
-	bclr r3, r3, _ARC_V2_SEC_STAT_SSC_BIT
-	sflag r3
-#else
-	bclr r3, r3, _ARC_V2_STATUS32_SC_BIT
-	kflag r3
-#endif
-#endif
-
-_switch_to_target_thread:
+	_disable_stack_checking r3
 
 	mov_s r2, r0
 
-	/* entering here, r2 contains the new current thread */
-#ifdef CONFIG_ARC_STACK_CHECKING
-	_load_stack_check_regs
-#endif
-
-	_load_callee_saved_regs
-
-#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
-	push_s r2
-	bl configure_mpu_thread
-	pop_s r2
-#endif
-
-	ld r3, [r2, _thread_offset_to_relinquish_cause]
+	_load_new_thread_callee_regs
 
 	breq r3, _CAUSE_RIRQ, _switch_return_from_rirq
 	nop_s
@@ -152,9 +126,12 @@ _switch_return_from_coop:
 	kflag r3    /* write status32 */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	b _capture_value_for_benchmarking
-#endif
-return_loc:
+	push_s blink
+
+	bl read_timer_end_of_swap
+
+	pop_s blink
+#endif /* CONFIG_EXECUTION_BENCHMARKING */
 	j_s [blink]
 
 
@@ -162,24 +139,14 @@ return_loc:
 _switch_return_from_rirq:
 _switch_return_from_firq:
 
-#if defined(CONFIG_USERSPACE)
-/*
- * need to recover the user/kernel status of interrupted thread
- */
-	pop_s r3
-	lr r2, [_ARC_V2_AUX_IRQ_ACT]
-	or r2, r2, r3
-	sr r2, [_ARC_V2_AUX_IRQ_ACT]
-#endif
+	_set_misc_regs_irq_switch_from_irq
 
-#ifdef CONFIG_ARC_SECURE_FIRMWARE
-	/* here need to recover SEC_STAT.IRM bit */
-	pop_s r3
-	sflag r3
-#endif
+	/* use lowest interrupt priority to simulate
+	 * a interrupt return to load left regs of new
+	 * thread
+	 */
 
 	lr r3, [_ARC_V2_AUX_IRQ_ACT]
-	/* use lowest interrupt priority */
 #ifdef CONFIG_ARC_SECURE_FIRMWARE
 	or r3, r3, (1 << (ARC_N_IRQ_START_LEVEL - 1))
 #else
@@ -195,14 +162,3 @@ _switch_return_from_firq:
 	sr r3, [_ARC_V2_AUX_IRQ_ACT]
 #endif
 	rtie
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	.balign 4
-_capture_value_for_benchmarking:
-	push_s blink
-
-	bl read_timer_end_of_swap
-
-	pop_s blink
-	b return_loc
-#endif /* CONFIG_EXECUTION_BENCHMARKING */

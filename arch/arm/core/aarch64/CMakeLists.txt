@@ -9,6 +9,7 @@ endif ()
 zephyr_library_sources(
   cpu_idle.S
   fatal.c
+  irq_init.c
   irq_manage.c
   prep_c.c
   reset.S

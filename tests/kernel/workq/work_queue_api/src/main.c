@@ -630,7 +630,8 @@ static void delayed_work_handler_resubmit(struct k_work *w)
 	k_sem_give(&sync_sema);
 
 	if (k_sem_count_get(&sync_sema) < NUM_OF_WORK) {
-		k_delayed_work_submit(delayed_w, TIMEOUT);
+		/**TESTPOINT: check if work can be resubmit from handler */
+		zassert_false(k_delayed_work_submit(delayed_w, TIMEOUT), NULL);
 	}
 }
 

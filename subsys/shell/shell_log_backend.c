@@ -73,7 +73,7 @@ static void flush_expired_messages(const struct shell *shell)
 			log_msg_put(msg.msg);
 
 			if (IS_ENABLED(CONFIG_SHELL_STATS)) {
-				shell->stats->log_lost_cnt++;
+				atomic_inc(&shell->stats->log_lost_cnt);
 			}
 		} else {
 			break;

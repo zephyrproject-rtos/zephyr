@@ -1,0 +1,10 @@
+# Mcrochip mec150x tachometer sensor configuration options
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config TACH_XEC
+	bool "XEC Tachometer sensor"
+	depends on SOC_FAMILY_MEC
+	help
+	  Enable the Microchip XEC tachometer sensor.

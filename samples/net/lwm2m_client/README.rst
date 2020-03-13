@@ -43,6 +43,9 @@ samples/net/lwm2m_client directory:
 - :file:`overlay-bt.conf`
   This overlay config can be added to enable Bluetooth networking support.
 
+- :file:`overlay-queue.conf`
+  This overlay config can be added to enable LWM2M Queue Mode support.
+
 Build the lwm2m-client sample application like this:
 
 .. zephyr-app-commands::
@@ -134,6 +137,25 @@ commands (requires Bluetooth for networking):
    :conf: "prj.conf overlay-bt.conf overlay-dtls.conf"
    :goals: build
    :compact:
+
+Queue Mode Support
+==================
+
+To build the lwm2m-client sample with LWM2M Queue Mode support do the following:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/lwm2m_client
+   :host-os: unix
+   :board: <board to use>
+   :conf: "prj.conf overlay-queue.conf"
+   :goals: build
+   :compact:
+
+With Queue Mode enabled, the LWM2M client will register with "UDP with Queue
+Mode" binding. The LWM2M engine will notify the application with
+``LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF`` event when the RX window
+is closed so it can e. g. turn the radio off. The next RX window will be open
+with consecutive ``LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE`` event.
 
 WNC-M14A2A LTE-M Modem Support
 ==============================

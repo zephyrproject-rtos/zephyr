@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation.
+ * Copyright (c) 2020 Endian Technologies AB
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 #include <net/net_pkt.h>
 
 #include <net/ppp.h>
+#include <net/dns_resolve.h>
 
 #include "net_private.h"
 
@@ -37,7 +39,9 @@ static bool append_to_buf(struct net_buf *buf, u8_t *data, u8_t data_len)
 	return true;
 }
 
-/* Length is (6): code + id + IPv4 address length */
+/* Length is (6): code + id + IPv4 address length. RFC 1332 and also
+ * DNS in RFC 1877.
+ */
 #define IP_ADDRESS_OPTION_LEN (1 + 1 + 4)
 
 static struct net_buf *ipcp_config_info_add(struct ppp_fsm *fsm)
@@ -45,15 +49,28 @@ static struct net_buf *ipcp_config_info_add(struct ppp_fsm *fsm)
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       ipcp.fsm);
 
-	/* Currently we support only one option (IP address) */
-	u8_t option[IP_ADDRESS_OPTION_LEN];
+	/* Currently we support IP address and DNS servers */
+	u8_t options[3 * IP_ADDRESS_OPTION_LEN];
 	const struct in_addr *my_addr;
 	struct net_buf *buf;
 	bool added;
 
 	my_addr = &ctx->ipcp.my_options.address;
 
+	u8_t *option = options;
 	option[0] = IPCP_OPTION_IP_ADDRESS;
+	option[1] = IP_ADDRESS_OPTION_LEN;
+	memcpy(&option[2], &my_addr->s_addr, sizeof(my_addr->s_addr));
+	option += IP_ADDRESS_OPTION_LEN;
+
+	my_addr = &ctx->ipcp.my_options.dns1_address;
+	option[0] = IPCP_OPTION_DNS1;
+	option[1] = IP_ADDRESS_OPTION_LEN;
+	memcpy(&option[2], &my_addr->s_addr, sizeof(my_addr->s_addr));
+
+	option += IP_ADDRESS_OPTION_LEN;
+	my_addr = &ctx->ipcp.my_options.dns2_address;
+	option[0] = IPCP_OPTION_DNS2;
 	option[1] = IP_ADDRESS_OPTION_LEN;
 	memcpy(&option[2], &my_addr->s_addr, sizeof(my_addr->s_addr));
 
@@ -62,7 +79,7 @@ static struct net_buf *ipcp_config_info_add(struct ppp_fsm *fsm)
 		goto out_of_mem;
 	}
 
-	added = append_to_buf(buf, option, sizeof(option));
+	added = append_to_buf(buf, options, sizeof(options));
 	if (!added) {
 		goto out_of_mem;
 	}
@@ -183,8 +200,12 @@ static int ipcp_config_info_req(struct ppp_fsm *fsm,
 		ctx = CONTAINER_OF(fsm, struct ppp_context, ipcp.fsm);
 
 		if (address_option_idx < 0) {
-			/* Address option was not present */
-			return -EINVAL;
+			/* The address option was not present, but we
+			 * can continue without it.
+			 */
+			NET_DBG("[%s/%p] No %saddress provided",
+				fsm->name, fsm, "peer ");
+			return PPP_CONFIGURE_ACK;
 		}
 
 		code = PPP_CONFIGURE_ACK;
@@ -261,6 +282,56 @@ bail_out:
 	return -ENOMEM;
 }
 
+static void ipcp_set_dns_servers(struct ppp_fsm *fsm)
+{
+#if defined(CONFIG_NET_L2_PPP_OPTION_DNS_USE)
+	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
+					       ipcp.fsm);
+
+	struct dns_resolve_context *dnsctx;
+	struct sockaddr_in dns1 = {
+		.sin_family = AF_INET,
+		.sin_port = htons(53),
+		.sin_addr = ctx->ipcp.my_options.dns1_address
+	};
+	struct sockaddr_in dns2 = {
+		.sin_family = AF_INET,
+		.sin_port = htons(53),
+		.sin_addr = ctx->ipcp.my_options.dns2_address
+	};
+	const struct sockaddr *dns_servers[] = {
+		(struct sockaddr *) &dns1,
+		(struct sockaddr *) &dns2,
+		NULL
+	};
+	int i, ret;
+
+	if (!dns1.sin_addr.s_addr) {
+		return;
+	}
+
+	if (!dns2.sin_addr.s_addr) {
+		dns_servers[1] = NULL;
+	}
+
+	dnsctx = dns_resolve_get_default();
+	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+		if (!dnsctx->queries[i].cb) {
+			continue;
+		}
+
+		dns_resolve_cancel(dnsctx, dnsctx->queries[i].id);
+	}
+	dns_resolve_close(dnsctx);
+
+	ret = dns_resolve_init(dnsctx, NULL, dns_servers);
+	if (ret < 0) {
+		NET_ERR("Could not set DNS servers");
+		return;
+	}
+#endif
+}
+
 static int ipcp_config_info_nack(struct ppp_fsm *fsm,
 				 struct net_pkt *pkt,
 				 u16_t length,
@@ -271,7 +342,7 @@ static int ipcp_config_info_nack(struct ppp_fsm *fsm,
 	struct ppp_option_pkt nack_options[MAX_IPCP_OPTIONS];
 	enum net_verdict verdict;
 	int i, ret, address_option_idx = -1;
-	struct in_addr addr;
+	struct in_addr addr, *dst_addr;
 
 	memset(nack_options, 0, sizeof(nack_options));
 
@@ -301,12 +372,45 @@ static int ipcp_config_info_nack(struct ppp_fsm *fsm,
 		case IPCP_OPTION_IP_COMP_PROTO:
 			continue;
 
+		case IPCP_OPTION_DNS1:
+			dst_addr = &ctx->ipcp.my_options.dns1_address;
+			break;
+
+		case IPCP_OPTION_DNS2:
+			dst_addr = &ctx->ipcp.my_options.dns2_address;
+			break;
+
 		case IPCP_OPTION_IP_ADDRESS:
+			dst_addr = &ctx->ipcp.my_options.address;
 			address_option_idx = i;
 			break;
 
 		default:
 			continue;
+		}
+
+		net_pkt_cursor_restore(pkt, &nack_options[i].value);
+
+		ret = net_pkt_read(pkt, (u32_t *)&addr, sizeof(addr));
+		if (ret < 0) {
+			/* Should not happen, is the pkt corrupt? */
+			return -EMSGSIZE;
+		}
+
+		memcpy(dst_addr, &addr, sizeof(addr));
+
+		if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
+			char dst[INET_ADDRSTRLEN];
+			char *addr_str;
+
+			addr_str = net_addr_ntop(AF_INET, &addr, dst,
+						 sizeof(dst));
+
+			NET_DBG("[%s/%p] Received %s address %s",
+				fsm->name, fsm,
+				ppp_option2str(PPP_IPCP,
+					       nack_options[i].type.ipcp),
+				log_strdup(addr_str));
 		}
 	}
 
@@ -314,26 +418,7 @@ static int ipcp_config_info_nack(struct ppp_fsm *fsm,
 		return -EINVAL;
 	}
 
-	net_pkt_cursor_restore(pkt, &nack_options[address_option_idx].value);
-
-	ret = net_pkt_read(pkt, (u32_t *)&addr, sizeof(addr));
-	if (ret < 0) {
-		/* Should not happen, is the pkt corrupt? */
-		return -EMSGSIZE;
-	}
-
-	memcpy(&ctx->ipcp.my_options.address, &addr, sizeof(addr));
-
-	if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-		char dst[INET_ADDRSTRLEN];
-		char *addr_str;
-
-		addr_str = net_addr_ntop(AF_INET, &addr, dst,
-					 sizeof(dst));
-
-		NET_DBG("[%s/%p] Received %saddress %s",
-			fsm->name, fsm, "", log_strdup(addr_str));
-	}
+	ipcp_set_dns_servers(fsm);
 
 	return 0;
 }

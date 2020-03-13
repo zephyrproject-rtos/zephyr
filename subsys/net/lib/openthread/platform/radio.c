@@ -11,11 +11,10 @@
  *
  */
 
-#define LOG_LEVEL CONFIG_OPENTHREAD_LOG_LEVEL
 #define LOG_MODULE_NAME net_otPlat_radio
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -43,6 +42,15 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define FRAME_TYPE_MASK 0x07
 #define FRAME_TYPE_ACK 0x02
 
+
+enum pending_events {
+	PENDING_EVENT_DETECT_ENERGY, /* Requested to start Energy Detection
+				      * procedure.
+				      */
+	PENDING_EVENT_DETECT_ENERGY_DONE, /* Energy Detection finished. */
+	PENDING_EVENT_COUNT /* keep last */
+};
+
 static otRadioState sState = OT_RADIO_STATE_DISABLED;
 
 static otRadioFrame sTransmitFrame;
@@ -57,6 +65,42 @@ static struct ieee802154_radio_api *radio_api;
 
 static s8_t tx_power;
 static u16_t channel;
+
+static u16_t energy_detection_time;
+static u8_t  energy_detection_channel;
+static s16_t energy_detected_value;
+
+ATOMIC_DEFINE(pending_events, PENDING_EVENT_COUNT);
+
+
+static inline bool is_pending_event_set(enum pending_events event)
+{
+	return atomic_test_bit(pending_events, event);
+}
+
+static void set_pending_event(enum pending_events event)
+{
+	atomic_set_bit(pending_events, event);
+	otSysEventSignalPending();
+}
+
+static void reset_pending_event(enum pending_events event)
+{
+	atomic_clear_bit(pending_events, event);
+}
+
+static inline void clear_pending_events(void)
+{
+	atomic_clear(pending_events);
+}
+
+void energy_detected(struct device *dev, s16_t max_ed)
+{
+	if (dev == radio_dev) {
+		energy_detected_value = max_ed;
+		set_pending_event(PENDING_EVENT_DETECT_ENERGY_DONE);
+	}
+}
 
 enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 					     struct net_pkt *pkt)
@@ -123,6 +167,7 @@ void platformRadioInit(void)
 
 void platformRadioProcess(otInstance *aInstance)
 {
+	bool event_pending = false;
 	if (sState == OT_RADIO_STATE_TRANSMIT) {
 		otError result = OT_ERROR_NONE;
 
@@ -153,14 +198,10 @@ void platformRadioProcess(otInstance *aInstance)
 
 		sState = OT_RADIO_STATE_RECEIVE;
 
-#if OPENTHREAD_ENABLE_DIAG
-
-		if (otPlatDiagModeGet()) {
+		if (IS_ENABLED(OPENTHREAD_ENABLE_DIAG) && otPlatDiagModeGet()) {
 			otPlatDiagRadioTransmitDone(aInstance, &sTransmitFrame,
 						    result);
-		} else
-#endif
-		{
+		} else {
 			if (sTransmitFrame.mPsdu[0] & IEEE802154_AR_FLAG_SET) {
 				if (ack_frame.mLength == 0) {
 					LOG_DBG("No ACK received.");
@@ -183,6 +224,27 @@ void platformRadioProcess(otInstance *aInstance)
 						  NULL, result);
 			}
 		}
+	}
+
+	if (is_pending_event_set(PENDING_EVENT_DETECT_ENERGY)) {
+		radio_api->set_channel(radio_dev, energy_detection_channel);
+
+		if (!radio_api->ed_scan(radio_dev, energy_detection_time,
+					energy_detected)) {
+			reset_pending_event(PENDING_EVENT_DETECT_ENERGY);
+		} else {
+			event_pending = true;
+		}
+	}
+
+	if (is_pending_event_set(PENDING_EVENT_DETECT_ENERGY_DONE)) {
+		otPlatRadioEnergyScanDone(aInstance,
+					  (s8_t)energy_detected_value);
+		reset_pending_event(PENDING_EVENT_DETECT_ENERGY_DONE);
+	}
+
+	if (event_pending) {
+		otSysEventSignalPending();
 	}
 }
 
@@ -309,9 +371,20 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 
 otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 {
-	ARG_UNUSED(aInstance);
+	otRadioCaps caps = OT_RADIO_CAPS_NONE;
 
-	return OT_RADIO_CAPS_NONE;
+	enum ieee802154_hw_caps radio_caps;
+	ARG_UNUSED(aInstance);
+	__ASSERT(radio_api,
+	    "platformRadioInit needs to be called prior to otPlatRadioGetCaps");
+
+	radio_caps = radio_api->get_capabilities(radio_dev);
+
+	if (radio_caps & IEEE802154_HW_ENERGY_SCAN) {
+		caps |= OT_RADIO_CAPS_ENERGY_SCAN;
+	}
+
+	return caps;
 }
 
 bool otPlatRadioGetPromiscuous(otInstance *aInstance)
@@ -337,11 +410,26 @@ void otPlatRadioSetPromiscuous(otInstance *aInstance, bool aEnable)
 otError otPlatRadioEnergyScan(otInstance *aInstance, u8_t aScanChannel,
 			      u16_t aScanDuration)
 {
-	ARG_UNUSED(aInstance);
-	ARG_UNUSED(aScanChannel);
-	ARG_UNUSED(aScanDuration);
+	energy_detection_time    = aScanDuration;
+	energy_detection_channel = aScanChannel;
 
-	return OT_ERROR_NOT_IMPLEMENTED;
+	clear_pending_events();
+
+	radio_api->set_channel(radio_dev, aScanChannel);
+
+	if (radio_api->ed_scan(radio_dev, energy_detection_time,
+				    energy_detected) != 0) {
+		/*
+		 * OpenThread API does not accept failure of this function,
+		 * it can return 'No Error' or 'Not Implemented' error only.
+		 * If ed_scan start failed event is set to schedule the scan at
+		 * later time.
+		 */
+		LOG_ERR("Failed do start energy scan, scheduling for later");
+		set_pending_event(PENDING_EVENT_DETECT_ENERGY);
+	}
+
+	return OT_ERROR_NONE;
 }
 
 void otPlatRadioEnableSrcMatch(otInstance *aInstance, bool aEnable)

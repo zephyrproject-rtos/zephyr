@@ -293,7 +293,6 @@ config BT_SMP
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
 	select BT_RPA
-	select BT_ECC
 	help
 	  This option enables support for the Security Manager Protocol
 	  (SMP), making it possible to pair devices over LE.
@@ -348,6 +347,20 @@ config BT_SMP_SC_ONLY
 	  for services that only require Security Mode 1 Level 1 (no security).
 	  Security Mode 1 Level 4 stands for authenticated LE Secure Connections
 	  pairing with encryption. Enabling this option disables legacy pairing.
+
+config BT_SMP_OOB_LEGACY_PAIR_ONLY
+	bool "Force Out Of Band Legacy pairing"
+	depends on !(BT_SMP_SC_PAIR_ONLY || BT_SMP_SC_ONLY)
+	help
+	  This option disables Legacy and LE SC pairing and forces legacy OOB.
+
+config BT_SMP_DISABLE_LEGACY_JW_PASSKEY
+	bool "Forbid usage of insecure legacy pairing methods"
+	depends on !(BT_SMP_SC_PAIR_ONLY || BT_SMP_SC_ONLY || \
+		     BT_SMP_OOB_LEGACY_PAIR_ONLY)
+	help
+	  This option disables Just Works and Passkey legacy pairing methods to
+	  increase security.
 
 config BT_SMP_ALLOW_UNAUTH_OVERWRITE
 	bool "Allow unauthenticated pairing for paired device"
@@ -545,6 +558,7 @@ endif # BT_HCI_HOST
 
 config BT_ECC
 	bool "Enable ECDH key generation support"
+	default y if !BT_SMP_OOB_LEGACY_PAIR_ONLY
 	help
 	  This option adds support for ECDH HCI commands.
 

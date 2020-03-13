@@ -271,11 +271,181 @@ void test_user_mode(void)
 }
 #endif
 
+struct k_thread join_thread;
+K_THREAD_STACK_DEFINE(join_stack, STACK_SIZE);
+
+struct k_thread control_thread;
+K_THREAD_STACK_DEFINE(control_stack, STACK_SIZE);
+
+enum control_method {
+	TIMEOUT,
+	NO_WAIT,
+	SELF_ABORT,
+	OTHER_ABORT,
+	ALREADY_EXIT,
+	ISR_ALREADY_EXIT,
+	ISR_RUNNING
+};
+
+void join_entry(void *p1, void *p2, void *p3)
+{
+	enum control_method m = (enum control_method)p1;
+
+	switch (m) {
+	case TIMEOUT:
+	case NO_WAIT:
+	case OTHER_ABORT:
+	case ISR_RUNNING:
+		printk("join_thread: sleeping forever\n");
+		k_sleep(K_FOREVER);
+		break;
+	case SELF_ABORT:
+	case ALREADY_EXIT:
+	case ISR_ALREADY_EXIT:
+		printk("join_thread: self-exiting\n");
+		return;
+	}
+}
+
+void control_entry(void *p1, void *p2, void *p3)
+{
+	printk("control_thread: killing join thread\n");
+	k_thread_abort(&join_thread);
+}
+
+void do_join_from_isr(void *arg)
+{
+	int *ret = arg;
+
+	printk("isr: joining join_thread\n");
+	*ret = k_thread_join(&join_thread, K_NO_WAIT);
+	printk("isr: k_thread_join() returned with %d\n", *ret);
+}
+
+int join_scenario(enum control_method m)
+{
+	s32_t timeout = K_FOREVER;
+	int ret;
+
+	printk("ztest_thread: method %d, create join_thread\n", m);
+	k_thread_create(&join_thread, join_stack, STACK_SIZE, join_entry,
+			(void *)m, NULL, NULL, K_PRIO_PREEMPT(1),
+			K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	switch (m) {
+	case ALREADY_EXIT:
+	case ISR_ALREADY_EXIT:
+		/* Let join_thread run first */
+		k_sleep(50);
+		break;
+	case OTHER_ABORT:
+		printk("ztest_thread: create control_thread\n");
+		k_thread_create(&control_thread, control_stack, STACK_SIZE,
+				control_entry, NULL, NULL, NULL,
+				K_PRIO_PREEMPT(2),
+				K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+		break;
+	case TIMEOUT:
+		timeout = 50;
+		break;
+	case NO_WAIT:
+		timeout = K_NO_WAIT;
+		break;
+	default:
+		break;
+	}
+
+	if (m == ISR_ALREADY_EXIT || m == ISR_RUNNING) {
+		irq_offload(do_join_from_isr, &ret);
+	} else {
+		printk("ztest_thread: joining join_thread\n");
+		ret = k_thread_join(&join_thread, timeout);
+		printk("ztest_thread: k_thread_join() returned with %d\n", ret);
+	}
+
+	if (ret != 0) {
+		k_thread_abort(&join_thread);
+	}
+
+	return ret;
+}
+
+void test_thread_join(void)
+{
+#ifdef CONFIG_USERSPACE
+	/* scenario: thread never started */
+	zassert_equal(k_thread_join(&join_thread, K_FOREVER), 0,
+		      "failed case thread never started");
+#endif
+	zassert_equal(join_scenario(TIMEOUT), -EAGAIN, "failed timeout case");
+	zassert_equal(join_scenario(NO_WAIT), -EBUSY, "failed no-wait case");
+	zassert_equal(join_scenario(SELF_ABORT), 0, "failed self-abort case");
+	zassert_equal(join_scenario(OTHER_ABORT), 0, "failed other-abort case");
+	zassert_equal(join_scenario(ALREADY_EXIT), 0,
+		      "failed already exit case");
+
+}
+
+void test_thread_join_isr(void)
+{
+	zassert_equal(join_scenario(ISR_RUNNING), -EBUSY, "failed isr running");
+	zassert_equal(join_scenario(ISR_ALREADY_EXIT), 0, "failed isr exited");
+}
+
+struct k_thread deadlock1_thread;
+K_THREAD_STACK_DEFINE(deadlock1_stack, STACK_SIZE);
+
+struct k_thread deadlock2_thread;
+K_THREAD_STACK_DEFINE(deadlock2_stack, STACK_SIZE);
+
+void deadlock1_entry(void *p1, void *p2, void *p3)
+{
+	int ret;
+
+	k_sleep(500);
+
+	ret = k_thread_join(&deadlock2_thread, K_FOREVER);
+	zassert_equal(ret, -EDEADLK, "failed mutual join case");
+}
+
+void deadlock2_entry(void *p1, void *p2, void *p3)
+{
+	int ret;
+
+	/* deadlock1_thread is active but currently sleeping */
+	ret = k_thread_join(&deadlock1_thread, K_FOREVER);
+
+	zassert_equal(ret, 0, "couldn't join deadlock2_thread");
+}
+
+void test_thread_join_deadlock(void)
+{
+	/* Deadlock scenarios */
+	zassert_equal(k_thread_join(k_current_get(), K_FOREVER), -EDEADLK,
+				    "failed self-deadlock case");
+
+	k_thread_create(&deadlock1_thread, deadlock1_stack, STACK_SIZE,
+			deadlock1_entry, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(1), K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+	k_thread_create(&deadlock2_thread, deadlock2_stack, STACK_SIZE,
+			deadlock2_entry, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(1), K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+
+	zassert_equal(k_thread_join(&deadlock1_thread, K_FOREVER), 0,
+		      "couldn't join deadlock1_thread");
+	zassert_equal(k_thread_join(&deadlock2_thread, K_FOREVER), 0,
+		      "couldn't join deadlock2_thread");
+}
+
 void test_main(void)
 {
-	k_thread_access_grant(k_current_get(), &tdata, tstack);
-	k_thread_access_grant(k_current_get(), &tdata_custom, tstack_custom);
-	k_thread_access_grant(k_current_get(), &tdata_name, tstack_name);
+	k_thread_access_grant(k_current_get(), &tdata, tstack,
+			      &tdata_custom, tstack_custom,
+			      &tdata_name, tstack_name,
+			      &join_thread, join_stack,
+			      &control_thread, control_stack,
+			      &deadlock1_thread, deadlock1_stack,
+			      &deadlock2_thread, deadlock2_stack);
 	main_prio = k_thread_priority_get(k_current_get());
 #ifdef CONFIG_USERSPACE
 	strncpy(unreadable_string, "unreadable string",
@@ -307,7 +477,10 @@ void test_main(void)
 			 ztest_unit_test(test_user_mode),
 			 ztest_1cpu_unit_test(test_threads_cpu_mask),
 			 ztest_unit_test(test_threads_suspend_timeout),
-			 ztest_unit_test(test_threads_suspend)
+			 ztest_unit_test(test_threads_suspend),
+			 ztest_user_unit_test(test_thread_join),
+			 ztest_unit_test(test_thread_join_isr),
+			 ztest_user_unit_test(test_thread_join_deadlock)
 			 );
 
 	ztest_run_test_suite(threads_lifecycle);

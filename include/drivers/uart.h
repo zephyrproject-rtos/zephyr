@@ -342,7 +342,7 @@ struct uart_device_config {
 };
 
 /** @brief Driver API structure. */
-struct uart_driver_api {
+__subsystem struct uart_driver_api {
 
 #ifdef CONFIG_UART_ASYNC_API
 

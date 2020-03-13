@@ -11,3 +11,4 @@ flash: 32
 supported:
   - gpio
   - uart
+  - watchdog

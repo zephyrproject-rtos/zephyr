@@ -52,7 +52,7 @@ Here's a quick summary of resources to help you find your way around:
 * **Source Code**: https://github.com/zephyrproject-rtos/zephyr is the main
   repository; https://elixir.bootlin.com/zephyr/latest/source contains a
   searchable index
-* **Releases**: https://zephyrproject.org/developers/#downloads
+* **Releases**: https://github.com/zephyrproject-rtos/zephyr/releases
 * **Samples and example code**: see `Sample and Demo Code Examples`_
 * **Mailing Lists**: users@lists.zephyrproject.org and
   devel@lists.zephyrproject.org are the main user and developer mailing lists,

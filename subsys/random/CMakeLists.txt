@@ -2,13 +2,11 @@
 
 if (CONFIG_ENTROPY_DEVICE_RANDOM_GENERATOR OR
     CONFIG_TIMER_RANDOM_GENERATOR OR
-    CONFIG_X86_TSC_RANDOM_GENERATOR OR
     CONFIG_XOROSHIRO_RANDOM_GENERATOR)
 zephyr_library()
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_TIMER_RANDOM_GENERATOR          rand32_timer.c)
-zephyr_library_sources_ifdef(CONFIG_X86_TSC_RANDOM_GENERATOR        rand32_timestamp.c)
 zephyr_library_sources_ifdef(CONFIG_XOROSHIRO_RANDOM_GENERATOR      rand32_xoroshiro128.c)
 zephyr_library_sources_ifdef(CONFIG_CTR_DRBG_CSPRNG_GENERATOR 		rand32_ctr_drbg.c)
 

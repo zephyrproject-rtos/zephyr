@@ -19,6 +19,8 @@
 #include <syscall.h>
 #include "macro.h"
 
+_ASM_FILE_PROLOGUE
+
 GDATA(_kernel)
 GDATA(_k_neg_eagain)
 

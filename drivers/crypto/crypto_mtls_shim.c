@@ -364,8 +364,6 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			return -EINVAL;
 		}
 		break;
-	case CRYPTO_CIPHER_MODE_CTR:
-		break;
 	case CRYPTO_CIPHER_MODE_CBC:
 		aes_ctx = &mtls_sessions[ctx_idx].mtls_aes;
 		mbedtls_aes_init(aes_ctx);

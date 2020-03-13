@@ -19,6 +19,7 @@ tests:
   tracing.backends.openocd:
     extra_configs:
       - CONFIG_OPENOCD_SUPPORT=y
+      - CONFIG_SMP=n
     arch_exclude: posix xtensa
     platform_exclude: qemu_x86_64
   tracing.uart:

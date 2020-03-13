@@ -127,8 +127,7 @@ static int mqtt_handle_packet(struct mqtt_client *client,
 			client->unacked_ping--;
 		}
 
-		/* No notification of Ping response to application. */
-		notify_event = false;
+		evt.type = MQTT_EVT_PINGRESP;
 		break;
 
 	default:

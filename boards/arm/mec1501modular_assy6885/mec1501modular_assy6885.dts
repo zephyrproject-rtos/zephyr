@@ -21,10 +21,10 @@
 
 	aliases {
 		pwm-0 = &pwm0;
+		peci-0 = &peci0;
 
 		i2c0 = &i2c_smb_0;
 		i2c1 = &i2c_smb_1;
-		i2c7 = &i2c_smb_2;
 	};
 };
 
@@ -49,12 +49,6 @@
 	port_sel = <1>;
 };
 
-&i2c_smb_2 {
-	status = "okay";
-	label = "I2C7";
-	port_sel = <7>;
-};
-
 &espi0 {
 	status = "okay";
 	io_girq = <19>;
@@ -75,5 +69,9 @@
 };
 
 &kscan0 {
+	status = "okay";
+};
+
+&peci0 {
 	status = "okay";
 };

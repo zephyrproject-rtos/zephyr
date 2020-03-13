@@ -26,6 +26,4 @@
 
 #define DT_ROM_SIZE				CONFIG_FLASH_SIZE
 
-#define DT_IOAPIC_BASE_ADDRESS		DT_INTEL_IOAPIC_FEC00000_BASE_ADDRESS
-
 /* End of SoC Level DTS fixup file */

@@ -134,6 +134,9 @@ u32_t ticker_update(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 		    u8_t force, ticker_op_func fp_op_func, void *op_context);
 u32_t ticker_stop(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 		  ticker_op_func fp_op_func, void *op_context);
+u32_t ticker_stop_abs(u8_t instance_index, u8_t user_id, u8_t ticker_id,
+		      u32_t ticks_at_stop, ticker_op_func fp_op_func,
+		      void *op_context);
 u32_t ticker_next_slot_get(u8_t instance_index, u8_t user_id,
 			   u8_t *ticker_id_head, u32_t *ticks_current,
 			   u32_t *ticks_to_expire,

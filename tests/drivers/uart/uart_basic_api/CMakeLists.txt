@@ -6,6 +6,7 @@ project(uart_basic_api)
 
 target_sources(app PRIVATE
     src/main.c
+    src/test_uart_config.c
     src/test_uart_poll.c
     )
 target_sources_ifdef(CONFIG_UART_INTERRUPT_DRIVEN app PRIVATE src/test_uart_fifo.c)

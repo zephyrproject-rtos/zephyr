@@ -43,4 +43,6 @@ void engine_trigger_update(void);
 void engine_bootstrap_finish(void);
 #endif
 
+void engine_update_tx_time(void);
+
 #endif /* LWM2M_RD_CLIENT_H */

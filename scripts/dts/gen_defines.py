@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2019 Nordic Semiconductor ASA
+# Copyright (c) 2019 - 2020 Nordic Semiconductor ASA
 # Copyright (c) 2019 Linaro Limited
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -34,7 +34,10 @@ def main():
     args = parse_args()
 
     try:
-        edt = edtlib.EDT(args.dts, args.bindings_dirs)
+        edt = edtlib.EDT(args.dts, args.bindings_dirs,
+                         # Suppress this warning if it's suppressed in dtc
+                         warn_reg_unit_address_mismatch=
+                             "-Wno-simple_bus_reg" not in args.dtc_flags)
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 
@@ -45,7 +48,6 @@ def main():
     conf_file = open(args.conf_out, "w", encoding="utf-8")
     header_file = open(args.header_out, "w", encoding="utf-8")
     flash_area_num = 0
-    edtlib.dtc_flags = args.dtc_flags
 
     write_top_comment(edt)
 
@@ -60,6 +62,7 @@ def main():
             flash_area_num += 1
 
         if node.enabled and node.matching_compat:
+            augment_node(node)
             write_regs(node)
             write_irqs(node)
             write_props(node)
@@ -90,7 +93,9 @@ def parse_args():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--dts", required=True, help="DTS file")
-    parser.add_argument("--dtc-flags", help="extra device tree parameters")
+    parser.add_argument("--dtc-flags",
+                        help="'dtc' devicetree compiler flags, some of which "
+                             "might be respected here")
     parser.add_argument("--bindings-dirs", nargs='+', required=True,
                         help="directory with bindings in YAML format, "
                         "we allow multiple")
@@ -103,6 +108,86 @@ def parse_args():
                              "as a debugging aid)")
 
     return parser.parse_args()
+
+
+def augment_node(node):
+    # Augment an EDT node with these zephyr-specific attributes, which
+    # are used to generate macros from it:
+    #
+    # - z_primary_ident: a primary node identifier based on the node's
+    #   compatible, plus information from its unit address (or its
+    #   parent's unit address) or its name, and/or its bus.
+    #
+    # - z_other_idents: a list of other identifiers for the node,
+    #   besides z_primary_ident.
+    #
+    # - z_idents: a list of all identifiers, containing the primary and other
+    #   identifiers in that order.
+    #
+    # The z_other_idents list contains the following other attributes,
+    # concatenated in this order:
+    #
+    # - z_inst_idents: node identifiers based on the index of the node
+    #   within the EDT list of nodes for each compatible, e.g.:
+    #   ["INST_3_<NODE's_COMPAT>",
+    #    "INST_2_<NODE's_OTHER_COMPAT>"]
+    #
+    # - z_alias_idents: node identifiers based on any /aliases pointing to
+    #   the node in the devicetree source, e.g.:
+    #   ["DT_ALIAS_<NODE's_ALIAS_NAME>"]
+
+    # Add the <COMPAT>_<UNIT_ADDRESS> style legacy identifier.
+    node.z_primary_ident = node_ident(node)
+
+    # Add z_instances, which are used to create these macros:
+    #
+    # #define DT_INST_<N>_<COMPAT>_<DEFINE> <VAL>
+    inst_idents = []
+    for compat in node.compats:
+        instance_no = node.edt.compat2enabled[compat].index(node)
+        inst_idents.append(f"INST_{instance_no}_{str2ident(compat)}")
+    node.z_inst_idents = inst_idents
+
+    # Add z_aliases, which are used to create these macros:
+    #
+    # #define DT_ALIAS_<ALIAS>_<DEFINE> <VAL>
+    # #define DT_<COMPAT>_<ALIAS>_<DEFINE> <VAL>
+    #
+    # TODO: See if we can remove or deprecate the second form.
+    compat_s = str2ident(node.matching_compat)
+    alias_idents = []
+    for alias in node.aliases:
+        alias_ident = str2ident(alias)
+        alias_idents.append(f"ALIAS_{alias_ident}")
+        # NOTE: in some cases (e.g. PWM_LEDS_BLUE_PWM_LET for
+        # hexiwear_k64) this is a collision with node.z_primary_ident,
+        # making the all_idents checking below necessary.
+        alias_idents.append(f"{compat_s}_{alias_ident}")
+    node.z_alias_idents = alias_idents
+
+    # z_other_idents are all the other identifiers for the node. We
+    # use the term "other" instead of "alias" here because that
+    # overlaps with the node's true aliases in the DTS, which is just
+    # part of what makes up z_other_idents.
+    all_idents = set()
+    all_idents.add(node.z_primary_ident)
+    other_idents = []
+    for ident in node.z_inst_idents + node.z_alias_idents:
+        if ident not in all_idents:
+            other_idents.append(ident)
+            all_idents.add(ident)
+    node.z_other_idents = other_idents
+
+    node.z_idents = [node.z_primary_ident] + node.z_other_idents
+
+
+def for_each_ident(node, function):
+    # Call "function" on node.z_primary_ident, then on each of the
+    # identifiers in node.z_other_idents, in that order.
+
+    function(node, node.z_primary_ident)
+    for ident in node.z_other_idents:
+        function(node, ident)
 
 
 def write_top_comment(edt):
@@ -193,61 +278,381 @@ def relativize(path):
 
 
 def write_regs(node):
-    # Writes address/size output for the registers in the node's 'reg' property
+    # Writes address/size output for the registers in the node's 'reg'
+    # property. This is where the BASE_ADDRESS and SIZE macros come from.
 
-    def write_reg(reg, base_ident, val):
-        # Drop '_0' from the identifier if there's a single register, for
-        # backwards compatibility
-        if len(reg.node.regs) > 1:
-            ident = f"{base_ident}_{reg.node.regs.index(reg)}"
+    if not node.regs:
+        return
+
+    # This maps a reg_i (see below) to the "primary" BASE_ADDRESS and SIZE
+    # macros used to identify it, which look like:
+    #
+    #   DT_<PRIMARY_NODE_IDENTIFIER>_BASE_ADDRESS_<reg_i>
+    #   DT_<PRIMARY_NODE_IDENTIFIER>_SIZE_<reg_i>
+    #
+    # Or, for backwards compatibility if there's only one reg:
+    #
+    #   DT_<IDENT>_BASE_ADDRESS
+    #   DT_<IDENT>_SIZE
+    #
+    # It's up to augment_node() to decide which identifier for the
+    # node is its "primary" identifier, and which identifiers are
+    # "other" identifiers. The "other" identifier BASE_ADDRESS and
+    # SIZE macros are defined in terms of the "primary" ones.
+    reg_i2primary_addr_size = {}
+
+    def write_regs_for_ident(node, ident):
+        # Write BASE_ADDRESS and SIZE macros for a given identifier
+        # 'ident'. If we have already generated primary address and
+        # size macros and saved in them in primary_addrs and
+        # primary_sizes, we just reuse those. Otherwise (i.e. the
+        # first time this is called), they are generated from the
+        # actual reg.addr and reg.size attributes, and the names of
+        # the primary macros are saved.
+
+        for reg_i, reg in enumerate(node.regs):
+            # DT_<IDENT>_BASE_ADDRESS_<reg_i>
+            # DT_<IDENT>_SIZE_<reg_i>
+            prim_addr, prim_size = reg_i2primary_addr_size.get(reg_i,
+                                                               (None, None))
+            suffix = f"_{reg_i}" if len(node.regs) > 1 else ""
+
+            if prim_addr is not None:
+                write_reg(ident, reg, prim_addr, prim_size,
+                          "", suffix)
+            else:
+                prim_addr, prim_size = write_reg(ident, reg, None, None,
+                                                 "", suffix)
+                reg_i2primary_addr_size[reg_i] = (prim_addr, prim_size)
+
+            # DT_<IDENT>_<reg.name>_BASE_ADDRESS
+            # DT_<IDENT>_<reg.name>_SIZE
+            if reg.name:
+                write_reg(ident, reg, prim_addr, prim_size,
+                          f"{str2ident(reg.name)}_", "")
+
+    def write_reg(ident, reg, prim_addr, prim_size, prefix, suffix):
+        addr = hex(reg.addr) if prim_addr is None else prim_addr
+        size = reg.size if prim_size is None else prim_size
+
+        addr_ret = out(f"{ident}_{prefix}BASE_ADDRESS{suffix}", addr)
+        if size is not None and size != 0:
+            size_ret = out(f"{ident}_{prefix}SIZE{suffix}", size)
         else:
-            ident = base_ident
+            size_ret = None
 
-        out_node(node, ident, val,
-                 # Name alias from 'reg-names = ...'
-                 f"{str2ident(reg.name)}_{base_ident}" if reg.name else None)
+        return (addr_ret, size_ret)
 
-    for reg in node.regs:
-        write_reg(reg, "BASE_ADDRESS", hex(reg.addr))
-        if reg.size:
-            write_reg(reg, "SIZE", reg.size)
-
+    out_comment("BASE_ADDRESS and SIZE macros from the 'reg' property",
+                blank_before=False)
+    for_each_ident(node, write_regs_for_ident)
 
 def write_props(node):
     # Writes any properties defined in the "properties" section of the binding
     # for the node
 
-    for prop in node.props.values():
-        if not should_write(prop):
-            continue
+    name2primary_macros = {}
+    def write_props_for_ident(node, ident):
+        for prop in node.props.values():
+            if not should_write(prop):
+                continue
 
+            primary_macros = name2primary_macros.get(prop.name)
+            if primary_macros is None:
+                name2primary_macros[prop.name] = primary_macros = \
+                    write_prop_primary(ident, prop)
+            else:
+                write_prop_other(ident, prop, primary_macros)
+
+    def write_prop_primary(ident, prop):
+        # "Generic" property macro generation done here is a bit
+        # inconsistent depending on the property type for historical
+        # reasons.
+        #
+        # Different types of arrays are handled in inconsistent ways:
+        #
+        # - whether or not to generate an array initializer for "simple"
+        #   (non-phandle) arrays depends on the DTS array type
+        # - phandle-arrays special cases depending on the length of the array
+        #   (adding a trailing _0 or not) which can't be fixed within the same
+        #   namespace
+        #
+        # This should be fixed up "once and for all" in a new macro namespace.
+
+        name = f"{ident}_{str2ident(prop.name)}"
+
+        comment = f"Macros from property '{prop.name}'"
         if prop.description is not None:
-            out_comment(prop.description, blank_before=False)
-
-        ident = str2ident(prop.name)
-
-        if prop.type == "boolean":
-            out_node(node, ident, 1 if prop.val else 0)
-        elif prop.type == "string":
-            out_node_s(node, ident, prop.val)
-        elif prop.type == "int":
-            out_node(node, ident, prop.val)
-        elif prop.type == "array":
-            for i, val in enumerate(prop.val):
-                out_node(node, f"{ident}_{i}", val)
-            out_node_init(node, ident, prop.val)
-        elif prop.type == "string-array":
-            for i, val in enumerate(prop.val):
-                out_node_s(node, f"{ident}_{i}", val)
-        elif prop.type == "uint8-array":
-            out_node_init(node, ident,
-                          [f"0x{b:02x}" for b in prop.val])
-        else:  # prop.type == "phandle-array"
-            write_phandle_val_list(prop)
+            comment += f": {prop.description}"
+        out_comment(comment, blank_before=False)
+        if prop.type in ["boolean", "string", "int"]:
+            # Single values are converted to macros as:
+            # DT_<IDENT>_<PROP_NAME> <PROP_VALUE>
+            ret = {"value": out(name, prop2value(prop))}
+        elif prop.type in ["array", "string-array", "uint8-array"]:
+            # Non-phandle-array array types are handled by
+            # generating one or both of these types of macros:
+            #
+            # 1. Individual macros for each array element:
+            #
+            #    DT_<IDENT>_<PROP_NAME>_0 <PROP_VALUE[0]>
+            #    ...
+            #    DT_<IDENT>_<PROP_NAME>_<N-1> <PROP_VALUE[N-1]>
+            #
+            # 2. A macro expanding to a C array initializer for all of them:
+            #
+            #    DT_<IDENT>_<PROP_NAME> {prop.val[0], ..., prop.val[n-1]}
+            #
+            # Only the "array" type gets both. The other array types
+            # get one of the two.
+            ret = {}
+            if prop.type in ["array", "string-array"]:
+                values = []
+                for val_i, val in enumerate(prop2values(prop)):
+                    values.append(out(f"{name}_{val_i}", val))
+                ret["values"] = values
+            if prop.type in ["array", "uint8-array"]:
+                ret['initializer'] = out(name, prop2init(prop))
+        elif prop.type == "phandle-array":
+            # The return value maps:
+            #
+            # - 'count' to the number of entries, if greater than one
+            # - each entry's index to a tuple:
+            #   (controller_macro, cell_macros, initializer_macro)
+            # - 'initializer' to the C initializer for the entire property
+            ret = write_phandle_array_primary(ident, prop)
+        else:
+            err(f"write_prop_primary: unhandled property type {prop.type} "
+                f"for property {prop}")
 
         # Generate DT_..._ENUM if there's an 'enum:' key in the binding
         if prop.enum_index is not None:
-            out_node(node, ident + "_ENUM", prop.enum_index)
+            ret["enum"] = out(f"{name}_ENUM", prop.enum_index)
+
+        return ret
+
+    def write_prop_other(ident, prop, primary_macros):
+        # Write macros for another node identifier 'ident'.
+
+        name = f"{ident}_{str2ident(prop.name)}"
+        if prop.type in ["boolean", "string", "int"]:
+            out(name, primary_macros['value'])
+        elif prop.type in ["array", "string-array", "uint8-array"]:
+            if prop.type in ["array", "string-array"]:
+                for val_i in range(len(prop2values(prop))):
+                    out(f"{name}_{val_i}", primary_macros["values"][val_i])
+            if prop.type in ["array", "uint8-array"]:
+                out(name, primary_macros['initializer'])
+        elif prop.type == "phandle-array":
+            write_phandle_array_other(ident, prop, primary_macros)
+        else:
+            err(f"write_prop_primary: unhandled property type {prop.type} "
+                f"for property {prop}")
+
+        # Generate DT_..._ENUM if there's an 'enum:' key in the binding
+        if prop.enum_index is not None:
+            out(f"{name}_ENUM", primary_macros['enum'])
+
+    for_each_ident(node, write_props_for_ident)
+
+
+def write_phandle_array_primary(ident, prop):
+    # Generate macros for a phandle-array property for a primary
+    # identifier.
+    #
+    # ident: a node identifier
+    # prop: a Property with type "phandle-array"
+    #
+    # Results depend on:
+    #
+    # - how many edtlib.ControllerAndData items there are in prop.val
+    # - whether or not the property 'foos' has a parallel 'foo-names'
+    #   property in the same node
+    #
+    # If there's just one ControllerAndData item, like this example:
+    #
+    #    gpios = <&gpioc 0xd 0>;
+    #
+    # Then the macros look like this:
+    #
+    #    #define DT_<IDENT>_GPIOS_CONTROLLER     "GPIOC"
+    #    #define DT_<IDENT>_GPIOS_PIN            13
+    #    #define DT_<IDENT>_GPIOS_FLAGS          0
+    #    #define DT_<IDENT>_GPIOS                {"GPIOC", 13, 0}
+    #
+    # Where:
+    #
+    # - The "GPIOS" part of the macros comes from the property name.
+    # - The "CONTROLLER" name is hard-coded, and its value comes from
+    #   the "label" property of the node pointed to by the &gpioc phandle.
+    #   If it has no label, the "CONTROLLER" macro is not generated.
+    # - The "PIN" and "FLAGS" names come from the devicetree YAML binding,
+    #   which in this case contains this:
+    #
+    #       gpio-cells:
+    #         - pin
+    #         - flags
+    #
+    # If there are multiple ControllerAndData items, like this:
+    #
+    #    cs-gpios = < &gpiod 0xd 0x10 >, < &gpioe 0x0 0x0 >;
+    #
+    # Then the macros have trailing indexes (_0 and _1 below),
+    # and there's a _COUNT macro:
+    #
+    #    #define DT_<IDENT>_CS_GPIOS_CONTROLLER_0    "GPIOD"
+    #    #define DT_<IDENT>_CS_GPIOS_PIN_0           13
+    #    #define DT_<IDENT>_CS_GPIOS_FLAGS_0         16
+    #    #define DT_<IDENT>_CS_GPIOS_0               {"GPIOD", 13, 16}
+    #    #define DT_<IDENT>_CS_GPIOS_CONTROLLER_1    "GPIOE"
+    #    #define DT_<IDENT>_CS_GPIOS_PIN_1           0
+    #    #define DT_<IDENT>_CS_GPIOS_FLAGS_1         0
+    #    #define DT_<IDENT>_CS_GPIOS_1               {"GPIOE", 0, 0}
+    #    #define DT_<IDENT>_CS_GPIOS_COUNT           2
+    #    #define DT_<IDENT>_CS_GPIOS                 {DT_<IDENT>_CS_GPIOS_0, DT_<IDENT>_CS_GPIOS_1}
+    #
+    # Additionally, if the node also has a property that names the
+    # individual controllers, like this:
+    #
+    #    foo {
+    #        io-channels = < &adc1 0x1a >, < &adc1 0x1b >;
+    #        io-channel-names = "SENSOR", "BANDGAP";
+    #    }
+    #
+    # Then the -names property will be used to generate additional
+    # macros, like this:
+    #
+    #   #define DT_<IDENT>_IO_CHANNELS_CONTROLLER_0       "ADC_1"
+    #   #define DT_<IDENT>_SENSOR_IO_CHANNELS_CONTROLLER  DT_<IDENT>_IO_CHANNELS_CONTROLLER_0
+    #   #define DT_<IDENT>_IO_CHANNELS_CONTROLLER_1       "ADC_1"
+    #   #define DT_<IDENT>_BANDGAP_IO_CHANNELS_CONTROLLER DT_<IDENT>_IO_CHANNELS_CONTROLLER_1
+    #   #define DT_<IDENT>_IO_CHANNELS_0                  {"ADC_1", 26}
+    #   #define DT_<IDENT>_IO_CHANNELS_SENSOR             DT_<IDENT>_IO_CHANNELS_0
+    #   #define DT_<IDENT>_IO_CHANNELS_1                  {"ADC_1", 27}
+    #   #define DT_<IDENT>_IO_CHANNELS_BANDGAP            DT_<IDENT>_IO_CHANNELS_1
+    #
+    # The numerical special-casing of whether there are trailing
+    # indexes can't be easily made consistent. If we always
+    # generate versions with trailing _0 *and* keep backwards
+    # compatibility by generating non-indexed versions if there's
+    # only one specifier in the array, there will be in duplicated
+    # macros. For example, DT_<IDENT>_GPIOS would be defined twice
+    # in the first example.
+    ret = {}
+    prop_ident = str2ident(prop.name)
+    nvals = len(prop.val)
+
+    for entry_i, entry in enumerate(prop.val):
+        suffix = f"_{entry_i}" if nvals > 1 else ""
+        ret[entry_i] = write_controller_and_data_primary(ident, prop_ident, entry, suffix)
+
+    if nvals > 1:
+        ret["count"] = out(f"{ident}_{prop_ident}_COUNT", nvals)
+
+    # Due to the issues discussed above, we have to
+    # special-case this logic depending on nvals.
+    if nvals > 1:
+        initializer = out(f"{ident}_{prop_ident}",
+                          "{" +
+                          ", ".join(ret[i][2] for i in range(nvals)) +
+                          "}")
+    else:
+        initializer = ret[0][2]
+    ret["initializer"] = initializer
+
+    return ret
+
+
+def write_phandle_array_other(ident, prop, primary_macros):
+    # Like write_phandle_array_primary, but using the primary macros
+    # in its return value.
+
+    prop_ident = str2ident(prop.name)
+    nvals = len(prop.val)
+
+    for entry_i, entry in enumerate(prop.val):
+        suffix = f"_{entry_i}" if nvals > 1 else ""
+        write_controller_and_data_other(ident, prop_ident, entry, suffix,
+                                        primary_macros[entry_i])
+
+    if nvals > 1:
+        out(f"{ident}_{prop_ident}_COUNT", primary_macros["count"])
+
+    if primary_macros["initializer"] and nvals > 1:
+        out(f"{ident}_{prop_ident}", primary_macros["initializer"])
+
+
+def write_controller_and_data_primary(ident, prop_ident, entry, suffix):
+    # Helper routine for writing a phandle array entry.
+    #
+    # entry:
+    #    A ControllerAndData to write the primary macros for.
+    #
+    # Returns a tuple:
+    #
+    #    (primary_controller_macro, primary_cell_macros,
+    #     primary_initializer_macro)
+    #
+    # See the detailed comment in write_phandle_array_primary() for
+    # examples.
+
+    entry_ident = str2ident(entry.name) if entry.name else None
+
+    if entry.controller.label is not None:
+        ctlr_macro = out_s(f"{ident}_{prop_ident}_CONTROLLER{suffix}",
+                           entry.controller.label)
+        if entry_ident:
+            out(f"{ident}_{entry_ident}_{prop_ident}_CONTROLLER", ctlr_macro)
+    else:
+        ctlr_macro = None
+
+    cell_macros = []
+    for cell, val in entry.data.items():
+        cell_ident = str2ident(cell)
+        cell_macro = out(f"{ident}_{prop_ident}_{cell_ident}{suffix}", val)
+        if entry_ident:
+            out(f"{ident}_{entry_ident}_{prop_ident}_{cell_ident}", cell_macro)
+        cell_macros.append(cell_macro)
+
+    if ctlr_macro:
+        initializer = out(f"{ident}_{prop_ident}{suffix}",
+                          "{" +
+                          ", ".join([quote_str(entry.controller.label)] +
+                                    list(map(str, entry.data.values()))) +
+                          "}")
+        if entry_ident:
+            out(f"{ident}_{prop_ident}_{entry_ident}", initializer)
+    else:
+        initializer = None
+
+    return (ctlr_macro, cell_macros, initializer)
+
+
+def write_controller_and_data_other(ident, prop_ident, entry, suffix,
+                                    primary_macros):
+    # Like write_controller_and_data_primary, but using the primary
+    # macros in its return value to generate defines.
+
+    entry_ident = str2ident(entry.name) if entry.name else None
+    ctlr_macro, cell_macros, init_macro = primary_macros
+
+    if ctlr_macro is not None:
+        out(f"{ident}_{prop_ident}_CONTROLLER{suffix}", ctlr_macro)
+        if entry_ident:
+            out(f"{ident}_{entry_ident}_{prop_ident}_CONTROLLER",
+                ctlr_macro)
+
+    for cell_i, cell in enumerate(entry.data.keys()):
+        cell_ident = str2ident(cell)
+        out(f"{ident}_{prop_ident}_{cell_ident}{suffix}", cell_macros[cell_i])
+        if entry_ident:
+            out(f"{ident}_{entry_ident}_{prop_ident}_{cell_ident}",
+                cell_macros[cell_i])
+
+    if init_macro is not None:
+        out(f"{ident}_{prop_ident}{suffix}", init_macro)
+        if entry_ident:
+            out(f"{ident}_{prop_ident}_{entry_ident}", init_macro)
 
 
 def should_write(prop):
@@ -278,6 +683,44 @@ def should_write(prop):
     return True
 
 
+def prop2value(prop):
+    # Get the single macro expansion for prop.value.
+
+    if prop.type == "boolean":
+        return 1 if prop.val else 0
+
+    if prop.type == "string":
+        return quote_str(prop.val)
+
+    if prop.type == "int":
+        return prop.val
+
+    err(f"prop2value: unsupported type {prop.type}")
+
+
+def prop2values(prop):
+    # For array properties, get a list containing the individual
+    # elements converted to C scalar constants.
+
+    if prop.type == "array":
+        return prop.val
+
+    if prop.type == "string-array":
+        return [quote_str(elm) for elm in prop.val]
+
+    if prop.type == "uint8-array":
+        return [f"0x{elm:02x}" for elm in prop.val]
+
+    err(f"prop2values: unsupported type {prop.type}")
+
+
+def prop2init(prop):
+    # For array properties, get a C array initializer for the
+    # property value.
+
+    return "{" + ", ".join(str(val) for val in prop2values(prop)) + "}"
+
+
 def write_bus(node):
     # Generate bus-related #defines
 
@@ -287,8 +730,18 @@ def write_bus(node):
     if node.bus_node.label is None:
         err(f"missing 'label' property on bus node {node.bus_node!r}")
 
-    # #define DT_<DEV-IDENT>_BUS_NAME <BUS-LABEL>
-    out_node_s(node, "BUS_NAME", str2ident(node.bus_node.label))
+    primary_macro = None
+    def write_bus_node_for_ident(node, ident):
+        # #define DT_<IDENT>_BUS_NAME <BUS-LABEL>
+
+        nonlocal primary_macro
+        if primary_macro is None:
+            primary_macro = out(f"{ident}_BUS_NAME",
+                                quote_str(str2ident(node.bus_node.label)))
+        else:
+            out(f"{ident}_BUS_NAME", primary_macro)
+
+    for_each_ident(node, write_bus_node_for_ident)
 
     for compat in node.compats:
         # #define DT_<COMPAT>_BUS_<BUS-TYPE> 1
@@ -330,45 +783,6 @@ def node_ident(node):
         ident += str2ident(node.name)
 
     return ident
-
-
-def node_aliases(node):
-    # Returns a list of aliases for 'node', used e.g. when building macro names
-
-    return node_path_aliases(node) + node_instance_aliases(node)
-
-
-def node_path_aliases(node):
-    # Returns a list of aliases for 'node', based on the aliases registered for
-    # it in the /aliases node. Used e.g. when building macro names.
-
-    if node.matching_compat is None:
-        return []
-
-    compat_s = str2ident(node.matching_compat)
-
-    aliases = []
-    for alias in node.aliases:
-        aliases.append(f"ALIAS_{str2ident(alias)}")
-        # TODO: See if we can remove or deprecate this form
-        aliases.append(f"{compat_s}_{str2ident(alias)}")
-
-    return aliases
-
-
-def node_instance_aliases(node):
-    # Returns a list of aliases for 'node', based on the compatible string and
-    # the instance number (each node with a particular compatible gets its own
-    # instance number, starting from zero).
-    #
-    # This is a list since a node can have multiple 'compatible' strings, each
-    # with their own instance number.
-
-    res = []
-    for compat in node.compats:
-        instance_no = node.edt.compat2enabled[compat].index(node)
-        res.append(f"INST_{instance_no}_{str2ident(compat)}")
-    return res
 
 
 def write_addr_size(edt, prop_name, prefix):
@@ -477,10 +891,12 @@ def write_flash_partition_prefix(prefix, partition_node, index):
     for i, reg in enumerate(partition_node.regs):
         # Also add aliases that point to the first sector (TODO: get rid of the
         # aliases?)
-        out(f"{prefix}_OFFSET_{i}", reg.addr,
-            aliases=[f"{prefix}_OFFSET"] if i == 0 else [])
-        out(f"{prefix}_SIZE_{i}", reg.size,
-            aliases=[f"{prefix}_SIZE"] if i == 0 else [])
+        offset = out(f"{prefix}_OFFSET_{i}", reg.addr)
+        if i == 0:
+            out(f"{prefix}_OFFSET", offset)
+        size = out(f"{prefix}_SIZE_{i}", reg.size)
+        if i == 0:
+            out(f"{prefix}_SIZE", size)
 
     controller = partition_node.flash_controller
     if controller.label is not None:
@@ -491,14 +907,39 @@ def write_irqs(node):
     # Writes IRQ num and data for the interrupts in the node's 'interrupt'
     # property
 
-    def irq_name_alias(irq, cell_name):
-        if not irq.name:
-            return None
+    if not node.interrupts:
+        return
 
-        alias = f"IRQ_{str2ident(irq.name)}"
-        if cell_name != "irq":
-            alias += f"_{str2ident(cell_name)}"
-        return alias
+    # maps (irq_i, cell_name) to the primary macro for that pair,
+    # if there is one.
+    irq_cell2primary_macro = {}
+
+    def write_irqs_for_ident(node, ident):
+        # Like write_regs_for_ident(), but for interrupts.
+
+        for irq_i, irq in enumerate(node.interrupts):
+            for cell_name, cell_value in irq.data.items():
+                if cell_name == "irq":
+                    if "arm,gic" in irq.controller.compats:
+                        cell_value = map_arm_gic_irq_type(irq, cell_value)
+                    cell_value = encode_zephyr_multi_level_irq(irq, cell_value)
+                    name_suffix = ""
+                else:
+                    name_suffix = f"_{str2ident(cell_name)}"
+
+                # DT_<IDENT>_IRQ_<irq_i>[_<CELL_NAME>]
+                idx_macro = f"{ident}_IRQ_{irq_i}{name_suffix}"
+                primary_macro = irq_cell2primary_macro.get((irq_i, cell_name))
+                if primary_macro is not None:
+                    out(idx_macro, primary_macro)
+                else:
+                    primary_macro = out(idx_macro, cell_value)
+                    irq_cell2primary_macro[(irq_i, cell_name)] = primary_macro
+
+                # DT_<IDENT>_IRQ_<IRQ_NAME>[_<CELL_NAME>]
+                if irq.name:
+                    out(f"{ident}_IRQ_{str2ident(irq.name)}{name_suffix}",
+                        primary_macro)
 
     def map_arm_gic_irq_type(irq, irq_num):
         # Maps ARM GIC IRQ (type)+(index) combo to linear IRQ number
@@ -528,117 +969,35 @@ def write_irqs(node):
             irq_ctrl = irq_ctrl.interrupts[0].controller
         return irq_num
 
-    for irq_i, irq in enumerate(node.interrupts):
-        for cell_name, cell_value in irq.data.items():
-            ident = f"IRQ_{irq_i}"
-            if cell_name == "irq":
-                if "arm,gic" in irq.controller.compats:
-                    cell_value = map_arm_gic_irq_type(irq, cell_value)
-                cell_value = encode_zephyr_multi_level_irq(irq, cell_value)
-            else:
-                ident += f"_{str2ident(cell_name)}"
-
-            out_node(node, ident, cell_value,
-                     name_alias=irq_name_alias(irq, cell_name))
+    out_comment("IRQ macros from the 'interrupts' property",
+                blank_before=False)
+    for_each_ident(node, write_irqs_for_ident)
 
 
 def write_spi_dev(node):
     # Writes SPI device GPIO chip select data if there is any
 
-    cs_gpio = edtlib.spi_dev_cs_gpio(node)
-    if cs_gpio is not None:
-        write_phandle_val_list_entry(node, cs_gpio, None, "CS_GPIOS")
+    cs_gpio = node.spi_cs_gpio
+    if cs_gpio is None:
+        return
 
-
-def write_phandle_val_list(prop):
-    # Writes output for a phandle/value list, e.g.
-    #
-    #    pwms = <&pwm-ctrl-1 10 20
-    #            &pwm-ctrl-2 30 40>;
-    #
-    # prop:
-    #   phandle/value Property instance.
-    #
-    #   If only one entry appears in 'prop' (the example above has two), the
-    #   generated identifier won't get a '_0' suffix, and the '_COUNT' and
-    #   group initializer are skipped too.
-    #
-    # The base identifier is derived from the property name. For example, 'pwms = ...'
-    # generates output like this:
-    #
-    #   #define <node prefix>_PWMS_CONTROLLER_0 "PWM_0"  (name taken from 'label = ...')
-    #   #define <node prefix>_PWMS_CHANNEL_0 123         (name taken from *-cells in binding)
-    #   #define <node prefix>_PWMS_0 {"PWM_0", 123}
-    #   #define <node prefix>_PWMS_CONTROLLER_1 "PWM_1"
-    #   #define <node prefix>_PWMS_CHANNEL_1 456
-    #   #define <node prefix>_PWMS_1 {"PWM_1", 456}
-    #   #define <node prefix>_PWMS_COUNT 2
-    #   #define <node prefix>_PWMS {<node prefix>_PWMS_0, <node prefix>_PWMS_1}
-    #   ...
-
-    # pwms -> PWMS
-    # foo-gpios -> FOO_GPIOS
-    ident = str2ident(prop.name)
-
-    initializer_vals = []
-    for i, entry in enumerate(prop.val):
-        initializer_vals.append(write_phandle_val_list_entry(
-            prop.node, entry, i if len(prop.val) > 1 else None, ident))
-
-    if len(prop.val) > 1:
-        out_node(prop.node, ident + "_COUNT", len(initializer_vals))
-        out_node_init(prop.node, ident, initializer_vals)
-
-
-def write_phandle_val_list_entry(node, entry, i, ident):
-    # write_phandle_val_list() helper. We could get rid of it if it wasn't for
-    # write_spi_dev(). Adds 'i' as an index to identifiers unless it's None.
-    #
-    # 'entry' is an edtlib.ControllerAndData instance.
-    #
-    # Returns the identifier for the macro that provides the
-    # initializer for the entire entry.
-
-    initializer_vals = []
-    if entry.controller.label is not None:
-        ctrl_ident = ident + "_CONTROLLER"  # e.g. PWMS_CONTROLLER
-        if entry.name:
-            name_alias = f"{str2ident(entry.name)}_{ctrl_ident}"
+    primary_macros = None
+    def write_spi_dev_for_ident(node, ident):
+        nonlocal primary_macros
+        if primary_macros is None:
+            primary_macros = write_controller_and_data_primary(ident,
+                                                               "CS_GPIOS", cs_gpio, "")
         else:
-            name_alias = None
-        # Ugly backwards compatibility hack. Only add the index if there's
-        # more than one entry.
-        if i is not None:
-            ctrl_ident += f"_{i}"
-        initializer_vals.append(quote_str(entry.controller.label))
-        out_node_s(node, ctrl_ident, entry.controller.label, name_alias)
+            write_controller_and_data_other(ident, "CS_GPIOS", cs_gpio, "",
+                                            primary_macros)
 
-    for cell, val in entry.data.items():
-        cell_ident = f"{ident}_{str2ident(cell)}"  # e.g. PWMS_CHANNEL
-        if entry.name:
-            # From e.g. 'pwm-names = ...'
-            name_alias = f"{str2ident(entry.name)}_{cell_ident}"
-        else:
-            name_alias = None
-        # Backwards compatibility (see above)
-        if i is not None:
-            cell_ident += f"_{i}"
-        out_node(node, cell_ident, val, name_alias)
-
-    initializer_vals += entry.data.values()
-
-    initializer_ident = ident
-    if entry.name:
-        name_alias = f"{initializer_ident}_{str2ident(entry.name)}"
-    else:
-        name_alias = None
-    if i is not None:
-        initializer_ident += f"_{i}"
-    return out_node_init(node, initializer_ident, initializer_vals, name_alias)
+    for_each_ident(node, write_spi_dev_for_ident)
 
 
 def write_clocks(node):
     # Writes clock information.
+    #
+    # Like write_regs(), but for clocks.
     #
     # Most of this ought to be handled in write_props(), but the identifiers
     # that get generated for 'clocks' are inconsistent with the with other
@@ -649,30 +1008,87 @@ def write_clocks(node):
     if "clocks" not in node.props:
         return
 
-    for clock_i, clock in enumerate(node.props["clocks"].val):
-        controller = clock.controller
+    # Maps a clock_i to (primary_controller, primary_data,
+    # primary_frequency) macros for that clock index
+    clock_i2primary_cdf = {}
 
-        if controller.label is not None:
-            out_node_s(node, "CLOCK_CONTROLLER", controller.label)
-
-        for name, val in clock.data.items():
-            if clock_i == 0:
-                clk_name_alias = "CLOCK_" + str2ident(name)
+    def write_clocks_for_ident(node, ident):
+        clocks = node.props["clocks"].val
+        for clock_i, clock in enumerate(clocks):
+            primary_cdf = clock_i2primary_cdf.get(clock_i)
+            if primary_cdf is None:
+                # Print the primary macros and save them for future use
+                clock_i2primary_cdf[clock_i] = primary_cdf = \
+                    write_clock_primary(ident, clock_i, clock)
             else:
-                clk_name_alias = None
+                # Print other macros in terms of primary macros
+                write_clock_other(ident, clock_i, clock, primary_cdf)
 
-            out_node(node, f"CLOCK_{str2ident(name)}_{clock_i}", val,
-                     name_alias=clk_name_alias)
+    def write_clock_primary(ident, clock_i, clock):
+        # Write clock macros for the primary identifier 'ident'.
+        # Return a (primary_controller, primary_data,
+        # primary_frequency) tuple to use for other idents.
 
-        if "fixed-clock" not in controller.compats:
-            continue
+        controller = clock.controller
+        # If the clock controller has a label property:
+        # DT_<IDENT>_CLOCK_CONTROLLER <LABEL_PROPERTY>
+        if controller.label:
+            # FIXME this is replicating previous behavior that didn't
+            # generate an indexed controller bug-for-bug. There's a
+            # missing _{clock_i} at the end of the f-string.
+            prim_controller = out_s(f"{ident}_CLOCK_CONTROLLER",
+                                    controller.label)
+        else:
+            prim_controller = None
 
-        if "clock-frequency" not in controller.props:
-            err(f"{controller!r} is a 'fixed-clock' but lacks a "
-                "'clock-frequency' property")
+        # For each additional cell in the controller + data:
+        # DT_<IDENT>_CLOCK_<CELL_NAME>_<clock_i> <CELL_VALUE>
+        #
+        # Cell names are from the controller binding's "clock-cells".
+        prim_data = []
+        for name, val in clock.data.items():
+            prim_macro = out(f"{ident}_CLOCK_{str2ident(name)}_{clock_i}", val)
+            prim_data.append(prim_macro)
+            if clock_i == 0:
+                out(f"{ident}_CLOCK_{str2ident(name)}", prim_macro)
 
-        out_node(node, "CLOCKS_CLOCK_FREQUENCY",
-                 controller.props["clock-frequency"].val)
+        # If the clock has a "fixed-clock" compat:
+        # DT_<IDENT>_CLOCKS_CLOCK_FREQUENCY_{clock_i} <CLOCK'S_FREQ>
+        if "fixed-clock" in controller.compats:
+            if "clock-frequency" not in controller.props:
+                err(f"{controller!r} is a 'fixed-clock' but lacks a "
+                    "'clock-frequency' property")
+            # FIXME like the CLOCK_CONTROLLER, this is missing a clock_i.
+            # We need to go bug-for-bug with the previous implementation
+            # to make sure there are no differences before fixing.
+            prim_freq = out(f"{ident}_CLOCKS_CLOCK_FREQUENCY",
+                            controller.props["clock-frequency"].val)
+        else:
+            prim_freq = None
+
+        return (prim_controller, prim_data, prim_freq)
+
+    def write_clock_other(ident, clock_i, clock, primary_cdf):
+        # Write clock macros for a secondary identifier 'ident'
+
+        prim_controller, prim_data, prim_freq = primary_cdf
+        if prim_controller is not None:
+            # FIXME this is replicating previous behavior that didn't
+            # generate an indexed controller bug-for-bug. There's a
+            # missing _{clock_i} at the end of the f-string.
+            out(f"{ident}_CLOCK_CONTROLLER", prim_controller)
+        for name_i, name in enumerate(clock.data.keys()):
+            out(f"{ident}_CLOCK_{str2ident(name)}_{clock_i}", prim_data[name_i])
+            if clock_i == 0:
+                out(f"{ident}_CLOCK_{str2ident(name)}", prim_data[name_i])
+        if prim_freq is not None:
+            # FIXME this is also a bug-for-bug match with the previous
+            # implementation.
+            out(f"{ident}_CLOCKS_CLOCK_FREQUENCY", prim_freq)
+
+    out_comment("Clock gate macros from the 'clocks' property",
+                blank_before=False)
+    for_each_ident(node, write_clocks_for_ident)
 
 
 def str2ident(s):
@@ -687,57 +1103,6 @@ def str2ident(s):
             .upper()
 
 
-def out_node(node, ident, val, name_alias=None, deprecation_msg=None):
-    # Writes a
-    #
-    #   <node prefix>_<ident> = <val>
-    #
-    # assignment, along with a set of
-    #
-    #   <node alias>_<ident>
-    #
-    # aliases, for each path/instance alias for the node. If 'name_alias' (a
-    # string) is passed, then these additional aliases are generated:
-    #
-    #   <node prefix>_<name alias>
-    #   <node alias>_<name alias> (for each node alias)
-    #
-    # 'name_alias' is used for reg-names and the like.
-    #
-    # If a 'deprecation_msg' string is passed, the generated identifiers will
-    # generate a warning if used, via __WARN(<deprecation_msg>)).
-    #
-    # Returns the identifier used for the macro that provides the value
-    # for 'ident' within 'node', e.g. DT_MFG_MODEL_CTL_GPIOS_PIN.
-
-    node_prefix = node_ident(node)
-
-    aliases = [f"{alias}_{ident}" for alias in node_aliases(node)]
-    if name_alias is not None:
-        aliases.append(f"{node_prefix}_{name_alias}")
-        aliases += [f"{alias}_{name_alias}" for alias in node_aliases(node)]
-
-    return out(f"{node_prefix}_{ident}", val, aliases, deprecation_msg)
-
-
-def out_node_s(node, ident, s, name_alias=None, deprecation_msg=None):
-    # Like out_node(), but emits 's' as a string literal
-    #
-    # Returns the generated macro name for 'ident'.
-
-    return out_node(node, ident, quote_str(s), name_alias, deprecation_msg)
-
-
-def out_node_init(node, ident, elms, name_alias=None, deprecation_msg=None):
-    # Like out_node(), but generates an {e1, e2, ...} initializer with the
-    # elements in the iterable 'elms'.
-    #
-    # Returns the generated macro name for 'ident'.
-
-    return out_node(node, ident, "{" + ", ".join(map(str, elms)) + "}",
-                    name_alias, deprecation_msg)
-
-
 def out_s(ident, val):
     # Like out(), but puts quotes around 'val' and escapes any double
     # quotes and backslashes within it
@@ -747,15 +1112,12 @@ def out_s(ident, val):
     return out(ident, quote_str(val))
 
 
-def out(ident, val, aliases=(), deprecation_msg=None):
+def out(ident, val, deprecation_msg=None):
     # Writes '#define <ident> <val>' to the header and '<ident>=<val>' to the
     # the configuration file.
     #
-    # Also writes any aliases listed in 'aliases' (an iterable). For the
-    # header, these look like '#define <alias> <ident>'. For the configuration
-    # file, the value is just repeated as '<alias>=<val>' for each alias.
-    #
-    # See out_node() for the meaning of 'deprecation_msg'.
+    # If a 'deprecation_msg' string is passed, the generated identifiers will
+    # generate a warning if used, via __WARN(<deprecation_msg>)).
     #
     # Returns the generated macro name for 'ident'.
 
@@ -770,22 +1132,14 @@ def out(ident, val, aliases=(), deprecation_msg=None):
     if output_to_conf:
         print(f"{primary_ident}={val}", file=conf_file)
 
-    for alias in aliases:
-        if alias != ident:
-            out_define(alias, "DT_" + ident, deprecation_msg, header_file)
-            if output_to_conf:
-                # For the configuration file, the value is just repeated for all
-                # the aliases
-                print(f"DT_{alias}={val}", file=conf_file)
-
     return primary_ident
 
 
 def out_define(ident, val, deprecation_msg, out_file):
-    # out() helper for writing a #define. See out_node() for the meaning of
+    # out() helper for writing a #define. See out() for the meaning of
     # 'deprecation_msg'.
 
-    s = f"#define DT_{ident:40}"
+    s = f"#define DT_{ident:60}"
     if deprecation_msg:
         s += fr' __WARN("{deprecation_msg}")'
     s += f" {val}"

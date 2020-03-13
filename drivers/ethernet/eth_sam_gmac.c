@@ -66,7 +66,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	"due to the granularity of RX DMA"
 #endif
 
-#if (CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT + 1) * CONFIG_ETH_SAM_GMAC_QUEUES \
+#if (CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT + 1) * GMAC_ACTIVE_QUEUE_NUM \
 	> CONFIG_NET_BUF_RX_COUNT
 #error Not enough RX buffers to allocate descriptors for each HW queue
 #endif
@@ -75,48 +75,268 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* RX descriptors list */
 static struct gmac_desc rx_desc_que0[MAIN_QUEUE_RX_DESC_COUNT]
 	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#if GMAC_PRIORITY_QUEUE_NUM >= 1
 static struct gmac_desc rx_desc_que1[PRIORITY_QUEUE1_RX_DESC_COUNT]
 	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#endif
+#if GMAC_PRIORITY_QUEUE_NUM >= 2
 static struct gmac_desc rx_desc_que2[PRIORITY_QUEUE2_RX_DESC_COUNT]
 	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#endif
+#if GMAC_PRIORITY_QUEUE_NUM >= 3
+static struct gmac_desc rx_desc_que3[PRIORITY_QUEUE3_RX_DESC_COUNT]
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#endif
+#if GMAC_PRIORITY_QUEUE_NUM >= 4
+static struct gmac_desc rx_desc_que4[PRIORITY_QUEUE4_RX_DESC_COUNT]
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#endif
+#if GMAC_PRIORITY_QUEUE_NUM >= 5
+static struct gmac_desc rx_desc_que5[PRIORITY_QUEUE5_RX_DESC_COUNT]
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#endif
+
 /* TX descriptors list */
 static struct gmac_desc tx_desc_que0[MAIN_QUEUE_TX_DESC_COUNT]
 	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#if GMAC_PRIORITY_QUEUE_NUM >= 1
 static struct gmac_desc tx_desc_que1[PRIORITY_QUEUE1_TX_DESC_COUNT]
 	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#endif
+#if GMAC_PRIORITY_QUEUE_NUM >= 2
 static struct gmac_desc tx_desc_que2[PRIORITY_QUEUE2_TX_DESC_COUNT]
 	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#endif
+#if GMAC_PRIORITY_QUEUE_NUM >= 3
+static struct gmac_desc tx_desc_que3[PRIORITY_QUEUE3_TX_DESC_COUNT]
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#endif
+#if GMAC_PRIORITY_QUEUE_NUM >= 4
+static struct gmac_desc tx_desc_que4[PRIORITY_QUEUE4_TX_DESC_COUNT]
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#endif
+#if GMAC_PRIORITY_QUEUE_NUM >= 5
+static struct gmac_desc tx_desc_que5[PRIORITY_QUEUE5_TX_DESC_COUNT]
+	__nocache __aligned(GMAC_DESC_ALIGNMENT);
+#endif
 
 /* RX buffer accounting list */
 static struct net_buf *rx_frag_list_que0[MAIN_QUEUE_RX_DESC_COUNT];
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 static struct net_buf *rx_frag_list_que1[PRIORITY_QUEUE1_RX_DESC_COUNT];
 #endif
-#if GMAC_PRIORITY_QUEUE_NO == 2
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
 static struct net_buf *rx_frag_list_que2[PRIORITY_QUEUE2_RX_DESC_COUNT];
 #endif
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
+static struct net_buf *rx_frag_list_que3[PRIORITY_QUEUE3_RX_DESC_COUNT];
+#endif
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
+static struct net_buf *rx_frag_list_que4[PRIORITY_QUEUE4_RX_DESC_COUNT];
+#endif
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
+static struct net_buf *rx_frag_list_que5[PRIORITY_QUEUE5_RX_DESC_COUNT];
+#endif
+
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 /* TX buffer accounting list */
 static struct net_buf *tx_frag_list_que0[MAIN_QUEUE_TX_DESC_COUNT];
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 static struct net_buf *tx_frag_list_que1[PRIORITY_QUEUE1_TX_DESC_COUNT];
 #endif
-#if GMAC_PRIORITY_QUEUE_NO == 2
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
 static struct net_buf *tx_frag_list_que2[PRIORITY_QUEUE2_TX_DESC_COUNT];
 #endif
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
+static struct net_buf *tx_frag_list_que3[PRIORITY_QUEUE3_TX_DESC_COUNT];
+#endif
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
+static struct net_buf *tx_frag_list_que4[PRIORITY_QUEUE4_TX_DESC_COUNT];
+#endif
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
+static struct net_buf *tx_frag_list_que5[PRIORITY_QUEUE5_TX_DESC_COUNT];
+#endif
+
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 /* TX frames accounting list */
 static struct net_pkt *tx_frame_list_que0[CONFIG_NET_PKT_TX_COUNT + 1];
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 static struct net_pkt *tx_frame_list_que1[CONFIG_NET_PKT_TX_COUNT + 1];
 #endif
-#if GMAC_PRIORITY_QUEUE_NO == 2
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
 static struct net_pkt *tx_frame_list_que2[CONFIG_NET_PKT_TX_COUNT + 1];
+#endif
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
+static struct net_pkt *tx_frame_list_que3[CONFIG_NET_PKT_TX_COUNT + 1];
+#endif
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
+static struct net_pkt *tx_frame_list_que4[CONFIG_NET_PKT_TX_COUNT + 1];
+#endif
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
+static struct net_pkt *tx_frame_list_que5[CONFIG_NET_PKT_TX_COUNT + 1];
 #endif
 #endif
 #endif
 
 #define MODULO_INC(val, max) {val = (++val < max) ? val : 0; }
+
+static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue);
+static void tx_descriptors_init(Gmac *gmac, struct gmac_queue *queue);
+static int nonpriority_queue_init(Gmac *gmac, struct gmac_queue *queue);
+
+#if GMAC_PRIORITY_QUEUE_NUM >= 1
+static inline void set_receive_buf_queue_pointer(
+	Gmac *gmac,
+	struct gmac_queue *queue)
+{
+	/* Set Receive Buffer Queue Pointer Register */
+	if (queue->que_idx == GMAC_QUE_0) {
+		gmac->GMAC_RBQB = (u32_t)queue->rx_desc_list.buf;
+	} else {
+		gmac->GMAC_RBQBAPQ[queue->que_idx - 1] =
+			(u32_t)queue->rx_desc_list.buf;
+	}
+}
+
+static inline void disable_all_priority_queue_interrupt(Gmac *gmac)
+{
+	u32_t idx;
+
+	for (idx = 0; idx < GMAC_PRIORITY_QUEUE_NUM; idx++) {
+		gmac->GMAC_IDRPQ[idx] = UINT32_MAX;
+		(void)gmac->GMAC_ISRPQ[idx];
+	}
+}
+
+static int priority_queue_init(Gmac *gmac, struct gmac_queue *queue)
+{
+	int result;
+	int queue_index;
+
+	__ASSERT_NO_MSG(queue->rx_desc_list.len > 0);
+	__ASSERT_NO_MSG(queue->tx_desc_list.len > 0);
+	__ASSERT(!((u32_t)queue->rx_desc_list.buf & ~GMAC_RBQB_ADDR_Msk),
+		 "RX descriptors have to be word aligned");
+	__ASSERT(!((u32_t)queue->tx_desc_list.buf & ~GMAC_TBQB_ADDR_Msk),
+		 "TX descriptors have to be word aligned");
+
+	/* Extract queue index for easier referencing */
+	queue_index = queue->que_idx - 1;
+
+	/* Setup descriptor lists */
+	result = rx_descriptors_init(gmac, queue);
+	if (result < 0) {
+		return result;
+	}
+
+	tx_descriptors_init(gmac, queue);
+
+#if GMAC_MULTIPLE_TX_PACKETS == 0
+	k_sem_init(&queue->tx_sem, 0, 1);
+#else
+	k_sem_init(&queue->tx_desc_sem, queue->tx_desc_list.len - 1,
+		   queue->tx_desc_list.len - 1);
+#endif
+
+	/* Setup RX buffer size for DMA */
+	gmac->GMAC_RBSRPQ[queue_index] =
+		GMAC_RBSRPQ_RBS(CONFIG_NET_BUF_DATA_SIZE >> 6);
+
+	/* Set Receive Buffer Queue Pointer Register */
+	gmac->GMAC_RBQBAPQ[queue_index] = (u32_t)queue->rx_desc_list.buf;
+	/* Set Transmit Buffer Queue Pointer Register */
+	gmac->GMAC_TBQBAPQ[queue_index] = (u32_t)queue->tx_desc_list.buf;
+
+	/* Enable RX/TX completion and error interrupts */
+	gmac->GMAC_IERPQ[queue_index] = GMAC_INTPQ_EN_FLAGS;
+
+	queue->err_rx_frames_dropped = 0U;
+	queue->err_rx_flushed_count = 0U;
+	queue->err_tx_flushed_count = 0U;
+
+	LOG_INF("Queue %d activated", queue->que_idx);
+
+	return 0;
+}
+
+static int priority_queue_init_as_idle(Gmac *gmac, struct gmac_queue *queue)
+{
+	struct gmac_desc_list *rx_desc_list = &queue->rx_desc_list;
+	struct gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
+
+	__ASSERT(!((u32_t)rx_desc_list->buf & ~GMAC_RBQB_ADDR_Msk),
+		 "RX descriptors have to be word aligned");
+	__ASSERT(!((u32_t)tx_desc_list->buf & ~GMAC_TBQB_ADDR_Msk),
+		 "TX descriptors have to be word aligned");
+	__ASSERT((rx_desc_list->len == 1U) && (tx_desc_list->len == 1U),
+		 "Priority queues are currently not supported, descriptor "
+		 "list has to have a single entry");
+
+	/* Setup RX descriptor lists */
+	/* Take ownership from GMAC and set the wrap bit */
+	rx_desc_list->buf[0].w0 = GMAC_RXW0_WRAP;
+	rx_desc_list->buf[0].w1 = 0U;
+	/* Setup TX descriptor lists */
+	tx_desc_list->buf[0].w0 = 0U;
+	/* Take ownership from GMAC and set the wrap bit */
+	tx_desc_list->buf[0].w1 = GMAC_TXW1_USED | GMAC_TXW1_WRAP;
+
+	/* Set Receive Buffer Queue Pointer Register */
+	gmac->GMAC_RBQBAPQ[queue->que_idx - 1] = (u32_t)rx_desc_list->buf;
+	/* Set Transmit Buffer Queue Pointer Register */
+	gmac->GMAC_TBQBAPQ[queue->que_idx - 1] = (u32_t)tx_desc_list->buf;
+
+	LOG_INF("Queue %d set to idle", queue->que_idx);
+
+	return 0;
+}
+
+static int queue_init(Gmac *gmac, struct gmac_queue *queue)
+{
+	if (queue->que_idx == GMAC_QUE_0) {
+		return nonpriority_queue_init(gmac, queue);
+	} else if (queue->que_idx <= GMAC_ACTIVE_PRIORITY_QUEUE_NUM) {
+		return priority_queue_init(gmac, queue);
+	} else {
+		return priority_queue_init_as_idle(gmac, queue);
+	}
+}
+
+#else
+
+static inline void set_receive_buf_queue_pointer(
+	Gmac *gmac,
+	struct gmac_queue *queue)
+{
+	gmac->GMAC_RBQB = (u32_t)queue->rx_desc_list.buf;
+}
+
+static int queue_init(Gmac *gmac, struct gmac_queue *queue)
+{
+	return nonpriority_queue_init(gmac, queue);
+}
+
+#define disable_all_queue_interrupt(gmac)
+
+#endif
+
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
+static int eth_sam_gmac_setup_qav(Gmac *gmac, int queue_id, bool enable);
+
+static inline void eth_sam_gmac_init_qav(Gmac *gmac)
+{
+	u32_t idx;
+
+	for (idx = GMAC_QUE_1; idx <= GMAC_ACTIVE_PRIORITY_QUEUE_NUM; idx++) {
+		eth_sam_gmac_setup_qav(gmac, idx, true);
+	}
+}
+
+#else
+
+#define eth_sam_gmac_init_qav(gmac)
+
+#endif
 
 /*
  * Cache helpers
@@ -611,13 +831,7 @@ static void rx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 		queue->rx_desc_list.buf[i].w0 &= ~GMAC_RXW0_OWNERSHIP;
 	}
 
-	/* Set Receive Buffer Queue Pointer Register */
-	if (queue->que_idx == 0) {
-		gmac->GMAC_RBQB = (u32_t)queue->rx_desc_list.buf;
-	} else {
-		gmac->GMAC_RBQBAPQ[queue->que_idx - 1] =
-			(u32_t)queue->rx_desc_list.buf;
-	}
+	set_receive_buf_queue_pointer(gmac, queue);
 
 	/* Restart reception */
 	gmac->GMAC_NCR |=  GMAC_NCR_RXEN;
@@ -652,11 +866,11 @@ static int get_mck_clock_divisor(u32_t mck)
 	return mck_divisor;
 }
 
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 static int eth_sam_gmac_setup_qav(Gmac *gmac, int queue_id, bool enable)
 {
 	/* Verify queue id */
-	if (queue_id < 1 || queue_id > GMAC_PRIORITY_QUEUE_NO) {
+	if (queue_id < GMAC_QUE_1 || queue_id > GMAC_ACTIVE_PRIORITY_QUEUE_NUM) {
 		return -EINVAL;
 	}
 
@@ -680,7 +894,7 @@ static int eth_sam_gmac_setup_qav(Gmac *gmac, int queue_id, bool enable)
 static int eth_sam_gmac_get_qav_status(Gmac *gmac, int queue_id, bool *enabled)
 {
 	/* Verify queue id */
-	if (queue_id < 1 || queue_id > GMAC_PRIORITY_QUEUE_NO) {
+	if (queue_id < GMAC_QUE_1 || queue_id > GMAC_ACTIVE_PRIORITY_QUEUE_NUM) {
 		return -EINVAL;
 	}
 
@@ -699,7 +913,7 @@ static int eth_sam_gmac_setup_qav_idle_slope(Gmac *gmac, int queue_id,
 	u32_t cbscr_val;
 
 	/* Verify queue id */
-	if (queue_id < 1 || queue_id > GMAC_PRIORITY_QUEUE_NO) {
+	if (queue_id < GMAC_QUE_1 || queue_id > GMAC_ACTIVE_PRIORITY_QUEUE_NUM) {
 		return -EINVAL;
 	}
 
@@ -742,7 +956,7 @@ static int eth_sam_gmac_get_qav_idle_slope(Gmac *gmac, int queue_id,
 					   unsigned int *idle_slope)
 {
 	/* Verify queue id */
-	if (queue_id < 1 || queue_id > GMAC_PRIORITY_QUEUE_NO) {
+	if (queue_id < GMAC_QUE_1 || queue_id > GMAC_ACTIVE_PRIORITY_QUEUE_NUM) {
 		return -EINVAL;
 	}
 
@@ -792,7 +1006,7 @@ static int eth_sam_gmac_setup_qav_delta_bandwidth(Gmac *gmac, int queue_id,
 	u32_t idle_slope;
 
 	/* Verify queue id */
-	if (queue_id < 1 || queue_id > GMAC_PRIORITY_QUEUE_NO) {
+	if (queue_id < GMAC_QUE_1 || queue_id > GMAC_ACTIVE_PRIORITY_QUEUE_NUM) {
 		return -EINVAL;
 	}
 
@@ -857,12 +1071,10 @@ static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 
 	/* Disable all interrupts */
 	gmac->GMAC_IDR = UINT32_MAX;
-	gmac->GMAC_IDRPQ[GMAC_QUE_1 - 1] = UINT32_MAX;
-	gmac->GMAC_IDRPQ[GMAC_QUE_2 - 1] = UINT32_MAX;
 	/* Clear all interrupts */
 	(void)gmac->GMAC_ISR;
-	(void)gmac->GMAC_ISRPQ[GMAC_QUE_1 - 1];
-	(void)gmac->GMAC_ISRPQ[GMAC_QUE_2 - 1];
+	disable_all_priority_queue_interrupt(gmac);
+
 	/* Setup Hash Registers - enable reception of all multicast frames when
 	 * GMAC_NCFGR_MTIHEN is set.
 	 */
@@ -888,10 +1100,9 @@ static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 	/* Enable Qav if priority queues are used, and setup the default delta
 	 * bandwidth according to IEEE802.1Qav (34.3.1)
 	 */
-#if GMAC_PRIORITY_QUEUE_NO == 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM == 1
 	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 1, 75);
-	eth_sam_gmac_setup_qav(gmac, 1, true);
-#elif GMAC_PRIORITY_QUEUE_NO == 2
+#elif GMAC_ACTIVE_PRIORITY_QUEUE_NUM == 2
 	/* For multiple priority queues, 802.1Qav suggests using 75% for the
 	 * highest priority queue, and 0% for the lower priority queues.
 	 * This is because the lower priority queues are supposed to be using
@@ -904,9 +1115,24 @@ static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 	 */
 	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 1, 25);
 	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 2, 50);
-	eth_sam_gmac_setup_qav(gmac, 1, true);
-	eth_sam_gmac_setup_qav(gmac, 2, true);
+#elif GMAC_ACTIVE_PRIORITY_QUEUE_NUM == 3
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 1, 25);
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 2, 25);
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 3, 25);
+#elif GMAC_ACTIVE_PRIORITY_QUEUE_NUM == 4
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 1, 21);
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 2, 18);
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 3, 18);
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 4, 18);
+#elif GMAC_ACTIVE_PRIORITY_QUEUE_NUM == 5
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 1, 15);
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 2, 15);
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 3, 15);
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 4, 15);
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 5, 15);
 #endif
+
+	eth_sam_gmac_init_qav(gmac);
 
 	return 0;
 }
@@ -989,100 +1215,6 @@ static int nonpriority_queue_init(Gmac *gmac, struct gmac_queue *queue)
 	LOG_INF("Queue %d activated", queue->que_idx);
 
 	return 0;
-}
-
-static int priority_queue_init(Gmac *gmac, struct gmac_queue *queue)
-{
-	int result;
-	int queue_index;
-
-	__ASSERT_NO_MSG(queue->rx_desc_list.len > 0);
-	__ASSERT_NO_MSG(queue->tx_desc_list.len > 0);
-	__ASSERT(!((u32_t)queue->rx_desc_list.buf & ~GMAC_RBQB_ADDR_Msk),
-		 "RX descriptors have to be word aligned");
-	__ASSERT(!((u32_t)queue->tx_desc_list.buf & ~GMAC_TBQB_ADDR_Msk),
-		 "TX descriptors have to be word aligned");
-
-	/* Extract queue index for easier referencing */
-	queue_index = queue->que_idx - 1;
-
-	/* Setup descriptor lists */
-	result = rx_descriptors_init(gmac, queue);
-	if (result < 0) {
-		return result;
-	}
-
-	tx_descriptors_init(gmac, queue);
-
-#if GMAC_MULTIPLE_TX_PACKETS == 0
-	k_sem_init(&queue->tx_sem, 0, 1);
-#else
-	k_sem_init(&queue->tx_desc_sem, queue->tx_desc_list.len - 1,
-		   queue->tx_desc_list.len - 1);
-#endif
-
-	/* Setup RX buffer size for DMA */
-	gmac->GMAC_RBSRPQ[queue_index] =
-		GMAC_RBSRPQ_RBS(CONFIG_NET_BUF_DATA_SIZE >> 6);
-
-	/* Set Receive Buffer Queue Pointer Register */
-	gmac->GMAC_RBQBAPQ[queue_index] = (u32_t)queue->rx_desc_list.buf;
-	/* Set Transmit Buffer Queue Pointer Register */
-	gmac->GMAC_TBQBAPQ[queue_index] = (u32_t)queue->tx_desc_list.buf;
-
-	/* Enable RX/TX completion and error interrupts */
-	gmac->GMAC_IERPQ[queue_index] = GMAC_INTPQ_EN_FLAGS;
-
-	queue->err_rx_frames_dropped = 0U;
-	queue->err_rx_flushed_count = 0U;
-	queue->err_tx_flushed_count = 0U;
-
-	LOG_INF("Queue %d activated", queue->que_idx);
-
-	return 0;
-}
-
-static int priority_queue_init_as_idle(Gmac *gmac, struct gmac_queue *queue)
-{
-	struct gmac_desc_list *rx_desc_list = &queue->rx_desc_list;
-	struct gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
-
-	__ASSERT(!((u32_t)rx_desc_list->buf & ~GMAC_RBQB_ADDR_Msk),
-		 "RX descriptors have to be word aligned");
-	__ASSERT(!((u32_t)tx_desc_list->buf & ~GMAC_TBQB_ADDR_Msk),
-		 "TX descriptors have to be word aligned");
-	__ASSERT((rx_desc_list->len == 1U) && (tx_desc_list->len == 1U),
-		 "Priority queues are currently not supported, descriptor "
-		 "list has to have a single entry");
-
-	/* Setup RX descriptor lists */
-	/* Take ownership from GMAC and set the wrap bit */
-	rx_desc_list->buf[0].w0 = GMAC_RXW0_WRAP;
-	rx_desc_list->buf[0].w1 = 0U;
-	/* Setup TX descriptor lists */
-	tx_desc_list->buf[0].w0 = 0U;
-	/* Take ownership from GMAC and set the wrap bit */
-	tx_desc_list->buf[0].w1 = GMAC_TXW1_USED | GMAC_TXW1_WRAP;
-
-	/* Set Receive Buffer Queue Pointer Register */
-	gmac->GMAC_RBQBAPQ[queue->que_idx - 1] = (u32_t)rx_desc_list->buf;
-	/* Set Transmit Buffer Queue Pointer Register */
-	gmac->GMAC_TBQBAPQ[queue->que_idx - 1] = (u32_t)tx_desc_list->buf;
-
-	LOG_INF("Queue %d set to idle", queue->que_idx);
-
-	return 0;
-}
-
-static int queue_init(Gmac *gmac, struct gmac_queue *queue)
-{
-	if (queue->que_idx == 0) {
-		return nonpriority_queue_init(gmac, queue);
-	} else if (queue->que_idx <= GMAC_PRIORITY_QUEUE_NO) {
-		return priority_queue_init(gmac, queue);
-	} else {
-		return priority_queue_init_as_idle(gmac, queue);
-	}
 }
 
 static struct net_pkt *frame_get(struct gmac_queue *queue)
@@ -1270,19 +1402,28 @@ static void eth_rx(struct gmac_queue *queue)
 }
 
 #if !defined(CONFIG_ETH_SAM_GMAC_FORCE_QUEUE) && \
-	((CONFIG_ETH_SAM_GMAC_QUEUES != NET_TC_TX_COUNT) || \
+	((GMAC_ACTIVE_QUEUE_NUM != NET_TC_TX_COUNT) || \
 	((NET_TC_TX_COUNT != NET_TC_RX_COUNT) && defined(CONFIG_NET_VLAN)))
 static int priority2queue(enum net_priority priority)
 {
 	static const u8_t queue_priority_map[] = {
-#if CONFIG_ETH_SAM_GMAC_QUEUES == 1
+#if GMAC_ACTIVE_QUEUE_NUM == 1
 		0, 0, 0, 0, 0, 0, 0, 0
 #endif
-#if CONFIG_ETH_SAM_GMAC_QUEUES == 2
+#if GMAC_ACTIVE_QUEUE_NUM == 2
 		0, 0, 0, 0, 1, 1, 1, 1
 #endif
-#if CONFIG_ETH_SAM_GMAC_QUEUES == 3
+#if GMAC_ACTIVE_QUEUE_NUM == 3
 		0, 0, 0, 0, 1, 1, 2, 2
+#endif
+#if GMAC_ACTIVE_QUEUE_NUM == 4
+		0, 0, 0, 0, 1, 1, 2, 3
+#endif
+#if GMAC_ACTIVE_QUEUE_NUM == 5
+		0, 0, 0, 0, 1, 2, 3, 4
+#endif
+#if GMAC_ACTIVE_QUEUE_NUM == 6
+		0, 0, 0, 1, 2, 3, 4, 5
 #endif
 	};
 
@@ -1328,7 +1469,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 #if defined(CONFIG_ETH_SAM_GMAC_FORCE_QUEUE)
 	/* Route eveything to the forced queue */
 	queue = &dev_data->queue_list[CONFIG_ETH_SAM_GMAC_FORCED_QUEUE];
-#elif CONFIG_ETH_SAM_GMAC_QUEUES == CONFIG_NET_TC_TX_COUNT
+#elif GMAC_ACTIVE_QUEUE_NUM == CONFIG_NET_TC_TX_COUNT
 	/* Prefer to chose queue based on its traffic class */
 	queue = &dev_data->queue_list[net_tx_priority2tc(pkt_prio)];
 #else
@@ -1521,7 +1662,7 @@ static void queue0_isr(void *arg)
 	}
 }
 
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 static inline void priority_queue_isr(void *arg, unsigned int queue_idx)
 {
 	struct device *const dev = (struct device *const)arg;
@@ -1572,17 +1713,38 @@ static inline void priority_queue_isr(void *arg, unsigned int queue_idx)
 }
 #endif
 
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 static void queue1_isr(void *arg)
 {
 	priority_queue_isr(arg, 1);
 }
 #endif
 
-#if GMAC_PRIORITY_QUEUE_NO == 2
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
 static void queue2_isr(void *arg)
 {
 	priority_queue_isr(arg, 2);
+}
+#endif
+
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
+static void queue3_isr(void *arg)
+{
+	priority_queue_isr(arg, 3);
+}
+#endif
+
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
+static void queue4_isr(void *arg)
+{
+	priority_queue_isr(arg, 4);
+}
+#endif
+
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
+static void queue5_isr(void *arg)
+{
+	priority_queue_isr(arg, 5);
 }
 #endif
 
@@ -1702,7 +1864,7 @@ static void eth0_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 
 	/* Initialize GMAC queues */
-	for (i = 0; i < GMAC_QUEUE_NO; i++) {
+	for (i = GMAC_QUE_0; i < GMAC_QUEUE_NUM; i++) {
 		result = queue_init(cfg->regs, &dev_data->queue_list[i]);
 		if (result < 0) {
 			LOG_ERR("Unable to initialize ETH queue%d", i);
@@ -1710,14 +1872,14 @@ static void eth0_iface_init(struct net_if *iface)
 		}
 	}
 
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 #if defined(CONFIG_ETH_SAM_GMAC_FORCE_QUEUE)
 	for (i = 0; i < CONFIG_NET_TC_RX_COUNT; ++i) {
 		cfg->regs->GMAC_ST1RPQ[i] =
 			GMAC_ST1RPQ_DSTCM(i) |
 			GMAC_ST1RPQ_QNB(CONFIG_ETH_SAM_GMAC_FORCED_QUEUE);
 	}
-#elif CONFIG_ETH_SAM_GMAC_QUEUES == NET_TC_RX_COUNT
+#elif GMAC_ACTIVE_QUEUE_NUM == NET_TC_RX_COUNT
 	/* If TC configuration is compatible with HW configuration, setup the
 	 * screening registers based on the DS/TC values.
 	 * Map them 1:1 - TC 0 -> Queue 0, TC 1 -> Queue 1 etc.
@@ -1779,13 +1941,13 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(struct device *dev)
 		ETHERNET_PTP |
 #endif
 		ETHERNET_PRIORITY_QUEUES |
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 		ETHERNET_QAV |
 #endif
 		ETHERNET_LINK_100BASE_T;
 }
 
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 static int eth_sam_gmac_set_qav_param(struct device *dev,
 				      enum ethernet_config_type type,
 				      const struct ethernet_config *config)
@@ -1833,7 +1995,7 @@ static int eth_sam_gmac_set_config(struct device *dev,
 				   const struct ethernet_config *config)
 {
 	switch (type) {
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 	case ETHERNET_CONFIG_TYPE_QAV_PARAM:
 		return eth_sam_gmac_set_qav_param(dev, type, config);
 #endif
@@ -1844,7 +2006,7 @@ static int eth_sam_gmac_set_config(struct device *dev,
 	return -ENOTSUP;
 }
 
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 static int eth_sam_gmac_get_qav_param(struct device *dev,
 				      enum ethernet_config_type type,
 				      struct ethernet_config *config)
@@ -1879,7 +2041,7 @@ static int eth_sam_gmac_get_qav_param(struct device *dev,
 		return eth_sam_gmac_get_qav_delta_bandwidth(gmac, queue_id,
 							    delta_bandwidth);
 	case ETHERNET_QAV_PARAM_TYPE_TRAFFIC_CLASS:
-#if CONFIG_ETH_SAM_GMAC_QUEUES == NET_TC_TX_COUNT
+#if GMAC_ACTIVE_QUEUE_NUM == NET_TC_TX_COUNT
 		config->qav_param.traffic_class = queue_id;
 		return 0;
 #else
@@ -1900,9 +2062,9 @@ static int eth_sam_gmac_get_config(struct device *dev,
 {
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM:
-		config->priority_queues_num = GMAC_PRIORITY_QUEUE_NO;
+		config->priority_queues_num = GMAC_ACTIVE_PRIORITY_QUEUE_NUM;
 		return 0;
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 	case ETHERNET_CONFIG_TYPE_QAV_PARAM:
 		return eth_sam_gmac_get_qav_param(dev, type, config);
 #endif
@@ -1943,16 +2105,34 @@ static void eth0_irq_config(void)
 		    DEVICE_GET(eth0_sam_gmac), 0);
 	irq_enable(GMAC_IRQn);
 
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 	IRQ_CONNECT(GMAC_Q1_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue1_isr,
 		    DEVICE_GET(eth0_sam_gmac), 0);
 	irq_enable(GMAC_Q1_IRQn);
 #endif
 
-#if GMAC_PRIORITY_QUEUE_NO == 2
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
 	IRQ_CONNECT(GMAC_Q2_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue2_isr,
 		    DEVICE_GET(eth0_sam_gmac), 0);
 	irq_enable(GMAC_Q2_IRQn);
+#endif
+
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
+	IRQ_CONNECT(GMAC_Q3_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue3_isr,
+		    DEVICE_GET(eth0_sam_gmac), 0);
+	irq_enable(GMAC_Q3_IRQn);
+#endif
+
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
+	IRQ_CONNECT(GMAC_Q4_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue4_isr,
+		    DEVICE_GET(eth0_sam_gmac), 0);
+	irq_enable(GMAC_Q4_IRQn);
+#endif
+
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
+	IRQ_CONNECT(GMAC_Q5_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue5_isr,
+		    DEVICE_GET(eth0_sam_gmac), 0);
+	irq_enable(GMAC_Q5_IRQn);
 #endif
 }
 
@@ -1978,7 +2158,8 @@ static struct eth_sam_dev_data eth0_data = {
 		CONFIG_ETH_SAM_GMAC_MAC5,
 	},
 #endif
-	.queue_list = {{
+	.queue_list = {
+		{
 			.que_idx = GMAC_QUE_0,
 			.rx_desc_list = {
 				.buf = rx_desc_que0,
@@ -2001,6 +2182,7 @@ static struct eth_sam_dev_data eth0_data = {
 			},
 #endif
 #endif
+#if GMAC_PRIORITY_QUEUE_NUM >= 1
 		}, {
 			.que_idx = GMAC_QUE_1,
 			.rx_desc_list = {
@@ -2011,7 +2193,7 @@ static struct eth_sam_dev_data eth0_data = {
 				.buf = tx_desc_que1,
 				.len = ARRAY_SIZE(tx_desc_que1),
 			},
-#if GMAC_PRIORITY_QUEUE_NO >= 1
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
 			.rx_frag_list = rx_frag_list_que1,
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 			.tx_frag_list = {
@@ -2026,6 +2208,8 @@ static struct eth_sam_dev_data eth0_data = {
 #endif
 #endif
 #endif
+#endif
+#if GMAC_PRIORITY_QUEUE_NUM >= 2
 		}, {
 			.que_idx = GMAC_QUE_2,
 			.rx_desc_list = {
@@ -2036,7 +2220,7 @@ static struct eth_sam_dev_data eth0_data = {
 				.buf = tx_desc_que2,
 				.len = ARRAY_SIZE(tx_desc_que2),
 			},
-#if GMAC_PRIORITY_QUEUE_NO == 2
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
 			.rx_frag_list = rx_frag_list_que2,
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 			.tx_frag_list = {
@@ -2048,6 +2232,88 @@ static struct eth_sam_dev_data eth0_data = {
 				.buf = (u32_t *)tx_frame_list_que2,
 				.len = ARRAY_SIZE(tx_frame_list_que2),
 			}
+#endif
+#endif
+#endif
+#endif
+#if GMAC_PRIORITY_QUEUE_NUM >= 3
+		}, {
+			.que_idx = GMAC_QUE_3,
+			.rx_desc_list = {
+				.buf = rx_desc_que3,
+				.len = ARRAY_SIZE(rx_desc_que3),
+			},
+			.tx_desc_list = {
+				.buf = tx_desc_que3,
+				.len = ARRAY_SIZE(tx_desc_que3),
+			},
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
+			.rx_frag_list = rx_frag_list_que3,
+#if GMAC_MULTIPLE_TX_PACKETS == 1
+			.tx_frag_list = {
+				.buf = (u32_t *)tx_frag_list_que3,
+				.len = ARRAY_SIZE(tx_frag_list_que3),
+			},
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+			.tx_frames = {
+				.buf = (u32_t *)tx_frame_list_que3,
+				.len = ARRAY_SIZE(tx_frame_list_que3),
+			}
+#endif
+#endif
+#endif
+#endif
+#if GMAC_PRIORITY_QUEUE_NUM >= 4
+		}, {
+			.que_idx = GMAC_QUE_4,
+			.rx_desc_list = {
+				.buf = rx_desc_que4,
+				.len = ARRAY_SIZE(rx_desc_que4),
+			},
+			.tx_desc_list = {
+				.buf = tx_desc_que4,
+				.len = ARRAY_SIZE(tx_desc_que4),
+			},
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
+			.rx_frag_list = rx_frag_list_que4,
+#if GMAC_MULTIPLE_TX_PACKETS == 1
+			.tx_frag_list = {
+				.buf = (u32_t *)tx_frag_list_que4,
+				.len = ARRAY_SIZE(tx_frag_list_que4),
+			},
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+			.tx_frames = {
+				.buf = (u32_t *)tx_frame_list_que4,
+				.len = ARRAY_SIZE(tx_frame_list_que4),
+			}
+#endif
+#endif
+#endif
+#endif
+#if GMAC_PRIORITY_QUEUE_NUM >= 5
+		}, {
+			.que_idx = GMAC_QUE_5,
+			.rx_desc_list = {
+				.buf = rx_desc_que5,
+				.len = ARRAY_SIZE(rx_desc_que5),
+			},
+			.tx_desc_list = {
+				.buf = tx_desc_que5,
+				.len = ARRAY_SIZE(tx_desc_que5),
+			},
+#if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
+			.rx_frag_list = rx_frag_list_que5,
+#if GMAC_MULTIPLE_TX_PACKETS == 1
+			.tx_frag_list = {
+				.buf = (u32_t *)tx_frag_list_que5,
+				.len = ARRAY_SIZE(tx_frag_list_que5),
+			},
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
+			.tx_frames = {
+				.buf = (u32_t *)tx_frame_list_que5,
+				.len = ARRAY_SIZE(tx_frame_list_que5),
+			}
+#endif
 #endif
 #endif
 #endif

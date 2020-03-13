@@ -26,14 +26,17 @@ extern "C" {
  * @{
  */
 
+typedef void (*energy_scan_done_cb_t)(struct device *dev, s16_t max_ed);
+
 enum ieee802154_hw_caps {
-	IEEE802154_HW_FCS	= BIT(0), /* Frame Check-Sum supported */
-	IEEE802154_HW_PROMISC	= BIT(1), /* Promiscuous mode supported */
-	IEEE802154_HW_FILTER	= BIT(2), /* Filters PAN ID, long/short addr */
-	IEEE802154_HW_CSMA	= BIT(3), /* CSMA-CA supported */
-	IEEE802154_HW_2_4_GHZ	= BIT(4), /* 2.4Ghz radio supported */
-	IEEE802154_HW_TX_RX_ACK = BIT(5), /* Handles ACK request on TX */
-	IEEE802154_HW_SUB_GHZ	= BIT(6), /* Sub-GHz radio supported */
+	IEEE802154_HW_FCS	  = BIT(0), /* Frame Check-Sum supported */
+	IEEE802154_HW_PROMISC	  = BIT(1), /* Promiscuous mode supported */
+	IEEE802154_HW_FILTER	  = BIT(2), /* Filter PAN ID, long/short addr */
+	IEEE802154_HW_CSMA	  = BIT(3), /* CSMA-CA supported */
+	IEEE802154_HW_2_4_GHZ	  = BIT(4), /* 2.4Ghz radio supported */
+	IEEE802154_HW_TX_RX_ACK	  = BIT(5), /* Handles ACK request on TX */
+	IEEE802154_HW_SUB_GHZ	  = BIT(6), /* Sub-GHz radio supported */
+	IEEE802154_HW_ENERGY_SCAN = BIT(7)  /* Energy scan supported */
 };
 
 enum ieee802154_filter_type {
@@ -149,8 +152,7 @@ struct ieee802154_radio_api {
 	 */
 	int (*ed_scan)(struct device *dev,
 		       u16_t duration,
-		       void (*done_cb)(struct device *dev,
-				       s16_t max_ed));
+		       energy_scan_done_cb_t done_cb);
 #endif /* CONFIG_NET_L2_OPENTHREAD */
 };
 

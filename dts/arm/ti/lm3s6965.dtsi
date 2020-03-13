@@ -74,6 +74,7 @@
 			label = "GPIO_A";
 			gpio-controller;
 			#gpio-cells = <2>;
+			ngpios = <8>;
 		};
 
 		gpio1: gpio@40005000 {
@@ -83,6 +84,7 @@
 			label = "GPIO_B";
 			gpio-controller;
 			#gpio-cells = <2>;
+			ngpios = <8>;
 		};
 
 		gpio2: gpio@40006000 {
@@ -92,6 +94,7 @@
 			label = "GPIO_C";
 			gpio-controller;
 			#gpio-cells = <2>;
+			ngpios = <8>;
 		};
 
 		gpio3: gpio@40007000 {
@@ -101,6 +104,7 @@
 			label = "GPIO_D";
 			gpio-controller;
 			#gpio-cells = <2>;
+			ngpios = <8>;
 		};
 
 		gpio4: gpio@40024000 {
@@ -110,6 +114,7 @@
 			label = "GPIO_E";
 			gpio-controller;
 			#gpio-cells = <2>;
+			ngpios = <4>;
 		};
 
 		gpio5: gpio@40025000 {
@@ -119,6 +124,7 @@
 			label = "GPIO_F";
 			gpio-controller;
 			#gpio-cells = <2>;
+			ngpios = <4>;
 		};
 
 		gpio6: gpio@40026000 {
@@ -128,6 +134,7 @@
 			label = "GPIO_G";
 			gpio-controller;
 			#gpio-cells = <2>;
+			ngpios = <2>;
 		};
 	};
 };

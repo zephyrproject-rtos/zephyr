@@ -357,7 +357,7 @@ typedef int (*espi_api_manage_callback)(struct device *dev,
 					struct espi_callback *callback,
 					bool set);
 
-struct espi_driver_api {
+__subsystem struct espi_driver_api {
 	espi_api_config config;
 	espi_api_get_channel_status get_channel_status;
 	espi_api_read_request read_request;
