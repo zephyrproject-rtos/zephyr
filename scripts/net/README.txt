@@ -15,38 +15,50 @@ In essence, the following needs to be done:
  * Install Docker
  * Check out the net-tools project from github or update it with west
  * Change working directory to the net-tools repository
- * Run './net-setup.sh --config docker.conf'
+ * cd docker/
+ * Run 'docker build -t net-tools .'
 
-This runs a Docker image called 'net-tools' and sets up docker network
-'net-tools0' on your local machine.
+This creates a Docker image called 'net-tools' which the script will need as
+its counterpart when testing various network sample applications.
 
 
 Using
 *****
 
-The scripts/net/run-sample-tests.sh shell script is meant to be run from the
-relevant Zephyr network sample test directory. Currently the following two
-samples are supported:
+The scripts/net/run-sample-tests.sh shell script is meant to be run from a
+Zephyr network sample test directory. Currently the following samples are
+supported:
 
  * samples/net/sockets/echo_client
  * samples/net/sockets/echo_server
+ * samples/net/mqtt_publisher
 
 The applications to run in the net-tools Docker container are selected based
-on the name of the sample directory, for echo_client the echo_server
+on the base name of the sample directory, for echo_client the echo_server
 application is started from the Docker container, and with echo_server
-echo_client is started in the Docker container. When completed, the return
-value, either from Zephyr or from the Docker container, is returned to the
-script on Zephyr or Docker application termination. The return value is used
-as a simple verdict whether the sample passed or failed.
+echo_client is started in the Docker container. With mqtt_publisher mosquitto
+MQTT server is run in the Docker container.
 
 The Docker container and a corresponding 'net-tools0' Docker network is started
 by the script, as well as Zephyr using native_posix. IP addresses are assigned
-to the Docker network, which is a Linux network bridge interface. The IP
-addresses are set based on the sample being run.
+to the Docker network, which is a Linux network bridge interface. The default
+IP addresses are:
 
- * echo_client uses addresses 192.0.2.1 and 2001:db8::1
- * echo_server uses addresses 192.0.2.2 and 2001:db8::2
+ * Zephyr uses addresses 192.0.2.1 and 2001:db8::1
+ * Docker net-tools image uses addresses 192.0.2.2 and 2001:db8::2
  * the Docker bridge interface uses addresses 192.0.2.254 and 2001:db8::254
+
+The default IP addresses are used by echo_client and mqtt_publisher, but
+with the echo_server the IP addresses are switched between Zephyr and Docker
+so that the echo_client application always uses addresses ending in .1 and
+the echo_server application uses those ending in .2. The script does the IP
+address setup for each sample test, be it the default ones or the switched
+ones.
+
+When completed, the return value, either from Zephyr or from the Docker
+container, is returned to the script on Zephyr or Docker application
+termination. The return value is used as a simple verdict whether the sample
+passed or failed.
 
 
 Directories
