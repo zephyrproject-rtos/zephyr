@@ -63,10 +63,10 @@ warning: "#cells:" in test-bindings/deprecated.yaml is deprecated and will be re
     #
 
     verify_streq(edt.get_node("/reg-zero-address-cells/node").regs,
-                 "[<Register, addr: 0x0, size: 0x1>, <Register, addr: 0x0, size: 0x2>]")
+                 "[<Register, size: 0x1>, <Register, size: 0x2>]")
 
     verify_streq(edt.get_node("/reg-zero-size-cells/node").regs,
-                 "[<Register, addr: 0x1, size: 0x0>, <Register, addr: 0x2, size: 0x0>]")
+                 "[<Register, addr: 0x1>, <Register, addr: 0x2>]")
 
     verify_streq(edt.get_node("/reg-ranges/parent/node").regs,
                  "[<Register, addr: 0x5, size: 0x1>, <Register, addr: 0xe0000000f, size: 0x1>, <Register, addr: 0xc0000000e, size: 0x1>, <Register, addr: 0xc0000000d, size: 0x1>, <Register, addr: 0xa0000000b, size: 0x1>, <Register, addr: 0x0, size: 0x1>]")
