@@ -128,15 +128,17 @@ SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 	cpsid	i
 
 	/*
-	 * No need to set SEVONPEND, it's set once in z_CpuIdleInit() and never
-	 * touched again.
+	 * No need to set SEVONPEND, it's set once in z_arm_cpu_idle_init()
+	 * and never touched again.
 	 */
 
 	/* r0: interrupt mask from caller */
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
 	|| defined(CONFIG_ARMV7_R)
-	/* No BASEPRI, call wfe directly (SEVONPEND set in z_CpuIdleInit()) */
+	/* No BASEPRI, call wfe directly
+	 * (SEVONPEND is set in z_arm_cpu_idle_init())
+	 */
 	wfe
 
 	cmp	r0, #0
