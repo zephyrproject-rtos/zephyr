@@ -501,7 +501,7 @@ static void isr_done(void *param)
 
 		return;
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_ADV_EXT_PBACK)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(BT_CTLR_ADV_EXT_PBACK)
 	} else {
 		struct pdu_adv_com_ext_adv *p;
 		struct ext_adv_hdr *h;
