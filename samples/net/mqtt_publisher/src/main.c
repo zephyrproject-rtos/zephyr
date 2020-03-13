@@ -415,12 +415,12 @@ static int process_mqtt_and_sleep(struct mqtt_client *client, int timeout)
 	return 0;
 }
 
-#define SUCCESS_OR_EXIT(rc) { if (rc != 0) { return; } }
+#define SUCCESS_OR_EXIT(rc) { if (rc != 0) { return 1; } }
 #define SUCCESS_OR_BREAK(rc) { if (rc != 0) { break; } }
 
-static void publisher(void)
+static int publisher(void)
 {
-	int i, rc;
+	int i, rc, r = 0;
 
 	LOG_INF("attempting to connect: ");
 	rc = try_to_connect(&client_ctx);
@@ -428,7 +428,9 @@ static void publisher(void)
 	SUCCESS_OR_EXIT(rc);
 
 	i = 0;
-	while (i++ < APP_MAX_ITERATIONS && connected) {
+	while (i++ < CONFIG_NET_SAMPLE_APP_MAX_ITERATIONS && connected) {
+		r = -1;
+
 		rc = mqtt_ping(&client_ctx);
 		PRINT_RESULT("mqtt_ping", rc);
 		SUCCESS_OR_BREAK(rc);
@@ -456,16 +458,21 @@ static void publisher(void)
 
 		rc = process_mqtt_and_sleep(&client_ctx, APP_SLEEP_MSECS);
 		SUCCESS_OR_BREAK(rc);
+
+		r = 0;
 	}
 
 	rc = mqtt_disconnect(&client_ctx);
 	PRINT_RESULT("mqtt_disconnect", rc);
 
 	LOG_INF("Bye!");
+
+	return r;
 }
 
 void main(void)
 {
+	int r = 0, i = 0;
 #if defined(CONFIG_MQTT_LIB_TLS)
 	int rc;
 
@@ -473,8 +480,14 @@ void main(void)
 	PRINT_RESULT("tls_init", rc);
 #endif
 
-	while (1) {
-		publisher();
-		k_sleep(K_MSEC(5000));
+	while (!CONFIG_NET_SAMPLE_APP_MAX_CONNECTIONS ||
+	       i++ < CONFIG_NET_SAMPLE_APP_MAX_CONNECTIONS) {
+		r = publisher();
+
+		if (!CONFIG_NET_SAMPLE_APP_MAX_CONNECTIONS) {
+			k_sleep(K_MSEC(5000));
+		}
 	}
+
+	exit(r);
 }
