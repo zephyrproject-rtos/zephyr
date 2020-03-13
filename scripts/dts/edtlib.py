@@ -1261,8 +1261,14 @@ class Node:
                               .format(address_cells, size_cells)):
             reg = Register()
             reg.node = self
-            reg.addr = _translate(to_num(raw_reg[:4*address_cells]), node)
-            reg.size = to_num(raw_reg[4*address_cells:])
+            if address_cells == 0:
+                reg.addr = None
+            else:
+                reg.addr = _translate(to_num(raw_reg[:4*address_cells]), node)
+            if size_cells == 0:
+                reg.size = None
+            else:
+                reg.size = to_num(raw_reg[4*address_cells:])
             if size_cells != 0 and reg.size == 0:
                 _err("zero-sized 'reg' in {!r} seems meaningless (maybe you "
                      "want a size of one or #size-cells = 0 instead)"
@@ -1411,8 +1417,8 @@ class Register:
       there is no 'reg-names' property
 
     addr:
-      The starting address of the register, in the parent address space. Any
-      'ranges' properties are taken into account.
+      The starting address of the register, in the parent address space, or None
+      if #address-cells is zero. Any 'ranges' properties are taken into account.
 
     size:
       The length of the register in bytes
@@ -1422,8 +1428,10 @@ class Register:
 
         if self.name is not None:
             fields.append("name: " + self.name)
-        fields.append("addr: " + hex(self.addr))
-        fields.append("size: " + hex(self.size))
+        if self.addr is not None:
+            fields.append("addr: " + hex(self.addr))
+        if self.size is not None:
+            fields.append("size: " + hex(self.size))
 
         return "<Register, {}>".format(", ".join(fields))
 

@@ -173,6 +173,9 @@ def _node_reg_addr(node, index, unit):
     if int(index) >= len(node.regs):
         return 0
 
+    if node.regs[int(index)].addr is None:
+        return 0
+
     return node.regs[int(index)].addr >> _dt_units_to_scale(unit)
 
 
@@ -184,6 +187,9 @@ def _node_reg_size(node, index, unit):
         return 0
 
     if int(index) >= len(node.regs):
+        return 0
+
+    if node.regs[int(index)].size is None:
         return 0
 
     return node.regs[int(index)].size >> _dt_units_to_scale(unit)
