@@ -757,6 +757,15 @@ int bt_mesh_model_extend(struct bt_mesh_model *extending_mod,
  */
 bool bt_mesh_model_is_extended(struct bt_mesh_model *model);
 
+/** @brief Indicate that the composition data will change on next bootup.
+ *
+ *  Tell the config server that the composition data is expected to change on
+ *  the next bootup, and the current composition data should be backed up.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_comp_change_prepare(void);
+
 /** Node Composition */
 struct bt_mesh_comp {
 	uint16_t cid; /**< Company ID */
