@@ -34,7 +34,7 @@ function(list_boards arch list_var)
       )
 
     # The above gives a list like
-    # nrf51_blenano/nrf51_blenano_defconfig;nrf51_pca10028/nrf51_pca10028_defconfig
+    # nrf51_blenano/nrf51_blenano_defconfig;nrf51dk_nrf51422/nrf51dk_nrf51422_defconfig
     # we construct a list of board names by removing both the _defconfig
     # suffix and the path.
     foreach(defconfig_path ${defconfigs_for_${arch}})

@@ -76,35 +76,35 @@ tests:
   bluetooth.init.test_controller:
     extra_args: CONF_FILE=prj_controller.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
-      nrf51_pca10028 96b_nitrogen
+      nrf51dk_nrf51422 96b_nitrogen
   bluetooth.init.test_controller_4_0:
     extra_args: CONF_FILE=prj_controller_4_0.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
-      nrf51_pca10028
+      nrf51dk_nrf51422
   bluetooth.init.test_controller_tiny:
     extra_args: CONF_FILE=prj_controller_tiny.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
-      nrf51_pca10028
+      nrf51dk_nrf51422
   bluetooth.init.test_controller_dbg:
     extra_args: CONF_FILE=prj_controller_dbg.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
-      nrf51_pca10028 96b_nitrogen
+      nrf51dk_nrf51422 96b_nitrogen
   bluetooth.init.test_controller_ll_sw_split:
     extra_args: CONF_FILE=prj_controller_ll_sw_split.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
-      nrf51_pca10028
+      nrf51dk_nrf51422
   bluetooth.init.test_controller_4_0_ll_sw_split:
     extra_args: CONF_FILE=prj_controller_4_0_ll_sw_split.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
-      nrf51_pca10028
+      nrf51dk_nrf51422
   bluetooth.init.test_controller_tiny_ll_sw_split:
     extra_args: CONF_FILE=prj_controller_tiny_ll_sw_split.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
-      nrf51_pca10028
+      nrf51dk_nrf51422
   bluetooth.init.test_controller_dbg_ll_sw_split:
     extra_args: CONF_FILE=prj_controller_dbg_ll_sw_split.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
-      nrf51_pca10028
+      nrf51dk_nrf51422
   bluetooth.init.test_h5:
     extra_args: CONF_FILE=prj_h5.conf
     platform_whitelist: qemu_cortex_m3

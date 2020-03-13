@@ -3,5 +3,5 @@ sample:
 tests:
   sample.boards.nrf.system_off:
     build_only: true
-    platform_whitelist: nrf52840_pca10056 nrf52_pca10040 nrf51_pca10028
+    platform_whitelist: nrf52840_pca10056 nrf52_pca10040 nrf51dk_nrf51422
     tags: power

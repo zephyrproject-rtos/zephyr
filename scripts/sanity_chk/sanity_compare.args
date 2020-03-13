@@ -5,6 +5,6 @@ footprint
 -p
 frdm_k64f
 -p
-nrf51_pca10028
+nrf51dk_nrf51422
 -p
 nrf52_pca10040

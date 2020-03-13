@@ -3,5 +3,5 @@ sample:
 tests:
   sample.bluetooth.hci_pwr_ctrl:
     harness: bluetooth
-    platform_whitelist: bbc_microbit nrf51_pca10028 nrf52_pca10040 qemu_cortex_m3 qemu_x86
+    platform_whitelist: bbc_microbit nrf51dk_nrf51422 nrf52_pca10040 qemu_cortex_m3 qemu_x86
     tags: bluetooth

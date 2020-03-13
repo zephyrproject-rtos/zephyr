@@ -6,7 +6,7 @@ tests:
   bootloader.mcuboot.build:
     tags: mcuboot
     build_only: true
-    platform_whitelist: nrf51_pca10028 nrf52_pca10040
+    platform_whitelist: nrf51dk_nrf51422 nrf52_pca10040
     extra_configs:
       - CONFIG_BOOTLOADER_MCUBOOT=y
   buildsystem.kconfig.utf8_in_values:
