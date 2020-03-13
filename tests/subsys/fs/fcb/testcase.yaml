@@ -1,5 +1,5 @@
 tests:
   filesystem.fcb:
-    platform_whitelist: nrf52840_pca10056 nrf52_pca10040 nrf51_pca10028
+    platform_whitelist: nrf52840_pca10056 nrf52_pca10040 nrf51dk_nrf51422
         native_posix native_posix_64
     tags: flash_circural_buffer

@@ -1,12 +1,12 @@
-# nRF51 PCA10028 board configuration
+# nRF51 DK NRF51422 board configuration
 
 # Copyright (c) 2016 Linaro Limited.
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF51_PCA10028
+if BOARD_NRF51DK_NRF51422
 
 config BOARD
-	default "nrf51_pca10028"
+	default "nrf51dk_nrf51422"
 
 config ADC_0
 	default y
@@ -23,4 +23,4 @@ config SPI_1
 config BT_CTLR
 	default BT
 
-endif # BOARD_NRF51_PCA10028
+endif # BOARD_NRF51DK_NRF51422

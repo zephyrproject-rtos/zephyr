@@ -7,6 +7,6 @@ common:
 tests:
   sample.mcumg.smp_svr.nrf51:
     extra_args: CONF_FILE="prj_tiny.conf"
-    platform_whitelist: nrf51_pca10028
+    platform_whitelist: nrf51dk_nrf51422
   sample.mcumg.smp_svr.nrf52:
     platform_whitelist: nrf52_pca10040 nrf52840_pca10056

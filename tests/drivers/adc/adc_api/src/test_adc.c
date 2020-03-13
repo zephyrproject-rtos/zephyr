@@ -17,7 +17,7 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#if defined(CONFIG_BOARD_NRF51_PCA10028)
+#if defined(CONFIG_BOARD_NRF51DK_NRF51422)
 
 #include <hal/nrf_adc.h>
 #define ADC_DEVICE_NAME		DT_ADC_0_NAME

@@ -1,5 +1,5 @@
-identifier: nrf51_pca10028
-name: nRF51-PCA10028
+identifier: nrf51dk_nrf51422
+name: nRF51-DK-NRF51422
 type: mcu
 arch: arm
 toolchain:

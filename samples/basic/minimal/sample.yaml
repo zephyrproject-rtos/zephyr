@@ -5,23 +5,23 @@ tests:
   sample.minimal.mt.arm:
     build_only: true
     extra_args: CONF_FILE='common.conf;mt.conf;arm.conf'
-    platform_whitelist: reel_board frdm_k64f mps2_an385 nrf51_pca10028 nucleo_f429zi disco_l475_iot1
+    platform_whitelist: reel_board frdm_k64f mps2_an385 nrf51dk_nrf51422 nucleo_f429zi disco_l475_iot1
   sample.minimal.mt-no-preempt.arm:
     build_only: true
     extra_args: CONF_FILE='common.conf;mt.conf;no-preempt.conf;arm.conf'
-    platform_whitelist: reel_board frdm_k64f mps2_an385 nrf51_pca10028 nucleo_f429zi disco_l475_iot1
+    platform_whitelist: reel_board frdm_k64f mps2_an385 nrf51dk_nrf51422 nucleo_f429zi disco_l475_iot1
   sample.minimal.mt-no-preempt-no-timers.arm:
     build_only: true
     extra_args: CONF_FILE='common.conf;mt.conf;no-preempt.conf;no-timers.conf;arm.conf'
-    platform_whitelist: reel_board frdm_k64f mps2_an385 nrf51_pca10028 nucleo_f429zi disco_l475_iot1
+    platform_whitelist: reel_board frdm_k64f mps2_an385 nrf51dk_nrf51422 nucleo_f429zi disco_l475_iot1
   sample.minimal.no-mt.arm:
     build_only: true
     extra_args: CONF_FILE='common.conf;no-mt.conf;arm.conf'
-    platform_whitelist: reel_board frdm_k64f mps2_an385 nrf51_pca10028 nucleo_f429zi disco_l475_iot1
+    platform_whitelist: reel_board frdm_k64f mps2_an385 nrf51dk_nrf51422 nucleo_f429zi disco_l475_iot1
   sample.minimal.no-mt-no-timers.arm:
     build_only: true
     extra_args: CONF_FILE='common.conf;no-mt.conf;no-timers.conf;arm.conf'
-    platform_whitelist: reel_board frdm_k64f mps2_an385 nrf51_pca10028 nucleo_f429zi disco_l475_iot1
+    platform_whitelist: reel_board frdm_k64f mps2_an385 nrf51dk_nrf51422 nucleo_f429zi disco_l475_iot1
   sample.minimal.mt.x86:
     build_only: true
     extra_args: CONF_FILE='common.conf;mt.conf;x86.conf'
