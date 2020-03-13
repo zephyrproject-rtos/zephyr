@@ -341,6 +341,9 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		/* NOTE: TargetA, filled at enable and RPA timeout */
 
 		/* NOTE: AdvA, filled at enable and RPA timeout */
+
+		/* Mark the adv set as created */
+		adv->is_created = 1;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	} else if (pdu->len == 0) {
@@ -1046,6 +1049,11 @@ int ull_adv_init(void)
 {
 	int err;
 
+	err = ull_adv_sync_init();
+	if (err) {
+		return err;
+	}
+
 	err = init_reset();
 	if (err) {
 		return err;
@@ -1058,6 +1066,11 @@ int ull_adv_reset(void)
 {
 	uint8_t handle;
 	int err;
+
+	err = ull_adv_sync_reset();
+	if (err) {
+		return err;
+	}
 
 	for (handle = 0U; handle < BT_CTLR_ADV_MAX; handle++) {
 		(void)disable(handle);
@@ -1125,6 +1138,20 @@ uint32_t ull_adv_filter_pol_get(uint8_t handle)
 
 	return adv->lll.filter_policy;
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+struct ll_adv_set *ull_adv_is_created_get(uint8_t handle)
+{
+	struct ll_adv_set *adv;
+
+	adv = ull_adv_set_get(handle);
+	if (!adv || !adv->is_created) {
+		return NULL;
+	}
+
+	return adv;
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 static int init_reset(void)
 {

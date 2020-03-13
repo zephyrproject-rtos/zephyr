@@ -50,7 +50,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 	struct ll_adv_set *adv;
 	struct pdu_adv *pdu;
 
-	adv = ull_adv_is_enabled_get(handle);
+	adv = ull_adv_is_created_get(handle);
 	if (!adv) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -64,6 +64,9 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 		lll = &sync->lll;
 		adv->lll.sync = lll;
+
+		ull_hdr_init(&sync->ull);
+		lll_hdr_init(lll, sync);
 	} else {
 		sync = (void *)HDR_LLL2EVT(lll);
 	}
@@ -76,6 +79,8 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 	pdu->chan_sel = 0U;
 	pdu->tx_addr = 0U;
 	pdu->rx_addr = 0U;
+
+	pdu->len = 0U;
 
 	if (flags & BIT(6)) {
 		/* TODO: add/remove Tx Power in AUX_SYNC_IND PDU */
@@ -94,21 +99,21 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
 
 uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 {
-	struct lll_adv_sync *lll_sync;
+	struct lll_adv_sync *lll;
 	struct ll_adv_sync_set *sync;
 	struct ll_adv_set *adv;
 
-	adv = ull_adv_is_enabled_get(handle);
+	adv = ull_adv_is_created_get(handle);
 	if (!adv) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	lll_sync = adv->lll.sync;
-	if (!lll_sync) {
+	lll = adv->lll.sync;
+	if (!lll) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
-	sync = (void *)HDR_LLL2EVT(lll_sync);
+	sync = (void *)HDR_LLL2EVT(lll);
 
 	if (!enable) {
 		/* TODO */
@@ -229,7 +234,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_prepare};
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_sync_prepare};
 	static struct lll_prepare_param p;
 	struct ll_adv_sync_set *sync = param;
 	struct lll_adv_sync *lll;
