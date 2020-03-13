@@ -50,8 +50,6 @@
 
 #define APP_CONNECT_TRIES	10
 
-#define APP_MAX_ITERATIONS	100
-
 #define APP_MQTT_BUFFER_SIZE	128
 
 #define MQTT_CLIENTID		"zephyr_publisher"
