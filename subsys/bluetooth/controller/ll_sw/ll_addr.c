@@ -17,7 +17,10 @@
 #include "pdu.h"
 #include "lll.h"
 
+#include "lll_adv.h"
 #include "lll_scan.h"
+
+#include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_adv_internal.h"
 #include "ull_scan_internal.h"

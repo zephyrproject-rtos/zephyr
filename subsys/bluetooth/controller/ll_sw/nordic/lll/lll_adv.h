@@ -13,6 +13,15 @@ struct lll_adv_pdu {
 	uint8_t pdu[DOUBLE_BUFFER_SIZE][PDU_AC_SIZE_MAX];
 };
 
+struct lll_adv_sync {
+	struct lll_hdr hdr;
+
+	uint8_t access_addr[4];
+	uint8_t crc_init[3];
+
+	struct lll_adv_pdu data;
+};
+
 struct lll_adv {
 	struct lll_hdr hdr;
 
@@ -43,6 +52,10 @@ struct lll_adv {
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	struct lll_adv_pdu aux_data;
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	struct lll_adv_sync *sync;
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
@@ -126,6 +139,25 @@ static inline struct pdu_adv *lll_adv_aux_data_peek(struct lll_adv *lll)
 {
 	return (void *)lll->aux_data.pdu[lll->aux_data.last];
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+static inline struct pdu_adv *lll_adv_sync_data_alloc(struct lll_adv_sync *lll,
+						     uint8_t *idx)
+{
+	return lll_adv_pdu_alloc(&lll->data, idx);
+}
+
+static inline void lll_adv_sync_data_enqueue(struct lll_adv_sync *lll,
+					     uint8_t idx)
+{
+	lll_adv_pdu_enqueue(&lll->data, idx);
+}
+
+static inline struct pdu_adv *lll_adv_sync_data_peek(struct lll_adv_sync *lll)
+{
+	return (void *)lll->data.pdu[lll->data.last];
+}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 extern uint16_t ull_adv_lll_handle_get(struct lll_adv *lll);

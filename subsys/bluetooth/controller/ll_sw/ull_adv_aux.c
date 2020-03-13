@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2017-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
 
-#include <zephyr.h>
+#include <zephyr/types.h>
 #include <bluetooth/hci.h>
 
 #include "hal/ccm.h"

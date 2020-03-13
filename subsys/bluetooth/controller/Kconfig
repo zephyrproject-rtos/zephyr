@@ -35,6 +35,10 @@ config BT_CTLR_PHY_UPDATE_SUPPORT
 config BT_CTLR_ADV_EXT_SUPPORT
 	bool
 
+config BT_CTLR_ADV_PERIODIC_SUPPORT
+	depends on BT_CTLR_ADV_EXT_SUPPORT
+	bool
+
 config BT_CTLR_CHAN_SEL_2_SUPPORT
 	bool
 
@@ -95,6 +99,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_PHY_UPDATE_SUPPORT if !SOC_SERIES_NRF51X || \
 					      BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_ADV_EXT_SUPPORT
+	select BT_CTLR_ADV_PERIODIC_SUPPORT
 	select BT_CTLR_CHAN_SEL_2_SUPPORT
 	select BT_CTLR_MIN_USED_CHAN_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
@@ -448,12 +453,26 @@ config BT_CTLR_ADV_EXT
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
 	  Controller.
 
-config BT_ADV_SET
+config BT_CTLR_ADV_SET
 	int "LE Advertising Extensions Sets"
 	depends on BT_CTLR_ADV_EXT
 	default 1
 	help
 	  Maximum supported advertising sets.
+
+config BT_CTLR_ADV_PERIODIC
+	bool "LE Periodic Advertising"
+	depends on BT_CTLR_ADV_EXT
+	help
+	  Enable support for Bluetooth 5.0 LE Periodic Advertising in the
+	  Controller.
+
+config BT_CTLR_ADV_SYNC_SET
+	int "LE Periodic Advertising Sets"
+	depends on BT_CTLR_ADV_PERIODIC
+	default 1
+	help
+	  Maximum supported periodic advertising sets.
 
 config BT_CTLR_DTM
 	bool

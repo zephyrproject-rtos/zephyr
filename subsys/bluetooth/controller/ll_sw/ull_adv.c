@@ -52,11 +52,11 @@
 
 #define ULL_ADV_RANDOM_DELAY HAL_TICKER_US_TO_TICKS(10000)
 
-inline struct ll_adv_set *ull_adv_set_get(uint16_t handle);
+inline struct ll_adv_set *ull_adv_set_get(uint8_t handle);
 inline uint16_t ull_adv_handle_get(struct ll_adv_set *adv);
 
 static int init_reset(void);
-static inline struct ll_adv_set *is_disabled_get(uint16_t handle);
+static inline struct ll_adv_set *is_disabled_get(uint8_t handle);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
 		      void *param);
 static void ticker_op_update_cb(uint32_t status, void *params);
@@ -69,7 +69,7 @@ static void disabled_cb(void *param);
 static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
 
-static inline uint8_t disable(uint16_t handle);
+static inline uint8_t disable(uint8_t handle);
 
 static struct ll_adv_set ll_adv[BT_CTLR_ADV_MAX];
 
@@ -102,7 +102,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 				     PDU_ADV_TYPE_SCAN_IND,
 				     PDU_ADV_TYPE_NONCONN_IND,
 				     PDU_ADV_TYPE_DIRECT_IND};
-	uint16_t const handle = 0;
+	uint8_t const handle = 0;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	struct ll_adv_set *adv;
@@ -367,12 +367,12 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-uint8_t ll_adv_data_set(uint16_t handle, uint8_t len, uint8_t const *const data)
+uint8_t ll_adv_data_set(uint8_t handle, uint8_t len, uint8_t const *const data)
 {
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_adv_data_set(uint8_t len, uint8_t const *const data)
 {
-	const uint16_t handle = 0;
+	const uint8_t handle = 0;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 	struct ll_adv_set *adv;
 	struct pdu_adv *prev;
@@ -418,12 +418,13 @@ uint8_t ll_adv_data_set(uint8_t len, uint8_t const *const data)
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-uint8_t ll_adv_scan_rsp_set(uint16_t handle, uint8_t len, uint8_t const *const data)
+uint8_t ll_adv_scan_rsp_set(uint8_t handle, uint8_t len,
+			    uint8_t const *const data)
 {
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_adv_scan_rsp_set(uint8_t len, uint8_t const *const data)
 {
-	const uint16_t handle = 0;
+	const uint8_t handle = 0;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 	struct ll_adv_set *adv;
 	struct pdu_adv *prev;
@@ -454,19 +455,23 @@ uint8_t ll_adv_scan_rsp_set(uint8_t len, uint8_t const *const data)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-uint8_t ll_adv_enable(uint16_t handle, uint8_t enable,
+uint8_t ll_adv_enable(uint8_t handle, uint8_t enable,
 		   uint8_t at_anchor, uint32_t ticks_anchor, uint8_t retry,
 		   uint8_t scan_window, uint8_t scan_delay)
 {
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-uint8_t ll_adv_enable(uint16_t handle, uint8_t enable)
+uint8_t ll_adv_enable(uint8_t handle, uint8_t enable)
 {
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	struct ll_adv_sync_set *sync;
+	uint8_t sync_is_started = 0U;
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 	uint32_t ticks_anchor;
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 #else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 uint8_t ll_adv_enable(uint8_t enable)
 {
-	uint16_t const handle = 0;
+	uint8_t const handle = 0;
 	uint32_t ticks_anchor;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 	volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
@@ -976,12 +981,37 @@ uint8_t ll_adv_enable(uint8_t enable)
 				   &ll_adv_ticker_ext[handle]
 #endif /* CONFIG_BT_TICKER_EXT */
 				   );
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+		if (lll->sync) {
+			struct lll_adv_sync *lll_sync = lll->sync;
+
+			sync = (void *)HDR_LLL2EVT(lll_sync);
+			if (sync->is_enabled && !sync->is_started) {
+				ret = ull_ticker_status_take(ret, &ret_cb);
+				if (ret != TICKER_STATUS_SUCCESS) {
+					goto failure_cleanup;
+				}
+
+				ret = ull_adv_sync_start(sync, ticks_anchor,
+							 &ret_cb);
+
+				sync_is_started = 1U;
+			}
+		}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 	}
 
 	ret = ull_ticker_status_take(ret, &ret_cb);
 	if (ret != TICKER_STATUS_SUCCESS) {
 		goto failure_cleanup;
 	}
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	if (sync_is_started) {
+		sync->is_started = sync_is_started;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
 	adv->is_enabled = 1;
 
@@ -1026,7 +1056,7 @@ int ull_adv_init(void)
 
 int ull_adv_reset(void)
 {
-	uint16_t handle;
+	uint8_t handle;
 	int err;
 
 	for (handle = 0U; handle < BT_CTLR_ADV_MAX; handle++) {
@@ -1041,7 +1071,7 @@ int ull_adv_reset(void)
 	return 0;
 }
 
-inline struct ll_adv_set *ull_adv_set_get(uint16_t handle)
+inline struct ll_adv_set *ull_adv_set_get(uint8_t handle)
 {
 	if (handle >= BT_CTLR_ADV_MAX) {
 		return NULL;
@@ -1060,7 +1090,7 @@ uint16_t ull_adv_lll_handle_get(struct lll_adv *lll)
 	return ull_adv_handle_get((void *)lll->hdr.parent);
 }
 
-inline struct ll_adv_set *ull_adv_is_enabled_get(uint16_t handle)
+inline struct ll_adv_set *ull_adv_is_enabled_get(uint8_t handle)
 {
 	struct ll_adv_set *adv;
 
@@ -1072,7 +1102,7 @@ inline struct ll_adv_set *ull_adv_is_enabled_get(uint16_t handle)
 	return adv;
 }
 
-uint32_t ull_adv_is_enabled(uint16_t handle)
+uint32_t ull_adv_is_enabled(uint8_t handle)
 {
 	struct ll_adv_set *adv;
 
@@ -1084,7 +1114,7 @@ uint32_t ull_adv_is_enabled(uint16_t handle)
 	return BIT(0);
 }
 
-uint32_t ull_adv_filter_pol_get(uint16_t handle)
+uint32_t ull_adv_filter_pol_get(uint8_t handle)
 {
 	struct ll_adv_set *adv;
 
@@ -1101,7 +1131,7 @@ static int init_reset(void)
 	return 0;
 }
 
-static inline struct ll_adv_set *is_disabled_get(uint16_t handle)
+static inline struct ll_adv_set *is_disabled_get(uint8_t handle)
 {
 	struct ll_adv_set *adv;
 
@@ -1184,7 +1214,7 @@ static void ticker_stop_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_
 			   void *param)
 {
 	struct ll_adv_set *adv = param;
-	uint16_t handle;
+	uint8_t handle;
 	uint32_t ret;
 
 #if 0
@@ -1306,7 +1336,7 @@ static void conn_release(struct ll_adv_set *adv)
 }
 #endif /* CONFIG_BT_PERIPHERAL */
 
-static inline uint8_t disable(uint16_t handle)
+static inline uint8_t disable(uint8_t handle)
 {
 	volatile uint32_t ret_cb = TICKER_STATUS_BUSY;
 	struct ll_adv_set *adv;
