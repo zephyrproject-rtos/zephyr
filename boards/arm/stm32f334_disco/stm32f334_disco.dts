@@ -1,0 +1,99 @@
+/*
+ * Copyright (c) 2017 I-SENSE group of ICCS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f3/stm32f334X8.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F334DISCOVERY board";
+	compatible = "st,stm32f334discovery", "st,stm32f334";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led_U: led_3 {
+			gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+		blue_led_D: led_6 {
+			gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+			label = "User LD6";
+		};
+		orange_led_L: led_4 {
+			gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+		green_led_R: led_5 {
+			gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+			label = "User LD5";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User";
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led_U;
+		led1 = &green_led_R;
+		led2 = &blue_led_D;
+		led3 = &orange_led_L;
+		sw0 = &user_button;
+		can-primary = &can1;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	status = "okay";
+};
+
+
+&rtc {
+	status = "okay";
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 6Kb of storage at the end of the 64Kb of flash */
+		storage_partition: partition@e800 {
+			label = "storage";
+			reg = <0x0000e800 0x00001800>;
+		};
+	};
+};

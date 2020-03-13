@@ -1,0 +1,18 @@
+identifier: stm32f334_disco
+name: STM32F334DISCOVERY
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 12
+flash: 64
+supported:
+  - gpio
+  - i2c
+  - spi
+  - pwm
+  - watchdog
+  - counter
+  - nvs

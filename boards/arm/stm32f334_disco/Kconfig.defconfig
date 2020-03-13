@@ -1,0 +1,29 @@
+# STM32F334DISCOVERY board configuration
+
+# Copyright (c) 2017 I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32F334_DISCO
+
+config BOARD
+	default "stm32f334_disco"
+
+config UART_2
+	default y
+	depends on UART_CONSOLE
+
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
+
+if SPI
+
+config SPI_1
+	default y
+
+endif # SPI
+
+endif # BOARD_STM32F334_DISCO
