@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2020 InnBlue
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf9160_sica.dtsi>
+#include "nrf9160_innblue22_common.dts"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
