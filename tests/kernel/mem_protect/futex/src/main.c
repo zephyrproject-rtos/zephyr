@@ -458,3 +458,7 @@ void test_main(void)
 			 ztest_unit_test(test_futex_wait_nowait));
 	ztest_run_test_suite(test_futex);
 }
+
+/**
+ * @}
+ */
