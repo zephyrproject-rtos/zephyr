@@ -27,7 +27,6 @@ void *ll_pdu_rx_alloc_peek(uint8_t count);
 void *ll_pdu_rx_alloc(void);
 void ll_rx_put(memq_link_t *link, void *rx);
 void ll_rx_sched(void);
-void ll_tx_ack_put(uint16_t handle, struct node_tx *node_tx);
 void ull_ticker_status_give(uint32_t status, void *param);
 uint32_t ull_ticker_status_take(uint32_t ret, uint32_t volatile *ret_cb);
 void *ull_disable_mark(void *param);

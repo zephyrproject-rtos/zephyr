@@ -19,8 +19,10 @@ uint8_t ll_adv_params_set(uint8_t handle, uint16_t evt_prop, uint32_t interval,
 		       uint8_t direct_addr_type, uint8_t const *const direct_addr,
 		       uint8_t chan_map, uint8_t filter_policy, uint8_t *tx_pwr,
 		       uint8_t phy_p, uint8_t skip, uint8_t phy_s, uint8_t sid, uint8_t sreq);
-uint8_t ll_adv_data_set(uint16_t handle, uint8_t len, uint8_t const *const p_data);
-uint8_t ll_adv_scan_rsp_set(uint16_t handle, uint8_t len, uint8_t const *const p_data);
+uint8_t ll_adv_data_set(uint8_t handle, uint8_t len,
+			uint8_t const *const p_data);
+uint8_t ll_adv_scan_rsp_set(uint8_t handle, uint8_t len,
+			    uint8_t const *const p_data);
 uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t *addr);
 uint8_t *ll_adv_aux_random_addr_get(uint8_t handle, uint8_t *addr);
 uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
@@ -31,6 +33,11 @@ uint16_t ll_adv_aux_max_data_length_get(void);
 uint8_t ll_adv_aux_set_count_get(void);
 uint8_t ll_adv_aux_set_remove(uint8_t handle);
 uint8_t ll_adv_aux_set_clear(void);
+uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval,
+			      uint16_t flags);
+uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
+				uint8_t len, uint8_t *data);
+uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable);
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		       uint8_t own_addr_type, uint8_t direct_addr_type,
@@ -42,11 +49,11 @@ uint8_t ll_adv_scan_rsp_set(uint8_t len, uint8_t const *const p_data);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-uint8_t ll_adv_enable(uint16_t handle, uint8_t enable,
+uint8_t ll_adv_enable(uint8_t handle, uint8_t enable,
 		   uint8_t at_anchor, uint32_t ticks_anchor, uint8_t retry,
 		   uint8_t scan_window, uint8_t scan_delay);
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-uint8_t ll_adv_enable(uint16_t handle, uint8_t enable);
+uint8_t ll_adv_enable(uint8_t handle, uint8_t enable);
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 #else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 uint8_t ll_adv_enable(uint8_t enable);

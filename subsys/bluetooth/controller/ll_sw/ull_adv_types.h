@@ -30,3 +30,14 @@ struct ll_adv_set {
 	uint8_t  id_addr[BDADDR_SIZE];
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 };
+
+struct ll_adv_sync_set {
+	struct evt_hdr      evt;
+	struct ull_hdr      ull;
+	struct lll_adv_sync lll;
+
+	uint16_t interval;
+
+	uint8_t is_enabled:1;
+	uint8_t is_started:1;
+};
