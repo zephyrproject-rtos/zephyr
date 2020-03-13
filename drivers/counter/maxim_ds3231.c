@@ -1339,7 +1339,7 @@ int z_vrfy_maxim_ds3231_get_syncpoint(struct device *dev,
 	struct maxim_ds3231_syncpoint value;
 	int rv;
 
-	Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_COUNTER, ds3231_init));
+	Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_COUNTER, &ds3231_api));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(syncpoint, sizeof(*syncpoint)));
 
 	rv = z_impl_maxim_ds3231_get_syncpoint(dev, &value);
@@ -1356,7 +1356,7 @@ int z_vrfy_maxim_ds3231_get_syncpoint(struct device *dev,
 int z_vrfy_maxim_ds3231_req_syncpoint(struct device *dev,
 				      struct k_poll_signal *sig)
 {
-	Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_COUNTER, ds3231_init));
+	Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_COUNTER, &ds3231_api));
 	if (sig != NULL) {
 		Z_OOPS(Z_SYSCALL_OBJ(sig, K_OBJ_POLL_SIGNAL));
 	}
