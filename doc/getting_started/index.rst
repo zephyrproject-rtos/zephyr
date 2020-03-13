@@ -137,7 +137,12 @@ We'll also install Zephyr's multi-purpose west tool.
 
          .. code-block:: bash
 
-            brew install cmake ninja gperf ccache dfu-util qemu dtc python3
+            brew install cmake ninja gperf ccache dfu-util qemu dtc python3 libgit2
+
+         .. note::
+            Depending on previously installed Python versions, the ``python``
+            command might point to a Python 2 installation instead of the newly
+            installed Python 3. See :ref:`python-pip` for more information.
 
       #. Install west:
 

@@ -18,6 +18,11 @@ to install and run scripts required to compile and run Zephyr
 applications, set up and maintain the Zephyr development environment,
 and build project documentation.
 
+You must use Python 3 with Zephyr; Python 2 versions will not work.
+Enter ``python --version`` to confirm your Python version. If the displayed
+version is not Python 3, ensure that Python 3 is added to the path before
+any Python 2 version, and create an alias for python=python3 if necessary.
+
 Depending on your operating system, you may need to provide the
 ``--user`` flag to the ``pip3`` command when installing new packages. This is
 documented throughout the instructions.
