@@ -36,6 +36,8 @@
 #define AD_OP           0x03
 #define AD_FRAG_PREF    0x00
 
+#define ADV_INTERVAL_PERIODIC 0x30
+
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_NO_BREDR),
 	};
@@ -170,20 +172,18 @@ void main(void)
 
 	printk("Starting periodic 1M advertising...");
 	handle = 0x0000;
-	evt_prop = EVT_PROP_TXP;
-	adv_type = 0x06; /* Periodic Advertising */
-	phy_p = ADV_PHY_1M;
-	phy_s = ADV_PHY_1M;
-	err = ll_adv_params_set(handle, evt_prop, ADV_INTERVAL, adv_type,
-				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
-				ADV_CHAN_MAP, FILTER_POLICY, ADV_TX_PWR,
-				phy_p, ADV_SEC_SKIP, phy_s, ADV_SID,
-				SCAN_REQ_NOT);
+	err = ll_adv_sync_param_set(handle, ADV_INTERVAL_PERIODIC, 0);
 	if (err) {
 		goto exit;
 	}
 
-	printk("enabling...");
+	printk("enabling periodic...");
+	err = ll_adv_sync_enable(handle, 1);
+	if (err) {
+		goto exit;
+	}
+
+	printk("enabling extended...");
 	err = ll_adv_enable(handle, 1);
 	if (err) {
 		goto exit;
