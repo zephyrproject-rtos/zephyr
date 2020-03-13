@@ -18,7 +18,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <drivers/interrupt_controller/loapic.h> /* public API declarations */
-#include <init.h>
+#include <device.h>
 #include <drivers/interrupt_controller/sysapic.h>
 
 /* Local APIC Version Register Bits */

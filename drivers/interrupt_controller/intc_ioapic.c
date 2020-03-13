@@ -57,7 +57,7 @@
 
 #include <toolchain.h>
 #include <linker/sections.h>
-#include <init.h>
+#include <device.h>
 #include <string.h>
 
 #include <drivers/interrupt_controller/ioapic.h> /* public API declarations */
