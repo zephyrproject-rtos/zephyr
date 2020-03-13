@@ -491,8 +491,8 @@ def addr_deref(elf, addr):
 
 
 def device_get_api_addr(elf, addr):
-    # Read device->driver API
-    offset = 4 if elf.elfclass == 32 else 8
+    # See include/device.h for a description of struct device
+    offset = 8 if elf.elfclass == 32 else 16
     return addr_deref(elf, addr + offset)
 
 
@@ -543,7 +543,7 @@ def find_kobjects(elf, syms):
         if not name:
             continue
 
-        if name.startswith("__device_sys_init"):
+        if name.startswith("__init_sys_init"):
             # Boot-time initialization function; not an actual device
             continue
 
