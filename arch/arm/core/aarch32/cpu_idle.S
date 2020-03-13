@@ -73,6 +73,12 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
+	/* Synchronization barriers before calling WFI
+	* DSB is recommented by architecture definitions
+	* ISB flushes the instruction pipeline after setting PRIMASK/BASEPRI
+	*/
+	dsb
+	isb
 	wfi
 
 	bx lr
