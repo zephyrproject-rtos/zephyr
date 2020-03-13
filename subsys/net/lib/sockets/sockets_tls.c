@@ -1174,6 +1174,10 @@ static int ztls_socket(int family, int type, int proto)
 		ctx->tls->tls_version = tls_proto;
 	}
 
+	if (proto == IPPROTO_TCP) {
+		net_context_ref(ctx);
+	}
+
 	z_finalize_fd(
 		fd, ctx, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable);
 
@@ -1298,6 +1302,7 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	}
 
 	net_context_set_accepting(child, false);
+	net_context_ref(child);
 
 	z_finalize_fd(
 		fd, child, (const struct fd_op_vtable *)&tls_sock_fd_op_vtable);

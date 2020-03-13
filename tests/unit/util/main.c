@@ -138,15 +138,19 @@ void test_UTIL_LISTIFY(void)
 		i += x;		\
 	} while (0);
 
-#define DEFINE(x, _) int a##x;
+#define DEFINE(x, y) int a##x = x * y;
 #define MARK_UNUSED(x, _) ARG_UNUSED(a##x);
 
-	UTIL_LISTIFY(4, DEFINE, _)
+	UTIL_LISTIFY(4, DEFINE, 2)
 	UTIL_LISTIFY(4, MARK_UNUSED, _)
 
 	UTIL_LISTIFY(4, INC, _)
 
 	zassert_equal(i, 0 + 1 + 2 + 3, NULL);
+	zassert_equal(a0, 0, NULL);
+	zassert_equal(a1, 2, NULL);
+	zassert_equal(a2, 4, NULL);
+	zassert_equal(a3, 6, NULL);
 }
 
 static int inc_func(void)

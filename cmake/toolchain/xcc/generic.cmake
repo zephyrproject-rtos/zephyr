@@ -40,3 +40,5 @@ set(NOSYSDEF_CFLAG "")
 list(APPEND TOOLCHAIN_C_FLAGS -fms-extensions)
 
 set(TOOLCHAIN_HAS_NEWLIB OFF CACHE BOOL "True if toolchain supports newlib")
+
+message(STATUS "Found toolchain: xcc (${XTENSA_TOOLCHAIN_PATH})")

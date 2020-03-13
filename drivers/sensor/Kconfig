@@ -31,6 +31,8 @@ comment "Device Drivers"
 
 source "drivers/sensor/adt7420/Kconfig"
 
+source "drivers/sensor/adxl345/Kconfig"
+
 source "drivers/sensor/adxl362/Kconfig"
 
 source "drivers/sensor/adxl372/Kconfig"
@@ -112,6 +114,8 @@ source "drivers/sensor/lsm9ds0_mfd/Kconfig"
 source "drivers/sensor/max30101/Kconfig"
 
 source "drivers/sensor/max44009/Kconfig"
+
+source "drivers/sensor/mchp_tach_xec/Kconfig"
 
 source "drivers/sensor/mcp9808/Kconfig"
 

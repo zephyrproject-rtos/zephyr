@@ -1,7 +1,7 @@
 /* ieee802154_rf2xx.h - IEEE 802.15.4 Driver definition for ATMEL RF2XX */
 
 /*
- * Copyright (c) 2019 Gerson Fernando Budke
+ * Copyright (c) 2019-2020 Gerson Fernando Budke
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,14 +65,6 @@ enum rf2xx_trx_state_trac_t {
 	RF2XX_TRX_PHY_STATE_TRAC_INVALID                = 0x07,
 };
 
-enum rf2xx_trx_state_t {
-	RF2XX_TRX_PHY_STATE_INITIAL,
-	RF2XX_TRX_PHY_STATE_IDLE,
-	RF2XX_TRX_PHY_STATE_SLEEP,
-	RF2XX_TRX_PHY_BUSY_RX,
-	RF2XX_TRX_PHY_BUSY_TX,
-};
-
 enum rf2xx_trx_model_t {
 	RF2XX_TRX_MODEL_INV     = 0x00,
 	RF2XX_TRX_MODEL_230     = 0x02,
@@ -127,11 +119,8 @@ struct rf2xx_context {
 			      CONFIG_IEEE802154_RF2XX_RX_STACK_SIZE);
 	struct k_sem trx_isr_lock;
 	struct k_sem trx_tx_sync;
-	struct k_timer trx_isr_timeout;
-	struct k_mutex phy_mutex;
 
 	enum rf2xx_trx_model_t trx_model;
-	enum rf2xx_trx_state_t trx_state;
 	enum rf2xx_trx_state_trac_t trx_trac;
 
 	u8_t mac_addr[8];
@@ -139,6 +128,7 @@ struct rf2xx_context {
 	u8_t pkt_ed;
 	s8_t trx_rssi_base;
 	u8_t trx_version;
+	u8_t rx_phr;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_RF2XX_H_ */

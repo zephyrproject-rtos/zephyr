@@ -88,6 +88,8 @@ static int stm32h7_init(struct device *arg)
 	/* Power Configuration */
 #ifdef SMPS
 	LL_PWR_ConfigSupply(LL_PWR_DIRECT_SMPS_SUPPLY);
+#else
+	LL_PWR_ConfigSupply(LL_PWR_LDO_SUPPLY);
 #endif
 	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
 	while (LL_PWR_IsActiveFlag_VOS() == 0) {

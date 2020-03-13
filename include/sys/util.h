@@ -738,10 +738,10 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
  * @arg LEN: The length of the sequence. Must be defined and less than
  * 20.
  *
- * @arg F(i, F_ARG): A macro function that accepts two arguments.
- *  F is called repeatedly, the first argument
- *  is the index in the sequence, and the second argument is the third
- *  argument given to UTIL_LISTIFY.
+ * @arg F(i, ...): A macro function that accepts at least two arguments.
+ *  F is called repeatedly, the first argument is the index in the sequence,
+ *  the variable list of arguments passed to UTIL_LISTIFY are passed through
+ *  to F.
  *
  * Example:
  *
@@ -753,7 +753,7 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
  * @note Calling UTIL_LISTIFY with undefined arguments has undefined
  * behavior.
  */
-#define UTIL_LISTIFY(LEN, F, F_ARG) UTIL_EVAL(UTIL_REPEAT(LEN, F, F_ARG))
+#define UTIL_LISTIFY(LEN, F, ...) UTIL_EVAL(UTIL_REPEAT(LEN, F, __VA_ARGS__))
 
 /**@brief Implementation details for NUM_VAR_ARGS */
 #define NUM_VA_ARGS_LESS_1_IMPL(				\

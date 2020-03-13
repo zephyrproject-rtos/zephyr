@@ -1,0 +1,14 @@
+identifier: nucleo_h743zi
+name: NUCLEO-H743ZI
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 512
+flash: 2048
+supported:
+  - arduino_gpio
+  - uart
+  - gpio

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 add_subdirectory_ifdef(CONFIG_ADT7420		adt7420)
+add_subdirectory_ifdef(CONFIG_ADXL345		adxl345)
 add_subdirectory_ifdef(CONFIG_ADXL362		adxl362)
 add_subdirectory_ifdef(CONFIG_ADXL372		adxl372)
 add_subdirectory_ifdef(CONFIG_AK8975		ak8975)
@@ -61,6 +62,7 @@ add_subdirectory_ifdef(CONFIG_TMP112		tmp112)
 add_subdirectory_ifdef(CONFIG_TMP116		tmp116)
 add_subdirectory_ifdef(CONFIG_VL53L0X		vl53l0x)
 add_subdirectory_ifdef(CONFIG_TEMP_KINETIS	nxp_kinetis_temp)
+add_subdirectory_ifdef(CONFIG_TACH_XEC		mchp_tach_xec)
 
 zephyr_sources_ifdef(CONFIG_USERSPACE sensor_handlers.c)
 zephyr_sources_ifdef(CONFIG_SENSOR_SHELL sensor_shell.c)

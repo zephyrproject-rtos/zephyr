@@ -1,0 +1,31 @@
+# black_f407ve board configuration
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BLACK_F407VE
+
+config BOARD
+	default "black_f407ve"
+
+config UART_2
+	default y
+	depends on UART_CONSOLE
+
+config PWM_STM32_2
+	default y
+	depends on PWM
+
+config CAN_2
+	default y
+	depends on CAN
+
+config SPI_2
+	default y
+	depends on SPI
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_BLACK_F407VE

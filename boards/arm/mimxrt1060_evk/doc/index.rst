@@ -305,7 +305,7 @@ should see the following message in the terminal:
    https://www.nxp.com/support/developer-resources/software-development-tools/mcuxpresso-software-and-tools/mimxrt1060-evk-i.mx-rt1060-evaluation-kit:MIMXRT1060-EVK
 
 .. _MIMXRT1060-EVK User Guide:
-   https://www.nxp.com/webapp/Download?colCode=UM11151
+   https://www.nxp.com/webapp/Download?colCode=UM11151UG
 
 .. _MIMXRT1060-EVK Schematics:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT1060-EVK-DESIGN-FILE-A2

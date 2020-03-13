@@ -353,8 +353,7 @@ static int lwm2m_device_init(struct device *dev)
 
 	/* Set default values */
 	time_offset = 0U;
-	/* currently only support UDP binding mode (no SMS or Queue mode) */
-	strcpy(binding_mode, "U");
+	lwm2m_engine_get_binding(binding_mode);
 
 	/* initialize the device field data */
 	device.obj_id = LWM2M_OBJECT_DEVICE_ID;

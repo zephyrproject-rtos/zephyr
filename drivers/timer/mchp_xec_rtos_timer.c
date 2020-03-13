@@ -47,6 +47,9 @@ BUILD_ASSERT_MSG(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
 #define CYCLES_PER_TICK \
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
+#define TIMER_REGS	\
+	((RTMR_Type *) DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_BASE_ADDRESS)
+
 /* Mask off bits[31:28] of 32-bit count */
 #define TIMER_MAX	0x0FFFFFFFUL
 
@@ -76,10 +79,10 @@ static u32_t cached_icr = CYCLES_PER_TICK;
 
 static void timer_restart(u32_t countdown)
 {
-	RTMR_REGS->CTRL = 0U;
-	RTMR_REGS->CTRL = MCHP_RTMR_CTRL_BLK_EN;
-	RTMR_REGS->PRLD = countdown;
-	RTMR_REGS->CTRL = TIMER_START_VAL;
+	TIMER_REGS->CTRL = 0U;
+	TIMER_REGS->CTRL = MCHP_RTMR_CTRL_BLK_EN;
+	TIMER_REGS->PRLD = countdown;
+	TIMER_REGS->CTRL = TIMER_START_VAL;
 }
 
 /*
@@ -96,9 +99,9 @@ static void timer_restart(u32_t countdown)
  */
 static INLINE u32_t timer_count(void)
 {
-	u32_t ccr = RTMR_REGS->CNT;
+	u32_t ccr = TIMER_REGS->CNT;
 
-	if ((ccr == 0) && (RTMR_REGS->CTRL & MCHP_RTMR_CTRL_START)) {
+	if ((ccr == 0) && (TIMER_REGS->CTRL & MCHP_RTMR_CTRL_START)) {
 		ccr = cached_icr;
 	}
 
@@ -135,7 +138,7 @@ void z_clock_set_timeout(s32_t n, bool idle)
 		 * We are not in a locked section. Are writes to two
 		 * global objects safe from pre-emption?
 		 */
-		RTMR_REGS->CTRL = 0U; /* stop timer */
+		TIMER_REGS->CTRL = 0U; /* stop timer */
 		cached_icr = TIMER_STOPPED;
 		return;
 	}
@@ -155,8 +158,9 @@ void z_clock_set_timeout(s32_t n, bool idle)
 	ccr = timer_count();
 
 	/* turn off to clear any pending interrupt status */
-	RTMR_REGS->CTRL = 0U;
-	GIRQ23_REGS->SRC = MCHP_RTMR_GIRQ_VAL;
+	TIMER_REGS->CTRL = 0U;
+	MCHP_GIRQ_SRC(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ) =
+		BIT(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ_BIT);
 	NVIC_ClearPendingIRQ(RTMR_IRQn);
 
 	temp = total_cycles;
@@ -216,7 +220,9 @@ static void xec_rtos_timer_isr(void *arg)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	GIRQ23_REGS->SRC = MCHP_RTMR_GIRQ_VAL;
+	MCHP_GIRQ_SRC(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ) =
+		BIT(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ_BIT);
+
 	/* Restart the timer as early as possible to minimize drift... */
 	timer_restart(MAX_TICKS * CYCLES_PER_TICK);
 
@@ -247,7 +253,9 @@ static void xec_rtos_timer_isr(void *arg)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	GIRQ23_REGS->SRC = MCHP_RTMR_GIRQ_VAL;
+	MCHP_GIRQ_SRC(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ) =
+		BIT(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ_BIT);
+
 	/* Restart the timer as early as possible to minimize drift... */
 	timer_restart(cached_icr);
 
@@ -301,7 +309,7 @@ void z_clock_idle_exit(void)
 
 void sys_clock_disable(void)
 {
-	RTMR_REGS->CTRL = 0U;
+	TIMER_REGS->CTRL = 0U;
 }
 
 int z_clock_driver_init(struct device *device)
@@ -314,15 +322,17 @@ int z_clock_driver_init(struct device *device)
 	cached_icr = MAX_TICKS;
 #endif
 
-	RTMR_REGS->CTRL = 0U;
-	GIRQ23_REGS->SRC = MCHP_RTMR_GIRQ_VAL;
+	TIMER_REGS->CTRL = 0U;
+	MCHP_GIRQ_SRC(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ) =
+		BIT(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ_BIT);
 	NVIC_ClearPendingIRQ(RTMR_IRQn);
 
 	IRQ_CONNECT(RTMR_IRQn,
 		    DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_IRQ_0_PRIORITY,
 		    xec_rtos_timer_isr, 0, 0);
 
-	GIRQ23_REGS->EN_SET = MCHP_RTMR_GIRQ_VAL;
+	MCHP_GIRQ_ENSET(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ) =
+		BIT(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ_BIT);
 	irq_enable(RTMR_IRQn);
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
@@ -337,7 +347,7 @@ int z_clock_driver_init(struct device *device)
 
 	timer_restart(cached_icr);
 	/* wait for Hibernation timer to load count register from preload */
-	while (RTMR_REGS->CNT == 0)
+	while (TIMER_REGS->CNT == 0)
 		;
 	B32TMR0_REGS->CTRL = btmr_ctrl;
 #else

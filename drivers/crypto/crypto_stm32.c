@@ -19,7 +19,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(crypto_stm32);
 
-#define CRYP_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS)
+#define CRYP_SUPPORT (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | \
+		      CAP_NO_IV_PREFIX)
 #define BLOCK_LEN_BYTES 16
 #define BLOCK_LEN_WORDS (BLOCK_LEN_BYTES / sizeof(u32_t))
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_STM32_MAX_SESSION
@@ -147,18 +148,23 @@ static int crypto_stm32_cbc_encrypt(struct cipher_ctx *ctx,
 {
 	int ret;
 	u32_t vec[BLOCK_LEN_WORDS];
+	int out_offset = 0;
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
 	copy_reverse_words((u8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
 	session->config.pInitVect = vec;
 
-	/* Prefix IV to ciphertext */
-	memcpy(pkt->out_buf, iv, 16);
+	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
+		/* Prefix IV to ciphertext unless CAP_NO_IV_PREFIX is set. */
+		memcpy(pkt->out_buf, iv, 16);
+		out_offset = 16;
+	}
 
-	ret = do_encrypt(ctx, pkt->in_buf, pkt->in_len, pkt->out_buf + 16);
+	ret = do_encrypt(ctx, pkt->in_buf, pkt->in_len,
+			 pkt->out_buf + out_offset);
 	if (ret == 0) {
-		pkt->out_len = pkt->in_len + 16;
+		pkt->out_len = pkt->in_len + out_offset;
 	}
 
 	return ret;
@@ -169,15 +175,21 @@ static int crypto_stm32_cbc_decrypt(struct cipher_ctx *ctx,
 {
 	int ret;
 	u32_t vec[BLOCK_LEN_WORDS];
+	int in_offset = 0;
 
 	struct crypto_stm32_session *session = CRYPTO_STM32_SESSN(ctx);
 
 	copy_reverse_words((u8_t *)vec, sizeof(vec), iv, BLOCK_LEN_BYTES);
 	session->config.pInitVect = vec;
 
-	ret = do_decrypt(ctx, pkt->in_buf + 16, pkt->in_len, pkt->out_buf);
+	if ((ctx->flags & CAP_NO_IV_PREFIX) == 0U) {
+		in_offset = 16;
+	}
+
+	ret = do_decrypt(ctx, pkt->in_buf + in_offset, pkt->in_len,
+			 pkt->out_buf);
 	if (ret == 0) {
-		pkt->out_len = pkt->in_len - 16;
+		pkt->out_len = pkt->in_len - in_offset;
 	}
 
 	return ret;

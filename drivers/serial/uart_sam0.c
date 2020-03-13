@@ -940,7 +940,7 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 #define UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	.irq_config_func = uart_sam0_irq_config_##n,
 
-#ifdef DT_ATMEL_SAM0_UART_0_IRQ_3
+#ifdef DT_INST_0_ATMEL_SAM0_UART_IRQ_3
 #define UART_SAM0_IRQ_HANDLER(n)					\
 static void uart_sam0_irq_config_##n(struct device *dev)		\
 {									\

@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <openthread/ip6.h>
 #include <openthread/link.h>
 #include <openthread/message.h>
+#include <openthread/platform/diag.h>
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
 #include <openthread/dataset.h>
@@ -182,9 +183,9 @@ void ot_receive_handler(otMessage *aMessage, void *context)
 
 	NET_DBG("Injecting Ip6 packet to Zephyr net stack");
 
-#if defined(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)
-	net_pkt_hexdump(pkt, "Received IPv6 packet");
-#endif
+	if (IS_ENABLED(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)) {
+		net_pkt_hexdump(pkt, "Received IPv6 packet");
+	}
 
 	if (!pkt_list_is_full(ot_context)) {
 		if (net_recv_data(ot_context->iface, pkt) < 0) {
@@ -242,11 +243,12 @@ static enum net_verdict openthread_recv(struct net_if *iface,
 
 	if (pkt_list_peek(ot_context) == pkt) {
 		pkt_list_remove_last(ot_context);
-		NET_DBG("Got injected Ip6 packet, "
-			    "sending to upper layers");
-#if defined(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)
-		net_pkt_hexdump(pkt, "Injected IPv6 packet");
-#endif
+		NET_DBG("Got injected Ip6 packet, sending to upper layers");
+
+		if (IS_ENABLED(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)) {
+			net_pkt_hexdump(pkt, "Injected IPv6 packet");
+		}
+
 		return NET_CONTINUE;
 	}
 
@@ -261,17 +263,15 @@ static enum net_verdict openthread_recv(struct net_if *iface,
 	recv_frame.mInfo.mRxInfo.mLqi = net_pkt_ieee802154_lqi(pkt);
 	recv_frame.mInfo.mRxInfo.mRssi = net_pkt_ieee802154_rssi(pkt);
 
-#if defined(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_15_4)
-	net_pkt_hexdump(pkt, "Received 802.15.4 frame");
-#endif
 
-#if OPENTHREAD_ENABLE_DIAG
-	if (otPlatDiagModeGet()) {
+	if (IS_ENABLED(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)) {
+		net_pkt_hexdump(pkt, "Received 802.15.4 frame");
+	}
+
+	if (IS_ENABLED(OPENTHREAD_ENABLE_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioReceiveDone(ot_context->instance,
 					   &recv_frame, OT_ERROR_NONE);
-	} else
-#endif
-	{
+	} else {
 		otPlatRadioReceiveDone(ot_context->instance,
 				       &recv_frame, OT_ERROR_NONE);
 	}
@@ -313,9 +313,9 @@ int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 		goto exit;
 	}
 
-#if defined(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)
-	net_pkt_hexdump(pkt, "Sent IPv6 packet");
-#endif
+	if (IS_ENABLED(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)) {
+		net_pkt_hexdump(pkt, "Sent IPv6 packet");
+	}
 
 exit:
 	net_pkt_unref(pkt);
@@ -397,10 +397,9 @@ static int openthread_init(struct net_if *iface)
 
 	__ASSERT(ot_context->instance, "OT instance is NULL");
 
-#if defined(CONFIG_OPENTHREAD_SHELL)
-	platformShellInit(ot_context->instance);
-#endif
-
+	if (IS_ENABLED(CONFIG_OPENTHREAD_SHELL)) {
+		platformShellInit(ot_context->instance);
+	}
 
 	otIp6SetEnabled(ot_context->instance, true);
 

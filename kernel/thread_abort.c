@@ -38,18 +38,8 @@ void z_impl_k_thread_abort(k_tid_t thread)
 		 * for "is _current dead" and we don't want one for
 		 * performance reasons.
 		 */
-		struct k_spinlock lock = {};
-
-		z_swap(&lock, k_spin_lock(&lock));
+		z_swap_unlocked();
 	} else {
-		/* Really, there's no good reason for this to be a
-		 * scheduling point if we aren't aborting _current (by
-		 * definition, no higher priority thread is runnable,
-		 * because we're running!).  But it always has been
-		 * and is thus part of our API, and we have tests that
-		 * rely on k_thread_abort() scheduling out of
-		 * cooperative threads.
-		 */
 		z_reschedule_unlocked();
 	}
 }

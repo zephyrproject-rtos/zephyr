@@ -112,7 +112,7 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	 * See #17656
 	 */
 #if defined(CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION)
-	if (arch_is_in_nested_exception(esf)) {
+	if ((esf != NULL) && arch_is_in_nested_exception(esf)) {
 		LOG_ERR("Fault during interrupt handling\n");
 	}
 #endif
@@ -140,7 +140,7 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 			 "Attempted to recover from a kernel panic condition");
 		/* FIXME: #17656 */
 #if defined(CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION)
-		if (arch_is_in_nested_exception(esf)) {
+		if ((esf != NULL) && arch_is_in_nested_exception(esf)) {
 #if defined(CONFIG_STACK_SENTINEL)
 			if (reason != K_ERR_STACK_CHK_FAIL) {
 				__ASSERT(0,
@@ -152,18 +152,26 @@ void z_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 	} else {
 		/* Test mode */
 #if defined(CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION)
-			if (arch_is_in_nested_exception(esf)) {
-				/* Abort the thread only on STACK Sentinel check fail. */
+		if ((esf != NULL) && arch_is_in_nested_exception(esf)) {
+			/* Abort the thread only on STACK Sentinel check fail. */
 #if defined(CONFIG_STACK_SENTINEL)
-				if (reason != K_ERR_STACK_CHK_FAIL) {
-					arch_irq_unlock(key);
-					return;
-				}
-#else
+			if (reason != K_ERR_STACK_CHK_FAIL) {
 				arch_irq_unlock(key);
 				return;
-#endif /* CONFIG_STACK_SENTINEL */
 			}
+#else
+			arch_irq_unlock(key);
+			return;
+#endif /* CONFIG_STACK_SENTINEL */
+		} else {
+			/* Abort the thread only if the fault is not due to
+			 * a spurious ISR handler triggered.
+			 */
+			if (reason == K_ERR_SPURIOUS_IRQ) {
+				arch_irq_unlock(key);
+				return;
+			}
+		}
 #endif /*CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
 	}
 

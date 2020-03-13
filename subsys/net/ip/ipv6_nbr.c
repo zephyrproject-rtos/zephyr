@@ -235,7 +235,7 @@ void nbr_print(void)
 			continue;
 		}
 
-		NET_DBG("[%d] %p %d/%d/%d/%d/%d pending %p iface %p idx %d "
+		NET_DBG("[%d] %p %d/%d/%d/%d/%d pending %p iface %p/%d "
 			"ll %s addr %s",
 			i, nbr, nbr->ref, net_ipv6_nbr_data(nbr)->ns_count,
 			net_ipv6_nbr_data(nbr)->is_router,
@@ -431,8 +431,8 @@ static struct net_nbr *nbr_new(struct net_if *iface,
 
 	nbr_init(nbr, iface, addr, is_router, state);
 
-	NET_DBG("nbr %p iface %p state %d IPv6 %s",
-		nbr, iface, state,
+	NET_DBG("nbr %p iface %p/%d state %d IPv6 %s",
+		nbr, iface, net_if_get_by_iface(iface), state,
 		log_strdup(net_sprint_ipv6_addr(addr)));
 
 	return nbr;
@@ -466,33 +466,39 @@ static void dbg_update_neighbor_lladdr_raw(u8_t *new_lladdr,
 	dbg_update_neighbor_lladdr(&lladdr, old_lladdr, addr);
 }
 
-#define dbg_addr(action, pkt_str, src, dst)				\
+#define dbg_addr(action, pkt_str, src, dst, pkt)			\
 	do {								\
-		NET_DBG("%s %s from %s to %s", action, pkt_str,         \
+		NET_DBG("%s %s from %s to %s iface %p/%d",		\
+			action, pkt_str,				\
 			log_strdup(net_sprint_ipv6_addr(src)),		\
-			log_strdup(net_sprint_ipv6_addr(dst)));		\
+			log_strdup(net_sprint_ipv6_addr(dst)),		\
+			net_pkt_iface(pkt),				\
+			net_if_get_by_iface(net_pkt_iface(pkt)));	\
 	} while (0)
 
-#define dbg_addr_recv(pkt_str, src, dst)	\
-	dbg_addr("Received", pkt_str, src, dst)
+#define dbg_addr_recv(pkt_str, src, dst, pkt)	\
+	dbg_addr("Received", pkt_str, src, dst, pkt)
 
-#define dbg_addr_sent(pkt_str, src, dst)	\
-	dbg_addr("Sent", pkt_str, src, dst)
+#define dbg_addr_sent(pkt_str, src, dst, pkt)	\
+	dbg_addr("Sent", pkt_str, src, dst, pkt)
 
-#define dbg_addr_with_tgt(action, pkt_str, src, dst, target)		\
+#define dbg_addr_with_tgt(action, pkt_str, src, dst, target, pkt)	\
 	do {								\
-		NET_DBG("%s %s from %s to %s, target %s", action,       \
+		NET_DBG("%s %s from %s to %s, target %s iface %p/%d",	\
+			action,						\
 			pkt_str,                                        \
 			log_strdup(net_sprint_ipv6_addr(src)),		\
 			log_strdup(net_sprint_ipv6_addr(dst)),		\
-			log_strdup(net_sprint_ipv6_addr(target)));	\
+			log_strdup(net_sprint_ipv6_addr(target)),	\
+			net_pkt_iface(pkt),				\
+			net_if_get_by_iface(net_pkt_iface(pkt)));	\
 	} while (0)
 
-#define dbg_addr_recv_tgt(pkt_str, src, dst, tgt)		\
-	dbg_addr_with_tgt("Received", pkt_str, src, dst, tgt)
+#define dbg_addr_recv_tgt(pkt_str, src, dst, tgt, pkt)		\
+	dbg_addr_with_tgt("Received", pkt_str, src, dst, tgt, pkt)
 
-#define dbg_addr_sent_tgt(pkt_str, src, dst, tgt)		\
-	dbg_addr_with_tgt("Sent", pkt_str, src, dst, tgt)
+#define dbg_addr_sent_tgt(pkt_str, src, dst, tgt, pkt)		\
+	dbg_addr_with_tgt("Sent", pkt_str, src, dst, tgt, pkt)
 
 static void ipv6_nd_remove_old_stale_nbr(void)
 {
@@ -624,11 +630,11 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 		}
 	}
 
-	NET_DBG("[%d] nbr %p state %d router %d IPv6 %s ll %s iface %p",
+	NET_DBG("[%d] nbr %p state %d router %d IPv6 %s ll %s iface %p/%d",
 		nbr->idx, nbr, state, is_router,
 		log_strdup(net_sprint_ipv6_addr(addr)),
 		log_strdup(net_sprint_ll_addr(lladdr->addr, lladdr->len)),
-		nbr->iface);
+		nbr->iface, net_if_get_by_iface(nbr->iface));
 
 #if defined(CONFIG_NET_MGMT_EVENT_INFO)
 	info.idx = nbr->idx;
@@ -722,9 +728,11 @@ static struct in6_addr *check_route(struct net_if *iface,
 	if (route) {
 		nexthop = net_route_get_nexthop(route);
 
-		NET_DBG("Route %p nexthop %s", route,
+		NET_DBG("Route %p nexthop %s iface %p/%d",
+			route,
 			nexthop ? log_strdup(net_sprint_ipv6_addr(nexthop)) :
-			"<unknown>");
+			"<unknown>",
+			iface, net_if_get_by_iface(iface));
 
 		if (!nexthop) {
 			net_route_del(route);
@@ -883,8 +891,9 @@ ignore_frag_error:
 try_send:
 	nbr = nbr_lookup(&net_neighbor.table, iface, nexthop);
 
-	NET_DBG("Neighbor lookup %p (%d) iface %p addr %s state %s", nbr,
-		nbr ? nbr->idx : NET_NBR_LLADDR_UNKNOWN, iface,
+	NET_DBG("Neighbor lookup %p (%d) iface %p/%d addr %s state %s", nbr,
+		nbr ? nbr->idx : NET_NBR_LLADDR_UNKNOWN,
+		iface, net_if_get_by_iface(iface),
 		log_strdup(net_sprint_ipv6_addr(nexthop)),
 		nbr ? net_ipv6_nbr_state2str(net_ipv6_nbr_data(nbr)->state) :
 		"-");
@@ -923,17 +932,22 @@ try_send:
 		/* In case of an error, the NS send function will unref
 		 * the pkt.
 		 */
-		NET_DBG("Cannot send NS (%d)", ret);
+		NET_DBG("Cannot send NS (%d) iface %p/%d",
+			ret, net_pkt_iface(pkt),
+			net_if_get_by_iface(net_pkt_iface(pkt)));
 	}
 
-	NET_DBG("pkt %p (buffer %p) will be sent later", pkt, pkt->buffer);
+	NET_DBG("pkt %p (buffer %p) will be sent later to iface %p/%d",
+		pkt, pkt->buffer, net_pkt_iface(pkt),
+		net_if_get_by_iface(net_pkt_iface(pkt)));
 
 	return NET_CONTINUE;
 #else
 	ARG_UNUSED(ret);
 
-	NET_DBG("pkt %p (buffer %p) cannot be sent, dropping it.",
-		pkt, pkt->buffer);
+	NET_DBG("pkt %p (buffer %p) cannot be sent to iface %p/%d, "
+		"dropping it.", pkt, pkt->buffer,
+		net_pkt_iface(pkt), net_if_get_by_iface(net_pkt_iface(pkt)));
 
 	return NET_DROP;
 #endif /* CONFIG_NET_IPV6_ND */
@@ -1074,7 +1088,8 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 	net_pkt_cursor_init(pkt);
 	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 
-	dbg_addr_sent_tgt("Neighbor Advertisement", src, dst, &na_hdr->tgt);
+	dbg_addr_sent_tgt("Neighbor Advertisement", src, dst, &na_hdr->tgt,
+			  pkt);
 
 	if (net_send_data(pkt) < 0) {
 		net_stats_update_ipv6_nd_drop(iface);
@@ -1104,14 +1119,16 @@ static void ns_routing_info(struct net_pkt *pkt,
 			 net_sprint_ipv6_addr(nexthop));
 
 		if (net_ipv6_addr_cmp(nexthop, tgt)) {
-			NET_DBG("Routing to %s iface %p",
+			NET_DBG("Routing to %s iface %p/%d",
 				log_strdup(out),
-				net_pkt_iface(pkt));
+				net_pkt_iface(pkt),
+				net_if_get_by_iface(net_pkt_iface(pkt)));
 		} else {
-			NET_DBG("Routing to %s via %s iface %p",
+			NET_DBG("Routing to %s via %s iface %p/%d",
 				log_strdup(net_sprint_ipv6_addr(tgt)),
 				log_strdup(out),
-				net_pkt_iface(pkt));
+				net_pkt_iface(pkt),
+				net_if_get_by_iface(net_pkt_iface(pkt)));
 		}
 	}
 }
@@ -1144,7 +1161,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 	}
 
 	dbg_addr_recv_tgt("Neighbor Solicitation",
-			  &ip_hdr->src, &ip_hdr->dst, &ns_hdr->tgt);
+			  &ip_hdr->src, &ip_hdr->dst, &ns_hdr->tgt, pkt);
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
@@ -1234,11 +1251,13 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 					net_pkt_iface(pkt), &ip_hdr->src);
 				if (!na_src) {
 					NET_DBG("DROP: No interface address "
-						"for dst %s iface %p",
+						"for dst %s iface %p/%d",
 						log_strdup(
 						  net_sprint_ipv6_addr(
 							  &ip_hdr->src)),
-						net_pkt_iface(pkt));
+						net_pkt_iface(pkt),
+						net_if_get_by_iface(
+							net_pkt_iface(pkt)));
 					goto drop;
 				}
 
@@ -1274,10 +1293,11 @@ nexthop_found:
 		}
 
 		if (ifaddr->addr_state == NET_ADDR_TENTATIVE) {
-			NET_DBG("DROP: DAD failed for %s iface %p",
+			NET_DBG("DROP: DAD failed for %s iface %p/%d",
 				log_strdup(net_sprint_ipv6_addr(
 						   &ifaddr->address.in6_addr)),
-				net_pkt_iface(pkt));
+				net_pkt_iface(pkt),
+				net_if_get_by_iface(net_pkt_iface(pkt)));
 
 			dad_failed(net_pkt_iface(pkt),
 				   &ifaddr->address.in6_addr);
@@ -1515,8 +1535,8 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 
 	nbr = nbr_lookup(&net_neighbor.table, net_pkt_iface(pkt), &na_hdr->tgt);
 
-	NET_DBG("Neighbor lookup %p iface %p addr %s", nbr,
-		net_pkt_iface(pkt),
+	NET_DBG("Neighbor lookup %p iface %p/%d addr %s", nbr,
+		net_pkt_iface(pkt), net_if_get_by_iface(net_pkt_iface(pkt)),
 		log_strdup(net_sprint_ipv6_addr(&na_hdr->tgt)));
 
 	if (!nbr) {
@@ -1699,7 +1719,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt,
 	}
 
 	dbg_addr_recv_tgt("Neighbor Advertisement",
-			  &ip_hdr->src, &ip_hdr->dst, &na_hdr->tgt);
+			  &ip_hdr->src, &ip_hdr->dst, &na_hdr->tgt, pkt);
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
@@ -1759,8 +1779,9 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt,
 	ifaddr = net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
 						  &na_hdr->tgt);
 	if (ifaddr) {
-		NET_DBG("Interface %p already has address %s",
+		NET_DBG("Interface %p/%d already has address %s",
 			net_pkt_iface(pkt),
+			net_if_get_by_iface(net_pkt_iface(pkt)),
 			log_strdup(net_sprint_ipv6_addr(&na_hdr->tgt)));
 
 #if defined(CONFIG_NET_IPV6_DAD)
@@ -1896,7 +1917,8 @@ int net_ipv6_send_ns(struct net_if *iface,
 		}
 	}
 
-	dbg_addr_sent_tgt("Neighbor Solicitation", src, dst, &ns_hdr->tgt);
+	dbg_addr_sent_tgt("Neighbor Solicitation", src, dst, &ns_hdr->tgt,
+			  pkt);
 
 	if (net_send_data(pkt) < 0) {
 		NET_DBG("Cannot send NS %p (pending %p)", pkt, pending);
@@ -1971,7 +1993,7 @@ int net_ipv6_send_rs(struct net_if *iface)
 	net_pkt_cursor_init(pkt);
 	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 
-	dbg_addr_sent("Router Solicitation", src, &dst);
+	dbg_addr_sent("Router Solicitation", src, &dst, pkt);
 
 	if (net_send_data(pkt) < 0) {
 		net_stats_update_ipv6_nd_drop(iface);
@@ -2031,18 +2053,21 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 						prefix_info->prefix_len,
 						prefix_info->valid_lifetime);
 		if (prefix) {
-			NET_DBG("Interface %p add prefix %s/%d lifetime %u",
+			NET_DBG("Interface %p/%d add prefix %s/%d lifetime %u",
 				net_pkt_iface(pkt),
+				net_if_get_by_iface(net_pkt_iface(pkt)),
 				log_strdup(net_sprint_ipv6_addr(
 						   &prefix_info->prefix)),
 				prefix_info->prefix_len,
 				prefix_info->valid_lifetime);
 		} else {
-			NET_ERR("Prefix %s/%d could not be added to iface %p",
+			NET_ERR("Prefix %s/%d could not be added to "
+				"iface %p/%d",
 				log_strdup(net_sprint_ipv6_addr(
 						   &prefix_info->prefix)),
 				prefix_info->prefix_len,
-				net_pkt_iface(pkt));
+				net_pkt_iface(pkt),
+				net_if_get_by_iface(net_pkt_iface(pkt)));
 
 			return;
 		}
@@ -2050,8 +2075,9 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 
 	switch (prefix_info->valid_lifetime) {
 	case 0:
-		NET_DBG("Interface %p delete prefix %s/%d",
+		NET_DBG("Interface %p/%d delete prefix %s/%d",
 			net_pkt_iface(pkt),
+			net_if_get_by_iface(net_pkt_iface(pkt)),
 			log_strdup(net_sprint_ipv6_addr(&prefix_info->prefix)),
 			prefix_info->prefix_len);
 
@@ -2061,8 +2087,9 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 		break;
 
 	case NET_IPV6_ND_INFINITE_LIFETIME:
-		NET_DBG("Interface %p prefix %s/%d infinite",
+		NET_DBG("Interface %p/%d prefix %s/%d infinite",
 			net_pkt_iface(pkt),
+			net_if_get_by_iface(net_pkt_iface(pkt)),
 			log_strdup(net_sprint_ipv6_addr(&prefix->prefix)),
 			prefix->len);
 
@@ -2070,8 +2097,9 @@ static inline void handle_prefix_onlink(struct net_pkt *pkt,
 		break;
 
 	default:
-		NET_DBG("Interface %p update prefix %s/%u lifetime %u",
+		NET_DBG("Interface %p/%d update prefix %s/%u lifetime %u",
 			net_pkt_iface(pkt),
+			net_if_get_by_iface(net_pkt_iface(pkt)),
 			log_strdup(net_sprint_ipv6_addr(&prefix_info->prefix)),
 			prefix_info->prefix_len, prefix_info->valid_lifetime);
 
@@ -2258,7 +2286,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	dbg_addr_recv("Router Advertisement", &ip_hdr->src, &ip_hdr->dst);
+	dbg_addr_recv("Router Advertisement", &ip_hdr->src, &ip_hdr->dst, pkt);
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 

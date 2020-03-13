@@ -227,13 +227,27 @@ size_t flash_img_bytes_written(struct flash_img_context *ctx)
 	return ctx->bytes_written;
 }
 
-int flash_img_init(struct flash_img_context *ctx)
+static void init_ctx(struct flash_img_context *ctx)
 {
 	ctx->bytes_written = 0;
 	ctx->buf_bytes = 0U;
 #ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
 	ctx->off_last = -1;
 #endif
+}
+
+int flash_img_init_id(struct flash_img_context *ctx, u8_t area_id)
+{
+	init_ctx(ctx);
+
+	return flash_area_open(area_id,
+			       (const struct flash_area **)&(ctx->flash_area));
+}
+
+int flash_img_init(struct flash_img_context *ctx)
+{
+	init_ctx(ctx);
+
 	return flash_area_open(FLASH_AREA_IMAGE_SECONDARY,
 			       (const struct flash_area **)&(ctx->flash_area));
 }

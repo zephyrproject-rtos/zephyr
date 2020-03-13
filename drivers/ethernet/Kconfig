@@ -21,6 +21,17 @@ config ETH_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
+config ETH_QEMU_IFACE_NAME
+	string "Network interface name for QEMU"
+	default "zeth"
+	depends on NET_QEMU_ETHERNET
+	help
+	  The network interface name for QEMU. This value is given as
+	  a parameter to -nic qemu command line option. The network
+	  interface must be created before starting QEMU. The net-setup.sh
+	  script from net-tools project can be used to create the network
+	  interface.
+
 source "drivers/ethernet/Kconfig.enc28j60"
 source "drivers/ethernet/Kconfig.enc424j600"
 source "drivers/ethernet/Kconfig.mcux"

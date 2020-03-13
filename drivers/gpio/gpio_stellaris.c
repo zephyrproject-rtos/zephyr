@@ -55,16 +55,6 @@ enum gpio_regs {
 	GPIO_ICR_OFFSET = 0x41C,
 };
 
-enum gpio_port_map {
-	GPIO_PORT_A_MAP = 0xFF,
-	GPIO_PORT_B_MAP = 0xFF,
-	GPIO_PORT_C_MAP = 0xFF,
-	GPIO_PORT_D_MAP = 0xFF,
-	GPIO_PORT_E_MAP = 0x0F,
-	GPIO_PORT_F_MAP = 0x0F,
-	GPIO_PORT_G_MAP = 0x03,
-};
-
 static void gpio_stellaris_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
@@ -263,236 +253,65 @@ static const struct gpio_driver_api gpio_stellaris_driver_api = {
 	.disable_callback = gpio_stellaris_disable_callback,
 };
 
-#ifdef CONFIG_GPIO_A_STELLARIS
+#define PORT_PIN_MASK(n) \
+	GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_## n ##_TI_STELLARIS_GPIO_NGPIOS)
 
-static void port_a_stellaris_config_func(struct device *dev);
+#define STELLARIS_GPIO_DEVICE(n)							\
+	static void port_## n ##_stellaris_config_func(struct device *dev);		\
+											\
+	static struct gpio_stellaris_runtime port_## n ##_stellaris_runtime;		\
+											\
+	static const struct gpio_stellaris_config gpio_stellaris_port_## n ##_config = {\
+		.common = {								\
+			.port_pin_mask = PORT_PIN_MASK(n),				\
+		},									\
+		.base = DT_INST_## n ##_TI_STELLARIS_GPIO_BASE_ADDRESS,			\
+		.port_map = BIT_MASK(DT_INST_## n ##_TI_STELLARIS_GPIO_NGPIOS),		\
+		.config_func = port_## n ##_stellaris_config_func,			\
+	};										\
+											\
+	DEVICE_AND_API_INIT(gpio_stellaris_port_## n,					\
+			    DT_INST_## n ## _TI_STELLARIS_GPIO_LABEL,			\
+			    gpio_stellaris_init,					\
+			    &port_## n ##_stellaris_runtime,				\
+			    &gpio_stellaris_port_## n ##_config,			\
+			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
+			    &gpio_stellaris_driver_api);				\
+											\
+	static void port_## n ##_stellaris_config_func(struct device *dev)		\
+	{										\
+		IRQ_CONNECT(DT_INST_## n ##_TI_STELLARIS_GPIO_IRQ_0,			\
+			    DT_INST_## n ##_TI_STELLARIS_GPIO_IRQ_0_PRIORITY,		\
+			    gpio_stellaris_isr,						\
+			    DEVICE_GET(gpio_stellaris_port_## n), 0);			\
+											\
+		irq_enable(DT_INST_## n ##_TI_STELLARIS_GPIO_IRQ_0);			\
+	}
 
-static struct gpio_stellaris_runtime port_a_stellaris_runtime;
+#ifdef DT_INST_0_TI_STELLARIS_GPIO
+STELLARIS_GPIO_DEVICE(0)
+#endif
 
-static const struct gpio_stellaris_config gpio_stellaris_port_a_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_TI_STELLARIS_GPIO_NGPIOS),
-	},
-	.base = DT_GPIO_A_BASE_ADDRESS,
-	.port_map = GPIO_PORT_A_MAP,
-	.config_func = port_a_stellaris_config_func,
-};
+#ifdef DT_INST_1_TI_STELLARIS_GPIO
+STELLARIS_GPIO_DEVICE(1)
+#endif
 
-DEVICE_AND_API_INIT(gpio_stellaris_port_a, DT_GPIO_A_LABEL,
-		    gpio_stellaris_init,
-		    &port_a_stellaris_runtime, &gpio_stellaris_port_a_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &gpio_stellaris_driver_api);
+#ifdef DT_INST_2_TI_STELLARIS_GPIO
+STELLARIS_GPIO_DEVICE(2)
+#endif
 
-static void port_a_stellaris_config_func(struct device *dev)
-{
-	IRQ_CONNECT(DT_GPIO_A_IRQ,
-		    DT_GPIO_A_IRQ_PRIO,
-		    gpio_stellaris_isr,
-		    DEVICE_GET(gpio_stellaris_port_a),
-		    0);
+#ifdef DT_INST_3_TI_STELLARIS_GPIO
+STELLARIS_GPIO_DEVICE(3)
+#endif
 
-	irq_enable(DT_GPIO_A_IRQ);
-}
-#endif /* CONFIG_GPIO_A_STELLARIS */
+#ifdef DT_INST_4_TI_STELLARIS_GPIO
+STELLARIS_GPIO_DEVICE(4)
+#endif
 
+#ifdef DT_INST_5_TI_STELLARIS_GPIO
+STELLARIS_GPIO_DEVICE(5)
+#endif
 
-#ifdef CONFIG_GPIO_B_STELLARIS
-
-static void port_b_stellaris_config_func(struct device *dev);
-
-static struct gpio_stellaris_runtime port_b_stellaris_runtime;
-
-static const struct gpio_stellaris_config gpio_stellaris_port_b_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_TI_STELLARIS_GPIO_NGPIOS),
-	},
-	.base = DT_GPIO_B_BASE_ADDRESS,
-	.port_map = GPIO_PORT_B_MAP,
-	.config_func = port_b_stellaris_config_func,
-};
-
-DEVICE_AND_API_INIT(gpio_stellaris_port_b, DT_GPIO_B_LABEL,
-		    gpio_stellaris_init,
-		    &port_b_stellaris_runtime, &gpio_stellaris_port_b_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &gpio_stellaris_driver_api);
-
-static void port_b_stellaris_config_func(struct device *dev)
-{
-	IRQ_CONNECT(DT_GPIO_B_IRQ,
-		    DT_GPIO_B_IRQ_PRIO,
-		    gpio_stellaris_isr,
-		    DEVICE_GET(gpio_stellaris_port_b),
-		    0);
-
-	irq_enable(DT_GPIO_B_IRQ);
-}
-#endif /* CONFIG_GPIO_B_STELLARIS */
-
-
-#ifdef CONFIG_GPIO_C_STELLARIS
-
-static void port_c_stellaris_config_func(struct device *dev);
-
-static struct gpio_stellaris_runtime port_c_stellaris_runtime;
-
-static const struct gpio_stellaris_config gpio_stellaris_port_c_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_TI_STELLARIS_GPIO_NGPIOS),
-	},
-	.base = DT_GPIO_C_BASE_ADDRESS,
-	.port_map = GPIO_PORT_C_MAP,
-	.config_func = port_c_stellaris_config_func,
-};
-
-DEVICE_AND_API_INIT(gpio_stellaris_port_c, DT_GPIO_C_LABEL,
-		    gpio_stellaris_init,
-		    &port_c_stellaris_runtime, &gpio_stellaris_port_c_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &gpio_stellaris_driver_api);
-
-static void port_c_stellaris_config_func(struct device *dev)
-{
-	IRQ_CONNECT(DT_GPIO_C_IRQ,
-		    DT_GPIO_C_IRQ_PRIO,
-		    gpio_stellaris_isr,
-		    DEVICE_GET(gpio_stellaris_port_c),
-		    0);
-
-	irq_enable(DT_GPIO_C_IRQ);
-}
-#endif /* CONFIG_GPIO_C_STELLARIS */
-
-
-#ifdef CONFIG_GPIO_D_STELLARIS
-
-static void port_d_stellaris_config_func(struct device *dev);
-
-static struct gpio_stellaris_runtime port_d_stellaris_runtime;
-
-static const struct gpio_stellaris_config gpio_stellaris_port_d_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_TI_STELLARIS_GPIO_NGPIOS),
-	},
-	.base = DT_GPIO_D_BASE_ADDRESS,
-	.port_map = GPIO_PORT_D_MAP,
-	.config_func = port_d_stellaris_config_func,
-};
-
-DEVICE_AND_API_INIT(gpio_stellaris_port_d, DT_GPIO_D_LABEL,
-		    gpio_stellaris_init,
-		    &port_d_stellaris_runtime, &gpio_stellaris_port_d_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &gpio_stellaris_driver_api);
-
-static void port_d_stellaris_config_func(struct device *dev)
-{
-	IRQ_CONNECT(DT_GPIO_D_IRQ,
-		    DT_GPIO_D_IRQ_PRIO,
-		    gpio_stellaris_isr,
-		    DEVICE_GET(gpio_stellaris_port_d), 0);
-
-	irq_enable(DT_GPIO_D_IRQ);
-}
-#endif /* CONFIG_GPIO_D_STELLARIS */
-
-
-#ifdef CONFIG_GPIO_E_STELLARIS
-
-static void port_e_stellaris_config_func(struct device *dev);
-
-static const struct gpio_stellaris_config gpio_stellaris_port_e_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_4_TI_STELLARIS_GPIO_NGPIOS),
-	},
-	.base = DT_GPIO_E_BASE_ADDRESS,
-	.port_map = GPIO_PORT_E_MAP,
-	.config_func = port_e_stellaris_config_func,
-};
-
-static struct gpio_stellaris_runtime port_e_stellaris_runtime;
-
-DEVICE_AND_API_INIT(gpio_stellaris_port_e, DT_GPIO_E_LABEL,
-		    gpio_stellaris_init,
-		    &port_e_stellaris_runtime, &gpio_stellaris_port_e_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &gpio_stellaris_driver_api);
-
-static void port_e_stellaris_config_func(struct device *dev)
-{
-	IRQ_CONNECT(DT_GPIO_E_IRQ,
-		    DT_GPIO_E_IRQ_PRIO,
-		    gpio_stellaris_isr,
-		    DEVICE_GET(gpio_stellaris_port_e),
-		    0);
-
-	irq_enable(DT_GPIO_E_IRQ);
-}
-#endif /* CONFIG_GPIO_E_STELLARIS */
-
-
-#ifdef CONFIG_GPIO_F_STELLARIS
-
-static void port_f_stellaris_config_func(struct device *dev);
-
-static struct gpio_stellaris_runtime port_f_stellaris_runtime;
-
-static const struct gpio_stellaris_config gpio_stellaris_port_f_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_5_TI_STELLARIS_GPIO_NGPIOS),
-	},
-	.base = DT_GPIO_F_BASE_ADDRESS,
-	.port_map = GPIO_PORT_F_MAP,
-	.config_func = port_f_stellaris_config_func,
-};
-
-DEVICE_AND_API_INIT(gpio_stellaris_port_f, DT_GPIO_F_LABEL,
-		    gpio_stellaris_init,
-		    &port_f_stellaris_runtime, &gpio_stellaris_port_f_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &gpio_stellaris_driver_api);
-
-static void port_f_stellaris_config_func(struct device *dev)
-{
-	IRQ_CONNECT(DT_GPIO_F_IRQ,
-		    DT_GPIO_F_IRQ_PRIO,
-		    gpio_stellaris_isr,
-		    DEVICE_GET(gpio_stellaris_port_f),
-		    0);
-	irq_enable(DT_GPIO_F_IRQ);
-}
-#endif /* CONFIG_GPIO_F_STELLARIS */
-
-
-#ifdef CONFIG_GPIO_G_STELLARIS
-
-static void port_g_stellaris_config_func(struct device *dev);
-
-static struct gpio_stellaris_runtime port_g_stellaris_runtime;
-
-static const struct gpio_stellaris_config gpio_stellaris_port_g_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_6_TI_STELLARIS_GPIO_NGPIOS),
-	},
-	.base = DT_GPIO_G_BASE_ADDRESS,
-	.port_map = GPIO_PORT_G_MAP,
-	.config_func = port_g_stellaris_config_func,
-};
-
-DEVICE_AND_API_INIT(gpio_stellaris_port_g, DT_GPIO_G_LABEL,
-		    gpio_stellaris_init,
-		    &port_g_stellaris_runtime, &gpio_stellaris_port_g_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &gpio_stellaris_driver_api);
-
-static void port_g_stellaris_config_func(struct device *dev)
-{
-	IRQ_CONNECT(DT_GPIO_G_IRQ,
-		    DT_GPIO_G_IRQ_PRIO,
-		    gpio_stellaris_isr,
-		    DEVICE_GET(gpio_stellaris_port_g),
-		    0);
-	irq_enable(DT_GPIO_G_IRQ);
-}
-#endif /* CONFIG_GPIO_G_STELLARIS */
+#ifdef DT_INST_6_TI_STELLARIS_GPIO
+STELLARIS_GPIO_DEVICE(6)
+#endif

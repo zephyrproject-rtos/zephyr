@@ -271,6 +271,8 @@ reg
     ``reg = <0x40003000 0x1000>;`` means the register map occupies 0x1000 bytes
     in the memory map.
 
+.. _devicetree-in-out-files:
+
 Input and output files
 **********************
 

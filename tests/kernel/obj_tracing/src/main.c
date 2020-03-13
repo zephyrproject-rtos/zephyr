@@ -53,32 +53,31 @@ K_SEM_DEFINE(f3, -5, 1);
  * @{
  * @}
  */
+static inline void thread_list_cb(const struct k_thread *thread, void *data)
+{
+	int *ctr = data;
+
+	if (thread->base.prio == -1) {
+		TC_PRINT("PREMPT: %p OPTIONS: 0x%02x, STATE: 0x%02x\n",
+			 thread,
+			 thread->base.user_options,
+			 thread->base.thread_state);
+	} else {
+		TC_PRINT("COOP: %p OPTIONS: 0x%02x, STATE: 0x%02x\n",
+			 thread,
+			 thread->base.user_options,
+			 thread->base.thread_state);
+	}
+	(*ctr)++;
+}
 
 static inline int thread_monitor(void)
 {
 	int obj_counter = 0;
-	struct k_thread *thread_list = NULL;
 
-	/* wait a bit to allow any initialization-only threads to terminate */
-
-	thread_list   = (struct k_thread *)SYS_THREAD_MONITOR_HEAD;
-	while (thread_list != NULL) {
-		if (thread_list->base.prio == -1) {
-			TC_PRINT("PREMPT: %p OPTIONS: 0x%02x, STATE: 0x%02x\n",
-				 thread_list,
-				 thread_list->base.user_options,
-				 thread_list->base.thread_state);
-		} else {
-			TC_PRINT("COOP: %p OPTIONS: 0x%02x, STATE: 0x%02x\n",
-				 thread_list,
-				 thread_list->base.user_options,
-				 thread_list->base.thread_state);
-		}
-		thread_list =
-			(struct k_thread *)SYS_THREAD_MONITOR_NEXT(thread_list);
-		obj_counter++;
-	}
+	k_thread_foreach(thread_list_cb, &obj_counter);
 	TC_PRINT("THREAD QUANTITY: %d\n", obj_counter);
+
 	return obj_counter;
 }
 

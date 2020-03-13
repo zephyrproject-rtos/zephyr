@@ -16,7 +16,7 @@ config ARM_MPU
 	  MCU implements Memory Protection Unit.
 
 	  Notes:
-	  The ARMv6-M and ARMv8-M MPU architecture requires a power-of-two
+	  The ARMv6-M and ARMv7-M MPU architecture requires a power-of-two
 	  alignment of MPU region base address and size.
 
 	  The NXP MPU as well as the ARMv8-M MPU do not require MPU regions

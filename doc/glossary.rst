@@ -65,6 +65,9 @@ Glossary of Terms
       The set of Zephyr-supplied files that implement the Zephyr kernel,
       including its core services, device drivers, network stack, and so on.
 
+   SoC
+      `System on a chip`_
+
    west
       A multi-repo meta-tool developed for the Zephyr project. See :ref:`west`.
 
@@ -92,3 +95,5 @@ Glossary of Terms
       (eXecute In Place) a method of executing programs directly from long
       term storage rather than copying it into RAM, saving writable memory for
       dynamic data and not the static program code.
+
+.. _System on a chip: https://en.wikipedia.org/wiki/System_on_a_chip

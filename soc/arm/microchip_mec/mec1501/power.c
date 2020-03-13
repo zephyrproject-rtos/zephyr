@@ -72,8 +72,11 @@ static void z_power_soc_deep_sleep(void)
 
 	soc_deep_sleep_non_wake_dis();
 
-	soc_deep_sleep_periph_restore();
+	/* Wait for PLL to lock */
+	while ((PCR_REGS->OSC_ID & MCHP_PCR_OSC_ID_PLL_LOCK) == 0) {
+	};
 
+	soc_deep_sleep_periph_restore();
 }
 #endif
 

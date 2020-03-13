@@ -3416,7 +3416,8 @@ u8_t bt_mesh_relay_get(void)
 
 u8_t bt_mesh_friend_get(void)
 {
-	BT_DBG("conf %p conf->frnd 0x%02x", conf, conf->frnd);
+	BT_DBG("conf %p conf->frnd 0x%02x", conf,
+	       conf ? conf->frnd : BT_MESH_FRIEND_NOT_SUPPORTED);
 
 	if (conf) {
 		return conf->frnd;

@@ -1,4 +1,3 @@
 tests:
   kernel.multiprocessing:
-    # Doesn't currently work on ARC, see #19599
-    filter: (CONFIG_MP_NUM_CPUS > 1) and not CONFIG_ARC
+    filter: CONFIG_MP_NUM_CPUS > 1

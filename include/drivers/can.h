@@ -312,7 +312,7 @@ struct zcan_work {
 	void *cb_arg;
 };
 
-struct can_driver_api {
+__subsystem struct can_driver_api {
 	can_configure_t configure;
 	can_send_t send;
 	can_attach_isr_t attach_isr;
