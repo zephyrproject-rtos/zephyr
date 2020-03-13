@@ -22,6 +22,12 @@ uint32_t ull_adv_is_enabled(uint8_t handle);
 /* Return filter policy used */
 uint32_t ull_adv_filter_pol_get(uint8_t handle);
 
+/* Return ll_adv_set context if created */
+struct ll_adv_set *ull_adv_is_created_get(uint8_t handle);
+
+int ull_adv_sync_init(void);
+int ull_adv_sync_reset(void);
+
 /* helper function to start periodic advertising */
 uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, uint32_t ticks_anchor,
 			 uint32_t volatile *ret_cb);
