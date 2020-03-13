@@ -204,10 +204,15 @@ stop_zephyr ()
 
 wait_zephyr ()
 {
+    local result=""
+
     echo "Waiting for Zephyr $zephyr_pid..."
     wait $zephyr_pid
+    result=$?
 
     zephyr_pid=0
+
+    return $result
 }
 
 
