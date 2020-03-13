@@ -131,12 +131,40 @@ static void shell_stack_dump(const struct k_thread *thread, void *user_data)
 		      size, unused, size - unused, size, pcnt);
 }
 
+extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
+
 static int cmd_kernel_stacks(const struct shell *shell,
 			     size_t argc, char **argv)
 {
+	u8_t *buf;
+	size_t size, unused = 0;
+
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	k_thread_foreach(shell_stack_dump, (void *)shell);
+
+	/* Placeholder logic for interrupt stack until we have better
+	 * kernel support, including dumping all IRQ stacks for SMP systems
+	 * and hooks to dump arch-specific exception-related stack buffers.
+	 *
+	 * For now, dump data for the first IRQ stack defined in init.c
+	 */
+	buf = Z_THREAD_STACK_BUFFER(_interrupt_stack);
+	size = K_THREAD_STACK_SIZEOF(_interrupt_stack);
+
+	for (size_t i = 0; i < K_THREAD_STACK_SIZEOF(_interrupt_stack); i++) {
+		if (buf[i] == 0xAAU) {
+			unused++;
+		} else {
+			break;
+		}
+	}
+
+	shell_print(shell,
+		"%p IRQ 0      (real size %zu):\tunused %zu\tusage %zu / %zu (%zu %%)",
+		      _interrupt_stack, size, unused, size - unused, size,
+		      ((size - unused) * 100U) / size);
+
 	return 0;
 }
 #endif
