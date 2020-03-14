@@ -39,7 +39,7 @@ config USB_DC_SAM0
 	help
 	  SAM0 family USB device controller Driver.
 
-config USB_DC_SAM
+config USB_DC_SAM_USBHS
 	bool "SAM series USB HS Device Controller driver"
 	depends on SOC_SERIES_SAME70 || \
 		   SOC_SERIES_SAMV71
