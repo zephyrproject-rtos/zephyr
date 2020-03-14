@@ -12,7 +12,7 @@
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(usb_dc_sam);
+LOG_MODULE_REGISTER(usb_dc_sam_usbhs);
 
 /*
  * This is defined in the support files for the SAM S7x, but not for
