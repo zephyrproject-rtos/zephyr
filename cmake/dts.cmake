@@ -7,7 +7,7 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 # that allows configuration based on information encoded in DTS.
 #
 # Here we call on dtc, the gcc preprocessor, and
-# scripts/dts/gen_defines.py to generate this header file at
+# scripts/dts/gen_legacy_defines.py to generate this header file at
 # CMake configure-time.
 #
 # See ~/zephyr/doc/dts
@@ -190,10 +190,10 @@ if(SUPPORTS_DTS)
   endif(DTC)
 
   #
-  # Run gen_defines.py to create a .conf file and a header file
+  # Run gen_legacy_defines.py to create a .conf file and a header file
   #
 
-  set(CMD_NEW_EXTRACT ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/gen_defines.py
+  set(CMD_NEW_EXTRACT ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/gen_legacy_defines.py
   --dts ${BOARD}.dts.pre.tmp
   --dtc-flags '${EXTRA_DTC_FLAGS}'
   --bindings-dirs ${DTS_ROOT_BINDINGS}
