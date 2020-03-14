@@ -300,6 +300,25 @@ static void enc424j600_setup_mac(struct device *dev)
 	}
 }
 
+static struct net_if *get_iface(struct enc424j600_runtime *ctx,
+				u16_t vlan_tag)
+{
+#if defined(CONFIG_NET_VLAN)
+	struct net_if *iface;
+
+	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
+	if (!iface) {
+		return ctx->iface;
+	}
+
+	return iface;
+#else
+	ARG_UNUSED(vlan_tag);
+
+	return ctx->iface;
+#endif
+}
+
 static int enc424j600_tx(struct device *dev, struct net_pkt *pkt)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
@@ -339,7 +358,7 @@ static int enc424j600_tx(struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static int enc424j600_rx(struct device *dev)
+static int enc424j600_rx(struct device *dev, u16_t *vlan_tag)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
 	const struct enc424j600_config *config = dev->config->config_info;
@@ -381,12 +400,12 @@ static int enc424j600_rx(struct device *dev)
 	}
 
 	/* Get the frame from the buffer */
-	pkt = net_pkt_rx_alloc_with_buffer(context->iface, frm_len,
-					   AF_UNSPEC, 0,
+	pkt = net_pkt_rx_alloc_with_buffer(get_iface(context, *vlan_tag),
+					   frm_len, AF_UNSPEC, 0,
 					   config->timeout);
 	if (!pkt) {
 		LOG_ERR("Could not allocate rx buffer");
-		eth_stats_update_errors_rx(context->iface);
+		eth_stats_update_errors_rx(get_iface(context, *vlan_tag));
 		goto done;
 	}
 
@@ -418,7 +437,30 @@ static int enc424j600_rx(struct device *dev)
 		pkt_buf = pkt_buf->frags;
 	} while (frm_len > 0);
 
-	if (net_recv_data(context->iface, pkt) < 0) {
+#if defined(CONFIG_NET_VLAN)
+	struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+	if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
+		struct net_eth_vlan_hdr *hdr_vlan =
+			(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+
+		net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
+		*vlan_tag = net_pkt_vlan_tag(pkt);
+
+#if CONFIG_NET_TC_RX_COUNT > 1
+		enum net_priority prio;
+
+		prio = net_vlan2priority(net_pkt_vlan_priority(pkt));
+		net_pkt_set_priority(pkt, prio);
+#endif
+	} else {
+		net_pkt_set_iface(pkt, context->iface);
+	}
+#else /* CONFIG_NET_VLAN */
+	net_pkt_set_iface(pkt, context->iface);
+#endif /* CONFIG_NET_VLAN */
+
+	if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
 		net_pkt_unref(pkt);
 	}
 
@@ -440,6 +482,7 @@ done:
 static void enc424j600_rx_thread(struct device *dev)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
+	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	u16_t eir;
 	u16_t estat;
 	u8_t counter;
@@ -456,7 +499,7 @@ static void enc424j600_rx_thread(struct device *dev)
 		if (eir & ENC424J600_EIR_PKTIF) {
 			counter = (u8_t)estat;
 			while (counter) {
-				enc424j600_rx(dev);
+				enc424j600_rx(dev, &vlan_tag);
 				enc424j600_read_sfru(dev,
 						     ENC424J600_SFRX_ESTATL,
 						     &estat);
@@ -495,7 +538,11 @@ static enum ethernet_hw_caps enc424j600_get_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
+	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T
+#if defined(CONFIG_NET_VLAN)
+		| ETHERNET_HW_VLAN
+#endif
+		;
 }
 
 static void enc424j600_iface_init(struct net_if *iface)
@@ -506,7 +553,15 @@ static void enc424j600_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, context->mac_address,
 			     sizeof(context->mac_address),
 			     NET_LINK_ETHERNET);
-	context->iface = iface;
+
+	/* For VLAN, this value is only used to get the correct L2 driver.
+	 * The iface pointer in context should contain the main interface
+	 * if the VLANs are enabled.
+	 */
+	if (context->iface == NULL) {
+		context->iface = iface;
+	}
+
 	ethernet_init(iface);
 
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
