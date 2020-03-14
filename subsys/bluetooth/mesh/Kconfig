@@ -20,7 +20,6 @@ if BT_MESH
 # Virtual option enabled whenever Generic Provisioning layer is needed
 config BT_MESH_PROV
 	bool
-	select BT_ECC
 
 config BT_MESH_PB_ADV
 	bool "Provisioning support using the advertising bearer (PB-ADV)"
@@ -32,7 +31,6 @@ config BT_MESH_PB_ADV
 
 config BT_MESH_PROVISIONER
 	bool "Provisioner support"
-	select BT_ECC
 	select BT_MESH_PROV
 	help
 	  Enable this option to have support for provisioning remote devices.
