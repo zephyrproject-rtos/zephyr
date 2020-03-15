@@ -134,6 +134,7 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 	const struct pwm_nrfx_config *config = dev->config->config_info;
 	struct pwm_nrfx_data *data = dev->driver_data;
 	u8_t channel;
+	bool was_stopped;
 
 	if (flags) {
 		/* PWM polarity not supported (yet?) */
@@ -150,6 +151,14 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 			pwm);
 		return -EINVAL;
 	}
+
+	/* Check if nrfx_pwm_stop function was called in previous
+	 * pwm_nrfx_pin_set call. Relying only on state returned by
+	 * nrfx_pwm_is_stopped may cause race condition if the pwm_nrfx_pin_set
+	 * is called multiple times in quick succession.
+	 */
+	was_stopped = !pwm_channel_is_active(channel, data) &&
+		      !any_other_channel_is_active(channel, data);
 
 	/* If this PWM is in center-aligned mode, pulse and period lengths
 	 * are effectively doubled by the up-down count, so halve them here
@@ -223,11 +232,16 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 		 * playing. The new channel values will be used
 		 * immediately when they are written into the seq array.
 		 */
-		if (nrfx_pwm_is_stopped(&config->pwm)) {
+		if (was_stopped) {
+			/* Wait until PWM will be stopped and then start the
+			 * sequence.
+			 */
+			while (!nrfx_pwm_is_stopped(&config->pwm)) {
+			};
 			nrfx_pwm_simple_playback(&config->pwm,
-				&config->seq,
-				1,
-				NRFX_PWM_FLAG_LOOP);
+						 &config->seq,
+						 1,
+						 NRFX_PWM_FLAG_LOOP);
 		}
 	}
 
