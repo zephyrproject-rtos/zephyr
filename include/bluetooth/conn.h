@@ -485,6 +485,7 @@ struct bt_conn_cb {
 	 *  - @ref BT_HCI_ERR_UNKNOWN_CONN_ID Creating the connection started by
 	 *    @ref bt_conn_create_le was canceled either by the user through
 	 *    @ref bt_conn_disconnect or by the timeout in the host through
+	 *    @ref bt_conn_initiation_timeout, which defaults to
 	 *    :option:`CONFIG_BT_CREATE_CONN_TIMEOUT`.
 	 *  - @p BT_HCI_ERR_ADV_TIMEOUT Directed advertiser started by @ref
 	 *    bt_conn_create_slave_le with high duty cycle timed out after 1.28
@@ -587,6 +588,15 @@ struct bt_conn_cb {
 
 	struct bt_conn_cb *_next;
 };
+
+/** @brief Update the initiation timeout for future connections
+ *
+ *  By default, the timeout is equal to
+ *  K_SECONDS(CONFIG_BT_CREATE_CONN_TIMEOUT)
+ *
+ *  @param timeout Updated initiation timeout
+ */
+void bt_conn_initiation_timeout(s32_t timeout);
 
 /** @brief Register connection callbacks.
  *

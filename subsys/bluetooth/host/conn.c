@@ -1158,6 +1158,11 @@ bt_security_t bt_conn_get_security(struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_SMP */
 
+void bt_conn_initiation_timeout(s32_t timeout)
+{
+	conn_initiation_timeout = timeout;
+}
+
 void bt_conn_cb_register(struct bt_conn_cb *cb)
 {
 	cb->_next = callback_list;
@@ -1713,7 +1718,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			/* this indicate LE Create Connection with peer address
 			 * has been stopped. This could either be triggered by
 			 * the application through bt_conn_disconnect or by
-			 * timeout set by CONFIG_BT_CREATE_CONN_TIMEOUT.
+			 * timeout contained in conn_initiation_timeout.
 			 */
 			if (conn->err) {
 				notify_connected(conn);

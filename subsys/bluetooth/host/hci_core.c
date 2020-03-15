@@ -877,12 +877,15 @@ static void hci_num_completed_packets(struct net_buf *buf)
 	}
 }
 
-static inline bool rpa_timeout_valid_check(void)
+static inline bool rpa_timeout_valid_check(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_PRIVACY)
-	/* Check if create conn timeout will happen before RPA timeout. */
+	/*
+	 * Check if create conn timeout will happen before RPA timeout.
+	 * update_work at this point is scheduled to run on initiation timeout.
+	 */
 	return k_delayed_work_remaining_get(&bt_dev.rpa_update) >
-	       K_SECONDS(CONFIG_BT_CREATE_CONN_TIMEOUT);
+	       k_delayed_work_remaining_get(&conn->update_work);
 #else
 	return true;
 #endif
@@ -903,7 +906,7 @@ int bt_le_create_conn(struct bt_conn *conn)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		if (use_filter || rpa_timeout_valid_check()) {
+		if (use_filter || rpa_timeout_valid_check(conn)) {
 			err = le_set_private_addr(BT_ID_DEFAULT);
 			if (err) {
 				return err;
