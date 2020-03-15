@@ -1,0 +1,8 @@
+sample:
+  description: MQTT sample app to AWS IoT cloud
+  name: aws-mqtt
+tests:
+  sample.net.cloud.aws_mqtt:
+    harness: net
+    platform_whitelist: sam_e70_xplained
+    tags: net mqtt cloud
