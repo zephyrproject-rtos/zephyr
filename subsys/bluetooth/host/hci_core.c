@@ -889,7 +889,7 @@ static inline bool rpa_timeout_valid_check(void)
 }
 
 #if defined(CONFIG_BT_CENTRAL)
-int bt_le_create_conn(const struct bt_conn *conn)
+int bt_le_create_conn(struct bt_conn *conn)
 {
 	struct bt_hci_cp_le_create_conn *cp;
 	struct cmd_state_set state;
