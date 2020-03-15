@@ -41,6 +41,16 @@ static inline void z_vrfy_uart_poll_out(struct device *dev,
 }
 #include <syscalls/uart_poll_out_mrsh.c>
 
+static inline int z_vrfy_uart_config_get(struct device *dev,
+		struct uart_config *cfg)
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_UART(dev, config_get));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(cfg, sizeof(struct uart_config)));
+
+	return z_impl_uart_config_get(dev, cfg);
+}
+#include <syscalls/uart_config_get_mrsh.c>
+
 #ifdef CONFIG_UART_ASYNC_API
 /* callback_set() excluded as we don't allow ISR callback installation from
  * user mode
