@@ -283,6 +283,7 @@ static void enc424j600_setup_mac(struct device *dev)
 		LOG_INF("full duplex");
 		enc424j600_read_sfru(dev, ENC424J600_SFR2_MACON2L, &macon2);
 		macon2 |= ENC424J600_MACON2_FULDPX;
+
 		enc424j600_write_sfru(dev, ENC424J600_SFR2_MACON2L, macon2);
 		enc424j600_write_sfru(dev, ENC424J600_SFR2_MABBIPGL,
 				      ENC424J600_MABBIPG_DEFAULT);
@@ -290,6 +291,19 @@ static void enc424j600_setup_mac(struct device *dev)
 	} else {
 		LOG_INF("half duplex");
 	}
+
+	if (IS_ENABLED(CONFIG_NET_VLAN)) {
+		/* Automatic VLAN detection and padding */
+		enc424j600_read_sfru(dev, ENC424J600_SFR2_MACON2L, &macon2);
+		macon2 |= ENC424J600_MACON2_PADCFG0;
+		macon2 &= ~ENC424J600_MACON2_PADCFG1;
+		macon2 |= ENC424J600_MACON2_PADCFG2;
+
+		enc424j600_write_sfru(dev, ENC424J600_SFR2_MACON2L, macon2);
+	}
+
+	enc424j600_write_sfru(dev, ENC424J600_SFR2_MAMXFLL,
+			      MAX_FRAME_TOTAL_LEN);
 
 	if (CONFIG_ETHERNET_LOG_LEVEL == LOG_LEVEL_DBG) {
 		enc424j600_read_sfru(dev, ENC424J600_SFR2_MACON2L, &tmp);
@@ -393,9 +407,10 @@ static int enc424j600_rx(struct device *dev, u16_t *vlan_tag)
 		context->next_pkt_ptr, frm_len, status);
 	/* frame length without FCS */
 	frm_len -= 4;
-	if (frm_len > NET_ETH_MAX_FRAME_SIZE) {
-		LOG_ERR("Maximum frame length exceeded");
-		eth_stats_update_errors_rx(context->iface);
+	if (frm_len > MAX_FRAME_SIZE) {
+		LOG_ERR("Maximum frame length (%d) exceeded (%d)",
+			MAX_FRAME_SIZE, frm_len);
+		eth_stats_update_errors_rx(get_iface(context, *vlan_tag));
 		goto done;
 	}
 
