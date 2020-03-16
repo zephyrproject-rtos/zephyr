@@ -201,6 +201,22 @@ void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 	}
 }
 
+static void print_le_oob(const struct shell *shell, struct bt_le_oob *oob)
+{
+	char addr[BT_ADDR_LE_STR_LEN];
+	char c[KEY_STR_LEN];
+	char r[KEY_STR_LEN];
+
+	bt_addr_le_to_str(&oob->addr, addr, sizeof(addr));
+
+	bin2hex(oob->le_sc_data.c, sizeof(oob->le_sc_data.c), c, sizeof(c));
+	bin2hex(oob->le_sc_data.r, sizeof(oob->le_sc_data.r), r, sizeof(r));
+
+	shell_print(shell, "OOB data:");
+	shell_print(shell, "%-29s %-32s %-32s", "addr", "random", "confirm");
+	shell_print(shell, "%29s %32s %32s", addr, r, c);
+}
+
 static void connected(struct bt_conn *conn, u8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
@@ -1059,6 +1075,26 @@ static int cmd_adv_select(const struct shell *shell, size_t argc, char *argv[])
 
 	return -ENOEXEC;
 }
+
+static int cmd_adv_oob(const struct shell *shell, size_t argc, char *argv[])
+{
+	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+	int err;
+
+	if (!adv) {
+		return -EINVAL;
+	}
+
+	err = bt_le_ext_adv_oob_get_local(adv, &oob_local);
+	if (err) {
+		shell_error(shell, "OOB data failed");
+		return err;
+	}
+
+	print_le_oob(shell, &oob_local);
+
+	return 0;
+}
 #endif /* CONFIG_BT_EXT_ADV */
 #endif /* CONFIG_BT_BROADCASTER */
 
@@ -1370,9 +1406,6 @@ static int cmd_chan_map(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_oob(const struct shell *shell, size_t argc, char *argv[])
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-	char c[KEY_STR_LEN];
-	char r[KEY_STR_LEN];
 	int err;
 
 	err = bt_le_oob_get_local(selected_id, &oob_local);
@@ -1381,15 +1414,7 @@ static int cmd_oob(const struct shell *shell, size_t argc, char *argv[])
 		return err;
 	}
 
-	bt_addr_le_to_str(&oob_local.addr, addr, sizeof(addr));
-	bin2hex(oob_local.le_sc_data.c, sizeof(oob_local.le_sc_data.c), c,
-		sizeof(c));
-	bin2hex(oob_local.le_sc_data.r, sizeof(oob_local.le_sc_data.r), r,
-		sizeof(r));
-
-	shell_print(shell, "OOB data:");
-	shell_print(shell, "%-26s %-32s %-32s", "addr", "random", "confirm");
-	shell_print(shell, "%26s %32s %32s", addr, r, c);
+	print_le_oob(shell, &oob_local);
 
 	return 0;
 }
@@ -2182,6 +2207,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(adv-stop, NULL, "", cmd_adv_stop, 1, 0),
 	SHELL_CMD_ARG(adv-delete, NULL, "", cmd_adv_delete, 1, 0),
 	SHELL_CMD_ARG(adv-select, NULL, "[adv]", cmd_adv_select, 1, 1),
+	SHELL_CMD_ARG(adv-oob, NULL, HELP_NONE, cmd_adv_oob, 1, 0),
 #endif
 #endif /* CONFIG_BT_BROADCASTER */
 #if defined(CONFIG_BT_CONN)
