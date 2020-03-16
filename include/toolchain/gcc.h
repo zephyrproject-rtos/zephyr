@@ -50,16 +50,17 @@
 
 /* C++11 has static_assert built in */
 #ifdef __cplusplus
-#define BUILD_ASSERT(EXPR) static_assert(EXPR, "")
-#define BUILD_ASSERT_MSG(EXPR, MSG) static_assert(EXPR, MSG)
+#define BUILD_ASSERT(EXPR, MSG...) static_assert(EXPR, "" MSG)
+#define BUILD_ASSERT_MSG(EXPR, MSG) __DEPRECATED_MACRO BUILD_ASSERT(EXPR, MSG)
+
 /*
  * GCC 4.6 and higher have the C11 _Static_assert built in, and its
  * output is easier to understand than the common BUILD_ASSERT macros.
  */
 #elif (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)) || \
 	(__STDC_VERSION__) >= 201100
-#define BUILD_ASSERT(EXPR) _Static_assert(EXPR, "")
-#define BUILD_ASSERT_MSG(EXPR, MSG) _Static_assert(EXPR, MSG)
+#define BUILD_ASSERT(EXPR, MSG...) _Static_assert(EXPR, "" MSG)
+#define BUILD_ASSERT_MSG(EXPR, MSG) __DEPRECATED_MACRO BUILD_ASSERT(EXPR, MSG)
 #endif
 
 #include <toolchain/common.h>
