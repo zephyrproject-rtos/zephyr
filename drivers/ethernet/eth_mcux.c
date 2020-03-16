@@ -1149,7 +1149,7 @@ static void eth_0_config_func(void)
 static void eth_1_config_func(void);
 
 static struct eth_context eth_1_context = {
-	.base = ENET,
+	.base = ENET2,
 	.config_func = eth_1_config_func,
 	.phy_addr = 0U,
 	.phy_duplex = kPHY_FullDuplex,
