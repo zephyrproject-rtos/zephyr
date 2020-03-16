@@ -41,6 +41,11 @@ static int stm32l5_init(struct device *arg)
 	/* At reset, system core clock is set to 4 MHz from MSI */
 	SystemCoreClock = 4000000;
 
+	/* Enable Scale 0 to achieve 110MHz */
+	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+	LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
+
 	return 0;
 }
 
