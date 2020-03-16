@@ -6,6 +6,7 @@
 # Do not use wildcard on all source yet
 # *                                        @galak @nashif
 
+/.github/                                 @nashif @galak
 /.known-issues/                           @inakypg @nashif
 /arch/arc/                                @vonhust @ruuddw
 /arch/arm/                                @MaureenHelm @galak
