@@ -644,8 +644,7 @@ struct onoff_notifier {
  *
  * @param np pointer to the notifier state.
  *
- * @retval 0 if the request was successful but the service is not yet on.
- * @retval positive if the request was successful and the service is stable on.
+ * @retval 0 if the request was successful. Request result in callback.
  * @retval -EIO if the notifier is in an error state.
  * @retval -EALREADY if the client already in a state heading toward on.
  * @retval -EWOULDBLOCK if the client is in the process of resetting
@@ -666,7 +665,7 @@ int onoff_notifier_request(struct onoff_notifier *np);
  *
  * @param np pointer to the notifier state.
  *
- * @retval 0 if the request was successful.
+ * @retval 0 if the release was successful. Release result in callback.
  * @retval -EIO if the notifier is in an error state
  * @retval -EALREADY if the client is already in a state heading toward off.
  * @retval -EWOULDBLOCK if the client is in the process of resetting
