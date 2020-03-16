@@ -23,6 +23,11 @@
 
 #define ST_MASK (ST_ON | ST_TRANSITION)
 
+#define CLIENT_FLAG_IN_CANCEL BIT(ASYNC_NOTIFY_EXTENSION_POS)
+#define CLIENT_FLAGS_MASK (ASYNC_NOTIFY_EXTENSION_MASK & ~CLIENT_FLAG_IN_CANCEL)
+
+static void onoff_stop_notify(struct onoff_manager *mp, int res);
+
 static void set_service_state(struct onoff_manager *mp,
 			      u32_t state)
 {
@@ -40,7 +45,7 @@ static int validate_args(const struct onoff_manager *mp,
 	int rv = async_notify_validate(&cli->notify);
 
 	if ((rv == 0)
-	    && ((cli->notify.flags & ASYNC_NOTIFY_EXTENSION_MASK) != 0)) {
+	    && ((cli->notify.flags & CLIENT_FLAGS_MASK) != 0)) {
 		rv = -EINVAL;
 	}
 
@@ -67,6 +72,8 @@ static void notify_one(struct onoff_manager *mp,
 		       struct onoff_client *cli,
 		       int res)
 {
+	res = ((cli->notify.flags & CLIENT_FLAG_IN_CANCEL) && (res >= 0)) ?
+							       -ECANCELED : res;
 	onoff_client_callback cb =
 		(onoff_client_callback)async_notify_finalize(&cli->notify, res);
 
@@ -93,11 +100,10 @@ static void notify_all(struct onoff_manager *mp,
 static void onoff_start_notify(struct onoff_manager *mp,
 			       int res)
 {
+	struct onoff_client *releaser = NULL;
+	bool cancelled = false;
 	k_spinlock_key_t key = k_spin_lock(&mp->lock);
 	sys_slist_t clients = mp->clients;
-
-	/* Can't have a queued releaser during start */
-	__ASSERT_NO_MSG(mp->releaser == NULL);
 
 	/* If the start failed log an error and leave the rest of the
 	 * state in place for diagnostics.
@@ -129,6 +135,13 @@ static void onoff_start_notify(struct onoff_manager *mp,
 			mp->flags |= ONOFF_HAS_ERROR;
 		} else {
 			mp->refs += refs;
+			if (refs == 0) {
+				cancelled = true;
+				set_service_state(mp, ST_TO_OFF);
+			} else {
+				releaser = mp->releaser;
+				mp->releaser = NULL;
+			}
 		}
 		__ASSERT_NO_MSG(mp->refs > 0U);
 	}
@@ -137,7 +150,16 @@ static void onoff_start_notify(struct onoff_manager *mp,
 
 	k_spin_unlock(&mp->lock, key);
 
-	notify_all(mp, &clients, res);
+	if (releaser) {
+		/* notify only in case of error */
+		notify_one(mp, releaser, res);
+	}
+
+	if (cancelled) {
+		mp->transitions->stop(mp, onoff_stop_notify);
+	} else {
+		notify_all(mp, &clients, res);
+	}
 }
 
 int onoff_request(struct onoff_manager *mp,
@@ -230,6 +252,7 @@ static void onoff_stop_notify(struct onoff_manager *mp,
 	bool notify_clients = false;
 	int client_res = res;
 	bool start = false;
+	bool releaser_present = false;
 	k_spinlock_key_t key = k_spin_lock(&mp->lock);
 	sys_slist_t clients = mp->clients;
 	struct onoff_client *releaser = mp->releaser;
@@ -259,10 +282,12 @@ static void onoff_stop_notify(struct onoff_manager *mp,
 		start = true;
 	}
 
-	__ASSERT_NO_MSG(releaser);
-	mp->refs -= 1U;
-	mp->releaser = NULL;
-	__ASSERT_NO_MSG(mp->refs == 0);
+	if (releaser) {
+		mp->refs -= 1U;
+		mp->releaser = NULL;
+		releaser_present = true;
+		__ASSERT_NO_MSG(mp->refs == 0);
+	}
 
 	/* Remove the clients if there was an error or a delayed start
 	 * couldn't be initiated, because we're resolving their
@@ -278,7 +303,10 @@ static void onoff_stop_notify(struct onoff_manager *mp,
 	 * pending requests; otherwise if there are pending requests
 	 * start the transition to ON.
 	 */
-	notify_one(mp, releaser, res);
+	if (releaser_present) {
+		notify_one(mp, releaser, res);
+	}
+
 	if (notify_clients) {
 		notify_all(mp, &clients, client_res);
 	} else if (start) {
@@ -436,12 +464,12 @@ int onoff_cancel(struct onoff_manager *mp,
 		 struct onoff_client *cli)
 {
 	int rv = validate_args(mp, cli);
+	bool notify = false;
 
 	if (rv < 0) {
 		return rv;
 	}
 
-	rv = -EALREADY;
 	k_spinlock_key_t key = k_spin_lock(&mp->lock);
 	u32_t state = mp->flags & ST_MASK;
 
@@ -452,19 +480,29 @@ int onoff_cancel(struct onoff_manager *mp,
 	 */
 	if (sys_slist_find_and_remove(&mp->clients, &cli->node)) {
 		rv = 0;
-		if (sys_slist_is_empty(&mp->clients)
-		    && (state != ST_TO_OFF)) {
-			rv = -EWOULDBLOCK;
-			sys_slist_append(&mp->clients, &cli->node);
+		if (sys_slist_is_empty(&mp->clients) &&
+		    ((cli->notify.flags & CLIENT_FLAG_IN_CANCEL) ||
+		    (state != ST_TO_OFF))) {
+			mp->releaser = cli;
+			mp->refs += 1U;
+			cli->notify.flags ^= CLIENT_FLAG_IN_CANCEL;
+		} else {
+			notify = true;
 		}
 	} else if (mp->releaser == cli) {
-		/* must be waiting for TO_OFF to complete */
-		rv = -EWOULDBLOCK;
+		if (!(cli->notify.flags & CLIENT_FLAG_IN_CANCEL)) {
+			mp->refs -= 1U;
+		}
+		mp->releaser = NULL;
+		cli->notify.flags ^= CLIENT_FLAG_IN_CANCEL;
+		sys_slist_append(&mp->clients, &cli->node);
+	} else {
+		rv = -EALREADY;
 	}
 
 	k_spin_unlock(&mp->lock, key);
 
-	if (rv == 0) {
+	if (notify) {
 		notify_one(mp, cli, -ECANCELED);
 	}
 
