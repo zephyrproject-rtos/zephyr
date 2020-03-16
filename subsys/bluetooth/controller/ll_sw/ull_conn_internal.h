@@ -17,6 +17,9 @@
  */
 #define PAYLOAD_OVERHEAD_SIZE (2 + 4)
 
+#define PHY_1M BIT(0)
+#define PHY_2M BIT(1)
+#define PHY_CODED BIT(2)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #define CODED_PHY_PREAMBLE_TIME_US (80)
 #define CODED_PHY_ACCESS_ADDRESS_TIME_US (256)
@@ -33,23 +36,23 @@
 				     CODED_PHY_CRC_SIZE + \
 				     CODED_PHY_TERM2_SIZE) * 8)
 
-#define PKT_US(octets, phy) (((phy) & BIT(2)) ?		   \
+#define PKT_US(octets, phy) (((phy) & PHY_CODED) ?		   \
 			     (CODED_PHY_PREAMBLE_TIME_US + \
 			      FEC_BLOCK1_TIME_US + \
 			      FEC_BLOCK2_TIME_US(octets)) : \
-			     (((PREAMBLE_SIZE(1) + \
+			     (((PREAMBLE_SIZE(phy) + \
 				ACCESS_ADDR_SIZE + \
 				PAYLOAD_OVERHEAD_SIZE + \
 				(octets) + \
 				CRC_SIZE) * 8) / \
 			      BIT(((phy) & 0x03) >> 1)))
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
-#define PKT_US(octets, phy) (((PREAMBLE_SIZE(1) + \
+#define PKT_US(octets, phy) ((((PREAMBLE_SIZE(phy)) +	\
 			       ACCESS_ADDR_SIZE + \
 			       PAYLOAD_OVERHEAD_SIZE + \
 			       (octets) + \
 			       CRC_SIZE) * 8) / \
-			     BIT(((phy) & 0x03) >> 1))
+			      BIT(((phy) & 0x03) >> 1))
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
 struct ll_conn *ll_conn_acquire(void);
