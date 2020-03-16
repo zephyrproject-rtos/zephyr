@@ -574,6 +574,7 @@ static void lp_comm_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	ntf = ntf_alloc();
 	LL_ASSERT(ntf);
 
+	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	pdu = (struct pdu_data *) ntf->pdu;
 
 	switch (ctx->proc) {
@@ -743,6 +744,7 @@ static void lp_enc_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	ntf = ntf_alloc();
 	LL_ASSERT(ntf);
 
+	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	pdu = (struct pdu_data *) ntf->pdu;
 
 	if (ctx->data.enc.error == BT_HCI_ERR_SUCCESS) {
@@ -1299,6 +1301,7 @@ static void rp_enc_ntf_ltk(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	ntf = ntf_alloc();
 	LL_ASSERT(ntf);
 
+	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	pdu = (struct pdu_data *) ntf->pdu;
 
 	/* TODO(thoh): is this correct? */
@@ -1317,6 +1320,7 @@ static void rp_enc_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	ntf = ntf_alloc();
 	LL_ASSERT(ntf);
 
+	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	pdu = (struct pdu_data *) ntf->pdu;
 
 	/* TODO(thoh): is this correct? */
