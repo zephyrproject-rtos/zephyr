@@ -4,7 +4,7 @@
 
 include: base.yaml
 
-parent-bus: stm32-timers
+on-bus: stm32-timers
 
 properties:
     reg:

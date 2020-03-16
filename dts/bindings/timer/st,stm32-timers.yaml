@@ -4,7 +4,7 @@ compatible: "st,stm32-timers"
 
 include: base.yaml
 
-child-bus: stm32-timers
+bus: stm32-timers
 
 properties:
     "#address-cells":
