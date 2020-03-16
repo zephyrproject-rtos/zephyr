@@ -27,6 +27,7 @@ uint32_t ull_adv_filter_pol_get(uint8_t handle);
 /* Return ll_adv_set context if created */
 struct ll_adv_set *ull_adv_is_created_get(uint8_t handle);
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 int ull_adv_aux_init(void);
 int ull_adv_aux_reset(void);
 
@@ -40,6 +41,7 @@ uint8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux);
 /* helper function to schedule a mayfly to get aux offset */
 void ull_adv_aux_offset_get(struct ll_adv_set *adv);
 
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 int ull_adv_sync_init(void);
 int ull_adv_sync_reset(void);
 
@@ -49,3 +51,5 @@ uint32_t ull_adv_sync_start(struct ll_adv_sync_set *sync, uint32_t ticks_anchor,
 
 /* helper function to schedule a mayfly to get sync offset */
 void ull_adv_sync_offset_get(struct ll_adv_set *adv);
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
