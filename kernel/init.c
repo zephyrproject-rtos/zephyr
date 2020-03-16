@@ -35,7 +35,6 @@
 #include <stdbool.h>
 #include <debug/gcov.h>
 
-#define IDLE_THREAD_NAME	"idle"
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(os);
@@ -280,11 +279,22 @@ void __weak main(void)
 /* LCOV_EXCL_STOP */
 
 #if defined(CONFIG_MULTITHREADING)
-static void init_idle_thread(struct k_thread *thread, k_thread_stack_t *stack)
+static void init_idle_thread(int i)
 {
+	struct k_thread *thread = &z_idle_threads[i];
+	k_thread_stack_t *stack = z_idle_stacks[i];
+
+#ifdef CONFIG_THREAD_NAME
+	char tname[8];
+
+	snprintk(tname, 8, "idle %02d", i);
+#else
+	char *tname = NULL;
+#endif /* CONFIG_THREAD_NAME */
+
 	z_setup_new_thread(thread, stack,
 			  CONFIG_IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
-			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL, IDLE_THREAD_NAME);
+			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL, tname);
 	z_mark_thread_as_started(thread);
 
 #ifdef CONFIG_SMP
@@ -354,7 +364,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	z_ready_thread(&z_main_thread);
 
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-		init_idle_thread(&z_idle_threads[i], z_idle_stacks[i]);
+		init_idle_thread(i);
 		_kernel.cpus[i].idle_thread = &z_idle_threads[i];
 		_kernel.cpus[i].id = i;
 		_kernel.cpus[i].irq_stack =
