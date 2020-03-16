@@ -756,7 +756,7 @@ static void thread_memory_write_done(void)
 	size_t overflowed_len = (addr + size) % CONFIG_MASS_STORAGE_BULK_EP_MPS;
 
 	if (overflowed_len) {
-		memcpy(page, &page[BLOCK_SIZE], overflowed_len);
+		memmove(page, &page[BLOCK_SIZE], overflowed_len);
 	}
 
 	addr += size;
