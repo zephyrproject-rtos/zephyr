@@ -134,7 +134,7 @@ static void test_basic(void)
 
 	/* Immediate success expected */
 	rc = onoff_notifier_request(&notifier);
-	zassert_equal(rc, 1,
+	zassert_equal(rc, 0,
 		      "request failed");
 	zassert_equal(num_onoff, 1,
 		      "onoff not invoked");
@@ -178,12 +178,14 @@ static void test_failed_request(void)
 
 	/* Immediate failure expected */
 	rc = onoff_notifier_request(&notifier);
-	zassert_equal(rc, -EIO,
+	zassert_equal(rc, 0,
 		      "request failed: %d", rc);
 	zassert_equal(num_onoff, 1,
 		      "onoff not invoked");
 	zassert_false(service.active,
 		      "active");
+	zassert_equal(notify_status[0], -23,
+		      "notification not on");
 
 	/* Failures are persistent until service reset. */
 	service.request_rv = 0;
@@ -215,7 +217,7 @@ static void test_async(void)
 
 	/* Re-invocation at this point has no effect */
 	rc = onoff_notifier_request(&notifier);
-	zassert_equal(rc, 0,
+	zassert_equal(rc, -EALREADY,
 		      "request not incomplete");
 
 	settle_onoff(service.request_rv, true);
@@ -358,7 +360,7 @@ static void test_cancelled_release(void)
 		      "unexp active");
 
 	rc = onoff_notifier_request(&notifier);
-	zassert_equal(rc, 1,
+	zassert_equal(rc, 0,
 		      "request not complete");
 	zassert_equal(num_onoff, 1,
 		      "onoff failed");
@@ -415,7 +417,7 @@ static void test_bicancelled_release(void)
 		      "unexp active");
 
 	rc = onoff_notifier_request(&notifier);
-	zassert_equal(rc, 1,
+	zassert_equal(rc, 0,
 		      "request not complete");
 	zassert_equal(num_onoff, 1,
 		      "onoff failed");
@@ -471,7 +473,7 @@ static void test_basic_reset(void)
 	service.request_rv = -23;
 
 	rc = onoff_notifier_request(&notifier);
-	zassert_equal(rc, -EIO,
+	zassert_equal(rc, 0,
 		      "request error");
 	zassert_equal(num_notify, 1,
 		      "notify wrong");
@@ -514,7 +516,7 @@ static void test_unsupported_reset(void)
 	service.request_rv = -23;
 
 	rc = onoff_notifier_request(&notifier);
-	zassert_equal(rc, -EIO,
+	zassert_equal(rc, 0,
 		      "request error");
 	zassert_equal(num_notify, 1,
 		      "notify wrong");
@@ -531,12 +533,10 @@ static void test_unsupported_reset(void)
 
 	/* Reset fails if service can't be reset */
 	rc = onoff_notifier_reset(&notifier);
-	zassert_equal(rc, -EIO,
+	zassert_equal(rc, -ENOTSUP,
 		       "reset unsupported failed");
-	zassert_equal(num_notify, 2,
+	zassert_equal(num_notify, 1,
 		      "notify wrong");
-	zassert_equal(notify_status[1], -ENOTSUP,
-		      "reset status wrong: %d", notify_status[1]);
 }
 
 static void test_already_reset(void)
@@ -547,7 +547,7 @@ static void test_already_reset(void)
 	service.request_rv = -23;
 
 	rc = onoff_notifier_request(&notifier);
-	zassert_equal(rc, -EIO,
+	zassert_equal(rc, 0,
 		      "request error");
 	zassert_equal(num_notify, 1,
 		      "notify wrong");
@@ -590,7 +590,7 @@ static void test_async_reset(void)
 	service.request_rv = -23;
 
 	rc = onoff_notifier_request(&notifier);
-	zassert_equal(rc, -EIO,
+	zassert_equal(rc, 0,
 		      "request error");
 	zassert_equal(num_notify, 1,
 		      "notify wrong");
