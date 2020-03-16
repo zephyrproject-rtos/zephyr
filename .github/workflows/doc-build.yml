@@ -1,0 +1,65 @@
+# Copyright (c) 2020 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Documentation GitHub Workflow
+
+on: [pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Update PATH for west
+      run: |
+        echo "::add-path::$HOME/.local/bin"
+
+    - name: checkout
+      uses: actions/checkout@v2
+
+    - name: install-pkgs
+      run: |
+        sudo apt-get install -y ninja-build doxygen
+
+    - name: cache-pip
+      uses: actions/cache@v1
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-doc-pip
+
+    - name: install-pip
+      run: |
+        pip3 install setuptools
+        pip3 install 'breathe>=4.9.1,<4.15.0' 'docutils>=0.14' \
+                     'sphinx>=1.7.5,<3.0' sphinx_rtd_theme sphinx-tabs \
+                     sphinxcontrib-svg2pdfconverter 'west>=0.6.2'
+        pip3 install pyelftools
+
+    - name: west setup
+      run: |
+        west init -l . || true
+
+    - name: build-docs
+      run: |
+        source zephyr-env.sh
+        make htmldocs
+        tar cvf htmldocs.tar --directory=./doc/_build html
+
+    - name: upload-build
+      uses: actions/upload-artifact@master
+      continue-on-error: True
+      with:
+        name: htmldocs.tar
+        path: htmldocs.tar
+
+    - name: check-warns
+      run: |
+        if [ -s doc/_build/doc.warnings ]; then
+           docwarn=$(cat doc/_build/doc.warnings)
+           docwarn="${docwarn//'%'/'%25'}"
+           docwarn="${docwarn//$'\n'/'%0A'}"
+           docwarn="${docwarn//$'\r'/'%0D'}"
+           # We treat doc warnings as errors
+           echo "::error file=doc.warnings::$docwarn"
+           exit 1
+        fi
