@@ -1078,23 +1078,23 @@ int ull_adv_init(void)
 {
 	int err;
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_CTLR_ADV_AUX_SET)
-		if (CONFIG_BT_CTLR_ADV_AUX_SET > 0) {
-			err = ull_adv_aux_init();
-			if (err) {
-				return err;
-			}
-		}
-#endif
-
-		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC)) {
-			err = ull_adv_sync_init();
-			if (err) {
-				return err;
-			}
+	if (CONFIG_BT_CTLR_ADV_AUX_SET > 0) {
+		err = ull_adv_aux_init();
+		if (err) {
+			return err;
 		}
 	}
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	err = ull_adv_sync_init();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SET */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	err = init_reset();
 	if (err) {
@@ -1109,23 +1109,23 @@ int ull_adv_reset(void)
 	u8_t handle;
 	int err;
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_CTLR_ADV_AUX_SET)
-		if (CONFIG_BT_CTLR_ADV_AUX_SET > 0) {
-			err = ull_adv_aux_reset();
-			if (err) {
-				return err;
-			}
-		}
-#endif
-
-		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_PERIODIC)) {
-			err = ull_adv_sync_reset();
-			if (err) {
-				return err;
-			}
+	if (CONFIG_BT_CTLR_ADV_AUX_SET > 0) {
+		err = ull_adv_aux_reset();
+		if (err) {
+			return err;
 		}
 	}
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	err = ull_adv_sync_reset();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SET */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	for (handle = 0U; handle < BT_CTLR_ADV_MAX; handle++) {
 		(void)disable(handle);
