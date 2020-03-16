@@ -476,10 +476,6 @@ FUNC_NORETURN void z_cstart(void)
 	_current_cpu->current = &dummy_thread;
 #endif
 
-#ifdef CONFIG_USERSPACE
-	z_app_shmem_bss_zero();
-#endif
-
 	/* perform basic hardware initialization */
 	z_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_1);
 	z_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
