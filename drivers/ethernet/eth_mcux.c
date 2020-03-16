@@ -363,7 +363,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 				k_sleep(USEC_PER_MSEC);
 			}
 		} else if (!link_up && context->link_up) {
-			LOG_INF("Link down");
+			LOG_INF("%s link down", eth_name(context->base));
 			context->link_up = link_up;
 			k_delayed_work_submit(&context->delayed_phy_work,
 					      CONFIG_ETH_MCUX_PHY_TICK_MS);
@@ -391,7 +391,8 @@ static void eth_mcux_phy_event(struct eth_context *context)
 				    (enet_mii_duplex_t) phy_duplex);
 		}
 
-		LOG_INF("Enabled %sM %s-duplex mode.",
+		LOG_INF("%s enabled %sM %s-duplex mode.",
+			eth_name(context->base),
 			(phy_speed ? "100" : "10"),
 			(phy_duplex ? "full" : "half"));
 		k_delayed_work_submit(&context->delayed_phy_work,
