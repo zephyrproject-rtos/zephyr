@@ -23,12 +23,6 @@
 
 GEN_ABS_SYM_BEGIN(_OffsetAbsSyms)
 
-#ifndef CONFIG_SMP
-GEN_OFFSET_SYM(_kernel_t, current);
-GEN_OFFSET_SYM(_kernel_t, nested);
-GEN_OFFSET_SYM(_kernel_t, irq_stack);
-#endif
-
 GEN_OFFSET_SYM(_cpu_t, current);
 GEN_OFFSET_SYM(_cpu_t, nested);
 GEN_OFFSET_SYM(_cpu_t, irq_stack);

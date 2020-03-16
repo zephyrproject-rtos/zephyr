@@ -270,7 +270,7 @@ is_interrupt:
 	RV_OP_STOREREG t0, 0x00(sp)
 
 on_irq_stack:
-	/* Increment _kernel.nested variable */
+	/* Increment _kernel.cpus[0].nested variable */
 	lw t3, _kernel_offset_to_nested(t2)
 	addi t3, t3, 1
 	sw t3, _kernel_offset_to_nested(t2)
@@ -337,7 +337,7 @@ on_thread_stack:
 	/* Get reference to _kernel */
 	la t1, _kernel
 
-	/* Decrement _kernel.nested variable */
+	/* Decrement _kernel.cpus[0].nested variable */
 	lw t2, _kernel_offset_to_nested(t1)
 	addi t2, t2, -1
 	sw t2, _kernel_offset_to_nested(t1)

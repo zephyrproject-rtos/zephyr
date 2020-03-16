@@ -34,7 +34,7 @@ extern void z_arm64_offload(void);
 
 static ALWAYS_INLINE bool arch_is_in_isr(void)
 {
-	return _kernel.nested != 0U;
+	return _kernel.cpus[0].nested != 0U;
 }
 
 

@@ -25,6 +25,10 @@ enum {
 	OPENOCD_OFFSET_T_COOP_FLOAT,
 };
 
+#if CONFIG_MP_NUM_CPUS > 1
+#error "This code doesn't work properly with multiple CPUs enabled"
+#endif
+
 /* Forward-compatibility notes: 1) Only append items to this table; otherwise
  * OpenOCD versions that expect less items will read garbage values.
  * 2) Avoid incompatible changes that affect the interpretation of existing
@@ -36,7 +40,7 @@ __attribute__((used, section(".openocd_dbg")))
 size_t _kernel_openocd_offsets[] = {
 	/* Version 0 starts */
 	[OPENOCD_OFFSET_VERSION] = 1,
-	[OPENOCD_OFFSET_K_CURR_THREAD] = offsetof(struct z_kernel, current),
+	[OPENOCD_OFFSET_K_CURR_THREAD] = offsetof(struct _cpu, current),
 	[OPENOCD_OFFSET_K_THREADS] = offsetof(struct z_kernel, threads),
 	[OPENOCD_OFFSET_T_ENTRY] = offsetof(struct k_thread, entry),
 	[OPENOCD_OFFSET_T_NEXT_THREAD] = offsetof(struct k_thread, next_thread),
