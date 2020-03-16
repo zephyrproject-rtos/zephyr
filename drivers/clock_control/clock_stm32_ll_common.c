@@ -329,6 +329,12 @@ static int stm32_clock_control_init(struct device *dev)
 
 #ifdef CONFIG_CLOCK_STM32_PLL_SRC_MSI
 
+	/* Set MSI Range */
+	LL_RCC_MSI_EnableRangeSelection();
+	LL_RCC_MSI_SetRange(CONFIG_CLOCK_STM32_MSI_RANGE
+							<< RCC_CR_MSIRANGE_Pos);
+	LL_RCC_MSI_SetCalibTrimming(0);
+
 #ifdef CONFIG_CLOCK_STM32_MSI_PLL_MODE
 	/* Enable MSI hardware auto calibration */
 	LL_RCC_MSI_EnablePLLMode();
