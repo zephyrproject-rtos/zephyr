@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <soc.h>
 #include <device.h>
-#include <clock_control/stm32_clock_control.h>
+#include <drivers/clock_control/stm32_clock_control.h>
 #include <mfd/mfd_timer_stm32.h>
 
 #define DEV_CFG(dev)							\
