@@ -50,16 +50,6 @@ extern void z_new_thread_init(struct k_thread *thread,
 					    char *pStack, size_t stackSize,
 					    int prio, unsigned int options);
 
-#ifdef CONFIG_USERSPACE
-/**
- * @brief Zero out BSS sections for application shared memory
- *
- * This isn't handled by any platform bss zeroing, and is called from
- * z_cstart() if userspace is enabled.
- */
-extern void z_app_shmem_bss_zero(void);
-#endif /* CONFIG_USERSPACE */
-
 /**
  * @brief Allocate some memory from the current thread's resource pool
  *
