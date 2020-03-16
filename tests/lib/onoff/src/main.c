@@ -7,6 +7,34 @@
 #include <ztest.h>
 #include <sys/onoff.h>
 
+/* Helper macros to make tests more compact and improve readability. */
+#define TEST_CLI_STATUS(cli, exp_result) \
+	rc = cli_result(cli); \
+	if (exp_result == 0) { \
+		zassert_true(rc >= 0, "Unexpected result:%d", rc);\
+	} \
+	zassert_equal(rc, exp_result, "Unexpected result:%d", rc);
+
+#define TEST_CLI_BUSY(cli) TEST_CLI_STATUS(cli, -EAGAIN)
+#define TEST_CLI_OK(cli) TEST_CLI_STATUS(cli, 0)
+
+#define TEST_ONOFF_REQUEST(srv, cli) \
+	init_spinwait(cli); \
+	rc = onoff_request(srv, cli); \
+	zassert_true(rc >= 0, "Unexpected result:%d", rc);
+
+#define TEST_ONOFF_RELEASE(srv, cli) \
+	init_spinwait(cli); \
+	rc = onoff_release(srv, cli); \
+	zassert_true(rc >= 0, "Unexpected result:%d", rc);
+
+#define TEST_ONOFF_CANCEL(srv, cli) \
+	rc = onoff_cancel(srv, cli); \
+	zassert_true(rc >= 0, "Unexpected result:%d", rc);
+
+#define TEST_SRV_OK(srv) \
+	zassert_false(onoff_service_has_error(srv), "has error");
+
 static struct onoff_client spinwait_cli;
 
 static int callback_res;
@@ -287,11 +315,6 @@ static void test_validate_args(void)
 	rc = onoff_request(&srv, &spinwait_cli);
 	zassert_true(rc > 0,
 		     "trigger to on");
-
-	memset(&cli, 0xA3, sizeof(cli));
-	rc = onoff_request(&srv, &cli);
-	zassert_equal(rc, -EINVAL,
-		      "validate req cli flags");
 
 	init_spinwait(&cli);
 	cli.flags = ONOFF_CLIENT_NOTIFY_INVALID;
@@ -906,7 +929,8 @@ static void test_cancel_request_waits(void)
 		      "start2 pending");
 
 	/* Allowed to cancel in-progress start if doing so leaves
-	 * something to receive the start completion.
+	 * something to receive the start completion. Notification is
+	 * immediate.
 	 */
 	rc = onoff_cancel(&srv, &cli);
 	zassert_equal(rc, 0,
@@ -916,67 +940,37 @@ static void test_cancel_request_waits(void)
 	zassert_false(onoff_service_has_error(&srv),
 		      "has error");
 
-	/* Not allowed to cancel the last pending start.
-	 */
+	/* Last one in the queue gets notification when service is off. */
 	rc = onoff_cancel(&srv, &spinwait_cli);
-	zassert_equal(rc, -EWOULDBLOCK,
-		      "last cancel", rc);
+	zassert_equal(rc, 0,
+		      "last cancel");
 	zassert_false(onoff_service_has_error(&srv),
 		      "has error");
 	zassert_equal(cli_result(&spinwait_cli), -EAGAIN,
 		      "last request");
 
 	notify(&start_state);
-	zassert_equal(cli_result(&spinwait_cli), start_state.retval,
-		      "last request");
+	notify(&stop_state);
+	
+	zassert_equal(cli_result(&spinwait_cli), -ECANCELED,
+		      "last request %d", cli_result(&spinwait_cli));
 	zassert_false(onoff_service_has_error(&srv),
 		      "has error");
 
 
-	/* Issue a stop, then confirm that you can request and cancel
-	 * a restart.
-	 */
-	init_spinwait(&cli);
-	rc = onoff_release(&srv, &cli);
-	zassert_equal(rc, 2, /* WHITEBOX stop pending */
-		      "stop pending, %d", rc);
-	zassert_equal(cli_result(&cli), -EAGAIN,
-		      "stop pending");
-
+	/* Issue a request to confirm that service is usable and in off. */
 	init_spinwait(&spinwait_cli);
 	rc = onoff_request(&srv, &spinwait_cli);
-	zassert_equal(rc, 3, /* WHITEBOX restart pending */
+	zassert_equal(rc, 2, /* WHITEBOX in off state */
 		      "restart pending");
-
-	rc = onoff_cancel(&srv, &spinwait_cli);
-	zassert_equal(rc, 0,
-		      "restart cancel");
-	zassert_equal(cli_result(&spinwait_cli), -ECANCELED,
-		      "restart cancel");
-	zassert_false(onoff_service_has_error(&srv),
-		      "has error");
-
-	zassert_equal(cli_result(&cli), -EAGAIN,
-		      "stop pending");
-
-	notify(&stop_state);
-	zassert_equal(cli_result(&cli), stop_state.retval,
-		      "released");
-	zassert_false(onoff_service_has_error(&srv),
-		      "has error");
 }
 
-static void test_cancel_request_ok(void)
+static void test_invalid_cancel(void)
 {
 	int rc;
 	struct onoff_service srv;
-	struct k_poll_signal sig;
 	struct onoff_client cli;
-
-	clear_transit();
-	start_state.async = true;
-	start_state.retval = 14;
-	stop_state.retval = 31;
+	struct k_poll_signal sig;
 
 	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
 				ONOFF_SERVICE_START_SLEEPS);
@@ -984,28 +978,6 @@ static void test_cancel_request_ok(void)
 		      "service init");
 
 	init_notify_sig(&cli, &sig);
-	rc = onoff_request(&srv, &cli);
-	zassert_true(rc > 0,
-		     "request pending");
-	zassert_false(start_state.notify == NULL,
-		      "start pending");
-
-	/* You can't cancel the last start request */
-	rc = onoff_cancel(&srv, &cli);
-	zassert_equal(rc, -EWOULDBLOCK,
-		      "cancel");
-	zassert_equal(srv.refs, 0,
-		      "refs empty");
-
-	notify(&start_state);
-	zassert_equal(srv.refs, 1,
-		      "refs");
-	zassert_false(onoff_service_has_error(&srv),
-		      "has error");
-	zassert_equal(cli_result(&cli), start_state.retval,
-		      "cancel notified");
-	zassert_false(onoff_service_has_error(&srv),
-		      "has error");
 
 	/* You can "cancel" an request that isn't active */
 	init_spinwait(&cli);
@@ -1099,51 +1071,6 @@ static void test_blocked_restart(void)
 		      "restart failed");
 }
 
-static void test_cancel_release(void)
-{
-	int rc;
-	struct onoff_service srv;
-
-	clear_transit();
-	start_state.retval = 16;
-	stop_state.async = true;
-	stop_state.retval = 94;
-
-	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
-				ONOFF_SERVICE_STOP_SLEEPS);
-	zassert_equal(rc, 0,
-		      "service init");
-
-	init_spinwait(&spinwait_cli);
-	rc = onoff_request(&srv, &spinwait_cli);
-	zassert_true(rc > 0,
-		     "request done");
-	zassert_equal(cli_result(&spinwait_cli), start_state.retval,
-		      "started");
-
-	init_spinwait(&spinwait_cli);
-	rc = onoff_release(&srv, &spinwait_cli);
-	zassert_true(rc > 0,
-		     "release pending");
-	zassert_false(stop_state.notify == NULL,
-		      "release pending");
-	zassert_equal(cli_result(&spinwait_cli), -EAGAIN,
-		      "release pending");
-
-	/* You can't cancel a stop request. */
-	rc = onoff_cancel(&srv, &spinwait_cli);
-	zassert_equal(rc, -EWOULDBLOCK,
-		      "cancel succeeded");
-	zassert_false(onoff_service_has_error(&srv),
-		      "has error");
-
-	notify(&stop_state);
-	zassert_equal(cli_result(&spinwait_cli), stop_state.retval,
-		      "release pending");
-	zassert_false(onoff_service_has_error(&srv),
-		      "has error");
-}
-
 static void uncond_stop(struct onoff_service *srv,
 		 onoff_service_notify_fn notify)
 {
@@ -1217,26 +1144,441 @@ static void test_uncond_start(void)
 		      "request canceled");
 }
 
+static void test_cancel_ongoing_request(void)
+{
+	int rc;
+	struct onoff_service srv;
+	
+	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0, "service init");
+
+	clear_transit();
+	start_state.async = true;
+	stop_state.async = true;
+
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli);
+
+	TEST_CLI_BUSY(&spinwait_cli);
+	
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	notify(&start_state);
+	/* not completed, it internally triggers transition to off. */
+	TEST_CLI_BUSY(&spinwait_cli);
+
+	notify(&stop_state);
+
+	TEST_CLI_STATUS(&spinwait_cli, -ECANCELED);
+
+	TEST_SRV_OK(&srv);
+}
+
+static void test_double_cancel_ongoing_request(void)
+{
+	int rc;
+	struct onoff_service srv;
+	
+	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0, "service init");
+
+	clear_transit();
+	start_state.async = true;
+	stop_state.async = true;
+
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli);
+
+	TEST_CLI_BUSY(&spinwait_cli);
+	
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	notify(&start_state);
+
+	/* cancelled cancel thus initial request completes as expected. */
+	TEST_CLI_OK(&spinwait_cli);
+
+	TEST_SRV_OK(&srv);
+}
+
+/* Following scenario is tested:
+ * - cli requests service
+ * - cli cancels service 
+ * - cli2 request service before service is started
+ * - when transition to on completes cli completes with -ECANCELED result
+ * - cli2 gets success result.
+ */
+static void test_cancel_ongoing_request_with_next_request(void)
+{
+	int rc;
+	struct onoff_service srv;
+	struct onoff_client spinwait_cli2;
+	
+	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0, "service init");
+
+	clear_transit();
+	start_state.async = true;
+	stop_state.async = true;
+
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli);
+
+	TEST_CLI_BUSY(&spinwait_cli);
+	
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	/* transition to on in progress, new request comes. */
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli2);
+
+	notify(&start_state);
+
+	/* cli get cancelled notification. */
+	TEST_CLI_STATUS(&spinwait_cli, -ECANCELED);
+
+	/* cli2 gets successful start. */
+	TEST_CLI_OK(&spinwait_cli2);
+
+	TEST_SRV_OK(&srv);	
+}
+
+/* Following scenario is tested:
+ * - cli requests service
+ * - cli cancels service 
+ * - when transition to on completes cli completes cli is the only one client
+ *   so transition to off is triggered
+ * - cli2 request service before service is off
+ * - service settles in off. cli gets -ECANCELED and transition to on starts
+ * - cli2 gets success result.
+ */
+static void test_cancel_ongoing_request_with_next_request2(void)
+{
+	int rc;
+	struct onoff_service srv;
+	struct onoff_client spinwait_cli2;
+	
+	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0, "service init");
+
+	clear_transit();
+	start_state.retval = 0;
+	start_state.async = true;
+	stop_state.retval = 0;
+	stop_state.async = true;
+
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli);
+
+	TEST_CLI_BUSY(&spinwait_cli);
+	
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	notify(&start_state);
+
+	/* transition to off in progress, new request comes. */
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli2);
+
+	TEST_CLI_BUSY(&spinwait_cli);
+
+	notify(&stop_state);
+
+	TEST_CLI_STATUS(&spinwait_cli, -ECANCELED);
+
+	/* transition to on started. */
+	TEST_CLI_BUSY(&spinwait_cli2);
+
+	notify(&start_state);
+
+	/* cli2 gets successful start. */
+	TEST_CLI_OK(&spinwait_cli2);
+
+	TEST_SRV_OK(&srv);
+}
+
+/* Following scenario is tested:
+ * - service is started
+ * - asynchronous release is triggered.
+ * - cli cancels release before transition to off is completed
+ * - service goes to off and immediately triggers transition to on
+ * - transition to on is completed
+ * - cli operation completes with canceled result
+ */
+static void test_cancel_ongoing_release(void)
+{
+	int rc;
+	struct onoff_service srv;
+	
+	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0, "service init");
+
+	clear_transit();
+	start_state.async = true;
+	stop_state.async = true;
+
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli);
+
+	notify(&start_state);
+
+	TEST_CLI_OK(&spinwait_cli);
+	
+	TEST_ONOFF_RELEASE(&srv, &spinwait_cli);
+
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	TEST_CLI_BUSY(&spinwait_cli);
+
+	notify(&stop_state);
+
+	TEST_CLI_BUSY(&spinwait_cli);
+
+	notify(&start_state);
+
+	/* cli returns cancelled. */
+	TEST_CLI_STATUS(&spinwait_cli, -ECANCELED);
+
+	TEST_SRV_OK(&srv);
+}
+
+/* Following scenario is tested:
+ * - service is started
+ * - asynchronous release is triggered.
+ * - cli cancels release before transition to off is completed
+ * - cli cancels cancelation before transition to off is completed
+ * - service goes to off
+ * - cli operation completes with success
+ */
+static void test_double_cancel_ongoing_release(void)
+{
+	int rc;
+	struct onoff_service srv;
+	
+	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0, "service init");
+
+	clear_transit();
+	start_state.async = true;
+	stop_state.async = true;
+
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli);
+
+	notify(&start_state);
+
+	TEST_CLI_OK(&spinwait_cli);
+	
+	TEST_ONOFF_RELEASE(&srv, &spinwait_cli);
+
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	/* cli busy. */
+	TEST_CLI_BUSY(&spinwait_cli);
+
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	notify(&stop_state);
+
+	TEST_CLI_OK(&spinwait_cli);
+
+	TEST_SRV_OK(&srv);
+}
+
+/* Following scenario is tested:
+ * - service is started
+ * - asynchronous release is triggered.
+ * - cli cancels release before transition to off is completed
+ * - service goes to off, triggers transition to on
+ * - cli cancels cancelation before transition to on is completed
+ * - service goes to on and triggers transition to off
+ * - service goes to off and notifies cli about successful completion
+ * - cli operation completes with success
+ */
+static void test_double_cancel_ongoing_release2(void)
+{
+	int rc;
+	struct onoff_service srv;
+	
+	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0, "service init");
+
+	clear_transit();
+	start_state.async = true;
+	stop_state.async = true;
+
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli);
+
+	notify(&start_state);
+
+	TEST_CLI_OK(&spinwait_cli);
+	
+	TEST_ONOFF_RELEASE(&srv, &spinwait_cli);
+
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	TEST_CLI_BUSY(&spinwait_cli);
+
+	notify(&stop_state);
+
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	TEST_CLI_BUSY(&spinwait_cli);
+
+	notify(&start_state);
+
+	TEST_CLI_BUSY(&spinwait_cli);
+
+	notify(&stop_state);
+
+	TEST_CLI_OK(&spinwait_cli);
+
+	TEST_SRV_OK(&srv);
+}
+
+static void test_error_cancel_ongoing_request(void)
+{
+	int rc;
+	struct onoff_service srv;
+	
+	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0, "service init");
+
+	clear_transit();
+	start_state.async = true;
+	start_state.retval = -EIO;
+
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli);
+
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	notify(&start_state);
+
+	TEST_CLI_STATUS(&spinwait_cli, -EIO);
+
+	/* Try double cancel with error reported. */
+	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0, "service init");
+
+	clear_transit();
+	start_state.async = true;
+	start_state.retval = -EIO;
+
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli);
+
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	notify(&start_state);
+
+	TEST_CLI_STATUS(&spinwait_cli, -EIO);
+}
+
+
+static void test_error_cancel_ongoing_release(void)
+{
+	int rc;
+	struct onoff_service srv;
+	
+	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0, "service init");
+
+	clear_transit();
+	stop_state.async = true;
+	stop_state.retval = -EIO;
+
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli);
+
+	TEST_ONOFF_RELEASE(&srv, &spinwait_cli);
+
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	notify(&stop_state);
+
+	TEST_CLI_STATUS(&spinwait_cli, -EIO);
+
+	/* Try double cancel with error reported. */
+	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0, "service init");
+
+	clear_transit();
+	stop_state.async = true;
+	stop_state.retval = -EIO;
+
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli);
+
+	TEST_ONOFF_RELEASE(&srv, &spinwait_cli);
+
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli);
+
+	notify(&stop_state);
+
+	TEST_CLI_STATUS(&spinwait_cli, -EIO);
+}
+
+/* Test checks that it is possible to cancel request which happened while
+ * service is transitioning to off.
+ */
+static void test_release_request_while_to_off(void)
+{
+	int rc;
+	struct onoff_service srv;
+	struct onoff_client spinwait_cli2;
+	
+	rc = onoff_service_init(&srv, start, stop, NULL, NULL, NULL,
+				ONOFF_SERVICE_STOP_SLEEPS);
+	zassert_equal(rc, 0, "service init");
+
+	clear_transit();
+	stop_state.async = true;
+
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli);
+
+	TEST_ONOFF_RELEASE(&srv, &spinwait_cli);
+
+	TEST_ONOFF_REQUEST(&srv, &spinwait_cli2);
+	TEST_ONOFF_CANCEL(&srv, &spinwait_cli2);
+	TEST_CLI_STATUS(&spinwait_cli2, -ECANCELED);	
+
+	notify(&stop_state);
+	TEST_SRV_OK(&srv);
+}
+
 void test_main(void)
 {
 	k_sem_init(&isr_sync, 0, 1);
 	k_timer_init(&isr_timer, isr_notify, NULL);
 
 	ztest_test_suite(onoff_api,
-			 ztest_unit_test(test_service_init_validation),
-			 ztest_unit_test(test_client_init_validation),
-			 ztest_unit_test(test_validate_args),
-			 ztest_unit_test(test_reset),
-			 ztest_unit_test(test_request),
-			 ztest_unit_test(test_sync),
-			 ztest_unit_test(test_async),
-			 ztest_unit_test(test_half_sync),
-			 ztest_unit_test(test_cancel_request_waits),
-			 ztest_unit_test(test_cancel_request_ok),
-			 ztest_unit_test(test_blocked_restart),
-			 ztest_unit_test(test_cancel_release),
-			 ztest_unit_test(test_uncond_stop),
-			 ztest_unit_test(test_uncond_start)
+		ztest_unit_test(test_service_init_validation),
+		ztest_unit_test(test_client_init_validation),
+		ztest_unit_test(test_validate_args),
+		ztest_unit_test(test_reset),
+		ztest_unit_test(test_request),
+		ztest_unit_test(test_sync),
+		ztest_unit_test(test_async),
+		ztest_unit_test(test_half_sync),
+		ztest_unit_test(test_cancel_request_waits),
+		ztest_unit_test(test_invalid_cancel),
+		ztest_unit_test(test_blocked_restart),
+		ztest_unit_test(test_uncond_stop),
+		ztest_unit_test(test_uncond_start),
+		ztest_unit_test(test_cancel_ongoing_request),
+		ztest_unit_test(test_double_cancel_ongoing_request),
+		ztest_unit_test(test_cancel_ongoing_request_with_next_request),
+		ztest_unit_test(test_cancel_ongoing_request_with_next_request2),
+		ztest_unit_test(test_cancel_ongoing_release),
+		ztest_unit_test(test_double_cancel_ongoing_release),
+		ztest_unit_test(test_double_cancel_ongoing_release2),
+		ztest_unit_test(test_error_cancel_ongoing_request),
+		ztest_unit_test(test_error_cancel_ongoing_release),
+		ztest_unit_test(test_release_request_while_to_off)
 	);
 	ztest_run_test_suite(onoff_api);
 }
