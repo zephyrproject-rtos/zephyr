@@ -37,7 +37,7 @@ FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
 
 static inline bool arch_is_in_isr(void)
 {
-	return _kernel.nested != 0U;
+	return _kernel.cpus[0].nested != 0U;
 }
 
 #ifdef CONFIG_IRQ_OFFLOAD

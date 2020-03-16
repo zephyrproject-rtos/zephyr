@@ -31,7 +31,7 @@ static inline bool arch_is_in_isr(void)
 	__asm__ volatile ("popf");
 	return ret;
 #else
-	return _kernel.nested != 0U;
+	return _kernel.cpus[0].nested != 0U;
 #endif
 }
 

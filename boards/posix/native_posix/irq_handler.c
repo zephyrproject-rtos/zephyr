@@ -76,11 +76,11 @@ void posix_irq_handler(void)
 		return;
 	}
 
-	if (_kernel.nested == 0) {
+	if (_kernel.cpus[0].nested == 0) {
 		may_swap = 0;
 	}
 
-	_kernel.nested++;
+	_kernel.cpus[0].nested++;
 
 	while ((irq_nbr = hw_irq_ctrl_get_highest_prio_irq()) != -1) {
 		int last_current_running_prio = hw_irq_ctrl_get_cur_prio();
@@ -96,7 +96,7 @@ void posix_irq_handler(void)
 		hw_irq_ctrl_set_cur_prio(last_current_running_prio);
 	}
 
-	_kernel.nested--;
+	_kernel.cpus[0].nested--;
 
 	/* Call swap if all the following is true:
 	 * 1) may_swap was enabled
