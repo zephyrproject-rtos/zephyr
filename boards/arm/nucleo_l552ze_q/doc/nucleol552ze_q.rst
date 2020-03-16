@@ -211,14 +211,14 @@ System Clock
 ------------
 
 Nucleo L552ZE Q System Clock could be driven by internal or external oscillator,
-as well as main PLL clock. By default System clock is driven by PLL clock at 80MHz,
-driven by 16MHz high speed internal oscillator.
+as well as main PLL clock. By default System clock is driven by PLL clock at
+110MHz, driven by 4MHz medium speed internal oscillator.
 
 Serial Port
 -----------
 
-Nucleo L552ZE Q board has 6 U(S)ARTs. The Zephyr console output is assigned to UART2.
-Default settings are 115200 8N1.
+Nucleo L552ZE Q board has 6 U(S)ARTs. The Zephyr console output is assigned to
+UART2. Default settings are 115200 8N1.
 
 
 Programming and Debugging
