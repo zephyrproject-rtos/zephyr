@@ -77,6 +77,11 @@ static enum net_verdict csma_ca_radio_handle_ack(struct net_if *iface,
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
+	if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
+	    ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_CSMA) {
+		return NET_OK;
+	}
+
 	return handle_ack(ctx, pkt);
 }
 
