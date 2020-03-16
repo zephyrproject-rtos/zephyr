@@ -106,11 +106,13 @@ static u8_t draw_char_vtmono(const struct char_framebuffer *fb,
 int cfb_print(struct device *dev, char *str, u16_t x, u16_t y)
 {
 	const struct char_framebuffer *fb = &char_fb;
-	const struct cfb_font *fptr = &(fb->fonts[fb->font_idx]);
+	const struct cfb_font *fptr;
 
 	if (!fb->fonts || !fb->buf) {
 		return -1;
 	}
+
+	fptr = &(fb->fonts[fb->font_idx]);
 
 	if (fptr->height % 8) {
 		LOG_ERR("Wrong font size");
