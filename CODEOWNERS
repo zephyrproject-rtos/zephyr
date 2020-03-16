@@ -99,6 +99,7 @@
 /boards/arm/stm32f3_disco/                @ydamigos
 /boards/arm/stm32*_eval/                  @erwango
 /boards/common/                           @mbolivar-nordic
+/boards/deprecated.cmake                  @tejlmand
 /boards/nios2/                            @wentongwu
 /boards/nios2/altera_max10/               @wentongwu
 /boards/arm/stm32_min_dev/                @cbsiddharth

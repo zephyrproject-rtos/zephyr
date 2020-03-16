@@ -158,7 +158,7 @@ if(CACHED_BOARD)
   # Warn the user if it looks like he is trying to change the board
   # without cleaning first
   if(board_cli_argument)
-    if(NOT (CACHED_BOARD STREQUAL board_cli_argument))
+    if(NOT ((CACHED_BOARD STREQUAL board_cli_argument) OR (BOARD_DEPRECATED STREQUAL board_cli_argument)))
       message(WARNING "The build directory must be cleaned pristinely when changing boards")
       # TODO: Support changing boards without requiring a clean build
     endif()
@@ -180,6 +180,13 @@ endif()
 
 assert(BOARD "BOARD not set")
 message(STATUS "Board: ${BOARD}")
+
+include(${ZEPHYR_BASE}/boards/deprecated.cmake)
+if(${BOARD}_DEPRECATED)
+  set(BOARD_DEPRECATED ${BOARD} CACHE STRING "Deprecated board name, provided by user")
+  set(BOARD ${${BOARD}_DEPRECATED})
+  message(WARNING "Deprecated BOARD=${BOARD_DEPRECATED} name specified, board automatically changed to: ${BOARD}.")
+endif()
 
 # Store the selected board in the cache
 set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
