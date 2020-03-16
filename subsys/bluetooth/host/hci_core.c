@@ -4494,6 +4494,8 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 	    addr->type == BT_ADDR_LE_RANDOM_ID) {
 		bt_addr_le_copy(&id_addr, addr);
 		id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+	} else if (addr->type == BT_HCI_PEER_ADDR_ANONYMOUS) {
+		bt_addr_le_copy(&id_addr, BT_ADDR_LE_ANY);
 	} else {
 		bt_addr_le_copy(&id_addr,
 				bt_lookup_id_addr(BT_ID_DEFAULT, addr));
