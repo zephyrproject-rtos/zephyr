@@ -532,21 +532,21 @@ static void pl011_irq_config_func_1(struct device *dev)
 	IRQ_CONNECT(DT_INST_1_ARM_PL011_IRQ_TX,
 		    DT_INST_1_ARM_PL011_IRQ_TX_PRIORITY,
 		    pl011_isr,
-		    DEVICE_GET(pl011_port_0),
+		    DEVICE_GET(pl011_port_1),
 		    0);
 	irq_enable(DT_INST_1_ARM_PL011_IRQ_TX);
 
 	IRQ_CONNECT(DT_INST_1_ARM_PL011_IRQ_RX,
 		    DT_INST_1_ARM_PL011_IRQ_RX_PRIORITY,
 		    pl011_isr,
-		    DEVICE_GET(pl011_port_0),
+		    DEVICE_GET(pl011_port_1),
 		    0);
 	irq_enable(DT_INST_1_ARM_PL011_IRQ_RX);
 
 	IRQ_CONNECT(DT_INST_1_ARM_PL011_IRQ_RXTIM,
 		    DT_INST_1_ARM_PL011_IRQ_RXTIM_PRIORITY,
 		    pl011_isr,
-		    DEVICE_GET(pl011_port_0),
+		    DEVICE_GET(pl011_port_1),
 		    0);
 	irq_enable(DT_INST_1_ARM_PL011_IRQ_RXTIM);
 #endif
