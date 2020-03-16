@@ -485,13 +485,15 @@ void lt_rx_q_is_empty()
 	zassert_is_null(tx, NULL);
 }
 
-void ut_rx(helper_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
+void ut_rx_pdu(helper_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
 {
 	struct pdu_data *pdu;
 	struct node_rx_pdu *ntf;
 
 	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
 	zassert_not_null(ntf, NULL);
+
+	zassert_equal(ntf->hdr.type, NODE_RX_TYPE_DC_PDU, NULL);
 
 	pdu = (struct pdu_data *) ntf->pdu;
 	helper_pdu_verify[opcode](pdu, param);
@@ -569,7 +571,7 @@ void test_api_local_version_exchange(void)
 	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
 
 	/* There should be one host notification */
-	ut_rx(LL_VERSION_IND, &ntf, &remote_version_ind);
+	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
 }
 
@@ -706,7 +708,7 @@ void test_api_both_version_exchange(void)
 	lt_rx_q_is_empty();
 
 	/* There should be one host notification */
-	ut_rx(LL_VERSION_IND, &ntf, &remote_version_ind);
+	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
 	ut_rx_q_is_empty();
 }
 
@@ -793,7 +795,7 @@ void test_api_local_encryption_start(void)
 	lt_tx(LL_START_ENC_RSP, &conn, NULL);
 
 	/* There should be one host notification */
-	ut_rx(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -928,7 +930,7 @@ void test_api_local_encryption_start_limited_memory(void)
 	ull_cp_run(&conn);
 
 	/* There should be one host notification */
-	ut_rx(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -1012,7 +1014,7 @@ void test_api_local_encryption_start_no_ltk(void)
 	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
 
 	/* There should be one host notification */
-	ut_rx(LL_REJECT_IND, &ntf, &reject_ind);
+	ut_rx_pdu(LL_REJECT_IND, &ntf, &reject_ind);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -1089,7 +1091,7 @@ void test_api_remote_encryption_start(void)
 	ull_cp_release_tx(tx);
 
 	/* There should be a host notification */
-	ut_rx(LL_ENC_REQ, &ntf, NULL);
+	ut_rx_pdu(LL_ENC_REQ, &ntf, NULL);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -1112,7 +1114,7 @@ void test_api_remote_encryption_start(void)
 	lt_tx(LL_START_ENC_RSP, &conn, NULL);
 
 	/* There should be a host notification */
-	ut_rx(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
 	ut_rx_q_is_empty();
 
 	/* Tx Queue should have one LL Control PDU */
@@ -1221,7 +1223,7 @@ void test_api_remote_encryption_start_limited_memory(void)
 	ull_cp_run(&conn);
 
 	/* There should be one host notification */
-	ut_rx(LL_ENC_REQ, &ntf, NULL);
+	ut_rx_pdu(LL_ENC_REQ, &ntf, NULL);
 	ut_rx_q_is_empty();
 
 	/* LTK request reply */
@@ -1256,7 +1258,7 @@ void test_api_remote_encryption_start_limited_memory(void)
 	ull_cp_run(&conn);
 
 	/* There should be one host notification */
-	ut_rx(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
 	ut_rx_q_is_empty();
 
 	/* Tx Queue should not have a LL Control PDU */
@@ -1329,7 +1331,7 @@ void test_api_remote_encryption_start_no_ltk(void)
 	ull_cp_release_tx(tx);
 
 	/* There should be a host notification */
-	ut_rx(LL_ENC_REQ, &ntf, NULL);
+	ut_rx_pdu(LL_ENC_REQ, &ntf, NULL);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
