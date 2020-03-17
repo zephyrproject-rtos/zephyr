@@ -99,6 +99,7 @@ extern "C" {
 
 /* Forward declaration */
 struct onoff_manager;
+struct onoff_monitor;
 
 /**
  * @brief Signature used to notify an on-off manager that a transition
@@ -172,10 +173,15 @@ struct onoff_manager {
 	 */
 	sys_slist_t clients;
 
+	/* List of monitors to be notified of state changes including
+	 * errors and transition completion.
+	 */
+	sys_slist_t monitors;
+
 	/* Transition functions. */
 	const struct onoff_transitions *transitions;
 
-	/* Mutex protection for flags, clients, and refs. */
+	/* Mutex protection for flags, clients, monitors, and refs. */
 	struct k_spinlock lock;
 
 	/* Flags identifying the service state. */
@@ -599,6 +605,78 @@ int onoff_reset(struct onoff_manager *mgr,
  */
 int onoff_cancel(struct onoff_manager *mgr,
 		 struct onoff_client *cli);
+
+/**
+ * @brief Signature used to notify a monitor of an onoff service of
+ * errors or completion of a state transition.
+ *
+ * This is similar to onoff_client_callback but provides information
+ * about all transitions, not just ones associated with a specific
+ * client.
+ *
+ * These functions may be invoked from any context including
+ * pre-kernel, ISR, or cooperative or pre-emptible threads.
+ * Compatible functions must be isr-callable and non-suspendable.
+ *
+ * The callback is permitted to unregister itself from the manager,
+ * but must not register or unregister any other monitors.
+ *
+ * @param mgr the manager for which a transition has completed.
+ *
+ * @param state the state of the machine at the time of completion,
+ * restricted by ONOFF_STATE_MASK.
+ *
+ * @param res the result of the operation.  Expected values are
+ * service- and state-specific, but the value shall be non-negative if
+ * the operation succeeded, and negative if the operation failed.
+ */
+typedef void (*onoff_monitor_callback)(struct onoff_manager *mgr,
+				       struct onoff_monitor *mon,
+				       u32_t state,
+				       int res);
+
+/**
+ * @brief Registration state for notifications of onoff service
+ * transitions.
+ *
+ * Any given onoff_monitor structure can be associated with at most
+ * one onoff_manager instance.
+ */
+struct onoff_monitor {
+	/* Links the client into the set of waiting service users. */
+	sys_snode_t node;
+
+	/* Callback to be invoked on state change. */
+	onoff_monitor_callback callback;
+};
+
+/**
+ * @brief Add a monitor of state changes for a manager.
+ *
+ * @param mgr the manager for which a state changes are to be monitored.
+ *
+ * @param mon a linkable node providing the callback to be invoked on
+ * state changes.
+ *
+ * @return non-negative on successful addition, or a negative error
+ * code.
+ */
+int onoff_monitor_register(struct onoff_manager *mgr,
+			   struct onoff_monitor *mon);
+
+/**
+ * @brief Remove a monitor of state changes from a manager.
+ *
+ * @param mgr the manager for which a state changes are to be monitored.
+ *
+ * @param mon a linkable node providing the callback to be invoked on
+ * state changes.
+ *
+ * @return non-negative on successful addition, or a negative error
+ * code.
+ */
+int onoff_monitor_unregister(struct onoff_manager *mgr,
+			     struct onoff_monitor *mon);
 
 /** @} */
 
