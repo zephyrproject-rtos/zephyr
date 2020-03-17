@@ -2,7 +2,7 @@
 
 # SPDX-License-Identifier: Apache-2.0
 
-# The nrf52811_pca10056 board mirrors the nRF52840 DK hardware. This
+# The nrf52840dk_nrf52811 board mirrors the nRF52840 DK hardware. This
 # needs to be considered by certain system initialization functionality
 # residing in system_nrf52811.c and SoC dependent routines in nrfx_coredep.h.
 zephyr_compile_definitions(DEVELOP_IN_NRF52840)

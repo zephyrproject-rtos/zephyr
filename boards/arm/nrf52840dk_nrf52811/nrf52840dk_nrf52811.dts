@@ -8,8 +8,8 @@
 #include <nordic/nrf52811_qfaa.dtsi>
 
 / {
-	model = "Nordic PCA10056 Dev Kit";
-	compatible = "nordic,pca10056-dk", "nordic,nrf52811-qfaa",
+	model = "Nordic nRF52840 DK NRF52811";
+	compatible = "nordic,nrf52840-dk-nrf52811", "nordic,nrf52811-qfaa",
 		     "nordic,nrf52811";
 
 	chosen {
