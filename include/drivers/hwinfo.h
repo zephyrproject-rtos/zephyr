@@ -13,6 +13,13 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_HWINFO_H_
 #define ZEPHYR_INCLUDE_DRIVERS_HWINFO_H_
 
+/**
+ * @brief Hardware Information Interface
+ * @defgroup hwinfo_interface Hardware Info Interface
+ * @ingroup io_interfaces
+ * @{
+ */
+
 #include <zephyr/types.h>
 #include <sys/types.h>
 #include <stddef.h>
@@ -22,12 +29,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Device ID
- * @{
- */
-
 
 /**
  * @brief Copy the device id to a buffer
