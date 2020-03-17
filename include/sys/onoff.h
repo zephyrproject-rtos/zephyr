@@ -167,19 +167,16 @@ struct onoff_transitions {
  * case of error it may be reset through the onoff_reset() API.
  */
 struct onoff_manager {
-	/* List of clients waiting for completion of reset or
-	 * transition to on.
+	/* List of clients waiting for transition or reset completion
+	 * notifications.
 	 */
 	sys_slist_t clients;
 
 	/* Transition functions. */
 	const struct onoff_transitions *transitions;
 
-	/* Mutex protection for flags, clients, releaser, and refs. */
+	/* Mutex protection for flags, clients, and refs. */
 	struct k_spinlock lock;
-
-	/* Client to be informed when transition to off completes. */
-	struct onoff_client *releaser;
 
 	/* Flags identifying the service state. */
 	u16_t flags;
@@ -284,7 +281,8 @@ typedef void (*onoff_client_callback)(struct onoff_manager *mgr,
  * when a pointer to the object is passed to any on-off service
  * function.  While the service provider controls the object the
  * client must not change any object fields.  Control reverts to the
- * client concurrent with release of the owned async_notify structure.
+ * client concurrent with release of the owned async_notify structure,
+ * or when indicated by an onoff_cancel() return value.
  *
  * After control has reverted to the client the state object must be
  * reinitialized for the next operation.
@@ -303,6 +301,23 @@ struct onoff_client {
 	/* User data for callback-based notification. */
 	void *user_data;
 };
+
+/** @internal */
+#define ONOFF_CLIENT_TYPE_POS ASYNC_NOTIFY_EXTENSION_POS
+/** @internal */
+#define ONOFF_CLIENT_TYPE_BITS 2U
+/**
+ * @brief Identify region of async_notify flags available for containing services.
+ *
+ * Bits of the flags field of the async_notify structure contained
+ * within the queued_operation structure at and above this position
+ * may be used by extensions to the onoff_client structure.
+ *
+ * These bits are intended for use by containing service
+ * implementations to record client-specific information.  Use of
+ * these does not imply that the flags field becomes public API.
+ */
+#define ONOFF_CLIENT_EXTENSION_POS (ASYNC_NOTIFY_EXTENSION_POS + ONOFF_CLIENT_TYPE_BITS)
 
 /**
  * @brief Check for and read the result of an asynchronous operation.
@@ -544,36 +559,39 @@ int onoff_reset(struct onoff_manager *mgr,
  * shut down before the operation has completed.  For example, when a
  * request was made and the need is no longer present.
  *
- * There is limited support for cancelling an in-progress operation:
- * * If a start or reset is in progress, all but one clients
- *   requesting the start can cancel their request.
- * * If a stop is in progress, all clients requesting a restart can
- *   cancel their request;
- * * A client requesting a release cannot cancel the release.
+ * In-progress transitions on behalf of a specific client can be
+ * cancelled, with the following behavior:
+ *
+ * * Clients with an incomplete request or reset can immediately
+ *   cancel it regardless of whether a start, stop, or reset is in
+ *   progress.
+ * * Clients with an incomplete release can cancel it, and the client
+ *   structure will be converted to a request operation that will
+ *   force a transition to on as soon as the transition to off
+ *   completes.
  *
  * Be aware that any transition that was initiated on behalf of the
- * client will continue to progress to completion.  The restricted
- * support for cancellation ensures that for any in-progress
- * transition there will always be at least one client that will be
- * notified when the operation completes.
- *
- * If the cancellation fails the service retains control of the client
- * object, and the client must wait for operation completion.
+ * client will continue to progress to completion: it is only
+ * notification of transition completion that may be eliminated.  If
+ * there are no active requests when a transition to on completes the
+ * manager will initiate a transition to off.  If there are pending
+ * requests when a transition to off completes the manager will
+ * initiate a transition to on.
  *
  * @param mgr the manager for which an operation is to be cancelled.
  *
  * @param cli a pointer to the same client state that was provided
- * when the operation to be cancelled was issued.  If the cancellation
- * is successful the client will be notified of operation completion
- * with a result of `-ECANCELED`.
+ * when the operation to be cancelled was issued.
  *
  * @retval 0 if the cancellation was completed before the client could
- * be notified.  The client will be notified through cli with an
- * operation completion of `-ECANCELED`.
+ * be notified.  The cancellation succeeds and control of the cli
+ * structure returns to the client without any completion notification.
+ * @retval 1 in the case where a pending release was cancelled before
+ * the service transitioned to off.  In this case the manager retains
+ * control of the client structure, which is converted to a request,
+ * and completion will be notified when the manager completes a
+ * transition back to on.
  * @retval -EINVAL if the parameters are invalid.
- * @retval -EWOULDBLOCK if cancellation was rejected because the
- * client is the only waiter for an in-progress transition.  The
- * service retains control of the client structure.
  * @retval -EALREADY if cli was not a record of an uncompleted
  * notification at the time the cancellation was processed.  This
  * likely indicates that the operation and client notification had
