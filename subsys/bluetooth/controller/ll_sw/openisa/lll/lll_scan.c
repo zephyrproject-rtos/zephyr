@@ -846,9 +846,8 @@ static inline uint32_t isr_rx_pdu(struct lll_scan *lll, uint8_t devmatch_ok,
 
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
-		ftr->us_radio_end = conn_space_us -
+		ftr->radio_end_us = conn_space_us -
 				    radio_tx_chain_delay_get(0, 0);
-		ftr->us_radio_rdy = radio_tx_ready_delay_get(0, 0);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;

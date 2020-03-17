@@ -293,6 +293,12 @@ bool lll_is_done(void *param)
 	return !event.curr.abort_cb;
 }
 
+int lll_is_abort_cb(void *next, int prio, void *curr,
+			 lll_prepare_cb_t *resume_cb, int *resume_prio)
+{
+	return -ECANCELED;
+}
+
 int lll_clk_on(void)
 {
 	int err;
@@ -404,6 +410,16 @@ void lll_chan_set(uint32_t chan)
 uint32_t lll_radio_is_idle(void)
 {
 	return radio_is_idle();
+}
+
+uint32_t lll_radio_tx_ready_delay_get(uint8_t phy, uint8_t flags)
+{
+	return radio_tx_ready_delay_get(phy, flags);
+}
+
+uint32_t lll_radio_rx_ready_delay_get(uint8_t phy, uint8_t flags)
+{
+	return radio_rx_ready_delay_get(phy, flags);
 }
 
 
