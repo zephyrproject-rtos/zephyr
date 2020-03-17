@@ -74,9 +74,13 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 	 */
 	cpsid	i
 
-	/* Set wake-up interrupt priority to the lowest */
+	/*
+	 * Set wake-up interrupt priority to the lowest and synchronise to
+	 * ensure that this is visible to the WFI instruction.
+	 */
 	eors.n	r0, r0
 	msr	BASEPRI, r0
+	isb
 #else
 	/*
 	 * For all the other ARM architectures that do not implement BASEPRI,
@@ -87,10 +91,21 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 	 */
 #endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 
+	/*
+	 * Wait for all memory transactions to complete before entering low
+	 * power state.
+	 */
+	dsb
+
+	/* Enter low power state */
 	wfi
 
-	/* Clear PRIMASK to service any pending interrupt */
+	/*
+	 * Clear PRIMASK and flush instruction buffer to immediately service
+	 * the wake-up interrupt.
+	 */
 	cpsie	i
+	isb
 
 	bx	lr
 
