@@ -6,7 +6,6 @@
  */
 #include <soc.h>
 #include <arch/arm/aarch64/arm_mmu.h>
-#include <dts_fixup.h>
 
 #define SZ_1K	1024
 
