@@ -6,9 +6,8 @@ nRF52840-PCA10056
 Overview
 ********
 
-The nRF52840 Preview Development Kit (PCA10056) hardware provides
-support for the Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and
-the following devices:
+The nRF52840 Development Kit (PCA10056) hardware provides support for the
+Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 
 * :abbr:`ADC (Analog to Digital Converter)`
 * CLOCK
@@ -29,20 +28,19 @@ the following devices:
 .. figure:: img/nrf52840_pca10056.jpg
      :width: 442px
      :align: center
-     :alt: nRF52840 PCA10056 Preview DK
+     :alt: nRF52840 PCA10056 DK
 
-     nRF52840 PCA10056 Preview DK (Credit: Nordic Semiconductor)
+     nRF52840 PCA10056 DK (Credit: Nordic Semiconductor)
 
-More information about the board can be found at the
-`nRF52840 PDK website`_. The `Nordic Semiconductor Infocenter`_
-contains the processor's information and the datasheet.
+More information about the board can be found at the `nRF52840 DK website`_.
+The `Nordic Semiconductor Infocenter`_ contains the processor's information
+and the datasheet.
 
 Hardware
 ********
 
-nRF52840 PDK has two external oscillators. The frequency of
-the slow clock is 32.768 kHz. The frequency of the main clock
-is 32 MHz.
+nRF52840 DK has two external oscillators. The frequency of the slow clock
+is 32.768 kHz. The frequency of the main clock is 32 MHz.
 
 Supported Features
 ==================
@@ -86,7 +84,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
-See `nRF52840 PDK website`_ and `Nordic Semiconductor Infocenter`_
+See `nRF52840 DK website`_ and `Nordic Semiconductor Infocenter`_
 for a complete list of nRF52840 Development Kit board hardware features.
 
 Connections and IOs
@@ -151,8 +149,8 @@ Refer to the :ref:`nordic_segger` page to learn about debugging Nordic boards wi
 Segger IC.
 
 
-Testing the LEDs and buttons in the nRF52840 PDK
-************************************************
+Testing the LEDs and buttons in the nRF52840 DK
+***********************************************
 
 There are 2 samples that allow you to test that the buttons (switches) and LEDs on
 the board are working properly with Zephyr:
@@ -224,7 +222,7 @@ References
 
 .. target-notes::
 
-.. _nRF52840 PDK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK
+.. _nRF52840 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52840-DK
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
 .. _nRF52840 Product Specification: http://infocenter.nordicsemi.com/pdf/nRF52840_PS_v1.0.pdf
