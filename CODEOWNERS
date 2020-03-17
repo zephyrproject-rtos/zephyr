@@ -97,7 +97,7 @@
 /boards/arm/stm32*_disco/                 @erwango
 /boards/arm/stm32f3_disco/                @ydamigos
 /boards/arm/stm32*_eval/                  @erwango
-/boards/common/                           @mbolivar
+/boards/common/                           @mbolivar-nordic
 /boards/nios2/                            @wentongwu
 /boards/nios2/altera_max10/               @wentongwu
 /boards/arm/stm32_min_dev/                @cbsiddharth
@@ -174,7 +174,7 @@
 /drivers/ipm/ipm_nrfx_ipc.h               @masz-nordic @ioannisg
 /drivers/ipm/ipm_stm32_ipcc.c             @arnopo
 /drivers/led/                             @Mani-Sadhasivam
-/drivers/led_strip/                       @mbolivar
+/drivers/led_strip/                       @mbolivar-nordic
 /drivers/lora/                            @Mani-Sadhasivam
 /drivers/modem/                           @mike-scott
 /drivers/pcie/                            @andrewboie
@@ -282,7 +282,7 @@
 /include/drivers/pcie/                    @andrewboie
 /include/drivers/hwinfo.h                 @alexanderwachter
 /include/drivers/led.h                    @Mani-Sadhasivam
-/include/drivers/led_strip.h              @mbolivar
+/include/drivers/led_strip.h              @mbolivar-nordic
 /include/drivers/sensor.h                 @MaureenHelm
 /include/drivers/spi.h                    @tbursztyka
 /include/drivers/lora.h                   @Mani-Sadhasivam
@@ -390,8 +390,8 @@
 /scripts/sanity_chk/                      @nashif
 /scripts/sanitycheck                      @nashif
 /scripts/series-push-hook.sh              @erwango
-/scripts/west_commands/                   @mbolivar
-/scripts/west-commands.yml                @mbolivar
+/scripts/west_commands/                   @mbolivar-nordic
+/scripts/west-commands.yml                @mbolivar-nordic
 /scripts/zephyr_module.py                 @tejlmand
 /scripts/valgrind.supp                    @aescolar @daor-oti
 /subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
