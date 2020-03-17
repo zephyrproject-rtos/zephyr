@@ -597,7 +597,8 @@ static int enc424j600_start_device(struct device *dev)
 
 	enc424j600_set_sfru(dev, ENC424J600_SFR3_ECON2L,
 			    ENC424J600_ECON2_ETHEN |
-			    ENC424J600_ECON2_STRCH);
+			    ENC424J600_ECON2_STRCH |
+			    ENC424J600_ECON2_AUTOFC);
 
 	enc424j600_read_phy(dev, ENC424J600_PSFR_PHCON1, &tmp);
 	tmp &= ~ENC424J600_PHCON1_PSLEEP;
