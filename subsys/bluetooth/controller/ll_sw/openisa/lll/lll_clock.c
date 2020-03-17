@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-void lll_clock_wait(void)
+int lll_clock_wait(void)
 {
-
+	return 0;
 }
