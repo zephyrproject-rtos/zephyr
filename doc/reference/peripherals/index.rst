@@ -12,6 +12,7 @@ Peripherals
    eeprom.rst
    entropy.rst
    flash.rst
+   gna.rst
    gpio.rst
    i2c_eeprom_slave.rst
    i2c.rst
