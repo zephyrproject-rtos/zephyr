@@ -1,13 +1,13 @@
 .. _bl652_dvk:
 
-BL652 DVK
-##############
+Laird Connectivity BL652 DVK
+############################
 
 Overview
 ********
 
 The BL652 Development Kit hardware provides
-support for the Laird BL652 module powered by a Nordic Semiconductor nRF52832 ARM Cortex-M4F CPU.
+support for the Laird Connectivity BL652 module powered by a Nordic Semiconductor nRF52832 ARM Cortex-M4F CPU.
 
 This development kit has the following features:
 
