@@ -23,40 +23,73 @@ extern "C" {
  */
 
 /**
- * @brief Flag fields used to specify on-off service behavior.
+ * @brief Flag used in struct onoff_manager_transitions.
+ *
+ * When provided this indicates the start transition function
+ * may cause the calling thread to wait.  This blocks attempts
+ * to initiate a transition from a non-thread context.
  */
-enum onoff_manager_flags {
-	/**
-	 * @brief Flag used in struct onoff_manager_transitions.
-	 *
-	 * When provided this indicates the start transition function
-	 * may cause the calling thread to wait.  This blocks attempts
-	 * to initiate a transition from a non-thread context.
-	 */
-	ONOFF_START_SLEEPS      = BIT(0),
+#define ONOFF_START_SLEEPS BIT(0)
 
-	/**
-	 * @brief Flag used in struct onoff_manager_transitions.
-	 *
-	 * As with @ref ONOFF_START_SLEEPS but describing the stop
-	 * transition function.
-	 */
-	ONOFF_STOP_SLEEPS       = BIT(1),
+/**
+ * @brief Flag used in struct onoff_manager_transitions.
+ *
+ * As with @ref ONOFF_START_SLEEPS but describing the stop
+ * transition function.
+ */
+#define ONOFF_STOP_SLEEPS BIT(1)
 
-	/**
-	 * @brief Flag used in struct onoff_manager_transitions.
-	 *
-	 * As with @ref ONOFF_START_SLEEPS but describing the reset
-	 * transition function.
-	 */
-	ONOFF_RESET_SLEEPS      = BIT(2),
+/**
+ * @brief Flag used in struct onoff_manager_transitions.
+ *
+ * As with @ref ONOFF_START_SLEEPS but describing the reset
+ * transition function.
+ */
+#define ONOFF_RESET_SLEEPS BIT(2)
 
-	/* Internal use. */
-	ONOFF_HAS_ERROR         = BIT(3),
+/**
+ * @brief Flag indicating an error state.
+ *
+ * Error states are cleared using onoff_reset().
+ */
+#define ONOFF_HAS_ERROR BIT(3)
 
-	/* This and higher bits reserved for internal use. */
-	ONOFF_INTERNAL_BASE     = BIT(4),
-};
+/** @internal */
+#define ONOFF_FLAG_ONOFF BIT(4)
+/** @internal */
+#define ONOFF_FLAG_TRANSITION BIT(5)
+
+/**
+ * @brief Mask used to isolate bits defining the service state.
+ *
+ * Mask a value with this then test for ONOFF_HAS_ERROR to determine
+ * whether the machine has an unfixed error, or compare against
+ * ONOFF_STATE_ON, ONOFF_STATE_OFF, ONOFF_STATE_TO_ON, or
+ * ONOFF_STATE_TO_OFF.
+ */
+#define ONOFF_STATE_MASK (ONOFF_HAS_ERROR | ONOFF_FLAG_TRANSITION | ONOFF_FLAG_ONOFF)
+
+/**
+ * @brief Value exposed by ONOFF_STATE_MASK when service is off.
+ */
+#define ONOFF_STATE_OFF 0
+
+/**
+ * @brief Value exposed by ONOFF_STATE_MASK when service is on.
+ */
+#define ONOFF_STATE_ON ONOFF_FLAG_ONOFF
+
+/**
+ * @brief Value exposed by ONOFF_STATE_MASK when service is
+ * transitioning to on.
+ */
+#define ONOFF_STATE_TO_ON (ONOFF_FLAG_TRANSITION | ONOFF_STATE_ON)
+
+/**
+ * @brief Value exposed by ONOFF_STATE_MASK when service is
+ * transitioning to off.
+ */
+#define ONOFF_STATE_TO_OFF (ONOFF_FLAG_TRANSITION | ONOFF_STATE_OFF)
 
 #define ONOFF_SERVICE_START_SLEEPS __DEPRECATED_MACRO ONOFF_START_SLEEPS
 #define ONOFF_SERVICE_STOP_SLEEPS __DEPRECATED_MACRO ONOFF_STOP_SLEEPS
