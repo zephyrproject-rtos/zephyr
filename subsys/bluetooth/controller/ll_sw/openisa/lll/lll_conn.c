@@ -99,12 +99,6 @@ void lll_conn_prepare_reset(void)
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 }
 
-int lll_conn_is_abort_cb(void *next, int prio, void *curr,
-			 lll_prepare_cb_t *resume_cb, int *resume_prio)
-{
-	return -ECANCELED;
-}
-
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
 	int err;
