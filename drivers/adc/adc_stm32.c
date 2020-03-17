@@ -161,6 +161,18 @@ static const u32_t table_samp_time[] = {
 	SMP_TIME(247, S_5),
 	SMP_TIME(640, S_5),
 };
+#elif defined(CONFIG_SOC_SERIES_STM32L1X)
+static const u16_t acq_time_tbl[8] = {5, 10, 17, 25, 49, 97, 193, 385};
+static const u32_t table_samp_time[] = {
+	SMP_TIME(4,   S),
+	SMP_TIME(9,   S),
+	SMP_TIME(16,  S),
+	SMP_TIME(24,  S),
+	SMP_TIME(48,  S),
+	SMP_TIME(96,  S),
+	SMP_TIME(192, S),
+	SMP_TIME(384, S),
+};
 #endif
 
 /* 16 external channels. */
@@ -456,7 +468,8 @@ static int adc_stm32_channel_setup(struct device *dev,
 #if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X)
+	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(CONFIG_SOC_SERIES_STM32L1X)
 static void adc_stm32_calib(struct device *dev)
 {
 	struct adc_stm32_cfg *config =
@@ -534,12 +547,16 @@ static int adc_stm32_init(struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
 			LL_ADC_CLOCK_SYNC_PCLK_DIV4);
+#elif defined(CONFIG_SOC_SERIES_STM32L1X)
+	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
+			LL_ADC_CLOCK_ASYNC_DIV4);
 #endif
 
 #if !defined(CONFIG_SOC_SERIES_STM32F2X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F4X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
-	!defined(CONFIG_SOC_SERIES_STM32F1X)
+	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
+	!defined(CONFIG_SOC_SERIES_STM32L1X)
 	/*
 	 * Calibration of F1 series has to be started after ADC Module is
 	 * enabled.
