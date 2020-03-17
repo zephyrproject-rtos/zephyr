@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2020 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -66,7 +66,7 @@ static void ticker_stop_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 			   void *param);
 static void ticker_op_stop_cb(u32_t status, void *params);
 static void disabled_cb(void *param);
-static inline void conn_release(struct ll_adv_set *adv);
+static void conn_release(struct ll_adv_set *adv);
 #endif /* CONFIG_BT_PERIPHERAL */
 
 static inline u8_t disable(u16_t handle);
@@ -549,6 +549,7 @@ u8_t ll_adv_enable(u8_t enable)
 		struct ll_conn *conn;
 		struct lll_conn *conn_lll;
 		void *link;
+		int err;
 
 		if (lll->conn) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
@@ -704,7 +705,12 @@ u8_t ll_adv_enable(u8_t enable)
 		lll_hdr_init(&conn->lll, conn);
 
 		/* wait for stable clocks */
-		lll_clock_wait();
+		err = lll_clock_wait();
+		if (err) {
+			conn_release(adv);
+
+			return BT_HCI_ERR_HW_FAILURE;
+		}
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
 
@@ -1218,7 +1224,7 @@ static void disabled_cb(void *param)
 	ll_rx_sched();
 }
 
-static inline void conn_release(struct ll_adv_set *adv)
+static void conn_release(struct ll_adv_set *adv)
 {
 	struct lll_conn *lll = adv->lll.conn;
 	memq_link_t *link;

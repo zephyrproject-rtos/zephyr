@@ -20,6 +20,7 @@
 
 #include "lll.h"
 #include "lll_vendor.h"
+#include "lll_clock.h"
 #include "lll_conn.h"
 #include "lll_slave.h"
 #include "lll_chan.h"
@@ -65,7 +66,7 @@ void lll_slave_prepare(void *param)
 	struct lll_prepare_param *p = param;
 	int err;
 
-	err = lll_clk_on();
+	err = lll_hfclock_on();
 	LL_ASSERT(!err || err == -EINPROGRESS);
 
 	err = lll_prepare(lll_conn_is_abort_cb, lll_conn_abort_cb, prepare_cb,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@
 
 #include "lll.h"
 #include "lll_vendor.h"
+#include "lll_clock.h"
 #include "lll_internal.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -46,10 +47,6 @@ static struct {
 		lll_abort_cb_t    abort_cb;
 	} curr;
 } event;
-
-static struct {
-	struct device *clk;
-} lll;
 
 /* Entropy device */
 static struct device *dev_entropy;
@@ -128,7 +125,6 @@ static void swi_ull_low_nrf5_isr(void *arg)
 
 int lll_init(void)
 {
-	struct device *clk;
 	int err;
 
 	/* Get reference to entropy device */
@@ -140,16 +136,11 @@ int lll_init(void)
 	/* Initialise LLL internals */
 	event.curr.abort_cb = NULL;
 
-	/* Initialize LF CLK */
-	clk = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
-	if (!clk) {
-		return -ENODEV;
+	/* Initialize Clocks */
+	err = lll_clock_init();
+	if (err) {
+		return err;
 	}
-
-	clock_control_on(clk, CLOCK_CONTROL_NRF_SUBSYS_LF);
-
-	/* Initialize HF CLK */
-	lll.clk = clk;
 
 	err = init_reset();
 	if (err) {
@@ -311,51 +302,6 @@ bool lll_is_done(void *param)
 {
 	/* FIXME: use param to check */
 	return !event.curr.abort_cb;
-}
-
-int lll_clk_on(void)
-{
-	int err;
-
-	/* turn on radio clock in non-blocking mode. */
-	err = clock_control_on(lll.clk, CLOCK_CONTROL_NRF_SUBSYS_HF);
-	if (!err || err == -EINPROGRESS) {
-		DEBUG_RADIO_XTAL(1);
-	}
-
-	return err;
-}
-
-int lll_clk_on_wait(void)
-{
-	int err;
-
-	/* turn on radio clock in blocking mode. */
-	err = clock_control_on(lll.clk, CLOCK_CONTROL_NRF_SUBSYS_HF);
-
-	while (clock_control_get_status(lll.clk, CLOCK_CONTROL_NRF_SUBSYS_HF) !=
-			CLOCK_CONTROL_STATUS_ON) {
-		k_cpu_idle();
-	}
-
-	DEBUG_RADIO_XTAL(1);
-
-	return err;
-}
-
-int lll_clk_off(void)
-{
-	int err;
-
-	/* turn off radio clock in non-blocking mode. */
-	err = clock_control_off(lll.clk, CLOCK_CONTROL_NRF_SUBSYS_HF);
-	if (!err) {
-		DEBUG_RADIO_XTAL(0);
-	} else if (err == -EBUSY) {
-		DEBUG_RADIO_XTAL(1);
-	}
-
-	return err;
 }
 
 u32_t lll_evt_offset_get(struct evt_hdr *evt)

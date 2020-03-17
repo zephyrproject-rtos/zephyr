@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,7 @@
 
 #include "lll.h"
 #include "lll_vendor.h"
+#include "lll_clock.h"
 #include "lll_adv.h"
 #include "lll_conn.h"
 #include "lll_chan.h"
@@ -105,7 +106,7 @@ void lll_adv_prepare(void *param)
 	struct lll_prepare_param *p = param;
 	int err;
 
-	err = lll_clk_on();
+	err = lll_hfclock_on();
 	LL_ASSERT(!err || err == -EINPROGRESS);
 
 	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, p);
@@ -134,7 +135,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	if (lll_is_stop(lll)) {
 		int err;
 
-		err = lll_clk_off();
+		err = lll_hfclock_off();
 		LL_ASSERT(!err || err == -EBUSY);
 
 		lll_done(NULL);
@@ -270,7 +271,7 @@ static int is_abort_cb(void *next, int prio, void *curr,
 			*resume_prio = 0; /* TODO: */
 
 			/* Retain HF clk */
-			err = lll_clk_on();
+			err = lll_hfclock_on();
 			LL_ASSERT(!err || err == -EINPROGRESS);
 
 			return -EAGAIN;
@@ -308,7 +309,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	/* NOTE: Else clean the top half preparations of the aborted event
 	 * currently in preparation pipeline.
 	 */
-	err = lll_clk_off();
+	err = lll_hfclock_off();
 	LL_ASSERT(!err || err == -EBUSY);
 
 	lll_done(param);
@@ -580,7 +581,7 @@ static void isr_cleanup(void *param)
 
 	radio_tmr_stop();
 
-	err = lll_clk_off();
+	err = lll_hfclock_off();
 	LL_ASSERT(!err || err == -EBUSY);
 
 	lll_done(NULL);

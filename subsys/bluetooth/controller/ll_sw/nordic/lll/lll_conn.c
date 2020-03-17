@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "pdu.h"
 
 #include "lll.h"
+#include "lll_clock.h"
 #include "lll_conn.h"
 
 #include "lll_internal.h"
@@ -125,7 +126,7 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	/* NOTE: Else clean the top half preparations of the aborted event
 	 * currently in preparation pipeline.
 	 */
-	err = lll_clk_off();
+	err = lll_hfclock_off();
 	LL_ASSERT(!err || err == -EBUSY);
 
 	lll_done(param);
@@ -638,7 +639,7 @@ static void isr_cleanup(void *param)
 
 	radio_tmr_stop();
 
-	err = lll_clk_off();
+	err = lll_hfclock_off();
 	LL_ASSERT(!err || err == -EBUSY);
 
 	lll_done(NULL);
