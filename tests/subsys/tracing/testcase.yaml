@@ -8,12 +8,12 @@ common:
         - "thread_b: Hello World from (.*)!"
 tests:
   tracing.backends.sysview:
-    platform_whitelist: nrf52840_pca10056
+    platform_whitelist: nrf52840dk_nrf52840
     extra_configs:
       - CONFIG_SEGGER_SYSTEMVIEW=y
       - CONFIG_USE_SEGGER_RTT=y
   tracing.backends.cpu_stats:
-    platform_whitelist: nrf52840_pca10056
+    platform_whitelist: nrf52840dk_nrf52840
     extra_configs:
       - CONFIG_TRACING_CPU_STATS=y
   tracing.backends.openocd:

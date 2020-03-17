@@ -1,4 +1,4 @@
 tests:
   drivers.clock.nrf5_clock_calibration:
     tags: drivers
-    platform_whitelist: nrf51dk_nrf51422 nrf52_pca10040 nrf52840_pca10056
+    platform_whitelist: nrf51dk_nrf51422 nrf52_pca10040 nrf52840dk_nrf52840

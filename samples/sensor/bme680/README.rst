@@ -30,12 +30,12 @@ Building and Running
 This project outputs sensor data to the console. It requires a BME680
 sensor. It should work with any platform featuring a I2C peripheral interface.
 It does not work on QEMU.
-In this example below the :ref:`nrf52840_pca10056` board is used.
+In this example below the :ref:`nrf52840dk_nrf52840` board is used.
 
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/bme680
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :goals: build flash
 
 Sample Output

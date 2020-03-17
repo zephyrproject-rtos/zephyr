@@ -3,19 +3,19 @@ sample:
   name: display_sample
 tests:
   sample.display.shield.adafruit_2_8_tft_touch_v2:
-    platform_whitelist: nrf52840_pca10056
+    platform_whitelist: nrf52840dk_nrf52840
     extra_args: SHIELD=adafruit_2_8_tft_touch_v2
     tags: display shield
   sample.display.shield.ssd1306_128x32:
-    platform_whitelist: nrf52840_pca10056
+    platform_whitelist: nrf52840dk_nrf52840
     extra_args: SHIELD=ssd1306_128x32
     tags: display shield
   sample.display.shield.ssd1306_128x64:
-    platform_whitelist: nrf52840_pca10056
+    platform_whitelist: nrf52840dk_nrf52840
     extra_args: SHIELD=ssd1306_128x64
     tags: display shield
   sample.display.shield.waveshare_epaper_gdeh0213b1:
-    platform_whitelist: nrf52840_pca10056
+    platform_whitelist: nrf52840dk_nrf52840
     extra_args: SHIELD=waveshare_epaper_gdeh0213b1
   sample.display.st7789v_tl019fqv01:
     platform_whitelist: nrf52_pca10040

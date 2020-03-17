@@ -2,7 +2,7 @@ tests:
   bluetooth.shell.main:
     extra_configs:
       - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
-    platform_whitelist: qemu_cortex_m3 qemu_x86 native_posix native_posix_64 nrf52840_pca10056
+    platform_whitelist: qemu_cortex_m3 qemu_x86 native_posix native_posix_64 nrf52840dk_nrf52840
     platform_exclude: nrf52810_pca10040
     tags: bluetooth
     harness: keyboard

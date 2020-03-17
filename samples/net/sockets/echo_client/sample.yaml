@@ -23,12 +23,12 @@ tests:
     platform_whitelist: frdm_k64f
   sample.net.sockets.echo_client.nrf_802154:
     extra_args: OVERLAY_CONFIG="overlay-802154.conf"
-    platform_whitelist: nrf52840_pca10056
+    platform_whitelist: nrf52840dk_nrf52840
   sample.net.sockets.echo_client.nrf_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     slow: true
     tags: net openthread
-    platform_whitelist: nrf52840_pca10056
+    platform_whitelist: nrf52840dk_nrf52840
   sample.net.sockets.echo_client.kw41z_openthread:
     extra_args: OVERLAY_CONFIG="overlay-ot.conf"
     slow: true

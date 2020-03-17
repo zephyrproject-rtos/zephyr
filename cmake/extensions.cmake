@@ -1413,7 +1413,7 @@ function(toolchain_parse_make_rule input_file include_files)
 
   # The file is formatted like this:
   # empty_file.o: misc/empty_file.c \
-  # nrf52840_pca10056/nrf52840_pca10056.dts \
+  # nrf52840dk_nrf52840/nrf52840dk_nrf52840.dts \
   # nrf52840_qiaa.dtsi
 
   # Get rid of the backslashes

@@ -54,7 +54,7 @@ Set ``-DSHIELD=adafruit_2_8_tft_touch_v2`` when you invoke ``west build``. For e
 
 .. zephyr-app-commands::
    :zephyr-app: samples/gui/lvgl
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :shield: adafruit_2_8_tft_touch_v2
    :goals: build
 

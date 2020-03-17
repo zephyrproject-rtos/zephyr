@@ -16,7 +16,7 @@ tests:
   sample.net.lwm2m_client.bt:
     harness: net
     extra_args: OVERLAY_CONFIG=overlay-bt.conf
-    platform_whitelist: nrf52_pca10040 nrf52840_pca10056 disco_l475_iot1
+    platform_whitelist: nrf52_pca10040 nrf52840dk_nrf52840 disco_l475_iot1
     tags: net lwm2m
   sample.net.lwm2m_client.queue_mode:
     harness: net
@@ -27,5 +27,5 @@ tests:
   sample.net.lwm2m_client.wnc_m14a2a:
     harness: net
     extra_args: SHIELD=wnc_m14a2a
-    platform_whitelist: frdm_k64f nrf52840_pca10056
+    platform_whitelist: frdm_k64f nrf52840dk_nrf52840
     tags: net lwm2m

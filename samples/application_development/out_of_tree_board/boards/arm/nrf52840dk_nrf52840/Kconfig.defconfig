@@ -1,12 +1,12 @@
-# nRF52 PCA10040 board configuration
+# nRF52840 DK NRF52840 board configuration
 
 # Copyright (c) 2016 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52840_PCA10056
+if BOARD_NRF52840DK_NRF52840
 
 config BOARD
-	default "nrf52840_pca10056"
+	default "nrf52840dk_nrf52840"
 
 if USB
 
@@ -18,4 +18,4 @@ config USB_DEVICE_STACK
 
 endif # USB
 
-endif # BOARD_NRF52840_PCA10056
+endif # BOARD_NRF52840DK_NRF52840

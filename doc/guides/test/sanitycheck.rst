@@ -511,7 +511,7 @@ devices, for example::
 Any options marked as 'unknown' need to be changed and set with the correct
 values, in the above example both the platform names and the runners need to be
 replaced with the correct values corresponding to the connected hardware. In
-this example we are using a reel_board and an nrf52840_pca10056::
+this example we are using a reel_board and an nrf52840dk_nrf52840::
 
   - available: true
     id: OSHW000032254e4500128002ab98002784d1000097969900
@@ -521,7 +521,7 @@ this example we are using a reel_board and an nrf52840_pca10056::
     serial: /dev/cu.usbmodem146114202
   - available: true
     id: 000683759358
-    platform: nrf52840_pca10056
+    platform: nrf52840dk_nrf52840
     product: J-Link
     runner: nrfjprog
     serial: /dev/cu.usbmodem0006837593581

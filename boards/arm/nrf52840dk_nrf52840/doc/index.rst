@@ -1,7 +1,7 @@
-.. _nrf52840_pca10056:
+.. _nrf52840dk_nrf52840:
 
-nRF52840-PCA10056
-#################
+nRF52840 DK
+###########
 
 Overview
 ********
@@ -25,16 +25,20 @@ Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf52840_pca10056.jpg
+.. figure:: img/nrf52840dk_nrf52840.jpg
      :width: 442px
      :align: center
-     :alt: nRF52840 PCA10056 DK
+     :alt: nRF52840 DK
 
-     nRF52840 PCA10056 DK (Credit: Nordic Semiconductor)
+     nRF52840 DK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the `nRF52840 DK website`_.
 The `Nordic Semiconductor Infocenter`_ contains the processor's information
 and the datasheet.
+
+.. note::
+
+   In earlier Zephyr releases this board was known as ``nrf52840_pca10056``.
 
 Hardware
 ********
@@ -45,7 +49,7 @@ is 32.768 kHz. The frequency of the main clock is 32 MHz.
 Supported Features
 ==================
 
-The nrf52840_pca10056 board configuration supports the following
+The nrf52840dk_nrf52840 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -110,7 +114,7 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for the ``nrf52840_pca10056`` board configuration can be
+Applications for the ``nrf52840dk_nrf52840`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details); however, the standard
 debugging targets are not currently available.
@@ -132,14 +136,14 @@ First, run your favorite terminal program to listen for output.
 
    $ minicom -D <tty_device> -b 115200
 
-Replace :code:`<tty_device>` with the port where the board nRF52 DK
+Replace :code:`<tty_device>` with the port where the board nRF52840 DK
 can be found. For example, under Linux, :code:`/dev/ttyACM0`.
 
 Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :goals: build flash
 
 Debugging
@@ -162,7 +166,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf52840_pca10056/nrf52840_pca10056.dts`.
+:zephyr_file:`boards/arm/nrf52840dk_nrf52840/nrf52840dk_nrf52840.dts`.
 
 Using UART1
 ***********
@@ -174,7 +178,7 @@ more than one UART for connecting peripheral devices:
 
    .. code-block:: console
 
-      $ cat nrf52840_pca10056.overlay
+      $ cat nrf52840dk_nrf52840.overlay
       &uart1 {
         compatible = "nordic,nrf-uarte";
         current-speed = <115200>;
