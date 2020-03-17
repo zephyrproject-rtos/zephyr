@@ -77,13 +77,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     bl z_arm_watchdog_init
 #endif
 
-#ifdef CONFIG_INIT_STACKS
-    ldr r0, =z_interrupt_stacks
-    ldr r1, =0xaa
-    ldr r2, =CONFIG_ISR_STACK_SIZE
-    bl memset
-#endif
-
     /*
      * Set PSP and use it to boot without using MSP, so that it
      * gets set to z_interrupt_stacks during initialization.

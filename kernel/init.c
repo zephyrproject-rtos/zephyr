@@ -212,6 +212,19 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	static const unsigned int boot_delay;
 #endif
 
+#ifdef CONFIG_INIT_STACKS
+	/* Disable local interrupts on this CPU. Other CPUs haven't been
+	 * started yet.
+	 */
+	int key = arch_irq_lock();
+
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		memset(Z_THREAD_STACK_BUFFER(z_interrupt_stacks[i]), 0xAA,
+		       K_THREAD_STACK_SIZEOF(z_interrupt_stacks[i]));
+	}
+	arch_irq_unlock(key);
+#endif
+
 	z_sys_post_kernel = true;
 
 	z_sys_device_do_config_level(_SYS_INIT_LEVEL_POST_KERNEL);

@@ -46,11 +46,6 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	 * already is a big win.
 	 */
 	WSR(CONFIG_XTENSA_KERNEL_CPU_PTR_SR, cpu0);
-
-#ifdef CONFIG_INIT_STACKS
-	memset(Z_THREAD_STACK_BUFFER(z_interrupt_stacks[0]), 0xAA,
-	       CONFIG_ISR_STACK_SIZE);
-#endif
 }
 
 void xtensa_switch(void *switch_to, void **switched_from);

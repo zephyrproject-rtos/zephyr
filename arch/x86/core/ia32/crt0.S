@@ -148,17 +148,6 @@ __csSet:
 	 * If it is a cold boot then _sys_resume_from_deep_sleep() should
 	 * not do anything and must return immediately.
 	 */
-#ifdef CONFIG_INIT_STACKS
-	movl $0xAAAAAAAA, %eax
-	leal z_interrupt_stacks, %edi
-#ifdef CONFIG_X86_STACK_PROTECTION
-	addl $4096, %edi
-#endif
-	stack_size_dwords = (CONFIG_ISR_STACK_SIZE / 4)
-	movl $stack_size_dwords, %ecx
-	rep  stosl
-#endif
-
 	movl	$z_interrupt_stacks, %esp
 #ifdef CONFIG_X86_STACK_PROTECTION
 	/* In this configuration, all stacks, including IRQ stack, are declared

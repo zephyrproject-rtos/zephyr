@@ -46,20 +46,6 @@ loop_slave_core:
 
 boot_master_core:
 
-#ifdef CONFIG_INIT_STACKS
-	/* Pre-populate all bytes in z_interrupt_stacks with 0xAA */
-	la t0, z_interrupt_stacks
-	li t1, CONFIG_ISR_STACK_SIZE
-	add t1, t1, t0
-
-	/* Populate z_interrupt_stacks with 0xaaaaaaaa */
-	li t2, 0xaaaaaaaa
-aa_loop:
-	sw t2, 0x00(t0)
-	addi t0, t0, 4
-	blt t0, t1, aa_loop
-#endif
-
 	/*
 	 * Initially, setup stack pointer to
 	 * z_interrupt_stacks + CONFIG_ISR_STACK_SIZE

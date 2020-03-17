@@ -152,22 +152,6 @@ _slave_core_wait:
 _master_core_startup:
 #endif
 
-#ifdef CONFIG_INIT_STACKS
-	/*
-	 * use the main stack to call memset on the interrupt stack and the
-	 * FIRQ stack when CONFIG_INIT_STACKS is enabled before switching to
-	 * one of them for the rest of the early boot
-	 */
-	mov_s sp, z_main_stack
-	add sp, sp, CONFIG_MAIN_STACK_SIZE
-
-	mov_s r0, z_interrupt_stacks
-	mov_s r1, 0xaa
-	mov_s r2, CONFIG_ISR_STACK_SIZE
-	jl memset
-
-#endif /* CONFIG_INIT_STACKS */
-
 	mov_s sp, INIT_STACK
 	add sp, sp, INIT_STACK_SIZE
 

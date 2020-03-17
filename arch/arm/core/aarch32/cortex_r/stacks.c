@@ -22,7 +22,5 @@ void z_arm_init_stacks(void)
 	memset(z_arm_svc_stack, 0xAA, CONFIG_ARMV7_SVC_STACK_SIZE);
 	memset(z_arm_abort_stack, 0xAA, CONFIG_ARMV7_EXCEPTION_STACK_SIZE);
 	memset(z_arm_undef_stack, 0xAA, CONFIG_ARMV7_EXCEPTION_STACK_SIZE);
-	memset(Z_THREAD_STACK_BUFFER(z_interrupt_stacks[0]), 0xAA,
-	       CONFIG_ISR_STACK_SIZE);
 }
 #endif

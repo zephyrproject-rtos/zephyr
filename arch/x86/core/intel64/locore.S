@@ -154,14 +154,6 @@ go64:	movl %cr4, %eax			/* enable PAE and SSE */
 	/* finally, complete environment for the C runtime and go. */
 	cld	/* GCC presumes a clear direction flag */
 
-#ifdef CONFIG_INIT_STACKS
-	movq $0xAAAAAAAAAAAAAAAA, %rax
-	movq %rsp, %rdi
-	subq $CONFIG_ISR_STACK_SIZE, %rdi
-	movq $(CONFIG_ISR_STACK_SIZE >> 3), %rcx
-	rep stosq
-#endif
-
 	/* Enter C domain now that we have a stack set up, never to return */
 	movq %rbp, %rdi
 	call z_x86_cpu_init
