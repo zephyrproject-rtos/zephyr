@@ -139,10 +139,15 @@ DEVICE_AND_API_INIT(shared_irq_0, DT_INST_0_SHARED_IRQ_LABEL,
 
 void shared_irq_config_0_irq(void)
 {
+#ifdef DT_INST_0_SHARED_IRQ_IRQ_0_SENSE
+#define IRQ_0_FLAGS DT_INST_0_SHARED_IRQ_IRQ_0_SENSE
+#else
+#define IRQ_0_FLAGS DT_INST_0_SHARED_IRQ_IRQ_0_FLAGS
+#endif
 	IRQ_CONNECT(DT_INST_0_SHARED_IRQ_IRQ_0,
 		    DT_INST_0_SHARED_IRQ_IRQ_0_PRIORITY,
 		    shared_irq_isr, DEVICE_GET(shared_irq_0),
-		    DT_INST_0_SHARED_IRQ_IRQ_0_SENSE);
+		    IRQ_0_FLAGS);
 }
 
 #endif /* CONFIG_SHARED_IRQ_0 */
@@ -165,10 +170,15 @@ DEVICE_AND_API_INIT(shared_irq_1, DT_INST_1_SHARED_IRQ_LABEL,
 
 void shared_irq_config_1_irq(void)
 {
+#ifdef DT_INST_1_SHARED_IRQ_IRQ_0_SENSE
+#define IRQ_1_FLAGS DT_INST_1_SHARED_IRQ_IRQ_0_SENSE
+#else
+#define IRQ_1_FLAGS DT_INST_1_SHARED_IRQ_IRQ_0_FLAGS
+#endif
 	IRQ_CONNECT(DT_INST_1_SHARED_IRQ_IRQ_0,
 		    DT_INST_1_SHARED_IRQ_IRQ_0_PRIORITY,
 		    shared_irq_isr, DEVICE_GET(shared_irq_1),
-		    DT_INST_1_SHARED_IRQ_IRQ_0_SENSE);
+		    IRQ_1_FLAGS);
 }
 
 #endif /* CONFIG_SHARED_IRQ_1 */
