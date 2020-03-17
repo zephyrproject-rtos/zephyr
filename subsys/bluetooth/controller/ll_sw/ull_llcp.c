@@ -17,11 +17,11 @@
 #include "util/memq.h"
 
 #include "pdu.h"
-#include "lll.h"
-#include "lll_conn.h"
-
 #include "ll.h"
 #include "ll_settings.h"
+
+#include "lll.h"
+#include "lll_conn.h"
 
 #include "ull_tx_queue.h"
 #include "ull_llcp.h"
@@ -326,12 +326,12 @@ static void ntf_release(struct node_rx_pdu *ntf)
 
 static void ull_tx_enqueue(struct ull_cp_conn *conn, struct node_tx *tx)
 {
-	ull_tx_q_enqueue_ctrl(conn->tx_q, tx);
+	ull_tx_q_enqueue_ctrl(&conn->tx_q, tx);
 }
 
 static void ull_tx_pause_data(struct ull_cp_conn *conn)
 {
-	ull_tx_q_pause_data(conn->tx_q);
+	ull_tx_q_pause_data(&conn->tx_q);
 }
 
 static void ull_tx_flush(struct ull_cp_conn *conn)
@@ -457,17 +457,17 @@ static void ntf_encode_version_ind(struct ull_cp_conn *conn, struct pdu_data *pd
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
 
 	p = &pdu->llctrl.version_ind;
-	p->version_number = conn->vex.cached.version_number;
-	p->company_id = sys_cpu_to_le16(conn->vex.cached.company_id);
-	p->sub_version_number = sys_cpu_to_le16(conn->vex.cached.sub_version_number);
+	p->version_number = conn->llcp.vex.cached.version_number;
+	p->company_id = sys_cpu_to_le16(conn->llcp.vex.cached.company_id);
+	p->sub_version_number = sys_cpu_to_le16(conn->llcp.vex.cached.sub_version_number);
 }
 
 static void pdu_decode_version_ind(struct ull_cp_conn *conn, struct pdu_data *pdu)
 {
-	conn->vex.valid = 1;
-	conn->vex.cached.version_number = pdu->llctrl.version_ind.version_number;
-	conn->vex.cached.company_id = sys_le16_to_cpu(pdu->llctrl.version_ind.company_id);
-	conn->vex.cached.sub_version_number = sys_le16_to_cpu(pdu->llctrl.version_ind.sub_version_number);
+	conn->llcp.vex.valid = 1;
+	conn->llcp.vex.cached.version_number = pdu->llctrl.version_ind.version_number;
+	conn->llcp.vex.cached.company_id = sys_le16_to_cpu(pdu->llctrl.version_ind.company_id);
+	conn->llcp.vex.cached.sub_version_number = sys_le16_to_cpu(pdu->llctrl.version_ind.sub_version_number);
 }
 
 /*
@@ -613,12 +613,12 @@ static void lp_comm_send_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 	switch (ctx->proc) {
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
-		if (!conn->vex.sent) {
+		if (!conn->llcp.vex.sent) {
 			if (!tx_alloc_is_available() || ctx->pause) {
 				ctx->state = LP_COMMON_STATE_WAIT_TX;
 			} else {
 				lp_comm_tx(conn, ctx);
-				conn->vex.sent = 1;
+				conn->llcp.vex.sent = 1;
 				ctx->state = LP_COMMON_STATE_WAIT_RX;
 			}
 		} else {
@@ -790,10 +790,10 @@ static void lp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx 
 		ctx->state = LP_ENC_STATE_WAIT_RX_START_ENC_RSP;
 
 		/* Tx Encryption enabled */
-		conn->enc_tx = 1U;
+		conn->lll.enc_tx = 1U;
 
 		/* Rx Decryption enabled */
-		conn->enc_rx = 1U;
+		conn->lll.enc_rx = 1U;
 	}
 }
 
@@ -955,14 +955,14 @@ static void lp_enc_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct nod
 
 static void lr_enqueue(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 {
-	sys_slist_append(&conn->local.pend_proc_list, &ctx->node);
+	sys_slist_append(&conn->llcp.local.pend_proc_list, &ctx->node);
 }
 
 static struct proc_ctx *lr_dequeue(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) sys_slist_get(&conn->local.pend_proc_list);
+	ctx = (struct proc_ctx *) sys_slist_get(&conn->llcp.local.pend_proc_list);
 	return ctx;
 }
 
@@ -970,7 +970,7 @@ static struct proc_ctx *lr_peek(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) sys_slist_peek_head(&conn->local.pend_proc_list);
+	ctx = (struct proc_ctx *) sys_slist_peek_head(&conn->llcp.local.pend_proc_list);
 	return ctx;
 }
 
@@ -1029,7 +1029,7 @@ static void lr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
 	switch (evt) {
 	case LR_EVT_CONNECT:
 		lr_act_connect(conn);
-		conn->local.state = LR_STATE_IDLE;
+		conn->llcp.local.state = LR_STATE_IDLE;
 		break;
 	default:
 		/* Ignore other evts */
@@ -1043,12 +1043,12 @@ static void lr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 	case LR_EVT_RUN:
 		if (lr_peek(conn)) {
 			lr_act_run(conn);
-			conn->local.state = LR_STATE_ACTIVE;
+			conn->llcp.local.state = LR_STATE_ACTIVE;
 		}
 		break;
 	case LR_EVT_DISCONNECT:
 		lr_act_disconnect(conn);
-		conn->local.state = LR_STATE_DISCONNECT;
+		conn->llcp.local.state = LR_STATE_DISCONNECT;
 		break;
 	default:
 		/* Ignore other evts */
@@ -1062,16 +1062,16 @@ static void lr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
 	case LR_EVT_RUN:
 		if (lr_peek(conn)) {
 			lr_act_run(conn);
-			conn->local.state = LR_STATE_ACTIVE;
+			conn->llcp.local.state = LR_STATE_ACTIVE;
 		}
 		break;
 	case LR_EVT_COMPLETE:
 		lr_act_complete(conn);
-		conn->local.state = LR_STATE_IDLE;
+		conn->llcp.local.state = LR_STATE_IDLE;
 		break;
 	case LR_EVT_DISCONNECT:
 		lr_act_disconnect(conn);
-		conn->local.state = LR_STATE_DISCONNECT;
+		conn->llcp.local.state = LR_STATE_DISCONNECT;
 		break;
 	default:
 		/* Ignore other evts */
@@ -1081,7 +1081,7 @@ static void lr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
 
 static void lr_execute_fsm(struct ull_cp_conn *conn, u8_t evt, void *param)
 {
-	switch (conn->local.state) {
+	switch (conn->llcp.local.state) {
 	case LR_STATE_DISCONNECT:
 		lr_st_disconnect(conn, evt, param);
 		break;
@@ -1180,12 +1180,12 @@ static void rp_comm_send_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 	switch (ctx->proc) {
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
-		if (!conn->vex.sent) {
+		if (!conn->llcp.vex.sent) {
 			if (!tx_alloc_is_available() || ctx->pause) {
 				ctx->state = RP_COMMON_STATE_WAIT_TX;
 			} else {
 				rp_comm_tx(conn, ctx);
-				conn->vex.sent = 1;
+				conn->llcp.vex.sent = 1;
 				rr_complete(conn);
 				ctx->state = RP_COMMON_STATE_IDLE;
 			}
@@ -1372,7 +1372,7 @@ static void rp_enc_send_start_enc_req(struct ull_cp_conn *conn, struct proc_ctx 
 		ctx->state = RP_ENC_STATE_WAIT_RX_START_ENC_RSP;
 
 		/* Rx Decryption enabled */
-		conn->enc_rx = 1U;
+		conn->lll.enc_rx = 1U;
 	}
 }
 
@@ -1397,7 +1397,7 @@ static void rp_enc_send_start_enc_rsp(struct ull_cp_conn *conn, struct proc_ctx 
 		ctx->state = RP_ENC_STATE_IDLE;
 
 		/* Tx Encryption enabled */
-		conn->enc_tx = 1U;
+		conn->lll.enc_tx = 1U;
 	}
 }
 
@@ -1598,14 +1598,14 @@ static void rp_enc_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct nod
 
 static void rr_enqueue(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 {
-	sys_slist_append(&conn->remote.pend_proc_list, &ctx->node);
+	sys_slist_append(&conn->llcp.remote.pend_proc_list, &ctx->node);
 }
 
 static struct proc_ctx *rr_dequeue(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) sys_slist_get(&conn->remote.pend_proc_list);
+	ctx = (struct proc_ctx *) sys_slist_get(&conn->llcp.remote.pend_proc_list);
 	return ctx;
 }
 
@@ -1613,7 +1613,7 @@ static struct proc_ctx *rr_peek(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
 
-	ctx = (struct proc_ctx *) sys_slist_peek_head(&conn->remote.pend_proc_list);
+	ctx = (struct proc_ctx *) sys_slist_peek_head(&conn->llcp.remote.pend_proc_list);
 	return ctx;
 }
 
@@ -1672,7 +1672,7 @@ static void rr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
 	switch (evt) {
 	case RR_EVT_CONNECT:
 		rr_act_connect(conn);
-		conn->remote.state = RR_STATE_IDLE;
+		conn->llcp.remote.state = RR_STATE_IDLE;
 		break;
 	default:
 		/* Ignore other evts */
@@ -1686,12 +1686,12 @@ static void rr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 	case RR_EVT_RUN:
 		if (rr_peek(conn)) {
 			rr_act_run(conn);
-			conn->remote.state = RR_STATE_ACTIVE;
+			conn->llcp.remote.state = RR_STATE_ACTIVE;
 		}
 		break;
 	case RR_EVT_DISCONNECT:
 		rr_act_disconnect(conn);
-		conn->remote.state = RR_STATE_DISCONNECT;
+		conn->llcp.remote.state = RR_STATE_DISCONNECT;
 		break;
 	default:
 		/* Ignore other evts */
@@ -1705,16 +1705,16 @@ static void rr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
 	case RR_EVT_RUN:
 		if (rr_peek(conn)) {
 			rr_act_run(conn);
-			conn->remote.state = RR_STATE_ACTIVE;
+			conn->llcp.remote.state = RR_STATE_ACTIVE;
 		}
 		break;
 	case RR_EVT_COMPLETE:
 		rr_act_complete(conn);
-		conn->remote.state = RR_STATE_IDLE;
+		conn->llcp.remote.state = RR_STATE_IDLE;
 		break;
 	case RR_EVT_DISCONNECT:
 		rr_act_disconnect(conn);
-		conn->remote.state = RR_STATE_DISCONNECT;
+		conn->llcp.remote.state = RR_STATE_DISCONNECT;
 		break;
 	default:
 		/* Ignore other evts */
@@ -1724,7 +1724,7 @@ static void rr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
 
 static void rr_execute_fsm(struct ull_cp_conn *conn, u8_t evt, void *param)
 {
-	switch (conn->remote.state) {
+	switch (conn->llcp.remote.state) {
 	case RR_STATE_DISCONNECT:
 		rr_st_disconnect(conn, evt, param);
 		break;
@@ -1811,19 +1811,19 @@ void ull_cp_init(void)
 void ull_cp_conn_init(struct ull_cp_conn *conn)
 {
 	/* Reset local request fsm */
-	conn->local.state = LR_STATE_DISCONNECT;
-	sys_slist_init(&conn->local.pend_proc_list);
+	conn->llcp.local.state = LR_STATE_DISCONNECT;
+	sys_slist_init(&conn->llcp.local.pend_proc_list);
 
 	/* Reset remote request fsm */
-	conn->remote.state = RR_STATE_DISCONNECT;
-	sys_slist_init(&conn->remote.pend_proc_list);
+	conn->llcp.remote.state = RR_STATE_DISCONNECT;
+	sys_slist_init(&conn->llcp.remote.pend_proc_list);
 
 	/* Reset the cached version Information (PROC_VERSION_EXCHANGE) */
-	memset(&conn->vex, 0, sizeof(conn->vex));
+	memset(&conn->llcp.vex, 0, sizeof(conn->llcp.vex));
 
 	/* Reset encryption related state */
-	conn->enc_tx = 0U;
-	conn->enc_rx = 0U;
+	conn->lll.enc_tx = 0U;
+	conn->lll.enc_rx = 0U;
 }
 
 void ull_cp_release_tx(struct node_tx *tx)
