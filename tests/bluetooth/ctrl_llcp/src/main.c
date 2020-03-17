@@ -11,6 +11,7 @@
 #define CONFIG_BT_LOG_LEVEL 1
 #define CONFIG_BT_CTLR_COMPANY_ID 0x1234
 #define CONFIG_BT_CTLR_SUBVERSION_NUMBER 0x5678
+#define CONFIG_BT_CTLR_LE_ENC 1
 
 #define ULL_LLCP_UNITTEST
 
@@ -22,7 +23,6 @@
 #include "ll_sw/ull_llcp.c"
 /* Implementation Under Test End */
 
-struct ull_tx_q tx_q;
 struct ull_cp_conn conn;
 
 sys_slist_t ll_rx_q;
@@ -37,11 +37,11 @@ sys_slist_t ll_rx_q;
 void test_api_init(void)
 {
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 
 	ull_cp_conn_init(&conn);
-	zassert_equal(conn.local.state, LR_STATE_DISCONNECT, NULL);
-	zassert_equal(conn.remote.state, RR_STATE_DISCONNECT, NULL);
+	zassert_equal(conn.llcp.local.state, LR_STATE_DISCONNECT, NULL);
+	zassert_equal(conn.llcp.remote.state, RR_STATE_DISCONNECT, NULL);
 }
 
 void test_int_mem_proc_ctx(void)
@@ -196,9 +196,8 @@ void test_int_create_proc(void)
 	struct proc_ctx *ctx;
 
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	ctx = create_procedure(PROC_VERSION_EXCHANGE);
 	zassert_not_null(ctx, NULL);
@@ -223,9 +222,8 @@ void test_int_pending_requests(void)
 	struct proc_ctx ctx;
 
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	/* Local */
 
@@ -236,7 +234,7 @@ void test_int_pending_requests(void)
 	zassert_is_null(dequeue_ctx, NULL);
 
 	lr_enqueue(&conn, &ctx);
-	peek_ctx = (struct proc_ctx *) sys_slist_peek_head(&conn.local.pend_proc_list);
+	peek_ctx = (struct proc_ctx *) sys_slist_peek_head(&conn.llcp.local.pend_proc_list);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
 	peek_ctx = lr_peek(&conn);
@@ -260,7 +258,7 @@ void test_int_pending_requests(void)
 	zassert_is_null(dequeue_ctx, NULL);
 
 	rr_enqueue(&conn, &ctx);
-	peek_ctx = (struct proc_ctx *) sys_slist_peek_head(&conn.remote.pend_proc_list);
+	peek_ctx = (struct proc_ctx *) sys_slist_peek_head(&conn.llcp.remote.pend_proc_list);
 	zassert_equal_ptr(peek_ctx, &ctx, NULL);
 
 	peek_ctx = rr_peek(&conn);
@@ -279,33 +277,31 @@ void test_int_pending_requests(void)
 void test_api_connect(void)
 {
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
-	zassert_equal(conn.local.state, LR_STATE_IDLE, NULL);
-	zassert_equal(conn.remote.state, RR_STATE_IDLE, NULL);
+	zassert_equal(conn.llcp.local.state, LR_STATE_IDLE, NULL);
+	zassert_equal(conn.llcp.remote.state, RR_STATE_IDLE, NULL);
 }
 
 void test_api_disconnect(void)
 {
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
-	zassert_equal(conn.local.state, LR_STATE_DISCONNECT, NULL);
-	zassert_equal(conn.remote.state, RR_STATE_DISCONNECT, NULL);
+	zassert_equal(conn.llcp.local.state, LR_STATE_DISCONNECT, NULL);
+	zassert_equal(conn.llcp.remote.state, RR_STATE_DISCONNECT, NULL);
 
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
-	zassert_equal(conn.local.state, LR_STATE_IDLE, NULL);
-	zassert_equal(conn.remote.state, RR_STATE_IDLE, NULL);
+	zassert_equal(conn.llcp.local.state, LR_STATE_IDLE, NULL);
+	zassert_equal(conn.llcp.remote.state, RR_STATE_IDLE, NULL);
 
 	ull_cp_state_set(&conn, ULL_CP_DISCONNECTED);
-	zassert_equal(conn.local.state, LR_STATE_DISCONNECT, NULL);
-	zassert_equal(conn.remote.state, RR_STATE_DISCONNECT, NULL);
+	zassert_equal(conn.llcp.local.state, LR_STATE_DISCONNECT, NULL);
+	zassert_equal(conn.llcp.remote.state, RR_STATE_DISCONNECT, NULL);
 }
 
 void helper_pdu_encode_version_ind(struct pdu_data *pdu, void *param)
@@ -468,7 +464,7 @@ void lt_rx(helper_opcode_t opcode, struct ull_cp_conn *conn, struct node_tx **tx
 	struct node_tx *tx;
 	struct pdu_data *pdu;
 
-	tx = ull_tx_q_dequeue(&tx_q);
+	tx = ull_tx_q_dequeue(&conn->tx_q);
 	zassert_not_null(tx, NULL);
 
 	pdu = (struct pdu_data *)tx->pdu;
@@ -481,7 +477,7 @@ void lt_rx_q_is_empty()
 {
 	struct node_tx *tx;
 
-	tx = ull_tx_q_dequeue(&tx_q);
+	tx = ull_tx_q_dequeue(&conn.tx_q);
 	zassert_is_null(tx, NULL);
 }
 
@@ -549,9 +545,8 @@ void test_api_local_version_exchange(void)
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -580,9 +575,8 @@ void test_api_local_version_exchange_2(void)
 	u8_t err;
 
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	err = ull_cp_version_exchange(&conn);
 
@@ -624,9 +618,8 @@ void test_api_remote_version_exchange(void)
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -686,9 +679,8 @@ void test_api_both_version_exchange(void)
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -757,9 +749,8 @@ void test_api_local_encryption_start(void)
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -802,10 +793,10 @@ void test_api_local_encryption_start(void)
 	ull_cp_release_ntf(ntf);
 
 	/* Tx Encryption should be enabled */
-	zassert_equal(conn.enc_tx, 1U, NULL);
+	zassert_equal(conn.lll.enc_tx, 1U, NULL);
 
 	/* Rx Decryption should be enabled */
-	zassert_equal(conn.enc_rx, 1U, NULL);
+	zassert_equal(conn.lll.enc_rx, 1U, NULL);
 }
 
 /* +-----+                     +-------+              +-----+
@@ -856,9 +847,8 @@ void test_api_local_encryption_start_limited_memory(void)
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -937,10 +927,10 @@ void test_api_local_encryption_start_limited_memory(void)
 	ull_cp_release_ntf(ntf);
 
 	/* Tx Encryption should be enabled */
-	zassert_equal(conn.enc_tx, 1U, NULL);
+	zassert_equal(conn.lll.enc_tx, 1U, NULL);
 
 	/* Rx Decryption should be enabled */
-	zassert_equal(conn.enc_rx, 1U, NULL);
+	zassert_equal(conn.lll.enc_rx, 1U, NULL);
 }
 
 /* +-----+                     +-------+              +-----+
@@ -986,9 +976,8 @@ void test_api_local_encryption_start_no_ltk(void)
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1021,10 +1010,10 @@ void test_api_local_encryption_start_no_ltk(void)
 	ull_cp_release_ntf(ntf);
 
 	/* Tx Encryption should be disabled */
-	zassert_equal(conn.enc_tx, 0U, NULL);
+	zassert_equal(conn.lll.enc_tx, 0U, NULL);
 
 	/* Rx Decryption should be disabled */
-	zassert_equal(conn.enc_rx, 0U, NULL);
+	zassert_equal(conn.lll.enc_rx, 0U, NULL);
 }
 
 /* +-----+                +-------+              +-----+
@@ -1073,9 +1062,8 @@ void test_api_remote_encryption_start(void)
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1108,7 +1096,7 @@ void test_api_remote_encryption_start(void)
 	ull_cp_release_tx(tx);
 
 	/* Rx Decryption should be enabled */
-	zassert_equal(conn.enc_rx, 1U, NULL);
+	zassert_equal(conn.lll.enc_rx, 1U, NULL);
 
 	/* Rx */
 	lt_tx(LL_START_ENC_RSP, &conn, NULL);
@@ -1125,7 +1113,7 @@ void test_api_remote_encryption_start(void)
 	ull_cp_release_tx(tx);
 
 	/* Tx Encryption should be enabled */
-	zassert_equal(conn.enc_tx, 1U, NULL);
+	zassert_equal(conn.lll.enc_tx, 1U, NULL);
 }
 
 /* +-----+                +-------+              +-----+
@@ -1178,9 +1166,8 @@ void test_api_remote_encryption_start_limited_memory(void)
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1243,7 +1230,7 @@ void test_api_remote_encryption_start_limited_memory(void)
 	lt_rx_q_is_empty();
 
 	/* Rx Decryption should be enabled */
-	zassert_equal(conn.enc_rx, 1U, NULL);
+	zassert_equal(conn.lll.enc_rx, 1U, NULL);
 
 	/* Rx */
 	lt_tx(LL_START_ENC_RSP, &conn, NULL);
@@ -1275,7 +1262,7 @@ void test_api_remote_encryption_start_limited_memory(void)
 	lt_rx_q_is_empty();
 
 	/* Tx Encryption should be enabled */
-	zassert_equal(conn.enc_tx, 1U, NULL);
+	zassert_equal(conn.lll.enc_tx, 1U, NULL);
 }
 
 /* +-----+                +-------+              +-----+
@@ -1313,9 +1300,8 @@ void test_api_remote_encryption_start_no_ltk(void)
 	/* Setup */
 	sys_slist_init(&ll_rx_q);
 	ull_cp_init();
-	ull_tx_q_init(&tx_q);
+	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
-	conn.tx_q = &tx_q;
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1351,10 +1337,10 @@ void test_api_remote_encryption_start_no_ltk(void)
 	ut_rx_q_is_empty();
 
 	/* Tx Encryption should be disabled */
-	zassert_equal(conn.enc_tx, 0U, NULL);
+	zassert_equal(conn.lll.enc_tx, 0U, NULL);
 
 	/* Rx Decryption should be disabled */
-	zassert_equal(conn.enc_rx, 0U, NULL);
+	zassert_equal(conn.lll.enc_rx, 0U, NULL);
 }
 
 
