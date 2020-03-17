@@ -45,9 +45,8 @@ extern "C" {
  */
 #define BT_ID_DEFAULT 0
 
-/**
- * @typedef bt_ready_cb_t
- * @brief Callback for notifying that Bluetooth has been enabled.
+/** @typedef bt_ready_cb_t
+ *  @brief Callback for notifying that Bluetooth has been enabled.
  *
  *  @param err zero on success or (negative) error code otherwise.
  */
@@ -106,7 +105,7 @@ int bt_set_id_addr(const bt_addr_le_t *addr);
  *  identifier that some APIs expect (such as advertising parameters) is
  *  simply the index of the identity in the @a addrs array.
  *
- *  Note: Deleted identities may show up as BT_LE_ADDR_ANY in the returned
+ *  @note Deleted identities may show up as BT_LE_ADDR_ANY in the returned
  *  array.
  *
  *  @param addrs Array where to store the configured identities.
@@ -165,7 +164,7 @@ int bt_id_create(bt_addr_le_t *addr, u8_t *irk);
  *  a new identity in the same slot, based on the @a addr and @a irk
  *  parameters.
  *
- *  Note: the default identity (BT_ID_DEFAULT) cannot be reset, i.e. this
+ *  @note the default identity (BT_ID_DEFAULT) cannot be reset, i.e. this
  *  API will return an error if asked to do that.
  *
  *  @param id   Existing identity identifier.
@@ -195,7 +194,7 @@ int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk);
  *  operations. To take back into use the slot the identity was occupying the
  *  bt_id_reset() API needs to be used.
  *
- *  Note: the default identity (BT_ID_DEFAULT) cannot be deleted, i.e. this
+ *  @note the default identity (BT_ID_DEFAULT) cannot be deleted, i.e. this
  *  API will return an error if asked to do that.
  *
  *  @param id   Existing identity identifier.
@@ -204,12 +203,12 @@ int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk);
  */
 int bt_id_delete(u8_t id);
 
-/* Advertising API */
+/** Advertising API */
 
 /** Description of different data types that can be encoded into
-  * advertising data. Used to form arrays that are passed to the
-  * bt_le_adv_start() function.
-  */
+ *  advertising data. Used to form arrays that are passed to the
+ *  bt_le_adv_start() function.
+ */
 struct bt_data {
 	u8_t type;
 	u8_t data_len;
@@ -321,11 +320,11 @@ struct bt_le_adv_param {
 };
 
 /** Helper to declare advertising parameters inline
-  *
-  * @param _options   Advertising Options
-  * @param _int_min   Minimum advertising interval
-  * @param _int_max   Maximum advertising interval
-  */
+ *
+ *  @param _options   Advertising Options
+ *  @param _int_min   Minimum advertising interval
+ *  @param _int_max   Maximum advertising interval
+ */
 #define BT_LE_ADV_PARAM(_options, _int_min, _int_max) \
 		((struct bt_le_adv_param[]) { { \
 			.id = BT_ID_DEFAULT, \
@@ -420,21 +419,21 @@ typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, s8_t rssi,
 			     u8_t adv_type, struct net_buf_simple *buf);
 
 enum {
-	/* Filter duplicates. */
+	/** Filter duplicates. */
 	BT_LE_SCAN_FILTER_DUPLICATE = BIT(0),
 
-	/* Filter using whitelist. */
+	/** Filter using whitelist. */
 	BT_LE_SCAN_FILTER_WHITELIST = BIT(1),
 
-	/* Filter using extended filter policies. */
+	/** Filter using extended filter policies. */
 	BT_LE_SCAN_FILTER_EXTENDED = BIT(2),
 };
 
 enum {
-	/* Scan without requesting additional information from advertisers. */
+	/** Scan without requesting additional information from advertisers. */
 	BT_LE_SCAN_TYPE_PASSIVE = 0x00,
 
-	/* Scan and request additional information from advertisers. */
+	/** Scan and request additional information from advertisers. */
 	BT_LE_SCAN_TYPE_ACTIVE = 0x01,
 };
 
@@ -480,13 +479,13 @@ struct bt_le_scan_cb {
 };
 
 /** Helper to declare scan parameters inline
-  *
-  * @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
-  *                  BT_LE_SCAN_TYPE_PASSIVE.
-  * @param _filter   Filter options
-  * @param _interval Scan Interval (N * 0.625 ms)
-  * @param _window   Scan Window (N * 0.625 ms)
-  */
+ *
+ *  @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
+ *                   BT_LE_SCAN_TYPE_PASSIVE.
+ *  @param _filter   Filter options
+ *  @param _interval Scan Interval (N * 0.625 ms)
+ *  @param _window   Scan Window (N * 0.625 ms)
+ */
 #define BT_LE_SCAN_PARAM(_type, _filter, _interval, _window) \
 		((struct bt_le_scan_param[]) { { \
 			.type = (_type), \
@@ -503,8 +502,8 @@ struct bt_le_scan_cb {
 
 /** Helper macro to enable passive scanning to discover new devices.
  *
- * This macro should be used if information required for device identification
- * (e.g., UUID) are known to be placed in Advertising Data.
+ *  This macro should be used if information required for device identification
+ *  (e.g., UUID) are known to be placed in Advertising Data.
  */
 #define BT_LE_SCAN_PASSIVE BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_PASSIVE, \
 					    BT_LE_SCAN_FILTER_DUPLICATE, \
@@ -516,7 +515,7 @@ struct bt_le_scan_cb {
  *  Start LE scanning with given parameters and provide results through
  *  the specified callback.
  *
- *  Note: The LE scanner by default does not use the Identity Address of the
+ *  @note The LE scanner by default does not use the Identity Address of the
  *        local device when :option:`CONFIG_BT_PRIVACY` is disabled. This is to
  *        prevent the active scanner from disclosing the identity information
  *        when requesting additional information from advertisers.
@@ -527,8 +526,8 @@ struct bt_le_scan_cb {
  *  @param cb Callback to notify scan results. May be NULL if callback
  *            registration through @ref bt_le_scan_cb_register is preferred.
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
 
@@ -536,8 +535,8 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  *
  *  Stops ongoing LE scanning.
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_scan_stop(void);
 
@@ -563,8 +562,8 @@ void bt_le_scan_cb_register(struct bt_le_scan_cb *cb);
  *
  *  @param addr Bluetooth LE identity address.
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error.
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_whitelist_add(const bt_addr_le_t *addr);
 
@@ -578,8 +577,8 @@ int bt_le_whitelist_add(const bt_addr_le_t *addr);
  *
  *  @param addr Bluetooth LE identity address.
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error.
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_whitelist_rem(const bt_addr_le_t *addr);
 
@@ -591,8 +590,8 @@ int bt_le_whitelist_rem(const bt_addr_le_t *addr);
  *  the whitelist, i.e advertiser or scanner using a whitelist or automatic
  *  connecting to devices using whitelist.
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error.
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_whitelist_clear(void);
 
@@ -600,8 +599,8 @@ int bt_le_whitelist_clear(void);
  *
  * @param chan_map Channel map.
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_set_chan_map(u8_t chan_map[5]);
 
@@ -663,8 +662,8 @@ struct bt_le_oob {
  *  @param[in]  id  Local identity, in most cases BT_ID_DEFAULT.
  *  @param[out] oob LE OOB information
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error.
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_oob_get_local(u8_t id, struct bt_le_oob *oob);
 
@@ -736,8 +735,8 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
  *  Stops ongoing BR/EDR discovery. If discovery was stopped by this call
  *  results won't be reported
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_br_discovery_stop(void);
 
@@ -746,13 +745,12 @@ struct bt_br_oob {
 	bt_addr_t addr;
 };
 
-/**
- * @brief Get BR/EDR local Out Of Band information
+/** @brief Get BR/EDR local Out Of Band information
  *
- * This function allows to get local controller information that are useful
- * for Out Of Band pairing or connection creation process.
+ *  This function allows to get local controller information that are useful
+ *  for Out Of Band pairing or connection creation process.
  *
- * @param oob Out Of Band information
+ *  @param oob Out Of Band information
  */
 int bt_br_oob_get_local(struct bt_br_oob *oob);
 
@@ -831,22 +829,21 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 			addr->a.val[2], addr->a.val[1], addr->a.val[0], type);
 }
 
-/**
- * @brief Convert Bluetooth address from string to binary.
+/** @brief Convert Bluetooth address from string to binary.
  *
- * @param[in]  str   The string representation of a Bluetooth address.
- * @param[out] addr  Address of buffer to store the Bluetooth address
+ *  @param[in]  str   The string representation of a Bluetooth address.
+ *  @param[out] addr  Address of buffer to store the Bluetooth address
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
 int bt_addr_from_str(const char *str, bt_addr_t *addr);
 
-/**
- * @brief Convert LE Bluetooth address from string to binary.
+/** @brief Convert LE Bluetooth address from string to binary.
  *
- * @param[in]  str   The string representation of an LE Bluetooth address.
- * @param[in]  type  The string representation of the LE Bluetooth address type.
- * @param[out] addr  Address of buffer to store the LE Bluetooth address
+ *  @param[in]  str   The string representation of an LE Bluetooth address.
+ *  @param[in]  type  The string representation of the LE Bluetooth address
+ *                    type.
+ *  @param[out] addr  Address of buffer to store the LE Bluetooth address
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
@@ -861,7 +858,7 @@ int bt_addr_le_from_str(const char *str, const char *type, bt_addr_le_t *addr);
  *  @param enable Value allowing/disallowing controller to become discoverable.
  *
  *  @return Negative if fail set to requested state or requested state has been
- *  already set. Zero if done successfully.
+ *          already set. Zero if done successfully.
  */
 int bt_br_set_discoverable(bool enable);
 
@@ -874,7 +871,7 @@ int bt_br_set_discoverable(bool enable);
  *  @param enable Value allowing/disallowing controller to be connectable.
  *
  *  @return Negative if fail set to requested state or requested state has been
- *  already set. Zero if done successfully.
+ *          already set. Zero if done successfully.
  */
 int bt_br_set_connectable(bool enable);
 

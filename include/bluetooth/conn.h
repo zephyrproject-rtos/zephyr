@@ -39,12 +39,12 @@ struct bt_le_conn_param {
 };
 
 /** Helper to declare connection parameters inline
-  *
-  * @param int_min  Minimum Connection Interval (N * 1.25 ms)
-  * @param int_max  Maximum Connection Interval (N * 1.25 ms)
-  * @param lat      Connection Latency
-  * @param to       Supervision Timeout (N * 10 ms)
-  */
+ *
+ *  @param int_min  Minimum Connection Interval (N * 1.25 ms)
+ *  @param int_max  Maximum Connection Interval (N * 1.25 ms)
+ *  @param lat      Connection Latency
+ *  @param to       Supervision Timeout (N * 10 ms)
+ */
 #define BT_LE_CONN_PARAM(int_min, int_max, lat, to) \
 	((struct bt_le_conn_param[]) { { \
 		.interval_min = (int_min), \
@@ -54,10 +54,10 @@ struct bt_le_conn_param {
 	 } })
 
 /** Default LE connection parameters:
-  *   Connection Interval: 30-50 ms
-  *   Latency: 0
-  *   Timeout: 4 s
-  */
+ *    Connection Interval: 30-50 ms
+ *    Latency: 0
+ *    Timeout: 4 s
+ */
 #define BT_LE_CONN_PARAM_DEFAULT BT_LE_CONN_PARAM(BT_GAP_INIT_CONN_INT_MIN, \
 						  BT_GAP_INIT_CONN_INT_MAX, \
 						  0, 400)
@@ -119,7 +119,7 @@ const bt_addr_le_t *bt_conn_get_dst(const struct bt_conn *conn);
  *  @param conn Connection object.
  *
  *  @return Index of the connection object.
- *  The range of the returned value is 0..CONFIG_BT_MAX_CONN-1
+ *          The range of the returned value is 0..CONFIG_BT_MAX_CONN-1
  */
 u8_t bt_conn_index(struct bt_conn *conn);
 
@@ -208,23 +208,23 @@ struct bt_conn_br_remote_info {
  *        valid data if :option:`CONFIG_BT_REMOTE_VERSION` is enabled.
  */
 struct bt_conn_remote_info {
-	/* Connection Type */
+	/** Connection Type */
 	u8_t  type;
 
-	/* Remote Link Layer version */
+	/** Remote Link Layer version */
 	u8_t  version;
 
-	/* Remote manufacturer identifier */
+	/** Remote manufacturer identifier */
 	u16_t manufacturer;
 
-	/* Per-manufacturer unique revision */
+	/** Per-manufacturer unique revision */
 	u16_t subversion;
 
 	union {
-		/* LE connection remote info */
+		/** LE connection remote info */
 		struct bt_conn_le_remote_info le;
 
-		/* BR/EDR connection remote info */
+		/** BR/EDR connection remote info */
 		struct bt_conn_br_remote_info br;
 	};
 };
@@ -323,7 +323,7 @@ int bt_conn_create_auto_stop(void);
  *  Every time the device loses the connection with peer, this connection
  *  will be re-established if connectable advertisement from peer is received.
  *
- *  Note: Auto connect is disabled during explicit scanning.
+ *  @note Auto connect is disabled during explicit scanning.
  *
  *  @param addr Remote Bluetooth address.
  *  @param param If non-NULL, auto connect is enabled with the given
@@ -618,58 +618,55 @@ void bt_set_bondable(bool enable);
  */
 void bt_set_oob_data_flag(bool enable);
 
-/**
- * @brief Set OOB Temporary Key to be used for pairing
+/** @brief Set OOB Temporary Key to be used for pairing
  *
- * This function allows to set OOB data for the LE legacy pairing procedure. The
- * function should only be called in response to the oob_data_request() callback
- * provided that the legacy method is user pairing.
+ *  This function allows to set OOB data for the LE legacy pairing procedure.
+ *  The function should only be called in response to the oob_data_request()
+ *  callback provided that the legacy method is user pairing.
  *
- * @param conn Connection object
- * @param tk Pointer to 16 byte long TK array
+ *  @param conn Connection object
+ *  @param tk Pointer to 16 byte long TK array
  *
- * @return Zero on success or -EINVAL if NULL
+ *  @return Zero on success or -EINVAL if NULL
  */
 int bt_le_oob_set_legacy_tk(struct bt_conn *conn, const u8_t *tk);
 
-/**
- * @brief Set OOB data during LE Secure Connections (SC) pairing procedure
+/** @brief Set OOB data during LE Secure Connections (SC) pairing procedure
  *
- * This function allows to set OOB data during the LE SC pairing procedure. The
- * function should only be called in response to the oob_data_request() callback
- * provided that LE SC method is used for pairing.
+ *  This function allows to set OOB data during the LE SC pairing procedure.
+ *  The function should only be called in response to the oob_data_request()
+ *  callback provided that LE SC method is used for pairing.
  *
- * The user should submit OOB data according to the information received in the
- * callback. This may yield three different configurations: with only local OOB
- * data present, with only remote OOB data present or with both local and
- * remote OOB data present.
+ *  The user should submit OOB data according to the information received in the
+ *  callback. This may yield three different configurations: with only local OOB
+ *  data present, with only remote OOB data present or with both local and
+ *  remote OOB data present.
  *
- * @param conn Connection object
- * @param oobd_local Local OOB data or NULL if not present
- * @param oobd_remote Remote OOB data or NULL if not present
+ *  @param conn Connection object
+ *  @param oobd_local Local OOB data or NULL if not present
+ *  @param oobd_remote Remote OOB data or NULL if not present
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_oob_set_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data *oobd_local,
 			  const struct bt_le_oob_sc_data *oobd_remote);
 
-/**
- * @brief Get OOB data used for LE Secure Connections (SC) pairing procedure
+/** @brief Get OOB data used for LE Secure Connections (SC) pairing procedure
  *
- * This function allows to get OOB data during the LE SC pairing procedure that
- * were set by the bt_le_oob_set_sc_data() API.
+ *  This function allows to get OOB data during the LE SC pairing procedure that
+ *  were set by the bt_le_oob_set_sc_data() API.
  *
- *  Note: The OOB data will only be available as long as the connection object
+ *  @note The OOB data will only be available as long as the connection object
  *  associated with it is valid.
  *
- * @param conn Connection object
- * @param oobd_local Local OOB data or NULL if not set
- * @param oobd_remote Remote OOB data or NULL if not set
+ *  @param conn Connection object
+ *  @param oobd_local Local OOB data or NULL if not set
+ *  @param oobd_remote Remote OOB data or NULL if not set
  *
- *  @return Zero on success or error code otherwise, positive in case
- *  of protocol error or negative (POSIX) in case of stack internal error
+ *  @return Zero on success or error code otherwise, positive in case of
+ *          protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_oob_get_sc_data(struct bt_conn *conn,
 			  const struct bt_le_oob_sc_data **oobd_local,
@@ -935,18 +932,18 @@ struct bt_conn_auth_cb {
 
 	/** @brief notify that pairing process was complete.
 	 *
-	 * This callback notifies the application that the pairing process
-	 * has been completed.
+	 *  This callback notifies the application that the pairing process
+	 *  has been completed.
 	 *
-	 * @param conn Connection object.
-	 * @param bonded pairing is bonded or not.
+	 *  @param conn Connection object.
+	 *  @param bonded pairing is bonded or not.
 	 */
 	void (*pairing_complete)(struct bt_conn *conn, bool bonded);
 
 	/** @brief notify that pairing process has failed.
 	 *
-	 * @param conn Connection object.
-	 * @param reason Pairing failed reason
+	 *  @param conn Connection object.
+	 *  @param reason Pairing failed reason
 	 */
 	void (*pairing_failed)(struct bt_conn *conn,
 			       enum bt_security_err reason);
@@ -1034,8 +1031,8 @@ struct bt_br_conn_param {
 	 } })
 
 /** Default BR/EDR connection parameters:
-  *   Role switch allowed
-  */
+ *    Role switch allowed
+ */
 #define BT_BR_CONN_PARAM_DEFAULT BT_BR_CONN_PARAM(true)
 
 
