@@ -1,7 +1,7 @@
 # Copyright (c) 2019 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52840_PCA10056
+if BOARD_NRF52840DK_NRF52840
 
 config GPIO_NRF_P1
 	default y
@@ -9,4 +9,4 @@ config GPIO_NRF_P1
 config UART_1_NRF_UARTE
 	default y
 
-endif # BOARD_NRF52840_PCA10056
+endif # BOARD_NRF52840DK_NRF52840

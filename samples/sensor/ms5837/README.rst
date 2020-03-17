@@ -37,11 +37,11 @@ Build this sample using the following commands:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/ms5837
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :goals: build
    :compact:
 
-See :ref:`nrf52840_pca10056` on how to flash the build.
+See :ref:`nrf52840dk_nrf52840` on how to flash the build.
 
 References
 **********

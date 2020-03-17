@@ -68,7 +68,7 @@ Example building for the nRF52840_pca10056 with OpenThread support:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :conf: "prj.conf overlay-ot.conf"
    :goals: run
    :compact:

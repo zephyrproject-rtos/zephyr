@@ -77,7 +77,7 @@ For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/gui/lvgl
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :shield: waveshare_epaper_gdeh0213b1
    :goals: build
 

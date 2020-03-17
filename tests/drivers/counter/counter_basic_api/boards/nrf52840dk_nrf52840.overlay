@@ -21,4 +21,3 @@
 &rtc0 {
 	ppi-wrap;
 };
-

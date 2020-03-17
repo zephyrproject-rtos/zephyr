@@ -9,3 +9,4 @@
 # set(<old_board_name>_DEPRECATED <new_board_name>)
 
 set(nrf51_pca10028_DEPRECATED nrf51dk_nrf51422)
+set(nrf52840_pca10056_DEPRECATED nrf52840dk_nrf52840)

@@ -57,7 +57,7 @@ Set ``-DSHIELD=st7789v_tl019fqv01`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/gui/lvgl
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :shield: st7789v_tl019fqv01
    :goals: build
 
