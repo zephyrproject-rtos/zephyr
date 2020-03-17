@@ -46,6 +46,14 @@ void platformRadioInit(void);
 void platformRadioProcess(otInstance *aInstance);
 
 /**
+ * This function performs UART driver processing.
+ *
+ * @param[in]  aInstance  The OpenThread instance structure.
+ *
+ */
+void platformUartProcess(otInstance *aInstance);
+
+/**
  * Get current channel from radio driver.
  *
  * @param[in]  aInstance  The OpenThread instance structure.

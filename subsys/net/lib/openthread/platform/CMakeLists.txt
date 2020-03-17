@@ -10,6 +10,7 @@ zephyr_library_sources(
   radio.c
   settings.c
   spi.c
+  uart.c
   )
 
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_SHELL shell.c)

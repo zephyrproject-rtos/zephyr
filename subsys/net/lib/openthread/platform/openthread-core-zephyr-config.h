@@ -142,4 +142,12 @@
  */
 #define RADIO_CONFIG_SRC_MATCH_EXT_ENTRY_NUM 0
 
+/**
+ * @def OPENTHREAD_CONFIG_NCP_BUFFER_SIZE
+ *
+ * The size of the NCP buffers.
+ *
+ */
+#define OPENTHREAD_CONFIG_NCP_BUFFER_SIZE 2048
+
 #endif  /* OPENTHREAD_CORE_NRF52840_CONFIG_H_ */
