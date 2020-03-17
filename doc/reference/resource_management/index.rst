@@ -85,5 +85,34 @@ Synchronous transition may be implemented by a caller based on its
 context, for example by using :cpp:func:`k_poll()` to wait until the
 completion is signalled.
 
+.. _resource_mgmt_onoff_monitor:
+
+On-Off Monitor
+==============
+
+In the simplest use cases a client of an on-off service will issue
+:cpp:func:`onoff_request()` and :cpp:func:`onoff_release()` commands and
+rely on the notifications to detect completion of these operations.  In
+cases where client needs may change, it may be necessary to cancel a
+request or release and return to the previous state after a transition
+has started.  This can be done using :cpp:func:`onoff_cancel()`, which
+can be simpler than designing the client to wait until the transition
+completes so it can issue a new release or request.
+
+However the asynchronous nature of on-off service transitions makes
+reliable use onoff_cancel() difficult.  It will return an error
+identifying when a transition has already completed, and will
+synchronously disable a request that has not been satisfied, but when
+cancelling a release it must convert the release operation into a
+request operation.  The release may complete before the caller has been
+informed of the conversion.  Similarly it is possible that, due to
+cancellation of a request, a service error that occurs during transition
+will not be reported.
+
+Clients and other components interested in tracking service state can be
+informed of state transitions by registering for state changes using
+onoff_monitor_request().  These changes are provided before issuing
+completion notifications associated with the new state.
+
 .. doxygengroup:: resource_mgmt_onoff_apis
    :project: Zephyr

@@ -80,6 +80,19 @@ int onoff_manager_init(struct onoff_manager *mgr,
 	return 0;
 }
 
+static void notify_monitors(struct onoff_manager *mgr,
+			    u32_t state,
+			    int res)
+{
+	sys_slist_t *mlist = &mgr->monitors;
+	struct onoff_monitor *mon;
+	struct onoff_monitor *tmp;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(mlist, mon, tmp, node) {
+		mon->callback(mgr, mon, state, res);
+	}
+}
+
 static void notify_one(struct onoff_manager *mgr,
 		       struct onoff_client *cli,
 		       u32_t state,
@@ -101,6 +114,8 @@ static void notify_all(struct onoff_manager *mgr,
 		       u32_t state,
 		       int res)
 {
+	notify_monitors(mgr, state, res);
+
 	while (!sys_slist_is_empty(list)) {
 		sys_snode_t *node = sys_slist_get_not_empty(list);
 		struct onoff_client *cli =
@@ -267,6 +282,7 @@ out:
 
 	if (start) {
 		__ASSERT_NO_MSG(mgr->transitions->start != NULL);
+		notify_monitors(mgr, state, 0);
 		mgr->transitions->start(mgr, onoff_start_notify);
 	} else if (notify) {
 		notify_one(mgr, cli, state, 0);
@@ -425,6 +441,7 @@ out:
 
 	if (stop) {
 		__ASSERT_NO_MSG(mgr->transitions->stop != NULL);
+		notify_monitors(mgr, state, 0);
 		mgr->transitions->stop(mgr, onoff_stop_notify);
 	} else if (notify) {
 		notify_one(mgr, cli, state, 0);
@@ -566,6 +583,42 @@ int onoff_cancel(struct onoff_manager *mgr,
 	if (rv == 0) {
 		set_client_type(cli, ONOFF_CLIENT_INACTIVE);
 	}
+
+	return rv;
+}
+
+int onoff_monitor_register(struct onoff_manager *mgr,
+			   struct onoff_monitor *mon)
+{
+	if ((mgr == NULL) || (mon == NULL)) {
+		return -EINVAL;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
+
+	sys_slist_append(&mgr->monitors, &mon->node);
+
+	k_spin_unlock(&mgr->lock, key);
+
+	return 0;
+}
+
+int onoff_monitor_unregister(struct onoff_manager *mgr,
+			     struct onoff_monitor *mon)
+{
+	int rv = -EINVAL;
+
+	if ((mgr == NULL) || (mon == NULL)) {
+		return rv;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
+
+	if (sys_slist_find_and_remove(&mgr->monitors, &mon->node)) {
+		rv = 0;
+	}
+
+	k_spin_unlock(&mgr->lock, key);
 
 	return rv;
 }

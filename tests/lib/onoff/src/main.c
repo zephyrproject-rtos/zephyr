@@ -8,6 +8,14 @@
 #include <ztest.h>
 #include <sys/onoff.h>
 
+struct transition_record {
+	u32_t state;
+	int res;
+};
+
+static struct transition_record xions[32];
+static struct transition_record *xions_end;
+
 static struct onoff_client spinwait_cli;
 
 static u32_t callback_state;
@@ -159,12 +167,27 @@ static void reset(struct onoff_manager *srv,
 	run_transit(srv, notify, &reset_state);
 }
 
+static void xion_callback(struct onoff_manager *mgr,
+			  struct onoff_monitor *mon,
+			  u32_t state,
+			  int res)
+{
+	if (xions_end < (xions + ARRAY_SIZE(xions))) {
+		*xions_end = (struct transition_record){
+			.state = state,
+			.res = res,
+		};
+		++xions_end;
+	}
+}
+
 static void clear_transit(void)
 {
 	callback_res = 0;
 	reset_transit_state(&start_state);
 	reset_transit_state(&stop_state);
 	reset_transit_state(&reset_state);
+	xions_end = xions;
 }
 
 static void test_service_init_validation(void)
@@ -359,6 +382,12 @@ static void test_reset(void)
 	rc = onoff_manager_init(&srv, &transitions);
 	zassert_equal(rc, 0,
 		      "service init");
+
+	struct onoff_monitor mon = {
+		.callback = xion_callback,
+	};
+	const struct transition_record *xp = xions;
+
 	rc = onoff_reset(&srv, &cli);
 	zassert_equal(rc, -ENOTSUP,
 		      "reset: %d", rc);
@@ -367,9 +396,15 @@ static void test_reset(void)
 	zassert_equal(rc, 0,
 		      "service init");
 
+	rc = onoff_monitor_register(&srv, &mon);
+	zassert_equal(rc, 0,
+		      "mon reg");
+
 	rc = onoff_reset(&srv, NULL);
 	zassert_equal(rc, -EINVAL,
 		      "rst no cli");
+	zassert_equal(xp, xions,
+		      "xion count");
 
 	init_spinwait(&spinwait_cli);
 	rc = onoff_request(&srv, &spinwait_cli);
@@ -377,6 +412,14 @@ static void test_reset(void)
 		     "req ok");
 	zassert_equal(srv.refs, 1U,
 		      "reset req refs: %u", srv.refs);
+	zassert_equal(xions_end, xions + 2,
+		      "xion count");
+	zassert_equal(xp->state, ONOFF_STATE_TO_ON,
+		      "xion0");
+	++xp;
+	zassert_equal(xp->state, ONOFF_STATE_ON,
+		      "xion1");
+	++xp;
 
 	zassert_false(onoff_has_error(&srv),
 		      "has error");
@@ -385,7 +428,6 @@ static void test_reset(void)
 	rc = onoff_reset(&srv, &cli);
 	zassert_equal(rc, -EALREADY,
 		      "reset: %d", rc);
-
 	stop_state.retval = -23;
 	init_notify_sig(&cli, &sig);
 	rc = onoff_release(&srv, &cli);
@@ -405,6 +447,16 @@ static void test_reset(void)
 	zassert_equal(result, stop_state.retval,
 		      "result");
 	k_poll_signal_reset(&sig);
+	zassert_equal(xions_end, xions + 4,
+		      "xion count");
+	zassert_equal(xp->state, ONOFF_STATE_TO_OFF,
+		      "xion2");
+	++xp;
+	zassert_equal(xp->state, ONOFF_HAS_ERROR | ONOFF_STATE_OFF,
+		      "xion3");
+	zassert_equal(xp->res, stop_state.retval,
+		      "xion3");
+	++xp;
 
 	reset_state.retval = -59;
 	init_notify_sig(&cli, &sig);
@@ -417,6 +469,13 @@ static void test_reset(void)
 		      "reset req refs: %u", srv.refs);
 	zassert_true(onoff_has_error(&srv),
 		     "has error");
+	zassert_equal(xions_end, xions + 5,
+		      "xion count");
+	zassert_equal(xp->state, ONOFF_HAS_ERROR | ONOFF_STATE_OFF,
+		      "xion4");
+	zassert_equal(xp->res, reset_state.retval,
+		      "xion4");
+	++xp;
 
 	reset_state.retval = 62;
 	init_notify_sig(&cli, &sig);
@@ -427,6 +486,13 @@ static void test_reset(void)
 		      "reset result");
 	zassert_false(onoff_has_error(&srv),
 		      "has error");
+	zassert_equal(xions_end, xions + 6,
+		      "xion count");
+	zassert_equal(xp->state, ONOFF_STATE_OFF,
+		      "xion5");
+	zassert_equal(xp->res, reset_state.retval,
+		      "xion5");
+	++xp;
 
 	signalled = 0;
 	result = -1;
@@ -724,6 +790,15 @@ static void test_async(void)
 	zassert_equal(rc, 0,
 		      "service init");
 
+	struct onoff_monitor mon = {
+		.callback = xion_callback,
+	};
+	const struct transition_record *xp = xions;
+
+	rc = onoff_monitor_register(&srv, &mon);
+	zassert_equal(rc, 0,
+		      "mon reg");
+
 	/* WHITEBOX: request that triggers on returns positive */
 	init_notify_sig(&cli[0], &sig[0]);
 	rc = onoff_request(&srv, &cli[0]);
@@ -734,6 +809,11 @@ static void test_async(void)
 		      "cli signalled");
 	zassert_equal(srv.refs, 0U,
 		      "reset req refs: %u", srv.refs);
+	zassert_equal(xions_end, xions + 1,
+		      "xion count");
+	zassert_equal(xp->state, ONOFF_STATE_TO_ON,
+		      "xion0");
+	++xp;
 
 	/* Attempts to request when client is active are failures. */
 	rc = onoff_request(&srv, &cli[0]);
@@ -797,6 +877,13 @@ static void test_async(void)
 		      "cli2 result");
 	zassert_equal(srv.refs, 3U,
 		      "reset req refs: %u", srv.refs);
+	zassert_equal(xions_end, xions + 2,
+		      "xion count %u", (xions_end - xions));
+	zassert_equal(xp->state, ONOFF_STATE_ON,
+		      "xion1");
+	zassert_equal(xp->res, start_state.retval,
+		      "xion1");
+	++xp;
 
 	/* Non-final release decrements refs and completes. */
 	init_notify_sig(&cli[0], &sig[0]);
@@ -811,6 +898,8 @@ static void test_async(void)
 		      "cli signalled");
 	zassert_equal(result, 0,
 		      "cli result");
+	zassert_equal(xions_end, xions + 2,
+		      "xion count %u", (xions_end - xions));
 
 	/* Non-final release from ISR is OK */
 	init_spinwait(&isrcli);
@@ -882,6 +971,17 @@ static void test_async(void)
 	zassert_equal(result, stop_state.retval,
 		      "cli result");
 
+	zassert_equal(xions_end, xions + 4,
+		      "xion count %u", (xions_end - xions));
+	zassert_equal(xp->state, ONOFF_STATE_TO_OFF,
+		      "xion2");
+	++xp;
+	zassert_equal(xp->state, ONOFF_STATE_TO_ON,
+		      "xion3");
+	zassert_equal(xp->res, stop_state.retval,
+		      "xion3");
+	++xp;
+
 	/* Release when starting is an error */
 	init_notify_sig(&cli[2], &sig[2]);
 	rc = onoff_release(&srv, &cli[2]);
@@ -899,6 +999,13 @@ static void test_async(void)
 		      "start notified");
 	zassert_equal(srv.refs, 1U,
 		      "reset rel refs: %u", srv.refs);
+	zassert_equal(xions_end, xions + 5,
+		      "xion count %u", (xions_end - xions));
+	zassert_equal(xp->state, ONOFF_STATE_ON,
+		      "xion4");
+	zassert_equal(xp->res, start_state.retval,
+		      "xion4");
+	++xp;
 }
 
 static void test_half_sync(void)
@@ -1026,6 +1133,14 @@ static void test_cancel_request_waits(void)
 	zassert_equal(rc, 0,
 		      "service init");
 
+	struct onoff_monitor mon = {
+		.callback = xion_callback,
+	};
+
+	rc = onoff_monitor_register(&srv, &mon);
+	zassert_equal(rc, 0,
+		      "mon reg");
+
 	init_notify_sig(&cli, &sig);
 	rc = onoff_request(&srv, &cli);
 	zassert_true(rc > 0,
@@ -1071,10 +1186,20 @@ static void test_cancel_request_waits(void)
 	zassert_false(stop_state.notify == NULL,
 		      "stop not pending");
 
-	/* Nobody's around to hear the stop completion */
+	/* Nobody's around to hear the stop completion... */
 	notify(&stop_state);
 	zassert_false(onoff_has_error(&srv),
 		      "has error");
+
+	/* ...except the monitor */
+	zassert_equal(xions_end - xions, 3,
+		      "xion count");
+	zassert_equal(xions[0].state, ONOFF_STATE_TO_ON,
+		      "xion0");
+	zassert_equal(xions[1].state, ONOFF_STATE_ON,
+		      "xion1");
+	zassert_equal(xions[2].state, ONOFF_STATE_OFF,
+		      "xion2");
 }
 
 static void test_cancel_request_ok(void)
@@ -1314,6 +1439,65 @@ static void test_cancel_reset(void)
 		      "error");
 }
 
+static void test_monitor(void)
+{
+	static const struct onoff_transitions srv_transitions =
+		ONOFF_TRANSITIONS_INITIALIZER(start, stop, reset,
+					      ONOFF_RESET_SLEEPS);
+	struct onoff_manager srv = ONOFF_MANAGER_INITIALIZER(&srv_transitions);
+	int rc;
+
+	clear_transit();
+
+	struct onoff_monitor mon = {
+		.callback = xion_callback,
+	};
+	const struct transition_record *xp = xions;
+
+	rc = onoff_monitor_register(NULL, &mon);
+	zassert_equal(rc, -EINVAL,
+		      "mgr validation");
+	rc = onoff_monitor_register(&srv, NULL);
+	zassert_equal(rc, -EINVAL,
+		      "mon validation");
+	rc = onoff_monitor_unregister(NULL, &mon);
+	zassert_equal(rc, -EINVAL,
+		      "mgr validation");
+	rc = onoff_monitor_unregister(&srv, NULL);
+	zassert_equal(rc, -EINVAL,
+		      "mon validation");
+	rc = onoff_monitor_register(&srv, &mon);
+	zassert_equal(rc, 0,
+		      "mgr register");
+
+	init_spinwait(&spinwait_cli);
+	rc = onoff_request(&srv, &spinwait_cli);
+	zassert_true(rc, 0,
+		     "request");
+	zassert_equal(xions_end, xions + 2,
+		      "xion count");
+	zassert_equal(xp->state, ONOFF_STATE_TO_ON,
+		      "xion0.state");
+	++xp;
+	zassert_equal(xp->state, ONOFF_STATE_ON,
+		      "xion1.state");
+
+	rc = onoff_monitor_unregister(&srv, &mon);
+	zassert_equal(rc, 0,
+		      "mgr unregister");
+	rc = onoff_monitor_unregister(&srv, &mon);
+	zassert_equal(rc, -EINVAL,
+		      "mgr dup unregister");
+
+	init_spinwait(&spinwait_cli);
+	rc = onoff_release(&srv, &spinwait_cli);
+	zassert_true(rc, 0,
+		     "release");
+
+	zassert_equal(xions_end, xions + 2,
+		      "xion count");
+}
+
 void test_main(void)
 {
 	k_sem_init(&isr_sync, 0, 1);
@@ -1334,6 +1518,7 @@ void test_main(void)
 			 ztest_unit_test(test_blocked_restart),
 			 ztest_unit_test(test_cancel_release),
 			 ztest_unit_test(test_orphan_stop),
-			 ztest_unit_test(test_cancel_reset));
+			 ztest_unit_test(test_cancel_reset),
+			 ztest_unit_test(test_monitor));
 	ztest_run_test_suite(onoff_api);
 }
