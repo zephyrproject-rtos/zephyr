@@ -62,18 +62,35 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 #endif /* CONFIG_TRACING */
 
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) \
-	|| defined(CONFIG_ARMV7_R)
-	cpsie	i
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	/* clear BASEPRI so wfi is awakened by incoming interrupts */
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	/*
+	 * PRIMASK is always cleared on ARMv7-M and ARMv8-M Mainline (not used
+	 * for interrupt locking), and configuring BASEPRI to the lowest
+	 * priority to ensure wake-up will cause interrupts to be serviced
+	 * before entering low power state.
+	 *
+	 * Set PRIMASK before configuring BASEPRI to prevent interruption
+	 * before wake-up.
+	 */
+	cpsid	i
+
+	/* Set wake-up interrupt priority to the lowest */
 	eors.n	r0, r0
 	msr	BASEPRI, r0
 #else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+	/*
+	 * For all the other ARM architectures that do not implement BASEPRI,
+	 * PRIMASK is used as the interrupt locking mechanism, and it is not
+	 * necessary to set PRIMASK here, as PRIMASK would have already been
+	 * set by the caller as part of interrupt locking if necessary
+	 * (i.e. if the caller sets _kernel.idle).
+	 */
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 
 	wfi
+
+	/* Clear PRIMASK to service any pending interrupt */
+	cpsie	i
 
 	bx	lr
 
