@@ -688,6 +688,7 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 		if (link) {
 			struct pdu_data *pdu_data_tx;
 			u8_t pdu_data_tx_len;
+			u8_t offset;
 
 			pdu_data_tx = (void *)(tx->pdu +
 					       lll->packet_tx_head_offset);
@@ -702,9 +703,10 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 			}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-			lll->packet_tx_head_offset += pdu_data_tx_len;
-			if (lll->packet_tx_head_offset ==
-			    lll->packet_tx_head_len) {
+			offset = lll->packet_tx_head_offset + pdu_data_tx_len;
+			if (offset < lll->packet_tx_head_len) {
+				lll->packet_tx_head_offset = offset;
+			} else if (offset == lll->packet_tx_head_len) {
 				lll->packet_tx_head_len = 0;
 				lll->packet_tx_head_offset = 0;
 
