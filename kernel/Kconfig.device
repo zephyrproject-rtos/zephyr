@@ -36,4 +36,18 @@ config DEVICE_CALL_TIMEOUT_VALUE
 	  By default -1 is set (K_FOREVER), any positive value is valid.
 	  Make sure to select a suitable value for all the devices.
 
+config DEVICE_STATUS_REPORT
+	bool "Enable support for device status reporting"
+	help
+	  If enabled, each and every device will maintain a status about
+	  how successful they initialized or ran an API call. This, in turn,
+	  will help further advanced error management.
+
+config DEVICE_STRICT_CHECK
+	bool "Enable strict status checking"
+	help
+	  If enabled, a check on the device status will also verify if
+	  there were no hardware fault and will behave accordingly: returning
+	  the error code.
+
 endmenu

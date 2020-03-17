@@ -294,13 +294,24 @@ struct device {
  * @brief Runtime device context structure per-driver instance
  *
  * @param sync A semaphore used for API call synchronization
- * @param call_status The status to return from the call
+ * @param status The overall status of the device made of the following parts:
+ *     code     [ 0 : 15 ]  - 0 or a errno value (which has to fit in 16 bits)
+ *     init     [ 16 ]      - 1 if inititialization was successful
+ *     hw fault [ 17 ]      - 1 if the error was from the hardware
+ *     call     [ 18 ]      - 1 if last API call was successful
+ *     reserved [ 19 : 32 ] - reserved for future use (PM mostly)
  * @param lock A semaphore used to protect against concurrent access
  * @param timeout A timeout for the on-going call
  */
 struct device_context {
 	struct k_sem sync;
-	int call_status;
+	struct {
+		u32_t code      : 16;
+		u32_t init      : 1;
+		u32_t hw_fault  : 1;
+		u32_t call      : 1;
+		u32_t reserved  : 13;
+	} status;
 #ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
 	struct k_sem lock;
 #endif
@@ -308,6 +319,12 @@ struct device_context {
 	k_timeout_t timeout;
 #endif
 };
+
+#define DEVICE_STATUS_GET_STATUS_CODE(_dc)		\
+	(-(int)_dc->status.code)
+
+#define DEVICE_STATUS_SET_STATUS_CODE(_dc, _code)	\
+	(_dc->status.code |= ((u32_t)(-_code)))
 
 #if CONFIG_DEVICE_CALL_TIMEOUT_VALUE == -1
 #define DEVICE_CALL_TIMEOUT K_FOREVER
@@ -355,6 +372,18 @@ void device_call_complete(struct device *dev, int status);
  * @return status of the device
  */
 int device_release(struct device *dev);
+
+/**
+ * @brief Set a device initialization status and return it
+ *
+ * @details Such function is to be used by device drivers only.
+ *
+ * @param dev a valid pointer to a device structure
+ * @param status the initialization status
+ *
+ * @return status
+ */
+int device_init_done(struct device *dev, int status);
 
 /**
  * @brief Retrieve the device structure for a driver by name

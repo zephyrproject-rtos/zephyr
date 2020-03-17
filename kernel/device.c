@@ -180,6 +180,85 @@ void device_busy_clear(struct device *busy_dev)
 #endif
 }
 
+#if defined(CONFIG_DEVICE_STATUS_REPORT)
+static void device_call_status(struct device *dev, bool init, int status)
+{
+	struct device_context *dc =
+		(struct device_context *)__device_context_start +
+		(dev - __device_start);
+
+	if (status) {
+		if (init) {
+			dc->status.init = false;
+		} else {
+			dc->status.call = false;
+		}
+
+		if (status == -EIO) {
+			dc->status.hw_fault = true;
+		}
+	} else {
+		if (init) {
+			dc->status.init = true;
+		} else {
+			dc->status.call = true;
+		}
+	}
+
+	DEVICE_STATUS_SET_STATUS_CODE(dc, status);
+}
+
+static int device_check_status(struct device *dev)
+{
+	struct device_context *dc =
+		(struct device_context *)__device_context_start +
+		(dev - __device_start);
+
+	if (!dc->status.init ||
+	    (IS_ENABLED(CONFIG_DEVICE_STRICT_CHECK) &&
+	     (dc->status.hw_fault))) {
+		return DEVICE_STATUS_GET_STATUS_CODE(dc);
+	}
+
+	return 0;
+}
+
+#else /* CONFIG_DEVICE_STATUS_REPORT */
+
+static void device_call_status(struct device *dev, bool init, int status)
+{
+	struct device_context *dc =
+		(struct device_context *)__device_context_start +
+		(dev - __device_start);
+
+	if (init) {
+		if (status) {
+			dc->status.init = false;
+		} else {
+			dc->status.init = true;
+		}
+	}
+
+	DEVICE_STATUS_SET_STATUS_CODE(dc, status);
+}
+
+static int device_check_status(struct device *dev)
+{
+	struct device_context *dc =
+		(struct device_context *)__device_context_start +
+		(dev - __device_start);
+
+	return dc->status.init ? 0 : -EIO;
+}
+#endif /* CONFIG_DEVICE_STATUS_REPORT */
+
+int device_init_done(struct device *dev, int status)
+{
+	device_call_status(dev, true, status);
+
+	return status;
+}
+
 #ifdef CONFIG_DEVICE_CALL_TIMEOUT
 static void device_call_set_timeout(struct device *dev, k_timeout_t timeout)
 {
@@ -195,6 +274,8 @@ static void device_call_cancel(struct device *dev)
 	if (dev->cancel != NULL) {
 		dev->cancel(dev);
 	}
+
+	device_call_status(dev, false, -ECANCELED);
 }
 #else
 #define device_call_set_timeout(...)
@@ -203,10 +284,14 @@ static void device_call_cancel(struct device *dev)
 
 int device_lock_timeout(struct device *dev, k_timeout_t timeout)
 {
-#ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
+	int status;
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
 	struct device_context *dc =
 		(struct device_context *)__device_context_start +
 		(dev - __device_start);
+#endif
+
+#ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
 	k_timeout_t lock_timeout = timeout;
 
 #ifdef CONFIG_DEVICE_CALL_TIMEOUT
@@ -244,7 +329,13 @@ int device_lock_timeout(struct device *dev, k_timeout_t timeout)
 
 	device_call_set_timeout(dev, timeout);
 
-	return 0;
+	status = device_check_status(dev);
+#ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
+	if (status != 0) {
+		k_sem_give(&dc->lock);
+	}
+#endif
+	return status;
 }
 
 void device_call_complete(struct device *dev, int status)
@@ -253,7 +344,8 @@ void device_call_complete(struct device *dev, int status)
 		(struct device_context *)__device_context_start +
 		(dev - __device_start);
 
-	dc->call_status = status;
+	(void)device_call_status(dev, false, status);
+
 	k_sem_give(&dc->sync);
 }
 
@@ -262,18 +354,17 @@ int device_release(struct device *dev)
 	struct device_context *dc =
 		(struct device_context *)__device_context_start +
 		(dev - __device_start);
-	u32_t status;
+	int status;
 
 #ifdef CONFIG_DEVICE_CALL_TIMEOUT
 	if (k_sem_take(&dc->sync, dc->timeout) == -EAGAIN) {
 		device_call_cancel(dev);
-		status = -ECANCELED;
 	}
 #else
 	k_sem_take(&dc->sync, K_FOREVER);
 #endif /* CONFIG_DEVICE_CALL_TIMEOUT */
 
-	status = dc->call_status;
+	status = DEVICE_STATUS_GET_STATUS_CODE(dc);
 
 #ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
 	k_sem_give(&dc->lock);
