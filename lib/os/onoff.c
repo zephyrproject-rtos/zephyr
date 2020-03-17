@@ -57,18 +57,20 @@ int onoff_manager_init(struct onoff_manager *mgr,
 
 static void notify_one(struct onoff_manager *mgr,
 		       struct onoff_client *cli,
+		       u32_t state,
 		       int res)
 {
 	onoff_client_callback cb =
 		(onoff_client_callback)async_notify_finalize(&cli->notify, res);
 
 	if (cb) {
-		cb(mgr, cli, cli->user_data, res);
+		cb(mgr, cli, state, res, cli->user_data);
 	}
 }
 
 static void notify_all(struct onoff_manager *mgr,
 		       sys_slist_t *list,
+		       u32_t state,
 		       int res)
 {
 	while (!sys_slist_is_empty(list)) {
@@ -78,7 +80,7 @@ static void notify_all(struct onoff_manager *mgr,
 				     struct onoff_client,
 				     node);
 
-		notify_one(mgr, cli, res);
+		notify_one(mgr, cli, state, res);
 	}
 }
 
@@ -127,9 +129,11 @@ static void onoff_start_notify(struct onoff_manager *mgr,
 
 	sys_slist_init(&mgr->clients);
 
+	u32_t state = mgr->flags & ONOFF_STATE_MASK;
+
 	k_spin_unlock(&mgr->lock, key);
 
-	notify_all(mgr, &clients, res);
+	notify_all(mgr, &clients, state, res);
 }
 
 int onoff_request(struct onoff_manager *mgr,
@@ -204,13 +208,14 @@ out:
 		mgr->refs += 1;
 	}
 
+	state = mgr->flags & ONOFF_STATE_MASK;
 	k_spin_unlock(&mgr->lock, key);
 
 	if (start) {
 		__ASSERT_NO_MSG(mgr->transitions->start != NULL);
 		mgr->transitions->start(mgr, onoff_start_notify);
 	} else if (notify) {
-		notify_one(mgr, cli, 0);
+		notify_one(mgr, cli, state, 0);
 	}
 
 	return rv;
@@ -264,15 +269,17 @@ static void onoff_stop_notify(struct onoff_manager *mgr,
 		sys_slist_init(&mgr->clients);
 	}
 
+	u32_t state = mgr->flags & ONOFF_STATE_MASK;
+
 	k_spin_unlock(&mgr->lock, key);
 
 	/* Notify the releaser.  If there was an error, notify any
 	 * pending requests; otherwise if there are pending requests
 	 * start the transition to ON.
 	 */
-	notify_one(mgr, releaser, res);
+	notify_one(mgr, releaser, state, res);
 	if (notify_clients) {
-		notify_all(mgr, &clients, client_res);
+		notify_all(mgr, &clients, state, client_res);
 	} else if (start) {
 		mgr->transitions->start(mgr, onoff_start_notify);
 	}
@@ -339,13 +346,14 @@ out:
 		mgr->refs -= 1U;
 	}
 
+	state = mgr->flags & ONOFF_STATE_MASK;
 	k_spin_unlock(&mgr->lock, key);
 
 	if (stop) {
 		__ASSERT_NO_MSG(mgr->transitions->stop != NULL);
 		mgr->transitions->stop(mgr, onoff_stop_notify);
 	} else if (notify) {
-		notify_one(mgr, cli, 0);
+		notify_one(mgr, cli, state, 0);
 	}
 
 	return rv;
@@ -373,9 +381,11 @@ static void onoff_reset_notify(struct onoff_manager *mgr,
 
 	sys_slist_init(&mgr->clients);
 
+	u32_t state = mgr->flags & ONOFF_STATE_MASK;
+
 	k_spin_unlock(&mgr->lock, key);
 
-	notify_all(mgr, &clients, res);
+	notify_all(mgr, &clients, state, res);
 }
 
 int onoff_reset(struct onoff_manager *mgr,
@@ -458,7 +468,7 @@ int onoff_cancel(struct onoff_manager *mgr,
 	k_spin_unlock(&mgr->lock, key);
 
 	if (rv == 0) {
-		notify_one(mgr, cli, -ECANCELED);
+		notify_one(mgr, cli, state, -ECANCELED);
 	}
 
 	return rv;

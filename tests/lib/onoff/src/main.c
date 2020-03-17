@@ -10,15 +10,18 @@
 
 static struct onoff_client spinwait_cli;
 
+static u32_t callback_state;
 static int callback_res;
 static void *callback_ud;
 static void callback(struct onoff_manager *srv,
 		     struct onoff_client *cli,
-		     void *ud,
-		     int res)
+		     u32_t state,
+		     int res,
+		     void *ud)
 {
-	callback_ud = ud;
+	callback_state = state;
 	callback_res = res;
+	callback_ud = ud;
 }
 
 static inline void init_notify_sig(struct onoff_client *cli,
@@ -476,23 +479,31 @@ static void test_request(void)
 {
 	int rc;
 	struct onoff_manager srv;
+	struct onoff_client cli;
 	struct onoff_transitions transitions =
 		ONOFF_TRANSITIONS_INITIALIZER(start, stop, reset, 0);
 
 	clear_transit();
+	start_state.retval = 16;
 
 	rc = onoff_manager_init(&srv, &transitions);
 	zassert_equal(rc, 0,
 		      "service init");
 
-	init_spinwait(&spinwait_cli);
-	rc = onoff_request(&srv, &spinwait_cli);
+	onoff_client_init_callback(&cli, callback, &srv);
+	rc = onoff_request(&srv, &cli);
 	zassert_true(rc >= 0,
 		     "reset req: %d", rc);
 	zassert_equal(srv.refs, 1U,
 		      "reset req refs: %u", srv.refs);
-	zassert_equal(cli_result(&spinwait_cli), 0,
-		      "reset req result: %d", cli_result(&spinwait_cli));
+	zassert_equal(cli_result(&cli), start_state.retval,
+		      "reset req result: %d", cli_result(&cli));
+	zassert_equal(callback_state, ONOFF_STATE_ON,
+		      "callback state");
+	zassert_equal(callback_res, start_state.retval,
+		      "callback res");
+	zassert_equal(callback_ud, (void *)&srv,
+		      "callback userdata");
 
 	/* Can't reset when no error present. */
 	init_spinwait(&spinwait_cli);
@@ -534,7 +545,6 @@ static void test_request(void)
 		      "rel with error");
 
 	struct k_poll_signal sig;
-	struct onoff_client cli;
 
 	/* Clear the error */
 	init_notify_sig(&cli, &sig);
