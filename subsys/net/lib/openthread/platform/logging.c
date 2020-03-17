@@ -39,16 +39,16 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion,
 
 	switch (aLogLevel) {
 	case OT_LOG_LEVEL_CRIT:
-		LOG_ERR("%s", logString);
+		LOG_ERR("%s", log_strdup(logString));
 		break;
 	case OT_LOG_LEVEL_WARN:
-		LOG_WRN("%s", logString);
+		LOG_WRN("%s", log_strdup(logString));
 		break;
 	case OT_LOG_LEVEL_INFO:
-		LOG_INF("%s", logString);
+		LOG_INF("%s", log_strdup(logString));
 		break;
 	case OT_LOG_LEVEL_DEBG:
-		LOG_DBG("%s", logString);
+		LOG_DBG("%s", log_strdup(logString));
 		break;
 	default:
 		break;
