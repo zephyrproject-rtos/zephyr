@@ -12,11 +12,4 @@
 #define DT_DDR_BASE_ADDRESS		DT_MMIO_SRAM_10000000_BASE_ADDRESS
 #define DT_DDR_SIZE			(DT_MMIO_SRAM_10000000_SIZE >> 10)
 
-/*
- * SPI configuration
- */
-
-#define DT_INST_0_SNPS_DESIGNWARE_SPI_IRQ_FLAGS		0
-#define DT_INST_1_SNPS_DESIGNWARE_SPI_IRQ_FLAGS		0
-
 /* End of SoC Level DTS fixup file */
