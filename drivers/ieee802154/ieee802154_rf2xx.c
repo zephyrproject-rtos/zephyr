@@ -447,16 +447,16 @@ static int rf2xx_filter(struct device *dev,
 #if defined(CONFIG_NET_L2_OPENTHREAD)
 static void rf2xx_handle_ack(struct rf2xx_context *ctx, u8_t seq_number)
 {
-	rf2xx_ack_psdu[0] = ACK_FRAME_TYPE;
+	rf2xx_ack_psdu[0] = RF2XX_ACK_FRAME_TYPE;
 	rf2xx_ack_psdu[2] = seq_number;
 
 	if (ctx->trx_trac == RF2XX_TRX_PHY_STATE_TRAC_SUCCESS_DATA_PENDING) {
-		rf2xx_ack_psdu[0] |=  ACK_FRAME_PENDING_BIT;
+		rf2xx_ack_psdu[0] |= RF2XX_ACK_FRAME_PENDING_BIT;
 	}
 
 	rf2xx_ack_frame.data = rf2xx_ack_psdu;
 
-	if (ieee802154_radio_handle_ack(ctx->iface, rf2xx_ack_pkt) != NET_OK) {
+	if (ieee802154_radio_handle_ack(ctx->iface, &rf2xx_ack_pkt) != NET_OK) {
 		LOG_INF("ACK packet not handled.");
 	}
 }
