@@ -1,12 +1,12 @@
-# nRF52811 PCA10056 board configuration
+# nRF52840 DK NRF52811 board configuration
 
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52811_PCA10056
+if BOARD_NRF52840DK_NRF52811
 
 config BOARD
-	default "nrf52811_pca10056"
+	default "nrf52840dk_nrf52811"
 
 config BT_CTLR
 	default BT
@@ -31,4 +31,4 @@ config IEEE802154_NRF5
 	default y
 	depends on IEEE802154
 
-endif # BOARD_NRF52811_PCA10056
+endif # BOARD_NRF52840DK_NRF52811
