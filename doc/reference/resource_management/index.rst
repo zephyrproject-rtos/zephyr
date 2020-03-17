@@ -33,7 +33,9 @@ The manager has the following properties:
   in the off state.  The service may also be in a transition to a given
   state.
 * The core operations are request (add a dependency) and release (remove
-  a dependency). The service manages the state based on calls to
+  a dependency). Supporting operations are reset (to clear an error
+  state) and cancel (to reclaim client data from an in-progress
+  transition).  The service manages the state based on calls to
   functions that initiate these operations.
 * The service transitions from off to on when first client request is
   received.
@@ -41,17 +43,11 @@ The manager has the following properties:
   received.
 * Each service configuration provides functions that implement the
   transition from off to on, from on to off, and optionally from an
-  error state to off.  Transitions that may put a calling thread to
-  sleep must be flagged in the configuration to support detecting unsafe
-  invocation from non-thread context.
-* All operations are asynchronous, and are initiated by a function call
-  that references a specific service and is given client notification
-  data. The function call will succeed or fail. On success, the
-  operation is guaranteed to be initiated, but whether the operation
-  itself succeeds or fails is indicated through client notification.
-  The initiation functions can be invoked from pre-kernel, thread, or
-  ISR context.  In contexts and states where the operation cannot
-  be started the function will result in an error.
+  error state to off.  Transitions must be invokable from both thread
+  and interrupt context.
+* The request and reset operations are asynchronous using
+  :ref:`async_notification`.  Both operations may be cancelled, but
+  cancellation has no effect on the in-progress transition.
 * Requests to turn on may be queued while a transition to off is in
   progress: when the service has turned off successfully it will be
   immediately turned on again (where context allows) and waiting clients
@@ -68,21 +64,15 @@ Failures in executing a transition are recorded and inhibit further
 requests or releases until the manager is reset. Pending requests are
 notified (and cancelled) when errors are discovered.
 
-Transition operation completion notifications are provided through the
-standard :ref:`async_notification`, supporting these methods:
+Transition operation completion notifications are provided through
+:ref:`async_notification`.
 
-* Signal: A pointer to a :c:type:`struct k_poll_signal` is provided, and
-  the signal is raised when the transition completes. The operation
-  completion code is stored as the signal value.
-* Callback: a function pointer is provided by the client along with an
-  opaque pointer, and on completion of the operation the function is
-  invoked with the pointer and the operation completion code.
-* Spin-wait: the client is required to check for operation completion
-  using the :cpp:func:`onoff_client_fetch_result()` function.
-
-Synchronous transition may be implemented by a caller based on its
-context, for example by using :cpp:func:`k_poll()` to wait until the
-completion is signalled.
+Clients and other components interested in tracking all service state
+changes, including when a service begins turning off or enters an error
+state, can be informed of state transitions by registering a monitor
+with onoff_monitor_register().  Notification of changes are provided
+before issuing completion notifications associated with the new
+state.
 
 .. doxygengroup:: resource_mgmt_onoff_apis
    :project: Zephyr
