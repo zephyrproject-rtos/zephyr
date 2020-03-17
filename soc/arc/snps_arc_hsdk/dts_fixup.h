@@ -7,11 +7,6 @@
 /* SoC level DTS fixup file */
 
 /*
- * GPIO configuration
- */
-#define DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS	0
-
-/*
  * SPI configuration
  */
 

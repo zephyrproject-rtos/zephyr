@@ -616,6 +616,11 @@ DEVICE_AND_API_INIT(gpio_dw_0, DT_INST_0_SNPS_DESIGNWARE_GPIO_LABEL,
 		    &api_funcs);
 #endif
 
+#if defined(DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS)
+#define INST_0_IRQ_FLAGS DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS
+#else
+#define INST_0_IRQ_FLAGS 0
+#endif
 static void gpio_config_0_irq(struct device *port)
 {
 #if (DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_0 > 0)
@@ -625,7 +630,7 @@ static void gpio_config_0_irq(struct device *port)
 	IRQ_CONNECT(DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_0,
 		    DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_0_PRIORITY, gpio_dw_isr,
 		    DEVICE_GET(gpio_dw_0),
-		    DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS);
+		    INST_0_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_0_IRQ_SHARED)
 	struct device *shared_irq_dev;
@@ -680,6 +685,12 @@ DEVICE_AND_API_INIT(gpio_dw_1, DT_INST_1_SNPS_DESIGNWARE_GPIO_LABEL,
 		    &api_funcs);
 #endif
 
+
+#if defined(DT_INST_1_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS)
+#define INST_1_IRQ_FLAGS DT_INST_1_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS
+#else
+#define INST_1_IRQ_FLAGS 0
+#endif
 static void gpio_config_1_irq(struct device *port)
 {
 #if (DT_INST_1_SNPS_DESIGNWARE_GPIO_IRQ_0 > 0)
@@ -689,7 +700,7 @@ static void gpio_config_1_irq(struct device *port)
 	IRQ_CONNECT(DT_INST_1_SNPS_DESIGNWARE_GPIO_IRQ_0,
 		    DT_INST_1_SNPS_DESIGNWARE_GPIO_IRQ_0_PRIORITY, gpio_dw_isr,
 		    DEVICE_GET(gpio_dw_1),
-		    DT_INST_1_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS);
+		    INST_1_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_1_IRQ_SHARED)
 	struct device *shared_irq_dev;
@@ -743,6 +754,11 @@ DEVICE_AND_API_INIT(gpio_dw_2, DT_INST_2_SNPS_DESIGNWARE_GPIO_LABEL,
 		    &api_funcs);
 #endif
 
+#if defined(DT_INST_2_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS)
+#define INST_2_IRQ_FLAGS DT_INST_2_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS
+#else
+#define INST_2_IRQ_FLAGS 0
+#endif
 static void gpio_config_2_irq(struct device *port)
 {
 #if (DT_INST_2_SNPS_DESIGNWARE_GPIO_IRQ_0 > 0)
@@ -752,7 +768,7 @@ static void gpio_config_2_irq(struct device *port)
 	IRQ_CONNECT(DT_INST_2_SNPS_DESIGNWARE_GPIO_IRQ_0,
 		    DT_INST_2_SNPS_DESIGNWARE_GPIO_IRQ_0_PRIORITY, gpio_dw_isr,
 		    DEVICE_GET(gpio_dw_2),
-		    DT_INST_2_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS);
+		    INST_2_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_2_IRQ_SHARED)
 	struct device *shared_irq_dev;
@@ -806,6 +822,11 @@ DEVICE_AND_API_INIT(gpio_dw_3, DT_INST_3_SNPS_DESIGNWARE_GPIO_LABEL,
 		    &api_funcs);
 #endif
 
+#if defined(DT_INST_3_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS)
+#define INST_3_IRQ_FLAGS DT_INST_3_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS
+#else
+#define INST_3_IRQ_FLAGS 0
+#endif
 static void gpio_config_3_irq(struct device *port)
 {
 #if (DT_INST_3_SNPS_DESIGNWARE_GPIO_IRQ_0 > 0)
@@ -815,7 +836,7 @@ static void gpio_config_3_irq(struct device *port)
 	IRQ_CONNECT(DT_INST_3_SNPS_DESIGNWARE_GPIO_IRQ_0,
 		    DT_INST_3_SNPS_DESIGNWARE_GPIO_IRQ_0_PRIORITY, gpio_dw_isr,
 		    DEVICE_GET(gpio_dw_3),
-		    DT_INST_3_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS);
+		    INST_3_IRQ_FLAGS);
 	irq_enable(config->irq_num);
 #elif defined(CONFIG_GPIO_DW_3_IRQ_SHARED)
 	struct device *shared_irq_dev;
