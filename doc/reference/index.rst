@@ -7,6 +7,7 @@ API Reference
    :maxdepth: 1
 
    terminology.rst
+   audio/index.rst
    bluetooth/index.rst
    kconfig/index.rst
    crypto/index.rst

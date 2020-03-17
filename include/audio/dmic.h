@@ -7,8 +7,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Public API header file for Digital Microphones
+ *
+ * This file contains the Digital Microphone APIs
+ */
+
 #ifndef ZEPHYR_INCLUDE_AUDIO_DMIC_H_
 #define ZEPHYR_INCLUDE_AUDIO_DMIC_H_
+
+/**
+ * @brief Abstraction for digital microphones
+ *
+ * @defgroup audio_dmic_interface Digital Microphone Interface
+ * @{
+ */
 
 #include <kernel.h>
 #include <device.h>
@@ -275,5 +289,9 @@ static inline int dmic_read(struct device *dev, u8_t stream, void **buffer,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_AUDIO_DMIC_H_ */
