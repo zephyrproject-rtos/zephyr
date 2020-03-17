@@ -198,7 +198,7 @@ static void test_service_init_validation(void)
 	zassert_equal(rc, -EINVAL,
 		      "init null start %d", rc);
 
-	start_stop_transitions.flags |= ONOFF_INTERNAL_BASE;
+	start_stop_transitions.flags |= ONOFF_FLAG_ONOFF;
 	rc = onoff_manager_init(&srv, &start_stop_transitions);
 	zassert_equal(rc, -EINVAL,
 		      "init bad flags %d", rc);
