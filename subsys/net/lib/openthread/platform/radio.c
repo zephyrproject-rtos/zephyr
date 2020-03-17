@@ -432,6 +432,24 @@ otError otPlatRadioEnergyScan(otInstance *aInstance, u8_t aScanChannel,
 	return OT_ERROR_NONE;
 }
 
+otError otPlatRadioGetCcaEnergyDetectThreshold(otInstance *aInstance,
+					       int8_t *aThreshold)
+{
+	OT_UNUSED_VARIABLE(aInstance);
+	OT_UNUSED_VARIABLE(aThreshold);
+
+	return OT_ERROR_NOT_IMPLEMENTED;
+}
+
+otError otPlatRadioSetCcaEnergyDetectThreshold(otInstance *aInstance,
+					       int8_t aThreshold)
+{
+	OT_UNUSED_VARIABLE(aInstance);
+	OT_UNUSED_VARIABLE(aThreshold);
+
+	return OT_ERROR_NOT_IMPLEMENTED;
+}
+
 void otPlatRadioEnableSrcMatch(otInstance *aInstance, bool aEnable)
 {
 	ARG_UNUSED(aInstance);
