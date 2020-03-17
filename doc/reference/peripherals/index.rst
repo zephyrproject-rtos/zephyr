@@ -14,6 +14,7 @@ Peripherals
    flash.rst
    gna.rst
    gpio.rst
+   hwinfo.rst
    i2c_eeprom_slave.rst
    i2c.rst
    i2s.rst
