@@ -3788,6 +3788,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 
 		if (node_tx) {
 			u8_t pdu_data_tx_len;
+			u8_t offset;
 
 			pdu_data_tx = (void *)(node_tx->pdu_data +
 				_radio.conn_curr->packet_tx_head_offset);
@@ -3806,10 +3807,13 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 				}
 			}
 
-			_radio.conn_curr->packet_tx_head_offset +=
-				pdu_data_tx_len;
-			if (_radio.conn_curr->packet_tx_head_offset ==
-			    _radio.conn_curr->packet_tx_head_len) {
+			offset = _radio.conn_curr->packet_tx_head_offset +
+				 pdu_data_tx_len;
+			if (offset < _radio.conn_curr->packet_tx_head_len) {
+				_radio.conn_curr->packet_tx_head_offset =
+					offset;
+			} else if (offset ==
+				   _radio.conn_curr->packet_tx_head_len) {
 				*tx_release = isr_rx_conn_pkt_release(node_tx);
 			}
 		}
