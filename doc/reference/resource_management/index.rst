@@ -76,7 +76,8 @@ standard :ref:`async_notification`, supporting these methods:
   completion code is stored as the signal value.
 * Callback: a function pointer is provided by the client along with an
   opaque pointer, and on completion of the operation the function is
-  invoked with the pointer and the operation completion code.
+  invoked with the manager, the client data, the manager state, the
+  operation completion code, and the user-provided pointer.
 * Spin-wait: the client is required to check for operation completion
   using the :cpp:func:`onoff_client_fetch_result()` function.
 

@@ -258,17 +258,25 @@ struct onoff_client;
  * @param cli the client structure passed to the function that
  * initiated the operation.
  *
- * @param user_data user data provided when the client structure was
- * initialized with onoff_client_init_callback().
+ * @param state the state of the machine at the time of completion,
+ * restricted by ONOFF_STATE_MASK.  ONOFF_HAS_ERROR must be checked
+ * independently of whether res is negative as a machine error may
+ * indicate that all future operations except onoff_reset() will fail.
  *
  * @param res the result of the operation.  Expected values are
  * service-specific, but the value shall be non-negative if the
- * operation succeeded, and negative if the operation failed.
+ * operation succeeded, and negative if the operation failed.  If res
+ * is negative ONOFF_HAS_ERROR will be set in state, but if res is
+ * non-negative ONOFF_HAS_ERROR may still be set in state.
+ *
+ * @param user_data user data provided when the client structure was
+ * initialized with onoff_client_init_callback().
  */
 typedef void (*onoff_client_callback)(struct onoff_manager *mgr,
 				      struct onoff_client *cli,
-				      void *user_data,
-				      int res);
+				      u32_t state,
+				      int res,
+				      void *user_data);
 
 /**
  * @brief State associated with a client of an on-off service.
