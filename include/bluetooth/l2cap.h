@@ -26,17 +26,17 @@
 extern "C" {
 #endif
 
-/* L2CAP header size, used for buffer size calculations */
+/** L2CAP header size, used for buffer size calculations */
 #define BT_L2CAP_HDR_SIZE               4
 
 /** @def BT_L2CAP_BUF_SIZE
  *
- *   Helper to calculate needed outgoing buffer size, useful e.g. for
- *   creating buffer pools.
+ *  Helper to calculate needed outgoing buffer size, useful e.g. for
+ *  creating buffer pools.
  *
- *   @param mtu Needed L2CAP MTU.
+ *  @param mtu Needed L2CAP MTU.
  *
- *   @return Needed buffer size to match the requested L2CAP MTU.
+ *  @return Needed buffer size to match the requested L2CAP MTU.
  */
 #define BT_L2CAP_BUF_SIZE(mtu) (BT_BUF_RESERVE + \
 				BT_HCI_ACL_HDR_SIZE + BT_L2CAP_HDR_SIZE + \
@@ -51,9 +51,10 @@ struct bt_l2cap_chan;
  */
 typedef void (*bt_l2cap_chan_destroy_t)(struct bt_l2cap_chan *chan);
 
-/** @brief Life-span states of L2CAP CoC channel. Used only by internal APIs
- *  dealing with setting channel to proper state depending on operational
- *  context.
+/** @brief Life-span states of L2CAP CoC channel.
+ *
+ *  Used only by internal APIs dealing with setting channel to proper state
+ *  depending on operational context.
  */
 typedef enum bt_l2cap_chan_state {
 	/** Channel disconnected */
@@ -150,7 +151,7 @@ struct bt_l2cap_le_chan {
  *  @param _ch Address of object of bt_l2cap_chan type
  *
  *  @return Address of in memory bt_l2cap_le_chan object type containing
- *  the address of in question object.
+ *          the address of in question object.
  */
 #define BT_L2CAP_LE_CHAN(_ch) CONTAINER_OF(_ch, struct bt_l2cap_le_chan, chan)
 
@@ -229,14 +230,16 @@ struct bt_l2cap_chan_ops {
 	 *  @param buf Buffer containing incoming data.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
-	 *  If -EINPROGRESS is returned user has to confirm once the data has
-	 *  been processed by calling bt_l2cap_chan_recv_complete passing back
-	 *  the buffer received with its original user_data which contains the
-	 *  number of segments/credits used by the packet.
+	 *  @return -EINPROGRESS in case where user has to confirm once the data
+	 *                       has been processed by calling
+	 *                       @ref bt_l2cap_chan_recv_complete passing back
+	 *                       the buffer received with its original user_data
+	 *                       which contains the number of segments/credits
+	 *                       used by the packet.
 	 */
 	int (*recv)(struct bt_l2cap_chan *chan, struct net_buf *buf);
 
-	/*  Channel sent callback
+	/** Channel sent callback
 	 *
 	 *  If this callback is provided it will be called whenever a SDU has
 	 *  been completely sent.
@@ -245,7 +248,7 @@ struct bt_l2cap_chan_ops {
 	 */
 	void (*sent)(struct bt_l2cap_chan *chan);
 
-	/*  Channel status callback
+	/** Channel status callback
 	 *
 	 *  If this callback is provided it will be called whenever the
 	 *  channel status changes.
@@ -289,10 +292,9 @@ struct bt_l2cap_server {
 	 *  @param chan Pointer to received the allocated channel
 	 *
 	 *  @return 0 in case of success or negative value in case of error.
-	 *  Possible return values:
-	 *  -ENOMEM if no available space for new channel.
-	 *  -EACCES if application did not authorize the connection.
-	 *  -EPERM if encryption key size is too short.
+	 *  @return -ENOMEM if no available space for new channel.
+	 *  @return -EACCES if application did not authorize the connection.
+	 *  @return -EPERM if encryption key size is too short.
 	 */
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
 

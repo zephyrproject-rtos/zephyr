@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-/* HCI Error Codes, BT Core Spec v5.2 [Vol 1, Part F]. */
+/** HCI Error Codes, BT Core Spec v5.2 [Vol 1, Part F]. */
 #define BT_HCI_ERR_SUCCESS                      0x00
 #define BT_HCI_ERR_UNKNOWN_CMD                  0x01
 #define BT_HCI_ERR_UNKNOWN_CONN_ID              0x02
