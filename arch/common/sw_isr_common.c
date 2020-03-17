@@ -16,8 +16,6 @@ void z_isr_install(unsigned int irq, void (*routine)(void *), void *param)
 {
 	unsigned int table_idx = irq - CONFIG_GEN_IRQ_START_VECTOR;
 
-	__ASSERT(!irq_is_enabled(irq), "IRQ %d is enabled", irq);
-
 	/* If dynamic IRQs are enabled, then the _sw_isr_table is in RAM and
 	 * can be modified
 	 */
