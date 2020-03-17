@@ -7,12 +7,8 @@ Zephyr provides several :ref:`west extension commands <west-extensions>` for
 building, flashing, and interacting with Zephyr programs running on a board:
 ``build``, ``flash``, ``debug``, ``debugserver`` and ``attach``.
 
-These use information stored in the CMake cache [#cmakecache]_ to
-flash or attach a debugger to a board supported by Zephyr. The exception is
-starting a clean build (i.e. with no previous artifacts) which will in fact
-run CMake thus creating the corresponding cache.
-The CMake build system commands with the same names (i.e. all but ``build``)
-directly delegate to West.
+For information on adding board support for the flashing and debugging
+commands, see :ref:`flash-and-debug-support` in the board porting guide.
 
 .. Add a per-page contents at the top of the page. This page is nested
    deeply enough that it doesn't have any subheadings in the main nav.
@@ -611,12 +607,6 @@ targets provided by Zephyr's build system (in fact, that's how these
 commands do it).
 
 .. rubric:: Footnotes
-
-.. [#cmakecache]
-
-   The CMake cache is a file containing saved variables and values
-   which is created by CMake when it is first run to generate a build
-   system. See the `cmake(1)`_ manual for more details.
 
 .. _cmake(1):
    https://cmake.org/cmake/help/latest/manual/cmake.1.html
