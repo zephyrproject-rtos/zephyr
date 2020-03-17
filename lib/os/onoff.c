@@ -15,6 +15,30 @@
 
 #define SERVICE_REFS_MAX UINT16_MAX
 
+#define ONOFF_CLIENT_INACTIVE 0
+#define ONOFF_CLIENT_REQUEST 1
+#define ONOFF_CLIENT_RELEASE 2
+#define ONOFF_CLIENT_RESET 3
+
+#define ONOFF_CLIENT_TYPE_MASK (BIT_MASK(ONOFF_CLIENT_TYPE_BITS) \
+				<< ONOFF_CLIENT_TYPE_POS)
+
+static u32_t get_client_type(const struct onoff_client *cli)
+{
+	return (cli->notify.flags >> ONOFF_CLIENT_TYPE_POS)
+	       & BIT_MASK(ONOFF_CLIENT_TYPE_BITS);
+}
+
+static void set_client_type(struct onoff_client *cli,
+			    u32_t type)
+{
+	u32_t flags = cli->notify.flags;
+
+	flags &= ~ONOFF_CLIENT_TYPE_MASK;
+	flags |= (type << ONOFF_CLIENT_TYPE_POS) & ONOFF_CLIENT_TYPE_MASK;
+	cli->notify.flags = flags;
+}
+
 static void set_service_state(struct onoff_manager *mgr,
 			      u32_t state)
 {
@@ -32,7 +56,8 @@ static int validate_args(const struct onoff_manager *mgr,
 	int rv = sys_notify_validate(&cli->notify);
 
 	if ((rv == 0)
-	    && ((cli->notify.flags & SYS_NOTIFY_EXTENSION_MASK) != 0)) {
+	    && ((cli->notify.flags
+		 & ~BIT_MASK(ONOFF_CLIENT_EXTENSION_POS)) != 0)) {
 		rv = -EINVAL;
 	}
 
@@ -60,6 +85,8 @@ static void notify_one(struct onoff_manager *mgr,
 		       u32_t state,
 		       int res)
 {
+	set_client_type(cli, ONOFF_CLIENT_INACTIVE);
+
 	void *ud = cli->user_data;
 	onoff_client_callback cb =
 		(onoff_client_callback)sys_notify_finalize(&cli->notify, res);
@@ -85,14 +112,31 @@ static void notify_all(struct onoff_manager *mgr,
 	}
 }
 
+static void onoff_stop_notify(struct onoff_manager *mgr,
+			      int res);
+
 static void onoff_start_notify(struct onoff_manager *mgr,
 			       int res)
 {
+	bool stop = false;
+	unsigned int refs = 0U;
+	sys_snode_t *node;
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
 	sys_slist_t clients = mgr->clients;
 
-	/* Can't have a queued releaser during start */
-	__ASSERT_NO_MSG(mgr->releaser == NULL);
+	/* All clients registered at the time a start completes must
+	 * be request clients.  Accrue a reference count for each of
+	 * them.
+	 */
+	SYS_SLIST_FOR_EACH_NODE(&clients, node) {
+		struct onoff_client *cli = CONTAINER_OF(node,
+							struct onoff_client,
+							node);
+
+		(void)cli;
+		__ASSERT_NO_MSG(get_client_type(cli) == ONOFF_CLIENT_REQUEST);
+		refs += 1U;
+	}
 
 	/* If the start failed log an error and leave the rest of the
 	 * state in place for diagnostics.
@@ -108,14 +152,7 @@ static void onoff_start_notify(struct onoff_manager *mgr,
 		mgr->flags &= ~ONOFF_FLAG_TRANSITION;
 		mgr->flags |= ONOFF_HAS_ERROR;
 	} else {
-		sys_snode_t *node;
-		unsigned int refs = 0U;
-
 		set_service_state(mgr, ONOFF_STATE_ON);
-
-		SYS_SLIST_FOR_EACH_NODE(&clients, node) {
-			refs += 1U;
-		}
 
 		/* Update the reference count, or fail if the count
 		 * would overflow.
@@ -125,7 +162,14 @@ static void onoff_start_notify(struct onoff_manager *mgr,
 		} else {
 			mgr->refs += refs;
 		}
-		__ASSERT_NO_MSG(mgr->refs > 0U);
+
+		stop = (mgr->refs == 0);
+		if (stop
+		    && (k_is_in_isr() || k_is_pre_kernel())
+		    && ((mgr->flags & ONOFF_STOP_SLEEPS) != 0U)) {
+			mgr->flags |= ONOFF_HAS_ERROR;
+			stop = false;
+		}
 	}
 
 	sys_slist_init(&mgr->clients);
@@ -135,6 +179,10 @@ static void onoff_start_notify(struct onoff_manager *mgr,
 	k_spin_unlock(&mgr->lock, key);
 
 	notify_all(mgr, &clients, state, res);
+	if (stop) {
+		__ASSERT_NO_MSG(mgr->transitions->stop != NULL);
+		mgr->transitions->stop(mgr, onoff_stop_notify);
+	}
 }
 
 int onoff_request(struct onoff_manager *mgr,
@@ -150,6 +198,11 @@ int onoff_request(struct onoff_manager *mgr,
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
+
+	if (get_client_type(cli) != ONOFF_CLIENT_INACTIVE) {
+		rv = -EINVAL;
+		goto out;
+	}
 
 	if ((mgr->flags & ONOFF_HAS_ERROR) != 0) {
 		rv = -EIO;
@@ -167,7 +220,6 @@ int onoff_request(struct onoff_manager *mgr,
 	switch (state) {
 	case ONOFF_STATE_TO_OFF:
 		/* Queue to start after release */
-		__ASSERT_NO_MSG(mgr->releaser != NULL);
 		add_client = true;
 		rv = 3;
 		break;
@@ -204,6 +256,7 @@ int onoff_request(struct onoff_manager *mgr,
 
 out:
 	if (add_client) {
+		set_client_type(cli, ONOFF_CLIENT_REQUEST);
 		sys_slist_append(&mgr->clients, &cli->node);
 	} else if (notify) {
 		mgr->refs += 1;
@@ -225,62 +278,76 @@ out:
 static void onoff_stop_notify(struct onoff_manager *mgr,
 			      int res)
 {
-	bool notify_clients = false;
-	int client_res = res;
+	bool fail_restart = false;
 	bool start = false;
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-	sys_slist_t clients = mgr->clients;
-	struct onoff_client *releaser = mgr->releaser;
+	sys_slist_t req_clients;
+	sys_slist_t rel_clients;
 
-	/* If the stop operation failed log an error and leave the
-	 * rest of the state in place.
+	/* Separate any remaining clients into request clients and
+	 * release clients, decrementing the reference count for the
+	 * release clients.
+	 */
+	sys_slist_init(&req_clients);
+	sys_slist_init(&rel_clients);
+	while (!sys_slist_is_empty(&mgr->clients)) {
+		sys_snode_t *node = sys_slist_get_not_empty(&mgr->clients);
+		struct onoff_client *cli = CONTAINER_OF(node,
+							struct onoff_client,
+							node);
+
+		if (get_client_type(cli) == ONOFF_CLIENT_RELEASE) {
+			sys_slist_append(&rel_clients, node);
+			mgr->refs -= 1U;
+		} else {
+			__ASSERT_NO_MSG(get_client_type(cli)
+					== ONOFF_CLIENT_REQUEST);
+			sys_slist_append(&req_clients, node);
+		}
+	}
+
+	__ASSERT_NO_MSG(mgr->refs == 0);
+
+	/* If the stop operation failed log an error, leave the
+	 * rest of the state in place, and notify all clients.
 	 *
-	 * If it succeeded remove the last reference and transition to
-	 * off.
-	 *
-	 * In either case remove the last reference, and notify all
-	 * waiting clients of operation completion.
+	 * If the stop succeeded mark the service as off.  If there
+	 * are request clients then synthesize a transition to on
+	 * (which fails if the start cannot be initiated).
 	 */
 	if (res < 0) {
 		mgr->flags &= ~ONOFF_FLAG_TRANSITION;
 		mgr->flags |= ONOFF_HAS_ERROR;
-		notify_clients = true;
-	} else if (sys_slist_is_empty(&clients)) {
-		set_service_state(mgr, ONOFF_STATE_OFF);
-	} else if ((k_is_in_isr() || k_is_pre_kernel())
-		   && ((mgr->flags & ONOFF_START_SLEEPS) != 0U)) {
-		set_service_state(mgr, ONOFF_STATE_OFF);
-		notify_clients = true;
-		client_res = -EWOULDBLOCK;
+		sys_slist_merge_slist(&rel_clients, &req_clients);
 	} else {
-		set_service_state(mgr, ONOFF_STATE_TO_ON);
-		start = true;
-	}
+		set_service_state(mgr, ONOFF_STATE_OFF);
 
-	__ASSERT_NO_MSG(releaser);
-	mgr->refs -= 1U;
-	mgr->releaser = NULL;
-	__ASSERT_NO_MSG(mgr->refs == 0);
+		if (!sys_slist_is_empty(&req_clients)) {
 
-	/* Remove the clients if there was an error or a delayed start
-	 * couldn't be initiated, because we're resolving their
-	 * operation with an error.
-	 */
-	if (notify_clients) {
-		sys_slist_init(&mgr->clients);
+			/* We need to restart, which requires that we
+			 * be able to start.
+			 */
+			fail_restart = ((k_is_in_isr() || k_is_pre_kernel())
+					&& ((mgr->flags & ONOFF_START_SLEEPS)
+					    != 0U));
+			if (!fail_restart) {
+				mgr->clients = req_clients;
+				set_service_state(mgr, ONOFF_STATE_TO_ON);
+				start = true;
+			}
+		}
 	}
 
 	u32_t state = mgr->flags & ONOFF_STATE_MASK;
 
 	k_spin_unlock(&mgr->lock, key);
 
-	/* Notify the releaser.  If there was an error, notify any
-	 * pending requests; otherwise if there are pending requests
-	 * start the transition to ON.
-	 */
-	notify_one(mgr, releaser, state, res);
-	if (notify_clients) {
-		notify_all(mgr, &clients, state, client_res);
+	/* Notify all the release clients of the result */
+	notify_all(mgr, &rel_clients, state, res);
+
+	/* Handle synthesized start (failure or initiate) */
+	if (fail_restart) {
+		notify_all(mgr, &req_clients, state, -EWOULDBLOCK);
 	} else if (start) {
 		mgr->transitions->start(mgr, onoff_start_notify);
 	}
@@ -298,6 +365,11 @@ int onoff_release(struct onoff_manager *mgr,
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
+
+	if (get_client_type(cli) != ONOFF_CLIENT_INACTIVE) {
+		rv = -EINVAL;
+		goto out;
+	}
 
 	if ((mgr->flags & ONOFF_HAS_ERROR) != 0) {
 		rv = -EIO;
@@ -327,7 +399,8 @@ int onoff_release(struct onoff_manager *mgr,
 		stop = true;
 
 		set_service_state(mgr, ONOFF_STATE_TO_OFF);
-		mgr->releaser = cli;
+		set_client_type(cli, ONOFF_CLIENT_RELEASE);
+		sys_slist_append(&mgr->clients, &cli->node);
 		rv = 2;
 
 		break;
@@ -411,6 +484,11 @@ int onoff_reset(struct onoff_manager *mgr,
 
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
 
+	if (get_client_type(cli) != ONOFF_CLIENT_INACTIVE) {
+		rv = -EINVAL;
+		goto out;
+	}
+
 	if ((mgr->flags & ONOFF_HAS_ERROR) == 0) {
 		rv = -EALREADY;
 		goto out;
@@ -423,6 +501,7 @@ int onoff_reset(struct onoff_manager *mgr,
 
 out:
 	if (rv >= 0) {
+		set_client_type(cli, ONOFF_CLIENT_RESET);
 		sys_slist_append(&mgr->clients, &cli->node);
 	}
 
@@ -448,28 +527,44 @@ int onoff_cancel(struct onoff_manager *mgr,
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
 	u32_t state = mgr->flags & ONOFF_STATE_MASK;
 
-	/* Can't remove the last client waiting for the in-progress
-	 * transition, as there would be nobody to receive the
-	 * completion notification, which might indicate a service
-	 * error.
-	 */
 	(void)state;
 	if (sys_slist_find_and_remove(&mgr->clients, &cli->node)) {
-		rv = 0;
-		if (sys_slist_is_empty(&mgr->clients)
-		    && (state != ONOFF_STATE_TO_OFF)) {
-			rv = -EWOULDBLOCK;
+		switch (get_client_type(cli)) {
+		case ONOFF_CLIENT_REQUEST:
+			/* Requests can be cancelled whether
+			 * transitioning to on or off.  They're
+			 * cancelled immediately.
+			 */
+			__ASSERT_NO_MSG((state == ONOFF_STATE_TO_ON)
+					|| (state == ONOFF_STATE_TO_OFF));
+			rv = 0;
+			break;
+		case ONOFF_CLIENT_RELEASE:
+			__ASSERT_NO_MSG(state == ONOFF_STATE_TO_OFF);
+
+			/* A release can only be present when
+			 * transitioning to off, and when cancelled it
+			 * converts to a request that goes back on the
+			 * client list to be completed later.
+			 */
+			set_client_type(cli, ONOFF_CLIENT_REQUEST);
+			mgr->refs -= 1;
+			rv = 1;
 			sys_slist_append(&mgr->clients, &cli->node);
+			break;
+		case ONOFF_CLIENT_RESET:
+			__ASSERT_NO_MSG((state & ONOFF_HAS_ERROR) != 0);
+			rv = 0;
+			break;
+		default:
+			break;
 		}
-	} else if (mgr->releaser == cli) {
-		/* must be waiting for TO_OFF to complete */
-		rv = -EWOULDBLOCK;
 	}
 
 	k_spin_unlock(&mgr->lock, key);
 
 	if (rv == 0) {
-		notify_one(mgr, cli, state, -ECANCELED);
+		set_client_type(cli, ONOFF_CLIENT_INACTIVE);
 	}
 
 	return rv;
