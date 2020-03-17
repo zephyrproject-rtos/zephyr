@@ -7,27 +7,116 @@
 
 #include <kernel.h>
 #include <sys/onoff.h>
-
-#define SERVICE_CONFIG_FLAGS \
-	(ONOFF_START_SLEEPS  \
-	 | ONOFF_STOP_SLEEPS \
-	 | ONOFF_RESET_SLEEPS)
+#include <stdio.h>
 
 #define SERVICE_REFS_MAX UINT16_MAX
 
-#define ST_OFF 0
-#define ST_ON ONOFF_INTERNAL_BASE
-#define ST_TRANSITION (ONOFF_INTERNAL_BASE << 1)
-#define ST_TO_ON (ST_TRANSITION | ST_ON)
-#define ST_TO_OFF (ST_TRANSITION | ST_OFF)
+/* Confirm consistency of public flags with private flags */
+BUILD_ASSERT((ONOFF_FLAG_ERROR | ONOFF_FLAG_ONOFF | ONOFF_FLAG_TRANSITION)
+	     < BIT(3));
 
-#define ST_MASK (ST_ON | ST_TRANSITION)
+#define ONOFF_FLAG_PROCESSING BIT(3)
+#define ONOFF_FLAG_COMPLETE BIT(4)
+#define ONOFF_FLAG_RECHECK BIT(5)
 
-static void set_service_state(struct onoff_manager *mgr,
-			      u32_t state)
+/* These symbols in the ONOFF_FLAGS namespace identify bits in
+ * onoff_manager::flags that indicate the state of the machine.  The
+ * bits are manipulated by process_event() under lock, and actions
+ * cued by bit values are executed outside of lock within
+ * process_event().
+ *
+ * * ERROR indicates that the machine is in an error state.  When
+ *   this bit is set ONOFF will be cleared.
+ * * ONOFF indicates whether the target/current state is off (clear)
+ *   or on (set).
+ * * TRANSITION indicates whether a service transition function is in
+ *   progress.  It combines with ONOFF to identify start and stop
+ *   transitions, and with ERROR to identify a reset transition.
+ * * PROCESSING indicates that the process_event() loop is active.  It
+ *   is used to defer initiation of transitions and other complex
+ *   state changes while invoking notifications associated with a
+ *   state transition.  This bounds the  depth by limiting
+ *   active process_event() call stacks to two instances.  State changes
+ *   initiated by a nested call will be executed when control returns
+ *   to the parent call.
+ * * COMPLETE indicates that a transition completion notification has
+ *   been received.  This flag is set in the notification, and cleared
+ *   by process_events() which is invoked from the notification.  In
+ *   the case of nested process_events() the processing is deferred to
+ *   the top invocation.
+ * * RECHECK indicates that a state transition has completed but
+ *   process_events() must re-check the overall state to confirm no
+ *   additional transitions are required.  This is used to simplfy the
+ *   logic when, for example, a request is received during a
+ *   transition to off, which means that when the transition completes
+ *   a transition to on must be initiated if the request is still
+ *   present.  Transition to ON with no remaining requests similarly
+ *   triggers a recheck.
+ */
+
+/* Identify the events that can trigger state changes, as well as an
+ * internal state used when processing deferred actions.
+ */
+enum event_type {
+	/* No-op event: used to process deferred changes.
+	 *
+	 * This event is local to the process loop.
+	 */
+	EVT_NOP,
+
+	/* Completion of a service transition.
+	 *
+	 * This event is triggered by the transition notify callback.
+	 * It can be received only when the machine is in a transition
+	 * state (TO-ON, TO-OFF, or RESETTING).
+	 */
+	EVT_COMPLETE,
+
+	/* Reassess whether a transition from a stable state is needed.
+	 *
+	 * This event causes:
+	 * * a start from OFF when there are clients;
+	 * * a stop from ON when there are no clients;
+	 * * a reset from ERROR when there are clients.
+	 *
+	 * The client list can change while the manager lock is
+	 * released (e.g. during client and monitor notifications and
+	 * transition initiations), so this event records the
+	 * potential for these state changes, and process_event() ...
+	 *
+	 */
+	EVT_RECHECK,
+
+	/* Transition to on.
+	 *
+	 * This is synthesized from EVT_RECHECK in a non-nested
+	 * process_event() when state OFF is confirmed with a
+	 * non-empty client (request) list.
+	 */
+	EVT_START,
+
+	/* Transition to off.
+	 *
+	 * This is synthesized from EVT_RECHECK in a non-nested
+	 * process_event() when state ON is confirmed with a
+	 * zero reference count.
+	 */
+	EVT_STOP,
+
+	/* Transition to resetting.
+	 *
+	 * This is synthesized from EVT_RECHECK in a non-nested
+	 * process_event() when state ERROR is confirmed with a
+	 * non-empty client (reset) list.
+	 */
+	EVT_RESET,
+};
+
+static void set_state(struct onoff_manager *mgr,
+		      u32_t state)
 {
-	mgr->flags &= ~ST_MASK;
-	mgr->flags |= (state & ST_MASK);
+	mgr->flags = (state & ONOFF_STATE_MASK)
+		     | (mgr->flags & ~ONOFF_STATE_MASK);
 }
 
 static int validate_args(const struct onoff_manager *mgr,
@@ -40,7 +129,8 @@ static int validate_args(const struct onoff_manager *mgr,
 	int rv = sys_notify_validate(&cli->notify);
 
 	if ((rv == 0)
-	    && ((cli->notify.flags & SYS_NOTIFY_EXTENSION_MASK) != 0)) {
+	    && ((cli->notify.flags
+		 & ~BIT_MASK(ONOFF_CLIENT_EXTENSION_POS)) != 0)) {
 		rv = -EINVAL;
 	}
 
@@ -50,11 +140,10 @@ static int validate_args(const struct onoff_manager *mgr,
 int onoff_manager_init(struct onoff_manager *mgr,
 		       const struct onoff_transitions *transitions)
 {
-	if (transitions->flags & ~SERVICE_CONFIG_FLAGS) {
-		return -EINVAL;
-	}
-
-	if ((transitions->start == NULL) || (transitions->stop == NULL)) {
+	if ((mgr == NULL)
+	    || (transitions == NULL)
+	    || (transitions->start == NULL)
+	    || (transitions->stop == NULL)) {
 		return -EINVAL;
 	}
 
@@ -63,21 +152,35 @@ int onoff_manager_init(struct onoff_manager *mgr,
 	return 0;
 }
 
+static void notify_monitors(struct onoff_manager *mgr,
+			    u32_t state,
+			    int res)
+{
+	sys_slist_t *mlist = &mgr->monitors;
+	struct onoff_monitor *mon;
+	struct onoff_monitor *tmp;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(mlist, mon, tmp, node) {
+		mon->callback(mgr, mon, state, res);
+	}
+}
+
 static void notify_one(struct onoff_manager *mgr,
 		       struct onoff_client *cli,
+		       u32_t state,
 		       int res)
 {
-	void *ud = cli->user_data;
 	onoff_client_callback cb =
 		(onoff_client_callback)sys_notify_finalize(&cli->notify, res);
 
 	if (cb) {
-		cb(mgr, cli, ud, res);
+		cb(mgr, cli, state, res);
 	}
 }
 
 static void notify_all(struct onoff_manager *mgr,
 		       sys_slist_t *list,
+		       u32_t state,
 		       int res)
 {
 	while (!sys_slist_is_empty(list)) {
@@ -87,65 +190,236 @@ static void notify_all(struct onoff_manager *mgr,
 				     struct onoff_client,
 				     node);
 
-		notify_one(mgr, cli, res);
+		notify_one(mgr, cli, state, res);
 	}
 }
 
-static void onoff_start_notify(struct onoff_manager *mgr,
-			       int res)
+static void process_event(struct onoff_manager *mgr,
+			  int evt,
+			  k_spinlock_key_t key);
+
+static void transition_complete(struct onoff_manager *mgr,
+				int res)
 {
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-	sys_slist_t clients = mgr->clients;
 
-	/* Can't have a queued releaser during start */
-	__ASSERT_NO_MSG(mgr->releaser == NULL);
+	mgr->last_res = res;
+	process_event(mgr, EVT_COMPLETE, key);
+}
 
-	/* If the start failed log an error and leave the rest of the
-	 * state in place for diagnostics.
-	 *
-	 * If the start succeeded record a reference for all clients
-	 * and set the state to ON.  There must be at least one client
-	 * left to receive the result.
-	 *
-	 * In either case reset the client queue and notify all
-	 * clients of operation completion.
-	 */
-	if (res < 0) {
-		mgr->flags &= ~ST_TRANSITION;
-		mgr->flags |= ONOFF_HAS_ERROR;
-	} else {
-		sys_snode_t *node;
-		unsigned int refs = 0U;
+/* Detect whether static state requires a transition. */
+static int process_recheck(struct onoff_manager *mgr)
+{
+	int evt = EVT_NOP;
+	u32_t state = mgr->flags & ONOFF_STATE_MASK;
 
-		set_service_state(mgr, ST_ON);
-
-		SYS_SLIST_FOR_EACH_NODE(&clients, node) {
-			refs += 1U;
-		}
-
-		/* Update the reference count, or fail if the count
-		 * would overflow.
-		 */
-		if (mgr->refs > (SERVICE_REFS_MAX - refs)) {
-			mgr->flags |= ONOFF_HAS_ERROR;
-		} else {
-			mgr->refs += refs;
-		}
-		__ASSERT_NO_MSG(mgr->refs > 0U);
+	if ((state == ONOFF_STATE_OFF)
+	    && !sys_slist_is_empty(&mgr->clients)) {
+		evt = EVT_START;
+	} else if ((state == ONOFF_STATE_ON)
+		   && (mgr->refs == 0)) {
+		evt = EVT_STOP;
+	} else if ((state == ONOFF_STATE_ERROR)
+		   && !sys_slist_is_empty(&mgr->clients)) {
+		evt = EVT_RESET;
 	}
 
-	sys_slist_init(&mgr->clients);
+	return evt;
+}
 
+/* Process a transition completion.
+ *
+ * If the completion requires notifying clients, the clients are moved
+ * from the manager to the output list for notification.
+ */
+static void process_complete(struct onoff_manager *mgr,
+			     sys_slist_t *clients,
+			     int res)
+{
+	u32_t state = mgr->flags & ONOFF_STATE_MASK;
+
+	if (res < 0) {
+		/* Enter ERROR state and notify all clients. */
+		*clients = mgr->clients;
+		sys_slist_init(&mgr->clients);
+		set_state(mgr, ONOFF_STATE_ERROR);
+	} else if ((state == ONOFF_STATE_TO_ON)
+		   || (state == ONOFF_STATE_RESETTING)) {
+		*clients = mgr->clients;
+		sys_slist_init(&mgr->clients);
+
+		if (state == ONOFF_STATE_TO_ON) {
+			struct onoff_client *cp;
+
+			/* Increment reference count for all remaining
+			 * clients and enter ON state.
+			 */
+			SYS_SLIST_FOR_EACH_CONTAINER(clients, cp, node) {
+				mgr->refs += 1U;
+			}
+
+			set_state(mgr, ONOFF_STATE_ON);
+		} else {
+			__ASSERT_NO_MSG(state == ONOFF_STATE_RESETTING);
+
+			set_state(mgr, ONOFF_STATE_OFF);
+		}
+		if (process_recheck(mgr) != EVT_NOP) {
+			mgr->flags |= ONOFF_FLAG_RECHECK;
+		}
+	} else if (state == ONOFF_STATE_TO_OFF) {
+		/* Any active clients are requests waiting for this
+		 * transition to complete.  Queue a RECHECK event to
+		 * ensure we don't miss them if we don't unlock to
+		 * tell anybody about the completion.
+		 */
+		set_state(mgr, ONOFF_STATE_OFF);
+		if (process_recheck(mgr) != EVT_NOP) {
+			mgr->flags |= ONOFF_FLAG_RECHECK;
+		}
+	} else {
+		__ASSERT_NO_MSG(false);
+	}
+}
+
+/* There are two points in the state machine where the machine is
+ * unlocked to perform some external action:
+ * * Initiation of an transition due to some event;
+ * * Invocation of the user-specified callback when a stable state is
+ *   reached or an error detected.
+ *
+ * Events received during these unlocked periods are recorded in the
+ * state, but processing is deferred to the top-level invocation which
+ * will loop to handle any events that occurred during the unlocked
+ * regions.
+ */
+static void process_event(struct onoff_manager *mgr,
+			  int evt,
+			  k_spinlock_key_t key)
+{
+	sys_slist_t clients;
+	u32_t state = mgr->flags & ONOFF_STATE_MASK;
+	int res = 0;
+	bool processing = ((mgr->flags & ONOFF_FLAG_PROCESSING) != 0);
+
+	__ASSERT_NO_MSG(evt != EVT_NOP);
+
+	/* If this is a nested call record the event for processing in
+	 * the top invocation.
+	 */
+	if (processing) {
+		if (evt == EVT_COMPLETE) {
+			mgr->flags |= ONOFF_FLAG_COMPLETE;
+		} else {
+			__ASSERT_NO_MSG(evt == EVT_RECHECK);
+
+			mgr->flags |= ONOFF_FLAG_RECHECK;
+		}
+
+		goto out;
+	}
+
+	sys_slist_init(&clients);
+	do {
+		onoff_transition_fn transit = NULL;
+
+		if (evt == EVT_RECHECK) {
+			evt = process_recheck(mgr);
+		}
+
+		if (evt == EVT_NOP) {
+			break;
+		}
+
+		res = 0;
+		if (evt == EVT_COMPLETE) {
+			res = mgr->last_res;
+			process_complete(mgr, &clients, res);
+			/* NB: This can trigger a RECHECK */
+		} else if (evt == EVT_START) {
+			__ASSERT_NO_MSG(state == ONOFF_STATE_OFF);
+			__ASSERT_NO_MSG(!sys_slist_is_empty(&mgr->clients));
+
+			transit = mgr->transitions->start;
+			__ASSERT_NO_MSG(transit != NULL);
+			set_state(mgr, ONOFF_STATE_TO_ON);
+		} else if (evt == EVT_STOP) {
+			__ASSERT_NO_MSG(state == ONOFF_STATE_ON);
+			__ASSERT_NO_MSG(mgr->refs == 0);
+
+			transit = mgr->transitions->stop;
+			__ASSERT_NO_MSG(transit != NULL);
+			set_state(mgr, ONOFF_STATE_TO_OFF);
+		} else if (evt == EVT_RESET) {
+			__ASSERT_NO_MSG(state == ONOFF_STATE_ERROR);
+			__ASSERT_NO_MSG(!sys_slist_is_empty(&mgr->clients));
+
+			transit = mgr->transitions->reset;
+			__ASSERT_NO_MSG(transit != NULL);
+			set_state(mgr, ONOFF_STATE_RESETTING);
+		} else {
+			__ASSERT_NO_MSG(false);
+		}
+
+		/* Have to unlock and do something if any of:
+		 * * We changed state and there are monitors;
+		 * * We completed a transition and there are clients to notify;
+		 * * We need to initiate a transition.
+		 */
+		bool do_monitors = (state != (mgr->flags & ONOFF_STATE_MASK))
+				   && !sys_slist_is_empty(&mgr->monitors);
+
+		evt = EVT_NOP;
+		if (do_monitors
+		    || !sys_slist_is_empty(&clients)
+		    || (transit != NULL)) {
+			u32_t flags = mgr->flags | ONOFF_FLAG_PROCESSING;
+
+			mgr->flags = flags;
+			state = flags & ONOFF_STATE_MASK;
+
+			k_spin_unlock(&mgr->lock, key);
+
+			if (do_monitors) {
+				notify_monitors(mgr, state, res);
+			}
+
+			if (!sys_slist_is_empty(&clients)) {
+				notify_all(mgr, &clients, state, res);
+			}
+
+			if (transit != NULL) {
+				transit(mgr, transition_complete);
+			}
+
+			key = k_spin_lock(&mgr->lock);
+			mgr->flags &= ~ONOFF_FLAG_PROCESSING;
+			state = mgr->flags & ONOFF_STATE_MASK;
+		}
+
+		/* Process deferred events.  Completion takes priority
+		 * over recheck.
+		 */
+		if ((mgr->flags & ONOFF_FLAG_COMPLETE) != 0) {
+			mgr->flags &= ~ONOFF_FLAG_COMPLETE;
+			evt = EVT_COMPLETE;
+		} else if ((mgr->flags & ONOFF_FLAG_RECHECK) != 0) {
+			mgr->flags &= ~ONOFF_FLAG_RECHECK;
+			evt = EVT_RECHECK;
+		}
+
+		state = mgr->flags & ONOFF_STATE_MASK;
+	} while (evt != EVT_NOP);
+
+out:
 	k_spin_unlock(&mgr->lock, key);
-
-	notify_all(mgr, &clients, res);
 }
 
 int onoff_request(struct onoff_manager *mgr,
 		  struct onoff_client *cli)
 {
 	bool add_client = false;        /* add client to pending list */
-	bool start = false;             /* invoke start transition */
+	bool start = false;             /* trigger a start transition */
 	bool notify = false;            /* do client notification */
 	int rv = validate_args(mgr, cli);
 
@@ -154,11 +428,7 @@ int onoff_request(struct onoff_manager *mgr,
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-
-	if ((mgr->flags & ONOFF_HAS_ERROR) != 0) {
-		rv = -EIO;
-		goto out;
-	}
+	u32_t state = mgr->flags & ONOFF_STATE_MASK;
 
 	/* Reject if this would overflow the reference count. */
 	if (mgr->refs == SERVICE_REFS_MAX) {
@@ -166,268 +436,104 @@ int onoff_request(struct onoff_manager *mgr,
 		goto out;
 	}
 
-	u32_t state = mgr->flags & ST_MASK;
-
-	switch (state) {
-	case ST_TO_OFF:
-		/* Queue to start after release */
-		__ASSERT_NO_MSG(mgr->releaser != NULL);
-		add_client = true;
-		rv = 3;
-		break;
-	case ST_OFF:
-		/* Reject if in a non-thread context and start could
-		 * wait.
-		 */
-		if ((k_is_in_isr() || k_is_pre_kernel())
-		    && ((mgr->flags & ONOFF_START_SLEEPS) != 0U)) {
-			rv = -EWOULDBLOCK;
-			break;
-		}
-
-		/* Start with first request while off */
-		__ASSERT_NO_MSG(mgr->refs == 0);
-		set_service_state(mgr, ST_TO_ON);
-		start = true;
-		add_client = true;
-		rv = 2;
-		break;
-	case ST_TO_ON:
-		/* Already starting, just queue it */
-		add_client = true;
-		rv = 1;
-		break;
-	case ST_ON:
-		/* Just increment the reference count */
+	rv = state;
+	if (state == ONOFF_STATE_ON) {
+		/* Increment reference count, notify in exit */
 		notify = true;
-		break;
-	default:
-		rv = -EINVAL;
-		break;
+		mgr->refs += 1U;
+	} else if ((state == ONOFF_STATE_OFF)
+		   || (state == ONOFF_STATE_TO_OFF)
+		   || (state == ONOFF_STATE_TO_ON)) {
+		/* Start if OFF, queue client */
+		start = (state == ONOFF_STATE_OFF);
+		add_client = true;
+	} else if (state == ONOFF_STATE_RESETTING) {
+		rv = -ENOTSUP;
+	} else {
+		__ASSERT_NO_MSG(state == ONOFF_STATE_ERROR);
+		rv = -EIO;
 	}
 
 out:
 	if (add_client) {
 		sys_slist_append(&mgr->clients, &cli->node);
-	} else if (notify) {
-		mgr->refs += 1;
 	}
 
-	k_spin_unlock(&mgr->lock, key);
-
 	if (start) {
-		__ASSERT_NO_MSG(mgr->transitions->start != NULL);
-		mgr->transitions->start(mgr, onoff_start_notify);
-	} else if (notify) {
-		notify_one(mgr, cli, 0);
+		process_event(mgr, EVT_RECHECK, key);
+	} else {
+		k_spin_unlock(&mgr->lock, key);
+
+		if (notify) {
+			notify_one(mgr, cli, state, 0);
+		}
 	}
 
 	return rv;
 }
 
-static void onoff_stop_notify(struct onoff_manager *mgr,
-			      int res)
+int onoff_release(struct onoff_manager *mgr)
 {
-	bool notify_clients = false;
-	int client_res = res;
-	bool start = false;
-	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-	sys_slist_t clients = mgr->clients;
-	struct onoff_client *releaser = mgr->releaser;
-
-	/* If the stop operation failed log an error and leave the
-	 * rest of the state in place.
-	 *
-	 * If it succeeded remove the last reference and transition to
-	 * off.
-	 *
-	 * In either case remove the last reference, and notify all
-	 * waiting clients of operation completion.
-	 */
-	if (res < 0) {
-		mgr->flags &= ~ST_TRANSITION;
-		mgr->flags |= ONOFF_HAS_ERROR;
-		notify_clients = true;
-	} else if (sys_slist_is_empty(&clients)) {
-		set_service_state(mgr, ST_OFF);
-	} else if ((k_is_in_isr() || k_is_pre_kernel())
-		   && ((mgr->flags & ONOFF_START_SLEEPS) != 0U)) {
-		set_service_state(mgr, ST_OFF);
-		notify_clients = true;
-		client_res = -EWOULDBLOCK;
-	} else {
-		set_service_state(mgr, ST_TO_ON);
-		start = true;
-	}
-
-	__ASSERT_NO_MSG(releaser);
-	mgr->refs -= 1U;
-	mgr->releaser = NULL;
-	__ASSERT_NO_MSG(mgr->refs == 0);
-
-	/* Remove the clients if there was an error or a delayed start
-	 * couldn't be initiated, because we're resolving their
-	 * operation with an error.
-	 */
-	if (notify_clients) {
-		sys_slist_init(&mgr->clients);
-	}
-
-	k_spin_unlock(&mgr->lock, key);
-
-	/* Notify the releaser.  If there was an error, notify any
-	 * pending requests; otherwise if there are pending requests
-	 * start the transition to ON.
-	 */
-	notify_one(mgr, releaser, res);
-	if (notify_clients) {
-		notify_all(mgr, &clients, client_res);
-	} else if (start) {
-		mgr->transitions->start(mgr, onoff_start_notify);
-	}
-}
-
-int onoff_release(struct onoff_manager *mgr,
-		  struct onoff_client *cli)
-{
-	bool stop = false;      /* invoke stop transition */
-	bool notify = false;    /* do client notification */
-	int rv = validate_args(mgr, cli);
-
-	if (rv < 0) {
-		return rv;
-	}
+	bool stop = false;      /* trigger a stop transition */
 
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
+	u32_t state = mgr->flags & ONOFF_STATE_MASK;
+	int rv = state;
 
-	if ((mgr->flags & ONOFF_HAS_ERROR) != 0) {
-		rv = -EIO;
+	if (state != ONOFF_STATE_ON) {
+		if (state == ONOFF_STATE_ERROR) {
+			rv = -EIO;
+		} else {
+			rv = -ENOTSUP;
+		}
 		goto out;
 	}
 
-	u32_t state = mgr->flags & ST_MASK;
-
-	switch (state) {
-	case ST_ON:
-		/* Stay on if release leaves a client. */
-		if (mgr->refs > 1U) {
-			notify = true;
-			rv = 1;
-			break;
-		}
-
-		/* Reject if in non-thread context but stop could
-		 * wait
-		 */
-		if ((k_is_in_isr() || k_is_pre_kernel())
-		    && ((mgr->flags & ONOFF_STOP_SLEEPS) != 0)) {
-			rv = -EWOULDBLOCK;
-			break;
-		}
-
-		stop = true;
-
-		set_service_state(mgr, ST_TO_OFF);
-		mgr->releaser = cli;
-		rv = 2;
-
-		break;
-	case ST_TO_ON:
-		rv = -EBUSY;
-		break;
-	case ST_OFF:
-	case ST_TO_OFF:
-		rv = -EALREADY;
-		break;
-	default:
-		rv = -EINVAL;
-	}
+	__ASSERT_NO_MSG(mgr->refs > 0);
+	mgr->refs -= 1U;
+	stop = (mgr->refs == 0);
 
 out:
-	if (notify) {
-		mgr->refs -= 1U;
-	}
-
-	k_spin_unlock(&mgr->lock, key);
-
 	if (stop) {
-		__ASSERT_NO_MSG(mgr->transitions->stop != NULL);
-		mgr->transitions->stop(mgr, onoff_stop_notify);
-	} else if (notify) {
-		notify_one(mgr, cli, 0);
+		process_event(mgr, EVT_RECHECK, key);
+	} else {
+		k_spin_unlock(&mgr->lock, key);
 	}
 
 	return rv;
-}
-
-static void onoff_reset_notify(struct onoff_manager *mgr,
-			       int res)
-{
-	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-	sys_slist_t clients = mgr->clients;
-
-	/* If the reset failed clear the transition flag but otherwise
-	 * leave the state unchanged.
-	 *
-	 * If it was successful clear the reference count and all
-	 * flags except capability flags (sets to ST_OFF).
-	 */
-	if (res < 0) {
-		mgr->flags &= ~ST_TRANSITION;
-	} else {
-		__ASSERT_NO_MSG(mgr->refs == 0U);
-		mgr->refs = 0U;
-		mgr->flags &= SERVICE_CONFIG_FLAGS;
-	}
-
-	sys_slist_init(&mgr->clients);
-
-	k_spin_unlock(&mgr->lock, key);
-
-	notify_all(mgr, &clients, res);
 }
 
 int onoff_reset(struct onoff_manager *mgr,
 		struct onoff_client *cli)
 {
-	if (mgr->transitions->reset == NULL) {
-		return -ENOTSUP;
-	}
-
 	bool reset = false;
 	int rv = validate_args(mgr, cli);
+
+	if ((rv >= 0)
+	    && (mgr->transitions->reset == NULL)) {
+		rv = -ENOTSUP;
+	}
 
 	if (rv < 0) {
 		return rv;
 	}
 
-	/* Reject if in a non-thread context and reset could wait. */
-	if ((k_is_in_isr() || k_is_pre_kernel())
-	    && ((mgr->flags & ONOFF_RESET_SLEEPS) != 0U)) {
-		return -EWOULDBLOCK;
-	}
-
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
+	u32_t state = mgr->flags & ONOFF_STATE_MASK;
 
-	if ((mgr->flags & ONOFF_HAS_ERROR) == 0) {
+	rv = state;
+
+	if ((state & ONOFF_FLAG_ERROR) == 0) {
 		rv = -EALREADY;
-		goto out;
-	}
-
-	if ((mgr->flags & ST_TRANSITION) == 0) {
-		reset = true;
-		mgr->flags |= ST_TRANSITION;
-	}
-
-out:
-	if (rv >= 0) {
+	} else {
+		reset = (state != ONOFF_STATE_RESETTING);
 		sys_slist_append(&mgr->clients, &cli->node);
 	}
 
-	k_spin_unlock(&mgr->lock, key);
-
 	if (reset) {
-		mgr->transitions->reset(mgr, onoff_reset_notify);
+		process_event(mgr, EVT_RECHECK, key);
+	} else {
+		k_spin_unlock(&mgr->lock, key);
 	}
 
 	return rv;
@@ -436,38 +542,61 @@ out:
 int onoff_cancel(struct onoff_manager *mgr,
 		 struct onoff_client *cli)
 {
-	int rv = validate_args(mgr, cli);
-
-	if (rv < 0) {
-		return rv;
+	if ((mgr == NULL) || (cli == NULL)) {
+		return -EINVAL;
 	}
 
-	rv = -EALREADY;
+	int rv = -EALREADY;
 	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
-	u32_t state = mgr->flags & ST_MASK;
+	u32_t state = mgr->flags & ONOFF_STATE_MASK;
 
-	/* Can't remove the last client waiting for the in-progress
-	 * transition, as there would be nobody to receive the
-	 * completion notification, which might indicate a service
-	 * error.
-	 */
 	if (sys_slist_find_and_remove(&mgr->clients, &cli->node)) {
-		rv = 0;
-		if (sys_slist_is_empty(&mgr->clients)
-		    && (state != ST_TO_OFF)) {
-			rv = -EWOULDBLOCK;
-			sys_slist_append(&mgr->clients, &cli->node);
-		}
-	} else if (mgr->releaser == cli) {
-		/* must be waiting for TO_OFF to complete */
-		rv = -EWOULDBLOCK;
+		__ASSERT_NO_MSG((state == ONOFF_STATE_TO_ON)
+				|| (state == ONOFF_STATE_TO_OFF)
+				|| (state == ONOFF_STATE_RESETTING));
+		rv = state;
 	}
 
 	k_spin_unlock(&mgr->lock, key);
 
-	if (rv == 0) {
-		notify_one(mgr, cli, -ECANCELED);
+	return rv;
+}
+
+int onoff_monitor_register(struct onoff_manager *mgr,
+			   struct onoff_monitor *mon)
+{
+	if ((mgr == NULL)
+	    || (mon == NULL)
+	    || (mon->callback == NULL)) {
+		return -EINVAL;
 	}
+
+	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
+
+	sys_slist_append(&mgr->monitors, &mon->node);
+
+	k_spin_unlock(&mgr->lock, key);
+
+	return 0;
+}
+
+int onoff_monitor_unregister(struct onoff_manager *mgr,
+			     struct onoff_monitor *mon)
+{
+	int rv = -EINVAL;
+
+	if ((mgr == NULL)
+	    || (mon == NULL)) {
+		return rv;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&mgr->lock);
+
+	if (sys_slist_find_and_remove(&mgr->monitors, &mon->node)) {
+		rv = 0;
+	}
+
+	k_spin_unlock(&mgr->lock, key);
 
 	return rv;
 }
