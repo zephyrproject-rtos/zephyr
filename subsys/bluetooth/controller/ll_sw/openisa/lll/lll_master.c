@@ -76,8 +76,7 @@ void lll_master_prepare(void *param)
 	lll->latency_prepare += elapsed;
 
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_conn_is_abort_cb, lll_conn_abort_cb, prepare_cb,
-			  0, p);
+	err = lll_prepare(lll_is_abort_cb, lll_conn_abort_cb, prepare_cb, 0, p);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 

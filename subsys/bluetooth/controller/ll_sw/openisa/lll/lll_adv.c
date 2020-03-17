@@ -740,9 +740,8 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		ftr = &(rx->hdr.rx_ftr);
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
-		ftr->us_radio_end = radio_tmr_end_get() -
+		ftr->radio_end_us = radio_tmr_end_get() -
 				    radio_tx_chain_delay_get(0, 0);
-		ftr->us_radio_rdy = radio_rx_ready_delay_get(0, 0);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
