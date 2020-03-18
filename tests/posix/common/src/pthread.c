@@ -239,8 +239,8 @@ void test_posix_pthread_execution(void)
 	void *retval, *stackaddr;
 	size_t stacksize;
 	int serial_threads = 0;
-	char name[] = "thread name";
-	char getName[CONFIG_THREAD_MAX_NAME_LEN];
+	const char thr_name[] = "thread name";
+	char thr_name_buf[CONFIG_THREAD_MAX_NAME_LEN];
 
 	sem_init(&main_sem, 0, 1);
 	schedparam.sched_priority = CONFIG_NUM_COOP_PRIORITIES - 1;
@@ -289,12 +289,16 @@ void test_posix_pthread_execution(void)
 	ret = pthread_attr_destroy(&attr[0]);
 	zassert_equal(ret, EINVAL, "uninitialized attr destroyed!");
 
-	/* TESTPOINT: Try getting thread name before init */
-	ret = pthread_getname_np(newthread[0], getName, sizeof(getName));
+	/* TESTPOINT: Try getting name of NULL thread (aka uninitialized
+	 * thread var).
+	 */
+	ret = pthread_getname_np(NULL, thr_name_buf, sizeof(thr_name_buf));
 	zassert_equal(ret, ESRCH, "uninitialized getname!");
 
-	/* TESTPOINT: Try setting thread name before init */
-	ret = pthread_setname_np(newthread[0], name);
+	/* TESTPOINT: Try setting name of NULL thread (aka uninitialized
+	 * thread var).
+	 */
+	ret = pthread_setname_np(NULL, thr_name);
 	zassert_equal(ret, ESRCH, "uninitialized setname!");
 
 	/* TESTPOINT: Try creating thread before attr init */
@@ -340,7 +344,7 @@ void test_posix_pthread_execution(void)
 	}
 
 	/* TESTPOINT: Try getting thread name with no buffer */
-	ret = pthread_getname_np(newthread[0], NULL, sizeof(getName));
+	ret = pthread_getname_np(newthread[0], NULL, sizeof(thr_name_buf));
 	zassert_equal(ret, EINVAL, "uninitialized getname!");
 
 	/* TESTPOINT: Try setting thread name with no buffer */
@@ -348,15 +352,17 @@ void test_posix_pthread_execution(void)
 	zassert_equal(ret, EINVAL, "uninitialized setname!");
 
 	/* TESTPOINT: Try setting thread name */
-	ret = pthread_setname_np(newthread[0], name);
-	zassert_false(ret, "Set name failed!");
+	ret = pthread_setname_np(newthread[0], thr_name);
+	zassert_false(ret, "Set thread name failed!");
 
 	/* TESTPOINT: Try getting thread name */
-	ret = pthread_getname_np(newthread[0], getName, sizeof(getName));
-	zassert_false(ret, "Get name failed!");
+	ret = pthread_getname_np(newthread[0], thr_name_buf,
+				 sizeof(thr_name_buf));
+	zassert_false(ret, "Get thread name failed!");
 
 	/* TESTPOINT: Thread names match */
-	ret = strncmp(name, getName, min(strlen(name), strlen(getName)));
+	ret = strncmp(thr_name, thr_name_buf, min(strlen(thr_name),
+						  strlen(thr_name_buf)));
 	zassert_false(ret, "Thread names don't match!");
 
 	while (!bounce_test_done()) {
