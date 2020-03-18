@@ -84,6 +84,16 @@ An API can be declared ``stable`` after fulfilling the following requirements:
 - Stable APIs can get backward compatible updates, bug fixes and security fixes
   at any time.
 
+In order to declare an API ``stable``, the following steps need to be followed:
+
+#. A Pull Request must be opened that changes the corresponding entry in the
+   :ref:`api_stability` table
+#. An email must be sent to the ``devel`` mailing list announcing the API
+   upgrade request
+#. The Pull Request must be submitted for discussion in the next
+   `Zephyr API meeting`_ where, barring any objections, the Pull Request will be
+   merged
+
 .. _stable_api_changes:
 
 Introducing incompatible changes
