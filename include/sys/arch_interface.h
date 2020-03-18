@@ -127,6 +127,10 @@ static inline u32_t arch_k_cycle_get_32(void);
  * immediately return, otherwise a power-saving instruction should be
  * issued to wait for an interrupt.
  *
+ * @note The function is expected to return after the interrupt that has
+ * caused the CPU to exit power-saving mode has been serviced, although
+ * this is not a firm requirement.
+ *
  * @see k_cpu_idle()
  */
 void arch_cpu_idle(void);
