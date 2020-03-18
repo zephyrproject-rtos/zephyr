@@ -58,3 +58,7 @@
 &iwdg {
 	status = "okay";
 };
+
+&adc1 {
+	status = "okay";
+};
