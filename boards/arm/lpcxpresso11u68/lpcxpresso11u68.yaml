@@ -1,0 +1,13 @@
+identifier: lpcxpresso11u68
+name: NXP LPCxpresso 11U68
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - clock_controller
+  - pinmux
+  - gpio
+  - i2c
+  - serial
+  - eeprom
