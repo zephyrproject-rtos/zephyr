@@ -17,6 +17,8 @@ no longer optimal or supported by the underlying platforms.
 
     API Life Cycle
 
+An up-to-date table of all APIs and their maturity level can be found in the
+:ref:`api_stability` page.
 
 Experimental
 *************
@@ -25,6 +27,15 @@ Experimental APIs denote that a feature was introduced recently, and may change
 or be removed in future versions. Try it out and provide feedback
 to the community via the `Developer mailing list <https://lists.zephyrproject.org/g/devel>`_.
 
+The following requirements apply to all new APIs:
+
+- Documentation of the API (usage)
+  explaining its design and assumptions, how it is to be used, current
+  implementation limitations, and future potential, if appropriate.
+- The API introduction should be accompanied by at least one implementation
+  of said API (in the case of peripheral APIs, this corresponds to one driver)
+- At least one sample using the new API (may only build on one single board)
+
 Peripheral APIs (Hardware Related)
 ==================================
 
@@ -32,24 +43,8 @@ When introducing an API (public header file with documentation) for a new
 peripheral or driver subsystem, review of the API is enforced and is driven by
 the API working group consisting of representatives from different vendors.
 
-The following requirements apply to new APIs:
-
-- Documentation of the API (usage)
-  explaining its design and assumptions, how it is to be used, current
-  implementation limitations, and future potential, if appropriate.
-- The API introduction should be accompanied by at least one driver
-  implementing this API
-- At least one sample using the new API
-
 The API shall be promoted to ``unstable`` when it has at least two
 implementations on different hardware platforms.
-
-Hardware Agnostic APIs
-=======================
-
-For hardware agnostic APIs, multiple applications are required to promote an
-API from ``experimental`` to ``unstable``.
-
 
 Unstable
 ********
@@ -61,6 +56,18 @@ be used on different hardware platforms.
 .. note::
 
    Changes will not be announced.
+
+Peripheral APIs (Hardware Related)
+==================================
+
+The API shall be promoted from ``experimental`` to ``unstable`` when it has at
+least two implementations on different hardware platforms.
+
+Hardware Agnostic APIs
+=======================
+
+For hardware agnostic APIs, multiple applications using it are required to
+promote an API from ``experimental`` to ``unstable``.
 
 Stable
 *******
