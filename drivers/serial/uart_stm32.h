@@ -19,6 +19,8 @@ struct uart_stm32_config {
 	struct stm32_pclken pclken;
 	/* initial hardware flow control, 1 for RTS/CTS */
 	bool hw_flow_control;
+	/* initial parity, 0 for none, 1 for odd, 2 for even */
+	int  parity;
 };
 
 /* driver data */

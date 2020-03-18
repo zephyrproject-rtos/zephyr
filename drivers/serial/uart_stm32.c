@@ -661,6 +661,8 @@ static int uart_stm32_init(struct device *dev)
 	const struct uart_stm32_config *config = DEV_CFG(dev);
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	u32_t ll_parity;
+	u32_t ll_datawidth;
 
 	__uart_stm32_get_clock(dev);
 	/* enable clock */
@@ -675,10 +677,31 @@ static int uart_stm32_init(struct device *dev)
 	LL_USART_SetTransferDirection(UartInstance,
 				      LL_USART_DIRECTION_TX_RX);
 
-	/* 8 data bit, 1 start bit, 1 stop bit, no parity */
+	/* Determine the datawidth and parity. If we use other parity than
+	 * 'none' we must use datawidth = 9 (to get 8 databit + 1 parity bit).
+	 */
+	if (config->parity == 2) {
+		/* 8 databit, 1 parity bit, parity even */
+		ll_parity = LL_USART_PARITY_EVEN;
+		ll_datawidth = LL_USART_DATAWIDTH_9B;
+	} else if (config->parity == 1) {
+		/* 8 databit, 1 parity bit, parity odd */
+		ll_parity = LL_USART_PARITY_ODD;
+		ll_datawidth = LL_USART_DATAWIDTH_9B;
+	} else {  /* Default to 8N0, but show warning if invalid value */
+		if (config->parity != 0) {
+			LOG_WRN("Invalid parity setting '%d'."
+				"Defaulting to 'none'.", config->parity);
+		}
+		/* 8 databit, parity none */
+		ll_parity = LL_USART_PARITY_NONE;
+		ll_datawidth = LL_USART_DATAWIDTH_8B;
+	}
+
+	/* Set datawidth and parity, 1 start bit, 1 stop bit  */
 	LL_USART_ConfigCharacter(UartInstance,
-				 LL_USART_DATAWIDTH_8B,
-				 LL_USART_PARITY_NONE,
+				 ll_datawidth,
+				 ll_parity,
 				 LL_USART_STOPBITS_1);
 
 	if (config->hw_flow_control) {
@@ -740,7 +763,8 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),	\
 		    .enr = DT_INST_CLOCKS_CELL(index, bits)	\
 	},								\
-	.hw_flow_control = DT_INST_PROP(index, hw_flow_control)\
+	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),\
+	.parity = DT_INST_PROP(index, parity)\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
