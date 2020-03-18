@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <soc.h>
 #include <device.h>
 #include <init.h>
+#include <debug/stack.h>
 #include <net/net_if.h>
 #include <net/net_pkt.h>
 
