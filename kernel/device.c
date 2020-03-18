@@ -8,6 +8,7 @@
 #include <device.h>
 #include <sys/atomic.h>
 #include <syscall_handler.h>
+#include <dsm.h>
 
 extern const struct init_entry __init_start[];
 extern const struct init_entry __init_PRE_KERNEL_1_start[];
@@ -186,6 +187,8 @@ static void device_call_status(struct device *dev, bool init, int status)
 	struct device_context *dc =
 		(struct device_context *)__device_context_start +
 		(dev - __device_start);
+
+	device_status_handler(dev, status);
 
 	if (status) {
 		if (init) {

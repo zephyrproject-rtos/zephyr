@@ -50,4 +50,11 @@ config DEVICE_STRICT_CHECK
 	  there were no hardware fault and will behave accordingly: returning
 	  the error code.
 
+config DEVICE_STATUS_HANDLER
+	bool
+	help
+	  Some features need this to be enabled. It will build the necessary
+	  infrastructure for handling statuses (either for logging these,
+	  reporting them to some external end point, managing them locally...)
+
 endmenu
