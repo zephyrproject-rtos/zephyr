@@ -1,187 +1,195 @@
 /*
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
  * Copyright (c) 2018 Xilinx, Inc.
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel.h>
+#include <soc.h>
 #include <drivers/timer/system_timer.h>
+#include "xlnx_psttc_timer_priv.h"
+
+#define TIMER_INDEX		CONFIG_XLNX_PSTTC_TIMER_INDEX
+#define TIMER_DT(v)		UTIL_CAT(UTIL_CAT(DT_INST_, TIMER_INDEX), _##v)
+
+#define TIMER_IRQ		TIMER_DT(XLNX_TTCPS_IRQ_0)
+#define TIMER_BASE_ADDR		TIMER_DT(XLNX_TTCPS_BASE_ADDRESS)
+#define TIMER_CLOCK_FREQUECY	TIMER_DT(XLNX_TTCPS_CLOCK_FREQUENCY)
+
+#define TICKS_PER_SEC		CONFIG_SYS_CLOCK_TICKS_PER_SEC
+#define CYCLES_PER_SEC		TIMER_CLOCK_FREQUECY
+#define CYCLES_PER_TICK		(CYCLES_PER_SEC / TICKS_PER_SEC)
+
+/*
+ * CYCLES_NEXT_MIN must be large enough to ensure that the timer does not miss
+ * interrupts.  This value was conservatively set using the trial and error
+ * method, and there is room for improvement.
+ */
+#define CYCLES_NEXT_MIN		(10000)
+#define CYCLES_NEXT_MAX		(XTTC_MAX_INTERVAL_COUNT)
+
+BUILD_ASSERT_MSG(TIMER_DT(XLNX_TTCPS_CLOCK_FREQUENCY) ==
+			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+		 "Configured system timer frequency does not match the TTC "
+		 "clock frequency in the device tree");
+
+BUILD_ASSERT_MSG(CYCLES_PER_SEC >= TICKS_PER_SEC,
+		 "Timer clock frequency must be greater than the system tick "
+		 "frequency");
+
+BUILD_ASSERT_MSG((CYCLES_PER_SEC % TICKS_PER_SEC) == 0,
+		 "Timer clock frequency is not divisible by the system tick "
+		 "frequency");
 
 #ifdef CONFIG_TICKLESS_KERNEL
-#warning "Tickless mode is not supported"
+static u32_t last_cycles;
 #endif
 
-#define TIMER_FREQ          CONFIG_SYS_CLOCK_TICKS_PER_SEC
-
-#if (CONFIG_XLNX_PSTTC_TIMER_INDEX == 0)
-#define TIMER_INPUT_CLKHZ   DT_INST_0_CDNS_TTC_CLOCK_FREQUENCY
-#define TIMER_IRQ           DT_INST_0_CDNS_TTC_IRQ_0
-#define TIMER_BASEADDR      DT_INST_0_CDNS_TTC_BASE_ADDRESS
-#else
-#error ("No timer is specified")
-#endif
-
-#define XTTCPS_CLK_CNTRL_OFFSET	   0x00000000U  /**< Clock Control Register */
-#define XTTCPS_CNT_CNTRL_OFFSET	   0x0000000CU  /**< Counter Control Register*/
-#define XTTCPS_COUNT_VALUE_OFFSET  0x00000018U  /**< Current Counter Value */
-#define XTTCPS_INTERVAL_VAL_OFFSET 0x00000024U  /**< Interval Count Value */
-#define XTTCPS_MATCH_0_OFFSET	   0x00000030U  /**< Match 1 value */
-#define XTTCPS_MATCH_1_OFFSET	   0x0000003CU  /**< Match 2 value */
-#define XTTCPS_MATCH_2_OFFSET	   0x00000048U  /**< Match 3 value */
-#define XTTCPS_ISR_OFFSET	   0x00000054U  /**< Interrupt Status Register */
-#define XTTCPS_IER_OFFSET	   0x00000060U  /**< Interrupt Enable Register */
-
-/* Clock Control Register definitions */
-#define XTTCPS_CLK_CNTRL_PS_EN_MASK	0x00000001U  /**< Prescale enable */
-#define XTTCPS_CLK_CNTRL_PS_VAL_MASK	0x0000001EU  /**< Prescale value */
-#define XTTCPS_CLK_CNTRL_PS_VAL_SHIFT	1U  /**< Prescale shift */
-#define XTTCPS_CLK_CNTRL_PS_DISABLE	16U  /**< Prescale disable */
-#define XTTCPS_CLK_CNTRL_SRC_MASK	0x00000020U  /**< Clock source */
-#define XTTCPS_CLK_CNTRL_EXT_EDGE_MASK	0x00000040U  /**< External Clock edge */
-
-/* Counter Control Register definitions */
-#define XTTCPS_CNT_CNTRL_DIS_MASK	0x00000001U /**< Disable the counter */
-#define XTTCPS_CNT_CNTRL_INT_MASK	0x00000002U /**< Interval mode */
-#define XTTCPS_CNT_CNTRL_DECR_MASK	0x00000004U /**< Decrement mode */
-#define XTTCPS_CNT_CNTRL_MATCH_MASK	0x00000008U /**< Match mode */
-#define XTTCPS_CNT_CNTRL_RST_MASK	0x00000010U /**< Reset counter */
-#define XTTCPS_CNT_CNTRL_EN_WAVE_MASK	0x00000020U /**< Enable waveform */
-#define XTTCPS_CNT_CNTRL_POL_WAVE_MASK	0x00000040U /**< Waveform polarity */
-#define XTTCPS_CNT_CNTRL_RESET_VALUE	0x00000021U /**< Reset value */
-
-/* Interrupt register masks */
-#define XTTCPS_IXR_INTERVAL_MASK	0x00000001U  /**< Interval Interrupt */
-#define XTTCPS_IXR_MATCH_0_MASK		0x00000002U  /**< Match 1 Interrupt */
-#define XTTCPS_IXR_MATCH_1_MASK		0x00000004U  /**< Match 2 Interrupt */
-#define XTTCPS_IXR_MATCH_2_MASK		0x00000008U  /**< Match 3 Interrupt */
-#define XTTCPS_IXR_CNT_OVR_MASK		0x00000010U  /**< Counter Overflow */
-#define XTTCPS_IXR_ALL_MASK		0x0000001FU  /**< All valid Interrupts */
-
-#define XTTC_MAX_INTERVAL_COUNT 0xFFFFFFFFU /**< Maximum value of interval counter */
-
-static u32_t accumulated_cycles;
-static s32_t _sys_idle_elapsed_ticks = 1;
-
-static int xttc_calculate_interval(u32_t *interval, u8_t *prescaler)
+static u32_t read_count(void)
 {
-	u32_t tmpinterval = 0;
-	u8_t tmpprescaler = 0;
-	unsigned int tmpval;
-
-	tmpval = (u32_t)(TIMER_INPUT_CLKHZ / TIMER_FREQ);
-
-	if (tmpval < (u32_t)65536U) {
-		/* no prescaler is required */
-		tmpinterval = tmpval;
-		tmpprescaler = 0;
-	} else {
-		for (tmpprescaler = 1U; tmpprescaler < 16; tmpprescaler++) {
-			tmpval = (u32_t)(TIMER_INPUT_CLKHZ /
-					 (TIMER_FREQ * (1U << tmpprescaler)));
-			if (tmpval < (u32_t)65536U) {
-				tmpinterval = tmpval;
-				break;
-			}
-		}
-	}
-
-	if (tmpinterval != 0) {
-		*interval = tmpinterval;
-		*prescaler = tmpprescaler;
-		return 0;
-	}
-
-	/* TBD: Is there a way to adjust the sys clock parameters such as
-	 * ticks per sec if it failed to configure the timer as specified
-	 */
-	return -EINVAL;
+	/* Read current counter value */
+	return sys_read32(TIMER_BASE_ADDR + XTTCPS_COUNT_VALUE_OFFSET);
 }
 
-/**
- * @brief System timer tick handler
- *
- * This routine handles the system clock tick interrupt. A TICK_EVENT event
- * is pushed onto the kernel stack.
- *
- * The symbol for this routine is either _timer_int_handler.
- *
- * @return N/A
- */
-void _timer_int_handler(void *unused)
+static void update_match(u32_t cycles, u32_t match)
 {
-	ARG_UNUSED(unused);
+	u32_t delta = match - cycles;
 
-	u32_t regval;
+	/* Ensure that the match value meets the minimum timing requirements */
+	if (delta < CYCLES_NEXT_MIN) {
+		match += CYCLES_NEXT_MIN - delta;
+	}
 
-	regval = sys_read32(TIMER_BASEADDR + XTTCPS_ISR_OFFSET);
-	accumulated_cycles += k_ticks_to_cyc_floor32(1);
-	z_clock_announce(_sys_idle_elapsed_ticks);
+	/* Write counter match value for interrupt generation */
+	sys_write32(match, TIMER_BASE_ADDR + XTTCPS_MATCH_0_OFFSET);
+}
+
+static void ttc_isr(void *arg)
+{
+	u32_t cycles;
+	u32_t ticks;
+
+	ARG_UNUSED(arg);
+
+	/* Acknowledge interrupt */
+	sys_read32(TIMER_BASE_ADDR + XTTCPS_ISR_OFFSET);
+
+	/* Read counter value */
+	cycles = read_count();
+
+#ifdef CONFIG_TICKLESS_KERNEL
+	/* Calculate the number of ticks since last announcement  */
+	ticks = (cycles - last_cycles) / CYCLES_PER_TICK;
+
+	/* Update last cycles count */
+	last_cycles = cycles;
+#else
+	/* Update counter match value for the next interrupt */
+	update_match(cycles, cycles + CYCLES_PER_TICK);
+
+	/* Advance tick count by 1 */
+	ticks = 1;
+#endif
+
+	/* Announce to the kernel*/
+	z_clock_announce(ticks);
 }
 
 int z_clock_driver_init(struct device *device)
 {
-	int ret;
-	u32_t interval;
-	u8_t prescaler;
-	u32_t regval;
+	u32_t reg_val;
 
 	/* Stop timer */
 	sys_write32(XTTCPS_CNT_CNTRL_DIS_MASK,
-		    TIMER_BASEADDR + XTTCPS_CNT_CNTRL_OFFSET);
+		    TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
 
-	/* Calculate prescaler */
-	ret = xttc_calculate_interval(&interval, &prescaler);
-	if (ret < 0) {
-		printk("Failed to calculate prescaler.\n");
-		return ret;
-	}
+#ifdef CONFIG_TICKLESS_KERNEL
+	/* Initialise internal states */
+	last_cycles = 0;
+#endif
 
-	/* Reset registers */
+	/* Initialise timer registers */
 	sys_write32(XTTCPS_CNT_CNTRL_RESET_VALUE,
-		    TIMER_BASEADDR + XTTCPS_CNT_CNTRL_OFFSET);
-	sys_write32(0, TIMER_BASEADDR + XTTCPS_CLK_CNTRL_OFFSET);
-	sys_write32(0, TIMER_BASEADDR + XTTCPS_INTERVAL_VAL_OFFSET);
-	sys_write32(0, TIMER_BASEADDR + XTTCPS_MATCH_0_OFFSET);
-	sys_write32(0, TIMER_BASEADDR + XTTCPS_MATCH_1_OFFSET);
-	sys_write32(0, TIMER_BASEADDR + XTTCPS_MATCH_2_OFFSET);
-	sys_write32(0, TIMER_BASEADDR + XTTCPS_IER_OFFSET);
-	sys_write32(XTTCPS_IXR_ALL_MASK, TIMER_BASEADDR + XTTCPS_ISR_OFFSET);
+		    TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
+	sys_write32(0, TIMER_BASE_ADDR + XTTCPS_CLK_CNTRL_OFFSET);
+	sys_write32(0, TIMER_BASE_ADDR + XTTCPS_INTERVAL_VAL_OFFSET);
+	sys_write32(0, TIMER_BASE_ADDR + XTTCPS_MATCH_0_OFFSET);
+	sys_write32(0, TIMER_BASE_ADDR + XTTCPS_MATCH_1_OFFSET);
+	sys_write32(0, TIMER_BASE_ADDR + XTTCPS_MATCH_2_OFFSET);
+	sys_write32(0, TIMER_BASE_ADDR + XTTCPS_IER_OFFSET);
+	sys_write32(XTTCPS_IXR_ALL_MASK, TIMER_BASE_ADDR + XTTCPS_ISR_OFFSET);
 
 	/* Reset counter value */
-	regval = sys_read32(TIMER_BASEADDR + XTTCPS_CNT_CNTRL_OFFSET);
-	regval |= XTTCPS_CNT_CNTRL_RST_MASK;
-	sys_write32(regval, TIMER_BASEADDR + XTTCPS_CNT_CNTRL_OFFSET);
+	reg_val = sys_read32(TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
+	reg_val |= XTTCPS_CNT_CNTRL_RST_MASK;
+	sys_write32(reg_val, TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
 
-	/* Set options */
-	regval = sys_read32(TIMER_BASEADDR + XTTCPS_CNT_CNTRL_OFFSET);
-	regval |= XTTCPS_CNT_CNTRL_INT_MASK;
-	sys_write32(regval, TIMER_BASEADDR + XTTCPS_CNT_CNTRL_OFFSET);
+	/* Set match mode */
+	reg_val = sys_read32(TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
+	reg_val |= XTTCPS_CNT_CNTRL_MATCH_MASK;
+	sys_write32(reg_val, TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
 
-	/* Set interval and prescaller */
-	sys_write32(interval, TIMER_BASEADDR + XTTCPS_INTERVAL_VAL_OFFSET);
-	regval = (u32_t)((prescaler & 0xFU) << 1);
-	sys_write32(regval, TIMER_BASEADDR + XTTCPS_CLK_CNTRL_OFFSET);
+	/* Set initial timeout */
+	reg_val = IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
+			CYCLES_NEXT_MAX : CYCLES_PER_TICK;
+	sys_write32(reg_val, TIMER_BASE_ADDR + XTTCPS_MATCH_0_OFFSET);
+
+	/* Connect timer interrupt */
+	IRQ_CONNECT(TIMER_IRQ, 0, ttc_isr, 0, 0);
+	irq_enable(TIMER_IRQ);
 
 	/* Enable timer interrupt */
-	IRQ_CONNECT(TIMER_IRQ, 0, _timer_int_handler, 0, 0);
-	irq_enable(TIMER_IRQ);
-	regval = sys_read32(TIMER_BASEADDR + XTTCPS_IER_OFFSET);
-	regval |= XTTCPS_IXR_INTERVAL_MASK;
-	sys_write32(regval, TIMER_BASEADDR + XTTCPS_IER_OFFSET);
+	reg_val = sys_read32(TIMER_BASE_ADDR + XTTCPS_IER_OFFSET);
+	reg_val |= XTTCPS_IXR_MATCH_0_MASK;
+	sys_write32(reg_val, TIMER_BASE_ADDR + XTTCPS_IER_OFFSET);
 
 	/* Start timer */
-	regval = sys_read32(TIMER_BASEADDR + XTTCPS_CNT_CNTRL_OFFSET);
-	regval &= (~XTTCPS_CNT_CNTRL_DIS_MASK);
-	sys_write32(regval, TIMER_BASEADDR + XTTCPS_CNT_CNTRL_OFFSET);
+	reg_val = sys_read32(TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
+	reg_val &= (~XTTCPS_CNT_CNTRL_DIS_MASK);
+	sys_write32(reg_val, TIMER_BASE_ADDR + XTTCPS_CNT_CNTRL_OFFSET);
 
 	return 0;
+}
+
+void z_clock_set_timeout(s32_t ticks, bool idle)
+{
+#ifdef CONFIG_TICKLESS_KERNEL
+	u32_t cycles;
+	u32_t next_cycles;
+
+	/* Read counter value */
+	cycles = read_count();
+
+	/* Calculate timeout counter value */
+	if (ticks == K_FOREVER) {
+		next_cycles = cycles + CYCLES_NEXT_MAX;
+	} else {
+		next_cycles = cycles + ((u32_t)ticks * CYCLES_PER_TICK);
+	}
+
+	/* Set match value for the next interrupt */
+	update_match(cycles, next_cycles);
+#endif
 }
 
 u32_t z_clock_elapsed(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
+	u32_t cycles;
+
+	/* Read counter value */
+	cycles = read_count();
+
+	/* Return the number of ticks since last announcement */
+	return (cycles - last_cycles) / CYCLES_PER_TICK;
+#else
+	/* Always return 0 for tickful operation */
 	return 0;
+#endif
 }
 
 u32_t z_timer_cycle_get_32(void)
 {
-	return accumulated_cycles;
+	/* Return the current counter value */
+	return read_count();
 }
