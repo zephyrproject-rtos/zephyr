@@ -31,7 +31,7 @@
 		};
 
 		ttc0: timer@ff110000 {
-			compatible = "cdns,ttc";
+			compatible = "xlnx,ttcps";
 			status = "disabled";
 			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>,
@@ -45,7 +45,7 @@
 		};
 
 		ttc1: timer@ff120000 {
-			compatible = "cdns,ttc";
+			compatible = "xlnx,ttcps";
 			status = "disabled";
 			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>,
@@ -59,7 +59,7 @@
 		};
 
 		ttc2: timer@ff130000 {
-			compatible = "cdns,ttc";
+			compatible = "xlnx,ttcps";
 			status = "disabled";
 			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>,
@@ -73,7 +73,7 @@
 		};
 
 		ttc3: timer@ff140000 {
-			compatible = "cdns,ttc";
+			compatible = "xlnx,ttcps";
 			status = "disabled";
 			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL
 					IRQ_DEFAULT_PRIORITY>,

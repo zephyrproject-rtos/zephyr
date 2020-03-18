@@ -70,7 +70,7 @@
 #elif defined(CONFIG_RV32M1_LPTMR_TIMER)
 #define TICK_IRQ DT_OPENISA_RV32M1_LPTMR_SYSTEM_LPTMR_IRQ_0
 #elif defined(CONFIG_XLNX_PSTTC_TIMER)
-#define TICK_IRQ DT_INST_0_CDNS_TTC_IRQ_0
+#define TICK_IRQ DT_INST_0_XLNX_TTCPS_IRQ_0
 #elif defined(CONFIG_CPU_CORTEX_M)
 /*
  * The Cortex-M use the SYSTICK exception for the system timer, which is

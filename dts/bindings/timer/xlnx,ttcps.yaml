@@ -1,6 +1,6 @@
 description: Xilinx ZynqMP PS TTC timer
 
-compatible: "cdns,ttc"
+compatible: "xlnx,ttcps"
 
 include: base.yaml
 
@@ -13,5 +13,5 @@ properties:
 
     clock-frequency:
       type: int
-      required: false
+      required: true
       description: Clock frequency information for Timer operation
