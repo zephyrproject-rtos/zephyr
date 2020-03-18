@@ -1,0 +1,25 @@
+# Copyright (c) 2020 Paratronic
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RTC_STM32
+	bool "STM32 RTC Driver"
+	depends on SOC_FAMILY_STM32 && !COUNTER_RTC_STM32
+	select USE_STM32_LL_RTC
+	help
+	  Build RTC driver for STM32 SoCs
+
+choice RTC_STM32_CLOCK_SRC
+	bool "RTC clock source"
+	depends on RTC_STM32
+
+config RTC_STM32_CLOCK_LSI
+	bool "LSI"
+	help
+	  Use LSI as RTC clock
+
+config RTC_STM32_CLOCK_LSE
+	bool "LSE"
+	help
+	  Use LSE as RTC clock
+
+endchoice #RTC_STM32_CLOCK_SRC

@@ -12,4 +12,6 @@ module = RTC
 module-str = rtc
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/rtc/Kconfig.rtc_stm32"
+
 endif # RTC
