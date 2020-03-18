@@ -48,6 +48,15 @@ config POSIX_CLOCK
 	  This enables POSIX clock\_\*(), timer\_\*(), and \*sleep()
 	  functions.
 
+if POSIX_CLOCK
+
+config POSIX_CLOCK_RTC
+	bool "Use RTC for realtime clock"
+	depends on RTC
+	default n
+
+endif # POSIX_CLOCK
+
 config MAX_TIMER_COUNT
 	int "Maximum timer count in POSIX application"
 	default 5

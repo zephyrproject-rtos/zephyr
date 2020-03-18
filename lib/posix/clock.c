@@ -7,6 +7,15 @@
 #include <errno.h>
 #include <posix/time.h>
 #include <posix/sys/time.h>
+#include <drivers/rtc.h>
+#include <logging/log.h>
+#include <init.h>
+
+LOG_MODULE_REGISTER(posix_clock);
+
+#ifndef DT_RTC_0_NAME
+#define DT_RTC_0_NAME ""
+#endif
 
 /*
  * `k_uptime_get` returns a timestamp based on an always increasing
@@ -16,6 +25,8 @@
  * set from a real time clock, if such hardware is present.
  */
 static struct timespec rt_clock_base;
+
+static struct device *rtc_dev;
 
 /**
  * @brief Get clock time specified by clock_id.
@@ -34,6 +45,9 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 		break;
 
 	case CLOCK_REALTIME:
+		if (rtc_dev) {
+			return rtc_get_time(rtc_dev, ts);
+		}
 		base = rt_clock_base;
 		break;
 
@@ -74,6 +88,11 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 		return -1;
 	}
 
+	if (rtc_dev) {
+		errno = rtc_set_time(rtc_dev, tp);
+		return (errno == 0) ? 0 : -1;
+	}
+
 	u64_t elapsed_msecs = k_uptime_get();
 	s64_t delta = (s64_t)NSEC_PER_SEC * tp->tv_sec + tp->tv_nsec
 		- elapsed_msecs * USEC_PER_MSEC * NSEC_PER_USEC;
@@ -106,3 +125,20 @@ int gettimeofday(struct timeval *tv, const void *tz)
 
 	return res;
 }
+
+static int clock_init(struct device *unused)
+{
+	ARG_UNUSED(unused);
+
+	if (!IS_ENABLED(CONFIG_POSIX_CLOCK_RTC))
+		return 0;
+
+	rtc_dev = device_get_binding(DT_RTC_0_NAME);
+	if (rtc_dev == NULL) {
+		LOG_ERR("Could not find RTC device");
+		return -ENODEV;
+	}
+	return 0;
+}
+
+SYS_INIT(clock_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
