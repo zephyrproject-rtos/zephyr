@@ -464,7 +464,7 @@ uint8_t ll_adv_enable(uint8_t handle, uint8_t enable,
 uint8_t ll_adv_enable(uint8_t handle, uint8_t enable)
 {
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-	struct ll_adv_sync_set *sync;
+	struct ll_adv_sync_set *sync = NULL;
 	uint8_t sync_is_started = 0U;
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 	struct ll_adv_aux_set *aux;
