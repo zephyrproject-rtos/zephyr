@@ -1,6 +1,8 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+DT_COMPAT_ST_STM32_SDMMC := st,stm32-sdmmc
+
 menuconfig DISK_ACCESS
 	bool "Disk Interface"
 	help
@@ -131,4 +133,22 @@ config DISK_SDHC_VOLUME_NAME
 	  Disk name as per file system naming guidelines.
 
 endif # DISK_ACCESS_SDHC
+
+config DISK_ACCESS_STM32_SDMMC
+	bool "STM32 SDMMC driver"
+	depends on HAS_STM32CUBE
+	select USE_STM32_HAL_SD
+	select USE_STM32_LL_SDMMC
+	default $(dt_compat_enabled,$(DT_COMPAT_ST_STM32_SDMMC))
+	help
+	  File system on sdmmc accessed through stm32 sdmmc.
+
+config DISK_STM32_SDMMC_VOLUME_NAME
+	string "SDMMC Disk mount point or drive name"
+	depends on DISK_ACCESS_STM32_SDMMC
+	default "SD" if FAT_FILESYSTEM_ELM
+	default "SDMMC"
+	help
+	  Disk name as per file system naming guidelines.
+
 endif # DISK_ACCESS
