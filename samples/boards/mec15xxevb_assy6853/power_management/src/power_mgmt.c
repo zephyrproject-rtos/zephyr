@@ -193,6 +193,9 @@ int test_pwr_mgmt_multithread(bool use_logging, u8_t cycles)
 
 	pm_reset_counters();
 
+	k_thread_abort(&threadA_id);
+	k_thread_abort(&threadB_id);
+
 	return 0;
 }
 
