@@ -126,3 +126,5 @@ if(CONFIG_BT_CONN_DISABLE_SECURITY)
   Do not use in production."
     )
 endif()
+
+add_subdirectory_ifdef(CONFIG_BT_AUDIO audio)
