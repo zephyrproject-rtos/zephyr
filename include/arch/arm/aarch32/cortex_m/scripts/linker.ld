@@ -137,6 +137,10 @@ SECTIONS
 
     SECTION_PROLOGUE(rom_start,,)
 	{
+#ifdef CONFIG_EARLY_INIT
+	. = 0x0;
+	KEEP(*(.early_init))
+#endif
 
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...). This typically contains the vector

@@ -71,6 +71,10 @@
 #define _NOCACHE_SECTION_NAME nocache
 #endif
 
+#ifdef CONFIG_EARLY_INIT
+#define EARLY_INIT	.early_init
+#endif
+
 #include <linker/section_tags.h>
 
 #endif /* ZEPHYR_INCLUDE_LINKER_SECTIONS_H_ */

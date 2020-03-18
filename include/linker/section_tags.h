@@ -36,6 +36,10 @@
 #define __nocache __in_section_unique(_NOCACHE_SECTION_NAME)
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+#if defined(CONFIG_EARLY_INIT)
+#define __early_init_section	Z_GENERIC_SECTION(EARLY_INIT)
+#endif /* CONFIG_EARLY_INIT */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_LINKER_SECTION_TAGS_H_ */

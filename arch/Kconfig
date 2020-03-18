@@ -565,3 +565,10 @@ config BOARD
 	  The Board is the first location where we search for a linker.ld file,
 	  if not found we look for the linker file in
 	  soc/<arch>/<family>/<series>
+
+config EARLY_INIT
+	bool "Support for early init code"
+	help
+	  Some boards require the initialization of some peripherals such as
+	  external flash or sdram. Enable this and create the vector table and
+	  early_init_handler to run code at the very start of the boot_rom.
