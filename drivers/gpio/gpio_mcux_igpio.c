@@ -123,6 +123,17 @@ static int mcux_igpio_pin_interrupt_configure(struct device *dev,
 	u8_t icr;
 	int shift;
 
+	if (mode == GPIO_INT_MODE_DISABLED) {
+		key = irq_lock();
+
+		WRITE_BIT(base->IMR, pin, 0);
+		WRITE_BIT(data->pin_callback_enables, pin, 0);
+
+		irq_unlock(key);
+
+		return 0;
+	}
+
 	if ((mode == GPIO_INT_MODE_EDGE) && (trig == GPIO_INT_TRIG_LOW)) {
 		icr = 3;
 	} else if ((mode == GPIO_INT_MODE_EDGE) &&
@@ -148,10 +159,9 @@ static int mcux_igpio_pin_interrupt_configure(struct device *dev,
 	key = irq_lock();
 
 	WRITE_BIT(base->EDGE_SEL, pin, trig == GPIO_INT_TRIG_BOTH);
-	WRITE_BIT(base->ISR, pin, mode != GPIO_INT_MODE_DISABLED);
-	WRITE_BIT(base->IMR, pin, mode != GPIO_INT_MODE_DISABLED);
-	WRITE_BIT(data->pin_callback_enables, pin,
-		  mode != GPIO_INT_MODE_DISABLED);
+	WRITE_BIT(base->ISR, pin, 1);
+	WRITE_BIT(base->IMR, pin, 1);
+	WRITE_BIT(data->pin_callback_enables, pin, 1);
 
 	irq_unlock(key);
 
