@@ -72,6 +72,6 @@
 		label = "DISPLAY";
 		spi-max-frequency = <15151515>;
 		reg = <0>;
-		cmd-data-gpios = <&gpiod 13 0>;
+		cmd-data-gpios = <&gpiod 13 GPIO_ACTIVE_LOW>;
 	};
 };
