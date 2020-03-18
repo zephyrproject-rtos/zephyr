@@ -64,6 +64,10 @@ static sec_tag_t m_sec_tags[] = {
 	APP_CA_CERT_TAG,
 };
 
+static u8_t topic[] = "devices/" MQTT_CLIENTID "/messages/devicebound/#";
+static struct mqtt_topic subs_topic;
+static struct mqtt_subscription_list subs_list;
+
 static void mqtt_event_handler(struct mqtt_client *const client,
 			       const struct mqtt_evt *evt);
 
@@ -193,7 +197,20 @@ static void client_init(struct mqtt_client *client)
 static void mqtt_event_handler(struct mqtt_client *const client,
 			       const struct mqtt_evt *evt)
 {
+	struct mqtt_puback_param puback;
+	u8_t data[33];
+	int len;
+	int bytes_read;
+
 	switch (evt->type) {
+	case MQTT_EVT_SUBACK:
+		LOG_INF("SUBACK packet id: %u", evt->param.suback.message_id);
+		break;
+
+	case MQTT_EVT_UNSUBACK:
+		LOG_INF("UNSUBACK packet id: %u", evt->param.suback.message_id);
+		break;
+
 	case MQTT_EVT_CONNACK:
 		if (evt->result) {
 			LOG_ERR("MQTT connect failed %d", evt->result);
@@ -220,9 +237,52 @@ static void mqtt_event_handler(struct mqtt_client *const client,
 		LOG_DBG("PUBACK packet id: %u\n", evt->param.puback.message_id);
 		break;
 
+	case MQTT_EVT_PUBLISH:
+		len = evt->param.publish.message.payload.len;
+
+		LOG_INF("MQTT publish received %d, %d bytes", evt->result, len);
+		LOG_INF(" id: %d, qos: %d", evt->param.publish.message_id,
+			evt->param.publish.message.topic.qos);
+
+		while (len) {
+			bytes_read = mqtt_read_publish_payload(&client_ctx,
+					data,
+					len >= sizeof(data) - 1 ?
+					sizeof(data) - 1 : len);
+			if (bytes_read < 0 && bytes_read != -EAGAIN) {
+				LOG_ERR("failure to read payload");
+				break;
+			}
+
+			data[bytes_read] = '\0';
+			LOG_INF("   payload: %s", log_strdup(data));
+			len -= bytes_read;
+		}
+
+		puback.message_id = evt->param.publish.message_id;
+		mqtt_publish_qos1_ack(&client_ctx, &puback);
+		break;
+
 	default:
 		LOG_DBG("Unhandled MQTT event %d", evt->type);
 		break;
+	}
+}
+
+static void subscribe(struct mqtt_client *client)
+{
+	int err;
+
+	/* subscribe */
+	subs_topic.topic.utf8 = topic;
+	subs_topic.topic.size = strlen(topic);
+	subs_list.list = &subs_topic;
+	subs_list.list_count = 1U;
+	subs_list.message_id = 1U;
+
+	err = mqtt_subscribe(client, &subs_list);
+	if (err) {
+		LOG_ERR("Failed on topic %s", topic);
 	}
 }
 
@@ -314,6 +374,7 @@ static int try_to_connect(struct mqtt_client *client)
 		mqtt_input(client);
 
 		if (mqtt_connected) {
+			subscribe(client);
 			return 0;
 		}
 
