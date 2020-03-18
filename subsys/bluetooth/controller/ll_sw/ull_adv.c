@@ -463,7 +463,7 @@ u8_t ll_adv_enable(u8_t handle, u8_t enable,
 u8_t ll_adv_enable(u8_t handle, u8_t enable)
 {
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-	struct ll_adv_sync_set *sync;
+	struct ll_adv_sync_set *sync = NULL;
 	u8_t sync_is_started = 0U;
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 	struct ll_adv_aux_set *aux;
