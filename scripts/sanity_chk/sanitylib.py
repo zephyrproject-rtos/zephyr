@@ -884,7 +884,6 @@ class SizeCalculator:
         "_k_pipe_area",
         "net_if",
         "net_if_dev",
-        "net_stack",
         "net_l2_data",
         "_k_queue_area",
         "_net_buf_pool_area",
