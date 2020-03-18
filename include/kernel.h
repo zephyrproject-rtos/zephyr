@@ -4999,6 +4999,9 @@ extern void z_handle_obj_poll_events(sys_dlist_t *events, u32_t state);
  * However, in some more constrained systems, such as a single-threaded system,
  * the only thread would be responsible for this if needed.
  *
+ * @note In some architectures, before returning, the function unmasks interrupts
+ * unconditionally.
+ *
  * @return N/A
  * @req K-CPU-IDLE-001
  */
