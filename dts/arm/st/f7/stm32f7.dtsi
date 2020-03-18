@@ -639,6 +639,13 @@
 			status = "disabled";
 			label = "DMA_2";
 		};
+
+		fmc: stm32-fmc@a0000000 {
+			compatible = "st,stm32-fmc";
+			reg = < 0xa0000000 0x400>;
+			status = "okay";
+			label = "FMC";
+		};
 	};
 
 	otghs_fs_phy: otghs_fs_phy {

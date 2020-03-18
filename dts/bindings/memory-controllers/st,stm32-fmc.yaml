@@ -1,0 +1,15 @@
+# Copyright (c) 2020, Mark Olsson <mark@markolsson.se>
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 Flexible Memory Controller (FMC)
+
+compatible: "st,stm32-fmc"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true

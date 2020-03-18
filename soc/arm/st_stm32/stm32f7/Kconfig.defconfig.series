@@ -12,6 +12,26 @@ source "soc/arm/st_stm32/stm32f7/Kconfig.defconfig.stm32f7*"
 config SOC_SERIES
 	default "stm32f7"
 
+if DATA_FMC
+
+config SRAM_SIZE
+	default $(dt_node_reg_size_int,/memory@c0000000,0,K)
+
+config SRAM_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/memory@c0000000)
+
+endif # DATA_FMC
+
+if DATA_OCRAM
+
+config SRAM_SIZE
+	default $(dt_node_reg_size_int,/memory@20010000,0,K)
+
+config SRAM_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/memory@20010000)
+
+endif # DATA_OCRAM
+
 if GPIO_STM32
 
 # GPIO ports A, B and C are set in ../common/Kconfig.defconfig.series

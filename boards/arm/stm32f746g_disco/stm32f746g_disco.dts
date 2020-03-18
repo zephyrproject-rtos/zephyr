@@ -35,6 +35,12 @@
 		};
 	};
 
+	sdram0: memory@c0000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = < 0xc0000000 DT_SIZE_K(8192) >;
+	};
+
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;

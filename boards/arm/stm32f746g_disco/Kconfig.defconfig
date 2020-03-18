@@ -8,6 +8,13 @@ if BOARD_STM32F746G_DISCO
 config BOARD
 	default "stm32f746g_disco"
 
+config EARLY_INIT
+	default y
+
+choice DATA_LOCATION
+	default DATA_FMC
+endchoice
+
 config UART_1
 	default y
 	depends on UART_CONSOLE

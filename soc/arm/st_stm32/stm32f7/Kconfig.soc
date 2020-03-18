@@ -25,3 +25,15 @@ config SOC_STM32F769XX
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 
 endchoice
+
+choice DATA_LOCATION
+	prompt "Data location selection"
+	default DATA_OCRAM
+
+config DATA_FMC
+	bool "Link data into external FMC-controlled memory"
+
+config DATA_OCRAM
+	bool "Link data into On-Chip RAM memory"
+
+endchoice
