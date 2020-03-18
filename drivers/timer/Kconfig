@@ -239,6 +239,7 @@ config XLNX_PSTTC_TIMER
 	bool "Xilinx PS ttc timer support"
 	default y
 	depends on SOC_XILINX_ZYNQMP
+	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the Xilinx ZynqMP
 	  platform provides the standard "system clock driver" interfaces.
