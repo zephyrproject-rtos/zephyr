@@ -12,18 +12,20 @@ menuconfig SPI_NRFX
 
 if SPI_NRFX
 
-config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+config NRF52832_SPIM_PAN58_WORKAROUND
 	depends on SOC_NRF52832
-	bool "Allow enabling the SPIM driver despite PAN 58"
+	bool "nRF52832 SPIM driver PAN 58 workaround"
 	help
-	  Allow enabling the nRF SPI Master with EasyDMA, despite
-	  Product Anomaly Notice 58 (SPIM: An additional byte is
-	  clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1).
-	  Without this override, the SPI Master is only available
+	  Enables the workaround for the nRF52832 Product Anomaly Notice 58
+	  for all nRF SPI Masters with EasyDMA.
+	  (PAN58: An additional byte is clocked out when
+	  RXD.MAXCNT == 1 and TXD.MAXCNT <= 1).
+	  Without this workaround, the SPI Master is only available
 	  without EasyDMA. Note that the 'SPIM' and 'SPIS' drivers
-	  use EasyDMA, while the 'SPI' driver does not. Use this
-	  option ONLY if you are certain that transactions with
-	  RXD.MAXCNT == 1 and TXD.MAXCNT <= 1 will NOT be executed.
+	  use EasyDMA, while the 'SPI' driver does not.
+	  Caution: the PPI and GPIOTE channels chosen via
+	  SPIM_X_NRF52832_PAN58_PPI_CH and SPIM_X_NRF52832_PAN58_GPIOTE_CH
+	  in this workaround must be carefully considered per SPIM enabled.
 
 # In most Nordic SoCs, SPI and TWI peripherals with the same instance number
 # share certain resources and therefore cannot be used at the same time
@@ -46,10 +48,8 @@ config SPI_0_NRF_SPI
 
 config SPI_0_NRF_SPIM
 	bool "nRF SPIM 0"
-	# This driver is not available for nRF52832 because of Product Anomaly 58
-	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
-	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
-	depends on HAS_HW_NRF_SPIM0 && (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
+	# This driver requires a workaround for nRF52832 because of Product Anomaly 58
+	depends on HAS_HW_NRF_SPIM0 && (!SOC_NRF52832 || NRF52832_SPIM_PAN58_WORKAROUND)
 	select NRFX_SPIM0
 	help
 	  Enable nRF SPI Master with EasyDMA on port 0.
@@ -75,6 +75,26 @@ config SPI_0_NRF_ORC
 	  Over-read character. Character clocked out after an over-read
 	  of the transmit buffer.
 
+if (SPI_0_NRF_SPIM && NRF52832_SPIM_PAN58_WORKAROUND)
+
+config SPIM_0_NRF52832_PAN58_PPI_CH
+	int "SPIM 0 PAN58 workaround PPI channel to use"
+	default 17
+	range 0 19
+	help
+	  SPI 0 SPIM PPI channel to use for PAN58 workaround.
+	  CAUTION: ensure PPI channel has no other users.
+
+config SPIM_0_NRF52832_PAN58_GPIOTE_CH
+	int "SPIM 0 PAN58 workaround GPIOTE channel to use"
+	default 5
+	range 0 7
+	help
+	  SPI 0 SPIM GPIOTE channel to use for PAN58 workaround.
+	  CAUTION: ensure GPIOTE channel has no other users.
+
+endif # (SPI_0_NRF_SPIM && NRF52832_SPIM_PAN58_WORKAROUND)
+
 endif # SPI_0 && (SOC_NRF52810 || ...
 
 # In Nordic SoCs, SPI and TWI peripherals with the same instance number
@@ -95,10 +115,8 @@ config SPI_1_NRF_SPI
 
 config SPI_1_NRF_SPIM
 	bool "nRF SPIM 1"
-	# This driver is not available for nRF52832 because of Product Anomaly 58
-	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
-	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
-	depends on HAS_HW_NRF_SPIM1 && (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
+	# This driver requires a workaround for nRF52832 because of Product Anomaly 58
+	depends on HAS_HW_NRF_SPIM1 && (!SOC_NRF52832 || NRF52832_SPIM_PAN58_WORKAROUND)
 	select NRFX_SPIM1
 	help
 	  Enable nRF SPI Master with EasyDMA on port 1.
@@ -124,6 +142,25 @@ config SPI_1_NRF_ORC
 	  Over-read character. Character clocked out after an over-read
 	  of the transmit buffer.
 
+if (SPI_1_NRF_SPIM && NRF52832_SPIM_PAN58_WORKAROUND)
+
+config SPIM_1_NRF52832_PAN58_PPI_CH
+	int "SPIM 1 PAN58 workaround PPI channel to use"
+	default 18
+	range 0 19
+	help
+	  SPI 1 SPIM PPI channel to use for PAN58 workaround.
+	  CAUTION: ensure PPI channel has no other users.
+
+config SPIM_1_NRF52832_PAN58_GPIOTE_CH
+	int "SPIM 1 PAN58 workaround GPIOTE channel to use"
+	default 6
+	range 0 7
+	help
+	  SPI 1 SPIM GPIOTE channel to use for PAN58 workaround.
+	  CAUTION: ensure GPIOTE channel has no other users.
+
+endif # (SPI_1_NRF_SPIM && NRF52832_SPIM_PAN58_WORKAROUND)
 endif # SPI_1 && !I2C_1 && !(SOC_SERIES_NRF91X && UART_1_NRF_UARTE) && ...
 
 # In Nordic SoCs, SPI and TWI peripherals with the same instance number
@@ -144,10 +181,8 @@ config SPI_2_NRF_SPI
 
 config SPI_2_NRF_SPIM
 	bool "nRF SPIM 2"
-	# This driver is not available for nRF52832 because of Product Anomaly 58
-	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
-	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
-	depends on HAS_HW_NRF_SPIM2 && (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
+	# This driver requires a workaround for nRF52832 because of Product Anomaly 58
+	depends on HAS_HW_NRF_SPIM2 && (!SOC_NRF52832 || NRF52832_SPIM_PAN58_WORKAROUND)
 	select NRFX_SPIM2
 	help
 	  Enable nRF SPI Master with EasyDMA on port 2.
@@ -173,6 +208,25 @@ config SPI_2_NRF_ORC
 	  Over-read character. Character clocked out after an over-read
 	  of the transmit buffer.
 
+if (SPI_2_NRF_SPIM && NRF52832_SPIM_PAN58_WORKAROUND)
+
+config SPIM_2_NRF52832_PAN58_PPI_CH
+	int "SPIM 2 PAN58 workaround PPI channel to use"
+	default 19
+	range 0 19
+	help
+	  SPI 2 SPIM PPI channel to use for PAN58 workaround.
+	  CAUTION: ensure PPI channel has no other users.
+
+config SPIM_2_NRF52832_PAN58_GPIOTE_CH
+	int "SPIM 2 PAN58 workaround GPIOTE channel to use"
+	default 7
+	range 0 7
+	help
+	  SPI 2 SPIM GPIOTE channel to use for PAN58 workaround.
+	  CAUTION: ensure GPIOTE channel has no other users.
+
+endif # (SPI_2_NRF_SPIM && NRF52832_SPIM_PAN58_WORKAROUND)
 endif # SPI_2 && !I2C_2 && !(SOC_SERIES_NRF91X && UART_2_NRF_UARTE) && ...
 
 # In Nordic SoCs, SPI and TWI peripherals with the same instance number
