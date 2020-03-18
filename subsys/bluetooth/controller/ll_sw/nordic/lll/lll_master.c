@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2019 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,11 +64,20 @@ int lll_master_reset(void)
 void lll_master_prepare(void *param)
 {
 	struct lll_prepare_param *p = param;
+	struct lll_conn *lll = p->param;
+	u16_t elapsed;
 	int err;
 
 	err = lll_hfclock_on();
 	LL_ASSERT(!err || err == -EINPROGRESS);
 
+	/* Instants elapsed */
+	elapsed = p->lazy + 1;
+
+	/* Save the (latency + 1) for use in event */
+	lll->latency_prepare += elapsed;
+
+	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(lll_conn_is_abort_cb, lll_conn_abort_cb, prepare_cb,
 			  0, p);
 	LL_ASSERT(!err || err == -EINPROGRESS);
@@ -89,36 +98,27 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	u32_t remainder_us;
 	u8_t data_chan_use;
 	u32_t remainder;
-	u16_t lazy;
 
 	DEBUG_RADIO_START_M(1);
-
-	/* TODO: Do the below in ULL ?  */
-
-	lazy = prepare_param->lazy;
-
-	/* save the latency for use in event */
-	lll->latency_prepare += lazy;
-
-	/* calc current event counter value */
-	event_counter = lll->event_counter + lll->latency_prepare;
-
-	/* store the next event counter value */
-	lll->event_counter = event_counter + 1;
-
-	/* TODO: Do the above in ULL ?  */
 
 	/* Reset connection event global variables */
 	lll_conn_prepare_reset();
 
-	/* TODO: can we do something in ULL? */
-	lll->latency_event = lll->latency_prepare;
+	/* Deduce the latency */
+	lll->latency_event = lll->latency_prepare - 1;
+
+	/* Calculate the current event counter value */
+	event_counter = lll->event_counter + lll->latency_event;
+
+	/* Update event counter to next value */
+	lll->event_counter = lll->event_counter + lll->latency_prepare;
+
+	/* Reset accumulated latencies */
 	lll->latency_prepare = 0;
 
 	if (lll->data_chan_sel) {
 #if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
-		data_chan_use = lll_chan_sel_2(lll->event_counter - 1,
-					       lll->data_chan_id,
+		data_chan_use = lll_chan_sel_2(event_counter, lll->data_chan_id,
 					       &lll->data_chan_map[0],
 					       lll->data_chan_count);
 #else /* !CONFIG_BT_CTLR_CHAN_SEL_2 */
