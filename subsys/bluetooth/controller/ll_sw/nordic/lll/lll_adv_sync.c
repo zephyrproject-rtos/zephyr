@@ -67,11 +67,20 @@ int lll_adv_sync_reset(void)
 void lll_adv_sync_prepare(void *param)
 {
 	struct lll_prepare_param *p = param;
+	struct lll_adv_sync *lll = p->param;
+	u16_t elapsed;
 	int err;
 
 	err = lll_hfclock_on();
 	LL_ASSERT(!err || err == -EINPROGRESS);
 
+	/* Instants elapsed */
+	elapsed = p->lazy + 1;
+
+	/* Save the (latency + 1) for use in event */
+	lll->latency_prepare += elapsed;
+
+	/* Invoke common pipeline handling of prepare */
 	err = lll_prepare(lll_is_abort_cb, abort_cb, prepare_cb, 0, p);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
@@ -122,31 +131,24 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	u8_t data_chan_use;
 	u32_t remainder;
 	u32_t start_us;
-	u16_t lazy;
 	u8_t phy_s;
 	u8_t upd;
 
 	DEBUG_RADIO_START_A(1);
 
-	/* TODO: Do the below in ULL ?  */
-	lazy = prepare_param->lazy;
+	/* Deduce the latency */
+	lll->latency_event = lll->latency_prepare - 1;
 
-	/* save the latency for use in event */
-	lll->latency_prepare += lazy;
+	/* Calculate the current event counter value */
+	event_counter = lll->event_counter + lll->latency_event;
 
-	/* calc current event counter value */
-	event_counter = lll->event_counter + lll->latency_prepare;
+	/* Update event counter to next value */
+	lll->event_counter = lll->event_counter + lll->latency_prepare;
 
-	/* store the next event counter value */
-	lll->event_counter = event_counter + 1;
-	/* TODO: Do the above in ULL ?  */
-
-	/* TODO: can we do something in ULL? */
-	lll->latency_event = lll->latency_prepare;
+	/* Reset accumulated latencies */
 	lll->latency_prepare = 0;
 
-	data_chan_use = lll_chan_sel_2(lll->event_counter - 1,
-				       lll->data_chan_id,
+	data_chan_use = lll_chan_sel_2(event_counter, lll->data_chan_id,
 				       &lll->data_chan_map[0],
 				       lll->data_chan_count);
 
