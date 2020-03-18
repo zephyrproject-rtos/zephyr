@@ -1,0 +1,15 @@
+# Copyright (c) 2020 Paratronic
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RTC
+	bool "RTC Drivers"
+	help
+	  Enable support for RTC.
+
+if RTC
+
+module = RTC
+module-str = rtc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # RTC
