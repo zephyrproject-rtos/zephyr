@@ -10,19 +10,6 @@ menuconfig SPI_NRFX
 
 if SPI_NRFX
 
-config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
-	depends on SOC_NRF52832
-	bool "Allow enabling the SPIM driver despite PAN 58"
-	help
-	  Allow enabling the nRF SPI Master with EasyDMA, despite
-	  Product Anomaly Notice 58 (SPIM: An additional byte is
-	  clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1).
-	  Without this override, the SPI Master is only available
-	  without EasyDMA. Note that the 'SPIM' and 'SPIS' drivers
-	  use EasyDMA, while the 'SPI' driver does not. Use this
-	  option ONLY if you are certain that transactions with
-	  RXD.MAXCNT == 1 and TXD.MAXCNT <= 1 will NOT be executed.
-
 # Workaround for not being able to have commas in macro arguments
 DT_COMPAT_NORDIC_NRF_SPI  := nordic,nrf-spi
 DT_COMPAT_NORDIC_NRF_SPIM := nordic,nrf-spim
@@ -36,10 +23,6 @@ config SPI_0_NRF_SPI
 
 config SPI_0_NRF_SPIM
 	def_bool $(dt_nodelabel_has_compat,spi0,$(DT_COMPAT_NORDIC_NRF_SPIM))
-	# This driver is not available for nRF52832 because of Product Anomaly 58
-	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
-	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
-	depends on (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
 	select NRFX_SPIM0
 	help
 	  Enable nRF SPI Master with EasyDMA on port 0.
@@ -62,6 +45,26 @@ config SPI_0_NRF_ORC
 	  Over-read character. Character clocked out after an over-read
 	  of the transmit buffer.
 
+if (SPI_0_NRF_SPIM && SOC_NRF52832)
+
+config SPIM_0_NRF52832_PAN58_PPI_CH
+	int "SPIM 0 PAN58 workaround PPI channel to use"
+	default 17
+	range 0 19
+	help
+	  SPI 0 SPIM PPI channel to use for PAN58 workaround.
+	  CAUTION: ensure PPI channel has no other users.
+
+config SPIM_0_NRF52832_PAN58_GPIOTE_CH
+	int "SPIM 0 PAN58 workaround GPIOTE channel to use"
+	default 5
+	range 0 7
+	help
+	  SPI 0 SPIM GPIOTE channel to use for PAN58 workaround.
+	  CAUTION: ensure GPIOTE channel has no other users.
+
+endif # (SPI_0_NRF_SPIM && SOC_NRF52832)
+
 config SPI_1_NRF_SPI
 	def_bool $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPI))
 	select NRFX_SPI1
@@ -70,10 +73,6 @@ config SPI_1_NRF_SPI
 
 config SPI_1_NRF_SPIM
 	def_bool $(dt_nodelabel_has_compat,spi1,$(DT_COMPAT_NORDIC_NRF_SPIM))
-	# This driver is not available for nRF52832 because of Product Anomaly 58
-	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
-	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
-	depends on (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
 	select NRFX_SPIM1
 	help
 	  Enable nRF SPI Master with EasyDMA on port 1.
@@ -96,6 +95,26 @@ config SPI_1_NRF_ORC
 	  Over-read character. Character clocked out after an over-read
 	  of the transmit buffer.
 
+if (SPI_1_NRF_SPIM && SOC_NRF52832)
+
+config SPIM_1_NRF52832_PAN58_PPI_CH
+	int "SPIM 1 PAN58 workaround PPI channel to use"
+	default 18
+	range 0 19
+	help
+	  SPI 1 SPIM PPI channel to use for PAN58 workaround.
+	  CAUTION: ensure PPI channel has no other users.
+
+config SPIM_1_NRF52832_PAN58_GPIOTE_CH
+	int "SPIM 1 PAN58 workaround GPIOTE channel to use"
+	default 6
+	range 0 7
+	help
+	  SPI 1 SPIM GPIOTE channel to use for PAN58 workaround.
+	  CAUTION: ensure GPIOTE channel has no other users.
+
+endif # (SPI_1_NRF_SPIM && SOC_NRF52832)
+
 config SPI_2_NRF_SPI
 	def_bool $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPI))
 	select NRFX_SPI2
@@ -104,10 +123,6 @@ config SPI_2_NRF_SPI
 
 config SPI_2_NRF_SPIM
 	def_bool $(dt_nodelabel_has_compat,spi2,$(DT_COMPAT_NORDIC_NRF_SPIM))
-	# This driver is not available for nRF52832 because of Product Anomaly 58
-	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
-	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
-	depends on (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
 	select NRFX_SPIM2
 	help
 	  Enable nRF SPI Master with EasyDMA on port 2.
@@ -129,6 +144,26 @@ config SPI_2_NRF_ORC
 	help
 	  Over-read character. Character clocked out after an over-read
 	  of the transmit buffer.
+
+if (SPI_2_NRF_SPIM && SOC_NRF52832)
+
+config SPIM_2_NRF52832_PAN58_PPI_CH
+	int "SPIM 2 PAN58 workaround PPI channel to use"
+	default 19
+	range 0 19
+	help
+	  SPI 2 SPIM PPI channel to use for PAN58 workaround.
+	  CAUTION: ensure PPI channel has no other users.
+
+config SPIM_2_NRF52832_PAN58_GPIOTE_CH
+	int "SPIM 2 PAN58 workaround GPIOTE channel to use"
+	default 7
+	range 0 7
+	help
+	  SPI 2 SPIM GPIOTE channel to use for PAN58 workaround.
+	  CAUTION: ensure GPIOTE channel has no other users.
+
+endif # (SPI_2_NRF_SPIM && SOC_NRF52832)
 
 config SPI_3_NRF_SPIM
 	def_bool $(dt_nodelabel_has_compat,spi3,$(DT_COMPAT_NORDIC_NRF_SPIM))
