@@ -29,6 +29,12 @@
 		};
 	};
 
+	uartclk: apb-pclk {
+		compatible = "fixed-clock";
+		clock-frequency = <24000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		interrupt-parent = <&gic>;
 
@@ -48,6 +54,7 @@
 			status = "disabled";
 			interrupts = <GIC_SPI 1 0 IRQ_TYPE_LEVEL>;
 			interrupt-names = "irq_0";
+			clocks = <&uartclk>;
 			label = "UART_0";
 		};
 
