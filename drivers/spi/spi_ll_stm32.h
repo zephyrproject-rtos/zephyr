@@ -19,8 +19,28 @@ struct spi_stm32_config {
 #endif
 };
 
+#ifdef CONFIG_SPI_STM32_DMA
+struct stream {
+	const char *dma_name;
+	u32_t channel; /* stores the channel for dma or mux */
+	struct dma_config dma_cfg;
+	u8_t priority;
+	bool src_addr_increment;
+	bool dst_addr_increment;
+	bool transfer_complete;
+	int fifo_threshold;
+};
+#endif
+
 struct spi_stm32_data {
 	struct spi_context ctx;
+	struct device *dev_dma_tx;
+	struct device *dev_dma_rx;
+#ifdef CONFIG_SPI_STM32_DMA
+	struct stream dma_rx;
+	struct stream dma_tx;
+	size_t dma_segment_len;
+#endif
 };
 
 static inline u32_t ll_func_tx_is_empty(SPI_TypeDef *spi)
