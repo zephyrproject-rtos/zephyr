@@ -77,7 +77,6 @@ static K_THREAD_STACK_DEFINE(rx_thread_stack, 512);
 static struct k_thread rx_thread_data;
 static K_THREAD_STACK_DEFINE(tx_thread_stack, 512);
 static struct k_thread tx_thread_data;
-static u8_t mode = BT_HCI_VS_USB_H2_MODE;
 
 struct usb_bluetooth_config {
 	struct usb_if_descriptor if0;
@@ -151,34 +150,6 @@ static struct usb_ep_cfg_data bluetooth_ep_data[] = {
 	},
 };
 
-#define H4_CMD 0x01
-#define H4_ACL 0x02
-#define H4_SCO 0x03
-#define H4_EVT 0x04
-
-static void usb_h4_send(struct net_buf *buf)
-{
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_IN:
-		net_buf_push_u8(buf, H4_ACL);
-		break;
-	case BT_BUF_EVT:
-		net_buf_push_u8(buf, H4_EVT);
-		break;
-	default:
-		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
-		net_buf_unref(buf);
-		return;
-	}
-
-	usb_transfer_sync(bluetooth_ep_data[HCI_IN_EP_IDX].ep_addr, buf->data,
-			  buf->len, USB_TRANS_WRITE);
-
-	net_buf_unref(buf);
-}
-
 static void hci_tx_thread(void)
 {
 	LOG_DBG("Start USB Bluetooth thread");
@@ -189,9 +160,9 @@ static void hci_tx_thread(void)
 		buf = net_buf_get(&tx_queue, K_FOREVER);
 
 		if (IS_ENABLED(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4) &&
-		    mode == BT_HCI_VS_USB_H4_MODE) {
-			usb_h4_send(buf);
-			continue;
+		    bt_hci_raw_get_mode() == BT_HCI_RAW_MODE_H4) {
+			/* Force to sent over bulk if H4 is selected */
+			bt_buf_set_type(buf, BT_BUF_ACL_IN);
 		}
 
 		switch (bt_buf_get_type(buf)) {
@@ -216,43 +187,16 @@ static void hci_tx_thread(void)
 	}
 }
 
-static void usb_h4_recv(struct net_buf *buf)
-{
-	u8_t type;
-
-	type = net_buf_pull_u8(buf);
-
-	switch (type) {
-	case H4_CMD:
-		bt_buf_set_type(buf, BT_BUF_CMD);
-		break;
-	case H4_ACL:
-		bt_buf_set_type(buf, BT_BUF_ACL_OUT);
-		break;
-	default:
-		LOG_ERR("Unknown H4 type %u", type);
-		return;
-	}
-
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-
-	if (bt_send(buf)) {
-		LOG_ERR("Error sending to driver");
-		net_buf_unref(buf);
-	}
-}
-
 static void hci_rx_thread(void)
 {
 	while (true) {
 		struct net_buf *buf;
+		int err;
 
 		buf = net_buf_get(&rx_queue, K_FOREVER);
 
-		if (IS_ENABLED(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4) &&
-		    mode == BT_HCI_VS_USB_H4_MODE) {
-			usb_h4_recv(buf);
-		} else if (bt_send(buf)) {
+		err = bt_send(buf);
+		if (err) {
 			LOG_ERR("Error sending to driver");
 			net_buf_unref(buf);
 		}
@@ -358,25 +302,25 @@ static u8_t vs_read_usb_transport_mode(struct net_buf *buf)
 static u8_t vs_set_usb_transport_mode(struct net_buf *buf)
 {
 	struct bt_hci_cp_vs_set_usb_transport_mode *cp;
+	u8_t mode;
 
 	cp = net_buf_pull_mem(buf, sizeof(*cp));
 
-	if (mode == cp->mode) {
-		return BT_HCI_ERR_INVALID_PARAM;
-	}
-
 	switch (cp->mode) {
 	case BT_HCI_VS_USB_H2_MODE:
+		mode = BT_HCI_RAW_MODE_PASSTHROUGH;
+		break;
 	case BT_HCI_VS_USB_H4_MODE:
+		mode = BT_HCI_RAW_MODE_H4;
 		break;
 	default:
 		LOG_DBG("Invalid mode: %u", cp->mode);
 		return BT_HCI_ERR_INVALID_PARAM;
 	}
 
-	mode = cp->mode;
-
 	LOG_DBG("mode %u", mode);
+
+	bt_hci_raw_set_mode(mode);
 
 	return BT_HCI_ERR_SUCCESS;
 }

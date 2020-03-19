@@ -98,11 +98,6 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_bt_h4_config bt_h4_cfg = {
 	},
 };
 
-#define H4_CMD 0x01
-#define H4_ACL 0x02
-#define H4_SCO 0x03
-#define H4_EVT 0x04
-
 static struct usb_ep_cfg_data bt_h4_ep_data[] = {
 	{
 		.ep_cb = usb_transfer_ep_callback,
@@ -137,29 +132,6 @@ static void bt_h4_read(u8_t ep, int size, void *priv)
 		     BUF_SIZE, USB_TRANS_READ, bt_h4_read, buf);
 }
 
-static void usb_h4_send(struct net_buf *buf)
-{
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_IN:
-		net_buf_push_u8(buf, H4_ACL);
-		break;
-	case BT_BUF_EVT:
-		net_buf_push_u8(buf, H4_EVT);
-		break;
-	default:
-		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
-		net_buf_unref(buf);
-		return;
-	}
-
-	usb_transfer_sync(bt_h4_ep_data[BT_H4_IN_EP_IDX].ep_addr,
-			  buf->data, buf->len, USB_TRANS_WRITE);
-
-	net_buf_unref(buf);
-}
-
 static void hci_tx_thread(void)
 {
 	LOG_DBG("Start USB Bluetooth thread");
@@ -168,32 +140,10 @@ static void hci_tx_thread(void)
 		struct net_buf *buf;
 
 		buf = net_buf_get(&tx_queue, K_FOREVER);
-		usb_h4_send(buf);
-	}
-}
 
-static void usb_h4_recv(struct net_buf *buf)
-{
-	u8_t type;
+		usb_transfer_sync(bt_h4_ep_data[BT_H4_IN_EP_IDX].ep_addr,
+				  buf->data, buf->len, USB_TRANS_WRITE);
 
-	type = net_buf_pull_u8(buf);
-
-	switch (type) {
-	case H4_CMD:
-		bt_buf_set_type(buf, BT_BUF_CMD);
-		break;
-	case H4_ACL:
-		bt_buf_set_type(buf, BT_BUF_ACL_OUT);
-		break;
-	default:
-		LOG_ERR("Unknown H4 type %u", type);
-		return;
-	}
-
-	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
-
-	if (bt_send(buf)) {
-		LOG_ERR("Error sending to driver");
 		net_buf_unref(buf);
 	}
 }
@@ -204,7 +154,10 @@ static void hci_rx_thread(void)
 		struct net_buf *buf;
 
 		buf = net_buf_get(&rx_queue, K_FOREVER);
-		usb_h4_recv(buf);
+		if (bt_send(buf)) {
+			LOG_ERR("Error sending to driver");
+			net_buf_unref(buf);
+		}
 	}
 }
 
