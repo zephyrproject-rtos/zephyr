@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <sys/atomic.h>
+#include <sys/byteorder.h>
 
 #include <drivers/bluetooth/hci_driver.h>
 #include <bluetooth/hci_raw.h>
@@ -37,6 +38,8 @@ NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
 			  BT_BUF_RX_SIZE, NULL);
 
 struct bt_dev_raw bt_dev;
+struct bt_hci_raw_cmd_ext *cmd_ext;
+static size_t cmd_ext_size;
 
 int bt_hci_driver_register(const struct bt_hci_driver *drv)
 {
@@ -151,6 +154,75 @@ static int bt_h4_send(struct net_buf *buf)
 	return 0;
 }
 
+static void bt_cmd_complete_ext(u16_t op, u8_t status)
+{
+	struct net_buf *buf;
+	struct bt_hci_evt_cc_status *cc;
+
+	if (status == BT_HCI_ERR_EXT_HANDLED) {
+		return;
+	}
+
+	buf = bt_hci_cmd_complete_create(op, sizeof(*cc));
+	cc = net_buf_add(buf, sizeof(*cc));
+	cc->status = status;
+
+	bt_recv(buf);
+}
+
+static u8_t bt_send_ext(struct net_buf *buf)
+{
+	struct bt_hci_cmd_hdr *hdr;
+	struct net_buf_simple_state state;
+	int i;
+	u16_t op;
+	u8_t status;
+
+	status = BT_HCI_ERR_SUCCESS;
+
+	if (!cmd_ext) {
+		return status;
+	}
+
+	net_buf_simple_save(&buf->b, &state);
+
+	if (buf->len < sizeof(*hdr)) {
+		BT_ERR("No HCI Command header");
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
+	if (buf->len < hdr->param_len) {
+		BT_ERR("Invalid HCI CMD packet length");
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	op = sys_le16_to_cpu(hdr->opcode);
+
+	for (i = 0; i < cmd_ext_size; i++) {
+		struct bt_hci_raw_cmd_ext *cmd = &cmd_ext[i];
+
+		if (cmd->op == op) {
+			if (buf->len < cmd->min_len) {
+				status = BT_HCI_ERR_INVALID_PARAM;
+			} else {
+				status = cmd->func(buf);
+			}
+
+			break;
+		}
+	}
+
+	if (status) {
+		bt_cmd_complete_ext(op, status);
+		return status;
+	}
+
+	net_buf_simple_restore(&buf->b, &state);
+
+	return status;
+}
+
 int bt_send(struct net_buf *buf)
 {
 	BT_DBG("buf %p len %u", buf, buf->len);
@@ -165,6 +237,16 @@ int bt_send(struct net_buf *buf)
 	}
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
+
+	if (IS_ENABLED(CONFIG_BT_HCI_RAW_CMD_EXT) &&
+	    bt_buf_get_type(buf) == BT_BUF_CMD) {
+		u8_t status;
+
+		status = bt_send_ext(buf);
+		if (status) {
+			return status;
+		}
+	}
 
 	if (IS_ENABLED(CONFIG_BT_TINYCRYPT_ECC)) {
 		return bt_hci_ecc_send(buf);
@@ -196,6 +278,14 @@ u8_t bt_hci_raw_get_mode(void)
 	}
 
 	return BT_HCI_RAW_MODE_PASSTHROUGH;
+}
+
+void bt_hci_raw_cmd_ext_register(struct bt_hci_raw_cmd_ext *cmds, size_t size)
+{
+	if (IS_ENABLED(CONFIG_BT_HCI_RAW_CMD_EXT)) {
+		cmd_ext = cmds;
+		cmd_ext_size = size;
+	}
 }
 
 int bt_enable_raw(struct k_fifo *rx_queue)

@@ -71,6 +71,12 @@ config BT_HCI_RAW_RESERVE
 	  This option is used by the HCI raw transport implementation to
 	  declare how much headroom it needs for any HCI transport headers.
 
+config BT_HCI_RAW_CMD_EXT
+	bool "RAW HCI Command Extension"
+	help
+	  This option enables HCI RAW command extension so the driver can
+	  register it own command table extension.
+
 config BT_PERIPHERAL
 	bool "Peripheral Role support"
 	select BT_BROADCASTER
