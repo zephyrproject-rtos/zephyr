@@ -490,6 +490,10 @@ int nrf5_configure(struct device *dev, enum ieee802154_config_type type,
 
 		break;
 
+	case IEEE802154_CONFIG_PROMISCUOUS:
+		nrf_802154_promiscuous_set(config->promiscuous);
+		break;
+
 	default:
 		return -EINVAL;
 	}
