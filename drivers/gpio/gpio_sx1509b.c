@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT semtech_sx1509b
+
 #include <errno.h>
 
 #include <kernel.h>
@@ -363,10 +365,10 @@ static int sx1509b_init(struct device *dev)
 	/* Reset state mediated by initial configuration */
 	drv_data->pin_state = (struct sx1509b_pin_state) {
 		.dir = (ALL_PINS
-			& ~(DT_INST_0_SEMTECH_SX1509B_INIT_OUT_LOW
-			    | DT_INST_0_SEMTECH_SX1509B_INIT_OUT_HIGH)),
+			& ~(DT_INST_PROP(0, init_out_low)
+			    | DT_INST_PROP(0, init_out_high))),
 		.data = (ALL_PINS
-			 & ~DT_INST_0_SEMTECH_SX1509B_INIT_OUT_LOW),
+			 & ~DT_INST_PROP(0, init_out_low)),
 	};
 
 	rc = i2c_reg_write_byte(drv_data->i2c_master, cfg->i2c_slave_addr,
@@ -410,17 +412,17 @@ static const struct gpio_driver_api api_table = {
 
 static const struct sx1509b_config sx1509b_cfg = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_SEMTECH_SX1509B_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
 	},
-	.i2c_master_dev_name = DT_INST_0_SEMTECH_SX1509B_BUS_NAME,
-	.i2c_slave_addr = DT_INST_0_SEMTECH_SX1509B_BASE_ADDRESS,
+	.i2c_master_dev_name = DT_INST_BUS_LABEL(0),
+	.i2c_slave_addr = DT_INST_REG_ADDR(0),
 };
 
 static struct sx1509b_drv_data sx1509b_drvdata = {
 	.lock = Z_SEM_INITIALIZER(sx1509b_drvdata.lock, 1, 1),
 };
 
-DEVICE_AND_API_INIT(sx1509b, DT_INST_0_SEMTECH_SX1509B_LABEL,
+DEVICE_AND_API_INIT(sx1509b, DT_INST_LABEL(0),
 		    sx1509b_init, &sx1509b_drvdata, &sx1509b_cfg,
 		    POST_KERNEL, CONFIG_GPIO_SX1509B_INIT_PRIORITY,
 		    &api_table);

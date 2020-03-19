@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam_pwm
+
 #include <device.h>
 #include <errno.h>
 #include <drivers/pwm.h>
@@ -96,30 +98,30 @@ static const struct pwm_driver_api sam_pwm_driver_api = {
 	.get_cycles_per_sec = sam_pwm_get_cycles_per_sec,
 };
 
-#ifdef DT_INST_0_ATMEL_SAM_PWM
+#if DT_HAS_DRV_INST(0)
 static const struct sam_pwm_config sam_pwm_config_0 = {
-	.regs = (Pwm *)DT_INST_0_ATMEL_SAM_PWM_BASE_ADDRESS,
-	.id = DT_INST_0_ATMEL_SAM_PWM_PERIPHERAL_ID,
-	.prescaler = DT_INST_0_ATMEL_SAM_PWM_PRESCALER,
-	.divider = DT_INST_0_ATMEL_SAM_PWM_DIVIDER,
+	.regs = (Pwm *)DT_INST_REG_ADDR(0),
+	.id = DT_INST_PROP(0, peripheral_id),
+	.prescaler = DT_INST_PROP(0, prescaler),
+	.divider = DT_INST_PROP(0, divider),
 };
 
-DEVICE_AND_API_INIT(sam_pwm_0, DT_INST_0_ATMEL_SAM_PWM_LABEL, &sam_pwm_init,
+DEVICE_AND_API_INIT(sam_pwm_0, DT_INST_LABEL(0), &sam_pwm_init,
 		    NULL, &sam_pwm_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &sam_pwm_driver_api);
-#endif /* DT_INST_0_ATMEL_SAM_PWM */
+#endif /* DT_HAS_DRV_INST(0) */
 
-#ifdef DT_INST_1_ATMEL_SAM_PWM
+#if DT_HAS_DRV_INST(1)
 static const struct sam_pwm_config sam_pwm_config_1 = {
-	.regs = (Pwm *)DT_INST_1_ATMEL_SAM_PWM_BASE_ADDRESS,
-	.id = DT_INST_1_ATMEL_SAM_PWM_PERIPHERAL_ID,
-	.prescaler = DT_INST_1_ATMEL_SAM_PWM_PRESCALER,
-	.divider = DT_INST_1_ATMEL_SAM_PWM_DIVIDER,
+	.regs = (Pwm *)DT_INST_REG_ADDR(1),
+	.id = DT_INST_PROP(1, peripheral_id),
+	.prescaler = DT_INST_PROP(1, prescaler),
+	.divider = DT_INST_PROP(1, divider),
 };
 
-DEVICE_AND_API_INIT(sam_pwm_1, DT_INST_1_ATMEL_SAM_PWM_LABEL, &sam_pwm_init,
+DEVICE_AND_API_INIT(sam_pwm_1, DT_INST_LABEL(1), &sam_pwm_init,
 		    NULL, &sam_pwm_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &sam_pwm_driver_api);
-#endif /* DT_INST_1_ATMEL_SAM_PWM */
+#endif /* DT_HAS_DRV_INST(1) */

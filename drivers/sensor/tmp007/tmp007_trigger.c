@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_tmp007
+
 #include <device.h>
 #include <drivers/gpio.h>
 #include <sys/util.h>
@@ -23,7 +25,7 @@ static inline void setup_int(struct device *dev,
 	struct tmp007_data *data = dev->driver_data;
 
 	gpio_pin_interrupt_configure(data->gpio,
-				     DT_INST_0_TI_TMP007_INT_GPIOS_PIN,
+				     DT_INST_GPIO_PIN(0, int_gpios),
 				     enable
 				     ? GPIO_INT_LEVEL_ACTIVE
 				     : GPIO_INT_DISABLE);
@@ -158,20 +160,20 @@ int tmp007_init_interrupt(struct device *dev)
 	drv_data->dev = dev;
 
 	/* setup gpio interrupt */
-	drv_data->gpio = device_get_binding(DT_INST_0_TI_TMP007_INT_GPIOS_CONTROLLER);
+	drv_data->gpio = device_get_binding(DT_INST_GPIO_LABEL(0, int_gpios));
 	if (drv_data->gpio == NULL) {
 		LOG_DBG("Failed to get pointer to %s device!",
-		    DT_INST_0_TI_TMP007_INT_GPIOS_CONTROLLER);
+		    DT_INST_GPIO_LABEL(0, int_gpios));
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, DT_INST_0_TI_TMP007_INT_GPIOS_PIN,
-			   DT_INST_0_TI_TMP007_INT_GPIOS_FLAGS
+	gpio_pin_configure(drv_data->gpio, DT_INST_GPIO_PIN(0, int_gpios),
+			   DT_INST_GPIO_FLAGS(0, int_gpios)
 			   | GPIO_INT_LEVEL_ACTIVE);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   tmp007_gpio_callback,
-			   BIT(DT_INST_0_TI_TMP007_INT_GPIOS_PIN));
+			   BIT(DT_INST_GPIO_PIN(0, int_gpios)));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback!");

@@ -179,8 +179,8 @@ void main(void)
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
-	struct device *lis2dw12 = device_get_binding(DT_INST_0_ST_LIS2DW12_LABEL);
-	struct device *lsm6dso = device_get_binding(DT_INST_0_ST_LSM6DSO_LABEL);
+	struct device *lis2dw12 = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dw12)));
+	struct device *lsm6dso = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dso)));
 	int cnt = 1;
 
 	if (lis2dw12 == NULL) {

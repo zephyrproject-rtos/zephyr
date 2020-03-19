@@ -1,6 +1,8 @@
 /* lsm6dsl_i2c.c - I2C routines for LSM6DSL driver
  */
 
+#define DT_DRV_COMPAT st_lsm6dsl
+
 /*
  * Copyright (c) 2018 STMicroelectronics
  *
@@ -15,7 +17,7 @@
 
 #ifdef DT_ST_LSM6DSL_BUS_I2C
 
-static u16_t lsm6dsl_i2c_slave_addr = DT_INST_0_ST_LSM6DSL_BASE_ADDRESS;
+static u16_t lsm6dsl_i2c_slave_addr = DT_INST_REG_ADDR(0);
 
 LOG_MODULE_DECLARE(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 

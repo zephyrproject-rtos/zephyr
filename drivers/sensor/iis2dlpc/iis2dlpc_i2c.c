@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/iis2dlpc.pdf
  */
 
+#define DT_DRV_COMPAT st_iis2dlpc
+
 #include <string.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
@@ -16,7 +18,7 @@
 
 #ifdef DT_ST_IIS2DLPC_BUS_I2C
 
-static u16_t iis2dlpc_i2c_slave_addr = DT_INST_0_ST_IIS2DLPC_BASE_ADDRESS;
+static u16_t iis2dlpc_i2c_slave_addr = DT_INST_REG_ADDR(0);
 
 LOG_MODULE_DECLARE(IIS2DLPC, CONFIG_SENSOR_LOG_LEVEL);
 

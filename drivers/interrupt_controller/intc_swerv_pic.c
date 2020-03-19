@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT swerv_pic
+
 /**
  * @brief SweRV EH1 PIC driver
  */
@@ -42,12 +44,12 @@ static int save_irq;
 
 static u32_t swerv_pic_read(u32_t reg)
 {
-	return *(volatile u32_t *)(DT_INST_0_SWERV_PIC_BASE_ADDRESS + reg);
+	return *(volatile u32_t *)(DT_INST_REG_ADDR(0) + reg);
 }
 
 static void swerv_pic_write(u32_t reg, u32_t val)
 {
-	*(volatile u32_t *)(DT_INST_0_SWERV_PIC_BASE_ADDRESS + reg) = val;
+	*(volatile u32_t *)(DT_INST_REG_ADDR(0) + reg) = val;
 }
 
 void swerv_pic_irq_enable(u32_t irq)

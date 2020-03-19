@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT arm_cmsdk_dtimer
+
 #include <drivers/counter.h>
 #include <device.h>
 #include <errno.h>
@@ -166,7 +168,7 @@ static int dtmr_cmsdk_apb_init(struct device *dev)
 }
 
 /* TIMER 0 */
-#ifdef DT_INST_0_ARM_CMSDK_DTIMER
+#if DT_HAS_DRV_INST(0)
 static void dtimer_cmsdk_apb_config_0(struct device *dev);
 
 static const struct dtmr_cmsdk_apb_cfg dtmr_cmsdk_apb_cfg_0 = {
@@ -176,14 +178,14 @@ static const struct dtmr_cmsdk_apb_cfg dtmr_cmsdk_apb_cfg_0 = {
 			.flags = 0,
 			.channels = 0U,
 	},
-	.dtimer = ((volatile struct dualtimer_cmsdk_apb *)DT_INST_0_ARM_CMSDK_DTIMER_BASE_ADDRESS),
+	.dtimer = ((volatile struct dualtimer_cmsdk_apb *)DT_INST_REG_ADDR(0)),
 	.dtimer_config_func = dtimer_cmsdk_apb_config_0,
 	.dtimer_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
-			 .device = DT_INST_0_ARM_CMSDK_DTIMER_BASE_ADDRESS,},
+			 .device = DT_INST_REG_ADDR(0),},
 	.dtimer_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
-			 .device = DT_INST_0_ARM_CMSDK_DTIMER_BASE_ADDRESS,},
+			 .device = DT_INST_REG_ADDR(0),},
 	.dtimer_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
-			  .device = DT_INST_0_ARM_CMSDK_DTIMER_BASE_ADDRESS,},
+			  .device = DT_INST_REG_ADDR(0),},
 };
 
 static struct dtmr_cmsdk_apb_dev_data dtmr_cmsdk_apb_dev_data_0 = {
@@ -191,7 +193,7 @@ static struct dtmr_cmsdk_apb_dev_data dtmr_cmsdk_apb_dev_data_0 = {
 };
 
 DEVICE_AND_API_INIT(dtmr_cmsdk_apb_0,
-		    DT_INST_0_ARM_CMSDK_DTIMER_LABEL,
+		    DT_INST_LABEL(0),
 		    dtmr_cmsdk_apb_init,
 		    &dtmr_cmsdk_apb_dev_data_0,
 		    &dtmr_cmsdk_apb_cfg_0, POST_KERNEL,
@@ -200,10 +202,10 @@ DEVICE_AND_API_INIT(dtmr_cmsdk_apb_0,
 
 static void dtimer_cmsdk_apb_config_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_0_ARM_CMSDK_DTIMER_IRQ_0,
-		    DT_INST_0_ARM_CMSDK_DTIMER_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    dtmr_cmsdk_apb_isr,
 		    DEVICE_GET(dtmr_cmsdk_apb_0), 0);
-	irq_enable(DT_INST_0_ARM_CMSDK_DTIMER_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 }
-#endif /* DT_INST_0_ARM_CMSDK_DTIMER */
+#endif /* DT_HAS_DRV_INST(0) */

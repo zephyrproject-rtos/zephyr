@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT bosch_bma280
+
 #include <drivers/i2c.h>
 #include <init.h>
 #include <drivers/sensor.h>
@@ -116,10 +118,10 @@ int bma280_init(struct device *dev)
 	struct bma280_data *drv_data = dev->driver_data;
 	u8_t id = 0U;
 
-	drv_data->i2c = device_get_binding(DT_INST_0_BOSCH_BMA280_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_DBG("Could not get pointer to %s device",
-			    DT_INST_0_BOSCH_BMA280_BUS_NAME);
+			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -160,7 +162,7 @@ int bma280_init(struct device *dev)
 
 struct bma280_data bma280_driver;
 
-DEVICE_AND_API_INIT(bma280, DT_INST_0_BOSCH_BMA280_LABEL,
+DEVICE_AND_API_INIT(bma280, DT_INST_LABEL(0),
 		    bma280_init, &bma280_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &bma280_driver_api);

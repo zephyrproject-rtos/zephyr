@@ -70,7 +70,7 @@ void main(void)
 		.calibrate = 0
 	};
 
-	lmp90100 = device_get_binding(DT_INST_0_TI_LMP90100_LABEL);
+	lmp90100 = device_get_binding(DT_LABEL(DT_INST(0, ti_lmp90100)));
 	if (!lmp90100) {
 		LOG_ERR("LMP90100 device not found");
 		return;

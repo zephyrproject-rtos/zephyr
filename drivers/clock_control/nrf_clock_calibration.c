@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT nordic_nrf_temp
 #include <drivers/sensor.h>
 #include <drivers/clock_control.h>
 #include "nrf_clock_calibration.h"
@@ -30,7 +32,7 @@ LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
  * is ongoing, it is requested by the calibration process and released when
  * calibration is done.
  */
-#ifndef DT_INST_0_NORDIC_NRF_TEMP_LABEL
+#if !DT_INST_NODE_HAS_PROP(0, label)
 #define DT_INST_0_NORDIC_NRF_TEMP_LABEL ""
 #endif
 
@@ -224,7 +226,7 @@ void z_nrf_clock_calibration_init(struct device *dev)
 
 	if (CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP != 0) {
 		temp_sensor =
-			device_get_binding(DT_INST_0_NORDIC_NRF_TEMP_LABEL);
+			device_get_binding(DT_INST_LABEL(0));
 	}
 
 	clk_dev = dev;

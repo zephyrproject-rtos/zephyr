@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT max_max30101
+
 #include <logging/log.h>
 
 #include "max30101.h"
@@ -204,8 +206,8 @@ static int max30101_init(struct device *dev)
 }
 
 static struct max30101_config max30101_config = {
-	.i2c_label = DT_INST_0_MAX_MAX30101_BUS_NAME,
-	.i2c_addr = DT_INST_0_MAX_MAX30101_BASE_ADDRESS,
+	.i2c_label = DT_INST_BUS_LABEL(0),
+	.i2c_addr = DT_INST_REG_ADDR(0),
 	.fifo = (CONFIG_MAX30101_SMP_AVE << MAX30101_FIFO_CFG_SMP_AVE_SHIFT) |
 #ifdef CONFIG_MAX30101_FIFO_ROLLOVER_EN
 		MAX30101_FIFO_CFG_ROLLOVER_EN_MASK |
@@ -244,7 +246,7 @@ static struct max30101_config max30101_config = {
 
 static struct max30101_data max30101_data;
 
-DEVICE_AND_API_INIT(max30101, DT_INST_0_MAX_MAX30101_LABEL, max30101_init,
+DEVICE_AND_API_INIT(max30101, DT_INST_LABEL(0), max30101_init,
 		    &max30101_data, &max30101_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &max30101_driver_api);

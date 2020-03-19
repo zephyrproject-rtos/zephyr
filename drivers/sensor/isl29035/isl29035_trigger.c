@@ -1,5 +1,7 @@
 /* sensor_isl29035.c - trigger support for ISL29035 light sensor */
 
+#define DT_DRV_COMPAT isil_isl29035
+
 /*
  * Copyright (c) 2016 Intel Corporation
  *
@@ -24,7 +26,7 @@ static inline void setup_int(struct isl29035_driver_data *drv_data,
 		: GPIO_INT_DISABLE;
 
 	gpio_pin_interrupt_configure(drv_data->gpio,
-				     DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN,
+				     DT_INST_GPIO_PIN(0, int_gpios),
 				     flags);
 }
 
@@ -152,7 +154,7 @@ int isl29035_trigger_set(struct device *dev,
 	/* enable interrupt callback */
 	setup_int(drv_data, true);
 	if (gpio_pin_get(drv_data->gpio,
-			 DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN) > 0) {
+			 DT_INST_GPIO_PIN(0, int_gpios)) > 0) {
 		handle_int(drv_data);
 	}
 
@@ -174,18 +176,18 @@ int isl29035_init_interrupt(struct device *dev)
 
 	/* setup gpio interrupt */
 	drv_data->gpio =
-		device_get_binding(DT_INST_0_ISIL_ISL29035_INT_GPIOS_CONTROLLER);
+		device_get_binding(DT_INST_GPIO_LABEL(0, int_gpios));
 	if (drv_data->gpio == NULL) {
 		LOG_DBG("Failed to get GPIO device.");
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN,
-			   GPIO_INPUT | DT_INST_0_ISIL_ISL29035_INT_GPIOS_FLAGS);
+	gpio_pin_configure(drv_data->gpio, DT_INST_GPIO_PIN(0, int_gpios),
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, int_gpios));
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   isl29035_gpio_callback,
-			   BIT(DT_INST_0_ISIL_ISL29035_INT_GPIOS_PIN));
+			   BIT(DT_INST_GPIO_PIN(0, int_gpios)));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback.");

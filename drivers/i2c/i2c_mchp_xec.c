@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_xec_i2c
+
 #include <drivers/clock_control.h>
 #include <kernel.h>
 #include <soc.h>
@@ -418,31 +420,31 @@ static int i2c_xec_init(struct device *dev)
 	static struct i2c_xec_data i2c_xec_data_##n;			\
 	static const struct i2c_xec_config i2c_xec_config_##n = {	\
 		.base_addr =						\
-			DT_INST_##n##_MICROCHIP_XEC_I2C_BASE_ADDRESS,	\
-		.port_sel = DT_INST_##n##_MICROCHIP_XEC_I2C_PORT_SEL,	\
+			DT_INST_REG_ADDR(n),	\
+		.port_sel = DT_INST_PROP(n, port_sel),	\
 	};								\
 	DEVICE_AND_API_INIT(i2c_xec_##n,				\
-		DT_INST_##n##_MICROCHIP_XEC_I2C_LABEL,			\
+		DT_INST_LABEL(n),			\
 		&i2c_xec_init, &i2c_xec_data_##n, &i2c_xec_config_##n,	\
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
 		&i2c_xec_driver_api)
 
-#ifdef DT_INST_0_MICROCHIP_XEC_I2C
+#if DT_HAS_DRV_INST(0)
 I2C_XEC_DEVICE(0);
 #endif
 
-#ifdef DT_INST_1_MICROCHIP_XEC_I2C
+#if DT_HAS_DRV_INST(1)
 I2C_XEC_DEVICE(1);
 #endif
 
-#ifdef DT_INST_2_MICROCHIP_XEC_I2C
+#if DT_HAS_DRV_INST(2)
 I2C_XEC_DEVICE(2);
 #endif
 
-#ifdef DT_INST_3_MICROCHIP_XEC_I2C
+#if DT_HAS_DRV_INST(3)
 I2C_XEC_DEVICE(3);
 #endif
 
-#ifdef DT_INST_4_MICROCHIP_XEC_I2C
+#if DT_HAS_DRV_INST(4)
 I2C_XEC_DEVICE(4);
 #endif

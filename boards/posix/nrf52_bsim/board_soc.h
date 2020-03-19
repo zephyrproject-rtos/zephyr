@@ -34,13 +34,13 @@
 #define OFFLOAD_SW_IRQ SWI0_EGU0_IRQn
 
 /* HACK due to the nrf52_bsim not yet supporting DTS */
-#if !defined(DT_INST_0_NORDIC_NRF_CLOCK_LABEL)
+#if !DT_NODE_HAS_PROP(DT_INST(0, nordic_nrf_clock), label)
 #define DT_INST_0_NORDIC_NRF_CLOCK_LABEL "CLOCK"
 #endif
-#if !defined(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0)
+#if !DT_IRQ_HAS_CELL(DT_INST(0, nordic_nrf_clock), irq)
 #define DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0 POWER_CLOCK_IRQn
 #endif
-#if !defined(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0_PRIORITY)
+#if !DT_IRQ_HAS_CELL(DT_INST(0, nordic_nrf_clock), priority)
 #define DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0_PRIORITY 1
 #endif
 

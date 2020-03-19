@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT zephyr_native_posix_uart
+
 #include <errno.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -201,7 +203,7 @@ static int np_uart_0_init(struct device *dev)
 	d = (struct native_uart_status *)dev->driver_data;
 
 	if (IS_ENABLED(CONFIG_NATIVE_UART_0_ON_OWN_PTY)) {
-		int tty_fn = open_tty(d, DT_INST_0_ZEPHYR_NATIVE_POSIX_UART_LABEL,
+		int tty_fn = open_tty(d, DT_INST_LABEL(0),
 				      auto_attach);
 
 		d->in_fd = tty_fn;
@@ -337,7 +339,7 @@ static int np_uart_tty_poll_in(struct device *dev, unsigned char *p_char)
 }
 
 DEVICE_AND_API_INIT(uart_native_posix0,
-	    DT_INST_0_ZEPHYR_NATIVE_POSIX_UART_LABEL, &np_uart_0_init,
+	    DT_INST_LABEL(0), &np_uart_0_init,
 	    (void *)&native_uart_status_0, NULL,
 	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	    &np_uart_driver_api_0);

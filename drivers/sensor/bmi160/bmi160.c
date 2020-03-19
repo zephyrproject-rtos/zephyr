@@ -8,6 +8,8 @@
  * http://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMI160-DS000-07.pdf
  */
 
+#define DT_DRV_COMPAT bosch_bmi160
+
 #include <init.h>
 #include <drivers/sensor.h>
 #include <sys/byteorder.h>
@@ -795,16 +797,16 @@ int bmi160_init(struct device *dev)
 	u8_t val = 0U;
 	s32_t acc_range, gyr_range;
 
-	bmi160->spi = device_get_binding(DT_INST_0_BOSCH_BMI160_BUS_NAME);
+	bmi160->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!bmi160->spi) {
 		LOG_DBG("SPI master controller not found: %s.",
-			    DT_INST_0_BOSCH_BMI160_BUS_NAME);
+			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
 	bmi160->spi_cfg.operation = SPI_WORD_SET(8);
-	bmi160->spi_cfg.frequency = DT_INST_0_BOSCH_BMI160_SPI_MAX_FREQUENCY;
-	bmi160->spi_cfg.slave = DT_INST_0_BOSCH_BMI160_BASE_ADDRESS;
+	bmi160->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
+	bmi160->spi_cfg.slave = DT_INST_REG_ADDR(0);
 
 	/* reboot the chip */
 	if (bmi160_byte_write(dev, BMI160_REG_CMD, BMI160_CMD_SOFT_RESET) < 0) {
@@ -899,14 +901,14 @@ int bmi160_init(struct device *dev)
 
 const struct bmi160_device_config bmi160_config = {
 #if defined(CONFIG_BMI160_TRIGGER)
-	.gpio_port = DT_INST_0_BOSCH_BMI160_INT_GPIOS_CONTROLLER,
-	.int_pin = DT_INST_0_BOSCH_BMI160_INT_GPIOS_PIN,
-	.int_flags = DT_INST_0_BOSCH_BMI160_INT_GPIOS_FLAGS,
+	.gpio_port = DT_INST_GPIO_LABEL(0, int_gpios),
+	.int_pin = DT_INST_GPIO_PIN(0, int_gpios),
+	.int_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
 #endif
 };
 
 
 
-DEVICE_AND_API_INIT(bmi160, DT_INST_0_BOSCH_BMI160_LABEL, bmi160_init, &bmi160_data,
+DEVICE_AND_API_INIT(bmi160, DT_INST_LABEL(0), bmi160_init, &bmi160_data,
 		&bmi160_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		&bmi160_api);

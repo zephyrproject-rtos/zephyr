@@ -28,53 +28,53 @@
 #define TO_ASYNC_CLK_DIV(val) _DO_CONCAT(kSCG_AsyncClkDivBy, val)
 
 /* System Clock configuration */
-ASSERT_WITHIN_RANGE(DT_INST_0_NXP_KINETIS_SCG_CLK_DIVIDER_SLOW, 2, 8,
+ASSERT_WITHIN_RANGE(DT_PROP(DT_INST(0, nxp_kinetis_scg), clk_divider_slow), 2, 8,
 		    "Invalid SCG slow clock divider value");
-ASSERT_WITHIN_RANGE(DT_INST_0_NXP_KINETIS_SCG_CLK_DIVIDER_BUS, 1, 16,
+ASSERT_WITHIN_RANGE(DT_PROP(DT_INST(0, nxp_kinetis_scg), clk_divider_bus), 1, 16,
 		    "Invalid SCG bus clock divider value");
-#if DT_INST_0_NXP_KINETIS_SCG_CLK_SOURCE == KINETIS_SCG_SCLK_SRC_SPLL
+#if DT_PROP(DT_INST(0, nxp_kinetis_scg), clk_source) == KINETIS_SCG_SCLK_SRC_SPLL
 /* Core divider range is 1 to 4 with SPLL as clock source */
-ASSERT_WITHIN_RANGE(DT_INST_0_NXP_KINETIS_SCG_CLK_DIVIDER_CORE, 1, 4,
+ASSERT_WITHIN_RANGE(DT_PROP(DT_INST(0, nxp_kinetis_scg), clk_divider_core), 1, 4,
 		    "Invalid SCG core clock divider value");
 #else
-ASSERT_WITHIN_RANGE(DT_INST_0_NXP_KINETIS_SCG_CLK_DIVIDER_CORE, 1, 16,
+ASSERT_WITHIN_RANGE(DT_PROP(DT_INST(0, nxp_kinetis_scg), clk_divider_core), 1, 16,
 		    "Invalid SCG core clock divider value");
 #endif
 static const scg_sys_clk_config_t scg_sys_clk_config = {
-	.divSlow = TO_SYS_CLK_DIV(DT_INST_0_NXP_KINETIS_SCG_CLK_DIVIDER_SLOW),
-	.divBus  = TO_SYS_CLK_DIV(DT_INST_0_NXP_KINETIS_SCG_CLK_DIVIDER_BUS),
-	.divCore = TO_SYS_CLK_DIV(DT_INST_0_NXP_KINETIS_SCG_CLK_DIVIDER_CORE),
-	.src     = DT_INST_0_NXP_KINETIS_SCG_CLK_SOURCE
+	.divSlow = TO_SYS_CLK_DIV(DT_PROP(DT_INST(0, nxp_kinetis_scg), clk_divider_slow)),
+	.divBus  = TO_SYS_CLK_DIV(DT_PROP(DT_INST(0, nxp_kinetis_scg), clk_divider_bus)),
+	.divCore = TO_SYS_CLK_DIV(DT_PROP(DT_INST(0, nxp_kinetis_scg), clk_divider_core)),
+	.src     = DT_PROP(DT_INST(0, nxp_kinetis_scg), clk_source)
 };
 
-#ifdef DT_INST_0_NXP_KINETIS_SCG_SOSC_FREQ
+#if DT_NODE_HAS_PROP(DT_INST(0, nxp_kinetis_scg), sosc_freq)
 /* System Oscillator (SOSC) configuration */
-ASSERT_ASYNC_CLK_DIV_VALID(DT_INST_0_NXP_KINETIS_SCG_SOSC_DIVIDER_1,
+ASSERT_ASYNC_CLK_DIV_VALID(DT_PROP(DT_INST(0, nxp_kinetis_scg), sosc_divider_1),
 		       "Invalid SCG SOSC divider 1 value");
-ASSERT_ASYNC_CLK_DIV_VALID(DT_INST_0_NXP_KINETIS_SCG_SOSC_DIVIDER_2,
+ASSERT_ASYNC_CLK_DIV_VALID(DT_PROP(DT_INST(0, nxp_kinetis_scg), sosc_divider_2),
 		       "Invalid SCG SOSC divider 2 value");
 static const scg_sosc_config_t scg_sosc_config = {
-	.freq        = DT_INST_0_NXP_KINETIS_SCG_SOSC_FREQ,
+	.freq        = DT_PROP(DT_INST(0, nxp_kinetis_scg), sosc_freq),
 	.monitorMode = kSCG_SysOscMonitorDisable,
 	.enableMode  = kSCG_SysOscEnable | kSCG_SysOscEnableInLowPower,
-	.div1        = TO_ASYNC_CLK_DIV(DT_INST_0_NXP_KINETIS_SCG_SOSC_DIVIDER_1),
-	.div2        = TO_ASYNC_CLK_DIV(DT_INST_0_NXP_KINETIS_SCG_SOSC_DIVIDER_2),
-	.workMode    = DT_INST_0_NXP_KINETIS_SCG_SOSC_MODE
+	.div1        = TO_ASYNC_CLK_DIV(DT_PROP(DT_INST(0, nxp_kinetis_scg), sosc_divider_1)),
+	.div2        = TO_ASYNC_CLK_DIV(DT_PROP(DT_INST(0, nxp_kinetis_scg), sosc_divider_2)),
+	.workMode    = DT_PROP(DT_INST(0, nxp_kinetis_scg), sosc_mode)
 };
-#endif /* DT_INST_0_NXP_KINETIS_SCG_SOSC_FREQ */
+#endif /* DT_NODE_HAS_PROP(DT_INST(0, nxp_kinetis_scg), sosc_freq) */
 
 /* Slow Internal Reference Clock (SIRC) configuration */
-ASSERT_ASYNC_CLK_DIV_VALID(DT_INST_0_NXP_KINETIS_SCG_SIRC_DIVIDER_1,
+ASSERT_ASYNC_CLK_DIV_VALID(DT_PROP(DT_INST(0, nxp_kinetis_scg), sirc_divider_1),
 		       "Invalid SCG SIRC divider 1 value");
-ASSERT_ASYNC_CLK_DIV_VALID(DT_INST_0_NXP_KINETIS_SCG_SIRC_DIVIDER_2,
+ASSERT_ASYNC_CLK_DIV_VALID(DT_PROP(DT_INST(0, nxp_kinetis_scg), sirc_divider_2),
 		       "Invalid SCG SIRC divider 2 value");
 static const scg_sirc_config_t scg_sirc_config = {
 	.enableMode = kSCG_SircEnable,
-	.div1       = TO_ASYNC_CLK_DIV(DT_INST_0_NXP_KINETIS_SCG_SIRC_DIVIDER_1),
-	.div2       = TO_ASYNC_CLK_DIV(DT_INST_0_NXP_KINETIS_SCG_SIRC_DIVIDER_2),
-#if MHZ(2) == DT_INST_0_NXP_KINETIS_SCG_SIRC_RANGE
+	.div1       = TO_ASYNC_CLK_DIV(DT_PROP(DT_INST(0, nxp_kinetis_scg), sirc_divider_1)),
+	.div2       = TO_ASYNC_CLK_DIV(DT_PROP(DT_INST(0, nxp_kinetis_scg), sirc_divider_2)),
+#if MHZ(2) == DT_PROP(DT_INST(0, nxp_kinetis_scg), sirc_range)
 	.range      = kSCG_SircRangeLow
-#elif MHZ(8) == DT_INST_0_NXP_KINETIS_SCG_SIRC_RANGE
+#elif MHZ(8) == DT_PROP(DT_INST(0, nxp_kinetis_scg), sirc_range)
 	.range      = kSCG_SircRangeHigh
 #else
 #error Invalid SCG SIRC range
@@ -82,21 +82,21 @@ static const scg_sirc_config_t scg_sirc_config = {
 };
 
 /* Fast Internal Reference Clock (FIRC) configuration */
-ASSERT_ASYNC_CLK_DIV_VALID(DT_INST_0_NXP_KINETIS_SCG_FIRC_DIVIDER_1,
+ASSERT_ASYNC_CLK_DIV_VALID(DT_PROP(DT_INST(0, nxp_kinetis_scg), firc_divider_1),
 		       "Invalid SCG FIRC divider 1 value");
-ASSERT_ASYNC_CLK_DIV_VALID(DT_INST_0_NXP_KINETIS_SCG_FIRC_DIVIDER_2,
+ASSERT_ASYNC_CLK_DIV_VALID(DT_PROP(DT_INST(0, nxp_kinetis_scg), firc_divider_2),
 		       "Invalid SCG FIRC divider 2 value");
 static const scg_firc_config_t scg_firc_config = {
 	.enableMode = kSCG_FircEnable,
-	.div1       = TO_ASYNC_CLK_DIV(DT_INST_0_NXP_KINETIS_SCG_FIRC_DIVIDER_1),
-	.div2       = TO_ASYNC_CLK_DIV(DT_INST_0_NXP_KINETIS_SCG_FIRC_DIVIDER_2),
-#if MHZ(48) == DT_INST_0_NXP_KINETIS_SCG_FIRC_RANGE
+	.div1       = TO_ASYNC_CLK_DIV(DT_PROP(DT_INST(0, nxp_kinetis_scg), firc_divider_1)),
+	.div2       = TO_ASYNC_CLK_DIV(DT_PROP(DT_INST(0, nxp_kinetis_scg), firc_divider_2)),
+#if MHZ(48) == DT_PROP(DT_INST(0, nxp_kinetis_scg), firc_range)
 	.range      = kSCG_FircRange48M,
-#elif MHZ(52) == DT_INST_0_NXP_KINETIS_SCG_FIRC_RANGE
+#elif MHZ(52) == DT_PROP(DT_INST(0, nxp_kinetis_scg), firc_range)
 	.range      = kSCG_FircRange52M,
-#elif MHZ(56) == DT_INST_0_NXP_KINETIS_SCG_FIRC_RANGE
+#elif MHZ(56) == DT_PROP(DT_INST(0, nxp_kinetis_scg), firc_range)
 	.range      = kSCG_FircRange56M,
-#elif MHZ(60) == DT_INST_0_NXP_KINETIS_SCG_FIRC_RANGE
+#elif MHZ(60) == DT_PROP(DT_INST(0, nxp_kinetis_scg), firc_range)
 	.range      = kSCG_FircRange60M,
 #else
 #error Invalid SCG FIRC range
@@ -105,28 +105,28 @@ static const scg_firc_config_t scg_firc_config = {
 };
 
 /* System Phase-Locked Loop (SPLL) configuration */
-ASSERT_ASYNC_CLK_DIV_VALID(DT_INST_0_NXP_KINETIS_SCG_SPLL_DIVIDER_1,
+ASSERT_ASYNC_CLK_DIV_VALID(DT_PROP(DT_INST(0, nxp_kinetis_scg), spll_divider_1),
 		       "Invalid SCG SPLL divider 1 value");
-ASSERT_ASYNC_CLK_DIV_VALID(DT_INST_0_NXP_KINETIS_SCG_SPLL_DIVIDER_2,
+ASSERT_ASYNC_CLK_DIV_VALID(DT_PROP(DT_INST(0, nxp_kinetis_scg), spll_divider_2),
 		       "Invalid SCG SPLL divider 2 value");
-ASSERT_WITHIN_RANGE(DT_INST_0_NXP_KINETIS_SCG_SPLL_DIVIDER_PRE, 1, 8,
+ASSERT_WITHIN_RANGE(DT_PROP(DT_INST(0, nxp_kinetis_scg), spll_divider_pre), 1, 8,
 		    "Invalid SCG SPLL pre divider value");
-ASSERT_WITHIN_RANGE(DT_INST_0_NXP_KINETIS_SCG_SPLL_MULTIPLIER, 16, 47,
+ASSERT_WITHIN_RANGE(DT_PROP(DT_INST(0, nxp_kinetis_scg), spll_multiplier), 16, 47,
 		    "Invalid SCG SPLL multiplier value");
 static const scg_spll_config_t scg_spll_config = {
 	.enableMode  = kSCG_SysPllEnable,
 	.monitorMode = kSCG_SysPllMonitorDisable,
-	.div1        = TO_ASYNC_CLK_DIV(DT_INST_0_NXP_KINETIS_SCG_SPLL_DIVIDER_1),
-	.div2        = TO_ASYNC_CLK_DIV(DT_INST_0_NXP_KINETIS_SCG_SPLL_DIVIDER_2),
-#if DT_INST_0_NXP_KINETIS_SCG_SPLL_SOURCE == KINETIS_SCG_SPLL_SRC_SOSC
+	.div1        = TO_ASYNC_CLK_DIV(DT_PROP(DT_INST(0, nxp_kinetis_scg), spll_divider_1)),
+	.div2        = TO_ASYNC_CLK_DIV(DT_PROP(DT_INST(0, nxp_kinetis_scg), spll_divider_2)),
+#if DT_PROP(DT_INST(0, nxp_kinetis_scg), spll_source) == KINETIS_SCG_SPLL_SRC_SOSC
 	.src         = kSCG_SysPllSrcSysOsc,
-#elif DT_INST_0_NXP_KINETIS_SCG_SPLL_SOURCE == KINETIS_SCG_SPLL_SRC_FIRC
+#elif DT_PROP(DT_INST(0, nxp_kinetis_scg), spll_source) == KINETIS_SCG_SPLL_SRC_FIRC
 	.src         = kSCG_SysPllSrcFirc,
 #else
 #error Invalid SCG SPLL source
 #endif
-	.prediv      = (DT_INST_0_NXP_KINETIS_SCG_SPLL_DIVIDER_PRE - 1U),
-	.mult        = (DT_INST_0_NXP_KINETIS_SCG_SPLL_MULTIPLIER - 16U)
+	.prediv      = (DT_PROP(DT_INST(0, nxp_kinetis_scg), spll_divider_pre) - 1U),
+	.mult        = (DT_PROP(DT_INST(0, nxp_kinetis_scg), spll_multiplier) - 16U)
 };
 
 static ALWAYS_INLINE void clk_init(void)
@@ -139,7 +139,7 @@ static ALWAYS_INLINE void clk_init(void)
 	};
 	scg_sys_clk_config_t current;
 
-#ifdef DT_INST_0_NXP_KINETIS_SCG_SOSC_FREQ
+#if DT_NODE_HAS_PROP(DT_INST(0, nxp_kinetis_scg), sosc_freq)
 	/* Optionally initialize system oscillator */
 	CLOCK_InitSysOsc(&scg_sosc_config);
 	CLOCK_SetXtal0Freq(scg_sosc_config.freq);

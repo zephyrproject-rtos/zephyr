@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT arm_cmsdk_gpio
+
 #include <kernel.h>
 
 #include <device.h>
@@ -273,7 +275,7 @@ static void gpio_cmsdk_ahb_config_0(struct device *dev);
 
 static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_0_cfg = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_ARM_CMSDK_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
 	},
 	.port = ((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO0),
 	.gpio_config_func = gpio_cmsdk_ahb_config_0,
@@ -309,7 +311,7 @@ static void gpio_cmsdk_ahb_config_1(struct device *dev);
 
 static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_1_cfg = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_ARM_CMSDK_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(1, ngpios)),
 	},
 	.port = ((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO1),
 	.gpio_config_func = gpio_cmsdk_ahb_config_1,
@@ -345,7 +347,7 @@ static void gpio_cmsdk_ahb_config_2(struct device *dev);
 
 static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_2_cfg = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_ARM_CMSDK_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(2, ngpios)),
 	},
 	.port = ((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO2),
 	.gpio_config_func = gpio_cmsdk_ahb_config_2,
@@ -381,7 +383,7 @@ static void gpio_cmsdk_ahb_config_3(struct device *dev);
 
 static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_3_cfg = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_ARM_CMSDK_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(3, ngpios)),
 	},
 	.port = ((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO3),
 	.gpio_config_func = gpio_cmsdk_ahb_config_3,

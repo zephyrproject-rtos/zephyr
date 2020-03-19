@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_mcp2515
+
 #include <kernel.h>
 #include <device.h>
 #include <drivers/spi.h>
@@ -759,7 +761,7 @@ static int mcp2515_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef DT_INST_0_MICROCHIP_MCP2515_CS_GPIOS_PIN
+#if DT_INST_SPI_DEV_HAS_CS(0)
 	dev_data->spi_cs_ctrl.gpio_dev =
 		device_get_binding(dev_cfg->spi_cs_port);
 	if (!dev_data->spi_cs_ctrl.gpio_dev) {
@@ -773,7 +775,7 @@ static int mcp2515_init(struct device *dev)
 	dev_data->spi_cfg.cs = &dev_data->spi_cs_ctrl;
 #else
 	dev_data->spi_cfg.cs = NULL;
-#endif  /* DT_INST_0_MICROCHIP_MCP2515_CS_GPIOS_PIN */
+#endif  /* DT_INST_SPI_DEV_HAS_CS(0) */
 
 	/* Reset MCP2515 */
 	if (mcp2515_cmd_soft_reset(dev)) {
@@ -790,7 +792,7 @@ static int mcp2515_init(struct device *dev)
 
 	if (gpio_pin_configure(dev_data->int_gpio, dev_cfg->int_pin,
 			       (GPIO_INPUT |
-				DT_INST_0_MICROCHIP_MCP2515_INT_GPIOS_FLAGS))) {
+				DT_INST_GPIO_FLAGS(0, int_gpios)))) {
 		LOG_ERR("Unable to configure GPIO pin %u", dev_cfg->int_pin);
 		return -EINVAL;
 	}
@@ -837,26 +839,26 @@ static struct mcp2515_data mcp2515_data_1 = {
 };
 
 static const struct mcp2515_config mcp2515_config_1 = {
-	.spi_port = DT_INST_0_MICROCHIP_MCP2515_BUS_NAME,
-	.spi_freq = DT_INST_0_MICROCHIP_MCP2515_SPI_MAX_FREQUENCY,
-	.spi_slave = DT_INST_0_MICROCHIP_MCP2515_BASE_ADDRESS,
-	.int_pin = DT_INST_0_MICROCHIP_MCP2515_INT_GPIOS_PIN,
-	.int_port = DT_INST_0_MICROCHIP_MCP2515_INT_GPIOS_CONTROLLER,
+	.spi_port = DT_INST_BUS_LABEL(0),
+	.spi_freq = DT_INST_PROP(0, spi_max_frequency),
+	.spi_slave = DT_INST_REG_ADDR(0),
+	.int_pin = DT_INST_GPIO_PIN(0, int_gpios),
+	.int_port = DT_INST_GPIO_LABEL(0, int_gpios),
 	.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,
 	.int_thread_priority = CONFIG_CAN_MCP2515_INT_THREAD_PRIO,
-#ifdef DT_INST_0_MICROCHIP_MCP2515_CS_GPIOS_PIN
-	.spi_cs_pin = DT_INST_0_MICROCHIP_MCP2515_CS_GPIOS_PIN,
-	.spi_cs_port = DT_INST_0_MICROCHIP_MCP2515_CS_GPIOS_CONTROLLER,
-#endif  /* DT_INST_0_MICROCHIP_MCP2515_CS_GPIOS_PIN */
-	.tq_sjw = DT_INST_0_MICROCHIP_MCP2515_SJW,
-	.tq_prop = DT_INST_0_MICROCHIP_MCP2515_PROP_SEG,
-	.tq_bs1 = DT_INST_0_MICROCHIP_MCP2515_PHASE_SEG1,
-	.tq_bs2 = DT_INST_0_MICROCHIP_MCP2515_PHASE_SEG2,
-	.bus_speed = DT_INST_0_MICROCHIP_MCP2515_BUS_SPEED,
-	.osc_freq = DT_INST_0_MICROCHIP_MCP2515_OSC_FREQ
+#if DT_INST_SPI_DEV_HAS_CS(0)
+	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIO_PIN(0),
+	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIO_LABEL(0),
+#endif  /* DT_INST_SPI_DEV_HAS_CS(0) */
+	.tq_sjw = DT_INST_PROP(0, sjw),
+	.tq_prop = DT_INST_PROP(0, prop_seg),
+	.tq_bs1 = DT_INST_PROP(0, phase_seg1),
+	.tq_bs2 = DT_INST_PROP(0, phase_seg2),
+	.bus_speed = DT_INST_PROP(0, bus_speed),
+	.osc_freq = DT_INST_PROP(0, osc_freq)
 };
 
-DEVICE_AND_API_INIT(can_mcp2515_1, DT_INST_0_MICROCHIP_MCP2515_LABEL, &mcp2515_init,
+DEVICE_AND_API_INIT(can_mcp2515_1, DT_INST_LABEL(0), &mcp2515_init,
 		    &mcp2515_data_1, &mcp2515_config_1, POST_KERNEL,
 		    CONFIG_CAN_MCP2515_INIT_PRIORITY, &can_api_funcs);
 

@@ -29,11 +29,11 @@ static struct arc_mpu_region mpu_regions[] = {
 			 REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),
 #endif
 
-#if DT_INST_0_MMIO_SRAM_SIZE > 0
+#if DT_REG_SIZE(DT_INST(0, mmio_sram)) > 0
 	/* Region DDR RAM */
 	MPU_REGION_ENTRY("DDR RAM",
-			DT_INST_0_MMIO_SRAM_BASE_ADDRESS,
-			DT_INST_0_MMIO_SRAM_SIZE,
+			DT_REG_ADDR(DT_INST(0, mmio_sram)),
+			DT_REG_SIZE(DT_INST(0, mmio_sram)),
 			AUX_MPU_ATTR_KW | AUX_MPU_ATTR_KR | AUX_MPU_ATTR_UR |
 			AUX_MPU_ATTR_KE | AUX_MPU_ATTR_UE | REGION_DYNAMIC),
 #endif

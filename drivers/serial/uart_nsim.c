@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT snps_nsim_uart
+
 #include <errno.h>
 
 #include <kernel.h>
@@ -108,10 +110,10 @@ static const struct uart_driver_api uart_nsim_driver_api = {
 };
 
 static struct uart_device_config uart_nsim_dev_cfg_0 = {
-	.regs = DT_INST_0_SNPS_NSIM_UART_BASE_ADDRESS,
+	.regs = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_AND_API_INIT(uart_nsim0, DT_INST_0_SNPS_NSIM_UART_LABEL, &uart_nsim_init,
+DEVICE_AND_API_INIT(uart_nsim0, DT_INST_LABEL(0), &uart_nsim_init,
 			NULL, &uart_nsim_dev_cfg_0,
 			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			&uart_nsim_driver_api);

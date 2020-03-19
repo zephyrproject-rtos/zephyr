@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT intel_e1000
+
 #define LOG_MODULE_NAME eth_e1000
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 #include <logging/log.h>
@@ -225,12 +227,12 @@ static void e1000_init(struct net_if *iface)
 	net_if_set_link_addr(iface, dev->mac, sizeof(dev->mac),
 				NET_LINK_ETHERNET);
 
-	IRQ_CONNECT(DT_INST_0_INTEL_E1000_IRQ_0,
-			DT_INST_0_INTEL_E1000_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+			DT_INST_IRQ(0, priority),
 			e1000_isr, DEVICE_GET(eth_e1000),
-			DT_INST_0_INTEL_E1000_IRQ_0_SENSE);
+			DT_INST_IRQ(0, sense));
 
-	irq_enable(DT_INST_0_INTEL_E1000_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	iow32(dev, CTRL, CTRL_SLU); /* Set link up */
 

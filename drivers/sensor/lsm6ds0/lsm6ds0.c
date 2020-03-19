@@ -2,6 +2,8 @@
  * temperature sensor
  */
 
+#define DT_DRV_COMPAT st_lsm6ds0
+
 /*
  * Copyright (c) 2016 Intel Corporation
  *
@@ -499,12 +501,12 @@ static int lsm6ds0_init(struct device *dev)
 }
 
 static const struct lsm6ds0_config lsm6ds0_config = {
-	.i2c_master_dev_name = DT_INST_0_ST_LSM6DS0_BUS_NAME,
-	.i2c_slave_addr = DT_INST_0_ST_LSM6DS0_BASE_ADDRESS,
+	.i2c_master_dev_name = DT_INST_BUS_LABEL(0),
+	.i2c_slave_addr = DT_INST_REG_ADDR(0),
 };
 
 static struct lsm6ds0_data lsm6ds0_data;
 
-DEVICE_AND_API_INIT(lsm6ds0, DT_INST_0_ST_LSM6DS0_LABEL, lsm6ds0_init,
+DEVICE_AND_API_INIT(lsm6ds0, DT_INST_LABEL(0), lsm6ds0_init,
 		    &lsm6ds0_data, &lsm6ds0_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lsm6ds0_api_funcs);

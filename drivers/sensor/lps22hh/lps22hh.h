@@ -42,7 +42,7 @@ struct lps22hh_config {
 	u16_t i2c_slv_addr;
 #elif DT_ST_LPS22HH_BUS_SPI
 	struct spi_config spi_conf;
-#if defined(DT_INST_0_ST_LPS22HH_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS(0)
 	const char *gpio_cs_port;
 	u8_t cs_gpio;
 #endif
@@ -80,7 +80,7 @@ struct lps22hh_data {
 #endif
 
 #endif /* CONFIG_LPS22HH_TRIGGER */
-#if defined(DT_INST_0_ST_LPS22HH_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS(0)
 	struct spi_cs_control cs_ctrl;
 #endif
 };

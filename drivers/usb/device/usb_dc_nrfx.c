@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nordic_nrf_clock
+
 /**
  * @file  usb_dc_nrfx.c
  * @brief Nordic USB device controller driver
@@ -536,7 +538,7 @@ static int hf_clock_enable(bool on, bool blocking)
 	struct device *clock;
 	static bool clock_requested;
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+	clock = device_get_binding(DT_INST_LABEL(0));
 	if (!clock) {
 		LOG_ERR("NRF HF Clock device not found!");
 		return ret;

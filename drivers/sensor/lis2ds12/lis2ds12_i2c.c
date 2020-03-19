@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/lis2ds12.pdf
  */
 
+#define DT_DRV_COMPAT st_lis2ds12
+
 #include <string.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
@@ -16,7 +18,7 @@
 
 #ifdef DT_ST_LIS2DS12_BUS_I2C
 
-static u16_t lis2ds12_i2c_slave_addr = DT_INST_0_ST_LIS2DS12_BASE_ADDRESS;
+static u16_t lis2ds12_i2c_slave_addr = DT_INST_REG_ADDR(0);
 
 LOG_MODULE_DECLARE(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);
 

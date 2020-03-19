@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT sensirion_sht3xd
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <kernel.h>
@@ -225,18 +227,18 @@ static int sht3xd_init(struct device *dev)
 
 struct sht3xd_data sht3xd0_driver;
 static const struct sht3xd_config sht3xd0_cfg = {
-	.bus_name = DT_INST_0_SENSIRION_SHT3XD_BUS_NAME,
+	.bus_name = DT_INST_BUS_LABEL(0),
 #ifdef CONFIG_SHT3XD_TRIGGER
-	.alert_gpio_name = DT_INST_0_SENSIRION_SHT3XD_ALERT_GPIOS_CONTROLLER,
+	.alert_gpio_name = DT_INST_GPIO_LABEL(0, alert_gpios),
 #endif
-	.base_address = DT_INST_0_SENSIRION_SHT3XD_BASE_ADDRESS,
+	.base_address = DT_INST_REG_ADDR(0),
 #ifdef CONFIG_SHT3XD_TRIGGER
-	.alert_pin = DT_INST_0_SENSIRION_SHT3XD_ALERT_GPIOS_PIN,
-	.alert_flags = DT_INST_0_SENSIRION_SHT3XD_ALERT_GPIOS_FLAGS,
+	.alert_pin = DT_INST_GPIO_PIN(0, alert_gpios),
+	.alert_flags = DT_INST_GPIO_FLAGS(0, alert_gpios),
 #endif
 };
 
-DEVICE_AND_API_INIT(sht3xd0, DT_INST_0_SENSIRION_SHT3XD_LABEL,
+DEVICE_AND_API_INIT(sht3xd0, DT_INST_LABEL(0),
 		    sht3xd_init, &sht3xd0_driver, &sht3xd0_cfg,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &sht3xd_driver_api);

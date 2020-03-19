@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ams_ens210
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <kernel.h>
@@ -49,7 +51,7 @@ static int ens210_sample_fetch(struct device *dev, enum sensor_channel chan)
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	for (cnt = 0; cnt <= CONFIG_ENS210_MAX_READ_RETRIES; cnt++) {
-		ret =  i2c_burst_read(drv_data->i2c, DT_INST_0_AMS_ENS210_BASE_ADDRESS,
+		ret =  i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
 				ENS210_REG_T_VAL, (u8_t *)&data, sizeof(data));
 		if (ret < 0) {
 			LOG_ERR("Failed to read data");
@@ -128,7 +130,7 @@ static int ens210_sys_reset(struct device *i2c_dev)
 	const struct ens210_sys_ctrl sys_ctrl = {.low_power = 0, .reset = 1};
 	int ret;
 
-	ret = i2c_reg_write_byte(i2c_dev, DT_INST_0_AMS_ENS210_BASE_ADDRESS,
+	ret = i2c_reg_write_byte(i2c_dev, DT_INST_REG_ADDR(0),
 				 ENS210_REG_SYS_CTRL, *(u8_t *)&sys_ctrl);
 	if (ret < 0) {
 		LOG_ERR("Failed to set SYS_CTRL to 0x%x", *(u8_t *)&sys_ctrl);
@@ -141,7 +143,7 @@ static int ens210_sys_enable(struct device *i2c_dev)
 	const struct ens210_sys_ctrl sys_ctrl = {.low_power = 0, .reset = 0};
 	int ret;
 
-	ret = i2c_reg_write_byte(i2c_dev, DT_INST_0_AMS_ENS210_BASE_ADDRESS,
+	ret = i2c_reg_write_byte(i2c_dev, DT_INST_REG_ADDR(0),
 				 ENS210_REG_SYS_CTRL, *(u8_t *)&sys_ctrl);
 	if (ret < 0) {
 		LOG_ERR("Failed to set SYS_CTRL to 0x%x", *(u8_t *)&sys_ctrl);
@@ -156,7 +158,7 @@ static int ens210_wait_boot(struct device *i2c_dev)
 	struct ens210_sys_stat sys_stat;
 
 	for (cnt = 0; cnt <= CONFIG_ENS210_MAX_STAT_RETRIES; cnt++) {
-		ret =  i2c_reg_read_byte(i2c_dev, DT_INST_0_AMS_ENS210_BASE_ADDRESS,
+		ret =  i2c_reg_read_byte(i2c_dev, DT_INST_REG_ADDR(0),
 					 ENS210_REG_SYS_STAT,
 					 (u8_t *)&sys_stat);
 
@@ -206,10 +208,10 @@ static int ens210_init(struct device *dev)
 	int ret;
 	u16_t part_id;
 
-	drv_data->i2c = device_get_binding(DT_INST_0_AMS_ENS210_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
-			    DT_INST_0_AMS_ENS210_BUS_NAME);
+			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -220,7 +222,7 @@ static int ens210_init(struct device *dev)
 	}
 
 	/* Check Hardware ID. This is only possible after device is ready */
-	ret =  i2c_burst_read(drv_data->i2c, DT_INST_0_AMS_ENS210_BASE_ADDRESS,
+	ret =  i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
 			      ENS210_REG_PART_ID, (u8_t *)&part_id,
 			      sizeof(part_id));
 	if (ret < 0) {
@@ -235,7 +237,7 @@ static int ens210_init(struct device *dev)
 	}
 
 	/* Set continuous measurement */
-	ret = i2c_reg_write_byte(drv_data->i2c, DT_INST_0_AMS_ENS210_BASE_ADDRESS,
+	ret = i2c_reg_write_byte(drv_data->i2c, DT_INST_REG_ADDR(0),
 				 ENS210_REG_SENS_RUN, *(u8_t *)&sense_run);
 	if (ret < 0) {
 		LOG_ERR("Failed to set SENS_RUN to 0x%x",
@@ -244,7 +246,7 @@ static int ens210_init(struct device *dev)
 	}
 
 	/* Start measuring */
-	ret = i2c_reg_write_byte(drv_data->i2c, DT_INST_0_AMS_ENS210_BASE_ADDRESS,
+	ret = i2c_reg_write_byte(drv_data->i2c, DT_INST_REG_ADDR(0),
 				 ENS210_REG_SENS_START, *(u8_t *)&sense_start);
 	if (ret < 0) {
 		LOG_ERR("Failed to set SENS_START to 0x%x",
@@ -256,6 +258,6 @@ static int ens210_init(struct device *dev)
 
 static struct ens210_data ens210_driver;
 
-DEVICE_AND_API_INIT(ens210, DT_INST_0_AMS_ENS210_LABEL, ens210_init, &ens210_driver,
+DEVICE_AND_API_INIT(ens210, DT_INST_LABEL(0), ens210_init, &ens210_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &en210_driver_api);

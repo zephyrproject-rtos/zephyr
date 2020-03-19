@@ -36,7 +36,7 @@
 #define GPIO_OUT_PIN            23
 #define GPIO_INT_PIN            24
 #define GPIO_NAME               "GPIO_"
-#define GPIO_DRV_NAME           DT_INST_0_SNPS_DESIGNWARE_GPIO_LABEL
+#define GPIO_DRV_NAME           DT_LABEL(DT_INST(0, snps_designware_gpio))
 
 /* size of stack area used by each thread */
 #define STACKSIZE               1024

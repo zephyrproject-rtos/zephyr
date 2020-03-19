@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT snps_designware_gpio
+
 #include <errno.h>
 
 #include <kernel.h>
@@ -584,15 +586,15 @@ static void gpio_config_0_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_config_0 = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_SNPS_DESIGNWARE_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
 	},
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
-	.irq_num = DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_0,
+	.irq_num = DT_INST_IRQN(0),
 #endif
-	.bits = DT_INST_0_SNPS_DESIGNWARE_GPIO_BITS,
+	.bits = DT_INST_PROP(0, bits),
 	.config_func = gpio_config_0_irq,
 #ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
-	.shared_irq_dev_name = DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_SHARED_NAME,
+	.shared_irq_dev_name = DT_INST_IRQ_BY_NAME(0, shared_name, irq),
 #endif
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_0_CLOCK_GATE_SUBSYS),
@@ -600,35 +602,35 @@ static const struct gpio_dw_config gpio_config_0 = {
 };
 
 static struct gpio_dw_runtime gpio_0_runtime = {
-	.base_addr = DT_INST_0_SNPS_DESIGNWARE_GPIO_BASE_ADDRESS,
+	.base_addr = DT_INST_REG_ADDR(0),
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 
-DEVICE_DEFINE(gpio_dw_0, DT_INST_0_SNPS_DESIGNWARE_GPIO_LABEL,
+DEVICE_DEFINE(gpio_dw_0, DT_INST_LABEL(0),
 	      gpio_dw_initialize, gpio_dw_device_ctrl, &gpio_0_runtime,
 	      &gpio_config_0, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 	      &api_funcs);
 #else
-DEVICE_AND_API_INIT(gpio_dw_0, DT_INST_0_SNPS_DESIGNWARE_GPIO_LABEL,
+DEVICE_AND_API_INIT(gpio_dw_0, DT_INST_LABEL(0),
 		    gpio_dw_initialize, &gpio_0_runtime, &gpio_config_0,
 		    POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif
 
-#if defined(DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS)
-#define INST_0_IRQ_FLAGS DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS
+#if DT_INST_IRQ_HAS_CELL(0, flags)
+#define INST_0_IRQ_FLAGS DT_INST_IRQ(0, flags)
 #else
 #define INST_0_IRQ_FLAGS 0
 #endif
 static void gpio_config_0_irq(struct device *port)
 {
-#if (DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_0 > 0)
+#if (DT_INST_IRQN(0) > 0)
 	const struct gpio_dw_config *config = port->config->config_info;
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_DIRECT
-	IRQ_CONNECT(DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_0,
-		    DT_INST_0_SNPS_DESIGNWARE_GPIO_IRQ_0_PRIORITY, gpio_dw_isr,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority), gpio_dw_isr,
 		    DEVICE_GET(gpio_dw_0),
 		    INST_0_IRQ_FLAGS);
 	irq_enable(config->irq_num);
@@ -653,16 +655,16 @@ static void gpio_config_1_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_1 = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_SNPS_DESIGNWARE_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(1, ngpios)),
 	},
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
-	.irq_num = DT_INST_1_SNPS_DESIGNWARE_GPIO_IRQ_0,
+	.irq_num = DT_INST_IRQN(1),
 #endif
-	.bits = DT_INST_1_SNPS_DESIGNWARE_GPIO_BITS,
+	.bits = DT_INST_PROP(1, bits),
 	.config_func = gpio_config_1_irq,
 
 #ifdef CONFIG_GPIO_DW_1_IRQ_SHARED
-	.shared_irq_dev_name = DT_INST_1_SNPS_DESIGNWARE_GPIO_IRQ_SHARED_NAME,
+	.shared_irq_dev_name = DT_INST_IRQ_BY_NAME(1, shared_name, irq),
 #endif
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_1_CLOCK_GATE_SUBSYS),
@@ -670,35 +672,35 @@ static const struct gpio_dw_config gpio_dw_config_1 = {
 };
 
 static struct gpio_dw_runtime gpio_1_runtime = {
-	.base_addr = DT_INST_1_SNPS_DESIGNWARE_GPIO_BASE_ADDRESS,
+	.base_addr = DT_INST_REG_ADDR(1),
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_DEFINE(gpio_dw_1, DT_INST_1_SNPS_DESIGNWARE_GPIO_LABEL,
+DEVICE_DEFINE(gpio_dw_1, DT_INST_LABEL(1),
 	      gpio_dw_initialize, gpio_dw_device_ctrl, &gpio_1_runtime,
 	      &gpio_dw_config_1, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 	      &api_funcs);
 #else
-DEVICE_AND_API_INIT(gpio_dw_1, DT_INST_1_SNPS_DESIGNWARE_GPIO_LABEL,
+DEVICE_AND_API_INIT(gpio_dw_1, DT_INST_LABEL(1),
 		    gpio_dw_initialize, &gpio_1_runtime, &gpio_dw_config_1,
 		    POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif
 
 
-#if defined(DT_INST_1_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS)
-#define INST_1_IRQ_FLAGS DT_INST_1_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS
+#if DT_INST_IRQ_HAS_CELL(1, flags)
+#define INST_1_IRQ_FLAGS DT_INST_IRQ(1, flags)
 #else
 #define INST_1_IRQ_FLAGS 0
 #endif
 static void gpio_config_1_irq(struct device *port)
 {
-#if (DT_INST_1_SNPS_DESIGNWARE_GPIO_IRQ_0 > 0)
+#if (DT_INST_IRQN(1) > 0)
 	const struct gpio_dw_config *config = port->config->config_info;
 
 #ifdef CONFIG_GPIO_DW_1_IRQ_DIRECT
-	IRQ_CONNECT(DT_INST_1_SNPS_DESIGNWARE_GPIO_IRQ_0,
-		    DT_INST_1_SNPS_DESIGNWARE_GPIO_IRQ_0_PRIORITY, gpio_dw_isr,
+	IRQ_CONNECT(DT_INST_IRQN(1),
+		    DT_INST_IRQ(1, priority), gpio_dw_isr,
 		    DEVICE_GET(gpio_dw_1),
 		    INST_1_IRQ_FLAGS);
 	irq_enable(config->irq_num);
@@ -722,16 +724,16 @@ static void gpio_config_2_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_2 = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_SNPS_DESIGNWARE_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(2, ngpios)),
 	},
 #ifdef CONFIG_GPIO_DW_2_IRQ_DIRECT
-	.irq_num = DT_INST_2_SNPS_DESIGNWARE_GPIO_IRQ_0,
+	.irq_num = DT_INST_IRQN(2),
 #endif
-	.bits = DT_INST_2_SNPS_DESIGNWARE_GPIO_BITS,
+	.bits = DT_INST_PROP(2, bits),
 	.config_func = gpio_config_2_irq,
 
 #ifdef CONFIG_GPIO_DW_2_IRQ_SHARED
-	.shared_irq_dev_name = DT_INST_2_SNPS_DESIGNWARE_GPIO_IRQ_SHARED_NAME,
+	.shared_irq_dev_name = DT_INST_IRQ_BY_NAME(2, shared_name, irq),
 #endif
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_2_CLOCK_GATE_SUBSYS),
@@ -739,34 +741,34 @@ static const struct gpio_dw_config gpio_dw_config_2 = {
 };
 
 static struct gpio_dw_runtime gpio_2_runtime = {
-	.base_addr = DT_INST_2_SNPS_DESIGNWARE_GPIO_BASE_ADDRESS,
+	.base_addr = DT_INST_REG_ADDR(2),
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_DEFINE(gpio_dw_2, DT_INST_2_SNPS_DESIGNWARE_GPIO_LABEL,
+DEVICE_DEFINE(gpio_dw_2, DT_INST_LABEL(2),
 	      gpio_dw_initialize, gpio_dw_device_ctrl, &gpio_2_runtime,
 	      &gpio_dw_config_2, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 	      &api_funcs);
 #else
-DEVICE_AND_API_INIT(gpio_dw_2, DT_INST_2_SNPS_DESIGNWARE_GPIO_LABEL,
+DEVICE_AND_API_INIT(gpio_dw_2, DT_INST_LABEL(2),
 		    gpio_dw_initialize, &gpio_2_runtime, &gpio_dw_config_2,
 		    POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif
 
-#if defined(DT_INST_2_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS)
-#define INST_2_IRQ_FLAGS DT_INST_2_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS
+#if DT_INST_IRQ_HAS_CELL(2, flags)
+#define INST_2_IRQ_FLAGS DT_INST_IRQ(2, flags)
 #else
 #define INST_2_IRQ_FLAGS 0
 #endif
 static void gpio_config_2_irq(struct device *port)
 {
-#if (DT_INST_2_SNPS_DESIGNWARE_GPIO_IRQ_0 > 0)
+#if (DT_INST_IRQN(2) > 0)
 	const struct gpio_dw_config *config = port->config->config_info;
 
 #ifdef CONFIG_GPIO_DW_2_IRQ_DIRECT
-	IRQ_CONNECT(DT_INST_2_SNPS_DESIGNWARE_GPIO_IRQ_0,
-		    DT_INST_2_SNPS_DESIGNWARE_GPIO_IRQ_0_PRIORITY, gpio_dw_isr,
+	IRQ_CONNECT(DT_INST_IRQN(2),
+		    DT_INST_IRQ(2, priority), gpio_dw_isr,
 		    DEVICE_GET(gpio_dw_2),
 		    INST_2_IRQ_FLAGS);
 	irq_enable(config->irq_num);
@@ -790,16 +792,16 @@ static void gpio_config_3_irq(struct device *port);
 
 static const struct gpio_dw_config gpio_dw_config_3 = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_SNPS_DESIGNWARE_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(3, ngpios)),
 	},
 #ifdef CONFIG_GPIO_DW_3_IRQ_DIRECT
-	.irq_num = DT_INST_3_SNPS_DESIGNWARE_GPIO_IRQ_0,
+	.irq_num = DT_INST_IRQN(3),
 #endif
-	.bits = DT_INST_3_SNPS_DESIGNWARE_GPIO_BITS,
+	.bits = DT_INST_PROP(3, bits),
 	.config_func = gpio_config_3_irq,
 
 #ifdef CONFIG_GPIO_DW_3_IRQ_SHARED
-	.shared_irq_dev_name = DT_INST_3_SNPS_DESIGNWARE_GPIO_IRQ_SHARED_NAME,
+	.shared_irq_dev_name = DT_INST_IRQ_BY_NAME(3, shared_name, irq),
 #endif
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_3_CLOCK_GATE_SUBSYS),
@@ -807,34 +809,34 @@ static const struct gpio_dw_config gpio_dw_config_3 = {
 };
 
 static struct gpio_dw_runtime gpio_3_runtime = {
-	.base_addr = DT_INST_3_SNPS_DESIGNWARE_GPIO_BASE_ADDRESS,
+	.base_addr = DT_INST_REG_ADDR(3),
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_DEFINE(gpio_dw_3, DT_INST_3_SNPS_DESIGNWARE_GPIO_LABEL,
+DEVICE_DEFINE(gpio_dw_3, DT_INST_LABEL(3),
 	      gpio_dw_initialize, gpio_dw_device_ctrl, &gpio_3_runtime,
 	      &gpio_dw_config_3, POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 	      &api_funcs);
 #else
-DEVICE_AND_API_INIT(gpio_dw_3, DT_INST_3_SNPS_DESIGNWARE_GPIO_LABEL,
+DEVICE_AND_API_INIT(gpio_dw_3, DT_INST_LABEL(3),
 		    gpio_dw_initialize, &gpio_3_runtime, &gpio_dw_config_3,
 		    POST_KERNEL, CONFIG_GPIO_DW_INIT_PRIORITY,
 		    &api_funcs);
 #endif
 
-#if defined(DT_INST_3_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS)
-#define INST_3_IRQ_FLAGS DT_INST_3_SNPS_DESIGNWARE_GPIO_IRQ_0_FLAGS
+#if DT_INST_IRQ_HAS_CELL(3, flags)
+#define INST_3_IRQ_FLAGS DT_INST_IRQ(3, flags)
 #else
 #define INST_3_IRQ_FLAGS 0
 #endif
 static void gpio_config_3_irq(struct device *port)
 {
-#if (DT_INST_3_SNPS_DESIGNWARE_GPIO_IRQ_0 > 0)
+#if (DT_INST_IRQN(3) > 0)
 	const struct gpio_dw_config *config = port->config->config_info;
 
 #ifdef CONFIG_GPIO_DW_3_IRQ_DIRECT
-	IRQ_CONNECT(DT_INST_3_SNPS_DESIGNWARE_GPIO_IRQ_0,
-		    DT_INST_3_SNPS_DESIGNWARE_GPIO_IRQ_0_PRIORITY, gpio_dw_isr,
+	IRQ_CONNECT(DT_INST_IRQN(3),
+		    DT_INST_IRQ(3, priority), gpio_dw_isr,
 		    DEVICE_GET(gpio_dw_3),
 		    INST_3_IRQ_FLAGS);
 	irq_enable(config->irq_num);

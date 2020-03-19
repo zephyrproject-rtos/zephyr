@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nordic_nrf_clock
+
 #include <soc.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
@@ -83,7 +85,7 @@ int z_clock_driver_init(struct device *device)
 
 	ARG_UNUSED(device);
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+	clock = device_get_binding(DT_INST_LABEL(0));
 	if (!clock) {
 		return -1;
 	}

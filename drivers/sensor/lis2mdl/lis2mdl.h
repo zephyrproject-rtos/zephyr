@@ -39,10 +39,10 @@ struct lis2mdl_config {
 	u16_t i2c_slv_addr;
 #elif DT_ST_LIS2MDL_BUS_SPI
 	struct spi_config spi_conf;
-#if defined(DT_INST_0_ST_LIS2MDL_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS(0)
 	const char *gpio_cs_port;
 	u8_t cs_gpio;
-#endif /* DT_INST_0_ST_LIS2MDL_CS_GPIOS_CONTROLLER */
+#endif /* DT_INST_SPI_DEV_HAS_CS(0) */
 #endif /* DT_ST_LIS2MDL_BUS_SPI */
 };
 
@@ -76,9 +76,9 @@ struct lis2mdl_data {
 	struct device *dev;
 #endif  /* CONFIG_LIS2MDL_TRIGGER_GLOBAL_THREAD */
 #endif  /* CONFIG_LIS2MDL_TRIGGER */
-#if defined(DT_INST_0_ST_LIS2MDL_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS(0)
 	struct spi_cs_control cs_ctrl;
-#endif /* DT_INST_0_ST_LIS2MDL_CS_GPIOS_CONTROLLER */
+#endif /* DT_INST_SPI_DEV_HAS_CS(0) */
 };
 
 int lis2mdl_spi_init(struct device *dev);

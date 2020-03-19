@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/lsm6dso.pdf
  */
 
+#define DT_DRV_COMPAT st_lsm6dso
+
 #include <string.h>
 #include "lsm6dso.h"
 #include <logging/log.h>
@@ -104,7 +106,7 @@ int lsm6dso_spi_init(struct device *dev)
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = dev;
 
-#if defined(DT_INST_0_ST_LSM6DSO_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS(0)
 	const struct lsm6dso_config *cfg = dev->config->config_info;
 
 	/* handle SPI CS thru GPIO if it is the case */

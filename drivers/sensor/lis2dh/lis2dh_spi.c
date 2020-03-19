@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/lis2dh.pdf
  */
 
+#define DT_DRV_COMPAT st_lis2dh
+
 #include <string.h>
 #include "lis2dh.h"
 #include <logging/log.h>
@@ -151,7 +153,7 @@ int lis2dh_spi_init(struct device *dev)
 
 	data->hw_tf = &lis2dh_spi_transfer_fn;
 
-#if defined(DT_INST_0_ST_LIS2DH_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS(0)
 	const struct lis2dh_config *cfg = dev->config->config_info;
 
 	/* handle SPI CS thru GPIO if it is the case */

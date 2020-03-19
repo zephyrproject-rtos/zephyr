@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_xec_rtos_timer
+
 #include <soc.h>
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
@@ -48,7 +50,7 @@ BUILD_ASSERT_MSG(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 #define TIMER_REGS	\
-	((RTMR_Type *) DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_BASE_ADDRESS)
+	((RTMR_Type *) DT_INST_REG_ADDR(0))
 
 /* Mask off bits[31:28] of 32-bit count */
 #define TIMER_MAX	0x0FFFFFFFUL
@@ -159,8 +161,8 @@ void z_clock_set_timeout(s32_t n, bool idle)
 
 	/* turn off to clear any pending interrupt status */
 	TIMER_REGS->CTRL = 0U;
-	MCHP_GIRQ_SRC(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ) =
-		BIT(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ_BIT);
+	MCHP_GIRQ_SRC(DT_INST_PROP(0, girq)) =
+		BIT(DT_INST_PROP(0, girq_bit));
 	NVIC_ClearPendingIRQ(RTMR_IRQn);
 
 	temp = total_cycles;
@@ -220,8 +222,8 @@ static void xec_rtos_timer_isr(void *arg)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	MCHP_GIRQ_SRC(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ) =
-		BIT(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ_BIT);
+	MCHP_GIRQ_SRC(DT_INST_PROP(0, girq)) =
+		BIT(DT_INST_PROP(0, girq_bit));
 
 	/* Restart the timer as early as possible to minimize drift... */
 	timer_restart(MAX_TICKS * CYCLES_PER_TICK);
@@ -253,8 +255,8 @@ static void xec_rtos_timer_isr(void *arg)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	MCHP_GIRQ_SRC(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ) =
-		BIT(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ_BIT);
+	MCHP_GIRQ_SRC(DT_INST_PROP(0, girq)) =
+		BIT(DT_INST_PROP(0, girq_bit));
 
 	/* Restart the timer as early as possible to minimize drift... */
 	timer_restart(cached_icr);
@@ -323,16 +325,16 @@ int z_clock_driver_init(struct device *device)
 #endif
 
 	TIMER_REGS->CTRL = 0U;
-	MCHP_GIRQ_SRC(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ) =
-		BIT(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ_BIT);
+	MCHP_GIRQ_SRC(DT_INST_PROP(0, girq)) =
+		BIT(DT_INST_PROP(0, girq_bit));
 	NVIC_ClearPendingIRQ(RTMR_IRQn);
 
 	IRQ_CONNECT(RTMR_IRQn,
-		    DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_IRQ_0_PRIORITY,
+		    DT_INST_IRQ(0, priority),
 		    xec_rtos_timer_isr, 0, 0);
 
-	MCHP_GIRQ_ENSET(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ) =
-		BIT(DT_INST_0_MICROCHIP_XEC_RTOS_TIMER_GIRQ_BIT);
+	MCHP_GIRQ_ENSET(DT_INST_PROP(0, girq)) =
+		BIT(DT_INST_PROP(0, girq_bit));
 	irq_enable(RTMR_IRQn);
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT

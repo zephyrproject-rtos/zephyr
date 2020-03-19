@@ -48,7 +48,7 @@
  * is not defined in platform, generate an error
  */
 #if defined(CONFIG_HPET_TIMER)
-#define TICK_IRQ DT_INST_0_INTEL_HPET_IRQ_0
+#define TICK_IRQ DT_IRQN(DT_INST(0, intel_hpet))
 #elif defined(CONFIG_ARM_ARCH_TIMER)
 #define TICK_IRQ ARM_ARCH_TIMER_IRQ
 #elif defined(CONFIG_APIC_TIMER)

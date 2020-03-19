@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT bosch_bma280
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <sys/util.h>
@@ -21,7 +23,7 @@ static inline void setup_int1(struct device *dev,
 	struct bma280_data *data = dev->driver_data;
 
 	gpio_pin_interrupt_configure(data->gpio,
-				     DT_INST_0_BOSCH_BMA280_INT1_GPIOS_PIN,
+				     DT_INST_GPIO_PIN(0, int1_gpios),
 				     (enable
 				      ? GPIO_INT_EDGE_TO_ACTIVE
 				      : GPIO_INT_DISABLE));
@@ -222,21 +224,21 @@ int bma280_init_interrupt(struct device *dev)
 
 	/* setup data ready gpio interrupt */
 	drv_data->gpio =
-		device_get_binding(DT_INST_0_BOSCH_BMA280_INT1_GPIOS_CONTROLLER);
+		device_get_binding(DT_INST_GPIO_LABEL(0, int1_gpios));
 	if (drv_data->gpio == NULL) {
 		LOG_DBG("Cannot get pointer to %s device",
-		    DT_INST_0_BOSCH_BMA280_INT1_GPIOS_CONTROLLER);
+		    DT_INST_GPIO_LABEL(0, int1_gpios));
 		return -EINVAL;
 	}
 
 	gpio_pin_configure(drv_data->gpio,
-			   DT_INST_0_BOSCH_BMA280_INT1_GPIOS_PIN,
-			   DT_INST_0_BOSCH_BMA280_INT1_GPIOS_FLAGS
+			   DT_INST_GPIO_PIN(0, int1_gpios),
+			   DT_INST_GPIO_FLAGS(0, int1_gpios)
 			   | GPIO_INPUT);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   bma280_gpio_callback,
-			   BIT(DT_INST_0_BOSCH_BMA280_INT1_GPIOS_PIN));
+			   BIT(DT_INST_GPIO_PIN(0, int1_gpios)));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Could not set gpio callback");

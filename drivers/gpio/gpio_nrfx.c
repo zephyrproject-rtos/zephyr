@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nordic_nrf_gpio
+
 #include <drivers/gpio.h>
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_gpiote.h>
@@ -513,7 +515,7 @@ static int gpio_nrfx_init(struct device *port)
 #define GPIO_NRF_DEVICE(id)						\
 	static const struct gpio_nrfx_cfg gpio_nrfx_p##id##_cfg = {	\
 		.common = {						\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_##id##_NORDIC_NRF_GPIO_NGPIOS), \
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(id, ngpios)), \
 		},							\
 		.port = NRF_P##id,					\
 		.port_num = id						\

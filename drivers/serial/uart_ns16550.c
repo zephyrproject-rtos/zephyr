@@ -1,5 +1,7 @@
 /* ns16550.c - NS16550D serial driver */
 
+#define DT_DRV_COMPAT ns16550
+
 /*
  * Copyright (c) 2010, 2012-2015 Wind River Systems, Inc.
  * Copyright (c) 2020 Intel Corp.
@@ -40,24 +42,24 @@
  * Ditto for DLF and PCI(e).
  */
 
-#if defined(DT_INST_0_NS16550_PCP) || \
-	defined(DT_INST_1_NS16550_PCP) || \
-	defined(DT_INST_2_NS16550_PCP) || \
-	defined(DT_INST_3_NS16550_PCP)
+#if DT_INST_NODE_HAS_PROP(0, pcp) || \
+	DT_INST_NODE_HAS_PROP(1, pcp) || \
+	DT_INST_NODE_HAS_PROP(2, pcp) || \
+	DT_INST_NODE_HAS_PROP(3, pcp)
 #define UART_NS16550_PCP_ENABLED
 #endif
 
-#if defined(DT_INST_0_NS16550_DLF) || \
-	defined(DT_INST_1_NS16550_DLF) || \
-	defined(DT_INST_2_NS16550_DLF) || \
-	defined(DT_INST_3_NS16550_DLF)
+#if DT_INST_NODE_HAS_PROP(0, dlf) || \
+	DT_INST_NODE_HAS_PROP(1, dlf) || \
+	DT_INST_NODE_HAS_PROP(2, dlf) || \
+	DT_INST_NODE_HAS_PROP(3, dlf)
 #define UART_NS16550_DLF_ENABLED
 #endif
 
-#if DT_INST_0_NS16550_PCIE || \
-	DT_INST_1_NS16550_PCIE || \
-	DT_INST_2_NS16550_PCIE || \
-	DT_INST_3_NS16550_PCIE
+#if DT_INST_PROP(0, pcie) || \
+	DT_INST_PROP(1, pcie) || \
+	DT_INST_PROP(2, pcie) || \
+	DT_INST_PROP(3, pcie)
 BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define UART_NS16550_PCIE_ENABLED
 #include <drivers/pcie/pcie.h>
@@ -222,8 +224,8 @@ BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 
 #define IIRC(dev) (DEV_DATA(dev)->iir_cache)
 
-#ifdef DT_INST_0_NS16550_REG_SHIFT
-#define UART_REG_ADDR_INTERVAL (1<<DT_INST_0_NS16550_REG_SHIFT)
+#if DT_INST_NODE_HAS_PROP(0, reg_shift)
+#define UART_REG_ADDR_INTERVAL (1<<DT_INST_PROP(0, reg_shift))
 #endif
 
 #ifdef UART_NS16550_ACCESS_IOPORT

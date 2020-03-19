@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT nordic_nrf_clock
 #include <drivers/counter.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/nrf_clock_control.h>
@@ -532,7 +534,7 @@ static int init_rtc(struct device *dev, u32_t prescaler)
 	NRF_RTC_Type *rtc = nrfx_config->rtc;
 	int err;
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+	clock = device_get_binding(DT_INST_LABEL(0));
 	if (!clock) {
 		return -ENODEV;
 	}

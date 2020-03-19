@@ -25,9 +25,9 @@ void main(void)
 	s16_t rssi;
 	s8_t snr;
 
-	lora_dev = device_get_binding(DT_INST_0_SEMTECH_SX1276_LABEL);
+	lora_dev = device_get_binding(DT_LABEL(DT_INST(0, semtech_sx1276)));
 	if (!lora_dev) {
-		LOG_ERR("%s Device not found", DT_INST_0_SEMTECH_SX1276_LABEL);
+		LOG_ERR("%s Device not found", DT_LABEL(DT_INST(0, semtech_sx1276)));
 		return;
 	}
 

@@ -6,7 +6,7 @@
 
 #include <init.h>
 
-#if defined CONFIG_PWM && defined DT_INST_0_ATMEL_SAM_PWM
+#if defined CONFIG_PWM && DT_HAS_NODE(DT_INST(0, atmel_sam_pwm))
 /* PWM on EXT1 connector, pin 7, channel 0, inverted */
 static const struct soc_gpio_pin pwm_ext1_pin7 = {
 	PIO_PA0A_PWM0_PWMH0, PIOA, ID_PIOA, SOC_GPIO_FUNC_A

@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_stellaris_ethernet
+
 #define LOG_MODULE_NAME eth_stellaris
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 #include <logging/log.h>
@@ -20,7 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static void eth_stellaris_assign_mac(struct device *dev)
 {
-	u8_t mac_addr[6] = DT_INST_0_TI_STELLARIS_ETHERNET_LOCAL_MAC_ADDRESS;
+	u8_t mac_addr[6] = DT_INST_PROP(0, local_mac_address);
 	u32_t value = 0x0;
 
 	value |= mac_addr[0];
@@ -323,19 +325,19 @@ static struct device DEVICE_NAME_GET(eth_stellaris);
 static void eth_stellaris_irq_config(struct device *dev)
 {
 	/* Enable Interrupt. */
-	IRQ_CONNECT(DT_INST_0_TI_STELLARIS_ETHERNET_IRQ_0,
-		    DT_INST_0_TI_STELLARIS_ETHERNET_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    eth_stellaris_isr, DEVICE_GET(eth_stellaris), 0);
-	irq_enable(DT_INST_0_TI_STELLARIS_ETHERNET_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 }
 
 struct eth_stellaris_config eth_cfg = {
-	.mac_base = DT_INST_0_TI_STELLARIS_ETHERNET_BASE_ADDRESS,
+	.mac_base = DT_INST_REG_ADDR(0),
 	.config_func = eth_stellaris_irq_config,
 };
 
 struct eth_stellaris_runtime eth_data = {
-	.mac_addr = DT_INST_0_TI_STELLARIS_ETHERNET_LOCAL_MAC_ADDRESS,
+	.mac_addr = DT_INST_PROP(0, local_mac_address),
 	.tx_err = false,
 	.tx_word = 0,
 	.tx_pos = 0,
@@ -349,7 +351,7 @@ static const struct ethernet_api eth_stellaris_apis = {
 #endif
 };
 
-NET_DEVICE_INIT(eth_stellaris, DT_INST_0_TI_STELLARIS_ETHERNET_LABEL,
+NET_DEVICE_INIT(eth_stellaris, DT_INST_LABEL(0),
 		eth_stellaris_dev_init, &eth_data, &eth_cfg,
 		CONFIG_ETH_INIT_PRIORITY,
 		&eth_stellaris_apis, ETHERNET_L2,

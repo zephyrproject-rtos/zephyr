@@ -40,12 +40,12 @@ void main(void)
 {
 	struct device *dev;
 
-	dev = device_get_binding(DT_INST_0_HONEYWELL_HMC5883L_LABEL);
+	dev = device_get_binding(DT_LABEL(DT_INST(0, honeywell_hmc5883l)));
 
 	if (dev == NULL) {
 		printk("Could not get %s device at I2C addr 0x%02X\n",
-		       DT_INST_0_HONEYWELL_HMC5883L_LABEL,
-		       DT_INST_0_HONEYWELL_HMC5883L_BASE_ADDRESS);
+		       DT_LABEL(DT_INST(0, honeywell_hmc5883l)),
+		       DT_REG_ADDR(DT_INST(0, honeywell_hmc5883l)));
 		return;
 	}
 

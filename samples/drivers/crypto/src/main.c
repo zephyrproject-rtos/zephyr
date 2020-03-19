@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(main);
 #elif CONFIG_CRYPTO_MBEDTLS_SHIM
 #define CRYPTO_DRV_NAME CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME
 #elif CONFIG_CRYPTO_STM32
-#define CRYPTO_DRV_NAME DT_INST_0_ST_STM32_CRYP_LABEL
+#define CRYPTO_DRV_NAME DT_LABEL(DT_INST(0, st_stm32_cryp))
 #else
 #error "You need to enable one crypto device"
 #endif

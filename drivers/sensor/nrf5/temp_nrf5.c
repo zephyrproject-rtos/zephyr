@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nordic_nrf_temp
+
 #include <device.h>
 #include <drivers/sensor.h>
 #include <drivers/clock_control.h>
@@ -111,17 +113,17 @@ static int temp_nrf5_init(struct device *dev)
 
 	/* A null clk_dev indicates sensor has not been initialized */
 	data->clk_dev =
-		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 	__ASSERT_NO_MSG(data->clk_dev);
 
 	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
 	IRQ_CONNECT(
-		DT_INST_0_NORDIC_NRF_TEMP_IRQ_0,
-		DT_INST_0_NORDIC_NRF_TEMP_IRQ_0_PRIORITY,
+		DT_INST_IRQN(0),
+		DT_INST_IRQ(0, priority),
 		temp_nrf5_isr,
 		DEVICE_GET(temp_nrf5),
 		0);
-	irq_enable(DT_INST_0_NORDIC_NRF_TEMP_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	nrf_temp_int_enable(NRF_TEMP, NRF_TEMP_INT_DATARDY_MASK);
 
@@ -131,7 +133,7 @@ static int temp_nrf5_init(struct device *dev)
 static struct temp_nrf5_data temp_nrf5_driver;
 
 DEVICE_AND_API_INIT(temp_nrf5,
-		    DT_INST_0_NORDIC_NRF_TEMP_LABEL,
+		    DT_INST_LABEL(0),
 		    temp_nrf5_init,
 		    &temp_nrf5_driver,
 		    NULL,

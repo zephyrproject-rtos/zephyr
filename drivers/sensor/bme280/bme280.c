@@ -1,5 +1,7 @@
 /* bmp280.c - Driver for Bosch BMP280 temperature and pressure sensor */
 
+#define DT_DRV_COMPAT bosch_bme280
+
 /*
  * Copyright (c) 2016, 2017 Intel Corporation
  * Copyright (c) 2017 IpTronix S.r.l.
@@ -335,31 +337,31 @@ static int bme280_chip_init(struct device *dev)
 #ifdef DT_BOSCH_BME280_BUS_SPI
 static inline int bme280_spi_init(struct bme280_data *data)
 {
-	data->spi = device_get_binding(DT_INST_0_BOSCH_BME280_BUS_NAME);
+	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!data->spi) {
 		LOG_DBG("spi device not found: %s",
-			    DT_INST_0_BOSCH_BME280_BUS_NAME);
+			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
 	data->spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB |
 		SPI_MODE_CPOL | SPI_MODE_CPHA;
-	data->spi_cfg.frequency = DT_INST_0_BOSCH_BME280_SPI_MAX_FREQUENCY;
-	data->spi_cfg.slave = DT_INST_0_BOSCH_BME280_BASE_ADDRESS;
+	data->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
+	data->spi_cfg.slave = DT_INST_REG_ADDR(0);
 
-#if defined(DT_INST_0_BOSCH_BME280_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS(0)
 	data->spi_cs_control.gpio_dev =
-		device_get_binding(DT_INST_0_BOSCH_BME280_CS_GPIOS_CONTROLLER);
+		device_get_binding(DT_INST_SPI_DEV_CS_GPIO_LABEL(0));
 	if (!data->spi_cs_control.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	data->spi_cs_control.gpio_pin = DT_INST_0_BOSCH_BME280_CS_GPIOS_PIN;
+	data->spi_cs_control.gpio_pin = DT_INST_SPI_DEV_CS_GPIO_PIN(0);
 	data->spi_cs_control.delay = 0U;
 
 	data->spi_cfg.cs = &data->spi_cs_control;
-#endif /* DT_INST_0_BOSCH_BME280_CS_GPIOS_CONTROLLER */
+#endif /* DT_INST_SPI_DEV_HAS_CS(0) */
 
 	return 0;
 }
@@ -370,18 +372,18 @@ int bme280_init(struct device *dev)
 	struct bme280_data *data = dev->driver_data;
 
 #ifdef DT_BOSCH_BME280_BUS_I2C
-	data->i2c_master = device_get_binding(DT_INST_0_BOSCH_BME280_BUS_NAME);
+	data->i2c_master = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!data->i2c_master) {
 		LOG_DBG("i2c master not found: %s",
-			    DT_INST_0_BOSCH_BME280_BUS_NAME);
+			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
-	data->i2c_slave_addr = DT_INST_0_BOSCH_BME280_BASE_ADDRESS;
+	data->i2c_slave_addr = DT_INST_REG_ADDR(0);
 #elif defined DT_BOSCH_BME280_BUS_SPI
 	if (bme280_spi_init(data) < 0) {
 		LOG_DBG("spi master not found: %s",
-			    DT_INST_0_BOSCH_BME280_BUS_NAME);
+			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 #endif
@@ -395,6 +397,6 @@ int bme280_init(struct device *dev)
 
 static struct bme280_data bme280_data;
 
-DEVICE_AND_API_INIT(bme280, DT_INST_0_BOSCH_BME280_LABEL, bme280_init, &bme280_data,
+DEVICE_AND_API_INIT(bme280, DT_INST_LABEL(0), bme280_init, &bme280_data,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &bme280_api_funcs);
