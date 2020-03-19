@@ -67,7 +67,53 @@ int bt_hci_raw_set_mode(u8_t mode);
  */
 u8_t bt_hci_raw_get_mode(void);
 
-/** @brief Enable Bluetooth RAW channel
+#define BT_HCI_ERR_EXT_HANDLED  0xff
+
+/** Helper macro to define a command extension
+ *
+ *  @param _op Opcode of the command.
+ *  @param _min_len Minimal length of the command.
+ *  @param _func Handler function to be called.
+ */
+#define BT_HCI_RAW_CMD_EXT(_op, _min_len, _func) \
+	{ \
+		.op = _op, \
+		.min_len = _min_len, \
+		.func = _func, \
+	}
+
+struct bt_hci_raw_cmd_ext {
+	/** Opcode of the command */
+	u16_t  op;
+
+	/** Minimal length of the command */
+	size_t min_len;
+
+	/** Handler function.
+	 *
+	 *  Handler function to be called when a command is intercepted.
+	 *
+	 *  @param buf Buffer containing the command.
+	 *
+	 *  @return HCI Status code or BT_HCI_ERR_EXT_HANDLED if command has
+	 *  been handled already and a response has been sent as oppose to
+	 *  BT_HCI_ERR_SUCCESS which just indicates that the command can be
+	 *  sent to the controller to be processed.
+	 */
+	u8_t   (*func)(struct net_buf *buf);
+};
+
+/** @brief Register Bluetooth RAW command extension table
+ *
+ *  Register Bluetooth RAW channel command extension table, opcodes in this
+ *  table are intercepted to sent to the handler function.
+ *
+ *  @param cmds Pointer to the command extension table.
+ *  @param size Size of the command extension table.
+ */
+void bt_hci_raw_cmd_ext_register(struct bt_hci_raw_cmd_ext *cmds, size_t size);
+
+/** @brief Enable Bluetooth RAW channel:
  *
  *  Enable Bluetooth RAW HCI channel.
  *

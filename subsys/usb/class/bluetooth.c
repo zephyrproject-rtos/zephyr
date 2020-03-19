@@ -271,15 +271,6 @@ static void bluetooth_status_cb(struct usb_cfg_data *cfg,
 	}
 }
 
-#define BT_HCI_ERR_VS_HANDLED  0xff
-
-#define CMD_EXT(_op, _min_len, _func) \
-	{ \
-		.op = _op, \
-		.min_len = _min_len, \
-		.func = _func, \
-	}
-
 static u8_t vs_read_usb_transport_mode(struct net_buf *buf)
 {
 	struct net_buf *rsp;
@@ -296,7 +287,7 @@ static u8_t vs_read_usb_transport_mode(struct net_buf *buf)
 
 	net_buf_put(&tx_queue, rsp);
 
-	return BT_HCI_ERR_VS_HANDLED;
+	return BT_HCI_ERR_EXT_HANDLED;
 }
 
 static u8_t vs_set_usb_transport_mode(struct net_buf *buf)
@@ -325,33 +316,13 @@ static u8_t vs_set_usb_transport_mode(struct net_buf *buf)
 	return BT_HCI_ERR_SUCCESS;
 }
 
-static struct hci_cmd_ext {
-	u16_t  op;
-	size_t min_len;
-	u8_t   (*func)(struct net_buf *buf);
-} cmd_ext[] = {
-	CMD_EXT(BT_OCF(BT_HCI_OP_VS_READ_USB_TRANSPORT_MODE), 0,
-		vs_read_usb_transport_mode),
-	CMD_EXT(BT_OCF(BT_HCI_OP_VS_SET_USB_TRANSPORT_MODE),
-		sizeof(struct bt_hci_cp_vs_set_usb_transport_mode),
-		vs_set_usb_transport_mode),
+static struct bt_hci_raw_cmd_ext cmd_ext[] = {
+	BT_HCI_RAW_CMD_EXT(BT_OCF(BT_HCI_OP_VS_READ_USB_TRANSPORT_MODE), 0,
+			   vs_read_usb_transport_mode),
+	BT_HCI_RAW_CMD_EXT(BT_OCF(BT_HCI_OP_VS_SET_USB_TRANSPORT_MODE),
+			   sizeof(struct bt_hci_cp_vs_set_usb_transport_mode),
+			   vs_set_usb_transport_mode),
 };
-
-static void vs_cmd_complete(u16_t op, u8_t status)
-{
-	struct net_buf *buf;
-	struct bt_hci_evt_cc_status *cc;
-
-	if (status == BT_HCI_ERR_VS_HANDLED) {
-		return;
-	}
-
-	buf = bt_hci_cmd_complete_create(op, sizeof(*cc));
-	cc = net_buf_add(buf, sizeof(*cc));
-	cc->status = status;
-
-	net_buf_put(&tx_queue, buf);
-}
 
 static int bluetooth_class_handler(struct usb_setup_packet *setup,
 				   s32_t *len, u8_t **data)
@@ -375,46 +346,6 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 	bt_buf_set_type(buf, BT_BUF_CMD);
 
 	net_buf_add_mem(buf, *data, *len);
-
-	if (IS_ENABLED(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4)) {
-		struct bt_hci_cmd_hdr *hdr;
-		struct net_buf_simple_state state;
-		int i;
-
-		net_buf_simple_save(&buf->b, &state);
-
-		if (buf->len < sizeof(*hdr)) {
-			LOG_ERR("No HCI Command header");
-			return -EINVAL;
-		}
-
-		hdr = net_buf_pull_mem(buf, sizeof(*hdr));
-		if (buf->len < hdr->param_len) {
-			LOG_ERR("Invalid HCI CMD packet length");
-			return -EINVAL;
-		}
-
-		for (i = 0; i < ARRAY_SIZE(cmd_ext); i++) {
-			struct hci_cmd_ext *cmd = &cmd_ext[i];
-
-			if (cmd->op == sys_le16_to_cpu(hdr->opcode)) {
-				u8_t status;
-
-				if (buf->len < cmd->min_len) {
-					status = BT_HCI_ERR_INVALID_PARAM;
-				} else {
-					status = cmd->func(buf);
-				}
-
-				if (status) {
-					vs_cmd_complete(cmd->op, status);
-					return 0;
-				}
-			}
-		}
-
-		net_buf_simple_restore(&buf->b, &state);
-	}
 
 	net_buf_put(&rx_queue, buf);
 
@@ -453,6 +384,10 @@ static int bluetooth_init(struct device *dev)
 	if (ret) {
 		LOG_ERR("Failed to open Bluetooth raw channel: %d", ret);
 		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4)) {
+		bt_hci_raw_cmd_ext_register(cmd_ext, ARRAY_SIZE(cmd_ext));
 	}
 
 	k_thread_create(&rx_thread_data, rx_thread_stack,
