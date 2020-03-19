@@ -77,8 +77,7 @@ manifest:
       revision: cf7020eb4c7ef93319f2d6d2403a21e12a879bf6
       path: modules/crypto/mbedtls
     - name: mcuboot
-      url: https://github.com/JuulLabs-OSS/mcuboot.git
-      revision: pull/682/head
+      revision: 470e2f3d5bdcb1892d76a534a745186fd8ff5aab
       path: bootloader/mcuboot
     - name: mcumgr
       revision: 301892dad2eb97294f634b632c4ab6a6c56426b5
