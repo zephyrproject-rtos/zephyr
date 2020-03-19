@@ -260,11 +260,18 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 static void process_tx_packet(struct k_work *work)
 {
+	struct net_if *iface;
 	struct net_pkt *pkt;
 
 	pkt = CONTAINER_OF(work, struct net_pkt, work);
 
-	net_if_tx(net_pkt_iface(pkt), pkt);
+	iface = net_pkt_iface(pkt);
+
+	net_if_tx(iface, pkt);
+
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+	iface->tx_pending--;
+#endif
 }
 
 void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
@@ -282,7 +289,16 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
 #endif
 
-	net_tc_submit_to_tx_queue(tc, pkt);
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+	iface->tx_pending++;
+#endif
+
+	if (!net_tc_submit_to_tx_queue(tc, pkt)) {
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+		iface->tx_pending--
+#endif
+			;
+	}
 }
 
 void net_if_stats_reset(struct net_if *iface)

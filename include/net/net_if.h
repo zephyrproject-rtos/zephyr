@@ -469,6 +469,14 @@ struct net_if {
 
 	/** Network interface instance configuration */
 	struct net_if_config config;
+
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+	/** Keep track of packets pending in traffic queues. This is
+	 * needed to avoid putting network device driver to sleep if
+	 * there are packets waiting to be sent.
+	 */
+	int tx_pending;
+#endif
 } __net_if_align;
 
 /**
@@ -2100,6 +2108,26 @@ void net_if_unset_promisc(struct net_if *iface);
  *         False if interface is not in in promiscuous mode.
  */
 bool net_if_is_promisc(struct net_if *iface);
+
+/**
+ * @brief Check if there are any pending TX network data for a given network
+ *        interface.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if there are pending TX network packets for this network
+ *         interface, False otherwise.
+ */
+static inline bool net_if_are_pending_tx_packets(struct net_if *iface)
+{
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+	return !!iface->tx_pending;
+#else
+	ARG_UNUSED(iface);
+
+	return false;
+#endif
+}
 
 /** @cond INTERNAL_HIDDEN */
 struct net_if_api {
