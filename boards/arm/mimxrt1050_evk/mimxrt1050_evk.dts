@@ -15,6 +15,7 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
+		kscan0 = &touch_controller;
 	};
 
 	chosen {
@@ -121,7 +122,7 @@ arduino_serial: &lpuart3 {};
 		int2-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 
-	ft5336@38 {
+	touch_controller: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		label = "FT5336";

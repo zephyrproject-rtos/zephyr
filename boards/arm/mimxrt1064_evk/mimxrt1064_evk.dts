@@ -16,6 +16,7 @@
 		led0 = &green_led;
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
+		kscan0 = &touch_controller;
 	};
 
 	chosen {
@@ -120,7 +121,7 @@ arduino_i2c: &lpi2c1 {};
 		};
 	};
 
-	ft5336@38 {
+	touch_controller: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		label = "FT5336";

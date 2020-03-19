@@ -24,3 +24,4 @@ supported:
   - pwm
   - usb_device
   - video
+  - kscan:touch
