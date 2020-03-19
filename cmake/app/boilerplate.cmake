@@ -303,69 +303,70 @@ foreach(root ${BOARD_ROOT})
 
   if(DEFINED SHIELD)
     foreach(s ${SHIELD_AS_LIST})
-      list(REMOVE_ITEM SHIELD ${s})
       list(FIND SHIELD_LIST ${s} _idx)
-      if (NOT _idx EQUAL -1)
-        list(GET shields_refs_list ${_idx} s_path)
-        get_filename_component(s_dir ${s_path} DIRECTORY)
+      if (_idx EQUAL -1)
+        continue()
+      endif()
 
-        # if shield config flag is on, add shield overlay to the shield overlays
-        # list and dts_fixup file to the shield fixup file
+      list(REMOVE_ITEM SHIELD ${s})
+
+      list(GET shields_refs_list ${_idx} s_path)
+      get_filename_component(s_dir ${s_path} DIRECTORY)
+
+      # if shield config flag is on, add shield overlay to the shield overlays
+      # list and dts_fixup file to the shield fixup file
+      list(APPEND
+        shield_dts_files
+        ${shield_dir}/${s_path}
+        )
+      list(APPEND
+        shield_dts_fixups
+        ${shield_dir}/${s_dir}/dts_fixup.h
+        )
+
+      # search for shield/boards/board.overlay file
+      if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.overlay)
+        # add shield/board overlay to the shield overlays list
         list(APPEND
           shield_dts_files
-          ${shield_dir}/${s_path}
-        )
+          ${shield_dir}/${s_dir}/boards/${BOARD}.overlay
+          )
+      endif()
+
+      # search for shield/boards/shield/board.overlay file
+      if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay)
+        # add shield/board overlay to the shield overlays list
         list(APPEND
-          shield_dts_fixups
-          ${shield_dir}/${s_dir}/dts_fixup.h
-        )
-
-        # search for shield/boards/board.overlay file
-        if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.overlay)
-          # add shield/board overlay to the shield overlays list
-          list(APPEND
-            shield_dts_files
-            ${shield_dir}/${s_dir}/boards/${BOARD}.overlay
+          shield_dts_files
+          ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay
           )
-        endif()
+      endif()
 
-        # search for shield/boards/shield/board.overlay file
-        if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay)
-          # add shield/board overlay to the shield overlays list
-          list(APPEND
-            shield_dts_files
-            ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay
+      # search for shield/shield.conf file
+      if(EXISTS ${shield_dir}/${s_dir}/${s}.conf)
+        # add shield.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s_dir}/${s}.conf
           )
-        endif()
+      endif()
 
-        # search for shield/shield.conf file
-        if(EXISTS ${shield_dir}/${s_dir}/${s}.conf)
-          # add shield.conf to the shield config list
-          list(APPEND
-            shield_conf_files
-            ${shield_dir}/${s_dir}/${s}.conf
+      # search for shield/boards/board.conf file
+      if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.conf)
+        # add HW specific board.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s_dir}/boards/${BOARD}.conf
           )
-        endif()
+      endif()
 
-        # search for shield/boards/board.conf file
-        if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.conf)
-          # add HW specific board.conf to the shield config list
-          list(APPEND
-            shield_conf_files
-            ${shield_dir}/${s_dir}/boards/${BOARD}.conf
+      # search for shield/boards/shield/board.conf file
+      if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf)
+        # add HW specific board.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf
           )
-        endif()
-
-        # search for shield/boards/shield/board.conf file
-        if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf)
-          # add HW specific board.conf to the shield config list
-          list(APPEND
-            shield_conf_files
-            ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf
-          )
-        endif()
-      else()
-        list(APPEND NOT_FOUND_SHIELD_LIST ${s})
       endif()
     endforeach()
   endif()
@@ -378,8 +379,8 @@ if(NOT BOARD_DIR)
   message(FATAL_ERROR "Invalid usage")
 endif()
 
-if(DEFINED SHIELD AND DEFINED NOT_FOUND_SHIELD_LIST)
-  foreach (s ${NOT_FOUND_SHIELD_LIST})
+if(DEFINED SHIELD AND NOT (SHIELD STREQUAL ""))
+  foreach (s ${SHIELD})
     message("No shield named '${s}' found")
   endforeach()
   print_usage()
