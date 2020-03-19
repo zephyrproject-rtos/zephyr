@@ -52,6 +52,18 @@ typedef u32_t k_ticks_t;
 
 #ifndef CONFIG_LEGACY_TIMEOUT_API
 
+/**
+ * @brief Kernel timeout type
+ *
+ * Timeout arguments presented to kernel APIs are stored in this
+ * opaque type, which is capable of representing times in various
+ * formats and units.  It should be constructed from application data
+ * using one of the macros defined for this purpose (e.g. `K_MSEC()`,
+ * `K_TIMEOUT_ABS_TICKS()`, etc...), or be one of the two constants
+ * K_NO_WAIT or K_FOREVER.  Applications should not inspect the
+ * internal data once constructed.  Timeout values may be compared for
+ * equality with the `K_TIMEOUT_EQ()` macro.
+ */
 typedef struct {
 	k_ticks_t ticks;
 } k_timeout_t;
