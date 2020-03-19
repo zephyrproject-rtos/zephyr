@@ -26,6 +26,7 @@
 struct ull_cp_conn conn;
 
 sys_slist_t ut_rx_q;
+sys_slist_t lt_tx_q;
 
 #define PDU_DC_LL_HEADER_SIZE	(offsetof(struct pdu_data, lldata))
 #define LL_LENGTH_OCTETS_RX_MAX 27
@@ -33,6 +34,8 @@ sys_slist_t ut_rx_q;
 #define NODE_RX_STRUCT_OVERHEAD	(NODE_RX_HEADER_SIZE)
 #define PDU_DATA_SIZE		(PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 #define PDU_RX_NODE_SIZE WB_UP(NODE_RX_STRUCT_OVERHEAD + PDU_DATA_SIZE)
+
+K_MEM_SLAB_DEFINE(lt_tx_pdu_slab, PDU_RX_NODE_SIZE, 10, 4);
 
 void ll_rx_enqueue(struct node_rx_pdu *rx)
 {
@@ -455,13 +458,15 @@ helper_func_t * const helper_pdu_verify[] = {
 void lt_tx(helper_opcode_t opcode, struct ull_cp_conn *conn, void *param)
 {
 	struct pdu_data *pdu;
-	u8_t node_rx_pdu_buf[PDU_RX_NODE_SIZE];
 	struct node_rx_pdu *rx;
 
-	rx = (struct node_rx_pdu *) &node_rx_pdu_buf[0];
+	int ret = k_mem_slab_alloc(&lt_tx_pdu_slab, (void **) &rx, K_NO_WAIT);
+	zassert_equal(0, ret, "k_mem_slab_alloc failed\n");
+
 	pdu = (struct pdu_data *) rx->pdu;
 	helper_pdu_encode[opcode](pdu, param);
-	ull_cp_rx(conn, rx);
+
+	sys_slist_append(&lt_tx_q, (sys_snode_t *) rx);
 }
 
 void lt_rx(helper_opcode_t opcode, struct ull_cp_conn *conn, struct node_tx **tx_ref, void *param)
@@ -510,6 +515,25 @@ void ut_rx_q_is_empty()
 	zassert_is_null(ntf, NULL);
 }
 
+void prepare(struct ull_cp_conn *conn)
+{
+	/*** ULL Prepare ***/
+
+	/* Handle any LL Control Procedures */
+	ull_cp_run(conn);
+}
+
+void done(struct ull_cp_conn *conn)
+{
+	struct node_rx_pdu *rx;
+
+	while ((rx = (struct node_rx_pdu *) sys_slist_get(&lt_tx_q))) {
+		ull_cp_rx(conn, rx);
+		k_mem_slab_free(&lt_tx_pdu_slab, (void **) &rx);
+	}
+}
+
+
 /* +-----+                     +-------+            +-----+
  * | UT  |                     | LL_A  |            | LT  |
  * +-----+                     +-------+            +-----+
@@ -549,6 +573,7 @@ void test_api_local_version_exchange(void)
 
 	/* Setup */
 	sys_slist_init(&ut_rx_q);
+	sys_slist_init(&lt_tx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -560,8 +585,8 @@ void test_api_local_version_exchange(void)
 	err = ull_cp_version_exchange(&conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
@@ -569,6 +594,9 @@ void test_api_local_version_exchange(void)
 
 	/* Rx */
 	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
+
+	/* Done */
+	done(&conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
@@ -622,6 +650,7 @@ void test_api_remote_version_exchange(void)
 
 	/* Setup */
 	sys_slist_init(&ut_rx_q);
+	sys_slist_init(&lt_tx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -629,15 +658,24 @@ void test_api_remote_version_exchange(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
+	/* Prepare */
+	prepare(&conn);
+
 	/* Rx */
 	lt_tx(LL_VERSION_IND, &conn, &remote_version_ind);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Done */
+	done(&conn);
+
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
 	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
 
 	/* There should not be a host notifications */
 	ut_rx_q_is_empty();
@@ -683,6 +721,7 @@ void test_api_both_version_exchange(void)
 
 	/* Setup */
 	sys_slist_init(&ut_rx_q);
+	sys_slist_init(&lt_tx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -697,12 +736,15 @@ void test_api_both_version_exchange(void)
 	err = ull_cp_version_exchange(&conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_VERSION_IND, &conn, &tx, &local_version_ind);
 	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_VERSION_IND, &ntf, &remote_version_ind);
@@ -753,6 +795,7 @@ void test_api_local_encryption_start(void)
 
 	/* Setup */
 	sys_slist_init(&ut_rx_q);
+	sys_slist_init(&lt_tx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -764,8 +807,8 @@ void test_api_local_encryption_start(void)
 	err = ull_cp_encryption_start(&conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_ENC_REQ, &conn, &tx, NULL);
@@ -780,6 +823,12 @@ void test_api_local_encryption_start(void)
 	/* Rx */
 	lt_tx(LL_START_ENC_REQ, &conn, NULL);
 
+	/* Done */
+	done(&conn);
+
+	/* Prepare */
+	prepare(&conn);
+
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
 	lt_rx_q_is_empty();
@@ -789,6 +838,9 @@ void test_api_local_encryption_start(void)
 
 	/* Rx */
 	lt_tx(LL_START_ENC_RSP, &conn, NULL);
+
+	/* Done */
+	done(&conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
@@ -851,6 +903,7 @@ void test_api_local_encryption_start_limited_memory(void)
 
 	/* Setup */
 	sys_slist_init(&ut_rx_q);
+	sys_slist_init(&lt_tx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -874,17 +927,20 @@ void test_api_local_encryption_start_limited_memory(void)
 	err = ull_cp_encryption_start(&conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should have no LL Control PDU */
 	lt_rx_q_is_empty();
 
+	/* Done */
+	done(&conn);
+
 	/* Release Tx */
 	ull_cp_release_tx(tx);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_ENC_REQ, &conn, &tx, NULL);
@@ -896,14 +952,17 @@ void test_api_local_encryption_start_limited_memory(void)
 	/* Rx */
 	lt_tx(LL_START_ENC_REQ, &conn, NULL);
 
+	/* Done */
+	done(&conn);
+
 	/* Tx Queue should have no LL Control PDU */
 	lt_rx_q_is_empty();
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should have no LL Control PDU */
 	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
@@ -915,14 +974,20 @@ void test_api_local_encryption_start_limited_memory(void)
 	/* Rx */
 	lt_tx(LL_START_ENC_RSP, &conn, NULL);
 
+	/* Done */
+	done(&conn);
+
 	/* There should be no host notifications */
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
 	ull_cp_release_ntf(ntf);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Prepare */
+	prepare(&conn);
+
+	/* Done */
+	done(&conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
@@ -980,6 +1045,7 @@ void test_api_local_encryption_start_no_ltk(void)
 
 	/* Setup */
 	sys_slist_init(&ut_rx_q);
+	sys_slist_init(&lt_tx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -991,8 +1057,8 @@ void test_api_local_encryption_start_no_ltk(void)
 	err = ull_cp_encryption_start(&conn);
 	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_ENC_REQ, &conn, &tx, NULL);
@@ -1006,6 +1072,9 @@ void test_api_local_encryption_start_no_ltk(void)
 
 	/* Rx */
 	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+
+	/* Done */
+	done(&conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_REJECT_IND, &ntf, &reject_ind);
@@ -1066,6 +1135,7 @@ void test_api_remote_encryption_start(void)
 
 	/* Setup */
 	sys_slist_init(&ut_rx_q);
+	sys_slist_init(&lt_tx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -1073,12 +1143,24 @@ void test_api_remote_encryption_start(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
+	/* Prepare */
+	prepare(&conn);
+
 	/* Rx */
 	lt_tx(LL_ENC_REQ, &conn, NULL);
+
+	/* Done */
+	done(&conn);
+
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_ENC_RSP, &conn, &tx, NULL);
 	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -1093,9 +1175,15 @@ void test_api_remote_encryption_start(void)
 	/* LTK request reply */
 	ull_cp_ltk_req_reply(&conn);
 
+	/* Prepare */
+	prepare(&conn);
+
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_START_ENC_REQ, &conn, &tx, NULL);
 	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -1103,16 +1191,28 @@ void test_api_remote_encryption_start(void)
 	/* Rx Decryption should be enabled */
 	zassert_equal(conn.lll.enc_rx, 1U, NULL);
 
+	/* Prepare */
+	prepare(&conn);
+
 	/* Rx */
 	lt_tx(LL_START_ENC_RSP, &conn, NULL);
+
+	/* Done */
+	done(&conn);
 
 	/* There should be a host notification */
 	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
 	ut_rx_q_is_empty();
 
+	/* Prepare */
+	prepare(&conn);
+
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
 	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -1170,6 +1270,7 @@ void test_api_remote_encryption_start_limited_memory(void)
 
 	/* Setup */
 	sys_slist_init(&ut_rx_q);
+	sys_slist_init(&lt_tx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -1189,56 +1290,83 @@ void test_api_remote_encryption_start_limited_memory(void)
 		zassert_not_null(ntf, NULL);
 	}
 
+	/* Prepare */
+	prepare(&conn);
+
 	/* Rx */
 	lt_tx(LL_ENC_REQ, &conn, NULL);
 
 	/* Tx Queue should not have a LL Control PDU */
 	lt_rx_q_is_empty();
 
+	/* Done */
+	done(&conn);
+
 	/* Release tx */
 	ull_cp_release_tx(tx);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_ENC_RSP, &conn, &tx, NULL);
 	lt_rx_q_is_empty();
 
+	/* Done */
+	done(&conn);
+
 	/* There should not be a host notification */
 	ut_rx_q_is_empty();
 
 	/* Release ntf */
 	ull_cp_release_ntf(ntf);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Prepare */
+	prepare(&conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_ENC_REQ, &ntf, NULL);
 	ut_rx_q_is_empty();
 
+	/* Done */
+	done(&conn);
+
 	/* LTK request reply */
 	ull_cp_ltk_req_reply(&conn);
+
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should not have one LL Control PDU */
 	lt_rx_q_is_empty();
 
+	/* Done */
+	done(&conn);
+
 	/* Release tx */
 	ull_cp_release_tx(tx);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_START_ENC_REQ, &conn, &tx, NULL);
 	lt_rx_q_is_empty();
 
+	/* Done */
+	done(&conn);
+
 	/* Rx Decryption should be enabled */
 	zassert_equal(conn.lll.enc_rx, 1U, NULL);
 
+	/* Prepare */
+	prepare(&conn);
+
 	/* Rx */
 	lt_tx(LL_START_ENC_RSP, &conn, NULL);
+
+	/* Done */
+	done(&conn);
 
 	/* There should not be a host notification */
 	ut_rx_q_is_empty();
@@ -1246,8 +1374,8 @@ void test_api_remote_encryption_start_limited_memory(void)
 	/* Release ntf */
 	ull_cp_release_ntf(ntf);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Prepare */
+	prepare(&conn);
 
 	/* There should be one host notification */
 	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
@@ -1256,15 +1384,21 @@ void test_api_remote_encryption_start_limited_memory(void)
 	/* Tx Queue should not have a LL Control PDU */
 	lt_rx_q_is_empty();
 
+	/* Done */
+	done(&conn);
+
 	/* Release tx */
 	ull_cp_release_tx(tx);
 
-	/* Run */
-	ull_cp_run(&conn);
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
 	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
 
 	/* Tx Encryption should be enabled */
 	zassert_equal(conn.lll.enc_tx, 1U, NULL);
@@ -1304,6 +1438,7 @@ void test_api_remote_encryption_start_no_ltk(void)
 
 	/* Setup */
 	sys_slist_init(&ut_rx_q);
+	sys_slist_init(&lt_tx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -1311,12 +1446,24 @@ void test_api_remote_encryption_start_no_ltk(void)
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
+	/* Prepare */
+	prepare(&conn);
+
 	/* Rx */
 	lt_tx(LL_ENC_REQ, &conn, NULL);
+
+	/* Done */
+	done(&conn);
+
+	/* Prepare */
+	prepare(&conn);
 
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_ENC_RSP, &conn, &tx, NULL);
 	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
@@ -1331,9 +1478,15 @@ void test_api_remote_encryption_start_no_ltk(void)
 	/* LTK request reply */
 	ull_cp_ltk_req_neq_reply(&conn);
 
+	/* Prepare */
+	prepare(&conn);
+
 	/* Tx Queue should have one LL Control PDU */
 	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &reject_ext_ind);
 	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
 
 	/* Release Tx */
 	ull_cp_release_tx(tx);
