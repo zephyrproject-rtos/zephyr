@@ -419,14 +419,9 @@ void pl011_isr(void *arg)
 static void pl011_irq_config_func_0(struct device *dev);
 #endif
 
-#ifndef DT_INST_0_ARM_PL011_CLOCK_FREQUENCY
-#define DT_INST_0_ARM_PL011_CLOCK_FREQUENCY \
-	DT_INST_0_ARM_PL011_CLOCKS_CLOCK_FREQUENCY
-#endif
-
 static struct uart_device_config pl011_cfg_port_0 = {
 	.base = (u8_t *)DT_INST_0_ARM_PL011_BASE_ADDRESS,
-	.sys_clk_freq = DT_INST_0_ARM_PL011_CLOCK_FREQUENCY,
+	.sys_clk_freq = DT_INST_0_ARM_PL011_CLOCKS_CLOCK_FREQUENCY,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = pl011_irq_config_func_0,
 #endif
@@ -490,14 +485,9 @@ static void pl011_irq_config_func_0(struct device *dev)
 static void pl011_irq_config_func_1(struct device *dev);
 #endif
 
-#ifndef DT_INST_1_ARM_PL011_CLOCK_FREQUENCY
-#define DT_INST_1_ARM_PL011_CLOCK_FREQUENCY \
-	DT_INST_1_ARM_PL011_CLOCKS_CLOCK_FREQUENCY
-#endif
-
 static struct uart_device_config pl011_cfg_port_1 = {
 	.base = (u8_t *)DT_INST_1_ARM_PL011_BASE_ADDRESS,
-	.sys_clk_freq = DT_INST_1_ARM_PL011_CLOCK_FREQUENCY,
+	.sys_clk_freq = DT_INST_1_ARM_PL011_CLOCKS_CLOCK_FREQUENCY,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = pl011_irq_config_func_1,
 #endif
