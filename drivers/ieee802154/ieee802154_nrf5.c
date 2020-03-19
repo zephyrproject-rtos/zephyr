@@ -490,6 +490,10 @@ int nrf5_configure(struct device *dev, enum ieee802154_config_type type,
 
 		break;
 
+	case IEEE802154_CONFIG_PAN_COORDINATOR:
+		nrf_802154_pan_coord_set(config->pan_coordinator);
+		break;
+
 	case IEEE802154_CONFIG_PROMISCUOUS:
 		nrf_802154_promiscuous_set(config->promiscuous);
 		break;
