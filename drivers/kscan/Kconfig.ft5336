@@ -11,3 +11,7 @@ config KSCAN_FT5336_PERIOD
 	int "Sample period (ms)"
 	default 10
 	depends on KSCAN_FT5336
+
+config KSCAN_FT5336_INTERRUPT
+	bool "Enable interrupt"
+	depends on KSCAN_FT5336
