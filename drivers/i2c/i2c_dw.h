@@ -11,14 +11,16 @@
 #include <drivers/i2c.h>
 #include <stdbool.h>
 
-#if DT_INST_0_SNPS_DESIGNWARE_I2C_PCIE || \
-	DT_INST_1_SNPS_DESIGNWARE_I2C_PCIE || \
-	DT_INST_2_SNPS_DESIGNWARE_I2C_PCIE || \
-	DT_INST_3_SNPS_DESIGNWARE_I2C_PCIE || \
-	DT_INST_4_SNPS_DESIGNWARE_I2C_PCIE || \
-	DT_INST_5_SNPS_DESIGNWARE_I2C_PCIE || \
-	DT_INST_6_SNPS_DESIGNWARE_I2C_PCIE || \
-	DT_INST_7_SNPS_DESIGNWARE_I2C_PCIE
+#define DT_DRV_COMPAT snps_designware_i2c
+
+#if DT_INST_PROP(0, pcie) || \
+	DT_INST_PROP(1, pcie) || \
+	DT_INST_PROP(2, pcie) || \
+	DT_INST_PROP(3, pcie) || \
+	DT_INST_PROP(4, pcie) || \
+	DT_INST_PROP(5, pcie) || \
+	DT_INST_PROP(6, pcie) || \
+	DT_INST_PROP(7, pcie)
 BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "DW I2C in DT needs CONFIG_PCIE");
 #define I2C_DW_PCIE_ENABLED
 #include <drivers/pcie/pcie.h>
