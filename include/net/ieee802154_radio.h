@@ -73,6 +73,9 @@ enum ieee802154_config_type {
 	 *  (NULL pointer) should disable it for all enabled addresses.
 	 */
 	IEEE802154_CONFIG_ACK_FPB,
+
+	/** Enable/disable promiscuous mode. */
+	IEEE802154_CONFIG_PROMISCUOUS,
 };
 
 /** IEEE802.15.4 driver configuration data. */
@@ -90,6 +93,9 @@ struct ieee802154_config {
 			bool extended;
 			bool enabled;
 		} ack_fpb;
+
+		/** ``IEEE802154_CONFIG_PROMISCUOUS`` */
+		bool promiscuous;
 	};
 };
 
