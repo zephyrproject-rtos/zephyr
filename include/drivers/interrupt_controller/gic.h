@@ -200,9 +200,9 @@
 /* GICC_IAR */
 #define	GICC_IAR_SPURIOUS	1023
 
-/* GICC_ICFGR */
-#define GICC_ICFGR_MASK		BIT_MASK(2)
-#define GICC_ICFGR_TYPE		BIT(1)
+/* GICD_ICFGR */
+#define GICD_ICFGR_MASK		BIT_MASK(2)
+#define GICD_ICFGR_TYPE		BIT(1)
 
 #endif /* CONFIG_GIC_VER <= 2 */
 
