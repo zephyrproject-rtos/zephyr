@@ -252,7 +252,7 @@ typedef struct {
 #endif /* _ASMLANGUAGE */
 
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
-	BUILD_ASSERT((size > 0) && ((u32_t)start % \
+	BUILD_ASSERT_MSG((size > 0) && ((u32_t)start % \
 			CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0U) && \
 		((size) % CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE == 0), \
 		" the start and size of the partition must align " \

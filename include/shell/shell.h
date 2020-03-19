@@ -501,8 +501,8 @@ struct shell_flags {
 	u32_t last_nl     :8; /*!< Last received new line character */
 };
 
-BUILD_ASSERT((sizeof(struct shell_flags) == sizeof(u32_t)),
-	     "Structure must fit in 4 bytes");
+BUILD_ASSERT_MSG((sizeof(struct shell_flags) == sizeof(u32_t)),
+		 "Structure must fit in 4 bytes");
 
 
 /**

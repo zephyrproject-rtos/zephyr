@@ -44,9 +44,9 @@
  */
 #define TICK_THRESHOLD 7
 
-BUILD_ASSERT(CYCLES_PER_TICK > TICK_THRESHOLD,
-	     "CYCLES_PER_TICK must be greater than TICK_THRESHOLD for "
-	     "tickless mode");
+BUILD_ASSERT_MSG(CYCLES_PER_TICK > TICK_THRESHOLD,
+		 "CYCLES_PER_TICK must be greater than TICK_THRESHOLD for "
+		 "tickless mode");
 
 #else /* !CONFIG_TICKLESS_KERNEL */
 
@@ -55,8 +55,8 @@ BUILD_ASSERT(CYCLES_PER_TICK > TICK_THRESHOLD,
  * MATCHCLR == 1 and PRESCALER == 0. So we need to check that CYCLES_PER_TICK
  * is more than one.
  */
-BUILD_ASSERT(CYCLES_PER_TICK > 1,
-	     "CYCLES_PER_TICK must be greater than 1 for ticking mode");
+BUILD_ASSERT_MSG(CYCLES_PER_TICK > 1,
+		 "CYCLES_PER_TICK must be greater than 1 for ticking mode");
 
 #endif /* CONFIG_TICKLESS_KERNEL */
 

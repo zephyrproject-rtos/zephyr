@@ -382,10 +382,10 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	.set_guard_period = set_guard_period,
 };
 
-#define COUNTER_NRFX_TIMER_DEVICE(idx)					\
-	BUILD_ASSERT(DT_NORDIC_NRF_TIMER_TIMER_##idx##_PRESCALER <=	\
-		     TIMER_PRESCALER_PRESCALER_Msk,			\
-		     "TIMER prescaler out of range");			\
+#define COUNTER_NRFX_TIMER_DEVICE(idx)					       \
+	BUILD_ASSERT_MSG(DT_NORDIC_NRF_TIMER_TIMER_##idx##_PRESCALER <=	       \
+			TIMER_PRESCALER_PRESCALER_Msk,			       \
+			"TIMER prescaler out of range");		       \
 	DEVICE_DECLARE(timer_##idx);					       \
 	static int counter_##idx##_init(struct device *dev)		       \
 	{								       \

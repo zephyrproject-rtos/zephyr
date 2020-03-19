@@ -638,10 +638,10 @@ static int qspi_nor_init(struct device *dev)
 #define LAYOUT_PAGES_COUNT (INST_0_BYTES / \
 			    CONFIG_NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE)
 
-BUILD_ASSERT((CONFIG_NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE *
-	      LAYOUT_PAGES_COUNT)
-	     == INST_0_BYTES,
-	     "QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size");
+BUILD_ASSERT_MSG((CONFIG_NORDIC_QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE *
+		  LAYOUT_PAGES_COUNT)
+		 == INST_0_BYTES,
+		 "QSPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size");
 
 static const struct flash_pages_layout dev_layout = {
 	.pages_count = LAYOUT_PAGES_COUNT,

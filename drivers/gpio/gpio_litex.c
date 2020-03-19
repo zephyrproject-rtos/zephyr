@@ -214,9 +214,9 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 /* Device Instantiation */
 
 #define GPIO_LITEX_INIT(n) \
-	BUILD_ASSERT(DT_INST_##n##_LITEX_GPIO_SIZE != 0 \
-		     && DT_INST_##n##_LITEX_GPIO_SIZE % 4 == 0, \
-		     "Register size must be a multiple of 4");	\
+	BUILD_ASSERT_MSG(DT_INST_##n##_LITEX_GPIO_SIZE != 0 \
+			&& DT_INST_##n##_LITEX_GPIO_SIZE % 4 == 0, \
+		"Register size must be a multiple of 4"); \
 \
 	static const struct gpio_litex_cfg gpio_litex_cfg_##n = { \
 		.reg_addr = \

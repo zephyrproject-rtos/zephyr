@@ -133,16 +133,16 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 		return NULL;
 	}
 
-	BUILD_ASSERT(osPriorityISR <= CONFIG_NUM_PREEMPT_PRIORITIES,
-		     "Configure NUM_PREEMPT_PRIORITIES to at least osPriorityISR");
+	BUILD_ASSERT_MSG(osPriorityISR <= CONFIG_NUM_PREEMPT_PRIORITIES,
+			 "Configure NUM_PREEMPT_PRIORITIES to at least osPriorityISR");
 
-	BUILD_ASSERT(CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT <=
-		     CONFIG_CMSIS_V2_THREAD_MAX_COUNT,
-		     "Number of dynamic threads cannot exceed max number of threads.");
+	BUILD_ASSERT_MSG(CONFIG_CMSIS_V2_THREAD_DYNAMIC_MAX_COUNT <=
+			 CONFIG_CMSIS_V2_THREAD_MAX_COUNT,
+			 "Number of dynamic threads cannot exceed max number of threads.");
 
-	BUILD_ASSERT(CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE <=
-		     CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE,
-		     "Default dynamic thread stack size cannot exceed max stack size");
+	BUILD_ASSERT_MSG(CONFIG_CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE <=
+			 CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE,
+			 "Default dynamic thread stack size cannot exceed max stack size");
 
 	__ASSERT(attr->stack_size <= CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE,
 		 "invalid stack size\n");

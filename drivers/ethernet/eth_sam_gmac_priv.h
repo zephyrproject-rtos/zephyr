@@ -41,8 +41,8 @@
 #endif
 #define GMAC_PRIORITY_QUEUE_NUM         (GMAC_QUEUE_NUM - 1)
 #if (GMAC_PRIORITY_QUEUE_NUM >= 1)
-BUILD_ASSERT(ARRAY_SIZE(GMAC->GMAC_TBQBAPQ) + 1 == GMAC_QUEUE_NUM,
-	     "GMAC_QUEUE_NUM doesn't match soc header");
+BUILD_ASSERT_MSG(ARRAY_SIZE(GMAC->GMAC_TBQBAPQ) + 1 == GMAC_QUEUE_NUM,
+		 "GMAC_QUEUE_NUM doesn't match soc header");
 #endif
 /** Number of priority queues used */
 #define GMAC_ACTIVE_QUEUE_NUM           (CONFIG_ETH_SAM_GMAC_QUEUES)

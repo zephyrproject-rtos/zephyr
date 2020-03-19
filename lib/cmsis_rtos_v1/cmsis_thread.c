@@ -51,7 +51,7 @@ osThreadId osThreadCreate(const osThreadDef_t *thread_def, void *arg)
 		return NULL;
 	}
 
-	BUILD_ASSERT(
+	BUILD_ASSERT_MSG(
 		CONFIG_NUM_PREEMPT_PRIORITIES >= TOTAL_CMSIS_THREAD_PRIORITIES,
 		"Configure NUM_PREEMPT_PRIORITIES to at least"
 		" TOTAL_CMSIS_THREAD_PRIORITIES");

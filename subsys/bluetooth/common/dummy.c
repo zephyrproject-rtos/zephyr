@@ -35,6 +35,6 @@ BUILD_ASSERT(CONFIG_BT_CTLR_RX_PRIO < CONFIG_BT_HCI_TX_PRIO);
  */
 #if !defined(CONFIG_TEST) && !defined(CONFIG_ARCH_POSIX) && \
 	(defined(CONFIG_BT_LL_SW_SPLIT) || defined(CONFIG_BT_LL_SW_LEGACY))
-BUILD_ASSERT(!IS_ENABLED(CONFIG_LOG_IMMEDIATE), "Immediate logging not "
-	     "supported with the software Link Layer");
+BUILD_ASSERT_MSG(!IS_ENABLED(CONFIG_LOG_IMMEDIATE), "Immediate logging not "
+		 "supported with the software Link Layer");
 #endif

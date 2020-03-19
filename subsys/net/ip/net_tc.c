@@ -104,8 +104,8 @@ static u8_t tx_tc2thread(u8_t tc)
 #endif
 	};
 
-	BUILD_ASSERT(NET_TC_TX_COUNT <= CONFIG_NUM_COOP_PRIORITIES,
-		     "Too many traffic classes");
+	BUILD_ASSERT_MSG(NET_TC_TX_COUNT <= CONFIG_NUM_COOP_PRIORITIES,
+			 "Too many traffic classes");
 
 	NET_ASSERT(tc < ARRAY_SIZE(thread_priorities));
 
@@ -157,8 +157,8 @@ static u8_t rx_tc2thread(u8_t tc)
 #endif
 	};
 
-	BUILD_ASSERT(NET_TC_RX_COUNT <= CONFIG_NUM_COOP_PRIORITIES,
-		     "Too many traffic classes");
+	BUILD_ASSERT_MSG(NET_TC_RX_COUNT <= CONFIG_NUM_COOP_PRIORITIES,
+			 "Too many traffic classes");
 
 	NET_ASSERT(tc < ARRAY_SIZE(thread_priorities));
 

@@ -535,20 +535,20 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 };
 
 #define ASSERT_AT24_ADDR_W_VALID(w) \
-	BUILD_ASSERT(w == 8U || w == 16U,		\
-		     "Unsupported address width")
+	BUILD_ASSERT_MSG(w == 8U || w == 16U, \
+			 "Unsupported address width")
 
-#define ASSERT_AT25_ADDR_W_VALID(w)			\
-	BUILD_ASSERT(w == 8U || w == 16U || w == 24U,	\
-		     "Unsupported address width")
+#define ASSERT_AT25_ADDR_W_VALID(w) \
+	BUILD_ASSERT_MSG(w == 8U || w == 16U || w == 24U, \
+			 "Unsupported address width")
 
 #define ASSERT_PAGESIZE_IS_POWER_OF_2(page) \
-	BUILD_ASSERT((page != 0U) && ((page & (page - 1)) == 0U),	\
-		     "Page size is not a power of two")
+	BUILD_ASSERT_MSG((page != 0U) && ((page & (page - 1)) == 0U), \
+			 "Page size is not a power of two")
 
-#define ASSERT_SIZE_PAGESIZE_VALID(size, page)				\
-	BUILD_ASSERT(size % page == 0U,					\
-		     "Size is not an integer multiple of page size")
+#define ASSERT_SIZE_PAGESIZE_VALID(size, page) \
+	BUILD_ASSERT_MSG(size % page == 0U, \
+			 "Size is not an integer multiple of page size")
 
 #define EEPROM_AT2X_DEVICE(t, n) \
 	ASSERT_PAGESIZE_IS_POWER_OF_2(DT_INST_##n##_ATMEL_AT##t##_PAGESIZE); \
