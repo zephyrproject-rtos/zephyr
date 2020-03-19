@@ -3,6 +3,7 @@
 
 comment "Optional modules. Make sure they're installed, via the project manifest."
 
+source "modules/Kconfig.altera"
 source "modules/Kconfig.atmel"
 source "modules/Kconfig.canopennode"
 source "modules/Kconfig.civetweb"
