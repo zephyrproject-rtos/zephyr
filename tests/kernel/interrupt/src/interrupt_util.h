@@ -4,15 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <ztest.h>
-#include <irq_offload.h>
-#include <kernel_structs.h>
+#ifndef INTERRUPT_UTIL_H_
+#define INTERRUPT_UTIL_H_
 
+#include <ztest.h>
+
+#define MS_TO_US(ms)  (K_MSEC(ms) * USEC_PER_MSEC)
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
-static u32_t get_available_nvic_line(u32_t initial_offset)
+static inline u32_t get_available_nvic_line(u32_t initial_offset)
 {
 	int i;
 
@@ -44,7 +46,7 @@ static u32_t get_available_nvic_line(u32_t initial_offset)
 	return i;
 }
 
-static void trigger_irq(int irq)
+static inline void trigger_irq(int irq)
 {
 	printk("Triggering irq : %d\n", irq);
 #if defined(CONFIG_SOC_TI_LM3S6965_QEMU) || defined(CONFIG_CPU_CORTEX_M0) \
@@ -56,7 +58,7 @@ static void trigger_irq(int irq)
 }
 
 #elif defined(CONFIG_RISCV)
-static void trigger_irq(int irq)
+static inline void trigger_irq(int irq)
 {
 	u32_t mip;
 
@@ -67,7 +69,7 @@ static void trigger_irq(int irq)
 }
 
 #elif defined(CONFIG_CPU_ARCV2)
-static void trigger_irq(int irq)
+static inline void trigger_irq(int irq)
 {
 	printk("Triggering irq : %d\n", irq);
 	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
@@ -76,3 +78,5 @@ static void trigger_irq(int irq)
 /* for not supported architecture */
 #define NO_TRIGGER_FROM_SW
 #endif
+
+#endif /* INTERRUPT_UTIL_H_ */
