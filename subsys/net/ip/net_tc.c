@@ -19,16 +19,12 @@ LOG_MODULE_REGISTER(net_tc, CONFIG_NET_TC_LOG_LEVEL);
 #include "net_tc_mapping.h"
 
 /* Stacks for TX work queue */
-NET_STACK_ARRAY_DEFINE(TX, tx_stack,
-		       CONFIG_NET_TX_STACK_SIZE,
-		       CONFIG_NET_TX_STACK_SIZE,
-		       NET_TC_TX_COUNT);
+K_THREAD_STACK_ARRAY_DEFINE(tx_stack, NET_TC_TX_COUNT,
+			    CONFIG_NET_TX_STACK_SIZE);
 
 /* Stacks for RX work queue */
-NET_STACK_ARRAY_DEFINE(RX, rx_stack,
-		       CONFIG_NET_RX_STACK_SIZE,
-		       CONFIG_NET_RX_STACK_SIZE,
-		       NET_TC_RX_COUNT);
+K_THREAD_STACK_ARRAY_DEFINE(rx_stack, NET_TC_RX_COUNT,
+			    CONFIG_NET_RX_STACK_SIZE);
 
 static struct net_traffic_class tx_classes[NET_TC_TX_COUNT];
 static struct net_traffic_class rx_classes[NET_TC_RX_COUNT];
@@ -169,14 +165,6 @@ static u8_t rx_tc2thread(u8_t tc)
 	return thread_priorities[tc];
 }
 
-#if defined(CONFIG_NET_SHELL)
-#define TX_STACK(idx) NET_STACK_GET_NAME(TX, tx_stack, 0)[idx].stack
-#define RX_STACK(idx) NET_STACK_GET_NAME(RX, rx_stack, 0)[idx].stack
-#else
-#define TX_STACK(idx) NET_STACK_GET_NAME(TX, tx_stack, 0)[idx]
-#define RX_STACK(idx) NET_STACK_GET_NAME(RX, rx_stack, 0)[idx]
-#endif
-
 #if defined(CONFIG_NET_STATISTICS)
 /* Fixup the traffic class statistics so that "net stats" shell command will
  * print output correctly.
@@ -238,18 +226,9 @@ void net_tc_tx_init(void)
 		thread_priority = tx_tc2thread(i);
 		tx_classes[i].tc = thread_priority;
 
-#if defined(CONFIG_NET_SHELL)
-		/* Fix the thread start address so that "net stacks"
-		 * command will print correct stack information.
-		 */
-		NET_STACK_GET_NAME(TX, tx_stack, 0)[i].stack = tx_stack[i];
-		NET_STACK_GET_NAME(TX, tx_stack, 0)[i].prio = thread_priority;
-		NET_STACK_GET_NAME(TX, tx_stack, 0)[i].idx = i;
-#endif
-
-		NET_DBG("[%d] Starting TX queue %p stack %p size %zd "
+		NET_DBG("[%d] Starting TX queue %p stack size %zd "
 			"prio %d (%d)", i,
-			&tx_classes[i].work_q.queue, TX_STACK(i),
+			&tx_classes[i].work_q.queue,
 			K_THREAD_STACK_SIZEOF(tx_stack[i]),
 			thread_priority, K_PRIO_COOP(thread_priority));
 
@@ -277,18 +256,9 @@ void net_tc_rx_init(void)
 		thread_priority = rx_tc2thread(i);
 		rx_classes[i].tc = thread_priority;
 
-#if defined(CONFIG_NET_SHELL)
-		/* Fix the thread start address so that "net stacks"
-		 * command will print correct stack information.
-		 */
-		NET_STACK_GET_NAME(RX, rx_stack, 0)[i].stack = rx_stack[i];
-		NET_STACK_GET_NAME(RX, rx_stack, 0)[i].prio = thread_priority;
-		NET_STACK_GET_NAME(RX, rx_stack, 0)[i].idx = i;
-#endif
-
-		NET_DBG("[%d] Starting RX queue %p stack %p size %zd "
+		NET_DBG("[%d] Starting RX queue %p stack size %zd "
 			"prio %d (%d)", i,
-			&rx_classes[i].work_q.queue, RX_STACK(i),
+			&rx_classes[i].work_q.queue,
 			K_THREAD_STACK_SIZEOF(rx_stack[i]),
 			thread_priority, K_PRIO_COOP(thread_priority));
 

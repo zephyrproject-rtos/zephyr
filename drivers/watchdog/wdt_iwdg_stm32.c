@@ -151,7 +151,7 @@ static const struct wdt_driver_api iwdg_stm32_api = {
 
 static int iwdg_stm32_init(struct device *dev)
 {
-#ifdef CONFIG_IWDG_STM32_START_AT_BOOT
+#ifndef CONFIG_WDT_DISABLE_AT_BOOT
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 	struct wdt_timeout_cfg config = {
 		.window.max = CONFIG_IWDG_STM32_TIMEOUT / USEC_PER_MSEC,

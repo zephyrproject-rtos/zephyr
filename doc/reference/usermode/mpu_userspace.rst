@@ -8,7 +8,7 @@ set of stacks.  These stacks exist in a 1:1 relationship with each thread stack
 defined in the system.  The privileged stacks are created as a part of the
 build process.
 
-A post-build script :ref:`gen_priv_stacks.py` scans the generated
+A post-build script :ref:`gen_kobject_list.py` scans the generated
 ELF file and finds all of the thread stack objects.  A set of privileged
 stacks, a lookup table, and a set of helper functions are created and added
 to the image.

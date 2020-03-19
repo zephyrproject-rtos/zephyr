@@ -139,17 +139,17 @@ extern "C" {
 
 
 #define ARCH_THREAD_STACK_DEFINE(sym, size) \
-		struct _k_thread_stack_element __noinit \
+		struct z_thread_stack_element __noinit \
 		__aligned(Z_ARC_THREAD_STACK_ALIGN(size)) \
 		sym[ARCH_THREAD_STACK_LEN(size)]
 
 #define ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-		struct _k_thread_stack_element __noinit \
+		struct z_thread_stack_element __noinit \
 		__aligned(Z_ARC_THREAD_STACK_ALIGN(size)) \
 		sym[nmemb][Z_ARC_THREAD_STACK_ARRAY_LEN(size)]
 
 #define ARCH_THREAD_STACK_MEMBER(sym, size) \
-		struct _k_thread_stack_element \
+		struct z_thread_stack_element \
 		__aligned(Z_ARC_THREAD_STACK_ALIGN(size)) \
 		sym[ARCH_THREAD_STACK_LEN(size)]
 
@@ -188,8 +188,7 @@ extern "C" {
 #define K_MEM_PARTITION_IS_WRITABLE(attr) \
 	({ \
 		int __is_writable__; \
-		attr &= (AUX_MPU_ATTR_UW | AUX_MPU_ATTR_KW); \
-		switch (attr) { \
+		switch (attr & (AUX_MPU_ATTR_UW | AUX_MPU_ATTR_KW)) { \
 		case (AUX_MPU_ATTR_UW | AUX_MPU_ATTR_KW): \
 		case AUX_MPU_ATTR_UW: \
 		case AUX_MPU_ATTR_KW: \

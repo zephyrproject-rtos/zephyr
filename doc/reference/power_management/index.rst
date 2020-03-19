@@ -1,4 +1,4 @@
-.. _power_management:
+.. _power_management_api:
 
 Power Management
 ################
@@ -269,7 +269,7 @@ in transition between power states:
 Device Model with Power Management Support
 ==========================================
 
-Drivers initialize the devices using macros. See :ref:`device_drivers` for
+Drivers initialize the devices using macros. See :ref:`device_model_api` for
 details on how these macros are used. Use the DEVICE_DEFINE macro to initialize
 drivers providing power management support via the PM control function.
 One of the macro parameters is the pointer to the device_pm_control handler function.

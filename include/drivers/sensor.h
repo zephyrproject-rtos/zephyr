@@ -134,6 +134,9 @@ enum sensor_channel {
 	/** Position change on the Z axis, in points. */
 	SENSOR_CHAN_POS_DZ,
 
+	/** Revolutions per minute, in RPM. */
+	SENSOR_CHAN_RPM,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 
@@ -189,6 +192,9 @@ enum sensor_trigger_type {
 
 	/** Trigger fires when a double tap is detected. */
 	SENSOR_TRIG_DOUBLE_TAP,
+
+	/** Trigger fires when a free fall is detected. */
+	SENSOR_TRIG_FREEFALL,
 
 	/**
 	 * Number of all common sensor triggers.
@@ -316,7 +322,7 @@ typedef int (*sensor_channel_get_t)(struct device *dev,
 				    enum sensor_channel chan,
 				    struct sensor_value *val);
 
-struct sensor_driver_api {
+__subsystem struct sensor_driver_api {
 	sensor_attr_set_t attr_set;
 	sensor_trigger_set_t trigger_set;
 	sensor_sample_fetch_t sample_fetch;

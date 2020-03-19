@@ -11,6 +11,7 @@
 
 #include <stdbool.h>
 #include <toolchain.h>
+#include <stddef.h>
 
 #include <zephyr/types.h>
 
@@ -20,6 +21,7 @@ extern "C" {
 
 typedef int atomic_t;
 typedef atomic_t atomic_val_t;
+typedef void *atomic_ptr_t;
 
 /**
  * @defgroup atomic_apis Atomic Services APIs
@@ -49,12 +51,41 @@ static inline bool atomic_cas(atomic_t *target, atomic_val_t old_value,
 					   __ATOMIC_SEQ_CST);
 }
 #elif defined(CONFIG_ATOMIC_OPERATIONS_C)
-__syscall int atomic_cas(atomic_t *target, atomic_val_t old_value,
+__syscall bool atomic_cas(atomic_t *target, atomic_val_t old_value,
 			 atomic_val_t new_value);
 
 #else
-extern int atomic_cas(atomic_t *target, atomic_val_t old_value,
+extern bool atomic_cas(atomic_t *target, atomic_val_t old_value,
 		      atomic_val_t new_value);
+#endif
+
+/**
+ * @brief Atomic compare-and-set with pointer values
+ *
+ * This routine performs an atomic compare-and-set on @a target. If the current
+ * value of @a target equals @a old_value, @a target is set to @a new_value.
+ * If the current value of @a target does not equal @a old_value, @a target
+ * is left unchanged.
+ *
+ * @param target Address of atomic variable.
+ * @param old_value Original value to compare against.
+ * @param new_value New value to store.
+ * @return true if @a new_value is written, false otherwise.
+ */
+#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
+static inline bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
+				  void *new_value)
+{
+	return __atomic_compare_exchange_n(target, &old_value, new_value,
+					   0, __ATOMIC_SEQ_CST,
+					   __ATOMIC_SEQ_CST);
+}
+#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
+__syscall bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
+			      void *new_value);
+#else
+extern bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value,
+			   void *new_value);
 #endif
 
 /**
@@ -160,6 +191,25 @@ extern atomic_val_t atomic_get(const atomic_t *target);
 
 /**
  *
+ * @brief Atomic get a pointer value
+ *
+ * This routine performs an atomic read on @a target.
+ *
+ * @param target Address of pointer variable.
+ *
+ * @return Value of @a target.
+ */
+#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
+static inline void *atomic_ptr_get(const atomic_ptr_t *target)
+{
+	return __atomic_load_n(target, __ATOMIC_SEQ_CST);
+}
+#else
+extern void *atomic_ptr_get(const atomic_ptr_t *target);
+#endif
+
+/**
+ *
  * @brief Atomic get-and-set.
  *
  * This routine atomically sets @a target to @a value and returns
@@ -187,6 +237,29 @@ extern atomic_val_t atomic_set(atomic_t *target, atomic_val_t value);
 
 /**
  *
+ * @brief Atomic get-and-set for pointer values
+ *
+ * This routine atomically sets @a target to @a value and returns
+ * the previous value of @a target.
+ *
+ * @param target Address of atomic variable.
+ * @param value Value to write to @a target.
+ *
+ * @return Previous value of @a target.
+ */
+#ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
+static inline void *atomic_ptr_set(atomic_ptr_t *target, void *value)
+{
+	return __atomic_exchange_n(target, value, __ATOMIC_SEQ_CST);
+}
+#elif defined(CONFIG_ATOMIC_OPERATIONS_C)
+__syscall void *atomic_ptr_set(atomic_ptr_t *target, void *value);
+#else
+extern void *atomic_ptr_set(atomic_ptr_t *target, void *value);
+#endif
+
+/**
+ *
  * @brief Atomic clear.
  *
  * This routine atomically sets @a target to zero and returns its previous
@@ -203,6 +276,27 @@ static inline atomic_val_t atomic_clear(atomic_t *target)
 }
 #else
 extern atomic_val_t atomic_clear(atomic_t *target);
+#endif
+
+/**
+ *
+ * @brief Atomic clear of a pointer value
+ *
+ * This routine atomically sets @a target to zero and returns its previous
+ * value. (Hence, it is equivalent to atomic_set(target, 0).)
+ *
+ * @param target Address of atomic variable.
+ *
+ * @return Previous value of @a target.
+ */
+#if defined(CONFIG_ATOMIC_OPERATIONS_BUILTIN) || \
+	defined (CONFIG_ATOMIC_OPERATIONS_C)
+static inline void *atomic_ptr_clear(atomic_ptr_t *target)
+{
+	return atomic_ptr_set(target, NULL);
+}
+#else
+extern void *atomic_ptr_clear(atomic_ptr_t *target);
 #endif
 
 /**

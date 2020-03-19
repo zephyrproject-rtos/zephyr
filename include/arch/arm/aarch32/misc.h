@@ -6,9 +6,9 @@
 
 /**
  * @file
- * @brief Cortex-M public kernel miscellaneous
+ * @brief ARM AArch32 public kernel miscellaneous
  *
- * ARM-specific kernel miscellaneous interface. Included by arm/arch.h.
+ * ARM AArch32-specific kernel miscellaneous interface. Included by arm/arch.h.
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_MISC_H_

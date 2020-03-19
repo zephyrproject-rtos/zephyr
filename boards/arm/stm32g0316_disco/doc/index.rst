@@ -54,6 +54,8 @@ The Zephyr stm32g0316_disco board configuration supports the following hardware 
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | independent watchdog                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by the port.
 

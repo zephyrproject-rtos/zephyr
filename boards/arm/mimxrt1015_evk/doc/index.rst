@@ -183,7 +183,7 @@ see the following message in the terminal:
    https://www.nxp.com/support/developer-resources/run-time-software/i.mx-developer-resources/i.mx-rt1015-evaluation-kit:MIMXRT1015-EVK
 
 .. _MIMXRT1015-EVK Quick Reference Guide:
-   https://www.nxp.com/docs/en/quick-reference-guide/IMXRT1015QSG.pdf
+   https://www.nxp.com/webapp/Download?colCode=IMXRT1015QSG
 
 .. _MIMXRT1015-EVK Design Files:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT1015-EVK-REVB-DS
@@ -195,4 +195,4 @@ see the following message in the terminal:
    https://www.nxp.com/docs/en/data-sheet/IMXRT1015CEC.pdf
 
 .. _i.MX RT1015 Reference Manual:
-   https://www.nxp.com/docs/en/reference-manual/IMXRT1015RM.pdf
+   https://www.nxp.com/webapp/Download?colCode=IMXRT1015RM

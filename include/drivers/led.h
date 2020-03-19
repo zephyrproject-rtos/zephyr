@@ -4,12 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Public LED driver APIs
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_LED_H_
 #define ZEPHYR_INCLUDE_DRIVERS_LED_H_
 
 /**
- * @file
- * @brief Public LED driver APIs
+ * @brief LED Interface
+ * @defgroup led_interface LED Interface
+ * @ingroup io_interfaces
+ * @{
  */
 
 #include <zephyr/types.h>
@@ -53,7 +60,7 @@ typedef int (*led_api_off)(struct device *dev, u32_t led);
  *
  * This is the mandatory API any LED driver needs to expose.
  */
-struct led_driver_api {
+__subsystem struct led_driver_api {
 	led_api_blink blink;
 	led_api_set_brightness set_brightness;
 	led_api_on on;
@@ -143,6 +150,10 @@ static inline int z_impl_led_off(struct device *dev, u32_t led)
 
 	return api->off(dev, led);
 }
+
+/**
+ * @}
+ */
 
 #include <syscalls/led.h>
 

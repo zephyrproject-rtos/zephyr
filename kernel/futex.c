@@ -14,14 +14,14 @@
 
 static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
 {
-	struct _k_object *obj;
+	struct z_object *obj;
 
 	obj = z_object_find(futex);
 	if (obj == NULL || obj->type != K_OBJ_FUTEX) {
 		return NULL;
 	}
 
-	return (struct z_futex_data *)obj->data;
+	return obj->data.futex_data;
 }
 
 int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)

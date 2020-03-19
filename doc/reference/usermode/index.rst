@@ -1,4 +1,4 @@
-.. _usermode:
+.. _usermode_api:
 
 User Mode
 #########

@@ -13,7 +13,7 @@ Requirements
 ************
 
 This project requires a SDHC or microSD card formatted with FAT filesystem.
-See the :ref:`SDHC_disks` documentation for Zephyr implementation details.
+See the :ref:`sdhc_api` documentation for Zephyr implementation details.
 
 Building and Running
 ********************

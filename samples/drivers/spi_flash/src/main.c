@@ -89,7 +89,7 @@ void main(void)
 		printf("Data read does not match data written!!\n");
 		while (rp < rpe) {
 			printf("%08x wrote %02x read %02x %s\n",
-			       FLASH_TEST_REGION_OFFSET + (rp - buf),
+			       (u32_t)(FLASH_TEST_REGION_OFFSET + (rp - buf)),
 			       *wp, *rp, (*rp == *wp) ? "match" : "MISMATCH");
 			++rp;
 			++wp;

@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static void eth_stellaris_assign_mac(struct device *dev)
 {
-	u8_t mac_addr[6] = DT_ETH_MAC_ADDR;
+	u8_t mac_addr[6] = DT_INST_0_TI_STELLARIS_ETHERNET_LOCAL_MAC_ADDRESS;
 	u32_t value = 0x0;
 
 	value |= mac_addr[0];
@@ -323,19 +323,19 @@ static struct device DEVICE_NAME_GET(eth_stellaris);
 static void eth_stellaris_irq_config(struct device *dev)
 {
 	/* Enable Interrupt. */
-	IRQ_CONNECT(DT_ETH_IRQ,
-		    DT_ETH_IRQ_PRIO,
+	IRQ_CONNECT(DT_INST_0_TI_STELLARIS_ETHERNET_IRQ_0,
+		    DT_INST_0_TI_STELLARIS_ETHERNET_IRQ_0_PRIORITY,
 		    eth_stellaris_isr, DEVICE_GET(eth_stellaris), 0);
-	irq_enable(DT_ETH_IRQ);
+	irq_enable(DT_INST_0_TI_STELLARIS_ETHERNET_IRQ_0);
 }
 
 struct eth_stellaris_config eth_cfg = {
-	.mac_base = DT_ETH_BASE_ADDR,
+	.mac_base = DT_INST_0_TI_STELLARIS_ETHERNET_BASE_ADDRESS,
 	.config_func = eth_stellaris_irq_config,
 };
 
 struct eth_stellaris_runtime eth_data = {
-	.mac_addr = DT_ETH_MAC_ADDR,
+	.mac_addr = DT_INST_0_TI_STELLARIS_ETHERNET_LOCAL_MAC_ADDRESS,
 	.tx_err = false,
 	.tx_word = 0,
 	.tx_pos = 0,
@@ -349,7 +349,7 @@ static const struct ethernet_api eth_stellaris_apis = {
 #endif
 };
 
-NET_DEVICE_INIT(eth_stellaris, DT_ETH_DRV_NAME,
+NET_DEVICE_INIT(eth_stellaris, DT_INST_0_TI_STELLARIS_ETHERNET_LABEL,
 		eth_stellaris_dev_init, &eth_data, &eth_cfg,
 		CONFIG_ETH_INIT_PRIORITY,
 		&eth_stellaris_apis, ETHERNET_L2,

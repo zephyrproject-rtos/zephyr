@@ -1,4 +1,4 @@
-.. _ipm_interface:
+.. _ipm_api:
 
 IPM
 ###

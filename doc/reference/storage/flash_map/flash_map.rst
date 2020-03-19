@@ -1,4 +1,4 @@
-.. _flash_map_flash_area:
+.. _flash_map_api:
 
 Flash map (flash_map)
 ##########################

@@ -8,9 +8,9 @@
 #include <syscall_handler.h>
 #include <kernel_structs.h>
 
-static struct _k_object *validate_any_object(void *obj)
+static struct z_object *validate_any_object(void *obj)
 {
-	struct _k_object *ko;
+	struct z_object *ko;
 	int ret;
 
 	ko = z_object_find(obj);
@@ -39,7 +39,7 @@ static struct _k_object *validate_any_object(void *obj)
 static inline void z_vrfy_k_object_access_grant(void *object,
 						struct k_thread *thread)
 {
-	struct _k_object *ko;
+	struct z_object *ko;
 
 	Z_OOPS(Z_SYSCALL_OBJ_INIT(thread, K_OBJ_THREAD));
 	ko = validate_any_object(object);
@@ -51,7 +51,7 @@ static inline void z_vrfy_k_object_access_grant(void *object,
 
 static inline void z_vrfy_k_object_release(void *object)
 {
-	struct _k_object *ko;
+	struct z_object *ko;
 
 	ko = validate_any_object((void *)object);
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(ko != NULL, "object %p access denied",
@@ -63,7 +63,7 @@ static inline void z_vrfy_k_object_release(void *object)
 static inline void *z_vrfy_k_object_alloc(enum k_objects otype)
 {
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(otype > K_OBJ_ANY && otype < K_OBJ_LAST &&
-				    otype != K_OBJ__THREAD_STACK_ELEMENT,
+				    otype != K_OBJ_THREAD_STACK_ELEMENT,
 				    "bad object type %d requested", otype));
 
 	return z_impl_k_object_alloc(otype);

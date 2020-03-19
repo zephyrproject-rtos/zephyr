@@ -276,13 +276,24 @@ DEVICE_AND_API_INIT(nrf_flash, DT_FLASH_DEV_NAME, nrf_flash_init,
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 
+static inline int _ticker_stop(u8_t inst_idx, u8_t u_id, u8_t tic_id)
+{
+	int ret = ticker_stop(inst_idx, u_id, tic_id, NULL, NULL);
+
+	if (ret != TICKER_STATUS_SUCCESS &&
+	    ret != TICKER_STATUS_BUSY) {
+		__ASSERT(0, "Failed to stop ticker.\n");
+	}
+
+	return ret;
+}
+
 static void time_slot_callback_work(u32_t ticks_at_expire, u32_t remainder,
 				    u16_t lazy, void *context)
 {
 	struct flash_op_desc *op_desc;
 	u8_t instance_index;
 	u8_t ticker_id;
-	int result;
 
 	__ASSERT(ll_radio_state_is_idle(),
 		 "Radio is on during flash operation.\n");
@@ -292,16 +303,7 @@ static void time_slot_callback_work(u32_t ticks_at_expire, u32_t remainder,
 		ll_timeslice_ticker_id_get(&instance_index, &ticker_id);
 
 		/* Stop the time slot ticker */
-		result = ticker_stop(instance_index,
-				     0,
-				     ticker_id,
-				     NULL,
-				     NULL);
-
-		if (result != TICKER_STATUS_SUCCESS &&
-		    result != TICKER_STATUS_BUSY) {
-			__ASSERT(0, "Failed to stop ticker.\n");
-		}
+		_ticker_stop(instance_index, 0, ticker_id);
 
 		((struct flash_op_desc *)context)->result = 0;
 
@@ -343,11 +345,7 @@ static void time_slot_callback_helper(u32_t ticks_at_expire, u32_t remainder,
 		((struct flash_op_desc *)context)->result = -ECANCELED;
 
 		/* abort flash timeslots */
-		err = ticker_stop(instance_index, 0, ticker_id, NULL, NULL);
-		if (err != TICKER_STATUS_SUCCESS &&
-		    err != TICKER_STATUS_BUSY) {
-			__ASSERT(0, "Failed to stop ticker.\n");
-		}
+		_ticker_stop(instance_index, 0, ticker_id);
 
 		/* notify thread that data is available */
 		k_sem_give(&sem_sync);
@@ -384,6 +382,9 @@ static int work_in_time_slice(struct flash_op_desc *p_flash_op_desc)
 	if (err != TICKER_STATUS_SUCCESS && err != TICKER_STATUS_BUSY) {
 		result = -ECANCELED;
 	} else if (k_sem_take(&sem_sync, K_MSEC(FLASH_TIMEOUT_MS)) != 0) {
+		/* Stop any scheduled jobs */
+		_ticker_stop(instance_index, 3, ticker_id);
+
 		/* wait for operation's complete overrun*/
 		result = -ETIMEDOUT;
 	} else {

@@ -38,8 +38,8 @@ static void uart_msp432p4xx_isr(void *arg);
 #endif
 
 static const struct uart_device_config uart_msp432p4xx_dev_cfg_0 = {
-	.base = (void *)DT_UART_MSP432P4XX_BASE_ADDRESS,
-	.sys_clk_freq = DT_UART_MSP432P4XX_CLOCK_FREQUENCY,
+	.base = (void *)DT_INST_0_TI_MSP432P4XX_UART_BASE_ADDRESS,
+	.sys_clk_freq = DT_INST_0_TI_MSP432P4XX_UART_CLOCKS_CLOCK_FREQUENCY,
 };
 
 static struct uart_msp432p4xx_dev_data_t uart_msp432p4xx_dev_data_0 = {
@@ -133,7 +133,7 @@ static int uart_msp432p4xx_init(struct device *dev)
 	UartConfig.overSampling = EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION;
 
 	/* Baud rate settings calculated for 48MHz */
-	err = baudrate_set(&UartConfig, DT_UART_MSP432P4XX_BAUD_RATE);
+	err = baudrate_set(&UartConfig, DT_INST_0_TI_MSP432P4XX_UART_CURRENT_SPEED);
 	if (err) {
 		return err;
 	}
@@ -144,11 +144,11 @@ static int uart_msp432p4xx_init(struct device *dev)
 	MAP_UART_enableModule((unsigned long)config->base);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	IRQ_CONNECT(DT_TI_MSP432P4XX_UART_40001000_IRQ_0,
-			DT_TI_MSP432P4XX_UART_40001000_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_0_TI_MSP432P4XX_UART_IRQ_0,
+			DT_INST_0_TI_MSP432P4XX_UART_IRQ_0_PRIORITY,
 			uart_msp432p4xx_isr, DEVICE_GET(uart_msp432p4xx_0),
 			0);
-	irq_enable(DT_TI_MSP432P4XX_UART_40001000_IRQ_0);
+	irq_enable(DT_INST_0_TI_MSP432P4XX_UART_IRQ_0);
 
 #endif
 	return 0;
@@ -358,7 +358,7 @@ static const struct uart_driver_api uart_msp432p4xx_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-DEVICE_AND_API_INIT(uart_msp432p4xx_0, DT_UART_MSP432P4XX_NAME,
+DEVICE_AND_API_INIT(uart_msp432p4xx_0, DT_INST_0_TI_MSP432P4XX_UART_LABEL,
 			uart_msp432p4xx_init, &uart_msp432p4xx_dev_data_0,
 			&uart_msp432p4xx_dev_cfg_0,
 			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

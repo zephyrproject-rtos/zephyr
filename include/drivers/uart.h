@@ -233,11 +233,6 @@ struct uart_event {
 typedef void (*uart_callback_t)(struct uart_event *evt, void *user_data);
 
 /**
- * @brief Options for @a UART initialization.
- */
-#define UART_OPTION_AFCE 0x01
-
-/**
  * @brief UART controller configuration structure
  *
  * @param baudrate  Baudrate setting in bps
@@ -342,7 +337,7 @@ struct uart_device_config {
 };
 
 /** @brief Driver API structure. */
-struct uart_driver_api {
+__subsystem struct uart_driver_api {
 
 #ifdef CONFIG_UART_ASYNC_API
 

@@ -222,6 +222,7 @@ struct ll_conn {
 #define LLCP_LENGTH_STATE_RESIZE              4
 #define LLCP_LENGTH_STATE_RESIZE_RSP          5
 #define LLCP_LENGTH_STATE_RESIZE_RSP_ACK_WAIT 6
+		u8_t  disabled:1;
 		u16_t rx_octets;
 		u16_t tx_octets;
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -251,6 +252,7 @@ struct ll_conn {
 		u8_t pause_tx:1;
 		u8_t flags:1;
 		u8_t cmd:1;
+		u8_t disabled:1;
 	} llcp_phy;
 
 	u8_t phy_pref_tx:3;

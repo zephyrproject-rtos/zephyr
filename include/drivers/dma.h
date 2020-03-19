@@ -189,7 +189,7 @@ typedef int (*dma_api_stop)(struct device *dev, u32_t channel);
 typedef int (*dma_api_get_status)(struct device *dev, u32_t channel,
 				  struct dma_status *status);
 
-struct dma_driver_api {
+__subsystem struct dma_driver_api {
 	dma_api_config config;
 	dma_api_reload reload;
 	dma_api_start start;

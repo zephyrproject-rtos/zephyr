@@ -6,9 +6,9 @@
 
 /**
  * @file
- * @brief ARM specific syscall header
+ * @brief ARM AArch32 specific syscall header
  *
- * This header contains the ARM specific syscall interface.  It is
+ * This header contains the ARM AArch32 specific syscall interface.  It is
  * included by the syscall interface architecture-abstraction header
  * (include/arch/syscall.h)
  */

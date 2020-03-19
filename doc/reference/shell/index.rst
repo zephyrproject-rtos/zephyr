@@ -1,4 +1,4 @@
-.. _shell_label:
+.. _shell_api:
 
 Shell
 ######
@@ -15,7 +15,7 @@ set. You can use it in examples where more than simple button or LED user
 interaction is required. This module is a Unix-like shell with these features:
 
 * Support for multiple instances.
-* Advanced cooperation with the :ref:`logger`.
+* Advanced cooperation with the :ref:`logging_api`.
 * Support for static and dynamic commands.
 * Smart command completion with the :kbd:`Tab` key.
 * Built-in commands: :command:`clear`, :command:`shell`, :command:`colors`,
@@ -253,7 +253,7 @@ Function :cpp:func:`shell_fprintf` or the shell print macros:
 :c:macro:`shell_print`, :c:macro:`shell_info`, :c:macro:`shell_warn` and
 :c:macro:`shell_error` can be used from the command handler or from threads,
 but not from an interrupt context. Instead, interrupt handlers should use
-:ref:`logger` for printing.
+:ref:`logging_api` for printing.
 
 Command help
 ------------
@@ -465,7 +465,7 @@ the shell will only print the subcommands registered for this command:
 Shell as the logger backend
 ***************************
 
-Shell instance can act as the :ref:`logger` backend. Shell ensures that log
+Shell instance can act as the :ref:`logging_api` backend. Shell ensures that log
 messages are correctly multiplexed with shell output. Log messages from logger
 thread are enqueued and processed in the shell thread. Logger thread will block
 for configurable amount of time if queue is full, blocking logger thread context

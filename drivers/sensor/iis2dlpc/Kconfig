@@ -1,0 +1,227 @@
+# ST Microelectronics IIS2DLPC 3-axis accelerometer driver
+
+# Copyright (c) 2020 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IIS2DLPC
+	bool "IIS2DLPC I2C/SPI accelerometer sensor driver"
+	depends on (I2C && HAS_DTS_I2C) || SPI
+	select HAS_STMEMSC
+	select USE_STDC_IIS2DLPC
+	help
+	  Enable driver for IIS2DLPC accelerometer sensor driver
+
+if IIS2DLPC
+
+choice IIS2DLPC_TRIGGER_MODE
+	prompt "Trigger mode"
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config IIS2DLPC_TRIGGER_NONE
+	bool "No trigger"
+
+config IIS2DLPC_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select IIS2DLPC_TRIGGER
+
+config IIS2DLPC_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select IIS2DLPC_TRIGGER
+
+endchoice
+
+config IIS2DLPC_TRIGGER
+	bool
+
+if IIS2DLPC_TRIGGER
+
+config IIS2DLPC_THREAD_PRIORITY
+	int "Thread priority"
+	depends on IIS2DLPC_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config IIS2DLPC_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on IIS2DLPC_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+choice
+	prompt "Sensor INT pin number"
+	default IIS2DLPC_INT_PIN_1
+	help
+	  The number of IIS2DLPC int pin used to generate interrupt to cpu.
+	  Supported values are int1 or int2
+
+config IIS2DLPC_INT_PIN_1
+	bool "int1"
+
+config IIS2DLPC_INT_PIN_2
+	bool "int2"
+endchoice
+
+menuconfig IIS2DLPC_PULSE
+	bool "Pulse detection"
+	help
+	  Enable pulse (single/double tap) detection
+
+if IIS2DLPC_PULSE
+
+choice
+	prompt "Pulse interrupt source"
+	default IIS2DLPC_ONLY_SINGLE
+
+config IIS2DLPC_ONLY_SINGLE
+	bool "single"
+
+config IIS2DLPC_SINGLE_DOUBLE
+	bool "single/double"
+
+endchoice
+
+config IIS2DLPC_PULSE_THSX
+	hex "Pulse X-axis threshold"
+	range 0 0x1F
+	default 0x0E
+	help
+	  Threshold to start the pulse-event detection procedure on the X-axis.
+	  Threshold values for each axis are unsigned 5-bit corresponding
+	  to an 2g acceleration full-scale range.
+
+config IIS2DLPC_PULSE_THSY
+	hex "Pulse Y-axis threshold"
+	range 0 0x1F
+	default 0x0E
+	help
+	  Threshold to start the pulse-event detection procedure on the Y-axis.
+	  Threshold values for each axis are unsigned 5-bit corresponding
+	  to an 2g acceleration full-scale range.
+
+config IIS2DLPC_PULSE_THSZ
+	hex "Pulse Z-axis threshold"
+	range 0 0x1F
+	default 0x0E
+	help
+	  Threshold to start the pulse-event detection procedure on the Z-axis.
+	  Threshold values for each axis are unsigned 5-bit corresponding
+	  to an 2g acceleration full-scale range.
+
+config IIS2DLPC_PULSE_X
+	bool "Enable X axis for pulse"
+	default y
+
+config IIS2DLPC_PULSE_Y
+	bool "Enable Y axis for pulse"
+	default y
+
+config IIS2DLPC_PULSE_Z
+	bool "Enable Z axis for pulse"
+	default y
+
+config IIS2DLPC_PULSE_SHOCK
+	hex "Shock value"
+	range 0 0x03
+	default 0x00
+	help
+	  Maximum duration of over-threshold event: this register represents
+	  the maximum time of an over-threshold signal detection to be
+	  recognized as a tap event. Where 0 equals 4*1/ODR and 1LSB = 8*1/ODR.
+
+config IIS2DLPC_PULSE_LTNCY
+	hex "Latency value"
+	range 0 0x0F
+	default 0x05
+	help
+	  When double-tap recognition is enabled, this register expresses
+	  the maximum time between two successive detected taps to
+	  determine a double-tap event. Where 0 equals 16*1/ODR and
+	  1LSB = 32*1/ODR.
+
+config IIS2DLPC_PULSE_QUIET
+	hex "Quiet value"
+	range 0 0x03
+	default 0x00
+	help
+	  Expected quiet time after a tap detection: this register represents
+	  the time after the first detected tap in which there must not be
+	  any overthreshold event. Where 0 equals 2*1/ODR and 1LSB = 4*1/ODR.
+
+endif # IIS2DLPC_PULSE
+
+endif # IIS2DLPC_TRIGGER
+
+choice
+	prompt "Accelerometer Full-scale range setting"
+	default IIS2DLPC_ACCEL_RANGE_RUNTIME
+
+config IIS2DLPC_ACCEL_RANGE_RUNTIME
+	bool "Set at runtime (Default 2G)"
+
+config IIS2DLPC_ACCEL_RANGE_2G
+	bool "2G"
+
+config IIS2DLPC_ACCEL_RANGE_4G
+	bool "4G"
+
+config IIS2DLPC_ACCEL_RANGE_8G
+	bool "8G"
+
+config IIS2DLPC_ACCEL_RANGE_16G
+	bool "16G"
+endchoice
+
+choice
+	prompt "Accelerometer sampling frequency (ODR)"
+	default IIS2DLPC_ODR_RUNTIME
+
+config IIS2DLPC_ODR_RUNTIME
+	bool "Set at runtime (Default 100 Hz)"
+
+config IIS2DLPC_ODR_1_6
+	bool "1.6 Hz"
+
+config IIS2DLPC_ODR_12_5
+	bool "12.5 Hz"
+
+config IIS2DLPC_ODR_25
+	bool "25 Hz"
+
+config IIS2DLPC_ODR_50
+	bool "50 Hz"
+
+config IIS2DLPC_ODR_100
+	bool "100 Hz"
+
+config IIS2DLPC_ODR_200
+	bool "200 Hz"
+
+config IIS2DLPC_ODR_400
+	bool "400 Hz"
+
+config IIS2DLPC_ODR_800
+	bool "800 Hz"
+
+config IIS2DLPC_ODR_1600
+	bool "1600 Hz"
+
+endchoice
+
+config IIS2DLPC_POWER_MODE
+	int "Sensor Power Modes"
+	range 0 4
+	default 0
+	help
+	  Specify the sensor power mode
+	  0: Low Power M1
+	  1: Low Power M2
+	  2: Low Power M3
+	  3: Low Power M4
+	  4: High Performance
+
+endif # IIS2DLPC

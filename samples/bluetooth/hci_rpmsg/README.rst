@@ -13,7 +13,7 @@ a part of `OpenAMP <https://github.com/OpenAMP/open-amp/>`__.
 Requirements
 ************
 
-* A board with :ref:`ipm_interface` driver and Bluetooth LE support
+* A board with :ref:`ipm_api` driver and Bluetooth LE support
 
 Building and Running
 ********************

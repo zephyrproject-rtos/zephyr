@@ -47,7 +47,7 @@ manifest:
       revision: a12d92816a53a521d79cefcf5c38b9dc8a4fed6e
       path: modules/hal/cypress
     - name: hal_nordic
-      revision: 12d7647870888e4cb0e421f2b26884c2e76915ac
+      revision: f6d5eca68e07551d6a36359b67600f9e98736839
       path: modules/hal/nordic
     - name: hal_openisa
       revision: 3b54187649cc9b37161d49918f1ad28ff7c7f830
@@ -77,13 +77,13 @@ manifest:
       revision: cf7020eb4c7ef93319f2d6d2403a21e12a879bf6
       path: modules/crypto/mbedtls
     - name: mcuboot
-      revision: v1.5.0
+      revision: 470e2f3d5bdcb1892d76a534a745186fd8ff5aab
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: d4e97cd4fc80ff949415062b1c83fd42929e8fe4
+      revision: 301892dad2eb97294f634b632c4ab6a6c56426b5
       path: modules/lib/mcumgr
     - name: net-tools
-      revision: 4bff01084d225996e4aae84b98be5969e2f9f33d
+      revision: a1fcd0c5949095194b26e6fb45768073bb3fd9de
       path: tools/net-tools
     - name: hal_nxp
       revision: 3e3f20e7de7606d735cdeefe21d5f2a51bf06095
@@ -95,14 +95,14 @@ manifest:
       revision: 29e516ec585b1a909af2b5f1c60d83e7d4d563e3
       path: modules/lib/loramac-node
     - name: openthread
-      revision: 3c6191eb4e8ca44b5f4eeaa696837bce14e83c69
+      revision: 8a1992e2e42fb707babe9491a6a1456e553490e8
       path: modules/lib/openthread
     - name: segger
       revision: 6fcf61606d6012d2c44129edc033f59331e268bc
       path: modules/debug/segger
     - name: tinycbor
       path: modules/lib/tinycbor
-      revision: 0fc68fceacd1efc1ce809c5880c380f3d98b7b6e
+      revision: 3cb8555348358d437893d3ab8e8de4e3b916afae
     - name: littlefs
       path: modules/fs/littlefs
       revision: fe9572dd5a9fcf93a249daa4233012692bd2881d

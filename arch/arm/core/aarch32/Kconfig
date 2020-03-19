@@ -76,6 +76,38 @@ config ISA_ARM
 	  processor start-up. Much of its functionality was subsumed into T32 with
 	  the introduction of Thumb-2 technology.
 
+config ASSEMBLER_ISA_THUMB2
+	bool
+	default y if ISA_THUMB2 && !ISA_ARM
+	depends on !ISA_ARM
+	help
+	  This helper symbol specifies the default target instruction set for
+	  the assembler.
+
+	  When only the Thumb-2 ISA is supported (i.e. on Cortex-M cores), the
+	  assembler must use the Thumb-2 instruction set.
+
+	  When both the Thumb-2 and ARM ISAs are supported (i.e. on Cortex-A
+	  and Cortex-R cores), the assembler must use the ARM instruction set
+	  because the architecture assembly code makes use of the ARM
+	  instructions.
+
+config COMPILER_ISA_THUMB2
+	bool "Compile C/C++ functions using Thumb-2 instruction set"
+	depends on ISA_THUMB2
+	default y
+	help
+	  This option configures the compiler to compile all C/C++ functions
+	  using the Thumb-2 instruction set.
+
+	  N.B. The scope of this symbol is not necessarily limited to the C and
+	       C++ languages; in fact, this symbol refers to all forms of
+	       "compiled" code.
+
+	       When an additional natively-compiled language support is added
+	       in the future, this symbol shall also specify the Thumb-2
+	       instruction set for that language.
+
 config NUM_IRQS
 	int
 

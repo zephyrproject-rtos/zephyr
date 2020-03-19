@@ -1,4 +1,4 @@
-/* ARM Cortex-M GCC specific public inline assembler functions and macros */
+/* ARM AArch32 GCC specific public inline assembler functions and macros */
 
 /*
  * Copyright (c) 2015, Wind River Systems, Inc.

@@ -1,4 +1,4 @@
-.. _fcb-manual:
+.. _fcb_api:
 
 Flash Circular Buffer (FCB)
 ###########################

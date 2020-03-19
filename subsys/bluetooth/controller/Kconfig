@@ -149,6 +149,8 @@ config BT_LLL_VENDOR_NORDIC
 config BT_LLL_VENDOR_OPENISA
 	bool "Use OpenISA LLL"
 	depends on BT_LL_SW_SPLIT && SOC_OPENISA_RV32M1_RISCV32
+	select BT_CTLR_PHY_UPDATE_SUPPORT
+	select BT_CTLR_EXT_REJ_IND_SUPPORT
 	select BT_HAS_HCI_VS
 	select BT_CTLR_LE_ENC_SUPPORT if !BT_CTLR_DATA_LENGTH_CLEAR
 	default y
@@ -442,6 +444,20 @@ config BT_CTLR_PHY
 	select BT_CTLR_EXT_REJ_IND
 	default y
 
+config BT_CTLR_PHY_2M
+	bool "2Mbps PHY Support"
+	depends on BT_CTLR_PHY && (!SOC_SERIES_NRF51X || BT_CTLR_PHY_2M_NRF)
+	default y
+	help
+	  Enable support for Bluetooth 5.0 2Mbps PHY in the Controller.
+
+config BT_CTLR_PHY_CODED
+	bool "Coded PHY Support"
+	depends on BT_CTLR_PHY && HAS_HW_NRF_RADIO_BLE_CODED
+	default y
+	help
+	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
+
 config BT_CTLR_MIN_USED_CHAN
 	bool "Minimum Number of Used Channels"
 	depends on BT_CTLR_MIN_USED_CHAN_SUPPORT
@@ -554,20 +570,6 @@ config BT_CTLR_PHY_2M_NRF
 	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
 	  Controller. Encrypted connections are not supported.
 
-config BT_CTLR_PHY_2M
-	bool "2Mbps PHY Support"
-	depends on BT_CTLR_PHY && (!SOC_SERIES_NRF51X || BT_CTLR_PHY_2M_NRF)
-	default y
-	help
-	  Enable support for Bluetooth 5.0 2Mbps PHY in the Controller.
-
-config BT_CTLR_PHY_CODED
-	bool "Coded PHY Support"
-	depends on (BT_CTLR_PHY || BT_CTLR_ADV_EXT) && HAS_HW_NRF_RADIO_BLE_CODED
-	default y
-	help
-	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
-
 config BT_CTLR_ZLI
 	bool "Use Zero Latency IRQs"
 	depends on ZERO_LATENCY_IRQS && BT_LL_SW_SPLIT
@@ -577,7 +579,8 @@ config BT_CTLR_ZLI
 	  else will impact controller stability.
 
 config BT_CTLR_OPTIMIZE_FOR_SPEED
-	bool "Optimize for Speed"
+	prompt "Optimize for Speed" if !(SOC_SERIES_NRF51X && BT_CTLR_LE_ENC)
+	bool
 	default y if BT_CTLR_LE_ENC
 	help
 	  Optimize compilation of controller for execution speed.

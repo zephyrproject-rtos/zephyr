@@ -508,8 +508,12 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	const struct in_addr *src;
 	struct net_pkt *pkt;
 
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) && net_if_is_ip_offloaded(iface)) {
+		return -ENOTSUP;
+	}
+
 	if (!iface->config.ip.ipv4) {
-		return -EINVAL;
+		return -ENETUNREACH;
 	}
 
 	/* Take the first address of the network interface */

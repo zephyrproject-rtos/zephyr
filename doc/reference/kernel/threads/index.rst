@@ -43,7 +43,7 @@ A thread has the following key properties:
   By default, threads run in supervisor mode and allow access to
   privileged CPU instructions, the entire memory address space, and
   peripherals. User mode threads have a reduced set of privileges.
-  This depends on the :option:`CONFIG_USERSPACE` option. See :ref:`usermode`.
+  This depends on the :option:`CONFIG_USERSPACE` option. See :ref:`usermode_api`.
 
 .. _lifecycle_v2:
 
@@ -84,6 +84,12 @@ prior to returning, since the kernel does *not* reclaim them automatically.
 .. note::
     The kernel does not currently make any claims regarding an application's
     ability to respawn a thread that terminates.
+
+In some cases a thread may want to sleep until another thread terminates.
+This can be accomplished with the :cpp:func:`k_thread_join()` API. This
+will block the calling thread until either the timeout expires, the target
+thread self-exits, or the target thread aborts (either due to a
+k_thread_abort() call or triggering a fatal error).
 
 Thread Aborting
 ===============
@@ -230,13 +236,13 @@ The following thread options are supported.
 
 :c:macro:`K_USER`
     If :option:`CONFIG_USERSPACE` is enabled, this thread will be created in
-    user mode and will have reduced privileges. See :ref:`usermode`. Otherwise
+    user mode and will have reduced privileges. See :ref:`usermode_api`. Otherwise
     this flag does nothing.
 
 :c:macro:`K_INHERIT_PERMS`
     If :option:`CONFIG_USERSPACE` is enabled, this thread will inherit all
     kernel object permissions that the parent thread had, except the parent
-    thread object.  See :ref:`usermode`.
+    thread object.  See :ref:`usermode_api`.
 
 
 .. _custom_data_v2:

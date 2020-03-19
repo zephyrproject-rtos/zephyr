@@ -9,13 +9,19 @@
 /**
  * @file
  * @brief Public API header file for Intel GNA driver
- *
- * This file contains the driver APIs for Intel's
- * Gaussian Mixture Model and Neural Network Accelerator (GNA)
  */
 
 #ifndef __INCLUDE_GNA__
 #define __INCLUDE_GNA__
+
+/**
+ * @defgroup gna_interface GNA Interface
+ * @ingroup io_interfaces
+ * @{
+ *
+ * This file contains the driver APIs for Intel's
+ * Gaussian Mixture Model and Neural Network Accelerator (GNA)
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -212,5 +218,9 @@ static inline int gna_infer(struct device *dev, struct gna_inference_req *req,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* __INCLUDE_GNA__ */

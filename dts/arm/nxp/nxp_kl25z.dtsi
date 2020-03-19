@@ -105,6 +105,36 @@
 			#io-channel-cells = <1>;
 		};
 
+		pinmux_a: pinmux@40049000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x40049000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+		};
+
+		pinmux_b: pinmux@4004a000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004a000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+		};
+
+		pinmux_c: pinmux@4004b000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004b000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+		};
+
+		pinmux_d: pinmux@4004c000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004c000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
+		};
+
+		pinmux_e: pinmux@4004d000 {
+			compatible = "nxp,kinetis-pinmux";
+			reg = <0x4004d000 0xd0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
+		};
+
 		gpioa: gpio@400ff000 {
 			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff000 0x40>;
@@ -112,6 +142,7 @@
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&pinmux_a>;
 		};
 
 		gpiob: gpio@400ff040 {
@@ -120,6 +151,7 @@
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&pinmux_b>;
 		};
 
 		gpioc: gpio@400ff080 {
@@ -128,6 +160,7 @@
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&pinmux_c>;
 		};
 
 		gpiod: gpio@400ff0c0 {
@@ -137,6 +170,7 @@
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&pinmux_d>;
 		};
 
 		gpioe: gpio@400ff100 {
@@ -145,6 +179,7 @@
 			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&pinmux_e>;
 		};
 
 		usbd: usbd@40072000 {

@@ -228,15 +228,15 @@ static const struct wdt_driver_api wdt_sam_api = {
 };
 
 static const struct wdt_sam_dev_cfg wdt_sam_cfg = {
-	.regs = (Wdt *)DT_WDT_SAM_BASE_ADDRESS,
+	.regs = (Wdt *)DT_INST_0_ATMEL_SAM_WATCHDOG_BASE_ADDRESS,
 };
 
 static void wdt_sam_irq_config(void)
 {
-	IRQ_CONNECT(DT_WDT_SAM_IRQ,
-		    DT_WDT_SAM_IRQ_PRIORITY, wdt_sam_isr,
+	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_WATCHDOG_IRQ_0,
+		    DT_INST_0_ATMEL_SAM_WATCHDOG_IRQ_0_PRIORITY, wdt_sam_isr,
 		    DEVICE_GET(wdt_sam), 0);
-	irq_enable(DT_WDT_SAM_IRQ);
+	irq_enable(DT_INST_0_ATMEL_SAM_WATCHDOG_IRQ_0);
 }
 
 static int wdt_sam_init(struct device *dev)
@@ -249,6 +249,6 @@ static int wdt_sam_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(wdt_sam, DT_WDT_SAM_LABEL, wdt_sam_init,
+DEVICE_AND_API_INIT(wdt_sam, DT_INST_0_ATMEL_SAM_WATCHDOG_LABEL, wdt_sam_init,
 		    &wdt_sam_data, &wdt_sam_cfg, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sam_api);

@@ -45,13 +45,6 @@
 #define INT_ENABLE_ARC				~(0x00000001 << 8)
 #define INT_ENABLE_ARC_BIT_POS			(8)
 
-/*
- * UARTs: UART0 & UART1 & UART2
- */
-#define DT_UART_NS16550_PORT_0_IRQ_FLAGS	0 /* Default */
-#define DT_UART_NS16550_PORT_1_IRQ_FLAGS	0 /* Default */
-#define DT_UART_NS16550_PORT_2_IRQ_FLAGS	0 /* Default */
-
 #ifndef CONFIG_HAS_DTS
 /* I2C */
 /* I2C_0 is on Pmod2 connector */
@@ -61,28 +54,6 @@
 /* I2C_1 is on Pmod4 connector */
 #define DT_I2C_1_BASE_ADDR			0xF0005000
 #define DT_I2C_1_IRQ_FLAGS			0
-
-
-/* GPIO */
-#define DT_GPIO_DW_0_BASE_ADDR			0xF0002000 /* GPIO 0 : PORTA */
-#define DT_GPIO_DW_0_BITS				32
-#define GPIO_DW_PORT_0_INT_MASK			0 /* n/a */
-#define DT_GPIO_DW_0_IRQ_FLAGS			0 /* Defaults */
-
-#define DT_GPIO_DW_1_BASE_ADDR			0xF000200C /* GPIO 1 : PORTB */
-#define DT_GPIO_DW_1_BITS				9          /* 9 LEDs on board */
-#define GPIO_DW_PORT_1_INT_MASK			0 /* n/a */
-
-#define DT_GPIO_DW_2_BASE_ADDR			0xF0002018 /* GPIO 2 : PORTC */
-#define DT_GPIO_DW_2_BITS				32
-#define GPIO_DW_PORT_2_INT_MASK			0 /* n/a */
-
-#define DT_GPIO_DW_3_BASE_ADDR			0xF0002024 /* GPIO 3 : PORTD */
-#define DT_GPIO_DW_3_BITS				12
-#define GPIO_DW_PORT_3_INT_MASK			0 /* n/a */
-
-/* SPI */
-#define DT_SPI_DW_IRQ_FLAGS			0
 
 /*
  * SPI Chip Select Assignments on EM Starter Kit

@@ -24,10 +24,8 @@ LOG_MODULE_DECLARE(power);
  */
 #if defined(CONFIG_SOC_FAMILY_NRF)
 #define MAX_PM_DEVICES	15
-#define MAX_DEV_NAME_LEN	16
-static const char core_devices[][MAX_DEV_NAME_LEN] = {
-	"CLOCK_32K",
-	"CLOCK_16M",
+static const char *const core_devices[] = {
+	"CLOCK",
 	"sys_clock",
 	"UART_0",
 };
@@ -136,7 +134,7 @@ void sys_pm_create_device_list(void)
 		     j < ARRAY_SIZE(core_devices);
 		     j++) {
 			if (!strcmp(pm_device_list[i].config->name,
-						&core_devices[j][0])) {
+						core_devices[j])) {
 				is_core_dev = true;
 				break;
 			}

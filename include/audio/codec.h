@@ -14,6 +14,13 @@
 #ifndef ZEPHYR_INCLUDE_AUDIO_CODEC_H_
 #define ZEPHYR_INCLUDE_AUDIO_CODEC_H_
 
+/**
+ * @brief Abstraction for audio codecs
+ *
+ * @defgroup audio_codec_interface Audio Codec Interface
+ * @{
+ */
+
 #include <drivers/i2s.h>
 
 #ifdef __cplusplus
@@ -216,5 +223,9 @@ static inline int audio_codec_apply_properties(struct device *dev)
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_AUDIO_CODEC_H_ */

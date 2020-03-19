@@ -1,4 +1,4 @@
-.. _kernel:
+.. _kernel_api:
 
 Kernel Services
 ###############

@@ -16,10 +16,6 @@
 #include <ksched.h>
 #include <wait_q.h>
 
-#ifdef CONFIG_USERSPACE
-extern u8_t *z_priv_stack_find(void *obj);
-#endif
-
 /* An initial context, to be "restored" by z_arm_pendsv(), is put at the other
  * end of the stack, and thus reusable by the stack when not needed anymore.
  *
@@ -135,9 +131,13 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->callee_saved.psp = (u32_t)pInitCtx;
 #if defined(CONFIG_CPU_CORTEX_R)
 	pInitCtx->basic.lr = (u32_t)pInitCtx->basic.pc;
-	thread->callee_saved.spsr = A_BIT | T_BIT | MODE_SYS;
-	thread->callee_saved.lr = (u32_t)pInitCtx->basic.pc;
+	thread->callee_saved.spsr = A_BIT | MODE_SYS;
+#if defined(CONFIG_COMPILER_ISA_THUMB2)
+	thread->callee_saved.spsr |= T_BIT;
 #endif
+
+	thread->callee_saved.lr = (u32_t)pInitCtx->basic.pc;
+#endif /* CONFIG_CPU_CORTEX_R */
 	thread->arch.basepri = 0;
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_FP_SHARING)

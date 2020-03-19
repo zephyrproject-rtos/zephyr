@@ -42,4 +42,8 @@ config GPIO_STM32_PORTK
 
 endif # GPIO_STM32
 
+config I2C_STM32_V2
+	default y
+	depends on I2C_STM32
+
 endif # SOC_SERIES_STM32H7X

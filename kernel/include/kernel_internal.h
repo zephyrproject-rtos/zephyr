@@ -50,16 +50,6 @@ extern void z_new_thread_init(struct k_thread *thread,
 					    char *pStack, size_t stackSize,
 					    int prio, unsigned int options);
 
-#ifdef CONFIG_USERSPACE
-/**
- * @brief Zero out BSS sections for application shared memory
- *
- * This isn't handled by any platform bss zeroing, and is called from
- * z_cstart() if userspace is enabled.
- */
-extern void z_app_shmem_bss_zero(void);
-#endif /* CONFIG_USERSPACE */
-
 /**
  * @brief Allocate some memory from the current thread's resource pool
  *
@@ -126,9 +116,17 @@ extern u32_t z_timestamp_idle; /* timestamp when CPU goes idle */
 #endif
 
 extern struct k_thread z_main_thread;
-extern struct k_thread z_idle_thread;
-extern K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
-extern K_THREAD_STACK_DEFINE(z_idle_stack, CONFIG_IDLE_STACK_SIZE);
+
+
+#ifdef CONFIG_MULTITHREADING
+extern struct k_thread z_idle_threads[CONFIG_MP_NUM_CPUS];
+#endif
+extern K_THREAD_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+				   CONFIG_ISR_STACK_SIZE);
+
+#ifdef CONFIG_GEN_PRIV_STACKS
+extern u8_t *z_priv_stack_find(k_thread_stack_t *stack);
+#endif
 
 #ifdef __cplusplus
 }

@@ -16,7 +16,7 @@ can publish messages to an Azure Cloud IoT hub based on MQTT protocol.
 - DNS supported
 
 The source code of this sample application can be found at:
-:zephyr_file:`samples/net/mqtt_azure`.
+:zephyr_file:`samples/net/cloud/mqtt_azure`.
 
 Requirements
 ************
@@ -110,6 +110,14 @@ This is the output from the FRDM UART console, with:
 	[00:00:51.861,000] <dbg> mqtt_azure.mqtt_event_handler: PUBACK packet id: 38106
 
 You can also check events or messages information on Azure Portal.
+
+Cloud to device communication
+=============================
+
+Goto IoT devices section in Azure Portal. Click on the device from
+IoT devices. If you have configured multiple devices, select correct device.
+Goto Message to Device section. Enter text in Message Body section.
+Click on Send Message.
 
 See `Azure Cloud MQTT Documentation
 <https://docs.microsoft.com/en-us/azure/iot-hub/iot-hub-mqtt-support>`_.

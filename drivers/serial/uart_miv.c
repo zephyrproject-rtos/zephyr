@@ -379,7 +379,7 @@ static const struct uart_driver_api uart_miv_driver_api = {
 #endif
 };
 
-#ifdef CONFIG_UART_MIV_PORT_0
+#ifdef DT_INST_0_MICROSEMI_COREUART
 
 static struct uart_miv_data uart_miv_data_0;
 
@@ -388,16 +388,16 @@ static void uart_miv_irq_cfg_func_0(struct device *dev);
 #endif
 
 static const struct uart_miv_device_config uart_miv_dev_cfg_0 = {
-	.uart_addr    = DT_MIV_UART_0_BASE_ADDR,
-	.sys_clk_freq = DT_MIV_UART_0_CLOCK_FREQUENCY,
+	.uart_addr    = DT_INST_0_MICROSEMI_COREUART_BASE_ADDRESS,
+	.sys_clk_freq = DT_INST_0_MICROSEMI_COREUART_CLOCK_FREQUENCY,
 	.line_config  = MIV_UART_0_LINECFG,
-	.baud_rate    = DT_MIV_UART_0_BAUD_RATE,
+	.baud_rate    = DT_INST_0_MICROSEMI_COREUART_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.cfg_func     = uart_miv_irq_cfg_func_0,
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_miv_0, DT_MIV_UART_0_NAME,
+DEVICE_AND_API_INIT(uart_miv_0, DT_INST_0_MICROSEMI_COREUART_LABEL,
 		    uart_miv_init, &uart_miv_data_0, &uart_miv_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&uart_miv_driver_api);
@@ -412,4 +412,4 @@ static void uart_miv_irq_cfg_func_0(struct device *dev)
 }
 #endif
 
-#endif /* CONFIG_UART_MIV_PORT_0 */
+#endif /* DT_INST_0_MICROSEMI_COREUART */

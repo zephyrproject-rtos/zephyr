@@ -67,6 +67,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* Leave room for 32 hexadeciaml digits (UUID) + NULL */
 #define CLIENT_EP_LEN		33
 
+/* Up to 3 characters + NULL */
+#define CLIENT_BINDING_LEN sizeof("UQS")
+
 /* The states for the RD client state machine */
 /*
  * When node is unregistered it ends up in UNREGISTERED
@@ -84,6 +87,7 @@ enum sm_engine_state {
 	ENGINE_DO_REGISTRATION,
 	ENGINE_REGISTRATION_SENT,
 	ENGINE_REGISTRATION_DONE,
+	ENGINE_REGISTRATION_DONE_RX_OFF,
 	ENGINE_UPDATE_SENT,
 	ENGINE_DEREGISTER,
 	ENGINE_DEREGISTER_SENT,
@@ -99,6 +103,7 @@ struct lwm2m_rd_client_info {
 	u8_t trigger_update;
 
 	s64_t last_update;
+	s64_t last_tx;
 
 	char ep_name[CLIENT_EP_LEN];
 	char server_ep[CLIENT_EP_LEN];
@@ -109,6 +114,11 @@ struct lwm2m_rd_client_info {
 /* buffers */
 static char query_buffer[64]; /* allocate some data for queries and updates */
 static u8_t client_data[256]; /* allocate some data for the RD */
+
+void engine_update_tx_time(void)
+{
+	client.last_tx = k_uptime_get();
+}
 
 static void set_sm_state(u8_t sm_state)
 {
@@ -127,6 +137,8 @@ static void set_sm_state(u8_t sm_state)
 		event = LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE;
 	} else if (sm_state == ENGINE_REGISTRATION_DONE) {
 		event = LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE;
+	} else if (sm_state == ENGINE_REGISTRATION_DONE_RX_OFF) {
+		event = LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF;
 	} else if ((sm_state == ENGINE_INIT ||
 		    sm_state == ENGINE_DEREGISTERED) &&
 		   (client.engine_state >= ENGINE_DO_REGISTRATION &&
@@ -579,6 +591,7 @@ static int sm_send_registration(bool send_obj_support_data,
 	struct lwm2m_message *msg;
 	u16_t client_data_len;
 	int ret;
+	char binding[CLIENT_BINDING_LEN];
 
 	msg = lwm2m_get_message(client.ctx);
 	if (!msg) {
@@ -633,7 +646,15 @@ static int sm_send_registration(bool send_obj_support_data,
 	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
 				  query_buffer, strlen(query_buffer));
 
-	/* TODO: add supported binding query string */
+	lwm2m_engine_get_binding(binding);
+	/* UDP is a default binding, no need to add option if UDP is used. */
+	if (strcmp(binding, "U") != 0) {
+		snprintk(query_buffer, sizeof(query_buffer) - 1,
+			 "b=%s", binding);
+		/* TODO: handle return error */
+		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
+					  query_buffer, strlen(query_buffer));
+	}
 
 	if (send_obj_support_data) {
 		ret = coap_packet_append_payload_marker(&msg->cpkt);
@@ -742,6 +763,13 @@ static int sm_registration_done(void)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_LWM2M_QUEUE_MODE_ENABLED) &&
+	    (client.engine_state != ENGINE_REGISTRATION_DONE_RX_OFF) &&
+	    (((k_uptime_get() - client.last_tx) / 1000) >=
+	     CONFIG_LWM2M_QUEUE_MODE_UPTIME)) {
+		set_sm_state(ENGINE_REGISTRATION_DONE_RX_OFF);
+	}
+
 	return ret;
 }
 
@@ -830,6 +858,7 @@ static void lwm2m_rd_client_service(struct k_work *work)
 			break;
 
 		case ENGINE_REGISTRATION_DONE:
+		case ENGINE_REGISTRATION_DONE_RX_OFF:
 			sm_registration_done();
 			break;
 

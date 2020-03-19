@@ -15,10 +15,10 @@
 extern "C" {
 #endif
 
-/* Company Identifiers (see Bluetooth Assigned Numbers) */
+/** Company Identifiers (see Bluetooth Assigned Numbers) */
 #define BT_COMP_ID_LF           0x05f1 /* The Linux Foundation */
 
-/* EIR/AD data type definitions */
+/** EIR/AD data type definitions */
 #define BT_DATA_FLAGS                   0x01 /* AD flags */
 #define BT_DATA_UUID16_SOME             0x02 /* 16-bit UUID, more available */
 #define BT_DATA_UUID16_ALL              0x03 /* 16-bit UUID, all listed */

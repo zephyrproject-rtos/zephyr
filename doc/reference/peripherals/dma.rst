@@ -1,4 +1,4 @@
-.. _dma_interface:
+.. _dma_api:
 
 DMA
 ###

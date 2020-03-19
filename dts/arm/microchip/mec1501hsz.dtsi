@@ -43,6 +43,8 @@
 			reg = <0x40007400 0x10>;
 			interrupts = <111 0>;
 			label = "RTIMER";
+			girq = <23>;
+			girq-bit = <10>;
 		};
 		wdog: watchdog@40000400 {
 			compatible = "microchip,xec-watchdog";
@@ -54,6 +56,7 @@
 			compatible = "ns16550";
 			reg = <0x400f2400 0x400>;
 			interrupts = <40 0>;
+			clock-frequency = <1843200>;
 			current-speed = <38400>;
 			label = "UART_0";
 			reg-shift = <0>;
@@ -63,6 +66,7 @@
 			compatible = "ns16550";
 			reg = <0x400f2800 0x400>;
 			interrupts = <41 0>;
+			clock-frequency = <1843200>;
 			current-speed = <38400>;
 			label = "UART_1";
 			reg-shift = <0>;
@@ -72,6 +76,7 @@
 			compatible = "ns16550";
 			reg = <0x400f2c00 0x400>;
 			interrupts = <44 0>;
+			clock-frequency = <1843200>;
 			current-speed = <38400>;
 			label = "UART_2";
 			reg-shift = <0>;
@@ -194,6 +199,8 @@
 			max-value = <0xFFFF>;
 			prescaler = <0>;
 			status = "disabled";
+			girq = <23>;
+			girq-bit = <0>;
 		};
 		timer1: timer@40000c20 {
 			compatible = "microchip,xec-timer";
@@ -204,6 +211,8 @@
 			max-value = <0xFFFF>;
 			prescaler = <0>;
 			status = "disabled";
+			girq = <23>;
+			girq-bit = <1>;
 		};
 		timer3: timer@40000ca0 {
 			compatible = "microchip,xec-timer";
@@ -213,6 +222,8 @@
 			label = "TIMER_3";
 			max-value = <0xFFFFFFFF>;
 			prescaler = <0>;
+			girq = <23>;
+			girq-bit = <5>;
 		};
 		ps2_0: ps2@40009000 {
 			compatible = "microchip,xec-ps2";
@@ -222,6 +233,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <18>;
+			girq-bit = <10>;
 		};
 		ps2_1: ps2@40009040 {
 			compatible = "microchip,xec-ps2";
@@ -231,6 +244,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+			girq = <18>;
+			girq-bit = <11>;
 		};
 		pwm0: pwm@40005800 {
 			compatible = "microchip,xec-pwm";
@@ -312,6 +327,14 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+		peci0: peci@40006400 {
+			compatible = "microchip,xec-peci";
+			reg = <0x40006400 0x80>;
+			interrupts = <70 4>;
+			label = "PECI_0";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 		spi0: spi@40070000 {
 			compatible = "microchip,xec-qmspi";
 			reg = <0x40070000 0x400>;
@@ -329,6 +352,42 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+		};
+		tach0: tach@40006000 {
+			compatible = "microchip,xec-tach";
+			reg = <0x40006000 0x10>;
+			interrupts = <71 4>;
+			label = "TACH_0";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		tach1: tach@40006010 {
+			compatible = "microchip,xec-tach";
+			reg = <0x40006010 0x10>;
+			interrupts = <72 4>;
+			label = "TACH_1";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		tach2: tach@40006020 {
+			compatible = "microchip,xec-tach";
+			reg = <0x40006020 0x10>;
+			interrupts = <73 4>;
+			label = "TACH_2";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+		tach3: tach@40006030 {
+			compatible = "microchip,xec-tach";
+			reg = <0x40006030 0x10>;
+			interrupts = <159 4>;
+			label = "TACH_3";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 };

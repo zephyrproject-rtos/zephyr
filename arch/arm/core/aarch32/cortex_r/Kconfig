@@ -33,6 +33,7 @@ config ARMV7_R
 	bool
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_ARM
+	select ISA_THUMB2
 	help
 	  This option signifies the use of an ARMv7-R processor
 	  implementation.

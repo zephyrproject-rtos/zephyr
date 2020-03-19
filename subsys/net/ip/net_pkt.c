@@ -1150,7 +1150,12 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 #endif
 
 	if (!buf) {
-		NET_ERR("Data buffer allocation failed.");
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+		NET_ERR("Data buffer (%zd) allocation failed (%s:%d)",
+			alloc_len, caller, line);
+#else
+		NET_ERR("Data buffer (%zd) allocation failed.", alloc_len);
+#endif
 		return -ENOMEM;
 	}
 

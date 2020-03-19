@@ -4,15 +4,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_LED_STRIP_H_
-#define ZEPHYR_INCLUDE_DRIVERS_LED_STRIP_H_
-
 /**
  * @file
  * @brief Public API for controlling linear strips of LEDs.
  *
  * This library abstracts the chipset drivers for individually
  * addressable strips of LEDs.
+ */
+
+#ifndef ZEPHYR_INCLUDE_DRIVERS_LED_STRIP_H_
+#define ZEPHYR_INCLUDE_DRIVERS_LED_STRIP_H_
+
+/**
+ * @brief LED Strip Interface
+ * @defgroup led_strip_interface LED Strip Interface
+ * @ingroup io_interfaces
+ * @{
  */
 
 #include <zephyr/types.h>
@@ -125,5 +132,9 @@ static inline int led_strip_update_channels(struct device *dev,
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @}
+ */
 
 #endif	/* ZEPHYR_INCLUDE_DRIVERS_LED_STRIP_H_ */

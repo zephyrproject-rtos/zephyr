@@ -54,7 +54,7 @@ set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
 set(LINKER_SCRIPT_TARGET       linker_script_target)
-
+set(PARSE_SYSCALLS_TARGET      parse_syscalls_target)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
@@ -351,9 +351,6 @@ endif()
 if(CONFIG_USERSPACE)
   set(APP_SMEM_ALIGNED_DEP app_smem_aligned_linker)
   set(APP_SMEM_UNALIGNED_DEP app_smem_unaligned_linker)
-  if(CONFIG_ARM)
-    set(PRIV_STACK_DEP priv_stacks_prebuilt)
-  endif()
 endif()
 
 get_property(TOPT GLOBAL PROPERTY TOPT)
@@ -494,6 +491,7 @@ endif()
 
 set(syscall_list_h ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
 set(syscalls_json  ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
+set(subsys_json    ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/subsystems.json)
 
 # The syscalls subdirs txt file is constructed by python containing a list of folders to use for
 # dependency handling, including empty folders.
@@ -585,16 +583,20 @@ endforeach()
 add_custom_command(
   OUTPUT
   ${syscalls_json}
+  ${subsys_json}
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/parse_syscalls.py
    --include          ${ZEPHYR_BASE}/include        # Read files from this dir
   ${parse_syscalls_include_args}                    # Read files from these dirs also
-  --json-file        ${syscalls_json}              # Write this file
+  --json-file        ${syscalls_json}               # Write this file
+  --subsystem-file   ${subsys_json}                 # Write subsystem list to this file
   DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
   )
 
 add_custom_target(${SYSCALL_LIST_H_TARGET} DEPENDS             ${syscall_list_h})
+add_custom_target(${PARSE_SYSCALLS_TARGET}
+	          DEPENDS ${syscalls_json} ${subsys_json})
 
 # 64-bit systems do not require special handling of 64-bit system call
 # parameters or return values, indicate this to the system call boilerplate
@@ -614,8 +616,11 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   --syscall-list     ${syscall_list_h}
   ${SYSCALL_LONG_REGISTERS_ARG}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${syscalls_json}
+  DEPENDS ${PARSE_SYSCALLS_TARGET}
   )
+
+# This is passed into all calls to the gen_kobject_list.py script.
+set(gen_kobject_list_include_args --include ${subsys_json})
 
 set(DRV_VALIDATION ${PROJECT_BINARY_DIR}/include/generated/driver-validation.h)
 add_custom_command(
@@ -624,8 +629,11 @@ add_custom_command(
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
   --validation-output ${DRV_VALIDATION}
+  ${gen_kobject_list_include_args}
   $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-  DEPENDS ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
+  DEPENDS
+  ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
+  ${PARSE_SYSCALLS_TARGET}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
@@ -695,7 +703,6 @@ endif() # CONFIG_CODE_DATA_RELOCATION
 configure_linker_script(
   linker.cmd
   ""
-  ${PRIV_STACK_DEP}
   ${APP_SMEM_ALIGNED_DEP}
   ${CODE_RELOCATION_DEP}
   zephyr_generated_headers
@@ -775,147 +782,7 @@ if(CONFIG_USERSPACE)
 
   get_property(compile_definitions_interface TARGET zephyr_interface
     PROPERTY INTERFACE_COMPILE_DEFINITIONS)
-endif()
 
-
-# Warning most of this gperf code is duplicated below for
-# gen_kobject_list.py / output_lib
-if(CONFIG_ARM AND CONFIG_USERSPACE)
-  set(GEN_PRIV_STACKS $ENV{ZEPHYR_BASE}/scripts/gen_priv_stacks.py)
-  set(PROCESS_PRIV_STACKS_GPERF $ENV{ZEPHYR_BASE}/scripts/process_gperf.py)
-
-  set(PRIV_STACKS                    priv_stacks_hash.gperf)
-  set(PRIV_STACKS_OUTPUT_SRC_PRE     priv_stacks_hash_preprocessed.c)
-  set(PRIV_STACKS_OUTPUT_SRC         priv_stacks_hash.c)
-  set(PRIV_STACKS_OUTPUT_OBJ         priv_stacks_hash.c.obj)
-  set(PRIV_STACKS_OUTPUT_OBJ_RENAMED priv_stacks_hash_renamed.o)
-
-  # Essentially what we are doing here is extracting some information
-  # out of the nearly finished elf file, generating the source code
-  # for a hash table based on that information, and then compiling and
-  # linking the hash table back into a now even more nearly finished
-  # elf file.
-
-  # Use the script GEN_PRIV_STACKS to scan the kernel binary's
-  # (${ZEPHYR_PREBUILT_EXECUTABLE}) DWARF information to produce a table of kernel
-  # objects (PRIV_STACKS) which we will then pass to gperf
-  add_custom_command(
-    OUTPUT ${PRIV_STACKS}
-    COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${GEN_PRIV_STACKS}
-    --kernel $<TARGET_FILE:priv_stacks_prebuilt>
-    --output ${PRIV_STACKS}
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS priv_stacks_prebuilt
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
-  add_custom_target(priv_stacks DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS})
-
-  if(${GPERF} STREQUAL GPERF-NOTFOUND)
-    message(FATAL_ERROR "Unable to find gperf")
-  endif()
-
-  # Use gperf to generate C code (PRIV_STACKS_OUTPUT_SRC_PRE) which implements a
-  # perfect hashtable based on PRIV_STACKS
-  add_custom_command(
-    OUTPUT ${PRIV_STACKS_OUTPUT_SRC_PRE}
-    COMMAND
-    ${GPERF} -C
-    --output-file ${PRIV_STACKS_OUTPUT_SRC_PRE}
-    ${PRIV_STACKS}
-    DEPENDS priv_stacks ${PRIV_STACKS}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
-  add_custom_target(priv_stacks_output_src_pre DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC_PRE})
-
-  # For our purposes the code/data generated by gperf is not optimal.
-  #
-  # The script PROCESS_GPERF creates a new c file OUTPUT_SRC based on
-  # OUTPUT_SRC_PRE to greatly reduce the amount of code/data generated
-  # since we know we are always working with pointer values
-  add_custom_command(
-    OUTPUT ${PRIV_STACKS_OUTPUT_SRC}
-    COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${PROCESS_PRIV_STACKS_GPERF}
-    -i ${PRIV_STACKS_OUTPUT_SRC_PRE}
-    -o ${PRIV_STACKS_OUTPUT_SRC}
-    -p "struct _k_priv_stack_map"
-    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS priv_stacks_output_src_pre ${PRIV_STACKS_OUTPUT_SRC_PRE}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
-  add_custom_target(priv_stacks_output_src DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC})
-
-  set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC}
-    PROPERTIES COMPILE_DEFINITIONS "${compile_definitions_interface}")
-
-  set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC}
-    PROPERTIES COMPILE_FLAGS
-    "${NO_COVERAGE_FLAGS} -fno-function-sections -fno-data-sections ")
-
-  # We need precise control of where generated text/data ends up in the final
-  # kernel image. Disable function/data sections and use objcopy to move
-  # generated data into special section names
-  add_library(priv_stacks_output_lib STATIC
-    ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC}
-    )
-
-  # Turn off -ffunction-sections, etc.
-  # NB: Using a library instead of target_compile_options(priv_stacks_output_lib
-  # [...]) because a library's options have precedence
-  add_library(priv_stacks_output_lib_interface INTERFACE)
-  foreach(incl ${include_dir_in_interface})
-    target_include_directories(priv_stacks_output_lib_interface INTERFACE ${incl})
-  endforeach()
-
-  foreach(incl ${sys_include_dir_in_interface})
-    target_include_directories(priv_stacks_output_lib_interface SYSTEM INTERFACE ${incl})
-  endforeach()
-
-  target_link_libraries(priv_stacks_output_lib priv_stacks_output_lib_interface)
-
-  set(PRIV_STACKS_OUTPUT_OBJ_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/priv_stacks_output_lib.dir/${PRIV_STACKS_OUTPUT_OBJ})
-
-  set(obj_copy_cmd "")
-  set(obj_copy_sections_rename
-    .bss=.priv_stacks.noinit
-    .data=.priv_stacks.data
-    .text=.priv_stacks.text
-    .rodata=.priv_stacks.rodata
-    )
-  bintools_objcopy(
-    RESULT_CMD_LIST obj_copy_cmd
-    SECTION_RENAME  ${obj_copy_sections_rename}
-    FILE_INPUT      ${PRIV_STACKS_OUTPUT_OBJ_PATH}
-    FILE_OUTPUT     ${PRIV_STACKS_OUTPUT_OBJ_RENAMED}
-    )
-  add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_OBJ_RENAMED}
-    ${obj_copy_cmd}
-    DEPENDS priv_stacks_output_lib
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
-  add_custom_target(priv_stacks_output_obj_renamed DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_OBJ_RENAMED})
-
-  add_library(priv_stacks_output_obj_renamed_lib STATIC IMPORTED GLOBAL)
-  set_property(
-    TARGET priv_stacks_output_obj_renamed_lib
-    PROPERTY
-    IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_OBJ_RENAMED}
-    )
-  add_dependencies(
-    priv_stacks_output_obj_renamed_lib
-    priv_stacks_output_obj_renamed
-    )
-
-  set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES priv_stacks_output_obj_renamed_lib)
-endif()
-
-# Warning: most of this gperf code is duplicated above for
-# gen_priv_stacks.py / priv_stacks_output_lib
-if(CONFIG_USERSPACE)
   set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/gen_kobject_list.py)
   set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/process_gperf.py)
 
@@ -941,8 +808,11 @@ if(CONFIG_USERSPACE)
     ${GEN_KOBJ_LIST}
     --kernel $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     --gperf-output ${OBJ_LIST}
+    ${gen_kobject_list_include_args}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
+    DEPENDS
+    ${ZEPHYR_PREBUILT_EXECUTABLE}
+    ${PARSE_SYSCALLS_TARGET}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(obj_list DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OBJ_LIST})
@@ -972,7 +842,7 @@ if(CONFIG_USERSPACE)
     ${PROCESS_GPERF}
     -i ${OUTPUT_SRC_PRE}
     -o ${OUTPUT_SRC}
-    -p "struct _k_object"
+    -p "struct z_object"
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS output_src_pre ${OUTPUT_SRC_PRE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
@@ -1154,42 +1024,6 @@ if(CONFIG_USERSPACE)
     )
 endif()
 
-if(CONFIG_USERSPACE AND CONFIG_ARM)
-  configure_linker_script(
-    linker_priv_stacks.cmd
-    ""
-    ${CODE_RELOCATION_DEP}
-    ${APP_SMEM_ALIGNED_DEP}
-    ${APP_SMEM_ALIGNED_LD}
-    zephyr_generated_headers
-    )
-
-  add_custom_target(
-    linker_priv_stacks_script
-    DEPENDS
-    linker_priv_stacks.cmd
-    )
-
-  set_property(TARGET
-    linker_priv_stacks_script
-    PROPERTY INCLUDE_DIRECTORIES
-    ${ZEPHYR_INCLUDE_DIRS}
-    )
-
-  set(PRIV_STACK_LIB priv_stacks_output_obj_renamed_lib)
-  add_executable(       priv_stacks_prebuilt misc/empty_file.c)
-  toolchain_ld_link_elf(
-    TARGET_ELF            priv_stacks_prebuilt
-    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/priv_stacks_prebuilt.map
-    LIBRARIES_PRE_SCRIPT  ""
-    LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd
-    LIBRARIES_POST_SCRIPT ""
-    DEPENDENCIES          ${CODE_RELOCATION_DEP}
-  )
-  set_property(TARGET   priv_stacks_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd)
-  add_dependencies(     priv_stacks_prebuilt linker_priv_stacks_script ${OFFSETS_LIB})
-endif()
-
 # FIXME: Is there any way to get rid of empty_file.c?
 add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c)
 toolchain_ld_link_elf(
@@ -1197,11 +1031,10 @@ toolchain_ld_link_elf(
   OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${ZEPHYR_PREBUILT_EXECUTABLE}.map
   LIBRARIES_PRE_SCRIPT  ""
   LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker.cmd
-  LIBRARIES_POST_SCRIPT ${PRIV_STACK_LIB}
   DEPENDENCIES          ${CODE_RELOCATION_DEP}
 )
 set_property(TARGET   ${ZEPHYR_PREBUILT_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
-add_dependencies(     ${ZEPHYR_PREBUILT_EXECUTABLE} ${PRIV_STACK_DEP} ${LINKER_SCRIPT_TARGET} ${OFFSETS_LIB})
+add_dependencies(     ${ZEPHYR_PREBUILT_EXECUTABLE} ${LINKER_SCRIPT_TARGET} ${OFFSETS_LIB})
 
 
 set(generated_kernel_files ${GKSF} ${GKOF})
@@ -1216,7 +1049,6 @@ else()
   configure_linker_script(
     linker_pass_final.cmd
     "-DLINKER_PASS2"
-    ${PRIV_STACK_DEP}
     ${CODE_RELOCATION_DEP}
     ${ZEPHYR_PREBUILT_EXECUTABLE}
     zephyr_generated_headers
@@ -1244,7 +1076,7 @@ else()
     DEPENDENCIES          ${CODE_RELOCATION_DEP}
   )
   set_property(TARGET   ${ZEPHYR_FINAL_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
-  add_dependencies(     ${ZEPHYR_FINAL_EXECUTABLE} ${PRIV_STACK_DEP} ${LINKER_PASS_FINAL_SCRIPT_TARGET})
+  add_dependencies(     ${ZEPHYR_FINAL_EXECUTABLE} ${LINKER_PASS_FINAL_SCRIPT_TARGET})
 
   # Use the pass2 elf as the final elf
   set(logical_target_for_zephyr_elf ${ZEPHYR_FINAL_EXECUTABLE})

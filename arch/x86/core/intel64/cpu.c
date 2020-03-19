@@ -7,6 +7,7 @@
 #include <kernel_arch_data.h>
 #include <kernel_arch_func.h>
 #include <kernel_structs.h>
+#include <kernel_internal.h>
 #include <arch/x86/multiboot.h>
 #include <arch/x86/mmustructs.h>
 #include <drivers/interrupt_controller/loapic.h>
@@ -85,7 +86,7 @@ struct x86_cpuboot x86_cpuboot[] = {
 	{
 		.tr = X86_KERNEL_CPU0_TR,
 		.gs_base = &tss0,
-		.sp = (u64_t) _interrupt_stack + CONFIG_ISR_STACK_SIZE,
+		.sp = (u64_t) z_interrupt_stacks[0] + CONFIG_ISR_STACK_SIZE,
 		.fn = z_x86_prep_c,
 #ifdef CONFIG_X86_MMU
 		.ptables = &z_x86_flat_ptables,

@@ -7,6 +7,7 @@
 #include <kernel.h>
 #include <aarch32/cortex_r/stack.h>
 #include <string.h>
+#include <kernel_internal.h>
 
 K_THREAD_STACK_DEFINE(z_arm_fiq_stack,   CONFIG_ARMV7_FIQ_STACK_SIZE);
 K_THREAD_STACK_DEFINE(z_arm_abort_stack, CONFIG_ARMV7_EXCEPTION_STACK_SIZE);
@@ -21,6 +22,7 @@ void z_arm_init_stacks(void)
 	memset(z_arm_svc_stack, 0xAA, CONFIG_ARMV7_SVC_STACK_SIZE);
 	memset(z_arm_abort_stack, 0xAA, CONFIG_ARMV7_EXCEPTION_STACK_SIZE);
 	memset(z_arm_undef_stack, 0xAA, CONFIG_ARMV7_EXCEPTION_STACK_SIZE);
-	memset(&_interrupt_stack, 0xAA, CONFIG_ISR_STACK_SIZE);
+	memset(Z_THREAD_STACK_BUFFER(z_interrupt_stacks[0]), 0xAA,
+	       CONFIG_ISR_STACK_SIZE);
 }
 #endif

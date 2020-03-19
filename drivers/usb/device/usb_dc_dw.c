@@ -723,9 +723,11 @@ int usb_dc_attach(void)
 	}
 
 	/* Connect and enable USB interrupt */
-	IRQ_CONNECT(DT_USB_DW_0_IRQ, DT_USB_DW_0_IRQ_PRI,
-		    usb_dw_isr_handler, 0, DT_USB_DW_0_IRQ_FLAGS);
-	irq_enable(DT_USB_DW_0_IRQ);
+	IRQ_CONNECT(DT_INST_0_SNPS_DESIGNWARE_USB_IRQ_0,
+		    DT_INST_0_SNPS_DESIGNWARE_USB_IRQ_0_PRIORITY,
+		    usb_dw_isr_handler, 0,
+		    DT_INST_0_SNPS_DESIGNWARE_USB_IRQ_0_SENSE);
+	irq_enable(DT_INST_0_SNPS_DESIGNWARE_USB_IRQ_0);
 
 	usb_dw_ctrl.attached = 1U;
 
@@ -738,7 +740,7 @@ int usb_dc_detach(void)
 		return 0;
 	}
 
-	irq_disable(DT_USB_DW_0_IRQ);
+	irq_disable(DT_INST_0_SNPS_DESIGNWARE_USB_IRQ_0);
 
 	/* Enable soft disconnect */
 	USB_DW->dctl |= USB_DW_DCTL_SFT_DISCON;

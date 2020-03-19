@@ -6,9 +6,10 @@
 
 /**
  * @file
- * @brief Cortex-M public error handling
+ * @brief ARM AArch32 public error handling
  *
- * ARM-specific kernel error handling interface. Included by arm/arch.h.
+ * ARM AArch32-specific kernel error handling interface. Included by
+ * arm/arch.h.
  */
 
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_ERROR_H_

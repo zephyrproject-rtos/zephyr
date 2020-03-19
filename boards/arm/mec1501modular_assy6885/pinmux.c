@@ -158,7 +158,7 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(portf, MCHP_GPIO_250, MCHP_GPIO_CTRL_MUX_F0);
 
 	/* See table 2-4 from the data sheet for pin multiplexing*/
-#ifdef CONFIG_UART_NS16550_PORT_1
+#ifdef DT_NS16550_400F2800_BASE_ADDRESS
 	/* Set muxing, for UART 1 TX/RX and power up */
 	mchp_pcr_periph_slp_ctrl(PCR_UART1, MCHP_PCR_SLEEP_DIS);
 
@@ -370,6 +370,13 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(porta, MCHP_GPIO_032,
 		       MCHP_GPIO_CTRL_MUX_F1 | MCHP_GPIO_CTRL_BUFT_OPENDRAIN);
 #endif /* CONFIG_KSCAN_XEC */
+
+#ifdef CONFIG_PECI_XEC
+	ECS_REGS->PECI_DIS = 0x00u;
+	mchp_pcr_periph_slp_ctrl(PCR_PECI, MCHP_PCR_SLEEP_DIS);
+	pinmux_pin_set(portb, MCHP_GPIO_042, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(portb, MCHP_GPIO_044, MCHP_GPIO_CTRL_MUX_F1);
+#endif
 
 #ifdef CONFIG_SPI_XEC_QMSPI
 #if defined(DT_INST_0_MICROCHIP_XEC_QMSPI)

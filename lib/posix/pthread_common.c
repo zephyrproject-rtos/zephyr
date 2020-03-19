@@ -9,6 +9,7 @@
 #include <wait_q.h>
 #include <posix/time.h>
 
+#ifdef CONFIG_POSIX_CLOCK
 s64_t timespec_to_timeoutms(const struct timespec *abstime)
 {
 	s64_t milli_secs, secs, nsecs;
@@ -30,3 +31,4 @@ s64_t timespec_to_timeoutms(const struct timespec *abstime)
 
 	return milli_secs;
 }
+#endif	/* CONFIG_POSIX_CLOCK */

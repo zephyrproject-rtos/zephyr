@@ -50,7 +50,7 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle,
 	const struct video_mcux_csi_config *config = dev->config->config_info;
 	struct video_mcux_csi_data *data = dev->driver_data;
 	enum video_signal_result result = VIDEO_BUF_DONE;
-	struct video_buffer *vbuf;
+	struct video_buffer *vbuf, *vbuf_first = NULL;
 	u32_t buffer_addr;
 
 	/* IRQ context */
@@ -72,10 +72,19 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle,
 			break;
 		}
 
-		/* should never happen on ordered stream, requeue and break */
+		/* should never happen on ordered stream, except on capture
+		 * start/restart, requeue the frame and continue looking for
+		 * the right buffer.
+		 */
 		k_fifo_put(&data->fifo_in, vbuf);
-		vbuf = NULL;
-		break;
+
+		/* prevent infinite loop */
+		if (vbuf_first == NULL) {
+			vbuf_first = vbuf;
+		} else if (vbuf_first == vbuf) {
+			vbuf = NULL;
+			break;
+		}
 	}
 
 	if (vbuf == NULL) {
@@ -93,9 +102,11 @@ static void __frame_done_cb(CSI_Type *base, csi_handle_t *handle,
 
 done:
 	/* Trigger Event */
-	if (data->signal) {
+	if (IS_ENABLED(CONFIG_POLL) && data->signal) {
 		k_poll_signal_raise(data->signal, result);
 	}
+
+	return;
 }
 
 static int video_mcux_csi_set_fmt(struct device *dev, enum video_endpoint_id ep,
@@ -221,7 +232,7 @@ static int video_mcux_csi_flush(struct device *dev, enum video_endpoint_id ep,
 
 		while ((vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT))) {
 			k_fifo_put(&data->fifo_out, vbuf);
-			if (data->signal) {
+			if (IS_ENABLED(CONFIG_POLL) && data->signal) {
 				k_poll_signal_raise(data->signal,
 						    VIDEO_BUF_ABORTED);
 			}
@@ -354,6 +365,7 @@ static int video_mcux_csi_init(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_POLL
 static int video_mcux_csi_set_signal(struct device *dev,
 				     enum video_endpoint_id ep,
 				     struct k_poll_signal *signal)
@@ -368,6 +380,7 @@ static int video_mcux_csi_set_signal(struct device *dev,
 
 	return 0;
 }
+#endif
 
 static const struct video_driver_api video_mcux_csi_driver_api = {
 	.set_format = video_mcux_csi_set_fmt,
@@ -380,7 +393,9 @@ static const struct video_driver_api video_mcux_csi_driver_api = {
 	.set_ctrl = video_mcux_csi_set_ctrl,
 	.get_ctrl = video_mcux_csi_get_ctrl,
 	.get_caps = video_mcux_csi_get_caps,
+#ifdef CONFIG_POLL
 	.set_signal = video_mcux_csi_set_signal,
+#endif
 };
 
 #if 1 /* Unique Instance */

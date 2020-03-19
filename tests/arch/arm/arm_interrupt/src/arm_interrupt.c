@@ -87,6 +87,24 @@ void test_arm_interrupt(void)
 
 	TC_PRINT("Available IRQ line: %u\n", i);
 
+	/* Verify that triggering an interrupt in an IRQ line,
+	 * on which an ISR has not yet been installed, leads
+	 * to a fault of type K_ERR_SPURIOUS_IRQ.
+	 */
+	expected_reason = K_ERR_SPURIOUS_IRQ;
+	NVIC_ClearPendingIRQ(i);
+	NVIC_EnableIRQ(i);
+	NVIC_SetPendingIRQ(i);
+	__DSB();
+	__ISB();
+
+	/* Verify that the spurious ISR has led to the fault and the
+	 * expected reason variable is reset.
+	 */
+	zassert_true(expected_reason == -1,
+		"expected_reason has not been reset\n");
+	NVIC_DisableIRQ(i);
+
 	arch_irq_connect_dynamic(i, 0 /* highest priority */,
 		arm_isr_handler,
 		NULL,

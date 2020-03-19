@@ -1,4 +1,4 @@
-.. _eeprom_interface:
+.. _eeprom_api:
 
 EEPROM
 ######
@@ -18,8 +18,6 @@ Configuration Options
 Related configuration options:
 
 * :option:`CONFIG_EEPROM`
-
-.. _eeprom_api:
 
 API Reference
 *************

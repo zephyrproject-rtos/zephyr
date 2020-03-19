@@ -27,6 +27,16 @@ struct flash_img_context {
 /**
  * @brief Initialize context needed for writing the image to the flash.
  *
+ * @param ctx     context to be initialized
+ * @param area_id flash area id of partition where the image should be written
+ *
+ * @return  0 on success, negative errno code on fail
+ */
+int flash_img_init_id(struct flash_img_context *ctx, u8_t area_id);
+
+/**
+ * @brief Initialize context needed for writing the image to the flash.
+ *
  * @param ctx context to be initialized
  *
  * @return  0 on success, negative errno code on fail

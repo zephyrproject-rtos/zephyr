@@ -97,6 +97,10 @@ static int ieee802154_scan(u32_t mgmt_request, struct net_if *iface,
 		return -EALREADY;
 	}
 
+	if (scan == NULL) {
+		return -EINVAL;
+	}
+
 	if (mgmt_request == NET_REQUEST_IEEE802154_ACTIVE_SCAN) {
 		struct ieee802154_frame_params params;
 

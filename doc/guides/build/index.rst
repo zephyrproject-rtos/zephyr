@@ -153,7 +153,7 @@ Final binary
 
 In some configurations, the binary from the previous stage is
 incomplete, with empty and/or placeholder sections that must be filled
-in by, essentially, reflection. When :ref:`usermode` is enabled:
+in by, essentially, reflection. When :ref:`usermode_api` is enabled:
 
 Kernel object hashing
    The *gen_kobject_list.py* scans the *ELF DWARF*
@@ -227,15 +227,6 @@ The following is a detailed description of the scripts used during the build pro
 
 
 .. include:: ../../../scripts/parse_syscalls.py
-   :start-after: """
-   :end-before: """
-
-.. _gen_priv_stacks.py:
-
-:zephyr_file:`scripts/gen_priv_stacks.py`
-==========================================
-
-.. include:: ../../../scripts/gen_priv_stacks.py
    :start-after: """
    :end-before: """
 

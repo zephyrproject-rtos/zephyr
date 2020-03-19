@@ -31,7 +31,8 @@ LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 	|| defined(CONFIG_SOC_SERIES_STM32F7X) \
 	|| defined(CONFIG_SOC_SERIES_STM32WBX) \
 	|| defined(CONFIG_SOC_SERIES_STM32G4X) \
-	|| defined(CONFIG_SOC_SERIES_STM32L1X)
+	|| defined(CONFIG_SOC_SERIES_STM32L1X) \
+	|| defined(CONFIG_SOC_SERIES_STM32H7X)
 #define RTC_EXTI_LINE	LL_EXTI_LINE_17
 #endif
 
@@ -286,12 +287,21 @@ static int rtc_stm32_init(struct device *dev)
 #else /* CONFIG_COUNTER_RTC_STM32_CLOCK_LSE */
 
 #if !defined(CONFIG_SOC_SERIES_STM32F4X) &&	\
-	!defined(CONFIG_SOC_SERIES_STM32F2X)
+	!defined(CONFIG_SOC_SERIES_STM32F2X) && \
+	!defined(CONFIG_SOC_SERIES_STM32L1X)
 
 	LL_RCC_LSE_SetDriveCapability(
 		CONFIG_COUNTER_RTC_STM32_LSE_DRIVE_STRENGTH);
 
-#endif /* !CONFIG_SOC_SERIES_STM32F4X && !CONFIG_SOC_SERIES_STM32F2X */
+#endif /*
+	* !CONFIG_SOC_SERIES_STM32F4X
+	* && !CONFIG_SOC_SERIES_STM32F2X
+	* && !CONFIG_SOC_SERIES_STM32L1X
+	*/
+
+#if defined(CONFIG_COUNTER_RTC_STM32_LSE_BYPASS)
+	LL_RCC_LSE_EnableBypass();
+#endif /* CONFIG_COUNTER_RTC_STM32_LSE_BYPASS */
 
 	LL_RCC_LSE_Enable();
 
@@ -338,8 +348,8 @@ static const struct rtc_stm32_config rtc_config = {
 		.channels = 1,
 	},
 	.pclken = {
-		.enr = DT_RTC_0_CLOCK_BITS,
-		.bus = DT_RTC_0_CLOCK_BUS,
+		.enr = DT_INST_0_ST_STM32_RTC_CLOCK_BITS,
+		.bus = DT_INST_0_ST_STM32_RTC_CLOCK_BUS,
 	},
 	.ll_rtc_config = {
 		.HourFormat = LL_RTC_HOURFORMAT_24HOUR,
@@ -368,13 +378,14 @@ static const struct counter_driver_api rtc_stm32_driver_api = {
 		.get_max_relative_alarm = rtc_stm32_get_max_relative_alarm,
 };
 
-DEVICE_AND_API_INIT(rtc_stm32, DT_RTC_0_NAME, &rtc_stm32_init,
+DEVICE_AND_API_INIT(rtc_stm32, DT_INST_0_ST_STM32_RTC_LABEL, &rtc_stm32_init,
 		    &rtc_data, &rtc_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &rtc_stm32_driver_api);
 
 static void rtc_stm32_irq_config(struct device *dev)
 {
-	IRQ_CONNECT(DT_RTC_0_IRQ, DT_RTC_0_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_0_ST_STM32_RTC_IRQ_0,
+		    DT_INST_0_ST_STM32_RTC_IRQ_0_PRIORITY,
 		    rtc_stm32_isr, DEVICE_GET(rtc_stm32), 0);
-	irq_enable(DT_RTC_0_IRQ);
+	irq_enable(DT_INST_0_ST_STM32_RTC_IRQ_0);
 }

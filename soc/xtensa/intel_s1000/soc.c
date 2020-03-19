@@ -54,7 +54,7 @@ void z_soc_irq_enable(u32_t irq)
 
 	switch (CAVS_IRQ_NUMBER(irq)) {
 	case DW_ICTL_IRQ_CAVS_OFFSET:
-		dev_ictl = device_get_binding(DT_INTC_DW_0_NAME);
+		dev_ictl = device_get_binding(DT_INST_0_SNPS_DESIGNWARE_INTC_LABEL);
 		break;
 	default:
 		/* The source of the interrupt is in CAVS interrupt logic */
@@ -112,7 +112,7 @@ void z_soc_irq_disable(u32_t irq)
 
 	switch (CAVS_IRQ_NUMBER(irq)) {
 	case DW_ICTL_IRQ_CAVS_OFFSET:
-		dev_ictl = device_get_binding(DT_INTC_DW_0_NAME);
+		dev_ictl = device_get_binding(DT_INST_0_SNPS_DESIGNWARE_INTC_LABEL);
 		break;
 	default:
 		/* The source of the interrupt is in CAVS interrupt logic */
@@ -179,7 +179,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 
 	switch (CAVS_IRQ_NUMBER(irq)) {
 	case DW_ICTL_IRQ_CAVS_OFFSET:
-		dev_ictl = device_get_binding(DT_INTC_DW_0_NAME);
+		dev_ictl = device_get_binding(DT_INST_0_SNPS_DESIGNWARE_INTC_LABEL);
 		break;
 	default:
 		/* The source of the interrupt is in CAVS interrupt logic */

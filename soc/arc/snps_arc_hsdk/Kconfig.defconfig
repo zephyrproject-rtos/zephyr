@@ -46,14 +46,8 @@ config UART_NS16550
 	default y
 	depends on SERIAL
 
-if UART_CONSOLE
-
-config UART_NS16550_PORT_0
-	default y
-
 config UART_NS16550_ACCESS_WORD_ONLY
 	default y
-
-endif # UART_CONSOLE
+	depends on UART_NS16550
 
 endif # ARC_HSDK

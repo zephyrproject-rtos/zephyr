@@ -75,7 +75,10 @@ enum mqtt_evt_type {
 	MQTT_EVT_SUBACK,
 
 	/** Acknowledgment to a unsubscribe request. */
-	MQTT_EVT_UNSUBACK
+	MQTT_EVT_UNSUBACK,
+
+	/** Ping Response from server. */
+	MQTT_EVT_PINGRESP,
 };
 
 /** @brief MQTT version protocol level. */
@@ -150,6 +153,18 @@ struct mqtt_utf8 {
 	u8_t *utf8;             /**< Pointer to UTF-8 string. */
 	u32_t size;             /**< Size of UTF string, in bytes. */
 };
+
+/**
+ * @brief Initialize UTF-8 encoded string from C literal string.
+ *
+ * Use it as follows:
+ *
+ * struct mqtt_utf8 password = MQTT_UTF8_LITERAL("my_pass");
+ *
+ * @param[in] literal Literal string from which to generate mqtt_utf8 object.
+ */
+#define MQTT_UTF8_LITERAL(literal)				\
+	((struct mqtt_utf8) {literal, sizeof(literal) - 1})
 
 /** @brief Abstracts binary strings. */
 struct mqtt_binstr {

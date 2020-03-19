@@ -766,6 +766,11 @@ Code component README template
 Contribution Roles and Responsibilities
 ***************************************
 
+.. toctree::
+   :maxdepth: 1
+
+   project_roles.rst
+
 The Zephyr project defines a development process workflow using GitHub
 **Issues** to track feature, enhancement, and bug reports together with GitHub
 **Pull Requests** (PRs) for submitting and reviewing changes.  Zephyr
@@ -780,3 +785,6 @@ submissions and for followup questions and clarifications.  Read about the
 project's :ref:`development processes and tools <dev-environment-and-tools>`
 and specifics about :ref:`review timelines <review_time>` to learn about the
 project's goals and guidelines for our active developer community.
+
+:ref:`project_roles` describes in detail the Zephyr project roles and associated permissions
+with respect to the development process workflow.

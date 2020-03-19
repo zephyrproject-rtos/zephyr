@@ -1,4 +1,4 @@
-.. _networking_reference:
+.. _networking_api:
 
 Networking
 ##########

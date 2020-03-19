@@ -11,6 +11,7 @@
 #include <sys/mempool_base.h>
 #include <toolchain.h>
 #include <irq.h>
+#include <errno.h>
 
 #include "util/mem.h"
 #include "hal/ccm.h"
@@ -34,14 +35,17 @@ static void *isr_cb_param;
 
 #define RADIO_AESCCM_HDR_MASK 0xE3 /* AES-CCM: NESN, SN, MD bits masked to 0 */
 #define RADIO_PDU_LEN_MAX (BIT(8) - 1)
+#define BYTES_TO_USEC(bytes, bits_per_usec)	\
+		((bytes) * 8 >> (__builtin_ffs(bits_per_usec) - 1))
 
 /* us values */
 #define MIN_CMD_TIME 10		/* Minimum interval for a delayed radio cmd */
 #define RX_MARGIN 8
 #define TX_MARGIN 0
 #define RX_WTMRK 5		/* (AA + PDU header) - 1 */
-#define AA_OVHD 27		/* AA playback overhead, depends on PHY type */
-#define Rx_OVHD 32		/* Rx overhead, depends on PHY type */
+#define AA_OVHD_1MBPS 27	/* AA playback overhead for 1 Mbps PHY */
+#define AA_OVHD_2MBPS 10	/* AA playback overhead for 2 Mbps PHY */
+#define RX_OVHD 32		/* Rx overhead */
 
 #define PB_RX 544	/* half of PB (packet buffer) */
 
@@ -53,6 +57,32 @@ static void *isr_cb_param;
 
 #define RADIO_ACTIVE_MASK 0x1fff
 #define RADIO_DISABLE_TMR 4		/* us */
+
+/* Delay needed in order to enter Manual DSM.
+ * Must be at least 4 ticks ahead of DSM_TIMER (from RM).
+ */
+#define DSM_ENTER_DELAY_TICKS 6
+
+/* Delay needed in order to exit Manual DSM.
+ * Should be after radio_tmr_start() (2 ticks after lll_clk_on()).
+ * But less that 1.5ms (EVENT_OVERHEAD_XTAL_US) (ULL to LLL time offset).
+ * Must be at least 4 ticks ahead of DSM_TIMER (from RM).
+ */
+#define DSM_EXIT_DELAY_TICKS 30
+
+/* Mask to determine the state of DSM machine */
+#define MAN_DSM_ON (RSIM_DSM_CONTROL_MAN_DEEP_SLEEP_STATUS_MASK \
+		| RSIM_DSM_CONTROL_DSM_MAN_READY_MASK \
+		| RSIM_DSM_CONTROL_MAN_SLEEP_REQUEST_MASK) \
+
+static u32_t dsm_ref; /* DSM reference counter */
+
+static u8_t delayed_radio_start;
+static u8_t delayed_trx;
+static u32_t delayed_ticks_start;
+static u32_t delayed_remainder;
+static u8_t delayed_radio_stop;
+static u32_t delayed_hcto;
 
 static u32_t rtc_start;
 static u32_t rtc_diff_start_us;
@@ -66,6 +96,14 @@ static u32_t tmr_tifs;
 
 static u32_t rx_wu;
 static u32_t tx_wu;
+
+static u8_t phy_mode;		/* Current PHY mode (DR_1MBPS or DR_2MBPS) */
+static u8_t bits_per_usec;	/* This saves the # of bits per usec,
+				 * depending on the PHY mode
+				 */
+static u8_t phy_aa_ovhd;	/* This saves the AA overhead, depending on the
+				 * PHY mode
+				 */
 
 static u32_t isr_tmr_aa;
 static u32_t isr_tmr_end;
@@ -123,6 +161,27 @@ static void get_isr_latency(void)
 	irq_disable(LL_RADIO_IRQn_2nd_lvl);
 }
 
+static u32_t radio_tmr_start_hlp(u8_t trx, u32_t ticks_start, u32_t remainder);
+static void radio_tmr_hcto_configure_hlp(u32_t hcto);
+static void radio_config_after_wake(void)
+{
+	if (!delayed_radio_start) {
+		delayed_radio_stop = 0;
+		return;
+	}
+
+	delayed_radio_start = 0;
+	radio_tmr_start_hlp(delayed_trx, delayed_ticks_start,
+				delayed_remainder);
+
+	if (delayed_radio_stop) {
+		delayed_radio_stop = 0;
+
+		/* Adjust time out as remainder was in radio_tmr_start_hlp() */
+		delayed_hcto += rtc_diff_start_us;
+		radio_tmr_hcto_configure_hlp(delayed_hcto);
+	}
+}
 
 static void pkt_rx(void)
 {
@@ -151,7 +210,7 @@ static void pkt_rx(void)
 	len += 2;
 
 	/* Add to AA time, PDU + CRC time */
-	isr_tmr_end = isr_tmr_aa + (len + 3) * 8;
+	isr_tmr_end = isr_tmr_aa + BYTES_TO_USEC(len + 3, bits_per_usec);
 
 	/* If not enough time for warmup after we copy the PDU from
 	 * packet buffer, send delayed command now
@@ -195,7 +254,8 @@ static void pkt_rx(void)
 
 #define IRQ_MASK ~(GENFSK_IRQ_CTRL_T2_IRQ_MASK | \
 		   GENFSK_IRQ_CTRL_RX_WATERMARK_IRQ_MASK | \
-		   GENFSK_IRQ_CTRL_TX_IRQ_MASK)
+		   GENFSK_IRQ_CTRL_TX_IRQ_MASK | \
+		   GENFSK_IRQ_CTRL_WAKE_IRQ_MASK)
 void isr_radio(void *arg)
 {
 	ARG_UNUSED(arg);
@@ -210,6 +270,17 @@ void isr_radio(void *arg)
 	 * GENFSK -> INTMUX(does not latch pending source interrupts)
 	 * INTMUX -> EVENT_UNIT
 	 */
+
+	if (irq & GENFSK_IRQ_CTRL_WAKE_IRQ_MASK) {
+		/* Clear pending interrupts */
+		GENFSK->IRQ_CTRL &= 0xffffffff;
+
+		/* Disable DSM_TIMER */
+		RSIM->DSM_CONTROL &= ~RSIM_DSM_CONTROL_DSM_TIMER_EN(1);
+
+		radio_config_after_wake();
+		return;
+	}
 
 	if (irq & GENFSK_IRQ_CTRL_TX_IRQ_MASK) {
 		valid = 1;
@@ -237,7 +308,8 @@ void isr_radio(void *arg)
 		GENFSK->T1_CMP &= ~GENFSK_T1_CMP_T1_CMP_EN_MASK;
 
 		/* Fix reported AA time */
-		isr_tmr_aa = GENFSK->TIMESTAMP - AA_OVHD;
+		isr_tmr_aa = GENFSK->TIMESTAMP - phy_aa_ovhd;
+
 		if (tmr_aa_save) {
 			tmr_aa = isr_tmr_aa;
 		}
@@ -377,13 +449,18 @@ void radio_setup(void)
 	hpmcal_disable();
 #endif
 
-	/* enable the CRC as it is disabled by default after reset */
+	/* Enable Deep Sleep Mode for GENFSK */
+	XCVR_MISC->XCVR_CTRL |= XCVR_CTRL_XCVR_CTRL_MAN_DSM_SEL(2);
+
+	/* Enable the CRC as it is disabled by default after reset */
 	XCVR_MISC->CRCW_CFG |= XCVR_CTRL_CRCW_CFG_CRCW_EN(1);
 
 	/* Assign Radio #0 Interrupt to GENERIC_FSK */
 	XCVR_MISC->XCVR_CTRL |= XCVR_CTRL_XCVR_CTRL_RADIO0_IRQ_SEL(3);
 
-	GENFSK->BITRATE = DR_1MBPS;
+	phy_mode = GENFSK->BITRATE = DR_1MBPS;
+	bits_per_usec = 1;
+	phy_aa_ovhd = AA_OVHD_1MBPS;
 
 	/*
 	 * Split the buffer in equal parts: first half for Tx,
@@ -403,13 +480,27 @@ void radio_setup(void)
 	GENFSK->IRQ_CTRL = GENFSK_IRQ_CTRL_GENERIC_FSK_IRQ_EN(1) |
 			   GENFSK_IRQ_CTRL_RX_WATERMARK_IRQ_EN(1) |
 			   GENFSK_IRQ_CTRL_TX_IRQ_EN(1) |
-			   GENFSK_IRQ_CTRL_T2_IRQ_EN(1);
+			   GENFSK_IRQ_CTRL_T2_IRQ_EN(1) |
+			   GENFSK_IRQ_CTRL_WAKE_IRQ_EN(1);
 
 	/* Disable Rx recycle */
 	GENFSK->IRQ_CTRL |= GENFSK_IRQ_CTRL_CRC_IGNORE(1);
 	GENFSK->WHITEN_SZ_THR |= GENFSK_WHITEN_SZ_THR_REC_BAD_PKT(1);
 
+	/* Turn radio on to measure ISR latency */
+	if (radio_is_off()) {
+		dsm_ref = 0;
+		radio_wake();
+		while (radio_is_off()) {
+		}
+	} else {
+		dsm_ref = 1;
+	}
+
 	get_isr_latency();
+
+	/* Turn radio off */
+	radio_sleep();
 }
 
 void radio_reset(void)
@@ -420,19 +511,50 @@ void radio_reset(void)
 
 void radio_phy_set(u8_t phy, u8_t flags)
 {
-	ARG_UNUSED(phy);
+	int err = 0;
 	ARG_UNUSED(flags);
 
-	/* This function should set one of three modes:
+	/* This function sets one of two modes:
 	 * - BLE 1 Mbps
 	 * - BLE 2 Mbps
-	 * - Coded BLE
-	 * We set this on radio_setup() function. There radio is
-	 * setup for DataRate of 1 Mbps.
-	 * For now this function does nothing. In the future it
-	 * may have to reset the radio
-	 * to the 2 Mbps (the only other mode supported by Vega radio).
+	 * Coded BLE is not supported by VEGA
 	 */
+	switch (phy) {
+	case BIT(0):
+	default:
+		if (phy_mode == DR_1MBPS) {
+			break;
+		}
+
+		err = XCVR_ChangeMode(GFSK_BT_0p5_h_0p5, DR_1MBPS);
+		if (err) {
+			BT_ERR("Failed to change PHY to 1 Mbps");
+			BT_ASSERT(0);
+		}
+
+		phy_mode = GENFSK->BITRATE = DR_1MBPS;
+		bits_per_usec = 1;
+		phy_aa_ovhd = AA_OVHD_1MBPS;
+
+		break;
+
+	case BIT(1):
+		if (phy_mode == DR_2MBPS) {
+			break;
+		}
+
+		err = XCVR_ChangeMode(GFSK_BT_0p5_h_0p5, DR_2MBPS);
+		if (err) {
+			BT_ERR("Failed to change PHY to 2 Mbps");
+			BT_ASSERT(0);
+		}
+
+		phy_mode = GENFSK->BITRATE = DR_2MBPS;
+		bits_per_usec = 2;
+		phy_aa_ovhd = AA_OVHD_2MBPS;
+
+		break;
+	}
 }
 
 void radio_tx_power_set(u32_t power)
@@ -615,9 +737,11 @@ u32_t radio_rx_chain_delay_get(u8_t phy, u8_t flags)
 {
 	/* RX_WTMRK = AA + PDU header, but AA time is already accounted for */
 	/* PDU header (assume 2 bytes) => 16us, depends on PHY type */
-	/* 2 * Rx_OVHD = RX_WATERMARK_IRQ time - TIMESTAMP - isr_latency */
+	/* 2 * RX_OVHD = RX_WATERMARK_IRQ time - TIMESTAMP - isr_latency */
 	/* The rest is Rx margin that for now isn't well defined */
-	return 16 + 2 * Rx_OVHD + RX_MARGIN + isr_latency + Rx_OVHD;
+	return BYTES_TO_USEC(2, bits_per_usec) + 2 * RX_OVHD +
+					RX_MARGIN + isr_latency +
+					RX_OVHD;
 }
 
 void radio_rx_enable(void)
@@ -927,6 +1051,15 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	}
 	remainder /= 1000000UL;
 
+	if (radio_is_off()) {
+		delayed_radio_start = 1;
+		delayed_trx = trx;
+		delayed_ticks_start = ticks_start;
+		delayed_remainder = remainder;
+		return remainder;
+	}
+
+	delayed_radio_start = 0;
 	return radio_tmr_start_hlp(trx, ticks_start, remainder);
 }
 
@@ -956,10 +1089,9 @@ u32_t radio_tmr_start_get(void)
 
 void radio_tmr_stop(void)
 {
-	/* Deep Sleep Mode (DSM)? */
 }
 
-void radio_tmr_hcto_configure(u32_t hcto)
+static void radio_tmr_hcto_configure_hlp(u32_t hcto)
 {
 	if (skip_hcto) {
 		skip_hcto = 0;
@@ -971,6 +1103,19 @@ void radio_tmr_hcto_configure(u32_t hcto)
 	GENFSK->T2_CMP = GENFSK_T2_CMP_T2_CMP(hcto) |
 			 GENFSK_T2_CMP_T2_CMP_EN(1);
 
+}
+
+/* Header completion time out */
+void radio_tmr_hcto_configure(u32_t hcto)
+{
+	if (delayed_radio_start) {
+		delayed_radio_stop = 1;
+		delayed_hcto = hcto;
+		return;
+	}
+
+	delayed_radio_stop = 0;
+	radio_tmr_hcto_configure_hlp(hcto);
 }
 
 void radio_tmr_aa_capture(void)
@@ -1292,4 +1437,99 @@ u32_t radio_ar_has_match(void)
 {
 	/* printk("%s\n", __func__); */
 	return 0;
+}
+
+u32_t radio_sleep(void)
+{
+
+	if (dsm_ref == 0) {
+		return -EALREADY;
+	}
+
+	u32_t localref = --dsm_ref;
+#if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_HIGH_PRIO) && \
+	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* TODO:
+	 * These operations (decrement, check) should be atomic/critical section
+	 * since we turn radio on/off from different contexts/ISRs (LLL, radio).
+	 * It's fine for now as all the contexts have the same priority and
+	 * don't preempt each other.
+	 */
+#else
+#error "Missing atomic operation in radio_sleep()"
+#endif
+	if (localref == 0) {
+
+		u32_t status = (RSIM->DSM_CONTROL & MAN_DSM_ON);
+
+		if (status) {
+			/* Already in sleep mode */
+			return 0;
+		}
+
+		/* Disable DSM_TIMER */
+		RSIM->DSM_CONTROL &= ~RSIM_DSM_CONTROL_DSM_TIMER_EN(1);
+
+		/* Get current DSM_TIMER value */
+		u32_t dsm_timer = RSIM->DSM_TIMER;
+
+		/* Set Sleep time after DSM_ENTER_DELAY */
+		RSIM->MAN_SLEEP = RSIM_MAN_SLEEP_MAN_SLEEP_TIME(dsm_timer +
+				DSM_ENTER_DELAY_TICKS);
+
+		/* Set Wake time to max, we use DSM early exit */
+		RSIM->MAN_WAKE = RSIM_MAN_WAKE_MAN_WAKE_TIME(dsm_timer - 1);
+
+		/* MAN wakeup request enable */
+		RSIM->DSM_CONTROL |= RSIM_DSM_CONTROL_MAN_WAKEUP_REQUEST_EN(1);
+
+		/* Enable DSM, sending a sleep request */
+		GENFSK->DSM_CTRL |= GENFSK_DSM_CTRL_GEN_SLEEP_REQUEST(1);
+
+		/* Enable DSM_TIMER */
+		RSIM->DSM_CONTROL |= RSIM_DSM_CONTROL_DSM_TIMER_EN(1);
+	}
+
+	return 0;
+}
+
+u32_t radio_wake(void)
+{
+	u32_t localref = ++dsm_ref;
+#if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_HIGH_PRIO) && \
+	(CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	/* TODO:
+	 * These operations (increment, check) should be atomic/critical section
+	 * since we turn radio on/off from different contexts/ISRs (LLL, radio).
+	 * It's fine for now as all the contexts have the same priority and
+	 * don't preempt each other.
+	 */
+#else
+#error "Missing atomic operation in radio_wake()"
+#endif
+	if (localref == 1) {
+
+		u32_t status = (RSIM->DSM_CONTROL & MAN_DSM_ON);
+
+		if (!status) {
+			/* Not in sleep mode */
+			return 0;
+		}
+
+		/* Get current DSM_TIMER value */
+		u32_t dsm_timer = RSIM->DSM_TIMER;
+
+		/* Set Wake time after DSM_ENTER_DELAY */
+		RSIM->MAN_WAKE = RSIM_MAN_WAKE_MAN_WAKE_TIME(dsm_timer +
+				DSM_EXIT_DELAY_TICKS);
+	}
+
+	return 0;
+}
+
+u32_t radio_is_off(void)
+{
+	u32_t status = (RSIM->DSM_CONTROL & MAN_DSM_ON);
+
+	return status;
 }

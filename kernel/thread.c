@@ -29,7 +29,13 @@
 #include <irq_offload.h>
 #include <sys/check.h>
 
-static struct k_spinlock lock;
+#ifdef CONFIG_THREAD_MONITOR
+/* This lock protects the linked list of active threads; i.e. the
+ * initial _kernel.threads pointer and the linked list made up of
+ * thread->next_thread (until NULL)
+ */
+static struct k_spinlock z_thread_monitor_lock;
+#endif /* CONFIG_THREAD_MONITOR */
 
 #define _FOREACH_STATIC_THREAD(thread_data)              \
 	Z_STRUCT_SECTION_FOREACH(_static_thread_data, thread_data)
@@ -48,11 +54,17 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 	 * The indirect ways are through calling k_thread_create and
 	 * k_thread_abort from user_cb.
 	 */
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&z_thread_monitor_lock);
+
+	_FOREACH_STATIC_THREAD(thread_data) {
+		user_cb(thread_data->init_thread, user_data);
+	}
+
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
 		user_cb(thread, user_data);
 	}
-	k_spin_unlock(&lock, key);
+
+	k_spin_unlock(&z_thread_monitor_lock, key);
 #endif
 }
 
@@ -64,13 +76,21 @@ void k_thread_foreach_unlocked(k_thread_user_cb_t user_cb, void *user_data)
 
 	__ASSERT(user_cb != NULL, "user_cb can not be NULL");
 
-	key = k_spin_lock(&lock);
-	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
-		k_spin_unlock(&lock, key);
-		user_cb(thread, user_data);
-		key = k_spin_lock(&lock);
+	key = k_spin_lock(&z_thread_monitor_lock);
+
+	_FOREACH_STATIC_THREAD(thread_data) {
+		k_spin_unlock(&z_thread_monitor_lock, key);
+		user_cb(thread_data->init_thread, user_data);
+		key = k_spin_lock(&z_thread_monitor_lock);
 	}
-	k_spin_unlock(&lock, key);
+
+	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
+		k_spin_unlock(&z_thread_monitor_lock, key);
+		user_cb(thread, user_data);
+		key = k_spin_lock(&z_thread_monitor_lock);
+	}
+
+	k_spin_unlock(&z_thread_monitor_lock, key);
 #endif
 }
 
@@ -177,7 +197,7 @@ static inline void *z_vrfy_k_thread_custom_data_get(void)
  */
 void z_thread_monitor_exit(struct k_thread *thread)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&z_thread_monitor_lock);
 
 	if (thread == _kernel.threads) {
 		_kernel.threads = _kernel.threads->next_thread;
@@ -194,7 +214,7 @@ void z_thread_monitor_exit(struct k_thread *thread)
 		}
 	}
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&z_thread_monitor_lock, key);
 }
 #endif
 
@@ -305,7 +325,7 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 {
 #ifdef CONFIG_THREAD_NAME
 	size_t len;
-	struct _k_object *ko = z_object_find(thread);
+	struct z_object *ko = z_object_find(thread);
 
 	/* Special case: we allow reading the names of initialized threads
 	 * even if we don't have permission on them
@@ -506,6 +526,8 @@ void z_setup_new_thread(struct k_thread *new_thread,
 #endif
 	stack_size = adjust_stack_size(stack_size);
 
+	z_waitq_init(&new_thread->base.join_waiters);
+
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 #ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
 	/* reserve space on top of stack for local data */
@@ -543,11 +565,11 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	new_thread->entry.parameter2 = p2;
 	new_thread->entry.parameter3 = p3;
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&z_thread_monitor_lock);
 
 	new_thread->next_thread = _kernel.threads;
 	_kernel.threads = new_thread;
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&z_thread_monitor_lock, key);
 #endif
 #ifdef CONFIG_THREAD_NAME
 	if (name != NULL) {
@@ -619,14 +641,14 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 			       void *p1, void *p2, void *p3,
 			       int prio, u32_t options, s32_t delay)
 {
-	size_t total_size;
-	struct _k_object *stack_object;
+	size_t total_size, stack_obj_size;
+	struct z_object *stack_object;
 
 	/* The thread and stack objects *must* be in an uninitialized state */
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
 	stack_object = z_object_find(stack);
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(z_obj_validation_check(stack_object, stack,
-						K_OBJ__THREAD_STACK_ELEMENT,
+						K_OBJ_THREAD_STACK_ELEMENT,
 						_OBJ_INIT_FALSE) == 0,
 				    "bad stack object"));
 
@@ -642,9 +664,14 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 	/* Testing less-than-or-equal since additional room may have been
 	 * allocated for alignment constraints
 	 */
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
-				    "stack size %zu is too big, max is %lu",
-				    total_size, stack_object->data));
+#ifdef CONFIG_GEN_PRIV_STACKS
+	stack_obj_size = stack_object->data.stack_data->size;
+#else
+	stack_obj_size = stack_object->data.stack_size;
+#endif
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(total_size <= stack_obj_size,
+				    "stack size %zu is too big, max is %zu",
+				    total_size, stack_obj_size));
 
 	/* User threads may only create other user threads and they can't
 	 * be marked as essential
@@ -672,60 +699,12 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_MULTITHREADING */
 
-extern void z_thread_single_suspend(struct k_thread *thread);
-
-void z_impl_k_thread_suspend(struct k_thread *thread)
-{
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	z_thread_single_suspend(thread);
-
-	if (thread == _current) {
-		z_reschedule(&lock, key);
-	} else {
-		k_spin_unlock(&lock, key);
-	}
-}
-
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_thread_suspend(struct k_thread *thread)
-{
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	z_impl_k_thread_suspend(thread);
-}
-#include <syscalls/k_thread_suspend_mrsh.c>
-#endif
-
-void z_thread_single_resume(struct k_thread *thread)
-{
-	z_mark_thread_as_not_suspended(thread);
-	z_ready_thread(thread);
-}
-
-void z_impl_k_thread_resume(struct k_thread *thread)
-{
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	z_thread_single_resume(thread);
-
-	z_reschedule(&lock, key);
-}
-
-#ifdef CONFIG_USERSPACE
-static inline void z_vrfy_k_thread_resume(struct k_thread *thread)
-{
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	z_impl_k_thread_resume(thread);
-}
-#include <syscalls/k_thread_resume_mrsh.c>
-#endif
-
 #ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_USERSPACE
 
 static void grant_static_access(void)
 {
-	Z_STRUCT_SECTION_FOREACH(_k_object_assignment, pos) {
+	Z_STRUCT_SECTION_FOREACH(z_object_assignment, pos) {
 		for (int i = 0; pos->objects[i] != NULL; i++) {
 			k_object_access_grant(pos->objects[i],
 					      pos->thread);

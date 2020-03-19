@@ -147,6 +147,22 @@ def dt_chosen_enabled(kconf, _, chosen):
     node = edt.chosen_node(chosen)
     return "y" if node and node.enabled else "n"
 
+
+def dt_nodelabel_enabled(kconf, _, label):
+    """
+    This function takes a 'label' and returns "y" if we find an "enabled"
+    node that has a 'nodelabel' of 'label' in the EDT otherwise we return "n"
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    for node in edt.nodes:
+        if label in node.labels and node.enabled:
+            return "y"
+
+    return "n"
+
+
 def _node_reg_addr(node, index, unit):
     if not node:
         return 0
@@ -354,6 +370,7 @@ functions = {
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
+        "dt_nodelabel_enabled": (dt_nodelabel_enabled, 1, 1),
         "dt_chosen_reg_addr_int": (dt_chosen_reg, 1, 3),
         "dt_chosen_reg_addr_hex": (dt_chosen_reg, 1, 3),
         "dt_chosen_reg_size_int": (dt_chosen_reg, 1, 3),

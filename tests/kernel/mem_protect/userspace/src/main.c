@@ -1123,7 +1123,7 @@ static struct k_sem recycle_sem;
 
 void test_object_recycle(void)
 {
-	struct _k_object *ko;
+	struct z_object *ko;
 	int perms_count = 0;
 
 	ko = z_object_find(&recycle_sem);

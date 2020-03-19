@@ -1,4 +1,4 @@
-.. _can_interface:
+.. _can_api:
 
 Controller Area Network (CAN)
 #############################
