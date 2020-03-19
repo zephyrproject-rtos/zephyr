@@ -203,7 +203,7 @@ static void test_init(void)
 	k_sem_init(&wait_data2, 0, UINT_MAX);
 
 	iface1 = net_if_get_by_index(0);
-	zassert_is_null(iface1, "iface1");
+	ztest_is_null(iface1, "iface1");
 
 	iface1 = net_if_get_by_index(1);
 
@@ -216,7 +216,7 @@ static void test_init(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr1));
-		zassert_not_null(ifaddr, "addr1");
+		ztest_not_null(ifaddr, "addr1");
 
 		return;
 	}
@@ -229,7 +229,7 @@ static void test_init(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&ll_addr));
-		zassert_not_null(ifaddr, "ll_addr");
+		ztest_not_null(ifaddr, "ll_addr");
 
 		return;
 	}
@@ -243,7 +243,7 @@ static void test_init(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv4 address %s\n",
 		       net_sprint_ipv4_addr(&my_addr2));
-		zassert_not_null(ifaddr, "addr2");
+		ztest_not_null(ifaddr, "addr2");
 
 		return;
 	}
@@ -279,7 +279,7 @@ static void dns_query_invalid_timeout(void)
 				dns_result_cb_dummy,
 				NULL,
 				K_NO_WAIT);
-	zassert_equal(ret, -EINVAL, "Wrong return code for timeout");
+	ztest_equal(ret, -EINVAL, "Wrong return code for timeout");
 }
 
 static void dns_query_invalid_context(void)
@@ -293,7 +293,7 @@ static void dns_query_invalid_context(void)
 			       dns_result_cb_dummy,
 			       NULL,
 			       DNS_TIMEOUT);
-	zassert_equal(ret, -EINVAL, "Wrong return code for context");
+	ztest_equal(ret, -EINVAL, "Wrong return code for context");
 }
 
 static void dns_query_invalid_callback(void)
@@ -306,7 +306,7 @@ static void dns_query_invalid_callback(void)
 				NULL,
 				NULL,
 				DNS_TIMEOUT);
-	zassert_equal(ret, -EINVAL, "Wrong return code for callback");
+	ztest_equal(ret, -EINVAL, "Wrong return code for callback");
 }
 
 static void dns_query_invalid_query(void)
@@ -319,7 +319,7 @@ static void dns_query_invalid_query(void)
 				dns_result_cb_dummy,
 				NULL,
 				DNS_TIMEOUT);
-	zassert_equal(ret, -EINVAL, "Wrong return code for query");
+	ztest_equal(ret, -EINVAL, "Wrong return code for query");
 }
 
 void dns_result_cb_timeout(enum dns_resolve_status status,
@@ -332,7 +332,7 @@ void dns_result_cb_timeout(enum dns_resolve_status status,
 		DBG("Result status %d\n", status);
 		DBG("Expected status %d\n", expected_status);
 
-		zassert_equal(expected_status, status, "Invalid status");
+		ztest_equal(expected_status, status, "Invalid status");
 	}
 
 	k_sem_give(&wait_data);
@@ -355,7 +355,7 @@ static void dns_query_server_count(void)
 		count++;
 	}
 
-	zassert_equal(count, CONFIG_DNS_RESOLVER_MAX_SERVERS,
+	ztest_equal(count, CONFIG_DNS_RESOLVER_MAX_SERVERS,
 		     "Invalid number of servers");
 }
 
@@ -385,8 +385,8 @@ static void dns_query_ipv4_server_count(void)
 		}
 	}
 
-	zassert_equal(count, 2, "Invalid number of IPv4 servers");
-	zassert_equal(port, 1, "Invalid number of IPv4 servers with port 53");
+	ztest_equal(count, 2, "Invalid number of IPv4 servers");
+	ztest_equal(port, 1, "Invalid number of IPv4 servers with port 53");
 }
 
 static void dns_query_ipv6_server_count(void)
@@ -416,11 +416,11 @@ static void dns_query_ipv6_server_count(void)
 	}
 
 #if defined(CONFIG_NET_IPV6)
-	zassert_equal(count, 2, "Invalid number of IPv6 servers");
-	zassert_equal(port, 1, "Invalid number of IPv6 servers with port 53");
+	ztest_equal(count, 2, "Invalid number of IPv6 servers");
+	ztest_equal(port, 1, "Invalid number of IPv6 servers with port 53");
 #else
-	zassert_equal(count, 0, "Invalid number of IPv6 servers");
-	zassert_equal(port, 0, "Invalid number of IPv6 servers with port 53");
+	ztest_equal(count, 0, "Invalid number of IPv6 servers");
+	ztest_equal(port, 0, "Invalid number of IPv6 servers with port 53");
 #endif
 }
 
@@ -437,7 +437,7 @@ static void dns_query_too_many(void)
 				dns_result_cb_timeout,
 				INT_TO_POINTER(expected_status),
 				DNS_TIMEOUT);
-	zassert_equal(ret, 0, "Cannot create IPv4 query");
+	ztest_equal(ret, 0, "Cannot create IPv4 query");
 
 	ret = dns_get_addr_info(NAME4,
 				DNS_QUERY_TYPE_A,
@@ -445,10 +445,10 @@ static void dns_query_too_many(void)
 				dns_result_cb_dummy,
 				INT_TO_POINTER(expected_status),
 				DNS_TIMEOUT);
-	zassert_equal(ret, -EAGAIN, "Should have run out of space");
+	ztest_equal(ret, -EAGAIN, "Should have run out of space");
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		zassert_true(false, "Timeout while waiting data");
+		ztest_true(false, "Timeout while waiting data");
 	}
 
 	timeout_query = false;
@@ -467,10 +467,10 @@ static void dns_query_ipv4_timeout(void)
 				dns_result_cb_timeout,
 				INT_TO_POINTER(expected_status),
 				DNS_TIMEOUT);
-	zassert_equal(ret, 0, "Cannot create IPv4 query");
+	ztest_equal(ret, 0, "Cannot create IPv4 query");
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		zassert_true(false, "Timeout while waiting data");
+		ztest_true(false, "Timeout while waiting data");
 	}
 
 	timeout_query = false;
@@ -489,10 +489,10 @@ static void dns_query_ipv6_timeout(void)
 				dns_result_cb_timeout,
 				INT_TO_POINTER(expected_status),
 				DNS_TIMEOUT);
-	zassert_equal(ret, 0, "Cannot create IPv6 query");
+	ztest_equal(ret, 0, "Cannot create IPv6 query");
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		zassert_true(false, "Timeout while waiting data");
+		ztest_true(false, "Timeout while waiting data");
 	}
 
 	timeout_query = false;
@@ -513,8 +513,8 @@ static void verify_cancelled(void)
 		}
 	}
 
-	zassert_equal(count, 0, "Not all pending queries vere cancelled");
-	zassert_equal(timer_not_stopped, 0, "Not all timers vere cancelled");
+	ztest_equal(count, 0, "Not all pending queries vere cancelled");
+	ztest_equal(timer_not_stopped, 0, "Not all timers vere cancelled");
 }
 
 static void dns_query_ipv4_cancel(void)
@@ -531,13 +531,13 @@ static void dns_query_ipv4_cancel(void)
 				dns_result_cb_timeout,
 				INT_TO_POINTER(expected_status),
 				DNS_TIMEOUT);
-	zassert_equal(ret, 0, "Cannot create IPv4 query");
+	ztest_equal(ret, 0, "Cannot create IPv4 query");
 
 	ret = dns_cancel_addr_info(dns_id);
-	zassert_equal(ret, 0, "Cannot cancel IPv4 query");
+	ztest_equal(ret, 0, "Cannot cancel IPv4 query");
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		zassert_true(false, "Timeout while waiting data");
+		ztest_true(false, "Timeout while waiting data");
 	}
 
 	verify_cancelled();
@@ -557,13 +557,13 @@ static void dns_query_ipv6_cancel(void)
 				dns_result_cb_timeout,
 				INT_TO_POINTER(expected_status),
 				DNS_TIMEOUT);
-	zassert_equal(ret, 0, "Cannot create IPv6 query");
+	ztest_equal(ret, 0, "Cannot create IPv6 query");
 
 	ret = dns_cancel_addr_info(dns_id);
-	zassert_equal(ret, 0, "Cannot cancel IPv6 query");
+	ztest_equal(ret, 0, "Cannot cancel IPv6 query");
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		zassert_true(false, "Timeout while waiting data");
+		ztest_true(false, "Timeout while waiting data");
 	}
 
 	verify_cancelled();
@@ -587,7 +587,7 @@ void dns_result_cb(enum dns_resolve_status status,
 		DBG("Expected status2 %d\n", expected->status2);
 		DBG("Caller %s\n", expected->caller);
 
-		zassert_true(false, "Invalid status");
+		ztest_true(false, "Invalid status");
 	}
 
 	k_sem_give(&wait_data2);
@@ -610,14 +610,14 @@ static void dns_query_ipv4(void)
 				dns_result_cb,
 				&status,
 				DNS_TIMEOUT);
-	zassert_equal(ret, 0, "Cannot create IPv4 query");
+	ztest_equal(ret, 0, "Cannot create IPv4 query");
 
 	DBG("Query id %u\n", current_dns_id);
 
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&wait_data2, WAIT_TIME)) {
-		zassert_true(false, "Timeout while waiting data");
+		ztest_true(false, "Timeout while waiting data");
 	}
 }
 
@@ -639,14 +639,14 @@ static void dns_query_ipv6(void)
 				dns_result_cb,
 				&status,
 				DNS_TIMEOUT);
-	zassert_equal(ret, 0, "Cannot create IPv6 query");
+	ztest_equal(ret, 0, "Cannot create IPv6 query");
 
 	DBG("Query id %u\n", current_dns_id);
 
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&wait_data2, WAIT_TIME)) {
-		zassert_true(false, "Timeout while waiting data");
+		ztest_true(false, "Timeout while waiting data");
 	}
 }
 #endif
@@ -670,13 +670,13 @@ void dns_result_numeric_cb(enum dns_resolve_status status,
 		DBG("Expected status2 %d\n", expected->status2);
 		DBG("Caller %s\n", expected->caller);
 
-		zassert_true(false, "Invalid status");
+		ztest_true(false, "Invalid status");
 	}
 
 	if (info && info->ai_family == AF_INET) {
 		if (net_ipv4_addr_cmp(&net_sin(&info->ai_addr)->sin_addr,
 				      &my_addr2) != true) {
-			zassert_true(false, "IPv4 address does not match");
+			ztest_true(false, "IPv4 address does not match");
 		}
 	}
 
@@ -684,7 +684,7 @@ void dns_result_numeric_cb(enum dns_resolve_status status,
 #if defined(CONFIG_NET_IPV6)
 		if (net_ipv6_addr_cmp(&net_sin6(&info->ai_addr)->sin6_addr,
 				      &my_addr3) != true) {
-			zassert_true(false, "IPv6 address does not match");
+			ztest_true(false, "IPv6 address does not match");
 		}
 #endif
 	}
@@ -709,14 +709,14 @@ static void dns_query_ipv4_numeric(void)
 				dns_result_numeric_cb,
 				&status,
 				DNS_TIMEOUT);
-	zassert_equal(ret, 0, "Cannot create IPv4 numeric query");
+	ztest_equal(ret, 0, "Cannot create IPv4 numeric query");
 
 	DBG("Query id %u\n", current_dns_id);
 
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&wait_data2, WAIT_TIME)) {
-		zassert_true(false, "Timeout while waiting data");
+		ztest_true(false, "Timeout while waiting data");
 	}
 }
 
@@ -738,14 +738,14 @@ static void dns_query_ipv6_numeric(void)
 				dns_result_numeric_cb,
 				&status,
 				DNS_TIMEOUT);
-	zassert_equal(ret, 0, "Cannot create IPv6 query");
+	ztest_equal(ret, 0, "Cannot create IPv6 query");
 
 	DBG("Query id %u\n", current_dns_id);
 
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&wait_data2, WAIT_TIME)) {
-		zassert_true(false, "Timeout while waiting data");
+		ztest_true(false, "Timeout while waiting data");
 	}
 }
 #endif

@@ -209,7 +209,7 @@ static enum net_verdict ppp_l2_recv(struct net_if *iface, struct net_pkt *pkt)
 static void iface_setup(void)
 {
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
-	zassert_not_null(iface, "PPP interface not found!");
+	ztest_not_null(iface, "PPP interface not found!");
 
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
@@ -236,7 +236,7 @@ static bool send_iface(struct net_if *iface,
 
 	ppp_driver_feed_data(recv, recv_len);
 
-	zassert_false(test_failed, "Test failed");
+	ztest_false(test_failed, "Test failed");
 
 	return true;
 }
@@ -250,7 +250,7 @@ static void send_ppp_pkt_with_escapes(void)
 	ret = send_iface(iface, ppp_recv_data1, sizeof(ppp_recv_data1),
 			 ppp_expect_data1, sizeof(ppp_expect_data1));
 
-	zassert_true(ret, "iface");
+	ztest_true(ret, "iface");
 }
 
 static void send_ppp_pkt_with_full_and_partial(void)
@@ -262,7 +262,7 @@ static void send_ppp_pkt_with_full_and_partial(void)
 	ret = send_iface(iface, ppp_recv_data2, sizeof(ppp_recv_data2),
 			 ppp_expect_data1, sizeof(ppp_expect_data1));
 
-	zassert_true(ret, "iface");
+	ztest_true(ret, "iface");
 }
 
 static bool check_fcs(struct net_pkt *pkt, u16_t *fcs)
@@ -321,7 +321,7 @@ static void ppp_verify_fcs(u8_t *buf, int len)
 	bool ret;
 
 	pkt = net_pkt_alloc_with_buffer(iface, len, AF_UNSPEC, 0, K_NO_WAIT);
-	zassert_not_null(pkt, "Cannot create pkt");
+	ztest_not_null(pkt, "Cannot create pkt");
 
 	ptr = buf;
 	while (ptr < &buf[len]) {
@@ -339,14 +339,14 @@ static void ppp_verify_fcs(u8_t *buf, int len)
 	 * fields so they must always be present.
 	 */
 	if (addr_and_ctrl != (0xff << 8 | 0x03)) {
-		zassert_true(false, "Invalid address / control bytes");
+		ztest_true(false, "Invalid address / control bytes");
 	}
 
 	/* Skip sync byte (1) */
 	net_buf_frag_last(pkt->buffer)->len -= 1;
 
 	ret = check_fcs(pkt, &fcs);
-	zassert_true(ret, "FCS calc failed, expecting 0x%x got 0x%x",
+	ztest_true(ret, "FCS calc failed, expecting 0x%x got 0x%x",
 		     0xf0b8, fcs);
 
 	net_pkt_unref(pkt);
@@ -392,7 +392,7 @@ static void ppp_calc_fcs(u8_t *buf, int len)
 	bool ret;
 
 	pkt = net_pkt_alloc_with_buffer(iface, len, AF_UNSPEC, 0, K_NO_WAIT);
-	zassert_not_null(pkt, "Cannot create pkt");
+	ztest_not_null(pkt, "Cannot create pkt");
 
 	ptr = buf;
 	while (ptr < &buf[len]) {
@@ -410,7 +410,7 @@ static void ppp_calc_fcs(u8_t *buf, int len)
 	 * fields so they must always be present.
 	 */
 	if (addr_and_ctrl != (0xff << 8 | 0x03)) {
-		zassert_true(false, "Invalid address / control bytes");
+		ztest_true(false, "Invalid address / control bytes");
 	}
 
 	len = net_pkt_get_len(pkt);
@@ -423,9 +423,9 @@ static void ppp_calc_fcs(u8_t *buf, int len)
 	net_buf_frag_last(pkt->buffer)->len -= 2 + 1;
 
 	ret = calc_fcs(pkt, &fcs);
-	zassert_true(ret, "FCS calc failed");
+	ztest_true(ret, "FCS calc failed");
 
-	zassert_equal(pkt_fcs, fcs, "FCS calc failed, expecting 0x%x got 0x%x",
+	ztest_equal(pkt_fcs, fcs, "FCS calc failed, expecting 0x%x got 0x%x",
 		     pkt_fcs, fcs);
 
 	net_pkt_unref(pkt);
@@ -450,10 +450,10 @@ static void send_ppp_3(void)
 	ret = send_iface(iface, ppp_recv_data3, sizeof(ppp_recv_data3),
 			 ppp_expect_data3, sizeof(ppp_expect_data3));
 
-	zassert_true(ret, "iface");
+	ztest_true(ret, "iface");
 
 	if (k_sem_take(&wait_data, WAIT_TIME_LONG)) {
-		zassert_true(false, "Timeout, packet not received");
+		ztest_true(false, "Timeout, packet not received");
 	}
 }
 
@@ -466,10 +466,10 @@ static void send_ppp_4(void)
 	ret = send_iface(iface, ppp_recv_data4, sizeof(ppp_recv_data4),
 			 ppp_expect_data4, sizeof(ppp_expect_data4));
 
-	zassert_true(ret, "iface");
+	ztest_true(ret, "iface");
 
 	if (k_sem_take(&wait_data, WAIT_TIME_LONG)) {
-		zassert_true(false, "Timeout, packet not received");
+		ztest_true(false, "Timeout, packet not received");
 	}
 }
 
@@ -482,10 +482,10 @@ static void send_ppp_5(void)
 	ret = send_iface(iface, ppp_recv_data5, sizeof(ppp_recv_data5),
 			 ppp_expect_data5, sizeof(ppp_expect_data5));
 
-	zassert_true(ret, "iface");
+	ztest_true(ret, "iface");
 
 	if (k_sem_take(&wait_data, WAIT_TIME_LONG)) {
-		zassert_true(false, "Timeout, packet not received");
+		ztest_true(false, "Timeout, packet not received");
 	}
 }
 
@@ -498,10 +498,10 @@ static void send_ppp_6(void)
 	ret = send_iface(iface, ppp_recv_data6, sizeof(ppp_recv_data6),
 			 ppp_expect_data6, sizeof(ppp_expect_data6));
 
-	zassert_true(ret, "iface");
+	ztest_true(ret, "iface");
 
 	if (k_sem_take(&wait_data, WAIT_TIME_LONG)) {
-		zassert_true(false, "Timeout, packet not received");
+		ztest_true(false, "Timeout, packet not received");
 	}
 }
 
@@ -514,10 +514,10 @@ static void send_ppp_7(void)
 	ret = send_iface(iface, ppp_recv_data7, sizeof(ppp_recv_data7),
 			 ppp_expect_data7, sizeof(ppp_expect_data7));
 
-	zassert_true(ret, "iface");
+	ztest_true(ret, "iface");
 
 	if (k_sem_take(&wait_data, WAIT_TIME_LONG)) {
-		zassert_true(false, "Timeout, packet not received");
+		ztest_true(false, "Timeout, packet not received");
 	}
 }
 
@@ -530,10 +530,10 @@ static void send_ppp_8(void)
 	ret = send_iface(iface, ppp_recv_data8, sizeof(ppp_recv_data8),
 			 ppp_expect_data8, sizeof(ppp_expect_data8));
 
-	zassert_true(ret, "iface");
+	ztest_true(ret, "iface");
 
 	if (k_sem_take(&wait_data, WAIT_TIME_LONG)) {
-		zassert_true(false, "Timeout, packet not received");
+		ztest_true(false, "Timeout, packet not received");
 	}
 }
 

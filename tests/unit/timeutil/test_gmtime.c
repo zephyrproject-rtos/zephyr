@@ -18,11 +18,11 @@ void test_gmtime(void)
 	};
 	time_t time = 1561994005;
 
-	zassert_equal(&tm, gmtime_r(&time, &tm),
+	ztest_equal(&tm, gmtime_r(&time, &tm),
 		      "gmtime_r return failed");
 
 	struct tm *tp = gmtime(&time);
 
-	zassert_true(memcmp(&tm, tp, sizeof(tm)) == 0,
+	ztest_true(memcmp(&tm, tp, sizeof(tm)) == 0,
 		     "gmtime disagrees with gmtime_r");
 }

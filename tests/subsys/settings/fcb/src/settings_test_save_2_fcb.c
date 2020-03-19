@@ -28,10 +28,10 @@ void test_config_save_2_fcb(void)
 	cf.cf_fcb.f_sector_cnt = ARRAY_SIZE(fcb_sectors);
 
 	rc = settings_fcb_src(&cf);
-	zassert_true(rc == 0, "can't register FCB as configuration source");
+	ztest_true(rc == 0, "can't register FCB as configuration source");
 
 	rc = settings_fcb_dst(&cf);
-	zassert_true(rc == 0,
+	ztest_true(rc == 0,
 		     "can't register FCB as configuration destination");
 
 	test_config_fill_area(test_ref_value, 0);
@@ -39,14 +39,14 @@ void test_config_save_2_fcb(void)
 
 	val8 = 42U;
 	rc = settings_save();
-	zassert_true(rc == 0, "fcb write error");
+	ztest_true(rc == 0, "fcb write error");
 
 	val8 = 0U;
 	(void)memset(val_string[0], 0, sizeof(val_string[0]));
 	rc = settings_load();
-	zassert_true(rc == 0, "fcb read error");
-	zassert_true(val8 == 42U, "bad value read");
-	zassert_true(!strcmp(val_string[0], test_ref_value[0]),
+	ztest_true(rc == 0, "fcb read error");
+	ztest_true(val8 == 42U, "bad value read");
+	ztest_true(!strcmp(val_string[0], test_ref_value[0]),
 		     "bad value read");
 	test_export_block = 1;
 
@@ -61,17 +61,17 @@ void test_config_save_2_fcb(void)
 		memcpy(val_string, test_ref_value, sizeof(val_string));
 
 		rc = settings_save();
-		zassert_true(rc == 0, "fcb write error");
+		ztest_true(rc == 0, "fcb write error");
 
 		(void)memset(val_string, 0, sizeof(val_string));
 
 		val8 = 0U;
 		rc = settings_load();
-		zassert_true(rc == 0, "fcb read error");
-		zassert_true(!memcmp(val_string, test_ref_value,
+		ztest_true(rc == 0, "fcb read error");
+		ztest_true(!memcmp(val_string, test_ref_value,
 				     sizeof(val_string)),
 			     "bad value read");
-		zassert_true(val8 == 42U, "bad value read");
+		ztest_true(val8 == 42U, "bad value read");
 	}
 	c2_var_count = 0;
 }

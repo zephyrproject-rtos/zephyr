@@ -90,25 +90,25 @@ USBD_CFG_DATA_DEFINE(primary, device) struct usb_cfg_data device_config = {
 
 static void test_usb_disable(void)
 {
-	zassert_equal(usb_disable(), TC_PASS, "usb_disable() failed");
+	ztest_equal(usb_disable(), TC_PASS, "usb_disable() failed");
 }
 
 static void test_usb_deconfig(void)
 {
-	zassert_equal(usb_deconfig(), TC_PASS, "usb_deconfig() failed");
+	ztest_equal(usb_deconfig(), TC_PASS, "usb_deconfig() failed");
 }
 
 /* Test USB Device Cotnroller API */
 static void test_usb_dc_api(void)
 {
 	/* Control endpoins are configured */
-	zassert_equal(usb_dc_ep_mps(0x0), 64,
+	ztest_equal(usb_dc_ep_mps(0x0), 64,
 		      "usb_dc_ep_mps(0x00) failed");
-	zassert_equal(usb_dc_ep_mps(0x80), 64,
+	ztest_equal(usb_dc_ep_mps(0x80), 64,
 		      "usb_dc_ep_mps(0x80) failed");
 
 	/* Bulk EP is not configured yet */
-	zassert_equal(usb_dc_ep_mps(ENDP_BULK_IN), 0,
+	ztest_equal(usb_dc_ep_mps(ENDP_BULK_IN), 0,
 		      "usb_dc_ep_mps(ENDP_BULK_IN) not configured");
 }
 
@@ -119,56 +119,56 @@ static void test_usb_dc_api_invalid(void)
 	u8_t byte;
 
 	/* Set stall to invalid EP */
-	zassert_not_equal(usb_dc_ep_set_stall(INVALID_EP), TC_PASS,
+	ztest_not_equal(usb_dc_ep_set_stall(INVALID_EP), TC_PASS,
 			  "usb_dc_ep_set_stall(INVALID_EP)");
 
 	/* Clear stall to invalid EP */
-	zassert_not_equal(usb_dc_ep_clear_stall(INVALID_EP), TC_PASS,
+	ztest_not_equal(usb_dc_ep_clear_stall(INVALID_EP), TC_PASS,
 			  "usb_dc_ep_clear_stall(INVALID_EP)");
 
 	/* Check if the selected endpoint is stalled */
-	zassert_not_equal(usb_dc_ep_is_stalled(INVALID_EP, &byte), TC_PASS,
+	ztest_not_equal(usb_dc_ep_is_stalled(INVALID_EP, &byte), TC_PASS,
 			  "usb_dc_ep_is_stalled(INVALID_EP, stalled)");
-	zassert_not_equal(usb_dc_ep_is_stalled(VALID_EP, NULL), TC_PASS,
+	ztest_not_equal(usb_dc_ep_is_stalled(VALID_EP, NULL), TC_PASS,
 			  "usb_dc_ep_is_stalled(VALID_EP, NULL)");
 
 	/* Halt invalid EP */
-	zassert_not_equal(usb_dc_ep_halt(INVALID_EP), TC_PASS,
+	ztest_not_equal(usb_dc_ep_halt(INVALID_EP), TC_PASS,
 			  "usb_dc_ep_halt(INVALID_EP)");
 
 	/* Enable invalid EP */
-	zassert_not_equal(usb_dc_ep_enable(INVALID_EP), TC_PASS,
+	ztest_not_equal(usb_dc_ep_enable(INVALID_EP), TC_PASS,
 			  "usb_dc_ep_enable(INVALID_EP)");
 
 	/* Disable invalid EP */
-	zassert_not_equal(usb_dc_ep_disable(INVALID_EP), TC_PASS,
+	ztest_not_equal(usb_dc_ep_disable(INVALID_EP), TC_PASS,
 			  "usb_dc_ep_disable(INVALID_EP)");
 
 	/* Flush invalid EP */
-	zassert_not_equal(usb_dc_ep_flush(INVALID_EP), TC_PASS,
+	ztest_not_equal(usb_dc_ep_flush(INVALID_EP), TC_PASS,
 			  "usb_dc_ep_flush(INVALID_EP)");
 
 	/* Set callback to invalid EP */
-	zassert_not_equal(usb_dc_ep_set_callback(INVALID_EP, NULL), TC_PASS,
+	ztest_not_equal(usb_dc_ep_set_callback(INVALID_EP, NULL), TC_PASS,
 			  "usb_dc_ep_set_callback(INVALID_EP, NULL)");
 
 	/* Write to invalid EP */
-	zassert_not_equal(usb_dc_ep_write(INVALID_EP, &byte, sizeof(byte),
+	ztest_not_equal(usb_dc_ep_write(INVALID_EP, &byte, sizeof(byte),
 					  &size),
 			  TC_PASS, "usb_dc_ep_write(INVALID_EP)");
 
 	/* Read invalid EP */
-	zassert_not_equal(usb_dc_ep_read(INVALID_EP, &byte, sizeof(byte),
+	ztest_not_equal(usb_dc_ep_read(INVALID_EP, &byte, sizeof(byte),
 					 &size),
 			  TC_PASS, "usb_dc_ep_read(INVALID_EP)");
-	zassert_not_equal(usb_dc_ep_read_wait(INVALID_EP, &byte, sizeof(byte),
+	ztest_not_equal(usb_dc_ep_read_wait(INVALID_EP, &byte, sizeof(byte),
 					      &size),
 			  TC_PASS, "usb_dc_ep_read_wait(INVALID_EP)");
-	zassert_not_equal(usb_dc_ep_read_continue(INVALID_EP), TC_PASS,
+	ztest_not_equal(usb_dc_ep_read_continue(INVALID_EP), TC_PASS,
 			  "usb_dc_ep_read_continue(INVALID_EP)");
 
 	/* Get endpoint max packet size for invalid EP */
-	zassert_not_equal(usb_dc_ep_mps(INVALID_EP), TC_PASS,
+	ztest_not_equal(usb_dc_ep_mps(INVALID_EP), TC_PASS,
 			  "usb_dc_ep_mps(INVALID_EP)");
 }
 
@@ -178,11 +178,11 @@ static void test_usb_dc_api_read_write(void)
 	u8_t byte;
 
 	/* Read invalid EP */
-	zassert_not_equal(usb_read(INVALID_EP, &byte, sizeof(byte), &size),
+	ztest_not_equal(usb_read(INVALID_EP, &byte, sizeof(byte), &size),
 			  TC_PASS, "usb_read(INVALID_EP)");
 
 	/* Write to invalid EP */
-	zassert_not_equal(usb_write(INVALID_EP, &byte, sizeof(byte), &size),
+	ztest_not_equal(usb_write(INVALID_EP, &byte, sizeof(byte), &size),
 			  TC_PASS, "usb_write(INVALID_EP)");
 }
 

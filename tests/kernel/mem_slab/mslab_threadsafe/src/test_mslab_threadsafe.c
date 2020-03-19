@@ -47,7 +47,7 @@ static void tmslab_api(void *p1, void *p2, void *p3)
 
 		for (int i = 0; i < BLK_NUM; i++) {
 			ret = k_mem_slab_alloc(slab, &block[i], TIMEOUT);
-			zassert_false(ret, "memory is not allocated");
+			ztest_false(ret, "memory is not allocated");
 		}
 		for (int i = 0; i < BLK_NUM; i++) {
 			if (block[i]) {

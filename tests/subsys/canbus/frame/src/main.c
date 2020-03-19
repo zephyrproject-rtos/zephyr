@@ -39,10 +39,10 @@ static void test_can_frame_to_zcan_frame(void)
 	LOG_HEXDUMP_DBG((const u8_t *)&msg, sizeof(msg), "msg");
 	LOG_HEXDUMP_DBG((const u8_t *)&expected, sizeof(expected), "expected");
 
-	zassert_equal(msg.rtr, expected.rtr, "RTR bit not set");
-	zassert_equal(msg.id_type, expected.id_type, "Id-type bit not set");
-	zassert_equal(msg.std_id, expected.std_id, "Std CAN id invalid");
-	zassert_equal(msg.dlc, expected.dlc, "Msg length invalid");
+	ztest_equal(msg.rtr, expected.rtr, "RTR bit not set");
+	ztest_equal(msg.id_type, expected.id_type, "Id-type bit not set");
+	ztest_equal(msg.std_id, expected.std_id, "Std CAN id invalid");
+	ztest_equal(msg.dlc, expected.dlc, "Msg length invalid");
 }
 
 static void test_zcan_frame_to_can_frame(void)
@@ -69,11 +69,11 @@ static void test_zcan_frame_to_can_frame(void)
 	LOG_HEXDUMP_DBG((const u8_t *)&msg, sizeof(msg), "msg");
 	LOG_HEXDUMP_DBG((const u8_t *)&expected, sizeof(expected), "expected");
 
-	zassert_mem_equal(&frame.can_id, &expected.can_id, sizeof(frame.can_id),
+	ztest_mem_equal(&frame.can_id, &expected.can_id, sizeof(frame.can_id),
 			  "CAN ID not same");
-	zassert_mem_equal(&frame.data, &expected.data, sizeof(frame.data),
+	ztest_mem_equal(&frame.data, &expected.data, sizeof(frame.data),
 			  "CAN data not same");
-	zassert_equal(frame.can_dlc, expected.can_dlc,
+	ztest_equal(frame.can_dlc, expected.can_dlc,
 		      "CAN msg length not same");
 }
 
@@ -100,11 +100,11 @@ static void test_invalid_zcan_frame_to_can_frame(void)
 	LOG_HEXDUMP_DBG((const u8_t *)&msg, sizeof(msg), "msg");
 	LOG_HEXDUMP_DBG((const u8_t *)&expected, sizeof(expected), "expected");
 
-	zassert_mem_equal(&frame.can_id, &expected.can_id, sizeof(frame.can_id),
+	ztest_mem_equal(&frame.can_id, &expected.can_id, sizeof(frame.can_id),
 			  "CAN ID not same");
-	zassert_mem_equal(&frame.data, &expected.data, sizeof(frame.data),
+	ztest_mem_equal(&frame.data, &expected.data, sizeof(frame.data),
 			  "CAN data not same");
-	zassert_equal(frame.can_dlc, expected.can_dlc,
+	ztest_equal(frame.can_dlc, expected.can_dlc,
 		      "CAN msg length not same");
 }
 
@@ -131,14 +131,14 @@ static void test_can_filter_to_zcan_filter(void)
 	LOG_HEXDUMP_DBG((const u8_t *)&filter, sizeof(filter), "filter");
 	LOG_HEXDUMP_DBG((const u8_t *)&expected, sizeof(expected), "expected");
 
-	zassert_equal(msg_filter.rtr, expected.rtr, "RTR bit not set");
-	zassert_equal(msg_filter.id_type, expected.id_type,
+	ztest_equal(msg_filter.rtr, expected.rtr, "RTR bit not set");
+	ztest_equal(msg_filter.id_type, expected.id_type,
 		      "Id-type bit not set");
-	zassert_equal(msg_filter.std_id, expected.std_id,
+	ztest_equal(msg_filter.std_id, expected.std_id,
 		      "Std CAN id invalid");
-	zassert_equal(msg_filter.rtr_mask, expected.rtr_mask,
+	ztest_equal(msg_filter.rtr_mask, expected.rtr_mask,
 		      "RTR mask bit not set");
-	zassert_equal(msg_filter.std_id_mask, expected.std_id_mask,
+	ztest_equal(msg_filter.std_id_mask, expected.std_id_mask,
 		      "Std id mask not set");
 }
 
@@ -164,9 +164,9 @@ static void test_zcan_filter_to_can_filter(void)
 	LOG_HEXDUMP_DBG((const u8_t *)&filter, sizeof(filter), "filter");
 	LOG_HEXDUMP_DBG((const u8_t *)&expected, sizeof(expected), "expected");
 
-	zassert_mem_equal(&filter.can_id, &expected.can_id,
+	ztest_mem_equal(&filter.can_id, &expected.can_id,
 			  sizeof(filter.can_id), "CAN ID not same");
-	zassert_mem_equal(&filter.can_mask, &expected.can_mask,
+	ztest_mem_equal(&filter.can_mask, &expected.can_mask,
 			  sizeof(filter.can_mask), "CAN mask not same");
 }
 

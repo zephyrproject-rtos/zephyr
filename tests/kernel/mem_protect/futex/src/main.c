@@ -64,25 +64,25 @@ void futex_wait_task(void *p1, void *p2, void *p3)
 	s32_t ret_value;
 	int time_val = *(int *)p1;
 
-	zassert_true(time_val >= K_FOREVER, "invalid timeout parameter");
+	ztest_true(time_val >= K_FOREVER, "invalid timeout parameter");
 
 	ret_value = k_futex_wait(&simple_futex,
 			atomic_get(&simple_futex.val), time_val);
 
 	switch (time_val) {
 	case K_FOREVER:
-		zassert_true(ret_value == 0,
+		ztest_true(ret_value == 0,
 		     "k_futex_wait failed when it shouldn't have");
-		zassert_false(ret_value == 0,
+		ztest_false(ret_value == 0,
 		     "futex wait task wakeup when it shouldn't have");
 		break;
 	case K_NO_WAIT:
-		zassert_true(ret_value == -ETIMEDOUT,
+		ztest_true(ret_value == -ETIMEDOUT,
 		     "k_futex_wait failed when it shouldn't have");
 		atomic_sub(&simple_futex.val, 1);
 		break;
 	default:
-		zassert_true(ret_value == -ETIMEDOUT,
+		ztest_true(ret_value == -ETIMEDOUT,
 		     "k_futex_wait failed when it shouldn't have");
 		atomic_sub(&simple_futex.val, 1);
 		break;
@@ -96,7 +96,7 @@ void futex_wake_task(void *p1, void *p2, void *p3)
 
 	ret_value = k_futex_wake(&simple_futex,
 				woken_num == 1 ? false : true);
-	zassert_true(ret_value == woken_num,
+	ztest_true(ret_value == woken_num,
 		"k_futex_wake failed when it shouldn't have");
 }
 
@@ -105,22 +105,22 @@ void futex_wait_wake_task(void *p1, void *p2, void *p3)
 	s32_t ret_value;
 	int time_val = *(int *)p1;
 
-	zassert_true(time_val >= K_FOREVER, "invalid timeout parameter");
+	ztest_true(time_val >= K_FOREVER, "invalid timeout parameter");
 
 	ret_value = k_futex_wait(&simple_futex,
 			atomic_get(&simple_futex.val), time_val);
 
 	switch (time_val) {
 	case K_FOREVER:
-		zassert_true(ret_value == 0,
+		ztest_true(ret_value == 0,
 		     "k_futex_wait failed when it shouldn't have");
 		break;
 	case K_NO_WAIT:
-		zassert_true(ret_value == -ETIMEDOUT,
+		ztest_true(ret_value == -ETIMEDOUT,
 		     "k_futex_wait failed when it shouldn't have");
 		break;
 	default:
-		zassert_true(ret_value == 0,
+		ztest_true(ret_value == 0,
 		     "k_futex_wait failed when it shouldn't have");
 		break;
 	}
@@ -134,11 +134,11 @@ void futex_multiple_wake_task(void *p1, void *p2, void *p3)
 	int woken_num = *(int *)p1;
 	int idx = *(int *)p2;
 
-	zassert_true(woken_num > 0, "invalid woken number");
+	ztest_true(woken_num > 0, "invalid woken number");
 
 	ret_value = k_futex_wake(&multiple_futex[idx],
 			woken_num == 1 ? false : true);
-	zassert_true(ret_value == woken_num,
+	ztest_true(ret_value == woken_num,
 		"k_futex_wake failed when it shouldn't have");
 }
 
@@ -148,11 +148,11 @@ void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 	int time_val = *(int *)p1;
 	int idx = *(int *)p2;
 
-	zassert_true(time_val == K_FOREVER, "invalid timeout parameter");
+	ztest_true(time_val == K_FOREVER, "invalid timeout parameter");
 
 	ret_value = k_futex_wait(&multiple_futex[idx],
 		atomic_get(&(multiple_futex[idx].val)), time_val);
-	zassert_true(ret_value == 0,
+	ztest_true(ret_value == 0,
 	     "k_futex_wait failed when it shouldn't have");
 
 	atomic_sub(&(multiple_futex[idx].val), 1);
@@ -180,7 +180,7 @@ void test_futex_wait_forever(void)
 	/* giving time for the futex_wait_task to execute */
 	k_yield();
 
-	zassert_false(atomic_get(&simple_futex.val) == 0,
+	ztest_false(atomic_get(&simple_futex.val) == 0,
 			"wait forever shouldn't wake");
 
 	k_thread_abort(&futex_tid);
@@ -200,7 +200,7 @@ void test_futex_wait_timeout(void)
 	/* giving time for the futex_wait_task to execute */
 	k_sleep(K_MSEC(100));
 
-	zassert_true(atomic_get(&simple_futex.val) == 0,
+	ztest_true(atomic_get(&simple_futex.val) == 0,
 			"wait timeout doesn't timeout");
 
 	k_thread_abort(&futex_tid);
@@ -220,7 +220,7 @@ void test_futex_wait_nowait(void)
 	/* giving time for the futex_wait_task to execute */
 	k_sleep(K_MSEC(100));
 
-	zassert_true(atomic_get(&simple_futex.val) == 0, "wait nowait fail");
+	ztest_true(atomic_get(&simple_futex.val) == 0, "wait nowait fail");
 
 	k_thread_abort(&futex_tid);
 }
@@ -254,7 +254,7 @@ void test_futex_wait_forever_wake(void)
 	 */
 	k_yield();
 
-	zassert_true(atomic_get(&simple_futex.val) == 0,
+	ztest_true(atomic_get(&simple_futex.val) == 0,
 			"wait forever doesn't wake");
 
 	k_thread_abort(&futex_wake_tid);
@@ -287,7 +287,7 @@ void test_futex_wait_timeout_wake(void)
 	 */
 	k_yield();
 
-	zassert_true(atomic_get(&simple_futex.val) == 0,
+	ztest_true(atomic_get(&simple_futex.val) == 0,
 			"wait timeout doesn't wake");
 
 	k_thread_abort(&futex_wake_tid);
@@ -340,7 +340,7 @@ void test_futex_wait_forever_wake_from_isr(void)
 	/* giving time for the futex_wait_wake_task to execute */
 	k_yield();
 
-	zassert_true(atomic_get(&simple_futex.val) == 0,
+	ztest_true(atomic_get(&simple_futex.val) == 0,
 			"wait forever wake from isr doesn't wake");
 
 	k_thread_abort(&futex_tid);
@@ -372,7 +372,7 @@ void test_futex_multiple_threads_wait_wake(void)
 	/* giving time for the other threads to execute */
 	k_yield();
 
-	zassert_true(atomic_get(&simple_futex.val) == 0,
+	ztest_true(atomic_get(&simple_futex.val) == 0,
 			"wait forever wake doesn't wake all threads");
 
 	k_thread_abort(&futex_wake_tid);
@@ -409,7 +409,7 @@ void test_multiple_futex_wait_wake(void)
 	k_yield();
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		zassert_true(atomic_get(&multiple_futex[i].val) == 0,
+		ztest_true(atomic_get(&multiple_futex[i].val) == 0,
 			"wait forever wake doesn't wake %d thread", i);
 	}
 
@@ -425,30 +425,30 @@ void test_user_futex_bad(void)
 
 	/* Is a futex, but no access to its memory */
 	ret = k_futex_wait(&no_access_futex, 0, K_NO_WAIT);
-	zassert_equal(ret, -EACCES, "shouldn't have been able to access");
+	ztest_equal(ret, -EACCES, "shouldn't have been able to access");
 	ret = k_futex_wake(&no_access_futex, false);
-	zassert_equal(ret, -EACCES, "shouldn't have been able to access");
+	ztest_equal(ret, -EACCES, "shouldn't have been able to access");
 
 	/* Access to memory, but not a kernel object */
 	ret = k_futex_wait((struct k_futex *)&not_a_futex, 0, K_NO_WAIT);
-	zassert_equal(ret, -EINVAL, "waited on non-futex");
+	ztest_equal(ret, -EINVAL, "waited on non-futex");
 	ret = k_futex_wake((struct k_futex *)&not_a_futex, false);
-	zassert_equal(ret, -EINVAL, "woke non-futex");
+	ztest_equal(ret, -EINVAL, "woke non-futex");
 
 	/* Access to memory, but wrong object type */
 	ret = k_futex_wait((struct k_futex *)&also_not_a_futex, 0, K_NO_WAIT);
-	zassert_equal(ret, -EINVAL, "waited on non-futex");
+	ztest_equal(ret, -EINVAL, "waited on non-futex");
 	ret = k_futex_wake((struct k_futex *)&also_not_a_futex, false);
-	zassert_equal(ret, -EINVAL, "woke non-futex");
+	ztest_equal(ret, -EINVAL, "woke non-futex");
 
 	/* Wait with unexpected value */
 	atomic_set(&simple_futex.val, 100);
 	ret = k_futex_wait(&simple_futex, 0, K_NO_WAIT);
-	zassert_equal(ret, -EAGAIN, "waited when values did not match");
+	ztest_equal(ret, -EAGAIN, "waited when values did not match");
 
 	/* Timeout case */
 	ret = k_futex_wait(&simple_futex, 100, K_NO_WAIT);
-	zassert_equal(ret, -ETIMEDOUT, "didn't time out");
+	ztest_equal(ret, -ETIMEDOUT, "didn't time out");
 }
 
 /* ztest main entry*/

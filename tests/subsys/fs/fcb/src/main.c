@@ -44,18 +44,18 @@ void fcb_test_wipe(void)
 	const struct flash_area *fap;
 
 	rc = flash_area_open(TEST_FCB_FLASH_AREA_ID, &fap);
-	zassert_true(rc == 0, "flash area open call failure");
+	ztest_true(rc == 0, "flash area open call failure");
 
 	for (i = 0; i < ARRAY_SIZE(test_fcb_sector); i++) {
 		rc = flash_area_erase(fap, test_fcb_sector[i].fs_off,
 				      test_fcb_sector[i].fs_size);
-		zassert_true(rc == 0, "erase call failure");
+		ztest_true(rc == 0, "erase call failure");
 	}
 }
 
 int fcb_test_empty_walk_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 {
-	zassert_unreachable("fcb_test_empty_walk_cb");
+	ztest_unreachable("fcb_test_empty_walk_cb");
 	return 0;
 }
 
@@ -74,15 +74,15 @@ int fcb_test_data_walk_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 
 	len = entry_ctx->loc.fe_data_len;
 
-	zassert_true(len == *var_cnt, "");
+	ztest_true(len == *var_cnt, "");
 
 	rc = flash_area_read(entry_ctx->fap,
 			     FCB_ENTRY_FA_DATA_OFF(entry_ctx->loc),
 			     test_data, len);
-	zassert_true(rc == 0, "read call failure");
+	ztest_true(rc == 0, "read call failure");
 
 	for (i = 0; i < len; i++) {
-		zassert_true(test_data[i] == fcb_test_append_data(len, i),
+		ztest_true(test_data[i] == fcb_test_append_data(len, i),
 		"fcb_test_append_data redout misrepresentation");
 	}
 	(*var_cnt)++;
@@ -114,7 +114,7 @@ void fcb_tc_pretest(int sectors)
 	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, fcb);
 	if (rc != 0) {
 		printf("%s rc == %xm, %d\n", __func__, rc, rc);
-		zassert_true(rc == 0, "fbc initialization failure");
+		ztest_true(rc == 0, "fbc initialization failure");
 	}
 }
 

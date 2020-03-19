@@ -39,7 +39,7 @@ static u32_t get_available_nvic_line(u32_t initial_offset)
 		}
 	}
 
-	zassert_true(i >= 0, "No available IRQ line\n");
+	ztest_true(i >= 0, "No available IRQ line\n");
 
 	return i;
 }

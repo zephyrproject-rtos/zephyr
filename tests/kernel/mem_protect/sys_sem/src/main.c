@@ -74,10 +74,10 @@ void sem_take_multiple_low_prio_helper(void *p1, void *p2, void *p3)
 	s32_t ret_value;
 
 	ret_value = sys_sem_take(&low_prio_sem, K_FOREVER);
-	zassert_true(ret_value == 0, "sys_sem_take failed");
+	ztest_true(ret_value == 0, "sys_sem_take failed");
 
 	ret_value = sys_sem_take(&multiple_thread_sem, K_FOREVER);
-	zassert_true(ret_value == 0, "sys_sem_take failed");
+	ztest_true(ret_value == 0, "sys_sem_take failed");
 
 	sys_sem_give(&low_prio_sem);
 }
@@ -87,10 +87,10 @@ void sem_take_multiple_mid_prio_helper(void *p1, void *p2, void *p3)
 	s32_t ret_value;
 
 	ret_value = sys_sem_take(&mid_prio_sem, K_FOREVER);
-	zassert_true(ret_value == 0, "sys_sem_take failed");
+	ztest_true(ret_value == 0, "sys_sem_take failed");
 
 	ret_value = sys_sem_take(&multiple_thread_sem, K_FOREVER);
-	zassert_true(ret_value == 0, "sys_sem_take failed");
+	ztest_true(ret_value == 0, "sys_sem_take failed");
 
 	sys_sem_give(&mid_prio_sem);
 }
@@ -100,10 +100,10 @@ void sem_take_multiple_high_prio_helper(void *p1, void *p2, void *p3)
 	s32_t ret_value;
 
 	ret_value = sys_sem_take(&high_prio_sem, K_FOREVER);
-	zassert_true(ret_value == 0, "sys_sem_take failed");
+	ztest_true(ret_value == 0, "sys_sem_take failed");
 
 	ret_value = sys_sem_take(&multiple_thread_sem, K_FOREVER);
-	zassert_true(ret_value == 0, "sys_sem_take failed");
+	ztest_true(ret_value == 0, "sys_sem_take failed");
 
 	sys_sem_give(&high_prio_sem);
 }
@@ -114,7 +114,7 @@ void sem_multiple_threads_wait_helper(void *p1, void *p2, void *p3)
 
 	/* get blocked until the test thread gives the semaphore */
 	ret_value = sys_sem_take(&multiple_thread_sem, K_FOREVER);
-	zassert_true(ret_value == 0, "sys_sem_take failed");
+	ztest_true(ret_value == 0, "sys_sem_take failed");
 
 	/* Inform the test thread that this thread has got multiple_thread_sem*/
 	sys_sem_give(&simple_sem);
@@ -131,19 +131,19 @@ void test_basic_sem_test(void)
 	s32_t ret_value;
 
 	ret_value = sys_sem_init(NULL, SEM_INIT_VAL, SEM_MAX_VAL);
-	zassert_true(ret_value == -EINVAL,
+	ztest_true(ret_value == -EINVAL,
 		     "sys_sem_init returned not equal -EINVAL");
 
 	ret_value = sys_sem_init(&simple_sem, SEM_INIT_VAL, SEM_INIT_VAL);
-	zassert_true(ret_value == -EINVAL,
+	ztest_true(ret_value == -EINVAL,
 		     "sys_sem_init returned not equal -EINVAL");
 
 	ret_value = sys_sem_init(&simple_sem, UINT_MAX, SEM_MAX_VAL);
-	zassert_true(ret_value == -EINVAL,
+	ztest_true(ret_value == -EINVAL,
 		     "sys_sem_init returned not equal -EINVAL");
 
 	ret_value = sys_sem_init(&simple_sem, SEM_MAX_VAL, UINT_MAX);
-	zassert_true(ret_value == -EINVAL,
+	ztest_true(ret_value == -EINVAL,
 		     "sys_sem_init returned not equal -EINVAL");
 
 	sys_sem_init(&simple_sem, SEM_INIT_VAL, SEM_MAX_VAL);
@@ -165,7 +165,7 @@ void test_simple_sem_from_isr(void)
 		sem_give_from_isr(&simple_sem);
 
 		signal_count = sys_sem_count_get(&simple_sem);
-		zassert_true(signal_count == (i + 1),
+		ztest_true(signal_count == (i + 1),
 			     "signal count missmatch Expected %d, got %d",
 			     (i + 1), signal_count);
 	}
@@ -185,7 +185,7 @@ void test_simple_sem_from_task(void)
 		sys_sem_give(&simple_sem);
 
 		signal_count = sys_sem_count_get(&simple_sem);
-		zassert_true(signal_count == (i + 1),
+		ztest_true(signal_count == (i + 1),
 			     "signal count missmatch Expected %d, got %d",
 			     (i + 1), signal_count);
 	}
@@ -202,12 +202,12 @@ void test_sem_take_no_wait(void)
 
 	for (int i = 4; i >= 0; i--) {
 		ret_value = sys_sem_take(&simple_sem, K_NO_WAIT);
-		zassert_true(ret_value == 0,
+		ztest_true(ret_value == 0,
 			     "unable to do sys_sem_take which returned %d",
 			     ret_value);
 
 		signal_count = sys_sem_count_get(&simple_sem);
-		zassert_true(signal_count == i,
+		ztest_true(signal_count == i,
 			     "signal count missmatch Expected %d, got %d",
 			     i, signal_count);
 	}
@@ -226,11 +226,11 @@ void test_sem_take_no_wait_fails(void)
 
 	for (int i = 4; i >= 0; i--) {
 		ret_value = sys_sem_take(&simple_sem, K_NO_WAIT);
-		zassert_true(ret_value == -ETIMEDOUT,
+		ztest_true(ret_value == -ETIMEDOUT,
 			     "sys_sem_take returned when not possible");
 
 		signal_count = sys_sem_count_get(&simple_sem);
-		zassert_true(signal_count == 0U,
+		ztest_true(signal_count == 0U,
 			     "signal count missmatch Expected 0, got %d",
 			     signal_count);
 	}
@@ -248,7 +248,7 @@ void test_sem_take_timeout_fails(void)
 
 	for (int i = 4; i >= 0; i--) {
 		ret_value = sys_sem_take(&simple_sem, SEM_TIMEOUT);
-		zassert_true(ret_value == -ETIMEDOUT,
+		ztest_true(ret_value == -ETIMEDOUT,
 			     "sys_sem_take succeeded when its not possible");
 	}
 
@@ -274,7 +274,7 @@ void test_sem_take_timeout(void)
 			K_NO_WAIT);
 
 	ret_value = sys_sem_take(&simple_sem, SEM_TIMEOUT);
-	zassert_true(ret_value == 0,
+	ztest_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
 }
 
@@ -298,7 +298,7 @@ void test_sem_take_timeout_forever(void)
 			K_NO_WAIT);
 
 	ret_value = sys_sem_take(&simple_sem, K_FOREVER);
-	zassert_true(ret_value == 0,
+	ztest_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
 }
 
@@ -316,7 +316,7 @@ void test_sem_take_timeout_isr(void)
 			K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 
 	ret_value = sys_sem_take(&simple_sem, SEM_TIMEOUT);
-	zassert_true(ret_value == 0,
+	ztest_true(ret_value == 0,
 		     "sys_sem_take failed when its shouldn't have");
 }
 
@@ -373,15 +373,15 @@ void test_sem_take_multiple(void)
 
 	/* check which threads completed. */
 	signal_count = sys_sem_count_get(&high_prio_sem);
-	zassert_true(signal_count == 1U,
+	ztest_true(signal_count == 1U,
 		     "Higher priority threads didn't execute");
 
 	signal_count = sys_sem_count_get(&mid_prio_sem);
-	zassert_true(signal_count == 0U,
+	ztest_true(signal_count == 0U,
 		     "Medium priority threads shouldn't have executed");
 
 	signal_count = sys_sem_count_get(&low_prio_sem);
-	zassert_true(signal_count == 0U,
+	ztest_true(signal_count == 0U,
 		     "low priority threads shouldn't have executed");
 
 	/* enable the Medium priority thread to run. */
@@ -390,15 +390,15 @@ void test_sem_take_multiple(void)
 
 	/* check which threads completed. */
 	signal_count = sys_sem_count_get(&high_prio_sem);
-	zassert_true(signal_count == 1U,
+	ztest_true(signal_count == 1U,
 		     "Higher priority thread executed again");
 
 	signal_count = sys_sem_count_get(&mid_prio_sem);
-	zassert_true(signal_count == 1U,
+	ztest_true(signal_count == 1U,
 		     "Medium priority thread didn't get executed");
 
 	signal_count = sys_sem_count_get(&low_prio_sem);
-	zassert_true(signal_count == 0U,
+	ztest_true(signal_count == 0U,
 		     "low priority thread shouldn't have executed");
 
 	/* enable the low priority thread to run. */
@@ -407,15 +407,15 @@ void test_sem_take_multiple(void)
 
 	/* check which threads completed. */
 	signal_count = sys_sem_count_get(&high_prio_sem);
-	zassert_true(signal_count == 1U,
+	ztest_true(signal_count == 1U,
 		     "Higher priority thread executed again");
 
 	signal_count = sys_sem_count_get(&mid_prio_sem);
-	zassert_true(signal_count == 1U,
+	ztest_true(signal_count == 1U,
 		     "Medium priority thread executed again");
 
 	signal_count = sys_sem_count_get(&low_prio_sem);
-	zassert_true(signal_count == 1U,
+	ztest_true(signal_count == 1U,
 		     "low priority thread didn't get executed");
 
 }
@@ -434,7 +434,7 @@ void test_sem_give_take_from_isr(void)
 		sem_give_from_isr(&simple_sem);
 
 		signal_count = sys_sem_count_get(&simple_sem);
-		zassert_true(signal_count == i + 1,
+		ztest_true(signal_count == i + 1,
 			     "signal count missmatch Expected %d, got %d",
 			     i + 1, signal_count);
 	}
@@ -444,7 +444,7 @@ void test_sem_give_take_from_isr(void)
 		sem_take_from_isr(&simple_sem);
 
 		signal_count = sys_sem_count_get(&simple_sem);
-		zassert_true(signal_count == (i - 1),
+		ztest_true(signal_count == (i - 1),
 			     "signal count missmatch Expected %d, got %d",
 			     (i - 1), signal_count);
 	}
@@ -463,11 +463,11 @@ void test_sem_give_limit(void)
 	/* Give semaphore and do a check for the count */
 	for (int i = 0; i < SEM_MAX_VAL; i++) {
 		ret_value = sys_sem_give(&simple_sem);
-		zassert_true(ret_value == 0,
+		ztest_true(ret_value == 0,
 			     "sys_sem_give failed when its shouldn't have");
 
 		signal_count = sys_sem_count_get(&simple_sem);
-		zassert_true(signal_count == i + 1,
+		ztest_true(signal_count == i + 1,
 			     "signal count missmatch Expected %d, got %d",
 			     i + 1, signal_count);
 	}
@@ -476,14 +476,14 @@ void test_sem_give_limit(void)
 		ret_value = sys_sem_give(&simple_sem);
 		if (ret_value == -EAGAIN) {
 			signal_count = sys_sem_count_get(&simple_sem);
-			zassert_true(signal_count == SEM_MAX_VAL,
+			ztest_true(signal_count == SEM_MAX_VAL,
 				"signal count missmatch Expected %d, got %d",
 				SEM_MAX_VAL, signal_count);
 
 			sys_sem_take(&simple_sem, K_FOREVER);
 		} else if (ret_value == 0) {
 			signal_count = sys_sem_count_get(&simple_sem);
-			zassert_true(signal_count == SEM_MAX_VAL,
+			ztest_true(signal_count == SEM_MAX_VAL,
 				"signal count missmatch Expected %d, got %d",
 				SEM_MAX_VAL, signal_count);
 		}
@@ -530,18 +530,18 @@ void test_sem_multiple_threads_wait(void)
 		/* check if all the threads are done. */
 		for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
 			ret_value = sys_sem_take(&simple_sem, K_FOREVER);
-			zassert_true(ret_value == 0,
+			ztest_true(ret_value == 0,
 				     "Some of the threads didn't get multiple_thread_sem"
 				     );
 		}
 
 		signal_count = sys_sem_count_get(&simple_sem);
-		zassert_true(signal_count == 0U,
+		ztest_true(signal_count == 0U,
 			     "signal count missmatch Expected 0, got %d",
 			     signal_count);
 
 		signal_count = sys_sem_count_get(&multiple_thread_sem);
-		zassert_true(signal_count == 0U,
+		ztest_true(signal_count == 0U,
 			     "signal count missmatch Expected 0, got %d",
 			     signal_count);
 

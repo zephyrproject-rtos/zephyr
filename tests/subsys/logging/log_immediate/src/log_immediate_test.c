@@ -67,7 +67,7 @@ static void test_log_immediate_preemption(void)
 	for (int i = 0; i < NUM_THREADS; i++) {
 		k_thread_abort(tids[i]);
 	}
-	zassert_true(true, "");
+	ztest_true(true, "");
 }
 
 /*test case main entry*/

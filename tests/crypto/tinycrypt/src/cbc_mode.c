@@ -123,7 +123,7 @@ void test_cbc_sp_800_38a_encrypt_decrypt(void)
 	TC_PRINT("CBC test #1 (encryption SP 800-38a tests):\n");
 
 	/**TESTPOINT: Check test 1*/
-	zassert_true(tc_cbc_mode_encrypt(encrypted,
+	ztest_true(tc_cbc_mode_encrypt(encrypted,
 			sizeof(plaintext) + TC_AES_BLOCK_SIZE,
 			plaintext, sizeof(plaintext), iv_buffer, &a),
 			"CBC test #1 (encryption SP 800-38a tests) failed");
@@ -139,7 +139,7 @@ void test_cbc_sp_800_38a_encrypt_decrypt(void)
 	length = ((u32_t) sizeof(encrypted)) - TC_AES_BLOCK_SIZE;
 
 	/**TESTPOINT: Check test 2*/
-	zassert_true(tc_cbc_mode_decrypt(decrypted,
+	ztest_true(tc_cbc_mode_decrypt(decrypted,
 		length, p, length, encrypted,
 		&a), "CBC test #2 (decryption SP 800-38a tests) failed");
 
@@ -147,5 +147,5 @@ void test_cbc_sp_800_38a_encrypt_decrypt(void)
 			      decrypted, sizeof(decrypted), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "CBC test #1 failed.");
+	ztest_false(result, "CBC test #1 failed.");
 }

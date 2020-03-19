@@ -75,7 +75,7 @@ void test_sha256_1(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #1 failed.");
+	ztest_false(result, "SHA256 test #1 failed.");
 }
 
 /*
@@ -106,7 +106,7 @@ void test_sha256_2(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #2 failed.");
+	ztest_false(result, "SHA256 test #2 failed.");
 }
 
 void test_sha256_3(void)
@@ -133,7 +133,7 @@ void test_sha256_3(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #3 failed.");
+	ztest_false(result, "SHA256 test #3 failed.");
 
 }
 
@@ -161,7 +161,7 @@ void test_sha256_4(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #4 failed.");
+	ztest_false(result, "SHA256 test #4 failed.");
 
 }
 
@@ -191,7 +191,7 @@ void test_sha256_5(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #5 failed.");
+	ztest_false(result, "SHA256 test #5 failed.");
 
 }
 
@@ -221,7 +221,7 @@ void test_sha256_6(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #6 failed.");
+	ztest_false(result, "SHA256 test #6 failed.");
 
 }
 
@@ -251,7 +251,7 @@ void test_sha256_7(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #7 failed.");
+	ztest_false(result, "SHA256 test #7 failed.");
 
 }
 
@@ -281,7 +281,7 @@ void test_sha256_8(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #8 failed.");
+	ztest_false(result, "SHA256 test #8 failed.");
 
 }
 
@@ -311,7 +311,7 @@ void test_sha256_9(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #9 failed.");
+	ztest_false(result, "SHA256 test #9 failed.");
 
 }
 
@@ -341,7 +341,7 @@ void test_sha256_10(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #10 failed.");
+	ztest_false(result, "SHA256 test #10 failed.");
 
 }
 
@@ -371,7 +371,7 @@ void test_sha256_11(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #11 failed.");
+	ztest_false(result, "SHA256 test #11 failed.");
 
 }
 
@@ -404,7 +404,7 @@ void test_sha256_12(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #12 failed.");
+	ztest_false(result, "SHA256 test #12 failed.");
 }
 #if EXTREME_SLOW
 void test_sha256_13(void)
@@ -436,7 +436,7 @@ void test_sha256_13(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #13 failed.");
+	ztest_false(result, "SHA256 test #13 failed.");
 
 }
 
@@ -469,7 +469,7 @@ void test_sha256_14(void)
 			      digest, sizeof(digest), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "SHA256 test #14 failed.");
+	ztest_false(result, "SHA256 test #14 failed.");
 
 }
 #endif

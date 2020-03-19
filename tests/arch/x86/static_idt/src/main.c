@@ -119,7 +119,7 @@ void test_idt_stub(void)
 	p_idt_entry = (struct segment_descriptor *)
 		      (_idt_base_address + (TEST_SOFT_INT << 3));
 	offset = (u32_t)(&int_stub);
-	zassert_equal(DTE_OFFSET(p_idt_entry), offset,
+	ztest_equal(DTE_OFFSET(p_idt_entry), offset,
 		      "Failed to find offset of int_stub (0x%x)"
 		      " at vector %d\n", offset, TEST_SOFT_INT);
 
@@ -127,7 +127,7 @@ void test_idt_stub(void)
 	p_idt_entry = (struct segment_descriptor *)
 		      (_idt_base_address + (IV_DIVIDE_ERROR << 3));
 	offset = (u32_t)(&_EXCEPTION_STUB_NAME(exc_divide_error_handler, 0));
-	zassert_equal(DTE_OFFSET(p_idt_entry), offset,
+	ztest_equal(DTE_OFFSET(p_idt_entry), offset,
 		      "Failed to find offset of exc stub (0x%x)"
 		      " at vector %d\n", offset, IV_DIVIDE_ERROR);
 
@@ -164,9 +164,9 @@ void test_static_idt(void)
 	TC_PRINT("Testing to see interrupt handler executes properly\n");
 	_trigger_isr_handler();
 
-	zassert_not_equal(int_handler_executed, 0,
+	ztest_not_equal(int_handler_executed, 0,
 			  "Interrupt handler did not execute");
-	zassert_equal(int_handler_executed, 1,
+	ztest_equal(int_handler_executed, 1,
 		      "Interrupt handler executed more than once! (%d)\n",
 		      int_handler_executed);
 
@@ -179,9 +179,9 @@ void test_static_idt(void)
 	error = 32;     /* avoid static checker uninitialized warnings */
 	error = error / exc_handler_executed;
 
-	zassert_not_equal(exc_handler_executed, 0,
+	ztest_not_equal(exc_handler_executed, 0,
 			  "Exception handler did not execute");
-	zassert_equal(exc_handler_executed, 1,
+	ztest_equal(exc_handler_executed, 1,
 		      "Exception handler executed more than once! (%d)\n",
 		      exc_handler_executed);
 	/*
@@ -196,7 +196,7 @@ void test_static_idt(void)
 	 * The thread should not run past where the spurious interrupt is
 	 * generated. Therefore spur_handler_aborted_thread should remain at 1.
 	 */
-	zassert_not_equal(spur_handler_aborted_thread, 0,
+	ztest_not_equal(spur_handler_aborted_thread, 0,
 			  "Spurious handler did not execute as expected");
 }
 

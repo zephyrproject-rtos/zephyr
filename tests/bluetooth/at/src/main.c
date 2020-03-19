@@ -25,9 +25,9 @@ int at_handle(struct at_client *hf_at)
 {
 	u32_t val;
 
-	zassert_equal(at_get_number(hf_at, &val), 0, "Error getting value");
+	ztest_equal(at_get_number(hf_at, &val), 0, "Error getting value");
 
-	zassert_equal(val, 999, "Invalid value parsed");
+	ztest_equal(val, 999, "Invalid value parsed");
 
 	return 0;
 }
@@ -38,7 +38,7 @@ int at_resp(struct at_client *hf_at, struct net_buf *buf)
 
 	err = at_parse_cmd_input(hf_at, buf, "ABCD", at_handle,
 				 AT_CMD_TYPE_NORMAL);
-	zassert_equal(err, 0, "Error parsing CMD input");
+	ztest_equal(err, 0, "Error parsing CMD input");
 
 	return 0;
 }
@@ -53,17 +53,17 @@ static void at_test1(void)
 	at.buf = buffer;
 
 	buf = net_buf_alloc(&at_pool, K_FOREVER);
-	zassert_not_null(buf, "Failed to get buffer");
+	ztest_not_null(buf, "Failed to get buffer");
 
 	at_register(&at, at_resp, NULL);
 	len = strlen(example_data);
 
-	zassert_true(net_buf_tailroom(buf) >= len,
+	ztest_true(net_buf_tailroom(buf) >= len,
 		    "Allocated buffer is too small");
 	strncpy((char *)buf->data, example_data, len);
 	net_buf_add(buf, len);
 
-	zassert_equal(at_parse_input(&at, buf), 0, "Parsing failed");
+	ztest_equal(at_parse_input(&at, buf), 0, "Parsing failed");
 }
 
 void test_main(void)

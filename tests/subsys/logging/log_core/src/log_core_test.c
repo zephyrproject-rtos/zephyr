@@ -54,7 +54,7 @@ static void put(struct log_backend const *const backend,
 	if (cb->check_id) {
 		u32_t exp_id = cb->exp_id[cb->counter];
 
-		zassert_equal(log_msg_source_id_get(msg),
+		ztest_equal(log_msg_source_id_get(msg),
 			      exp_id,
 			      "Unexpected source_id");
 	}
@@ -62,7 +62,7 @@ static void put(struct log_backend const *const backend,
 	if (cb->check_timestamp) {
 		u32_t exp_timestamp = cb->exp_timestamps[cb->counter];
 
-		zassert_equal(log_msg_timestamp_get(msg),
+		ztest_equal(log_msg_timestamp_get(msg),
 			      exp_timestamp,
 			      "Unexpected message index");
 	}
@@ -72,13 +72,13 @@ static void put(struct log_backend const *const backend,
 		for (int i = 0; i < nargs; i++) {
 			u32_t arg = log_msg_arg_get(msg, i);
 
-			zassert_equal(i+1, arg,
+			ztest_equal(i+1, arg,
 				      "Unexpected argument in the message");
 		}
 	}
 
 	if (cb->check_strdup) {
-		zassert_false(cb->exp_strdup[cb->counter]
+		ztest_false(cb->exp_strdup[cb->counter]
 			      ^ log_is_strdup((void *)log_msg_arg_get(msg, 0)),
 			      NULL);
 	}
@@ -151,11 +151,11 @@ static int log_source_id_get(const char *name)
 static void log_setup(bool backend2_enable)
 {
 	stamp = 0U;
-	zassert_false(in_panic, "Logger in panic state.");
+	ztest_false(in_panic, "Logger in panic state.");
 
 	log_init();
 
-	zassert_equal(0, log_set_timestamp_func(timestamp_get, 0),
+	ztest_equal(0, log_set_timestamp_func(timestamp_get, 0),
 		      "Expects successful timestamp function setting.");
 
 	memset(&backend1_cb, 0, sizeof(backend1_cb));
@@ -208,11 +208,11 @@ static void test_log_backend_runtime_filtering(void)
 	while (log_process(false)) {
 	}
 
-	zassert_equal(3,
+	ztest_equal(3,
 		      backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 
-	zassert_equal(2,
+	ztest_equal(2,
 		      backend2_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 }
@@ -231,7 +231,7 @@ static void test_log_overflow(void)
 	u32_t hexdump_len = max_hexdump_len - HEXDUMP_BYTES_CONT_MSG;
 
 
-	zassert_true(IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW),
+	ztest_true(IS_ENABLED(CONFIG_LOG_MODE_OVERFLOW),
 		     "Test requires that overflow mode is enabled");
 
 	log_setup(false);
@@ -260,7 +260,7 @@ static void test_log_overflow(void)
 	while (log_process(false)) {
 	}
 
-	zassert_equal(2,
+	ztest_equal(2,
 		      backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 }
@@ -298,7 +298,7 @@ static void test_log_arguments(void)
 	while (log_process(false)) {
 	}
 
-	zassert_equal(8,
+	ztest_equal(8,
 		      backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 }
@@ -322,7 +322,7 @@ static void test_log_from_declared_module(void)
 	while (log_process(false)) {
 	}
 
-	zassert_equal(2, backend1_cb.counter,
+	ztest_equal(2, backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 }
 
@@ -349,7 +349,7 @@ static void test_log_strdup_gc(void)
 	while (log_process(false)) {
 	}
 
-	zassert_equal(2, backend1_cb.counter,
+	ztest_equal(2, backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 
 	/* Processing should free strdup buffer. */
@@ -359,7 +359,7 @@ static void test_log_strdup_gc(void)
 	while (log_process(false)) {
 	}
 
-	zassert_equal(3, backend1_cb.counter,
+	ztest_equal(3, backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 
 }
@@ -373,7 +373,7 @@ static void test_log_strdup_gc(void)
 		while (log_process(false)) { \
 		} \
 		\
-		zassert_equal(exp_cnt, backend1_cb.counter,\
+		ztest_equal(exp_cnt, backend1_cb.counter,\
 		"Unexpected amount of messages received by the backend (%d).", \
 			backend1_cb.counter); \
 	}
@@ -411,7 +411,7 @@ static void strdup_trim_callback(struct log_backend const *const backend,
 	char *str = (char *)log_msg_arg_get(msg, 0);
 	size_t len = strlen(str);
 
-	zassert_equal(len, CONFIG_LOG_STRDUP_MAX_STRING,
+	ztest_equal(len, CONFIG_LOG_STRDUP_MAX_STRING,
 			"Expected trimmed string");
 }
 
@@ -431,7 +431,7 @@ static void test_strdup_trimming(void)
 	while (log_process(false)) {
 	}
 
-	zassert_equal(1, backend1_cb.counter,
+	ztest_equal(1, backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 }
 
@@ -446,7 +446,7 @@ static void log_n_messages(u32_t n_msg, u32_t exp_dropped)
 	while (log_process(false)) {
 	}
 
-	zassert_equal(backend1_cb.total_drops, exp_dropped,
+	ztest_equal(backend1_cb.total_drops, exp_dropped,
 			"Unexpected log msg dropped %d (expected %d)",
 			backend1_cb.total_drops, exp_dropped);
 
@@ -482,7 +482,7 @@ static void test_single_z_log_get_s_mask(const char *str, u32_t nargs,
 {
 	u32_t mask = z_log_get_s_mask(str, nargs);
 
-	zassert_equal(mask, exp_mask, "Unexpected mask %x (expected %x)",
+	ztest_equal(mask, exp_mask, "Unexpected mask %x (expected %x)",
 								mask, exp_mask);
 }
 
@@ -511,17 +511,17 @@ static void test_log_panic(void)
 	log_panic();
 	in_panic = true;
 
-	zassert_true(backend1_cb.panic,
+	ztest_true(backend1_cb.panic,
 		     "Expecting backend to receive panic notification.");
 
-	zassert_equal(2,
+	ztest_equal(2,
 		      backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 
 	/* messages processed where called */
 	LOG_INF("test");
 
-	zassert_equal(3,
+	ztest_equal(3,
 		      backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 }

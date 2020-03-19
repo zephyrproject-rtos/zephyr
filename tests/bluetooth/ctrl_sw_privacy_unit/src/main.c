@@ -29,9 +29,9 @@
 
 void helper_privacy_clear(void)
 {
-	zassert_equal(newest_prpa, 0, "");
+	ztest_equal(newest_prpa, 0, "");
 	for (u8_t i = 0; i < CONFIG_BT_CTLR_RPA_CACHE_SIZE; i++) {
-		zassert_equal(prpa_cache[i].taken, 0U, "");
+		ztest_equal(prpa_cache[i].taken, 0U, "");
 	}
 }
 
@@ -49,33 +49,33 @@ void helper_privacy_add(int skew)
 	prpa_cache_add(&a1);
 	pos = prpa_cache_find(&a1);
 	ex_pos = (1 + skew) % CONFIG_BT_CTLR_RPA_CACHE_SIZE;
-	zassert_equal(pos, ex_pos, "");
+	ztest_equal(pos, ex_pos, "");
 
 	prpa_cache_add(&a2);
 	pos = prpa_cache_find(&a2);
 	ex_pos = (2 + skew) % CONFIG_BT_CTLR_RPA_CACHE_SIZE;
-	zassert_equal(pos, ex_pos, "");
+	ztest_equal(pos, ex_pos, "");
 
 	prpa_cache_add(&a3);
 	pos = prpa_cache_find(&a3);
 	ex_pos = (3 + skew) % CONFIG_BT_CTLR_RPA_CACHE_SIZE;
-	zassert_equal(pos, ex_pos, "");
+	ztest_equal(pos, ex_pos, "");
 
 	/* Adding this should cause wrap around */
 	prpa_cache_add(&a4);
 	pos = prpa_cache_find(&a4);
 	ex_pos = (4 + skew) % CONFIG_BT_CTLR_RPA_CACHE_SIZE;
-	zassert_equal(pos, ex_pos, "");
+	ztest_equal(pos, ex_pos, "");
 
 	/* adding this should cause a1 to be dropped */
 	prpa_cache_add(&a5);
 	pos = prpa_cache_find(&a5);
 	ex_pos = (1 + skew) % CONFIG_BT_CTLR_RPA_CACHE_SIZE;
-	zassert_equal(pos, ex_pos, "");
+	ztest_equal(pos, ex_pos, "");
 
 	/* check that a1 can no loger be found */
 	pos = prpa_cache_find(&a1);
-	zassert_equal(pos, FILTER_IDX_NONE, "");
+	ztest_equal(pos, FILTER_IDX_NONE, "");
 }
 
 void test_privacy_clear(void)

@@ -204,12 +204,12 @@ static void mld_setup(void)
 
 	iface = net_if_get_default();
 
-	zassert_not_null(iface, "Interface is NULL");
+	ztest_not_null(iface, "Interface is NULL");
 
 	ifaddr = net_if_ipv6_addr_add(iface, &my_addr,
 				      NET_ADDR_MANUAL, 0);
 
-	zassert_not_null(ifaddr, "Cannot add IPv6 address");
+	ztest_not_null(ifaddr, "Cannot add IPv6 address");
 }
 
 static void join_group(void)
@@ -222,10 +222,10 @@ static void join_group(void)
 	ret = net_ipv6_mld_join(iface, &mcast_addr);
 
 	if (ignore_already) {
-		zassert_true(ret == 0 || ret == -EALREADY,
+		ztest_true(ret == 0 || ret == -EALREADY,
 			     "Cannot join IPv6 multicast group");
 	} else {
-		zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
+		ztest_equal(ret, 0, "Cannot join IPv6 multicast group");
 	}
 
 	k_yield();
@@ -239,7 +239,7 @@ static void leave_group(void)
 
 	ret = net_ipv6_mld_leave(iface, &mcast_addr);
 
-	zassert_equal(ret, 0, "Cannot leave IPv6 multicast group");
+	ztest_equal(ret, 0, "Cannot leave IPv6 multicast group");
 
 	k_yield();
 }
@@ -253,11 +253,11 @@ static void catch_join_group(void)
 	join_group();
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		zassert_true(0, "Timeout while waiting join event");
+		ztest_true(0, "Timeout while waiting join event");
 	}
 
 	if (!is_group_joined) {
-		zassert_true(0, "Did not catch join event");
+		ztest_true(0, "Did not catch join event");
 	}
 
 	is_group_joined = false;
@@ -270,11 +270,11 @@ static void catch_leave_group(void)
 	leave_group();
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		zassert_true(0, "Timeout while waiting leave event");
+		ztest_true(0, "Timeout while waiting leave event");
 	}
 
 	if (!is_group_left) {
-		zassert_true(0, "Did not catch leave event");
+		ztest_true(0, "Did not catch leave event");
 	}
 
 	is_group_left = false;
@@ -289,11 +289,11 @@ static void verify_join_group(void)
 	join_group();
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		zassert_true(0, "Timeout while waiting join event");
+		ztest_true(0, "Timeout while waiting join event");
 	}
 
 	if (!is_join_msg_ok) {
-		zassert_true(0, "Join msg invalid");
+		ztest_true(0, "Join msg invalid");
 	}
 
 	is_join_msg_ok = false;
@@ -306,11 +306,11 @@ static void verify_leave_group(void)
 	leave_group();
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		zassert_true(0, "Timeout while waiting leave event");
+		ztest_true(0, "Timeout while waiting leave event");
 	}
 
 	if (!is_leave_msg_ok) {
-		zassert_true(0, "Leave msg invalid");
+		ztest_true(0, "Leave msg invalid");
 	}
 
 	is_leave_msg_ok = false;
@@ -328,61 +328,61 @@ static void send_query(struct net_if *iface)
 	/* router alert opt + icmpv6 reserved space + mldv2 mcast record */
 	pkt = net_pkt_alloc_with_buffer(iface, 144, AF_INET6,
 					IPPROTO_ICMPV6, K_FOREVER);
-	zassert_not_null(pkt, "Cannot allocate pkt");
+	ztest_not_null(pkt, "Cannot allocate pkt");
 
 	net_pkt_set_ipv6_hop_limit(pkt, 1); /* RFC 3810 ch 7.4 */
 	ret = net_ipv6_create(pkt, &peer_addr, &dst);
-	zassert_false(ret, "Cannot create ipv6 pkt");
+	ztest_false(ret, "Cannot create ipv6 pkt");
 
 	/* Add hop-by-hop option and router alert option, RFC 3810 ch 5. */
 	ret = net_pkt_write_u8(pkt, IPPROTO_ICMPV6);
-	zassert_false(ret, "Failed to write");
+	ztest_false(ret, "Failed to write");
 	ret = net_pkt_write_u8(pkt, 0); /* length (0 means 8 bytes) */
-	zassert_false(ret, "Failed to write");
+	ztest_false(ret, "Failed to write");
 
 #define ROUTER_ALERT_LEN 8
 
 	/* IPv6 router alert option is described in RFC 2711. */
 	ret = net_pkt_write_be16(pkt, 0x0502); /* RFC 2711 ch 2.1 */
-	zassert_false(ret, "Failed to write");
+	ztest_false(ret, "Failed to write");
 	ret = net_pkt_write_be16(pkt, 0); /* pkt contains MLD msg */
-	zassert_false(ret, "Failed to write");
+	ztest_false(ret, "Failed to write");
 
 	ret = net_pkt_write_u8(pkt, 1); /* padn */
-	zassert_false(ret, "Failed to write");
+	ztest_false(ret, "Failed to write");
 	ret = net_pkt_write_u8(pkt, 0); /* padn len */
-	zassert_false(ret, "Failed to write");
+	ztest_false(ret, "Failed to write");
 
 	net_pkt_set_ipv6_ext_len(pkt, ROUTER_ALERT_LEN);
 
 	/* ICMPv6 header */
 	ret = net_icmpv6_create(pkt, NET_ICMPV6_MLD_QUERY, 0);
-	zassert_false(ret, "Cannot create icmpv6 pkt");
+	ztest_false(ret, "Cannot create icmpv6 pkt");
 
 	ret = net_pkt_write_be16(pkt, 3); /* maximum response code */
-	zassert_false(ret, "Failed to write");
+	ztest_false(ret, "Failed to write");
 	ret = net_pkt_write_be16(pkt, 0); /* reserved field */
-	zassert_false(ret, "Failed to write");
+	ztest_false(ret, "Failed to write");
 
 	net_pkt_set_ipv6_next_hdr(pkt, NET_IPV6_NEXTHDR_HBHO);
 
 	ret = net_pkt_write_be16(pkt, 0); /* Resv, S, QRV and QQIC */
-	zassert_false(ret, "Failed to write");
+	ztest_false(ret, "Failed to write");
 	ret = net_pkt_write_be16(pkt, 0); /* number of addresses */
-	zassert_false(ret, "Failed to write");
+	ztest_false(ret, "Failed to write");
 
 	ret = net_pkt_write(pkt, net_ipv6_unspecified_address(),
 			    sizeof(struct in6_addr));
-	zassert_false(ret, "Failed to write");
+	ztest_false(ret, "Failed to write");
 
 	net_pkt_cursor_init(pkt);
 	ret = net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
-	zassert_false(ret, "Failed to finalize ipv6 packet");
+	ztest_false(ret, "Failed to finalize ipv6 packet");
 
 	net_pkt_cursor_init(pkt);
 
 	ret = net_recv_data(iface, pkt);
-	zassert_false(ret, "Failed to receive data");
+	ztest_false(ret, "Failed to receive data");
 }
 
 /* We are not really interested to parse the query at this point */
@@ -414,11 +414,11 @@ static void catch_query(void)
 	k_yield();
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		zassert_true(0, "Timeout while waiting query event");
+		ztest_true(0, "Timeout while waiting query event");
 	}
 
 	if (!is_query_received) {
-		zassert_true(0, "Query msg invalid");
+		ztest_true(0, "Query msg invalid");
 	}
 
 	is_query_received = false;
@@ -441,11 +441,11 @@ static void verify_send_report(void)
 
 	/* Did we send a report? */
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		zassert_true(0, "Timeout while waiting report");
+		ztest_true(0, "Timeout while waiting report");
 	}
 
 	if (!is_report_sent) {
-		zassert_true(0, "Report not sent");
+		ztest_true(0, "Report not sent");
 	}
 }
 
@@ -465,7 +465,7 @@ static void test_allnodes(void)
 
 	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
 
-	zassert_not_null(ifmaddr, "Interface does not contain "
+	ztest_not_null(ifmaddr, "Interface does not contain "
 			"allnodes multicast address");
 }
 
@@ -479,7 +479,7 @@ static void test_solicit_node(void)
 
 	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
 
-	zassert_not_null(ifmaddr, "Interface does not contain "
+	ztest_not_null(ifmaddr, "Interface does not contain "
 			"solicit node multicast address");
 }
 

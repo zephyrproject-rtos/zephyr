@@ -38,23 +38,23 @@ void fcb_test_multi_scratch(void)
 
 		rc = flash_area_write(fcb->fap, FCB_ENTRY_FA_DATA_OFF(loc),
 				      test_data, sizeof(test_data));
-		zassert_true(rc == 0, "flash_area_write call failure");
+		ztest_true(rc == 0, "flash_area_write call failure");
 
 		rc = fcb_append_finish(fcb, &loc);
-		zassert_true(rc == 0, "fcb_append_finish call failure");
+		ztest_true(rc == 0, "fcb_append_finish call failure");
 	}
 
-	zassert_true(elem_cnts[0] > 0, "unexpected entry number was appended");
-	zassert_true(elem_cnts[0] == elem_cnts[1] &&
+	ztest_true(elem_cnts[0] > 0, "unexpected entry number was appended");
+	ztest_true(elem_cnts[0] == elem_cnts[1] &&
 		     elem_cnts[0] == elem_cnts[2],
 		     "unexpected entry number was appended");
-	zassert_true(elem_cnts[3] == 0, "unexpected entry number was appended");
+	ztest_true(elem_cnts[3] == 0, "unexpected entry number was appended");
 
 	/*
 	 * Ask to use scratch block, then fill it up.
 	 */
 	rc = fcb_append_to_scratch(fcb);
-	zassert_true(rc == 0, "fcb_append_to_scratch call failure");
+	ztest_true(rc == 0, "fcb_append_to_scratch call failure");
 
 	while (1) {
 		rc = fcb_append(fcb, sizeof(test_data), &loc);
@@ -66,31 +66,31 @@ void fcb_test_multi_scratch(void)
 
 		rc = flash_area_write(fcb->fap, FCB_ENTRY_FA_DATA_OFF(loc),
 				      test_data, sizeof(test_data));
-		zassert_true(rc == 0, "flash_area_write call failure");
+		ztest_true(rc == 0, "flash_area_write call failure");
 
 		rc = fcb_append_finish(fcb, &loc);
-		zassert_true(rc == 0, "fcb_append_finish call failure");
+		ztest_true(rc == 0, "fcb_append_finish call failure");
 	}
-	zassert_true(elem_cnts[3] == elem_cnts[0],
+	ztest_true(elem_cnts[3] == elem_cnts[0],
 		     "unexpected entry number was appended");
 
 	/*
 	 * Rotate
 	 */
 	rc = fcb_rotate(fcb);
-	zassert_true(rc == 0, "fcb_rotate call failure");
+	ztest_true(rc == 0, "fcb_rotate call failure");
 
 	(void)memset(&cnts, 0, sizeof(cnts));
 	rc = fcb_walk(fcb, NULL, fcb_test_cnt_elems_cb, &aa_arg);
-	zassert_true(rc == 0, "fcb_walk call failure");
+	ztest_true(rc == 0, "fcb_walk call failure");
 
-	zassert_true(cnts[0] == 0, "unexpected entry count");
-	zassert_true(cnts[1] > 0, "unexpected entry count");
-	zassert_true(cnts[1] == cnts[2] && cnts[1] == cnts[3],
+	ztest_true(cnts[0] == 0, "unexpected entry count");
+	ztest_true(cnts[1] > 0, "unexpected entry count");
+	ztest_true(cnts[1] == cnts[2] && cnts[1] == cnts[3],
 		     "unexpected entry count");
 
 	rc = fcb_append_to_scratch(fcb);
-	zassert_true(rc == 0, "fcb_append_to_scratch call failure");
+	ztest_true(rc == 0, "fcb_append_to_scratch call failure");
 	rc = fcb_append_to_scratch(fcb);
-	zassert_true(rc != 0, "fcb_append_to_scratch call should fail");
+	ztest_true(rc != 0, "fcb_append_to_scratch call should fail");
 }

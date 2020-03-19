@@ -41,31 +41,31 @@ static struct bt_l2cap_server test_inv_server = {
 void test_l2cap_register(void)
 {
 	/* Attempt to register server with PSM auto allocation */
-	zassert_false(bt_l2cap_server_register(&test_server),
+	ztest_false(bt_l2cap_server_register(&test_server),
 		     "Test server registration failed");
 
 	/* Attempt to register server with fixed PSM */
-	zassert_false(bt_l2cap_server_register(&test_fixed_server),
+	ztest_false(bt_l2cap_server_register(&test_fixed_server),
 		     "Test fixed PSM server registration failed");
 
 	/* Attempt to register server with dynamic PSM */
-	zassert_false(bt_l2cap_server_register(&test_dyn_server),
+	ztest_false(bt_l2cap_server_register(&test_dyn_server),
 		     "Test dynamic PSM server registration failed");
 
 	/* Attempt to register server with invalid PSM */
-	zassert_true(bt_l2cap_server_register(&test_inv_server),
+	ztest_true(bt_l2cap_server_register(&test_inv_server),
 		     "Test invalid PSM server registration succeeded");
 
 	/* Attempt to re-register server with PSM auto allocation */
-	zassert_true(bt_l2cap_server_register(&test_server),
+	ztest_true(bt_l2cap_server_register(&test_server),
 		     "Test server duplicate succeeded");
 
 	/* Attempt to re-register server with fixed PSM */
-	zassert_true(bt_l2cap_server_register(&test_fixed_server),
+	ztest_true(bt_l2cap_server_register(&test_fixed_server),
 		     "Test fixed PSM server duplicate succeeded");
 
 	/* Attempt to re-register server with dynamic PSM */
-	zassert_true(bt_l2cap_server_register(&test_dyn_server),
+	ztest_true(bt_l2cap_server_register(&test_dyn_server),
 		     "Test dynamic PSM server duplicate succeeded");
 }
 

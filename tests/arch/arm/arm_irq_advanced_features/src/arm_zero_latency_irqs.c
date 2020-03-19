@@ -27,7 +27,7 @@ void test_arm_zero_latency_irqs(void)
 
 	init_flag = test_flag;
 
-	zassert_false(init_flag, "Test flag not initialized to zero\n");
+	ztest_false(init_flag, "Test flag not initialized to zero\n");
 
 	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
 		if (NVIC_GetEnableIRQ(i) == 0) {
@@ -51,7 +51,7 @@ void test_arm_zero_latency_irqs(void)
 		}
 	}
 
-	zassert_true(i >= 0,
+	ztest_true(i >= 0,
 		"No available IRQ line to configure as zero-latency\n");
 
 	TC_PRINT("Available IRQ line: %u\n", i);
@@ -81,7 +81,7 @@ void test_arm_zero_latency_irqs(void)
 
 	/* Confirm test flag is set by the zero-latency ISR handler. */
 	post_flag = test_flag;
-	zassert_true(post_flag == 1, "Test flag not set by ISR\n");
+	ztest_true(post_flag == 1, "Test flag not set by ISR\n");
 
 	irq_unlock(key);
 }

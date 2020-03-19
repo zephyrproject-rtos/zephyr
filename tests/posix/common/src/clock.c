@@ -19,9 +19,9 @@ void test_posix_clock(void)
 	printk("POSIX clock APIs\n");
 
 	/* TESTPOINT: Pass invalid clock type */
-	zassert_equal(clock_gettime(CLOCK_INVALID, &ts), -1,
+	ztest_equal(clock_gettime(CLOCK_INVALID, &ts), -1,
 			NULL);
-	zassert_equal(errno, EINVAL, NULL);
+	ztest_equal(errno, EINVAL, NULL);
 
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	/* 2 Sec Delay */
@@ -38,7 +38,7 @@ void test_posix_clock(void)
 	}
 
 	/*TESTPOINT: Check if POSIX clock API test passes*/
-	zassert_equal(secs_elapsed, (2 * SLEEP_SECONDS),
+	ztest_equal(secs_elapsed, (2 * SLEEP_SECONDS),
 			"POSIX clock API test failed");
 
 	printk("POSIX clock APIs test done\n");
@@ -57,13 +57,13 @@ void test_posix_realtime(void)
 
 	printk("POSIX clock set APIs\n");
 	ret = clock_gettime(CLOCK_MONOTONIC, &mts);
-	zassert_equal(ret, 0, "Fail to get monotonic clock");
+	ztest_equal(ret, 0, "Fail to get monotonic clock");
 
 	ret = clock_gettime(CLOCK_REALTIME, &rts);
-	zassert_equal(ret, 0, "Fail to get realtime clock");
+	ztest_equal(ret, 0, "Fail to get realtime clock");
 
-	zassert_equal(rts.tv_sec, mts.tv_sec, "Seconds not equal");
-	zassert_equal(rts.tv_nsec, mts.tv_nsec, "Nanoseconds not equal");
+	ztest_equal(rts.tv_sec, mts.tv_sec, "Seconds not equal");
+	ztest_equal(rts.tv_nsec, mts.tv_nsec, "Nanoseconds not equal");
 
 	/* Set a particular time.  In this case, the output of:
 	 * `date +%s -d 2018-01-01T15:45:01Z`
@@ -73,15 +73,15 @@ void test_posix_realtime(void)
 	nts.tv_nsec = NSEC_PER_SEC / 2U;
 
 	/* TESTPOINT: Pass invalid clock type */
-	zassert_equal(clock_settime(CLOCK_INVALID, &nts), -1,
+	ztest_equal(clock_settime(CLOCK_INVALID, &nts), -1,
 			NULL);
-	zassert_equal(errno, EINVAL, NULL);
+	ztest_equal(errno, EINVAL, NULL);
 
 	ret = clock_settime(CLOCK_MONOTONIC, &nts);
-	zassert_not_equal(ret, 0, "Should not be able to set monotonic time");
+	ztest_not_equal(ret, 0, "Should not be able to set monotonic time");
 
 	ret = clock_settime(CLOCK_REALTIME, &nts);
-	zassert_equal(ret, 0, "Fail to set realtime clock");
+	ztest_equal(ret, 0, "Fail to set realtime clock");
 
 	/*
 	 * Loop 20 times, sleeping a little bit for each, making sure
@@ -93,7 +93,7 @@ void test_posix_realtime(void)
 	for (int i = 1; i <= 20; i++) {
 		usleep(USEC_PER_MSEC * 90U);
 		ret = clock_gettime(CLOCK_REALTIME, &rts);
-		zassert_equal(ret, 0, "Fail to read realitime clock");
+		ztest_equal(ret, 0, "Fail to read realitime clock");
 
 		s64_t delta =
 			((s64_t)rts.tv_sec * NSEC_PER_SEC -
@@ -103,7 +103,7 @@ void test_posix_realtime(void)
 		/* Make the delta milliseconds. */
 		delta /= (NSEC_PER_SEC / 1000U);
 
-		zassert_true(delta > last_delta, "Clock moved backward");
+		ztest_true(delta > last_delta, "Clock moved backward");
 		s64_t error = delta - last_delta;
 
 		/* printk("Delta %d: %lld\n", i, delta); */
@@ -111,26 +111,26 @@ void test_posix_realtime(void)
 		/* Allow for a little drift upward, but not
 		 * downward
 		 */
-		zassert_true(error >= 90, "Clock inaccurate %d", error);
-		zassert_true(error <= 110, "Clock inaccurate %d", error);
+		ztest_true(error >= 90, "Clock inaccurate %d", error);
+		ztest_true(error <= 110, "Clock inaccurate %d", error);
 
 		last_delta = delta;
 	}
 
 	/* Validate gettimeofday API */
 	ret = gettimeofday(&tv, NULL);
-	zassert_equal(ret, 0, NULL);
+	ztest_equal(ret, 0, NULL);
 
 	ret = clock_gettime(CLOCK_REALTIME, &rts);
-	zassert_equal(ret, 0, NULL);
+	ztest_equal(ret, 0, NULL);
 
 	/* TESTPOINT: Check if time obtained from
 	 * gettimeofday is same or more than obtained
 	 * from clock_gettime
 	 */
-	zassert_true(rts.tv_sec >= tv.tv_sec, "gettimeofday didn't"
+	ztest_true(rts.tv_sec >= tv.tv_sec, "gettimeofday didn't"
 			" provide correct result");
-	zassert_true(rts.tv_nsec >= tv.tv_usec * NSEC_PER_USEC,
+	ztest_true(rts.tv_nsec >= tv.tv_usec * NSEC_PER_USEC,
 			"gettimeofday didn't provide correct result");
 
 	printk("POSIX clock set APIs test done\n");

@@ -39,5 +39,5 @@ static int test_mount(void)
  */
 void test_fs_mount(void)
 {
-	zassert_true(test_mount() == TC_PASS, NULL);
+	ztest_true(test_mount() == TC_PASS, NULL);
 }

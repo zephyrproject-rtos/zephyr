@@ -24,17 +24,17 @@ void fcb_test_append(void)
 			test_data[j] = fcb_test_append_data(i, j);
 		}
 		rc = fcb_append(fcb, i, &loc);
-		zassert_true(rc == 0, "fcb_append call failure");
+		ztest_true(rc == 0, "fcb_append call failure");
 		rc = flash_area_write(fcb->fap, FCB_ENTRY_FA_DATA_OFF(loc),
 				      test_data, i);
-		zassert_true(rc == 0, "flash_area_write call failure");
+		ztest_true(rc == 0, "flash_area_write call failure");
 		rc = fcb_append_finish(fcb, &loc);
-		zassert_true(rc == 0, "fcb_append_finish call failure");
+		ztest_true(rc == 0, "fcb_append_finish call failure");
 	}
 
 	var_cnt = 0;
 	rc = fcb_walk(fcb, 0, fcb_test_data_walk_cb, &var_cnt);
-	zassert_true(rc == 0, "fcb_walk call failure");
-	zassert_true(var_cnt == sizeof(test_data),
+	ztest_true(rc == 0, "fcb_walk call failure");
+	ztest_true(var_cnt == sizeof(test_data),
 		     "fetched data size not match to wrote data size");
 }

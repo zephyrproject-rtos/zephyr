@@ -61,7 +61,7 @@ SYS_INIT(test_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 static void test_new_delete(void)
 {
 	foo_class *test_foo = new foo_class(10);
-	zassert_equal(test_foo->get_foo(), 10, NULL);
+	ztest_equal(test_foo->get_foo(), 10, NULL);
 	delete test_foo;
 }
 

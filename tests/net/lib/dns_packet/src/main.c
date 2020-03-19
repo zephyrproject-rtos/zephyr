@@ -417,19 +417,19 @@ void test_dns_query(void)
 
 	rc = eval_query(DNAME1, tid1, DNS_RR_TYPE_A,
 			query_ipv4, sizeof(query_ipv4));
-	zassert_equal(rc, 0, "Query test failed for domain: "DNAME1);
+	ztest_equal(rc, 0, "Query test failed for domain: "DNAME1);
 
 	rc = eval_query(NULL, tid1, DNS_RR_TYPE_A,
 			query_ipv4, sizeof(query_ipv4));
-	zassert_not_equal(rc, 0, "Query test with invalid domain name failed");
+	ztest_not_equal(rc, 0, "Query test with invalid domain name failed");
 
 	rc = eval_query(DNAME1, tid1, DNS_RR_TYPE_AAAA,
 			query_ipv4, sizeof(query_ipv4));
-	zassert_not_equal(rc, 0, "Query test for IPv4 with RR type AAAA failed");
+	ztest_not_equal(rc, 0, "Query test for IPv4 with RR type AAAA failed");
 
 	rc = eval_query(DNAME1, tid1 + 1, DNS_RR_TYPE_A,
 			query_ipv4, sizeof(query_ipv4));
-	zassert_not_equal(rc, 0, "Query test with invalid ID failed");
+	ztest_not_equal(rc, 0, "Query test with invalid ID failed");
 }
 
 /* DNS response for www.zephyrproject.org with the following parameters:
@@ -471,14 +471,14 @@ void test_dns_response(void)
 
 	memcpy(&test1, &test, sizeof(test1));
 	rc = eval_response1(&test1, false);
-	zassert_equal(rc, 0,
+	ztest_equal(rc, 0,
 		      "Response test failed for domain: " DNAME1
 		      " at line %d", -rc);
 
 	/* Test also using dns_unpack_answer() API */
 	memcpy(&test2, &test, sizeof(test2));
 	rc = eval_response1(&test2, true);
-	zassert_equal(rc, 0,
+	ztest_equal(rc, 0,
 		      "Response test 2 failed for domain: " DNAME1
 		      " at line %d", -rc);
 }
@@ -521,7 +521,7 @@ void test_dns_response2(void)
 
 	/* Test also using dns_unpack_answer() API */
 	rc = eval_response1(&test1, true);
-	zassert_equal(rc, 0,
+	ztest_equal(rc, 0,
 		      "Response test 2 failed for domain: " DNAME2
 		      " at line %d", -rc);
 }
@@ -532,7 +532,7 @@ void test_mdns_query(void)
 
 	rc = eval_query(ZEPHYR_LOCAL, tid1, DNS_RR_TYPE_A,
 			query_mdns, sizeof(query_mdns));
-	zassert_equal(rc, 0, "Query test failed for domain: " ZEPHYR_LOCAL);
+	ztest_equal(rc, 0, "Query test failed for domain: " ZEPHYR_LOCAL);
 }
 
 /* DNS response for zephyr.local with the following parameters:
@@ -579,7 +579,7 @@ void test_mdns_response(void)
 	int rc;
 
 	rc = eval_response1(&test1, true);
-	zassert_equal(rc, 0,
+	ztest_equal(rc, 0,
 		      "Response test failed for domain: " ZEPHYR_LOCAL
 		      " at line %d", -rc);
 }

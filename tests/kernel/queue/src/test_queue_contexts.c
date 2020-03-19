@@ -68,23 +68,23 @@ static void tqueue_get(struct k_queue *pqueue)
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: queue get*/
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_p[i], NULL);
+		ztest_equal(rx_data, (void *)&data_p[i], NULL);
 	}
 	/*get queue data from "queue_append"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		/**TESTPOINT: queue get*/
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data[i], NULL);
+		ztest_equal(rx_data, (void *)&data[i], NULL);
 	}
 	/*get queue data from "queue_append_list"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_l[i], NULL);
+		ztest_equal(rx_data, (void *)&data_l[i], NULL);
 	}
 	/*get queue data from "queue_merge_slist"*/
 	for (int i = 0; i < LIST_LEN; i++) {
 		rx_data = k_queue_get(pqueue, K_NO_WAIT);
-		zassert_equal(rx_data, (void *)&data_sl[i], NULL);
+		ztest_equal(rx_data, (void *)&data_sl[i], NULL);
 	}
 }
 
@@ -182,7 +182,7 @@ void test_queue_isr2thread(void)
 
 static void tThread_get(void *p1, void *p2, void *p3)
 {
-	zassert_true(k_queue_get((struct k_queue *)p1, K_FOREVER) != NULL,
+	ztest_true(k_queue_get((struct k_queue *)p1, K_FOREVER) != NULL,
 		     NULL);
 	k_sem_give(&end_sema);
 }
@@ -233,7 +233,7 @@ static void tqueue_alloc(struct k_queue *pqueue)
 	k_queue_alloc_append(pqueue, (void *)&data_append);
 
 	/* Insertion fails and alloc returns NOMEM */
-	zassert_false(k_queue_remove(pqueue, &data_append), NULL);
+	ztest_false(k_queue_remove(pqueue, &data_append), NULL);
 
 	/* Assign resource pool of lower size */
 	k_thread_resource_pool_assign(k_current_get(), &mem_pool_fail);
@@ -243,24 +243,24 @@ static void tqueue_alloc(struct k_queue *pqueue)
 	 */
 	k_queue_alloc_prepend(pqueue, (void *)&data_prepend);
 
-	zassert_false(k_queue_remove(pqueue, &data_prepend), NULL);
+	ztest_false(k_queue_remove(pqueue, &data_prepend), NULL);
 
 	/* No element must be present in the queue, as all
 	 * operations failed
 	 */
-	zassert_true(k_queue_is_empty(pqueue), NULL);
+	ztest_true(k_queue_is_empty(pqueue), NULL);
 
 	/* Assign resource pool of sufficient size */
 	k_thread_resource_pool_assign(k_current_get(),
 				      &mem_pool_pass);
 
-	zassert_false(k_queue_alloc_prepend(pqueue, (void *)&data_prepend),
+	ztest_false(k_queue_alloc_prepend(pqueue, (void *)&data_prepend),
 		      NULL);
 
 	/* Now queue shouldn't be empty */
-	zassert_false(k_queue_is_empty(pqueue), NULL);
+	ztest_false(k_queue_is_empty(pqueue), NULL);
 
-	zassert_true(k_queue_get(pqueue, K_FOREVER) != NULL,
+	ztest_true(k_queue_get(pqueue, K_FOREVER) != NULL,
 		     NULL);
 }
 

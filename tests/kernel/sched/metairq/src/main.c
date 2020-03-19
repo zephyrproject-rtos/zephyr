@@ -73,18 +73,18 @@ void coop_thread1(void)
 
 	/* Expect that low-priority thread has run to completion */
 	cnt1 = coop_cnt1;
-	zassert_equal(cnt1, 0, "Unexpected cnt1 at start: %d", cnt1);
+	ztest_equal(cnt1, 0, "Unexpected cnt1 at start: %d", cnt1);
 	cnt2 = coop_cnt2;
-	zassert_equal(cnt2, LOOP_CNT, "Unexpected cnt2 at start: %d", cnt2);
+	ztest_equal(cnt2, LOOP_CNT, "Unexpected cnt2 at start: %d", cnt2);
 
 	printk("thread1\n");
 	coop_cnt1++;
 
 	/* Expect that both threads have run to completion */
 	cnt1 = coop_cnt1;
-	zassert_equal(cnt1, 1, "Unexpected cnt1 at end: %d", cnt1);
+	ztest_equal(cnt1, 1, "Unexpected cnt1 at end: %d", cnt1);
 	cnt2 = coop_cnt2;
-	zassert_equal(cnt2, LOOP_CNT, "Unexpected cnt2 at end: %d", cnt2);
+	ztest_equal(cnt2, LOOP_CNT, "Unexpected cnt2 at end: %d", cnt2);
 
 	k_sem_give(&coop_sem1);
 }
@@ -98,9 +98,9 @@ void coop_thread2(void)
 
 	/* Expect that this is run first */
 	cnt1 = coop_cnt1;
-	zassert_equal(cnt1, 0, "Unexpected cnt1 at start: %d", cnt1);
+	ztest_equal(cnt1, 0, "Unexpected cnt1 at start: %d", cnt1);
 	cnt2 = coop_cnt2;
-	zassert_equal(cnt2, 0, "Unexpected cnt2 at start: %d", cnt2);
+	ztest_equal(cnt2, 0, "Unexpected cnt2 at start: %d", cnt2);
 
 	for (int i = 0; i < LOOP_CNT; i++) {
 		printk("thread2\n");
@@ -112,9 +112,9 @@ void coop_thread2(void)
 	 * thread is started
 	 */
 	cnt1 = coop_cnt1;
-	zassert_equal(cnt1, 0, "Unexpected cnt1 at end: %d", cnt1);
+	ztest_equal(cnt1, 0, "Unexpected cnt1 at end: %d", cnt1);
 	cnt2 = coop_cnt2;
-	zassert_equal(cnt2, LOOP_CNT, "Unexpected cnt2 at end: %d", cnt2);
+	ztest_equal(cnt2, LOOP_CNT, "Unexpected cnt2 at end: %d", cnt2);
 
 	k_sem_give(&coop_sem2);
 }

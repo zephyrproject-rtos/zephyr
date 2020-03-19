@@ -203,7 +203,7 @@ void ticklessTestThread(void)
 
 	printk("variance in time stamp diff: %d percent\n", (s32_t)diff_per);
 
-	zassert_equal(diff_ticks, SLEEP_TICKS,
+	ztest_equal(diff_ticks, SLEEP_TICKS,
 		      "* TEST FAILED. TICK COUNT INCORRECT *");
 
 	/* release the timer, if necessary */

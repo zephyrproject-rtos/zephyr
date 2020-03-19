@@ -31,11 +31,11 @@ static void threads_suspend_resume(int prio)
 	k_thread_suspend(tid);
 	k_sleep(K_MSEC(100));
 	/* checkpoint: created thread shouldn't be executed after suspend */
-	zassert_false(last_prio == create_prio, NULL);
+	ztest_false(last_prio == create_prio, NULL);
 	k_thread_resume(tid);
 	k_sleep(K_MSEC(100));
 	/* checkpoint: created thread should be executed after resume */
-	zassert_true(last_prio == create_prio, NULL);
+	ztest_true(last_prio == create_prio, NULL);
 }
 
 /*test cases*/
@@ -101,7 +101,7 @@ void test_threads_suspend(void)
 	 * stopped executing after suspending itself.
 	 */
 	k_sleep(K_MSEC(100));
-	zassert_false(after_suspend, "thread woke up unexpectedly");
+	ztest_false(after_suspend, "thread woke up unexpectedly");
 
 	k_thread_abort(tid);
 }
@@ -142,7 +142,7 @@ void test_threads_suspend_timeout(void)
 	 * has been suspended)
 	 */
 	k_sleep(K_MSEC(200));
-	zassert_false(after_suspend, "thread woke up unexpectedly");
+	ztest_false(after_suspend, "thread woke up unexpectedly");
 
 	k_thread_abort(tid);
 }

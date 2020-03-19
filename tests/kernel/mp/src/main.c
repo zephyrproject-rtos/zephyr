@@ -35,7 +35,7 @@ volatile int cpu_running;
  */
 FUNC_NORETURN void cpu1_fn(void *arg)
 {
-	zassert_true(arg == &cpu_arg && *(int *)arg == 12345, "wrong arg");
+	ztest_true(arg == &cpu_arg && *(int *)arg == 12345, "wrong arg");
 
 	cpu_running = 1;
 
@@ -59,7 +59,7 @@ void test_mp_start(void)
 	while (!cpu_running) {
 	}
 
-	zassert_true(cpu_running, "cpu1 didn't start");
+	ztest_true(cpu_running, "cpu1 didn't start");
 }
 
 void test_main(void)

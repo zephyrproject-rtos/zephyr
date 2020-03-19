@@ -40,7 +40,7 @@ static void counter_tear_down_instance(const char *dev_name)
 	dev = device_get_binding(dev_name);
 
 	err = counter_stop(dev);
-	zassert_equal(0, err, "%s: Counter failed to stop", dev_name);
+	ztest_equal(0, err, "%s: Counter failed to stop", dev_name);
 
 }
 
@@ -68,7 +68,7 @@ void test_set_custom_top_value_fails_on_instance(const char *dev_name)
 	top_cfg.ticks = counter_get_max_top_value(dev) - 1;
 
 	err = counter_set_top_value(dev, &top_cfg);
-	zassert_true(err != 0, "%s: Expected error code", dev_name);
+	ztest_true(err != 0, "%s: Expected error code", dev_name);
 }
 
 void test_set_custom_top_value_fails(void)
@@ -95,7 +95,7 @@ void test_top_handler_on_instance(const char *dev_name)
 	top_cfg.ticks = counter_get_max_top_value(dev);
 
 	err = counter_set_top_value(dev, &top_cfg);
-	zassert_equal(0, err, "%s: Unexpected error code (%d)", dev_name, err);
+	ztest_equal(0, err, "%s: Unexpected error code (%d)", dev_name, err);
 
 #ifdef CONFIG_COUNTER_RTC0
 	nrf_rtc_task_trigger(NRF_RTC0, NRF_RTC_TASK_TRIGGER_OVERFLOW);
@@ -108,7 +108,7 @@ void test_top_handler_on_instance(const char *dev_name)
 	k_busy_wait(10000);
 
 	tmp_top_cnt = top_cnt;
-	zassert_equal(tmp_top_cnt, 1, "%s: Expected top handler", dev_name);
+	ztest_equal(tmp_top_cnt, 1, "%s: Expected top handler", dev_name);
 }
 
 void test_top_handler(void)

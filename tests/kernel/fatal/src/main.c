@@ -243,7 +243,7 @@ void check_stack_overflow(void *handler, u32_t flags)
 			NULL, NULL, NULL, K_PRIO_PREEMPT(PRIORITY), flags,
 			K_NO_WAIT);
 
-	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+	ztest_not_equal(rv, TC_FAIL, "thread was not aborted");
 }
 #endif /* !CONFIG_ARCH_POSIX */
 
@@ -274,7 +274,7 @@ void test_fatal(void)
 			(k_thread_entry_t)alt_thread1,
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
-	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+	ztest_not_equal(rv, TC_FAIL, "thread was not aborted");
 #else
 	/*
 	 * We want the native OS to handle segfaults so we can debug it
@@ -290,7 +290,7 @@ void test_fatal(void)
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
-	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+	ztest_not_equal(rv, TC_FAIL, "thread was not aborted");
 
 	TC_PRINT("test alt thread 3: initiate kernel panic\n");
 	k_thread_create(&alt_thread, alt_stack,
@@ -299,7 +299,7 @@ void test_fatal(void)
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
-	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+	ztest_not_equal(rv, TC_FAIL, "thread was not aborted");
 
 	TC_PRINT("test alt thread 4: fail assertion\n");
 	k_thread_create(&alt_thread, alt_stack,
@@ -308,7 +308,7 @@ void test_fatal(void)
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
-	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+	ztest_not_equal(rv, TC_FAIL, "thread was not aborted");
 
 	TC_PRINT("test alt thread 5: initiate arbitrary SW exception\n");
 	k_thread_create(&alt_thread, alt_stack,
@@ -317,7 +317,7 @@ void test_fatal(void)
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	k_thread_abort(&alt_thread);
-	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+	ztest_not_equal(rv, TC_FAIL, "thread was not aborted");
 
 #ifndef CONFIG_ARCH_POSIX
 

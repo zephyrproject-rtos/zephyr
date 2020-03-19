@@ -12,12 +12,12 @@ static void test_empty_test(void)
 
 static void test_assert_tests(void)
 {
-	zassert_true(1, NULL);
-	zassert_false(0, NULL);
-	zassert_is_null(NULL, NULL);
-	zassert_not_null("foo", NULL);
-	zassert_equal(1, 1, NULL);
-	zassert_equal_ptr(NULL, NULL, NULL);
+	ztest_true(1, NULL);
+	ztest_false(0, NULL);
+	ztest_is_null(NULL, NULL);
+	ztest_not_null("foo", NULL);
+	ztest_equal(1, 1, NULL);
+	ztest_equal_ptr(NULL, NULL, NULL);
 }
 
 static void test_assert_mem_equal(void)
@@ -30,7 +30,7 @@ static void test_assert_mem_equal(void)
 	};
 	uint32_t actual[4] = {0};
 	memcpy(actual, expected, sizeof(actual));
-	zassert_mem_equal(actual, expected, sizeof(expected), NULL);
+	ztest_mem_equal(actual, expected, sizeof(expected), NULL);
 }
 
 void test_main(void)

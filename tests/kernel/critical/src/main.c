@@ -172,10 +172,10 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
 	ncalls = critical_loop("reg1", ncalls);
 
 	/* Wait for alternate_thread() to complete */
-	zassert_true(k_sem_take(&REGRESS_SEM, TEST_TIMEOUT) == 0,
+	ztest_true(k_sem_take(&REGRESS_SEM, TEST_TIMEOUT) == 0,
 		     "Timed out waiting for REGRESS_SEM");
 
-	zassert_equal(critical_var, ncalls + alt_thread_iterations,
+	ztest_equal(critical_var, ncalls + alt_thread_iterations,
 		      "Unexpected value for <critical_var>");
 
 	TC_PRINT("Enable timeslicing at %u\n", k_uptime_get_32());
@@ -186,10 +186,10 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
 	ncalls = critical_loop("reg2", ncalls);
 
 	/* Wait for alternate_thread() to finish */
-	zassert_true(k_sem_take(&REGRESS_SEM, TEST_TIMEOUT) == 0,
+	ztest_true(k_sem_take(&REGRESS_SEM, TEST_TIMEOUT) == 0,
 		     "Timed out waiting for REGRESS_SEM");
 
-	zassert_equal(critical_var, ncalls + alt_thread_iterations,
+	ztest_equal(critical_var, ncalls + alt_thread_iterations,
 		      "Unexpected value for <critical_var>");
 
 	k_sem_give(&TEST_SEM);
@@ -230,7 +230,7 @@ void test_critical(void)
 	init_objects();
 	start_threads();
 
-	zassert_true(k_sem_take(&TEST_SEM, TEST_TIMEOUT * 2) == 0,
+	ztest_true(k_sem_take(&TEST_SEM, TEST_TIMEOUT * 2) == 0,
 		     "Timed out waiting for TEST_SEM");
 }
 

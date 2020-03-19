@@ -26,16 +26,16 @@ static void pin_get_raw_and_verify(struct device *port, unsigned int pin,
 	int val_actual;
 
 	val_actual = gpio_pin_get_raw(port, pin);
-	zassert_true(val_actual >= 0,
+	ztest_true(val_actual >= 0,
 		     "Test point %d: failed to get pin value", idx);
-	zassert_equal(val_expected, val_actual,
+	ztest_equal(val_expected, val_actual,
 		      "Test point %d: invalid pin get value", idx);
 }
 
 static void pin_set_raw_and_verify(struct device *port, unsigned int pin,
 				   int val, int idx)
 {
-	zassert_equal(gpio_pin_set_raw(port, pin, val), 0,
+	ztest_equal(gpio_pin_set_raw(port, pin, val), 0,
 		      "Test point %d: failed to set pin value", idx);
 	k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 }
@@ -57,12 +57,12 @@ void test_gpio_pin_configure_push_pull(void)
 	int ret;
 
 	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	ztest_not_null(port, "device " TEST_DEV " not found");
 
 	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
 
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_OUTPUT);
-	zassert_equal(ret, 0, "Failed to configure the pin as an output");
+	ztest_equal(ret, 0, "Failed to configure the pin as an output");
 
 	pin_set_raw_and_verify(port, TEST_PIN, 1, TEST_POINT(1));
 	pin_set_raw_and_verify(port, TEST_PIN, 0, TEST_POINT(1));
@@ -76,7 +76,7 @@ void test_gpio_pin_configure_push_pull(void)
 		ztest_test_skip();
 		return;
 	}
-	zassert_equal(ret, 0, "Failed to configure the pin in in/out mode");
+	ztest_equal(ret, 0, "Failed to configure the pin in in/out mode");
 
 	pin_set_raw_and_verify(port, TEST_PIN, 0, TEST_POINT(2));
 	pin_get_raw_and_verify(port, TEST_PIN, 0, TEST_POINT(2));
@@ -89,7 +89,7 @@ void test_gpio_pin_configure_push_pull(void)
 
 	/* Verify that GPIO_OUTPUT_HIGH flag is initializing the pin to high. */
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_OUTPUT_HIGH | GPIO_INPUT);
-	zassert_equal(ret, 0,
+	ztest_equal(ret, 0,
 		      "Failed to configure the pin in in/out mode and "
 		      "initialize it to high");
 
@@ -99,13 +99,13 @@ void test_gpio_pin_configure_push_pull(void)
 	 * to high or low does not change pin state.
 	 */
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_OUTPUT | GPIO_INPUT);
-	zassert_equal(ret, 0, "Failed to configure the pin in in/out mode");
+	ztest_equal(ret, 0, "Failed to configure the pin in in/out mode");
 
 	pin_get_raw_and_verify(port, TEST_PIN, 1, TEST_POINT(6));
 
 	/* Verify that GPIO_OUTPUT_LOW flag is initializing the pin to low. */
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_OUTPUT_LOW | GPIO_INPUT);
-	zassert_equal(ret, 0,
+	ztest_equal(ret, 0,
 		      "Failed to configure the pin in in/out mode and "
 		      "initialize it to low");
 
@@ -115,7 +115,7 @@ void test_gpio_pin_configure_push_pull(void)
 	 * to high or low does not change pin state.
 	 */
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_OUTPUT | GPIO_INPUT);
-	zassert_equal(ret, 0, "Failed to configure the pin in in/out mode");
+	ztest_equal(ret, 0, "Failed to configure the pin in in/out mode");
 
 	pin_get_raw_and_verify(port, TEST_PIN, 0, TEST_POINT(8));
 
@@ -123,12 +123,12 @@ void test_gpio_pin_configure_push_pull(void)
 	 * gpio_pin_set_raw function if pin is configured as an input.
 	 */
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_INPUT);
-	zassert_equal(ret, 0, "Failed to configure the pin as an input");
+	ztest_equal(ret, 0, "Failed to configure the pin as an input");
 
 	int pin_in_val;
 
 	pin_in_val = gpio_pin_get_raw(port, TEST_PIN);
-	zassert_true(pin_in_val >= 0,
+	ztest_true(pin_in_val >= 0,
 		     "Test point %d: failed to get pin value", TEST_POINT(9));
 
 	pin_set_raw_and_verify(port, TEST_PIN, 0, TEST_POINT(10));
@@ -173,7 +173,7 @@ void test_gpio_pin_configure_single_ended(void)
 	int ret;
 
 	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	ztest_not_null(port, "device " TEST_DEV " not found");
 
 	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
 
@@ -199,12 +199,12 @@ void test_gpio_pin_configure_single_ended(void)
 		ztest_test_skip();
 		return;
 	}
-	zassert_equal(ret, 0, "Failed to configure pin as an input");
+	ztest_equal(ret, 0, "Failed to configure pin as an input");
 
 	k_sleep(K_MSEC(TEST_GPIO_MAX_SINGLE_ENDED_RISE_FALL_TIME_MS));
 
 	pin_in_val = gpio_pin_get_raw(port, TEST_PIN);
-	zassert_true(pin_in_val >= 0, "Failed to get pin value");
+	ztest_true(pin_in_val >= 0, "Failed to get pin value");
 
 	if (pin_val != pin_in_val) {
 		TC_PRINT("Board configuration does not allow to run the test\n");
@@ -227,7 +227,7 @@ void test_gpio_pin_configure_single_ended(void)
 			ztest_test_skip();
 			return;
 		}
-		zassert_equal(ret, 0,
+		ztest_equal(ret, 0,
 			      "Failed to configure the pin in Open Drain mode");
 
 		pin_get_raw_and_verify(port, TEST_PIN, 1, TEST_POINT(1));
@@ -250,7 +250,7 @@ void test_gpio_pin_configure_single_ended(void)
 				 "bias is not supported\n");
 			return;
 		}
-		zassert_equal(ret, 0,
+		ztest_equal(ret, 0,
 			      "Failed to configure the pin in Open Source mode");
 
 		k_sleep(K_MSEC(TEST_GPIO_MAX_SINGLE_ENDED_RISE_FALL_TIME_MS));
@@ -274,7 +274,7 @@ void test_gpio_pin_configure_single_ended(void)
 			ztest_test_skip();
 			return;
 		}
-		zassert_equal(ret, 0,
+		ztest_equal(ret, 0,
 			      "Failed to configure the pin in Open Source mode");
 
 		pin_get_raw_and_verify(port, TEST_PIN, 0, TEST_POINT(5));
@@ -297,7 +297,7 @@ void test_gpio_pin_configure_single_ended(void)
 				 "bias is not supported\n");
 			return;
 		}
-		zassert_equal(ret, 0,
+		ztest_equal(ret, 0,
 			      "Failed to configure the pin in Open Drain mode");
 
 		k_sleep(K_MSEC(TEST_GPIO_MAX_SINGLE_ENDED_RISE_FALL_TIME_MS));

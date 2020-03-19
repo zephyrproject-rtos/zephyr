@@ -86,13 +86,13 @@ u32_t do_test(const u8_t *key,
 	result = tc_ccm_config(&c, &sched, nonce, nlen, mlen);
 
 	/**TESTPOINT: Check CCM config*/
-	zassert_true(result, "CCM config failed");
+	ztest_true(result, "CCM config failed");
 
 	result = tc_ccm_generation_encryption(ciphertext, sizeof(ciphertext),
 					      hdr, hlen, data, dlen, &c);
 
 	/**TESTPOINT: Check CCM encrypt*/
-	zassert_true(result, "ccm_encrypt failed");
+	ztest_true(result, "ccm_encrypt failed");
 
 	/**TESTPOINT: Verify ciphertext*/
 	if (memcmp(expected, ciphertext, elen) != 0) {
@@ -100,7 +100,7 @@ u32_t do_test(const u8_t *key,
 		show_str("\t\tComputed", ciphertext, elen);
 
 		/**ASSERTION: Signal wrong output and assert*/
-		zassert_true(0, "ccm_encrypt produced wrong ciphertext");
+		ztest_true(0, "ccm_encrypt produced wrong ciphertext");
 	}
 
 	result = tc_ccm_decryption_verification(decrypted, sizeof(decrypted),
@@ -113,7 +113,7 @@ u32_t do_test(const u8_t *key,
 		show_str("\t\tComputed", decrypted, sizeof(decrypted));
 
 		/**ASSERTION: Decrypt failed, so exit by assert*/
-		zassert_true(0, "ccm_decrypt failed");
+		ztest_true(0, "ccm_decrypt failed");
 	}
 
 	result = TC_PASS;
@@ -155,7 +155,7 @@ void test_ccm_vector_1(void)
 			 data, sizeof(data), expected, sizeof(expected), mlen);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "CCM test #1 (RFC 3610 test vector #1) failed.");
+	ztest_false(result, "CCM test #1 (RFC 3610 test vector #1) failed.");
 }
 
 void test_ccm_vector_2(void)
@@ -193,7 +193,7 @@ void test_ccm_vector_2(void)
 			 data, sizeof(data), expected, sizeof(expected), mlen);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "CCM test #2 failed.");
+	ztest_false(result, "CCM test #2 failed.");
 }
 
 void test_ccm_vector_3(void)
@@ -233,7 +233,7 @@ void test_ccm_vector_3(void)
 			 sizeof(data), expected, sizeof(expected), mlen);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "CCM test #3 failed.");
+	ztest_false(result, "CCM test #3 failed.");
 }
 
 void test_ccm_vector_4(void)
@@ -272,7 +272,7 @@ void test_ccm_vector_4(void)
 			 data, sizeof(data), expected, sizeof(expected), mlen);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "CCM test #4 failed.");
+	ztest_false(result, "CCM test #4 failed.");
 }
 
 void test_ccm_vector_5(void)
@@ -311,7 +311,7 @@ void test_ccm_vector_5(void)
 			 data, sizeof(data), expected, sizeof(expected), mlen);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "CCM test #5 failed.");
+	ztest_false(result, "CCM test #5 failed.");
 }
 
 void test_ccm_vector_6(void)
@@ -351,7 +351,7 @@ void test_ccm_vector_6(void)
 			 data, sizeof(data), expected, sizeof(expected), mlen);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "CCM test #6 failed.");
+	ztest_false(result, "CCM test #6 failed.");
 }
 
 void test_ccm_vector_7(void)
@@ -386,13 +386,13 @@ void test_ccm_vector_7(void)
 	tc_aes128_set_encrypt_key(&sched, key);
 
 	/**TESTPOINT: Check CCM configuration*/
-	zassert_true(tc_ccm_config(&c, &sched, nonce, sizeof(nonce), mlen),
+	ztest_true(tc_ccm_config(&c, &sched, nonce, sizeof(nonce), mlen),
 		"ccm_config failed");
 
 	result = tc_ccm_generation_encryption(ciphertext, sizeof(ciphertext),
 					      hdr, 0, data, sizeof(data), &c);
 	/**TESTPOINT: Check CCM encryption*/
-	zassert_true(result, "ccm_encryption failed");
+	ztest_true(result, "ccm_encryption failed");
 
 	result = tc_ccm_decryption_verification(decrypted, sizeof(decrypted),
 						hdr, 0, ciphertext,
@@ -404,14 +404,14 @@ void test_ccm_vector_7(void)
 		show_str("\t\tComputed", decrypted, sizeof(decrypted));
 
 		/**TESTPOINT: Check CCM decryption, and assert*/
-		zassert_true(result, "ccm_decryption failed");
+		ztest_true(result, "ccm_decryption failed");
 
 	}
 
 	result = TC_PASS;
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "CCM test #7 failed.");
+	ztest_false(result, "CCM test #7 failed.");
 
 }
 
@@ -442,14 +442,14 @@ void test_ccm_vector_8(void)
 	tc_aes128_set_encrypt_key(&sched, key);
 
 	/**TESTPOINT: Check CCM configuration*/
-	zassert_true(tc_ccm_config(&c, &sched, nonce, sizeof(nonce), mlen),
+	ztest_true(tc_ccm_config(&c, &sched, nonce, sizeof(nonce), mlen),
 	"CCM config failed");
 
 	result = tc_ccm_generation_encryption(ciphertext, sizeof(ciphertext),
 					      hdr, sizeof(hdr), data,
 					      sizeof(data), &c);
 	/**TESTPOINT: Check CCM encryption*/
-	zassert_true(result, "ccm_encrypt failed");
+	ztest_true(result, "ccm_encrypt failed");
 
 	result = tc_ccm_decryption_verification(decrypted, sizeof(decrypted),
 						hdr, sizeof(hdr),
@@ -460,12 +460,12 @@ void test_ccm_vector_8(void)
 		show_str("\t\tComputed", decrypted, sizeof(decrypted));
 
 		/**ASSERTION: Decrypt failed, so exit by assert*/
-		zassert_true(0, "ccm_decrypt failed");
+		ztest_true(0, "ccm_decrypt failed");
 	}
 
 	result = TC_PASS;
 	TC_END_RESULT(result);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "CCM test #8 (no payload data) failed.");
+	ztest_false(result, "CCM test #8 (no payload data) failed.");
 }

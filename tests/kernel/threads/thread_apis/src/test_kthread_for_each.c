@@ -54,7 +54,7 @@ void test_k_thread_foreach(void)
 	/* Check thread_count non-zero, thread_flag
 	 * and stack_flag are not set.
 	 */
-	zassert_true(tcount && !thread_flag,
+	ztest_true(tcount && !thread_flag,
 				"thread_callback() not getting called");
 	/* Save the initial thread count */
 	count = tcount;
@@ -73,7 +73,7 @@ void test_k_thread_foreach(void)
 	k_thread_foreach(thread_callback, TEST_STRING);
 
 	/* Check thread_count > temp, thread_flag and stack_flag are set */
-	zassert_true((tcount > count) && thread_flag,
+	ztest_true((tcount > count) && thread_flag,
 					"thread_callback() not getting called");
 	k_thread_abort(tid);
 }

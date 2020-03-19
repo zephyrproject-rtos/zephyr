@@ -239,12 +239,12 @@ static bool send_ipv6_udp_msg(struct net_if *iface,
 
 	pkt = net_pkt_alloc_with_buffer(iface, 0, AF_INET6,
 					IPPROTO_UDP, K_SECONDS(1));
-	zassert_not_null(pkt, "Out of mem");
+	ztest_not_null(pkt, "Out of mem");
 
 	if (net_ipv6_create(pkt, src, dst) ||
 	    net_udp_create(pkt, htons(src_port), htons(dst_port))) {
 		printk("Cannot create IPv6 UDP pkt %p", pkt);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	net_pkt_cursor_init(pkt);
@@ -253,13 +253,13 @@ static bool send_ipv6_udp_msg(struct net_if *iface,
 	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
 		printk("Cannot recv pkt %p, ret %d\n", pkt, ret);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	if (k_sem_take(&recv_lock, TIMEOUT)) {
 
 		/**TESTPOINT: Check for failure*/
-		zassert_true(expect_failure, "Timeout, packet not received");
+		ztest_true(expect_failure, "Timeout, packet not received");
 		return true;
 	}
 
@@ -269,7 +269,7 @@ static bool send_ipv6_udp_msg(struct net_if *iface,
 	if (ud != returned_ud && !expect_failure) {
 		printk("IPv6 wrong user data %p returned, expected %p\n",
 		       returned_ud, ud);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	return !fail;
@@ -290,17 +290,17 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 					sizeof(ipv6_hop_by_hop_ext_hdr) +
 					sizeof(payload), AF_INET6,
 					IPPROTO_UDP, K_SECONDS(1));
-	zassert_not_null(pkt, "Out of mem");
+	ztest_not_null(pkt, "Out of mem");
 
 	if (net_ipv6_create(pkt, src, dst)) {
 		printk("Cannot create IPv6  pkt %p", pkt);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	if (net_pkt_write(pkt, (u8_t *)ipv6_hop_by_hop_ext_hdr,
 			      sizeof(ipv6_hop_by_hop_ext_hdr))) {
 		printk("Cannot write IPv6 ext header pkt %p", pkt);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	net_pkt_set_ipv6_ext_len(pkt, sizeof(ipv6_hop_by_hop_ext_hdr));
@@ -308,12 +308,12 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 
 	if (net_udp_create(pkt, htons(src_port), htons(dst_port))) {
 		printk("Cannot create IPv6  pkt %p", pkt);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	if (net_pkt_write(pkt, (u8_t *)payload, sizeof(payload))) {
 		printk("Cannot write IPv6 ext header pkt %p", pkt);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	net_pkt_cursor_init(pkt);
@@ -322,12 +322,12 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
 		printk("Cannot recv pkt %p, ret %d\n", pkt, ret);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	if (k_sem_take(&recv_lock, TIMEOUT)) {
 		/**TESTPOINT: Check for failure*/
-		zassert_true(expect_failure, "Timeout, packet not received");
+		ztest_true(expect_failure, "Timeout, packet not received");
 		return true;
 	}
 
@@ -337,7 +337,7 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 	if (ud != returned_ud && !expect_failure) {
 		printk("IPv6 wrong user data %p returned, expected %p\n",
 		       returned_ud, ud);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	return !fail;
@@ -356,12 +356,12 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 
 	pkt = net_pkt_alloc_with_buffer(iface, 0, AF_INET,
 					IPPROTO_UDP, K_SECONDS(1));
-	zassert_not_null(pkt, "Out of mem");
+	ztest_not_null(pkt, "Out of mem");
 
 	if (net_ipv4_create(pkt, src, dst) ||
 	    net_udp_create(pkt, htons(src_port), htons(dst_port))) {
 		printk("Cannot create IPv4 UDP pkt %p", pkt);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	net_pkt_cursor_init(pkt);
@@ -370,13 +370,13 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 	ret = net_recv_data(iface, pkt);
 	if (ret < 0) {
 		printk("Cannot recv pkt %p, ret %d\n", pkt, ret);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	if (k_sem_take(&recv_lock, TIMEOUT)) {
 
 		/**TESTPOINT: Check for failure*/
-		zassert_true(expect_failure, "Timeout, packet not received");
+		ztest_true(expect_failure, "Timeout, packet not received");
 		return true;
 	}
 
@@ -386,7 +386,7 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 	if (ud != returned_ud && !expect_failure) {
 		printk("IPv4 wrong user data %p returned, expected %p\n",
 		       returned_ud, ud);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	return !fail;
@@ -474,14 +474,14 @@ void test_udp(void)
 	if (!ifaddr) {
 		printk("Cannot add %s to interface %p\n",
 		       net_sprint_ipv6_addr(&in6addr_my), iface);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	ifaddr = net_if_ipv4_addr_add(iface, &in4addr_my, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		printk("Cannot add %s to interface %p\n",
 		       net_sprint_ipv4_addr(&in4addr_my), iface);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 #define REGISTER(family, raddr, laddr, rport, lport)			\
@@ -507,7 +507,7 @@ void test_udp(void)
 		if (ret) {						\
 			printk("UDP register %s failed (%d)\n",		\
 			       user_data.test, ret);			\
-			zassert_true(0, "exiting");			\
+			ztest_true(0, "exiting");			\
 		}							\
 		user_data.handle = handlers[i++];			\
 		&user_data;						\
@@ -522,7 +522,7 @@ void test_udp(void)
 	if (!ret) {							\
 		printk("UDP register invalid match %s failed\n",	\
 		       "DST="#raddr"-SRC="#laddr"-RP="#rport"-LP="#lport); \
-		zassert_true(0, "exiting");				\
+		ztest_true(0, "exiting");				\
 	}
 
 #define UNREGISTER(ud)							\
@@ -530,7 +530,7 @@ void test_udp(void)
 	if (ret) {							\
 		printk("UDP unregister %p failed (%d)\n", ud->handle,	\
 		       ret);						\
-		zassert_true(0, "exiting");				\
+		ztest_true(0, "exiting");				\
 	}
 
 #define TEST_IPV6_OK(ud, raddr, laddr, rport, lport)			\
@@ -539,7 +539,7 @@ void test_udp(void)
 	if (!st) {							\
 		printk("%d: UDP test \"%s\" fail\n", __LINE__,		\
 		       ud->test);					\
-		zassert_true(0, "exiting");				\
+		ztest_true(0, "exiting");				\
 	}
 
 #define TEST_IPV6_LONG_OK(ud, raddr, laddr, rport, lport)		\
@@ -548,7 +548,7 @@ void test_udp(void)
 	if (!st) {							\
 		printk("%d: UDP long test \"%s\" fail\n", __LINE__,	\
 		       ud->test);					\
-		zassert_true(0, "exiting");				\
+		ztest_true(0, "exiting");				\
 	}
 
 #define TEST_IPV4_OK(ud, raddr, laddr, rport, lport)			\
@@ -557,7 +557,7 @@ void test_udp(void)
 	if (!st) {							\
 		printk("%d: UDP test \"%s\" fail\n", __LINE__,		\
 		       ud->test);					\
-		zassert_true(0, "exiting");				\
+		ztest_true(0, "exiting");				\
 	}
 
 #define TEST_IPV6_FAIL(ud, raddr, laddr, rport, lport)			\
@@ -566,7 +566,7 @@ void test_udp(void)
 	if (!st) {							\
 		printk("%d: UDP neg test \"%s\" fail\n", __LINE__,	\
 		       ud->test);					\
-		zassert_true(0, "exiting");				\
+		ztest_true(0, "exiting");				\
 	}
 
 #define TEST_IPV4_FAIL(ud, raddr, laddr, rport, lport)			\
@@ -575,7 +575,7 @@ void test_udp(void)
 	if (!st) {							\
 		printk("%d: UDP neg test \"%s\" fail\n", __LINE__,	\
 		       ud->test);					\
-		zassert_true(0, "exiting");				\
+		ztest_true(0, "exiting");				\
 	}
 
 	ud = REGISTER(AF_INET6, &any_addr6, &any_addr6, 1234, 4242);
@@ -644,21 +644,21 @@ void test_udp(void)
 	REGISTER_FAIL(&my_addr4, &my_addr6, 1234, 4242);
 
 	/**TESTPOINT: Check if tests passed*/
-	zassert_false(fail, "Tests failed");
+	ztest_false(fail, "Tests failed");
 
 	i--;
 	while (i) {
 		ret = net_udp_unregister(handlers[i]);
 		if (ret < 0 && ret != -ENOENT) {
 			printk("Cannot unregister udp %d\n", i);
-			zassert_true(0, "exiting");
+			ztest_true(0, "exiting");
 		}
 
 		i--;
 	}
 
-	zassert_true((net_udp_unregister(NULL) < 0), "Unregister udp failed");
-	zassert_false(test_failed, "udp tests failed");
+	ztest_true((net_udp_unregister(NULL) < 0), "Unregister udp failed");
+	ztest_false(test_failed, "udp tests failed");
 }
 
 void test_main(void)

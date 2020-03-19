@@ -116,7 +116,7 @@ static struct k_thread alt_thread_data;
 
 void test_stackprot(void)
 {
-	zassert_true(ret == TC_PASS, NULL);
+	ztest_true(ret == TC_PASS, NULL);
 	print_loop(__func__);
 }
 

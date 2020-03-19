@@ -30,16 +30,16 @@ void test_threads_cpu_mask(void)
 
 	/* Shouldn't be able to operate on a running thread */
 	ret = k_thread_cpu_mask_clear(k_current_get());
-	zassert_true(ret == -EINVAL, "");
+	ztest_true(ret == -EINVAL, "");
 
 	ret = k_thread_cpu_mask_enable_all(k_current_get());
-	zassert_true(ret == -EINVAL, "");
+	ztest_true(ret == -EINVAL, "");
 
 	ret = k_thread_cpu_mask_enable(k_current_get(), 0);
-	zassert_true(ret == -EINVAL, "");
+	ztest_true(ret == -EINVAL, "");
 
 	ret = k_thread_cpu_mask_disable(k_current_get(), 0);
-	zassert_true(ret == -EINVAL, "");
+	ztest_true(ret == -EINVAL, "");
 
 	for (pass = 0; pass < 4; pass++) {
 		child_has_run = false;
@@ -48,7 +48,7 @@ void test_threads_cpu_mask(void)
 		 * it yet.
 		 */
 		prio = k_thread_priority_get(k_current_get());
-		zassert_true(prio > K_HIGHEST_APPLICATION_THREAD_PRIO, "");
+		ztest_true(prio > K_HIGHEST_APPLICATION_THREAD_PRIO, "");
 		thread = k_thread_create(&child_thread,
 					 tstack, tstack_size,
 					 child_fn, NULL, NULL, NULL,
@@ -58,29 +58,29 @@ void test_threads_cpu_mask(void)
 		/* Set up the CPU mask */
 		if (pass == 0) {
 			ret = k_thread_cpu_mask_clear(thread);
-			zassert_true(ret == 0, "");
+			ztest_true(ret == 0, "");
 		} else if (pass == 1) {
 			ret = k_thread_cpu_mask_enable_all(thread);
-			zassert_true(ret == 0, "");
+			ztest_true(ret == 0, "");
 		} else if (pass == 2) {
 			ret = k_thread_cpu_mask_disable(thread, 0);
-			zassert_true(ret == 0, "");
+			ztest_true(ret == 0, "");
 		} else {
 			ret = k_thread_cpu_mask_enable(thread, 0);
-			zassert_true(ret == 0, "");
+			ztest_true(ret == 0, "");
 		}
 
 		/* Start it.  If it is runnable, it will do so
 		 * immediately when we yield.  Check to see if it ran.
 		 */
-		zassert_false(child_has_run, "");
+		ztest_false(child_has_run, "");
 		k_thread_start(thread);
 		k_yield();
 
 		if (pass == 1 || pass == 3) {
-			zassert_true(child_has_run, "");
+			ztest_true(child_has_run, "");
 		} else {
-			zassert_false(child_has_run, "");
+			ztest_false(child_has_run, "");
 		}
 
 		k_thread_abort(thread);

@@ -58,7 +58,7 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 		/* Test Fails if thread exceed allocated time slice or
 		 * Any thread is scheduled out of order.
 		 */
-		zassert_true(((tdelta >= expected_slice_min) &&
+		ztest_true(((tdelta >= expected_slice_min) &&
 			      (tdelta <= expected_slice_max) &&
 			      (idx == thread_idx)), NULL);
 		thread_idx = (thread_idx + 1) % (NUM_THREAD);

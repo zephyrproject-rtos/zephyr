@@ -393,7 +393,7 @@ int testfs_bcmd_verify_layout(struct testfs_path *pp,
 			 stat.size);
 
 		if (dotdir) {
-			zassert_true(false,
+			ztest_true(false,
 				     "special directories observed");
 		} else if (cp != NULL) {
 			rc = check_layout_entry(pp, &stat, cp, ecp);

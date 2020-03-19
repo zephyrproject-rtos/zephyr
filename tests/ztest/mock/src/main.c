@@ -35,7 +35,7 @@ static int returns_int(void)
 static void test_return_value_tests(void)
 {
 	ztest_returns_value(returns_int, 5);
-	zassert_equal(returns_int(), 5, NULL);
+	ztest_equal(returns_int(), 5, NULL);
 }
 
 static void test_multi_value_tests(void)
@@ -48,7 +48,7 @@ static void test_multi_value_tests(void)
 
 	/* Verify mock behavior */
 	expect_one_parameter(1);
-	zassert_equal(returns_int(), 5, NULL);
+	ztest_equal(returns_int(), 5, NULL);
 	expect_two_parameters(2, 3);
 }
 

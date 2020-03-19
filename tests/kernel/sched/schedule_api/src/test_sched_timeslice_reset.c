@@ -85,10 +85,10 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 
 	/** TESTPOINT: timeslice should be reset for each preemptive thread*/
 #ifndef CONFIG_COVERAGE
-	zassert_true(t >= expected_slice_min,
+	ztest_true(t >= expected_slice_min,
 		     "timeslice too small, expected %u got %u",
 		     expected_slice_min, t);
-	zassert_true(t <= expected_slice_max,
+	ztest_true(t <= expected_slice_max,
 		     "timeslice too big, expected %u got %u",
 		     expected_slice_max, t);
 #else

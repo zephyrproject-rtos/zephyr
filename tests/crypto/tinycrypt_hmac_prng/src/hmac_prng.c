@@ -7551,364 +7551,364 @@ void test_hmac_prng(void)
 	TC_START("Performing HMAC-PRNG tests:");
 
 	result = test_1();
-	zassert_false(result == TC_FAIL, "HMAC test 1 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 1 failed");
 
 	result = test_2();
-	zassert_false(result == TC_FAIL, "HMAC test 2 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 2 failed");
 
 	result = test_3();
-	zassert_false(result == TC_FAIL, "HMAC test 3 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 3 failed");
 
 	result = test_4();
-	zassert_false(result == TC_FAIL, "HMAC test 4 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 4 failed");
 
 	result = test_5();
-	zassert_false(result == TC_FAIL, "HMAC test 5 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 5 failed");
 
 	result = test_6();
-	zassert_false(result == TC_FAIL, "HMAC test 6 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 6 failed");
 
 	result = test_7();
-	zassert_false(result == TC_FAIL, "HMAC test 7 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 7 failed");
 
 	result = test_8();
-	zassert_false(result == TC_FAIL, "HMAC test 8 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 8 failed");
 
 	result = test_9();
-	zassert_false(result == TC_FAIL, "HMAC test 9 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 9 failed");
 
 	result = test_10();
-	zassert_false(result == TC_FAIL, "HMAC test 10 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 10 failed");
 
 	result = test_11();
-	zassert_false(result == TC_FAIL, "HMAC test 11 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 11 failed");
 
 	result = test_12();
-	zassert_false(result == TC_FAIL, "HMAC test 12 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 12 failed");
 
 	result = test_13();
-	zassert_false(result == TC_FAIL, "HMAC test 13 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 13 failed");
 
 	result = test_14();
-	zassert_false(result == TC_FAIL, "HMAC test 14 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 14 failed");
 
 	result = test_15();
-	zassert_false(result == TC_FAIL, "HMAC test 15 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 15 failed");
 
 	result = test_16();
-	zassert_false(result == TC_FAIL, "HMAC test 16 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 16 failed");
 
 	result = test_17();
-	zassert_false(result == TC_FAIL, "HMAC test 17 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 17 failed");
 
 	result = test_18();
-	zassert_false(result == TC_FAIL, "HMAC test 18 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 18 failed");
 
 	result = test_19();
-	zassert_false(result == TC_FAIL, "HMAC test 19 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 19 failed");
 
 	result = test_20();
-	zassert_false(result == TC_FAIL, "HMAC test 20 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 20 failed");
 
 	result = test_21();
-	zassert_false(result == TC_FAIL, "HMAC test 21 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 21 failed");
 
 	result = test_22();
-	zassert_false(result == TC_FAIL, "HMAC test 22 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 22 failed");
 
 	result = test_23();
-	zassert_false(result == TC_FAIL, "HMAC test 23 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 23 failed");
 
 	result = test_24();
-	zassert_false(result == TC_FAIL, "HMAC test 24 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 24 failed");
 
 	result = test_25();
-	zassert_false(result == TC_FAIL, "HMAC test 25 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 25 failed");
 
 	result = test_26();
-	zassert_false(result == TC_FAIL, "HMAC test 26 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 26 failed");
 
 	result = test_27();
-	zassert_false(result == TC_FAIL, "HMAC test 27 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 27 failed");
 
 	result = test_28();
-	zassert_false(result == TC_FAIL, "HMAC test 28 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 28 failed");
 
 	result = test_29();
-	zassert_false(result == TC_FAIL, "HMAC test 29 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 29 failed");
 
 	result = test_30();
-	zassert_false(result == TC_FAIL, "HMAC test 30 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 30 failed");
 
 	result = test_31();
-	zassert_false(result == TC_FAIL, "HMAC test 31 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 31 failed");
 
 	result = test_32();
-	zassert_false(result == TC_FAIL, "HMAC test 32 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 32 failed");
 
 	result = test_33();
-	zassert_false(result == TC_FAIL, "HMAC test 33 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 33 failed");
 
 	result = test_34();
-	zassert_false(result == TC_FAIL, "HMAC test 34 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 34 failed");
 
 	result = test_35();
-	zassert_false(result == TC_FAIL, "HMAC test 35 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 35 failed");
 
 	result = test_36();
-	zassert_false(result == TC_FAIL, "HMAC test 36 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 36 failed");
 
 	result = test_37();
-	zassert_false(result == TC_FAIL, "HMAC test 37 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 37 failed");
 
 	result = test_38();
-	zassert_false(result == TC_FAIL, "HMAC test 38 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 38 failed");
 
 	result = test_39();
-	zassert_false(result == TC_FAIL, "HMAC test 39 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 39 failed");
 
 	result = test_40();
-	zassert_false(result == TC_FAIL, "HMAC test 40 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 40 failed");
 
 	result = test_41();
-	zassert_false(result == TC_FAIL, "HMAC test 41 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 41 failed");
 
 	result = test_42();
-	zassert_false(result == TC_FAIL, "HMAC test 42 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 42 failed");
 
 	result = test_43();
-	zassert_false(result == TC_FAIL, "HMAC test 43 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 43 failed");
 
 	result = test_44();
-	zassert_false(result == TC_FAIL, "HMAC test 44 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 44 failed");
 
 	result = test_45();
-	zassert_false(result == TC_FAIL, "HMAC test 45 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 45 failed");
 
 	result = test_46();
-	zassert_false(result == TC_FAIL, "HMAC test 46 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 46 failed");
 
 	result = test_47();
-	zassert_false(result == TC_FAIL, "HMAC test 47 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 47 failed");
 
 	result = test_48();
-	zassert_false(result == TC_FAIL, "HMAC test 48 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 48 failed");
 
 	result = test_49();
-	zassert_false(result == TC_FAIL, "HMAC test 49 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 49 failed");
 
 	result = test_50();
-	zassert_false(result == TC_FAIL, "HMAC test 50 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 50 failed");
 
 	result = test_51();
-	zassert_false(result == TC_FAIL, "HMAC test 51 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 51 failed");
 
 	result = test_52();
-	zassert_false(result == TC_FAIL, "HMAC test 52 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 52 failed");
 
 	result = test_53();
-	zassert_false(result == TC_FAIL, "HMAC test 53 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 53 failed");
 
 	result = test_54();
-	zassert_false(result == TC_FAIL, "HMAC test 54 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 54 failed");
 
 	result = test_55();
-	zassert_false(result == TC_FAIL, "HMAC test 55 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 55 failed");
 
 	result = test_56();
-	zassert_false(result == TC_FAIL, "HMAC test 56 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 56 failed");
 
 	result = test_57();
-	zassert_false(result == TC_FAIL, "HMAC test 57 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 57 failed");
 
 	result = test_58();
-	zassert_false(result == TC_FAIL, "HMAC test 58 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 58 failed");
 
 	result = test_59();
-	zassert_false(result == TC_FAIL, "HMAC test 59 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 59 failed");
 
 	result = test_60();
-	zassert_false(result == TC_FAIL, "HMAC test 60 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 60 failed");
 
 	result = test_61();
-	zassert_false(result == TC_FAIL, "HMAC test 61 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 61 failed");
 
 	result = test_62();
-	zassert_false(result == TC_FAIL, "HMAC test 62 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 62 failed");
 
 	result = test_63();
-	zassert_false(result == TC_FAIL, "HMAC test 63 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 63 failed");
 
 	result = test_64();
-	zassert_false(result == TC_FAIL, "HMAC test 64 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 64 failed");
 
 	result = test_65();
-	zassert_false(result == TC_FAIL, "HMAC test 65 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 65 failed");
 
 	result = test_66();
-	zassert_false(result == TC_FAIL, "HMAC test 66 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 66 failed");
 
 	result = test_67();
-	zassert_false(result == TC_FAIL, "HMAC test 67 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 67 failed");
 
 	result = test_68();
-	zassert_false(result == TC_FAIL, "HMAC test 68 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 68 failed");
 
 	result = test_69();
-	zassert_false(result == TC_FAIL, "HMAC test 69 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 69 failed");
 
 	result = test_70();
-	zassert_false(result == TC_FAIL, "HMAC test 70 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 70 failed");
 
 	result = test_71();
-	zassert_false(result == TC_FAIL, "HMAC test 71 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 71 failed");
 
 	result = test_72();
-	zassert_false(result == TC_FAIL, "HMAC test 72 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 72 failed");
 
 	result = test_73();
-	zassert_false(result == TC_FAIL, "HMAC test 73 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 73 failed");
 
 	result = test_74();
-	zassert_false(result == TC_FAIL, "HMAC test 74 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 74 failed");
 
 	result = test_75();
-	zassert_false(result == TC_FAIL, "HMAC test 75 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 75 failed");
 
 	result = test_76();
-	zassert_false(result == TC_FAIL, "HMAC test 76 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 76 failed");
 
 	result = test_77();
-	zassert_false(result == TC_FAIL, "HMAC test 77 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 77 failed");
 
 	result = test_78();
-	zassert_false(result == TC_FAIL, "HMAC test 78 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 78 failed");
 
 	result = test_79();
-	zassert_false(result == TC_FAIL, "HMAC test 79 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 79 failed");
 
 	result = test_80();
-	zassert_false(result == TC_FAIL, "HMAC test 80 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 80 failed");
 
 	result = test_81();
-	zassert_false(result == TC_FAIL, "HMAC test 81 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 81 failed");
 
 	result = test_82();
-	zassert_false(result == TC_FAIL, "HMAC test 82 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 82 failed");
 
 	result = test_83();
-	zassert_false(result == TC_FAIL, "HMAC test 83 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 83 failed");
 
 	result = test_84();
-	zassert_false(result == TC_FAIL, "HMAC test 84 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 84 failed");
 
 	result = test_85();
-	zassert_false(result == TC_FAIL, "HMAC test 85 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 85 failed");
 
 	result = test_86();
-	zassert_false(result == TC_FAIL, "HMAC test 86 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 86 failed");
 
 	result = test_87();
-	zassert_false(result == TC_FAIL, "HMAC test 87 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 87 failed");
 
 	result = test_88();
-	zassert_false(result == TC_FAIL, "HMAC test 88 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 88 failed");
 
 	result = test_89();
-	zassert_false(result == TC_FAIL, "HMAC test 89 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 89 failed");
 
 	result = test_90();
-	zassert_false(result == TC_FAIL, "HMAC test 90 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 90 failed");
 
 	result = test_91();
-	zassert_false(result == TC_FAIL, "HMAC test 91 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 91 failed");
 
 	result = test_92();
-	zassert_false(result == TC_FAIL, "HMAC test 92 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 92 failed");
 
 	result = test_93();
-	zassert_false(result == TC_FAIL, "HMAC test 93 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 93 failed");
 
 	result = test_94();
-	zassert_false(result == TC_FAIL, "HMAC test 94 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 94 failed");
 
 	result = test_95();
-	zassert_false(result == TC_FAIL, "HMAC test 95 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 95 failed");
 
 	result = test_96();
-	zassert_false(result == TC_FAIL, "HMAC test 96 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 96 failed");
 
 	result = test_97();
-	zassert_false(result == TC_FAIL, "HMAC test 97 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 97 failed");
 
 	result = test_98();
-	zassert_false(result == TC_FAIL, "HMAC test 98 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 98 failed");
 
 	result = test_99();
-	zassert_false(result == TC_FAIL, "HMAC test 99 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 99 failed");
 
 	result = test_100();
-	zassert_false(result == TC_FAIL, "HMAC test 100 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 100 failed");
 
 	result = test_101();
-	zassert_false(result == TC_FAIL, "HMAC test 101 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 101 failed");
 
 	result = test_102();
-	zassert_false(result == TC_FAIL, "HMAC test 102 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 102 failed");
 
 	result = test_103();
-	zassert_false(result == TC_FAIL, "HMAC test 103 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 103 failed");
 
 	result = test_104();
-	zassert_false(result == TC_FAIL, "HMAC test 104 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 104 failed");
 
 	result = test_105();
-	zassert_false(result == TC_FAIL, "HMAC test 105 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 105 failed");
 
 	result = test_106();
-	zassert_false(result == TC_FAIL, "HMAC test 106 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 106 failed");
 
 	result = test_107();
-	zassert_false(result == TC_FAIL, "HMAC test 107 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 107 failed");
 
 	result = test_108();
-	zassert_false(result == TC_FAIL, "HMAC test 108 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 108 failed");
 
 	result = test_109();
-	zassert_false(result == TC_FAIL, "HMAC test 109 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 109 failed");
 
 	result = test_110();
-	zassert_false(result == TC_FAIL, "HMAC test 110 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 110 failed");
 
 	result = test_111();
-	zassert_false(result == TC_FAIL, "HMAC test 111 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 111 failed");
 
 	result = test_112();
-	zassert_false(result == TC_FAIL, "HMAC test 112 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 112 failed");
 
 	result = test_113();
-	zassert_false(result == TC_FAIL, "HMAC test 113 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 113 failed");
 
 	result = test_114();
-	zassert_false(result == TC_FAIL, "HMAC test 114 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 114 failed");
 
 	result = test_115();
-	zassert_false(result == TC_FAIL, "HMAC test 115 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 115 failed");
 
 	result = test_116();
-	zassert_false(result == TC_FAIL, "HMAC test 116 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 116 failed");
 
 	result = test_117();
-	zassert_false(result == TC_FAIL, "HMAC test 117 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 117 failed");
 
 	result = test_118();
-	zassert_false(result == TC_FAIL, "HMAC test 118 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 118 failed");
 
 	result = test_119();
-	zassert_false(result == TC_FAIL, "HMAC test 119 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 119 failed");
 
 	result = test_120();
-	zassert_false(result == TC_FAIL, "HMAC test 120 failed");
+	ztest_false(result == TC_FAIL, "HMAC test 120 failed");
 
 	TC_PRINT("All HMAC-PRNG tests succeeded!\n");
 }

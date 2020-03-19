@@ -105,7 +105,7 @@ void test_printk(void)
 	printk("%lld %lld %llu %llx\n", 0xFFFFFFFFFULL, -1LL, -1ULL, -1ULL);
 
 	pk_console[pos] = '\0';
-	zassert_true((strcmp(pk_console, expected) == 0), "printk failed");
+	ztest_true((strcmp(pk_console, expected) == 0), "printk failed");
 
 	(void)memset(pk_console, 0, sizeof(pk_console));
 	count = 0;
@@ -136,7 +136,7 @@ void test_printk(void)
 			  "%lld %lld %llu %llx\n",
 			  0xFFFFFFFFFULL, -1LL, -1ULL, -1ULL);
 	pk_console[count] = '\0';
-	zassert_true((strcmp(pk_console, expected) == 0), "snprintk failed");
+	ztest_true((strcmp(pk_console, expected) == 0), "snprintk failed");
 }
 /**
  * @}

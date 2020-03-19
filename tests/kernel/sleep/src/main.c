@@ -230,14 +230,14 @@ void test_sleep(void)
 	/* Wake the test thread */
 	k_wakeup(test_thread_id);
 
-	zassert_false(test_failure, "test failure");
+	ztest_false(test_failure, "test failure");
 
 	TC_PRINT("Testing kernel k_sleep()\n");
 	align_to_tick_boundary();
 	start_tick = k_uptime_get_32();
 	k_sleep(ONE_SECOND);
 	end_tick = k_uptime_get_32();
-	zassert_true(sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED),
+	ztest_true(sleep_time_valid(start_tick, end_tick, ONE_SECOND_ALIGNED),
 		     "k_sleep() slept for %d ticks, not %d\n",
 		     end_tick - start_tick, ONE_SECOND_ALIGNED);
 
@@ -251,7 +251,7 @@ static void forever_thread_entry(void *p1, void *p2, void *p3)
 	s32_t ret;
 
 	ret = k_sleep(K_FOREVER);
-	zassert_equal(ret, K_FOREVER, "unexpected return value");
+	ztest_equal(ret, K_FOREVER, "unexpected return value");
 	k_sem_give(&test_thread_sem);
 }
 

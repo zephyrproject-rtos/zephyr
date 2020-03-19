@@ -43,10 +43,10 @@ void test_priority_cooperative(void)
 				      thread_entry, NULL, NULL, NULL,
 				      spawn_prio, 0, K_NO_WAIT);
 	/* checkpoint: current thread shouldn't preempted by higher thread */
-	zassert_true(last_prio == k_thread_priority_get(k_current_get()), NULL);
+	ztest_true(last_prio == k_thread_priority_get(k_current_get()), NULL);
 	k_sleep(K_MSEC(100));
 	/* checkpoint: spawned thread get executed */
-	zassert_true(last_prio == spawn_prio, NULL);
+	ztest_true(last_prio == spawn_prio, NULL);
 	k_thread_abort(tid);
 
 	/* restore environment */
@@ -78,7 +78,7 @@ void test_priority_preemptible(void)
 				      thread_entry, NULL, NULL, NULL,
 				      spawn_prio, 0, K_NO_WAIT);
 	/* checkpoint: thread is preempted by higher thread */
-	zassert_true(last_prio == spawn_prio, NULL);
+	ztest_true(last_prio == spawn_prio, NULL);
 
 	k_sleep(K_MSEC(100));
 	k_thread_abort(tid);
@@ -88,7 +88,7 @@ void test_priority_preemptible(void)
 			      thread_entry, NULL, NULL, NULL,
 			      spawn_prio, 0, K_NO_WAIT);
 	/* checkpoint: thread is not preempted by lower thread */
-	zassert_false(last_prio == spawn_prio, NULL);
+	ztest_false(last_prio == spawn_prio, NULL);
 	k_thread_abort(tid);
 
 	/* restore environment */
@@ -122,11 +122,11 @@ void test_bad_priorities(void)
 	};
 
 	for (int i = 0; i < ARRAY_SIZE(testcases); i++) {
-		zassert_equal(_is_valid_prio(testcases[i].prio,
+		ztest_equal(_is_valid_prio(testcases[i].prio,
 					     testcases[i].entry),
 			      testcases[i].result, "failed check %d", i);
 		/* XXX why are these even separate APIs? */
-		zassert_equal(Z_VALID_PRIO(testcases[i].prio,
+		ztest_equal(Z_VALID_PRIO(testcases[i].prio,
 					   testcases[i].entry),
 			      testcases[i].result, "failed check %d", i);
 	}

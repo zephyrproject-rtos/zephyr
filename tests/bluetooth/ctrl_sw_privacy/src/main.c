@@ -15,7 +15,7 @@
 
 void test_ctrl_sw_privacy(void)
 {
-	zassert_false(bt_enable(NULL), "%s failed", __func__);
+	ztest_false(bt_enable(NULL), "%s failed", __func__);
 }
 
 /* test case main entry */

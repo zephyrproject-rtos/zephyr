@@ -308,7 +308,7 @@ void test_pending_fifo(void)
 	 */
 
 	TC_PRINT("Testing preemptible threads block on fifos ...\n");
-	zassert_false((coop_high_state != FIFO_TEST_START) ||
+	ztest_false((coop_high_state != FIFO_TEST_START) ||
 		      (coop_low_state != FIFO_TEST_START) ||
 		      (task_high_state != FIFO_TEST_START) ||
 		      (task_low_state != FIFO_TEST_START), NULL);
@@ -322,7 +322,7 @@ void test_pending_fifo(void)
 	 */
 
 	TC_PRINT("Testing fifos time-out in correct order ...\n");
-	zassert_false((task_low_state != FIFO_TEST_START + 1) ||
+	ztest_false((task_low_state != FIFO_TEST_START + 1) ||
 		      (task_high_state != FIFO_TEST_START + 2) ||
 		      (coop_low_state != FIFO_TEST_START + 3) ||
 		      (coop_high_state != FIFO_TEST_START + 4),
@@ -346,7 +346,7 @@ void test_pending_fifo(void)
 	k_fifo_put(&fifo, &fifo_test_data[2]);
 	k_fifo_put(&fifo, &fifo_test_data[3]);
 
-	zassert_false((coop_high_state != FIFO_TEST_END + 1) ||
+	ztest_false((coop_high_state != FIFO_TEST_END + 1) ||
 		      (coop_low_state != FIFO_TEST_END + 2) ||
 		      (task_high_state != FIFO_TEST_END + 3) ||
 		      (task_low_state != FIFO_TEST_END + 4),
@@ -380,7 +380,7 @@ void test_pending_lifo(void)
 	 */
 
 	TC_PRINT("Testing preemptible threads block on lifos ...\n");
-	zassert_false((coop_high_state != LIFO_TEST_START) ||
+	ztest_false((coop_high_state != LIFO_TEST_START) ||
 		      (coop_low_state != LIFO_TEST_START) ||
 		      (task_high_state != LIFO_TEST_START) ||
 		      (task_low_state != LIFO_TEST_START), NULL);
@@ -389,7 +389,7 @@ void test_pending_lifo(void)
 	k_sleep(NUM_SECONDS(2));
 
 	TC_PRINT("Testing lifos time-out in correct order ...\n");
-	zassert_false((task_low_state != LIFO_TEST_START + 1) ||
+	ztest_false((task_low_state != LIFO_TEST_START + 1) ||
 		      (task_high_state != LIFO_TEST_START + 2) ||
 		      (coop_low_state != LIFO_TEST_START + 3) ||
 		      (coop_high_state != LIFO_TEST_START + 4),
@@ -413,7 +413,7 @@ void test_pending_lifo(void)
 	k_lifo_put(&lifo, &lifo_test_data[3]);
 
 	TC_PRINT("Testing lifos delivered data correctly ...\n");
-	zassert_false((coop_high_state != LIFO_TEST_END + 1) ||
+	ztest_false((coop_high_state != LIFO_TEST_END + 1) ||
 		      (coop_low_state != LIFO_TEST_END + 2) ||
 		      (task_high_state != LIFO_TEST_END + 3) ||
 		      (task_low_state != LIFO_TEST_END + 4),
@@ -446,15 +446,15 @@ void test_pending_timer(void)
 	 */
 
 	TC_PRINT("Testing preemptible thread waiting on timer ...\n");
-	zassert_equal(timer_end_tick, 0, "Task did not pend on timer");
+	ztest_equal(timer_end_tick, 0, "Task did not pend on timer");
 
 	/* Let the timer expire */
 	k_sleep(NUM_SECONDS(2));
 
-	zassert_false((timer_end_tick < timer_start_tick + NUM_SECONDS(1)),
+	ztest_false((timer_end_tick < timer_start_tick + NUM_SECONDS(1)),
 			"Task waiting on timer error");
 
-	zassert_equal(timer_data, NON_NULL_PTR,
+	ztest_equal(timer_data, NON_NULL_PTR,
 				"Incorrect data from timer");
 
 	k_sem_give(&end_test_sem);

@@ -95,7 +95,7 @@ static void write_ro(void)
 		INFO("something went wrong!\n");
 	}
 
-	zassert_unreachable("Write to rodata did not fault");
+	ztest_unreachable("Write to rodata did not fault");
 }
 
 /**
@@ -126,7 +126,7 @@ static void write_text(void)
 		INFO("Did not get expected return value!\n");
 	}
 
-	zassert_unreachable("Write to text did not fault");
+	ztest_unreachable("Write to text did not fault");
 }
 
 /**
@@ -137,7 +137,7 @@ static void write_text(void)
 static void exec_data(void)
 {
 	execute_from_buffer(data_buf);
-	zassert_unreachable("Execute from data did not fault");
+	ztest_unreachable("Execute from data did not fault");
 }
 
 /**
@@ -150,7 +150,7 @@ static void exec_stack(void)
 	u8_t stack_buf[BUF_SIZE] __aligned(sizeof(int));
 
 	execute_from_buffer(stack_buf);
-	zassert_unreachable("Execute from stack did not fault");
+	ztest_unreachable("Execute from stack did not fault");
 }
 
 /**
@@ -165,7 +165,7 @@ static void exec_heap(void)
 
 	execute_from_buffer(heap_buf);
 	k_free(heap_buf);
-	zassert_unreachable("Execute from heap did not fault");
+	ztest_unreachable("Execute from heap did not fault");
 }
 #else
 static void exec_heap(void)

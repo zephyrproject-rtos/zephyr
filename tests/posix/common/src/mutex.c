@@ -31,22 +31,22 @@ void *normal_mutex_entry(void *p1)
 		k_sleep(SLEEP_MS);
 	}
 
-	zassert_false(rc, "try lock failed");
+	ztest_false(rc, "try lock failed");
 	TC_PRINT("mutex lock is taken\n");
-	zassert_false(pthread_mutex_unlock(&mutex1),
+	ztest_false(pthread_mutex_unlock(&mutex1),
 		      "mutex unlock is falied");
 	return NULL;
 }
 
 void *recursive_mutex_entry(void *p1)
 {
-	zassert_false(pthread_mutex_lock(&mutex2), "mutex is not taken");
-	zassert_false(pthread_mutex_lock(&mutex2),
+	ztest_false(pthread_mutex_lock(&mutex2), "mutex is not taken");
+	ztest_false(pthread_mutex_lock(&mutex2),
 		      "mutex is not taken 2nd time");
 	TC_PRINT("recrusive mutex lock is taken\n");
-	zassert_false(pthread_mutex_unlock(&mutex2),
+	ztest_false(pthread_mutex_unlock(&mutex2),
 		      "mutex is not unlocked");
-	zassert_false(pthread_mutex_unlock(&mutex2),
+	ztest_false(pthread_mutex_unlock(&mutex2),
 		      "mutex is not unlocked");
 	return NULL;
 }
@@ -70,9 +70,9 @@ void test_posix_normal_mutex(void)
 	schedparam.sched_priority = 2;
 	ret = pthread_attr_init(&attr);
 	if (ret != 0) {
-		zassert_false(pthread_attr_destroy(&attr),
+		ztest_false(pthread_attr_destroy(&attr),
 			      "Unable to destroy pthread object attrib");
-		zassert_false(pthread_attr_init(&attr),
+		ztest_false(pthread_attr_init(&attr),
 			      "Unable to create pthread object attrib");
 	}
 
@@ -81,21 +81,21 @@ void test_posix_normal_mutex(void)
 	pthread_attr_setschedparam(&attr, &schedparam);
 
 	temp = pthread_mutexattr_settype(&mut_attr, PTHREAD_MUTEX_NORMAL);
-	zassert_false(temp, "setting mutex type is failed");
+	ztest_false(temp, "setting mutex type is failed");
 	temp = pthread_mutex_init(&mutex1, &mut_attr);
-	zassert_false(temp, "mutex initialization is failed");
+	ztest_false(temp, "mutex initialization is failed");
 
 	temp = pthread_mutexattr_gettype(&mut_attr, &type);
-	zassert_false(temp, "reading mutex type is failed");
+	ztest_false(temp, "reading mutex type is failed");
 	temp = pthread_mutexattr_getprotocol(&mut_attr, &protocol);
-	zassert_false(temp, "reading mutex protocol is failed");
+	ztest_false(temp, "reading mutex protocol is failed");
 
 	pthread_mutex_lock(&mutex1);
 
-	zassert_equal(type, PTHREAD_MUTEX_NORMAL,
+	ztest_equal(type, PTHREAD_MUTEX_NORMAL,
 		      "mutex type is not normal");
 
-	zassert_equal(protocol, PTHREAD_PRIO_NONE,
+	ztest_equal(protocol, PTHREAD_PRIO_NONE,
 		      "mutex protocol is not prio_none");
 	ret = pthread_create(&thread_1, &attr, &normal_mutex_entry, NULL);
 
@@ -107,7 +107,7 @@ void test_posix_normal_mutex(void)
 
 	pthread_join(thread_1, NULL);
 	temp = pthread_mutex_destroy(&mutex1);
-	zassert_false(temp, "Destroying mutex is failed");
+	ztest_false(temp, "Destroying mutex is failed");
 }
 
 /**
@@ -129,9 +129,9 @@ void test_posix_recursive_mutex(void)
 	schedparam2.sched_priority = 2;
 	ret = pthread_attr_init(&attr2);
 	if (ret != 0) {
-		zassert_false(pthread_attr_destroy(&attr2),
+		ztest_false(pthread_attr_destroy(&attr2),
 			      "Unable to destroy pthread object attrib");
-		zassert_false(pthread_attr_init(&attr2),
+		ztest_false(pthread_attr_init(&attr2),
 			      "Unable to create pthread object attrib");
 	}
 
@@ -140,25 +140,25 @@ void test_posix_recursive_mutex(void)
 	pthread_attr_setschedparam(&attr2, &schedparam2);
 
 	temp = pthread_mutexattr_settype(&mut_attr2, PTHREAD_MUTEX_RECURSIVE);
-	zassert_false(temp, "setting mutex2 type is failed");
+	ztest_false(temp, "setting mutex2 type is failed");
 	temp = pthread_mutex_init(&mutex2, &mut_attr2);
-	zassert_false(temp, "mutex2 initialization is failed");
+	ztest_false(temp, "mutex2 initialization is failed");
 
 	temp = pthread_mutexattr_gettype(&mut_attr2, &type);
-	zassert_false(temp, "reading mutex2 type is failed");
+	ztest_false(temp, "reading mutex2 type is failed");
 	temp = pthread_mutexattr_getprotocol(&mut_attr2, &protocol);
-	zassert_false(temp, "reading mutex2 protocol is failed");
+	ztest_false(temp, "reading mutex2 protocol is failed");
 
-	zassert_equal(type, PTHREAD_MUTEX_RECURSIVE,
+	ztest_equal(type, PTHREAD_MUTEX_RECURSIVE,
 		      "mutex2 type is not recursive");
 
-	zassert_equal(protocol, PTHREAD_PRIO_NONE,
+	ztest_equal(protocol, PTHREAD_PRIO_NONE,
 		      "mutex2 protocol is not prio_none");
 	ret = pthread_create(&thread_2, &attr2, &recursive_mutex_entry, NULL);
 
-	zassert_false(ret, "Thread2 creation failed");
+	ztest_false(ret, "Thread2 creation failed");
 
 	pthread_join(thread_2, NULL);
 	temp = pthread_mutex_destroy(&mutex2);
-	zassert_false(temp, "Destroying mutex2 is failed");
+	ztest_false(temp, "Destroying mutex2 is failed");
 }

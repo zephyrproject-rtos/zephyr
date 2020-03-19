@@ -81,7 +81,7 @@ static void verify_callee_saved(const _callee_saved_t *src,
 		const _callee_saved_t *dst)
 {
 	/* Verify callee-saved registers are as expected */
-	zassert_true((src->v1 == dst->v1)
+	ztest_true((src->v1 == dst->v1)
 			&& (src->v2 == dst->v2)
 			&& (src->v3 == dst->v3)
 			&& (src->v4 == dst->v4)
@@ -139,7 +139,7 @@ static void verify_fp_callee_saved(const struct _preempt_float *src,
 		const struct _preempt_float *dst)
 {
 	/* Verify FP callee-saved registers are as expected */
-	zassert_true((src->s16 == dst->s16)
+	ztest_true((src->s16 == dst->s16)
 			&& (src->s17 == dst->s17)
 			&& (src->s18 == dst->s18)
 			&& (src->s19 == dst->s19)
@@ -205,24 +205,24 @@ static void alt_thread_entry(void)
 	(void)irq_lock();
 
 	init_flag = switch_flag;
-	zassert_true(init_flag == false,
+	ztest_true(init_flag == false,
 		"Alternative thread: switch flag not false on thread entry\n");
 
 	/* Set switch flag */
 	switch_flag = true;
 
 #if defined(CONFIG_NO_OPTIMIZATIONS)
-	zassert_true(p_ztest_thread->arch.basepri == 0,
+	ztest_true(p_ztest_thread->arch.basepri == 0,
 		"ztest thread basepri not preserved in swap-out\n");
 #else
 	/* Verify that the main test thread has the correct value
 	 * for state variable thread.arch.basepri (set before swap).
 	 */
-	zassert_true(p_ztest_thread->arch.basepri == BASEPRI_MODIFIED_1,
+	ztest_true(p_ztest_thread->arch.basepri == BASEPRI_MODIFIED_1,
 		"ztest thread basepri not preserved in swap-out\n");
 
 	/* Verify original swap return value (set by arch_swap() */
-	zassert_true(p_ztest_thread->arch.swap_return_value == -EAGAIN,
+	ztest_true(p_ztest_thread->arch.swap_return_value == -EAGAIN,
 		"ztest thread swap-return-value not preserved in swap-out\n");
 #endif
 
@@ -242,15 +242,15 @@ static void alt_thread_entry(void)
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 
 	/*  Verify that the _current_ (alt) thread is initialized with FPCA cleared. */
-	zassert_true((__get_CONTROL() & CONTROL_FPCA_Msk) == 0,
+	ztest_true((__get_CONTROL() & CONTROL_FPCA_Msk) == 0,
 		"CONTROL.FPCA is not cleared at initialization: 0x%x\n",
 		__get_CONTROL());
 
 	/* Verify that the _current_ (alt) thread is initialized with FPSCR cleared. */
-	zassert_true(__get_FPSCR() == 0,
+	ztest_true(__get_FPSCR() == 0,
 		"(Alt thread) FPSCR is not cleared at initialization: 0x%x\n", __get_FPSCR());
 
-	zassert_true((p_ztest_thread->arch.mode & CONTROL_FPCA_Msk) != 0,
+	ztest_true((p_ztest_thread->arch.mode & CONTROL_FPCA_Msk) != 0,
 		"ztest thread mode FPCA flag not updated at swap-out: 0x%0x\n",
 		p_ztest_thread->arch.mode);
 
@@ -328,7 +328,7 @@ static void alt_thread_entry(void)
 	 * it when it is swapped-back in.
 	 */
 	post_flag = switch_flag;
-	zassert_true(post_flag == false,
+	ztest_true(post_flag == false,
 		"Alternative thread: switch flag not false on thread exit\n");
 }
 
@@ -362,45 +362,45 @@ void test_arm_thread_swap(void)
 
 	/* Confirm initial conditions before starting the test. */
 	test_flag = switch_flag;
-	zassert_true(test_flag == false,
+	ztest_true(test_flag == false,
 		"Switch flag not initialized properly\n");
-	zassert_true(_current->arch.basepri == 0,
+	ztest_true(_current->arch.basepri == 0,
 		"Thread BASEPRI flag not clear at thread start\n");
 	/* Verify, also, that the interrupts are unlocked. */
 #if defined(CONFIG_CPU_CORTEX_M_HAS_BASEPRI)
-	zassert_true(__get_BASEPRI() == 0,
+	ztest_true(__get_BASEPRI() == 0,
 		"initial BASEPRI not zero\n");
 #else
 	/* For Cortex-M Baseline architecture, we verify that
 	 * the interrupt lock is disabled.
 	 */
-	 zassert_true(__get_PRIMASK() == 0,
+	 ztest_true(__get_PRIMASK() == 0,
 	 "initial PRIMASK not zero\n");
 #endif /* CONFIG_CPU_CORTEX_M_HAS_BASEPRI */
 
 #if defined(CONFIG_USERSPACE)
 	/* The main test thread is set to run in privilege mode */
-	zassert_false((arch_is_user_context()),
+	ztest_false((arch_is_user_context()),
 		"Main test thread does not start in privilege mode\n");
 
 	/* Assert that the mode status variable indicates privilege mode */
-	zassert_true((_current->arch.mode & CONTROL_nPRIV_Msk) == 0,
+	ztest_true((_current->arch.mode & CONTROL_nPRIV_Msk) == 0,
 		"Thread nPRIV flag not clear for supervisor thread: 0x%0x\n",
 		_current->arch.mode);
 #endif /* CONFIG_USERSPACE */
 
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 	/* The main test thread is not (yet) actively using the FP registers */
-	zassert_true((_current->arch.mode & CONTROL_FPCA_Msk) == 0,
+	ztest_true((_current->arch.mode & CONTROL_FPCA_Msk) == 0,
 		"Thread FPCA flag not clear at initialization 0x%0x\n",
 		_current->arch.mode);
 
 	/* Verify that the main test thread is initialized with FPCA cleared. */
-	zassert_true((__get_CONTROL() & CONTROL_FPCA_Msk) == 0,
+	ztest_true((__get_CONTROL() & CONTROL_FPCA_Msk) == 0,
 		"CONTROL.FPCA is not cleared at initialization: 0x%x\n",
 		__get_CONTROL());
 	/* Verify that the main test thread is initialized with FPSCR cleared. */
-	zassert_true(__get_FPSCR() == 0,
+	ztest_true(__get_FPSCR() == 0,
 		"FPSCR is not cleared at initialization: 0x%x\n", __get_FPSCR());
 
 	/* Clear the thread's floating-point callee-saved registers' container.
@@ -413,14 +413,14 @@ void test_arm_thread_swap(void)
 	load_fp_callee_saved_regs(&ztest_thread_fp_callee_saved_regs);
 
 	/* Modify bit-0 of the FPSCR - will be checked again upon swap-in. */
-	zassert_true((__get_FPSCR() & 0x1) == 0,
+	ztest_true((__get_FPSCR() & 0x1) == 0,
 		"FPSCR bit-0 has been set before testing it\n");
 	__set_FPSCR(__get_FPSCR() | 0x1);
 
 	/* The main test thread is using the FP registers, but the .mode
 	 * flag is not updated until the next context switch.
 	 */
-	zassert_true((_current->arch.mode & CONTROL_FPCA_Msk) == 0,
+	ztest_true((_current->arch.mode & CONTROL_FPCA_Msk) == 0,
 		"Thread FPCA flag not clear at initialization\n");
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
 
@@ -435,7 +435,7 @@ void test_arm_thread_swap(void)
 
 	/* Verify context-switch has not occurred. */
 	test_flag = switch_flag;
-	zassert_true(test_flag == false,
+	ztest_true(test_flag == false,
 		"Switch flag incremented when it should not have\n");
 
 	/* Prepare to force a context switch to the alternative thread,
@@ -456,7 +456,7 @@ void test_arm_thread_swap(void)
 
 	/* Verify context-switch has not occurred yet. */
 	test_flag = switch_flag;
-	zassert_true(test_flag == false,
+	ztest_true(test_flag == false,
 		"Switch flag incremented by unexpected context-switch.\n");
 
 	/* Store the callee-saved registers to some global memory
@@ -570,7 +570,7 @@ void test_arm_thread_swap(void)
 
 	/* Verify context-switch did occur. */
 	test_flag = switch_flag;
-	zassert_true(test_flag == true,
+	ztest_true(test_flag == true,
 		"Switch flag not incremented as expected %u\n",
 		switch_flag);
 	/* Clear the switch flag to signal that the main test thread
@@ -582,31 +582,31 @@ void test_arm_thread_swap(void)
 	 * the alternative thread modified it, since the thread
 	 * is now switched back in.
 	 */
-	zassert_true(_current->arch.basepri == 0,
+	ztest_true(_current->arch.basepri == 0,
 		"arch.basepri value not in accordance with the update\n");
 
 #if defined(CONFIG_CPU_CORTEX_M_HAS_BASEPRI)
 	/* Verify that the BASEPRI register is updated during the last
 	 * swap-in of the thread.
 	 */
-	zassert_true(__get_BASEPRI() == BASEPRI_MODIFIED_2,
+	ztest_true(__get_BASEPRI() == BASEPRI_MODIFIED_2,
 		"BASEPRI not in accordance with the update: 0x%0x\n",
 		__get_BASEPRI());
 #else
 	/* For Cortex-M Baseline architecture, we verify that
 	 * the interrupt lock is enabled.
 	 */
-	 zassert_true(__get_PRIMASK() != 0,
+	 ztest_true(__get_PRIMASK() != 0,
 	 "PRIMASK not in accordance with the update: 0x%0x\n",
 	 __get_PRIMASK());
 #endif /* CONFIG_CPU_CORTEX_M_HAS_BASEPRI */
 
 #if !defined(CONFIG_NO_OPTIMIZATIONS)
 	/* The thread is now swapped-back in. */
-	zassert_equal(_current->arch.swap_return_value, SWAP_RETVAL,
+	ztest_equal(_current->arch.swap_return_value, SWAP_RETVAL,
 		"Swap value not set as expected: 0x%x (0x%x)\n",
 		_current->arch.swap_return_value, SWAP_RETVAL);
-	zassert_equal(_current->arch.swap_return_value, ztest_swap_return_val,
+	ztest_equal(_current->arch.swap_return_value, ztest_swap_return_val,
 		"Swap value not returned as expected 0x%x (0x%x)\n",
 		_current->arch.swap_return_value, ztest_swap_return_val);
 #endif
@@ -629,7 +629,7 @@ void test_arm_thread_swap(void)
 		&_current->arch.preempt_float);
 
 	/* Verify that the main test thread restored the FPSCR bit-0. */
-	zassert_true((__get_FPSCR() & 0x1) == 0x1,
+	ztest_true((__get_FPSCR() & 0x1) == 0x1,
 		"FPSCR bit-0 not restored at swap: 0x%x\n", __get_FPSCR());
 
 #endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */

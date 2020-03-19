@@ -78,10 +78,10 @@ static void test_gen_inc_file(void)
 {
 	int i;
 
-	zassert_equal(sizeof(inc_file), 256, "Invalid size file");
+	ztest_equal(sizeof(inc_file), 256, "Invalid size file");
 
 	for (i = 0; i < sizeof(inc_file); i++) {
-		zassert_equal(inc_file[i], i, "Invalid value in inc file");
+		ztest_equal(inc_file[i], i, "Invalid value in inc file");
 	}
 }
 
@@ -97,21 +97,21 @@ static void do_test_gen_gz_inc_file(const unsigned char gz_inc_file[],
 			 * the gzip header.
 			 */
 			if (mtime != NULL) { /* NULL arg = random "now" */
-				zassert_equal(gz_inc_file[i], mtime[i-4],
+				ztest_equal(gz_inc_file[i], mtime[i-4],
 					      "Invalid mtime in inc file");
 			}
 
 			continue;
 		}
 
-		zassert_equal(gz_inc_file[i], compressed_inc_file[i],
+		ztest_equal(gz_inc_file[i], compressed_inc_file[i],
 			      "Invalid value in inc file");
 	}
 }
 
 static void test_gen_gz_inc_file_no_mtime(void)
 {
-	zassert_equal(sizeof(no_mtime_gz_inc_file), sizeof(compressed_inc_file),
+	ztest_equal(sizeof(no_mtime_gz_inc_file), sizeof(compressed_inc_file),
 		      "Invalid compressed file size");
 
 	do_test_gen_gz_inc_file(no_mtime_gz_inc_file, mtime_zero);
@@ -119,7 +119,7 @@ static void test_gen_gz_inc_file_no_mtime(void)
 
 static void test_gen_gz_inc_file_mtime_arg(void)
 {
-	zassert_equal(sizeof(mtime_gz_inc_file), sizeof(compressed_inc_file),
+	ztest_equal(sizeof(mtime_gz_inc_file), sizeof(compressed_inc_file),
 		      "Invalid compressed file size");
 
 	do_test_gen_gz_inc_file(mtime_gz_inc_file, mtime_test_val);

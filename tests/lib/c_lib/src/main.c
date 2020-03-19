@@ -53,7 +53,7 @@ volatile long long_one = 1L;
 void test_limits(void)
 {
 
-	zassert_true((long_max + long_one == LONG_MIN), NULL);
+	ztest_true((long_max + long_one == LONG_MIN), NULL);
 }
 
 static ssize_t foobar(void)
@@ -63,7 +63,7 @@ static ssize_t foobar(void)
 
 void test_ssize_t(void)
 {
-	zassert_true(foobar() < 0, NULL);
+	ztest_true(foobar() < 0, NULL);
 }
 
 /**
@@ -75,8 +75,8 @@ void test_ssize_t(void)
 void test_stdbool(void)
 {
 
-	zassert_true((true == 1), "true value");
-	zassert_true((false == 0), "false value");
+	ztest_true((true == 1), "true value");
+	ztest_true((false == 0), "false value");
 }
 
 /*
@@ -96,9 +96,9 @@ volatile size_t size_of_long_variable = sizeof(long_variable);
 void test_stddef(void)
 {
 #ifdef CONFIG_64BIT
-	zassert_true((size_of_long_variable == 8), "sizeof");
+	ztest_true((size_of_long_variable == 8), "sizeof");
 #else
-	zassert_true((size_of_long_variable == 4), "sizeof");
+	ztest_true((size_of_long_variable == 4), "sizeof");
 #endif
 }
 
@@ -118,7 +118,7 @@ volatile u32_t unsigned_int = 0xffffff00;
 
 void test_stdint(void)
 {
-	zassert_true((unsigned_int + unsigned_byte + 1u == 0U), NULL);
+	ztest_true((unsigned_int + unsigned_byte + 1u == 0U), NULL);
 
 }
 
@@ -139,8 +139,8 @@ char buffer[BUFSIZE];
 void test_memset(void)
 {
 	(void)memset(buffer, 'a', BUFSIZE);
-	zassert_true((buffer[0] == 'a'), "memset");
-	zassert_true((buffer[BUFSIZE - 1] == 'a'), "memset");
+	ztest_true((buffer[0] == 'a'), "memset");
+	ztest_true((buffer[BUFSIZE - 1] == 'a'), "memset");
 }
 
 /**
@@ -153,7 +153,7 @@ void test_strlen(void)
 {
 	(void)memset(buffer, '\0', BUFSIZE);
 	(void)memset(buffer, 'b', 5); /* 5 is BUFSIZE / 2 */
-	zassert_equal(strlen(buffer), 5, "strlen");
+	ztest_equal(strlen(buffer), 5, "strlen");
 }
 
 /**
@@ -166,9 +166,9 @@ void test_strcmp(void)
 {
 	strcpy(buffer, "eeeee");
 
-	zassert_true((strcmp(buffer, "fffff") < 0), "strcmp less ...");
-	zassert_true((strcmp(buffer, "eeeee") == 0), "strcmp equal ...");
-	zassert_true((strcmp(buffer, "ddddd") > 0), "strcmp greater ...");
+	ztest_true((strcmp(buffer, "fffff") < 0), "strcmp less ...");
+	ztest_true((strcmp(buffer, "eeeee") == 0), "strcmp equal ...");
+	ztest_true((strcmp(buffer, "ddddd") > 0), "strcmp greater ...");
 }
 
 /**
@@ -185,9 +185,9 @@ void test_strncmp(void)
 	__ASSERT_NO_MSG(sizeof(pattern) - 1 > BUFSIZE);
 	memcpy(buffer, pattern, BUFSIZE);
 
-	zassert_true((strncmp(buffer, "fffff", 0) == 0), "strncmp 0");
-	zassert_true((strncmp(buffer, "eeeff", 3) == 0), "strncmp 3");
-	zassert_true((strncmp(buffer, "eeeeeeeeeeeff", BUFSIZE) == 0),
+	ztest_true((strncmp(buffer, "fffff", 0) == 0), "strncmp 0");
+	ztest_true((strncmp(buffer, "eeeff", 3) == 0), "strncmp 3");
+	ztest_true((strncmp(buffer, "eeeeeeeeeeeff", BUFSIZE) == 0),
 		     "strncmp 10");
 }
 
@@ -203,7 +203,7 @@ void test_strcpy(void)
 	(void)memset(buffer, '\0', BUFSIZE);
 	strcpy(buffer, "10 chars!\0");
 
-	zassert_true((strcmp(buffer, "10 chars!\0") == 0), "strcpy");
+	ztest_true((strcmp(buffer, "10 chars!\0") == 0), "strcpy");
 }
 
 /**
@@ -221,7 +221,7 @@ void test_strncpy(void)
 
 	/* Purposely different values */
 	ret = strncmp(buffer, "This is over 20 characters", BUFSIZE);
-	zassert_true((ret == 0), "strncpy");
+	ztest_true((ret == 0), "strncpy");
 
 }
 
@@ -241,11 +241,11 @@ void test_strchr(void)
 
 	rs = strchr(buffer, '1');
 
-	zassert_not_null(rs, "strchr");
+	ztest_not_null(rs, "strchr");
 
 
 	ret = strncmp(rs, "10", 2);
-	zassert_true((ret == 0), "strchr");
+	ztest_true((ret == 0), "strchr");
 
 }
 
@@ -260,17 +260,17 @@ void test_strxspn(void)
 	const char *empty = "";
 	const char *cset = "abc";
 
-	zassert_true(strspn("", empty) == 0U, "strspn empty empty");
-	zassert_true(strcspn("", empty) == 0U, "strcspn empty empty");
+	ztest_true(strspn("", empty) == 0U, "strspn empty empty");
+	ztest_true(strcspn("", empty) == 0U, "strcspn empty empty");
 
-	zassert_true(strspn("abde", cset) == 2U, "strspn match");
-	zassert_true(strcspn("abde", cset) == 0U, "strcspn nomatch");
+	ztest_true(strspn("abde", cset) == 2U, "strspn match");
+	ztest_true(strcspn("abde", cset) == 0U, "strcspn nomatch");
 
-	zassert_true(strspn("da", cset) == 0U, "strspn nomatch");
-	zassert_true(strcspn("da", cset) == 1U, "strcspn match");
+	ztest_true(strspn("da", cset) == 0U, "strspn nomatch");
+	ztest_true(strcspn("da", cset) == 1U, "strcspn match");
 
-	zassert_true(strspn("abac", cset) == 4U, "strspn all");
-	zassert_true(strcspn("defg", cset) == 4U, "strcspn all");
+	ztest_true(strspn("abac", cset) == 4U, "strspn all");
+	ztest_true(strcspn("defg", cset) == 4U, "strcspn all");
 }
 
 /**
@@ -287,10 +287,10 @@ void test_memcmp(void)
 
 
 	ret = memcmp(m1, m2, 4);
-	zassert_true((ret == 0), "memcmp 4");
+	ztest_true((ret == 0), "memcmp 4");
 
 	ret = memcmp(m1, m2, 5);
-	zassert_true((ret != 0), "memcmp 5");
+	ztest_true((ret != 0), "memcmp 5");
 }
 
 /**
@@ -312,11 +312,11 @@ void test_bsearch(void)
 	int key = 30;
 
 	result = (int *)bsearch(&key, arr, size, sizeof(int), cmp_func);
-	zassert_is_null(result, "bsearch -key not found");
+	ztest_is_null(result, "bsearch -key not found");
 
 	key = 60;
 	result = (int *)bsearch(&key, arr, size, sizeof(int), cmp_func);
-	zassert_not_null(result, "bsearch -key found");
+	ztest_not_null(result, "bsearch -key found");
 }
 
 void test_main(void)

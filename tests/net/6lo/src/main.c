@@ -1070,7 +1070,7 @@ static void test_6lo(struct net_6lo_data *data)
 	int diff;
 
 	pkt = create_pkt(data);
-	zassert_not_null(pkt, "failed to create buffer");
+	ztest_not_null(pkt, "failed to create buffer");
 #if DEBUG > 0
 	TC_PRINT("length before compression %zu\n",
 		 net_pkt_get_len(pkt));
@@ -1079,7 +1079,7 @@ static void test_6lo(struct net_6lo_data *data)
 
 	net_pkt_cursor_init(pkt);
 
-	zassert_true((net_6lo_compress(pkt, data->iphc) >= 0),
+	ztest_true((net_6lo_compress(pkt, data->iphc) >= 0),
 		     "compression failed");
 
 #if DEBUG > 0
@@ -1089,9 +1089,9 @@ static void test_6lo(struct net_6lo_data *data)
 #endif
 
 	diff = net_6lo_uncompress_hdr_diff(pkt);
-	zassert_true(diff == data->hdr_diff, "unexpected HDR diff");
+	ztest_true(diff == data->hdr_diff, "unexpected HDR diff");
 
-	zassert_true(net_6lo_uncompress(pkt),
+	ztest_true(net_6lo_uncompress(pkt),
 		     "uncompression failed");
 #if DEBUG > 0
 	TC_PRINT("length after uncompression %zu\n",
@@ -1099,7 +1099,7 @@ static void test_6lo(struct net_6lo_data *data)
 	net_pkt_hexdump(pkt, "after-uncompression");
 #endif
 
-	zassert_true(compare_pkt(pkt, data), NULL);
+	ztest_true(compare_pkt(pkt, data), NULL);
 
 	net_pkt_unref(pkt);
 }

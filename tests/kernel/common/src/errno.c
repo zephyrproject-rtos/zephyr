@@ -51,7 +51,7 @@ static void errno_thread(void *_n, void *_my_errno, void *_unused)
 		result[n].pass = 1;
 	}
 
-	zassert_equal(errno, my_errno, NULL);
+	ztest_equal(errno, my_errno, NULL);
 
 	k_fifo_put(&fifo, &result[n]);
 }
@@ -93,7 +93,7 @@ void test_thread_context(void)
 		}
 	}
 
-	zassert_equal(errno, test_errno, NULL);
+	ztest_equal(errno, test_errno, NULL);
 
 	if (errno != errno_values[N_THREADS]) {
 		rv = TC_FAIL;

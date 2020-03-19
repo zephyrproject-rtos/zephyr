@@ -99,14 +99,14 @@ int ecdh_vectors(char **qx_vec, char **qy_vec, char **d_vec, char **z_vec,
 		rc = uECC_shared_secret(pub_bytes, private_bytes, z_bytes, curve);
 
 		/**TESTPOINT: Check for ECDH failure*/
-		zassert_equal(rc, TC_CRYPTO_SUCCESS, "ECDH failure, exit");
+		ztest_equal(rc, TC_CRYPTO_SUCCESS, "ECDH failure, exit");
 
 		uECC_vli_bytesToNative(z, z_bytes, NUM_ECC_BYTES);
 
 		result = check_ecc_result(i, "Z", exp_z, z, NUM_ECC_WORDS, verbose);
 
 		/**TESTPOINT: Check result*/
-		zassert_false(result, "ECDH test failed");
+		ztest_false(result, "ECDH test failed");
 	}
 	return result;
 }
@@ -235,7 +235,7 @@ int cavp_ecdh(bool verbose)
 	result = ecdh_vectors(x, y, d, Z, 25, verbose);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "ECDH test failed");
+	ztest_false(result, "ECDH test failed");
 	return result;
 }
 
@@ -290,7 +290,7 @@ int cavp_keygen(bool verbose)
 	result = keygen_vectors(d, x, y, 10, verbose);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "ECC KeyGen test failed");
+	ztest_false(result, "ECC KeyGen test failed");
 	return result;
 }
 
@@ -343,7 +343,7 @@ int pkv_vectors(char **qx_vec, char **qy_vec, int res_vec[], int tests,
 		result = check_code(i, exp_rc, rc, verbose);
 
 		/**TESTPOINT: Check result*/
-		zassert_false(result, "PubKey verification failed");
+		ztest_false(result, "PubKey verification failed");
 	}
 		return result;
 }
@@ -413,15 +413,15 @@ int montecarlo_ecdh(int num_tests, bool verbose)
 
 		if (!uECC_make_key(public1, private1, curve) ||
 		    !uECC_make_key(public2, private2, curve)) {
-			zassert_true(0, "uECC_make_key() failed");
+			ztest_true(0, "uECC_make_key() failed");
 		}
 
 		if (!uECC_shared_secret(public2, private1, secret1, curve)) {
-			zassert_true(0, "shared_secret() failed (1)");
+			ztest_true(0, "shared_secret() failed (1)");
 		}
 
 		if (!uECC_shared_secret(public1, private2, secret2, curve)) {
-			zassert_true(0, "shared_secret() failed (2)");
+			ztest_true(0, "shared_secret() failed (2)");
 		}
 
 		if (memcmp(secret1, secret2, sizeof(secret1)) != 0) {
@@ -461,25 +461,25 @@ void test_ecc_dh(void)
 	result = cavp_ecdh(verbose);
 
 	/**TESTPOINT: Check cavp_ecdh*/
-	zassert_false(result, "cavp_ecdh test failed");
+	ztest_false(result, "cavp_ecdh test failed");
 
 	TC_PRINT("Performing cavp_keygen test:\n");
 	result = cavp_keygen(verbose);
 
 	/**TESTPOINT: Check cavp_keygen*/
-	zassert_false(result, "cavp_keygen test failed");
+	ztest_false(result, "cavp_keygen test failed");
 
 	TC_PRINT("Performing cavp_pkv test:\n");
 	result = cavp_pkv(verbose);
 
 	/**TESTPOINT: Check cavp_pkv*/
-	zassert_false(result, "cavp_pkv test failed");
+	ztest_false(result, "cavp_pkv test failed");
 
 	TC_PRINT("Performing montecarlo_ecdh test:\n");
 	result = montecarlo_ecdh(10, verbose);
 
 	/**TESTPOINT: Check cavp_ecdh*/
-	zassert_false(result, "montecarlo_ecdh test failed");
+	ztest_false(result, "montecarlo_ecdh test failed");
 
 	TC_PRINT("All EC-DH tests succeeded!\n");
 }

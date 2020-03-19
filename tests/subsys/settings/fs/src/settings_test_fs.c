@@ -76,28 +76,28 @@ int c1_handle_set(const char *name, size_t len, settings_read_cb read_cb,
 	test_set_called = 1;
 	if (settings_name_steq(name, "mybar", &next) && !next) {
 		val_len = len;
-		zassert_true(val_len == 1, "bad set-value size");
+		ztest_true(val_len == 1, "bad set-value size");
 
 		rc = read_cb(cb_arg, &val8, sizeof(val8));
-		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		ztest_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
 	if (settings_name_steq(name, "mybar16", &next) && !next) {
 		val_len = len;
-		zassert_true(val_len == 2, "bad set-value size");
+		ztest_true(val_len == 2, "bad set-value size");
 
 		rc = read_cb(cb_arg, &val16, sizeof(val16));
-		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		ztest_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
 	if (settings_name_steq(name, "mybar64", &next) && !next) {
 		val_len = len;
-		zassert_true(val_len == 8, "bad set-value size");
+		ztest_true(val_len == 8, "bad set-value size");
 
 		rc = read_cb(cb_arg, &val64, sizeof(val64));
-		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		ztest_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
@@ -217,11 +217,11 @@ int settings_test_file_strstr(const char *fname, char const *string,
 
 	len = entry.size;
 	buf = (char *)k_malloc(len + 1);
-	zassert_not_null(buf, "out of memory");
+	ztest_not_null(buf, "out of memory");
 
 	rc = fsutil_read_file(fname, 0, len, buf, &rlen);
-	zassert_true(rc == 0, "can't access the file\n'");
-	zassert_true(rc == 0, "not enough data read\n'");
+	ztest_true(rc == 0, "can't access the file\n'");
+	ztest_true(rc == 0, "not enough data read\n'");
 	buf[rlen] = '\0';
 
 	if (memmem(buf, len, string, str_len)) {

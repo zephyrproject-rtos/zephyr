@@ -237,12 +237,12 @@ void test_create_sockets(void)
 			continue;
 		}
 
-		zassert_equal(fd, expected_result[i].result,
+		ztest_equal(fd, expected_result[i].result,
 			      "[%d] Invalid result (expecting %d got %d, "
 			      "errno %d)", i, expected_result[i].result, fd,
 			      errno);
 		if (expected_result[i].result < 0) {
-			zassert_equal(errno, expected_result[i].error,
+			ztest_equal(errno, expected_result[i].error,
 				      "[%d] Invalid errno (%d vs %d)", i,
 				      errno, expected_result[i].error);
 		}
@@ -258,7 +258,7 @@ void test_create_sockets(void)
 		}
 	}
 
-	zassert_equal(ok_tests + failed_tests - failed_family, func_called,
+	ztest_equal(ok_tests + failed_tests - failed_family, func_called,
 		      "Invalid num of tests failed (%d vs %d)",
 		      ok_tests + failed_tests - failed_family, func_called);
 }

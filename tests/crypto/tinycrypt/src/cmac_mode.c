@@ -271,31 +271,31 @@ void test_cmac_mode(void)
 	result = verify_gf_2_128_double(K1, K2, state);
 
 	/**TESTPOINT: Check result - test 1*/
-	zassert_false(result, "CMAC test #1 (128 double) failed");
+	ztest_false(result, "CMAC test #1 (128 double) failed");
 
 	(void) tc_cmac_setup(&state, key, &sched);
 	result = verify_cmac_null_msg(&state);
 
 	/**TESTPOINT: Check result - test 2*/
-	zassert_false(result, "CMAC test #2 (null msg) failed");
+	ztest_false(result, "CMAC test #2 (null msg) failed");
 
 	(void) tc_cmac_setup(&state, key, &sched);
 	result = verify_cmac_1_block_msg(&state);
 
 	/**TESTPOINT: Check result - test 3*/
-	zassert_false(result, "CMAC test #1 (1 block msg) failed");
+	ztest_false(result, "CMAC test #1 (1 block msg) failed");
 
 	(void) tc_cmac_setup(&state, key, &sched);
 	result = verify_cmac_320_bit_msg(&state);
 
 	/**TESTPOINT: Check result - test 4*/
-	zassert_false(result, "CMAC test #1 (320 bit msg) failed");
+	ztest_false(result, "CMAC test #1 (320 bit msg) failed");
 
 	(void) tc_cmac_setup(&state, key, &sched);
 	result = verify_cmac_512_bit_msg(&state);
 
 	/**TESTPOINT: Check result - test 5*/
-	zassert_false(result, "CMAC test #1 (512 bit msg) failed");
+	ztest_false(result, "CMAC test #1 (512 bit msg) failed");
 
 	TC_PRINT("All CMAC tests succeeded!\n");
 }

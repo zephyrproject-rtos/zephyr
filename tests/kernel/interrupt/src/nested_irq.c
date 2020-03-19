@@ -89,7 +89,7 @@ void isr0(void *param)
 	k_busy_wait(MS_TO_US(10));
 #endif
 	printk("%s execution completed !!\n", __func__);
-	zassert_equal(new_val, old_val, "Nested interrupt is not working\n");
+	ztest_equal(new_val, old_val, "Nested interrupt is not working\n");
 }
 
 /**
@@ -155,7 +155,7 @@ void test_prevent_interruption(void)
 	 */
 	k_timer_start(&irqlock_timer, DURATION, K_NO_WAIT);
 	k_busy_wait(MS_TO_US(1000));
-	zassert_not_equal(check_lock_new, check_lock_old,
+	ztest_not_equal(check_lock_new, check_lock_old,
 		"Interrupt locking didn't work properly");
 
 	printk("unlocking interrupts\n");
@@ -163,7 +163,7 @@ void test_prevent_interruption(void)
 
 	k_busy_wait(MS_TO_US(1000));
 
-	zassert_equal(check_lock_new, check_lock_old,
+	ztest_equal(check_lock_new, check_lock_old,
 		"timer should have fired");
 
 	k_timer_stop(&irqlock_timer);

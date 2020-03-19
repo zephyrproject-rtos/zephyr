@@ -16,7 +16,7 @@ static void test_size(void)
 	eeprom = device_get_binding(DT_ALIAS_EEPROM_0_LABEL);
 
 	size = eeprom_get_size(eeprom);
-	zassert_not_equal(0, size, "Unexpected size of zero bytes");
+	ztest_not_equal(0, size, "Unexpected size of zero bytes");
 }
 
 static void test_out_of_bounds(void)
@@ -30,7 +30,7 @@ static void test_out_of_bounds(void)
 	size = eeprom_get_size(eeprom);
 
 	rc = eeprom_write(eeprom, size - 1, data, sizeof(data));
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 }
 
 static void test_write_and_verify(void)
@@ -44,22 +44,22 @@ static void test_write_and_verify(void)
 	eeprom = device_get_binding(DT_ALIAS_EEPROM_0_LABEL);
 
 	rc = eeprom_write(eeprom, 0, wr_buf1, sizeof(wr_buf1));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(0, rc, "Unexpected error code (%d)", rc);
 
 	rc = eeprom_read(eeprom, 0, rd_buf, sizeof(rd_buf));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(0, rc, "Unexpected error code (%d)", rc);
 
 	rc = memcmp(wr_buf1, rd_buf, sizeof(wr_buf1));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(0, rc, "Unexpected error code (%d)", rc);
 
 	rc = eeprom_write(eeprom, 0, wr_buf2, sizeof(wr_buf2));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(0, rc, "Unexpected error code (%d)", rc);
 
 	rc = eeprom_read(eeprom, 0, rd_buf, sizeof(rd_buf));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(0, rc, "Unexpected error code (%d)", rc);
 
 	rc = memcmp(wr_buf2, rd_buf, sizeof(wr_buf2));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(0, rc, "Unexpected error code (%d)", rc);
 }
 
 static void test_zero_length_write(void)
@@ -73,22 +73,22 @@ static void test_zero_length_write(void)
 	eeprom = device_get_binding(DT_ALIAS_EEPROM_0_LABEL);
 
 	rc = eeprom_write(eeprom, 0, wr_buf1, sizeof(wr_buf1));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(0, rc, "Unexpected error code (%d)", rc);
 
 	rc = eeprom_read(eeprom, 0, rd_buf, sizeof(rd_buf));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(0, rc, "Unexpected error code (%d)", rc);
 
 	rc = memcmp(wr_buf1, rd_buf, sizeof(wr_buf1));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(0, rc, "Unexpected error code (%d)", rc);
 
 	rc = eeprom_write(eeprom, 0, wr_buf2, 0);
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(0, rc, "Unexpected error code (%d)", rc);
 
 	rc = eeprom_read(eeprom, 0, rd_buf, sizeof(rd_buf));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(0, rc, "Unexpected error code (%d)", rc);
 
 	rc = memcmp(wr_buf1, rd_buf, sizeof(wr_buf1));
-	zassert_equal(0, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(0, rc, "Unexpected error code (%d)", rc);
 }
 
 void test_main(void)
@@ -96,7 +96,7 @@ void test_main(void)
 	static struct device *eeprom;
 
 	eeprom = device_get_binding(DT_ALIAS_EEPROM_0_LABEL);
-	zassert_not_null(eeprom, "Unable to get EEPROM device");
+	ztest_not_null(eeprom, "Unable to get EEPROM device");
 
 	k_object_access_grant(eeprom, k_current_get());
 

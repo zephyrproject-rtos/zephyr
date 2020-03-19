@@ -42,16 +42,16 @@ void test_jwt(void)
 
 	res = jwt_init_builder(&build, buf, sizeof(buf));
 
-	zassert_equal(res, 0, "Setting up jwt");
+	ztest_equal(res, 0, "Setting up jwt");
 
 	res = jwt_add_payload(&build, 1530312026, 1530308426,
 			      "iot-work-199419");
-	zassert_equal(res, 0, "Adding payload");
+	ztest_equal(res, 0, "Adding payload");
 
 	res = jwt_sign(&build, jwt_test_private_der, jwt_test_private_der_len);
-	zassert_equal(res, 0, "Signing payload");
+	ztest_equal(res, 0, "Signing payload");
 
-	zassert_equal(build.overflowed, false, "Not overflow");
+	ztest_equal(build.overflowed, false, "Not overflow");
 
 	printk("JWT:\n%s\n", buf);
 	printk("len: %zd\n", jwt_payload_len(&build));

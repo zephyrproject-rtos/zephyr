@@ -91,7 +91,7 @@ static int test_lsdir(const char *path)
  */
 void test_fs_mkdir(void)
 {
-	zassert_true(test_mkdir() == TC_PASS, NULL);
+	ztest_true(test_mkdir() == TC_PASS, NULL);
 }
 
 /**
@@ -103,5 +103,5 @@ void test_fs_mkdir(void)
  */
 void test_fs_readdir(void)
 {
-	zassert_true(test_lsdir(TEST_DIR) == TC_PASS, NULL);
+	ztest_true(test_lsdir(TEST_DIR) == TC_PASS, NULL);
 }

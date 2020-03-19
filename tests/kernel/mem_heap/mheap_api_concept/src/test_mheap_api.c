@@ -33,12 +33,12 @@ void test_mheap_malloc_free(void)
 		 */
 		block[i] = k_malloc(i);
 		/** TESTPOINT: Address of the allocated memory if successful;*/
-		zassert_not_null(block[i], NULL);
+		ztest_not_null(block[i], NULL);
 	}
 
 	block_fail = k_malloc(BLK_SIZE_MIN);
 	/** TESTPOINT: Return NULL if fail.*/
-	zassert_is_null(block_fail, NULL);
+	ztest_is_null(block_fail, NULL);
 
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
 		/**
@@ -75,11 +75,11 @@ void test_mheap_calloc(void)
 
 	mem = k_calloc(NMEMB, SIZE);
 
-	zassert_not_null(mem, "calloc operation failed");
+	ztest_not_null(mem, "calloc operation failed");
 
 	/* Memory should be zeroed and not crash us if we read/write to it */
 	for (int i = 0; i < BOUNDS; i++) {
-		zassert_equal(mem[i], 0, NULL);
+		ztest_equal(mem[i], 0, NULL);
 		mem[i] = 1;
 	}
 

@@ -32,11 +32,11 @@ void test_mpool_alloc_size_roundup(void)
 	 */
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
 		/*request a size for the mpool to round up to "BLK_SIZE_MAX"*/
-		zassert_true(k_mem_pool_alloc(&mpool1, &block[i], TEST_SIZE,
+		ztest_true(k_mem_pool_alloc(&mpool1, &block[i], TEST_SIZE,
 					      K_NO_WAIT) == 0, NULL);
 	}
 	/*verify consequently no more blocks available*/
-	zassert_true(k_mem_pool_alloc(&mpool1, &block_fail, BLK_SIZE_MIN,
+	ztest_true(k_mem_pool_alloc(&mpool1, &block_fail, BLK_SIZE_MIN,
 				      K_NO_WAIT) == -ENOMEM, NULL);
 
 	/*test case tear down*/

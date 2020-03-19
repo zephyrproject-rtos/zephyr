@@ -15,9 +15,9 @@ void config_empty_lookups(void)
 
 	strcpy(name, "foo/bar");
 	rc = settings_runtime_set(name, "tmp", 4);
-	zassert_true(rc != 0, "settings_runtime_set callback");
+	ztest_true(rc != 0, "settings_runtime_set callback");
 
 	strcpy(name, "foo/bar");
 	rc = settings_runtime_get(name, tmp, sizeof(tmp));
-	zassert_true(rc == -EINVAL, "settings_runtime_get callback");
+	ztest_true(rc == -EINVAL, "settings_runtime_get callback");
 }

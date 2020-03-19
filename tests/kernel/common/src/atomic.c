@@ -36,106 +36,106 @@ void test_atomic(void)
 	oldvalue = 6;
 
 	/* atomic_cas() */
-	zassert_false(atomic_cas(&target, oldvalue, value), "atomic_cas");
+	ztest_false(atomic_cas(&target, oldvalue, value), "atomic_cas");
 	target = 6;
-	zassert_true(atomic_cas(&target, oldvalue, value), "atomic_cas");
-	zassert_true((target == value), "atomic_cas");
+	ztest_true(atomic_cas(&target, oldvalue, value), "atomic_cas");
+	ztest_true((target == value), "atomic_cas");
 
 	/* atomic_ptr_cas() */
 	ptr_target = (atomic_ptr_t)4;
 	ptr_value = (void *)5;
 	old_ptr_value = (void *)6;
-	zassert_false(atomic_ptr_cas(&ptr_target, old_ptr_value, ptr_value),
+	ztest_false(atomic_ptr_cas(&ptr_target, old_ptr_value, ptr_value),
 		      "atomic_ptr_cas");
 	ptr_target = (void *)6;
-	zassert_true(atomic_ptr_cas(&ptr_target, old_ptr_value, ptr_value),
+	ztest_true(atomic_ptr_cas(&ptr_target, old_ptr_value, ptr_value),
 		     "atomic_ptr_cas");
-	zassert_true((ptr_target == ptr_value), "atomic_ptr_cas");
+	ztest_true((ptr_target == ptr_value), "atomic_ptr_cas");
 
 	/* atomic_add() */
 	target = 1;
 	value = 2;
-	zassert_true((atomic_add(&target, value) == 1), "atomic_add");
-	zassert_true((target == 3), "atomic_add");
+	ztest_true((atomic_add(&target, value) == 1), "atomic_add");
+	ztest_true((target == 3), "atomic_add");
 
 	/* atomic_sub() */
 	target = 10;
 	value = 2;
-	zassert_true((atomic_sub(&target, value) == 10), "atomic_sub");
-	zassert_true((target == 8), "atomic_sub");
+	ztest_true((atomic_sub(&target, value) == 10), "atomic_sub");
+	ztest_true((target == 8), "atomic_sub");
 
 	/* atomic_inc() */
 	target = 5;
-	zassert_true((atomic_inc(&target) == 5), "atomic_inc");
-	zassert_true((target == 6), "atomic_inc");
+	ztest_true((atomic_inc(&target) == 5), "atomic_inc");
+	ztest_true((target == 6), "atomic_inc");
 
 	/* atomic_dec() */
 	target = 2;
-	zassert_true((atomic_dec(&target) == 2), "atomic_dec");
-	zassert_true((target == 1), "atomic_dec");
+	ztest_true((atomic_dec(&target) == 2), "atomic_dec");
+	ztest_true((target == 1), "atomic_dec");
 
 	/* atomic_get() */
 	target = 50;
-	zassert_true((atomic_get(&target) == 50), "atomic_get");
+	ztest_true((atomic_get(&target) == 50), "atomic_get");
 
 	/* atomic_ptr_get() */
 	ptr_target = (atomic_ptr_t)50;
-	zassert_true((atomic_ptr_get(&ptr_target) == (void *)50),
+	ztest_true((atomic_ptr_get(&ptr_target) == (void *)50),
 		     "atomic_ptr_get");
 
 	/* atomic_set() */
 	target = 42;
 	value = 77;
-	zassert_true((atomic_set(&target, value) == 42), "atomic_set");
-	zassert_true((target == value), "atomic_set");
+	ztest_true((atomic_set(&target, value) == 42), "atomic_set");
+	ztest_true((target == value), "atomic_set");
 
 	/* atomic_ptr_set() */
 	ptr_target = (atomic_ptr_t)42;
 	ptr_value = (void *)77;
-	zassert_true((atomic_ptr_set(&ptr_target, ptr_value) == (void *)42),
+	ztest_true((atomic_ptr_set(&ptr_target, ptr_value) == (void *)42),
 		     "atomic_ptr_set");
-	zassert_true((ptr_target == ptr_value), "atomic_ptr_set");
+	ztest_true((ptr_target == ptr_value), "atomic_ptr_set");
 
 	/* atomic_clear() */
 	target = 100;
-	zassert_true((atomic_clear(&target) == 100), "atomic_clear");
-	zassert_true((target == 0), "atomic_clear");
+	ztest_true((atomic_clear(&target) == 100), "atomic_clear");
+	ztest_true((target == 0), "atomic_clear");
 
 	/* atomic_ptr_clear() */
 	ptr_target = (atomic_ptr_t)100;
-	zassert_true((atomic_ptr_clear(&ptr_target) == (void *)100),
+	ztest_true((atomic_ptr_clear(&ptr_target) == (void *)100),
 		     "atomic_ptr_clear");
-	zassert_true((ptr_target == NULL), "atomic_ptr_clear");
+	ztest_true((ptr_target == NULL), "atomic_ptr_clear");
 
 	/* atomic_or() */
 	target = 0xFF00;
 	value  = 0x0F0F;
-	zassert_true((atomic_or(&target, value) == 0xFF00), "atomic_or");
-	zassert_true((target == 0xFF0F), "atomic_or");
+	ztest_true((atomic_or(&target, value) == 0xFF00), "atomic_or");
+	ztest_true((target == 0xFF0F), "atomic_or");
 
 	/* atomic_xor() */
 	target = 0xFF00;
 	value  = 0x0F0F;
-	zassert_true((atomic_xor(&target, value) == 0xFF00), "atomic_xor");
-	zassert_true((target == 0xF00F), "atomic_xor");
+	ztest_true((atomic_xor(&target, value) == 0xFF00), "atomic_xor");
+	ztest_true((target == 0xF00F), "atomic_xor");
 
 	/* atomic_and() */
 	target = 0xFF00;
 	value  = 0x0F0F;
-	zassert_true((atomic_and(&target, value) == 0xFF00), "atomic_and");
-	zassert_true((target == 0x0F00), "atomic_and");
+	ztest_true((atomic_and(&target, value) == 0xFF00), "atomic_and");
+	ztest_true((target == 0x0F00), "atomic_and");
 
 
 	/* atomic_nand() */
 	target = 0xFF00;
 	value  = 0x0F0F;
-	zassert_true((atomic_nand(&target, value) == 0xFF00), "atomic_nand");
-	zassert_true((target == 0xFFFFF0FF), "atomic_nand");
+	ztest_true((atomic_nand(&target, value) == 0xFF00), "atomic_nand");
+	ztest_true((target == 0xFFFFF0FF), "atomic_nand");
 
 	/* atomic_test_bit() */
 	for (i = 0; i < 32; i++) {
 		target = 0x0F0F0F0F;
-		zassert_true(!!(atomic_test_bit(&target, i) == !!(target & (1 << i))),
+		ztest_true(!!(atomic_test_bit(&target, i) == !!(target & (1 << i))),
 			     "atomic_test_bit");
 	}
 
@@ -143,18 +143,18 @@ void test_atomic(void)
 	for (i = 0; i < 32; i++) {
 		orig = 0x0F0F0F0F;
 		target = orig;
-		zassert_true(!!(atomic_test_and_clear_bit(&target, i)) == !!(orig & (1 << i)),
+		ztest_true(!!(atomic_test_and_clear_bit(&target, i)) == !!(orig & (1 << i)),
 			     "atomic_test_and_clear_bit");
-		zassert_true(target == (orig & ~(1 << i)), "atomic_test_and_clear_bit");
+		ztest_true(target == (orig & ~(1 << i)), "atomic_test_and_clear_bit");
 	}
 
 	/* atomic_test_and_set_bit() */
 	for (i = 0; i < 32; i++) {
 		orig = 0x0F0F0F0F;
 		target = orig;
-		zassert_true(!!(atomic_test_and_set_bit(&target, i)) == !!(orig & (1 << i)),
+		ztest_true(!!(atomic_test_and_set_bit(&target, i)) == !!(orig & (1 << i)),
 			     "atomic_test_and_set_bit");
-		zassert_true(target == (orig | (1 << i)), "atomic_test_and_set_bit");
+		ztest_true(target == (orig | (1 << i)), "atomic_test_and_set_bit");
 	}
 
 	/* atomic_clear_bit() */
@@ -162,7 +162,7 @@ void test_atomic(void)
 		orig = 0x0F0F0F0F;
 		target = orig;
 		atomic_clear_bit(&target, i);
-		zassert_true(target == (orig & ~(1 << i)), "atomic_clear_bit");
+		ztest_true(target == (orig & ~(1 << i)), "atomic_clear_bit");
 	}
 
 	/* atomic_set_bit() */
@@ -170,7 +170,7 @@ void test_atomic(void)
 		orig = 0x0F0F0F0F;
 		target = orig;
 		atomic_set_bit(&target, i);
-		zassert_true(target == (orig | (1 << i)), "atomic_set_bit");
+		ztest_true(target == (orig | (1 << i)), "atomic_set_bit");
 	}
 
 	/* atomic_set_bit_to(&target, i, false) */
@@ -178,7 +178,7 @@ void test_atomic(void)
 		orig = 0x0F0F0F0F;
 		target = orig;
 		atomic_set_bit_to(&target, i, false);
-		zassert_true(target == (orig & ~(1 << i)), "atomic_set_bit_to");
+		ztest_true(target == (orig & ~(1 << i)), "atomic_set_bit_to");
 	}
 
 	/* atomic_set_bit_to(&target, i, true) */
@@ -186,7 +186,7 @@ void test_atomic(void)
 		orig = 0x0F0F0F0F;
 		target = orig;
 		atomic_set_bit_to(&target, i, true);
-		zassert_true(target == (orig | (1 << i)), "atomic_set_bit_to");
+		ztest_true(target == (orig | (1 << i)), "atomic_set_bit_to");
 	}
 }
 /**

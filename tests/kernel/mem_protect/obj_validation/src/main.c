@@ -49,20 +49,20 @@ static int test_object(struct k_sem *sem, int retval)
 void object_permission_checks(struct k_sem *sem, bool skip_init)
 {
 	/* Should fail because we don't have perms on this object */
-	zassert_false(test_object(sem, -EPERM),
+	ztest_false(test_object(sem, -EPERM),
 		      "object should not have had permission granted");
 
 	k_object_access_grant(sem, k_current_get());
 
 	if (!skip_init) {
 		/* Should fail, not initialized and we have no permissions */
-		zassert_false(test_object(sem, -EINVAL),
+		ztest_false(test_object(sem, -EINVAL),
 			      "object should not have been initialized");
 		k_sem_init(sem, 0, 1);
 	}
 
 	/* This should succeed now */
-	zassert_false(test_object(sem, 0),
+	ztest_false(test_object(sem, 0),
 		      "object should have had sufficient permissions");
 }
 
@@ -78,9 +78,9 @@ void test_generic_object(void)
 	struct k_sem stack_sem;
 
 	/* None of these should be even in the table */
-	zassert_false(test_object(&stack_sem, -EBADF), NULL);
-	zassert_false(test_object((struct k_sem *)&bad_sem, -EBADF), NULL);
-	zassert_false(test_object((struct k_sem *)0xFFFFFFFF, -EBADF), NULL);
+	ztest_false(test_object(&stack_sem, -EBADF), NULL);
+	ztest_false(test_object((struct k_sem *)&bad_sem, -EBADF), NULL);
+	ztest_false(test_object((struct k_sem *)0xFFFFFFFF, -EBADF), NULL);
 	object_permission_checks(&sem3, false);
 	object_permission_checks(&sem1, true);
 	object_permission_checks(&sem2, false);
@@ -88,7 +88,7 @@ void test_generic_object(void)
 	for (int i = 0; i < SEM_ARRAY_SIZE; i++) {
 		object_permission_checks(&semarray[i], false);
 		dyn_sem[i] = k_object_alloc(K_OBJ_SEM);
-		zassert_not_null(dyn_sem[i], "couldn't allocate semaphore");
+		ztest_not_null(dyn_sem[i], "couldn't allocate semaphore");
 		/* Give an extra reference to another thread so the object
 		 * doesn't disappear if we revoke our own
 		 */
@@ -98,11 +98,11 @@ void test_generic_object(void)
 	/* dynamic object table well-populated with semaphores at this point */
 	for (int i = 0; i < SEM_ARRAY_SIZE; i++) {
 		/* Should have permission granted but be uninitialized */
-		zassert_false(test_object(dyn_sem[i], -EINVAL), NULL);
+		ztest_false(test_object(dyn_sem[i], -EINVAL), NULL);
 		k_object_access_revoke(dyn_sem[i], k_current_get());
 		object_permission_checks(dyn_sem[i], false);
 		k_object_free(dyn_sem[i]);
-		zassert_false(test_object(dyn_sem[i], -EBADF), NULL);
+		ztest_false(test_object(dyn_sem[i], -EBADF), NULL);
 	}
 }
 

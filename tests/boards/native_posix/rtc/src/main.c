@@ -99,7 +99,7 @@ static void test_realtime(void)
 				WAIT_TIME / acc_ratio,
 				TOLERANCE);
 
-		zassert_true(abs(error) < TOLERANCE,
+		ztest_true(abs(error) < TOLERANCE,
 			     "Real time error over TOLERANCE");
 
 		/*
@@ -117,19 +117,19 @@ static void test_realtime(void)
 				error / 1000.0);
 
 		error /= 1000;
-		zassert_true(abs(error) < TOLERANCE,
+		ztest_true(abs(error) < TOLERANCE,
 			     "PSEUDOHOSTREALTIME time error over TOLERANCE");
 
 		diff = native_rtc_gettime_us(RTC_CLOCK_BOOT) -
 			start_rtc_time[0];
 
-		zassert_true(diff == WAIT_TIME * 1000,
+		ztest_true(diff == WAIT_TIME * 1000,
 				"Error in RTC_CLOCK_BOOT");
 
 		diff = native_rtc_gettime_us(RTC_CLOCK_REALTIME) -
 			start_rtc_time[1];
 
-		zassert_true(diff == WAIT_TIME * 1000,
+		ztest_true(diff == WAIT_TIME * 1000,
 				"Error in RTC_CLOCK_REALTIME");
 
 		start_time += WAIT_TIME * 1000 / acc_ratio;
@@ -156,12 +156,12 @@ static void test_rtc_offset(void)
 		- start_rtc_time[1];
 
 	error = diff - offset;
-	zassert_true(abs(error) < TOLERANCE,
+	ztest_true(abs(error) < TOLERANCE,
 		     "PSEUDOHOSTREALTIME offset error over TOLERANCE");
 
 	diff = native_rtc_gettime_us(RTC_CLOCK_REALTIME) - start_rtc_time[0];
 
-	zassert_true(diff == offset, "Offseting RTC failed\n");
+	ztest_true(diff == offset, "Offseting RTC failed\n");
 }
 
 void test_main(void)

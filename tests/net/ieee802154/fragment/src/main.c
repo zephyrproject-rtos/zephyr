@@ -578,56 +578,56 @@ static void test_fragment_sam00_dam00(void)
 {
 	bool ret = test_fragment(&test_data_1);
 
-	zassert_true(ret, NULL);
+	ztest_true(ret, NULL);
 }
 
 static void test_fragment_sam01_dam01(void)
 {
 	bool ret = test_fragment(&test_data_2);
 
-	zassert_true(ret, NULL);
+	ztest_true(ret, NULL);
 }
 
 static void test_fragment_sam10_dam10(void)
 {
 	bool ret = test_fragment(&test_data_3);
 
-	zassert_true(ret, NULL);
+	ztest_true(ret, NULL);
 }
 
 static void test_fragment_sam00_m1_dam00(void)
 {
 	bool ret = test_fragment(&test_data_4);
 
-	zassert_true(ret, NULL);
+	ztest_true(ret, NULL);
 }
 
 static void test_fragment_sam01_m1_dam01(void)
 {
 	bool ret = test_fragment(&test_data_5);
 
-	zassert_true(ret, NULL);
+	ztest_true(ret, NULL);
 }
 
 static void test_fragment_sam10_m1_dam10(void)
 {
 	bool ret = test_fragment(&test_data_6);
 
-	zassert_true(ret, NULL);
+	ztest_true(ret, NULL);
 }
 
 static void test_fragment_ipv6_dispatch_small(void)
 {
 	bool ret = test_fragment(&test_data_7);
 
-	zassert_true(ret, NULL);
+	ztest_true(ret, NULL);
 }
 
 static void test_fragment_ipv6_dispatch_big(void)
 {
 	bool ret = test_fragment(&test_data_8);
 
-	zassert_true(ret, NULL);
+	ztest_true(ret, NULL);
 }
 
 

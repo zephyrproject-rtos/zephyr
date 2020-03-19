@@ -154,7 +154,7 @@ void test_conversion(struct test_rec *t, u64_t val)
 		mindiff = -(s64_t)(from_hz/2);
 	}
 
-	zassert_true(diff <= maxdiff && diff >= mindiff,
+	ztest_true(diff <= maxdiff && diff >= mindiff,
 		     "Convert %lld from %lldhz to %lldhz (= %lld) failed. "
 		     "diff %lld should be in [%lld:%lld]",
 		     val, from_hz, to_hz, result, diff, mindiff, maxdiff);

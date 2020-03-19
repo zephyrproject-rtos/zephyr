@@ -65,7 +65,7 @@ static void test_starve(void)
 
 		s32_t now_diff = now - last_now;
 
-		zassert_true(now_diff > 0,
+		ztest_true(now_diff > 0,
 			     "%sTime went backwards by %d: was %u.%03u\n",
 			     tag(), -now_diff, last_now / MSEC_PER_SEC,
 			     last_now % MSEC_PER_SEC);
@@ -75,14 +75,14 @@ static void test_starve(void)
 		u64_t ticks = z_tick_get();
 		s64_t ticks_diff = ticks - last_ticks;
 
-		zassert_true(ticks_diff > 0,
+		ztest_true(ticks_diff > 0,
 			     "%sTicks went backwards by %d\n",
 			     tag(), -(s32_t)ticks_diff);
 		last_ticks = ticks;
 
 		u32_t na_capture = na;
 
-		zassert_equal(na_capture, 0,
+		ztest_equal(na_capture, 0,
 			      "%sTimer alarm fired: %u\n",
 			      na_capture);
 

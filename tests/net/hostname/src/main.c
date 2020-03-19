@@ -232,14 +232,14 @@ static void iface_setup(void)
 	DBG("Interfaces: [%d] iface1 %p\n",
 	    net_if_get_by_iface(iface1), iface1);
 
-	zassert_not_null(iface1, "Interface 1");
+	ztest_not_null(iface1, "Interface 1");
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr1));
-		zassert_not_null(ifaddr, "addr1");
+		ztest_not_null(ifaddr, "addr1");
 	}
 
 	ifaddr = net_if_ipv4_addr_add(iface1, &my_ipv4_addr1,
@@ -247,7 +247,7 @@ static void iface_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv4 address %s\n",
 		       net_sprint_ipv4_addr(&my_ipv4_addr1));
-		zassert_not_null(ifaddr, "ipv4 addr1");
+		ztest_not_null(ifaddr, "ipv4 addr1");
 	}
 
 	/* For testing purposes we need to set the adddresses preferred */
@@ -258,7 +258,7 @@ static void iface_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&ll_addr));
-		zassert_not_null(ifaddr, "ll_addr");
+		ztest_not_null(ifaddr, "ll_addr");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -269,7 +269,7 @@ static void iface_setup(void)
 	if (!maddr) {
 		DBG("Cannot add multicast IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&in6addr_mcast));
-		zassert_not_null(maddr, "mcast");
+		ztest_not_null(maddr, "mcast");
 	}
 
 	net_if_up(iface1);
@@ -318,7 +318,7 @@ static void hostname_get(void)
 
 	hostname = net_hostname_get();
 
-	zassert_mem_equal(hostname, config_hostname,
+	ztest_mem_equal(hostname, config_hostname,
 			  sizeof(CONFIG_NET_HOSTNAME) - 1, "");
 
 	if (IS_ENABLED(CONFIG_NET_HOSTNAME_UNIQUE)) {
@@ -327,9 +327,9 @@ static void hostname_get(void)
 
 		ret = bytes_from_hostname_unique(mac, sizeof(mac),
 				 hostname + sizeof(CONFIG_NET_HOSTNAME) - 1);
-		zassert_equal(ret, 0, "");
+		ztest_equal(ret, 0, "");
 
-		zassert_mem_equal(mac, net_if_get_link_addr(iface1)->addr,
+		ztest_mem_equal(mac, net_if_get_link_addr(iface1)->addr,
 				  net_if_get_link_addr(iface1)->len, "");
 	}
 }
@@ -340,7 +340,7 @@ static void hostname_set(void)
 		int ret;
 
 		ret = net_hostname_set_postfix("foobar", sizeof("foobar") - 1);
-		zassert_equal(ret, -EALREADY,
+		ztest_equal(ret, -EALREADY,
 			      "Could set hostname postfix (%d)", ret);
 	}
 }

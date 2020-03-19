@@ -153,13 +153,13 @@ void pipe_put_single(void)
 					  single_elements[index].size, &written,
 					  min_xfer, K_NO_WAIT);
 
-		zassert_true((return_value ==
+		ztest_true((return_value ==
 			      single_elements[index].return_value),
 			     " Return value of k_pipe_put missmatch at index = %d expected =%d received = %d\n",
 			     index,
 			     single_elements[index].return_value, return_value);
 
-		zassert_true((written == single_elements[index].sent_bytes),
+		ztest_true((written == single_elements[index].sent_bytes),
 			     "Bytes written missmatch written is %d but expected is %d index = %d\n",
 			     written,
 			     single_elements[index].sent_bytes, index);
@@ -191,17 +191,17 @@ void pipe_get_single(void *p1, void *p2, void *p3)
 					  min_xfer, K_NO_WAIT);
 
 
-		zassert_true((return_value ==
+		ztest_true((return_value ==
 			      single_elements[index].return_value),
 			     "Return value of k_pipe_get missmatch at index = %d expected =%d received = %d\n",
 			     index, single_elements[index].return_value,
 			     return_value);
 
-		zassert_true((read == single_elements[index].sent_bytes),
+		ztest_true((read == single_elements[index].sent_bytes),
 			     "Bytes read missmatch read is %d but expected is %d index = %d\n",
 			     read, single_elements[index].sent_bytes, index);
 
-		zassert_true(rx_buffer_check(rx_buffer, read) == read,
+		ztest_true(rx_buffer_check(rx_buffer, read) == read,
 			     "Bytes read are not matching at index= %d\n expected =%d but received= %d",
 			     index, read, rx_buffer_check(rx_buffer, read));
 		k_sem_give(&put_sem);
@@ -228,14 +228,14 @@ void pipe_put_multiple(void)
 					  &written,
 					  min_xfer, K_NO_WAIT);
 
-		zassert_true((return_value ==
+		ztest_true((return_value ==
 			      multiple_elements[index].return_value),
 			     "Return value of k_pipe_put missmatch at index = %d expected =%d received = %d\n",
 			     index,
 			     multiple_elements[index].return_value,
 			     return_value);
 
-		zassert_true((written == multiple_elements[index].sent_bytes),
+		ztest_true((written == multiple_elements[index].sent_bytes),
 			     "Bytes written missmatch written is %d but expected is %d index = %d\n",
 			     written,
 			     multiple_elements[index].sent_bytes, index);
@@ -269,17 +269,17 @@ void pipe_get_multiple(void *p1, void *p2, void *p3)
 					  min_xfer, K_NO_WAIT);
 
 
-		zassert_true((return_value ==
+		ztest_true((return_value ==
 			      multiple_elements[index].return_value),
 			     "Return value of k_pipe_get missmatch at index = %d expected =%d received = %d\n",
 			     index, multiple_elements[index].return_value,
 			     return_value);
 
-		zassert_true((read == multiple_elements[index].sent_bytes),
+		ztest_true((read == multiple_elements[index].sent_bytes),
 			     "Bytes read missmatch read is %d but expected is %d index = %d\n",
 			     read, multiple_elements[index].sent_bytes, index);
 
-		zassert_true(rx_buffer_check(rx_buffer, read) == read,
+		ztest_true(rx_buffer_check(rx_buffer, read) == read,
 			     "Bytes read are not matching at index= %d\n expected =%d but received= %d",
 			     index, read, rx_buffer_check(rx_buffer, read));
 
@@ -303,11 +303,11 @@ void pipe_put_forever_wait(void)
 				  PIPE_SIZE, &written,
 				  PIPE_SIZE, K_FOREVER);
 
-	zassert_true(return_value == RETURN_SUCCESS,
+	ztest_true(return_value == RETURN_SUCCESS,
 		     "k_pipe_put failed expected = 0 received = %d\n",
 		     return_value);
 
-	zassert_true(written == PIPE_SIZE,
+	ztest_true(written == PIPE_SIZE,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, written);
 
@@ -319,11 +319,11 @@ void pipe_put_forever_wait(void)
 				  PIPE_SIZE, &written,
 				  PIPE_SIZE, K_FOREVER);
 
-	zassert_true(return_value == RETURN_SUCCESS,
+	ztest_true(return_value == RETURN_SUCCESS,
 		     "k_pipe_put failed expected = 0 received = %d\n",
 		     return_value);
 
-	zassert_true(written == PIPE_SIZE,
+	ztest_true(written == PIPE_SIZE,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, written);
 
@@ -332,11 +332,11 @@ void pipe_put_forever_wait(void)
 				  PIPE_SIZE, &written,
 				  ATLEAST_1, K_FOREVER);
 
-	zassert_true(return_value == RETURN_SUCCESS,
+	ztest_true(return_value == RETURN_SUCCESS,
 		     "k_pipe_put failed expected = 0 received = %d\n",
 		     return_value);
 
-	zassert_true(written == PIPE_SIZE,
+	ztest_true(written == PIPE_SIZE,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, written);
 
@@ -356,11 +356,11 @@ void pipe_get_forever_wait(void *pi, void *p2, void *p3)
 				  PIPE_SIZE, &read,
 				  PIPE_SIZE, K_FOREVER);
 
-	zassert_true(return_value == RETURN_SUCCESS,
+	ztest_true(return_value == RETURN_SUCCESS,
 		     "k_pipe_get failed expected = 0 received = %d\n",
 		     return_value);
 
-	zassert_true(read == PIPE_SIZE,
+	ztest_true(read == PIPE_SIZE,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, read);
 
@@ -369,11 +369,11 @@ void pipe_get_forever_wait(void *pi, void *p2, void *p3)
 				  PIPE_SIZE, &read,
 				  ATLEAST_1, K_FOREVER);
 
-	zassert_true(return_value == RETURN_SUCCESS,
+	ztest_true(return_value == RETURN_SUCCESS,
 		     "k_pipe_get failed expected = 0 received = %d\n",
 		     return_value);
 
-	zassert_true(read == PIPE_SIZE,
+	ztest_true(read == PIPE_SIZE,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, read);
 
@@ -382,11 +382,11 @@ void pipe_get_forever_wait(void *pi, void *p2, void *p3)
 				  PIPE_SIZE, &read,
 				  ATLEAST_1, K_FOREVER);
 
-	zassert_true(return_value == RETURN_SUCCESS,
+	ztest_true(return_value == RETURN_SUCCESS,
 		     "k_pipe_get failed expected = 0 received = %d\n",
 		     return_value);
 
-	zassert_true(read == PIPE_SIZE,
+	ztest_true(read == PIPE_SIZE,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, read);
 
@@ -407,11 +407,11 @@ void pipe_put_timeout(void)
 				  PIPE_SIZE, &written,
 				  PIPE_SIZE, TIMEOUT_VAL);
 
-	zassert_true(return_value == RETURN_SUCCESS,
+	ztest_true(return_value == RETURN_SUCCESS,
 		     "k_pipe_put failed expected = 0 received = %d\n",
 		     return_value);
 
-	zassert_true(written == PIPE_SIZE,
+	ztest_true(written == PIPE_SIZE,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, written);
 
@@ -421,11 +421,11 @@ void pipe_put_timeout(void)
 				  PIPE_SIZE, &written,
 				  PIPE_SIZE, TIMEOUT_VAL);
 
-	zassert_true(return_value == -EAGAIN,
+	ztest_true(return_value == -EAGAIN,
 		     "k_pipe_put failed expected = -EAGAIN received = %d\n",
 		     return_value);
 
-	zassert_true(written == 0,
+	ztest_true(written == 0,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, written);
 
@@ -436,11 +436,11 @@ void pipe_put_timeout(void)
 				  PIPE_SIZE, &written,
 				  ATLEAST_1, TIMEOUT_VAL);
 
-	zassert_true(return_value == -EAGAIN,
+	ztest_true(return_value == -EAGAIN,
 		     "k_pipe_put failed expected = -EAGAIN received = %d\n",
 		     return_value);
 
-	zassert_true(written == 0,
+	ztest_true(written == 0,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, written);
 
@@ -451,11 +451,11 @@ void pipe_put_timeout(void)
 				  PIPE_SIZE, &written,
 				  PIPE_SIZE, TIMEOUT_VAL);
 
-	zassert_true(return_value == RETURN_SUCCESS,
+	ztest_true(return_value == RETURN_SUCCESS,
 		     "k_pipe_put failed expected = 0 received = %d\n",
 		     return_value);
 
-	zassert_true(written == PIPE_SIZE,
+	ztest_true(written == PIPE_SIZE,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, written);
 
@@ -464,11 +464,11 @@ void pipe_put_timeout(void)
 				  PIPE_SIZE, &written,
 				  ATLEAST_1, TIMEOUT_VAL);
 
-	zassert_true(return_value == RETURN_SUCCESS,
+	ztest_true(return_value == RETURN_SUCCESS,
 		     "k_pipe_put failed expected = 0 received = %d\n",
 		     return_value);
 
-	zassert_true(written == PIPE_SIZE,
+	ztest_true(written == PIPE_SIZE,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, written);
 }
@@ -487,11 +487,11 @@ void pipe_get_timeout(void *pi, void *p2, void *p3)
 				  PIPE_SIZE, &read,
 				  PIPE_SIZE, TIMEOUT_VAL);
 
-	zassert_true(return_value == RETURN_SUCCESS,
+	ztest_true(return_value == RETURN_SUCCESS,
 		     "k_pipe_get failed expected = 0 received = %d\n",
 		     return_value);
 
-	zassert_true(read == PIPE_SIZE,
+	ztest_true(read == PIPE_SIZE,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, read);
 
@@ -500,11 +500,11 @@ void pipe_get_timeout(void *pi, void *p2, void *p3)
 				  PIPE_SIZE, &read,
 				  ATLEAST_1, TIMEOUT_VAL);
 
-	zassert_true(return_value == RETURN_SUCCESS,
+	ztest_true(return_value == RETURN_SUCCESS,
 		     "k_pipe_get failed expected = 0 received = %d\n",
 		     return_value);
 
-	zassert_true(read == PIPE_SIZE,
+	ztest_true(read == PIPE_SIZE,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, read);
 
@@ -513,11 +513,11 @@ void pipe_get_timeout(void *pi, void *p2, void *p3)
 				  PIPE_SIZE, &read,
 				  ATLEAST_1, TIMEOUT_VAL);
 
-	zassert_true(return_value == RETURN_SUCCESS,
+	ztest_true(return_value == RETURN_SUCCESS,
 		     "k_pipe_get failed expected = 0 received = %d\n",
 		     return_value);
 
-	zassert_true(read == PIPE_SIZE,
+	ztest_true(read == PIPE_SIZE,
 		     "k_pipe_put written failed expected = %d received = %d\n",
 		     PIPE_SIZE, read);
 
@@ -539,7 +539,7 @@ void pipe_get_on_empty_pipe(void)
 					  read_size, &read,
 					  read_size, K_NO_WAIT);
 
-		zassert_true(return_value == -EIO,
+		ztest_true(return_value == -EIO,
 			     "k_pipe_get failed expected = -EIO received = %d\n",
 			     return_value);
 
@@ -547,7 +547,7 @@ void pipe_get_on_empty_pipe(void)
 					  read_size, &read,
 					  ATLEAST_1, K_NO_WAIT);
 
-		zassert_true(return_value == -EIO,
+		ztest_true(return_value == -EIO,
 			     "k_pipe_get failed expected = -EIO received = %d\n",
 			     return_value);
 
@@ -555,11 +555,11 @@ void pipe_get_on_empty_pipe(void)
 					  read_size, &read,
 					  NO_CONSTRAINT, K_NO_WAIT);
 
-		zassert_true(return_value == RETURN_SUCCESS,
+		ztest_true(return_value == RETURN_SUCCESS,
 			     "k_pipe_get failed expected = 0 received = %d\n",
 			     return_value);
 
-		zassert_true(read == 0,
+		ztest_true(read == 0,
 			     "k_pipe_put written failed expected = %d received = %d\n",
 			     PIPE_SIZE, read);
 	}
@@ -588,13 +588,13 @@ void pipe_put_forever_timeout(void)
 					  wait_elements[index].size, &written,
 					  min_xfer, K_FOREVER);
 
-		zassert_true((return_value ==
+		ztest_true((return_value ==
 			      wait_elements[index].return_value),
 			     "Return value of k_pipe_put missmatch at index = %d expected =%d received = %d\n",
 			     index, wait_elements[index].return_value,
 			     return_value);
 
-		zassert_true((written == wait_elements[index].sent_bytes),
+		ztest_true((written == wait_elements[index].sent_bytes),
 			     "Bytes written missmatch written is %d but expected is %d index = %d\n",
 			     written, wait_elements[index].sent_bytes, index);
 
@@ -622,13 +622,13 @@ void pipe_get_forever_timeout(void *p1, void *p2, void *p3)
 					  min_xfer, K_FOREVER);
 
 
-		zassert_true((return_value ==
+		ztest_true((return_value ==
 			      wait_elements[index].return_value),
 			     "Return value of k_pipe_get missmatch at index = %d expected =%d received = %d\n",
 			     index, wait_elements[index].return_value,
 			     return_value);
 
-		zassert_true((read == wait_elements[index].sent_bytes),
+		ztest_true((read == wait_elements[index].sent_bytes),
 			     "Bytes read missmatch read is %d but expected is %d index = %d\n",
 			     read, wait_elements[index].sent_bytes, index);
 
@@ -658,13 +658,13 @@ void pipe_put_get_timeout(void)
 					  min_xfer, TIMEOUT_200MSEC);
 
 
-		zassert_true((return_value ==
+		ztest_true((return_value ==
 			      timeout_elements[index].return_value),
 			     "Return value of k_pipe_get missmatch at index = %d expected =%d received = %d\n",
 			     index, timeout_elements[index].return_value,
 			     return_value);
 
-		zassert_true((read == timeout_elements[index].sent_bytes),
+		ztest_true((read == timeout_elements[index].sent_bytes),
 			     "Bytes read missmatch read is %d but expected is %d index = %d\n",
 			     read, timeout_elements[index].sent_bytes, index);
 
@@ -823,6 +823,6 @@ void test_pipe_get_invalid_size(void)
 		   0, &read,
 		   1, TIMEOUT_200MSEC);
 
-	zassert_equal(ret, -EINVAL,
+	ztest_equal(ret, -EINVAL,
 		      "fault didn't occur for min_xfer <= bytes_to_read");
 }

@@ -17,23 +17,23 @@ std::vector<int> vector;
 
 static void test_array(void)
 {
-	zassert_equal(array.size(), 4, "unexpected size");
-	zassert_equal(array[0], 1, "array[0] wrong");
-	zassert_equal(array[3], 4, "array[3] wrong");
+	ztest_equal(array.size(), 4, "unexpected size");
+	ztest_equal(array[0], 1, "array[0] wrong");
+	ztest_equal(array[3], 4, "array[3] wrong");
 
 	std::array<u8_t, 2> local = {1, 2};
-	zassert_equal(local.size(), 2, "unexpected size");
-	zassert_equal(local[0], 1, "local[0] wrong");
-	zassert_equal(local[1], 2, "local[1] wrong");
+	ztest_equal(local.size(), 2, "unexpected size");
+	ztest_equal(local[0], 1, "local[0] wrong");
+	ztest_equal(local[1], 2, "local[1] wrong");
 }
 
 static void test_vector(void)
 {
-	zassert_equal(vector.size(), 0, "vector init nonzero");
+	ztest_equal(vector.size(), 0, "vector init nonzero");
 	for (auto v : array) {
 		vector.push_back(v);
 	}
-	zassert_equal(vector.size(), array.size(), "vector store failed");
+	ztest_equal(vector.size(), array.size(), "vector store failed");
 }
 
 struct make_unique_data {
@@ -55,16 +55,16 @@ int make_unique_data::dtors;
 
 static void test_make_unique(void)
 {
-	zassert_equal(make_unique_data::ctors, 0, "ctor count not initialized");
-	zassert_equal(make_unique_data::dtors, 0, "dtor count not initialized");
+	ztest_equal(make_unique_data::ctors, 0, "ctor count not initialized");
+	ztest_equal(make_unique_data::dtors, 0, "dtor count not initialized");
 	auto d = std::make_unique<make_unique_data>();
-	zassert_true(static_cast<bool>(d), "allocation failed");
-	zassert_equal(make_unique_data::ctors, 1, "ctr update failed");
-	zassert_equal(d->inst, 1, "instance init failed");
-	zassert_equal(make_unique_data::dtors, 0, "dtor count not zero");
+	ztest_true(static_cast<bool>(d), "allocation failed");
+	ztest_equal(make_unique_data::ctors, 1, "ctr update failed");
+	ztest_equal(d->inst, 1, "instance init failed");
+	ztest_equal(make_unique_data::dtors, 0, "dtor count not zero");
 	d.reset();
-	zassert_false(d, "release failed");
-	zassert_equal(make_unique_data::dtors, 1, "dtor count not incremented");
+	ztest_false(d, "release failed");
+	ztest_equal(make_unique_data::dtors, 1, "dtor count not incremented");
 }
 
 void test_main(void)

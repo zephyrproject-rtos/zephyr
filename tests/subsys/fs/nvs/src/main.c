@@ -43,7 +43,7 @@ void setup(void)
 		int err;
 
 		err = nvs_clear(&fs);
-		zassert_true(err == 0,  "nvs_clear call failure: %d", err);
+		ztest_true(err == 0,  "nvs_clear call failure: %d", err);
 	}
 }
 
@@ -64,18 +64,18 @@ void test_nvs_init(void)
 	struct flash_pages_info info;
 
 	err = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fa);
-	zassert_true(err == 0, "flash_area_open() fail: %d", err);
+	ztest_true(err == 0, "flash_area_open() fail: %d", err);
 
 	fs.offset = TEST_FLASH_AREA_STORAGE_OFFSET;
 	err = flash_get_page_info_by_offs(flash_area_get_device(fa), fs.offset,
 					  &info);
-	zassert_true(err == 0,  "Unable to get page info: %d", err);
+	ztest_true(err == 0,  "Unable to get page info: %d", err);
 
 	fs.sector_size = info.size;
 	fs.sector_count = TEST_SECTOR_COUNT;
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 }
 
 static void execute_long_pattern_write(u16_t id)
@@ -86,7 +86,7 @@ static void execute_long_pattern_write(u16_t id)
 	size_t len;
 
 	len = nvs_read(&fs, id, rd_buf, sizeof(rd_buf));
-	zassert_true(len == -ENOENT,  "nvs_read unexpected failure: %d", len);
+	ztest_true(len == -ENOENT,  "nvs_read unexpected failure: %d", len);
 
 	BUILD_ASSERT((sizeof(wr_buf) % sizeof(pattern)) == 0);
 	for (int i = 0; i < sizeof(wr_buf); i += sizeof(pattern)) {
@@ -94,12 +94,12 @@ static void execute_long_pattern_write(u16_t id)
 	}
 
 	len = nvs_write(&fs, id, wr_buf, sizeof(wr_buf));
-	zassert_true(len == sizeof(wr_buf), "nvs_write failed: %d", len);
+	ztest_true(len == sizeof(wr_buf), "nvs_write failed: %d", len);
 
 	len = nvs_read(&fs, id, rd_buf, sizeof(rd_buf));
-	zassert_true(len == sizeof(rd_buf),  "nvs_read unexpected failure: %d",
+	ztest_true(len == sizeof(rd_buf),  "nvs_read unexpected failure: %d",
 			len);
-	zassert_mem_equal(wr_buf, rd_buf, sizeof(rd_buf),
+	ztest_mem_equal(wr_buf, rd_buf, sizeof(rd_buf),
 			"RD buff should be equal to the WR buff");
 }
 
@@ -108,7 +108,7 @@ void test_nvs_write(void)
 	int err;
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 
 	execute_long_pattern_write(TEST_DATA_ID);
 }
@@ -148,10 +148,10 @@ void test_nvs_corrupted_write(void)
 	u32_t *flash_max_write_calls;
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 
 	err = nvs_read(&fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
-	zassert_true(err == -ENOENT,  "nvs_read unexpected failure: %d", err);
+	ztest_true(err == -ENOENT,  "nvs_read unexpected failure: %d", err);
 
 	BUILD_ASSERT((sizeof(wr_buf_1) % sizeof(pattern_1)) == 0);
 	for (int i = 0; i < sizeof(wr_buf_1); i += sizeof(pattern_1)) {
@@ -159,12 +159,12 @@ void test_nvs_corrupted_write(void)
 	}
 
 	len = nvs_write(&fs, TEST_DATA_ID, wr_buf_1, sizeof(wr_buf_1));
-	zassert_true(len == sizeof(wr_buf_1), "nvs_write failed: %d", len);
+	ztest_true(len == sizeof(wr_buf_1), "nvs_write failed: %d", len);
 
 	len = nvs_read(&fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
-	zassert_true(len == sizeof(rd_buf),  "nvs_read unexpected failure: %d",
+	ztest_true(len == sizeof(rd_buf),  "nvs_read unexpected failure: %d",
 			len);
-	zassert_mem_equal(wr_buf_1, rd_buf, sizeof(rd_buf),
+	ztest_mem_equal(wr_buf_1, rd_buf, sizeof(rd_buf),
 			"RD buff should be equal to the first WR buff");
 
 	BUILD_ASSERT((sizeof(wr_buf_2) % sizeof(pattern_2)) == 0);
@@ -187,19 +187,19 @@ void test_nvs_corrupted_write(void)
 	 * are corrupted at this point and should be discarded by the NVS.
 	 */
 	len = nvs_write(&fs, TEST_DATA_ID, wr_buf_2, sizeof(wr_buf_2));
-	zassert_true(len == sizeof(wr_buf_2), "nvs_write failed: %d", len);
+	ztest_true(len == sizeof(wr_buf_2), "nvs_write failed: %d", len);
 
 	/* Reinitialize the NVS. */
 	memset(&fs, 0, sizeof(fs));
 	test_nvs_init();
 
 	len = nvs_read(&fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
-	zassert_true(len == sizeof(rd_buf),  "nvs_read unexpected failure: %d",
+	ztest_true(len == sizeof(rd_buf),  "nvs_read unexpected failure: %d",
 			len);
-	zassert_true(memcmp(wr_buf_2, rd_buf, sizeof(rd_buf)) != 0,
+	ztest_true(memcmp(wr_buf_2, rd_buf, sizeof(rd_buf)) != 0,
 			"RD buff should not be equal to the second WR buff because of "
 			"corrupted write operation");
-	zassert_mem_equal(wr_buf_1, rd_buf, sizeof(rd_buf),
+	ztest_mem_equal(wr_buf_1, rd_buf, sizeof(rd_buf),
 			"RD buff should be equal to the first WR buff because subsequent "
 			"write operation has failed");
 }
@@ -218,7 +218,7 @@ void test_nvs_gc(void)
 	fs.sector_count = 2;
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 
 	for (u16_t i = 0; i < max_writes; i++) {
 		u8_t id = (i % max_id);
@@ -227,36 +227,36 @@ void test_nvs_gc(void)
 		memset(buf, id_data, sizeof(buf));
 
 		len = nvs_write(&fs, id, buf, sizeof(buf));
-		zassert_true(len == sizeof(buf), "nvs_write failed: %d", len);
+		ztest_true(len == sizeof(buf), "nvs_write failed: %d", len);
 	}
 
 	for (u16_t id = 0; id < max_id; id++) {
 		len = nvs_read(&fs, id, rd_buf, sizeof(buf));
-		zassert_true(len == sizeof(rd_buf),
+		ztest_true(len == sizeof(rd_buf),
 			     "nvs_read unexpected failure: %d", len);
 
 		for (u16_t i = 0; i < sizeof(rd_buf); i++) {
 			rd_buf[i] = rd_buf[i] % max_id;
 			buf[i] = id;
 		}
-		zassert_mem_equal(buf, rd_buf, sizeof(rd_buf),
+		ztest_mem_equal(buf, rd_buf, sizeof(rd_buf),
 				"RD buff should be equal to the WR buff");
 
 	}
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 
 	for (u16_t id = 0; id < max_id; id++) {
 		len = nvs_read(&fs, id, rd_buf, sizeof(buf));
-		zassert_true(len == sizeof(rd_buf),
+		ztest_true(len == sizeof(rd_buf),
 			     "nvs_read unexpected failure: %d", len);
 
 		for (u16_t i = 0; i < sizeof(rd_buf); i++) {
 			rd_buf[i] = rd_buf[i] % max_id;
 			buf[i] = id;
 		}
-		zassert_mem_equal(buf, rd_buf, sizeof(rd_buf),
+		ztest_mem_equal(buf, rd_buf, sizeof(rd_buf),
 				"RD buff should be equal to the WR buff");
 
 	}
@@ -275,7 +275,7 @@ static void write_content(u16_t max_id, u16_t begin, u16_t end,
 		memset(buf, id_data, sizeof(buf));
 
 		len = nvs_write(fs, id, buf, sizeof(buf));
-		zassert_true(len == sizeof(buf), "nvs_write failed: %d", len);
+		ztest_true(len == sizeof(buf), "nvs_write failed: %d", len);
 	}
 }
 
@@ -287,14 +287,14 @@ static void check_content(u16_t max_id, struct nvs_fs *fs)
 
 	for (u16_t id = 0; id < max_id; id++) {
 		len = nvs_read(fs, id, rd_buf, sizeof(buf));
-		zassert_true(len == sizeof(rd_buf),
+		ztest_true(len == sizeof(rd_buf),
 			     "nvs_read unexpected failure: %d", len);
 
 		for (u16_t i = 0; i < ARRAY_SIZE(rd_buf); i++) {
 			rd_buf[i] = rd_buf[i] % max_id;
 			buf[i] = id;
 		}
-		zassert_mem_equal(buf, rd_buf, sizeof(rd_buf),
+		ztest_mem_equal(buf, rd_buf, sizeof(rd_buf),
 				  "RD buff should be equal to the WR buff");
 
 	}
@@ -320,22 +320,22 @@ void test_nvs_gc_3sectors(void)
 	fs.sector_count = 3;
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 0,
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 0,
 		     "unexpected write sector");
 
 	/* Trigger 1st GC */
 	write_content(max_id, 0, max_writes, &fs);
 
 	/* sector sequence: empty,closed, write */
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
+	ztest_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
+	ztest_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
@@ -343,14 +343,14 @@ void test_nvs_gc_3sectors(void)
 	write_content(max_id, max_writes, max_writes_2, &fs);
 
 	/* sector sequence: write, empty, closed */
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 0,
+	ztest_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 0,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 0,
+	ztest_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 0,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
@@ -358,14 +358,14 @@ void test_nvs_gc_3sectors(void)
 	write_content(max_id, max_writes_2, max_writes_3, &fs);
 
 	/* sector sequence: closed, write, empty */
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 1,
+	ztest_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 1,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 1,
+	ztest_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 1,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
@@ -373,14 +373,14 @@ void test_nvs_gc_3sectors(void)
 	write_content(max_id, max_writes_3, max_writes_4, &fs);
 
 	/* sector sequence: empty,closed, write */
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
+	ztest_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
+	ztest_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 }
@@ -444,7 +444,7 @@ void test_nvs_corrupted_sector_close_operation(void)
 	stats_walk(sim_stats, flash_sim_erase_calls_find, &flash_erase_stat);
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 
 	for (u16_t i = 0; i < max_writes; i++) {
 		u8_t id = (i % max_id);
@@ -467,7 +467,7 @@ void test_nvs_corrupted_sector_close_operation(void)
 		}
 
 		len = nvs_write(&fs, id, buf, sizeof(buf));
-		zassert_true(len == sizeof(buf), "nvs_write failed: %d", len);
+		ztest_true(len == sizeof(buf), "nvs_write failed: %d", len);
 	}
 
 	/* Make the flash simulator functional again. */
@@ -476,7 +476,7 @@ void test_nvs_corrupted_sector_close_operation(void)
 	*flash_max_len = 0;
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 
 	check_content(max_id, &fs);
 
@@ -497,7 +497,7 @@ void test_nvs_full_sector(void)
 	fs.sector_count = 3;
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 
 	while (1) {
 		len = nvs_write(&fs, filling_id, &filling_id,
@@ -505,33 +505,33 @@ void test_nvs_full_sector(void)
 		if (len == -ENOSPC) {
 			break;
 		}
-		zassert_true(len == sizeof(filling_id), "nvs_write failed: %d",
+		ztest_true(len == sizeof(filling_id), "nvs_write failed: %d",
 			     len);
 		filling_id++;
 	}
 
 	/* check whether can delete whatever from full storage */
 	err = nvs_delete(&fs, 1);
-	zassert_true(err == 0,  "nvs_delete call failure: %d", err);
+	ztest_true(err == 0,  "nvs_delete call failure: %d", err);
 
 	/* the last sector is full now, test re-initialization */
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 
 	len = nvs_write(&fs, filling_id, &filling_id, sizeof(filling_id));
-	zassert_true(len == sizeof(filling_id), "nvs_write failed: %d", len);
+	ztest_true(len == sizeof(filling_id), "nvs_write failed: %d", len);
 
 	/* sanitycheck on NVS content */
 	for (i = 0; i <= filling_id; i++) {
 		len = nvs_read(&fs, i, &data_read, sizeof(data_read));
 		if (i == 1) {
-			zassert_true(len == -ENOENT,
+			ztest_true(len == -ENOENT,
 				     "nvs_read shouldn't found the entry: %d",
 				     len);
 		} else {
-			zassert_true(len == sizeof(data_read),
+			ztest_true(len == sizeof(data_read),
 				     "nvs_read failed: %d", i, len);
-			zassert_equal(data_read, i,
+			ztest_equal(data_read, i,
 				      "read unexpected data: %d instead of %d",
 				      data_read, i);
 		}
@@ -548,13 +548,13 @@ void test_delete(void)
 	fs.sector_count = 3;
 
 	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
-	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+	ztest_true(err == 0,  "nvs_init call failure: %d", err);
 
 	for (filling_id = 0; filling_id < 10; filling_id++) {
 		len = nvs_write(&fs, filling_id, &filling_id,
 				sizeof(filling_id));
 
-		zassert_true(len == sizeof(filling_id), "nvs_write failed: %d",
+		ztest_true(len == sizeof(filling_id), "nvs_write failed: %d",
 			     len);
 
 		if (filling_id != 0) {
@@ -563,19 +563,19 @@ void test_delete(void)
 
 		/* delete the first entry while it is the most recent one */
 		err = nvs_delete(&fs, filling_id);
-		zassert_true(err == 0,  "nvs_delete call failure: %d", err);
+		ztest_true(err == 0,  "nvs_delete call failure: %d", err);
 
 		len = nvs_read(&fs, filling_id, &data_read, sizeof(data_read));
-		zassert_true(len == -ENOENT,
+		ztest_true(len == -ENOENT,
 			     "nvs_read shouldn't found the entry: %d", len);
 	}
 
 	/* delete existing entry */
 	err = nvs_delete(&fs, 1);
-	zassert_true(err == 0,  "nvs_delete call failure: %d", err);
+	ztest_true(err == 0,  "nvs_delete call failure: %d", err);
 
 	len = nvs_read(&fs, 1, &data_read, sizeof(data_read));
-	zassert_true(len == -ENOENT, "nvs_read shouldn't found the entry: %d",
+	ztest_true(len == -ENOENT, "nvs_read shouldn't found the entry: %d",
 		     len);
 
 	ate_wra = fs.ate_wra;
@@ -583,15 +583,15 @@ void test_delete(void)
 
 	/* delete already deleted entry */
 	err = nvs_delete(&fs, 1);
-	zassert_true(err == 0,  "nvs_delete call failure: %d", err);
-	zassert_true(ate_wra == fs.ate_wra && data_wra == fs.data_wra,
+	ztest_true(err == 0,  "nvs_delete call failure: %d", err);
+	ztest_true(ate_wra == fs.ate_wra && data_wra == fs.data_wra,
 		     "delete already deleted entry should not make"
 		     " any footprint in the storage");
 
 	/* delete nonexisting entry */
 	err = nvs_delete(&fs, filling_id);
-	zassert_true(err == 0,  "nvs_delete call failure: %d", err);
-	zassert_true(ate_wra == fs.ate_wra && data_wra == fs.data_wra,
+	ztest_true(err == 0,  "nvs_delete call failure: %d", err);
+	ztest_true(ate_wra == fs.ate_wra && data_wra == fs.data_wra,
 		     "delete nonexistent entry should not make"
 		     " any footprint in the storage");
 }

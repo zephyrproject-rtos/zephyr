@@ -30,11 +30,11 @@ void test_byteorder_memcpy_swap(void)
 	u8_t buf_dst[8] = { 0 };
 
 	sys_memcpy_swap(buf_dst, buf_orig, 8);
-	zassert_true((memcmp(buf_dst, buf_chk, 8) == 0),
+	ztest_true((memcmp(buf_dst, buf_chk, 8) == 0),
 		     "Swap memcpy failed");
 
 	sys_memcpy_swap(buf_dst, buf_chk, 8);
-	zassert_true((memcmp(buf_dst, buf_orig, 8) == 0),
+	ztest_true((memcmp(buf_dst, buf_orig, 8) == 0),
 		     "Swap memcpy failed");
 }
 
@@ -59,11 +59,11 @@ void test_byteorder_mem_swap(void)
 			       0x02, 0x01, 0x00 };
 
 	sys_mem_swap(buf_orig_1, 8);
-	zassert_true((memcmp(buf_orig_1, buf_chk_1, 8) == 0),
+	ztest_true((memcmp(buf_orig_1, buf_chk_1, 8) == 0),
 		     "Swapping buffer failed");
 
 	sys_mem_swap(buf_orig_2, 11);
-	zassert_true((memcmp(buf_orig_2, buf_chk_2, 11) == 0),
+	ztest_true((memcmp(buf_orig_2, buf_chk_2, 11) == 0),
 		     "Swapping buffer failed");
 }
 
@@ -83,7 +83,7 @@ void test_sys_get_be64(void)
 
 	tmp = sys_get_be64(buf);
 
-	zassert_equal(tmp, val, "sys_get_be64() failed");
+	ztest_equal(tmp, val, "sys_get_be64() failed");
 }
 
 /**
@@ -103,7 +103,7 @@ void test_sys_put_be64(void)
 
 	sys_put_be64(val, tmp);
 
-	zassert_mem_equal(tmp, buf, sizeof(u64_t), "sys_put_be64() failed");
+	ztest_mem_equal(tmp, buf, sizeof(u64_t), "sys_put_be64() failed");
 }
 
 /**
@@ -122,7 +122,7 @@ void test_sys_get_be32(void)
 
 	tmp = sys_get_be32(buf);
 
-	zassert_equal(tmp, val, "sys_get_be32() failed");
+	ztest_equal(tmp, val, "sys_get_be32() failed");
 }
 
 /**
@@ -142,7 +142,7 @@ void test_sys_put_be32(void)
 
 	sys_put_be32(val, tmp);
 
-	zassert_mem_equal(tmp, buf, sizeof(u32_t), "sys_put_be32() failed");
+	ztest_mem_equal(tmp, buf, sizeof(u32_t), "sys_put_be32() failed");
 }
 
 /**
@@ -161,7 +161,7 @@ void test_sys_get_be16(void)
 
 	tmp = sys_get_be16(buf);
 
-	zassert_equal(tmp, val, "sys_get_be16() failed");
+	ztest_equal(tmp, val, "sys_get_be16() failed");
 }
 
 /**
@@ -181,7 +181,7 @@ void test_sys_put_be16(void)
 
 	sys_put_be16(val, tmp);
 
-	zassert_mem_equal(tmp, buf, sizeof(u16_t), "sys_put_be16() failed");
+	ztest_mem_equal(tmp, buf, sizeof(u16_t), "sys_put_be16() failed");
 }
 
 /**
@@ -200,7 +200,7 @@ void test_sys_get_le16(void)
 
 	tmp = sys_get_le16(buf);
 
-	zassert_equal(tmp, val, "sys_get_le16() failed");
+	ztest_equal(tmp, val, "sys_get_le16() failed");
 }
 
 /**
@@ -220,7 +220,7 @@ void test_sys_put_le16(void)
 
 	sys_put_le16(val, tmp);
 
-	zassert_mem_equal(tmp, buf, sizeof(u16_t), "sys_put_le16() failed");
+	ztest_mem_equal(tmp, buf, sizeof(u16_t), "sys_put_le16() failed");
 }
 
 /**
@@ -239,7 +239,7 @@ void test_sys_get_le32(void)
 
 	tmp = sys_get_le32(buf);
 
-	zassert_equal(tmp, val, "sys_get_le32() failed");
+	ztest_equal(tmp, val, "sys_get_le32() failed");
 }
 
 /**
@@ -259,7 +259,7 @@ void test_sys_put_le32(void)
 
 	sys_put_le32(val, tmp);
 
-	zassert_mem_equal(tmp, buf, sizeof(u32_t), "sys_put_le32() failed");
+	ztest_mem_equal(tmp, buf, sizeof(u32_t), "sys_put_le32() failed");
 }
 
 /**
@@ -278,7 +278,7 @@ void test_sys_get_le64(void)
 
 	tmp = sys_get_le64(buf);
 
-	zassert_equal(tmp, val, "sys_get_le64() failed");
+	ztest_equal(tmp, val, "sys_get_le64() failed");
 }
 
 /**
@@ -298,7 +298,7 @@ void test_sys_put_le64(void)
 
 	sys_put_le64(val, tmp);
 
-	zassert_mem_equal(tmp, buf, sizeof(u64_t), "sys_put_le64() failed");
+	ztest_mem_equal(tmp, buf, sizeof(u64_t), "sys_put_le64() failed");
 }
 
 /**

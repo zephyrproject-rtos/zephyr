@@ -39,12 +39,12 @@ void test_sys_mem_pool_alloc_free(void)
 		 */
 		block[i] = sys_mem_pool_alloc(&pool, BLK_SIZE_MAX - DESC_SIZE);
 		/** TESTPOINT: Address of the allocated memory if successful;*/
-		zassert_not_null(block[i], NULL);
+		ztest_not_null(block[i], NULL);
 	}
 
 	block_fail = sys_mem_pool_alloc(&pool, BLK_SIZE_MIN);
 	/** TESTPOINT: Return NULL if fail.*/
-	zassert_is_null(block_fail, NULL);
+	ztest_is_null(block_fail, NULL);
 
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
 		/**
@@ -75,8 +75,8 @@ void test_sys_mem_pool_alloc_align4(void)
 	 */
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
 		block[i] = sys_mem_pool_alloc(&pool, i);
-		zassert_not_null(block[i], NULL);
-		zassert_false((uintptr_t)block[i] % sizeof(void *), NULL);
+		ztest_not_null(block[i], NULL);
+		ztest_false((uintptr_t)block[i] % sizeof(void *), NULL);
 	}
 
 	/* test case tear down*/
@@ -109,11 +109,11 @@ void test_sys_mem_pool_min_block_size(void)
 	 */
 	for (int i = 0; i < TOTAL_MIN_BLKS; i++) {
 		block[i] = sys_mem_pool_alloc(&pool, 0);
-		zassert_not_null(block[i], NULL);
+		ztest_not_null(block[i], NULL);
 	}
 	/* verify no more free blocks available*/
 	block_fail = sys_mem_pool_alloc(&pool, BLK_SIZE_MIN);
-	zassert_is_null(block_fail, NULL);
+	ztest_is_null(block_fail, NULL);
 
 	/* test case tear down*/
 	for (int i = 0; i < BLK_NUM_MAX; i++) {

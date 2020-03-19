@@ -130,12 +130,12 @@ static void check_results(int num_tests)
 {
 	int i;
 
-	zassert_equal(num_results, num_tests,
+	ztest_equal(num_results, num_tests,
 		      "*** work items finished: %d (expected: %d)\n",
 		      num_results, num_tests);
 
 	for (i = 0; i < num_tests; i++) {
-		zassert_equal(results[i], i + 1,
+		ztest_equal(results[i], i + 1,
 			      "*** got result %d in position %d"
 			      " (expected %d)\n",
 			      results[i], i, i + 1);
@@ -271,7 +271,7 @@ static void test_delayed_submit(void)
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting delayed work %d from"
 			 " preempt thread\n", i + 1);
-		zassert_true(k_delayed_work_submit(&delayed_tests[i].work,
+		ztest_true(k_delayed_work_submit(&delayed_tests[i].work,
 						   (i + 1) * WORK_ITEM_WAIT) == 0, NULL);
 	}
 
@@ -443,7 +443,7 @@ static void triggered_work_handler(struct k_work *work)
 
 	TC_PRINT(" - Running triggered test item %d\n", ti->key);
 
-	zassert_equal(ti->work.poll_result, expected_poll_result,
+	ztest_equal(ti->work.poll_result, expected_poll_result,
 		     "res %d expect %d", ti->work.poll_result, expected_poll_result);
 
 	results[num_results++] = ti->key;
@@ -486,7 +486,7 @@ static void test_triggered_submit(s32_t timeout)
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
 		TC_PRINT(" - Submitting triggered work %d\n", i + 1);
-		zassert_true(k_work_poll_submit(&triggered_tests[i].work,
+		ztest_true(k_work_poll_submit(&triggered_tests[i].work,
 						&triggered_tests[i].event,
 						1, timeout) == 0, NULL);
 	}
@@ -503,7 +503,7 @@ static void test_triggered_trigger(void)
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
 		TC_PRINT(" - Triggering work %d\n", i + 1);
-		zassert_true(k_poll_signal_raise(&triggered_tests[i].signal,
+		ztest_true(k_poll_signal_raise(&triggered_tests[i].signal,
 						 1) == 0, NULL);
 	}
 }
@@ -582,7 +582,7 @@ static void triggered_resubmit_work_handler(struct k_work *work)
 		TC_PRINT(" - Resubmitting triggered work\n");
 
 		k_poll_signal_reset(&triggered_tests[0].signal);
-		zassert_true(k_work_poll_submit(&triggered_tests[0].work,
+		ztest_true(k_work_poll_submit(&triggered_tests[0].work,
 						&triggered_tests[0].event,
 						1, K_FOREVER) == 0, NULL);
 	}
@@ -615,14 +615,14 @@ static void test_triggered_resubmit(void)
 			  &triggered_tests[0].signal);
 
 	TC_PRINT(" - Submitting triggered work\n");
-	zassert_true(k_work_poll_submit(&triggered_tests[0].work,
+	ztest_true(k_work_poll_submit(&triggered_tests[0].work,
 					&triggered_tests[0].event,
 					1, K_FOREVER) == 0, NULL);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
 		TC_PRINT(" - Triggering test item execution (iteration: %d)\n",
 									i + 1);
-		zassert_true(k_poll_signal_raise(&triggered_tests[0].signal,
+		ztest_true(k_poll_signal_raise(&triggered_tests[0].signal,
 						 1) == 0, NULL);
 		k_sleep(WORK_ITEM_WAIT);
 	}

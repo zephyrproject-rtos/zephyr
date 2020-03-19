@@ -28,15 +28,15 @@ static inline struct testfs_path *reset_path()
 
 void test_util_path_init_base(void)
 {
-	zassert_equal(testfs_path_init(&path, NULL, TESTFS_PATH_END),
+	ztest_equal(testfs_path_init(&path, NULL, TESTFS_PATH_END),
 		      path.path,
 		      "bad root init return");
-	zassert_equal(strcmp(path.path, "/"), 0, "bad root init path");
+	ztest_equal(strcmp(path.path, "/"), 0, "bad root init path");
 
-	zassert_equal(testfs_path_init(&path, &mnt, TESTFS_PATH_END),
+	ztest_equal(testfs_path_init(&path, &mnt, TESTFS_PATH_END),
 		      path.path,
 		      "bad mnt init return");
-	zassert_equal(strcmp(path.path, mnt.mnt_point), 0, "bad mnt init path");
+	ztest_equal(strcmp(path.path, mnt.mnt_point), 0, "bad mnt init path");
 
 	if (IS_ENABLED(CONFIG_DEBUG)) {
 		struct fs_mount_t invalid = {
@@ -57,33 +57,33 @@ void test_util_path_init_overrun(void)
 		.mnt_point = overrun,
 	};
 
-	zassert_true(path_max < overrun_max,
+	ztest_true(path_max < overrun_max,
 		     "path length requirements unmet");
 
 	memset(overrun + 1, 'A', overrun_max - 1);
 
-	zassert_equal(testfs_path_init(&path, &overrun_mnt, TESTFS_PATH_END),
+	ztest_equal(testfs_path_init(&path, &overrun_mnt, TESTFS_PATH_END),
 		      path.path,
 		      "bad overrun init return");
-	zassert_true(strcmp(path.path, overrun) < 0,
+	ztest_true(strcmp(path.path, overrun) < 0,
 		     "bad overrun init");
-	zassert_equal(strncmp(path.path, overrun, path_max),
+	ztest_equal(strncmp(path.path, overrun, path_max),
 		      0,
 		      "bad overrun path");
-	zassert_equal(path.path[path_max], '\0',
+	ztest_equal(path.path[path_max], '\0',
 		      "missing overrun EOS");
 }
 
 void test_util_path_init_extended(void)
 {
-	zassert_equal(strcmp(testfs_path_init(&path, &mnt,
+	ztest_equal(strcmp(testfs_path_init(&path, &mnt,
 					      ELT1,
 					      TESTFS_PATH_END),
 			     MNT "/" ELT1),
 		      0,
 		      "bad mnt init elt1");
 
-	zassert_equal(strcmp(testfs_path_init(&path, &mnt,
+	ztest_equal(strcmp(testfs_path_init(&path, &mnt,
 					      ELT1,
 					      ELT2,
 					      TESTFS_PATH_END),
@@ -94,20 +94,20 @@ void test_util_path_init_extended(void)
 
 void test_util_path_extend(void)
 {
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
+	ztest_equal(strcmp(testfs_path_extend(reset_path(),
 						TESTFS_PATH_END),
 			     MNT),
 		      0,
 		      "empty extend failed");
 
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
+	ztest_equal(strcmp(testfs_path_extend(reset_path(),
 						ELT2,
 						TESTFS_PATH_END),
 			     MNT "/" ELT2),
 		      0,
 		      "elt extend failed");
 
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
+	ztest_equal(strcmp(testfs_path_extend(reset_path(),
 						ELT1,
 						ELT2,
 						TESTFS_PATH_END),
@@ -118,7 +118,7 @@ void test_util_path_extend(void)
 
 void test_util_path_extend_up(void)
 {
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
+	ztest_equal(strcmp(testfs_path_extend(reset_path(),
 						ELT2,
 						"..",
 						ELT1,
@@ -127,14 +127,14 @@ void test_util_path_extend_up(void)
 		      0,
 		      "elt elt2, up, elt1 failed");
 
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
+	ztest_equal(strcmp(testfs_path_extend(reset_path(),
 						"..",
 						TESTFS_PATH_END),
 			     "/"),
 		      0,
 		      "up strip mnt failed");
 
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
+	ztest_equal(strcmp(testfs_path_extend(reset_path(),
 						"..",
 						"..",
 						TESTFS_PATH_END),
@@ -150,7 +150,7 @@ void test_util_path_extend_overrun(void)
 	memset(long_elt, 'a', sizeof(long_elt) - 1);
 	long_elt[sizeof(long_elt) - 1] = '\0';
 
-	zassert_equal(strcmp(testfs_path_extend(reset_path(),
+	ztest_equal(strcmp(testfs_path_extend(reset_path(),
 						long_elt,
 						ELT1,
 						TESTFS_PATH_END),

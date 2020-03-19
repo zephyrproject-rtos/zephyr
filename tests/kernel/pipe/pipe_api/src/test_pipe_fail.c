@@ -19,16 +19,16 @@ static void put_fail(struct k_pipe *p)
 {
 	size_t wt_byte = 0;
 
-	zassert_false(k_pipe_put(p, data, PIPE_LEN, &wt_byte,
+	ztest_false(k_pipe_put(p, data, PIPE_LEN, &wt_byte,
 				 1, K_FOREVER), NULL);
 	/**TESTPOINT: pipe put returns -EIO*/
-	zassert_equal(k_pipe_put(p, data, PIPE_LEN, &wt_byte,
+	ztest_equal(k_pipe_put(p, data, PIPE_LEN, &wt_byte,
 				 1, K_NO_WAIT), -EIO, NULL);
-	zassert_false(wt_byte, NULL);
+	ztest_false(wt_byte, NULL);
 	/**TESTPOINT: pipe put returns -EAGAIN*/
-	zassert_equal(k_pipe_put(p, data, PIPE_LEN, &wt_byte,
+	ztest_equal(k_pipe_put(p, data, PIPE_LEN, &wt_byte,
 				 1, TIMEOUT), -EAGAIN, NULL);
-	zassert_true(wt_byte < 1, NULL);
+	ztest_true(wt_byte < 1, NULL);
 }
 
 /**
@@ -52,8 +52,8 @@ void test_pipe_user_put_fail(void)
 {
 	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
 
-	zassert_true(p != NULL, NULL);
-	zassert_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
+	ztest_true(p != NULL, NULL);
+	ztest_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
 
 	put_fail(p);
 }
@@ -65,13 +65,13 @@ static void get_fail(struct k_pipe *p)
 	size_t rd_byte = 0;
 
 	/**TESTPOINT: pipe put returns -EIO*/
-	zassert_equal(k_pipe_get(p, rx_data, PIPE_LEN, &rd_byte, 1,
+	ztest_equal(k_pipe_get(p, rx_data, PIPE_LEN, &rd_byte, 1,
 				 K_NO_WAIT), -EIO, NULL);
-	zassert_false(rd_byte, NULL);
+	ztest_false(rd_byte, NULL);
 	/**TESTPOINT: pipe put returns -EAGAIN*/
-	zassert_equal(k_pipe_get(p, rx_data, PIPE_LEN, &rd_byte, 1,
+	ztest_equal(k_pipe_get(p, rx_data, PIPE_LEN, &rd_byte, 1,
 				 TIMEOUT), -EAGAIN, NULL);
-	zassert_true(rd_byte < 1, NULL);
+	ztest_true(rd_byte < 1, NULL);
 }
 
 /**
@@ -96,8 +96,8 @@ void test_pipe_user_get_fail(void)
 {
 	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
 
-	zassert_true(p != NULL, NULL);
-	zassert_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
+	ztest_true(p != NULL, NULL);
+	ztest_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
 
 	get_fail(p);
 }

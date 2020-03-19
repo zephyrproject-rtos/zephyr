@@ -20,9 +20,9 @@ void test_gethostname(void)
 	int res;
 
 	res = gethostname(buf, sizeof(buf));
-	zassert_equal(res, 0, "");
+	ztest_equal(res, 0, "");
 	printk("%s\n", buf);
-	zassert_equal(strcmp(buf, "ztest_hostname"), 0, "");
+	ztest_equal(strcmp(buf, "ztest_hostname"), 0, "");
 }
 
 void test_inet_pton(void)
@@ -31,22 +31,22 @@ void test_inet_pton(void)
 	u8_t buf[32];
 
 	res = inet_pton(AF_INET, "127.0.0.1", buf);
-	zassert_equal(res, 1, "");
+	ztest_equal(res, 1, "");
 
 	res = inet_pton(AF_INET, "127.0.0.1a", buf);
-	zassert_equal(res, 0, "");
+	ztest_equal(res, 0, "");
 
 	res = inet_pton(AF_INET6, "a:b:c:d:0:1:2:3", buf);
-	zassert_equal(res, 1, "");
+	ztest_equal(res, 1, "");
 
 	res = inet_pton(AF_INET6, "::1", buf);
-	zassert_equal(res, 1, "");
+	ztest_equal(res, 1, "");
 
 	res = inet_pton(AF_INET6, "1::", buf);
-	zassert_equal(res, 1, "");
+	ztest_equal(res, 1, "");
 
 	res = inet_pton(AF_INET6, "a:b:c:d:0:1:2:3z", buf);
-	zassert_equal(res, 0, "");
+	ztest_equal(res, 0, "");
 }
 
 void test_main(void)

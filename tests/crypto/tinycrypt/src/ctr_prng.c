@@ -322,22 +322,22 @@ static int test_prng_vector(struct prng_vector *v)
 	rc = tc_ctr_prng_init(&ctx, entropy, ent_len, personal, plen);
 
 	/**TESTPOINT: Check if init works*/
-	zassert_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG init failed");
+	ztest_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG init failed");
 
 	rc = tc_ctr_prng_generate(&ctx, extra1, extra1_len, output, exp_len);
 
 	/**TESTPOINT: Check if generate works*/
-	zassert_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG generate failed");
+	ztest_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG generate failed");
 
 	rc = tc_ctr_prng_generate(&ctx, extra2, extra2_len, output, exp_len);
 
 	/**TESTPOINT: Check if generate works*/
-	zassert_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG generate failed");
+	ztest_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG generate failed");
 
 	rc = memcmp(output, expected, exp_len);
 
 	/**TESTPOINT: Check results*/
-	zassert_false(rc, "expected value different - check failed");
+	ztest_false(rc, "expected value different - check failed");
 
 	rc = TC_PASS;
 	return rc;
@@ -359,7 +359,7 @@ void test_ctr_prng_reseed(void)
 	rc = tc_ctr_prng_init(&ctx, entropy, sizeof(entropy), 0, 0U);
 
 	/**TESTPOINT: Check if init works*/
-	zassert_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG init failed");
+	ztest_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG init failed");
 
 	/* force internal state to max allowed count */
 	ctx.reseedCount = 0x1000000000000ULL;
@@ -367,13 +367,13 @@ void test_ctr_prng_reseed(void)
 	rc = tc_ctr_prng_generate(&ctx, 0, 0, output, sizeof(output));
 
 	/**TESTPOINT: Check if generate works*/
-	zassert_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG generate failed");
+	ztest_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG generate failed");
 
 	/* expect further attempts to fail due to reaching reseed threshold */
 	rc = tc_ctr_prng_generate(&ctx, 0, 0, output, sizeof(output));
 
 	/**TESTPOINT: Check if generate works*/
-	zassert_equal(rc, TC_CTR_PRNG_RESEED_REQ, "CTR PRNG generate failed");
+	ztest_equal(rc, TC_CTR_PRNG_RESEED_REQ, "CTR PRNG generate failed");
 
 	/* reseed and confirm generate works again
 	 * make entropy different from original value - not really important
@@ -384,12 +384,12 @@ void test_ctr_prng_reseed(void)
 				sizeof(extra_input));
 
 	/**TESTPOINT: Recheck if the functions work*/
-	zassert_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG reseed failed");
+	ztest_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG reseed failed");
 
 	rc = tc_ctr_prng_generate(&ctx, 0, 0, output, sizeof(output));
 
 	/**TESTPOINT: Check if generate works again*/
-	zassert_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG generate failed");
+	ztest_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG generate failed");
 
 	/* confirm entropy and additional_input are being used correctly
 	 * first, entropy only
@@ -402,10 +402,10 @@ void test_ctr_prng_reseed(void)
 	rc = tc_ctr_prng_reseed(&ctx, entropy, sizeof(entropy), 0, 0);
 
 	/**TESTPOINT: Check if reseed works*/
-	zassert_equal(rc, 1, "CTR PRNG reseed failed");
+	ztest_equal(rc, 1, "CTR PRNG reseed failed");
 
 	/**TESTPOINT: Check results*/
-	zassert_false(memcmp(ctx.V, expectedV1, sizeof(expectedV1)),
+	ztest_false(memcmp(ctx.V, expectedV1, sizeof(expectedV1)),
 	"expected value different - check failed");
 
 	/* now, entropy and additional_input */
@@ -418,10 +418,10 @@ void test_ctr_prng_reseed(void)
 				 extra_input, sizeof(extra_input));
 
 	/**TESTPOINT: Check if reseed works*/
-	zassert_equal(rc, 1, "CTR PRNG reseed failed");
+	ztest_equal(rc, 1, "CTR PRNG reseed failed");
 
 	/**TESTPOINT: Check results*/
-	zassert_false(memcmp(ctx.V, expectedV2, sizeof(expectedV2)),
+	ztest_false(memcmp(ctx.V, expectedV2, sizeof(expectedV2)),
 	"expected value different - check failed");
 
 	TC_PRINT("CTR PRNG reseed test succeeded\n");
@@ -438,26 +438,26 @@ void test_ctr_prng_uninstantiate(void)
 	rc = tc_ctr_prng_init(&ctx, entropy, sizeof(entropy), 0, 0);
 
 	/**TESTPOINT: Check if init works*/
-	zassert_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG init failed");
+	ztest_equal(rc, TC_CRYPTO_SUCCESS, "CTR PRNG init failed");
 
 	tc_ctr_prng_uninstantiate(&ctx);
 	/* show that state has been zeroised */
 	for (i = 0; i < sizeof(ctx.V); i++) {
 
 		/**TESTPOINT: Check if states have been zeroised*/
-		zassert_false(ctx.V[i], "some states have not been zeroised");
+		ztest_false(ctx.V[i], "some states have not been zeroised");
 	}
 
 	words = sizeof(ctx.key.words) / sizeof(ctx.key.words[0]);
 	for (i = 0; i < words; i++) {
 
 		/**TESTPOINT: Check words*/
-		zassert_false(ctx.key.words[i],
+		ztest_false(ctx.key.words[i],
 		"expected value wrong - check failed");
 	}
 
 	/**TESTPOINT: Check if uninstantiation passed*/
-	zassert_false(ctx.reseedCount, "CTR PRNG uninstantiate test failed");
+	ztest_false(ctx.reseedCount, "CTR PRNG uninstantiate test failed");
 
 	TC_PRINT("CTR PRNG uninstantiate test succeeded\n");
 }
@@ -475,62 +475,62 @@ void test_ctr_prng_robustness(void)
 	rc = tc_ctr_prng_generate(&ctx, 0, 0, 0, 0);
 
 	/**TESTPOINT: Check if invalid input test works*/
-	zassert_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
+	ztest_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
 
 	rc = tc_ctr_prng_generate(0, 0, 0, output, sizeof(output));
 
 	/**TESTPOINT: Check if invalid input test works*/
-	zassert_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
+	ztest_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
 
 	rc = tc_ctr_prng_generate(0, 0, 0, 0, 0);
 
 	/**TESTPOINT: Check if invalid input test works*/
-	zassert_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
+	ztest_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
 
 	rc = tc_ctr_prng_reseed(&ctx, 0, 0, 0, 0);
 
 	/**TESTPOINT: Check if invalid input test works*/
-	zassert_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
+	ztest_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
 
 	/* too little entropy */
 	rc = tc_ctr_prng_reseed(&ctx, entropy, sizeof(entropy) - 1, 0, 0);
 
 	/**TESTPOINT: Check if invalid input test works*/
-	zassert_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
+	ztest_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
 
 
 	rc = tc_ctr_prng_reseed(0, entropy, sizeof(entropy), 0, 0);
 
 	/**TESTPOINT: Check if invalid input test works*/
-	zassert_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
+	ztest_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
 
 
 	rc = tc_ctr_prng_reseed(0, 0, 0, 0, 0);
 
 	/**TESTPOINT: Check if invalid input test works*/
-	zassert_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
+	ztest_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
 
 
 	rc = tc_ctr_prng_init(&ctx, 0, 0, 0, 0);
 
 	/**TESTPOINT: Check if invalid input test works*/
-	zassert_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
+	ztest_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
 
 	/* too little entropy */
 	rc = tc_ctr_prng_init(&ctx, entropy, sizeof(entropy) - 1, 0, 0);
 
 	/**TESTPOINT: Check if invalid input test works*/
-	zassert_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
+	ztest_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
 
 	rc = tc_ctr_prng_init(0, entropy, sizeof(entropy), 0, 0);
 
 	/**TESTPOINT: Check if invalid input test works*/
-	zassert_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
+	ztest_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
 
 	rc = tc_ctr_prng_init(0, 0, 0, 0, 0);
 
 	/**TESTPOINT: Check if invalid input test works*/
-	zassert_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
+	ztest_equal(rc, TC_CRYPTO_FAIL, "CTR PRNG invalid input test failed");
 
 	TC_PRINT("CTR PRNG robustness test succeeded\n");
 }
@@ -553,7 +553,7 @@ void test_ctr_prng_vector(void)
 			 TC_RESULT_TO_STR(rc), i);
 
 		/**TESTPOINT: Check if test passed*/
-		zassert_false(rc, "CTR PRNG vector test failed");
+		ztest_false(rc, "CTR PRNG vector test failed");
 	}
 	TC_PRINT("CTR PRNG vector test succeeded\n");
 }

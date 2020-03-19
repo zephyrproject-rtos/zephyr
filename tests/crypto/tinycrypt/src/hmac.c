@@ -91,7 +91,7 @@ void test_hmac_1(void)
 			      expected, sizeof(expected));
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "HMAC test #7 failed");
+	ztest_false(result, "HMAC test #7 failed");
 }
 
 void test_hmac_2(void)
@@ -125,7 +125,7 @@ void test_hmac_2(void)
 			      expected, sizeof(expected));
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "HMAC test #7 failed");
+	ztest_false(result, "HMAC test #7 failed");
 }
 
 void test_hmac_3(void)
@@ -165,7 +165,7 @@ void test_hmac_3(void)
 			      expected, sizeof(expected));
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "HMAC test #3 failed");
+	ztest_false(result, "HMAC test #3 failed");
 }
 
 void test_hmac_4(void)
@@ -207,7 +207,7 @@ void test_hmac_4(void)
 			      expected, sizeof(expected));
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "HMAC test #4 failed");
+	ztest_false(result, "HMAC test #4 failed");
 }
 
 void test_hmac_5(void)
@@ -241,7 +241,7 @@ void test_hmac_5(void)
 			      expected, sizeof(expected));
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "HMAC test #5 failed");
+	ztest_false(result, "HMAC test #5 failed");
 }
 
 void test_hmac_6(void)
@@ -299,7 +299,7 @@ void test_hmac_6(void)
 			      expected, sizeof(expected));
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "HMAC test #6 failed");
+	ztest_false(result, "HMAC test #6 failed");
 }
 
 void test_hmac_7(void)
@@ -373,5 +373,5 @@ void test_hmac_7(void)
 			      expected, sizeof(expected));
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "HMAC test #7 failed");
+	ztest_false(result, "HMAC test #7 failed");
 }

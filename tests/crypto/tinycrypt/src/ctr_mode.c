@@ -104,7 +104,7 @@ void test_ctr_sp_800_38a_encrypt_decrypt(void)
 	(void)memcpy(out, ctr, sizeof(ctr));
 
 	/**TESTPOINT: Check test 1 result*/
-	zassert_true(tc_ctr_mode(&out[TC_AES_BLOCK_SIZE],
+	ztest_true(tc_ctr_mode(&out[TC_AES_BLOCK_SIZE],
 			sizeof(plaintext), plaintext, sizeof(plaintext),
 			ctr, &sched),
 			"CTR test #1 (encryption SP 800-38a tests) failed");
@@ -115,7 +115,7 @@ void test_ctr_sp_800_38a_encrypt_decrypt(void)
 	(void)memcpy(ctr, out, sizeof(ctr));
 
 	/**TESTPOINT: Check test 2 result*/
-	zassert_true(tc_ctr_mode(decrypted, sizeof(decrypted),
+	ztest_true(tc_ctr_mode(decrypted, sizeof(decrypted),
 			&out[TC_AES_BLOCK_SIZE], sizeof(decrypted),
 			ctr, &sched),
 			"CTR test #2 (decryption SP 800-38a tests) failed");
@@ -124,6 +124,6 @@ void test_ctr_sp_800_38a_encrypt_decrypt(void)
 			      decrypted, sizeof(plaintext), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result, "CBC test #1 failed");
+	ztest_false(result, "CBC test #1 failed");
 	TC_PRINT("All CTR tests succeeded!\n");
 }

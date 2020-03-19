@@ -88,20 +88,20 @@ static int test_task(u32_t chan_id, u32_t blen)
 /* export test cases */
 void test_dma_m2m_chan0_burst8(void)
 {
-	zassert_true((test_task(0, 8) == TC_PASS), NULL);
+	ztest_true((test_task(0, 8) == TC_PASS), NULL);
 }
 
 void test_dma_m2m_chan1_burst8(void)
 {
-	zassert_true((test_task(1, 8) == TC_PASS), NULL);
+	ztest_true((test_task(1, 8) == TC_PASS), NULL);
 }
 
 void test_dma_m2m_chan0_burst16(void)
 {
-	zassert_true((test_task(0, 16) == TC_PASS), NULL);
+	ztest_true((test_task(0, 16) == TC_PASS), NULL);
 }
 
 void test_dma_m2m_chan1_burst16(void)
 {
-	zassert_true((test_task(1, 16) == TC_PASS), NULL);
+	ztest_true((test_task(1, 16) == TC_PASS), NULL);
 }

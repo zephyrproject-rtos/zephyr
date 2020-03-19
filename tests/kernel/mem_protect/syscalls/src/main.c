@@ -156,18 +156,18 @@ void test_string_nlen(void)
 
 	ret = string_nlen(kernel_string, BUF_SIZE, &err);
 	if (arch_is_user_context()) {
-		zassert_equal(err, -1,
+		ztest_equal(err, -1,
 			      "kernel string did not fault on user access");
 	} else {
-		zassert_equal(err, 0, "kernel string faulted in kernel mode");
-		zassert_equal(ret, strlen(kernel_string),
+		ztest_equal(err, 0, "kernel string faulted in kernel mode");
+		ztest_equal(ret, strlen(kernel_string),
 			      "incorrect length returned");
 	}
 
 	/* Valid usage */
 	ret = string_nlen(user_string, BUF_SIZE, &err);
-	zassert_equal(err, 0, "user string faulted");
-	zassert_equal(ret, strlen(user_string), "incorrect length returned");
+	ztest_equal(err, 0, "user string faulted");
+	ztest_equal(ret, strlen(user_string), "incorrect length returned");
 
 	/* Skip this scenario for nsim_sem emulated board, unfortunately
 	 * the emulator doesn't set up memory as specified in DTS and poking
@@ -176,7 +176,7 @@ void test_string_nlen(void)
 #if !(defined(CONFIG_BOARD_NSIM) && defined(CONFIG_SOC_NSIM_SEM))
 	/* Try to blow up the kernel */
 	ret = string_nlen((char *)0xFFFFFFF0, BUF_SIZE, &err);
-	zassert_equal(err, -1, "nonsense string address did not fault");
+	ztest_equal(err, -1, "nonsense string address did not fault");
 #endif
 }
 
@@ -192,17 +192,17 @@ void test_user_string_alloc_copy(void)
 	int ret;
 
 	ret = string_alloc_copy("asdkajshdazskjdh");
-	zassert_equal(ret, -2, "got %d", ret);
+	ztest_equal(ret, -2, "got %d", ret);
 
 	ret = string_alloc_copy(
 	    "asdkajshdazskjdhikfsdjhfskdjfhsdkfjhskdfjhdskfjhs");
-	zassert_equal(ret, -1, "got %d", ret);
+	ztest_equal(ret, -1, "got %d", ret);
 
 	ret = string_alloc_copy(kernel_string);
-	zassert_equal(ret, -1, "got %d", ret);
+	ztest_equal(ret, -1, "got %d", ret);
 
 	ret = string_alloc_copy("this is a kernel string");
-	zassert_equal(ret, 0, "string should have matched");
+	ztest_equal(ret, 0, "string should have matched");
 }
 
 /**
@@ -217,16 +217,16 @@ void test_user_string_copy(void)
 	int ret;
 
 	ret = string_copy("asdkajshdazskjdh");
-	zassert_equal(ret, ESRCH, "got %d", ret);
+	ztest_equal(ret, ESRCH, "got %d", ret);
 
 	ret = string_copy("asdkajshdazskjdhikfsdjhfskdjfhsdkfjhskdfjhdskfjhs");
-	zassert_equal(ret, EINVAL, "got %d", ret);
+	ztest_equal(ret, EINVAL, "got %d", ret);
 
 	ret = string_copy(kernel_string);
-	zassert_equal(ret, EFAULT, "got %d", ret);
+	ztest_equal(ret, EFAULT, "got %d", ret);
 
 	ret = string_copy("this is a kernel string");
-	zassert_equal(ret, 0, "string should have matched");
+	ztest_equal(ret, 0, "string should have matched");
 }
 
 /**
@@ -242,21 +242,21 @@ void test_to_copy(void)
 	int ret;
 
 	ret = to_copy(kernel_buf);
-	zassert_equal(ret, EFAULT, "should have faulted");
+	ztest_equal(ret, EFAULT, "should have faulted");
 
 	ret = to_copy(buf);
-	zassert_equal(ret, 0, "copy should have been a success");
+	ztest_equal(ret, 0, "copy should have been a success");
 	ret = strcmp(buf, user_string);
-	zassert_equal(ret, 0, "string should have matched");
+	ztest_equal(ret, 0, "string should have matched");
 }
 
 void test_arg64(void)
 {
-	zassert_equal(syscall_arg64(54321),
+	ztest_equal(syscall_arg64(54321),
 		      z_impl_syscall_arg64(54321),
 		      "syscall didn't match impl");
 
-	zassert_equal(syscall_arg64_big(1, 2, 3, 4, 5, 6),
+	ztest_equal(syscall_arg64_big(1, 2, 3, 4, 5, 6),
 		      z_impl_syscall_arg64_big(1, 2, 3, 4, 5, 6),
 		      "syscall didn't match impl");
 }
@@ -280,20 +280,20 @@ void syscall_torture(void *arg1, void *arg2, void *arg3)
 		 * for concurrency problems.
 		 */
 		ret = string_nlen(user_string, BUF_SIZE, &err);
-		zassert_equal(err, 0, "user string faulted");
-		zassert_equal(ret, strlen(user_string),
+		ztest_equal(err, 0, "user string faulted");
+		ztest_equal(ret, strlen(user_string),
 			      "incorrect length returned");
 
 		ret = string_alloc_copy("this is a kernel string");
-		zassert_equal(ret, 0, "string should have matched");
+		ztest_equal(ret, 0, "string should have matched");
 
 		ret = string_copy("this is a kernel string");
-		zassert_equal(ret, 0, "string should have matched");
+		ztest_equal(ret, 0, "string should have matched");
 
 		ret = to_copy(buf);
-		zassert_equal(ret, 0, "copy should have been a success");
+		ztest_equal(ret, 0, "copy should have been a success");
 		ret = strcmp(buf, user_string);
-		zassert_equal(ret, 0, "string should have matched");
+		ztest_equal(ret, 0, "string should have matched");
 
 		test_arg64();
 

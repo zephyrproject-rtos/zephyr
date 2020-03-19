@@ -65,7 +65,7 @@ void test_stack_pt_randomization(void)
 	       changed, THREAD_COUNT);
 
 	sp_changed = changed;
-	zassert_not_equal(sp_changed, 0, "Stack pointer is not randomized");
+	ztest_not_equal(sp_changed, 0, "Stack pointer is not randomized");
 
 	/* Restore priority */
 	k_thread_priority_set(k_current_get(), old_prio);

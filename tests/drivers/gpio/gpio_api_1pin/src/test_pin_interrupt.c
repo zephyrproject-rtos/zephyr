@@ -23,7 +23,7 @@ static int cb_count;
 static void callback_edge(struct device *port, struct gpio_callback *cb,
 			  gpio_port_pins_t pins)
 {
-	zassert_equal(pins, BIT(TEST_PIN),
+	ztest_equal(pins, BIT(TEST_PIN),
 		     "Detected interrupt on an invalid pin");
 	cb_count++;
 }
@@ -33,11 +33,11 @@ static void callback_level(struct device *port, struct gpio_callback *cb,
 {
 	int ret;
 
-	zassert_equal(pins, BIT(TEST_PIN),
+	ztest_equal(pins, BIT(TEST_PIN),
 		     "Detected interrupt on an invalid pin");
 
 	ret = gpio_pin_interrupt_configure(port, TEST_PIN, GPIO_INT_DISABLE);
-	zassert_equal(ret, 0,
+	ztest_equal(ret, 0,
 		      "Failed to disable pin interrupt in the callback");
 
 	cb_count++;
@@ -46,7 +46,7 @@ static void callback_level(struct device *port, struct gpio_callback *cb,
 static void pin_set_and_verify(struct device *port, unsigned int pin, int val,
 			       int idx)
 {
-	zassert_equal(gpio_pin_set(port, pin, val), 0,
+	ztest_equal(gpio_pin_set(port, pin, val), 0,
 		      "Test point %d: failed to set logical pin value", idx);
 	k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 }
@@ -60,7 +60,7 @@ void test_gpio_pin_interrupt_edge(unsigned int cfg_flags,
 	int ret;
 
 	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	ztest_not_null(port, "device " TEST_DEV " not found");
 
 	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
 
@@ -70,7 +70,7 @@ void test_gpio_pin_interrupt_edge(unsigned int cfg_flags,
 		ztest_test_skip();
 		return;
 	}
-	zassert_equal(ret, 0, "Failed to configure the pin");
+	ztest_equal(ret, 0, "Failed to configure the pin");
 
 	if ((cfg_flags & GPIO_ACTIVE_LOW) != 0) {
 		cfg_out_flag = GPIO_OUTPUT_HIGH;
@@ -79,7 +79,7 @@ void test_gpio_pin_interrupt_edge(unsigned int cfg_flags,
 	}
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_INPUT | cfg_out_flag |
 				 cfg_flags);
-	zassert_equal(ret, 0, "Failed to configure the pin");
+	ztest_equal(ret, 0, "Failed to configure the pin");
 
 	cb_count = 0;
 	cb_count_expected = 0;
@@ -93,14 +93,14 @@ void test_gpio_pin_interrupt_edge(unsigned int cfg_flags,
 		ztest_test_skip();
 		return;
 	}
-	zassert_equal(ret, 0, "Failed to configure pin interrupt");
+	ztest_equal(ret, 0, "Failed to configure pin interrupt");
 
 	for (int i = 0; i < 6; i++) {
 		pin_set_and_verify(port, TEST_PIN, 1, i);
 		if (int_flags & GPIO_INT_HIGH_1) {
 			cb_count_expected++;
 		}
-		zassert_equal(cb_count, cb_count_expected,
+		ztest_equal(cb_count, cb_count_expected,
 			      "Test point %d: Pin interrupt triggered invalid "
 			      "number of times on rising/to active edge", i);
 
@@ -108,18 +108,18 @@ void test_gpio_pin_interrupt_edge(unsigned int cfg_flags,
 		if (int_flags & GPIO_INT_LOW_0) {
 			cb_count_expected++;
 		}
-		zassert_equal(cb_count, cb_count_expected,
+		ztest_equal(cb_count, cb_count_expected,
 			      "Test point %d: Pin interrupt triggered invalid "
 			      "number of times on falling/to inactive edge", i);
 	}
 
 	ret = gpio_pin_interrupt_configure(port, TEST_PIN, GPIO_INT_DISABLE);
-	zassert_equal(ret, 0, "Failed to disable pin interrupt");
+	ztest_equal(ret, 0, "Failed to disable pin interrupt");
 
 	for (int i = 0; i < 6; i++) {
 		pin_set_and_verify(port, TEST_PIN, 1, i);
 		pin_set_and_verify(port, TEST_PIN, 0, i);
-		zassert_equal(cb_count, cb_count_expected,
+		ztest_equal(cb_count, cb_count_expected,
 			      "Pin interrupt triggered when disabled");
 	}
 }
@@ -134,7 +134,7 @@ void test_gpio_pin_interrupt_level(unsigned int cfg_flags,
 	int ret;
 
 	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	ztest_not_null(port, "device " TEST_DEV " not found");
 
 	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
 
@@ -144,7 +144,7 @@ void test_gpio_pin_interrupt_level(unsigned int cfg_flags,
 		ztest_test_skip();
 		return;
 	}
-	zassert_equal(ret, 0, "Failed to configure the pin");
+	ztest_equal(ret, 0, "Failed to configure the pin");
 
 	pin_out_val = ((int_flags & GPIO_INT_HIGH_1) != 0) ? 0 : 1;
 
@@ -158,7 +158,7 @@ void test_gpio_pin_interrupt_level(unsigned int cfg_flags,
 
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_INPUT | cfg_out_flag |
 				 cfg_flags);
-	zassert_equal(ret, 0, "Failed to configure the pin");
+	ztest_equal(ret, 0, "Failed to configure the pin");
 
 	cb_count = 0;
 	cb_count_expected = 0;
@@ -172,38 +172,38 @@ void test_gpio_pin_interrupt_level(unsigned int cfg_flags,
 		ztest_test_skip();
 		return;
 	}
-	zassert_equal(ret, 0, "Failed to configure pin interrupt");
+	ztest_equal(ret, 0, "Failed to configure pin interrupt");
 
-	zassert_equal(cb_count, cb_count_expected,
+	ztest_equal(cb_count, cb_count_expected,
 		      "Pin interrupt triggered on level %d", pin_out_val);
 
 	for (int i = 0; i < 6; i++) {
 		pin_out_val = (pin_out_val != 0) ? 0 : 1;
 		pin_set_and_verify(port, TEST_PIN, pin_out_val, i);
 		cb_count_expected++;
-		zassert_equal(cb_count, cb_count_expected,
+		ztest_equal(cb_count, cb_count_expected,
 			      "Test point %d: Pin interrupt triggered invalid "
 			      "number of times on level %d", i, pin_out_val);
 
 		pin_out_val = (pin_out_val != 0) ? 0 : 1;
 		pin_set_and_verify(port, TEST_PIN, pin_out_val, i);
-		zassert_equal(cb_count, cb_count_expected,
+		ztest_equal(cb_count, cb_count_expected,
 			      "Test point %d: Pin interrupt triggered invalid "
 			      "number of times on level %d", i, pin_out_val);
 
 		/* Re-enable pin level interrupt */
 		ret = gpio_pin_interrupt_configure(port, TEST_PIN, int_flags);
-		zassert_equal(ret, 0,
+		ztest_equal(ret, 0,
 			      "Failed to re-enable pin level interrupt");
 	}
 
 	ret = gpio_pin_interrupt_configure(port, TEST_PIN, GPIO_INT_DISABLE);
-	zassert_equal(ret, 0, "Failed to disable pin interrupt");
+	ztest_equal(ret, 0, "Failed to disable pin interrupt");
 
 	for (int i = 0; i < 6; i++) {
 		pin_set_and_verify(port, TEST_PIN, 1, i);
 		pin_set_and_verify(port, TEST_PIN, 0, i);
-		zassert_equal(cb_count, cb_count_expected,
+		ztest_equal(cb_count, cb_count_expected,
 			      "Pin interrupt triggered when disabled");
 	}
 }

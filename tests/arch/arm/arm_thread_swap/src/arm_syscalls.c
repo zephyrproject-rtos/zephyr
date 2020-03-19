@@ -40,22 +40,22 @@ void z_impl_test_arm_user_syscall(void)
 	 * - PSPLIM register guards the privileged stack
 	 * - MSPLIM register still guards the interrupt stack
 	 */
-	zassert_true((_current->arch.mode & CONTROL_nPRIV_Msk) == 0,
+	ztest_true((_current->arch.mode & CONTROL_nPRIV_Msk) == 0,
 	"mode variable not set to PRIV mode in system call\n");
 
-	zassert_false(arch_is_user_context(),
+	ztest_false(arch_is_user_context(),
 	"arch_is_user_context() indicates nPRIV\n");
 
-	zassert_true(
+	ztest_true(
 		((__get_PSP() >= _current->arch.priv_stack_start) &&
 		(__get_PSP() < (_current->arch.priv_stack_start +
 			CONFIG_PRIVILEGED_STACK_SIZE))),
 	"Process SP outside thread privileged stack limits\n");
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
-	zassert_true(__get_PSPLIM() == _current->arch.priv_stack_start,
+	ztest_true(__get_PSPLIM() == _current->arch.priv_stack_start,
 	"PSPLIM not guarding the thread's privileged stack\n");
-	zassert_true(__get_MSPLIM() == (u32_t)z_interrupt_stacks,
+	ztest_true(__get_MSPLIM() == (u32_t)z_interrupt_stacks,
 	"MSPLIM not guarding the interrupt stack\n");
 #endif
 }
@@ -78,13 +78,13 @@ void arm_isr_handler(void *args)
 	 * - MSPLIM register still guards the interrupt stack
 	 */
 
-	zassert_true((_current->arch.mode & CONTROL_nPRIV_Msk) != 0,
+	ztest_true((_current->arch.mode & CONTROL_nPRIV_Msk) != 0,
 	"mode variable not set to nPRIV mode for user thread\n");
 
-	zassert_false(arch_is_user_context(),
+	ztest_false(arch_is_user_context(),
 	"arch_is_user_context() indicates nPRIV in ISR\n");
 
-	zassert_true(
+	ztest_true(
 		((__get_PSP() >= _current->stack_info.start) &&
 		(__get_PSP() < (_current->stack_info.start +
 			_current->stack_info.size))),
@@ -106,9 +106,9 @@ void arm_isr_handler(void *args)
 		/* Second ISR run occurs after thread context-switch.
 		 * We expect PSPLIM to be clear at this point.
 		 */
-		zassert_true(__get_PSPLIM() == 0,
+		ztest_true(__get_PSPLIM() == 0,
 		"PSPLIM not clear\n");
-		zassert_true(__get_MSPLIM() == (u32_t)z_interrupt_stacks,
+		ztest_true(__get_MSPLIM() == (u32_t)z_interrupt_stacks,
 		"MSPLIM not guarding the interrupt stack\n");
 #endif
 	}
@@ -161,22 +161,22 @@ void test_arm_syscalls(void)
 	 * - MSPLIM register guards the interrupt stack
 	 */
 
-	zassert_true((_current->arch.mode & CONTROL_nPRIV_Msk) == 0,
+	ztest_true((_current->arch.mode & CONTROL_nPRIV_Msk) == 0,
 	"mode variable not set to PRIV mode for supervisor thread\n");
 
-	zassert_false(arch_is_user_context(),
+	ztest_false(arch_is_user_context(),
 	"arch_is_user_context() indicates nPRIV\n");
 
-	zassert_true(
+	ztest_true(
 		((__get_PSP() >= _current->stack_info.start) &&
 		(__get_PSP() < (_current->stack_info.start +
 			_current->stack_info.size))),
 	"Process SP outside thread stack limits\n");
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
-	zassert_true(__get_PSPLIM() == _current->stack_info.start,
+	ztest_true(__get_PSPLIM() == _current->stack_info.start,
 	"PSPLIM not guarding the default stack\n");
-	zassert_true(__get_MSPLIM() == (u32_t)z_interrupt_stacks,
+	ztest_true(__get_MSPLIM() == (u32_t)z_interrupt_stacks,
 	"MSPLIM not guarding the interrupt stack\n");
 #endif
 
@@ -203,7 +203,7 @@ void test_arm_syscalls(void)
 		}
 	}
 
-	zassert_true(i >= 0,
+	ztest_true(i >= 0,
 		 "No available IRQ line to use in the test\n");
 
 	TC_PRINT("Available IRQ line: %u\n", i);

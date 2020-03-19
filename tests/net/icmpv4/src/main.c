@@ -182,40 +182,40 @@ static int verify_echo_reply(struct net_pkt *pkt)
 
 	ret = net_pkt_skip(pkt, NET_IPV4H_LEN);
 	if (ret != 0) {
-		zassert_true(false, "echo_reply skip failed");
+		ztest_true(false, "echo_reply skip failed");
 	}
 
 	/* EchoReply Code and Type is 0 */
 	ret = net_pkt_read(pkt, &icmp_hdr, sizeof(struct net_icmp_hdr));
 	if (ret != 0) {
-		zassert_true(false, "echo_reply read failed");
+		ztest_true(false, "echo_reply read failed");
 	}
 
 	if (icmp_hdr.code != 0 || icmp_hdr.type != 0) {
-		zassert_true(false, "echo_reply invalid type or code");
+		ztest_true(false, "echo_reply invalid type or code");
 	}
 
 	/* Calculate payload length */
 	payload_len = sizeof(icmpv4_echo_req) -
 		      NET_IPV4H_LEN - NET_ICMPH_LEN;
 	if (payload_len != net_pkt_remaining_data(pkt)) {
-		zassert_true(false, "echo_reply invalid payload len");
+		ztest_true(false, "echo_reply invalid payload len");
 	}
 
 	ret = net_pkt_read(pkt, buf, payload_len);
 	if (ret != 0) {
-		zassert_true(false, "echo_reply read payload failed");
+		ztest_true(false, "echo_reply read payload failed");
 	}
 
 	/* Compare the payload */
 	if (memcmp(buf, icmpv4_echo_req + NET_IPV4H_LEN + NET_ICMPH_LEN,
 		   payload_len)) {
-		zassert_true(false, "echo_reply invalid payload");
+		ztest_true(false, "echo_reply invalid payload");
 	}
 
 	/* Options length should be zero */
 	if (net_pkt_ipv4_opts_len(pkt)) {
-		zassert_true(false, "echo_reply invalid opts len");
+		ztest_true(false, "echo_reply invalid opts len");
 	}
 
 	return 0;
@@ -235,52 +235,52 @@ static int verify_echo_reply_with_opts(struct net_pkt *pkt)
 
 	ret = net_pkt_read_u8(pkt, &vhl);
 	if (ret != 0) {
-		zassert_true(false, "echo_reply_opts read failed");
+		ztest_true(false, "echo_reply_opts read failed");
 	}
 
 	vhl = (vhl & NET_IPV4_IHL_MASK) * 4U;
 	opts_len = vhl - sizeof(struct net_ipv4_hdr);
 	if (opts_len == 0) {
-		zassert_true(false, "echo_reply_opts wrong opts len");
+		ztest_true(false, "echo_reply_opts wrong opts len");
 	}
 
 	ret = net_pkt_skip(pkt, NET_IPV4H_LEN - 1U + opts_len);
 	if (ret != 0) {
-		zassert_true(false, "echo_reply_opts skip failed");
+		ztest_true(false, "echo_reply_opts skip failed");
 	}
 
 	/* EchoReply Code and Type is 0 */
 	ret = net_pkt_read(pkt, &icmp_hdr, sizeof(struct net_icmp_hdr));
 	if (ret != 0) {
-		zassert_true(false, "echo_reply_opts read failed");
+		ztest_true(false, "echo_reply_opts read failed");
 	}
 
 	if (icmp_hdr.code != 0 || icmp_hdr.type != 0) {
-		zassert_true(false, "echo_reply_opts wrong code and type");
+		ztest_true(false, "echo_reply_opts wrong code and type");
 	}
 
 	/* Calculate payload length */
 	payload_len = sizeof(icmpv4_echo_req_opt) -
 		      NET_IPV4H_LEN - NET_ICMPH_LEN - opts_len;
 	if (payload_len != net_pkt_remaining_data(pkt)) {
-		zassert_true(false, "echo_reply_opts invalid paylaod len");
+		ztest_true(false, "echo_reply_opts invalid paylaod len");
 	}
 
 	ret = net_pkt_read(pkt, buf, payload_len);
 	if (ret != 0) {
-		zassert_true(false, "echo_reply_opts read payload failed");
+		ztest_true(false, "echo_reply_opts read payload failed");
 	}
 
 	/* Compare the payload */
 	if (memcmp(buf, icmpv4_echo_req_opt +
 		   NET_IPV4H_LEN + NET_ICMPH_LEN + opts_len,
 		   payload_len)) {
-		zassert_true(false, "echo_reply_opts invalid payload");
+		ztest_true(false, "echo_reply_opts invalid payload");
 	}
 
 	/* Options length should not be zero */
 	if (net_pkt_ipv4_opts_len(pkt) != opts_len) {
-		zassert_true(false, "echo_reply_opts wrong opts len");
+		ztest_true(false, "echo_reply_opts wrong opts len");
 	}
 
 	return 0;
@@ -419,12 +419,12 @@ static void test_icmpv4(void)
 
 	iface = net_if_get_default();
 	if (!iface) {
-		zassert_true(false, "Interface not available");
+		ztest_true(false, "Interface not available");
 	}
 
 	ifaddr = net_if_ipv4_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		zassert_true(false, "Failed to add address");
+		ztest_true(false, "Failed to add address");
 	}
 }
 
@@ -436,12 +436,12 @@ static void test_icmpv4_send_echo_req(void)
 
 	pkt = prepare_echo_request(iface);
 	if (!pkt) {
-		zassert_true(false, "EchoRequest packet prep failed");
+		ztest_true(false, "EchoRequest packet prep failed");
 	}
 
 	if (net_ipv4_input(pkt)) {
 		net_pkt_unref(pkt);
-		zassert_true(false, "Failed to send");
+		ztest_true(false, "Failed to send");
 	}
 }
 
@@ -453,12 +453,12 @@ static void test_icmpv4_send_echo_rep(void)
 
 	pkt = prepare_echo_reply(iface);
 	if (!pkt) {
-		zassert_true(false, "EchoReply packet prep failed");
+		ztest_true(false, "EchoReply packet prep failed");
 	}
 
 	if (net_ipv4_input(pkt)) {
 		net_pkt_unref(pkt);
-		zassert_true(false, "Failed to send");
+		ztest_true(false, "Failed to send");
 	}
 
 	net_icmpv4_unregister_handler(&echo_rep_handler);
@@ -472,12 +472,12 @@ static void test_icmpv4_send_echo_req_opt(void)
 
 	pkt = prepare_echo_request_with_options(iface);
 	if (!pkt) {
-		zassert_true(false, "EchoRequest with opts packet prep failed");
+		ztest_true(false, "EchoRequest with opts packet prep failed");
 	}
 
 	if (net_ipv4_input(pkt)) {
 		net_pkt_unref(pkt);
-		zassert_true(false, "Failed to send");
+		ztest_true(false, "Failed to send");
 	}
 }
 
@@ -487,13 +487,13 @@ static void test_icmpv4_send_echo_req_bad_opt(void)
 
 	pkt = prepare_echo_request_with_bad_options(iface);
 	if (!pkt) {
-		zassert_true(false,
+		ztest_true(false,
 			     "EchoRequest with bad opts packet prep failed");
 	}
 
 	if (!net_ipv4_input(pkt)) {
 		net_pkt_unref(pkt);
-		zassert_true(false, "Failed to send");
+		ztest_true(false, "Failed to send");
 	}
 }
 

@@ -23,20 +23,20 @@ void thread1(void const *argument)
 	osStatus status;
 	osThreadId id = osThreadGetId();
 
-	zassert_true(id != NULL, "Failed getting Thread ID");
+	ztest_true(id != NULL, "Failed getting Thread ID");
 
 	/* This thread starts off at a high priority (same as thread2) */
 	thread_yield_check++;
-	zassert_equal(thread_yield_check, 1, NULL);
+	ztest_equal(thread_yield_check, 1, NULL);
 
 	/* Yield to thread2 which is of same priority */
 	status = osThreadYield();
-	zassert_true(status == osOK, "Error doing thread yield");
+	ztest_true(status == osOK, "Error doing thread yield");
 
 	/* thread_yield_check should now be 2 as it was incremented
 	 * in thread2.
 	 */
-	zassert_equal(thread_yield_check, 2, NULL);
+	ztest_equal(thread_yield_check, 2, NULL);
 }
 
 void thread2(void const *argument)
@@ -61,27 +61,27 @@ void thread3(void const *argument)
 	/* Lower the priority of the current thread */
 	osThreadSetPriority(id, osPriorityBelowNormal);
 	rv = osThreadGetPriority(id);
-	zassert_equal(rv, osPriorityBelowNormal,
+	ztest_equal(rv, osPriorityBelowNormal,
 			"Expected priority to be changed to %d, not %d",
 			(int)osPriorityBelowNormal, (int)rv);
 
 	/* Increase the priority of the current thread */
 	osThreadSetPriority(id, osPriorityAboveNormal);
 	rv = osThreadGetPriority(id);
-	zassert_equal(rv, osPriorityAboveNormal,
+	ztest_equal(rv, osPriorityAboveNormal,
 			"Expected priority to be changed to %d, not %d",
 			(int)osPriorityAboveNormal, (int)rv);
 
 	/* Restore the priority of the current thread */
 	osThreadSetPriority(id, prio);
 	rv = osThreadGetPriority(id);
-	zassert_equal(rv, prio,
+	ztest_equal(rv, prio,
 			"Expected priority to be changed to %d, not %d",
 			(int)prio, (int)rv);
 
 	/* Try to set unsupported priority and assert failure */
 	status = osThreadSetPriority(id, osPriorityDeadline);
-	zassert_true(status == osErrorValue,
+	ztest_true(status == osErrorValue,
 			"Something's wrong with osThreadSetPriority!");
 
 	/* Indication that thread3 is done with its processing */
@@ -103,7 +103,7 @@ void test_thread_prio(void)
 	osThreadId id3;
 
 	id3 = osThreadCreate(osThread(thread3), NULL);
-	zassert_true(id3 != NULL, "Failed creating thread3");
+	ztest_true(id3 != NULL, "Failed creating thread3");
 
 	/* Keep delaying 10 milliseconds to ensure thread3 is done with
 	 * its execution. It loops at the end and is terminated here.
@@ -113,16 +113,16 @@ void test_thread_prio(void)
 	} while (thread3_state == 0);
 
 	status = osThreadTerminate(id3);
-	zassert_true(status == osOK, "Error terminating thread3");
+	ztest_true(status == osOK, "Error terminating thread3");
 
 	/* Try to set priority to inactive thread and assert failure */
 	status = osThreadSetPriority(id3, osPriorityNormal);
-	zassert_true(status == osErrorResource,
+	ztest_true(status == osErrorResource,
 			"Something's wrong with osThreadSetPriority!");
 
 	/* Try to terminate inactive thread and assert failure */
 	status = osThreadTerminate(id3);
-	zassert_true(status == osErrorResource,
+	ztest_true(status == osErrorResource,
 			"Something's wrong with osThreadTerminate!");
 
 	thread3_state = 0;
@@ -134,10 +134,10 @@ void test_thread_apis(void)
 	osThreadId id2;
 
 	id1 = osThreadCreate(osThread(thread1), NULL);
-	zassert_true(id1 != NULL, "Failed creating thread1");
+	ztest_true(id1 != NULL, "Failed creating thread1");
 
 	id2 = osThreadCreate(osThread(thread2), NULL);
-	zassert_true(id2 != NULL, "Failed creating thread2");
+	ztest_true(id2 != NULL, "Failed creating thread2");
 
 	do {
 		osDelay(100);

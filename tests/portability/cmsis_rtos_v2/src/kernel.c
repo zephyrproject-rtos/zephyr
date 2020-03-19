@@ -42,22 +42,22 @@ void lock_unlock_check(void *arg)
 
 	state_before_lock = osKernelLock();
 	if (k_is_in_isr()) {
-		zassert_true(state_before_lock == osErrorISR, NULL);
+		ztest_true(state_before_lock == osErrorISR, NULL);
 	}
 	tick_freq = osKernelGetTickFreq();
 	sys_timer_freq = osKernelGetTickFreq();
 
 	state_after_lock = osKernelUnlock();
 	if (k_is_in_isr()) {
-		zassert_true(state_after_lock == osErrorISR, NULL);
+		ztest_true(state_after_lock == osErrorISR, NULL);
 	} else {
-		zassert_true(state_before_lock == !state_after_lock, NULL);
+		ztest_true(state_before_lock == !state_after_lock, NULL);
 	}
 	current_state = osKernelRestoreLock(state_before_lock);
 	if (k_is_in_isr()) {
-		zassert_true(current_state == osErrorISR, NULL);
+		ztest_true(current_state == osErrorISR, NULL);
 	} else {
-		zassert_equal(current_state, state_before_lock, NULL);
+		ztest_equal(current_state, state_before_lock, NULL);
 	}
 }
 
@@ -69,9 +69,9 @@ void test_kernel_apis(void)
 	irq_offload(get_version_check, &version_irq);
 
 	/* Check if the version value retrieved in ISR and thread is same */
-	zassert_equal(strcmp(version.info, version_irq.info), 0, NULL);
-	zassert_equal(version.os_info.api, version_irq.os_info.api, NULL);
-	zassert_equal(version.os_info.kernel, version_irq.os_info.kernel, NULL);
+	ztest_equal(strcmp(version.info, version_irq.info), 0, NULL);
+	ztest_equal(version.os_info.api, version_irq.os_info.api, NULL);
+	ztest_equal(version.os_info.kernel, version_irq.os_info.kernel, NULL);
 
 	lock_unlock_check(NULL);
 
@@ -90,9 +90,9 @@ void delay_until(void *param)
 void test_delay(void)
 {
 	delay_until(NULL);
-	zassert_true(tick <= osKernelGetTickCount(), NULL);
-	zassert_equal(status_val, osOK, NULL);
+	ztest_true(tick <= osKernelGetTickCount(), NULL);
+	ztest_equal(status_val, osOK, NULL);
 
 	irq_offload(delay_until, NULL);
-	zassert_equal(status_val, osErrorISR, NULL);
+	ztest_equal(status_val, osErrorISR, NULL);
 }

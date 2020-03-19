@@ -81,7 +81,7 @@ static int test_i2c_adv7513(void)
 	}
 
 	/* Power up ADV7513 */
-	zassert_true(powerup_adv7513(i2c_dev) == TC_PASS,
+	ztest_true(powerup_adv7513(i2c_dev) == TC_PASS,
 					"ADV7513 power up failed");
 
 	TC_PRINT("*** Running i2c read/write tests ***\n");
@@ -123,7 +123,7 @@ static int test_i2c_adv7513(void)
 
 void test_i2c_master(void)
 {
-	zassert_true(test_i2c_adv7513() == TC_PASS, NULL);
+	ztest_true(test_i2c_adv7513() == TC_PASS, NULL);
 }
 
 void test_main(void)

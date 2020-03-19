@@ -33,8 +33,8 @@ static void tstack_pop(struct k_stack *pstack)
 
 	for (int i = STACK_LEN - 1; i >= 0; i--) {
 		/**TESTPOINT: stack pop*/
-		zassert_false(k_stack_pop(pstack, &rx_data, K_NO_WAIT), NULL);
-		zassert_equal(rx_data, data[i], NULL);
+		ztest_false(k_stack_pop(pstack, &rx_data, K_NO_WAIT), NULL);
+		ztest_equal(rx_data, data[i], NULL);
 	}
 }
 
@@ -114,8 +114,8 @@ void test_stack_user_thread2thread(void)
 {
 	struct k_stack *stack = k_object_alloc(K_OBJ_STACK);
 
-	zassert_not_null(stack, "couldn't allocate stack object");
-	zassert_false(k_stack_alloc_init(stack, STACK_LEN),
+	ztest_not_null(stack, "couldn't allocate stack object");
+	ztest_false(k_stack_alloc_init(stack, STACK_LEN),
 		      "stack init failed");
 
 	tstack_thread_thread(stack);
@@ -164,7 +164,7 @@ void test_stack_alloc_thread2thread(void)
 
 	/** Requested buffer allocation from the test pool.*/
 	ret = k_stack_alloc_init(&kstack_test_alloc, (STACK_SIZE/2)+1);
-	zassert_true(ret == -ENOMEM,
+	ztest_true(ret == -ENOMEM,
 			"resource pool is smaller then requested buffer");
 }
 

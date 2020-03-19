@@ -23,7 +23,7 @@ static void test_shell_exec(const char *line, int result)
 
 	TC_PRINT("shell_execute_cmd(%s): %d\n", line, ret);
 
-	zassert_true(ret == result, line);
+	ztest_true(ret == result, line);
 }
 
 void test_fs_help(void)

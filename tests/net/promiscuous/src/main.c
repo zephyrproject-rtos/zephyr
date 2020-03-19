@@ -211,8 +211,8 @@ static void iface_setup(void)
 	((struct net_if_test *)
 	 net_if_get_device(iface2)->driver_data)->idx = idx;
 
-	zassert_not_null(iface1, "Interface 1");
-	zassert_not_null(iface2, "Interface 2");
+	ztest_not_null(iface1, "Interface 1");
+	ztest_not_null(iface2, "Interface 2");
 
 	DBG("Interfaces: [%d] iface1 %p, [%d] iface2 %p\n",
 	    net_if_get_by_iface(iface1), iface1,
@@ -223,7 +223,7 @@ static void iface_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr1));
-		zassert_not_null(ifaddr, "addr1");
+		ztest_not_null(ifaddr, "addr1");
 	}
 
 	/* For testing purposes we need to set the adddresses preferred */
@@ -234,7 +234,7 @@ static void iface_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&ll_addr));
-		zassert_not_null(ifaddr, "ll_addr");
+		ztest_not_null(ifaddr, "ll_addr");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -244,7 +244,7 @@ static void iface_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr2));
-		zassert_not_null(ifaddr, "addr2");
+		ztest_not_null(ifaddr, "addr2");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -254,7 +254,7 @@ static void iface_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr3));
-		zassert_not_null(ifaddr, "addr3");
+		ztest_not_null(ifaddr, "addr3");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -265,7 +265,7 @@ static void iface_setup(void)
 	if (!maddr) {
 		DBG("Cannot add multicast IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&in6addr_mcast));
-		zassert_not_null(maddr, "mcast");
+		ztest_not_null(maddr, "mcast");
 	}
 
 	net_if_up(iface1);
@@ -280,7 +280,7 @@ static void _set_promisc_mode_on_again(struct net_if *iface)
 
 	ret = net_promisc_mode_on(iface);
 
-	zassert_equal(ret, -EALREADY, "iface %p promiscuous mode ON", iface);
+	ztest_equal(ret, -EALREADY, "iface %p promiscuous mode ON", iface);
 }
 
 static void _set_promisc_mode_on(struct net_if *iface)
@@ -291,7 +291,7 @@ static void _set_promisc_mode_on(struct net_if *iface)
 
 	ret = net_promisc_mode_on(iface);
 
-	zassert_equal(ret, 0, "iface %p promiscuous mode set ON failed",
+	ztest_equal(ret, 0, "iface %p promiscuous mode set ON failed",
 		      iface);
 }
 
@@ -303,7 +303,7 @@ static void _set_promisc_mode_off_again(struct net_if *iface)
 
 	ret = net_promisc_mode_off(iface);
 
-	zassert_equal(ret, -EALREADY, "iface %p promiscuous mode OFF", iface);
+	ztest_equal(ret, -EALREADY, "iface %p promiscuous mode OFF", iface);
 }
 
 static void _set_promisc_mode_off(struct net_if *iface)
@@ -314,7 +314,7 @@ static void _set_promisc_mode_off(struct net_if *iface)
 
 	ret = net_promisc_mode_off(iface);
 
-	zassert_equal(ret, 0, "iface %p promiscuous mode set OFF failed",
+	ztest_equal(ret, 0, "iface %p promiscuous mode set OFF failed",
 		      iface);
 }
 
@@ -353,7 +353,7 @@ static void _recv_data(struct net_if *iface, struct net_pkt **pkt)
 	net_pkt_write(*pkt, data, sizeof(data));
 
 	ret = net_recv_data(iface, *pkt);
-	zassert_equal(ret, 0, "Data receive failure");
+	ztest_equal(ret, 0, "Data receive failure");
 }
 
 static struct net_pkt *pkt1;
@@ -370,11 +370,11 @@ static void verify_data(void)
 	struct net_pkt *pkt;
 
 	pkt = net_promisc_mode_wait_data(K_SECONDS(1));
-	zassert_equal_ptr(pkt, pkt1, "pkt %p != %p", pkt, pkt1);
+	ztest_equal_ptr(pkt, pkt1, "pkt %p != %p", pkt, pkt1);
 	net_pkt_unref(pkt);
 
 	pkt = net_promisc_mode_wait_data(K_SECONDS(1));
-	zassert_equal_ptr(pkt, pkt2, "pkt %p != %p", pkt, pkt2);
+	ztest_equal_ptr(pkt, pkt2, "pkt %p != %p", pkt, pkt2);
 	net_pkt_unref(pkt);
 }
 

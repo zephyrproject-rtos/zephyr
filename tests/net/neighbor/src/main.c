@@ -77,7 +77,7 @@ static void test_neighbor(void)
 	struct net_if *iface2 = INT_TO_POINTER(2);
 	int ret, i;
 
-	zassert_true(CONFIG_NET_IPV6_MAX_NEIGHBORS == (ARRAY_SIZE(addrs) - 2),
+	ztest_true(CONFIG_NET_IPV6_MAX_NEIGHBORS == (ARRAY_SIZE(addrs) - 2),
 		     "There should be exactly %d valid entries in addrs array\n",
 		     CONFIG_NET_IPV6_MAX_NEIGHBORS + 1);
 
@@ -85,10 +85,10 @@ static void test_neighbor(void)
 	 * to it. Only the first one should succeed.
 	 */
 	nbr = net_nbr_get(&net_test_neighbor.table);
-	zassert_not_null(nbr, "Cannot get neighbor from table %p\n",
+	ztest_not_null(nbr, "Cannot get neighbor from table %p\n",
 			 &net_test_neighbor.table);
 
-	zassert_false(nbr->ref != 1, "Invalid ref count %d\n", nbr->ref);
+	ztest_false(nbr->ref != 1, "Invalid ref count %d\n", nbr->ref);
 
 	lladdr.len = sizeof(struct net_eth_addr);
 
@@ -100,7 +100,7 @@ static void test_neighbor(void)
 		ret = net_nbr_link(nbr, iface1, &lladdr);
 
 		/* One neighbor can have only one lladdr */
-		zassert_false(i == 0 && ret < 0, "Cannot add %s to nbr cache (%d)\n",
+		ztest_false(i == 0 && ret < 0, "Cannot add %s to nbr cache (%d)\n",
 			      net_sprint_ll_addr(lladdr.addr, lladdr.len),
 			      ret);
 
@@ -113,7 +113,7 @@ static void test_neighbor(void)
 
 	lladdr.addr = addrs[0]->addr;
 	nbr = net_nbr_lookup(&net_test_neighbor.table, iface1, &lladdr);
-	zassert_true(nbr->idx == 0, "Wrong index %d should be %d\n", nbr->idx, 0);
+	ztest_true(nbr->idx == 0, "Wrong index %d should be %d\n", nbr->idx, 0);
 
 	for (i = 0; i < 2; i++) {
 		eth_addr = addrs[i];
@@ -121,7 +121,7 @@ static void test_neighbor(void)
 		lladdr.addr = eth_addr->addr;
 
 		ret = net_nbr_unlink(nbr, &lladdr);
-		zassert_false(i == 0 && ret < 0, "Cannot add %s to nbr cache (%d)\n",
+		ztest_false(i == 0 && ret < 0, "Cannot add %s to nbr cache (%d)\n",
 			      net_sprint_ll_addr(lladdr.addr, lladdr.len),
 			      ret);
 		if (!ret) {
@@ -132,7 +132,7 @@ static void test_neighbor(void)
 	}
 
 	net_nbr_unref(nbr);
-	zassert_false(nbr->ref != 0, "nbr still referenced, ref %d\n",
+	ztest_false(nbr->ref != 0, "nbr still referenced, ref %d\n",
 		      nbr->ref);
 
 	/* Then adding multiple neighbors.
@@ -146,11 +146,11 @@ static void test_neighbor(void)
 				/* Ok, last entry will not fit cache */
 				break;
 			}
-			zassert_true(1, "[%d] Cannot get neighbor from table %p\n",
+			ztest_true(1, "[%d] Cannot get neighbor from table %p\n",
 				     i, &net_test_neighbor.table);
 		}
 
-		zassert_true(nbr->ref == 1, "[%d] Invalid ref count %d\n", i, nbr->ref);
+		ztest_true(nbr->ref == 1, "[%d] Invalid ref count %d\n", i, nbr->ref);
 		nbrs[i] = nbr;
 
 		eth_addr = addrs[i];
@@ -158,7 +158,7 @@ static void test_neighbor(void)
 		lladdr.addr = eth_addr->addr;
 
 		ret = net_nbr_link(nbr, iface1, &lladdr);
-		zassert_false(ret < 0, "Cannot add %s to nbr cache (%d)\n",
+		ztest_false(ret < 0, "Cannot add %s to nbr cache (%d)\n",
 			      net_sprint_ll_addr(lladdr.addr, lladdr.len),
 			      ret);
 		printk("Adding %s\n", net_sprint_ll_addr(eth_addr->addr,
@@ -168,7 +168,7 @@ static void test_neighbor(void)
 	for (i = 0; i < ARRAY_SIZE(addrs) - 2; i++) {
 		lladdr.addr = addrs[i]->addr;
 		nbr = net_nbr_lookup(&net_test_neighbor.table, iface1, &lladdr);
-		zassert_false(nbr->idx != i, "Wrong index %d should be %d\n", nbr->idx, i);
+		ztest_false(nbr->idx != i, "Wrong index %d should be %d\n", nbr->idx, i);
 	}
 
 	for (i = 0; i < ARRAY_SIZE(addrs); i++) {
@@ -181,14 +181,14 @@ static void test_neighbor(void)
 		}
 
 		ret = net_nbr_unlink(nbr, &lladdr);
-		zassert_false(ret < 0, "Cannot del %s from nbr cache (%d)\n",
+		ztest_false(ret < 0, "Cannot del %s from nbr cache (%d)\n",
 			      net_sprint_ll_addr(lladdr.addr, lladdr.len),
 			      ret);
 		printk("Deleting %s\n", net_sprint_ll_addr(eth_addr->addr,
 							   sizeof(struct net_eth_addr)));
 
 		net_nbr_unref(nbr);
-		zassert_false(nbr->ref != 0, "nbr still referenced, ref %d\n",
+		ztest_false(nbr->ref != 0, "nbr still referenced, ref %d\n",
 			      nbr->ref);
 	}
 
@@ -205,11 +205,11 @@ static void test_neighbor(void)
 				/* Ok, last entry will not fit cache */
 				break;
 			}
-			zassert_true(1, "[%d] Cannot get neighbor from table %p\n",
+			ztest_true(1, "[%d] Cannot get neighbor from table %p\n",
 				     i, &net_test_neighbor.table);
 		}
 
-		zassert_false(nbr->ref != 1, "[%d] Invalid ref count %d\n", i, nbr->ref);
+		ztest_false(nbr->ref != 1, "[%d] Invalid ref count %d\n", i, nbr->ref);
 		nbrs[i] = nbr;
 
 		eth_addr = addrs[i];
@@ -221,7 +221,7 @@ static void test_neighbor(void)
 		} else {
 			ret = net_nbr_link(nbr, iface2, &lladdr);
 		}
-		zassert_false(ret < 0, "Cannot add %s to nbr cache (%d)\n",
+		ztest_false(ret < 0, "Cannot add %s to nbr cache (%d)\n",
 			      net_sprint_ll_addr(lladdr.addr, lladdr.len),
 			      ret);
 		printk("Adding %s iface %p\n",
@@ -240,12 +240,12 @@ static void test_neighbor(void)
 			nbr = net_nbr_lookup(&net_test_neighbor.table, iface2,
 					     &lladdr);
 		}
-		zassert_false(nbr->idx != i, "Wrong index %d should be %d\n", nbr->idx, i);
+		ztest_false(nbr->idx != i, "Wrong index %d should be %d\n", nbr->idx, i);
 
 		lladdr_ptr = net_nbr_get_lladdr(i);
 		if (memcmp(lladdr_ptr->addr, addrs[i]->addr,
 			   sizeof(struct net_eth_addr))) {
-			zassert_true(1, "Wrong lladdr %s in index %d\n",
+			ztest_true(1, "Wrong lladdr %s in index %d\n",
 				     net_sprint_ll_addr(lladdr_ptr->addr,
 							lladdr_ptr->len),
 				     i);
@@ -266,7 +266,7 @@ static void test_neighbor(void)
 		iface = nbr->iface;
 
 		ret = net_nbr_unlink(nbr, &lladdr);
-		zassert_false(ret < 0, "Cannot del %s from nbr cache (%d)\n",
+		ztest_false(ret < 0, "Cannot del %s from nbr cache (%d)\n",
 			      net_sprint_ll_addr(lladdr.addr, lladdr.len),
 			      ret);
 
@@ -274,21 +274,21 @@ static void test_neighbor(void)
 								    sizeof(struct net_eth_addr)), iface);
 
 		net_nbr_unref(nbr);
-		zassert_false(nbr->ref != 0, "nbr still referenced, ref %d\n", nbr->ref);
+		ztest_false(nbr->ref != 0, "nbr still referenced, ref %d\n", nbr->ref);
 	}
 
-	zassert_false(add_count != remove_count, "Remove count %d does not match add count %d\n",
+	ztest_false(add_count != remove_count, "Remove count %d does not match add count %d\n",
 		      remove_count, add_count);
 
 	net_nbr_clear_table(&net_test_neighbor.table);
 
-	zassert_true(clear_called, "Table clear check failed");
+	ztest_true(clear_called, "Table clear check failed");
 
 	/* The table should be empty now */
 	lladdr.addr = addrs[0]->addr;
 	nbr = net_nbr_lookup(&net_test_neighbor.table, iface1, &lladdr);
 
-	zassert_is_null(nbr, "Some entries still found in nbr cache");
+	ztest_is_null(nbr, "Some entries still found in nbr cache");
 
 	return;
 }

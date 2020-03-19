@@ -239,15 +239,15 @@ static void test_init(void)
 	    net_if_get_by_iface(my_iface), my_iface,
 	    net_if_get_by_iface(peer_iface), peer_iface);
 
-	zassert_not_null(my_iface,
+	ztest_not_null(my_iface,
 			 "Interface is NULL");
 
-	zassert_not_null(peer_iface,
+	ztest_not_null(peer_iface,
 			 "Interface is NULL");
 
 	ifaddr = net_if_ipv6_addr_add(my_iface, &my_addr,
 				      NET_ADDR_MANUAL, 0);
-	zassert_not_null(ifaddr,
+	ztest_not_null(ifaddr,
 			 "Cannot add IPv6 address");
 
 	/* For testing purposes we need to set the adddresses preferred */
@@ -255,7 +255,7 @@ static void test_init(void)
 
 	ifaddr = net_if_ipv6_addr_add(my_iface, &ll_addr,
 				      NET_ADDR_MANUAL, 0);
-	zassert_not_null(ifaddr,
+	ztest_not_null(ifaddr,
 			 "Cannot add IPv6 address");
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -263,7 +263,7 @@ static void test_init(void)
 	net_ipv6_addr_create(&in6addr_mcast, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
 
 	maddr = net_if_ipv6_maddr_add(my_iface, &in6addr_mcast);
-	zassert_not_null(maddr,
+	ztest_not_null(maddr,
 			 "Cannot add multicast IPv6 address");
 
 	/* The peer and dest interfaces are just simulated, they are not
@@ -286,7 +286,7 @@ static void net_ctx_create(void)
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_ctx);
-	zassert_equal(ret, 0,
+	ztest_equal(ret, 0,
 		      "Context create IPv6 UDP test failed");
 }
 
@@ -334,24 +334,24 @@ static void populate_nbr_cache(void)
 
 	recipient = my_iface;
 
-	zassert_true(net_test_send_ns(peer_iface, &peer_addr), NULL);
+	ztest_true(net_test_send_ns(peer_iface, &peer_addr), NULL);
 
 	nbr = net_ipv6_nbr_add(net_if_get_default(),
 			       &peer_addr,
 			       &net_route_data_peer.ll_addr,
 			       false,
 			       NET_IPV6_NBR_STATE_REACHABLE);
-	zassert_not_null(nbr, "Cannot add peer to neighbor cache");
+	ztest_not_null(nbr, "Cannot add peer to neighbor cache");
 
 	k_sem_take(&wait_data, WAIT_TIME);
 
 	feed_data = false;
 
-	zassert_false(data_failure, "data failure");
+	ztest_false(data_failure, "data failure");
 
 	data_failure = false;
 
-	zassert_true(net_test_nbr_lookup_ok(my_iface, &peer_addr), NULL);
+	ztest_true(net_test_nbr_lookup_ok(my_iface, &peer_addr), NULL);
 }
 
 static void route_add(void)
@@ -360,7 +360,7 @@ static void route_add(void)
 			      &dest_addr, 128,
 			      &peer_addr);
 
-	zassert_not_null(entry, "Route add failed");
+	ztest_not_null(entry, "Route add failed");
 }
 
 static void route_update(void)
@@ -370,7 +370,7 @@ static void route_update(void)
 	update_entry = net_route_add(my_iface,
 				     &dest_addr, 128,
 				     &peer_addr);
-	zassert_equal_ptr(update_entry, entry,
+	ztest_equal_ptr(update_entry, entry,
 			  "Route add again failed");
 }
 
@@ -380,7 +380,7 @@ static void route_del(void)
 
 	ret = net_route_del(entry);
 	if (ret < 0) {
-		zassert_true(0, "Route del failed");
+		ztest_true(0, "Route del failed");
 	}
 }
 
@@ -390,7 +390,7 @@ static void route_del_again(void)
 
 	ret = net_route_del(entry);
 	if (ret >= 0) {
-		zassert_true(0, "Route del again failed");
+		ztest_true(0, "Route del again failed");
 	}
 }
 
@@ -400,9 +400,9 @@ static void route_get_nexthop(void)
 
 	nexthop = net_route_get_nexthop(entry);
 
-	zassert_not_null(nexthop, "Route get nexthop failed");
+	ztest_not_null(nexthop, "Route get nexthop failed");
 
-	zassert_true(net_ipv6_addr_cmp(nexthop, &peer_addr),
+	ztest_true(net_ipv6_addr_cmp(nexthop, &peer_addr),
 		     "Route nexthop does not match");
 }
 
@@ -411,7 +411,7 @@ static void route_lookup_ok(void)
 	struct net_route_entry *entry;
 
 	entry = net_route_lookup(my_iface, &dest_addr);
-	zassert_not_null(entry,
+	ztest_not_null(entry,
 			 "Route lookup failed");
 }
 
@@ -420,7 +420,7 @@ static void route_lookup_fail(void)
 	struct net_route_entry *entry;
 
 	entry = net_route_lookup(my_iface, &peer_addr);
-	zassert_is_null(entry,
+	ztest_is_null(entry,
 			"Route lookup failed for peer address");
 }
 
@@ -430,7 +430,7 @@ static void route_del_nexthop(void)
 	int ret;
 
 	ret = net_route_del_by_nexthop(my_iface, nexthop);
-	zassert_false((ret <= 0), "Route del nexthop failed");
+	ztest_false((ret <= 0), "Route del nexthop failed");
 }
 
 static void route_del_nexthop_again(void)
@@ -439,7 +439,7 @@ static void route_del_nexthop_again(void)
 	int ret;
 
 	ret = net_route_del_by_nexthop(my_iface, nexthop);
-	zassert_false((ret >= 0), "Route del again nexthop failed");
+	ztest_false((ret >= 0), "Route del again nexthop failed");
 }
 
 static void route_add_many(void)
@@ -452,7 +452,7 @@ static void route_add_many(void)
 		test_routes[i] = net_route_add(my_iface,
 					  &dest_addresses[i], 128,
 					  &peer_addr);
-		zassert_not_null(test_routes[i], "Route add failed");
+		ztest_not_null(test_routes[i], "Route add failed");
 		}
 }
 
@@ -463,7 +463,7 @@ static void route_del_many(void)
 	for (i = 0; i < max_routes; i++) {
 		DBG("Deleting route %d addr %s\n", i + 1,
 		    net_sprint_ipv6_addr(&dest_addresses[i]));
-		zassert_false(net_route_del(test_routes[i]),
+		ztest_false(net_route_del(test_routes[i]),
 			      " Route del failed");
 	}
 }

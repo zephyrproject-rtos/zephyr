@@ -24,22 +24,22 @@ void test_getnameinfo_ipv4(void)
 
 	ret = getnameinfo((struct sockaddr *)&saddr, sizeof(saddr),
 			  host, sizeof(host), serv, sizeof(serv), 0);
-	zassert_equal(ret, 0, "");
+	ztest_equal(ret, 0, "");
 
 	printk("%s %s\n", host, serv);
-	zassert_equal(strcmp(host, "0.0.0.0"), 0, "");
-	zassert_equal(strcmp(serv, "0"), 0, "");
+	ztest_equal(strcmp(host, "0.0.0.0"), 0, "");
+	ztest_equal(strcmp(serv, "0"), 0, "");
 
 	saddr.sin_port = htons(1234);
 	saddr.sin_addr.s_addr = htonl(0x7f000001);
 
 	ret = getnameinfo((struct sockaddr *)&saddr, sizeof(saddr),
 			  host, sizeof(host), serv, sizeof(serv), 0);
-	zassert_equal(ret, 0, "");
+	ztest_equal(ret, 0, "");
 
 	printk("%s %s\n", host, serv);
-	zassert_equal(strcmp(host, "127.0.0.1"), 0, "");
-	zassert_equal(strcmp(serv, "1234"), 0, "");
+	ztest_equal(strcmp(host, "127.0.0.1"), 0, "");
+	ztest_equal(strcmp(serv, "1234"), 0, "");
 }
 
 void test_getnameinfo_ipv6(void)
@@ -54,11 +54,11 @@ void test_getnameinfo_ipv6(void)
 
 	ret = getnameinfo((struct sockaddr *)&saddr, sizeof(saddr),
 			  host, sizeof(host), serv, sizeof(serv), 0);
-	zassert_equal(ret, 0, "");
+	ztest_equal(ret, 0, "");
 
 	printk("%s %s\n", host, serv);
-	zassert_equal(strcmp(host, "::"), 0, "");
-	zassert_equal(strcmp(serv, "0"), 0, "");
+	ztest_equal(strcmp(host, "::"), 0, "");
+	ztest_equal(strcmp(serv, "0"), 0, "");
 
 	saddr.sin6_port = htons(4321);
 	saddr.sin6_addr.s6_addr[0] = 0xff;
@@ -67,11 +67,11 @@ void test_getnameinfo_ipv6(void)
 
 	ret = getnameinfo((struct sockaddr *)&saddr, sizeof(saddr),
 			  host, sizeof(host), serv, sizeof(serv), 0);
-	zassert_equal(ret, 0, "");
+	ztest_equal(ret, 0, "");
 
 	printk("%s %s\n", host, serv);
-	zassert_equal(strcmp(host, "ff55::11"), 0, "");
-	zassert_equal(strcmp(serv, "4321"), 0, "");
+	ztest_equal(strcmp(host, "ff55::11"), 0, "");
+	ztest_equal(strcmp(serv, "4321"), 0, "");
 }
 
 void test_main(void)

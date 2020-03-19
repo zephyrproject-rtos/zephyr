@@ -99,7 +99,7 @@ static void is_usermode(void)
 	/* Confirm that we are in fact running in user mode. */
 	expect_fault = false;
 	BARRIER();
-	zassert_true(_is_user_context(), "thread left in kernel mode");
+	ztest_true(_is_user_context(), "thread left in kernel mode");
 }
 
 /**
@@ -126,7 +126,7 @@ static void write_control(void)
 		"mov %eax, %cr0;\n\t"
 		);
 #endif
-	zassert_unreachable("Write to control register did not fault");
+	ztest_unreachable("Write to control register did not fault");
 #elif defined(CONFIG_ARM)
 	unsigned int msr_value;
 
@@ -138,7 +138,7 @@ static void write_control(void)
 	__DSB();
 	__ISB();
 	msr_value = __get_CONTROL();
-	zassert_true((msr_value & (CONTROL_nPRIV_Msk)),
+	ztest_true((msr_value & (CONTROL_nPRIV_Msk)),
 		     "Write to control register was successful");
 #elif defined(CONFIG_ARC)
 	unsigned int er_status;
@@ -153,7 +153,7 @@ static void write_control(void)
 	);
 #else
 #error "Not implemented for this architecture"
-	zassert_unreachable("Write to control register did not fault");
+	ztest_unreachable("Write to control register did not fault");
 #endif
 }
 
@@ -195,7 +195,7 @@ static void disable_mmu_mpu(void)
 #else
 #error "Not implemented for this architecture"
 #endif
-	zassert_unreachable("Disable MMU/MPU did not fault");
+	ztest_unreachable("Disable MMU/MPU did not fault");
 }
 
 /**
@@ -213,7 +213,7 @@ static void read_kernram(void)
 	BARRIER();
 	p = _current->init_data;
 	printk("%p\n", p);
-	zassert_unreachable("Read from kernel RAM did not fault");
+	ztest_unreachable("Read from kernel RAM did not fault");
 }
 
 /**
@@ -228,7 +228,7 @@ static void write_kernram(void)
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	BARRIER();
 	_current->init_data = NULL;
-	zassert_unreachable("Write to kernel RAM did not fault");
+	ztest_unreachable("Write to kernel RAM did not fault");
 }
 
 extern int _k_neg_eagain;
@@ -245,14 +245,14 @@ static void write_kernro(void)
 	/* Try to write to kernel RO. */
 	const char *const ptr = (const char *const)&_k_neg_eagain;
 
-	zassert_true(ptr < _image_rodata_end &&
+	ztest_true(ptr < _image_rodata_end &&
 		     ptr >= _image_rodata_start,
 		     "_k_neg_eagain is not in rodata");
 	expect_fault = true;
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	BARRIER();
 	_k_neg_eagain = -EINVAL;
-	zassert_unreachable("Write to kernel RO did not fault");
+	ztest_unreachable("Write to kernel RO did not fault");
 }
 
 /**
@@ -267,7 +267,7 @@ static void write_kerntext(void)
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	BARRIER();
 	memset(&z_is_thread_essential, 0, 4);
-	zassert_unreachable("Write to kernel text did not fault");
+	ztest_unreachable("Write to kernel text did not fault");
 }
 
 static int kernel_data;
@@ -287,7 +287,7 @@ static void read_kernel_data(void)
 	BARRIER();
 	value = kernel_data;
 	printk("%d\n", value);
-	zassert_unreachable("Read from data did not fault");
+	ztest_unreachable("Read from data did not fault");
 }
 
 /**
@@ -301,7 +301,7 @@ static void write_kernel_data(void)
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	BARRIER();
 	kernel_data = 1;
-	zassert_unreachable("Write to  data did not fault");
+	ztest_unreachable("Write to  data did not fault");
 }
 
 /*
@@ -335,7 +335,7 @@ static void read_priv_stack(void)
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	BARRIER();
 	printk("%c\n", *priv_stack_ptr);
-	zassert_unreachable("Read from privileged stack did not fault");
+	ztest_unreachable("Read from privileged stack did not fault");
 }
 
 /**
@@ -360,7 +360,7 @@ static void write_priv_stack(void)
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	BARRIER();
 	*priv_stack_ptr = 42;
-	zassert_unreachable("Write to privileged stack did not fault");
+	ztest_unreachable("Write to privileged stack did not fault");
 }
 
 
@@ -378,7 +378,7 @@ static void pass_user_object(void)
 	expected_reason = K_ERR_KERNEL_OOPS;
 	BARRIER();
 	k_sem_init(&sem, 0, 1);
-	zassert_unreachable("Pass a user object to a syscall did not fault");
+	ztest_unreachable("Pass a user object to a syscall did not fault");
 }
 
 static struct k_sem ksem;
@@ -395,7 +395,7 @@ static void pass_noperms_object(void)
 	expected_reason = K_ERR_KERNEL_OOPS;
 	BARRIER();
 	k_sem_init(&ksem, 0, 1);
-	zassert_unreachable("Pass an unauthorized object to a "
+	ztest_unreachable("Pass an unauthorized object to a "
 			    "syscall did not fault");
 }
 
@@ -422,7 +422,7 @@ static void start_kernel_thread(void)
 			(k_thread_entry_t)thread_body, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(1), K_INHERIT_PERMS,
 			K_NO_WAIT);
-	zassert_unreachable("Create a kernel thread did not fault");
+	ztest_unreachable("Create a kernel thread did not fault");
 }
 
 struct k_thread uthread_thread;
@@ -468,7 +468,7 @@ static void read_other_stack(void)
 		give_uthread_end_sem = false;
 		k_sem_give(&uthread_end_sem);
 	}
-	zassert_unreachable("Read from other thread stack did not fault");
+	ztest_unreachable("Read from other thread stack did not fault");
 }
 
 /**
@@ -501,7 +501,7 @@ static void write_other_stack(void)
 		give_uthread_end_sem = false;
 		k_sem_give(&uthread_end_sem);
 	}
-	zassert_unreachable("Write to other thread stack did not fault");
+	ztest_unreachable("Write to other thread stack did not fault");
 }
 
 /**
@@ -517,7 +517,7 @@ static void revoke_noperms_object(void)
 	BARRIER();
 	k_object_release(&ksem);
 
-	zassert_unreachable("Revoke access to unauthorized object "
+	ztest_unreachable("Revoke access to unauthorized object "
 			    "did not fault");
 }
 
@@ -536,7 +536,7 @@ static void access_after_revoke(void)
 	BARRIER();
 	k_sem_take(&test_revoke_sem, K_NO_WAIT);
 
-	zassert_unreachable("Using revoked object did not fault");
+	ztest_unreachable("Using revoked object did not fault");
 }
 
 static void umode_enter_func(void)
@@ -550,7 +550,7 @@ static void umode_enter_func(void)
 		 */
 		ztest_test_pass();
 	} else {
-		zassert_unreachable("Thread did not enter user mode");
+		ztest_unreachable("Thread did not enter user mode");
 	}
 }
 
@@ -588,7 +588,7 @@ static void write_kobject_user_pipe(void)
 	k_pipe_get(&kpipe, &uthread_start_sem, BYTES_TO_READ_WRITE,
 		   &bytes_written_read, 1, K_NO_WAIT);
 
-	zassert_unreachable("System call memory write validation "
+	ztest_unreachable("System call memory write validation "
 			    "did not fault");
 }
 
@@ -609,7 +609,7 @@ static void read_kobject_user_pipe(void)
 	k_pipe_put(&kpipe, &uthread_start_sem, BYTES_TO_READ_WRITE,
 		   &bytes_written_read, 1, K_NO_WAIT);
 
-	zassert_unreachable("System call memory read validation "
+	ztest_unreachable("System call memory read validation "
 			    "did not fault");
 }
 
@@ -626,7 +626,7 @@ static void shared_mem_thread(void)
 	expected_reason = K_ERR_CPU_EXCEPTION;
 	BARRIER();
 	thread_bool = false;
-	zassert_unreachable("Thread accessed global in other "
+	ztest_unreachable("Thread accessed global in other "
 			    "memory domain\n");
 }
 
@@ -951,15 +951,15 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 	/* Assert that the created stack object, with the reserved data
 	 * removed, can hold a thread buffer of STEST_STACKSIZE
 	 */
-	zassert_true(STEST_STACKSIZE <= (obj_size - K_THREAD_STACK_RESERVED),
+	ztest_true(STEST_STACKSIZE <= (obj_size - K_THREAD_STACK_RESERVED),
 		      "bad stack size in object");
 
 	/* Check that the stack info in the thread marks a region
 	 * completely contained within the stack object
 	 */
-	zassert_true(stack_end <= obj_end,
+	ztest_true(stack_end <= obj_end,
 		     "stack size in thread struct out of bounds (overflow)");
-	zassert_true(stack_start >= obj_start,
+	ztest_true(stack_start >= obj_start,
 		     "stack size in thread struct out of bounds (underflow)");
 
 	/* Check that the entire stack buffer is read/writable */
@@ -986,7 +986,7 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		 * to ensure that the thread has permissions on it.
 		 */
 		for (pos = stack_start; pos < stack_end; pos++) {
-			zassert_false(check_perms((void *)pos, 1, 1),
+			ztest_false(check_perms((void *)pos, 1, 1),
 				      "bad MPU/MMU permission on stack buffer at address %p",
 				      pos);
 		}
@@ -996,10 +996,10 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		 * alignment constraints, we test the end of the stack object
 		 * and not the buffer.
 		 */
-		zassert_true(check_perms(obj_start - 1, 1, 0),
+		ztest_true(check_perms(obj_start - 1, 1, 0),
 			     "user mode access to memory %p before start of stack object",
 			     obj_start - 1);
-		zassert_true(check_perms(obj_end, 1, 0),
+		ztest_true(check_perms(obj_end, 1, 0),
 			     "user mode access to memory %p past end of stack object",
 			     obj_end);
 	}
@@ -1012,7 +1012,7 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 	}
 
 	if (arch_is_user_context()) {
-		zassert_true(stack_size <= obj_size - K_THREAD_STACK_RESERVED,
+		ztest_true(stack_size <= obj_size - K_THREAD_STACK_RESERVED,
 			      "bad stack size %zu in thread struct",
 			      stack_size);
 	}
@@ -1025,7 +1025,7 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		expected = 0;
 	}
 
-	zassert_equal(ret, expected, "unexpected return value %d", ret);
+	ztest_equal(ret, expected, "unexpected return value %d", ret);
 	if (ret == 0) {
 		printk("self-reported unused stack space: %zu\n", unused);
 	}
@@ -1058,7 +1058,7 @@ void stest_thread_launch(void *stack_obj, size_t obj_size, u32_t flags,
 	k_sem_take(&uthread_end_sem, K_FOREVER);
 
 	ret = k_thread_stack_space_get(&uthread_thread, &unused);
-	zassert_equal(ret, 0, "failed to calculate unused stack space\n");
+	ztest_equal(ret, 0, "failed to calculate unused stack space\n");
 	printk("target thread unused stack space: %zu\n", unused);
 }
 
@@ -1130,15 +1130,15 @@ void test_object_recycle(void)
 	(void)memset(ko->perms, 0xFF, sizeof(ko->perms));
 
 	z_object_recycle(&recycle_sem);
-	zassert_true(ko != NULL, "kernel object not found");
-	zassert_true(ko->flags & K_OBJ_FLAG_INITIALIZED,
+	ztest_true(ko != NULL, "kernel object not found");
+	ztest_true(ko->flags & K_OBJ_FLAG_INITIALIZED,
 		     "object wasn't marked as initialized");
 
 	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
 		perms_count += popcount(ko->perms[i]);
 	}
 
-	zassert_true(perms_count == 1, "invalid number of thread permissions");
+	ztest_true(perms_count == 1, "invalid number of thread permissions");
 }
 
 #define test_oops(provided, expected) do { \
@@ -1181,10 +1181,10 @@ void z_impl_check_syscall_context(void)
 	/* Make sure that interrupts aren't locked when handling system calls;
 	 * key has the previous locking state before the above irq_lock() call.
 	 */
-	zassert_true(arch_irq_unlocked(key), "irqs locked during syscall");
+	ztest_true(arch_irq_unlocked(key), "irqs locked during syscall");
 
 	/* The kernel should not think we are in ISR context either */
-	zassert_false(k_is_in_isr(), "kernel reports irq context");
+	ztest_false(k_is_in_isr(), "kernel reports irq context");
 }
 
 static inline void z_vrfy_check_syscall_context(void)

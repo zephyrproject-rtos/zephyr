@@ -32,35 +32,35 @@ void test_mempool(void)
 	static struct mem_block zeroblock;
 
 	mempool_id = osPoolCreate(osPool(MemPool));
-	zassert_true(mempool_id != NULL, "mempool creation failed");
+	ztest_true(mempool_id != NULL, "mempool creation failed");
 
 	for (i = 0; i < MAX_BLOCKS; i++) {
 		addr_list[i] = (struct mem_block *)osPoolAlloc(mempool_id);
-		zassert_true(addr_list[i] != NULL, "mempool allocation failed");
+		ztest_true(addr_list[i] != NULL, "mempool allocation failed");
 	}
 
 	/* All blocks in mempool are allocated, any more allocation
 	 * without free should fail
 	 */
 	addr_list[i] = (struct mem_block *)osPoolAlloc(mempool_id);
-	zassert_true(addr_list[i] == NULL, "allocation happened."
+	ztest_true(addr_list[i] == NULL, "allocation happened."
 			" Something's wrong!");
 
 	for (i = 0; i < MAX_BLOCKS; i++) {
 		status_list[i] = osPoolFree(mempool_id, addr_list[i]);
-		zassert_true(status_list[i] == osOK, "mempool free failed");
+		ztest_true(status_list[i] == osOK, "mempool free failed");
 	}
 
 	for (i = 0; i < MAX_BLOCKS; i++) {
 		addr_list[i] = (struct mem_block *)osPoolCAlloc(mempool_id);
-		zassert_true(addr_list[i] != NULL, "mempool allocation failed");
-		zassert_true(memcmp(addr_list[i], &zeroblock,
+		ztest_true(addr_list[i] != NULL, "mempool allocation failed");
+		ztest_true(memcmp(addr_list[i], &zeroblock,
 					sizeof(struct mem_block)) == 0,
 			     "osPoolCAlloc didn't set mempool to 0");
 	}
 
 	for (i = 0; i < MAX_BLOCKS; i++) {
 		status_list[i] = osPoolFree(mempool_id, addr_list[i]);
-		zassert_true(status_list[i] == osOK, "mempool free failed");
+		ztest_true(status_list[i] == osOK, "mempool free failed");
 	}
 }

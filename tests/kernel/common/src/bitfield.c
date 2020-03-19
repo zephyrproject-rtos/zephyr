@@ -39,84 +39,84 @@ void test_bitfield(void)
 	for (bit = 0U; bit < 32; ++bit) {
 		sys_set_bit((mem_addr_t)&b1, bit);
 
-		zassert_equal(b1, (1 << bit),
+		ztest_equal(b1, (1 << bit),
 			      "sys_set_bit failed on bit %d\n", bit);
 
-		zassert_true(sys_test_bit((mem_addr_t)&b1, bit),
+		ztest_true(sys_test_bit((mem_addr_t)&b1, bit),
 			     "sys_test_bit did not detect bit %d\n", bit);
 
 		sys_clear_bit((mem_addr_t)&b1, bit);
-		zassert_equal(b1, 0, "sys_clear_bit failed for bit %d\n", bit);
+		ztest_equal(b1, 0, "sys_clear_bit failed for bit %d\n", bit);
 
-		zassert_false(sys_test_bit((mem_addr_t)&b1, bit),
+		ztest_false(sys_test_bit((mem_addr_t)&b1, bit),
 			      "sys_test_bit erroneously detected bit %d\n",
 			      bit);
 
-		zassert_false(sys_test_and_set_bit((mem_addr_t)&b1, bit),
+		ztest_false(sys_test_and_set_bit((mem_addr_t)&b1, bit),
 			      "sys_test_and_set_bit erroneously"
 			      " detected bit %d\n", bit);
-		zassert_equal(b1, (1 << bit),
+		ztest_equal(b1, (1 << bit),
 			      "sys_test_and_set_bit did not set bit %d\n",
 			      bit);
-		zassert_true(sys_test_and_set_bit((mem_addr_t)&b1, bit),
+		ztest_true(sys_test_and_set_bit((mem_addr_t)&b1, bit),
 			     "sys_test_and_set_bit did not detect bit %d\n",
 			     bit);
-		zassert_equal(b1, (1 << bit),
+		ztest_equal(b1, (1 << bit),
 			      "sys_test_and_set_bit cleared bit %d\n", bit);
 
-		zassert_true(sys_test_and_clear_bit((mem_addr_t)&b1, bit),
+		ztest_true(sys_test_and_clear_bit((mem_addr_t)&b1, bit),
 			     "sys_test_and_clear_bit did not detect bit %d\n",
 			     bit);
-		zassert_equal(b1, 0, "sys_test_and_clear_bit did not clear"
+		ztest_equal(b1, 0, "sys_test_and_clear_bit did not clear"
 			      " bit %d\n", bit);
-		zassert_false(sys_test_and_clear_bit((mem_addr_t)&b1, bit),
+		ztest_false(sys_test_and_clear_bit((mem_addr_t)&b1, bit),
 			      "sys_test_and_clear_bit erroneously detected"
 			      " bit %d\n", bit);
-		zassert_equal(b1, 0, "sys_test_and_clear_bit set bit %d\n",
+		ztest_equal(b1, 0, "sys_test_and_clear_bit set bit %d\n",
 			      bit);
 	}
 
 	for (bit = 0U; bit < BITFIELD_SIZE; ++bit) {
 		sys_bitfield_set_bit((mem_addr_t)b2, bit);
-		zassert_equal(b2[BIT_INDEX(bit)], BIT_VAL(bit),
+		ztest_equal(b2[BIT_INDEX(bit)], BIT_VAL(bit),
 			      "sys_bitfield_set_bit failed for bit %d\n",
 			      bit);
-		zassert_true(sys_bitfield_test_bit((mem_addr_t)b2, bit),
+		ztest_true(sys_bitfield_test_bit((mem_addr_t)b2, bit),
 			     "sys_bitfield_test_bit did not detect bit %d\n",
 			     bit);
 
 		sys_bitfield_clear_bit((mem_addr_t)b2, bit);
-		zassert_equal(b2[BIT_INDEX(bit)], 0,
+		ztest_equal(b2[BIT_INDEX(bit)], 0,
 			      "sys_bitfield_clear_bit failed for bit %d\n",
 			      bit);
-		zassert_false(sys_bitfield_test_bit((mem_addr_t)b2, bit),
+		ztest_false(sys_bitfield_test_bit((mem_addr_t)b2, bit),
 			      "sys_bitfield_test_bit erroneously detected"
 			      " bit %d\n", bit);
 
 		ret = sys_bitfield_test_and_set_bit((mem_addr_t)b2, bit);
-		zassert_false(ret, "sys_bitfield_test_and_set_bit erroneously"
+		ztest_false(ret, "sys_bitfield_test_and_set_bit erroneously"
 			      " detected bit %d\n", bit);
 
-		zassert_equal(b2[BIT_INDEX(bit)], BIT_VAL(bit),
+		ztest_equal(b2[BIT_INDEX(bit)], BIT_VAL(bit),
 			      "sys_bitfield_test_and_set_bit did not set"
 			      " bit %d\n", bit);
-		zassert_true(sys_bitfield_test_and_set_bit((mem_addr_t)b2, bit),
+		ztest_true(sys_bitfield_test_and_set_bit((mem_addr_t)b2, bit),
 			     "sys_bitfield_test_and_set_bit did not detect bit"
 			     " %d\n", bit);
-		zassert_equal(b2[BIT_INDEX(bit)], BIT_VAL(bit),
+		ztest_equal(b2[BIT_INDEX(bit)], BIT_VAL(bit),
 			      "sys_bitfield_test_and_set_bit cleared bit %d\n",
 			      bit);
 
-		zassert_true(sys_bitfield_test_and_clear_bit((mem_addr_t)b2,
+		ztest_true(sys_bitfield_test_and_clear_bit((mem_addr_t)b2,
 							     bit), "sys_bitfield_test_and_clear_bit did not"
 			     " detect bit %d\n", bit);
-		zassert_equal(b2[BIT_INDEX(bit)], 0,
+		ztest_equal(b2[BIT_INDEX(bit)], 0,
 			      "sys_bitfield_test_and_clear_bit did not"
 			      " clear bit %d\n", bit);
-		zassert_false(sys_bitfield_test_and_clear_bit((mem_addr_t)b2,
+		ztest_false(sys_bitfield_test_and_clear_bit((mem_addr_t)b2,
 							      bit), "sys_bitfield_test_and_clear_bit"
 			      " erroneously detected bit %d\n", bit);
-		zassert_equal(b2[BIT_INDEX(bit)], 0,
+		ztest_equal(b2[BIT_INDEX(bit)], 0,
 			      "sys_bitfield_test_and_clear_bit set bit %d\n",
 			      bit);
 	}

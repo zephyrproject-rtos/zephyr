@@ -38,17 +38,17 @@ void test_config_compress_file(void)
 	config_wipe_srcs();
 
 	rc = fs_mkdir(TEST_CONFIG_DIR);
-	zassert_true(rc == 0 || rc == -EEXIST, "can't create directory");
+	ztest_true(rc == 0 || rc == -EEXIST, "can't create directory");
 
 	cf.cf_name = TEST_CONFIG_DIR "/korwin";
 	cf.cf_maxlines = 24;
 	cf.cf_lines = 0; /* required as not start with load settings */
 
 	rc = settings_file_src(&cf);
-	zassert_true(rc == 0, "can't register FS as configuration source");
+	ztest_true(rc == 0, "can't register FS as configuration source");
 
 	rc = settings_file_dst(&cf);
-	zassert_true(rc == 0,
+	ztest_true(rc == 0,
 		     "can't register FS as configuration destination");
 
 	val64 = 1125U;
@@ -57,39 +57,39 @@ void test_config_compress_file(void)
 	for (int i = 0; i < 21; i++) {
 		val8 = i;
 		rc = settings_save();
-		zassert_true(rc == 0, "fs write error");
+		ztest_true(rc == 0, "fs write error");
 
 		val8 = 0xff;
 		settings_load();
-		zassert_true(val8 == i, "Bad value loaded");
+		ztest_true(val8 == i, "Bad value loaded");
 	}
 
 	val64 = 37U;
 	rc = settings_save();
-	zassert_true(rc == 0, "fs write error");
+	ztest_true(rc == 0, "fs write error");
 
 	const char exp_content_1[] = EXP_STR_CONTENT_1;
 
 	/* check 1st compression */
 	rc = file_str_cmp(cf.cf_name, exp_content_1, sizeof(exp_content_1)-1);
-	zassert_true(rc == 0, "bad value read");
+	ztest_true(rc == 0, "bad value read");
 
 	val16 = 257U;
 	for (int i = 0; i < 20; i++) {
 		val64 = i;
 		rc = settings_save();
-		zassert_true(rc == 0, "fs write error");
+		ztest_true(rc == 0, "fs write error");
 
 		val64 = 0xff;
 		settings_load();
-		zassert_true(val64 == i, "Bad value loaded");
+		ztest_true(val64 == i, "Bad value loaded");
 	}
 
 	const char exp_content_2[] = EXP_STR_CONTENT_2;
 
 	/* check subsequent compression */
 	rc = file_str_cmp(cf.cf_name, exp_content_2, sizeof(exp_content_2)-1);
-	zassert_true(rc == 0, "bad value read");
+	ztest_true(rc == 0, "bad value read");
 }
 
 int file_str_cmp(const char *fname, char const *string, size_t pattern_len)
@@ -111,11 +111,11 @@ int file_str_cmp(const char *fname, char const *string, size_t pattern_len)
 
 	len = entry.size;
 	buf = (char *)k_malloc(len + 1);
-	zassert_not_null(buf, "out of memory");
+	ztest_not_null(buf, "out of memory");
 
 	rc = fsutil_read_file(fname, 0, len, buf, &rlen);
-	zassert_true(rc == 0, "can't access the file\n'");
-	zassert_true(rc == 0, "not enough data read\n'");
+	ztest_true(rc == 0, "can't access the file\n'");
+	ztest_true(rc == 0, "not enough data read\n'");
 	buf[rlen] = '\0';
 
 	if (memcmp(buf, string, len)) {

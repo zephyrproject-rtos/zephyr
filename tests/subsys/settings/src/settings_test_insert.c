@@ -12,7 +12,7 @@ void test_config_insert_x(int idx)
 	int rc;
 
 	rc = settings_register(&c_test_handlers[idx]);
-	zassert_true(rc == 0, "settings_register fail");
+	ztest_true(rc == 0, "settings_register fail");
 }
 
 void test_config_insert(void)

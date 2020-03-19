@@ -422,9 +422,9 @@ void test_mbedtls(void)
 		} else {
 			mbedtls_printf("  [ All tests PASS ]\n\n");
 		}
-		zassert_not_equal(suites_tested, 0,
+		ztest_not_equal(suites_tested, 0,
 			      "ran %d tests", suites_tested);
-		zassert_equal(suites_failed, 0,
+		ztest_equal(suites_failed, 0,
 			      "%d tests failed", suites_failed);
 
 #if defined(_WIN32)

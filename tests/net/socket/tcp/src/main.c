@@ -24,28 +24,28 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 static void test_bind(int sock, struct sockaddr *addr, socklen_t addrlen)
 {
-	zassert_equal(bind(sock, addr, addrlen),
+	ztest_equal(bind(sock, addr, addrlen),
 		      0,
 		      "bind failed");
 }
 
 static void test_listen(int sock)
 {
-	zassert_equal(listen(sock, MAX_CONNS),
+	ztest_equal(listen(sock, MAX_CONNS),
 		      0,
 		      "listen failed");
 }
 
 static void test_connect(int sock, struct sockaddr *addr, socklen_t addrlen)
 {
-	zassert_equal(connect(sock, addr, addrlen),
+	ztest_equal(connect(sock, addr, addrlen),
 		      0,
 		      "connect failed");
 }
 
 static void test_send(int sock, const void *buf, size_t len, int flags)
 {
-	zassert_equal(send(sock, buf, len, flags),
+	ztest_equal(send(sock, buf, len, flags),
 		      len,
 		      "send failed");
 }
@@ -53,7 +53,7 @@ static void test_send(int sock, const void *buf, size_t len, int flags)
 static void test_sendto(int sock, const void *buf, size_t len, int flags,
 			const struct sockaddr *addr, socklen_t addrlen)
 {
-	zassert_equal(sendto(sock, buf, len, flags, addr, addrlen),
+	ztest_equal(sendto(sock, buf, len, flags, addr, addrlen),
 		      len,
 		      "send failed");
 }
@@ -61,25 +61,25 @@ static void test_sendto(int sock, const void *buf, size_t len, int flags,
 static void test_accept(int sock, int *new_sock, struct sockaddr *addr,
 			socklen_t *addrlen)
 {
-	zassert_not_null(new_sock, "null newsock");
+	ztest_not_null(new_sock, "null newsock");
 
 	*new_sock = accept(sock, addr, addrlen);
-	zassert_true(*new_sock >= 0, "accept failed");
+	ztest_true(*new_sock >= 0, "accept failed");
 }
 
 static void test_accept_timeout(int sock, int *new_sock, struct sockaddr *addr,
 				socklen_t *addrlen)
 {
-	zassert_not_null(new_sock, "null newsock");
+	ztest_not_null(new_sock, "null newsock");
 
 	*new_sock = accept(sock, addr, addrlen);
-	zassert_equal(*new_sock, -1, "accept succeed");
-	zassert_equal(errno, EAGAIN, "");
+	ztest_equal(*new_sock, -1, "accept succeed");
+	ztest_equal(errno, EAGAIN, "");
 }
 
 static void test_fcntl(int sock, int cmd, int val)
 {
-	zassert_equal(fcntl(sock, cmd, val), 0, "fcntl failed");
+	ztest_equal(fcntl(sock, cmd, val), 0, "fcntl failed");
 }
 
 static void test_recv(int sock, int flags)
@@ -88,10 +88,10 @@ static void test_recv(int sock, int flags)
 	char rx_buf[30] = {0};
 
 	recved = recv(sock, rx_buf, sizeof(rx_buf), flags);
-	zassert_equal(recved,
+	ztest_equal(recved,
 		      strlen(TEST_STR_SMALL),
 		      "unexpected received bytes");
-	zassert_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
+	ztest_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
 		      0,
 		      "unexpected data");
 }
@@ -110,17 +110,17 @@ static void test_recvfrom(int sock,
 			  flags,
 			  addr,
 			  addrlen);
-	zassert_equal(recved,
+	ztest_equal(recved,
 		      strlen(TEST_STR_SMALL),
 		      "unexpected received bytes");
-	zassert_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
+	ztest_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
 		      0,
 		      "unexpected data");
 }
 
 static void test_close(int sock)
 {
-	zassert_equal(close(sock),
+	ztest_equal(close(sock),
 		      0,
 		      "close failed");
 }
@@ -135,16 +135,16 @@ static void test_eof(int sock)
 
 	/* Test that EOF properly detected. */
 	recved = recv(sock, rx_buf, sizeof(rx_buf), 0);
-	zassert_equal(recved, 0, "");
+	ztest_equal(recved, 0, "");
 
 	/* Calling again should be OK. */
 	recved = recv(sock, rx_buf, sizeof(rx_buf), 0);
-	zassert_equal(recved, 0, "");
+	ztest_equal(recved, 0, "");
 
 	/* Calling when TCP connection is fully torn down should be still OK. */
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 	recved = recv(sock, rx_buf, sizeof(rx_buf), 0);
-	zassert_equal(recved, 0, "");
+	ztest_equal(recved, 0, "");
 }
 
 void test_v4_send_recv(void)
@@ -170,7 +170,7 @@ void test_v4_send_recv(void)
 	test_send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
 
 	test_accept(s_sock, &new_sock, &addr, &addrlen);
-	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+	ztest_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
 
 	test_recv(new_sock, MSG_PEEK);
 	test_recv(new_sock, 0);
@@ -207,7 +207,7 @@ void test_v6_send_recv(void)
 	test_send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
 
 	test_accept(s_sock, &new_sock, &addr, &addrlen);
-	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
+	ztest_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
 
 	test_recv(new_sock, MSG_PEEK);
 	test_recv(new_sock, 0);
@@ -244,13 +244,13 @@ void test_v4_sendto_recvfrom(void)
 		    (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 
 	test_accept(s_sock, &new_sock, &addr, &addrlen);
-	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+	ztest_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
 
 	test_recvfrom(new_sock, MSG_PEEK, &addr, &addrlen);
-	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+	ztest_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
 
 	test_recvfrom(new_sock, 0, &addr, &addrlen);
-	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+	ztest_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
 
 	test_close(new_sock);
 	test_close(s_sock);
@@ -283,13 +283,13 @@ void test_v6_sendto_recvfrom(void)
 		    (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 
 	test_accept(s_sock, &new_sock, &addr, &addrlen);
-	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
+	ztest_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
 
 	test_recvfrom(new_sock, MSG_PEEK, &addr, &addrlen);
-	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
+	ztest_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
 
 	test_recvfrom(new_sock, 0, &addr, &addrlen);
-	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
+	ztest_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
 
 	test_close(new_sock);
 	test_close(s_sock);
@@ -322,7 +322,7 @@ void test_v4_sendto_recvfrom_null_dest(void)
 		    (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 
 	test_accept(s_sock, &new_sock, &addr, &addrlen);
-	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+	ztest_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
 
 	test_recvfrom(new_sock, 0, NULL, NULL);
 
@@ -357,7 +357,7 @@ void test_v6_sendto_recvfrom_null_dest(void)
 		    (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 
 	test_accept(s_sock, &new_sock, &addr, &addrlen);
-	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
+	ztest_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
 
 	test_recvfrom(new_sock, 0, NULL, NULL);
 
@@ -402,7 +402,7 @@ void test_open_close_immediately(void)
 	 */
 	s_saddr.sin_port = htons(SERVER_PORT + 1);
 
-	zassert_not_equal(connect(c_sock, (struct sockaddr *)&s_saddr,
+	ztest_not_equal(connect(c_sock, (struct sockaddr *)&s_saddr,
 				  sizeof(s_saddr)),
 			  0, "connect succeed");
 	test_close(c_sock);
@@ -412,7 +412,7 @@ void test_open_close_immediately(void)
 
 	test_close(s_sock);
 
-	zassert_equal(count_before - 1, count_after,
+	ztest_equal(count_before - 1, count_after,
 		      "net_context still in use (before %d vs after %d)",
 		      count_before - 1, count_after);
 
@@ -439,7 +439,7 @@ void test_v4_accept_timeout(void)
 
 	tstamp = k_uptime_get_32();
 	test_accept_timeout(s_sock, &new_sock, &addr, &addrlen);
-	zassert_true(k_uptime_get_32() - tstamp <= 100, "");
+	ztest_true(k_uptime_get_32() - tstamp <= 100, "");
 
 	test_close(s_sock);
 

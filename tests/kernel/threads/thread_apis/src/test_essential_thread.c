@@ -21,11 +21,11 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	if (z_is_thread_essential()) {
 		k_busy_wait(100);
 	} else {
-		zassert_unreachable("The thread is not set as essential");
+		ztest_unreachable("The thread is not set as essential");
 	}
 
 	z_thread_essential_clear();
-	zassert_false(z_is_thread_essential(),
+	ztest_false(z_is_thread_essential(),
 		      "Essential flag of the thread is not cleared");
 
 	k_sem_give(&sync_sem);

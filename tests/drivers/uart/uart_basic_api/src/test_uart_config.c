@@ -88,10 +88,10 @@ static int test_config_get(void)
 
 void test_uart_configure(void)
 {
-	zassert_true(test_configure() == TC_PASS, NULL);
+	ztest_true(test_configure() == TC_PASS, NULL);
 }
 
 void test_uart_config_get(void)
 {
-	zassert_true(test_config_get() == TC_PASS, NULL);
+	ztest_true(test_config_get() == TC_PASS, NULL);
 }

@@ -37,7 +37,7 @@ void test_rand32(void)
 	/* Test early boot random number generation function */
 	z_early_boot_rand_get((u8_t *)&last_gen, sizeof(last_gen));
 	z_early_boot_rand_get((u8_t *)&gen, sizeof(gen));
-	zassert_true(last_gen != gen,
+	ztest_true(last_gen != gen,
 			"z_early_boot_rand_get failed");
 
 	/*
@@ -63,7 +63,7 @@ void test_rand32(void)
 	}
 
 	if (equal_count > N_VALUES / 2) {
-		zassert_false((equal_count > N_VALUES / 2),
+		ztest_false((equal_count > N_VALUES / 2),
 		"random numbers returned same value with high probability");
 	}
 
@@ -80,7 +80,7 @@ void test_rand32(void)
 	}
 
 	if (equal_count > N_VALUES / 2) {
-		zassert_false((equal_count > N_VALUES / 2),
+		ztest_false((equal_count > N_VALUES / 2),
 		"random numbers returned same value with high probability");
 	}
 
@@ -100,7 +100,7 @@ void test_rand32(void)
 	}
 
 	if (equal_count > N_VALUES / 2) {
-		zassert_false((equal_count > N_VALUES / 2),
+		ztest_false((equal_count > N_VALUES / 2),
 		"random numbers returned same value with high probability");
 	}
 

@@ -27,18 +27,18 @@ static struct fs_mount_t mnt = {
 
 void test_get_default_screen(void)
 {
-	zassert_not_null(lv_scr_act(), "No default screen");
+	ztest_not_null(lv_scr_act(), "No default screen");
 }
 
 void test_add_delete_screen(void)
 {
 	lv_obj_t *default_screen = lv_scr_act();
 
-	zassert_not_null(default_screen, "No default screen");
+	ztest_not_null(default_screen, "No default screen");
 
 	lv_obj_t *new_screen = lv_obj_create(NULL, NULL);
 
-	zassert_not_null(new_screen, "Failed to create new screen");
+	ztest_not_null(new_screen, "Failed to create new screen");
 
 	lv_scr_load(new_screen);
 
@@ -46,7 +46,7 @@ void test_add_delete_screen(void)
 
 	lv_obj_t *act_screen = lv_scr_act();
 
-	zassert_equal_ptr(act_screen, new_screen, "New screen not active");
+	ztest_equal_ptr(act_screen, new_screen, "New screen not active");
 
 	lv_obj_del(new_screen);
 
@@ -55,7 +55,7 @@ void test_add_delete_screen(void)
 	lv_task_handler();
 
 	act_screen = lv_scr_act();
-	zassert_equal_ptr(act_screen, default_screen,
+	ztest_equal_ptr(act_screen, default_screen,
 			"Default screen not active");
 
 }
@@ -63,7 +63,7 @@ void test_add_img(void)
 {
 	lv_obj_t *img = lv_img_create(lv_scr_act(), NULL);
 
-	zassert_not_null(img, "Failed to create image");
+	ztest_not_null(img, "Failed to create image");
 
 	lv_img_set_src(img, IMG_FILE_PATH);
 	lv_obj_align(img, NULL, LV_ALIGN_CENTER, 0, 0);

@@ -77,7 +77,7 @@ static void get_obj_count(int obj_type)
 			obj_list = SYS_TRACING_NEXT(struct k_timer, k_timer,
 						    obj_list);
 		}
-		zassert_equal(obj_found, 2,  "Didn't find timer objects");
+		ztest_equal(obj_found, 2,  "Didn't find timer objects");
 		break;
 	case MEM_SLAB:
 		k_mem_slab_init(&mslab, slab, BLOCK_SIZE, NUM_BLOCKS);
@@ -90,7 +90,7 @@ static void get_obj_count(int obj_type)
 			obj_list = SYS_TRACING_NEXT(struct k_mem_slab,
 						    k_mem_slab, obj_list);
 		}
-		zassert_equal(obj_found, 2, "Didn't find mem_slab objects");
+		ztest_equal(obj_found, 2, "Didn't find mem_slab objects");
 		break;
 	case SEM:
 		k_sem_init(&sema, 0, 1);
@@ -103,7 +103,7 @@ static void get_obj_count(int obj_type)
 			obj_list = SYS_TRACING_NEXT(struct k_sem, k_sem,
 						    obj_list);
 		}
-		zassert_equal(obj_found, 2, "Didn't find semaphore objects");
+		ztest_equal(obj_found, 2, "Didn't find semaphore objects");
 		break;
 	case MUTEX:
 		k_mutex_init(&mutex);
@@ -116,7 +116,7 @@ static void get_obj_count(int obj_type)
 			obj_list = SYS_TRACING_NEXT(struct k_mutex, k_mutex,
 						    obj_list);
 		}
-		zassert_equal(obj_found, 2, "Didn't find mutex objects");
+		ztest_equal(obj_found, 2, "Didn't find mutex objects");
 		break;
 	case STACK:
 		k_stack_init(&stack, sdata, NUM_BLOCKS);
@@ -129,7 +129,7 @@ static void get_obj_count(int obj_type)
 			obj_list = SYS_TRACING_NEXT(struct k_stack, k_stack,
 						    obj_list);
 		}
-		zassert_equal(obj_found, 2, "Didn't find stack objects");
+		ztest_equal(obj_found, 2, "Didn't find stack objects");
 		break;
 	case MSGQ:
 		k_msgq_init(&msgq, buffer, BLOCK_SIZE, NUM_BLOCKS);
@@ -142,7 +142,7 @@ static void get_obj_count(int obj_type)
 			obj_list = SYS_TRACING_NEXT(struct k_msgq, k_msgq,
 						    obj_list);
 		}
-		zassert_equal(obj_found, 2, "Didn't find msgq objects");
+		ztest_equal(obj_found, 2, "Didn't find msgq objects");
 		break;
 	case MBOX:
 		k_mbox_init(&mbox);
@@ -155,7 +155,7 @@ static void get_obj_count(int obj_type)
 			obj_list = SYS_TRACING_NEXT(struct k_mbox, k_mbox,
 						    obj_list);
 		}
-		zassert_equal(obj_found, 2, "Didn't find mbox objects");
+		ztest_equal(obj_found, 2, "Didn't find mbox objects");
 		break;
 	case PIPE:
 		k_pipe_init(&pipe, data, 8);
@@ -168,7 +168,7 @@ static void get_obj_count(int obj_type)
 			obj_list = SYS_TRACING_NEXT(struct k_pipe, k_pipe,
 						    obj_list);
 		}
-		zassert_equal(obj_found, 2, "Didn't find pipe objects");
+		ztest_equal(obj_found, 2, "Didn't find pipe objects");
 		break;
 	case QUEUE:
 		k_queue_init(&queue);
@@ -181,10 +181,10 @@ static void get_obj_count(int obj_type)
 			obj_list = SYS_TRACING_NEXT(struct k_queue, k_queue,
 						    obj_list);
 		}
-		zassert_equal(obj_found, 2, "Didn't find queue objects\n");
+		ztest_equal(obj_found, 2, "Didn't find queue objects\n");
 		break;
 	default:
-		zassert_unreachable("Undefined kernel object");
+		ztest_unreachable("Undefined kernel object");
 	}
 }
 

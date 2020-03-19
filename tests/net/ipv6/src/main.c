@@ -301,7 +301,7 @@ static void test_init(void)
 	struct net_if_ipv6 *ipv6;
 	int i;
 
-	zassert_not_null(iface, "Interface is NULL");
+	ztest_not_null(iface, "Interface is NULL");
 
 	/* We cannot use net_if_ipv6_addr_add() to add the address to
 	 * network interface in this case as that would trigger DAD which
@@ -309,7 +309,7 @@ static void test_init(void)
 	 * manually in this special case so that subsequent tests can
 	 * pass.
 	 */
-	zassert_false(net_if_config_ipv6_get(iface, &ipv6) < 0,
+	ztest_false(net_if_config_ipv6_get(iface, &ipv6) < 0,
 			"IPv6 config is not valid");
 
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
@@ -328,12 +328,12 @@ static void test_init(void)
 	}
 
 	ifaddr2 = net_if_ipv6_addr_lookup(&my_addr, &iface2);
-	zassert_true(ifaddr2 == ifaddr, "Invalid ifaddr (%p vs %p)\n", ifaddr, ifaddr2);
+	ztest_true(ifaddr2 == ifaddr, "Invalid ifaddr (%p vs %p)\n", ifaddr, ifaddr2);
 
 	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
 
 	maddr = net_if_ipv6_maddr_add(iface, &mcast_addr);
-	zassert_not_null(maddr, "Cannot add multicast IPv6 address %s\n",
+	ztest_not_null(maddr, "Cannot add multicast IPv6 address %s\n",
 			 net_sprint_ipv6_addr(&mcast_addr));
 
 	/* The semaphore is there to wait the data to be received. */
@@ -355,36 +355,36 @@ static void test_cmp_prefix(void)
 					0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 
 	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
-	zassert_true(st, "Prefix /64  compare failed");
+	ztest_true(st, "Prefix /64  compare failed");
 
 	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
-	zassert_true(st, "Prefix /65 compare failed");
+	ztest_true(st, "Prefix /65 compare failed");
 
 	/* Set one extra bit in the other prefix for testing /65 */
 	prefix1.s6_addr[8] = 0x80;
 
 	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
-	zassert_false(st, "Prefix /65 compare should have failed");
+	ztest_false(st, "Prefix /65 compare should have failed");
 
 	/* Set two bits in prefix2, it is now /66 */
 	prefix2.s6_addr[8] = 0xc0;
 
 	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
-	zassert_true(st, "Prefix /65 compare failed");
+	ztest_true(st, "Prefix /65 compare failed");
 
 	/* Set all remaining bits in prefix2, it is now /128 */
 	(void)memset(&prefix2.s6_addr[8], 0xff, 8);
 
 	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 65);
-	zassert_true(st, "Prefix /65 compare failed");
+	ztest_true(st, "Prefix /65 compare failed");
 
 	/* Comparing /64 should be still ok */
 	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 64);
-	zassert_true(st, "Prefix /64 compare failed");
+	ztest_true(st, "Prefix /64 compare failed");
 
 	/* But comparing /66 should should fail */
 	st = net_ipv6_is_prefix((u8_t *)&prefix1, (u8_t *)&prefix2, 66);
-	zassert_false(st, "Prefix /66 compare should have failed");
+	ztest_false(st, "Prefix /66 compare should have failed");
 
 }
 
@@ -410,7 +410,7 @@ static void test_add_neighbor(void)
 
 	nbr = net_ipv6_nbr_add(net_if_get_default(), &peer_addr, &lladdr,
 			       false, NET_IPV6_NBR_STATE_REACHABLE);
-	zassert_not_null(nbr, "Cannot add peer %s to neighbor cache\n",
+	ztest_not_null(nbr, "Cannot add peer %s to neighbor cache\n",
 			 net_sprint_ipv6_addr(&peer_addr));
 }
 
@@ -443,7 +443,7 @@ static void test_add_max_neighbors(void)
 		nbr = net_ipv6_nbr_add(net_if_get_default(), &dst_addr,
 				       &lladdr, false,
 				       NET_IPV6_NBR_STATE_STALE);
-		zassert_not_null(nbr, "Cannot add peer %s to neighbor cache\n",
+		ztest_not_null(nbr, "Cannot add peer %s to neighbor cache\n",
 				 net_sprint_ipv6_addr(&dst_addr));
 	}
 }
@@ -457,7 +457,7 @@ static void test_nbr_lookup_fail(void)
 
 	nbr = net_ipv6_nbr_lookup(net_if_get_default(),
 				  &peer_addr);
-	zassert_is_null(nbr, "Neighbor %s found in cache\n",
+	ztest_is_null(nbr, "Neighbor %s found in cache\n",
 			net_sprint_ipv6_addr(&peer_addr));
 
 }
@@ -471,7 +471,7 @@ static void test_nbr_lookup_ok(void)
 
 	nbr = net_ipv6_nbr_lookup(net_if_get_default(),
 				  &peer_addr);
-	zassert_not_null(nbr, "Neighbor %s not found in cache\n",
+	ztest_not_null(nbr, "Neighbor %s not found in cache\n",
 			 net_sprint_ipv6_addr(&peer_addr));
 }
 
@@ -493,7 +493,7 @@ static void test_send_ns_extra_options(void)
 	net_pkt_write(pkt, icmpv6_ns_invalid, sizeof(icmpv6_ns_invalid));
 	net_pkt_lladdr_clear(pkt);
 
-	zassert_false((net_recv_data(iface, pkt) < 0),
+	ztest_false((net_recv_data(iface, pkt) < 0),
 		      "Data receive for invalid NS failed.");
 
 }
@@ -516,7 +516,7 @@ static void test_send_ns_no_options(void)
 	net_pkt_write(pkt, icmpv6_ns_no_sllao, sizeof(icmpv6_ns_no_sllao));
 	net_pkt_lladdr_clear(pkt);
 
-	zassert_false((net_recv_data(iface, pkt) < 0),
+	ztest_false((net_recv_data(iface, pkt) < 0),
 		      "Data receive for invalid NS failed.");
 }
 
@@ -533,7 +533,7 @@ static void test_prefix_timeout(void)
 
 	prefix = net_if_ipv6_prefix_add(net_if_get_default(),
 					&addr, len, lifetime);
-	zassert_not_null(prefix, "Cannot get prefix");
+	ztest_not_null(prefix, "Cannot get prefix");
 
 	net_if_ipv6_prefix_set_lf(prefix, false);
 	net_if_ipv6_prefix_set_timer(prefix, lifetime);
@@ -542,7 +542,7 @@ static void test_prefix_timeout(void)
 
 	prefix = net_if_ipv6_prefix_lookup(net_if_get_default(),
 					   &addr, len);
-	zassert_is_null(prefix, "Prefix %s/%d should have expired",
+	ztest_is_null(prefix, "Prefix %s/%d should have expired",
 			net_sprint_ipv6_addr(&addr), len);
 }
 
@@ -562,18 +562,18 @@ static void test_prefix_timeout_long(void)
 	net_if_ipv6_prefix_set_lf(ifprefix, false);
 	net_if_ipv6_prefix_set_timer(ifprefix, lifetime);
 
-	zassert_equal(ifprefix->lifetime.wrap_counter, 2000,
+	ztest_equal(ifprefix->lifetime.wrap_counter, 2000,
 		      "Wrap counter wrong (%d)",
 		      ifprefix->lifetime.wrap_counter);
 	remaining = K_SECONDS((u64_t)lifetime) -
 		NET_TIMEOUT_MAX_VALUE * (u64_t)ifprefix->lifetime.wrap_counter;
 
-	zassert_equal(remaining, ifprefix->lifetime.timer_timeout,
+	ztest_equal(remaining, ifprefix->lifetime.timer_timeout,
 		     "Remaining time wrong (%llu vs %d)", remaining,
 		      ifprefix->lifetime.timer_timeout);
 
 	ret = net_if_ipv6_prefix_rm(net_if_get_default(), &prefix, len);
-	zassert_equal(ret, true, "Prefix %s/%d should have been removed",
+	ztest_equal(ret, true, "Prefix %s/%d should have been removed",
 		      net_sprint_ipv6_addr(&prefix), len);
 }
 
@@ -588,7 +588,7 @@ static void test_rs_message(void)
 
 	ret = net_ipv6_send_rs(iface);
 
-	zassert_equal(ret, 0, "RS sending failed (%d)", ret);
+	ztest_equal(ret, 0, "RS sending failed (%d)", ret);
 }
 
 static void test_ra_message(void)
@@ -604,12 +604,12 @@ static void test_ra_message(void)
 
 	expecting_ra = false;
 
-	zassert_false(!net_if_ipv6_prefix_lookup(net_if_get_default(),
+	ztest_false(!net_if_ipv6_prefix_lookup(net_if_get_default(),
 						 &prefix, 32),
 		      "Prefix %s should be here\n",
 		      net_sprint_ipv6_addr(&prefix));
 
-	zassert_false(!net_if_ipv6_router_lookup(net_if_get_default(), &addr),
+	ztest_false(!net_if_ipv6_router_lookup(net_if_get_default(), &addr),
 		      "Router %s should be here\n",
 		      net_sprint_ipv6_addr(&addr));
 }
@@ -632,7 +632,7 @@ static void test_hbho_message(void)
 	net_pkt_write(pkt, ipv6_hbho, sizeof(ipv6_hbho));
 	net_pkt_lladdr_clear(pkt);
 
-	zassert_false(net_recv_data(iface, pkt) < 0,
+	ztest_false(net_recv_data(iface, pkt) < 0,
 		      "Data receive for HBHO failed.");
 }
 
@@ -684,11 +684,11 @@ static void test_hbho_message_1(void)
 
 	net_pkt_lladdr_clear(pkt);
 
-	zassert_false(net_recv_data(iface, pkt) < 0,
+	ztest_false(net_recv_data(iface, pkt) < 0,
 		      "Data receive for HBHO failed.");
 
 	/* Verify IPv6 Ext hdr length */
-	zassert_false(net_pkt_ipv6_ext_len(pkt) == 72U,
+	ztest_false(net_pkt_ipv6_ext_len(pkt) == 72U,
 		      "IPv6 mismatch ext hdr length");
 }
 
@@ -744,11 +744,11 @@ static void test_hbho_message_2(void)
 	net_pkt_write(pkt, ipv6_hbho_2, sizeof(ipv6_hbho_2));
 	net_pkt_lladdr_clear(pkt);
 
-	zassert_false(net_recv_data(iface, pkt) < 0,
+	ztest_false(net_recv_data(iface, pkt) < 0,
 		      "Data receive for HBHO failed.");
 
 	/* Verify IPv6 Ext hdr length */
-	zassert_false(net_pkt_ipv6_ext_len(pkt) == 104U,
+	ztest_false(net_pkt_ipv6_ext_len(pkt) == 104U,
 		      "IPv6 mismatch ext hdr length");
 }
 
@@ -906,11 +906,11 @@ static void test_hbho_message_3(void)
 	net_pkt_write(pkt, ipv6_hbho_3, sizeof(ipv6_hbho_3));
 	net_pkt_lladdr_clear(pkt);
 
-	zassert_false(net_recv_data(iface, pkt) < 0,
+	ztest_false(net_recv_data(iface, pkt) < 0,
 		      "Data receive for HBHO failed.");
 
 	/* Verify IPv6 Ext hdr length */
-	zassert_false(net_pkt_ipv6_ext_len(pkt) == 920U,
+	ztest_false(net_pkt_ipv6_ext_len(pkt) == 920U,
 		      "IPv6 mismatch ext hdr length");
 }
 
@@ -932,7 +932,7 @@ static void test_address_lifetime(void)
 
 	ifaddr = net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF,
 				      vlifetime);
-	zassert_not_null(ifaddr, "Address with lifetime cannot be added");
+	ztest_not_null(ifaddr, "Address with lifetime cannot be added");
 
 	/* Make sure DAD gets some time to run */
 	k_sleep(K_MSEC(200));
@@ -940,10 +940,10 @@ static void test_address_lifetime(void)
 	/* Then check that the timeout values in net_if_addr are set correctly.
 	 * Start first with smaller timeout values.
 	 */
-	zassert_equal(ifaddr->lifetime.timer_timeout, timeout,
+	ztest_equal(ifaddr->lifetime.timer_timeout, timeout,
 		      "Timer timeout set wrong (%d vs %llu)",
 		      ifaddr->lifetime.timer_timeout, timeout);
-	zassert_equal(ifaddr->lifetime.wrap_counter, 0,
+	ztest_equal(ifaddr->lifetime.wrap_counter, 0,
 		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
 
 	/* Then update the lifetime and check that timeout values are correct
@@ -951,19 +951,19 @@ static void test_address_lifetime(void)
 	vlifetime = FIFTY_DAYS;
 	net_if_ipv6_addr_update_lifetime(ifaddr, vlifetime);
 
-	zassert_equal(ifaddr->lifetime.wrap_counter, 2,
+	ztest_equal(ifaddr->lifetime.wrap_counter, 2,
 		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
 	remaining = K_SECONDS((u64_t)vlifetime) -
 		NET_TIMEOUT_MAX_VALUE * (u64_t)ifaddr->lifetime.wrap_counter;
 
-	zassert_equal(remaining, ifaddr->lifetime.timer_timeout,
+	ztest_equal(remaining, ifaddr->lifetime.timer_timeout,
 		     "Remaining time wrong (%llu vs %d)", remaining,
 		      ifaddr->lifetime.timer_timeout);
 
 	/* The address should not expire */
 	net_address_lifetime_timeout();
 
-	zassert_equal(ifaddr->lifetime.wrap_counter, 2,
+	ztest_equal(ifaddr->lifetime.wrap_counter, 2,
 		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
 
 	ifaddr->lifetime.timer_timeout = K_MSEC(10);
@@ -973,14 +973,14 @@ static void test_address_lifetime(void)
 	net_address_lifetime_timeout();
 
 	/* The address should be expired now */
-	zassert_equal(ifaddr->lifetime.timer_timeout, 0,
+	ztest_equal(ifaddr->lifetime.timer_timeout, 0,
 		      "Timer timeout set wrong (%llu vs %llu)",
 		      ifaddr->lifetime.timer_timeout, 0);
-	zassert_equal(ifaddr->lifetime.wrap_counter, 0,
+	ztest_equal(ifaddr->lifetime.wrap_counter, 0,
 		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
 
 	ret = net_if_ipv6_addr_rm(iface, &addr);
-	zassert_true(ret, "Address with lifetime cannot be removed");
+	ztest_true(ret, "Address with lifetime cannot be removed");
 }
 
 /**
@@ -1006,14 +1006,14 @@ static void test_change_ll_addr(void)
 
 	ret = net_ipv6_send_na(iface, &peer_addr, &dst,
 			       &peer_addr, flags);
-	zassert_false(ret < 0, "Cannot send NA 1");
+	ztest_false(ret < 0, "Cannot send NA 1");
 
 	nbr = net_ipv6_nbr_lookup(iface, &peer_addr);
 	ll = net_nbr_get_lladdr(nbr->idx);
 
 	ll_iface = net_if_get_link_addr(iface);
 
-	zassert_true(memcmp(ll->addr, ll_iface->addr, ll->len) != 0,
+	ztest_true(memcmp(ll->addr, ll_iface->addr, ll->len) != 0,
 		     "Wrong link address 1");
 
 	/* As the net_ipv6_send_na() uses interface link address to
@@ -1023,12 +1023,12 @@ static void test_change_ll_addr(void)
 
 	ret = net_ipv6_send_na(iface, &peer_addr, &dst,
 			       &peer_addr, flags);
-	zassert_false(ret < 0, "Cannot send NA 2");
+	ztest_false(ret < 0, "Cannot send NA 2");
 
 	nbr = net_ipv6_nbr_lookup(iface, &peer_addr);
 	ll = net_nbr_get_lladdr(nbr->idx);
 
-	zassert_true(memcmp(ll->addr, ll_iface->addr, ll->len) != 0,
+	ztest_true(memcmp(ll->addr, ll_iface->addr, ll->len) != 0,
 		     "Wrong link address 2");
 }
 
@@ -1048,26 +1048,26 @@ static void test_dad_timeout(void)
 	dad_time[0] = dad_time[1] = dad_time[2] = 0U;
 
 	ifaddr = net_if_ipv6_addr_add(iface, &addr1, NET_ADDR_AUTOCONF, 0xffff);
-	zassert_not_null(ifaddr, "Address 1 cannot be added");
+	ztest_not_null(ifaddr, "Address 1 cannot be added");
 
 	k_sleep(K_MSEC(10));
 
 	ifaddr = net_if_ipv6_addr_add(iface, &addr2, NET_ADDR_AUTOCONF, 0xffff);
-	zassert_not_null(ifaddr, "Address 2 cannot be added");
+	ztest_not_null(ifaddr, "Address 2 cannot be added");
 
 	k_sleep(K_MSEC(10));
 
 	ifaddr = net_if_ipv6_addr_add(iface, &addr3, NET_ADDR_AUTOCONF, 0xffff);
-	zassert_not_null(ifaddr, "Address 3 cannot be added");
+	ztest_not_null(ifaddr, "Address 3 cannot be added");
 
 	k_sleep(K_MSEC(200));
 
 	/* We should have received three DAD queries, make sure they are in
 	 * proper order.
 	 */
-	zassert_true(dad_time[0] < dad_time[1], "DAD timer 1+2 failure");
-	zassert_true(dad_time[1] < dad_time[2], "DAD timer 2+3 failure");
-	zassert_true((dad_time[2] - dad_time[0]) < 100,
+	ztest_true(dad_time[0] < dad_time[1], "DAD timer 1+2 failure");
+	ztest_true(dad_time[1] < dad_time[2], "DAD timer 2+3 failure");
+	ztest_true((dad_time[2] - dad_time[0]) < 100,
 		     "DAD timers took too long time [%u] [%u] [%u]",
 		     dad_time[0], dad_time[1], dad_time[2]);
 #endif
@@ -1092,17 +1092,17 @@ static struct net_pkt *setup_ipv6_udp(struct net_if *iface,
 
 	if (net_ipv6_create(pkt, local_addr, remote_addr)) {
 		printk("Cannot create IPv6  pkt %p", pkt);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	if (net_udp_create(pkt, htons(local_port), htons(remote_port))) {
 		printk("Cannot create IPv6  pkt %p", pkt);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	if (net_pkt_write(pkt, (u8_t *)payload, strlen(payload))) {
 		printk("Cannot write IPv6 ext header pkt %p", pkt);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	net_pkt_cursor_init(pkt);
@@ -1148,7 +1148,7 @@ static void test_src_localaddr_recv(void)
 	enum net_verdict verdict;
 
 	verdict = recv_msg(&localaddr, &addr);
-	zassert_equal(verdict, NET_DROP,
+	ztest_equal(verdict, NET_DROP,
 		      "Local address packet was not dropped");
 }
 
@@ -1161,7 +1161,7 @@ static void test_dst_localaddr_recv(void)
 	enum net_verdict verdict;
 
 	verdict = recv_msg(&addr, &localaddr);
-	zassert_equal(verdict, NET_DROP,
+	ztest_equal(verdict, NET_DROP,
 		      "Local address packet was not dropped");
 }
 
@@ -1174,7 +1174,7 @@ static void test_dst_iface_scope_mcast_recv(void)
 	enum net_verdict verdict;
 
 	verdict = recv_msg(&addr, &mcast_iface);
-	zassert_equal(verdict, NET_DROP,
+	ztest_equal(verdict, NET_DROP,
 		      "Interface scope multicast packet was not dropped");
 }
 
@@ -1187,7 +1187,7 @@ static void test_dst_zero_scope_mcast_recv(void)
 	enum net_verdict verdict;
 
 	verdict = recv_msg(&addr, &mcast_zero);
-	zassert_equal(verdict, NET_DROP,
+	ztest_equal(verdict, NET_DROP,
 		      "Zero scope multicast packet was not dropped");
 }
 
@@ -1200,7 +1200,7 @@ static void test_dst_site_scope_mcast_recv_drop(void)
 	enum net_verdict verdict;
 
 	verdict = recv_msg(&addr, &mcast_site);
-	zassert_equal(verdict, NET_DROP,
+	ztest_equal(verdict, NET_DROP,
 		      "Site scope multicast packet was not dropped");
 }
 
@@ -1209,7 +1209,7 @@ static void net_ctx_create(struct net_context **ctx)
 	int ret;
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, ctx);
-	zassert_equal(ret, 0,
+	ztest_equal(ret, 0,
 		      "Context create IPv6 UDP test failed");
 }
 
@@ -1226,12 +1226,12 @@ static void net_ctx_bind_mcast(struct net_context *ctx, struct in6_addr *maddr)
 
 	ret = net_context_bind(ctx, (struct sockaddr *)&addr,
 			       sizeof(struct sockaddr_in6));
-	zassert_equal(ret, 0, "Context bind test failed (%d)", ret);
+	ztest_equal(ret, 0, "Context bind test failed (%d)", ret);
 }
 
 static void net_ctx_listen(struct net_context *ctx)
 {
-	zassert_true(net_context_listen(ctx, 0),
+	ztest_true(net_context_listen(ctx, 0),
 		     "Context listen IPv6 UDP test failed");
 }
 
@@ -1259,7 +1259,7 @@ static void net_ctx_recv(struct net_context *ctx)
 	int ret;
 
 	ret = net_context_recv(ctx, recv_cb, 0, NULL);
-	zassert_equal(ret, 0, "Context recv IPv6 UDP failed");
+	ztest_equal(ret, 0, "Context recv IPv6 UDP failed");
 }
 
 static void join_group(struct in6_addr *mcast_addr)
@@ -1267,7 +1267,7 @@ static void join_group(struct in6_addr *mcast_addr)
 	int ret;
 
 	ret = net_ipv6_mld_join(net_if_get_default(), mcast_addr);
-	zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
+	ztest_equal(ret, 0, "Cannot join IPv6 multicast group");
 }
 
 static void test_dst_site_scope_mcast_recv_ok(void)
@@ -1290,7 +1290,7 @@ static void test_dst_site_scope_mcast_recv_ok(void)
 	net_ctx_recv(ctx);
 
 	verdict = recv_msg(&addr, &mcast_all_dhcp);
-	zassert_equal(verdict, NET_OK,
+	ztest_equal(verdict, NET_OK,
 		      "All DHCP site scope multicast packet was dropped (%d)",
 		      verdict);
 
@@ -1306,7 +1306,7 @@ static void test_dst_org_scope_mcast_recv(void)
 	enum net_verdict verdict;
 
 	verdict = recv_msg(&addr, &mcast_org);
-	zassert_equal(verdict, NET_DROP,
+	ztest_equal(verdict, NET_DROP,
 		      "Organisation scope multicast packet was not dropped");
 }
 
@@ -1326,7 +1326,7 @@ static void test_dst_iface_scope_mcast_send(void)
 	 * the network interface.
 	 */
 	maddr = net_if_ipv6_maddr_add(net_if_get_default(), &mcast_iface);
-	zassert_not_null(maddr, "Cannot add multicast address to interface");
+	ztest_not_null(maddr, "Cannot add multicast address to interface");
 
 	net_ctx_create(&ctx);
 	net_ctx_bind_mcast(ctx, &mcast_iface);
@@ -1334,13 +1334,13 @@ static void test_dst_iface_scope_mcast_send(void)
 	net_ctx_recv(ctx);
 
 	ret = send_msg(&addr, &mcast_iface);
-	zassert_equal(ret, 0,
+	ztest_equal(ret, 0,
 		      "Interface local scope multicast packet was dropped (%d)",
 		      ret);
 
 	k_sem_take(&wait_data, WAIT_TIME);
 
-	zassert_true(recv_cb_called, "No data received on time, "
+	ztest_true(recv_cb_called, "No data received on time, "
 		     "IPv6 recv test failed");
 	recv_cb_called = false;
 

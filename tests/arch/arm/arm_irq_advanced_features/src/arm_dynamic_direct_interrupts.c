@@ -58,7 +58,7 @@ void test_arm_dynamic_direct_interrupts(void)
 
 	/* Confirm test flag is set by the dynamic direct ISR handler. */
 	post_flag = test_flag;
-	zassert_true(post_flag == 1, "Test flag not set by ISR0\n");
+	ztest_true(post_flag == 1, "Test flag not set by ISR0\n");
 
 	post_flag = 0;
 	irq_disable(DIRECT_ISR_OFFSET);
@@ -82,7 +82,7 @@ void test_arm_dynamic_direct_interrupts(void)
 
 	/* Confirm test flag is set by the dynamic direct ISR handler. */
 	post_flag = test_flag;
-	zassert_true(post_flag == 2, "Test flag not set by ISR1\n");
+	ztest_true(post_flag == 2, "Test flag not set by ISR1\n");
 }
 /**
  * @}

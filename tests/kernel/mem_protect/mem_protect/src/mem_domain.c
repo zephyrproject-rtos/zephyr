@@ -217,7 +217,7 @@ static void user_thread_entry_ro(void *p1, void *p2, void *p3)
 	 */
 	mem_domain_buf1[0] = 10U;
 
-	zassert_unreachable("The user thread is allowed to access a read only"
+	ztest_unreachable("The user thread is allowed to access a read only"
 			    " partition of a memory domain");
 }
 /**
@@ -338,7 +338,7 @@ void mem_domain_for_user_tc3(void *max_partitions, void *p2, void *p3)
 			10U;
 	}
 
-	zassert_unreachable(ERROR_STR);
+	ztest_unreachable(ERROR_STR);
 	ztest_test_fail();
 }
 
@@ -456,7 +456,7 @@ void mem_domain_for_user_tc5(void *p1, void *p2, void *p3)
 
 	/* will generate a fault */
 	mem_domain_tc3_part1[0] = 10U;
-	zassert_unreachable(ERROR_STR);
+	ztest_unreachable(ERROR_STR);
 }
 /**
  * @brief Test the removal of the partition
@@ -497,7 +497,7 @@ void mem_domain_test_6_2(void *p1, void *p2, void *p3)
 	USERSPACE_BARRIER;
 
 	mem_domain_tc3_part2[0] = 10U;
-	zassert_unreachable(ERROR_STR);
+	ztest_unreachable(ERROR_STR);
 }
 
 /**
@@ -550,7 +550,7 @@ void mem_domain_for_user_tc7(void *p1, void *p2, void *p3)
 
 	/* will generate a fault */
 	mem_domain_tc3_part4[0] = 10U;
-	zassert_unreachable(ERROR_STR);
+	ztest_unreachable(ERROR_STR);
 }
 
 /**
@@ -600,10 +600,10 @@ void test_mem_domain_destroy(void)
 	if (tid->mem_domain_info.mem_domain == &mem_domain1) {
 		k_mem_domain_destroy(&mem_domain1);
 
-		zassert_true(tid->mem_domain_info.mem_domain !=
+		ztest_true(tid->mem_domain_info.mem_domain !=
 			     &mem_domain1, "The thread has reference to"
 			     " memory domain which is already destroyed");
 	} else {
-		zassert_unreachable("k_mem_domain_add_thread() failed");
+		ztest_unreachable("k_mem_domain_add_thread() failed");
 	}
 }

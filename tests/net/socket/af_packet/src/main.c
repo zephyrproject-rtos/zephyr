@@ -80,7 +80,7 @@ static int setup_socket(struct net_if *iface)
 	int sock;
 
 	sock = socket(AF_PACKET, SOCK_RAW, ETH_P_ALL);
-	zassert_true(sock >= 0, "Cannot create packet socket (%d)", sock);
+	ztest_true(sock >= 0, "Cannot create packet socket (%d)", sock);
 
 	return sock;
 }
@@ -125,20 +125,20 @@ static void test_packet_sockets(void)
 
 	net_if_foreach(iface_cb, &ud);
 
-	zassert_not_null(ud.first, "1st Ethernet interface not found");
-	zassert_not_null(ud.second, "2nd Ethernet interface not found");
+	ztest_not_null(ud.first, "1st Ethernet interface not found");
+	ztest_not_null(ud.second, "2nd Ethernet interface not found");
 
 	sock1 = setup_socket(ud.first);
-	zassert_true(sock1 >= 0, "Cannot create 1st socket (%d)", sock1);
+	ztest_true(sock1 >= 0, "Cannot create 1st socket (%d)", sock1);
 
 	sock2 = setup_socket(ud.second);
-	zassert_true(sock2 >= 0, "Cannot create 2nd socket (%d)", sock2);
+	ztest_true(sock2 >= 0, "Cannot create 2nd socket (%d)", sock2);
 
 	ret = bind_socket(sock1, ud.first);
-	zassert_equal(ret, 0, "Cannot bind 1st socket (%d)", -errno);
+	ztest_equal(ret, 0, "Cannot bind 1st socket (%d)", -errno);
 
 	ret = bind_socket(sock2, ud.second);
-	zassert_equal(ret, 0, "Cannot bind 2nd socket (%d)", -errno);
+	ztest_equal(ret, 0, "Cannot bind 2nd socket (%d)", -errno);
 }
 
 void test_main(void)

@@ -30,28 +30,28 @@ void test_config_small_file(void)
 	cf_running.cf_name = TEST_CONFIG_DIR "/running";
 
 	rc = settings_file_src(&cf_mfg);
-	zassert_true(rc == 0, "can't register FS as configuration source");
+	ztest_true(rc == 0, "can't register FS as configuration source");
 	rc = settings_file_src(&cf_running);
-	zassert_true(rc == 0, "can't register FS as configuration source");
+	ztest_true(rc == 0, "can't register FS as configuration source");
 
 	rc = fsutil_write_file(TEST_CONFIG_DIR "/mfg", cf_mfg_test,
 			       sizeof(cf_mfg_test));
-	zassert_true(rc == 0, "can't write to file");
+	ztest_true(rc == 0, "can't write to file");
 
 	settings_load();
-	zassert_true(test_set_called, "the SET handler wasn't called");
-	zassert_true(val8 == 1U,
+	ztest_true(test_set_called, "the SET handler wasn't called");
+	ztest_true(val8 == 1U,
 		     "SET handler: was called with wrong parameters");
 
 	ctest_clear_call_state();
 
 	rc = fsutil_write_file(TEST_CONFIG_DIR "/running", cf_running_test,
 			       sizeof(cf_running_test));
-	zassert_true(rc == 0, "can't write to file");
+	ztest_true(rc == 0, "can't write to file");
 
 	settings_load();
-	zassert_true(test_set_called, "the SET handler wasn't called");
-	zassert_true(val8 == 8U,
+	ztest_true(test_set_called, "the SET handler wasn't called");
+	ztest_true(val8 == 8U,
 		     "SET handler: was called with wrong parameters");
 
 	ctest_clear_call_state();

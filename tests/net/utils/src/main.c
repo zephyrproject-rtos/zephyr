@@ -401,7 +401,7 @@ void test_net_addr(void)
 		}
 	}
 
-	zassert_equal(pass, ARRAY_SIZE(tests), "check_net_addr error");
+	ztest_equal(pass, ARRAY_SIZE(tests), "check_net_addr error");
 }
 
 void test_addr_parse(void)
@@ -783,19 +783,19 @@ void test_addr_parse(void)
 		if (ret != parse_ipv4_entries[i].verdict) {
 			printk("IPv4 entry [%d] \"%s\" failed\n", i,
 				parse_ipv4_entries[i].address);
-			zassert_true(false, "failure");
+			ztest_true(false, "failure");
 		}
 
 		if (ret == true) {
-			zassert_true(
+			ztest_true(
 				net_ipv4_addr_cmp(
 				      &net_sin(&addr)->sin_addr,
 				      &parse_ipv4_entries[i].result.sin_addr),
 				parse_ipv4_entries[i].address);
-			zassert_true(net_sin(&addr)->sin_port ==
+			ztest_true(net_sin(&addr)->sin_port ==
 				     parse_ipv4_entries[i].result.sin_port,
 				     "IPv4 port");
-			zassert_true(net_sin(&addr)->sin_family ==
+			ztest_true(net_sin(&addr)->sin_family ==
 				     parse_ipv4_entries[i].result.sin_family,
 				     "IPv4 family");
 		}
@@ -812,19 +812,19 @@ void test_addr_parse(void)
 		if (ret != parse_ipv6_entries[i].verdict) {
 			printk("IPv6 entry [%d] \"%s\" failed\n", i,
 			       parse_ipv6_entries[i].address);
-			zassert_true(false, "failure");
+			ztest_true(false, "failure");
 		}
 
 		if (ret == true) {
-			zassert_true(
+			ztest_true(
 				net_ipv6_addr_cmp(
 				      &net_sin6(&addr)->sin6_addr,
 				      &parse_ipv6_entries[i].result.sin6_addr),
 				parse_ipv6_entries[i].address);
-			zassert_true(net_sin6(&addr)->sin6_port ==
+			ztest_true(net_sin6(&addr)->sin6_port ==
 				     parse_ipv6_entries[i].result.sin6_port,
 				     "IPv6 port");
-			zassert_true(net_sin6(&addr)->sin6_family ==
+			ztest_true(net_sin6(&addr)->sin6_family ==
 				     parse_ipv6_entries[i].result.sin6_family,
 				     "IPv6 family");
 		}

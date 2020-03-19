@@ -57,10 +57,10 @@ static void test_calibration(u32_t exp_cal, u32_t exp_skip,
 	cal_cnt = z_nrf_clock_calibration_count() - cal_cnt;
 	skip_cnt = z_nrf_clock_calibration_skips_count() - skip_cnt;
 
-	zassert_equal(cal_cnt, exp_cal,
+	ztest_equal(cal_cnt, exp_cal,
 			"%d: Unexpected number of calibrations (%d, exp:%d)",
 			line, cal_cnt, exp_cal);
-	zassert_equal(skip_cnt, exp_skip,
+	ztest_equal(skip_cnt, exp_skip,
 			"%d: Unexpected number of skips (%d, exp:%d)",
 			line, skip_cnt, exp_skip);
 }

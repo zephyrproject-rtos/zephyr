@@ -55,8 +55,8 @@ static void comm_sendto_recvfrom(int client_sock,
 	socklen_t addrlen2;
 	static char rx_buf[400] = {0};
 
-	zassert_not_null(client_addr, "null client addr");
-	zassert_not_null(server_addr, "null server addr");
+	ztest_not_null(client_addr, "null client addr");
+	ztest_not_null(server_addr, "null server addr");
 
 	/*
 	 * Test client -> server sending
@@ -64,33 +64,33 @@ static void comm_sendto_recvfrom(int client_sock,
 
 	sent = sendto(client_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
 		      0, server_addr, server_addrlen);
-	zassert_equal(sent, strlen(TEST_STR_SMALL), "sendto failed");
+	ztest_equal(sent, strlen(TEST_STR_SMALL), "sendto failed");
 
 	/* Test recvfrom(MSG_PEEK) */
 	addrlen = sizeof(addr);
 	clear_buf(rx_buf);
 	recved = recvfrom(server_sock, rx_buf, sizeof(rx_buf),
 			  MSG_PEEK, &addr, &addrlen);
-	zassert_true(recved >= 0, "recvfrom fail");
-	zassert_equal(recved, strlen(TEST_STR_SMALL),
+	ztest_true(recved >= 0, "recvfrom fail");
+	ztest_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes");
-	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
-	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
+	ztest_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
+	ztest_equal(addrlen, client_addrlen, "unexpected addrlen");
 
 	/* Test normal recvfrom() */
 	addrlen = sizeof(addr);
 	clear_buf(rx_buf);
 	recved = recvfrom(server_sock, rx_buf, sizeof(rx_buf),
 			  0, &addr, &addrlen);
-	zassert_true(recved >= 0, "recvfrom fail");
-	zassert_equal(recved, strlen(TEST_STR_SMALL),
+	ztest_true(recved >= 0, "recvfrom fail");
+	ztest_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes");
-	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
-	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
+	ztest_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
+	ztest_equal(addrlen, client_addrlen, "unexpected addrlen");
 
 	/* Check the client port */
 	if (net_sin(client_addr)->sin_port != ANY_PORT) {
-		zassert_equal(net_sin(client_addr)->sin_port,
+		ztest_equal(net_sin(client_addr)->sin_port,
 			      net_sin(&addr)->sin_port,
 			      "unexpected client port");
 	}
@@ -101,21 +101,21 @@ static void comm_sendto_recvfrom(int client_sock,
 
 	sent = sendto(server_sock, BUF_AND_SIZE(TEST_STR2),
 		      0, &addr, addrlen);
-	zassert_equal(sent, STRLEN(TEST_STR2), "sendto failed");
+	ztest_equal(sent, STRLEN(TEST_STR2), "sendto failed");
 
 	/* Test normal recvfrom() */
 	addrlen2 = sizeof(addr);
 	clear_buf(rx_buf);
 	recved = recvfrom(client_sock, rx_buf, sizeof(rx_buf),
 			  0, &addr2, &addrlen2);
-	zassert_true(recved >= 0, "recvfrom fail");
-	zassert_equal(recved, STRLEN(TEST_STR2),
+	ztest_true(recved >= 0, "recvfrom fail");
+	ztest_equal(recved, STRLEN(TEST_STR2),
 		      "unexpected received bytes");
-	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR2), "wrong data");
-	zassert_equal(addrlen2, server_addrlen, "unexpected addrlen");
+	ztest_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR2), "wrong data");
+	ztest_equal(addrlen2, server_addrlen, "unexpected addrlen");
 
 	/* Check the server port */
-	zassert_equal(net_sin(server_addr)->sin_port,
+	ztest_equal(net_sin(server_addr)->sin_port,
 		      net_sin(&addr2)->sin_port,
 		      "unexpected server port");
 
@@ -124,24 +124,24 @@ static void comm_sendto_recvfrom(int client_sock,
 	/* Send 2 datagrams */
 	sent = sendto(server_sock, BUF_AND_SIZE(TEST_STR2),
 		      0, &addr, addrlen);
-	zassert_equal(sent, STRLEN(TEST_STR2), "sendto failed");
+	ztest_equal(sent, STRLEN(TEST_STR2), "sendto failed");
 	sent = sendto(server_sock, BUF_AND_SIZE(TEST_STR_SMALL),
 		      0, &addr, addrlen);
-	zassert_equal(sent, STRLEN(TEST_STR_SMALL), "sendto failed");
+	ztest_equal(sent, STRLEN(TEST_STR_SMALL), "sendto failed");
 
 	/* Receive just beginning of 1st datagram */
 	addrlen2 = sizeof(addr);
 	clear_buf(rx_buf);
 	recved = recvfrom(client_sock, rx_buf, 16, 0, &addr2, &addrlen2);
-	zassert_true(recved == 16, "recvfrom fail");
-	zassert_mem_equal(rx_buf, TEST_STR2, 16, "wrong data");
+	ztest_true(recved == 16, "recvfrom fail");
+	ztest_mem_equal(rx_buf, TEST_STR2, 16, "wrong data");
 
 	/* Make sure that now we receive 2nd datagram */
 	addrlen2 = sizeof(addr);
 	clear_buf(rx_buf);
 	recved = recvfrom(client_sock, rx_buf, 16, 0, &addr2, &addrlen2);
-	zassert_true(recved == STRLEN(TEST_STR_SMALL), "recvfrom fail");
-	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
+	ztest_true(recved == STRLEN(TEST_STR_SMALL), "recvfrom fail");
+	ztest_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
 }
 
 void test_v4_sendto_recvfrom(void)
@@ -160,7 +160,7 @@ void test_v4_sendto_recvfrom(void)
 	rv = bind(server_sock,
 		  (struct sockaddr *)&server_addr,
 		  sizeof(server_addr));
-	zassert_equal(rv, 0, "bind failed");
+	ztest_equal(rv, 0, "bind failed");
 
 	comm_sendto_recvfrom(client_sock,
 			     (struct sockaddr *)&client_addr,
@@ -170,9 +170,9 @@ void test_v4_sendto_recvfrom(void)
 			     sizeof(server_addr));
 
 	rv = close(client_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 	rv = close(server_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 }
 
 void test_v6_sendto_recvfrom(void)
@@ -190,7 +190,7 @@ void test_v6_sendto_recvfrom(void)
 
 	rv = bind(server_sock,
 		  (struct sockaddr *)&server_addr, sizeof(server_addr));
-	zassert_equal(rv, 0, "bind failed");
+	ztest_equal(rv, 0, "bind failed");
 
 	comm_sendto_recvfrom(client_sock,
 			     (struct sockaddr *)&client_addr,
@@ -200,9 +200,9 @@ void test_v6_sendto_recvfrom(void)
 			     sizeof(server_addr));
 
 	rv = close(client_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 	rv = close(server_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 }
 
 void test_v4_bind_sendto(void)
@@ -220,11 +220,11 @@ void test_v4_bind_sendto(void)
 
 	rv = bind(client_sock,
 		  (struct sockaddr *)&client_addr, sizeof(client_addr));
-	zassert_equal(rv, 0, "bind failed");
+	ztest_equal(rv, 0, "bind failed");
 
 	rv = bind(server_sock,
 		  (struct sockaddr *)&server_addr, sizeof(server_addr));
-	zassert_equal(rv, 0, "bind failed");
+	ztest_equal(rv, 0, "bind failed");
 
 	comm_sendto_recvfrom(client_sock,
 			     (struct sockaddr *)&client_addr,
@@ -234,9 +234,9 @@ void test_v4_bind_sendto(void)
 			     sizeof(server_addr));
 
 	rv = close(client_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 	rv = close(server_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 }
 
 void test_v6_bind_sendto(void)
@@ -254,11 +254,11 @@ void test_v6_bind_sendto(void)
 
 	rv = bind(client_sock,
 		  (struct sockaddr *)&client_addr, sizeof(client_addr));
-	zassert_equal(rv, 0, "bind failed");
+	ztest_equal(rv, 0, "bind failed");
 
 	rv = bind(server_sock,
 		  (struct sockaddr *)&server_addr, sizeof(server_addr));
-	zassert_equal(rv, 0, "bind failed");
+	ztest_equal(rv, 0, "bind failed");
 
 	comm_sendto_recvfrom(client_sock,
 			     (struct sockaddr *)&client_addr,
@@ -268,9 +268,9 @@ void test_v6_bind_sendto(void)
 			     sizeof(server_addr));
 
 	rv = close(client_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 	rv = close(server_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 }
 
 void test_send_recv_2_sock(void)
@@ -286,28 +286,28 @@ void test_send_recv_2_sock(void)
 			    &sock2, &conn_addr);
 
 	rv = bind(sock1, (struct sockaddr *)&bind_addr, sizeof(bind_addr));
-	zassert_equal(rv, 0, "bind failed");
+	ztest_equal(rv, 0, "bind failed");
 
 	rv = connect(sock2, (struct sockaddr *)&conn_addr, sizeof(conn_addr));
-	zassert_equal(rv, 0, "connect failed");
+	ztest_equal(rv, 0, "connect failed");
 
 	len = send(sock2, BUF_AND_SIZE(TEST_STR_SMALL), 0);
-	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
+	ztest_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
 
 	clear_buf(buf);
 	len = recv(sock1, buf, sizeof(buf), MSG_PEEK);
-	zassert_equal(len, STRLEN(TEST_STR_SMALL), "Invalid recv len");
-	zassert_mem_equal(buf, BUF_AND_SIZE(TEST_STR_SMALL), "Wrong data");
+	ztest_equal(len, STRLEN(TEST_STR_SMALL), "Invalid recv len");
+	ztest_mem_equal(buf, BUF_AND_SIZE(TEST_STR_SMALL), "Wrong data");
 
 	clear_buf(buf);
 	len = recv(sock1, buf, sizeof(buf), 0);
-	zassert_equal(len, STRLEN(TEST_STR_SMALL), "Invalid recv len");
-	zassert_mem_equal(buf, BUF_AND_SIZE(TEST_STR_SMALL), "Wrong data");
+	ztest_equal(len, STRLEN(TEST_STR_SMALL), "Invalid recv len");
+	ztest_mem_equal(buf, BUF_AND_SIZE(TEST_STR_SMALL), "Wrong data");
 
 	rv = close(sock1);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 	rv = close(sock2);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 }
 
 void test_so_priority(void)
@@ -323,25 +323,25 @@ void test_so_priority(void)
 			    &sock2, &bind_addr6);
 
 	rv = bind(sock1, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
-	zassert_equal(rv, 0, "bind failed");
+	ztest_equal(rv, 0, "bind failed");
 
 	rv = bind(sock2, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
-	zassert_equal(rv, 0, "bind failed");
+	ztest_equal(rv, 0, "bind failed");
 
 	optval = 2;
 	rv = setsockopt(sock1, SOL_SOCKET, SO_PRIORITY, &optval,
 			sizeof(optval));
-	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+	ztest_equal(rv, 0, "setsockopt failed (%d)", errno);
 
 	optval = 8;
 	rv = setsockopt(sock2, SOL_SOCKET, SO_PRIORITY, &optval,
 			sizeof(optval));
-	zassert_equal(rv, 0, "setsockopt failed");
+	ztest_equal(rv, 0, "setsockopt failed");
 
 	rv = close(sock1);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 	rv = close(sock2);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 }
 
 static void comm_sendmsg_recvfrom(int client_sock,
@@ -359,51 +359,51 @@ static void comm_sendmsg_recvfrom(int client_sock,
 	static char rx_buf[400];
 	int len, i;
 
-	zassert_not_null(client_addr, "null client addr");
-	zassert_not_null(server_addr, "null server addr");
+	ztest_not_null(client_addr, "null client addr");
+	ztest_not_null(server_addr, "null server addr");
 
 	/*
 	 * Test client -> server sending
 	 */
 
 	sent = sendmsg(client_sock, client_msg, 0);
-	zassert_true(sent > 0, "sendmsg failed (%d)", -errno);
+	ztest_true(sent > 0, "sendmsg failed (%d)", -errno);
 
 	for (i = 0, len = 0; i < client_msg->msg_iovlen; i++) {
 		len += client_msg->msg_iov[i].iov_len;
 	}
 
-	zassert_equal(sent, len, "iovec len (%d) vs sent (%d)", len, sent);
+	ztest_equal(sent, len, "iovec len (%d) vs sent (%d)", len, sent);
 
 	/* Test recvfrom(MSG_PEEK) */
 	addrlen = sizeof(addr);
 	clear_buf(rx_buf);
 	recved = recvfrom(server_sock, rx_buf, sizeof(rx_buf),
 			  MSG_PEEK, &addr, &addrlen);
-	zassert_true(recved >= 0, "recvfrom fail");
-	zassert_equal(recved, strlen(TEST_STR_SMALL),
+	ztest_true(recved >= 0, "recvfrom fail");
+	ztest_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes");
-	zassert_equal(sent, recved, "sent(%d)/received(%d) mismatch",
+	ztest_equal(sent, recved, "sent(%d)/received(%d) mismatch",
 		      sent, recved);
 
-	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL),
+	ztest_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL),
 			  "wrong data (%s)", rx_buf);
-	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
+	ztest_equal(addrlen, client_addrlen, "unexpected addrlen");
 
 	/* Test normal recvfrom() */
 	addrlen = sizeof(addr);
 	clear_buf(rx_buf);
 	recved = recvfrom(server_sock, rx_buf, sizeof(rx_buf),
 			  0, &addr, &addrlen);
-	zassert_true(recved >= 0, "recvfrom fail");
-	zassert_equal(recved, strlen(TEST_STR_SMALL),
+	ztest_true(recved >= 0, "recvfrom fail");
+	ztest_equal(recved, strlen(TEST_STR_SMALL),
 		      "unexpected received bytes");
-	zassert_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
-	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
+	ztest_mem_equal(rx_buf, BUF_AND_SIZE(TEST_STR_SMALL), "wrong data");
+	ztest_equal(addrlen, client_addrlen, "unexpected addrlen");
 
 	/* Check the client port */
 	if (net_sin(client_addr)->sin_port != ANY_PORT) {
-		zassert_equal(net_sin(client_addr)->sin_port,
+		ztest_equal(net_sin(client_addr)->sin_port,
 			      net_sin(&addr)->sin_port,
 			      "unexpected client port");
 	}
@@ -432,12 +432,12 @@ void test_v4_sendmsg_recvfrom(void)
 	rv = bind(server_sock,
 		  (struct sockaddr *)&server_addr,
 		  sizeof(server_addr));
-	zassert_equal(rv, 0, "server bind failed");
+	ztest_equal(rv, 0, "server bind failed");
 
 	rv = bind(client_sock,
 		  (struct sockaddr *)&client_addr,
 		  sizeof(client_addr));
-	zassert_equal(rv, 0, "client bind failed");
+	ztest_equal(rv, 0, "client bind failed");
 
 	io_vector[0].iov_base = TEST_STR_SMALL;
 	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
@@ -465,9 +465,9 @@ void test_v4_sendmsg_recvfrom(void)
 			      sizeof(server_addr));
 
 	rv = close(client_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 	rv = close(server_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 }
 
 void test_v6_sendmsg_recvfrom(void)
@@ -492,12 +492,12 @@ void test_v6_sendmsg_recvfrom(void)
 
 	rv = bind(server_sock,
 		  (struct sockaddr *)&server_addr, sizeof(server_addr));
-	zassert_equal(rv, 0, "server bind failed");
+	ztest_equal(rv, 0, "server bind failed");
 
 	rv = bind(client_sock,
 		  (struct sockaddr *)&client_addr,
 		  sizeof(client_addr));
-	zassert_equal(rv, 0, "client bind failed");
+	ztest_equal(rv, 0, "client bind failed");
 
 	io_vector[0].iov_base = TEST_STR_SMALL;
 	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
@@ -525,9 +525,9 @@ void test_v6_sendmsg_recvfrom(void)
 			      sizeof(server_addr));
 
 	rv = close(client_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 	rv = close(server_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 }
 
 void test_v4_sendmsg_recvfrom_connected(void)
@@ -553,16 +553,16 @@ void test_v4_sendmsg_recvfrom_connected(void)
 	rv = bind(server_sock,
 		  (struct sockaddr *)&server_addr,
 		  sizeof(server_addr));
-	zassert_equal(rv, 0, "server bind failed");
+	ztest_equal(rv, 0, "server bind failed");
 
 	rv = bind(client_sock,
 		  (struct sockaddr *)&client_addr,
 		  sizeof(client_addr));
-	zassert_equal(rv, 0, "client bind failed");
+	ztest_equal(rv, 0, "client bind failed");
 
 	rv = connect(client_sock, (struct sockaddr *)&server_addr,
 		     sizeof(server_addr));
-	zassert_equal(rv, 0, "connect failed");
+	ztest_equal(rv, 0, "connect failed");
 
 	io_vector[0].iov_base = TEST_STR_SMALL;
 	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
@@ -588,9 +588,9 @@ void test_v4_sendmsg_recvfrom_connected(void)
 			      sizeof(server_addr));
 
 	rv = close(client_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 	rv = close(server_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 }
 
 void test_v6_sendmsg_recvfrom_connected(void)
@@ -615,16 +615,16 @@ void test_v6_sendmsg_recvfrom_connected(void)
 
 	rv = bind(server_sock,
 		  (struct sockaddr *)&server_addr, sizeof(server_addr));
-	zassert_equal(rv, 0, "server bind failed");
+	ztest_equal(rv, 0, "server bind failed");
 
 	rv = bind(client_sock,
 		  (struct sockaddr *)&client_addr,
 		  sizeof(client_addr));
-	zassert_equal(rv, 0, "client bind failed");
+	ztest_equal(rv, 0, "client bind failed");
 
 	rv = connect(client_sock, (struct sockaddr *)&server_addr,
 		     sizeof(server_addr));
-	zassert_equal(rv, 0, "connect failed");
+	ztest_equal(rv, 0, "connect failed");
 
 	io_vector[0].iov_base = TEST_STR_SMALL;
 	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
@@ -650,9 +650,9 @@ void test_v6_sendmsg_recvfrom_connected(void)
 			      sizeof(server_addr));
 
 	rv = close(client_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 	rv = close(server_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 }
 
 void test_so_txtime(void)
@@ -669,39 +669,39 @@ void test_so_txtime(void)
 			    &sock2, &bind_addr6);
 
 	rv = bind(sock1, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
-	zassert_equal(rv, 0, "bind failed");
+	ztest_equal(rv, 0, "bind failed");
 
 	rv = bind(sock2, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
-	zassert_equal(rv, 0, "bind failed");
+	ztest_equal(rv, 0, "bind failed");
 
 	optval = true;
 	rv = setsockopt(sock1, SOL_SOCKET, SO_TXTIME, &optval,
 			sizeof(optval));
-	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
+	ztest_equal(rv, 0, "setsockopt failed (%d)", errno);
 
 	optval = false;
 	rv = setsockopt(sock2, SOL_SOCKET, SO_TXTIME, &optval,
 			sizeof(optval));
-	zassert_equal(rv, 0, "setsockopt failed");
+	ztest_equal(rv, 0, "setsockopt failed");
 
 	optlen = sizeof(optval);
 	rv = getsockopt(sock1, SOL_SOCKET, SO_TXTIME, &optval, &optlen);
-	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
-	zassert_equal(optlen, sizeof(optval), "invalid optlen %d vs %d",
+	ztest_equal(rv, 0, "getsockopt failed (%d)", errno);
+	ztest_equal(optlen, sizeof(optval), "invalid optlen %d vs %d",
 		      optlen, sizeof(optval));
-	zassert_equal(optval, true, "getsockopt txtime");
+	ztest_equal(optval, true, "getsockopt txtime");
 
 	optlen = sizeof(optval);
 	rv = getsockopt(sock2, SOL_SOCKET, SO_TXTIME, &optval, &optlen);
-	zassert_equal(rv, 0, "getsockopt failed (%d)", errno);
-	zassert_equal(optlen, sizeof(optval), "invalid optlen %d vs %d",
+	ztest_equal(rv, 0, "getsockopt failed (%d)", errno);
+	ztest_equal(optlen, sizeof(optval), "invalid optlen %d vs %d",
 		      optlen, sizeof(optval));
-	zassert_equal(optval, false, "getsockopt txtime");
+	ztest_equal(optval, false, "getsockopt txtime");
 
 	rv = close(sock1);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 	rv = close(sock2);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 }
 
 static void comm_sendmsg_with_txtime(int client_sock,
@@ -712,20 +712,20 @@ static void comm_sendmsg_with_txtime(int client_sock,
 	ssize_t sent;
 	int len, i;
 
-	zassert_not_null(client_addr, "null client addr");
+	ztest_not_null(client_addr, "null client addr");
 
 	/*
 	 * Test client -> server sending
 	 */
 
 	sent = sendmsg(client_sock, client_msg, 0);
-	zassert_true(sent > 0, "sendmsg failed (%d)", -errno);
+	ztest_true(sent > 0, "sendmsg failed (%d)", -errno);
 
 	for (i = 0, len = 0; i < client_msg->msg_iovlen; i++) {
 		len += client_msg->msg_iov[i].iov_len;
 	}
 
-	zassert_equal(sent, len, "iovec len (%d) vs sent (%d)", len, sent);
+	ztest_equal(sent, len, "iovec len (%d) vs sent (%d)", len, sent);
 }
 
 /* In order to verify that the network device driver is able to receive
@@ -818,14 +818,14 @@ static void setup_eth(void)
 	int ret;
 
 	eth_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
-	zassert_not_null(eth_iface, "No ethernet interface found");
+	ztest_not_null(eth_iface, "No ethernet interface found");
 
 	ifaddr = net_if_ipv6_addr_add(eth_iface, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr1));
-		zassert_not_null(ifaddr, "addr1");
+		ztest_not_null(ifaddr, "addr1");
 	}
 
 	net_if_up(eth_iface);
@@ -834,7 +834,7 @@ static void setup_eth(void)
 	server_addr.sin6_family = AF_INET6;
 	server_addr.sin6_port = htons(1234);
 	ret = inet_pton(AF_INET6, PEER_IPV6_ADDR, &server_addr.sin6_addr);
-	zassert_equal(ret, 1, "inet_pton failed");
+	ztest_equal(ret, 1, "inet_pton failed");
 
 	/* In order to avoid neighbor discovery, populate neighbor cache */
 	net_ipv6_nbr_add(eth_iface, &server_addr.sin6_addr, &server_link_addr,
@@ -862,7 +862,7 @@ void test_v6_sendmsg_with_txtime(void)
 	rv = bind(client_sock,
 		  (struct sockaddr *)&client_addr,
 		  sizeof(client_addr));
-	zassert_equal(rv, 0, "client bind failed");
+	ztest_equal(rv, 0, "client bind failed");
 
 	io_vector[0].iov_base = TEST_STR_SMALL;
 	io_vector[0].iov_len = strlen(TEST_STR_SMALL);
@@ -895,13 +895,13 @@ void test_v6_sendmsg_with_txtime(void)
 				 &msg);
 
 	rv = close(client_sock);
-	zassert_equal(rv, 0, "close failed");
+	ztest_equal(rv, 0, "close failed");
 
 	if (sys_mutex_lock(&wait_data, WAIT_TIME)) {
-		zassert_true(false, "Timeout DNS query not received");
+		ztest_true(false, "Timeout DNS query not received");
 	}
 
-	zassert_false(test_failed, "Invalid txtime received");
+	ztest_false(test_failed, "Invalid txtime received");
 
 	test_started = false;
 }

@@ -23,7 +23,7 @@ void test_multilib(void)
 	volatile long long b = 3;
 	volatile long long c = a / b;
 
-	zassert_equal(c, 33, "smoke-test failed: wrong multilib selected");
+	ztest_equal(c, 33, "smoke-test failed: wrong multilib selected");
 }
 
 /**

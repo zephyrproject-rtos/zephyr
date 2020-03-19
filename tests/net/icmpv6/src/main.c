@@ -102,7 +102,7 @@ void test_icmpv6(void)
 
 	pkt = net_pkt_alloc_with_buffer(NULL, ICMPV6_MSG_SIZE,
 					AF_UNSPEC, 0, K_SECONDS(1));
-	zassert_not_null(pkt, "Allocation failed");
+	ztest_not_null(pkt, "Allocation failed");
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
@@ -116,7 +116,7 @@ void test_icmpv6(void)
 	ret = net_icmpv6_input(pkt, hdr);
 
 	/**TESTPOINT: Check input*/
-	zassert_true(ret == NET_DROP, "Callback not called properly");
+	ztest_true(ret == NET_DROP, "Callback not called properly");
 
 	handler_status = -1;
 
@@ -134,7 +134,7 @@ void test_icmpv6(void)
 	ret = net_icmpv6_input(pkt, hdr);
 
 	/**TESTPOINT: Check input*/
-	zassert_true(!(ret == NET_DROP || handler_status != 0),
+	ztest_true(!(ret == NET_DROP || handler_status != 0),
 		     "Callback not called properly");
 
 	handler_status = -1;
@@ -153,11 +153,11 @@ void test_icmpv6(void)
 	ret = net_icmpv6_input(pkt, hdr);
 
 	/**TESTPOINT: Check input*/
-	zassert_true(!(ret == NET_DROP || handler_status != 0),
+	ztest_true(!(ret == NET_DROP || handler_status != 0),
 			"Callback not called properly");
 
 	/**TESTPOINT: Check input*/
-	zassert_true(!(handler_called != 2), "Callbacks not called properly");
+	ztest_true(!(handler_called != 2), "Callbacks not called properly");
 }
 
 /**test case main entry*/

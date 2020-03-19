@@ -27,9 +27,9 @@ void tmpool_alloc_free(void *data)
 		 * the block descriptor is set to the starting address of the
 		 * memory block.
 		 */
-		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
+		ztest_true(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
 					      K_NO_WAIT) == 0, NULL);
-		zassert_not_null(block[i].data, NULL);
+		ztest_not_null(block[i].data, NULL);
 	}
 
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
@@ -46,9 +46,9 @@ void tmpool_alloc_free(void *data)
 	 * @a max_size bytes long.
 	 */
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
-		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MAX,
+		ztest_true(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MAX,
 					      K_NO_WAIT) == 0, NULL);
-		zassert_not_null(block[i].data, NULL);
+		ztest_not_null(block[i].data, NULL);
 	}
 
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
@@ -106,10 +106,10 @@ void test_mpool_alloc_size(void)
 	 * into quarters, down to blocks of @a min_size bytes long.
 	 */
 	while (size >= BLK_SIZE_MIN) {
-		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
+		ztest_true(k_mem_pool_alloc(&kmpool, &block[i], size,
 					      K_NO_WAIT) == 0, NULL);
-		zassert_not_null(block[i].data, NULL);
-		zassert_true((uintptr_t)(block[i].data) % BLK_ALIGN == 0, NULL);
+		ztest_not_null(block[i].data, NULL);
+		ztest_true((uintptr_t)(block[i].data) % BLK_ALIGN == 0, NULL);
 		i++;
 		size = size >> 2;
 	}
@@ -124,10 +124,10 @@ void test_mpool_alloc_size(void)
 	 * aligned to this boundary, min_size must also be a multiple of align.
 	 */
 	while (size <= BLK_SIZE_MAX) {
-		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
+		ztest_true(k_mem_pool_alloc(&kmpool, &block[i], size,
 					      K_NO_WAIT) == 0, NULL);
-		zassert_not_null(block[i].data, NULL);
-		zassert_true((uintptr_t)(block[i].data) % BLK_ALIGN == 0, NULL);
+		ztest_not_null(block[i].data, NULL);
+		ztest_true((uintptr_t)(block[i].data) % BLK_ALIGN == 0, NULL);
 		i++;
 		size = size << 2;
 	}
@@ -148,23 +148,23 @@ void test_mpool_alloc_timeout(void)
 	s64_t tms;
 
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
-		zassert_equal(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
+		ztest_equal(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
 					       K_NO_WAIT), 0, NULL);
 	}
 
 	/** TESTPOINT: Use K_NO_WAIT to return without waiting*/
 	/** TESTPOINT: @retval -ENOMEM Returned without waiting*/
-	zassert_equal(k_mem_pool_alloc(&kmpool, &fblock, BLK_SIZE_MIN,
+	ztest_equal(k_mem_pool_alloc(&kmpool, &fblock, BLK_SIZE_MIN,
 				       K_NO_WAIT), -ENOMEM, NULL);
 	/** TESTPOINT: @retval -EAGAIN Waiting period timed out*/
 	tms = k_uptime_get();
-	zassert_equal(k_mem_pool_alloc(&kmpool, &fblock, BLK_SIZE_MIN, TIMEOUT),
+	ztest_equal(k_mem_pool_alloc(&kmpool, &fblock, BLK_SIZE_MIN, TIMEOUT),
 		      -EAGAIN, NULL);
 	/**
 	 * TESTPOINT: Maximum time to wait for operation to complete (in
 	 * milliseconds)
 	 */
-	zassert_true(k_uptime_delta(&tms) >= TIMEOUT, NULL);
+	ztest_true(k_uptime_delta(&tms) >= TIMEOUT, NULL);
 
 	for (int i = 0; i < BLK_NUM_MIN; i++) {
 		k_mem_pool_free(&block[i]);
@@ -183,9 +183,9 @@ void test_sys_heap_mem_pool_assign(void)
 
 	k_thread_system_pool_assign(k_current_get());
 	ptr = (char *)z_thread_malloc(BLK_SIZE_MIN/2);
-	zassert_not_null(ptr, "bytes allocation failed from system pool");
+	ztest_not_null(ptr, "bytes allocation failed from system pool");
 	k_free(ptr);
 
-	zassert_is_null((char *)z_thread_malloc(BLK_SIZE_MAX * 2),
+	ztest_is_null((char *)z_thread_malloc(BLK_SIZE_MAX * 2),
 						"overflow check failed");
 }

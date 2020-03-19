@@ -212,7 +212,7 @@ static int driver_open(void)
 /*  HCI driver send.  */
 static int driver_send(struct net_buf *buf)
 {
-	zassert_true(cmd_handle(buf, cmds, ARRAY_SIZE(cmds)) == 0,
+	ztest_true(cmd_handle(buf, cmds, ARRAY_SIZE(cmds)) == 0,
 		     "Unknown HCI command");
 
 	net_buf_unref(buf);
@@ -300,7 +300,7 @@ static bool prop_cb(struct net_buf_simple *buf)
 
 		/* Allocate memory for storing the data */
 		prop_cb_data = k_malloc(data_len);
-		zassert_not_null(prop_cb_data, "Cannot allocate memory");
+		ztest_not_null(prop_cb_data, "Cannot allocate memory");
 
 		/* Copy data so it can be verified later */
 		memcpy(prop_cb_data, data, data_len);
@@ -350,7 +350,7 @@ static void test_hci_prop_evt_entry(void)
 	bt_hci_driver_register(&drv);
 
 	/* Go! Wait until Bluetooth initialization is done  */
-	zassert_true((bt_enable(NULL) == 0),
+	ztest_true((bt_enable(NULL) == 0),
 		     "bt_enable failed");
 
 	/* Register the prop callback */
@@ -364,15 +364,15 @@ static void test_hci_prop_evt_entry(void)
 	send_prop_report(&data[0], data_len);
 
 	/* Wait for the prop callback to be called */
-	zassert_true(k_sem_take(&prop_cb_sem, K_MSEC(100)) == 0,
+	ztest_true(k_sem_take(&prop_cb_sem, K_MSEC(100)) == 0,
 		     "prop_cb was not called within timeout");
 
 	/* Verify the data length */
-	zassert_true(prop_cb_data_len == data_len,
+	ztest_true(prop_cb_data_len == data_len,
 		     "prop_cb_data_len invalid");
 
 	/* Verify the data itself */
-	zassert_true(memcmp(prop_cb_data, data, data_len) == 0,
+	ztest_true(memcmp(prop_cb_data, data, data_len) == 0,
 		     "prop_cb_data invalid");
 
 	/* Free the data memory */

@@ -28,22 +28,22 @@ void test_config_save_3_fcb(void)
 	cf.cf_fcb.f_sector_cnt = 4;
 
 	rc = settings_fcb_src(&cf);
-	zassert_true(rc == 0, "can't register FCB as configuration source");
+	ztest_true(rc == 0, "can't register FCB as configuration source");
 
 	rc = settings_fcb_dst(&cf);
-	zassert_true(rc == 0,
+	ztest_true(rc == 0,
 		     "can't register FCB as configuration destination");
 
 	for (i = 0; i < TESTS_S3_FCB_ITERATIONS; i++) {
 		val32 = i;
 
 		rc = settings_save();
-		zassert_true(rc == 0, "fcb write error");
+		ztest_true(rc == 0, "fcb write error");
 
 		val32 = 0U;
 
 		rc = settings_load();
-		zassert_true(rc == 0, "fcb read error");
-		zassert_true(val32 == i, "bad value read");
+		ztest_true(rc == 0, "fcb read error");
+		ztest_true(val32 == i, "bad value read");
 	}
 }

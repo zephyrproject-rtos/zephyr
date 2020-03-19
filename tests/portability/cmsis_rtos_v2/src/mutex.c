@@ -26,7 +26,7 @@ void cleanup_max_mutex(osMutexId_t *mutex_ids)
 
 	for (mutex_count = 0; mutex_count < max_mtx_cnt; mutex_count++) {
 		status = osMutexDelete(mutex_ids[mutex_count]);
-		zassert_true(status == osOK, "Mutex delete fail");
+		ztest_true(status == osOK, "Mutex delete fail");
 	}
 }
 
@@ -39,11 +39,11 @@ void test_max_mutex(void)
 	for (mtx_cnt = 0; mtx_cnt < max_mtx_cnt + 1; mtx_cnt++) {
 		mutex_ids[mtx_cnt] = osMutexNew(&mutex_attr);
 		if (mtx_cnt == max_mtx_cnt) {
-			zassert_true(mutex_ids[mtx_cnt] == NULL,
+			ztest_true(mutex_ids[mtx_cnt] == NULL,
 				     "Mutex creation pass unexpectedly after max count");
 			cleanup_max_mutex(mutex_ids);
 		} else {
-			zassert_true(mutex_ids[mtx_cnt] != NULL,
+			ztest_true(mutex_ids[mtx_cnt] != NULL,
 				     "Multiple mutex creation failed before max count");
 		}
 	}
@@ -58,49 +58,49 @@ void test_mutex(void)
 
 	/* Try deleting invalid mutex object */
 	status = osMutexDelete(mutex_id);
-	zassert_true(status == osErrorParameter,
+	ztest_true(status == osErrorParameter,
 		     "Invalid Mutex deleted unexpectedly!");
 
 	mutex_id = osMutexNew(&mutex_attr);
-	zassert_true(mutex_id != NULL, "Mutex1 creation failed");
+	ztest_true(mutex_id != NULL, "Mutex1 creation failed");
 
 	name = osMutexGetName(mutex_id);
-	zassert_true(strcmp(mutex_attr.name, name) == 0,
+	ztest_true(strcmp(mutex_attr.name, name) == 0,
 		     "Error getting Mutex name");
 
 	/* Try to release mutex without obtaining it */
 	status = osMutexRelease(mutex_id);
-	zassert_true(status == osErrorResource, "Mutex released unexpectedly!");
+	ztest_true(status == osErrorResource, "Mutex released unexpectedly!");
 
 	/* Try figuring out the owner for a Mutex which has not been
 	 * acquired by any thread yet.
 	 */
 	id = osMutexGetOwner(mutex_id);
-	zassert_true(id == NULL, "Something wrong with MutexGetOwner!");
+	ztest_true(id == NULL, "Something wrong with MutexGetOwner!");
 
 	status = osMutexAcquire(mutex_id, 0);
-	zassert_true(status == osOK, "Mutex wait failure");
+	ztest_true(status == osOK, "Mutex wait failure");
 
 	id = osMutexGetOwner(mutex_id);
-	zassert_equal(id, osThreadGetId(), "Current thread is not the owner!");
+	ztest_equal(id, osThreadGetId(), "Current thread is not the owner!");
 
 	/* Try to acquire an already acquired mutex */
 	status = osMutexAcquire(mutex_id, 0);
-	zassert_true(status == osOK, "Mutex wait failure");
+	ztest_true(status == osOK, "Mutex wait failure");
 
 	status = osMutexRelease(mutex_id);
-	zassert_true(status == osOK, "Mutex release failure");
+	ztest_true(status == osOK, "Mutex release failure");
 
 	/* Release mutex again as it was acquired twice */
 	status = osMutexRelease(mutex_id);
-	zassert_true(status == osOK, "Mutex release failure");
+	ztest_true(status == osOK, "Mutex release failure");
 
 	/* Try to release mutex that was already released */
 	status = osMutexRelease(mutex_id);
-	zassert_true(status == osErrorResource, "Mutex released unexpectedly!");
+	ztest_true(status == osErrorResource, "Mutex released unexpectedly!");
 
 	status = osMutexDelete(mutex_id);
-	zassert_true(status == osOK, "Mutex delete failure");
+	ztest_true(status == osOK, "Mutex delete failure");
 
 	/* Try mutex creation for more than maximum allowed count */
 	test_max_mutex();
@@ -115,16 +115,16 @@ void tThread_entry_lock_timeout(void *arg)
 	 * by the other thread. Try with and without timeout.
 	 */
 	status = osMutexAcquire((osMutexId_t)arg, 0);
-	zassert_true(status == osErrorResource, NULL);
+	ztest_true(status == osErrorResource, NULL);
 
 	status = osMutexAcquire((osMutexId_t)arg, TIMEOUT_TICKS - 5);
-	zassert_true(status == osErrorTimeout, NULL);
+	ztest_true(status == osErrorTimeout, NULL);
 
 	status = osMutexRelease((osMutexId_t)arg);
-	zassert_true(status == osErrorResource, "Mutex unexpectedly released");
+	ztest_true(status == osErrorResource, "Mutex unexpectedly released");
 
 	id = osMutexGetOwner((osMutexId_t)arg);
-	zassert_not_equal(id, osThreadGetId(),
+	ztest_not_equal(id, osThreadGetId(),
 			  "Unexpectedly, current thread is the mutex owner!");
 
 	/* This delay ensures that the mutex gets released by the other
@@ -136,7 +136,7 @@ void tThread_entry_lock_timeout(void *arg)
 	 * and release it.
 	 */
 	status = osMutexAcquire((osMutexId_t)arg, TIMEOUT_TICKS);
-	zassert_true(status == osOK, NULL);
+	ztest_true(status == osOK, NULL);
 	osMutexRelease((osMutexId_t)arg);
 }
 
@@ -160,13 +160,13 @@ void test_mutex_lock_timeout(void)
 	osStatus_t status;
 
 	mutex_id = osMutexNew(&mutex_attr);
-	zassert_true(mutex_id != NULL, "Mutex2 creation failed");
+	ztest_true(mutex_id != NULL, "Mutex2 creation failed");
 
 	id = osThreadNew(tThread_entry_lock_timeout, mutex_id, &thread_attr);
-	zassert_true(id != NULL, "Thread creation failed");
+	ztest_true(id != NULL, "Thread creation failed");
 
 	status = osMutexAcquire(mutex_id, osWaitForever);
-	zassert_true(status == osOK, "Mutex wait failure");
+	ztest_true(status == osOK, "Mutex wait failure");
 
 	/* wait for spawn thread to take action */
 	osDelay(TIMEOUT_TICKS);

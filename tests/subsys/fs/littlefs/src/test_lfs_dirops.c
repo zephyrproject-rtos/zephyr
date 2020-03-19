@@ -35,10 +35,10 @@ static int clean_mount(struct fs_mount_t *mp)
 {
 	TC_PRINT("checking clean mount\n");
 
-	zassert_equal(testfs_lfs_wipe_partition(mp),
+	ztest_equal(testfs_lfs_wipe_partition(mp),
 		      TC_PASS,
 		      "failed to wipe partition");
-	zassert_equal(fs_mount(mp), 0,
+	ztest_equal(fs_mount(mp), 0,
 		      "mount small failed");
 
 	return TC_PASS;
@@ -49,43 +49,43 @@ static int check_mkdir(struct fs_mount_t *mp)
 	struct testfs_path dpath;
 
 	TC_PRINT("checking dir create unlink\n");
-	zassert_equal(testfs_path_init(&dpath, mp,
+	ztest_equal(testfs_path_init(&dpath, mp,
 				       "dir",
 				       TESTFS_PATH_END),
 		      dpath.path,
 		      "root init failed");
 
-	zassert_equal(fs_mkdir(dpath.path),
+	ztest_equal(fs_mkdir(dpath.path),
 		      0,
 		      "mkdir failed");
 
 	struct fs_file_t file;
 	struct testfs_path fpath;
 
-	zassert_equal(fs_open(&file,
+	ztest_equal(fs_open(&file,
 			      testfs_path_extend(testfs_path_copy(&fpath,
 								  &dpath),
 						 "file",
 						 TESTFS_PATH_END)),
 		      0,
 		      "creat in dir failed");
-	zassert_equal(fs_close(&file), 0,
+	ztest_equal(fs_close(&file), 0,
 		      "close file failed");
 
 	struct fs_dirent stat;
 
-	zassert_equal(fs_stat(fpath.path, &stat), 0,
+	ztest_equal(fs_stat(fpath.path, &stat), 0,
 		      "stat file failed");
 
-	zassert_equal(fs_unlink(dpath.path),
+	ztest_equal(fs_unlink(dpath.path),
 		      -ENOTEMPTY,
 		      "unlink bad failure");
 
-	zassert_equal(fs_unlink(fpath.path),
+	ztest_equal(fs_unlink(fpath.path),
 		      0,
 		      "unlink file failed");
 
-	zassert_equal(fs_unlink(dpath.path),
+	ztest_equal(fs_unlink(dpath.path),
 		      0,
 		      "unlink dir failed");
 
@@ -100,21 +100,21 @@ static int build_layout(struct fs_mount_t *mp,
 
 	TC_PRINT("building layout on %s\n", mp->mnt_point);
 
-	zassert_equal(fs_statvfs(mp->mnt_point, &stat), 0,
+	ztest_equal(fs_statvfs(mp->mnt_point, &stat), 0,
 		      "statvfs failed");
 
 	TC_PRINT("before: bsize %lu ; frsize %lu ; blocks %lu ; bfree %lu\n",
 		 stat.f_bsize, stat.f_frsize, stat.f_blocks, stat.f_bfree);
 
-	zassert_equal(testfs_path_init(&path, mp, TESTFS_PATH_END),
+	ztest_equal(testfs_path_init(&path, mp, TESTFS_PATH_END),
 		      path.path,
 		      "root init failed");
 
-	zassert_equal(testfs_build(&path, cp),
+	ztest_equal(testfs_build(&path, cp),
 		      0,
 		      "build_layout failed");
 
-	zassert_equal(fs_statvfs(mp->mnt_point, &stat), 0,
+	ztest_equal(fs_statvfs(mp->mnt_point, &stat), 0,
 		      "statvfs failed");
 
 	TC_PRINT("after: bsize %lu ; frsize %lu ; blocks %lu ; bfree %lu\n",
@@ -131,15 +131,15 @@ static int check_layout(struct fs_mount_t *mp,
 
 	TC_PRINT("checking layout\n");
 
-	zassert_equal(testfs_path_init(&path, mp, TESTFS_PATH_END),
+	ztest_equal(testfs_path_init(&path, mp, TESTFS_PATH_END),
 		      path.path,
 		      "root init failed");
 
 	int rc = testfs_bcmd_verify_layout(&path, layout, end_layout);
 
-	zassert_true(rc >= 0, "layout check failed");
+	ztest_true(rc >= 0, "layout check failed");
 
-	zassert_equal(rc, 0,
+	ztest_equal(rc, 0,
 		      "layout found foreign");
 
 	struct testfs_bcmd *cp = layout;
@@ -150,7 +150,7 @@ static int check_layout(struct fs_mount_t *mp,
 				 cp->name,
 				 (cp->type == FS_DIR_ENTRY_DIR) ? "/" : "",
 				 cp->size);
-			zassert_true(cp->matched,
+			ztest_true(cp->matched,
 				     "Unmatched layout entry");
 		}
 		++cp;
@@ -197,20 +197,20 @@ static int check_rename(struct fs_mount_t *mp)
 	};
 	struct testfs_bcmd *to_end_bcmd = testfs_bcmd_end(to_bcmd);
 
-	zassert_equal(testfs_path_init(&root, mp,
+	ztest_equal(testfs_path_init(&root, mp,
 				       "rename",
 				       TESTFS_PATH_END),
 		      root.path,
 		      "root init failed");
 
-	zassert_equal(fs_mkdir(root.path),
+	ztest_equal(fs_mkdir(root.path),
 		      0,
 		      "rename mkdir failed");
-	zassert_equal(testfs_build(&root, from_bcmd),
+	ztest_equal(testfs_build(&root, from_bcmd),
 		      0,
 		      "rename build failed");
 
-	zassert_equal(testfs_bcmd_verify_layout(&root, from_bcmd, from_end_bcmd),
+	ztest_equal(testfs_bcmd_verify_layout(&root, from_bcmd, from_end_bcmd),
 		      0,
 		      "layout check failed");
 
@@ -221,7 +221,7 @@ static int check_rename(struct fs_mount_t *mp)
 			   "f1t",
 			   TESTFS_PATH_END);
 	TC_PRINT("%s => %s -ENOENT\n", from, to);
-	zassert_equal(fs_rename(from, to),
+	ztest_equal(fs_rename(from, to),
 		      -ENOENT,
 		      "rename noent failed");
 
@@ -230,7 +230,7 @@ static int check_rename(struct fs_mount_t *mp)
 			   "f1f",
 			   TESTFS_PATH_END);
 	TC_PRINT("%s => %s ok\n", from, to);
-	zassert_equal(fs_rename(from, to),
+	ztest_equal(fs_rename(from, to),
 		      0,
 		      "rename noent failed");
 
@@ -242,10 +242,10 @@ static int check_rename(struct fs_mount_t *mp)
 			   "f2t",
 			   TESTFS_PATH_END);
 	TC_PRINT("%s => %s clobber ok\n", from, to);
-	zassert_equal(fs_rename(from, to),
+	ztest_equal(fs_rename(from, to),
 		      0,
 		      "rename clobber failed");
-	zassert_equal(fs_stat(from, &stat),
+	ztest_equal(fs_stat(from, &stat),
 		      -ENOENT,
 		      "rename clobber left from");
 
@@ -257,10 +257,10 @@ static int check_rename(struct fs_mount_t *mp)
 			   "d1f", "d1f2t",
 			   TESTFS_PATH_END);
 	TC_PRINT("%s => %s move ok\n", from, to);
-	zassert_equal(fs_rename(from, to),
+	ztest_equal(fs_rename(from, to),
 		      0,
 		      "rename to subdir failed");
-	zassert_equal(fs_stat(from, &stat),
+	ztest_equal(fs_stat(from, &stat),
 		      -ENOENT,
 		      "rename to subdir left from");
 
@@ -272,7 +272,7 @@ static int check_rename(struct fs_mount_t *mp)
 			   "d2t",
 			   TESTFS_PATH_END);
 	TC_PRINT("%s => %s -ENOTEMPTY\n", from, to);
-	zassert_equal(fs_rename(from, to),
+	ztest_equal(fs_rename(from, to),
 		      -ENOTEMPTY,
 		      "rename to existing dir failed");
 
@@ -284,14 +284,14 @@ static int check_rename(struct fs_mount_t *mp)
 			   "d1t",
 			   TESTFS_PATH_END);
 	TC_PRINT("%s => %s ok\n", from, to);
-	zassert_equal(fs_rename(from, to),
+	ztest_equal(fs_rename(from, to),
 		      0,
 		      "rename to new dir failed");
-	zassert_equal(fs_stat(from, &stat),
+	ztest_equal(fs_stat(from, &stat),
 		      -ENOENT,
 		      "rename to new dir left from");
 
-	zassert_equal(testfs_bcmd_verify_layout(&root, to_bcmd, to_end_bcmd),
+	ztest_equal(testfs_bcmd_verify_layout(&root, to_bcmd, to_end_bcmd),
 		      0,
 		      "layout verification failed");
 
@@ -299,7 +299,7 @@ static int check_rename(struct fs_mount_t *mp)
 
 	while (cp != to_end_bcmd) {
 		if (cp->name) {
-			zassert_true(cp->matched, "foriegn file retained");
+			ztest_true(cp->matched, "foriegn file retained");
 		}
 		++cp;
 	}
@@ -311,25 +311,25 @@ void test_lfs_dirops(void)
 {
 	struct fs_mount_t *mp = &testfs_small_mnt;
 
-	zassert_equal(clean_mount(mp), TC_PASS,
+	ztest_equal(clean_mount(mp), TC_PASS,
 		      "clean mount failed");
 
-	zassert_equal(check_mkdir(mp), TC_PASS,
+	ztest_equal(check_mkdir(mp), TC_PASS,
 		      "check mkdir failed");
 
 	k_sleep(K_MSEC(100));   /* flush log messages */
-	zassert_equal(build_layout(mp, test_hierarchy), TC_PASS,
+	ztest_equal(build_layout(mp, test_hierarchy), TC_PASS,
 		      "build test hierarchy failed");
 
 	k_sleep(K_MSEC(100));   /* flush log messages */
-	zassert_equal(check_layout(mp, test_hierarchy), TC_PASS,
+	ztest_equal(check_layout(mp, test_hierarchy), TC_PASS,
 		      "check test hierarchy failed");
 
 	k_sleep(K_MSEC(100));   /* flush log messages */
-	zassert_equal(check_rename(mp), TC_PASS,
+	ztest_equal(check_rename(mp), TC_PASS,
 		      "check rename failed");
 
 	k_sleep(K_MSEC(100));   /* flush log messages */
-	zassert_equal(fs_unmount(mp), 0,
+	ztest_equal(fs_unmount(mp), 0,
 		      "unmount small failed");
 }

@@ -48,7 +48,7 @@ static void preempt_test_thread(void *p1, void *p2, void *p3)
 void test_user_k_is_preempt(void)
 {
 	/* thread_was_preempt is volatile, and static analysis doesn't
-	 * like to see it being tested inside zassert_true, because
+	 * like to see it being tested inside ztest_true, because
 	 * the read is treated as a "side effect" of an assertion
 	 * (e.g. a read is significant for things like volatile MMIO
 	 * addresses, and assertions may or may not be compiled, even
@@ -67,7 +67,7 @@ void test_user_k_is_preempt(void)
 	k_sem_take(&user_sem, K_FOREVER);
 
 	twp = thread_was_preempt;
-	zassert_false(twp, "unexpected return value");
+	ztest_false(twp, "unexpected return value");
 
 	k_thread_create(&user_thread, ustack, STACK_SIZE, preempt_test_thread,
 			NULL, NULL, NULL,
@@ -77,5 +77,5 @@ void test_user_k_is_preempt(void)
 	k_sem_take(&user_sem, K_FOREVER);
 
 	twp = thread_was_preempt;
-	zassert_true(twp, "unexpected return value");
+	ztest_true(twp, "unexpected return value");
 }

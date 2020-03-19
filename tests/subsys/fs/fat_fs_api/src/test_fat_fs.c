@@ -35,5 +35,5 @@ static int test_statvfs(void)
 
 void test_fat_fs(void)
 {
-	zassert_true(test_statvfs() == TC_PASS, NULL);
+	ztest_true(test_statvfs() == TC_PASS, NULL);
 }

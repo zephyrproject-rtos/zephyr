@@ -111,32 +111,32 @@ static void test_on_off_status_instance(const char *dev_name,
 	enum clock_control_status status;
 	int err;
 
-	zassert_true(dev != NULL, "%s: Unknown device", dev_name);
+	ztest_true(dev != NULL, "%s: Unknown device", dev_name);
 
 	status = clock_control_get_status(dev, subsys);
-	zassert_equal(CLOCK_CONTROL_STATUS_OFF, status,
+	ztest_equal(CLOCK_CONTROL_STATUS_OFF, status,
 			"%s: Unexpected status (%d)", dev_name, status);
 
 
 	err = clock_control_on(dev, subsys);
-	zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
+	ztest_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 
 	status = clock_control_get_status(dev, subsys);
-	zassert_true((status == CLOCK_CONTROL_STATUS_STARTING) ||
+	ztest_true((status == CLOCK_CONTROL_STATUS_STARTING) ||
 			(status == CLOCK_CONTROL_STATUS_ON),
 			"%s: Unexpected status (%d)", dev_name, status);
 
 	k_busy_wait(startup_us);
 
 	status = clock_control_get_status(dev, subsys);
-	zassert_equal(CLOCK_CONTROL_STATUS_ON, status,
+	ztest_equal(CLOCK_CONTROL_STATUS_ON, status,
 			"%s: Unexpected status (%d)", dev_name, status);
 
 	err = clock_control_off(dev, subsys);
-	zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
+	ztest_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 
 	status = clock_control_get_status(dev, subsys);
-	zassert_equal(CLOCK_CONTROL_STATUS_OFF, status,
+	ztest_equal(CLOCK_CONTROL_STATUS_OFF, status,
 			"%s: Unexpected status (%d)", dev_name, status);
 }
 
@@ -159,30 +159,30 @@ static void test_multiple_users_instance(const char *dev_name,
 	int err;
 
 	status = clock_control_get_status(dev, subsys);
-	zassert_equal(CLOCK_CONTROL_STATUS_OFF, status,
+	ztest_equal(CLOCK_CONTROL_STATUS_OFF, status,
 			"%s: Unexpected status (%d)", dev_name, status);
 
 	for (int i = 0; i < users; i++) {
 		err = clock_control_on(dev, subsys);
-		zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
+		ztest_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 	}
 
 	status = clock_control_get_status(dev, subsys);
-	zassert_true((status == CLOCK_CONTROL_STATUS_STARTING) ||
+	ztest_true((status == CLOCK_CONTROL_STATUS_STARTING) ||
 			(status == CLOCK_CONTROL_STATUS_ON),
 			"%s: Unexpected status (%d)", dev_name, status);
 
 	for (int i = 0; i < users; i++) {
 		err = clock_control_off(dev, subsys);
-		zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
+		ztest_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 	}
 
 	status = clock_control_get_status(dev, subsys);
-	zassert_true(status == CLOCK_CONTROL_STATUS_OFF,
+	ztest_true(status == CLOCK_CONTROL_STATUS_OFF,
 			"%s: Unexpected status (%d)", dev_name, status);
 
 	err = clock_control_off(dev, subsys);
-	zassert_equal(-EALREADY, err, "%s: Unexpected err (%d)", dev_name, err);
+	ztest_equal(-EALREADY, err, "%s: Unexpected err (%d)", dev_name, err);
 }
 
 static void test_multiple_users(void)
@@ -234,20 +234,20 @@ static void test_async_on_instance(const char *dev_name,
 	};
 
 	status = clock_control_get_status(dev, subsys);
-	zassert_equal(CLOCK_CONTROL_STATUS_OFF, status,
+	ztest_equal(CLOCK_CONTROL_STATUS_OFF, status,
 			"%s: Unexpected status (%d)", dev_name, status);
 
 	err = clock_control_async_on(dev, subsys, &data1);
-	zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
+	ztest_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 
 	err = clock_control_async_on(dev, subsys, &data2);
-	zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
+	ztest_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 
 	/* wait for clock started. */
 	k_busy_wait(startup_us);
 
-	zassert_true(executed1, "%s: Expected flag to be true", dev_name);
-	zassert_true(executed2, "%s: Expected flag to be true", dev_name);
+	ztest_true(executed1, "%s: Expected flag to be true", dev_name);
+	ztest_true(executed2, "%s: Expected flag to be true", dev_name);
 }
 
 static void test_async_on(void)
@@ -274,22 +274,22 @@ static void test_async_on_stopped_on_instance(const char *dev_name,
 	};
 
 	status = clock_control_get_status(dev, subsys);
-	zassert_equal(CLOCK_CONTROL_STATUS_OFF, status,
+	ztest_equal(CLOCK_CONTROL_STATUS_OFF, status,
 			"%s: Unexpected status (%d)", dev_name, status);
 
 	/* lock to prevent clock interrupt for fast starting clocks.*/
 	key = irq_lock();
 	err = clock_control_async_on(dev, subsys, &data1);
-	zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
+	ztest_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 
 	err = clock_control_off(dev, subsys);
-	zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
+	ztest_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 
 	irq_unlock(key);
 
 	k_busy_wait(10000);
 
-	zassert_false(executed1, "%s: Expected flag to be false", dev_name);
+	ztest_false(executed1, "%s: Expected flag to be false", dev_name);
 }
 
 static void test_async_on_stopped(void)
@@ -315,23 +315,23 @@ static void test_immediate_cb_when_clock_on_on_instance(const char *dev_name,
 	};
 
 	status = clock_control_get_status(dev, subsys);
-	zassert_equal(CLOCK_CONTROL_STATUS_OFF, status,
+	ztest_equal(CLOCK_CONTROL_STATUS_OFF, status,
 			"%s: Unexpected status (%d)", dev_name, status);
 
 	err = clock_control_on(dev, subsys);
-	zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
+	ztest_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 
 	/* wait for clock started. */
 	k_busy_wait(startup_us);
 
 	status = clock_control_get_status(dev, subsys);
-	zassert_equal(CLOCK_CONTROL_STATUS_ON, status,
+	ztest_equal(CLOCK_CONTROL_STATUS_ON, status,
 			"%s: Unexpected status (%d)", dev_name, status);
 
 	err = clock_control_async_on(dev, subsys, &data1);
-	zassert_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
+	ztest_equal(0, err, "%s: Unexpected err (%d)", dev_name, err);
 
-	zassert_true(executed1, "%s: Expected flag to be false", dev_name);
+	ztest_true(executed1, "%s: Expected flag to be false", dev_name);
 }
 
 static void test_immediate_cb_when_clock_on(void)

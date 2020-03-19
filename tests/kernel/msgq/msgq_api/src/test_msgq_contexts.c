@@ -29,21 +29,21 @@ static void put_msgq(struct k_msgq *pmsgq)
 
 	for (int i = 0; i < MSGQ_LEN; i++) {
 		ret = k_msgq_put(pmsgq, (void *)&data[i], K_NO_WAIT);
-		zassert_equal(ret, 0, NULL);
+		ztest_equal(ret, 0, NULL);
 
 		/**TESTPOINT: Check if k_msgq_peek reads msgq
 		 * in FIFO manner.
 		 * Everytime msg is enqueued, msg read should
 		 * always be the first message
 		 */
-		zassert_equal(k_msgq_peek(pmsgq, &read_data), 0, NULL);
-		zassert_equal(read_data, data[0], NULL);
+		ztest_equal(k_msgq_peek(pmsgq, &read_data), 0, NULL);
+		ztest_equal(read_data, data[0], NULL);
 
 		/**TESTPOINT: msgq free get*/
-		zassert_equal(k_msgq_num_free_get(pmsgq),
+		ztest_equal(k_msgq_num_free_get(pmsgq),
 				MSGQ_LEN - 1 - i, NULL);
 		/**TESTPOINT: msgq used get*/
-		zassert_equal(k_msgq_num_used_get(pmsgq), i + 1, NULL);
+		ztest_equal(k_msgq_num_used_get(pmsgq), i + 1, NULL);
 	}
 }
 
@@ -53,18 +53,18 @@ static void get_msgq(struct k_msgq *pmsgq)
 	int ret;
 
 	for (int i = 0; i < MSGQ_LEN; i++) {
-		zassert_equal(k_msgq_peek(pmsgq, &read_data), 0, NULL);
+		ztest_equal(k_msgq_peek(pmsgq, &read_data), 0, NULL);
 
 		ret = k_msgq_get(pmsgq, &rx_data, K_FOREVER);
-		zassert_equal(ret, 0, NULL);
-		zassert_equal(rx_data, data[i], NULL);
+		ztest_equal(ret, 0, NULL);
+		ztest_equal(rx_data, data[i], NULL);
 
 		/**TESTPOINT: Check if msg read is the msg deleted*/
-		zassert_equal(read_data, rx_data, NULL);
+		ztest_equal(read_data, rx_data, NULL);
 		/**TESTPOINT: msgq free get*/
-		zassert_equal(k_msgq_num_free_get(pmsgq), i + 1, NULL);
+		ztest_equal(k_msgq_num_free_get(pmsgq), i + 1, NULL);
 		/**TESTPOINT: msgq used get*/
-		zassert_equal(k_msgq_num_used_get(pmsgq),
+		ztest_equal(k_msgq_num_used_get(pmsgq),
 				MSGQ_LEN - 1 - i, NULL);
 	}
 }
@@ -74,9 +74,9 @@ static void purge_msgq(struct k_msgq *pmsgq)
 	u32_t read_data;
 
 	k_msgq_purge(pmsgq);
-	zassert_equal(k_msgq_num_free_get(pmsgq), MSGQ_LEN, NULL);
-	zassert_equal(k_msgq_num_used_get(pmsgq), 0, NULL);
-	zassert_equal(k_msgq_peek(pmsgq, &read_data), -ENOMSG, NULL);
+	ztest_equal(k_msgq_num_free_get(pmsgq), MSGQ_LEN, NULL);
+	ztest_equal(k_msgq_num_used_get(pmsgq), 0, NULL);
+	ztest_equal(k_msgq_peek(pmsgq, &read_data), -ENOMSG, NULL);
 }
 
 static void tisr_entry(void *p)
@@ -113,11 +113,11 @@ static void thread_entry_overflow(void *p1, void *p2, void *p3)
 
 	ret = k_msgq_get(p1, &rx_buf[0], K_FOREVER);
 
-	zassert_equal(ret, 0, NULL);
+	ztest_equal(ret, 0, NULL);
 
 	ret = k_msgq_get(p1, &rx_buf[1], K_FOREVER);
 
-	zassert_equal(ret, 0, NULL);
+	ztest_equal(ret, 0, NULL);
 
 	k_sem_give(&end_sema);
 }
@@ -128,7 +128,7 @@ static void msgq_thread_overflow(struct k_msgq *pmsgq)
 
 	ret = k_msgq_put(pmsgq, (void *)&data[0], K_FOREVER);
 
-	zassert_equal(ret, 0, NULL);
+	ztest_equal(ret, 0, NULL);
 
 	/**TESTPOINT: thread-thread data passing via message queue*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
@@ -138,7 +138,7 @@ static void msgq_thread_overflow(struct k_msgq *pmsgq)
 
 	ret = k_msgq_put(pmsgq, (void *)&data[1], K_FOREVER);
 
-	zassert_equal(ret, 0, NULL);
+	ztest_equal(ret, 0, NULL);
 
 	k_sem_take(&end_sema, K_FOREVER);
 	k_thread_abort(tid);
@@ -174,7 +174,7 @@ static void pend_thread_entry(void *p1, void *p2, void *p3)
 	int ret;
 
 	ret = k_msgq_put(p1, &data[1], TIMEOUT);
-	zassert_equal(ret, 0, NULL);
+	ztest_equal(ret, 0, NULL);
 }
 
 static void msgq_thread_data_passing(struct k_msgq *pmsgq)
@@ -241,8 +241,8 @@ void test_msgq_user_thread(void)
 	struct k_msgq *q;
 
 	q = k_object_alloc(K_OBJ_MSGQ);
-	zassert_not_null(q, "couldn't alloc message queue");
-	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN), NULL);
+	ztest_not_null(q, "couldn't alloc message queue");
+	ztest_false(k_msgq_alloc_init(q, MSG_SIZE, MSGQ_LEN), NULL);
 	k_sem_init(&end_sema, 0, 1);
 
 	msgq_thread(q);
@@ -257,8 +257,8 @@ void test_msgq_user_thread_overflow(void)
 	struct k_msgq *q;
 
 	q = k_object_alloc(K_OBJ_MSGQ);
-	zassert_not_null(q, "couldn't alloc message queue");
-	zassert_false(k_msgq_alloc_init(q, MSG_SIZE, 1), NULL);
+	ztest_not_null(q, "couldn't alloc message queue");
+	ztest_false(k_msgq_alloc_init(q, MSG_SIZE, 1), NULL);
 	k_sem_init(&end_sema, 0, 1);
 
 	msgq_thread_overflow(q);
@@ -308,12 +308,12 @@ void test_msgq_alloc(void)
 
 	/** Requesting buffer allocation from the test pool.*/
 	ret = k_msgq_alloc_init(&kmsgq_test_alloc, MSG_SIZE * 64, MSGQ_LEN);
-	zassert_true(ret == -ENOMEM,
+	ztest_true(ret == -ENOMEM,
 		"resource pool is smaller then requested buffer");
 
 	/* Requesting a huge size of MSG to validate overflow*/
 	ret = k_msgq_alloc_init(&kmsgq_test_alloc, OVERFLOW_SIZE_MSG, MSGQ_LEN);
-	zassert_true(ret == -EINVAL, "Invalid request");
+	ztest_true(ret == -EINVAL, "Invalid request");
 }
 
 /**

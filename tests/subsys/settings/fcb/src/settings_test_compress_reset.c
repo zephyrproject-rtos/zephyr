@@ -24,10 +24,10 @@ void test_config_compress_reset(void)
 	cf.cf_fcb.f_sector_cnt = ARRAY_SIZE(fcb_sectors);
 
 	rc = settings_fcb_src(&cf);
-	zassert_true(rc == 0, "can't register FCB as configuration source");
+	ztest_true(rc == 0, "can't register FCB as configuration source");
 
 	rc = settings_fcb_dst(&cf);
-	zassert_true(rc == 0,
+	ztest_true(rc == 0,
 		     "can't register FCB as configuration destination");
 
 	c2_var_count = 1;
@@ -38,7 +38,7 @@ void test_config_compress_reset(void)
 		memcpy(val_string, test_ref_value, sizeof(val_string));
 
 		rc = settings_save();
-		zassert_true(rc == 0, "fcb write error");
+		ztest_true(rc == 0, "fcb write error");
 
 		if (cf.cf_fcb.f_active.fe_sector == &fcb_sectors[2]) {
 			/*
@@ -49,18 +49,18 @@ void test_config_compress_reset(void)
 		(void)memset(val_string, 0, sizeof(val_string));
 
 		rc = settings_load();
-		zassert_true(rc == 0, "fcb read error");
-		zassert_true(!memcmp(val_string, test_ref_value,
+		ztest_true(rc == 0, "fcb read error");
+		ztest_true(!memcmp(val_string, test_ref_value,
 				     SETTINGS_MAX_VAL_LEN),
 			     "bad value read");
 	}
 
 	fa = cf.cf_fcb.f_active.fe_sector;
 	rc = fcb_append_to_scratch(&cf.cf_fcb);
-	zassert_true(rc == 0, "fcb_append_to_scratch call failure");
-	zassert_true(fcb_free_sector_cnt(&cf.cf_fcb) == 0,
+	ztest_true(rc == 0, "fcb_append_to_scratch call failure");
+	ztest_true(fcb_free_sector_cnt(&cf.cf_fcb) == 0,
 		     "expected non of free sectors");
-	zassert_true(fa != cf.cf_fcb.f_active.fe_sector,
+	ztest_true(fa != cf.cf_fcb.f_active.fe_sector,
 		     "active page should change");
 
 	config_wipe_srcs();
@@ -72,16 +72,16 @@ void test_config_compress_reset(void)
 	cf.cf_fcb.f_sector_cnt = ARRAY_SIZE(fcb_sectors);
 
 	rc = settings_fcb_src(&cf);
-	zassert_true(rc == 0, "can't register FCB as configuration source");
+	ztest_true(rc == 0, "can't register FCB as configuration source");
 
 	rc = settings_fcb_dst(&cf);
-	zassert_true(rc == 0,
+	ztest_true(rc == 0,
 		     "can't register FCB as configuration destination");
 
 
-	zassert_true(fcb_free_sector_cnt(&cf.cf_fcb) == 1,
+	ztest_true(fcb_free_sector_cnt(&cf.cf_fcb) == 1,
 		     "expected one free sector");
-	zassert_true(fa == cf.cf_fcb.f_active.fe_sector,
+	ztest_true(fa == cf.cf_fcb.f_active.fe_sector,
 		   "active sector should become free after garbage collection");
 
 	c2_var_count = 0;

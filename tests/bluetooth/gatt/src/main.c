@@ -92,47 +92,47 @@ static struct bt_gatt_service test1_svc = BT_GATT_SERVICE(test1_attrs);
 void test_gatt_register(void)
 {
 	/* Attempt to register services */
-	zassert_false(bt_gatt_service_register(&test_svc),
+	ztest_false(bt_gatt_service_register(&test_svc),
 		     "Test service registration failed");
-	zassert_false(bt_gatt_service_register(&test1_svc),
+	ztest_false(bt_gatt_service_register(&test1_svc),
 		     "Test service1 registration failed");
 
 	/* Attempt to register already registered services */
-	zassert_true(bt_gatt_service_register(&test_svc),
+	ztest_true(bt_gatt_service_register(&test_svc),
 		     "Test service duplicate succeeded");
-	zassert_true(bt_gatt_service_register(&test1_svc),
+	ztest_true(bt_gatt_service_register(&test1_svc),
 		     "Test service1 duplicate succeeded");
 }
 
 void test_gatt_unregister(void)
 {
 	/* Attempt to unregister last */
-	zassert_false(bt_gatt_service_unregister(&test1_svc),
+	ztest_false(bt_gatt_service_unregister(&test1_svc),
 		     "Test service1 unregister failed");
-	zassert_false(bt_gatt_service_register(&test1_svc),
+	ztest_false(bt_gatt_service_register(&test1_svc),
 		     "Test service1 re-registration failed");
 
 	/* Attempt to unregister first/middle */
-	zassert_false(bt_gatt_service_unregister(&test_svc),
+	ztest_false(bt_gatt_service_unregister(&test_svc),
 		     "Test service unregister failed");
-	zassert_false(bt_gatt_service_register(&test_svc),
+	ztest_false(bt_gatt_service_register(&test_svc),
 		     "Test service re-registration failed");
 
 	/* Attempt to unregister all reverse order */
-	zassert_false(bt_gatt_service_unregister(&test1_svc),
+	ztest_false(bt_gatt_service_unregister(&test1_svc),
 		     "Test service1 unregister failed");
-	zassert_false(bt_gatt_service_unregister(&test_svc),
+	ztest_false(bt_gatt_service_unregister(&test_svc),
 		     "Test service unregister failed");
 
-	zassert_false(bt_gatt_service_register(&test_svc),
+	ztest_false(bt_gatt_service_register(&test_svc),
 		     "Test service registration failed");
-	zassert_false(bt_gatt_service_register(&test1_svc),
+	ztest_false(bt_gatt_service_register(&test1_svc),
 		     "Test service1 registration failed");
 
 	/* Attempt to unregister all same order */
-	zassert_false(bt_gatt_service_unregister(&test_svc),
+	ztest_false(bt_gatt_service_unregister(&test_svc),
 		     "Test service1 unregister failed");
-	zassert_false(bt_gatt_service_unregister(&test1_svc),
+	ztest_false(bt_gatt_service_unregister(&test1_svc),
 		     "Test service unregister failed");
 }
 
@@ -160,29 +160,29 @@ void test_gatt_foreach(void)
 	u16_t num = 0;
 
 	/* Attempt to register services */
-	zassert_false(bt_gatt_service_register(&test_svc),
+	ztest_false(bt_gatt_service_register(&test_svc),
 		     "Test service registration failed");
-	zassert_false(bt_gatt_service_register(&test1_svc),
+	ztest_false(bt_gatt_service_register(&test1_svc),
 		     "Test service1 registration failed");
 
 	/* Iterate attributes */
 	bt_gatt_foreach_attr(test_attrs[0].handle, 0xffff, count_attr, &num);
-	zassert_equal(num, 7, "Number of attributes don't match");
+	ztest_equal(num, 7, "Number of attributes don't match");
 
 	/* Iterate 1 attribute */
 	num = 0;
 	bt_gatt_foreach_attr_type(test_attrs[0].handle, 0xffff, NULL, NULL, 1,
 				  count_attr, &num);
-	zassert_equal(num, 1, "Number of attributes don't match");
+	ztest_equal(num, 1, "Number of attributes don't match");
 
 	/* Find attribute by UUID */
 	attr = NULL;
 	bt_gatt_foreach_attr_type(test_attrs[0].handle, 0xffff,
 				  &test_chrc_uuid.uuid, NULL, 0, find_attr,
 				  &attr);
-	zassert_not_null(attr, "Attribute don't match");
+	ztest_not_null(attr, "Attribute don't match");
 	if (attr) {
-		zassert_equal(attr->uuid, &test_chrc_uuid.uuid,
+		ztest_equal(attr->uuid, &test_chrc_uuid.uuid,
 			      "Attribute UUID don't match");
 	}
 
@@ -190,9 +190,9 @@ void test_gatt_foreach(void)
 	attr = NULL;
 	bt_gatt_foreach_attr_type(test_attrs[0].handle, 0xffff, NULL,
 				  test_value, 0, find_attr, &attr);
-	zassert_not_null(attr, "Attribute don't match");
+	ztest_not_null(attr, "Attribute don't match");
 	if (attr) {
-		zassert_equal(attr->user_data, test_value,
+		ztest_equal(attr->user_data, test_value,
 			      "Attribute value don't match");
 	}
 
@@ -200,24 +200,24 @@ void test_gatt_foreach(void)
 	num = 0;
 	bt_gatt_foreach_attr_type(test_attrs[0].handle, 0xffff,
 				  BT_UUID_GATT_CHRC, NULL, 0, count_attr, &num);
-	zassert_equal(num, 2, "Number of attributes don't match");
+	ztest_equal(num, 2, "Number of attributes don't match");
 
 	/* Find 1 characteristic */
 	attr = NULL;
 	bt_gatt_foreach_attr_type(test_attrs[0].handle, 0xffff,
 				  BT_UUID_GATT_CHRC, NULL, 1, find_attr, &attr);
-	zassert_not_null(attr, "Attribute don't match");
+	ztest_not_null(attr, "Attribute don't match");
 
 	/* Find attribute by UUID and DATA */
 	attr = NULL;
 	bt_gatt_foreach_attr_type(test_attrs[0].handle, 0xffff,
 				  &test1_nfy_uuid.uuid, &nfy_enabled, 1,
 				  find_attr, &attr);
-	zassert_not_null(attr, "Attribute don't match");
+	ztest_not_null(attr, "Attribute don't match");
 	if (attr) {
-		zassert_equal(attr->uuid, &test1_nfy_uuid.uuid,
+		ztest_equal(attr->uuid, &test1_nfy_uuid.uuid,
 			      "Attribute UUID don't match");
-		zassert_equal(attr->user_data, &nfy_enabled,
+		ztest_equal(attr->user_data, &nfy_enabled,
 			      "Attribute value don't match");
 	}
 }
@@ -233,14 +233,14 @@ void test_gatt_read(void)
 	bt_gatt_foreach_attr_type(test_attrs[0].handle, 0xffff,
 				  &test_chrc_uuid.uuid, NULL, 0, find_attr,
 				  &attr);
-	zassert_not_null(attr, "Attribute don't match");
-	zassert_equal(attr->uuid, &test_chrc_uuid.uuid,
+	ztest_not_null(attr, "Attribute don't match");
+	ztest_equal(attr->uuid, &test_chrc_uuid.uuid,
 			      "Attribute UUID don't match");
 
 	ret = attr->read(NULL, attr, (void *)buf, sizeof(buf), 0);
-	zassert_equal(ret, strlen(test_value),
+	ztest_equal(ret, strlen(test_value),
 		      "Attribute read unexpected return");
-	zassert_mem_equal(buf, test_value, ret,
+	ztest_mem_equal(buf, test_value, ret,
 			  "Attribute read value don't match");
 }
 
@@ -255,11 +255,11 @@ void test_gatt_write(void)
 	bt_gatt_foreach_attr_type(test_attrs[0].handle, 0xffff,
 				  &test_chrc_uuid.uuid, NULL, 0, find_attr,
 				  &attr);
-	zassert_not_null(attr, "Attribute don't match");
+	ztest_not_null(attr, "Attribute don't match");
 
 	ret = attr->write(NULL, attr, (void *)value, strlen(value), 0, 0);
-	zassert_equal(ret, strlen(value), "Attribute write unexpected return");
-	zassert_mem_equal(value, test_value, ret,
+	ztest_equal(ret, strlen(value), "Attribute write unexpected return");
+	ztest_mem_equal(value, test_value, ret,
 			  "Attribute write value don't match");
 }
 

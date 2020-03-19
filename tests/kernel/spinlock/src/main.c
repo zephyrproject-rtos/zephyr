@@ -43,15 +43,15 @@ void test_spinlock_basic(void)
 	k_spinlock_key_t key;
 	static struct k_spinlock l;
 
-	zassert_true(!l.locked, "Spinlock initialized to locked");
+	ztest_true(!l.locked, "Spinlock initialized to locked");
 
 	key = k_spin_lock(&l);
 
-	zassert_true(l.locked, "Spinlock failed to lock");
+	ztest_true(l.locked, "Spinlock failed to lock");
 
 	k_spin_unlock(&l, key);
 
-	zassert_true(!l.locked, "Spinlock failed to unlock");
+	ztest_true(!l.locked, "Spinlock failed to unlock");
 }
 
 void bounce_once(int id)
@@ -79,7 +79,7 @@ void bounce_once(int id)
 		return;
 	}
 
-	zassert_true(locked, "Other cpu did not get lock in 10000 tries");
+	ztest_true(locked, "Other cpu did not get lock in 10000 tries");
 
 	/* Mark us as the owner, spin for a while validating that we
 	 * never see another owner write to the protected data.
@@ -87,7 +87,7 @@ void bounce_once(int id)
 	bounce_owner = id;
 
 	for (i = 0; i < 100; i++) {
-		zassert_true(bounce_owner == id, "Locked data changed");
+		ztest_true(bounce_owner == id, "Locked data changed");
 	}
 
 	/* Release the lock */

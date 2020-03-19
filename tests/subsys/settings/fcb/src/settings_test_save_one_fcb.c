@@ -26,27 +26,27 @@ void test_config_save_one_fcb(void)
 	cf.cf_fcb.f_sector_cnt = ARRAY_SIZE(fcb_sectors);
 
 	rc = settings_fcb_src(&cf);
-	zassert_true(rc == 0, "can't register FCB as configuration source");
+	ztest_true(rc == 0, "can't register FCB as configuration source");
 
 	rc = settings_fcb_dst(&cf);
-	zassert_true(rc == 0,
+	ztest_true(rc == 0,
 			 "can't register FCB as configuration destination");
 
 	val8 = 33U;
 	rc = settings_save();
-	zassert_true(rc == 0, "fcb write error");
+	ztest_true(rc == 0, "fcb write error");
 
 	rc = test_config_save_one_byte_value("myfoo/mybar", 42);
-	zassert_true(rc == 0, "fcb one item write error");
+	ztest_true(rc == 0, "fcb one item write error");
 
 	rc = settings_load();
-	zassert_true(rc == 0, "fcb read error");
-	zassert_true(val8 == 42U, "bad value read");
+	ztest_true(rc == 0, "fcb read error");
+	ztest_true(val8 == 42U, "bad value read");
 
 	rc = test_config_save_one_byte_value("myfoo/mybar", 44);
-	zassert_true(rc == 0, "fcb one item write error");
+	ztest_true(rc == 0, "fcb one item write error");
 
 	rc = settings_load();
-	zassert_true(rc == 0, "fcb read error");
-	zassert_true(val8 == 44U, "bad value read");
+	ztest_true(rc == 0, "fcb read error");
+	ztest_true(val8 == 44U, "bad value read");
 }

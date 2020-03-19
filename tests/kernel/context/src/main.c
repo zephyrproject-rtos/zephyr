@@ -264,7 +264,7 @@ static void _test_kernel_cpu_idle(int atomic)
 		/* calculating milliseconds per tick*/
 		tms += k_ticks_to_ms_floor64(1);
 		tms2 = k_uptime_get_32();
-		zassert_false(tms2 < tms, "Bad ms per tick value computed,"
+		ztest_false(tms2 < tms, "Bad ms per tick value computed,"
 			      "got %d which is less than %d\n",
 			      tms2, tms);
 	}
@@ -366,7 +366,7 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 	 * counter and ticks DO advance with interrupts locked!
 	 */
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		zassert_equal(tick2, tick,
+		ztest_equal(tick2, tick,
 			      "tick advanced with interrupts locked");
 	}
 
@@ -379,7 +379,7 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 	}
 
 	tick2 = z_tick_get_32();
-	zassert_not_equal(tick, tick2,
+	ztest_not_equal(tick, tick2,
 			  "tick didn't advance as expected");
 }
 
@@ -452,9 +452,9 @@ static void test_kernel_ctx_thread(void)
 	/* isr_info is modified by the isr_handler routine */
 	isr_handler_trigger();
 
-	zassert_false(isr_info.error, "ISR detected an error");
+	ztest_false(isr_info.error, "ISR detected an error");
 
-	zassert_equal(isr_info.data, (void *)self_thread_id,
+	ztest_equal(isr_info.data, (void *)self_thread_id,
 		      "ISR context ID mismatch");
 
 	TC_PRINT("Testing k_is_in_isr() from an ISR\n");
@@ -462,15 +462,15 @@ static void test_kernel_ctx_thread(void)
 	isr_info.error = 0;
 	isr_handler_trigger();
 
-	zassert_false(isr_info.error, "ISR detected an error");
+	ztest_false(isr_info.error, "ISR detected an error");
 
-	zassert_equal(isr_info.value, K_ISR,
+	ztest_equal(isr_info.value, K_ISR,
 		      "isr_info.value was not K_ISR");
 
 	TC_PRINT("Testing k_is_in_isr() from a preemptible thread\n");
-	zassert_false(k_is_in_isr(), "Should not be in ISR context");
+	ztest_false(k_is_in_isr(), "Should not be in ISR context");
 
-	zassert_false(_current->base.prio < 0,
+	ztest_false(_current->base.prio < 0,
 		      "Current thread should have preemptible priority: %d",
 		      _current->base.prio);
 
@@ -490,7 +490,7 @@ static void _test_kernel_thread(k_tid_t _thread_id)
 	k_tid_t self_thread_id;
 
 	self_thread_id = k_current_get();
-	zassert_true((self_thread_id != _thread_id), "thread id matches parent thread");
+	ztest_true((self_thread_id != _thread_id), "thread id matches parent thread");
 
 	isr_info.command = THREAD_SELF_CMD;
 	isr_info.error = 0;
@@ -499,18 +499,18 @@ static void _test_kernel_thread(k_tid_t _thread_id)
 	 * Either the ISR detected an error, or the ISR context ID
 	 * does not match the interrupted thread's ID.
 	 */
-	zassert_false((isr_info.error || (isr_info.data != (void *)self_thread_id)),
+	ztest_false((isr_info.error || (isr_info.data != (void *)self_thread_id)),
 		      "Thread ID taken during ISR != calling thread");
 
 	isr_info.command = EXEC_CTX_TYPE_CMD;
 	isr_info.error = 0;
 	isr_handler_trigger();
-	zassert_false((isr_info.error || (isr_info.value != K_ISR)),
+	ztest_false((isr_info.error || (isr_info.value != K_ISR)),
 		      "k_is_in_isr() when called from an ISR is false");
 
-	zassert_false(k_is_in_isr(), "k_is_in_isr() when called from a thread is true");
+	ztest_false(k_is_in_isr(), "k_is_in_isr() when called from a thread is true");
 
-	zassert_false((_current->base.prio >= 0),
+	ztest_false((_current->base.prio >= 0),
 		      "thread is not a cooperative thread");
 }
 
@@ -583,7 +583,7 @@ static void k_yield_entry(void *arg0, void *arg1, void *arg2)
 			thread_helper, NULL, NULL, NULL,
 			K_PRIO_COOP(THREAD_PRIORITY - 1), 0, K_NO_WAIT);
 
-	zassert_equal(thread_evidence, 0,
+	ztest_equal(thread_evidence, 0,
 		      "Helper created at higher priority ran prematurely.");
 
 	/*
@@ -592,11 +592,11 @@ static void k_yield_entry(void *arg0, void *arg1, void *arg2)
 	 */
 	k_yield();
 
-	zassert_not_equal(thread_evidence, 0,
+	ztest_not_equal(thread_evidence, 0,
 			  "k_yield() did not yield to a higher priority thread: %d",
 			  thread_evidence);
 
-	zassert_false((thread_evidence > 1),
+	ztest_false((thread_evidence > 1),
 		      "k_yield() did not yield to an equal priority thread: %d",
 		      thread_evidence);
 
@@ -607,7 +607,7 @@ static void k_yield_entry(void *arg0, void *arg1, void *arg2)
 	k_thread_priority_set(self_thread_id, self_thread_id->base.prio - 1);
 	k_yield();
 
-	zassert_equal(thread_evidence, 1,
+	ztest_equal(thread_evidence, 1,
 		      "k_yield() yielded to a lower priority thread");
 
 	/*
@@ -746,7 +746,7 @@ static void test_busy_wait(void)
 
 	rv = k_sem_take(&reply_timeout, timeout * 2);
 
-	zassert_false(rv, " *** thread timed out waiting for " "k_busy_wait()");
+	ztest_false(rv, " *** thread timed out waiting for " "k_busy_wait()");
 }
 
 /**
@@ -772,7 +772,7 @@ static void test_k_sleep(void)
 			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, K_NO_WAIT);
 
 	rv = k_sem_take(&reply_timeout, timeout * 2);
-	zassert_equal(rv, 0, " *** thread timed out waiting for thread on "
+	ztest_equal(rv, 0, " *** thread timed out waiting for thread on "
 		      "k_sleep().");
 
 	/* test k_thread_create() without cancellation */
@@ -787,10 +787,10 @@ static void test_k_sleep(void)
 	}
 	for (i = 0; i < NUM_TIMEOUT_THREADS; i++) {
 		data = k_fifo_get(&timeout_order_fifo, 750);
-		zassert_not_null(data, " *** timeout while waiting for"
+		ztest_not_null(data, " *** timeout while waiting for"
 				 " delayed thread");
 
-		zassert_equal(data->timeout_order, i,
+		ztest_equal(data->timeout_order, i,
 			      " *** wrong delayed thread ran (got %d, "
 			      "expected %d)\n", data->timeout_order, i);
 
@@ -801,7 +801,7 @@ static void test_k_sleep(void)
 	/* ensure no more thread fire */
 	data = k_fifo_get(&timeout_order_fifo, 750);
 
-	zassert_false(data, " *** got something unexpected in the fifo");
+	ztest_false(data, " *** got something unexpected in the fifo");
 
 	/* test k_thread_create() with cancellation */
 	TC_PRINT("Testing k_thread_create() with cancellations\n");
@@ -846,10 +846,10 @@ static void test_k_sleep(void)
 
 		data = k_fifo_get(&timeout_order_fifo, 2750);
 
-		zassert_not_null(data, " *** timeout while waiting for"
+		ztest_not_null(data, " *** timeout while waiting for"
 				 " delayed thread");
 
-		zassert_equal(data->timeout_order, i,
+		ztest_equal(data->timeout_order, i,
 			      " *** wrong delayed thread ran (got %d, "
 			      "expected %d)\n", data->timeout_order, i);
 
@@ -858,13 +858,13 @@ static void test_k_sleep(void)
 			 data->timeout_order);
 	}
 
-	zassert_equal(num_cancellations, next_cancellation,
+	ztest_equal(num_cancellations, next_cancellation,
 		      " *** wrong number of cancellations (expected %d, "
 		      "got %d\n", num_cancellations, next_cancellation);
 
 	/* ensure no more thread fire */
 	data = k_fifo_get(&timeout_order_fifo, 750);
-	zassert_false(data, " *** got something unexpected in the fifo");
+	ztest_false(data, " *** got something unexpected in the fifo");
 
 }
 
@@ -892,7 +892,7 @@ void test_k_yield(void)
 			k_yield_entry, NULL, NULL,
 			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, K_NO_WAIT);
 
-	zassert_equal(thread_evidence, 1,
+	ztest_equal(thread_evidence, 1,
 		      "Thread did not execute as expected!: %d", thread_evidence);
 
 	k_sem_give(&sem_thread);

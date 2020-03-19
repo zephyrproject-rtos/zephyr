@@ -22,14 +22,14 @@ void tmslab_alloc_wait_timeout(void *p1, void *p2, void *p3)
 {
 	void *block;
 
-	zassert_true(k_mem_slab_alloc(&mslab1, &block, TIMEOUT) == -EAGAIN,
+	ztest_true(k_mem_slab_alloc(&mslab1, &block, TIMEOUT) == -EAGAIN,
 		     NULL);
 	k_sem_give(&sync_sema);
 }
 
 void tmslab_alloc_wait_ok(void *p1, void *p2, void *p3)
 {
-	zassert_true(k_mem_slab_alloc(&mslab1, &block_ok, TIMEOUT) == 0, NULL);
+	ztest_true(k_mem_slab_alloc(&mslab1, &block_ok, TIMEOUT) == 0, NULL);
 	k_sem_give(&sync_sema);
 }
 
@@ -56,7 +56,7 @@ void test_mslab_alloc_wait_prio(void)
 	k_sem_init(&sync_sema, 0, THREAD_NUM);
 	/*allocated up all blocks*/
 	for (int i = 0; i < BLK_NUM; i++) {
-		zassert_equal(k_mem_slab_alloc(&mslab1, &block[i], K_NO_WAIT),
+		ztest_equal(k_mem_slab_alloc(&mslab1, &block[i], K_NO_WAIT),
 			      0, NULL);
 	}
 

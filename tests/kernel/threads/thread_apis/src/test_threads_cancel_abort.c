@@ -27,7 +27,7 @@ static void thread_entry_abort(void *p1, void *p2, void *p3)
 	k_thread_abort(k_current_get());
 	/*unreachable*/
 	execute_flag = 2;
-	zassert_true(1 == 0, NULL);
+	ztest_true(1 == 0, NULL);
 }
 /**
  * @ingroup kernel_thread_tests
@@ -46,7 +46,7 @@ void test_threads_abort_self(void)
 			NULL, NULL, NULL, 0, K_USER, K_NO_WAIT);
 	k_sleep(K_MSEC(100));
 	/**TESTPOINT: spawned thread executed but abort itself*/
-	zassert_true(execute_flag == 1, NULL);
+	ztest_true(execute_flag == 1, NULL);
 }
 
 /**
@@ -69,7 +69,7 @@ void test_threads_abort_others(void)
 	k_thread_abort(tid);
 	k_sleep(K_MSEC(100));
 	/**TESTPOINT: check not-started thread is aborted*/
-	zassert_true(execute_flag == 0, NULL);
+	ztest_true(execute_flag == 0, NULL);
 
 	tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			      thread_entry, NULL, NULL, NULL,
@@ -77,9 +77,9 @@ void test_threads_abort_others(void)
 	k_sleep(K_MSEC(50));
 	k_thread_abort(tid);
 	/**TESTPOINT: check running thread is aborted*/
-	zassert_true(execute_flag == 1, NULL);
+	ztest_true(execute_flag == 1, NULL);
 	k_sleep(K_MSEC(1000));
-	zassert_true(execute_flag == 1, NULL);
+	ztest_true(execute_flag == 1, NULL);
 }
 
 /**
@@ -117,7 +117,7 @@ static void abort_function(void)
 static void uthread_entry(void)
 {
 	block = k_malloc(BLOCK_SIZE);
-	zassert_true(block != NULL, NULL);
+	ztest_true(block != NULL, NULL);
 	printk("Child thread is running\n");
 	k_sleep(K_MSEC(2));
 }
@@ -144,7 +144,7 @@ void test_abort_handler(void)
 	printk("Calling abort of child from parent\n");
 	k_thread_abort(tid);
 
-	zassert_true(abort_called == true, "Abort handler"
+	ztest_true(abort_called == true, "Abort handler"
 		     " is not called");
 }
 
@@ -152,7 +152,7 @@ static void delayed_thread_entry(void *p1, void *p2, void *p3)
 {
 	execute_flag = 1;
 
-	zassert_unreachable("Delayed thread shouldn't be executed");
+	ztest_unreachable("Delayed thread shouldn't be executed");
 }
 
 /**
@@ -180,13 +180,13 @@ void test_delayed_thread_abort(void)
 	k_sleep(K_MSEC(50));
 
 	/* Test point: check if thread delayed for 100ms has not started*/
-	zassert_true(execute_flag == 0, "Delayed thread created is not"
+	ztest_true(execute_flag == 0, "Delayed thread created is not"
 		     " put to wait queue");
 
 	k_thread_abort(tid);
 
 	/* Test point: Test abort of thread before its execution*/
-	zassert_false(execute_flag == 1, "Delayed thread is has executed"
+	ztest_false(execute_flag == 1, "Delayed thread is has executed"
 		      " before cancellation");
 
 	/* Restore the priority */

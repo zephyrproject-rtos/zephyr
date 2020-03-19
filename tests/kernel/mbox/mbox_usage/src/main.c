@@ -63,13 +63,13 @@ static void msg_receiver(struct k_mbox *pmbox, k_tid_t thd_id, s32_t timeout)
 		mmsg.size = sizeof(rxdata);
 		mmsg.rx_source_thread = thd_id;
 		if (timeout == K_FOREVER) {
-			zassert_true(k_mbox_get(pmbox, &mmsg,
+			ztest_true(k_mbox_get(pmbox, &mmsg,
 				     rxdata, K_FOREVER) == 0, NULL);
 		} else if (timeout == K_NO_WAIT) {
-			zassert_false(k_mbox_get(pmbox, &mmsg,
+			ztest_false(k_mbox_get(pmbox, &mmsg,
 				      rxdata, K_NO_WAIT) == 0, NULL);
 		} else {
-			zassert_true(k_mbox_get(pmbox, &mmsg,
+			ztest_true(k_mbox_get(pmbox, &mmsg,
 				     rxdata, timeout) == 0, NULL);
 		}
 		break;

@@ -50,9 +50,9 @@ static void test_check_pattern32(off_t start, u32_t (*pattern_gen)(void),
 	for (off = 0; off < size; off += 4) {
 		rc = flash_read(flash_dev, start + off, &r_val32,
 				sizeof(r_val32));
-		zassert_equal(0, rc, "flash_write should succedd");
+		ztest_equal(0, rc, "flash_write should succedd");
 		val32 = pattern_gen();
-		zassert_equal(val32, r_val32,
+		ztest_equal(val32, r_val32,
 			     "flash word at offset 0x%x has value 0x%0x02",
 			     start + off, r_val32);
 	}
@@ -65,15 +65,15 @@ static void test_int(void)
 
 	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
-	zassert_true(flash_dev != NULL,
+	ztest_true(flash_dev != NULL,
 		     "Simulated flash driver was not found!");
 
 	rc = flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 			test_read_buf, sizeof(test_read_buf));
-	zassert_equal(0, rc, "flash_read should succedd");
+	ztest_equal(0, rc, "flash_read should succedd");
 
 	for (i = 0; i < sizeof(test_read_buf); i++) {
-		zassert_equal(0xff, test_read_buf[i],
+		ztest_equal(0xff, test_read_buf[i],
 			     "sim flash byte at offset 0x%x has value 0x%0x02",
 			     i, test_read_buf[i]);
 	}
@@ -87,11 +87,11 @@ static void test_write_read(void)
 
 	for (off = 0; off < TEST_SIM_FLASH_SIZE; off += 4) {
 		rc = flash_write_protection_set(flash_dev, false);
-		zassert_equal(0, rc, NULL);
+		ztest_equal(0, rc, NULL);
 		rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET +
 					    off,
 				 &val32, sizeof(val32));
-		zassert_equal(0, rc,
+		ztest_equal(0, rc,
 			      "flash_write (%d) should succedd at off 0x%x", rc,
 			       FLASH_SIMULATOR_BASE_OFFSET + off);
 		val32++;
@@ -103,8 +103,8 @@ static void test_write_read(void)
 		rc = flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET +
 					   off,
 				&r_val32, sizeof(r_val32));
-		zassert_equal(0, rc, "flash_write should succedd");
-		zassert_equal(val32, r_val32,
+		ztest_equal(0, rc, "flash_write should succedd");
+		ztest_equal(val32, r_val32,
 			     "flash byte at offset 0x%x has value 0x%0x02",
 			     off, r_val32);
 		val32++;
@@ -118,7 +118,7 @@ static void test_erase(void)
 	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET +
 			 FLASH_SIMULATOR_ERASE_UNIT,
 			 FLASH_SIMULATOR_ERASE_UNIT);
-	zassert_equal(0, rc, "flash_erase should succedd");
+	ztest_equal(0, rc, "flash_erase should succedd");
 
 	TC_PRINT("Incremental pattern expected\n");
 	pattern32_ini(0);
@@ -145,15 +145,15 @@ static void test_access(void)
 	int rc;
 
 	rc = flash_write_protection_set(flash_dev, true);
-	zassert_equal(0, rc, NULL);
+	ztest_equal(0, rc, NULL);
 
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 				 data, 4);
-	zassert_equal(-EACCES, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EACCES, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 			 FLASH_SIMULATOR_ERASE_UNIT);
-	zassert_equal(-EACCES, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EACCES, rc, "Unexpected error code (%d)", rc);
 }
 
 static void test_out_of_bounds(void)
@@ -165,53 +165,53 @@ static void test_out_of_bounds(void)
 
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET - 4,
 				 data, 4);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET - 4,
 				 data, 8);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_write(flash_dev, TEST_SIM_FLASH_END,
 				 data, 4);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_write(flash_dev, TEST_SIM_FLASH_END - 4,
 				 data, 8);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET -
 			 FLASH_SIMULATOR_ERASE_UNIT,
 			 FLASH_SIMULATOR_ERASE_UNIT);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_erase(flash_dev, TEST_SIM_FLASH_END,
 			 FLASH_SIMULATOR_ERASE_UNIT);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET -
 			 FLASH_SIMULATOR_ERASE_UNIT*2,
 			 FLASH_SIMULATOR_ERASE_UNIT*2);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_erase(flash_dev, TEST_SIM_FLASH_END -
 			 FLASH_SIMULATOR_ERASE_UNIT,
 			 FLASH_SIMULATOR_ERASE_UNIT*2);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET - 4,
 				 data, 4);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET - 4,
 				 data, 8);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_read(flash_dev, TEST_SIM_FLASH_END,
 				 data, 4);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_read(flash_dev, TEST_SIM_FLASH_END - 4, data, 8);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 }
 
 static void test_align(void)
@@ -221,25 +221,25 @@ static void test_align(void)
 
 	rc = flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET + 1,
 				 data, 4);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET + 1,
 				 data, 4);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 				 data, 3);
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET + 1,
 			 FLASH_SIMULATOR_ERASE_UNIT);
 
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 
 	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 			 FLASH_SIMULATOR_ERASE_UNIT + 1);
 
-	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 }
 
 static void test_double_write(void)
@@ -249,15 +249,15 @@ static void test_double_write(void)
 
 	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 			 FLASH_SIMULATOR_ERASE_UNIT);
-	zassert_equal(0, rc, "flash_erase should succedd");
+	ztest_equal(0, rc, "flash_erase should succedd");
 
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 				 data, 4);
-	zassert_equal(0, rc, "flash_write should succedd");
+	ztest_equal(0, rc, "flash_write should succedd");
 
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 				 data, 4);
-	zassert_equal(-EIO, rc, "Unexpected error code (%d)", rc);
+	ztest_equal(-EIO, rc, "Unexpected error code (%d)", rc);
 }
 
 void test_main(void)

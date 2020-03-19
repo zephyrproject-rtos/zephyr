@@ -31,20 +31,20 @@ void test_bank_erase(void)
 
 	for (offs = 0; offs < fa->fa_size; offs += sizeof(temp)) {
 		ret = flash_area_read(fa, offs, &temp, sizeof(temp));
-		zassert_true(ret == 0, "Reading from flash");
+		ztest_true(ret == 0, "Reading from flash");
 		if (temp == 0xFFFFFFFF) {
 			ret = flash_area_write(fa, offs, &temp2, sizeof(temp));
-			zassert_true(ret == 0, "Writing to flash");
+			ztest_true(ret == 0, "Writing to flash");
 		}
 	}
 
-	zassert(boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID) == 0,
+	ztest(boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID) == 0,
 		"pass", "fail");
 
 	for (offs = 0; offs < fa->fa_size; offs += sizeof(temp)) {
 		ret = flash_area_read(fa, offs, &temp, sizeof(temp));
-		zassert_true(ret == 0, "Reading from flash");
-		zassert(temp == 0xFFFFFFFF, "pass", "fail");
+		ztest_true(ret == 0, "Reading from flash");
+		ztest(temp == 0xFFFFFFFF, "pass", "fail");
 	}
 }
 
@@ -68,27 +68,27 @@ void test_request_upgrade(void)
 		return;
 	}
 
-	zassert(boot_request_upgrade(false) == 0, "pass", "fail");
+	ztest(boot_request_upgrade(false) == 0, "pass", "fail");
 
 	ret = flash_area_read(fa, fa->fa_size - sizeof(expectation),
 			      &readout, sizeof(readout));
-	zassert_true(ret == 0, "Read from flash");
+	ztest_true(ret == 0, "Read from flash");
 
-	zassert(memcmp(expectation, readout, sizeof(expectation)) == 0,
+	ztest(memcmp(expectation, readout, sizeof(expectation)) == 0,
 		"pass", "fail");
 
 	boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID);
 
-	zassert(boot_request_upgrade(true) == 0, "pass", "fail");
+	ztest(boot_request_upgrade(true) == 0, "pass", "fail");
 
 	ret = flash_area_read(fa, fa->fa_size - sizeof(expectation),
 			      &readout, sizeof(readout));
-	zassert_true(ret == 0, "Read from flash");
+	ztest_true(ret == 0, "Read from flash");
 
-	zassert(memcmp(&expectation[2], &readout[2], sizeof(expectation) -
+	ztest(memcmp(&expectation[2], &readout[2], sizeof(expectation) -
 		       2 * sizeof(expectation[0])) == 0, "pass", "fail");
 
-	zassert_equal(1, readout[0] & 0xff, "confirmation error");
+	ztest_equal(1, readout[0] & 0xff, "confirmation error");
 }
 
 void test_write_confirm(void)
@@ -104,26 +104,26 @@ void test_write_confirm(void)
 		return;
 	}
 
-	zassert(boot_erase_img_bank(DT_FLASH_AREA_IMAGE_0_ID) == 0,
+	ztest(boot_erase_img_bank(DT_FLASH_AREA_IMAGE_0_ID) == 0,
 		"pass", "fail");
 
 	ret = flash_area_read(fa, fa->fa_size - sizeof(img_magic),
 			      &readout, sizeof(img_magic));
-	zassert_true(ret == 0, "Read from flash");
+	ztest_true(ret == 0, "Read from flash");
 
 	if (memcmp(img_magic, readout, sizeof(img_magic)) != 0) {
 		ret = flash_area_write(fa, fa->fa_size - 16,
 				       img_magic, 16);
-		zassert_true(ret == 0, "Write to flash");
+		ztest_true(ret == 0, "Write to flash");
 	}
 
-	zassert(boot_write_img_confirmed() == 0, "pass", "fail");
+	ztest(boot_write_img_confirmed() == 0, "pass", "fail");
 
 	ret = flash_area_read(fa, fa->fa_size - 24, readout,
 			      sizeof(readout[0]));
-	zassert_true(ret == 0, "Read from flash");
+	ztest_true(ret == 0, "Read from flash");
 
-	zassert_equal(1, readout[0] & 0xff, "confirmation error");
+	ztest_equal(1, readout[0] & 0xff, "confirmation error");
 }
 
 void test_main(void)

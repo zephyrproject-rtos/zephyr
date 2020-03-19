@@ -240,7 +240,7 @@ void kobject_user_test6(void *p1, void *p2, void *p3)
 	USERSPACE_BARRIER;
 
 	k_object_access_grant(&kobject_sem, &kobject_test_reuse_2_tid);
-	zassert_unreachable("k_object validation  failure");
+	ztest_unreachable("k_object validation  failure");
 }
 
 /**
@@ -377,7 +377,7 @@ void kobject_user_2_test9(void *p1, void *p2, void *p3)
 	USERSPACE_BARRIER;
 
 	k_sem_take(&kobject_sem, K_FOREVER);
-	zassert_unreachable("Failed to clear permission on a deleted thread");
+	ztest_unreachable("Failed to clear permission on a deleted thread");
 }
 
 /**
@@ -439,7 +439,7 @@ void test_kobject_access_grant_to_invalid_thread(void *p1, void *p2, void *p3)
 	    != 0) {
 		ztest_test_pass();
 	} else {
-		zassert_unreachable(ERROR_STR_TEST_10);
+		ztest_unreachable(ERROR_STR_TEST_10);
 	}
 }
 /****************************************************************************/
@@ -456,7 +456,7 @@ void test_kobject_access_invalid_kobject(void *p1, void *p2, void *p3)
 	USERSPACE_BARRIER;
 
 	k_sem_take(&kobject_sem_not_hash_table, K_SECONDS(1));
-	zassert_unreachable("k_object validation  failure.");
+	ztest_unreachable("k_object validation  failure.");
 
 }
 
@@ -476,7 +476,7 @@ void test_access_kobject_without_init_access(void *p1,
 	USERSPACE_BARRIER;
 
 	k_sem_take(&kobject_sem_no_init_no_access, K_SECONDS(1));
-	zassert_unreachable("k_object validation  failure");
+	ztest_unreachable("k_object validation  failure");
 
 }
 /****************************************************************************/
@@ -487,7 +487,7 @@ void kobject_test_user_13(void *p1, void *p2, void *p3)
 	USERSPACE_BARRIER;
 
 	k_sem_take(&kobject_sem_no_init_access, K_SECONDS(1));
-	zassert_unreachable("_SYSCALL_OBJ implementation failure.");
+	ztest_unreachable("_SYSCALL_OBJ implementation failure.");
 }
 
 /**
@@ -519,7 +519,7 @@ void test_access_kobject_without_init_with_access(void *p1,
 /* object validation checks */
 void kobject_test_user_2_14(void *p1, void *p2, void *p3)
 {
-	zassert_unreachable("_SYSCALL_OBJ implementation failure.");
+	ztest_unreachable("_SYSCALL_OBJ implementation failure.");
 }
 
 void kobject_test_user_1_14(void *p1, void *p2, void *p3)
@@ -534,7 +534,7 @@ void kobject_test_user_1_14(void *p1, void *p2, void *p3)
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	zassert_unreachable("_SYSCALL_OBJ implementation failure.");
+	ztest_unreachable("_SYSCALL_OBJ implementation failure.");
 
 }
 /**
@@ -605,7 +605,7 @@ void test_create_new_thread_from_user(void *p1, void *p2, void *p3)
 /* object validation checks */
 void kobject_test_user_2_16(void *p1, void *p2, void *p3)
 {
-	zassert_unreachable("k_object validation failure in k thread create");
+	ztest_unreachable("k_object validation failure in k thread create");
 }
 
 void kobject_test_user_1_16(void *p1, void *p2, void *p3)
@@ -654,7 +654,7 @@ void test_create_new_thread_from_user_no_access_stack(void *p1,
 /* object validation checks */
 void kobject_test_user_2_17(void *p1, void *p2, void *p3)
 {
-	zassert_unreachable("k_object validation failure in k thread create");
+	ztest_unreachable("k_object validation failure in k thread create");
 }
 
 void kobject_test_user_1_17(void *p1, void *p2, void *p3)
@@ -670,7 +670,7 @@ void kobject_test_user_1_17(void *p1, void *p2, void *p3)
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	zassert_unreachable("k_object validation failure in k thread create");
+	ztest_unreachable("k_object validation failure in k thread create");
 }
 /**
  * @brief Test to validate user thread spawning with stack overflow
@@ -711,7 +711,7 @@ void test_create_new_thread_from_user_invalid_stacksize(void *p1,
 /* object validation checks */
 void kobject_test_user_2_18(void *p1, void *p2, void *p3)
 {
-	zassert_unreachable("k_object validation failure in k thread create");
+	ztest_unreachable("k_object validation failure in k thread create");
 }
 
 void kobject_test_user_1_18(void *p1, void *p2, void *p3)
@@ -728,7 +728,7 @@ void kobject_test_user_1_18(void *p1, void *p2, void *p3)
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	zassert_unreachable("k_object validation failure in k thread create");
+	ztest_unreachable("k_object validation failure in k thread create");
 }
 /**
  * @brief Test to check stack overflow from user thread
@@ -772,7 +772,7 @@ void test_create_new_thread_from_user_huge_stacksize(void *p1,
 
 void kobject_test_user_2_19(void *p1, void *p2, void *p3)
 {
-	zassert_unreachable("k_object validation failure in k thread create");
+	ztest_unreachable("k_object validation failure in k thread create");
 }
 
 void kobject_test_user_1_19(void *p1, void *p2, void *p3)
@@ -788,7 +788,7 @@ void kobject_test_user_1_19(void *p1, void *p2, void *p3)
 			NULL, NULL, NULL,
 			0, 0, K_NO_WAIT);
 
-	zassert_unreachable("k_object validation failure in k thread create");
+	ztest_unreachable("k_object validation failure in k thread create");
 }
 /**
  * @brief Test to create a new supervisor thread from user.
@@ -818,7 +818,7 @@ void test_create_new_supervisor_thread_from_user(void *p1, void *p2, void *p3)
 
 void kobject_test_user_2_20(void *p1, void *p2, void *p3)
 {
-	zassert_unreachable("k_object validation failure in k thread create");
+	ztest_unreachable("k_object validation failure in k thread create");
 }
 
 void kobject_test_user_1_20(void *p1, void *p2, void *p3)
@@ -834,7 +834,7 @@ void kobject_test_user_1_20(void *p1, void *p2, void *p3)
 			NULL, NULL, NULL,
 			0, K_USER | K_ESSENTIAL, K_NO_WAIT);
 
-	zassert_unreachable("k_object validation failure in k thread create");
+	ztest_unreachable("k_object validation failure in k thread create");
 }
 /**
  * @brief Create a new essential thread from user.
@@ -864,7 +864,7 @@ void test_create_new_essential_thread_from_user(void *p1, void *p2, void *p3)
 
 void kobject_test_user_2_21(void *p1, void *p2, void *p3)
 {
-	zassert_unreachable("k_object validation failure in k thread create");
+	ztest_unreachable("k_object validation failure in k thread create");
 }
 
 void kobject_test_user_1_21(void *p1, void *p2, void *p3)
@@ -880,7 +880,7 @@ void kobject_test_user_1_21(void *p1, void *p2, void *p3)
 			NULL, NULL, NULL,
 			-1, K_USER, K_NO_WAIT);
 
-	zassert_unreachable("k_object validation failure in k thread create");
+	ztest_unreachable("k_object validation failure in k thread create");
 }
 /**
  * @brief Thread creation with prority is higher than current thread
@@ -913,7 +913,7 @@ void test_create_new_higher_prio_thread_from_user(void *p1, void *p2, void *p3)
 
 void kobject_test_user_2_22(void *p1, void *p2, void *p3)
 {
-	zassert_unreachable("k_object validation failure in k thread create");
+	ztest_unreachable("k_object validation failure in k thread create");
 }
 
 void kobject_test_user_1_22(void *p1, void *p2, void *p3)
@@ -929,7 +929,7 @@ void kobject_test_user_1_22(void *p1, void *p2, void *p3)
 			NULL, NULL, NULL,
 			6000, K_USER, K_NO_WAIT);
 
-	zassert_unreachable("k_object validation failure in k thread create");
+	ztest_unreachable("k_object validation failure in k thread create");
 }
 /**
  * @brief Create a new thread whose prority is invalid.

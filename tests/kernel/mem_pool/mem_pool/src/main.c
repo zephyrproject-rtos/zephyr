@@ -140,7 +140,7 @@ static void pool_block_get_work(char *string, pool_block_get_func_t func,
 	for (i = 0; i < n_tests; i++) {
 		rv = func(tests[i].block, tests[i].pool_id, tests[i].size,
 			  tests[i].timeout);
-		zassert_equal(rv, tests[i].rcode, "%s() expected %d, got %d\n"
+		ztest_equal(rv, tests[i].rcode, "%s() expected %d, got %d\n"
 			      "size: %d, timeout: %d\n", string, tests[i].rcode, rv,
 			      tests[i].size, tests[i].timeout);
 	}
@@ -205,19 +205,19 @@ static void test_pool_block_get_timeout(void)
 	}
 
 	rv = k_mem_pool_alloc(&POOL_ID, &helper_block, 3148, K_MSEC(5));
-	zassert_true(rv == 0,
+	ztest_true(rv == 0,
 		     "Failed to get size 3148 byte block from POOL_ID");
 
 	rv = k_mem_pool_alloc(&POOL_ID, &block, 3148, K_NO_WAIT);
-	zassert_true(rv == -ENOMEM, "Unexpectedly got size 3148 "
+	ztest_true(rv == -ENOMEM, "Unexpectedly got size 3148 "
 		     "byte block from POOL_ID");
 
 	k_sem_give(&HELPER_SEM);    /* Activate helper_task */
 	rv = k_mem_pool_alloc(&POOL_ID, &block, 3148, K_MSEC(20));
-	zassert_true(rv == 0, "Failed to get size 3148 byte block from POOL_ID");
+	ztest_true(rv == 0, "Failed to get size 3148 byte block from POOL_ID");
 
 	rv = k_sem_take(&REGRESS_SEM, K_NO_WAIT);
-	zassert_true(rv == 0, "Failed to get size 3148 "
+	ztest_true(rv == 0, "Failed to get size 3148 "
 		     "byte block within 20 ticks");
 
 	k_mem_pool_free(&block);
@@ -233,21 +233,21 @@ static void test_pool_block_get_wait(void)
 	int rv;
 
 	rv = k_mem_pool_alloc(&POOL_ID, &block_list[0], 3000, K_FOREVER);
-	zassert_equal(rv, 0, "k_mem_pool_alloc(3000) expected %d, got %d\n", 0, rv);
+	ztest_equal(rv, 0, "k_mem_pool_alloc(3000) expected %d, got %d\n", 0, rv);
 
 	k_sem_give(&ALTERNATE_SEM);    /* Wake alternate_task */
 	evidence = 0;
 	rv = k_mem_pool_alloc(&POOL_ID, &block_list[1], 128, K_FOREVER);
-	zassert_true(rv == 0, "k_mem_pool_alloc(128) expected %d, got %d\n", 0, rv);
+	ztest_true(rv == 0, "k_mem_pool_alloc(128) expected %d, got %d\n", 0, rv);
 
 	switch (evidence) {
 	case 0:
-		zassert_true(evidence == 0, "k_mem_pool_alloc(128) did not block!");
+		ztest_true(evidence == 0, "k_mem_pool_alloc(128) did not block!");
 	case 1:
 		break;
 	case 2:
 	default:
-		zassert_true(1, "Rescheduling did not occur "
+		ztest_true(1, "Rescheduling did not occur "
 			     "after k_mem_pool_free()");
 	}
 
@@ -292,31 +292,31 @@ static void test_pool_malloc(void)
 
 	/* allocate a large block (which consumes the entire pool buffer) */
 	block[0] = k_malloc(150);
-	zassert_not_null(block[0], "150 byte allocation failed");
+	ztest_not_null(block[0], "150 byte allocation failed");
 
 	/* ensure a small block can no longer be allocated */
 	block[1] = k_malloc(16);
-	zassert_is_null(block[1], "16 byte allocation did not fail");
+	ztest_is_null(block[1], "16 byte allocation did not fail");
 
 	/* return the large block */
 	k_free(block[0]);
 
 	/* allocate a small block (triggers block splitting)*/
 	block[0] = k_malloc(16);
-	zassert_not_null(block[0], "16 byte allocation 0 failed");
+	ztest_not_null(block[0], "16 byte allocation 0 failed");
 
 	/* ensure a large block can no longer be allocated */
 	block[1] = k_malloc(80);
-	zassert_is_null(block[1], "80 byte allocation did not fail");
+	ztest_is_null(block[1], "80 byte allocation did not fail");
 
 	/* ensure all remaining small blocks can be allocated */
 	for (j = 1; j < 4; j++) {
 		block[j] = k_malloc(16);
-		zassert_not_null(block[j], "16 byte allocation %d failed\n", j);
+		ztest_not_null(block[j], "16 byte allocation %d failed\n", j);
 	}
 
 	/* ensure a small block can no longer be allocated */
-	zassert_is_null(k_malloc(8), "8 byte allocation did not fail");
+	ztest_is_null(k_malloc(8), "8 byte allocation did not fail");
 
 	/* return the small blocks to pool in a "random" order */
 	k_free(block[2]);
@@ -326,14 +326,14 @@ static void test_pool_malloc(void)
 
 	/* allocate large block (triggers autodefragmentation) */
 	block[0] = k_malloc(100);
-	zassert_not_null(block[0], "100 byte allocation failed");
+	ztest_not_null(block[0], "100 byte allocation failed");
 
 	/* ensure a small block can no longer be allocated */
-	zassert_is_null(k_malloc(32), "32 byte allocation did not fail");
+	ztest_is_null(k_malloc(32), "32 byte allocation did not fail");
 
 	/* ensure overflow detection is working */
-	zassert_is_null(k_malloc(0xffffffff), "overflow check failed");
-	zassert_is_null(k_calloc(0xffffffff, 2), "overflow check failed");
+	ztest_is_null(k_malloc(0xffffffff), "overflow check failed");
+	ztest_is_null(k_calloc(0xffffffff, 2), "overflow check failed");
 }
 
 K_THREAD_DEFINE(t_alternate, STACKSIZE, alternate_task, NULL, NULL, NULL,

@@ -100,7 +100,7 @@ static int get_entropy(void)
 
 static void test_entropy_get_entropy(void)
 {
-	zassert_true(get_entropy() == TC_PASS, NULL);
+	ztest_true(get_entropy() == TC_PASS, NULL);
 }
 
 void test_main(void)

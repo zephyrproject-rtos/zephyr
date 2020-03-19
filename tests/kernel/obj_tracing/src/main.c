@@ -109,7 +109,7 @@ static void object_monitor(void)
 
 	thread_counter += thread_monitor();
 
-	zassert_true(((thread_counter == (TOTAL_THREADS + initial_count)) &&
+	ztest_true(((thread_counter == (TOTAL_THREADS + initial_count)) &&
 		      (obj_counter == TOTAL_OBJECTS)), "test failed");
 }
 

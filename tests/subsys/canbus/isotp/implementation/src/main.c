@@ -58,7 +58,7 @@ u8_t data_buf[128];
 
 void send_complette_cb(int error_nr, void *arg)
 {
-	zassert_equal(error_nr, ISOTP_N_OK, "Sending failed (%d)", error_nr);
+	ztest_equal(error_nr, ISOTP_N_OK, "Sending failed (%d)", error_nr);
 }
 
 static void send_sf(struct device *can_dev)
@@ -67,7 +67,7 @@ static void send_sf(struct device *can_dev)
 
 	ret = isotp_send(&send_ctx, can_dev, random_data, DATA_SIZE_SF,
 			 &rx_addr, &tx_addr, send_complette_cb, NULL);
-	zassert_equal(ret, 0, "Send returned %d", ret);
+	ztest_equal(ret, 0, "Send returned %d", ret);
 }
 
 static void get_sf_net(struct isotp_recv_ctx *recv_ctx)
@@ -76,13 +76,13 @@ static void get_sf_net(struct isotp_recv_ctx *recv_ctx)
 	int remaining_len, ret;
 
 	remaining_len = isotp_recv_net(recv_ctx, &buf, K_MSEC(1000));
-	zassert_true(remaining_len >= 0, "recv returned %d", remaining_len);
-	zassert_equal(remaining_len, 0, "SF should fit in one frame");
-	zassert_equal(buf->len, DATA_SIZE_SF, "Data length (%d) should be %d.",
+	ztest_true(remaining_len >= 0, "recv returned %d", remaining_len);
+	ztest_equal(remaining_len, 0, "SF should fit in one frame");
+	ztest_equal(buf->len, DATA_SIZE_SF, "Data length (%d) should be %d.",
 		      buf->len, DATA_SIZE_SF);
 
 	ret = memcmp(random_data, buf->data, buf->len);
-	zassert_equal(ret, 0, "received data differ");
+	ztest_equal(ret, 0, "received data differ");
 	memset(buf->data, 0, buf->len);
 	net_buf_unref(buf);
 }
@@ -94,13 +94,13 @@ static void get_sf(struct isotp_recv_ctx *recv_ctx)
 
 	memset(data_buf, 0, sizeof(data_buf));
 	ret = isotp_recv(recv_ctx, data_buf_ptr++, 1, K_MSEC(1000));
-	zassert_equal(ret, 1, "recv returned %d", ret);
+	ztest_equal(ret, 1, "recv returned %d", ret);
 	ret = isotp_recv(recv_ctx, data_buf_ptr++, sizeof(data_buf) - 1,
 			  K_MSEC(1000));
-	zassert_equal(ret, DATA_SIZE_SF - 1, "recv returned %d", ret);
+	ztest_equal(ret, DATA_SIZE_SF - 1, "recv returned %d", ret);
 
 	ret = memcmp(random_data, data_buf, DATA_SIZE_SF);
-	zassert_equal(ret, 0, "received data differ");
+	ztest_equal(ret, 0, "received data differ");
 }
 
 void print_hex(const u8_t *ptr, size_t len)
@@ -116,7 +116,7 @@ static void send_test_data(struct device *can_dev, const u8_t *data, size_t len)
 
 	ret = isotp_send(&send_ctx, can_dev, data, len, &rx_addr, &tx_addr,
 			  send_complette_cb, NULL);
-	zassert_equal(ret, 0, "Send returned %d", ret);
+	ztest_equal(ret, 0, "Send returned %d", ret);
 }
 
 static const u8_t *check_frag(struct net_buf *frag, const u8_t *data)
@@ -131,7 +131,7 @@ static const u8_t *check_frag(struct net_buf *frag, const u8_t *data)
 		print_hex(frag->data, frag->len);
 		printk("\n");
 	}
-	zassert_equal(ret, 0, "Received data differ");
+	ztest_equal(ret, 0, "Received data differ");
 	return data + frag->len;
 }
 
@@ -145,10 +145,10 @@ static void receive_test_data_net(struct isotp_recv_ctx *recv_ctx,
 
 	do {
 		remaining_len = isotp_recv_net(recv_ctx, &buf, K_MSEC(1000));
-		zassert_true(remaining_len >= 0, "recv error: %d",
+		ztest_true(remaining_len >= 0, "recv error: %d",
 			     remaining_len);
 		received_len += buf->len;
-		zassert_equal(received_len + remaining_len, len,
+		ztest_equal(received_len + remaining_len, len,
 			      "Length missmatch");
 
 		data_ptr = check_frag(buf, data_ptr);
@@ -161,7 +161,7 @@ static void receive_test_data_net(struct isotp_recv_ctx *recv_ctx,
 	} while (remaining_len);
 
 	remaining_len = isotp_recv_net(recv_ctx, &buf, K_MSEC(50));
-	zassert_equal(remaining_len, ISOTP_RECV_TIMEOUT,
+	ztest_equal(remaining_len, ISOTP_RECV_TIMEOUT,
 		      "Expected timeout but got %d", remaining_len);
 }
 
@@ -177,7 +177,7 @@ static void check_data(const u8_t *recv_data, const u8_t *send_data, size_t len)
 		print_hex(recv_data, len);
 		printk("\n");
 	}
-	zassert_equal(ret, 0, "Received data differ");
+	ztest_equal(ret, 0, "Received data differ");
 }
 
 static void receive_test_data(struct isotp_recv_ctx *recv_ctx,
@@ -191,9 +191,9 @@ static void receive_test_data(struct isotp_recv_ctx *recv_ctx,
 		memset(data_buf, 0, sizeof(data_buf));
 		ret = isotp_recv(recv_ctx, data_buf, sizeof(data_buf),
 				 K_MSEC(1000));
-		zassert_true(ret >= 0, "recv error: %d", ret);
+		ztest_true(ret >= 0, "recv error: %d", ret);
 
-		zassert_true(remaining_len >= ret, "More data then expected");
+		ztest_true(remaining_len >= ret, "More data then expected");
 		check_data(data_buf, data_ptr, ret);
 		data_ptr += ret;
 		remaining_len -= ret;
@@ -204,7 +204,7 @@ static void receive_test_data(struct isotp_recv_ctx *recv_ctx,
 	} while (remaining_len);
 
 	ret = isotp_recv(recv_ctx, data_buf, sizeof(data_buf), K_MSEC(50));
-	zassert_equal(ret, ISOTP_RECV_TIMEOUT,
+	ztest_equal(ret, ISOTP_RECV_TIMEOUT,
 		      "Expected timeout but got %d", ret);
 }
 
@@ -214,7 +214,7 @@ static void test_send_receive_net_sf(void)
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr, &fc_opts,
 			 K_NO_WAIT);
-	zassert_equal(ret, 0, "Bind returned %d", ret);
+	ztest_equal(ret, 0, "Bind returned %d", ret);
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
 		send_sf(can_dev);
@@ -230,7 +230,7 @@ static void test_send_receive_sf(void)
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr, &fc_opts,
 			 K_NO_WAIT);
-	zassert_equal(ret, 0, "Bind returned %d", ret);
+	ztest_equal(ret, 0, "Bind returned %d", ret);
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
 		send_sf(can_dev);
@@ -246,7 +246,7 @@ static void test_send_receive_net_blocks(void)
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr, &fc_opts,
 			 K_NO_WAIT);
-	zassert_equal(ret, 0, "Binding failed (%d)", ret);
+	ztest_equal(ret, 0, "Binding failed (%d)", ret);
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
 		send_test_data(can_dev, random_data, random_data_len);
@@ -264,7 +264,7 @@ static void test_send_receive_blocks(void)
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr, &fc_opts,
 			 K_NO_WAIT);
-	zassert_equal(ret, 0, "Binding failed (%d)", ret);
+	ztest_equal(ret, 0, "Binding failed (%d)", ret);
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
 		send_test_data(can_dev, random_data, data_size);
@@ -285,16 +285,16 @@ static void test_send_receive_net_single_blocks(void)
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 			 &fc_opts_single, K_NO_WAIT);
-	zassert_equal(ret, 0, "Binding failed (%d)", ret);
+	ztest_equal(ret, 0, "Binding failed (%d)", ret);
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
 		send_test_data(can_dev, random_data, send_len);
 		data_ptr = random_data;
 
 		ret = isotp_recv_net(&recv_ctx, &buf, K_MSEC(1000));
-		zassert_equal(ret, 0, "recv returned %d", ret);
+		ztest_equal(ret, 0, "recv returned %d", ret);
 		buf_len = net_buf_frags_len(buf);
-		zassert_equal(buf_len, send_len, "Data length differ");
+		ztest_equal(buf_len, send_len, "Data length differ");
 		frag = buf;
 
 		do {
@@ -316,7 +316,7 @@ static void test_send_receive_single_block(void)
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 			 &fc_opts_single, K_NO_WAIT);
-	zassert_equal(ret, 0, "Binding failed (%d)", ret);
+	ztest_equal(ret, 0, "Binding failed (%d)", ret);
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
 		send_test_data(can_dev, random_data, send_len);
@@ -324,10 +324,10 @@ static void test_send_receive_single_block(void)
 		memset(data_buf, 0, sizeof(data_buf));
 		ret = isotp_recv(&recv_ctx, data_buf, sizeof(data_buf),
 				 K_MSEC(1000));
-		zassert_equal(ret, send_len,
+		ztest_equal(ret, send_len,
 			      "data should be received at once (ret: %d)", ret);
 		ret = memcmp(random_data, data_buf, send_len);
-		zassert_equal(ret, 0, "Data differ");
+		ztest_equal(ret, 0, "Data differ");
 	}
 
 	isotp_unbind(&recv_ctx);
@@ -340,14 +340,14 @@ static void test_bind_unbind(void)
 	for (i = 0; i < 100; i++) {
 		ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 				 &fc_opts, K_NO_WAIT);
-		zassert_equal(ret, 0, "Binding failed (%d)", ret);
+		ztest_equal(ret, 0, "Binding failed (%d)", ret);
 		isotp_unbind(&recv_ctx);
 	}
 
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
 		ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 				 &fc_opts, K_NO_WAIT);
-		zassert_equal(ret, 0, "Binding failed (%d)", ret);
+		ztest_equal(ret, 0, "Binding failed (%d)", ret);
 		send_sf(can_dev);
 		get_sf_net(&recv_ctx);
 		isotp_unbind(&recv_ctx);
@@ -356,7 +356,7 @@ static void test_bind_unbind(void)
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
 		ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 				 &fc_opts, K_NO_WAIT);
-		zassert_equal(ret, 0, "Binding failed (%d)", ret);
+		ztest_equal(ret, 0, "Binding failed (%d)", ret);
 		send_sf(can_dev);
 		get_sf(&recv_ctx);
 		isotp_unbind(&recv_ctx);
@@ -365,7 +365,7 @@ static void test_bind_unbind(void)
 	for (i = 0; i < 10; i++) {
 		ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 				 &fc_opts, K_NO_WAIT);
-		zassert_equal(ret, 0, "Binding failed (%d)", ret);
+		ztest_equal(ret, 0, "Binding failed (%d)", ret);
 		send_test_data(can_dev, random_data, 60);
 		receive_test_data_net(&recv_ctx, random_data, 60, 0);
 		isotp_unbind(&recv_ctx);
@@ -374,7 +374,7 @@ static void test_bind_unbind(void)
 	for (i = 0; i < NUMBER_OF_REPETITIONS; i++) {
 		ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr,
 				 &fc_opts, K_NO_WAIT);
-		zassert_equal(ret, 0, "Binding failed (%d)", ret);
+		ztest_equal(ret, 0, "Binding failed (%d)", ret);
 		send_test_data(can_dev, random_data, 60);
 		receive_test_data(&recv_ctx, random_data, 60, 0);
 		isotp_unbind(&recv_ctx);
@@ -389,7 +389,7 @@ static void test_buffer_allocation(void)
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr, &fc_opts,
 			 K_NO_WAIT);
-	zassert_equal(ret, 0, "Binding failed (%d)", ret);
+	ztest_equal(ret, 0, "Binding failed (%d)", ret);
 
 	send_test_data(can_dev, random_data, send_data_length);
 	k_sleep(K_MSEC(100));
@@ -405,7 +405,7 @@ static void test_buffer_allocation_wait(void)
 
 	ret = isotp_bind(&recv_ctx, can_dev, &rx_addr, &tx_addr, &fc_opts,
 			 K_NO_WAIT);
-	zassert_equal(ret, 0, "Binding failed (%d)", ret);
+	ztest_equal(ret, 0, "Binding failed (%d)", ret);
 
 	send_test_data(can_dev, random_data, send_data_length);
 	k_sleep(K_MSEC(100));
@@ -417,13 +417,13 @@ void test_main(void)
 {
 	int ret;
 
-	zassert_true(sizeof(random_data) >= sizeof(data_buf) * 2 + 10,
+	ztest_true(sizeof(random_data) >= sizeof(data_buf) * 2 + 10,
 		     "Test data size to small");
 
 	can_dev = device_get_binding(CAN_DEVICE_NAME);
-	zassert_not_null(can_dev, "CAN device not not found");
+	ztest_not_null(can_dev, "CAN device not not found");
 	ret = can_configure(can_dev, CAN_LOOPBACK_MODE, 0);
-	zassert_equal(ret, 0, "Configuring loopback mode failed (%d)", ret);
+	ztest_equal(ret, 0, "Configuring loopback mode failed (%d)", ret);
 
 	ztest_test_suite(isotp,
 			 ztest_unit_test(test_bind_unbind),

@@ -52,10 +52,10 @@ void test_poll(void)
 			    &s_sock_tcp, &s_addr);
 
 	res = bind(s_sock, (struct sockaddr *)&s_addr, sizeof(s_addr));
-	zassert_equal(res, 0, "bind failed");
+	ztest_equal(res, 0, "bind failed");
 
 	res = connect(c_sock, (struct sockaddr *)&s_addr, sizeof(s_addr));
-	zassert_equal(res, 0, "connect failed");
+	ztest_equal(res, 0, "connect failed");
 
 	memset(pollfds, 0, sizeof(pollfds));
 	pollfds[0].fd = c_sock;
@@ -66,53 +66,53 @@ void test_poll(void)
 	/* Poll non-ready fd's with timeout of 0 */
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 0);
-	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
-	zassert_equal(res, 0, "");
+	ztest_true(k_uptime_get_32() - tstamp <= FUZZ, "");
+	ztest_equal(res, 0, "");
 
-	zassert_equal(pollfds[0].fd, c_sock, "");
-	zassert_equal(pollfds[0].events, POLLIN, "");
-	zassert_equal(pollfds[0].revents, 0, "");
-	zassert_equal(pollfds[1].fd, s_sock, "");
-	zassert_equal(pollfds[1].events, POLLIN, "");
-	zassert_equal(pollfds[1].revents, 0, "");
+	ztest_equal(pollfds[0].fd, c_sock, "");
+	ztest_equal(pollfds[0].events, POLLIN, "");
+	ztest_equal(pollfds[0].revents, 0, "");
+	ztest_equal(pollfds[1].fd, s_sock, "");
+	ztest_equal(pollfds[1].events, POLLIN, "");
+	ztest_equal(pollfds[1].revents, 0, "");
 
 
 	/* Poll non-ready fd's with timeout of 30 */
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 30);
 	tstamp = k_uptime_get_32() - tstamp;
-	zassert_true(tstamp >= 30U && tstamp <= 30 + FUZZ * 2, "tstamp %d",
+	ztest_true(tstamp >= 30U && tstamp <= 30 + FUZZ * 2, "tstamp %d",
 		     tstamp);
-	zassert_equal(res, 0, "");
+	ztest_equal(res, 0, "");
 
 
 	/* Send pkt for s_sock and poll with timeout of 10 */
 	len = send(c_sock, BUF_AND_SIZE(TEST_STR_SMALL), 0);
-	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
+	ztest_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
 
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 30);
 	tstamp = k_uptime_get_32() - tstamp;
-	zassert_true(tstamp <= FUZZ, "");
-	zassert_equal(res, 1, "");
+	ztest_true(tstamp <= FUZZ, "");
+	ztest_equal(res, 1, "");
 
-	zassert_equal(pollfds[0].fd, c_sock, "");
-	zassert_equal(pollfds[0].events, POLLIN, "");
-	zassert_equal(pollfds[0].revents, 0, "");
-	zassert_equal(pollfds[1].fd, s_sock, "");
-	zassert_equal(pollfds[1].events, POLLIN, "");
-	zassert_equal(pollfds[1].revents, POLLIN, "");
+	ztest_equal(pollfds[0].fd, c_sock, "");
+	ztest_equal(pollfds[0].events, POLLIN, "");
+	ztest_equal(pollfds[0].revents, 0, "");
+	ztest_equal(pollfds[1].fd, s_sock, "");
+	ztest_equal(pollfds[1].events, POLLIN, "");
+	ztest_equal(pollfds[1].revents, POLLIN, "");
 
 
 	/* Recv pkt from s_sock and ensure no poll events happen */
 	len = recv(s_sock, BUF_AND_SIZE(buf), 0);
-	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid recv len");
+	ztest_equal(len, STRLEN(TEST_STR_SMALL), "invalid recv len");
 
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 0);
-	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
-	zassert_equal(res, 0, "");
-	zassert_equal(pollfds[1].revents, 0, "");
+	ztest_true(k_uptime_get_32() - tstamp <= FUZZ, "");
+	ztest_equal(res, 0, "");
+	ztest_equal(pollfds[1].revents, 0, "");
 
 	/* Make sure that POLLOUT does not wait if not really needed */
 	memset(pollout, 0, sizeof(pollout));
@@ -121,13 +121,13 @@ void test_poll(void)
 
 	res = connect(c_sock, (const struct sockaddr *)&s_addr,
 		      sizeof(s_addr));
-	zassert_equal(res, 0, "");
+	ztest_equal(res, 0, "");
 
 	tstamp = k_uptime_get_32();
 	res = poll(pollout, ARRAY_SIZE(pollout), K_MSEC(200));
-	zassert_true(k_uptime_get_32() - tstamp < K_MSEC(100), "");
-	zassert_equal(res, 1, "");
-	zassert_equal(pollout[0].revents, POLLOUT, "");
+	ztest_true(k_uptime_get_32() - tstamp < K_MSEC(100), "");
+	ztest_equal(res, 1, "");
+	ztest_equal(pollout[0].revents, POLLOUT, "");
 
 	/* First test that TCP POLLOUT will not wait if there is enough
 	 * room in TCP window
@@ -137,40 +137,40 @@ void test_poll(void)
 	pollout[0].events = POLLOUT;
 
 	res = bind(s_sock_tcp, (struct sockaddr *)&s_addr, sizeof(s_addr));
-	zassert_equal(res, 0, "");
+	ztest_equal(res, 0, "");
 	res = listen(s_sock_tcp, 0);
-	zassert_equal(res, 0, "");
+	ztest_equal(res, 0, "");
 
 	res = connect(c_sock_tcp, (const struct sockaddr *)&s_addr,
 		      sizeof(s_addr));
-	zassert_equal(res, 0, "");
+	ztest_equal(res, 0, "");
 
 	tstamp = k_uptime_get_32();
 	res = poll(pollout, ARRAY_SIZE(pollout), K_MSEC(200));
-	zassert_true(k_uptime_get_32() - tstamp < K_MSEC(100), "");
-	zassert_equal(res, 1, "");
-	zassert_equal(pollout[0].revents, POLLOUT, "");
+	ztest_true(k_uptime_get_32() - tstamp < K_MSEC(100), "");
+	ztest_equal(res, 1, "");
+	ztest_equal(pollout[0].revents, POLLOUT, "");
 
 	res = close(c_sock_tcp);
-	zassert_equal(res, 0, "close failed");
+	ztest_equal(res, 0, "close failed");
 
 	res = close(s_sock_tcp);
-	zassert_equal(res, 0, "close failed");
+	ztest_equal(res, 0, "close failed");
 
 	/* Close one socket and ensure POLLNVAL happens */
 	res = close(c_sock);
-	zassert_equal(res, 0, "close failed");
+	ztest_equal(res, 0, "close failed");
 
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 0);
-	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
-	zassert_equal(res, 1, "");
-	zassert_equal(pollfds[0].revents, POLLNVAL, "");
-	zassert_equal(pollfds[1].revents, 0, "");
+	ztest_true(k_uptime_get_32() - tstamp <= FUZZ, "");
+	ztest_equal(res, 1, "");
+	ztest_equal(pollfds[0].revents, POLLNVAL, "");
+	ztest_equal(pollfds[1].revents, 0, "");
 
 
 	res = close(s_sock);
-	zassert_equal(res, 0, "close failed");
+	ztest_equal(res, 0, "close failed");
 }
 
 void test_main(void)

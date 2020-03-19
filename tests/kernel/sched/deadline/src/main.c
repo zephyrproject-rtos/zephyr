@@ -28,8 +28,8 @@ void worker(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	zassert_true(tidx >= 0 && tidx < NUM_THREADS, "");
-	zassert_true(n_exec >= 0 && n_exec < NUM_THREADS, "");
+	ztest_true(tidx >= 0 && tidx < NUM_THREADS, "");
+	ztest_true(n_exec >= 0 && n_exec < NUM_THREADS, "");
 
 	exec_order[n_exec++] = tidx;
 
@@ -67,7 +67,7 @@ void test_deadline(void)
 		thread_deadlines[i] = sys_rand32_get() & 0x7fffff00;
 	}
 
-	zassert_true(n_exec == 0, "threads ran too soon");
+	ztest_true(n_exec == 0, "threads ran too soon");
 
 	/* Similarly do the deadline setting in one quick pass to
 	 * minimize aliasing with "now"
@@ -76,17 +76,17 @@ void test_deadline(void)
 		k_thread_deadline_set(&worker_threads[i], thread_deadlines[i]);
 	}
 
-	zassert_true(n_exec == 0, "threads ran too soon");
+	ztest_true(n_exec == 0, "threads ran too soon");
 
 	k_sleep(K_MSEC(100));
 
-	zassert_true(n_exec == NUM_THREADS, "not enough threads ran");
+	ztest_true(n_exec == NUM_THREADS, "not enough threads ran");
 
 	for (i = 1; i < NUM_THREADS; i++) {
 		int d0 = thread_deadlines[exec_order[i-1]];
 		int d1 = thread_deadlines[exec_order[i]];
 
-		zassert_true(d0 <= d1, "threads ran in wrong order");
+		ztest_true(d0 <= d1, "threads ran in wrong order");
 	}
 }
 

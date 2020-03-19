@@ -110,21 +110,21 @@ static void test_net_pkt_allocate_wo_buffer(void)
 
 	/* How to allocate a packet, with no buffer */
 	pkt = net_pkt_alloc(K_NO_WAIT);
-	zassert_true(pkt != NULL, "Pkt not allocated");
+	ztest_true(pkt != NULL, "Pkt not allocated");
 
 	/* Freeing the packet */
 	net_pkt_unref(pkt);
-	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+	ztest_true(atomic_get(&pkt->atomic_ref) == 0,
 		     "Pkt not properly unreferenced");
 
 	/* Note that, if you already know the iface to which the packet
 	 * belongs to, you will be able to use net_pkt_alloc_on_iface().
 	 */
 	pkt = net_pkt_alloc_on_iface(eth_if, K_NO_WAIT);
-	zassert_true(pkt != NULL, "Pkt not allocated");
+	ztest_true(pkt != NULL, "Pkt not allocated");
 
 	net_pkt_unref(pkt);
-	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+	ztest_true(atomic_get(&pkt->atomic_ref) == 0,
 		     "Pkt not properly unreferenced");
 }
 
@@ -138,14 +138,14 @@ static void test_net_pkt_allocate_with_buffer(void)
 	 */
 	pkt = net_pkt_alloc_with_buffer(eth_if, 512,
 					AF_UNSPEC, 0, K_NO_WAIT);
-	zassert_true(pkt != NULL, "Pkt not allocated");
+	ztest_true(pkt != NULL, "Pkt not allocated");
 
 	/* Did we get the requested size? */
-	zassert_true(pkt_is_of_size(pkt, 512), "Pkt size is not right");
+	ztest_true(pkt_is_of_size(pkt, 512), "Pkt size is not right");
 
 	/* Freeing the packet */
 	net_pkt_unref(pkt);
-	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+	ztest_true(atomic_get(&pkt->atomic_ref) == 0,
 		     "Pkt not properly unreferenced");
 
 	/*
@@ -154,15 +154,15 @@ static void test_net_pkt_allocate_with_buffer(void)
 	 */
 	pkt = net_pkt_alloc_with_buffer(eth_if, 1800,
 					AF_UNSPEC, 0, K_NO_WAIT);
-	zassert_true(pkt != NULL, "Pkt not allocated");
+	ztest_true(pkt != NULL, "Pkt not allocated");
 
-	zassert_false(pkt_is_of_size(pkt, 1800), "Pkt size is not right");
-	zassert_true(pkt_is_of_size(pkt, net_if_get_mtu(eth_if) + L2_HDR_SIZE),
+	ztest_false(pkt_is_of_size(pkt, 1800), "Pkt size is not right");
+	ztest_true(pkt_is_of_size(pkt, net_if_get_mtu(eth_if) + L2_HDR_SIZE),
 		     "Pkt size is not right");
 
 	/* Freeing the packet */
 	net_pkt_unref(pkt);
-	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+	ztest_true(atomic_get(&pkt->atomic_ref) == 0,
 		     "Pkt not properly unreferenced");
 
 	/*
@@ -170,15 +170,15 @@ static void test_net_pkt_allocate_with_buffer(void)
 	 */
 	pkt = net_pkt_alloc_with_buffer(eth_if, 512, AF_INET,
 					IPPROTO_UDP, K_NO_WAIT);
-	zassert_true(pkt != NULL, "Pkt not allocated");
+	ztest_true(pkt != NULL, "Pkt not allocated");
 
 	/* Because 512 + NET_IPV4UDPH_LEN fits MTU, total must be that one */
-	zassert_true(pkt_is_of_size(pkt, 512 + NET_IPV4UDPH_LEN),
+	ztest_true(pkt_is_of_size(pkt, 512 + NET_IPV4UDPH_LEN),
 		     "Pkt overall size does not match");
 
 	/* Freeing the packet */
 	net_pkt_unref(pkt);
-	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+	ztest_true(atomic_get(&pkt->atomic_ref) == 0,
 		     "Pkt not properly unreferenced");
 
 	/*
@@ -186,18 +186,18 @@ static void test_net_pkt_allocate_with_buffer(void)
 	 */
 	pkt = net_pkt_alloc_with_buffer(eth_if, 1800, AF_INET,
 					IPPROTO_UDP, K_NO_WAIT);
-	zassert_true(pkt != NULL, "Pkt not allocated");
+	ztest_true(pkt != NULL, "Pkt not allocated");
 
 	/* Because 1800 + NET_IPV4UDPH_LEN won't fit MTU, payload size
 	 * should be MTU
 	 */
-	zassert_true(net_pkt_available_buffer(pkt) ==
+	ztest_true(net_pkt_available_buffer(pkt) ==
 		     net_if_get_mtu(eth_if),
 		     "Payload buf size does not match for ipv4/udp");
 
 	/* Freeing the packet */
 	net_pkt_unref(pkt);
-	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+	ztest_true(atomic_get(&pkt->atomic_ref) == 0,
 		     "Pkt not properly unreferenced");
 }
 
@@ -214,12 +214,12 @@ static void test_net_pkt_basics_of_rw(void)
 
 	pkt = net_pkt_alloc_with_buffer(eth_if, 512,
 					AF_UNSPEC, 0, K_NO_WAIT);
-	zassert_true(pkt != NULL, "Pkt not allocated");
+	ztest_true(pkt != NULL, "Pkt not allocated");
 
 	/* Once newly allocated with buffer,
 	 * a packet has no data accounted for in its buffer
 	 */
-	zassert_true(net_pkt_get_len(pkt) == 0,
+	ztest_true(net_pkt_get_len(pkt) == 0,
 		     "Pkt initial length should be 0");
 
 	/* This is done through net_buf which can distinguish
@@ -230,16 +230,16 @@ static void test_net_pkt_basics_of_rw(void)
 	 * We write values made of 0s
 	 */
 	ret = net_pkt_write_u8(pkt, 0);
-	zassert_true(ret == 0, "Pkt write failed");
+	ztest_true(ret == 0, "Pkt write failed");
 
 	/* Length should be 1 now */
-	zassert_true(net_pkt_get_len(pkt) == 1, "Pkt length mismatch");
+	ztest_true(net_pkt_get_len(pkt) == 1, "Pkt length mismatch");
 
 	ret = net_pkt_write_be16(pkt, 0);
-	zassert_true(ret == 0, "Pkt write failed");
+	ztest_true(ret == 0, "Pkt write failed");
 
 	/* Length should be 3 now */
-	zassert_true(net_pkt_get_len(pkt) == 3, "Pkt length mismatch");
+	ztest_true(net_pkt_get_len(pkt) == 3, "Pkt length mismatch");
 
 	/* Verify that the data is properly written to net_buf */
 	net_pkt_cursor_backup(pkt, &backup);
@@ -247,47 +247,47 @@ static void test_net_pkt_basics_of_rw(void)
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_skip(pkt, 1);
 	net_pkt_read_be16(pkt, &value16);
-	zassert_equal(value16, 0, "Invalid value %d read, expected %d",
+	ztest_equal(value16, 0, "Invalid value %d read, expected %d",
 		      value16, 0);
 
 	/* Then write new value, overwriting the old one */
 	net_pkt_cursor_init(pkt);
 	net_pkt_skip(pkt, 1);
 	ret = net_pkt_write_be16(pkt, 42);
-	zassert_true(ret == 0, "Pkt write failed");
+	ztest_true(ret == 0, "Pkt write failed");
 
 	/* And re-read the value again */
 	net_pkt_cursor_init(pkt);
 	net_pkt_skip(pkt, 1);
 	ret = net_pkt_read_be16(pkt, &value16);
-	zassert_true(ret == 0, "Pkt read failed");
-	zassert_equal(value16, 42, "Invalid value %d read, expected %d",
+	ztest_true(ret == 0, "Pkt read failed");
+	ztest_equal(value16, 42, "Invalid value %d read, expected %d",
 		      value16, 42);
 
 	net_pkt_set_overwrite(pkt, false);
 	net_pkt_cursor_restore(pkt, &backup);
 
 	ret = net_pkt_write_be32(pkt, 0);
-	zassert_true(ret == 0, "Pkt write failed");
+	ztest_true(ret == 0, "Pkt write failed");
 
 	/* Length should be 7 now */
-	zassert_true(net_pkt_get_len(pkt) == 7, "Pkt length mismatch");
+	ztest_true(net_pkt_get_len(pkt) == 7, "Pkt length mismatch");
 
 	/* All these writing functions use net_ptk_write(), which works
 	 * this way:
 	 */
 	ret = net_pkt_write(pkt, small_buffer, 9);
-	zassert_true(ret == 0, "Pkt write failed");
+	ztest_true(ret == 0, "Pkt write failed");
 
 	/* Length should be 16 now */
-	zassert_true(net_pkt_get_len(pkt) == 16, "Pkt length mismatch");
+	ztest_true(net_pkt_get_len(pkt) == 16, "Pkt length mismatch");
 
 	/* Now let's say you want to memset some data */
 	ret = net_pkt_memset(pkt, 0, 4);
-	zassert_true(ret == 0, "Pkt memset failed");
+	ztest_true(ret == 0, "Pkt memset failed");
 
 	/* Length should be 20 now */
-	zassert_true(net_pkt_get_len(pkt) == 20, "Pkt length mismatch");
+	ztest_true(net_pkt_get_len(pkt) == 20, "Pkt length mismatch");
 
 	/* So memset affects the length exactly as write does */
 
@@ -297,10 +297,10 @@ static void test_net_pkt_basics_of_rw(void)
 	 * Note: usually you will not have to use that function a lot yourself.
 	 */
 	ret = net_pkt_skip(pkt, 20);
-	zassert_true(ret == 0, "Pkt skip failed");
+	ztest_true(ret == 0, "Pkt skip failed");
 
 	/* Length should be 40 now */
-	zassert_true(net_pkt_get_len(pkt) == 40, "Pkt length mismatch");
+	ztest_true(net_pkt_get_len(pkt) == 40, "Pkt length mismatch");
 
 	/* Again, skip affected the length also, like a write
 	 * But wait a minute: how to get back then, in order to write at
@@ -332,29 +332,29 @@ static void test_net_pkt_basics_of_rw(void)
 	 */
 	net_pkt_set_overwrite(pkt, true);
 
-	zassert_true(net_pkt_is_being_overwritten(pkt),
+	ztest_true(net_pkt_is_being_overwritten(pkt),
 		     "Pkt is not set to overwrite");
 
 	/* Ok so previous skipped position was at offset 20 */
 	ret = net_pkt_skip(pkt, 20);
-	zassert_true(ret == 0, "Pkt skip failed");
+	ztest_true(ret == 0, "Pkt skip failed");
 
 	/* Length should _still_ be 40 */
-	zassert_true(net_pkt_get_len(pkt) == 40, "Pkt length mismatch");
+	ztest_true(net_pkt_get_len(pkt) == 40, "Pkt length mismatch");
 
 	/* And you can write stuff */
 	ret = net_pkt_write_le32(pkt, 0);
-	zassert_true(ret == 0, "Pkt write failed");
+	ztest_true(ret == 0, "Pkt write failed");
 
 	/* Again, length should _still_ be 40 */
-	zassert_true(net_pkt_get_len(pkt) == 40, "Pkt length mismatch");
+	ztest_true(net_pkt_get_len(pkt) == 40, "Pkt length mismatch");
 
 	/* Let's memset the rest */
 	ret = net_pkt_memset(pkt, 0, 16);
-	zassert_true(ret == 0, "Pkt memset failed");
+	ztest_true(ret == 0, "Pkt memset failed");
 
 	/* Again, length should _still_ be 40 */
-	zassert_true(net_pkt_get_len(pkt) == 40, "Pkt length mismatch");
+	ztest_true(net_pkt_get_len(pkt) == 40, "Pkt length mismatch");
 
 	/* We are now back at the end of the existing data in the buffer
 	 * Since overwrite is still on, we should not be able to r/w
@@ -363,7 +363,7 @@ static void test_net_pkt_basics_of_rw(void)
 	 * on existing data in the buffer:
 	 */
 	ret = net_pkt_write_be32(pkt, 0);
-	zassert_true(ret != 0, "Pkt write succeeded where it shouldn't have");
+	ztest_true(ret != 0, "Pkt write succeeded where it shouldn't have");
 
 	/* Logically, in order to be able to add new data in the buffer,
 	 * overwrite should be disabled:
@@ -372,7 +372,7 @@ static void test_net_pkt_basics_of_rw(void)
 
 	/* But it will fail: */
 	ret = net_pkt_write_le32(pkt, 0);
-	zassert_true(ret != 0, "Pkt write succeeded?");
+	ztest_true(ret != 0, "Pkt write succeeded?");
 
 	/* Why is that?
 	 * This is because in case of r/w error: the iterator is invalidated.
@@ -384,7 +384,7 @@ static void test_net_pkt_basics_of_rw(void)
 
 	/* Freeing the packet */
 	net_pkt_unref(pkt);
-	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+	ztest_true(atomic_get(&pkt->atomic_ref) == 0,
 		     "Pkt not properly unreferenced");
 }
 
@@ -396,7 +396,7 @@ void test_net_pkt_advanced_basics(void)
 
 	pkt = net_pkt_alloc_with_buffer(eth_if, 512,
 					AF_INET, IPPROTO_UDP, K_NO_WAIT);
-	zassert_true(pkt != NULL, "Pkt not allocated");
+	ztest_true(pkt != NULL, "Pkt not allocated");
 
 	pkt_print_cursor(pkt);
 
@@ -409,7 +409,7 @@ void test_net_pkt_advanced_basics(void)
 	 * You could certainly do:
 	 */
 	ret = net_pkt_write(pkt, small_buffer, 20);
-	zassert_true(ret == 0, "Pkt write failed");
+	ztest_true(ret == 0, "Pkt write failed");
 
 	pkt_print_cursor(pkt);
 
@@ -422,7 +422,7 @@ void test_net_pkt_advanced_basics(void)
 	/* And finally go back with overwrite/skip: */
 	net_pkt_set_overwrite(pkt, true);
 	ret = net_pkt_skip(pkt, 20);
-	zassert_true(ret == 0, "Pkt skip failed");
+	ztest_true(ret == 0, "Pkt skip failed");
 	net_pkt_set_overwrite(pkt, false);
 
 	pkt_print_cursor(pkt);
@@ -451,7 +451,7 @@ void test_net_pkt_advanced_basics(void)
 	 * For this, you'll use:
 	 */
 	ret = (int) net_pkt_is_contiguous(pkt, 4);
-	zassert_true(ret == 1, "Pkt contiguity check failed");
+	ztest_true(ret == 1, "Pkt contiguity check failed");
 
 	/* If that's successful you should be able to get the actual
 	 * position in the buffer and cast it to the type you want.
@@ -470,7 +470,7 @@ void test_net_pkt_advanced_basics(void)
 
 	/* Freeing the packet */
 	net_pkt_unref(pkt);
-	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+	ztest_true(atomic_get(&pkt->atomic_ref) == 0,
 		     "Pkt not properly unreferenced");
 
 	/* Obviously one will very rarely use these 2 last low level functions
@@ -488,7 +488,7 @@ void test_net_pkt_easier_rw_usage(void)
 
 	pkt = net_pkt_alloc_with_buffer(eth_if, 512,
 					AF_INET, IPPROTO_UDP, K_NO_WAIT);
-	zassert_true(pkt != NULL, "Pkt not allocated");
+	ztest_true(pkt != NULL, "Pkt not allocated");
 
 	/* In net core, all goes down in fine to header manipulation.
 	 * Either it's an IP header, UDP, ICMP, TCP one etc...
@@ -512,14 +512,14 @@ void test_net_pkt_easier_rw_usage(void)
 
 		ip_hdr = (struct net_ipv4_hdr *)
 			net_pkt_get_data(pkt, &ip_access);
-		zassert_not_null(ip_hdr, "Accessor failed");
+		ztest_not_null(ip_hdr, "Accessor failed");
 
 		ip_hdr->tos = 0x00;
 
 		ret = net_pkt_set_data(pkt, &ip_access);
-		zassert_true(ret == 0, "Accessor failed");
+		ztest_true(ret == 0, "Accessor failed");
 
-		zassert_true(net_pkt_get_len(pkt) == NET_IPV4H_LEN,
+		ztest_true(net_pkt_get_len(pkt) == NET_IPV4H_LEN,
 			     "Pkt length mismatch");
 	}
 
@@ -530,7 +530,7 @@ void test_net_pkt_easier_rw_usage(void)
 
 	/* Freeing the packet */
 	net_pkt_unref(pkt);
-	zassert_true(atomic_get(&pkt->atomic_ref) == 0,
+	ztest_true(atomic_get(&pkt->atomic_ref) == 0,
 		     "Pkt not properly unreferenced");
 }
 
@@ -580,7 +580,7 @@ void test_net_pkt_copy(void)
 	struct net_pkt *pkt_dst;
 
 	pkt_src = net_pkt_alloc_on_iface(eth_if, K_NO_WAIT);
-	zassert_true(pkt_src != NULL, "Pkt not allocated");
+	ztest_true(pkt_src != NULL, "Pkt not allocated");
 
 	pkt_print_cursor(pkt_src);
 
@@ -590,12 +590,12 @@ void test_net_pkt_copy(void)
 	net_pkt_set_overwrite(pkt_src, true);
 
 	/* There should be some space left */
-	zassert_true(net_pkt_available_buffer(pkt_src) != 0, "No space left?");
+	ztest_true(net_pkt_available_buffer(pkt_src) != 0, "No space left?");
 	/* Length should be 4 */
-	zassert_true(net_pkt_get_len(pkt_src) == 4, "Wrong length");
+	ztest_true(net_pkt_get_len(pkt_src) == 4, "Wrong length");
 
 	/* Actual space left is 12 (in b1, b2 and b4) */
-	zassert_true(net_pkt_available_buffer(pkt_src) == 12,
+	ztest_true(net_pkt_available_buffer(pkt_src) == 12,
 		     "Wrong space left?");
 
 	pkt_print_cursor(pkt_src);
@@ -604,28 +604,28 @@ void test_net_pkt_copy(void)
 	 * This will test net_pkt_copy_new() as it uses it for the buffers
 	 */
 	pkt_dst = net_pkt_clone(pkt_src, K_NO_WAIT);
-	zassert_true(pkt_dst != NULL, "Pkt not clone");
+	ztest_true(pkt_dst != NULL, "Pkt not clone");
 
 	/* Cloning does not take into account left space,
 	 * but only occupied one
 	 */
-	zassert_true(net_pkt_available_buffer(pkt_dst) == 0, "Space left");
-	zassert_true(net_pkt_get_len(pkt_src) == net_pkt_get_len(pkt_dst),
+	ztest_true(net_pkt_available_buffer(pkt_dst) == 0, "Space left");
+	ztest_true(net_pkt_get_len(pkt_src) == net_pkt_get_len(pkt_dst),
 		     "Not same amount?");
 
 	/* It also did not care to copy the net_buf itself, only the content
 	 * so, knowing that the base buffer size is bigger than necessary,
 	 * pkt_dst has only one net_buf
 	 */
-	zassert_true(pkt_dst->buffer->frags == NULL, "Not only one buffer?");
+	ztest_true(pkt_dst->buffer->frags == NULL, "Not only one buffer?");
 
 	/* Freeing the packet */
 	pkt_src->buffer = NULL;
 	net_pkt_unref(pkt_src);
-	zassert_true(atomic_get(&pkt_src->atomic_ref) == 0,
+	ztest_true(atomic_get(&pkt_src->atomic_ref) == 0,
 		     "Pkt not properly unreferenced");
 	net_pkt_unref(pkt_dst);
-	zassert_true(atomic_get(&pkt_dst->atomic_ref) == 0,
+	ztest_true(atomic_get(&pkt_dst->atomic_ref) == 0,
 		     "Pkt not properly unreferenced");
 }
 
@@ -648,23 +648,23 @@ void test_net_pkt_pull(void)
 					      AF_UNSPEC,
 					      0,
 					      K_NO_WAIT);
-	zassert_true(dummy_pkt != NULL, "Pkt not allocated");
+	ztest_true(dummy_pkt != NULL, "Pkt not allocated");
 
-	zassert_true(net_pkt_write(dummy_pkt,
+	ztest_true(net_pkt_write(dummy_pkt,
 				   pkt_data,
 				   PULL_TEST_PKT_DATA_SIZE) == 0,
 		     "Write packet failed");
 
 	net_pkt_cursor_init(dummy_pkt);
 	net_pkt_pull(dummy_pkt, PULL_AMOUNT);
-	zassert_equal(net_pkt_get_len(dummy_pkt),
+	ztest_equal(net_pkt_get_len(dummy_pkt),
 		      PULL_TEST_PKT_DATA_SIZE - PULL_AMOUNT,
 		      "Pull failed to set new size");
-	zassert_true(net_pkt_read(dummy_pkt,
+	ztest_true(net_pkt_read(dummy_pkt,
 				  pkt_data_readback,
 				  PULL_TEST_PKT_DATA_SIZE - PULL_AMOUNT) == 0,
 		     "Read packet failed");
-	zassert_mem_equal(pkt_data_readback,
+	ztest_mem_equal(pkt_data_readback,
 			  &pkt_data[PULL_AMOUNT],
 			  PULL_TEST_PKT_DATA_SIZE - PULL_AMOUNT,
 			  "Packet data changed");
@@ -681,30 +681,30 @@ void test_net_pkt_clone(void)
 
 	pkt = net_pkt_alloc_with_buffer(eth_if, 64,
 					AF_UNSPEC, 0, K_NO_WAIT);
-	zassert_true(pkt != NULL, "Pkt not allocated");
+	ztest_true(pkt != NULL, "Pkt not allocated");
 
 	ret = net_pkt_write(pkt, buf, sizeof(buf));
-	zassert_true(ret == 0, "Pkt write failed");
+	ztest_true(ret == 0, "Pkt write failed");
 
-	zassert_true(net_pkt_get_len(pkt) == sizeof(buf),
+	ztest_true(net_pkt_get_len(pkt) == sizeof(buf),
 		     "Pkt length mismatch");
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_skip(pkt, 6);
-	zassert_true(sizeof(buf) - 6 == net_pkt_remaining_data(pkt),
+	ztest_true(sizeof(buf) - 6 == net_pkt_remaining_data(pkt),
 		     "Pkt remaining data mismatch");
 
 	cloned_pkt = net_pkt_clone(pkt, K_NO_WAIT);
-	zassert_true(cloned_pkt != NULL, "Pkt not cloned");
+	ztest_true(cloned_pkt != NULL, "Pkt not cloned");
 
-	zassert_true(net_pkt_get_len(cloned_pkt) == sizeof(buf),
+	ztest_true(net_pkt_get_len(cloned_pkt) == sizeof(buf),
 		     "Cloned pkt length mismatch");
 
-	zassert_true(sizeof(buf) - 6 == net_pkt_remaining_data(pkt),
+	ztest_true(sizeof(buf) - 6 == net_pkt_remaining_data(pkt),
 		     "Pkt remaining data mismatch");
 
-	zassert_true(sizeof(buf) - 6 == net_pkt_remaining_data(cloned_pkt),
+	ztest_true(sizeof(buf) - 6 == net_pkt_remaining_data(cloned_pkt),
 		     "Cloned pkt remaining data mismatch");
 
 	net_pkt_unref(pkt);

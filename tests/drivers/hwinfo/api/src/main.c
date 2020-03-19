@@ -35,16 +35,16 @@ static void test_device_id_get(void)
 	int i;
 
 	length_read_1 = hwinfo_get_device_id(buffer_1, 1);
-	zassert_not_equal(length_read_1, -ENOTSUP, "Not supported by hardware");
-	zassert_false((length_read_1 < 0),
+	ztest_not_equal(length_read_1, -ENOTSUP, "Not supported by hardware");
+	ztest_false((length_read_1 < 0),
 		      "Unexpected negative return value: %d", length_read_1);
-	zassert_not_equal(length_read_1, 0, "Zero bytes read");
-	zassert_equal(length_read_1, 1, "Length not adhered");
+	ztest_not_equal(length_read_1, 0, "Zero bytes read");
+	ztest_equal(length_read_1, 1, "Length not adhered");
 
 	memset(buffer_1, BUFFER_CANARY, sizeof(buffer_1));
 
 	length_read_1 = hwinfo_get_device_id(buffer_1, BUFFER_LENGTH - 1);
-	zassert_equal(buffer_1[length_read_1], BUFFER_CANARY,
+	ztest_equal(buffer_1[length_read_1], BUFFER_CANARY,
 		      "Too many bytes are written");
 
 	memcpy(buffer_2, buffer_1, length_read_1);
@@ -54,13 +54,13 @@ static void test_device_id_get(void)
 	}
 
 	length_read_2 = hwinfo_get_device_id(buffer_1, BUFFER_LENGTH - 1);
-	zassert_equal(length_read_1, length_read_2, "Length varied");
+	ztest_equal(length_read_1, length_read_2, "Length varied");
 
-	zassert_equal(buffer_1[length_read_1], (BUFFER_CANARY ^ 0xA5),
+	ztest_equal(buffer_1[length_read_1], (BUFFER_CANARY ^ 0xA5),
 		      "Too many bytes are written");
 
 	for (i = 0; i < length_read_1; i++) {
-		zassert_equal(buffer_1[i], buffer_2[i],
+		ztest_equal(buffer_1[i], buffer_2[i],
 			      "Two consecutively readings don't match");
 	}
 }
@@ -78,7 +78,7 @@ static void test_device_id_enotsup(void)
 	/* There is no hwinfo driver for this platform, hence the return value
 	 * should be -ENOTSUP
 	 */
-	zassert_equal(ret, -ENOTSUP,
+	ztest_equal(ret, -ENOTSUP,
 		      "hwinfo_get_device_id returned % instead of %d",
 		      ret, -ENOTSUP);
 }

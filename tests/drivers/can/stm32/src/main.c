@@ -88,25 +88,25 @@ static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2)
 {
 	int cmp_res;
 
-	zassert_equal(msg1->id_type, msg2->id_type,
+	ztest_equal(msg1->id_type, msg2->id_type,
 		      "ID type does not match");
 
-	zassert_equal(msg1->rtr, msg2->rtr,
+	ztest_equal(msg1->rtr, msg2->rtr,
 		      "RTR bit does not match");
 
 	if (msg2->id_type == CAN_STANDARD_IDENTIFIER) {
-		zassert_equal(msg1->std_id, msg2->std_id,
+		ztest_equal(msg1->std_id, msg2->std_id,
 			      "ID does not match");
 	} else {
-		zassert_equal(msg1->ext_id, msg2->ext_id,
+		ztest_equal(msg1->ext_id, msg2->ext_id,
 			      "ID does not match");
 	}
 
-	zassert_equal(msg1->dlc, msg2->dlc,
+	ztest_equal(msg1->dlc, msg2->dlc,
 		      "DLC does not match");
 
 	cmp_res = memcmp(msg1->data, msg2->data, msg1->dlc);
-	zassert_equal(cmp_res, 0, "Received data differ");
+	ztest_equal(cmp_res, 0, "Received data differ");
 }
 
 static void send_test_msg(struct device *can_dev, struct zcan_frame *msg)
@@ -114,9 +114,9 @@ static void send_test_msg(struct device *can_dev, struct zcan_frame *msg)
 	int ret;
 
 	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, NULL, NULL);
-	zassert_not_equal(ret, CAN_TX_ARB_LOST,
+	ztest_not_equal(ret, CAN_TX_ARB_LOST,
 			  "Arbitration though in loopback mode");
-	zassert_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);
+	ztest_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);
 }
 
 /*
@@ -135,40 +135,40 @@ static void test_filter_handling(void)
 	ret = can_configure(can_dev, CAN_LOOPBACK_MODE, 0);
 
 	filter_id_1 = can_attach_msgq(can_dev, &can_msgq, &test_ext_masked_filter);
-	zassert_not_equal(filter_id_1, CAN_NO_FREE_FILTER,
+	ztest_not_equal(filter_id_1, CAN_NO_FREE_FILTER,
 			  "Filter full even for a single one");
-	zassert_true((filter_id_1 >= 0), "Negative filter number");
+	ztest_true((filter_id_1 >= 0), "Negative filter number");
 
 	filter_id_2 = can_attach_msgq(can_dev, &can_msgq, &test_std_filter);
-	zassert_not_equal(filter_id_2, CAN_NO_FREE_FILTER,
+	ztest_not_equal(filter_id_2, CAN_NO_FREE_FILTER,
 			  "Filter full when attaching the second one");
-	zassert_true((filter_id_2 >= 0), "Negative filter number");
+	ztest_true((filter_id_2 >= 0), "Negative filter number");
 
 	can_detach(can_dev, filter_id_1);
 	filter_id_1 = can_attach_msgq(can_dev, &can_msgq, &test_std_some_filter);
-	zassert_not_equal(filter_id_1, CAN_NO_FREE_FILTER,
+	ztest_not_equal(filter_id_1, CAN_NO_FREE_FILTER,
 			  "Filter full when overriding the first one");
-	zassert_true((filter_id_1 >= 0), "Negative filter number");
+	ztest_true((filter_id_1 >= 0), "Negative filter number");
 
 	send_test_msg(can_dev, &test_std_msg);
 
 	ret = k_msgq_get(&can_msgq, &msg_buffer, TEST_RECEIVE_TIMEOUT);
-	zassert_equal(ret, 0, "Receiving timeout");
+	ztest_equal(ret, 0, "Receiving timeout");
 	check_msg(&test_std_msg, &msg_buffer);
 
 	ret = k_msgq_get(&can_msgq, &msg_buffer, TEST_RECEIVE_TIMEOUT);
-	zassert_equal(ret, -EAGAIN, "There is more than one msg in the queue");
+	ztest_equal(ret, -EAGAIN, "There is more than one msg in the queue");
 
 	can_detach(can_dev, filter_id_1);
 	filter_id_1 = can_attach_msgq(can_dev, &can_msgq, &test_ext_filter);
-	zassert_not_equal(filter_id_1, CAN_NO_FREE_FILTER,
+	ztest_not_equal(filter_id_1, CAN_NO_FREE_FILTER,
 			  "Filter full when overriding the first one");
-	zassert_true((filter_id_1 >= 0), "Negative filter number");
+	ztest_true((filter_id_1 >= 0), "Negative filter number");
 
 	send_test_msg(can_dev, &test_std_msg);
 
 	ret = k_msgq_get(&can_msgq, &msg_buffer, TEST_RECEIVE_TIMEOUT);
-	zassert_equal(ret, 0, "Receiving timeout");
+	ztest_equal(ret, 0, "Receiving timeout");
 	check_msg(&test_std_msg, &msg_buffer);
 
 	can_detach(can_dev, filter_id_1);

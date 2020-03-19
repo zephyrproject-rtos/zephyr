@@ -27,72 +27,72 @@ void test_flash_area_get_sectors(void)
 	struct device *flash_dev;
 
 	rc = flash_area_open(DT_FLASH_AREA_IMAGE_1_ID, &fa);
-	zassert_true(rc == 0, "flash_area_open() fail");
+	ztest_true(rc == 0, "flash_area_open() fail");
 
 	/* First erase the area so it's ready for use. */
 	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	rc = flash_write_protection_set(flash_dev, false);
-	zassert_false(rc, "failed to disable flash write protection");
+	ztest_false(rc, "failed to disable flash write protection");
 
 	rc = flash_erase(flash_dev, fa->fa_off, fa->fa_size);
-	zassert_true(rc == 0, "flash area erase fail");
+	ztest_true(rc == 0, "flash area erase fail");
 
 	rc = flash_write_protection_set(flash_dev, true);
-	zassert_false(rc, "failed to enable flash write protection");
+	ztest_false(rc, "failed to enable flash write protection");
 
 	(void)memset(wd, 0xa5, sizeof(wd));
 
 	sec_cnt = ARRAY_SIZE(fs_sectors);
 	rc = flash_area_get_sectors(DT_FLASH_AREA_IMAGE_1_ID, &sec_cnt,
 				    fs_sectors);
-	zassert_true(rc == 0, "flash_area_get_sectors failed");
+	ztest_true(rc == 0, "flash_area_get_sectors failed");
 
 	/* write stuff to beginning of every sector */
 	off = 0;
 	for (i = 0; i < sec_cnt; i++) {
 		rc = flash_area_write(fa, off, wd, sizeof(wd));
-		zassert_true(rc == 0, "flash_area_write() fail");
+		ztest_true(rc == 0, "flash_area_write() fail");
 
 		/* read it back via hal_flash_Read() */
 		rc = flash_read(flash_dev, fa->fa_off + off, rd, sizeof(rd));
-		zassert_true(rc == 0, "hal_flash_read() fail");
+		ztest_true(rc == 0, "hal_flash_read() fail");
 
 		rc = memcmp(wd, rd, sizeof(wd));
-		zassert_true(rc == 0, "read data != write data");
+		ztest_true(rc == 0, "read data != write data");
 
 		(void) flash_write_protection_set(flash_dev, false);
 		/* write stuff to end of area */
 		rc = flash_write(flash_dev, fa->fa_off + off +
 					    fs_sectors[i].fs_size - sizeof(wd),
 				 wd, sizeof(wd));
-		zassert_true(rc == 0, "hal_flash_write() fail");
+		ztest_true(rc == 0, "hal_flash_write() fail");
 
 		/* and read it back */
 		(void)memset(rd, 0, sizeof(rd));
 		rc = flash_area_read(fa, off + fs_sectors[i].fs_size -
 					 sizeof(rd),
 				     rd, sizeof(rd));
-		zassert_true(rc == 0, "hal_flash_read() fail");
+		ztest_true(rc == 0, "hal_flash_read() fail");
 
 		rc = memcmp(wd, rd, sizeof(rd));
-		zassert_true(rc == 0, "read data != write data");
+		ztest_true(rc == 0, "read data != write data");
 
 		off += fs_sectors[i].fs_size;
 	}
 
 	/* erase it */
 	rc = flash_area_erase(fa, 0, fa->fa_size);
-	zassert_true(rc == 0, "read data != write data");
+	ztest_true(rc == 0, "read data != write data");
 
 	/* should read back ff all throughout*/
 	(void)memset(wd, 0xff, sizeof(wd));
 	for (off = 0; off < fa->fa_size; off += sizeof(rd)) {
 		rc = flash_area_read(fa, off, rd, sizeof(rd));
-		zassert_true(rc == 0, "hal_flash_read() fail");
+		ztest_true(rc == 0, "hal_flash_read() fail");
 
 		rc = memcmp(wd, rd, sizeof(rd));
-		zassert_true(rc == 0, "area not erased");
+		ztest_true(rc == 0, "area not erased");
 	}
 
 }

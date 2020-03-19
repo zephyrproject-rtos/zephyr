@@ -38,14 +38,14 @@ static void do_isr_dynamic(void)
 		}
 	}
 
-	zassert_true(_sw_isr_table[i].isr == z_irq_spurious,
+	ztest_true(_sw_isr_table[i].isr == z_irq_spurious,
 		     "could not find slot for dynamic isr");
 
 	argval = &i;
 	arch_irq_connect_dynamic(i + CONFIG_GEN_IRQ_START_VECTOR, 0, dyn_isr,
 				   argval, 0);
 
-	zassert_true(_sw_isr_table[i].isr == dyn_isr &&
+	ztest_true(_sw_isr_table[i].isr == dyn_isr &&
 		     _sw_isr_table[i].arg == argval,
 		     "dynamic isr did not install successfully");
 }

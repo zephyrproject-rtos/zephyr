@@ -80,7 +80,7 @@ static void *get_scratch_packet(void)
 {
 	void *packet = k_lifo_get(&scratch_lifo_packets_lifo, K_NO_WAIT);
 
-	zassert_true(packet != NULL, NULL);
+	ztest_true(packet != NULL, NULL);
 	return packet;
 }
 
@@ -96,11 +96,11 @@ static void thread_entry_nowait(void *p1, void *p2, void *p3)
 	ret = k_lifo_get((struct k_lifo *)p1, K_FOREVER);
 
 	/* data pushed at last should be read first */
-	zassert_equal(ret, (void *)&data[1], NULL);
+	ztest_equal(ret, (void *)&data[1], NULL);
 
 	ret = k_lifo_get((struct k_lifo *)p1, K_FOREVER);
 
-	zassert_equal(ret, (void *)&data[0], NULL);
+	ztest_equal(ret, (void *)&data[0], NULL);
 
 	k_sem_give(&start_sema);
 }
@@ -136,7 +136,7 @@ static int test_multiple_threads_pending(struct timeout_order_data *test_data,
 			TC_PRINT(" thread (q order: %d, t/o: %d, lifo %p)\n",
 				data->q_order, data->timeout, data->klifo);
 		} else {
-			zassert_equal(data->timeout_order, ii, " *** thread %d "
+			ztest_equal(data->timeout_order, ii, " *** thread %d "
 				      "woke up, expected %d\n",
 				      data->timeout_order, ii);
 			return TC_FAIL;
@@ -244,13 +244,13 @@ static void test_lifo_wait(void)
 
 	ret = k_lifo_get(&plifo, K_FOREVER);
 
-	zassert_equal(ret, (void *)&data[0], NULL);
+	ztest_equal(ret, (void *)&data[0], NULL);
 
 	k_sem_take(&wait_sema, K_FOREVER);
 
 	ret = k_lifo_get(&plifo, K_FOREVER);
 
-	zassert_equal(ret, (void *)&data[1], NULL);
+	ztest_equal(ret, (void *)&data[1], NULL);
 
 	k_thread_abort(tid);
 }
@@ -271,13 +271,13 @@ static void test_timeout_empty_lifo(void)
 
 	packet = k_lifo_get(&lifo_timeout[0], timeout);
 
-	zassert_equal(packet, NULL, NULL);
+	ztest_equal(packet, NULL, NULL);
 
-	zassert_true(is_timeout_in_range(start_time, timeout), NULL);
+	ztest_true(is_timeout_in_range(start_time, timeout), NULL);
 
 	/* Test empty lifo with timeout of K_NO_WAIT */
 	packet = k_lifo_get(&lifo_timeout[0], K_NO_WAIT);
-	zassert_equal(packet, NULL, NULL);
+	ztest_equal(packet, NULL, NULL);
 }
 
 /**
@@ -292,14 +292,14 @@ static void test_timeout_non_empty_lifo(void)
 	scratch_packet = get_scratch_packet();
 	k_lifo_put(&lifo_timeout[0], scratch_packet);
 	packet = k_lifo_get(&lifo_timeout[0], K_NO_WAIT);
-	zassert_true(packet != NULL, NULL);
+	ztest_true(packet != NULL, NULL);
 	put_scratch_packet(scratch_packet);
 
 	 /* Test k_lifo_get with K_FOREVER */
 	scratch_packet = get_scratch_packet();
 	k_lifo_put(&lifo_timeout[0], scratch_packet);
 	packet = k_lifo_get(&lifo_timeout[0], K_FOREVER);
-	zassert_true(packet != NULL, NULL);
+	ztest_true(packet != NULL, NULL);
 }
 
 /**
@@ -325,8 +325,8 @@ static void test_timeout_lifo_thread(void)
 				LIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
 	packet = k_lifo_get(&lifo_timeout[0], timeout + 10);
-	zassert_true(packet != NULL, NULL);
-	zassert_true(is_timeout_in_range(start_time, timeout), NULL);
+	ztest_true(packet != NULL, NULL);
+	ztest_true(is_timeout_in_range(start_time, timeout), NULL);
 	put_scratch_packet(packet);
 
 	/*
@@ -342,8 +342,8 @@ static void test_timeout_lifo_thread(void)
 
 	k_yield();
 	packet = k_lifo_get(&timeout_order_lifo, K_NO_WAIT);
-	zassert_true(packet != NULL, NULL);
-	zassert_false(reply_packet.reply, NULL);
+	ztest_true(packet != NULL, NULL);
+	ztest_false(reply_packet.reply, NULL);
 
 	/*
 	 * Test k_lifo_get with timeout of K_NO_WAIT and the lifo
@@ -361,8 +361,8 @@ static void test_timeout_lifo_thread(void)
 
 	k_yield();
 	packet = k_lifo_get(&timeout_order_lifo, K_NO_WAIT);
-	zassert_true(packet != NULL, NULL);
-	zassert_true(reply_packet.reply, NULL);
+	ztest_true(packet != NULL, NULL);
+	ztest_true(reply_packet.reply, NULL);
 	put_scratch_packet(scratch_packet);
 
 	/*
@@ -380,8 +380,8 @@ static void test_timeout_lifo_thread(void)
 				LIFO_THREAD_PRIO, K_INHERIT_PERMS, K_NO_WAIT);
 
 	packet = k_lifo_get(&timeout_order_lifo, K_FOREVER);
-	zassert_true(packet != NULL, NULL);
-	zassert_true(reply_packet.reply, NULL);
+	ztest_true(packet != NULL, NULL);
+	ztest_true(reply_packet.reply, NULL);
 	put_scratch_packet(scratch_packet);
 }
 
@@ -397,8 +397,8 @@ void test_thread_pend_and_timeout(void *p1, void *p2, void *p3)
 
 	start_time = k_cycle_get_32();
 	packet = k_lifo_get(d->klifo, d->timeout);
-	zassert_true(packet == NULL, NULL);
-	zassert_true(is_timeout_in_range(start_time, d->timeout), NULL);
+	ztest_true(packet == NULL, NULL);
+	ztest_true(is_timeout_in_range(start_time, d->timeout), NULL);
 
 	k_lifo_put(&timeout_order_lifo, d);
 }
@@ -420,7 +420,7 @@ static void test_timeout_threads_pend_on_lifo(void)
 	 */
 	test_data_size = ARRAY_SIZE(timeout_order_data);
 	rv = test_multiple_threads_pending(timeout_order_data, test_data_size);
-	zassert_equal(rv, TC_PASS, NULL);
+	ztest_equal(rv, TC_PASS, NULL);
 }
 
 /**

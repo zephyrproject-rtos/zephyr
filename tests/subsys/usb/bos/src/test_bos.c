@@ -184,12 +184,12 @@ static void test_usb_bos_macros(void)
 	LOG_HEXDUMP_DBG((void *)&webusb_bos_descriptor_2, sizeof(cap_msosv2),
 			"webusb cap msos v2");
 
-	zassert_true(len ==
+	ztest_true(len ==
 		     sizeof(struct usb_bos_descriptor) +
 		     sizeof(cap_webusb) +
 		     sizeof(cap_msosv2),
 		     "Incorrect calculated length");
-	zassert_true(!memcmp(hdr, &webusb_bos_descriptor, len) ||
+	ztest_true(!memcmp(hdr, &webusb_bos_descriptor, len) ||
 		     !memcmp(hdr, &webusb_bos_descriptor_2, len),
 		     "Wrong data");
 }
@@ -209,9 +209,9 @@ static void test_usb_bos(void)
 
 	TC_PRINT("%s: ret %d len %u data %p\n", __func__, ret, len, data);
 
-	zassert_true(!ret, "Return code failed");
-	zassert_equal(len, sizeof(webusb_bos_descriptor), "Wrong length");
-	zassert_true(!memcmp(data, &webusb_bos_descriptor, len) ||
+	ztest_true(!ret, "Return code failed");
+	ztest_equal(len, sizeof(webusb_bos_descriptor), "Wrong length");
+	ztest_true(!memcmp(data, &webusb_bos_descriptor, len) ||
 		     !memcmp(data, &webusb_bos_descriptor_2, len),
 		     "Wrong data");
 }

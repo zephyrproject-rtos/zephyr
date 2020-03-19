@@ -101,9 +101,9 @@ static void test_handle_os_desc(void)
 
 	TC_PRINT("%s: ret %d len %u data %p\n", __func__, ret, len, data);
 
-	zassert_true(!ret, "Return code failed");
-	zassert_equal(len, sizeof(msosv1_string_descriptor), "Wrong length");
-	zassert_true(!memcmp(data, &msosv1_string_descriptor, len),
+	ztest_true(!ret, "Return code failed");
+	ztest_equal(len, sizeof(msosv1_string_descriptor), "Wrong length");
+	ztest_true(!memcmp(data, &msosv1_string_descriptor, len),
 		     "Wrong data");
 }
 
@@ -121,9 +121,9 @@ static void test_handle_os_desc_feature(void)
 
 	TC_PRINT("%s: ret %d len %u data %p\n", __func__, ret, len, data);
 
-	zassert_true(!ret, "Return code failed");
-	zassert_equal(len, sizeof(msosv1_compatid_descriptor), "Wrong length");
-	zassert_true(!memcmp(data, &msosv1_compatid_descriptor, len),
+	ztest_true(!ret, "Return code failed");
+	ztest_equal(len, sizeof(msosv1_compatid_descriptor), "Wrong length");
+	ztest_true(!memcmp(data, &msosv1_compatid_descriptor, len),
 		     "Wrong data");
 }
 

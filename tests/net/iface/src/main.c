@@ -339,16 +339,16 @@ static void iface_setup(void)
 	    net_if_get_by_iface(iface2), iface2,
 	    net_if_get_by_iface(iface3), iface3);
 
-	zassert_not_null(iface1, "Interface 1");
-	zassert_not_null(iface2, "Interface 2");
-	zassert_not_null(iface3, "Interface 3");
+	ztest_not_null(iface1, "Interface 1");
+	ztest_not_null(iface2, "Interface 2");
+	ztest_not_null(iface3, "Interface 3");
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr1));
-		zassert_not_null(ifaddr, "addr1");
+		ztest_not_null(ifaddr, "addr1");
 	}
 
 	ifaddr = net_if_ipv4_addr_add(iface1, &my_ipv4_addr1,
@@ -356,7 +356,7 @@ static void iface_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv4 address %s\n",
 		       net_sprint_ipv4_addr(&my_ipv4_addr1));
-		zassert_not_null(ifaddr, "ipv4 addr1");
+		ztest_not_null(ifaddr, "ipv4 addr1");
 	}
 
 	/* For testing purposes we need to set the adddresses preferred */
@@ -367,7 +367,7 @@ static void iface_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&ll_addr));
-		zassert_not_null(ifaddr, "ll_addr");
+		ztest_not_null(ifaddr, "ll_addr");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -377,7 +377,7 @@ static void iface_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr2));
-		zassert_not_null(ifaddr, "addr2");
+		ztest_not_null(ifaddr, "addr2");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -387,7 +387,7 @@ static void iface_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr3));
-		zassert_not_null(ifaddr, "addr3");
+		ztest_not_null(ifaddr, "addr3");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -398,7 +398,7 @@ static void iface_setup(void)
 	if (!maddr) {
 		DBG("Cannot add multicast IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&in6addr_mcast));
-		zassert_not_null(maddr, "mcast");
+		ztest_not_null(maddr, "mcast");
 	}
 
 	net_if_up(iface1);
@@ -453,7 +453,7 @@ static void send_iface1(void)
 
 	ret = send_iface(iface1, 1, false);
 
-	zassert_true(ret, "iface 1");
+	ztest_true(ret, "iface 1");
 }
 
 static void send_iface2(void)
@@ -464,7 +464,7 @@ static void send_iface2(void)
 
 	ret = send_iface(iface2, 2, false);
 
-	zassert_true(ret, "iface 2");
+	ztest_true(ret, "iface 2");
 }
 
 static void send_iface3(void)
@@ -475,7 +475,7 @@ static void send_iface3(void)
 
 	ret = send_iface(iface3, 3, false);
 
-	zassert_true(ret, "iface 3");
+	ztest_true(ret, "iface 3");
 }
 
 static void send_iface1_down(void)
@@ -488,7 +488,7 @@ static void send_iface1_down(void)
 
 	ret = send_iface(iface1, 1, true);
 
-	zassert_true(ret, "iface 1 down");
+	ztest_true(ret, "iface 1 down");
 }
 
 static void send_iface1_up(void)
@@ -501,7 +501,7 @@ static void send_iface1_up(void)
 
 	ret = send_iface(iface1, 1, false);
 
-	zassert_true(ret, "iface 1 up again");
+	ztest_true(ret, "iface 1 up again");
 }
 
 static void select_src_iface(void)
@@ -522,31 +522,31 @@ static void select_src_iface(void)
 	struct sockaddr_in6 ipv6;
 
 	iface = net_if_ipv6_select_src_iface(&dst_addr1);
-	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+	ztest_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
 			  iface, iface1);
 
 	iface = net_if_ipv6_select_src_iface(&ll_addr1);
-	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+	ztest_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
 			  iface, iface1);
 
 	net_ipv6_addr_create(&in6addr_mcast1, 0xff02, 0, 0, 0, 0, 0, 0, 0x0002);
 
 	iface = net_if_ipv6_select_src_iface(&in6addr_mcast1);
-	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+	ztest_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
 			  iface, iface1);
 
 	iface = net_if_ipv6_select_src_iface(&dst_addr3);
-	zassert_equal_ptr(iface, iface2, "Invalid interface %p vs %p selected",
+	ztest_equal_ptr(iface, iface2, "Invalid interface %p vs %p selected",
 			  iface, iface2);
 
 	ifaddr = net_if_ipv6_addr_lookup(&ll_addr, NULL);
-	zassert_not_null(ifaddr, "No such ll_addr found");
+	ztest_not_null(ifaddr, "No such ll_addr found");
 
 	ifaddr->addr_state = NET_ADDR_TENTATIVE;
 
 	/* We should now get default interface */
 	iface = net_if_ipv6_select_src_iface(&ll_addr1);
-	zassert_equal_ptr(iface, net_if_get_default(),
+	ztest_equal_ptr(iface, net_if_get_default(),
 			  "Invalid interface %p vs %p selected",
 			  iface, net_if_get_default());
 
@@ -555,7 +555,7 @@ static void select_src_iface(void)
 	ipv4.sin_port = 0U;
 
 	iface = net_if_select_src_iface((struct sockaddr *)&ipv4);
-	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+	ztest_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
 			  iface, iface1);
 
 	net_ipaddr_copy(&ipv6.sin6_addr, &dst_addr1);
@@ -563,7 +563,7 @@ static void select_src_iface(void)
 	ipv6.sin6_port = 0U;
 
 	iface = net_if_select_src_iface((struct sockaddr *)&ipv6);
-	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
+	ztest_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
 			  iface, iface1);
 }
 
@@ -575,7 +575,7 @@ static void check_promisc_mode_off(void)
 
 	ret = net_if_is_promisc(iface4);
 
-	zassert_false(ret, "iface 1 promiscuous mode ON");
+	ztest_false(ret, "iface 1 promiscuous mode ON");
 }
 
 static void check_promisc_mode_on(void)
@@ -586,7 +586,7 @@ static void check_promisc_mode_on(void)
 
 	ret = net_if_is_promisc(iface4);
 
-	zassert_true(ret, "iface 1 promiscuous mode OFF");
+	ztest_true(ret, "iface 1 promiscuous mode OFF");
 }
 
 static void set_promisc_mode_on_again(void)
@@ -597,7 +597,7 @@ static void set_promisc_mode_on_again(void)
 
 	ret = net_if_set_promisc(iface4);
 
-	zassert_equal(ret, -EALREADY, "iface 1 promiscuous mode OFF");
+	ztest_equal(ret, -EALREADY, "iface 1 promiscuous mode OFF");
 }
 
 static void set_promisc_mode_on(void)
@@ -608,7 +608,7 @@ static void set_promisc_mode_on(void)
 
 	ret = net_if_set_promisc(iface4);
 
-	zassert_equal(ret, 0, "iface 1 promiscuous mode set failed");
+	ztest_equal(ret, 0, "iface 1 promiscuous mode set failed");
 }
 
 static void set_promisc_mode_off(void)
@@ -627,7 +627,7 @@ static void v4_addr_add(void)
 
 	ret = net_if_ipv4_addr_add_by_index(1, &my_ipv4_addr_test,
 					    NET_ADDR_MANUAL, 0);
-	zassert_true(ret, "Cannot add IPv4 address");
+	ztest_true(ret, "Cannot add IPv4 address");
 }
 
 static void v4_addr_lookup(void)
@@ -635,10 +635,10 @@ static void v4_addr_lookup(void)
 	int ret;
 
 	ret = net_if_ipv4_addr_lookup_by_index(&my_ipv4_addr_test);
-	zassert_equal(ret, 1, "IPv4 address not found");
+	ztest_equal(ret, 1, "IPv4 address not found");
 
 	ret = net_if_ipv4_addr_lookup_by_index(&my_ipv4_addr_not_found);
-	zassert_not_equal(ret, 1, "IPv4 address found");
+	ztest_not_equal(ret, 1, "IPv4 address found");
 }
 
 static void v4_addr_rm(void)
@@ -646,7 +646,7 @@ static void v4_addr_rm(void)
 	bool ret;
 
 	ret = net_if_ipv4_addr_rm_by_index(1, &my_ipv4_addr_test);
-	zassert_true(ret, "Cannot remove IPv4 address");
+	ztest_true(ret, "Cannot remove IPv4 address");
 }
 
 #define MY_ADDR_V4_USER      { { { 10, 0, 0, 2 } } }
@@ -659,11 +659,11 @@ static void v4_addr_add_user(void)
 
 	ret = net_if_ipv4_addr_add_by_index(1, &my_addr, NET_ADDR_MANUAL, 0);
 	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
-		zassert_true(ret, "Cannot add IPv4 address");
+		ztest_true(ret, "Cannot add IPv4 address");
 	} else if (IS_ENABLED(CONFIG_USERSPACE)) {
-		zassert_false(ret, "Could add IPv4 address");
+		ztest_false(ret, "Could add IPv4 address");
 	} else {
-		zassert_true(ret, "Cannot add IPv4 address");
+		ztest_true(ret, "Cannot add IPv4 address");
 	}
 }
 
@@ -675,11 +675,11 @@ static void v4_addr_lookup_user(void)
 
 	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
 		ret = net_if_ipv4_addr_lookup_by_index(&my_addr);
-		zassert_equal(ret, 1, "IPv4 address not found (%d)", ret);
+		ztest_equal(ret, 1, "IPv4 address not found (%d)", ret);
 	}
 
 	ret = net_if_ipv4_addr_lookup_by_index(&unknown_addr);
-	zassert_equal(ret, 0, "IPv4 address found");
+	ztest_equal(ret, 0, "IPv4 address found");
 }
 
 static void v4_addr_rm_user(void)
@@ -689,7 +689,7 @@ static void v4_addr_rm_user(void)
 
 	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
 		ret = net_if_ipv4_addr_rm_by_index(1, &my_addr);
-		zassert_true(ret, "Cannot remove IPv4 address");
+		ztest_true(ret, "Cannot remove IPv4 address");
 	}
 }
 
@@ -707,7 +707,7 @@ static void v6_addr_add(void)
 
 	ret = net_if_ipv6_addr_add_by_index(1, &my_ipv6_addr_test,
 					    NET_ADDR_MANUAL, 0);
-	zassert_true(ret, "Cannot add IPv6 address");
+	ztest_true(ret, "Cannot add IPv6 address");
 }
 
 static void v6_addr_lookup(void)
@@ -715,10 +715,10 @@ static void v6_addr_lookup(void)
 	int ret;
 
 	ret = net_if_ipv6_addr_lookup_by_index(&my_ipv6_addr_test);
-	zassert_equal(ret, 1, "IPv6 address not found");
+	ztest_equal(ret, 1, "IPv6 address not found");
 
 	ret = net_if_ipv6_addr_lookup_by_index(&my_ipv6_addr_not_found);
-	zassert_not_equal(ret, 1, "IPv6 address found");
+	ztest_not_equal(ret, 1, "IPv6 address found");
 }
 
 static void v6_addr_rm(void)
@@ -726,7 +726,7 @@ static void v6_addr_rm(void)
 	bool ret;
 
 	ret = net_if_ipv6_addr_rm_by_index(1, &my_ipv6_addr_test);
-	zassert_true(ret, "Cannot remove IPv6 address");
+	ztest_true(ret, "Cannot remove IPv6 address");
 }
 
 #define MY_ADDR_V6_USER { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
@@ -742,11 +742,11 @@ static void v6_addr_add_user(void)
 
 	ret = net_if_ipv6_addr_add_by_index(1, &my_addr, NET_ADDR_MANUAL, 0);
 	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
-		zassert_true(ret, "Cannot add IPv6 address");
+		ztest_true(ret, "Cannot add IPv6 address");
 	} else if (IS_ENABLED(CONFIG_USERSPACE)) {
-		zassert_false(ret, "Could add IPv6 address");
+		ztest_false(ret, "Could add IPv6 address");
 	} else {
-		zassert_true(ret, "Cannot add IPv6 address");
+		ztest_true(ret, "Cannot add IPv6 address");
 	}
 }
 
@@ -758,10 +758,10 @@ static void v6_addr_lookup_user(void)
 
 	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
 		ret = net_if_ipv6_addr_lookup_by_index(&my_addr);
-		zassert_equal(ret, 1, "IPv6 address not found (%d)", ret);
+		ztest_equal(ret, 1, "IPv6 address not found (%d)", ret);
 
 		ret = net_if_ipv6_addr_lookup_by_index(&unknown_addr);
-		zassert_equal(ret, 0, "IPv6 address found");
+		ztest_equal(ret, 0, "IPv6 address found");
 	}
 }
 
@@ -775,7 +775,7 @@ static void v6_addr_rm_user(void)
 	 */
 	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
 		ret = net_if_ipv6_addr_rm_by_index(1, &my_addr);
-		zassert_true(ret, "Cannot remove IPv6 address");
+		ztest_true(ret, "Cannot remove IPv6 address");
 	}
 }
 
@@ -786,7 +786,7 @@ static void netmask_addr_add(void)
 
 	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
 		ret = net_if_ipv4_set_netmask_by_index(1, &my_netmask);
-		zassert_true(ret, "Cannot add IPv4 netmask");
+		ztest_true(ret, "Cannot add IPv4 netmask");
 	}
 }
 
@@ -797,7 +797,7 @@ static void gw_addr_add(void)
 
 	if (IS_ENABLED(CONFIG_NET_IF_USERSPACE_ACCESS)) {
 		ret = net_if_ipv4_set_gw_by_index(1, &my_gw);
-		zassert_true(ret, "Cannot add IPv4 gateway");
+		ztest_true(ret, "Cannot add IPv4 gateway");
 	}
 }
 

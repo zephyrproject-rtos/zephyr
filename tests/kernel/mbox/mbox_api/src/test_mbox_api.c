@@ -100,7 +100,7 @@ static void mbox_get_waiting_thread(void *p1, void *p2, void *p3)
 	}
 
 	mmsg.size = 0;
-	zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
+	ztest_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 		     "Failure at thread number %d", thread_number);
 
 }
@@ -149,7 +149,7 @@ static void tmbox_put(struct k_mbox *pmbox)
 		mmsg.info = ASYNC_PUT_GET_BLOCK;
 		mmsg.size = MAIL_LEN;
 		mmsg.tx_data = NULL;
-		zassert_equal(k_mem_pool_alloc(&mpooltx, &mmsg.tx_block,
+		ztest_equal(k_mem_pool_alloc(&mpooltx, &mmsg.tx_block,
 					       MAIL_LEN, K_NO_WAIT), 0, NULL);
 		memcpy(mmsg.tx_block.data, data[info_type], MAIL_LEN);
 		if (info_type == TARGET_SOURCE_THREAD_BLOCK) {
@@ -163,7 +163,7 @@ static void tmbox_put(struct k_mbox *pmbox)
 		break;
 	case INCORRECT_TRANSMIT_TID:
 		mmsg.tx_target_thread = random_tid;
-		zassert_true(k_mbox_put(pmbox,
+		ztest_true(k_mbox_put(pmbox,
 					&mmsg,
 					K_NO_WAIT) == -ENOMSG, NULL);
 		break;
@@ -192,7 +192,7 @@ static void tmbox_put(struct k_mbox *pmbox)
 		mmsg.tx_data = data[1];
 		mmsg.tx_block.data = NULL;
 		mmsg.tx_target_thread = K_ANY;
-		zassert_true(k_mbox_put(pmbox, &mmsg, K_FOREVER) == 0, NULL);
+		ztest_true(k_mbox_put(pmbox, &mmsg, K_FOREVER) == 0, NULL);
 		break;
 	case BLOCK_GET_BUFF_TO_SMALLER_POOL:
 		/* copy the tx buffer data onto a pool block via data_block_get
@@ -203,7 +203,7 @@ static void tmbox_put(struct k_mbox *pmbox)
 		mmsg.tx_data = data[1];
 		mmsg.tx_block.data = NULL;
 		mmsg.tx_target_thread = K_ANY;
-		zassert_true(k_mbox_put(pmbox, &mmsg, TIMEOUT) == 0, NULL);
+		ztest_true(k_mbox_put(pmbox, &mmsg, TIMEOUT) == 0, NULL);
 		break;
 
 	case DISPOSE_SIZE_0_MSG:
@@ -212,18 +212,18 @@ static void tmbox_put(struct k_mbox *pmbox)
 		mmsg.tx_data = data[1];
 		mmsg.tx_block.data = NULL;
 		mmsg.tx_target_thread = K_ANY;
-		zassert_true(k_mbox_put(pmbox, &mmsg, K_FOREVER) == 0, NULL);
+		ztest_true(k_mbox_put(pmbox, &mmsg, K_FOREVER) == 0, NULL);
 		break;
 
 	case CLEAN_UP_TX_POOL:
 		/* Dispose of tx mem pool once we receive it */
 		mmsg.size = MAIL_LEN;
 		mmsg.tx_data = NULL;
-		zassert_equal(k_mem_pool_alloc(&mpooltx, &mmsg.tx_block,
+		ztest_equal(k_mem_pool_alloc(&mpooltx, &mmsg.tx_block,
 					       MAIL_LEN, K_NO_WAIT), 0, NULL);
 		memcpy(mmsg.tx_block.data, data[0], MAIL_LEN);
 		mmsg.tx_target_thread = K_ANY;
-		zassert_true(k_mbox_put(pmbox, &mmsg, K_FOREVER) == 0, NULL);
+		ztest_true(k_mbox_put(pmbox, &mmsg, K_FOREVER) == 0, NULL);
 		break;
 	case ASYNC_PUT_TO_WAITING_GET:
 		k_sem_take(&sync_sema, K_FOREVER);
@@ -306,12 +306,12 @@ static void tmbox_get(struct k_mbox *pmbox)
 		mmsg.size = sizeof(rxdata);
 		mmsg.rx_source_thread = K_ANY;
 		/*verify return value*/
-		zassert_true(k_mbox_get(pmbox, &mmsg, rxdata, K_FOREVER) == 0,
+		ztest_true(k_mbox_get(pmbox, &mmsg, rxdata, K_FOREVER) == 0,
 			     NULL);
 		/*verify .info*/
-		zassert_equal(mmsg.info, PUT_GET_NULL, NULL);
+		ztest_equal(mmsg.info, PUT_GET_NULL, NULL);
 		/*verify .size*/
-		zassert_equal(mmsg.size, 0, NULL);
+		ztest_equal(mmsg.size, 0, NULL);
 		break;
 	case PUT_GET_BUFFER:
 	/*fall through*/
@@ -323,24 +323,24 @@ static void tmbox_get(struct k_mbox *pmbox)
 		} else {
 			mmsg.rx_source_thread = K_ANY;
 		}
-		zassert_true(k_mbox_get(pmbox, &mmsg, rxdata, K_FOREVER) == 0,
+		ztest_true(k_mbox_get(pmbox, &mmsg, rxdata, K_FOREVER) == 0,
 			     NULL);
-		zassert_equal(mmsg.info, PUT_GET_BUFFER, NULL);
-		zassert_equal(mmsg.size, sizeof(data[info_type]), NULL);
+		ztest_equal(mmsg.info, PUT_GET_BUFFER, NULL);
+		ztest_equal(mmsg.size, sizeof(data[info_type]), NULL);
 		/*verify rxdata*/
-		zassert_true(memcmp(rxdata, data[info_type], MAIL_LEN) == 0,
+		ztest_true(memcmp(rxdata, data[info_type], MAIL_LEN) == 0,
 			     NULL);
 		break;
 	case ASYNC_PUT_GET_BUFFER:
 		/**TESTPOINT: mbox async get buffer*/
 		mmsg.size = sizeof(rxdata);
 		mmsg.rx_source_thread = K_ANY;
-		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
+		ztest_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 			     NULL);
-		zassert_equal(mmsg.info, ASYNC_PUT_GET_BUFFER, NULL);
-		zassert_equal(mmsg.size, sizeof(data[info_type]), NULL);
+		ztest_equal(mmsg.info, ASYNC_PUT_GET_BUFFER, NULL);
+		ztest_equal(mmsg.size, sizeof(data[info_type]), NULL);
 		k_mbox_data_get(&mmsg, rxdata);
-		zassert_true(memcmp(rxdata, data[info_type], MAIL_LEN) == 0,
+		ztest_true(memcmp(rxdata, data[info_type], MAIL_LEN) == 0,
 			     NULL);
 		break;
 	case ASYNC_PUT_GET_BLOCK:
@@ -353,41 +353,41 @@ static void tmbox_get(struct k_mbox *pmbox)
 		} else {
 			mmsg.rx_source_thread = K_ANY;
 		}
-		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
+		ztest_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 			     NULL);
-		zassert_true(k_mbox_data_block_get
+		ztest_true(k_mbox_data_block_get
 				     (&mmsg, &mpoolrx, &rxblock, K_FOREVER) == 0
 			     , NULL);
-		zassert_equal(mmsg.info, ASYNC_PUT_GET_BLOCK, NULL);
-		zassert_equal(mmsg.size, MAIL_LEN, NULL);
+		ztest_equal(mmsg.info, ASYNC_PUT_GET_BLOCK, NULL);
+		ztest_equal(mmsg.size, MAIL_LEN, NULL);
 		/*verify rxblock*/
-		zassert_true(memcmp(rxblock.data, data[info_type], MAIL_LEN)
+		ztest_true(memcmp(rxblock.data, data[info_type], MAIL_LEN)
 			     == 0, NULL);
 		k_mem_pool_free(&rxblock);
 		break;
 	case INCORRECT_RECEIVER_TID:
 		mmsg.rx_source_thread = random_tid;
-		zassert_true(k_mbox_get
+		ztest_true(k_mbox_get
 			     (pmbox, &mmsg, NULL, K_NO_WAIT) == -ENOMSG,
 			     NULL);
 		break;
 	case TIMED_OUT_MBOX_GET:
 		mmsg.rx_source_thread = random_tid;
-		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, TIMEOUT) == -EAGAIN,
+		ztest_true(k_mbox_get(pmbox, &mmsg, NULL, TIMEOUT) == -EAGAIN,
 			     NULL);
 		break;
 	case BLOCK_GET_INVALID_POOL:
 		/* To dispose of the rx msg using block get */
 		mmsg.rx_source_thread = K_ANY;
-		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
+		ztest_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 			     NULL);
-		zassert_true(k_mbox_data_block_get
+		ztest_true(k_mbox_data_block_get
 			     (&mmsg, NULL, NULL, K_FOREVER) == 0,
 			     NULL);
 		break;
 	case MSG_TID_MISMATCH:
 		mmsg.rx_source_thread = random_tid;
-		zassert_true(k_mbox_get
+		ztest_true(k_mbox_get
 			     (pmbox, &mmsg, NULL, K_NO_WAIT) == -ENOMSG, NULL);
 		break;
 
@@ -397,13 +397,13 @@ static void tmbox_get(struct k_mbox *pmbox)
 		 */
 		mmsg.rx_source_thread = K_ANY;
 		mmsg.size = MAIL_LEN;
-		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
+		ztest_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 			     NULL);
-		zassert_true(k_mbox_data_block_get
+		ztest_true(k_mbox_data_block_get
 			     (&mmsg, &mpoolrx, &rxblock, K_FOREVER) == 0, NULL);
 
 		/* verfiy */
-		zassert_true(memcmp(rxblock.data, data[1], MAIL_LEN)
+		ztest_true(memcmp(rxblock.data, data[1], MAIL_LEN)
 			     == 0, NULL);
 		/* free the block */
 		k_mem_pool_free(&rxblock);
@@ -415,10 +415,10 @@ static void tmbox_get(struct k_mbox *pmbox)
 		 */
 		mmsg.rx_source_thread = K_ANY;
 		mmsg.size = MAIL_LEN * 2;
-		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
+		ztest_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 			     NULL);
 
-		zassert_true(k_mbox_data_block_get
+		ztest_true(k_mbox_data_block_get
 			     (&mmsg, &mpoolrx, &rxblock, K_MSEC(1)) == -EAGAIN,
 			     NULL);
 
@@ -429,7 +429,7 @@ static void tmbox_get(struct k_mbox *pmbox)
 	case DISPOSE_SIZE_0_MSG:
 		mmsg.rx_source_thread = K_ANY;
 		mmsg.size = 0;
-		zassert_true(k_mbox_get(pmbox, &mmsg, &rxdata, K_FOREVER) == 0,
+		ztest_true(k_mbox_get(pmbox, &mmsg, &rxdata, K_FOREVER) == 0,
 			     NULL);
 		break;
 
@@ -437,7 +437,7 @@ static void tmbox_get(struct k_mbox *pmbox)
 
 		mmsg.rx_source_thread = K_ANY;
 		mmsg.size = 0;
-		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
+		ztest_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 			     NULL);
 		break;
 	case ASYNC_PUT_TO_WAITING_GET:
@@ -453,7 +453,7 @@ static void tmbox_get(struct k_mbox *pmbox)
 		/* Here get is blocked until the thread we created releases
 		 *  the semaphore and the async put completes it operation.
 		 */
-		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
+		ztest_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 			     NULL);
 		break;
 	case GET_WAITING_PUT_INCORRECT_TID:
@@ -469,11 +469,11 @@ static void tmbox_get(struct k_mbox *pmbox)
 		 * but the TIDs of the msgs doesn't match and hence
 		 * causing a timeout.
 		 */
-		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, TIMEOUT) == -EAGAIN,
+		ztest_true(k_mbox_get(pmbox, &mmsg, NULL, TIMEOUT) == -EAGAIN,
 			     NULL);
 		/* clean up  */
 		mmsg.rx_source_thread = K_ANY;
-		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, TIMEOUT) == 0,
+		ztest_true(k_mbox_get(pmbox, &mmsg, NULL, TIMEOUT) == 0,
 			     NULL);
 		break;
 
@@ -484,16 +484,16 @@ static void tmbox_get(struct k_mbox *pmbox)
 		mmsg.rx_source_thread = K_ANY;
 		mmsg.size = 0;
 		/* get K_any msg */
-		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, TIMEOUT) == 0,
+		ztest_true(k_mbox_get(pmbox, &mmsg, NULL, TIMEOUT) == 0,
 			     NULL);
 		/* get the msg specific to receiver_tid */
 		mmsg.rx_source_thread = sender_tid;
-		zassert_true(k_mbox_get
+		ztest_true(k_mbox_get
 			     (pmbox, &mmsg, NULL, TIMEOUT) == 0, NULL);
 
 		/* get msg from async or random tid */
 		mmsg.rx_source_thread = K_ANY;
-		zassert_true(k_mbox_get
+		ztest_true(k_mbox_get
 			     (pmbox, &mmsg, NULL, TIMEOUT) == 0, NULL);
 		break;
 	case MULTIPLE_WAITING_GET:

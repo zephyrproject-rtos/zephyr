@@ -32,10 +32,10 @@ void *sender_thread(void *p1)
 	mqd = mq_open(queue, O_WRONLY);
 	clock_gettime(CLOCK_MONOTONIC, &curtime);
 	curtime.tv_sec += 1;
-	zassert_false(mq_timedsend(mqd, send_data, MESSAGE_SIZE, 0, &curtime),
+	ztest_false(mq_timedsend(mqd, send_data, MESSAGE_SIZE, 0, &curtime),
 		      "Not able to send message in timer");
 	usleep(USEC_PER_MSEC);
-	zassert_false(mq_close(mqd),
+	ztest_false(mq_close(mqd),
 		      "unable to close message queue descriptor.");
 	pthread_exit(p1);
 	return NULL;
@@ -52,9 +52,9 @@ void *receiver_thread(void *p1)
 	clock_gettime(CLOCK_MONOTONIC, &curtime);
 	curtime.tv_sec += 1;
 	mq_timedreceive(mqd, rec_data, MESSAGE_SIZE, 0, &curtime);
-	zassert_false(strcmp(rec_data, send_data), "Error in data reception");
+	ztest_false(strcmp(rec_data, send_data), "Error in data reception");
 	usleep(USEC_PER_MSEC);
-	zassert_false(mq_close(mqd),
+	ztest_false(mq_close(mqd),
 		      "unable to close message queue descriptor.");
 	pthread_exit(p1);
 	return NULL;
@@ -77,8 +77,8 @@ void test_posix_mqueue(void)
 	for (i = 0; i < N_THR; i++) {
 		/* Creating threads */
 		if (pthread_attr_init(&attr[i]) != 0) {
-			zassert_equal(pthread_attr_destroy(&attr[i]), 0, NULL);
-			zassert_false(pthread_attr_init(&attr[i]),
+			ztest_equal(pthread_attr_destroy(&attr[i]), 0, NULL);
+			ztest_false(pthread_attr_init(&attr[i]),
 				      "pthread attr init failed");
 		}
 		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
@@ -93,8 +93,8 @@ void test_posix_mqueue(void)
 					     INT_TO_POINTER(i));
 		}
 
-		zassert_false(ret, "Not enough space to create new thread");
-		zassert_equal(pthread_attr_destroy(&attr[i]), 0, NULL);
+		ztest_false(ret, "Not enough space to create new thread");
+		ztest_equal(pthread_attr_destroy(&attr[i]), 0, NULL);
 	}
 
 	usleep(USEC_PER_MSEC * 10U);
@@ -103,7 +103,7 @@ void test_posix_mqueue(void)
 		pthread_join(newthread[i], &retval);
 	}
 
-	zassert_false(mq_close(mqd),
+	ztest_false(mq_close(mqd),
 		      "unable to close message queue descriptor.");
-	zassert_false(mq_unlink(queue), "Not able to unlink Queue");
+	ztest_false(mq_unlink(queue), "Not able to unlink Queue");
 }

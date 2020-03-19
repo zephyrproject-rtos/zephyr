@@ -39,7 +39,7 @@ void send_thread(void const *argument)
 	memset(&zeroblock, 0, sizeof(struct sample_data));
 
 	status = osMailPut(mail_id, NULL);
-	zassert_true(status == osErrorValue,
+	ztest_true(status == osErrorValue,
 	 "Something's wrong with osMailPut. It is passing for NULL mail!");
 
 	/* Wait for mail_recv to complete initial checks */
@@ -47,12 +47,12 @@ void send_thread(void const *argument)
 
 	/* Prepare and send 1st mail */
 	tx_ptr = osMailAlloc(mail_id, osWaitForever);
-	zassert_true(tx_ptr != NULL, "Mail1 alloc failed");
+	ztest_true(tx_ptr != NULL, "Mail1 alloc failed");
 	tx_ptr->data1 = MAIL1_DATA1;
 	tx_ptr->data2 = MAIL1_DATA2;
 	tx_ptr->data3 = MAIL1_DATA3;
 	status = osMailPut(mail_id, tx_ptr);
-	zassert_true(status == osOK, "osMailPut failure for mail1");
+	ztest_true(status == osOK, "osMailPut failure for mail1");
 
 	/* Fill the queue with blocks of mails */
 	for (i = 0; i < Q_LEN; i++) {
@@ -65,14 +65,14 @@ void send_thread(void const *argument)
 		} else {
 			tx_ptr = osMailAlloc(mail_id, osWaitForever);
 		}
-		zassert_true(tx_ptr != NULL, "Mail alloc failed");
+		ztest_true(tx_ptr != NULL, "Mail alloc failed");
 
 		tx_ptr->data1 = i;
 		tx_ptr->data2 = i+1;
 		tx_ptr->data3 = i+2;
 
 		status = osMailPut(mail_id, tx_ptr);
-		zassert_true(status == osOK,
+		ztest_true(status == osOK,
 				"osMailPut failure for mail!");
 	}
 
@@ -80,29 +80,29 @@ void send_thread(void const *argument)
 	 * before it is emptied out and assert failure
 	 */
 	tx_ptr = osMailAlloc(mail_id, 0);
-	zassert_true(tx_ptr == NULL, "MailAlloc passed. Something's wrong");
+	ztest_true(tx_ptr == NULL, "MailAlloc passed. Something's wrong");
 	tx_ptr = osMailCAlloc(mail_id, 0);
-	zassert_true(tx_ptr == NULL, "MailCAlloc passed. Something's wrong");
+	ztest_true(tx_ptr == NULL, "MailCAlloc passed. Something's wrong");
 
 	/* Try allocating mail to a full queue within a duration
 	 * less than TIMEOUT, before the queue is emptied out
 	 */
 	tx_ptr = osMailAlloc(mail_id, TIMEOUT/3);
-	zassert_true(tx_ptr == NULL, "MailAlloc passed. Something's wrong");
+	ztest_true(tx_ptr == NULL, "MailAlloc passed. Something's wrong");
 	tx_ptr = osMailCAlloc(mail_id, TIMEOUT/3);
-	zassert_true(tx_ptr == NULL, "MailCAlloc passed. Something's wrong");
+	ztest_true(tx_ptr == NULL, "MailCAlloc passed. Something's wrong");
 
 	/* Send another mail after the queue is emptied */
 	tx_ptr = osMailCAlloc(mail_id, TIMEOUT*2);
-	zassert_true(tx_ptr != NULL, "Mail alloc failed");
-	zassert_equal(memcmp(tx_ptr, &zeroblock, sizeof(struct sample_data)), 0,
+	ztest_true(tx_ptr != NULL, "Mail alloc failed");
+	ztest_equal(memcmp(tx_ptr, &zeroblock, sizeof(struct sample_data)), 0,
 		"osMailCAlloc returned memory not initialized to 0");
 
 	tx_ptr->data1 = MAIL2_DATA1;
 	tx_ptr->data2 = MAIL2_DATA2;
 	tx_ptr->data3 = MAIL2_DATA3;
 	status = osMailPut(mail_id, tx_ptr);
-	zassert_true(status == osOK, "osMailPut failure for mail");
+	ztest_true(status == osOK, "osMailPut failure for mail");
 }
 
 void mail_recv(void)
@@ -114,25 +114,25 @@ void mail_recv(void)
 
 	/* Try getting mail immediately before the queue is populated */
 	evt = osMailGet(mail_id, 0);
-	zassert_true(evt.status == osOK,
+	ztest_true(evt.status == osOK,
 			"Something's wrong with osMailGet!");
 
 	/* Try receiving mail within a duration of TIMEOUT */
 	evt = osMailGet(mail_id, TIMEOUT);
-	zassert_true(evt.status == osEventTimeout,
+	ztest_true(evt.status == osEventTimeout,
 		"Something's wrong with osMailGet!");
 
 	/* Receive 1st mail */
 	evt = osMailGet(mail_id, osWaitForever);
-	zassert_true(evt.status == osEventMail, "osMailGet failure");
+	ztest_true(evt.status == osEventMail, "osMailGet failure");
 
 	rx_ptr = evt.value.p;
-	zassert_equal(rx_ptr->data1, MAIL1_DATA1, NULL);
-	zassert_equal(rx_ptr->data2, MAIL1_DATA2, NULL);
-	zassert_equal(rx_ptr->data3, MAIL1_DATA3, NULL);
+	ztest_equal(rx_ptr->data1, MAIL1_DATA1, NULL);
+	ztest_equal(rx_ptr->data2, MAIL1_DATA2, NULL);
+	ztest_equal(rx_ptr->data3, MAIL1_DATA3, NULL);
 
 	status = osMailFree(mail_id, rx_ptr);
-	zassert_true(status == osOK, "osMailFree failure");
+	ztest_true(status == osOK, "osMailFree failure");
 
 	/* Wait for queue to get filled */
 	osDelay(TIMEOUT);
@@ -140,28 +140,28 @@ void mail_recv(void)
 	/* Empty the queue */
 	for (i = 0; i < Q_LEN; i++) {
 		evt = osMailGet(mail_id, osWaitForever);
-		zassert_true(evt.status == osEventMail, "osMailGet failure");
+		ztest_true(evt.status == osEventMail, "osMailGet failure");
 
 		rx_ptr = evt.value.p;
-		zassert_equal(rx_ptr->data1, i, NULL);
-		zassert_equal(rx_ptr->data2, i + 1, NULL);
-		zassert_equal(rx_ptr->data3, i + 2, NULL);
+		ztest_equal(rx_ptr->data1, i, NULL);
+		ztest_equal(rx_ptr->data2, i + 1, NULL);
+		ztest_equal(rx_ptr->data3, i + 2, NULL);
 
 		status = osMailFree(mail_id, rx_ptr);
-		zassert_true(status == osOK, "osMailFree failure");
+		ztest_true(status == osOK, "osMailFree failure");
 	}
 
 	/* Receive the next mail */
 	evt = osMailGet(mail_id, osWaitForever);
-	zassert_true(evt.status == osEventMail, "osMailGet failure");
+	ztest_true(evt.status == osEventMail, "osMailGet failure");
 
 	rx_ptr = evt.value.p;
-	zassert_equal(rx_ptr->data1, MAIL2_DATA1, NULL);
-	zassert_equal(rx_ptr->data2, MAIL2_DATA2, NULL);
-	zassert_equal(rx_ptr->data3, MAIL2_DATA3, NULL);
+	ztest_equal(rx_ptr->data1, MAIL2_DATA1, NULL);
+	ztest_equal(rx_ptr->data2, MAIL2_DATA2, NULL);
+	ztest_equal(rx_ptr->data3, MAIL2_DATA3, NULL);
 
 	status = osMailFree(mail_id, rx_ptr);
-	zassert_true(status == osOK, "osMailFree failure");
+	ztest_true(status == osOK, "osMailFree failure");
 }
 
 osThreadDef(send_thread, osPriorityNormal, 1, 0);
@@ -171,10 +171,10 @@ void test_mailq(void)
 	osThreadId tid;
 
 	mail_id = osMailCreate(osMailQ(mail), NULL);
-	zassert_true(mail_id != NULL, "Mail creation failed");
+	ztest_true(mail_id != NULL, "Mail creation failed");
 
 	tid = osThreadCreate(osThread(send_thread), NULL);
-	zassert_true(tid != NULL, "Thread creation failed");
+	ztest_true(tid != NULL, "Thread creation failed");
 
 	mail_recv();
 }

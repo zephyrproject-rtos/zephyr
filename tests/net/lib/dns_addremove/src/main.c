@@ -155,7 +155,7 @@ static void test_init(void)
 	struct net_if_addr *ifaddr;
 
 	iface1 = net_if_get_by_index(0);
-	zassert_is_null(iface1, "iface1");
+	ztest_is_null(iface1, "iface1");
 
 	iface1 = net_if_get_by_index(1);
 
@@ -168,7 +168,7 @@ static void test_init(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr1));
-		zassert_not_null(ifaddr, "addr1");
+		ztest_not_null(ifaddr, "addr1");
 
 		return;
 	}
@@ -183,7 +183,7 @@ static void test_init(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv4 address %s\n",
 		       net_sprint_ipv4_addr(&my_addr2));
-		zassert_not_null(ifaddr, "addr2");
+		ztest_not_null(ifaddr, "addr2");
 
 		return;
 	}
@@ -210,7 +210,7 @@ static void dns_do_not_add_add_callback6(void)
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_added, WAIT_TIME)) {
-		zassert_true(true,
+		ztest_true(true,
 			"Received DNS added callback when should not have");
 	}
 #endif
@@ -236,7 +236,7 @@ static void dns_add_callback6(void)
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_added, WAIT_TIME)) {
-		zassert_true(false,
+		ztest_true(false,
 			     "Timeout while waiting for DNS added callback");
 	}
 #endif
@@ -251,12 +251,12 @@ static void dns_remove_callback6(void)
 
 	ret = dns_resolve_close(&resv_ipv6);
 
-	zassert_equal(ret, 0, "Cannot remove DNS server");
+	ztest_equal(ret, 0, "Cannot remove DNS server");
 
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_removed, WAIT_TIME)) {
-		zassert_true(false,
+		ztest_true(false,
 			     "Timeout while waiting for DNS removed callback");
 	}
 #endif
@@ -270,12 +270,12 @@ static void dns_remove_none_callback6(void)
 
 	ret = dns_resolve_close(&resv_ipv6);
 
-	zassert_not_equal(ret, 0, "Cannot remove DNS server");
+	ztest_not_equal(ret, 0, "Cannot remove DNS server");
 
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_removed, WAIT_TIME)) {
-		zassert_true(true,
+		ztest_true(true,
 			"Received DNS removed callback when should not have");
 	}
 #endif
@@ -299,7 +299,7 @@ static void dns_add_remove_two_callback6(void)
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_added, WAIT_TIME)) {
-		zassert_true(false,
+		ztest_true(false,
 			     "Timeout while waiting for DNS added callback");
 	}
 
@@ -316,56 +316,56 @@ static void dns_add_remove_two_callback6(void)
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_added, WAIT_TIME)) {
-		zassert_true(false,
+		ztest_true(false,
 			     "Timeout while waiting for DNS added callback");
 	}
 
 	/* Check both DNS servers are used */
-	zassert_true(resv_ipv6.is_used, "DNS server #1 is missing");
-	zassert_true(resv_ipv6_2.is_used, "DNS server #2 is missing");
+	ztest_true(resv_ipv6.is_used, "DNS server #1 is missing");
+	ztest_true(resv_ipv6_2.is_used, "DNS server #2 is missing");
 
 	/* Remove first DNS server */
 	dnsCtx = &resv_ipv6;
 	ret = dns_resolve_close(dnsCtx);
-	zassert_equal(ret, 0, "Cannot remove DNS server #1");
+	ztest_equal(ret, 0, "Cannot remove DNS server #1");
 
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_removed, WAIT_TIME)) {
-		zassert_true(true,
+		ztest_true(true,
 			"Received DNS removed callback when should not have");
 	}
 
 	/* Check second DNS servers is used */
-	zassert_false(resv_ipv6.is_used, "DNS server #1 is active");
-	zassert_true(resv_ipv6_2.is_used, "DNS server #2 is missing");
+	ztest_false(resv_ipv6.is_used, "DNS server #1 is active");
+	ztest_true(resv_ipv6_2.is_used, "DNS server #2 is missing");
 
 	/* Check first DNS server cannot be removed once removed */
 	ret = dns_resolve_close(dnsCtx);
-	zassert_not_equal(ret, 0,
+	ztest_not_equal(ret, 0,
 			  "Successful result code when attempting to "
 			  "remove DNS server #1 again");
 
 	/* Remove second DNS server */
 	dnsCtx = &resv_ipv6_2;
 	ret = dns_resolve_close(dnsCtx);
-	zassert_equal(ret, 0, "Cannot remove DNS server #2");
+	ztest_equal(ret, 0, "Cannot remove DNS server #2");
 
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_removed, WAIT_TIME)) {
-		zassert_true(true,
+		ztest_true(true,
 			     "Received DNS removed callback when should "
 			     "not have");
 	}
 
 	/* Check neither DNS server is used */
-	zassert_false(resv_ipv6.is_used, "DNS server #1 isa ctive");
-	zassert_false(resv_ipv6_2.is_used, "DNS server #2 is active");
+	ztest_false(resv_ipv6.is_used, "DNS server #1 isa ctive");
+	ztest_false(resv_ipv6_2.is_used, "DNS server #2 is active");
 
 	/* Check first DNS server cannot be removed once removed */
 	ret = dns_resolve_close(dnsCtx);
-	zassert_not_equal(ret, 0,
+	ztest_not_equal(ret, 0,
 			  "Successful result code when attempting "
 			  "to remove DNS server #1 again");
 #endif
@@ -379,7 +379,7 @@ static void dns_do_not_add_add_callback(void)
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_added, WAIT_TIME)) {
-		zassert_true(true,
+		ztest_true(true,
 			"Received DNS added callback when should not have");
 	}
 #endif
@@ -404,7 +404,7 @@ static void dns_add_callback(void)
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_added, WAIT_TIME)) {
-		zassert_true(false,
+		ztest_true(false,
 			     "Timeout while waiting for DNS added callback");
 	}
 #endif
@@ -418,12 +418,12 @@ static void dns_remove_callback(void)
 
 	ret = dns_resolve_close(&resv_ipv4);
 
-	zassert_equal(ret, 0, "Cannot remove DNS server");
+	ztest_equal(ret, 0, "Cannot remove DNS server");
 
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_removed, WAIT_TIME)) {
-		zassert_true(false,
+		ztest_true(false,
 			     "Timeout while waiting for DNS removed callback");
 	}
 #endif
@@ -437,12 +437,12 @@ static void dns_remove_none_callback(void)
 
 	ret = dns_resolve_close(&resv_ipv4);
 
-	zassert_not_equal(ret, 0, "Cannot remove DNS server");
+	ztest_not_equal(ret, 0, "Cannot remove DNS server");
 
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_removed, WAIT_TIME)) {
-		zassert_true(true,
+		ztest_true(true,
 			"Received DNS removed callback when should not have");
 	}
 #endif
@@ -466,7 +466,7 @@ static void dns_add_remove_two_callback(void)
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_added, WAIT_TIME)) {
-		zassert_true(false,
+		ztest_true(false,
 			     "Timeout while waiting for DNS added callback");
 	}
 
@@ -483,56 +483,56 @@ static void dns_add_remove_two_callback(void)
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_added, WAIT_TIME)) {
-		zassert_true(false,
+		ztest_true(false,
 			     "Timeout while waiting for DNS added callback");
 	}
 
 	/* Check both DNS servers are used */
-	zassert_true(resv_ipv4.is_used, "DNS server #1 is missing");
-	zassert_true(resv_ipv4_2.is_used, "DNS server #2 is missing");
+	ztest_true(resv_ipv4.is_used, "DNS server #1 is missing");
+	ztest_true(resv_ipv4_2.is_used, "DNS server #2 is missing");
 
 	/* Remove first DNS server */
 	dnsCtx = &resv_ipv4;
 	ret = dns_resolve_close(dnsCtx);
-	zassert_equal(ret, 0, "Cannot remove DNS server #1");
+	ztest_equal(ret, 0, "Cannot remove DNS server #1");
 
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_removed, WAIT_TIME)) {
-		zassert_true(true,
+		ztest_true(true,
 			"Received DNS removed callback when should not have");
 	}
 
 	/* Check second DNS servers is used */
-	zassert_false(resv_ipv4.is_used, "DNS server #1 is active");
-	zassert_true(resv_ipv4_2.is_used, "DNS server #2 is missing");
+	ztest_false(resv_ipv4.is_used, "DNS server #1 is active");
+	ztest_true(resv_ipv4_2.is_used, "DNS server #2 is missing");
 
 	/* Check first DNS server cannot be removed once removed */
 	ret = dns_resolve_close(dnsCtx);
-	zassert_not_equal(ret, 0,
+	ztest_not_equal(ret, 0,
 			  "Successful result code when attempting to "
 			  "remove DNS server #1 again");
 
 	/* Remove second DNS server */
 	dnsCtx = &resv_ipv4_2;
 	ret = dns_resolve_close(dnsCtx);
-	zassert_equal(ret, 0, "Cannot remove DNS server #2");
+	ztest_equal(ret, 0, "Cannot remove DNS server #2");
 
 	k_yield(); /* mandatory so that net_if send func gets to run */
 
 	if (k_sem_take(&dns_removed, WAIT_TIME)) {
-		zassert_true(true,
+		ztest_true(true,
 			     "Received DNS removed callback when should "
 			     "not have");
 	}
 
 	/* Check neither DNS server is used */
-	zassert_false(resv_ipv4.is_used, "DNS server #1 isa ctive");
-	zassert_false(resv_ipv4_2.is_used, "DNS server #2 is active");
+	ztest_false(resv_ipv4.is_used, "DNS server #1 isa ctive");
+	ztest_false(resv_ipv4_2.is_used, "DNS server #2 is active");
 
 	/* Check first DNS server cannot be removed once removed */
 	ret = dns_resolve_close(dnsCtx);
-	zassert_not_equal(ret, 0,
+	ztest_not_equal(ret, 0,
 			  "Successful result code when attempting to "
 			  "remove DNS server #1 again");
 #endif

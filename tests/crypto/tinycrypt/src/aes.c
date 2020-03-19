@@ -93,7 +93,7 @@ void test_aes_key_chain(void)
 	TC_PRINT("AES128 %s (NIST key schedule test):\n", __func__);
 
 	/**TESTPOINT: Check NIST_key*/
-	zassert_true(tc_aes128_set_encrypt_key(&s, nist_key),
+	ztest_true(tc_aes128_set_encrypt_key(&s, nist_key),
 			"NIST key schedule test failed.");
 
 	result = check_result(1, expected.words,
@@ -101,7 +101,7 @@ void test_aes_key_chain(void)
 		     s.words, sizeof(s.words), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result,
+	ztest_false(result,
 			"AES128 test #1 (NIST key schedule test) failed.");
 }
 
@@ -131,14 +131,14 @@ void test_aes_vectors(void)
 	(void)tc_aes128_set_encrypt_key(&s, nist_key);
 
 	/**TESTPOINT: Check NIST input*/
-	zassert_true(tc_aes_encrypt(ciphertext, nist_input, &s),
+	ztest_true(tc_aes_encrypt(ciphertext, nist_input, &s),
 			"NIST encryption test failed.");
 
 	result = check_result(2, expected, sizeof(expected),
 			      ciphertext, sizeof(ciphertext), 1);
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result,
+	ztest_false(result,
 			"AES128 test #2 (NIST encryption test) failed.");
 }
 
@@ -1087,7 +1087,7 @@ void test_aes_fixed_key_variable_text(void)
 	}
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result,
+	ztest_false(result,
 			"AES128 test #3 (NIST fixed-key and variable-text) failed.");
 }
 
@@ -2027,6 +2027,6 @@ void test_aes_variable_key_fixed_text(void)
 	}
 
 	/**TESTPOINT: Check result*/
-	zassert_false(result,
+	ztest_false(result,
 			"AES128 test #4 (NIST variable-key and fixed-text) failed.");
 }

@@ -29,13 +29,13 @@ void *thread_top(void *p1)
 
 	value = k_malloc(sizeof(buffer));
 
-	zassert_true((int) POINTER_TO_INT(value),
+	ztest_true((int) POINTER_TO_INT(value),
 		     "thread could not allocate storage");
 
 	ret = pthread_setspecific(key, value);
 
 	/* TESTPOINT: Check if thread's value is associated with key */
-	zassert_false(ret, "pthread_setspecific failed");
+	ztest_false(ret, "pthread_setspecific failed");
 
 	getval = 0;
 
@@ -44,7 +44,7 @@ void *thread_top(void *p1)
 	/* TESTPOINT: Check if pthread_getspecific returns the same value
 	 * set by pthread_setspecific
 	 */
-	zassert_equal(value, getval,
+	ztest_equal(value, getval,
 			"set and retrieved values are different");
 
 	printk("set value = %d and retrieved value = %d\n",
@@ -63,14 +63,14 @@ void *thread_func(void *p1)
 
 	value = k_malloc(sizeof(buffer));
 
-	zassert_true((int) POINTER_TO_INT(value),
+	ztest_true((int) POINTER_TO_INT(value),
 		     "thread could not allocate storage");
 
 	for (i = 0; i < N_KEY; i++) {
 		ret = pthread_setspecific(keys[i], value);
 
 		/* TESTPOINT: Check if thread's value is associated with keys */
-		zassert_false(ret, "pthread_setspecific failed");
+		ztest_false(ret, "pthread_setspecific failed");
 	}
 
 	for (i = 0; i < N_KEY; i++) {
@@ -80,7 +80,7 @@ void *thread_func(void *p1)
 		/* TESTPOINT: Check if pthread_getspecific returns the same
 		 * value set by pthread_setspecific for each of the keys
 		 */
-		zassert_equal(value, getval,
+		ztest_equal(value, getval,
 				"set and retrieved values are different");
 
 		printk("key %d: set value = %d and retrieved value = %d\n",
@@ -95,7 +95,7 @@ static void make_key(void)
 	int ret = 0;
 
 	ret = pthread_key_create(&key, NULL);
-	zassert_false(ret, "insufficient memory to create key");
+	ztest_false(ret, "insufficient memory to create key");
 }
 
 static void make_keys(void)
@@ -104,7 +104,7 @@ static void make_keys(void)
 
 	for (i = 0; i < N_KEY; i++) {
 		ret = pthread_key_create(&keys[i], NULL);
-		zassert_false(ret, "insufficient memory to create keys");
+		ztest_false(ret, "insufficient memory to create keys");
 	}
 }
 
@@ -133,7 +133,7 @@ void test_posix_multiple_threads_single_key(void)
 	ret = pthread_once(&key_once, make_key);
 
 	/* TESTPOINT: Check if key is created */
-	zassert_false(ret, "attempt to create key failed");
+	ztest_false(ret, "attempt to create key failed");
 
 	printk("\nDifferent threads set different values to same key:\n");
 
@@ -141,9 +141,9 @@ void test_posix_multiple_threads_single_key(void)
 	for (i = 0; i < N_THR; i++) {
 		ret = pthread_attr_init(&attr[i]);
 		if (ret != 0) {
-			zassert_false(pthread_attr_destroy(&attr[i]),
+			ztest_false(pthread_attr_destroy(&attr[i]),
 					"Unable to destroy pthread object attr");
-			zassert_false(pthread_attr_init(&attr[i]),
+			ztest_false(pthread_attr_init(&attr[i]),
 					"Unable to create pthread object attr");
 		}
 
@@ -155,7 +155,7 @@ void test_posix_multiple_threads_single_key(void)
 				INT_TO_POINTER(i));
 
 		/* TESTPOINT: Check if threads are created successfully */
-		zassert_false(ret, "attempt to create threads failed");
+		ztest_false(ret, "attempt to create threads failed");
 	}
 
 	for (i = 0; i < N_THR; i++) {
@@ -166,7 +166,7 @@ void test_posix_multiple_threads_single_key(void)
 	ret = pthread_key_delete(key);
 
 	/* TESTPOINT: Check if key is deleted */
-	zassert_false(ret, "attempt to delete key failed");
+	ztest_false(ret, "attempt to delete key failed");
 	printk("\n");
 }
 
@@ -181,14 +181,14 @@ void test_posix_single_thread_multiple_keys(void)
 	ret = pthread_once(&keys_once, make_keys);
 
 	/* TESTPOINT: Check if keys are created successfully */
-	zassert_false(ret, "attempt to create keys failed");
+	ztest_false(ret, "attempt to create keys failed");
 
 	printk("\nSingle thread associates its value with different keys:\n");
 	ret = pthread_attr_init(&attr);
 	if (ret != 0) {
-		zassert_false(pthread_attr_destroy(&attr),
+		ztest_false(pthread_attr_destroy(&attr),
 				"Unable to destroy pthread object attr");
-		zassert_false(pthread_attr_init(&attr),
+		ztest_false(pthread_attr_init(&attr),
 				"Unable to create pthread object attr");
 	}
 
@@ -200,7 +200,7 @@ void test_posix_single_thread_multiple_keys(void)
 			(void *)0);
 
 	/*TESTPOINT: Check if thread is created successfully */
-	zassert_false(ret, "attempt to create thread failed");
+	ztest_false(ret, "attempt to create thread failed");
 
 	pthread_join(newthread, NULL);
 
@@ -208,7 +208,7 @@ void test_posix_single_thread_multiple_keys(void)
 		ret = pthread_key_delete(keys[i]);
 
 		/* TESTPOINT: Check if keys are deleted */
-		zassert_false(ret, "attempt to delete keys failed");
+		ztest_false(ret, "attempt to delete keys failed");
 	}
 	printk("\n");
 }

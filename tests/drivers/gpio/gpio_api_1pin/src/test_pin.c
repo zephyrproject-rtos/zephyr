@@ -23,9 +23,9 @@ static void pin_get_raw_and_verify(struct device *port, unsigned int pin,
 	int val_actual;
 
 	val_actual = gpio_pin_get_raw(port, pin);
-	zassert_true(val_actual >= 0,
+	ztest_true(val_actual >= 0,
 		     "Test point %d: failed to get physical pin value", idx);
-	zassert_equal(val_expected, val_actual,
+	ztest_equal(val_expected, val_actual,
 		      "Test point %d: invalid physical pin get value", idx);
 }
 
@@ -35,16 +35,16 @@ static void pin_get_and_verify(struct device *port, unsigned int pin,
 	int val_actual;
 
 	val_actual = gpio_pin_get(port, pin);
-	zassert_true(val_actual >= 0,
+	ztest_true(val_actual >= 0,
 		     "Test point %d: failed to get logical pin value", idx);
-	zassert_equal(val_expected, val_actual,
+	ztest_equal(val_expected, val_actual,
 		      "Test point %d: invalid logical pin get value", idx);
 }
 
 static void pin_set_raw_and_verify(struct device *port, unsigned int pin,
 				   int val, int idx)
 {
-	zassert_equal(gpio_pin_set_raw(port, pin, val), 0,
+	ztest_equal(gpio_pin_set_raw(port, pin, val), 0,
 		      "Test point %d: failed to set physical pin value", idx);
 	k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 }
@@ -52,7 +52,7 @@ static void pin_set_raw_and_verify(struct device *port, unsigned int pin,
 static void pin_set_and_verify(struct device *port, unsigned int pin, int val,
 			       int idx)
 {
-	zassert_equal(gpio_pin_set(port, pin, val), 0,
+	ztest_equal(gpio_pin_set(port, pin, val), 0,
 		      "Test point %d: failed to set logical pin value", idx);
 	k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 }
@@ -69,7 +69,7 @@ void test_gpio_pin_toggle(void)
 	int ret;
 
 	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	ztest_not_null(port, "device " TEST_DEV " not found");
 
 	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
 
@@ -79,13 +79,13 @@ void test_gpio_pin_toggle(void)
 		ztest_test_skip();
 		return;
 	}
-	zassert_equal(ret, 0, "Failed to configure the pin");
+	ztest_equal(ret, 0, "Failed to configure the pin");
 
 	pin_set_raw_and_verify(port, TEST_PIN, 1, 0);
 
 	for (int i = 0; i < 5; i++) {
 		ret = gpio_pin_toggle(port, TEST_PIN);
-		zassert_equal(ret, 0, "Failed to toggle pin value");
+		ztest_equal(ret, 0, "Failed to toggle pin value");
 		k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 
 		val_expected = i % 2;
@@ -111,13 +111,13 @@ void test_gpio_pin_toggle_visual(void)
 	int ret;
 
 	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	ztest_not_null(port, "device " TEST_DEV " not found");
 
 	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
 
 	ret = gpio_pin_configure(port, TEST_PIN, GPIO_OUTPUT |
 				 TEST_PIN_DTS_FLAGS);
-	zassert_equal(ret, 0, "Failed to configure the pin");
+	ztest_equal(ret, 0, "Failed to configure the pin");
 
 	pin_set_and_verify(port, TEST_PIN, 1, 0);
 	TC_PRINT("LED ON\n");
@@ -126,7 +126,7 @@ void test_gpio_pin_toggle_visual(void)
 		k_sleep(K_SECONDS(2));
 
 		ret = gpio_pin_toggle(port, TEST_PIN);
-		zassert_equal(ret, 0, "Failed to toggle pin value");
+		ztest_equal(ret, 0, "Failed to toggle pin value");
 		k_busy_wait(TEST_GPIO_MAX_RISE_FALL_TIME_US);
 
 		val_expected = i % 2;
@@ -150,7 +150,7 @@ void test_gpio_pin_set_get_raw(void)
 	};
 
 	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	ztest_not_null(port, "device " TEST_DEV " not found");
 
 	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
 
@@ -160,7 +160,7 @@ void test_gpio_pin_set_get_raw(void)
 		ztest_test_skip();
 		return;
 	}
-	zassert_equal(ret, 0, "Failed to configure the pin");
+	ztest_equal(ret, 0, "Failed to configure the pin");
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		pin_set_raw_and_verify(port, TEST_PIN, test_vector[i], i);
@@ -187,7 +187,7 @@ void test_gpio_pin_set_get(void)
 	};
 
 	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	ztest_not_null(port, "device " TEST_DEV " not found");
 
 	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
 
@@ -197,7 +197,7 @@ void test_gpio_pin_set_get(void)
 		ztest_test_skip();
 		return;
 	}
-	zassert_equal(ret, 0, "Failed to configure the pin");
+	ztest_equal(ret, 0, "Failed to configure the pin");
 
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
 		pin_set_and_verify(port, TEST_PIN, test_vector[i], i);
@@ -224,7 +224,7 @@ void test_gpio_pin_set_get_active_high(void)
 	const int test_vector[] = {0, 2, 0, 9, -1, 0, 0, 1, INT_MAX, INT_MIN};
 
 	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	ztest_not_null(port, "device " TEST_DEV " not found");
 
 	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
 
@@ -235,7 +235,7 @@ void test_gpio_pin_set_get_active_high(void)
 		ztest_test_skip();
 		return;
 	}
-	zassert_equal(ret, 0, "Failed to configure the pin");
+	ztest_equal(ret, 0, "Failed to configure the pin");
 
 	TC_PRINT("Step 1: Set logical, get logical and physical pin value\n");
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {
@@ -274,7 +274,7 @@ void test_gpio_pin_set_get_active_low(void)
 	const int test_vector[] = {0, 4, 0, 0, 1, 8, -3, -12, 0};
 
 	port = device_get_binding(TEST_DEV);
-	zassert_not_null(port, "device " TEST_DEV " not found");
+	ztest_not_null(port, "device " TEST_DEV " not found");
 
 	TC_PRINT("Running test on port=%s, pin=%d\n", TEST_DEV, TEST_PIN);
 
@@ -285,7 +285,7 @@ void test_gpio_pin_set_get_active_low(void)
 		ztest_test_skip();
 		return;
 	}
-	zassert_equal(ret, 0, "Failed to configure the pin");
+	ztest_equal(ret, 0, "Failed to configure the pin");
 
 	TC_PRINT("Step 1: Set logical, get logical and physical pin value\n");
 	for (int i = 0; i < ARRAY_SIZE(test_vector); i++) {

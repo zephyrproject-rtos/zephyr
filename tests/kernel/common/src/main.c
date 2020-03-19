@@ -69,11 +69,11 @@ static void test_version(void)
 {
 	u32_t version = sys_kernel_version_get();
 
-	zassert_true(SYS_KERNEL_VER_MAJOR(version) == KERNEL_VERSION_MAJOR,
+	ztest_true(SYS_KERNEL_VER_MAJOR(version) == KERNEL_VERSION_MAJOR,
 		     "major version mismatch");
-	zassert_true(SYS_KERNEL_VER_MINOR(version) == KERNEL_VERSION_MINOR,
+	ztest_true(SYS_KERNEL_VER_MINOR(version) == KERNEL_VERSION_MINOR,
 		     "minor version mismatch");
-	zassert_true(SYS_KERNEL_VER_PATCHLEVEL(version) == KERNEL_PATCHLEVEL,
+	ztest_true(SYS_KERNEL_VER_PATCHLEVEL(version) == KERNEL_PATCHLEVEL,
 		     "patchlevel version match");
 
 }
@@ -88,11 +88,11 @@ static void test_bounds_check_mitigation(void)
 	int index = 17;
 
 	index = k_array_index_sanitize(index, 24);
-	zassert_equal(index, 17, "bad index");
+	ztest_equal(index, 17, "bad index");
 
 #ifdef CONFIG_USERSPACE
 	index = k_array_index_sanitize(index, 5);
-	zassert_equal(index, 0, "bad index");
+	ztest_equal(index, 0, "bad index");
 #endif
 }
 

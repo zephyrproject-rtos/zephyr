@@ -55,8 +55,8 @@ static void validate_output_string(const char *exp)
 {
 	int len = strlen(exp);
 
-	zassert_equal(len, mock_len, "Unexpected string length");
-	zassert_equal(0, memcmp(exp, mock_buffer, mock_len),
+	ztest_equal(len, mock_len, "Unexpected string length");
+	ztest_equal(0, memcmp(exp, mock_buffer, mock_len),
 			"Unxpected string");
 }
 

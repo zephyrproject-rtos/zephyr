@@ -73,32 +73,32 @@ void test_k_float_disable_common(void)
 	k_yield();
 
 	/* Verify K_FP_OPTS are set properly */
-	zassert_true(
+	ztest_true(
 		(usr_fp_thread.base.user_options & K_FP_OPTS) != 0,
 		"usr_fp_thread FP options not set (0x%0x)",
 		usr_fp_thread.base.user_options);
 
 #if defined(CONFIG_ARM)
 	/* Verify FP mode can only be disabled for current thread */
-	zassert_true((k_float_disable(&usr_fp_thread) == -EINVAL),
+	ztest_true((k_float_disable(&usr_fp_thread) == -EINVAL),
 		"k_float_disable() successful on thread other than current!");
 
 	/* Verify K_FP_OPTS are still set */
-	zassert_true(
+	ztest_true(
 		(usr_fp_thread.base.user_options & K_FP_OPTS) != 0,
 		"usr_fp_thread FP options cleared");
 #elif defined(CONFIG_X86) && defined(CONFIG_LAZY_FP_SHARING)
-	zassert_true((k_float_disable(&usr_fp_thread) == 0),
+	ztest_true((k_float_disable(&usr_fp_thread) == 0),
 		"k_float_disable() failure");
 
 	/* Verify K_FP_OPTS are now cleared */
-	zassert_true(
+	ztest_true(
 		(usr_fp_thread.base.user_options & K_FP_OPTS) == 0,
 		"usr_fp_thread FP options not clear (0x%0x)",
 		usr_fp_thread.base.user_options);
 #elif defined(CONFIG_X86) && !defined(CONFIG_LAZY_FP_SHARING)
 	/* Verify k_float_disable() is not supported */
-	zassert_true((k_float_disable(&usr_fp_thread) == -ENOSYS),
+	ztest_true((k_float_disable(&usr_fp_thread) == -ENOSYS),
 		"k_float_disable() successful when not supported");
 #endif
 }
@@ -122,7 +122,7 @@ void test_k_float_disable_syscall(void)
 	k_yield();
 
 	/* Verify K_FP_OPTS are set properly */
-	zassert_true(
+	ztest_true(
 		(usr_fp_thread.base.user_options & K_FP_OPTS) != 0,
 		"usr_fp_thread FP options not set (0x%0x)",
 		usr_fp_thread.base.user_options);
@@ -134,7 +134,7 @@ void test_k_float_disable_syscall(void)
 	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FP_SHARING))
 
 	/* Verify K_FP_OPTS are now cleared by the user thread itself */
-	zassert_true(
+	ztest_true(
 		(usr_fp_thread.base.user_options & K_FP_OPTS) == 0,
 		"usr_fp_thread FP options not clear (0x%0x)",
 		usr_fp_thread.base.user_options);
@@ -142,7 +142,7 @@ void test_k_float_disable_syscall(void)
 	/* ret is volatile, static analysis says we can't use in assert */
 	bool ok = ret == TC_PASS;
 
-	zassert_true(ok, "");
+	ztest_true(ok, "");
 #else
 	/* Check skipped for x86 without support for Lazy FP Sharing */
 #endif
@@ -192,7 +192,7 @@ static void sup_fp_thread_entry(void)
 		}
 	}
 
-	zassert_true(i >= 0,
+	ztest_true(i >= 0,
 		"No available IRQ line to use in the test\n");
 
 	TC_PRINT("Available IRQ line: %u\n", i);
@@ -243,7 +243,7 @@ void test_k_float_disable_irq(void)
 	/* ret is volatile, static analysis says we can't use in assert */
 	bool ok = ret == TC_PASS;
 
-	zassert_true(ok, "");
+	ztest_true(ok, "");
 }
 #else
 void test_k_float_disable_irq(void)

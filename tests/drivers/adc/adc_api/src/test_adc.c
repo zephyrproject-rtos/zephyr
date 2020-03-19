@@ -214,15 +214,15 @@ static struct device *init_adc(void)
 	int ret;
 	struct device *adc_dev = device_get_binding(ADC_DEVICE_NAME);
 
-	zassert_not_null(adc_dev, "Cannot get ADC device");
+	ztest_not_null(adc_dev, "Cannot get ADC device");
 
 	ret = adc_channel_setup(adc_dev, &m_1st_channel_cfg);
-	zassert_equal(ret, 0,
+	ztest_equal(ret, 0,
 		"Setting up of the first channel failed with code %d", ret);
 
 #if defined(ADC_2ND_CHANNEL_ID)
 	ret = adc_channel_setup(adc_dev, &m_2nd_channel_cfg);
-	zassert_equal(ret, 0,
+	ztest_equal(ret, 0,
 		"Setting up of the second channel failed with code %d", ret);
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
 
@@ -241,10 +241,10 @@ static void check_samples(int expected_count)
 
 		TC_PRINT("0x%04x ", sample_value);
 		if (i < expected_count) {
-			zassert_not_equal(0, sample_value,
+			ztest_not_equal(0, sample_value,
 				"[%u] should be non-zero", i);
 		} else {
-			zassert_equal(0, sample_value,
+			ztest_equal(0, sample_value,
 				"[%u] should be zero", i);
 		}
 	}
@@ -271,7 +271,7 @@ static int test_task_one_channel(void)
 	}
 
 	ret = adc_read(adc_dev, &sequence);
-	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+	ztest_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	check_samples(1);
 
@@ -280,7 +280,7 @@ static int test_task_one_channel(void)
 
 void test_adc_sample_one_channel(void)
 {
-	zassert_true(test_task_one_channel() == TC_PASS, NULL);
+	ztest_true(test_task_one_channel() == TC_PASS, NULL);
 }
 
 /*
@@ -305,7 +305,7 @@ static int test_task_two_channels(void)
 	}
 
 	ret = adc_read(adc_dev, &sequence);
-	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+	ztest_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	check_samples(2);
 
@@ -316,7 +316,7 @@ static int test_task_two_channels(void)
 void test_adc_sample_two_channels(void)
 {
 #if defined(ADC_2ND_CHANNEL_ID)
-	zassert_true(test_task_two_channels() == TC_PASS, NULL);
+	ztest_true(test_task_two_channels() == TC_PASS, NULL);
 #else
 	ztest_test_skip();
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
@@ -354,10 +354,10 @@ static int test_task_asynchronous_call(void)
 	}
 
 	ret = adc_read_async(adc_dev, &sequence, &async_sig);
-	zassert_equal(ret, 0, "adc_read_async() failed with code %d", ret);
+	ztest_equal(ret, 0, "adc_read_async() failed with code %d", ret);
 
 	ret = k_poll(&async_evt, 1, K_MSEC(1000));
-	zassert_equal(ret, 0, "k_poll failed with error %d", ret);
+	ztest_equal(ret, 0, "k_poll failed with error %d", ret);
 
 	check_samples(1 + options.extra_samplings);
 
@@ -368,7 +368,7 @@ static int test_task_asynchronous_call(void)
 void test_adc_asynchronous_call(void)
 {
 #if defined(CONFIG_ADC_ASYNC)
-	zassert_true(test_task_asynchronous_call() == TC_PASS, NULL);
+	ztest_true(test_task_asynchronous_call() == TC_PASS, NULL);
 #else
 	ztest_test_skip();
 #endif /* defined(CONFIG_ADC_ASYNC) */
@@ -409,7 +409,7 @@ static int test_task_with_interval(void)
 	}
 
 	ret = adc_read(adc_dev, &sequence);
-	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+	ztest_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	check_samples(1 + options.extra_samplings);
 
@@ -418,7 +418,7 @@ static int test_task_with_interval(void)
 
 void test_adc_sample_with_interval(void)
 {
-	zassert_true(test_task_with_interval() == TC_PASS, NULL);
+	ztest_true(test_task_with_interval() == TC_PASS, NULL);
 }
 
 /*
@@ -497,14 +497,14 @@ static int test_task_repeated_samplings(void)
 	}
 
 	ret = adc_read(adc_dev, &sequence);
-	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+	ztest_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	return TC_PASS;
 }
 
 void test_adc_repeated_samplings(void)
 {
-	zassert_true(test_task_repeated_samplings() == TC_PASS, NULL);
+	ztest_true(test_task_repeated_samplings() == TC_PASS, NULL);
 }
 
 /*
@@ -527,11 +527,11 @@ static int test_task_invalid_request(void)
 	}
 
 	ret = adc_read(adc_dev, &sequence);
-	zassert_not_equal(ret, 0, "adc_read() unexpectedly succeeded");
+	ztest_not_equal(ret, 0, "adc_read() unexpectedly succeeded");
 
 #if defined(CONFIG_ADC_ASYNC)
 	ret = adc_read_async(adc_dev, &sequence, &async_sig);
-	zassert_not_equal(ret, 0, "adc_read_async() unexpectedly succeeded");
+	ztest_not_equal(ret, 0, "adc_read_async() unexpectedly succeeded");
 #endif
 
 	/*
@@ -540,7 +540,7 @@ static int test_task_invalid_request(void)
 	sequence.resolution = ADC_RESOLUTION;
 
 	ret = adc_read(adc_dev, &sequence);
-	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+	ztest_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	check_samples(1);
 
@@ -549,5 +549,5 @@ static int test_task_invalid_request(void)
 
 void test_adc_invalid_request(void)
 {
-	zassert_true(test_task_invalid_request() == TC_PASS, NULL);
+	ztest_true(test_task_invalid_request() == TC_PASS, NULL);
 }

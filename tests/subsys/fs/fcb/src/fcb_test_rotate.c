@@ -24,8 +24,8 @@ void fcb_test_rotate(void)
 
 	old_id = fcb->f_active_id;
 	rc = fcb_rotate(fcb);
-	zassert_true(rc == 0, "fcb_rotate call failure");
-	zassert_true(fcb->f_active_id == old_id + 1,
+	ztest_true(rc == 0, "fcb_rotate call failure");
+	ztest_true(fcb->f_active_id == old_id + 1,
 		     "flash location id should increased");
 
 	/*
@@ -41,59 +41,59 @@ void fcb_test_rotate(void)
 		} else if (loc.fe_sector == &test_fcb_sector[1]) {
 			elem_cnts[1]++;
 		} else {
-			zassert_true(0,
+			ztest_true(0,
 				     "unexpected flash area of appended loc");
 		}
 
 		rc = flash_area_write(fcb->fap, FCB_ENTRY_FA_DATA_OFF(loc),
 				      test_data, sizeof(test_data));
-		zassert_true(rc == 0, "flash_area_write call failure");
+		ztest_true(rc == 0, "flash_area_write call failure");
 
 		rc = fcb_append_finish(fcb, &loc);
-		zassert_true(rc == 0, "fcb_append_finish call failure");
+		ztest_true(rc == 0, "fcb_append_finish call failure");
 	}
-	zassert_true(elem_cnts[0] > 0 && elem_cnts[0] == elem_cnts[1],
+	ztest_true(elem_cnts[0] > 0 && elem_cnts[0] == elem_cnts[1],
 		     "unexpected entry number was appended");
 
 	old_id = fcb->f_active_id;
 	rc = fcb_rotate(fcb);
-	zassert_true(rc == 0, "fcb_rotate call failure");
-	zassert_true(fcb->f_active_id == old_id,
+	ztest_true(rc == 0, "fcb_rotate call failure");
+	ztest_true(fcb->f_active_id == old_id,
 		     "flash location should be kept");
 
 	(void)memset(cnts, 0, sizeof(cnts));
 	rc = fcb_walk(fcb, NULL, fcb_test_cnt_elems_cb, &aa_arg);
-	zassert_true(rc == 0, "fcb_walk call failure");
-	zassert_true(aa_arg.elem_cnts[0] == elem_cnts[0] ||
+	ztest_true(rc == 0, "fcb_walk call failure");
+	ztest_true(aa_arg.elem_cnts[0] == elem_cnts[0] ||
 		     aa_arg.elem_cnts[1] == elem_cnts[1],
 		     "fcb_walk: entry count got different than expected");
-	zassert_true(aa_arg.elem_cnts[0] == 0 || aa_arg.elem_cnts[1] == 0,
+	ztest_true(aa_arg.elem_cnts[0] == 0 || aa_arg.elem_cnts[1] == 0,
 		     "fcb_walk: entry count got different than expected");
 
 	/*
 	 * One sector is full. The other one should have one entry in it.
 	 */
 	rc = fcb_append(fcb, sizeof(test_data), &loc);
-	zassert_true(rc == 0, "fcb_append call failure");
+	ztest_true(rc == 0, "fcb_append call failure");
 
 	rc = flash_area_write(fcb->fap, FCB_ENTRY_FA_DATA_OFF(loc), test_data,
 			      sizeof(test_data));
-	zassert_true(rc == 0, "flash_area_write call failure");
+	ztest_true(rc == 0, "flash_area_write call failure");
 
 	rc = fcb_append_finish(fcb, &loc);
-	zassert_true(rc == 0, "fcb_append_finish call failure");
+	ztest_true(rc == 0, "fcb_append_finish call failure");
 
 	old_id = fcb->f_active_id;
 	rc = fcb_rotate(fcb);
-	zassert_true(rc == 0, "fcb_rotate call failure");
-	zassert_true(fcb->f_active_id == old_id,
+	ztest_true(rc == 0, "fcb_rotate call failure");
+	ztest_true(fcb->f_active_id == old_id,
 		     "flash location should be kept");
 
 	(void)memset(cnts, 0, sizeof(cnts));
 	rc = fcb_walk(fcb, NULL, fcb_test_cnt_elems_cb, &aa_arg);
-	zassert_true(rc == 0, "fcb_walk call failure");
-	zassert_true(aa_arg.elem_cnts[0] == 1 || aa_arg.elem_cnts[1] == 1,
+	ztest_true(rc == 0, "fcb_walk call failure");
+	ztest_true(aa_arg.elem_cnts[0] == 1 || aa_arg.elem_cnts[1] == 1,
 		     "fcb_walk: entry count got different than expected");
-	zassert_true(aa_arg.elem_cnts[0] == 0 || aa_arg.elem_cnts[1] == 0,
+	ztest_true(aa_arg.elem_cnts[0] == 0 || aa_arg.elem_cnts[1] == 0,
 		     "fcb_walk: entry count got different than expected");
 }

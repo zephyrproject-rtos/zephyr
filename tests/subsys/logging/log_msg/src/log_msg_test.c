@@ -20,7 +20,7 @@ extern struct k_mem_slab log_msg_pool;
 static const char my_string[] = "test_string";
 void test_log_std_msg(void)
 {
-	zassert_equal(LOG_MSG_NARGS_SINGLE_CHUNK,
+	ztest_equal(LOG_MSG_NARGS_SINGLE_CHUNK,
 		      IS_ENABLED(CONFIG_64BIT) ? 4 : 3,
 		      "test assumes following setting");
 
@@ -49,14 +49,14 @@ void test_log_std_msg(void)
 		}
 
 		used_slabs += (i > LOG_MSG_NARGS_SINGLE_CHUNK) ? 2 : 1;
-		zassert_equal(used_slabs,
+		ztest_equal(used_slabs,
 			      k_mem_slab_num_used_get(&log_msg_pool),
 			      "Expected mem slab allocation.");
 
 		log_msg_put(msg);
 
 		used_slabs -= (i > LOG_MSG_NARGS_SINGLE_CHUNK) ? 2 : 1;
-		zassert_equal(used_slabs,
+		ztest_equal(used_slabs,
 			      k_mem_slab_num_used_get(&log_msg_pool),
 			      "Expected mem slab allocation.");
 	}
@@ -77,14 +77,14 @@ void test_log_hexdump_msg(void)
 	msg = log_msg_hexdump_create("test", data,
 				     LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK - 4);
 
-	zassert_equal((used_slabs + 1),
+	ztest_equal((used_slabs + 1),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
 	used_slabs++;
 
 	log_msg_put(msg);
 
-	zassert_equal((used_slabs - 1),
+	ztest_equal((used_slabs - 1),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
 	used_slabs--;
@@ -93,14 +93,14 @@ void test_log_hexdump_msg(void)
 	msg = log_msg_hexdump_create("test", data,
 				     LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK);
 
-	zassert_equal((used_slabs + 1),
+	ztest_equal((used_slabs + 1),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
 	used_slabs++;
 
 	log_msg_put(msg);
 
-	zassert_equal((used_slabs - 1),
+	ztest_equal((used_slabs - 1),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
 	used_slabs--;
@@ -109,14 +109,14 @@ void test_log_hexdump_msg(void)
 	msg = log_msg_hexdump_create("test", data,
 				     LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK + 1);
 
-	zassert_equal((used_slabs + 2U),
+	ztest_equal((used_slabs + 2U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
 	used_slabs += 2U;
 
 	log_msg_put(msg);
 
-	zassert_equal((used_slabs - 2U),
+	ztest_equal((used_slabs - 2U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
 	used_slabs -= 2U;
@@ -126,14 +126,14 @@ void test_log_hexdump_msg(void)
 				     LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK +
 				     HEXDUMP_BYTES_CONT_MSG + 1);
 
-	zassert_equal((used_slabs + 3U),
+	ztest_equal((used_slabs + 3U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
 	used_slabs += 3U;
 
 	log_msg_put(msg);
 
-	zassert_equal((used_slabs - 3U),
+	ztest_equal((used_slabs - 3U),
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
 	used_slabs -= 3U;
@@ -166,11 +166,11 @@ void test_log_hexdump_data_get_single_chunk(void)
 				 &rd_length,
 				 offset);
 
-	zassert_equal(rd_length,
+	ztest_equal(rd_length,
 		      rd_req_length,
 		      "Expected to read requested amount of data\n");
 
-	zassert_true(memcmp(&data[offset],
+	ztest_true(memcmp(&data[offset],
 		     read_data,
 		     rd_length) == 0,
 			"Expected data.\n");
@@ -184,11 +184,11 @@ void test_log_hexdump_data_get_single_chunk(void)
 				 read_data,
 				 &rd_length,
 				 offset);
-	zassert_equal(rd_length,
+	ztest_equal(rd_length,
 		      wr_length,
 		      "Expected to read requested amount of data\n");
 
-	zassert_true(memcmp(&data[offset],
+	ztest_true(memcmp(&data[offset],
 		     read_data,
 		     rd_length) == 0,
 		     "Expected data.\n");
@@ -205,11 +205,11 @@ void test_log_hexdump_data_get_single_chunk(void)
 				 &rd_length,
 				 offset);
 
-	zassert_equal(rd_length,
+	ztest_equal(rd_length,
 		      rd_req_length,
 		      "Expected to read requested amount of data\n");
 
-	zassert_true(memcmp(&data[offset],
+	ztest_true(memcmp(&data[offset],
 		     read_data,
 		     rd_length) == 0,
 		     "Expected data.\n");
@@ -226,11 +226,11 @@ void test_log_hexdump_data_get_single_chunk(void)
 				 &rd_length,
 				 offset);
 
-	zassert_equal(rd_length,
+	ztest_equal(rd_length,
 		      wr_length - offset,
 		      "Expected to read requested amount of data\n");
 
-	zassert_true(memcmp(&data[offset],
+	ztest_true(memcmp(&data[offset],
 		     read_data,
 		     rd_length) == 0,
 		     "Expected data.\n");
@@ -266,11 +266,11 @@ void test_log_hexdump_data_get_two_chunks(void)
 				 &rd_length,
 				 offset);
 
-	zassert_equal(rd_length,
+	ztest_equal(rd_length,
 		      rd_req_length,
 		      "Expected to read requested amount of data\n");
 
-	zassert_true(memcmp(&data[offset],
+	ztest_true(memcmp(&data[offset],
 		     read_data,
 		     rd_length) == 0,
 		     "Expected data.\n");
@@ -285,11 +285,11 @@ void test_log_hexdump_data_get_two_chunks(void)
 				 &rd_length,
 				 offset);
 
-	zassert_equal(rd_length,
+	ztest_equal(rd_length,
 		      rd_req_length,
 		      "Expected to read requested amount of data\n");
 
-	zassert_true(memcmp(&data[offset],
+	ztest_true(memcmp(&data[offset],
 		     read_data,
 		     rd_length) == 0,
 		     "Expected data.\n");
@@ -304,11 +304,11 @@ void test_log_hexdump_data_get_two_chunks(void)
 				 &rd_length,
 				 offset);
 
-	zassert_equal(rd_length,
+	ztest_equal(rd_length,
 		      rd_req_length,
 		      "Expected to read requested amount of data\n");
 
-	zassert_true(memcmp(&data[offset], read_data, rd_length) == 0,
+	ztest_true(memcmp(&data[offset], read_data, rd_length) == 0,
 		     "Expected data.\n");
 
 	/* Read more than available */
@@ -321,11 +321,11 @@ void test_log_hexdump_data_get_two_chunks(void)
 				 &rd_length,
 				 offset);
 
-	zassert_equal(rd_length,
+	ztest_equal(rd_length,
 		      wr_length - offset,
 		      "Expected to read requested amount of data\n");
 
-	zassert_true(memcmp(&data[offset], read_data, rd_length) == 0,
+	ztest_true(memcmp(&data[offset], read_data, rd_length) == 0,
 		     "Expected data.\n");
 
 	log_msg_put(msg);
@@ -360,11 +360,11 @@ void test_log_hexdump_data_get_multiple_chunks(void)
 				 offset);
 
 
-	zassert_equal(rd_length,
+	ztest_equal(rd_length,
 		      rd_req_length,
 		      "Expected to read requested amount of data\n");
 
-	zassert_true(memcmp(&data[offset], read_data, rd_length) == 0,
+	ztest_true(memcmp(&data[offset], read_data, rd_length) == 0,
 		     "Expected data.\n");
 
 	/* Read data with offset starting from second chunk. */
@@ -377,11 +377,11 @@ void test_log_hexdump_data_get_multiple_chunks(void)
 				 &rd_length,
 				 offset);
 
-	zassert_equal(rd_length,
+	ztest_equal(rd_length,
 		      rd_req_length,
 		      "Expected to read requested amount of data\n");
 
-	zassert_true(memcmp(&data[offset], read_data, rd_length) == 0,
+	ztest_true(memcmp(&data[offset], read_data, rd_length) == 0,
 		     "Expected data.\n");
 
 	/* Read data from second chunk with saturation. */
@@ -394,11 +394,11 @@ void test_log_hexdump_data_get_multiple_chunks(void)
 				 &rd_length,
 				 offset);
 
-	zassert_equal(rd_length,
+	ztest_equal(rd_length,
 		      wr_length - offset,
 		      "Expected to read requested amount of data\n");
 
-	zassert_true(memcmp(&data[offset], read_data, rd_length) == 0,
+	ztest_true(memcmp(&data[offset], read_data, rd_length) == 0,
 		     "Expected data.\n");
 
 
@@ -412,7 +412,7 @@ void test_log_hexdump_data_get_multiple_chunks(void)
 				 &rd_length,
 				 offset);
 
-	zassert_equal(rd_length,
+	ztest_equal(rd_length,
 		      0,
 		      "Expected to read requested amount of data\n");
 

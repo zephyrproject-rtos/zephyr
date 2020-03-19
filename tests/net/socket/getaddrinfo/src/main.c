@@ -176,7 +176,7 @@ void test_getaddrinfo_setup(void)
 	ret = net_ipaddr_parse(CONFIG_DNS_SERVER1,
 			       sizeof(CONFIG_DNS_SERVER1) - 1,
 			       &addr);
-	zassert_true(ret, "Cannot parse IP address %s", CONFIG_DNS_SERVER1);
+	ztest_true(ret, "Cannot parse IP address %s", CONFIG_DNS_SERVER1);
 
 	if (addr.sa_family == AF_INET) {
 		memcpy(&addr_v4, net_sin(&addr), sizeof(struct sockaddr_in));
@@ -187,7 +187,7 @@ void test_getaddrinfo_setup(void)
 	ret = net_ipaddr_parse(CONFIG_DNS_SERVER2,
 			       sizeof(CONFIG_DNS_SERVER2) - 1,
 			       &addr);
-	zassert_true(ret, "Cannot parse IP address %s", CONFIG_DNS_SERVER2);
+	ztest_true(ret, "Cannot parse IP address %s", CONFIG_DNS_SERVER2);
 
 	if (addr.sa_family == AF_INET) {
 		memcpy(&addr_v4, net_sin(&addr), sizeof(struct sockaddr_in));
@@ -199,13 +199,13 @@ void test_getaddrinfo_setup(void)
 	NET_DBG("v4: [%s]:%d", log_strdup(addr_str), ntohs(addr_v4.sin_port));
 
 	sock_v4 = prepare_listen_sock_udp_v4(&addr_v4);
-	zassert_true(sock_v4 >= 0, "Invalid IPv4 socket");
+	ztest_true(sock_v4 >= 0, "Invalid IPv4 socket");
 
 	addr_str = inet_ntop(AF_INET6, &addr_v6.sin6_addr, str, sizeof(str));
 	NET_DBG("v6: [%s]:%d", log_strdup(addr_str), ntohs(addr_v6.sin6_port));
 
 	sock_v6 = prepare_listen_sock_udp_v6(&addr_v6);
-	zassert_true(sock_v6 >= 0, "Invalid IPv6 socket");
+	ztest_true(sock_v6 >= 0, "Invalid IPv6 socket");
 
 	k_thread_start(dns_server_thread_id);
 
@@ -227,10 +227,10 @@ void test_getaddrinfo_ok(void)
 	(void)getaddrinfo(QUERY_HOST, NULL, NULL, &res);
 
 	if (sys_mutex_lock(&wait_data, WAIT_TIME)) {
-		zassert_true(false, "Timeout DNS query not received");
+		ztest_true(false, "Timeout DNS query not received");
 	}
 
-	zassert_equal(queries_received, 2,
+	ztest_equal(queries_received, 2,
 		      "Did not receive both IPv4 and IPv6 query");
 
 	freeaddrinfo(res);
@@ -244,7 +244,7 @@ void test_getaddrinfo_cancelled(void)
 	ret = getaddrinfo(QUERY_HOST, NULL, NULL, &res);
 
 	/* Without a local DNS server this request will be canceled. */
-	zassert_equal(ret, DNS_EAI_CANCELED, "Invalid result");
+	ztest_equal(ret, DNS_EAI_CANCELED, "Invalid result");
 
 	freeaddrinfo(res);
 }
@@ -256,9 +256,9 @@ void test_getaddrinfo_no_host(void)
 
 	ret = getaddrinfo(NULL, NULL, NULL, &res);
 
-	zassert_equal(ret, DNS_EAI_SYSTEM, "Invalid result");
-	zassert_equal(errno, EINVAL, "Invalid errno");
-	zassert_is_null(res, "ai_addr is not NULL");
+	ztest_equal(ret, DNS_EAI_SYSTEM, "Invalid result");
+	ztest_equal(errno, EINVAL, "Invalid errno");
+	ztest_is_null(res, "ai_addr is not NULL");
 
 	freeaddrinfo(res);
 }
@@ -271,21 +271,21 @@ void test_getaddrinfo_num_ipv4(void)
 
 	ret = zsock_getaddrinfo("1.2.3.255", "65534", NULL, &res);
 
-	zassert_equal(ret, 0, "Invalid result");
-	zassert_not_null(res, "");
-	zassert_is_null(res->ai_next, "");
+	ztest_equal(ret, 0, "Invalid result");
+	ztest_not_null(res, "");
+	ztest_is_null(res->ai_next, "");
 
-	zassert_equal(res->ai_family, AF_INET, "");
-	zassert_equal(res->ai_socktype, SOCK_STREAM, "");
-	zassert_equal(res->ai_protocol, IPPROTO_TCP, "");
+	ztest_equal(res->ai_family, AF_INET, "");
+	ztest_equal(res->ai_socktype, SOCK_STREAM, "");
+	ztest_equal(res->ai_protocol, IPPROTO_TCP, "");
 
 	saddr = (struct sockaddr_in *)res->ai_addr;
-	zassert_equal(saddr->sin_family, AF_INET, "");
-	zassert_equal(saddr->sin_port, htons(65534), "");
-	zassert_equal(saddr->sin_addr.s4_addr[0], 1, "");
-	zassert_equal(saddr->sin_addr.s4_addr[1], 2, "");
-	zassert_equal(saddr->sin_addr.s4_addr[2], 3, "");
-	zassert_equal(saddr->sin_addr.s4_addr[3], 255, "");
+	ztest_equal(saddr->sin_family, AF_INET, "");
+	ztest_equal(saddr->sin_port, htons(65534), "");
+	ztest_equal(saddr->sin_addr.s4_addr[0], 1, "");
+	ztest_equal(saddr->sin_addr.s4_addr[1], 2, "");
+	ztest_equal(saddr->sin_addr.s4_addr[2], 3, "");
+	ztest_equal(saddr->sin_addr.s4_addr[3], 255, "");
 
 	zsock_freeaddrinfo(res);
 }
@@ -299,12 +299,12 @@ void test_getaddrinfo_flags_numerichost(void)
 	};
 
 	ret = zsock_getaddrinfo("foo.bar", "65534", &hints, &res);
-	zassert_equal(ret, DNS_EAI_FAIL, "Invalid result");
-	zassert_is_null(res, "");
+	ztest_equal(ret, DNS_EAI_FAIL, "Invalid result");
+	ztest_is_null(res, "");
 
 	ret = zsock_getaddrinfo("1.2.3.4", "65534", &hints, &res);
-	zassert_equal(ret, 0, "Invalid result");
-	zassert_not_null(res, "");
+	ztest_equal(ret, 0, "Invalid result");
+	ztest_not_null(res, "");
 
 	zsock_freeaddrinfo(res);
 }
@@ -318,8 +318,8 @@ static void test_getaddrinfo_ipv4_hints_ipv6(void)
 	int ret;
 
 	ret = zsock_getaddrinfo("192.0.2.1", NULL, &hints, &res);
-	zassert_equal(ret, DNS_EAI_ADDRFAMILY, "Invalid result (%d)", ret);
-	zassert_is_null(res, "");
+	ztest_equal(ret, DNS_EAI_ADDRFAMILY, "Invalid result (%d)", ret);
+	ztest_is_null(res, "");
 }
 
 static void test_getaddrinfo_ipv6_hints_ipv4(void)
@@ -331,8 +331,8 @@ static void test_getaddrinfo_ipv6_hints_ipv4(void)
 	int ret;
 
 	ret = zsock_getaddrinfo("2001:db8::1", NULL, &hints, &res);
-	zassert_equal(ret, DNS_EAI_ADDRFAMILY, "Invalid result (%d)", ret);
-	zassert_is_null(res, "");
+	ztest_equal(ret, DNS_EAI_ADDRFAMILY, "Invalid result (%d)", ret);
+	ztest_is_null(res, "");
 }
 
 void test_main(void)

@@ -42,9 +42,9 @@ void test_dummy_device(void)
 	struct device *dev;
 
 	dev = device_get_binding(DUMMY_PORT_1);
-	zassert_equal(dev, NULL, NULL);
+	ztest_equal(dev, NULL, NULL);
 	dev = device_get_binding(DUMMY_PORT_2);
-	zassert_false((dev == NULL), NULL);
+	ztest_false((dev == NULL), NULL);
 
 	device_busy_set(dev);
 	device_busy_clear(dev);
@@ -53,7 +53,7 @@ void test_dummy_device(void)
 	 * with failed init.
 	 */
 	dev = device_get_binding(BAD_DRIVER);
-	zassert_true((dev == NULL), NULL);
+	ztest_true((dev == NULL), NULL);
 }
 
 /**
@@ -70,7 +70,7 @@ static void test_dynamic_name(void)
 
 	snprintk(name, sizeof(name), "%s", DUMMY_PORT_2);
 	mux = device_get_binding(name);
-	zassert_true(mux != NULL, NULL);
+	ztest_true(mux != NULL, NULL);
 }
 
 /**
@@ -88,7 +88,7 @@ static void test_bogus_dynamic_name(void)
 
 	snprintk(name, sizeof(name), "ANOTHER_BOGUS_NAME");
 	mux = device_get_binding(name);
-	zassert_true(mux == NULL, NULL);
+	ztest_true(mux == NULL, NULL);
 }
 
 static struct init_record {
@@ -144,23 +144,23 @@ void test_pre_kernel_detection(void)
 {
 	struct init_record *rpe = rp;
 
-	zassert_equal(rp - init_records, 4U,
+	ztest_equal(rp - init_records, 4U,
 		      "bad record count");
 	rp = init_records;
 	while ((rp < rpe) && rp->pre_kernel) {
-		zassert_equal(rp->is_in_isr, false,
+		ztest_equal(rp->is_in_isr, false,
 			      "rec %zu isr", rp - init_records);
-		zassert_equal(rp->is_pre_kernel, true,
+		ztest_equal(rp->is_pre_kernel, true,
 			      "rec %zu pre-kernel", rp - init_records);
 		++rp;
 	}
-	zassert_equal(rp - init_records, 2U,
+	ztest_equal(rp - init_records, 2U,
 		      "bad pre-kernel count");
 
 	while (rp < rpe) {
-		zassert_equal(rp->is_in_isr, false,
+		ztest_equal(rp->is_in_isr, false,
 			      "rec %zu isr", rp - init_records);
-		zassert_equal(rp->is_pre_kernel, false,
+		ztest_equal(rp->is_pre_kernel, false,
 			      "rec %zu post-kernel", rp - init_records);
 		++rp;
 	}
@@ -181,7 +181,7 @@ static void build_suspend_device_list(void)
 	struct device *devices;
 
 	device_list_get(&devices, &devcount);
-	zassert_false((devcount == 0), NULL);
+	ztest_false((devcount == 0), NULL);
 }
 
 /**
@@ -201,32 +201,32 @@ void test_dummy_device_pm(void)
 	int busy, ret;
 
 	dev = device_get_binding(DUMMY_PORT_2);
-	zassert_false((dev == NULL), NULL);
+	ztest_false((dev == NULL), NULL);
 
 	busy = device_any_busy_check();
-	zassert_true((busy == 0), NULL);
+	ztest_true((busy == 0), NULL);
 
 	/* Set device state to DEVICE_PM_ACTIVE_STATE */
 	ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
-	zassert_true((ret == 0), "Unable to set active state to device");
+	ztest_true((ret == 0), "Unable to set active state to device");
 
 	device_busy_set(dev);
 
 	busy = device_any_busy_check();
-	zassert_false((busy == 0), NULL);
+	ztest_false((busy == 0), NULL);
 
 	busy = device_busy_check(dev);
-	zassert_false((busy == 0), NULL);
+	ztest_false((busy == 0), NULL);
 
 	device_busy_clear(dev);
 
 	busy = device_busy_check(dev);
-	zassert_true((busy == 0), NULL);
+	ztest_true((busy == 0), NULL);
 
 	/* Set device state to DEVICE_PM_FORCE_SUSPEND_STATE */
 	ret = device_set_power_state(dev,
 			DEVICE_PM_FORCE_SUSPEND_STATE, NULL, NULL);
-	zassert_true((ret == 0), "Unable to force suspend device");
+	ztest_true((ret == 0), "Unable to force suspend device");
 
 	build_suspend_device_list();
 }

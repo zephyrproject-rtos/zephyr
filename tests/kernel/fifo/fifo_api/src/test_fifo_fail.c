@@ -25,8 +25,8 @@ void test_fifo_get_fail(void *p1, void *p2, void *p3)
 
 	k_fifo_init(&fifo);
 	/**TESTPOINT: fifo get returns NULL*/
-	zassert_is_null(k_fifo_get(&fifo, K_NO_WAIT), NULL);
-	zassert_is_null(k_fifo_get(&fifo, TIMEOUT), NULL);
+	ztest_is_null(k_fifo_get(&fifo, K_NO_WAIT), NULL);
+	ztest_is_null(k_fifo_get(&fifo, TIMEOUT), NULL);
 }
 /**
  * @}

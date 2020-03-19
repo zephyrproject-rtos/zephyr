@@ -30,29 +30,29 @@ void child_thread_get(void *p1, void *p2, void *p3)
 	struct k_queue *q = p1;
 	struct k_sem *sem = p2;
 
-	zassert_false(k_queue_is_empty(q), NULL);
+	ztest_false(k_queue_is_empty(q), NULL);
 	qd = k_queue_peek_head(q);
-	zassert_equal(qd->data, 0, NULL);
+	ztest_equal(qd->data, 0, NULL);
 	qd = k_queue_peek_tail(q);
-	zassert_equal(qd->data, (LIST_LEN * 2) - 1,
+	ztest_equal(qd->data, (LIST_LEN * 2) - 1,
 		      "got %d expected %d", qd->data, (LIST_LEN * 2) - 1);
 
 	for (int i = 0; i < (LIST_LEN * 2); i++) {
 		qd = k_queue_get(q, K_FOREVER);
 
-		zassert_equal(qd->data, i, NULL);
+		ztest_equal(qd->data, i, NULL);
 		if (qd->allocated) {
 			/* snode should never have been touched */
-			zassert_is_null(qd->snode.next, NULL);
+			ztest_is_null(qd->snode.next, NULL);
 		}
 	}
 
 
-	zassert_true(k_queue_is_empty(q), NULL);
+	ztest_true(k_queue_is_empty(q), NULL);
 
 	/* This one gets canceled */
 	qd = k_queue_get(q, K_FOREVER);
-	zassert_is_null(qd, NULL);
+	ztest_is_null(qd, NULL);
 
 	k_sem_give(sem);
 }
@@ -75,11 +75,11 @@ void test_queue_supv_to_user(void)
 	struct k_sem *sem;
 
 	q = k_object_alloc(K_OBJ_QUEUE);
-	zassert_not_null(q, "no memory for allocated queue object");
+	ztest_not_null(q, "no memory for allocated queue object");
 	k_queue_init(q);
 
 	sem = k_object_alloc(K_OBJ_SEM);
-	zassert_not_null(sem, "no memory for semaphore object");
+	ztest_not_null(sem, "no memory for semaphore object");
 	k_sem_init(sem, 0, 1);
 
 	for (int i = 0; i < (LIST_LEN * 2); i = i + 2) {
@@ -95,7 +95,7 @@ void test_queue_supv_to_user(void)
 		qdata[i + 1].data = i + 1;
 		qdata[i + 1].allocated = true;
 		qdata[i + 1].snode.next = NULL;
-		zassert_false(k_queue_alloc_append(q, &qdata[i + 1]), NULL);
+		ztest_false(k_queue_alloc_append(q, &qdata[i + 1]), NULL);
 	}
 
 	k_thread_create(&child_thread, child_stack, STACK_SIZE,
@@ -114,20 +114,20 @@ void test_queue_alloc_prepend_user(void)
 	struct k_queue *q;
 
 	q = k_object_alloc(K_OBJ_QUEUE);
-	zassert_not_null(q, "no memory for allocated queue object");
+	ztest_not_null(q, "no memory for allocated queue object");
 	k_queue_init(q);
 
 	for (int i = 0; i < LIST_LEN * 2; i++) {
 		qdata[i].data = i;
-		zassert_false(k_queue_alloc_prepend(q, &qdata[i]), NULL);
+		ztest_false(k_queue_alloc_prepend(q, &qdata[i]), NULL);
 	}
 
 	for (int i = (LIST_LEN * 2) - 1; i >= 0; i--) {
 		struct qdata *qd;
 
 		qd = k_queue_get(q, K_NO_WAIT);
-		zassert_true(qd != NULL, NULL);
-		zassert_equal(qd->data, i, NULL);
+		ztest_true(qd != NULL, NULL);
+		ztest_equal(qd->data, i, NULL);
 	}
 }
 
@@ -136,20 +136,20 @@ void test_queue_alloc_append_user(void)
 	struct k_queue *q;
 
 	q = k_object_alloc(K_OBJ_QUEUE);
-	zassert_not_null(q, "no memory for allocated queue object");
+	ztest_not_null(q, "no memory for allocated queue object");
 	k_queue_init(q);
 
 	for (int i = 0; i < LIST_LEN * 2; i++) {
 		qdata[i].data = i;
-		zassert_false(k_queue_alloc_append(q, &qdata[i]), NULL);
+		ztest_false(k_queue_alloc_append(q, &qdata[i]), NULL);
 	}
 
 	for (int i = 0; i < LIST_LEN * 2; i++) {
 		struct qdata *qd;
 
 		qd = k_queue_get(q, K_NO_WAIT);
-		zassert_true(qd != NULL, NULL);
-		zassert_equal(qd->data, i, NULL);
+		ztest_true(qd != NULL, NULL);
+		ztest_equal(qd->data, i, NULL);
 	}
 }
 
@@ -171,7 +171,7 @@ void test_auto_free(void)
 	int i;
 
 	for (i = 0; i < 4; i++) {
-		zassert_false(k_mem_pool_alloc(&test_pool, &b[i], 64,
+		ztest_false(k_mem_pool_alloc(&test_pool, &b[i], 64,
 					       K_FOREVER),
 			      "memory not auto released!");
 	}

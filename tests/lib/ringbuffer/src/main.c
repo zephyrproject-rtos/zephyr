@@ -78,7 +78,7 @@ void test_ring_buffer_main(void)
 	if (ret != -EMSGSIZE) {
 		LOG_DBG("Allowed retreival with insufficient "
 			"destination buffer space");
-		zassert_true((getsize == INITIAL_SIZE),
+		ztest_true((getsize == INITIAL_SIZE),
 			     "Correct size wasn't reported back to the caller");
 	}
 
@@ -86,21 +86,21 @@ void test_ring_buffer_main(void)
 		getsize = SIZE32_OF(getdata);
 		ret = ring_buf_item_get(&ring_buf1, &gettype, &getval, getdata,
 				       &getsize);
-		zassert_true((ret == 0), "Couldn't retrieve a stored value");
+		ztest_true((ret == 0), "Couldn't retrieve a stored value");
 		LOG_DBG("got %u chunks of type %u and val %u, %u remaining",
 			    getsize, gettype, getval,
 			    ring_buf_space_get(&ring_buf1));
 
-		zassert_true((memcmp((char *)getdata, rb_data, getsize * sizeof(u32_t)) == 0),
+		ztest_true((memcmp((char *)getdata, rb_data, getsize * sizeof(u32_t)) == 0),
 			     "data corrupted");
-		zassert_true((gettype == TYPE), "type information corrupted");
-		zassert_true((getval == VALUE), "value information corrupted");
+		ztest_true((gettype == TYPE), "type information corrupted");
+		ztest_true((getval == VALUE), "value information corrupted");
 	}
 
 	getsize = SIZE32_OF(getdata);
 	ret = ring_buf_item_get(&ring_buf1, &gettype, &getval, getdata,
 			       &getsize);
-	zassert_true((ret == -EAGAIN), "Got data out of an empty buffer");
+	ztest_true((ret == -EAGAIN), "Got data out of an empty buffer");
 }
 
 /**TESTPOINT: init via RING_BUF_ITEM_DECLARE_POW2*/
@@ -134,7 +134,7 @@ static void tringbuf_put(void *p)
 	int ret = ring_buf_item_put(pbuf, data[index].type, data[index].value,
 				   data[index].buffer, data[index].length);
 
-	zassert_equal(ret, 0, NULL);
+	ztest_equal(ret, 0, NULL);
 }
 
 static void tringbuf_get(void *p)
@@ -146,11 +146,11 @@ static void tringbuf_get(void *p)
 
 	/**TESTPOINT: ring buffer get*/
 	ret = ring_buf_item_get(pbuf, &type, &value, rx_data, &size32);
-	zassert_equal(ret, 0, NULL);
-	zassert_equal(type, data[index].type, NULL);
-	zassert_equal(value, data[index].value, NULL);
-	zassert_equal(size32, data[index].length, NULL);
-	zassert_equal(memcmp(rx_data, data[index].buffer, size32), 0, NULL);
+	ztest_equal(ret, 0, NULL);
+	ztest_equal(type, data[index].type, NULL);
+	ztest_equal(value, data[index].value, NULL);
+	ztest_equal(size32, data[index].length, NULL);
+	ztest_equal(memcmp(rx_data, data[index].buffer, size32), 0, NULL);
 }
 
 /*test cases*/
@@ -158,20 +158,20 @@ void test_ringbuffer_init(void)
 {
 	/**TESTPOINT: init via ring_buf_init*/
 	ring_buf_init(&ringbuf, RINGBUFFER_SIZE, buffer);
-	zassert_true(ring_buf_is_empty(&ringbuf), NULL);
-	zassert_equal(ring_buf_space_get(&ringbuf), RINGBUFFER_SIZE - 1, NULL);
+	ztest_true(ring_buf_is_empty(&ringbuf), NULL);
+	ztest_equal(ring_buf_space_get(&ringbuf), RINGBUFFER_SIZE - 1, NULL);
 }
 
 void test_ringbuffer_declare_pow2(void)
 {
-	zassert_true(ring_buf_is_empty(&ringbuf_pow2), NULL);
-	zassert_equal(ring_buf_space_get(&ringbuf_pow2), (1 << POW) - 1, NULL);
+	ztest_true(ring_buf_is_empty(&ringbuf_pow2), NULL);
+	ztest_equal(ring_buf_space_get(&ringbuf_pow2), (1 << POW) - 1, NULL);
 }
 
 void test_ringbuffer_declare_size(void)
 {
-	zassert_true(ring_buf_is_empty(&ringbuf_size), NULL);
-	zassert_equal(ring_buf_space_get(&ringbuf_size), RINGBUFFER_SIZE - 1,
+	ztest_true(ring_buf_is_empty(&ringbuf_size), NULL);
+	ztest_equal(ring_buf_space_get(&ringbuf_size), RINGBUFFER_SIZE - 1,
 		      NULL);
 }
 
@@ -183,9 +183,9 @@ void test_ringbuffer_put_get_thread(void)
 	tringbuf_get((void *)0);
 	tringbuf_get((void *)1);
 	tringbuf_put((void *)2);
-	zassert_false(ring_buf_is_empty(pbuf), NULL);
+	ztest_false(ring_buf_is_empty(pbuf), NULL);
 	tringbuf_get((void *)2);
-	zassert_true(ring_buf_is_empty(pbuf), NULL);
+	ztest_true(ring_buf_is_empty(pbuf), NULL);
 }
 
 void test_ringbuffer_put_get_isr(void)
@@ -196,9 +196,9 @@ void test_ringbuffer_put_get_isr(void)
 	irq_offload(tringbuf_get, (void *)0);
 	irq_offload(tringbuf_get, (void *)1);
 	irq_offload(tringbuf_put, (void *)2);
-	zassert_false(ring_buf_is_empty(pbuf), NULL);
+	ztest_false(ring_buf_is_empty(pbuf), NULL);
 	irq_offload(tringbuf_get, (void *)2);
-	zassert_true(ring_buf_is_empty(pbuf), NULL);
+	ztest_true(ring_buf_is_empty(pbuf), NULL);
 }
 
 void test_ringbuffer_put_get_thread_isr(void)
@@ -254,28 +254,28 @@ void test_ringbuffer_raw(void)
 		out_size = ring_buf_get(&ringbuf_raw, outbuf,
 						RINGBUFFER_SIZE - 2);
 
-		zassert_true(in_size == RINGBUFFER_SIZE - 2, NULL);
-		zassert_true(in_size == out_size, NULL);
-		zassert_true(memcmp(inbuf, outbuf, RINGBUFFER_SIZE - 2) == 0,
+		ztest_true(in_size == RINGBUFFER_SIZE - 2, NULL);
+		ztest_true(in_size == out_size, NULL);
+		ztest_true(memcmp(inbuf, outbuf, RINGBUFFER_SIZE - 2) == 0,
 			     NULL);
 	}
 
 	in_size = ring_buf_put(&ringbuf_raw, inbuf,
 				       RINGBUFFER_SIZE);
-	zassert_equal(in_size, RINGBUFFER_SIZE - 1, NULL);
+	ztest_equal(in_size, RINGBUFFER_SIZE - 1, NULL);
 
 	in_size = ring_buf_put(&ringbuf_raw, inbuf,
 				       1);
-	zassert_equal(in_size, 0, NULL);
+	ztest_equal(in_size, 0, NULL);
 
 	out_size = ring_buf_get(&ringbuf_raw, outbuf,
 					RINGBUFFER_SIZE);
 
-	zassert_true(out_size == RINGBUFFER_SIZE - 1, NULL);
+	ztest_true(out_size == RINGBUFFER_SIZE - 1, NULL);
 
 	out_size = ring_buf_get(&ringbuf_raw, outbuf,
 					RINGBUFFER_SIZE + 1);
-	zassert_true(out_size == 0, NULL);
+	ztest_true(out_size == 0, NULL);
 
 
 }
@@ -294,27 +294,27 @@ void test_ringbuffer_alloc_put(void)
 
 	allocated = ring_buf_put_claim(&ringbuf_raw, &data, 1);
 	sum_allocated = allocated;
-	zassert_true(allocated == 1U, NULL);
+	ztest_true(allocated == 1U, NULL);
 
 
 	allocated = ring_buf_put_claim(&ringbuf_raw, &data,
 					   RINGBUFFER_SIZE - 1);
 	sum_allocated += allocated;
-	zassert_true(allocated == RINGBUFFER_SIZE - 2, NULL);
+	ztest_true(allocated == RINGBUFFER_SIZE - 2, NULL);
 
 	/* Putting too much returns error */
 	err = ring_buf_put_finish(&ringbuf_raw, RINGBUFFER_SIZE);
-	zassert_true(err != 0, NULL);
+	ztest_true(err != 0, NULL);
 
 	err = ring_buf_put_finish(&ringbuf_raw, 1);
-	zassert_true(err == 0, NULL);
+	ztest_true(err == 0, NULL);
 
 	err = ring_buf_put_finish(&ringbuf_raw, RINGBUFFER_SIZE - 2);
-	zassert_true(err == 0, NULL);
+	ztest_true(err == 0, NULL);
 
 	read_size = ring_buf_get(&ringbuf_raw, outputbuf,
 					     RINGBUFFER_SIZE - 1);
-	zassert_true(read_size == (RINGBUFFER_SIZE - 1), NULL);
+	ztest_true(read_size == (RINGBUFFER_SIZE - 1), NULL);
 
 	for (int i = 0; i < 10; i++) {
 		allocated = ring_buf_put_claim(&ringbuf_raw, &data, 2);
@@ -338,13 +338,13 @@ void test_ringbuffer_alloc_put(void)
 		}
 
 		err = ring_buf_put_finish(&ringbuf_raw, 4);
-		zassert_true(err == 0, NULL);
+		ztest_true(err == 0, NULL);
 
 		read_size = ring_buf_get(&ringbuf_raw,
 						     outputbuf, 4);
-		zassert_true(read_size == 4U, NULL);
+		ztest_true(read_size == 4U, NULL);
 
-		zassert_true(memcmp(outputbuf, inputbuf, 4) == 0, NULL);
+		ztest_true(memcmp(outputbuf, inputbuf, 4) == 0, NULL);
 	}
 }
 
@@ -359,7 +359,7 @@ void test_byte_put_free(void)
 
 	/* Ring buffer is empty */
 	granted = ring_buf_get_claim(&ringbuf_raw, &data, RINGBUFFER_SIZE);
-	zassert_true(granted == 0U, NULL);
+	ztest_true(granted == 0U, NULL);
 
 	for (int i = 0; i < 10; i++) {
 		ring_buf_put(&ringbuf_raw, indata,
@@ -369,29 +369,29 @@ void test_byte_put_free(void)
 					       RINGBUFFER_SIZE);
 
 		if (granted == (RINGBUFFER_SIZE-2)) {
-			zassert_true(memcmp(indata, data, granted) == 0, NULL);
+			ztest_true(memcmp(indata, data, granted) == 0, NULL);
 		} else if (granted < (RINGBUFFER_SIZE-2)) {
 			/* When buffer wraps, operation is split. */
 			u32_t granted_1 = granted;
 
-			zassert_true(memcmp(indata, data, granted) == 0, NULL);
+			ztest_true(memcmp(indata, data, granted) == 0, NULL);
 			granted = ring_buf_get_claim(&ringbuf_raw, &data,
 						       RINGBUFFER_SIZE);
 
-			zassert_true((granted + granted_1) ==
+			ztest_true((granted + granted_1) ==
 					RINGBUFFER_SIZE - 2, NULL);
-			zassert_true(memcmp(&indata[granted_1], data, granted)
+			ztest_true(memcmp(&indata[granted_1], data, granted)
 					== 0, NULL);
 		} else {
-			zassert_true(false, NULL);
+			ztest_true(false, NULL);
 		}
 
 		/* Freeing more than possible case. */
 		err = ring_buf_get_finish(&ringbuf_raw, RINGBUFFER_SIZE-1);
-		zassert_true(err != 0, NULL);
+		ztest_true(err != 0, NULL);
 
 		err = ring_buf_get_finish(&ringbuf_raw, RINGBUFFER_SIZE-2);
-		zassert_true(err == 0, NULL);
+		ztest_true(err == 0, NULL);
 	}
 }
 
@@ -405,7 +405,7 @@ void test_capacity(void)
 	 * 1 byte is used for distinguishing between full and empty state.
 	 */
 	capacity = ring_buf_capacity_get(&ringbuf_raw);
-	zassert_equal(RINGBUFFER_SIZE - 1, capacity,
+	ztest_equal(RINGBUFFER_SIZE - 1, capacity,
 			"Unexpected capacity");
 }
 
@@ -423,24 +423,24 @@ void test_reset(void)
 
 	len = 3;
 	out_len = ring_buf_put(&ringbuf_raw, indata, len);
-	zassert_equal(out_len, len, NULL);
+	ztest_equal(out_len, len, NULL);
 
 	out_len = ring_buf_get(&ringbuf_raw, outdata, len);
-	zassert_equal(out_len, len, NULL);
+	ztest_equal(out_len, len, NULL);
 
 	space = ring_buf_space_get(&ringbuf_raw);
-	zassert_equal(space, RINGBUFFER_SIZE - 1, NULL);
+	ztest_equal(space, RINGBUFFER_SIZE - 1, NULL);
 
 	/* Even though ringbuffer is empty, full buffer cannot be allocated
 	 * because internal pointers are not at the beginning.
 	 */
 	granted = ring_buf_put_claim(&ringbuf_raw, &outbuf, RINGBUFFER_SIZE);
-	zassert_false(granted == RINGBUFFER_SIZE - 1, NULL);
+	ztest_false(granted == RINGBUFFER_SIZE - 1, NULL);
 
 	/* After reset full buffer can be allocated. */
 	ring_buf_reset(&ringbuf_raw);
 	granted = ring_buf_put_claim(&ringbuf_raw, &outbuf, RINGBUFFER_SIZE);
-	zassert_true(granted == RINGBUFFER_SIZE - 1, NULL);
+	ztest_true(granted == RINGBUFFER_SIZE - 1, NULL);
 }
 
 /*test case main entry*/

@@ -22,13 +22,13 @@ void test_kernel_start(void)
 		/* When osFeature_MainThread is 1 the kernel offers to start
 		 * with 'main'. The kernel is in this case already started.
 		 */
-		zassert_true(!osKernelInitialize() && !osKernelStart()
+		ztest_true(!osKernelInitialize() && !osKernelStart()
 			     && osKernelRunning(), NULL);
 	} else {
 		/* When osFeature_MainThread is 0 the kernel requires
 		 * explicit start with osKernelStart.
 		 */
-		zassert_false(osKernelRunning(), NULL);
+		ztest_false(osKernelRunning(), NULL);
 	}
 }
 
@@ -55,7 +55,7 @@ void test_kernel_systick(void)
 	max = WAIT_TIME_US + (WAIT_TIME_US / 100);
 	min = WAIT_TIME_US - (WAIT_TIME_US / 100);
 
-	zassert_true(diff <= max && diff >= min,
+	ztest_true(diff <= max && diff >= min,
 		     "start %d stop %d (diff %d) wait %d\n",
 		     start_time, stop_time, diff, WAIT_TIME_US);
 }

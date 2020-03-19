@@ -26,7 +26,7 @@ static void callback(struct device *dev,
 						 struct drv_data, gpio_cb);
 
 	/*= checkpoint: pins should be marked with correct pin number bit =*/
-	zassert_equal(pins, BIT(PIN_IN),
+	ztest_equal(pins, BIT(PIN_IN),
 		      "unexpected pins %x", pins);
 	++cb_cnt;
 	TC_PRINT("callback triggered: %d\n", cb_cnt);
@@ -46,7 +46,7 @@ static void callback(struct device *dev,
 		 */
 		rc = gpio_pin_configure(dev, PIN_IN, GPIO_DIR_IN
 					| GPIO_INT_DISABLE);
-		zassert_equal(rc, 0,
+		ztest_equal(rc, 0,
 			      "disable interrupts failed: %d", rc);
 	}
 }
@@ -152,16 +152,16 @@ static int test_callback_enable_disable(void)
 /* export test cases */
 void test_gpio_deprecated(void)
 {
-	zassert_equal(test_callback_enable_disable(),
+	ztest_equal(test_callback_enable_disable(),
 		      TC_PASS, "callback enable/disable failed");
-	zassert_equal(test_callback(GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH),
+	ztest_equal(test_callback(GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH),
 		      TC_PASS, "rising edge failed");
-	zassert_equal(test_callback(GPIO_INT_EDGE | GPIO_INT_ACTIVE_LOW),
+	ztest_equal(test_callback(GPIO_INT_EDGE | GPIO_INT_ACTIVE_LOW),
 		      TC_PASS, "falling edge failed");
-	zassert_equal(test_callback(GPIO_INT_EDGE_BOTH),
+	ztest_equal(test_callback(GPIO_INT_EDGE_BOTH),
 		      TC_PASS, "double edge failed");
-	zassert_equal(test_callback(GPIO_INT_LEVEL | GPIO_INT_ACTIVE_HIGH),
+	ztest_equal(test_callback(GPIO_INT_LEVEL | GPIO_INT_ACTIVE_HIGH),
 		      TC_PASS, "level high failed");
-	zassert_equal(test_callback(GPIO_INT_LEVEL | GPIO_INT_ACTIVE_LOW),
+	ztest_equal(test_callback(GPIO_INT_LEVEL | GPIO_INT_ACTIVE_LOW),
 		      TC_PASS, "level low failed");
 }

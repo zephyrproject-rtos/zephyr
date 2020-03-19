@@ -99,7 +99,7 @@ void test_requesting_nm(void)
 
 	TC_PRINT("- Request Net MGMT\n");
 
-	zassert_false(net_mgmt(TEST_MGMT_REQUEST, NULL, &data, sizeof(data)),
+	ztest_false(net_mgmt(TEST_MGMT_REQUEST, NULL, &data, sizeof(data)),
 		      "Requesting Net MGMT failed");
 }
 
@@ -171,8 +171,8 @@ static int sending_event(u32_t times, bool receiver, bool info)
 		TC_PRINT("\tReceived 0x%08X %u times\n",
 			 rx_event, rx_calls);
 
-		zassert_equal(rx_event, event2throw, "rx_event check failed");
-		zassert_equal(rx_calls, times, "rx_calls check failed");
+		ztest_equal(rx_event, event2throw, "rx_event check failed");
+		ztest_equal(rx_calls, times, "rx_calls check failed");
 
 		net_mgmt_del_event_callback(&rx_cb);
 		rx_event = rx_calls = 0U;
@@ -261,12 +261,12 @@ static int test_core_event(u32_t event, bool (*func)(void))
 
 	net_mgmt_add_event_callback(&rx_cb);
 
-	zassert_true(func(), "func() check failed");
+	ztest_true(func(), "func() check failed");
 
 	k_yield();
 
-	zassert_true(rx_calls > 0 && rx_calls != -1, "rx_calls empty");
-	zassert_equal(rx_event, event, "rx_event check failed, "
+	ztest_true(rx_calls > 0 && rx_calls != -1, "rx_calls empty");
+	ztest_equal(rx_event, event, "rx_event check failed, "
 		      "0x%08x vs 0x%08x", rx_event, event);
 
 	net_mgmt_del_event_callback(&rx_cb);
@@ -302,40 +302,40 @@ void test_mgmt(void)
 
 	initialize_event_tests();
 
-	zassert_false(test_sending_event(1, false),
+	ztest_false(test_sending_event(1, false),
 		      "test_sending_event failed");
 
-	zassert_false(test_sending_event(2, false),
+	ztest_false(test_sending_event(2, false),
 		      "test_sending_event failed");
 
-	zassert_false(test_sending_event(1, true),
+	ztest_false(test_sending_event(1, true),
 		      "test_sending_event failed");
 
-	zassert_false(test_sending_event(2, true),
+	ztest_false(test_sending_event(2, true),
 		      "test_sending_event failed");
 
-	zassert_false(test_sending_event_info(1, false),
+	ztest_false(test_sending_event_info(1, false),
 		      "test_sending_event failed");
 
-	zassert_false(test_sending_event_info(2, false),
+	ztest_false(test_sending_event_info(2, false),
 		      "test_sending_event failed");
 
-	zassert_false(test_sending_event_info(1, true),
+	ztest_false(test_sending_event_info(1, true),
 		      "test_sending_event failed");
 
-	zassert_false(test_sending_event_info(2, true),
+	ztest_false(test_sending_event_info(2, true),
 		      "test_sending_event failed");
 
-	zassert_false(test_core_event(NET_EVENT_IPV6_ADDR_ADD, _iface_ip6_add),
+	ztest_false(test_core_event(NET_EVENT_IPV6_ADDR_ADD, _iface_ip6_add),
 		      "test_core_event failed");
 
-	zassert_false(test_core_event(NET_EVENT_IPV6_ADDR_DEL, _iface_ip6_del),
+	ztest_false(test_core_event(NET_EVENT_IPV6_ADDR_DEL, _iface_ip6_del),
 		      "test_core_event failed");
 
-	zassert_false(test_synchronous_event_listener(2, false),
+	ztest_false(test_synchronous_event_listener(2, false),
 		      "test_synchronous_event_listener failed");
 
-	zassert_false(test_synchronous_event_listener(2, true),
+	ztest_false(test_synchronous_event_listener(2, true),
 		      "test_synchronous_event_listener failed");
 }
 

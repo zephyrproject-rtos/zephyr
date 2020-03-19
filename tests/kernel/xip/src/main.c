@@ -52,7 +52,7 @@ void test_globals(void)
 	for (i = 0; i < XIP_TEST_ARRAY_SZ; i++) {
 
 		/**TESTPOINT: Check if the array value is correct*/
-		zassert_equal(xip_array[i], (i+1), "Array value is incorrect");
+		ztest_equal(xip_array[i], (i+1), "Array value is incorrect");
 	}
 }
 

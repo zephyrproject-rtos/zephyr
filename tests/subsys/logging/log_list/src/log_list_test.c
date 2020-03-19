@@ -30,12 +30,12 @@ void test_log_list(void)
 	log_list_add_tail(&my_list, &msg1);
 
 	msg = log_list_head_peek(&my_list);
-	zassert_true(&msg1 == msg, "Unexpected head 0x%08X.\n", msg);
+	ztest_true(&msg1 == msg, "Unexpected head 0x%08X.\n", msg);
 
 	msg = log_list_head_get(&my_list);
 
-	zassert_true(&msg1 == msg, "Unexpected head 0x%08X.\n", msg);
-	zassert_true(log_list_head_peek(&my_list) == NULL,
+	ztest_true(&msg1 == msg, "Unexpected head 0x%08X.\n", msg);
+	ztest_true(log_list_head_peek(&my_list) == NULL,
 		     "Expected empty list.\n");
 
 	/* two elements */
@@ -43,24 +43,24 @@ void test_log_list(void)
 	log_list_add_tail(&my_list, &msg2);
 
 	msg = log_list_head_peek(&my_list);
-	zassert_true(&msg1 == msg, "Unexpected head 0x%08X.\n", msg);
+	ztest_true(&msg1 == msg, "Unexpected head 0x%08X.\n", msg);
 
 	msg = log_list_head_get(&my_list);
-	zassert_true(&msg1 == msg, "Unexpected head 0x%08X.\n", msg);
+	ztest_true(&msg1 == msg, "Unexpected head 0x%08X.\n", msg);
 
 	msg = log_list_head_peek(&my_list);
-	zassert_true(&msg2 == msg, "Unexpected head 0x%08X.\n", msg);
+	ztest_true(&msg2 == msg, "Unexpected head 0x%08X.\n", msg);
 
 	log_list_add_tail(&my_list, &msg1);
 
 	msg = log_list_head_get(&my_list);
-	zassert_true(&msg2 == msg, "Unexpected head 0x%08X.\n", msg);
+	ztest_true(&msg2 == msg, "Unexpected head 0x%08X.\n", msg);
 
 	msg = log_list_head_get(&my_list);
-	zassert_true(&msg1 == msg, "Unexpected head 0x%08X.\n", msg);
+	ztest_true(&msg1 == msg, "Unexpected head 0x%08X.\n", msg);
 
 	msg = log_list_head_get(&my_list);
-	zassert_true(msg == NULL, "Expected empty list.\n");
+	ztest_true(msg == NULL, "Expected empty list.\n");
 }
 
 void test_log_list_multiple_items(void)
@@ -77,10 +77,10 @@ void test_log_list_multiple_items(void)
 	}
 
 	for (i = 0; i < 10; i++) {
-		zassert_true(&msg[i] == log_list_head_get(&my_list),
+		ztest_true(&msg[i] == log_list_head_get(&my_list),
 			     "Unexpected head.\n");
 	}
-	zassert_true(log_list_head_get(&my_list) == NULL,
+	ztest_true(log_list_head_get(&my_list) == NULL,
 		     "Expected empty list.\n");
 }
 /*test case main entry*/

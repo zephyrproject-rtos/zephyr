@@ -72,7 +72,7 @@ static void buf_destroy(struct net_buf *buf)
 	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 	destroy_called++;
-	zassert_equal(pool, &bufs_pool, "Invalid free pointer in buffer");
+	ztest_equal(pool, &bufs_pool, "Invalid free pointer in buffer");
 	net_buf_destroy(buf);
 }
 
@@ -81,7 +81,7 @@ static void fixed_destroy(struct net_buf *buf)
 	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 	destroy_called++;
-	zassert_equal(pool, &fixed_pool, "Invalid free pointer in buffer");
+	ztest_equal(pool, &fixed_pool, "Invalid free pointer in buffer");
 	net_buf_destroy(buf);
 }
 
@@ -90,7 +90,7 @@ static void var_destroy(struct net_buf *buf)
 	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 	destroy_called++;
-	zassert_equal(pool, &var_pool, "Invalid free pointer in buffer");
+	ztest_equal(pool, &var_pool, "Invalid free pointer in buffer");
 	net_buf_destroy(buf);
 }
 
@@ -106,7 +106,7 @@ static void net_buf_test_1(void)
 
 	for (i = 0; i < bufs_pool.buf_count; i++) {
 		buf = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
-		zassert_not_null(buf, "Failed to get buffer");
+		ztest_not_null(buf, "Failed to get buffer");
 		bufs[i] = buf;
 	}
 
@@ -114,7 +114,7 @@ static void net_buf_test_1(void)
 		net_buf_unref(bufs[i]);
 	}
 
-	zassert_equal(destroy_called, ARRAY_SIZE(bufs),
+	ztest_equal(destroy_called, ARRAY_SIZE(bufs),
 		     "Incorrect destroy callback count");
 }
 
@@ -125,12 +125,12 @@ static void net_buf_test_2(void)
 	int i;
 
 	head = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
-	zassert_not_null(head, "Failed to get fragment list head");
+	ztest_not_null(head, "Failed to get fragment list head");
 
 	frag = head;
 	for (i = 0; i < bufs_pool.buf_count - 1; i++) {
 		frag->frags = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
-		zassert_not_null(frag->frags, "Failed to get fragment");
+		ztest_not_null(frag->frags, "Failed to get fragment");
 		frag = frag->frags;
 	}
 
@@ -140,7 +140,7 @@ static void net_buf_test_2(void)
 
 	destroy_called = 0;
 	net_buf_unref(head);
-	zassert_equal(destroy_called, bufs_pool.buf_count,
+	ztest_equal(destroy_called, bufs_pool.buf_count,
 		     "Incorrect fragment destroy callback count");
 }
 
@@ -153,11 +153,11 @@ static void test_3_thread(void *arg1, void *arg2, void *arg3)
 	k_sem_give(sema);
 
 	buf = net_buf_get(fifo, TEST_TIMEOUT);
-	zassert_not_null(buf, "Unable to get buffer");
+	ztest_not_null(buf, "Unable to get buffer");
 
 	destroy_called = 0;
 	net_buf_unref(buf);
-	zassert_equal(destroy_called, bufs_pool.buf_count,
+	ztest_equal(destroy_called, bufs_pool.buf_count,
 		     "Incorrect destroy callback count");
 
 	k_sem_give(sema);
@@ -174,12 +174,12 @@ static void net_buf_test_3(void)
 	int i;
 
 	head = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
-	zassert_not_null(head, "Failed to get fragment list head");
+	ztest_not_null(head, "Failed to get fragment list head");
 
 	frag = head;
 	for (i = 0; i < bufs_pool.buf_count - 1; i++) {
 		frag->frags = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
-		zassert_not_null(frag->frags, "Failed to get fragment");
+		ztest_not_null(frag->frags, "Failed to get fragment");
 		frag = frag->frags;
 	}
 
@@ -191,12 +191,12 @@ static void net_buf_test_3(void)
 			(k_thread_entry_t) test_3_thread, &fifo, &sema, NULL,
 			K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-	zassert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
+	ztest_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
 		    "Timeout while waiting for semaphore");
 
 	net_buf_put(&fifo, head);
 
-	zassert_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
+	ztest_true(k_sem_take(&sema, TEST_TIMEOUT) == 0,
 		    "Timeout while waiting for semaphore");
 }
 
@@ -213,7 +213,7 @@ static void net_buf_test_4(void)
 	 */
 	buf = net_buf_alloc_len(&bufs_pool, 0, K_FOREVER);
 
-	zassert_equal(buf->size, 0, "Invalid buffer size");
+	ztest_equal(buf->size, 0, "Invalid buffer size");
 
 	/* Test the fragments by appending after last fragment */
 	for (i = 0; i < bufs_pool.buf_count - 2; i++) {
@@ -235,7 +235,7 @@ static void net_buf_test_4(void)
 		i++;
 	}
 
-	zassert_equal(i, bufs_pool.buf_count - 1, "Incorrect fragment count");
+	ztest_equal(i, bufs_pool.buf_count - 1, "Incorrect fragment count");
 
 	/* Remove about half of the fragments and verify count */
 	i = removed = 0;
@@ -260,7 +260,7 @@ static void net_buf_test_4(void)
 		i++;
 	}
 
-	zassert_equal(1 + i + removed, bufs_pool.buf_count,
+	ztest_equal(1 + i + removed, bufs_pool.buf_count,
 		     "Incorrect removed fragment count");
 
 	removed = 0;
@@ -273,8 +273,8 @@ static void net_buf_test_4(void)
 		removed++;
 	}
 
-	zassert_equal(removed, i, "Incorrect removed fragment count");
-	zassert_equal(destroy_called, bufs_pool.buf_count - 1,
+	ztest_equal(removed, i, "Incorrect removed fragment count");
+	ztest_equal(destroy_called, bufs_pool.buf_count - 1,
 		     "Incorrect frag destroy callback count");
 
 	/* Add the fragments back and verify that they are properly unref
@@ -300,13 +300,13 @@ static void net_buf_test_4(void)
 		i++;
 	}
 
-	zassert_equal(i, bufs_pool.buf_count - 1, "Incorrect fragment count");
+	ztest_equal(i, bufs_pool.buf_count - 1, "Incorrect fragment count");
 
 	destroy_called = 0;
 
 	net_buf_unref(buf);
 
-	zassert_equal(destroy_called, bufs_pool.buf_count,
+	ztest_equal(destroy_called, bufs_pool.buf_count,
 		     "Incorrect frag destroy callback count");
 }
 
@@ -334,7 +334,7 @@ static void net_buf_test_big_buf(void)
 	/* First add some application data */
 	len = strlen(example_data);
 	for (i = 0; i < 2; i++) {
-		zassert_true(net_buf_tailroom(frag) >= len,
+		ztest_true(net_buf_tailroom(frag) >= len,
 			    "Allocated buffer is too small");
 		memcpy(net_buf_add(frag, len), example_data, len);
 	}
@@ -345,7 +345,7 @@ static void net_buf_test_big_buf(void)
 	net_buf_frag_add(buf, frag);
 	net_buf_unref(buf);
 
-	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
+	ztest_equal(destroy_called, 2, "Incorrect destroy callback count");
 }
 
 static void net_buf_test_multi_frags(void)
@@ -386,7 +386,7 @@ static void net_buf_test_multi_frags(void)
 	/* First add some application data */
 	len = strlen(example_data);
 	for (i = 0; i < bufs_pool.buf_count - 2; i++) {
-		zassert_true(net_buf_tailroom(frags[i]) >= len,
+		ztest_true(net_buf_tailroom(frags[i]) >= len,
 			    "Allocated buffer is too small");
 		memcpy(net_buf_add(frags[i], len), example_data, len);
 		occupied += frags[i]->len;
@@ -397,7 +397,7 @@ static void net_buf_test_multi_frags(void)
 
 	net_buf_unref(buf);
 
-	zassert_equal(destroy_called, bufs_pool.buf_count,
+	ztest_equal(destroy_called, bufs_pool.buf_count,
 		     "Incorrect frag destroy callback count");
 }
 
@@ -408,16 +408,16 @@ static void net_buf_test_clone(void)
 	destroy_called = 0;
 
 	buf = net_buf_alloc_len(&bufs_pool, 74, K_NO_WAIT);
-	zassert_not_null(buf, "Failed to get buffer");
+	ztest_not_null(buf, "Failed to get buffer");
 
 	clone = net_buf_clone(buf, K_NO_WAIT);
-	zassert_not_null(clone, "Failed to get clone buffer");
-	zassert_equal(buf->data, clone->data, "Incorrect clone data pointer");
+	ztest_not_null(clone, "Failed to get clone buffer");
+	ztest_equal(buf->data, clone->data, "Incorrect clone data pointer");
 
 	net_buf_unref(buf);
 	net_buf_unref(clone);
 
-	zassert_equal(destroy_called, 2, "Incorrect destroy callback count");
+	ztest_equal(destroy_called, 2, "Incorrect destroy callback count");
 }
 
 static void net_buf_test_fixed_pool(void)
@@ -427,11 +427,11 @@ static void net_buf_test_fixed_pool(void)
 	destroy_called = 0;
 
 	buf = net_buf_alloc_len(&fixed_pool, 20, K_NO_WAIT);
-	zassert_not_null(buf, "Failed to get buffer");
+	ztest_not_null(buf, "Failed to get buffer");
 
 	net_buf_unref(buf);
 
-	zassert_equal(destroy_called, 1, "Incorrect destroy callback count");
+	ztest_equal(destroy_called, 1, "Incorrect destroy callback count");
 }
 
 static void net_buf_test_var_pool(void)
@@ -441,20 +441,20 @@ static void net_buf_test_var_pool(void)
 	destroy_called = 0;
 
 	buf1 = net_buf_alloc_len(&var_pool, 20, K_NO_WAIT);
-	zassert_not_null(buf1, "Failed to get buffer");
+	ztest_not_null(buf1, "Failed to get buffer");
 
 	buf2 = net_buf_alloc_len(&var_pool, 200, K_NO_WAIT);
-	zassert_not_null(buf2, "Failed to get buffer");
+	ztest_not_null(buf2, "Failed to get buffer");
 
 	buf3 = net_buf_clone(buf2, K_NO_WAIT);
-	zassert_not_null(buf3, "Failed to clone buffer");
-	zassert_equal(buf3->data, buf2->data, "Cloned data doesn't match");
+	ztest_not_null(buf3, "Failed to clone buffer");
+	ztest_equal(buf3->data, buf2->data, "Cloned data doesn't match");
 
 	net_buf_unref(buf1);
 	net_buf_unref(buf2);
 	net_buf_unref(buf3);
 
-	zassert_equal(destroy_called, 3, "Incorrect destroy callback count");
+	ztest_equal(destroy_called, 3, "Incorrect destroy callback count");
 }
 
 static void net_buf_test_byte_order(void)
@@ -475,13 +475,13 @@ static void net_buf_test_byte_order(void)
 	u64_t u64;
 
 	buf = net_buf_alloc_len(&fixed_pool, 16, K_FOREVER);
-	zassert_not_null(buf, "Failed to get buffer");
+	ztest_not_null(buf, "Failed to get buffer");
 
 	net_buf_add_mem(buf, &le16, sizeof(le16));
 	net_buf_add_mem(buf, &be16, sizeof(be16));
 
 	u16 = net_buf_pull_le16(buf);
-	zassert_equal(u16, net_buf_pull_be16(buf),
+	ztest_equal(u16, net_buf_pull_be16(buf),
 		      "Invalid 16 bits byte order");
 
 	net_buf_reset(buf);
@@ -489,9 +489,9 @@ static void net_buf_test_byte_order(void)
 	net_buf_add_le16(buf, u16);
 	net_buf_add_be16(buf, u16);
 
-	zassert_mem_equal(le16, net_buf_pull_mem(buf, sizeof(le16)),
+	ztest_mem_equal(le16, net_buf_pull_mem(buf, sizeof(le16)),
 			  sizeof(le16), "Invalid 16 bits byte order");
-	zassert_mem_equal(be16, net_buf_pull_mem(buf, sizeof(be16)),
+	ztest_mem_equal(be16, net_buf_pull_mem(buf, sizeof(be16)),
 			  sizeof(be16), "Invalid 16 bits byte order");
 
 	net_buf_reset(buf);
@@ -500,7 +500,7 @@ static void net_buf_test_byte_order(void)
 	net_buf_add_mem(buf, &be24, sizeof(be24));
 
 	u32 = net_buf_pull_le24(buf);
-	zassert_equal(u32, net_buf_pull_be24(buf),
+	ztest_equal(u32, net_buf_pull_be24(buf),
 		      "Invalid 24 bits byte order");
 
 	net_buf_reset(buf);
@@ -508,9 +508,9 @@ static void net_buf_test_byte_order(void)
 	net_buf_add_le24(buf, u32);
 	net_buf_add_be24(buf, u32);
 
-	zassert_mem_equal(le24, net_buf_pull_mem(buf, sizeof(le24)),
+	ztest_mem_equal(le24, net_buf_pull_mem(buf, sizeof(le24)),
 			  sizeof(le24), "Invalid 24 bits byte order");
-	zassert_mem_equal(be24, net_buf_pull_mem(buf, sizeof(be24)),
+	ztest_mem_equal(be24, net_buf_pull_mem(buf, sizeof(be24)),
 			  sizeof(be24), "Invalid 24 bits byte order");
 
 	net_buf_reset(buf);
@@ -519,7 +519,7 @@ static void net_buf_test_byte_order(void)
 	net_buf_add_mem(buf, &be32, sizeof(be32));
 
 	u32 = net_buf_pull_le32(buf);
-	zassert_equal(u32, net_buf_pull_be32(buf),
+	ztest_equal(u32, net_buf_pull_be32(buf),
 		      "Invalid 32 bits byte order");
 
 	net_buf_reset(buf);
@@ -527,9 +527,9 @@ static void net_buf_test_byte_order(void)
 	net_buf_add_le32(buf, u32);
 	net_buf_add_be32(buf, u32);
 
-	zassert_mem_equal(le32, net_buf_pull_mem(buf, sizeof(le32)),
+	ztest_mem_equal(le32, net_buf_pull_mem(buf, sizeof(le32)),
 			  sizeof(le32), "Invalid 32 bits byte order");
-	zassert_mem_equal(be32, net_buf_pull_mem(buf, sizeof(be32)),
+	ztest_mem_equal(be32, net_buf_pull_mem(buf, sizeof(be32)),
 			  sizeof(be32), "Invalid 32 bits byte order");
 
 	net_buf_reset(buf);
@@ -538,7 +538,7 @@ static void net_buf_test_byte_order(void)
 	net_buf_add_mem(buf, &be48, sizeof(be48));
 
 	u64 = net_buf_pull_le48(buf);
-	zassert_equal(u64, net_buf_pull_be48(buf),
+	ztest_equal(u64, net_buf_pull_be48(buf),
 		      "Invalid 48 bits byte order");
 
 	net_buf_reset(buf);
@@ -546,9 +546,9 @@ static void net_buf_test_byte_order(void)
 	net_buf_add_le48(buf, u64);
 	net_buf_add_be48(buf, u64);
 
-	zassert_mem_equal(le48, net_buf_pull_mem(buf, sizeof(le48)),
+	ztest_mem_equal(le48, net_buf_pull_mem(buf, sizeof(le48)),
 			  sizeof(le48), "Invalid 48 bits byte order");
-	zassert_mem_equal(be48, net_buf_pull_mem(buf, sizeof(be48)),
+	ztest_mem_equal(be48, net_buf_pull_mem(buf, sizeof(be48)),
 			  sizeof(be48), "Invalid 48 bits byte order");
 
 	net_buf_reset(buf);
@@ -557,7 +557,7 @@ static void net_buf_test_byte_order(void)
 	net_buf_add_mem(buf, &be64, sizeof(be64));
 
 	u64 = net_buf_pull_le64(buf);
-	zassert_equal(u64, net_buf_pull_be64(buf),
+	ztest_equal(u64, net_buf_pull_be64(buf),
 		      "Invalid 64 bits byte order");
 
 	net_buf_reset(buf);
@@ -565,9 +565,9 @@ static void net_buf_test_byte_order(void)
 	net_buf_add_le64(buf, u64);
 	net_buf_add_be64(buf, u64);
 
-	zassert_mem_equal(le64, net_buf_pull_mem(buf, sizeof(le64)),
+	ztest_mem_equal(le64, net_buf_pull_mem(buf, sizeof(le64)),
 			  sizeof(le64), "Invalid 64 bits byte order");
-	zassert_mem_equal(be64, net_buf_pull_mem(buf, sizeof(be64)),
+	ztest_mem_equal(be64, net_buf_pull_mem(buf, sizeof(be64)),
 			  sizeof(be48), "Invalid 64 bits byte order");
 
 	net_buf_unref(buf);

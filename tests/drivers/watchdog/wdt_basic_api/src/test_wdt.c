@@ -305,24 +305,24 @@ static int test_wdt_bad_window_max(void)
 void test_wdt(void)
 {
 	if ((m_testcase_index != 1U) && (m_testcase_index != 2U)) {
-		zassert_true(test_wdt_no_callback() == TC_PASS, NULL);
+		ztest_true(test_wdt_no_callback() == TC_PASS, NULL);
 	}
 	if (m_testcase_index == 1U) {
 #if TEST_WDT_CALLBACK_1
-		zassert_true(test_wdt_callback_1() == TC_PASS, NULL);
+		ztest_true(test_wdt_callback_1() == TC_PASS, NULL);
 #else
 		m_testcase_index++;
 #endif
 	}
 	if (m_testcase_index == 2U) {
 #if TEST_WDT_CALLBACK_2
-		zassert_true(test_wdt_callback_2() == TC_PASS, NULL);
+		ztest_true(test_wdt_callback_2() == TC_PASS, NULL);
 #else
 		m_testcase_index++;
 #endif
 	}
 	if (m_testcase_index == 3U) {
-		zassert_true(test_wdt_bad_window_max() == TC_PASS, NULL);
+		ztest_true(test_wdt_bad_window_max() == TC_PASS, NULL);
 		m_testcase_index++;
 	}
 	if (m_testcase_index > 3) {

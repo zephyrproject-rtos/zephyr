@@ -15,20 +15,20 @@ void test_init_id(void)
 	int ret;
 
 	ret = flash_img_init(&ctx_no_id);
-	zassert_true(ret == 0, "Flash img init");
+	ztest_true(ret == 0, "Flash img init");
 
 	ret = flash_img_init_id(&ctx_id, DT_FLASH_AREA_IMAGE_1_ID);
-	zassert_true(ret == 0, "Flash img init id");
+	ztest_true(ret == 0, "Flash img init id");
 
 	/* Verify that the default partition ID is IMAGE_1 */
-	zassert_equal(ctx_id.flash_area, ctx_no_id.flash_area,
+	ztest_equal(ctx_id.flash_area, ctx_no_id.flash_area,
 		      "Default partition ID is incorrect");
 
 	/* Note: IMAGE_0, not IMAGE_1 as above */
 	ret = flash_img_init_id(&ctx_id, DT_FLASH_AREA_IMAGE_0_ID);
-	zassert_true(ret == 0, "Flash img init id");
+	ztest_true(ret == 0, "Flash img init id");
 
-	zassert_equal(ctx_id.flash_area->fa_id, DT_FLASH_AREA_IMAGE_0_ID,
+	ztest_equal(ctx_id.flash_area->fa_id, DT_FLASH_AREA_IMAGE_0_ID,
 		      "Partition ID is not set correctly");
 }
 
@@ -41,7 +41,7 @@ void test_collecting(void)
 	int ret;
 
 	ret = flash_img_init(&ctx);
-	zassert_true(ret == 0, "Flash img init");
+	ztest_true(ret == 0, "Flash img init");
 
 #ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
 	u8_t erase_buf[8];
@@ -57,19 +57,19 @@ void test_collecting(void)
 	for (i = 0U; i < 300 * sizeof(data) / sizeof(erase_buf); i++) {
 		ret = flash_area_write(fa, i * sizeof(erase_buf), erase_buf,
 				       sizeof(erase_buf));
-		zassert_true(ret == 0, "Flash write failure (%d)", ret);
+		ztest_true(ret == 0, "Flash write failure (%d)", ret);
 	}
 
 	/* ensure that the last page dirt */
 	ret = flash_area_write(fa, fa->fa_size - sizeof(erase_buf), erase_buf,
 			       sizeof(erase_buf));
-	zassert_true(ret == 0, "Flash write failure (%d)", ret);
+	ztest_true(ret == 0, "Flash write failure (%d)", ret);
 #else
 	ret = flash_area_erase(ctx.flash_area, 0, ctx.flash_area->fa_size);
-	zassert_true(ret == 0, "Flash erase failure (%d)", ret);
+	ztest_true(ret == 0, "Flash erase failure (%d)", ret);
 #endif
 
-	zassert(flash_img_bytes_written(&ctx) == 0, "pass", "fail");
+	ztest(flash_img_bytes_written(&ctx) == 0, "pass", "fail");
 
 	k = 0U;
 	for (i = 0U; i < 300; i++) {
@@ -77,10 +77,10 @@ void test_collecting(void)
 			data[j] = k++;
 		}
 		ret = flash_img_buffered_write(&ctx, data, sizeof(data), false);
-		zassert_true(ret == 0, "image colletion fail: %d\n", ret);
+		ztest_true(ret == 0, "image colletion fail: %d\n", ret);
 	}
 
-	zassert(flash_img_buffered_write(&ctx, data, 0, true) == 0, "pass",
+	ztest(flash_img_buffered_write(&ctx, data, 0, true) == 0, "pass",
 					 "fail");
 
 
@@ -92,8 +92,8 @@ void test_collecting(void)
 
 	k = 0U;
 	for (i = 0U; i < 300 * sizeof(data); i++) {
-		zassert(flash_area_read(fa, i, &temp, 1) == 0, "pass", "fail");
-		zassert(temp == k, "pass", "fail");
+		ztest(flash_area_read(fa, i, &temp, 1) == 0, "pass", "fail");
+		ztest(temp == k, "pass", "fail");
 		k++;
 	}
 
@@ -101,8 +101,8 @@ void test_collecting(void)
 	u8_t buf[sizeof(erase_buf)];
 
 	ret = flash_area_read(fa, fa->fa_size - sizeof(buf), buf, sizeof(buf));
-	zassert_true(ret == 0, "Flash read failure (%d)", ret);
-	zassert_true(memcmp(erase_buf, buf, sizeof(buf)) == 0,
+	ztest_true(ret == 0, "Flash read failure (%d)", ret);
+	ztest_true(memcmp(erase_buf, buf, sizeof(buf)) == 0,
 		     "Image trailer was not cleared");
 #endif
 }

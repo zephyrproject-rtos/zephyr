@@ -57,7 +57,7 @@ static int main_prio;
  */
 void test_systhreads_main(void)
 {
-	zassert_true(main_prio == CONFIG_MAIN_THREAD_PRIORITY, NULL);
+	ztest_true(main_prio == CONFIG_MAIN_THREAD_PRIORITY, NULL);
 }
 
 /**
@@ -68,7 +68,7 @@ void test_systhreads_idle(void)
 {
 	k_sleep(K_MSEC(100));
 	/** TESTPOINT: check working thread priority should */
-	zassert_true(k_thread_priority_get(k_current_get()) <
+	ztest_true(k_thread_priority_get(k_current_get()) <
 		     K_IDLE_PRIO, NULL);
 }
 
@@ -76,13 +76,13 @@ static void customdata_entry(void *p1, void *p2, void *p3)
 {
 	long data = 1U;
 
-	zassert_is_null(k_thread_custom_data_get(), NULL);
+	ztest_is_null(k_thread_custom_data_get(), NULL);
 	while (1) {
 		k_thread_custom_data_set((void *)data);
 		/* relinguish cpu for a while */
 		k_sleep(K_MSEC(50));
 		/** TESTPOINT: custom data comparison */
-		zassert_equal(data, (long)k_thread_custom_data_get(), NULL);
+		ztest_equal(data, (long)k_thread_custom_data_get(), NULL);
 		data++;
 	}
 }
@@ -123,11 +123,11 @@ void test_thread_name_get_set(void)
 
 	/* Set and get current thread's name */
 	ret = k_thread_name_set(NULL, "parent_thread");
-	zassert_equal(ret, 0, "k_thread_name_set() failed");
+	ztest_equal(ret, 0, "k_thread_name_set() failed");
 	thread_name = k_thread_name_get(k_current_get());
-	zassert_true(thread_name != NULL, "thread name was null");
+	ztest_true(thread_name != NULL, "thread name was null");
 	ret = strcmp(thread_name, "parent_thread");
-	zassert_equal(ret, 0, "parent thread name does not match");
+	ztest_equal(ret, 0, "parent thread name does not match");
 
 	/* Set and get child thread's name */
 	k_tid_t tid = k_thread_create(&tdata_name, tstack_name, STACK_SIZE,
@@ -135,11 +135,11 @@ void test_thread_name_get_set(void)
 				      K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
 
 	ret = k_thread_name_set(tid, "customdata");
-	zassert_equal(ret, 0, "k_thread_name_set() failed");
+	ztest_equal(ret, 0, "k_thread_name_set() failed");
 	ret = k_thread_name_copy(tid, thread_buf, sizeof(thread_buf));
-	zassert_equal(ret, 0, "couldn't get copied thread name");
+	ztest_equal(ret, 0, "couldn't get copied thread name");
 	ret = strcmp(thread_buf, "customdata");
-	zassert_equal(ret, 0, "child thread name does not match");
+	ztest_equal(ret, 0, "child thread name does not match");
 
 	/* cleanup environment */
 	k_thread_abort(tid);
@@ -165,36 +165,36 @@ void test_thread_name_user_get_set(void)
 
 	/* Some memory-related error cases for k_thread_name_set() */
 	ret = k_thread_name_set(NULL, (const char *)0xFFFFFFF0);
-	zassert_equal(ret, -EFAULT, "accepted nonsense string (%d)", ret);
+	ztest_equal(ret, -EFAULT, "accepted nonsense string (%d)", ret);
 	ret = k_thread_name_set(NULL, unreadable_string);
-	zassert_equal(ret, -EFAULT, "accepted unreadable string");
+	ztest_equal(ret, -EFAULT, "accepted unreadable string");
 	ret = k_thread_name_set((struct k_thread *)&sem, "some name");
-	zassert_equal(ret, -EINVAL, "accepted non-thread object");
+	ztest_equal(ret, -EINVAL, "accepted non-thread object");
 	ret = k_thread_name_set(&z_main_thread, "some name");
-	zassert_equal(ret, -EINVAL, "no permission on thread object");
+	ztest_equal(ret, -EINVAL, "no permission on thread object");
 
 	/* Set and get current thread's name */
 	ret = k_thread_name_set(NULL, "parent_thread");
-	zassert_equal(ret, 0, "k_thread_name_set() failed");
+	ztest_equal(ret, 0, "k_thread_name_set() failed");
 	ret = k_thread_name_copy(k_current_get(), thread_name,
 				     sizeof(thread_name));
-	zassert_equal(ret, 0, "k_thread_name_copy() failed");
+	ztest_equal(ret, 0, "k_thread_name_copy() failed");
 	ret = strcmp(thread_name, "parent_thread");
-	zassert_equal(ret, 0, "parent thread name does not match");
+	ztest_equal(ret, 0, "parent thread name does not match");
 
 	/* memory-related cases for k_thread_name_get() */
 	ret = k_thread_name_copy(k_current_get(), too_small,
 				     sizeof(too_small));
-	zassert_equal(ret, -ENOSPC, "wrote to too-small buffer");
+	ztest_equal(ret, -ENOSPC, "wrote to too-small buffer");
 	ret = k_thread_name_copy(k_current_get(), not_my_buffer,
 				     sizeof(not_my_buffer));
-	zassert_equal(ret, -EFAULT, "wrote to buffer without permission");
+	ztest_equal(ret, -EFAULT, "wrote to buffer without permission");
 	ret = k_thread_name_copy((struct k_thread *)&sem, thread_name,
 				     sizeof(thread_name));
-	zassert_equal(ret, -EINVAL, "not a thread object");
+	ztest_equal(ret, -EINVAL, "not a thread object");
 	ret = k_thread_name_copy(&z_main_thread, thread_name,
 				     sizeof(thread_name));
-	zassert_equal(ret, 0, "couldn't get main thread name");
+	ztest_equal(ret, 0, "couldn't get main thread name");
 	printk("Main thread name is '%s'\n", thread_name);
 
 	/* Set and get child thread's name */
@@ -202,11 +202,11 @@ void test_thread_name_user_get_set(void)
 				      thread_name_entry, NULL, NULL, NULL,
 				      K_PRIO_PREEMPT(1), K_USER, K_NO_WAIT);
 	ret = k_thread_name_set(tid, "customdata");
-	zassert_equal(ret, 0, "k_thread_name_set() failed");
+	ztest_equal(ret, 0, "k_thread_name_set() failed");
 	ret = k_thread_name_copy(tid, thread_name, sizeof(thread_name));
-	zassert_equal(ret, 0, "couldn't get copied thread name");
+	ztest_equal(ret, 0, "couldn't get copied thread name");
 	ret = strcmp(thread_name, "customdata");
-	zassert_equal(ret, 0, "child thread name does not match");
+	ztest_equal(ret, 0, "child thread name does not match");
 
 	/* cleanup environment */
 	k_thread_abort(tid);
@@ -243,7 +243,7 @@ static void umode_entry(void *thread_id, void *p2, void *p3)
 	    (k_current_get() == (k_tid_t)thread_id)) {
 		ztest_test_pass();
 	} else {
-		zassert_unreachable("User thread is essential or thread"
+		ztest_unreachable("User thread is essential or thread"
 				    " structure is corrupted\n");
 	}
 }
@@ -258,7 +258,7 @@ void test_user_mode(void)
 {
 	z_thread_essential_set();
 
-	zassert_true(z_is_thread_essential(), "Thread isn't set"
+	ztest_true(z_is_thread_essential(), "Thread isn't set"
 		     " as essential\n");
 
 	k_thread_user_mode_enter((k_thread_entry_t)umode_entry,
@@ -374,22 +374,22 @@ void test_thread_join(void)
 {
 #ifdef CONFIG_USERSPACE
 	/* scenario: thread never started */
-	zassert_equal(k_thread_join(&join_thread, K_FOREVER), 0,
+	ztest_equal(k_thread_join(&join_thread, K_FOREVER), 0,
 		      "failed case thread never started");
 #endif
-	zassert_equal(join_scenario(TIMEOUT), -EAGAIN, "failed timeout case");
-	zassert_equal(join_scenario(NO_WAIT), -EBUSY, "failed no-wait case");
-	zassert_equal(join_scenario(SELF_ABORT), 0, "failed self-abort case");
-	zassert_equal(join_scenario(OTHER_ABORT), 0, "failed other-abort case");
-	zassert_equal(join_scenario(ALREADY_EXIT), 0,
+	ztest_equal(join_scenario(TIMEOUT), -EAGAIN, "failed timeout case");
+	ztest_equal(join_scenario(NO_WAIT), -EBUSY, "failed no-wait case");
+	ztest_equal(join_scenario(SELF_ABORT), 0, "failed self-abort case");
+	ztest_equal(join_scenario(OTHER_ABORT), 0, "failed other-abort case");
+	ztest_equal(join_scenario(ALREADY_EXIT), 0,
 		      "failed already exit case");
 
 }
 
 void test_thread_join_isr(void)
 {
-	zassert_equal(join_scenario(ISR_RUNNING), -EBUSY, "failed isr running");
-	zassert_equal(join_scenario(ISR_ALREADY_EXIT), 0, "failed isr exited");
+	ztest_equal(join_scenario(ISR_RUNNING), -EBUSY, "failed isr running");
+	ztest_equal(join_scenario(ISR_ALREADY_EXIT), 0, "failed isr exited");
 }
 
 struct k_thread deadlock1_thread;
@@ -405,7 +405,7 @@ void deadlock1_entry(void *p1, void *p2, void *p3)
 	k_sleep(500);
 
 	ret = k_thread_join(&deadlock2_thread, K_FOREVER);
-	zassert_equal(ret, -EDEADLK, "failed mutual join case");
+	ztest_equal(ret, -EDEADLK, "failed mutual join case");
 }
 
 void deadlock2_entry(void *p1, void *p2, void *p3)
@@ -415,13 +415,13 @@ void deadlock2_entry(void *p1, void *p2, void *p3)
 	/* deadlock1_thread is active but currently sleeping */
 	ret = k_thread_join(&deadlock1_thread, K_FOREVER);
 
-	zassert_equal(ret, 0, "couldn't join deadlock2_thread");
+	ztest_equal(ret, 0, "couldn't join deadlock2_thread");
 }
 
 void test_thread_join_deadlock(void)
 {
 	/* Deadlock scenarios */
-	zassert_equal(k_thread_join(k_current_get(), K_FOREVER), -EDEADLK,
+	ztest_equal(k_thread_join(k_current_get(), K_FOREVER), -EDEADLK,
 				    "failed self-deadlock case");
 
 	k_thread_create(&deadlock1_thread, deadlock1_stack, STACK_SIZE,
@@ -431,9 +431,9 @@ void test_thread_join_deadlock(void)
 			deadlock2_entry, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(1), K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
-	zassert_equal(k_thread_join(&deadlock1_thread, K_FOREVER), 0,
+	ztest_equal(k_thread_join(&deadlock1_thread, K_FOREVER), 0,
 		      "couldn't join deadlock1_thread");
-	zassert_equal(k_thread_join(&deadlock2_thread, K_FOREVER), 0,
+	ztest_equal(k_thread_join(&deadlock2_thread, K_FOREVER), 0,
 		      "couldn't join deadlock2_thread");
 }
 

@@ -671,11 +671,11 @@ static int eval_msg_connect(struct mqtt_test *mqtt_test)
 	rc = connect_request_encode(&client, &buf);
 
 	/**TESTPOINTS: Check connect_request_encode functions*/
-	zassert_false(rc, "connect_request_encode failed");
+	ztest_false(rc, "connect_request_encode failed");
 
 	rc = eval_buffers(&buf, mqtt_test->expected, mqtt_test->expected_len);
 
-	zassert_false(rc, "eval_buffers failed");
+	ztest_false(rc, "eval_buffers failed");
 
 	return TC_PASS;
 }
@@ -691,11 +691,11 @@ static int eval_msg_disconnect(struct mqtt_test *mqtt_test)
 	rc = disconnect_encode(&buf);
 
 	/**TESTPOINTS: Check disconnect_encode functions*/
-	zassert_false(rc, "disconnect_encode failed");
+	ztest_false(rc, "disconnect_encode failed");
 
 	rc = eval_buffers(&buf, mqtt_test->expected, mqtt_test->expected_len);
 
-	zassert_false(rc, "eval_buffers failed");
+	ztest_false(rc, "eval_buffers failed");
 
 	return TC_PASS;
 }
@@ -723,38 +723,38 @@ static int eval_msg_publish(struct mqtt_test *mqtt_test)
 	buf.end += param->message.payload.len;
 
 	/**TESTPOINT: Check publish_encode function*/
-	zassert_false(rc, "publish_encode failed");
+	ztest_false(rc, "publish_encode failed");
 
 	rc = eval_buffers(&buf, mqtt_test->expected, mqtt_test->expected_len);
 
-	zassert_false(rc, "eval_buffers failed");
+	ztest_false(rc, "eval_buffers failed");
 
 	rc = fixed_header_decode(&buf, &type_and_flags, &length);
 
-	zassert_false(rc, "fixed_header_decode failed");
+	ztest_false(rc, "fixed_header_decode failed");
 
 	rc = publish_decode(type_and_flags, length, &buf, &dec_param);
 
 	/**TESTPOINT: Check publish_decode function*/
-	zassert_false(rc, "publish_decode failed");
+	ztest_false(rc, "publish_decode failed");
 
-	zassert_equal(dec_param.message_id, param->message_id,
+	ztest_equal(dec_param.message_id, param->message_id,
 		      "message_id error");
-	zassert_equal(dec_param.dup_flag, param->dup_flag,
+	ztest_equal(dec_param.dup_flag, param->dup_flag,
 		      "dup flag error");
-	zassert_equal(dec_param.retain_flag, param->retain_flag,
+	ztest_equal(dec_param.retain_flag, param->retain_flag,
 		      "retain flag error");
-	zassert_equal(dec_param.message.topic.qos, param->message.topic.qos,
+	ztest_equal(dec_param.message.topic.qos, param->message.topic.qos,
 		      "topic qos error");
-	zassert_equal(dec_param.message.topic.topic.size,
+	ztest_equal(dec_param.message.topic.topic.size,
 		      param->message.topic.topic.size,
 		      "topic len error");
 	if (memcmp(dec_param.message.topic.topic.utf8,
 		   param->message.topic.topic.utf8,
 		   dec_param.message.topic.topic.size) != 0) {
-		zassert_unreachable("topic content error");
+		ztest_unreachable("topic content error");
 	}
-	zassert_equal(dec_param.message.payload.len,
+	ztest_equal(dec_param.message.payload.len,
 		      param->message.payload.len,
 		      "payload len error");
 
@@ -774,7 +774,7 @@ static int eval_msg_subscribe(struct mqtt_test *mqtt_test)
 	rc = subscribe_encode(param, &buf);
 
 	/**TESTPOINT: Check subscribe_encode function*/
-	zassert_false(rc, "subscribe_encode failed");
+	ztest_false(rc, "subscribe_encode failed");
 
 	return eval_buffers(&buf, mqtt_test->expected, mqtt_test->expected_len);
 }
@@ -797,21 +797,21 @@ static int eval_msg_suback(struct mqtt_test *mqtt_test)
 
 	rc = fixed_header_decode(&buf, &type_and_flags, &length);
 
-	zassert_false(rc, "fixed_header_decode failed");
+	ztest_false(rc, "fixed_header_decode failed");
 
 	rc = subscribe_ack_decode(&buf, &dec_param);
 
 	/**TESTPOINT: Check subscribe_ack_decode function*/
-	zassert_false(rc, "subscribe_ack_decode failed");
+	ztest_false(rc, "subscribe_ack_decode failed");
 
-	zassert_equal(dec_param.message_id, param->message_id,
+	ztest_equal(dec_param.message_id, param->message_id,
 		      "packet identifier error");
-	zassert_equal(dec_param.return_codes.len,
+	ztest_equal(dec_param.return_codes.len,
 		      param->return_codes.len,
 		      "topic count error");
 	if (memcmp(dec_param.return_codes.data, param->return_codes.data,
 		   dec_param.return_codes.len) != 0) {
-		zassert_unreachable("subscribe result error");
+		ztest_unreachable("subscribe result error");
 	}
 
 	return TC_PASS;
@@ -828,11 +828,11 @@ static int eval_msg_pingreq(struct mqtt_test *mqtt_test)
 	rc = ping_request_encode(&buf);
 
 	/**TESTPOINTS: Check eval_msg_pingreq functions*/
-	zassert_false(rc, "ping_request_encode failed");
+	ztest_false(rc, "ping_request_encode failed");
 
 	rc = eval_buffers(&buf, mqtt_test->expected, mqtt_test->expected_len);
 
-	zassert_false(rc, "eval_buffers failed");
+	ztest_false(rc, "eval_buffers failed");
 
 	return TC_PASS;
 }
@@ -855,21 +855,21 @@ static int eval_msg_puback(struct mqtt_test *mqtt_test)
 	rc = publish_ack_encode(param, &buf);
 
 	/**TESTPOINTS: Check publish_ack_encode functions*/
-	zassert_false(rc, "publish_ack_encode failed");
+	ztest_false(rc, "publish_ack_encode failed");
 
 	rc = eval_buffers(&buf, mqtt_test->expected, mqtt_test->expected_len);
 
-	zassert_false(rc, "eval_buffers failed");
+	ztest_false(rc, "eval_buffers failed");
 
 	rc = fixed_header_decode(&buf, &type_and_flags, &length);
 
-	zassert_false(rc, "fixed_header_decode failed");
+	ztest_false(rc, "fixed_header_decode failed");
 
 	rc = publish_ack_decode(&buf, &dec_param);
 
-	zassert_false(rc, "publish_ack_decode failed");
+	ztest_false(rc, "publish_ack_decode failed");
 
-	zassert_equal(dec_param.message_id, param->message_id,
+	ztest_equal(dec_param.message_id, param->message_id,
 		      "packet identifier error");
 
 	return TC_PASS;
@@ -893,21 +893,21 @@ static int eval_msg_pubcomp(struct mqtt_test *mqtt_test)
 	rc = publish_complete_encode(param, &buf);
 
 	/**TESTPOINTS: Check publish_complete_encode functions*/
-	zassert_false(rc, "publish_complete_encode failed");
+	ztest_false(rc, "publish_complete_encode failed");
 
 	rc = eval_buffers(&buf, mqtt_test->expected, mqtt_test->expected_len);
 
-	zassert_false(rc, "eval_buffers failed");
+	ztest_false(rc, "eval_buffers failed");
 
 	rc = fixed_header_decode(&buf, &type_and_flags, &length);
 
-	zassert_false(rc, "fixed_header_decode failed");
+	ztest_false(rc, "fixed_header_decode failed");
 
 	rc = publish_complete_decode(&buf, &dec_param);
 
-	zassert_false(rc, "publish_complete_decode failed");
+	ztest_false(rc, "publish_complete_decode failed");
 
-	zassert_equal(dec_param.message_id, param->message_id,
+	ztest_equal(dec_param.message_id, param->message_id,
 		      "packet identifier error");
 
 	return TC_PASS;
@@ -931,21 +931,21 @@ static int eval_msg_pubrec(struct mqtt_test *mqtt_test)
 	rc = publish_receive_encode(param, &buf);
 
 	/**TESTPOINTS: Check publish_receive_encode functions*/
-	zassert_false(rc, "publish_receive_encode failed");
+	ztest_false(rc, "publish_receive_encode failed");
 
 	rc = eval_buffers(&buf, mqtt_test->expected, mqtt_test->expected_len);
 
-	zassert_false(rc, "eval_buffers failed");
+	ztest_false(rc, "eval_buffers failed");
 
 	rc = fixed_header_decode(&buf, &type_and_flags, &length);
 
-	zassert_false(rc, "fixed_header_decode failed");
+	ztest_false(rc, "fixed_header_decode failed");
 
 	rc = publish_receive_decode(&buf, &dec_param);
 
-	zassert_false(rc, "publish_receive_decode failed");
+	ztest_false(rc, "publish_receive_decode failed");
 
-	zassert_equal(dec_param.message_id, param->message_id,
+	ztest_equal(dec_param.message_id, param->message_id,
 		      "packet identifier error");
 
 	return TC_PASS;
@@ -969,21 +969,21 @@ static int eval_msg_pubrel(struct mqtt_test *mqtt_test)
 	rc = publish_release_encode(param, &buf);
 
 	/**TESTPOINTS: Check publish_release_encode functions*/
-	zassert_false(rc, "publish_release_encode failed");
+	ztest_false(rc, "publish_release_encode failed");
 
 	rc = eval_buffers(&buf, mqtt_test->expected, mqtt_test->expected_len);
 
-	zassert_false(rc, "eval_buffers failed");
+	ztest_false(rc, "eval_buffers failed");
 
 	rc = fixed_header_decode(&buf, &type_and_flags, &length);
 
-	zassert_false(rc, "fixed_header_decode failed");
+	ztest_false(rc, "fixed_header_decode failed");
 
 	rc = publish_release_decode(&buf, &dec_param);
 
-	zassert_false(rc, "publish_release_decode failed");
+	ztest_false(rc, "publish_release_decode failed");
 
-	zassert_equal(dec_param.message_id, param->message_id,
+	ztest_equal(dec_param.message_id, param->message_id,
 		      "packet identifier error");
 
 	return TC_PASS;
@@ -1006,13 +1006,13 @@ static int eval_msg_unsuback(struct mqtt_test *mqtt_test)
 
 	rc = fixed_header_decode(&buf, &type_and_flags, &length);
 
-	zassert_false(rc, "fixed_header_decode failed");
+	ztest_false(rc, "fixed_header_decode failed");
 
 	rc = unsubscribe_ack_decode(&buf, &dec_param);
 
-	zassert_false(rc, "unsubscribe_ack_decode failed");
+	ztest_false(rc, "unsubscribe_ack_decode failed");
 
-	zassert_equal(dec_param.message_id, param->message_id,
+	ztest_equal(dec_param.message_id, param->message_id,
 		      "packet identifier error");
 
 	return TC_PASS;
@@ -1045,7 +1045,7 @@ void test_mqtt_packet(void)
 			test->test_name);
 
 		/**TESTPOINT: Check eval_fcn*/
-		zassert_false(rc, "mqtt_packet test error");
+		ztest_false(rc, "mqtt_packet test error");
 
 		i++;
 	} while (1);

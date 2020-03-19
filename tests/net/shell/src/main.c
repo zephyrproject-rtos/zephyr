@@ -190,14 +190,14 @@ static void test_setup(void)
 	if (!ifaddr) {
 		printk("Cannot add %s to interface %p\n",
 		       net_sprint_ipv6_addr(&in6addr_my), iface);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 
 	ifaddr = net_if_ipv4_addr_add(iface, &in4addr_my, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		printk("Cannot add %s to interface %p\n",
 		       net_sprint_ipv4_addr(&in4addr_my), iface);
-		zassert_true(0, "exiting");
+		ztest_true(0, "exiting");
 	}
 }
 
@@ -207,11 +207,11 @@ static void test_net_shell(void)
 
 	/* Test that command exists */
 	ret = shell_execute_cmd(NULL, "net iface");
-	zassert_equal(ret, 0, "");
+	ztest_equal(ret, 0, "");
 
 	/* There is no foobar command */
 	ret = shell_execute_cmd(NULL, "net foobar");
-	zassert_equal(ret, 1, "");
+	ztest_equal(ret, 1, "");
 }
 
 void test_main(void)

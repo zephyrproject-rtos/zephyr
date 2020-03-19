@@ -24,11 +24,11 @@ void config_setup_littlefs(void)
 	const struct flash_area *fap;
 
 	rc = flash_area_open(DT_FLASH_AREA_LITTLEFS_DEV_ID, &fap);
-	zassert_true(rc == 0, "opening flash area for erase [%d]\n", rc);
+	ztest_true(rc == 0, "opening flash area for erase [%d]\n", rc);
 
 	flash_area_erase(fap, fap->fa_off, fap->fa_size);
-	zassert_true(rc == 0, "erasing flash area [%d]\n", rc);
+	ztest_true(rc == 0, "erasing flash area [%d]\n", rc);
 
 	rc = fs_mount(&littlefs_mnt);
-	zassert_true(rc == 0, "mounting littlefs [%d]\n", rc);
+	ztest_true(rc == 0, "mounting littlefs [%d]\n", rc);
 }

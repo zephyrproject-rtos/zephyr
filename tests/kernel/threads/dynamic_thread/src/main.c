@@ -46,7 +46,7 @@ static void create_dynamic_thread(void)
 
 	dyn_thread = k_object_alloc(K_OBJ_THREAD);
 
-	zassert_not_null(dyn_thread, "Cannot allocate thread k_object!");
+	ztest_not_null(dyn_thread, "Cannot allocate thread k_object!");
 
 	tid = k_thread_create(dyn_thread, dyn_thread_stack, STACKSIZE,
 			      dyn_thread_entry, NULL, NULL, NULL,
@@ -57,7 +57,7 @@ static void create_dynamic_thread(void)
 
 	k_sem_give(&start_sem);
 
-	zassert_true(k_sem_take(&end_sem, K_SECONDS(1)) == 0,
+	ztest_true(k_sem_take(&end_sem, K_SECONDS(1)) == 0,
 		     "k_sem_take(end_sem) failed");
 
 	k_thread_abort(tid);
@@ -72,7 +72,7 @@ static void permission_test(void)
 
 	dyn_thread = k_object_alloc(K_OBJ_THREAD);
 
-	zassert_not_null(dyn_thread, "Cannot allocate thread k_object!");
+	ztest_not_null(dyn_thread, "Cannot allocate thread k_object!");
 
 	tid = k_thread_create(dyn_thread, dyn_thread_stack, STACKSIZE,
 			      dyn_thread_entry, NULL, NULL, NULL,
@@ -91,7 +91,7 @@ static void permission_test(void)
 	 * If dyn_thread has permission to access end_sem,
 	 * k_sem_take() would be able to take the semaphore.
 	 */
-	zassert_true(k_sem_take(&end_sem, K_SECONDS(1)) != 0,
+	ztest_true(k_sem_take(&end_sem, K_SECONDS(1)) != 0,
 		     "Semaphore end_sem has incorrect permission");
 
 	k_thread_abort(tid);
@@ -134,7 +134,7 @@ static void test_thread_index_management(void)
 		ctr++;
 	}
 
-	zassert_true(ctr != 0, "unable to create any thread objects");
+	ztest_true(ctr != 0, "unable to create any thread objects");
 
 	TC_PRINT("created %d thread objects\n", ctr);
 
@@ -142,7 +142,7 @@ static void test_thread_index_management(void)
 	 * heap space/
 	 */
 	void *blob = k_malloc(256);
-	zassert_true(blob != NULL, "out of heap memory");
+	ztest_true(blob != NULL, "out of heap memory");
 
 	/* Free one of the threads... */
 	k_object_free(dynamic_threads[0]);
@@ -151,7 +151,7 @@ static void test_thread_index_management(void)
 	 * index should have been garbage collected.
 	 */
 	dynamic_threads[0] = k_object_alloc(K_OBJ_THREAD);
-	zassert_true(dynamic_threads[0] != NULL,
+	ztest_true(dynamic_threads[0] != NULL,
 		     "couldn't create thread object\n");
 
 	/* TODO: Implement a test that shows that thread IDs are properly

@@ -100,7 +100,7 @@ static int test_callback_add_remove(void)
 		TC_PRINT("%s not supported\n", __func__);
 		return TC_PASS;
 	}
-	zassert_equal(rc, 0,
+	ztest_equal(rc, 0,
 		      "init_callback failed");
 
 	/* 3. enable callback, trigger PIN_IN interrupt by operate PIN_OUT */
@@ -149,7 +149,7 @@ static int test_callback_self_remove(void)
 		TC_PRINT("%s not supported\n", __func__);
 		return TC_PASS;
 	}
-	zassert_equal(rc, 0,
+	ztest_equal(rc, 0,
 		      "init_callback failed");
 
 	gpio_pin_set(dev, PIN_OUT, 0);
@@ -201,7 +201,7 @@ static int test_callback_enable_disable(void)
 		TC_PRINT("%s not supported\n", __func__);
 		return TC_PASS;
 	}
-	zassert_equal(rc, 0,
+	ztest_equal(rc, 0,
 		      "init_callback failed");
 
 	/* 3. enable callback, trigger PIN_IN interrupt by operate PIN_OUT */
@@ -239,18 +239,18 @@ err_exit:
 
 void test_gpio_callback_add_remove(void)
 {
-	zassert_equal(test_callback_add_remove(), TC_PASS,
+	ztest_equal(test_callback_add_remove(), TC_PASS,
 		     NULL);
 }
 
 void test_gpio_callback_self_remove(void)
 {
-	zassert_equal(test_callback_self_remove(), TC_PASS,
+	ztest_equal(test_callback_self_remove(), TC_PASS,
 		     NULL);
 }
 
 void test_gpio_callback_enable_disable(void)
 {
-	zassert_equal(test_callback_enable_disable(), TC_PASS,
+	ztest_equal(test_callback_enable_disable(), TC_PASS,
 		     NULL);
 }

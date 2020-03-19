@@ -75,9 +75,9 @@ void test_timer(void)
 		t_last = t_now;
 	}
 
-	zassert_false(errors, "errors = %d\n", errors);
+	ztest_false(errors, "errors = %d\n", errors);
 
-	zassert_false(test_frequency(), "test frequency failed");
+	ztest_false(test_frequency(), "test frequency failed");
 }
 
 void test_main(void)

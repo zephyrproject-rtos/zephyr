@@ -46,7 +46,7 @@ void test_bluetooth_entry(void)
 {
 	driver_init();
 
-	zassert_true((bt_enable(NULL) == EXPECTED_ERROR),
+	ztest_true((bt_enable(NULL) == EXPECTED_ERROR),
 			"bt_enable failed");
 }
 

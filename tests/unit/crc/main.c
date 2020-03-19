@@ -18,9 +18,9 @@ void test_crc32_ieee(void)
 	u8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 	u8_t test3[] = { 'Z', 'e', 'p', 'h', 'y', 'r' };
 
-	zassert_equal(crc32_ieee(test1, sizeof(test1)), 0xD3D99E8B, NULL);
-	zassert_equal(crc32_ieee(test2, sizeof(test2)), 0xCBF43926, NULL);
-	zassert_equal(crc32_ieee(test3, sizeof(test3)), 0x20089AA4, NULL);
+	ztest_equal(crc32_ieee(test1, sizeof(test1)), 0xD3D99E8B, NULL);
+	ztest_equal(crc32_ieee(test2, sizeof(test2)), 0xCBF43926, NULL);
+	ztest_equal(crc32_ieee(test3, sizeof(test3)), 0x20089AA4, NULL);
 }
 
 void test_crc16(void)
@@ -29,11 +29,11 @@ void test_crc16(void)
 	u8_t test1[] = { 'A' };
 	u8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-	zassert_equal(crc16(test0, sizeof(test0), 0x1021, 0xffff, true),
+	ztest_equal(crc16(test0, sizeof(test0), 0x1021, 0xffff, true),
 		      0x1d0f, NULL);
-	zassert_equal(crc16(test1, sizeof(test1), 0x1021, 0xffff, true),
+	ztest_equal(crc16(test1, sizeof(test1), 0x1021, 0xffff, true),
 		      0x9479, NULL);
-	zassert_equal(crc16(test2, sizeof(test2), 0x1021, 0xffff, true),
+	ztest_equal(crc16(test2, sizeof(test2), 0x1021, 0xffff, true),
 		      0xe5cc, NULL);
 }
 
@@ -43,9 +43,9 @@ void test_crc16_ansi(void)
 	u8_t test1[] = { 'A' };
 	u8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-	zassert(crc16_ansi(test0, sizeof(test0)) == 0x800d, "pass", "fail");
-	zassert(crc16_ansi(test1, sizeof(test1)) == 0x8f85, "pass", "fail");
-	zassert(crc16_ansi(test2, sizeof(test2)) == 0x9ecf, "pass", "fail");
+	ztest(crc16_ansi(test0, sizeof(test0)) == 0x800d, "pass", "fail");
+	ztest(crc16_ansi(test1, sizeof(test1)) == 0x8f85, "pass", "fail");
+	ztest(crc16_ansi(test2, sizeof(test2)) == 0x9ecf, "pass", "fail");
 }
 
 void test_crc16_ccitt(void)
@@ -56,9 +56,9 @@ void test_crc16_ccitt(void)
 	u8_t test3[] = { 'Z', 'e', 'p', 'h', 'y', 'r', 0, 0 };
 	u16_t crc;
 
-	zassert_equal(crc16_ccitt(0, test0, sizeof(test0)), 0x0, NULL);
-	zassert_equal(crc16_ccitt(0, test1, sizeof(test1)), 0x538d, NULL);
-	zassert_equal(crc16_ccitt(0, test2, sizeof(test2)), 0x2189, NULL);
+	ztest_equal(crc16_ccitt(0, test0, sizeof(test0)), 0x0, NULL);
+	ztest_equal(crc16_ccitt(0, test1, sizeof(test1)), 0x538d, NULL);
+	ztest_equal(crc16_ccitt(0, test2, sizeof(test2)), 0x2189, NULL);
 
 	/* Appending the CRC to a buffer and computing the CRC over
 	 * the extended buffer leaves a residual of zero.
@@ -67,7 +67,7 @@ void test_crc16_ccitt(void)
 	test3[sizeof(test3)-2] = (u8_t)(crc >> 0);
 	test3[sizeof(test3)-1] = (u8_t)(crc >> 8);
 
-	zassert_equal(crc16_ccitt(0, test3, sizeof(test3)), 0, NULL);
+	ztest_equal(crc16_ccitt(0, test3, sizeof(test3)), 0, NULL);
 }
 
 void test_crc16_ccitt_for_ppp(void)
@@ -83,9 +83,9 @@ void test_crc16_ccitt_for_ppp(void)
 	};
 	u8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-	zassert_equal(crc16_ccitt(0xffff, test0, sizeof(test0)),
+	ztest_equal(crc16_ccitt(0xffff, test0, sizeof(test0)),
 		      0xf0b8, NULL);
-	zassert_equal(crc16_ccitt(0xffff, test2, sizeof(test2)) ^ 0xFFFF,
+	ztest_equal(crc16_ccitt(0xffff, test2, sizeof(test2)) ^ 0xFFFF,
 		      0x906e, NULL);
 }
 
@@ -93,7 +93,7 @@ void test_crc16_itu_t(void)
 {
 	u8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-	zassert_equal(crc16_itu_t(0, test2, sizeof(test2)),
+	ztest_equal(crc16_itu_t(0, test2, sizeof(test2)),
 		      0x31c3, NULL);
 }
 
@@ -103,11 +103,11 @@ void test_crc8_ccitt(void)
 	u8_t test1[] = { 'A' };
 	u8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-	zassert(crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, test0,
+	ztest(crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, test0,
 			   sizeof(test0)) == 0xF3, "pass", "fail");
-	zassert(crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, test1,
+	ztest(crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, test1,
 			   sizeof(test1)) == 0x33, "pass", "fail");
-	zassert(crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, test2,
+	ztest(crc8_ccitt(CRC8_CCITT_INITIAL_VALUE, test2,
 			   sizeof(test2)) == 0xFB, "pass", "fail");
 }
 
@@ -117,9 +117,9 @@ void test_crc7_be(void)
 	u8_t test1[] = { 'A' };
 	u8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 
-	zassert_equal(crc7_be(0, test0, sizeof(test0)), 0, NULL);
-	zassert_equal(crc7_be(0, test1, sizeof(test1)), 0xDA, NULL);
-	zassert_equal(crc7_be(0, test2, sizeof(test2)), 0xEA, NULL);
+	ztest_equal(crc7_be(0, test0, sizeof(test0)), 0, NULL);
+	ztest_equal(crc7_be(0, test1, sizeof(test1)), 0xDA, NULL);
+	ztest_equal(crc7_be(0, test2, sizeof(test2)), 0xEA, NULL);
 }
 
 void test_crc8(void)
@@ -135,71 +135,71 @@ void test_crc8(void)
 
 	fcs = crc8(test0, sizeof(test0), 0x00, 0x00, false);
 	expected = 0x00;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test0, sizeof(test0), 0x31, 0x00, false);
 	expected = 0x00;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test1, sizeof(test1), 0x07, 0x00, false);
 	expected = 0x1a;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test1, sizeof(test1), 0x31, 0xff, false);
 	expected = 0x92;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test1, sizeof(test1), 0x07, 0x00, false);
 	expected = 0x1a;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test2, sizeof(test2), 0x31, 0x00, false);
 	expected = 0x45;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test2, sizeof(test2), 0x31, 0xff, false);
 	expected = 0xc4;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test2, sizeof(test2), 0x07, 0x00, false);
 	expected = 0xd6;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test2, sizeof(test2), 0x07, 0xff, false);
 	expected = 0x01;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test2, sizeof(test2), 0xe0, 0xff, true);
 	expected = 0x76;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test3, sizeof(test3), 0xe0, 0xff, true);
 	expected = 0xcf;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test3, sizeof(test3), 0x07, 0xff, false);
 	expected = 0xb1;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test4, sizeof(test4), 0x31, 0x00, false);
 	expected = 0x3a;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test4, sizeof(test4), 0x07, 0x00, false);
 	expected = 0xaf;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test4, sizeof(test4), 0x9b, 0xff, false);
 	expected = 0xf0;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test4, sizeof(test4), 0x1d, 0xfd, false);
 	expected = 0x49;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 
 	fcs = crc8(test5, sizeof(test5), 0xe0, 0xff, true);
 	expected = 0xcf;
-	zassert_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
+	ztest_equal(fcs, expected, "0x%02x vs 0x%02x", fcs, expected);
 }
 
 void test_main(void)

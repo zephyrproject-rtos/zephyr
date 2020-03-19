@@ -131,7 +131,7 @@ static void test_recv(int count)
 				    recv_buf + total_read,
 				    sizeof(recv_buf) - total_read);
 		if (count < 7 && (i * count) < FRAME1_HDR_SIZE) {
-			zassert_equal(ret, -EAGAIN,
+			ztest_equal(ret, -EAGAIN,
 				      "[%d] Header parse failed (ret %d)",
 				      i * count, ret);
 		} else {
@@ -147,10 +147,10 @@ static void test_recv(int count)
 				    &ctx, &msg_type, &remaining,
 				    recv_buf + total_read,
 				    sizeof(recv_buf) - total_read);
-		zassert_true(ret <= (sizeof(recv_buf) - total_read),
+		ztest_true(ret <= (sizeof(recv_buf) - total_read),
 			     "Invalid number of bytes read (%d)", ret);
 		total_read += ret;
-		zassert_equal(total_read, sizeof(frame1) - FRAME1_HDR_SIZE,
+		ztest_equal(total_read, sizeof(frame1) - FRAME1_HDR_SIZE,
 			      "Invalid amount of data read (%d)", ret);
 
 	} else if (total_read < (sizeof(frame1) - FRAME1_HDR_SIZE)) {
@@ -164,15 +164,15 @@ static void test_recv(int count)
 				    recv_buf + total_read,
 				    sizeof(recv_buf) - total_read);
 		total_read += ret;
-		zassert_equal(total_read, sizeof(frame1) - FRAME1_HDR_SIZE,
+		ztest_equal(total_read, sizeof(frame1) - FRAME1_HDR_SIZE,
 			      "Invalid amount of data read (%d)", ret);
 	}
 
-	zassert_mem_equal(recv_buf, frame1_msg, sizeof(frame1_msg) - 1,
+	ztest_mem_equal(recv_buf, frame1_msg, sizeof(frame1_msg) - 1,
 			  "Invalid message, should be '%s' was '%s'",
 			  frame1_msg, recv_buf);
 
-	zassert_equal(remaining, 0, "Msg not empty");
+	ztest_equal(remaining, 0, "Msg not empty");
 }
 
 static void test_recv_1_byte(void)
@@ -246,11 +246,11 @@ static void test_recv_2(int count)
 	total_read = test_recv_buf(&feed_buf[0], count, &ctx, &msg_type,
 				   &remaining, recv_buf, sizeof(recv_buf));
 
-	zassert_mem_equal(recv_buf, frame1_msg, sizeof(frame1_msg) - 1,
+	ztest_mem_equal(recv_buf, frame1_msg, sizeof(frame1_msg) - 1,
 			  "Invalid message, should be '%s' was '%s'",
 			  frame1_msg, recv_buf);
 
-	zassert_equal(remaining, 0, "Msg not empty");
+	ztest_equal(remaining, 0, "Msg not empty");
 
 	/* Then read again, now we should get EAGAIN as the second message
 	 * header is partially read.
@@ -258,10 +258,10 @@ static void test_recv_2(int count)
 	ret = test_recv_buf(&feed_buf[sizeof(frame1)], count, &ctx, &msg_type,
 			    &remaining, recv_buf, sizeof(recv_buf));
 
-	zassert_equal(ret, sizeof(frame1_msg) - 1,
+	ztest_equal(ret, sizeof(frame1_msg) - 1,
 		      "2nd header parse failed (ret %d)", ret);
 
-	zassert_equal(remaining, 0, "Msg not empty");
+	ztest_equal(remaining, 0, "Msg not empty");
 }
 
 static void test_recv_two_msg(void)
@@ -287,7 +287,7 @@ int verify_sent_and_received_msg(struct msghdr *msg, bool split_msg)
 			    msg->msg_iov[0].iov_len,
 			    &ctx, &msg_type, &remaining,
 			    recv_buf, sizeof(recv_buf));
-	zassert_equal(ret, -EAGAIN, "Msg header not found");
+	ztest_equal(ret, -EAGAIN, "Msg header not found");
 
 	/* Then the first split if it is enabled */
 	if (split_msg) {
@@ -297,7 +297,7 @@ int verify_sent_and_received_msg(struct msghdr *msg, bool split_msg)
 				    split_len,
 				    &ctx, &msg_type, &remaining,
 				    recv_buf, sizeof(recv_buf));
-		zassert_true(ret > 0, "Cannot read data (%d)", ret);
+		ztest_true(ret > 0, "Cannot read data (%d)", ret);
 
 		total_read = ret;
 	}
@@ -309,20 +309,20 @@ int verify_sent_and_received_msg(struct msghdr *msg, bool split_msg)
 				    msg->msg_iov[1].iov_len - total_read,
 				    &ctx, &msg_type, &remaining,
 				    recv_buf, sizeof(recv_buf));
-		zassert_true(ret > 0, "Cannot read data (%d)", ret);
+		ztest_true(ret > 0, "Cannot read data (%d)", ret);
 
 		if (memcmp(recv_buf, lorem_ipsum + total_read, ret) != 0) {
 			LOG_HEXDUMP_ERR(lorem_ipsum + total_read, ret,
 					"Received message should be");
 			LOG_HEXDUMP_ERR(recv_buf, ret, "but it was instead");
-			zassert_true(false, "Invalid received message "
+			ztest_true(false, "Invalid received message "
 				     "after %d bytes", total_read);
 		}
 
 		total_read += ret;
 	}
 
-	zassert_equal(total_read, test_msg_len,
+	ztest_equal(total_read, test_msg_len,
 		      "Msg body not valid, received %d instead of %zd",
 		      total_read, test_msg_len);
 
@@ -348,7 +348,7 @@ static void test_send_and_recv_lorem_ipsum(void)
 				 lorem_ipsum, test_msg_len,
 				 WEBSOCKET_OPCODE_DATA_TEXT, true, true,
 				 K_FOREVER);
-	zassert_equal(ret, test_msg_len,
+	ztest_equal(ret, test_msg_len,
 		      "Should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);
 }
@@ -368,7 +368,7 @@ static void test_recv_two_large_split_msg(void)
 	ret = websocket_send_msg(POINTER_TO_INT(&ctx), lorem_ipsum,
 				 test_msg_len, WEBSOCKET_OPCODE_DATA_TEXT,
 				 false, true, K_FOREVER);
-	zassert_equal(ret, test_msg_len,
+	ztest_equal(ret, test_msg_len,
 		      "1st should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);
 }

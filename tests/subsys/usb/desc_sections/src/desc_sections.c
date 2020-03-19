@@ -171,13 +171,13 @@ static void check_endpoint_allocation(struct usb_desc_header *head)
 			LOG_DBG("iface %u", if_descr->bInterfaceNumber);
 
 			/* Check that interfaces get correct numbers */
-			zassert_equal(if_descr->bInterfaceNumber, interfaces,
+			ztest_equal(if_descr->bInterfaceNumber, interfaces,
 				      "Interfaces numbering failed");
 
 			interfaces++;
 
 			cfg_data = usb_get_cfg_data(if_descr);
-			zassert_not_null(cfg_data, "Check available cfg data");
+			ztest_not_null(cfg_data, "Check available cfg data");
 		}
 
 		if (head->bDescriptorType == USB_ENDPOINT_DESC) {
@@ -185,9 +185,9 @@ static void check_endpoint_allocation(struct usb_desc_header *head)
 				(struct usb_ep_descriptor *)head;
 
 			/* Check that we get iface desc before */
-			zassert_not_null(cfg_data, "Check available cfg data");
+			ztest_not_null(cfg_data, "Check available cfg data");
 
-			zassert_true(find_cfg_data_ep(ep_descr, cfg_data,
+			ztest_true(find_cfg_data_ep(ep_descr, cfg_data,
 						      ep_count),
 				     "Check endpoint config in cfg_data");
 			ep_count++;
@@ -229,14 +229,14 @@ static void test_desc_sections(void)
 			"USB Configuratio structures section");
 
 	head = (struct usb_desc_header *)__usb_descriptor_start;
-	zassert_not_null(head, NULL);
+	ztest_not_null(head, NULL);
 
-	zassert_equal(SYMBOL_SPAN(__usb_descriptor_end, __usb_descriptor_start),
+	ztest_equal(SYMBOL_SPAN(__usb_descriptor_end, __usb_descriptor_start),
 		      TEST_DESCRIPTOR_TABLE_SPAN, NULL);
 
 	/* Calculate number of structures */
-	zassert_equal(__usb_data_end - __usb_data_start, NUM_INSTANCES, NULL);
-	zassert_equal(SYMBOL_SPAN(__usb_data_end, __usb_data_start),
+	ztest_equal(__usb_data_end - __usb_data_start, NUM_INSTANCES, NULL);
+	ztest_equal(SYMBOL_SPAN(__usb_data_end, __usb_data_start),
 		      NUM_INSTANCES * sizeof(struct usb_cfg_data), NULL);
 
 	check_endpoint_allocation(head);

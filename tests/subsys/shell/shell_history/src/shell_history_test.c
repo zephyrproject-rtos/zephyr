@@ -39,15 +39,15 @@ static void test_get(bool ok, bool up, u8_t *exp_buf, u16_t exp_len)
 	res = shell_history_get(&history, up, out_buf, &out_len);
 
 	if (ok) {
-		zassert_true(res, "history should contain one entry.\n");
+		ztest_true(res, "history should contain one entry.\n");
 
-		zassert_equal(out_len, exp_len, "Unexpected entry length.\n");
+		ztest_equal(out_len, exp_len, "Unexpected entry length.\n");
 		if (out_len) {
-			zassert_equal(memcmp(out_buf, exp_buf, out_len), 0,
+			ztest_equal(memcmp(out_buf, exp_buf, out_len), 0,
 				"Expected equal buffers.\n");
 		}
 	} else {
-		zassert_false(res, "History should return nothing.\n");
+		ztest_false(res, "History should return nothing.\n");
 	}
 }
 

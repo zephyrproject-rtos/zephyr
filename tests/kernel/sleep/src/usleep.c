@@ -88,6 +88,6 @@ void test_usleep(void)
 	}
 
 	printk("elapsed_ms = %lld\n", elapsed_ms);
-	zassert_true(elapsed_ms >= LOWER_BOUND_MS, "short sleep");
-	zassert_true(elapsed_ms <= UPPER_BOUND_MS, "overslept");
+	ztest_true(elapsed_ms >= LOWER_BOUND_MS, "short sleep");
+	ztest_true(elapsed_ms <= UPPER_BOUND_MS, "overslept");
 }

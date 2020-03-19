@@ -39,7 +39,7 @@ void test_posix_timer(void)
 	ret = timer_create(CLOCK_MONOTONIC, &sig, &timerid);
 
 	/*TESTPOINT: Check if timer is created successfully*/
-	zassert_false(ret, "POSIX timer create failed");
+	ztest_false(ret, "POSIX timer create failed");
 
 	value.it_value.tv_sec = DURATION_SECS;
 	value.it_value.tv_nsec = DURATION_NSECS;
@@ -48,7 +48,7 @@ void test_posix_timer(void)
 	ret = timer_settime(timerid, 0, &value, &ovalue);
 	usleep(100 * USEC_PER_MSEC);
 	ret = timer_gettime(timerid, &value);
-	zassert_false(ret, "Failed to get time to expire.");
+	ztest_false(ret, "Failed to get time to expire.");
 
 	if (ret == 0) {
 		printk("Timer fires every %d secs and  %d nsecs\n",
@@ -62,7 +62,7 @@ void test_posix_timer(void)
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 
 	/*TESTPOINT: Check if timer has started successfully*/
-	zassert_false(ret, "POSIX timer failed to start");
+	ztest_false(ret, "POSIX timer failed to start");
 
 	sleep(SECS_TO_SLEEP);
 
@@ -83,6 +83,6 @@ void test_posix_timer(void)
 			     value.it_interval.tv_nsec)) / NSEC_PER_SEC;
 
 	/*TESTPOINT: Check if POSIX timer test passed*/
-	zassert_equal(total_secs_timer, secs_elapsed,
+	ztest_equal(total_secs_timer, secs_elapsed,
 		      "POSIX timer test has failed");
 }

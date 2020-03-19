@@ -43,7 +43,7 @@ extern void test_time_conversions(void);
 	do {					 \
 		if (!(exp)) {			 \
 			k_timer_stop(tmr);	 \
-			zassert_true(exp, NULL); \
+			ztest_true(exp, NULL); \
 		}				 \
 	} while (0)
 
@@ -483,7 +483,7 @@ void test_timer_user_data(void)
 				      (void *)user_data[ii]);
 		check = (intptr_t)k_timer_user_data_get(user_data_timer[ii]);
 
-		zassert_true(check == user_data[ii], NULL);
+		ztest_true(check == user_data[ii], NULL);
 	}
 
 	for (ii = 0; ii < 5; ii++) {
@@ -497,7 +497,7 @@ void test_timer_user_data(void)
 	}
 
 	for (ii = 0; ii < 5; ii++) {
-		zassert_true(user_data_correct[ii], NULL);
+		ztest_true(user_data_correct[ii], NULL);
 	}
 }
 
@@ -532,7 +532,7 @@ void test_timer_remaining_get(void)
 	 * the value obtained through k_timer_remaining_get() could be larger
 	 * than actual remaining time with maximum error equal to one tick.
 	 */
-	zassert_true(remaining <= (DURATION / 2) + k_ticks_to_ms_floor64(1), NULL);
+	ztest_true(remaining <= (DURATION / 2) + k_ticks_to_ms_floor64(1), NULL);
 }
 
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,

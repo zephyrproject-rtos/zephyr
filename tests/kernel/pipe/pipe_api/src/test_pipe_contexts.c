@@ -50,9 +50,9 @@ static void tpipe_put(struct k_pipe *ppipe, int timeout)
 		/**TESTPOINT: pipe put*/
 		to_wt = (PIPE_LEN - i) >= BYTES_TO_WRITE ?
 			BYTES_TO_WRITE : (PIPE_LEN - i);
-		zassert_false(k_pipe_put(ppipe, &data[i], to_wt,
+		ztest_false(k_pipe_put(ppipe, &data[i], to_wt,
 					 &wt_byte, 1, timeout), NULL);
-		zassert_true(wt_byte == to_wt || wt_byte == 1, NULL);
+		ztest_true(wt_byte == to_wt || wt_byte == 1, NULL);
 	}
 }
 
@@ -63,7 +63,7 @@ static void tpipe_block_put(struct k_pipe *ppipe, struct k_sem *sema,
 
 	for (int i = 0; i < PIPE_LEN; i += BYTES_TO_WRITE) {
 		/**TESTPOINT: pipe block put*/
-		zassert_equal(k_mem_pool_alloc(&mpool, &block, BYTES_TO_WRITE,
+		ztest_equal(k_mem_pool_alloc(&mpool, &block, BYTES_TO_WRITE,
 					       timeout), 0, NULL);
 		memcpy(block.data, &data[i], BYTES_TO_WRITE);
 		k_pipe_block_put(ppipe, &block, BYTES_TO_WRITE, sema);
@@ -83,12 +83,12 @@ static void tpipe_get(struct k_pipe *ppipe, int timeout)
 		/**TESTPOINT: pipe get*/
 		to_rd = (PIPE_LEN - i) >= BYTES_TO_READ ?
 			BYTES_TO_READ : (PIPE_LEN - i);
-		zassert_false(k_pipe_get(ppipe, &rx_data[i], to_rd,
+		ztest_false(k_pipe_get(ppipe, &rx_data[i], to_rd,
 					 &rd_byte, 1, timeout), NULL);
-		zassert_true(rd_byte == to_rd || rd_byte == 1, NULL);
+		ztest_true(rd_byte == to_rd || rd_byte == 1, NULL);
 	}
 	for (int i = 0; i < PIPE_LEN; i++) {
-		zassert_equal(rx_data[i], data[i], NULL);
+		ztest_equal(rx_data[i], data[i], NULL);
 	}
 }
 
@@ -150,9 +150,9 @@ static void tpipe_put_no_wait(struct k_pipe *ppipe)
 	/**TESTPOINT: pipe put*/
 		to_wt = (PIPE_LEN - i) >= BYTES_TO_WRITE ?
 			BYTES_TO_WRITE : (PIPE_LEN - i);
-		zassert_false(k_pipe_put(ppipe, &data[i], to_wt,
+		ztest_false(k_pipe_put(ppipe, &data[i], to_wt,
 					&wt_byte, 1, K_NO_WAIT), NULL);
-		zassert_true(wt_byte == to_wt || wt_byte == 1, NULL);
+		ztest_true(wt_byte == to_wt || wt_byte == 1, NULL);
 	}
 }
 
@@ -198,8 +198,8 @@ void test_pipe_user_thread2thread(void)
 
 	struct k_pipe *p = k_object_alloc(K_OBJ_PIPE);
 
-	zassert_true(p != NULL, NULL);
-	zassert_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
+	ztest_true(p != NULL, NULL);
+	ztest_false(k_pipe_alloc_init(p, PIPE_LEN), NULL);
 	tpipe_thread_thread(&pipe);
 
 	/**TESTPOINT: test K_PIPE_DEFINE pipe*/
@@ -273,8 +273,8 @@ void test_resource_pool_auto_free(void)
 	/* Pool has 2 blocks, both should succeed if kernel object and pipe
 	 * buffer are auto-freed when the allocating threads exit
 	 */
-	zassert_true(k_mem_pool_malloc(&test_pool, 64) != NULL, NULL);
-	zassert_true(k_mem_pool_malloc(&test_pool, 64) != NULL, NULL);
+	ztest_true(k_mem_pool_malloc(&test_pool, 64) != NULL, NULL);
+	ztest_true(k_mem_pool_malloc(&test_pool, 64) != NULL, NULL);
 }
 #endif
 
@@ -326,7 +326,7 @@ void test_half_pipe_saturating_block_put(void)
 	r[0] = k_mem_pool_alloc(&mpool, &blocks[0], BYTES_TO_WRITE, K_NO_WAIT);
 	r[1] = k_mem_pool_alloc(&mpool, &blocks[1], BYTES_TO_WRITE, K_NO_WAIT);
 	r[2] = k_mem_pool_alloc(&mpool, &blocks[2], BYTES_TO_WRITE, K_NO_WAIT);
-	zassert_true(r[0] == 0 && r[1] == 0 && r[2] == -ENOMEM, NULL);
+	ztest_true(r[0] == 0 && r[1] == 0 && r[2] == -ENOMEM, NULL);
 	k_mem_pool_free(&blocks[0]);
 	k_mem_pool_free(&blocks[1]);
 
@@ -367,16 +367,16 @@ void test_pipe_alloc(void)
 {
 	int ret;
 
-	zassert_false(k_pipe_alloc_init(&pipe_test_alloc, PIPE_LEN), NULL);
+	ztest_false(k_pipe_alloc_init(&pipe_test_alloc, PIPE_LEN), NULL);
 
 	tpipe_kthread_to_kthread(&pipe_test_alloc);
 	k_pipe_cleanup(&pipe_test_alloc);
 
-	zassert_false(k_pipe_alloc_init(&pipe_test_alloc, 0), NULL);
+	ztest_false(k_pipe_alloc_init(&pipe_test_alloc, 0), NULL);
 	k_pipe_cleanup(&pipe_test_alloc);
 
 	ret = k_pipe_alloc_init(&pipe_test_alloc, 1024);
-	zassert_true(ret == -ENOMEM,
+	ztest_true(ret == -ENOMEM,
 		"resource pool max block size is not smaller then requested buffer");
 }
 

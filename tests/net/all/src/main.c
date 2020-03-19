@@ -37,7 +37,7 @@ NET_DEVICE_OFFLOAD_INIT(net_offload, "net_offload",
 
 static void ok(void)
 {
-	zassert_true(true, "This test should never fail");
+	ztest_true(true, "This test should never fail");
 }
 
 void test_main(void)

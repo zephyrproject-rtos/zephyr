@@ -14,7 +14,7 @@ static u8_t test_rwbs = 1U;
 
 static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
 {
-	zassert_equal(ctx, (void *)ENC_CTX_VAL, "bad write callback context\n");
+	ztest_equal(ctx, (void *)ENC_CTX_VAL, "bad write callback context\n");
 
 	if (off % test_rwbs || len % test_rwbs) {
 		return -EIO;
@@ -39,11 +39,11 @@ static void test_encoding_iteration(char const *name, char const *value,
 	rc = settings_line_write(name, value, strlen(value), 0,
 				 (void *)ENC_CTX_VAL);
 
-	zassert_equal(rc, 0, "Can't encode the line %d.\n", rc);
+	ztest_equal(rc, 0, "Can't encode the line %d.\n", rc);
 
-	zassert_equal(enc_buf_cnt, exp_len, "Wrote more than expected\n");
+	ztest_equal(enc_buf_cnt, exp_len, "Wrote more than expected\n");
 
-	zassert_true(memcmp(pattern, enc_buf, exp_len) == 0,
+	ztest_true(memcmp(pattern, enc_buf, exp_len) == 0,
 		     "encoding defect, was     : %s\nexpected: %s\n", enc_buf,
 		     pattern);
 }
@@ -74,7 +74,7 @@ static int read_handle(void *ctx, off_t off, char *buf, size_t *len)
 {
 	int r_len;
 
-	zassert_equal(ctx, (void *)ENC_CTX_VAL, "bad write callback context\n");
+	ztest_equal(ctx, (void *)ENC_CTX_VAL, "bad write callback context\n");
 
 	if (off % test_rwbs || *len % test_rwbs) {
 		return -EIO;
@@ -107,20 +107,20 @@ static void test_raw_read_iteration(u8_t rbs, size_t off, size_t len)
 	rc = settings_line_raw_read(off, &read_buf[4], len, &len_read,
 				    (void *)ENC_CTX_VAL);
 
-	zassert_equal(rc, 0, "Can't read the line %d.\n", rc);
+	ztest_equal(rc, 0, "Can't read the line %d.\n", rc);
 
 	expected = MIN((sizeof(enc_buf) - off), len);
-	zassert_equal(expected, len_read, "Unexpected read size\n");
+	ztest_equal(expected, len_read, "Unexpected read size\n");
 
-	zassert_true(memcmp(&enc_buf[off], &read_buf[4], len_read) == 0,
+	ztest_true(memcmp(&enc_buf[off], &read_buf[4], len_read) == 0,
 			    "read defect\n");
 
 	for (rc = 0; rc < 4; rc++) {
-		zassert_equal(read_buf[rc], 0, "buffer lickage\n");
+		ztest_equal(read_buf[rc], 0, "buffer lickage\n");
 	}
 
 	for (rc = len_read + 4; rc < sizeof(read_buf); rc++) {
-		zassert_equal(read_buf[rc], 0, "buffer lickage\n");
+		ztest_equal(read_buf[rc], 0, "buffer lickage\n");
 	}
 }
 
@@ -162,12 +162,12 @@ static void test_val_read_iteration(char const *src, size_t src_len,
 	rc =  settings_line_val_read(val_off, off, read_buf, len, &len_read,
 				     (void *)ENC_CTX_VAL);
 
-	zassert_equal(rc, 0, "Can't read the value.\n");
+	ztest_equal(rc, 0, "Can't read the value.\n");
 
-	zassert_equal(len_read, pattern_len, "Bad length (was %d).\n",
+	ztest_equal(len_read, pattern_len, "Bad length (was %d).\n",
 		      len_read);
 	read_buf[len_read] = 0;
-	zassert_true(memcmp(pattern, read_buf, pattern_len) == 0,
+	ztest_true(memcmp(pattern, read_buf, pattern_len) == 0,
 		     "encoding defect, was :\n%s\nexpected :\n%s\n", read_buf,
 		     pattern);
 }

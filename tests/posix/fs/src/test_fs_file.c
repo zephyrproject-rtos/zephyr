@@ -17,7 +17,7 @@ static int test_file_open(void)
 	int res;
 
 	res = open(TEST_FILE, O_RDWR);
-	zassert_true(res >= 0, "Failed opening file: %d, errno=%d\n", res, errno);
+	ztest_true(res >= 0, "Failed opening file: %d, errno=%d\n", res, errno);
 
 	file = res;
 
@@ -117,7 +117,7 @@ static int test_file_close(void)
 	int res;
 
 	res = close(file);
-	zassert_true(res == 0, "Failed closing file: %d, errno=%d\n", res, errno);
+	ztest_true(res == 0, "Failed closing file: %d, errno=%d\n", res, errno);
 
 	return res;
 }
@@ -142,7 +142,7 @@ static int test_file_delete(void)
  */
 void test_fs_open(void)
 {
-	zassert_true(test_file_open() == TC_PASS, NULL);
+	ztest_true(test_file_open() == TC_PASS, NULL);
 }
 
 /**
@@ -152,7 +152,7 @@ void test_fs_open(void)
  */
 void test_fs_write(void)
 {
-	zassert_true(test_file_write() == TC_PASS, NULL);
+	ztest_true(test_file_write() == TC_PASS, NULL);
 }
 
 /**
@@ -162,7 +162,7 @@ void test_fs_write(void)
  */
 void test_fs_read(void)
 {
-	zassert_true(test_file_read() == TC_PASS, NULL);
+	ztest_true(test_file_read() == TC_PASS, NULL);
 }
 
 /**
@@ -172,7 +172,7 @@ void test_fs_read(void)
  */
 void test_fs_close(void)
 {
-	zassert_true(test_file_close() == TC_PASS, NULL);
+	ztest_true(test_file_close() == TC_PASS, NULL);
 }
 
 /**
@@ -182,7 +182,7 @@ void test_fs_close(void)
  */
 void test_fs_unlink(void)
 {
-	zassert_true(test_file_delete() == TC_PASS, NULL);
+	ztest_true(test_file_delete() == TC_PASS, NULL);
 }
 
 void test_fs_fd_leak(void)

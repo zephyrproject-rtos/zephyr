@@ -9,7 +9,7 @@
 #include "../../../lib/os/rb.c"
 
 #define _CHECK(n) \
-	zassert_true(!!(n), "Tree check failed: [ " #n " ] @%d", __LINE__)
+	ztest_true(!!(n), "Tree check failed: [ " #n " ] @%d", __LINE__)
 
 #define MAX_NODES 256
 

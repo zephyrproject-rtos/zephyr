@@ -42,7 +42,7 @@ static void starting_addr_range(u32_t start_addr_range)
 	     addr_range += 0x1000) {
 		value = *z_x86_get_pte(&z_x86_kernel_ptables, addr_range);
 		status &= check_param(value, REGION_PERM);
-		zassert_false((status == 0U), "error at %d permissions %d\n",
+		ztest_false((status == 0U), "error at %d permissions %d\n",
 			      addr_range, REGION_PERM);
 	}
 }
@@ -58,7 +58,7 @@ static void before_start_addr_range(u32_t start_addr_range)
 		value = *z_x86_get_pte(&z_x86_kernel_ptables, addr_range);
 		status &= check_param_nonset_region(value, REGION_PERM);
 
-		zassert_false((status == 0U), "error at %d permissions %d\n",
+		ztest_false((status == 0U), "error at %d permissions %d\n",
 			      addr_range, REGION_PERM);
 	}
 }
@@ -73,7 +73,7 @@ static void ending_start_addr_range(u32_t start_addr_range)
 	     addr_range += 0x1000) {
 		value = *z_x86_get_pte(&z_x86_kernel_ptables, addr_range);
 		status &= check_param_nonset_region(value, REGION_PERM);
-		zassert_false((status == 0U), "error at %d permissions %d\n",
+		ztest_false((status == 0U), "error at %d permissions %d\n",
 			      addr_range, REGION_PERM);
 	}
 }

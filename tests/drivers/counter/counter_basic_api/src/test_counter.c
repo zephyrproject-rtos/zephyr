@@ -101,11 +101,11 @@ static void counter_tear_down_instance(const char *dev_name)
 		err = counter_set_top_value(dev, &top_cfg);
 
 	}
-	zassert_true((err == 0) || (err == -ENOTSUP),
+	ztest_true((err == 0) || (err == -ENOTSUP),
 			"%s: Setting top value to default failed", dev_name);
 
 	err = counter_stop(dev);
-	zassert_equal(0, err, "%s: Counter failed to stop", dev_name);
+	ztest_equal(0, err, "%s: Counter failed to stop", dev_name);
 
 }
 
@@ -151,7 +151,7 @@ static bool set_top_value_capable(const char *dev_name)
 
 static void top_handler(struct device *dev, void *user_data)
 {
-	zassert_true(user_data == exp_user_data,
+	ztest_true(user_data == exp_user_data,
 			"%s: Unexpected callback", dev->config->name);
 	k_sem_give(&top_cnt_sem);
 }
@@ -173,12 +173,12 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 	dev = device_get_binding(dev_name);
 	top_cfg.ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Counter failed to start", dev_name);
+	ztest_equal(0, err, "%s: Counter failed to start", dev_name);
 
 	k_busy_wait(5000);
 
 	err = counter_get_value(dev, &cnt);
-	zassert_true(err == 0, "%s: Counter read failed (err: %d)", dev_name,
+	ztest_true(err == 0, "%s: Counter read failed (err: %d)", dev_name,
 		     err);
 	if (counter_is_counting_up(dev)) {
 		err = (cnt > 0) ? 0 : 1;
@@ -186,16 +186,16 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 		top_cnt = counter_get_top_value(dev);
 		err = (cnt < top_cnt) ? 0 : 1;
 	}
-	zassert_true(err == 0, "%s: Counter should progress", dev_name);
+	ztest_true(err == 0, "%s: Counter should progress", dev_name);
 
 	err = counter_set_top_value(dev, &top_cfg);
-	zassert_equal(0, err, "%s: Counter failed to set top value (err: %d)",
+	ztest_equal(0, err, "%s: Counter failed to set top value (err: %d)",
 			dev_name, err);
 
 	k_busy_wait(5.2*COUNTER_PERIOD_US);
 
 	top_cnt = k_sem_count_get(&top_cnt_sem);
-	zassert_true(top_cnt == 5U,
+	ztest_true(top_cnt == 5U,
 			"%s: Unexpected number of turnarounds (%d).",
 			dev_name, top_cnt);
 }
@@ -221,12 +221,12 @@ void test_set_top_value_without_alarm_instance(const char *dev_name)
 	dev = device_get_binding(dev_name);
 	top_cfg.ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Counter failed to start", dev_name);
+	ztest_equal(0, err, "%s: Counter failed to start", dev_name);
 
 	k_busy_wait(5000);
 
 	err = counter_get_value(dev, &cnt);
-	zassert_true(err == 0, "%s: Counter read failed (err: %d)", dev_name,
+	ztest_true(err == 0, "%s: Counter read failed (err: %d)", dev_name,
 		     err);
 	if (counter_is_counting_up(dev)) {
 		err = (cnt > 0) ? 0 : 1;
@@ -234,13 +234,13 @@ void test_set_top_value_without_alarm_instance(const char *dev_name)
 		top_cnt = counter_get_top_value(dev);
 		err = (cnt < top_cnt) ? 0 : 1;
 	}
-	zassert_true(err == 0, "%s: Counter should progress", dev_name);
+	ztest_true(err == 0, "%s: Counter should progress", dev_name);
 
 	err = counter_set_top_value(dev, &top_cfg);
-	zassert_equal(0, err, "%s: Counter failed to set top value (err: %d)",
+	ztest_equal(0, err, "%s: Counter failed to set top value (err: %d)",
 			dev_name, err);
 
-	zassert_true(counter_get_top_value(dev) == top_cfg.ticks,
+	ztest_true(counter_get_top_value(dev) == top_cfg.ticks,
 			"%s: new top value not in use.",
 			dev_name);
 }
@@ -258,25 +258,25 @@ static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
 	int err;
 
 	err = counter_get_value(dev, &now);
-	zassert_true(err == 0, "%s: Counter read failed (err: %d)",
+	ztest_true(err == 0, "%s: Counter read failed (err: %d)",
 		     dev->config->name, err);
 
 	if (counter_is_counting_up(dev)) {
-		zassert_true(now >= counter,
+		ztest_true(now >= counter,
 			"%s: Alarm (%d) too early now: %d (counting up).",
 			dev->config->name, counter, now);
 	} else {
-		zassert_true(now <= counter,
+		ztest_true(now <= counter,
 			"%s: Alarm (%d) too early now: %d (counting down).",
 			dev->config->name, counter, now);
 	}
 
 	if (user_data) {
-		zassert_true(&alarm_cfg == user_data,
+		ztest_true(&alarm_cfg == user_data,
 			"%s: Unexpected callback", dev->config->name);
 	}
 
-	zassert_true(k_is_in_isr(), "%s: Expected interrupt context",
+	ztest_true(k_is_in_isr(), "%s: Expected interrupt context",
 			dev->config->name);
 	k_sem_give(&alarm_cnt_sem);
 }
@@ -309,17 +309,17 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 	}
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Counter failed to start", dev_name);
+	ztest_equal(0, err, "%s: Counter failed to start", dev_name);
 
 	if (set_top) {
 		err = counter_set_top_value(dev, &top_cfg);
 
-		zassert_equal(0, err,
+		ztest_equal(0, err,
 			     "%s: Counter failed to set top value", dev_name);
 
 		alarm_cfg.ticks = ticks + 1;
 		err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
-		zassert_equal(-EINVAL, err,
+		ztest_equal(-EINVAL, err,
 			      "%s: Counter should return error because ticks"
 			      " exceeded the limit set alarm", dev_name);
 		alarm_cfg.ticks = ticks - 1;
@@ -327,22 +327,22 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 
 	alarm_cfg.ticks = ticks;
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
-	zassert_equal(0, err, "%s: Counter set alarm failed (err: %d)",
+	ztest_equal(0, err, "%s: Counter set alarm failed (err: %d)",
 			dev_name, err);
 
 	k_busy_wait(2*(u32_t)counter_ticks_to_us(dev, ticks));
 
 	alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-	zassert_equal(1, alarm_cnt,
+	ztest_equal(1, alarm_cnt,
 			"%s: Expecting alarm callback", dev_name);
 
 	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
 	alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-	zassert_equal(1, alarm_cnt,
+	ztest_equal(1, alarm_cnt,
 			"%s: Expecting alarm callback", dev_name);
 
 	err = counter_cancel_channel_alarm(dev, 0);
-	zassert_equal(0, err, "%s: Counter disabling alarm failed", dev_name);
+	ztest_equal(0, err, "%s: Counter disabling alarm failed", dev_name);
 
 	top_cfg.ticks = counter_get_max_top_value(dev);
 	top_cfg.callback = NULL;
@@ -354,11 +354,11 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 		err = counter_set_top_value(dev, &top_cfg);
 
 	}
-	zassert_true((err == 0) || (err == -ENOTSUP),
+	ztest_true((err == 0) || (err == -ENOTSUP),
 			"%s: Setting top value to default failed", dev_name);
 
 	err = counter_stop(dev);
-	zassert_equal(0, err, "%s: Counter failed to stop", dev_name);
+	ztest_equal(0, err, "%s: Counter failed to stop", dev_name);
 }
 
 void test_single_shot_alarm_notop_instance(const char *dev_name)
@@ -445,39 +445,39 @@ void test_multiple_alarms_instance(const char *dev_name)
 	}
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Counter failed to start", dev_name);
+	ztest_equal(0, err, "%s: Counter failed to start", dev_name);
 
 	err = counter_set_top_value(dev, &top_cfg);
-	zassert_equal(0, err,
+	ztest_equal(0, err,
 			"%s: Counter failed to set top value", dev_name);
 
 	k_busy_wait(3*(u32_t)counter_ticks_to_us(dev, alarm_cfg.ticks));
 
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
-	zassert_equal(0, err, "%s: Counter set alarm failed", dev_name);
+	ztest_equal(0, err, "%s: Counter set alarm failed", dev_name);
 
 	err = counter_set_channel_alarm(dev, 1, &alarm_cfg2);
-	zassert_equal(0, err, "%s: Counter set alarm failed", dev_name);
+	ztest_equal(0, err, "%s: Counter set alarm failed", dev_name);
 
 	k_busy_wait(1.2*counter_ticks_to_us(dev, ticks * 2U));
 	alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-	zassert_equal(2, alarm_cnt,
+	ztest_equal(2, alarm_cnt,
 			"%s: Invalid number of callbacks %d (expected: %d)",
 			dev_name, alarm_cnt, 2);
 
-	zassert_equal(&alarm_cfg2, clbk_data[0],
+	ztest_equal(&alarm_cfg2, clbk_data[0],
 			"%s: Expected different order or callbacks",
 			dev_name);
-	zassert_equal(&alarm_cfg, clbk_data[1],
+	ztest_equal(&alarm_cfg, clbk_data[1],
 			"%s: Expected different order or callbacks",
 			dev_name);
 
 	/* tear down */
 	err = counter_cancel_channel_alarm(dev, 0);
-	zassert_equal(0, err, "%s: Counter disabling alarm failed", dev_name);
+	ztest_equal(0, err, "%s: Counter disabling alarm failed", dev_name);
 
 	err = counter_cancel_channel_alarm(dev, 1);
-	zassert_equal(0, err, "%s: Counter disabling alarm failed", dev_name);
+	ztest_equal(0, err, "%s: Counter disabling alarm failed", dev_name);
 }
 
 static bool multiple_channel_alarm_capable(const char *dev_name)
@@ -513,7 +513,7 @@ void test_all_channels_instance(const char *dev_name)
 	alarm_cfgs.user_data = NULL;
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Counter failed to start", dev_name);
+	ztest_equal(0, err, "%s: Counter failed to start", dev_name);
 
 	for (int i = 0; i < n; i++) {
 		err = counter_set_channel_alarm(dev, i, &alarm_cfgs);
@@ -522,25 +522,25 @@ void test_all_channels_instance(const char *dev_name)
 		} else if (err == -ENOTSUP) {
 			limit_reached = true;
 		} else {
-			zassert_equal(0, 1,
+			ztest_equal(0, 1,
 			   "%s: Unexpected error on setting alarm", dev_name);
 		}
 	}
 
 	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
 	alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-	zassert_equal(nchan, alarm_cnt,
+	ztest_equal(nchan, alarm_cnt,
 			"%s: Expecting alarm callback", dev_name);
 
 	for (int i = 0; i < nchan; i++) {
 		err = counter_cancel_channel_alarm(dev, i);
-		zassert_equal(0, err,
+		ztest_equal(0, err,
 			"%s: Unexpected error on disabling alarm", dev_name);
 	}
 
 	for (int i = nchan; i < n; i++) {
 		err = counter_cancel_channel_alarm(dev, i);
-		zassert_equal(-ENOTSUP, err,
+		ztest_equal(-ENOTSUP, err,
 			"%s: Unexpected error on disabling alarm", dev_name);
 	}
 }
@@ -571,38 +571,38 @@ void test_late_alarm_instance(const char *dev_name)
 
 	err = counter_set_guard_period(dev, guard,
 					COUNTER_GUARD_PERIOD_LATE_TO_SET);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	ztest_equal(0, err, "%s: Unexcepted error", dev_name);
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	ztest_equal(0, err, "%s: Unexcepted error", dev_name);
 
 	k_busy_wait(2*tick_us);
 
 	alarm_cfg.ticks = 0;
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
-	zassert_equal(-ETIME, err, "%s: Unexpected error (%d)", dev_name, err);
+	ztest_equal(-ETIME, err, "%s: Unexpected error (%d)", dev_name, err);
 
 	/* wait couple of ticks */
 	k_busy_wait(5*tick_us);
 
 	alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-	zassert_equal(1, alarm_cnt,
+	ztest_equal(1, alarm_cnt,
 			"%s: Expected %d callbacks, got %d\n",
 			dev_name, 1, alarm_cnt);
 
 	err = counter_get_value(dev, &(alarm_cfg.ticks));
-	zassert_true(err == 0, "%s: Counter read failed (err: %d)", dev_name,
+	ztest_true(err == 0, "%s: Counter read failed (err: %d)", dev_name,
 		     err);
 
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
-	zassert_equal(-ETIME, err, "%s: Failed to set an alarm (err: %d)",
+	ztest_equal(-ETIME, err, "%s: Failed to set an alarm (err: %d)",
 			dev_name, err);
 
 	/* wait to ensure that tick+1 timeout will expire. */
 	k_busy_wait(3*tick_us);
 
 	alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-	zassert_equal(2, alarm_cnt,
+	ztest_equal(2, alarm_cnt,
 			"%s: Expected %d callbacks, got %d\n",
 			dev_name, 2, alarm_cnt);
 }
@@ -621,25 +621,25 @@ void test_late_alarm_error_instance(const char *dev_name)
 
 	err = counter_set_guard_period(dev, guard,
 					COUNTER_GUARD_PERIOD_LATE_TO_SET);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	ztest_equal(0, err, "%s: Unexcepted error", dev_name);
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	ztest_equal(0, err, "%s: Unexcepted error", dev_name);
 
 	k_busy_wait(2*tick_us);
 
 	alarm_cfg.ticks = 0;
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
-	zassert_equal(-ETIME, err,
+	ztest_equal(-ETIME, err,
 			"%s: Failed to detect late setting (err: %d)",
 			dev_name, err);
 
 	err = counter_get_value(dev, &(alarm_cfg.ticks));
-	zassert_true(err == 0, "%s: Counter read failed (err: %d)", dev_name,
+	ztest_true(err == 0, "%s: Counter read failed (err: %d)", dev_name,
 		     err);
 
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
-	zassert_equal(-ETIME, err,
+	ztest_equal(-ETIME, err,
 			"%s: Counter failed to detect late setting (err: %d)",
 			dev_name, err);
 }
@@ -683,13 +683,13 @@ static void test_short_relative_alarm_instance(const char *dev_name)
 	};
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	ztest_equal(0, err, "%s: Unexcepted error", dev_name);
 
 	alarm_cfg.ticks = 1;
 
 	for (int i = 0; i < 100; ++i) {
 		err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
-		zassert_equal(0, err,
+		ztest_equal(0, err,
 				"%s: Failed to set an alarm (err: %d)",
 				dev_name, err);
 
@@ -697,7 +697,7 @@ static void test_short_relative_alarm_instance(const char *dev_name)
 		k_busy_wait(3*tick_us);
 
 		alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-		zassert_equal(i + 1, alarm_cnt,
+		ztest_equal(i + 1, alarm_cnt,
 				"%s: Expected %d callbacks, got %d\n",
 				dev_name, i + 1, alarm_cnt);
 	}
@@ -778,39 +778,39 @@ static void test_cancelled_alarm_does_not_expire_instance(const char *dev_name)
 	};
 
 	err = counter_start(dev);
-	zassert_equal(0, err, "%s: Unexcepted error", dev_name);
+	ztest_equal(0, err, "%s: Unexcepted error", dev_name);
 
 
 	for (int i = 0; i < us/2; ++i) {
 		err = counter_get_value(dev, &(alarm_cfg.ticks));
-		zassert_true(err == 0, "%s: Counter read failed (err: %d)",
+		ztest_true(err == 0, "%s: Counter read failed (err: %d)",
 			     dev_name, err);
 
 		alarm_cfg.ticks	+= ticks;
 		err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
-		zassert_equal(0, err, "%s: Failed to set an alarm (err: %d)",
+		ztest_equal(0, err, "%s: Failed to set an alarm (err: %d)",
 				dev_name, err);
 
 		err = counter_cancel_channel_alarm(dev, 0);
-		zassert_equal(0, err, "%s: Failed to cancel an alarm (err: %d)",
+		ztest_equal(0, err, "%s: Failed to cancel an alarm (err: %d)",
 				dev_name, err);
 
 		k_busy_wait(us/2 + i);
 
 		alarm_cfg.ticks = alarm_cfg.ticks + 2*alarm_cfg.ticks;
 		err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
-		zassert_equal(0, err, "%s: Failed to set an alarm (err: %d)",
+		ztest_equal(0, err, "%s: Failed to set an alarm (err: %d)",
 				dev_name, err);
 
 		/* wait to ensure that tick+1 timeout will expire. */
 		k_busy_wait(us);
 
 		err = counter_cancel_channel_alarm(dev, 0);
-		zassert_equal(0, err, "%s: Failed to cancel an alarm (err: %d)",
+		ztest_equal(0, err, "%s: Failed to cancel an alarm (err: %d)",
 					dev_name, err);
 
 		alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
-		zassert_equal(0, alarm_cnt,
+		ztest_equal(0, alarm_cnt,
 				"%s: Expected %d callbacks, got %d\n",
 				dev_name, 0, alarm_cnt);
 	}
@@ -890,7 +890,7 @@ void test_main(void)
 
 	for (i = 0; i < ARRAY_SIZE(devices); i++) {
 		dev = device_get_binding(devices[i]);
-		zassert_not_null(dev, "Unable to get counter device %s",
+		ztest_not_null(dev, "Unable to get counter device %s",
 				 devices[i]);
 		k_object_access_grant(dev, k_current_get());
 	}

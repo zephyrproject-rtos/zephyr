@@ -83,17 +83,17 @@ void test_intmath(void)
 	ba = 0x00000012ABCDEF12ULL;
 	bb = 0x0000001000000111ULL;
 	bignum = ba * bb;
-	zassert_true((bignum == 0xbcdf0509369bf232ULL), "64-bit multiplication failed");
+	ztest_true((bignum == 0xbcdf0509369bf232ULL), "64-bit multiplication failed");
 
 	a = 30000U;
 	b = 5872U;
 	num = a * b;
-	zassert_true((num == 176160000U), "32-bit multiplication failed");
+	ztest_true((num == 176160000U), "32-bit multiplication failed");
 
 	a = 234424432U;
 	b = 98982U;
 	num = a / b;
-	zassert_true((num == 2368U), "32-bit division failed");
+	ztest_true((num == 2368U), "32-bit division failed");
 }
 /**
  * @}

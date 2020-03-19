@@ -58,7 +58,7 @@ void test_arm_interrupt(void)
 
 	init_flag = test_flag;
 
-	zassert_false(init_flag, "Test flag not initialized to zero\n");
+	ztest_false(init_flag, "Test flag not initialized to zero\n");
 
 	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
 		if (NVIC_GetEnableIRQ(i) == 0) {
@@ -82,7 +82,7 @@ void test_arm_interrupt(void)
 		}
 	}
 
-	zassert_true(i >= 0,
+	ztest_true(i >= 0,
 		"No available IRQ line to use in the test\n");
 
 	TC_PRINT("Available IRQ line: %u\n", i);
@@ -101,7 +101,7 @@ void test_arm_interrupt(void)
 	/* Verify that the spurious ISR has led to the fault and the
 	 * expected reason variable is reset.
 	 */
-	zassert_true(expected_reason == -1,
+	ztest_true(expected_reason == -1,
 		"expected_reason has not been reset\n");
 	NVIC_DisableIRQ(i);
 
@@ -129,7 +129,7 @@ void test_arm_interrupt(void)
 
 		/* Confirm test flag is set by the ISR handler. */
 		post_flag = test_flag;
-		zassert_true(post_flag == j, "Test flag not set by ISR\n");
+		ztest_true(post_flag == j, "Test flag not set by ISR\n");
 	}
 }
 
@@ -141,7 +141,7 @@ void z_impl_test_arm_user_interrupt_syscall(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* Confirm IRQs are not locked */
-	zassert_false(__get_PRIMASK(), "PRIMASK is set\n");
+	ztest_false(__get_PRIMASK(), "PRIMASK is set\n");
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 
 	static bool first_call = 1;
@@ -155,11 +155,11 @@ void z_impl_test_arm_user_interrupt_syscall(void)
 		int key = irq_lock();
 
 		/* Verify that IRQs were not already locked */
-		zassert_false(key, "IRQs locked in system call\n");
+		ztest_false(key, "IRQs locked in system call\n");
 	}
 
 	/* Confirm IRQs are still locked */
-	zassert_true(__get_BASEPRI(), "BASEPRI not set\n");
+	ztest_true(__get_BASEPRI(), "BASEPRI not set\n");
 #endif
 }
 
@@ -172,7 +172,7 @@ static inline void z_vrfy_test_arm_user_interrupt_syscall(void)
 void test_arm_user_interrupt(void)
 {
 	/* Test thread executing in user mode */
-	zassert_true(arch_is_user_context(),
+	ztest_true(arch_is_user_context(),
 		"Test thread not running in user mode\n");
 
 	/* Attempt to lock IRQs in user mode */
@@ -182,7 +182,7 @@ void test_arm_user_interrupt(void)
 	 */
 	int lock = irq_lock();
 
-	zassert_false(lock, "IRQs shown locked in user mode\n");
+	ztest_false(lock, "IRQs shown locked in user mode\n");
 
 	/* Generate a system call to manage the IRQ locking */
 	test_arm_user_interrupt_syscall();
@@ -201,7 +201,7 @@ void test_arm_user_interrupt(void)
 	test_arm_user_interrupt_syscall();
 
 	/* Verify that thread is not able to infer that IRQs are locked. */
-	zassert_false(irq_lock(), "IRQs are shown to be locked\n");
+	ztest_false(irq_lock(), "IRQs are shown to be locked\n");
 #endif
 }
 #else

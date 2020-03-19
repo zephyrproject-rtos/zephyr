@@ -423,14 +423,14 @@ void test_dhcp(void)
 
 	iface = net_if_get_default();
 	if (!iface) {
-		zassert_true(false, "Interface not available");
+		ztest_true(false, "Interface not available");
 	}
 
 	net_dhcpv4_start(iface);
 
 	while (event_count < 3) {
 		if (k_sem_take(&test_lock, WAIT_TIME)) {
-			zassert_true(false, "Timeout while waiting");
+			ztest_true(false, "Timeout while waiting");
 		}
 	}
 }

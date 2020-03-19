@@ -168,7 +168,7 @@ static void timestamp_callback(struct net_pkt *pkt)
 		/* This is very artificial test but make sure that we
 		 * have advanced the time a bit.
 		 */
-		zassert_true(pkt->timestamp.nanosecond > pkt->timestamp.second,
+		ztest_true(pkt->timestamp.nanosecond > pkt->timestamp.second,
 			     "Timestamp not working ok (%d < %d)\n",
 			     pkt->timestamp.nanosecond, pkt->timestamp.second);
 	}
@@ -199,8 +199,8 @@ static void timestamp_setup(void)
 	/* Make sure that the callback function is called */
 	net_if_call_timestamp_cb(pkt);
 
-	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
+	ztest_true(timestamp_cb_called, "Timestamp callback not called\n");
+	ztest_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
 }
 
 static void timestamp_callback_2(struct net_pkt *pkt)
@@ -211,12 +211,12 @@ static void timestamp_callback_2(struct net_pkt *pkt)
 		/* This is very artificial test but make sure that we
 		 * have advanced the time a bit.
 		 */
-		zassert_true(pkt->timestamp.nanosecond > pkt->timestamp.second,
+		ztest_true(pkt->timestamp.nanosecond > pkt->timestamp.second,
 			     "Timestamp not working ok (%d < %d)\n",
 			     pkt->timestamp.nanosecond, pkt->timestamp.second);
 	}
 
-	zassert_equal(eth_interfaces[1], net_pkt_iface(pkt),
+	ztest_equal(eth_interfaces[1], net_pkt_iface(pkt),
 		      "Invalid interface");
 
 	/* The pkt was ref'ed in send_some_data()() */
@@ -245,8 +245,8 @@ static void timestamp_setup_2nd_iface(void)
 	/* Make sure that the callback function is called */
 	net_if_call_timestamp_cb(pkt);
 
-	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
+	ztest_true(timestamp_cb_called, "Timestamp callback not called\n");
+	ztest_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
 }
 
 static void timestamp_setup_all(void)
@@ -270,8 +270,8 @@ static void timestamp_setup_all(void)
 	/* Make sure that the callback function is called */
 	net_if_call_timestamp_cb(pkt);
 
-	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
+	ztest_true(timestamp_cb_called, "Timestamp callback not called\n");
+	ztest_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
 
 	net_if_unregister_timestamp_cb(&timestamp_cb_3);
 }
@@ -294,8 +294,8 @@ static void timestamp_cleanup(void)
 	 */
 	net_if_call_timestamp_cb(pkt);
 
-	zassert_false(timestamp_cb_called, "Timestamp callback called\n");
-	zassert_false(atomic_get(&pkt->atomic_ref) < 1, "Pkt %p released\n");
+	ztest_false(timestamp_cb_called, "Timestamp callback called\n");
+	ztest_false(atomic_get(&pkt->atomic_ref) < 1, "Pkt %p released\n");
 
 	net_pkt_unref(pkt);
 }
@@ -352,15 +352,15 @@ static void address_setup(void)
 	iface1 = eth_interfaces[0];
 	iface2 = eth_interfaces[1];
 
-	zassert_not_null(iface1, "Interface 1\n");
-	zassert_not_null(iface2, "Interface 2\n");
+	ztest_not_null(iface1, "Interface 1\n");
+	ztest_not_null(iface2, "Interface 2\n");
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr1));
-		zassert_not_null(ifaddr, "addr1\n");
+		ztest_not_null(ifaddr, "addr1\n");
 	}
 
 	/* For testing purposes we need to set the adddresses preferred */
@@ -371,7 +371,7 @@ static void address_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&ll_addr));
-		zassert_not_null(ifaddr, "ll_addr\n");
+		ztest_not_null(ifaddr, "ll_addr\n");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -381,7 +381,7 @@ static void address_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr2));
-		zassert_not_null(ifaddr, "addr2\n");
+		ztest_not_null(ifaddr, "addr2\n");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -439,17 +439,17 @@ static void send_some_data(struct net_if *iface)
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_v6_ctx);
-	zassert_equal(ret, 0, "Create IPv6 UDP context failed\n");
+	ztest_equal(ret, 0, "Create IPv6 UDP context failed\n");
 
 	memcpy(&src_addr6.sin6_addr, &my_addr1, sizeof(struct in6_addr));
 	memcpy(&dst_addr6.sin6_addr, &dst_addr, sizeof(struct in6_addr));
 
 	ret = net_context_bind(udp_v6_ctx, (struct sockaddr *)&src_addr6,
 			       sizeof(struct sockaddr_in6));
-	zassert_equal(ret, 0, "Context bind failure test failed\n");
+	ztest_equal(ret, 0, "Context bind failure test failed\n");
 
 	ret = add_neighbor(iface, &dst_addr);
-	zassert_true(ret, "Cannot add neighbor\n");
+	ztest_true(ret, "Cannot add neighbor\n");
 
 	net_context_set_option(udp_v6_ctx, NET_OPT_TIMESTAMP,
 			       &timestamp, sizeof(timestamp));
@@ -458,7 +458,7 @@ static void send_some_data(struct net_if *iface)
 				 (struct sockaddr *)&dst_addr6,
 				 sizeof(struct sockaddr_in6),
 				 NULL, K_NO_WAIT, NULL);
-	zassert_true(ret > 0, "Send UDP pkt failed\n");
+	ztest_true(ret > 0, "Send UDP pkt failed\n");
 
 	net_context_unref(udp_v6_ctx);
 }
@@ -472,7 +472,7 @@ static void check_timestamp_before_enabling(void)
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout\n");
+		ztest_false(true, "Timeout\n");
 	}
 }
 
@@ -485,7 +485,7 @@ static void check_timestamp_after_enabling(void)
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
-		zassert_false(true, "Timeout\n");
+		ztest_false(true, "Timeout\n");
 	}
 }
 

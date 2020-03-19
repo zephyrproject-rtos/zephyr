@@ -116,21 +116,21 @@ static void test_early_sleep(void)
 
 	TC_PRINT("k_sleep() ticks at POST_KERNEL level: %d\n",
 					actual_post_kernel_sleep_ticks);
-	zassert_true((actual_post_kernel_sleep_ticks + 1) >
+	ztest_true((actual_post_kernel_sleep_ticks + 1) >
 					TEST_TICKS_TO_SLEEP, NULL);
 
 	TC_PRINT("k_sleep() ticks at APPLICATION level: %d\n",
 					actual_app_sleep_ticks);
-	zassert_true((actual_app_sleep_ticks + 1) >
+	ztest_true((actual_app_sleep_ticks + 1) >
 					TEST_TICKS_TO_SLEEP, NULL);
 
 	actual_sleep_ticks = ticks_to_sleep(TEST_TICKS_TO_SLEEP);
 	TC_PRINT("k_sleep() ticks on running system: %d\n",
 					actual_sleep_ticks);
-	zassert_true((actual_sleep_ticks + 1) >
+	ztest_true((actual_sleep_ticks + 1) >
 					TEST_TICKS_TO_SLEEP, NULL);
 
-	zassert_false(test_failure, "Lower priority thread not ran!!");
+	ztest_false(test_failure, "Lower priority thread not ran!!");
 }
 
 /*test case main entry*/

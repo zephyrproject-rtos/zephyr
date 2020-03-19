@@ -100,22 +100,22 @@ int c1_handle_set(const char *name, size_t len, settings_read_cb read_cb,
 	test_set_called = 1;
 	if (settings_name_steq(name, "mybar", &next) && !next) {
 		rc = read_cb(cb_arg, &val8, sizeof(val8));
-		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		ztest_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
 	if (settings_name_steq(name, "mybar64", &next) && !next) {
 		rc = read_cb(cb_arg, &val64, sizeof(val64));
-		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		ztest_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
 	if (settings_name_steq(name, "unaligned", &next) && !next) {
 		val_len = len;
-		zassert_equal(val_len, sizeof(val8_un),
+		ztest_equal(val_len, sizeof(val8_un),
 			      "value length: %d, ought equal 1", val_len);
 		rc = read_cb(cb_arg, &val8_un, sizeof(val8_un));
-		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		ztest_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
@@ -191,7 +191,7 @@ void config_wipe_fcb(struct flash_sector *fs, int cnt)
 
 	for (i = 0; i < cnt; i++) {
 		rc = flash_area_erase(fap, fs[i].fs_off, fs[i].fs_size);
-		zassert_true(rc == 0, "Can't get flash area");
+		ztest_true(rc == 0, "Can't get flash area");
 	}
 }
 
@@ -217,12 +217,12 @@ char *c2_var_find(char *name)
 	char *eptr;
 
 	len = strlen(name);
-	zassert_true(len > 6, "string type expected");
-	zassert_true(!strncmp(name, "string", 6), "string type expected");
+	ztest_true(len > 6, "string type expected");
+	ztest_true(!strncmp(name, "string", 6), "string type expected");
 
 	idx = strtoul(&name[6], &eptr, 10);
-	zassert_true(*eptr == '\0', "EOF");
-	zassert_true(idx < c2_var_count,
+	ztest_true(*eptr == '\0', "EOF");
+	ztest_true(idx < c2_var_count,
 		     "var index greather than any exporter");
 
 	return val_string[idx];
@@ -276,7 +276,7 @@ int c2_handle_set(const char *name, size_t len, settings_read_cb read_cb,
 		}
 
 		rc = read_cb(cb_arg, valptr, sizeof(val_string[0]));
-		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		ztest_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		if (rc == 0) {
 			(void)memset(valptr, 0, sizeof(val_string[0]));
 		}
@@ -322,10 +322,10 @@ int c3_handle_set(const char *name, size_t len, settings_read_cb read_cb,
 
 	if (settings_name_steq(name, "v", &next) && !next) {
 		val_len = len;
-		zassert_true(val_len == 4, "bad set-value size");
+		ztest_true(val_len == 4, "bad set-value size");
 
 		rc = read_cb(cb_arg, &val32, sizeof(val32));
-		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		ztest_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
@@ -348,10 +348,10 @@ void tests_settings_check_target(void)
 	u8_t wbs;
 
 	rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
-	zassert_true(rc == 0, "Can't open storage flash area");
+	ztest_true(rc == 0, "Can't open storage flash area");
 
 	wbs = flash_area_align(fap);
-	zassert_true(wbs <= 16,
+	ztest_true(wbs <= 16,
 		"Flash driver is not compatible with the settings fcb-backend");
 }
 

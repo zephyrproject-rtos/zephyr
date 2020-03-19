@@ -77,11 +77,11 @@ An example can be seen below::
     /**
      * @brief Test Asserts
      *
-     * This test verifies the zassert_true macro.
+     * This test verifies the ztest_true macro.
      */
     static void test_assert(void)
     {
-            zassert_true(1, "1 was false");
+            ztest_true(1, "1 was false");
     }
 
 
@@ -119,7 +119,7 @@ it needs to report either a pass or fail.  For example::
 	#ifdef CONFIG_TEST1
 	void test_test1(void)
 	{
-		zassert_true(1, "true");
+		ztest_true(1, "true");
 	}
         #else
 	void test_test1(void)
@@ -312,7 +312,7 @@ option:`CONFIG_ZTEST_ASSERT_VERBOSE` is 0, the assertions will only print the
 file and line numbers, reducing the binary size of the test.
 
 Example output for a failed macro from
-``zassert_equal(buf->ref, 2, "Invalid refcount")``:
+``ztest_equal(buf->ref, 2, "Invalid refcount")``:
 
 .. code-block:: none
 

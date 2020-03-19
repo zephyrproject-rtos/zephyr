@@ -99,7 +99,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	struct eth_context *context = dev->driver_data;
 
 	if (&eth_context_1 != context && &eth_context_2 != context) {
-		zassert_true(false, "Context pointers do not match\n");
+		ztest_true(false, "Context pointers do not match\n");
 	}
 
 	if (!pkt->frags) {
@@ -186,7 +186,7 @@ static int my_ptp_clock_set(struct device *dev, struct net_ptp_time *tm)
 	struct eth_context *eth_ctx = ptp_ctx->eth_context;
 
 	if (&eth_context_1 != eth_ctx && &eth_context_2 != eth_ctx) {
-		zassert_true(false, "Context pointers do not match\n");
+		ztest_true(false, "Context pointers do not match\n");
 	}
 
 	memcpy(&eth_ctx->time, tm, sizeof(struct net_ptp_time));
@@ -320,11 +320,11 @@ static void check_interfaces(void)
 	/* Make sure we have enough interfaces */
 	net_if_foreach(iface_cb, &ud);
 
-	zassert_equal(ud.eth_if_count, MAX_NUM_INTERFACES,
+	ztest_equal(ud.eth_if_count, MAX_NUM_INTERFACES,
 		      "Invalid numer of ethernet interfaces %d vs %d\n",
 		      ud.eth_if_count, MAX_NUM_INTERFACES);
 
-	zassert_equal(ud.total_if_count, ud.eth_if_count,
+	ztest_equal(ud.total_if_count, ud.eth_if_count,
 		      "Invalid numer of interfaces %d vs %d\n",
 		      ud.total_if_count, ud.eth_if_count);
 }
@@ -342,16 +342,16 @@ static void address_setup(void)
 	iface2 = eth_interfaces[1];
 	iface3 = eth_interfaces[2];
 
-	zassert_not_null(iface1, "Interface 1\n");
-	zassert_not_null(iface2, "Interface 2\n");
-	zassert_not_null(iface3, "Interface 3\n");
+	ztest_not_null(iface1, "Interface 1\n");
+	ztest_not_null(iface2, "Interface 2\n");
+	ztest_not_null(iface3, "Interface 3\n");
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr1));
-		zassert_not_null(ifaddr, "addr1\n");
+		ztest_not_null(ifaddr, "addr1\n");
 	}
 
 	/* For testing purposes we need to set the adddresses preferred */
@@ -362,7 +362,7 @@ static void address_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&ll_addr));
-		zassert_not_null(ifaddr, "ll_addr\n");
+		ztest_not_null(ifaddr, "ll_addr\n");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -372,7 +372,7 @@ static void address_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr2));
-		zassert_not_null(ifaddr, "addr2\n");
+		ztest_not_null(ifaddr, "addr2\n");
 	}
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
@@ -382,7 +382,7 @@ static void address_setup(void)
 	if (!ifaddr) {
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr3));
-		zassert_not_null(ifaddr, "addr3\n");
+		ztest_not_null(ifaddr, "addr3\n");
 	}
 
 	net_if_up(iface1);
@@ -400,20 +400,20 @@ static void test_ptp_clock_interfaces(void)
 
 	idx = ptp_interface[0];
 	clk = net_eth_get_ptp_clock(eth_interfaces[idx]);
-	zassert_not_null(clk, "Clock not found for interface %p\n",
+	ztest_not_null(clk, "Clock not found for interface %p\n",
 			 eth_interfaces[idx]);
 
 	idx = ptp_interface[1];
 	clk = net_eth_get_ptp_clock(eth_interfaces[idx]);
-	zassert_not_null(clk, "Clock not found for interface %p\n",
+	ztest_not_null(clk, "Clock not found for interface %p\n",
 			 eth_interfaces[idx]);
 
 	clk = net_eth_get_ptp_clock(eth_interfaces[non_ptp_interface]);
-	zassert_is_null(clk, "Clock found for interface %p\n",
+	ztest_is_null(clk, "Clock found for interface %p\n",
 			eth_interfaces[non_ptp_interface]);
 
 	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[0]);
-	zassert_not_null(clk_by_index,
+	ztest_not_null(clk_by_index,
 			 "Clock not found for interface index %d\n",
 			 ptp_clocks[0]);
 }
@@ -430,7 +430,7 @@ static void test_ptp_clock_iface(int idx)
 
 	clk = net_eth_get_ptp_clock(eth_interfaces[idx]);
 
-	zassert_not_null(clk, "Clock not found for interface %p\n",
+	ztest_not_null(clk, "Clock not found for interface %p\n",
 			 eth_interfaces[idx]);
 
 	ptp_clock_set(clk, &tm);
@@ -449,7 +449,7 @@ static void test_ptp_clock_iface(int idx)
 	new_value = timestamp_to_nsec(&tm);
 
 	/* The clock value must be the same after incrementing it */
-	zassert_equal(orig + rnd_value, new_value,
+	ztest_equal(orig + rnd_value, new_value,
 		      "Time adjust failure (%llu vs %llu)\n",
 		      orig + rnd_value, new_value);
 }
@@ -475,26 +475,26 @@ static void test_ptp_clock_get_by_index(void)
 	idx = ptp_interface[0];
 
 	clk = net_eth_get_ptp_clock(eth_interfaces[idx]);
-	zassert_not_null(clk, "PTP 0 not found");
+	ztest_not_null(clk, "PTP 0 not found");
 
 	clk0 = clk;
 
 	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[0]);
-	zassert_not_null(clk_by_index, "PTP 0 not found");
+	ztest_not_null(clk_by_index, "PTP 0 not found");
 
-	zassert_equal(clk, clk_by_index, "Interface index %d invalid", idx);
+	ztest_equal(clk, clk_by_index, "Interface index %d invalid", idx);
 
 	idx = ptp_interface[1];
 
 	clk = net_eth_get_ptp_clock(eth_interfaces[idx]);
-	zassert_not_null(clk, "PTP 1 not found");
+	ztest_not_null(clk, "PTP 1 not found");
 
 	clk1 = clk;
 
 	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[1]);
-	zassert_not_null(clk_by_index, "PTP 1 not found");
+	ztest_not_null(clk_by_index, "PTP 1 not found");
 
-	zassert_equal(clk, clk_by_index, "Interface index %d invalid", idx);
+	ztest_equal(clk, clk_by_index, "Interface index %d invalid", idx);
 }
 
 static void test_ptp_clock_get_by_index_user(void)
@@ -502,12 +502,12 @@ static void test_ptp_clock_get_by_index_user(void)
 	struct device *clk_by_index;
 
 	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[0]);
-	zassert_not_null(clk_by_index, "PTP 0 not found");
-	zassert_equal(clk0, clk_by_index, "Invalid PTP clock 0");
+	ztest_not_null(clk_by_index, "PTP 0 not found");
+	ztest_equal(clk0, clk_by_index, "Invalid PTP clock 0");
 
 	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[1]);
-	zassert_not_null(clk_by_index, "PTP 1 not found");
-	zassert_equal(clk1, clk_by_index, "Invalid PTP clock 1");
+	ztest_not_null(clk_by_index, "PTP 1 not found");
+	ztest_equal(clk1, clk_by_index, "Invalid PTP clock 1");
 }
 
 static ZTEST_BMEM struct net_ptp_time tm;
@@ -519,14 +519,14 @@ static void test_ptp_clock_get_by_xxx(const char *who)
 	int ret;
 
 	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[0]);
-	zassert_not_null(clk_by_index, "PTP 0 not found (%s)", who);
-	zassert_equal(clk0, clk_by_index, "Invalid PTP clock 0 (%s)", who);
+	ztest_not_null(clk_by_index, "PTP 0 not found (%s)", who);
+	ztest_equal(clk0, clk_by_index, "Invalid PTP clock 0 (%s)", who);
 
 	(void)memset(&tm, 0, sizeof(tm));
 	ptp_clock_get(clk_by_index, &tm);
 
 	ret = memcmp(&tm, &empty, sizeof(tm));
-	zassert_not_equal(ret, 0, "ptp_clock_get() failed in %s mode", who);
+	ztest_not_equal(ret, 0, "ptp_clock_get() failed in %s mode", who);
 }
 
 static void test_ptp_clock_get_kernel(void)

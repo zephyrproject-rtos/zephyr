@@ -121,7 +121,7 @@ void test_smp_coop_threads(void)
 	}
 
 	k_thread_abort(tid);
-	zassert_true(ok, "SMP test failed");
+	ztest_true(ok, "SMP test failed");
 }
 
 static void child_fn(void *p1, void *p2, void *p3)
@@ -130,7 +130,7 @@ static void child_fn(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 	int parent_cpu_id = POINTER_TO_INT(p1);
 
-	zassert_true(parent_cpu_id != curr_cpu(),
+	ztest_true(parent_cpu_id != curr_cpu(),
 		     "Parent isn't on other core");
 
 	sync_count++;
@@ -261,10 +261,10 @@ void test_coop_resched_threads(void)
 	 * other cores except the last one
 	 */
 	for (int i = 0; i < THREADS_NUM - 1; i++) {
-		zassert_true(tinfo[i].executed == 1,
+		ztest_true(tinfo[i].executed == 1,
 			     "cooperative thread %d didn't run", i);
 	}
-	zassert_true(tinfo[THREADS_NUM - 1].executed == 0,
+	ztest_true(tinfo[THREADS_NUM - 1].executed == 0,
 		     "cooperative thread is preempted");
 
 	/* Abort threads created */
@@ -293,7 +293,7 @@ void test_preempt_resched_threads(void)
 	spin_for_threads_exit();
 
 	for (int i = 0; i < THREADS_NUM; i++) {
-		zassert_true(tinfo[i].executed == 1,
+		ztest_true(tinfo[i].executed == 1,
 			     "preemptive thread %d didn't run", i);
 	}
 
@@ -325,7 +325,7 @@ void test_yield_threads(void)
 	k_busy_wait(DELAY_US);
 
 	for (int i = 0; i < THREADS_NUM; i++) {
-		zassert_true(tinfo[i].executed == 1,
+		ztest_true(tinfo[i].executed == 1,
 			     "thread %d did not execute", i);
 
 	}
@@ -351,7 +351,7 @@ void test_sleep_threads(void)
 	k_sleep(TIMEOUT);
 
 	for (int i = 0; i < THREADS_NUM; i++) {
-		zassert_true(tinfo[i].executed == 1,
+		ztest_true(tinfo[i].executed == 1,
 			     "thread %d did not execute", i);
 	}
 
@@ -392,7 +392,7 @@ static void wakeup_on_start_thread(int tnum)
 			k_wakeup(tinfo[i].tid);
 		}
 	}
-	zassert_equal(threads_started, tnum,
+	ztest_equal(threads_started, tnum,
 		      "All threads haven't started");
 }
 
@@ -410,7 +410,7 @@ static void check_wokeup_threads(int tnum)
 			threads_woke_up++;
 		}
 	}
-	zassert_equal(threads_woke_up, tnum, "Threads did not wakeup");
+	ztest_equal(threads_woke_up, tnum, "Threads did not wakeup");
 }
 
 /**

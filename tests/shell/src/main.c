@@ -29,7 +29,7 @@ static void test_shell_execute_cmd(const char *cmd, int result)
 
 	TC_PRINT("shell_execute_cmd(%s): %d\n", cmd, ret);
 
-	zassert_true(ret == result, cmd);
+	ztest_true(ret == result, cmd);
 }
 
 static void test_cmd_help(void)

@@ -281,15 +281,15 @@ void test_mutex(void)
 
 	for (i = 0; i < 4; i++) {
 		rv = sys_mutex_lock(mutexes[i], K_NO_WAIT);
-		zassert_equal(rv, 0, "Failed to lock mutex %p\n", mutexes[i]);
+		ztest_equal(rv, 0, "Failed to lock mutex %p\n", mutexes[i]);
 		k_sleep(K_SECONDS(1));
 
 		rv = k_thread_priority_get(k_current_get());
-		zassert_equal(rv, priority[i], "expected priority %d, not %d\n",
+		ztest_equal(rv, priority[i], "expected priority %d, not %d\n",
 			      priority[i], rv);
 
 		/* Catch any errors from other threads */
-		zassert_equal(tc_rc, TC_PASS, NULL);
+		ztest_equal(tc_rc, TC_PASS, NULL);
 	}
 
 	/* ~ 4 seconds have passed */
@@ -302,14 +302,14 @@ void test_mutex(void)
 	/* ~ 5 seconds have passed */
 
 	rv = k_thread_priority_get(k_current_get());
-	zassert_equal(rv, 6, "%s timed out and out priority should drop.\n",
+	ztest_equal(rv, 6, "%s timed out and out priority should drop.\n",
 		      "thread_05");
-	zassert_equal(rv, 6, "Expected priority %d, not %d\n", 6, rv);
+	ztest_equal(rv, 6, "Expected priority %d, not %d\n", 6, rv);
 
 	sys_mutex_unlock(&mutex_4);
 	rv = k_thread_priority_get(k_current_get());
-	zassert_equal(rv, 7, "Gave %s and priority should drop.\n", "mutex_4");
-	zassert_equal(rv, 7, "Expected priority %d, not %d\n", 7, rv);
+	ztest_equal(rv, 7, "Gave %s and priority should drop.\n", "mutex_4");
+	ztest_equal(rv, 7, "Expected priority %d, not %d\n", 7, rv);
 
 	k_sleep(K_SECONDS(1));       /* thread_07 should time out */
 
@@ -317,29 +317,29 @@ void test_mutex(void)
 
 	for (i = 0; i < 3; i++) {
 		rv = k_thread_priority_get(k_current_get());
-		zassert_equal(rv, droppri[i], "Expected priority %d, not %d\n",
+		ztest_equal(rv, droppri[i], "Expected priority %d, not %d\n",
 			      droppri[i], rv);
 		sys_mutex_unlock(givemutex[i]);
 
-		zassert_equal(tc_rc, TC_PASS, NULL);
+		ztest_equal(tc_rc, TC_PASS, NULL);
 	}
 
 	rv = k_thread_priority_get(k_current_get());
-	zassert_equal(rv, 10, "Expected priority %d, not %d\n", 10, rv);
+	ztest_equal(rv, 10, "Expected priority %d, not %d\n", 10, rv);
 
 	k_sleep(K_SECONDS(1));     /* Give thread_11 time to run */
 
-	zassert_equal(tc_rc, TC_PASS, NULL);
+	ztest_equal(tc_rc, TC_PASS, NULL);
 
 	/* test recursive locking using a private mutex */
 
 	TC_PRINT("Testing recursive locking\n");
 
 	rv = sys_mutex_lock(&private_mutex, K_NO_WAIT);
-	zassert_equal(rv, 0, "Failed to lock private mutex");
+	ztest_equal(rv, 0, "Failed to lock private mutex");
 
 	rv = sys_mutex_lock(&private_mutex, K_NO_WAIT);
-	zassert_equal(rv, 0, "Failed to recursively lock private mutex");
+	ztest_equal(rv, 0, "Failed to recursively lock private mutex");
 
 	/* Start thread */
 	k_thread_create(&thread_12_thread_data, thread_12_stack_area, STACKSIZE,
@@ -351,10 +351,10 @@ void test_mutex(void)
 	sys_mutex_unlock(&private_mutex); /* thread_12 should now have lock */
 
 	rv = sys_mutex_lock(&private_mutex, K_NO_WAIT);
-	zassert_equal(rv, -EBUSY, "Unexpectedly got lock on private mutex");
+	ztest_equal(rv, -EBUSY, "Unexpectedly got lock on private mutex");
 
 	rv = sys_mutex_lock(&private_mutex, K_SECONDS(1));
-	zassert_equal(rv, 0, "Failed to re-obtain lock on private mutex");
+	ztest_equal(rv, 0, "Failed to re-obtain lock on private mutex");
 
 	sys_mutex_unlock(&private_mutex);
 
@@ -368,19 +368,19 @@ void test_supervisor_access(void)
 #ifdef CONFIG_USERSPACE
 	/* coverage for get_k_mutex checks */
 	rv = sys_mutex_lock((struct sys_mutex *)NULL, K_NO_WAIT);
-	zassert_true(rv == -EINVAL, "accepted bad mutex pointer");
+	ztest_true(rv == -EINVAL, "accepted bad mutex pointer");
 	rv = sys_mutex_lock((struct sys_mutex *)k_current_get(), K_NO_WAIT);
-	zassert_true(rv == -EINVAL, "accepted object that was not a mutex");
+	ztest_true(rv == -EINVAL, "accepted object that was not a mutex");
 	rv = sys_mutex_unlock((struct sys_mutex *)NULL);
-	zassert_true(rv == -EINVAL, "accepted bad mutex pointer");
+	ztest_true(rv == -EINVAL, "accepted bad mutex pointer");
 	rv = sys_mutex_unlock((struct sys_mutex *)k_current_get());
-	zassert_true(rv == -EINVAL, "accepted object that was not a mutex");
+	ztest_true(rv == -EINVAL, "accepted object that was not a mutex");
 #endif /* CONFIG_USERSPACE */
 
 	rv = sys_mutex_unlock(&not_my_mutex);
-	zassert_true(rv == -EPERM, "unlocked a mutex that wasn't owner");
+	ztest_true(rv == -EPERM, "unlocked a mutex that wasn't owner");
 	rv = sys_mutex_unlock(&bad_count_mutex);
-	zassert_true(rv == -EINVAL, "mutex wasn't locked");
+	ztest_true(rv == -EINVAL, "mutex wasn't locked");
 }
 
 void test_user_access(void)
@@ -389,9 +389,9 @@ void test_user_access(void)
 	int rv;
 
 	rv = sys_mutex_lock(&no_access_mutex, K_NO_WAIT);
-	zassert_true(rv == -EACCES, "accessed mutex not in memory domain");
+	ztest_true(rv == -EACCES, "accessed mutex not in memory domain");
 	rv = sys_mutex_unlock(&no_access_mutex);
-	zassert_true(rv == -EACCES, "accessed mutex not in memory domain");
+	ztest_true(rv == -EACCES, "accessed mutex not in memory domain");
 #else
 	ztest_test_skip();
 #endif /* CONFIG_USERSPACE */

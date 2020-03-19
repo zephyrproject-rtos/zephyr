@@ -15,5 +15,5 @@ void fcb_test_empty_walk(void)
 	fcb = &test_fcb;
 
 	rc = fcb_walk(fcb, 0, fcb_test_empty_walk_cb, NULL);
-	zassert_true(rc == 0, "fcb_walk call failure");
+	ztest_true(rc == 0, "fcb_walk call failure");
 }

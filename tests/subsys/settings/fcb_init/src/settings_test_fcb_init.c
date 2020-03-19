@@ -38,7 +38,7 @@ static int c1_set(const char *name, size_t len, settings_read_cb read_cb,
 
 	if (settings_name_steq(name, "val32", &next) && !next) {
 		rc = read_cb(cb_arg, &val32, sizeof(val32));
-		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		ztest_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
@@ -67,13 +67,13 @@ void test_init(void)
 	val32++;
 
 	err = settings_save();
-	zassert_true(err == 0, "can't save settings");
+	ztest_true(err == 0, "can't save settings");
 
 	prev_int = val32;
 	val32 = 0U;
 	err = settings_load();
-	zassert_true(err == 0, "can't load settings");
-	zassert_equal(prev_int, val32,
+	ztest_true(err == 0, "can't load settings");
+	ztest_equal(prev_int, val32,
 		      "load value doesn't match to what was saved");
 }
 
@@ -93,24 +93,24 @@ void test_prepare_storage(void)
 	if (prepared_mark[0] == ERASED_VAL) {
 		TC_PRINT("First run: erasing the storage\r\n");
 		err = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fa);
-		zassert_true(err == 0, "Can't open storage flash area");
+		ztest_true(err == 0, "Can't open storage flash area");
 
 		err = flash_area_erase(fa, 0, fa->fa_size);
-		zassert_true(err == 0, "Can't erase storage flash area");
+		ztest_true(err == 0, "Can't erase storage flash area");
 
 		err = flash_area_open(DT_FLASH_AREA_IMAGE_0_ID, &fa);
-		zassert_true(err == 0, "Can't open storage flash area");
+		ztest_true(err == 0, "Can't open storage flash area");
 
 		dev = flash_area_get_device(fa);
 
 		err = flash_write_protection_set(dev, false);
-		zassert_true(err == 0, "can't unprotect flash");
+		ztest_true(err == 0, "can't unprotect flash");
 
 		(void)memset(new_val, (~ERASED_VAL) & 0xFF,
 			     DT_FLASH_WRITE_BLOCK_SIZE);
 		err = flash_write(dev, (off_t)&prepared_mark, &new_val,
 				  sizeof(new_val));
-		zassert_true(err == 0, "can't write prepared_mark");
+		ztest_true(err == 0, "can't write prepared_mark");
 	}
 #else
 	TC_PRINT("Storage preparation can't be performed\r\n");
@@ -127,15 +127,15 @@ void test_init_setup(void)
 	settings_subsys_init();
 
 	err = settings_register(&c1_settings);
-	zassert_true(err == 0, "can't regsister the settings handler");
+	ztest_true(err == 0, "can't regsister the settings handler");
 
 	err = settings_load();
-	zassert_true(err == 0, "can't load settings");
+	ztest_true(err == 0, "can't load settings");
 
 	if (val32 < 1) {
 		val32 = 1U;
 		err = settings_save();
-		zassert_true(err == 0, "can't save settings");
+		ztest_true(err == 0, "can't save settings");
 		k_sleep(K_MSEC(250));
 		sys_reboot(SYS_REBOOT_COLD);
 	}

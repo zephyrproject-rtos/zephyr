@@ -348,7 +348,7 @@ static void test_net_mgmt_setup(void)
 	int ret;
 
 	fd = socket(AF_NET_MGMT, SOCK_DGRAM, NET_MGMT_EVENT_PROTO);
-	zassert_false(fd < 0, "Cannot create net_mgmt socket (%d)", errno);
+	ztest_false(fd < 0, "Cannot create net_mgmt socket (%d)", errno);
 
 	memset(&sockaddr, 0, sizeof(sockaddr));
 
@@ -360,7 +360,7 @@ static void test_net_mgmt_setup(void)
 			   NET_EVENT_IPV6_ADDR_DEL;
 
 	ret = bind(fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr));
-	zassert_false(ret < 0, "Cannot bind net_mgmt socket (%d)", errno);
+	ztest_false(ret < 0, "Cannot bind net_mgmt socket (%d)", errno);
 
 	k_thread_start(trigger_events_thread_id);
 }
@@ -400,7 +400,7 @@ static void test_net_mgmt_catch_events(void)
 			    event_addr.nm_ifindex,
 			    get_ip_addr(ipaddr, sizeof(ipaddr),
 					AF_INET6, hdr));
-			zassert_equal(strncmp(ipaddr, "2001:db8::3",
+			ztest_equal(strncmp(ipaddr, "2001:db8::3",
 					      sizeof(ipaddr) - 1), 0,
 				      "Invalid IPv6 address %s added",
 				      ipaddr);
@@ -411,7 +411,7 @@ static void test_net_mgmt_catch_events(void)
 			    event_addr.nm_ifindex,
 			    get_ip_addr(ipaddr, sizeof(ipaddr),
 					AF_INET6, hdr));
-			zassert_equal(strncmp(ipaddr, "2001:db8::3",
+			ztest_equal(strncmp(ipaddr, "2001:db8::3",
 					      sizeof(ipaddr) - 1), 0,
 				      "Invalid IPv6 address %s removed",
 				      ipaddr);
@@ -450,7 +450,7 @@ static void test_ethernet_set_qav(void)
 	ret = setsockopt(fd, SOL_NET_MGMT_RAW,
 			 NET_REQUEST_ETHERNET_SET_QAV_PARAM,
 			 &params, sizeof(params));
-	zassert_equal(ret, 0, "Cannot set Qav parameters");
+	ztest_equal(ret, 0, "Cannot set Qav parameters");
 }
 
 static void test_ethernet_set_qav_kernel(void)
@@ -477,10 +477,10 @@ static void test_ethernet_get_qav(void)
 	ret = getsockopt(fd, SOL_NET_MGMT_RAW,
 			 NET_REQUEST_ETHERNET_GET_QAV_PARAM,
 			 &params, &optlen);
-	zassert_equal(ret, 0, "Cannot get Qav parameters (%d)", ret);
-	zassert_equal(optlen, sizeof(params), "Invalid optlen (%d)", optlen);
+	ztest_equal(ret, 0, "Cannot get Qav parameters (%d)", ret);
+	ztest_equal(optlen, sizeof(params), "Invalid optlen (%d)", optlen);
 
-	zassert_true(params.qav_param.enabled, "Qav not enabled");
+	ztest_true(params.qav_param.enabled, "Qav not enabled");
 }
 
 static void test_ethernet_get_qav_kernel(void)
@@ -504,8 +504,8 @@ static void test_ethernet_get_unknown_option(void)
 	ret = getsockopt(fd, SOL_NET_MGMT_RAW,
 			 NET_REQUEST_ETHERNET_GET_PRIORITY_QUEUES_NUM,
 			 &params, &optlen);
-	zassert_equal(ret, -1, "Could get prio queue parameters (%d)", errno);
-	zassert_equal(errno, EINVAL, "prio queue get parameters");
+	ztest_equal(ret, -1, "Could get prio queue parameters (%d)", errno);
+	ztest_equal(errno, EINVAL, "prio queue get parameters");
 }
 
 static void test_ethernet_get_unknown_opt_kernel(void)
@@ -529,8 +529,8 @@ static void test_ethernet_set_unknown_option(void)
 	ret = setsockopt(fd, SOL_NET_MGMT_RAW,
 			 NET_REQUEST_ETHERNET_SET_MAC_ADDRESS,
 			 &params, optlen);
-	zassert_equal(ret, -1, "Could set promisc_mode parameters (%d)", errno);
-	zassert_equal(errno, EINVAL, "promisc_mode set parameters");
+	ztest_equal(ret, -1, "Could set promisc_mode parameters (%d)", errno);
+	ztest_equal(errno, EINVAL, "promisc_mode set parameters");
 }
 
 static void test_ethernet_set_unknown_opt_kernel(void)

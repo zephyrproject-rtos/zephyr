@@ -44,7 +44,7 @@ void test_msgdma(void)
 	int i;
 
 	dma = device_get_binding(CONFIG_DMA_0_NAME);
-	zassert_true(dma != NULL, "DMA_0 device not found!!");
+	ztest_true(dma != NULL, "DMA_0 device not found!!");
 
 	/* Init tx buffer */
 	for (i = 0; i < DMA_BUFF_SIZE; i++) {
@@ -73,14 +73,14 @@ void test_msgdma(void)
 	dma_block_cfg.dest_address = (u32_t)rx_data;
 
 	/* Configure DMA */
-	zassert_true(dma_config(dma, chan_id, &dma_cfg) == 0,
+	ztest_true(dma_config(dma, chan_id, &dma_cfg) == 0,
 						"DMA config error");
 
 	/* Make sure all the data is written out to memory */
 	z_nios2_dcache_flush_all();
 
 	/* Start DMA operation */
-	zassert_true(dma_start(dma, chan_id) == 0, "DMA start error");
+	ztest_true(dma_start(dma, chan_id) == 0, "DMA start error");
 
 	while (dma_stat == DMA_OP_STAT_NONE) {
 		k_busy_wait(10);
@@ -89,10 +89,10 @@ void test_msgdma(void)
 	/* Invalidate the data cache */
 	z_nios2_dcache_flush_no_writeback(rx_data, DMA_BUFF_SIZE);
 
-	zassert_true(dma_stat == DMA_OP_STAT_SUCCESS,
+	ztest_true(dma_stat == DMA_OP_STAT_SUCCESS,
 			"Nios-II DMA operation failed!!");
 
-	zassert_true(!memcmp(&tx_data, &rx_data, DMA_BUFF_SIZE),
+	ztest_true(!memcmp(&tx_data, &rx_data, DMA_BUFF_SIZE),
 					"Nios-II DMA Test failed!!");
 
 }

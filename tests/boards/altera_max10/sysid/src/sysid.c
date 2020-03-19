@@ -23,7 +23,7 @@ void test_sysid(void)
 		TC_PRINT("[SysID] hardware appears to be older than software\n");
 	}
 
-	zassert_equal(status, TC_PASS, "SysID test failed");
+	ztest_equal(status, TC_PASS, "SysID test failed");
 }
 
 void test_main(void)

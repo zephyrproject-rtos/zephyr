@@ -150,7 +150,7 @@ void test_arm_irq_vector_table(void)
 		k_sem_init(&sem[ii], 0, UINT_MAX);
 	}
 
-	zassert_true((k_sem_take(&sem[0], K_NO_WAIT) ||
+	ztest_true((k_sem_take(&sem[0], K_NO_WAIT) ||
 		      k_sem_take(&sem[1], K_NO_WAIT) ||
 		      k_sem_take(&sem[2], K_NO_WAIT)), NULL);
 
@@ -166,7 +166,7 @@ void test_arm_irq_vector_table(void)
 #endif
 	}
 
-	zassert_false((k_sem_take(&sem[0], K_NO_WAIT) ||
+	ztest_false((k_sem_take(&sem[0], K_NO_WAIT) ||
 		       k_sem_take(&sem[1], K_NO_WAIT) ||
 		       k_sem_take(&sem[2], K_NO_WAIT)), NULL);
 

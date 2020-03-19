@@ -22,19 +22,19 @@ void test_cmos_rate(void)
 	int err;
 
 	cmos = device_get_binding("CMOS");
-	zassert_true(cmos != NULL, "can't find CMOS counter device");
+	ztest_true(cmos != NULL, "can't find CMOS counter device");
 
 	err = counter_get_value(cmos, &start);
-	zassert_true(err == 0, "failed to read CMOS counter device");
+	ztest_true(err == 0, "failed to read CMOS counter device");
 
 	k_sleep(DELAY_MS);
 
 	err = counter_get_value(cmos, &elapsed);
-	zassert_true(err == 0, "failed to read CMOS counter device");
+	ztest_true(err == 0, "failed to read CMOS counter device");
 	elapsed -= start;
 
-	zassert_true(elapsed >= MIN_BOUND, "busted minimum bound");
-	zassert_true(elapsed <= MAX_BOUND, "busted maximum bound");
+	ztest_true(elapsed >= MIN_BOUND, "busted minimum bound");
+	ztest_true(elapsed <= MAX_BOUND, "busted maximum bound");
 }
 
 void test_main(void)

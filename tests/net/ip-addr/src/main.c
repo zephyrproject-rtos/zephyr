@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 	do {							 \
 		char out[3];					 \
 		net_byte_to_hex(out, value, 'A', true);		 \
-		zassert_false(strcmp(out, expected),		 \
+		ztest_false(strcmp(out, expected),		 \
 			      "Test 0x%s failed.\n", expected);	 \
 	} while (0)
 
@@ -45,14 +45,14 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 	do {							 \
 		char out[3];					 \
 		net_byte_to_hex(out, value, 'a', true);		 \
-		zassert_false(strcmp(out, expected),		 \
+		ztest_false(strcmp(out, expected),		 \
 			      "Test 0x%s failed.\n", expected);	 \
 	} while (0)
 
 #define TEST_LL_6(a, b, c, d, e, f, expected)				\
 	do {								\
 		u8_t ll[] = { a, b, c, d, e, f };			\
-		zassert_false(strcmp(net_sprint_ll_addr(ll, sizeof(ll)),\
+		ztest_false(strcmp(net_sprint_ll_addr(ll, sizeof(ll)),\
 				     expected),				\
 			      "Test %s failed.\n", expected);		\
 	} while (0)
@@ -60,7 +60,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #define TEST_LL_8(a, b, c, d, e, f, g, h, expected)			\
 	do {								\
 		u8_t ll[] = { a, b, c, d, e, f, g, h };			\
-		zassert_false(strcmp(net_sprint_ll_addr(ll, sizeof(ll)), \
+		ztest_false(strcmp(net_sprint_ll_addr(ll, sizeof(ll)), \
 				     expected),				\
 			      "Test %s failed.\n", expected);		\
 	} while (0)
@@ -75,7 +75,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 		snprintk(out + sizeof("xx:xx:xx:xx:xx:xx"),		\
 			 sizeof(out), "%s",				\
 			 net_sprint_ll_addr(ll2, sizeof(ll2)));		\
-		zassert_false(strcmp(out, expected),			\
+		ztest_false(strcmp(out, expected),			\
 			      "Test %s failed, got %s\n", expected,	\
 			      out);					\
 	} while (0)
@@ -85,7 +85,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 		struct in6_addr addr = { { { a, b, c, d, e, f, g, h,	     \
 					       i, j, k, l, m, n, o, p } } }; \
 		char *ptr = net_sprint_ipv6_addr(&addr);		     \
-		zassert_false(strcmp(ptr, expected),			     \
+		ztest_false(strcmp(ptr, expected),			     \
 			      "Test %s failed, got %s\n", expected,	     \
 			      ptr);					     \
 	} while (0)
@@ -94,7 +94,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 	do {								\
 		struct in_addr addr = { { { a, b, c, d } } };		\
 		char *ptr = net_sprint_ipv4_addr(&addr);		\
-		zassert_false(strcmp(ptr, expected),			\
+		ztest_false(strcmp(ptr, expected),			\
 			      "Test %s failed, got %s\n", expected,	\
 			      ptr);					\
 	} while (0)
@@ -224,11 +224,11 @@ static void test_ipv6_addresses(void)
 	int i;
 
 	/**TESTPOINT: Check if the IPv6 address is a loopback address*/
-	zassert_true(net_ipv6_is_addr_loopback(&loopback),
+	ztest_true(net_ipv6_is_addr_loopback(&loopback),
 		     "IPv6 loopback address check failed.");
 
 	/**TESTPOINT: Check if the IPv6 address is a multicast address*/
-	zassert_true(net_ipv6_is_addr_mcast(&mcast),
+	ztest_true(net_ipv6_is_addr_mcast(&mcast),
 		     "IPv6 multicast address check failed.");
 
 	ifaddr1 = net_if_ipv6_addr_add(net_if_get_default(),
@@ -236,76 +236,76 @@ static void test_ipv6_addresses(void)
 				      NET_ADDR_MANUAL,
 				      0);
 	/**TESTPOINT: Check if IPv6 interface address is added*/
-	zassert_not_null(ifaddr1, "IPv6 interface address add failed");
+	ztest_not_null(ifaddr1, "IPv6 interface address add failed");
 
 	ifaddr2 = net_if_ipv6_addr_lookup(&addr6, NULL);
 
 	/**TESTPOINT: Check if addresses match*/
-	zassert_equal_ptr(ifaddr1, ifaddr2,
+	ztest_equal_ptr(ifaddr1, ifaddr2,
 			  "IPv6 interface address mismatch");
 
 	/**TESTPOINT: Check if the IPv6 address is a loopback address*/
-	zassert_false(net_ipv6_is_my_addr(&loopback),
+	ztest_false(net_ipv6_is_my_addr(&loopback),
 		      "My IPv6 loopback address check failed");
 
 	/**TESTPOINT: Check IPv6 address*/
-	zassert_true(net_ipv6_is_my_addr(&addr6),
+	ztest_true(net_ipv6_is_my_addr(&addr6),
 		     "My IPv6 address check failed");
 
 	/**TESTPOINTS: Check IPv6 prefix*/
-	zassert_true(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
+	ztest_true(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
 					(u8_t *)&addr6_pref2, 64),
 		     "Same IPv6 prefix test failed");
 
-	zassert_false(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
+	ztest_false(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
 					 (u8_t *)&addr6_pref3, 64),
 		      "Different IPv6 prefix test failed");
 
-	zassert_false(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
+	ztest_false(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
 					 (u8_t *)&addr6_pref2, 128),
 		      "Different full IPv6 prefix test failed");
 
-	zassert_false(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
+	ztest_false(net_ipv6_is_prefix((u8_t *)&addr6_pref1,
 					 (u8_t *)&addr6_pref3, 255),
 		      "Too long prefix test failed");
 
 	ifmaddr1 = net_if_ipv6_maddr_add(net_if_get_default(), &mcast);
 
 	/**TESTPOINTS: Check IPv6 addresses*/
-	zassert_not_null(ifmaddr1, "IPv6 multicast address add failed");
+	ztest_not_null(ifmaddr1, "IPv6 multicast address add failed");
 
 	ifmaddr1 = net_if_ipv6_maddr_add(net_if_get_default(), &addr6);
 
-	zassert_is_null(ifmaddr1,
+	ztest_is_null(ifmaddr1,
 			"IPv6 multicast address could be added failed");
 
-	zassert_false(memcmp(net_ipv6_unspecified_address(), &any, sizeof(any)),
+	ztest_false(memcmp(net_ipv6_unspecified_address(), &any, sizeof(any)),
 		      "My IPv6 unspecified address check failed");
 
 	ifaddr2 = net_if_ipv6_addr_add(net_if_get_default(),
 				       &addr6,
 				       NET_ADDR_AUTOCONF,
 				       0);
-	zassert_not_null(ifaddr2, "IPv6 ll address autoconf add failed");
+	ztest_not_null(ifaddr2, "IPv6 ll address autoconf add failed");
 
 	ifaddr2->addr_state = NET_ADDR_PREFERRED;
 
 	tmp = net_if_ipv6_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
-	zassert_false(tmp && memcmp(tmp, &addr6.s6_addr,
+	ztest_false(tmp && memcmp(tmp, &addr6.s6_addr,
 				    sizeof(struct in6_addr)),
 		      "IPv6 ll address fetch failed");
 
 	ifaddr2->addr_state = NET_ADDR_DEPRECATED;
 
 	tmp = net_if_ipv6_get_ll(net_if_get_default(), NET_ADDR_PREFERRED);
-	zassert_false(tmp && !memcmp(tmp, &any, sizeof(struct in6_addr)),
+	ztest_false(tmp && !memcmp(tmp, &any, sizeof(struct in6_addr)),
 		      "IPv6 preferred ll address fetch failed");
 
 	ifaddr1 = net_if_ipv6_addr_add(net_if_get_default(),
 				       &addr6_pref2,
 				       NET_ADDR_AUTOCONF,
 				       0);
-	zassert_not_null(ifaddr1, "IPv6 global address autoconf add failed");
+	ztest_not_null(ifaddr1, "IPv6 global address autoconf add failed");
 
 	ifaddr1->addr_state = NET_ADDR_PREFERRED;
 
@@ -316,27 +316,27 @@ static void test_ipv6_addresses(void)
 		ifaddr2->addr_state = NET_ADDR_DEPRECATED;
 
 		out = net_if_ipv6_select_src_addr(iface, &addr6_pref1);
-		zassert_not_null(out,
+		ztest_not_null(out,
 				 "IPv6 src addr selection failed, iface %p\n",
 				 iface);
 
 		DBG("Selected IPv6 address %s, iface %p\n",
 		       net_sprint_ipv6_addr(out), iface);
 
-		zassert_false(memcmp(out->s6_addr, &addr6_pref2.s6_addr,
+		ztest_false(memcmp(out->s6_addr, &addr6_pref2.s6_addr,
 				     sizeof(struct in6_addr)),
 			      "IPv6 wrong src address selected, iface %p\n",
 			      iface);
 
 		/* Now we should get :: address */
 		out = net_if_ipv6_select_src_addr(iface, &addr6);
-		zassert_not_null(out, "IPv6 src any addr selection failed, "
+		ztest_not_null(out, "IPv6 src any addr selection failed, "
 				 "iface %p\n", iface);
 
 		DBG("Selected IPv6 address %s, iface %p\n",
 		       net_sprint_ipv6_addr(out), iface);
 
-		zassert_false(memcmp(out->s6_addr, &any.s6_addr,
+		ztest_false(memcmp(out->s6_addr, &any.s6_addr,
 				     sizeof(struct in6_addr)),
 			      "IPv6 wrong src any address selected, iface %p\n",
 			      iface);
@@ -345,13 +345,13 @@ static void test_ipv6_addresses(void)
 
 		/* Now we should get ll address */
 		out = net_if_ipv6_select_src_addr(iface, &addr6);
-		zassert_not_null(out,  "IPv6 src ll addr selection failed, "
+		ztest_not_null(out,  "IPv6 src ll addr selection failed, "
 				 "iface %p\n", iface);
 
 		DBG("Selected IPv6 address %s, iface %p\n",
 		       net_sprint_ipv6_addr(out), iface);
 
-		zassert_false(memcmp(out->s6_addr, &addr6.s6_addr,
+		ztest_false(memcmp(out->s6_addr, &addr6.s6_addr,
 				     sizeof(struct in6_addr)),
 			      "IPv6 wrong src ll address selected, iface %p\n",
 			      iface);
@@ -387,21 +387,21 @@ static void test_ipv4_addresses(void)
 				       &addr4,
 				       NET_ADDR_MANUAL,
 				       0);
-	zassert_not_null(ifaddr1, "IPv4 interface address add failed");
+	ztest_not_null(ifaddr1, "IPv4 interface address add failed");
 
-	zassert_true(net_ipv4_is_my_addr(&addr4),
+	ztest_true(net_ipv4_is_my_addr(&addr4),
 		     "My IPv4 address check failed");
 
 	ifaddr1 = net_if_ipv4_addr_add(net_if_get_default(),
 				       &lladdr4,
 				       NET_ADDR_MANUAL,
 				       0);
-	zassert_not_null(ifaddr1, "IPv4 interface address add failed");
+	ztest_not_null(ifaddr1, "IPv4 interface address add failed");
 
-	zassert_true(net_ipv4_is_my_addr(&lladdr4),
+	ztest_true(net_ipv4_is_my_addr(&lladdr4),
 		     "My IPv4 address check failed");
 
-	zassert_false(net_ipv4_is_my_addr(&loopback4),
+	ztest_false(net_ipv4_is_my_addr(&loopback4),
 		      "My IPv4 loopback address check failed");
 
 	/* Two tests for IPv4, first with interface given, then when
@@ -409,49 +409,49 @@ static void test_ipv4_addresses(void)
 	 */
 	for (i = 0, iface = net_if_get_default(); i < 2; i++, iface = NULL) {
 		out = net_if_ipv4_select_src_addr(iface, &addr4);
-		zassert_not_null(out,  "IPv4 src addr selection failed, "
+		ztest_not_null(out,  "IPv4 src addr selection failed, "
 				 "iface %p\n", iface);
 
 		DBG("Selected IPv4 address %s, iface %p\n",
 		       net_sprint_ipv4_addr(out), iface);
 
-		zassert_equal(out->s_addr, addr4.s_addr,
+		ztest_equal(out->s_addr, addr4.s_addr,
 			      "IPv4 wrong src address selected, iface %p\n",
 			      iface);
 
 		/* Now we should get ll address */
 		out = net_if_ipv4_select_src_addr(iface, &lladdr4);
-		zassert_not_null(out, "IPv4 src ll addr selection failed, "
+		ztest_not_null(out, "IPv4 src ll addr selection failed, "
 				 "iface %p\n", iface);
 
 		DBG("Selected IPv4 address %s, iface %p\n",
 		       net_sprint_ipv4_addr(out), iface);
 
-		zassert_equal(out->s_addr, lladdr4.s_addr,
+		ztest_equal(out->s_addr, lladdr4.s_addr,
 			      "IPv4 wrong src ll address selected, iface %p\n",
 			      iface);
 
 		/* Now we should get 192.168.0.1 address */
 		out = net_if_ipv4_select_src_addr(iface, &addr4b);
-		zassert_not_null(out, "IPv4 src any addr selection failed, "
+		ztest_not_null(out, "IPv4 src any addr selection failed, "
 				 "iface %p\n", iface);
 
 		DBG("Selected IPv4 address %s, iface %p\n",
 		       net_sprint_ipv4_addr(out), iface);
 
-		zassert_equal(out->s_addr, addr4.s_addr,
+		ztest_equal(out->s_addr, addr4.s_addr,
 			      "IPv4 wrong src address selected, iface %p\n",
 			      iface);
 
 		/* Now we should get 192.168.0.1 address */
 		out = net_if_ipv4_select_src_addr(iface, &addr4_not_found);
-		zassert_not_null(out, "IPv4 src any addr selection failed, "
+		ztest_not_null(out, "IPv4 src any addr selection failed, "
 				 "iface %p\n", iface);
 
 		DBG("Selected IPv4 address %s, iface %p\n",
 		       net_sprint_ipv4_addr(out), iface);
 
-		zassert_equal(out->s_addr, addr4.s_addr,
+		ztest_equal(out->s_addr, addr4.s_addr,
 			      "IPv4 wrong src address selected, iface %p\n",
 			      iface);
 	}
@@ -461,25 +461,25 @@ static void test_ipv4_addresses(void)
 	net_if_ipv4_set_gw(iface, &gw);
 	net_if_ipv4_set_netmask(iface, &netmask);
 
-	zassert_false(net_ipv4_addr_mask_cmp(iface, &fail_addr),
+	ztest_false(net_ipv4_addr_mask_cmp(iface, &fail_addr),
 		"IPv4 wrong match failed");
 
-	zassert_true(net_ipv4_addr_mask_cmp(iface, &match_addr),
+	ztest_true(net_ipv4_addr_mask_cmp(iface, &match_addr),
 		     "IPv4 match failed");
 
-	zassert_true(net_ipv4_is_addr_mcast(&maddr4a),
+	ztest_true(net_ipv4_is_addr_mcast(&maddr4a),
 		     "IPv4 multicast address");
 
-	zassert_true(net_ipv4_is_addr_mcast(&maddr4b),
+	ztest_true(net_ipv4_is_addr_mcast(&maddr4b),
 		     "IPv4 multicast address");
 
-	zassert_false(net_ipv4_is_addr_mcast(&addr4), "IPv4 address");
+	ztest_false(net_ipv4_is_addr_mcast(&addr4), "IPv4 address");
 
 	ifmaddr1 = net_if_ipv4_maddr_add(net_if_get_default(), &maddr4a);
-	zassert_not_null(ifmaddr1, "IPv4 multicast address add failed");
+	ztest_not_null(ifmaddr1, "IPv4 multicast address add failed");
 
 	ifmaddr1 = net_if_ipv4_maddr_add(net_if_get_default(), &maddr4b);
-	zassert_not_null(ifmaddr1, "IPv4 multicast address add failed");
+	ztest_not_null(ifmaddr1, "IPv4 multicast address add failed");
 
 	iface = NULL;
 
@@ -487,53 +487,53 @@ static void test_ipv4_addresses(void)
 	iface2 = net_if_get_by_index(2);
 
 	ifmaddr1 = net_if_ipv4_maddr_lookup(&maddr4a, &iface);
-	zassert_not_null(ifmaddr1, "IPv4 multicast address lookup failed");
-	zassert_equal(iface, iface1, "Interface not found");
+	ztest_not_null(ifmaddr1, "IPv4 multicast address lookup failed");
+	ztest_equal(iface, iface1, "Interface not found");
 
 	ifmaddr1 = net_if_ipv4_maddr_lookup(&maddr4b, &iface);
-	zassert_not_null(ifmaddr1, "IPv4 multicast address lookup failed");
-	zassert_equal(iface, iface1, "Interface not found");
+	ztest_not_null(ifmaddr1, "IPv4 multicast address lookup failed");
+	ztest_equal(iface, iface1, "Interface not found");
 
 	ifmaddr1 = net_if_ipv4_maddr_lookup(&maddr4a, &iface2);
-	zassert_is_null(ifmaddr1, "IPv4 multicast address lookup succeed");
+	ztest_is_null(ifmaddr1, "IPv4 multicast address lookup succeed");
 
 	ret = net_if_ipv4_maddr_rm(iface2, &maddr4a);
-	zassert_false(ret, "IPv4 rm succeed");
+	ztest_false(ret, "IPv4 rm succeed");
 
 	ret = net_if_ipv4_maddr_rm(iface1, &maddr4a);
-	zassert_true(ret, "IPv4 rm failed");
+	ztest_true(ret, "IPv4 rm failed");
 
 	ifmaddr1 = net_if_ipv4_maddr_lookup(&maddr4a, &iface1);
-	zassert_is_null(ifmaddr1, "IPv4 multicast address lookup succeed");
+	ztest_is_null(ifmaddr1, "IPv4 multicast address lookup succeed");
 
 	ret = net_if_ipv4_maddr_rm(iface1, &maddr4b);
-	zassert_true(ret, "IPv4 rm failed");
+	ztest_true(ret, "IPv4 rm failed");
 
 	ifmaddr1 = net_if_ipv4_maddr_lookup(&maddr4b, &iface1);
-	zassert_is_null(ifmaddr1, "IPv4 multicast address lookup succeed");
+	ztest_is_null(ifmaddr1, "IPv4 multicast address lookup succeed");
 
 	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr1);
-	zassert_true(ret, "IPv4 address 1 is not broadcast address");
+	ztest_true(ret, "IPv4 address 1 is not broadcast address");
 
 	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr2);
-	zassert_false(ret, "IPv4 address 2 is broadcast address");
+	ztest_false(ret, "IPv4 address 2 is broadcast address");
 
 	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr4);
-	zassert_false(ret, "IPv4 address 4 is broadcast address");
+	ztest_false(ret, "IPv4 address 4 is broadcast address");
 
 	ret = net_ipv4_is_addr_bcast(iface, &maddr4b);
-	zassert_false(ret, "IPv4 address is broadcast address");
+	ztest_false(ret, "IPv4 address is broadcast address");
 
 	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr5);
-	zassert_true(ret, "IPv4 address 5 is not broadcast address");
+	ztest_true(ret, "IPv4 address 5 is not broadcast address");
 
 	net_if_ipv4_set_netmask(iface, &netmask2);
 
 	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr2);
-	zassert_false(ret, "IPv4 address 2 is broadcast address");
+	ztest_false(ret, "IPv4 address 2 is broadcast address");
 
 	ret = net_ipv4_is_addr_bcast(iface, &bcast_addr3);
-	zassert_true(ret, "IPv4 address 3 is not broadcast address");
+	ztest_true(ret, "IPv4 address 3 is not broadcast address");
 }
 
 void test_main(void)

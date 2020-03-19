@@ -50,21 +50,21 @@ void test_threads_priority_set(void)
 	/* Lower the priority of the current thread (thread1) */
 	k_thread_priority_set(k_current_get(), prio + 2);
 	rv = k_thread_priority_get(k_current_get());
-	zassert_equal(rv, prio + 2,
+	ztest_equal(rv, prio + 2,
 		      "Expected priority to be changed to %d, not %d\n",
 		      prio + 2, rv);
 
 	/* Raise the priority of the current thread (thread1) */
 	k_thread_priority_set(k_current_get(), prio - 2);
 	rv = k_thread_priority_get(k_current_get());
-	zassert_equal(rv, prio - 2,
+	ztest_equal(rv, prio - 2,
 		      "Expected priority to be changed to %d, not %d\n",
 		      prio - 2, rv);
 
 	/* Restore the priority of the current thread (thread1) */
 	k_thread_priority_set(k_current_get(), prio);
 	rv = k_thread_priority_get(k_current_get());
-	zassert_equal(rv, prio,
+	ztest_equal(rv, prio,
 		      "Expected priority to be changed to %d, not %d\n",
 		      prio, rv);
 
@@ -80,7 +80,7 @@ void test_threads_priority_set(void)
 	k_thread_priority_set(thread2_id, thread2_prio + 2);
 	k_sem_give(&sem_thread2);
 	k_sem_take(&sem_thread1, K_FOREVER);
-	zassert_equal(thread2_data, thread2_prio + 2,
+	ztest_equal(thread2_data, thread2_prio + 2,
 		      "Expected priority to be changed to %d, not %d\n",
 		      thread2_prio + 2, thread2_data);
 
@@ -88,7 +88,7 @@ void test_threads_priority_set(void)
 	k_thread_priority_set(thread2_id, thread2_prio - 2);
 	k_sem_give(&sem_thread2);
 	k_sem_take(&sem_thread1, K_FOREVER);
-	zassert_equal(thread2_data, thread2_prio - 2,
+	ztest_equal(thread2_data, thread2_prio - 2,
 		      "Expected priority to be changed to %d, not %d\n",
 		      thread2_prio - 2, thread2_data);
 
@@ -96,7 +96,7 @@ void test_threads_priority_set(void)
 	k_thread_priority_set(thread2_id, thread2_prio);
 	k_sem_give(&sem_thread2);
 	k_sem_take(&sem_thread1, K_FOREVER);
-	zassert_equal(thread2_data, thread2_prio,
+	ztest_equal(thread2_data, thread2_prio,
 		      "Expected priority to be changed to %d, not %d\n",
 		      thread2_prio, thread2_data);
 }

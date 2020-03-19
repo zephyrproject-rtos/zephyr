@@ -443,7 +443,7 @@ void reset_multi_pde_flag(void)
  */
 void test_multi_pde_buffer_readable_write(void)
 {
-	zassert_true(multi_pde_buffer_readable_write() == TC_PASS, NULL);
+	ztest_true(multi_pde_buffer_readable_write() == TC_PASS, NULL);
 }
 
 /**
@@ -455,7 +455,7 @@ void test_multi_pde_buffer_readable_write(void)
  */
 void test_multi_pde_buffer_readable_read(void)
 {
-	zassert_true(multi_pde_buffer_readable_read() == TC_PASS, NULL);
+	ztest_true(multi_pde_buffer_readable_read() == TC_PASS, NULL);
 }
 
 /**
@@ -467,7 +467,7 @@ void test_multi_pde_buffer_readable_read(void)
  */
 void test_multi_pde_buffer_writeable_write(void)
 {
-	zassert_true(multi_pde_buffer_writeable_write() == TC_PASS, NULL);
+	ztest_true(multi_pde_buffer_writeable_write() == TC_PASS, NULL);
 }
 
 /**
@@ -479,7 +479,7 @@ void test_multi_pde_buffer_writeable_write(void)
  */
 void test_multi_pde_buffer_rw(void)
 {
-	zassert_true(multi_pde_buffer_rw() == TC_PASS, NULL);
+	ztest_true(multi_pde_buffer_rw() == TC_PASS, NULL);
 }
 
 /**
@@ -491,7 +491,7 @@ void test_multi_pde_buffer_rw(void)
  */
 void test_buffer_rw_read(void)
 {
-	zassert_true(buffer_rw_read() == TC_PASS, NULL);
+	ztest_true(buffer_rw_read() == TC_PASS, NULL);
 }
 
 /**
@@ -503,7 +503,7 @@ void test_buffer_rw_read(void)
  */
 void test_buffer_writeable_write(void)
 {
-	zassert_true(buffer_writeable_write() == TC_PASS, NULL);
+	ztest_true(buffer_writeable_write() == TC_PASS, NULL);
 }
 
 /**
@@ -515,7 +515,7 @@ void test_buffer_writeable_write(void)
  */
 void test_buffer_readable_read(void)
 {
-	zassert_true(buffer_readable_read() == TC_PASS, NULL);
+	ztest_true(buffer_readable_read() == TC_PASS, NULL);
 }
 
 /**
@@ -527,7 +527,7 @@ void test_buffer_readable_read(void)
  */
 void test_buffer_readable_write(void)
 {
-	zassert_true(buffer_readable_write() == TC_PASS, NULL);
+	ztest_true(buffer_readable_write() == TC_PASS, NULL);
 }
 
 /**
@@ -539,7 +539,7 @@ void test_buffer_readable_write(void)
  */
 void test_buffer_supervisor_rw(void)
 {
-	zassert_true(buffer_supervisor_rw() == TC_PASS, NULL);
+	ztest_true(buffer_supervisor_rw() == TC_PASS, NULL);
 }
 
 /**
@@ -551,7 +551,7 @@ void test_buffer_supervisor_rw(void)
  */
 void test_buffer_supervisor_w(void)
 {
-	zassert_true(buffer_supervisor_w() == TC_PASS, NULL);
+	ztest_true(buffer_supervisor_w() == TC_PASS, NULL);
 }
 
 /**
@@ -563,7 +563,7 @@ void test_buffer_supervisor_w(void)
  */
 void test_buffer_user_rw_user(void)
 {
-	zassert_true(buffer_user_rw_user() == TC_PASS, NULL);
+	ztest_true(buffer_user_rw_user() == TC_PASS, NULL);
 }
 
 /**
@@ -575,7 +575,7 @@ void test_buffer_user_rw_user(void)
  */
 void test_buffer_user_rw_supervisor(void)
 {
-	zassert_true(buffer_user_rw_supervisor() == TC_PASS, NULL);
+	ztest_true(buffer_user_rw_supervisor() == TC_PASS, NULL);
 }
 
 /**
@@ -587,7 +587,7 @@ void test_buffer_user_rw_supervisor(void)
  */
 void test_multi_page_buffer_user(void)
 {
-	zassert_true(multi_page_buffer_user() == TC_PASS, NULL);
+	ztest_true(multi_page_buffer_user() == TC_PASS, NULL);
 }
 
 /**
@@ -599,7 +599,7 @@ void test_multi_page_buffer_user(void)
  */
 void test_multi_page_buffer_write_user(void)
 {
-	zassert_true(multi_page_buffer_write_user() == TC_PASS, NULL);
+	ztest_true(multi_page_buffer_write_user() == TC_PASS, NULL);
 }
 
 /**
@@ -611,7 +611,7 @@ void test_multi_page_buffer_write_user(void)
  */
 void test_multi_page_buffer_read_user(void)
 {
-	zassert_true(multi_page_buffer_read_user() == TC_PASS, NULL);
+	ztest_true(multi_page_buffer_read_user() == TC_PASS, NULL);
 }
 
 /**
@@ -623,5 +623,5 @@ void test_multi_page_buffer_read_user(void)
  */
 void test_multi_page_buffer_read(void)
 {
-	zassert_true(multi_page_buffer_read() == TC_PASS, NULL);
+	ztest_true(multi_page_buffer_read() == TC_PASS, NULL);
 }
