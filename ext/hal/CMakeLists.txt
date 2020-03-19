@@ -1,2 +1,1 @@
-add_subdirectory(cmsis)
 add_subdirectory_ifdef(CONFIG_HAS_ALTERA_HAL altera)

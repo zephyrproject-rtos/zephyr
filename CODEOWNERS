@@ -268,7 +268,6 @@
 /dts/posix/                               @aescolar @vanwinkeljan @daor-oti
 /dts/bindings/sensor/*bme680*             @BoschSensortec
 /dts/bindings/sensor/st*                  @avisconti
-/ext/hal/cmsis/                           @MaureenHelm @galak @stephanosio
 /ext/lib/crypto/tinycrypt/                @ceolin
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
 /include/drivers/adc.h                    @anangl
