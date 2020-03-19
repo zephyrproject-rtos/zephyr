@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr.h>
 #include <kernel.h>
+#include <debug/stack.h>
 #include <device.h>
 #include <string.h>
 #include <errno.h>
