@@ -17,3 +17,4 @@ supported:
   - pwm
   - counter
   - usb_device
+  - kscan:touch
