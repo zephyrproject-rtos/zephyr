@@ -343,18 +343,8 @@ static void ull_tx_flush(struct ull_cp_conn *conn)
  * ULL -> LL Interface
  */
 
-static void ll_rx_enqueue(struct node_rx_pdu *rx)
-{
-#if !defined(ULL_LLCP_UNITTEST)
-	/* TODO:
-	 * Implement correct ULL->LL path
-	 * */
-#else
-	/* UNIT TEST SOLUTION TO AVOID INCLUDING THE WORLD */
-	extern sys_slist_t ll_rx_q;
-	sys_slist_append(&ll_rx_q, (sys_snode_t *) rx);
-#endif
-}
+extern void ll_rx_enqueue(struct node_rx_pdu *rx);
+
 
 /*
  * LLCP Procedure Creation
