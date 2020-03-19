@@ -247,11 +247,13 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 			ptr += sizeof(struct ext_adv_adi);
 		}
 
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		/* AuxPtr flag */
 		if (_h.aux_ptr) {
 			h->aux_ptr = 1;
 			ptr += sizeof(struct ext_adv_aux_ptr);
 		}
+#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 		/* No SyncInfo flag in primary channel PDU */
 
@@ -303,6 +305,7 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 
 		/* No SyncInfo in primary channel PDU */
 
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		/* AuxPtr */
 		if (h->aux_ptr) {
 			struct ext_adv_aux_ptr *aux;
@@ -319,6 +322,7 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 			aux->phy = find_lsb_set(phy_s) - 1;
 		}
 		adv->lll.phy_s = phy_s;
+#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 		/* ADI */
 		if (h->adi) {
@@ -466,7 +470,7 @@ u8_t ll_adv_enable(u8_t handle, u8_t enable)
 	struct ll_adv_sync_set *sync = NULL;
 	u8_t sync_is_started = 0U;
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
-	struct ll_adv_aux_set *aux;
+	struct ll_adv_aux_set *aux = NULL;
 	u8_t aux_is_started = 0U;
 	u32_t ticks_anchor;
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
@@ -524,6 +528,7 @@ u8_t ll_adv_enable(u8_t enable)
 			}
 
 			memcpy(ptr, tx_addr, BDADDR_SIZE);
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		} else if (h->aux_ptr) {
 			struct pdu_adv_com_ext_adv *s;
 			struct pdu_adv *pdu_aux;
@@ -553,6 +558,7 @@ u8_t ll_adv_enable(u8_t enable)
 				/* TODO: allocate periodic advertising context
 				 */
 			}
+#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 		}
 
 		/* TODO: TargetA, fill here at enable */
@@ -984,7 +990,7 @@ u8_t ll_adv_enable(u8_t enable)
 #endif /* CONFIG_BT_TICKER_EXT */
 				   );
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		if (lll->aux) {
 			struct lll_adv_aux *lll_aux = lll->aux;
 
@@ -1025,7 +1031,7 @@ u8_t ll_adv_enable(u8_t enable)
 			}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 		}
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 	}
 
 	ret = ull_ticker_status_take(ret, &ret_cb);

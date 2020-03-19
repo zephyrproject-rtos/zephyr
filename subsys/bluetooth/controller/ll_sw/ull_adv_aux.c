@@ -37,6 +37,8 @@
 #include "hal/debug.h"
 
 static int init_reset(void);
+
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 static inline struct ll_adv_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_adv_aux_set *aux);
 static inline u16_t aux_handle_get(struct ll_adv_aux_set *aux);
@@ -47,6 +49,7 @@ static void ticker_op_cb(u32_t status, void *param);
 
 static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *adv_aux_free;
+#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 u8_t ll_adv_aux_random_addr_set(u8_t handle, u8_t *addr)
 {
@@ -60,6 +63,7 @@ u8_t *ll_adv_aux_random_addr_get(u8_t handle, u8_t *addr)
 	return NULL;
 }
 
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 			    u8_t *data)
 {
@@ -431,6 +435,7 @@ u16_t ll_adv_aux_max_data_length_get(void)
 	/* TODO: return a Kconfig value */
 	return 0;
 }
+#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 u8_t ll_adv_aux_set_count_get(void)
 {
@@ -476,6 +481,7 @@ int ull_adv_aux_reset(void)
 	return 0;
 }
 
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 u16_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
 {
 	return aux_handle_get((void *)lll->hdr.parent);
@@ -699,3 +705,10 @@ static void ticker_op_cb(u32_t status, void *param)
 {
 	*((u32_t volatile *)param) = status;
 }
+#else /* !(CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+
+static int init_reset(void)
+{
+	return 0;
+}
+#endif /* !(CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
