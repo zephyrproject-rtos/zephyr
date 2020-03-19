@@ -65,6 +65,7 @@ static struct ieee802154_radio_api *radio_api;
 
 static s8_t tx_power;
 static u16_t channel;
+static bool promiscuous;
 
 static u16_t energy_detection_time;
 static u8_t  energy_detection_channel;
@@ -391,20 +392,23 @@ bool otPlatRadioGetPromiscuous(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
 
-	/* TODO: No API in Zephyr to get promiscuous mode. */
-	bool result = false;
+	LOG_DBG("PromiscuousMode=%d", promiscuous ? 1 : 0);
 
-	LOG_DBG("PromiscuousMode=%d", result ? 1 : 0);
-	return result;
+	return promiscuous;
 }
 
 void otPlatRadioSetPromiscuous(otInstance *aInstance, bool aEnable)
 {
+	struct ieee802154_config config = {
+		.promiscuous = aEnable
+	};
+
 	ARG_UNUSED(aInstance);
-	ARG_UNUSED(aEnable);
 
 	LOG_DBG("PromiscuousMode=%d", aEnable ? 1 : 0);
-	/* TODO: No API in Zephyr to set promiscuous mode. */
+
+	promiscuous = aEnable;
+	radio_api->configure(radio_dev, IEEE802154_CONFIG_PROMISCUOUS, &config);
 }
 
 otError otPlatRadioEnergyScan(otInstance *aInstance, u8_t aScanChannel,
