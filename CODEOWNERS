@@ -186,6 +186,7 @@
 /drivers/pinmux/stm32/                    @rsalveti @idlethread
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pwm/*litex*                      @mateusz-holenko @kgugala @pgielda
+/drivers/rtc/                             @jdascenzio
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
