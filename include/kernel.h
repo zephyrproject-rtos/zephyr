@@ -1060,7 +1060,7 @@ extern k_ticks_t z_timeout_remaining(struct _timeout *timeout);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
 /**
- * @brief Get time when a thread wakes up, in ticks
+ * @brief Get time when a thread wakes up, in system ticks
  *
  * This routine computes the system uptime when a waiting thread next
  * executes, in units of system ticks.  If the thread is not waiting,
@@ -1075,7 +1075,7 @@ static inline k_ticks_t z_impl_k_thread_timeout_expires_ticks(
 }
 
 /**
- * @brief Get time remaining before a thread wakes up, in ticks
+ * @brief Get time remaining before a thread wakes up, in system ticks
  *
  * This routine computes the time remaining before a waiting thread
  * next executes, in units of system ticks.  If the thread is not
@@ -1593,7 +1593,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
  * Note that timer precision is limited to the tick rate, not the
  * requested value.
  *
- * @paramt Duration in nanoseconds.
+ * @param t Duration in nanoseconds.
  *
  * @return Timeout delay value.
  */
@@ -1607,7 +1607,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
  * Note that timer precision is limited to the tick rate, not the
  * requested value.
  *
- * @paramt Duration in microseconds.
+ * @param t Duration in microseconds.
  *
  * @return Timeout delay value.
  */
@@ -1619,7 +1619,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
  * This macro generates a timeout delay that instructs a kernel API
  * to wait up to @a t cycles to perform the requested operation.
  *
- * @paramt Duration in cycles.
+ * @param t Duration in cycles.
  *
  * @return Timeout delay value.
  */
@@ -1631,7 +1631,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
  * This macro generates a timeout delay that instructs a kernel API
  * to wait up to @a t ticks to perform the requested operation.
  *
- * @paramt Duration in system ticks.
+ * @param t Duration in system ticks.
  *
  * @return Timeout delay value.
  */
@@ -1698,10 +1698,10 @@ const char *k_thread_state_str(k_tid_t thread_id);
 #ifdef CONFIG_TIMEOUT_64BIT
 
 /**
- * @brief Generates an absolute/uptime timeout value in ticks
+ * @brief Generates an absolute/uptime timeout value from system ticks
  *
  * This macro generates a timeout delay that represents an expiration
- * at the absolute uptime value specified, in ticks.  That is, the
+ * at the absolute uptime value specified, in system ticks.  That is, the
  * timeout will expire immediately after the system uptime reaches the
  * specified tick count.
  *
@@ -1711,7 +1711,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 #define K_TIMEOUT_ABS_TICKS(t) Z_TIMEOUT_TICKS(Z_TICK_ABS(MAX(t, 0)))
 
 /**
- * @brief Generates an absolute/uptime timeout value in ms
+ * @brief Generates an absolute/uptime timeout value from milliseconds
  *
  * This macro generates a timeout delay that represents an expiration
  * at the absolute uptime value specified, in milliseconds.  That is,
@@ -1724,7 +1724,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 #define K_TIMEOUT_ABS_MS(t) K_TIMEOUT_ABS_TICKS(k_ms_to_ticks_ceil64(t))
 
 /**
- * @brief Generates an absolute/uptime timeout value in us
+ * @brief Generates an absolute/uptime timeout value from microseconds
  *
  * This macro generates a timeout delay that represents an expiration
  * at the absolute uptime value specified, in microseconds.  That is,
@@ -1738,7 +1738,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 #define K_TIMEOUT_ABS_US(t) K_TIMEOUT_ABS_TICKS(k_us_to_ticks_ceil64(t))
 
 /**
- * @brief Generates an absolute/uptime timeout value in ns
+ * @brief Generates an absolute/uptime timeout value from nanoseconds
  *
  * This macro generates a timeout delay that represents an expiration
  * at the absolute uptime value specified, in nanoseconds.  That is,
@@ -1752,7 +1752,7 @@ const char *k_thread_state_str(k_tid_t thread_id);
 #define K_TIMEOUT_ABS_NS(t) K_TIMEOUT_ABS_TICKS(k_ns_to_ticks_ceil64(t))
 
 /**
- * @brief Generates an absolute/uptime timeout value in cycles
+ * @brief Generates an absolute/uptime timeout value from system cycles
  *
  * This macro generates a timeout delay that represents an expiration
  * at the absolute uptime value specified, in cycles.  That is, the
@@ -1964,7 +1964,7 @@ __syscall u32_t k_timer_status_sync(struct k_timer *timer);
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
 /**
- * @brief Get next expiration time of a timer, in ticks
+ * @brief Get next expiration time of a timer, in system ticks
  *
  * This routine returns the future system uptime reached at the next
  * time of expiration of the timer, in units of system ticks.  If the
@@ -1981,7 +1981,7 @@ static inline k_ticks_t z_impl_k_timer_expires_ticks(struct k_timer *timer)
 }
 
 /**
- * @brief Get time remaining before a timer next expires, in ticks
+ * @brief Get time remaining before a timer next expires, in system ticks
  *
  * This routine computes the time remaining before a running timer
  * next expires, in units of system ticks.  If the timer is not
@@ -2058,7 +2058,7 @@ static inline void *z_impl_k_timer_user_data_get(struct k_timer *timer)
  */
 
 /**
- * @brief Get system uptime, in ticks.
+ * @brief Get system uptime, in system ticks.
  *
  * This routine returns the elapsed time since the system booted, in
  * ticks (c.f. :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC`), which is the
@@ -3479,7 +3479,8 @@ static inline k_ticks_t k_delayed_work_expires_ticks(
 }
 
 /**
- * @brief Get time remaining before a delayed work gets scheduled, in ticks
+ * @brief Get time remaining before a delayed work gets scheduled, in
+ * system ticks
  *
  * This routine computes the time remaining before a delayed work gets
  * executed. If the delayed work is not waiting to be scheduled, it
