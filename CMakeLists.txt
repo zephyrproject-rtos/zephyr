@@ -616,6 +616,7 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   ${SYSCALL_LONG_REGISTERS_ARG}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   DEPENDS ${PARSE_SYSCALLS_TARGET}
+  ${syscalls_json}
   )
 
 # This is passed into all calls to the gen_kobject_list.py script.
@@ -633,6 +634,7 @@ add_custom_command(
   DEPENDS
   ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
   ${PARSE_SYSCALLS_TARGET}
+  ${subsys_json}
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
