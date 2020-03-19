@@ -66,9 +66,9 @@ void arm_gic_irq_set_priority(
 	int_off = (irq % 16) * 2;
 
 	val = sys_read8(GICD_ICFGRn + int_grp);
-	val &= ~(GICC_ICFGR_MASK << int_off);
+	val &= ~(GICD_ICFGR_MASK << int_off);
 	if (flags & IRQ_TYPE_EDGE) {
-		val |= (GICC_ICFGR_TYPE << int_off);
+		val |= (GICD_ICFGR_TYPE << int_off);
 	}
 
 	sys_write8(val, GICD_ICFGRn + int_grp);
