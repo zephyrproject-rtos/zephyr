@@ -25,7 +25,7 @@
 
 struct ull_cp_conn conn;
 
-sys_slist_t ll_rx_q;
+sys_slist_t ut_rx_q;
 
 #define PDU_DC_LL_HEADER_SIZE	(offsetof(struct pdu_data, lldata))
 #define LL_LENGTH_OCTETS_RX_MAX 27
@@ -33,6 +33,11 @@ sys_slist_t ll_rx_q;
 #define NODE_RX_STRUCT_OVERHEAD	(NODE_RX_HEADER_SIZE)
 #define PDU_DATA_SIZE		(PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 #define PDU_RX_NODE_SIZE WB_UP(NODE_RX_STRUCT_OVERHEAD + PDU_DATA_SIZE)
+
+void ll_rx_enqueue(struct node_rx_pdu *rx)
+{
+	sys_slist_append(&ut_rx_q, (sys_snode_t *) rx);
+}
 
 void test_api_init(void)
 {
@@ -486,7 +491,7 @@ void ut_rx_pdu(helper_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param
 	struct pdu_data *pdu;
 	struct node_rx_pdu *ntf;
 
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
+	ntf = (struct node_rx_pdu *) sys_slist_get(&ut_rx_q);
 	zassert_not_null(ntf, NULL);
 
 	zassert_equal(ntf->hdr.type, NODE_RX_TYPE_DC_PDU, NULL);
@@ -501,7 +506,7 @@ void ut_rx_q_is_empty()
 {
 	struct node_rx_pdu *ntf;
 
-	ntf = (struct node_rx_pdu *) sys_slist_get(&ll_rx_q);
+	ntf = (struct node_rx_pdu *) sys_slist_get(&ut_rx_q);
 	zassert_is_null(ntf, NULL);
 }
 
@@ -543,7 +548,7 @@ void test_api_local_version_exchange(void)
 	};
 
 	/* Setup */
-	sys_slist_init(&ll_rx_q);
+	sys_slist_init(&ut_rx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -616,7 +621,7 @@ void test_api_remote_version_exchange(void)
 	};
 
 	/* Setup */
-	sys_slist_init(&ll_rx_q);
+	sys_slist_init(&ut_rx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -677,7 +682,7 @@ void test_api_both_version_exchange(void)
 	};
 
 	/* Setup */
-	sys_slist_init(&ll_rx_q);
+	sys_slist_init(&ut_rx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -747,7 +752,7 @@ void test_api_local_encryption_start(void)
 	struct node_rx_pdu *ntf;
 
 	/* Setup */
-	sys_slist_init(&ll_rx_q);
+	sys_slist_init(&ut_rx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -845,7 +850,7 @@ void test_api_local_encryption_start_limited_memory(void)
 	struct node_rx_pdu *ntf;
 
 	/* Setup */
-	sys_slist_init(&ll_rx_q);
+	sys_slist_init(&ut_rx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -974,7 +979,7 @@ void test_api_local_encryption_start_no_ltk(void)
 	};
 
 	/* Setup */
-	sys_slist_init(&ll_rx_q);
+	sys_slist_init(&ut_rx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -1060,7 +1065,7 @@ void test_api_remote_encryption_start(void)
 	struct node_rx_pdu *ntf;
 
 	/* Setup */
-	sys_slist_init(&ll_rx_q);
+	sys_slist_init(&ut_rx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -1164,7 +1169,7 @@ void test_api_remote_encryption_start_limited_memory(void)
 	struct node_rx_pdu *ntf;
 
 	/* Setup */
-	sys_slist_init(&ll_rx_q);
+	sys_slist_init(&ut_rx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
@@ -1298,7 +1303,7 @@ void test_api_remote_encryption_start_no_ltk(void)
 	};
 
 	/* Setup */
-	sys_slist_init(&ll_rx_q);
+	sys_slist_init(&ut_rx_q);
 	ull_cp_init();
 	ull_tx_q_init(&conn.tx_q);
 	ull_cp_conn_init(&conn);
