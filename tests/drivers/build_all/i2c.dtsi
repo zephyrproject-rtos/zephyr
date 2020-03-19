@@ -508,3 +508,12 @@ test_i2c_tmp116: tmp116@46 {
 	reg = <0x46>;
 };
 
+test_i2c_bq274xx: bq27xx@47 {
+	compatible = "ti,bq274xx";
+	label = "BQ274XX";
+	reg = <0x47>;
+	design-voltage = <3700>;
+	design-capacity = <1800>;
+	taper-current = <45>;
+	terminate-voltage = <3000>;
+};
