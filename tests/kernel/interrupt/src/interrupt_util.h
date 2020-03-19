@@ -33,9 +33,12 @@ static inline u32_t get_available_nvic_line(u32_t initial_offset)
 			NVIC_SetPendingIRQ(i);
 
 			if (NVIC_GetPendingIRQ(i)) {
-				/* If the NVIC line is pending, it is
-				 * guaranteed that it is implemented.
+				/*
+				 * If the NVIC line is pending, it is
+				 * guaranteed that it is implemented; clear the
+				 * line and return the NVIC line number.
 				 */
+				NVIC_ClearPendingIRQ(i);
 				break;
 			}
 		}
