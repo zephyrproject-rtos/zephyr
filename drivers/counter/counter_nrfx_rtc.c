@@ -654,10 +654,10 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	.set_guard_period = set_guard_period,
 };
 
-#define COUNTER_NRF_RTC_DEVICE(idx)					\
-	BUILD_ASSERT((DT_NORDIC_NRF_RTC_RTC_##idx##_PRESCALER - 1) <=	\
-		     RTC_PRESCALER_PRESCALER_Msk,			\
-		     "RTC prescaler out of range");			\
+#define COUNTER_NRF_RTC_DEVICE(idx)					       \
+	BUILD_ASSERT_MSG((DT_NORDIC_NRF_RTC_RTC_##idx##_PRESCALER - 1) <=      \
+			RTC_PRESCALER_PRESCALER_Msk,			       \
+			"RTC prescaler out of range");			       \
 	DEVICE_DECLARE(rtc_##idx);					       \
 	static int counter_##idx##_init(struct device *dev)		       \
 	{								       \

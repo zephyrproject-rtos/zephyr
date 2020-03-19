@@ -28,9 +28,9 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 {
 	struct cv2_msgq *msgq;
 
-	BUILD_ASSERT(CONFIG_HEAP_MEM_POOL_SIZE >=
-		     CONFIG_CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE,
-		     "heap must be configured to be at least the max dynamic size");
+	BUILD_ASSERT_MSG(CONFIG_HEAP_MEM_POOL_SIZE >=
+			 CONFIG_CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE,
+			 "heap must be configured to be at least the max dynamic size");
 
 	if (k_is_in_isr()) {
 		return NULL;

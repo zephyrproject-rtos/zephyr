@@ -9,9 +9,9 @@
 #include <sys_clock.h>
 #include <spinlock.h>
 
-BUILD_ASSERT(!IS_ENABLED(CONFIG_SMP), "XEC RTOS timer doesn't support SMP");
-BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
-	     "XEC RTOS timer HW frequency is fixed at 32768");
+BUILD_ASSERT_MSG(!IS_ENABLED(CONFIG_SMP), "XEC RTOS timer doesn't support SMP");
+BUILD_ASSERT_MSG(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
+		 "XEC RTOS timer HW frequency is fixed at 32768");
 
 #define DEBUG_RTOS_TIMER 0
 

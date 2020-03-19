@@ -389,7 +389,7 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		))
 
 #define SPI_NRFX_SPIM_DEVICE(idx)					       \
-	BUILD_ASSERT(						       \
+	BUILD_ASSERT_MSG(						       \
 		!SPIM_NRFX_MISO_PULL_UP(idx) || !SPIM_NRFX_MISO_PULL_DOWN(idx),\
 		"SPIM"#idx						       \
 		": cannot enable both pull-up and pull-down on MISO line");    \
