@@ -74,6 +74,9 @@ enum ieee802154_config_type {
 	 */
 	IEEE802154_CONFIG_ACK_FPB,
 
+	/** Indicates whether the device is a PAN coordinator. */
+	IEEE802154_CONFIG_PAN_COORDINATOR,
+
 	/** Enable/disable promiscuous mode. */
 	IEEE802154_CONFIG_PROMISCUOUS,
 };
@@ -93,6 +96,9 @@ struct ieee802154_config {
 			bool extended;
 			bool enabled;
 		} ack_fpb;
+
+		/** ``IEEE802154_CONFIG_PAN_COORDINATOR`` */
+		bool pan_coordinator;
 
 		/** ``IEEE802154_CONFIG_PROMISCUOUS`` */
 		bool promiscuous;
