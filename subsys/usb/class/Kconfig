@@ -94,6 +94,7 @@ config USB_DEVICE_BLUETOOTH
 config USB_DEVICE_BLUETOOTH_VS_H4
 	bool "Enable USB Bluetooth H4 vendor command"
 	depends on USB_DEVICE_BLUETOOTH
+	select BT_HCI_RAW_H4
 	help
 	  Enables vendor command to switch to H:4 transport using the bulk
 	  endpoint.
@@ -102,6 +103,8 @@ config USB_DEVICE_BT_H4
 	bool "USB Bluetooth H4 Device Class Driver"
 	select BT
 	select BT_HCI_RAW
+	select BT_HCI_RAW_H4
+	select BT_HCI_RAW_H4_ENABLE
 	help
 	  USB Bluetooth H4 device class driver
 

@@ -49,10 +49,23 @@ config BT_HCI_RAW
 	  This option allows to access Bluetooth controller
 	  from the application with the RAW HCI protocol.
 
+config BT_HCI_RAW_H4
+	bool "RAW HCI H:4 transport"
+	help
+	  This option enables HCI RAW access to work over an H:4
+	  transport, note that it still need to be selected at runtime.
+
+config BT_HCI_RAW_H4_ENABLE
+	bool "RAW HCI H:4 transport enable"
+	depends on BT_HCI_RAW_H4
+	help
+	  This option enables use of H:4 transport for HCI RAW access at
+	  build time.
+
 config BT_HCI_RAW_RESERVE
 	int "Buffer headroom needed for HCI transport"
 	depends on BT_HCI_RAW
-	default 1 if USB_DEVICE_BT_H4
+	default 1 if BT_HCI_RAW_H4
 	default 0
 	help
 	  This option is used by the HCI raw transport implementation to
