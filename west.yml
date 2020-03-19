@@ -25,6 +25,9 @@ manifest:
   #
   # Please add items below based on alphabetical order
   projects:
+    - name: cmsis
+      revision: a2b82e79bd8ac156fb283d5f52fa0a2373962cf9
+      path: modules/hal/cmsis
     - name: hal_atmel
       revision: 5a44c9d54dffd685fb6664a646922cfe41c5cf8e
       path: modules/hal/atmel

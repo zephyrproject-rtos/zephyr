@@ -9,6 +9,4 @@ menu "HALs"
 
 source "ext/hal/altera/Kconfig"
 
-source "ext/hal/cmsis/Kconfig"
-
 endmenu
