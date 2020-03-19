@@ -241,6 +241,7 @@ struct net_pkt {
 #if defined(CONFIG_IEEE802154)
 	u8_t ieee802154_rssi; /* Received Signal Strength Indication */
 	u8_t ieee802154_lqi;  /* Link Quality Indicator */
+	u8_t ieee802154_ack_fpb : 1; /* Frame Pending Bit was set in the ACK */
 #endif
 #if defined(CONFIG_NET_L2_CANBUS)
 	union {
@@ -880,6 +881,17 @@ static inline void net_pkt_set_ieee802154_lqi(struct net_pkt *pkt,
 					      u8_t lqi)
 {
 	pkt->ieee802154_lqi = lqi;
+}
+
+static inline bool net_pkt_ieee802154_ack_fpb(struct net_pkt *pkt)
+{
+	return pkt->ieee802154_ack_fpb;
+}
+
+static inline void net_pkt_set_ieee802154_ack_fpb(struct net_pkt *pkt,
+						  bool fpb)
+{
+	pkt->ieee802154_ack_fpb = fpb;
 }
 #endif
 
