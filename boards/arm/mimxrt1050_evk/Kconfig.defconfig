@@ -21,7 +21,7 @@ config DISK_ACCESS_USDHC1
 	depends on DISK_ACCESS_USDHC
 
 config I2C
-	default y if LVGL
+	default y if KSCAN
 
 config I2C_1
 	default y
