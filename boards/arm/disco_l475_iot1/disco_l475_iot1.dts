@@ -7,7 +7,7 @@
 /dts-v1/;
 #include <st/l4/stm32l475Xg.dtsi>
 #include "arduino_r3_connector.dtsi"
-
+#include <dt-bindings/pinctrl/stm32l4-pins.h>
 
 / {
 	model = "STMicroelectronics B-L475E-IOT01Ax board";
@@ -49,13 +49,74 @@
 	};
 };
 
+&pinctrl {
+	usart1_pins_default: pinmux_usart1_pins {
+		pinmux = <STM32_PINMUX('A', 9, AF7)>, <STM32_PINMUX('A', 10, AF7)>;
+		bias-disable;
+	};
+
+	usart2_pins_default: pinmux_usart2_pins {
+		pinmux = <STM32_PINMUX('A', 2, AF7)>, <STM32_PINMUX('A', 3, AF7)>;
+		bias-disable;
+	};
+};
+
+&pinctrl {
+	usart1_pins_default: pinmux_usart1_pins {
+		rx {
+			pinmux = <STM32_PINMUX('A', 10, AF7)>;
+			bias-disable;
+		};
+		tx {
+			pinmux = <STM32_PINMUX('A', 9, AF7)>;
+			bias-pull-up;
+		};
+	};
+
+	usart2_pins_default: pinmux_usart2_pins {
+		rx {
+			pinmux = <STM32_PINMUX('A', 3, AF7)>;
+			bias-disable;
+		};
+		tx {
+			pinmux = <STM32_PINMUX('A', 2, AF7)>;
+			bias-pull-up;
+		};
+	};
+};
+
+&pinctrl {
+	usart1_rx_pins_default: pinmux_usart1_rx_pins {
+		pinmux = <STM32_PINMUX('A', 10, AF7)>;
+		bias-disable;
+	};
+
+	usart1_tx_pins_default: pinmux_usart1_tx_pins {
+		pinmux = <STM32_PINMUX('A', 9, AF7)>;
+		bias-pull-up;
+	};
+
+	usart2_rx_pins_default: pinmux_usart2_rx_pins {
+		pinmux = <PIN_PA3_UART2_RX>;
+		bias-disable;
+	};
+
+	usart2_tx_pins_default: pinmux_usart2_tx_pins {
+		pinmux = <PIN_PA2_UART2_TX STM32_PUSHPULL_PULLUP>;
+	};
+};
+
 &usart1 {
 	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
 &usart2 {
 	current-speed = <115200>;
+	pinctrl-0 = <&usart2_rx_pins_default &usart2_tx_pins_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 

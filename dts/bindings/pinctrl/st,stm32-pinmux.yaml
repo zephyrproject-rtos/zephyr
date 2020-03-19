@@ -11,6 +11,50 @@ properties:
     reg:
       required: true
 
-pinmux-cells:
-  - pin
-  - function
+child-binding:
+    title: STM32 PIN configurations
+
+    description: |
+        This binding gives a base representation of the STM32 pins configration
+
+    properties:
+        pinmux:
+          required: false
+          type: int
+
+        bias-disable:
+          required: false
+          type: boolean
+
+        bias-pull-down:
+          required: false
+          type: boolean
+
+        bias-pull-up:
+          required: false
+          type: boolean
+
+        drive-push-pull:
+          required: false
+          type: boolean
+
+        drive-open-drain:
+          required: false
+          type: boolean
+
+        output-low:
+          required: false
+          type: boolean
+
+        output-high:
+          required: false
+          type: boolean
+
+        slew-rate:
+          type: int
+          default: 2
+          enum:
+          - 0
+          - 1
+          - 2
+          - 3
