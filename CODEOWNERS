@@ -445,7 +445,7 @@
 /subsys/usb/                              @jfischer-phytec-iot @finikorg
 /tests/                                   @nashif
 /tests/application_development/libcxx/    @pabigot
-/tests/arch/arm/                          @ioannisg
+/tests/arch/arm/                          @ioannisg @stephanosio
 /tests/boards/native_posix/               @aescolar @daor-oti
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
 /tests/bluetooth/                         @joerchan @jhedberg @Vudentz
