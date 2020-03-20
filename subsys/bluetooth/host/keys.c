@@ -236,7 +236,8 @@ void bt_keys_clear(struct bt_keys *keys)
 {
 	BT_DBG("%s (keys 0x%04x)", bt_addr_le_str(&keys->addr), keys->keys);
 
-	if (keys->keys & BT_KEYS_IRK) {
+	if ((IS_ENABLED(CONFIG_BT_CENTRAL) && IS_ENABLED(CONFIG_BT_PRIVACY)) ||
+	    keys->keys & BT_KEYS_IRK) {
 		bt_id_del(keys);
 	}
 
@@ -393,7 +394,11 @@ static int keys_commit(void)
 	 * called multiple times for the same address, especially if
 	 * the keys were already removed.
 	 */
-	bt_keys_foreach(BT_KEYS_IRK, id_add, NULL);
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) && IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		bt_keys_foreach(BT_KEYS_ALL, id_add, NULL);
+	} else {
+		bt_keys_foreach(BT_KEYS_IRK, id_add, NULL);
+	}
 
 	return 0;
 }
