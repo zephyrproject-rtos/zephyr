@@ -44,6 +44,14 @@
 #include <stm32g0xx_ll_i2c.h>
 #endif
 
+#if  defined(CONFIG_SPI_STM32) || defined(CONFIG_I2S_STM32)
+#include <stm32g0xx_ll_spi.h>
+#endif
+
+#ifdef CONFIG_ADC_STM32
+#include <stm32g0xx_ll_adc.h>
+#endif
+
 #ifdef CONFIG_IWDG_STM32
 #include <stm32g0xx_ll_iwdg.h>
 #endif
@@ -52,12 +60,20 @@
 #include <stm32g0xx_ll_wwdg.h>
 #endif
 
+#ifdef CONFIG_LPUART_1
+#include <stm32g0xx_ll_lpuart.h>
+#endif
+
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32g0xx_ll_usart.h>
 #endif
 
 #ifdef CONFIG_HWINFO_STM32
 #include <stm32g0xx_ll_utils.h>
+#endif
+
+#ifdef CONFIG_DMA_STM32
+#include <stm32g0xx_ll_dma.h>
 #endif
 
 /* Add include for DTS generated information */
