@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <posix/time.h>
 #include <posix/sys/time.h>
+#include <syscall_handler.h>
 
 /*
  * `k_uptime_get` returns a timestamp based on an always increasing
@@ -22,7 +23,7 @@ static struct timespec rt_clock_base;
  *
  * See IEEE 1003.1
  */
-int clock_gettime(clockid_t clock_id, struct timespec *ts)
+int z_impl_clock_gettime(clockid_t clock_id, struct timespec *ts)
 {
 	u64_t elapsed_msecs;
 	struct timespec base;
@@ -57,6 +58,15 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
 	return 0;
 }
 
+#ifdef CONFIG_USERSPACE
+int z_vrfy_clock_gettime(clockid_t clock_id, struct timespec *ts)
+{
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(ts, sizeof(*ts)));
+	return z_impl_clock_gettime(clock_id, ts);
+}
+#include <syscalls/clock_gettime_mrsh.c>
+#endif
+
 /**
  * @brief Set the time of the specified clock.
  *
@@ -65,7 +75,7 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts)
  * Note that only the `CLOCK_REALTIME` clock can be set using this
  * call.
  */
-int clock_settime(clockid_t clock_id, const struct timespec *tp)
+int z_impl_clock_settime(clockid_t clock_id, const struct timespec *tp)
 {
 	struct timespec base;
 
@@ -85,6 +95,15 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 
 	return 0;
 }
+
+#ifdef CONFIG_USERSPACE
+int z_vrfy_clock_settime(clockid_t clock_id, const struct timespec *ts)
+{
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(ts, sizeof(*ts)));
+	return z_impl_clock_settime(clock_id, ts);
+}
+#include <syscalls/clock_settime_mrsh.c>
+#endif
 
 /**
  * @brief Get current real time.
