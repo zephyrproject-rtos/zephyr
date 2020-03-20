@@ -120,7 +120,9 @@
 /doc/CMakeLists.txt                       @carlescufi
 /doc/scripts/                             @carlescufi
 /doc/guides/bluetooth/                    @joerchan @jhedberg @Vudentz
+/doc/guides/dts/                          @galak @mbolivar-nordic
 /doc/reference/bluetooth/                 @joerchan @jhedberg @Vudentz
+/doc/reference/devicetree/                @galak @mbolivar-nordic
 /doc/reference/kernel/other/resource_mgmt.rst @pabigot
 /doc/reference/networking/can*            @alexanderwachter
 /drivers/debug/                           @nashif
@@ -311,6 +313,7 @@
 /include/tracing/                         @wentongwu @nashif
 /include/debug/                           @nashif
 /include/device.h                         @wentongwu @nashif
+/include/devicetree.h                     @galak
 /include/display/                         @vanwinkeljan
 /include/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
 /include/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
