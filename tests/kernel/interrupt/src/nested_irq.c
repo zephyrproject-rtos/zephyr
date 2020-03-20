@@ -8,6 +8,19 @@
 #include <ztest.h>
 #include "interrupt_util.h"
 
+/*
+ * Run the nested interrupt test for the supported platforms only.
+ *
+ * NOTE: Cortex-A and Cortex-R platforms with the ARM GIC are skipped because
+ *       the arch port for these architectures do not support interrupt
+ *       nesting yet.
+ */
+#if defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_CPU_ARCV2) || \
+	(defined(CONFIG_GIC) && !defined(CONFIG_CPU_CORTEX_A) && \
+	 !defined(CONFIG_CPU_CORTEX_R))
+#define TEST_NESTED_ISR
+#endif
+
 #define DURATION	5
 
 #define ISR0_TOKEN	0xDEADBEEF
@@ -31,6 +44,16 @@
  */
 #define IRQ0_PRIO	2
 #define IRQ1_PRIO	1
+#elif defined(CONFIG_GIC)
+/*
+ * For the platforms that use the ARM GIC, use the SGI (software generated
+ * interrupt) lines 14 and 15 for testing.
+ */
+#define IRQ0_LINE	14
+#define IRQ1_LINE	15
+
+#define IRQ0_PRIO	2
+#define IRQ1_PRIO	1
 #else
 /*
  * For all the other platforms, use the last two available IRQ lines for
@@ -43,7 +66,7 @@
 #define IRQ1_PRIO	0
 #endif
 
-#ifndef NO_TRIGGER_FROM_SW
+#ifdef TEST_NESTED_ISR
 static u32_t irq_line_0;
 static u32_t irq_line_1;
 
@@ -133,4 +156,4 @@ void test_nested_isr(void)
 {
 	ztest_test_skip();
 }
-#endif /* NO_TRIGGER_FROM_SW */
+#endif /* TEST_NESTED_ISR */
