@@ -63,6 +63,7 @@ add_subdirectory_ifdef(CONFIG_TMP007		tmp007)
 add_subdirectory_ifdef(CONFIG_TMP112		tmp112)
 add_subdirectory_ifdef(CONFIG_TMP116		tmp116)
 add_subdirectory_ifdef(CONFIG_VL53L0X		vl53l0x)
+add_subdirectory_ifdef(CONFIG_VL53L1X		vl53l1x)
 add_subdirectory_ifdef(CONFIG_TEMP_KINETIS	nxp_kinetis_temp)
 add_subdirectory_ifdef(CONFIG_TACH_XEC		mchp_tach_xec)
 

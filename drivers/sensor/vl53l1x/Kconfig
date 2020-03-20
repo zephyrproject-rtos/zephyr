@@ -1,0 +1,21 @@
+# VL53L1X time of flight sensor configuration options
+
+# Copyright (c) 2019 eProsima
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VL53L1X
+	bool "VL53L1X time of flight sensor"
+	depends on I2C && HAS_DTS_I2C
+	select HAS_STLIB
+	help
+	  Enable driver for VL531X I2C-based time of flight sensor.
+
+if VL53L1X
+
+config VL53L1X_PROXIMITY_THRESHOLD
+	int "Proximity threshold in millimeters"
+	default 100
+	help
+	  Threshold used for proximity detection when sensor is used with SENSOR_CHAN_PROX.
+
+endif # VL53L1X
