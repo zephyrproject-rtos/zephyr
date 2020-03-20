@@ -43,6 +43,10 @@ static int temp_kinetis_sample_fetch(struct device *dev,
 {
 	const struct temp_kinetis_config *config = dev->config->config_info;
 	struct temp_kinetis_data *data = dev->driver_data;
+#ifdef CONFIG_TEMP_KINETIS_FILTER
+	u16_t previous[TEMP_KINETIS_ADC_SAMPLES];
+	int i;
+#endif /* CONFIG_TEMP_KINETIS_FILTER */
 	int err;
 
 	/* Always read both sensor and bandgap voltage in one go */
@@ -51,6 +55,10 @@ static int temp_kinetis_sample_fetch(struct device *dev,
 		return -ENOTSUP;
 	}
 
+#ifdef CONFIG_TEMP_KINETIS_FILTER
+	memcpy(previous, data->buffer, sizeof(previous));
+#endif /* CONFIG_TEMP_KINETIS_FILTER */
+
 	err = adc_read(data->adc, &config->adc_seq);
 	if (err) {
 		LOG_ERR("failed to read ADC channels (err %d)", err);
@@ -58,6 +66,18 @@ static int temp_kinetis_sample_fetch(struct device *dev,
 	}
 
 	LOG_DBG("sensor = %d, bandgap = %d", data->buffer[0], data->buffer[1]);
+
+#ifdef CONFIG_TEMP_KINETIS_FILTER
+	if (previous[0] != 0 && previous[1] != 0) {
+		for (i = 0; i < ARRAY_SIZE(previous); i++) {
+			data->buffer[i] = (data->buffer[i] >> 1) +
+				(previous[i] >> 1);
+		}
+
+		LOG_DBG("sensor = %d, bandgap = %d (filtered)", data->buffer[0],
+			data->buffer[1]);
+	}
+#endif /* CONFIG_TEMP_KINETIS_FILTER */
 
 	return 0;
 }
