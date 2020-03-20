@@ -283,17 +283,10 @@ static void _test_kernel_cpu_idle(int atomic)
  *
  * @see k_cpu_idle()
  */
-#ifndef CONFIG_ARM
 static void test_kernel_cpu_idle_atomic(void)
 {
 	_test_kernel_cpu_idle(1);
 }
-#else
-static void test_kernel_cpu_idle_atomic(void)
-{
-	ztest_test_skip();
-}
-#endif
 
 static void test_kernel_cpu_idle(void)
 {
