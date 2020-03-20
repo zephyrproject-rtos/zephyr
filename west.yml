@@ -109,6 +109,9 @@ manifest:
     - name: tinycbor
       path: modules/lib/tinycbor
       revision: 3cb8555348358d437893d3ab8e8de4e3b916afae
+    - name: tinycrypt
+      path: modules/crypto/tinycrypt
+      revision: 3e9a49d2672ec01435ffbf0d788db6d95ef28de0
     - name: littlefs
       path: modules/fs/littlefs
       revision: fe9572dd5a9fcf93a249daa4233012692bd2881d

@@ -5,8 +5,6 @@
 
 menu "External Sources"
 
-source "ext/lib/crypto/Kconfig"
-
 source "ext/lib/fnmatch/Kconfig"
 
 endmenu
