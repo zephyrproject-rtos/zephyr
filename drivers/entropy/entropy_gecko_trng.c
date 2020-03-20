@@ -51,6 +51,35 @@ static int entropy_gecko_trng_get_entropy(struct device *dev, u8_t *buffer,
 	return 0;
 }
 
+static int entropy_gecko_trng_get_entropy_isr(struct device *dev, u8_t *buf,
+					u16_t len, u32_t flags)
+{
+
+	if ((flags & ENTROPY_BUSYWAIT) == 0U) {
+
+		/* No busy wait; return whatever data is available. */
+		size_t count;
+		size_t available = TRNG0->FIFOLEVEL * 4;
+
+		if (available == 0) {
+			return -ENODATA;
+		}
+		count = SL_MIN(len, available);
+		entropy_gecko_trng_read(buf, count);
+		return count;
+
+	} else {
+		/* Allowed to busy-wait */
+		int ret = entropy_gecko_trng_get_entropy(dev, buf, len);
+
+		if (ret == 0) {
+			/* Data retrieved successfully. */
+			return len;
+		}
+		return ret;
+	}
+}
+
 static int entropy_gecko_trng_init(struct device *device)
 {
 	/* Enable the TRNG0 clock. */
@@ -62,7 +91,8 @@ static int entropy_gecko_trng_init(struct device *device)
 }
 
 static struct entropy_driver_api entropy_gecko_trng_api_funcs = {
-	.get_entropy = entropy_gecko_trng_get_entropy
+	.get_entropy = entropy_gecko_trng_get_entropy,
+	.get_entropy_isr = entropy_gecko_trng_get_entropy_isr
 };
 
 DEVICE_AND_API_INIT(entropy_gecko_trng, CONFIG_ENTROPY_NAME,
