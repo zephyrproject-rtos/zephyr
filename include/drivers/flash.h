@@ -95,9 +95,8 @@ __subsystem struct flash_driver_api {
 /**
  *  @brief  Read data from flash
  *
- *  Most of flash drivers support unaligned flash access, but some have
- *  restrictions on the read offset or/and the read size. Please refer to
- *  the driver implementation to get details on the read alignment requirement.
+ *  All flash drivers support reads without alignment restrictions on
+ *  the read offset, the read size, or the destination address.
  *
  *  @param  dev             : flash dev
  *  @param  offset          : Offset (byte aligned) to read
