@@ -29,9 +29,15 @@ K_THREAD_STACK_ARRAY_DEFINE(rx_stack, NET_TC_RX_COUNT,
 static struct net_traffic_class tx_classes[NET_TC_TX_COUNT];
 static struct net_traffic_class rx_classes[NET_TC_RX_COUNT];
 
-void net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt)
+bool net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt)
 {
+	if (k_work_pending(net_pkt_work(pkt))) {
+		return false;
+	}
+
 	k_work_submit_to_queue(&tx_classes[tc].work_q, net_pkt_work(pkt));
+
+	return true;
 }
 
 void net_tc_submit_to_rx_queue(u8_t tc, struct net_pkt *pkt)
