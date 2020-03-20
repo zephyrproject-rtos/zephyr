@@ -35,16 +35,7 @@ extern volatile irq_offload_routine_t offload_routine;
 /* Check the CPSR mode bits to see if we are in IRQ or FIQ mode */
 static ALWAYS_INLINE bool arch_is_in_isr(void)
 {
-	unsigned int status;
-
-	__asm__ volatile(
-			" mrs %0, cpsr"
-			: "=r" (status) : : "memory", "cc");
-	status &= MODE_MASK;
-
-	return	(status == MODE_FIQ) ||
-		(status == MODE_IRQ) ||
-		(status == MODE_SVC);
+	return (_kernel.nested != 0);
 }
 
 /**
