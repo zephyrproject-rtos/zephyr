@@ -205,4 +205,3 @@ int fnmatch(const char *pattern, const char *string, int flags)
 {
     return fnmatchx(pattern, string, flags, 64);
 }
-
