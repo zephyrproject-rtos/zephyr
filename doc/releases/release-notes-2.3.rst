@@ -227,8 +227,16 @@ Build and Infrastructure
 
 * <TBD>
 
+* Devicetree
+
+  * A new :ref:`devicetree_api` was added. This API is not generated, but is
+    still included via ``<devicetree.h>``. The :ref:`dt-legacy-macros` are now
+    deprecated; users should replace the generated macros with new API. The
+    :ref:`dt-howtos` page has been extended for the new API, and a new
+    :ref:`dt-from-c` API usage guide was also added.
+
 Libraries / Subsystems
-***********************
+**********************
 
 * Random
 
