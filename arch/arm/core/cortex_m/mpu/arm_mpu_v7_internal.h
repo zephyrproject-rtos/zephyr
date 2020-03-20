@@ -200,6 +200,7 @@ static inline int is_in_region(u32_t r_index, u32_t start, u32_t size)
 	u32_t r_addr_start;
 	u32_t r_size_lshift;
 	u32_t r_addr_end;
+	u32_t end;
 
 	/* Lock IRQs to ensure RNR value is correct when reading RBAR, RASR. */
 	unsigned int key;
@@ -216,7 +217,12 @@ static inline int is_in_region(u32_t r_index, u32_t start, u32_t size)
 			MPU_RASR_SIZE_Pos) + 1;
 	r_addr_end = r_addr_start + (1UL << r_size_lshift) - 1;
 
-	if (start >= r_addr_start && (start + size - 1) <= r_addr_end) {
+	size = size == 0 ? 0 : size - 1;
+	if (__builtin_add_overflow(start, size, &end)) {
+		return 0;
+	}
+
+	if ((start >= r_addr_start) && (end <= r_addr_end)) {
 		return 1;
 	}
 
