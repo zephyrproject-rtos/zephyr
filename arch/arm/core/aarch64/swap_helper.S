@@ -209,6 +209,14 @@ offload:
 	b	inv
 
 context_switch:
+	/* Check if we need to context switch */
+	ldr	x1, =_kernel
+	ldr	x2, [x1, #_kernel_offset_to_current]
+	ldr	x3, [x1, #_kernel_offset_to_ready_q_cache]
+	cmp	x2, x3
+	beq	exit
+
+	/* Switch thread */
 	bl	z_arm64_context_switch
 
 exit:
