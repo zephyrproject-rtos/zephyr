@@ -34,11 +34,20 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(void *parameter), void *parameter,
 			     u32_t flags)
 {
+	unsigned int level;
+
 	ARG_UNUSED(flags);
 
 	z_isr_install(irq, routine, parameter);
+
 #if defined(CONFIG_RISCV_HAS_PLIC)
-	riscv_plic_set_priority(irq, priority);
+	level = irq_get_level(irq);
+
+	if (level == 2) {
+		irq = irq_from_level_2(irq);
+
+		riscv_plic_set_priority(irq, priority);
+	}
 #else
 	ARG_UNUSED(priority);
 #endif
