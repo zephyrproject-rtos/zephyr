@@ -125,19 +125,19 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->basic.a2 = (u32_t)parameter1;
 	pInitCtx->basic.a3 = (u32_t)parameter2;
 	pInitCtx->basic.a4 = (u32_t)parameter3;
+
+#if defined(CONFIG_CPU_CORTEX_M)
 	pInitCtx->basic.xpsr =
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
+#else
+	pInitCtx->basic.xpsr = A_BIT | MODE_SYS;
+#if defined(CONFIG_COMPILER_ISA_THUMB2)
+	pInitCtx->basic.xpsr |= T_BIT;
+#endif /* CONFIG_COMPILER_ISA_THUMB2 */
+#endif /* CONFIG_CPU_CORTEX_M */
 
 	thread->callee_saved.psp = (u32_t)pInitCtx;
-#if defined(CONFIG_CPU_CORTEX_R)
-	pInitCtx->basic.lr = (u32_t)pInitCtx->basic.pc;
-	thread->callee_saved.spsr = A_BIT | MODE_SYS;
-#if defined(CONFIG_COMPILER_ISA_THUMB2)
-	thread->callee_saved.spsr |= T_BIT;
-#endif
 
-	thread->callee_saved.lr = (u32_t)pInitCtx->basic.pc;
-#endif /* CONFIG_CPU_CORTEX_R */
 	thread->arch.basepri = 0;
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_FP_SHARING)

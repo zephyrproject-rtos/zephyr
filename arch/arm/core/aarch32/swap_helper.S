@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright (c) 2017-2019 Nordic Semiconductor ASA.
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,8 +111,9 @@ out_fp_endif:
 #endif /* CONFIG_FP_SHARING */
 #elif defined(CONFIG_ARMV7_R)
     /* Store rest of process context */
-    mrs r12, SPSR
-    stm r0, {r4-r12,sp,lr}^
+    cps #MODE_SYS
+    stm r0, {r4-r11, sp}
+    cps #MODE_SVC
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -315,9 +317,10 @@ _thread_irq_disabled:
     ldr r0, =_thread_offset_to_callee_saved
     add r0, r2
 
-    /* restore r4-r12 for incoming thread, plus system sp and lr */
-    ldm r0, {r4-r12,sp,lr}^
-    msr SPSR_fsxc, r12
+    /* restore r4-r11 and sp for incoming thread */
+    cps #MODE_SYS
+    ldm r0, {r4-r11, sp}
+    cps #MODE_SVC
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
@@ -585,15 +588,21 @@ SECTION_FUNC(TEXT, z_arm_svc)
      * Save r12 and the lr as we could be swapping in another process and
      * returning to a different location.
      */
-    push {r4, r5}
-    mov r4, r12
-    mov r5, lr
-
+    srsdb #MODE_SYS!
     cps #MODE_SYS
-    stmdb sp!, {r0-r5}
+    push {r0-r3, r12, lr}
     cps #MODE_SVC
 
-    pop {r4, r5}
+    /* Align stack at double-word boundary */
+    and r3, sp, #4
+    sub sp, sp, r3
+    push {r2, r3}
+
+    /* Increment interrupt nesting count */
+    ldr r2, =_kernel
+    ldr r0, [r2, #_kernel_offset_to_nested]
+    add r0, r0, #1
+    str r0, [r2, #_kernel_offset_to_nested]
 
     /* Get SVC number */
     mrs r0, spsr
