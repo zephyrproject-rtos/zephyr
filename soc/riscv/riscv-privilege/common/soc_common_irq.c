@@ -11,30 +11,15 @@
  */
 #include <irq.h>
 
-/**
- * @brief Get an IRQ's level
- * @param irq The IRQ number in the Zephyr irq.h numbering system
- * @return IRQ level, either 1 or 2
- */
-static inline unsigned int _irq_level(unsigned int irq)
-{
-	return ((irq >> 8) & 0xff) == 0U ? 1 : 2;
-}
-
-static inline unsigned int _level2_irq(unsigned int irq)
-{
-	return (irq >> 8) - 1;
-}
-
 void arch_irq_enable(unsigned int irq)
 {
 	u32_t mie;
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
-	unsigned int level = _irq_level(irq);
+	unsigned int level = irq_get_level(irq);
 
 	if (level == 2) {
-		irq = _level2_irq(irq);
+		irq = irq_from_level_2(irq);
 		riscv_plic_irq_enable(irq);
 		return;
 	}
@@ -54,10 +39,10 @@ void arch_irq_disable(unsigned int irq)
 	u32_t mie;
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
-	unsigned int level = _irq_level(irq);
+	unsigned int level = irq_get_level(irq);
 
 	if (level == 2) {
-		irq = _level2_irq(irq);
+		irq = irq_from_level_2(irq);
 		riscv_plic_irq_disable(irq);
 		return;
 	}
@@ -75,10 +60,10 @@ void arch_irq_disable(unsigned int irq)
 void arch_irq_priority_set(unsigned int irq, unsigned int prio)
 {
 #if defined(CONFIG_RISCV_HAS_PLIC)
-	unsigned int level = _irq_level(irq);
+	unsigned int level = irq_get_level(irq);
 
 	if (level == 2) {
-		irq = _level2_irq(irq);
+		irq = irq_from_level_2(irq);
 		riscv_plic_set_priority(irq, prio);
 	}
 #endif
@@ -91,10 +76,10 @@ int arch_irq_is_enabled(unsigned int irq)
 	u32_t mie;
 
 #if defined(CONFIG_RISCV_HAS_PLIC)
-	unsigned int level = _irq_level(irq);
+	unsigned int level = irq_get_level(irq);
 
 	if (level == 2) {
-		irq = _level2_irq(irq);
+		irq = irq_from_level_2(irq);
 		return riscv_plic_irq_is_enabled(irq);
 	}
 #endif
