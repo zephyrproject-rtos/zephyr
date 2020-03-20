@@ -60,17 +60,6 @@ static inline void trigger_irq(int irq)
 #endif
 }
 
-#elif defined(CONFIG_RISCV)
-static inline void trigger_irq(int irq)
-{
-	u32_t mip;
-
-	printk("Triggering irq : %d\n", irq);
-	__asm__ volatile ("csrrs %0, mip, %1\n"
-			: "=r" (mip)
-			: "r" (1 << irq));
-}
-
 #elif defined(CONFIG_CPU_ARCV2)
 static inline void trigger_irq(int irq)
 {
