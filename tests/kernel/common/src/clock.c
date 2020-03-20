@@ -31,7 +31,6 @@
  * @brief Test clock uptime APIs functionality
  *
  * @see k_uptime_get(), k_uptime_get_32(), k_uptime_delta()
- * k_uptime_delta_32()
  */
 void test_clock_uptime(void)
 {
@@ -66,19 +65,6 @@ void test_clock_uptime(void)
 		k_busy_wait(50);
 #endif
 	}
-
-	/**TESTPOINT: uptime delta lower 32-bit*/
-	k_uptime_delta_32(&d64);
-	while (k_uptime_delta_32(&d64) == 0) {
-#if defined(CONFIG_ARCH_POSIX)
-		k_busy_wait(50);
-#endif
-	}
-
-	/**TESTPOINT: uptime delta straddled ms boundary*/
-	k_uptime_delta_32(&d64);
-	ALIGN_MS_BOUNDARY;
-	zassert_true(k_uptime_delta_32(&d64) > 0, NULL);
 }
 
 /**
