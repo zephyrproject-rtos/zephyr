@@ -273,7 +273,7 @@ void main(void)
 				 * exact time elapsed.
 				 */
 				k_sleep(K_MSEC(timeout));
-				elapsed = k_uptime_delta_32(&timestamp);
+				elapsed = (u32_t)k_uptime_delta(&timestamp);
 			} else {
 				/*
 				 * Do not sleep, more processing to be
