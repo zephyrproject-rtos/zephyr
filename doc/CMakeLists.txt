@@ -23,7 +23,7 @@ else()
   message(STATUS "West: not found")
 endif()
 
-find_package(PythonInterp 3.4)
+find_package(PythonInterp 3.6 REQUIRED)
 set(DOXYGEN_SKIP_DOT True)
 find_package(Doxygen REQUIRED)
 find_package(LATEX)
