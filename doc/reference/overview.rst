@@ -1,10 +1,10 @@
-.. _api_stability:
+.. _api_overview:
 
-API Stability
-#############
+API Overview
+############
 
-The table below lists the available documented APIs in Zephyr, their
-:ref:`current status <api_lifecycle>` and the release that introduced them.
+The table lists Zephyr's APIs and information about them, including their
+current :ref:`stability level <api_lifecycle>`.
 
 .. list-table::
    :header-rows: 1
