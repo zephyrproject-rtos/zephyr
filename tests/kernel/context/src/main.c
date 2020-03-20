@@ -267,8 +267,8 @@ static void _test_kernel_cpu_idle(int atomic)
 #else /* CONFIG_TICKLESS_KERNEL */
 static void _test_kernel_cpu_idle(int atomic)
 {
-	int tms, tms2;;         /* current time in millisecond */
-	int i;                  /* loop variable */
+	int tms, tms2;
+	int i;
 
 	/* Align to a "ms boundary". */
 	tms = k_uptime_get_32();
@@ -279,7 +279,7 @@ static void _test_kernel_cpu_idle(int atomic)
 	}
 
 	tms = k_uptime_get_32();
-	for (i = 0; i < 5; i++) {       /* Repeat the test five times */
+	for (i = 0; i < 5; i++) { /* Repeat the test five times */
 		if (atomic) {
 			unsigned int key = irq_lock();
 
