@@ -12,4 +12,3 @@ zephyr_sources_ifdef(
   CONFIG_FNMATCH
   fnmatch.c
 )
-

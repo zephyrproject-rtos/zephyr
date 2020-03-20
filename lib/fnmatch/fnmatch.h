@@ -47,4 +47,3 @@
 int     fnmatch(const char *, const char *, int);
 
 #endif /* !_FNMATCH_H_ */
-

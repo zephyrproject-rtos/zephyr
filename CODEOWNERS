@@ -339,6 +339,7 @@
 /include/toolchain/                       @andrewboie @andyross
 /include/zephyr.h                         @andrewboie @andyross
 /kernel/                                  @andrewboie @andyross
+/lib/fnmatch/                             @carlescufi
 /lib/gui/                                 @vanwinkeljan
 /lib/os/                                  @andrewboie @andyross
 /lib/posix/                               @pfalcon
