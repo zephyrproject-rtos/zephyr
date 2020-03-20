@@ -20,6 +20,7 @@ struct nrf5_802154_rx_frame {
 	u32_t time; /* RX timestamp. */
 	u8_t lqi; /* Last received frame LQI value. */
 	s8_t rssi; /* Last received frame RSSI value. */
+	bool ack_fpb; /* FPB value in ACK sent for the received frame. */
 };
 
 struct nrf5_802154_data {
@@ -42,6 +43,9 @@ struct nrf5_802154_data {
 	 * RX thread via rx_fifo object.
 	 */
 	struct nrf5_802154_rx_frame rx_frames[NRF_802154_RX_BUFFERS];
+
+	/* Frame pending bit value in ACK sent for the last received frame. */
+	bool last_frame_ack_fpb;
 
 	/* CCA complete sempahore. Unlocked when CCA is complete. */
 	struct k_sem cca_wait;
