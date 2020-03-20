@@ -5,6 +5,14 @@ tests:
     extra_configs:
       - CONFIG_DYNAMIC_INTERRUPTS=y
     tags: kernel userspace
+  kernel.fp_sharing.float_disable.riscv32:
+    filter: CONFIG_CPU_HAS_FPU
+    arch_whitelist: riscv32
+    tags: kernel userspace
+  kernel.fp_sharing.float_disable.riscv64:
+    filter: CONFIG_CPU_HAS_FPU
+    arch_whitelist: riscv64
+    tags: kernel userspace
   kernel.fp_sharing.float_disable.x86:
     extra_args: CONF_FILE=prj_x86.conf
     platform_whitelist: qemu_x86
