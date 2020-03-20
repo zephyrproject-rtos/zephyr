@@ -452,7 +452,6 @@ else()
 endif()
 
 add_subdirectory(boards)
-add_subdirectory(ext)
 add_subdirectory(subsys)
 add_subdirectory(drivers)
 
