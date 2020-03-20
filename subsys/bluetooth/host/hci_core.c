@@ -6109,7 +6109,7 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 			return err;
 		}
 
-		if (sd) {
+		if (sd || (param->options & BT_LE_ADV_OPT_USE_NAME)) {
 			set_param.type = BT_LE_ADV_SCAN_IND;
 		} else {
 			set_param.type = BT_LE_ADV_NONCONN_IND;
