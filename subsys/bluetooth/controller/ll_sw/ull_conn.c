@@ -3152,26 +3152,26 @@ static inline void dle_max_time_get(const struct ll_conn *conn,
 {
 	u16_t rx_time = 0;
 	u16_t tx_time = 0;
-	u16_t bit = 0;
+	u8_t  phy_bitmask = 0;
+
+	if (!conn->common.fex_valid) {
+		phy_bitmask = 0;
+	}
 
 #if defined(CONFIG_BT_CTLR_PHY)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	if (conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_PHY_CODED)) {
-		bit = BIT(2);
+	else if (conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_PHY_CODED)) {
+		phy_bitmask = BIT(2);
 	}
 #else /* CONFIG_BT_CTLR_PHY_CODED */
 #if defined(CONFIG_BT_CTLR_PHY_2M)
-	if (conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_PHY_2M)) {
-		bit = BIT(1);
+	else if (conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_PHY_2M)) {
+		phy_bitmask = BIT(1);
 	}
 #endif
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 
-	if (!conn->common.fex_valid) {
-		bit = 0;
-	}
-
-	if (bit == 0) {
+	if (phy_bitmask == 0) {
 		rx_time = PKT_US(LL_LENGTH_OCTETS_RX_MAX, 0);
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -3181,9 +3181,9 @@ static inline void dle_max_time_get(const struct ll_conn *conn,
 		tx_time = PKT_US(conn->default_tx_octets, 0);
 #endif /* CONFIG_BT_CTLR_PHY */
 	} else {
-		rx_time = MAX(PKT_US(LL_LENGTH_OCTETS_RX_MAX, bit),
-			      PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, bit));
-		tx_time = MIN(PKT_US(LL_LENGTH_OCTETS_RX_MAX, bit),
+		rx_time = MAX(PKT_US(LL_LENGTH_OCTETS_RX_MAX, phy_bitmask),
+			      PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, phy_bitmask));
+		tx_time = MIN(PKT_US(LL_LENGTH_OCTETS_RX_MAX, phy_bitmask),
 			      conn->default_tx_time);
 	}
 #endif /* CONFIG_BT_CTLR_PHY */
