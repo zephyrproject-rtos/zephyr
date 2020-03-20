@@ -1339,7 +1339,12 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 #if defined(CONFIG_BT_SMP)
 	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
-		bt_keys_foreach(BT_KEYS_IRK, update_pending_id, NULL);
+		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+		    IS_ENABLED(CONFIG_BT_PRIVACY)) {
+			bt_keys_foreach(BT_KEYS_ALL, update_pending_id, NULL);
+		} else {
+			bt_keys_foreach(BT_KEYS_IRK, update_pending_id, NULL);
+		}
 	}
 #endif
 
@@ -3178,7 +3183,9 @@ done:
 
 static void keys_add_id(struct bt_keys *keys, void *data)
 {
-	hci_id_add(keys->id, &keys->addr, keys->irk.val);
+	if (keys != (struct bt_keys *)data) {
+		hci_id_add(keys->id, &keys->addr, keys->irk.val);
+	}
 }
 
 void bt_id_del(struct bt_keys *keys)
@@ -3229,8 +3236,12 @@ void bt_id_del(struct bt_keys *keys)
 	/* We checked size + 1 earlier, so here we know we can fit again */
 	if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 		bt_dev.le.rl_entries--;
-		keys->keys &= ~BT_KEYS_IRK;
-		bt_keys_foreach(BT_KEYS_IRK, keys_add_id, NULL);
+		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+		    IS_ENABLED(CONFIG_BT_PRIVACY)) {
+			bt_keys_foreach(BT_KEYS_ALL, keys_add_id, keys);
+		} else {
+			bt_keys_foreach(BT_KEYS_IRK, keys_add_id, keys);
+		}
 		goto done;
 	}
 

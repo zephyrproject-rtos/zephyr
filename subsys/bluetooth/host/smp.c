@@ -4405,6 +4405,16 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 		atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_SIGNING_INFO);
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+	    IS_ENABLED(CONFIG_BT_PRIVACY) &&
+	    !(smp->remote_dist & BT_SMP_DIST_ID_KEY)) {
+		/* To resolve directed advertising we need our local IRK
+		 * in the controllers resolving list, add it now since the
+		 * peer has no identity key.
+		 */
+		bt_id_add(conn->le.keys);
+	}
+
 	atomic_set_bit(smp->flags, SMP_FLAG_KEYS_DISTR);
 
 	/* Slave distributes it's keys first */
