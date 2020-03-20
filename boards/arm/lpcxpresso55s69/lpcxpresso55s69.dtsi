@@ -31,6 +31,29 @@
 			status = "disabled";
 		};
 	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =	<0 0 &gpio0 16 0>,	/* AN  */
+				/* Not a GPIO*/		/* RST */
+				<2 0 &gpio1 1 0>,	/* CS   */
+				<3 0 &gpio1 2 0>,	/* SCK  */
+				<4 0 &gpio1 3 0>,	/* MISO */
+				<5 0 &gpio0 26 0>,	/* MOSI */
+							/* +3.3V */
+							/* GND */
+				<6 0 &gpio1 15 0>,	/* PWM  */
+				<7 0 &gpio1 18 0>,	/* INT  */
+				<8 0 &gpio0 27 0>,	/* RX   */
+				<9 0 &gpio1 24 0>,	/* TX   */
+				<10 0 &gpio1 20 0>,	/* SCL  */
+				<11 0 &gpio1 21 0>;	/* SDA  */
+							/* +5V */
+							/* GND */
+	};
 };
 
 &flexcomm0 {
@@ -53,4 +76,7 @@ arduino_i2c: &flexcomm4 {
 };
 
 arduino_spi: &hs_lspi {
+};
+
+mikrobus_spi: &hs_lspi {
 };
