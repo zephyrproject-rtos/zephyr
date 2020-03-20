@@ -229,16 +229,42 @@ void irq_enable_wrapper(int irq)
 	irq_enable(irq);
 }
 
+#if defined(HAS_POWERSAVE_INSTRUCTION)
 #if defined(CONFIG_TICKLESS_KERNEL)
-static void test_kernel_cpu_idle(void)
+static struct k_timer idle_timer;
+
+static void idle_timer_expiry_function(struct k_timer *timer_id)
 {
-	ztest_test_skip();
+	k_timer_stop(&idle_timer);
 }
-static void test_kernel_cpu_idle_atomic(void)
+
+static void _test_kernel_cpu_idle(int atomic)
 {
-	ztest_test_skip();
+	int tms, tms2;
+	int i;
+
+	/* Set up a time to trigger events to exit idle mode */
+	k_timer_init(&idle_timer, idle_timer_expiry_function, NULL);
+
+	for (i = 0; i < 5; i++) { /* Repeat the test five times */
+		k_timer_start(&idle_timer, 1, 0);
+		tms = k_uptime_get_32();
+		if (atomic) {
+			unsigned int key = irq_lock();
+
+			k_cpu_atomic_idle(key);
+		} else {
+			k_cpu_idle();
+		}
+		tms += 1;
+		tms2 = k_uptime_get_32();
+		zassert_false(tms2 < tms, "Bad ms value computed,"
+	      "got %d which is less than %d\n",
+	      tms2, tms);
+	}
 }
-#elif defined(HAS_POWERSAVE_INSTRUCTION)
+
+#else /* CONFIG_TICKLESS_KERNEL */
 static void _test_kernel_cpu_idle(int atomic)
 {
 	int tms, tms2;;         /* current time in millisecond */
@@ -269,6 +295,7 @@ static void _test_kernel_cpu_idle(int atomic)
 			      tms2, tms);
 	}
 }
+#endif /* CONFIG_TICKLESS_KERNEL */
 
 /**
  *
@@ -300,7 +327,7 @@ static void test_kernel_cpu_idle(void)
 	_test_kernel_cpu_idle(0);
 }
 
-#else
+#else /* HAS_POWERSAVE_INSTRUCTION */
 static void test_kernel_cpu_idle(void)
 {
 	ztest_test_skip();
