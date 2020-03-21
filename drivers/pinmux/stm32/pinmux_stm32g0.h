@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Philippe Retornaz <philippe@shapescale.com>
  * Copyright (c) 2019 ST Microelectronics
+ * Copyright (c) Framework Computer LLC <ktl@frame.work>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,21 +12,17 @@
 /**
  * @file Header for STM32G0 pin multiplexing helper
  */
-#define STM32G0_PINMUX_FUNC_PA2_USART2_TX \
-	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
-#define STM32G0_PINMUX_FUNC_PA3_USART2_RX \
-	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUPDR_NO_PULL)
 
-#define STM32G0_PINMUX_FUNC_PA9_USART1_TX \
-	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
-#define STM32G0_PINMUX_FUNC_PB6_USART1_TX \
-	(STM32_PINMUX_ALT_FUNC_0 | STM32_PUSHPULL_NOPULL)
-#define STM32G0_PINMUX_FUNC_PB7_USART1_RX \
-	(STM32_PINMUX_ALT_FUNC_0 | STM32_PUPDR_NO_PULL)
-#define STM32G0_PINMUX_FUNC_PB6_USART1_TX_RX \
-	(STM32_PINMUX_ALT_FUNC_0 | STM32_OPENDRAIN_PULLUP)
+#include "pinmux_stm32g0_common.h"
 
-#define STM32G0_PINMUX_FUNC_PA7_TIM3_CH2 \
-	(STM32_PINMUX_ALT_FUNC_1 | STM32_PUSHPULL_NOPULL)
+#if defined(CONFIG_SOC_STM32G071XX)
+/* Same for stm32g071xx and stm32g081xx */
+#include "pinmux_stm32g071xx.h"
 
-#endif /* ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32G0_H_ */
+#elif defined(CONFIG_SOC_STM32G031XX)
+/* Same for stm32g031xx and stm32g041xx*/
+#include "pinmux_stm32g031xx.h"
+
+#endif  /* SOC_STM32G071XX */
+
+#endif  /* ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32G0_H_ */
