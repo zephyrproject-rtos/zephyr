@@ -5,3 +5,6 @@ tests:
     extra_args: DTC_OVERLAY_FILE=boards/qemu_x86_ev_0x00.overlay
     platform_whitelist: qemu_x86
     build_only: true
+  filesystem.nvs_large_sector:
+    extra_args: CONF_FILE="prj_large_sectors.conf"
+    platform_whitelist: qemu_x86

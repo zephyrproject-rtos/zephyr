@@ -14,12 +14,21 @@ extern "C" {
 /*
  * MASKS AND SHIFT FOR ADDRESSES
  * an address in nvs is an uint32_t where:
- *   high 2 bytes represent the sector number
- *   low 2 bytes represent the offset in a sector
+ *   high bits represent the sector number
+ *   low bits represent the offset in a sector
+ *   The number of offset bits is determined by
+ *   NVS_OFFSET_BITS
  */
-#define ADDR_SECT_MASK 0xFFFF0000
-#define ADDR_SECT_SHIFT 16
-#define ADDR_OFFS_MASK 0x0000FFFF
+#if defined CONFIG_NVS_SECTOR_SIZE_64K
+#define NVS_OFFSET_BITS 16
+#elif defined CONFIG_NVS_SECTOR_SIZE_256K
+#define NVS_OFFSET_BITS 18
+#else
+#error "No maximum sector size defined for NVS"
+#endif
+
+#define ADDR_SECT_MASK (0xFFFFFFFF << NVS_OFFSET_BITS)
+#define ADDR_OFFS_MASK (0xFFFFFFFF >> (32 - NVS_OFFSET_BITS))
 
 /*
  * Status return values
@@ -30,11 +39,18 @@ extern "C" {
 
 /* Allocation Table Entry */
 struct nvs_ate {
-	uint16_t id;	/* data id */
-	uint16_t offset;	/* data offset within sector */
-	uint16_t len;	/* data len within sector */
-	uint8_t part;	/* part of a multipart data - future extension */
-	uint8_t crc8;	/* crc8 check of the entry */
+#if NVS_OFFSET_BITS > 16
+	/* Order to keep proper alignment within struct */
+	uint32_t offset;   /* data offset within sector */
+	uint16_t len;      /* data length */
+	uint16_t id;       /* data id */
+#else
+	uint16_t id;       /* data id */
+	uint16_t offset;   /* data offset within sector */
+	uint16_t len;      /* data length */
+#endif
+	uint8_t part;      /* part of a multipart data - future extension */
+	uint8_t crc8;      /* crc8 check of the entry */
 } __packed;
 
 BUILD_ASSERT(offsetof(struct nvs_ate, crc8) ==

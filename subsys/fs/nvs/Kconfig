@@ -14,4 +14,16 @@ module = NVS
 module-str = nvs
 source "subsys/logging/Kconfig.template.log_config"
 
+choice NVS_SECTOR_SIZE
+	bool "Maximum sector size"
+	default NVS_SECTOR_SIZE_64K
+
+config NVS_SECTOR_SIZE_64K
+	bool "64kB (max. 65536 sectors)"
+
+config NVS_SECTOR_SIZE_256K
+	bool "256kB (max. 16384 sectors)"
+
+endchoice # NVS_SECTOR_SIZE
+
 endif # NVS

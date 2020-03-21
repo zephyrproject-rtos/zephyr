@@ -29,6 +29,7 @@
 #define TEST_FLASH_AREA_STORAGE_OFFSET	FLASH_AREA_OFFSET(storage)
 #define TEST_DATA_ID			1
 #define TEST_SECTOR_COUNT		5U
+#define TEST_GC_BUF_LENGTH		32U
 
 static struct nvs_fs fs;
 struct stats_hdr *sim_stats;
@@ -58,7 +59,7 @@ void teardown(void)
 	}
 }
 
-void test_nvs_init(void)
+static void init(uint8_t blocks_per_sector)
 {
 	int err;
 	const struct flash_area *fa;
@@ -72,11 +73,36 @@ void test_nvs_init(void)
 					  &info);
 	zassert_true(err == 0,  "Unable to get page info: %d", err);
 
-	fs.sector_size = info.size;
+	fs.sector_size = blocks_per_sector * info.size;
 	fs.sector_count = TEST_SECTOR_COUNT;
 
 	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+}
+
+void test_nvs_init(void)
+{
+	init(3);
+}
+
+void test_nvs_init_large_sectors(void)
+{
+#if NVS_OFFSET_BITS > 16
+	init(65);
+#else
+	ztest_test_skip();
+#endif
+}
+
+/* return size aligned to fs->write_block_size */
+static inline size_t al_size(struct nvs_fs *fs, size_t len)
+{
+	uint8_t write_block_size = fs->flash_parameters->write_block_size;
+
+	if (write_block_size <= 1U) {
+		return len;
+	}
+	return (len + (write_block_size - 1U)) & ~(write_block_size - 1U);
 }
 
 static void execute_long_pattern_write(uint16_t id)
@@ -112,6 +138,22 @@ void test_nvs_write(void)
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
 
 	execute_long_pattern_write(TEST_DATA_ID);
+}
+
+void test_nvs_write_large_sectors(void)
+{
+#if NVS_OFFSET_BITS > 16
+	int err;
+
+	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
+	for (uint32_t i = 0; i < (TEST_SECTOR_COUNT - 1) * 125; ++i) {
+		execute_long_pattern_write(i + 27014);
+	}
+#else
+	ztest_test_skip();
+#endif
 }
 
 static int flash_sim_write_calls_find(struct stats_hdr *hdr, void *arg,
@@ -209,8 +251,8 @@ void test_nvs_gc(void)
 {
 	int err;
 	int len;
-	uint8_t buf[32];
-	uint8_t rd_buf[32];
+	uint8_t buf[TEST_GC_BUF_LENGTH];
+	uint8_t rd_buf[TEST_GC_BUF_LENGTH];
 
 	const uint16_t max_id = 10;
 	/* 25th write will trigger GC. */
@@ -266,12 +308,18 @@ void test_nvs_gc(void)
 static void write_content(uint16_t max_id, uint16_t begin, uint16_t end,
 			     struct nvs_fs *fs)
 {
-	uint8_t buf[32];
+	uint8_t buf[TEST_GC_BUF_LENGTH];
 	ssize_t len;
 
 	for (uint16_t i = begin; i < end; i++) {
 		uint8_t id = (i % max_id);
 		uint8_t id_data = id + max_id * (i / max_id);
+
+		zassert_equal(id_data % max_id, id,
+			      "Generating pattern failed\n"
+			      "id: 0x%x, id_data: 0x%08x, max_id: 0x%x\n"
+			       "i: %d, begin: %d, end: %d",
+			      id, id_data, max_id, i, begin, end);
 
 		memset(buf, id_data, sizeof(buf));
 
@@ -282,12 +330,12 @@ static void write_content(uint16_t max_id, uint16_t begin, uint16_t end,
 
 static void check_content(uint16_t max_id, struct nvs_fs *fs)
 {
-	uint8_t rd_buf[32];
-	uint8_t buf[32];
+	uint8_t rd_buf[TEST_GC_BUF_LENGTH];
+	uint8_t buf[TEST_GC_BUF_LENGTH];
 	ssize_t len;
 
 	for (uint16_t id = 0; id < max_id; id++) {
-		len = nvs_read(fs, id, rd_buf, sizeof(buf));
+		len = nvs_read(fs, id, rd_buf, sizeof(rd_buf));
 		zassert_true(len == sizeof(rd_buf),
 			     "nvs_read unexpected failure: %d", len);
 
@@ -296,8 +344,11 @@ static void check_content(uint16_t max_id, struct nvs_fs *fs)
 			buf[i] = id;
 		}
 		zassert_mem_equal(buf, rd_buf, sizeof(rd_buf),
-				  "RD buff should be equal to the WR buff");
-
+				  "RD buff should be equal to the WR buff\n"
+				  "id: %d, wra: 0x%x\n"
+				  "expected: 0x%08x, effective: 0x%08x",
+				  id, fs->data_wra,
+				  ((uint32_t *)buf)[0], ((uint32_t *)rd_buf)[0]);
 	}
 }
 
@@ -308,35 +359,40 @@ void test_nvs_gc_3sectors(void)
 {
 	int err;
 
-	const uint16_t max_id = 10;
-	/* 50th write will trigger 1st GC. */
-	const uint16_t max_writes = 51;
-	/* 75th write will trigger 2st GC. */
-	const uint16_t max_writes_2 = 51 + 25;
-	/* 100th write will trigger 3st GC. */
-	const uint16_t max_writes_3 = 51 + 25 + 25;
-	/* 125th write will trigger 4st GC. */
-	const uint16_t max_writes_4 = 51 + 25 + 25 + 25;
+	/* Must be power of two or pattern generation will fail */
+	const uint16_t max_id = 8;
+	/* Number of writes to fill a sector completely */
+	const uint16_t sector_writes = fs.sector_size /
+				    (sizeof(struct nvs_ate) +
+				     TEST_GC_BUF_LENGTH);
+	/* Number of writes to trigger 1st GC. */
+	const uint16_t max_writes = 2 * sector_writes + 1;
+	/* Number of writes to trigger 2nd GC. */
+	const uint16_t max_writes_2 = 3 * sector_writes + 1;
+	/* Number of writes to trigger 3rd GC. */
+	const uint16_t max_writes_3 = 4 * sector_writes + 1;
+	/* Number of writes to trigger 4th GC. */
+	const uint16_t max_writes_4 = 5 * sector_writes + 1;
 
 	fs.sector_count = 3;
 
 	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 0,
+	zassert_equal(fs.ate_wra >> NVS_OFFSET_BITS, 0,
 		     "unexpected write sector");
 
 	/* Trigger 1st GC */
 	write_content(max_id, 0, max_writes, &fs);
 
 	/* sector sequence: empty,closed, write */
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
+	zassert_equal(fs.ate_wra >> NVS_OFFSET_BITS, 2,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
 	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
 
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
+	zassert_equal(fs.ate_wra >> NVS_OFFSET_BITS, 2,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
@@ -344,14 +400,14 @@ void test_nvs_gc_3sectors(void)
 	write_content(max_id, max_writes, max_writes_2, &fs);
 
 	/* sector sequence: write, empty, closed */
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 0,
+	zassert_equal(fs.ate_wra >> NVS_OFFSET_BITS, 0,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
 	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
 
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 0,
+	zassert_equal(fs.ate_wra >> NVS_OFFSET_BITS, 0,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
@@ -359,14 +415,14 @@ void test_nvs_gc_3sectors(void)
 	write_content(max_id, max_writes_2, max_writes_3, &fs);
 
 	/* sector sequence: closed, write, empty */
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 1,
+	zassert_equal(fs.ate_wra >> NVS_OFFSET_BITS, 1,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
 	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
 
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 1,
+	zassert_equal(fs.ate_wra >> NVS_OFFSET_BITS, 1,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
@@ -374,14 +430,14 @@ void test_nvs_gc_3sectors(void)
 	write_content(max_id, max_writes_3, max_writes_4, &fs);
 
 	/* sector sequence: empty,closed, write */
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
+	zassert_equal(fs.ate_wra >> NVS_OFFSET_BITS, 2,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 
 	err = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
 
-	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
+	zassert_equal(fs.ate_wra >> NVS_OFFSET_BITS, 2,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
 }
@@ -611,18 +667,24 @@ void test_nvs_gc_corrupt_close_ate(void)
 	uint32_t data;
 	ssize_t len;
 	int err;
+	uint8_t ate_size;
+	uint8_t data_size;
+
+	/* align data and ate size to write block size of flash */
+	ate_size = al_size(&fs, sizeof(struct nvs_ate));
+	data_size = al_size(&fs, sizeof(data));
 
 	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
-	zassert_true(flash_dev != NULL,  "device_get_binding failure");
+	zassert_true(flash_dev != NULL, "device_get_binding failure");
 
 	close_ate.id = 0xffff;
-	close_ate.offset = fs.sector_size - sizeof(struct nvs_ate) * 5;
+	close_ate.offset = fs.sector_size - ate_size * 5;
 	close_ate.len = 0;
 	close_ate.crc8 = 0xff; /* Incorrect crc8 */
 
 	ate.id = 0x1;
 	ate.offset = 0;
-	ate.len = sizeof(data);
+	ate.len = data_size;
 	ate.crc8 = crc8_ccitt(0xff, &ate,
 			      offsetof(struct nvs_ate, crc8));
 
@@ -630,24 +692,22 @@ void test_nvs_gc_corrupt_close_ate(void)
 
 	/* Mark sector 0 as closed */
 	err = flash_write(flash_dev, fs.offset + fs.sector_size -
-			  sizeof(struct nvs_ate), &close_ate,
-			  sizeof(close_ate));
+			  ate_size, &close_ate, ate_size);
 	zassert_true(err == 0,  "flash_write failed: %d", err);
 
 	/* Write valid ate at -6 */
 	err = flash_write(flash_dev, fs.offset + fs.sector_size -
-			  sizeof(struct nvs_ate) * 6, &ate, sizeof(ate));
+			  ate_size * 6, &ate, ate_size);
 	zassert_true(err == 0,  "flash_write failed: %d", err);
 
 	/* Write data for previous ate */
 	data = 0xaa55aa55;
-	err = flash_write(flash_dev, fs.offset, &data, sizeof(data));
+	err = flash_write(flash_dev, fs.offset, &data, data_size);
 	zassert_true(err == 0,  "flash_write failed: %d", err);
 
 	/* Mark sector 1 as closed */
 	err = flash_write(flash_dev, fs.offset + (2 * fs.sector_size) -
-			  sizeof(struct nvs_ate), &close_ate,
-			  sizeof(close_ate));
+			  ate_size, &close_ate, ate_size);
 	zassert_true(err == 0,  "flash_write failed: %d", err);
 
 	flash_write_protection_set(flash_dev, true);
@@ -658,9 +718,9 @@ void test_nvs_gc_corrupt_close_ate(void)
 	zassert_true(err == 0,  "nvs_init call failure: %d", err);
 
 	data = 0;
-	len = nvs_read(&fs, 1, &data, sizeof(data));
-	zassert_true(len == sizeof(data),
-		     "nvs_read should have read %d bytes", sizeof(data));
+	len = nvs_read(&fs, 1, &data, data_size);
+	zassert_true(len == data_size,
+		     "nvs_read should have read %d bytes", data_size);
 	zassert_true(data == 0xaa55aa55, "unexpected value %d", data);
 }
 
@@ -672,6 +732,10 @@ void test_nvs_gc_corrupt_ate(void)
 	struct nvs_ate corrupt_ate, close_ate;
 	struct device *flash_dev;
 	int err;
+	uint8_t ate_size;
+
+	/* align ate size to write block size of flash */
+	ate_size = al_size(&fs, sizeof(struct nvs_ate));
 
 	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	zassert_true(flash_dev != NULL,  "device_get_binding failure");
@@ -691,19 +755,17 @@ void test_nvs_gc_corrupt_ate(void)
 
 	/* Mark sector 0 as closed */
 	err = flash_write(flash_dev, fs.offset + fs.sector_size -
-			  sizeof(struct nvs_ate), &close_ate,
-			  sizeof(close_ate));
+			  ate_size, &close_ate, ate_size);
 	zassert_true(err == 0,  "flash_write failed: %d", err);
 
 	/* Write a corrupt ate */
 	err = flash_write(flash_dev, fs.offset + (fs.sector_size / 2),
-			  &corrupt_ate, sizeof(corrupt_ate));
+			  &corrupt_ate, ate_size);
 	zassert_true(err == 0,  "flash_write failed: %d", err);
 
 	/* Mark sector 1 as closed */
 	err = flash_write(flash_dev, fs.offset + (2 * fs.sector_size) -
-			  sizeof(struct nvs_ate), &close_ate,
-			  sizeof(close_ate));
+			  ate_size, &close_ate, ate_size);
 	zassert_true(err == 0,  "flash_write failed: %d", err);
 
 	flash_write_protection_set(flash_dev, true);
@@ -737,7 +799,11 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(
 				 test_nvs_gc_corrupt_close_ate, setup, teardown),
 			 ztest_unit_test_setup_teardown(
-				 test_nvs_gc_corrupt_ate, setup, teardown)
+				 test_nvs_gc_corrupt_ate, setup, teardown),
+			 ztest_unit_test_setup_teardown(
+				 test_nvs_init_large_sectors, setup, teardown),
+			 ztest_unit_test_setup_teardown(
+				 test_nvs_write_large_sectors, setup, teardown)
 			);
 
 	ztest_run_test_suite(test_nvs);

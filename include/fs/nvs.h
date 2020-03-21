@@ -34,25 +34,25 @@ extern "C" {
  * @brief Non-volatile Storage File system structure
  *
  * @param offset File system offset in flash
- * @param ate_wra: Allocation table entry write address. Addresses are stored
- * as uint32_t: high 2 bytes are sector, low 2 bytes are offset in sector,
+ * @param ate_wra: Allocation table entry write address. Adresses are stored
+ * as uint32_t: high bits are sector, low bits are offset in sector.
+ * Number of offset bits are determined by NVS_OFFSET_BITS.
  * @param data_wra: Data write address.
  * @param sector_size File system is divided into sectors each sector should be
- * multiple of pagesize
- * @param sector_count Amount of sectors in the file systems
+ * a multiple of the pagesize
+ * @param sector_count Number of sectors in the file systems
  * @param write_block_size Alignment size
+ * @param ready Is the file system initialized?
  * @param nvs_lock Mutex
  * @param flash_device Flash Device
  */
 struct nvs_fs {
-	off_t offset;		/* filesystem offset in flash */
-	uint32_t ate_wra;		/* next alloc table entry write address */
-	uint32_t data_wra;		/* next data write address */
-	uint16_t sector_size;	/* filesystem is divided into sectors,
-				 * sector size should be multiple of pagesize
-				 */
-	uint16_t sector_count;	/* amount of sectors in the filesystem */
-	bool ready;		/* is the filesystem initialized ? */
+	off_t offset;              /* filesystem offset in flash */
+	uint32_t ate_wra;          /* next alloc table entry write address */
+	uint32_t data_wra;         /* next data write address */
+	size_t sector_size;        /* filesystem is divided into sectors */
+	uint16_t sector_count;     /* number of sectors in the filesystem */
+	bool ready;                /* is the file system initialized? */
 
 	struct k_mutex nvs_lock;
 	struct device *flash_device;

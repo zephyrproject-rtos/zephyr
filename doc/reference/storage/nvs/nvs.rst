@@ -7,8 +7,8 @@ Elements, represented as id-data pairs, are stored in flash using a
 FIFO-managed circular buffer. The flash area is divided into sectors. Elements
 are appended to a sector until storage space in the sector is exhausted. Then a
 new sector in the flash area is prepared for use (erased). Before erasing the
-sector it is checked that identifier - data pairs exist in the sectors in use,
-if not the id-data pair is copied.
+sector it is checked that identifier - data pairs exist in the sectors in use.
+If not the id-data pair is copied.
 
 The id is a 16-bit unsigned number. NVS ensures that for each used id there is
 at least one id-data pair stored in flash at all time.
@@ -16,12 +16,12 @@ at least one id-data pair stored in flash at all time.
 NVS allows storage of binary blobs, strings, integers, longs, and any
 combination of these.
 
-Each element is stored in flash as metadata (8 byte) and data. The metadata is
-written in a table starting from the end of a nvs sector, the data is
-written one after the other from the start of the sector. The metadata consists
-of: id, data offset in sector, data length, part (unused) and a crc.
+Each element is stored in flash as metadata (8 to 10 bytes) and data. The
+metadata is written in a table starting from the end of a nvs sector, the data
+is written one after the other from the start of the sector. The metadata
+consists of: id, data offset in sector, data length, part (unused) and a crc.
 
-A write of data to nvs always starts with writing the data, followed by a write
+A write of data to nvs always starts by writing the data, followed by a write
 of the metadata. Data that is written in flash without metadata is ignored
 during initialization.
 
@@ -49,7 +49,7 @@ For NVS the file system is declared as:
 where
 
 - ``NVS_SECTOR_SIZE`` is the sector size, it has to be a multiple of
-  the flash erase page size and a power of 2.
+  the flash erase page size.
 - ``NVS_SECTOR_COUNT`` is the number of sectors, it is at least 2, one
   sector is always kept empty to allow copying of existing data.
 - ``NVS_STORAGE_OFFSET`` is the offset of the storage area in flash.
@@ -93,6 +93,20 @@ the expected device life (in minutes) can be calculated as::
 
 From this formula it is also clear what to do in case the expected life is too
 short: increase ``SECTOR_COUNT`` or ``SECTOR_SIZE``.
+
+
+Efficiency considerations
+*************************
+
+Preparing a new sector for writing requires some time to ensure that no data
+elements within are lost. The required time increases about linearly in relation
+to the number of data elements within the sector and can therefore take a
+considerable amount of time.
+As a rule of thumb, the number of data elements should be limited to about 1000
+per sector. This can be accomplished by keeping the sector size small or by
+increasing the data element size, combining related data into a single
+element.
+
 
 Sample
 ******
