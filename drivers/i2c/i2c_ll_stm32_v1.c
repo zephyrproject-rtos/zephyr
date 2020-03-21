@@ -29,6 +29,17 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v1);
 
 #define STM32_I2C_SYSCALL_TIMEOUT_MSEC	10
 
+static void ll_i2c_generate_start_condition(I2C_TypeDef *i2c)
+{
+	u16_t cr1 = LL_I2C_ReadReg(i2c, CR1);
+
+	if (cr1 & I2C_CR1_STOP) {
+		LOG_DBG("%s: START while STOP active!", __func__);
+		LL_I2C_WriteReg(i2c, CR1, cr1 & ~I2C_CR1_STOP);
+	}
+
+	LL_I2C_GenerateStartCondition(i2c);
+}
 
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 static inline void handle_sb(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
@@ -64,7 +75,7 @@ static inline void handle_addr(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 		if (!data->current.is_write && data->current.is_restart) {
 			data->current.is_restart = 0U;
 			LL_I2C_ClearFlag_ADDR(i2c);
-			LL_I2C_GenerateStartCondition(i2c);
+			ll_i2c_generate_start_condition(i2c);
 
 			return;
 		}
@@ -238,7 +249,7 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	LL_I2C_EnableIT_ERR(i2c);
 	LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
 	if (msg->flags & I2C_MSG_RESTART) {
-		LL_I2C_GenerateStartCondition(i2c);
+		ll_i2c_generate_start_condition(i2c);
 	}
 	LL_I2C_EnableIT_BUF(i2c);
 
@@ -292,7 +303,7 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	LL_I2C_EnableIT_EVT(i2c);
 	LL_I2C_EnableIT_ERR(i2c);
 	LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
-	LL_I2C_GenerateStartCondition(i2c);
+	ll_i2c_generate_start_condition(i2c);
 	LL_I2C_EnableIT_BUF(i2c);
 
 	ret = k_sem_take(&data->device_sync_sem,
@@ -344,7 +355,7 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
 
 	if (msg->flags & I2C_MSG_RESTART) {
-		LL_I2C_GenerateStartCondition(i2c);
+		ll_i2c_generate_start_condition(i2c);
 		timeout = STM32_I2C_TIMEOUT_USEC;
 		while (!LL_I2C_IsActiveFlag_SB(i2c)) {
 			if (stm32_i2c_wait_timeout(&timeout)) {
@@ -440,7 +451,7 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
 
 	if (msg->flags & I2C_MSG_RESTART) {
-		LL_I2C_GenerateStartCondition(i2c);
+		ll_i2c_generate_start_condition(i2c);
 		timeout = STM32_I2C_TIMEOUT_USEC;
 		while (!LL_I2C_IsActiveFlag_SB(i2c)) {
 			if (stm32_i2c_wait_timeout(&timeout)) {
@@ -471,7 +482,7 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 				}
 			}
 			LL_I2C_ClearFlag_ADDR(i2c);
-			LL_I2C_GenerateStartCondition(i2c);
+			ll_i2c_generate_start_condition(i2c);
 			timeout = STM32_I2C_TIMEOUT_USEC;
 			while (!LL_I2C_IsActiveFlag_SB(i2c)) {
 				if (stm32_i2c_wait_timeout(&timeout)) {
