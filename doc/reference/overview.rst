@@ -125,7 +125,7 @@ current :ref:`stability level <api_lifecycle>`.
      - 2.2
 
    * - :ref:`hwinfo_api`
-     - Unstable
+     - Stable
      - 1.14
      - 1.14
 
