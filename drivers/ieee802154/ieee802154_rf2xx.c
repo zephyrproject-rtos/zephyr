@@ -43,11 +43,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #if defined(CONFIG_NET_L2_OPENTHREAD)
 #include <net/openthread.h>
 
-#define RF2XX_OT_PSDU_LENGTH            1280
+#define RF2XX_OT_PSDU_LENGTH              1280
 
-#define RF2XX_ACK_FRAME_LEN             3
-#define RF2XX_ACK_FRAME_TYPE           (2 << 0)
-#define RF2XX_ACK_FRAME_PENDING_BIT    (1 << 4)
+#define RF2XX_ACK_FRAME_LEN               3
+#define RF2XX_ACK_FRAME_TYPE              (2 << 0)
+#define RF2XX_ACK_FRAME_PENDING_BIT       (1 << 4)
+#define RF2XX_FRAME_CTRL_ACK_REQUEST_BIT  (1 << 5)
 
 static u8_t rf2xx_ack_psdu[RF2XX_ACK_FRAME_LEN] = { 0 };
 static struct net_buf rf2xx_ack_frame = {
@@ -55,6 +56,7 @@ static struct net_buf rf2xx_ack_frame = {
 	.size  = RF2XX_ACK_FRAME_LEN,
 	.len   = RF2XX_ACK_FRAME_LEN,
 	.__buf = rf2xx_ack_psdu,
+	.frags = NULL,
 };
 static struct net_pkt rf2xx_ack_pkt = {
 	.buffer = &rf2xx_ack_frame,
@@ -445,16 +447,20 @@ static int rf2xx_filter(struct device *dev,
 }
 
 #if defined(CONFIG_NET_L2_OPENTHREAD)
-static void rf2xx_handle_ack(struct rf2xx_context *ctx, u8_t seq_number)
+static void rf2xx_handle_ack(struct rf2xx_context *ctx, struct net_buf *frag)
 {
+	if ((frag->data[0] & RF2XX_FRAME_CTRL_ACK_REQUEST_BIT) == 0) {
+		return;
+	}
+
 	rf2xx_ack_psdu[0] = RF2XX_ACK_FRAME_TYPE;
-	rf2xx_ack_psdu[2] = seq_number;
+	rf2xx_ack_psdu[2] = frag->data[2];
 
 	if (ctx->trx_trac == RF2XX_TRX_PHY_STATE_TRAC_SUCCESS_DATA_PENDING) {
 		rf2xx_ack_psdu[0] |= RF2XX_ACK_FRAME_PENDING_BIT;
 	}
 
-	rf2xx_ack_frame.data = rf2xx_ack_psdu;
+	net_pkt_cursor_init(&rf2xx_ack_pkt);
 
 	if (ieee802154_radio_handle_ack(ctx->iface, &rf2xx_ack_pkt) != NET_OK) {
 		LOG_INF("ACK packet not handled.");
@@ -508,7 +514,7 @@ static int rf2xx_tx(struct device *dev,
 	 * acknowledgment frame was set.
 	 */
 	default:
-		rf2xx_handle_ack(ctx, frag->data[2]);
+		rf2xx_handle_ack(ctx, frag);
 		break;
 	}
 
