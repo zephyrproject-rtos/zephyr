@@ -26,8 +26,7 @@ LOG_MODULE_REGISTER(sdhc_spi, CONFIG_DISK_LOG_LEVEL);
 struct sdhc_spi_data {
 	struct device *spi;
 	struct spi_config cfg;
-	struct device *cs;
-	u32_t pin;
+	struct spi_cs_control cs_ctrl;
 	gpio_dt_flags_t flags;
 
 	bool high_capacity;
@@ -67,12 +66,6 @@ static int sdhc_spi_trace(struct sdhc_spi_data *data, int dir, int err,
 	}
 #endif
 	return err;
-}
-
-/* Asserts or deasserts chip select */
-static void sdhc_spi_set_cs(struct sdhc_spi_data *data, int value)
-{
-	gpio_pin_set(data->cs, data->pin, value);
 }
 
 /* Receives a fixed number of bytes */
@@ -460,12 +453,8 @@ static int sdhc_spi_recover(struct sdhc_spi_data *data)
 /* Attempts to return the card to idle mode */
 static int sdhc_spi_go_idle(struct sdhc_spi_data *data)
 {
-	sdhc_spi_set_cs(data, 1);
-
 	/* Write the initial >= 74 clocks */
 	sdhc_spi_tx(data, sdhc_ones, 10);
-
-	sdhc_spi_set_cs(data, 0);
 
 	return sdhc_spi_cmd_r1_idle(data, SDHC_GO_IDLE_STATE, 0);
 }
@@ -673,8 +662,6 @@ static int sdhc_spi_read(struct sdhc_spi_data *data,
 		addr = sector * SDMMC_DEFAULT_BLOCK_SIZE;
 	}
 
-	sdhc_spi_set_cs(data, 0);
-
 	/* Send the start read command */
 	err = sdhc_spi_cmd_r1(data, SDHC_READ_MULTIPLE_BLOCK, addr);
 	if (err != 0) {
@@ -698,8 +685,6 @@ static int sdhc_spi_read(struct sdhc_spi_data *data,
 	err = sdhc_spi_skip_until_ready(data);
 
 error:
-	sdhc_spi_set_cs(data, 1);
-
 	return err;
 }
 
@@ -713,8 +698,6 @@ static int sdhc_spi_write(struct sdhc_spi_data *data,
 	if (err != 0) {
 		return err;
 	}
-
-	sdhc_spi_set_cs(data, 0);
 
 	/* Write the blocks one-by-one */
 	for (; count != 0U; count--) {
@@ -755,8 +738,6 @@ static int sdhc_spi_write(struct sdhc_spi_data *data,
 
 	err = 0;
 error:
-	sdhc_spi_set_cs(data, 1);
-
 	return err;
 }
 
@@ -771,17 +752,29 @@ static int sdhc_spi_init(struct device *dev)
 	data->cfg.frequency = SDHC_SPI_INITIAL_SPEED;
 	data->cfg.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS;
 	data->cfg.slave = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_BASE_ADDRESS;
-	data->cs = device_get_binding(
+#ifdef DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_CONTROLLER
+	data->cs_ctrl.gpio_dev = device_get_binding(
 		DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_CONTROLLER);
-	__ASSERT_NO_MSG(data->cs != NULL);
+	__ASSERT_NO_MSG(data->cs_ctrl.gpio_dev != NULL);
 
-	data->pin = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_PIN;
+	data->cs_ctrl.delay = CONFIG_DISK_SDHC_SPI_CS_CONTROL_DELAY;
+	data->cs_ctrl.gpio_pin = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_PIN;
 	data->flags = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_FLAGS;
+	data->cfg.cs = &data->cs_ctrl;
+#else
+	data->flags = 0;
+	data->cfg.cs = NULL;
+#endif
 
 	disk_spi_sdhc_init(dev);
 
-	return gpio_pin_configure(data->cs, data->pin,
-				  GPIO_OUTPUT_INACTIVE | data->flags);
+	if (!data->cs_ctrl.gpio_dev) {
+		return 0;
+	}
+
+	return gpio_pin_configure(data->cs_ctrl.gpio_dev,
+			data->cs_ctrl.gpio_pin,
+			GPIO_OUTPUT_INACTIVE | data->flags);
 }
 
 static int disk_spi_sdhc_access_status(struct disk_info *disk)
@@ -866,7 +859,6 @@ static int disk_spi_sdhc_access_init(struct disk_info *disk)
 	int err;
 
 	err = sdhc_spi_detect(data);
-	sdhc_spi_set_cs(data, 1);
 
 	return err;
 }

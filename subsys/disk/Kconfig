@@ -98,6 +98,15 @@ config DISK_ACCESS_SPI_SDHC
 	help
 	  File system on a SDHC card accessed over SPI.
 
+if DISK_ACCESS_SPI_SDHC
+
+config DISK_SDHC_SPI_CS_CONTROL_DELAY
+	int "CS line control delay in microseconds"
+	default 0
+	help
+	  Delay in microseconds to control CS line before and after transmitting.
+endif
+
 config DISK_ACCESS_USDHC
 	bool "NXP i.MXRT USDHC driver"
 	depends on (HAS_MCUX_USDHC1 || HAS_MCUX_USDHC2)
