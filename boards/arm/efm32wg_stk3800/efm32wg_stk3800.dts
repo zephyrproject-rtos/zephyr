@@ -57,6 +57,22 @@
 	clock-frequency = <48000000>;
 };
 
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
 &uart0 {
 	current-speed = <115200>;
 	location-rx = <GECKO_LOCATION(1) GECKO_PORT_E GECKO_PIN(1)>;

@@ -9,7 +9,7 @@
 #include <sys/printk.h>
 
 /* This pin is used to enable the serial port using the board controller */
-#define VCOM_ENABLE_GPIO_NAME  DT_GPIO_GECKO_PORTA_NAME
+#define VCOM_ENABLE_GPIO_NAME  "GPIO_A"
 #define VCOM_ENABLE_GPIO_PIN   5
 
 static int efr32_radio_init(struct device *dev)
