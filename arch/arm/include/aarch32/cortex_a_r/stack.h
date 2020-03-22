@@ -6,13 +6,13 @@
 
 /**
  * @file
- * @brief Stack helpers for Cortex-R CPUs
+ * @brief Stack helpers for Cortex-A and Cortex-R CPUs
  *
  * Stack helper functions.
  */
 
-#ifndef _ARM_CORTEXR_STACK__H_
-#define _ARM_CORTEXR_STACK__H_
+#ifndef ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_A_R_STACK_H_
+#define ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_A_R_STACK_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,4 +44,4 @@ static ALWAYS_INLINE void z_arm_interrupt_stack_setup(void)
 }
 #endif
 
-#endif /* _ARM_CORTEXR_STACK__H_ */
+#endif /* ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_A_R_STACK_H_ */

@@ -238,6 +238,6 @@ config FP_SOFTABI
 endchoice
 
 rsource "cortex_m/Kconfig"
-rsource "cortex_r/Kconfig"
+rsource "cortex_a_r/Kconfig"
 
 endif # !ARM64

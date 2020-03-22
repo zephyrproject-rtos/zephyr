@@ -6,13 +6,13 @@
 
 /**
  * @file
- * @brief Exception/interrupt context helpers for Cortex-R CPUs
+ * @brief Exception/interrupt context helpers for Cortex-A and Cortex-R CPUs
  *
  * Exception/interrupt context helpers.
  */
 
-#ifndef _ARM_CORTEXR_ISR__H_
-#define _ARM_CORTEXR_ISR__H_
+#ifndef ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_A_R_EXC_H_
+#define ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_A_R_EXC_H_
 
 #include <arch/cpu.h>
 
@@ -77,4 +77,4 @@ extern void z_arm_cortex_r_svc(void);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _ARM_CORTEXRM_ISR__H_ */
+#endif /* ZEPHYR_ARCH_ARM_INCLUDE_AARCH32_CORTEX_A_R_EXC_H_ */

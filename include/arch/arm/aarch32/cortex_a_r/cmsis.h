@@ -11,8 +11,8 @@
  * This header contains the interface to the ARM CMSIS Core headers.
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_R_CMSIS_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_R_CMSIS_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CMSIS_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CMSIS_H_
 
 #include <soc.h>
 
@@ -37,7 +37,7 @@ extern "C" {
 #elif defined(CONFIG_CPU_CORTEX_R5)
 #include <core_cr5.h>
 #else
-#error "Unknown Cortex-R device"
+#error "Unknown device"
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_R_CMSIS_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CMSIS_H_ */

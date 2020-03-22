@@ -9,14 +9,14 @@
  * gcc builtins)
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_R_SYS_IO_H_
-#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_R_SYS_IO_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_SYS_IO_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_SYS_IO_H_
 
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
 #include <sys/sys_io.h>
-#include <arch/arm/aarch32/cortex_r/cmsis.h>
+#include <arch/arm/aarch32/cortex_a_r/cmsis.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -160,4 +160,4 @@ static ALWAYS_INLINE
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_R_SYS_IO_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_SYS_IO_H_ */

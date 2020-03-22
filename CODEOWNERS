@@ -22,7 +22,7 @@
 /arch/arm/core/aarch64/                   @carlocaione
 /arch/arm/include/aarch32/cortex_m/cmse.h @ioannisg
 /arch/arm/include/aarch64/                @carlocaione
-/arch/arm/core/aarch32/cortex_r/          @MaureenHelm @galak @ioannisg @bbolen @stephanosio
+/arch/arm/core/aarch32/cortex_a_r/        @MaureenHelm @galak @ioannisg @bbolen @stephanosio
 /arch/common/                             @andrewboie @ioannisg @andyross
 /soc/arc/snps_*/                          @vonhust @ruuddw
 /soc/nios2/                               @nashif @wentongwu
@@ -298,7 +298,7 @@
 /include/arch/arc/arch.h                  @andrewboie
 /include/arch/arc/v2/irq.h                @andrewboie
 /include/arch/arm/aarch32/                @MaureenHelm @galak @ioannisg
-/include/arch/arm/aarch32/cortex_r/       @stephanosio
+/include/arch/arm/aarch32/cortex_a_r/     @stephanosio
 /include/arch/arm/aarch64/                @carlocaione
 /include/arch/arm/aarch32/irq.h           @andrewboie
 /include/arch/nios2/                      @andrewboie
