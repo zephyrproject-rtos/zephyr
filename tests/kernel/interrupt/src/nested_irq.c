@@ -11,13 +11,11 @@
 /*
  * Run the nested interrupt test for the supported platforms only.
  *
- * NOTE: Cortex-A and Cortex-R platforms with the ARM GIC are skipped because
- *       the arch port for these architectures do not support interrupt
- *       nesting yet.
+ * NOTE: Cortex-R platforms with the ARM GIC are skipped because the arch port
+ *       for these architectures do not support interrupt nesting yet.
  */
 #if defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_CPU_ARCV2) || \
-	(defined(CONFIG_GIC) && !defined(CONFIG_CPU_CORTEX_A) && \
-	 !defined(CONFIG_CPU_CORTEX_R))
+	(defined(CONFIG_GIC) && !defined(CONFIG_CPU_CORTEX_R))
 #define TEST_NESTED_ISR
 #endif
 
