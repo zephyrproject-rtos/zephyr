@@ -8,3 +8,4 @@ Audio
 
    codec.rst
    dmic.rst
+   i2s.rst
