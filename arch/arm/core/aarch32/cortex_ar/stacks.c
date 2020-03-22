@@ -5,7 +5,7 @@
  */
 
 #include <kernel.h>
-#include <aarch32/cortex_r/stack.h>
+#include <aarch32/cortex_ar/stack.h>
 #include <string.h>
 #include <kernel_internal.h>
 

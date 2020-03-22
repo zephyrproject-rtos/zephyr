@@ -8,7 +8,7 @@
  * @file
  * @brief Linker command/script file
  *
- * Linker script for the Cortex-R platforms.
+ * Linker script for the Cortex-A and Cortex-R platforms.
  */
 
 #include <autoconf.h>
