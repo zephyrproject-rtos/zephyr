@@ -12,7 +12,6 @@ supported:
 ram: 64
 flash: 128
 testing:
-  default: true
   ignore_tags:
     - net
     - bluetooth
