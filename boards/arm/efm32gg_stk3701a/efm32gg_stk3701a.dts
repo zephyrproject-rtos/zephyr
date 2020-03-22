@@ -97,6 +97,42 @@
 	status = "okay";
 };
 
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&gpiog {
+	status = "okay";
+};
+
+&gpioh {
+	status = "okay";
+};
+
+&gpioi {
+	status = "okay";
+};
+
 &eth0 {
 	/* local-mac-address = <>;*/
 

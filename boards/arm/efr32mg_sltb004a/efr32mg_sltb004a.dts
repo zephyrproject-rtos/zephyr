@@ -120,6 +120,22 @@
 	status = "okay";
 };
 
+&gpioa {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&gpiok {
+	status = "okay";
+};
+
 &wdog0 {
 	status = "okay";
 };

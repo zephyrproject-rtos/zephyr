@@ -22,28 +22,6 @@ config LOG_BACKEND_SWO_FREQ_HZ
 
 endif # LOG_BACKEND_SWO
 
-if GPIO_GECKO
-
-config GPIO_GECKO_PORTA
-	default y
-
-config GPIO_GECKO_PORTB
-	default y
-
-config GPIO_GECKO_PORTC
-	default y
-
-config GPIO_GECKO_PORTD
-	default y
-
-config GPIO_GECKO_PORTE
-	default n
-
-config GPIO_GECKO_PORTF
-	default y
-
-endif # GPIO_GECKO
-
 if SERIAL
 
 config UART_GECKO
