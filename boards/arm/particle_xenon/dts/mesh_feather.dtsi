@@ -118,7 +118,7 @@
 	status = "okay";
 };
 
-&i2c0 { /* feather I2C */
+arduino_i2c: &i2c0 { /* feather I2C */
 	compatible = "nordic,nrf-twi";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
