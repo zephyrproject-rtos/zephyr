@@ -11,7 +11,5 @@ supported:
   - gpio
   - nvs
   - watchdog
-testing:
-  default: true
 ram: 256
 flash: 2048
