@@ -37,8 +37,8 @@
 #include <arch/arm/aarch32/cortex_m/memory_map.h>
 #include <arch/common/sys_io.h>
 #elif defined(CONFIG_CPU_CORTEX_R)
-#include <arch/arm/aarch32/cortex_r/cpu.h>
-#include <arch/arm/aarch32/cortex_r/sys_io.h>
+#include <arch/arm/aarch32/cortex_a_r/cpu.h>
+#include <arch/arm/aarch32/cortex_a_r/sys_io.h>
 #endif
 
 #ifdef __cplusplus

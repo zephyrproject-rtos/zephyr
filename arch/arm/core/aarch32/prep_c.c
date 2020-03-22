@@ -21,7 +21,7 @@
 #include <linker/linker-defs.h>
 
 #if defined(CONFIG_ARMV7_R)
-#include <aarch32/cortex_r/stack.h>
+#include <aarch32/cortex_a_r/stack.h>
 #endif
 
 #if defined(__GNUC__)

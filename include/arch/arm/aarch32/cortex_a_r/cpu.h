@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _CORTEX_R_CPU_H
-#define _CORTEX_R_CPU_H
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CPU_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CPU_H_
 
 #define MODE_USR	0x10
 #define MODE_FIQ	0x11
@@ -31,4 +31,4 @@
 
 #define FPEXC_EN	(1 << 30)
 
-#endif
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CPU_H_ */
