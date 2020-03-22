@@ -279,4 +279,7 @@ config SW_VECTOR_RELAY
 
 endmenu
 
+rsource "mpu/Kconfig"
+rsource "tz/Kconfig"
+
 endif # CPU_CORTEX_M
