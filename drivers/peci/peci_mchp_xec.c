@@ -277,7 +277,6 @@ static int peci_xec_transfer(struct device *dev, struct peci_msg *msg)
 			LOG_WRN("Write buffer is not empty\n");
 		}
 
-		base->ERROR = base->ERROR;
 		LOG_WRN("Transaction error %x\n", base->ERROR);
 		return -EIO;
 	}
