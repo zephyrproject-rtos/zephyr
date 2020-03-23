@@ -682,7 +682,10 @@ static void le_rpa_invalidate(void)
 	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_TIMEOUT_SET);
 
 	/* Invalidate RPA */
-	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	      atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED))) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	}
 
 #if defined(CONFIG_BT_EXT_ADV)
 	struct bt_le_ext_adv *adv;
@@ -820,7 +823,9 @@ static void le_update_private_addr(void)
 	bool scan_enabled = false;
 
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
-	    atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)) {
+	    atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN) &&
+	    !(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	      atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED))) {
 		set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE);
 		scan_enabled = true;
 	}
@@ -837,10 +842,13 @@ static void le_update_private_addr(void)
 #if defined(CONFIG_BT_EXT_ADV)
 	struct bt_le_ext_adv *adv;
 
-	err = le_set_private_addr(BT_ID_DEFAULT);
-	if (err) {
-		BT_WARN("Failed to update RPA address (%d)", err);
-		return;
+	if (IS_ENABLED(CONFIG_BT_OBSERVER) &&
+	    !atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED)) {
+		err = le_set_private_addr(BT_ID_DEFAULT);
+		if (err) {
+			BT_WARN("Failed to update RPA address (%d)", err);
+			return;
+		}
 	}
 
 	/* TODO: Foreach adv set */
@@ -4241,6 +4249,17 @@ static int start_le_scan_ext(struct bt_hci_ext_scan_phy *phy_1m,
 	active_scan = (phy_1m && phy_1m->type == BT_HCI_LE_SCAN_ACTIVE) ||
 		      (phy_coded && phy_coded->type == BT_HCI_LE_SCAN_ACTIVE);
 
+	if (duration > 0) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED);
+
+#if defined(CONFIG_BT_PRIVACY)
+		if (k_delayed_work_remaining_get(&bt_dev.rpa_update) <
+		    (RPA_TIMEOUT - K_MSEC(500))) {
+			atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+		}
+#endif /* defined(CONFIG_BT_PRIVACY) */
+	}
+
 	err = le_scan_set_random_addr(active_scan, &own_addr_type);
 	if (err) {
 		return err;
@@ -4535,6 +4554,9 @@ static void le_scan_timeout(struct net_buf *buf)
 
 	atomic_clear_bit(bt_dev.flags, BT_DEV_SCANNING);
 	atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
+
+	atomic_clear_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED);
+	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&scan_cbs, listener, node) {
 		listener->timeout();
@@ -7853,6 +7875,11 @@ int bt_le_scan_stop(void)
 	}
 
 	scan_dev_found_cb = NULL;
+
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	    atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED)) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+	}
 
 	return bt_le_scan_update(false);
 }
