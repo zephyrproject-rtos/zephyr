@@ -119,25 +119,24 @@ static void gpio_sifive_irq_handler(void *arg)
 
 	/* Calculate pin and mask from base level 2 line */
 	u8_t pin = 1 + (riscv_plic_get_irq() - (u8_t)(cfg->gpio_irq_base >> 8));
-	u32_t pin_mask = BIT(pin);
 
-	/* Call the corresponding callback registered for the pin */
-	gpio_fire_callbacks(&data->cb, dev, pin_mask);
-
-	/*
-	 * Write to either the rise_ip, fall_ip, high_ip or low_ip registers
-	 * to indicate to GPIO controller that interrupt for the corresponding
-	 * pin has been handled.
+	/* This peripheral tracks each condition separately: a
+	 * transition from low to high will mark the pending bit for
+	 * both rise and high, while low will probably be set from the
+	 * previous state.
+	 *
+	 * It is certainly possible, especially on double-edge, that
+	 * multiple conditions are present.  However, there is no way
+	 * to tell which one occurred first, and no provision to
+	 * indicate which one occurred in the callback.
+	 *
+	 * Clear all the conditions so we only invoke the callback
+	 * once.  Level conditions will remain set after clear.
 	 */
-	if (gpio->rise_ip & BIT(pin)) {
-		gpio->rise_ip = BIT(pin);
-	} else if (gpio->fall_ip & BIT(pin)) {
-		gpio->fall_ip = BIT(pin);
-	} else if (gpio->high_ip & BIT(pin)) {
-		gpio->high_ip = BIT(pin);
-	} else if (gpio->low_ip & BIT(pin)) {
-		gpio->low_ip = BIT(pin);
-	}
+	gpio->rise_ip = BIT(pin);
+	gpio->fall_ip = BIT(pin);
+	gpio->high_ip = BIT(pin);
+	gpio->low_ip = BIT(pin);
 
 	/* Call the corresponding callback registered for the pin */
 	gpio_fire_callbacks(&data->cb, dev, BIT(pin));
@@ -251,58 +250,37 @@ static int gpio_sifive_pin_interrupt_configure(struct device *dev,
 	volatile struct gpio_sifive_t *gpio = DEV_GPIO(dev);
 	const struct gpio_sifive_config *cfg = DEV_GPIO_CFG(dev);
 
+	gpio->rise_ie &= ~BIT(pin);
+	gpio->fall_ie &= ~BIT(pin);
+	gpio->high_ie &= ~BIT(pin);
+	gpio->low_ie  &= ~BIT(pin);
+
 	switch (mode) {
 	case GPIO_INT_MODE_DISABLED:
-		gpio->rise_ie &= ~BIT(pin);
-		gpio->fall_ie &= ~BIT(pin);
-		gpio->high_ie &= ~BIT(pin);
-		gpio->low_ie  &= ~BIT(pin);
 		irq_disable(gpio_sifive_pin_irq(cfg->gpio_irq_base, pin));
 		break;
 	case GPIO_INT_MODE_LEVEL:
-		/* TODO: The interrupt functionality of this driver is incomplete,
-		 * but for the sake of not slowing down the GPIO API refactor,
-		 * I'm just returning -ENOTSUP until we can track down the issue.
-		 */
-		return -ENOTSUP;
-
-		gpio->rise_ie &= ~BIT(pin);
-		gpio->fall_ie &= ~BIT(pin);
-
+		/* Board supports both levels, but Zephyr does not. */
 		if (trig == GPIO_INT_TRIG_HIGH) {
-			gpio->high_ip  = BIT(pin);
+			gpio->high_ip = BIT(pin);
 			gpio->high_ie |= BIT(pin);
-			gpio->low_ie  &= ~BIT(pin);
-		} else if (trig == GPIO_INT_TRIG_LOW) {
-			gpio->high_ie &= ~BIT(pin);
-			gpio->low_ip   = BIT(pin);
+		} else {
+			__ASSERT_NO_MSG(trig == GPIO_INT_TRIG_LOW);
+			gpio->low_ip = BIT(pin);
 			gpio->low_ie  |= BIT(pin);
 		}
 		irq_enable(gpio_sifive_pin_irq(cfg->gpio_irq_base, pin));
 		break;
 	case GPIO_INT_MODE_EDGE:
-		/* TODO: The interrupt functionality of this driver is incomplete,
-		 * but for the sake of not slowing down the GPIO API refactor,
-		 * I'm just returning -ENOTSUP until we can track down the issue.
-		 */
-		return -ENOTSUP;
+		__ASSERT_NO_MSG(GPIO_INT_TRIG_BOTH ==
+				(GPIO_INT_LOW_0 | GPIO_INT_HIGH_1));
 
-		gpio->high_ie &= ~BIT(pin);
-		gpio->low_ie  &= ~BIT(pin);
-
-		/* Rising Edge, Falling Edge or Double Edge ? */
-		if (trig == GPIO_INT_TRIG_HIGH) {
-			gpio->rise_ip  = BIT(pin);
+		if ((trig & GPIO_INT_HIGH_1) != 0) {
+			gpio->rise_ip = BIT(pin);
 			gpio->rise_ie |= BIT(pin);
-			gpio->fall_ie &= ~BIT(pin);
-		} else if (trig == GPIO_INT_TRIG_LOW) {
-			gpio->rise_ie &= ~BIT(pin);
-			gpio->fall_ip  = BIT(pin);
-			gpio->fall_ie |= BIT(pin);
-		} else {
-			gpio->rise_ip  = BIT(pin);
-			gpio->rise_ie |= BIT(pin);
-			gpio->fall_ip  = BIT(pin);
+		}
+		if ((trig & GPIO_INT_LOW_0) != 0) {
+			gpio->rise_ip = BIT(pin);
 			gpio->fall_ie |= BIT(pin);
 		}
 		irq_enable(gpio_sifive_pin_irq(cfg->gpio_irq_base, pin));
