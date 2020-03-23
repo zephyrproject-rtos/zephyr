@@ -3716,16 +3716,32 @@ static void keys_add_id(struct bt_keys *keys, void *data)
 	}
 }
 
+static int hci_id_del(const bt_addr_le_t *addr)
+{
+	struct bt_hci_cp_le_rem_dev_from_rl *cp;
+	struct net_buf *buf;
+
+	BT_DBG("addr %s", bt_addr_le_str(addr));
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_RL, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_le_copy(&cp->peer_id_addr, addr);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_RL, buf, NULL);
+}
+
 void bt_id_del(struct bt_keys *keys)
 {
 	struct bt_le_ext_adv *adv;
-	struct bt_hci_cp_le_rem_dev_from_rl *cp;
 	bool adv_enabled;
 #if defined(CONFIG_BT_OBSERVER)
 	bool scan_enabled;
 #endif /* CONFIG_BT_OBSERVER */
 	struct bt_conn *conn;
-	struct net_buf *buf;
 	int err;
 
 	BT_DBG("addr %s", bt_addr_le_str(&keys->addr));
@@ -3780,15 +3796,7 @@ void bt_id_del(struct bt_keys *keys)
 		goto done;
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_RL, sizeof(*cp));
-	if (!buf) {
-		goto done;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_le_copy(&cp->peer_id_addr, &keys->addr);
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_RL, buf, NULL);
+	err = hci_id_del(&keys->addr);
 	if (err) {
 		BT_ERR("Failed to remove IRK from controller");
 		goto done;
