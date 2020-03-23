@@ -82,7 +82,7 @@ or :cpp:func:`bt_gatt_write_without_response_cb` APIs can be used, with the
 later working similarly to ``bt_gatt_notify_cb``.
 
 Subscriptions to notification and indication can be initiated with use of
-:cpp:func`bt_gatt_subscribe` API which takes
+:cpp:func:`bt_gatt_subscribe` API which takes
 :cpp:class:`bt_gatt_subscribe_params` as parameters. Multiple subscriptions to
 the same attribute are supported so there could be multiple ``notify`` callback
 being triggered for the same attribute. Subscriptions can be removed with use of
