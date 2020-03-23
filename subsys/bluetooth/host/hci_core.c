@@ -1693,7 +1693,7 @@ static void slave_update_conn_param(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_SMP)
-static void update_pending_id(struct bt_keys *keys, void *data)
+static void pending_id_update(struct bt_keys *keys, void *data)
 {
 	if (keys->flags & BT_KEYS_ID_PENDING_ADD) {
 		keys->flags &= ~BT_KEYS_ID_PENDING_ADD;
@@ -1707,7 +1707,25 @@ static void update_pending_id(struct bt_keys *keys, void *data)
 		return;
 	}
 }
-#endif
+
+static void pending_id_keys_update_set(struct bt_keys *keys, u8_t flag)
+{
+	atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
+	keys->flags |= flag;
+}
+
+static void pending_id_keys_update(void)
+{
+	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
+		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+		    IS_ENABLED(CONFIG_BT_PRIVACY)) {
+			bt_keys_foreach(BT_KEYS_ALL, pending_id_update, NULL);
+		} else {
+			bt_keys_foreach(BT_KEYS_IRK, pending_id_update, NULL);
+		}
+	}
+}
+#endif /* defined(CONFIG_BT_SMP) */
 
 static struct bt_conn *find_pending_connect(u8_t role, bt_addr_le_t *peer_addr)
 {
@@ -1835,14 +1853,7 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	       evt->role, bt_addr_le_str(&evt->peer_addr));
 
 #if defined(CONFIG_BT_SMP)
-	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
-		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
-		    IS_ENABLED(CONFIG_BT_PRIVACY)) {
-			bt_keys_foreach(BT_KEYS_ALL, update_pending_id, NULL);
-		} else {
-			bt_keys_foreach(BT_KEYS_IRK, update_pending_id, NULL);
-		}
-	}
+	pending_id_keys_update();
 #endif
 
 	if (evt->status) {
@@ -3605,11 +3616,8 @@ static int hci_id_add(u8_t id, const bt_addr_le_t *addr, u8_t peer_irk[16])
 void bt_id_add(struct bt_keys *keys)
 {
 	struct bt_le_ext_adv *adv;
-	bool adv_enabled;
-#if defined(CONFIG_BT_OBSERVER)
-	bool scan_enabled;
-#endif /* CONFIG_BT_OBSERVER */
 	struct bt_conn *conn;
+	bool adv_enabled;
 	int err;
 
 	BT_DBG("addr %s", bt_addr_le_str(&keys->addr));
@@ -3622,25 +3630,38 @@ void bt_id_add(struct bt_keys *keys)
 
 	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_CONNECT);
 	if (conn) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
-		keys->flags |= BT_KEYS_ID_PENDING_ADD;
+		pending_id_keys_update_set(keys, BT_KEYS_ID_PENDING_ADD);
 		bt_conn_unref(conn);
 		return;
 	}
 
+	adv_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+
 #if defined(CONFIG_BT_EXT_ADV)
+	/* TODO: Foreach adv set */
 	adv = bt_adv_lookup_handle(0);
+	if (adv && adv_enabled &&
+	    atomic_test_bit(adv->flags, BT_ADV_LIMITED)) {
+		pending_id_keys_update_set(keys, BT_KEYS_ID_PENDING_ADD);
+		return;
+	}
 #else
 	adv = bt_adv_lookup_legacy();
 #endif
 
-	adv_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+#if defined(CONFIG_BT_OBSERVER)
+	bool scan_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING);
+
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && scan_enabled &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED)) {
+		pending_id_keys_update_set(keys, BT_KEYS_ID_PENDING_ADD);
+	}
+#endif
 	if (adv_enabled) {
 		set_le_adv_enable(adv, false);
 	}
 
 #if defined(CONFIG_BT_OBSERVER)
-	scan_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING);
 	if (scan_enabled) {
 		set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE);
 	}
@@ -3737,11 +3758,8 @@ static int hci_id_del(const bt_addr_le_t *addr)
 void bt_id_del(struct bt_keys *keys)
 {
 	struct bt_le_ext_adv *adv;
-	bool adv_enabled;
-#if defined(CONFIG_BT_OBSERVER)
-	bool scan_enabled;
-#endif /* CONFIG_BT_OBSERVER */
 	struct bt_conn *conn;
+	bool adv_enabled;
 	int err;
 
 	BT_DBG("addr %s", bt_addr_le_str(&keys->addr));
@@ -3754,25 +3772,39 @@ void bt_id_del(struct bt_keys *keys)
 
 	conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, NULL, BT_CONN_CONNECT);
 	if (conn) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
-		keys->flags |= BT_KEYS_ID_PENDING_DEL;
+		pending_id_keys_update_set(keys, BT_KEYS_ID_PENDING_DEL);
 		bt_conn_unref(conn);
 		return;
 	}
 
+	adv_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+
 #if defined(CONFIG_BT_EXT_ADV)
+	/* TODO: Foreach adv set */
 	adv = bt_adv_lookup_handle(0);
+	if (adv && adv_enabled &&
+	    atomic_test_bit(adv->flags, BT_ADV_LIMITED)) {
+		pending_id_keys_update_set(keys, BT_KEYS_ID_PENDING_DEL);
+		return;
+	}
 #else
 	adv = bt_adv_lookup_legacy();
 #endif
 
-	adv_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+#if defined(CONFIG_BT_OBSERVER)
+	bool scan_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING);
+
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && scan_enabled &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED)) {
+		pending_id_keys_update_set(keys, BT_KEYS_ID_PENDING_DEL);
+	}
+#endif /* CONFIG_BT_OBSERVER */
+
 	if (adv_enabled) {
 		set_le_adv_enable(adv, false);
 	}
 
 #if defined(CONFIG_BT_OBSERVER)
-	scan_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING);
 	if (scan_enabled) {
 		set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE);
 	}
@@ -4566,6 +4598,10 @@ static void le_scan_timeout(struct net_buf *buf)
 	atomic_clear_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED);
 	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 
+#if defined(CONFIG_BT_SMP)
+	pending_id_keys_update();
+#endif
+
 	SYS_SLIST_FOR_EACH_CONTAINER(&scan_cbs, listener, node) {
 		listener->timeout();
 	}
@@ -4732,6 +4768,10 @@ static void le_adv_set_terminated(struct net_buf *buf)
 
 	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_LIMITED)) {
 		atomic_clear_bit(adv->flags, BT_ADV_RPA_VALID);
+
+#if defined(CONFIG_BT_SMP)
+		pending_id_keys_update();
+#endif
 
 		if (adv->cb && adv->cb->sent) {
 			struct bt_le_ext_adv_sent_info info = {
@@ -7685,6 +7725,10 @@ int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv)
 
 	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_LIMITED)) {
 		atomic_clear_bit(adv->flags, BT_ADV_RPA_VALID);
+
+#if defined(CONFIG_BT_SMP)
+		pending_id_keys_update();
+#endif
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
@@ -7887,6 +7931,10 @@ int bt_le_scan_stop(void)
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED)) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+
+#if defined(CONFIG_BT_SMP)
+		pending_id_keys_update();
+#endif
 	}
 
 	return bt_le_scan_update(false);
