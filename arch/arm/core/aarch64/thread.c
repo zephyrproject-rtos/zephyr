@@ -41,6 +41,25 @@
 
 void z_thread_entry_wrapper(k_thread_entry_t k, void *p1, void *p2, void *p3);
 
+struct init_stack_frame {
+	/* top of the stack / most recently pushed */
+
+	/* SPSL_ELn and ELR_ELn */
+	u64_t spsr;
+	u64_t elr;
+
+	/*
+	 * Used by z_thread_entry_wrapper. pulls these off the stack and
+	 * into argument registers before calling z_thread_entry()
+	 */
+	u64_t entry_point;
+	u64_t arg1;
+	u64_t arg2;
+	u64_t arg3;
+
+	/* least recently pushed */
+};
+
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     size_t stackSize, k_thread_entry_t pEntry,
 		     void *parameter1, void *parameter2, void *parameter3,
@@ -48,19 +67,29 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 {
 	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
 	char *stackEnd;
-	struct __esf *pInitCtx;
+	struct init_stack_frame *pInitCtx;
 
 	stackEnd = pStackMem + stackSize;
 
 	z_new_thread_init(thread, pStackMem, stackSize, priority, options);
 
-	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd -
-				    sizeof(struct __basic_sf)));
+	pInitCtx = (struct init_stack_frame *)(STACK_ROUND_DOWN(stackEnd -
+				    sizeof(struct init_stack_frame)));
 
-	pInitCtx->basic.regs[0] = (u64_t)pEntry;
-	pInitCtx->basic.regs[1] = (u64_t)parameter1;
-	pInitCtx->basic.regs[2] = (u64_t)parameter2;
-	pInitCtx->basic.regs[3] = (u64_t)parameter3;
+	pInitCtx->entry_point = (u64_t)pEntry;
+	pInitCtx->arg1 = (u64_t)parameter1;
+	pInitCtx->arg2 = (u64_t)parameter2;
+	pInitCtx->arg3 = (u64_t)parameter3;
+
+	/*
+	 * - ELR_ELn: to be used by eret in z_thread_entry_wrapper() to return
+	 *   to z_thread_entry() with pEntry in x0(entry_point) and the parameters
+	 *   already in place in x1(arg1), x2(arg2), x3(arg3).
+	 * - SPSR_ELn: to enable IRQs (we are masking debug exceptions, SError
+	 *   interrupts and FIQs).
+	 */
+	pInitCtx->elr = (u64_t)z_thread_entry;
+	pInitCtx->spsr = SPSR_MODE_EL1H | DAIF_FIQ;
 
 	/*
 	 * We are saving:
@@ -69,15 +98,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *   z_thread_entry_wrapper().
 	 * - x30: to be used by ret in z_arm64_context_switch() when the new
 	 *   task is first scheduled.
-	 * - ELR_EL1: to be used by eret in z_thread_entry_wrapper() to return
-	 *   to z_thread_entry() with pEntry in x0 and the parameters already
-	 *   in place in x1, x2, x3.
-	 * - SPSR_EL1: to enable IRQs (we are masking debug exceptions, SError
-	 *   interrupts and FIQs).
 	 */
 
 	thread->callee_saved.sp = (u64_t)pInitCtx;
 	thread->callee_saved.x30 = (u64_t)z_thread_entry_wrapper;
-	thread->callee_saved.elr = (u64_t)z_thread_entry;
-	thread->callee_saved.spsr = SPSR_MODE_EL1H | DAIF_FIQ;
 }

@@ -46,28 +46,13 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldr	x0, =_thread_offset_to_callee_saved
 	add	x0, x0, x2
 
-	/* Store rest of process context including x30, SPSR_ELn and ELR_ELn */
+	/* Store rest of process context including x30 */
 	stp	x19, x20, [x0], #16
 	stp	x21, x22, [x0], #16
 	stp	x23, x24, [x0], #16
 	stp	x25, x26, [x0], #16
 	stp	x27, x28, [x0], #16
 	stp	x29, x30, [x0], #16
-
-	switch_el x3, 3f, 2f, 1f
-3:
-	mrs	x4, spsr_el3
-	mrs	x5, elr_el3
-	b	0f
-2:
-	mrs	x4, spsr_el2
-	mrs	x5, elr_el2
-	b	0f
-1:
-	mrs	x4, spsr_el1
-	mrs	x5, elr_el1
-0:
-	stp	x4, x5, [x0], #16
 
 	/* Save the current SP */
 	mov	x6, sp
@@ -81,7 +66,7 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldr	x0, =_thread_offset_to_callee_saved
 	add	x0, x0, x2
 
-	/* Restore x19-x29 plus x30, SPSR_ELn and ELR_ELn */
+	/* Restore x19-x29 plus x30 */
 	ldp	x19, x20, [x0], #16
 	ldp	x21, x22, [x0], #16
 	ldp	x23, x24, [x0], #16
@@ -89,21 +74,6 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldp	x27, x28, [x0], #16
 	ldp	x29, x30, [x0], #16
 
-	ldp	x4, x5, [x0], #16
-
-	switch_el x3, 3f, 2f, 1f
-3:
-	msr	spsr_el3, x4
-	msr	elr_el3, x5
-	b	0f
-2:
-	msr	spsr_el2, x4
-	msr	elr_el2, x5
-	b	0f
-1:
-	msr	spsr_el1, x4
-	msr	elr_el1, x5
-0:
 	ldr	x6, [x0]
 	mov	sp, x6
 
@@ -136,6 +106,24 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 
 GTEXT(z_thread_entry_wrapper)
 SECTION_FUNC(TEXT, z_thread_entry_wrapper)
+	/*
+	 * Restore SPSR_ELn and ELR_ELn saved in the temporary stack by
+	 * arch_new_thread()
+	 */
+	ldp	x0, x1, [sp], #16
+	switch_el x3, 3f, 2f, 1f
+3:
+	msr	spsr_el3, x0
+	msr	elr_el3, x1
+	b	0f
+2:
+	msr	spsr_el2, x0
+	msr	elr_el2, x1
+	b	0f
+1:
+	msr	spsr_el1, x0
+	msr	elr_el1, x1
+0:
 	/*
 	 * z_thread_entry_wrapper is called for every new thread upon the return
 	 * of arch_swap() or ISR. Its address, as well as its input function

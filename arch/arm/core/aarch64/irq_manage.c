@@ -53,6 +53,17 @@ void z_arm64_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 }
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			     void (*routine)(void *parameter), void *parameter,
+			     u32_t flags)
+{
+	z_isr_install(irq, routine, parameter);
+	z_arm64_irq_priority_set(irq, priority, flags);
+	return irq;
+}
+#endif
+
 void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
