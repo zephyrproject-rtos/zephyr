@@ -10,6 +10,32 @@ menuconfig ENS210
 	  Enable driver for ENS210 Digital Temperature and Humidity sensor.
 if ENS210
 
+choice
+	prompt "Temperature measurement mode"
+	default ENS210_TEMPERATURE_CONTINUOUS
+	help
+	  Enable/disable temperature measurements and set measurement mode.
+config ENS210_TEMPERATURE_OFF
+	bool "Disable temperature measurements"
+config ENS210_TEMPERATURE_SINGLE
+	bool "Enable temperature measurements in single shot mode"
+config ENS210_TEMPERATURE_CONTINUOUS
+	bool "Enable temperature measurements in continuous mode"
+endchoice
+
+choice
+	prompt "Humidity measurement mode"
+	default ENS210_HUMIDITY_CONTINUOUS
+	help
+	  Enable/disable relative humidity measurements and set measurement mode.
+config ENS210_HUMIDITY_OFF
+	bool "Disable relative humidity measurements"
+config ENS210_HUMIDITY_SINGLE
+	bool "Enable relative humidity measurements in single shot mode"
+config ENS210_HUMIDITY_CONTINUOUS
+	bool "Enable relative humidity measurements in continuous mode"
+endchoice
+
 config ENS210_CRC_CHECK
 	bool "Enable CRC Check"
 	default y
