@@ -46,6 +46,11 @@
 #include "crypto.h"
 #include "settings.h"
 
+#if !defined(CONFIG_BT_EXT_ADV_LEGACY_SUPPORT)
+#undef BT_FEAT_LE_EXT_ADV
+#define BT_FEAT_LE_EXT_ADV(feat)  1
+#endif
+
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
 #define CONN_UPDATE_TIMEOUT  K_MSEC(CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT)
 #define RPA_TIMEOUT          K_SECONDS(CONFIG_BT_RPA_TIMEOUT)
