@@ -48,6 +48,7 @@ static int write_dword(struct device *dev, off_t offset, u64_t val)
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->CR & FLASH_CR_LOCK) {
+		LOG_ERR("CR locked");
 		return -EIO;
 	}
 
@@ -60,6 +61,7 @@ static int write_dword(struct device *dev, off_t offset, u64_t val)
 	/* Check if this double word is erased */
 	if (flash[0] != 0xFFFFFFFFUL ||
 	    flash[1] != 0xFFFFFFFFUL) {
+		LOG_ERR("Word at offs %d not erased", offset);
 		return -EIO;
 	}
 
@@ -90,6 +92,7 @@ static int erase_page(struct device *dev, unsigned int page)
 
 	/* if the control register is locked, do not fail silently */
 	if (regs->CR & FLASH_CR_LOCK) {
+		LOG_ERR("CR locked");
 		return -EIO;
 	}
 
@@ -99,10 +102,29 @@ static int erase_page(struct device *dev, unsigned int page)
 		return rc;
 	}
 
+#ifdef FLASH_OPTR_DBANK
+	if (page > 127) {
+		if (!(regs->OPTR & FLASH_OPTR_DBANK)) {
+			LOG_ERR("Page %d does not exist when DBANK=0", page);
+			return -EINVAL;
+		}
+
+		/* The pages to be erased is in bank 2*/
+		regs->CR |= FLASH_CR_BKER;
+		page = page - 128;
+		LOG_DBG("Erase page %d on bank 2", page);
+	} else {
+		LOG_DBG("Erase page %d on bank 1", page);
+	}
+
+
+	__ASSERT(page <= 127, "There are only 127 pages, but page is %d", page);
+#endif
+
 	/* Set the PER bit and select the page you wish to erase */
 	regs->CR |= FLASH_CR_PER;
 	regs->CR &= ~FLASH_CR_PNB_Msk;
-	regs->CR |= ((page % 256) << 3);
+	regs->CR |= (page << FLASH_CR_PNB_Pos);
 
 	/* Set the STRT bit */
 	regs->CR |= FLASH_CR_STRT;
@@ -113,7 +135,11 @@ static int erase_page(struct device *dev, unsigned int page)
 	/* Wait for the BSY bit */
 	rc = flash_stm32_wait_flash_idle(dev);
 
-	regs->CR &= ~FLASH_CR_PER;
+#ifdef FLASH_OPTR_DBANK
+	regs->CR &= ~(FLASH_CR_PER | FLASH_CR_BKER);
+#else
+	regs->CR &= ~(FLASH_CR_PER);
+#endif
 
 	return rc;
 }
