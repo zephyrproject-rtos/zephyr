@@ -79,7 +79,7 @@ config ADC_0
 	depends on ADC
 
 config TEMP_KINETIS
-	default y
+	default y if ADC_0
 	depends on SENSOR
 
 if PWM
