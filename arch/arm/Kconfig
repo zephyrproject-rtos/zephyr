@@ -55,5 +55,6 @@ config CODE_DATA_RELOCATION_SRAM
 	  relocation.
 
 rsource "core/aarch32/Kconfig"
+rsource "core/aarch32/Kconfig.vfp"
 
 endmenu
