@@ -23,18 +23,6 @@
 #include <zephyr/types.h>
 
 struct _callee_saved {
-	u64_t x19;
-	u64_t x20;
-	u64_t x21;
-	u64_t x22;
-	u64_t x23;
-	u64_t x24;
-	u64_t x25;
-	u64_t x26;
-	u64_t x27;
-	u64_t x28;
-	u64_t x29; /* FP */
-	u64_t x30; /* LR */
 	u64_t sp;
 };
 

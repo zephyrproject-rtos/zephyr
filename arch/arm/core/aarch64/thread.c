@@ -16,6 +16,38 @@
 #include <wait_q.h>
 #include <arch/cpu.h>
 
+void z_thread_entry_wrapper(k_thread_entry_t k, void *p1, void *p2, void *p3);
+/*
+ * init_stack_frame:
+ *
+ * SP
+ * ^
+ * | +------------------------------+
+ * | | entry_point + arg1/arg2/arg3 | to setup z_thread_entry()
+ * | +------------------------------+
+ * | | SPSR + ELR                   | used by eret to jump back from SVC
+ * | +------------------------------+
+ * | | callee-saved (only x30 used) | popped-out by z_arm64_context_switch()
+ * + +------------------------------+
+ */
+struct init_stack_frame {
+	/* The only callee-saved register we are interested in is x30 */
+	_callee_saved_stack_t callee;
+
+	/* SPSL_ELn and ELR_ELn */
+	u64_t spsr;
+	u64_t elr;
+
+	/*
+	 * Used by z_thread_entry_wrapper. pulls these off the stack and
+	 * into argument registers before calling z_thread_entry()
+	 */
+	u64_t entry_point;
+	u64_t arg1;
+	u64_t arg2;
+	u64_t arg3;
+};
+
 /**
  *
  * @brief Initialize a new thread from its stack space
@@ -38,28 +70,6 @@
  *
  * @return N/A
  */
-
-void z_thread_entry_wrapper(k_thread_entry_t k, void *p1, void *p2, void *p3);
-
-struct init_stack_frame {
-	/* top of the stack / most recently pushed */
-
-	/* SPSL_ELn and ELR_ELn */
-	u64_t spsr;
-	u64_t elr;
-
-	/*
-	 * Used by z_thread_entry_wrapper. pulls these off the stack and
-	 * into argument registers before calling z_thread_entry()
-	 */
-	u64_t entry_point;
-	u64_t arg1;
-	u64_t arg2;
-	u64_t arg3;
-
-	/* least recently pushed */
-};
-
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     size_t stackSize, k_thread_entry_t pEntry,
 		     void *parameter1, void *parameter2, void *parameter3,
@@ -83,8 +93,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	/*
 	 * - ELR_ELn: to be used by eret in z_thread_entry_wrapper() to return
-	 *   to z_thread_entry() with pEntry in x0(entry_point) and the parameters
-	 *   already in place in x1(arg1), x2(arg2), x3(arg3).
+	 *   to z_thread_entry() with pEntry in x0(entry_point) and the
+	 *   parameters already in place in x1(arg1), x2(arg2), x3(arg3).
 	 * - SPSR_ELn: to enable IRQs (we are masking debug exceptions, SError
 	 *   interrupts and FIQs).
 	 */
@@ -92,14 +102,18 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->spsr = SPSR_MODE_EL1H | DAIF_FIQ;
 
 	/*
-	 * We are saving:
-	 *
-	 * - SP: to pop out pEntry and parameters when going through
-	 *   z_thread_entry_wrapper().
-	 * - x30: to be used by ret in z_arm64_context_switch() when the new
-	 *   task is first scheduled.
+	 * The only callee-register we need is x30 to be used by ret in
+	 * z_arm64_context_switch() when the new task is first scheduled.
 	 */
+	pInitCtx->callee.x30 = (u64_t)z_thread_entry_wrapper;
 
+	/*
+	 * We are saving SP to pop out:
+	 * - x30 to jump from z_arm64_context_switch() to
+	 *   z_thread_entry_wrapper()
+	 * - SPSR and ELR to be restored by eret in z_thread_entry_wrapper()
+	 * - entry_point and arguments when going through
+	 *   z_thread_entry_wrapper().
+	 */
 	thread->callee_saved.sp = (u64_t)pInitCtx;
-	thread->callee_saved.x30 = (u64_t)z_thread_entry_wrapper;
 }
