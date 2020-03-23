@@ -48,6 +48,25 @@
 	stp	x14, x15, [sp, #-16]!
 	stp     x16, x17, [sp, #-16]!
 	stp     x18, x30, [sp, #-16]!
+
+	/*
+	 * Store SPSR_ELn and ELR_ELn. This is needed to support nested
+	 * exception handlers
+	 */
+	switch_el x3, 3f, 2f, 1f
+3:
+	mrs	x0, spsr_el3
+	mrs	x1, elr_el3
+	b	0f
+2:
+	mrs	x0, spsr_el2
+	mrs	x1, elr_el2
+	b	0f
+1:
+	mrs	x0, spsr_el1
+	mrs	x1, elr_el1
+0:
+	stp	x0, x1, [sp, #-16]!
 .endm
 
 /**
@@ -63,6 +82,24 @@
  */
 
 .macro z_arm64_exit_exc
+	/*
+	 * Restore SPSR_ELn and ELR_ELn. This is needed to support nested
+	 * exception handlers
+	 */
+	ldp	x0, x1, [sp], #16
+	switch_el x3, 3f, 2f, 1f
+3:
+	msr	spsr_el3, x0
+	msr	elr_el3, x1
+	b	0f
+2:
+	msr	spsr_el2, x0
+	msr	elr_el2, x1
+	b	0f
+1:
+	msr	spsr_el1, x0
+	msr	elr_el1, x1
+0:
 	/*
 	 * In x30 we can have:
 	 *

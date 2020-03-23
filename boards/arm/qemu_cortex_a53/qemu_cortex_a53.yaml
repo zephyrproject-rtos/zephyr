@@ -9,5 +9,3 @@ toolchain:
 ram: 128
 testing:
   default: true
-  ignore_tags:
-    - interrupt
