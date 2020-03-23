@@ -13,6 +13,18 @@ menuconfig BME280
 if BME280
 
 choice
+	prompt "BME280 sampling mode"
+	default BME280_MODE_NORMAL
+	help
+	  Select sampling mode. In normal mode continuous measurements are
+	  performed, whereas in forced mode only single measurement is performed.
+config BME280_MODE_NORMAL
+	bool "normal"
+config BME280_MODE_FORCED
+	bool "forced"
+endchoice
+
+choice
 	prompt "BME280 temperature oversampling"
 	default BME280_TEMP_OVER_2X
 	help
