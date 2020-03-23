@@ -7,6 +7,7 @@
 #include <ztest.h>
 #include <linker/linker-defs.h>
 #include <syscall_handler.h>
+#include <toolchain.h>
 
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
@@ -42,7 +43,7 @@ void test_arm_sw_vector_relay(void)
 	 * interrupt vector table respect the VTOR.TBLOFF alignment
 	 * requirements.
 	 */
-	uint32_t mask = MAX(128, POW2_CEIL(4 * (16 + CONFIG_NUM_IRQS))) - 1;
+	uint32_t mask = MAX(128, Z_POW2_CEIL(4 * (16 + CONFIG_NUM_IRQS))) - 1;
 
 	zassert_true(((vector_table_addr) & mask) == 0,
 		"vector table not properly aligned: 0x%x\n",
