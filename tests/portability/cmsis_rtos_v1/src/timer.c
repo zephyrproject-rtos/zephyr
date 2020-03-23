@@ -89,10 +89,7 @@ void test_timer(void)
 	 */
 	osDelay(timerDelay*NUM_PERIODS + 100);
 
-	/* The first firing of the timer should be ignored.
-	 * Hence checking for NUM_PERIODS + 1.
-	 */
-	zassert_true(num_periods_executed == NUM_PERIODS + 1,
+	zassert_true(num_periods_executed == NUM_PERIODS,
 			"error setting up periodic timer");
 
 	/* Delete the timer before stop */
