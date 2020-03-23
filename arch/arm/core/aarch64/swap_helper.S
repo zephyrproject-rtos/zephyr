@@ -38,6 +38,14 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	bl	sys_trace_thread_switched_in
 	ldp	xzr, x30, [sp], #16
 #endif
+	/* Store rest of process context including x30 */
+	stp	x19, x20, [sp, #-16]!
+	stp	x21, x22, [sp, #-16]!
+	stp	x23, x24, [sp, #-16]!
+	stp	x25, x26, [sp, #-16]!
+	stp	x27, x28, [sp, #-16]!
+	stp	x29, x30, [sp, #-16]!
+
 	/* load _kernel into x1 and current k_thread into x2 */
 	ldr	x1, =_kernel
 	ldr	x2, [x1, #_kernel_offset_to_current]
@@ -45,14 +53,6 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	/* addr of callee-saved regs in thread in x0 */
 	ldr	x0, =_thread_offset_to_callee_saved
 	add	x0, x0, x2
-
-	/* Store rest of process context including x30 */
-	stp	x19, x20, [x0], #16
-	stp	x21, x22, [x0], #16
-	stp	x23, x24, [x0], #16
-	stp	x25, x26, [x0], #16
-	stp	x27, x28, [x0], #16
-	stp	x29, x30, [x0], #16
 
 	/* Save the current SP */
 	mov	x6, sp
@@ -66,16 +66,16 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldr	x0, =_thread_offset_to_callee_saved
 	add	x0, x0, x2
 
-	/* Restore x19-x29 plus x30 */
-	ldp	x19, x20, [x0], #16
-	ldp	x21, x22, [x0], #16
-	ldp	x23, x24, [x0], #16
-	ldp	x25, x26, [x0], #16
-	ldp	x27, x28, [x0], #16
-	ldp	x29, x30, [x0], #16
-
 	ldr	x6, [x0]
 	mov	sp, x6
+
+	/* Restore x19-x29 plus x30 */
+	ldp	x29, x30, [sp], #16
+	ldp	x27, x28, [sp], #16
+	ldp	x25, x26, [sp], #16
+	ldp	x23, x24, [sp], #16
+	ldp	x21, x22, [sp], #16
+	ldp	x19, x20, [sp], #16
 
 #ifdef CONFIG_TRACING
 	stp	xzr, x30, [sp, #-16]!

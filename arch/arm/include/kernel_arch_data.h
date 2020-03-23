@@ -31,6 +31,7 @@
 #include <aarch32/cortex_r/stack.h>
 #include <aarch32/cortex_r/exc.h>
 #elif defined(CONFIG_CPU_CORTEX_A)
+#include <aarch64/stack.h>
 #include <aarch64/exc.h>
 #endif
 

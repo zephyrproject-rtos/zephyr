@@ -16,11 +16,24 @@
 #include <wait_q.h>
 #include <arch/cpu.h>
 
-
 void z_thread_entry_wrapper(k_thread_entry_t k, void *p1, void *p2, void *p3);
 
+/*
+ * init_stack_frame:
+ *
+ * SP
+ * ^
+ * | +------------------------------+
+ * | | entry_point + arg1/arg2/arg3 | to setup z_thread_entry()
+ * | +------------------------------+
+ * | | SPSR + ELR                   | used by eret to jump back from SVC
+ * | +------------------------------+
+ * | | callee-saved (only x30 used) | popped-out by z_arm64_context_switch()
+ * + +------------------------------+
+ */
 struct init_stack_frame {
-	/* top of the stack / most recently pushed */
+	/* The only callee-saved register we are interested in is x30 */
+	_callee_saved_stack_t callee;
 
 	/* SPSL_ELn and ELR_ELn */
 	uint64_t spsr;
@@ -67,14 +80,18 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->spsr = SPSR_MODE_EL1H | DAIF_FIQ;
 
 	/*
-	 * We are saving:
-	 *
-	 * - SP: to pop out entry and parameters when going through
-	 *   z_thread_entry_wrapper().
-	 * - x30: to be used by ret in z_arm64_context_switch() when the new
-	 *   task is first scheduled.
+	 * The only callee-register we need is x30 to be used by ret in
+	 * z_arm64_context_switch() when the new task is first scheduled.
 	 */
+	pInitCtx->callee.x30 = (uint64_t)z_thread_entry_wrapper;
 
+	/*
+	 * We are saving SP to pop out:
+	 * - x30 to jump from z_arm64_context_switch() to
+	 *   z_thread_entry_wrapper()
+	 * - SPSR and ELR to be restored by eret in z_thread_entry_wrapper()
+	 * - entry_point and arguments when going through
+	 *   z_thread_entry_wrapper().
+	 */
 	thread->callee_saved.sp = (uint64_t)pInitCtx;
-	thread->callee_saved.x30 = (uint64_t)z_thread_entry_wrapper;
 }
