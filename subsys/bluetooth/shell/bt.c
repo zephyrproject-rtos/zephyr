@@ -601,14 +601,16 @@ static int cmd_id_select(const struct shell *shell, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_OBSERVER)
-static int cmd_active_scan_on(const struct shell *shell, u32_t options)
+static int cmd_active_scan_on(const struct shell *shell, u32_t options,
+			      u16_t timeout)
 {
 	int err;
 	struct bt_le_scan_param param = {
 			.type       = BT_LE_SCAN_TYPE_ACTIVE,
 			.options    = BT_LE_SCAN_OPT_FILTER_DUPLICATE,
 			.interval   = BT_GAP_SCAN_FAST_INTERVAL,
-			.window     = BT_GAP_SCAN_FAST_WINDOW };
+			.window     = BT_GAP_SCAN_FAST_WINDOW,
+			.timeout    = timeout, };
 
 	param.options |= options;
 
@@ -624,13 +626,15 @@ static int cmd_active_scan_on(const struct shell *shell, u32_t options)
 	return 0;
 }
 
-static int cmd_passive_scan_on(const struct shell *shell, u32_t options)
+static int cmd_passive_scan_on(const struct shell *shell, u32_t options,
+			       u16_t timeout)
 {
 	struct bt_le_scan_param param = {
 			.type       = BT_LE_SCAN_TYPE_PASSIVE,
 			.options    = BT_LE_SCAN_OPT_NONE,
 			.interval   = 0x10,
-			.window     = 0x10 };
+			.window     = 0x10,
+			.timeout    = timeout, };
 	int err;
 
 	param.options |= options;
@@ -666,6 +670,7 @@ static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 {
 	const char *action;
 	u32_t options = 0;
+	u16_t timeout = 0;
 
 	/* Parse duplicate filtering data */
 	for (size_t argn = 2; argn < argc; argn++) {
@@ -681,6 +686,13 @@ static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 			options |= BT_LE_SCAN_OPT_CODED;
 		} else if (!strcmp(arg, "no-1m")) {
 			options |= BT_LE_SCAN_OPT_NO_1M;
+		} else if (!strcmp(arg, "timeout")) {
+			if (++argn == argc) {
+				shell_help(shell);
+				return SHELL_CMD_HELP_PRINTED;
+			}
+
+			timeout = strtoul(argv[argn], NULL, 16);
 		} else {
 			shell_help(shell);
 			return SHELL_CMD_HELP_PRINTED;
@@ -689,11 +701,11 @@ static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 
 	action = argv[1];
 	if (!strcmp(action, "on")) {
-		return cmd_active_scan_on(shell, options);
+		return cmd_active_scan_on(shell, options, timeout);
 	} else if (!strcmp(action, "off")) {
 		return cmd_scan_off(shell);
 	} else if (!strcmp(action, "passive")) {
-		return cmd_passive_scan_on(shell, options);
+		return cmd_passive_scan_on(shell, options, timeout);
 	} else {
 		shell_help(shell);
 		return SHELL_CMD_HELP_PRINTED;
