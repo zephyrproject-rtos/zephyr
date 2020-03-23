@@ -945,6 +945,7 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 	char *stack_start, *stack_ptr, *stack_end, *obj_start, *obj_end;
 	volatile char *pos;
 	int ret, expected;
+	uintptr_t base = (uintptr_t)stack_obj;
 
 	expect_fault = false;
 
@@ -970,6 +971,11 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		     "stack size in thread struct out of bounds (overflow)");
 	zassert_true(stack_start >= obj_start,
 		     "stack size in thread struct out of bounds (underflow)");
+
+	/* Check that the base of the stack is aligned properly. */
+	zassert_true(base % Z_THREAD_STACK_OBJ_ALIGN(stack_size) == 0,
+		     "stack base address %p not aligned to %zu",
+		     stack_obj, Z_THREAD_STACK_OBJ_ALIGN(stack_size));
 
 	/* Check that the entire stack buffer is read/writable */
 	printk("   - check read/write to stack buffer\n");
