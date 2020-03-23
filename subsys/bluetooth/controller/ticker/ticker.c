@@ -417,7 +417,7 @@ static u8_t ticker_enqueue(struct ticker_instance *instance, u8_t id)
 		 */
 		if (ticks_to_expire == 0 && (ticker_new->lazy_current >
 					     ticker_current->lazy_current)) {
-			ticks_to_expire = ticker_current->ticks_to_expire;
+			ticks_to_expire = ticks_to_expire_current;
 			break;
 		}
 
