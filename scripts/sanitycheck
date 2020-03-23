@@ -1873,7 +1873,7 @@ class CMake():
             '-G{}'.format(get_generator()[1])
         ]
 
-        if options.cmake_only:
+        if self.cmake_only:
             cmake_args.append("-DCMAKE_EXPORT_COMPILE_COMMANDS=1")
 
         args = ["-D{}".format(a.replace('"', '')) for a in args]
