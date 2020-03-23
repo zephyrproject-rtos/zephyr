@@ -66,7 +66,6 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 extern void platformShellInit(otInstance *aInstance);
 
-K_SEM_DEFINE(ot_sem, 0, 1);
 
 K_THREAD_STACK_DEFINE(ot_stack_area, OT_STACK_SIZE);
 static struct k_thread ot_thread_data;
@@ -74,6 +73,54 @@ static k_tid_t ot_tid;
 static struct net_linkaddr *ll_addr;
 
 static struct net_mgmt_event_callback ip6_addr_cb;
+
+static struct k_poll_signal openthread_signals[OPENTHREAD_SIGNALS];
+static struct k_poll_event openthread_events[OPENTHREAD_SIGNALS];
+
+
+bool ot_signal_check_clear(enum openthread_signal_id signal_id,
+						int *signal_value)
+{
+	struct k_poll_signal *signal = &openthread_signals[signal_id];
+	int set;
+	bool success = false;
+
+	k_poll_signal_check(signal, &set, signal_value);
+
+	if (set) {
+		k_poll_signal_reset(signal);
+		success = true;
+	}
+	return success;
+}
+
+void ot_signal_set(enum openthread_signal_id signal_id,
+						int signal_value)
+{
+	struct k_poll_signal *signal = &openthread_signals[signal_id];
+
+	k_poll_signal_raise(signal, signal_value);
+}
+
+
+int ot_signal_poll(enum openthread_signal_id signal_start_id,
+					int num_events, s32_t timeout)
+{
+	return k_poll(&openthread_events[signal_start_id], num_events,
+								timeout);
+}
+
+void ot_signal_init(void)
+{
+	for (int i = 0; i < OPENTHREAD_SIGNALS; i++) {
+		k_poll_signal_init(&openthread_signals[i]);
+		k_poll_event_init(&openthread_events[i],
+				  K_POLL_TYPE_SIGNAL,
+				  K_POLL_MODE_NOTIFY_ONLY,
+				  &openthread_signals[i]);
+	}
+}
+
 
 k_tid_t openthread_thread_id_get(void)
 {
@@ -105,12 +152,12 @@ void otPlatRadioGetIeeeEui64(otInstance *instance, uint8_t *ieee_eui64)
 
 void otTaskletsSignalPending(otInstance *instance)
 {
-	k_sem_give(&ot_sem);
+	ot_signal_set(OPENTHREAD_SIGNAL_PENDING, 0);
 }
 
 void otSysEventSignalPending(void)
 {
-	k_sem_give(&ot_sem);
+	ot_signal_set(OPENTHREAD_SIGNAL_PENDING, 0);
 }
 
 void ot_state_changed_handler(uint32_t flags, void *context)
@@ -232,7 +279,14 @@ static void openthread_process(void *context, void *arg2, void *arg3)
 
 		otSysProcessDrivers(ot_context->instance);
 
-		k_sem_take(&ot_sem, K_FOREVER);
+		ot_signal_poll(OPENTHREAD_SIGNAL_PENDING, 1,
+							K_FOREVER);
+		{
+			int unused;
+
+			ot_signal_check_clear(OPENTHREAD_SIGNAL_PENDING,
+							&unused);
+		}
 	}
 }
 
@@ -389,6 +443,8 @@ static int openthread_init(struct net_if *iface)
 	struct openthread_context *ot_context = net_if_l2_data(iface);
 
 	NET_DBG("openthread_init");
+
+	ot_signal_init();
 
 	otSysInit(0, NULL);
 

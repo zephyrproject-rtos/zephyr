@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <device.h>
 #include <net/ieee802154_radio.h>
 #include <net/net_pkt.h>
+#include <net/openthread.h>
 #include <sys/__assert.h>
 
 #include <openthread-system.h>
@@ -361,12 +362,49 @@ otRadioFrame *otPlatRadioGetTransmitBuffer(otInstance *aInstance)
 	return &sTransmitFrame;
 }
 
+static void get_rssi_energy_detected(struct device *dev, s16_t max_ed)
+{
+	ARG_UNUSED(dev);
+	ot_signal_set(OPENTHREAD_SIGNAL_BLOCKING, max_ed);
+}
+
 int8_t otPlatRadioGetRssi(otInstance *aInstance)
 {
-	ARG_UNUSED(aInstance);
+	s8_t ret_rssi = INT8_MAX;
+	int signal_value;
 
-	/* TODO: No API in Zephyr to get the RSSI. */
-	return 0;
+	otRadioCaps radioCaps =  otPlatRadioGetCaps(aInstance);
+
+	if (!(radioCaps & OT_RADIO_CAPS_ENERGY_SCAN)) {
+		/*
+		 *TODO: No API in Zephyr to get the RSSI
+		 * when OT_RADIO_CAPS_ENERGY_SCAN is not available
+		 */
+		ret_rssi = 0;
+	} else {
+		/*
+		 * Blocking implementation of get RSSI
+		 * using no-blocking ed_scan
+		 */
+		int error = 0;
+		const u16_t energy_detection_time = 1;
+
+		error = radio_api->ed_scan(radio_dev, energy_detection_time,
+					    get_rssi_energy_detected);
+
+		if (!error) {
+
+			ot_signal_poll(OPENTHREAD_SIGNAL_BLOCKING, 1,
+							K_FOREVER);
+
+			if (ot_signal_check_clear(OPENTHREAD_SIGNAL_BLOCKING,
+							&signal_value)) {
+				ret_rssi = (s8_t) signal_value;
+			}
+		}
+	}
+
+	return ret_rssi;
 }
 
 otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
