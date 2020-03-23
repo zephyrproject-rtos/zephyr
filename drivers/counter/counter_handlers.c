@@ -68,7 +68,7 @@ static inline int z_vrfy_counter_get_value(struct device *dev,
 					   u32_t *ticks)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_COUNTER(dev, get_value));
-	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(ticks, sizeof(ticks)));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(ticks, sizeof(*ticks)));
 	return z_impl_counter_get_value((struct device *)dev, ticks);
 }
 #include <syscalls/counter_get_value_mrsh.c>
