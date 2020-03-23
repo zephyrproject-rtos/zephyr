@@ -118,6 +118,8 @@ int callbacks_configure(struct device *gpio, u32_t pin, int flags,
 			void (*handler)(struct device*, struct gpio_callback*,
 			u32_t), struct gpio_callback *callback, u32_t *val)
 {
+	int ret;
+
 	if (!gpio) {
 		LOG_ERR("Could not find PORT");
 		return -ENXIO;
@@ -125,10 +127,12 @@ int callbacks_configure(struct device *gpio, u32_t pin, int flags,
 
 	gpio_pin_configure(gpio, pin,
 			   GPIO_INPUT | GPIO_INT_DEBOUNCE | flags);
-	*val = gpio_pin_get(gpio, pin);
-	if (*val < 0) {
-		return *val;
+	ret = gpio_pin_get(gpio, pin);
+	if (ret < 0) {
+		return ret;
 	}
+
+	*val = (u32_t)ret;
 
 	gpio_init_callback(callback, handler, BIT(pin));
 	gpio_add_callback(gpio, callback);
