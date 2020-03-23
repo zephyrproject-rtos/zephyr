@@ -15,5 +15,6 @@ supported:
   - i2c
   - counter
   - adc
+  - rtc
 ram: 96
 flash: 1024

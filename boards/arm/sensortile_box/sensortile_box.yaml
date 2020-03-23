@@ -14,5 +14,6 @@ supported:
   - usb device
   - nvs
   - counter
+  - rtc
 ram: 640
 flash: 2048

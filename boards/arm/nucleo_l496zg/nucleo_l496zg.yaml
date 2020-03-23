@@ -17,6 +17,7 @@ supported:
   - pwm
   - counter
   - watchdog
+  - rtc
 testing:
   ignore_tags:
     - net
