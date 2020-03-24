@@ -1,0 +1,13 @@
+common:
+  tags: net ethernet enc28j60
+  depends_on: netif
+  min_flash: 140
+  harness: net
+sample:
+  description: Simple sample application that uses enc28j60
+    Ethernet controller.
+  name: enc28j60 sample
+tests:
+  # Create a whitelisted entry for each supported board
+  sample.driver.enc28j60.black_f407ve:
+    platform_whitelist: black_f407ve
