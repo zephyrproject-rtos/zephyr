@@ -1282,6 +1282,16 @@
 #define DT_INST_BUS_LABEL(inst) DT_BUS_LABEL(DT_DRV_INST(inst))
 
 /**
+ * @brief Does the devicetree have a particular instance number?
+ *
+ * This is equivalent to DT_HAS_NODE(DT_DRV_INST(inst)).
+ * @param inst instance number
+ * @return 1 if the devicetree has that numbered instance,
+ *         0 otherwise.
+ */
+#define DT_HAS_DRV_INST(inst) DT_HAS_NODE(DT_DRV_INST(inst))
+
+/**
  * @brief Test if a DT_DRV_COMPAT's bus type is a given type
  * This is equivalent to DT_ON_BUS(DT_DRV_INST(inst), bus).
  * @param inst instance number
