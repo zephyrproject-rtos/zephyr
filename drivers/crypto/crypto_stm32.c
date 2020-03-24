@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_cryp
+
 #include <init.h>
 #include <kernel.h>
 #include <device.h>
@@ -455,12 +457,12 @@ static struct crypto_stm32_data crypto_stm32_dev_data = {
 
 static struct crypto_stm32_config crypto_stm32_dev_config = {
 	.pclken = {
-		.enr = DT_INST_0_ST_STM32_CRYP_CLOCK_BITS,
-		.bus = DT_INST_0_ST_STM32_CRYP_CLOCK_BUS
+		.enr = DT_INST_CLOCKS_CELL(0, bits),
+		.bus = DT_INST_CLOCKS_CELL(0, bus)
 	}
 };
 
-DEVICE_AND_API_INIT(crypto_stm32, DT_INST_0_ST_STM32_CRYP_LABEL,
+DEVICE_AND_API_INIT(crypto_stm32, DT_INST_LABEL(0),
 		    crypto_stm32_init, &crypto_stm32_dev_data,
 		    &crypto_stm32_dev_config, POST_KERNEL,
 		    CONFIG_CRYPTO_INIT_PRIORITY, (void *)&crypto_enc_funcs);

@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_dma
+
 /**
  * @brief Common part of DMA drivers for stm32.
  * @note  Functions named with stm32_dma_* are SoCs related functions
@@ -523,11 +525,11 @@ static const struct dma_driver_api dma_funcs = {
 static void dma_stm32_config_irq_##index(struct device *dev);		\
 									\
 const struct dma_stm32_config dma_stm32_config_##index = {		\
-	.pclken = { .bus = DT_INST_##index##_ST_STM32_DMA_CLOCK_BUS,	\
-		    .enr = DT_INST_##index##_ST_STM32_DMA_CLOCK_BITS },	\
+	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),	\
+		    .enr = DT_INST_CLOCKS_CELL(index, bits) },	\
 	.config_irq = dma_stm32_config_irq_##index,			\
-	.base = DT_INST_##index##_ST_STM32_DMA_BASE_ADDRESS,		\
-	.support_m2m = DT_INST_##index##_ST_STM32_DMA_ST_MEM2MEM,	\
+	.base = DT_INST_REG_ADDR(index),		\
+	.support_m2m = DT_INST_PROP(index, st_mem2mem),	\
 };									\
 									\
 static struct dma_stm32_data dma_stm32_data_##index = {			\
@@ -535,7 +537,7 @@ static struct dma_stm32_data dma_stm32_data_##index = {			\
 	.streams = NULL,						\
 };									\
 									\
-DEVICE_AND_API_INIT(dma_##index, DT_INST_##index##_ST_STM32_DMA_LABEL,	\
+DEVICE_AND_API_INIT(dma_##index, DT_INST_LABEL(index),	\
 		    &dma_stm32_init,					\
 		    &dma_stm32_data_##index, &dma_stm32_config_##index,	\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
@@ -549,16 +551,16 @@ static void dma_stm32_irq_##chan(void *arg)				\
 
 #define IRQ_INIT(dma, chan)                                             \
 do {									\
-	if (!irq_is_enabled(DT_INST_##dma##_ST_STM32_DMA_IRQ_##chan)) {	\
-		irq_connect_dynamic(DT_INST_##dma##_ST_STM32_DMA_IRQ_##chan,\
-			DT_INST_##dma##_ST_STM32_DMA_IRQ_##chan##_PRIORITY,\
+	if (!irq_is_enabled(DT_INST_IRQ_BY_IDX(dma, chan, irq))) {	\
+		irq_connect_dynamic(DT_INST_IRQ_BY_IDX(dma, chan, irq), \
+			DT_INST_IRQ_BY_IDX(dma, chan, priority),        \
 			dma_stm32_irq_handler, dev, 0);			\
-		irq_enable(DT_INST_##dma##_ST_STM32_DMA_IRQ_##chan);	\
+		irq_enable(DT_INST_IRQ_BY_IDX(dma, chan, irq));	        \
 	}								\
 	data->max_streams++;						\
 } while (0)
 
-#ifdef DT_INST_0_ST_STM32_DMA
+#if DT_HAS_DRV_INST(0)
 DMA_INIT(0);
 
 static void dma_stm32_config_irq_0(struct device *dev)
@@ -570,21 +572,21 @@ static void dma_stm32_config_irq_0(struct device *dev)
 	IRQ_INIT(0, 2);
 	IRQ_INIT(0, 3);
 	IRQ_INIT(0, 4);
-#ifdef DT_INST_0_ST_STM32_DMA_IRQ_5
+#if DT_INST_IRQ_HAS_IDX(0, 5)
 	IRQ_INIT(0, 5);
-#ifdef DT_INST_0_ST_STM32_DMA_IRQ_6
+#if DT_INST_IRQ_HAS_IDX(0, 6)
 	IRQ_INIT(0, 6);
-#ifdef DT_INST_0_ST_STM32_DMA_IRQ_7
+#if DT_INST_IRQ_HAS_IDX(0, 7)
 	IRQ_INIT(0, 7);
-#endif /* DT_INST_0_ST_STM32_DMA_IRQ_5 */
-#endif /* DT_INST_0_ST_STM32_DMA_IRQ_6 */
-#endif /* DT_INST_0_ST_STM32_DMA_IRQ_7 */
+#endif /* DT_INST_IRQ_HAS_IDX(0, 5) */
+#endif /* DT_INST_IRQ_HAS_IDX(0, 6) */
+#endif /* DT_INST_IRQ_HAS_IDX(0, 7) */
 /* Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
 }
-#endif /* DT_INST_0_ST_STM32_DMA */
+#endif /* DT_HAS_DRV_INST(0) */
 
 
-#ifdef DT_INST_1_ST_STM32_DMA
+#if DT_HAS_DRV_INST(1)
 DMA_INIT(1);
 
 static void dma_stm32_config_irq_1(struct device *dev)
@@ -596,15 +598,15 @@ static void dma_stm32_config_irq_1(struct device *dev)
 	IRQ_INIT(1, 2);
 	IRQ_INIT(1, 3);
 	IRQ_INIT(1, 4);
-#ifdef DT_INST_1_ST_STM32_DMA_IRQ_5
+#if DT_INST_IRQ_HAS_IDX(1, 5)
 	IRQ_INIT(1, 5);
-#ifdef DT_INST_1_ST_STM32_DMA_IRQ_6
+#if DT_INST_IRQ_HAS_IDX(1, 6)
 	IRQ_INIT(1, 6);
-#ifdef DT_INST_1_ST_STM32_DMA_IRQ_7
+#if DT_INST_IRQ_HAS_IDX(1, 7)
 	IRQ_INIT(1, 7);
-#endif /* DT_INST_1_ST_STM32_DMA_IRQ_5 */
-#endif /* DT_INST_1_ST_STM32_DMA_IRQ_6 */
-#endif /* DT_INST_1_ST_STM32_DMA_IRQ_7 */
+#endif /* DT_INST_IRQ_HAS_IDX(1, 5) */
+#endif /* DT_INST_IRQ_HAS_IDX(1, 6) */
+#endif /* DT_INST_IRQ_HAS_IDX(1, 7) */
 /* Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
 }
-#endif /* DT_INST_1_ST_STM32_DMA */
+#endif /* DT_HAS_DRV_INST(1) */

@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_adc
+
 #include <errno.h>
 
 #include <drivers/adc.h>
@@ -652,11 +654,11 @@ static const struct adc_driver_api api_stm32_driver_api = {
 static void adc_stm32_cfg_func_##index(void);				\
 									\
 static const struct adc_stm32_cfg adc_stm32_cfg_##index = {		\
-	.base = (ADC_TypeDef *)DT_INST_##index##_ST_STM32_ADC_BASE_ADDRESS,\
+	.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),\
 	.irq_cfg_func = adc_stm32_cfg_func_##index,			\
 	.pclken = {							\
-		.enr = DT_INST_##index##_ST_STM32_ADC_CLOCK_BITS,	\
-		.bus = DT_INST_##index##_ST_STM32_ADC_CLOCK_BUS,	\
+		.enr = DT_INST_CLOCKS_CELL(index, bits),	\
+		.bus = DT_INST_CLOCKS_CELL(index, bus),	\
 	},								\
 };									\
 static struct adc_stm32_data adc_stm32_data_##index = {			\
@@ -665,7 +667,7 @@ static struct adc_stm32_data adc_stm32_data_##index = {			\
 	ADC_CONTEXT_INIT_SYNC(adc_stm32_data_##index, ctx),		\
 };									\
 									\
-DEVICE_AND_API_INIT(adc_##index, DT_INST_##index##_ST_STM32_ADC_LABEL,	\
+DEVICE_AND_API_INIT(adc_##index, DT_INST_LABEL(index),	\
 		    &adc_stm32_init,					\
 		    &adc_stm32_data_##index, &adc_stm32_cfg_##index,	\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
@@ -673,12 +675,12 @@ DEVICE_AND_API_INIT(adc_##index, DT_INST_##index##_ST_STM32_ADC_LABEL,	\
 									\
 static void adc_stm32_cfg_func_##index(void)				\
 {									\
-	IRQ_CONNECT(DT_INST_##index##_ST_STM32_ADC_IRQ_0,		\
-		    DT_INST_##index##_ST_STM32_ADC_IRQ_0_PRIORITY,	\
+	IRQ_CONNECT(DT_INST_IRQN(index),		\
+		    DT_INST_IRQ(index, priority),	\
 		    adc_stm32_isr, DEVICE_GET(adc_##index), 0);		\
-	irq_enable(DT_INST_##index##_ST_STM32_ADC_IRQ_0);		\
+	irq_enable(DT_INST_IRQN(index));		\
 }
 
-#ifdef DT_INST_0_ST_STM32_ADC
+#if DT_HAS_DRV_INST(0)
 STM32_ADC_INIT(0);
-#endif /* DT_INST_0_ST_STM32_ADC */
+#endif /* DT_HAS_DRV_INST(0) */

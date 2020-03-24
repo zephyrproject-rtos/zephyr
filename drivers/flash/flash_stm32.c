@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT soc_nv_flash
+
 #include <kernel.h>
 #include <device.h>
 #include <string.h>
@@ -279,7 +281,7 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 }
 
 static struct flash_stm32_priv flash_data = {
-	.regs = (FLASH_TypeDef *) DT_INST_0_SOC_NV_FLASH_BASE_ADDRESS,
+	.regs = (FLASH_TypeDef *) DT_INST_REG_ADDR(0),
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F1X) || \
@@ -299,8 +301,8 @@ static const struct flash_driver_api flash_stm32_api = {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif
-#ifdef DT_INST_0_SOC_NV_FLASH_WRITE_BLOCK_SIZE
-	.write_block_size = DT_INST_0_SOC_NV_FLASH_WRITE_BLOCK_SIZE,
+#if DT_INST_NODE_HAS_PROP(0, write_block_size)
+	.write_block_size = DT_INST_PROP(0, write_block_size),
 #else
 #error Flash write block size not available
 	/* Flash Write block size is extracted from device tree */

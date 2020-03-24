@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_spi
+
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_ll_stm32);
@@ -506,10 +508,10 @@ static int spi_stm32_init(struct device *dev)
 #define STM32_SPI_IRQ_HANDLER(id)					\
 static void spi_stm32_irq_config_func_##id(struct device *dev)		\
 {									\
-	IRQ_CONNECT(DT_INST_##id##_ST_STM32_SPI_IRQ_0,			\
-		    DT_INST_##id##_ST_STM32_SPI_IRQ_0_PRIORITY,		\
+	IRQ_CONNECT(DT_INST_IRQN(id),			\
+		    DT_INST_IRQ(id, priority),		\
 		    spi_stm32_isr, DEVICE_GET(spi_stm32_##id), 0);	\
-	irq_enable(DT_INST_##id##_ST_STM32_SPI_IRQ_0);			\
+	irq_enable(DT_INST_IRQN(id));			\
 }
 #else
 #define STM32_SPI_IRQ_HANDLER_DECL(id)
@@ -521,10 +523,10 @@ static void spi_stm32_irq_config_func_##id(struct device *dev)		\
 STM32_SPI_IRQ_HANDLER_DECL(id);						\
 									\
 static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
-	.spi = (SPI_TypeDef *) DT_INST_##id##_ST_STM32_SPI_BASE_ADDRESS,\
+	.spi = (SPI_TypeDef *) DT_INST_REG_ADDR(id),\
 	.pclken = {							\
-		.enr = DT_INST_##id##_ST_STM32_SPI_CLOCK_BITS,		\
-		.bus = DT_INST_##id##_ST_STM32_SPI_CLOCK_BUS		\
+		.enr = DT_INST_CLOCKS_CELL(id, bits),		\
+		.bus = DT_INST_CLOCKS_CELL(id, bus)		\
 	},								\
 	STM32_SPI_IRQ_HANDLER_FUNC(id)					\
 };									\
@@ -534,7 +536,7 @@ static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_##id, ctx),		\
 };									\
 									\
-DEVICE_AND_API_INIT(spi_stm32_##id, DT_INST_##id##_ST_STM32_SPI_LABEL,	\
+DEVICE_AND_API_INIT(spi_stm32_##id, DT_INST_LABEL(id),	\
 		    &spi_stm32_init,					\
 		    &spi_stm32_dev_data_##id, &spi_stm32_cfg_##id,	\
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		\
@@ -542,26 +544,26 @@ DEVICE_AND_API_INIT(spi_stm32_##id, DT_INST_##id##_ST_STM32_SPI_LABEL,	\
 									\
 STM32_SPI_IRQ_HANDLER(id)
 
-#ifdef DT_INST_0_ST_STM32_SPI
+#if DT_HAS_DRV_INST(0)
 STM32_SPI_INIT(0)
-#endif /* DT_INST_0_ST_STM32_SPI */
+#endif /* DT_HAS_DRV_INST(0) */
 
-#ifdef DT_INST_1_ST_STM32_SPI
+#if DT_HAS_DRV_INST(1)
 STM32_SPI_INIT(1)
-#endif /* DT_INST_1_ST_STM32_SPI */
+#endif /* DT_HAS_DRV_INST(1) */
 
-#ifdef DT_INST_2_ST_STM32_SPI
+#if DT_HAS_DRV_INST(2)
 STM32_SPI_INIT(2)
-#endif /* DT_INST_2_ST_STM32_SPI */
+#endif /* DT_HAS_DRV_INST(2) */
 
-#ifdef DT_INST_3_ST_STM32_SPI
+#if DT_HAS_DRV_INST(3)
 STM32_SPI_INIT(3)
-#endif /* DT_INST_3_ST_STM32_SPI */
+#endif /* DT_HAS_DRV_INST(3) */
 
-#ifdef DT_INST_4_ST_STM32_SPI
+#if DT_HAS_DRV_INST(4)
 STM32_SPI_INIT(4)
-#endif /* DT_INST_4_ST_STM32_SPI */
+#endif /* DT_HAS_DRV_INST(4) */
 
-#ifdef DT_INST_5_ST_STM32_SPI
+#if DT_HAS_DRV_INST(5)
 STM32_SPI_INIT(5)
-#endif /* DT_INST_5_ST_STM32_SPI */
+#endif /* DT_HAS_DRV_INST(5) */
