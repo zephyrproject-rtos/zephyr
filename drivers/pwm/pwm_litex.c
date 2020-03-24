@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT litex_pwm
+
 #include <device.h>
 #include <drivers/pwm.h>
 #include <zephyr/types.h>
@@ -89,20 +91,20 @@ static const struct pwm_driver_api pwm_litex_driver_api = {
 	static const struct pwm_litex_cfg pwm_litex_cfg_##n = {		       \
 		.reg_en =						       \
 		  (volatile u32_t *)                                           \
-			DT_INST_##n##_LITEX_PWM_ENABLE_BASE_ADDRESS,           \
-		.reg_en_size = DT_INST_##n##_LITEX_PWM_ENABLE_SIZE / 4,        \
+			DT_INST_REG_ADDR_BY_NAME(n, enable),           \
+		.reg_en_size = DT_INST_REG_SIZE_BY_NAME(n, enable) / 4,        \
 		.reg_width =						       \
 		  (volatile u32_t *)                                           \
-			DT_INST_##n##_LITEX_PWM_WIDTH_BASE_ADDRESS,            \
-		.reg_width_size = DT_INST_##n##_LITEX_PWM_WIDTH_SIZE / 4,      \
+			DT_INST_REG_ADDR_BY_NAME(n, width),            \
+		.reg_width_size = DT_INST_REG_SIZE_BY_NAME(n, width) / 4,      \
 		.reg_period  =						       \
 		  (volatile u32_t *)                                           \
-			DT_INST_##n##_LITEX_PWM_PERIOD_BASE_ADDRESS,           \
-		.reg_period_size = DT_INST_##n##_LITEX_PWM_PERIOD_SIZE / 4,    \
+			DT_INST_REG_ADDR_BY_NAME(n, period),           \
+		.reg_period_size = DT_INST_REG_SIZE_BY_NAME(n, period) / 4,    \
 	};								       \
 									       \
 	DEVICE_AND_API_INIT(pwm_##n,					       \
-			    DT_INST_##n##_LITEX_PWM_LABEL,		       \
+			    DT_INST_LABEL(n),		       \
 			    pwm_litex_init,				       \
 			    NULL,					       \
 			    &pwm_litex_cfg_##n,				       \
@@ -111,38 +113,38 @@ static const struct pwm_driver_api pwm_litex_driver_api = {
 			    &pwm_litex_driver_api			       \
 			   )
 
-#ifdef DT_INST_0_LITEX_PWM_LABEL
+#if DT_INST_NODE_HAS_PROP(0, label)
 PWM_LITEX_INIT(0);
 #endif
 
-#ifdef DT_INST_1_LITEX_PWM_LABEL
+#if DT_INST_NODE_HAS_PROP(1, label)
 PWM_LITEX_INIT(1);
 #endif
 
-#ifdef DT_INST_2_LITEX_PWM_LABEL
+#if DT_INST_NODE_HAS_PROP(2, label)
 PWM_LITEX_INIT(2);
 #endif
 
-#ifdef DT_INST_3_LITEX_PWM_LABEL
+#if DT_INST_NODE_HAS_PROP(3, label)
 PWM_LITEX_INIT(3);
 #endif
 
-#ifdef DT_INST_4_LITEX_PWM_LABEL
+#if DT_INST_NODE_HAS_PROP(4, label)
 PWM_LITEX_INIT(4);
 #endif
 
-#ifdef DT_INST_5_LITEX_PWM_LABEL
+#if DT_INST_NODE_HAS_PROP(5, label)
 PWM_LITEX_INIT(5);
 #endif
 
-#ifdef DT_INST_6_LITEX_PWM_LABEL
+#if DT_INST_NODE_HAS_PROP(6, label)
 PWM_LITEX_INIT(6);
 #endif
 
-#ifdef DT_INST_7_LITEX_PWM_LABEL
+#if DT_INST_NODE_HAS_PROP(7, label)
 PWM_LITEX_INIT(7);
 #endif
 
-#ifdef DT_INST_8_LITEX_PWM_LABEL
+#if DT_INST_NODE_HAS_PROP(8, label)
 PWM_LITEX_INIT(8);
 #endif

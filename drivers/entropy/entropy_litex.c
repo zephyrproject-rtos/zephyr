@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT litex_prbs
+
 #include <device.h>
 #include <drivers/entropy.h>
 #include <errno.h>
@@ -12,8 +14,8 @@
 #include <string.h>
 #include <zephyr.h>
 
-#define PRBS_STATUS     ((volatile uint32_t *)DT_INST_0_LITEX_PRBS_BASE_ADDRESS)
-#define PRBS_WIDTH      DT_INST_0_LITEX_PRBS_SIZE
+#define PRBS_STATUS     ((volatile uint32_t *)DT_INST_REG_ADDR(0))
+#define PRBS_WIDTH      DT_INST_REG_SIZE(0)
 #define SUBREG_SIZE_BIT 8
 
 static inline unsigned int prbs_read(volatile u32_t *reg_status,
