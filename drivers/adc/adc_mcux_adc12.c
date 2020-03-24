@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_adc12
+
 #include <drivers/adc.h>
 #include <fsl_adc12.h>
 
@@ -252,26 +254,26 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 #define TO_ADC12_CLOCK_SRC(val) _DO_CONCAT(kADC12_ClockSourceAlt, val)
 #define TO_ADC12_CLOCK_DIV(val) _DO_CONCAT(kADC12_ClockDivider, val)
 
-#if DT_INST_0_NXP_KINETIS_ADC12
+#if DT_HAS_DRV_INST(0)
 static void mcux_adc12_config_func_0(struct device *dev);
 
-ASSERT_WITHIN_RANGE(DT_INST_0_NXP_KINETIS_ADC12_CLK_SOURCE, 0, 3,
+ASSERT_WITHIN_RANGE(DT_INST_PROP(0, clk_source), 0, 3,
 		    "Invalid clock source");
-ASSERT_ADC12_CLK_DIV_VALID(DT_INST_0_NXP_KINETIS_ADC12_CLK_DIVIDER,
+ASSERT_ADC12_CLK_DIV_VALID(DT_INST_PROP(0, clk_divider),
 			   "Invalid clock divider");
-ASSERT_WITHIN_RANGE(DT_INST_0_NXP_KINETIS_ADC12_SAMPLE_TIME, 2, 256,
+ASSERT_WITHIN_RANGE(DT_INST_PROP(0, sample_time), 2, 256,
 		    "Invalid sample time");
 static const struct mcux_adc12_config mcux_adc12_config_0 = {
-	.base = (ADC_Type *)DT_INST_0_NXP_KINETIS_ADC12_BASE_ADDRESS,
-	.clock_src = TO_ADC12_CLOCK_SRC(DT_INST_0_NXP_KINETIS_ADC12_CLK_SOURCE),
+	.base = (ADC_Type *)DT_INST_REG_ADDR(0),
+	.clock_src = TO_ADC12_CLOCK_SRC(DT_INST_PROP(0, clk_source)),
 	.clock_div =
-		TO_ADC12_CLOCK_DIV(DT_INST_0_NXP_KINETIS_ADC12_CLK_DIVIDER),
-#if DT_INST_0_NXP_KINETIS_ADC12_ALTERNATE_VOLTAGE_REFERENCE == 1
+		TO_ADC12_CLOCK_DIV(DT_INST_PROP(0, clk_divider)),
+#if DT_INST_PROP(0, alternate_voltage_reference) == 1
 	.ref_src = kADC12_ReferenceVoltageSourceValt,
 #else
 	.ref_src = kADC12_ReferenceVoltageSourceVref,
 #endif
-	.sample_clk_count = DT_INST_0_NXP_KINETIS_ADC12_SAMPLE_TIME,
+	.sample_clk_count = DT_INST_PROP(0, sample_time),
 	.irq_config_func = mcux_adc12_config_func_0,
 };
 
@@ -281,41 +283,41 @@ static struct mcux_adc12_data mcux_adc12_data_0 = {
 	ADC_CONTEXT_INIT_SYNC(mcux_adc12_data_0, ctx),
 };
 
-DEVICE_AND_API_INIT(mcux_adc12_0, DT_INST_0_NXP_KINETIS_ADC12_LABEL,
+DEVICE_AND_API_INIT(mcux_adc12_0, DT_INST_LABEL(0),
 		    &mcux_adc12_init, &mcux_adc12_data_0, &mcux_adc12_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_adc12_driver_api);
 
 static void mcux_adc12_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_0_NXP_KINETIS_ADC12_IRQ_0,
-		    DT_INST_0_NXP_KINETIS_ADC12_IRQ_0_PRIORITY, mcux_adc12_isr,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority), mcux_adc12_isr,
 		    DEVICE_GET(mcux_adc12_0), 0);
 
-	irq_enable(DT_INST_0_NXP_KINETIS_ADC12_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 }
-#endif /* DT_INST_0_NXP_KINETIS_ADC12 */
+#endif /* DT_HAS_DRV_INST(0) */
 
-#if DT_INST_1_NXP_KINETIS_ADC12
+#if DT_HAS_DRV_INST(1)
 static void mcux_adc12_config_func_1(struct device *dev);
 
-ASSERT_WITHIN_RANGE(DT_INST_1_NXP_KINETIS_ADC12_CLK_SOURCE, 0, 3,
+ASSERT_WITHIN_RANGE(DT_INST_PROP(1, clk_source), 0, 3,
 		    "Invalid clock source");
-ASSERT_ADC12_CLK_DIV_VALID(DT_INST_1_NXP_KINETIS_ADC12_CLK_DIVIDER,
+ASSERT_ADC12_CLK_DIV_VALID(DT_INST_PROP(1, clk_divider),
 			   "Invalid clock divider");
-ASSERT_WITHIN_RANGE(DT_INST_1_NXP_KINETIS_ADC12_SAMPLE_TIME, 2, 256,
+ASSERT_WITHIN_RANGE(DT_INST_PROP(1, sample_time), 2, 256,
 		    "Invalid sample time");
 static const struct mcux_adc12_config mcux_adc12_config_1 = {
-	.base = (ADC_Type *)DT_INST_1_NXP_KINETIS_ADC12_BASE_ADDRESS,
-	.clock_src = TO_ADC12_CLOCK_SRC(DT_INST_1_NXP_KINETIS_ADC12_CLK_SOURCE),
+	.base = (ADC_Type *)DT_INST_REG_ADDR(1),
+	.clock_src = TO_ADC12_CLOCK_SRC(DT_INST_PROP(1, clk_source)),
 	.clock_div =
-		TO_ADC12_CLOCK_DIV(DT_INST_1_NXP_KINETIS_ADC12_CLK_DIVIDER),
-#if DT_INST_1_NXP_KINETIS_ADC12_ALTERNATE_VOLTAGE_REFERENCE == 1
+		TO_ADC12_CLOCK_DIV(DT_INST_PROP(1, clk_divider)),
+#if DT_INST_PROP(1, alternate_voltage_reference) == 1
 	.ref_src = kADC12_ReferenceVoltageSourceValt,
 #else
 	.ref_src = kADC12_ReferenceVoltageSourceVref,
 #endif
-	.sample_clk_count = DT_INST_1_NXP_KINETIS_ADC12_SAMPLE_TIME,
+	.sample_clk_count = DT_INST_PROP(1, sample_time),
 	.irq_config_func = mcux_adc12_config_func_1,
 };
 
@@ -325,41 +327,41 @@ static struct mcux_adc12_data mcux_adc12_data_1 = {
 	ADC_CONTEXT_INIT_SYNC(mcux_adc12_data_1, ctx),
 };
 
-DEVICE_AND_API_INIT(mcux_adc12_1, DT_INST_1_NXP_KINETIS_ADC12_LABEL,
+DEVICE_AND_API_INIT(mcux_adc12_1, DT_INST_LABEL(1),
 		    &mcux_adc12_init, &mcux_adc12_data_1, &mcux_adc12_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_adc12_driver_api);
 
 static void mcux_adc12_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_1_NXP_KINETIS_ADC12_IRQ_0,
-		    DT_INST_1_NXP_KINETIS_ADC12_IRQ_0_PRIORITY, mcux_adc12_isr,
+	IRQ_CONNECT(DT_INST_IRQN(1),
+		    DT_INST_IRQ(1, priority), mcux_adc12_isr,
 		    DEVICE_GET(mcux_adc12_1), 0);
 
-	irq_enable(DT_INST_1_NXP_KINETIS_ADC12_IRQ_0);
+	irq_enable(DT_INST_IRQN(1));
 }
-#endif /* DT_INST_1_NXP_KINETIS_ADC12 */
+#endif /* DT_HAS_DRV_INST(1) */
 
-#if DT_INST_2_NXP_KINETIS_ADC12
+#if DT_HAS_DRV_INST(2)
 static void mcux_adc12_config_func_2(struct device *dev);
 
-ASSERT_WITHIN_RANGE(DT_INST_2_NXP_KINETIS_ADC12_CLK_SOURCE, 0, 3,
+ASSERT_WITHIN_RANGE(DT_INST_PROP(2, clk_source), 0, 3,
 		    "Invalid clock source");
-ASSERT_ADC12_CLK_DIV_VALID(DT_INST_2_NXP_KINETIS_ADC12_CLK_DIVIDER,
+ASSERT_ADC12_CLK_DIV_VALID(DT_INST_PROP(2, clk_divider),
 			   "Invalid clock divider");
-ASSERT_WITHIN_RANGE(DT_INST_2_NXP_KINETIS_ADC12_SAMPLE_TIME, 2, 256,
+ASSERT_WITHIN_RANGE(DT_INST_PROP(2, sample_time), 2, 256,
 		    "Invalid sample time");
 static const struct mcux_adc12_config mcux_adc12_config_2 = {
-	.base = (ADC_Type *)DT_INST_2_NXP_KINETIS_ADC12_BASE_ADDRESS,
-	.clock_src = TO_ADC12_CLOCK_SRC(DT_INST_2_NXP_KINETIS_ADC12_CLK_SOURCE),
+	.base = (ADC_Type *)DT_INST_REG_ADDR(2),
+	.clock_src = TO_ADC12_CLOCK_SRC(DT_INST_PROP(2, clk_source)),
 	.clock_div =
-		TO_ADC12_CLOCK_DIV(DT_INST_2_NXP_KINETIS_ADC12_CLK_DIVIDER),
-#if DT_INST_2_NXP_KINETIS_ADC12_ALTERNATE_VOLTAGE_REFERENCE == 1
+		TO_ADC12_CLOCK_DIV(DT_INST_PROP(2, clk_divider)),
+#if DT_INST_PROP(2, alternate_voltage_reference) == 1
 	.ref_src = kADC12_ReferenceVoltageSourceValt,
 #else
 	.ref_src = kADC12_ReferenceVoltageSourceVref,
 #endif
-	.sample_clk_count = DT_INST_2_NXP_KINETIS_ADC12_SAMPLE_TIME,
+	.sample_clk_count = DT_INST_PROP(2, sample_time),
 	.irq_config_func = mcux_adc12_config_func_2,
 };
 
@@ -369,17 +371,17 @@ static struct mcux_adc12_data mcux_adc12_data_2 = {
 	ADC_CONTEXT_INIT_SYNC(mcux_adc12_data_2, ctx),
 };
 
-DEVICE_AND_API_INIT(mcux_adc12_2, DT_INST_2_NXP_KINETIS_ADC12_LABEL,
+DEVICE_AND_API_INIT(mcux_adc12_2, DT_INST_LABEL(2),
 		    &mcux_adc12_init, &mcux_adc12_data_2, &mcux_adc12_config_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_adc12_driver_api);
 
 static void mcux_adc12_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_2_NXP_KINETIS_ADC12_IRQ_0,
-		    DT_INST_2_NXP_KINETIS_ADC12_IRQ_0_PRIORITY, mcux_adc12_isr,
+	IRQ_CONNECT(DT_INST_IRQN(2),
+		    DT_INST_IRQ(2, priority), mcux_adc12_isr,
 		    DEVICE_GET(mcux_adc12_2), 0);
 
-	irq_enable(DT_INST_2_NXP_KINETIS_ADC12_IRQ_0);
+	irq_enable(DT_INST_IRQN(2));
 }
-#endif /* DT_INST_2_NXP_KINETIS_ADC12 */
+#endif /* DT_HAS_DRV_INST(2) */

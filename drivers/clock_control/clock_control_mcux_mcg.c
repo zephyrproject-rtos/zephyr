@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_mcg
+
 #include <drivers/clock_control.h>
 #include <dt-bindings/clock/kinetis_mcg.h>
 #include <soc.h>
@@ -57,7 +59,7 @@ static const struct clock_control_driver_api mcux_mcg_driver_api = {
 	.get_rate = mcux_mcg_get_rate,
 };
 
-DEVICE_AND_API_INIT(mcux_mcg, DT_INST_0_NXP_KINETIS_MCG_LABEL,
+DEVICE_AND_API_INIT(mcux_mcg, DT_INST_LABEL(0),
 		    &mcux_mcg_init,
 		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

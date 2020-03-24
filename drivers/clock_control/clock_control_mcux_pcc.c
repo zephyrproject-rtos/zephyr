@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_pcc
+
 #include <errno.h>
 #include <soc.h>
 #include <drivers/clock_control.h>
@@ -65,12 +67,12 @@ static const struct clock_control_driver_api mcux_pcc_api = {
 	.get_rate = mcux_pcc_get_rate,
 };
 
-#if defined(DT_INST_0_NXP_KINETIS_PCC_LABEL)
+#if DT_HAS_DRV_INST(0)
 static const struct mcux_pcc_config mcux_pcc0_config = {
-	.base_address = DT_INST_0_NXP_KINETIS_PCC_BASE_ADDRESS
+	.base_address = DT_INST_REG_ADDR(0)
 };
 
-DEVICE_AND_API_INIT(mcux_pcc0, DT_INST_0_NXP_KINETIS_PCC_LABEL,
+DEVICE_AND_API_INIT(mcux_pcc0, DT_INST_LABEL(0),
 		    &mcux_pcc_init,
 		    NULL, &mcux_pcc0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
