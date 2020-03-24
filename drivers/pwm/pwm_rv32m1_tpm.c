@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT openisa_rv32m1_tpm
+
 #include <drivers/clock_control.h>
 #include <errno.h>
 #include <drivers/pwm.h>
@@ -179,37 +181,37 @@ static const struct pwm_driver_api rv32m1_tpm_driver_api = {
 #define TPM_DEVICE(n) \
 	static const struct rv32m1_tpm_config rv32m1_tpm_config_##n = { \
 		.base =	(TPM_Type *) \
-			DT_INST_##n##_OPENISA_RV32M1_TPM_BASE_ADDRESS, \
+			DT_INST_REG_ADDR(n), \
 		.clock_name = \
-			DT_INST_##n##_OPENISA_RV32M1_TPM_CLOCK_CONTROLLER, \
+			DT_INST_CLOCKS_LABEL(n), \
 		.clock_subsys = (clock_control_subsys_t) \
-			DT_INST_##n##_OPENISA_RV32M1_TPM_CLOCK_NAME, \
+			DT_INST_CLOCKS_CELL(n, name), \
 		.tpm_clock_source = kTPM_SystemClock, \
 		.prescale = kTPM_Prescale_Divide_16, \
 		.channel_count = FSL_FEATURE_TPM_CHANNEL_COUNTn((TPM_Type *) \
-			DT_INST_##n##_OPENISA_RV32M1_TPM_BASE_ADDRESS), \
+			DT_INST_REG_ADDR(n)), \
 		.mode = kTPM_EdgeAlignedPwm, \
 	}; \
 	static struct rv32m1_tpm_data rv32m1_tpm_data_##n; \
 	DEVICE_AND_API_INIT(rv32m1_tpm_##n, \
-			    DT_INST_##n##_OPENISA_RV32M1_TPM_LABEL, \
+			    DT_INST_LABEL(n), \
 			    &rv32m1_tpm_init, &rv32m1_tpm_data_##n, \
 			    &rv32m1_tpm_config_##n, \
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 			    &rv32m1_tpm_driver_api)
 
-#if DT_INST_0_OPENISA_RV32M1_TPM
+#if DT_HAS_DRV_INST(0)
 TPM_DEVICE(0);
-#endif /* DT_INST_0_OPENISA_RV32M1_TPM */
+#endif /* DT_HAS_DRV_INST(0) */
 
-#if DT_INST_1_OPENISA_RV32M1_TPM
+#if DT_HAS_DRV_INST(1)
 TPM_DEVICE(1);
-#endif /* DT_INST_1_OPENISA_RV32M1_TPM */
+#endif /* DT_HAS_DRV_INST(1) */
 
-#if DT_INST_2_OPENISA_RV32M1_TPM
+#if DT_HAS_DRV_INST(2)
 TPM_DEVICE(2);
-#endif /* DT_INST_2_OPENISA_RV32M1_TPM */
+#endif /* DT_HAS_DRV_INST(2) */
 
-#if DT_INST_3_OPENISA_RV32M1_TPM
+#if DT_HAS_DRV_INST(3)
 TPM_DEVICE(3);
-#endif /* DT_INST_3_OPENISA_RV32M1_TPM */
+#endif /* DT_HAS_DRV_INST(3) */
