@@ -2641,7 +2641,6 @@ class TestSuite:
 
     def load_from_file(self, file, filter_status=[]):
         try:
-            total_tests = 0
             with open(file, "r") as fp:
                 cr = csv.DictReader(fp)
                 instance_list = []
@@ -2661,9 +2660,6 @@ class TestSuite:
                     instance.create_overlay(platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
                     instance_list.append(instance)
                 self.add_instances(instance_list)
-
-            tests_to_run = len(self.instances)
-            logger.info("%d tests passed already, retrying %d tests" % (total_tests - tests_to_run, tests_to_run))
 
         except KeyError as e:
             logger.error("Key error while parsing tests file.({})".format(str(e)))
