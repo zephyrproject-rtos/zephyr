@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_wdog
+
 #include <drivers/watchdog.h>
 #include <drivers/clock_control.h>
 #include <fsl_wdog.h>
@@ -165,16 +167,16 @@ static const struct wdt_driver_api mcux_wdog_api = {
 static void mcux_wdog_config_func_0(struct device *dev);
 
 static const struct mcux_wdog_config mcux_wdog_config_0 = {
-	.base = (WDOG_Type *) DT_INST_0_NXP_KINETIS_WDOG_BASE_ADDRESS,
-	.clock_name = DT_INST_0_NXP_KINETIS_WDOG_CLOCK_CONTROLLER,
+	.base = (WDOG_Type *) DT_INST_REG_ADDR(0),
+	.clock_name = DT_INST_CLOCKS_LABEL(0),
 	.clock_subsys = (clock_control_subsys_t)
-		DT_INST_0_NXP_KINETIS_WDOG_CLOCK_NAME,
+		DT_INST_CLOCKS_CELL(0, name),
 	.irq_config_func = mcux_wdog_config_func_0,
 };
 
 static struct mcux_wdog_data mcux_wdog_data_0;
 
-DEVICE_AND_API_INIT(mcux_wdog_0, DT_INST_0_NXP_KINETIS_WDOG_LABEL,
+DEVICE_AND_API_INIT(mcux_wdog_0, DT_INST_LABEL(0),
 		    &mcux_wdog_init,
 		    &mcux_wdog_data_0, &mcux_wdog_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -182,9 +184,9 @@ DEVICE_AND_API_INIT(mcux_wdog_0, DT_INST_0_NXP_KINETIS_WDOG_LABEL,
 
 static void mcux_wdog_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_0_NXP_KINETIS_WDOG_IRQ_0,
-		    DT_INST_0_NXP_KINETIS_WDOG_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    mcux_wdog_isr, DEVICE_GET(mcux_wdog_0), 0);
 
-	irq_enable(DT_INST_0_NXP_KINETIS_WDOG_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 }

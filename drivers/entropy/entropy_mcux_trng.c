@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_trng
+
 #include <device.h>
 #include <drivers/entropy.h>
 #include <random/rand32.h>
@@ -34,7 +36,7 @@ static const struct entropy_driver_api entropy_mcux_trng_api_funcs = {
 };
 
 static struct mcux_entropy_config entropy_mcux_config = {
-	.base = (TRNG_Type *)DT_INST_0_NXP_KINETIS_TRNG_BASE_ADDRESS
+	.base = (TRNG_Type *)DT_INST_REG_ADDR(0)
 };
 
 static int entropy_mcux_trng_init(struct device *);

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_imx_gpio
+
 #include <errno.h>
 #include <device.h>
 #include <drivers/gpio.h>
@@ -217,7 +219,7 @@ static int mcux_igpio_1_init(struct device *dev);
 
 static const struct mcux_igpio_config mcux_igpio_1_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_NXP_IMX_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
 	},
 	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_1_BASE_ADDRESS,
 };
@@ -255,7 +257,7 @@ static int mcux_igpio_2_init(struct device *dev);
 
 static const struct mcux_igpio_config mcux_igpio_2_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_NXP_IMX_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(1, ngpios)),
 	},
 	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_2_BASE_ADDRESS,
 };
@@ -293,7 +295,7 @@ static int mcux_igpio_3_init(struct device *dev);
 
 static const struct mcux_igpio_config mcux_igpio_3_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_NXP_IMX_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(2, ngpios)),
 	},
 	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_3_BASE_ADDRESS,
 };
@@ -331,7 +333,7 @@ static int mcux_igpio_4_init(struct device *dev);
 
 static const struct mcux_igpio_config mcux_igpio_4_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_NXP_IMX_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(3, ngpios)),
 	},
 	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_4_BASE_ADDRESS,
 };
@@ -369,7 +371,7 @@ static int mcux_igpio_5_init(struct device *dev);
 
 static const struct mcux_igpio_config mcux_igpio_5_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_4_NXP_IMX_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(4, ngpios)),
 	},
 	.base = (GPIO_Type *)DT_NXP_IMX_GPIO_GPIO_5_BASE_ADDRESS,
 };

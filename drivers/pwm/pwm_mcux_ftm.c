@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_ftm
+
 #include <drivers/clock_control.h>
 #include <errno.h>
 #include <drivers/pwm.h>
@@ -153,35 +155,35 @@ static const struct pwm_driver_api mcux_ftm_driver_api = {
 
 #define FTM_DEVICE(n) \
 	static const struct mcux_ftm_config mcux_ftm_config_##n = { \
-		.base = (FTM_Type *)DT_INST_##n##_NXP_KINETIS_FTM_BASE_ADDRESS,\
-		.clock_name = DT_INST_##n##_NXP_KINETIS_FTM_CLOCK_CONTROLLER, \
+		.base = (FTM_Type *)DT_INST_REG_ADDR(n),\
+		.clock_name = DT_INST_CLOCKS_LABEL(n), \
 		.clock_subsys = (clock_control_subsys_t) \
-			DT_INST_##n##_NXP_KINETIS_FTM_CLOCK_NAME, \
+			DT_INST_CLOCKS_CELL(n, name), \
 		.ftm_clock_source = kFTM_FixedClock, \
 		.prescale = kFTM_Prescale_Divide_16, \
 		.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn((FTM_Type *) \
-			DT_INST_##n##_NXP_KINETIS_FTM_BASE_ADDRESS), \
+			DT_INST_REG_ADDR(n)), \
 		.mode = kFTM_EdgeAlignedPwm, \
 	}; \
 	static struct mcux_ftm_data mcux_ftm_data_##n; \
-	DEVICE_AND_API_INIT(mcux_ftm_##n, DT_INST_##n##_NXP_KINETIS_FTM_LABEL, \
+	DEVICE_AND_API_INIT(mcux_ftm_##n, DT_INST_LABEL(n), \
 			    &mcux_ftm_init, &mcux_ftm_data_##n, \
 			    &mcux_ftm_config_##n, \
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 			    &mcux_ftm_driver_api)
 
-#if DT_INST_0_NXP_KINETIS_FTM
+#if DT_HAS_DRV_INST(0)
 FTM_DEVICE(0);
-#endif /* DT_INST_0_NXP_KINETIS_FTM */
+#endif /* DT_HAS_DRV_INST(0) */
 
-#if DT_INST_1_NXP_KINETIS_FTM
+#if DT_HAS_DRV_INST(1)
 FTM_DEVICE(1);
-#endif /* DT_INST_1_NXP_KINETIS_FTM */
+#endif /* DT_HAS_DRV_INST(1) */
 
-#if DT_INST_2_NXP_KINETIS_FTM
+#if DT_HAS_DRV_INST(2)
 FTM_DEVICE(2);
-#endif /* DT_INST_2_NXP_KINETIS_FTM */
+#endif /* DT_HAS_DRV_INST(2) */
 
-#if DT_INST_3_NXP_KINETIS_FTM
+#if DT_HAS_DRV_INST(3)
 FTM_DEVICE(3);
-#endif /* DT_INST_3_NXP_KINETIS_FTM */
+#endif /* DT_HAS_DRV_INST(3) */

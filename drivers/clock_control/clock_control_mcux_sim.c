@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT nxp_kinetis_sim
 #include <errno.h>
 #include <soc.h>
 #include <drivers/clock_control.h>
@@ -43,25 +45,25 @@ static int mcux_sim_get_subsys_rate(struct device *dev,
 	return 0;
 }
 
-#ifdef DT_INST_0_NXP_KINETIS_KE1XF_SIM
-#define NXP_KINETIS_SIM_LABEL DT_INST_0_NXP_KINETIS_KE1XF_SIM_LABEL
-#ifdef DT_INST_0_NXP_KINETIS_KE1XF_SIM_CLKOUT_SOURCE
+#if DT_HAS_NODE(DT_INST(0, nxp_kinetis_ke1xf_sim))
+#define NXP_KINETIS_SIM_LABEL DT_LABEL(DT_INST(0, nxp_kinetis_ke1xf_sim))
+#if DT_NODE_HAS_PROP(DT_INST(0, nxp_kinetis_ke1xf_sim), clkout_source)
 	#define NXP_KINETIS_SIM_CLKOUT_SOURCE \
-			DT_INST_0_NXP_KINETIS_KE1XF_SIM_CLKOUT_SOURCE
+			DT_PROP(DT_INST(0, nxp_kinetis_ke1xf_sim), clkout_source)
 #endif
-#ifdef DT_INST_0_NXP_KINETIS_KE1XF_SIM_CLKOUT_DIVIDER
+#if DT_NODE_HAS_PROP(DT_INST(0, nxp_kinetis_ke1xf_sim), clkout_divider)
 	#define NXP_KINETIS_SIM_CLKOUT_DIVIDER \
-			DT_INST_0_NXP_KINETIS_KE1XF_SIM_CLKOUT_DIVIDER
+			DT_PROP(DT_INST(0, nxp_kinetis_ke1xf_sim), clkout_divider)
 #endif
 #else
-#define NXP_KINETIS_SIM_LABEL DT_INST_0_NXP_KINETIS_SIM_LABEL
-#ifdef DT_INST_0_NXP_KINETIS_SIM_CLKOUT_SOURCE
+#define NXP_KINETIS_SIM_LABEL DT_LABEL(DT_INST(0, nxp_kinetis_sim))
+#if DT_NODE_HAS_PROP(DT_INST(0, nxp_kinetis_sim), clkout_source)
 	#define NXP_KINETIS_SIM_CLKOUT_SOURCE \
-		DT_INST_0_NXP_KINETIS_SIM_CLKOUT_SOURCE
+		DT_PROP(DT_INST(0, nxp_kinetis_sim), clkout_source)
 #endif
-#ifdef DT_INST_0_NXP_KINETIS_SIM_CLKOUT_DIVIDER
+#if DT_NODE_HAS_PROP(DT_INST(0, nxp_kinetis_sim), clkout_divider)
 	#define NXP_KINETIS_SIM_CLKOUT_DIVIDER \
-		DT_INST_0_NXP_KINETIS_SIM_CLKOUT_DIVIDER
+		DT_PROP(DT_INST(0, nxp_kinetis_sim), clkout_divider)
 #endif
 #endif
 
