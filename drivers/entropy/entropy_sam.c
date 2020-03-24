@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam_trng
+
 #include <device.h>
 #include <drivers/entropy.h>
 #include <errno.h>
@@ -162,7 +164,7 @@ static int entropy_sam_init(struct device *dev)
 	trng->CTRLA.bit.ENABLE = 1;
 #else
 	/* Enable the user interface clock */
-	soc_pmc_peripheral_enable(DT_INST_0_ATMEL_SAM_TRNG_PERIPHERAL_ID);
+	soc_pmc_peripheral_enable(DT_INST_PROP(0, peripheral_id));
 
 	/* Enable the TRNG */
 	trng->TRNG_CR = TRNG_CR_KEY_PASSWD | TRNG_CR_ENABLE;
@@ -176,7 +178,7 @@ static const struct entropy_driver_api entropy_sam_api = {
 };
 
 static const struct trng_sam_dev_cfg trng_sam_cfg = {
-	.regs = (Trng *)DT_INST_0_ATMEL_SAM_TRNG_BASE_ADDRESS,
+	.regs = (Trng *)DT_INST_REG_ADDR(0),
 };
 
 DEVICE_AND_API_INIT(entropy_sam, CONFIG_ENTROPY_NAME,

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam_watchdog
+
 /**
  * @brief Watchdog (WDT) Driver for Atmel SAM MCUs
  *
@@ -228,15 +230,15 @@ static const struct wdt_driver_api wdt_sam_api = {
 };
 
 static const struct wdt_sam_dev_cfg wdt_sam_cfg = {
-	.regs = (Wdt *)DT_INST_0_ATMEL_SAM_WATCHDOG_BASE_ADDRESS,
+	.regs = (Wdt *)DT_INST_REG_ADDR(0),
 };
 
 static void wdt_sam_irq_config(void)
 {
-	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_WATCHDOG_IRQ_0,
-		    DT_INST_0_ATMEL_SAM_WATCHDOG_IRQ_0_PRIORITY, wdt_sam_isr,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority), wdt_sam_isr,
 		    DEVICE_GET(wdt_sam), 0);
-	irq_enable(DT_INST_0_ATMEL_SAM_WATCHDOG_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 }
 
 static int wdt_sam_init(struct device *dev)
@@ -249,6 +251,6 @@ static int wdt_sam_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(wdt_sam, DT_INST_0_ATMEL_SAM_WATCHDOG_LABEL, wdt_sam_init,
+DEVICE_AND_API_INIT(wdt_sam, DT_INST_LABEL(0), wdt_sam_init,
 		    &wdt_sam_data, &wdt_sam_cfg, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sam_api);

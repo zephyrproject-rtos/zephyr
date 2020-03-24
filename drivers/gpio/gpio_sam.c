@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam_gpio
+
 #include <errno.h>
 #include <kernel.h>
 #include <device.h>
@@ -333,7 +335,7 @@ static void port_a_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_a_sam_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_ATMEL_SAM_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
 	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTA_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTA_PERIPHERAL_ID,
@@ -361,7 +363,7 @@ static void port_b_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_b_sam_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_ATMEL_SAM_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(1, ngpios)),
 	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTB_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTB_PERIPHERAL_ID,
@@ -389,7 +391,7 @@ static void port_c_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_c_sam_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_ATMEL_SAM_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(2, ngpios)),
 	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTC_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTC_PERIPHERAL_ID,
@@ -417,7 +419,7 @@ static void port_d_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_d_sam_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_ATMEL_SAM_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(3, ngpios)),
 	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTD_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTD_PERIPHERAL_ID,
@@ -445,7 +447,7 @@ static void port_e_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_e_sam_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_4_ATMEL_SAM_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(4, ngpios)),
 	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTE_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTE_PERIPHERAL_ID,
