@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_cc13xx_cc26xx_spi
+
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_cc13xx_cc26xx);
@@ -327,7 +329,7 @@ static const struct spi_cc13xx_cc26xx_config spi_cc13xx_cc26xx_config_0 = {
 	.cs_pin = DT_TI_CC13XX_CC26XX_SPI_40000000_CS_PIN,
 #else
 	.cs_pin = IOID_UNUSED,
-#endif /* DT_INST_0_TI_CC13XX_CC26XX_SPI_CS_PIN */
+#endif
 };
 
 static struct spi_cc13xx_cc26xx_data spi_cc13xx_cc26xx_data_0 = {

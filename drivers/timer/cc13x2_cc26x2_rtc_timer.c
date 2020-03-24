@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_cc13xx_cc26xx_rtc
+
 /*
  * TI SimpleLink CC13X2/CC26X2 RTC-based system timer
  *
@@ -191,10 +193,10 @@ int z_clock_driver_init(struct device *device)
 	startDevice();
 
 	/* Enable RTC interrupt. */
-	IRQ_CONNECT(DT_INST_0_TI_CC13XX_CC26XX_RTC_IRQ_0,
-		DT_INST_0_TI_CC13XX_CC26XX_RTC_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		DT_INST_IRQ(0, priority),
 		rtc_isr, 0, 0);
-	irq_enable(DT_INST_0_TI_CC13XX_CC26XX_RTC_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
