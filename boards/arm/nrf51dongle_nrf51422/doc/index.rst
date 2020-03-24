@@ -1,7 +1,7 @@
-.. _nrf51_pca10031:
+.. _nrf51dongle_nrf51422:
 
-nRF51-PCA10031
-##############
+nRF51 Dongle
+############
 
 Overview
 ********
@@ -22,16 +22,20 @@ Semiconductor nRF51822 ARM Cortex-M0 CPU and the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf51_pca10031.jpg
+.. figure:: img/nrf51dongle_nrf51422.jpg
      :width: 442px
      :align: center
-     :alt: nRF51 PCA10031 Dongle
+     :alt: nRF51 Dongle
 
-     nRF51 PCA10031 Dongle (Credit: Nordic Semiconductor)
+     nRF51 Dongle (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
 `nRF51 Dongle website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
+
+.. note::
+
+   In previous Zephyr releases this board was named *nrf51_pca10031*.
 
 Hardware
 ********
@@ -43,7 +47,7 @@ is 16 MHz.
 Supported Features
 ==================
 
-The nrf51_pca10031 board configuration supports the following nRF51
+The nrf51dongle_nrf51422 board configuration supports the following nRF51
 hardware features:
 
 +-----------+------------+----------------------+
@@ -120,7 +124,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf51_pca10031
+   :board: nrf51dongle_nrf51422
    :goals: build flash
 
 Debugging
