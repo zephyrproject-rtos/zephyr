@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_xec_espi
+
 #include <kernel.h>
 #include <soc.h>
 #include <errno.h>
@@ -1025,13 +1027,13 @@ static const struct espi_driver_api espi_xec_driver_api = {
 static struct espi_xec_data espi_xec_data;
 
 static const struct espi_xec_config espi_xec_config = {
-	.base_addr = DT_INST_0_MICROCHIP_XEC_ESPI_BASE_ADDRESS,
-	.bus_girq_id = DT_INST_0_MICROCHIP_XEC_ESPI_IO_GIRQ,
-	.vw_girq_id = DT_INST_0_MICROCHIP_XEC_ESPI_VW_GIRQ,
-	.pc_girq_id = DT_INST_0_MICROCHIP_XEC_ESPI_PC_GIRQ,
+	.base_addr = DT_INST_REG_ADDR(0),
+	.bus_girq_id = DT_INST_PROP(0, io_girq),
+	.vw_girq_id = DT_INST_PROP(0, vw_girq),
+	.pc_girq_id = DT_INST_PROP(0, pc_girq),
 };
 
-DEVICE_AND_API_INIT(espi_xec_0, DT_INST_0_MICROCHIP_XEC_ESPI_LABEL,
+DEVICE_AND_API_INIT(espi_xec_0, DT_INST_LABEL(0),
 		    &espi_xec_init, &espi_xec_data, &espi_xec_config,
 		    PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
 		    &espi_xec_driver_api);
@@ -1116,27 +1118,27 @@ static int espi_xec_init(struct device *dev)
 #endif
 	/* Enable aggregated interrupt block for eSPI bus events */
 	MCHP_GIRQ_BLK_SETEN(config->bus_girq_id);
-	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_0,
-		    DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    espi_xec_bus_isr,
 		    DEVICE_GET(espi_xec_0), 0);
-	irq_enable(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	/* Enable aggregated interrupt block for eSPI VWire events */
 	MCHP_GIRQ_BLK_SETEN(config->vw_girq_id);
-	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_1,
-		    DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_1_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 1, irq),
+		    DT_INST_IRQ_BY_IDX(0, 1, priority),
 		    espi_xec_vw_isr,
 		    DEVICE_GET(espi_xec_0), 0);
-	irq_enable(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_1);
+	irq_enable(DT_INST_IRQ_BY_IDX(0, 1, irq));
 
 	/* Enable aggregated interrupt block for eSPI peripheral channel */
 	MCHP_GIRQ_BLK_SETEN(config->pc_girq_id);
-	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_2,
-		    DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_2_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 2, irq),
+		    DT_INST_IRQ_BY_IDX(0, 2, priority),
 		    espi_xec_periph_isr,
 		    DEVICE_GET(espi_xec_0), 0);
-	irq_enable(DT_INST_0_MICROCHIP_XEC_ESPI_IRQ_2);
+	irq_enable(DT_INST_IRQ_BY_IDX(0, 2, irq));
 
 	return 0;
 }

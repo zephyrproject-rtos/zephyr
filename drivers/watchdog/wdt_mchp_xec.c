@@ -1,5 +1,7 @@
 /* wdt_xec.c - Microchip XEC watchdog driver */
 
+#define DT_DRV_COMPAT microchip_xec_watchdog
+
 /*
  * Copyright (c) 2019 Intel Corporation.
  *
@@ -16,7 +18,7 @@ LOG_MODULE_REGISTER(wdt_mchp_xec);
 #include <assert.h>
 
 #define WDT_XEC_REG_BASE						\
-	((WDT_Type *)(DT_INST_0_MICROCHIP_XEC_WATCHDOG_BASE_ADDRESS))
+	((WDT_Type *)(DT_INST_REG_ADDR(0)))
 
 struct wdt_xec_data {
 	wdt_callback_t cb;
@@ -167,17 +169,17 @@ static int wdt_xec_init(struct device *dev)
 
 	MCHP_GIRQ_ENSET(MCHP_WDT_GIRQ) = MCHP_WDT_GIRQ_VAL;
 
-	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_WATCHDOG_IRQ_0,
-		    DT_INST_0_MICROCHIP_XEC_WATCHDOG_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    wdt_xec_isr, DEVICE_GET(wdt_xec), 0);
-	irq_enable(DT_INST_0_MICROCHIP_XEC_WATCHDOG_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
 
 static struct wdt_xec_data wdt_xec_dev_data;
 
-DEVICE_AND_API_INIT(wdt_xec, DT_INST_0_MICROCHIP_XEC_WATCHDOG_LABEL,
+DEVICE_AND_API_INIT(wdt_xec, DT_INST_LABEL(0),
 		    wdt_xec_init, &wdt_xec_dev_data, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &wdt_xec_api);

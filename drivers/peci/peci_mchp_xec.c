@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_xec_peci
+
 #include <errno.h>
 #include <device.h>
 #include <drivers/peci.h>
@@ -40,8 +42,8 @@ static struct peci_xec_data peci_data;
 #endif
 
 static const struct peci_xec_config peci_xec_config = {
-	.base = (PECI_Type *) DT_INST_0_MICROCHIP_XEC_PECI_BASE_ADDRESS,
-	.irq_num = DT_INST_0_MICROCHIP_XEC_PECI_IRQ_0,
+	.base = (PECI_Type *) DT_INST_REG_ADDR(0),
+	.irq_num = DT_INST_IRQN(0),
 };
 
 static int check_bus_idle(PECI_Type *base)
@@ -347,13 +349,13 @@ static int peci_xec_init(struct device *dev)
 
 	/* Direct NVIC */
 	IRQ_CONNECT(peci_xec_config.irq_num,
-		    DT_INST_0_MICROCHIP_XEC_PECI_IRQ_0_PRIORITY,
+		    DT_INST_IRQ(0, priority),
 		    peci_xec_isr, NULL, 0);
 #endif
 	return 0;
 }
 
-DEVICE_AND_API_INIT(peci_xec, DT_INST_0_MICROCHIP_XEC_PECI_LABEL,
+DEVICE_AND_API_INIT(peci_xec, DT_INST_LABEL(0),
 		    &peci_xec_init,
 		    NULL, NULL,
 		    POST_KERNEL, CONFIG_PECI_INIT_PRIORITY,

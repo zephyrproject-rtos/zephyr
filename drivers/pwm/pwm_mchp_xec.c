@@ -1,5 +1,7 @@
 /* pwm_mchp_xec.c - Microchip XEC PWM driver */
 
+#define DT_DRV_COMPAT microchip_xec_pwm
+
 /*
  * Copyright (c) 2019 Intel Corporation
  *
@@ -380,119 +382,119 @@ static struct pwm_driver_api pwm_xec_api = {
 	.get_cycles_per_sec = pwm_xec_get_cycles_per_sec
 };
 
-#if defined(DT_INST_0_MICROCHIP_XEC_PWM)
+#if DT_HAS_DRV_INST(0)
 
 static struct pwm_xec_config pwm_xec_dev_config_0 = {
-	.base_address = DT_INST_0_MICROCHIP_XEC_PWM_BASE_ADDRESS
+	.base_address = DT_INST_REG_ADDR(0)
 };
 
-DEVICE_AND_API_INIT(pwm_xec_0, DT_INST_0_MICROCHIP_XEC_PWM_LABEL,
+DEVICE_AND_API_INIT(pwm_xec_0, DT_INST_LABEL(0),
 		    pwm_xec_init, NULL, &pwm_xec_dev_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pwm_xec_api);
 
-#endif /* DT_INST_0_MICROCHIP_XEC_PWM */
+#endif /* DT_HAS_DRV_INST(0) */
 
-#if defined(DT_INST_1_MICROCHIP_XEC_PWM)
+#if DT_HAS_DRV_INST(1)
 
 static struct pwm_xec_config pwm_xec_dev_config_1 = {
-	.base_address = DT_INST_1_MICROCHIP_XEC_PWM_BASE_ADDRESS
+	.base_address = DT_INST_REG_ADDR(1)
 };
 
-DEVICE_AND_API_INIT(pwm_xec_1, DT_INST_1_MICROCHIP_XEC_PWM_LABEL,
+DEVICE_AND_API_INIT(pwm_xec_1, DT_INST_LABEL(1),
 		    pwm_xec_init, NULL, &pwm_xec_dev_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pwm_xec_api);
 
-#endif /* DT_INST_1_MICROCHIP_XEC_PWM */
+#endif /* DT_HAS_DRV_INST(1) */
 
-#if defined(DT_INST_2_MICROCHIP_XEC_PWM)
+#if DT_HAS_DRV_INST(2)
 
 static struct pwm_xec_config pwm_xec_dev_config_2 = {
-	.base_address = DT_INST_2_MICROCHIP_XEC_PWM_BASE_ADDRESS
+	.base_address = DT_INST_REG_ADDR(2)
 };
 
-DEVICE_AND_API_INIT(pwm_xec_2, DT_INST_2_MICROCHIP_XEC_PWM_LABEL,
+DEVICE_AND_API_INIT(pwm_xec_2, DT_INST_LABEL(2),
 		    pwm_xec_init, NULL, &pwm_xec_dev_config_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pwm_xec_api);
 
-#endif /* DT_INST_2_MICROCHIP_XEC_PWM */
+#endif /* DT_HAS_DRV_INST(2) */
 
-#if defined(DT_INST_3_MICROCHIP_XEC_PWM)
+#if DT_HAS_DRV_INST(3)
 
 static struct pwm_xec_config pwm_xec_dev_config_3 = {
-	.base_address = DT_INST_3_MICROCHIP_XEC_PWM_BASE_ADDRESS
+	.base_address = DT_INST_REG_ADDR(3)
 };
 
-DEVICE_AND_API_INIT(pwm_xec_3, DT_INST_3_MICROCHIP_XEC_PWM_LABEL,
+DEVICE_AND_API_INIT(pwm_xec_3, DT_INST_LABEL(3),
 		    pwm_xec_init, NULL, &pwm_xec_dev_config_3,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pwm_xec_api);
 
-#endif /* DT_INST_3_MICROCHIP_XEC_PWM */
+#endif /* DT_HAS_DRV_INST(3) */
 
-#if defined(DT_INST_4_MICROCHIP_XEC_PWM)
+#if DT_HAS_DRV_INST(4)
 
 static struct pwm_xec_config pwm_xec_dev_config_4 = {
-	.base_address = DT_INST_4_MICROCHIP_XEC_PWM_BASE_ADDRESS
+	.base_address = DT_INST_REG_ADDR(4)
 };
 
-DEVICE_AND_API_INIT(pwm_xec_4, DT_INST_4_MICROCHIP_XEC_PWM_LABEL,
+DEVICE_AND_API_INIT(pwm_xec_4, DT_INST_LABEL(4),
 		    pwm_xec_init, NULL, &pwm_xec_dev_config_4,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pwm_xec_api);
 
-#endif /* DT_INST_4_MICROCHIP_XEC_PWM */
+#endif /* DT_HAS_DRV_INST(4) */
 
-#if defined(DT_INST_5_MICROCHIP_XEC_PWM)
+#if DT_HAS_DRV_INST(5)
 
 static struct pwm_xec_config pwm_xec_dev_config_5 = {
-	.base_address = DT_INST_5_MICROCHIP_XEC_PWM_BASE_ADDRESS
+	.base_address = DT_INST_REG_ADDR(5)
 };
 
-DEVICE_AND_API_INIT(pwm_xec_5, DT_INST_5_MICROCHIP_XEC_PWM_LABEL,
+DEVICE_AND_API_INIT(pwm_xec_5, DT_INST_LABEL(5),
 		    pwm_xec_init, NULL, &pwm_xec_dev_config_5,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pwm_xec_api);
 
-#endif /* DT_INST_5_MICROCHIP_XEC_PWM */
+#endif /* DT_HAS_DRV_INST(5) */
 
-#if defined(DT_INST_6_MICROCHIP_XEC_PWM)
+#if DT_HAS_DRV_INST(6)
 
 static struct pwm_xec_config pwm_xec_dev_config_6 = {
-	.base_address = DT_INST_6_MICROCHIP_XEC_PWM_BASE_ADDRESS
+	.base_address = DT_INST_REG_ADDR(6)
 };
 
-DEVICE_AND_API_INIT(pwm_xec_6, DT_INST_6_MICROCHIP_XEC_PWM_LABEL,
+DEVICE_AND_API_INIT(pwm_xec_6, DT_INST_LABEL(6),
 		    pwm_xec_init, NULL, &pwm_xec_dev_config_6,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pwm_xec_api);
 
-#endif /* DT_INST_6_MICROCHIP_XEC_PWM */
+#endif /* DT_HAS_DRV_INST(6) */
 
-#if defined(DT_INST_7_MICROCHIP_XEC_PWM)
+#if DT_HAS_DRV_INST(7)
 
 static struct pwm_xec_config pwm_xec_dev_config_7 = {
-	.base_address = DT_INST_7_MICROCHIP_XEC_PWM_BASE_ADDRESS
+	.base_address = DT_INST_REG_ADDR(7)
 };
 
-DEVICE_AND_API_INIT(pwm_xec_7, DT_INST_7_MICROCHIP_XEC_PWM_LABEL,
+DEVICE_AND_API_INIT(pwm_xec_7, DT_INST_LABEL(7),
 		    pwm_xec_init, NULL, &pwm_xec_dev_config_7,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pwm_xec_api);
 
-#endif /* DT_INST_7_MICROCHIP_XEC_PWM */
+#endif /* DT_HAS_DRV_INST(7) */
 
-#if defined(DT_INST_8_MICROCHIP_XEC_PWM)
+#if DT_HAS_DRV_INST(8)
 
 static struct pwm_xec_config pwm_xec_dev_config_8 = {
-	.base_address = DT_INST_8_MICROCHIP_XEC_PWM_BASE_ADDRESS
+	.base_address = DT_INST_REG_ADDR(8)
 };
 
-DEVICE_AND_API_INIT(pwm_xec_8, DT_INST_8_MICROCHIP_XEC_PWM_LABEL,
+DEVICE_AND_API_INIT(pwm_xec_8, DT_INST_LABEL(8),
 		    pwm_xec_init, NULL, &pwm_xec_dev_config_8,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pwm_xec_api);
 
-#endif /* DT_INST_8_MICROCHIP_XEC_PWM */
+#endif /* DT_HAS_DRV_INST(8) */
