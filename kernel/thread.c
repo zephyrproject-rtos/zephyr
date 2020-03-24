@@ -843,17 +843,6 @@ static inline int z_vrfy_k_float_disable(struct k_thread *thread)
 	return z_impl_k_float_disable(thread);
 }
 #include <syscalls/k_float_disable_mrsh.c>
-
-static inline void z_vrfy_k_thread_abort(k_tid_t thread)
-{
-	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!(thread->base.user_options & K_ESSENTIAL),
-				    "aborting essential thread %p", thread));
-
-	z_impl_k_thread_abort((struct k_thread *)thread);
-}
-#include <syscalls/k_thread_abort_mrsh.c>
-
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_IRQ_OFFLOAD

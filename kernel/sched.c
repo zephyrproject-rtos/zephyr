@@ -1472,7 +1472,7 @@ static bool thread_obj_validate(struct k_thread *thread)
 	CODE_UNREACHABLE;
 }
 
-int z_vrfy_k_thread_join(struct k_thread *thread, s32_t timeout)
+static inline int z_vrfy_k_thread_join(struct k_thread *thread, s32_t timeout)
 {
 	if (thread_obj_validate(thread)) {
 		return 0;
@@ -1481,4 +1481,17 @@ int z_vrfy_k_thread_join(struct k_thread *thread, s32_t timeout)
 	return z_impl_k_thread_join(thread, timeout);
 }
 #include <syscalls/k_thread_join_mrsh.c>
+
+static inline void z_vrfy_k_thread_abort(k_tid_t thread)
+{
+	if (thread_obj_validate(thread)) {
+		return;
+	}
+
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!(thread->base.user_options & K_ESSENTIAL),
+				    "aborting essential thread %p", thread));
+
+	z_impl_k_thread_abort((struct k_thread *)thread);
+}
+#include <syscalls/k_thread_abort_mrsh.c>
 #endif /* CONFIG_USERSPACE */
