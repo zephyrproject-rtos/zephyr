@@ -331,6 +331,71 @@ For example:
     }
     #include <syscalls/k_sem_take_mrsh.c>
 
+Verification Policies
+=====================
+
+When verifying system calls, it's important to note which kinds of verification
+failures should propagate a return value to the caller, and which should
+simply invoke :c:macro:`Z_OOPS()` which kills the calling thread. The current
+coventions are as follows:
+
+#. For system calls that are defined but not compiled, invocations of these
+   missing system calls are routed to :c:func:`handler_no_syscall()` which
+   invokes :c:macro:`Z_OOPS()`.
+
+#. Any invalid access to memory found by the set of ``Z_SYSCALL_MEMORY`` APIs,
+   :c:func:`z_user_from_copy()`, :c:func:`z_user_to_copy()`
+   should trigger a :c:macro:`Z_OOPS`. This happens when the caller doesn't have
+   appropriate permissions on the memory buffer or some size calculation
+   overflowed.
+
+#. Most system calls take kernel object pointers as an argument, checked either
+   with one of the ``Z_SYSCALL_OBJ`` functions,  ``Z_SYSCALL_DRIVER_nnnnn``, or
+   manually using :c:func:`z_object_validate()`. These can fail for a variety
+   of reasons: missing driver API, bad kernel object pointer, wrong kernel
+   object type, or improper initialization state. These issues should always
+   invoke :c:macro:`Z_OOPS()`.
+
+#. Any error resulting from a failed memory heap allocation, often from
+   invoking :c:func:`z_thread_malloc()`, should propagate ``-ENOMEM`` to the
+   caller.
+
+#. General parameter checks should be done in the implementation function,
+   in most cases using ``CHECKIF()``.
+
+   * The behavior of ``CHECKIF()`` depends on the kernel configuration, but if
+     user mode is enabled, :option:`CONFIG_RUNTIME_ERROR_CHECKS` is enforced,
+     which guarantees that these checks will be made and a return value
+     propagated.
+
+#. It is totally forbidden for any kind of kernel mode callback function to
+   be registered from user mode. APIs which simply install callbacks shall not
+   be exposed as system calls. Some driver subsystem APIs may take optional
+   function callback pointers. User mode verification functions for these APIs
+   must enforce that these are NULL and should invoke :c:macro:`Z_OOPS()` if
+   not.
+
+#. Some parameter checks are enforced only from user mode. These should be
+   checked in the verification function and propagate a return value to the
+   caller if possible.
+
+There are some known exceptions to these policies currently in Zephyr:
+
+* :c:func:`k_thread_join()` and :c:func:`k_thread_abort()` are no-ops if
+  the thread object isn't initialized. This is because for threads, the
+  initialization bit pulls double-duty to indicate whether a thread is
+  running, cleared upon exit. See #23030.
+
+* :c:func:`k_thread_create()` invokes :c:macro:`Z_OOPS()` for parameter
+  checks, due to a great deal of existing code ignoring the return value.
+  This will also be addressed by #23030.
+
+* :c:func:`k_thread_abort()` invokes :c:macro:`Z_OOPS()` if an essential
+  thread is aborted, as the function has no return value.
+
+* Various system calls related to logging invoke :c:macro:`Z_OOPS()`
+  when bad parameters are passed in as they do not propagate errors.
+
 Configuration Options
 *********************
 
