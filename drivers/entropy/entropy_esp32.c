@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT espressif_esp32_trng
+
 #include <string.h>
 #include <drivers/entropy.h>
 
@@ -17,7 +19,7 @@ static inline u32_t entropy_esp32_get_u32(void)
 	 * https://www.esp32.com/viewtopic.php?f=2&t=3033&p=14227
 	 * also check: ECO and Workarounds for Bugs Document, point 3.3
 	 */
-	volatile u32_t *rng_data_reg = (u32_t *)DT_INST_0_ESPRESSIF_ESP32_TRNG_BASE_ADDRESS;
+	volatile u32_t *rng_data_reg = (u32_t *)DT_INST_REG_ADDR(0);
 
 	/* Read just once.  This is not optimal as the generator has
 	 * limited throughput due to scarce sources of entropy, specially
@@ -54,7 +56,7 @@ static struct entropy_driver_api entropy_esp32_api_funcs = {
 	.get_entropy = entropy_esp32_get_entropy
 };
 
-DEVICE_AND_API_INIT(entropy_esp32, DT_INST_0_ESPRESSIF_ESP32_TRNG_LABEL,
+DEVICE_AND_API_INIT(entropy_esp32, DT_INST_LABEL(0),
 		    entropy_esp32_init, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_esp32_api_funcs);

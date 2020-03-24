@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT espressif_esp32_watchdog
+
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <soc/rtc_cntl_reg.h>
 #include <soc/timer_group_reg.h>
@@ -237,7 +239,7 @@ static const struct wdt_driver_api wdt_api = {
 													   \
 	static struct wdt_esp32_data wdt##idx##_data;							   \
 	static struct wdt_esp32_config wdt_esp32_config##idx = {					   \
-		.base = (struct wdt_esp32_regs_t *) DT_INST_##idx##_ESPRESSIF_ESP32_WATCHDOG_BASE_ADDRESS, \
+		.base = (struct wdt_esp32_regs_t *) DT_INST_REG_ADDR(idx), \
 		.irq_regs = {										   \
 			.timer_int_ena = (u32_t *)TIMG_INT_ENA_TIMERS_REG(idx),				   \
 			.timer_int_clr = (u32_t *)TIMG_INT_CLR_TIMERS_REG(idx),				   \
@@ -249,7 +251,7 @@ static const struct wdt_driver_api wdt_api = {
 		.connect_irq = wdt_esp32_connect_irq_func##idx						   \
 	};												   \
 													   \
-	DEVICE_AND_API_INIT(wdt_esp32_##idx, DT_INST_##idx##_ESPRESSIF_ESP32_WATCHDOG_LABEL,		   \
+	DEVICE_AND_API_INIT(wdt_esp32_##idx, DT_INST_LABEL(idx),		   \
 			    wdt_esp32_init,								   \
 			    &wdt##idx##_data,								   \
 			    &wdt_esp32_config##idx,							   \
@@ -268,10 +270,10 @@ static void wdt_esp32_isr(struct device *dev)
 }
 
 
-#ifdef DT_INST_0_ESPRESSIF_ESP32_WATCHDOG
+#if DT_HAS_DRV_INST(0)
 ESP32_WDT_INIT(0);
 #endif
 
-#ifdef DT_INST_1_ESPRESSIF_ESP32_WATCHDOG
+#if DT_HAS_DRV_INST(1)
 ESP32_WDT_INIT(1);
 #endif
