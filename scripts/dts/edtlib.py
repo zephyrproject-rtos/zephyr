@@ -258,12 +258,12 @@ class EDT:
                         self._graph.add_edge(node, phandle_node)
                 elif prop.type == 'phandle-array':
                     for cd in prop.val:
-                        self._graph.add_edge(node, cd.controller)
+                        self._graph.add_edge(node, cd.controller.node)
 
             # A Node depends on whatever supports the interrupts it
             # generates.
             for intr in node.interrupts:
-                self._graph.add_edge(node, intr.controller)
+                self._graph.add_edge(node, intr.controller.node)
 
         # Calculate an order that ensures no node is before any node
         # it depends on.  This sets the dep_ordinal field in each
@@ -498,6 +498,7 @@ class EDT:
             node = Node()
             node.edt = self
             node._node = dt_node
+            node.controllers = {}
             node.bus_node = node._bus_node()
             node._init_binding()
             node._init_regs()
@@ -1316,10 +1317,14 @@ class Node:
         for controller_node, data in _interrupts(node):
             interrupt = ControllerAndData()
             interrupt.node = self
-            interrupt.controller = self.edt._node2enode[controller_node]
-            interrupt.data = self._named_cells(interrupt.controller, data,
+            ctrl = self.edt._node2enode[controller_node]
+            if "interrupt" not in ctrl.controllers:
+                ctrl.controllers["interrupt"] = Controller(ctrl)
+            interrupt.controller = ctrl.controllers["interrupt"]
+            interrupt.data = self._named_cells(interrupt.controller.node, data,
                                                "interrupt")
 
+            interrupt.controller.specifiers.append(interrupt)
             self.interrupts.append(interrupt)
 
         _add_names(node, "interrupt", self.interrupts)
@@ -1363,9 +1368,14 @@ class Node:
 
             entry = ControllerAndData()
             entry.node = self
-            entry.controller = self.edt._node2enode[mapped_controller]
-            entry.data = self._named_cells(entry.controller, mapped_data,
+            ctrl = self.edt._node2enode[mapped_controller]
+            if basename not in ctrl.controllers:
+                ctrl.controllers[basename] = init_controller(basename, ctrl)
+            entry.controller = ctrl.controllers[basename]
+            entry.data = self._named_cells(entry.controller.node, mapped_data,
                                            basename)
+
+            entry.controller.specifiers.append(entry)
 
             res.append(entry)
 
@@ -1434,6 +1444,49 @@ class Register:
             fields.append("size: " + hex(self.size))
 
         return "<Register, {}>".format(", ".join(fields))
+
+
+def init_controller(controller_type, node):
+    map = {}
+    c = map.get(controller_type, Controller)
+    return c(node)
+
+
+class Controller:
+    """
+    node:
+      The Node instance the property appears on
+
+    controller:
+    """
+    def __init__(self, node):
+        """
+        Controller constructor. This is the top-level entry point to the library.
+
+        node:
+          The Node instance the property appears on
+        """
+        self.node = node
+
+        self.pri = node._binding.get("cells-primary", None)
+
+        self.specifiers = []
+
+    def __repr__(self):
+        fields = []
+
+        if self.name is not None:
+            fields.append("name: " + self.name)
+
+#        fields.append("controller: {}".format(self.controller))
+#        fields.append("data: {}".format(self.data))
+        print("YCTRL %s" % self.node.name)
+
+        if self.pri:
+            for s in self.specifiers:
+                print("%s = %s[%s] (%s)" % (self.pri, s.data[self.pri], s.name, s.node.name))
+
+        return "<Controller, {}>".format(", ".join(fields))
 
 
 class ControllerAndData:
