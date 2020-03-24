@@ -2692,9 +2692,21 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 			*rx_enqueue = 1U;
 		}
 	} else {
-		/* Drop response with no Local initiated request. */
-		LL_ASSERT(pdu_data_rx->llctrl.opcode ==
-			  PDU_DATA_LLCTRL_TYPE_LENGTH_RSP);
+		/* Drop response with no Local initiated request and duplicate
+		 * requests.
+		 */
+		if (pdu_data_rx->llctrl.opcode !=
+		    PDU_DATA_LLCTRL_TYPE_LENGTH_RSP) {
+			mem_release(node_tx, &_radio.pkt_tx_ctrl_free);
+
+			/* Defer new request if previous in resize state */
+			if (_radio.conn_curr->llcp_length.state ==
+			    LLCP_LENGTH_STATE_RESIZE) {
+				return 1U;
+			}
+		}
+
+		return 0;
 	}
 
 send_length_resp:
