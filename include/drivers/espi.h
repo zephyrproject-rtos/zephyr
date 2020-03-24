@@ -705,7 +705,7 @@ static inline int z_impl_espi_receive_oob(struct device *dev,
 __syscall int espi_read_flash(struct device *dev,
 			      struct espi_flash_packet pckt);
 
-static inline int z_impl_espi_flash_read(struct device *dev,
+static inline int z_impl_espi_read_flash(struct device *dev,
 					 struct espi_flash_packet pckt)
 {
 	const struct espi_driver_api *api =
@@ -734,7 +734,7 @@ static inline int z_impl_espi_flash_read(struct device *dev,
 __syscall int espi_write_flash(struct device *dev,
 			       struct espi_flash_packet pckt);
 
-static inline int z_impl_espi_flash_write(struct device *dev,
+static inline int z_impl_espi_write_flash(struct device *dev,
 					  struct espi_flash_packet pckt)
 {
 	const struct espi_driver_api *api =
