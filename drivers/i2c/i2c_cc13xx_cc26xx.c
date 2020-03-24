@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_cc13xx_cc26xx_i2c
+
 #include <kernel.h>
 #include <drivers/i2c.h>
 #include <power/power.h>
@@ -427,16 +429,16 @@ static int i2c_cc13xx_cc26xx_init(struct device *dev)
 	}
 #endif
 
-	IRQ_CONNECT(DT_INST_0_TI_CC13XX_CC26XX_I2C_IRQ_0,
-		    DT_INST_0_TI_CC13XX_CC26XX_I2C_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    i2c_cc13xx_cc26xx_isr, DEVICE_GET(i2c_cc13xx_cc26xx), 0);
-	irq_enable(DT_INST_0_TI_CC13XX_CC26XX_I2C_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	/* Configure IOC module to route SDA and SCL signals */
 	IOCPinTypeI2c(get_dev_config(dev)->base, get_dev_config(dev)->sda_pin,
 		      get_dev_config(dev)->scl_pin);
 
-	cfg = i2c_map_dt_bitrate(DT_INST_0_TI_CC13XX_CC26XX_I2C_CLOCK_FREQUENCY);
+	cfg = i2c_map_dt_bitrate(DT_INST_PROP(0, clock_frequency));
 	err = i2c_cc13xx_cc26xx_configure(dev, cfg | I2C_MODE_MASTER);
 	if (err) {
 		LOG_ERR("Failed to configure");
@@ -454,9 +456,9 @@ static const struct i2c_driver_api i2c_cc13xx_cc26xx_driver_api = {
 };
 
 static const struct i2c_cc13xx_cc26xx_config i2c_cc13xx_cc26xx_config = {
-	.base = DT_INST_0_TI_CC13XX_CC26XX_I2C_BASE_ADDRESS,
-	.sda_pin = DT_INST_0_TI_CC13XX_CC26XX_I2C_SDA_PIN,
-	.scl_pin = DT_INST_0_TI_CC13XX_CC26XX_I2C_SCL_PIN
+	.base = DT_INST_REG_ADDR(0),
+	.sda_pin = DT_INST_PROP(0, sda_pin),
+	.scl_pin = DT_INST_PROP(0, scl_pin)
 };
 
 static struct i2c_cc13xx_cc26xx_data i2c_cc13xx_cc26xx_data = {
@@ -466,14 +468,14 @@ static struct i2c_cc13xx_cc26xx_data i2c_cc13xx_cc26xx_data = {
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_DEFINE(i2c_cc13xx_cc26xx, DT_INST_0_TI_CC13XX_CC26XX_I2C_LABEL,
+DEVICE_DEFINE(i2c_cc13xx_cc26xx, DT_INST_LABEL(0),
 		i2c_cc13xx_cc26xx_init,
 		i2c_cc13xx_cc26xx_pm_control,
 		&i2c_cc13xx_cc26xx_data, &i2c_cc13xx_cc26xx_config,
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		&i2c_cc13xx_cc26xx_driver_api);
 #else
-DEVICE_AND_API_INIT(i2c_cc13xx_cc26xx, DT_INST_0_TI_CC13XX_CC26XX_I2C_LABEL,
+DEVICE_AND_API_INIT(i2c_cc13xx_cc26xx, DT_INST_LABEL(0),
 		    i2c_cc13xx_cc26xx_init, &i2c_cc13xx_cc26xx_data,
 		    &i2c_cc13xx_cc26xx_config, POST_KERNEL,
 		    CONFIG_I2C_INIT_PRIORITY, &i2c_cc13xx_cc26xx_driver_api);
