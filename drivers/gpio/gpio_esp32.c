@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT espressif_esp32_gpio
+
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <soc/dport_reg.h>
 #include <soc/gpio_reg.h>
@@ -361,10 +363,10 @@ static struct gpio_esp32_data gpio_1_data = { /* 32..39 */
 
 #define GPIO_DEVICE_INIT(_id) \
 	static struct gpio_driver_config gpio_##_id##_cfg = { \
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_##_id##_ESPRESSIF_ESP32_GPIO_NGPIOS),\
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(_id, ngpios)),\
 	}; \
 	DEVICE_AND_API_INIT(gpio_esp32_##_id,				\
-			    DT_INST_##_id##_ESPRESSIF_ESP32_GPIO_LABEL,	\
+			    DT_INST_LABEL(_id),	\
 			    gpio_esp32_init,				\
 			    &gpio_##_id##_data, &gpio_##_id##_cfg,	\
 			    POST_KERNEL,				\
