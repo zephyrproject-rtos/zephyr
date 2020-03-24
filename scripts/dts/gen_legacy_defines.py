@@ -490,7 +490,7 @@ def write_irqs(node):
     def map_arm_gic_irq_type(irq, irq_num):
         # Maps ARM GIC IRQ (type)+(index) combo to linear IRQ number
         if "type" not in irq.data:
-            err(f"Expected binding for {irq.controller!r} to have 'type' in "
+            err(f"Expected binding for {irq.controller.node!r} to have 'type' in "
                 "interrupt-cells")
         irq_type = irq.data["type"]
 
@@ -504,7 +504,7 @@ def write_irqs(node):
         # See doc/reference/kernel/other/interrupts.rst for details
         # on how this encoding works
 
-        irq_ctrl = irq.controller
+        irq_ctrl = irq.controller.node
         # Look for interrupt controller parent until we have none
         while irq_ctrl.interrupts:
             irq_num = (irq_num + 1) << 8
@@ -512,14 +512,14 @@ def write_irqs(node):
                 err(f"Expected binding for {irq_ctrl!r} to have 'irq' in "
                     "interrupt-cells")
             irq_num |= irq_ctrl.interrupts[0].data["irq"]
-            irq_ctrl = irq_ctrl.interrupts[0].controller
+            irq_ctrl = irq_ctrl.interrupts[0].controller.node
         return irq_num
 
     for irq_i, irq in enumerate(node.interrupts):
         for cell_name, cell_value in irq.data.items():
             ident = f"IRQ_{irq_i}"
             if cell_name == "irq":
-                if "arm,gic" in irq.controller.compats:
+                if "arm,gic" in irq.controller.node.compats:
                     cell_value = map_arm_gic_irq_type(irq, cell_value)
                 cell_value = encode_zephyr_multi_level_irq(irq, cell_value)
             else:
@@ -587,7 +587,7 @@ def write_phandle_val_list_entry(node, entry, i, ident):
     # initializer for the entire entry.
 
     initializer_vals = []
-    if entry.controller.label is not None:
+    if entry.controller.node.label is not None:
         ctrl_ident = ident + "_CONTROLLER"  # e.g. PWMS_CONTROLLER
         if entry.name:
             name_alias = f"{str2ident(entry.name)}_{ctrl_ident}"
@@ -597,8 +597,8 @@ def write_phandle_val_list_entry(node, entry, i, ident):
         # more than one entry.
         if i is not None:
             ctrl_ident += f"_{i}"
-        initializer_vals.append(quote_str(entry.controller.label))
-        out_node_s(node, ctrl_ident, entry.controller.label, name_alias)
+        initializer_vals.append(quote_str(entry.controller.node.label))
+        out_node_s(node, ctrl_ident, entry.controller.node.label, name_alias)
 
     for cell, val in entry.data.items():
         cell_ident = f"{ident}_{str2ident(cell)}"  # e.g. PWMS_CHANNEL
@@ -637,7 +637,7 @@ def write_clocks(node):
         return
 
     for clock_i, clock in enumerate(node.props["clocks"].val):
-        controller = clock.controller
+        controller = clock.controller.node
 
         if controller.label is not None:
             out_node_s(node, "CLOCK_CONTROLLER", controller.label)

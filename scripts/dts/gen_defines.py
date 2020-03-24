@@ -270,7 +270,7 @@ def write_interrupts(node):
     def map_arm_gic_irq_type(irq, irq_num):
         # Maps ARM GIC IRQ (type)+(index) combo to linear IRQ number
         if "type" not in irq.data:
-            err(f"Expected binding for {irq.controller!r} to have 'type' in "
+            err(f"Expected binding for {irq.controller.node!r} to have 'type' in "
                 "interrupt-cells")
         irq_type = irq.data["type"]
 
@@ -284,7 +284,7 @@ def write_interrupts(node):
         # See doc/reference/kernel/other/interrupts.rst for details
         # on how this encoding works
 
-        irq_ctrl = irq.controller
+        irq_ctrl = irq.controller.node
         # Look for interrupt controller parent until we have none
         while irq_ctrl.interrupts:
             irq_num = (irq_num + 1) << 8
@@ -292,7 +292,7 @@ def write_interrupts(node):
                 err(f"Expected binding for {irq_ctrl!r} to have 'irq' in "
                     "interrupt-cells")
             irq_num |= irq_ctrl.interrupts[0].data["irq"]
-            irq_ctrl = irq_ctrl.interrupts[0].controller
+            irq_ctrl = irq_ctrl.interrupts[0].controller.node
         return irq_num
 
     idx_vals = []
@@ -307,7 +307,7 @@ def write_interrupts(node):
             name = str2ident(cell_name)
 
             if cell_name == "irq":
-                if "arm,gic" in irq.controller.compats:
+                if "arm,gic" in irq.controller.node.compats:
                     cell_value = map_arm_gic_irq_type(irq, cell_value)
                 cell_value = encode_zephyr_multi_level_irq(irq, cell_value)
 
@@ -473,7 +473,7 @@ def controller_and_data_macros(entry, i, macro):
     data = entry.data
 
     # DT_N_<node-id>_P_<prop-id>_IDX_<i>_PH
-    ret[f"{macro}_IDX_{i}_PH"] = f"DT_{entry.controller.z_path_id}"
+    ret[f"{macro}_IDX_{i}_PH"] = f"DT_{entry.controller.node.z_path_id}"
     # DT_N_<node-id>_P_<prop-id>_IDX_<i>_VAL_<VAL>
     for cell, val in data.items():
         ret[f"{macro}_IDX_{i}_VAL_{str2ident(cell)}"] = val
@@ -486,7 +486,7 @@ def controller_and_data_macros(entry, i, macro):
     # DT_N_<node-id>_P_<prop-id>_IDX_<i>_NAME
     ret[f"{macro}_IDX_{i}_NAME"] = quote_str(entry.name)
     # DT_N_<node-id>_P_<prop-id>_NAME_<NAME>_PH
-    ret[f"{macro}_NAME_{name}_PH"] = f"DT_{entry.controller.z_path_id}"
+    ret[f"{macro}_NAME_{name}_PH"] = f"DT_{entry.controller.node.z_path_id}"
     # DT_N_<node-id>_P_<prop-id>_NAME_<NAME>_VAL_<VAL>
     for cell, val in data.items():
         cell_ident = str2ident(cell)
