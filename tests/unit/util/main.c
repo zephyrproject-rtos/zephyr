@@ -110,6 +110,39 @@ void test_COND_CODE_0(void)
 	zassert_true((y3 == 1), NULL);
 }
 
+#undef ZERO
+#undef SEVEN
+#undef A_BUILD_ERROR
+#define ZERO 0
+#define SEVEN 7
+#define A_BUILD_ERROR (this would be a build error if you used || or &&)
+
+void test_UTIL_OR(void)
+{
+	zassert_equal(UTIL_OR(SEVEN, A_BUILD_ERROR), 7, NULL);
+	zassert_equal(UTIL_OR(7, 0), 7, NULL);
+	zassert_equal(UTIL_OR(SEVEN, ZERO), 7, NULL);
+	zassert_equal(UTIL_OR(0, 7), 7, NULL);
+	zassert_equal(UTIL_OR(ZERO, SEVEN), 7, NULL);
+	zassert_equal(UTIL_OR(0, 0), 0, NULL);
+	zassert_equal(UTIL_OR(ZERO, ZERO), 0, NULL);
+}
+
+void test_UTIL_AND(void)
+{
+	zassert_equal(UTIL_AND(ZERO, A_BUILD_ERROR), 0, NULL);
+	zassert_equal(UTIL_AND(7, 0), 0, NULL);
+	zassert_equal(UTIL_AND(SEVEN, ZERO), 0, NULL);
+	zassert_equal(UTIL_AND(0, 7), 0, NULL);
+	zassert_equal(UTIL_AND(ZERO, SEVEN), 0, NULL);
+	zassert_equal(UTIL_AND(0, 0), 0, NULL);
+	zassert_equal(UTIL_AND(ZERO, ZERO), 0, NULL);
+	zassert_equal(UTIL_AND(7, 7), 7, NULL);
+	zassert_equal(UTIL_AND(7, SEVEN), 7, NULL);
+	zassert_equal(UTIL_AND(SEVEN, 7), 7, NULL);
+	zassert_equal(UTIL_AND(SEVEN, SEVEN), 7, NULL);
+}
+
 void test_IF_ENABLED(void)
 {
 	#define test_IF_ENABLED_FLAG_A 1
@@ -190,6 +223,8 @@ void test_main(void)
 			 ztest_unit_test(test_u8_to_dec),
 			 ztest_unit_test(test_COND_CODE_1),
 			 ztest_unit_test(test_COND_CODE_0),
+			 ztest_unit_test(test_UTIL_OR),
+			 ztest_unit_test(test_UTIL_AND),
 			 ztest_unit_test(test_IF_ENABLED),
 			 ztest_unit_test(test_UTIL_LISTIFY),
 			 ztest_unit_test(test_MACRO_MAP_CAT),

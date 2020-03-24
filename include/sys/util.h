@@ -711,6 +711,21 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 
 #define UTIL_IF(c) UTIL_IIF(UTIL_BOOL(c))
 
+/*
+ * These are like || and &&, but they do evaluation and
+ * short-circuiting at preprocessor time instead of runtime.
+ *
+ * UTIL_OR(foo, bar) is sometimes a replacement for (foo || bar)
+ * when "bar" is an expression that would cause a build
+ * error when "foo" is true.
+ *
+ * UTIL_AND(foo, bar) is sometimes a replacement for (foo && bar)
+ * when "bar" is an expression that would cause a build
+ * error when "foo" is false.
+ */
+#define UTIL_OR(a, b) COND_CODE_1(UTIL_BOOL(a), (a), (b))
+#define UTIL_AND(a, b) COND_CODE_1(UTIL_BOOL(a), (b), (0))
+
 #define UTIL_EAT(...)
 #define UTIL_EXPAND(...) __VA_ARGS__
 #define UTIL_WHEN(c) UTIL_IF(c)(UTIL_EXPAND, UTIL_EAT)
