@@ -259,6 +259,10 @@ static void test_bus(void)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_spi_device
+	zassert_equal(DT_HAS_DRV_INST(0), 1, "missing spi inst 0");
+	zassert_equal(DT_HAS_DRV_INST(1), 1, "missing spi inst 1");
+	zassert_equal(DT_HAS_DRV_INST(2), 0, "unexpected spi inst 2");
+
 	zassert_equal(DT_INST_ON_BUS(0, spi), 1, "spi inst 0 not on spi");
 	zassert_equal(DT_INST_ON_BUS(0, i2c), 0, "spi inst 0 on i2c");
 
@@ -272,6 +276,9 @@ static void test_bus(void)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_i2c_device
+	zassert_equal(DT_HAS_DRV_INST(0), 1, "missing i2c inst 0");
+	zassert_equal(DT_HAS_DRV_INST(1), 0, "unexpected i2c inst 1");
+
 	zassert_equal(DT_INST_ON_BUS(0, i2c), 1, "i2c inst 0 not on i2c");
 	zassert_equal(DT_INST_ON_BUS(0, spi), 0, "i2c inst 0 on spi");
 
