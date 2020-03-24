@@ -153,6 +153,16 @@ void test_UTIL_LISTIFY(void)
 	zassert_equal(a3, 6, NULL);
 }
 
+void test_MACRO_MAP_CAT(void)
+{
+	int item_a_item_b_item_c_ = 1;
+
+#undef FOO
+#define FOO(x) item_##x##_
+	zassert_equal(MACRO_MAP_CAT(FOO, a, b, c), 1, "MACRO_MAP_CAT");
+#undef FOO
+}
+
 static int inc_func(void)
 {
 	static int a = 1;
@@ -182,6 +192,7 @@ void test_main(void)
 			 ztest_unit_test(test_COND_CODE_0),
 			 ztest_unit_test(test_IF_ENABLED),
 			 ztest_unit_test(test_UTIL_LISTIFY),
+			 ztest_unit_test(test_MACRO_MAP_CAT),
 			 ztest_unit_test(test_z_max_z_min)
 	);
 
