@@ -4501,8 +4501,7 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 	if (/* Local idle, and Peer request then complete the Peer procedure
 	     * with response.
 	     */
-	    ((conn->llcp_length.req == conn->llcp_length.ack) &&
-	     (pdu_rx->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)) ||
+	    ((conn->llcp_length.req == conn->llcp_length.ack) && tx) ||
 	    /* or Local has active... */
 	    ((conn->llcp_length.req != conn->llcp_length.ack) &&
 	     /* with Local requested and Peer request then complete the
@@ -4510,17 +4509,12 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 	      */
 	     ((((conn->llcp_length.state == LLCP_LENGTH_STATE_REQ) ||
 		(conn->llcp_length.state == LLCP_LENGTH_STATE_REQ_ACK_WAIT)) &&
-	       (pdu_rx->llctrl.opcode ==
-		PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)) ||
+	       tx) ||
 	      /* with Local waiting for response, and Peer response then
 	       * complete the Local procedure or Peer request then complete the
 	       * Peer procedure with response.
 	       */
-	      ((conn->llcp_length.state == LLCP_LENGTH_STATE_RSP_WAIT) &&
-	       ((pdu_rx->llctrl.opcode ==
-		 PDU_DATA_LLCTRL_TYPE_LENGTH_RSP) ||
-		(pdu_rx->llctrl.opcode ==
-		 PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)))))) {
+	      (conn->llcp_length.state == LLCP_LENGTH_STATE_RSP_WAIT)))) {
 		struct pdu_data_llctrl_length_req *lr;
 		u16_t max_rx_octets;
 		u16_t max_tx_octets;
