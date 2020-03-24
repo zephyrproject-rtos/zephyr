@@ -4678,9 +4678,20 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 #endif /* CONFIG_BT_CTLR_PHY */
 		}
 	} else {
-		/* Drop response with no Local initiated request. */
-		LL_ASSERT(pdu_rx->llctrl.opcode ==
-			  PDU_DATA_LLCTRL_TYPE_LENGTH_RSP);
+		/* Drop response with no Local initiated request and duplicate
+		 * requests.
+		 */
+		if (pdu_rx->llctrl.opcode != PDU_DATA_LLCTRL_TYPE_LENGTH_RSP) {
+			mem_release(tx, &mem_conn_tx_ctrl.free);
+
+			/* Defer new request if previous in resize state */
+			if (conn->llcp_length.state ==
+			    LLCP_LENGTH_STATE_RESIZE) {
+				return -EBUSY;
+			}
+		}
+
+		return 0;
 	}
 
 send_length_resp:
