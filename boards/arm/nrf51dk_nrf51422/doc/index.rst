@@ -6,7 +6,7 @@ nRF51 DK
 Overview
 ********
 
-The nRF51 Development Kit (nRF51 DK) hardware provides support for the Nordic
+The nRF51 Development Kit (PCA10028) hardware provides support for the Nordic
 Semiconductor nRF51422 ARM Cortex-M0 CPU and the following devices:
 
 * :abbr:`ADC (Analog to Digital Converter)`
