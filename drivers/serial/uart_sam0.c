@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam0_uart
+
 #include <device.h>
 #include <errno.h>
 #include <init.h>
@@ -940,7 +942,7 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 #define UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	.irq_config_func = uart_sam0_irq_config_##n,
 
-#ifdef DT_INST_0_ATMEL_SAM0_UART_IRQ_3
+#if DT_INST_IRQ_HAS_IDX(0, 3)
 #define UART_SAM0_IRQ_HANDLER(n)					\
 static void uart_sam0_irq_config_##n(struct device *dev)		\
 {									\

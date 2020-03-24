@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam0_usb
+
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_sam0);
@@ -21,8 +23,8 @@ LOG_MODULE_REGISTER(usb_dc_sam0);
 
 #define USB_SAM0_IN_EP 0x80
 
-#define REGS ((Usb *)DT_INST_0_ATMEL_SAM0_USB_BASE_ADDRESS)
-#define USB_NUM_ENDPOINTS DT_INST_0_ATMEL_SAM0_USB_NUM_BIDIR_ENDPOINTS
+#define REGS ((Usb *)DT_INST_REG_ADDR(0))
+#define USB_NUM_ENDPOINTS DT_INST_PROP(0, num_bidir_endpoints)
 
 struct usb_sam0_data {
 	UsbDeviceDescriptor descriptors[USB_NUM_ENDPOINTS];
@@ -180,10 +182,10 @@ static void usb_sam0_load_padcal(void)
 
 #define SAM0_USB_IRQ_CONNECT(n) 				\
 	do {							\
-	IRQ_CONNECT(DT_INST_0_ATMEL_SAM0_USB_IRQ_##n,		\
-		    DT_INST_0_ATMEL_SAM0_USB_IRQ_##n##_PRIORITY,\
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq),		\
+		    DT_INST_IRQ_BY_IDX(0, n, priority),		\
 		    usb_sam0_isr, 0, 0);			\
-	irq_enable(DT_INST_0_ATMEL_SAM0_USB_IRQ_##n);		\
+	irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		\
 	} while (0)
 
 /* Attach by initializing the device */
@@ -235,16 +237,16 @@ int usb_dc_attach(void)
 	regs->INTENSET.reg = USB_DEVICE_INTENSET_EORST;
 
 	/* Connect and enable the interrupt */
-#ifdef DT_INST_0_ATMEL_SAM0_USB_IRQ_0
+#if DT_INST_IRQ_HAS_CELL(0, irq)
 	SAM0_USB_IRQ_CONNECT(0);
 #endif
-#ifdef DT_INST_0_ATMEL_SAM0_USB_IRQ_1
+#if DT_INST_IRQ_HAS_IDX(0, 1)
 	SAM0_USB_IRQ_CONNECT(1);
 #endif
-#ifdef DT_INST_0_ATMEL_SAM0_USB_IRQ_2
+#if DT_INST_IRQ_HAS_IDX(0, 2)
 	SAM0_USB_IRQ_CONNECT(2);
 #endif
-#ifdef DT_INST_0_ATMEL_SAM0_USB_IRQ_3
+#if DT_INST_IRQ_HAS_IDX(0, 3)
 	SAM0_USB_IRQ_CONNECT(3);
 #endif
 
@@ -272,7 +274,7 @@ int usb_dc_reset(void)
 {
 	UsbDevice *regs = &REGS->DEVICE;
 
-	irq_disable(DT_INST_0_ATMEL_SAM0_USB_IRQ_0);
+	irq_disable(DT_INST_IRQN(0));
 
 	regs->CTRLA.bit.SWRST = 1;
 	usb_sam0_wait_syncbusy();

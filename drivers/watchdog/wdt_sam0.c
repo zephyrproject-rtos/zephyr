@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam0_watchdog
+
 #include <soc.h>
 #include <drivers/watchdog.h>
 
@@ -12,7 +14,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(wdt_sam0);
 
-#define WDT_REGS ((Wdt *)DT_INST_0_ATMEL_SAM0_WATCHDOG_BASE_ADDRESS)
+#define WDT_REGS ((Wdt *)DT_INST_REG_ADDR(0))
 
 #ifndef WDT_CONFIG_PER_8_Val
 #define WDT_CONFIG_PER_8_Val WDT_CONFIG_PER_CYC8_Val
@@ -262,16 +264,16 @@ static int wdt_sam0_init(struct device *dev)
 		| GCLK_CLKCTRL_CLKEN;
 #endif
 
-	IRQ_CONNECT(DT_INST_0_ATMEL_SAM0_WATCHDOG_IRQ_0,
-		    DT_INST_0_ATMEL_SAM0_WATCHDOG_IRQ_0_PRIORITY, wdt_sam0_isr,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority), wdt_sam0_isr,
 		    DEVICE_GET(wdt_sam0), 0);
-	irq_enable(DT_INST_0_ATMEL_SAM0_WATCHDOG_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
 
 static struct wdt_sam0_dev_data wdt_sam0_data;
 
-DEVICE_AND_API_INIT(wdt_sam0, DT_INST_0_ATMEL_SAM0_WATCHDOG_LABEL, wdt_sam0_init,
+DEVICE_AND_API_INIT(wdt_sam0, DT_INST_LABEL(0), wdt_sam0_init,
 		    &wdt_sam0_data, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sam0_api);

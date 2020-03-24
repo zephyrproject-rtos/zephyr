@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam0_rtc
+
 /**
  * @file
  * @brief Atmel SAM0 series RTC-based system timer
@@ -20,7 +22,7 @@
 #include <sys_clock.h>
 
 /* RTC registers. */
-#define RTC0 ((RtcMode0 *) DT_INST_0_ATMEL_SAM0_RTC_BASE_ADDRESS)
+#define RTC0 ((RtcMode0 *) DT_INST_REG_ADDR(0))
 
 #ifdef MCLK
 #define RTC_CLOCK_HW_CYCLES_PER_SEC SOC_ATMEL_SAM0_OSC32K_FREQ_HZ
@@ -184,7 +186,7 @@ int z_clock_driver_init(struct device *device)
 	/* Set up bus clock and GCLK generator. */
 	PM->APBAMASK.reg |= PM_APBAMASK_RTC;
 	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(RTC_GCLK_ID) | GCLK_CLKCTRL_CLKEN
-			    | GCLK_GEN(DT_INST_0_ATMEL_SAM0_RTC_CLOCK_GENERATOR);
+			    | GCLK_GEN(DT_INST_CLOCKS_CELL(0, generator));
 
 	/* Synchronize GCLK. */
 	while (GCLK->STATUS.bit.SYNCBUSY) {
@@ -238,10 +240,10 @@ int z_clock_driver_init(struct device *device)
 #endif
 
 	/* Enable RTC interrupt. */
-	NVIC_ClearPendingIRQ(DT_INST_0_ATMEL_SAM0_RTC_IRQ_0);
-	IRQ_CONNECT(DT_INST_0_ATMEL_SAM0_RTC_IRQ_0,
-		    DT_INST_0_ATMEL_SAM0_RTC_IRQ_0_PRIORITY, rtc_isr, 0, 0);
-	irq_enable(DT_INST_0_ATMEL_SAM0_RTC_IRQ_0);
+	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority), rtc_isr, 0, 0);
+	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }

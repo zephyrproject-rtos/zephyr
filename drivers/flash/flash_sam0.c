@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam0_nvmctrl
+
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(flash_sam0);
@@ -30,7 +32,7 @@ LOG_MODULE_REGISTER(flash_sam0);
  * Number of lock regions.  The number is fixed and the region size
  * grows with the flash size.
  */
-#define LOCK_REGIONS DT_INST_0_ATMEL_SAM0_NVMCTRL_LOCK_REGIONS
+#define LOCK_REGIONS DT_INST_PROP(0, lock_regions)
 #define LOCK_REGION_SIZE (FLASH_SIZE / LOCK_REGIONS)
 
 #if defined(NVMCTRL_BLOCK_SIZE)
@@ -420,6 +422,6 @@ static const struct flash_driver_api flash_sam0_api = {
 
 static struct flash_sam0_data flash_sam0_data_0;
 
-DEVICE_AND_API_INIT(flash_sam0, DT_INST_0_ATMEL_SAM0_NVMCTRL_LABEL,
+DEVICE_AND_API_INIT(flash_sam0, DT_INST_LABEL(0),
 		    flash_sam0_init, &flash_sam0_data_0, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_sam0_api);
