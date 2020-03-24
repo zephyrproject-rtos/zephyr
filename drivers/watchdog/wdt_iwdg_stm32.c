@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_watchdog
+
 #include <drivers/watchdog.h>
 #include <soc.h>
 #include <errno.h>
@@ -175,10 +177,10 @@ static int iwdg_stm32_init(struct device *dev)
 }
 
 static struct iwdg_stm32_data iwdg_stm32_dev_data = {
-	.Instance = (IWDG_TypeDef *)DT_INST_0_ST_STM32_WATCHDOG_BASE_ADDRESS
+	.Instance = (IWDG_TypeDef *)DT_INST_REG_ADDR(0)
 };
 
-DEVICE_AND_API_INIT(iwdg_stm32, DT_INST_0_ST_STM32_WATCHDOG_LABEL,
+DEVICE_AND_API_INIT(iwdg_stm32, DT_INST_LABEL(0),
 		    iwdg_stm32_init, &iwdg_stm32_dev_data, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &iwdg_stm32_api);

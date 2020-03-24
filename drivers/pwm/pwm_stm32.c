@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_pwm
+
 #include <errno.h>
 
 #include <soc.h>
@@ -219,101 +221,101 @@ static int pwm_stm32_init(struct device *dev)
 #define PWM_DEVICE_INIT_STM32(index)					\
 	static struct pwm_stm32_data pwm_stm32_dev_data_##index = {	\
 		/* Default case */					\
-		.pwm_prescaler = DT_INST_##index##_ST_STM32_PWM_ST_PRESCALER,\
+		.pwm_prescaler = DT_INST_PROP(index, st_prescaler),\
 	};								\
 									\
 	static const struct pwm_stm32_config pwm_stm32_dev_cfg_##index = {\
-		.pwm_base = DT_INST_##index##_ST_STM32_TIMERS_BASE_ADDRESS,\
+		.pwm_base = DT_REG_ADDR(DT_INST(index, st_stm32_timers)),\
 		.pclken = {						\
-			.bus = DT_INST_##index##_ST_STM32_TIMERS_CLOCK_BUS,\
-			.enr = DT_INST_##index##_ST_STM32_TIMERS_CLOCK_BITS\
+			.bus = DT_CLOCKS_CELL(DT_INST(index, st_stm32_timers), bus),\
+			.enr = DT_CLOCKS_CELL(DT_INST(index, st_stm32_timers), bits)\
 		},\
 	};								\
 									\
 	DEVICE_AND_API_INIT(pwm_stm32_##index,				\
-			    DT_INST_##index##_ST_STM32_PWM_LABEL,	\
+			    DT_INST_LABEL(index),	\
 			    pwm_stm32_init,				\
 			    &pwm_stm32_dev_data_##index,		\
 			    &pwm_stm32_dev_cfg_##index,			\
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,\
 			    &pwm_stm32_drv_api_funcs)
 
-#ifdef DT_INST_0_ST_STM32_PWM
+#if DT_HAS_DRV_INST(0)
 PWM_DEVICE_INIT_STM32(0);
-#endif /* DT_INST_0_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(0) */
 
-#ifdef DT_INST_1_ST_STM32_PWM
+#if DT_HAS_DRV_INST(1)
 PWM_DEVICE_INIT_STM32(1);
-#endif /* DT_INST_1_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(1) */
 
-#ifdef DT_INST_2_ST_STM32_PWM
+#if DT_HAS_DRV_INST(2)
 PWM_DEVICE_INIT_STM32(2);
-#endif /* DT_INST_2_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(2) */
 
-#ifdef DT_INST_3_ST_STM32_PWM
+#if DT_HAS_DRV_INST(3)
 PWM_DEVICE_INIT_STM32(3);
-#endif /* DT_INST_3_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(3) */
 
-#ifdef DT_INST_4_ST_STM32_PWM
+#if DT_HAS_DRV_INST(4)
 PWM_DEVICE_INIT_STM32(4);
-#endif /* DT_INST_4_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(4) */
 
-#ifdef DT_INST_5_ST_STM32_PWM
+#if DT_HAS_DRV_INST(5)
 PWM_DEVICE_INIT_STM32(5);
-#endif /* DT_INST_5_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(5) */
 
-#ifdef DT_INST_6_ST_STM32_PWM
+#if DT_HAS_DRV_INST(6)
 PWM_DEVICE_INIT_STM32(6);
-#endif /* DT_INST_6_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(6) */
 
-#ifdef DT_INST_7_ST_STM32_PWM
+#if DT_HAS_DRV_INST(7)
 PWM_DEVICE_INIT_STM32(7);
-#endif /* DT_INST_7_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(7) */
 
-#ifdef DT_INST_8_ST_STM32_PWM
+#if DT_HAS_DRV_INST(8)
 PWM_DEVICE_INIT_STM32(8);
-#endif /* DT_INST_8_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(8) */
 
-#ifdef DT_INST_9_ST_STM32_PWM
+#if DT_HAS_DRV_INST(9)
 PWM_DEVICE_INIT_STM32(9);
-#endif /* DT_INST_9_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(9) */
 
-#ifdef DT_INST_10_ST_STM32_PWM
+#if DT_HAS_DRV_INST(10)
 PWM_DEVICE_INIT_STM32(10);
-#endif /* DT_INST_10_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(10) */
 
-#ifdef DT_INST_11_ST_STM32_PWM
+#if DT_HAS_DRV_INST(11)
 PWM_DEVICE_INIT_STM32(11);
-#endif /* DT_INST_11_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(11) */
 
-#ifdef DT_INST_12_ST_STM32_PWM
+#if DT_HAS_DRV_INST(12)
 PWM_DEVICE_INIT_STM32(12);
-#endif /* DT_INST_12_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(12) */
 
-#ifdef DT_INST_13_ST_STM32_PWM
+#if DT_HAS_DRV_INST(13)
 PWM_DEVICE_INIT_STM32(13);
-#endif /* DT_INST_13_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(13) */
 
-#ifdef DT_INST_14_ST_STM32_PWM
+#if DT_HAS_DRV_INST(14)
 PWM_DEVICE_INIT_STM32(14);
-#endif /* DT_INST_14_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(14) */
 
-#ifdef DT_INST_15_ST_STM32_PWM
+#if DT_HAS_DRV_INST(15)
 PWM_DEVICE_INIT_STM32(15);
-#endif /* DT_INST_15_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(15) */
 
-#ifdef DT_INST_16_ST_STM32_PWM
+#if DT_HAS_DRV_INST(16)
 PWM_DEVICE_INIT_STM32(16);
-#endif /* DT_INST_16_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(16) */
 
-#ifdef DT_INST_17_ST_STM32_PWM
+#if DT_HAS_DRV_INST(17)
 PWM_DEVICE_INIT_STM32(17);
-#endif /* DT_INST_17_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(17) */
 
-#ifdef DT_INST_18_ST_STM32_PWM
+#if DT_HAS_DRV_INST(18)
 PWM_DEVICE_INIT_STM32(18);
-#endif /* DT_INST_18_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(18) */
 
-#ifdef DT_INST_19_ST_STM32_PWM
+#if DT_HAS_DRV_INST(19)
 PWM_DEVICE_INIT_STM32(19);
-#endif /* DT_INST_19_ST_STM32_PWM */
+#endif /* DT_HAS_DRV_INST(19) */

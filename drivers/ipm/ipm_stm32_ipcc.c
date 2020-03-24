@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_ipcc_mailbox
+
 #include <drivers/clock_control.h>
 #include <device.h>
 #include <errno.h>
@@ -285,14 +287,14 @@ static void stm32_ipcc_mailbox_config_func(struct device *dev);
 /* Config MAILBOX 0 */
 static const struct stm32_ipcc_mailbox_config stm32_ipcc_mailbox_0_config = {
 	.irq_config_func = stm32_ipcc_mailbox_config_func,
-	.ipcc = (IPCC_TypeDef *)DT_INST_0_ST_STM32_IPCC_MAILBOX_BASE_ADDRESS,
-	.pclken = { .bus = DT_INST_0_ST_STM32_IPCC_MAILBOX_CLOCK_BUS,
-		    .enr = DT_INST_0_ST_STM32_IPCC_MAILBOX_CLOCK_BITS
+	.ipcc = (IPCC_TypeDef *)DT_INST_REG_ADDR(0),
+	.pclken = { .bus = DT_INST_CLOCKS_CELL(0, bus),
+		    .enr = DT_INST_CLOCKS_CELL(0, bits)
 	},
 
 };
 
-DEVICE_AND_API_INIT(mailbox_0, DT_INST_0_ST_STM32_IPCC_MAILBOX_LABEL,
+DEVICE_AND_API_INIT(mailbox_0, DT_INST_LABEL(0),
 		    &stm32_ipcc_mailbox_init,
 		    &stm32_IPCC_data, &stm32_ipcc_mailbox_0_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -300,14 +302,14 @@ DEVICE_AND_API_INIT(mailbox_0, DT_INST_0_ST_STM32_IPCC_MAILBOX_LABEL,
 
 static void stm32_ipcc_mailbox_config_func(struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_0_ST_STM32_IPCC_MAILBOX_IRQ_RXO,
-		    DT_INST_0_ST_STM32_IPCC_MAILBOX_IRQ_RXO_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rxo, irq),
+		    DT_INST_IRQ_BY_NAME(0, rxo, priority),
 		    stm32_ipcc_mailbox_rx_isr, DEVICE_GET(mailbox_0), 0);
 
-	IRQ_CONNECT(DT_INST_0_ST_STM32_IPCC_MAILBOX_IRQ_TXF,
-		    DT_INST_0_ST_STM32_IPCC_MAILBOX_IRQ_TXF_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, txf, irq),
+		    DT_INST_IRQ_BY_NAME(0, txf, priority),
 		    stm32_ipcc_mailbox_tx_isr, DEVICE_GET(mailbox_0), 0);
 
-	irq_enable(DT_INST_0_ST_STM32_IPCC_MAILBOX_IRQ_RXO);
-	irq_enable(DT_INST_0_ST_STM32_IPCC_MAILBOX_IRQ_TXF);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, rxo, irq));
+	irq_enable(DT_INST_IRQ_BY_NAME(0, txf, irq));
 }

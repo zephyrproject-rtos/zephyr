@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_uart
+
 /**
  * @brief Driver for UART port on STM32 family processor.
  * @note  LPUART and U(S)ART have the same base and
@@ -711,11 +713,11 @@ static int uart_stm32_init(struct device *dev)
 #define STM32_UART_IRQ_HANDLER(index)					\
 static void uart_stm32_irq_config_func_##index(struct device *dev)	\
 {									\
-	IRQ_CONNECT(DT_INST_##index##_ST_STM32_UART_IRQ_0,		\
-		DT_INST_##index##_ST_STM32_UART_IRQ_0_PRIORITY,		\
+	IRQ_CONNECT(DT_INST_IRQN(index),		\
+		DT_INST_IRQ(index, priority),		\
 		uart_stm32_isr, DEVICE_GET(uart_stm32_##index),		\
 		0);							\
-	irq_enable(DT_INST_##index##_ST_STM32_UART_IRQ_0);		\
+	irq_enable(DT_INST_IRQN(index));		\
 }
 #else
 #define STM32_UART_IRQ_HANDLER_DECL(index)
@@ -728,20 +730,20 @@ STM32_UART_IRQ_HANDLER_DECL(index);					\
 									\
 static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.uconf = {							\
-		.base = (u8_t *)DT_INST_##index##_ST_STM32_UART_BASE_ADDRESS,\
+		.base = (u8_t *)DT_INST_REG_ADDR(index),\
 		STM32_UART_IRQ_HANDLER_FUNC(index)			\
 	},								\
-	.pclken = { .bus = DT_INST_##index##_ST_STM32_UART_CLOCK_BUS,	\
-		    .enr = DT_INST_##index##_ST_STM32_UART_CLOCK_BITS	\
+	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),	\
+		    .enr = DT_INST_CLOCKS_CELL(index, bits)	\
 	},								\
-	.hw_flow_control = DT_INST_##index##_ST_STM32_UART_HW_FLOW_CONTROL\
+	.hw_flow_control = DT_INST_PROP(index, hw_flow_control)\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
-	.baud_rate = DT_INST_##index##_ST_STM32_UART_CURRENT_SPEED	\
+	.baud_rate = DT_INST_PROP(index, current_speed)	\
 };									\
 									\
-DEVICE_AND_API_INIT(uart_stm32_##index, DT_INST_##index##_ST_STM32_UART_LABEL,\
+DEVICE_AND_API_INIT(uart_stm32_##index, DT_INST_LABEL(index),\
 		    &uart_stm32_init,					\
 		    &uart_stm32_data_##index, &uart_stm32_cfg_##index,	\
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
@@ -749,46 +751,46 @@ DEVICE_AND_API_INIT(uart_stm32_##index, DT_INST_##index##_ST_STM32_UART_LABEL,\
 									\
 STM32_UART_IRQ_HANDLER(index)
 
-#ifdef DT_INST_0_ST_STM32_UART
+#if DT_HAS_DRV_INST(0)
 STM32_UART_INIT(0)
-#endif	/* DT_INST_0_ST_STM32_UART */
+#endif	/* DT_HAS_DRV_INST(0) */
 
-#ifdef DT_INST_1_ST_STM32_UART
+#if DT_HAS_DRV_INST(1)
 STM32_UART_INIT(1)
-#endif	/* DT_INST_1_ST_STM32_UART */
+#endif	/* DT_HAS_DRV_INST(1) */
 
-#ifdef DT_INST_2_ST_STM32_UART
+#if DT_HAS_DRV_INST(2)
 STM32_UART_INIT(2)
-#endif	/* DT_INST_2_ST_STM32_UART */
+#endif	/* DT_HAS_DRV_INST(2) */
 
-#ifdef DT_INST_3_ST_STM32_UART
+#if DT_HAS_DRV_INST(3)
 STM32_UART_INIT(3)
-#endif	/* DT_INST_3_ST_STM32_UART */
+#endif	/* DT_HAS_DRV_INST(3) */
 
-#ifdef DT_INST_4_ST_STM32_UART
+#if DT_HAS_DRV_INST(4)
 STM32_UART_INIT(4)
-#endif /* DT_INST_4_ST_STM32_UART */
+#endif /* DT_HAS_DRV_INST(4) */
 
-#ifdef DT_INST_5_ST_STM32_UART
+#if DT_HAS_DRV_INST(5)
 STM32_UART_INIT(5)
-#endif /* DT_INST_5_ST_STM32_UART */
+#endif /* DT_HAS_DRV_INST(5) */
 
-#ifdef DT_INST_6_ST_STM32_UART
+#if DT_HAS_DRV_INST(6)
 STM32_UART_INIT(6)
-#endif /* DT_INST_6_ST_STM32_UART */
+#endif /* DT_HAS_DRV_INST(6) */
 
-#ifdef DT_INST_7_ST_STM32_UART
+#if DT_HAS_DRV_INST(7)
 STM32_UART_INIT(7)
-#endif /* DT_INST_7_ST_STM32_UART */
+#endif /* DT_HAS_DRV_INST(7) */
 
-#ifdef DT_INST_8_ST_STM32_UART
+#if DT_HAS_DRV_INST(8)
 STM32_UART_INIT(8)
-#endif /* DT_INST_8_ST_STM32_UART */
+#endif /* DT_HAS_DRV_INST(8) */
 
-#ifdef DT_INST_9_ST_STM32_UART
+#if DT_HAS_DRV_INST(9)
 STM32_UART_INIT(9)
-#endif /* DT_INST_9_ST_STM32_UART */
+#endif /* DT_HAS_DRV_INST(9) */
 
-#ifdef DT_INST_10_ST_STM32_UART
+#if DT_HAS_DRV_INST(10)
 STM32_UART_INIT(10)
-#endif /* DT_INST_10_ST_STM32_UART */
+#endif /* DT_HAS_DRV_INST(10) */

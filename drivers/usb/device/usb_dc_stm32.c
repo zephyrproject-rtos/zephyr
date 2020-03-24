@@ -1,5 +1,7 @@
 /* USB device controller driver for STM32 devices */
 
+#define DT_DRV_COMPAT st_stm32_usb
+
 /*
  * Copyright (c) 2017 Christer Weinigel.
  * Copyright (c) 2017, I-SENSE group of ICCS
@@ -60,34 +62,34 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #endif
 
 #if defined(DT_COMPAT_ST_STM32_OTGHS)
-#define DT_USB_BASE_ADDRESS		DT_INST_0_ST_STM32_OTGHS_BASE_ADDRESS
-#define DT_USB_IRQ			DT_INST_0_ST_STM32_OTGHS_IRQ_OTGHS
-#define DT_USB_IRQ_PRI		    DT_INST_0_ST_STM32_OTGHS_IRQ_OTGHS_PRIORITY
-#define DT_USB_NUM_BIDIR_ENDPOINTS  DT_INST_0_ST_STM32_OTGHS_NUM_BIDIR_ENDPOINTS
-#define DT_USB_RAM_SIZE			DT_INST_0_ST_STM32_OTGHS_RAM_SIZE
-#define DT_USB_MAXIMUM_SPEED		DT_INST_0_ST_STM32_OTGHS_MAXIMUM_SPEED
-#define DT_USB_CLOCK_BITS		DT_INST_0_ST_STM32_OTGHS_CLOCK_BITS
-#define DT_USB_CLOCK_BUS		DT_INST_0_ST_STM32_OTGHS_CLOCK_BUS
+#define DT_USB_BASE_ADDRESS		DT_REG_ADDR(DT_INST(0, st_stm32_otghs))
+#define DT_USB_IRQ			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_otghs), otghs, irq)
+#define DT_USB_IRQ_PRI			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_otghs), otghs, priority)
+#define DT_USB_NUM_BIDIR_ENDPOINTS	DT_PROP(DT_INST(0, st_stm32_otghs), num_bidir_endpoints)
+#define DT_USB_RAM_SIZE			DT_PROP(DT_INST(0, st_stm32_otghs), ram_size)
+#define DT_USB_MAXIMUM_SPEED		DT_PROP(DT_INST(0, st_stm32_otghs), maximum_speed)
+#define DT_USB_CLOCK_BITS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_otghs), bits)
+#define DT_USB_CLOCK_BUS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_otghs), bus)
 #elif defined(DT_COMPAT_ST_STM32_OTGFS)
-#define DT_USB_BASE_ADDRESS		DT_INST_0_ST_STM32_OTGFS_BASE_ADDRESS
-#define DT_USB_IRQ			DT_INST_0_ST_STM32_OTGFS_IRQ_OTGFS
-#define DT_USB_IRQ_PRI		    DT_INST_0_ST_STM32_OTGFS_IRQ_OTGFS_PRIORITY
-#define DT_USB_NUM_BIDIR_ENDPOINTS  DT_INST_0_ST_STM32_OTGFS_NUM_BIDIR_ENDPOINTS
-#define DT_USB_RAM_SIZE			DT_INST_0_ST_STM32_OTGFS_RAM_SIZE
-#define DT_USB_MAXIMUM_SPEED		DT_INST_0_ST_STM32_OTGFS_MAXIMUM_SPEED
-#define DT_USB_CLOCK_BITS		DT_INST_0_ST_STM32_OTGFS_CLOCK_BITS
-#define DT_USB_CLOCK_BUS		DT_INST_0_ST_STM32_OTGFS_CLOCK_BUS
+#define DT_USB_BASE_ADDRESS		DT_REG_ADDR(DT_INST(0, st_stm32_otgfs))
+#define DT_USB_IRQ			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_otgfs), otgfs, irq)
+#define DT_USB_IRQ_PRI			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_otgfs), otgfs, priority)
+#define DT_USB_NUM_BIDIR_ENDPOINTS	DT_PROP(DT_INST(0, st_stm32_otgfs), num_bidir_endpoints)
+#define DT_USB_RAM_SIZE			DT_PROP(DT_INST(0, st_stm32_otgfs), ram_size)
+#define DT_USB_MAXIMUM_SPEED		DT_PROP(DT_INST(0, st_stm32_otgfs), maximum_speed)
+#define DT_USB_CLOCK_BITS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_otgfs), bits)
+#define DT_USB_CLOCK_BUS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_otgfs), bus)
 #elif defined(DT_COMPAT_ST_STM32_USB)
-#define DT_USB_BASE_ADDRESS		DT_INST_0_ST_STM32_USB_BASE_ADDRESS
-#define DT_USB_IRQ			DT_INST_0_ST_STM32_USB_IRQ_USB
-#define DT_USB_IRQ_PRI			DT_INST_0_ST_STM32_USB_IRQ_USB_PRIORITY
-#define DT_USB_NUM_BIDIR_ENDPOINTS   DT_INST_0_ST_STM32_USB_NUM_BIDIR_ENDPOINTS
-#define DT_USB_RAM_SIZE			DT_INST_0_ST_STM32_USB_RAM_SIZE
-#define DT_USB_MAXIMUM_SPEED		DT_INST_0_ST_STM32_USB_MAXIMUM_SPEED
-#define DT_USB_CLOCK_BITS		DT_INST_0_ST_STM32_USB_CLOCK_BITS
-#define DT_USB_CLOCK_BUS		DT_INST_0_ST_STM32_USB_CLOCK_BUS
-#ifdef DT_INST_0_ST_STM32_USB_ENABLE_PIN_REMAP
-#define DT_USB_ENABLE_PIN_REMAP		DT_INST_0_ST_STM32_USB_ENABLE_PIN_REMAP
+#define DT_USB_BASE_ADDRESS		DT_REG_ADDR(DT_INST(0, st_stm32_usb))
+#define DT_USB_IRQ			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_usb), usb, irq)
+#define DT_USB_IRQ_PRI			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_usb), usb, priority)
+#define DT_USB_NUM_BIDIR_ENDPOINTS	DT_PROP(DT_INST(0, st_stm32_usb), num_bidir_endpoints)
+#define DT_USB_RAM_SIZE			DT_PROP(DT_INST(0, st_stm32_usb), ram_size)
+#define DT_USB_MAXIMUM_SPEED		DT_PROP(DT_INST(0, st_stm32_usb), maximum_speed)
+#define DT_USB_CLOCK_BITS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_usb), bits)
+#define DT_USB_CLOCK_BUS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_usb), bus)
+#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_usb), enable_pin_remap)
+#define DT_USB_ENABLE_PIN_REMAP		DT_PROP(DT_INST(0, st_stm32_usb), enable_pin_remap)
 #endif
 #endif
 
@@ -1040,11 +1042,11 @@ void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 	struct device *usb_disconnect;
 
 	usb_disconnect = device_get_binding(
-				DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_CONTROLLER);
+				DT_GPIO_LABEL(DT_INST(0, st_stm32_usb), disconnect_gpios));
 
 	gpio_pin_configure(usb_disconnect,
-			   DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_PIN,
-			   DT_INST_0_ST_STM32_USB_DISCONNECT_GPIOS_FLAGS |
+			   DT_GPIO_PIN(DT_INST(0, st_stm32_usb), disconnect_gpios),
+			   DT_GPIO_FLAGS(DT_INST(0, st_stm32_usb), disconnect_gpios) |
 			   (state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE));
 }
 #endif /* USB && CONFIG_USB_DC_STM32_DISCONN_ENABLE */
