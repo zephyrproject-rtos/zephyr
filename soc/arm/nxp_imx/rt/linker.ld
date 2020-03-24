@@ -15,11 +15,11 @@ MEMORY
 #if (DT_MMIO_SRAM_80000000_SIZE > 0) && !defined(CONFIG_DATA_SEMC)
         SDRAM  (wx) : ORIGIN = DT_MMIO_SRAM_80000000_BASE_ADDRESS, LENGTH = DT_MMIO_SRAM_80000000_SIZE
 #endif
-#if (DT_INST_0_NXP_IMX_DTCM_SIZE > 0) && !defined(CONFIG_DATA_DTCM)
-        DTCM    (wx) : ORIGIN = DT_INST_0_NXP_IMX_DTCM_BASE_ADDRESS, LENGTH = DT_INST_0_NXP_IMX_DTCM_SIZE
+#if (DT_REG_SIZE(DT_INST(0, nxp_imx_dtcm)) > 0) && !defined(CONFIG_DATA_DTCM)
+        DTCM    (wx) : ORIGIN = DT_REG_ADDR(DT_INST(0, nxp_imx_dtcm)), LENGTH = DT_REG_ADDR(DT_INST(0, nxp_imx_dtcm))
 #endif
-#if (DT_INST_0_NXP_IMX_ITCM_SIZE > 0) && !defined(CONFIG_CODE_ITCM)
-        ITCM    (wx) : ORIGIN = DT_INST_0_NXP_IMX_ITCM_BASE_ADDRESS, LENGTH = DT_INST_0_NXP_IMX_ITCM_SIZE
+#if (DT_REG_SIZE(DT_INST(0, nxp_imx_itcm)) > 0) && !defined(CONFIG_CODE_ITCM)
+        ITCM    (wx) : ORIGIN = DT_REG_ADDR(DT_INST(0, nxp_imx_itcm)), LENGTH = DT_REG_ADDR(DT_INST(0, nxp_imx_itcm))
 #endif
      }
 
