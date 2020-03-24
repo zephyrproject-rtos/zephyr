@@ -423,9 +423,8 @@ static inline char *log_strdup(const char *str)
  * @param level Level used in file or in function.
  *
  */
-#define LOG_LEVEL_SET(level) \
-	static const u32_t __log_level __unused = \
-			_LOG_LEVEL_RESOLVE(level)
+#define LOG_LEVEL_SET(level) static const u32_t __log_level __unused = \
+				Z_LOG_RESOLVED_LEVEL(level, 0)
 
 /**
  * @}
