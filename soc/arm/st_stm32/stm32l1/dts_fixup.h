@@ -82,9 +82,9 @@
 #define DT_I2C_2_CLOCK_BITS		DT_ST_STM32_I2C_V1_40005800_CLOCK_BITS
 #define DT_I2C_2_CLOCK_BUS		DT_ST_STM32_I2C_V1_40005800_CLOCK_BUS
 
-#define DT_WDT_0_NAME			DT_INST_0_ST_STM32_WATCHDOG_LABEL
+#define DT_WDT_0_NAME			DT_LABEL(DT_INST(0, st_stm32_watchdog))
 
 #define DT_ADC_1_NAME			DT_ST_STM32_ADC_40012400_LABEL
 
-#define DT_RTC_0_NAME                   DT_INST_0_ST_STM32_RTC_LABEL
+#define DT_RTC_0_NAME                   DT_LABEL(DT_INST(0, st_stm32_rtc))
 /* End of SoC Level DTS fixup file */
