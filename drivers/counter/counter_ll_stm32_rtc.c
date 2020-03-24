@@ -9,6 +9,8 @@
  *
  */
 
+#define DT_DRV_COMPAT st_stm32_rtc
+
 #include <time.h>
 
 #include <drivers/clock_control/stm32_clock_control.h>
@@ -348,8 +350,8 @@ static const struct rtc_stm32_config rtc_config = {
 		.channels = 1,
 	},
 	.pclken = {
-		.enr = DT_INST_0_ST_STM32_RTC_CLOCK_BITS,
-		.bus = DT_INST_0_ST_STM32_RTC_CLOCK_BUS,
+		.enr = DT_INST_CLOCKS_CELL(0, bits),
+		.bus = DT_INST_CLOCKS_CELL(0, bus),
 	},
 	.ll_rtc_config = {
 		.HourFormat = LL_RTC_HOURFORMAT_24HOUR,
@@ -378,14 +380,14 @@ static const struct counter_driver_api rtc_stm32_driver_api = {
 		.get_max_relative_alarm = rtc_stm32_get_max_relative_alarm,
 };
 
-DEVICE_AND_API_INIT(rtc_stm32, DT_INST_0_ST_STM32_RTC_LABEL, &rtc_stm32_init,
+DEVICE_AND_API_INIT(rtc_stm32, DT_INST_LABEL(0), &rtc_stm32_init,
 		    &rtc_data, &rtc_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &rtc_stm32_driver_api);
 
 static void rtc_stm32_irq_config(struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_0_ST_STM32_RTC_IRQ_0,
-		    DT_INST_0_ST_STM32_RTC_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    rtc_stm32_isr, DEVICE_GET(rtc_stm32), 0);
-	irq_enable(DT_INST_0_ST_STM32_RTC_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 }
