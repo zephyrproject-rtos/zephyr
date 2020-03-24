@@ -2490,9 +2490,7 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 	     * with response.
 	     */
 	    ((_radio.conn_curr->llcp_length.req ==
-	      _radio.conn_curr->llcp_length.ack) &&
-	     (pdu_data_rx->llctrl.opcode ==
-	      PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)) ||
+	      _radio.conn_curr->llcp_length.ack) && node_tx) ||
 	    /* or Local has active... */
 	    ((_radio.conn_curr->llcp_length.req !=
 	      _radio.conn_curr->llcp_length.ack) &&
@@ -2502,19 +2500,13 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 	     ((((_radio.conn_curr->llcp_length.state ==
 		 LLCP_LENGTH_STATE_REQ) ||
 		(_radio.conn_curr->llcp_length.state ==
-		 LLCP_LENGTH_STATE_REQ_ACK_WAIT)) &&
-	       (pdu_data_rx->llctrl.opcode ==
-		PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)) ||
+		 LLCP_LENGTH_STATE_REQ_ACK_WAIT)) && node_tx) ||
 	      /* with Local waiting for response, and Peer response then
 	       * complete the Local procedure or Peer request then complete the
 	       * Peer procedure with response.
 	       */
-	      ((_radio.conn_curr->llcp_length.state ==
-		LLCP_LENGTH_STATE_RSP_WAIT) &&
-	       ((pdu_data_rx->llctrl.opcode ==
-		 PDU_DATA_LLCTRL_TYPE_LENGTH_RSP) ||
-		(pdu_data_rx->llctrl.opcode ==
-		 PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)))))) {
+	      (_radio.conn_curr->llcp_length.state ==
+		LLCP_LENGTH_STATE_RSP_WAIT)))) {
 		struct pdu_data_llctrl_length_req *lr;
 
 		lr = &pdu_data_rx->llctrl.length_req;
