@@ -15,14 +15,17 @@ properties:
     sck-pin:
       type: int
       required: true
-      description: SCK pin
+      description: |
+        SCK pin selection. The value contains the pin number in bits 0:4,
+        and the port number (0 for P0, 1 for P1) in bit 5.
+        For example, P1.1 is 33, and P0.2 is 2.
 
     mosi-pin:
       type: int
       required: true
-      description: MOSI pin
+      description: MOSI pin selection, encoded the same way as sck-pin.
 
     miso-pin:
       type: int
       required: true
-      description: MISO pin
+      description: MISO pin selection, encoded the same way as sck-pin.
