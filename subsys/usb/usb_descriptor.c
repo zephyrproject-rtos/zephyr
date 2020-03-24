@@ -241,7 +241,8 @@ static int usb_validate_ep_cfg_data(struct usb_ep_descriptor * const ep_descr,
 		for (u8_t idx = 1; idx < 16; idx++) {
 			struct usb_dc_ep_cfg_data ep_cfg;
 
-			ep_cfg.ep_type = ep_descr->bmAttributes;
+			ep_cfg.ep_type = (ep_descr->bmAttributes &
+					  USB_EP_TRANSFER_TYPE_MASK);
 			ep_cfg.ep_mps = ep_descr->wMaxPacketSize;
 			ep_cfg.ep_addr = ep_descr->bEndpointAddress;
 			if (ep_cfg.ep_addr & USB_EP_DIR_IN) {
