@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT silabs_gecko_ethernet
+
 /* Silicon Labs EFM32 Giant Gecko 11 Ethernet driver.
  * Limitations:
  * - no link monitoring through PHY interrupt
@@ -438,20 +440,20 @@ static void eth_init_pins(struct device *dev)
 	eth->ROUTELOC1 = 0;
 	eth->ROUTEPEN = 0;
 
-#if defined(DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII)
+#if DT_INST_NODE_HAS_PROP(0, location_rmii)
 	for (idx = 0; idx < ARRAY_SIZE(cfg->pin_list->rmii); idx++)
 		soc_gpio_configure(&cfg->pin_list->rmii[idx]);
 
-	eth->ROUTELOC1 |= (DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII <<
+	eth->ROUTELOC1 |= (DT_INST_PROP(0, location_rmii) <<
 			   _ETH_ROUTELOC1_RMIILOC_SHIFT);
 	eth->ROUTEPEN |= ETH_ROUTEPEN_RMIIPEN;
 #endif
 
-#if defined(DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_MDIO)
+#if DT_INST_NODE_HAS_PROP(0, location_mdio)
 	for (idx = 0; idx < ARRAY_SIZE(cfg->pin_list->mdio); idx++)
 		soc_gpio_configure(&cfg->pin_list->mdio[idx]);
 
-	eth->ROUTELOC1 |= (DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_MDIO <<
+	eth->ROUTELOC1 |= (DT_INST_PROP(0, location_mdio) <<
 			   _ETH_ROUTELOC1_MDIOLOC_SHIFT);
 	eth->ROUTEPEN |= ETH_ROUTEPEN_MDIOPEN;
 #endif
@@ -472,7 +474,7 @@ static int eth_init(struct device *dev)
 	/* Connect pins to peripheral */
 	eth_init_pins(dev);
 
-#if defined(DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII)
+#if DT_INST_NODE_HAS_PROP(0, location_rmii)
 	/* Enable global clock and RMII operation */
 	eth->CTRL = ETH_CTRL_GBLCLKEN | ETH_CTRL_MIISEL_RMII;
 #endif
@@ -653,10 +655,10 @@ static struct device DEVICE_NAME_GET(eth_gecko);
 
 static void eth0_irq_config(void)
 {
-	IRQ_CONNECT(DT_INST_0_SILABS_GECKO_ETHERNET_IRQ_0,
-		    DT_INST_0_SILABS_GECKO_ETHERNET_IRQ_0_PRIORITY, eth_isr,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority), eth_isr,
 		    DEVICE_GET(eth_gecko), 0);
-	irq_enable(DT_INST_0_SILABS_GECKO_ETHERNET_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 }
 
 static const struct eth_gecko_pin_list pins_eth0 = {
@@ -666,14 +668,14 @@ static const struct eth_gecko_pin_list pins_eth0 = {
 
 static const struct eth_gecko_dev_cfg eth0_config = {
 	.regs = (ETH_TypeDef *)
-		DT_INST_0_SILABS_GECKO_ETHERNET_BASE_ADDRESS,
+		DT_INST_REG_ADDR(0),
 	.pin_list = &pins_eth0,
 	.pin_list_size = ARRAY_SIZE(pins_eth0.mdio) +
 			 ARRAY_SIZE(pins_eth0.rmii),
 	.config_func = eth0_irq_config,
 	.phy = { (ETH_TypeDef *)
-		 DT_INST_0_SILABS_GECKO_ETHERNET_BASE_ADDRESS,
-		 DT_INST_0_SILABS_GECKO_ETHERNET_PHY_ADDRESS },
+		 DT_INST_REG_ADDR(0),
+		 DT_INST_PROP(0, phy_address) },
 };
 
 static struct eth_gecko_dev_data eth0_data = {
