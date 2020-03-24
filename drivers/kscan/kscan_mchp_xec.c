@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_xec_kscan
+
 #include <errno.h>
 #include <device.h>
 #include <drivers/kscan.h>
@@ -56,7 +58,7 @@ struct kscan_xec_data {
 };
 
 static KSCAN_Type *base = (KSCAN_Type *)
-	(DT_INST_0_MICROCHIP_XEC_KSCAN_BASE_ADDRESS);
+	(DT_INST_REG_ADDR(0));
 
 static struct kscan_xec_data kbd_data;
 
@@ -146,7 +148,7 @@ static void scan_matrix_xec_isr(void *arg)
 	ARG_UNUSED(arg);
 
 	MCHP_GIRQ_SRC(MCHP_KSCAN_GIRQ) = BIT(MCHP_KSCAN_GIRQ_POS);
-	irq_disable(DT_INST_0_MICROCHIP_XEC_KSCAN_IRQ_0);
+	irq_disable(DT_INST_IRQN(0));
 	k_sem_give(&kbd_data.poll_lock);
 	LOG_DBG(" ");
 }
@@ -366,7 +368,7 @@ static const struct kscan_driver_api kscan_xec_driver_api = {
 
 static int kscan_xec_init(struct device *dev);
 
-DEVICE_AND_API_INIT(kscan_xec, DT_INST_0_MICROCHIP_XEC_KSCAN_LABEL,
+DEVICE_AND_API_INIT(kscan_xec, DT_INST_LABEL(0),
 		    &kscan_xec_init,
 		    NULL, NULL,
 		    POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,
