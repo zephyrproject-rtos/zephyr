@@ -88,11 +88,27 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	cmp	x2, #0
 	bne	exit
 
-	/* Check if we need to context switch */
-	ldr	x2, [x1, #_kernel_offset_to_current]
-	ldr	x3, [x1, #_kernel_offset_to_ready_q_cache]
-	cmp	x2, x3
+	/* Save current switch_handle pointer in x17 */
+	ldr	x1, =_kernel
+	ldr     x17, [x1, #_kernel_offset_to_current]
+	add	x17, x17, ___thread_t_switch_handle_OFFSET
+	stp     x17, xzr, [sp, #-16]!
+
+	/* Fetch next scheduled thread and return it into x0 */
+	mov	x0, x17
+	bl	z_get_next_switch_handle
+	ldp     x17, xzr, [sp], #16
+
+	/* Check if a context switch is needed */
+	cmp	x17, x0
 	beq	exit
+
+	/*
+	 * As expected by z_arm64_context_switch():
+	 * - x16 <- new_thread->switch_handle
+	 * - x17 <- old_thread->switch_handle (already set)
+	 */
+	mov	x16, x0
 
 	/* Switch thread */
 	bl	z_arm64_context_switch

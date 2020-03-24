@@ -33,11 +33,6 @@ GDATA(_k_neg_eagain)
 
 GTEXT(z_arm64_context_switch)
 SECTION_FUNC(TEXT, z_arm64_context_switch)
-#ifdef CONFIG_TRACING
-	stp	xzr, x30, [sp, #-16]!
-	bl	sys_trace_thread_switched_in
-	ldp	xzr, x30, [sp], #16
-#endif
 	/* Store rest of process context including x30 */
 	stp	x19, x20, [sp, #-16]!
 	stp	x21, x22, [sp, #-16]!
@@ -46,28 +41,11 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	stp	x27, x28, [sp, #-16]!
 	stp	x29, x30, [sp, #-16]!
 
-	/* load _kernel into x1 and current k_thread into x2 */
-	ldr	x1, =_kernel
-	ldr	x2, [x1, #_kernel_offset_to_current]
-
-	/* addr of callee-saved regs in thread in x0 */
-	ldr	x0, =_thread_offset_to_callee_saved
-	add	x0, x0, x2
-
 	/* Save the current SP */
 	mov	x6, sp
-	str	x6, [x0]
+	str	x6, [x17]
 
-	/* fetch the thread to run from the ready queue cache */
-	ldr	x2, [x1, #_kernel_offset_to_ready_q_cache]
-	str	x2, [x1, #_kernel_offset_to_current]
-
-	/* addr of callee-saved regs in thread in x0 */
-	ldr	x0, =_thread_offset_to_callee_saved
-	add	x0, x0, x2
-
-	ldr	x6, [x0]
-	mov	sp, x6
+	mov	sp, x16
 
 	/* Restore x19-x29 plus x30 */
 	ldp	x29, x30, [sp], #16
@@ -76,12 +54,6 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldp	x23, x24, [sp], #16
 	ldp	x21, x22, [sp], #16
 	ldp	x19, x20, [sp], #16
-
-#ifdef CONFIG_TRACING
-	stp	xzr, x30, [sp, #-16]!
-	bl	sys_trace_thread_switched_out
-	ldp	xzr, x30, [sp], #16
-#endif
 
 	/* We restored x30 from the process stack. There are three possible
 	 * cases:
@@ -154,6 +126,13 @@ GTEXT(z_arm64_svc)
 SECTION_FUNC(TEXT, z_arm64_svc)
 	z_arm64_enter_exc
 
+	/*
+	 * x0 = new_thread->switch_handle = switch_to thread,
+	 * x1 = &old_thread->switch_handle = &switch_from thread
+	 */
+	mov	x16, x0
+	mov	x17, x1
+
 	switch_el x3, 3f, 2f, 1f
 3:
 	mrs	x0, esr_el3
@@ -197,13 +176,6 @@ offload:
 	b	inv
 
 context_switch:
-	/* Check if we need to context switch */
-	ldr	x1, =_kernel
-	ldr	x2, [x1, #_kernel_offset_to_current]
-	ldr	x3, [x1, #_kernel_offset_to_ready_q_cache]
-	cmp	x2, x3
-	beq	exit
-
 	/* Switch thread */
 	bl	z_arm64_context_switch
 

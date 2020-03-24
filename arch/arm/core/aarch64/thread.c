@@ -115,5 +115,5 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * - entry_point and arguments when going through
 	 *   z_thread_entry_wrapper().
 	 */
-	thread->callee_saved.sp = (u64_t)pInitCtx;
+	thread->switch_handle = (void *)pInitCtx;
 }
