@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT soc_nv_flash
+
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
@@ -162,8 +164,8 @@ static int erase_flash_block(off_t offset, size_t size)
 #if CONFIG_FLASH_PAGE_LAYOUT
 static const struct flash_pages_layout flash_gecko_0_pages_layout = {
 	.pages_count = (CONFIG_FLASH_SIZE * 1024) /
-			DT_INST_0_SOC_NV_FLASH_ERASE_BLOCK_SIZE,
-	.pages_size = DT_INST_0_SOC_NV_FLASH_ERASE_BLOCK_SIZE,
+			DT_INST_PROP(0, erase_block_size),
+	.pages_size = DT_INST_PROP(0, erase_block_size),
 };
 
 void flash_gecko_page_layout(struct device *dev,
@@ -199,7 +201,7 @@ static const struct flash_driver_api flash_gecko_driver_api = {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_gecko_page_layout,
 #endif
-	.write_block_size = DT_INST_0_SOC_NV_FLASH_WRITE_BLOCK_SIZE,
+	.write_block_size = DT_INST_PROP(0, write_block_size),
 };
 
 static struct flash_gecko_data flash_gecko_0_data;
