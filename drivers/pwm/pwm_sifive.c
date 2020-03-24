@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT sifive_pwm0
+
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(pwm_sifive, CONFIG_PWM_LOG_LEVEL);
@@ -231,12 +233,12 @@ static const struct pwm_driver_api pwm_sifive_api = {
 #define PWM_SIFIVE_INIT(n)	\
 	static struct pwm_sifive_data pwm_sifive_data_##n;	\
 	static const struct pwm_sifive_cfg pwm_sifive_cfg_##n = {	\
-			.base = DT_INST_##n##_SIFIVE_PWM0_BASE_ADDRESS,	\
-			.f_sys = DT_INST_##n##_SIFIVE_PWM0_CLOCK_FREQUENCY,  \
-			.cmpwidth = DT_INST_##n##_SIFIVE_PWM0_SIFIVE_COMPARE_WIDTH, \
+			.base = DT_INST_REG_ADDR(n),	\
+			.f_sys = DT_INST_PROP(n, clock_frequency),  \
+			.cmpwidth = DT_INST_PROP(n, sifive_compare_width), \
 		};	\
 	DEVICE_AND_API_INIT(pwm_##n,	\
-			    DT_INST_##n##_SIFIVE_PWM0_LABEL,	\
+			    DT_INST_LABEL(n),	\
 			    pwm_sifive_init,	\
 			    &pwm_sifive_data_##n,	\
 			    &pwm_sifive_cfg_##n,	\
@@ -244,14 +246,14 @@ static const struct pwm_driver_api pwm_sifive_api = {
 			    CONFIG_PWM_SIFIVE_INIT_PRIORITY,	\
 			    &pwm_sifive_api)
 
-#ifdef DT_INST_0_SIFIVE_PWM0_LABEL
+#if DT_INST_NODE_HAS_PROP(0, label)
 PWM_SIFIVE_INIT(0);
-#endif /* DT_INST_0_SIFIVE_PWM0_LABEL */
+#endif /* DT_INST_NODE_HAS_PROP(0, label) */
 
-#ifdef DT_INST_1_SIFIVE_PWM0_LABEL
+#if DT_INST_NODE_HAS_PROP(1, label)
 PWM_SIFIVE_INIT(1);
-#endif /* DT_INST_1_SIFIVE_PWM0_LABEL */
+#endif /* DT_INST_NODE_HAS_PROP(1, label) */
 
-#ifdef DT_INST_2_SIFIVE_PWM0_LABEL
+#if DT_INST_NODE_HAS_PROP(2, label)
 PWM_SIFIVE_INIT(2);
-#endif /* DT_INST_2_SIFIVE_PWM0_LABEL */
+#endif /* DT_INST_NODE_HAS_PROP(2, label) */
