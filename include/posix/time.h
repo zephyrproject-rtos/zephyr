@@ -79,7 +79,11 @@ static inline s32_t _ts_to_ms(const struct timespec *to)
 	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
 }
 
+#ifdef CONFIG_ARCH_POSIX
 int clock_gettime(clockid_t clock_id, struct timespec *ts);
+#else
+__syscall int clock_gettime(clockid_t clock_id, struct timespec *ts);
+#endif /* CONFIG_ARCH_POSIX */
 int clock_settime(clockid_t clock_id, const struct timespec *ts);
 /* Timer APIs */
 int timer_create(clockid_t clockId, struct sigevent *evp, timer_t *timerid);
@@ -91,5 +95,9 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 #ifdef __cplusplus
 }
 #endif
+
+#ifndef CONFIG_ARCH_POSIX
+#include <syscalls/time.h>
+#endif /* CONFIG_ARCH_POSIX */
 
 #endif /* ZEPHYR_INCLUDE_POSIX_TIME_H_ */
