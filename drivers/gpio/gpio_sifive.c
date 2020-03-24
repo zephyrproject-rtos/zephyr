@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT sifive_gpio0
+
 /**
  * @file GPIO driver for the SiFive Freedom Processor
  */
@@ -379,16 +381,16 @@ static void gpio_sifive_cfg_0(void);
 
 static const struct gpio_sifive_config gpio_sifive_config0 = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_SIFIVE_GPIO0_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
 	},
-	.gpio_base_addr = DT_INST_0_SIFIVE_GPIO0_BASE_ADDRESS,
-	.gpio_irq_base  = DT_INST_0_SIFIVE_GPIO0_IRQ_0,
+	.gpio_base_addr = DT_INST_REG_ADDR(0),
+	.gpio_irq_base  = DT_INST_IRQN(0),
 	.gpio_cfg_func  = gpio_sifive_cfg_0,
 };
 
 static struct gpio_sifive_data gpio_sifive_data0;
 
-DEVICE_AND_API_INIT(gpio_sifive_0, DT_INST_0_SIFIVE_GPIO0_LABEL,
+DEVICE_AND_API_INIT(gpio_sifive_0, DT_INST_LABEL(0),
 		    gpio_sifive_init,
 		    &gpio_sifive_data0, &gpio_sifive_config0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -403,100 +405,100 @@ IRQ_CONNECT(DT_INST_0_SIFIVE_GPIO0_IRQ_##n,	\
 
 static void gpio_sifive_cfg_0(void)
 {
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_0
+#if DT_INST_IRQ_HAS_CELL(0, irq)
 	IRQ_INIT(0);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_1
+#if DT_INST_IRQ_HAS_IDX(0, 1)
 	IRQ_INIT(1);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_2
+#if DT_INST_IRQ_HAS_IDX(0, 2)
 	IRQ_INIT(2);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_3
+#if DT_INST_IRQ_HAS_IDX(0, 3)
 	IRQ_INIT(3);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_4
+#if DT_INST_IRQ_HAS_IDX(0, 4)
 	IRQ_INIT(4);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_5
+#if DT_INST_IRQ_HAS_IDX(0, 5)
 	IRQ_INIT(5);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_6
+#if DT_INST_IRQ_HAS_IDX(0, 6)
 	IRQ_INIT(6);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_7
+#if DT_INST_IRQ_HAS_IDX(0, 7)
 	IRQ_INIT(7);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_8
+#if DT_INST_IRQ_HAS_IDX(0, 8)
 	IRQ_INIT(8);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_9
+#if DT_INST_IRQ_HAS_IDX(0, 9)
 	IRQ_INIT(9);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_10
+#if DT_INST_IRQ_HAS_IDX(0, 10)
 	IRQ_INIT(10);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_11
+#if DT_INST_IRQ_HAS_IDX(0, 11)
 	IRQ_INIT(11);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_12
+#if DT_INST_IRQ_HAS_IDX(0, 12)
 	IRQ_INIT(12);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_13
+#if DT_INST_IRQ_HAS_IDX(0, 13)
 	IRQ_INIT(13);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_14
+#if DT_INST_IRQ_HAS_IDX(0, 14)
 	IRQ_INIT(14);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_15
+#if DT_INST_IRQ_HAS_IDX(0, 15)
 	IRQ_INIT(15);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_16
+#if DT_INST_IRQ_HAS_IDX(0, 16)
 	IRQ_INIT(16);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_17
+#if DT_INST_IRQ_HAS_IDX(0, 17)
 	IRQ_INIT(17);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_18
+#if DT_INST_IRQ_HAS_IDX(0, 18)
 	IRQ_INIT(18);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_19
+#if DT_INST_IRQ_HAS_IDX(0, 19)
 	IRQ_INIT(19);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_20
+#if DT_INST_IRQ_HAS_IDX(0, 20)
 	IRQ_INIT(20);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_21
+#if DT_INST_IRQ_HAS_IDX(0, 21)
 	IRQ_INIT(21);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_22
+#if DT_INST_IRQ_HAS_IDX(0, 22)
 	IRQ_INIT(22);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_23
+#if DT_INST_IRQ_HAS_IDX(0, 23)
 	IRQ_INIT(23);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_24
+#if DT_INST_IRQ_HAS_IDX(0, 24)
 	IRQ_INIT(24);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_25
+#if DT_INST_IRQ_HAS_IDX(0, 25)
 	IRQ_INIT(25);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_26
+#if DT_INST_IRQ_HAS_IDX(0, 26)
 	IRQ_INIT(26);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_27
+#if DT_INST_IRQ_HAS_IDX(0, 27)
 	IRQ_INIT(27);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_28
+#if DT_INST_IRQ_HAS_IDX(0, 28)
 	IRQ_INIT(28);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_29
+#if DT_INST_IRQ_HAS_IDX(0, 29)
 	IRQ_INIT(29);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_30
+#if DT_INST_IRQ_HAS_IDX(0, 30)
 	IRQ_INIT(30);
 #endif
-#ifdef DT_INST_0_SIFIVE_GPIO0_IRQ_31
+#if DT_INST_IRQ_HAS_IDX(0, 31)
 	IRQ_INIT(31);
 #endif
 }

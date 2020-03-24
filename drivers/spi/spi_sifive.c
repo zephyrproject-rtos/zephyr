@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT sifive_spi0
+
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_sifive);
@@ -241,11 +243,11 @@ static struct spi_driver_api spi_sifive_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_sifive_data_##n, ctx), \
 	}; \
 	static struct spi_sifive_cfg spi_sifive_cfg_##n = { \
-		.base = DT_INST_##n##_SIFIVE_SPI0_CONTROL_BASE_ADDRESS, \
-		.f_sys = DT_INST_##n##_SIFIVE_SPI0_CLOCK_FREQUENCY, \
+		.base = DT_INST_REG_ADDR_BY_NAME(n, control), \
+		.f_sys = DT_INST_PROP(n, clock_frequency), \
 	}; \
 	DEVICE_AND_API_INIT(spi_##n, \
-			DT_INST_##n##_SIFIVE_SPI0_LABEL, \
+			DT_INST_LABEL(n), \
 			spi_sifive_init, \
 			&spi_sifive_data_##n, \
 			&spi_sifive_cfg_##n, \
@@ -254,21 +256,21 @@ static struct spi_driver_api spi_sifive_api = {
 			&spi_sifive_api)
 
 #ifndef CONFIG_SIFIVE_SPI_0_ROM
-#ifdef DT_INST_0_SIFIVE_SPI0_LABEL
+#if DT_INST_NODE_HAS_PROP(0, label)
 
 SPI_INIT(0);
 
-#endif /* DT_INST_0_SIFIVE_SPI0_LABEL */
+#endif /* DT_INST_NODE_HAS_PROP(0, label) */
 #endif /* !CONFIG_SIFIVE_SPI_0_ROM */
 
-#ifdef DT_INST_1_SIFIVE_SPI0_LABEL
+#if DT_INST_NODE_HAS_PROP(1, label)
 
 SPI_INIT(1);
 
-#endif /* DT_INST_1_SIFIVE_SPI0_LABEL */
+#endif /* DT_INST_NODE_HAS_PROP(1, label) */
 
-#ifdef DT_INST_2_SIFIVE_SPI0_LABEL
+#if DT_INST_NODE_HAS_PROP(2, label)
 
 SPI_INIT(2);
 
-#endif /* DT_INST_2_SIFIVE_SPI0_LABEL */
+#endif /* DT_INST_NODE_HAS_PROP(2, label) */
