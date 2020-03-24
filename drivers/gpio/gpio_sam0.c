@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam0_gpio
+
 #include <errno.h>
 #include <device.h>
 #include <drivers/gpio.h>
@@ -304,7 +306,7 @@ static int gpio_sam0_init(struct device *dev) { return 0; }
 
 static const struct gpio_sam0_config gpio_sam0_config_0 = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_ATMEL_SAM0_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
 	},
 	.regs = (PortGroup *)DT_ATMEL_SAM0_GPIO_PORT_A_BASE_ADDRESS,
 #ifdef CONFIG_SAM0_EIC
@@ -325,7 +327,7 @@ DEVICE_AND_API_INIT(gpio_sam0_0, DT_ATMEL_SAM0_GPIO_PORT_A_LABEL,
 
 static const struct gpio_sam0_config gpio_sam0_config_1 = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_1_ATMEL_SAM0_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(1, ngpios)),
 	},
 	.regs = (PortGroup *)DT_ATMEL_SAM0_GPIO_PORT_B_BASE_ADDRESS,
 #ifdef CONFIG_SAM0_EIC
@@ -346,7 +348,7 @@ DEVICE_AND_API_INIT(gpio_sam0_1, DT_ATMEL_SAM0_GPIO_PORT_B_LABEL,
 
 static const struct gpio_sam0_config gpio_sam0_config_2 = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_2_ATMEL_SAM0_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(2, ngpios)),
 	},
 	.regs = (PortGroup *)DT_ATMEL_SAM0_GPIO_PORT_C_BASE_ADDRESS,
 #ifdef CONFIG_SAM0_EIC
@@ -367,7 +369,7 @@ DEVICE_AND_API_INIT(gpio_sam0_2, DT_ATMEL_SAM0_GPIO_PORT_C_LABEL,
 
 static const struct gpio_sam0_config gpio_sam0_config_3 = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_3_ATMEL_SAM0_GPIO_NGPIOS),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(3, ngpios)),
 	},
 	.regs = (PortGroup *)DT_ATMEL_SAM0_GPIO_PORT_D_BASE_ADDRESS,
 #ifdef CONFIG_SAM0_EIC
