@@ -83,7 +83,7 @@ int z_clock_driver_init(struct device *device)
 
 	ARG_UNUSED(device);
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+	clock = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 	if (!clock) {
 		return -1;
 	}

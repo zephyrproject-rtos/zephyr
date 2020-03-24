@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <drivers/sensor.h>
 #include <drivers/clock_control.h>
 #include "nrf_clock_calibration.h"
@@ -30,9 +31,6 @@ LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
  * is ongoing, it is requested by the calibration process and released when
  * calibration is done.
  */
-#ifndef DT_INST_0_NORDIC_NRF_TEMP_LABEL
-#define DT_INST_0_NORDIC_NRF_TEMP_LABEL ""
-#endif
 
 static atomic_t cal_process_in_progress;
 static s16_t prev_temperature; /* Previous temperature measurement. */
@@ -61,6 +59,21 @@ static K_WORK_DEFINE(temp_measure_work, measure_temperature);
 
 static void timeout_handler(struct k_timer *timer);
 static K_TIMER_DEFINE(backoff_timer, timeout_handler, NULL);
+
+#define TEMP_SENSOR DT_NODELABEL(temp)
+static inline struct device *get_temp_sensor(void)
+{
+	/*
+	 * E.g. application core in nRF5340 has no TEMP peripheral
+	 * available -- it's network core only there. The
+	 * recommendation is to run calibration on only one core
+	 * (network if that's running).
+	 */
+	return COND_CODE_1(DT_HAS_NODE(TEMP_SENSOR),
+			   (device_get_binding(DT_LABEL(TEMP_SENSOR))),
+			   (NULL));
+}
+#undef TEMP_SENSOR
 
 static void hf_request(void)
 {
@@ -223,8 +236,7 @@ void z_nrf_clock_calibration_init(struct device *dev)
 	nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_DONE_MASK);
 
 	if (CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP != 0) {
-		temp_sensor =
-			device_get_binding(DT_INST_0_NORDIC_NRF_TEMP_LABEL);
+		temp_sensor = get_temp_sensor();
 	}
 
 	clk_dev = dev;
