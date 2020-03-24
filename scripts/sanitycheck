@@ -456,6 +456,8 @@ class Handler:
         self.log = os.path.join(self.build_dir, "handler.log")
         self.returncode = 0
         self.set_state("running", self.duration)
+        self.generator = None
+        self.generator_cmd = None
 
         self.args = []
 
@@ -543,7 +545,7 @@ class BinaryHandler(Handler):
         harness.configure(self.instance)
 
         if self.call_make_run:
-            command = [get_generator()[0], "run"]
+            command = [self.generator_cmd, "run"]
         else:
             command = [self.binary]
 
@@ -622,6 +624,8 @@ class DeviceHandler(Handler):
         super().__init__(instance, type_str)
 
         self.suite = None
+        self.west_flash = None
+        self.west_runner = None
 
     def monitor_serial(self, ser, halt_fileno, harness):
         log_out_fp = open(self.log, "wt")
@@ -701,11 +705,11 @@ class DeviceHandler(Handler):
     def handle(self):
         out_state = "failed"
 
-        if options.west_flash:
+        if self.west_flash:
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
-            if options.west_runner:
+            if self.west_runner:
                 command.append("--runner")
-                command.append(options.west_runner)
+                command.append(self.west_runner)
             # There are three ways this option is used.
             # 1) bare: --west-flash
             #    This results in options.west_flash == []
@@ -713,11 +717,11 @@ class DeviceHandler(Handler):
             #    This results in options.west_flash == "--board-id=42"
             # 3) Multiple values: --west-flash="--board-id=42,--erase"
             #    This results in options.west_flash == "--board-id=42 --erase"
-            if options.west_flash != []:
+            if self.west_flash != []:
                 command.append('--')
-                command.extend(options.west_flash.split(','))
+                command.extend(self.west_flash.split(','))
         else:
-            command = [get_generator()[0], "-C", self.build_dir, "flash"]
+            command = [self.generator_cmd, "-C", self.build_dir, "flash"]
 
         while not self.device_is_available(self.instance.platform.name):
             logger.debug("Waiting for device {} to become available".format(self.instance.platform.name))
@@ -1008,7 +1012,7 @@ class QEMUHandler(Handler):
         subprocess.call(["stty", "sane"])
 
         logger.debug("Running %s (%s)" % (self.name, self.type_str))
-        command = [get_generator()[0]]
+        command = [self.generator_cmd]
         command += ["-C", self.build_dir, "run"]
 
         with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
@@ -1794,6 +1798,8 @@ class CMake():
         self.source_dir = source_dir
         self.build_dir = build_dir
         self.log = "build.log"
+        self.generator = None
+        self.generator_cmd = None
 
     def parse_generated(self):
         self.defconfig = {}
@@ -1870,7 +1876,7 @@ class CMake():
             '-DEXTRA_CFLAGS="-Werror ',
             '-DEXTRA_AFLAGS=-Wa,--fatal-warnings',
             '-DEXTRA_LDFLAGS="{}'.format(ldflags),
-            '-G{}'.format(get_generator()[1])
+            '-G{}'.format(self.generator)
         ]
 
         if self.cmake_only:
@@ -2006,6 +2012,10 @@ class ProjectBuilder(FilterBuilder):
         self.cleanup = kwargs.get('cleanup', False)
         self.coverage = kwargs.get('coverage', False)
         self.inline_logs = kwargs.get('inline_logs', False)
+        self.west_flash = kwargs.get('west_flash', None)
+        self.west_runner = kwargs.get('west_runner', None)
+        self.generator = kwargs.get('generator', None)
+        self.generator_cmd = kwargs.get('generator_cmd', None)
 
     @staticmethod
     def log_info(filename, inline_logs):
@@ -2078,6 +2088,9 @@ class ProjectBuilder(FilterBuilder):
 
         if instance.handler:
             instance.handler.args = args
+
+        instance.handler.generator_cmd = self.generator_cmd
+        instance.handler.generator = self.generator
 
     def process(self, message):
         op = message.get('op')
@@ -2342,6 +2355,10 @@ class TestSuite:
         self.extra_args = []
         self.inline_logs = False
         self.enable_sizes_report = False
+        self.west_flash = None
+        self.west_runner = None
+        self.generator = None
+        self.generator_cmd = None
 
         # Keep track of which test cases we've filtered out and why
         self.testcases = {}
@@ -2911,7 +2928,11 @@ class TestSuite:
                                         cmake_only=self.cmake_only,
                                         cleanup=self.cleanup,
                                         valgrind=self.enable_valgrind,
-                                        inline_logs=self.inline_logs
+                                        inline_logs=self.inline_logs,
+                                        west_flash=self.west_flash,
+                                        west_runner=self.west_runner,
+                                        generator=self.generator,
+                                        generator_cmd=self.generator_cmd
                                         )
                     future_to_test[executor.submit(pb.process, message)] = test.name
 
@@ -3774,17 +3795,6 @@ class Gcovr(CoverageTool):
                                ["-o", os.path.join(subdir, "index.html")],
                                stdout=coveragelog)
 
-
-def get_generator():
-    if options.ninja:
-        generator_cmd = "ninja"
-        generator = "Ninja"
-    else:
-        generator_cmd = "make"
-        generator = "Unix Makefiles"
-    return generator_cmd, generator
-
-
 def export_tests(filename, tests):
     with open(filename, "wt") as csvfile:
         fieldnames = ['section', 'subsection', 'title', 'reference']
@@ -4069,6 +4079,15 @@ def main():
     suite.inline_logs = options.inline_logs
     suite.enable_size_report = options.enable_size_report
     suite.extra_args = options.extra_args
+    suite.west_flash = options.west_flash
+    suite.west_runner = options.west_runner
+
+    if options.ninja:
+        suite.generator_cmd = "ninja"
+        suite.generator = "Ninja"
+    else:
+        suite.generator_cmd = "make"
+        suite.generator = "Unix Makefiles"
 
     # Set number of jobs
     if options.jobs:
