@@ -1,5 +1,7 @@
 /* spi.c - SPI based Bluetooth driver */
 
+#define DT_DRV_COMPAT zephyr_bt_hci_spi
+
 /*
  * Copyright (c) 2017 Linaro Ltd.
  *
@@ -45,14 +47,14 @@
 #define CMD_OGF			1
 #define CMD_OCF			2
 
-#define GPIO_IRQ_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIOS_PIN
-#define GPIO_IRQ_FLAGS		DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIOS_FLAGS
-#define GPIO_RESET_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIOS_PIN
-#define GPIO_RESET_FLAGS	DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIOS_FLAGS
-#ifdef DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_PIN
-#define GPIO_CS_PIN		DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_PIN
-#define GPIO_CS_FLAGS		DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_FLAGS
-#endif /* DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_PIN */
+#define GPIO_IRQ_PIN		DT_INST_GPIO_PIN(0, irq_gpios)
+#define GPIO_IRQ_FLAGS		DT_INST_GPIO_FLAGS(0, irq_gpios)
+#define GPIO_RESET_PIN		DT_INST_GPIO_PIN(0, reset_gpios)
+#define GPIO_RESET_FLAGS	DT_INST_GPIO_FLAGS(0, reset_gpios)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+#define GPIO_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
+#define GPIO_CS_FLAGS		DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0)
+#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 
 /* Max SPI buffer length for transceive operations.
  *
@@ -127,7 +129,7 @@ static int bt_spi_send_aci_config_data_controller_mode(void);
 static struct device *spi_dev;
 
 static struct spi_config spi_conf = {
-	.frequency = DT_INST_0_ZEPHYR_BT_HCI_SPI_SPI_MAX_FREQUENCY,
+	.frequency = DT_INST_PROP(0, spi_max_frequency),
 	.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) |
 		      SPI_LINES_SINGLE),
 	.slave     = 0,
@@ -197,10 +199,10 @@ static void bt_spi_handle_vendor_evt(u8_t *rxmsg)
  */
 static int configure_cs(void)
 {
-	cs_dev = device_get_binding(DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_CONTROLLER);
+	cs_dev = device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!cs_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_CONTROLLER);
+		       DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 		return -EIO;
 	}
 
@@ -258,10 +260,10 @@ static int configure_cs(void)
 
 	spi_conf_cs.gpio_pin = GPIO_CS_PIN,
 	spi_conf_cs.gpio_dev = device_get_binding(
-		DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_CONTROLLER);
+		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!spi_conf_cs.gpio_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_0_ZEPHYR_BT_HCI_SPI_CS_GPIOS_CONTROLLER);
+		       DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 		return -EIO;
 	}
 
@@ -520,7 +522,7 @@ static int bt_spi_open(void)
 }
 
 static const struct bt_hci_driver drv = {
-	.name		= DT_INST_0_ZEPHYR_BT_HCI_SPI_LABEL,
+	.name		= DT_INST_LABEL(0),
 	.bus		= BT_HCI_DRIVER_BUS_SPI,
 #if defined(CONFIG_BT_BLUENRG_ACI)
 	.quirks		= BT_QUIRK_NO_RESET,
@@ -533,10 +535,10 @@ static int bt_spi_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	spi_dev = device_get_binding(DT_INST_0_ZEPHYR_BT_HCI_SPI_BUS_NAME);
+	spi_dev = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!spi_dev) {
 		BT_ERR("Failed to initialize SPI driver: %s",
-		       DT_INST_0_ZEPHYR_BT_HCI_SPI_BUS_NAME);
+		       DT_INST_BUS_LABEL(0));
 		return -EIO;
 	}
 
@@ -545,18 +547,18 @@ static int bt_spi_init(struct device *unused)
 	}
 
 	irq_dev = device_get_binding(
-		DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIOS_CONTROLLER);
+		DT_INST_GPIO_LABEL(0, irq_gpios));
 	if (!irq_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_0_ZEPHYR_BT_HCI_SPI_IRQ_GPIOS_CONTROLLER);
+		       DT_INST_GPIO_LABEL(0, irq_gpios));
 		return -EIO;
 	}
 
 	rst_dev = device_get_binding(
-		DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIOS_CONTROLLER);
+		DT_INST_GPIO_LABEL(0, reset_gpios));
 	if (!rst_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       DT_INST_0_ZEPHYR_BT_HCI_SPI_RESET_GPIOS_CONTROLLER);
+		       DT_INST_GPIO_LABEL(0, reset_gpios));
 		return -EIO;
 	}
 
