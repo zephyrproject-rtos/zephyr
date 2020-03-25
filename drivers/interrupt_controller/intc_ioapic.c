@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT intel_ioapic
+
 /**
  * @file
  * @brief Intel IO APIC/xAPIC driver
@@ -62,7 +64,7 @@
 #include <drivers/interrupt_controller/loapic.h> /* public API declarations and registers */
 #include "intc_ioapic_priv.h"
 
-#define IOAPIC_REG DT_INST_0_INTEL_IOAPIC_BASE_ADDRESS
+#define IOAPIC_REG DT_INST_REG_ADDR(0)
 #define BITS_PER_IRQ  3
 #define IOAPIC_BITFIELD_HI_LO	0
 #define IOAPIC_BITFIELD_LVL_EDGE 1
