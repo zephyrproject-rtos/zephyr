@@ -348,8 +348,8 @@ static const char *tcp_state_to_str(enum tcp_state state, bool prefix)
 	_(TCP_SYN_SENT);
 	_(TCP_SYN_RECEIVED);
 	_(TCP_ESTABLISHED);
-	_(TCP_FIN_WAIT1);
-	_(TCP_FIN_WAIT2);
+	_(TCP_FIN_WAIT_1);
+	_(TCP_FIN_WAIT_2);
 	_(TCP_CLOSE_WAIT);
 	_(TCP_CLOSING);
 	_(TCP_LAST_ACK);
@@ -919,8 +919,8 @@ next_state:
 		break;
 	case TCP_TIME_WAIT:
 	case TCP_CLOSING:
-	case TCP_FIN_WAIT1:
-	case TCP_FIN_WAIT2:
+	case TCP_FIN_WAIT_1:
+	case TCP_FIN_WAIT_2:
 	default:
 		NET_ASSERT(false, "%s is unimplemented",
 			   tcp_state_to_str(conn->state, true));
