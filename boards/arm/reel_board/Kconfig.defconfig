@@ -20,16 +20,6 @@ config I2C_0
 config I2C_1
 	default n
 
-choice I2C_0_NRF_TYPE
-	default I2C_0_NRF_TWIM
-	depends on I2C_0
-endchoice
-
-choice I2C_1_NRF_TYPE
-	default I2C_1_NRF_TWIM
-	depends on I2C_1
-endchoice
-
 endif # I2C
 
 config PWM_0
