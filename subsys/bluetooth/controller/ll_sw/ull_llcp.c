@@ -145,7 +145,7 @@ enum {
 };
 
 /* LLCP Procedure */
-enum {
+enum llcp_proc {
 	PROC_UNKNOWN,
 	PROC_VERSION_EXCHANGE,
 	PROC_ENCRYPTION_START,
@@ -201,7 +201,7 @@ struct proc_ctx {
 	sys_snode_t node;
 
 	/* PROC_ */
-	u8_t proc;
+	enum llcp_proc proc;
 
 	/* Procedure FSM */
 	u8_t state;
@@ -360,7 +360,7 @@ static void ll_rx_enqueue(struct node_rx_pdu *rx)
  * LLCP Procedure Creation
  */
 
-static struct proc_ctx *create_procedure(u8_t proc)
+static struct proc_ctx *create_procedure(enum llcp_proc proc)
 {
 	struct proc_ctx *ctx;
 
@@ -376,7 +376,7 @@ static struct proc_ctx *create_procedure(u8_t proc)
 	return ctx;
 }
 
-static struct proc_ctx *create_local_procedure(u8_t proc)
+static struct proc_ctx *create_local_procedure(enum llcp_proc proc)
 {
 	struct proc_ctx *ctx;
 
@@ -400,7 +400,7 @@ static struct proc_ctx *create_local_procedure(u8_t proc)
 	return ctx;
 }
 
-static struct proc_ctx *create_remote_procedure(u8_t proc)
+static struct proc_ctx *create_remote_procedure(enum llcp_proc proc)
 {
 	struct proc_ctx *ctx;
 
