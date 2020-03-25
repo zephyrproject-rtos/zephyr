@@ -127,6 +127,12 @@ other-macro =  %s"DT_N_" alternate-id
 other-macro =/ %s"DT_N_INST_" dt-name %s"_NUM"
 ; E.g.: #define DT_CHOSEN_zephyr_flash
 other-macro =/ %s"DT_CHOSEN_" dt-name
+; Declares that a compatible has at least one node on a bus.
+;
+; Example:
+;
+;   #define DT_COMPAT_vnd_dev_BUS_spi 1
+other-macro =/ %s"DT_COMPAT_" dt-name %s"_BUS_" dt-name
 
 ; --------------------------------------------------------------------
 ; alternate-id: another way to specify a node besides a path-id

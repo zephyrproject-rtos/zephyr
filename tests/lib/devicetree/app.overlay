@@ -121,6 +121,12 @@
 				label = "TEST_I2C_DEV_10";
 				reg = < 0x10 >;
 			};
+
+			gpio@11 {
+				compatible = "vnd,gpio-expander";
+				reg = <0x11>;
+				label = "TEST_EXPANDER_I2C";
+			};
 		};
 
 		test_spi: spi@33334444 {
@@ -134,7 +140,8 @@
 			clock-frequency = < 2000000 >;
 
 			cs-gpios = <&test_gpio_1 0x10 0x20>,
-					<&test_gpio_2 0x30 0x40>;
+					<&test_gpio_2 0x30 0x40>,
+					<&test_gpio_2 0x50 0x60>;
 
 			/* all vnd,spi-device instances should have CS */
 
@@ -150,6 +157,13 @@
 				label = "TEST_SPI_DEV_1";
 				reg = <1>;
 				spi-max-frequency = < 2000000 >;
+			};
+
+			gpio@2 {
+				compatible = "vnd,gpio-expander";
+				reg = <2>;
+				label = "TEST_EXPANDER_SPI";
+				spi-max-frequency = <(1 * 1000 * 1000)>;
 			};
 		};
 
