@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT intel_apl_gpio
+
 /**
  * @file
  * @brief Intel Apollo Lake SoC GPIO Controller Driver
@@ -36,7 +38,7 @@
  * as well, but my (admitted cursory) testing disagrees.
  */
 
-BUILD_ASSERT(DT_INST_0_INTEL_APL_GPIO_IRQ_0 == 14);
+BUILD_ASSERT(DT_INST_IRQN(0) == 14);
 
 #define REG_PAD_BASE_ADDR		0x000C
 
@@ -558,12 +560,12 @@ int gpio_intel_apl_init(struct device *dev)
 		/* Note that all controllers are using the same IRQ line.
 		 * So we can just use the values from the first instance.
 		 */
-		IRQ_CONNECT(DT_INST_0_INTEL_APL_GPIO_IRQ_0,
-			    DT_INST_0_INTEL_APL_GPIO_IRQ_0_PRIORITY,
+		IRQ_CONNECT(DT_INST_IRQN(0),
+			    DT_INST_IRQ(0, priority),
 			    gpio_intel_apl_isr, NULL,
-			    DT_INST_0_INTEL_APL_GPIO_IRQ_0_SENSE);
+			    DT_INST_IRQ(0, sense));
 
-		irq_enable(DT_INST_0_INTEL_APL_GPIO_IRQ_0);
+		irq_enable(DT_INST_IRQN(0));
 	}
 
 	isr_devs[nr_isr_devs++] = dev;
