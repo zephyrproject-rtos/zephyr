@@ -292,6 +292,20 @@ static void test_bus(void)
 		     "inst 0 i2c dev label");
 	zassert_true(!strncmp(i2c_bus, DT_INST_BUS_LABEL(0), strlen(i2c_bus)),
 		     "inst 0 i2c bus label");
+
+#undef DT_DRV_COMPAT
+	/*
+	 * Make sure the underlying DT_COMPAT_ON_BUS used by
+	 * DT_ANY_INST_ON_BUS works without DT_DRV_COMPAT defined.
+	 */
+	zassert_equal(DT_COMPAT_ON_BUS(vnd_spi_device, spi), 1, NULL);
+	zassert_equal(DT_COMPAT_ON_BUS(vnd_spi_device, i2c), 0, NULL);
+
+	zassert_equal(DT_COMPAT_ON_BUS(vnd_i2c_device, i2c), 1, NULL);
+	zassert_equal(DT_COMPAT_ON_BUS(vnd_i2c_device, spi), 0, NULL);
+
+	zassert_equal(DT_COMPAT_ON_BUS(vnd_gpio_expander, i2c), 1, NULL);
+	zassert_equal(DT_COMPAT_ON_BUS(vnd_gpio_expander, spi), 1, NULL);
 }
 
 #undef DT_DRV_COMPAT
@@ -1032,7 +1046,7 @@ static void test_cs_gpios(void)
 	zassert_equal(DT_SPI_NUM_CS_GPIOS(TEST_SPI_NO_CS), 0, "wrong no. of cs");
 
 	zassert_equal(DT_SPI_HAS_CS_GPIOS(TEST_SPI), 1, "missing cs");
-	zassert_equal(DT_SPI_NUM_CS_GPIOS(TEST_SPI), 2, "wrong no. of cs");
+	zassert_equal(DT_SPI_NUM_CS_GPIOS(TEST_SPI), 3, "wrong no. of cs");
 
 	zassert_true(!strcmp(DT_SPI_DEV_CS_GPIOS_LABEL(TEST_SPI_DEV_0),
 			     "TEST_GPIO_1"),

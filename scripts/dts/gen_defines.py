@@ -19,6 +19,7 @@
 # edtlib. This will keep this script simple.
 
 import argparse
+from collections import defaultdict
 import os
 import pathlib
 import re
@@ -64,7 +65,7 @@ def main():
             write_vanilla_props(node)
 
         write_chosen(edt)
-        write_inst_num(edt)
+        write_global_compat_info(edt)
 
 
 def parse_args():
@@ -510,26 +511,29 @@ def write_chosen(edt):
         out_define(macro, value, width=max_len)
 
 
-def write_inst_num(edt):
-    # Tree-wide information such as number of instances is printed here.
+def write_global_compat_info(edt):
+    # Tree-wide information related to each compatible, such as number
+    # of instances, is printed here.
 
-    out_comment("Number of instances\n")
-    compat_list = []
+    compat2numinst = {}
+    compat2buses = defaultdict(list)
+    for compat, enabled in edt.compat2enabled.items():
+        compat2numinst[compat] = len(enabled)
 
-    # Walk the nodes to build which compats we need to generate for
-    for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
-        if not node.enabled:
-            continue
-        if not node.matching_compat:
-            continue
-        for compat in node.compats:
-            if compat not in compat_list:
-                compat_list.append(compat)
+        for node in enabled:
+            bus = node.on_bus
+            if bus is not None and bus not in compat2buses[compat]:
+                compat2buses[compat].append(bus)
 
-    for compat in compat_list:
-        num_inst = len(edt.compat2enabled[compat])
-        out_define(f"DT_N_INST_{str2ident(compat)}_NUM", num_inst)
+    out_comment("Number of enabled instances of each compatible\n")
+    for compat, numinst in compat2numinst.items():
+        out_define(f"DT_N_INST_{str2ident(compat)}_NUM", numinst)
 
+    out_comment("Bus information for enabled nodes of each compatible\n")
+    for compat, buses in compat2buses.items():
+        for bus in buses:
+            out_define(
+                f"DT_COMPAT_{str2ident(compat)}_BUS_{str2ident(bus)}", 1)
 
 def str2ident(s):
     # Converts 's' to a form suitable for (part of) an identifier

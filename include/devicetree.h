@@ -1037,6 +1037,31 @@
 #define DT_ON_BUS(node_id, bus) IS_ENABLED(DT_CAT(node_id, _BUS_##bus))
 
 /**
+ * @brief Test if any node of a compatible is on a bus of a given type
+ *
+ * Example devicetree overlay:
+ *
+ *     &i2c0 {
+ *            temp: temperature-sensor@76 {
+ *                     compatible = "vnd,some-sensor";
+ *                     reg = <0x76>;
+ *            };
+ *     };
+ *
+ * Example usage, assuming "i2c0" is an I2C bus controller node, and
+ * therefore "temp" is on an I2C bus:
+ *
+ *     DT_COMPAT_ON_BUS(vnd_some_sensor, i2c) // 1
+ *
+ * @param compat lowercase-and-underscores version of a compatible
+ * @param bus a binding's bus type as a C token, lowercased and without quotes
+ * @return 1 if any enabled node with that compatible is on that bus type,
+ *         0 otherwise
+ */
+#define DT_COMPAT_ON_BUS(compat, bus) \
+	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
+
+/**
  * @}
  */
 
@@ -1319,17 +1344,10 @@
 /**
  * @brief Test if any node with compatible DT_DRV_COMPAT is on a bus
  *
- * This is the same as logically ORing together DT_ON_BUS(node, bus)
- * for every enabled node which matches compatible DT_DRV_COMPAT.
- *
- * It can be useful, for instance, when writing device drivers for
- * hardware that supports multiple possible bus connections to the
- * SoC.
- *
+ * This is equivalent to DT_COMPAT_ON_BUS(DT_DRV_COMPAT, bus).
  * @param bus a binding's bus type as a C token, lowercased and without quotes
  */
-#define DT_ANY_INST_ON_BUS(bus) \
-	(UTIL_LISTIFY(DT_NUM_INST(DT_DRV_COMPAT), DT_INST_ON_BUS_OR, bus) 0)
+#define DT_ANY_INST_ON_BUS(bus) DT_COMPAT_ON_BUS(DT_DRV_COMPAT, bus)
 
 /**
  * @def DT_INST_FOREACH
@@ -1445,8 +1463,6 @@
 #define DT_DASH(...) MACRO_MAP_CAT(DT_DASH_PREFIX, __VA_ARGS__)
 /** @internal helper for DT_DASH(): prepends _ to a name */
 #define DT_DASH_PREFIX(name) _##name
-/** @internal DT_ANY_INST_ON_BUS helper */
-#define DT_INST_ON_BUS_OR(inst, bus) DT_ON_BUS(DT_DRV_INST(inst), bus) ||
 /** @internal DT_INST_FOREACH helper */
 #define DT_CALL_WITH_ARG(arg, expr) expr(arg);
 
