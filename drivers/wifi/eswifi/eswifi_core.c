@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT inventek_eswifi
 #define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(wifi_eswifi_core);
@@ -638,27 +640,27 @@ static int eswifi_init(struct device *dev)
 	eswifi->bus->init(eswifi);
 
 	eswifi->resetn.dev = device_get_binding(
-			DT_INST_0_INVENTEK_ESWIFI_RESETN_GPIOS_CONTROLLER);
+			DT_INST_GPIO_LABEL(0, resetn_gpios));
 	if (!eswifi->resetn.dev) {
 		LOG_ERR("Failed to initialize GPIO driver: %s",
-			    DT_INST_0_INVENTEK_ESWIFI_RESETN_GPIOS_CONTROLLER);
+			    DT_INST_GPIO_LABEL(0, resetn_gpios));
 		return -ENODEV;
 	}
-	eswifi->resetn.pin = DT_INST_0_INVENTEK_ESWIFI_RESETN_GPIOS_PIN;
+	eswifi->resetn.pin = DT_INST_GPIO_PIN(0, resetn_gpios);
 	gpio_pin_configure(eswifi->resetn.dev, eswifi->resetn.pin,
-			   DT_INST_0_INVENTEK_ESWIFI_RESETN_GPIOS_FLAGS |
+			   DT_INST_GPIO_FLAGS(0, resetn_gpios) |
 			   GPIO_OUTPUT_INACTIVE);
 
 	eswifi->wakeup.dev = device_get_binding(
-			DT_INST_0_INVENTEK_ESWIFI_WAKEUP_GPIOS_CONTROLLER);
+			DT_INST_GPIO_LABEL(0, wakeup_gpios));
 	if (!eswifi->wakeup.dev) {
 		LOG_ERR("Failed to initialize GPIO driver: %s",
-			    DT_INST_0_INVENTEK_ESWIFI_WAKEUP_GPIOS_CONTROLLER);
+			    DT_INST_GPIO_LABEL(0, wakeup_gpios));
 		return -ENODEV;
 	}
-	eswifi->wakeup.pin = DT_INST_0_INVENTEK_ESWIFI_WAKEUP_GPIOS_PIN;
+	eswifi->wakeup.pin = DT_INST_GPIO_PIN(0, wakeup_gpios);
 	gpio_pin_configure(eswifi->wakeup.dev, eswifi->wakeup.pin,
-			   DT_INST_0_INVENTEK_ESWIFI_WAKEUP_GPIOS_FLAGS |
+			   DT_INST_GPIO_FLAGS(0, wakeup_gpios) |
 			   GPIO_OUTPUT_ACTIVE);
 
 	k_work_q_start(&eswifi->work_q, eswifi_work_q_stack,
