@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT worldsemi_ws2812_gpio
+
 #include <drivers/led_strip.h>
 
 #include <string.h>
@@ -181,15 +183,15 @@ static const struct led_strip_driver_api ws2812_gpio_api = {
 };
 
 #define WS2812_GPIO_LABEL(idx) \
-	(DT_INST_##idx##_WORLDSEMI_WS2812_GPIO_LABEL)
+	(DT_INST_LABEL(idx))
 #define WS2812_GPIO_HAS_WHITE(idx) \
-	(DT_INST_##idx##_WORLDSEMI_WS2812_GPIO_HAS_WHITE_CHANNEL == 1)
+	(DT_INST_PROP(idx, has_white_channel) == 1)
 #define WS2812_GPIO_DEV(idx) \
-	(DT_INST_##idx##_WORLDSEMI_WS2812_GPIO_IN_GPIOS_CONTROLLER)
+	(DT_INST_GPIO_LABEL(idx, in_gpios))
 #define WS2812_GPIO_PIN(idx) \
-	(DT_INST_##idx##_WORLDSEMI_WS2812_GPIO_IN_GPIOS_PIN)
+	(DT_INST_GPIO_PIN(idx, in_gpios))
 #define WS2812_GPIO_FLAGS(idx) \
-	(DT_INST_##idx##_WORLDSEMI_WS2812_GPIO_IN_GPIOS_FLAGS)
+	(DT_INST_GPIO_FLAGS(idx, in_gpios))
 /*
  * The inline assembly above is designed to work on nRF51 devices with
  * the 16 MHz clock enabled.
@@ -238,10 +240,10 @@ static const struct led_strip_driver_api ws2812_gpio_api = {
 			    CONFIG_LED_STRIP_INIT_PRIORITY,		\
 			    &ws2812_gpio_api)
 
-#ifdef DT_INST_0_WORLDSEMI_WS2812_GPIO_LABEL
+#if DT_INST_NODE_HAS_PROP(0, label)
 WS2812_GPIO_DEVICE(0);
 #endif
 
-#ifdef DT_INST_1_WORLDSEMI_WS2812_GPIO_LABEL
+#if DT_INST_NODE_HAS_PROP(1, label)
 WS2812_GPIO_DEVICE(1);
 #endif

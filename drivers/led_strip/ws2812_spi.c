@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT worldsemi_ws2812_spi
+
 #include <drivers/led_strip.h>
 
 #include <string.h>
@@ -167,21 +169,21 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 };
 
 #define WS2812_SPI_LABEL(idx) \
-	(DT_INST_##idx##_WORLDSEMI_WS2812_SPI_LABEL)
+	(DT_INST_LABEL(idx))
 #define WS2812_SPI_NUM_PIXELS(idx) \
-	(DT_INST_##idx##_WORLDSEMI_WS2812_SPI_CHAIN_LENGTH)
+	(DT_INST_PROP(idx, chain_length))
 #define WS2812_SPI_HAS_WHITE(idx) \
-	(DT_INST_##idx##_WORLDSEMI_WS2812_SPI_HAS_WHITE_CHANNEL == 1)
+	(DT_INST_PROP(idx, has_white_channel) == 1)
 #define WS2812_SPI_BUS(idx) \
-	(DT_INST_##idx##_WORLDSEMI_WS2812_SPI_BUS_NAME)
+	(DT_INST_BUS_LABEL(idx))
 #define WS2812_SPI_SLAVE(idx) \
-	(DT_INST_##idx##_WORLDSEMI_WS2812_SPI_BASE_ADDRESS)
+	(DT_INST_REG_ADDR(idx))
 #define WS2812_SPI_FREQ(idx) \
-	(DT_INST_##idx##_WORLDSEMI_WS2812_SPI_SPI_MAX_FREQUENCY)
+	(DT_INST_PROP(idx, spi_max_frequency))
 #define WS2812_SPI_ONE_FRAME(idx) \
-	(DT_INST_##idx##_WORLDSEMI_WS2812_SPI_SPI_ONE_FRAME)
+	(DT_INST_PROP(idx, spi_one_frame))
 #define WS2812_SPI_ZERO_FRAME(idx)\
-	(DT_INST_##idx##_WORLDSEMI_WS2812_SPI_SPI_ZERO_FRAME)
+	(DT_INST_PROP(idx, spi_zero_frame))
 #define WS2812_SPI_BUFSZ(idx) \
 	(BYTES_PER_PX(WS2812_SPI_HAS_WHITE(idx)) * WS2812_SPI_NUM_PIXELS(idx))
 
@@ -228,10 +230,10 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 			    CONFIG_LED_STRIP_INIT_PRIORITY,		\
 			    &ws2812_spi_api);
 
-#ifdef DT_INST_0_WORLDSEMI_WS2812_SPI_LABEL
+#if DT_INST_NODE_HAS_PROP(0, label)
 WS2812_SPI_DEVICE(0);
 #endif
 
-#ifdef DT_INST_1_WORLDSEMI_WS2812_SPI_LABEL
+#if DT_INST_NODE_HAS_PROP(1, label)
 WS2812_SPI_DEVICE(1);
 #endif
