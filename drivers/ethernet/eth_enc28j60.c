@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_enc28j60
+
 #define LOG_MODULE_NAME eth_enc28j60
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
@@ -807,7 +809,7 @@ static int eth_enc28j60_init(struct device *dev)
 #ifdef CONFIG_ETH_ENC28J60_0
 
 static struct eth_enc28j60_runtime eth_enc28j60_0_runtime = {
-	.mac_address = DT_INST_0_MICROCHIP_ENC28J60_LOCAL_MAC_ADDRESS,
+	.mac_address = DT_INST_PROP(0, local_mac_address),
 	.tx_rx_sem = Z_SEM_INITIALIZER(eth_enc28j60_0_runtime.tx_rx_sem,
 					1,  UINT_MAX),
 	.int_sem  = Z_SEM_INITIALIZER(eth_enc28j60_0_runtime.int_sem,
@@ -815,21 +817,21 @@ static struct eth_enc28j60_runtime eth_enc28j60_0_runtime = {
 };
 
 static const struct eth_enc28j60_config eth_enc28j60_0_config = {
-	.gpio_port = DT_INST_0_MICROCHIP_ENC28J60_INT_GPIOS_CONTROLLER,
-	.gpio_pin = DT_INST_0_MICROCHIP_ENC28J60_INT_GPIOS_PIN,
-	.gpio_flags = DT_INST_0_MICROCHIP_ENC28J60_INT_GPIOS_FLAGS,
-	.spi_port = DT_INST_0_MICROCHIP_ENC28J60_BUS_NAME,
-	.spi_freq  = DT_INST_0_MICROCHIP_ENC28J60_SPI_MAX_FREQUENCY,
-	.spi_slave = DT_INST_0_MICROCHIP_ENC28J60_BASE_ADDRESS,
+	.gpio_port = DT_INST_GPIO_LABEL(0, int_gpios),
+	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
+	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
+	.spi_port = DT_INST_BUS_LABEL(0),
+	.spi_freq  = DT_INST_PROP(0, spi_max_frequency),
+	.spi_slave = DT_INST_REG_ADDR(0),
 #ifdef CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS
-	.spi_cs_port = DT_INST_0_MICROCHIP_ENC28J60_CS_GPIOS_CONTROLLER,
-	.spi_cs_pin = DT_INST_0_MICROCHIP_ENC28J60_CS_GPIOS_PIN,
+	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
 #endif /* CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS */
 	.full_duplex = IS_ENABLED(CONFIG_ETH_ENC28J60_0_FULL_DUPLEX),
 	.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,
 };
 
-ETH_NET_DEVICE_INIT(enc28j60_0, DT_INST_0_MICROCHIP_ENC28J60_LABEL,
+ETH_NET_DEVICE_INIT(enc28j60_0, DT_INST_LABEL(0),
 		    eth_enc28j60_init, device_pm_control_nop,
 		    &eth_enc28j60_0_runtime, &eth_enc28j60_0_config,
 		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);

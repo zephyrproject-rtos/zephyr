@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_enc424j600
+
 #include <zephyr.h>
 #include <device.h>
 #include <string.h>
@@ -752,20 +754,20 @@ static struct enc424j600_runtime enc424j600_0_runtime = {
 };
 
 static const struct enc424j600_config enc424j600_0_config = {
-	.gpio_port = DT_INST_0_MICROCHIP_ENC424J600_INT_GPIOS_CONTROLLER,
-	.gpio_pin = DT_INST_0_MICROCHIP_ENC424J600_INT_GPIOS_PIN,
-	.gpio_flags = DT_INST_0_MICROCHIP_ENC424J600_INT_GPIOS_FLAGS,
-	.spi_port = DT_INST_0_MICROCHIP_ENC424J600_BUS_NAME,
-	.spi_freq  = DT_INST_0_MICROCHIP_ENC424J600_SPI_MAX_FREQUENCY,
-	.spi_slave = DT_INST_0_MICROCHIP_ENC424J600_BASE_ADDRESS,
+	.gpio_port = DT_INST_GPIO_LABEL(0, int_gpios),
+	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
+	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
+	.spi_port = DT_INST_BUS_LABEL(0),
+	.spi_freq  = DT_INST_PROP(0, spi_max_frequency),
+	.spi_slave = DT_INST_REG_ADDR(0),
 #ifdef CONFIG_ETH_ENC424J600_0_GPIO_SPI_CS
-	.spi_cs_port = DT_INST_0_MICROCHIP_ENC424J600_CS_GPIOS_CONTROLLER,
-	.spi_cs_pin = DT_INST_0_MICROCHIP_ENC424J600_CS_GPIOS_PIN,
+	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
 #endif /* CONFIG_ETH_ENC424J600_0_GPIO_SPI_CS */
 	.timeout = CONFIG_ETH_ENC424J600_TIMEOUT,
 };
 
-ETH_NET_DEVICE_INIT(enc424j600_0, DT_INST_0_MICROCHIP_ENC424J600_LABEL,
+ETH_NET_DEVICE_INIT(enc424j600_0, DT_INST_LABEL(0),
 		    enc424j600_init, device_pm_control_nop,
 		    &enc424j600_0_runtime, &enc424j600_0_config,
 		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);

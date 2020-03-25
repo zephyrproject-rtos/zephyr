@@ -7,6 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_ethernet
+
 /* Driver Limitations:
  *
  * There is no statistics collection for either normal operation or
@@ -1198,7 +1200,7 @@ static void eth_0_config_func(void);
 static struct eth_context eth_0_context = {
 	.base = ENET,
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
-	.clock_name = DT_INST_0_NXP_KINETIS_ETHERNET_CLOCK_CONTROLLER,
+	.clock_name = DT_INST_CLOCKS_LABEL(0),
 	.clock = kCLOCK_Enet0,
 #endif
 	.config_func = eth_0_config_func,
@@ -1260,7 +1262,7 @@ static void eth_1_config_func(void);
 static struct eth_context eth_1_context = {
 	.base = ENET2,
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
-	.clock_name = DT_INST_1_NXP_KINETIS_ETHERNET_CLOCK_CONTROLLER,
+	.clock_name = DT_INST_CLOCKS_LABEL(1),
 	.clock = kCLOCK_Enet2,
 #endif
 	.config_func = eth_1_config_func,
