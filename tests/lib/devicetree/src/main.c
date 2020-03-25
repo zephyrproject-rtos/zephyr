@@ -581,7 +581,7 @@ static void test_phandles(void)
 	zassert_equal(ARRAY_SIZE(gps), 2, "gpios size");
 	zassert_equal(DT_PROP_LEN(TEST_PH, gpios), 2, "pha len");
 
-	/* DT_PHA_HAS_IDX */
+	/* DT_PROP_HAS_IDX */
 	zassert_true(DT_PROP_HAS_IDX(TEST_PH, gpios, 0), "has idx 0");
 	zassert_true(DT_PROP_HAS_IDX(TEST_PH, gpios, 1), "has idx 1");
 	zassert_false(DT_PROP_HAS_IDX(TEST_PH, gpios, 2), "!has idx 2");
@@ -686,8 +686,7 @@ static void test_phandles(void)
 			     "TEST_GPIO_2"),
 		     "gpios[1].label");
 
-#if 0
-	/* DT_INST_PHA_HAS_IDX */
+	/* DT_INST_PROP_HAS_IDX */
 	zassert_true(DT_INST_PROP_HAS_IDX(0, gpios, 0), "has idx 0");
 	zassert_true(DT_INST_PROP_HAS_IDX(0, gpios, 1), "has idx 1");
 	zassert_false(DT_INST_PROP_HAS_IDX(0, gpios, 2), "!has idx 2");
@@ -710,7 +709,6 @@ static void test_phandles(void)
 	/* DT_INST_PHA_HAS_CELL */
 	zassert_true(DT_INST_PHA_HAS_CELL(0, gpios, flags), "has gpio flags");
 	zassert_false(DT_INST_PHA_HAS_CELL(0, gpios, bar), "no gpio bar");
-#endif
 
 	/* DT_INST_PHANDLE_BY_IDX */
 	zassert_true(!strcmp(DT_LABEL(DT_INST_PHANDLE_BY_IDX(0, gpios, 0)),
