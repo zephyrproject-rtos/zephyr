@@ -1879,9 +1879,8 @@ class ProjectBuilder(FilterBuilder):
 
         if instance.handler:
             instance.handler.args = args
-
-        instance.handler.generator_cmd = self.generator_cmd
-        instance.handler.generator = self.generator
+            instance.handler.generator_cmd = self.generator_cmd
+            instance.handler.generator = self.generator
 
     def process(self, message):
         op = message.get('op')
