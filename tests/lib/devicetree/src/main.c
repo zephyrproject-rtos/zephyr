@@ -519,17 +519,6 @@ struct gpios_struct {
 		       label) \
 	}
 
-/* Helper macro that UTIL_LISTIFY can use and produces an element with comma */
-#define DT_GPIO_ELEM(idx, node_id, prop) \
-	{ \
-		DT_PROP(DT_PHANDLE_BY_IDX(node_id, prop, idx), label), \
-		DT_PHA_BY_IDX(node_id, prop, idx, pin),\
-		DT_PHA_BY_IDX(node_id, prop, idx, flags),\
-	},
-#define DT_GPIO_LISTIFY(node_id, prop) \
-	{ UTIL_LISTIFY(DT_PROP_LEN(node_id, prop), DT_GPIO_ELEM, \
-		       node_id, prop) }
-
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_phandle_holder
 static void test_phandles(void)

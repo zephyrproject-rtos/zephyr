@@ -191,6 +191,94 @@ extern "C" {
 	DT_INST_GPIO_FLAGS_BY_IDX(inst, gpio_pha, 0)
 
 /**
+ * @brief Create a struct initializer for a "gpio" phandle-array element
+ *
+ * The struct initializer will be of the form:
+ *
+ * { label, pin, flags },
+ *
+ * Example devicetree fragment:
+ *
+ *     gpio1: gpio@... {
+ *             label = "GPIO_1";
+ *     };
+ *
+ *     gpio2: gpio@... {
+ *             label = "GPIO_2";
+ *     };
+ *
+ *     n: node {
+ *             gpios = <&gpio1 10 20>, <&gpio2 30 40>;
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_GPIO_ELEM(DT_NODELABEL(n), gpios, 1)
+ *
+ * Will produce the following struct initializer:
+ *
+ *     { "GPIO_2", 30, 40 },
+ *
+ * The idx element is placed first so that the macro will be usable by
+ * UTIL_LISTIFY
+ *
+ * @param idx into the gpio_pha phandle-array
+ * @param node_id node identifier
+ * @param gpio_pha lowercase-and-underscores GPIO property with
+ *        type "phandle-array"
+ * @return a struct initializer for the give index "idx" into the
+ *         "phandle-array" gpio_pha
+ */
+#define DT_GPIO_ELEM(idx, node_id, gpio_pha) \
+	{ \
+		DT_GPIO_LABEL_BY_IDX(node_id, gpio_pha, idx), \
+		DT_GPIO_PIN_BY_IDX(node_id, gpio_pha, idx), \
+		DT_GPIO_FLAGS_BY_IDX(node_id, gpio_pha, idx), \
+	},
+
+/**
+ * @brief Create an array initializer for a "gpio" phandle-array
+ *
+ * The array initializer will be of the form:
+ *
+ * {
+ *     { label[0], pin[0], flags[0] }
+ *     ...
+ *     { label[n-1], pin[n-1], flags[n-1] },
+ * }
+ *
+ * Example devicetree fragment:
+ *
+ *     gpio1: gpio@... {
+ *             label = "GPIO_1";
+ *     };
+ *
+ *     gpio2: gpio@... {
+ *             label = "GPIO_2";
+ *     };
+ *
+ *     n: node {
+ *             gpios = <&gpio1 10 20>, <&gpio2 30 40>;
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_GPIO_LISTIFY(DT_NODELABEL(n), gpios)
+ *
+ * Will produce:
+ *
+ *     { { "GPIO_1", 10, 20 }, { "GPIO_2", 30, 40 }, }
+ *
+ * @param node_id node identifier
+ * @param gpio_pha lowercase-and-underscores GPIO property with
+ *        type "phandle-array"
+ * @return an array initializer for the given "phandle-array" gpio_pha
+ */
+#define DT_GPIO_LISTIFY(node_id, gpio_pha) \
+	{ UTIL_LISTIFY(DT_PROP_LEN(node_id, gpio_pha), DT_GPIO_ELEM, \
+		       node_id, gpio_pha) }
+
+/**
  * @}
  */
 
