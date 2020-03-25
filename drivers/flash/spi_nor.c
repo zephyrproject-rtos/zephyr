@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT jedec_spi_nor
+
 #include <errno.h>
 #include <drivers/flash.h>
 #include <drivers/spi.h>
@@ -44,18 +46,18 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define NSEC_PER_MSEC (NSEC_PER_USEC * USEC_PER_MSEC)
 #endif
 
-#ifdef DT_INST_0_JEDEC_SPI_NOR_T_ENTER_DPD
-#define T_DP_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_T_ENTER_DPD, NSEC_PER_MSEC)
+#if DT_INST_NODE_HAS_PROP(0, t_enter_dpd)
+#define T_DP_MS ceiling_fraction(DT_INST_PROP(0, t_enter_dpd), NSEC_PER_MSEC)
 #else /* T_ENTER_DPD */
 #define T_DP_MS 0
 #endif /* T_ENTER_DPD */
-#ifdef DT_INST_0_JEDEC_SPI_NOR_T_EXIT_DPD
-#define T_RES1_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_T_EXIT_DPD, NSEC_PER_MSEC)
+#if DT_INST_NODE_HAS_PROP(0, t_exit_dpd)
+#define T_RES1_MS ceiling_fraction(DT_INST_PROP(0, t_exit_dpd), NSEC_PER_MSEC)
 #endif /* T_EXIT_DPD */
-#ifdef DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE
-#define T_DPDD_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE_0, NSEC_PER_MSEC)
-#define T_CRDP_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE_1, NSEC_PER_MSEC)
-#define T_RDP_MS ceiling_fraction(DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE_2, NSEC_PER_MSEC)
+#if DT_INST_NODE_HAS_PROP(0, dpd_wakeup_sequence)
+#define T_DPDD_MS ceiling_fraction(DT_INST_PROP(0, dpd_wakeup_sequence_0), NSEC_PER_MSEC)
+#define T_CRDP_MS ceiling_fraction(DT_INST_PROP(0, dpd_wakeup_sequence_1), NSEC_PER_MSEC)
+#define T_RDP_MS ceiling_fraction(DT_INST_PROP(0, dpd_wakeup_sequence_2), NSEC_PER_MSEC)
 #else /* DPD_WAKEUP_SEQUENCE */
 #define T_DPDD_MS 0
 #endif /* DPD_WAKEUP_SEQUENCE */
@@ -70,10 +72,10 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 struct spi_nor_data {
 	struct device *spi;
 	struct spi_config spi_cfg;
-#ifdef DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control cs_ctrl;
-#endif /* DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER */
-#ifdef DT_INST_0_JEDEC_SPI_NOR_HAS_DPD
+#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
+#if DT_INST_NODE_HAS_PROP(0, has_dpd)
 	/* Low 32-bits of uptime counter at which device last entered
 	 * deep power-down.
 	 */
@@ -85,7 +87,7 @@ struct spi_nor_data {
 /* Capture the time at which the device entered deep power-down. */
 static inline void record_entered_dpd(const struct device *const dev)
 {
-#ifdef DT_INST_0_JEDEC_SPI_NOR_HAS_DPD
+#if DT_INST_NODE_HAS_PROP(0, has_dpd)
 	struct spi_nor_data *const driver_data = dev->driver_data;
 
 	driver_data->ts_enter_dpd = k_uptime_get_32();
@@ -97,7 +99,7 @@ static inline void record_entered_dpd(const struct device *const dev)
  */
 static inline void delay_until_exit_dpd_ok(const struct device *const dev)
 {
-#ifdef DT_INST_0_JEDEC_SPI_NOR_HAS_DPD
+#if DT_INST_NODE_HAS_PROP(0, has_dpd)
 	struct spi_nor_data *const driver_data = dev->driver_data;
 	s32_t since = (s32_t)(k_uptime_get_32() - driver_data->ts_enter_dpd);
 
@@ -121,7 +123,7 @@ static inline void delay_until_exit_dpd_ok(const struct device *const dev)
 			k_sleep(K_MSEC((u32_t)-since));
 		}
 	}
-#endif /* DT_INST_0_JEDEC_SPI_NOR_HAS_DPD */
+#endif /* DT_INST_NODE_HAS_PROP(0, has_dpd) */
 }
 
 /*
@@ -191,7 +193,7 @@ static int enter_dpd(const struct device *const dev)
 {
 	int ret = 0;
 
-	if (IS_ENABLED(DT_INST_0_JEDEC_SPI_NOR_HAS_DPD)) {
+	if (IS_ENABLED(DT_INST_PROP(0, has_dpd))) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_DPD);
 		if (ret == 0) {
 			record_entered_dpd(dev);
@@ -204,10 +206,10 @@ static int exit_dpd(const struct device *const dev)
 {
 	int ret = 0;
 
-	if (IS_ENABLED(DT_INST_0_JEDEC_SPI_NOR_HAS_DPD)) {
+	if (IS_ENABLED(DT_INST_PROP(0, has_dpd))) {
 		delay_until_exit_dpd_ok(dev);
 
-#ifdef DT_INST_0_JEDEC_SPI_NOR_DPD_WAKEUP_SEQUENCE
+#if DT_INST_NODE_HAS_PROP(0, dpd_wakeup_sequence)
 		/* Assert CSn and wait for tCRDP.
 		 *
 		 * Unfortunately the SPI API doesn't allow us to
@@ -224,7 +226,7 @@ static int exit_dpd(const struct device *const dev)
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_RDPD);
 
 		if (ret == 0) {
-#ifdef DT_INST_0_JEDEC_SPI_NOR_T_EXIT_DPD
+#if DT_INST_NODE_HAS_PROP(0, t_exit_dpd)
 			k_sleep(K_MSEC(T_RES1_MS));
 #endif /* T_EXIT_DPD */
 		}
@@ -447,7 +449,7 @@ static int spi_nor_write_protection_set(struct device *dev, bool write_protect)
 	ret = spi_nor_cmd_write(dev, (write_protect) ?
 	      SPI_NOR_CMD_WRDI : SPI_NOR_CMD_WREN);
 
-	if (IS_ENABLED(DT_INST_0_JEDEC_SPI_NOR_REQUIRES_ULBPR)
+	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))
 	    && (ret == 0)
 	    && !write_protect) {
 		ret = spi_nor_cmd_write(dev, SPI_NOR_CMD_ULBPR);
@@ -470,27 +472,27 @@ static int spi_nor_configure(struct device *dev)
 	struct spi_nor_data *data = dev->driver_data;
 	const struct spi_nor_config *params = dev->config->config_info;
 
-	data->spi = device_get_binding(DT_INST_0_JEDEC_SPI_NOR_BUS_NAME);
+	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!data->spi) {
 		return -EINVAL;
 	}
 
-	data->spi_cfg.frequency = DT_INST_0_JEDEC_SPI_NOR_SPI_MAX_FREQUENCY;
+	data->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	data->spi_cfg.operation = SPI_WORD_SET(8);
-	data->spi_cfg.slave = DT_INST_0_JEDEC_SPI_NOR_BASE_ADDRESS;
+	data->spi_cfg.slave = DT_INST_REG_ADDR(0);
 
-#ifdef DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	data->cs_ctrl.gpio_dev =
-		device_get_binding(DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER);
+		device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!data->cs_ctrl.gpio_dev) {
 		return -ENODEV;
 	}
 
-	data->cs_ctrl.gpio_pin = DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_PIN;
+	data->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
 	data->cs_ctrl.delay = CONFIG_SPI_NOR_CS_WAIT_DELAY;
 
 	data->spi_cfg.cs = &data->cs_ctrl;
-#endif /* DT_INST_0_JEDEC_SPI_NOR_CS_GPIOS_CONTROLLER */
+#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 
 	/* Might be in DPD if system restarted without power cycle. */
 	exit_dpd(dev);
@@ -528,7 +530,7 @@ static int spi_nor_init(struct device *dev)
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 
 /* instance 0 size in bytes */
-#define INST_0_BYTES (DT_INST_0_JEDEC_SPI_NOR_SIZE / 8)
+#define INST_0_BYTES (DT_INST_PROP(0, size) / 8)
 
 BUILD_ASSERT_MSG(SPI_NOR_IS_SECTOR_ALIGNED(CONFIG_SPI_NOR_FLASH_LAYOUT_PAGE_SIZE),
 		 "SPI_NOR_FLASH_LAYOUT_PAGE_SIZE must be multiple of 4096");
@@ -567,16 +569,16 @@ static const struct flash_driver_api spi_nor_api = {
 };
 
 static const struct spi_nor_config flash_id = {
-	.id = DT_INST_0_JEDEC_SPI_NOR_JEDEC_ID,
-#ifdef DT_INST_0_JEDEC_SPI_NOR_HAS_BE32K
+	.id = DT_INST_PROP(0, jedec_id),
+#if DT_INST_NODE_HAS_PROP(0, has_be32k)
 	.has_be32k = true,
-#endif /* DT_INST_0_JEDEC_SPI_NOR_HAS_BE32K */
-	.size = DT_INST_0_JEDEC_SPI_NOR_SIZE / 8,
+#endif /* DT_INST_NODE_HAS_PROP(0, has_be32k) */
+	.size = DT_INST_PROP(0, size) / 8,
 };
 
 static struct spi_nor_data spi_nor_memory_data;
 
-DEVICE_AND_API_INIT(spi_flash_memory, DT_INST_0_JEDEC_SPI_NOR_LABEL,
+DEVICE_AND_API_INIT(spi_flash_memory, DT_INST_LABEL(0),
 		    &spi_nor_init, &spi_nor_memory_data,
 		    &flash_id, POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
 		    &spi_nor_api);
