@@ -3630,6 +3630,7 @@ void bt_id_add(struct bt_keys *keys)
 	/* Nothing to be done if host-side resolving is used */
 	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 		bt_dev.le.rl_entries++;
+		keys->state |= BT_KEYS_ID_ADDED;
 		return;
 	}
 
@@ -3691,6 +3692,7 @@ void bt_id_add(struct bt_keys *keys)
 		}
 
 		bt_dev.le.rl_entries++;
+		keys->state |= BT_KEYS_ID_ADDED;
 
 		goto done;
 	}
@@ -3702,6 +3704,7 @@ void bt_id_add(struct bt_keys *keys)
 	}
 
 	bt_dev.le.rl_entries++;
+	keys->state |= BT_KEYS_ID_ADDED;
 
 	/*
 	 * According to Core Spec. 5.0 Vol 1, Part A 5.4.5 Privacy Feature
@@ -3737,7 +3740,7 @@ done:
 
 static void keys_add_id(struct bt_keys *keys, void *data)
 {
-	if (keys != (struct bt_keys *)data) {
+	if (keys->state & BT_KEYS_ID_ADDED) {
 		hci_id_add(keys->id, &keys->addr, keys->irk.val);
 	}
 }
@@ -3772,6 +3775,7 @@ void bt_id_del(struct bt_keys *keys)
 	if (!bt_dev.le.rl_size ||
 	    bt_dev.le.rl_entries > bt_dev.le.rl_size + 1) {
 		bt_dev.le.rl_entries--;
+		keys->state &= ~BT_KEYS_ID_ADDED;
 		return;
 	}
 
@@ -3824,11 +3828,12 @@ void bt_id_del(struct bt_keys *keys)
 	/* We checked size + 1 earlier, so here we know we can fit again */
 	if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 		bt_dev.le.rl_entries--;
+		keys->state &= ~BT_KEYS_ID_ADDED;
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    IS_ENABLED(CONFIG_BT_PRIVACY)) {
-			bt_keys_foreach(BT_KEYS_ALL, keys_add_id, keys);
+			bt_keys_foreach(BT_KEYS_ALL, keys_add_id, NULL);
 		} else {
-			bt_keys_foreach(BT_KEYS_IRK, keys_add_id, keys);
+			bt_keys_foreach(BT_KEYS_IRK, keys_add_id, NULL);
 		}
 		goto done;
 	}
@@ -3840,6 +3845,7 @@ void bt_id_del(struct bt_keys *keys)
 	}
 
 	bt_dev.le.rl_entries--;
+	keys->state &= ~BT_KEYS_ID_ADDED;
 
 done:
 	/* Only re-enable if there are entries to do resolving with */

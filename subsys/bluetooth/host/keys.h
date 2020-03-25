@@ -22,6 +22,7 @@ enum {
 enum {
 	BT_KEYS_ID_PENDING_ADD  = BIT(0),
 	BT_KEYS_ID_PENDING_DEL  = BIT(1),
+	BT_KEYS_ID_ADDED        = BIT(2),
 };
 
 enum {
