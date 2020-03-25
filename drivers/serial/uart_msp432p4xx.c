@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_msp432p4xx_uart
+
 /* See www.ti.com/lit/pdf/slau356f, Chapter 22, for MSP432P4XX UART info. */
 
 /* include driverlib/gpio.h (from the msp432p4xx SDK) before Z's uart.h so
@@ -38,8 +40,8 @@ static void uart_msp432p4xx_isr(void *arg);
 #endif
 
 static const struct uart_device_config uart_msp432p4xx_dev_cfg_0 = {
-	.base = (void *)DT_INST_0_TI_MSP432P4XX_UART_BASE_ADDRESS,
-	.sys_clk_freq = DT_INST_0_TI_MSP432P4XX_UART_CLOCKS_CLOCK_FREQUENCY,
+	.base = (void *)DT_INST_REG_ADDR(0),
+	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency),
 };
 
 static struct uart_msp432p4xx_dev_data_t uart_msp432p4xx_dev_data_0 = {
@@ -133,7 +135,7 @@ static int uart_msp432p4xx_init(struct device *dev)
 	UartConfig.overSampling = EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION;
 
 	/* Baud rate settings calculated for 48MHz */
-	err = baudrate_set(&UartConfig, DT_INST_0_TI_MSP432P4XX_UART_CURRENT_SPEED);
+	err = baudrate_set(&UartConfig, DT_INST_PROP(0, current_speed));
 	if (err) {
 		return err;
 	}
@@ -144,11 +146,11 @@ static int uart_msp432p4xx_init(struct device *dev)
 	MAP_UART_enableModule((unsigned long)config->base);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	IRQ_CONNECT(DT_INST_0_TI_MSP432P4XX_UART_IRQ_0,
-			DT_INST_0_TI_MSP432P4XX_UART_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+			DT_INST_IRQ(0, priority),
 			uart_msp432p4xx_isr, DEVICE_GET(uart_msp432p4xx_0),
 			0);
-	irq_enable(DT_INST_0_TI_MSP432P4XX_UART_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 #endif
 	return 0;
@@ -358,7 +360,7 @@ static const struct uart_driver_api uart_msp432p4xx_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-DEVICE_AND_API_INIT(uart_msp432p4xx_0, DT_INST_0_TI_MSP432P4XX_UART_LABEL,
+DEVICE_AND_API_INIT(uart_msp432p4xx_0, DT_INST_LABEL(0),
 			uart_msp432p4xx_init, &uart_msp432p4xx_dev_data_0,
 			&uart_msp432p4xx_dev_cfg_0,
 			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
