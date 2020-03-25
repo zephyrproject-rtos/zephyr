@@ -333,13 +333,13 @@ int get_pch_temp(struct device *dev)
 	resp_pckt.buf = (u8_t *)&rsp;
 	resp_pckt.len = MAX_RESP_SIZE;
 
-	ret = espi_send_oob(dev, req_pckt);
+	ret = espi_send_oob(dev, &req_pckt);
 	if (ret) {
 		LOG_ERR("OOB Tx failed %d", ret);
 		return ret;
 	}
 
-	ret = espi_receive_oob(dev, resp_pckt);
+	ret = espi_receive_oob(dev, &resp_pckt);
 	if (ret) {
 		LOG_ERR("OOB Rx failed %d", ret);
 		return ret;
