@@ -207,10 +207,10 @@ struct proc_ctx {
 	u8_t state;
 
 	/* Expected opcode to be recieved next */
-	u8_t rx_opcode;
+	enum pdu_data_llctrl_type rx_opcode;
 
 	/* Last transmitted opcode used for unknown/reject */
-	u8_t tx_opcode;
+	enum pdu_data_llctrl_type tx_opcode;
 
 	/* Instant collision */
 	int collision;
