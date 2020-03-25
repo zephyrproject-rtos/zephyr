@@ -58,15 +58,6 @@
 			label = "UART_0";
 		};
 
-		sharedirq0: sharedirq0 {
-			compatible = "shared-irq";
-			label = "SHARED_IRQ";
-			interrupts = <GIC_SPI 1 0 IRQ_TYPE_LEVEL>;
-			interrupt-controller;
-			#interrupt-cells = <0>;
-			status = "okay";
-		};
-
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_K(64)>;
