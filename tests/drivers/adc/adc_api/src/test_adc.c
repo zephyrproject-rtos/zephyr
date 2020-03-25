@@ -17,7 +17,16 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#if defined(CONFIG_BOARD_NRF51DK_NRF51422)
+#if defined(CONFIG_SHIELD_MIKROE_ADC_CLICK)
+#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, microchip_mcp3204))
+#define ADC_RESOLUTION		12
+#define ADC_GAIN		ADC_GAIN_1
+#define ADC_REFERENCE		ADC_REF_EXTERNAL0
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID	0
+#define ADC_2ND_CHANNEL_ID	1
+
+#elif defined(CONFIG_BOARD_NRF51DK_NRF51422)
 
 #include <hal/nrf_adc.h>
 #define ADC_DEVICE_NAME		DT_ADC_0_NAME
