@@ -203,9 +203,8 @@ elements.
    size_t b_len = DT_PROP_LEN(FOO, b); /* 4 */
    size_t c_len = DT_PROP_LEN(FOO, c); /* 2 */
 
-``DT_PROP_LEN()`` takes devicetree semantics into account for special
-properties also. This means that it returns logical lengths when used with the
-``reg`` and ``interrupts`` properties described next.
+``DT_PROP_LEN()`` cannot be used with the special ``reg`` or ``interrupts``
+properties. These have alternative macros which are described next.
 
 .. _reg-properties:
 
@@ -214,20 +213,21 @@ reg properties
 
 See :ref:`dt-important-props` for an introduction to ``reg``.
 
-Given a node identifier ``node_id``, ``DT_PROP_LEN(node_id, reg)`` is the
-total number of register blocks in the node's ``reg``. However, you **cannot**
-read register block addresses and lengths with ``DT_PROP(node, reg)``.
+Given a node identifier ``node_id``, ``DT_NUM_REGS(node_id)`` is the
+total number of register blocks in the node's ``reg`` property.
 
-Instead, if a node only has one register block, use :c:func:`DT_REG_ADDR` or
-:c:func:`DT_REG_SIZE`:
+You **cannot** read register block addresses and lengths with ``DT_PROP(node,
+reg)``. Instead, if a node only has one register block, use
+:c:func:`DT_REG_ADDR` or :c:func:`DT_REG_SIZE`:
 
 - ``DT_REG_ADDR(node_id)``: the given node's register block address
 - ``DT_REG_SIZE(node_id)``: its size
 
-Use :c:func:`DT_REG_ADDR_BY_IDX` or :c:func:`DT_REG_SIZE_BY_IDX` instead if the node
-has multiple register blocks:
+Use :c:func:`DT_REG_ADDR_BY_IDX` or :c:func:`DT_REG_SIZE_BY_IDX` instead if the
+node has multiple register blocks:
 
-- ``DT_REG_ADDR_BY_IDX(node_id, idx)``: address of register block at index ``idx``
+- ``DT_REG_ADDR_BY_IDX(node_id, idx)``: address of register block at index
+  ``idx``
 - ``DT_REG_SIZE_BY_IDX(node_id, idx)``: size of block at index ``idx``
 
 The ``idx`` argument to these must be an integer literal or a macro that
@@ -238,7 +238,7 @@ be a variable. This won't work:
 
    /* This will cause a compiler error. */
 
-   for (size_t i = 0; i < DT_PROP_LEN(node_id, reg); i++) {
+   for (size_t i = 0; i < DT_NUM_REGS(node_id); i++) {
            size_t addr = DT_REG_ADDR_BY_IDX(node_id, i);
    }
 
@@ -249,7 +249,11 @@ interrupts properties
 
 See :ref:`dt-important-props` for a brief introduction to ``interrupts``.
 
-The most general purpose API macro for accessing these is :c:func:`DT_IRQ_BY_IDX`:
+Given a node identifier ``node_id``, ``DT_NUM_IRQS(node_id)`` is the total
+number of interrupt specifiers in the node's ``interrupts`` property.
+
+The most general purpose API macro for accessing these is
+:c:func:`DT_IRQ_BY_IDX`:
 
 .. code-block:: c
 
