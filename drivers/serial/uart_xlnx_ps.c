@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT xlnx_xuartps
+
 /**
  * @brief Xilnx Zynq Family Serial Driver
  *
@@ -645,11 +647,11 @@ DEVICE_DECLARE(uart_xlnx_ps_##port); \
 \
 static void uart_xlnx_ps_irq_config_0(struct device *dev) \
 { \
-	IRQ_CONNECT(DT_INST_##port##_XLNX_XUARTPS_IRQ_0, \
-		    DT_INST_##port##_XLNX_XUARTPS_IRQ_0_PRIORITY, \
+	IRQ_CONNECT(DT_INST_IRQN(port), \
+		    DT_INST_IRQ(port, priority), \
 		    uart_xlnx_ps_isr, DEVICE_GET(uart_xlnx_ps_##port), \
 		    0); \
-	irq_enable(DT_INST_##port##_XLNX_XUARTPS_IRQ_0); \
+	irq_enable(DT_INST_IRQN(port)); \
 }
 
 #define UART_XLNX_PS_DEV_DATA(port) \
@@ -666,17 +668,17 @@ static struct uart_xlnx_ps_dev_data_t uart_xlnx_ps_dev_data_##port
 #define UART_XLNX_PS_DEV_CFG(port) \
 static struct uart_xlnx_ps_dev_config uart_xlnx_ps_dev_cfg_##port = { \
 	.uconf = { \
-		.regs = DT_INST_##port##_XLNX_XUARTPS_BASE_ADDRESS, \
-		.base = (u8_t *)DT_INST_##port##_XLNX_XUARTPS_BASE_ADDRESS, \
-		.sys_clk_freq = DT_INST_##port##_XLNX_XUARTPS_CLOCK_FREQUENCY, \
+		.regs = DT_INST_REG_ADDR(port), \
+		.base = (u8_t *)DT_INST_REG_ADDR(port), \
+		.sys_clk_freq = DT_INST_PROP(port, clock_frequency), \
 		UART_XLNX_PS_IRQ_CONF_FUNC_SET(port) \
 	}, \
-	.baud_rate = DT_INST_##port##_XLNX_XUARTPS_CURRENT_SPEED, \
+	.baud_rate = DT_INST_PROP(port, current_speed), \
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define UART_XLNX_PS_INIT(port) \
-DEVICE_AND_API_INIT(uart_xlnx_ps_##port, DT_INST_##port##_XLNX_XUARTPS_LABEL, \
+DEVICE_AND_API_INIT(uart_xlnx_ps_##port, DT_INST_LABEL(port), \
 		    uart_xlnx_ps_init, \
 		    &uart_xlnx_ps_dev_data_##port, \
 		    &uart_xlnx_ps_dev_cfg_##port, \
@@ -684,7 +686,7 @@ DEVICE_AND_API_INIT(uart_xlnx_ps_##port, DT_INST_##port##_XLNX_XUARTPS_LABEL, \
 		    &uart_xlnx_ps_driver_api)
 #else
 #define UART_XLNX_PS_INIT(port) \
-DEVICE_AND_API_INIT(uart_xlnx_ps_##port, DT_INST_##port##_XLNX_XUARTPS_LABEL, \
+DEVICE_AND_API_INIT(uart_xlnx_ps_##port, DT_INST_LABEL(port), \
 		    uart_xlnx_ps_init, \
 		    NULL, \
 		    &uart_xlnx_ps_dev_cfg_##port, \
@@ -692,14 +694,14 @@ DEVICE_AND_API_INIT(uart_xlnx_ps_##port, DT_INST_##port##_XLNX_XUARTPS_LABEL, \
 		    &uart_xlnx_ps_driver_api)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#ifdef DT_INST_0_XLNX_XUARTPS_BASE_ADDRESS
+#if DT_HAS_DRV_INST(0)
 UART_XLNX_PS_IRQ_CONF_FUNC(0);
 UART_XLNX_PS_DEV_DATA(0);
 UART_XLNX_PS_DEV_CFG(0);
 UART_XLNX_PS_INIT(0);
 #endif
 
-#ifdef DT_INST_1_XLNX_XUARTPS_BASE_ADDRESS
+#if DT_HAS_DRV_INST(1)
 UART_XLNX_PS_IRQ_CONF_FUNC(1);
 UART_XLNX_PS_DEV_DATA(1);
 UART_XLNX_PS_DEV_CFG(1);
