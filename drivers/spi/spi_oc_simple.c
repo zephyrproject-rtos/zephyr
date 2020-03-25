@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT opencores_spi_simple
+
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_oc_simple);
@@ -201,9 +203,9 @@ int spi_oc_simple_init(struct device *dev)
 	return 0;
 }
 
-#ifdef DT_INST_0_OPENCORES_SPI_SIMPLE
+#if DT_HAS_DRV_INST(0)
 static struct spi_oc_simple_cfg spi_oc_simple_cfg_0 = {
-	.base = DT_INST_0_OPENCORES_SPI_SIMPLE_CONTROL_BASE_ADDRESS,
+	.base = DT_INST_REG_ADDR_BY_NAME(0, control),
 };
 
 static struct spi_oc_simple_data spi_oc_simple_data_0 = {
@@ -212,7 +214,7 @@ static struct spi_oc_simple_data spi_oc_simple_data_0 = {
 };
 
 DEVICE_AND_API_INIT(spi_oc_simple_0,
-		    DT_INST_0_OPENCORES_SPI_SIMPLE_LABEL,
+		    DT_INST_LABEL(0),
 		    spi_oc_simple_init,
 		    &spi_oc_simple_data_0,
 		    &spi_oc_simple_cfg_0,
@@ -221,9 +223,9 @@ DEVICE_AND_API_INIT(spi_oc_simple_0,
 		    &spi_oc_simple_api);
 #endif
 
-#ifdef DT_INST_1_OPENCORES_SPI_SIMPLE
+#if DT_HAS_DRV_INST(1)
 static struct spi_oc_simple_cfg spi_oc_simple_cfg_1 = {
-	.base = DT_INST_1_OPENCORES_SPI_SIMPLE_CONTROL_BASE_ADDRESS,
+	.base = DT_INST_REG_ADDR_BY_NAME(1, control),
 };
 
 static struct spi_oc_simple_data spi_oc_simple_data_1 = {
@@ -232,7 +234,7 @@ static struct spi_oc_simple_data spi_oc_simple_data_1 = {
 };
 
 DEVICE_AND_API_INIT(spi_oc_simple_1,
-		    DT_INST_1_OPENCORES_SPI_SIMPLE_LABEL,
+		    DT_INST_LABEL(1),
 		    spi_oc_simple_init,
 		    &spi_oc_simple_data_1,
 		    &spi_oc_simple_cfg_1,
