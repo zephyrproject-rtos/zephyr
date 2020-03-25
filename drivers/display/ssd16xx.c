@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT solomon_ssd16xxfb
+
 #define LOG_LEVEL CONFIG_DISPLAY_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(ssd16xx);
@@ -23,24 +25,24 @@ LOG_MODULE_REGISTER(ssd16xx);
  * SSD1673, SSD1608 compatible EPD controller driver.
  */
 
-#define SSD16XX_SPI_FREQ DT_INST_0_SOLOMON_SSD16XXFB_SPI_MAX_FREQUENCY
-#define SSD16XX_BUS_NAME DT_INST_0_SOLOMON_SSD16XXFB_BUS_NAME
-#define SSD16XX_DC_PIN DT_INST_0_SOLOMON_SSD16XXFB_DC_GPIOS_PIN
-#define SSD16XX_DC_FLAGS DT_INST_0_SOLOMON_SSD16XXFB_DC_GPIOS_FLAGS
-#define SSD16XX_DC_CNTRL DT_INST_0_SOLOMON_SSD16XXFB_DC_GPIOS_CONTROLLER
-#define SSD16XX_CS_PIN DT_INST_0_SOLOMON_SSD16XXFB_CS_GPIOS_PIN
-#if defined(DT_INST_0_SOLOMON_SSD16XXFB_CS_GPIOS_CONTROLLER)
-#define SSD16XX_CS_CNTRL DT_INST_0_SOLOMON_SSD16XXFB_CS_GPIOS_CONTROLLER
+#define SSD16XX_SPI_FREQ DT_INST_PROP(0, spi_max_frequency)
+#define SSD16XX_BUS_NAME DT_INST_BUS_LABEL(0)
+#define SSD16XX_DC_PIN DT_INST_GPIO_PIN(0, dc_gpios)
+#define SSD16XX_DC_FLAGS DT_INST_GPIO_FLAGS(0, dc_gpios)
+#define SSD16XX_DC_CNTRL DT_INST_GPIO_LABEL(0, dc_gpios)
+#define SSD16XX_CS_PIN DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+#define SSD16XX_CS_CNTRL DT_INST_SPI_DEV_CS_GPIOS_LABEL(0)
 #endif
-#define SSD16XX_BUSY_PIN DT_INST_0_SOLOMON_SSD16XXFB_BUSY_GPIOS_PIN
-#define SSD16XX_BUSY_CNTRL DT_INST_0_SOLOMON_SSD16XXFB_BUSY_GPIOS_CONTROLLER
-#define SSD16XX_BUSY_FLAGS DT_INST_0_SOLOMON_SSD16XXFB_BUSY_GPIOS_FLAGS
-#define SSD16XX_RESET_PIN DT_INST_0_SOLOMON_SSD16XXFB_RESET_GPIOS_PIN
-#define SSD16XX_RESET_CNTRL DT_INST_0_SOLOMON_SSD16XXFB_RESET_GPIOS_CONTROLLER
-#define SSD16XX_RESET_FLAGS DT_INST_0_SOLOMON_SSD16XXFB_RESET_GPIOS_FLAGS
+#define SSD16XX_BUSY_PIN DT_INST_GPIO_PIN(0, busy_gpios)
+#define SSD16XX_BUSY_CNTRL DT_INST_GPIO_LABEL(0, busy_gpios)
+#define SSD16XX_BUSY_FLAGS DT_INST_GPIO_FLAGS(0, busy_gpios)
+#define SSD16XX_RESET_PIN DT_INST_GPIO_PIN(0, reset_gpios)
+#define SSD16XX_RESET_CNTRL DT_INST_GPIO_LABEL(0, reset_gpios)
+#define SSD16XX_RESET_FLAGS DT_INST_GPIO_FLAGS(0, reset_gpios)
 
-#define EPD_PANEL_WIDTH			DT_INST_0_SOLOMON_SSD16XXFB_WIDTH
-#define EPD_PANEL_HEIGHT		DT_INST_0_SOLOMON_SSD16XXFB_HEIGHT
+#define EPD_PANEL_WIDTH			DT_INST_PROP(0, width)
+#define EPD_PANEL_HEIGHT		DT_INST_PROP(0, height)
 #define EPD_PANEL_NUMOF_COLUMS		EPD_PANEL_WIDTH
 #define EPD_PANEL_NUMOF_ROWS_PER_PAGE	8
 #define EPD_PANEL_NUMOF_PAGES		(EPD_PANEL_HEIGHT / \
@@ -65,19 +67,19 @@ struct ssd16xx_data {
 	u8_t scan_mode;
 };
 
-static u8_t ssd16xx_lut_initial[] = DT_INST_0_SOLOMON_SSD16XXFB_LUT_INITIAL;
-static u8_t ssd16xx_lut_default[] = DT_INST_0_SOLOMON_SSD16XXFB_LUT_DEFAULT;
-#if defined(DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART)
-static u8_t ssd16xx_softstart[] = DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART;
+static u8_t ssd16xx_lut_initial[] = DT_INST_PROP(0, lut_initial);
+static u8_t ssd16xx_lut_default[] = DT_INST_PROP(0, lut_default);
+#if DT_INST_NODE_HAS_PROP(0, softstart)
+static u8_t ssd16xx_softstart[] = DT_INST_PROP(0, softstart);
 #endif
-static u8_t ssd16xx_gdv[] = DT_INST_0_SOLOMON_SSD16XXFB_GDV;
-static u8_t ssd16xx_sdv[] = DT_INST_0_SOLOMON_SSD16XXFB_SDV;
+static u8_t ssd16xx_gdv[] = DT_INST_PROP(0, gdv);
+static u8_t ssd16xx_sdv[] = DT_INST_PROP(0, sdv);
 
-#ifndef DT_INST_0_SOLOMON_SSD16XXFB_LUT_INITIAL
+#if !DT_INST_NODE_HAS_PROP(0, lut_initial)
 #error "No initial waveform look up table (LUT) selected!"
 #endif
 
-#ifndef DT_INST_0_SOLOMON_SSD16XXFB_LUT_DEFAULT
+#if !DT_INST_NODE_HAS_PROP(0, lut_default)
 #error "No default waveform look up table (LUT) selected!"
 #endif
 
@@ -120,27 +122,27 @@ static inline void ssd16xx_busy_wait(struct ssd16xx_data *driver)
 
 static inline size_t push_x_param(u8_t *data, u16_t x)
 {
-#if DT_INST_0_SOLOMON_SSD16XXFB_PP_WIDTH_BITS == 8
+#if DT_INST_PROP(0, pp_width_bits) == 8
 	data[0] = (u8_t)x;
 	return 1;
-#elif DT_INST_0_SOLOMON_SSD16XXFB_PP_WIDTH_BITS == 16
+#elif DT_INST_PROP(0, pp_width_bits) == 16
 	sys_put_le16(sys_cpu_to_le16(x), data);
 	return 2;
 #else
-#error Unsupported DT_INST_0_SOLOMON_SSD16XXFB_PP_WIDTH_BITS value
+#error Unsupported pp_width_bits value for solomon,ssd16xxfb DTS instance 0
 #endif
 }
 
 static inline size_t push_y_param(u8_t *data, u16_t y)
 {
-#if DT_INST_0_SOLOMON_SSD16XXFB_PP_HEIGHT_BITS == 8
+#if DT_INST_PROP(0, pp_height_bits) == 8
 	data[0] = (u8_t)y;
 	return 1;
-#elif DT_INST_0_SOLOMON_SSD16XXFB_PP_HEIGHT_BITS == 16
+#elif DT_INST_PROP(0, pp_height_bits) == 16
 	sys_put_le16(sys_cpu_to_le16(y), data);
 	return 2;
 #else
-#error Unsupported DT_INST_0_SOLOMON_SSD16XXFB_PP_HEIGHT_BITS value
+#error Unsupported pp_height_bits value for solomon,ssd16xxfb DTS instance 0
 #endif
 }
 
@@ -189,7 +191,7 @@ static inline int ssd16xx_set_ram_ptr(struct ssd16xx_data *driver,
 static void ssd16xx_set_orientation_internall(struct ssd16xx_data *driver)
 
 {
-#if DT_INST_0_SOLOMON_SSD16XXFB_ORIENTATION_FLIPPED == 1
+#if DT_INST_PROP(0, orientation_flipped) == 1
 	driver->scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
 #else
 	driver->scan_mode = SSD16XX_DATA_ENTRY_XDYIY;
@@ -472,7 +474,7 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-#if defined(DT_INST_0_SOLOMON_SSD16XXFB_SOFTSTART)
+#if DT_INST_NODE_HAS_PROP(0, softstart)
 	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_SOFTSTART,
 				ssd16xx_softstart, sizeof(ssd16xx_softstart));
 	if (err < 0) {
@@ -492,7 +494,7 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-	tmp[0] = DT_INST_0_SOLOMON_SSD16XXFB_VCOM;
+	tmp[0] = DT_INST_PROP(0, vcom);
 	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_VCOM_VOLTAGE, tmp, 1);
 	if (err < 0) {
 		return err;
@@ -510,7 +512,7 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-	tmp[0] = DT_INST_0_SOLOMON_SSD16XXFB_BORDER_WAVEFORM;
+	tmp[0] = DT_INST_PROP(0, border_waveform);
 	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_BWF_CTRL, tmp, 1);
 	if (err < 0) {
 		return err;
@@ -564,7 +566,7 @@ static int ssd16xx_init(struct device *dev)
 
 	driver->spi_config.frequency = SSD16XX_SPI_FREQ;
 	driver->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	driver->spi_config.slave = DT_INST_0_SOLOMON_SSD16XXFB_BASE_ADDRESS;
+	driver->spi_config.slave = DT_INST_REG_ADDR(0);
 	driver->spi_config.cs = NULL;
 
 	driver->reset = device_get_binding(SSD16XX_RESET_CNTRL);
@@ -625,7 +627,7 @@ static struct display_driver_api ssd16xx_driver_api = {
 };
 
 
-DEVICE_AND_API_INIT(ssd16xx, DT_INST_0_SOLOMON_SSD16XXFB_LABEL, ssd16xx_init,
+DEVICE_AND_API_INIT(ssd16xx, DT_INST_LABEL(0), ssd16xx_init,
 		    &ssd16xx_driver, NULL,
 		    POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
 		    &ssd16xx_driver_api);
