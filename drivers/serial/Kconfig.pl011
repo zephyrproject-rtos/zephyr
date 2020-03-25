@@ -20,25 +20,4 @@ config UART_PL011_PORT1
 	help
 	  Build the driver to utilize UART controller Port 1.
 
-config UART_PL011_SHARED_IRQ
-	bool
-
-config UART_PL011_PORT0_SHARED_IRQ
-	bool "Shared IRQ for UART 0"
-	depends on SHARED_IRQ_0
-	depends on UART_PL011_PORT0
-	select UART_PL011_SHARED_IRQ
-	help
-	  When interrupts fire, the shared IRQ driver is notified. Then the shared IRQ
-	  driver dispatches the interrupt to the UART driver.
-
-config UART_PL011_PORT1_SHARED_IRQ
-	bool "Shared IRQ for UART 1"
-	depends on SHARED_IRQ_1
-	depends on UART_PL011_PORT1
-	select UART_PL011_SHARED_IRQ
-	help
-	  When interrupts fire, the shared IRQ driver is notified. Then the shared IRQ
-	  driver dispatches the interrupt to the UART driver.
-
 endif # UART_PL011
