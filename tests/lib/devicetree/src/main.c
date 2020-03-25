@@ -151,11 +151,14 @@ static void test_has_alias(void)
 	zassert_equal(DT_HAS_NODE(DT_ALIAS(test_undef)), 0, "test-undef");
 }
 
-static void test_has_inst(void)
+static void test_inst_checks(void)
 {
 	zassert_equal(DT_HAS_NODE(DT_INST(0, vnd_gpio)), 1, "vnd,gpio #0");
 	zassert_equal(DT_HAS_NODE(DT_INST(1, vnd_gpio)), 1, "vnd,gpio #1");
 	zassert_equal(DT_HAS_NODE(DT_INST(2, vnd_gpio)), 0, "vnd,gpio #2");
+
+	zassert_equal(DT_NUM_INST(vnd_gpio), 2, "num. vnd,gpio");
+	zassert_equal(DT_NUM_INST(xxxx), 0, "num. xxxx");
 }
 
 static void test_has_nodelabel(void)
@@ -1122,7 +1125,7 @@ void test_main(void)
 			 ztest_unit_test(test_inst_props),
 			 ztest_unit_test(test_has_path),
 			 ztest_unit_test(test_has_alias),
-			 ztest_unit_test(test_has_inst),
+			 ztest_unit_test(test_inst_checks),
 			 ztest_unit_test(test_has_nodelabel),
 			 ztest_unit_test(test_has_compat),
 			 ztest_unit_test(test_bus),

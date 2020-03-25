@@ -851,7 +851,9 @@
  * @param compat lowercase-and-underscores version of a compatible
  * @return Number of enabled instances
  */
-#define DT_NUM_INST(compat) UTIL_CAT(DT_N_INST, DT_DASH(compat, NUM))
+#define DT_NUM_INST(compat)					\
+	UTIL_AND(DT_HAS_COMPAT(compat),				\
+		 UTIL_CAT(DT_N_INST, DT_DASH(compat, NUM)))
 
 /**
  * @brief Test if the devicetree has a /chosen node
