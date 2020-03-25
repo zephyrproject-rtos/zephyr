@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT winbond_w25q16
+
 #include <errno.h>
 
 #include <drivers/flash.h>
@@ -401,23 +403,23 @@ static int spi_flash_wb_configure(struct device *dev)
 {
 	struct spi_flash_data *data = dev->driver_data;
 
-	data->spi = device_get_binding(DT_INST_0_WINBOND_W25Q16_BUS_NAME);
+	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!data->spi) {
 		return -EINVAL;
 	}
 
-	data->spi_cfg.frequency = DT_INST_0_WINBOND_W25Q16_SPI_MAX_FREQUENCY;
+	data->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	data->spi_cfg.operation = SPI_WORD_SET(8);
-	data->spi_cfg.slave = DT_INST_0_WINBOND_W25Q16_BASE_ADDRESS;
+	data->spi_cfg.slave = DT_INST_REG_ADDR(0);
 
 #if defined(CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS)
 	data->cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_0_WINBOND_W25Q16_CS_GPIOS_CONTROLLER);
+		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!data->cs_ctrl.gpio_dev) {
 		return -ENODEV;
 	}
 
-	data->cs_ctrl.gpio_pin = DT_INST_0_WINBOND_W25Q16_CS_GPIOS_PIN;
+	data->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
 	data->cs_ctrl.delay = CONFIG_SPI_FLASH_W25QXXDV_GPIO_CS_WAIT_DELAY;
 
 	data->spi_cfg.cs = &data->cs_ctrl;
