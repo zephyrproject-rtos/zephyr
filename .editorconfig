@@ -32,7 +32,7 @@ indent_style = tab
 indent_size = 8
 
 # YAML
-[*.yml]
+[*.{yml,yaml}]
 indent_style = space
 indent_size = 2
 
