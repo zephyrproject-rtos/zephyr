@@ -17,6 +17,11 @@ static int ip_k66f_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTA_NAME);
 #endif
 
+#ifdef CONFIG_PINMUX_MCUX_PORTB
+	struct device *portb =
+		device_get_binding(CONFIG_PINMUX_MCUX_PORTB_NAME);
+#endif
+
 	/* Red0, Red2 LEDs */
 	pinmux_pin_set(porta, 8, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porta, 10, PORT_PCR_MUX(kPORT_MuxAsGpio));
@@ -32,6 +37,15 @@ static int ip_k66f_pinmux_init(struct device *dev)
 	pinmux_pin_set(porta, 25, PORT_PCR_MUX(kPORT_MuxAsGpio));/* !ETH_PME */
 	pinmux_pin_set(porta, 26, PORT_PCR_MUX(kPORT_MuxAsGpio));/* !ETH_INT */
 #endif
+
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay) && CONFIG_SPI
+	/* SPI1 CS0, SCK, SOUT, SIN - Control of KSZ8794 */
+	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portb, 11, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt2));
+#endif
+
 	return 0;
 }
 
