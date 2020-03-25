@@ -1,5 +1,7 @@
 /* ieee802154_mcr20a.c - NXP MCR20A driver */
 
+#define DT_DRV_COMPAT nxp_mcr20a
+
 /*
  * Copyright (c) 2017 PHYTEC Messtechnik GmbH
  *
@@ -800,7 +802,7 @@ static void enable_irqb_interrupt(struct mcr20a_context *mcr20a,
 		: GPIO_INT_DISABLE;
 
 	gpio_pin_interrupt_configure(mcr20a->irq_gpio,
-				     DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN,
+				     DT_INST_GPIO_PIN(0, irqb_gpios),
 				     flags);
 }
 
@@ -808,7 +810,7 @@ static inline void setup_gpio_callbacks(struct mcr20a_context *mcr20a)
 {
 	gpio_init_callback(&mcr20a->irqb_cb,
 			   irqb_int_handler,
-			   BIT(DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN));
+			   BIT(DT_INST_GPIO_PIN(0, irqb_gpios)));
 	gpio_add_callback(mcr20a->irq_gpio, &mcr20a->irqb_cb);
 }
 
@@ -1266,16 +1268,16 @@ static int power_on_and_setup(struct device *dev)
 
 	if (!PART_OF_KW2XD_SIP) {
 		gpio_pin_set(mcr20a->reset_gpio,
-			     DT_INST_0_NXP_MCR20A_RESET_GPIOS_PIN, 1);
+			     DT_INST_GPIO_PIN(0, reset_gpios), 1);
 		z_usleep(150);
 		gpio_pin_set(mcr20a->reset_gpio,
-			     DT_INST_0_NXP_MCR20A_RESET_GPIOS_PIN, 0);
+			     DT_INST_GPIO_PIN(0, reset_gpios), 0);
 
 		do {
 			z_usleep(50);
 			timeout--;
 			pin = gpio_pin_get(mcr20a->irq_gpio,
-					   DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN);
+					   DT_INST_GPIO_PIN(0, irqb_gpios));
 		} while (pin > 0 && timeout);
 
 		if (pin) {
@@ -1329,32 +1331,32 @@ static inline int configure_gpios(struct device *dev)
 
 	/* setup gpio for the modem interrupt */
 	mcr20a->irq_gpio =
-		device_get_binding(DT_INST_0_NXP_MCR20A_IRQB_GPIOS_CONTROLLER);
+		device_get_binding(DT_INST_GPIO_LABEL(0, irqb_gpios));
 	if (mcr20a->irq_gpio == NULL) {
 		LOG_ERR("Failed to get pointer to %s device",
-			DT_INST_0_NXP_MCR20A_IRQB_GPIOS_CONTROLLER);
+			DT_INST_GPIO_LABEL(0, irqb_gpios));
 		return -EINVAL;
 	}
 
 	gpio_pin_configure(mcr20a->irq_gpio,
-			   DT_INST_0_NXP_MCR20A_IRQB_GPIOS_PIN,
-			   GPIO_INPUT | DT_INST_0_NXP_MCR20A_IRQB_GPIOS_FLAGS);
+			   DT_INST_GPIO_PIN(0, irqb_gpios),
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, irqb_gpios));
 
 	if (!PART_OF_KW2XD_SIP) {
 		/* setup gpio for the modems reset */
 		mcr20a->reset_gpio =
 			device_get_binding(
-				DT_INST_0_NXP_MCR20A_RESET_GPIOS_CONTROLLER);
+				DT_INST_GPIO_LABEL(0, reset_gpios));
 		if (mcr20a->reset_gpio == NULL) {
 			LOG_ERR("Failed to get pointer to %s device",
-				DT_INST_0_NXP_MCR20A_RESET_GPIOS_CONTROLLER);
+				DT_INST_GPIO_LABEL(0, reset_gpios));
 			return -EINVAL;
 		}
 
 		gpio_pin_configure(mcr20a->reset_gpio,
-				   DT_INST_0_NXP_MCR20A_RESET_GPIOS_PIN,
+				   DT_INST_GPIO_PIN(0, reset_gpios),
 				   GPIO_OUTPUT_ACTIVE |
-				   DT_INST_0_NXP_MCR20A_RESET_GPIOS_FLAGS);
+				   DT_INST_GPIO_FLAGS(0, reset_gpios));
 	}
 
 	return 0;
@@ -1364,37 +1366,37 @@ static inline int configure_spi(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
 
-	mcr20a->spi = device_get_binding(DT_INST_0_NXP_MCR20A_BUS_NAME);
+	mcr20a->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!mcr20a->spi) {
 		LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
 	}
 
-#if defined(DT_INST_0_NXP_MCR20A_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	mcr20a->cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_0_NXP_MCR20A_CS_GPIOS_CONTROLLER);
+		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!mcr20a->cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	mcr20a->cs_ctrl.gpio_pin = DT_INST_0_NXP_MCR20A_CS_GPIOS_PIN;
+	mcr20a->cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
 	mcr20a->cs_ctrl.delay = 0U;
 
 	mcr20a->spi_cfg.cs = &mcr20a->cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		DT_INST_0_NXP_MCR20A_CS_GPIOS_CONTROLLER,
-		DT_INST_0_NXP_MCR20A_CS_GPIOS_PIN);
-#endif /* DT_INST_0_NXP_MCR20A_CS_GPIOS_CONTROLLER */
+		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+		DT_INST_SPI_DEV_CS_GPIOS_PIN(0));
+#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 
-	mcr20a->spi_cfg.frequency = DT_INST_0_NXP_MCR20A_SPI_MAX_FREQUENCY;
+	mcr20a->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	mcr20a->spi_cfg.operation = SPI_WORD_SET(8);
-	mcr20a->spi_cfg.slave = DT_INST_0_NXP_MCR20A_BASE_ADDRESS;
+	mcr20a->spi_cfg.slave = DT_INST_REG_ADDR(0);
 
 	LOG_DBG("SPI configured %s, %d",
-		DT_INST_0_NXP_MCR20A_BUS_NAME,
-		DT_INST_0_NXP_MCR20A_BASE_ADDRESS);
+		DT_INST_BUS_LABEL(0),
+		DT_INST_REG_ADDR(0));
 
 	return 0;
 }
