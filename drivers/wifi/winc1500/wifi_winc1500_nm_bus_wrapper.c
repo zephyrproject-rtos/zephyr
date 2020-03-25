@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_winc1500
+
 #define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(winc1500);
@@ -24,9 +26,9 @@ LOG_MODULE_REGISTER(winc1500);
 
 static
 struct winc1500_gpio_configuration winc1500_gpios[WINC1500_GPIO_IDX_MAX] = {
-	{ .dev = NULL, .pin = DT_INST_0_ATMEL_WINC1500_ENABLE_GPIOS_PIN },
-	{ .dev = NULL, .pin = DT_INST_0_ATMEL_WINC1500_IRQ_GPIOS_PIN },
-	{ .dev = NULL, .pin = DT_INST_0_ATMEL_WINC1500_RESET_GPIOS_PIN },
+	{ .dev = NULL, .pin = DT_INST_GPIO_PIN(0, enable_gpios) },
+	{ .dev = NULL, .pin = DT_INST_GPIO_PIN(0, irq_gpios) },
+	{ .dev = NULL, .pin = DT_INST_GPIO_PIN(0, reset_gpios) },
 };
 
 #define NM_BUS_MAX_TRX_SZ	256
@@ -99,24 +101,24 @@ struct winc1500_gpio_configuration *winc1500_configure_gpios(void)
 	struct device *gpio_en, *gpio_irq, *gpio_reset;
 
 	gpio_en = device_get_binding(
-		DT_INST_0_ATMEL_WINC1500_ENABLE_GPIOS_CONTROLLER);
+		DT_INST_GPIO_LABEL(0, enable_gpios));
 	gpio_irq = device_get_binding(
-		DT_INST_0_ATMEL_WINC1500_IRQ_GPIOS_CONTROLLER);
+		DT_INST_GPIO_LABEL(0, irq_gpios));
 	gpio_reset = device_get_binding(
-		DT_INST_0_ATMEL_WINC1500_RESET_GPIOS_CONTROLLER);
+		DT_INST_GPIO_LABEL(0, reset_gpios));
 
 	gpio_pin_configure(gpio_en,
 			   winc1500_gpios[WINC1500_GPIO_IDX_CHIP_EN].pin,
 			   GPIO_OUTPUT_LOW |
-			   DT_INST_0_ATMEL_WINC1500_ENABLE_GPIOS_FLAGS);
+			   DT_INST_GPIO_FLAGS(0, enable_gpios));
 	gpio_pin_configure(gpio_irq,
 			   winc1500_gpios[WINC1500_GPIO_IDX_IRQN].pin,
 			   GPIO_INPUT |
-			   DT_INST_0_ATMEL_WINC1500_IRQ_GPIOS_FLAGS);
+			   DT_INST_GPIO_FLAGS(0, irq_gpios));
 	gpio_pin_configure(gpio_reset,
 			   winc1500_gpios[WINC1500_GPIO_IDX_RESET_N].pin,
 			   GPIO_OUTPUT_LOW |
-			   DT_INST_0_ATMEL_WINC1500_RESET_GPIOS_FLAGS);
+			   DT_INST_GPIO_FLAGS(0, reset_gpios));
 
 	winc1500_gpios[WINC1500_GPIO_IDX_CHIP_EN].dev = gpio_en;
 	winc1500_gpios[WINC1500_GPIO_IDX_IRQN].dev = gpio_irq;
@@ -134,32 +136,32 @@ s8_t nm_bus_init(void *pvinit)
 	/* Not implemented */
 #elif defined CONF_WINC_USE_SPI
 	/* setup SPI device */
-	winc1500.spi = device_get_binding(DT_INST_0_ATMEL_WINC1500_BUS_NAME);
+	winc1500.spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!winc1500.spi) {
 		LOG_ERR("spi device binding");
 		return -1;
 	}
 
 	winc1500.spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
-	winc1500.spi_cfg.frequency = DT_INST_0_ATMEL_WINC1500_SPI_MAX_FREQUENCY;
-	winc1500.spi_cfg.slave = DT_INST_0_ATMEL_WINC1500_BASE_ADDRESS;
+	winc1500.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
+	winc1500.spi_cfg.slave = DT_INST_REG_ADDR(0);
 
 #ifdef CONFIG_WIFI_WINC1500_GPIO_SPI_CS
 	cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_0_ATMEL_WINC1500_CS_GPIOS_CONTROLLER);
+		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	cs_ctrl.gpio_pin = DT_INST_0_ATMEL_WINC1500_CS_GPIOS_PIN;
+	cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
 	cs_ctrl.delay = 0U;
 
 	winc1500.spi_cfg.cs = &cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		    DT_INST_0_ATMEL_WINC1500_CS_GPIOS_CONTROLLER,
-		    DT_INST_0_ATMEL_WINC1500_CS_GPIOS_PIN);
+		    DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+		    DT_INST_SPI_DEV_CS_GPIOS_PIN(0));
 #endif /* CONFIG_WIFI_WINC1500_GPIO_SPI_CS */
 
 	nm_bsp_reset();
