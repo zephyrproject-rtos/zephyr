@@ -1,5 +1,7 @@
 /* ieee802154_cc2520.c - TI CC2520 driver */
 
+#define DT_DRV_COMPAT ti_cc2520
+
 /*
  * Copyright (c) 2016 Intel Corporation.
  *
@@ -968,69 +970,69 @@ static struct cc2520_gpio_configuration *configure_gpios(struct device *dev)
 	struct device *gpio;
 
 	/* VREG_EN */
-	gpio = device_get_binding(DT_INST_0_TI_CC2520_VREG_EN_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, vreg_en_gpios));
 	if (!gpio) {
 		return NULL;
 	}
 
-	cc2520->gpios[CC2520_GPIO_IDX_VREG_EN].pin = DT_INST_0_TI_CC2520_VREG_EN_GPIOS_PIN;
+	cc2520->gpios[CC2520_GPIO_IDX_VREG_EN].pin = DT_INST_GPIO_PIN(0, vreg_en_gpios);
 	gpio_pin_configure(gpio, cc2520->gpios[CC2520_GPIO_IDX_VREG_EN].pin,
-			   GPIO_OUTPUT_LOW | DT_INST_0_TI_CC2520_VREG_EN_GPIOS_FLAGS);
+			   GPIO_OUTPUT_LOW | DT_INST_GPIO_FLAGS(0, vreg_en_gpios));
 	cc2520->gpios[CC2520_GPIO_IDX_VREG_EN].dev = gpio;
 
 	/* RESET */
-	gpio = device_get_binding(DT_INST_0_TI_CC2520_RESET_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, reset_gpios));
 	if (!gpio) {
 		return NULL;
 	}
 
-	cc2520->gpios[CC2520_GPIO_IDX_RESET].pin = DT_INST_0_TI_CC2520_RESET_GPIOS_PIN;
+	cc2520->gpios[CC2520_GPIO_IDX_RESET].pin = DT_INST_GPIO_PIN(0, reset_gpios);
 	gpio_pin_configure(gpio, cc2520->gpios[CC2520_GPIO_IDX_RESET].pin,
-			   GPIO_OUTPUT_LOW | DT_INST_0_TI_CC2520_RESET_GPIOS_FLAGS);
+			   GPIO_OUTPUT_LOW | DT_INST_GPIO_FLAGS(0, reset_gpios));
 	cc2520->gpios[CC2520_GPIO_IDX_RESET].dev = gpio;
 
 	/*FIFO */
-	gpio = device_get_binding(DT_INST_0_TI_CC2520_FIFO_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, fifo_gpios));
 	if (!gpio) {
 		return NULL;
 	}
 
-	cc2520->gpios[CC2520_GPIO_IDX_FIFO].pin = DT_INST_0_TI_CC2520_FIFO_GPIOS_PIN;
+	cc2520->gpios[CC2520_GPIO_IDX_FIFO].pin = DT_INST_GPIO_PIN(0, fifo_gpios);
 	gpio_pin_configure(gpio, cc2520->gpios[CC2520_GPIO_IDX_FIFO].pin,
-			   GPIO_INPUT | DT_INST_0_TI_CC2520_FIFO_GPIOS_FLAGS);
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, fifo_gpios));
 	cc2520->gpios[CC2520_GPIO_IDX_FIFO].dev = gpio;
 
 	/* CCA */
-	gpio = device_get_binding(DT_INST_0_TI_CC2520_CCA_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, cca_gpios));
 	if (!gpio) {
 		return NULL;
 	}
 
-	cc2520->gpios[CC2520_GPIO_IDX_CCA].pin = DT_INST_0_TI_CC2520_CCA_GPIOS_PIN;
+	cc2520->gpios[CC2520_GPIO_IDX_CCA].pin = DT_INST_GPIO_PIN(0, cca_gpios);
 	gpio_pin_configure(gpio, cc2520->gpios[CC2520_GPIO_IDX_CCA].pin,
-			   GPIO_INPUT | DT_INST_0_TI_CC2520_CCA_GPIOS_FLAGS);
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, cca_gpios));
 	cc2520->gpios[CC2520_GPIO_IDX_CCA].dev = gpio;
 
 	/* SFD */
-	gpio = device_get_binding(DT_INST_0_TI_CC2520_SFD_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, sfd_gpios));
 	if (!gpio) {
 		return NULL;
 	}
 
-	cc2520->gpios[CC2520_GPIO_IDX_SFD].pin = DT_INST_0_TI_CC2520_SFD_GPIOS_PIN;
+	cc2520->gpios[CC2520_GPIO_IDX_SFD].pin = DT_INST_GPIO_PIN(0, sfd_gpios);
 	gpio_pin_configure(gpio, cc2520->gpios[CC2520_GPIO_IDX_SFD].pin,
-			   GPIO_INPUT | DT_INST_0_TI_CC2520_SFD_GPIOS_FLAGS);
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, sfd_gpios));
 	cc2520->gpios[CC2520_GPIO_IDX_SFD].dev = gpio;
 
 	/* FIFOP */
-	gpio = device_get_binding(DT_INST_0_TI_CC2520_FIFOP_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, fifop_gpios));
 	if (!gpio) {
 		return NULL;
 	}
 
-	cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin = DT_INST_0_TI_CC2520_FIFOP_GPIOS_PIN;
+	cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin = DT_INST_GPIO_PIN(0, fifop_gpios);
 	gpio_pin_configure(gpio, cc2520->gpios[CC2520_GPIO_IDX_FIFOP].pin,
-			   GPIO_INPUT | DT_INST_0_TI_CC2520_SFD_GPIOS_FLAGS);
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, sfd_gpios));
 	cc2520->gpios[CC2520_GPIO_IDX_FIFOP].dev = gpio;
 
 	return cc2520->gpios;
@@ -1041,7 +1043,7 @@ static inline int configure_spi(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
-	cc2520->spi = device_get_binding(DT_INST_0_TI_CC2520_BUS_NAME);
+	cc2520->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!cc2520->spi) {
 		LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
@@ -1049,25 +1051,25 @@ static inline int configure_spi(struct device *dev)
 
 #if defined(CONFIG_IEEE802154_CC2520_GPIO_SPI_CS)
 	cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_0_TI_CC2520_CS_GPIOS_CONTROLLER);
+		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	cs_ctrl.gpio_pin = DT_INST_0_TI_CC2520_CS_GPIOS_PIN;
+	cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
 	cs_ctrl.delay = 0U;
 
 	cc2520->spi_cfg.cs = &cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		    DT_INST_0_TI_CC2520_CS_GPIOS_CONTROLLER,
-		    DT_INST_0_TI_CC2520_CS_GPIOS_PIN);
+		    DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+		    DT_INST_SPI_DEV_CS_GPIOS_PIN(0));
 #endif /* CONFIG_IEEE802154_CC2520_GPIO_SPI_CS */
 
-	cc2520->spi_cfg.frequency = DT_INST_0_TI_CC2520_SPI_MAX_FREQUENCY;
+	cc2520->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	cc2520->spi_cfg.operation = SPI_WORD_SET(8);
-	cc2520->spi_cfg.slave = DT_INST_0_TI_CC2520_BASE_ADDRESS;
+	cc2520->spi_cfg.slave = DT_INST_REG_ADDR(0);
 
 	return 0;
 }

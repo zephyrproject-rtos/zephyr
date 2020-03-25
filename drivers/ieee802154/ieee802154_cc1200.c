@@ -1,5 +1,7 @@
 /* ieee802154_cc1200.c - TI CC1200 driver */
 
+#define DT_DRV_COMPAT ti_cc1200
+
 /*
  * Copyright (c) 2017 Intel Corporation.
  *
@@ -729,15 +731,15 @@ static int power_on_and_setup(struct device *dev)
 static struct cc1200_gpio_configuration *configure_gpios(struct device *dev)
 {
 	struct cc1200_context *cc1200 = dev->driver_data;
-	struct device *gpio = device_get_binding(DT_INST_0_TI_CC1200_INT_GPIOS_CONTROLLER);
+	struct device *gpio = device_get_binding(DT_INST_GPIO_LABEL(0, int_gpios));
 
 	if (!gpio) {
 		return NULL;
 	}
 
-	cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin = DT_INST_0_TI_CC1200_INT_GPIOS_PIN;
+	cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin = DT_INST_GPIO_PIN(0, int_gpios);
 	gpio_pin_configure(gpio, cc1200->gpios[CC1200_GPIO_IDX_GPIO0].pin,
-			   GPIO_INPUT | DT_INST_0_TI_CC1200_INT_GPIOS_FLAGS);
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, int_gpios));
 	cc1200->gpios[CC1200_GPIO_IDX_GPIO0].dev = gpio;
 
 	return cc1200->gpios;
@@ -747,7 +749,7 @@ static int configure_spi(struct device *dev)
 {
 	struct cc1200_context *cc1200 = dev->driver_data;
 
-	cc1200->spi = device_get_binding(DT_INST_0_TI_CC1200_BUS_NAME);
+	cc1200->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!cc1200->spi) {
 		LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
@@ -755,25 +757,25 @@ static int configure_spi(struct device *dev)
 
 #if defined(CONFIG_IEEE802154_CC1200_GPIO_SPI_CS)
 	cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_0_TI_CC1200_CS_GPIOS_CONTROLLER);
+		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	cs_ctrl.gpio_pin = DT_INST_0_TI_CC1200_CS_GPIOS_PIN;
+	cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
 	cs_ctrl.delay = 0U;
 
 	cc1200->spi_cfg.cs = &cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		DT_INST_0_TI_CC1200_CS_GPIOS_CONTROLLER,
-		DT_INST_0_TI_CC1200_CS_GPIOS_PIN);
+		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+		DT_INST_SPI_DEV_CS_GPIOS_PIN(0));
 #endif /* CONFIG_IEEE802154_CC1200_GPIO_SPI_CS */
 
 	cc1200->spi_cfg.operation = SPI_WORD_SET(8);
-	cc1200->spi_cfg.frequency = DT_INST_0_TI_CC1200_SPI_MAX_FREQUENCY;
-	cc1200->spi_cfg.slave = DT_INST_0_TI_CC1200_BASE_ADDRESS;
+	cc1200->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
+	cc1200->spi_cfg.slave = DT_INST_REG_ADDR(0);
 
 	return 0;
 }

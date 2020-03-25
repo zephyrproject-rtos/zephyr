@@ -1,5 +1,7 @@
 /* ieee802154_rf2xx.c - ATMEL RF2XX IEEE 802.15.4 Driver */
 
+#define DT_DRV_COMPAT atmel_rf2xx
+
 /*
  * Copyright (c) 2019-2020 Gerson Fernando Budke
  *
@@ -811,69 +813,57 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 #endif /* CONFIG_IEEE802154_RAW_MODE */
 
 /*
- * Optional features place holders
+ * Optional features place holders, get a 0 if the "gpio" doesn't exist
  */
-#ifndef DT_INST_0_ATMEL_RF2XX_DIG2_GPIOS_CONTROLLER
-#define DT_INST_0_ATMEL_RF2XX_DIG2_GPIOS_CONTROLLER 0
-#define DT_INST_0_ATMEL_RF2XX_DIG2_GPIOS_PIN        0
-#define DT_INST_0_ATMEL_RF2XX_DIG2_GPIOS_FLAGS      0
-#endif
-#ifndef DT_INST_1_ATMEL_RF2XX_DIG2_GPIOS_CONTROLLER
-#define DT_INST_1_ATMEL_RF2XX_DIG2_GPIOS_CONTROLLER 0
-#define DT_INST_1_ATMEL_RF2XX_DIG2_GPIOS_PIN        0
-#define DT_INST_1_ATMEL_RF2XX_DIG2_GPIOS_FLAGS      0
-#endif
-#ifndef DT_INST_0_ATMEL_RF2XX_CLKM_GPIOS_CONTROLLER
-#define DT_INST_0_ATMEL_RF2XX_CLKM_GPIOS_CONTROLLER 0
-#define DT_INST_0_ATMEL_RF2XX_CLKM_GPIOS_PIN        0
-#define DT_INST_0_ATMEL_RF2XX_CLKM_GPIOS_FLAGS      0
-#endif
-#ifndef DT_INST_1_ATMEL_RF2XX_CLKM_GPIOS_CONTROLLER
-#define DT_INST_1_ATMEL_RF2XX_CLKM_GPIOS_CONTROLLER 0
-#define DT_INST_1_ATMEL_RF2XX_CLKM_GPIOS_PIN        0
-#define DT_INST_1_ATMEL_RF2XX_CLKM_GPIOS_FLAGS      0
-#endif
-#ifndef DT_INST_0_ATMEL_RF2XX_CS_GPIOS_CONTROLLER
-#define DT_INST_0_ATMEL_RF2XX_CS_GPIOS_CONTROLLER   0
-#define DT_INST_0_ATMEL_RF2XX_CS_GPIOS_PIN          0
-#define DT_INST_0_ATMEL_RF2XX_CS_GPIOS_FLAGS        0
-#endif
-#ifndef DT_INST_1_ATMEL_RF2XX_CS_GPIOS_CONTROLLER
-#define DT_INST_1_ATMEL_RF2XX_CS_GPIOS_CONTROLLER   0
-#define DT_INST_1_ATMEL_RF2XX_CS_GPIOS_PIN          0
-#define DT_INST_1_ATMEL_RF2XX_CS_GPIOS_FLAGS        0
-#endif
+#define DRV_INST_GPIO_LABEL(n, gpio_pha)	     \
+	UTIL_AND(DT_INST_NODE_HAS_PROP(n, gpio_pha), \
+		 DT_INST_GPIO_LABEL(n, gpio_pha))
+#define DRV_INST_GPIO_PIN(n, gpio_pha)	             \
+	UTIL_AND(DT_INST_NODE_HAS_PROP(n, gpio_pha), \
+		 DT_INST_GPIO_PIN(n, gpio_pha))
+#define DRV_INST_GPIO_FLAGS(n, gpio_pha)	     \
+	UTIL_AND(DT_INST_NODE_HAS_PROP(n, gpio_pha), \
+		 DT_INST_GPIO_FLAGS(n, gpio_pha))
+#define DRV_INST_SPI_DEV_CS_GPIOS_LABEL(n)           \
+	UTIL_AND(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),    \
+		 DT_INST_SPI_DEV_CS_GPIOS_LABEL(n))
+#define DRV_INST_SPI_DEV_CS_GPIOS_PIN(n)             \
+	UTIL_AND(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),    \
+		 DT_INST_SPI_DEV_CS_GPIOS_PIN(n))
+#define DRV_INST_SPI_DEV_CS_GPIOS_FLAGS(n)           \
+	UTIL_AND(DT_INST_SPI_DEV_HAS_CS_GPIOS(n),    \
+		 DT_INST_SPI_DEV_CS_GPIOS_FLAGS(n))
 
 #define IEEE802154_RF2XX_DEVICE_CONFIG(n)					   \
 	static const struct rf2xx_config rf2xx_ctx_config_##n = {		   \
 		.inst = n,							   \
 										   \
-		.irq.devname = DT_INST_##n##_ATMEL_RF2XX_IRQ_GPIOS_CONTROLLER,	   \
-		.irq.pin = DT_INST_##n##_ATMEL_RF2XX_IRQ_GPIOS_PIN,		   \
-		.irq.flags = DT_INST_##n##_ATMEL_RF2XX_IRQ_GPIOS_FLAGS,		   \
+		.irq.devname = DRV_INST_GPIO_LABEL(n, irq_gpios),		   \
+		.irq.pin = DRV_INST_GPIO_PIN(n, irq_gpios),			   \
+		.irq.flags = DRV_INST_GPIO_FLAGS(n, irq_gpios),			   \
 										   \
-		.reset.devname = DT_INST_##n##_ATMEL_RF2XX_RESET_GPIOS_CONTROLLER, \
-		.reset.pin = DT_INST_##n##_ATMEL_RF2XX_RESET_GPIOS_PIN,		   \
-		.reset.flags = DT_INST_##n##_ATMEL_RF2XX_RESET_GPIOS_FLAGS,	   \
+		.reset.devname = DRV_INST_GPIO_LABEL(n, reset_gpios),		   \
+		.reset.pin = DRV_INST_GPIO_PIN(n, reset_gpios),			   \
+		.reset.flags = DRV_INST_GPIO_FLAGS(n, reset_gpios),		   \
 										   \
-		.slptr.devname = DT_INST_##n##_ATMEL_RF2XX_SLPTR_GPIOS_CONTROLLER, \
-		.slptr.pin = DT_INST_##n##_ATMEL_RF2XX_SLPTR_GPIOS_PIN,		   \
-		.slptr.flags = DT_INST_##n##_ATMEL_RF2XX_SLPTR_GPIOS_FLAGS,	   \
+		.slptr.devname = DRV_INST_GPIO_LABEL(n, slptr_gpios),		   \
+		.slptr.pin = DRV_INST_GPIO_PIN(n, slptr_gpios),			   \
+		.slptr.flags = DRV_INST_GPIO_FLAGS(n, slptr_gpios),		   \
 										   \
-		.dig2.devname = DT_INST_##n##_ATMEL_RF2XX_DIG2_GPIOS_CONTROLLER,   \
-		.dig2.pin = DT_INST_##n##_ATMEL_RF2XX_DIG2_GPIOS_PIN,		   \
-		.dig2.flags = DT_INST_##n##_ATMEL_RF2XX_DIG2_GPIOS_FLAGS,	   \
+		.dig2.devname = DRV_INST_GPIO_LABEL(n, dig2_gpios),		   \
+		.dig2.pin = DRV_INST_GPIO_PIN(n, dig2_gpios),			   \
+		.dig2.flags = DRV_INST_GPIO_FLAGS(n, dig2_gpios),		   \
 										   \
-		.clkm.devname = DT_INST_##n##_ATMEL_RF2XX_CLKM_GPIOS_CONTROLLER,   \
-		.clkm.pin = DT_INST_##n##_ATMEL_RF2XX_CLKM_GPIOS_PIN,		   \
-		.clkm.flags = DT_INST_##n##_ATMEL_RF2XX_CLKM_GPIOS_FLAGS,	   \
+		.clkm.devname = DRV_INST_GPIO_LABEL(n, clkm_gpios),		   \
+		.clkm.pin = DRV_INST_GPIO_PIN(n, clkm_gpios),			   \
+		.clkm.flags = DRV_INST_GPIO_FLAGS(n, clkm_gpios),		   \
 										   \
-		.spi.devname = DT_INST_##n##_ATMEL_RF2XX_BUS_NAME,		   \
-		.spi.addr = DT_INST_##n##_ATMEL_RF2XX_BASE_ADDRESS,		   \
-		.spi.freq = DT_INST_##n##_ATMEL_RF2XX_SPI_MAX_FREQUENCY,	   \
-		.spi.cs.devname = DT_INST_##n##_ATMEL_RF2XX_CS_GPIOS_CONTROLLER,   \
-		.spi.cs.pin = DT_INST_##n##_ATMEL_RF2XX_CS_GPIOS_PIN,		   \
-		.spi.cs.flags = DT_INST_##n##_ATMEL_RF2XX_CS_GPIOS_FLAGS,	   \
+		.spi.devname = DT_INST_BUS_LABEL(n),				   \
+		.spi.addr = DT_INST_REG_ADDR(n),				   \
+		.spi.freq = DT_INST_PROP(n, spi_max_frequency),			   \
+		.spi.cs.devname = DRV_INST_SPI_DEV_CS_GPIOS_LABEL(n),		   \
+		.spi.cs.pin = DRV_INST_SPI_DEV_CS_GPIOS_PIN(n),			   \
+		.spi.cs.flags = DRV_INST_SPI_DEV_CS_GPIOS_FLAGS(n),		   \
 	};
 
 #define IEEE802154_RF2XX_DEVICE_DATA(n)			   \
@@ -882,7 +872,7 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 #define IEEE802154_RF2XX_RAW_DEVICE_INIT(n)	   \
 	DEVICE_AND_API_INIT(			   \
 		rf2xx_##n,			   \
-		DT_INST_##n##_ATMEL_RF2XX_LABEL,   \
+		DT_INST_LABEL(n),		   \
 		&rf2xx_init,			   \
 		&rf2xx_ctx_data_##n,		   \
 		&rf2xx_ctx_config_##n,		   \
@@ -893,7 +883,7 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 #define IEEE802154_RF2XX_NET_DEVICE_INIT(n)	   \
 	NET_DEVICE_INIT(			   \
 		rf2xx_##n,			   \
-		DT_INST_##n##_ATMEL_RF2XX_LABEL,   \
+		DT_INST_LABEL(n),		   \
 		&rf2xx_init,			   \
 		device_pm_control_nop,		   \
 		&rf2xx_ctx_data_##n,		   \
@@ -904,7 +894,7 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 		L2_CTX_TYPE,			   \
 		MTU)
 
-#if DT_INST_0_ATMEL_RF2XX
+#if DT_HAS_DRV_INST(0)
 	IEEE802154_RF2XX_DEVICE_CONFIG(0);
 	IEEE802154_RF2XX_DEVICE_DATA(0);
 
@@ -915,7 +905,7 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 	#endif /* CONFIG_IEEE802154_RAW_MODE */
 #endif
 
-#if DT_INST_1_ATMEL_RF2XX
+#if DT_HAS_DRV_INST(1)
 	IEEE802154_RF2XX_DEVICE_CONFIG(1);
 	IEEE802154_RF2XX_DEVICE_DATA(1);
 
