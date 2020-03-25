@@ -431,11 +431,11 @@ typedef enum {
 	LL_ENC_RSP,
 	LL_START_ENC_REQ,
 	LL_START_ENC_RSP,
-} helper_opcode_t;
+} helper_pdu_opcode_t;
 
-typedef void (helper_func_t) (struct pdu_data * data, void *param);
+typedef void (helper_pdu_func_t) (struct pdu_data * data, void *param);
 
-helper_func_t * const helper_pdu_encode[] = {
+helper_pdu_func_t * const helper_pdu_encode[] = {
 	helper_pdu_encode_version_ind,
 	NULL,
 	helper_pdu_encode_reject_ext_ind,
@@ -445,7 +445,7 @@ helper_func_t * const helper_pdu_encode[] = {
 	helper_pdu_encode_start_enc_rsp
 };
 
-helper_func_t * const helper_pdu_verify[] = {
+helper_pdu_func_t * const helper_pdu_verify[] = {
 	helper_pdu_verify_version_ind,
 	helper_pdu_verify_reject_ind,
 	helper_pdu_verify_reject_ext_ind,
@@ -455,7 +455,7 @@ helper_func_t * const helper_pdu_verify[] = {
 	helper_pdu_verify_start_enc_rsp
 };
 
-void lt_tx(helper_opcode_t opcode, struct ull_cp_conn *conn, void *param)
+void lt_tx(helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, void *param)
 {
 	struct pdu_data *pdu;
 	struct node_rx_pdu *rx;
@@ -469,7 +469,7 @@ void lt_tx(helper_opcode_t opcode, struct ull_cp_conn *conn, void *param)
 	sys_slist_append(&lt_tx_q, (sys_snode_t *) rx);
 }
 
-void lt_rx(helper_opcode_t opcode, struct ull_cp_conn *conn, struct node_tx **tx_ref, void *param)
+void lt_rx(helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, struct node_tx **tx_ref, void *param)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
@@ -491,7 +491,7 @@ void lt_rx_q_is_empty()
 	zassert_is_null(tx, NULL);
 }
 
-void ut_rx_pdu(helper_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
+void ut_rx_pdu(helper_pdu_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
 {
 	struct pdu_data *pdu;
 	struct node_rx_pdu *ntf;
