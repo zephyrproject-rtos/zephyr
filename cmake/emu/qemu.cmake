@@ -292,12 +292,12 @@ list(APPEND MORE_FLAGS_FOR_debugserver -s -S)
 
 # Architectures can define QEMU_KERNEL_FILE to use a specific output
 # file to pass to qemu (and a "qemu_kernel_target" target to generate
-# it), or set QEMU_KERNEL_OPTION if they want to replace the "-kernel
-# ..." option entirely.
+# it), or set QEMU_KERNEL_OPTION if they want to replace the
+# "-device loader,file=..." option entirely.
 if(DEFINED QEMU_KERNEL_FILE)
-  set(QEMU_KERNEL_OPTION "-kernel;${QEMU_KERNEL_FILE}")
+  set(QEMU_KERNEL_OPTION "-device;loader,file=${QEMU_KERNEL_FILE}")
 elseif(NOT DEFINED QEMU_KERNEL_OPTION)
-  set(QEMU_KERNEL_OPTION "-kernel;$<TARGET_FILE:${logical_target_for_zephyr_elf}>")
+  set(QEMU_KERNEL_OPTION "-device;loader,file=$<TARGET_FILE:${logical_target_for_zephyr_elf}>")
 endif()
 
 foreach(target ${qemu_targets})
