@@ -1700,14 +1700,14 @@ static void slave_update_conn_param(struct bt_conn *conn)
 #if defined(CONFIG_BT_SMP)
 static void pending_id_update(struct bt_keys *keys, void *data)
 {
-	if (keys->flags & BT_KEYS_ID_PENDING_ADD) {
-		keys->flags &= ~BT_KEYS_ID_PENDING_ADD;
+	if (keys->state & BT_KEYS_ID_PENDING_ADD) {
+		keys->state &= ~BT_KEYS_ID_PENDING_ADD;
 		bt_id_add(keys);
 		return;
 	}
 
-	if (keys->flags & BT_KEYS_ID_PENDING_DEL) {
-		keys->flags &= ~BT_KEYS_ID_PENDING_DEL;
+	if (keys->state & BT_KEYS_ID_PENDING_DEL) {
+		keys->state &= ~BT_KEYS_ID_PENDING_DEL;
 		bt_id_del(keys);
 		return;
 	}
@@ -1716,7 +1716,7 @@ static void pending_id_update(struct bt_keys *keys, void *data)
 static void pending_id_keys_update_set(struct bt_keys *keys, u8_t flag)
 {
 	atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
-	keys->flags |= flag;
+	keys->state |= flag;
 }
 
 static void pending_id_keys_update(void)
