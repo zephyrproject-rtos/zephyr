@@ -20,10 +20,14 @@ enum {
 };
 
 enum {
+	BT_KEYS_ID_PENDING_ADD  = BIT(0),
+	BT_KEYS_ID_PENDING_DEL  = BIT(1),
+};
+
+enum {
 	BT_KEYS_AUTHENTICATED   = BIT(0),
 	BT_KEYS_DEBUG           = BIT(1),
-	BT_KEYS_ID_PENDING_ADD  = BIT(2),
-	BT_KEYS_ID_PENDING_DEL  = BIT(3),
+	/* Bit 2 and 3 might accidentally exist in old stored keys */
 	BT_KEYS_SC              = BIT(4),
 };
 
@@ -46,7 +50,8 @@ struct bt_csrk {
 struct bt_keys {
 	u8_t                    id;
 	bt_addr_le_t		addr;
-	u8_t                    storage_start[0];
+	u8_t                    state;
+	u8_t                    storage_start[0] __aligned(sizeof(void *));
 	u8_t			enc_size;
 	u8_t                    flags;
 	u16_t			keys;
