@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT arm_mhu
+
 #include <errno.h>
 #include <device.h>
 #include <soc.h>
@@ -175,7 +177,7 @@ static const struct ipm_driver_api ipm_mhu_driver_api = {
 static void ipm_mhu_irq_config_func_0(struct device *d);
 
 static const struct ipm_mhu_device_config ipm_mhu_cfg_0 = {
-	.base = (u8_t *)DT_INST_0_ARM_MHU_BASE_ADDRESS,
+	.base = (u8_t *)DT_INST_REG_ADDR(0),
 	.irq_config_func = ipm_mhu_irq_config_func_0,
 };
 
@@ -185,7 +187,7 @@ static struct ipm_mhu_data ipm_mhu_data_0 = {
 };
 
 DEVICE_AND_API_INIT(mhu_0,
-			DT_INST_0_ARM_MHU_LABEL,
+			DT_INST_LABEL(0),
 			&ipm_mhu_init,
 			&ipm_mhu_data_0,
 			&ipm_mhu_cfg_0, PRE_KERNEL_1,
@@ -195,18 +197,18 @@ DEVICE_AND_API_INIT(mhu_0,
 static void ipm_mhu_irq_config_func_0(struct device *d)
 {
 	ARG_UNUSED(d);
-	IRQ_CONNECT(DT_INST_0_ARM_MHU_IRQ_0,
-			DT_INST_0_ARM_MHU_IRQ_0,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+			DT_INST_IRQN(0),
 			ipm_mhu_isr,
 			DEVICE_GET(mhu_0),
 			0);
-	irq_enable(DT_INST_0_ARM_MHU_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 }
 
 static void ipm_mhu_irq_config_func_1(struct device *d);
 
 static const struct ipm_mhu_device_config ipm_mhu_cfg_1 = {
-	.base = (u8_t *)DT_INST_1_ARM_MHU_BASE_ADDRESS,
+	.base = (u8_t *)DT_INST_REG_ADDR(1),
 	.irq_config_func = ipm_mhu_irq_config_func_1,
 };
 
@@ -216,7 +218,7 @@ static struct ipm_mhu_data ipm_mhu_data_1 = {
 };
 
 DEVICE_AND_API_INIT(mhu_1,
-			DT_INST_1_ARM_MHU_LABEL,
+			DT_INST_LABEL(1),
 			&ipm_mhu_init,
 			&ipm_mhu_data_1,
 			&ipm_mhu_cfg_1, PRE_KERNEL_1,
@@ -226,10 +228,10 @@ DEVICE_AND_API_INIT(mhu_1,
 static void ipm_mhu_irq_config_func_1(struct device *d)
 {
 	ARG_UNUSED(d);
-	IRQ_CONNECT(DT_INST_1_ARM_MHU_IRQ_0,
-			DT_INST_1_ARM_MHU_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(1),
+			DT_INST_IRQ(1, priority),
 			ipm_mhu_isr,
 			DEVICE_GET(mhu_1),
 			0);
-	irq_enable(DT_INST_1_ARM_MHU_IRQ_0);
+	irq_enable(DT_INST_IRQN(1));
 }

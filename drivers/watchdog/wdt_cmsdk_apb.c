@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT arm_cmsdk_watchdog
+
 /**
  * @brief Driver for CMSDK APB Watchdog.
  */
@@ -57,7 +59,7 @@ struct wdog_cmsdk_apb {
 #define CMSDK_APB_WDOG_LOCK_VALUE (0x2BDDF662)
 
 #define WDOG_STRUCT \
-	((volatile struct wdog_cmsdk_apb *)(DT_INST_0_ARM_CMSDK_WATCHDOG_BASE_ADDRESS))
+	((volatile struct wdog_cmsdk_apb *)(DT_INST_REG_ADDR(0)))
 
 /* Keep reference of the device to pass it to the callback */
 struct device *wdog_r;
@@ -111,7 +113,7 @@ static int wdog_cmsdk_apb_install_timeout(struct device *dev,
 
 	/* Reload value */
 	reload_s = config->window.max *
-			   DT_INST_0_ARM_CMSDK_WATCHDOG_CLOCKS_CLOCK_FREQUENCY;
+			   DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency);
 	flags = config->flags;
 
 	wdog->load = reload_s;
@@ -197,7 +199,7 @@ static int wdog_cmsdk_apb_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(wdog_cmsdk_apb, DT_INST_0_ARM_CMSDK_WATCHDOG_LABEL,
+DEVICE_AND_API_INIT(wdog_cmsdk_apb, DT_INST_LABEL(0),
 		    wdog_cmsdk_apb_init,
 		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
