@@ -444,7 +444,7 @@ static int espi_xec_receive_vwire(struct device *dev,
 	return 0;
 }
 
-static int espi_xec_send_oob(struct device *dev, struct espi_oob_packet pckt)
+static int espi_xec_send_oob(struct device *dev, struct espi_oob_packet *pckt)
 {
 	int ret;
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
@@ -464,14 +464,14 @@ static int espi_xec_send_oob(struct device *dev, struct espi_oob_packet pckt)
 		return -EBUSY;
 	}
 
-	if (pckt.len > MAX_OOB_BUFFER_SIZE) {
+	if (pckt->len > MAX_OOB_BUFFER_SIZE) {
 		LOG_ERR("insufficient space");
 		return -EINVAL;
 	}
 
-	memcpy(slave_tx_mem, pckt.buf, pckt.len);
+	memcpy(slave_tx_mem, pckt->buf, pckt->len);
 
-	ESPI_OOB_REGS->TX_LEN = pckt.len;
+	ESPI_OOB_REGS->TX_LEN = pckt->len;
 	ESPI_OOB_REGS->TX_CTRL = MCHP_ESPI_OOB_TX_CTRL_START;
 	LOG_DBG("%s %d", __func__, ESPI_OOB_REGS->TX_LEN);
 
@@ -489,7 +489,7 @@ static int espi_xec_send_oob(struct device *dev, struct espi_oob_packet pckt)
 }
 
 static int espi_xec_receive_oob(struct device *dev,
-				struct espi_oob_packet pckt)
+				struct espi_oob_packet *pckt)
 {
 	int ret;
 	u8_t err_mask = MCHP_ESPI_OOB_RX_STS_IBERR |
@@ -509,13 +509,13 @@ static int espi_xec_receive_oob(struct device *dev,
 	/* Check if buffer passed to driver can fit the received buffer */
 	u32_t rcvd_len = ESPI_OOB_REGS->RX_LEN & ESPI_XEC_OOB_RX_LEN_MASK;
 
-	if (rcvd_len > pckt.len) {
-		LOG_ERR("space rcvd %d vs %d", rcvd_len, pckt.len);
+	if (rcvd_len > pckt->len) {
+		LOG_ERR("space rcvd %d vs %d", rcvd_len, pckt->len);
 		return -EIO;
 	}
 
-	pckt.len = rcvd_len;
-	memcpy(pckt.buf, slave_rx_mem, pckt.len);
+	pckt->len = rcvd_len;
+	memcpy(pckt->buf, slave_rx_mem, pckt->len);
 
 	return 0;
 }
