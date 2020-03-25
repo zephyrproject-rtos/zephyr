@@ -1168,7 +1168,7 @@
 	DT_PHANDLE_BY_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's  node identifier for a phandle
+ * @brief Get a DT_DRV_COMPAT instance's node identifier for a phandle
  * property's value
  * @param inst instance number
  * @param prop lowercase-and-underscores property of "inst"
@@ -1185,6 +1185,7 @@
  *         0 otherwise.
  */
 #define DT_INST_REG_HAS_IDX(inst, idx) DT_REG_HAS_IDX(DT_DRV_INST(inst), idx)
+
 /**
  * @brief Get a DT_DRV_COMPAT instance's idx-th register block's address
  * @param inst instance number
