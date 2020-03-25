@@ -7,13 +7,14 @@ This test file contains foundational testcases for Sanitycheck tool
 """
 
 import os
-import imp
 import sys
 import pytest
+
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
-from sanity_chk import scl
-sanitycheck = imp.load_source('sanitycheck', ZEPHYR_BASE + '/scripts/sanitycheck')
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
+
+import scl
+from sanitylib import SanityConfigParser
 
 @pytest.fixture(name='test_data')
 def _test_data():
@@ -31,6 +32,6 @@ def test_correct_testcase_schema(test_data):
     """ Test to validate the testcase schema"""
     filename = test_data + 'testcase_correct_schema.yaml'
     schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/sanity_chk/testcase-schema.yaml')
-    data = sanitycheck.SanityConfigParser(filename, schema)
+    data = SanityConfigParser(filename, schema)
     data.load()
     assert data
