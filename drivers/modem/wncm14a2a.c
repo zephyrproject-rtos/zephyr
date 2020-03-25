@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT wnc_m14a2a
+
 #define LOG_DOMAIN modem_wncm14a2a
 #define LOG_LEVEL CONFIG_MODEM_LOG_LEVEL
 #include <logging/log.h>
@@ -59,7 +61,7 @@ enum mdm_control_pins {
 	MDM_KEEP_AWAKE,
 	MDM_RESET,
 	SHLD_3V3_1V8_SIG_TRANS_ENA,
-#ifdef DT_INST_0_WNC_M14A2A_MDM_SEND_OK_GPIOS_PIN
+#if DT_INST_NODE_HAS_PROP(0, mdm_send_ok_gpios)
 	MDM_SEND_OK,
 #endif
 	MAX_MDM_CONTROL_PINS,
@@ -67,39 +69,39 @@ enum mdm_control_pins {
 
 static const struct mdm_control_pinconfig pinconfig[] = {
 	/* MDM_BOOT_MODE_SEL */
-	PINCONFIG(DT_INST_0_WNC_M14A2A_MDM_BOOT_MODE_SEL_GPIOS_CONTROLLER,
-		  DT_INST_0_WNC_M14A2A_MDM_BOOT_MODE_SEL_GPIOS_PIN,
-		  DT_INST_0_WNC_M14A2A_MDM_BOOT_MODE_SEL_GPIOS_FLAGS),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_boot_mode_sel_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_boot_mode_sel_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_boot_mode_sel_gpios)),
 
 	/* MDM_POWER */
-	PINCONFIG(DT_INST_0_WNC_M14A2A_MDM_POWER_GPIOS_CONTROLLER,
-		  DT_INST_0_WNC_M14A2A_MDM_POWER_GPIOS_PIN,
-		  DT_INST_0_WNC_M14A2A_MDM_POWER_GPIOS_FLAGS),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_power_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_power_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_power_gpios)),
 
 	/* MDM_KEEP_AWAKE */
-	PINCONFIG(DT_INST_0_WNC_M14A2A_MDM_KEEP_AWAKE_GPIOS_CONTROLLER,
-		  DT_INST_0_WNC_M14A2A_MDM_KEEP_AWAKE_GPIOS_PIN,
-		  DT_INST_0_WNC_M14A2A_MDM_KEEP_AWAKE_GPIOS_FLAGS),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_keep_awake_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_keep_awake_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_keep_awake_gpios)),
 
 	/* MDM_RESET */
-	PINCONFIG(DT_INST_0_WNC_M14A2A_MDM_RESET_GPIOS_CONTROLLER,
-		  DT_INST_0_WNC_M14A2A_MDM_RESET_GPIOS_PIN,
-		  DT_INST_0_WNC_M14A2A_MDM_RESET_GPIOS_FLAGS),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_reset_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_reset_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_reset_gpios)),
 
 	/* SHLD_3V3_1V8_SIG_TRANS_ENA */
-	PINCONFIG(DT_INST_0_WNC_M14A2A_MDM_SHLD_TRANS_ENA_GPIOS_CONTROLLER,
-		  DT_INST_0_WNC_M14A2A_MDM_SHLD_TRANS_ENA_GPIOS_PIN,
-		  DT_INST_0_WNC_M14A2A_MDM_SHLD_TRANS_ENA_GPIOS_FLAGS),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_shld_trans_ena_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_shld_trans_ena_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_shld_trans_ena_gpios)),
 
-#ifdef DT_INST_0_WNC_M14A2A_MDM_SEND_OK_GPIOS_PIN
+#if DT_INST_NODE_HAS_PROP(0, mdm_send_ok_gpios)
 	/* MDM_SEND_OK */
-	PINCONFIG(DT_INST_0_WNC_M14A2A_MDM_SEND_OK_GPIOS_CONTROLLER,
-		  DT_INST_0_WNC_M14A2A_MDM_SEND_OK_GPIOS_PIN,
-		  DT_INST_0_WNC_M14A2A_MDM_SEND_OK_GPIOS_FLAGS),
+	PINCONFIG(DT_INST_GPIO_LABEL(0, mdm_send_ok_gpios),
+		  DT_INST_GPIO_PIN(0, mdm_send_ok_gpios),
+		  DT_INST_GPIO_FLAGS(0, mdm_send_ok_gpios)),
 #endif
 };
 
-#define MDM_UART_DEV_NAME		DT_INST_0_WNC_M14A2A_BUS_NAME
+#define MDM_UART_DEV_NAME		DT_INST_BUS_LABEL(0)
 
 #define MDM_BOOT_MODE_SPECIAL		0
 #define MDM_BOOT_MODE_NORMAL		1
@@ -1263,7 +1265,7 @@ static int modem_pin_init(void)
 	gpio_pin_set_raw(ictx.gpio_port_dev[MDM_KEEP_AWAKE],
 			 pinconfig[MDM_KEEP_AWAKE].pin,
 			 MDM_KEEP_AWAKE_ENABLED);
-#ifdef DT_INST_0_WNC_M14A2A_MDM_SEND_OK_GPIOS_PIN
+#if DT_INST_NODE_HAS_PROP(0, mdm_send_ok_gpios)
 	LOG_DBG("MDM_SEND_OK_PIN -> ENABLED");
 	gpio_pin_set_raw(ictx.gpio_port_dev[MDM_SEND_OK],
 			 pinconfig[MDM_SEND_OK].pin,
