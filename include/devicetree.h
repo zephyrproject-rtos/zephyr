@@ -1072,6 +1072,18 @@
 	DT_PROP_BY_IDX(DT_DRV_INST(inst), prop, idx)
 
 /**
+ * @brief Is index "idx" valid for an array type property
+ *        on a DT_DRV_COMPAT instance?
+ * @param inst instance number
+ * @param prop lowercase-and-underscores property name
+ * @param idx index to check
+ * @return 1 if "idx" is a valid index into the given property,
+ *         0 otherwise.
+ */
+#define DT_INST_PROP_HAS_IDX(inst, prop, idx) \
+	DT_PROP_HAS_IDX(DT_DRV_INST(inst), prop, idx)
+
+/**
  * @brief Get a DT_DRV_COMPAT property length
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
@@ -1328,6 +1340,31 @@
  */
 #define DT_INST_NODE_HAS_PROP(inst, prop) \
 	DT_NODE_HAS_PROP(DT_DRV_INST(inst), prop)
+
+/**
+ * @brief Does a phandle array have a named cell specifier at an index?
+ *        for a DT_DRV_COMPAT instance
+ * @param inst instance number
+ * @param pha lowercase-and-underscores property with type "phandle-array"
+ * @param idx index to check
+ * @param cell named cell value whose existence to check
+ * @return 1 if the named cell exists in the specifier at index idx,
+ *         0 otherwise.
+ */
+#define DT_INST_PHA_HAS_CELL_AT_IDX(inst, pha, idx, cell) \
+	DT_PHA_HAS_CELL_AT_IDX(DT_DRV_INST(inst), pha, idx, cell)
+
+/**
+ * @brief Does a phandle array have a named cell specifier at index 0
+ *        for a DT_DRV_COMPAT instance?
+ * @param inst instance number
+ * @param pha lowercase-and-underscores property with type "phandle-array"
+ * @param cell named cell value whose existence to check
+ * @return 1 if the named cell exists in the specifier at index 0,
+ *         0 otherwise.
+ */
+#define DT_INST_PHA_HAS_CELL(inst, pha, cell) \
+	DT_INST_PHA_HAS_CELL_AT_IDX(inst, pha, 0, cell)
 
 /**
  * @brief is index valid for interrupt property on a DT_DRV_COMPAT instance?
