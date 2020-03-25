@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT focaltech_ft5336
+
 #include <drivers/kscan.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
@@ -139,13 +141,13 @@ static const struct kscan_driver_api ft5336_driver_api = {
 };
 
 static const struct ft5336_config ft5336_config = {
-	.i2c_name = DT_INST_0_FOCALTECH_FT5336_BUS_NAME,
-	.i2c_address = DT_INST_0_FOCALTECH_FT5336_BASE_ADDRESS,
+	.i2c_name = DT_INST_BUS_LABEL(0),
+	.i2c_address = DT_INST_REG_ADDR(0),
 };
 
 static struct ft5336_data ft5336_data;
 
-DEVICE_AND_API_INIT(ft5336, DT_INST_0_FOCALTECH_FT5336_LABEL, ft5336_init,
+DEVICE_AND_API_INIT(ft5336, DT_INST_LABEL(0), ft5336_init,
 		    &ft5336_data, &ft5336_config,
 		    POST_KERNEL, CONFIG_KSCAN_INIT_PRIORITY,
 		    &ft5336_driver_api);
