@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT gooddisplay_gd7965
+
 #include <string.h>
 #include <device.h>
 #include <init.h>
@@ -24,24 +26,24 @@ LOG_MODULE_REGISTER(gd7965, CONFIG_DISPLAY_LOG_LEVEL);
  * also first gate/source should be 0.
  */
 
-#define GD7965_SPI_FREQ DT_INST_0_GOODDISPLAY_GD7965_SPI_MAX_FREQUENCY
-#define GD7965_BUS_NAME DT_INST_0_GOODDISPLAY_GD7965_BUS_NAME
-#define GD7965_DC_PIN DT_INST_0_GOODDISPLAY_GD7965_DC_GPIOS_PIN
-#define GD7965_DC_FLAGS DT_INST_0_GOODDISPLAY_GD7965_DC_GPIOS_FLAGS
-#define GD7965_DC_CNTRL DT_INST_0_GOODDISPLAY_GD7965_DC_GPIOS_CONTROLLER
-#define GD7965_CS_PIN DT_INST_0_GOODDISPLAY_GD7965_CS_GPIOS_PIN
-#if defined(DT_INST_0_GOODDISPLAY_GD7965_CS_GPIOS_CONTROLLER)
-#define GD7965_CS_CNTRL DT_INST_0_GOODDISPLAY_GD7965_CS_GPIOS_CONTROLLER
+#define GD7965_SPI_FREQ DT_INST_PROP(0, spi_max_frequency)
+#define GD7965_BUS_NAME DT_INST_BUS_LABEL(0)
+#define GD7965_DC_PIN DT_INST_GPIO_PIN(0, dc_gpios)
+#define GD7965_DC_FLAGS DT_INST_GPIO_FLAGS(0, dc_gpios)
+#define GD7965_DC_CNTRL DT_INST_GPIO_LABEL(0, dc_gpios)
+#define GD7965_CS_PIN DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+#define GD7965_CS_CNTRL DT_INST_SPI_DEV_CS_GPIOS_LABEL(0)
 #endif
-#define GD7965_BUSY_PIN DT_INST_0_GOODDISPLAY_GD7965_BUSY_GPIOS_PIN
-#define GD7965_BUSY_CNTRL DT_INST_0_GOODDISPLAY_GD7965_BUSY_GPIOS_CONTROLLER
-#define GD7965_BUSY_FLAGS DT_INST_0_GOODDISPLAY_GD7965_BUSY_GPIOS_FLAGS
-#define GD7965_RESET_PIN DT_INST_0_GOODDISPLAY_GD7965_RESET_GPIOS_PIN
-#define GD7965_RESET_CNTRL DT_INST_0_GOODDISPLAY_GD7965_RESET_GPIOS_CONTROLLER
-#define GD7965_RESET_FLAGS DT_INST_0_GOODDISPLAY_GD7965_RESET_GPIOS_FLAGS
+#define GD7965_BUSY_PIN DT_INST_GPIO_PIN(0, busy_gpios)
+#define GD7965_BUSY_CNTRL DT_INST_GPIO_LABEL(0, busy_gpios)
+#define GD7965_BUSY_FLAGS DT_INST_GPIO_FLAGS(0, busy_gpios)
+#define GD7965_RESET_PIN DT_INST_GPIO_PIN(0, reset_gpios)
+#define GD7965_RESET_CNTRL DT_INST_GPIO_LABEL(0, reset_gpios)
+#define GD7965_RESET_FLAGS DT_INST_GPIO_FLAGS(0, reset_gpios)
 
-#define EPD_PANEL_WIDTH			DT_INST_0_GOODDISPLAY_GD7965_WIDTH
-#define EPD_PANEL_HEIGHT		DT_INST_0_GOODDISPLAY_GD7965_HEIGHT
+#define EPD_PANEL_WIDTH			DT_INST_PROP(0, width)
+#define EPD_PANEL_HEIGHT		DT_INST_PROP(0, height)
 #define GD7965_PIXELS_PER_BYTE		8U
 
 /* Horizontally aligned page! */
@@ -64,8 +66,8 @@ struct gd7965_data {
 #endif
 };
 
-static u8_t gd7965_softstart[] = DT_INST_0_GOODDISPLAY_GD7965_SOFTSTART;
-static u8_t gd7965_pwr[] = DT_INST_0_GOODDISPLAY_GD7965_PWR;
+static u8_t gd7965_softstart[] = DT_INST_PROP(0, softstart);
+static u8_t gd7965_pwr[] = DT_INST_PROP(0, pwr);
 
 /* Border and data polarity settings */
 static u8_t bdd_polarity;
@@ -362,14 +364,14 @@ static int gd7965_controller_init(struct device *dev)
 	bdd_polarity = GD7965_CDI_BDV1 |
 		       GD7965_CDI_N2OCP | GD7965_CDI_DDX0;
 	tmp[GD7965_CDI_BDZ_DDX_IDX] = bdd_polarity;
-	tmp[GD7965_CDI_CDI_IDX] = DT_INST_0_GOODDISPLAY_GD7965_CDI;
+	tmp[GD7965_CDI_CDI_IDX] = DT_INST_PROP(0, cdi);
 	LOG_HEXDUMP_DBG(tmp, GD7965_CDI_REG_LENGTH, "CDI");
 	if (gd7965_write_cmd(driver, GD7965_CMD_CDI, tmp,
 			     GD7965_CDI_REG_LENGTH)) {
 		return -EIO;
 	}
 
-	tmp[0] = DT_INST_0_GOODDISPLAY_GD7965_TCON;
+	tmp[0] = DT_INST_PROP(0, tcon);
 	if (gd7965_write_cmd(driver, GD7965_CMD_TCON, tmp, 1)) {
 		return -EIO;
 	}
@@ -401,7 +403,7 @@ static int gd7965_init(struct device *dev)
 
 	driver->spi_config.frequency = GD7965_SPI_FREQ;
 	driver->spi_config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	driver->spi_config.slave = DT_INST_0_GOODDISPLAY_GD7965_BASE_ADDRESS;
+	driver->spi_config.slave = DT_INST_REG_ADDR(0);
 	driver->spi_config.cs = NULL;
 
 	driver->reset = device_get_binding(GD7965_RESET_CNTRL);
@@ -462,7 +464,7 @@ static struct display_driver_api gd7965_driver_api = {
 };
 
 
-DEVICE_AND_API_INIT(gd7965, DT_INST_0_GOODDISPLAY_GD7965_LABEL, gd7965_init,
+DEVICE_AND_API_INIT(gd7965, DT_INST_LABEL(0), gd7965_init,
 		    &gd7965_driver, NULL,
 		    POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
 		    &gd7965_driver_api);
