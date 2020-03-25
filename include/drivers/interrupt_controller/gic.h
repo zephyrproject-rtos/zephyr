@@ -23,8 +23,8 @@
  * GIC Register Interface Base Addresses
  */
 
-#define GIC_DIST_BASE	DT_INST_0_ARM_GIC_BASE_ADDRESS_0
-#define GIC_CPU_BASE	DT_INST_0_ARM_GIC_BASE_ADDRESS_1
+#define GIC_DIST_BASE	DT_REG_ADDR_BY_IDX(DT_INST(0, arm_gic), 0)
+#define GIC_CPU_BASE	DT_REG_ADDR_BY_IDX(DT_INST(0, arm_gic), 1)
 
 /*
  * GIC Distributor Interface
