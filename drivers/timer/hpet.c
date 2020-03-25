@@ -3,13 +3,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT intel_hpet
 #include <drivers/timer/system_timer.h>
 #include <sys_clock.h>
 #include <spinlock.h>
 #include <irq.h>
 
 #define HPET_REG32(off) (*(volatile u32_t *)(long)			\
-		       (DT_INST_0_INTEL_HPET_BASE_ADDRESS + (off)))
+		       (DT_INST_REG_ADDR(0) + (off)))
 
 #define CLK_PERIOD_REG        HPET_REG32(0x04) /* High dword of caps reg */
 #define GENERAL_CONF_REG      HPET_REG32(0x10)
@@ -84,11 +86,11 @@ int z_clock_driver_init(struct device *device)
 	extern int z_clock_hw_cycles_per_sec;
 	u32_t hz;
 
-	IRQ_CONNECT(DT_INST_0_INTEL_HPET_IRQ_0,
-		    DT_INST_0_INTEL_HPET_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    hpet_isr, 0, 0);
-	set_timer0_irq(DT_INST_0_INTEL_HPET_IRQ_0);
-	irq_enable(DT_INST_0_INTEL_HPET_IRQ_0);
+	set_timer0_irq(DT_INST_IRQN(0));
+	irq_enable(DT_INST_IRQN(0));
 
 	/* CLK_PERIOD_REG is in femtoseconds (1e-15 sec) */
 	hz = (u32_t)(1000000000000000ull / CLK_PERIOD_REG);
