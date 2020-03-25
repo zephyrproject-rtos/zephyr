@@ -18,3 +18,6 @@ CONFIG_RTT_CONSOLE=y
 
 # Enable MPU
 CONFIG_ARM_MPU=y
+
+# The KSZ8794 needs SPI to get MII registers data
+CONFIG_SPI=y
