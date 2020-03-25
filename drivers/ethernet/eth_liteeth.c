@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT litex_eth0
+
 #define LOG_MODULE_NAME eth_liteeth
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
@@ -25,21 +27,21 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LITEETH_EV_RX		0x1
 
 /* slots */
-#define LITEETH_SLOT_BASE	DT_INST_0_LITEX_ETH0_BUFFERS_BASE_ADDRESS
+#define LITEETH_SLOT_BASE	DT_INST_REG_ADDR_BY_NAME(0, buffers)
 #define LITEETH_SLOT_RX0	((LITEETH_SLOT_BASE) + 0x0000)
 #define LITEETH_SLOT_RX1	((LITEETH_SLOT_BASE) + 0x0800)
 #define LITEETH_SLOT_TX0	((LITEETH_SLOT_BASE) + 0x1000)
 #define LITEETH_SLOT_TX1	((LITEETH_SLOT_BASE) + 0x1800)
 
 /* sram - rx */
-#define LITEETH_RX_BASE		DT_INST_0_LITEX_ETH0_CONTROL_BASE_ADDRESS
+#define LITEETH_RX_BASE		DT_INST_REG_ADDR_BY_NAME(0, control)
 #define LITEETH_RX_SLOT		((LITEETH_RX_BASE) + 0x00)
 #define LITEETH_RX_LENGTH	((LITEETH_RX_BASE) + 0x04)
 #define LITEETH_RX_EV_PENDING	((LITEETH_RX_BASE) + 0x28)
 #define LITEETH_RX_EV_ENABLE	((LITEETH_RX_BASE) + 0x2c)
 
 /* sram - tx */
-#define LITEETH_TX_BASE		((DT_INST_0_LITEX_ETH0_CONTROL_BASE_ADDRESS) + 0x30)
+#define LITEETH_TX_BASE		((DT_INST_REG_ADDR_BY_NAME(0, control)) + 0x30)
 #define LITEETH_TX_START	((LITEETH_TX_BASE) + 0x00)
 #define LITEETH_TX_READY	((LITEETH_TX_BASE) + 0x04)
 #define LITEETH_TX_SLOT		((LITEETH_TX_BASE) + 0x0c)
@@ -47,11 +49,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LITEETH_TX_EV_PENDING	((LITEETH_TX_BASE) + 0x1c)
 
 /* irq */
-#define LITEETH_IRQ		DT_INST_0_LITEX_ETH0_IRQ_0
+#define LITEETH_IRQ		DT_INST_IRQN(0)
 #define LITEETH_IRQ_PRIORITY	CONFIG_ETH_LITEETH_0_IRQ_PRI
 
 /* label */
-#define LITEETH_LABEL		DT_INST_0_LITEX_ETH0_LABEL
+#define LITEETH_LABEL		DT_INST_LABEL(0)
 
 struct eth_liteeth_dev_data {
 	struct net_if *iface;
@@ -190,7 +192,7 @@ static void generate_mac(u8_t *mac_addr)
 #ifdef CONFIG_ETH_LITEETH_0
 
 static struct eth_liteeth_dev_data eth_data = {
-	.mac_addr =  DT_INST_0_LITEX_ETH0_LOCAL_MAC_ADDRESS
+	.mac_addr =  DT_INST_PROP(0, local_mac_address)
 };
 
 static void eth_irq_config(void);

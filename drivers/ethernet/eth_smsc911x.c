@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT smsc_lan9220
+
 /* SMSC911x/SMSC9220 driver. Partly based on mbedOS driver. */
 
 #define LOG_MODULE_NAME eth_smsc911x
@@ -659,8 +661,8 @@ static struct device DEVICE_NAME_GET(eth_smsc911x_0);
 
 int eth_init(struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_0_SMSC_LAN9220_IRQ_0,
-		    DT_INST_0_SMSC_LAN9220_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    eth_smsc911x_isr, DEVICE_GET(eth_smsc911x_0), 0);
 
 	int ret = smsc_init();
@@ -670,7 +672,7 @@ int eth_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	irq_enable(DT_INST_0_SMSC_LAN9220_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	return ret;
 }
