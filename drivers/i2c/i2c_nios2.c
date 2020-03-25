@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nios2_i2c
+
 #include <errno.h>
 #include <drivers/i2c.h>
 #include <soc.h>
@@ -157,14 +159,14 @@ static struct i2c_driver_api i2c_nios2_driver_api = {
 
 static struct i2c_nios2_config i2c_nios2_cfg = {
 	.i2c_dev = {
-		.i2c_base = (alt_u32 *)DT_INST_0_NIOS2_I2C_BASE_ADDRESS,
+		.i2c_base = (alt_u32 *)DT_INST_REG_ADDR(0),
 		.irq_controller_ID = I2C_0_IRQ_INTERRUPT_CONTROLLER_ID,
 		.irq_ID = I2C_0_IRQ,
-		.ip_freq_in_hz = DT_INST_0_NIOS2_I2C_CLOCK_FREQUENCY,
+		.ip_freq_in_hz = DT_INST_PROP(0, clock_frequency),
 	},
 };
 
-DEVICE_AND_API_INIT(i2c_nios2_0, DT_INST_0_NIOS2_I2C_LABEL, &i2c_nios2_init,
+DEVICE_AND_API_INIT(i2c_nios2_0, DT_INST_LABEL(0), &i2c_nios2_init,
 		    NULL, &i2c_nios2_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_nios2_driver_api);
