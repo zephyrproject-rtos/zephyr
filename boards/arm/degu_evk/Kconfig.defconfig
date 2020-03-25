@@ -50,16 +50,6 @@ config I2C_1
 
 endif # I2C
 
-choice I2C_0_NRF_TYPE
-	default I2C_0_NRF_TWIM
-	depends on I2C_0
-endchoice
-
-choice I2C_1_NRF_TYPE
-	default I2C_1_NRF_TWIM
-	depends on I2C_1
-endchoice
-
 config ADC_0
 	default y
 	depends on ADC

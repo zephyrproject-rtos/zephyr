@@ -14,27 +14,29 @@ menuconfig I2C_NRFX
 
 if I2C_NRFX
 
-choice I2C_0_NRF_TYPE
-	prompt "I2C Port 0 Driver type"
-	# In most Nordic SoCs, SPI and TWI peripherals with the same instance
-	# number share certain resources and therefore cannot be used at the
-	# same time (in nRF91 and nRF53 Series this limitation concerns UART
-	# peripherals as well). In nRF52810 though, there are only single
-	# instances of these peripherals and they are arranged in a different
-	# way, so this limitation does not apply.
-	depends on I2C_0 && (SOC_NRF52810 || \
-		(!SPI_0 && !(SOC_SERIES_NRF91X && UART_0_NRF_UARTE)) || \
-		(!SPI_0 && !(SOC_SERIES_NRF53X && UART_0_NRF_UARTE)))
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_NORDIC_NRF_TWI  := nordic,nrf-twi
+DT_COMPAT_NORDIC_NRF_TWIM := nordic,nrf-twim
+
+# In most Nordic SoCs, SPI and TWI peripherals with the same instance
+# number share certain resources and therefore cannot be used at the
+# same time (in nRF91 and nRF53 Series this limitation concerns UART
+# peripherals as well). In nRF52810 though, there are only single
+# instances of these peripherals and they are arranged in a different
+# way, so this limitation does not apply.
+if I2C_0 && (SOC_NRF52810 || \
+	(!SPI_0 && !(SOC_SERIES_NRF91X && UART_0_NRF_UARTE)) || \
+	(!SPI_0 && !(SOC_SERIES_NRF53X && UART_0_NRF_UARTE)))
 
 config I2C_0_NRF_TWI
-	bool "nRF TWI 0"
+	def_bool $(dt_nodelabel_has_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWI))
 	depends on HAS_HW_NRF_TWI0
 	select NRFX_TWI0
 	help
 	  Enable nRF TWI Master without EasyDMA on port 0.
 
 config I2C_0_NRF_TWIM
-	bool "nRF TWIM 0"
+	def_bool $(dt_nodelabel_has_compat,i2c0,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	depends on HAS_HW_NRF_TWIM0
 	select NRFX_TWIM0
 	help
@@ -42,27 +44,25 @@ config I2C_0_NRF_TWIM
 	  This peripheral accepts transfers from RAM only,
 	  if provided buffer is placed in flash, transfer will fail.
 
-endchoice
+endif # I2C_0 && (SOC_NRF52810 || ...
 
-choice I2C_1_NRF_TYPE
-	prompt "I2C Port 1 Driver type"
-	# In Nordic SoCs, SPI and TWI peripherals with the same instance number
-	# share certain resources and therefore cannot be used at the same time
-	# (in nRF91 and nRF53 Series this limitation concerns UART peripherals
-	# as well).
-	depends on I2C_1 && !SPI_1 && \
-		!(SOC_SERIES_NRF91X && UART_1_NRF_UARTE) && \
-		!(SOC_SERIES_NRF53X && UART_1_NRF_UARTE)
+# In Nordic SoCs, SPI and TWI peripherals with the same instance number
+# share certain resources and therefore cannot be used at the same time
+# (in nRF91 and nRF53 Series this limitation concerns UART peripherals
+# as well).
+if I2C_1 && !SPI_1 && \
+	!(SOC_SERIES_NRF91X && UART_1_NRF_UARTE) && \
+	!(SOC_SERIES_NRF53X && UART_1_NRF_UARTE)
 
 config I2C_1_NRF_TWI
-	bool "nRF TWI 1"
+	def_bool $(dt_nodelabel_has_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWI))
 	depends on HAS_HW_NRF_TWI1
 	select NRFX_TWI1
 	help
 	  Enable nRF TWI Master without EasyDMA on port 1.
 
 config I2C_1_NRF_TWIM
-	bool "nRF TWIM 1"
+	def_bool $(dt_nodelabel_has_compat,i2c1,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	depends on HAS_HW_NRF_TWIM1
 	select NRFX_TWIM1
 	help
@@ -70,20 +70,18 @@ config I2C_1_NRF_TWIM
 	  This peripheral accepts transfers from RAM only,
 	  if provided buffer is placed in flash, transfer will fail.
 
-endchoice
+endif # I2C_1 && !SPI_1 && ...
 
-choice I2C_2_NRF_TYPE
-	prompt "I2C Port 2 Driver type"
-	# In Nordic SoCs, SPI and TWI peripherals with the same instance number
-	# share certain resources and therefore cannot be used at the same time
-	# (in nRF91 and nRF53 Series this limitation concerns UART peripherals
-	# as well).
-	depends on I2C_2 && !SPI_2 && \
-		!(SOC_SERIES_NRF91X && UART_2_NRF_UARTE) && \
-		!(SOC_SERIES_NRF53X && UART_2_NRF_UARTE)
+# In Nordic SoCs, SPI and TWI peripherals with the same instance number
+# share certain resources and therefore cannot be used at the same time
+# (in nRF91 and nRF53 Series this limitation concerns UART peripherals
+# as well).
+if I2C_2 && !SPI_2 && \
+	!(SOC_SERIES_NRF91X && UART_2_NRF_UARTE) && \
+	!(SOC_SERIES_NRF53X && UART_2_NRF_UARTE)
 
 config I2C_2_NRF_TWIM
-	bool "nRF TWIM 2"
+	def_bool $(dt_nodelabel_has_compat,i2c2,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	depends on HAS_HW_NRF_TWIM2
 	select NRFX_TWIM2
 	help
@@ -91,20 +89,18 @@ config I2C_2_NRF_TWIM
 	  This peripheral accepts transfers from RAM only,
 	  if provided buffer is placed in flash, transfer will fail.
 
-endchoice
+endif # I2C_2 && !SPI_2 && ...
 
-choice I2C_3_NRF_TYPE
-	prompt "I2C Port 3 Driver type"
-	# In Nordic SoCs, SPI and TWI peripherals with the same instance number
-	# share certain resources and therefore cannot be used at the same time
-	# (in nRF91 and nRF53 Series this limitation concerns UART peripherals
-	# as well).
-	depends on I2C_3 && !SPI_3 && \
-		!(SOC_SERIES_NRF91X && UART_3_NRF_UARTE) && \
-		!(SOC_SERIES_NRF53X && UART_3_NRF_UARTE)
+# In Nordic SoCs, SPI and TWI peripherals with the same instance number
+# share certain resources and therefore cannot be used at the same time
+# (in nRF91 and nRF53 Series this limitation concerns UART peripherals
+# as well).
+if I2C_3 && !SPI_3 && \
+	!(SOC_SERIES_NRF91X && UART_3_NRF_UARTE) && \
+	!(SOC_SERIES_NRF53X && UART_3_NRF_UARTE)
 
 config I2C_3_NRF_TWIM
-	bool "nRF TWIM 3"
+	def_bool $(dt_nodelabel_has_compat,i2c3,$(DT_COMPAT_NORDIC_NRF_TWIM))
 	depends on HAS_HW_NRF_TWIM3
 	select NRFX_TWIM3
 	help
@@ -112,6 +108,6 @@ config I2C_3_NRF_TWIM
 	  This peripheral accepts transfers from RAM only,
 	  if provided buffer is placed in flash, transfer will fail.
 
-endchoice
+endif # I2C_3 && !SPI_3 && ...
 
 endif # I2C_NRFX

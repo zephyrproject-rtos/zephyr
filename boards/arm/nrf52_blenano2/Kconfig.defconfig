@@ -12,11 +12,6 @@ config I2C_0
 	default y
 	depends on I2C
 
-choice I2C_0_NRF_TYPE
-	default I2C_0_NRF_TWIM
-	depends on I2C_0
-endchoice
-
 config BT_CTLR
 	default BT
 
