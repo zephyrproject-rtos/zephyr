@@ -505,7 +505,7 @@ def write_chosen(edt):
     for name, node in edt.chosen_nodes.items():
         chosen[f"DT_CHOSEN_{str2ident(name)}"] = f"DT_{node.z_path_id}"
         chosen[f"DT_CHOSEN_{str2ident(name)}_EXISTS"] = 1
-    max_len = max(map(len, chosen))
+    max_len = max(map(len, chosen), default=0)
     for macro, value in chosen.items():
         out_define(macro, value, width=max_len)
 
