@@ -29,7 +29,7 @@ manifest:
       revision: bfa48a337e6fe08187d86f7ba7bbca0626475e17
       path: modules/hal/cmsis
     - name: hal_atmel
-      revision: c6825eab4a3eabe901d25259080f1f3661c8a7b6
+      revision: 1fe96f0a5e1a11d8101b258a3b84d35dc7178401
       path: modules/hal/atmel
     - name: hal_altera
       revision: 23c1c1dd7a0c1cc9a399509d1819375847c95b97
