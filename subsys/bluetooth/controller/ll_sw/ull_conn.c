@@ -1222,9 +1222,10 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 	/* break latency based on ctrl procedure pending */
-	if ((((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) &&
-	    ((conn->llcp_type == LLCP_CONN_UPD) ||
-	     (conn->llcp_type == LLCP_CHAN_MAP))) {
+	if (((((conn->llcp_req - conn->llcp_ack) & 0x03) == 0x02) &&
+	     ((conn->llcp_type == LLCP_CONN_UPD) ||
+	      (conn->llcp_type == LLCP_CHAN_MAP))) ||
+	    (conn->llcp_cu.req != conn->llcp_cu.ack)) {
 		lll->latency_event = 0;
 	}
 
