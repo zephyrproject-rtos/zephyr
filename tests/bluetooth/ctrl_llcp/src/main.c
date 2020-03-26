@@ -558,7 +558,7 @@ void done(struct ull_cp_conn *conn)
  *    |<---------------------------|                   |
  *    |                            |                   |
  */
-void test_api_local_version_exchange(void)
+void test_version_exchange_mas_loc(void)
 {
 	u8_t err;
 	struct node_tx *tx;
@@ -608,7 +608,7 @@ void test_api_local_version_exchange(void)
 	ut_rx_q_is_empty();
 }
 
-void test_api_local_version_exchange_2(void)
+void test_version_exchange_mas_loc_2(void)
 {
 	u8_t err;
 
@@ -637,7 +637,7 @@ void test_api_local_version_exchange_2(void)
  *    |        |------------------>|
  *    |        |                   |
  */
-void test_api_remote_version_exchange(void)
+void test_version_exchange_mas_rem(void)
 {
 	struct node_tx *tx;
 
@@ -706,7 +706,7 @@ void test_api_remote_version_exchange(void)
  *    |<---------------------------|                   |
  *    |                            |                   |
  */
-void test_api_both_version_exchange(void)
+void test_version_exchange_mas_rem_2(void)
 {
 	u8_t err;
 	struct node_tx *tx;
@@ -792,7 +792,7 @@ void test_api_both_version_exchange(void)
  *    |<---------------------------|                     |
  *    |                            |                     |
  */
-void test_api_local_encryption_start(void)
+void test_encryption_start_mas_loc(void)
 {
 	u8_t err;
 	struct node_tx *tx;
@@ -900,7 +900,7 @@ void test_api_local_encryption_start(void)
  *    |<---------------------------|                     |
  *    |                            |                     |
  */
-void test_api_local_encryption_start_limited_memory(void)
+void test_encryption_start_mas_loc_limited_memory(void)
 {
 	u8_t err;
 	struct node_tx *tx;
@@ -1033,7 +1033,7 @@ void test_api_local_encryption_start_limited_memory(void)
  *    |<---------------------------|                     |
  *    |                            |                     |
  */
-void test_api_local_encryption_start_no_ltk(void)
+void test_encryption_start_mas_loc_no_ltk(void)
 {
 	u8_t err;
 	struct node_tx *tx;
@@ -1133,7 +1133,7 @@ void test_api_local_encryption_start_no_ltk(void)
  *    |     |---------------| |                     |
  *    |                       |                     |
  */
-void test_api_remote_encryption_start(void)
+void test_encryption_start_mas_rem(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1268,7 +1268,7 @@ void test_api_remote_encryption_start(void)
  *    |     |---------------| |                     |
  *    |                       |                     |
  */
-void test_api_remote_encryption_start_limited_memory(void)
+void test_encryption_start_mas_rem_limited_memory(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1431,7 +1431,7 @@ void test_api_remote_encryption_start_limited_memory(void)
  *    |                       | LL_REJECT_EXT_IND   |
  *    |                       |-------------------->|
  */
-void test_api_remote_encryption_start_no_ltk(void)
+void test_encryption_start_mas_rem_no_ltk(void)
 {
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
@@ -1525,19 +1525,19 @@ void test_main(void)
 			);
 
 	ztest_test_suite(version_exchange,
-			 ztest_unit_test(test_api_local_version_exchange),
-			 ztest_unit_test(test_api_local_version_exchange_2),
-			 ztest_unit_test(test_api_remote_version_exchange),
-			 ztest_unit_test(test_api_both_version_exchange)
+			 ztest_unit_test(test_version_exchange_mas_loc),
+			 ztest_unit_test(test_version_exchange_mas_loc_2),
+			 ztest_unit_test(test_version_exchange_mas_rem),
+			 ztest_unit_test(test_version_exchange_mas_rem_2)
 			);
 
 	ztest_test_suite(encryption,
-			 ztest_unit_test(test_api_local_encryption_start),
-			 ztest_unit_test(test_api_local_encryption_start_limited_memory),
-			 ztest_unit_test(test_api_local_encryption_start_no_ltk),
-			 ztest_unit_test(test_api_remote_encryption_start),
-			 ztest_unit_test(test_api_remote_encryption_start_limited_memory),
-			 ztest_unit_test(test_api_remote_encryption_start_no_ltk)
+			 ztest_unit_test(test_encryption_start_mas_loc),
+			 ztest_unit_test(test_encryption_start_mas_loc_limited_memory),
+			 ztest_unit_test(test_encryption_start_mas_loc_no_ltk),
+			 ztest_unit_test(test_encryption_start_mas_rem),
+			 ztest_unit_test(test_encryption_start_mas_rem_limited_memory),
+			 ztest_unit_test(test_encryption_start_mas_rem_no_ltk)
 			);
 
 	ztest_run_test_suite(internal);
