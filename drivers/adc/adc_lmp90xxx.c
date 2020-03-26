@@ -662,7 +662,7 @@ static void lmp90xxx_acquisition_thread(struct device *dev)
 		if (err) {
 			LOG_ERR("failed to read ADC DOUT (err %d)", err);
 			adc_context_complete(&data->ctx, err);
-			return;
+			continue;
 		}
 
 		if (IS_ENABLED(CONFIG_ADC_LMP90XXX_CRC)) {
@@ -672,7 +672,7 @@ static void lmp90xxx_acquisition_thread(struct device *dev)
 				LOG_ERR("CRC mismatch (0x%02x vs. 0x%02x)",
 					buf[3], crc);
 				adc_context_complete(&data->ctx, -EIO);
-				return;
+				continue;
 			}
 		}
 
