@@ -120,7 +120,6 @@ struct lmp90xxx_config {
 };
 
 struct lmp90xxx_data {
-	struct device *dev;
 	struct adc_context ctx;
 	struct device *spi_dev;
 	struct spi_cs_control spi_cs;
@@ -130,7 +129,6 @@ struct lmp90xxx_data {
 	s32_t *buffer;
 	s32_t *repeat_buffer;
 	u32_t channels;
-	u32_t channel_id;
 	u8_t channel_odr[LMP90XXX_MAX_CHANNELS];
 #ifdef CONFIG_ADC_LMP90XXX_GPIO
 	struct k_mutex gpio_lock;
@@ -138,7 +136,8 @@ struct lmp90xxx_data {
 	u8_t gpio_dat;
 #endif /* CONFIG_ADC_LMP90XXX_GPIO */
 	struct k_thread thread;
-	struct k_sem sem;
+	struct k_sem acq_sem;
+	struct k_sem drdyb_sem;
 
 	K_THREAD_STACK_MEMBER(stack,
 			CONFIG_ADC_LMP90XXX_ACQUISITION_THREAD_STACK_SIZE);
@@ -539,43 +538,6 @@ static int lmp90xxx_adc_read(struct device *dev,
 	return lmp90xxx_adc_read_async(dev, sequence, NULL);
 }
 
-static void lmp90xxx_adc_start_channel(struct device *dev)
-{
-	const struct lmp90xxx_config *config = dev->config->config_info;
-	struct lmp90xxx_data *data = dev->driver_data;
-	u8_t ch_scan;
-	int err;
-
-	data->channel_id = find_lsb_set(data->channels) - 1;
-
-	LOG_DBG("starting channel %d", data->channel_id);
-
-	/* Single channel, single scan mode */
-	ch_scan = LMP90XXX_CH_SCAN_SEL(0x1) |
-		  LMP90XXX_FIRST_CH(data->channel_id) |
-		  LMP90XXX_LAST_CH(data->channel_id);
-
-	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_CH_SCAN, ch_scan);
-	if (err) {
-		LOG_ERR("failed to setup scan channels (err %d)", err);
-		adc_context_complete(&data->ctx, err);
-		return;
-	}
-
-	/* Start scan */
-	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_PWRCN, LMP90XXX_PWRCN(0));
-	if (err) {
-		LOG_ERR("failed to set active mode (err %d)", err);
-		adc_context_complete(&data->ctx, err);
-		return;
-	}
-
-	if (!LMP90XXX_HAS_DRDYB(config)) {
-		/* Signal thread to start polling for data ready */
-		k_sem_give(&data->sem);
-	}
-}
-
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct lmp90xxx_data *data =
@@ -584,7 +546,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	data->channels = ctx->sequence.channels;
 	data->repeat_buffer = data->buffer;
 
-	lmp90xxx_adc_start_channel(data->dev);
+	k_sem_give(&data->acq_sem);
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx,
@@ -598,85 +560,120 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
-static void lmp90xxx_acquisition_thread(struct device *dev)
+static int lmp90xxx_adc_read_channel(struct device *dev, u8_t channel,
+				     s32_t *result)
 {
 	const struct lmp90xxx_config *config = dev->config->config_info;
 	struct lmp90xxx_data *data = dev->driver_data;
-	s32_t result = 0;
 	u8_t adc_done;
+	u8_t ch_scan;
 	u8_t buf[4]; /* ADC_DOUT + CRC */
 	s32_t delay;
 	u8_t odr;
 	int err;
 
-	while (true) {
-		k_sem_take(&data->sem, K_FOREVER);
+	/* Single channel, single scan mode */
+	ch_scan = LMP90XXX_CH_SCAN_SEL(0x1) | LMP90XXX_FIRST_CH(channel) |
+		  LMP90XXX_LAST_CH(channel);
 
-		if (!LMP90XXX_HAS_DRDYB(config)) {
-			odr = data->channel_odr[data->channel_id];
-			delay = lmp90xxx_odr_delay_tbl[odr];
-			LOG_DBG("sleeping for %d ms", delay);
-			k_sleep(delay);
+	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_CH_SCAN, ch_scan);
+	if (err) {
+		LOG_ERR("failed to setup scan channels (err %d)", err);
+		return err;
+	}
 
-			/* Poll for data ready */
-			do {
-				err = lmp90xxx_read_reg8(dev,
-							 LMP90XXX_REG_ADC_DONE,
-							 &adc_done);
-				if (adc_done == 0xFFU) {
-					LOG_DBG("sleeping for 1 ms");
-					k_sleep(1);
-				} else {
-					break;
-				}
-			} while (true);
-		}
+	/* Start scan */
+	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_PWRCN, LMP90XXX_PWRCN(0));
+	if (err) {
+		LOG_ERR("failed to set active mode (err %d)", err);
+		return err;
+	}
 
-		if (IS_ENABLED(CONFIG_ADC_LMP90XXX_CRC)) {
-			err = lmp90xxx_read_reg(dev, LMP90XXX_REG_ADC_DOUT,
-						buf, sizeof(buf));
-		} else {
-			err = lmp90xxx_read_reg(dev, LMP90XXX_REG_ADC_DOUT,
-						buf, config->resolution / 8);
-		}
+	if (LMP90XXX_HAS_DRDYB(config)) {
+		k_sem_take(&data->drdyb_sem, K_FOREVER);
+	} else {
+		odr = data->channel_odr[channel];
+		delay = lmp90xxx_odr_delay_tbl[odr];
+		LOG_DBG("sleeping for %d ms", delay);
+		k_sleep(delay);
 
-		if (err) {
-			LOG_ERR("failed to read ADC DOUT (err %d)", err);
-			adc_context_complete(&data->ctx, err);
-			continue;
-		}
-
-		if (IS_ENABLED(CONFIG_ADC_LMP90XXX_CRC)) {
-			u8_t crc = crc8(buf, 3, 0x31, 0, false) ^ 0xFFU;
-
-			if (buf[3] != crc) {
-				LOG_ERR("CRC mismatch (0x%02x vs. 0x%02x)",
-					buf[3], crc);
-				adc_context_complete(&data->ctx, -EIO);
-				continue;
+		/* Poll for data ready */
+		do {
+			err = lmp90xxx_read_reg8(dev, LMP90XXX_REG_ADC_DONE,
+						&adc_done);
+			if (adc_done == 0xFFU) {
+				LOG_DBG("sleeping for 1 ms");
+				k_sleep(1);
+			} else {
+				break;
 			}
+		} while (true);
+	}
+
+	if (IS_ENABLED(CONFIG_ADC_LMP90XXX_CRC)) {
+		err = lmp90xxx_read_reg(dev, LMP90XXX_REG_ADC_DOUT, buf,
+					sizeof(buf));
+	} else {
+		err = lmp90xxx_read_reg(dev, LMP90XXX_REG_ADC_DOUT, buf,
+					config->resolution / 8);
+	}
+
+	if (err) {
+		LOG_ERR("failed to read ADC DOUT (err %d)", err);
+		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_ADC_LMP90XXX_CRC)) {
+		u8_t crc = crc8(buf, 3, 0x31, 0, false) ^ 0xFFU;
+
+		if (buf[3] != crc) {
+			LOG_ERR("CRC mismatch (0x%02x vs. 0x%02x)", buf[3],
+				crc);
+			return err;
+		}
+	}
+
+	/* Read result, get rid of CRC, and sign extend result */
+	*result = (s32_t)sys_get_be32(buf);
+	*result >>= (32 - config->resolution);
+
+	return 0;
+}
+
+static void lmp90xxx_acquisition_thread(struct device *dev)
+{
+	struct lmp90xxx_data *data = dev->driver_data;
+	s32_t result = 0;
+	u8_t channel;
+	int err;
+
+	while (true) {
+		k_sem_take(&data->acq_sem, K_FOREVER);
+
+		while (data->channels) {
+			channel = find_lsb_set(data->channels) - 1;
+
+			LOG_DBG("reading channel %d", channel);
+
+			err = lmp90xxx_adc_read_channel(dev, channel, &result);
+			if (err) {
+				adc_context_complete(&data->ctx, err);
+				break;
+			}
+
+			LOG_DBG("finished channel %d, result = %d", channel,
+				result);
+
+			/*
+			 * ADC samples are stored as s32_t regardless of the
+			 * resolution in order to provide a uniform interface
+			 * for the driver.
+			 */
+			*data->buffer++ = result;
+			WRITE_BIT(data->channels, channel, 0);
 		}
 
-		/* Read result, get rid of CRC, and sign extend result */
-		result = (s32_t)sys_get_be32(buf);
-		result >>= (32 - config->resolution);
-
-		LOG_DBG("finished channel %d, result = %d", data->channel_id,
-			result);
-
-		/*
-		 * ADC samples are stored as s32_t regardless of the
-		 * resolution in order to provide a uniform interface
-		 * for the driver.
-		 */
-		*data->buffer++ = result;
-		data->channels &= ~BIT(data->channel_id);
-
-		if (data->channels) {
-			lmp90xxx_adc_start_channel(dev);
-		} else {
-			adc_context_on_sampling_done(&data->ctx, dev);
-		}
+		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 }
 
@@ -687,7 +684,7 @@ static void lmp90xxx_drdyb_callback(struct device *port,
 		CONTAINER_OF(cb, struct lmp90xxx_data, drdyb_cb);
 
 	/* Signal thread that data is now ready */
-	k_sem_give(&data->sem);
+	k_sem_give(&data->drdyb_sem);
 }
 
 #ifdef CONFIG_ADC_LMP90XXX_GPIO
@@ -900,9 +897,9 @@ static int lmp90xxx_init(struct device *dev)
 	struct device *drdyb_dev;
 	int err;
 
-	data->dev = dev;
 	k_mutex_init(&data->ura_lock);
-	k_sem_init(&data->sem, 0, 1);
+	k_sem_init(&data->acq_sem, 0, 1);
+	k_sem_init(&data->drdyb_sem, 0, 1);
 #ifdef CONFIG_ADC_LMP90XXX_GPIO
 	k_mutex_init(&data->gpio_lock);
 #endif /* CONFIG_ADC_LMP90XXX_GPIO */
