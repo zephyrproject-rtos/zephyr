@@ -388,19 +388,12 @@ enabled instance. Currently, this looks like this:
 			    MY_DEV_INIT_LEVEL, MY_DEV_INIT_PRIORITY,    \
 			    &my_api_funcs)
 
-   #if DT_HAS_NODE(DT_DRV_INST(0))
-   CREATE_MY_DEVICE(0);
-   #endif
+   /* Call the device creation macro for every compatible node: */
+   DT_INST_FOREACH(CREATE_MY_DEVICE);
 
-   #if DT_HAS_NODE(DT_DRV_INST(1))
-   CREATE_MY_DEVICE(1);
-   #endif
-
-   /* And so on, for all "possible" instance numbers you need to support. */
-
-Notice the use of :c:func:`DT_INST_PROP` and :c:func:`DT_DRV_INST`. These are
-helpers which rely on ``DT_DRV_COMPAT`` to choose devicetree nodes of a chosen
-compatible at a given index.
+Notice the use of :c:func:`DT_INST_PROP` and :c:func:`DT_INST_FOREACH`.
+These are helpers which rely on ``DT_DRV_COMPAT`` to choose devicetree nodes
+of a chosen compatible at a given index.
 
 As shown above, the driver uses additional information from
 :file:`devicetree.h` to create :ref:`struct device <device_struct>` instances
