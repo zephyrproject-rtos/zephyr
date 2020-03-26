@@ -39,9 +39,6 @@ config BT_CTLR
 
 if MODEM
 
-config UART_1_NRF_UARTE
-	default y
-
 config UART_1_NRF_FLOW_CONTROL
 	default y
 

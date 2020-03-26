@@ -17,21 +17,20 @@ menuconfig UART_NRFX
 
 if UART_NRFX
 
+# Workaround for not being able to have commas in macro arguments
+DT_COMPAT_NORDIC_NRF_UART  := nordic,nrf-uart
+DT_COMPAT_NORDIC_NRF_UARTE := nordic,nrf-uarte
 
 # ----------------- port 0 -----------------
-choice
-	prompt "UART Port 0 Driver type"
-	optional
-
 config UART_0_NRF_UART
-	bool "nRF UART 0"
+	def_bool $(dt_nodelabel_has_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UART))
 	depends on HAS_HW_NRF_UART0
 	select NRF_UART_PERIPHERAL
 	help
 	  Enable nRF UART without EasyDMA on port 0.
 
 config UART_0_NRF_UARTE
-	bool "nRF UARTE 0"
+	def_bool $(dt_nodelabel_has_compat,uart0,$(DT_COMPAT_NORDIC_NRF_UARTE))
 	# In nRF91 and nRF53 Series SoCs, UART peripherals share certain resources with
 	# SPI and TWI peripherals having the same instance number, and therefore
 	# these cannot be used simultaneously.
@@ -39,7 +38,6 @@ config UART_0_NRF_UARTE
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 0.
-endchoice
 
 if UART_0_NRF_UART || UART_0_NRF_UARTE
 
@@ -105,7 +103,7 @@ endif # UART_0_NRF_UART || UART_0_NRF_UARTE
 
 # ----------------- port 1 -----------------
 config UART_1_NRF_UARTE
-	bool "nRF UARTE 1"
+	def_bool $(dt_nodelabel_has_compat,uart1,$(DT_COMPAT_NORDIC_NRF_UARTE))
 	# In nRF91 and nRF53 Series SoCs, UART peripherals share certain resources with
 	# SPI and TWI peripherals having the same instance number, and therefore
 	# these cannot be used simultaneously.
@@ -177,7 +175,7 @@ endif # UART_1_NRF_UARTE
 
 # ----------------- port 2 -----------------
 config UART_2_NRF_UARTE
-	bool "nRF UARTE 2"
+	def_bool $(dt_nodelabel_has_compat,uart2,$(DT_COMPAT_NORDIC_NRF_UARTE))
 	# In nRF91 and nRF53 Series SoCs, UART peripherals share certain resources with
 	# SPI and TWI peripherals having the same instance number, and therefore
 	# these cannot be used simultaneously.
@@ -248,7 +246,7 @@ endif # UART_2_NRF_UARTE
 
 # ----------------- port 3 -----------------
 config UART_3_NRF_UARTE
-	bool "nRF UARTE 3"
+	def_bool $(dt_nodelabel_has_compat,uart3,$(DT_COMPAT_NORDIC_NRF_UARTE))
 	# In nRF91 and nRF53 Series SoCs, UART peripherals share certain resources with
 	# SPI and TWI peripherals having the same instance number, and therefore
 	# these cannot be used simultaneously.
