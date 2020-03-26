@@ -117,7 +117,6 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_HAS_HCI_VS
 	select ENTROPY_NRF5_RNG
 	select ENTROPY_NRF5_BIAS_CORRECTION
-
 	select BT_CTLR_LE_ENC_SUPPORT if !BT_CTLR_DATA_LENGTH_CLEAR && \
 					 !BT_CTLR_PHY_2M_NRF
 	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
@@ -137,11 +136,6 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
 	select BT_CTLR_TIFS_HW_SUPPORT
-
-	# Until ticker resolve collision is fixed for skipped ticker catch-up
-	# issue, use the old compatibility mode
-	select BT_TICKER_COMPATIBILITY_MODE
-
 	default y
 	help
 	  Use Nordic Lower Link Layer implementation.
