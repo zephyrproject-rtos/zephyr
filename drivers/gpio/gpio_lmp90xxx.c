@@ -9,6 +9,8 @@
  * @brief GPIO driver for the LMP90xxx AFE.
  */
 
+#define DT_DRV_COMPAT ti_lmp90xxx_gpio
+
 #include <drivers/gpio.h>
 #include <zephyr.h>
 
@@ -169,22 +171,21 @@ BUILD_ASSERT_MSG(CONFIG_GPIO_LMP90XXX_INIT_PRIORITY >
 		.common = {                                             \
 			.port_pin_mask =                                \
 				 GPIO_PORT_PIN_MASK_FROM_NGPIOS(        \
-					DT_INST_##id##_TI_LMP90XXX_GPIO_NGPIOS)\
+					DT_INST_PROP(id, ngpios))	\
 		},                                                      \
-		.parent_dev_name =					\
-			DT_INST_##id##_TI_LMP90XXX_GPIO_BUS_NAME,	\
+		.parent_dev_name = DT_INST_BUS_LABEL(id),		\
 	};								\
 									\
 	static struct gpio_lmp90xxx_data gpio_lmp90xxx_##id##_data;	\
 									\
 	DEVICE_AND_API_INIT(gpio_lmp90xxx_##id,				\
-			    DT_INST_##id##_TI_LMP90XXX_GPIO_LABEL,	\
+			    DT_INST_LABEL(id),				\
 			    &gpio_lmp90xxx_init,			\
 			    &gpio_lmp90xxx_##id##_data,			\
 			    &gpio_lmp90xxx_##id##_cfg, POST_KERNEL,	\
 			    CONFIG_GPIO_LMP90XXX_INIT_PRIORITY,		\
 			    &gpio_lmp90xxx_api)
 
-#ifdef DT_INST_0_TI_LMP90XXX_GPIO
+#if DT_HAS_DRV_INST(0)
 GPIO_LMP90XXX_DEVICE(0);
 #endif
