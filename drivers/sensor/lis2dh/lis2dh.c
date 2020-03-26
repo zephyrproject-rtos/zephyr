@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_lis2dh
+
 
 #include <init.h>
 #include <sys/byteorder.h>
@@ -21,7 +23,7 @@ LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
  * multiplied by 100.
  */
 static const u32_t lis2dh_reg_val_to_scale[] = {
-#if defined(DT_INST_0_ST_LSM303AGR_ACCEL)
+#if DT_HAS_NODE(DT_INST(0, st_lsm303agr_accel))
 	ACCEL_SCALE(1563),
 	ACCEL_SCALE(3126),
 	ACCEL_SCALE(6252),
@@ -291,7 +293,7 @@ int lis2dh_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(DT_INST_0_ST_LIS2DH_DISCONNECT_SDO_SA0_PULL_UP)) {
+	if (IS_ENABLED(DT_INST_PROP(0, disconnect_sdo_sa0_pull_up))) {
 		status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL0,
 						   LIS2DH_SDO_PU_DISC_MASK,
 						   LIS2DH_SDO_PU_DISC_MASK);
@@ -347,29 +349,29 @@ int lis2dh_init(struct device *dev)
 static struct lis2dh_data lis2dh_data;
 
 static const struct lis2dh_config lis2dh_config = {
-	.bus_name = DT_INST_0_ST_LIS2DH_BUS_NAME,
-#if defined(DT_ST_LIS2DH_BUS_SPI)
+	.bus_name = DT_INST_BUS_LABEL(0),
+#if DT_ANY_INST_ON_BUS(spi)
 	.bus_init = lis2dh_spi_init,
-	.spi_conf.frequency = DT_INST_0_ST_LIS2DH_SPI_MAX_FREQUENCY,
+	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
 	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 			       SPI_MODE_CPHA | SPI_WORD_SET(8) |
 			       SPI_LINES_SINGLE),
-	.spi_conf.slave     = DT_INST_0_ST_LIS2DH_BASE_ADDRESS,
-#if defined(DT_INST_0_ST_LIS2DH_CS_GPIOS_CONTROLLER)
-	.gpio_cs_port	    = DT_INST_0_ST_LIS2DH_CS_GPIOS_CONTROLLER,
-	.cs_gpio	    = DT_INST_0_ST_LIS2DH_CS_GPIOS_PIN,
+	.spi_conf.slave     = DT_INST_REG_ADDR(0),
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
 	.spi_conf.cs        =  &lis2dh_data.cs_ctrl,
 #else
 	.spi_conf.cs        = NULL,
 #endif
-#elif defined(DT_ST_LIS2DH_BUS_I2C)
+#elif DT_ANY_INST_ON_BUS(i2c)
 	.bus_init = lis2dh_i2c_init,
-	.i2c_slv_addr = DT_INST_0_ST_LIS2DH_BASE_ADDRESS,
+	.i2c_slv_addr = DT_INST_REG_ADDR(0),
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
 #endif
 };
 
-DEVICE_AND_API_INIT(lis2dh, DT_INST_0_ST_LIS2DH_LABEL, lis2dh_init, &lis2dh_data,
+DEVICE_AND_API_INIT(lis2dh, DT_INST_LABEL(0), lis2dh_init, &lis2dh_data,
 		    &lis2dh_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &lis2dh_driver_api);

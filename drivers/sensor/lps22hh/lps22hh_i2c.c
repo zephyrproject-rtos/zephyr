@@ -8,13 +8,15 @@
  * https://www.st.com/resource/en/datasheet/lps22hh.pdf
  */
 
+#define DT_DRV_COMPAT st_lps22hh
+
 #include <string.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
 
 #include "lps22hh.h"
 
-#ifdef DT_ST_LPS22HH_BUS_I2C
+#if DT_ANY_INST_ON_BUS(i2c)
 
 LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -50,4 +52,4 @@ int lps22hh_i2c_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ST_LPS22HH_BUS_I2C */
+#endif /* DT_ANY_INST_ON_BUS(i2c) */

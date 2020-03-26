@@ -8,15 +8,17 @@
  * https://www.st.com/resource/en/datasheet/iis2dlpc.pdf
  */
 
+#define DT_DRV_COMPAT st_iis2dlpc
+
 #include <init.h>
 #include <sys/__assert.h>
 #include <sys/byteorder.h>
 #include <logging/log.h>
 #include <drivers/sensor.h>
 
-#if defined(DT_ST_IIS2DLPC_BUS_SPI)
+#if DT_ANY_INST_ON_BUS(spi)
 #include <drivers/spi.h>
-#elif defined(DT_ST_IIS2DLPC_BUS_I2C)
+#elif DT_ANY_INST_ON_BUS(i2c)
 #include <drivers/i2c.h>
 #endif
 
@@ -220,9 +222,9 @@ static int iis2dlpc_init_interface(struct device *dev)
 		return -EINVAL;
 	}
 
-#if defined(DT_ST_IIS2DLPC_BUS_SPI)
+#if DT_ANY_INST_ON_BUS(spi)
 	iis2dlpc_spi_init(dev);
-#elif defined(DT_ST_IIS2DLPC_BUS_I2C)
+#elif DT_ANY_INST_ON_BUS(i2c)
 	iis2dlpc_i2c_init(dev);
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
@@ -371,12 +373,12 @@ static int iis2dlpc_init(struct device *dev)
 }
 
 const struct iis2dlpc_device_config iis2dlpc_cfg = {
-	.bus_name = DT_INST_0_ST_IIS2DLPC_BUS_NAME,
+	.bus_name = DT_INST_BUS_LABEL(0),
 	.pm = CONFIG_IIS2DLPC_POWER_MODE,
 #ifdef CONFIG_IIS2DLPC_TRIGGER
-	.int_gpio_port = DT_INST_0_ST_IIS2DLPC_DRDY_GPIOS_CONTROLLER,
-	.int_gpio_pin = DT_INST_0_ST_IIS2DLPC_DRDY_GPIOS_PIN,
-	.int_gpio_flags = DT_INST_0_ST_IIS2DLPC_DRDY_GPIOS_FLAGS,
+	.int_gpio_port = DT_INST_GPIO_LABEL(0, drdy_gpios),
+	.int_gpio_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
+	.int_gpio_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
 #if defined(CONFIG_IIS2DLPC_INT_PIN_1)
 	.int_pin = 1,
 #elif defined(CONFIG_IIS2DLPC_INT_PIN_2)
@@ -401,6 +403,6 @@ const struct iis2dlpc_device_config iis2dlpc_cfg = {
 
 struct iis2dlpc_data iis2dlpc_data;
 
-DEVICE_AND_API_INIT(iis2dlpc, DT_INST_0_ST_IIS2DLPC_LABEL, iis2dlpc_init,
+DEVICE_AND_API_INIT(iis2dlpc, DT_INST_LABEL(0), iis2dlpc_init,
 	     &iis2dlpc_data, &iis2dlpc_cfg, POST_KERNEL,
 	     CONFIG_SENSOR_INIT_PRIORITY, &iis2dlpc_driver_api);

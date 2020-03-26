@@ -131,7 +131,7 @@ struct iis2dlpc_data {
 	struct device *dev;
 #endif /* CONFIG_IIS2DLPC_TRIGGER_GLOBAL_THREAD */
 #endif /* CONFIG_IIS2DLPC_TRIGGER */
-#if defined(DT_INST_0_ST_IIS2DLPC_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control cs_ctrl;
 #endif
 };

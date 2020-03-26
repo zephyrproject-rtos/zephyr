@@ -8,12 +8,14 @@
  * https://www.st.com/resource/en/datasheet/lps22hh.pdf
  */
 
+#define DT_DRV_COMPAT st_lps22hh
+
 
 #include <string.h>
 #include "lps22hh.h"
 #include <logging/log.h>
 
-#ifdef DT_ST_LPS22HH_BUS_SPI
+#if DT_ANY_INST_ON_BUS(spi)
 
 #define LPS22HH_SPI_READ		(1 << 7)
 
@@ -105,7 +107,7 @@ int lps22hh_spi_init(struct device *dev)
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = dev;
 
-#if defined(DT_INST_0_ST_LPS22HH_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const struct lps22hh_config *cfg = dev->config->config_info;
 
 	/* handle SPI CS thru GPIO if it is the case */
@@ -124,4 +126,4 @@ int lps22hh_spi_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ST_LPS22HH_BUS_SPI */
+#endif /* DT_ANY_INST_ON_BUS(spi) */

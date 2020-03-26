@@ -8,13 +8,15 @@
  * https://www.st.com/resource/en/datasheet/lis2dh.pdf
  */
 
+#define DT_DRV_COMPAT st_lis2dh
+
 #include <string.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
 
 #include "lis2dh.h"
 
-#ifdef DT_ST_LIS2DH_BUS_I2C
+#if DT_ANY_INST_ON_BUS(i2c)
 
 LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -89,4 +91,4 @@ int lis2dh_i2c_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ST_LIS2DH_BUS_I2C */
+#endif /* DT_ANY_INST_ON_BUS(i2c) */

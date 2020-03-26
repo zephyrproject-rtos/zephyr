@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/lis2ds12.pdf
  */
 
+#define DT_DRV_COMPAT st_lis2ds12
+
 #include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
@@ -24,18 +26,18 @@ LOG_MODULE_REGISTER(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);
 static struct lis2ds12_data lis2ds12_data;
 
 static struct lis2ds12_config lis2ds12_config = {
-	.comm_master_dev_name = DT_INST_0_ST_LIS2DS12_BUS_NAME,
-#if defined(DT_ST_LIS2DS12_BUS_SPI)
+	.comm_master_dev_name = DT_INST_BUS_LABEL(0),
+#if DT_ANY_INST_ON_BUS(spi)
 	.bus_init = lis2ds12_spi_init,
-#elif defined(DT_ST_LIS2DS12_BUS_I2C)
+#elif DT_ANY_INST_ON_BUS(i2c)
 	.bus_init = lis2ds12_i2c_init,
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
 #endif
 #ifdef CONFIG_LIS2DS12_TRIGGER
-	.irq_port	= DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_CONTROLLER,
-	.irq_pin	= DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_PIN,
-	.irq_flags	= DT_INST_0_ST_LIS2DS12_IRQ_GPIOS_FLAGS,
+	.irq_port	= DT_INST_GPIO_LABEL(0, irq_gpios),
+	.irq_pin	= DT_INST_GPIO_PIN(0, irq_gpios),
+	.irq_flags	= DT_INST_GPIO_FLAGS(0, irq_gpios),
 #endif
 };
 
@@ -316,6 +318,6 @@ static int lis2ds12_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(lis2ds12, DT_INST_0_ST_LIS2DS12_LABEL, lis2ds12_init,
+DEVICE_AND_API_INIT(lis2ds12, DT_INST_LABEL(0), lis2ds12_init,
 		    &lis2ds12_data, &lis2ds12_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lis2ds12_api_funcs);

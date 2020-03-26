@@ -8,11 +8,13 @@
  * https://www.st.com/resource/en/datasheet/lis2mdl.pdf
  */
 
+#define DT_DRV_COMPAT st_lis2mdl
+
 #include <string.h>
 #include "lis2mdl.h"
 #include <logging/log.h>
 
-#ifdef DT_ST_LIS2MDL_BUS_SPI
+#if DT_ANY_INST_ON_BUS(spi)
 
 #define LIS2MDL_SPI_READ		(1 << 7)
 
@@ -105,7 +107,7 @@ int lis2mdl_spi_init(struct device *dev)
 	data->ctx = &data->ctx_spi;
 	data->ctx->handle = dev;
 
-#if defined(DT_INST_0_ST_LIS2MDL_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const struct lis2mdl_config *cfg = dev->config->config_info;
 
 	/* handle SPI CS thru GPIO if it is the case */
@@ -131,4 +133,4 @@ int lis2mdl_spi_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ST_LIS2MDL_BUS_SPI */
+#endif /* DT_ANY_INST_ON_BUS(spi) */

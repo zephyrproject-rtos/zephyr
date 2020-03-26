@@ -32,9 +32,9 @@ struct iis3dhhc_config {
 	u8_t int_pin;
 	u8_t int_flags;
 #endif
-#ifdef DT_ST_IIS3DHHC_BUS_SPI
+#if DT_ANY_INST_ON_BUS(spi)
 	struct spi_config spi_conf;
-#if defined(DT_INST_0_ST_IIS3DHHC_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
 	u8_t cs_gpio;
 #endif
@@ -47,7 +47,7 @@ struct iis3dhhc_data {
 
 	stmdev_ctx_t *ctx;
 
-#ifdef DT_ST_IIS3DHHC_BUS_SPI
+#if DT_ANY_INST_ON_BUS(spi)
 	stmdev_ctx_t ctx_spi;
 #endif
 
@@ -68,7 +68,7 @@ struct iis3dhhc_data {
 #endif
 
 #endif /* CONFIG_IIS3DHHC_TRIGGER */
-#if defined(DT_INST_0_ST_IIS3DHHC_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control cs_ctrl;
 #endif
 };

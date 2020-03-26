@@ -8,13 +8,15 @@
  * https://www.st.com/resource/en/datasheet/iis2mdc.pdf
  */
 
+#define DT_DRV_COMPAT st_iis2mdc
+
 #include <string.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
 
 #include "iis2mdc.h"
 
-#ifdef DT_ST_IIS2MDC_BUS_I2C
+#if DT_ANY_INST_ON_BUS(i2c)
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_DECLARE(IIS2MDC);
@@ -51,4 +53,4 @@ int iis2mdc_i2c_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ST_IIS2MDC_BUS_I2C */
+#endif /* DT_ANY_INST_ON_BUS(i2c) */

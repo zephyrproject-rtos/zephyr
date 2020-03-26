@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_lsm6dsl
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <sys/__assert.h>
@@ -23,7 +25,7 @@ static inline void setup_irq(struct lsm6dsl_data *drv_data,
 		: GPIO_INT_DISABLE;
 
 	gpio_pin_interrupt_configure(drv_data->gpio,
-				     DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_PIN,
+				     DT_INST_GPIO_PIN(0, irq_gpios),
 				     flags);
 }
 
@@ -56,7 +58,7 @@ int lsm6dsl_trigger_set(struct device *dev,
 	drv_data->data_ready_trigger = *trig;
 
 	setup_irq(drv_data, true);
-	if (gpio_pin_get(drv_data->gpio, DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_PIN) > 0) {
+	if (gpio_pin_get(drv_data->gpio, DT_INST_GPIO_PIN(0, irq_gpios)) > 0) {
 		handle_irq(drv_data);
 	}
 
@@ -117,19 +119,19 @@ int lsm6dsl_init_interrupt(struct device *dev)
 	struct lsm6dsl_data *drv_data = dev->driver_data;
 
 	/* setup data ready gpio interrupt */
-	drv_data->gpio = device_get_binding(DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_CONTROLLER);
+	drv_data->gpio = device_get_binding(DT_INST_GPIO_LABEL(0, irq_gpios));
 	if (drv_data->gpio == NULL) {
 		LOG_ERR("Cannot get pointer to %s device.",
-			    DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_CONTROLLER);
+			    DT_INST_GPIO_LABEL(0, irq_gpios));
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_PIN,
-			   GPIO_INPUT | DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_FLAGS);
+	gpio_pin_configure(drv_data->gpio, DT_INST_GPIO_PIN(0, irq_gpios),
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, irq_gpios));
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   lsm6dsl_gpio_callback,
-			   BIT(DT_INST_0_ST_LSM6DSL_IRQ_GPIOS_PIN));
+			   BIT(DT_INST_GPIO_PIN(0, irq_gpios)));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_ERR("Could not set gpio callback.");

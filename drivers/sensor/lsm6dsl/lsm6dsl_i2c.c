@@ -7,15 +7,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_lsm6dsl
+
 #include <string.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
 
 #include "lsm6dsl.h"
 
-#ifdef DT_ST_LSM6DSL_BUS_I2C
+#if DT_ANY_INST_ON_BUS(i2c)
 
-static u16_t lsm6dsl_i2c_slave_addr = DT_INST_0_ST_LSM6DSL_BASE_ADDRESS;
+static u16_t lsm6dsl_i2c_slave_addr = DT_INST_REG_ADDR(0);
 
 LOG_MODULE_DECLARE(LSM6DSL, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -62,4 +64,4 @@ int lsm6dsl_i2c_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ST_LSM6DSL_BUS_I2C */
+#endif /* DT_ANY_INST_ON_BUS(i2c) */
