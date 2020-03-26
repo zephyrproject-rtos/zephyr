@@ -86,13 +86,13 @@ void main(void)
 		err = adc_read(lmp90100, &seq);
 		if (err) {
 			LOG_ERR("failed to read ADC (err %d)", err);
-			return;
+		} else {
+			resistance = (buffer / 8388608.0) * 2000;
+			printf("R: %.02f ohm\n", resistance);
+			printf("T: %.02f degC\n",
+				rtd_temperature(RTD_NOMINAL_RESISTANCE,
+						resistance));
 		}
-
-		resistance = (buffer / 8388608.0) * 2000;
-		printf("R: %.02f ohm\n", resistance);
-		printf("T: %.02f degC\n",
-		       rtd_temperature(RTD_NOMINAL_RESISTANCE, resistance));
 
 		k_sleep(1000);
 	}
