@@ -1,0 +1,24 @@
+# Copyright (c) 2020, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "microchip,mec15xx-board-power"
+
+description: |
+    This binding provides MEC15xx board gpio power rails resources to
+    build and run samples/drives/espi in Zephyr.
+    GPIOs required before performing a eSPI host-slave handshake
+
+properties:
+   pwrg-gpios:
+        type: phandle-array
+        required: true
+        description: |
+          Board GPIO input used to detect that power rails are stable.
+
+   rsm-gpios:
+        type: phandle-array
+        required: true
+        description: |
+          Board GPIO output used to notify eSPI master to ackwnowledge
+          power has stabilized and bare minimum initialization in eSPI slave
+          is complete so eSPI master can proceed with eSPI handshake.
