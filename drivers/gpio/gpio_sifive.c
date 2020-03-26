@@ -397,7 +397,7 @@ DEVICE_AND_API_INIT(gpio_sifive_0, DT_INST_LABEL(0),
 		    &gpio_sifive_driver);
 
 #define		IRQ_INIT(n)					\
-IRQ_CONNECT(DT_INST_0_SIFIVE_GPIO0_IRQ_##n,	\
+IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq),			\
 		CONFIG_GPIO_SIFIVE_##n##_PRIORITY,		\
 		gpio_sifive_irq_handler,			\
 		DEVICE_GET(gpio_sifive_0),			\
@@ -405,7 +405,7 @@ IRQ_CONNECT(DT_INST_0_SIFIVE_GPIO0_IRQ_##n,	\
 
 static void gpio_sifive_cfg_0(void)
 {
-#if DT_INST_IRQ_HAS_CELL(0, irq)
+#if DT_INST_IRQ_HAS_IDX(0, 0)
 	IRQ_INIT(0);
 #endif
 #if DT_INST_IRQ_HAS_IDX(0, 1)
