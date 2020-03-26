@@ -30,9 +30,16 @@
 
 #define NON_NULL_PTR          ((void *)0x12345678)
 
+#ifdef CONFIG_COVERAGE
+#define OFFLOAD_WORKQUEUE_STACK_SIZE 4096
+#else
+#define OFFLOAD_WORKQUEUE_STACK_SIZE 1024
+#endif
+
+#define OFFLOAD_WORKQUEUE_PRIORITY	(-1)
 static struct k_work_q offload_work_q;
 static K_THREAD_STACK_DEFINE(offload_work_q_stack,
-			     CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE);
+			     OFFLOAD_WORKQUEUE_STACK_SIZE);
 
 struct fifo_data {
 	intptr_t reserved;
@@ -244,7 +251,7 @@ void task_high(void)
 	k_work_q_start(&offload_work_q,
 		       offload_work_q_stack,
 		       K_THREAD_STACK_SIZEOF(offload_work_q_stack),
-		       CONFIG_OFFLOAD_WORKQUEUE_PRIORITY);
+		       OFFLOAD_WORKQUEUE_PRIORITY);
 
 	counter = SEM_TEST_START;
 

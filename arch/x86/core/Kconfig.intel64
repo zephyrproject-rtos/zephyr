@@ -20,9 +20,6 @@ config TEST_EXTRA_STACKSIZE
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	default 8192
 
-config OFFLOAD_WORKQUEUE_STACK_SIZE
-	default 8192
-
 config EXCEPTION_STACK_SIZE
 	int "Size of the exception stack(s)"
 	default 2048
