@@ -256,6 +256,13 @@ int publish_decode(u8_t flags, u32_t var_length, struct buf_ctx *buf,
 		var_header_length += sizeof(u16_t);
 	}
 
+	if (var_length < var_header_length) {
+		MQTT_ERR("Corrupted PUBLISH message, header length (%u) larger "
+			 "than total length (%u)", var_header_length,
+			 var_length);
+		return -EINVAL;
+	}
+
 	param->message.payload.data = NULL;
 	param->message.payload.len = var_length - var_header_length;
 
