@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2020 Vincent van der Locht
  * Copyright (c) 2019 Gerson Fernando Budke
  * Copyright (c) 2017 Justin Watson
  * SPDX-License-Identifier: Apache-2.0
@@ -23,8 +24,8 @@
 
 #define PINS_UART0 {PIN_UART0_RXD, PIN_UART0_TXD}
 
-#define PIN_UART1_RXD {PIO_PA5C_URXD1, PIOB, ID_PIOB, SOC_GPIO_FUNC_C}
-#define PIN_UART1_TXD {PIO_PA6C_UTXD1, PIOB, ID_PIOB, SOC_GPIO_FUNC_C}
+#define PIN_UART1_RXD {PIO_PA5C_URXD1, PIOA, ID_PIOA, SOC_GPIO_FUNC_C}
+#define PIN_UART1_TXD {PIO_PA6C_UTXD1, PIOA, ID_PIOA, SOC_GPIO_FUNC_C}
 
 #define PINS_UART1 {PIN_UART1_RXD, PIN_UART1_TXD}
 
