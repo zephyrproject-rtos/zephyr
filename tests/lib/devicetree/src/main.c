@@ -223,13 +223,13 @@ static void test_bus(void)
 	zassert_true(!strcmp(DT_LABEL(TEST_SPI_BUS_1), "TEST_SPI_CTLR"),
 		     "spi 1");
 
-	zassert_equal(DT_SPI_DEV_HAS_CS(TEST_SPI_DEV_0), 1, "no cs");
-	zassert_equal(DT_SPI_DEV_HAS_CS(TEST_SPI_DEV_NO_CS), 0, "has cs");
+	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_0), 1, "no cs");
+	zassert_equal(DT_SPI_DEV_HAS_CS_GPIOS(TEST_SPI_DEV_NO_CS), 0, "has cs");
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_spi_device_2
 	/* there is only one instance, and it has no CS */
-	zassert_equal(DT_INST_SPI_DEV_HAS_CS(0), 0,
+	zassert_equal(DT_INST_SPI_DEV_HAS_CS_GPIOS(0), 0,
 		      "inst of vnd,spi-device-2 with cs");
 
 #undef DT_DRV_COMPAT
@@ -238,17 +238,17 @@ static void test_bus(void)
 	 * DT_INST_SPI_DEV: use with care here. We could be matching
 	 * either vnd,spi-device.
 	 */
-	zassert_equal(DT_INST_SPI_DEV_HAS_CS(0), 1,
+	zassert_equal(DT_INST_SPI_DEV_HAS_CS_GPIOS(0), 1,
 		      "inst of vnd,spi-device without cs");
 
-	zassert_true(!strncmp(gpio, DT_INST_SPI_DEV_CS_GPIO_LABEL(0),
+	zassert_true(!strncmp(gpio, DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 			      strlen(gpio)),
 		     "inst 0 cs label");
 
-	pin = DT_INST_SPI_DEV_CS_GPIO_PIN(0);
+	pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
 	zassert_true((pin == 0x10) || (pin == 0x30), "inst 0 cs pin");
 
-	flags = DT_INST_SPI_DEV_CS_GPIO_FLAGS(0);
+	flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0);
 	zassert_true((flags == 0x20) || (flags == 0x40), "inst 0 cs flags");
 
 	zassert_equal(DT_ON_BUS(TEST_SPI_DEV_0, spi), 1, "spidev not on spi");
@@ -1028,18 +1028,18 @@ static void test_devices(void)
 
 static void test_cs_gpios(void)
 {
-	zassert_equal(DT_SPI_HAS_CS(TEST_SPI_NO_CS), 0, "unexpected cs");
-	zassert_equal(DT_SPI_NUM_CS(TEST_SPI_NO_CS), 0, "wrong no. of cs");
+	zassert_equal(DT_SPI_HAS_CS_GPIOS(TEST_SPI_NO_CS), 0, "unexpected cs");
+	zassert_equal(DT_SPI_NUM_CS_GPIOS(TEST_SPI_NO_CS), 0, "wrong no. of cs");
 
-	zassert_equal(DT_SPI_HAS_CS(TEST_SPI), 1, "missing cs");
-	zassert_equal(DT_SPI_NUM_CS(TEST_SPI), 2, "wrong no. of cs");
+	zassert_equal(DT_SPI_HAS_CS_GPIOS(TEST_SPI), 1, "missing cs");
+	zassert_equal(DT_SPI_NUM_CS_GPIOS(TEST_SPI), 2, "wrong no. of cs");
 
-	zassert_true(!strcmp(DT_SPI_DEV_CS_GPIO_LABEL(TEST_SPI_DEV_0),
+	zassert_true(!strcmp(DT_SPI_DEV_CS_GPIOS_LABEL(TEST_SPI_DEV_0),
 			     "TEST_GPIO_1"),
 		     "dev 0 cs gpio name");
-	zassert_equal(DT_SPI_DEV_CS_GPIO_PIN(TEST_SPI_DEV_0), 0x10,
+	zassert_equal(DT_SPI_DEV_CS_GPIOS_PIN(TEST_SPI_DEV_0), 0x10,
 		      "dev 0 cs gpio pin");
-	zassert_equal(DT_SPI_DEV_CS_GPIO_FLAGS(TEST_SPI_DEV_0), 0x20,
+	zassert_equal(DT_SPI_DEV_CS_GPIOS_FLAGS(TEST_SPI_DEV_0), 0x20,
 		      "dev 0 cs gpio flags");
 }
 
