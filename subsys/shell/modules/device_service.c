@@ -17,11 +17,18 @@ extern struct device __device_POST_KERNEL_start[];
 extern struct device __device_APPLICATION_start[];
 extern struct device __device_init_end[];
 
+#ifdef CONFIG_SMP
+extern struct device __device_SMP_start[];
+#endif
+
 static struct device *config_levels[] = {
 	__device_PRE_KERNEL_1_start,
 	__device_PRE_KERNEL_2_start,
 	__device_POST_KERNEL_start,
 	__device_APPLICATION_start,
+#ifdef CONFIG_SMP
+	__device_SMP_start,
+#endif
 	/* End marker */
 	__device_init_end,
 };
