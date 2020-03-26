@@ -962,6 +962,8 @@ static int test_gpio_init(struct device *dev)
 }
 
 #define INST(num) DT_INST(num, vnd_gpio)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_gpio
 
 static const struct gpio_driver_api test_api;
 
@@ -983,12 +985,7 @@ static const struct gpio_driver_api test_api;
 			    CONFIG_APPLICATION_INIT_PRIORITY,	\
 			    &test_api)
 
-#if DT_HAS_NODE(INST(0))
-TEST_GPIO_INIT(0);
-#endif
-#if DT_HAS_NODE(INST(1))
-TEST_GPIO_INIT(1);
-#endif
+DT_INST_FOREACH(TEST_GPIO_INIT);
 
 static inline struct test_gpio_data *to_data(struct device *dev)
 {
