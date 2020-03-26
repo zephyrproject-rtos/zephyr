@@ -193,6 +193,11 @@ static int lmp90xxx_read_reg(struct device *dev, u8_t addr, u8_t *dptr,
 		return -EINVAL;
 	}
 
+	if (k_is_in_isr()) {
+		/* Prevent SPI transactions from an ISR */
+		return -EWOULDBLOCK;
+	}
+
 	k_mutex_lock(&data->ura_lock, K_FOREVER);
 
 	if (ura != data->ura) {
@@ -257,6 +262,11 @@ static int lmp90xxx_write_reg(struct device *dev, u8_t addr, u8_t *dptr,
 	if (len == 0) {
 		LOG_ERR("attempt write 0 bytes to register 0x%02x", addr);
 		return -EINVAL;
+	}
+
+	if (k_is_in_isr()) {
+		/* Prevent SPI transactions from an ISR */
+		return -EWOULDBLOCK;
 	}
 
 	k_mutex_lock(&data->ura_lock, K_FOREVER);
