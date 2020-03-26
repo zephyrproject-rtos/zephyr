@@ -33,40 +33,40 @@ enum {
 };
 
 struct bt_ltk {
-	u8_t			rand[8];
-	u8_t			ediv[2];
-	u8_t			val[16];
+	u8_t                    rand[8];
+	u8_t                    ediv[2];
+	u8_t                    val[16];
 };
 
 struct bt_irk {
-	u8_t			val[16];
-	bt_addr_t		rpa;
+	u8_t                    val[16];
+	bt_addr_t               rpa;
 };
 
 struct bt_csrk {
-	u8_t			val[16];
-	u32_t			cnt;
+	u8_t                    val[16];
+	u32_t                   cnt;
 };
 
 struct bt_keys {
 	u8_t                    id;
-	bt_addr_le_t		addr;
+	bt_addr_le_t            addr;
 	u8_t                    state;
 	u8_t                    storage_start[0] __aligned(sizeof(void *));
-	u8_t			enc_size;
+	u8_t                    enc_size;
 	u8_t                    flags;
-	u16_t			keys;
-	struct bt_ltk		ltk;
-	struct bt_irk		irk;
+	u16_t                   keys;
+	struct bt_ltk           ltk;
+	struct bt_irk           irk;
 #if defined(CONFIG_BT_SIGNING)
-	struct bt_csrk		local_csrk;
-	struct bt_csrk		remote_csrk;
+	struct bt_csrk          local_csrk;
+	struct bt_csrk          remote_csrk;
 #endif /* BT_SIGNING */
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
-	struct bt_ltk		slave_ltk;
+	struct bt_ltk           slave_ltk;
 #endif /* CONFIG_BT_SMP_SC_PAIR_ONLY */
 #if (defined(CONFIG_BT_KEYS_OVERWRITE_OLDEST))
-	u32_t			aging_counter;
+	u32_t                   aging_counter;
 #endif /* CONFIG_BT_KEYS_OVERWRITE_OLDEST */
 };
 
@@ -101,9 +101,9 @@ enum {
 };
 
 struct bt_keys_link_key {
-	bt_addr_t		addr;
+	bt_addr_t               addr;
 	u8_t                    flags;
-	u8_t			val[16];
+	u8_t                    val[16];
 };
 
 struct bt_keys_link_key *bt_keys_get_link_key(const bt_addr_t *addr);
