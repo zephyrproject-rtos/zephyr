@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT silabs_gecko_gpio_port
+
 #include <errno.h>
 #include <drivers/gpio.h>
 #include <soc.h>
@@ -308,7 +310,7 @@ static const struct gpio_gecko_common_config gpio_gecko_common_config = {
 
 static struct gpio_gecko_common_data gpio_gecko_common_data;
 
-DEVICE_AND_API_INIT(gpio_gecko_common, DT_INST_0_SILABS_GECKO_GPIO_LABEL,
+DEVICE_AND_API_INIT(gpio_gecko_common, DT_LABEL(DT_INST(0, silabs_gecko_gpio)),
 		    gpio_gecko_common_init,
 		    &gpio_gecko_common_data, &gpio_gecko_common_config,
 		    POST_KERNEL, CONFIG_GPIO_GECKO_COMMON_INIT_PRIORITY,
@@ -318,11 +320,11 @@ static int gpio_gecko_common_init(struct device *dev)
 {
 	gpio_gecko_common_data.count = 0;
 	IRQ_CONNECT(GPIO_EVEN_IRQn,
-		    DT_INST_0_SILABS_GECKO_GPIO_IRQ_GPIO_EVEN_PRIORITY,
+		    DT_IRQ_BY_NAME(DT_INST(0, silabs_gecko_gpio), gpio_even, priority),
 		    gpio_gecko_common_isr, DEVICE_GET(gpio_gecko_common), 0);
 
 	IRQ_CONNECT(GPIO_ODD_IRQn,
-		    DT_INST_0_SILABS_GECKO_GPIO_IRQ_GPIO_ODD_PRIORITY,
+		    DT_IRQ_BY_NAME(DT_INST(0, silabs_gecko_gpio), gpio_odd, priority),
 		    gpio_gecko_common_isr, DEVICE_GET(gpio_gecko_common), 0);
 
 	irq_enable(GPIO_EVEN_IRQn);
@@ -338,14 +340,14 @@ static const struct gpio_gecko_config gpio_gecko_port##idx##_config = { \
 	.common = { \
 		.port_pin_mask = (gpio_port_pins_t)(-1), \
 	}, \
-	.gpio_base = (GPIO_P_TypeDef *)DT_INST_##idx##_SILABS_GECKO_GPIO_PORT_BASE_ADDRESS, \
-	.gpio_index = DT_INST_##idx##_SILABS_GECKO_GPIO_PORT_PERIPHERAL_ID, \
+	.gpio_base = (GPIO_P_TypeDef *)DT_INST_REG_ADDR(idx), \
+	.gpio_index = DT_INST_PROP(idx, peripheral_id), \
 }; \
 \
 static struct gpio_gecko_data gpio_gecko_port##idx##_data; \
 \
 DEVICE_AND_API_INIT(gpio_gecko_port##idx, \
-		    DT_INST_##idx##_SILABS_GECKO_GPIO_PORT_LABEL, \
+		    DT_INST_LABEL(idx), \
 		    gpio_gecko_port##idx##_init, \
 		    &gpio_gecko_port##idx##_data, \
 		    &gpio_gecko_port##idx##_config, \
@@ -358,46 +360,4 @@ static int gpio_gecko_port##idx##_init(struct device *dev) \
 	return 0; \
 }
 
-#ifdef DT_INST_0_SILABS_GECKO_GPIO_PORT
-GPIO_PORT_INIT(0)
-#endif /* DT_INST_0_SILABS_GECKO_GPIO_PORT */
-
-#ifdef DT_INST_1_SILABS_GECKO_GPIO_PORT
-GPIO_PORT_INIT(1)
-#endif /* DT_INST_1_SILABS_GECKO_GPIO_PORT */
-
-#ifdef DT_INST_2_SILABS_GECKO_GPIO_PORT
-GPIO_PORT_INIT(2)
-#endif /* DT_INST_2_SILABS_GECKO_GPIO_PORT */
-
-#ifdef DT_INST_3_SILABS_GECKO_GPIO_PORT
-GPIO_PORT_INIT(3)
-#endif /* DT_INST_3_SILABS_GECKO_GPIO_PORT */
-
-#ifdef DT_INST_4_SILABS_GECKO_GPIO_PORT
-GPIO_PORT_INIT(4)
-#endif /* DT_INST_4_SILABS_GECKO_GPIO_PORT */
-
-#ifdef DT_INST_5_SILABS_GECKO_GPIO_PORT
-GPIO_PORT_INIT(5)
-#endif /* DT_INST_5_SILABS_GECKO_GPIO_PORT */
-
-#ifdef DT_INST_6_SILABS_GECKO_GPIO_PORT
-GPIO_PORT_INIT(6)
-#endif /* DT_INST_6_SILABS_GECKO_GPIO_PORT */
-
-#ifdef DT_INST_7_SILABS_GECKO_GPIO_PORT
-GPIO_PORT_INIT(7)
-#endif /* DT_INST_7_SILABS_GECKO_GPIO_PORT */
-
-#ifdef DT_INST_8_SILABS_GECKO_GPIO_PORT
-GPIO_PORT_INIT(8)
-#endif /* DT_INST_8_SILABS_GECKO_GPIO_PORT */
-
-#ifdef DT_INST_9_SILABS_GECKO_GPIO_PORT
-GPIO_PORT_INIT(9)
-#endif /* DT_INST_9_SILABS_GECKO_GPIO_PORT */
-
-#ifdef DT_INST_10_SILABS_GECKO_GPIO_PORT
-GPIO_PORT_INIT(10)
-#endif /* DT_INST_10_SILABS_GECKO_GPIO_PORT */
+DT_INST_FOREACH(GPIO_PORT_INIT)
