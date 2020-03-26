@@ -15,6 +15,7 @@
 #include <drivers/spi.h>
 #include <kernel.h>
 #include <sys/byteorder.h>
+#include <sys/crc.h>
 #include <zephyr.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
@@ -597,26 +598,6 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
-static u8_t lmp90xxx_crc8(u8_t val, const void *buf, size_t cnt)
-{
-	const u8_t *p = buf;
-	int i, j;
-
-	for (i = 0; i < cnt; i++) {
-		val ^= p[i];
-
-		for (j = 0; j < 8; j++) {
-			if (val & 0x80) {
-				val = (val << 1) ^ 0x31;
-			} else {
-				val <<= 1;
-			}
-		}
-	}
-
-	return val ^ 0xFFU;
-}
-
 static void lmp90xxx_acquisition_thread(struct device *dev)
 {
 	const struct lmp90xxx_config *config = dev->config->config_info;
@@ -666,7 +647,7 @@ static void lmp90xxx_acquisition_thread(struct device *dev)
 		}
 
 		if (IS_ENABLED(CONFIG_ADC_LMP90XXX_CRC)) {
-			u8_t crc = lmp90xxx_crc8(0, buf, 3);
+			u8_t crc = crc8(buf, 3, 0x31, 0, false) ^ 0xFFU;
 
 			if (buf[3] != crc) {
 				LOG_ERR("CRC mismatch (0x%02x vs. 0x%02x)",
