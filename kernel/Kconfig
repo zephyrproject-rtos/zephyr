@@ -374,15 +374,6 @@ config SYSTEM_WORKQUEUE_PRIORITY
 	  priority. This means that any work handler, once started, won't
 	  be preempted by any other thread until finished.
 
-config OFFLOAD_WORKQUEUE_STACK_SIZE
-	int "Workqueue stack size for thread offload requests"
-	default 4096 if COVERAGE
-	default 1024
-
-config OFFLOAD_WORKQUEUE_PRIORITY
-	int "Offload requests workqueue priority"
-	default -1
-
 endmenu
 
 menu "Atomic Operations"

@@ -35,12 +35,20 @@
 #define NUM_MILLISECONDS        5000
 #define TEST_TIMEOUT            20000
 
+#ifdef CONFIG_COVERAGE
+#define OFFLOAD_WORKQUEUE_STACK_SIZE 4096
+#else
+#define OFFLOAD_WORKQUEUE_STACK_SIZE 1024
+#endif
+
+#define OFFLOAD_WORKQUEUE_PRIORITY (-1)
+
 static u32_t critical_var;
 static u32_t alt_thread_iterations;
 
 static struct k_work_q offload_work_q;
 static K_THREAD_STACK_DEFINE(offload_work_q_stack,
-			     CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE);
+			     OFFLOAD_WORKQUEUE_STACK_SIZE);
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 
@@ -203,7 +211,7 @@ static void init_objects(void)
 	k_work_q_start(&offload_work_q,
 		       offload_work_q_stack,
 		       K_THREAD_STACK_SIZEOF(offload_work_q_stack),
-		       CONFIG_OFFLOAD_WORKQUEUE_PRIORITY);
+		       OFFLOAD_WORKQUEUE_PRIORITY);
 }
 
 static void start_threads(void)
