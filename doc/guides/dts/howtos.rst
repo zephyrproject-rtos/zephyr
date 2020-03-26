@@ -254,12 +254,11 @@ Chosen nodes work the same way. For example:
    	};
    };
 
-To delete a property (this is how you override a true boolean property to a
-false value):
+To delete a property (in addition to deleting properties in general, this is
+how to set a boolean property to false if it's true in BOARD.dts):
 
 .. code-block:: none
 
-   /* Option 1 */
    &serial0 {
    	/delete-property/ some-unwanted-property;
    };
