@@ -1510,25 +1510,38 @@ void test_api_remote_encryption_start_no_ltk(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test,
-			 ztest_unit_test(test_api_init),
+	ztest_test_suite(internal,
 			 ztest_unit_test(test_int_mem_proc_ctx),
 			 ztest_unit_test(test_int_mem_tx),
 			 ztest_unit_test(test_int_mem_ntf),
 			 ztest_unit_test(test_int_create_proc),
-			 ztest_unit_test(test_int_pending_requests),
+			 ztest_unit_test(test_int_pending_requests)
+			);
+
+	ztest_test_suite(public,
+			 ztest_unit_test(test_api_init),
 			 ztest_unit_test(test_api_connect),
-			 ztest_unit_test(test_api_disconnect),
+			 ztest_unit_test(test_api_disconnect)
+			);
+
+	ztest_test_suite(version_exchange,
 			 ztest_unit_test(test_api_local_version_exchange),
 			 ztest_unit_test(test_api_local_version_exchange_2),
 			 ztest_unit_test(test_api_remote_version_exchange),
-			 ztest_unit_test(test_api_both_version_exchange),
+			 ztest_unit_test(test_api_both_version_exchange)
+			);
+
+	ztest_test_suite(encryption,
 			 ztest_unit_test(test_api_local_encryption_start),
 			 ztest_unit_test(test_api_local_encryption_start_limited_memory),
 			 ztest_unit_test(test_api_local_encryption_start_no_ltk),
 			 ztest_unit_test(test_api_remote_encryption_start),
 			 ztest_unit_test(test_api_remote_encryption_start_limited_memory),
 			 ztest_unit_test(test_api_remote_encryption_start_no_ltk)
-			 );
-	ztest_run_test_suite(test);
+			);
+
+	ztest_run_test_suite(internal);
+	ztest_run_test_suite(public);
+	ztest_run_test_suite(version_exchange);
+	ztest_run_test_suite(encryption);
 }
