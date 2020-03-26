@@ -1,5 +1,5 @@
-identifier: nrf9160_pca10090ns
-name: nRF9160-PCA10090-Non-Secure
+identifier: nrf9160dk_nrf9160ns
+name: nRF9160-DK-NRF9160-Non-Secure
 type: mcu
 arch: arm
 toolchain:

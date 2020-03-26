@@ -23,7 +23,8 @@ LED is then toggled.
 Requirements
 ************
 
-This sample has been tested on the NordicSemiconductor nRF9160 DK (nrf9160_pca10090) board.
+This sample has been tested on the NordicSemiconductor nRF9160 DK
+(nrf9160dk_nrf9160) board.
 
 Building and Running
 ********************
@@ -34,7 +35,7 @@ To build and flash the application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf/nrfx
-   :board: nrf9160_pca10090
+   :board: nrf9160dk_nrf9160
    :goals: build flash
    :compact:
 

@@ -1,14 +1,14 @@
-.. _nrf9160_pca10090:
+.. _nrf9160dk_nrf9160:
 
-nRF9160-PCA10090
-################
+nRF9160 DK
+##########
 
 Overview
 ********
 
-The nRF9160 PCA10090 is a single-board development kit for evaluation
-and development on the nRF9160 SiP for LTE-M and NB-IoT. The
-nrf9160_pca10090 board provides support for the Nordic Semiconductor
+The nRF9160 Development Kit (PCA10090) is a single-board development kit
+for evaluation and development on the nRF9160 SiP for LTE-M and NB-IoT.
+The nrf9160dk_nrf9160 board provides support for the Nordic Semiconductor
 nRF9160 ARM Cortex-M33F CPU with ARMv8-M Security Extension and the
 following devices:
 
@@ -27,16 +27,20 @@ following devices:
 * :abbr:`WDT (Watchdog Timer)`
 * :abbr:`IDAU (Implementation Defined Attribution Unit)`
 
-.. figure:: img/nrf9160_pca10090.png
+.. figure:: img/nrf9160dk_nrf9160.png
      :width: 711px
      :align: center
-     :alt: nRF9160 PCA10090 DK
+     :alt: nRF9160 DK
 
-     nRF9160 PCA10090 DK (Credit: Nordic Semiconductor)
+     nRF9160 DK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
 `nRF91 DK website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
+
+.. note::
+
+   In previous Zephyr releases this board was named *nrf9160_pca10090*.
 
 Hardware
 ********
@@ -48,7 +52,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The nrf9160_pca10090 board configuration supports the following
+The nrf9160dk_nrf9160 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -120,7 +124,7 @@ Security components
 Programming and Debugging
 *************************
 
-nrf9160_pca10090 supports the Armv8m Security Extension, and by default boots
+nrf9160dk_nrf9160 supports the Armv8m Security Extension, and by default boots
 in the Secure state.
 
 Building Secure/Non-Secure Zephyr applications
@@ -128,9 +132,9 @@ Building Secure/Non-Secure Zephyr applications
 
 The process requires the following steps:
 
-1. Build the Secure Zephyr application using ``-DBOARD=nrf9160_pca10090`` and
+1. Build the Secure Zephyr application using ``-DBOARD=nrf9160dk_nrf9160`` and
    ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the the application project configuration file.
-2. Build the Non-Secure Zephyr application using ``-DBOARD=nrf9160_pca10090ns``.
+2. Build the Non-Secure Zephyr application using ``-DBOARD=nrf9160dk_nrf9160ns``.
 3. Merge the two binaries together.
 
 When building a Secure/Non-Secure application, the Secure application will
@@ -142,7 +146,7 @@ Building a Secure only application
 ==================================
 
 Build the Zephyr app in the usual way (see :ref:`build_an_application`
-and :ref:`application_run`), using ``-DBOARD=nrf9160_pca10090``.
+and :ref:`application_run`), using ``-DBOARD=nrf9160dk_nrf9160``.
 
 
 Flashing
@@ -169,7 +173,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf9160_pca10090
+   :board: nrf9160dk_nrf9160
    :goals: build flash
 
 Debugging
@@ -190,7 +194,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf9160_pca10090/nrf9160_pca10090_common.dts`.
+:zephyr_file:`boards/arm/nrf9160dk_nrf9160/nrf9160dk_nrf9160_common.dts`.
 
 References
 **********

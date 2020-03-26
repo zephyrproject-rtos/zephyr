@@ -1,5 +1,5 @@
-identifier: nrf9160_pca10090
-name: nRF9160-PCA10090
+identifier: nrf9160dk_nrf9160
+name: nRF9160-DK-NRF9160
 type: mcu
 arch: arm
 toolchain:
