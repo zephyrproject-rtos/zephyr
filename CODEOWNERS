@@ -113,8 +113,8 @@
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
 /boards/xtensa/odroid_go/                 @ydamigos
 # All cmake related files
-/cmake/                                   @SebastianBoe @nashif
-/CMakeLists.txt                           @SebastianBoe @nashif
+/cmake/                                   @tejlmand @nashif
+/CMakeLists.txt                           @tejlmand @nashif
 /doc/                                     @dbkinder
 /doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
 /doc/CMakeLists.txt                       @carlescufi
