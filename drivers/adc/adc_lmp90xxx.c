@@ -129,6 +129,7 @@ struct lmp90xxx_data {
 	s32_t *buffer;
 	s32_t *repeat_buffer;
 	u32_t channels;
+	bool calibrate;
 	u8_t channel_odr[LMP90XXX_MAX_CHANNELS];
 #ifdef CONFIG_ADC_LMP90XXX_GPIO
 	struct k_mutex gpio_lock;
@@ -487,7 +488,6 @@ static int lmp90xxx_adc_start_read(struct device *dev,
 {
 	const struct lmp90xxx_config *config = dev->config->config_info;
 	struct lmp90xxx_data *data = dev->driver_data;
-	u8_t bgcalcn = LMP90XXX_BGCALN(0x3); /* Default to BgCalMode3 */
 	int err;
 
 	if (sequence->resolution != config->resolution) {
@@ -501,18 +501,8 @@ static int lmp90xxx_adc_start_read(struct device *dev,
 		return err;
 	}
 
-	if (sequence->calibrate) {
-		/* Use BgCalMode2 */
-		bgcalcn = LMP90XXX_BGCALN(0x2);
-	}
-
-	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_BGCALCN, bgcalcn);
-	if (err) {
-		LOG_ERR("failed to setup background calibration (err %d)", err);
-		return err;
-	}
-
 	data->buffer = sequence->buffer;
+	data->calibrate = sequence->calibrate;
 	adc_context_start_read(&data->ctx, sequence);
 
 	return adc_context_wait_for_completion(&data->ctx);
@@ -643,12 +633,27 @@ static int lmp90xxx_adc_read_channel(struct device *dev, u8_t channel,
 static void lmp90xxx_acquisition_thread(struct device *dev)
 {
 	struct lmp90xxx_data *data = dev->driver_data;
+	u8_t bgcalcn = LMP90XXX_BGCALN(0x3); /* Default to BgCalMode3 */
 	s32_t result = 0;
 	u8_t channel;
 	int err;
 
 	while (true) {
 		k_sem_take(&data->acq_sem, K_FOREVER);
+
+		if (data->calibrate) {
+			/* Use BgCalMode2 */
+			bgcalcn = LMP90XXX_BGCALN(0x2);
+		}
+
+		LOG_DBG("using BGCALCN = 0x%02x", bgcalcn);
+		err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_BGCALCN, bgcalcn);
+		if (err) {
+			LOG_ERR("failed to setup background calibration "
+				"(err %d)", err);
+				adc_context_complete(&data->ctx, err);
+				break;
+		}
 
 		while (data->channels) {
 			channel = find_lsb_set(data->channels) - 1;
