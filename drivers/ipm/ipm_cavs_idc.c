@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT intel_cavs_idc
+
 #include <stdint.h>
 #include <device.h>
 #include <init.h>
@@ -193,7 +195,7 @@ static int cavs_idc_set_enabled(struct device *dev, int enable)
 		/* FIXME: when we have API to enable IRQ on specific core. */
 		sys_set_bit(DT_CAVS_ICTL_BASE_ADDR + 0x04 +
 			    CAVS_ICTL_INT_CPU_OFFSET(i),
-			    CAVS_IRQ_NUMBER(DT_INST_0_INTEL_CAVS_IDC_IRQ_0));
+			    CAVS_IRQ_NUMBER(DT_INST_IRQN(0)));
 	}
 
 	return 0;
@@ -201,11 +203,11 @@ static int cavs_idc_set_enabled(struct device *dev, int enable)
 
 static int cavs_idc_init(struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_0_INTEL_CAVS_IDC_IRQ_0,
-		    DT_INST_0_INTEL_CAVS_IDC_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    cavs_idc_isr, DEVICE_GET(cavs_idc), 0);
 
-	irq_enable(DT_INST_0_INTEL_CAVS_IDC_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
@@ -219,7 +221,7 @@ static const struct ipm_driver_api cavs_idc_driver_api = {
 };
 
 DEVICE_AND_API_INIT(IPM_CAVS_IDC_DEV_NAME,
-		    DT_INST_0_INTEL_CAVS_IDC_LABEL,
+		    DT_INST_LABEL(0),
 		    &cavs_idc_init, &cavs_idc_device_data, NULL,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &cavs_idc_driver_api);
