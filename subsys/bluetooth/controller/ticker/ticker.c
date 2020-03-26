@@ -1007,7 +1007,6 @@ static u8_t ticker_remainder_inc(struct ticker_node *ticker)
 #endif
 }
 
-#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 /**
  * @brief Decrement remainder
  *
@@ -1037,7 +1036,6 @@ static u8_t ticker_remainder_dec(struct ticker_node *ticker)
 	return 0;
 #endif
 }
-#endif /* CONFIG_BT_TICKER_COMPATIBILITY_MODE */
 
 /**
  * @brief Invoke user operation callback
@@ -1093,7 +1091,6 @@ static inline void ticker_job_node_update(struct ticker_node *ticker,
 	if ((ticker->ticks_periodic != 0U) &&
 	    (user_op->params.update.lazy != 0U)) {
 		user_op->params.update.lazy--;
-#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 		while ((ticks_to_expire > ticker->ticks_periodic) &&
 		       (ticker->lazy_current > user_op->params.update.lazy)) {
 			ticks_to_expire -= ticker->ticks_periodic +
@@ -1106,7 +1103,6 @@ static inline void ticker_job_node_update(struct ticker_node *ticker,
 					   ticker_remainder_inc(ticker);
 			ticker->lazy_current++;
 		}
-#endif /* CONFIG_BT_TICKER_COMPATIBILITY_MODE */
 		ticker->lazy_periodic = user_op->params.update.lazy;
 	}
 
@@ -1365,6 +1361,14 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 	struct ticker_node *node;
 	u32_t ticks_expired;
 
+#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+	u32_t ticks_latency;
+	u32_t ticks_now;
+
+	ticks_now = cntr_cnt_get();
+	ticks_latency = ticker_ticks_diff_get(ticks_now, ticks_previous);
+#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+
 	node = &instance->nodes[0];
 	ticks_expired = 0U;
 	while (instance->ticker_id_head != TICKER_NULL) {
@@ -1388,6 +1392,8 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		ticks_expired += ticks_to_expire;
 
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+		ticks_latency -= ticks_to_expire;
+
 		if (ticker->lazy_current != 0U &&
 		    !TICKER_RESCHEDULE_PENDING(ticker)) {
 			instance->ticker_id_slot_previous = TICKER_NULL;
@@ -1433,11 +1439,46 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 				 */
 				ticker->ticks_to_expire = ticks_elapsed;
 			} else {
-				/* Reload ticks_to_expire with one period */
-				ticker->ticks_to_expire =
-					ticker->ticks_periodic;
-				ticker->ticks_to_expire +=
-					ticker_remainder_inc(ticker);
+				u16_t lazy_periodic;
+				u32_t count;
+				u16_t lazy;
+
+				/* If not skipped apply lazy_periodic */
+				if (!ticker->lazy_current) {
+					lazy_periodic = ticker->lazy_periodic;
+				} else {
+					lazy_periodic = 0U;
+				}
+
+				/* Reload ticks_to_expire with atleast one
+				 * period.
+				 */
+				ticks_to_expire = 0U;
+				count = 1 + lazy_periodic;
+				while (count--) {
+					ticks_to_expire +=
+						ticker->ticks_periodic;
+					ticks_to_expire +=
+						ticker_remainder_inc(ticker);
+				}
+
+				/* Skip intervals that have elapsed w.r.t.
+				 * current ticks.
+				 */
+				lazy = 0U;
+				while (ticks_to_expire < ticks_latency) {
+					ticks_to_expire +=
+						ticker->ticks_periodic;
+					ticks_to_expire +=
+						ticker_remainder_inc(ticker);
+					lazy++;
+				}
+
+				/* Use the calculated ticks to expire and
+				 * laziness.
+				 */
+				ticker->ticks_to_expire = ticks_to_expire;
+				ticker->lazy_current += (lazy_periodic + lazy);
 			}
 
 			ticks_to_expire_prep(ticker, instance->ticks_current,
