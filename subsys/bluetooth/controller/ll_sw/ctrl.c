@@ -4904,9 +4904,10 @@ static inline void isr_close_conn(void)
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 	/* break latency based on ctrl procedure pending */
-	if ((_radio.conn_curr->llcp_ack != _radio.conn_curr->llcp_req) &&
-	    ((_radio.conn_curr->llcp_type == LLCP_CONN_UPD) ||
-	     (_radio.conn_curr->llcp_type == LLCP_CHAN_MAP))) {
+	if (((_radio.conn_curr->llcp_ack != _radio.conn_curr->llcp_req) &&
+	     ((_radio.conn_curr->llcp_type == LLCP_CONN_UPD) ||
+	      (_radio.conn_curr->llcp_type == LLCP_CHAN_MAP))) ||
+	    (_radio.conn_curr->llcp_cu.req != _radio.conn_curr->llcp_cu.ack)) {
 		_radio.conn_curr->latency_event = 0U;
 	}
 
