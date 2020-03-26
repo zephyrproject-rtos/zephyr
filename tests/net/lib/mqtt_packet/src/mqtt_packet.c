@@ -90,6 +90,15 @@ static int eval_msg_connect(struct mqtt_test *mqtt_test);
 static int eval_msg_publish(struct mqtt_test *mqtt_test);
 
 /**
+ * @brief eval_msg_corrupted_publish Evaluate the given mqtt_test against the
+ *				     corrupted publish message.
+ * @param [in] mqtt_test	     MQTT test structure
+ * @return			     TC_PASS on success
+ * @return			     TC_FAIL on error
+ */
+static int eval_msg_corrupted_publish(struct mqtt_test *mqtt_test);
+
+/**
  * @brief eval_msg_subscribe	Evaluate the given mqtt_test against the
  *				subscribe packing/unpacking routines.
  * @param [in] mqtt_test	MQTT test structure
@@ -422,6 +431,14 @@ static ZTEST_DMEM struct mqtt_publish_param msg_publish4 = {
 	.message.payload.len = 2,
 };
 
+static ZTEST_DMEM
+u8_t publish_corrupted[] = {0x30, 0x07, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
+			    0x6f, 0x72, 0x73, 0x00, 0x01, 0x4f, 0x4b};
+static ZTEST_DMEM struct buf_ctx publish_corrupted_buf = {
+	.cur = publish_corrupted,
+	.end = publish_corrupted + sizeof(publish_corrupted)
+};
+
 /*
  * MQTT SUBSCRIBE msg:
  * pkt_id: 1, topic: sensors, qos: 0
@@ -591,6 +608,9 @@ struct mqtt_test mqtt_tests[] = {
 	{.test_name = "PUBLISH, qos = 2",
 	 .ctx = &msg_publish4, .eval_fcn = eval_msg_publish,
 	 .expected = publish4, .expected_len = sizeof(publish4)},
+
+	{.test_name = "PUBLISH, corrupted message length (smaller than topic)",
+	 .ctx = &publish_corrupted_buf, .eval_fcn = eval_msg_corrupted_publish},
 
 	{.test_name = "SUBSCRIBE, one topic, qos = 0",
 	 .ctx = &msg_subscribe1, .eval_fcn = eval_msg_subscribe,
@@ -795,6 +815,23 @@ static int eval_msg_publish(struct mqtt_test *mqtt_test)
 	zassert_equal(dec_param.message.payload.len,
 		      param->message.payload.len,
 		      "payload len error");
+
+	return TC_PASS;
+}
+
+static int eval_msg_corrupted_publish(struct mqtt_test *mqtt_test)
+{
+	struct buf_ctx *buf = (struct buf_ctx *)mqtt_test->ctx;
+	int rc;
+	u8_t type_and_flags;
+	u32_t length;
+	struct mqtt_publish_param dec_param;
+
+	rc = fixed_header_decode(buf, &type_and_flags, &length);
+	zassert_equal(rc, 0, "fixed_header_decode failed");
+
+	rc = publish_decode(type_and_flags, length, buf, &dec_param);
+	zassert_equal(rc, -EINVAL, "publish_decode should fail");
 
 	return TC_PASS;
 }
