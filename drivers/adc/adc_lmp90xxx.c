@@ -495,6 +495,12 @@ static int lmp90xxx_adc_start_read(struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (!lmp90xxx_has_channel(dev, find_msb_set(sequence->channels) - 1)) {
+		LOG_ERR("unsupported channels in mask: 0x%08x",
+			sequence->channels);
+		return -ENOTSUP;
+	}
+
 	err = lmp90xxx_validate_buffer_size(sequence);
 	if (err) {
 		LOG_ERR("buffer size too small");
