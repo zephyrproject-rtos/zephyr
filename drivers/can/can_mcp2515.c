@@ -761,7 +761,7 @@ static int mcp2515_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#if DT_INST_SPI_DEV_HAS_CS(0)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	dev_data->spi_cs_ctrl.gpio_dev =
 		device_get_binding(dev_cfg->spi_cs_port);
 	if (!dev_data->spi_cs_ctrl.gpio_dev) {
@@ -775,7 +775,7 @@ static int mcp2515_init(struct device *dev)
 	dev_data->spi_cfg.cs = &dev_data->spi_cs_ctrl;
 #else
 	dev_data->spi_cfg.cs = NULL;
-#endif  /* DT_INST_SPI_DEV_HAS_CS(0) */
+#endif  /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 
 	/* Reset MCP2515 */
 	if (mcp2515_cmd_soft_reset(dev)) {
@@ -846,10 +846,10 @@ static const struct mcp2515_config mcp2515_config_1 = {
 	.int_port = DT_INST_GPIO_LABEL(0, int_gpios),
 	.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,
 	.int_thread_priority = CONFIG_CAN_MCP2515_INT_THREAD_PRIO,
-#if DT_INST_SPI_DEV_HAS_CS(0)
-	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIO_PIN(0),
-	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIO_LABEL(0),
-#endif  /* DT_INST_SPI_DEV_HAS_CS(0) */
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
+	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+#endif  /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 	.tq_sjw = DT_INST_PROP(0, sjw),
 	.tq_prop = DT_INST_PROP(0, prop_seg),
 	.tq_bs1 = DT_INST_PROP(0, phase_seg1),
