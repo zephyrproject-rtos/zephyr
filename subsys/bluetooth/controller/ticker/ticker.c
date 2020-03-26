@@ -2083,6 +2083,7 @@ static inline void ticker_job_compare_update(struct ticker_instance *instance,
 	if (instance->ticker_id_head == TICKER_NULL) {
 		if (cntr_stop() == 0) {
 			instance->ticks_slot_previous = 0U;
+			instance->ticks_current = cntr_cnt_get();
 		}
 		return;
 	}
