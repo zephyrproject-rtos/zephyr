@@ -182,8 +182,8 @@ static int flash_stm32_read(struct device *dev, off_t offset, void *data,
 			    size_t len)
 {
 	if (!flash_stm32_valid_range(dev, offset, len, false)) {
-		LOG_ERR("Read range invalid. Offset: %d, len: %zu",
-			offset, len);
+		LOG_ERR("Read range invalid. Offset: %ld, len: %zu",
+			(long int) offset, len);
 		return -EINVAL;
 	}
 
@@ -191,7 +191,7 @@ static int flash_stm32_read(struct device *dev, off_t offset, void *data,
 		return 0;
 	}
 
-	LOG_DBG("Read offset: %d, len: %zu", offset, len);
+	LOG_DBG("Read offset: %ld, len: %zu", (long int) offset, len);
 
 	memcpy(data, (u8_t *) CONFIG_FLASH_BASE_ADDRESS + offset, len);
 
@@ -203,8 +203,8 @@ static int flash_stm32_erase(struct device *dev, off_t offset, size_t len)
 	int rc;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Erase range invalid. Offset: %d, len: %zu",
-			offset, len);
+		LOG_ERR("Erase range invalid. Offset: %ld, len: %zu",
+			(long int) offset, len);
 		return -EINVAL;
 	}
 
@@ -214,7 +214,7 @@ static int flash_stm32_erase(struct device *dev, off_t offset, size_t len)
 
 	flash_stm32_sem_take(dev);
 
-	LOG_DBG("Erase offset: %d, len: %zu", offset, len);
+	LOG_DBG("Erase offset: %ld, len: %zu", (long int) offset, len);
 
 	rc = flash_stm32_block_erase_loop(dev, offset, len);
 
@@ -231,8 +231,8 @@ static int flash_stm32_write(struct device *dev, off_t offset,
 	int rc;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Write range invalid. Offset: %d, len: %zu",
-			offset, len);
+		LOG_ERR("Write range invalid. Offset: %ld, len: %zu",
+			(long int) offset, len);
 		return -EINVAL;
 	}
 
@@ -242,7 +242,7 @@ static int flash_stm32_write(struct device *dev, off_t offset,
 
 	flash_stm32_sem_take(dev);
 
-	LOG_DBG("Write offset: %d, len: %zu", offset, len);
+	LOG_DBG("Write offset: %ld, len: %zu", (long int) offset, len);
 
 	rc = flash_stm32_write_range(dev, offset, data, len);
 
