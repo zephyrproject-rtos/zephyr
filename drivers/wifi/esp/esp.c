@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT espressif_esp_wifi
+
 #define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(wifi_esp);
@@ -26,16 +28,16 @@ LOG_MODULE_REGISTER(wifi_esp);
 
 /* pin settings */
 enum modem_control_pins {
-#if defined(DT_INST_0_ESPRESSIF_ESP_WIFI_RESET_GPIOS_PIN)
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	WIFI_RESET,
 #endif
 	NUM_PINS,
 };
 
 static struct modem_pin modem_pins[] = {
-#if defined(DT_INST_0_ESPRESSIF_ESP_WIFI_RESET_GPIOS_PIN)
-	MODEM_PIN(DT_INST_0_ESPRESSIF_ESP_WIFI_RESET_GPIOS_CONTROLLER,
-		  DT_INST_0_ESPRESSIF_ESP_WIFI_RESET_GPIOS_PIN,
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
+	MODEM_PIN(DT_INST_GPIO_LABEL(0, reset_gpios),
+		  DT_INST_GPIO_PIN(0, reset_gpios),
 		  GPIO_OUTPUT),
 #endif
 };
@@ -742,7 +744,7 @@ static void esp_reset(struct esp_data *dev)
 		net_if_down(dev->net_iface);
 	}
 
-#if defined(DT_INST_0_ESPRESSIF_ESP_WIFI_RESET_GPIOS_PIN)
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	modem_pin_write(&dev->mctx, WIFI_RESET, 0);
 	k_sleep(K_MSEC(100));
 	modem_pin_write(&dev->mctx, WIFI_RESET, 1);
@@ -838,7 +840,7 @@ static int esp_init(struct device *dev)
 	data->iface_data.rx_rb_buf = &data->iface_rb_buf[0];
 	data->iface_data.rx_rb_buf_len = sizeof(data->iface_rb_buf);
 	ret = modem_iface_uart_init(&data->mctx.iface, &data->iface_data,
-				    DT_INST_0_ESPRESSIF_ESP_BUS_NAME);
+				    DT_INST_BUS_LABEL(0));
 	if (ret < 0) {
 		goto error;
 	}
