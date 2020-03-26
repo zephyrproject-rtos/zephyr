@@ -6,9 +6,6 @@ if BOARD_NRF52840DK_NRF52840
 config GPIO_NRF_P1
 	default y
 
-config UART_1_NRF_UARTE
-	default y
-
 config UART_1_NRF_FLOW_CONTROL
 	default y
 

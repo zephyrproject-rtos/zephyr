@@ -189,11 +189,7 @@ more than one UART for connecting peripheral devices:
 
    In the overlay file above, pin P0.16 is used for RX and P0.14 is used for TX
 
-2. Go to menuconfig and enable :option:`CONFIG_UART_1_NRF_UARTE`:
-
-   (top menu) -> Device Drivers -> Serial Drivers -> nRF UART nrfx drivers
-
-3. Use the UART1 as ``device_get_binding("UART_1")``
+2. Use the UART1 as ``device_get_binding(DT_LABEL(DT_NODELABEL(uart1)))``
 
 Overlay file naming
 ===================
