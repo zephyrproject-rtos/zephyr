@@ -8,13 +8,15 @@
  * https://www.st.com/resource/en/datasheet/lsm6dso.pdf
  */
 
+#define DT_DRV_COMPAT st_lsm6dso
+
 #include <string.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
 
 #include "lsm6dso.h"
 
-#ifdef DT_ST_LSM6DSO_BUS_I2C
+#if DT_ANY_INST_ON_BUS(i2c)
 
 LOG_MODULE_DECLARE(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -50,4 +52,4 @@ int lsm6dso_i2c_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ST_LSM6DSO_BUS_I2C */
+#endif /* DT_ANY_INST_ON_BUS(i2c) */

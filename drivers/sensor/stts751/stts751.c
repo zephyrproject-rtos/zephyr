@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/stts751.pdf
  */
 
+#define DT_DRV_COMPAT st_stts751
+
 #include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
@@ -196,20 +198,20 @@ static int stts751_init(struct device *dev)
 static struct stts751_data stts751_data;
 
 static const struct stts751_config stts751_config = {
-	.master_dev_name = DT_INST_0_ST_STTS751_BUS_NAME,
+	.master_dev_name = DT_INST_BUS_LABEL(0),
 #ifdef CONFIG_STTS751_TRIGGER
-	.event_port	= DT_INST_0_ST_STTS751_DRDY_GPIOS_CONTROLLER,
-	.event_pin	= DT_INST_0_ST_STTS751_DRDY_GPIOS_PIN,
-	.int_flags	= DT_INST_0_ST_STTS751_DRDY_GPIOS_FLAGS,
+	.event_port	= DT_INST_GPIO_LABEL(0, drdy_gpios),
+	.event_pin	= DT_INST_GPIO_PIN(0, drdy_gpios),
+	.int_flags	= DT_INST_GPIO_FLAGS(0, drdy_gpios),
 #endif
-#if defined(DT_ST_STTS751_BUS_I2C)
+#if DT_ANY_INST_ON_BUS(i2c)
 	.bus_init = stts751_i2c_init,
-	.i2c_slv_addr = DT_INST_0_ST_STTS751_BASE_ADDRESS,
+	.i2c_slv_addr = DT_INST_REG_ADDR(0),
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
 #endif
 };
 
-DEVICE_AND_API_INIT(stts751, DT_INST_0_ST_STTS751_LABEL, stts751_init,
+DEVICE_AND_API_INIT(stts751, DT_INST_LABEL(0), stts751_init,
 		    &stts751_data, &stts751_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &stts751_api_funcs);

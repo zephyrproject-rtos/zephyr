@@ -8,27 +8,29 @@
  * https://www.st.com/resource/en/datasheet/lis2ds12.pdf
  */
 
+#define DT_DRV_COMPAT st_lis2ds12
+
 
 #include <string.h>
 #include <drivers/spi.h>
 #include "lis2ds12.h"
 #include <logging/log.h>
 
-#ifdef DT_ST_LIS2DS12_BUS_SPI
+#if DT_ANY_INST_ON_BUS(spi)
 
 #define LIS2DS12_SPI_READ		(1 << 7)
 
 LOG_MODULE_DECLARE(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);
 
-#if defined(DT_INST_0_ST_LIS2DS12_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 static struct spi_cs_control lis2ds12_cs_ctrl;
 #endif
 
 static struct spi_config lis2ds12_spi_conf = {
-	.frequency = DT_INST_0_ST_LIS2DS12_SPI_MAX_FREQUENCY,
+	.frequency = DT_INST_PROP(0, spi_max_frequency),
 	.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 		      SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE),
-	.slave     = DT_INST_0_ST_LIS2DS12_BASE_ADDRESS,
+	.slave     = DT_INST_REG_ADDR(0),
 	.cs        = NULL,
 };
 
@@ -155,25 +157,25 @@ int lis2ds12_spi_init(struct device *dev)
 
 	data->hw_tf = &lis2ds12_spi_transfer_fn;
 
-#if defined(DT_INST_0_ST_LIS2DS12_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	/* handle SPI CS thru GPIO if it is the case */
 	lis2ds12_cs_ctrl.gpio_dev = device_get_binding(
-		DT_INST_0_ST_LIS2DS12_CS_GPIOS_CONTROLLER);
+		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!lis2ds12_cs_ctrl.gpio_dev) {
 		LOG_ERR("Unable to get GPIO SPI CS device");
 		return -ENODEV;
 	}
 
-	lis2ds12_cs_ctrl.gpio_pin = DT_INST_0_ST_LIS2DS12_CS_GPIOS_PIN;
+	lis2ds12_cs_ctrl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
 	lis2ds12_cs_ctrl.delay = 0U;
 
 	lis2ds12_spi_conf.cs = &lis2ds12_cs_ctrl;
 
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
-		    DT_INST_0_ST_LIS2DS12_CS_GPIOS_CONTROLLER,
-		    DT_INST_0_ST_LIS2DS12_CS_GPIOS_PIN);
+		    DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+		    DT_INST_SPI_DEV_CS_GPIOS_PIN(0));
 #endif
 
 	return 0;
 }
-#endif /* DT_ST_LIS2DS12_BUS_SPI */
+#endif /* DT_ANY_INST_ON_BUS(spi) */

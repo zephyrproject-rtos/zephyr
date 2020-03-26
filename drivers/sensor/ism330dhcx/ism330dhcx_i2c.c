@@ -8,13 +8,15 @@
  * https://www.st.com/resource/en/datasheet/ism330dhcx.pdf
  */
 
+#define DT_DRV_COMPAT st_ism330dhcx
+
 #include <string.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
 
 #include "ism330dhcx.h"
 
-#ifdef DT_ST_ISM330DHCX_BUS_I2C
+#if DT_ANY_INST_ON_BUS(i2c)
 
 LOG_MODULE_DECLARE(ISM330DHCX, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -50,4 +52,4 @@ int ism330dhcx_i2c_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ST_ISM330DHCX_BUS_I2C */
+#endif /* DT_ANY_INST_ON_BUS(i2c) */

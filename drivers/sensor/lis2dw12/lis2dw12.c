@@ -8,15 +8,17 @@
  * https://www.st.com/resource/en/datasheet/lis2dw12.pdf
  */
 
+#define DT_DRV_COMPAT st_lis2dw12
+
 #include <init.h>
 #include <sys/__assert.h>
 #include <sys/byteorder.h>
 #include <logging/log.h>
 #include <drivers/sensor.h>
 
-#if defined(DT_ST_LIS2DW12_BUS_SPI)
+#if DT_ANY_INST_ON_BUS(spi)
 #include <drivers/spi.h>
-#elif defined(DT_ST_LIS2DW12_BUS_I2C)
+#elif DT_ANY_INST_ON_BUS(i2c)
 #include <drivers/i2c.h>
 #endif
 
@@ -220,9 +222,9 @@ static int lis2dw12_init_interface(struct device *dev)
 		return -EINVAL;
 	}
 
-#if defined(DT_ST_LIS2DW12_BUS_SPI)
+#if DT_ANY_INST_ON_BUS(spi)
 	lis2dw12_spi_init(dev);
-#elif defined(DT_ST_LIS2DW12_BUS_I2C)
+#elif DT_ANY_INST_ON_BUS(i2c)
 	lis2dw12_i2c_init(dev);
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
@@ -371,12 +373,12 @@ static int lis2dw12_init(struct device *dev)
 }
 
 const struct lis2dw12_device_config lis2dw12_cfg = {
-	.bus_name = DT_INST_0_ST_LIS2DW12_BUS_NAME,
+	.bus_name = DT_INST_BUS_LABEL(0),
 	.pm = CONFIG_LIS2DW12_POWER_MODE,
 #ifdef CONFIG_LIS2DW12_TRIGGER
-	.int_gpio_port = DT_INST_0_ST_LIS2DW12_IRQ_GPIOS_CONTROLLER,
-	.int_gpio_pin = DT_INST_0_ST_LIS2DW12_IRQ_GPIOS_PIN,
-	.int_gpio_flags = DT_INST_0_ST_LIS2DW12_IRQ_GPIOS_FLAGS,
+	.int_gpio_port = DT_INST_GPIO_LABEL(0, irq_gpios),
+	.int_gpio_pin = DT_INST_GPIO_PIN(0, irq_gpios),
+	.int_gpio_flags = DT_INST_GPIO_FLAGS(0, irq_gpios),
 #if defined(CONFIG_LIS2DW12_INT_PIN_1)
 	.int_pin = 1,
 #elif defined(CONFIG_LIS2DW12_INT_PIN_2)
@@ -401,6 +403,6 @@ const struct lis2dw12_device_config lis2dw12_cfg = {
 
 struct lis2dw12_data lis2dw12_data;
 
-DEVICE_AND_API_INIT(lis2dw12, DT_INST_0_ST_LIS2DW12_LABEL, lis2dw12_init,
+DEVICE_AND_API_INIT(lis2dw12, DT_INST_LABEL(0), lis2dw12_init,
 	     &lis2dw12_data, &lis2dw12_cfg, POST_KERNEL,
 	     CONFIG_SENSOR_INIT_PRIORITY, &lis2dw12_driver_api);

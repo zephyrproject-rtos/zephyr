@@ -35,15 +35,15 @@ struct iis2mdc_config {
 	gpio_pin_t drdy_pin;
 	gpio_dt_flags_t drdy_flags;
 #endif  /* CONFIG_IIS2MDC_TRIGGER */
-#ifdef DT_ST_IIS2MDC_BUS_I2C
+#if DT_ANY_INST_ON_BUS(i2c)
 	u16_t i2c_slv_addr;
-#elif DT_ST_IIS2MDC_BUS_SPI
+#elif DT_ANY_INST_ON_BUS(spi)
 	struct spi_config spi_conf;
-#if defined(DT_INST_0_ST_IIS2MDC_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
 	u8_t cs_gpio;
-#endif /* DT_INST_0_ST_IIS2MDC_CS_GPIOS_CONTROLLER */
-#endif /* DT_ST_IIS2MDC_BUS_SPI */
+#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
+#endif /* DT_ANY_INST_ON_BUS(spi) */
 };
 
 /* Sensor data */
@@ -55,9 +55,9 @@ struct iis2mdc_data {
 
 	stmdev_ctx_t *ctx;
 
-#ifdef DT_ST_IIS2MDC_BUS_I2C
+#if DT_ANY_INST_ON_BUS(i2c)
 	stmdev_ctx_t ctx_i2c;
-#elif DT_ST_IIS2MDC_BUS_SPI
+#elif DT_ANY_INST_ON_BUS(spi)
 	stmdev_ctx_t ctx_spi;
 #endif
 
@@ -76,9 +76,9 @@ struct iis2mdc_data {
 	struct device *dev;
 #endif  /* CONFIG_IIS2MDC_TRIGGER_GLOBAL_THREAD */
 #endif  /* CONFIG_IIS2MDC_TRIGGER */
-#if defined(DT_INST_0_ST_IIS2MDC_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control cs_ctrl;
-#endif /* DT_INST_0_ST_IIS2MDC_CS_GPIOS_CONTROLLER */
+#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 };
 
 int iis2mdc_spi_init(struct device *dev);

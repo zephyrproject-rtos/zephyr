@@ -8,11 +8,13 @@
  * https://www.st.com/resource/en/datasheet/lis2dh.pdf
  */
 
+#define DT_DRV_COMPAT st_lis2dh
+
 #include <string.h>
 #include "lis2dh.h"
 #include <logging/log.h>
 
-#ifdef DT_ST_LIS2DH_BUS_SPI
+#if DT_ANY_INST_ON_BUS(spi)
 
 LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -151,7 +153,7 @@ int lis2dh_spi_init(struct device *dev)
 
 	data->hw_tf = &lis2dh_spi_transfer_fn;
 
-#if defined(DT_INST_0_ST_LIS2DH_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const struct lis2dh_config *cfg = dev->config->config_info;
 
 	/* handle SPI CS thru GPIO if it is the case */
@@ -170,4 +172,4 @@ int lis2dh_spi_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ST_LIS2DH_BUS_SPI */
+#endif /* DT_ANY_INST_ON_BUS(spi) */

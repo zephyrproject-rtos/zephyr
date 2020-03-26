@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/iis3dhhc.pdf
  */
 
+#define DT_DRV_COMPAT st_iis3dhhc
+
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
@@ -218,28 +220,28 @@ static int iis3dhhc_init(struct device *dev)
 static struct iis3dhhc_data iis3dhhc_data;
 
 static const struct iis3dhhc_config iis3dhhc_config = {
-	.master_dev_name = DT_INST_0_ST_IIS3DHHC_BUS_NAME,
+	.master_dev_name = DT_INST_BUS_LABEL(0),
 #ifdef CONFIG_IIS3DHHC_TRIGGER
 #ifdef CONFIG_IIS3DHHC_DRDY_INT1
-	.int_port	= DT_INST_0_ST_IIS3DHHC_IRQ_GPIOS_CONTROLLER_0,
-	.int_pin	= DT_INST_0_ST_IIS3DHHC_IRQ_GPIOS_PIN_0,
-	.int_flags	= DT_INST_0_ST_IIS3DHHC_IRQ_GPIOS_FLAGS_0,
+	.int_port	= DT_INST_GPIO_LABEL_BY_IDX(0, irq_gpios, 0),
+	.int_pin	= DT_INST_GPIO_PIN_BY_IDX(0, irq_gpios, 0),
+	.int_flags	= DT_INST_GPIO_FLAGS_BY_IDX(0, irq_gpios, 0),
 #else
-	.int_port	= DT_INST_0_ST_IIS3DHHC_IRQ_GPIOS_CONTROLLER_1,
-	.int_pin	= DT_INST_0_ST_IIS3DHHC_IRQ_GPIOS_PIN_1,
-	.int_flags	= DT_INST_0_ST_IIS3DHHC_IRQ_GPIOS_FLAGS_1,
+	.int_port	= DT_INST_GPIO_LABEL_BY_IDX(0, irq_gpios, 1),
+	.int_pin	= DT_INST_GPIO_PIN_BY_IDX(0, irq_gpios, 1),
+	.int_flags	= DT_INST_GPIO_FLAGS_BY_IDX(0, irq_gpios, 1),
 #endif /* CONFIG_IIS3DHHC_DRDY_INT1 */
 #endif /* CONFIG_IIS3DHHC_TRIGGER */
-#if defined(DT_ST_IIS3DHHC_BUS_SPI)
+#if DT_ANY_INST_ON_BUS(spi)
 	.bus_init = iis3dhhc_spi_init,
-	.spi_conf.frequency = DT_INST_0_ST_IIS3DHHC_SPI_MAX_FREQUENCY,
+	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
 	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 			       SPI_MODE_CPHA | SPI_WORD_SET(8) |
 			       SPI_LINES_SINGLE),
-	.spi_conf.slave     = DT_INST_0_ST_IIS3DHHC_BASE_ADDRESS,
-#if defined(DT_INST_0_ST_IIS3DHHC_CS_GPIOS_CONTROLLER)
-	.gpio_cs_port	    = DT_INST_0_ST_IIS3DHHC_CS_GPIOS_CONTROLLER,
-	.cs_gpio	    = DT_INST_0_ST_IIS3DHHC_CS_GPIOS_PIN,
+	.spi_conf.slave     = DT_INST_REG_ADDR(0),
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
 
 	.spi_conf.cs        =  &iis3dhhc_data.cs_ctrl,
 #else
@@ -250,6 +252,6 @@ static const struct iis3dhhc_config iis3dhhc_config = {
 #endif
 };
 
-DEVICE_AND_API_INIT(iis3dhhc, DT_INST_0_ST_IIS3DHHC_LABEL, iis3dhhc_init,
+DEVICE_AND_API_INIT(iis3dhhc, DT_INST_LABEL(0), iis3dhhc_init,
 		    &iis3dhhc_data, &iis3dhhc_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &iis3dhhc_api_funcs);

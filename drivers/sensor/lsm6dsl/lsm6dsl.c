@@ -8,6 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_lsm6dsl
+
 #include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
@@ -772,7 +774,7 @@ static int lsm6dsl_init_chip(struct device *dev)
 }
 
 static struct lsm6dsl_config lsm6dsl_config = {
-	.comm_master_dev_name = DT_INST_0_ST_LSM6DSL_BUS_NAME,
+	.comm_master_dev_name = DT_INST_BUS_LABEL(0),
 };
 
 static int lsm6dsl_init(struct device *dev)
@@ -787,7 +789,7 @@ static int lsm6dsl_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef DT_ST_LSM6DSL_BUS_SPI
+#if DT_ANY_INST_ON_BUS(spi)
 	lsm6dsl_spi_init(dev);
 #else
 	lsm6dsl_i2c_init(dev);
@@ -818,6 +820,6 @@ static int lsm6dsl_init(struct device *dev)
 
 static struct lsm6dsl_data lsm6dsl_data;
 
-DEVICE_AND_API_INIT(lsm6dsl, DT_INST_0_ST_LSM6DSL_LABEL, lsm6dsl_init,
+DEVICE_AND_API_INIT(lsm6dsl, DT_INST_LABEL(0), lsm6dsl_init,
 		    &lsm6dsl_data, &lsm6dsl_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lsm6dsl_api_funcs);

@@ -8,6 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_lsm9ds0_mfd
+
 #include <drivers/sensor.h>
 #include <kernel.h>
 #include <device.h>
@@ -787,12 +789,12 @@ int lsm9ds0_mfd_init(struct device *dev)
 }
 
 static const struct lsm9ds0_mfd_config lsm9ds0_mfd_config = {
-	.i2c_master_dev_name = DT_INST_0_ST_LSM9DS0_MFD_BUS_NAME,
-	.i2c_slave_addr = DT_INST_0_ST_LSM9DS0_MFD_BASE_ADDRESS,
+	.i2c_master_dev_name = DT_INST_BUS_LABEL(0),
+	.i2c_slave_addr = DT_INST_REG_ADDR(0),
 };
 
 static struct lsm9ds0_mfd_data lsm9ds0_mfd_data;
 
-DEVICE_AND_API_INIT(lsm9ds0_mfd, DT_INST_0_ST_LSM9DS0_MFD_LABEL, lsm9ds0_mfd_init,
+DEVICE_AND_API_INIT(lsm9ds0_mfd, DT_INST_LABEL(0), lsm9ds0_mfd_init,
 		    &lsm9ds0_mfd_data, &lsm9ds0_mfd_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lsm9ds0_mfd_api_funcs);

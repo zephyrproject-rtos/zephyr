@@ -8,13 +8,15 @@
  * https://www.st.com/resource/en/datasheet/stts751.pdf
  */
 
+#define DT_DRV_COMPAT st_stts751
+
 #include <string.h>
 #include <drivers/i2c.h>
 #include <logging/log.h>
 
 #include "stts751.h"
 
-#ifdef DT_ST_STTS751_BUS_I2C
+#if DT_ANY_INST_ON_BUS(i2c)
 
 LOG_MODULE_DECLARE(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -50,4 +52,4 @@ int stts751_i2c_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ST_STTS751_BUS_I2C */
+#endif /* DT_ANY_INST_ON_BUS(i2c) */

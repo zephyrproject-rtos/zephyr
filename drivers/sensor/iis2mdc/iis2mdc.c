@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/iis2mdc.pdf
  */
 
+#define DT_DRV_COMPAT st_iis2mdc
+
 #include <init.h>
 #include <sys/__assert.h>
 #include <sys/byteorder.h>
@@ -255,30 +257,30 @@ static int iis2mdc_init_interface(struct device *dev)
 }
 
 static const struct iis2mdc_config iis2mdc_dev_config = {
-	.master_dev_name = DT_INST_0_ST_IIS2MDC_BUS_NAME,
+	.master_dev_name = DT_INST_BUS_LABEL(0),
 #ifdef CONFIG_IIS2MDC_TRIGGER
-	.drdy_port = DT_INST_0_ST_IIS2MDC_DRDY_GPIOS_CONTROLLER,
-	.drdy_pin = DT_INST_0_ST_IIS2MDC_DRDY_GPIOS_PIN,
-	.drdy_flags = DT_INST_0_ST_IIS2MDC_DRDY_GPIOS_FLAGS,
+	.drdy_port = DT_INST_GPIO_LABEL(0, drdy_gpios),
+	.drdy_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
+	.drdy_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
 #endif  /* CONFIG_IIS2MDC_TRIGGER */
-#if defined(DT_ST_IIS2MDC_BUS_SPI)
+#if DT_ANY_INST_ON_BUS(spi)
 	.bus_init = iis2mdc_spi_init,
-	.spi_conf.frequency = DT_INST_0_ST_IIS2MDC_SPI_MAX_FREQUENCY,
+	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
 	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 			       SPI_MODE_CPHA | SPI_WORD_SET(8) |
 			       SPI_LINES_SINGLE),
-	.spi_conf.slave     = DT_INST_0_ST_IIS2MDC_BASE_ADDRESS,
-#if defined(DT_INST_0_ST_IIS2MDC_CS_GPIOS_CONTROLLER)
-	.gpio_cs_port	    = DT_INST_0_ST_IIS2MDC_CS_GPIOS_CONTROLLER,
-	.cs_gpio	    = DT_INST_0_ST_IIS2MDC_CS_GPIOS_PIN,
+	.spi_conf.slave     = DT_INST_REG_ADDR(0),
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	.gpio_cs_port	    = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+	.cs_gpio	    = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
 
 	.spi_conf.cs        =  &iis2mdc_data.cs_ctrl,
 #else
 	.spi_conf.cs        = NULL,
 #endif
-#elif defined(DT_ST_IIS2MDC_BUS_I2C)
+#elif DT_ANY_INST_ON_BUS(i2c)
 	.bus_init = iis2mdc_i2c_init,
-	.i2c_slv_addr = DT_INST_0_ST_IIS2MDC_BASE_ADDRESS,
+	.i2c_slv_addr = DT_INST_REG_ADDR(0),
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
 #endif
@@ -359,6 +361,6 @@ static int iis2mdc_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(iis2mdc, DT_INST_0_ST_IIS2MDC_LABEL, iis2mdc_init,
+DEVICE_AND_API_INIT(iis2mdc, DT_INST_LABEL(0), iis2mdc_init,
 		     &iis2mdc_data, &iis2mdc_dev_config, POST_KERNEL,
 		     CONFIG_SENSOR_INIT_PRIORITY, &iis2mdc_driver_api);
