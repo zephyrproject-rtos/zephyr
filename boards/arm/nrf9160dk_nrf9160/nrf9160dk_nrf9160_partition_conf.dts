@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /*
- * Default Flash planning for nRF9160_pca10090.
+ * Default Flash planning for nRF9160dk_nrf9160.
  *
  * Zephyr build for nRF9160 with ARM TrustZone-M support,
  * implies building Secure and Non-Secure Zephyr images.
