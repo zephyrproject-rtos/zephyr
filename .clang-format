@@ -65,18 +65,12 @@ ExperimentalAutoDetectBinPacking: false
 #FixNamespaceComments: false # Unknown to clang-format-4.0
 
 # Taken from:
-#   git grep -h '^#define [^[:space:]]*for_each[^[:space:]]*(' include/ \
-#   | sed "s,^#define \([^[:space:]]*for_each[^[:space:]]*\)(.*$,  - '\1'," \
+#   git grep -h '^#define [^[:space:]]*FOR_EACH[^[:space:]]*(' include/ \
+#   | sed "s,^#define \([^[:space:]]*FOR_EACH[^[:space:]]*\)(.*$,  - '\1'," \
 #   | sort | uniq
 ForEachMacros:
   - 'FOR_EACH'
-  - 'for_each_linux_bus'
-  - 'for_each_linux_driver'
-  - 'metal_bitmap_for_each_clear_bit'
-  - 'metal_bitmap_for_each_set_bit'
-  - 'metal_for_each_page_size_down'
-  - 'metal_for_each_page_size_up'
-  - 'metal_list_for_each'
+  - 'FOR_EACH_FIXED_ARG'
   - 'RB_FOR_EACH'
   - 'RB_FOR_EACH_CONTAINER'
   - 'SYS_DLIST_FOR_EACH_CONTAINER'
@@ -91,11 +85,11 @@ ForEachMacros:
   - 'SYS_SLIST_FOR_EACH_CONTAINER_SAFE'
   - 'SYS_SLIST_FOR_EACH_NODE'
   - 'SYS_SLIST_FOR_EACH_NODE_SAFE'
-  - '_WAIT_Q_FOR_EACH'
   - 'Z_GENLIST_FOR_EACH_CONTAINER'
   - 'Z_GENLIST_FOR_EACH_CONTAINER_SAFE'
   - 'Z_GENLIST_FOR_EACH_NODE'
   - 'Z_GENLIST_FOR_EACH_NODE_SAFE'
+  - '_WAIT_Q_FOR_EACH'
 
 #IncludeBlocks: Preserve # Unknown to clang-format-5.0
 IncludeCategories:
