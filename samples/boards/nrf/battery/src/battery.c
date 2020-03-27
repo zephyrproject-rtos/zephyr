@@ -20,6 +20,8 @@
 
 LOG_MODULE_REGISTER(BATTERY, CONFIG_ADC_LOG_LEVEL);
 
+#define VBATT DT_PATH(vbatt)
+
 #ifdef CONFIG_BOARD_NRF52_PCA20020
 /* This board uses a divider that reduces max voltage to
  * reference voltage (600 mV).
@@ -51,12 +53,19 @@ struct divider_config {
 };
 
 static const struct divider_config divider_config = {
-	.io_channel = DT_VOLTAGE_DIVIDER_VBATT_IO_CHANNELS,
-#ifdef DT_VOLTAGE_DIVIDER_VBATT_POWER_GPIOS
-	.power_gpios = DT_VOLTAGE_DIVIDER_VBATT_POWER_GPIOS,
+	.io_channel = {
+		DT_IO_CHANNELS_LABEL(VBATT),
+		DT_IO_CHANNELS_INPUT(VBATT),
+	},
+#if DT_NODE_HAS_PROP(VBATT, power_gpios)
+	.power_gpios = {
+		DT_GPIO_LABEL(VBATT, power_gpios),
+		DT_GPIO_PIN(VBATT, power_gpios),
+		DT_GPIO_FLAGS(VBATT, power_gpios),
+	},
 #endif
-	.output_ohm = DT_VOLTAGE_DIVIDER_VBATT_OUTPUT_OHMS,
-	.full_ohm = DT_VOLTAGE_DIVIDER_VBATT_FULL_OHMS,
+	.output_ohm = DT_PROP(VBATT, output_ohms),
+	.full_ohm = DT_PROP(VBATT, full_ohms),
 };
 
 struct divider_data {
