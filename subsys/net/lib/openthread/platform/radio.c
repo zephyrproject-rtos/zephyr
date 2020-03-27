@@ -51,6 +51,8 @@ enum pending_events {
 	PENDING_EVENT_COUNT /* keep last */
 };
 
+K_SEM_DEFINE(radio_sem, 0, 1);
+
 static otRadioState sState = OT_RADIO_STATE_DISABLED;
 
 static otRadioFrame sTransmitFrame;
@@ -362,12 +364,45 @@ otRadioFrame *otPlatRadioGetTransmitBuffer(otInstance *aInstance)
 	return &sTransmitFrame;
 }
 
+static void get_rssi_energy_detected(struct device *dev, s16_t max_ed)
+{
+	ARG_UNUSED(dev);
+	energy_detected_value = max_ed;
+	k_sem_give(&radio_sem);
+}
+
 int8_t otPlatRadioGetRssi(otInstance *aInstance)
 {
+	s8_t ret_rssi = INT8_MAX;
+	int error = 0;
+	const u16_t energy_detection_time = 1;
+	enum ieee802154_hw_caps radio_caps;
 	ARG_UNUSED(aInstance);
 
-	/* TODO: No API in Zephyr to get the RSSI. */
-	return 0;
+	radio_caps = radio_api->get_capabilities(radio_dev);
+
+	if (!(radio_caps & IEEE802154_HW_ENERGY_SCAN)) {
+		/*
+		 * TODO: No API in Zephyr to get the RSSI
+		 * when IEEE802154_HW_ENERGY_SCAN is not available
+		 */
+		ret_rssi = 0;
+	} else {
+		/*
+		 * Blocking implementation of get RSSI
+		 * using no-blocking ed_scan
+		 */
+		error = radio_api->ed_scan(radio_dev, energy_detection_time,
+					   get_rssi_energy_detected);
+
+		if (error == 0) {
+			k_sem_take(&radio_sem, K_FOREVER);
+
+			ret_rssi = (s8_t)energy_detected_value;
+		}
+	}
+
+	return ret_rssi;
 }
 
 otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
