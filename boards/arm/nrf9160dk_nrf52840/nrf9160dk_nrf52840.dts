@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2018-2020 Nordic Semiconductor ASA
  * Copyright (c) 2017 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -9,8 +9,8 @@
 #include <nordic/nrf52840_qiaa.dtsi>
 
 / {
-	model = "Nordic PCA10090 Dev Kit";
-	compatible = "nordic,pca10090-dk", "nordic,nrf52840-qiaa",
+	model = "Nordic nRF9160 DK NRF52840";
+	compatible = "nordic,nrf9160-dk-nrf52840", "nordic,nrf52840-qiaa",
 		     "nordic,nrf52840";
 
 	chosen {
@@ -36,7 +36,7 @@
 };
 
 /* The nRF52840 SoC does not have any connection to the any of the LEDs,
- * buttons, switches and Arduino pin headers on the PCA10090 board.
+ * buttons, switches and Arduino pin headers on the nRF9160 DK board.
  */
 
 &uart0 {

@@ -1,7 +1,7 @@
-.. _nrf52840_pca10090:
+.. _nrf9160dk_nrf52840:
 
-nRF52840-PCA10090
-#################
+nRF9160 DK - NRF52840
+#####################
 
 Overview
 ********
@@ -22,7 +22,7 @@ Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 The nRF52840 SoC does not have any connection to the any of the LEDs,
-buttons, switches, and Arduino pin headers on the PCA10090 board. It is,
+buttons, switches, and Arduino pin headers on the nRF9160 DK board. It is,
 however, possible to route some of the pins of the nRF52840 SoC to the nRF9160
 SiP.
 
@@ -30,6 +30,10 @@ More information about the board can be found at
 the `Nordic Low power cellular IoT`_ website.
 The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
+
+.. note::
+
+   In previous Zephyr releases this board was named *nrf52840_pca10090*.
 
 Hardware
 ********
@@ -41,7 +45,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The nrf52840_pca10090 board configuration supports the following
+The nrf9160dk_nrf52840 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -74,7 +78,7 @@ hardware features:
 Programming and Debugging
 *************************
 
-Applications for the ``nrf52840_pca10090`` board configuration can be
+Applications for the ``nrf9160dk_nrf52840`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details).
 
@@ -107,7 +111,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf52840_pca10090
+   :board: nrf9160dk_nrf52840
    :goals: build flash
 
 Debugging
@@ -125,7 +129,7 @@ The board controller firmware is a small snippet of code that takes care of
 routing specific pins on nRF9160 SiP to different components on the board,
 such as LEDs, switches, and specific nRF52840 SoC pins.
 
-When compiling a project for nrf52840_pca10090, the board controller firmware
+When compiling a project for nrf9160dk_nrf52840, the board controller firmware
 will be compiled and run automatically after the Kernel has been initialized.
 
 By default, the board controller firmware will route the following:
