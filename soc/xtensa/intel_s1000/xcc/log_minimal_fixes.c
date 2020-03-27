@@ -61,7 +61,8 @@ void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
 {
 }
 
-void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap)
+void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
+		 enum log_strdup_action strdup_action)
 {
 }
 

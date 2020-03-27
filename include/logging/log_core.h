@@ -416,6 +416,13 @@ static inline char z_log_minimal_level_to_char(int level)
 extern struct log_source_const_data __log_const_start[];
 extern struct log_source_const_data __log_const_end[];
 
+/** @brief Enum with possible actions for strdup operation. */
+enum log_strdup_action {
+	LOG_STRDUP_SKIP,     /**< None RAM string duplication. */
+	LOG_STRDUP_EXEC,     /**< Always duplicate RAM strings. */
+	LOG_STRDUP_CHECK_EXEC/**< Duplicate RAM strings, if not dupl. before.*/
+};
+
 /** @brief Get name of the log source.
  *
  * @param source_id Source ID.
@@ -586,8 +593,25 @@ void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
  * @brief Writes a generic log message to the log.
  *
  * @note This function is intended to be used when porting other log systems.
+ *
+ * @param src_level      Log identification.
+ * @param fmt            String to format.
+ * @param ap             Poiner to arguments list.
+ * @param strdup_action  Manages strdup activity.
  */
-void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap);
+void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
+		 enum log_strdup_action strdup_action);
+
+/**
+ * @brief Returns number of arguments visible from format string.
+ *
+ * @note This function is intended to be used when porting other log systems.
+ *
+ * @param fmt     Format string.
+ *
+ * @return        Number of arguments.
+ */
+uint32_t log_count_args(const char *fmt);
 
 /**
  * @brief Writes a generic log message to the log from user mode.
@@ -676,6 +700,116 @@ void log_hexdump_from_user(struct log_msg_ids src_level, const char *metadata,
 __syscall void z_log_hexdump_from_user(uint32_t src_level_val,
 				       const char *metadata,
 				       const uint8_t *data, uint32_t len);
+
+/******************************************************************************/
+/********** Mocros _VA operate on var-args parameters.          ***************/
+/*********  Intended to be used when porting other log systems. ***************/
+/*********  Shall be used in the log entry interface function.  ***************/
+/*********  Speed optimized for up to three arguments number.   ***************/
+/******************************************************************************/
+#define Z_LOG_VA(_level, _str, _valist, _argnum, _strdup_action)\
+	__LOG_VA(_level,					\
+		  (uint16_t)LOG_CURRENT_MODULE_ID(),		\
+		  LOG_CURRENT_DYNAMIC_DATA_ADDR(),		\
+		  _str, _valist, _argnum, _strdup_action)
+
+#define __LOG_VA(_level, _id, _filter, _str, _valist, _argnum, _strdup_action) \
+	do {								       \
+		bool is_user_context = _is_user_context();		       \
+									       \
+		if (Z_LOG_CONST_LEVEL_CHECK(_level)) {			       \
+			if (IS_ENABLED(CONFIG_LOG_MINIMAL)) {		       \
+				if (IS_ENABLED(CONFIG_LOG_PRINTK)) {	       \
+					log_printk(_str, _valist);	       \
+				} else {				       \
+					vprintk(_str, _valist);		       \
+				}					       \
+			} else if (is_user_context ||			       \
+				   (_level <= LOG_RUNTIME_FILTER(_filter))) {  \
+				struct log_msg_ids src_level = {	       \
+					.level = _level,		       \
+					.domain_id = CONFIG_LOG_DOMAIN_ID,     \
+					.source_id = _id		       \
+				};					       \
+				__LOG_INTERNAL_VA(is_user_context,	       \
+						src_level,		       \
+						_str, _valist, _argnum,        \
+						_strdup_action);	       \
+			}						       \
+		}							       \
+	} while (false)
+
+/**
+ * @brief Inline function to perform strdup, used in __LOG_INTERNAL_VA macro
+ *
+ * @note This function is intended to be used when porting other log systems.
+ *
+ * @param msk	  Bitmask marking all %s arguments.
+ * @param idx	  Index of actually processed argument.
+ * @param param   Value of actually processed argument.
+ * @param action  Action for strdup operation.
+ *
+ * @return	  Duplicated string or not changed param.
+ */
+static inline log_arg_t z_log_do_strdup(uint32_t msk, uint32_t idx,
+					log_arg_t param,
+					enum log_strdup_action action)
+{
+#ifndef CONFIG_LOG_MINIMAL
+	char *log_strdup(const char *str);
+
+	if (msk & (1 << idx)) {
+		const char *str = (const char *)param;
+		/* is_rodata(str) is not checked,
+		 * because log_strdup does it.
+		 * Hence, we will do only optional check
+		 * if already not duplicated.
+		 */
+		if (action == LOG_STRDUP_EXEC || !log_is_strdup(str)) {
+			param = (log_arg_t)log_strdup(str);
+		}
+	}
+#endif
+	return param;
+}
+
+#define __LOG_INTERNAL_VA(is_user_context, _src_level, _str, _valist,	       \
+						_argnum, _strdup_action)       \
+do {									       \
+	if (is_user_context) {						       \
+		log_generic_from_user(_src_level, _str, _valist);	       \
+	} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {			       \
+		log_generic(_src_level, _str, _valist, _strdup_action);        \
+	} else if (_argnum == 0) {					       \
+		_LOG_INTERNAL_0(_src_level, _str);			       \
+	} else {							       \
+		uint32_t mask = (_strdup_action != LOG_STRDUP_SKIP) ?	       \
+			z_log_get_s_mask(_str, _argnum) 		       \
+			: 0;						       \
+									       \
+		if (_argnum == 1) {					       \
+			_LOG_INTERNAL_1(_src_level, _str,		       \
+				z_log_do_strdup(mask, 0,		       \
+				  va_arg(_valist, log_arg_t), _strdup_action));\
+		} else if (_argnum == 2) {				       \
+			_LOG_INTERNAL_2(_src_level, _str,		       \
+				z_log_do_strdup(mask, 0,		       \
+				  va_arg(_valist, log_arg_t), _strdup_action), \
+				z_log_do_strdup(mask, 1,		       \
+				  va_arg(_valist, log_arg_t), _strdup_action));\
+		} else if (_argnum == 3) {				       \
+			_LOG_INTERNAL_3(_src_level, _str,		       \
+				z_log_do_strdup(mask, 0,		       \
+				  va_arg(_valist, log_arg_t), _strdup_action), \
+				z_log_do_strdup(mask, 1,		       \
+				  va_arg(_valist, log_arg_t), _strdup_action), \
+				z_log_do_strdup(mask, 2,		       \
+				  va_arg(_valist, log_arg_t), _strdup_action));\
+		} else {						       \
+			log_generic(_src_level, _str, _valist, _strdup_action);\
+		}							       \
+	}								       \
+} while (false)
 
 #include <syscalls/log_core.h>
 
