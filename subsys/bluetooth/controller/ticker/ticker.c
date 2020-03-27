@@ -1388,33 +1388,24 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 		ticks_latency -= ticks_to_expire;
+#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
 
-		if (ticker->lazy_current != 0U &&
-		    !TICKER_RESCHEDULE_PENDING(ticker)) {
+		/* decrement ticks_slot_previous */
+		if (instance->ticks_slot_previous > ticks_to_expire) {
+			instance->ticks_slot_previous -= ticks_to_expire;
+		} else {
 			instance->ticker_id_slot_previous = TICKER_NULL;
 			instance->ticks_slot_previous = 0U;
-		} else
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
-		{
-			/* decrement ticks_slot_previous */
-			if (instance->ticks_slot_previous > ticks_to_expire) {
-				instance->ticks_slot_previous -=
-				ticks_to_expire;
-			} else {
-				instance->ticker_id_slot_previous = TICKER_NULL;
-				instance->ticks_slot_previous = 0U;
-			}
+		}
 
-			/* If a reschedule is set pending, we will need to keep
-			 * the slot_previous information
-			 */
-			if (!TICKER_RESCHEDULE_PENDING(ticker) &&
-			    ticker->ticks_slot != 0U) {
-				instance->ticker_id_slot_previous =
-					id_expired;
-				instance->ticks_slot_previous =
-					ticker->ticks_slot;
-			}
+		/* If a reschedule is set pending, we will need to keep
+		 * the slot_previous information
+		 */
+		if ((ticker->ticks_slot != 0U) &&
+		    (((ticker->req - ticker->ack) & 0xff) == 2U) &&
+		    !TICKER_RESCHEDULE_PENDING(ticker)) {
+			instance->ticker_id_slot_previous = id_expired;
+			instance->ticks_slot_previous = ticker->ticks_slot;
 		}
 
 		/* ticker expired, set ticks_to_expire zero */
