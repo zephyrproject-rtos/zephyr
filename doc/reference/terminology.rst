@@ -15,11 +15,12 @@ on the current thread state, and other behavioral characteristics.
    if a parameter to the function can prevent the invoking thread from
    trying to sleep
 :ref:`api_term_isr-ok`
-   if the function can always be safely called from interrupt context
-   even if it may return an error in that case
+   if the function can be safely called and will have its specified
+   effect whether invoked from interrupt or thread context
 :ref:`api_term_pre-kernel-ok`
    if the function can be safely called before the kernel has been fully
-   initialized, even if it may return an error in that case
+   initialized and will have its specified effect when invoked from that
+   context.
 :ref:`api_term_async`
    if the function may return before the operation it initializes is
    complete (i.e. function return and operation completion are
@@ -122,22 +123,23 @@ pre-kernel contexts only when the parameter selects the no-wait path.
 isr-ok
 ======
 
-The isr-ok attribute is used on a function to indicate that it can be
-called from interrupt context.  If necessary the function will use
-:cpp:func:`k_is_in_isr` to detect its calling context and force an
-execution path that will not cause the invoking thread to sleep.
+The isr-ok attribute is used on a function to indicate that it works
+whether it is being invoked from interrupt or thread context.
 
 Explanation
 -----------
 
-This attribute is intended for **sleep** functions that may be
-indirectly invoked from interrupt context with arguments that could
-attempt to put the invoking thread to sleep, e.g. because the function
-is not **no-wait** or the parameters do not select the no-wait path.
+Any function that is not **sleep** is inherently **isr-ok**.  Functions
+that are **sleep** are **isr-ok** if the implementation ensures that the
+documented behavior is implemented even if called from an interrupt
+context.  This may be achieved by having the implementation detect the
+calling context and transfer the operation that would sleep to a thread,
+or by documenting that when invoked from a non-thread context the
+function will return a specific error (generally ``-EWOULDBLOCK``).
 
-Functions that are **isr-ok** may be always be safely invoked from
-interrupt context, and will return an error if they were unable to
-fulfill their behavior in that context.
+Note that a function that is **no-wait** is safe to call from interrupt
+context only when the no-wait path is selected.  **isr-ok** functions
+need not provide a no-wait path.
 
 .. _api_term_pre-kernel-ok:
 
@@ -145,9 +147,8 @@ pre-kernel-ok
 =============
 
 The pre-kernel-ok attribute is used on a function to indicate that it
-will take reasonable steps to ensure it is safe to invoke before all
-kernel services are started. In some cases the invocation in that
-context may return an error code.
+works as documented even when invoked before the kernel main thread has
+been started.
 
 Explanation
 -----------
