@@ -408,6 +408,7 @@
 /scripts/zephyr_module.py                 @tejlmand
 /scripts/valgrind.supp                    @aescolar @daor-oti
 /share/zephyr-package/                    @tejlmand
+/share/zephyrunittest-package/            @tejlmand
 /subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot
 /subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @joerchan @Vudentz
