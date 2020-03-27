@@ -16,6 +16,7 @@
 #include <stdint.h>
 
 #include <openthread/instance.h>
+#include <net/net_pkt.h>
 
 /**
  * This function initializes the alarm service used by OpenThread.
@@ -74,5 +75,11 @@ void platformRandomInit(void);
  *  Initialize platform Shell driver.
  */
 void platformShellInit(otInstance *aInstance);
+
+
+/**
+ * Notify OpenThread task about new rx message.
+ */
+int notify_new_rx_frame(struct net_pkt *pkt);
 
 #endif  /* PLATFORM_POSIX_H_ */
