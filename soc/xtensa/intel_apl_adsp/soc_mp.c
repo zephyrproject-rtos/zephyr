@@ -106,7 +106,7 @@ static void mp_entry2(void)
 
 #ifdef CONFIG_IPM_CAVS_IDC
 	/* Interrupt must be enabled while running on current core */
-	irq_enable(XTENSA_IRQ_NUMBER(DT_INST_0_INTEL_CAVS_IDC_IRQ_0));
+	irq_enable(XTENSA_IRQ_NUMBER(DT_IRQN(DT_INST(0, intel_cavs_idc))));
 #endif /* CONFIG_IPM_CAVS_IDC */
 
 	start_rec.alive = 1;
@@ -178,7 +178,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	SOC_DCACHE_FLUSH(&start_rec, sizeof(start_rec));
 
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
-	idc = device_get_binding(DT_INST_0_INTEL_CAVS_IDC_LABEL);
+	idc = device_get_binding(DT_LABEL(DT_INST(0, intel_cavs_idc)));
 #endif
 
 	/* Enable IDC interrupt on the other core */

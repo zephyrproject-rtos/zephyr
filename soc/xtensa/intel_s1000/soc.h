@@ -45,7 +45,7 @@
 #define IOAPIC_HIGH				0
 
 /* DW interrupt controller */
-#define DW_ICTL_IRQ_CAVS_OFFSET			CAVS_IRQ_NUMBER(DT_INST_0_SNPS_DESIGNWARE_INTC_IRQ_0)
+#define DW_ICTL_IRQ_CAVS_OFFSET			CAVS_IRQ_NUMBER(DT_IRQN(DT_INST(0, snps_designware_intc)))
 #define DW_ICTL_NUM_IRQS			9
 
 /* GPIO */
