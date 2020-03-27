@@ -7,56 +7,58 @@
  * This file is a template for cmake and is not meant to be used directly!
  */
 
-#ifdef DT_INST_@NUM@_NS16550
+#if DT_HAS_DRV_INST(@NUM@)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_@NUM@(struct device *port);
 #endif
 
 static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_@NUM@ = {
-	.devconf.port = DT_INST_@NUM@_NS16550_BASE_ADDRESS,
-	.devconf.sys_clk_freq = DT_INST_@NUM@_NS16550_CLOCK_FREQUENCY,
+	.devconf.port = DT_INST_REG_ADDR(@NUM@),
+	.devconf.sys_clk_freq = DT_INST_PROP(@NUM@, clock_frequency),
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.devconf.irq_config_func = irq_config_func_@NUM@,
 #endif
 
-#ifdef DT_INST_@NUM@_NS16550_PCP
-	.pcp = DT_INST_@NUM@_NS16550_PCP,
+#if DT_INST_NODE_HAS_PROP(@NUM@, pcp)
+	.pcp = DT_INST_PROP(@NUM@, pcp),
 #endif
 
-#if DT_INST_@NUM@_NS16550_PCIE
+#if DT_INST_PROP(@NUM@, pcie)
 	.pcie = true,
-	.pcie_bdf = DT_INST_@NUM@_NS16550_BASE_ADDRESS,
-	.pcie_id = DT_INST_@NUM@_NS16550_SIZE,
+	.pcie_bdf = DT_INST_REG_ADDR(@NUM@),
+	.pcie_id = DT_INST_REG_SIZE(@NUM@),
 #endif
 };
 
 static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_@NUM@ = {
-#ifdef DT_INST_@NUM@_NS16550_CURRENT_SPEED
-	.uart_config.baudrate = DT_INST_@NUM@_NS16550_CURRENT_SPEED,
+#if DT_INST_NODE_HAS_PROP(@NUM@, current_speed)
+	.uart_config.baudrate = DT_INST_PROP(@NUM@, current_speed),
 #endif
 	.uart_config.parity = UART_CFG_PARITY_NONE,
 	.uart_config.stop_bits = UART_CFG_STOP_BITS_1,
 	.uart_config.data_bits = UART_CFG_DATA_BITS_8,
-#if DT_INST_@NUM@_NS16550_HW_FLOW_CONTROL
+#if DT_INST_PROP(@NUM@, hw_flow_control)
 	.uart_config.flow_ctrl = UART_CFG_FLOW_CTRL_RTS_CTS,
 #else
 	.uart_config.flow_ctrl = UART_CFG_FLOW_CTRL_NONE,
 #endif
-#ifdef DT_INST_@NUM@_NS16550_DLF
-	.dlf = DT_INST_@NUM@_NS16550_DLF,
+#if DT_INST_NODE_HAS_PROP(@NUM@, dlf)
+	.dlf = DT_INST_PROP(@NUM@, dlf),
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_ns16550_@NUM@, DT_INST_@NUM@_NS16550_LABEL,
+DEVICE_AND_API_INIT(uart_ns16550_@NUM@, DT_INST_LABEL(@NUM@),
 		    &uart_ns16550_init,
 		    &uart_ns16550_dev_data_@NUM@, &uart_ns16550_dev_cfg_@NUM@,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_ns16550_driver_api);
 
-#ifndef DT_INST_@NUM@_NS16550_IRQ_0_SENSE
-#define DT_INST_@NUM@_NS16550_IRQ_0_SENSE 0
+#if DT_INST_IRQ_HAS_CELL(@NUM@, sense)
+#define INST_@NUM@_IRQ_FLAGS  DT_INST_IRQ(@NUM@, sense)
+#else
+#define INST_@NUM@_IRQ_FLAGS 0
 #endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -64,8 +66,8 @@ static void irq_config_func_@NUM@(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#if DT_INST_@NUM@_NS16550_PCIE
-#if DT_INST_@NUM@_NS16550_IRQ_0 == PCIE_IRQ_DETECT
+#if DT_INST_PROP(@NUM@, pcie)
+#if DT_INST_IRQN(@NUM@) == PCIE_IRQ_DETECT
 
 	/* PCI(e) with auto IRQ detection */
 
@@ -74,43 +76,43 @@ static void irq_config_func_@NUM@(struct device *dev)
 
 	unsigned int irq;
 
-	irq = pcie_wired_irq(DT_INST_@NUM@_NS16550_BASE_ADDRESS);
+	irq = pcie_wired_irq(DT_INST_REG_ADDR(@NUM@));
 
 	if (irq == PCIE_CONF_INTR_IRQ_NONE) {
 		return;
 	}
 
 	irq_connect_dynamic(irq,
-			    DT_INST_@NUM@_NS16550_IRQ_0_PRIORITY,
+			    DT_INST_IRQ(@NUM@, priority),
 			    uart_ns16550_isr,
 			    DEVICE_GET(uart_ns16550_@NUM@),
-			    DT_INST_@NUM@_NS16550_IRQ_0_SENSE);
+			    INST_@NUM@_IRQ_FLAGS);
 
-	pcie_irq_enable(DT_INST_@NUM@_NS16550_BASE_ADDRESS, irq);
+	pcie_irq_enable(DT_INST_REG_ADDR(@NUM@), irq);
 
 #else
 
 	/* PCI(e) with fixed or MSI IRQ */
 
-	IRQ_CONNECT(DT_INST_@NUM@_NS16550_IRQ_0,
-		    DT_INST_@NUM@_NS16550_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(@NUM@),
+		    DT_INST_IRQ(@NUM@, priority),
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_@NUM@),
-		    DT_INST_@NUM@_NS16550_IRQ_0_SENSE);
+		    INST_@NUM@_IRQ_FLAGS);
 
-	pcie_irq_enable(DT_INST_@NUM@_NS16550_BASE_ADDRESS,
-			DT_INST_@NUM@_NS16550_IRQ_0);
+	pcie_irq_enable(DT_INST_REG_ADDR(@NUM@),
+			DT_INST_IRQN(@NUM@));
 
 #endif
 #else
 
 	/* not PCI(e) */
 
-	IRQ_CONNECT(DT_INST_@NUM@_NS16550_IRQ_0,
-		    DT_INST_@NUM@_NS16550_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(@NUM@),
+		    DT_INST_IRQ(@NUM@, priority),
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_@NUM@),
-		    DT_INST_@NUM@_NS16550_IRQ_0_SENSE);
+		    INST_@NUM@_IRQ_FLAGS);
 
-	irq_enable(DT_INST_@NUM@_NS16550_IRQ_0);
+	irq_enable(DT_INST_IRQN(@NUM@));
 
 #endif
 }
