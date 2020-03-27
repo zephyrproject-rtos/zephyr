@@ -96,13 +96,6 @@ Other hardware features are not yet supported in this Zephyr port.
 The default configuration can be found in the defconfig file:
 ``boards/arm/nucleo_l152re/nucleo_l152re_defconfig``
 
-System Clock
-============
-
-Nucleo L152RE System Clock could be driven by internal or external oscillator,
-as well as main PLL clock. It should theoretically support running at 32MHz,
-but a bug (under investigation) limits operations to 16MHz.
-
 Connections and IOs
 ===================
 
