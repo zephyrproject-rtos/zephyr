@@ -957,7 +957,7 @@ next_state:
 	k_mutex_unlock(&conn->lock);
 }
 
-/* close() has been called on the socket */
+/* Active connection close: send FIN and go to FIN_WAIT_1 state */
 int net_tcp_put(struct net_context *context)
 {
 	struct tcp *conn = context->tcp;
@@ -965,8 +965,9 @@ int net_tcp_put(struct net_context *context)
 	NET_DBG("%s", conn ? log_strdup(tcp_conn_state(conn, NULL)) : "");
 
 	if (conn) {
-		conn->state = TCP_CLOSE_WAIT;
-		tcp_in(conn, NULL);
+		tcp_out(conn, FIN | ACK);
+
+		conn_state(conn, TCP_FIN_WAIT_1);
 	}
 
 	net_context_unref(context);
