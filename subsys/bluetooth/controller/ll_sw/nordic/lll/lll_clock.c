@@ -28,7 +28,7 @@ int lll_clock_init(void)
 {
 	int err;
 
-	dev = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+	dev = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 	if (!dev) {
 		return -ENODEV;
 	}

@@ -5378,7 +5378,7 @@ static void k32src_wait(void)
 	done = true;
 
 	struct device *clock = device_get_binding(
-		DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+		DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 
 	LL_ASSERT(clock);
 
