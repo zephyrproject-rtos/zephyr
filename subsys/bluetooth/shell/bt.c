@@ -1107,6 +1107,28 @@ static int cmd_adv_oob(const struct shell *shell, size_t argc, char *argv[])
 
 	return 0;
 }
+
+static int cmd_adv_info(const struct shell *shell, size_t argc, char *argv[])
+{
+	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+	struct bt_le_ext_adv_info info;
+	int err;
+
+	if (!adv) {
+		return -EINVAL;
+	}
+
+	err = bt_le_ext_adv_get_info(adv, &info);
+	if (err) {
+		shell_error(shell, "OOB data failed");
+		return err;
+	}
+
+	shell_print(shell, "Advertiser[%d] %p", selected_adv, adv);
+	shell_print(shell, "Id: %d, TX power: %d dBm", info.id, info.tx_power);
+
+	return 0;
+}
 #endif /* CONFIG_BT_EXT_ADV */
 #endif /* CONFIG_BT_BROADCASTER */
 
@@ -2220,6 +2242,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(adv-delete, NULL, "", cmd_adv_delete, 1, 0),
 	SHELL_CMD_ARG(adv-select, NULL, "[adv]", cmd_adv_select, 1, 1),
 	SHELL_CMD_ARG(adv-oob, NULL, HELP_NONE, cmd_adv_oob, 1, 0),
+	SHELL_CMD_ARG(adv-info, NULL, HELP_NONE, cmd_adv_info, 1, 0),
 #endif
 #endif /* CONFIG_BT_BROADCASTER */
 #if defined(CONFIG_BT_CONN)
