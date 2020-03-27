@@ -1,5 +1,7 @@
 /* usb_dc_dw.c - USB DesignWare device controller driver */
 
+#define DT_DRV_COMPAT snps_designware_usb
+
 /*
  * Copyright (c) 2016 Intel Corporation.
  *
@@ -723,11 +725,11 @@ int usb_dc_attach(void)
 	}
 
 	/* Connect and enable USB interrupt */
-	IRQ_CONNECT(DT_INST_0_SNPS_DESIGNWARE_USB_IRQ_0,
-		    DT_INST_0_SNPS_DESIGNWARE_USB_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    usb_dw_isr_handler, 0,
-		    DT_INST_0_SNPS_DESIGNWARE_USB_IRQ_0_SENSE);
-	irq_enable(DT_INST_0_SNPS_DESIGNWARE_USB_IRQ_0);
+		    DT_INST_IRQ(0, sense));
+	irq_enable(DT_INST_IRQN(0));
 
 	usb_dw_ctrl.attached = 1U;
 
@@ -740,7 +742,7 @@ int usb_dc_detach(void)
 		return 0;
 	}
 
-	irq_disable(DT_INST_0_SNPS_DESIGNWARE_USB_IRQ_0);
+	irq_disable(DT_INST_IRQN(0));
 
 	/* Enable soft disconnect */
 	USB_DW->dctl |= USB_DW_DCTL_SFT_DISCON;
