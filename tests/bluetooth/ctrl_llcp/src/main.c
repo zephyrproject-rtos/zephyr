@@ -396,6 +396,16 @@ void helper_pdu_encode_phy_update_ind(struct pdu_data *pdu, void *param)
 	/* TODO(thoh): Fill in correct data */
 }
 
+void helper_pdu_encode_unknown_rsp(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_unknown_rsp *p = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, unknown_rsp) + sizeof(struct pdu_data_llctrl_unknown_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP;
+	pdu->llctrl.unknown_rsp.type = p->type;
+}
+
 void helper_pdu_verify_version_ind(struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_version_ind *p = param;
@@ -476,9 +486,23 @@ void helper_pdu_verify_phy_update_ind(struct pdu_data *pdu, void *param)
 	/* TODO(thoh): Fill in correct data */
 }
 
-void helper_node_verify_phy_update(struct node_rx_pdu *rx)
+void helper_pdu_verify_unknown_rsp(struct pdu_data *pdu, void *param)
 {
+	struct pdu_data_llctrl_unknown_rsp *p = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, unknown_rsp) + sizeof(struct pdu_data_llctrl_unknown_rsp), NULL);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP, NULL);
+	zassert_equal(pdu->llctrl.unknown_rsp.type, p->type, NULL);
+}
+
+void helper_node_verify_phy_update(struct node_rx_pdu *rx, void *param)
+{
+	struct node_rx_pu *pdu = (struct node_rx_pu *)rx->pdu;
+	struct node_rx_pu *p = param;
+
 	zassert_equal(rx->hdr.type, NODE_RX_TYPE_PHY_UPDATE, NULL);
+	zassert_equal(pdu->status, p->status, NULL);
 }
 
 typedef enum {
@@ -492,6 +516,7 @@ typedef enum {
 	LL_PHY_REQ,
 	LL_PHY_RSP,
 	LL_PHY_UPDATE_IND,
+	LL_UNKNOWN_RSP,
 } helper_pdu_opcode_t;
 
 typedef void (helper_pdu_func_t) (struct pdu_data * data, void *param);
@@ -507,6 +532,7 @@ helper_pdu_func_t * const helper_pdu_encode[] = {
 	helper_pdu_encode_phy_req,
 	helper_pdu_encode_phy_rsp,
 	helper_pdu_encode_phy_update_ind,
+	helper_pdu_encode_unknown_rsp,
 };
 
 helper_pdu_func_t * const helper_pdu_verify[] = {
@@ -520,13 +546,14 @@ helper_pdu_func_t * const helper_pdu_verify[] = {
 	helper_pdu_verify_phy_req,
 	helper_pdu_verify_phy_rsp,
 	helper_pdu_verify_phy_update_ind,
+	helper_pdu_verify_unknown_rsp,
 };
 
 typedef enum {
 	NODE_PHY_UPDATE
 } helper_node_opcode_t;
 
-typedef void (helper_node_func_t) (struct node_rx_pdu *rx);
+typedef void (helper_node_func_t) (struct node_rx_pdu *rx, void *param);
 
 helper_node_func_t * const helper_node_verify[] = {
 	helper_node_verify_phy_update,
@@ -599,7 +626,7 @@ void ut_rx_node(helper_node_opcode_t opcode, struct node_rx_pdu **ntf_ref, void 
 	zassert_not_equal(ntf->hdr.type, NODE_RX_TYPE_DC_PDU, NULL);
 
 	if (helper_node_verify[opcode]) {
-		helper_node_verify[opcode](ntf);
+		helper_node_verify[opcode](ntf, param);
 	}
 
 	*ntf_ref = ntf;
@@ -1653,6 +1680,10 @@ void test_phy_update_mas_loc(void)
 	struct pdu_data *pdu;
 	u16_t instant;
 
+	struct node_rx_pu pu = {
+		.status = BT_HCI_ERR_SUCCESS
+	};
+
 	/* Setup */
 	sys_slist_init(&ut_rx_q);
 	sys_slist_init(&lt_tx_q);
@@ -1726,7 +1757,59 @@ void test_phy_update_mas_loc(void)
 	done(&conn);
 
 	/* There should be one host notification */
-	ut_rx_node(NODE_PHY_UPDATE, &ntf, NULL);
+	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+}
+
+void test_phy_update_mas_loc_unsupp_feat(void)
+{
+	u8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	struct pdu_data_llctrl_unknown_rsp unknown_rsp = {
+		.type = PDU_DATA_LLCTRL_TYPE_PHY_REQ
+	};
+
+	struct node_rx_pu pu = {
+		.status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
+	};
+
+	/* Setup */
+	sys_slist_init(&ut_rx_q);
+	sys_slist_init(&lt_tx_q);
+	ull_cp_init();
+	ull_tx_q_init(&conn.tx_q);
+	ull_cp_conn_init(&conn);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate an PHY Update Procedure */
+	err = ull_cp_phy_update(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PHY_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
+
+	/* Rx */
+	lt_tx(LL_UNKNOWN_RSP, &conn, &unknown_rsp);
+
+	/* Done */
+	done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* There should be one host notification */
+	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
 	ut_rx_q_is_empty();
 
 	/* Release Ntf */
@@ -1767,7 +1850,8 @@ void test_main(void)
 			);
 
 	ztest_test_suite(phy,
-			 ztest_unit_test(test_phy_update_mas_loc)
+			 ztest_unit_test(test_phy_update_mas_loc),
+			 ztest_unit_test(test_phy_update_mas_loc_unsupp_feat)
 			);
 
 	ztest_run_test_suite(internal);
