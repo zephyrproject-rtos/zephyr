@@ -1433,6 +1433,12 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 				 * restarted
 				 */
 				ticker->ticks_to_expire = ticks_elapsed;
+
+				/* Reset ticker state, so that its put
+				 * back in requested state later down
+				 * in the code.
+				 */
+				ticker->req = ticker->ack;
 			} else {
 				u16_t lazy_periodic;
 				u32_t count;
@@ -1443,6 +1449,12 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 					lazy_periodic = ticker->lazy_periodic;
 				} else {
 					lazy_periodic = 0U;
+
+					/* Reset ticker state, so that its put
+					 * back in requested state later down
+					 * in the code.
+					 */
+					ticker->req = ticker->ack;
 				}
 
 				/* Reload ticks_to_expire with atleast one
