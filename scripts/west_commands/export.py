@@ -47,8 +47,26 @@ class ZephyrExport(WestCommand):
         lines = run_cmake(cmake_args, capture_output=True)
 
         # Let's clean up, as Zephyr has now been exported, and we no longer
-	# need the generated files.
+        # need the generated files.
         cmake_args = ['--build', f'{zephyr_config_package_path}',
+                      '--target', 'pristine']
+        run_cmake(cmake_args, capture_output=True)
+
+        # Let's ignore the normal CMake printing and instead only print
+        # the important information.
+        msg = [line for line in lines if not line.startswith('-- ')]
+        print('\n'.join(msg))
+
+        zephyr_unittest_config_package_path = PurePath(__file__).parents[2] \
+            / 'share' / 'zephyrunittest-package' / 'cmake'
+
+        cmake_args = ['-S', f'{zephyr_unittest_config_package_path}',
+                      '-B', f'{zephyr_unittest_config_package_path}']
+        lines = run_cmake(cmake_args, capture_output=True)
+
+        # Let's clean up, as Zephyr has now been exported, and we no longer
+        # need the generated files.
+        cmake_args = ['--build', f'{zephyr_unittest_config_package_path}',
                       '--target', 'pristine']
         run_cmake(cmake_args, capture_output=True)
 

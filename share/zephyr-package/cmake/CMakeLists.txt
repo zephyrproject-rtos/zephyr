@@ -15,14 +15,12 @@ if(NOT (CMAKE_BINARY_DIR STREQUAL CMAKE_CURRENT_LIST_DIR))
   message(WARNING "\$\{CMAKE_BINARY_DIR\} is different from \$\{CMAKE_CURRENT_LIST_DIR\}, Zephyr config package may not work as expected.")
 endif()
 
-message("Zephyr and ZephyrUnitTest (${CMAKE_CURRENT_LIST_DIR})")
+message("Zephyr (${CMAKE_CURRENT_LIST_DIR})")
 message("has been added to the user package registry in:")
 if(WIN32)
-  message("HKEY_CURRENT_USER\\Software\\Kitware\\CMake\\Packages\\Zephyr")
-  message("HKEY_CURRENT_USER\\Software\\Kitware\\CMake\\Packages\\ZephyrUnitTest")
+  message("HKEY_CURRENT_USER\\Software\\Kitware\\CMake\\Packages\\Zephyr\n")
 else()
-  message("~/.cmake/packages/Zephyr")
-  message("~/.cmake/packages/ZephyrUnitTest")
+  message("~/.cmake/packages/Zephyr\n")
 endif()
 
 add_custom_target(pristine
@@ -30,4 +28,3 @@ add_custom_target(pristine
 )
 
 export(PACKAGE Zephyr)
-export(PACKAGE ZephyrUnittest)

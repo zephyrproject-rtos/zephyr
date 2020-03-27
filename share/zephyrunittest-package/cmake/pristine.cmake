@@ -13,9 +13,8 @@ file(GLOB_RECURSE GENERATED_FILES
 list(REMOVE_ITEM GENERATED_FILES
      "${CMAKE_CURRENT_LIST_DIR}/CMakeLists.txt"
      "${CMAKE_CURRENT_LIST_DIR}/pristine.cmake"
-     "${CMAKE_CURRENT_LIST_DIR}/zephyr_package_search.cmake"
-     "${CMAKE_CURRENT_LIST_DIR}/ZephyrConfigVersion.cmake"
-     "${CMAKE_CURRENT_LIST_DIR}/ZephyrConfig.cmake"
+     "${CMAKE_CURRENT_LIST_DIR}/ZephyrUnittestConfigVersion.cmake"
+     "${CMAKE_CURRENT_LIST_DIR}/ZephyrUnittestConfig.cmake"
 )
 
 # Delete everything else, as those files are created by CMake.
