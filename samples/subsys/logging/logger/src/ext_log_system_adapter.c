@@ -33,7 +33,7 @@ static void log_handler(enum ext_log_level level, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	log_generic(src_level, fmt, ap);
+	log_generic(src_level, fmt, ap, LOG_STRDUP_CHECK_EXEC);
 	va_end(ap);
 }
 

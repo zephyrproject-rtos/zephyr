@@ -335,7 +335,8 @@ void log_printk(const char *fmt, va_list ap)
 
 			z_log_string_from_user(src_level_union.value, str);
 		} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
-			log_generic(src_level_union.structure, fmt, ap);
+			log_generic(src_level_union.structure, fmt, ap,
+							LOG_STRDUP_SKIP);
 		} else {
 			uint8_t str[CONFIG_LOG_PRINTK_MAX_STRING_LENGTH + 1];
 			struct log_msg *msg;
@@ -358,7 +359,7 @@ void log_printk(const char *fmt, va_list ap)
  *
  * Function counts number of '%' not followed by '%'.
  */
-static uint32_t count_args(const char *fmt)
+uint32_t log_count_args(const char *fmt)
 {
 	uint32_t args = 0U;
 	bool prev = false; /* if previous char was a modificator. */
@@ -376,11 +377,12 @@ static uint32_t count_args(const char *fmt)
 	return args;
 }
 
-void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap)
+void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap,
+		 enum log_strdup_action strdup_action)
 {
 	if (_is_user_context()) {
 		log_generic_from_user(src_level, fmt, ap);
-	} else  if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
+	} else if (IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
 	    (!IS_ENABLED(CONFIG_LOG_FRONTEND))) {
 		struct log_backend const *backend;
 		uint32_t timestamp = timestamp_func();
@@ -395,13 +397,32 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap)
 		}
 	} else {
 		log_arg_t args[LOG_MAX_NARGS];
-		uint32_t nargs = count_args(fmt);
+		uint32_t nargs = log_count_args(fmt);
 
 		__ASSERT_NO_MSG(nargs < LOG_MAX_NARGS);
 		for (int i = 0; i < nargs; i++) {
 			args[i] = va_arg(ap, log_arg_t);
 		}
 
+		if (strdup_action != LOG_STRDUP_SKIP) {
+			uint32_t mask = z_log_get_s_mask(fmt, nargs);
+
+			while (mask) {
+				uint32_t idx = 31 - __builtin_clz(mask);
+				const char *str = (const char *)args[idx];
+
+				/* is_rodata(str) is not checked,
+				 * because log_strdup does it.
+				 * Hence, we will do only optional check
+				 * if already not duplicated.
+				 */
+				if (strdup_action == LOG_STRDUP_EXEC
+				   || !log_is_strdup(str)) {
+					args[idx] = (log_arg_t)log_strdup(str);
+				}
+				mask &= ~BIT(idx);
+			}
+		}
 		log_n(fmt, args, nargs, src_level);
 	}
 }
@@ -412,7 +433,7 @@ void log_string_sync(struct log_msg_ids src_level, const char *fmt, ...)
 
 	va_start(ap, fmt);
 
-	log_generic(src_level, fmt, ap);
+	log_generic(src_level, fmt, ap, LOG_STRDUP_SKIP);
 
 	va_end(ap);
 }
