@@ -427,7 +427,7 @@
 /share/zephyr-package/                    @tejlmand
 /share/zephyrunittest-package/            @tejlmand
 /subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
-/subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot
+/subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot @kruithofa @dagbja
 /subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @joerchan @Vudentz
 /subsys/canbus/                           @alexanderwachter
 /subsys/cpp/                              @pabigot @vanwinkeljan
@@ -476,7 +476,7 @@
 /tests/benchmarks/cmsis_dsp/              @stephanosio
 /tests/boards/native_posix/               @aescolar @daor-oti
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
-/tests/bluetooth/                         @joerchan @jhedberg @Vudentz
+/tests/bluetooth/                         @carlescufi @cvinayak @thoh-ot @kruithofa @dagbja
 /tests/bluetooth/bsim_bt/                 @joerchan @jhedberg @Vudentz @aescolar @wopu-ot
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
