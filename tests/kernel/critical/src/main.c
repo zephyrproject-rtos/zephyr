@@ -7,13 +7,13 @@
 /**
  * @file
  *
- * @brief Offload to the Kernel offload workqueue
+ * @brief Offload to the Kernel workqueue
  *
  * @defgroup kernel_critical_tests Critical Tests
  *
  * @ingroup all_tests
  *
- * This test verifies that the kernel offload workqueue operates as
+ * This test verifies that the kernel workqueue operates as
  * expected.
  *
  * This test has two threads that increment a counter.  The routine that
@@ -41,7 +41,6 @@
 #define OFFLOAD_WORKQUEUE_STACK_SIZE 1024
 #endif
 
-#define OFFLOAD_WORKQUEUE_PRIORITY (-1)
 
 static u32_t critical_var;
 static u32_t alt_thread_iterations;
@@ -63,14 +62,10 @@ K_SEM_DEFINE(REGRESS_SEM, 0, UINT_MAX);
 K_SEM_DEFINE(TEST_SEM, 0, UINT_MAX);
 
 /**
- *
  * @brief Routine to be called from a workqueue
  *
  * This routine increments the global variable @a critical_var.
- *
- * @return 0
  */
-
 void critical_rtn(struct k_work *unused)
 {
 	volatile u32_t x;
@@ -79,22 +74,17 @@ void critical_rtn(struct k_work *unused)
 
 	x = critical_var;
 	critical_var = x + 1;
-
 }
 
 /**
- *
- * @brief Common code for invoking offload work
+ * @brief Common code for invoking work
  *
  * @param tag text identifying the invocation context
- *
  * @param count number of critical section calls made thus far
  *
  * @return number of critical section calls made by a thread
  */
-
-u32_t critical_loop(const char *tag,
-		    u32_t count)
+u32_t critical_loop(const char *tag, u32_t count)
 {
 	s64_t now;
 	s64_t last;
@@ -129,14 +119,10 @@ u32_t critical_loop(const char *tag,
 }
 
 /**
- *
  * @brief Alternate thread
  *
  * This routine invokes the workqueue many times.
- *
- * @return N/A
  */
-
 void alternate_thread(void *arg1, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg1);
@@ -157,14 +143,11 @@ void alternate_thread(void *arg1, void *arg2, void *arg3)
 }
 
 /**
- *
  * @brief Regression thread
  *
- * This routine calls invokes the workqueue many times. It also checks to
+ * This routine invokes the workqueue many times. It also checks to
  * ensure that the number of times it is called matches the global variable
  * @a critical_var.
- *
- * @return N/A
  */
 
 void regression_thread(void *arg1, void *arg2, void *arg3)
@@ -204,27 +187,6 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
 
 }
 
-static void init_objects(void)
-{
-	critical_var = 0U;
-	alt_thread_iterations = 0U;
-	k_work_q_start(&offload_work_q,
-		       offload_work_q_stack,
-		       K_THREAD_STACK_SIZEOF(offload_work_q_stack),
-		       OFFLOAD_WORKQUEUE_PRIORITY);
-}
-
-static void start_threads(void)
-{
-	k_thread_create(&thread1, stack1, STACK_SIZE,
-			alternate_thread, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(12), 0, K_NO_WAIT);
-
-	k_thread_create(&thread2, stack2, STACK_SIZE,
-			regression_thread, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(12), 0, K_NO_WAIT);
-}
-
 /**
  * @brief Verify thread context
  *
@@ -235,8 +197,21 @@ static void start_threads(void)
  */
 void test_critical(void)
 {
-	init_objects();
-	start_threads();
+	critical_var = 0U;
+	alt_thread_iterations = 0U;
+
+	k_work_q_start(&offload_work_q,
+		       offload_work_q_stack,
+		       K_THREAD_STACK_SIZEOF(offload_work_q_stack),
+		       CONFIG_MAIN_THREAD_PRIORITY);
+
+	k_thread_create(&thread1, stack1, STACK_SIZE,
+			alternate_thread, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(12), 0, K_NO_WAIT);
+
+	k_thread_create(&thread2, stack2, STACK_SIZE,
+			regression_thread, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(12), 0, K_NO_WAIT);
 
 	zassert_true(k_sem_take(&TEST_SEM, K_MSEC(TEST_TIMEOUT * 2)) == 0,
 		     "Timed out waiting for TEST_SEM");
