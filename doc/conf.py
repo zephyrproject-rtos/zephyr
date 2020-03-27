@@ -343,6 +343,8 @@ html_redirect_pages = [
 		('boards/arm/nrf52810_pca10040/doc/nrf52810_pca10040', 'boards/arm/nrf52810_pca10040/doc/index'),
 		('boards/arm/nrf52840_pca10056/doc/nrf52840_pca10056', 'boards/arm/nrf52840dk_nrf52840/doc/index'),
 		('boards/arm/nrf52840_pca10056/doc/nrf52840_pca10056/index', 'boards/arm/nrf52840dk_nrf52840/doc/index'),
+		('boards/arm/nrf9160_pca10090/doc/nrf9160_pca10090/index', 'boards/arm/nrf9160dk_nrf9160/doc/index'),
+		('boards/arm/nrf52840_pca10090/doc/nrf52840_pca10090/index', 'boards/arm/nrf9160dk_nrf52840/doc/index'),
 		('boards/arm/nrf52840_pca10059/doc/nrf52840_pca10059', 'boards/arm/nrf52840_pca10059/doc/index'),
 		('boards/arm/nrf52_adafruit_feather/doc/nrf52_adafruit_feather', 'boards/arm/nrf52_adafruit_feather/doc/index'),
 		('boards/arm/nrf52_blenano2/doc/nrf52_blenano2', 'boards/arm/nrf52_blenano2/doc/index'),
