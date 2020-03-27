@@ -354,7 +354,7 @@
 /scripts/zephyr_module.py                 @tejlmand
 /scripts/valgrind.supp                    @aescolar
 /subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
-/subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot
+/subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot @kruithofa @dagbja
 /subsys/bluetooth/mesh/                   @jhedberg @trond-snekvik @joerchan @Vudentz
 /subsys/canbus/                           @alexanderwachter
 /subsys/cpp/                              @pabigot @vanwinkeljan
@@ -397,7 +397,7 @@
 /tests/arch/arm/                          @ioannisg
 /tests/boards/native_posix/               @aescolar
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
-/tests/bluetooth/                         @joerchan @jhedberg @Vudentz
+/tests/bluetooth/                         @carlescufi @cvinayak @thoh-ot @kruithofa @dagbja
 /tests/bluetooth/bsim_bt/                 @joerchan @jhedberg @Vudentz @aescolar
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
