@@ -638,15 +638,10 @@ static u32_t ticker_dequeue(struct ticker_instance *instance, u8_t id)
 static u8_t ticker_resolve_collision(struct ticker_node *nodes,
 				     struct ticker_node *ticker)
 {
-	u8_t  skipped = 0;
-	s32_t lazy_current = ticker->lazy_current;
+	if ((ticker->priority != TICKER_PRIORITY_CRITICAL) &&
+	    (ticker->next != TICKER_NULL)) {
+		s32_t lazy_current = ticker->lazy_current;
 
-	if (ticker->lazy_periodic > lazy_current) {
-		/* Programmed latency must be respected */
-		skipped = 1;
-
-	} else if ((ticker->priority != TICKER_PRIORITY_CRITICAL) &&
-		   (ticker->next != TICKER_NULL)) {
 		/* Check if this ticker node will starve next node which has
 		 * latency or higher priority
 		 */
@@ -654,7 +649,7 @@ static u8_t ticker_resolve_collision(struct ticker_node *nodes,
 			lazy_current -= ticker->lazy_periodic;
 		}
 		u8_t  id_head = ticker->next;
-		u32_t acc_ticks_to_expire = 0;
+		u32_t acc_ticks_to_expire = 0U;
 
 		/* Age is time since last expiry */
 		u32_t current_age = ticker->ticks_periodic +
@@ -670,7 +665,7 @@ static u8_t ticker_resolve_collision(struct ticker_node *nodes,
 			}
 
 			/* We only care about nodes with slot reservation */
-			if (ticker_next->ticks_slot == 0) {
+			if (ticker_next->ticks_slot == 0U) {
 				id_head = ticker_next->next;
 				continue;
 			}
@@ -725,13 +720,13 @@ static u8_t ticker_resolve_collision(struct ticker_node *nodes,
 			    (next_has_priority && !current_is_older) ||
 			    (equal_priority && next_is_older))) {
 				/* This node must be skipped - check window */
-				skipped = 1;
-				break;
+				return 1U;
 			}
 			id_head = ticker_next->next;
 		}
 	}
-	return skipped;
+
+	return 0U;
 }
 #endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
 
@@ -1443,7 +1438,7 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 				u32_t count;
 				u16_t lazy;
 
-				/* If not skipped apply lazy_periodic */
+				/* If not skipped, apply lazy_periodic */
 				if (!ticker->lazy_current) {
 					lazy_periodic = ticker->lazy_periodic;
 				} else {
