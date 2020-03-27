@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT snps_designware_dma
+
 #include <errno.h>
 
 #include <stdio.h>
@@ -357,17 +359,17 @@ static const struct dma_driver_api dw_dma_driver_api = {
 	.stop = dw_dma_transfer_stop,
 };
 
-#if defined(DT_INST_0_SNPS_DESIGNWARE_DMA)
+#if DT_HAS_DRV_INST(0)
 
 static struct device DEVICE_NAME_GET(dw_dma0);
 
 static void dw_dma0_irq_config(void)
 {
-	IRQ_CONNECT(DT_INST_0_SNPS_DESIGNWARE_DMA_IRQ_0,
-		    DT_INST_0_SNPS_DESIGNWARE_DMA_IRQ_0_PRIORITY, dw_dma_isr,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority), dw_dma_isr,
 		    DEVICE_GET(dw_dma0),
-		    DT_INST_0_SNPS_DESIGNWARE_DMA_IRQ_0_SENSE);
-	irq_enable(DT_INST_0_SNPS_DESIGNWARE_DMA_IRQ_0);
+		    DT_INST_IRQ(0, sense));
+	irq_enable(DT_INST_IRQN(0));
 }
 
 static struct dw_drv_plat_data dmac0 = {
@@ -406,7 +408,7 @@ static struct dw_drv_plat_data dmac0 = {
 };
 
 static const struct dw_dma_dev_cfg dw_dma0_config = {
-	.base = DT_INST_0_SNPS_DESIGNWARE_DMA_BASE_ADDRESS,
+	.base = DT_INST_REG_ADDR(0),
 	.irq_config = dw_dma0_irq_config
 };
 
@@ -414,23 +416,23 @@ static struct dw_dma_dev_data dw_dma0_data = {
 	.channel_data = &dmac0,
 };
 
-DEVICE_AND_API_INIT(dw_dma0, DT_INST_0_SNPS_DESIGNWARE_DMA_LABEL, &dw_dma_init,
+DEVICE_AND_API_INIT(dw_dma0, DT_INST_LABEL(0), &dw_dma_init,
 		    &dw_dma0_data, &dw_dma0_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_dma_driver_api);
-#endif /* DT_INST_0_SNPS_DESIGNWARE_DMA */
+#endif /* DT_HAS_DRV_INST(0) */
 
 
-#if defined(DT_INST_1_SNPS_DESIGNWARE_DMA)
+#if DT_HAS_DRV_INST(1)
 
 static struct device DEVICE_NAME_GET(dw_dma2);
 
 static void dw_dma1_irq_config(void)
 {
-	IRQ_CONNECT(DT_INST_1_SNPS_DESIGNWARE_DMA_IRQ_0,
-		    DT_INST_1_SNPS_DESIGNWARE_DMA_IRQ_0_PRIORITY, dw_dma_isr,
+	IRQ_CONNECT(DT_INST_IRQN(1),
+		    DT_INST_IRQ(1, priority), dw_dma_isr,
 		    DEVICE_GET(dw_dma0),
-		    DT_INST_1_SNPS_DESIGNWARE_DMA_IRQ_0_SENSE);
-	irq_enable(DT_INST_1_SNPS_DESIGNWARE_DMA_IRQ_0);
+		    DT_INST_IRQ(1, sense));
+	irq_enable(DT_INST_IRQN(1));
 }
 
 static struct dw_drv_plat_data dmac1 = {
@@ -469,7 +471,7 @@ static struct dw_drv_plat_data dmac1 = {
 };
 
 static const struct dw_dma_dev_cfg dw_dma1_config = {
-	.base = DT_INST_1_SNPS_DESIGNWARE_DMA_BASE_ADDRESS,
+	.base = DT_INST_REG_ADDR(1),
 	.irq_config = dw_dma1_irq_config
 };
 
@@ -477,22 +479,22 @@ static struct dw_dma_dev_data dw_dma1_data = {
 	.channel_data = &dmac1,
 };
 
-DEVICE_AND_API_INIT(dw_dma1, DT_INST_1_SNPS_DESIGNWARE_DMA_LABEL, &dw_dma_init,
+DEVICE_AND_API_INIT(dw_dma1, DT_INST_LABEL(1), &dw_dma_init,
 		    &dw_dma1_data, &dw_dma1_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_dma_driver_api);
-#endif /* DT_INST_1_SNPS_DESIGNWARE_DMA */
+#endif /* DT_HAS_DRV_INST(1) */
 
-#if defined(DT_INST_2_SNPS_DESIGNWARE_DMA)
+#if DT_HAS_DRV_INST(2)
 
 static struct device DEVICE_NAME_GET(dw_dma2);
 
 static void dw_dma2_irq_config(void)
 {
-	IRQ_CONNECT(DT_INST_2_SNPS_DESIGNWARE_DMA_IRQ_0,
-		    DT_INST_2_SNPS_DESIGNWARE_DMA_IRQ_0_PRIORITY, dw_dma_isr,
+	IRQ_CONNECT(DT_INST_IRQN(2),
+		    DT_INST_IRQ(2, priority), dw_dma_isr,
 		    DEVICE_GET(dw_dma0),
-		    DT_INST_2_SNPS_DESIGNWARE_DMA_IRQ_0_SENSE);
-	irq_enable(DT_INST_2_SNPS_DESIGNWARE_DMA_IRQ_0);
+		    DT_INST_IRQ(2, sense));
+	irq_enable(DT_INST_IRQN(2));
 }
 
 static struct dw_drv_plat_data dmac2 = {
@@ -531,7 +533,7 @@ static struct dw_drv_plat_data dmac2 = {
 };
 
 static const struct dw_dma_dev_cfg dw_dma2_config = {
-	.base = DT_INST_2_SNPS_DESIGNWARE_DMA_BASE_ADDRESS,
+	.base = DT_INST_REG_ADDR(2),
 	.irq_config = dw_dma2_irq_config
 };
 
@@ -539,7 +541,7 @@ static struct dw_dma_dev_data dw_dma2_data = {
 	.channel_data = &dmac2,
 };
 
-DEVICE_AND_API_INIT(dw_dma2, DT_INST_2_SNPS_DESIGNWARE_DMA_LABEL, &dw_dma_init,
+DEVICE_AND_API_INIT(dw_dma2, DT_INST_LABEL(2), &dw_dma_init,
 		    &dw_dma2_data, &dw_dma2_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_dma_driver_api);
-#endif /* DT_INST_2_SNPS_DESIGNWARE_DMA */
+#endif /* DT_HAS_DRV_INST(2) */
