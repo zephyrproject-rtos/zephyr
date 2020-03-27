@@ -40,7 +40,7 @@
 
 	soc {
 
-		flash-controller@4001e000 {
+		flash_controller: flash-controller@4001e000 {
 			compatible = "nordic,nrf52-flash-controller";
 			reg = <0x4001e000 0x1000>;
 
