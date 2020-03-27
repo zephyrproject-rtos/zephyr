@@ -699,6 +699,23 @@ static bool is_instant_reached(struct ull_cp_conn *conn, u16_t instant)
 	return ((event_counter(conn) - instant) & 0xFFFF) <= 0x7FFF;
 }
 
+static void setup()
+{
+	/* Initialize the upper test rx queue */
+	sys_slist_init(&ut_rx_q);
+
+	/* Initialize the lower tester tx queue */
+	sys_slist_init(&lt_tx_q);
+
+	/* Initialize the control procedure code */
+	ull_cp_init();
+
+	/* Initialize the ULL TX Q */
+	ull_tx_q_init(&conn.tx_q);
+
+	/* Initialize the connection object */
+	ull_cp_conn_init(&conn);
+}
 
 /* +-----+                     +-------+            +-----+
  * | UT  |                     | LL_A  |            | LT  |
@@ -737,12 +754,6 @@ void test_version_exchange_mas_loc(void)
 		.sub_version_number = 0x1234,
 	};
 
-	/* Setup */
-	sys_slist_init(&ut_rx_q);
-	sys_slist_init(&lt_tx_q);
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -814,12 +825,6 @@ void test_version_exchange_mas_rem(void)
 		.sub_version_number = 0x1234,
 	};
 
-	/* Setup */
-	sys_slist_init(&ut_rx_q);
-	sys_slist_init(&lt_tx_q);
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -885,12 +890,6 @@ void test_version_exchange_mas_rem_2(void)
 		.sub_version_number = 0x1234,
 	};
 
-	/* Setup */
-	sys_slist_init(&ut_rx_q);
-	sys_slist_init(&lt_tx_q);
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -959,12 +958,6 @@ void test_encryption_start_mas_loc(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
-	/* Setup */
-	sys_slist_init(&ut_rx_q);
-	sys_slist_init(&lt_tx_q);
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1067,12 +1060,6 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
-	/* Setup */
-	sys_slist_init(&ut_rx_q);
-	sys_slist_init(&lt_tx_q);
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1209,12 +1196,6 @@ void test_encryption_start_mas_loc_no_ltk(void)
 		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
 	};
 
-	/* Setup */
-	sys_slist_init(&ut_rx_q);
-	sys_slist_init(&lt_tx_q);
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1299,12 +1280,6 @@ void test_encryption_start_mas_rem(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
-	/* Setup */
-	sys_slist_init(&ut_rx_q);
-	sys_slist_init(&lt_tx_q);
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1434,12 +1409,6 @@ void test_encryption_start_mas_rem_limited_memory(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
-	/* Setup */
-	sys_slist_init(&ut_rx_q);
-	sys_slist_init(&lt_tx_q);
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1602,12 +1571,6 @@ void test_encryption_start_mas_rem_no_ltk(void)
 		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
 	};
 
-	/* Setup */
-	sys_slist_init(&ut_rx_q);
-	sys_slist_init(&lt_tx_q);
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1684,12 +1647,6 @@ void test_phy_update_mas_loc(void)
 		.status = BT_HCI_ERR_SUCCESS
 	};
 
-	/* Setup */
-	sys_slist_init(&ut_rx_q);
-	sys_slist_init(&lt_tx_q);
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1778,12 +1735,6 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 		.status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
 	};
 
-	/* Setup */
-	sys_slist_init(&ut_rx_q);
-	sys_slist_init(&lt_tx_q);
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1827,12 +1778,6 @@ void test_phy_update_mas_rem(void)
 		.status = BT_HCI_ERR_SUCCESS
 	};
 
-	/* Setup */
-	sys_slist_init(&ut_rx_q);
-	sys_slist_init(&lt_tx_q);
-	ull_cp_init();
-	ull_tx_q_init(&conn.tx_q);
-	ull_cp_conn_init(&conn);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1914,25 +1859,25 @@ void test_main(void)
 			);
 
 	ztest_test_suite(version_exchange,
-			 ztest_unit_test(test_version_exchange_mas_loc),
-			 ztest_unit_test(test_version_exchange_mas_loc_2),
-			 ztest_unit_test(test_version_exchange_mas_rem),
-			 ztest_unit_test(test_version_exchange_mas_rem_2)
+			 ztest_unit_test_setup_teardown(test_version_exchange_mas_loc, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_version_exchange_mas_loc_2, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_version_exchange_mas_rem, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_version_exchange_mas_rem_2, setup, unit_test_noop)
 			);
 
 	ztest_test_suite(encryption,
-			 ztest_unit_test(test_encryption_start_mas_loc),
-			 ztest_unit_test(test_encryption_start_mas_loc_limited_memory),
-			 ztest_unit_test(test_encryption_start_mas_loc_no_ltk),
-			 ztest_unit_test(test_encryption_start_mas_rem),
-			 ztest_unit_test(test_encryption_start_mas_rem_limited_memory),
-			 ztest_unit_test(test_encryption_start_mas_rem_no_ltk)
+			 ztest_unit_test_setup_teardown(test_encryption_start_mas_loc, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_limited_memory, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_no_ltk, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_encryption_start_mas_rem, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_encryption_start_mas_rem_limited_memory, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_encryption_start_mas_rem_no_ltk, setup, unit_test_noop)
 			);
 
 	ztest_test_suite(phy,
-			 ztest_unit_test(test_phy_update_mas_loc),
-			 ztest_unit_test(test_phy_update_mas_loc_unsupp_feat),
-			 ztest_unit_test(test_phy_update_mas_rem)
+			 ztest_unit_test_setup_teardown(test_phy_update_mas_loc, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_phy_update_mas_loc_unsupp_feat, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_phy_update_mas_rem, setup, unit_test_noop)
 			);
 
 	ztest_run_test_suite(internal);
