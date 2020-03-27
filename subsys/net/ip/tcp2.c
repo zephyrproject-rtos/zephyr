@@ -914,7 +914,6 @@ next_state:
 		}
 		break;
 	case TCP_CLOSED:
-		fl = 0;
 		tcp_conn_unref(conn);
 		break;
 	case TCP_TIME_WAIT:
