@@ -45,8 +45,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define OT_WORKER_STACK_SIZE 512
 #define OT_WORKER_PRIORITY   K_PRIO_COOP(CONFIG_OPENTHREAD_THREAD_PRIORITY)
 
-#define OT_RX_MESSAGES 5
-
 enum pending_events {
 	PENDING_EVENT_FRAME_RECEIVED, /* Radio has received new frame */
 	PENDING_EVENT_TX_STARTED, /* Radio has started transmitting */
@@ -85,7 +83,7 @@ K_THREAD_STACK_DEFINE(ot_task_stack, OT_WORKER_STACK_SIZE);
 static struct k_work_q ot_work_q;
 static otError tx_result;
 
-K_MSGQ_DEFINE(rx_pkt_queue, sizeof(struct net_pkt *), OT_RX_MESSAGES, 4);
+K_FIFO_DEFINE(rx_pkt_fifo);
 
 static inline bool is_pending_event_set(enum pending_events event)
 {
@@ -297,14 +295,10 @@ static void openthread_handle_received_frame(otInstance *instance,
 
 int notify_new_rx_frame(struct net_pkt *pkt)
 {
-	int err = -ENOBUFS;
+	k_fifo_put(&rx_pkt_fifo, pkt);
+	set_pending_event(PENDING_EVENT_FRAME_RECEIVED);
 
-	if (k_msgq_put(&rx_pkt_queue, &pkt, K_FOREVER) == 0) {
-		err = 0;
-		set_pending_event(PENDING_EVENT_FRAME_RECEIVED);
-	}
-
-	return err;
+	return 0;
 }
 
 static int run_tx_task(otInstance *aInstance)
@@ -332,7 +326,9 @@ void platformRadioProcess(otInstance *aInstance)
 		struct net_pkt *rx_pkt;
 
 		reset_pending_event(PENDING_EVENT_FRAME_RECEIVED);
-		while (k_msgq_get(&rx_pkt_queue, &rx_pkt, K_NO_WAIT) == 0) {
+		while ((rx_pkt = (struct net_pkt *)k_fifo_get(&rx_pkt_fifo,
+							      K_NO_WAIT))
+		      != NULL) {
 			openthread_handle_received_frame(aInstance, rx_pkt);
 		}
 	}

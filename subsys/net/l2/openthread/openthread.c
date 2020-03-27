@@ -256,29 +256,14 @@ static enum net_verdict openthread_recv(struct net_if *iface,
 
 	NET_DBG("Got 802.15.4 packet, sending to OT");
 
-	otRadioFrame recv_frame;
-
-	recv_frame.mPsdu = net_buf_frag_last(pkt->buffer)->data;
-	/* Length inc. CRC. */
-	recv_frame.mLength = net_buf_frags_len(pkt->buffer);
-	recv_frame.mChannel = platformRadioChannelGet(ot_context->instance);
-	recv_frame.mInfo.mRxInfo.mLqi = net_pkt_ieee802154_lqi(pkt);
-	recv_frame.mInfo.mRxInfo.mRssi = net_pkt_ieee802154_rssi(pkt);
-
-
 	if (IS_ENABLED(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)) {
 		net_pkt_hexdump(pkt, "Received 802.15.4 frame");
 	}
 
-	if (IS_ENABLED(OPENTHREAD_ENABLE_DIAG) && otPlatDiagModeGet()) {
-		otPlatDiagRadioReceiveDone(ot_context->instance,
-					   &recv_frame, OT_ERROR_NONE);
-	} else {
-		otPlatRadioReceiveDone(ot_context->instance,
-				       &recv_frame, OT_ERROR_NONE);
+	if (notify_new_rx_frame(pkt) != 0) {
+		NET_ERR("Failed to queue RX packet for OpenThread");
+		return NET_DROP;
 	}
-
-	net_pkt_unref(pkt);
 
 	return NET_OK;
 }
