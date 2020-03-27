@@ -54,7 +54,8 @@ extern "C" {
  * @see DT_PHANDLE_BY_IDX()
  */
 #define DT_GPIO_LABEL_BY_IDX(node_id, gpio_pha, idx) \
-	DT_PROP_BY_PHANDLE_IDX(node_id, gpio_pha, idx, label)
+	UTIL_AND(DT_HAS_PROP(DT_PHANDLE_BY_IDX(node_id, gpio_pha, idx), label), \
+		 DT_PROP_BY_PHANDLE_IDX(node_id, gpio_pha, idx, label))
 
 /**
  * @brief Equivalent to DT_GPIO_LABEL_BY_IDX(node_id, gpio_pha, 0)
@@ -83,7 +84,8 @@ extern "C" {
  * @see DT_PHA()
  */
 #define DT_GPIO_PIN_BY_IDX(node_id, gpio_pha, idx) \
-	DT_PHA_BY_IDX(node_id, gpio_pha, idx, pin)
+	UTIL_AND(DT_PHA_HAS_CELL_AT_IDX(node_id, gpio_pha, idx, pin), \
+		 DT_PHA_BY_IDX(node_id, gpio_pha, idx, pin))
 
 /**
  * @brief Equivalent to DT_GPIO_PIN_BY_IDX(node_id, gpio_pha, 0)
@@ -112,7 +114,8 @@ extern "C" {
  * @see DT_PHA()
  */
 #define DT_GPIO_FLAGS_BY_IDX(node_id, gpio_pha, idx) \
-	DT_PHA_BY_IDX(node_id, gpio_pha, idx, flags)
+	UTIL_AND(DT_PHA_HAS_CELL_AT_IDX(node_id, gpio_pha, idx, flags), \
+		 DT_PHA_BY_IDX(node_id, gpio_pha, idx, flags))
 
 /**
  * @brief Equivalent to DT_GPIO_FLAGS_BY_IDX(node_id, gpio_pha, 0)
