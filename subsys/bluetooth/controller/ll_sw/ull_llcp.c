@@ -23,6 +23,7 @@
 #include "lll.h"
 #include "lll_conn.h"
 
+#include "ull_conn_types.h"
 #include "ull_tx_queue.h"
 #include "ull_llcp.h"
 
@@ -253,6 +254,7 @@ struct proc_ctx {
 
 		/* PHY Update */
 		struct {
+			u8_t error;
 			u16_t instant;
 		} pu;
 	} data;
@@ -1047,12 +1049,16 @@ static void lp_pu_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcode
 static void lp_pu_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 {
 	struct node_rx_pdu *ntf;
+	struct node_rx_pu *pdu;
 
 	/* Allocate ntf node */
 	ntf = ntf_alloc();
 	LL_ASSERT(ntf);
 
 	ntf->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
+	pdu = (struct node_rx_pu *)ntf->pdu;
+
+	pdu->status = ctx->data.pu.error;
 
 	/* Enqueue notification towards LL */
 	ll_rx_enqueue(ntf);
@@ -1117,6 +1123,10 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *
 	case LP_PU_EVT_PHY_RSP:
 		lp_pu_send_phy_update_ind(conn, ctx, evt, param);
 		break;
+	case LP_PU_EVT_UNKNOWN:
+		ctx->data.pu.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+		lp_pu_complete(conn, ctx, evt, param);
+		break;
 	default:
 		/* Ignore other evts */
 		break;
@@ -1132,6 +1142,7 @@ static void lp_pu_check_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 {
 	u16_t event_counter = lp_event_counter(conn);
 	if (((event_counter - ctx->data.pu.instant) & 0xFFFF) <= 0x7FFF) {
+		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		lp_pu_complete(conn, ctx, evt, param);
 	}
 }
@@ -1188,6 +1199,9 @@ static void lp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node
 	switch (pdu->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
 		lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_PHY_RSP, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
+		lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_UNKNOWN, pdu);
 		break;
 	default:
 		/* Unknown opcode */
