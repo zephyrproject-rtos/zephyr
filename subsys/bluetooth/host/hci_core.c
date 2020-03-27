@@ -7296,7 +7296,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 {
 	struct bt_hci_cp_le_set_ext_adv_param *cp;
 	bool dir_adv = peer != NULL;
-	struct net_buf *buf;
+	struct net_buf *buf, *rsp;
 	int err;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_EXT_ADV_PARAM, sizeof(*cp));
@@ -7375,10 +7375,18 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 
 	cp->sid = param->sid;
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_ADV_PARAM, buf, NULL);
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_ADV_PARAM, buf, &rsp);
 	if (err) {
 		return err;
 	}
+
+#if defined(CONFIG_BT_EXT_ADV)
+	struct bt_hci_rp_le_set_ext_adv_param *rp = (void *)rsp->data;
+
+	adv->tx_power = rp->tx_power;
+#endif /* defined(CONFIG_BT_EXT_ADV) */
+
+	net_buf_unref(rsp);
 
 	/* Todo: Figure out how keep advertising works with multiple adv sets */
 	atomic_set_bit_to(bt_dev.flags, BT_DEV_KEEP_ADVERTISING, false);
@@ -7623,6 +7631,15 @@ void bt_le_adv_resume(void)
 static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 {
 	return valid_adv_param(param, false);
+}
+
+int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
+			   struct bt_le_ext_adv_info *info)
+{
+	info->id = adv->id;
+	info->tx_power = adv->tx_power;
+
+	return 0;
 }
 
 int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
