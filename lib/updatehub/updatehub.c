@@ -35,8 +35,13 @@ LOG_MODULE_REGISTER(updatehub);
 #define NETWORK_TIMEOUT K_SECONDS(2)
 #define UPDATEHUB_POLL_INTERVAL K_MINUTES(CONFIG_UPDATEHUB_POLL_INTERVAL)
 #define MAX_PATH_SIZE 255
-#define MAX_PAYLOAD_SIZE 500
-#define MAX_DOWNLOAD_DATA 1100
+/* MAX_PAYLOAD_SIZE must reflect size COAP_BLOCK_x option */
+#define MAX_PAYLOAD_SIZE 1024
+/* MAX_DOWNLOAD_DATA must be equal or bigger than:
+ * MAX_PAYLOAD_SIZE + (len + header + options)
+ * otherwise download size will be less than real size.
+ */
+#define MAX_DOWNLOAD_DATA (MAX_PAYLOAD_SIZE + 32)
 #define COAP_MAX_RETRY 3
 #define MAX_IP_SIZE 30
 
