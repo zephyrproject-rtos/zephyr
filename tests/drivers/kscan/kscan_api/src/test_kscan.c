@@ -10,9 +10,7 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#if defined(DT_KSCAN_0_NAME)
-#define KSCAN_DEV_NAME DT_KSCAN_0_NAME
-#endif
+#define KSCAN_DEV_NAME DT_LABEL(DT_ALIAS(kscan0))
 
 static void kb_callback(struct device *dev, u32_t row, u32_t col, bool pressed)
 {
