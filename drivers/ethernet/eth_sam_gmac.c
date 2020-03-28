@@ -18,6 +18,8 @@
  * - no statistics collection
  */
 
+#define DT_DRV_COMPAT atmel_sam_gmac
+
 #define LOG_MODULE_NAME eth_sam
 #define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
 
@@ -2139,44 +2141,44 @@ static struct device DEVICE_NAME_GET(eth0_sam_gmac);
 
 static void eth0_irq_config(void)
 {
-	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_GMAC_IRQ_GMAC,
-		    DT_INST_0_ATMEL_SAM_GMAC_IRQ_GMAC_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, gmac, irq),
+		    DT_INST_IRQ_BY_NAME(0, gmac, priority),
 		    queue0_isr, DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(DT_INST_0_ATMEL_SAM_GMAC_IRQ_GMAC);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, gmac, irq));
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1
-	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q1,
-		    DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q1_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q1, irq),
+		    DT_INST_IRQ_BY_NAME(0, q1, priority),
 		    queue1_isr, DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q1);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, q1, irq));
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 2
-	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q2,
-		    DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q2_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q2, irq),
+		    DT_INST_IRQ_BY_NAME(0, q1, priority),
 		    queue2_isr, DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q2);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, q2, irq));
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 3
-	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q3,
-		    DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q3_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q3, irq),
+		    DT_INST_IRQ_BY_NAME(0, q3, priority),
 		    queue3_isr, DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q3);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, q3, irq));
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 4
-	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q4,
-		    DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q4_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q4, irq),
+		    DT_INST_IRQ_BY_NAME(0, q4, priority),
 		    queue4_isr, DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q4);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, q4, irq));
 #endif
 
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 5
-	IRQ_CONNECT(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q5,
-		    DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q5_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, q5, irq),
+		    DT_INST_IRQ_BY_NAME(0, q5, priority),
 		    queue5_isr, DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(DT_INST_0_ATMEL_SAM_GMAC_IRQ_Q5);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, q5, irq));
 #endif
 }
 
@@ -2193,7 +2195,7 @@ static const struct eth_sam_dev_cfg eth0_config = {
 
 static struct eth_sam_dev_data eth0_data = {
 #ifdef CONFIG_ETH_SAM_GMAC_MAC_MANUAL
-	.mac_addr = DT_INST_0_ATMEL_SAM_GMAC_LOCAL_MAC_ADDRESS,
+	.mac_addr = DT_INST_PROP(0, local_mac_address),
 #endif
 	.queue_list = {
 		{
@@ -2358,7 +2360,7 @@ static struct eth_sam_dev_data eth0_data = {
 	},
 };
 
-ETH_NET_DEVICE_INIT(eth0_sam_gmac, DT_INST_0_ATMEL_SAM_GMAC_LABEL,
+ETH_NET_DEVICE_INIT(eth0_sam_gmac, DT_INST_LABEL(0),
 		    eth_initialize, device_pm_control_nop, &eth0_data,
 		    &eth0_config, CONFIG_ETH_INIT_PRIORITY, &eth_api,
 		    GMAC_MTU);
