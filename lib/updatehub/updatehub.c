@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 O.S.Systems
+ * Copyright (c) 2018-2020 O.S.Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,6 +66,8 @@ static struct update_info {
 	int image_size;
 } update_info;
 
+static struct k_delayed_work updatehub_work_handle;
+
 static void wait_fds(void)
 {
 	if (poll(ctx.fds, ctx.nfds, NETWORK_TIMEOUT) < 0) {
@@ -76,7 +78,7 @@ static void wait_fds(void)
 static void prepare_fds(void)
 {
 	ctx.fds[ctx.nfds].fd = ctx.sock;
-	ctx.fds[ctx.nfds].events = 1;
+	ctx.fds[ctx.nfds].events = POLLIN;
 	ctx.nfds++;
 }
 
@@ -288,7 +290,7 @@ static int send_request(enum coap_msgtype msgtype, enum coap_method method,
 		}
 
 		ret = coap_packet_append_payload(&request_packet,
-						 &ctx.payload,
+						 ctx.payload,
 						 strlen(ctx.payload));
 		if (ret < 0) {
 			LOG_ERR("Not able to append payload");
@@ -614,8 +616,6 @@ enum updatehub_response updatehub_probe(void)
 		goto error;
 	}
 
-	k_sem_init(&ctx.semaphore, 0, 1);
-
 	if (!boot_is_img_confirmed()) {
 		LOG_ERR("The current image is not confirmed");
 		ctx.code_status = UPDATEHUB_UNCONFIRMED_IMAGE;
@@ -765,7 +765,7 @@ error:
 	return ctx.code_status;
 }
 
-static void autohandler(struct k_delayed_work *work)
+static void autohandler(struct k_work *work)
 {
 	switch (updatehub_probe()) {
 	case UPDATEHUB_UNCONFIRMED_IMAGE:
@@ -794,13 +794,11 @@ static void autohandler(struct k_delayed_work *work)
 		break;
 	}
 
-	k_delayed_work_submit(work, UPDATEHUB_POLL_INTERVAL);
+	k_delayed_work_submit(&updatehub_work_handle, UPDATEHUB_POLL_INTERVAL);
 }
 
 void updatehub_autohandler(void)
 {
-	static struct k_delayed_work work;
-
-	k_delayed_work_init(&work, autohandler);
-	k_delayed_work_submit(&work, K_NO_WAIT);
+	k_delayed_work_init(&updatehub_work_handle, autohandler);
+	k_delayed_work_submit(&updatehub_work_handle, K_NO_WAIT);
 }
