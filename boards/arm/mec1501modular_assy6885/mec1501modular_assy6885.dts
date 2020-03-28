@@ -25,6 +25,7 @@
 
 		i2c0 = &i2c_smb_0;
 		i2c1 = &i2c_smb_1;
+		kscan0 = &kscan0;
 	};
 };
 
