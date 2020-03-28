@@ -1831,8 +1831,8 @@ class CMake():
                 log_msg = out.decode(sys.getdefaultencoding())
                 with open(os.path.join(self.build_dir, self.log), "a") as log:
                     log.write(log_msg)
-
             else:
+                logger.debug("Build failed")
                 return None
         else:
             # A real error occurred, raise an exception
@@ -2105,13 +2105,18 @@ class ProjectBuilder(FilterBuilder):
             logger.debug("build test: %s" % self.instance.name)
             results = self.build()
 
-            if results.get('returncode', 1) > 0:
+            if not results:
+                self.instance.status = "failed"
+                self.instance.reason = "Build Failure"
                 pipeline.put({"op": "report", "test": self.instance})
             else:
-                if self.instance.run:
-                    pipeline.put({"op": "run", "test": self.instance})
-                else:
+                if results.get('returncode', 1) > 0:
                     pipeline.put({"op": "report", "test": self.instance})
+                else:
+                    if self.instance.run:
+                        pipeline.put({"op": "run", "test": self.instance})
+                    else:
+                        pipeline.put({"op": "report", "test": self.instance})
         # Run the generated binary using one of the supported handlers
         elif op == "run":
             logger.debug("run test: %s" % self.instance.name)
