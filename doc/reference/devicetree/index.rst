@@ -96,3 +96,12 @@ SPI
 
 .. doxygengroup:: devicetree-spi
    :project: Zephyr
+
+Zephyr specific /chosen nodes
+=============================
+
+These are conveniences for commonly used zephyr-specific properties of the
+``/chosen`` node. They may have fallbacks from :file:`dts_fixup.h` files.
+
+.. doxygengroup:: devicetree-zephyr
+   :project: Zephyr
