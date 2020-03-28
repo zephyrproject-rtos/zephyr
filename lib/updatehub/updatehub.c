@@ -405,13 +405,15 @@ static void install_update_cb(void)
 	}
 
 	if (coap_next_block(&response_packet, &ctx.block) == 0) {
-		LOG_ERR("Could not get the next");
-		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
-		goto cleanup;
-	}
+		if (ctx.downloaded_size != ctx.block.total_size) {
+			LOG_ERR("Could not get the next coap block");
+			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
+			goto cleanup;
+		}
 
-	if (ctx.downloaded_size == ctx.block.total_size) {
-		if (!install_update_cb_sha256())
+		LOG_INF("Firmware downloaded successfully");
+		if (!install_update_cb_sha256()) {
+			LOG_ERR("Firmware validation has failed");
 			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 			goto cleanup;
 		}
