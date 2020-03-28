@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 O.S.Systems
+ * Copyright (c) 2018-2020 O.S.Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 
 bool updatehub_get_device_identity(char *id, int id_max_len)
 {
-	int i, id_len = 0, buf_len = 0;
+	int i, id_len = 0;
 	char buf[3];
 	u8_t hwinfo_id[id_max_len];
 	size_t length;
