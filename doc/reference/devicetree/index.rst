@@ -79,6 +79,12 @@ ADC
 .. doxygengroup:: devicetree-adc
    :project: Zephyr
 
+Clocks
+======
+
+.. doxygengroup:: devicetree-clocks
+   :project: Zephyr
+
 GPIO
 ====
 
@@ -89,10 +95,4 @@ SPI
 ===
 
 .. doxygengroup:: devicetree-spi
-   :project: Zephyr
-
-Clocks
-======
-
-.. doxygengroup:: devicetree-clocks
    :project: Zephyr

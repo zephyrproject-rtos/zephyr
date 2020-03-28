@@ -1429,10 +1429,10 @@
  * @}
  */
 
-#include <devicetree/gpio.h>
-#include <devicetree/spi.h>
 #include <devicetree/adc.h>
 #include <devicetree/clocks.h>
+#include <devicetree/gpio.h>
+#include <devicetree/spi.h>
 
 /** @internal pay no attention to the man behind the curtain! */
 #define DT_PATH_INTERNAL(...) \
