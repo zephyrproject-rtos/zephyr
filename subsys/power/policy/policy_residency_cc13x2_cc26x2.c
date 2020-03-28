@@ -143,5 +143,9 @@ enum power_states sys_pm_policy_next_state(s32_t ticks)
 
 __weak bool sys_pm_policy_low_power_devices(enum power_states pm_state)
 {
+#ifdef CONFIG_SYS_POWER_SLEEP_STATES
 	return (pm_state == SYS_POWER_STATE_SLEEP_2);
+#else
+	return false;
+#endif
 }
