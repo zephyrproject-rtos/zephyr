@@ -12,13 +12,17 @@ config SOC_SERIES_STM32H7X
 	select HAS_STM32CUBE
 	select CPU_HAS_ARM_MPU
 	select REQUIRES_FULL_LIBC
-	select USE_STM32_HAL_RCC_EX if CPU_CORTEX_M4
+	select USE_STM32_LL_BUS
+	select USE_STM32_LL_CORTEX
+	select USE_STM32_LL_PWR
+	select USE_STM32_LL_RCC
 	help
 	  Enable support for STM32H7 MCU series
 
 config STM32H7_DUAL_CORE
 	bool "Enable Dual Core"
 	depends on SOC_SERIES_STM32H7X
+	select USE_STM32_LL_HSEM
 
 choice STM32H7_DUAL_CORE_BOOT
 	prompt "STM32H7x Boot type selection"

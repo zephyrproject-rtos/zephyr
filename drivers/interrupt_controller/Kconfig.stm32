@@ -8,6 +8,7 @@ if SOC_FAMILY_STM32
 config EXTI_STM32
 	bool "External Interrupt/Event Controller (EXTI) Driver for STM32 family of MCUs"
 	default y if SOC_FAMILY_STM32
+	select USE_STM32_LL_EXTI
 	help
 	  Enable EXTI driver for STM32 line of MCUs
 

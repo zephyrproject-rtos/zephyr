@@ -8,6 +8,7 @@
 menuconfig IWDG_STM32
 	bool "Independent Watchdog (IWDG) Driver for STM32 family of MCUs"
 	depends on SOC_FAMILY_STM32
+	select USE_STM32_LL_IWDG
 	help
 	  Enable IWDG driver for STM32 line of MCUs
 
@@ -23,5 +24,6 @@ config IWDG_STM32_TIMEOUT
 config WWDG_STM32
 	bool "System Window Watchdog (WWDG) Driver for STM32 family of MCUs"
 	depends on SOC_FAMILY_STM32
+	select USE_STM32_LL_WWDG
 	help
 	  Enable WWDG driver for STM32 line of MCUs

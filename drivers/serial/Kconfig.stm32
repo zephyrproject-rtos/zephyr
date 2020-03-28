@@ -8,6 +8,7 @@ menuconfig UART_STM32
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	depends on SOC_FAMILY_STM32
+	select USE_STM32_LL_USART
 	help
 	  This option enables the UART driver for STM32 family of
 	  processors.

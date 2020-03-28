@@ -530,11 +530,21 @@ config USE_STM32_LL_BDMA
 	  Enable STM32Cube Basic direct memory access controller (BDMA) LL
 	  module driver
 
+config USE_STM32_LL_BUS
+	bool
+	help
+	  Enable STM32Cube Basic bus LL module driver
+
 config USE_STM32_LL_COMP
 	bool
 	help
 	  Enable STM32Cube Ultra Low Power Comparator channels (COMP) LL module
 	  driver
+
+config USE_STM32_LL_CORTEX
+	bool
+	help
+	  Enable STM32Cube Basic Cortex LL module driver
 
 config USE_STM32_LL_CRC
 	bool
@@ -569,6 +579,12 @@ config USE_STM32_LL_DMA2D
 	  Enable STM32Cube Chrom-Art Accelerator™ controller (DMA2D) LL module
 	  driver
 
+config USE_STM32_LL_DMAMUX
+	bool
+	help
+	  Enable STM32Cube DMAMUX LL module
+	  driver
+
 config USE_STM32_LL_EXTI
 	bool
 	help
@@ -596,10 +612,21 @@ config USE_STM32_LL_HRTIM
 	help
 	  Enable STM32Cube High-Resolution Timer (HRTIM) LL module driver
 
+config USE_STM32_LL_HSEM
+	bool
+	help
+	  Enable STM32Cube Hardware Semaphore (HSEM) LL module driver
+
 config USE_STM32_LL_I2C
 	bool
 	help
 	  Enable STM32Cube Inter-integrated circuit (I2C) interface LL module
+	  driver
+
+config USE_STM32_LL_IWDG
+	bool
+	help
+	  Enable STM32Cube Independent Watchdog (IWDG) interface LL module
 	  driver
 
 config USE_STM32_LL_IPCC
@@ -667,6 +694,11 @@ config USE_STM32_LL_SWPMI
 	  Enable STM32Cube Single Wire Protocol Master Interface (SWPMI) LL
 	  module driver
 
+config USE_STM32_LL_SYSTEM
+	bool
+	help
+	  Enable STM32Cube System LL module driver
+
 config USE_STM32_LL_TIM
 	bool
 	help
@@ -688,5 +720,10 @@ config USE_STM32_LL_UTILS
 	bool
 	help
 	  Enable STM32Cube Utility functions (UTILS) LL module driver
+
+config USE_STM32_LL_WWDG
+	bool
+	help
+	  Enable STM32Cube System Window Watchdog (WWDG) LL module driver
 
 endif # HAS_STM32CUBE
