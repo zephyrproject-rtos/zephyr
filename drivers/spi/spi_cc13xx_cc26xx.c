@@ -146,7 +146,8 @@ static int spi_cc13xx_cc26xx_transceive(struct device *dev,
 
 	spi_context_lock(ctx, false, NULL);
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
+	defined(CONFIG_SYS_POWER_SLEEP_STATES)
 	sys_pm_ctrl_disable_state(SYS_POWER_STATE_SLEEP_2);
 #endif
 
@@ -182,7 +183,8 @@ static int spi_cc13xx_cc26xx_transceive(struct device *dev,
 	spi_context_cs_control(ctx, false);
 
 done:
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
+	defined(CONFIG_SYS_POWER_SLEEP_STATES)
 	sys_pm_ctrl_enable_state(SYS_POWER_STATE_SLEEP_2);
 #endif
 	spi_context_release(ctx, err);

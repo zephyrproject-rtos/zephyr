@@ -228,7 +228,8 @@ static int uart_cc13xx_cc26xx_fifo_read(struct device *dev, u8_t *buf,
 
 static void uart_cc13xx_cc26xx_irq_tx_enable(struct device *dev)
 {
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
+	defined(CONFIG_SYS_POWER_SLEEP_STATES)
 	if (!get_dev_data(dev)->tx_constrained) {
 		/*
 		 * When tx irq is enabled, it is implicit that we are expecting
@@ -252,7 +253,8 @@ static void uart_cc13xx_cc26xx_irq_tx_disable(struct device *dev)
 {
 	UARTIntDisable(get_dev_conf(dev)->regs, UART_INT_TX);
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
+	defined(CONFIG_SYS_POWER_SLEEP_STATES)
 	if (get_dev_data(dev)->tx_constrained) {
 		sys_pm_ctrl_enable_state(SYS_POWER_STATE_SLEEP_2);
 		get_dev_data(dev)->tx_constrained = false;
@@ -267,7 +269,8 @@ static int uart_cc13xx_cc26xx_irq_tx_ready(struct device *dev)
 
 static void uart_cc13xx_cc26xx_irq_rx_enable(struct device *dev)
 {
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
+	defined(CONFIG_SYS_POWER_SLEEP_STATES)
 	/*
 	 * When rx is enabled, it is implicit that we are expecting
 	 * to receive from the uart, hence we can no longer go into
@@ -284,7 +287,8 @@ static void uart_cc13xx_cc26xx_irq_rx_enable(struct device *dev)
 
 static void uart_cc13xx_cc26xx_irq_rx_disable(struct device *dev)
 {
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
+#if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
+	defined(CONFIG_SYS_POWER_SLEEP_STATES)
 	if (get_dev_data(dev)->rx_constrained) {
 		sys_pm_ctrl_enable_state(SYS_POWER_STATE_SLEEP_2);
 		get_dev_data(dev)->rx_constrained = false;
