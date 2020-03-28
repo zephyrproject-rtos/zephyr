@@ -198,7 +198,7 @@ static const struct led_strip_driver_api ws2812_gpio_api = {
  *
  * TODO: try to make this portable, or at least port to more devices.
  */
-#define WS2812_GPIO_CLK(idx) DT_INST_0_NORDIC_NRF_CLOCK_LABEL
+#define WS2812_GPIO_CLK(idx) DT_LABEL(DT_INST(0, nordic_nrf_clock))
 
 #define WS2812_GPIO_DEVICE(idx)					\
 									\
