@@ -757,6 +757,12 @@ enum updatehub_response updatehub_update(void)
 		goto error;
 	}
 
+	if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
+		LOG_ERR("Could not reporting downloaded state");
+		ctx.code_status = UPDATEHUB_INSTALL_ERROR;
+		goto error;
+	}
+
 	if (report(UPDATEHUB_STATE_INSTALLED) < 0) {
 		LOG_ERR("Could not reporting installed state");
 		goto error;
