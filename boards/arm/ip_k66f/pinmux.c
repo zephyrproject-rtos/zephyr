@@ -7,6 +7,7 @@
 #include <init.h>
 #include <drivers/pinmux.h>
 #include <fsl_port.h>
+#include <drivers/gpio.h>
 
 static int ip_k66f_pinmux_init(struct device *dev)
 {
@@ -52,6 +53,11 @@ static int ip_k66f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
+
+	struct device *gpioa = device_get_binding(DT_ALIAS_GPIO_A_LABEL);
+
+	/* Set !ETH_RST */
+	gpio_pin_configure(gpioa, 24, GPIO_OUTPUT_HIGH);
 
 	return 0;
 }
