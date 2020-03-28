@@ -358,7 +358,7 @@
 /samples/                                 @nashif
 /samples/basic/minimal/                   @carlescufi
 /samples/basic/servo_motor/*microbit*     @jhe
-/lib/updatehub/                           @chtavares592 @otavio
+/lib/updatehub/                           @nandojve @otavio
 /samples/bluetooth/                       @jhedberg @Vudentz @joerchan
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
 /samples/display/                         @vanwinkeljan
@@ -372,7 +372,7 @@
 /samples/net/mqtt_publisher/              @jukkar @tbursztyka
 /samples/net/sockets/coap_*/              @rveerama1
 /samples/net/sockets/                     @jukkar @tbursztyka @pfalcon
-/samples/net/updatehub/                   @chtavares592 @otavio
+/samples/net/updatehub/                   @nandojve @otavio
 /samples/sensor/                          @MaureenHelm
 /samples/shields/                         @avisconti
 /samples/subsys/logging/                  @nordic-krch @jakub-uC
