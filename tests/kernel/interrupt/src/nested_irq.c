@@ -24,7 +24,10 @@
 #if defined(CONFIG_CPU_CORTEX_M)
 /*
  * For Cortex-M NVIC, unused and available IRQs are automatically detected when
- * when the test is run.
+ * the test is run.
+ *
+ * The IRQ priorities start at 1 because the priority 0 is reserved for the
+ * SVCall exception and Zero-Latency IRQs (see `_EXCEPTION_RESERVED_PRIO`).
  */
 #define IRQ0_PRIO	2
 #define IRQ1_PRIO	1
