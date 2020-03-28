@@ -1491,5 +1491,6 @@
 #include <devicetree/clocks.h>
 #include <devicetree/gpio.h>
 #include <devicetree/spi.h>
+#include <devicetree/zephyr.h>
 
 #endif /* DEVICETREE_H */
