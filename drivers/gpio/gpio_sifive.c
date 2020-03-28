@@ -282,7 +282,7 @@ static int gpio_sifive_pin_interrupt_configure(struct device *dev,
 			gpio->rise_ie |= BIT(pin);
 		}
 		if ((trig & GPIO_INT_LOW_0) != 0) {
-			gpio->rise_ip = BIT(pin);
+			gpio->fall_ip = BIT(pin);
 			gpio->fall_ie |= BIT(pin);
 		}
 		irq_enable(gpio_sifive_pin_irq(cfg->gpio_irq_base, pin));
