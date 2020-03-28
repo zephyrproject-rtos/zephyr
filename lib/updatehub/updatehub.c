@@ -322,12 +322,40 @@ error:
 	return ret;
 }
 
+static bool install_update_cb_sha256(void)
+{
+	u8_t image_hash[TC_SHA256_DIGEST_SIZE];
+	char buffer[3], sha256_image_dowloaded[TC_SHA256_BLOCK_SIZE + 1];
+	int i, buffer_len = 0;
+
+	if (tc_sha256_final(image_hash, &ctx.sha256sum) < 1) {
+		LOG_ERR("Could not finish sha256sum");
+		return false;
+	}
+
+	memset(&sha256_image_dowloaded, 0, TC_SHA256_BLOCK_SIZE + 1);
+	for (i = 0; i < TC_SHA256_DIGEST_SIZE; i++) {
+		snprintk(buffer, sizeof(buffer), "%02x", image_hash[i]);
+		buffer_len = buffer_len + strlen(buffer);
+		strncat(&sha256_image_dowloaded[i], buffer,
+			MIN(TC_SHA256_BLOCK_SIZE, buffer_len));
+	}
+
+	if (strncmp(sha256_image_dowloaded,
+		update_info.sha256sum_image,
+		strlen(update_info.sha256sum_image)) != 0) {
+		LOG_ERR("SHA256SUM of image are not the same");
+		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
+		return false;
+	}
+
+	return true;
+}
+
 static void install_update_cb(void)
 {
 	struct coap_packet response_packet;
-	char buffer[3], sha256_image_dowloaded[TC_SHA256_BLOCK_SIZE + 1];
 	u8_t *data = k_malloc(MAX_DOWNLOAD_DATA);
-	int i, buffer_len = 0;
 	int rcvd = -1;
 
 	if (data == NULL) {
@@ -383,26 +411,7 @@ static void install_update_cb(void)
 	}
 
 	if (ctx.downloaded_size == ctx.block.total_size) {
-		u8_t image_hash[TC_SHA256_DIGEST_SIZE];
-
-		if (tc_sha256_final(image_hash, &ctx.sha256sum) < 1) {
-			LOG_ERR("Could not finish sha256sum");
-			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
-			goto cleanup;
-		}
-
-		memset(&sha256_image_dowloaded, 0, TC_SHA256_BLOCK_SIZE + 1);
-		for (i = 0; i < TC_SHA256_DIGEST_SIZE; i++) {
-			snprintk(buffer, sizeof(buffer), "%02x", image_hash[i]);
-			buffer_len = buffer_len + strlen(buffer);
-			strncat(&sha256_image_dowloaded[i], buffer,
-				MIN(TC_SHA256_BLOCK_SIZE, buffer_len));
-		}
-
-		if (strncmp(sha256_image_dowloaded,
-			    update_info.sha256sum_image,
-			    strlen(update_info.sha256sum_image)) != 0) {
-			LOG_ERR("SHA256SUM of image are not the same");
+		if (!install_update_cb_sha256())
 			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 			goto cleanup;
 		}
