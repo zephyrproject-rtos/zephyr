@@ -35,8 +35,18 @@ config CPU_CORTEX_M4
 	select CPU_CORTEX_M
 	select ARMV7_M_ARMV8_M_MAINLINE
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	select ARMV7_M_ARMV8_M_DSP if CPU_CORTEX_M_HAS_DSP
 	help
 	  This option signifies the use of a Cortex-M4 CPU
+
+config CPU_CORTEX_M7
+	bool
+	select CPU_CORTEX_M
+	select ARMV7_M_ARMV8_M_MAINLINE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	select ARMV7_M_ARMV8_M_DSP if CPU_CORTEX_M_HAS_DSP
+	help
+	  This option signifies the use of a Cortex-M7 CPU
 
 config CPU_CORTEX_M23
 	bool
@@ -52,16 +62,19 @@ config CPU_CORTEX_M33
 	select ARMV8_M_MAINLINE
 	select ARMV8_M_SE if CPU_HAS_TEE
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
+	select ARMV7_M_ARMV8_M_DSP if CPU_CORTEX_M_HAS_DSP
 	help
 	  This option signifies the use of a Cortex-M33 CPU
 
-config CPU_CORTEX_M7
+config CPU_CORTEX_M55
 	bool
 	select CPU_CORTEX_M
-	select ARMV7_M_ARMV8_M_MAINLINE
+	select ARMV8_M_MAINLINE
+	select ARMV8_M_SE if CPU_HAS_TEE
 	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
-	help
-	  This option signifies the use of a Cortex-M7 CPU
+	select ARMV7_M_ARMV8_M_DSP if CPU_CORTEX_M_HAS_DSP
+	select ARMV8_M_MVEI if CPU_CORTEX_M_HAS_HELIUM
+	select ARMV8_M_MVEF if CPU_CORTEX_M_HAS_HELIUM
 
 if CPU_CORTEX_M
 
@@ -141,6 +154,69 @@ config CPU_CORTEX_M_HAS_CMSE
 	depends on ARMV8_M_BASELINE || ARMV8_M_MAINLINE
 	help
 	  This option signifies the Cortex-M CPU has the CMSE intrinsics.
+
+config CPU_CORTEX_M_HAS_DSP
+	bool
+	help
+	  This option signifies the Cortex-M CPU supports the DSP extension.
+
+config CPU_CORTEX_M_HAS_HELIUM
+	bool
+	help
+	  This option signifies the Cortex-M CPU supports the M-Profile Vector
+	  Extension (Helium).
+
+config FP_SP_D16_FP16_FMAC
+	bool
+	select VFP_SP_D16_FP16_FMAC
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports half- and single-precision operations (including fused
+	  multiply-accumulate) with 16 double-word registers.
+
+	  This configuration applies to the following core configurations:
+	  * v7-M + FPv4-SP-D16-M
+	  * v7-M + FPv5-SP-D16-M
+	  * v8-M + FPv5-SP-D16-M
+
+config FP_SP_D16_FP16_FMAC_DSP
+	bool
+	select VFP_SP_D16_FP16_FMAC
+	select CPU_CORTEX_M_HAS_DSP
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports half- and single-precision operations (including fused
+	  multiply-accumulate) with 16 double-word registers.
+
+	  This configuration applies to the following core configurations:
+	  * v7E-M + FPv4-SP-D16-M
+	  * v7E-M + FPv5-SP-D16-M
+	  * v8-M + DSP + FPv5-SP-D16-M
+
+config FP_DP_D16_FP16_FMAC
+	bool
+	select VFP_DP_D16_FP16_FMAC
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports half-, single- and double-precision operations
+	  (including fused multiply-accumulate) with 16 double-word registers.
+
+	  This configuration applies to the following core configurations:
+	  * v7-M + FPv5-DP-D16-M
+	  * v8-M + FPv5-DP-D16-M
+
+config FP_DP_D16_FP16_FMAC_DSP
+	bool
+	select VFP_DP_D16_FP16_FMAC
+	select CPU_CORTEX_M_HAS_DSP
+	help
+	  This option signifies the use of a VFP floating-point coprocessor
+	  that supports half-, single- and double-precision operations
+	  (including fused multiply-accumulate) with 16 double-word registers.
+
+	  This configuration applies to the following core configurations:
+	  * v7E-M + FPv5-DP-D16-M
+	  * v8-M + DSP + FPv5-DP-D16-M
 
 config ARMV6_M_ARMV8_M_BASELINE
 	bool
@@ -222,12 +298,24 @@ config ARMV7_M_ARMV8_M_FP
 	  implementation, or the use of an ARMv8-M processor
 	  implementation supporting the Floating-Point Extension.
 
-config ARMV8_M_DSP
+config ARMV7_M_ARMV8_M_DSP
 	bool
-	depends on ARMV8_M_MAINLINE
 	help
-	  This option signifies the use of an ARMv8-M processor
+	  This option signifies the use of an ARMv7-M and ARMv8-M processor
 	  implementation supporting the DSP Extension.
+
+config ARMV8_M_MVEI
+	bool
+	help
+	  This option signifies the use of an ARMv8-M processor implementation
+	  supporting the M-Profile Vector Extension integer instruction set.
+
+config ARMV8_M_MVEF
+	bool
+	help
+	  This option signifies the use of an ARMv8-M processor implementation
+	  supporting the M-Profile Vector Extension floating-point instruction
+	  set.
 
 config XIP
 	default y
