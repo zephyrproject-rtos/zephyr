@@ -19,7 +19,6 @@ config SOC_MK64F12
 	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
-	select CPU_HAS_FPU
 	select HAS_MCUX_RTC
 
 config SOC_MK66F18
@@ -34,7 +33,6 @@ config SOC_MK66F18
 	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
-	select CPU_HAS_FPU
 	select HAS_MCUX_RTC
 
 endchoice

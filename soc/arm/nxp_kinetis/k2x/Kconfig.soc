@@ -13,6 +13,7 @@ choice
 
 config SOC_MK22F51212
 	bool "SOC_MK22F51212"
+	select FP_SP_D16_FP16_FMAC_DSP
 	select HAS_MCUX
 	select HAS_MCUX_SMC
 	select HAS_MCUX_ADC16
@@ -22,7 +23,6 @@ config SOC_MK22F51212
 	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
-	select CPU_HAS_FPU
 
 endchoice
 
