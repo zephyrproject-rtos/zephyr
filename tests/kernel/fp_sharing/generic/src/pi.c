@@ -6,7 +6,9 @@
 
 /*
  * @file
- * pi computation portion of FPU sharing test
+ * @brief pi computation portion of FPU sharing test
+ *
+ * @ingroup kernel_fpsharing_tests
  *
  * This module is used for the FPU sharing test, and supplements the basic
  * load/store test by incorporating two additional threads that utilize the
@@ -34,6 +36,7 @@
 #include <tc_util.h>
 
 #include "float_context.h"
+#include "test_common.h"
 
 /*
  * PI_NUM_ITERATIONS: This macro is defined in the project's Makefile and
@@ -156,3 +159,9 @@ void calculate_pi_high(void)
 		}
 	}
 }
+
+K_THREAD_DEFINE(pi_low, THREAD_STACK_SIZE, calculate_pi_low, NULL, NULL, NULL,
+		THREAD_LOW_PRIORITY, THREAD_FP_FLAGS, 0);
+
+K_THREAD_DEFINE(pi_high, THREAD_STACK_SIZE, calculate_pi_high, NULL, NULL, NULL,
+		THREAD_HIGH_PRIORITY, THREAD_FP_FLAGS, 0);
