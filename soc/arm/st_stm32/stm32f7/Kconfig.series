@@ -8,7 +8,6 @@ config SOC_SERIES_STM32F7X
 	select ARM
 	select CPU_CORTEX_M7
 	select CPU_CORTEX_M_HAS_DWT
-	select CPU_HAS_FPU
 	select SOC_FAMILY_STM32
 	select HAS_STM32CUBE
 	select CPU_HAS_ARM_MPU
