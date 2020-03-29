@@ -12,8 +12,7 @@ config SOC_LPC55S69_CPU0
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
-	select CPU_HAS_FPU
-	select ARMV8_M_DSP
+	select FP_SP_D16_FP16_FMAC_DSP
 	select ARM_TRUSTZONE_M
 	select HAS_MCUX_IAP
 
