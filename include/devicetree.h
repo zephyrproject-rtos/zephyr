@@ -797,7 +797,7 @@
 
 /**
  * @brief Get a node identifier for a /chosen node property
- * This is only valid to call if DT_HAS_CHOSEN_NODE(prop) is 1.
+ * This is only valid to call if DT_HAS_CHOSEN(prop) is 1.
  * @param prop lowercase-and-underscores property name for
  *             the /chosen node
  * @return a node identifier for the chosen node property
