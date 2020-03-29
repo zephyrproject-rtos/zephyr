@@ -8,8 +8,8 @@ config SOC_SERIES_IMX7_M4
 	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
+	select FP_SP_D16_FP16_FMAC
 	select SOC_FAMILY_IMX
 	select CLOCK_CONTROL
-	select CPU_HAS_FPU
 	help
 	  Enable support for i.MX7 M4 MCU series
