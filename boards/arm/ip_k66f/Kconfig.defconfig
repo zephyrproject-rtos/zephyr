@@ -15,7 +15,7 @@ config MCG_PRDIV0
 	default 0x0
 
 config MCG_VDIV0
-	default 0x4
+	default 0xe
 
 config MCG_FCRDIV
 	default 1
