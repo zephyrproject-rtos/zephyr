@@ -64,13 +64,9 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 from sanity_chk import scl
 from sanity_chk import expr_parser
 
-VERBOSE = 0
-
 logger = logging.getLogger('sanitycheck')
 logger.setLevel(logging.DEBUG)
 
-
-options = None
 pipeline = queue.LifoQueue()
 
 class CMakeCacheEntry:
@@ -1807,6 +1803,7 @@ class ProjectBuilder(FilterBuilder):
         self.west_runner = kwargs.get('west_runner', None)
         self.generator = kwargs.get('generator', None)
         self.generator_cmd = kwargs.get('generator_cmd', None)
+        self.verbose = kwargs.get('verbose', None)
 
     @staticmethod
     def log_info(filename, inline_logs):
@@ -1977,7 +1974,7 @@ class ProjectBuilder(FilterBuilder):
 
         if instance.status in ["failed", "timeout"]:
             self.suite.total_failed += 1
-            if VERBOSE:
+            if self.verbose:
                 status = Fore.RED + "FAILED " + Fore.RESET + instance.reason
             else:
                 print("")
@@ -1988,7 +1985,7 @@ class ProjectBuilder(FilterBuilder):
                         Fore.RED,
                         Fore.RESET,
                         instance.reason))
-            if not VERBOSE:
+            if not self.verbose:
                 self.log_info_file(self.inline_logs)
         elif instance.status == "skipped":
             self.suite.total_skipped += 1
@@ -1996,7 +1993,7 @@ class ProjectBuilder(FilterBuilder):
         else:
             status = Fore.GREEN + "PASSED" + Fore.RESET
 
-        if VERBOSE:
+        if self.verbose:
             if self.cmake_only:
                 more_info = "cmake"
             elif instance.status == "skipped":
@@ -2746,7 +2743,8 @@ class TestSuite:
                                         west_flash=self.west_flash,
                                         west_runner=self.west_runner,
                                         generator=self.generator,
-                                        generator_cmd=self.generator_cmd
+                                        generator_cmd=self.generator_cmd,
+                                        verbose=self.verbose
                                         )
                     future_to_test[executor.submit(pb.process, message)] = test.name
 
@@ -3011,20 +3009,25 @@ class CoverageTool:
     """
 
     def __init__(self):
-        self.gcov_tool = options.gcov_tool
+        self.gcov_tool = None
+        self.base_dir = None
 
     @staticmethod
     def factory(tool):
         if tool == 'lcov':
-            return Lcov()
-        if tool == 'gcovr':
-            return Gcovr()
-        logger.error("Unsupported coverage tool specified: {}".format(tool))
+            t =  Lcov()
+        elif tool == 'gcovr':
+            t =  Lcov()
+        else:
+            logger.error("Unsupported coverage tool specified: {}".format(tool))
+            return None
+
+        t.gcov_tool = tool
+        return t
 
     @staticmethod
     def retrieve_gcov_data(intput_file):
-        if VERBOSE:
-            logger.debug("Working on %s" % intput_file)
+        logger.debug("Working on %s" % intput_file)
         extracted_coverage_info = {}
         capture_data = False
         capture_complete = False
@@ -3057,8 +3060,7 @@ class CoverageTool:
 
     @staticmethod
     def create_gcda_files(extracted_coverage_info):
-        if VERBOSE:
-            logger.debug("Generating gcda files")
+        logger.debug("Generating gcda files")
         for filename, hexdump_val in extracted_coverage_info.items():
             # if kobject_hash is given for coverage gcovr fails
             # hence skipping it problem only in gcovr v4.1
@@ -3113,14 +3115,14 @@ class Lcov(CoverageTool):
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
         subprocess.call(["lcov", "--gcov-tool", self.gcov_tool, "--extract",
                          coveragefile,
-                         os.path.join(ZEPHYR_BASE, "tests", "ztest", "*"),
+                         os.path.join(self.base_dir, "tests", "ztest", "*"),
                          "--output-file", ztestfile,
                          "--rc", "lcov_branch_coverage=1"], stdout=coveragelog)
 
         if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
             subprocess.call(["lcov", "--gcov-tool", self.gcov_tool, "--remove",
                              ztestfile,
-                             os.path.join(ZEPHYR_BASE, "tests/ztest/test/*"),
+                             os.path.join(self.base_dir, "tests/ztest/test/*"),
                              "--output-file", ztestfile,
                              "--rc", "lcov_branch_coverage=1"],
                             stdout=coveragelog)
@@ -3168,12 +3170,12 @@ class Gcovr(CoverageTool):
         excludes = Gcovr._interleave_list("-e", self.ignores)
 
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
-        subprocess.call(["gcovr", "-r", ZEPHYR_BASE, "--gcov-executable",
+        subprocess.call(["gcovr", "-r", self.base_dir, "--gcov-executable",
                          self.gcov_tool, "-e", "tests/*"] + excludes +
                         ["--json", "-o", coveragefile, outdir],
                         stdout=coveragelog)
 
-        subprocess.call(["gcovr", "-r", ZEPHYR_BASE, "--gcov-executable",
+        subprocess.call(["gcovr", "-r", self.base_dir, "--gcov-executable",
                          self.gcov_tool, "-f", "tests/ztest", "-e",
                          "tests/ztest/test/*", "--json", "-o", ztestfile,
                          outdir], stdout=coveragelog)
@@ -3188,7 +3190,7 @@ class Gcovr(CoverageTool):
 
         tracefiles = self._interleave_list("--add-tracefile", files)
 
-        return subprocess.call(["gcovr", "-r", ZEPHYR_BASE, "--html",
+        return subprocess.call(["gcovr", "-r", self.base_dir, "--html",
                                 "--html-details"] + tracefiles +
                                ["-o", os.path.join(subdir, "index.html")],
                                stdout=coveragelog)
