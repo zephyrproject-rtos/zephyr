@@ -20,6 +20,19 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 1
 
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+config ETH_MCUX
+	default y if NET_L2_ETHERNET
+
+config ETH_MCUX_0
+	default y if ETH_MCUX
+
+endif # NETWORKING
+
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA
@@ -27,6 +40,9 @@ config PINMUX_MCUX_PORTA
 
 config PINMUX_MCUX_PORTB
 	default y if "$(dt_nodelabel_enabled,spi1)" && SPI
+
+config PINMUX_MCUX_PORTE
+	default y if "$(dt_nodelabel_enabled,enet)" && NET_L2_ETHERNET
 
 endif # PINMUX_MCUX
 
