@@ -9,7 +9,7 @@ config SOC_SERIES_SAMV71
 	select ARM
 	select CPU_CORTEX_M7
 	select SOC_FAMILY_SAM
-	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select FP_DP_D16_FP16_FMAC_DSP
 	select CPU_CORTEX_M_HAS_DWT
 	select ASF
 	select XIP
