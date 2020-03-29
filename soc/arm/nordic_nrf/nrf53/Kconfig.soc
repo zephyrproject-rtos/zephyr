@@ -7,8 +7,7 @@ config SOC_NRF5340_CPUAPP
 	depends on SOC_SERIES_NRF53X
 	bool
 	select CPU_HAS_NRF_IDAU
-	select CPU_HAS_FPU
-	select ARMV8_M_DSP
+	select FP_SP_D16_FP16_FMAC_DSP
 	select HAS_SYS_POWER_STATE_DEEP_SLEEP_1
 	select HAS_HW_NRF_CC312
 	select HAS_HW_NRF_CLOCK

@@ -95,7 +95,7 @@ config SOC_NRF52832
 	bool
 	select SOC_COMPATIBLE_NRF52832
 	select CPU_CORTEX_M_HAS_DWT
-	select CPU_HAS_FPU
+	select FP_SP_D16_FP16_FMAC_DSP
 	select HAS_HW_NRF_BPROT
 	select HAS_HW_NRF_CCM
 	select HAS_HW_NRF_CLOCK
@@ -160,7 +160,7 @@ config SOC_NRF52833
 	depends on SOC_SERIES_NRF52X
 	bool
 	select CPU_CORTEX_M_HAS_DWT
-	select CPU_HAS_FPU
+	select FP_SP_D16_FP16_FMAC_DSP
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CCM
 	select HAS_HW_NRF_CLOCK
@@ -232,7 +232,7 @@ config SOC_NRF52840
 	depends on SOC_SERIES_NRF52X
 	bool
 	select CPU_CORTEX_M_HAS_DWT
-	select CPU_HAS_FPU
+	select FP_SP_D16_FP16_FMAC_DSP
 	select HAS_HW_NRF_ACL
 	select HAS_HW_NRF_CC310
 	select HAS_HW_NRF_CCM

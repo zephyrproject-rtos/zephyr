@@ -10,8 +10,7 @@ config SOC_SERIES_NRF91X
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_NRF_IDAU
-	select CPU_HAS_FPU
-	select ARMV8_M_DSP
+	select FP_SP_D16_FP16_FMAC_DSP
 	select SOC_FAMILY_NRF
 	select HAS_SYS_POWER_STATE_DEEP_SLEEP_1
 	select XIP
