@@ -195,12 +195,8 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
 
 from sanitylib import HardwareMap, TestSuite, SizeCalculator, CoverageTool
 
-VERBOSE = 0
-
 logger = logging.getLogger('sanitycheck')
 logger.setLevel(logging.DEBUG)
-
-options = None
 
 def size_report(sc):
     logger.info(sc.filename)
@@ -635,8 +631,6 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
 def main():
     start_time = time.time()
-    global VERBOSE
-    global options
 
     options = parse_arguments()
 
@@ -669,7 +663,7 @@ def main():
     # create console handler with a higher log level
     ch = logging.StreamHandler()
 
-    VERBOSE += options.verbose
+    VERBOSE = options.verbose
     if VERBOSE > 1:
         ch.setLevel(logging.DEBUG)
     else:
@@ -757,6 +751,7 @@ def main():
     suite.extra_args = options.extra_args
     suite.west_flash = options.west_flash
     suite.west_runner = options.west_runner
+    suite.verbose = VERBOSE
 
     if options.ninja:
         suite.generator_cmd = "ninja"
@@ -1018,7 +1013,7 @@ def main():
     suite.summary(options.disable_unrecognized_section_test)
 
     if options.coverage:
-        if options.gcov_tool is None:
+        if not options.gcov_tools:
             use_system_gcov = False
 
             for plat in options.coverage_platform:
@@ -1034,6 +1029,7 @@ def main():
 
         logger.info("Generating coverage files...")
         coverage_tool = CoverageTool.factory(options.coverage_tool)
+        coverage_tool.base_dir = ZEPHYR_BASE
         coverage_tool.add_ignore_file('generated')
         coverage_tool.add_ignore_directory('tests')
         coverage_tool.add_ignore_directory('samples')
