@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2011-2014 Wind River Systems, Inc.
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,10 +31,7 @@
  * has occurred.
  */
 
-#include <zephyr.h>
-
-#include <stdio.h>
-#include <tc_util.h>
+#include <ztest.h>
 
 #include "float_context.h"
 #include "test_common.h"
@@ -42,8 +40,7 @@
  * PI_NUM_ITERATIONS: This macro is defined in the project's Makefile and
  * is configurable from the command line.
  */
-
-static double reference_pi = 0.0f;
+static float reference_pi = 0.0f;
 
 /*
  * Test counters are "volatile" because GCC wasn't properly updating
@@ -51,79 +48,79 @@ static double reference_pi = 0.0f;
  * in its error handling logic -- the value was incremented in a register,
  * but never written back to memory. (Seems to be a compiler bug!)
  */
-
 static volatile unsigned int calc_pi_low_count;
 static volatile unsigned int calc_pi_high_count;
 
+/* Indicates that the load/store test exited */
+static bool test_exited;
+
+/* Semaphore for signaling end of test */
+static K_SEM_DEFINE(test_exit_sem, 0, 1);
+
 /**
- *
  * @brief Entry point for the low priority pi compute task
  *
  * @ingroup kernel_fpsharing_tests
  */
-
-void calculate_pi_low(void)
+static void calculate_pi_low(void)
 {
-	volatile double pi; /* volatile to avoid optimizing out of loop */
-	double divisor = 3.0;
-	double sign = -1.0;
+	volatile float pi; /* volatile to avoid optimizing out of loop */
+	float divisor = 3.0f;
+	float sign = -1.0f;
 	unsigned int ix;
 
-	/* loop forever, unless an error is detected */
+	/* Loop until the test finishes, or an error is detected. */
+	for (calc_pi_low_count = 0; !test_exited; calc_pi_low_count++) {
 
-	while (1) {
+		sign = -1.0f;
+		pi = 1.0f;
+		divisor = 3.0f;
 
-		sign = -1.0;
-		pi = 1.0;
-		divisor = 3.0;
-
-		for (ix = 0U; ix < PI_NUM_ITERATIONS; ix++) {
+		for (ix = 0; ix < PI_NUM_ITERATIONS; ix++) {
 			pi += sign / divisor;
-			divisor += 2.0;
-			sign *= -1.0;
+			divisor += 2.0f;
+			sign *= -1.0f;
 		}
 
-		pi *= 4;
+		pi *= 4.0f;
 
 		if (reference_pi == 0.0f) {
 			reference_pi = pi;
 		} else if (reference_pi != pi) {
-			TC_ERROR("Computed pi %1.6f, reference pi %1.6f\n",
-				 pi, reference_pi);
-			fpu_sharing_error = 1;
-			return;
+			printf("Computed pi %1.6f, reference pi %1.6f\n",
+			       pi, reference_pi);
 		}
 
-		++calc_pi_low_count;
+		zassert_equal(reference_pi, pi,
+			      "pi computation error");
 	}
 }
 
 /**
- *
  * @brief Entry point for the high priority pi compute task
  *
  * @ingroup kernel_fpsharing_tests
  */
-
-void calculate_pi_high(void)
+static void calculate_pi_high(void)
 {
-	volatile double pi; /* volatile to avoid optimizing out of loop */
-	double divisor = 3.0;
-	double sign = -1.0;
+	volatile float pi; /* volatile to avoid optimizing out of loop */
+	float divisor = 3.0f;
+	float sign = -1.0f;
 	unsigned int ix;
 
-	/* loop forever, unless an error is detected */
+	/* Run the test until the specified maximum test count is reached */
+	for (calc_pi_high_count = 0;
+	     calc_pi_high_count <= MAX_TESTS;
+	     calc_pi_high_count++) {
 
-	while (1) {
+		sign = -1.0f;
+		pi = 1.0f;
+		divisor = 3.0f;
 
-		sign = -1.0;
-		pi = 1.0;
-		divisor = 3.0;
-
-		for (ix = 0U; ix < PI_NUM_ITERATIONS; ix++) {
+		for (ix = 0; ix < PI_NUM_ITERATIONS; ix++) {
 			pi += sign / divisor;
-			divisor += 2.0;
-			sign *= -1.0;
+			divisor += 2.0f;
+			sign *= -1.0f;
 		}
 
 		/*
@@ -136,32 +133,49 @@ void calculate_pi_high(void)
 		 * kernel to provide a "clean" FPU state to this thread
 		 * once the sleep ends.
 		 */
-
 		k_sleep(K_MSEC(10));
 
-		pi *= 4;
+		pi *= 4.0f;
 
 		if (reference_pi == 0.0f) {
 			reference_pi = pi;
 		} else if (reference_pi != pi) {
-			TC_ERROR("Computed pi %1.6f, reference pi %1.6f\n",
-				 pi, reference_pi);
-			fpu_sharing_error = 1;
-			return;
+			printf("Computed pi %1.6f, reference pi %1.6f\n",
+			       pi, reference_pi);
 		}
 
-		/* periodically issue progress report */
+		zassert_equal(reference_pi, pi,
+			      "pi computation error");
 
-		if ((++calc_pi_high_count % 100) == 50U) {
-			PRINT_DATA("Pi calculation OK after %u (high) +"
-				   " %u (low) tests (computed %1.6f)\n",
-				   calc_pi_high_count, calc_pi_low_count, pi);
+		/* Periodically issue progress report */
+		if ((calc_pi_high_count % 100) == 50) {
+			printf("Pi calculation OK after %u (high) +"
+			       " %u (low) tests (computed %1.6lf)\n",
+			       calc_pi_high_count, calc_pi_low_count, pi);
 		}
 	}
+
+	/* Signal end of test */
+	test_exited = true;
+	k_sem_give(&test_exit_sem);
 }
 
 K_THREAD_DEFINE(pi_low, THREAD_STACK_SIZE, calculate_pi_low, NULL, NULL, NULL,
-		THREAD_LOW_PRIORITY, THREAD_FP_FLAGS, 0);
+		THREAD_LOW_PRIORITY, THREAD_FP_FLAGS, K_TICKS_FOREVER);
 
 K_THREAD_DEFINE(pi_high, THREAD_STACK_SIZE, calculate_pi_high, NULL, NULL, NULL,
-		THREAD_HIGH_PRIORITY, THREAD_FP_FLAGS, 0);
+		THREAD_HIGH_PRIORITY, THREAD_FP_FLAGS, K_TICKS_FOREVER);
+
+void test_pi(void)
+{
+	/* Initialise test states */
+	test_exited = false;
+	k_sem_reset(&test_exit_sem);
+
+	/* Start test threads */
+	k_thread_start(pi_low);
+	k_thread_start(pi_high);
+
+	/* Wait for test threads to exit */
+	k_sem_take(&test_exit_sem, K_FOREVER);
+}

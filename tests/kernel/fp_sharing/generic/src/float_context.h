@@ -133,6 +133,4 @@ struct fp_register_set {
 #define MAIN_FLOAT_REG_CHECK_BYTE ((unsigned char)0xe5)
 #define FIBER_FLOAT_REG_CHECK_BYTE ((unsigned char)0xf9)
 
-extern int fpu_sharing_error;
-
 #endif /* _FLOATCONTEXT_H */

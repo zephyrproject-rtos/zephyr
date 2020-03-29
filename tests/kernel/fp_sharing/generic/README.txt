@@ -2,14 +2,18 @@ Title: Shared Floating Point Support
 
 Description:
 
-This test uses two tasks to independently compute pi, while two other tasks
-load and store floating point registers and check for corruption. This tests
-the ability of tasks to safely share floating point hardware resources, even
-when switching occurs preemptively. (Note that both sets of tests run
-concurrently even though they report their progress at different times.)
+The Shared Floating Point Support test uses two tasks to:
 
-The demonstration utilizes mutex APIs, timers, semaphores,
-round robin scheduling, and floating point support.
+  1) load and store floating point registers and check for corruption
+  2) independently compute pi and check for any errors
+
+This tests the ability of tasks to safely share floating point hardware
+resources, even when switching occurs preemptively (note that both sets of
+tests run concurrently even though they report their progress at different
+times).
+
+The demonstration utilizes semaphores, round robin scheduling, and floating
+point support.
 
 --------------------------------------------------------------------------------
 
@@ -49,18 +53,26 @@ precision.
 
 Sample Output:
 
-***** BOOTING ZEPHYR OS vxxx - BUILD: Jan xxxx *****
-Floating point sharing tests started
+*** Booting Zephyr OS build zephyr-v2.2.0-845-g8b769de30317  ***
+Running test suite fp_sharing
 ===================================================================
-Load and store OK after 100 (high) + 47119 (low) tests
-Pi calculation OK after 50 (high) + 2 (low) tests (computed 3.141594)
-Load and store OK after 200 (high) + 94186 (low) tests
-Load and store OK after 300 (high) + 142416 (low) tests
-Pi calculation OK after 150 (high) + 7 (low) tests (computed 3.141594)
-Load and store OK after 400 (high) + 190736 (low) tests
-Load and store OK after 500 (high) + 238618 (low) tests
+starting test - test_load_store
+Load and store OK after 0 (high) + 63 (low) tests
+Load and store OK after 100 (high) + 6540 (low) tests
+Load and store OK after 200 (high) + 12965 (low) tests
+Load and store OK after 300 (high) + 19366 (low) tests
+Load and store OK after 400 (high) + 25756 (low) tests
+Load and store OK after 500 (high) + 32128 (low) tests
+PASS - test_load_store
 ===================================================================
-PASS - load_store_high.
+starting test - test_pi
+Pi calculation OK after 50 (high) + 10 (low) tests (computed 3.141598)
+Pi calculation OK after 150 (high) + 31 (low) tests (computed 3.141598)
+Pi calculation OK after 250 (high) + 51 (low) tests (computed 3.141598)
+Pi calculation OK after 350 (high) + 72 (low) tests (computed 3.141598)
+Pi calculation OK after 450 (high) + 92 (low) tests (computed 3.141598)
+PASS - test_pi
+===================================================================
+Test suite fp_sharing succeeded
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL
-
