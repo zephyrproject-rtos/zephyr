@@ -9,7 +9,7 @@ config BOARD
 	default "ip_k66f"
 
 config OSC_XTAL0_FREQ
-	default 50000000
+	default 12000000
 
 config MCG_PRDIV0
 	default 0x0
