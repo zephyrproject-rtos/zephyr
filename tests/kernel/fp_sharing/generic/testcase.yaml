@@ -1,5 +1,5 @@
 tests:
-  kernel.float.fp_sharing:
+  kernel.float.fp_sharing.arm:
     extra_args: PI_NUM_ITERATIONS=70000
     filter: CONFIG_ARMV7_M_ARMV8_M_FP
     slow: true
