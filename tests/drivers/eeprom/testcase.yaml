@@ -3,6 +3,6 @@ tests:
     platform_whitelist: native_posix native_posix_64 qemu_x86
     tags: drivers userspace
   peripheral.eeprom.generic:
-    build_on_all: true
+    build_only: true
     depends_on: eeprom
     tags: drivers userspace
