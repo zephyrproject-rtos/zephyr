@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT grove_temperature
+
 #include <drivers/adc.h>
 #include <device.h>
 #include <math.h>
@@ -115,13 +117,13 @@ static int gts_init(struct device *dev)
 
 static struct gts_data gts_data;
 static const struct gts_config gts_cfg = {
-	.adc_label = DT_INST_0_GROVE_TEMPERATURE_IO_CHANNELS_CONTROLLER,
-	.b_const = (IS_ENABLED(DT_INST_0_GROVE_TEMPERATURE_V1P0)
+	.adc_label = DT_INST_IO_CHANNELS_LABEL(0),
+	.b_const = (IS_ENABLED(DT_INST_PROP(0, v1p0))
 		    ? 3975
 		    : 4250),
-	.adc_channel = DT_INST_0_GROVE_TEMPERATURE_IO_CHANNELS_INPUT,
+	.adc_channel = DT_INST_IO_CHANNELS_INPUT(0),
 };
 
-DEVICE_AND_API_INIT(gts_dev, DT_INST_0_GROVE_TEMPERATURE_LABEL, &gts_init,
+DEVICE_AND_API_INIT(gts_dev, DT_INST_LABEL(0), &gts_init,
 		&gts_data, &gts_cfg, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		&gts_api);

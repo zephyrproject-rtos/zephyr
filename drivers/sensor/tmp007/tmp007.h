@@ -11,7 +11,7 @@
 #include <drivers/gpio.h>
 #include <sys/util.h>
 
-#define TMP007_I2C_ADDRESS		DT_INST_0_TI_TMP007_BASE_ADDRESS
+#define TMP007_I2C_ADDRESS		DT_INST_REG_ADDR(0)
 
 #define TMP007_REG_CONFIG		0x02
 #define TMP007_ALERT_EN_BIT		BIT(8)

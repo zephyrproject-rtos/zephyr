@@ -23,14 +23,12 @@
 #define AK8975_MEASURE_TIME_US		9000
 #define AK8975_MICRO_GAUSS_PER_BIT	3000
 
-#ifdef DT_INST_0_INVENSENSE_MPU9150_BASE_ADDRESS
-#if DT_INST_0_ASAHI_KASEI_AK8975_BASE_ADDRESS != 0x0C
+#if DT_NODE_HAS_PROP(DT_INST(0, invensense_mpu9150), reg)
+#if DT_REG_ADDR(DT_INST(0, asahi_kasei_ak8975)) != 0x0C
 #error "I2C address must be 0x0C when AK8975 is part of a MPU9150 chip"
 #endif
 
-#ifdef DT_INST_0_INVENSENSE_MPU9150
-#define MPU9150_I2C_ADDR		DT_INST_0_INVENSENSE_MPU9150_BASE_ADDRESS
-#endif
+#define MPU9150_I2C_ADDR		DT_REG_ADDR(DT_INST(0, invensense_mpu9150))
 
 #define MPU9150_REG_BYPASS_CFG		0x37
 #define MPU9150_I2C_BYPASS_EN		BIT(1)
@@ -38,7 +36,7 @@
 #define MPU9150_REG_PWR_MGMT1		0x6B
 #define MPU9150_SLEEP_EN		BIT(6)
 
-#endif /* DT_INST_0_INVENSENSE_MPU9150 */
+#endif /* DT_NODE_HAS_PROP(DT_INST(0, invensense_mpu9150), reg) */
 
 
 struct ak8975_data {

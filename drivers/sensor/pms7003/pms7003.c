@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT plantower_pms7003
+
 /* sensor pms7003.c - Driver for plantower PMS7003 sensor
  * PMS7003 product: http://www.plantower.com/en/content/?110.html
  * PMS7003 spec: http://aqicn.org/air/view/sensor/spec/pms7003.pdf
@@ -166,11 +168,11 @@ static int pms7003_init(struct device *dev)
 {
 	struct pms7003_data *drv_data = dev->driver_data;
 
-	drv_data->uart_dev = device_get_binding(DT_INST_0_PLANTOWER_PMS7003_BUS_NAME);
+	drv_data->uart_dev = device_get_binding(DT_INST_BUS_LABEL(0));
 
 	if (!drv_data->uart_dev) {
 		LOG_DBG("uart device is not found: %s",
-			    DT_INST_0_PLANTOWER_PMS7003_BUS_NAME);
+			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -179,6 +181,6 @@ static int pms7003_init(struct device *dev)
 
 static struct pms7003_data pms7003_data;
 
-DEVICE_AND_API_INIT(gts_dev, DT_INST_0_PLANTOWER_PMS7003_LABEL, &pms7003_init,
+DEVICE_AND_API_INIT(gts_dev, DT_INST_LABEL(0), &pms7003_init,
 		    &pms7003_data, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &pms7003_api);

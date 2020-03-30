@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT honeywell_hmc5883l
+
 #include <drivers/i2c.h>
 #include <init.h>
 #include <sys/__assert.h>
@@ -60,7 +62,7 @@ static int hmc5883l_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	/* fetch magnetometer sample */
 	if (i2c_burst_read(drv_data->i2c,
-			   DT_INST_0_HONEYWELL_HMC5883L_BASE_ADDRESS,
+			   DT_INST_REG_ADDR(0),
 			   HMC5883L_REG_DATA_START, (u8_t *)buf, 6) < 0) {
 		LOG_ERR("Failed to fetch megnetometer sample.");
 		return -EIO;
@@ -87,16 +89,16 @@ int hmc5883l_init(struct device *dev)
 	u8_t chip_cfg[3], id[3], idx;
 
 	drv_data->i2c = device_get_binding(
-		DT_INST_0_HONEYWELL_HMC5883L_BUS_NAME);
+		DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_ERR("Failed to get pointer to %s device.",
-			DT_INST_0_HONEYWELL_HMC5883L_BUS_NAME);
+			DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
 	/* check chip ID */
 	if (i2c_burst_read(drv_data->i2c,
-			   DT_INST_0_HONEYWELL_HMC5883L_BASE_ADDRESS,
+			   DT_INST_REG_ADDR(0),
 			   HMC5883L_REG_CHIP_ID, id, 3) < 0) {
 		LOG_ERR("Failed to read chip ID.");
 		return -EIO;
@@ -140,7 +142,7 @@ int hmc5883l_init(struct device *dev)
 	chip_cfg[2] = HMC5883L_MODE_CONTINUOUS;
 
 	if (i2c_burst_write(drv_data->i2c,
-			    DT_INST_0_HONEYWELL_HMC5883L_BASE_ADDRESS,
+			    DT_INST_REG_ADDR(0),
 			    HMC5883L_REG_CONFIG_A, chip_cfg, 3) < 0) {
 		LOG_ERR("Failed to configure chip.");
 		return -EIO;
@@ -158,6 +160,6 @@ int hmc5883l_init(struct device *dev)
 
 struct hmc5883l_data hmc5883l_driver;
 
-DEVICE_AND_API_INIT(hmc5883l, DT_INST_0_HONEYWELL_HMC5883L_LABEL,
+DEVICE_AND_API_INIT(hmc5883l, DT_INST_LABEL(0),
 		    hmc5883l_init, &hmc5883l_driver, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &hmc5883l_driver_api);

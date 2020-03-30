@@ -8,6 +8,8 @@
  *   http://www.hoperf.com/upload/sensor/HP206C_DataSheet_EN_V2.0.pdf
  */
 
+#define DT_DRV_COMPAT hoperf_hp206c
+
 #include <init.h>
 #include <drivers/sensor.h>
 #include <drivers/i2c.h>
@@ -284,7 +286,7 @@ static int hp206c_init(struct device *dev)
 {
 	struct hp206c_device_data *hp206c = dev->driver_data;
 
-	hp206c->i2c = device_get_binding(DT_INST_0_HOPERF_HP206C_BUS_NAME);
+	hp206c->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!hp206c->i2c) {
 		LOG_ERR("I2C master controller not found!");
 		return -EINVAL;
@@ -314,7 +316,7 @@ static int hp206c_init(struct device *dev)
 
 static struct hp206c_device_data hp206c_data;
 
-DEVICE_AND_API_INIT(hp206c, DT_INST_0_HOPERF_HP206C_LABEL,
+DEVICE_AND_API_INIT(hp206c, DT_INST_LABEL(0),
 		    hp206c_init, &hp206c_data,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &hp206c_api);

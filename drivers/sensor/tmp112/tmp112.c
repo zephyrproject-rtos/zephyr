@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_tmp112
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <sys/byteorder.h>
@@ -15,7 +17,7 @@
 
 LOG_MODULE_REGISTER(TMP112, CONFIG_SENSOR_LOG_LEVEL);
 
-#define TMP112_I2C_ADDRESS		DT_INST_0_TI_TMP112_BASE_ADDRESS
+#define TMP112_I2C_ADDRESS		DT_INST_REG_ADDR(0)
 
 #define TMP112_REG_TEMPERATURE		0x00
 #define TMP112_D0_BIT			BIT(0)
@@ -195,10 +197,10 @@ int tmp112_init(struct device *dev)
 {
 	struct tmp112_data *drv_data = dev->driver_data;
 
-	drv_data->i2c = device_get_binding(DT_INST_0_TI_TMP112_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_DBG("Failed to get pointer to %s device!",
-			    DT_INST_0_TI_TMP112_BUS_NAME);
+			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -207,5 +209,5 @@ int tmp112_init(struct device *dev)
 
 static struct tmp112_data tmp112_driver;
 
-DEVICE_AND_API_INIT(tmp112, DT_INST_0_TI_TMP112_LABEL, tmp112_init, &tmp112_driver,
+DEVICE_AND_API_INIT(tmp112, DT_INST_LABEL(0), tmp112_init, &tmp112_driver,
 	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &tmp112_driver_api);

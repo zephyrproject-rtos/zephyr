@@ -1,5 +1,7 @@
 /* vl53l0x.c - Driver for ST VL53L0X time of flight sensor */
 
+#define DT_DRV_COMPAT st_vl53l0x
+
 /*
  * Copyright (c) 2017 STMicroelectronics
  *
@@ -202,39 +204,39 @@ static int vl53l0x_init(struct device *dev)
 
 	LOG_DBG("enter in %s", __func__);
 
-#ifdef DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_CONTROLLER
+#if DT_INST_NODE_HAS_PROP(0, xshut_gpios)
 	struct device *gpio;
 
 	/* configure and set VL53L0X_XSHUT_Pin */
-	gpio = device_get_binding(DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, xshut_gpios));
 	if (gpio == NULL) {
 		LOG_ERR("Could not get pointer to %s device.",
-		DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_CONTROLLER);
+		DT_INST_GPIO_LABEL(0, xshut_gpios));
 		return -EINVAL;
 	}
 
 	if (gpio_pin_configure(gpio,
-			      DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_PIN,
+			      DT_INST_GPIO_PIN(0, xshut_gpios),
 			      GPIO_OUTPUT | GPIO_PULL_UP) < 0) {
 		LOG_ERR("Could not configure GPIO %s %d).",
-			DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_CONTROLLER,
-			DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_PIN);
+			DT_INST_GPIO_LABEL(0, xshut_gpios),
+			DT_INST_GPIO_PIN(0, xshut_gpios));
 		return -EINVAL;
 	}
 
-	gpio_pin_set(gpio, DT_INST_0_ST_VL53L0X_XSHUT_GPIOS_PIN, 1);
+	gpio_pin_set(gpio, DT_INST_GPIO_PIN(0, xshut_gpios), 1);
 	k_sleep(K_MSEC(100));
 #endif
 
-	drv_data->i2c = device_get_binding(DT_INST_0_ST_VL53L0X_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_ERR("Could not get pointer to %s device.",
-			DT_INST_0_ST_VL53L0X_BUS_NAME);
+			DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
 	drv_data->vl53l0x.i2c = drv_data->i2c;
-	drv_data->vl53l0x.I2cDevAddr = DT_INST_0_ST_VL53L0X_BASE_ADDRESS;
+	drv_data->vl53l0x.I2cDevAddr = DT_INST_REG_ADDR(0);
 
 	/* Get info from sensor */
 	(void)memset(&vl53l0x_dev_info, 0, sizeof(VL53L0X_DeviceInfo_t));
@@ -280,6 +282,6 @@ static int vl53l0x_init(struct device *dev)
 
 static struct vl53l0x_data vl53l0x_driver;
 
-DEVICE_AND_API_INIT(vl53l0x, DT_INST_0_ST_VL53L0X_LABEL, vl53l0x_init, &vl53l0x_driver,
+DEVICE_AND_API_INIT(vl53l0x, DT_INST_LABEL(0), vl53l0x_init, &vl53l0x_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &vl53l0x_api_funcs);

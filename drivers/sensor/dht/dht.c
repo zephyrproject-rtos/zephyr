@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT aosong_dht
+
 #include <device.h>
 #include <drivers/gpio.h>
 #include <sys/byteorder.h>
@@ -172,7 +174,7 @@ static int dht_channel_get(struct device *dev,
 			|| chan == SENSOR_CHAN_HUMIDITY);
 
 	/* see data calculation example from datasheet */
-	if (IS_ENABLED(DT_INST_0_AOSONG_DHT_DHT22)) {
+	if (IS_ENABLED(DT_INST_PROP(0, dht22))) {
 		/*
 		 * use both integral and decimal data bytes; resulted
 		 * 16bit data has a resolution of 0.1 units
@@ -239,11 +241,11 @@ static int dht_init(struct device *dev)
 
 static struct dht_data dht_data;
 static const struct dht_config dht_config = {
-	.ctrl = DT_INST_0_AOSONG_DHT_DIO_GPIOS_CONTROLLER,
-	.flags = DT_INST_0_AOSONG_DHT_DIO_GPIOS_FLAGS,
-	.pin = DT_INST_0_AOSONG_DHT_DIO_GPIOS_PIN,
+	.ctrl = DT_INST_GPIO_LABEL(0, dio_gpios),
+	.flags = DT_INST_GPIO_FLAGS(0, dio_gpios),
+	.pin = DT_INST_GPIO_PIN(0, dio_gpios),
 };
 
-DEVICE_AND_API_INIT(dht_dev, DT_INST_0_AOSONG_DHT_LABEL, &dht_init,
+DEVICE_AND_API_INIT(dht_dev, DT_INST_LABEL(0), &dht_init,
 		    &dht_data, &dht_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &dht_api);

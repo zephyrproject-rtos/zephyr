@@ -1,9 +1,12 @@
 /* adxl362.c - ADXL362 Three-Axis Digital Accelerometers */
+
 /*
  * Copyright (c) 2017 IpTronix S.r.l.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT adi_adxl362
 
 #include <kernel.h>
 #include <string.h>
@@ -733,7 +736,7 @@ static int adxl362_init(struct device *dev)
 	data->spi_cfg.frequency = config->spi_max_frequency;
 	data->spi_cfg.slave = config->spi_slave;
 
-#if defined(DT_INST_0_ADI_ADXL362_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	data->adxl362_cs_ctrl.gpio_dev =
 				device_get_binding(config->gpio_cs_port);
 	if (!data->adxl362_cs_ctrl.gpio_dev) {
@@ -784,20 +787,20 @@ static int adxl362_init(struct device *dev)
 }
 
 static const struct adxl362_config adxl362_config = {
-	.spi_name = DT_INST_0_ADI_ADXL362_BUS_NAME,
-	.spi_slave = DT_INST_0_ADI_ADXL362_BASE_ADDRESS,
-	.spi_max_frequency = DT_INST_0_ADI_ADXL362_SPI_MAX_FREQUENCY,
-#if defined(DT_INST_0_ADI_ADXL362_CS_GPIOS_CONTROLLER)
-	.gpio_cs_port = DT_INST_0_ADI_ADXL362_CS_GPIOS_CONTROLLER,
-	.cs_gpio = DT_INST_0_ADI_ADXL362_CS_GPIOS_PIN,
+	.spi_name = DT_INST_BUS_LABEL(0),
+	.spi_slave = DT_INST_REG_ADDR(0),
+	.spi_max_frequency = DT_INST_PROP(0, spi_max_frequency),
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	.gpio_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
+	.cs_gpio = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
 #endif
 #if defined(CONFIG_ADXL362_TRIGGER)
-	.gpio_port = DT_INST_0_ADI_ADXL362_INT1_GPIOS_CONTROLLER,
-	.int_gpio = DT_INST_0_ADI_ADXL362_INT1_GPIOS_PIN,
-	.int_flags = DT_INST_0_ADI_ADXL362_INT1_GPIOS_FLAGS,
+	.gpio_port = DT_INST_GPIO_LABEL(0, int1_gpios),
+	.int_gpio = DT_INST_GPIO_PIN(0, int1_gpios),
+	.int_flags = DT_INST_GPIO_FLAGS(0, int1_gpios),
 #endif
 };
 
-DEVICE_AND_API_INIT(adxl362, DT_INST_0_ADI_ADXL362_LABEL, adxl362_init,
+DEVICE_AND_API_INIT(adxl362, DT_INST_LABEL(0), adxl362_init,
 		    &adxl362_data, &adxl362_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &adxl362_api_funcs);

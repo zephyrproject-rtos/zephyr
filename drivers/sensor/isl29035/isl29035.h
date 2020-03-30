@@ -14,7 +14,7 @@
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>
 
-#define ISL29035_I2C_ADDRESS		DT_INST_0_ISIL_ISL29035_BASE_ADDRESS
+#define ISL29035_I2C_ADDRESS		DT_INST_REG_ADDR(0)
 
 #define ISL29035_COMMAND_I_REG		0x00
 #define ISL29035_OPMODE_SHIFT		5

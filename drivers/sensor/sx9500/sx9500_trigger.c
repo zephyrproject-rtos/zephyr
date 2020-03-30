@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT semtech_sx9500
+
 #include <errno.h>
 
 #include <kernel.h>
@@ -157,22 +159,22 @@ int sx9500_setup_interrupt(struct device *dev)
 	data->dev = dev;
 #endif
 
-	gpio = device_get_binding(DT_INST_0_SEMTECH_SX9500_INT_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, int_gpios));
 	if (!gpio) {
 		LOG_DBG("sx9500: gpio controller %s not found",
-			    DT_INST_0_SEMTECH_SX9500_INT_GPIOS_CONTROLLER);
+			    DT_INST_GPIO_LABEL(0, int_gpios));
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(gpio, DT_INST_0_SEMTECH_SX9500_INT_GPIOS_PIN,
-			   GPIO_INPUT | DT_INST_0_SEMTECH_SX9500_INT_GPIOS_FLAGS);
+	gpio_pin_configure(gpio, DT_INST_GPIO_PIN(0, int_gpios),
+			   GPIO_INPUT | DT_INST_GPIO_FLAGS(0, int_gpios));
 
 	gpio_init_callback(&data->gpio_cb,
 			   sx9500_gpio_cb,
-			   BIT(DT_INST_0_SEMTECH_SX9500_INT_GPIOS_PIN));
+			   BIT(DT_INST_GPIO_PIN(0, int_gpios)));
 
 	gpio_add_callback(gpio, &data->gpio_cb);
-	gpio_pin_interrupt_configure(gpio, DT_INST_0_SEMTECH_SX9500_INT_GPIOS_PIN,
+	gpio_pin_interrupt_configure(gpio, DT_INST_GPIO_PIN(0, int_gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD

@@ -12,10 +12,10 @@
 #include <zephyr/types.h>
 #include <drivers/gpio.h>
 
-#define BMA280_I2C_ADDRESS		DT_INST_0_BOSCH_BMA280_BASE_ADDRESS
+#define BMA280_I2C_ADDRESS		DT_INST_REG_ADDR(0)
 
 #define BMA280_REG_CHIP_ID		0x00
-#if DT_INST_0_BOSCH_BMA280_IS_BMC150
+#if DT_INST_PROP(0, is_bmc150)
 	#define BMA280_CHIP_ID		0xFA
 #else
 	#define BMA280_CHIP_ID		0xFB
@@ -96,7 +96,7 @@
 #define BMA280_REG_ACCEL_Y_LSB		0x4
 #define BMA280_REG_ACCEL_Z_LSB		0x6
 
-#if DT_INST_0_BOSCH_BMA280_IS_BMC150
+#if DT_INST_PROP(0, is_bmc150)
 	#define BMA280_ACCEL_LSB_BITS	4
 	#define BMA280_ACCEL_LSB_SHIFT	4
 #else

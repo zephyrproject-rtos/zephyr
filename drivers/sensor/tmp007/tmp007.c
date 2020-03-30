@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_tmp007
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <drivers/gpio.h>
@@ -107,10 +109,10 @@ int tmp007_init(struct device *dev)
 {
 	struct tmp007_data *drv_data = dev->driver_data;
 
-	drv_data->i2c = device_get_binding(DT_INST_0_TI_TMP007_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_DBG("Failed to get pointer to %s device!",
-			    DT_INST_0_TI_TMP007_BUS_NAME);
+			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -126,7 +128,7 @@ int tmp007_init(struct device *dev)
 
 struct tmp007_data tmp007_driver;
 
-DEVICE_AND_API_INIT(tmp007, DT_INST_0_TI_TMP007_LABEL, tmp007_init,
+DEVICE_AND_API_INIT(tmp007, DT_INST_LABEL(0), tmp007_init,
 		    &tmp007_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &tmp007_driver_api);
