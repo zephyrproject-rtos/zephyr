@@ -9,10 +9,6 @@
  *
  * @brief Offload to the Kernel workqueue
  *
- * @defgroup kernel_critical_tests Critical Tests
- *
- * @ingroup all_tests
- *
  * This test verifies that the kernel workqueue operates as
  * expected.
  *
@@ -193,9 +189,9 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
  * @details Check whether variable value per-thread is saved
  * during context switch
  *
- * @ingroup kernel_critical_tests
+ * @ingroup kernel_workqueue_tests
  */
-void test_critical(void)
+void test_offload_workqueue(void)
 {
 	critical_var = 0U;
 	alt_thread_iterations = 0U;
@@ -219,8 +215,8 @@ void test_critical(void)
 
 void test_main(void)
 {
-	ztest_test_suite(kernel_critical,
-			 ztest_1cpu_unit_test(test_critical)
+	ztest_test_suite(kernel_offload_wq,
+			 ztest_1cpu_unit_test(test_offload_workqueue)
 			 );
-	ztest_run_test_suite(kernel_critical);
+	ztest_run_test_suite(kernel_offload_wq);
 }
