@@ -23,9 +23,7 @@ extern const struct init_entry __init_SMP_start[];
 extern struct device __device_start[];
 extern struct device __device_end[];
 
-#ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
 extern struct device_context __device_context_start[];
-#endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 extern u32_t __device_busy_start[];
@@ -196,16 +194,31 @@ int device_lock(struct device *dev)
 	return 0;
 }
 
-int device_release(struct device *dev)
+void device_call_complete(struct device *dev, int status)
 {
-#ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
 	struct device_context *dc =
 		(struct device_context *)__device_context_start +
 		(dev - __device_start);
 
+	dc->call_status = status;
+	k_sem_give(&dc->sync);
+}
+
+int device_release(struct device *dev)
+{
+	struct device_context *dc =
+		(struct device_context *)__device_context_start +
+		(dev - __device_start);
+	u32_t status;
+
+	k_sem_take(&dc->sync, K_FOREVER);
+
+	status = dc->call_status;
+
+#ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
 	if (!k_is_in_isr()) {
 		k_sem_give(&dc->lock);
 	}
 #endif
-	return 0;
+	return status;
 }

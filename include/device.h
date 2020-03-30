@@ -85,8 +85,15 @@ extern "C" {
 #if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
 #define DEVICE_CONTEXT_INITIALIZE(_obj)				\
 	{							\
+		.sync = Z_SEM_INITIALIZER(_obj.sync, 0, 1),	\
 		.lock = Z_SEM_INITIALIZER(_obj.lock, 1, 1),	\
 	}
+#else
+#define DEVICE_CONTEXT_INITIALIZE(_obj)				\
+	{							\
+		.sync = Z_SEM_INITIALIZER(_obj.sync, 0, 1)	\
+	}
+#endif
 
 #define DEVICE_CONTEXT_DEFINE(dev_name, level, prio)			\
 	static Z_DECL_ALIGN(struct device_context)			\
@@ -96,9 +103,6 @@ extern "C" {
 		DEVICE_CONTEXT_INITIALIZE(_CONCAT(__device_context_,	\
 						  dev_name))		\
 
-#else
-#define DEVICE_CONTEXT_DEFINE(dev_name, level, prio)
-#endif
 
 /**
  * @def DEVICE_AND_API_INIT
@@ -285,9 +289,13 @@ struct device {
 /**
  * @brief Runtime device context structure per-driver instance
  *
+ * @param sync A semaphore used for API call synchronization
+ * @param call_status The status to return from the call
  * @param lock A semaphore used to protect against concurrent access
  */
 struct device_context {
+	struct k_sem sync;
+	int call_status;
 #ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
 	struct k_sem lock;
 #endif
@@ -301,6 +309,15 @@ struct device_context {
  * @return 0 if device got locked, a negative errno otherwise.
  */
 int device_lock(struct device *dev);
+
+/**
+ * @brief Notify when a call is finished
+ *
+ * @param dev A valid pointer on a struct device instance
+ * @param status The status of the device, 0 on success or a negative errno
+ *               otherwise. This function is ISR ready.
+ */
+void device_call_complete(struct device *dev, int status);
 
 /**
  * @brief Release a previously locked device
