@@ -222,7 +222,6 @@ Debug:
     files:
         - include/debug/
         - subsys/debug/
-        - tests/subsys/debug/
     labels:
         - "area: Debugging"
 
@@ -258,7 +257,7 @@ Display drivers:
     files:
         - drivers/display/
         - dts/bindings/display/
-        - include/display.h
+        - include/drivers/display.h
         - include/display/
         - include/drivers/display.h
         - lib/gui/
@@ -330,7 +329,7 @@ Documentation:
     files:
         - drivers/clock_control/
         - dts/bindings/clock/
-        - include/clock_control.h
+        - include/drivers/clock_control.h
         - include/dt-bindings/clock/
         - tests/drivers/clock_control/
     labels:
@@ -444,7 +443,6 @@ Documentation:
         - drivers/flash/
         - dts/bindings/flash_controller/
         - include/drivers/flash.h
-        - include/flash.h
         - samples/drivers/flash_shell/
     labels:
         - "area: Flash"
@@ -459,7 +457,6 @@ Documentation:
         - drivers/gpio/
         - include/drivers/gpio/
         - include/drivers/gpio.h
-        - include/gpio.h
         - include/dt-bindings/gpio/
         - tests/drivers/gpio/
         - samples/drivers/gpio/
@@ -474,7 +471,6 @@ Documentation:
         - drivers/hwinfo/
         - dts/bindings/hwinfo/
         - include/drivers/hwinfo.h
-        - include/hwinfo.h
         - tests/drivers/hwinfo/
     labels:
         - "area: HWINFO"
@@ -513,7 +509,6 @@ Documentation:
     files:
         - drivers/i2c/
         - dts/bindings/i2c/
-        - include/i2c.h
         - include/drivers/i2c.h
         - include/drivers/i2c/
     labels:
@@ -526,7 +521,6 @@ Documentation:
         - doc/reference/peripherals/i2s.rst
         - drivers/i2s/
         - dts/bindings/i2s/
-        - include/i2s.h
         - include/drivers/i2s.h
         - tests/drivers/i2s/
     labels:
@@ -556,7 +550,6 @@ Documentation:
         - Mani-Sadhasivam
     files:
         - drivers/led/
-        - include/led.h
         - include/drivers/led/
         - include/drivers/led.h
         - samples/drivers/led_*/
@@ -570,7 +563,6 @@ Documentation:
     files:
         - drivers/led_strip/
         - dts/bindings/led_strip/
-        - include/led_strip.h
         - include/drivers/led_strip.h
 
 "Drivers: Modem":
@@ -612,8 +604,6 @@ Documentation:
         - doc/reference/peripherals/pinmux.rst
         - drivers/pinmux/
         - include/drivers/pinmux.h
-        - include/pinmux.h
-        - tests/drivers/pinmux/
     labels:
         - "area: Pinmux"
 
@@ -624,7 +614,6 @@ Documentation:
         - drivers/pwm/
         - dts/bindings/pwm/
         - include/drivers/pwm.h
-        - include/pwm.h
         - tests/drivers/pwm/
     labels:
         - "area: PWM"
@@ -681,7 +670,6 @@ Documentation:
         - doc/reference/peripherals/watchdog.rst
         - drivers/watchdog/
         - dts/bindings/watchdog/
-        - include/watchdog.h
         - include/drivers/watchdog.h
         - samples/drivers/watchdog/
         - tests/drivers/watchdog/
@@ -721,7 +709,6 @@ Filesystems:
         - wentongwu
     files:
         - include/fs/
-        - include/fs.h
         - samples/subsys/fs/
         - subsys/fs/
         - tests/subsys/fs/
@@ -782,7 +769,6 @@ Native POSIX and POSIX arch:
         - include/arch/posix/
         - scripts/valgrind.supp
         - soc/posix/
-        - subsys/debug/asan.c
         - tests/boards/native_posix/
     labels:
         - "area: native port"
@@ -944,7 +930,6 @@ Settings:
         - include/settings/
         - subsys/settings/
         - tests/subsys/settings/
-        - doc/reference/runtime_conf/
     labels:
         - "area: Settings"
 
