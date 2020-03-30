@@ -301,6 +301,23 @@ struct device_context {
 #endif
 };
 
+#if CONFIG_DEVICE_LOCK_TIMEOUT_VALUE == -1
+#define DEVICE_LOCK_TIMEOUT K_FOREVER
+#else
+#define DEVICE_LOCK_TIMEOUT K_MSEC(CONFIG_DEVICE_LOCK_TIMEOUT_VALUE)
+#endif
+
+/**
+ * @brief Lock a device structure to avoid concurrent access
+ *
+ * @param dev A valid pointer on a struct device instance
+ * @param timeout Waiting period to take the semaphore,
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @return 0 if device got locked, a negative errno otherwise.
+ */
+int device_lock_timeout(struct device *dev, k_timeout_t timeout);
+
 /**
  * @brief Lock an interrupt based device structure to avoid concurrent access.
  *
@@ -310,7 +327,10 @@ struct device_context {
  *
  * @return 0 if device got locked, a negative errno otherwise.
  */
-int device_lock(struct device *dev);
+static inline int device_lock(struct device *dev)
+{
+	return device_lock_timeout(dev, DEVICE_LOCK_TIMEOUT);
+}
 
 /**
  * @brief Notify when a call is finished

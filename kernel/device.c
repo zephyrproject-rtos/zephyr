@@ -180,7 +180,7 @@ void device_busy_clear(struct device *busy_dev)
 #endif
 }
 
-int device_lock(struct device *dev)
+int device_lock_timeout(struct device *dev, k_timeout_t timeout)
 {
 #ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
 	struct device_context *dc =
@@ -188,7 +188,9 @@ int device_lock(struct device *dev)
 		(dev - __device_start);
 
 	if (!k_is_in_isr()) {
-		k_sem_take(&dc->lock, K_FOREVER);
+		if (k_sem_take(&dc->lock, timeout) != 0) {
+			return -EAGAIN;
+		}
 	}
 #endif
 	return 0;
