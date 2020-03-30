@@ -27,13 +27,15 @@ LOG_MODULE_REGISTER(net_ppp, LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_core.h>
-#include <drivers/console/uart_pipe.h>
+#include <sys/ring_buffer.h>
 #include <sys/crc.h>
+#include <drivers/uart.h>
+#include <drivers/console/uart_mux.h>
 
 #include "../../subsys/net/ip/net_stats.h"
 #include "../../subsys/net/ip/net_private.h"
 
-#define UART_BUF_LEN CONFIG_NET_PPP_UART_PIPE_BUF_LEN
+#define UART_BUF_LEN CONFIG_NET_PPP_UART_BUF_LEN
 
 enum ppp_driver_state {
 	STATE_HDLC_FRAME_START,
@@ -42,6 +44,7 @@ enum ppp_driver_state {
 };
 
 struct ppp_driver_context {
+	struct device *dev;
 	struct net_if *iface;
 
 	/* This net_pkt contains pkt that is being read */
@@ -59,10 +62,19 @@ struct ppp_driver_context {
 	u8_t mac_addr[6];
 	struct net_linkaddr ll_addr;
 
+	/* Flag that tells whether this instance is initialized or not */
+	atomic_t modem_init_done;
+
+	/* Incoming data is routed via ring buffer */
+	struct ring_buf rx_ringbuf;
+	u8_t rx_buf[CONFIG_NET_PPP_RINGBUF_SIZE];
+
+	/* ISR function callback worker */
+	struct k_work cb_work;
+
 #if defined(CONFIG_NET_STATISTICS_PPP)
 	struct net_stats_ppp stats;
 #endif
-
 	enum ppp_driver_state state;
 
 #if defined(CONFIG_PPP_CLIENT_CLIENTSERVER)
@@ -176,7 +188,11 @@ static void ppp_change_state(struct ppp_driver_context *ctx,
 static int ppp_send_flush(struct ppp_driver_context *ppp, int off)
 {
 	if (!IS_ENABLED(CONFIG_NET_TEST)) {
-		uart_pipe_send(ppp->send_buf, off);
+		u8_t *buf = ppp->send_buf;
+
+		while (off--) {
+			uart_poll_out(ppp->dev, *buf++);
+		}
 	}
 
 	return 0;
@@ -401,6 +417,7 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 	ppp->pkt = NULL;
 }
 
+#if defined(CONFIG_NET_TEST)
 static u8_t *ppp_recv_cb(u8_t *buf, size_t *off)
 {
 	struct ppp_driver_context *ppp =
@@ -435,7 +452,6 @@ static u8_t *ppp_recv_cb(u8_t *buf, size_t *off)
 	return buf;
 }
 
-#if defined(CONFIG_NET_TEST)
 void ppp_driver_feed_data(u8_t *data, int data_len)
 {
 	struct ppp_driver_context *ppp = &ppp_driver_context_data;
@@ -609,11 +625,56 @@ static int ppp_send(struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
+#if !defined(CONFIG_NET_TEST)
+static void ppp_isr_cb_work(struct k_work *work)
+{
+	struct ppp_driver_context *ppp =
+		CONTAINER_OF(work, struct ppp_driver_context, cb_work);
+	u8_t *data;
+	size_t len, tmp;
+	int ret;
+
+	len = ring_buf_get_claim(&ppp->rx_ringbuf, &data,
+				 CONFIG_NET_PPP_RINGBUF_SIZE);
+	if (len == 0) {
+		LOG_DBG("Ringbuf %p is empty!", &ppp->rx_ringbuf);
+		return;
+	}
+
+	/* This will print too much data, enable only if really needed */
+	if (0) {
+		LOG_HEXDUMP_DBG(data, len, ppp->dev->config->name);
+	}
+
+	tmp = len;
+
+	do {
+		if (ppp_input_byte(ppp, *data++) == 0) {
+			/* Ignore empty or too short frames */
+			if (ppp->pkt && net_pkt_get_len(ppp->pkt) > 3) {
+				ppp_process_msg(ppp);
+				break;
+			}
+		}
+	} while (--tmp);
+
+	ret = ring_buf_get_finish(&ppp->rx_ringbuf, len);
+	if (ret < 0) {
+		LOG_DBG("Cannot flush ring buffer (%d)", ret);
+	}
+}
+#endif /* !CONFIG_NET_TEST */
+
 static int ppp_driver_init(struct device *dev)
 {
 	struct ppp_driver_context *ppp = dev->driver_data;
 
 	LOG_DBG("[%p] dev %p", ppp, dev);
+
+#if !defined(CONFIG_NET_TEST)
+	ring_buf_init(&ppp->rx_ringbuf, sizeof(ppp->rx_buf), ppp->rx_buf);
+	k_work_init(&ppp->cb_work, ppp_isr_cb_work);
+#endif
 
 	ppp->pkt = NULL;
 	ppp_change_state(ppp, STATE_HDLC_FRAME_START);
@@ -674,13 +735,6 @@ use_random_mac:
 
 	memset(ppp->buf, 0, sizeof(ppp->buf));
 
-	/* We do not use uart_pipe for unit tests as the unit test has its
-	 * own handling of UART. See tests/net/ppp/driver for details.
-	 */
-	if (!IS_ENABLED(CONFIG_NET_TEST)) {
-		uart_pipe_register(ppp->buf, sizeof(ppp->buf), ppp_recv_cb);
-	}
-
 	/* If we have a GSM modem with PPP support, then do not start the
 	 * interface automatically but only after the modem is ready.
 	 */
@@ -698,9 +752,96 @@ static struct net_stats_ppp *ppp_get_stats(struct device *dev)
 }
 #endif
 
+#if !defined(CONFIG_NET_TEST)
+static void ppp_uart_flush(struct device *dev)
+{
+	u8_t c;
+
+	while (uart_fifo_read(dev, &c, 1) > 0) {
+		continue;
+	}
+}
+
+static void ppp_uart_isr(void *user_data)
+{
+	struct ppp_driver_context *context = user_data;
+	struct device *uart = context->dev;
+	int rx = 0, ret;
+
+	/* get all of the data off UART as fast as we can */
+	while (uart_irq_update(uart) && uart_irq_rx_ready(uart)) {
+		rx = uart_fifo_read(uart, context->buf, sizeof(context->buf));
+		if (rx <= 0) {
+			continue;
+		}
+
+		ret = ring_buf_put(&context->rx_ringbuf, context->buf, rx);
+		if (ret < rx) {
+			LOG_ERR("Rx buffer doesn't have enough space. "
+				"Bytes pending: %d, written: %d",
+				rx, ret);
+			break;
+		}
+
+		k_work_submit(&context->cb_work);
+	}
+}
+#endif /* !CONFIG_NET_TEST */
+
 static int ppp_start(struct device *dev)
 {
 	struct ppp_driver_context *context = dev->driver_data;
+
+	/* Init the PPP UART only once. This should only be done after
+	 * the GSM muxing is setup and enabled. GSM modem will call this
+	 * after everything is ready to be connected.
+	 */
+#if !defined(CONFIG_NET_TEST)
+	if (atomic_cas(&context->modem_init_done, false, true)) {
+		const char *dev_name = NULL;
+
+		/* Now try to figure out what device to open. If GSM muxing
+		 * is enabled, then use it. If not, then check if modem
+		 * configuration is enabled, and use that. If none are enabled,
+		 * then use our own config.
+		 */
+#if IS_ENABLED(CONFIG_GSM_MUX)
+		struct device *mux;
+
+		mux = uart_mux_find(CONFIG_GSM_MUX_DLCI_PPP);
+		if (mux == NULL) {
+			LOG_ERR("Cannot find GSM mux dev for DLCI %d",
+				CONFIG_GSM_MUX_DLCI_PPP);
+			return -ENOENT;
+		}
+
+		dev_name = mux->config->name;
+#elif IS_ENABLED(CONFIG_MODEM_GSM_PPP)
+		dev_name = CONFIG_MODEM_GSM_UART_NAME;
+#else
+		dev_name = CONFIG_NET_PPP_UART_NAME;
+#endif
+		if (dev_name == NULL || dev_name[0] == '\0') {
+			LOG_ERR("UART configuration is wrong!");
+			return -EINVAL;
+		}
+
+		LOG_DBG("Initializing PPP to use %s", dev_name);
+
+		context->dev = device_get_binding(dev_name);
+		if (!context->dev) {
+			LOG_ERR("Cannot find dev %s", dev_name);
+			return -ENODEV;
+		}
+
+		uart_irq_rx_disable(context->dev);
+		uart_irq_tx_disable(context->dev);
+		ppp_uart_flush(context->dev);
+		uart_irq_callback_user_data_set(context->dev, ppp_uart_isr,
+						context);
+		uart_irq_rx_enable(context->dev);
+	}
+#endif /* !CONFIG_NET_TEST */
 
 	net_ppp_carrier_on(context->iface);
 

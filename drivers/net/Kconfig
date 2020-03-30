@@ -8,10 +8,13 @@ menuconfig NET_PPP
 	bool "Point-to-point (PPP) UART based driver"
 	depends on NET_L2_PPP
 	depends on NET_NATIVE
-	select UART_PIPE if ! MODEM_GSM_PPP
-	select UART_INTERRUPT_DRIVEN
+	select UART_MUX if GSM_MUX
 
 if NET_PPP
+
+config NET_PPP_UART_NAME
+	string "UART device name the PPP is connected to"
+	depends on !MODEM_GSM_PPP
 
 config NET_PPP_DRV_NAME
 	string "PPP Driver name"
@@ -19,12 +22,19 @@ config NET_PPP_DRV_NAME
 	help
 	  This option sets the driver name
 
-config NET_PPP_UART_PIPE_BUF_LEN
+config NET_PPP_UART_BUF_LEN
 	int "Buffer length when reading from UART"
 	default 8
 	help
-	  This options sets the size of the UART pipe buffer where data
+	  This options sets the size of the UART buffer where data
 	  is being read to.
+
+config NET_PPP_RINGBUF_SIZE
+	int "PPP ring buffer size"
+	default 256
+	help
+	  PPP ring buffer size when passing data from RX ISR to worker
+	  thread that will pass the data to IP stack.
 
 config NET_PPP_VERIFY_FCS
 	bool "Verify that received FCS is valid"

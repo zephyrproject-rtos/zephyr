@@ -5,8 +5,14 @@
  */
 
 #define DLCI_CONTROL 0
+
+#if IS_ENABLED(CONFIG_GSM_MUX)
 #define DLCI_AT      CONFIG_GSM_MUX_DLCI_AT
 #define DLCI_PPP     CONFIG_GSM_MUX_DLCI_PPP
+#else
+#define DLCI_AT      -1
+#define DLCI_PPP     -1
+#endif
 
 struct gsm_mux;
 struct gsm_dlci;

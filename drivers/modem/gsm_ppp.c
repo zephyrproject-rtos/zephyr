@@ -13,7 +13,6 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #include <sys/util.h>
 #include <net/ppp.h>
 #include <drivers/uart.h>
-#include <drivers/console/uart_pipe.h>
 #include <drivers/console/uart_mux.h>
 
 #include "modem_context.h"
@@ -24,7 +23,7 @@ LOG_MODULE_REGISTER(modem_gsm, CONFIG_MODEM_LOG_LEVEL);
 #define GSM_CMD_READ_BUF       128
 #define GSM_CMD_AT_TIMEOUT     K_SECONDS(2)
 #define GSM_CMD_SETUP_TIMEOUT  K_SECONDS(6)
-#define GSM_RX_STACK_SIZE      1024
+#define GSM_RX_STACK_SIZE      CONFIG_MODEM_GSM_RX_STACK_SIZE
 #define GSM_RECV_MAX_BUF       30
 #define GSM_RECV_BUF_SIZE      128
 #define GSM_BUF_ALLOC_TIMEOUT  K_SECONDS(1)
@@ -56,8 +55,6 @@ static struct gsm_modem {
 
 	u8_t *ppp_recv_buf;
 	size_t ppp_recv_buf_len;
-	uart_pipe_recv_cb ppp_recv_cb;
-	struct k_sem ppp_send_sem;
 
 	enum setup_state state;
 	struct device *ppp_dev;
@@ -69,8 +66,6 @@ static struct gsm_modem {
 	bool setup_done : 1;
 } gsm;
 
-static size_t recv_buf_offset;
-
 NET_BUF_POOL_DEFINE(gsm_recv_pool, GSM_RECV_MAX_BUF, GSM_RECV_BUF_SIZE,
 		    0, NULL);
 K_THREAD_STACK_DEFINE(gsm_rx_stack, GSM_RX_STACK_SIZE);
@@ -79,47 +74,14 @@ struct k_thread gsm_rx_thread;
 
 static void gsm_rx(struct gsm_modem *gsm)
 {
-	int bytes, r;
-
 	LOG_DBG("starting");
 
 	while (true) {
 		k_sem_take(&gsm->gsm_data.rx_sem, K_FOREVER);
 
-		if (gsm->mux_enabled == false) {
-			if (gsm->setup_done == false) {
-				gsm->context.cmd_handler.process(
-						&gsm->context.cmd_handler,
-						&gsm->context.iface);
-				continue;
-			}
-
-			if (gsm->ppp_recv_cb == NULL ||
-			    gsm->ppp_recv_buf == NULL ||
-			    gsm->ppp_recv_buf_len == 0) {
-				return;
-			}
-
-			r = gsm->context.iface.read(
-					&gsm->context.iface,
-					&gsm->ppp_recv_buf[recv_buf_offset],
-					gsm->ppp_recv_buf_len -
-					recv_buf_offset,
-					&bytes);
-			if (r < 0 || bytes == 0) {
-				continue;
-			}
-
-			recv_buf_offset += bytes;
-
-			gsm->ppp_recv_buf = gsm->ppp_recv_cb(gsm->ppp_recv_buf,
-							     &recv_buf_offset);
-		} else if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
-			/* The handler will listen AT channel */
-			gsm->context.cmd_handler.process(
-						&gsm->context.cmd_handler,
-						&gsm->context.iface);
-		}
+		/* The handler will listen AT channel */
+		gsm->context.cmd_handler.process(&gsm->context.cmd_handler,
+						 &gsm->context.iface);
 	}
 }
 
@@ -282,20 +244,15 @@ static int gsm_setup_mccmno(struct gsm_modem *gsm)
 static void set_ppp_carrier_on(struct gsm_modem *gsm)
 {
 	struct device *ppp_dev = device_get_binding(CONFIG_NET_PPP_DRV_NAME);
-	struct net_if *iface;
+	const struct ppp_api *api =
+				(const struct ppp_api *)ppp_dev->driver_api;
 
 	if (!ppp_dev) {
 		LOG_ERR("Cannot find PPP %s!", "device");
 		return;
 	}
 
-	iface = net_if_lookup_by_dev(ppp_dev);
-	if (!iface) {
-		LOG_ERR("Cannot find PPP %s!", "network interface");
-		return;
-	}
-
-	net_ppp_carrier_on(iface);
+	api->start(ppp_dev);
 }
 
 static void gsm_finalize_connection(struct gsm_modem *gsm)
@@ -352,11 +309,12 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 
 	gsm->setup_done = true;
 
-	/* FIXME: This will let PPP to start send data. We should actually
-	 * change this so that the PPP L2 is initialized after the GSM modem
-	 * is working and connection is created. TBDL.
+	/* If we are not muxing, the modem interface and gsm_rx() thread is not
+	 * needed as PPP will handle the incoming traffic internally.
 	 */
-	k_sem_give(&gsm->ppp_send_sem);
+	if (!IS_ENABLED(CONFIG_GSM_MUX)) {
+		k_thread_abort(&gsm_rx_thread);
+	}
 
 	set_ppp_carrier_on(gsm);
 }
@@ -576,8 +534,6 @@ static int gsm_init(struct device *device)
 
 	LOG_DBG("Generic GSM modem (%p)", gsm);
 
-	k_sem_init(&gsm->ppp_send_sem, 0, 1);
-
 	gsm->cmd_handler_data.cmds[CMD_RESP] = response_cmds;
 	gsm->cmd_handler_data.cmds_len[CMD_RESP] = ARRAY_SIZE(response_cmds);
 	gsm->cmd_handler_data.read_buf = &gsm->cmd_read_buf[0];
@@ -630,32 +586,13 @@ static int gsm_init(struct device *device)
 			K_THREAD_STACK_SIZEOF(gsm_rx_stack),
 			(k_thread_entry_t) gsm_rx,
 			gsm, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_name_set(&gsm_rx_thread, "gsm_rx");
 
 	k_delayed_work_init(&gsm->gsm_configure_work, gsm_configure);
 
 	(void)k_delayed_work_submit(&gsm->gsm_configure_work, K_NO_WAIT);
 
 	return 0;
-}
-
-int uart_pipe_send(const u8_t *buf, int len)
-{
-	k_sem_take(&gsm.ppp_send_sem, K_FOREVER);
-
-	(void)gsm.context.iface.write(&gsm.context.iface, buf, len);
-
-	k_sem_give(&gsm.ppp_send_sem);
-
-	return 0;
-}
-
-
-/* Setup the connection to PPP. PPP driver will call this function. */
-void uart_pipe_register(u8_t *buf, size_t len, uart_pipe_recv_cb cb)
-{
-	gsm.ppp_recv_buf = buf;
-	gsm.ppp_recv_buf_len = len;
-	gsm.ppp_recv_cb = cb;
 }
 
 DEVICE_INIT(gsm_ppp, "modem_gsm", gsm_init, &gsm, NULL, POST_KERNEL,
