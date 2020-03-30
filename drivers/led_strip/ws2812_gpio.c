@@ -240,10 +240,4 @@ static const struct led_strip_driver_api ws2812_gpio_api = {
 			    CONFIG_LED_STRIP_INIT_PRIORITY,		\
 			    &ws2812_gpio_api)
 
-#if DT_INST_NODE_HAS_PROP(0, label)
-WS2812_GPIO_DEVICE(0);
-#endif
-
-#if DT_INST_NODE_HAS_PROP(1, label)
-WS2812_GPIO_DEVICE(1);
-#endif
+DT_INST_FOREACH(WS2812_GPIO_DEVICE)
