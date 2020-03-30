@@ -14,6 +14,33 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #include <device.h>
 #include <drivers/display.h>
 
+#if DT_HAS_NODE(DT_INST(0, ilitek_ili9340))
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, ilitek_ili9340))
+#endif
+
+#if DT_HAS_NODE(DT_INST(0, solomon_ssd1306fb))
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, solomon_ssd1306fb))
+#endif
+
+#if DT_HAS_NODE(DT_INST(0, gooddisplay_gdeh0213b1))
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, gooddisplay_gdeh0213b1))
+#endif
+
+#if DT_HAS_NODE(DT_INST(0, sitronix_st7789v))
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, sitronix_st7789v))
+#endif
+
+#if DT_HAS_NODE(DT_INST(0, fsl_imx6sx_lcdif))
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, fsl_imx6sx_lcdif))
+#endif
+
+#ifdef CONFIG_SDL_DISPLAY_DEV_NAME
+#define DISPLAY_DEV_NAME CONFIG_SDL_DISPLAY_DEV_NAME
+#endif
+
+#ifdef CONFIG_DUMMY_DISPLAY_DEV_NAME
+#define DISPLAY_DEV_NAME CONFIG_DUMMY_DISPLAY_DEV_NAME
+#endif
 #ifdef CONFIG_ARCH_POSIX
 #include "posix_board_if.h"
 #endif

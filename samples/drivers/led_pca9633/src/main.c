@@ -14,7 +14,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#define LED_DEV_NAME DT_INST_0_NXP_PCA9633_LABEL
+#define LED_DEV_NAME DT_LABEL(DT_INST(0, nxp_pca9633))
 #define NUM_LEDS 4
 #define MAX_BRIGHTNESS 100
 #define HALF_BRIGHTNESS (MAX_BRIGHTNESS / 2)
