@@ -183,7 +183,7 @@ Bluetooth Mesh:
 Build system:
     status: maintained
     maintainers:
-        - SebastianBoe
+        - tejlmand
     collaborators:
         - nashif
     files:
@@ -267,9 +267,9 @@ Display drivers:
 
 Documentation:
     # Provisional entry, to be corrected
-    status: maintained
-    maintainers:
-        - dbkinder
+    status: orphaned
+    collaborators:
+        - nashif
     files:
         - doc/
     files-regex:
