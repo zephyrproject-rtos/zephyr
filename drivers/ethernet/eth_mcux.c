@@ -101,6 +101,7 @@ struct eth_context {
 	const char *clock_name;
 	clock_ip_name_t clock;
 	struct device *clock_dev;
+	bool initialized;
 #endif
 	enet_handle_t enet_handle;
 #if defined(CONFIG_PTP_CLOCK_MCUX)
@@ -199,7 +200,7 @@ static int eth_mcux_device_pm_control(struct device *dev, u32_t command,
 			LOG_DBG("Suspending");
 
 			ret = net_if_suspend(eth_ctx->iface);
-			if (ret == -EBUSY) {
+			if (ret != 0) {
 				goto out;
 			}
 
@@ -210,7 +211,13 @@ static int eth_mcux_device_pm_control(struct device *dev, u32_t command,
 			ENET_Deinit(eth_ctx->base);
 			clock_control_off(eth_ctx->clock_dev,
 				(clock_control_subsys_t)eth_ctx->clock);
+
+			eth_ctx->initialized = false;
 		} else if (*(u32_t *)context == DEVICE_PM_ACTIVE_STATE) {
+			if (eth_ctx->initialized) {
+				goto out;
+			}
+
 			LOG_DBG("Resuming");
 
 			clock_control_on(eth_ctx->clock_dev,
@@ -1015,6 +1022,7 @@ static int eth_init(struct device *dev)
 
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	context->clock_dev = device_get_binding(context->clock_name);
+	context->initialized = true;
 #endif
 
 	k_sem_init(&context->tx_buf_sem,
