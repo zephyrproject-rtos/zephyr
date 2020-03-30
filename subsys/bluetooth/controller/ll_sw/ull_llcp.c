@@ -615,6 +615,11 @@ static void pdu_encode_phy_update_ind(struct pdu_data *pdu, u16_t instant)
 	pdu->llctrl.phy_upd_ind.instant = sys_cpu_to_le16(instant);
 }
 
+static void pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	ctx->data.pu.instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
+}
+
 /*
  * LLCP Local Procedure Common FSM
  */
@@ -1190,11 +1195,9 @@ static void lp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct pro
 
 static void lp_pu_st_wait_rx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	struct pdu_data *pdu = (struct pdu_data *) param;
-
 	switch (evt) {
 	case LP_PU_EVT_PHY_UPDATE_IND:
-		ctx->data.pu.instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
+		pdu_decode_phy_update_ind(ctx, param);
 		ctx->state = LP_PU_STATE_WAIT_INSTANT;
 		break;
 	default:
@@ -2080,11 +2083,9 @@ static void rp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct pro
 
 static void rp_pu_st_wait_rx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	struct pdu_data *pdu = (struct pdu_data *) param;
-
 	switch (evt) {
 	case RP_PU_EVT_PHY_UPDATE_IND:
-		ctx->data.pu.instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
+		pdu_decode_phy_update_ind(ctx, param);
 		ctx->state = RP_PU_STATE_WAIT_INSTANT;
 		break;
 	default:
