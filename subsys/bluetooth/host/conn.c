@@ -64,9 +64,6 @@ NET_BUF_POOL_FIXED_DEFINE(frag_pool, CONFIG_BT_L2CAP_TX_FRAG_COUNT, FRAG_SIZE,
 
 #endif /* CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0 */
 
-/* How long until we cancel HCI_LE_Create_Connection */
-#define CONN_TIMEOUT	K_SECONDS(CONFIG_BT_CREATE_CONN_TIMEOUT)
-
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 const struct bt_conn_auth_cb *bt_auth;
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
@@ -1713,7 +1710,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			/* this indicate LE Create Connection with peer address
 			 * has been stopped. This could either be triggered by
 			 * the application through bt_conn_disconnect or by
-			 * timeout set by CONFIG_BT_CREATE_CONN_TIMEOUT.
+			 * timeout set by bt_conn_le_create_param.timeout.
 			 */
 			if (conn->err) {
 				notify_connected(conn);
@@ -1765,7 +1762,8 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 		 */
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    conn->type == BT_CONN_TYPE_LE) {
-			k_delayed_work_submit(&conn->update_work, CONN_TIMEOUT);
+			k_delayed_work_submit(&conn->update_work,
+				K_MSEC(10 * bt_dev.create_param.timeout));
 		}
 
 		break;
@@ -2122,6 +2120,40 @@ static void bt_conn_set_param_le(struct bt_conn *conn,
 	conn->le.timeout = param->timeout;
 }
 
+static bool create_param_validate(const struct bt_conn_le_create_param *param)
+{
+#if defined(CONFIG_BT_PRIVACY)
+	/* Initiation timeout cannot be greater than the RPA timeout */
+	const u32_t timeout_max = (MSEC_PER_SEC / 10) * CONFIG_BT_RPA_TIMEOUT;
+
+	if (param->timeout > timeout_max) {
+		return false;
+	}
+#endif
+
+	return true;
+}
+
+static void create_param_setup(const struct bt_conn_le_create_param *param)
+{
+	bt_dev.create_param = *param;
+
+	bt_dev.create_param.timeout =
+		(bt_dev.create_param.timeout != 0) ?
+		bt_dev.create_param.timeout :
+		(MSEC_PER_SEC / 10) * CONFIG_BT_CREATE_CONN_TIMEOUT;
+
+	bt_dev.create_param.interval_coded =
+		(bt_dev.create_param.interval_coded != 0) ?
+		bt_dev.create_param.interval_coded :
+		bt_dev.create_param.interval;
+
+	bt_dev.create_param.window_coded =
+		(bt_dev.create_param.window_coded != 0) ?
+		bt_dev.create_param.window_coded :
+		bt_dev.create_param.window;
+}
+
 #if defined(CONFIG_BT_WHITELIST)
 int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 			   const struct bt_le_conn_param *param)
@@ -2165,7 +2197,7 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 	}
 
 	bt_conn_set_param_le(conn, param);
-	bt_dev.create_param = *create_param;
+	create_param_setup(create_param);
 
 	atomic_set_bit(conn->flags, BT_CONN_AUTO_CONNECT);
 	bt_conn_set_state(conn, BT_CONN_CONNECT_AUTO);
@@ -2235,6 +2267,10 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		return -EINVAL;
 	}
 
+	if (!create_param_validate(create_param)) {
+		return -EINVAL;
+	}
+
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
 		return -EINVAL;
 	}
@@ -2278,7 +2314,7 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 	}
 
 	bt_conn_set_param_le(conn, conn_param);
-	bt_dev.create_param = *create_param;
+	create_param_setup(create_param);
 
 #if defined(CONFIG_BT_SMP)
 	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {

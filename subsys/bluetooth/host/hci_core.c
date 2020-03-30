@@ -1261,7 +1261,7 @@ static inline bool rpa_timeout_valid_check(void)
 #if defined(CONFIG_BT_PRIVACY)
 	/* Check if create conn timeout will happen before RPA timeout. */
 	return k_delayed_work_remaining_get(&bt_dev.rpa_update) >
-	       K_SECONDS(CONFIG_BT_CREATE_CONN_TIMEOUT);
+	       (10 * bt_dev.create_param.timeout);
 #else
 	return true;
 #endif
@@ -1401,17 +1401,12 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	}
 
 	if (bt_dev.create_param.options & BT_LE_CONN_OPT_CODED) {
-		u16_t interval = bt_dev.create_param.interval_coded ?
-			bt_dev.create_param.interval_coded :
-			bt_dev.create_param.interval;
-		u16_t window = bt_dev.create_param.window_coded ?
-			bt_dev.create_param.window_coded :
-			bt_dev.create_param.window;
-
 		cp->phys |= BT_HCI_LE_EXT_SCAN_PHY_CODED;
 		phy = net_buf_add(buf, sizeof(*phy));
-		phy->scan_interval = sys_cpu_to_le16(interval);
-		phy->scan_window = sys_cpu_to_le16(window);
+		phy->scan_interval = sys_cpu_to_le16(
+			bt_dev.create_param.interval_coded);
+		phy->scan_window = sys_cpu_to_le16(
+			bt_dev.create_param.window_coded);
 		set_phy_conn_param(conn, phy);
 	}
 
