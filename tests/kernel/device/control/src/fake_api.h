@@ -13,6 +13,7 @@ struct fake_api {
 	int (*sync_poll_call)(struct device *dev);
 	int (*lock_int_call)(struct device *dev, int *val);
 	int (*lock_poll_call)(struct device *dev, int *val);
+	int (*no_to_call)(struct device *dev, int *val);
 
 };
 
@@ -42,4 +43,11 @@ static inline int fake_lock_poll_call(struct device *dev, int *val)
 	const struct fake_api *api = (const struct fake_api *)dev->driver_api;
 
 	return api->lock_poll_call(dev, val);
+}
+
+static inline int fake_no_timeout_call(struct device *dev, int *val)
+{
+	const struct fake_api *api = (const struct fake_api *)dev->driver_api;
+
+	return api->no_to_call(dev, val);
 }

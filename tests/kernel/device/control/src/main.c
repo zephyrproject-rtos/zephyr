@@ -20,6 +20,7 @@ enum test_triggers {
 	TEST_TRIGGER_NONE = 0,
 	TEST_TRIGGER_INT,
 	TEST_TRIGGER_POLL,
+	TEST_TRIGGER_LOCK_TIMEOUT,
 };
 
 enum test_triggers trigger;
@@ -45,6 +46,10 @@ static void concurrent_thread(void)
 			zassert_true((ret == 0), NULL);
 			zassert_true((value == 3), NULL);
 			break;
+		case TEST_TRIGGER_LOCK_TIMEOUT:
+			ret = fake_no_timeout_call(dev, &value);
+			zassert_true((ret == 0), NULL);
+			zassert_true((value == 5), NULL);
 			break;
 		default:
 			break;
@@ -100,6 +105,14 @@ void test_lock(void)
 	ret = fake_lock_poll_call(dev, &value);
 	zassert_true((ret == 0), NULL);
 	zassert_true((value == 4), NULL);
+
+	trigger = TEST_TRIGGER_LOCK_TIMEOUT;
+	k_sem_give(&concurrent_trigger);
+	k_yield();
+
+	/* It must timeout as concurrent_thread is already calling */
+	ret = fake_no_timeout_call(dev, &value);
+	zassert_true((ret == -EAGAIN), NULL);
 }
 #else
 void test_lock(void)

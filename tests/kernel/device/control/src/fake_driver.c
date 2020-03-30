@@ -88,6 +88,21 @@ static int fake_lock_polling_call(struct device *dev, int *val)
 	return device_release(dev);
 }
 
+static int fake_no_to_call(struct device *dev, int *val)
+{
+	if (device_lock_timeout(dev, K_NO_WAIT) != 0) {
+		return -EAGAIN;
+	}
+
+	value++;
+	*val = value;
+	k_sleep(K_MSEC(100));
+
+	device_call_complete(dev, 0);
+
+	return device_release(dev);
+}
+
 static int fake_driver_init(struct device *dev)
 {
 	fake_dev = dev;
@@ -108,6 +123,7 @@ static const struct fake_api api = {
 	.sync_poll_call = fake_sync_polling_call,
 	.lock_int_call = fake_lock_interrupt_call,
 	.lock_poll_call = fake_lock_polling_call,
+	.no_to_call = fake_no_to_call,
 };
 
 
