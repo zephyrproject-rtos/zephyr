@@ -140,7 +140,7 @@ EL1_Reset_Handler:
     mov r13, #0         /* r13_sys */
     mov r14, #0         /* r14_sys */
 
-#if defined(CONFIG_FPU)
+#if defined(CONFIG_FPU) && defined(CONFIG_CPU_HAS_VFP)
     /*
      * Initialise FPU registers to a defined state.
      */
@@ -152,7 +152,7 @@ EL1_Reset_Handler:
 
     /* Enable VFP */
     mov  r0, #FPEXC_EN
-    fmxr fpexc, r0
+    vmsr fpexc, r0
 
     /* Initialise VFP registers */
     fmdrr d0,  r1, r1
@@ -171,7 +171,28 @@ EL1_Reset_Handler:
     fmdrr d13, r1, r1
     fmdrr d14, r1, r1
     fmdrr d15, r1, r1
-#endif /* CONFIG_FPU */
+#if defined(CONFIG_VFP_FEATURE_REGS_S64_D32)
+    fmdrr d16, r1, r1
+    fmdrr d17, r1, r1
+    fmdrr d18, r1, r1
+    fmdrr d19, r1, r1
+    fmdrr d20, r1, r1
+    fmdrr d21, r1, r1
+    fmdrr d22, r1, r1
+    fmdrr d23, r1, r1
+    fmdrr d24, r1, r1
+    fmdrr d25, r1, r1
+    fmdrr d26, r1, r1
+    fmdrr d27, r1, r1
+    fmdrr d28, r1, r1
+    fmdrr d29, r1, r1
+    fmdrr d30, r1, r1
+    fmdrr d31, r1, r1
+#endif /* CONFIG_VFP_FEATURE_REGS_S64_D32 */
+
+    vmsr fpscr, r1
+    vmsr fpexc, r1
+#endif /* CONFIG_FPU && CONFIG_CPU_HAS_VFP */
 
 #endif /* CONFIG_CPU_HAS_DCLS */
 
