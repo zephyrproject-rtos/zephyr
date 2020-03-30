@@ -97,6 +97,7 @@ enum {
 	LP_PU_STATE_WAIT_TX_PHY_REQ,
 	LP_PU_STATE_WAIT_RX_PHY_RSP,
 	LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND,
+	LP_PU_STATE_WAIT_RX_PHY_UPDATE_IND,
 	LP_PU_STATE_WAIT_INSTANT,
 	LP_PU_STATE_WAIT_NTF,
 };
@@ -108,6 +109,9 @@ enum {
 
 	/* Response recieved */
 	LP_PU_EVT_PHY_RSP,
+
+	/* Indication recieved */
+	LP_PU_EVT_PHY_UPDATE_IND,
 
 	/* Reject response recieved */
 	LP_PU_EVT_REJECT,
@@ -174,7 +178,9 @@ enum {
 enum {
 	RP_PU_STATE_IDLE,
 	RP_PU_STATE_WAIT_RX_PHY_REQ,
+	RP_PU_STATE_WAIT_TX_PHY_RSP,
 	RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND,
+	RP_PU_STATE_WAIT_RX_PHY_UPDATE_IND,
 	RP_PU_STATE_WAIT_INSTANT,
 	RP_PU_STATE_WAIT_NTF,
 };
@@ -186,6 +192,9 @@ enum {
 
 	/* Request recieved */
 	RP_PU_EVT_PHY_REQ,
+
+	/* Indication recieved */
+	RP_PU_EVT_PHY_UPDATE_IND,
 };
 
 /* LLCP Procedure */
@@ -587,6 +596,14 @@ static void pdu_encode_phy_req(struct pdu_data *pdu)
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, phy_req) + sizeof(struct pdu_data_llctrl_phy_req);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_REQ;
+	/* TODO(thoh): Fill in PDU with correct data */
+}
+
+static void pdu_encode_phy_rsp(struct pdu_data *pdu)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, phy_rsp) + sizeof(struct pdu_data_llctrl_phy_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_RSP;
 	/* TODO(thoh): Fill in PDU with correct data */
 }
 
@@ -1102,8 +1119,20 @@ static void lp_pu_send_phy_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_REQ;
 	} else {
 		lp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_REQ);
-		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_RSP;
-		ctx->state = LP_PU_STATE_WAIT_RX_PHY_RSP;
+
+		switch (conn->lll.role) {
+		case BT_HCI_ROLE_MASTER:
+			ctx->state = LP_PU_STATE_WAIT_RX_PHY_RSP;
+			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_RSP;
+			break;
+		case BT_HCI_ROLE_SLAVE:
+			ctx->state = LP_PU_STATE_WAIT_RX_PHY_UPDATE_IND;
+			ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
+			break;
+		default:
+			/* Unknown role */
+			LL_ASSERT(0);
+		}
 	}
 }
 
@@ -1159,6 +1188,21 @@ static void lp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct pro
 	/* TODO(thoh) */
 }
 
+static void lp_pu_st_wait_rx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	struct pdu_data *pdu = (struct pdu_data *) param;
+
+	switch (evt) {
+	case LP_PU_EVT_PHY_UPDATE_IND:
+		ctx->data.pu.instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
+		ctx->state = LP_PU_STATE_WAIT_INSTANT;
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
 static void lp_pu_check_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	u16_t event_counter = lp_event_counter(conn);
@@ -1201,6 +1245,9 @@ static void lp_pu_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8
 	case LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND:
 		lp_pu_st_wait_tx_phy_update_ind(conn, ctx, evt, param);
 		break;
+	case LP_PU_STATE_WAIT_RX_PHY_UPDATE_IND:
+		lp_pu_st_wait_rx_phy_update_ind(conn, ctx, evt, param);
+		break;
 	case LP_PU_STATE_WAIT_INSTANT:
 		lp_pu_st_wait_instant(conn, ctx, evt, param);
 		break;
@@ -1220,6 +1267,9 @@ static void lp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node
 	switch (pdu->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
 		lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_PHY_RSP, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
+		lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_PHY_UPDATE_IND, pdu);
 		break;
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_UNKNOWN, pdu);
@@ -1914,6 +1964,9 @@ static void rp_pu_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcode
 
 	/* Encode LL Control PDU */
 	switch (opcode) {
+	case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
+		pdu_encode_phy_rsp(pdu);
+		break;
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
 		pdu_encode_phy_update_ind(pdu, ctx->data.pu.instant);
 		break;
@@ -1969,6 +2022,17 @@ static void rp_pu_send_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx 
 	}
 }
 
+static void rp_pu_send_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!tx_alloc_is_available()) {
+		ctx->state = RP_PU_STATE_WAIT_TX_PHY_RSP;
+	} else {
+		rp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_RSP);
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
+		ctx->state = RP_PU_STATE_WAIT_RX_PHY_UPDATE_IND;
+	}
+}
+
 static void rp_pu_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	/* TODO */
@@ -1986,7 +2050,17 @@ static void rp_pu_st_wait_rx_phy_req(struct ull_cp_conn *conn, struct proc_ctx *
 {
 	switch (evt) {
 	case RP_PU_EVT_PHY_REQ:
-		rp_pu_send_phy_update_ind(conn, ctx, evt, param);
+		switch (conn->lll.role) {
+		case BT_HCI_ROLE_MASTER:
+			rp_pu_send_phy_update_ind(conn, ctx, evt, param);
+			break;
+		case BT_HCI_ROLE_SLAVE:
+			rp_pu_send_phy_rsp(conn, ctx, evt, param);
+			break;
+		default:
+			/* Unknown role */
+			LL_ASSERT(0);
+		}
 		break;
 	default:
 		/* Ignore other evts */
@@ -1994,9 +2068,29 @@ static void rp_pu_st_wait_rx_phy_req(struct ull_cp_conn *conn, struct proc_ctx *
 	}
 }
 
+static void rp_pu_st_wait_tx_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+}
+
 static void rp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	/* TODO(thoh) */
+}
+
+static void rp_pu_st_wait_rx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	struct pdu_data *pdu = (struct pdu_data *) param;
+
+	switch (evt) {
+	case RP_PU_EVT_PHY_UPDATE_IND:
+		ctx->data.pu.instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
+		ctx->state = RP_PU_STATE_WAIT_INSTANT;
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void rp_pu_check_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
@@ -2035,8 +2129,14 @@ static void rp_pu_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8
 	case RP_PU_STATE_WAIT_RX_PHY_REQ:
 		rp_pu_st_wait_rx_phy_req(conn, ctx, evt, param);
 		break;
+	case RP_PU_STATE_WAIT_TX_PHY_RSP:
+		rp_pu_st_wait_tx_phy_rsp(conn, ctx, evt, param);
+		break;
 	case RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND:
 		rp_pu_st_wait_tx_phy_update_ind(conn, ctx, evt, param);
+		break;
+	case RP_PU_STATE_WAIT_RX_PHY_UPDATE_IND:
+		rp_pu_st_wait_rx_phy_update_ind(conn, ctx, evt, param);
 		break;
 	case RP_PU_STATE_WAIT_INSTANT:
 		rp_pu_st_wait_instant(conn, ctx, evt, param);
@@ -2057,6 +2157,9 @@ static void rp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node
 	switch (pdu->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
 		rp_pu_execute_fsm(conn, ctx, RP_PU_EVT_PHY_REQ, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
+		rp_pu_execute_fsm(conn, ctx, RP_PU_EVT_PHY_UPDATE_IND, pdu);
 		break;
 	default:
 		/* Unknown opcode */
