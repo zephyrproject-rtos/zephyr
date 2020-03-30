@@ -23,12 +23,19 @@
 #include "controller/ticker/ticker.h"
 #include "controller/include/ll.h"
 
-#define FLASH_SLOT_ERASE     FLASH_PAGE_ERASE_MAX_TIME_US
-#define FLASH_INTERVAL_ERASE FLASH_SLOT_ERASE
-#define FLASH_SLOT_WRITE     7500
-#define FLASH_INTERVAL_WRITE FLASH_SLOT_WRITE
+#define FLASH_RADIO_ABORT_DELAY_US 1500
+#define FLASH_RADIO_WORK_DELAY_US  200
 
-#define FLASH_RADIO_ABORT_DELAY_US 500
+#define FLASH_SLOT_ERASE     FLASH_PAGE_ERASE_MAX_TIME_US
+#define FLASH_INTERVAL_ERASE (FLASH_RADIO_ABORT_DELAY_US + \
+			      FLASH_RADIO_WORK_DELAY_US + \
+			      FLASH_SLOT_ERASE)
+
+#define FLASH_INTERVAL_WRITE 7500
+#define FLASH_SLOT_WRITE     (FLASH_INTERVAL_WRITE - \
+			      FLASH_RADIO_ABORT_DELAY_US - \
+			      FLASH_RADIO_WORK_DELAY_US)
+
 #define FLASH_TIMEOUT_MS ((FLASH_PAGE_ERASE_MAX_TIME_US)\
 			* (FLASH_PAGE_MAX_CNT) / 1000)
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
@@ -312,31 +319,30 @@ static void time_slot_callback_work(u32_t ticks_at_expire, u32_t remainder,
 	}
 }
 
-static void time_slot_callback_helper(u32_t ticks_at_expire, u32_t remainder,
-		u16_t lazy, void *context)
+static void time_slot_delay(u32_t ticks_at_expire, u32_t ticks_delay,
+			    ticker_timeout_func callback, void *context)
 {
 	u8_t instance_index;
 	u8_t ticker_id;
 	int err;
 
-	ll_radio_state_abort();
-
 	ll_timeslice_ticker_id_get(&instance_index, &ticker_id);
 
-	/* start a secondary one-shot ticker after ~ 500 us, */
-	/* this will let any radio role to gracefully release the Radio h/w */
-
+	/* start a secondary one-shot ticker after ticks_delay,
+	 * this will let any radio role to gracefully abort and release the
+	 * Radio h/w.
+	 */
 	err = ticker_start(instance_index, /* Radio instance ticker */
 			   0, /* user_id */
 			   0, /* ticker_id */
 			   ticks_at_expire, /* current tick */
-			   HAL_TICKER_US_TO_TICKS(FLASH_RADIO_ABORT_DELAY_US),
-			   0, /* periodic (on-shot) */
-			   0, /* per. remaind. (on-shot) */
+			   ticks_delay, /* one-shot delayed timeout */
+			   0, /* periodic timeout  */
+			   0, /* periodic remainder */
 			   0, /* lazy, voluntary skips */
 			   0,
-			   time_slot_callback_work, /* handler for executing */
-						    /* the flash operation */
+			   callback, /* handler for executing radio abort or */
+				     /* flash work */
 			   context, /* the context for the flash operation */
 			   NULL, /* no op callback */
 			   NULL);
@@ -350,6 +356,25 @@ static void time_slot_callback_helper(u32_t ticks_at_expire, u32_t remainder,
 		/* notify thread that data is available */
 		k_sem_give(&sem_sync);
 	}
+}
+
+static void time_slot_callback_abort(u32_t ticks_at_expire, u32_t remainder,
+				     u16_t lazy, void *context)
+{
+	ll_radio_state_abort();
+	time_slot_delay(ticks_at_expire,
+			HAL_TICKER_US_TO_TICKS(FLASH_RADIO_WORK_DELAY_US),
+			time_slot_callback_work,
+			context);
+}
+
+static void time_slot_callback_prepare(u32_t ticks_at_expire, u32_t remainder,
+				       u16_t lazy, void *context)
+{
+	time_slot_delay(ticks_at_expire,
+			HAL_TICKER_US_TO_TICKS(FLASH_RADIO_ABORT_DELAY_US),
+			time_slot_callback_abort,
+			context);
 }
 
 static int work_in_time_slice(struct flash_op_desc *p_flash_op_desc)
@@ -374,7 +399,7 @@ static int work_in_time_slice(struct flash_op_desc *p_flash_op_desc)
 			   HAL_TICKER_REMAINDER(context->interval),
 			   0, /* lazy, voluntary skips */
 			   HAL_TICKER_US_TO_TICKS(context->slot),
-			   time_slot_callback_helper,
+			   time_slot_callback_prepare,
 			   p_flash_op_desc,
 			   NULL, /* no op callback */
 			   NULL);
