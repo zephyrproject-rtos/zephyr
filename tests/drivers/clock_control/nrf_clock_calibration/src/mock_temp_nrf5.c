@@ -44,7 +44,7 @@ static const struct sensor_driver_api mock_temp_nrf5_driver_api = {
 };
 
 DEVICE_AND_API_INIT(mock_temp_nrf5,
-		    DT_INST_0_NORDIC_NRF_TEMP_LABEL,
+		    DT_LABEL(DT_INST(0, nordic_nrf_temp)),
 		    mock_temp_nrf5_init,
 		    NULL,
 		    NULL,

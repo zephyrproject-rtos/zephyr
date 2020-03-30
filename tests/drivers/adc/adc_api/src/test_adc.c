@@ -127,7 +127,7 @@
 
 #elif defined(CONFIG_SOC_FAMILY_SAM0)
 #include <soc.h>
-#define ADC_DEVICE_NAME         DT_INST_0_ATMEL_SAM0_ADC_LABEL
+#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, atmel_sam0_adc))
 #define ADC_RESOLUTION          12
 #define ADC_GAIN                ADC_GAIN_1
 #define ADC_REFERENCE           ADC_REF_INTERNAL
