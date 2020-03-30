@@ -21,8 +21,8 @@
 #define ETH_RESET_GPIO_PIN		7
 
 #define ETH_REF_CLK_GPIO_NAME		"GPIO_D"
-#define ETH_REF_CLK_GPIO_PIN		DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_REFCLK_2
-#define ETH_REF_CLK_LOCATION		DT_INST_0_SILABS_GECKO_ETHERNET_LOCATION_RMII_REFCLK_0
+#define ETH_REF_CLK_GPIO_PIN		DT_PROP_BY_IDX(DT_INST(0, silabs_gecko_ethernet), location_rmii_refclk, 2)
+#define ETH_REF_CLK_LOCATION		DT_PROP_BY_IDX(DT_INST(0, silabs_gecko_ethernet), location_rmii_refclk, 0)
 
 #endif /* CONFIG_ETH_GECKO */
 
