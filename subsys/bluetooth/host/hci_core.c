@@ -7415,6 +7415,10 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 			const struct bt_data *sd, size_t sd_len,
 			const bt_addr_le_t *peer)
 {
+	struct bt_le_ext_adv_start_param start_param = {
+		.timeout = 0,
+		.num_events = 0,
+	};
 	bool dir_adv = (peer != NULL);
 	struct bt_conn *conn = NULL;
 	int err = 0;
@@ -7453,9 +7457,12 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 
 			bt_conn_set_state(conn, BT_CONN_CONNECT_ADV);
 		}
+	} else if (!(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
+		start_param.timeout = BT_HCI_LE_EXT_ADV_DURATION_HI_DC_MAX;
+		atomic_set_bit(adv->flags, BT_ADV_LIMITED);
 	}
 
-	err = set_le_adv_enable_ext(adv, true, NULL);
+	err = set_le_adv_enable_ext(adv, true, &start_param);
 	if (err) {
 		BT_ERR("Failed to start advertiser");
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && conn) {
