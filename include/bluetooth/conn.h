@@ -328,6 +328,15 @@ struct bt_conn_le_create_param {
 	 *  Set zero to use same as LE 1M PHY scan window.
 	 */
 	u16_t window_coded;
+
+	/** Connection initiation timeout (N * 10 MS)
+	 *
+	 *  Set zero to use the default :option:`CONFIG_BT_CREATE_CONN_TIMEOUT`
+	 *  timeout.
+	 *
+	 *  @note Unused in @ref bt_conn_create_auto_le
+	 */
+	u16_t timeout;
 };
 
 /** Helper to declare create connection parameters inline
@@ -343,6 +352,7 @@ struct bt_conn_le_create_param {
 		.window = (_window), \
 		.interval_coded = 0, \
 		.window_coded = 0, \
+		.timeout = 0, \
 	 } })
 
 /** Default LE create connection parameters.
@@ -610,7 +620,8 @@ struct bt_conn_cb {
 	 *  - @ref BT_HCI_ERR_UNKNOWN_CONN_ID Creating the connection started by
 	 *    @ref bt_conn_create_le was canceled either by the user through
 	 *    @ref bt_conn_disconnect or by the timeout in the host through
-	 *    :option:`CONFIG_BT_CREATE_CONN_TIMEOUT`.
+	 *    @ref bt_conn_le_create_param timeout parameter, which defaults to
+	 *    :option:`CONFIG_BT_CREATE_CONN_TIMEOUT` seconds.
 	 *  - @p BT_HCI_ERR_ADV_TIMEOUT Directed advertiser started by @ref
 	 *    bt_conn_create_slave_le with high duty cycle timed out after 1.28
 	 *    seconds.

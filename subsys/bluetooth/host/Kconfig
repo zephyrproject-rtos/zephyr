@@ -477,8 +477,8 @@ config BT_MAX_PAIRED
 config BT_CREATE_CONN_TIMEOUT
 	int "Timeout for pending LE Create Connection command in seconds"
 	default 3
-	range 1 BT_RPA_TIMEOUT if BT_PRIVACY
-	range 1 65535
+	range 1 BT_RPA_TIMEOUT if BT_PRIVACY && (BT_RPA_TIMEOUT < 655)
+	range 1 655
 
 config BT_CONN_PARAM_UPDATE_TIMEOUT
 	int "Peripheral connection parameter update timeout in milliseconds"
