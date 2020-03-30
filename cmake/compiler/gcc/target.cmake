@@ -51,6 +51,7 @@ foreach(file_name include/stddef.h include-fixed/limits.h)
 endforeach()
 
 include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
+include(${ZEPHYR_BASE}/cmake/gcc-m-fpu.cmake)
 
 if("${ARCH}" STREQUAL "arm")
   include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arm.cmake)
