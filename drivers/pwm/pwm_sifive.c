@@ -246,14 +246,4 @@ static const struct pwm_driver_api pwm_sifive_api = {
 			    CONFIG_PWM_SIFIVE_INIT_PRIORITY,	\
 			    &pwm_sifive_api)
 
-#if DT_INST_NODE_HAS_PROP(0, label)
-PWM_SIFIVE_INIT(0);
-#endif /* DT_INST_NODE_HAS_PROP(0, label) */
-
-#if DT_INST_NODE_HAS_PROP(1, label)
-PWM_SIFIVE_INIT(1);
-#endif /* DT_INST_NODE_HAS_PROP(1, label) */
-
-#if DT_INST_NODE_HAS_PROP(2, label)
-PWM_SIFIVE_INIT(2);
-#endif /* DT_INST_NODE_HAS_PROP(2, label) */
+DT_INST_FOREACH(PWM_SIFIVE_INIT)

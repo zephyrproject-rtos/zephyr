@@ -182,8 +182,4 @@ static struct spi_driver_api spi_litespi_api = {
 			CONFIG_SPI_INIT_PRIORITY, \
 			&spi_litespi_api)
 
-#if DT_INST_NODE_HAS_PROP(0, label)
-
-SPI_INIT(0);
-
-#endif /* DT_INST_NODE_HAS_PROP(0, label) */
+DT_INST_FOREACH(SPI_INIT)

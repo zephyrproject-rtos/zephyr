@@ -136,38 +136,4 @@ static const struct i2c_driver_api i2c_litex_driver_api = {
 			   &i2c_litex_driver_api			       \
 			   )
 
-#if DT_INST_NODE_HAS_PROP(0, label)
-I2C_LITEX_INIT(0);
-#endif
-
-#if DT_INST_NODE_HAS_PROP(1, label)
-I2C_LITEX_INIT(1);
-#endif
-
-#if DT_INST_NODE_HAS_PROP(2, label)
-I2C_LITEX_INIT(2);
-#endif
-
-#if DT_INST_NODE_HAS_PROP(3, label)
-I2C_LITEX_INIT(3);
-#endif
-
-#if DT_INST_NODE_HAS_PROP(4, label)
-I2C_LITEX_INIT(4);
-#endif
-
-#if DT_INST_NODE_HAS_PROP(5, label)
-I2C_LITEX_INIT(5);
-#endif
-
-#if DT_INST_NODE_HAS_PROP(6, label)
-I2C_LITEX_INIT(6);
-#endif
-
-#if DT_INST_NODE_HAS_PROP(7, label)
-I2C_LITEX_INIT(7);
-#endif
-
-#if DT_INST_NODE_HAS_PROP(8, label)
-I2C_LITEX_INIT(8);
-#endif
+DT_INST_FOREACH(I2C_LITEX_INIT)

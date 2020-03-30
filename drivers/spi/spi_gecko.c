@@ -321,26 +321,4 @@ static struct spi_driver_api spi_gecko_api = {
 
 #define SPI_INIT(n) SPI_INIT2(n, SPI_ID(n))
 
-#if DT_INST_NODE_HAS_PROP(0, label)
-
-SPI_INIT(0);
-
-#endif /* DT_INST_NODE_HAS_PROP(0, label) */
-
-#if DT_INST_NODE_HAS_PROP(1, label)
-
-SPI_INIT(1);
-
-#endif /* DT_INST_NODE_HAS_PROP(1, label) */
-
-#if DT_INST_NODE_HAS_PROP(2, label)
-
-SPI_INIT(2);
-
-#endif /* DT_INST_NODE_HAS_PROP(2, label) */
-
-#if DT_INST_NODE_HAS_PROP(3, label)
-
-SPI_INIT(3);
-
-#endif /* DT_INST_NODE_HAS_PROP(3, label) */
+DT_INST_FOREACH(SPI_INIT)
