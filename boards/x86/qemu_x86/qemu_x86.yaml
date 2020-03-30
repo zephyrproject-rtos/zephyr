@@ -11,5 +11,6 @@ supported:
   - nvs
   - netif:serial-net
   - ieee802154
+  - eeprom
 testing:
   default: true
