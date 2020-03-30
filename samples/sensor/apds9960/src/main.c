@@ -29,7 +29,7 @@ void main(void)
 	struct sensor_value intensity, pdata;
 
 	printk("APDS9960 sample application\n");
-	dev = device_get_binding(DT_INST_0_AVAGO_APDS9960_LABEL);
+	dev = device_get_binding(DT_LABEL(DT_INST(0, avago_apds9960)));
 	if (!dev) {
 		printk("sensor: device not found.\n");
 		return;

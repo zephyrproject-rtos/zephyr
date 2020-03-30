@@ -14,7 +14,7 @@ void main(void)
 	struct device *dev;
 	struct sensor_value co2, voc;
 
-	dev = device_get_binding(DT_INST_0_AMS_IAQCORE_LABEL);
+	dev = device_get_binding(DT_LABEL(DT_INST(0, ams_iaqcore)));
 	if (!dev) {
 		printk("Failed to get device binding");
 		return;
