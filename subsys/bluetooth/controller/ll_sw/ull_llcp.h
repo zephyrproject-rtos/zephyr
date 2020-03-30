@@ -40,6 +40,8 @@ struct ull_cp_conn {
 		 u16_t latency_prepare;
 		 u16_t latency_event;
 		 u16_t event_counter;
+
+		 u8_t role;
 	} lll;
 };
 
