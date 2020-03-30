@@ -86,7 +86,7 @@ static void handle_mpu6050_drdy(struct device *dev,
 
 void main(void)
 {
-	const char *const label = DT_INST_0_INVENSENSE_MPU6050_LABEL;
+	const char *const label = DT_LABEL(DT_INST(0, invensense_mpu6050));
 	struct device *mpu6050 = device_get_binding(label);
 
 	if (!mpu6050) {

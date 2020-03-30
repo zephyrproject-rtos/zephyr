@@ -32,7 +32,7 @@ static const char *now_str(void)
 
 void main(void)
 {
-	const char *const label = DT_INST_0_AOSONG_DHT_LABEL;
+	const char *const label = DT_LABEL(DT_INST(0, aosong_dht));
 	struct device *dht22 = device_get_binding(label);
 
 	if (!dht22) {
