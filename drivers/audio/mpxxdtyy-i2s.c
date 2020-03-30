@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_mpxxdtyy
+
 #include "mpxxdtyy.h"
 #include <drivers/i2s.h>
 
@@ -11,7 +13,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(mpxxdtyy);
 
-#ifdef DT_ST_MPXXDTYY_BUS_I2S
+#if DT_ANY_INST_ON_BUS(i2s)
 
 #define NUM_RX_BLOCKS			4
 #define PDM_BLOCK_MAX_SIZE_BYTES	512
@@ -138,4 +140,4 @@ int mpxxdtyy_i2s_configure(struct device *dev, struct dmic_cfg *cfg)
 	data->state = DMIC_STATE_CONFIGURED;
 	return 0;
 }
-#endif /* DT_ST_MPXXDTYY_BUS_I2S */
+#endif /* DT_ANY_INST_ON_BUS(i2s) */
