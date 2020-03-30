@@ -230,7 +230,9 @@ if [ -n "$main_ci" ]; then
 	fi
 	$short_git_log
 
-	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" ]; then
+	SC=`./scripts/ci/what_changed.py --commits ${commit_range}`
+
+	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" -a "$SC" == "full" ]; then
 		echo "Build and run BT simulator tests"
 		# Run BLE tests in simulator on the 1st CI instance:
 		if [ "$matrix" = "1" ]; then
@@ -249,8 +251,12 @@ if [ -n "$main_ci" ]; then
 		get_tests_to_run
 	fi
 
+	if [ "$SC" == "full" ]; then
 	# Save list of tests to be run
 	${sanitycheck} ${sanitycheck_options} --save-tests test_file_3.txt || exit 1
+	else
+	echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" > test_file_3.txt
+	fi
 
 	# Remove headers from all files but the first one to generate one
 	# single file with only one header row
