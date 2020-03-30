@@ -13,4 +13,12 @@ config DEVICE_CONCURRENT_ACCESS
 	  This can be a valid possibility if you know your devices will not be
 	  accessed by 2+ threads, and thus will reduce the memory footprint.
 
+config DEVICE_SYNCHRONIZED_CALL
+	bool "Add synchronous call generic capability"
+	default y
+	help
+	  If disabled, device drivers will need to implement their own
+	  synchronization mechanism when running an interrupt based API call.
+	  Using this generic capability will avoid doing so.
+
 endmenu

@@ -211,8 +211,20 @@ int device_supported_foreach(const struct device *dev,
 	return device_visitor(handles, handle_count, visitor_cb, context);
 }
 
-#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
 
+#if defined(CONFIG_DEVICE_SYNCHRONIZED_CALL)
+void device_call_complete(struct device *dev, int status)
+{
+	struct device_context *dc = GET_DEV_CONTEXT(dev)
+
+	if (dc->sync != NULL) {
+		dc->call_status = status;
+		k_sem_give(dc->sync);
+	}
+}
+#endif /* CONFIG_DEVICE_SYNCHRONIZED_CALL */
+
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
 int device_lock(struct device *dev)
 {
 	struct device_context *dc = GET_DEV_CONTEXT(dev);
@@ -223,16 +235,30 @@ int device_lock(struct device *dev)
 
 	return k_sem_take(dc->lock, K_FOREVER);
 }
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
 
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS) ||		\
+	defined(CONFIG_DEVICE_SYNCHRONIZED_CALL)
 int device_release(struct device *dev, int status)
 {
 	struct device_context *dc = GET_DEV_CONTEXT(dev);
 
+#if defined(CONFIG_DEVICE_SYNCHRONIZED_CALL)
+	/* If status is an error, the interrupt based
+	 * call has not been started
+	 */
+	if (status == 0 && dc->sync != NULL) {
+		k_sem_take(dc->sync, K_FOREVER);
+		status = dc->call_status;
+ 	}
+#endif /* CONFIG_DEVICE_SYNCHRONIZED_CALL */
+
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
 	if (dc->lock != NULL) {
 		k_sem_give(dc->lock);
 	}
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
 
 	return status;
 }
-
-#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS || CONFIG_DEVICE_SYNCHRONIZED_CALL */

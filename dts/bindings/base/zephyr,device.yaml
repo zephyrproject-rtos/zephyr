@@ -7,3 +7,11 @@ properties:
         description: |
             Unset by default, it enables the possibility to avoid allocating a lock
             on the device instance.
+
+    zephyr,no-sync:
+        type: boolean
+        required: false
+        description: |
+            Unset by default, it enables the possibility to avoid allocating
+            a synchronization object on the device instance. This can be useful if
+            the device driver works on polling mode only.

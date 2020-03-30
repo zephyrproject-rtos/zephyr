@@ -431,6 +431,10 @@ struct device_context {
 #if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
 	struct k_sem *lock;
 #endif
+#if defined(CONFIG_DEVICE_SYNCHRONIZED_CALL)
+	int call_status;
+	struct k_sem *sync;
+#endif
 };
 
 struct pm_device;
@@ -813,6 +817,14 @@ __deprecated static inline int device_usable_check(const struct device *dev)
  */
 int device_lock(struct device *dev);
 
+#else
+
+#define device_lock(...) (0U)
+
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
+
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS) ||		\
+	defined(CONFIG_DEVICE_SYNCHRONIZED_CALL)
 /**
  * @brief Release a previously locked device
  *
@@ -825,12 +837,28 @@ int device_lock(struct device *dev);
  */
 int device_release(struct device *dev, int status);
 
-#else /* CONFIG_DEVICE_CONCURRENT_ACCESS */
+#else /* CONFIG_DEVICE_CONCURRENT_ACCESS || CONFIG_DEVICE_SYNCHRONIZED_CALL */
 
-#define device_lock(...) (0U)
 #define device_release(_dev, _status) (_status)
 
-#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS || CONFIG_DEVICE_SYNCHRONIZED_CALL */
+
+#if defined(CONFIG_DEVICE_SYNCHRONIZED_CALL)
+
+/**
+ * @brief Notify when a call is finished
+ *
+ * @param dev A valid pointer on a struct device instance
+ * @param status The status of the device, 0 on success or a negative errno
+ *               otherwise. This function is ISR ready.
+ */
+void device_call_complete(struct device *dev, int status);
+
+#else /* CONFIG_DEVICE_SYNCHRONIZED_CALL */
+
+#define device_call_complete(_dev, _status)
+
+#endif /* CONFIG_DEVICE_SYNCHRONIZED_CALL */
 
 /**
  * @}
@@ -853,20 +881,60 @@ int device_release(struct device *dev, int status);
 	COND_CODE_0(DT_PROP(node_id, zephyr_no_lock),			\
 		    (Z_DEVICE_CONTEXT_LOCK_DECLARE(dev_name)), ())
 
-/* Initialize structure device_context's specific attributes */
-#define Z_DEVICE_CONTEXT_INITIALIZE(node_id, dev_name)			\
-	{								\
-		COND_CODE_0(DT_PROP(node_id, zephyr_no_lock),		\
-			    (.lock = &Z_DEVICE_CONTEXT_LOCK_NAME(dev_name)), \
-			    (.lock = NULL))				\
-	}
+/* Initialize structure device_context's lock attribute */
+#define Z_DEVICE_CONTEXT_INITIALIZE_WITH_LOCK(node_id, dev_name)	\
+	COND_CODE_0(DT_PROP(node_id, zephyr_no_lock),			\
+		    (.lock = &Z_DEVICE_CONTEXT_LOCK_NAME(dev_name),),	\
+		    (.lock = NULL,))
 
 #else /* CONFIG_DEVICE_CONCURRENT_ACCESS */
 
 #define Z_DEVICE_CONTEXT_LOCK_INITIALIZE(node_id, dev_name)
-#define Z_DEVICE_CONTEXT_INITIALIZE(node_id, dev_name) {}
+#define Z_DEVICE_CONTEXT_INITIALIZE_WITH_LOCK(node_id, dev_name)
 
 #endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
+
+#if defined(CONFIG_DEVICE_SYNCHRONIZED_CALL)
+
+/* Get device context's sync name */
+#define Z_DEVICE_CONTEXT_SYNC_NAME(dev_name)		\
+	_CONCAT(Z_DEVICE_CONTEXT_NAME(dev_name), _sync)
+
+/* Declare and initialize a sync */
+#define Z_DEVICE_CONTEXT_SYNC_DECLARE(dev_name)				\
+	static struct k_sem Z_DEVICE_CONTEXT_SYNC_NAME(dev_name) __used	\
+	__attribute__((__section__(".z_devcontext_sync"))) = 		\
+		Z_SEM_INITIALIZER(Z_DEVICE_CONTEXT_SYNC_NAME(dev_name), 0, 1);
+
+/* Conditionally create a sync for the device context */
+#define Z_DEVICE_CONTEXT_SYNC_INITIALIZE(node_id, dev_name)		\
+	COND_CODE_0(DT_PROP(node_id, zephyr_no_sync),			\
+		    (Z_DEVICE_CONTEXT_SYNC_DECLARE(dev_name)), ())
+
+/* Initialize structure device_context's sync attribute */
+#define Z_DEVICE_CONTEXT_INITIALIZE_WITH_SYNC(node_id, dev_name)	\
+	COND_CODE_0(DT_PROP(node_id, zephyr_no_sync),			\
+		    (.sync = &Z_DEVICE_CONTEXT_SYNC_NAME(dev_name),),	\
+		    (.sync = NULL,))
+
+#else /* CONFIG_DEVICE_SYNCHRONIZED_CALL */
+
+#define Z_DEVICE_CONTEXT_SYNC_INITIALIZE(node_id, dev_name)
+#define Z_DEVICE_CONTEXT_INITIALIZE_WITH_SYNC(node_id, dev_name)
+
+#endif /* CONFIG_DEVICE_SYNCHRONIZED_CALL */
+
+#define Z_DEVICE_CONTEXT_INITIALIZE(node_id, dev_name)			\
+ 	{								\
+		COND_CODE_1(CONFIG_DEVICE_CONCURRENT_ACCESS,		\
+			    (Z_DEVICE_CONTEXT_INITIALIZE_WITH_LOCK(	\
+				    node_id, dev_name)),		\
+			    ())						\
+		COND_CODE_1(CONFIG_DEVICE_SYNCHRONIZED_CALL,		\
+			    (Z_DEVICE_CONTEXT_INITIALIZE_WITH_SYNC(	\
+				    node_id, dev_name)),		\
+			    ())						\
+ 	}
 
 /*
  * Utility macro to define and initialize the device runtime context.
@@ -880,6 +948,7 @@ int device_release(struct device *dev, int status);
  */
 #define Z_DEVICE_CONTEXT_DEFINE(node_id, dev_name, level, prio)		\
 	Z_DEVICE_CONTEXT_LOCK_INITIALIZE(node_id, dev_name)		\
+	Z_DEVICE_CONTEXT_SYNC_INITIALIZE(node_id, dev_name)		\
 	static Z_DECL_ALIGN(struct device_context)			\
 		Z_DEVICE_CONTEXT_NAME(dev_name)	__used			\
 	__attribute__(							\

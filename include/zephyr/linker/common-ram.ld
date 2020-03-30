@@ -36,6 +36,15 @@
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
 
+#if defined(CONFIG_DEVICE_SYNCHRONIZED_CALL)
+	SECTION_DATA_PROLOGUE(devcontext_syncs,,)
+	{
+		__devcontext_syncs_start = .;
+		KEEP(*(".z_devcontext_sync"));
+		__devcontext_syncs_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif
+
         SECTION_DATA_PROLOGUE(device_contexts,,)
         {
 		/* Device runtime context used by the device objects. */
