@@ -785,6 +785,8 @@ config TICKLESS_KERNEL
 	  This option enables a fully event driven kernel. Periodic system
 	  clock interrupt generation would be stopped at all times.
 
+source "kernel/Kconfig.device"
+
 source "kernel/Kconfig.power_mgmt"
 
 endmenu

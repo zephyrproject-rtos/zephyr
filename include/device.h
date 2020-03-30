@@ -81,6 +81,19 @@ extern "C" {
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn,		\
 			    data, cfg_info, level, prio, NULL)
 
+/* Initialize structure device_context */
+#if defined(CONFIG_DEVICE_CONCURRENT_ACCESS)
+#define DEVICE_CONTEXT_INITIALIZE(_obj)				\
+	{							\
+		.sync = Z_SEM_INITIALIZER(_obj.sync, 0, 1),	\
+		.lock = Z_SEM_INITIALIZER(_obj.lock, 1, 1),	\
+	}
+#else
+#define DEVICE_CONTEXT_INITIALIZE(_obj)				\
+	{							\
+		.sync = Z_SEM_INITIALIZER(_obj.sync, 0, 1)	\
+	}
+#endif
 
 /**
  * @def DEVICE_AND_API_INIT
@@ -97,6 +110,12 @@ extern "C" {
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api)				\
+	static Z_DECL_ALIGN(struct device_context)			\
+		_CONCAT(__device_context_, dev_name) __used		\
+	__attribute__(							\
+		(__section__(".device_context_" #level STRINGIFY(prio)))) = \
+		DEVICE_CONTEXT_INITIALIZE(_CONCAT(__device_context_,	\
+						  dev_name));		\
 	static Z_DECL_ALIGN(struct device)				\
 		_CONCAT(__device_, dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
@@ -151,6 +170,12 @@ extern "C" {
 			K_POLL_MODE_NOTIFY_ONLY,			\
 			&_CONCAT(__pm_, dev_name).signal),		\
 	};								\
+	static Z_DECL_ALIGN(struct device_context)			\
+		_CONCAT(__device_context_, dev_name) __used		\
+	__attribute__(							\
+		(__section__(".device_context_" #level STRINGIFY(prio)))) = \
+		DEVICE_CONTEXT_INITIALIZE(_CONCAT(__device_context_,	\
+						  dev_name));		\
 	static Z_DECL_ALIGN(struct device)				\
 		_CONCAT(__device_, dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
@@ -261,6 +286,68 @@ struct device {
 	struct device_pm * const pm;
 #endif
 };
+
+/**
+ * @brief Runtime device context structure per-driver instance
+ *
+ * @param sync A semaphore used for API call synchronization
+ * @param call_status The status to return from the call
+ * @param lock A semaphore used to protect against concurrent access
+ */
+struct device_context {
+	struct k_sem sync;
+	int call_status;
+#ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
+	struct k_sem lock;
+#endif
+};
+
+#if CONFIG_DEVICE_LOCK_TIMEOUT_VALUE == -1
+#define DEVICE_TIMEOUT K_FOREVER
+#else
+#define DEVICE_TIMEOUT K_MSEC(CONFIG_DEVICE_LOCK_TIMEOUT_VALUE)
+#endif
+
+/**
+ * @brief Lock a device structure to avoid concurrent access
+ *
+ * @param dev A valid pointer on a struct device instance
+ * @param timeout Waiting period to take the semaphore,
+ *                or one of the special values K_NO_WAIT and K_FOREVER.
+ *
+ * @return 0 if device got locked, a negative errno otherwise.
+ */
+int device_lock_timeout(struct device *dev, k_timeout_t timeout);
+
+/**
+ * @brief Lock an interrupt based device structure to avoid concurrent access.
+ *
+ * @param dev A valid pointer on a struct device instance
+ *
+ * @return 0 if device got locked, a negative errno otherwise.
+ */
+static inline int device_lock(struct device *dev)
+{
+	return device_lock_timeout(dev, DEVICE_TIMEOUT);
+}
+
+/**
+ * @brief Notify when a call is finished
+ *
+ * @param dev A valid pointer on a struct device instance
+ * @param status The status of the device, 0 on success or a negative errno
+ *               otherwise.
+ */
+void device_call_complete(struct device *dev, int status);
+
+/**
+ * @brief Release a previously locked device
+ *
+ * @param dev A valid pointer on a struct device instance.
+ *
+ * @return status of the device
+ */
+int device_release(struct device *dev);
 
 /**
  * @brief Retrieve the device structure for a driver by name

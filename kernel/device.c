@@ -23,6 +23,8 @@ extern const struct init_entry __init_SMP_start[];
 extern struct device __device_start[];
 extern struct device __device_end[];
 
+extern struct device_context __device_context_start[];
+
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 extern u32_t __device_busy_start[];
 extern u32_t __device_busy_end[];
@@ -176,4 +178,46 @@ void device_busy_clear(struct device *busy_dev)
 #else
 	ARG_UNUSED(busy_dev);
 #endif
+}
+
+int device_lock_timeout(struct device *dev, k_timeout_t timeout)
+{
+#ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
+	struct device_context *dc =
+		(struct device_context *)__device_context_start +
+		(dev - __device_start);
+
+	if (k_sem_take(&dc->lock, timeout) != 0) {
+		return -EAGAIN;
+	}
+#endif
+
+	return 0;
+}
+
+void device_call_complete(struct device *dev, int status)
+{
+	struct device_context *dc =
+		(struct device_context *)__device_context_start +
+		(dev - __device_start);
+
+	dc->call_status = status;
+	k_sem_give(&dc->sync);
+}
+
+int device_release(struct device *dev)
+{
+	struct device_context *dc =
+		(struct device_context *)__device_context_start +
+		(dev - __device_start);
+	u32_t status;
+
+	k_sem_take(&dc->sync, K_FOREVER);
+
+	status = dc->call_status;
+
+#ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
+	k_sem_give(&dc->lock);
+#endif
+	return status;
 }

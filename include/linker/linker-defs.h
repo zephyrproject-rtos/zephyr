@@ -87,6 +87,15 @@
 #define INIT_UNDEFINED_SECTION()		\
 		KEEP(*(SORT(.init_[_A-Z0-9]*)))	\
 
+#define DEVICE_CONTEXT_SECTIONS()				\
+		__device_context_start = .;			\
+		CREATE_OBJ_LEVEL(device_context, PRE_KERNEL_1)	\
+		CREATE_OBJ_LEVEL(device_context, PRE_KERNEL_2)	\
+		CREATE_OBJ_LEVEL(device_context, POST_KERNEL)	\
+		CREATE_OBJ_LEVEL(device_context, APPLICATION)	\
+		CREATE_OBJ_LEVEL(device_context, SMP)		\
+		__device_context_end = .;			\
+
 
 /*
  * link in devices objects, which are tied to the init ones;
@@ -101,7 +110,8 @@
 		CREATE_OBJ_LEVEL(device, APPLICATION)	\
 		CREATE_OBJ_LEVEL(device, SMP)		\
 		__device_end = .;			\
-		DEVICE_BUSY_BITFIELD()			\
+		DEVICE_BUSY_BITFIELD();			\
+		DEVICE_CONTEXT_SECTIONS()		\
 
 
 /*
