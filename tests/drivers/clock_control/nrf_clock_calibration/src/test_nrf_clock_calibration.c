@@ -99,7 +99,7 @@ static void test_basic_clock_calibration(void)
 static void test_calibration_after_enabling_lfclk(void)
 {
 	struct device *clk_dev =
-		device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 	struct sensor_value value = { .val1 = 0, .val2 = 0 };
 
 	mock_temp_nrf5_value_set(&value);

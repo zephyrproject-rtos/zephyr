@@ -139,30 +139,30 @@ void test_eeprom_slave(void)
 
 
 	i2c_0 = device_get_binding(
-			DT_INST_0_ATMEL_AT24_BUS_NAME);
+			DT_BUS_LABEL(DT_INST(0, atmel_at24)));
 	zassert_not_null(i2c_0, "I2C device %s not found",
-			 DT_INST_0_ATMEL_AT24_BUS_NAME);
+			 DT_BUS_LABEL(DT_INST(0, atmel_at24)));
 
 	LOG_INF("Found I2C Master device %s",
-		    DT_INST_0_ATMEL_AT24_BUS_NAME);
+		    DT_BUS_LABEL(DT_INST(0, atmel_at24)));
 
 	i2c_1 = device_get_binding(
-			DT_INST_1_ATMEL_AT24_BUS_NAME);
+			DT_BUS_LABEL(DT_INST(1, atmel_at24)));
 	zassert_not_null(i2c_1, "I2C device %s not found",
-			 DT_INST_1_ATMEL_AT24_BUS_NAME);
+			 DT_BUS_LABEL(DT_INST(1, atmel_at24)));
 
 	LOG_INF("Found I2C Master device %s",
-		    DT_INST_1_ATMEL_AT24_BUS_NAME);
+		    DT_BUS_LABEL(DT_INST(1, atmel_at24)));
 
 	/*
 	 * Normal applications would interact with an EEPROM
 	 * identified by the string literal used in the binding node
 	 * label property ("EEPROM_SLAVE_0") rather than the generated
-	 * macro DT_INST_0_ATMEL_AT24_LABEL.  There is no guarantee that
+	 * macro DT_LABEL(DT_INST(0, atmel_at24)).  There is no guarantee that
 	 * the index for the compatible is persistent across builds;
-	 * for example DT_INST_0_ATMEL_AT24 might refer to "EEPROM_SLAVE_1"
-	 * if the order of the node declarations were changed in the
-	 * overlay file.
+	 * for example DT_LABEL(DT_INST(0, atmel_at24)) might refer to
+	 * "EEPROM_SLAVE_1" * if the order of the node declarations were changed
+	 * in the overlay file.
 	 *
 	 * The label string cannot be directly used to determine the
 	 * correct parent bus and device index for whitebox testing in
@@ -171,61 +171,61 @@ void test_eeprom_slave(void)
 	 * using the generated macro.
 	 */
 
-	eeprom_0 = device_get_binding(DT_INST_0_ATMEL_AT24_LABEL);
+	eeprom_0 = device_get_binding(DT_LABEL(DT_INST(0, atmel_at24)));
 	zassert_not_null(eeprom_0, "EEPROM device %s not found",
-			 DT_INST_0_ATMEL_AT24_LABEL);
+			 DT_LABEL(DT_INST(0, atmel_at24)));
 
-	LOG_INF("Found EEPROM device %s", DT_INST_0_ATMEL_AT24_LABEL);
+	LOG_INF("Found EEPROM device %s", DT_LABEL(DT_INST(0, atmel_at24)));
 
-	eeprom_1 = device_get_binding(DT_INST_1_ATMEL_AT24_LABEL);
+	eeprom_1 = device_get_binding(DT_LABEL(DT_INST(1, atmel_at24)));
 	zassert_not_null(eeprom_1, "EEPROM device %s not found",
-			 DT_INST_1_ATMEL_AT24_LABEL);
+			 DT_LABEL(DT_INST(1, atmel_at24)));
 
-	LOG_INF("Found EEPROM device %s", DT_INST_1_ATMEL_AT24_LABEL);
+	LOG_INF("Found EEPROM device %s", DT_LABEL(DT_INST(1, atmel_at24)));
 
 	/* Program dummy bytes */
 	ret = eeprom_slave_program(eeprom_0, eeprom_0_data, TEST_DATA_SIZE);
 	zassert_equal(ret, 0, "Failed to program EEPROM %s",
-		      DT_INST_0_ATMEL_AT24_LABEL);
+		      DT_LABEL(DT_INST(0, atmel_at24)));
 
 	ret = eeprom_slave_program(eeprom_1, eeprom_1_data, TEST_DATA_SIZE);
 	zassert_equal(ret, 0, "Failed to program EEPROM %s",
-		      DT_INST_1_ATMEL_AT24_LABEL);
+		      DT_LABEL(DT_INST(1, atmel_at24)));
 
 	/* Attach EEPROM */
 	ret = i2c_slave_driver_register(eeprom_0);
 	zassert_equal(ret, 0, "Failed to register EEPROM %s",
-		      DT_INST_0_ATMEL_AT24_LABEL);
+		      DT_LABEL(DT_INST(0, atmel_at24)));
 
-	LOG_INF("EEPROM %s Attached !", DT_INST_0_ATMEL_AT24_LABEL);
+	LOG_INF("EEPROM %s Attached !", DT_LABEL(DT_INST(0, atmel_at24)));
 
 	ret = i2c_slave_driver_register(eeprom_1);
 	zassert_equal(ret, 0, "Failed to register EEPROM %s",
-		      DT_INST_1_ATMEL_AT24_LABEL);
+		      DT_LABEL(DT_INST(1, atmel_at24)));
 
-	LOG_INF("EEPROM %s Attached !", DT_INST_1_ATMEL_AT24_LABEL);
+	LOG_INF("EEPROM %s Attached !", DT_LABEL(DT_INST(1, atmel_at24)));
 
 	/* Run Tests without bus access conflicts */
-	run_full_read(i2c_0, DT_INST_1_ATMEL_AT24_BASE_ADDRESS, eeprom_1_data);
-	run_full_read(i2c_1, DT_INST_0_ATMEL_AT24_BASE_ADDRESS, eeprom_0_data);
+	run_full_read(i2c_0, DT_REG_ADDR(DT_INST(1, atmel_at24)), eeprom_1_data);
+	run_full_read(i2c_1, DT_REG_ADDR(DT_INST(0, atmel_at24)), eeprom_0_data);
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
-		run_partial_read(i2c_0, DT_INST_1_ATMEL_AT24_BASE_ADDRESS,
+		run_partial_read(i2c_0, DT_REG_ADDR(DT_INST(1, atmel_at24)),
 				 eeprom_1_data, offset);
 	}
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
-		run_partial_read(i2c_1, DT_INST_0_ATMEL_AT24_BASE_ADDRESS,
+		run_partial_read(i2c_1, DT_REG_ADDR(DT_INST(0, atmel_at24)),
 				 eeprom_0_data, offset);
 	}
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
-		run_program_read(i2c_0, DT_INST_1_ATMEL_AT24_BASE_ADDRESS,
+		run_program_read(i2c_0, DT_REG_ADDR(DT_INST(1, atmel_at24)),
 				 offset);
 	}
 
 	for (offset = 0 ; offset < TEST_DATA_SIZE-1 ; ++offset) {
-		run_program_read(i2c_1, DT_INST_0_ATMEL_AT24_BASE_ADDRESS,
+		run_program_read(i2c_1, DT_REG_ADDR(DT_INST(0, atmel_at24)),
 				 offset);
 	}
 
@@ -234,17 +234,17 @@ void test_eeprom_slave(void)
 	/* Detach EEPROM */
 	ret = i2c_slave_driver_unregister(eeprom_0);
 	zassert_equal(ret, 0, "Failed to unregister EEPROM %s",
-		      DT_INST_0_ATMEL_AT24_LABEL);
+		      DT_LABEL(DT_INST(0, atmel_at24)));
 
 	LOG_INF("EEPROM %s Detached !",
-		    DT_INST_0_ATMEL_AT24_LABEL);
+		    DT_LABEL(DT_INST(0, atmel_at24)));
 
 	ret = i2c_slave_driver_unregister(eeprom_1);
 	zassert_equal(ret, 0, "Failed to unregister EEPROM %s",
-		      DT_INST_1_ATMEL_AT24_LABEL);
+		      DT_LABEL(DT_INST(1, atmel_at24)));
 
 	LOG_INF("EEPROM %s Detached !",
-		    DT_INST_1_ATMEL_AT24_LABEL);
+		    DT_LABEL(DT_INST(1, atmel_at24)));
 }
 
 void test_main(void)

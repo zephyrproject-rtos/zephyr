@@ -12,7 +12,7 @@
 #include <sys/util.h>
 #include <ztest.h>
 
-#ifdef DT_INST_0_TEST_GPIO_BASIC_API
+#if DT_HAS_NODE(DT_INST(0, test_gpio_basic_api))
 
 /* Execution of the test requires hardware configuration described in
  * devicetree.  See the test,gpio_basic_api binding local to this test
@@ -21,9 +21,9 @@
  * If this is not present devices that have gpio-0, gpio-1, or gpio-2
  * aliases are supported for build-only tests.
  */
-#define DEV_NAME DT_INST_0_TEST_GPIO_BASIC_API_OUT_GPIOS_CONTROLLER
-#define PIN_OUT DT_INST_0_TEST_GPIO_BASIC_API_OUT_GPIOS_PIN
-#define PIN_IN DT_INST_0_TEST_GPIO_BASIC_API_IN_GPIOS_PIN
+#define DEV_NAME DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), out_gpios)
+#define PIN_OUT DT_GPIO_PIN(DT_INST(0, test_gpio_basic_api), out_gpios)
+#define PIN_IN DT_GPIO_PIN(DT_INST(0, test_gpio_basic_api), in_gpios)
 
 #elif defined(DT_ALIAS_GPIO_0_LABEL)
 #define DEV_NAME DT_ALIAS_GPIO_0_LABEL

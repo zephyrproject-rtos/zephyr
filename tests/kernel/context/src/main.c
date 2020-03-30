@@ -48,7 +48,7 @@
  * is not defined in platform, generate an error
  */
 #if defined(CONFIG_HPET_TIMER)
-#define TICK_IRQ DT_INST_0_INTEL_HPET_IRQ_0
+#define TICK_IRQ DT_IRQN(DT_INST(0, intel_hpet))
 #elif defined(CONFIG_ARM_ARCH_TIMER)
 #define TICK_IRQ ARM_ARCH_TIMER_IRQ
 #elif defined(CONFIG_APIC_TIMER)
@@ -70,7 +70,7 @@
 #elif defined(CONFIG_RV32M1_LPTMR_TIMER)
 #define TICK_IRQ DT_OPENISA_RV32M1_LPTMR_SYSTEM_LPTMR_IRQ_0
 #elif defined(CONFIG_XLNX_PSTTC_TIMER)
-#define TICK_IRQ DT_INST_0_XLNX_TTCPS_IRQ_0
+#define TICK_IRQ DT_IRQN(DT_INST(0, xlnx_ttcps))
 #elif defined(CONFIG_CPU_CORTEX_M)
 /*
  * The Cortex-M use the SYSTICK exception for the system timer, which is
