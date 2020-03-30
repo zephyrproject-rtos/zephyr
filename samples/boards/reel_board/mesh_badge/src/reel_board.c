@@ -593,7 +593,7 @@ void board_refresh_display(void)
 
 int board_init(void)
 {
-	epd_dev = device_get_binding(DT_INST_0_SOLOMON_SSD16XXFB_LABEL);
+	epd_dev = device_get_binding(DT_LABEL(DT_INST(0, solomon_ssd16xxfb)));
 	if (epd_dev == NULL) {
 		printk("SSD16XX device not found\n");
 		return -ENODEV;
