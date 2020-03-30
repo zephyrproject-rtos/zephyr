@@ -35,11 +35,15 @@
 
 /* This URL is parsed in-place, so buffer must be non-const. */
 static char download_url[] =
+#if defined(CONFIG_SAMPLE_BIG_HTTP_DL_URL)
+    CONFIG_SAMPLE_BIG_HTTP_DL_URL;
+#else
 #if !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
     "http://archive.ubuntu.com/ubuntu/dists/xenial/main/installer-amd64/current/images/hd-media/vmlinuz";
 #else
     "https://www.7-zip.org/a/7z1805.exe";
 #endif /* !defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
+#endif /* defined(CONFIG_SAMPLE_BIG_HTTP_DL_URL) */
 /* Quick testing. */
 /*    "http://google.com/foo";*/
 
