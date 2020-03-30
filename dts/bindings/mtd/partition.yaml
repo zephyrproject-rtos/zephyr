@@ -17,7 +17,6 @@ child-binding:
     description: Flash partition child node
     properties:
        label:
-          required: true
           type: string
           required: false
           description: Human readable string describing the device (used by Zephyr for API name)
