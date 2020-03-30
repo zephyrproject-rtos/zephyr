@@ -384,7 +384,7 @@ DEVICE_DECLARE(dma_sam0_0);
 #define DMA_SAM0_IRQ_CONNECT(n)						 \
 	do {								 \
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, n, irq),		 \
-			    DT_INST_IRQ_HAS_IDX(0, n, priority),	 \
+			    DT_INST_IRQ_BY_IDX(0, n, priority),		 \
 			    dma_sam0_isr, DEVICE_GET(dma_sam0_0), 0);	 \
 		irq_enable(DT_INST_IRQ_BY_IDX(0, n, irq));		 \
 	} while (0)
