@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(sdhc_spi, CONFIG_DISK_LOG_LEVEL);
 /* Clock speed used after initialisation */
 #define SDHC_SPI_SPEED 4000000
 
-#ifndef DT_INST_0_ZEPHYR_MMC_SPI_SLOT_LABEL
+#if !DT_NODE_HAS_PROP(DT_INST(0, zephyr_mmc_spi_slot), label)
 #warning NO SDHC slot specified on board
 #else
 struct sdhc_spi_data {
@@ -766,17 +766,17 @@ static int sdhc_spi_init(struct device *dev)
 {
 	struct sdhc_spi_data *data = dev->driver_data;
 
-	data->spi = device_get_binding(DT_INST_0_ZEPHYR_MMC_SPI_SLOT_BUS_NAME);
+	data->spi = device_get_binding(DT_BUS_LABEL(DT_INST(0, zephyr_mmc_spi_slot)));
 
 	data->cfg.frequency = SDHC_SPI_INITIAL_SPEED;
 	data->cfg.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS;
-	data->cfg.slave = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_BASE_ADDRESS;
+	data->cfg.slave = DT_REG_ADDR(DT_INST(0, zephyr_mmc_spi_slot));
 	data->cs = device_get_binding(
-		DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_CONTROLLER);
+		DT_SPI_DEV_CS_GPIOS_LABEL(DT_INST(0, zephyr_mmc_spi_slot)));
 	__ASSERT_NO_MSG(data->cs != NULL);
 
-	data->pin = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_PIN;
-	data->flags = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_FLAGS;
+	data->pin = DT_SPI_DEV_CS_GPIOS_PIN(DT_INST(0, zephyr_mmc_spi_slot));
+	data->flags = DT_SPI_DEV_CS_GPIOS_FLAGS(DT_INST(0, zephyr_mmc_spi_slot));
 
 	disk_spi_sdhc_init(dev);
 
@@ -898,7 +898,7 @@ static int disk_spi_sdhc_init(struct device *dev)
 static struct sdhc_spi_data sdhc_spi_data_0;
 
 DEVICE_AND_API_INIT(sdhc_spi_0,
-	DT_INST_0_ZEPHYR_MMC_SPI_SLOT_LABEL,
+	DT_LABEL(DT_INST(0, zephyr_mmc_spi_slot)),
 	sdhc_spi_init, &sdhc_spi_data_0, NULL,
 	APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 #endif
