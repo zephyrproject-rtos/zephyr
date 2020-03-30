@@ -66,7 +66,7 @@ static void work_handler(struct k_work *work)
 }
 
 /**
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_work_init()
  */
 static void delayed_test_items_init(void)
@@ -108,7 +108,7 @@ static void coop_work_main(int arg1, int arg2)
 }
 
 /**
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  * @see k_work_submit()
  */
 static void delayed_test_items_submit(void)
@@ -146,7 +146,7 @@ static void check_results(int num_tests)
 /**
  * @brief Test work queue items submission sequence
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_init(), k_work_submit()
  */
@@ -185,7 +185,7 @@ static void resubmit_work_handler(struct k_work *work)
 /**
  * @brief Test work queue item resubmission
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_submit()
  */
@@ -220,7 +220,7 @@ static void delayed_work_handler(struct k_work *work)
 /**
  * @brief Test delayed work queue init
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init()
  */
@@ -256,7 +256,7 @@ static void coop_delayed_work_main(int arg1, int arg2)
 /**
  * @brief Test delayed workqueue submit
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init(), k_delayed_work_submit()
  */
@@ -299,7 +299,7 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
 /**
  * @brief Test work queue delayed cancel
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init(), k_delayed_work_submit(),
  * k_delayed_work_cancel()
@@ -341,7 +341,7 @@ static void delayed_resubmit_work_handler(struct k_work *work)
 /**
  * @brief Test delayed resubmission of work queue item
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init(), k_delayed_work_submit()
  */
@@ -388,7 +388,7 @@ static void coop_delayed_work_resubmit(void)
 /**
  * @brief Test delayed resubmission of work queue thread
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init()
  */
@@ -414,7 +414,7 @@ static void test_delayed_resubmit_thread(void)
 /**
  * @brief Test delayed work items
  *
- * @ingroup kernel_workqueue_delayed_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_delayed_work_init(), k_delayed_work_submit()
  */
@@ -452,7 +452,7 @@ static void triggered_work_handler(struct k_work *work)
 /**
  * @brief Test triggered work queue init
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init()
  */
@@ -476,7 +476,7 @@ static void test_triggered_init(void)
 /**
  * @brief Test triggered workqueue submit
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -495,7 +495,7 @@ static void test_triggered_submit(k_timeout_t timeout)
 /**
  * @brief Trigger triggered workqueue execution
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  */
 static void test_triggered_trigger(void)
 {
@@ -511,7 +511,7 @@ static void test_triggered_trigger(void)
 /**
  * @brief Test triggered work items
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -542,7 +542,7 @@ static void test_triggered(void)
 /**
  * @brief Test already triggered work items
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -591,7 +591,7 @@ static void triggered_resubmit_work_handler(struct k_work *work)
 /**
  * @brief Test resubmission of triggered work queue item
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -635,7 +635,7 @@ static void test_triggered_resubmit(void)
 /**
  * @brief Test triggered work items with K_NO_WAIT timeout
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -666,7 +666,7 @@ static void test_triggered_no_wait(void)
 /**
  * @brief Test expired triggered work items with K_NO_WAIT timeout
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -694,7 +694,7 @@ static void test_triggered_no_wait_expired(void)
 /**
  * @brief Test triggered work items with arbitrary timeout
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
@@ -725,7 +725,7 @@ static void test_triggered_wait(void)
 /**
  * @brief Test expired triggered work items with arbitrary timeout
  *
- * @ingroup kernel_workqueue_triggered_tests
+ * @ingroup kernel_workqueue_tests
  *
  * @see k_work_poll_init(), k_work_poll_submit()
  */
