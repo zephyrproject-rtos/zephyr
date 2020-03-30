@@ -16,11 +16,11 @@ void main(void)
 	struct sensor_value accel1[3], accel2[3];
 	struct sensor_value gyro[3];
 	struct sensor_value magn[3];
-	struct device *hts221 = device_get_binding(DT_INST_0_ST_HTS221_LABEL);
-	struct device *lps22hb = device_get_binding(DT_INST_0_ST_LPS22HB_PRESS_LABEL);
-	struct device *lsm6dsl = device_get_binding(DT_INST_0_ST_LSM6DSL_LABEL);
-	struct device *lsm303agr_a = device_get_binding(DT_INST_0_ST_LIS2DH_LABEL);
-	struct device *lsm303agr_m = device_get_binding(DT_INST_0_ST_LIS2MDL_LABEL);
+	struct device *hts221 = device_get_binding(DT_LABEL(DT_INST(0, st_hts221)));
+	struct device *lps22hb = device_get_binding(DT_LABEL(DT_INST(0, st_lps22hb_press)));
+	struct device *lsm6dsl = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dsl)));
+	struct device *lsm303agr_a = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dh)));
+	struct device *lsm303agr_m = device_get_binding(DT_LABEL(DT_INST(0, st_lis2mdl)));
 
 	if (hts221 == NULL) {
 		printf("Could not get HTS221 device\n");
