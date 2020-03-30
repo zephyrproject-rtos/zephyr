@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_mcp9808
+
 #include <errno.h>
 
 #include <kernel.h>
@@ -88,15 +90,15 @@ int mcp9808_init(struct device *dev)
 
 static struct mcp9808_data mcp9808_data;
 static const struct mcp9808_config mcp9808_cfg = {
-	.i2c_bus = DT_INST_0_MICROCHIP_MCP9808_BUS_NAME,
-	.i2c_addr = DT_INST_0_MICROCHIP_MCP9808_BASE_ADDRESS,
+	.i2c_bus = DT_INST_BUS_LABEL(0),
+	.i2c_addr = DT_INST_REG_ADDR(0),
 #ifdef CONFIG_MCP9808_TRIGGER
-	.alert_pin = DT_INST_0_MICROCHIP_MCP9808_INT_GPIOS_PIN,
-	.alert_flags = DT_INST_0_MICROCHIP_MCP9808_INT_GPIOS_FLAGS,
-	.alert_controller = DT_INST_0_MICROCHIP_MCP9808_INT_GPIOS_CONTROLLER,
+	.alert_pin = DT_INST_GPIO_PIN(0, int_gpios),
+	.alert_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
+	.alert_controller = DT_INST_GPIO_LABEL(0, int_gpios),
 #endif /* CONFIG_MCP9808_TRIGGER */
 };
 
-DEVICE_AND_API_INIT(mcp9808, DT_INST_0_MICROCHIP_MCP9808_LABEL, mcp9808_init,
+DEVICE_AND_API_INIT(mcp9808, DT_INST_LABEL(0), mcp9808_init,
 		    &mcp9808_data, &mcp9808_cfg, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &mcp9808_api_funcs);

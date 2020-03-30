@@ -109,13 +109,13 @@
 					 BME280_SPI_3W_DISABLE)
 
 struct bme280_data {
-#ifdef DT_BOSCH_BME280_BUS_I2C
+#if DT_ANY_INST_ON_BUS(i2c)
 	struct device *i2c_master;
 	u16_t i2c_slave_addr;
-#elif defined DT_BOSCH_BME280_BUS_SPI
+#elif DT_ANY_INST_ON_BUS(spi)
 	struct device *spi;
 	struct spi_config spi_cfg;
-#if defined(DT_INST_0_BOSCH_BME280_CS_GPIOS_CONTROLLER)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control spi_cs_control;
 #endif
 #else

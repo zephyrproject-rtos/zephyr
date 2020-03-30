@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT microchip_xec_tach
+
 #include <errno.h>
 #include <device.h>
 #include <drivers/sensor.h>
@@ -114,13 +117,13 @@ static const struct sensor_driver_api tach_xec_driver_api = {
 #define TACH_XEC_DEVICE(id)						\
 	static const struct tach_xec_config tach_xec_dev_config##id = {	\
 		.base_address =						\
-		DT_INST_##id##_MICROCHIP_XEC_TACH_BASE_ADDRESS,		\
+		DT_INST_REG_ADDR(id),		\
 	};								\
 									\
 	static struct tach_xec_data tach_xec_dev_data##id;		\
 									\
 	DEVICE_AND_API_INIT(tach##id,					\
-			    DT_INST_##id##_MICROCHIP_XEC_TACH_LABEL,	\
+			    DT_INST_LABEL(id),	\
 			    tach_xec_init,				\
 			    &tach_xec_dev_data##id,			\
 			    &tach_xec_dev_config##id,			\
@@ -128,18 +131,4 @@ static const struct sensor_driver_api tach_xec_driver_api = {
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &tach_xec_driver_api)			\
 
-#ifdef DT_INST_0_MICROCHIP_XEC_TACH
-TACH_XEC_DEVICE(0);
-#endif
-
-#ifdef DT_INST_1_MICROCHIP_XEC_TACH
-TACH_XEC_DEVICE(1);
-#endif
-
-#ifdef DT_INST_2_MICROCHIP_XEC_TACH
-TACH_XEC_DEVICE(2);
-#endif
-
-#ifdef DT_INST_3_MICROCHIP_XEC_TACH
-TACH_XEC_DEVICE(3);
-#endif
+DT_INST_FOREACH(TACH_XEC_DEVICE)

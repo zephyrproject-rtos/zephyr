@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT panasonic_amg88xx
+
 #include <string.h>
 #include <device.h>
 #include <drivers/i2c.h>
@@ -141,16 +143,16 @@ static const struct sensor_driver_api amg88xx_driver_api = {
 };
 
 static const struct amg88xx_config amg88xx_config = {
-	.i2c_name = DT_INST_0_PANASONIC_AMG88XX_BUS_NAME,
-	.i2c_address = DT_INST_0_PANASONIC_AMG88XX_BASE_ADDRESS,
+	.i2c_name = DT_INST_BUS_LABEL(0),
+	.i2c_address = DT_INST_REG_ADDR(0),
 #ifdef CONFIG_AMG88XX_TRIGGER
-	.gpio_name = DT_INST_0_PANASONIC_AMG88XX_INT_GPIOS_CONTROLLER,
-	.gpio_pin = DT_INST_0_PANASONIC_AMG88XX_INT_GPIOS_PIN,
-	.gpio_flags = DT_INST_0_PANASONIC_AMG88XX_INT_GPIOS_FLAGS,
+	.gpio_name = DT_INST_GPIO_LABEL(0, int_gpios),
+	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
+	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
 #endif
 };
 
-DEVICE_AND_API_INIT(amg88xx, DT_INST_0_PANASONIC_AMG88XX_LABEL, amg88xx_init,
+DEVICE_AND_API_INIT(amg88xx, DT_INST_LABEL(0), amg88xx_init,
 		    &amg88xx_driver, &amg88xx_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &amg88xx_driver_api);

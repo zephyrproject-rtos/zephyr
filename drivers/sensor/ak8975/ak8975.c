@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT asahi_kasei_ak8975
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <kernel.h>
@@ -25,7 +27,7 @@ static int ak8975_sample_fetch(struct device *dev, enum sensor_channel chan)
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
 	if (i2c_reg_write_byte(drv_data->i2c,
-			       DT_INST_0_ASAHI_KASEI_AK8975_BASE_ADDRESS,
+			       DT_INST_REG_ADDR(0),
 			       AK8975_REG_CNTL, AK8975_MODE_MEASURE) < 0) {
 		LOG_ERR("Failed to start measurement.");
 		return -EIO;
@@ -34,7 +36,7 @@ static int ak8975_sample_fetch(struct device *dev, enum sensor_channel chan)
 	k_busy_wait(AK8975_MEASURE_TIME_US);
 
 	if (i2c_burst_read(drv_data->i2c,
-			   DT_INST_0_ASAHI_KASEI_AK8975_BASE_ADDRESS,
+			   DT_INST_REG_ADDR(0),
 			   AK8975_REG_DATA_START, buf, 6) < 0) {
 		LOG_ERR("Failed to read sample data.");
 		return -EIO;
@@ -94,14 +96,14 @@ static int ak8975_read_adjustment_data(struct ak8975_data *drv_data)
 	u8_t buf[3];
 
 	if (i2c_reg_write_byte(drv_data->i2c,
-			       DT_INST_0_ASAHI_KASEI_AK8975_BASE_ADDRESS,
+			       DT_INST_REG_ADDR(0),
 			       AK8975_REG_CNTL, AK8975_MODE_FUSE_ACCESS) < 0) {
 		LOG_ERR("Failed to set chip in fuse access mode.");
 		return -EIO;
 	}
 
 	if (i2c_burst_read(drv_data->i2c,
-			   DT_INST_0_ASAHI_KASEI_AK8975_BASE_ADDRESS,
+			   DT_INST_REG_ADDR(0),
 			   AK8975_REG_ADJ_DATA_START, buf, 3) < 0) {
 		LOG_ERR("Failed to read adjustment data.");
 		return -EIO;
@@ -120,14 +122,14 @@ int ak8975_init(struct device *dev)
 	u8_t id;
 
 	drv_data->i2c =
-		device_get_binding(DT_INST_0_ASAHI_KASEI_AK8975_BUS_NAME);
+		device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
-			    DT_INST_0_ASAHI_KASEI_AK8975_BUS_NAME);
+			    DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
-#ifdef DT_INST_0_INVENSENSE_MPU9150
+#if DT_HAS_NODE(DT_INST(0, invensense_mpu9150))
 	/* wake up MPU9150 chip */
 	if (i2c_reg_update_byte(drv_data->i2c, MPU9150_I2C_ADDR,
 				MPU9150_REG_PWR_MGMT1, MPU9150_SLEEP_EN,
@@ -147,7 +149,7 @@ int ak8975_init(struct device *dev)
 
 	/* check chip ID */
 	if (i2c_reg_read_byte(drv_data->i2c,
-			      DT_INST_0_ASAHI_KASEI_AK8975_BASE_ADDRESS,
+			      DT_INST_REG_ADDR(0),
 			      AK8975_REG_CHIP_ID, &id) < 0) {
 		LOG_ERR("Failed to read chip ID.");
 		return -EIO;
@@ -167,7 +169,7 @@ int ak8975_init(struct device *dev)
 
 struct ak8975_data ak8975_data;
 
-DEVICE_AND_API_INIT(ak8975, DT_INST_0_ASAHI_KASEI_AK8975_LABEL, ak8975_init,
+DEVICE_AND_API_INIT(ak8975, DT_INST_LABEL(0), ak8975_init,
 		    &ak8975_data,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &ak8975_driver_api);

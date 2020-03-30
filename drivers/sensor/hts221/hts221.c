@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_hts221
+
 #include <drivers/i2c.h>
 #include <init.h>
 #include <sys/__assert.h>
@@ -177,15 +179,15 @@ int hts221_init(struct device *dev)
 
 static struct hts221_data hts221_driver;
 static const struct hts221_config hts221_cfg = {
-	.i2c_bus = DT_INST_0_ST_HTS221_BUS_NAME,
-	.i2c_addr = DT_INST_0_ST_HTS221_BASE_ADDRESS,
+	.i2c_bus = DT_INST_BUS_LABEL(0),
+	.i2c_addr = DT_INST_REG_ADDR(0),
 #ifdef CONFIG_HTS221_TRIGGER
-	.drdy_pin = DT_INST_0_ST_HTS221_DRDY_GPIOS_PIN,
-	.drdy_flags = DT_INST_0_ST_HTS221_DRDY_GPIOS_FLAGS,
-	.drdy_controller = DT_INST_0_ST_HTS221_DRDY_GPIOS_CONTROLLER,
+	.drdy_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
+	.drdy_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
+	.drdy_controller = DT_INST_GPIO_LABEL(0, drdy_gpios),
 #endif /* CONFIG_HTS221_TRIGGER */
 };
 
-DEVICE_AND_API_INIT(hts221, DT_INST_0_ST_HTS221_LABEL, hts221_init,
+DEVICE_AND_API_INIT(hts221, DT_INST_LABEL(0), hts221_init,
 		    &hts221_driver, &hts221_cfg, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &hts221_driver_api);

@@ -5,6 +5,8 @@
  *SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT avago_apds9960
+
 /* @file
  * @brief driver for APDS9960 ALS/RGB/gesture/proximity sensor
  */
@@ -490,11 +492,11 @@ static const struct sensor_driver_api apds9960_driver_api = {
 };
 
 static const struct apds9960_config apds9960_config = {
-	.i2c_name = DT_INST_0_AVAGO_APDS9960_BUS_NAME,
-	.i2c_address = DT_INST_0_AVAGO_APDS9960_BASE_ADDRESS,
-	.gpio_name = DT_INST_0_AVAGO_APDS9960_INT_GPIOS_CONTROLLER,
-	.gpio_pin = DT_INST_0_AVAGO_APDS9960_INT_GPIOS_PIN,
-	.gpio_flags = DT_INST_0_AVAGO_APDS9960_INT_GPIOS_FLAGS,
+	.i2c_name = DT_INST_BUS_LABEL(0),
+	.i2c_address = DT_INST_REG_ADDR(0),
+	.gpio_name = DT_INST_GPIO_LABEL(0, int_gpios),
+	.gpio_pin = DT_INST_GPIO_PIN(0, int_gpios),
+	.gpio_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
 #if CONFIG_APDS9960_PGAIN_8X
 	.pgain = APDS9960_PGAIN_8X,
 #elif CONFIG_APDS9960_PGAIN_4X
@@ -540,11 +542,11 @@ static const struct apds9960_config apds9960_config = {
 static struct apds9960_data apds9960_data;
 
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_AND_API_INIT(apds9960, DT_INST_0_AVAGO_APDS9960_LABEL, &apds9960_init,
+DEVICE_AND_API_INIT(apds9960, DT_INST_LABEL(0), &apds9960_init,
 		    &apds9960_data, &apds9960_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
 #else
-DEVICE_DEFINE(apds9960, DT_INST_0_AVAGO_APDS9960_LABEL, apds9960_init,
+DEVICE_DEFINE(apds9960, DT_INST_LABEL(0), apds9960_init,
 	      apds9960_device_ctrl, &apds9960_data, &apds9960_config,
 	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
 #endif

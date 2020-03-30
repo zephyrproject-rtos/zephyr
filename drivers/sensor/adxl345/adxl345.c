@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT adi_adxl345
+
 #include <drivers/sensor.h>
 #include <init.h>
 #include <drivers/gpio.h>
@@ -183,10 +185,10 @@ static int adxl345_init(struct device *dev)
 static struct adxl345_dev_data adxl345_data;
 
 static const struct adxl345_dev_config adxl345_config = {
-	.i2c_master_name = DT_INST_0_ADI_ADXL345_BUS_NAME,
-	.i2c_addr = DT_INST_0_ADI_ADXL345_BASE_ADDRESS,
+	.i2c_master_name = DT_INST_BUS_LABEL(0),
+	.i2c_addr = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_AND_API_INIT(adxl345, DT_INST_0_ADI_ADXL345_LABEL, adxl345_init,
+DEVICE_AND_API_INIT(adxl345, DT_INST_LABEL(0), adxl345_init,
 		    &adxl345_data, &adxl345_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &adxl345_api_funcs);

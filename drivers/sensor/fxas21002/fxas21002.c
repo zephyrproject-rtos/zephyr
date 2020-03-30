@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_fxas21002
+
 #include "fxas21002.h"
 #include <sys/util.h>
 #include <sys/__assert.h>
@@ -284,27 +286,27 @@ static const struct sensor_driver_api fxas21002_driver_api = {
 };
 
 static const struct fxas21002_config fxas21002_config = {
-	.i2c_name = DT_INST_0_NXP_FXAS21002_BUS_NAME,
-	.i2c_address = DT_INST_0_NXP_FXAS21002_BASE_ADDRESS,
+	.i2c_name = DT_INST_BUS_LABEL(0),
+	.i2c_address = DT_INST_REG_ADDR(0),
 	.whoami = CONFIG_FXAS21002_WHOAMI,
 	.range = CONFIG_FXAS21002_RANGE,
 	.dr = CONFIG_FXAS21002_DR,
 #ifdef CONFIG_FXAS21002_TRIGGER
 #ifdef CONFIG_FXAS21002_DRDY_INT1
-	.gpio_name = DT_INST_0_NXP_FXAS21002_INT1_GPIOS_CONTROLLER,
-	.gpio_pin = DT_INST_0_NXP_FXAS21002_INT1_GPIOS_PIN,
-	.gpio_flags = DT_INST_0_NXP_FXAS21002_INT1_GPIOS_FLAGS,
+	.gpio_name = DT_INST_GPIO_LABEL(0, int1_gpios),
+	.gpio_pin = DT_INST_GPIO_PIN(0, int1_gpios),
+	.gpio_flags = DT_INST_GPIO_FLAGS(0, int1_gpios),
 #else
-	.gpio_name = DT_INST_0_NXP_FXAS21002_INT2_GPIOS_CONTROLLER,
-	.gpio_pin = DT_INST_0_NXP_FXAS21002_INT2_GPIOS_PIN,
-	.gpio_flags = DT_INST_0_NXP_FXAS21002_INT2_GPIOS_FLAGS,
+	.gpio_name = DT_INST_GPIO_LABEL(0, int2_gpios),
+	.gpio_pin = DT_INST_GPIO_PIN(0, int2_gpios),
+	.gpio_flags = DT_INST_GPIO_FLAGS(0, int2_gpios),
 #endif
 #endif
 };
 
 static struct fxas21002_data fxas21002_data;
 
-DEVICE_AND_API_INIT(fxas21002, DT_INST_0_NXP_FXAS21002_LABEL, fxas21002_init,
+DEVICE_AND_API_INIT(fxas21002, DT_INST_LABEL(0), fxas21002_init,
 		    &fxas21002_data, &fxas21002_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &fxas21002_driver_api);

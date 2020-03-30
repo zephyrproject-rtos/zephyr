@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_tmp116
+
 #include <device.h>
 #include <drivers/i2c.h>
 #include <drivers/sensor.h>
@@ -47,13 +49,13 @@ static inline int tmp116_device_id_check(struct device *dev)
 
 	if (tmp116_reg_read(dev, TMP116_REG_DEVICE_ID, &value) != 0) {
 		LOG_ERR("%s: Failed to get Device ID register!",
-			DT_INST_0_TI_TMP116_LABEL);
+			DT_INST_LABEL(0));
 		return -EIO;
 	}
 
 	if ((value != TMP116_DEVICE_ID) && (value != TMP117_DEVICE_ID)) {
 		LOG_ERR("%s: Failed to match the device IDs!",
-			DT_INST_0_TI_TMP116_LABEL);
+			DT_INST_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -76,7 +78,7 @@ static int tmp116_sample_fetch(struct device *dev, enum sensor_channel chan)
 	rc = tmp116_reg_read(dev, TMP116_REG_TEMP, &value);
 	if (rc < 0) {
 		LOG_ERR("%s: Failed to read from TEMP register!",
-			DT_INST_0_TI_TMP116_LABEL);
+			DT_INST_LABEL(0));
 		return rc;
 	}
 
@@ -118,10 +120,10 @@ static int tmp116_init(struct device *dev)
 	int rc;
 
 	/* Bind to the I2C bus that the sensor is connected */
-	drv_data->i2c = device_get_binding(DT_INST_0_TI_TMP116_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!drv_data->i2c) {
 		LOG_ERR("Cannot bind to %s device!",
-			DT_INST_0_TI_TMP116_BUS_NAME);
+			DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -137,9 +139,9 @@ static int tmp116_init(struct device *dev)
 static struct tmp116_data tmp116_data;
 
 static const struct tmp116_dev_config tmp116_config = {
-	.i2c_addr = DT_INST_0_TI_TMP116_BASE_ADDRESS,
+	.i2c_addr = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_AND_API_INIT(hdc1080, DT_INST_0_TI_TMP116_LABEL, tmp116_init,
+DEVICE_AND_API_INIT(hdc1080, DT_INST_LABEL(0), tmp116_init,
 		    &tmp116_data, &tmp116_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &tmp116_driver_api);
