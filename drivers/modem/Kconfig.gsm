@@ -32,6 +32,12 @@ endchoice
 config MODEM_GSM_UART_NAME
 	string "UART device name the modem is connected to"
 
+config MODEM_GSM_RX_STACK_SIZE
+	int "Size of the stack allocated for receiving data from modem"
+	default 512
+	help
+	  Sets the stack size which will be used by the GSM RX thread.
+
 config MODEM_GSM_INIT_PRIORITY
 	int "Init priority for the GSM modem driver"
 	default 42
