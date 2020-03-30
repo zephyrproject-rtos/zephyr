@@ -99,7 +99,7 @@ void main(void)
 			   BIT(DT_ALIAS_SW0_GPIOS_PIN) |
 			   BIT(DT_ALIAS_SW1_GPIOS_PIN));
 
-	pwm = device_get_binding(DT_INST_0_NORDIC_NRF_SW_PWM_LABEL);
+	pwm = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_sw_pwm)));
 
 	k_work_init(&beep_work, beep);
 	/* Notify with a beep that we've started */

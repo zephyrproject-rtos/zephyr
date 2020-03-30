@@ -513,7 +513,7 @@ void main(void)
 
 	k_delayed_work_init(&refresh, game_refresh);
 
-	pwm = device_get_binding(DT_INST_0_NORDIC_NRF_SW_PWM_LABEL);
+	pwm = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_sw_pwm)));
 
 	ble_init();
 
