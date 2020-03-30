@@ -717,6 +717,10 @@ static void setup()
 	ull_cp_conn_init(&conn);
 }
 
+static void set_role(struct ull_cp_conn *conn, u8_t role)
+{
+}
+
 /* +-----+                     +-------+            +-----+
  * | UT  |                     | LL_A  |            | LT  |
  * +-----+                     +-------+            +-----+
@@ -754,6 +758,8 @@ void test_version_exchange_mas_loc(void)
 		.sub_version_number = 0x1234,
 	};
 
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_MASTER);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -825,6 +831,8 @@ void test_version_exchange_mas_rem(void)
 		.sub_version_number = 0x1234,
 	};
 
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_MASTER);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -890,6 +898,8 @@ void test_version_exchange_mas_rem_2(void)
 		.sub_version_number = 0x1234,
 	};
 
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_MASTER);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -958,6 +968,8 @@ void test_encryption_start_mas_loc(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_MASTER);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1060,6 +1072,8 @@ void test_encryption_start_mas_loc_limited_memory(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_MASTER);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1196,6 +1210,8 @@ void test_encryption_start_mas_loc_no_ltk(void)
 		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
 	};
 
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_MASTER);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1280,6 +1296,8 @@ void test_encryption_start_mas_rem(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_MASTER);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1409,6 +1427,8 @@ void test_encryption_start_mas_rem_limited_memory(void)
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_MASTER);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1571,6 +1591,8 @@ void test_encryption_start_mas_rem_no_ltk(void)
 		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
 	};
 
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_MASTER);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1647,6 +1669,8 @@ void test_phy_update_mas_loc(void)
 		.status = BT_HCI_ERR_SUCCESS
 	};
 
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_MASTER);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1735,6 +1759,8 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 		.status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
 	};
 
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_MASTER);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -1778,6 +1804,8 @@ void test_phy_update_mas_rem(void)
 		.status = BT_HCI_ERR_SUCCESS
 	};
 
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_MASTER);
 
 	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
