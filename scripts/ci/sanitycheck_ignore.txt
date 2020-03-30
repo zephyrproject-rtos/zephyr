@@ -1,0 +1,26 @@
+# Add one pattern per line.
+#
+# The patterns listed in this file will be compared with the list of files
+# changed in a patch series (Pull Request) and if all files in the pull request
+# are matched, then sanitycheck will not do a full run and optionally will only
+# run on changed tests or boards.
+#
+.clang-format
+.codecov.yml
+.editorconfig
+.gitattributes
+.gitignore
+.known-issues
+.mailmap
+.uncrustify.cfg
+CODEOWNERS
+LICENSE
+Makefile
+tests/*
+samples/*
+*.rst
+*.md
+# if we change this file or associated script, it should not trigger a full
+# sanitycheck.
+scripts/ci/sanitycheck_ignore.txt
+scripts/ci/what_changed.py
