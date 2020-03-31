@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2020, Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	bmx160@68 {
+		compatible = "bosch,bmx160";
+		reg = <0x68>;
+		label = "BMX160";
+		int-gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+	};
+};

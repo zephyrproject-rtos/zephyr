@@ -1,0 +1,8 @@
+sample:
+  name: BMX160 Sensor Sample
+tests:
+  sample.sensor.bmx160:
+    harness: sensor
+    tags: sensors
+    depends_on: i2c gpio
+    filter: dt_compat_enabled("bosch,bmx160")
