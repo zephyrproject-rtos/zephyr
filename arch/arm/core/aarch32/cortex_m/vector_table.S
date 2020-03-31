@@ -57,7 +57,11 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
     .word z_arm_reserved
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
     .word z_arm_reserved
+#if defined(CONFIG_SOC_SERIES_LPC55XXX)
+    .word 0
+#else
     .word z_arm_reserved
+#endif
     .word z_arm_reserved
     .word z_arm_svc
     .word z_arm_debug_monitor
