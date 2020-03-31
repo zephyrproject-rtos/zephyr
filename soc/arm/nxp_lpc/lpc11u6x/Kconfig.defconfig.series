@@ -14,5 +14,11 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 40
 
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_LPC11U6X
+	default y
+
+endif # CLOCK_CONTROL
 
 endif # SOC_SERIES_LPC11U6X
