@@ -361,7 +361,7 @@
 /kernel/idle.c                            @andrewboie @andyross @nashif
 /samples/                                 @nashif
 /samples/basic/minimal/                   @carlescufi
-/samples/basic/servo_motor/*microbit*     @jhe
+/samples/basic/servo_motor/boards/*microbit* @jhe
 /lib/updatehub/                           @nandojve @otavio
 /samples/bluetooth/                       @jhedberg @Vudentz @joerchan
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
