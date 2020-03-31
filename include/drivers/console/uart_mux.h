@@ -104,6 +104,27 @@ __syscall struct device *uart_mux_find(int dlci_address);
  */
 struct device *uart_mux_alloc(void);
 
+/**
+ * @typedef uart_mux_cb_t
+ * @brief Callback used while iterating over UART muxes
+ *
+ * @param uart Pointer to UART device where the mux is running
+ * @param dev Pointer to UART mux device
+ * @param dlci_address DLCI channel id this UART is muxed
+ * @param user_data A valid pointer to user data or NULL
+ */
+typedef void (*uart_mux_cb_t)(struct device *uart, struct device *dev,
+			      int dlci_address, void *user_data);
+
+/**
+ * @brief Go through all the UART muxes and call callback
+ * for each of them
+ *
+ * @param cb User-supplied callback function to call
+ * @param user_data User specified data
+ */
+void uart_mux_foreach(uart_mux_cb_t cb, void *user_data);
+
 #ifdef __cplusplus
 }
 #endif
