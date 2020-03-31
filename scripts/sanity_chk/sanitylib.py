@@ -26,6 +26,7 @@ import glob
 import concurrent
 import xml.etree.ElementTree as ET
 import logging
+import pty
 from pathlib import Path
 from distutils.spawn import find_executable
 from colorama import Fore
@@ -522,7 +523,7 @@ class DeviceHandler(Handler):
         for i in self.suite.connected_hardware:
             if fixture and fixture not in i.get('fixtures', []):
                 continue
-            if i['platform'] == device and i['available'] and i['serial']:
+            if i['platform'] == device and i['available'] and (i['serial'] or i['serial_pty']):
                 return True
 
         return False
@@ -530,7 +531,7 @@ class DeviceHandler(Handler):
     def get_available_device(self, instance):
         device = instance.platform.name
         for i in self.suite.connected_hardware:
-            if i['platform'] == device and i['available'] and i['serial']:
+            if i['platform'] == device and i['available'] and (i['serial'] or i['serial_pty']):
                 i['available'] = False
                 i['counter'] += 1
                 return i
@@ -540,7 +541,7 @@ class DeviceHandler(Handler):
     def make_device_available(self, serial):
         with hw_map_local:
             for i in self.suite.connected_hardware:
-                if i['serial'] == serial:
+                if i['serial'] == serial or i['serial_pty']:
                     i['available'] = True
 
     @staticmethod
@@ -612,7 +613,21 @@ class DeviceHandler(Handler):
             elif runner == "jlink":
                 command.append("--tool-opt=-SelectEmuBySN  %s" % (board_id))
 
-        serial_device = hardware['serial']
+        serial_pty = hardware['serial_pty']
+        if serial_pty:
+            master, slave = pty.openpty()
+
+            try:
+                ser_pty_process = subprocess.Popen(serial_pty, stdout=master, stdin=master, stderr=master)
+            except subprocess.CalledProcessError as error:
+                logger.error("Failed to run subprocess {}, error {}".format(serial_pty, error.output))
+                return
+
+            serial_device = os.ttyname(slave)
+        else:
+            serial_device = hardware['serial']
+
+        logger.debug("Using serial device {}".format(serial_device))
 
         try:
             ser = serial.Serial(
@@ -627,6 +642,12 @@ class DeviceHandler(Handler):
             self.set_state("failed", 0)
             self.instance.reason = "Failed"
             logger.error("Serial device error: %s" % (str(e)))
+
+            if serial_pty:
+                ser_pty_process.terminate()
+                outs, errs = ser_pty_process.communicate()
+                logger.debug("Process {} terminated outs: {} errs {}".format(serial_pty, outs, errs))
+
             self.make_device_available(serial_device)
             return
 
@@ -677,7 +698,6 @@ class DeviceHandler(Handler):
         if post_flash_script:
             self.run_custom_script(post_flash_script, 30)
 
-
         t.join(self.timeout)
         if t.is_alive():
             logger.debug("Timed out while monitoring serial output on {}".format(self.instance.platform.name))
@@ -685,6 +705,11 @@ class DeviceHandler(Handler):
 
         if ser.isOpen():
             ser.close()
+
+        if serial_pty:
+            ser_pty_process.terminate()
+            outs, errs = ser_pty_process.communicate()
+            logger.debug("Process {} terminated outs: {} errs {}".format(serial_pty, outs, errs))
 
         os.close(write_pipe)
         os.close(read_pipe)
@@ -3427,14 +3452,21 @@ class HardwareMap:
         self.detected = []
         self.connected_hardware = []
 
-    def load_device_from_cmdline(self, serial, platform):
+    def load_device_from_cmdline(self, serial, platform, is_pty):
         device = {
-            "serial": serial,
+            "serial": None,
             "platform": platform,
+            "serial_pty": None,
             "counter": 0,
             "available": True,
             "connected": True
         }
+
+        if is_pty:
+            device['serial_pty'] = serial
+        else:
+            device['serial'] = serial
+
         self.connected_hardware.append(device)
 
     def load_hardware_map(self, map_file):

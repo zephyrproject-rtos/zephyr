@@ -575,9 +575,21 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
     parser.add_argument(
         "-X", "--fixture", action="append", default=[],
         help="Specify a fixture that a board might support")
-    parser.add_argument(
-        "--device-serial",
-        help="Serial device for accessing the board (e.g., /dev/ttyACM0)")
+
+    serial = parser.add_mutually_exclusive_group()
+    serial.add_argument("--device-serial",
+                        help="""Serial device for accessing the board
+                        (e.g., /dev/ttyACM0)
+                        """)
+
+    serial.add_argument("--device-serial-pty",
+                        help="""Script for controlling pseudoterminal.
+                        Sanitycheck believes that it interacts with a terminal
+                        when it actually interacts with the script.
+
+                        E.g "sanitycheck --device-testing
+                        --device-serial-pty <script>
+                        """)
 
     parser.add_argument("--generate-hardware-map",
                         help="""Probe serial devices connected to this platform
@@ -837,13 +849,22 @@ def main():
                     if platform['connected']:
                         options.platform.append(platform['platform'])
 
-        elif options.device_serial:  # back-ward compatibility
+        elif options.device_serial or options.device_serial_pty:
             if options.platform and len(options.platform) == 1:
-                hwm.load_device_from_cmdline(options.device_serial, options.platform[0])
+                if options.device_serial:
+                    hwm.load_device_from_cmdline(options.device_serial,
+                                                 options.platform[0],
+                                                 False)
+                else:
+                    hwm.load_device_from_cmdline(options.device_serial_pty,
+                                                 options.platform[0],
+                                                 True)
+
                 suite.connected_hardware = hwm.connected_hardware
             else:
-                logger.error("""When --device-testing is used with --device-serial, only one
-                      platform is allowed""")
+                logger.error("""When --device-testing is used with
+                             --device-serial or --device-serial-pty,
+                             only one platform is allowed""")
 
     if suite.load_errors:
         sys.exit(1)
