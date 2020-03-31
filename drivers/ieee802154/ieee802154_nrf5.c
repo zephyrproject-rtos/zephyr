@@ -493,13 +493,30 @@ static void nrf5_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
-int nrf5_configure(struct device *dev, enum ieee802154_config_type type,
-		   const struct ieee802154_config *config)
+static int nrf5_configure(struct device *dev, enum ieee802154_config_type type,
+			  const struct ieee802154_config *config)
 {
 	ARG_UNUSED(dev);
 
 	switch (type) {
 	case IEEE802154_CONFIG_AUTO_ACK_FPB:
+		if (config->auto_ack_fpb.enabled) {
+			switch (config->auto_ack_fpb.mode) {
+			case IEEE802154_FPB_ADDR_MATCH_THREAD:
+				nrf_802154_src_addr_matching_method_set(
+					NRF_802154_SRC_ADDR_MATCH_THREAD);
+				break;
+
+			case IEEE802154_FPB_ADDR_MATCH_ZIGBEE:
+				nrf_802154_src_addr_matching_method_set(
+					NRF_802154_SRC_ADDR_MATCH_ZIGBEE);
+				break;
+
+			default:
+				return -EINVAL;
+			}
+		}
+
 		nrf_802154_auto_pending_bit_set(config->auto_ack_fpb.enabled);
 		break;
 
