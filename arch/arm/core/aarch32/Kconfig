@@ -214,11 +214,13 @@ config ARM_NONSECURE_FIRMWARE
 
 choice
 	prompt "Floating point ABI"
-	default FP_HARDABI
+	default FP_HARDABI if CPU_HAS_FPU
+	default FP_SOFTABI
 	depends on FLOAT
 
 config FP_HARDABI
 	bool "Floating point Hard ABI"
+	depends on CPU_HAS_FPU
 	help
 	  This option selects the Floating point ABI in which hardware floating
 	  point instructions are generated and uses FPU-specific calling
