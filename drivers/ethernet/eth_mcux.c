@@ -32,6 +32,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 #include <ptp_clock.h>
 #include <net/gptp.h>
+
+#define PTP_INST_NODEID(n) DT_CHILD(DT_DRV_INST(n), ptp)
 #endif
 
 #include "fsl_enet.h"
@@ -81,10 +83,10 @@ static const char *eth_name(ENET_Type *base)
 {
 	switch ((int)base) {
 	case (int)ENET:
-		return DT_ETH_MCUX_0_NAME;
+		return DT_INST_LABEL(0);
 #if defined(CONFIG_ETH_MCUX_1)
 	case (int)ENET2:
-		return DT_ETH_MCUX_1_NAME;
+		return DT_INST_LABEL(1);
 #endif
 	default:
 		return "unknown";
@@ -1138,7 +1140,7 @@ static void eth_mcux_ptp_isr(void *p)
 }
 #endif
 
-#if defined(DT_IRQ_ETH_COMMON)
+#if DT_INST_IRQ_HAS_NAME(0, common)
 static void eth_mcux_dispacher_isr(void *p)
 {
 	struct device *dev = p;
@@ -1161,7 +1163,7 @@ static void eth_mcux_dispacher_isr(void *p)
 }
 #endif
 
-#if defined(DT_IRQ_ETH_RX)
+#if DT_INST_IRQ_HAS_NAME(0, rx)
 static void eth_mcux_rx_isr(void *p)
 {
 	struct device *dev = p;
@@ -1171,7 +1173,7 @@ static void eth_mcux_rx_isr(void *p)
 }
 #endif
 
-#if defined(DT_IRQ_ETH_TX)
+#if DT_INST_IRQ_HAS_NAME(0, tx)
 static void eth_mcux_tx_isr(void *p)
 {
 	struct device *dev = p;
@@ -1181,7 +1183,7 @@ static void eth_mcux_tx_isr(void *p)
 }
 #endif
 
-#if defined(DT_IRQ_ETH_ERR_MISC)
+#if DT_INST_IRQ_HAS_NAME(0, err_misc)
 static void eth_mcux_error_isr(void *p)
 {
 	struct device *dev = p;
@@ -1214,45 +1216,50 @@ static struct eth_context eth_0_context = {
 	.generate_mac = generate_random_mac,
 #endif
 #if defined(CONFIG_ETH_MCUX_0_MANUAL_MAC)
-	.mac_addr = DT_ETH_MCUX_0_MAC,
+	.mac_addr = DT_INST_PROP(0, local_mac_address),
 	.generate_mac = NULL,
 #endif
 };
 
-ETH_NET_DEVICE_INIT(eth_mcux_0, DT_ETH_MCUX_0_NAME, eth_init,
+ETH_NET_DEVICE_INIT(eth_mcux_0, DT_INST_LABEL(0), eth_init,
 		    ETH_MCUX_PM_FUNC, &eth_0_context, NULL,
 		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 
 static void eth_0_config_func(void)
 {
-#if defined(DT_IRQ_ETH_RX)
-	IRQ_CONNECT(DT_IRQ_ETH_RX, DT_ETH_MCUX_0_IRQ_PRI,
+#if DT_INST_IRQ_HAS_NAME(0, rx)
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rx, irq),
+		    DT_INST_IRQ_BY_NAME(0, rx, priority),
 		    eth_mcux_rx_isr, DEVICE_GET(eth_mcux_0), 0);
-	irq_enable(DT_IRQ_ETH_RX);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, rx, irq));
 #endif
 
-#if defined(DT_IRQ_ETH_TX)
-	IRQ_CONNECT(DT_IRQ_ETH_TX, DT_ETH_MCUX_0_IRQ_PRI,
+#if DT_INST_IRQ_HAS_NAME(0, tx)
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, tx, irq),
+		    DT_INST_IRQ_BY_NAME(0, tx, priority),
 		    eth_mcux_tx_isr, DEVICE_GET(eth_mcux_0), 0);
-	irq_enable(DT_IRQ_ETH_TX);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, tx, irq));
 #endif
 
-#if defined(DT_IRQ_ETH_ERR_MISC)
-	IRQ_CONNECT(DT_IRQ_ETH_ERR_MISC, DT_ETH_MCUX_0_IRQ_PRI,
+#if DT_INST_IRQ_HAS_NAME(0, err_misc)
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, err_misc, irq),
+		    DT_INST_IRQ_BY_NAME(0, err_misc, priority),
 		    eth_mcux_error_isr, DEVICE_GET(eth_mcux_0), 0);
-	irq_enable(DT_IRQ_ETH_ERR_MISC);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, err_misc, irq));
 #endif
 
-#if defined(DT_IRQ_ETH_COMMON)
-	IRQ_CONNECT(DT_IRQ_ETH_COMMON, DT_ETH_MCUX_0_IRQ_PRI,
+#if DT_INST_IRQ_HAS_NAME(0, common)
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, common, irq),
+		    DT_INST_IRQ_BY_NAME(0, common, priority),
 		    eth_mcux_dispacher_isr, DEVICE_GET(eth_mcux_0), 0);
-	irq_enable(DT_IRQ_ETH_COMMON);
+	irq_enable(DT_INST_IRQ_BY_NAME(0, common, irq));
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-	IRQ_CONNECT(DT_IRQ_ETH_IEEE1588_TMR, DT_ETH_MCUX_0_IRQ_PRI,
+	IRQ_CONNECT(DT_IRQ_BY_NAME(PTP_INST_NODEID(0), ieee1588_tmr, irq),
+		    DT_IRQ_BY_NAME(PTP_INST_NODEID(0), ieee1588_tmr, priority),
 		    eth_mcux_ptp_isr, DEVICE_GET(eth_mcux_0), 0);
-	irq_enable(DT_IRQ_ETH_IEEE1588_TMR);
+	irq_enable(DT_IRQ_BY_NAME(PTP_INST_NODEID(0), ieee1588_tmr, irq));
 #endif
 }
 
@@ -1276,27 +1283,29 @@ static struct eth_context eth_1_context = {
 	.generate_mac = generate_random_mac,
 #endif
 #if defined(CONFIG_ETH_MCUX_1_MANUAL_MAC)
-	.mac_addr = DT_ETH_MCUX_1_MAC,
+	.mac_addr = DT_INST_PROP(1, local_mac_address),
 	.generate_mac = NULL,
 #endif
 };
 
-ETH_NET_DEVICE_INIT(eth_mcux_1, DT_ETH_MCUX_1_NAME, eth_init,
+ETH_NET_DEVICE_INIT(eth_mcux_1, DT_INST_LABEL(1), eth_init,
 		    ETH_MCUX_PM_FUNC, &eth_1_context, NULL,
 		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 
 static void eth_1_config_func(void)
 {
-#if defined(DT_IRQ_ETH1_COMMON)
-	IRQ_CONNECT(DT_IRQ_ETH1_COMMON, DT_ETH_MCUX_1_IRQ_PRI,
+#if DT_INST_IRQ_HAS_NAME(1, common)
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(1, common, irq),
+		    DT_INST_IRQ_BY_NAME(1, common, priority),
 		    eth_mcux_dispacher_isr, DEVICE_GET(eth_mcux_1), 0);
-	irq_enable(DT_IRQ_ETH1_COMMON);
+	irq_enable(DT_INST_IRQ_BY_NAME(1, common, irq))
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-	IRQ_CONNECT(DT_IRQ_ETH1_IEEE1588_TMR, DT_ETH_MCUX_1_IRQ_PRI,
+	IRQ_CONNECT(DT_IRQ_BY_NAME(PTP_INST_NODEID(1), ieee1588_tmr, irq),
+		    DT_IRQ_BY_NAME(PTP_INST_NODEID(1), ieee1588_tmr, priority),
 		    eth_mcux_ptp_isr, DEVICE_GET(eth_mcux_1), 0);
-	irq_enable(DT_IRQ_ETH1_IEEE1588_TMR);
+	irq_enable(DT_IRQ_BY_NAME(PTP_INST_NODEID(1), ieee1588_tmr, irq));
 #endif
 }
 #endif /* CONFIG_ETH_MCUX_1 */
