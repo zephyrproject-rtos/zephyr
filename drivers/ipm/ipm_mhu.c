@@ -198,7 +198,7 @@ static void ipm_mhu_irq_config_func_0(struct device *d)
 {
 	ARG_UNUSED(d);
 	IRQ_CONNECT(DT_INST_IRQN(0),
-			DT_INST_IRQN(0),
+			DT_INST_IRQ(0, priority),
 			ipm_mhu_isr,
 			DEVICE_GET(mhu_0),
 			0);
