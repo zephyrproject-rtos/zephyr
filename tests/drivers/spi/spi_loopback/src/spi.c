@@ -33,6 +33,8 @@ struct spi_cs_control spi_cs = {
 #define CS_CTRL_GPIO_DRV_NAME ""
 #endif
 
+/* to run this test, connect MOSI pin to the MISO of the SPI */
+
 #define STACK_SIZE 512
 #define BUF_SIZE 17
 u8_t buffer_tx[] = "0123456789abcdef\0";
@@ -117,7 +119,7 @@ static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
 
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start complete loop");
 
 	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
@@ -175,7 +177,7 @@ static int spi_null_tx_buf(struct device *dev, struct spi_config *spi_conf)
 
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start null tx");
 
 	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
@@ -222,7 +224,7 @@ static int spi_rx_half_start(struct device *dev, struct spi_config *spi_conf)
 	};
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start half start");
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
@@ -277,7 +279,7 @@ static int spi_rx_half_end(struct device *dev, struct spi_config *spi_conf)
 	};
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start half end");
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
@@ -340,7 +342,7 @@ static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
 	};
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start every 4");
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
 
@@ -431,7 +433,7 @@ static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
 	};
 	int ret;
 
-	LOG_INF("Start");
+	LOG_INF("Start async call");
 
 	ret = spi_transceive_async(dev, spi_conf, &tx, &rx, &async_sig);
 	if (ret == -ENOTSUP) {
@@ -517,6 +519,8 @@ void test_spi_loopback(void)
 					  K_PRIO_COOP(7), 0, K_NO_WAIT);
 #endif
 
+	LOG_INF("SPI test slow config");
+
 	if (spi_complete_loop(spi_slow, &spi_cfg_slow) ||
 	    spi_null_tx_buf(spi_slow, &spi_cfg_slow) ||
 	    spi_rx_half_start(spi_slow, &spi_cfg_slow) ||
@@ -528,6 +532,8 @@ void test_spi_loopback(void)
 	    ) {
 		goto end;
 	}
+
+	LOG_INF("SPI test fast config");
 
 	if (spi_complete_loop(spi_fast, &spi_cfg_fast) ||
 	    spi_null_tx_buf(spi_fast, &spi_cfg_fast) ||
