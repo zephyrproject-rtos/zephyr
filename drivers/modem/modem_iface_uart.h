@@ -36,6 +36,19 @@ struct modem_iface_uart_data {
 };
 
 /**
+ * @brief  Init modem interface device for UART
+ *
+ * @details This can be called after the init if the UART is changed.
+ *
+ * @param  *iface: modem interface to initialize.
+ * @param  *dev_name: name of the UART device to use
+ *
+ * @retval 0 if ok, < 0 if error.
+ */
+int modem_iface_uart_init_dev(struct modem_iface *iface,
+			      const char *dev_name);
+
+/**
  * @brief  Init modem interface for UART
  *
  * @param  *iface: modem interface to initialize.

@@ -317,6 +317,30 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 	}
 
 	set_ppp_carrier_on(gsm);
+
+	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
+		/* Re-use the original iface for AT channel */
+		ret = modem_iface_uart_init_dev(&gsm->context.iface,
+						gsm->at_dev->config->name);
+		if (ret < 0) {
+			LOG_DBG("iface %suart error %d", "AT ", ret);
+		} else {
+			/* Do a test and try to send AT command to modem */
+			ret = modem_cmd_send(&gsm->context.iface,
+					     &gsm->context.cmd_handler,
+					     &response_cmds[0],
+					     ARRAY_SIZE(response_cmds),
+					     "AT", &gsm->sem_response,
+					     GSM_CMD_AT_TIMEOUT);
+			if (ret < 0) {
+				LOG_DBG("modem setup returned %d, %s",
+					ret, "AT cmds failed");
+			} else {
+				LOG_INF("AT channel %d connected to %s",
+					DLCI_AT, gsm->at_dev->config->name);
+			}
+		}
+	}
 }
 
 static int mux_enable(struct gsm_modem *gsm)
@@ -455,15 +479,22 @@ static void mux_setup(struct k_work *work)
 		break;
 
 	case STATE_DONE:
-		/* Re-use the original iface for AT channel */
-		ret = modem_iface_uart_init(&gsm->context.iface,
-					    &gsm->gsm_data,
-					    gsm->at_dev->config->name);
+		/* At least the SIMCOM modem expects that the Internet
+		 * connection is created in PPP channel. We will need
+		 * to attach the AT channel to context iface after the
+		 * PPP connection is established in order to give AT commands
+		 * to the modem.
+		 */
+		ret = modem_iface_uart_init_dev(&gsm->context.iface,
+						gsm->ppp_dev->config->name);
 		if (ret < 0) {
-			LOG_DBG("iface %suart error %d", "mux ", ret);
+			LOG_DBG("iface %suart error %d", "PPP ", ret);
 			gsm->mux_enabled = false;
 			goto fail;
 		}
+
+		LOG_INF("PPP channel %d connected to %s",
+			DLCI_PPP, gsm->ppp_dev->config->name);
 
 		gsm_finalize_connection(gsm);
 		break;
