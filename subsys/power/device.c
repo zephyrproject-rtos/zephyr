@@ -38,7 +38,7 @@ static const char *const core_devices[] = {
 #elif defined(CONFIG_SOC_SERIES_KINETIS_K6X)
 #define MAX_PM_DEVICES		1
 static const char *const core_devices[] = {
-	DT_ETH_MCUX_0_NAME,
+	DT_LABEL(DT_INST(0, nxp_kinetis_ethernet)),
 };
 #else
 #error "Add SoC's core devices list for PM"
