@@ -2705,7 +2705,7 @@ static int usdhc_access_init(const struct device *dev)
 	(void)k_mutex_lock(&z_usdhc_init_lock, K_FOREVER);
 
 	memset((char *)priv, 0, sizeof(struct usdhc_priv));
-#if DT_NODE_HAS_PROP(DT_INST(0, nxp_imx_usdhc), label)
+#if DT_HAS_NODE(DT_INST(0, nxp_imx_usdhc))
 	if (!strcmp(dev->config->name, DT_LABEL(DT_INST(0, nxp_imx_usdhc)))) {
 		priv->host_config.base =
 			(USDHC_Type *)DT_REG_ADDR(DT_INST(0, nxp_imx_usdhc));
@@ -2721,7 +2721,7 @@ static int usdhc_access_init(const struct device *dev)
 	}
 #endif
 
-#if DT_NODE_HAS_PROP(DT_INST(1, nxp_imx_usdhc), label)
+#if DT_HAS_NODE(DT_INST(1, nxp_imx_usdhc))
 	if (!strcmp(dev->config->name, DT_LABEL(DT_INST(1, nxp_imx_usdhc)))) {
 		priv->host_config.base =
 			(USDHC_Type *)DT_REG_ADDR(DT_INST(1, nxp_imx_usdhc));
@@ -2876,7 +2876,7 @@ static int disk_usdhc_init(struct device *dev)
 
 #ifdef CONFIG_DISK_ACCESS_USDHC1
 static struct usdhc_priv usdhc_priv_1;
-#if DT_NODE_HAS_PROP(DT_INST(0, nxp_imx_usdhc), label)
+#if DT_HAS_NODE(DT_INST(0, nxp_imx_usdhc))
 DEVICE_AND_API_INIT(usdhc_dev1,
 		DT_LABEL(DT_INST(0, nxp_imx_usdhc)), disk_usdhc_init,
 		&usdhc_priv_1, NULL, APPLICATION,
@@ -2889,7 +2889,7 @@ DEVICE_AND_API_INIT(usdhc_dev1,
 
 #ifdef CONFIG_DISK_ACCESS_USDHC2
 static struct usdhc_priv usdhc_priv_2;
-#if DT_NODE_HAS_PROP(DT_INST(1, nxp_imx_usdhc), label)
+#if DT_HAS_NODE(DT_INST(1, nxp_imx_usdhc))
 DEVICE_AND_API_INIT(usdhc_dev2,
 		DT_LABEL(DT_INST(1, nxp_imx_usdhc)), disk_usdhc_init,
 		usdhc_priv_2, NULL, APPLICATION,
