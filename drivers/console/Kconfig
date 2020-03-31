@@ -357,6 +357,18 @@ config UART_MUX_REAL_DEVICE_COUNT
 	  only one UART and the muxed UARTs are run on top of that. If you have
 	  two modems for example, then you would need to increase this to two.
 
+config UART_MUX_RX_STACK_SIZE
+	int "Size of the stack allocated for receiving data from UART"
+	default 512
+	help
+	  Sets the stack size which will be used by the PPP RX workqueue.
+
+config UART_MUX_RX_PRIORITY
+	int "RX workqueue thread priority"
+	default 7
+	help
+	  Sets the priority of the RX workqueue thread.
+
 module = UART_MUX
 module-str = UART mux
 source "subsys/logging/Kconfig.template.log_config"

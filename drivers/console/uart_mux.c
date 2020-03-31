@@ -9,6 +9,7 @@ LOG_MODULE_REGISTER(uart_mux, CONFIG_UART_MUX_LOG_LEVEL);
 
 #include <sys/__assert.h>
 #include <kernel.h>
+#include <init.h>
 #include <syscall_handler.h>
 #include <device.h>
 #include <drivers/uart.h>
@@ -23,6 +24,16 @@ LOG_MODULE_REGISTER(uart_mux, CONFIG_UART_MUX_LOG_LEVEL);
 #error "CONFIG_UART_MUX_DEVICE_COUNT tells number of DLCIs to create " \
 	"and must be >0"
 #endif
+
+#define UART_MUX_WORKQ_PRIORITY CONFIG_UART_MUX_RX_PRIORITY
+#define UART_MUX_WORKQ_STACK_SIZE CONFIG_UART_MUX_RX_STACK_SIZE
+
+/* All the RX/TX data is passed via own workqueue. This is done like this
+ * as the GSM modem uses global workqueue which causes difficulties if we do
+ * the same here. This workqueue is shared between all the DLCI channels.
+ */
+K_THREAD_STACK_DEFINE(uart_mux_stack, UART_MUX_WORKQ_STACK_SIZE);
+static struct k_work_q uart_mux_workq;
 
 /* The UART mux contains information about the real UART. It will synchronize
  * the access to the real UART and pass data between it and GSM muxing API.
@@ -254,7 +265,7 @@ static void uart_mux_isr(void *user_data)
 				rx - wrote);
 		}
 
-		k_work_submit(&real_uart->rx_work);
+		k_work_submit_to_queue(&uart_mux_workq, &real_uart->rx_work);
 	}
 }
 
@@ -478,7 +489,7 @@ static int uart_mux_fifo_fill(struct device *dev, const u8_t *tx_data, int len)
 		LOG_WRN("Ring buffer full, drop %d bytes", len - wrote);
 	}
 
-	k_work_submit(&dev_data->tx_work);
+	k_work_submit_to_queue(&uart_mux_workq, &dev_data->tx_work);
 
 	return wrote;
 }
@@ -521,7 +532,7 @@ static void uart_mux_irq_tx_enable(struct device *dev)
 	dev_data->tx_enabled = true;
 
 	if (dev_data->cb && dev_data->tx_ready) {
-		k_work_submit(&dev_data->cb_work);
+		k_work_submit_to_queue(&uart_mux_workq, &dev_data->cb_work);
 	}
 }
 
@@ -562,7 +573,7 @@ static void uart_mux_irq_rx_enable(struct device *dev)
 	dev_data->rx_enabled = true;
 
 	if (dev_data->cb && dev_data->rx_ready) {
-		k_work_submit(&dev_data->cb_work);
+		k_work_submit_to_queue(&uart_mux_workq, &dev_data->cb_work);
 	}
 }
 
@@ -774,7 +785,7 @@ int uart_mux_recv(struct device *mux, struct gsm_dlci *dlci, u8_t *data,
 	dev_data->rx_ready = true;
 
 	if (dev_data->cb && dev_data->rx_enabled) {
-		k_work_submit(&dev_data->cb_work);
+		k_work_submit_to_queue(&uart_mux_workq, &dev_data->cb_work);
 	}
 
 	return wrote;
@@ -805,3 +816,17 @@ int uart_mux_recv(struct device *mux, struct gsm_dlci *dlci, u8_t *data,
 UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_CFG_DATA, _)
 UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEV_DATA, _)
 UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEVICE, _)
+
+static int init_uart_mux(struct device *device)
+{
+	ARG_UNUSED(device);
+
+	k_work_q_start(&uart_mux_workq, uart_mux_stack,
+		       K_THREAD_STACK_SIZEOF(uart_mux_stack),
+		       K_PRIO_COOP(UART_MUX_WORKQ_PRIORITY));
+	k_thread_name_set(&uart_mux_workq.thread, "uart_mux_workq");
+
+	return 0;
+}
+
+SYS_INIT(init_uart_mux, POST_KERNEL, CONFIG_UART_MUX_INIT_PRIORITY);
