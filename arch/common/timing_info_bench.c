@@ -31,6 +31,12 @@ u64_t arch_timing_value_swap_temp;
 #define TIMING_INFO_GET_TIMER_VALUE() (TIMING_INFO_OS_GET_TIME())
 #define SUBTRACT_CLOCK_CYCLES(val)    (val)
 
+#elif CONFIG_SOC_SERIES_MEC1501X
+#define TIMING_INFO_PRE_READ()
+#define TIMING_INFO_OS_GET_TIME()     (B32TMR1_REGS->CNT)
+#define TIMING_INFO_GET_TIMER_VALUE() (TIMING_INFO_OS_GET_TIME())
+#define SUBTRACT_CLOCK_CYCLES(val)    (val)
+
 #elif CONFIG_X86
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()      (z_tsc_read())

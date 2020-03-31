@@ -44,6 +44,12 @@
 #define TIMING_INFO_GET_TIMER_VALUE() (TIMING_INFO_OS_GET_TIME())
 #define SUBTRACT_CLOCK_CYCLES(val)    (val)
 
+#elif CONFIG_SOC_SERIES_MEC1501X
+#define TIMING_INFO_PRE_READ()
+#define TIMING_INFO_OS_GET_TIME()     (B32TMR1_REGS->CNT)
+#define TIMING_INFO_GET_TIMER_VALUE() (TIMING_INFO_OS_GET_TIME())
+#define SUBTRACT_CLOCK_CYCLES(val)    (val)
+
 #elif CONFIG_X86
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()      (z_tsc_read())
@@ -131,6 +137,47 @@ static inline void benchmark_timer_start(void)
 static inline u32_t get_core_freq_MHz(void)
 {
 	return SystemCoreClock/1000000;
+}
+
+#elif CONFIG_SOC_SERIES_MEC1501X
+
+#define NANOSECS_PER_SEC	(1000000000)
+#define CYCLES_PER_SEC		(48000000)
+#define CYCLES_TO_NS(x)		((x) * (NANOSECS_PER_SEC/CYCLES_PER_SEC))
+#define PRINT_STATS(x, y, z)   PRINT_F(x, y, z)
+
+/* Configure Timer parameters */
+static inline void benchmark_timer_init(void)
+{
+	/* Setup counter */
+	B32TMR1_REGS->CTRL =
+		MCHP_BTMR_CTRL_ENABLE |
+		MCHP_BTMR_CTRL_AUTO_RESTART |
+		MCHP_BTMR_CTRL_COUNT_UP;
+
+	B32TMR1_REGS->PRLD = 0;		/* Preload */
+	B32TMR1_REGS->CNT = 0;		/* Counter value */
+
+	B32TMR1_REGS->IEN = 0;		/* Disable interrupt */
+	B32TMR1_REGS->STS = 1;		/* Clear interrupt */
+}
+
+/* Stop the timer */
+static inline void benchmark_timer_stop(void)
+{
+	B32TMR1_REGS->CTRL &= ~MCHP_BTMR_CTRL_START;
+}
+
+/* Start the timer */
+static inline void benchmark_timer_start(void)
+{
+	B32TMR1_REGS->CTRL |= MCHP_BTMR_CTRL_START;
+}
+
+/* 48MHz counter frequency */
+static inline u32_t get_core_freq_MHz(void)
+{
+	return CYCLES_PER_SEC;
 }
 
 #else  /* All other architectures */
