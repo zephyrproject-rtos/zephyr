@@ -279,6 +279,11 @@ static int spi_rx_half_end(struct device *dev, struct spi_config *spi_conf)
 	};
 	int ret;
 
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
+		LOG_INF("Skip half end");
+		return 0;
+	}
+
 	LOG_INF("Start half end");
 
 	(void)memset(buffer_rx, 0, BUF_SIZE);
@@ -341,6 +346,11 @@ static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
 		.count = ARRAY_SIZE(rx_bufs)
 	};
 	int ret;
+
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA)) {
+		LOG_INF("Skip every 4");
+		return 0;
+	}
 
 	LOG_INF("Start every 4");
 
