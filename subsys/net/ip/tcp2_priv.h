@@ -80,7 +80,7 @@ static struct net_pkt *tcp_pkt_alloc(size_t len)
 	(_conn)->state = _s;						\
 })
 
-#define TCPOPT_PAD	0
+#define TCPOPT_END	0
 #define TCPOPT_NOP	1
 #define TCPOPT_MAXSEG	2
 #define TCPOPT_WINDOW	3

@@ -382,12 +382,12 @@ static bool tcp_options_check(void *buf, ssize_t len)
 
 	for ( ; len >= 2; options += opt_len, len -= opt_len) {
 		opt = options[0];
-		opt_len = (opt == TCPOPT_PAD || opt == TCPOPT_NOP) ?
+		opt_len = (opt == TCPOPT_END || opt == TCPOPT_NOP) ?
 			1 : options[1];
 
 		NET_DBG("opt: %hu, opt_len: %hu", (u16_t)opt, (u16_t)opt_len);
 
-		if (opt == TCPOPT_PAD || opt == TCPOPT_NOP) {
+		if (opt == TCPOPT_END || opt == TCPOPT_NOP) {
 			continue;
 		}
 
