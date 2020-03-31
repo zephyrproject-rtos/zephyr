@@ -451,8 +451,6 @@ class DeviceHandler(Handler):
         super().__init__(instance, type_str)
 
         self.suite = None
-        self.west_flash = None
-        self.west_runner = None
 
     def monitor_serial(self, ser, halt_fileno, harness):
         log_out_fp = open(self.log, "wt")
@@ -532,11 +530,11 @@ class DeviceHandler(Handler):
     def handle(self):
         out_state = "failed"
 
-        if self.west_flash:
+        if self.suite.west_flash:
             command = ["west", "flash", "--skip-rebuild", "-d", self.build_dir]
-            if self.west_runner:
+            if self.suite.west_runner:
                 command.append("--runner")
-                command.append(self.west_runner)
+                command.append(self.suite.west_runner)
             # There are three ways this option is used.
             # 1) bare: --west-flash
             #    This results in options.west_flash == []
@@ -544,9 +542,9 @@ class DeviceHandler(Handler):
             #    This results in options.west_flash == "--board-id=42"
             # 3) Multiple values: --west-flash="--board-id=42,--erase"
             #    This results in options.west_flash == "--board-id=42 --erase"
-            if self.west_flash != []:
+            if self.suite.west_flash != []:
                 command.append('--')
-                command.extend(self.west_flash.split(','))
+                command.extend(self.suite.west_flash.split(','))
         else:
             command = [self.generator_cmd, "-C", self.build_dir, "flash"]
 
@@ -1799,8 +1797,6 @@ class ProjectBuilder(FilterBuilder):
         self.cleanup = kwargs.get('cleanup', False)
         self.coverage = kwargs.get('coverage', False)
         self.inline_logs = kwargs.get('inline_logs', False)
-        self.west_flash = kwargs.get('west_flash', None)
-        self.west_runner = kwargs.get('west_runner', None)
         self.generator = kwargs.get('generator', None)
         self.generator_cmd = kwargs.get('generator_cmd', None)
         self.verbose = kwargs.get('verbose', None)
@@ -2740,8 +2736,6 @@ class TestSuite:
                                         cleanup=self.cleanup,
                                         valgrind=self.enable_valgrind,
                                         inline_logs=self.inline_logs,
-                                        west_flash=self.west_flash,
-                                        west_runner=self.west_runner,
                                         generator=self.generator,
                                         generator_cmd=self.generator_cmd,
                                         verbose=self.verbose
