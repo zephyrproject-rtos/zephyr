@@ -9,6 +9,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_
 
 #include <drivers/gpio.h>
+#include <drivers/i2c.h>
 #include <drivers/spi.h>
 #include <sys/util.h>
 
@@ -243,8 +244,11 @@
 #define BMI160_INT1_EDGE_CTRL		BIT(0)
 
 /* other */
-#define BMI160_CHIP_ID			0xD1
 #define BMI160_TEMP_OFFSET		23
+
+/* Constant identifier to differentiate bmx160 & bmi160 sensor */
+#define BMX160_CHIP_ID			0xD8
+#define BMI160_CHIP_ID			0xD1
 
 /* allowed ODR values */
 enum bmi160_odr {
@@ -384,11 +388,10 @@ struct bmi160_range {
 };
 
 struct bmi160_device_config {
-#if defined(CONFIG_BMI160_TRIGGER)
 	const char *gpio_port;
 	gpio_pin_t int_pin;
 	gpio_dt_flags_t int_flags;
-#endif
+	uint8_t chipid;
 };
 
 union bmi160_pmu_status {
@@ -429,7 +432,11 @@ struct bmi160_scale {
 
 struct bmi160_device_data {
 	const struct device *spi;
+	const struct device *i2c;
+	const char *bus_name;
+	uint16_t i2c_addr;
 	struct spi_config spi_cfg;
+
 #if defined(CONFIG_BMI160_TRIGGER)
 	const struct device *dev;
 	const struct device *gpio;
@@ -481,7 +488,17 @@ int bmi160_trigger_set(const struct device *dev,
 int bmi160_acc_slope_config(const struct device *dev,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val);
+int bmi160_acc_tap_config(const struct device *dev, enum sensor_attribute attr,
+			  const struct sensor_value *val);
 int32_t bmi160_acc_reg_val_to_range(uint8_t reg_val);
 int32_t bmi160_gyr_reg_val_to_range(uint8_t reg_val);
+
+int bmi160_attr_set(const struct device *dev, enum sensor_channel chan,
+		    enum sensor_attribute attr,
+		    const struct sensor_value *val);
+int bmi160_sample_fetch(const struct device *dev, enum sensor_channel chan);
+int bmi160_channel_get(const struct device *dev, enum sensor_channel chan,
+			struct sensor_value *val);
+int bm160_device_init(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI160_BMI160_H_ */

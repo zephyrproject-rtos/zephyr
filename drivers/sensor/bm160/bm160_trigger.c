@@ -9,10 +9,10 @@
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>
 
-#include "bmi160.h"
+#include "bm160.h"
 
 #include <logging/log.h>
-LOG_MODULE_DECLARE(BMI160, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_DECLARE(BM160, CONFIG_SENSOR_LOG_LEVEL);
 
 static void bmi160_handle_anymotion(const struct device *dev)
 {

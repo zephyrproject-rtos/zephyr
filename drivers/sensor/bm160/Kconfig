@@ -3,14 +3,22 @@
 # Copyright (c) 2016 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig BMI160
+config BMI160
 	bool "Bosch BMI160 inertial measurement unit"
 	depends on SPI
 	help
 	  Enable Bosch BMI160 inertial measurement unit that provides acceleration
 	  and angular rate measurements.
 
-if BMI160
+config BMX160
+	bool "Bosch BMX160 inertial measurement unit"
+	depends on I2C
+	help
+	  Enable Bosch BMX160 inertial measurement unit that provides acceleration,
+	  angular rate and magnetic field measurements.
+
+
+if BMI160 || BMX160
 
 choice
 	prompt "Trigger mode"
@@ -208,4 +216,4 @@ config BMI160_GYRO_ODR_3200
 	bool "3200 Hz"
 endchoice
 
-endif # BMI160
+endif # BMI160 || BMX160

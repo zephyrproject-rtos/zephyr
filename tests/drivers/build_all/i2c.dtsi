@@ -559,3 +559,10 @@ test_i2c_max17055: max17055@49 {
 	desired-charging-current = <2000>;
 	rsense-mohms = <5>;
 };
+
+test_i2c_bmx160: bmx160@68 {
+	compatible = "bosch,bmx160";
+	label = "BMX160";
+	reg = <0x68>;
+	int-gpios = <&test_gpio 0 0>;
+};

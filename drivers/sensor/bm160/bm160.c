@@ -8,8 +8,6 @@
  * http://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMI160-DS000-07.pdf
  */
 
-#define DT_DRV_COMPAT bosch_bmi160
-
 #include <init.h>
 #include <drivers/sensor.h>
 #include <sys/byteorder.h>
@@ -17,14 +15,12 @@
 #include <sys/__assert.h>
 #include <logging/log.h>
 
-#include "bmi160.h"
+#include "bm160.h"
 
-LOG_MODULE_REGISTER(BMI160, CONFIG_SENSOR_LOG_LEVEL);
+LOG_MODULE_REGISTER(BM160, CONFIG_SENSOR_LOG_LEVEL);
 
-struct bmi160_device_data bmi160_data;
-
-static int bmi160_transceive(const struct device *dev, uint8_t reg,
-			     bool write, void *data, size_t length)
+static int bmi160_transceive_spi(const struct device *dev, uint8_t reg,
+				 bool write, void *data, size_t length)
 {
 	struct bmi160_device_data *bmi160 = dev->data;
 	const struct spi_buf buf[2] = {
@@ -53,8 +49,34 @@ static int bmi160_transceive(const struct device *dev, uint8_t reg,
 
 	return spi_write(bmi160->spi, &bmi160->spi_cfg, &tx);
 }
-int bmi160_read(const struct device *dev, uint8_t reg_addr, uint8_t *data,
-		uint8_t len)
+
+static int bmi160_transceive_i2c(const struct device *dev, uint8_t reg,
+				 bool write, void *data, size_t len)
+{
+	struct bmi160_device_data *bmi160 = dev->data;
+
+	if (!write) {
+		return i2c_burst_read(bmi160->i2c, bmi160->i2c_addr,
+				reg, data, len);
+	}
+
+	return i2c_burst_write(bmi160->i2c, bmi160->i2c_addr, reg, data, len);
+}
+
+
+static int bmi160_transceive(const struct device *dev, uint8_t reg,
+			     bool write, void *data, size_t length)
+{
+	struct bmi160_device_data *bmi160 = dev->data;
+
+	if (bmi160->i2c) {
+		return bmi160_transceive_i2c(dev, reg, write, data, length);
+	} else {
+		return bmi160_transceive_spi(dev, reg, write, data, length);
+	}
+}
+
+int bmi160_read(const struct device *dev, uint8_t reg_addr, uint8_t *data, uint8_t len)
 {
 	return bmi160_transceive(dev, reg_addr | BIT(7), false, data, len);
 }
@@ -604,9 +626,8 @@ static int bmi160_gyr_config(const struct device *dev,
 }
 #endif /* !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND) */
 
-static int bmi160_attr_set(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+int bmi160_attr_set(const struct device *dev, enum sensor_channel chan,
+		    enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (chan) {
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
@@ -638,8 +659,8 @@ static int bmi160_attr_set(const struct device *dev, enum sensor_channel chan,
 #	define BMI160_SAMPLE_BURST_READ_ADDR	BMI160_REG_DATA_GYR_X
 #	define BMI160_DATA_READY_BIT_MASK	(1 << 6)
 #endif
-static int bmi160_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+
+int bmi160_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct bmi160_device_data *bmi160 = dev->data;
 	size_t i;
@@ -766,9 +787,9 @@ static int bmi160_temp_channel_get(const struct device *dev,
 	return 0;
 }
 
-static int bmi160_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
-			      struct sensor_value *val)
+int bmi160_channel_get(const struct device *dev,
+		       enum sensor_channel chan,
+		       struct sensor_value *val)
 {
 	switch (chan) {
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
@@ -797,31 +818,12 @@ static int bmi160_channel_get(const struct device *dev,
 	return 0;
 }
 
-static const struct sensor_driver_api bmi160_api = {
-	.attr_set = bmi160_attr_set,
-#ifdef CONFIG_BMI160_TRIGGER
-	.trigger_set = bmi160_trigger_set,
-#endif
-	.sample_fetch = bmi160_sample_fetch,
-	.channel_get = bmi160_channel_get,
-};
-
-int bmi160_init(const struct device *dev)
+int bm160_device_init(const struct device *dev)
 {
-	struct bmi160_device_data *bmi160 = dev->data;
 	uint8_t val = 0U;
 	int32_t acc_range, gyr_range;
-
-	bmi160->spi = device_get_binding(DT_INST_BUS_LABEL(0));
-	if (!bmi160->spi) {
-		LOG_DBG("SPI master controller not found: %s.",
-			    DT_INST_BUS_LABEL(0));
-		return -EINVAL;
-	}
-
-	bmi160->spi_cfg.operation = SPI_WORD_SET(8);
-	bmi160->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
-	bmi160->spi_cfg.slave = DT_INST_REG_ADDR(0);
+	struct bmi160_device_data *ddata = dev->data;
+	const struct bmi160_device_config *cfg = dev->config;
 
 	/* reboot the chip */
 	if (bmi160_byte_write(dev, BMI160_REG_CMD, BMI160_CMD_SOFT_RESET) < 0) {
@@ -844,16 +846,16 @@ int bmi160_init(const struct device *dev)
 		return -EIO;
 	}
 
-	if (val != BMI160_CHIP_ID) {
+	if (val != cfg->chipid) {
 		LOG_DBG("Unsupported chip detected (0x%x)!", val);
 		return -ENODEV;
 	}
 
 	/* set default PMU for gyro, accelerometer */
-	bmi160->pmu_sts.gyr = BMI160_DEFAULT_PMU_GYR;
-	bmi160->pmu_sts.acc = BMI160_DEFAULT_PMU_ACC;
+	ddata->pmu_sts.gyr = BMI160_DEFAULT_PMU_GYR;
+	ddata->pmu_sts.acc = BMI160_DEFAULT_PMU_ACC;
 	/* compass not supported, yet */
-	bmi160->pmu_sts.mag = BMI160_PMU_SUSPEND;
+	ddata->pmu_sts.mag = BMI160_PMU_SUSPEND;
 
 	/*
 	 * The next command will take around 100ms (contains some necessary busy
@@ -861,7 +863,7 @@ int bmi160_init(const struct device *dev)
 	 * guarantee the BMI is up and running, before the app's main() is
 	 * called.
 	 */
-	if (bmi160_pmu_set(dev, &bmi160->pmu_sts) < 0) {
+	if (bmi160_pmu_set(dev, &ddata->pmu_sts) < 0) {
 		LOG_DBG("Failed to set power mode.");
 		return -EIO;
 	}
@@ -875,7 +877,7 @@ int bmi160_init(const struct device *dev)
 
 	acc_range = bmi160_acc_reg_val_to_range(BMI160_DEFAULT_RANGE_ACC);
 
-	bmi160->scale.acc = BMI160_ACC_SCALE(acc_range);
+	ddata->scale.acc = BMI160_ACC_SCALE(acc_range);
 
 	/* set gyro default range */
 	if (bmi160_byte_write(dev, BMI160_REG_GYR_RANGE,
@@ -886,7 +888,7 @@ int bmi160_init(const struct device *dev)
 
 	gyr_range = bmi160_gyr_reg_val_to_range(BMI160_DEFAULT_RANGE_GYR);
 
-	bmi160->scale.gyr = BMI160_GYR_SCALE(gyr_range);
+	ddata->scale.gyr = BMI160_GYR_SCALE(gyr_range);
 
 	if (bmi160_reg_field_update(dev, BMI160_REG_ACC_CONF,
 				    BMI160_ACC_CONF_ODR_POS,
@@ -913,17 +915,3 @@ int bmi160_init(const struct device *dev)
 
 	return 0;
 }
-
-const struct bmi160_device_config bmi160_config = {
-#if defined(CONFIG_BMI160_TRIGGER)
-	.gpio_port = DT_INST_GPIO_LABEL(0, int_gpios),
-	.int_pin = DT_INST_GPIO_PIN(0, int_gpios),
-	.int_flags = DT_INST_GPIO_FLAGS(0, int_gpios),
-#endif
-};
-
-
-
-DEVICE_AND_API_INIT(bmi160, DT_INST_LABEL(0), bmi160_init, &bmi160_data,
-		&bmi160_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		&bmi160_api);
