@@ -3,13 +3,6 @@
 # Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
 # SPDX-License-Identifier: Apache-2.0
 
-if ARM64
-
-config CPU_CORTEX
-	bool
-	help
-	  This option signifies the use of a CPU of the Cortex family.
-
 config CPU_CORTEX_A
 	bool
 	select CPU_CORTEX
@@ -164,8 +157,6 @@ config ARM64_PA_BITS
 	default 42 if ARM64_PA_BITS_42
 	default 48 if ARM64_PA_BITS_48
 
-endif #ARM_MMU
+endif # ARM_MMU
 
 endif # CPU_CORTEX_A
-
-endif # ARM64
