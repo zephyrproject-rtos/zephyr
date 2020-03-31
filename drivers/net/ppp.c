@@ -43,6 +43,11 @@ enum ppp_driver_state {
 	STATE_HDLC_FRAME_DATA,
 };
 
+#define PPP_WORKQ_PRIORITY CONFIG_NET_PPP_RX_PRIORITY
+#define PPP_WORKQ_STACK_SIZE CONFIG_NET_PPP_RX_STACK_SIZE
+
+K_THREAD_STACK_DEFINE(ppp_workq, PPP_WORKQ_STACK_SIZE);
+
 struct ppp_driver_context {
 	struct device *dev;
 	struct net_if *iface;
@@ -71,6 +76,7 @@ struct ppp_driver_context {
 
 	/* ISR function callback worker */
 	struct k_work cb_work;
+	struct k_work_q cb_workq;
 
 #if defined(CONFIG_NET_STATISTICS_PPP)
 	struct net_stats_ppp stats;
@@ -674,6 +680,11 @@ static int ppp_driver_init(struct device *dev)
 #if !defined(CONFIG_NET_TEST)
 	ring_buf_init(&ppp->rx_ringbuf, sizeof(ppp->rx_buf), ppp->rx_buf);
 	k_work_init(&ppp->cb_work, ppp_isr_cb_work);
+
+	k_work_q_start(&ppp->cb_workq, ppp_workq,
+		       K_THREAD_STACK_SIZEOF(ppp_workq),
+		       K_PRIO_COOP(PPP_WORKQ_PRIORITY));
+	k_thread_name_set(&ppp->cb_workq.thread, "ppp_workq");
 #endif
 
 	ppp->pkt = NULL;
@@ -783,7 +794,7 @@ static void ppp_uart_isr(void *user_data)
 			break;
 		}
 
-		k_work_submit(&context->cb_work);
+		k_work_submit_to_queue(&context->cb_workq, &context->cb_work);
 	}
 }
 #endif /* !CONFIG_NET_TEST */

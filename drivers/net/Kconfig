@@ -36,6 +36,18 @@ config NET_PPP_RINGBUF_SIZE
 	  PPP ring buffer size when passing data from RX ISR to worker
 	  thread that will pass the data to IP stack.
 
+config NET_PPP_RX_STACK_SIZE
+	int "Size of the stack allocated for receiving data from modem"
+	default 768
+	help
+	  Sets the stack size which will be used by the PPP RX workqueue.
+
+config NET_PPP_RX_PRIORITY
+	int "RX workqueue thread priority"
+	default 7
+	help
+	  Sets the priority of the RX workqueue thread.
+
 config NET_PPP_VERIFY_FCS
 	bool "Verify that received FCS is valid"
 	default y
