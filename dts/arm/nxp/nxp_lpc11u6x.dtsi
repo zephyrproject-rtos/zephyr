@@ -68,6 +68,8 @@
 			#clock-cells = <1>;
 			reg = <0x40048000 0x400>;
 			label = "SYSCON";
+			pinmuxs = <&pinmux2 0 1>, <&pinmux2 1 1>;
+			pinmux-names = "XTALIN", "XTALOUT";
 		};
 	};
 };

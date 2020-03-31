@@ -1,0 +1,40 @@
+# LPC11U6X MCU clock control driver config
+
+# Copyright (c) 2020 Seagate
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CLOCK_CONTROL_LPC11U6X
+	bool "LPC11U6X Reset and clock control"
+	depends on SOC_SERIES_LPC11U6X
+	help
+	  Enable driver for reset and clock control used in
+	  LPC11U6X MCUs
+
+if CLOCK_CONTROL_LPC11U6X
+
+config CLOCK_CONTROL_LPC11U6X_ENABLE_SRAM1
+	bool "Enable SRAM1"
+	help
+	  Enable SRAM1
+
+config CLOCK_CONTROL_LPC11U6X_ENABLE_USB_RAM
+	bool "Enable USB RAM"
+	help
+	  Enable USB RAM
+
+choice CLOCK_CONTROL_LPC11U6X_PLL_SRC
+	prompt "LPC11U6X PLL Clock source"
+
+config CLOCK_CONTROL_LPC11U6X_PLL_SRC_IRC
+	bool "IRC"
+	help
+	  Use the internal oscillator as the clock source for the PLL
+
+config CLOCK_CONTROL_LPC11U6X_PLL_SRC_SYSOSC
+	bool "SYSOSC"
+	help
+	  Use the system oscillator as the clock source for the PLL
+
+endchoice # CLOCK_CONTROL_LPC11U6X_PLL_SRC
+
+endif # CLOCK_CONTROL_LPC11U6X
