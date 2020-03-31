@@ -27,6 +27,7 @@
 #include <sys/util.h>
 #include <sys/mempool_base.h>
 #include <kernel_structs.h>
+#include <mempool_sys.h>
 #include <kernel_version.h>
 #include <random/rand32.h>
 #include <syscall.h>

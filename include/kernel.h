@@ -4075,30 +4075,6 @@ static inline u32_t z_impl_k_msgq_num_used_get(struct k_msgq *msgq)
 /** @} */
 
 /**
- * @defgroup mem_pool_apis Memory Pool APIs
- * @ingroup kernel_apis
- * @{
- */
-
-/* Note on sizing: the use of a 20 bit field for block means that,
- * assuming a reasonable minimum block size of 16 bytes, we're limited
- * to 16M of memory managed by a single pool.  Long term it would be
- * good to move to a variable bit size based on configuration.
- */
-struct k_mem_block_id {
-	u32_t pool : 8;
-	u32_t level : 4;
-	u32_t block : 20;
-};
-
-struct k_mem_block {
-	void *data;
-	struct k_mem_block_id id;
-};
-
-/** @} */
-
-/**
  * @defgroup mailbox_apis Mailbox APIs
  * @ingroup kernel_apis
  * @{
@@ -4638,19 +4614,6 @@ static inline u32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 /** @} */
 
 /**
- * @cond INTERNAL_HIDDEN
- */
-
-struct k_mem_pool {
-	struct sys_mem_pool_base base;
-	_wait_q_t wait_q;
-};
-
-/**
- * INTERNAL_HIDDEN @endcond
- */
-
-/**
  * @addtogroup mem_pool_apis
  * @{
  */
@@ -4674,21 +4637,8 @@ struct k_mem_pool {
  * @param nmax Number of maximum sized blocks in the pool.
  * @param align Alignment of the pool's buffer (power of 2).
  */
-#define K_MEM_POOL_DEFINE(name, minsz, maxsz, nmax, align)		\
-	char __aligned(WB_UP(align)) _mpool_buf_##name[WB_UP(maxsz) * nmax \
-				  + _MPOOL_BITS_SIZE(maxsz, minsz, nmax)]; \
-	struct sys_mem_pool_lvl _mpool_lvls_##name[Z_MPOOL_LVLS(maxsz, minsz)]; \
-	Z_STRUCT_SECTION_ITERABLE(k_mem_pool, name) = { \
-		.base = {						\
-			.buf = _mpool_buf_##name,			\
-			.max_sz = WB_UP(maxsz),				\
-			.n_max = nmax,					\
-			.n_levels = Z_MPOOL_LVLS(maxsz, minsz),		\
-			.levels = _mpool_lvls_##name,			\
-			.flags = SYS_MEM_POOL_KERNEL			\
-		} \
-	}; \
-	BUILD_ASSERT(WB_UP(maxsz) >= _MPOOL_MINBLK, "K_MEM_POOL_DEFINE: size of the largest block (parameter maxsz) is too small")
+#define K_MEM_POOL_DEFINE(name, minsz, maxsz, nmax, align) \
+	Z_MEM_POOL_DEFINE(name, minsz, maxsz, nmax, align)
 
 /**
  * @brief Allocate memory from a memory pool.

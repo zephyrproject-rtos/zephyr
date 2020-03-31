@@ -11,6 +11,7 @@ add_library(kernel
   mailbox.c
   mem_slab.c
   mempool.c
+  mempool_sys.c
   msg_q.c
   mutex.c
   pipes.c
