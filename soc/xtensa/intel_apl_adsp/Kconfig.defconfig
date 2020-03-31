@@ -44,7 +44,7 @@ config TEST_LOGGING_DEFAULTS
 if LOG
 
 config LOG_PRINTK
-	default y
+	default y if !CONSOLE
 
 config LOG_BACKEND_RB
 	default y
@@ -56,7 +56,6 @@ config LOG_BACKEND_RB_MEM_SIZE
 	default 8192
 
 endif # LOG
-
 
 if SMP
 
@@ -79,5 +78,14 @@ config SCHED_IPI_SUPPORTED
 	default y if IPM_CAVS_IDC
 
 endif
+
+config IPM_ADSP
+	default y
+	depends on IPM
+
+config IPM_CONSOLE
+	default y
+	depends on CONSOLE
+	depends on IPM
 
 endif
