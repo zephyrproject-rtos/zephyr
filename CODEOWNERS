@@ -391,6 +391,7 @@
 /scripts/gen_app_partitions.py            @andrewboie
 /scripts/dts/                             @ulfalizer @galak
 /scripts/release/                         @nashif
+/scripts/ci/                              @nashif
 /arch/x86/gen_gdt.py                      @andrewboie
 /arch/x86/gen_idt.py                      @andrewboie
 /scripts/gen_kobject_list.py              @andrewboie
