@@ -759,6 +759,17 @@ Logging:
     labels:
         - "area: Logging"
 
+MAINTAINERS file:
+    status: maintained
+    maintainers:
+        - MaureenHelm
+    files:
+        - MAINTAINERS.yml
+    labels:
+        - "area: Process"
+    description:
+        Zephyr Maintainers File
+
 Native POSIX and POSIX arch:
     status: maintained
     maintainers:
