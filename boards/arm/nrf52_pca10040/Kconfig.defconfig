@@ -12,23 +12,9 @@ config ADC_0
 	default y
 	depends on ADC
 
-config I2C_0
-	default y
-	depends on I2C
-
 config PWM_0
 	default y
 	depends on PWM
-
-if SPI
-
-config SPI_1
-	default y
-
-config SPI_2
-	default y
-
-endif # SPI
 
 config BT_CTLR
 	default BT

@@ -8,14 +8,6 @@ if BOARD_NRF51_BLE400
 config BOARD
 	default "nrf51_ble400"
 
-config I2C_0
-	default y
-	depends on I2C
-
-config SPI_1
-	default y
-	depends on SPI
-
 config BT_CTLR
 	default BT
 

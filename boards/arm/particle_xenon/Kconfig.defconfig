@@ -13,14 +13,6 @@ config ADC_0
 	default y
 	depends on ADC
 
-config I2C_0
-	default y
-	depends on I2C
-
-config SPI_2
-	default y
-	depends on SPI
-
 if USB
 
 config USB_NRFX

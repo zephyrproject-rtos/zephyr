@@ -33,12 +33,4 @@ config PWM_0
 	default y
 	depends on PWM
 
-config I2C_0
-	default y
-	depends on I2C
-
-config SPI_1
-	default y
-	depends on SPI
-
 endif # BOARD_NRF52840_BLIP

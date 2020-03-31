@@ -12,12 +12,4 @@ config ADC_0
 	default y
 	depends on ADC
 
-config I2C_0
-	default y
-	depends on I2C
-
-config SPI_0
-	default y
-	depends on SPI
-
 endif # BOARD_NRF52810_PCA10040

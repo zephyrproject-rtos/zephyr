@@ -18,7 +18,6 @@ CONFIG_SERIAL=y
 
 # enable power I2C interface
 CONFIG_I2C=y
-CONFIG_I2C_1=y
 
 # enable console
 CONFIG_CONSOLE=y
