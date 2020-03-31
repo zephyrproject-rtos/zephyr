@@ -791,6 +791,24 @@ int uart_mux_recv(struct device *mux, struct gsm_dlci *dlci, u8_t *data,
 	return wrote;
 }
 
+void uart_mux_foreach(uart_mux_cb_t cb, void *user_data)
+{
+	sys_snode_t *sn, *sns;
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&uart_mux_data_devlist, sn, sns) {
+		struct uart_mux_dev_data *dev_data =
+			CONTAINER_OF(sn, struct uart_mux_dev_data, node);
+
+		if (!dev_data->in_use) {
+			continue;
+		}
+
+		cb(dev_data->real_uart->uart, dev_data->dev,
+		   dev_data->dlci ? gsm_dlci_id(dev_data->dlci) : -1,
+		   user_data);
+	}
+}
+
 #define DEFINE_UART_MUX_CFG_DATA(x, _)					  \
 	struct uart_mux_cfg_data uart_mux_config_##x = {		  \
 	};
