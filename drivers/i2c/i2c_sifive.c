@@ -202,6 +202,7 @@ static int i2c_sifive_configure(struct device *dev, u32_t dev_config)
 	const struct i2c_sifive_cfg *config = NULL;
 	u32_t i2c_speed = 0U;
 	u16_t prescale = 0U;
+	u16_t nudge_slower = 0U;
 
 	/* Check for NULL pointers */
 	if (dev == NULL) {
@@ -226,12 +227,20 @@ static int i2c_sifive_configure(struct device *dev, u32_t dev_config)
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
 		i2c_speed = 100000U; /* 100 KHz */
+		nudge_slower = 2;
 		break;
 	case I2C_SPEED_FAST:
 		i2c_speed = 400000U; /* 400 KHz */
+		nudge_slower = 2;
 		break;
 	case I2C_SPEED_FAST_PLUS:
+		i2c_speed = 1000000U;
+		nudge_slower = 1;
+		break;
 	case I2C_SPEED_HIGH:
+		i2c_speed = 3200000U;
+		nudge_slower = 0;
+		break;
 	case I2C_SPEED_ULTRA:
 	default:
 		LOG_ERR("Unsupported I2C speed requested");
@@ -239,7 +248,8 @@ static int i2c_sifive_configure(struct device *dev, u32_t dev_config)
 	}
 
 	/* Calculate prescale value */
-	prescale = (config->f_sys / (i2c_speed * 5U)) - 1;
+	prescale = ((config->f_sys / (i2c_speed * 5U)) - 1) + nudge_slower;
+
 
 	/* Configure peripheral with calculated prescale */
 	sys_write8((u8_t) (0xFF & prescale), I2C_REG(config, REG_PRESCALE_LOW));
