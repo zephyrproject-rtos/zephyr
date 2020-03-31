@@ -40,16 +40,6 @@ config IEEE802154_NRF5
 	default y
 	depends on IEEE802154
 
-if I2C
-
-config I2C_0
-	default y
-
-config I2C_1
-	default y
-
-endif # I2C
-
 config ADC_0
 	default y
 	depends on ADC

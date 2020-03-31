@@ -15,26 +15,6 @@ config ADC_0
 config I2C
 	default y
 
-if I2C
-
-config I2C_0
-	default y
-
-config I2C_1
-	default y
-
-if I2C_1
-
-config GPIO_SX1509B
-	default y
-
-config GPIO_SX1509B_INIT_PRIORITY
-	default 70
-
-endif # I2C_1
-
-endif # I2C
-
 config BT_CTLR
 	default BT
 

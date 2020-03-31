@@ -8,10 +8,6 @@ if BOARD_BBC_MICROBIT
 config BOARD
 	default "bbc_microbit"
 
-config I2C_0
-	default y
-	depends on I2C
-
 config BT_CTLR
 	default BT
 
