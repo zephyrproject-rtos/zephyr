@@ -130,11 +130,14 @@ ARM arch:
     maintainers:
         - ioannisg
     collaborators:
+        - carlocaione
         - MaureenHelm
         - galak
+        - stephanosio
     files:
         - arch/arm/
         - include/arch/arm/
+        - tests/arch/arm/
     labels:
         - "area: ARM"
 
