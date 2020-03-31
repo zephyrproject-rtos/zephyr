@@ -217,6 +217,11 @@ static void xec_rtos_timer_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_start_of_tick_handler(void);
+	read_timer_start_of_tick_handler();
+#endif
+
 	u32_t cycles;
 	s32_t ticks;
 
@@ -243,6 +248,11 @@ static void xec_rtos_timer_isr(void *arg)
 
 	k_spin_unlock(&lock, key);
 	z_clock_announce(ticks);
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_end_of_tick_handler(void);
+	read_timer_end_of_tick_handler();
+#endif
 }
 
 #else
