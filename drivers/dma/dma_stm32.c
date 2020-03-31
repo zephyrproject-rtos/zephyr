@@ -324,6 +324,10 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 		periph_addr_adj = config->head_block->dest_addr_adj;
 		break;
 	/* Direction has been asserted in dma_stm32_get_direction. */
+	default:
+		LOG_ERR("Channel direction error (%d).",
+				config->channel_direction);
+		return -EINVAL;
 	}
 
 	ret = dma_stm32_get_memory_increment(memory_addr_adj,
