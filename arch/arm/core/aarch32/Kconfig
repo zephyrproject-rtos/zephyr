@@ -3,13 +3,6 @@
 # Copyright (c) 2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if !ARM64
-
-config CPU_CORTEX
-	bool
-	help
-	  This option signifies the use of a CPU of the Cortex family.
-
 config CPU_CORTEX_M
 	bool
 	select CPU_CORTEX
@@ -239,5 +232,3 @@ endchoice
 
 rsource "cortex_m/Kconfig"
 rsource "cortex_a_r/Kconfig"
-
-endif # !ARM64
