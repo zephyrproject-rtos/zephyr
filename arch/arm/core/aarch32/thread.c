@@ -73,7 +73,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stackSize -= MPU_GUARD_ALIGN_AND_SIZE;
 #endif
 
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING) \
+#if defined(CONFIG_FP_HARDABI) && defined(CONFIG_FP_SHARING) \
 	&& defined(CONFIG_MPU_STACK_GUARD)
 	/* For a thread which intends to use the FP services, it is required to
 	 * allocate a wider MPU guard region, to always successfully detect an
@@ -169,13 +169,13 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	 * privileged stack. Adjust the available (writable) stack
 	 * buffer area accordingly.
 	 */
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FP_HARDABI) && defined(CONFIG_FP_SHARING)
 	_current->arch.priv_stack_start +=
 		(_current->base.user_options & K_FP_REGS) ?
 		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
 #else
 	_current->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
-#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+#endif /* CONFIG_FP_HARDABI && CONFIG_FP_SHARING */
 #endif /* CONFIG_MPU_STACK_GUARD */
 
 	z_arm_userspace_enter(user_entry, p1, p2, p3,
@@ -288,12 +288,12 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
 		return 0;
 	}
 
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FP_HARDABI) && defined(CONFIG_FP_SHARING)
 	u32_t guard_len = (thread->base.user_options & K_FP_REGS) ?
 		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
 #else
 	u32_t guard_len = MPU_GUARD_ALIGN_AND_SIZE;
-#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+#endif /* CONFIG_FP_HARDABI && CONFIG_FP_SHARING */
 
 #if defined(CONFIG_USERSPACE)
 	if (thread->arch.priv_stack_start) {
@@ -336,7 +336,7 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
 }
 #endif /* CONFIG_MPU_STACK_GUARD || CONFIG_USERSPACE */
 
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FP_HARDABI) && defined(CONFIG_FP_SHARING)
 int arch_float_disable(struct k_thread *thread)
 {
 	if (thread != _current) {
@@ -368,14 +368,14 @@ int arch_float_disable(struct k_thread *thread)
 
 	return 0;
 }
-#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+#endif /* CONFIG_FP_HARDABI && CONFIG_FP_SHARING */
 
 void arch_switch_to_main_thread(struct k_thread *main_thread,
 				k_thread_stack_t *main_stack,
 				size_t main_stack_size,
 				k_thread_entry_t _main)
 {
-#if defined(CONFIG_FLOAT)
+#if defined(CONFIG_FP_HARDABI)
 	/* Initialize the Floating Point Status and Control Register when in
 	 * Unshared FP Registers mode (In Shared FP Registers mode, FPSCR is
 	 * initialized at thread creation for threads that make use of the FP).
@@ -386,7 +386,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
 	__set_CONTROL(__get_CONTROL() & (~(CONTROL_FPCA_Msk)));
 	__ISB();
 #endif /* CONFIG_FP_SHARING */
-#endif /* CONFIG_FLOAT */
+#endif /* CONFIG_FP_HARDABI */
 
 #ifdef CONFIG_ARM_MPU
 	/* Configure static memory map. This will program MPU regions,
