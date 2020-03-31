@@ -76,26 +76,6 @@ extern "C" {
 #define K_HIGHEST_APPLICATION_THREAD_PRIO (K_HIGHEST_THREAD_PRIO)
 #define K_LOWEST_APPLICATION_THREAD_PRIO (K_LOWEST_THREAD_PRIO - 1)
 
-#ifdef CONFIG_WAITQ_SCALABLE
-
-typedef struct {
-	struct _priq_rb waitq;
-} _wait_q_t;
-
-extern bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
-
-#define Z_WAIT_Q_INIT(wait_q) { { { .lessthan_fn = z_priq_rb_lessthan } } }
-
-#else
-
-typedef struct {
-	sys_dlist_t waitq;
-} _wait_q_t;
-
-#define Z_WAIT_Q_INIT(wait_q) { SYS_DLIST_STATIC_INIT(&(wait_q)->waitq) }
-
-#endif
-
 #ifdef CONFIG_OBJECT_TRACING
 #define _OBJECT_TRACING_NEXT_PTR(type) struct type *__next;
 #define _OBJECT_TRACING_LINKED_FLAG u8_t __linked;

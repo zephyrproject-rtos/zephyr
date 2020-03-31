@@ -207,6 +207,39 @@ bool z_smp_cpu_mobile(void);
 
 #define _timeout_q _kernel.timeout_q
 
+/* kernel wait queue record */
+
+#ifdef CONFIG_WAITQ_SCALABLE
+
+typedef struct {
+	struct _priq_rb waitq;
+} _wait_q_t;
+
+extern bool z_priq_rb_lessthan(struct rbnode *a, struct rbnode *b);
+
+#define Z_WAIT_Q_INIT(wait_q) { { { .lessthan_fn = z_priq_rb_lessthan } } }
+
+#else
+
+typedef struct {
+	sys_dlist_t waitq;
+} _wait_q_t;
+
+#define Z_WAIT_Q_INIT(wait_q) { SYS_DLIST_STATIC_INIT(&(wait_q)->waitq) }
+
+#endif
+
+/* kernel timeout record */
+
+struct _timeout;
+typedef void (*_timeout_func_t)(struct _timeout *t);
+
+struct _timeout {
+	sys_dnode_t node;
+	s32_t dticks;
+	_timeout_func_t fn;
+};
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_STRUCTS_H_ */
