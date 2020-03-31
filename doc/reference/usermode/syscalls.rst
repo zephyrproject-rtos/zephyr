@@ -73,12 +73,12 @@ limitations:
 
 * :c:macro:`__syscall` must be the first thing in the prototype.
 
-The preprocessor is intentionally not used when determining the set of
-system calls to generate. However, any generated system calls that don't
-actually have a handler function defined (because the related feature is not
-enabled in the kernel configuration) will instead point to a special handler
-for unimplemented system calls. Data type definitions for APIs should not
-have conditional visibility to the compiler.
+The preprocessor is intentionally not used when determining the set of system
+calls to generate. However, any generated system calls that don't actually have
+a verification function defined (because the related feature is not enabled in
+the kernel configuration) will instead point to a special verification for
+unimplemented system calls. Data type definitions for APIs should not have
+conditional visibility to the compiler.
 
 Any header file that declares system calls must include a special generated
 header at the very bottom of the header file. This header follows the
@@ -138,11 +138,11 @@ the project out directory under ``include/generated/``:
 * An entry for the system call is created in the dispatch table
   ``_k_sycall_table``, expressed in ``include/generated/syscall_dispatch.c``
 
-* A weak handler function is declared, which is just an alias of the
-  'unimplemented system call' handler. This is necessary since the real
-  handler function may or may not be built depending on the kernel
+* A weak verification function is declared, which is just an alias of the
+  'unimplemented system call' verifier. This is necessary since the real
+  verification function may or may not be built depending on the kernel
   configuration. For example, if a user thread makes a sensor subsystem
-  API call, but the sensor subsystem is not enabled, the weak handler
+  API call, but the sensor subsystem is not enabled, the weak verifier
   will be invoked instead.
 
 * An unmarshalling function is defined in ``include/generated/<name>_mrsh.c``
@@ -191,7 +191,7 @@ Some system calls may have more than six arguments. The number of
 arguments passed via registers is limited to six for all
 architectures. Additional arguments will need to be passed in an array
 in the source memory space, which needs to be treated as untrusted
-memory in the handler function. This code (packing, unpacking and
+memory in the verification function. This code (packing, unpacking and
 validation) is generated automatically as needed in the stub above and
 in the unmarshalling function.
 
@@ -215,20 +215,21 @@ declared in the same header as the API as a static inline function or
 declared in some C file. There is no prototype needed for implementation
 functions, these are automatically generated.
 
-Handler Function
-****************
+Verification Function
+*********************
 
-The handler function runs on the kernel side when a user thread makes
+The verification function runs on the kernel side when a user thread makes
 a system call. When the user thread makes a software interrupt to elevate to
 supervisor mode, the common system call entry point uses the system call ID
-provided by the user to look up the appropriate handler function for that
-system call and jump into it.
+provided by the user to look up the appropriate unmarshalling function for that
+system call and jump into it. This in turn calls the verification function.
 
-Handler functions only run when system call APIs are invoked from user mode.
-If an API is invoked from supervisor mode, the implementation is simply called.
+Verification and unmarshalling functions only run when system call APIs are
+invoked from user mode. If an API is invoked from supervisor mode, the
+implementation is simply called and there is no software trap.
 
-The purpose of the handler function is to validate all the arguments passed in.
-This includes:
+The purpose of the verification function is to validate all the arguments
+passed in.  This includes:
 
 * Any kernel object pointers provided. For example, the semaphore APIs must
   ensure that the semaphore object passed in is a valid semaphore and that
@@ -239,9 +240,9 @@ This includes:
 
 * Any other arguments that have a limited range of valid values.
 
-Handler functions involve a great deal of boilerplate code which has been
+Verification functions involve a great deal of boilerplate code which has been
 made simpler by some macros in ``kernel/include/syscall_handlers.h``.
-Handler functions should be declared using these macros.
+Verification functions should be declared using these macros.
 
 Argument Validation
 ===================
@@ -254,7 +255,7 @@ Several macros exist to validate arguments:
 
 * :c:macro:`Z_SYSCALL_OBJ_INIT()` is the same as
   :c:macro:`Z_SYSCALL_OBJ()`, except that the provided object may be
-  uninitialized. This is useful for handlers of object init functions.
+  uninitialized. This is useful for verifiers of object init functions.
 
 * :c:macro:`Z_SYSCALL_OBJ_NEVER_INIT()` is the same as
   :c:macro:`Z_SYSCALL_OBJ()`, except that the provided object must be
@@ -406,7 +407,7 @@ Related configuration options:
 APIs
 ****
 
-Helper macros for creating system call handlers are provided in
+Helper macros for creating system call verification functions are provided in
 :zephyr_file:`kernel/include/syscall_handler.h`:
 
 * :c:macro:`Z_SYSCALL_OBJ()`
