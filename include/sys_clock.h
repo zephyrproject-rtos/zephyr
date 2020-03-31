@@ -220,17 +220,6 @@ s64_t z_tick_get(void);
 
 u64_t z_timeout_end_calc(k_timeout_t timeout);
 
-/* timeouts */
-
-struct _timeout;
-typedef void (*_timeout_func_t)(struct _timeout *t);
-
-struct _timeout {
-	sys_dnode_t node;
-	s32_t dticks;
-	_timeout_func_t fn;
-};
-
 #ifdef __cplusplus
 }
 #endif
