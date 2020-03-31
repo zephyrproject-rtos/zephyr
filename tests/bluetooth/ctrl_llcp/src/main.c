@@ -464,6 +464,7 @@ void lt_tx(helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, void *param)
 	zassert_equal(0, ret, "k_mem_slab_alloc failed\n");
 
 	pdu = (struct pdu_data *) rx->pdu;
+	zassert_not_null(helper_pdu_encode[opcode], "PDU encode function cannot be NULL\n");
 	helper_pdu_encode[opcode](pdu, param);
 
 	sys_slist_append(&lt_tx_q, (sys_snode_t *) rx);
@@ -478,7 +479,9 @@ void lt_rx(helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, struct node_tx 
 	zassert_not_null(tx, NULL);
 
 	pdu = (struct pdu_data *)tx->pdu;
-	helper_pdu_verify[opcode](pdu, param);
+	if (helper_pdu_verify[opcode]) {
+		helper_pdu_verify[opcode](pdu, param);
+	}
 
 	*tx_ref = tx;
 }
@@ -502,7 +505,9 @@ void ut_rx_pdu(helper_pdu_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *p
 	zassert_equal(ntf->hdr.type, NODE_RX_TYPE_DC_PDU, NULL);
 
 	pdu = (struct pdu_data *) ntf->pdu;
-	helper_pdu_verify[opcode](pdu, param);
+	if (helper_pdu_verify[opcode]) {
+		helper_pdu_verify[opcode](pdu, param);
+	}
 
 	*ntf_ref = ntf;
 }
