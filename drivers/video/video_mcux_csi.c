@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT nxp_imx_csi
+
 #include <zephyr.h>
 
 #include <fsl_csi.h>
@@ -400,23 +403,23 @@ static const struct video_driver_api video_mcux_csi_driver_api = {
 
 #if 1 /* Unique Instance */
 static const struct video_mcux_csi_config video_mcux_csi_config_0 = {
-	.base = (CSI_Type *)DT_VIDEO_MCUX_CSI_BASE_ADDRESS,
-	.sensor_label = DT_VIDEO_MCUX_CSI_SENSOR_NAME,
+	.base = (CSI_Type *)DT_INST_REG_ADDR(0),
+	.sensor_label = DT_INST_PROP(0, sensor_label),
 };
 
 static struct video_mcux_csi_data video_mcux_csi_data_0;
 
 static int video_mcux_csi_init_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_VIDEO_MCUX_CSI_IRQ, DT_VIDEO_MCUX_CSI_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    video_mcux_csi_isr, NULL, 0);
 
-	irq_enable(DT_VIDEO_MCUX_CSI_IRQ);
+	irq_enable(DT_INST_IRQN(0));
 
 	return video_mcux_csi_init(dev);
 }
 
-DEVICE_AND_API_INIT(video_mcux_csi, DT_VIDEO_MCUX_CSI_NAME,
+DEVICE_AND_API_INIT(video_mcux_csi, DT_INST_LABEL(0),
 		    &video_mcux_csi_init_0, &video_mcux_csi_data_0,
 		    &video_mcux_csi_config_0,
 		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,

@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(main);
 #define VIDEO_DEV_SW "VIDEO_SW_GENERATOR"
 
 #if defined(CONFIG_VIDEO_MCUX_CSI)
-#define VIDEO_DEV DT_VIDEO_MCUX_CSI_NAME
+#define VIDEO_DEV DT_LABEL(DT_INST(0, nxp_imx_csi))
 #endif
 
 void main(void)
