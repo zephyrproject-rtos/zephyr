@@ -387,6 +387,9 @@ config ARCH_HAS_RAMFUNC_SUPPORT
 config ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	bool
 
+config ARCH_HAS_SOFTWARE_FP_ABI
+	bool
+
 #
 # Other architecture related options
 #
@@ -515,8 +518,8 @@ config MPU_GAP_FILLING
 
 menuconfig FLOAT
 	bool "Floating point"
-	depends on CPU_HAS_FPU
 	depends on ARM || X86 || ARC
+	depends on CPU_HAS_FPU || ARCH_HAS_SOFTWARE_FP_ABI
 	help
 	  This option allows threads to use the floating point registers.
 	  By default, only a single thread may use the registers.
