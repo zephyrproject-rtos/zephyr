@@ -62,6 +62,13 @@
 			label = "PINMUX_2";
 			status = "okay";
 		};
+
+		syscon: clock-controller@40048000 {
+			compatible = "nxp,lpc11u6x-syscon";
+			#clock-cells = <1>;
+			reg = <0x40048000 0x400>;
+			label = "SYSCON";
+		};
 	};
 };
 
