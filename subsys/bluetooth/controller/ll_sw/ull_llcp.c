@@ -19,6 +19,7 @@
 #include "pdu.h"
 #include "ll.h"
 #include "ll_settings.h"
+#include "ll_feat.h"
 
 #include "lll.h"
 #include "lll_conn.h"
@@ -200,6 +201,7 @@ enum {
 /* LLCP Procedure */
 enum llcp_proc {
 	PROC_UNKNOWN,
+	PROC_FEATURE_EXCHANGE,
 	PROC_VERSION_EXCHANGE,
 	PROC_ENCRYPTION_START,
 	PROC_PHY_UPDATE,
@@ -452,6 +454,9 @@ static struct proc_ctx *create_local_procedure(enum llcp_proc proc)
 	}
 
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		ctx->state = LP_COMMON_STATE_IDLE;
+		break;
 	case PROC_VERSION_EXCHANGE:
 		ctx->state = LP_COMMON_STATE_IDLE;
 		break;
@@ -479,6 +484,9 @@ static struct proc_ctx *create_remote_procedure(enum llcp_proc proc)
 	}
 
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		ctx->state = RP_COMMON_STATE_IDLE;
+		break;
 	case PROC_VERSION_EXCHANGE:
 		ctx->state = RP_COMMON_STATE_IDLE;
 		break;
@@ -517,6 +525,92 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 }
 
 /*
+ * Feature exchange procedure helper
+ */
+static void pdu_encode_set_features(struct ull_cp_conn *conn, u8_t *features)
+{
+  /* EGON: set real values */
+  features[0] = 0xA0;
+  features[1] = 0xA1;
+  features[2] = 0xA2;
+  features[3] = 0xA3;
+  features[4] = 0xA4;
+  features[5] = 0xA5;
+  features[6] = 0xA6;
+  features[7] = 0xA7;
+}
+
+static u32_t feature_filter(u8_t *features)
+{
+  u32_t feat;
+  /* EGON: verify that formula is correct */
+  feat = ~LL_FEAT_BIT_MASK_VALID | features[0] | (features[1] << 8) | (features[2] << 16);
+  return feat;
+}
+static void pdu_encode_feature_req(struct ull_cp_conn *conn, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_feature_req *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl,feature_req) + sizeof(struct pdu_data_llctrl_feature_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_REQ;
+
+	p = &pdu->llctrl.feature_req;
+	pdu_encode_set_features(conn, p->features);  /* EGON */
+}
+
+static void ntf_encode_feature_rsp(struct ull_cp_conn *conn, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_feature_rsp *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl,feature_rsp) + sizeof(struct pdu_data_llctrl_feature_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
+
+	p = &pdu->llctrl.feature_rsp;
+
+	memcpy(p->features, conn->llcp.fex.features,
+	       sizeof(struct pdu_data_llctrl_feature_rsp)); /* EGON */
+}
+
+static void pdu_encode_feature_rsp(struct ull_cp_conn *conn, struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_feature_rsp *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl,feature_rsp) + sizeof(struct pdu_data_llctrl_feature_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
+
+	p = &pdu->llctrl.feature_rsp;
+	pdu_encode_set_features(conn, p->features);  /* EGON */
+}
+
+static void pdu_decode_feature_req(struct ull_cp_conn *conn, struct pdu_data *pdu)
+{
+	u32_t featureset;
+	u8_t cntr;
+
+	featureset = feature_filter(pdu->llctrl.feature_req.features);
+
+	for (cntr = 0; cntr < 3; cntr++) {
+		conn->llcp.fex.features[cntr] &= (featureset << cntr*8) & 0xFF; /* EGON */
+	}
+	conn->llcp.fex.valid = 1;
+}
+
+static void pdu_decode_feature_rsp(struct ull_cp_conn *conn, struct pdu_data *pdu)
+{
+	u32_t featureset;
+	u8_t cntr;
+
+  	featureset = feature_filter(pdu->llctrl.feature_rsp.features);
+	for (cntr = 0; cntr < 3; cntr++) {
+		conn->llcp.fex.features[cntr] &= (featureset << cntr*8) & 0xFF; /* EGON */
+	}
+
+	conn->llcp.fex.valid = 1;
+}
+/*
  * Version Exchange Procedure Helper
  */
 
@@ -526,7 +620,7 @@ static void pdu_encode_version_ind(struct pdu_data *pdu)
 	u16_t svn;
 	struct pdu_data_llctrl_version_ind *p;
 
-
+	printf("EGON: version ind\n");
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, version_ind) + sizeof(struct pdu_data_llctrl_version_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
@@ -543,7 +637,7 @@ static void ntf_encode_version_ind(struct ull_cp_conn *conn, struct pdu_data *pd
 {
 	struct pdu_data_llctrl_version_ind *p;
 
-
+	printf("EGON: Ntf version ind\n");
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, version_ind) + sizeof(struct pdu_data_llctrl_version_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
@@ -675,6 +769,10 @@ static void lp_comm_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 
 	/* Encode LL Control PDU */
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		pdu_encode_feature_req(conn, pdu);
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
+		break;
 	case PROC_VERSION_EXCHANGE:
 		pdu_encode_version_ind(pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
@@ -703,6 +801,10 @@ static void lp_comm_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	pdu = (struct pdu_data *) ntf->pdu;
 
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		printf("NTF encoding feature response\n");
+		ntf_encode_feature_rsp(conn, pdu);
+		break;
 	case PROC_VERSION_EXCHANGE:
 		ntf_encode_version_ind(conn, pdu);
 		break;
@@ -717,7 +819,19 @@ static void lp_comm_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 
 static void lp_comm_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
+	printf("LP comm complete\n");
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		printf("LP comm feature exchange\n");
+		if (!ntf_alloc_is_available()) {
+			ctx->state = LP_COMMON_STATE_WAIT_NTF;
+		} else {
+			printf("Decoding\n");
+			lp_comm_ntf(conn, ctx);
+			lr_complete(conn);
+			ctx->state = LP_COMMON_STATE_IDLE;
+		}
+		break;
 	case PROC_VERSION_EXCHANGE:
 		if (!ntf_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_NTF;
@@ -735,7 +849,23 @@ static void lp_comm_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 
 static void lp_comm_send_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
+	printf("EGON: sending request\n");
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		if (!conn->llcp.fex.sent) {
+			printf("EGON: not sent yet\n");
+			if (!tx_alloc_is_available() || ctx->pause) {
+				ctx->state = LP_COMMON_STATE_WAIT_TX;
+			} else {
+				lp_comm_tx(conn, ctx);
+				conn->llcp.fex.sent = 1;
+				ctx->state = LP_COMMON_STATE_WAIT_RX;
+			}
+		} else {
+			printf("Notifying host\n");
+			lp_comm_complete(conn, ctx, evt, param);
+		}
+		break;
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
 		if (!conn->llcp.vex.sent) {
@@ -780,6 +910,12 @@ static void lp_comm_st_wait_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 static void lp_comm_rx_decode(struct ull_cp_conn *conn, struct pdu_data *pdu)
 {
 	switch (pdu->llctrl.opcode) {
+	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
+		pdu_decode_feature_rsp(conn, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
+		pdu_decode_feature_req(conn, pdu);
+		break;
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
 		pdu_decode_version_ind(conn, pdu);
 		break;
@@ -791,6 +927,7 @@ static void lp_comm_rx_decode(struct ull_cp_conn *conn, struct pdu_data *pdu)
 
 static void lp_comm_st_wait_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
+	printf("EGON: wait state\n");
 	switch (evt) {
 	case LP_COMMON_EVT_RESPONSE:
 		lp_comm_rx_decode(conn, (struct pdu_data *) param);
@@ -1395,6 +1532,9 @@ static struct proc_ctx *lr_peek(struct ull_cp_conn *conn)
 static void lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RESPONSE, rx->pdu);
+		break;
 	case PROC_VERSION_EXCHANGE:
 		lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RESPONSE, rx->pdu);
 		break;
@@ -1417,6 +1557,10 @@ static void lr_act_run(struct ull_cp_conn *conn)
 	ctx = lr_peek(conn);
 
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RUN, NULL);
+		break;
+
 	case PROC_VERSION_EXCHANGE:
 		lp_comm_execute_fsm(conn, ctx, LP_COMMON_EVT_RUN, NULL);
 		break;
@@ -1549,6 +1693,12 @@ static void rr_complete(struct ull_cp_conn *conn);
 static void rp_comm_rx_decode(struct ull_cp_conn *conn, struct pdu_data *pdu)
 {
 	switch (pdu->llctrl.opcode) {
+	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
+		pdu_decode_feature_rsp(conn, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
+		pdu_decode_feature_req(conn, pdu);
+		break;
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
 		pdu_decode_version_ind(conn, pdu);
 		break;
@@ -1566,11 +1716,15 @@ static void rp_comm_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	/* Allocate tx node */
 	tx = tx_alloc();
 	LL_ASSERT(tx);
-
+	printf("EGON: RP comm tx\n");
 	pdu = (struct pdu_data *)tx->pdu;
 
 	/* Encode LL Control PDU */
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		pdu_encode_feature_rsp(conn, pdu);
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
+		break;
 	case PROC_VERSION_EXCHANGE:
 		pdu_encode_version_ind(pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
@@ -1601,6 +1755,21 @@ static void rp_comm_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t
 static void rp_comm_send_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		/* verify if we can sent multiple feature requests EGON */
+		if (!conn->llcp.fex.sent) {
+			if (!tx_alloc_is_available() || ctx->pause) {
+				ctx->state = RP_COMMON_STATE_WAIT_TX;
+			} else {
+				rp_comm_tx(conn, ctx);
+				conn->llcp.fex.sent = 1;
+				rr_complete(conn);
+				ctx->state = RP_COMMON_STATE_IDLE;
+			}
+		} else {
+			LL_ASSERT(0);
+		}
+		break;
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
 		if (!conn->llcp.vex.sent) {
@@ -2325,6 +2494,9 @@ static struct proc_ctx *rr_peek(struct ull_cp_conn *conn)
 static void rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+  		rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_REQUEST, rx->pdu);
+		break;
 	case PROC_VERSION_EXCHANGE:
 		rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_REQUEST, rx->pdu);
 		break;
@@ -2347,6 +2519,9 @@ static void rr_act_run(struct ull_cp_conn *conn)
 	ctx = rr_peek(conn);
 
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_RUN, NULL);
+		break;
 	case PROC_VERSION_EXCHANGE:
 		rp_comm_execute_fsm(conn, ctx, RP_COMMON_EVT_RUN, NULL);
 		break;
@@ -2581,11 +2756,14 @@ static void rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 {
 	struct proc_ctx *ctx;
 	struct pdu_data *pdu;
-	u8_t proc;
+	u8_t proc = 0;
 
 	pdu = (struct pdu_data *) rx->pdu;
 
 	switch (pdu->llctrl.opcode) {
+	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
+		proc = PROC_FEATURE_EXCHANGE;
+		break;
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
 		proc = PROC_VERSION_EXCHANGE;
 		break;
@@ -2682,6 +2860,20 @@ void ull_cp_state_set(struct ull_cp_conn *conn, u8_t state)
 	}
 }
 
+u8_t ull_cp_feature_exchange(struct ull_cp_conn *conn)
+{
+  	struct proc_ctx *ctx;
+
+	ctx = create_local_procedure(PROC_FEATURE_EXCHANGE);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
 u8_t ull_cp_version_exchange(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
@@ -2770,11 +2962,18 @@ void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 {
 	struct pdu_data *pdu;
 	struct proc_ctx *ctx;
-
+	int temp;
+	printf("EGON: LL rx\n");
 	pdu = (struct pdu_data *) rx->pdu;
 
 	ctx = lr_peek(conn);
+	temp = 0;
+//	temp = ctx->rx_opcode;
+//	printf("Status: %d %d %d\n",  pdu_is_expected(pdu, ctx), pdu_is_unknown(pdu,ctx), pdu_is_reject(pdu, ctx));
+//	printf("Opcodes: %d %d\n", (int) ctx->rx_opcode, (int) pdu->llctrl.opcode);
+	printf("Opcodes: %d %d\n", temp, pdu->llctrl.opcode);
 	if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
+		printf("EGON: Local proc\n");
 		/* Response on local procedure */
 		lr_rx(conn, ctx, rx);
 		return;
@@ -2782,6 +2981,7 @@ void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 
 	ctx = rr_peek(conn);
 	if (ctx && (pdu_is_expected(pdu, ctx) || pdu_is_unknown(pdu, ctx) || pdu_is_reject(pdu, ctx))) {
+		printf("EGON: remote proc\n");
 		/* Response on remote procedure */
 		rr_rx(conn, ctx, rx);
 		return;

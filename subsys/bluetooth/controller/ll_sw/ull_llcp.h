@@ -11,6 +11,7 @@ struct ull_cp_conn {
 	struct ull_tx_q tx_q;
 
 	struct {
+
 		/* Local Request */
 		struct {
 			sys_slist_t pend_proc_list;
@@ -32,6 +33,16 @@ struct ull_cp_conn {
 			u8_t valid;
 			struct pdu_data_llctrl_version_ind cached;
 		} vex;
+
+	/*
+	 * As of today only 36 feature bits are in use,
+	 * so some optimisation is possible
+	 */
+	struct {
+		u8_t sent;
+		u8_t valid;
+		u8_t features[8];
+	} fex;
 	} llcp;
 
 	struct mocked_lll_conn {
@@ -46,6 +57,7 @@ struct ull_cp_conn {
 
 		 u8_t role;
 	} lll;
+
 };
 
 enum {
@@ -105,6 +117,7 @@ void ull_cp_ltk_req_reply(struct ull_cp_conn *conn);
 /**
  */
 void ull_cp_ltk_req_neq_reply(struct ull_cp_conn *conn);
+
 
 /**
  * @brief Initiate a PHY Update Procedure.
