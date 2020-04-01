@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_imx_mu
+
 #include <errno.h>
 #include <string.h>
 #include <device.h>
@@ -207,13 +209,13 @@ static const struct ipm_driver_api imx_mu_driver_api = {
 static void imx_mu_config_func_b(struct device *dev);
 
 static const struct imx_mu_config imx_mu_b_config = {
-	.base = (MU_Type *)DT_IPM_IMX_MU_B_BASE_ADDRESS,
+	.base = (MU_Type *)DT_INST_REG_ADDR(0),
 	.irq_config_func = imx_mu_config_func_b,
 };
 
 static struct imx_mu_data imx_mu_b_data;
 
-DEVICE_AND_API_INIT(mu_b, DT_IPM_IMX_MU_B_NAME,
+DEVICE_AND_API_INIT(mu_b, DT_INST_LABEL(0),
 		    &imx_mu_init,
 		    &imx_mu_b_data, &imx_mu_b_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -221,9 +223,9 @@ DEVICE_AND_API_INIT(mu_b, DT_IPM_IMX_MU_B_NAME,
 
 static void imx_mu_config_func_b(struct device *dev)
 {
-	IRQ_CONNECT(DT_IPM_IMX_MU_B_IRQ,
-		    DT_IPM_IMX_MU_B_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    imx_mu_isr, DEVICE_GET(mu_b), 0);
 
-	irq_enable(DT_IPM_IMX_MU_B_IRQ);
+	irq_enable(DT_INST_IRQN(0));
 }
