@@ -12,3 +12,6 @@ supported:
   - i2c
   - spi
   - usb
+  - feather_serial
+  - feather_i2c
+  - feather_spi

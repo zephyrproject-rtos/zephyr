@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <st/f4/stm32f405Xg.dtsi>
+#include "feather_connector.dtsi"
 
 / {
 	model = "Adafruit Feather STM32F405 Express";
