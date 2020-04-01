@@ -387,7 +387,9 @@ static bool tcp_options_check(void *buf, ssize_t len)
 
 		NET_DBG("opt: %hu, opt_len: %hu", (u16_t)opt, (u16_t)opt_len);
 
-		if (opt == TCPOPT_END || opt == TCPOPT_NOP) {
+		if (opt == TCPOPT_END) {
+			break;
+		} else if (opt == TCPOPT_NOP) {
 			continue;
 		}
 
