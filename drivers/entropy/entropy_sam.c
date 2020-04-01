@@ -181,7 +181,7 @@ static const struct trng_sam_dev_cfg trng_sam_cfg = {
 	.regs = (Trng *)DT_INST_REG_ADDR(0),
 };
 
-DEVICE_AND_API_INIT(entropy_sam, CONFIG_ENTROPY_NAME,
+DEVICE_AND_API_INIT(entropy_sam, DT_INST_LABEL(0),
 		    entropy_sam_init, NULL, &trng_sam_cfg,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_sam_api);
