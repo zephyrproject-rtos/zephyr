@@ -161,6 +161,7 @@
 			interrupts = <6 3>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			label = "GPIO_0";
 		};
 
 		gpio1: gpio@40011000 {
@@ -169,6 +170,7 @@
 			interrupts = <7 3>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			label = "GPIO_1";
 		};
 
 		gpio2: gpio@40012000 {
@@ -177,6 +179,7 @@
 			interrupts = <16 3>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			label = "GPIO_2";
 		};
 
 		gpio3: gpio@40013000 {
@@ -185,6 +188,7 @@
 			interrupts = <17 3>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			label = "GPIO_3";
 		};
 
 		eth0: eth@40200000 {
