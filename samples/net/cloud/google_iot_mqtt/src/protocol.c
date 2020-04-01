@@ -201,7 +201,7 @@ static int wait_for_input(int timeout)
 	return res;
 }
 
-#define ALIVE_TIME	(MSEC_PER_SEC * 60U)
+#define ALIVE_TIME	K_SECONDS(60)
 
 static struct mqtt_utf8 password = {
 	.utf8 = token
