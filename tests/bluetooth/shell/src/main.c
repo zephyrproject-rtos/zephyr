@@ -122,7 +122,7 @@ void main(void)
 	       " the stack.\n");
 
 	while (1) {
-		k_sleep(MSEC_PER_SEC);
+		k_sleep(K_SECONDS(1));
 
 #if defined(CONFIG_BT_GATT_HRS)
 		/* Heartrate measurements simulation */
