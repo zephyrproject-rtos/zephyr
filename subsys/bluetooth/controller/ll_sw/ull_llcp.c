@@ -1154,11 +1154,16 @@ static void lp_pu_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t 
 	}
 }
 
+static void rr_set_incompat(struct ull_cp_conn *conn, enum proc_incompat incompat);
+static bool rr_get_collision(struct ull_cp_conn *conn);
+
 static void lp_pu_send_phy_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	if (!tx_alloc_is_available()) {
+	if (!tx_alloc_is_available() || rr_get_collision(conn)) {
 		ctx->state = LP_PU_STATE_WAIT_TX_PHY_REQ;
 	} else {
+		rr_set_incompat(conn, INCOMPAT_RESOLVABLE);
+
 		lp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_REQ);
 
 		switch (conn->lll.role) {
@@ -1211,10 +1216,19 @@ static void lp_pu_st_wait_tx_phy_req(struct ull_cp_conn *conn, struct proc_ctx *
 static void lp_pu_st_wait_rx_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	switch (evt) {
+	case LP_PU_EVT_RUN:
+		if (conn->lll.role == BT_HCI_ROLE_SLAVE && rr_get_collision(conn)) {
+			rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+			ctx->data.pu.error = BT_HCI_ERR_LL_PROC_COLLISION;
+			lp_pu_complete(conn, ctx, evt, param);
+		}
+		break;
 	case LP_PU_EVT_PHY_RSP:
+		rr_set_incompat(conn, INCOMPAT_RESERVED);
 		lp_pu_send_phy_update_ind(conn, ctx, evt, param);
 		break;
 	case LP_PU_EVT_UNKNOWN:
+		rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.pu.error = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		lp_pu_complete(conn, ctx, evt, param);
 		break;
@@ -1236,6 +1250,10 @@ static void lp_pu_st_wait_rx_phy_update_ind(struct ull_cp_conn *conn, struct pro
 		pdu_decode_phy_update_ind(ctx, param);
 		ctx->state = LP_PU_STATE_WAIT_INSTANT;
 		break;
+	case LP_PU_EVT_REJECT:
+		rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
+		ctx->data.pu.error = BT_HCI_ERR_LL_PROC_COLLISION;
+		lp_pu_complete(conn, ctx, evt, param);
 	default:
 		/* Ignore other evts */
 		break;
@@ -1246,6 +1264,7 @@ static void lp_pu_check_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, 
 {
 	u16_t event_counter = lp_event_counter(conn);
 	if (((event_counter - ctx->data.pu.instant) & 0xFFFF) <= 0x7FFF) {
+		rr_set_incompat(conn, INCOMPAT_NO_COLLISION);
 		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
 		lp_pu_complete(conn, ctx, evt, param);
 	}
@@ -1312,6 +1331,9 @@ static void lp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node
 		break;
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_UNKNOWN, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
+		lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_REJECT, pdu);
 		break;
 	default:
 		/* Unknown opcode */
