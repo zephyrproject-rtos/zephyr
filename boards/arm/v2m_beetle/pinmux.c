@@ -33,9 +33,9 @@
  */
 
 #define CMSDK_AHB_GPIO0_DEV \
-	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO0)
+	((volatile struct gpio_cmsdk_ahb *)DT_REG_ADDR(DT_NODELABEL(gpio0)))
 #define CMSDK_AHB_GPIO1_DEV \
-	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO1)
+	((volatile struct gpio_cmsdk_ahb *)DT_REG_ADDR(DT_NODELABEL(gpio1)))
 
 /*
  * This is the mapping from the ARM V2M Beetle Board pins to GPIO
