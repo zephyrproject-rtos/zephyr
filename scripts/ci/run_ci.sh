@@ -221,16 +221,20 @@ if [ -n "$main_ci" ]; then
 	# Possibly the only record of what exact version is being tested:
 	short_git_log='git log -n 5 --oneline --decorate --abbrev=12 '
 
+	# check what files have changed.
+	SC=`./scripts/ci/what_changed.py --commits ${commit_range}`
+
 	if [ -n "$pull_request_nr" ]; then
 		$short_git_log $remote/${branch}
 		# Now let's pray this script is being run from a
 		# different location
 # https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
 		git rebase $remote/${branch}
+	else
+		SC="full"
 	fi
 	$short_git_log
 
-	SC=`./scripts/ci/what_changed.py --commits ${commit_range}`
 
 	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" -a "$SC" == "full" ]; then
 		echo "Build and run BT simulator tests"
