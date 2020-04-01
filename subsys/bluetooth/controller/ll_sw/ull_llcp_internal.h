@@ -7,6 +7,7 @@
 /* LLCP Procedure */
 enum llcp_proc {
 	PROC_UNKNOWN,
+	PROC_FEATURE_EXCHANGE,
 	PROC_VERSION_EXCHANGE,
 	PROC_ENCRYPTION_START,
 	PROC_PHY_UPDATE,
@@ -19,6 +20,8 @@ struct proc_ctx {
 
 	/* PROC_ */
 	enum llcp_proc proc;
+
+	enum pdu_data_llctrl_type response_opcode;
 
 	/* Procedure FSM */
 	u8_t state;
@@ -47,7 +50,12 @@ struct proc_ctx {
 			u8_t error;
 			u16_t instant;
 		} pu;
+
 	} data;
+	struct {
+		u8_t type;
+	} unknown_response;
+
 };
 
 /* Procedure Incompatibility */
@@ -425,6 +433,86 @@ static inline void rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 	return ull_cp_priv_rr_new(conn, rx);
 }
 
+/*
+ * Unknown response helper
+ */
+void ull_cp_priv_pdu_decode_unknown_rsp(struct proc_ctx *ctx,
+					struct pdu_data *pdu);
+static inline void pdu_decode_unknown_rsp(struct proc_ctx *ctx,
+					   struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_unknown_rsp(ctx, pdu);
+}
+
+void ull_cp_priv_ntf_encode_unknown_rsp(struct proc_ctx *ctx,
+					struct pdu_data *pdu);
+
+static inline void ntf_encode_unknown_rsp(struct proc_ctx *ctx,
+					  struct pdu_data *pdu)
+
+{
+	return ull_cp_priv_ntf_encode_unknown_rsp(ctx, pdu);
+}
+
+
+/*
+ * Feature Exchange Procedure Helper
+ */
+void ull_cp_priv_pdu_encode_feature_req(struct ull_cp_conn *conn,
+					struct pdu_data *pdu);
+
+static inline void pdu_encode_feature_req(struct ull_cp_conn *conn,
+					   struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_feature_req(conn, pdu);
+}
+
+void ull_cp_priv_pdu_encode_feature_rsp(struct ull_cp_conn *conn,
+					struct pdu_data *pdu);
+
+static inline void pdu_encode_feature_rsp(struct ull_cp_conn *conn,
+					struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_feature_rsp(conn, pdu);
+}
+
+void ull_cp_priv_ntf_encode_feature_rsp(struct ull_cp_conn *conn,
+					struct pdu_data *pdu);
+
+static inline void ntf_encode_feature_rsp(struct ull_cp_conn *conn,
+				    struct pdu_data *pdu)
+{
+	return ull_cp_priv_ntf_encode_feature_rsp(conn, pdu);
+}
+
+void ull_cp_priv_ntf_encode_feature_req(struct ull_cp_conn *conn,
+					      struct pdu_data *pdu);
+
+static inline void ntf_encode_feature_req(struct ull_cp_conn *conn,
+					  struct pdu_data *pdu)
+{
+	return ull_cp_priv_ntf_encode_feature_req(conn, pdu);
+}
+
+void ull_cp_priv_pdu_decode_feature_req(struct ull_cp_conn *conn,
+					struct pdu_data *pdu);
+
+static inline void pdu_decode_feature_req(struct ull_cp_conn *conn,
+					  struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_feature_req(conn, pdu);
+}
+
+void ull_cp_priv_pdu_decode_feature_rsp(struct ull_cp_conn *conn,
+					struct pdu_data *pdu);
+
+static inline void pdu_decode_feature_rsp(struct ull_cp_conn *conn,
+					  struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_feature_rsp(conn, pdu);
+}
+
+
 
 /*
  * Version Exchange Procedure Helper
@@ -534,4 +622,3 @@ bool lr_is_idle(struct ull_cp_conn *conn);
 bool rr_is_disconnected(struct ull_cp_conn *conn);
 bool rr_is_idle(struct ull_cp_conn *conn);
 #endif
-
