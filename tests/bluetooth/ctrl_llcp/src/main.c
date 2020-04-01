@@ -2035,6 +2035,245 @@ void test_phy_update_sla_rem(void)
 	ull_cp_release_ntf(ntf);
 }
 
+void test_phy_update_mas_loc_collision(void)
+{
+	u8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	struct pdu_data *pdu;
+	u16_t instant;
+
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_PHY_REQ,
+		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
+	};
+
+	struct node_rx_pu pu = {
+		.status = BT_HCI_ERR_SUCCESS
+	};
+
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_MASTER);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate an PHY Update Procedure */
+	err = ull_cp_phy_update(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/*** ***/
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PHY_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
+
+	/* Rx */
+	lt_tx(LL_PHY_REQ, &conn, NULL);
+
+	/* Done */
+	done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/*** ***/
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &reject_ext_ind);
+	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/*** ***/
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty();
+
+	/* Rx */
+	lt_tx(LL_PHY_RSP, &conn, NULL);
+
+	/* Done */
+	done(&conn);
+
+	/*** ***/
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
+
+	/* Save Instant */
+	pdu = (struct pdu_data *)tx->pdu;
+	instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* */
+	while (!is_instant_reached(&conn, instant))
+	{
+		/* Prepare */
+		prepare(&conn);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty();
+
+		/* Done */
+		done(&conn);
+
+		/* There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/*** ***/
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
+
+	/* There should be one host notification */
+	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+}
+
+void test_phy_update_sla_loc_collision(void)
+{
+	u8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	u16_t instant;
+
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_PHY_REQ,
+		.error_code = BT_HCI_ERR_LL_PROC_COLLISION
+	};
+
+	struct node_rx_pu pu = {0};
+	struct pdu_data_llctrl_phy_upd_ind phy_update_ind = {0};
+
+	/* Role */
+	set_role(&conn, BT_HCI_ROLE_SLAVE);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/*** ***/
+
+	/* Initiate an PHY Update Procedure */
+	err = ull_cp_phy_update(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PHY_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
+
+	/* Rx */
+	lt_tx(LL_PHY_REQ, &conn, NULL);
+
+	/* Done */
+	done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PHY_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
+
+	/* Rx */
+	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+
+	/* Done */
+	done(&conn);
+
+	/* There should be one host notification */
+	pu.status = BT_HCI_ERR_LL_PROC_COLLISION;
+	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Rx */
+	phy_update_ind.instant = instant = event_counter(&conn) + 6;
+	lt_tx(LL_PHY_UPDATE_IND, &conn, &phy_update_ind);
+
+	/* Done */
+	done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* */
+	while (!is_instant_reached(&conn, instant))
+	{
+		/* Prepare */
+		prepare(&conn);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty();
+
+		/* Done */
+		done(&conn);
+
+		/* There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
+
+	/* There should be one host notification */
+	pu.status = BT_HCI_ERR_SUCCESS;
+	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+}
 
 
 void test_main(void)
@@ -2074,7 +2313,9 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(test_phy_update_mas_loc_unsupp_feat, setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_phy_update_mas_rem, setup, unit_test_noop),
 			 ztest_unit_test_setup_teardown(test_phy_update_sla_loc, setup, unit_test_noop),
-			 ztest_unit_test_setup_teardown(test_phy_update_sla_rem, setup, unit_test_noop)
+			 ztest_unit_test_setup_teardown(test_phy_update_sla_rem, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_phy_update_mas_loc_collision, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_phy_update_sla_loc_collision, setup, unit_test_noop)
 			);
 
 	ztest_run_test_suite(internal);
