@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT fsl_imx7d_i2c
+
 #include <errno.h>
 #include <drivers/i2c.h>
 #include <soc.h>
@@ -353,109 +355,33 @@ static const struct i2c_driver_api i2c_imx_driver_api = {
 	.transfer = i2c_imx_transfer,
 };
 
-#ifdef CONFIG_I2C_1
-static void i2c_imx_config_func_1(struct device *dev);
+#define I2C_IMX_INIT(n)							\
+	static void i2c_imx_config_func_##n(struct device *dev);	\
+									\
+	static const struct i2c_imx_config i2c_imx_config_##n = {	\
+		.base = (I2C_Type *)DT_INST_REG_ADDR(n),		\
+		.irq_config_func = i2c_imx_config_func_##n,		\
+		.bitrate = DT_INST_PROP(n, clock_frequency),		\
+	};								\
+									\
+	static struct i2c_imx_data i2c_imx_data_##n;			\
+									\
+	DEVICE_AND_API_INIT(i2c_imx_##n, DT_INST_LABEL(n),		\
+				&i2c_imx_init,				\
+				&i2c_imx_data_##n, &i2c_imx_config_##n,	\
+				POST_KERNEL,				\
+				CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+				&i2c_imx_driver_api);			\
+									\
+	static void i2c_imx_config_func_##n(struct device *dev)		\
+	{								\
+		ARG_UNUSED(dev);					\
+									\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			    DT_INST_IRQ(n, priority),			\
+			    i2c_imx_isr, DEVICE_GET(i2c_imx_##n), 0);	\
+									\
+		irq_enable(DT_INST_IRQN(n));				\
+	}
 
-static const struct i2c_imx_config i2c_imx_config_1 = {
-	.base = (I2C_Type *)DT_FSL_IMX7D_I2C_I2C_1_BASE_ADDRESS,
-	.irq_config_func = i2c_imx_config_func_1,
-	.bitrate = DT_FSL_IMX7D_I2C_I2C_1_CLOCK_FREQUENCY,
-};
-
-static struct i2c_imx_data i2c_imx_data_1;
-
-DEVICE_AND_API_INIT(i2c_imx_1, DT_FSL_IMX7D_I2C_I2C_1_LABEL, &i2c_imx_init,
-			&i2c_imx_data_1, &i2c_imx_config_1,
-			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-			&i2c_imx_driver_api);
-
-static void i2c_imx_config_func_1(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	IRQ_CONNECT(DT_FSL_IMX7D_I2C_I2C_1_IRQ_0, DT_FSL_IMX7D_I2C_I2C_1_IRQ_0_PRIORITY,
-			i2c_imx_isr, DEVICE_GET(i2c_imx_1), 0);
-
-	irq_enable(DT_FSL_IMX7D_I2C_I2C_1_IRQ_0);
-}
-#endif /* CONFIG_I2C_1 */
-
-#ifdef CONFIG_I2C_2
-static void i2c_imx_config_func_2(struct device *dev);
-
-static const struct i2c_imx_config i2c_imx_config_2 = {
-	.base = (I2C_Type *)DT_FSL_IMX7D_I2C_I2C_2_BASE_ADDRESS,
-	.irq_config_func = i2c_imx_config_func_2,
-	.bitrate = DT_FSL_IMX7D_I2C_I2C_2_CLOCK_FREQUENCY,
-};
-
-static struct i2c_imx_data i2c_imx_data_2;
-
-DEVICE_AND_API_INIT(i2c_imx_2, DT_FSL_IMX7D_I2C_I2C_2_LABEL, &i2c_imx_init,
-			&i2c_imx_data_2, &i2c_imx_config_2,
-			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-			&i2c_imx_driver_api);
-
-static void i2c_imx_config_func_2(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	IRQ_CONNECT(DT_FSL_IMX7D_I2C_I2C_2_IRQ_0, DT_FSL_IMX7D_I2C_I2C_2_IRQ_0_PRIORITY,
-			i2c_imx_isr, DEVICE_GET(i2c_imx_2), 0);
-
-	irq_enable(DT_FSL_IMX7D_I2C_I2C_2_IRQ_0);
-}
-#endif /* CONFIG_I2C_2 */
-
-#ifdef CONFIG_I2C_3
-static void i2c_imx_config_func_3(struct device *dev);
-
-static const struct i2c_imx_config i2c_imx_config_3 = {
-	.base = (I2C_Type *)DT_FSL_IMX7D_I2C_I2C_3_BASE_ADDRESS,
-	.irq_config_func = i2c_imx_config_func_3,
-	.bitrate = DT_FSL_IMX7D_I2C_I2C_3_CLOCK_FREQUENCY,
-};
-
-static struct i2c_imx_data i2c_imx_data_3;
-
-DEVICE_AND_API_INIT(i2c_imx_3, DT_FSL_IMX7D_I2C_I2C_3_LABEL, &i2c_imx_init,
-			&i2c_imx_data_3, &i2c_imx_config_3,
-			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-			&i2c_imx_driver_api);
-
-static void i2c_imx_config_func_3(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	IRQ_CONNECT(DT_FSL_IMX7D_I2C_I2C_3_IRQ_0, DT_FSL_IMX7D_I2C_I2C_3_IRQ_0_PRIORITY,
-			i2c_imx_isr, DEVICE_GET(i2c_imx_3), 0);
-
-	irq_enable(DT_FSL_IMX7D_I2C_I2C_3_IRQ_0);
-}
-#endif /* CONFIG_I2C_3 */
-
-#ifdef CONFIG_I2C_4
-static void i2c_imx_config_func_4(struct device *dev);
-
-static const struct i2c_imx_config i2c_imx_config_4 = {
-	.base = (I2C_Type *)DT_FSL_IMX7D_I2C_I2C_4_BASE_ADDRESS,
-	.irq_config_func = i2c_imx_config_func_4,
-	.bitrate = DT_FSL_IMX7D_I2C_I2C_4_CLOCK_FREQUENCY,
-};
-
-static struct i2c_imx_data i2c_imx_data_4;
-
-DEVICE_AND_API_INIT(i2c_imx_4, DT_FSL_IMX7D_I2C_I2C_4_LABEL, &i2c_imx_init,
-			&i2c_imx_data_4, &i2c_imx_config_4,
-			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-			&i2c_imx_driver_api);
-
-static void i2c_imx_config_func_4(struct device *dev)
-{
-	ARG_UNUSED(dev);
-	IRQ_CONNECT(DT_FSL_IMX7D_I2C_I2C_4_IRQ_0, DT_FSL_IMX7D_I2C_I2C_4_IRQ_0_PRIORITY,
-			i2c_imx_isr, DEVICE_GET(i2c_imx_4), 0);
-
-	irq_enable(DT_FSL_IMX7D_I2C_I2C_4_IRQ_0);
-}
-#endif /* CONFIG_I2C_4 */
+DT_INST_FOREACH(I2C_IMX_INIT)
