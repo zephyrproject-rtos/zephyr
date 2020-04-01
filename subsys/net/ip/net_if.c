@@ -3636,6 +3636,8 @@ int net_if_suspend(struct net_if *iface)
 		return -EALREADY;
 	}
 
+	net_stats_add_suspend_start_time(iface, k_cycle_get_32());
+
 	return 0;
 }
 
@@ -3646,6 +3648,8 @@ int net_if_resume(struct net_if *iface)
 	}
 
 	net_if_flag_clear(iface, NET_IF_SUSPENDED);
+
+	net_stats_add_suspend_end_time(iface, k_cycle_get_32());
 
 	return 0;
 }
