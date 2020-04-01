@@ -141,6 +141,7 @@
 /drivers/counter/                         @nordic-krch
 /drivers/counter/counter_cmos.c           @andrewboie
 /drivers/crypto/*nrf_ecb*                 @maciekfabia @anangl
+/drivers/console/*mux*                    @jukkar
 /drivers/display/                         @vanwinkeljan
 /drivers/display/display_framebuf.c       @andrewboie
 /drivers/dma/*dw*                         @tbursztyka
