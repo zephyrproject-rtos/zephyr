@@ -538,7 +538,7 @@ static void test_prefix_timeout(void)
 	net_if_ipv6_prefix_set_lf(prefix, false);
 	net_if_ipv6_prefix_set_timer(prefix, lifetime);
 
-	k_sleep((lifetime * 2U) * MSEC_PER_SEC);
+	k_sleep(K_SECONDS(lifetime * 2U));
 
 	prefix = net_if_ipv6_prefix_lookup(net_if_get_default(),
 					   &addr, len);
@@ -1338,7 +1338,7 @@ static void test_dst_iface_scope_mcast_send(void)
 		      "Interface local scope multicast packet was dropped (%d)",
 		      ret);
 
-	k_sem_take(&wait_data, WAIT_TIME);
+	k_sem_take(&wait_data, K_MSEC(WAIT_TIME));
 
 	zassert_true(recv_cb_called, "No data received on time, "
 		     "IPv6 recv test failed");
