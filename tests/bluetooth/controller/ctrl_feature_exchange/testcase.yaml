@@ -1,0 +1,5 @@
+common:
+    tags: test_framework bluetooth feature_exchange ull_llcp
+tests:
+  bluetooth.controller.ctrl_feature_exchange.test:
+     type: unit
