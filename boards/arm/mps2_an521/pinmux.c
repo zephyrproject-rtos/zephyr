@@ -32,13 +32,13 @@
  */
 
 #define CMSDK_AHB_GPIO0_DEV \
-	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO0)
+	((volatile struct gpio_cmsdk_ahb *)DT_REG_ADDR(DT_NODELABEL(gpio0)))
 #define CMSDK_AHB_GPIO1_DEV \
-	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO1)
+	((volatile struct gpio_cmsdk_ahb *)DT_REG_ADDR(DT_NODELABEL(gpio1)))
 #define CMSDK_AHB_GPIO2_DEV \
-	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO2)
+	((volatile struct gpio_cmsdk_ahb *)DT_REG_ADDR(DT_NODELABEL(gpio2)))
 #define CMSDK_AHB_GPIO3_DEV \
-	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO3)
+	((volatile struct gpio_cmsdk_ahb *)DT_REG_ADDR(DT_NODELABEL(gpio3)))
 
 /*
  * This is the mapping from the ARM MPS2 AN521 Board pins to GPIO
