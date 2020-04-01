@@ -88,7 +88,8 @@ C << r_last_timeout_const_report.C;
 msg = "WARNING: replace constant {} with timeout in {}".format(C, fn)
 coccilib.report.print_report(p[0], msg);
 
-// ** Convert integer delays in K_THREAD_DEFINE to the appropriate macro
+// ** Convert timeout-valued delays in K_THREAD_DEFINE with durations
+// ** in milliseconds
 
 // Identify declarers where an identifier is used for the delay
 @r_thread_decl_id@
@@ -98,43 +99,55 @@ position p;
 @@
 K_THREAD_DEFINE@p(..., C);
 
-// Select declarers with constant literal delay and replace with
-// appropriate macro
-@depends on patch@
+// Select declarers where the startup delay is a timeout expression
+// and replace with the corresponding millisecond duration.
+@r_thread_decl_patch
+ depends on patch@
 declarer name K_THREAD_DEFINE;
-constant C;
+identifier K_NO_WAIT =~ "^K_NO_WAIT$";
+identifier K_FOREVER =~ "^K_FOREVER$";
+expression E;
 position p != r_thread_decl_id.p;
 @@
 K_THREAD_DEFINE@p(...,
 (
-- 0
-+ K_NO_WAIT
+- K_NO_WAIT
++ 0
 |
-- -1
-+ K_FOREVER
+- K_FOREVER
++ -1
 |
-- C
-+ K_MSEC(C)
+- K_MSEC(E)
++ E
 )
  );
 
-// Identify declarers where an identifier is used for the delay
-@r_thread_decl_const
+//
+@r_thread_decl_report
  depends on report@
 declarer name K_THREAD_DEFINE;
-constant C;
+identifier K_NO_WAIT =~ "^K_NO_WAIT$";
+identifier K_FOREVER =~ "^K_FOREVER$";
+expression V;
 position p != r_thread_decl_id.p;
 @@
-K_THREAD_DEFINE@p(..., C);
+K_THREAD_DEFINE@p(...,
+(
+ K_NO_WAIT
+|
+ K_FOREVER
+|
+ K_MSEC(V)
+)
+ );
 
 
 @script:python
  depends on report
 @
-C << r_thread_decl_const.C;
-p << r_thread_decl_const.p;
+p << r_thread_decl_report.p;
 @@
-msg = "WARNING: replace constant {} with timeout in K_THREAD_DEFINE".format(C)
+msg = "WARNING: replace timeout-valued delay with millisecond duration".format()
 coccilib.report.print_report(p[0], msg);
 
 // ** Handle k_timer_start where the second (not last) argument is a
