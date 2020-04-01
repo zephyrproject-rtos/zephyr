@@ -24,6 +24,18 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 
+static u32_t table_m_size[] = {
+	LL_DMA_MDATAALIGN_BYTE,
+	LL_DMA_MDATAALIGN_HALFWORD,
+	LL_DMA_MDATAALIGN_WORD,
+};
+
+static u32_t table_p_size[] = {
+	LL_DMA_PDATAALIGN_BYTE,
+	LL_DMA_PDATAALIGN_HALFWORD,
+	LL_DMA_PDATAALIGN_WORD,
+};
+
 static void dma_stm32_dump_stream_irq(struct device *dev, u32_t id)
 {
 	const struct dma_stm32_config *config = dev->config->config_info;
