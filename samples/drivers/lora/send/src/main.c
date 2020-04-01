@@ -54,6 +54,6 @@ void main(void)
 		LOG_INF("Data sent!");
 
 		/* Send data at 1s interval */
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 	}
 }

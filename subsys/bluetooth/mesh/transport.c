@@ -232,7 +232,7 @@ static void seg_tx_unblock_check(struct seg_tx *tx)
 		BT_DBG("Unblocked 0x%04x",
 		       (u16_t)(blocked->seq_auth & TRANS_SEQ_ZERO_MASK));
 		blocked->blocked = false;
-		k_delayed_work_submit(&blocked->retransmit, 0);
+		k_delayed_work_submit(&blocked->retransmit, K_NO_WAIT);
 	}
 }
 

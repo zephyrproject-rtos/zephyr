@@ -94,6 +94,6 @@ void main(void)
 						resistance));
 		}
 
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 	}
 }

@@ -609,7 +609,7 @@ static int lmp90xxx_adc_read_channel(struct device *dev, u8_t channel,
 						&adc_done);
 			if (adc_done == 0xFFU) {
 				LOG_DBG("sleeping for 1 ms");
-				k_sleep(1);
+				k_sleep(K_MSEC(1));
 			} else {
 				break;
 			}
