@@ -59,7 +59,7 @@ static const struct entropy_driver_api entropy_prbs_api = {
 	.get_entropy = entropy_prbs_get_entropy
 };
 
-DEVICE_AND_API_INIT(entropy_prbs, CONFIG_ENTROPY_NAME,
+DEVICE_AND_API_INIT(entropy_prbs, DT_INST_LABEL(0),
 		    entropy_prbs_init, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_prbs_api);
