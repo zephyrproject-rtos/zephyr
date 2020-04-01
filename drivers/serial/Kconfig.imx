@@ -3,7 +3,7 @@
 # Copyright (c) 2018, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig UART_IMX
+config UART_IMX
 	bool "NXP i.MX7 family processor UART driver"
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
@@ -11,52 +11,3 @@ menuconfig UART_IMX
 	help
 	  This option enables the UART driver for NXP i.MX7
 	  family processors.
-
-config UART_IMX_UART_1
-	bool "Enable NXP i.MX7 UART1 Port"
-	depends on UART_IMX
-	help
-	  Enable support for UART1 port in the driver. Say y here
-	  if you want to use UART1 device.
-
-config UART_IMX_UART_2
-	bool "Enable NXP i.MX7 UART2 Port"
-	depends on UART_IMX
-	help
-	  Enable support for UART2 port in the driver. Say y here
-	  if you want to use UART2 device.
-
-config UART_IMX_UART_3
-	bool "Enable NXP i.MX7 UART3 Port"
-	depends on UART_IMX
-	help
-	  Enable support for UART3 port in the driver. Say y here
-	  if you want to use UART3 device.
-
-config UART_IMX_UART_4
-	bool "Enable NXP i.MX7 UART4 Port"
-	depends on UART_IMX
-	help
-	  Enable support for UART4 port in the driver. Say y here
-	  if you want to use UART4 device.
-
-config UART_IMX_UART_5
-	bool "Enable NXP i.MX7 UART5 Port"
-	depends on UART_IMX
-	help
-	  Enable support for UART5 port in the driver. Say y here
-	  if you want to use UART5 device.
-
-config UART_IMX_UART_6
-	bool "Enable NXP i.MX7 UART6 Port"
-	depends on UART_IMX
-	help
-	  Enable support for UART6 port in the driver. Say y here
-	  if you want to use UART6 device.
-
-config UART_IMX_UART_7
-	bool "Enable NXP i.MX7 UART7 Port"
-	depends on UART_IMX
-	help
-	  Enable support for UART7 port in the driver. Say y here
-	  if you want to use UART7 device.

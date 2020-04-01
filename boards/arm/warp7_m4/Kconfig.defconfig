@@ -12,16 +12,6 @@ config GPIO_IMX_PORT_7
 	default y
 	depends on GPIO_IMX
 
-if UART_IMX
-
-config UART_IMX_UART_2
-	default y
-
-config UART_IMX_UART_6
-	default y
-
-endif # UART_IMX
-
 config I2C_4
 	default y
 	depends on I2C_IMX

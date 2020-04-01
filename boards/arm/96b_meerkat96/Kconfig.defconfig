@@ -12,10 +12,6 @@ config GPIO_IMX_PORT_1
 	default y
 	depends on GPIO_IMX
 
-config UART_IMX_UART_1
-	default y
-	depends on UART_IMX
-
 if !XIP
 config FLASH_SIZE
 	default 0
