@@ -7,18 +7,6 @@
 #ifndef DMA_STM32_H_
 #define DMA_STM32_H_
 
-static u32_t table_m_size[] = {
-	LL_DMA_MDATAALIGN_BYTE,
-	LL_DMA_MDATAALIGN_HALFWORD,
-	LL_DMA_MDATAALIGN_WORD,
-};
-
-static u32_t table_p_size[] = {
-	LL_DMA_PDATAALIGN_BYTE,
-	LL_DMA_PDATAALIGN_HALFWORD,
-	LL_DMA_PDATAALIGN_WORD,
-};
-
 /* Maximum data sent in single transfer (Bytes) */
 #define DMA_STM32_MAX_DATA_ITEMS	0xffff
 
