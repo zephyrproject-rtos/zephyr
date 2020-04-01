@@ -1,0 +1,11 @@
+common:
+  tags: device userspace
+tests:
+  kernel.device_control:
+    tags: device
+    platform_whitelist: native_posix native_posix_64 qemu_x86
+  kernel.device_control.no_concurrent:
+    tags: device
+    extra_configs:
+      - CONFIG_DEVICE_CONCURRENT_ACCESS=n
+    platform_whitelist: native_posix native_posix_64 qemu_x86
