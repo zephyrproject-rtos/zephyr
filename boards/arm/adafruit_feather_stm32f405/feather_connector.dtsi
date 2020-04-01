@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2020 Richard Osterloh <richard.osterloh@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	feather_header: connector {
+		compatible = "adafruit-feather-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpioa 4 0>,	/* A0 */
+			   <1 0 &gpioa 5 0>,	/* A1 */
+			   <2 0 &gpioa 6 0>,	/* A2 */
+			   <3 0 &gpioa 7 0>,	/* A3 */
+			   <4 0 &gpioc 4 0>,	/* A4 */
+			   <5 0 &gpioc 5 0>,	/* A5 */
+			   <6 0 &gpiob 13 0>,	/* SCK */
+			   <7 0 &gpiob 15 0>,	/* MOSI */
+			   <8 0 &gpiob 14 0>,	/* MISO */
+			   <9 0 &gpiob 11 0>,	/* RX */
+			   <10 0 &gpiob 10 0>,	/* TX */
+			   <11 0 &gpioa 8 0>,	/* B0 (NC) */
+			   <12 0 &gpiob 7 0>,	/* SDA */
+			   <13 0 &gpiob 6 0>,	/* SCL */
+			   <14 0 &gpioc 7 0>,	/* D5 */
+			   <15 0 &gpioc 6 0>,	/* D6 */
+			   <16 0 &gpioc 5 0>,	/* D9 */
+			   <17 0 &gpioc 4 0>,	/* D10 */
+			   <18 0 &gpioc 3 0>,	/* D11 */
+			   <19 0 &gpioc 2 0>,	/* D12 */
+			   <20 0 &gpioc 1 0>;	/* D13 */
+	};
+};
+
+feather_serial: &usart3 {};
+feather_i2c: &i2c1 {};
+feather_spi: &spi2 {};
