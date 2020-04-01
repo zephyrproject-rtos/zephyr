@@ -252,7 +252,7 @@ static void catch_join_group(void)
 
 	join_group();
 
-	if (k_sem_take(&wait_data, WAIT_TIME)) {
+	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting join event");
 	}
 
@@ -269,7 +269,7 @@ static void catch_leave_group(void)
 
 	leave_group();
 
-	if (k_sem_take(&wait_data, WAIT_TIME)) {
+	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting leave event");
 	}
 
@@ -288,7 +288,7 @@ static void verify_join_group(void)
 
 	join_group();
 
-	if (k_sem_take(&wait_data, WAIT_TIME)) {
+	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting join event");
 	}
 
@@ -305,7 +305,7 @@ static void verify_leave_group(void)
 
 	leave_group();
 
-	if (k_sem_take(&wait_data, WAIT_TIME)) {
+	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting leave event");
 	}
 
@@ -413,7 +413,7 @@ static void catch_query(void)
 
 	k_yield();
 
-	if (k_sem_take(&wait_data, WAIT_TIME)) {
+	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting query event");
 	}
 
@@ -440,7 +440,7 @@ static void verify_send_report(void)
 	k_yield();
 
 	/* Did we send a report? */
-	if (k_sem_take(&wait_data, WAIT_TIME)) {
+	if (k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		zassert_true(0, "Timeout while waiting report");
 	}
 
@@ -461,7 +461,7 @@ static void test_allnodes(void)
 	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
 
 	/* Let the DAD succeed so that the multicast address will be there */
-	k_sleep(DAD_TIMEOUT);
+	k_sleep(K_MSEC(DAD_TIMEOUT));
 
 	ifmaddr = net_if_ipv6_maddr_lookup(&addr, &iface);
 

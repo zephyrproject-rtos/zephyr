@@ -1674,7 +1674,7 @@ static bool test_init_tcp_connect(void)
 		return false;
 	}
 
-	if (k_sem_take(&wait_in_accept, WAIT_TIME_LONG)) {
+	if (k_sem_take(&wait_in_accept, K_MSEC(WAIT_TIME_LONG))) {
 		TC_ERROR("Timeout while waiting data back\n");
 		return false;
 	}
@@ -1696,7 +1696,7 @@ static bool test_init_tcp_connect(void)
 
 	DBG("Waiting v6 connection\n");
 
-	if (k_sem_take(&wait_connect, WAIT_TIME_LONG)) {
+	if (k_sem_take(&wait_connect, K_MSEC(WAIT_TIME_LONG))) {
 		TC_ERROR("Timeout while waiting data back\n");
 		return false;
 	}
@@ -1716,7 +1716,7 @@ static bool test_init_tcp_connect(void)
 		return false;
 	}
 
-	k_sem_take(&wait_connect, WAIT_TIME);
+	k_sem_take(&wait_connect, K_MSEC(WAIT_TIME));
 	if (!connect_cb_called) {
 		TC_ERROR("No IPv4 connect cb called on time, "
 			 "TCP connect test failed\n");
