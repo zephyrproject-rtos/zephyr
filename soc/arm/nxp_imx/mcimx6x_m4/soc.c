@@ -21,72 +21,72 @@ static void SOC_RdcInit(void)
 			RDC_DOMAIN_PERM(M4_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
 			false, false);
 
-#ifdef CONFIG_UART_IMX_UART_1
+#if DT_HAS_NODE(DT_NODELABEL(uart1))
 	/* Set access to UART_1 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart1, DT_NXP_IMX_UART_UART_1_RDC, false, false);
-#endif /* CONFIG_UART_IMX_UART_1 */
-#ifdef CONFIG_UART_IMX_UART_2
+	RDC_SetPdapAccess(RDC, rdcPdapUart1, RDC_DT_VAL(uart1), false, false);
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(uart2))
 	/* Set access to UART_2 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart2, DT_NXP_IMX_UART_UART_2_RDC, false, false);
-#endif /* CONFIG_UART_IMX_UART_2 */
-#ifdef CONFIG_UART_IMX_UART_3
+	RDC_SetPdapAccess(RDC, rdcPdapUart2, RDC_DT_VAL(uart2), false, false);
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(uart3))
 	/* Set access to UART_3 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart3, DT_NXP_IMX_UART_UART_3_RDC, false, false);
-#endif /* CONFIG_UART_IMX_UART_3 */
-#ifdef CONFIG_UART_IMX_UART_4
+	RDC_SetPdapAccess(RDC, rdcPdapUart3, RDC_DT_VAL(uart3), false, false);
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(uart4))
 	/* Set access to UART_4 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart4, DT_NXP_IMX_UART_UART_4_RDC, false, false);
-#endif /* CONFIG_UART_IMX_UART_4 */
-#ifdef CONFIG_UART_IMX_UART_5
+	RDC_SetPdapAccess(RDC, rdcPdapUart4, RDC_DT_VAL(uart4), false, false);
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(uart5))
 	/* Set access to UART_5 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart5, DT_NXP_IMX_UART_UART_5_RDC, false, false);
-#endif /* CONFIG_UART_IMX_UART_5 */
-#ifdef CONFIG_UART_IMX_UART_6
+	RDC_SetPdapAccess(RDC, rdcPdapUart5, RDC_DT_VAL(uart5), false, false);
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(uart6))
 	/* Set access to UART_6 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapUart6, DT_NXP_IMX_UART_UART_6_RDC, false, false);
-#endif /* CONFIG_UART_IMX_UART_6 */
-#ifdef CONFIG_GPIO_IMX_PORT_1
+	RDC_SetPdapAccess(RDC, rdcPdapUart6, RDC_DT_VAL(uart6), false, false);
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(gpio1))
 	/* Set access to GPIO_1 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio1, DT_NXP_IMX_GPIO_GPIO_1_RDC, false, false);
-#endif /* CONFIG_GPIO_IMX_PORT_1 */
-#ifdef CONFIG_GPIO_IMX_PORT_2
+	RDC_SetPdapAccess(RDC, rdcPdapGpio1, RDC_DT_VAL(gpio1), false, false);
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(gpio2))
 	/* Set access to GPIO_2 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio2, DT_NXP_IMX_GPIO_GPIO_2_RDC, false, false);
-#endif /* CONFIG_GPIO_IMX_PORT_2 */
-#ifdef CONFIG_GPIO_IMX_PORT_3
+	RDC_SetPdapAccess(RDC, rdcPdapGpio2, RDC_DT_VAL(gpio2), false, false);
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(gpio3))
 	/* Set access to GPIO_3 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio3, DT_NXP_IMX_GPIO_GPIO_3_RDC, false, false);
-#endif /* CONFIG_GPIO_IMX_PORT_3 */
-#ifdef CONFIG_GPIO_IMX_PORT_4
+	RDC_SetPdapAccess(RDC, rdcPdapGpio3, RDC_DT_VAL(gpio3), false, false);
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(gpio4))
 	/* Set access to GPIO_4 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio4, DT_NXP_IMX_GPIO_GPIO_4_RDC, false, false);
-#endif /* CONFIG_GPIO_IMX_PORT_4 */
-#ifdef CONFIG_GPIO_IMX_PORT_5
+	RDC_SetPdapAccess(RDC, rdcPdapGpio4, RDC_DT_VAL(gpio4), false, false);
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(gpio5))
 	/* Set access to GPIO_5 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio5, DT_NXP_IMX_GPIO_GPIO_5_RDC, false, false);
-#endif /* CONFIG_GPIO_IMX_PORT_5 */
-#ifdef CONFIG_GPIO_IMX_PORT_6
+	RDC_SetPdapAccess(RDC, rdcPdapGpio5, RDC_DT_VAL(gpio5), false, false);
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(gpio6))
 	/* Set access to GPIO_6 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio6, DT_NXP_IMX_GPIO_GPIO_6_RDC, false, false);
-#endif /* CONFIG_GPIO_IMX_PORT_6 */
-#ifdef CONFIG_GPIO_IMX_PORT_7
+	RDC_SetPdapAccess(RDC, rdcPdapGpio6, RDC_DT_VAL(gpio6), false, false);
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(gpio7))
 	/* Set access to GPIO_7 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapGpio7, DT_NXP_IMX_GPIO_GPIO_7_RDC, false, false);
-#endif /* CONFIG_GPIO_IMX_PORT_7 */
+	RDC_SetPdapAccess(RDC, rdcPdapGpio7, RDC_DT_VAL(gpio7), false, false);
+#endif
 
 #ifdef CONFIG_IPM_IMX
 	/* Set access to MU B for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapMuB, DT_NXP_IMX_MU_MU_B_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapMuB, RDC_DT_VAL(mub), false, false);
 #endif /* CONFIG_IPM_IMX */
 
-#ifdef CONFIG_COUNTER_IMX_EPIT_1
+#if DT_HAS_NODE(DT_NODELABEL(epit1))
 	/* Set access to EPIT_1 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapEpit1, DT_NXP_IMX_EPIT_EPIT_1_RDC, false, false);
-#endif /* CONFIG_COUNTER_IMX_EPIT_1 */
-#ifdef CONFIG_COUNTER_IMX_EPIT_2
+	RDC_SetPdapAccess(RDC, rdcPdapEpit1, RDC_DT_VAL(epit1), false, false);
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(epit2))
 	/* Set access to EPIT_2 for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapEpit2, DT_NXP_IMX_EPIT_EPIT_2_RDC, false, false);
-#endif /* CONFIG_COUNTER_IMX_EPIT_2 */
+	RDC_SetPdapAccess(RDC, rdcPdapEpit2, RDC_DT_VAL(epit2), false, false);
+#endif
 }
 
 /* Initialize cache. */
@@ -151,12 +151,12 @@ static void SOC_ClockInit(void)
 	CCM_SetRootDivider(CCM, ccmRootPerclkPodf, 0);
 
 	/* Enable EPIT clocks */
-#ifdef CONFIG_COUNTER_IMX_EPIT_1
+#if DT_HAS_NODE(DT_NODELABEL(epit1))
 	CCM_ControlGate(CCM, ccmCcgrGateEpit1Clk, ccmClockNeededAll);
-#endif /* CONFIG_COUNTER_IMX_EPIT_1 */
-#ifdef CONFIG_COUNTER_IMX_EPIT_2
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(epit2))
 	CCM_ControlGate(CCM, ccmCcgrGateEpit2Clk, ccmClockNeededAll);
-#endif /* CONFIG_COUNTER_IMX_EPIT_2 */
+#endif
 #endif /* CONFIG_COUNTER_IMX_EPIT */
 }
 
