@@ -408,7 +408,7 @@ void main(void)
 	bt_conn_cb_register(&conn_callbacks);
 
 	while (1) {
-		k_sleep(MSEC_PER_SEC);
+		k_sleep(K_SECONDS(1));
 
 		/* CSC simulation */
 		if (csc_simulate) {
