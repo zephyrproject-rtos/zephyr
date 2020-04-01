@@ -62,8 +62,4 @@ config PINMUX_MCUX_PORTE
 
 endif # PINMUX_MCUX
 
-config UART_MCUX_0
-	default y if UART_CONSOLE
-	depends on UART_MCUX
-
 endif # BOARD_TWR_KV58F220M

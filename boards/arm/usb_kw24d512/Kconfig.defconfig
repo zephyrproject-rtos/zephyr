@@ -24,14 +24,10 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 2
 
-config UART_MCUX_0
-	default y
-	depends on UART_MCUX
-
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA
-	default y if UART_MCUX_0
+	default y if "$(dt_nodelabel_enabled,uart0)"
 
 config PINMUX_MCUX_PORTB
 	default y if SPI_1
