@@ -899,6 +899,12 @@ static void test_macro_names(void)
 	zassert_true(!strcmp(TO_STRING(DT_NODELABEL(test_nodelabel_allcaps)),
 			     "DT_N_S_test_S_gpio_deadbeef"),
 		     "nodelabel (all caps)");
+
+#define CHILD_NODE_ID DT_CHILD(DT_PATH(test, i2c_11112222), test_i2c_dev_10)
+#define FULL_PATH_ID DT_PATH(test, i2c_11112222, test_i2c_dev_10)
+
+	zassert_true(!strcmp(TO_STRING(CHILD_NODE_ID), TO_STRING(FULL_PATH_ID)),
+		     "child");
 }
 
 static int a[] = DT_PROP(TEST_ARRAYS, a);
