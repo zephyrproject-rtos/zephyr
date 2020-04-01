@@ -209,6 +209,32 @@
 #define DT_INST(inst, compat) UTIL_CAT(DT_N_INST, DT_DASH(inst, compat))
 
 /**
+ * @brief Get a node identifier for a child node
+ *
+ * Example devicetree fragment:
+ *
+ *     / {
+ *             soc-label: soc {
+ *                     my-serial: serial@4 {
+ *                             status = "okay";
+ *                             current-speed = <115200>;
+ *                             ...
+ *                     };
+ *             };
+ *     };
+ *
+ * Example usage with @ref DT_PROP() to get the status of the child node
+ * "serial@4" of the node referenced by node label "soc-label":
+ *
+ *     DT_PROP(DT_CHILD(DT_NODELABEL(soc_label), serial_4), status) // "okay"
+ *
+ * @param node_id node identifier
+ * @param child lowercase-and-underscores child node name
+ * @return node identifier for the node with the name referred to by 'child'
+ */
+#define DT_CHILD(node_id, child) UTIL_CAT(node_id, DT_S_PREFIX(child))
+
+/**
  * @}
  */
 
