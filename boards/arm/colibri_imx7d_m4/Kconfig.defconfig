@@ -33,10 +33,6 @@ config GPIO_IMX_PORT_7
 
 endif # GPIO_IMX
 
-config UART_IMX_UART_2
-	default y
-	depends on UART_IMX
-
 if I2C_IMX
 
 config I2C_1

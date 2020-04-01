@@ -8,28 +8,6 @@ if BOARD_UDOO_NEO_FULL_M4
 config BOARD
 	default "udoo_neo_full_m4"
 
-if UART_IMX
-
-config UART_IMX_UART_1
-	default n
-
-config UART_IMX_UART_2
-	default n
-
-config UART_IMX_UART_3
-	default n
-
-config UART_IMX_UART_4
-	default n
-
-config UART_IMX_UART_5
-	default y if UART_CONSOLE
-
-config UART_IMX_UART_6
-	default n
-
-endif # UART_IMX
-
 if GPIO_IMX
 
 config GPIO_IMX_PORT_1
