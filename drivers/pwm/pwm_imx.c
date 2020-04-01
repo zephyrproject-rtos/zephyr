@@ -158,58 +158,21 @@ static const struct pwm_driver_api imx_pwm_driver_api = {
 	.get_cycles_per_sec = imx_pwm_get_cycles_per_sec,
 };
 
-#ifdef CONFIG_PWM_1
-static const struct imx_pwm_config imx_pwm_config_1 = {
-	.base = (PWM_Type *)DT_ALIAS_PWM_1_BASE_ADDRESS,
-	.prescaler = DT_ALIAS_PWM_1_PRESCALER,
-};
+#define PWM_IMX_INIT(n)							\
+	static const struct imx_pwm_config imx_pwm_config_##n = {	\
+		.base = (PWM_Type *)DT_INST_REG_ADDR(n),		\
+		.prescaler = DT_INST_PROP(n, prescaler),		\
+	};								\
+									\
+	static struct imx_pwm_data imx_pwm_data_##n;			\
+									\
+	DEVICE_AND_API_INIT(imx_pwm_##n, DT_INST_LABEL(n),		\
+			    &imx_pwm_init, &imx_pwm_data_##n,		\
+			    &imx_pwm_config_##n, POST_KERNEL,		\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &imx_pwm_driver_api)
 
-static struct imx_pwm_data imx_pwm_data_1;
-
-DEVICE_AND_API_INIT(imx_pwm_1, DT_ALIAS_PWM_1_LABEL, &imx_pwm_init,
-		    &imx_pwm_data_1, &imx_pwm_config_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &imx_pwm_driver_api);
-#endif /* CONFIG_PWM_1 */
-
-#ifdef CONFIG_PWM_2
-static const struct imx_pwm_config imx_pwm_config_2 = {
-	.base = (PWM_Type *)DT_ALIAS_PWM_2_BASE_ADDRESS,
-	.prescaler = DT_ALIAS_PWM_2_PRESCALER,
-};
-
-static struct imx_pwm_data imx_pwm_data_2;
-
-DEVICE_AND_API_INIT(imx_pwm_2, DT_ALIAS_PWM_2_LABEL, &imx_pwm_init,
-		    &imx_pwm_data_2, &imx_pwm_config_2,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &imx_pwm_driver_api);
-#endif /* CONFIG_PWM_2 */
-
-#ifdef CONFIG_PWM_3
-static const struct imx_pwm_config imx_pwm_config_3 = {
-	.base = (PWM_Type *)DT_ALIAS_PWM_3_BASE_ADDRESS,
-	.prescaler = DT_ALIAS_PWM_3_PRESCALER,
-};
-
-static struct imx_pwm_data imx_pwm_data_3;
-
-DEVICE_AND_API_INIT(imx_pwm_3, DT_ALIAS_PWM_3_LABEL, &imx_pwm_init,
-		    &imx_pwm_data_3, &imx_pwm_config_3,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &imx_pwm_driver_api);
-#endif /* CONFIG_PWM_3 */
-
-#ifdef CONFIG_PWM_4
-static const struct imx_pwm_config imx_pwm_config_4 = {
-	.base = (PWM_Type *)DT_ALIAS_PWM_4_BASE_ADDRESS
-	.prescaler = DT_ALIAS_PWM_4_PRESCALER,
-};
-
-static struct imx_pwm_data imx_pwm_data_4;
-
-DEVICE_AND_API_INIT(imx_pwm_4, DT_ALIAS_PWM_4_LABEL, &imx_pwm_init,
-		    &imx_pwm_data_4, &imx_pwm_config_4,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &imx_pwm_driver_api);
-#endif /* CONFIG_PWM_4 */
+#if DT_HAS_COMPAT(fsl_imx7d_pwm)
+#define DT_DRV_COMPAT fsl_imx7d_pwm
+DT_INST_FOREACH(PWM_IMX_INIT)
+#endif
