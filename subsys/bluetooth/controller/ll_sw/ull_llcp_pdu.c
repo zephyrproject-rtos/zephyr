@@ -28,11 +28,150 @@
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
+#include "ll_feat.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_llcp
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
+
+/*
+ * Unknown response helper
+ */
+
+void ull_cp_priv_pdu_decode_unknown_rsp(struct ull_cp_conn *conn,
+					struct pdu_data *pdu)
+{
+	conn->llcp.unknown.type = pdu->llctrl.unknown_rsp.type;
+}
+
+void ull_cp_priv_ntf_encode_unknown_rsp(struct ull_cp_conn *conn,
+					struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_unknown_rsp *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, unknown_rsp) +
+		sizeof(struct pdu_data_llctrl_unknown_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP;
+	p = &pdu->llctrl.unknown_rsp;
+	p->type = conn->llcp.unknown.type;
+}
+
+/*
+ * Feature Exchange Procedure Helper
+ */
+static void pdu_encode_set_features(struct ull_cp_conn *conn, u8_t *features)
+{
+	memcpy(&features[0], conn->llcp.fex.features,
+	       sizeof(conn->llcp.fex.features));
+}
+
+static void feature_filter(u8_t *featuresin, u8_t *featuresout)
+{
+	u64_t feat;
+	u8_t counter;
+
+	feat = sys_cpu_to_le64(~LL_FEAT_BIT_MASK_VALID);
+	for (counter = 0; counter < 8; counter++) {
+		feat |= featuresin[counter] << 8*counter;
+	}
+	feat &= sys_cpu_to_le64(LL_FEAT_BIT_MASK_VALID);
+
+	for (counter = 0; counter < 8; counter++) {
+		featuresout[counter] = (feat >> 8*counter) & 0xFF;
+	}
+}
+
+void ull_cp_priv_pdu_encode_feature_req(struct ull_cp_conn *conn,
+					struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_feature_req *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, feature_req) +
+		sizeof(struct pdu_data_llctrl_feature_req);
+	if (conn->lll.role == BT_HCI_ROLE_MASTER) {
+		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_REQ;
+	} else {
+		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
+	}
+
+	p = &pdu->llctrl.feature_req;
+	pdu_encode_set_features(conn, p->features);
+}
+
+void ull_cp_priv_pdu_encode_feature_rsp(struct ull_cp_conn *conn,
+					struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_feature_rsp *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, feature_rsp) +
+		sizeof(struct pdu_data_llctrl_feature_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
+
+	p = &pdu->llctrl.feature_rsp;
+	pdu_encode_set_features(conn, p->features);
+}
+
+void ull_cp_priv_ntf_encode_feature_rsp(struct ull_cp_conn *conn,
+					struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_feature_rsp *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, feature_rsp) +
+		sizeof(struct pdu_data_llctrl_feature_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
+	p = &pdu->llctrl.feature_rsp;
+
+	memcpy(p->features, conn->llcp.fex.features,
+	       sizeof(struct pdu_data_llctrl_feature_rsp));
+}
+
+void ull_cp_priv_ntf_encode_slave_feature_req(struct ull_cp_conn *conn,
+					      struct pdu_data *pdu)
+{
+	struct pdu_data_llctrl_slave_feature_req *p;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, slave_feature_req) +
+		sizeof(struct pdu_data_llctrl_slave_feature_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
+
+	p = &pdu->llctrl.slave_feature_req;
+	pdu_encode_set_features(conn, p->features);
+}
+
+void ull_cp_priv_pdu_decode_feature_req(struct ull_cp_conn *conn,
+					struct pdu_data *pdu)
+{
+	u8_t featureset[8];
+	u8_t cntr;
+
+	feature_filter(pdu->llctrl.feature_req.features, &featureset[0]);
+
+	for (cntr = 0; cntr < 8; cntr++) {
+		conn->llcp.fex.features[cntr] &= featureset[cntr];
+	}
+	conn->llcp.fex.valid = 1;
+}
+
+void ull_cp_priv_pdu_decode_feature_rsp(struct ull_cp_conn *conn,
+					struct pdu_data *pdu)
+{
+	u8_t featureset[8];
+	u8_t cntr;
+
+	feature_filter(pdu->llctrl.feature_rsp.features, &featureset[0]);
+
+	for (cntr = 0; cntr < 8; cntr++) {
+		conn->llcp.fex.features[cntr] &= featureset[cntr];
+	}
+	conn->llcp.fex.valid = 1;
+}
 
 /*
  * Version Exchange Procedure Helper
@@ -46,7 +185,8 @@ void ull_cp_priv_pdu_encode_version_ind(struct pdu_data *pdu)
 
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, version_ind) + sizeof(struct pdu_data_llctrl_version_ind);
+	pdu->len = offsetof(struct pdu_data_llctrl, version_ind) +
+		sizeof(struct pdu_data_llctrl_version_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
 
 	p = &pdu->llctrl.version_ind;
@@ -57,13 +197,15 @@ void ull_cp_priv_pdu_encode_version_ind(struct pdu_data *pdu)
 	p->sub_version_number = svn;
 }
 
-void ull_cp_priv_ntf_encode_version_ind(struct ull_cp_conn *conn, struct pdu_data *pdu)
+void ull_cp_priv_ntf_encode_version_ind(struct ull_cp_conn *conn,
+					struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_version_ind *p;
 
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, version_ind) + sizeof(struct pdu_data_llctrl_version_ind);
+	pdu->len = offsetof(struct pdu_data_llctrl, version_ind) +
+		sizeof(struct pdu_data_llctrl_version_ind);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
 
 	p = &pdu->llctrl.version_ind;
@@ -173,5 +315,3 @@ void ull_cp_priv_pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_data
 {
 	ctx->data.pu.instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
 }
-
-
