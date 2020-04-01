@@ -33,17 +33,17 @@ static int frdm_k22f_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
 #endif
 
-#ifdef CONFIG_UART_MCUX_0
+#if DT_HAS_NODE(DT_NODELABEL(uart0))
 #error "No UART0 is used"
 #endif
 
-#ifdef CONFIG_UART_MCUX_1
+#if DT_HAS_NODE(DT_NODELABEL(uart1))
 	/* UART1 RX, TX */
 	pinmux_pin_set(porte, 0, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(porte, 1, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#ifdef CONFIG_UART_MCUX_2
+#if DT_HAS_NODE(DT_NODELABEL(uart2))
 	/* UART2 RX, TX */
 	pinmux_pin_set(portd, 2, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAlt3));
