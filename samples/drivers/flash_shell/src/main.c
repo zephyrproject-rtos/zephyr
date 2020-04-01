@@ -581,7 +581,8 @@ void main(void)
 {
 	flash_device = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_LABEL);
 	if (flash_device) {
-		printk("Found flash device %s.\n", DT_CHOSEN_ZEPHYR_FLASH_LABEL);
+		printk("Found flash device %s.\n",
+		       DT_CHOSEN_ZEPHYR_FLASH_LABEL);
 		printk("Flash I/O commands can be run.\n");
 	} else {
 		printk("**No flash device found!**\n");

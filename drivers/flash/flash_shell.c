@@ -27,7 +27,7 @@ static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 	int result;
 	u32_t size;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_LABEL);
 	if (!flash_dev) {
 		shell_error(shell, "Flash driver was not found!");
 		return -ENODEV;
@@ -78,7 +78,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	u32_t w_addr;
 	int j = 0;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_LABEL);
 	if (!flash_dev) {
 		shell_error(shell, "Flash driver was not found!");
 		return -ENODEV;
@@ -130,7 +130,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 	u32_t addr;
 	int cnt;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_LABEL);
 	if (!flash_dev) {
 		shell_error(shell, "Flash driver was not found!");
 		return -ENODEV;
@@ -170,7 +170,7 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 	u32_t addr;
 	u32_t size;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_LABEL);
 	if (!flash_dev) {
 		shell_error(shell, "Flash driver was not found!");
 		return -ENODEV;
