@@ -52,7 +52,6 @@ Install dependencies
 ********************
 
 Next, you'll install some host dependencies using your package manager.
-You'll also install :ref:`west <west>`, Zephyr's multi-purpose tool.
 
 .. tabs::
 
@@ -95,15 +94,6 @@ You'll also install :ref:`west <west>`, Zephyr's multi-purpose tool.
                sudo apt update
                sudo apt install cmake
 
-      #. Install west, and make sure :file:`~/.local/bin` is on your
-         :envvar:`PATH` :ref:`environment variable <env_vars>`:
-
-         .. code-block:: bash
-
-            pip3 install --user -U west
-            echo 'export PATH=~/.local/bin:"$PATH"' >> ~/.bashrc
-            source ~/.bashrc
-
    .. group-tab:: macOS
 
       #. Install `Homebrew <https://brew.sh/>`_:
@@ -117,12 +107,6 @@ You'll also install :ref:`west <west>`, Zephyr's multi-purpose tool.
          .. code-block:: bash
 
             brew install cmake ninja gperf python3 ccache qemu dtc
-
-      #. Install west:
-
-         .. code-block:: bash
-
-            pip3 install west
 
    .. group-tab:: Windows
 
@@ -168,95 +152,121 @@ You'll also install :ref:`west <west>`, Zephyr's multi-purpose tool.
 
       #. Open a new ``cmd.exe`` window **as a regular user** to continue.
 
-      #. Install west in the new window:
-
-         .. code-block:: bash
-
-            pip3 install west
-
 .. _Chocolatey: https://chocolatey.org/
 .. _Install chocolatey: https://chocolatey.org/install
 
 .. _get_the_code:
 .. _clone-zephyr:
-
-.. rst-class:: numbered-step
-
-Get the source code
-*******************
-
-Clone Zephyr and its :ref:`modules <modules>` into a new :term:`west workspace`
-named :file:`zephyrproject`.
-
-.. tabs::
-
-   .. group-tab:: Ubuntu
-
-      .. code-block:: bash
-
-         west init ~/zephyrproject
-         cd ~/zephyrproject
-         west update
-
-   .. group-tab:: macOS
-
-      .. code-block:: bash
-
-         west init ~/zephyrproject
-         cd ~/zephyrproject
-         west update
-
-   .. group-tab:: Windows
-
-      .. code-block:: bat
-
-         cd %HOMEPATH%
-         west init zephyrproject
-         cd zephyrproject
-         west update
-
-.. rst-class:: numbered-step
-
-Export Zephyr CMake package
-***************************
-
-The :ref:`Zephyr CMake package <cmake_pkg>` allows CMake to load boilerplate
-code required for building Zephyr applications.
-
-.. code-block:: console
-
-   west zephyr-export
-
 .. _install_py_requirements:
 .. _gs_python_deps:
 
 .. rst-class:: numbered-step
 
-Install Python dependencies
-***************************
+Get Zephyr and install Python dependencies
+******************************************
 
-Zephyr's ``scripts/requirements.txt`` file declares additional Python
-dependencies. Install them with ``pip3``.
+Next, clone Zephyr and its :ref:`modules <modules>` into a new :ref:`west
+<west>` workspace named :file:`zephyrproject`. You'll also install Zephyr's
+additional Python dependencies.
 
 .. tabs::
 
    .. group-tab:: Ubuntu
 
-      .. code-block:: bash
+      #. Install west, and make sure :file:`~/.local/bin` is on your
+         :envvar:`PATH` :ref:`environment variable <env_vars>`:
 
-         pip3 install --user -r ~/zephyrproject/zephyr/scripts/requirements.txt
+         .. code-block:: bash
+
+            pip3 install --user -U west
+            echo 'export PATH=~/.local/bin:"$PATH"' >> ~/.bashrc
+            source ~/.bashrc
+
+      #. Get the Zephyr source code:
+
+         .. code-block:: bash
+
+            west init ~/zephyrproject
+            cd ~/zephyrproject
+            west update
+
+      #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
+         automatically load boilerplate code required for building Zephyr
+         applications.
+
+         .. code-block:: console
+
+            west zephyr-export
+
+      #. Zephyr's ``scripts/requirements.txt`` file declares additional Python
+         dependencies. Install them with ``pip3``.
+
+         .. code-block:: bash
+
+            pip3 install --user -r ~/zephyrproject/zephyr/scripts/requirements.txt
 
    .. group-tab:: macOS
 
-      .. code-block:: bash
+      #. Install west:
 
-         pip3 install -r ~/zephyrproject/zephyr/scripts/requirements.txt
+         .. code-block:: bash
+
+            pip3 install west
+
+      #. Get the Zephyr source code:
+
+         .. code-block:: bash
+
+            west init ~/zephyrproject
+            cd ~/zephyrproject
+            west update
+
+      #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
+         automatically load boilerplate code required for building Zephyr
+         applications.
+
+         .. code-block:: console
+
+            west zephyr-export
+
+      #. Zephyr's ``scripts/requirements.txt`` file declares additional Python
+         dependencies. Install them with ``pip3``.
+
+         .. code-block:: bash
+
+            pip3 install -r ~/zephyrproject/zephyr/scripts/requirements.txt
 
    .. group-tab:: Windows
 
-      .. code-block:: bat
+      #. Install west:
 
-         pip3 install -r %HOMEPATH%\zephyrproject\zephyr\scripts\requirements.txt
+         .. code-block:: bash
+
+            pip3 install west
+
+      #. Get the Zephyr source code:
+
+         .. code-block:: bat
+
+            cd %HOMEPATH%
+            west init zephyrproject
+            cd zephyrproject
+            west update
+
+      #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
+         automatically load boilerplate code required for building Zephyr
+         applications.
+
+         .. code-block:: console
+
+            west zephyr-export
+
+      #. Zephyr's ``scripts/requirements.txt`` file declares additional Python
+         dependencies. Install them with ``pip3``.
+
+         .. code-block:: bat
+
+            pip3 install -r %HOMEPATH%\zephyrproject\zephyr\scripts\requirements.txt
 
 .. rst-class:: numbered-step
 
