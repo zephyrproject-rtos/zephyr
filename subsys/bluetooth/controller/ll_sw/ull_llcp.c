@@ -28,6 +28,8 @@
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
+#include "ll_feat.h"
+
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #define LOG_MODULE_NAME bt_ctlr_ull_llcp
 #include "common/log.h"
@@ -176,6 +178,9 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	}
 
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		lp_comm_init_proc(ctx);
+		break;
 	case PROC_VERSION_EXCHANGE:
 		lp_comm_init_proc(ctx);
 		break;
@@ -203,6 +208,9 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 	}
 
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		rp_comm_init_proc(ctx);
+		break;
 	case PROC_VERSION_EXCHANGE:
 		rp_comm_init_proc(ctx);
 		break;
@@ -247,6 +255,13 @@ void ull_cp_conn_init(struct ull_cp_conn *conn)
 	/* Reset the cached version Information (PROC_VERSION_EXCHANGE) */
 	memset(&conn->llcp.vex, 0, sizeof(conn->llcp.vex));
 
+	/*
+	 * set the feature exchange fields
+	 *
+	 */
+	memset(&conn->llcp.fex, 0, sizeof(conn->llcp.fex));
+	conn->llcp.fex.features = LL_FEAT;
+
 	/* Reset encryption related state */
 	conn->lll.enc_tx = 0U;
 	conn->lll.enc_rx = 0U;
@@ -282,6 +297,20 @@ void ull_cp_state_set(struct ull_cp_conn *conn, u8_t state)
 	default:
 		break;
 	}
+}
+
+u8_t ull_cp_feature_exchange(struct ull_cp_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = create_local_procedure(PROC_FEATURE_EXCHANGE);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
 }
 
 u8_t ull_cp_version_exchange(struct ull_cp_conn *conn)
