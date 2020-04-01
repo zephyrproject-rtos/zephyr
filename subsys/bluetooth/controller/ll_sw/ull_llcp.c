@@ -206,7 +206,7 @@ enum llcp_proc {
 };
 
 /* LLCP Local Request FSM State */
-enum {
+enum lr_state {
 	LR_STATE_IDLE,
 	LR_STATE_ACTIVE,
 	LR_STATE_DISCONNECT
@@ -228,7 +228,7 @@ enum {
 };
 
 /* LLCP Remote Request FSM State */
-enum {
+enum rr_state {
 	RR_STATE_IDLE,
 	RR_STATE_REJECT,
 	RR_STATE_ACTIVE,
@@ -1366,6 +1366,11 @@ static void lp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node
  * LLCP Local Request FSM
  */
 
+static void lr_set_state(struct ull_cp_conn *conn, enum lr_state state)
+{
+	conn->llcp.local.state = state;
+}
+
 static void lr_enqueue(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 {
 	sys_slist_append(&conn->llcp.local.pend_proc_list, &ctx->node);
@@ -1448,7 +1453,7 @@ static void lr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
 	switch (evt) {
 	case LR_EVT_CONNECT:
 		lr_act_connect(conn);
-		conn->llcp.local.state = LR_STATE_IDLE;
+		lr_set_state(conn, LR_STATE_IDLE);
 		break;
 	default:
 		/* Ignore other evts */
@@ -1462,12 +1467,12 @@ static void lr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 	case LR_EVT_RUN:
 		if (lr_peek(conn)) {
 			lr_act_run(conn);
-			conn->llcp.local.state = LR_STATE_ACTIVE;
+			lr_set_state(conn, LR_STATE_ACTIVE);
 		}
 		break;
 	case LR_EVT_DISCONNECT:
 		lr_act_disconnect(conn);
-		conn->llcp.local.state = LR_STATE_DISCONNECT;
+		lr_set_state(conn, LR_STATE_DISCONNECT);
 		break;
 	default:
 		/* Ignore other evts */
@@ -1485,11 +1490,11 @@ static void lr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
 		break;
 	case LR_EVT_COMPLETE:
 		lr_act_complete(conn);
-		conn->llcp.local.state = LR_STATE_IDLE;
+		lr_set_state(conn, LR_STATE_IDLE);
 		break;
 	case LR_EVT_DISCONNECT:
 		lr_act_disconnect(conn);
-		conn->llcp.local.state = LR_STATE_DISCONNECT;
+		lr_set_state(conn, LR_STATE_DISCONNECT);
 		break;
 	default:
 		/* Ignore other evts */
@@ -2271,6 +2276,11 @@ static void rp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node
  * LLCP Remote Request FSM
  */
 
+static void rr_set_state(struct ull_cp_conn *conn, enum rr_state state)
+{
+	conn->llcp.remote.state = state;
+}
+
 static void rr_set_incompat(struct ull_cp_conn *conn, enum proc_incompat incompat)
 {
 	conn->llcp.remote.incompat = incompat;
@@ -2382,7 +2392,7 @@ static void rr_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcode)
 static void rr_act_reject(struct ull_cp_conn *conn)
 {
 	if (!tx_alloc_is_available()) {
-		conn->llcp.remote.state = RR_STATE_REJECT;
+		rr_set_state(conn, RR_STATE_REJECT);
 	} else {
 		struct proc_ctx *ctx = rr_peek(conn);
 
@@ -2391,7 +2401,7 @@ static void rr_act_reject(struct ull_cp_conn *conn)
 		/* Dequeue pending request that just completed */
 		(void) rr_dequeue(conn);
 
-		conn->llcp.remote.state = RR_STATE_IDLE;
+		rr_set_state(conn, RR_STATE_IDLE);
 	}
 }
 
@@ -2418,7 +2428,7 @@ static void rr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
 	switch (evt) {
 	case RR_EVT_CONNECT:
 		rr_act_connect(conn);
-		conn->llcp.remote.state = RR_STATE_IDLE;
+		rr_set_state(conn, RR_STATE_IDLE);
 		break;
 	default:
 		/* Ignore other evts */
@@ -2460,7 +2470,7 @@ static void rr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 
 				/* Run remote procedure */
 				rr_act_run(conn);
-				conn->llcp.remote.state = RR_STATE_ACTIVE;
+				rr_set_state(conn, RR_STATE_ACTIVE);
 			} else if (with_instant && master && incompat == INCOMPAT_RESOLVABLE) {
 				/* Master collision
 				 * => Send reject
@@ -2486,7 +2496,7 @@ static void rr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 		break;
 	case RR_EVT_DISCONNECT:
 		rr_act_disconnect(conn);
-		conn->llcp.remote.state = RR_STATE_DISCONNECT;
+		rr_set_state(conn, RR_STATE_DISCONNECT);
 		break;
 	default:
 		/* Ignore other evts */
@@ -2509,11 +2519,11 @@ static void rr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
 		break;
 	case RR_EVT_COMPLETE:
 		rr_act_complete(conn);
-		conn->llcp.remote.state = RR_STATE_IDLE;
+		rr_set_state(conn, RR_STATE_IDLE);
 		break;
 	case RR_EVT_DISCONNECT:
 		rr_act_disconnect(conn);
-		conn->llcp.remote.state = RR_STATE_DISCONNECT;
+		rr_set_state(conn, RR_STATE_DISCONNECT);
 		break;
 	default:
 		/* Ignore other evts */
@@ -2623,11 +2633,11 @@ void ull_cp_init(void)
 void ull_cp_conn_init(struct ull_cp_conn *conn)
 {
 	/* Reset local request fsm */
-	conn->llcp.local.state = LR_STATE_DISCONNECT;
+	lr_set_state(conn, LR_STATE_DISCONNECT);
 	sys_slist_init(&conn->llcp.local.pend_proc_list);
 
 	/* Reset remote request fsm */
-	conn->llcp.remote.state = RR_STATE_DISCONNECT;
+	rr_set_state(conn, RR_STATE_DISCONNECT);
 	sys_slist_init(&conn->llcp.remote.pend_proc_list);
 	conn->llcp.remote.incompat = INCOMPAT_NO_COLLISION;
 	conn->llcp.remote.collision = 0U;
