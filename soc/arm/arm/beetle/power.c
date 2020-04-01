@@ -11,13 +11,13 @@
 #include <soc_power.h>
 #include <arch/cpu.h>
 
-#ifdef CONFIG_GPIO_CMSDK_AHB_PORT0
+#if DT_HAS_NODE(DT_NODELABEL(gpio0))
 #define CLK_BIT_GPIO0	_BEETLE_GPIO0
 #else
 #define CLK_BIT_GPIO0	0
 #endif
 
-#ifdef CONFIG_GPIO_CMSDK_AHB_PORT1
+#if DT_HAS_NODE(DT_NODELABEL(gpio1))
 #define CLK_BIT_GPIO1	_BEETLE_GPIO1
 #else
 #define CLK_BIT_GPIO1	0
