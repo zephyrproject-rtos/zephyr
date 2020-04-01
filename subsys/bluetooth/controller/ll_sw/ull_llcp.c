@@ -1460,7 +1460,6 @@ static void lr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
 	case LR_EVT_RUN:
 		if (lr_peek(conn)) {
 			lr_act_run(conn);
-			conn->llcp.local.state = LR_STATE_ACTIVE;
 		}
 		break;
 	case LR_EVT_COMPLETE:
@@ -2464,7 +2463,6 @@ static void rr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
 	case RR_EVT_RUN:
 		if (rr_peek(conn)) {
 			rr_act_run(conn);
-			conn->llcp.remote.state = RR_STATE_ACTIVE;
 		}
 		break;
 	case RR_EVT_COMPLETE:
