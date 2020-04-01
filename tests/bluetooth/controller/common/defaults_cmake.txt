@@ -29,6 +29,7 @@ FILE(GLOB ll_sw_sources
 
 FILE(GLOB mock_sources
         $ENV{ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ll.c
+        $ENV{ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ll_assert.c
 )
 
 FILE(GLOB common_sources

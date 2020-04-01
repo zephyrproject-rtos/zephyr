@@ -33,8 +33,50 @@
 
 
 #include "helper_pdu.h"
+#include "helper_features.h"
 
 
+void helper_pdu_encode_feature_req(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_feature_req *feature_req = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, feature_req) +
+		sizeof(struct pdu_data_llctrl_feature_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_REQ;
+	for (int counter = 0; counter < 8; counter++) {
+		u8_t expected_value = feature_req->features[counter];
+		pdu->llctrl.feature_req.features[counter] = expected_value;
+	}
+}
+void helper_pdu_encode_slave_feature_req(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_feature_req *feature_req = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, feature_req) +
+		sizeof(struct pdu_data_llctrl_feature_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
+
+	for (int counter = 0 ; counter < 8; counter++)	{
+		u8_t expected_value = feature_req->features[counter];
+		pdu->llctrl.feature_req.features[counter] = expected_value;
+	}
+}
+
+void helper_pdu_encode_feature_rsp(struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_feature_rsp *feature_rsp = param;
+
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, feature_rsp) +
+		sizeof(struct pdu_data_llctrl_feature_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
+	for (int counter = 0; counter < 8; counter++) {
+		u8_t expected_value = feature_rsp->features[counter];
+		pdu->llctrl.feature_req.features[counter] = expected_value;
+	}
+}
 
 
 void helper_pdu_encode_version_ind(struct pdu_data *pdu, void *param)
@@ -126,7 +168,6 @@ void helper_pdu_encode_unknown_rsp(struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_unknown_rsp *p = param;
 
-	printf("Encoding unknown response %d\n", p->type);
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, unknown_rsp) + sizeof(struct pdu_data_llctrl_unknown_rsp);
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP;
@@ -145,6 +186,58 @@ void helper_pdu_verify_version_ind(const char *file, u32_t line, struct pdu_data
 }
 
 
+void helper_pdu_verify_feature_req(const char *file, u32_t line,
+				   struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_feature_req *feature_req = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_FEATURE_REQ,
+		      "Wrong opcode.\nCalled at %s:%d\n", file, line);
+
+	for (int counter = 0; counter < 8; counter++) {
+		u8_t expected_value = feature_req->features[counter];
+		zassert_equal(pdu->llctrl.feature_req.features[counter],
+			      expected_value,
+			      "Wrong feature exchange data.\nAt %s:%d\n",
+			      file, line);
+	}
+}
+
+void helper_pdu_verify_slave_feature_req(const char *file, u32_t line,
+					 struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_feature_req *feature_req = param;
+
+		zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ, NULL);
+
+	for (int counter = 0; counter < 8; counter++) {
+		u8_t expected_value = feature_req->features[counter];
+		zassert_equal(pdu->llctrl.feature_req.features[counter],
+			      expected_value,
+			      "Wrong feature data\nCalled at %s:%d\n",
+			      file, line);
+	}
+}
+void helper_pdu_verify_feature_rsp(const char *file, u32_t line,
+				   struct pdu_data *pdu, void *param)
+{
+	struct pdu_data_llctrl_feature_rsp *feature_rsp = param;
+
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_FEATURE_RSP,
+		      "Response: %d Expected: %d\n",
+		      pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_FEATURE_RSP);
+
+	for (int counter = 0; counter < 8; counter++) {
+		u8_t expected_value = feature_rsp->features[counter];
+		zassert_equal(pdu->llctrl.feature_rsp.features[counter],
+			      expected_value,
+			      "Wrong feature data\nCalled at %s:%d\n",
+			      file, line);
+	}
+}
 
 void helper_pdu_verify_enc_req(const char *file, u32_t line, struct pdu_data *pdu, void *param)
 {
