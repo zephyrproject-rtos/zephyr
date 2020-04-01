@@ -11,6 +11,24 @@ config MODEM_GSM_PPP
 
 if MODEM_GSM_PPP
 
+choice
+	prompt "Modem type"
+	default MODEM_GSM_GENERIC
+	help
+	  Type/manufacturer of the GSM modem
+
+config MODEM_GSM_GENERIC
+	bool "Generic GSM modem"
+	help
+	  The modem does not need any special handling etc.
+
+config MODEM_GSM_SIMCOM
+	bool "SIMCOM modem"
+	help
+	  Use this if you have SIMCOM based modem like SIM800 etc.
+
+endchoice
+
 config MODEM_GSM_UART_NAME
 	string "UART device name the modem is connected to"
 
