@@ -12,19 +12,6 @@ config UART_2
 	default y
 	depends on UART_CONSOLE
 
-# Disable ports D and F to allow kernel test cases common and
-# contex to run on nucleo_f030r8.
-# Test cases fail due to 'SRAM' region overflow.
-if GPIO
-
-config GPIO_STM32_PORTD
-	default n
-
-config GPIO_STM32_PORTF
-	default n
-
-endif # GPIO
-
 if I2C
 
 config I2C_1

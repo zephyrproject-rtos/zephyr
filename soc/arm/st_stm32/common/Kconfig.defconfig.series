@@ -25,15 +25,6 @@ if GPIO
 config GPIO_STM32
 	default y
 
-config GPIO_STM32_PORTA
-	default y
-
-config GPIO_STM32_PORTB
-	default y
-
-config GPIO_STM32_PORTC
-	default y
-
 endif # GPIO
 
 config PINMUX_STM32

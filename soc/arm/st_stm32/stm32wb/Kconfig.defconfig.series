@@ -10,19 +10,6 @@ source "soc/arm/st_stm32/stm32wb/Kconfig.defconfig.stm32wb*"
 config SOC_SERIES
 	default "stm32wb"
 
-if GPIO_STM32
-
-config GPIO_STM32_PORTD
-	default y
-
-config GPIO_STM32_PORTE
-	default y
-
-config GPIO_STM32_PORTH
-	default y
-
-endif # GPIO_STM32
-
 config I2C_STM32_V2
 	default y
 	depends on I2C_STM32

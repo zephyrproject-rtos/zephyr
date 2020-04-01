@@ -13,13 +13,6 @@ source "soc/arm/st_stm32/stm32l4/Kconfig.defconfig.stm32l4*"
 config SOC_SERIES
 	default "stm32l4"
 
-
-# GPIO ports A, B and C are set in ../common/Kconfig.defconfig.series
-
-config GPIO_STM32_PORTH
-	default y
-	depends on GPIO_STM32
-
 config I2C_STM32_V2
 	default y
 	depends on I2C_STM32

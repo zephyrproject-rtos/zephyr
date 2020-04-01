@@ -8,16 +8,6 @@ if SOC_STM32F756XX
 config SOC
 	default "stm32f756xx"
 
-if GPIO_STM32
-
-config GPIO_STM32_PORTJ
-	default y
-
-config GPIO_STM32_PORTK
-	default y
-
-endif # GPIO_STM32
-
 config NUM_IRQS
 	default 98
 
