@@ -848,6 +848,25 @@ static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
 #endif /* NET_TC_RX_COUNT > 1 */
 }
 
+static void print_net_pm_stats(const struct shell *shell, struct net_if *iface)
+{
+#if defined(CONFIG_NET_STATISTICS_POWER_MANAGEMENT)
+	PR("PM suspend stats:\n");
+	PR("\tLast time     : %u ms\n",
+	   GET_STAT(iface, pm.last_suspend_time));
+	PR("\tAverage time  : %u ms\n",
+	   (u32_t)(GET_STAT(iface, pm.overall_suspend_time) /
+		   GET_STAT(iface, pm.suspend_count)));
+	PR("\tTotal time    : %llu ms\n",
+	   GET_STAT(iface, pm.overall_suspend_time));
+	PR("\tHow many times: %u\n",
+	   GET_STAT(iface, pm.suspend_count));
+#else
+	ARG_UNUSED(shell);
+	ARG_UNUSED(iface);
+#endif
+}
+
 static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
@@ -983,6 +1002,8 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 		}
 	}
 #endif /* CONFIG_NET_STATISTICS_PPP && CONFIG_NET_STATISTICS_USER_API */
+
+	print_net_pm_stats(shell, iface);
 }
 #endif /* CONFIG_NET_STATISTICS */
 
