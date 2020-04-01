@@ -12,7 +12,4 @@ config SOC
 config NUM_IRQS
 	default 32
 
-if GPIO_STM32
-
-endif # GPIO_STM32
 endif # SOC_STM32G071XX

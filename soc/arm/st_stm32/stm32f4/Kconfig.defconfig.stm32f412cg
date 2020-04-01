@@ -11,19 +11,6 @@ config SOC
 config NUM_IRQS
 	default 97
 
-if GPIO_STM32
-
-config GPIO_STM32_PORTD
-	default n
-
-config GPIO_STM32_PORTE
-	default n
-
-config GPIO_STM32_PORTH
-	default n
-
-endif # GPIO_STM32
-
 config ENTROPY_STM32_RNG
 	default y
 	depends on ENTROPY_GENERATOR

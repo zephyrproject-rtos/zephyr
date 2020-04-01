@@ -41,6 +41,11 @@
 	};
 };
 
+/* Due to limited available memory, don't enable gpiod and gpiof */
+/* (Test cases fail due to 'SRAM' region overflow) */
+&gpiod {status = "disabled";};
+&gpiof {status = "disabled";};
+
 &usart1 {
 	current-speed = <115200>;
 	status = "okay";

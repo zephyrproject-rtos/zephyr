@@ -12,39 +12,6 @@ menuconfig GPIO_STM32
 
 if GPIO_STM32
 
-config GPIO_STM32_PORTA
-	bool "Enable GPIO port A support"
-
-config GPIO_STM32_PORTB
-	bool "Enable GPIO port B support"
-
-config GPIO_STM32_PORTC
-	bool "Enable GPIO port C support"
-
-config GPIO_STM32_PORTD
-	bool "Enable GPIO port D support"
-
-config GPIO_STM32_PORTE
-	bool "Enable GPIO port E support"
-
-config GPIO_STM32_PORTF
-	bool "Enable GPIO port F support"
-
-config GPIO_STM32_PORTG
-	bool "Enable GPIO port G support"
-
-config GPIO_STM32_PORTH
-	bool "Enable GPIO port H support"
-
-config GPIO_STM32_PORTI
-	bool "Enable GPIO port I support"
-
-config GPIO_STM32_PORTJ
-	bool "Enable GPIO port J support"
-
-config GPIO_STM32_PORTK
-	bool "Enable GPIO port K support"
-
 choice GPIO_STM32_SWJ
 	prompt "Serial wire JTAG configuration"
 	depends on SOC_SERIES_STM32F1X

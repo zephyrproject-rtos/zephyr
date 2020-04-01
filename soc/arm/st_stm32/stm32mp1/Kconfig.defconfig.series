@@ -10,34 +10,6 @@ source "soc/arm/st_stm32/stm32mp1/Kconfig.defconfig.stm32mp15_m4"
 config SOC_SERIES
 	default "stm32mp1"
 
-if GPIO_STM32
-
-config GPIO_STM32_PORTD
-	default y
-
-config GPIO_STM32_PORTE
-	default y
-
-config GPIO_STM32_PORTF
-	default y
-
-config GPIO_STM32_PORTG
-	default y
-
-config GPIO_STM32_PORTH
-	default y
-
-config GPIO_STM32_PORTI
-	default y
-
-config GPIO_STM32_PORTJ
-	default y
-
-config GPIO_STM32_PORTK
-	default y
-
-endif # GPIO_STM32
-
 config IPM_STM32_IPCC
 	default y
 	depends on IPM
