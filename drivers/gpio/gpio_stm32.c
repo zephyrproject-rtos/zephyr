@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_gpio
+
 #include <errno.h>
 
 #include <kernel.h>
@@ -569,7 +571,7 @@ static int gpio_stm32_init(struct device *device)
 #define GPIO_DEVICE_INIT(__name, __suffix, __base_addr, __port, __cenr, __bus) \
 	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {   \
 		.common = {						       \
-			 .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),		       \
+			 .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U), \
 		},							       \
 		.base = (u32_t *)__base_addr,				       \
 		.port = __port,						       \
@@ -585,13 +587,13 @@ static int gpio_stm32_init(struct device *device)
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
 			    &gpio_stm32_driver)
 
-#define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)		      \
-	GPIO_DEVICE_INIT(DT_GPIO_STM32_GPIO##__SUFFIX##_LABEL,	      \
-			 __suffix,				      \
-			 DT_GPIO_STM32_GPIO##__SUFFIX##_BASE_ADDRESS, \
-			 STM32_PORT##__SUFFIX,			      \
-			 DT_GPIO_STM32_GPIO##__SUFFIX##_CLOCK_BITS,   \
-			 DT_GPIO_STM32_GPIO##__SUFFIX##_CLOCK_BUS)
+#define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\
+	GPIO_DEVICE_INIT(DT_LABEL(DT_NODELABEL(gpio##__suffix)),	\
+			 __suffix,					\
+			 DT_REG_ADDR(DT_NODELABEL(gpio##__suffix)),	\
+			 STM32_PORT##__SUFFIX,				\
+			 DT_CLOCKS_CELL(DT_NODELABEL(gpio##__suffix), bits),\
+			 DT_CLOCKS_CELL(DT_NODELABEL(gpio##__suffix), bus))
 
 #ifdef CONFIG_GPIO_STM32_PORTA
 GPIO_DEVICE_INIT_STM32(a, A);
