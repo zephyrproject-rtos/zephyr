@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#define DT_DRV_COMPAT nxp_imx_epit
 
 #include <drivers/counter.h>
 #include <device.h>
@@ -151,36 +152,30 @@ static const struct counter_driver_api imx_epit_driver_api = {
 
 #define COUNTER_IMX_EPIT_DEVICE(idx)					       \
 static int imx_epit_config_func_##idx(struct device *dev);		       \
-static const struct imx_epit_config imx_epit_##idx##z_config = {		       \
+static const struct imx_epit_config imx_epit_##idx##z_config = {	       \
 	.info = {							       \
 			.max_top_value = COUNTER_MAX_RELOAD,		       \
 			.freq = 1U,					       \
 			.flags = 0,					       \
 			.channels = 0U,					       \
 		},							       \
-	.base = (EPIT_Type *)DT_COUNTER_IMX_EPIT_##idx##_BASE_ADDRESS,	       \
-	.prescaler = DT_COUNTER_IMX_EPIT_##idx##_PRESCALER,		       \
+	.base = (EPIT_Type *)DT_INST_REG_ADDR(idx),			       \
+	.prescaler = DT_INST_PROP(idx, prescaler),			       \
 };									       \
 static struct imx_epit_data imx_epit_##idx##_data;			       \
-DEVICE_AND_API_INIT(epit_##idx, DT_COUNTER_IMX_EPIT_##idx##_LABEL,	       \
+DEVICE_AND_API_INIT(epit_##idx, DT_INST_LABEL(idx),			       \
 		    &imx_epit_config_func_##idx,			       \
-		    &imx_epit_##idx##_data, &imx_epit_##idx##z_config.info,     \
+		    &imx_epit_##idx##_data, &imx_epit_##idx##z_config.info,    \
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
 		    &imx_epit_driver_api);				       \
 static int imx_epit_config_func_##idx(struct device *dev)		       \
 {									       \
 	imx_epit_init(dev);						       \
-	IRQ_CONNECT(DT_COUNTER_IMX_EPIT_##idx##_IRQ,			       \
-		    DT_COUNTER_IMX_EPIT_##idx##_IRQ_PRI,		       \
+	IRQ_CONNECT(DT_INST_IRQN(idx),					       \
+		    DT_INST_IRQ(idx, priority),				       \
 		    imx_epit_isr, DEVICE_GET(epit_##idx), 0);		       \
-	irq_enable(DT_COUNTER_IMX_EPIT_##idx##_IRQ);			       \
+	irq_enable(DT_INST_IRQN(idx));					       \
 	return 0;							       \
 }
 
-#ifdef CONFIG_COUNTER_IMX_EPIT_1
-COUNTER_IMX_EPIT_DEVICE(1);
-#endif /* CONFIG_COUNTER_IMX_EPIT_1 */
-
-#ifdef CONFIG_COUNTER_IMX_EPIT_2
-COUNTER_IMX_EPIT_DEVICE(2);
-#endif /* CONFIG_COUNTER_IMX_EPIT_2 */
+DT_INST_FOREACH(COUNTER_IMX_EPIT_DEVICE)
