@@ -137,7 +137,7 @@ static int wdt_gecko_install_timeout(struct device *dev,
 				     const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_gecko_data *data = DEV_DATA(dev);
-	WDOG_Init_TypeDef init_defaults = WDOG_INIT_DEFAULT;
+	data->wdog_config = (WDOG_Init_TypeDef)WDOG_INIT_DEFAULT;
 	u32_t installed_timeout;
 
 	if (data->timeout_installed) {
@@ -152,7 +152,9 @@ static int wdt_gecko_install_timeout(struct device *dev,
 		return -EINVAL;
 	}
 
-	data->wdog_config = init_defaults;
+#if defined(_WDOG_CTRL_CLKSEL_MASK)
+	data->wdog_config.clkSel = wdogClkSelULFRCO;
+#endif
 
 	data->wdog_config.perSel = (WDOG_PeriodSel_TypeDef)
 		wdt_gecko_get_persel_from_timeout(cfg->window.max);
