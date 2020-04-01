@@ -58,6 +58,8 @@
 #define FLASH_OP_DONE    (0) /* 0 for compliance with the driver API. */
 #define FLASH_OP_ONGOING (-1)
 
+#define DT_DRV_COMPAT soc_nv_flash
+
 struct flash_context {
 	u32_t data_addr;  /* Address of data to write. */
 	u32_t flash_addr; /* Address of flash to write or erase. */
@@ -295,7 +297,7 @@ static int nrf_flash_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(nrf_flash, DT_FLASH_DEV_NAME, nrf_flash_init,
+DEVICE_AND_API_INIT(nrf_flash, DT_INST_LABEL(0), nrf_flash_init,
 		NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&flash_nrf_api);
 
