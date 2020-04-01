@@ -1,16 +1,13 @@
 /*
- * Copyright (c) 2019 Gerson Fernando Budke
  * Copyright (c) 2017 Piotr Mienkowski
  * Copyright (c) 2017 Justin Watson
+ * Copyright (c) 2019-2020 Gerson Fernando Budke <nandojve@gmail.com>
  * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 / {
-	model = "Atmel SAM V71 Xplained Ultra board";
-	compatible = "atmel,sam_v71_xult", "atmel,samv71q21", "atmel,samv71";
-
 	aliases {
 		i2c-0 = &twihs0;
 		i2c-1 = &twihs1;
