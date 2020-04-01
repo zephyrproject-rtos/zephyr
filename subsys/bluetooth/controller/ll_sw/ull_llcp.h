@@ -32,6 +32,16 @@ struct ull_cp_conn {
 			u8_t valid;
 			struct pdu_data_llctrl_version_ind cached;
 		} vex;
+
+		/*
+		 * As of today only 36 feature bits are in use,
+		 * so some optimisation is possible
+		 */
+		struct {
+			u8_t sent;
+			u8_t valid;
+			u64_t features;
+		} fex;
 	} llcp;
 
 	struct mocked_lll_conn {
@@ -92,6 +102,11 @@ void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx);
  * @brief Initiate a Version Exchange Procedure.
  */
 u8_t ull_cp_version_exchange(struct ull_cp_conn *conn);
+
+/**
+ * @brief Initiate a Featue Exchange Procedure.
+ */
+u8_t ull_cp_feature_exchange(struct ull_cp_conn *conn);
 
 /**
  * @brief Initiate a Encryption Start Procedure.
