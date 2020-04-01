@@ -94,11 +94,11 @@ void SX1276Reset(void)
 	gpio_pin_configure(dev_data.reset, GPIO_RESET_PIN,
 			   GPIO_OUTPUT_ACTIVE | GPIO_RESET_FLAGS);
 
-	k_sleep(1);
+	k_sleep(K_MSEC(1));
 
 	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 0);
 
-	k_sleep(6);
+	k_sleep(K_MSEC(6));
 }
 
 void BoardCriticalSectionBegin(uint32_t *mask)
@@ -489,9 +489,9 @@ static int sx1276_lora_init(struct device *dev)
 	ret = gpio_pin_configure(dev_data.reset, GPIO_RESET_PIN,
 				 GPIO_OUTPUT_ACTIVE | GPIO_RESET_FLAGS);
 
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 0);
-	k_sleep(100);
+	k_sleep(K_MSEC(100));
 
 	ret = sx1276_read(SX1276_REG_VERSION, &regval, 1);
 	if (ret < 0) {

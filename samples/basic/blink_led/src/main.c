@@ -89,6 +89,6 @@ void main(void)
 			}
 		}
 
-		k_sleep(K_MSEC(MSEC_PER_SEC * 4U));
+		k_sleep(K_SECONDS(4U));
 	}
 }

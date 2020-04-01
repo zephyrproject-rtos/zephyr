@@ -74,6 +74,6 @@ void main(void)
 			}
 		}
 
-		k_sleep(K_MSEC(MSEC_PER_SEC));
+		k_sleep(K_SECONDS(1));
 	}
 }

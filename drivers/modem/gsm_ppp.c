@@ -351,7 +351,7 @@ static int gsm_init(struct device *device)
 
 	k_delayed_work_init(&gsm->gsm_configure_work, gsm_configure);
 
-	(void)k_delayed_work_submit(&gsm->gsm_configure_work, 0);
+	(void)k_delayed_work_submit(&gsm->gsm_configure_work, K_NO_WAIT);
 
 	LOG_DBG("iface->read %p iface->write %p",
 		gsm->context.iface.read, gsm->context.iface.write);

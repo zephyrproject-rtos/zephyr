@@ -87,7 +87,7 @@ int peci_get_tjmax(u8_t *tjmax)
 
 		peci_resp = packet.rx_buffer.buf[0];
 		rx_fcs = packet.rx_buffer.buf[PECI_RD_PKG_LEN_DWORD];
-		k_sleep(1);
+		k_sleep(K_MSEC(1));
 		printk("\npeci_resp %x\n", peci_resp);
 		retries--;
 	} while ((peci_resp != PECI_RW_PKG_CFG_RSP_PASS) && (retries > 0));
@@ -167,7 +167,7 @@ void get_max_temp(void)
 static void monitor_temperature_func(void *dummy1, void *dummy2, void *dummy3)
 {
 	while (true) {
-		k_sleep(1000);
+		k_sleep(K_MSEC(1000));
 		if (peci_initialized) {
 			read_temp();
 		}

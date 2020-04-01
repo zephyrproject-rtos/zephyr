@@ -44,7 +44,7 @@ static int mdio_bus_wait(ETH_TypeDef *eth)
 			return -ETIMEDOUT;
 		}
 
-		k_sleep(10);
+		k_sleep(K_MSEC(10));
 	}
 
 	return 0;
@@ -127,7 +127,7 @@ static int phy_soft_reset(const struct phy_gecko_dev *phy)
 			return -ETIMEDOUT;
 		}
 
-		k_sleep(50);
+		k_sleep(K_MSEC(50));
 
 		retval = phy_read(phy, MII_BMCR, &phy_reg);
 		if (retval < 0) {
@@ -228,7 +228,7 @@ int phy_gecko_auto_negotiate(const struct phy_gecko_dev *phy,
 			goto auto_negotiate_exit;
 		}
 
-		k_sleep(100);
+		k_sleep(K_MSEC(100));
 
 		retval = phy_read(phy, MII_BMSR, &val);
 		if (retval < 0) {
