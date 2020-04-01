@@ -680,6 +680,13 @@ use_random_mac:
 	if (!IS_ENABLED(CONFIG_NET_TEST)) {
 		uart_pipe_register(ppp->buf, sizeof(ppp->buf), ppp_recv_cb);
 	}
+
+	/* If we have a GSM modem with PPP support, then do not start the
+	 * interface automatically but only after the modem is ready.
+	 */
+	if (IS_ENABLED(CONFIG_MODEM_GSM_PPP)) {
+		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	}
 }
 
 #if defined(CONFIG_NET_STATISTICS_PPP)
