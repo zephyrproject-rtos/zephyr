@@ -100,6 +100,10 @@ static void lp_comm_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 
 	/* Encode LL Control PDU */
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		pdu_encode_feature_req(conn, pdu);
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
+		break;
 	case PROC_VERSION_EXCHANGE:
 		pdu_encode_version_ind(pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
@@ -115,6 +119,37 @@ static void lp_comm_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 	tx_enqueue(conn, tx);
 }
 
+static void lp_comm_ntf_feature_exchange(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	switch (ctx->response_opcode) {
+	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
+		ntf_encode_feature_rsp(conn, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
+	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
+		ntf_encode_feature_req(conn, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
+		ntf_encode_unknown_rsp(ctx, pdu);
+		break;
+	default:
+		/* EGON: TODO: define behaviour for unexpected PDU */
+		LL_ASSERT(0);
+	}
+}
+
+static void lp_comm_ntf_version_ind(struct ull_cp_conn *conn,  struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	switch (ctx->response_opcode) {
+	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
+		ntf_encode_version_ind(conn, pdu);
+		break;
+	default:
+		/* EGON: TODO: define behaviour for unexpected PDU */
+		LL_ASSERT(0);
+	}
+}
+
 static void lp_comm_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 {
 	struct node_rx_pdu *ntf;
@@ -126,14 +161,16 @@ static void lp_comm_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 
 	ntf->hdr.type = NODE_RX_TYPE_DC_PDU;
 	pdu = (struct pdu_data *) ntf->pdu;
-
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		lp_comm_ntf_feature_exchange(conn, ctx, pdu);
+		break;
 	case PROC_VERSION_EXCHANGE:
-		ntf_encode_version_ind(conn, pdu);
+		lp_comm_ntf_version_ind(conn, ctx, pdu);
 		break;
 	default:
-		/* Unknown procedure */
 		LL_ASSERT(0);
+		break;
 	}
 
 	/* Enqueue notification towards LL */
@@ -143,6 +180,15 @@ static void lp_comm_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 static void lp_comm_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		if (!ntf_alloc_is_available()) {
+			ctx->state = LP_COMMON_STATE_WAIT_NTF;
+		} else {
+			lp_comm_ntf(conn, ctx);
+			lr_complete(conn);
+			ctx->state = LP_COMMON_STATE_IDLE;
+		}
+		break;
 	case PROC_VERSION_EXCHANGE:
 		if (!ntf_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_NTF;
@@ -161,6 +207,19 @@ static void lp_comm_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 static void lp_comm_send_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		if (!conn->llcp.fex.sent) {
+			if (!tx_alloc_is_available() || ctx->pause) {
+				ctx->state = LP_COMMON_STATE_WAIT_TX;
+			} else {
+				lp_comm_tx(conn, ctx);
+				conn->llcp.fex.sent = 1;
+				ctx->state = LP_COMMON_STATE_WAIT_RX;
+			}
+		} else {
+			lp_comm_complete(conn, ctx, evt, param);
+		}
+		break;
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
 		if (!conn->llcp.vex.sent) {
@@ -202,13 +261,26 @@ static void lp_comm_st_wait_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 	/* TODO */
 }
 
-static void lp_comm_rx_decode(struct ull_cp_conn *conn, struct pdu_data *pdu)
+static void lp_comm_rx_decode(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
+	ctx->response_opcode = pdu->llctrl.opcode;
+
 	switch (pdu->llctrl.opcode) {
+	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
+		pdu_decode_feature_rsp(conn, pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
+	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
+		pdu_decode_feature_req(conn, pdu);
+		break;
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
 		pdu_decode_version_ind(conn, pdu);
 		break;
+	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
+		pdu_decode_unknown_rsp(ctx, pdu);
+		break;
 	default:
+
 		/* Unknown opcode */
 		LL_ASSERT(0);
 	}
@@ -218,7 +290,7 @@ static void lp_comm_st_wait_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 {
 	switch (evt) {
 	case LP_COMMON_EVT_RESPONSE:
-		lp_comm_rx_decode(conn, (struct pdu_data *) param);
+		lp_comm_rx_decode(conn, ctx, (struct pdu_data *) param);
 		lp_comm_complete(conn, ctx, evt, param);
 	default:
 		/* Ignore other evts */
@@ -271,9 +343,14 @@ void ull_cp_priv_lp_comm_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, voi
  * LLCP Remote Procedure Common FSM
  */
 
-static void rp_comm_rx_decode(struct ull_cp_conn *conn, struct pdu_data *pdu)
+static void rp_comm_rx_decode(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
+	ctx->response_opcode = pdu->llctrl.opcode;
 	switch (pdu->llctrl.opcode) {
+	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
+	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
+		pdu_decode_feature_req(conn, pdu);
+		break;
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
 		pdu_decode_version_ind(conn, pdu);
 		break;
@@ -296,6 +373,10 @@ static void rp_comm_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 
 	/* Encode LL Control PDU */
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		pdu_encode_feature_rsp(conn, pdu);
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
+		break;
 	case PROC_VERSION_EXCHANGE:
 		pdu_encode_version_ind(pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
@@ -326,6 +407,17 @@ static void rp_comm_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t
 static void rp_comm_send_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	switch (ctx->proc) {
+	case PROC_FEATURE_EXCHANGE:
+		/* Always respond on remote feature exchange */
+		if (!tx_alloc_is_available() || ctx->pause) {
+			ctx->state = RP_COMMON_STATE_WAIT_TX;
+		} else {
+			rp_comm_tx(conn, ctx);
+			conn->llcp.fex.sent = 1;
+			rr_complete(conn);
+			ctx->state = RP_COMMON_STATE_IDLE;
+		}
+		break;
 	case PROC_VERSION_EXCHANGE:
 		/* The Link Layer shall only queue for transmission a maximum of one LL_VERSION_IND PDU during a connection. */
 		if (!conn->llcp.vex.sent) {
@@ -356,7 +448,7 @@ static void rp_comm_st_wait_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u
 {
 	switch (evt) {
 	case RP_COMMON_EVT_REQUEST:
-		rp_comm_rx_decode(conn, (struct pdu_data *) param);
+		rp_comm_rx_decode(conn, ctx, (struct pdu_data *) param);
 		if (ctx->pause) {
 			ctx->state = RP_COMMON_STATE_WAIT_TX;
 		} else {
