@@ -7,6 +7,7 @@ config ENTROPY_RV32M1_TRNG
 	bool "RV32M1 TRNG driver"
 	depends on SOC_OPENISA_RV32M1_RISCV32
 	select ENTROPY_HAS_DRIVER
+	select HAS_DTS_ENTROPY
 	help
 	  This option enables the true random number generator (TRNG)
 	  driver based on the RV32M1 TRNG driver.
