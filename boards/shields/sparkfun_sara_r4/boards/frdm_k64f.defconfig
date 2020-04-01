@@ -1,6 +1,0 @@
-# Copyright (c) 2019 Linaro Limited
-# SPDX-License-Identifier: Apache-2.0
-
-config UART_MCUX_3
-	default y
-	depends on BOARD_FRDM_K64F
