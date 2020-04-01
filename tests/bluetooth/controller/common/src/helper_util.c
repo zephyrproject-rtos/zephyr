@@ -47,6 +47,9 @@ static sys_slist_t lt_tx_q;
 
 helper_pdu_encode_func_t * const helper_pdu_encode[] = {
 	helper_pdu_encode_version_ind,
+	helper_pdu_encode_feature_req,
+	helper_pdu_encode_slave_feature_req,
+	helper_pdu_encode_feature_rsp,
 	NULL,
 	helper_pdu_encode_reject_ext_ind,
 	helper_pdu_encode_enc_req,
@@ -61,6 +64,9 @@ helper_pdu_encode_func_t * const helper_pdu_encode[] = {
 
 helper_pdu_verify_func_t *const helper_pdu_verify[] = {
 	helper_pdu_verify_version_ind,
+	helper_pdu_verify_feature_req,
+	helper_pdu_verify_slave_feature_req,
+	helper_pdu_verify_feature_rsp,
 	helper_pdu_verify_reject_ind,
 	helper_pdu_verify_reject_ext_ind,
 	helper_pdu_verify_enc_req,
@@ -95,9 +101,9 @@ void test_print_conn(struct ull_cp_conn *conn)
 	printf("--------------------->\n");
 
 }
-
 void test_setup(struct ull_cp_conn *conn)
 {
+	memset(conn, 0, sizeof(struct ull_cp_conn));
 		/* Initialize the upper test rx queue */
 	sys_slist_init(&ut_rx_q);
 
