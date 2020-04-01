@@ -63,8 +63,8 @@ Next, you'll install some host dependencies using your package manager.
 
             sudo apt install --no-install-recommends git cmake ninja-build gperf \
               ccache dfu-util device-tree-compiler wget \
-              python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
-              make gcc gcc-multilib g++-multilib libsdl2-dev
+              python3-dev python3-pip python3-setuptools python3-tk python3-wheel python3-venv \
+              xz-utils file make gcc gcc-multilib g++-multilib libsdl2-dev
 
       #. Verify the version of cmake installed on your system using::
 
@@ -167,20 +167,36 @@ Get Zephyr and install Python dependencies
 
 Next, clone Zephyr and its :ref:`modules <modules>` into a new :ref:`west
 <west>` workspace named :file:`zephyrproject`. You'll also install Zephyr's
-additional Python dependencies.
+additional Python dependencies. West and the rest of the Python dependencies
+will be installed in a Python `virtual environment
+<https://docs.python.org/3/tutorial/venv.html>`_ which you'll create inside the
+workspace.
 
 .. tabs::
 
    .. group-tab:: Ubuntu
 
-      #. Install west, and make sure :file:`~/.local/bin` is on your
-         :envvar:`PATH` :ref:`environment variable <env_vars>`:
+      #. Create and switch to a new virtual environment:
 
          .. code-block:: bash
 
-            pip3 install --user -U west
-            echo 'export PATH=~/.local/bin:"$PATH"' >> ~/.bashrc
-            source ~/.bashrc
+            python3 -m venv --prompt zephyrproject ~/zephyrproject/venv
+            source ~/zephyrproject/venv/bin/activate
+
+         When you've switched into the virtual environment, you'll see
+         ``(zephyrproject)`` at the beginning of your shell prompt:
+
+         .. code-block:: none
+
+            (zephyrproject) [...]$
+
+      #. Set up your virtual environment for installing packages in the wheel
+         format, and install west into the virtual environment:
+
+         .. code-block:: bash
+
+            pip install wheel
+            pip install west
 
       #. Get the Zephyr source code:
 
@@ -199,19 +215,33 @@ additional Python dependencies.
             west zephyr-export
 
       #. Zephyr's ``scripts/requirements.txt`` file declares additional Python
-         dependencies. Install them with ``pip3``.
+         dependencies. Install them into the virtual environment with ``pip``.
 
          .. code-block:: bash
 
-            pip3 install --user -r ~/zephyrproject/zephyr/scripts/requirements.txt
+            pip install -r ~/zephyrproject/zephyr/scripts/requirements.txt
 
    .. group-tab:: macOS
 
-      #. Install west:
+      #. Create and switch to a new virtual environment:
 
          .. code-block:: bash
 
-            pip3 install west
+            python3 -m venv --prompt zephyrproject ~/zephyrproject/venv
+            source ~/zephyrproject/venv/bin/activate
+
+         When you've switched into the virtual environment, you'll see
+         ``(zephyrproject)`` at the beginning of your shell prompt:
+
+         .. code-block:: none
+
+            (zephyrproject) [...]$
+
+      #. Install west into the virtual environment with ``pip``:
+
+         .. code-block:: bash
+
+            pip install west
 
       #. Get the Zephyr source code:
 
@@ -230,27 +260,40 @@ additional Python dependencies.
             west zephyr-export
 
       #. Zephyr's ``scripts/requirements.txt`` file declares additional Python
-         dependencies. Install them with ``pip3``.
+         dependencies. Install them with ``pip`` into the virtual environment.
 
          .. code-block:: bash
 
-            pip3 install -r ~/zephyrproject/zephyr/scripts/requirements.txt
+            pip install -r ~/zephyrproject/zephyr/scripts/requirements.txt
 
    .. group-tab:: Windows
 
-      #. Install west:
+      #. Create and switch to a new virtual environment:
+
+         .. code-block:: console
+
+            python3 -m venv --prompt zephyrproject %HOMEPATH%\zephyrproject\venv
+            %HOMEPATH%\zephyrproject\venv\Scripts\activate.bat
+
+         When you've switched into the virtual environment, you'll see
+         ``(zephyrproject)`` at the beginning of your ``cmd.exe`` prompt:
+
+         .. code-block:: none
+
+            (zephyrproject) [...]>
+
+      #. Install west into the virtual environment:
 
          .. code-block:: bash
 
-            pip3 install west
+            pip install west
 
       #. Get the Zephyr source code:
 
          .. code-block:: bat
 
-            cd %HOMEPATH%
-            west init zephyrproject
-            cd zephyrproject
+            west init %HOMEPATH%\zephyrproject
+            cd %HOMEPATH%\zephyrproject
             west update
 
       #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
@@ -266,7 +309,7 @@ additional Python dependencies.
 
          .. code-block:: bat
 
-            pip3 install -r %HOMEPATH%\zephyrproject\zephyr\scripts\requirements.txt
+            pip install -r %HOMEPATH%\zephyrproject\zephyr\scripts\requirements.txt
 
 .. rst-class:: numbered-step
 
