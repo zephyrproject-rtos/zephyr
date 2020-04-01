@@ -84,4 +84,11 @@
 		 */
 		current-speed = <0>;
 	};
+
+	rng {
+		status = "okay";
+		compatible = "zephyr,native-posix-rng";
+		label = "ENTROPY_0";
+	};
+
 };

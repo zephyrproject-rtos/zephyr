@@ -11,6 +11,8 @@
  * This entropy source should only be used for testing.
  */
 
+#define DT_DRV_COMPAT zephyr_native_posix_rng
+
 #include "device.h"
 #include <drivers/entropy.h>
 #include "init.h"
@@ -71,7 +73,7 @@ static const struct entropy_driver_api entropy_native_posix_api_funcs = {
 	.get_entropy_isr = entropy_native_posix_get_entropy_isr
 };
 
-DEVICE_AND_API_INIT(entropy_native_posix, CONFIG_ENTROPY_NAME,
+DEVICE_AND_API_INIT(entropy_native_posix, DT_INST_LABEL(0),
 		    entropy_native_posix_init, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_native_posix_api_funcs);
