@@ -174,7 +174,7 @@ otError otPlatUartEnable(void)
 	}
 
 	LOG_INF("Wait for host to settle");
-	k_sleep(MSEC_PER_SEC * 1);
+	k_sleep(K_SECONDS(1));
 
 	ret = uart_line_ctrl_get(ot_uart.dev,
 				 UART_LINE_CTRL_BAUD_RATE,
