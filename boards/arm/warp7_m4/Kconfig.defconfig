@@ -8,10 +8,6 @@ if BOARD_WARP7_M4
 config BOARD
 	default "warp7_m4"
 
-config GPIO_IMX_PORT_7
-	default y
-	depends on GPIO_IMX
-
 config I2C_4
 	default y
 	depends on I2C_IMX
