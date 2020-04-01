@@ -295,4 +295,6 @@ module = UART_CONSOLE
 module-str = UART console
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/console/Kconfig.gsm_mux"
+
 endif
