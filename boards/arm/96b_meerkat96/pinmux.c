@@ -11,7 +11,7 @@ static int meerakt96_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#ifdef CONFIG_GPIO_IMX_PORT_1
+#if DT_HAS_NODE(DT_NODELABEL(gpio1))
 	/* GPIO1_IO04 Mux Config */
 	IOMUXC_LPSR_SW_MUX_CTL_PAD_GPIO1_IO04 = 0;
 	IOMUXC_LPSR_SW_PAD_CTL_PAD_GPIO1_IO04 = 0;
@@ -24,9 +24,9 @@ static int meerakt96_pinmux_init(struct device *dev)
 	/* GPIO1_IO07 Mux Config */
 	IOMUXC_LPSR_SW_MUX_CTL_PAD_GPIO1_IO07 = 0;
 	IOMUXC_LPSR_SW_PAD_CTL_PAD_GPIO1_IO07 = 0;
-#endif /* CONFIG_GPIO_IMX_PORT_1 */
+#endif
 
-#ifdef CONFIG_UART_IMX_UART_1
+#if DT_HAS_NODE(DT_NODELABEL(uart1))
 	IOMUXC_SW_MUX_CTL_PAD_UART1_RX_DATA =
 		IOMUXC_SW_MUX_CTL_PAD_UART1_RX_DATA_MUX_MODE(0);
 	IOMUXC_SW_MUX_CTL_PAD_UART1_TX_DATA =
@@ -46,7 +46,7 @@ static int meerakt96_pinmux_init(struct device *dev)
 	/* Select TX_PAD for RX data (DTE mode...) */
 	IOMUXC_UART1_RX_DATA_SELECT_INPUT =
 		IOMUXC_UART1_RX_DATA_SELECT_INPUT_DAISY(1);
-#endif  /* CONFIG_UART_IMX_UART_1 */
+#endif
 
 	return 0;
 

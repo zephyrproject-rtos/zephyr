@@ -11,7 +11,7 @@ static int udoo_neo_full_m4_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#ifdef CONFIG_GPIO_IMX_PORT_4
+#if DT_HAS_NODE(DT_NODELABEL(gpio4))
 	/* GPIO4_IO06 pin mux configuration (red LED) */
 	IOMUXC_SW_MUX_CTL_PAD_NAND_DATA02 =
 				IOMUXC_SW_MUX_CTL_PAD_NAND_DATA02_MUX_MODE(5);
@@ -20,9 +20,9 @@ static int udoo_neo_full_m4_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_NAND_DATA02_PKE_MASK |
 				IOMUXC_SW_PAD_CTL_PAD_NAND_DATA02_SPEED(2) |
 				IOMUXC_SW_PAD_CTL_PAD_NAND_DATA02_DSE(6);
-#endif /* CONFIG_GPIO_IMX_PORT_4 */
+#endif
 
-#ifdef CONFIG_UART_IMX_UART_5
+#if DT_HAS_NODE(DT_NODELABEL(uart5))
 	/* UART5 pin mux configuration */
 	IOMUXC_SW_MUX_CTL_PAD_SD4_DATA4 =
 				IOMUXC_SW_MUX_CTL_PAD_SD4_DATA4_MUX_MODE(2);
@@ -46,7 +46,7 @@ static int udoo_neo_full_m4_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_SD4_DATA5_HYS_MASK;
 	IOMUXC_UART5_IPP_UART_RXD_MUX_SELECT_INPUT =
 			IOMUXC_UART5_IPP_UART_RXD_MUX_SELECT_INPUT_DAISY(0);
-#endif  /* CONFIG_UART_IMX_UART_5 */
+#endif
 
 	return 0;
 }
