@@ -463,6 +463,30 @@ static inline void net_stats_update_tc_rx_time(struct net_if *iface,
 #endif /* NET_PKT_RXTIME_STATS && NET_STATISTICS */
 #endif /* NET_TC_COUNT > 1 */
 
+#if defined(CONFIG_NET_STATISTICS_POWER_MANAGEMENT)	\
+	&& defined(CONFIG_NET_STATISTICS) && defined(CONFIG_NET_NATIVE)
+static inline void net_stats_add_suspend_start_time(struct net_if *iface,
+						    u32_t time)
+{
+	UPDATE_STAT(iface, stats.pm.start_time = time);
+}
+
+static inline void net_stats_add_suspend_end_time(struct net_if *iface,
+						  u32_t time)
+{
+	u32_t diff_time =
+		k_cyc_to_ms_floor32(time - GET_STAT(iface, pm.start_time));
+
+	UPDATE_STAT(iface, stats.pm.start_time = 0);
+	UPDATE_STAT(iface, stats.pm.last_suspend_time = diff_time);
+	UPDATE_STAT(iface, stats.pm.suspend_count++);
+	UPDATE_STAT(iface, stats.pm.overall_suspend_time += diff_time);
+}
+#else
+#define net_stats_add_suspend_start_time(iface, time)
+#define net_stats_add_suspend_end_time(iface, time)
+#endif
+
 #if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT) \
 	&& defined(CONFIG_NET_NATIVE)
 /* A simple periodic statistic printer, used only in net core */

@@ -111,4 +111,11 @@ config NET_STATISTICS_ETHERNET_VENDOR
 	  key-value pairs. Deciphering the information may require
 	  vendor documentation.
 
+config NET_STATISTICS_POWER_MANAGEMENT
+	bool "Power management statistics"
+	depends on NET_POWER_MANAGEMENT
+	help
+	  This will provide how many time a network interface went
+	  suspended, for how long the last time and on average.
+
 endif # NET_STATISTICS
