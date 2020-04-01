@@ -183,7 +183,6 @@ static int nrf5_set_channel(struct device *dev, u16_t channel)
 	return 0;
 }
 
-#ifdef CONFIG_NET_L2_OPENTHREAD
 static int nrf5_energy_scan_start(struct device *dev,
 				  u16_t duration,
 				  energy_scan_done_cb_t done_cb)
@@ -205,7 +204,6 @@ static int nrf5_energy_scan_start(struct device *dev,
 
 	return err;
 }
-#endif /* CONFIG_NET_L2_OPENTHREAD */
 
 static int nrf5_set_pan_id(struct device *dev, u16_t pan_id)
 {
@@ -610,9 +608,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.start = nrf5_start,
 	.stop = nrf5_stop,
 	.tx = nrf5_tx,
-#ifdef CONFIG_NET_L2_OPENTHREAD
 	.ed_scan = nrf5_energy_scan_start,
-#endif /* CONFIG_NET_L2_OPENTHREAD */
 	.configure = nrf5_configure,
 };
 

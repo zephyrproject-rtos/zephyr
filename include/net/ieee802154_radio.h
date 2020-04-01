@@ -157,15 +157,13 @@ struct ieee802154_radio_api {
 	u16_t (*get_subg_channel_count)(struct device *dev);
 #endif /* CONFIG_NET_L2_IEEE802154_SUB_GHZ */
 
-#ifdef CONFIG_NET_L2_OPENTHREAD
 	/** Run an energy detection scan.
-	 * Note: channel must be set prior to request this function.
-	 * duration parameter is in ms.
+	 *  Note: channel must be set prior to request this function.
+	 *  duration parameter is in ms.
 	 */
 	int (*ed_scan)(struct device *dev,
 		       u16_t duration,
 		       energy_scan_done_cb_t done_cb);
-#endif /* CONFIG_NET_L2_OPENTHREAD */
 };
 
 /* Make sure that the network interface API is properly setup inside
