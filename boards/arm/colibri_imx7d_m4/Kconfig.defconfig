@@ -8,31 +8,6 @@ if BOARD_COLIBRI_IMX7D_M4
 config BOARD
 	default "colibri_imx7d_m4"
 
-if GPIO_IMX
-
-config GPIO_IMX_PORT_1
-	default y
-
-config GPIO_IMX_PORT_2
-	default y
-
-config GPIO_IMX_PORT_3
-	default n
-
-config GPIO_IMX_PORT_4
-	default n
-
-config GPIO_IMX_PORT_5
-	default n
-
-config GPIO_IMX_PORT_6
-	default n
-
-config GPIO_IMX_PORT_7
-	default n
-
-endif # GPIO_IMX
-
 if I2C_IMX
 
 config I2C_1

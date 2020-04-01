@@ -8,10 +8,6 @@ if BOARD_96B_MEERKAT96
 config BOARD
 	default "96b_meerkat96"
 
-config GPIO_IMX_PORT_1
-	default y
-	depends on GPIO_IMX
-
 if !XIP
 config FLASH_SIZE
 	default 0
