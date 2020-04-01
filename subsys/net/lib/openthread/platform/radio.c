@@ -417,6 +417,10 @@ otError otPlatRadioEnergyScan(otInstance *aInstance, u8_t aScanChannel,
 	energy_detection_time    = aScanDuration;
 	energy_detection_channel = aScanChannel;
 
+	if (radio_api->ed_scan == NULL) {
+		return OT_ERROR_NOT_IMPLEMENTED;
+	}
+
 	clear_pending_events();
 
 	radio_api->set_channel(radio_dev, aScanChannel);
