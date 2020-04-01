@@ -8,22 +8,6 @@ if BOARD_COLIBRI_IMX7D_M4
 config BOARD
 	default "colibri_imx7d_m4"
 
-if I2C_IMX
-
-config I2C_1
-	default n
-
-config I2C_2
-	default n
-
-config I2C_3
-	default n
-
-config I2C_4
-	default y
-
-endif # I2C_IMX
-
 if !XIP
 config FLASH_SIZE
 	default 0
