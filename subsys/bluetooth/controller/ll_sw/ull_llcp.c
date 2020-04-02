@@ -90,6 +90,31 @@ enum {
 	LP_ENC_EVT_UNKNOWN,
 };
 
+/* LLCP Local Procedure PHY Update FSM states */
+enum {
+	LP_PU_STATE_IDLE,
+	LP_PU_STATE_WAIT_TX_PHY_REQ,
+	LP_PU_STATE_WAIT_RX_PHY_RSP,
+	LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND,
+	LP_PU_STATE_WAIT_INSTANT,
+	LP_PU_STATE_WAIT_NTF,
+};
+
+/* LLCP Local Procedure PHY Update FSM events */
+enum {
+	/* Procedure run */
+	LP_PU_EVT_RUN,
+
+	/* Response recieved */
+	LP_PU_EVT_PHY_RSP,
+
+	/* Reject response recieved */
+	LP_PU_EVT_REJECT,
+
+	/* Unknown response recieved */
+	LP_PU_EVT_UNKNOWN,
+};
+
 /* LLCP Remote Procedure Common FSM states */
 enum {
 	RP_COMMON_STATE_IDLE,
@@ -149,6 +174,7 @@ enum llcp_proc {
 	PROC_UNKNOWN,
 	PROC_VERSION_EXCHANGE,
 	PROC_ENCRYPTION_START,
+	PROC_PHY_UPDATE,
 };
 
 /* LLCP Local Request FSM State */
@@ -224,6 +250,11 @@ struct proc_ctx {
 		struct {
 			u8_t error;
 		} enc;
+
+		/* PHY Update */
+		struct {
+			u16_t instant;
+		} pu;
 	} data;
 };
 
@@ -382,6 +413,9 @@ static struct proc_ctx *create_local_procedure(enum llcp_proc proc)
 	case PROC_ENCRYPTION_START:
 		ctx->state = LP_ENC_STATE_IDLE;
 		break;
+	case PROC_PHY_UPDATE:
+		ctx->state = LP_PU_STATE_IDLE;
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -519,6 +553,26 @@ static void pdu_encode_reject_ext_ind(struct pdu_data *pdu, u8_t reject_opcode, 
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
 	pdu->llctrl.reject_ext_ind.reject_opcode = reject_opcode;
 	pdu->llctrl.reject_ext_ind.error_code = error_code;
+}
+
+/*
+ * PHY Update Procedure Helper
+ */
+
+static void pdu_encode_phy_req(struct pdu_data *pdu)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, phy_req) + sizeof(struct pdu_data_llctrl_phy_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_REQ;
+	/* TODO(thoh): Fill in PDU with correct data */
+}
+
+static void pdu_encode_phy_update_ind(struct pdu_data *pdu, u16_t instant)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, phy_upd_ind) + sizeof(struct pdu_data_llctrl_phy_upd_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
+	pdu->llctrl.phy_upd_ind.instant = sys_cpu_to_le16(instant);
 }
 
 /*
@@ -940,6 +994,208 @@ static void lp_enc_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct nod
 }
 
 /*
+ * LLCP Local Procedure PHY Update FSM
+ */
+
+static u16_t lp_event_counter(struct ull_cp_conn *conn)
+{
+	/* TODO(thoh): Mocked lll_conn */
+	struct mocked_lll_conn *lll;
+	u16_t event_counter;
+
+	/* TODO(thoh): Lazy hardcoded */
+	u16_t lazy = 0;
+
+	/**/
+	lll = &conn->lll;
+
+	/* Calculate current event counter */
+	event_counter = lll->event_counter + lll->latency_prepare + lazy;
+
+	return event_counter;
+}
+
+static void lp_pu_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcode)
+{
+	struct node_tx *tx;
+	struct pdu_data *pdu;
+
+	/* Allocate tx node */
+	tx = tx_alloc();
+	LL_ASSERT(tx);
+
+	pdu = (struct pdu_data *)tx->pdu;
+
+	/* Encode LL Control PDU */
+	switch (opcode) {
+	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
+		pdu_encode_phy_req(pdu);
+		break;
+	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
+		pdu_encode_phy_update_ind(pdu, ctx->data.pu.instant);
+		break;
+	default:
+		LL_ASSERT(0);
+	}
+
+	ctx->tx_opcode = pdu->llctrl.opcode;
+
+	/* Enqueue LL Control PDU towards LLL */
+	ull_tx_enqueue(conn, tx);
+}
+
+static void lp_pu_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+{
+	struct node_rx_pdu *ntf;
+
+	/* Allocate ntf node */
+	ntf = ntf_alloc();
+	LL_ASSERT(ntf);
+
+	ntf->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
+
+	/* Enqueue notification towards LL */
+	ll_rx_enqueue(ntf);
+}
+
+static void lp_pu_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!ntf_alloc_is_available()) {
+		ctx->state = LP_PU_STATE_WAIT_NTF;
+	} else {
+		lp_pu_ntf(conn, ctx);
+		lr_complete(conn);
+		ctx->state = LP_PU_STATE_IDLE;
+	}
+}
+
+static void lp_pu_send_phy_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!tx_alloc_is_available()) {
+		ctx->state = LP_PU_STATE_WAIT_TX_PHY_REQ;
+	} else {
+		lp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_REQ);
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PHY_RSP;
+		ctx->state = LP_PU_STATE_WAIT_RX_PHY_RSP;
+	}
+}
+
+static void lp_pu_send_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!tx_alloc_is_available()) {
+		ctx->state = LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
+	} else {
+		/* TODO(thoh): Hardcoded instant delta +6 */
+		ctx->data.pu.instant = lp_event_counter(conn) + 6;
+		lp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND);
+		ctx->rx_opcode = 0xFF; /* TODO(thoh): Hmm */
+		ctx->state = LP_PU_STATE_WAIT_INSTANT;
+	}
+}
+
+static void lp_pu_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	switch (evt) {
+	case LP_PU_EVT_RUN:
+		lp_pu_send_phy_req(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void lp_pu_st_wait_tx_phy_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO(thoh) */
+}
+
+static void lp_pu_st_wait_rx_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	switch (evt) {
+	case LP_PU_EVT_PHY_RSP:
+		lp_pu_send_phy_update_ind(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void lp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO(thoh) */
+}
+
+static void lp_pu_check_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	u16_t event_counter = lp_event_counter(conn);
+	if (((event_counter - ctx->data.pu.instant) & 0xFFFF) <= 0x7FFF) {
+		lp_pu_complete(conn, ctx, evt, param);
+	}
+}
+
+static void lp_pu_st_wait_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	switch (evt) {
+	case LP_PU_EVT_RUN:
+		lp_pu_check_instant(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void lp_pu_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO(thoh) */
+}
+
+static void lp_pu_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	switch (ctx->state) {
+	case LP_PU_STATE_IDLE:
+		lp_pu_st_idle(conn, ctx, evt, param);
+		break;
+	case LP_PU_STATE_WAIT_TX_PHY_REQ:
+		lp_pu_st_wait_tx_phy_req(conn, ctx, evt, param);
+		break;
+	case LP_PU_STATE_WAIT_RX_PHY_RSP:
+		lp_pu_st_wait_rx_phy_rsp(conn, ctx, evt, param);
+		break;
+	case LP_PU_STATE_WAIT_TX_PHY_UPDATE_IND:
+		lp_pu_st_wait_tx_phy_update_ind(conn, ctx, evt, param);
+		break;
+	case LP_PU_STATE_WAIT_INSTANT:
+		lp_pu_st_wait_instant(conn, ctx, evt, param);
+		break;
+	case LP_PU_STATE_WAIT_NTF:
+		lp_pu_st_wait_ntf(conn, ctx, evt, param);
+		break;
+	default:
+		/* Unknown state */
+		LL_ASSERT(0);
+	}
+}
+
+static void lp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+{
+	struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
+
+	switch (pdu->llctrl.opcode) {
+	case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
+		lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_PHY_RSP, pdu);
+		break;
+	default:
+		/* Unknown opcode */
+		LL_ASSERT(0);
+	}
+}
+
+/*
  * LLCP Local Request FSM
  */
 
@@ -973,6 +1229,9 @@ static void lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx
 	case PROC_ENCRYPTION_START:
 		lp_enc_rx(conn, ctx, rx);
 		break;
+	case PROC_PHY_UPDATE:
+		lp_pu_rx(conn, ctx, rx);
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -991,6 +1250,9 @@ static void lr_act_run(struct ull_cp_conn *conn)
 		break;
 	case PROC_ENCRYPTION_START:
 		lp_enc_execute_fsm(conn, ctx, LP_ENC_EVT_RUN, NULL);
+		break;
+	case PROC_PHY_UPDATE:
+		lp_pu_execute_fsm(conn, ctx, LP_PU_EVT_RUN, NULL);
 		break;
 	default:
 		/* Unknown procedure */
@@ -1869,6 +2131,22 @@ u8_t ull_cp_encryption_start(struct ull_cp_conn *conn)
 	/* TODO(thoh): Proper checks for role, parameters etc. */
 
 	ctx = create_local_procedure(PROC_ENCRYPTION_START);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
+u8_t ull_cp_phy_update(struct ull_cp_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	/* TODO(thoh): Proper checks for role, parameters etc. */
+
+	ctx = create_local_procedure(PROC_PHY_UPDATE);
 	if (!ctx) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
