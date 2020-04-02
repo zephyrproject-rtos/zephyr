@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT openisa_rv32m1_intmux
+
 /**
  * @file
  * @brief RV32M1 INTMUX (interrupt multiplexer) driver
@@ -143,10 +145,9 @@ static const struct irq_next_level_api rv32m1_intmux_apis = {
 };
 
 static const struct rv32m1_intmux_config rv32m1_intmux_cfg = {
-	.regs = (INTMUX_Type *)DT_OPENISA_RV32M1_INTMUX_INTMUX_BASE_ADDRESS,
-	.clock_name = DT_OPENISA_RV32M1_INTMUX_INTMUX_CLOCK_CONTROLLER,
-	.clock_subsys =
-		UINT_TO_POINTER(DT_OPENISA_RV32M1_INTMUX_INTMUX_CLOCK_NAME),
+	.regs = (INTMUX_Type *)DT_INST_REG_ADDR(0),
+	.clock_name = DT_INST_CLOCKS_LABEL(0),
+	.clock_subsys = UINT_TO_POINTER(DT_INST_CLOCKS_CELL(0, name)),
 	.isr_base = &_sw_isr_table[CONFIG_2ND_LVL_ISR_TBL_OFFSET],
 };
 
@@ -218,7 +219,7 @@ static int rv32m1_intmux_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(intmux, DT_OPENISA_RV32M1_INTMUX_INTMUX_LABEL,
+DEVICE_AND_API_INIT(intmux, DT_INST_LABEL(0),
 		    &rv32m1_intmux_init, NULL,
 		    &rv32m1_intmux_cfg, PRE_KERNEL_1,
 		    CONFIG_RV32M1_INTMUX_INIT_PRIORITY, &rv32m1_intmux_apis);
