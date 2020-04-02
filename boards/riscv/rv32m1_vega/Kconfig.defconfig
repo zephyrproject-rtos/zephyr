@@ -53,16 +53,6 @@ config UART_RV32M1_LPUART
 	default y
 	depends on SERIAL
 
-if I2C
-
-config I2C_0
-	default y
-
-config I2C_3
-	default y if RV32M1_INTMUX
-
-endif # I2C
-
 if SPI
 
 config SPI_0
