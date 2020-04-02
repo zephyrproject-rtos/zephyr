@@ -1645,7 +1645,7 @@ static int cmd_net_dns_query(const struct shell *shell, size_t argc,
 {
 
 #if defined(CONFIG_DNS_RESOLVER)
-#define DNS_TIMEOUT K_MSEC(2000) /* ms */
+#define DNS_TIMEOUT (MSEC_PER_SEC * 2) /* ms */
 	enum dns_query_type qtype = DNS_QUERY_TYPE_A;
 	char *host, *type = NULL;
 	int ret, arg = 1;

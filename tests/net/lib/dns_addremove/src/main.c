@@ -71,7 +71,7 @@ static struct dns_resolve_context resv_ipv6_2;
 #endif
 
 /* this must be higher that the DNS_TIMEOUT */
-#define WAIT_TIME ((DNS_TIMEOUT + 300) * 3)
+#define WAIT_TIME K_MSEC((DNS_TIMEOUT + 300) * 3)
 
 struct net_if_test {
 	u8_t idx;

@@ -178,7 +178,7 @@ struct dns_resolve_context {
 	/** This timeout is also used when a buffer is required from the
 	 * buffer pools.
 	 */
-	s32_t buf_timeout;
+	k_timeout_t buf_timeout;
 
 	/** Result callbacks. We have multiple callbacks here so that it is
 	 * possible to do multiple queries at the same time.
@@ -197,7 +197,7 @@ struct dns_resolve_context {
 		void *user_data;
 
 		/** TX timeout */
-		s32_t timeout;
+		k_timeout_t timeout;
 
 		/** String containing the thing to resolve like www.example.com
 		 */
