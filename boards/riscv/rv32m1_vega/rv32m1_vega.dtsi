@@ -44,15 +44,15 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		blue_pwm_led: pwm_led_0 {
-			pwms = <&pwm2 2 0 0>;
+			pwms = <&tpm2 2 0 0>;
 			label = "User PWM LD1";
 		};
 		green_pwm_led: pwm_led_1 {
-			pwms = <&pwm2 1 0 0>;
+			pwms = <&tpm2 1 0 0>;
 			label = "User PWM LD2";
 		};
 		red_pwm_led: pwm_led_2 {
-			pwms = <&pwm2 0 0 0>;
+			pwms = <&tpm2 0 0 0>;
 			label = "User PWM LD3";
 		};
 	};
@@ -107,18 +107,18 @@
 	};
 };
 
-arduino_serial: &uart1 {};
+arduino_serial: &lpuart1 {};
 
-&uart0 {
+&lpuart0 {
 	current-speed = <115200>;
 	status = "okay";
 };
 
-arduino_i2c: &i2c0 {
+arduino_i2c: &lpi2c0 {
 	status = "okay";
 };
 
-&i2c3 {
+&lpi2c3 {
 	status = "okay";
 
 	fxos8700@1e {
@@ -131,11 +131,11 @@ arduino_i2c: &i2c0 {
 	};
 };
 
-arduino_spi: &spi0 {
+arduino_spi: &lpspi0 {
 	status = "okay";
 };
 
-&spi1 {
+&lpspi1 {
 	status = "okay";
 	cs-gpios = <&gpiob 22 0>;
 	mx25r32: mx25r3235f@0 {
@@ -149,6 +149,6 @@ arduino_spi: &spi0 {
 	};
 };
 
-&pwm2 {
+&tpm2 {
 	status = "okay";
 };

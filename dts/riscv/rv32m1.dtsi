@@ -14,32 +14,32 @@
 	aliases {
 		pcc-0 = &pcc0;
 		pcc-1 = &pcc1;
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
-		pinmux-c = &pinmux_c;
-		pinmux-d = &pinmux_d;
-		pinmux-e = &pinmux_e;
+		pinmux-a = &porta;
+		pinmux-b = &portb;
+		pinmux-c = &portc;
+		pinmux-d = &portd;
+		pinmux-e = &porte;
 		gpio-a = &gpioa;
 		gpio-b = &gpiob;
 		gpio-c = &gpioc;
 		gpio-d = &gpiod;
 		gpio-e = &gpioe;
-		uart-0 = &uart0;
-		uart-1 = &uart1;
-		uart-2 = &uart2;
-		uart-3 = &uart3;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		i2c-2 = &i2c2;
-		i2c-3 = &i2c3;
-		spi-0 = &spi0;
-		spi-1 = &spi1;
-		spi-2 = &spi2;
-		spi-3 = &spi3;
-		pwm-0 = &pwm0;
-		pwm-1 = &pwm1;
-		pwm-2 = &pwm2;
-		pwm-3 = &pwm3;
+		uart-0 = &lpuart0;
+		uart-1 = &lpuart1;
+		uart-2 = &lpuart2;
+		uart-3 = &lpuart3;
+		i2c-0 = &lpi2c0;
+		i2c-1 = &lpi2c1;
+		i2c-2 = &lpi2c2;
+		i2c-3 = &lpi2c3;
+		spi-0 = &lpspi0;
+		spi-1 = &lpspi1;
+		spi-2 = &lpspi2;
+		spi-3 = &lpspi3;
+		pwm-0 = &tpm0;
+		pwm-1 = &tpm1;
+		pwm-2 = &tpm2;
+		pwm-3 = &tpm3;
 	};
 
 	cpus {
@@ -304,31 +304,31 @@
 			label = "LPTMR_2";
 		};
 
-		pinmux_a: pinmux@40046000 {
+		porta: pinmux@40046000 {
 			compatible = "openisa,rv32m1-pinmux";
 			reg = <0x40046000 0xd0>;
 			clocks = <&pcc0 0x118>;
 		};
 
-		pinmux_b: pinmux@40047000 {
+		portb: pinmux@40047000 {
 			compatible = "openisa,rv32m1-pinmux";
 			reg = <0x40047000 0xd0>;
 			clocks = <&pcc0 0x11c>;
 		};
 
-		pinmux_c: pinmux@40048000 {
+		portc: pinmux@40048000 {
 			compatible = "openisa,rv32m1-pinmux";
 			reg = <0x40048000 0xd0>;
 			clocks = <&pcc0 0x120>;
 		};
 
-		pinmux_d: pinmux@40049000 {
+		portd: pinmux@40049000 {
 			compatible = "openisa,rv32m1-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&pcc0 0x124>;
 		};
 
-		pinmux_e: pinmux@41037000 {
+		porte: pinmux@41037000 {
 			compatible = "openisa,rv32m1-pinmux";
 			reg = <0x41037000 0xd0>;
 			clocks = <&pcc1 0xdc>;
@@ -375,7 +375,7 @@
 			clocks = <&pcc1 0x3c>;
 		};
 
-		uart0: lpuart@40042000 {
+		lpuart0: lpuart@40042000 {
 			compatible = "openisa,rv32m1-lpuart";
 			reg = <0x40042000 0x2c>;
 			clocks = <&pcc0 0x108>;
@@ -383,7 +383,7 @@
 			status = "disabled";
 		};
 
-		uart1: lpuart@40043000 {
+		lpuart1: lpuart@40043000 {
 			compatible = "openisa,rv32m1-lpuart";
 			reg = <0x40043000 0x2c>;
 			clocks = <&pcc0 0x10c>;
@@ -391,7 +391,7 @@
 			status = "disabled";
 		};
 
-		uart2: lpuart@40044000 {
+		lpuart2: lpuart@40044000 {
 			compatible = "openisa,rv32m1-lpuart";
 			reg = <0x40044000 0x2c>;
 			clocks = <&pcc0 0x110>;
@@ -399,7 +399,7 @@
 			status = "disabled";
 		};
 
-		uart3: lpuart@41036000 {
+		lpuart3: lpuart@41036000 {
 			compatible = "openisa,rv32m1-lpuart";
 			reg = <0x41036000 0x2c>;
 			clocks = <&pcc0 0xd8>;
@@ -407,7 +407,7 @@
 			status = "disabled";
 		};
 
-		i2c0: lpi2c@4003a000 {
+		lpi2c0: lpi2c@4003a000 {
 			compatible = "openisa,rv32m1-lpi2c";
 			reg = <0x4003a000 0x170>;
 			clocks = <&pcc0 0xe8>;
@@ -418,7 +418,7 @@
 			status = "disabled";
 		};
 
-		i2c1: lpi2c@4003b000 {
+		lpi2c1: lpi2c@4003b000 {
 			compatible = "openisa,rv32m1-lpi2c";
 			reg = <0x4003b000 0x170>;
 			clocks = <&pcc0 0xec>;
@@ -429,7 +429,7 @@
 			status = "disabled";
 		};
 
-		i2c2: lpi2c@4003c000 {
+		lpi2c2: lpi2c@4003c000 {
 			compatible = "openisa,rv32m1-lpi2c";
 			reg = <0x4003c000 0x170>;
 			clocks = <&pcc0 0xf0>;
@@ -440,7 +440,7 @@
 			status = "disabled";
 		};
 
-		i2c3: lpi2c@4102e000 {
+		lpi2c3: lpi2c@4102e000 {
 			compatible = "openisa,rv32m1-lpi2c";
 			reg = <0x4102e000 0x170>;
 			clocks = <&pcc1 0xb8>;
@@ -451,7 +451,7 @@
 			status = "disabled";
 		};
 
-		spi0: spi@4003f000 {
+		lpspi0: spi@4003f000 {
 			compatible = "openisa,rv32m1-lpspi";
 			reg = <0x4003f000 0x78>;
 			label = "SPI_0";
@@ -461,7 +461,7 @@
 			#size-cells = <0>;
 		};
 
-		spi1: spi@40040000 {
+		lpspi1: spi@40040000 {
 			compatible = "openisa,rv32m1-lpspi";
 			reg = <0x40040000 0x78>;
 			label = "SPI_1";
@@ -471,7 +471,7 @@
 			#size-cells = <0>;
 		};
 
-		spi2: spi@40041000 {
+		lpspi2: spi@40041000 {
 			compatible = "openisa,rv32m1-lpspi";
 			reg = <0x40041000 0x78>;
 			label = "SPI_2";
@@ -481,7 +481,7 @@
 			#size-cells = <0>;
 		};
 
-		spi3: spi@41035000 {
+		lpspi3: spi@41035000 {
 			compatible = "openisa,rv32m1-lpspi";
 			reg = <0x41035000 0x78>;
 			label = "SPI_3";
@@ -498,7 +498,7 @@
 			#size-cells = <0>;
 		};
 
-		pwm0: pwm@40035000 {
+		tpm0: pwm@40035000 {
 			compatible = "openisa,rv32m1-tpm";
 			reg = <0x40035000 0x88>;
 			clocks = <&pcc0 0xd4>;
@@ -507,7 +507,7 @@
 			#pwm-cells = <3>;
 		};
 
-		pwm1: pwm@40036000 {
+		tpm1: pwm@40036000 {
 			compatible = "openisa,rv32m1-tpm";
 			reg = <0x40036000 0x88>;
 			clocks = <&pcc0 0xd8>;
@@ -516,7 +516,7 @@
 			#pwm-cells = <3>;
 		};
 
-		pwm2: pwm@40037000 {
+		tpm2: pwm@40037000 {
 			compatible = "openisa,rv32m1-tpm";
 			reg = <0x40037000 0x88>;
 			clocks = <&pcc0 0xdc>;
@@ -533,7 +533,7 @@
 			label = "TRNG";
 		};
 
-		pwm3: pwm@4102d000 {
+		tpm3: pwm@4102d000 {
 			compatible = "openisa,rv32m1-tpm";
 			reg = <0x4102d000 0x88>;
 			clocks = <&pcc1 0xb4>;
