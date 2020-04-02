@@ -11,4 +11,4 @@ tests:
       regex:
         - "Entropy Example! (.*)"
         - "entropy device is (.*), name is (.*)"
-        - "(  0x([0-9a-f]){2}){9}"
+        - "(\\s*0x([0-9a-f]){2}){9}"
