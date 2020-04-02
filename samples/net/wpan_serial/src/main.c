@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(wpan_serial, CONFIG_USB_DEVICE_LOG_LEVEL);
 
 #include <drivers/uart.h>
 #include <zephyr.h>
+#include <usb/usb_device.h>
 
 #include <net/buf.h>
 #include <net_private.h>
@@ -521,6 +522,12 @@ void main(void)
 	dev = device_get_binding("CDC_ACM_0");
 	if (!dev) {
 		LOG_ERR("CDC ACM device not found");
+		return;
+	}
+
+	ret = usb_enable(NULL);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB");
 		return;
 	}
 
