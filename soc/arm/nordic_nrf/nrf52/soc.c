@@ -30,6 +30,8 @@ extern void z_arm_nmi_init(void);
 #include <system_nrf52810.h>
 #elif defined(CONFIG_SOC_NRF52811)
 #include <system_nrf52811.h>
+#elif defined(CONFIG_SOC_NRF52820)
+#include <system_nrf52820.h>
 #elif defined(CONFIG_SOC_NRF52832)
 #include <system_nrf52.h>
 #elif defined(CONFIG_SOC_NRF52833)
