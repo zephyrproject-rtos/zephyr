@@ -117,7 +117,7 @@ static int cmd_modem_send(const struct shell *shell, size_t argc,
 		}
 
 		if (i == argc - 1) {
-			ret = ms_send(mdm_ctx, "\r", 2);
+			ret = ms_send(mdm_ctx, "\r", 1);
 		} else {
 			ret = ms_send(mdm_ctx, " ", 1);
 		}

@@ -64,10 +64,6 @@ static struct modem_pin modem_pins[] = {
 #define MDM_POWER_DISABLE		0
 #define MDM_RESET_NOT_ASSERTED		1
 #define MDM_RESET_ASSERTED		0
-#if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
-#define MDM_VINT_ENABLE			1
-#define MDM_VINT_DISABLE		0
-#endif
 
 #define MDM_CMD_TIMEOUT			K_SECONDS(10)
 #define MDM_DNS_TIMEOUT			K_SECONDS(70)
@@ -642,7 +638,7 @@ static int pin_init(void)
 #if DT_INST_NODE_HAS_PROP(0, mdm_vint_gpios)
 	LOG_DBG("Waiting for MDM_VINT_PIN = 0");
 
-	while (modem_pin_read(&mctx, MDM_VINT) != MDM_VINT_DISABLE) {
+	while (modem_pin_read(&mctx, MDM_VINT) > 0) {
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
 		/* try to power off again */
 		LOG_DBG("MDM_POWER_PIN -> DISABLE");
@@ -677,7 +673,7 @@ static int pin_init(void)
 	LOG_DBG("Waiting for MDM_VINT_PIN = 1");
 	do {
 		k_sleep(K_MSEC(100));
-	} while (modem_pin_read(&mctx, MDM_VINT) != MDM_VINT_ENABLE);
+	} while (modem_pin_read(&mctx, MDM_VINT) == 0);
 #else
 	k_sleep(K_SECONDS(10));
 #endif
