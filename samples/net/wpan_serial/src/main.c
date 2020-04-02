@@ -537,6 +537,9 @@ void main(void)
 		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
 		if (dtr) {
 			break;
+		} else {
+			/* Give CPU resources to low priority threads. */
+			k_sleep(K_MSEC(100));
 		}
 	}
 
