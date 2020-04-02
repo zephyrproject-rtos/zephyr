@@ -127,7 +127,6 @@ static int wdt_sam0_setup(struct device *dev, u8_t options)
 static int wdt_sam0_disable(struct device *dev)
 {
 	if (!wdt_sam0_is_enabled()) {
-		LOG_ERR("Watchdog not enabled");
 		return -EFAULT;
 	}
 
