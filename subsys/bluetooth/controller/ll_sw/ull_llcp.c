@@ -170,6 +170,24 @@ enum {
 	RP_ENC_EVT_UNKNOWN,
 };
 
+/* LLCP Remote Procedure PHY Update FSM states */
+enum {
+	RP_PU_STATE_IDLE,
+	RP_PU_STATE_WAIT_RX_PHY_REQ,
+	RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND,
+	RP_PU_STATE_WAIT_INSTANT,
+	RP_PU_STATE_WAIT_NTF,
+};
+
+/* LLCP Remote Procedure PHY Update FSM events */
+enum {
+	/* Procedure run */
+	RP_PU_EVT_RUN,
+
+	/* Request recieved */
+	RP_PU_EVT_PHY_REQ,
+};
+
 /* LLCP Procedure */
 enum llcp_proc {
 	PROC_UNKNOWN,
@@ -441,6 +459,9 @@ static struct proc_ctx *create_remote_procedure(enum llcp_proc proc)
 		break;
 	case PROC_ENCRYPTION_START:
 		ctx->state = RP_ENC_STATE_IDLE;
+		break;
+	case PROC_PHY_UPDATE:
+		ctx->state = RP_PU_STATE_IDLE;
 		break;
 	default:
 		/* Unknown procedure */
@@ -1859,6 +1880,191 @@ static void rp_enc_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct nod
 }
 
 /*
+ * LLCP Remote Procedure PHY Update FSM
+ */
+
+static u16_t rp_event_counter(struct ull_cp_conn *conn)
+{
+	/* TODO(thoh): Mocked lll_conn */
+	struct mocked_lll_conn *lll;
+	u16_t event_counter;
+
+	/* TODO(thoh): Lazy hardcoded */
+	u16_t lazy = 0;
+
+	/**/
+	lll = &conn->lll;
+
+	/* Calculate current event counter */
+	event_counter = lll->event_counter + lll->latency_prepare + lazy;
+
+	return event_counter;
+}
+
+static void rp_pu_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcode)
+{
+	struct node_tx *tx;
+	struct pdu_data *pdu;
+
+	/* Allocate tx node */
+	tx = tx_alloc();
+	LL_ASSERT(tx);
+
+	pdu = (struct pdu_data *)tx->pdu;
+
+	/* Encode LL Control PDU */
+	switch (opcode) {
+	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
+		pdu_encode_phy_update_ind(pdu, ctx->data.pu.instant);
+		break;
+	default:
+		LL_ASSERT(0);
+	}
+
+	ctx->tx_opcode = pdu->llctrl.opcode;
+
+	/* Enqueue LL Control PDU towards LLL */
+	ull_tx_enqueue(conn, tx);
+}
+
+static void rp_pu_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
+{
+	struct node_rx_pdu *ntf;
+	struct node_rx_pu *pdu;
+
+	/* Allocate ntf node */
+	ntf = ntf_alloc();
+	LL_ASSERT(ntf);
+
+	ntf->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
+	pdu = (struct node_rx_pu *)ntf->pdu;
+
+	pdu->status = ctx->data.pu.error;
+
+	/* Enqueue notification towards LL */
+	ll_rx_enqueue(ntf);
+}
+
+static void rp_pu_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!ntf_alloc_is_available()) {
+		ctx->state = RP_PU_STATE_WAIT_NTF;
+	} else {
+		rp_pu_ntf(conn, ctx);
+		rr_complete(conn);
+		ctx->state = RP_PU_STATE_IDLE;
+	}
+}
+
+static void rp_pu_send_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	if (!tx_alloc_is_available()) {
+		ctx->state = RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND;
+	} else {
+		/* TODO(thoh): Hardcoded instant delta +6 */
+		ctx->data.pu.instant = rp_event_counter(conn) + 6;
+		rp_pu_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND);
+		ctx->rx_opcode = 0xFF; /* TODO(thoh): Hmm */
+		ctx->state = RP_PU_STATE_WAIT_INSTANT;
+	}
+}
+
+static void rp_pu_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	switch (evt) {
+	case RP_PU_EVT_RUN:
+		ctx->state = RP_PU_STATE_WAIT_RX_PHY_REQ;
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void rp_pu_st_wait_rx_phy_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	switch (evt) {
+	case RP_PU_EVT_PHY_REQ:
+		rp_pu_send_phy_update_ind(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void rp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO(thoh) */
+}
+
+static void rp_pu_check_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	u16_t event_counter = rp_event_counter(conn);
+	if (((event_counter - ctx->data.pu.instant) & 0xFFFF) <= 0x7FFF) {
+		ctx->data.pu.error = BT_HCI_ERR_SUCCESS;
+		rp_pu_complete(conn, ctx, evt, param);
+	}
+}
+
+static void rp_pu_st_wait_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO */
+	switch (evt) {
+	case RP_PU_EVT_RUN:
+		rp_pu_check_instant(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
+}
+
+static void rp_pu_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	/* TODO(thoh) */
+}
+
+static void rp_pu_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
+{
+	switch (ctx->state) {
+	case RP_PU_STATE_IDLE:
+		rp_pu_st_idle(conn, ctx, evt, param);
+		break;
+	case RP_PU_STATE_WAIT_RX_PHY_REQ:
+		rp_pu_st_wait_rx_phy_req(conn, ctx, evt, param);
+		break;
+	case RP_PU_STATE_WAIT_TX_PHY_UPDATE_IND:
+		rp_pu_st_wait_tx_phy_update_ind(conn, ctx, evt, param);
+		break;
+	case RP_PU_STATE_WAIT_INSTANT:
+		rp_pu_st_wait_instant(conn, ctx, evt, param);
+		break;
+	case RP_PU_STATE_WAIT_NTF:
+		rp_pu_st_wait_ntf(conn, ctx, evt, param);
+		break;
+	default:
+		/* Unknown state */
+		LL_ASSERT(0);
+	}
+}
+
+static void rp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
+{
+	struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
+
+	switch (pdu->llctrl.opcode) {
+	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
+		rp_pu_execute_fsm(conn, ctx, RP_PU_EVT_PHY_REQ, pdu);
+		break;
+	default:
+		/* Unknown opcode */
+		LL_ASSERT(0);
+	}
+}
+
+/*
  * LLCP Remote Request FSM
  */
 
@@ -1892,6 +2098,9 @@ static void rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx
 	case PROC_ENCRYPTION_START:
 		rp_enc_rx(conn, ctx, rx);
 		break;
+	case PROC_PHY_UPDATE:
+		rp_pu_rx(conn, ctx, rx);
+		break;
 	default:
 		/* Unknown procedure */
 		LL_ASSERT(0);
@@ -1910,6 +2119,9 @@ static void rr_act_run(struct ull_cp_conn *conn)
 		break;
 	case PROC_ENCRYPTION_START:
 		rp_enc_execute_fsm(conn, ctx, RP_ENC_EVT_RUN, NULL);
+		break;
+	case PROC_PHY_UPDATE:
+		rp_pu_execute_fsm(conn, ctx, RP_PU_EVT_RUN, NULL);
 		break;
 	default:
 		/* Unknown procedure */
@@ -2040,6 +2252,9 @@ static void rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 		break;
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		proc = PROC_ENCRYPTION_START;
+		break;
+	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
+		proc = PROC_PHY_UPDATE;
 		break;
 	default:
 		/* Unknown opcode */
