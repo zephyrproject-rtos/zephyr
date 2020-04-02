@@ -49,16 +49,6 @@ config UART_RV32M1_LPUART
 	default y
 	depends on SERIAL
 
-if SPI
-
-config SPI_0
-	default y
-
-config SPI_1
-	default y
-
-endif # SPI
-
 config PWM_2
 	default y
 	depends on PWM
