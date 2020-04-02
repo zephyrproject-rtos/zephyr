@@ -127,7 +127,7 @@ static int canopen_settings_set(const char *key, size_t len_rd,
 {
 	const char *next;
 	int nlen;
-	int len;
+	ssize_t len;
 
 	nlen = settings_name_next(key, &next);
 
