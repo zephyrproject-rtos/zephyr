@@ -21,6 +21,9 @@ struct ull_cp_conn {
 		struct {
 			sys_slist_t pend_proc_list;
 			u8_t state;
+			u8_t collision;
+			u8_t incompat;
+			u8_t reject_opcode;
 		} remote;
 
 		/* Version Exchange Procedure State */
