@@ -129,6 +129,60 @@ extern "C" {
 #endif
 
 /**
+ * @def DT_DEVICE_DEFINE
+ *
+ * @brief Create device object and set it up for boot time initialization,
+ * with the option to set driver_api based on devicetree node_id.
+ *
+ * This macro is a devicetree aware wrapper around DEVICE_AND_API_INIT
+ * in which the dev_name is based on the devicetree node_id and the
+ * drv_name comes from the label property of that node_id.
+ *
+ * @param node_id a devicetree node identifier
+ * @param init_fn Address to the init function of the driver.
+ * @param data Pointer to the device's configuration data.
+ * @param cfg_info The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param level The initialization level at which configuration occurs.
+ * @param prio The initialization priority of the device, relative to
+ * @param api Provides an initial pointer to the API function struct
+ *
+ * @details The driver api is also set here, eliminating the need to do that
+ * during initialization.
+ */
+#define DT_DEVICE_DEFINE(node_id, init_fn, data, cfg_info, level, \
+			       prio, api)			  \
+	DEVICE_AND_API_INIT(node_id, DT_LABEL(node_id), init_fn,  \
+			    data, cfg_info, level, prio, api)
+
+/**
+ * @def DT_INST_DEVICE_DEFINE
+ *
+ * @brief Create device object and set it up for boot time initialization,
+ * with the option to set driver_api based on devicetree a DT_DRV_COMPAT
+ * instance.
+ *
+ * This macro is a devicetree aware wrapper around DEVICE_AND_API_INIT
+ * in which the dev_name is based on the devicetree node_id and the
+ * drv_name comes from the label property of that node_id.
+ *
+ * @param inst devicetree instance number
+ * @param init_fn Address to the init function of the driver.
+ * @param data Pointer to the device's configuration data.
+ * @param cfg_info The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param level The initialization level at which configuration occurs.
+ * @param prio The initialization priority of the device, relative to
+ * @param api Provides an initial pointer to the API function struct
+ *
+ * @details The driver api is also set here, eliminating the need to do that
+ * during initialization.
+ */
+#define DT_INST_DEVICE_DEFINE(inst, init_fn, data, cfg_info, level, prio, api)\
+	DT_DEVICE_DEFINE(DT_DRV_INST(inst), init_fn, data, cfg_info,	      \
+			 level, prio, api)
+
+/**
  * @def DEVICE_DEFINE
  *
  * @brief Create device object and set it up for boot time initialization,
