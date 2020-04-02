@@ -64,6 +64,11 @@ def main():
             write_special_props(node)
             write_vanilla_props(node)
 
+            print("#ifndef _ASMLANGUAGE\n"
+                  "extern struct device __device_DT_{};\n"
+                  "#endif".format(node.z_path_id), file=header_file)
+
+
         write_chosen(edt)
         write_global_compat_info(edt)
 
