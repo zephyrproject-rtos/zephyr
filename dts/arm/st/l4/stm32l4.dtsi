@@ -341,6 +341,14 @@
 			status = "disabled";
 			label = "LPTIM_1";
 		};
+
+		rng: rng@50060800 {
+			compatible = "st,stm32-rng";
+			reg = <0x50060800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>;
+			status = "disabled";
+			label = "RNG";
+		};
 	};
 };
 
