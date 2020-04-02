@@ -1,5 +1,5 @@
-identifier: nrf52810_pca10040
-name: nRF52810-PCA10040
+identifier: nrf52dk_nrf52810
+name: nRF52-DK-NRF52810
 type: mcu
 arch: arm
 toolchain:

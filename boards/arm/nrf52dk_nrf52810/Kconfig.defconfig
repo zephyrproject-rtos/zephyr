@@ -1,15 +1,15 @@
-# nRF52810 PCA10040 board configuration
+# nRF52 DK nRF52810 board configuration
 
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52810_PCA10040
+if BOARD_NRF52DK_NRF52810
 
 config BOARD
-	default "nrf52810_pca10040"
+	default "nrf52dk_nrf52810"
 
 config ADC_0
 	default y
 	depends on ADC
 
-endif # BOARD_NRF52810_PCA10040
+endif # BOARD_NRF52DK_NRF52810
