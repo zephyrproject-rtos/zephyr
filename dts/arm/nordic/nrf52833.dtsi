@@ -132,6 +132,7 @@
 			reg = <0x50000300 0x200
 			       0x50000800 0x300>;
 			#gpio-cells = <2>;
+			ngpios = <10>;
 			label = "GPIO_1";
 			status = "disabled";
 		};
