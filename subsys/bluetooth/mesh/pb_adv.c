@@ -374,7 +374,7 @@ static void gen_prov_ack(struct prov_rx *rx, struct net_buf_simple *buf)
 			prov_clear_tx();
 		}
 
-		if (link.tx.cb && link.tx.cb) {
+		if (link.tx.cb) {
 			link.tx.cb(0, link.tx.cb_data);
 		}
 	}
