@@ -1816,6 +1816,86 @@ void test_phy_update_mas_loc_unsupp_feat(void)
 	ull_cp_release_ntf(ntf);
 }
 
+void test_phy_update_mas_rem(void)
+{
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	struct pdu_data *pdu;
+	u16_t instant;
+
+	struct node_rx_pu pu = {
+		.status = BT_HCI_ERR_SUCCESS
+	};
+
+	/* Setup */
+	sys_slist_init(&ut_rx_q);
+	sys_slist_init(&lt_tx_q);
+	ull_cp_init();
+	ull_tx_q_init(&conn.tx_q);
+	ull_cp_conn_init(&conn);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_PHY_REQ, &conn, NULL);
+
+	/* Done */
+	done(&conn);
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
+
+	/* Save Instant */
+	pdu = (struct pdu_data *)tx->pdu;
+	instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* */
+	while (!is_instant_reached(&conn, instant))
+	{
+		/* Prepare */
+		prepare(&conn);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty();
+
+		/* Done */
+		done(&conn);
+
+		/* There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
+
+	/* There should be one host notification */
+	ut_rx_node(NODE_PHY_UPDATE, &ntf, &pu);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+}
+
 
 void test_main(void)
 {
@@ -1851,7 +1931,8 @@ void test_main(void)
 
 	ztest_test_suite(phy,
 			 ztest_unit_test(test_phy_update_mas_loc),
-			 ztest_unit_test(test_phy_update_mas_loc_unsupp_feat)
+			 ztest_unit_test(test_phy_update_mas_loc_unsupp_feat),
+			 ztest_unit_test(test_phy_update_mas_rem)
 			);
 
 	ztest_run_test_suite(internal);
