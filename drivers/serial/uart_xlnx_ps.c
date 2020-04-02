@@ -1208,15 +1208,6 @@ DEVICE_AND_API_INIT(uart_xlnx_ps_##port, DT_INST_LABEL(port), \
 		    &uart_xlnx_ps_dev_cfg_##port, \
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 		    &uart_xlnx_ps_driver_api)
-#else
-#define UART_XLNX_PS_INIT(port) \
-DEVICE_AND_API_INIT(uart_xlnx_ps_##port, DT_INST_LABEL(port), \
-		    uart_xlnx_ps_init, \
-		    NULL, \
-		    &uart_xlnx_ps_dev_cfg_##port, \
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
-		    &uart_xlnx_ps_driver_api)
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #if DT_HAS_DRV_INST(0)
 UART_XLNX_PS_IRQ_CONF_FUNC(0);
