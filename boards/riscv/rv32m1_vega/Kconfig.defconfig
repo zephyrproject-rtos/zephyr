@@ -7,10 +7,6 @@ config BOARD
 	default "rv32m1_vega_ri5cy" if SOC_OPENISA_RV32M1_RI5CY
 	default "rv32m1_vega_zero_riscy" if SOC_OPENISA_RV32M1_ZERO_RISCY
 
-config UART_RV32M1_LPUART_0
-	default y if UART_CONSOLE
-	depends on UART_RV32M1_LPUART
-
 if PINMUX_RV32M1
 
 config PINMUX_RV32M1_PORTA
