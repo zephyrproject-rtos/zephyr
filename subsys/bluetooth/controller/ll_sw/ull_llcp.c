@@ -230,12 +230,16 @@ enum {
 /* LLCP Remote Request FSM State */
 enum {
 	RR_STATE_IDLE,
+	RR_STATE_REJECT,
 	RR_STATE_ACTIVE,
 	RR_STATE_DISCONNECT
 };
 
 /* LLCP Remote Request FSM Event */
 enum {
+	/* Procedure prepare */
+	RR_EVT_PREPARE,
+
 	/* Procedure run */
 	RR_EVT_RUN,
 
@@ -285,6 +289,18 @@ struct proc_ctx {
 			u16_t instant;
 		} pu;
 	} data;
+};
+
+/* Procedure Incompatibility */
+enum proc_incompat {
+	/* Local procedure has not sent first PDU */
+	INCOMPAT_NO_COLLISION,
+
+	/* Local incompatible procedure has sent first PDU */
+	INCOMPAT_RESOLVABLE,
+
+	/* Local incompatible procedure has received first PDU */
+	INCOMPAT_RESERVED,
 };
 
 /* LLCP Memory Pool Descriptor */
@@ -478,6 +494,26 @@ static struct proc_ctx *create_remote_procedure(enum llcp_proc proc)
 	}
 
 	return ctx;
+}
+
+static bool proc_with_instant(struct proc_ctx *ctx)
+{
+	switch (ctx->proc) {
+	case PROC_VERSION_EXCHANGE:
+		return 0U;
+		break;
+	case PROC_ENCRYPTION_START:
+		return 0U;
+		break;
+	case PROC_PHY_UPDATE:
+		return 1U;
+		break;
+	default:
+		/* Unknown procedure */
+		LL_ASSERT(0);
+	}
+
+	return 0U;
 }
 
 /*
@@ -2172,6 +2208,26 @@ static void rp_pu_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node
  * LLCP Remote Request FSM
  */
 
+static void rr_set_incompat(struct ull_cp_conn *conn, enum proc_incompat incompat)
+{
+	conn->llcp.remote.incompat = incompat;
+}
+
+static enum proc_incompat rr_get_incompat(struct ull_cp_conn *conn)
+{
+	return conn->llcp.remote.incompat;
+}
+
+static void rr_set_collision(struct ull_cp_conn *conn, bool collision)
+{
+	conn->llcp.remote.collision = collision;
+}
+
+static bool rr_get_collision(struct ull_cp_conn *conn)
+{
+	return conn->llcp.remote.collision;
+}
+
 static void rr_enqueue(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 {
 	sys_slist_append(&conn->llcp.remote.pend_proc_list, &ctx->node);
@@ -2233,8 +2289,53 @@ static void rr_act_run(struct ull_cp_conn *conn)
 	}
 }
 
+static void rr_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t opcode)
+{
+	struct node_tx *tx;
+	struct pdu_data *pdu;
+
+	/* Allocate tx node */
+	tx = tx_alloc();
+	LL_ASSERT(tx);
+
+	pdu = (struct pdu_data *)tx->pdu;
+
+	/* Encode LL Control PDU */
+	switch (opcode) {
+	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
+		/* TODO(thoh): Select between LL_REJECT_IND and LL_REJECT_EXT_IND */
+		pdu_encode_reject_ext_ind(pdu, conn->llcp.remote.reject_opcode, BT_HCI_ERR_LL_PROC_COLLISION);
+		break;
+	default:
+		LL_ASSERT(0);
+	}
+
+	ctx->tx_opcode = pdu->llctrl.opcode;
+
+	/* Enqueue LL Control PDU towards LLL */
+	ull_tx_enqueue(conn, tx);
+}
+
+static void rr_act_reject(struct ull_cp_conn *conn)
+{
+	if (!tx_alloc_is_available()) {
+		conn->llcp.remote.state = RR_STATE_REJECT;
+	} else {
+		struct proc_ctx *ctx = rr_peek(conn);
+
+		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
+
+		/* Dequeue pending request that just completed */
+		(void) rr_dequeue(conn);
+
+		conn->llcp.remote.state = RR_STATE_IDLE;
+	}
+}
+
 static void rr_act_complete(struct ull_cp_conn *conn)
 {
+	rr_set_collision(conn, 0U);
+
 	/* Dequeue pending request that just completed */
 	(void) rr_dequeue(conn);
 }
@@ -2264,11 +2365,60 @@ static void rr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
 
 static void rr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 {
+	struct proc_ctx *ctx;
+
 	switch (evt) {
-	case RR_EVT_RUN:
-		if (rr_peek(conn)) {
-			rr_act_run(conn);
-			conn->llcp.remote.state = RR_STATE_ACTIVE;
+	case RR_EVT_PREPARE:
+		if ((ctx = rr_peek(conn))){
+			const enum proc_incompat incompat = rr_get_incompat(conn);
+			const bool slave = !!(conn->lll.role == BT_HCI_ROLE_SLAVE);
+			const bool master = !!(conn->lll.role == BT_HCI_ROLE_MASTER);
+			const bool with_instant = proc_with_instant(ctx);
+
+			if (incompat == INCOMPAT_NO_COLLISION) {
+				/* No collision
+				 * => Run procedure
+				 *
+				 * Local incompatible procedure request is kept pending.
+				 */
+
+				/* Pause local incompatible procedure */
+				rr_set_collision(conn, with_instant);
+
+				/* Run remote procedure */
+				rr_act_run(conn);
+				conn->llcp.remote.state = RR_STATE_ACTIVE;
+			} else if (slave && incompat == INCOMPAT_RESOLVABLE) {
+				/* Slave collision
+				 * => Run procedure
+				 *
+				 * Local slave procedure completes with error.
+				 */
+
+				/* Run remote procedure */
+				rr_act_run(conn);
+				conn->llcp.remote.state = RR_STATE_ACTIVE;
+			} else if (with_instant && master && incompat == INCOMPAT_RESOLVABLE) {
+				/* Master collision
+				 * => Send reject
+				 *
+				 * Local master incompatible procedure continues unaffected.
+				 */
+
+				/* Send reject */
+				struct node_rx_pdu *rx = (struct node_rx_pdu *) param;
+				struct pdu_data *pdu = (struct pdu_data *) rx->pdu;
+				conn->llcp.remote.reject_opcode = pdu->llctrl.opcode;
+				rr_act_reject(conn);
+			} else if (with_instant && incompat == INCOMPAT_RESERVED) {
+				 /* Protocol violation.
+				 * => Disconnect
+				 *
+				 */
+
+				/* TODO */
+				LL_ASSERT(0);
+			}
 		}
 		break;
 	case RR_EVT_DISCONNECT:
@@ -2279,6 +2429,11 @@ static void rr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 		/* Ignore other evts */
 		break;
 	}
+}
+static void rr_st_reject(struct ull_cp_conn *conn, u8_t evt, void *param)
+{
+	/* TODO */
+	LL_ASSERT(0);
 }
 
 static void rr_st_active(struct ull_cp_conn *conn, u8_t evt, void *param)
@@ -2313,6 +2468,9 @@ static void rr_execute_fsm(struct ull_cp_conn *conn, u8_t evt, void *param)
 	case RR_STATE_IDLE:
 		rr_st_idle(conn, evt, param);
 		break;
+	case RR_STATE_REJECT:
+		rr_st_reject(conn, evt, param);
+		break;
 	case RR_STATE_ACTIVE:
 		rr_st_active(conn, evt, param);
 		break;
@@ -2320,6 +2478,11 @@ static void rr_execute_fsm(struct ull_cp_conn *conn, u8_t evt, void *param)
 		/* Unknown state */
 		LL_ASSERT(0);
 	}
+}
+
+static void rr_prepare(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
+{
+	rr_execute_fsm(conn, RR_EVT_PREPARE, rx);
 }
 
 static void rr_run(struct ull_cp_conn *conn)
@@ -2374,11 +2537,13 @@ static void rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 	rr_enqueue(conn, ctx);
 
 	/* Prepare procedure */
-	rr_run(conn);
+	rr_prepare(conn, rx);
 
 	/* Handle PDU */
 	ctx = rr_peek(conn);
-	rr_rx(conn, ctx, rx);
+	if (ctx) {
+		rr_rx(conn, ctx, rx);
+	}
 }
 
 /*
@@ -2402,6 +2567,8 @@ void ull_cp_conn_init(struct ull_cp_conn *conn)
 	/* Reset remote request fsm */
 	conn->llcp.remote.state = RR_STATE_DISCONNECT;
 	sys_slist_init(&conn->llcp.remote.pend_proc_list);
+	conn->llcp.remote.incompat = INCOMPAT_NO_COLLISION;
+	conn->llcp.remote.collision = 0U;
 
 	/* Reset the cached version Information (PROC_VERSION_EXCHANGE) */
 	memset(&conn->llcp.vex, 0, sizeof(conn->llcp.vex));
