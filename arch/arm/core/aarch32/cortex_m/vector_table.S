@@ -38,15 +38,15 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
     .word z_arm_hard_fault
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    .word z_arm_reserved
-    .word z_arm_reserved
-    .word z_arm_reserved
-    .word z_arm_reserved
-    .word z_arm_reserved
-    .word z_arm_reserved
-    .word z_arm_reserved
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
+    .word 0
     .word z_arm_svc
-    .word z_arm_reserved
+    .word 0
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     .word z_arm_mpu_fault
     .word z_arm_bus_fault
@@ -56,15 +56,15 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 #else
     .word z_arm_reserved
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
-    .word z_arm_reserved
-    .word z_arm_reserved
-    .word z_arm_reserved
+    .word 0
+    .word 0
+    .word 0
     .word z_arm_svc
     .word z_arm_debug_monitor
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-    .word z_arm_reserved
+    .word 0
     .word z_arm_pendsv
 #if defined(CONFIG_SYS_CLOCK_EXISTS)
     .word z_clock_isr
