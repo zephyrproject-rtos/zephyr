@@ -38,7 +38,7 @@ Requirements
 ************
 
 This sample has been tested on the Nordic nRF52840-PDK board, but would
-likely also run on the nrf52_pca10040 board.
+likely also run on the nrf52dk_nrf52832 board.
 
 Building and Running
 ********************

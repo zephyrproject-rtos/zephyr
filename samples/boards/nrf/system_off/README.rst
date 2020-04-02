@@ -27,7 +27,7 @@ Building, Flashing and Running
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf52/system_off
-   :board: nrf52_pca10040
+   :board: nrf52dk_nrf52832
    :goals: build flash
    :compact:
 
@@ -50,7 +50,7 @@ nRF52 core output
 
    ***** Booting Zephyr OS build v2.1.0-rc1-158-gb642e1a96d17 *****
 
-   nrf52_pca10040 system off demo
+   nrf52dk_nrf52832 system off demo
    Busy-wait 2 s
    Sleep 2 s
    Sleep 60000 ms (deep sleep minimum)

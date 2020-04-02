@@ -54,7 +54,7 @@ To make sure the sample is set up properly for building, you must:
   chain length (number of WS2812 chips).
 
 For example devicetree configurations for each compatible, see
-:zephyr_file:`samples/drivers/led_ws2812/boards/nrf52_pca10040.overlay` and
+:zephyr_file:`samples/drivers/led_ws2812/boards/nrf52dk_nrf52832.overlay` and
 :zephyr_file:`samples/drivers/led_ws2812/boards/nrf51dk_nrf51422.overlay`.
 
 Some boards are already supported out of the box; see the :file:`boards`

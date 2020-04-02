@@ -357,7 +357,7 @@ Thingy:52 does not have an on-board J-Link debug IC as some other nRF5
 development boards, however, instructions from the :ref:`nordic_segger` page
 also apply to this board, with the additional step of connecting an external
 debugger. A development board with a Debug out connector such as the
-:ref:`nrf52_pca10040` can be used as a debugger with Thingy:52.
+:ref:`nrf52dk_nrf52832` can be used as a debugger with Thingy:52.
 
 Testing board features
 **********************

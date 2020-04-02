@@ -43,7 +43,7 @@ not always used.
      - SoC family
      - CPU core
      - Architecture
-   * - :ref:`nrf52_pca10040 <nrf52_pca10040>`
+   * - :ref:`nrf52dk_nrf52832 <nrf52dk_nrf52832>`
      - nRF52832
      - nRF52
      - Nordic nRF5

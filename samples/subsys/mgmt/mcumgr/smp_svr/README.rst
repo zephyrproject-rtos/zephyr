@@ -52,7 +52,7 @@ Building and Running
 
 The below steps describe how to build and run the ``smp_svr`` sample in
 Zephyr. Where examples are given, they assume the sample is being built for
-the Nordic nRF52 Development Kit (``BOARD=nrf52_pca10040``).
+the Nordic nRF52 Development Kit (``BOARD=nrf52dk_nrf52832``).
 
 If you would like to use a more constrained platform, such as the nRF51 DK, you
 should use the :file:`prj_tiny.conf` configuration file rather than the default
@@ -91,8 +91,8 @@ Step 3: Build smp_svr
 
 .. zephyr-app-commands::
     :zephyr-app: samples/subsys/mgmt/mcumgr/smp_svr
-    :board: nrf52_pca10040
-    :build-dir: nrf52_pca10040
+    :board: nrf52dk_nrf52832
+    :build-dir: nrf52dk_nrf52832
     :goals: build
 
 .. _smp_svr_sample_sign:

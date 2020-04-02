@@ -1,12 +1,12 @@
-# nRF52 PCA10040 board configuration
+# nRF52 DK NRF52832 board configuration
 
 # Copyright (c) 2016 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52_PCA10040
+if BOARD_NRF52DK_NRF52832
 
 config BOARD
-	default "nrf52_pca10040"
+	default "nrf52dk_nrf52832"
 
 config ADC_0
 	default y
@@ -19,4 +19,4 @@ config PWM_0
 config BT_CTLR
 	default BT
 
-endif # BOARD_NRF52_PCA10040
+endif # BOARD_NRF52DK_NRF52832

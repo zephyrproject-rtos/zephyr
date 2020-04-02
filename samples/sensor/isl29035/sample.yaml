@@ -5,4 +5,4 @@ tests:
     harness: console
     tags: sensors
     depends_on: i2c
-    platform_whitelist: nrf52_pca10040
+    platform_whitelist: nrf52dk_nrf52832
