@@ -35,7 +35,7 @@
 		uart-0 = &uart0;
 		gpio-0 = &gpio0;
 		gpiote-0 = &gpiote;
-		wdt-0 = &wdt;
+		wdt-0 = &wdt0;
 		usbd-0 = &usbd;
 		qdec-0 = &qdec;
 		rtc-0 = &rtc0;
