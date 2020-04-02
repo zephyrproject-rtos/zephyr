@@ -68,7 +68,7 @@ static u16_t current_dns_id;
 static struct dns_addrinfo addrinfo;
 
 /* this must be higher that the DNS_TIMEOUT */
-#define WAIT_TIME (DNS_TIMEOUT + 300)
+#define WAIT_TIME K_MSEC(DNS_TIMEOUT + 300)
 
 struct net_if_test {
 	u8_t idx;
@@ -279,7 +279,7 @@ static void dns_query_invalid_timeout(void)
 				NULL,
 				dns_result_cb_dummy,
 				NULL,
-				K_NO_WAIT);
+				0);
 	zassert_equal(ret, -EINVAL, "Wrong return code for timeout");
 }
 

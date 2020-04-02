@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #define LLMNR_IPV4_ADDR "224.0.0.252:5355"
 #define LLMNR_IPV6_ADDR "[ff02::1:3]:5355"
 
-#define DNS_BUF_TIMEOUT 500 /* ms */
+#define DNS_BUF_TIMEOUT K_MSEC(500) /* ms */
 
 /* RFC 1035, 3.1. Name space definitions
  * To simplify implementations, the total length of a domain name (i.e.,
@@ -764,17 +764,13 @@ static int dns_write(struct dns_resolve_context *ctx,
 				    ctx->queries[query_idx].timeout);
 	if (ret < 0) {
 		NET_DBG("[%u] cannot submit work to server idx %d for id %u "
-			"timeout %u ret %d",
-			query_idx, server_idx, dns_id,
-			ctx->queries[query_idx].timeout, ret);
+			"ret %d", query_idx, server_idx, dns_id, ret);
 		return ret;
 	}
 
 	NET_DBG("[%u] submitting work to server idx %d for id %u "
-		"hash %u timeout %u",
-		query_idx, server_idx, dns_id,
-		ctx->queries[query_idx].query_hash,
-		ctx->queries[query_idx].timeout);
+		"hash %u", query_idx, server_idx, dns_id,
+		ctx->queries[query_idx].query_hash);
 
 	ret = net_context_sendto(net_ctx, dns_data->data, dns_data->len,
 				 server, server_addr_len, NULL,
@@ -888,6 +884,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 		     void *user_data,
 		     s32_t timeout)
 {
+	k_timeout_t tout;
 	struct net_buf *dns_data = NULL;
 	struct net_buf *dns_qname = NULL;
 	struct sockaddr addr;
@@ -900,9 +897,15 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 		return -EINVAL;
 	}
 
+	if (timeout == NET_WAIT_FOREVER) {
+		tout = K_FOREVER;
+	} else {
+		tout = K_MSEC(timeout);
+	}
+
 	/* Timeout cannot be 0 as we cannot resolve name that fast.
 	 */
-	if (timeout == K_NO_WAIT) {
+	if (K_TIMEOUT_EQ(tout, K_NO_WAIT)) {
 		return -EINVAL;
 	}
 
@@ -963,7 +966,7 @@ try_resolve:
 	}
 
 	ctx->queries[i].cb = cb;
-	ctx->queries[i].timeout = timeout;
+	ctx->queries[i].timeout = tout;
 	ctx->queries[i].query = query;
 	ctx->queries[i].query_type = type;
 	ctx->queries[i].user_data = user_data;

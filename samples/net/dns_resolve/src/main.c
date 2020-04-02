@@ -28,7 +28,7 @@ static void do_mdns_ipv6_lookup(struct k_work *work);
 #endif
 #endif
 
-#define DNS_TIMEOUT K_SECONDS(2)
+#define DNS_TIMEOUT (2 * MSEC_PER_SEC)
 
 void dns_result_cb(enum dns_resolve_status status,
 		   struct dns_addrinfo *info,
