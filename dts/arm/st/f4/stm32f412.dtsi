@@ -135,6 +135,14 @@
 			};
 		};
 
+		rng: rng@50060800 {
+			compatible = "st,stm32-rng";
+			reg = <0x50060800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000040>;
+			status = "disabled";
+			label = "RNG";
+		};
+
 		usbotg_fs: usb@50000000 {
 			num-bidir-endpoints = <6>;
 		};
