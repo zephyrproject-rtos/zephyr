@@ -1,14 +1,14 @@
-.. _nrf52_pca20020:
+.. _thingy52_nrf52832:
 
-nRF52-PCA20020 (Thingy:52)
-##########################
+Thingy:52
+#########
 
 Overview
 ********
 
-Zephyr uses the nrf52_pca20020 board configuration for building for the
-Thingy:52 board. The board has the nRF52832 MCU with ARM Cortex-M4F processor,
-a set of environmental sensors, a pushbutton, and two RGB LEDs.
+Zephyr uses the thingy52_nrf52832 (PCA20020) board configuration for building
+for the Thingy:52 board. The board has the nRF52832 MCU with ARM Cortex-M4F
+processor, a set of environmental sensors, a pushbutton, and two RGB LEDs.
 
 * :abbr:`ADC (Analog to Digital Converter)`
 * CLOCK
@@ -29,7 +29,7 @@ a set of environmental sensors, a pushbutton, and two RGB LEDs.
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf52_pca20020.jpg
+.. figure:: img/thingy52_nrf52832.jpg
      :width: 442px
      :align: center
      :alt: nRF52 Thingy:52
@@ -39,6 +39,10 @@ a set of environmental sensors, a pushbutton, and two RGB LEDs.
 More information about the board can be found at the `nRF52 DK website`_. The
 `Nordic Semiconductor Infocenter`_ contains the processor's information and the
 datasheet.
+
+.. note::
+
+   In previous Zephyr releases this board was named *nrf52_pca20020*.
 
 Hardware
 ********
@@ -366,7 +370,7 @@ The green lightwell LED can be tested with the :ref:`blinky-sample` example.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nrf52_pca20020
+   :board: thingy52_nrf52832
    :goals: build flash
 
 
@@ -376,7 +380,7 @@ sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/hts221
-   :board: nrf52_pca20020
+   :board: thingy52_nrf52832
    :goals: build flash
 
 References

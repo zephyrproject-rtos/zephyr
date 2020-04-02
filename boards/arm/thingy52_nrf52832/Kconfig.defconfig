@@ -1,12 +1,12 @@
-# nRF52 PCA20020 board configuration
+# Thingy52 NRF52832 board configuration
 
 # Copyright (c) 2018 Aapo Vienamo
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52_PCA20020
+if BOARD_THINGY52_NRF52832
 
 config BOARD
-	default "nrf52_pca20020"
+	default "thingy52_nrf52832"
 
 config ADC_0
 	default y
@@ -18,4 +18,4 @@ config I2C
 config BT_CTLR
 	default BT
 
-endif # BOARD_NRF52_PCA20020
+endif # BOARD_THINGY52_NRF52832

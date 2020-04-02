@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(BATTERY, CONFIG_ADC_LOG_LEVEL);
 
 #define VBATT DT_PATH(vbatt)
 
-#ifdef CONFIG_BOARD_NRF52_PCA20020
+#ifdef CONFIG_BOARD_THINGY52_NRF52832
 /* This board uses a divider that reduces max voltage to
  * reference voltage (600 mV).
  */

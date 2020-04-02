@@ -10,8 +10,8 @@
 #include <nordic/nrf52832_qfaa.dtsi>
 
 / {
-	model = "Nordic PCA20020 Dev Kit";
-	compatible = "nordic,pca20020-dk", "nordic,nrf52832-qfaa",
+	model = "Nordic Thingy52 NRF52832";
+	compatible = "nordic,thingy52-nrf52832", "nordic,nrf52832-qfaa",
 		"nordic,nrf52832";
 
 	chosen {
