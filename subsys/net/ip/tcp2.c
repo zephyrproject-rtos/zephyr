@@ -381,18 +381,24 @@ static bool tcp_options_check(void *buf, ssize_t len)
 
 	NET_DBG("len=%zd", len);
 
-	for ( ; len >= 2; options += opt_len, len -= opt_len) {
+	for ( ; len >= 1; options += opt_len, len -= opt_len) {
 		opt = options[0];
-		opt_len = (opt == TCPOPT_END || opt == TCPOPT_NOP) ?
-			1 : options[1];
-
-		NET_DBG("opt: %hu, opt_len: %hu", (u16_t)opt, (u16_t)opt_len);
 
 		if (opt == TCPOPT_END) {
 			break;
 		} else if (opt == TCPOPT_NOP) {
+			opt_len = 1;
 			continue;
+		} else {
+			if (len < 2) { /* Only END and NOP can have length 1 */
+				NET_ERR("Illegal option %d with length %d",
+					opt, len);
+				result = false;
+				break;
+			}
+			opt_len = options[1];
 		}
+		NET_DBG("opt: %hu, opt_len: %hu", (u16_t)opt, (u16_t)opt_len);
 
 		if (opt_len < 2 || opt_len > len) {
 			result = false;
@@ -807,6 +813,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 {
 	struct tcphdr *th = pkt ? th_get(pkt) : NULL;
 	u8_t next = 0, fl = th ? th->th_flags : 0;
+	size_t tcp_options_len = th ? (th->th_off - 5) * 4 : 0;
 	size_t len;
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
@@ -814,6 +821,13 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	NET_DBG("%s", log_strdup(tcp_conn_state(conn, pkt)));
 
 	if (th && th->th_off < 5) {
+		tcp_out(conn, RST);
+		conn_state(conn, TCP_CLOSED);
+		goto next_state;
+	}
+
+	if (tcp_options_len && !tcp_options_check((th + 1), tcp_options_len)) {
+		NET_DBG("DROP: Invalid TCP option list");
 		tcp_out(conn, RST);
 		conn_state(conn, TCP_CLOSED);
 		goto next_state;
