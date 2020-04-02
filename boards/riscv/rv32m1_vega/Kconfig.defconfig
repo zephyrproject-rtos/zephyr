@@ -30,10 +30,6 @@ config UART_RV32M1_LPUART
 	default y
 	depends on SERIAL
 
-config PWM_2
-	default y
-	depends on PWM
-
 if BT
 
 config BT_CTLR
