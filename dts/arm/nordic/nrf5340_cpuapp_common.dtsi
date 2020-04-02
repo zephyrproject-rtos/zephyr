@@ -339,6 +339,7 @@ gpio1: gpio@842800 {
 	gpio-controller;
 	reg = <0x842800 0x300>;
 	#gpio-cells = <2>;
+	ngpios = <16>;
 	label = "GPIO_1";
 	status = "disabled";
 };
