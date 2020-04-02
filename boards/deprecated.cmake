@@ -11,6 +11,7 @@
 set(nrf51_pca10028_DEPRECATED nrf51dk_nrf51422)
 set(nrf51_pca10031_DEPRECATED nrf51dongle_nrf51422)
 set(nrf52_pca10040_DEPRECATED nrf52dk_nrf52832)
+set(nrf52_pca20020_DEPRECATED thingy52_nrf52832)
 set(nrf52810_pca10040_DEPRECATED nrf52dk_nrf52810)
 set(nrf52833_pca10100_DEPRECATED nrf52833dk_nrf52833)
 set(nrf52840_pca10056_DEPRECATED nrf52840dk_nrf52840)

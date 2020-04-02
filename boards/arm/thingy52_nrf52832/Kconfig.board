@@ -1,9 +1,9 @@
-# nRF52 PCA20020 board configuration
+# Thingy52 NRF52832 board configuration
 
 # Copyright (c) 2018 Aapo Vienamo
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_NRF52_PCA20020
-	bool "nRF52 PCA20020"
+config BOARD_THINGY52_NRF52832
+	bool "Thingy52 NRF52832"
 	select GPIO
 	depends on SOC_NRF52832_QFAA

@@ -11,5 +11,5 @@ tests:
   sample.sensor.ccs811:
     harness: sensor
     tags: sensors
-    platform_whitelist: nrf52_pca20020
+    platform_whitelist: thingy52_nrf52832
     depends_on: i2c

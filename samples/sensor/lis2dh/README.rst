@@ -29,7 +29,7 @@ The LIS2DH2 or compatible sensors are available on a variety of boards
 and shields supported by Zephyr, including:
 
 * :ref:`actinius_icarus`
-* :ref:`nrf52_pca20020`
+* :ref:`thingy52_nrf52832`
 * :ref:`stm32f3_disco_board`
 * :ref:`x-nucleo-iks01a2`
 
