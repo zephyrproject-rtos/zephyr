@@ -174,7 +174,7 @@ struct http_client_internal_data {
 	int sock;
 
 	/** Request timeout */
-	s32_t timeout;
+	k_timeout_t timeout;
 };
 
 /**
@@ -271,6 +271,7 @@ struct http_request {
  * @param req HTTP request information
  * @param timeout Max timeout to wait for the data. The timeout value cannot be
  *        0 as there would be no time to receive the data.
+ *        The timeout value is in milliseconds.
  * @param user_data User specified data that is passed to the callback.
  *
  * @return <0 if error, >=0 amount of data sent to the server

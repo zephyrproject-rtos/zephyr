@@ -490,8 +490,13 @@ int http_client_req(int sock, struct http_request *req,
 	req->internal.response.recv_buf = req->recv_buf;
 	req->internal.response.recv_buf_len = req->recv_buf_len;
 	req->internal.user_data = user_data;
-	req->internal.timeout = timeout;
 	req->internal.sock = sock;
+
+	if (timeout == NET_WAIT_FOREVER) {
+		req->internal.timeout = K_FOREVER;
+	} else {
+		req->internal.timeout = K_MSEC(timeout);
+	}
 
 	method = http_method_str(req->method);
 
@@ -635,9 +640,11 @@ int http_client_req(int sock, struct http_request *req,
 	http_client_init_parser(&req->internal.parser,
 				&req->internal.parser_settings);
 
-	if (timeout != K_FOREVER && timeout != K_NO_WAIT) {
+	if (!K_TIMEOUT_EQ(req->internal.timeout, K_FOREVER) &&
+	    !K_TIMEOUT_EQ(req->internal.timeout, K_NO_WAIT)) {
 		k_delayed_work_init(&req->internal.work, http_timeout);
-		(void)k_delayed_work_submit(&req->internal.work, timeout);
+		(void)k_delayed_work_submit(&req->internal.work,
+					    req->internal.timeout);
 	}
 
 	/* Request is sent, now wait data to be received */
@@ -648,7 +655,8 @@ int http_client_req(int sock, struct http_request *req,
 		NET_DBG("Received %d bytes", total_recv);
 	}
 
-	if (timeout != K_FOREVER && timeout != K_NO_WAIT) {
+	if (!K_TIMEOUT_EQ(req->internal.timeout, K_FOREVER) &&
+	    !K_TIMEOUT_EQ(req->internal.timeout, K_NO_WAIT)) {
 		(void)k_delayed_work_cancel(&req->internal.work);
 	}
 
