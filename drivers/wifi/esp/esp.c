@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT espressif_esp_wifi
+#define DT_DRV_COMPAT espressif_esp
 
 #define LOG_LEVEL CONFIG_WIFI_LOG_LEVEL
 #include <logging/log.h>
