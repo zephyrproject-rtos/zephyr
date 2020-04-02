@@ -152,7 +152,7 @@ void main(void)
 	struct sockaddr_in6 addr6;
 	struct sockaddr_in addr4;
 	int sock4 = -1, sock6 = -1;
-	s32_t timeout = K_SECONDS(3);
+	s32_t timeout = 3 * MSEC_PER_SEC;
 	int ret;
 	int port = HTTP_PORT;
 
