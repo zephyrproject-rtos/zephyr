@@ -12,6 +12,7 @@
 #include <soc.h>
 #include <drivers/i2c.h>
 #include <drivers/dma.h>
+#include <power/power.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
@@ -21,6 +22,9 @@ LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
 #ifndef SERCOM_I2CM_CTRLA_MODE_I2C_MASTER
 #define SERCOM_I2CM_CTRLA_MODE_I2C_MASTER SERCOM_I2CM_CTRLA_MODE(5)
 #endif
+
+/* max i2c idle bus wait timeout is approx. 20us */
+#define I2C_IDLE_TIMEOUT 20
 
 struct i2c_sam0_dev_config {
 	SercomI2cm *regs;
@@ -50,12 +54,16 @@ struct i2c_sam0_msg {
 };
 
 struct i2c_sam0_dev_data {
-	struct k_sem sem;
+	struct k_sem completion_sync;
+	struct k_sem transfer_sync;
 	struct i2c_sam0_msg msg;
+	struct i2c_msg *msgs;
+	u8_t num_msgs;
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
 	struct device *dma;
 #endif
+
 };
 
 #define DEV_NAME(dev) ((dev)->name)
@@ -109,6 +117,9 @@ static bool i2c_sam0_terminate_on_error(struct device *dev)
 
 	data->msg.status = i2c->STATUS.reg;
 
+	if (i2c->STATUS.reg & SERCOM_I2CM_STATUS_RXNACK) {
+		i2c->CTRLB.bit.CMD = 3;
+	}
 	/*
 	 * Clear all the flags that require an explicit clear
 	 * (as opposed to being cleared by ADDR writes, etc)
@@ -119,12 +130,30 @@ static bool i2c_sam0_terminate_on_error(struct device *dev)
 #endif
 			  SERCOM_I2CM_STATUS_LOWTOUT |
 			  SERCOM_I2CM_STATUS_BUSERR;
-	wait_synchronization(i2c);
 
+	i2c->INTFLAG.reg = SERCOM_I2CM_INTFLAG_ERROR | SERCOM_I2CM_INTFLAG_MB
+			 | SERCOM_I2CM_INTFLAG_SB;
 	i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
-	k_sem_give(&data->sem);
+	k_sem_give(&data->completion_sync);
 	return true;
 }
+
+/*
+ *  The i2c CMD bits can only be set when either the Slave on Bus
+ *  interrupt flag (INTFLAG.SB) or Master on Bus interrupt flag
+ *  (INTFLAG.MB) is '1'.  See 28.10.2
+ *
+ *  Writing or reading the data register when SBEN is enabled clears
+ *  the SB and MB interrupt status bits.
+ *
+ *  So, the STOP command must be issued before the MB and SB interrupt
+ *  flag bits are cleared; otherwise:
+ *    1. the CMD bits are ignored,
+ *    2. a STOP does not occur,
+ *    3. the bus remains in the OWNER state,
+ *    4. the clock (SCL) is held low.
+ *  See 28.10.6
+ */
 
 static void i2c_sam0_isr(void *arg)
 {
@@ -133,50 +162,85 @@ static void i2c_sam0_isr(void *arg)
 	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
 	SercomI2cm *i2c = cfg->regs;
 
-	/* Get present interrupts and clear them */
+	int key = irq_lock();
+
+	/* Get present interrupts */
 	uint32_t status = i2c->INTFLAG.reg;
 
-	i2c->INTFLAG.reg = status;
-
 	if (i2c_sam0_terminate_on_error(dev)) {
+		irq_unlock(key);
 		return;
 	}
 
 	if (status & SERCOM_I2CM_INTFLAG_MB) {
-		if (!data->msg.size) {
+		if (data->msg.size == 0) {
+			if (data->msgs->flags & I2C_MSG_STOP) {
+				i2c->CTRLB.bit.CMD = 3;
+			} else if (data->num_msgs > 1) {
+				if ((data->msgs+1)->flags & I2C_MSG_RESTART) {
+					/*
+					 * if next message is flagged
+					 * to restart, clear MB flag and
+					 * do not send STOP.
+					 */
+					i2c->INTFLAG.reg &=
+						~SERCOM_I2CM_INTFLAG_MB;
+				}
+			} else {
+				/*  default:  send STOP  */
+				i2c->CTRLB.bit.CMD = 3;
+			}
 			i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
-			k_sem_give(&data->sem);
+			k_sem_give(&data->completion_sync);
+			irq_unlock(key);
 			return;
 		}
 
 		i2c->DATA.reg = *data->msg.buffer;
 		data->msg.buffer++;
 		data->msg.size--;
-
-		return;
 	}
 
 	if (status & SERCOM_I2CM_INTFLAG_SB) {
 		if (data->msg.size == 1) {
 			/*
-			 * If this is the last byte, then prepare for an auto
-			 * NACK before doing the actual read.  This does not
-			 * require write synchronization.
-			 */
+			* If this is the last byte, then prepare for an auto
+			* NACK before doing the actual read.  This does not
+			* require write synchronization.
+			*/
 			i2c->CTRLB.bit.ACKACT = 1;
+			if (data->msgs->flags & I2C_MSG_STOP) {
+				i2c->CTRLB.bit.CMD = 3;
+			} else if (data->num_msgs > 1) {
+				if ((data->msgs+1)->flags & I2C_MSG_RESTART) {
+					/*
+					 * if next message is flagged
+					 * to restart, clear SB flag and
+					 * do not send STOP.
+					 */
+					i2c->INTFLAG.reg &=
+						~SERCOM_I2CM_INTFLAG_SB;
+				}
+			} else {
+				/*  default:  send STOP  */
+				i2c->CTRLB.bit.CMD = 3;
+			}
 		}
 
 		*data->msg.buffer = i2c->DATA.reg;
 		data->msg.buffer++;
 		data->msg.size--;
 
-		if (!data->msg.size) {
+		if (data->msg.size == 0) {
 			i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
-			k_sem_give(&data->sem);
+			k_sem_give(&data->completion_sync);
+			irq_unlock(key);
 			return;
 		}
-		return;
 	}
+
+	irq_unlock(key);
+	return;
 }
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
@@ -204,7 +268,7 @@ static void i2c_sam0_dma_write_done(void *arg, uint32_t id, int error_code)
 
 		data->msg.status = error_code;
 
-		k_sem_give(&data->sem);
+		k_sem_give(&data->completion_sync);
 		return;
 	}
 
@@ -297,7 +361,7 @@ static void i2c_sam0_dma_read_done(void *arg, uint32_t id, int error_code)
 
 		data->msg.status = error_code;
 
-		k_sem_give(&data->sem);
+		k_sem_give(&data->completion_sync);
 		return;
 	}
 
@@ -378,15 +442,34 @@ static int i2c_sam0_transfer(struct device *dev, struct i2c_msg *msgs,
 	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
 	SercomI2cm *i2c = cfg->regs;
 	uint32_t addr_reg;
+	int ret = 0;
+	uint32_t i;
 
 	if (!num_msgs) {
 		return 0;
 	}
 
+	i = 0;
+	wait_synchronization(i2c);
+	while (i2c->STATUS.bit.BUSSTATE != 1) {
+		if (i > I2C_IDLE_TIMEOUT) {
+			LOG_WRN("Bus is not idle");
+			return -EBUSY;
+		}
+		k_busy_wait(1);
+		i++;
+	}
+
+	if (k_sem_take(&data->transfer_sync, 1000) == -EAGAIN) {
+		LOG_WRN("Failed to acquire sam0 i2c device lock");
+		return -EAGAIN;
+	}
+
 	for (; num_msgs > 0;) {
 		if (!msgs->len) {
 			if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
-				return -EINVAL;
+				ret = -EINVAL;
+				break;
 			}
 		}
 
@@ -404,6 +487,8 @@ static int i2c_sam0_transfer(struct device *dev, struct i2c_msg *msgs,
 		data->msg.buffer = msgs->buf;
 		data->msg.size = msgs->len;
 		data->msg.status = 0;
+		data->msgs = msgs;
+		data->num_msgs = num_msgs;
 
 		addr_reg = addr << 1U;
 		if ((msgs->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
@@ -418,7 +503,8 @@ static int i2c_sam0_transfer(struct device *dev, struct i2c_msg *msgs,
 #ifdef SERCOM_I2CM_ADDR_TENBITEN
 			addr_reg |= SERCOM_I2CM_ADDR_TENBITEN;
 #else
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			break;
 #endif
 		}
 
@@ -466,41 +552,43 @@ static int i2c_sam0_transfer(struct device *dev, struct i2c_msg *msgs,
 
 		irq_unlock(key);
 
-		/* Now wait for the ISR to handle everything */
-		k_sem_take(&data->sem, K_FOREVER);
+		/*
+		 * Wait for the ISR to handle bus transaction
+		 *
+		 * The following wait is a busy wait that prevents the kernel
+		 * from idling and therefore prevents system power management
+		 * until the bus transaction is complete.
+		 */
+		while (k_sem_take(&data->completion_sync, K_NO_WAIT)
+			== -EBUSY) {
+			/*  busy wait for semaphore  */
+		}
 
 		if (data->msg.status) {
 			if (data->msg.status & SERCOM_I2CM_STATUS_ARBLOST) {
 				LOG_DBG("Arbitration lost on %s",
 					DEV_NAME(dev));
-				return -EAGAIN;
+				ret = -EAGAIN;
+				break;
+			} else if (data->msg.status
+				   & SERCOM_I2CM_STATUS_RXNACK) {
+				LOG_DBG("RXNACK on %s", DEV_NAME(dev));
+				ret = -EAGAIN;
+				break;
 			}
 
 			LOG_ERR("Transaction error on %s: %08X",
 				DEV_NAME(dev), data->msg.status);
-			return -EIO;
-		}
-
-		if (msgs->flags & I2C_MSG_STOP) {
-			i2c->CTRLB.bit.CMD = 3;
-		} else if ((msgs->flags & I2C_MSG_RESTART) && num_msgs > 1) {
-			/*
-			 * No action, since we do this automatically if we
-			 * don't send an explicit stop
-			 */
-		} else {
-			/*
-			 * Neither present, so assume we want to release
-			 * the bus (by sending a stop)
-			 */
-			i2c->CTRLB.bit.CMD = 3;
+			ret = -EIO;
+			break;
 		}
 
 		num_msgs--;
 		msgs++;
 	}
 
-	return 0;
+	k_sem_give(&data->transfer_sync);
+	return ret;
 }
 
 static int i2c_sam0_set_apply_bitrate(struct device *dev, uint32_t config)
@@ -639,12 +727,36 @@ static int i2c_sam0_set_apply_bitrate(struct device *dev, uint32_t config)
 
 static int i2c_sam0_configure(struct device *dev, uint32_t config)
 {
+	struct i2c_sam0_dev_data *data = DEV_DATA(dev);
 	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
 
 	if (!(config & I2C_MODE_MASTER)) {
 		return -EINVAL;
+	}
+
+	if (config & I2C_MODE_MASTER) {
+		i2c->CTRLA.bit.ENABLE = 0;
+		wait_synchronization(i2c);
+
+		/* Disable all I2C interrupts */
+		i2c->INTENCLR.reg = SERCOM_I2CM_INTENCLR_MASK;
+
+		/* I2C mode, enable timeouts */
+		i2c->CTRLA.reg = SERCOM_I2CM_CTRLA_MODE_I2C_MASTER
+#ifdef SERCOM_I2CM_CTRLA_LOWTOUTEN
+			| SERCOM_I2CM_CTRLA_LOWTOUTEN
+#endif
+			| SERCOM_I2CM_CTRLA_INACTOUT(0x3);
+		wait_synchronization(i2c);
+
+		/* Enable smart mode (auto ACK) */
+		i2c->CTRLB.reg = SERCOM_I2CM_CTRLB_SMEN;
+		wait_synchronization(i2c);
+
+		i2c->CTRLA.bit.ENABLE = 1;
+		wait_synchronization(i2c);
 	}
 
 	if (config & I2C_SPEED_MASK) {
@@ -682,6 +794,15 @@ static int i2c_sam0_initialize(struct device *dev)
 	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
 			    GCLK_CLKCTRL_CLKEN;
 
+	/*
+	 * The GCLK_SERCOM_SLOW clock is used to time the time-outs
+	 * and must be configured to use a 32KHz oscillator.  See 28.6.3.1
+	 * GCLK4 is configured to 32768 Hz
+	 */
+	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_SERCOMX_SLOW |
+			    GCLK_CLKCTRL_GEN_GCLK4 |
+			    GCLK_CLKCTRL_CLKEN;
+
 	/* Enable SERCOM clock in PM */
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
 #endif
@@ -701,12 +822,13 @@ static int i2c_sam0_initialize(struct device *dev)
 	wait_synchronization(i2c);
 
 	retval = i2c_sam0_set_apply_bitrate(dev,
-					    i2c_map_dt_bitrate(cfg->bitrate));
+			    i2c_map_dt_bitrate(cfg->bitrate));
 	if (retval != 0) {
 		return retval;
 	}
 
-	k_sem_init(&data->sem, 0, 1);
+	k_sem_init(&data->completion_sync, 0, 1);
+	k_sem_init(&data->transfer_sync, 1, 1);
 
 	cfg->irq_config_func(dev);
 
@@ -715,6 +837,8 @@ static int i2c_sam0_initialize(struct device *dev)
 	data->dma = device_get_binding(cfg->dma_dev);
 
 #endif
+
+	i2c->DBGCTRL.bit.DBGSTOP = 1;
 
 	i2c->CTRLA.bit.ENABLE = 1;
 	wait_synchronization(i2c);
@@ -725,7 +849,6 @@ static int i2c_sam0_initialize(struct device *dev)
 
 	return 0;
 }
-
 
 static const struct i2c_driver_api i2c_sam0_driver_api = {
 	.configure = i2c_sam0_configure,

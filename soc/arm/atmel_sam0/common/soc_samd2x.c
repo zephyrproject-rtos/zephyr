@@ -152,6 +152,11 @@ static void gclks_init(void)
 	    GCLK_GENCTRL_ID(3) | GCLK_GENCTRL_SRC_OSC8M | GCLK_GENCTRL_GENEN;
 	wait_gclk_synchronization();
 
+	/* XOSC32K/1 -> GCLK4 */
+	GCLK->GENCTRL.reg =
+	    GCLK_GENCTRL_ID(4) | GCLK_GENCTRL_SRC_XOSC32K | GCLK_GENCTRL_GENEN;
+	wait_gclk_synchronization();
+
 	/* OSCULP32K/32 -> GCLK2 */
 	GCLK->GENDIV.reg = GCLK_GENDIV_ID(2) | GCLK_GENDIV_DIV(32 - 1);
 	wait_gclk_synchronization();
