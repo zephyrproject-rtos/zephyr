@@ -1068,14 +1068,17 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 	struct sockaddr local_addr = { };
 	u16_t local_port, remote_port;
 
-	NET_DBG("context: %p, tcp: %p, cb: %p", context, conn, cb);
-
-	conn->accept_cb = cb;
-
-	if (!conn || conn->state != TCP_LISTEN) {
+	if (!conn) {
 		return -EINVAL;
 	}
 
+	NET_DBG("context: %p, tcp: %p, cb: %p", context, conn, cb);
+
+	if (conn->state != TCP_LISTEN) {
+		return -EINVAL;
+	}
+
+	conn->accept_cb = cb;
 	local_addr.sa_family = net_context_get_family(context);
 
 	switch (local_addr.sa_family) {
