@@ -89,55 +89,65 @@ extern "C" {
 		1 << (31 - __builtin_clz(x) + 1) : \
 		1 << (31 - __builtin_clz(x)))
 
-
-#if defined(CONFIG_USERSPACE)
-#define ARCH_THREAD_STACK_RESERVED \
-	(STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE)
-#else
-#define ARCH_THREAD_STACK_RESERVED (STACK_GUARD_SIZE)
-#endif
-
-
-#if  defined(CONFIG_USERSPACE) && CONFIG_ARC_MPU_VER == 2
+#if CONFIG_ARC_MPU_VER == 2
 /* MPUv2 requires
  *  - region size must be power of 2 and >= 2048
  *  - region start must be aligned to its size
  */
-#define Z_ARC_MPUV2_SIZE_ALIGN(size) POW2_CEIL(STACK_SIZE_ALIGN(size))
+#define Z_ARC_MPU_SIZE_ALIGN(size) POW2_CEIL(STACK_SIZE_ALIGN(size))
+#elif CONFIG_ARC_MPU_VER == 3
+/* MPUv3 requires
+ * - region size must be 32 bytes aligned
+ * - region start must be 32 bytes aligned
+ */
+#define Z_ARC_MPU_SIZE_ALIGN(size) STACK_SIZE_ALIGN(size)
+#endif
+
+
+
+#if  defined(CONFIG_USERSPACE)
+
+
+/* don't need a stack guard for used stack kernel */
+#define ARCH_THREAD_STACK_RESERVED 0
+
+#if CONFIG_ARC_MPU_VER == 2
+#define Z_PRIVILEGE_STACK_ALIGN CONFIG_PRIVILEGED_STACK_SIZE
 /*
- * user stack and guard are protected using MPU regions, so need to adhere to
+ * user stack are protected using MPU regions, so need to adhere to
  * MPU start, size alignment
  */
-#define Z_ARC_THREAD_STACK_ALIGN(size)	Z_ARC_MPUV2_SIZE_ALIGN(size)
-#define ARCH_THREAD_STACK_LEN(size) \
-	(Z_ARC_MPUV2_SIZE_ALIGN(size) + ARCH_THREAD_STACK_RESERVED)
+#define Z_ARC_THREAD_STACK_ALIGN(size)	Z_ARC_MPU_SIZE_ALIGN(size)
+#define ARCH_THREAD_STACK_LEN(size) Z_ARC_MPU_SIZE_ALIGN(size)
+
+#elif CONFIG_ARC_MPU_VER == 3
+#define Z_PRIVILEGE_STACK_ALIGN (STACK_ALIGN)
+
+#define Z_ARC_THREAD_STACK_ALIGN(size) (STACK_ALIGN)
+#define ARCH_THREAD_STACK_LEN(size) Z_ARC_MPU_SIZE_ALIGN(size)
+
+#endif /* CONFIG_ARC_MPU_VER == 2 */
+
+#else /* CONFIG_USERSPACE */
 /*
- * for stack array, each array member should be aligned both in size
- * and start
- */
-#define Z_ARC_THREAD_STACK_ARRAY_LEN(size) \
-		(Z_ARC_MPUV2_SIZE_ALIGN(size) + \
-		MAX(Z_ARC_MPUV2_SIZE_ALIGN(size), \
-		POW2_CEIL(ARCH_THREAD_STACK_RESERVED)))
-#else
-/*
- * MPUv3, no-mpu and no USERSPACE share the same macro definitions.
  * For MPU STACK_GUARD  kernel stacks do not need a MPU region to protect,
  * only guard needs to be protected and aligned. For MPUv3, MPU_STACK_GUARD
  * requires start 32 bytes aligned, also for size which is decided by stack
  * array and USERSPACE; For MPUv2, MPU_STACK_GUARD requires
  * start 2048 bytes aligned, also for size which is decided by stack array.
  *
+
  * When no-mpu and no USERSPACE/MPU_STACK_GUARD, everything is 4 bytes
  * aligned
  */
-#define Z_ARC_THREAD_STACK_ALIGN(size)	(STACK_ALIGN)
+#define ARCH_THREAD_STACK_RESERVED (STACK_GUARD_SIZE)
+
+#define Z_ARC_THREAD_STACK_ALIGN(size) (STACK_ALIGN)
 #define ARCH_THREAD_STACK_LEN(size) \
 		(STACK_SIZE_ALIGN(size) + ARCH_THREAD_STACK_RESERVED)
-#define Z_ARC_THREAD_STACK_ARRAY_LEN(size) \
-		ARCH_THREAD_STACK_LEN(size)
+#endif /* CONFIG_USERSPACE */
 
-#endif /* CONFIG_USERSPACE && CONFIG_ARC_MPU_VER == 2 */
+#define Z_ARC_THREAD_STACK_ARRAY_LEN(size) ARCH_THREAD_STACK_LEN(size)
 
 
 #define ARCH_THREAD_STACK_DEFINE(sym, size) \
