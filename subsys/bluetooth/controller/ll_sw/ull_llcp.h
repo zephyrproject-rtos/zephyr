@@ -35,6 +35,11 @@ struct ull_cp_conn {
 		/* Encryption State (temporary) */
 		u8_t enc_tx;
 		u8_t enc_rx;
+
+		/**/
+		 u16_t latency_prepare;
+		 u16_t latency_event;
+		 u16_t event_counter;
 	} lll;
 };
 
@@ -96,3 +101,7 @@ void ull_cp_ltk_req_reply(struct ull_cp_conn *conn);
  */
 void ull_cp_ltk_req_neq_reply(struct ull_cp_conn *conn);
 
+/**
+ * @brief Initiate a PHY Update Procedure.
+ */
+u8_t ull_cp_phy_update(struct ull_cp_conn *conn);
