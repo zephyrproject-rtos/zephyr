@@ -18,11 +18,11 @@ tests:
     platform_whitelist: nrf52840dk_nrf52840
     extra_args: SHIELD=waveshare_epaper_gdeh0213b1
   sample.display.st7789v_tl019fqv01:
-    platform_whitelist: nrf52_pca10040
+    platform_whitelist: nrf52dk_nrf52832
     extra_args: SHIELD=st7789v_tl019fqv01
     tags: display shield
   sample.display.st7789v_waveshare_240x240:
-    platform_whitelist: nrf52_pca10040
+    platform_whitelist: nrf52dk_nrf52832
     extra_args: SHIELD=st7789v_waveshare_240x240
     tags: display shield
   sample.display.mcux_elcdif:

@@ -3,4 +3,4 @@
 
 config CAN_1
 	default y
-	depends on BOARD_NRF52_PCA10040
+	depends on BOARD_NRF52DK_NRF52832

@@ -5,7 +5,7 @@ tests:
     harness: sensor
     tags: sensors
     depends_on: spi
-    platform_whitelist: nrf52_pca10040
+    platform_whitelist: nrf52dk_nrf52832
   sample.sensor.adxl372.i2c:
     harness: sensor
     tags: sensors

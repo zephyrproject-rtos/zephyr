@@ -66,12 +66,12 @@ Building and Running
 This project outputs sensor data to the console. It requires an ADXL372
 sensor. It should work with any platform featuring a I2C/SPI peripheral interface.
 It does not work on QEMU.
-In this example below the :ref:`nrf52_pca10040` board is used.
+In this example below the :ref:`nrf52dk_nrf52832` board is used.
 
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/adxl372
-   :board: nrf52_pca10040
+   :board: nrf52dk_nrf52832
    :goals: build flash
 
 

@@ -1,7 +1,7 @@
-.. _nrf52_pca10040:
+.. _nrf52dk_nrf52832:
 
-nRF52-PCA10040
-##############
+nRF52 DK
+########
 
 Overview
 ********
@@ -25,16 +25,20 @@ the following devices:
 * :abbr:`UART (Universal asynchronous receiver-transmitter)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf52_pca10040.jpg
+.. figure:: img/nrf52dk_nrf52832.jpg
      :width: 442px
      :align: center
-     :alt: nRF52 PCA10040 DK
+     :alt: nRF52 DK
 
-     nRF52 PCA10040 DK (Credit: Nordic Semiconductor)
+     nRF52 DK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
 `nRF52 DK website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
+
+.. note::
+
+   In previous Zephyr releases this board was named *nrf52_pca10040*.
 
 Hardware
 ********
@@ -46,7 +50,7 @@ is 32 MHz.
 Supported Features
 ==================
 
-The nrf52_pca10040 board configuration supports the following
+The nrf52dk_nrf52832 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -372,7 +376,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf52_pca10040
+   :board: nrf52dk_nrf52832
    :goals: build flash
 
 Debugging
@@ -395,7 +399,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf52_pca10040/nrf52_pca10040.dts`.
+:zephyr_file:`boards/arm/nrf52dk_nrf52832/nrf52dk_nrf52832.dts`.
 
 References
 **********

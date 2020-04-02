@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.13.1)
 
 if((BOARD STREQUAL nrf52840dk_nrf52840) OR
-   (BOARD STREQUAL nrf52_pca10040) OR
+   (BOARD STREQUAL nrf52dk_nrf52832) OR
    (BOARD STREQUAL nrf9160dk_nrf9160) OR
    (BOARD STREQUAL reel_board)
 )

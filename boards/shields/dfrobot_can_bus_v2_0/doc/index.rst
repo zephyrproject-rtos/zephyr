@@ -120,7 +120,7 @@ Zephyr application. For example:
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/CAN
    :tool: all
-   :board: nrf52_pca10040
+   :board: nrf52dk_nrf52832
    :shield: dfrobot_can_bus_v2_0
    :conf: prj.mcp2515.conf
    :goals: build flash
