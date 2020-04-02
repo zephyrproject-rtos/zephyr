@@ -51,11 +51,15 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
     .word z_arm_mpu_fault
     .word z_arm_bus_fault
     .word z_arm_usage_fault
+#if defined(CONFIG_ARMV8_M_SE)
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
     .word z_arm_secure_fault
 #else
     .word z_arm_reserved
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
+#else
+    .word 0
+#endif /* CONFIG_ARMV8_M_SE */
     .word 0
     .word 0
     .word 0
