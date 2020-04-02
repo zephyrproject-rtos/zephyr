@@ -1210,7 +1210,14 @@ static void lp_pu_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t e
 
 static void lp_pu_st_wait_tx_phy_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	/* TODO(thoh) */
+	switch (evt) {
+	case LP_PU_EVT_RUN:
+		lp_pu_send_phy_req(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void lp_pu_st_wait_rx_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
@@ -1240,7 +1247,14 @@ static void lp_pu_st_wait_rx_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *
 
 static void lp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	/* TODO(thoh) */
+	switch (evt) {
+	case LP_PU_EVT_RUN:
+		lp_pu_send_phy_update_ind(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void lp_pu_st_wait_rx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
@@ -1285,7 +1299,14 @@ static void lp_pu_st_wait_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx
 
 static void lp_pu_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	/* TODO(thoh) */
+	switch (evt) {
+	case LP_PU_EVT_RUN:
+		lp_pu_complete(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void lp_pu_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
@@ -2130,12 +2151,26 @@ static void rp_pu_st_wait_rx_phy_req(struct ull_cp_conn *conn, struct proc_ctx *
 
 static void rp_pu_st_wait_tx_phy_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	/* TODO */
+	switch (evt) {
+	case RP_PU_EVT_RUN:
+		rp_pu_send_phy_rsp(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void rp_pu_st_wait_tx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	/* TODO(thoh) */
+	switch (evt) {
+	case RP_PU_EVT_RUN:
+		rp_pu_send_phy_update_ind(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void rp_pu_st_wait_rx_phy_update_ind(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
@@ -2175,7 +2210,14 @@ static void rp_pu_st_wait_instant(struct ull_cp_conn *conn, struct proc_ctx *ctx
 
 static void rp_pu_st_wait_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
-	/* TODO(thoh) */
+	switch (evt) {
+	case RP_PU_EVT_RUN:
+		rp_pu_complete(conn, ctx, evt, param);
+		break;
+	default:
+		/* Ignore other evts */
+		break;
+	}
 }
 
 static void rp_pu_execute_fsm(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
