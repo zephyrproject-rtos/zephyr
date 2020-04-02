@@ -131,62 +131,62 @@
 	interrupts = <27>;
 };
 
-&uart0 {
+&lpuart0 {
 	interrupt-parent = <&event0>;
 	interrupts = <17>;
 };
 
-&uart1 {
+&lpuart1 {
 	interrupt-parent = <&intmux0_ch1>;
 	interrupts = <13>;
 };
 
-&uart2 {
+&lpuart2 {
 	interrupt-parent = <&intmux0_ch1>;
 	interrupts = <14>;
 };
 
-&uart3 {
+&lpuart3 {
 	interrupt-parent = <&intmux0_ch1>;
 	interrupts = <26>;
 };
 
-&i2c0 {
+&lpi2c0 {
 	interrupt-parent = <&event0>;
 	interrupts = <15>;
 };
 
-&i2c1 {
+&lpi2c1 {
 	interrupt-parent = <&event0>;
 	interrupts = <16>;
 };
 
-&i2c2 {
+&lpi2c2 {
 	interrupt-parent = <&intmux0_ch1>;
 	interrupts = <11>;
 };
 
-&i2c3 {
+&lpi2c3 {
 	interrupt-parent = <&intmux0_ch1>;
 	interrupts = <24>;
 };
 
-&spi0 {
+&lpspi0 {
 	interrupt-parent = <&event0>;
 	interrupts = <13>;
 };
 
-&spi1 {
+&lpspi1 {
 	interrupt-parent = <&event0>;
 	interrupts = <14>;
 };
 
-&spi2 {
+&lpspi2 {
 	interrupt-parent = <&intmux0_ch1>;
 	interrupts = <12>;
 };
 
-&spi3 {
+&lpspi3 {
 	interrupt-parent = <&intmux0_ch1>;
 	interrupts = <25>;
 };
@@ -196,22 +196,22 @@
 	interrupts = <29>;
 };
 
-&pwm0 {
+&tpm0 {
 	interrupt-parent = <&event0>;
 	interrupts = <19>;
 };
 
-&pwm1 {
+&tpm1 {
 	interrupt-parent = <&intmux0_ch1>;
 	interrupts = <9>;
 };
 
-&pwm2 {
+&tpm2 {
 	interrupt-parent = <&intmux0_ch1>;
 	interrupts = <10>;
 };
 
-&pwm3 {
+&tpm3 {
 	interrupt-parent = <&intmux0_ch1>;
 	interrupts = <23>;
 };

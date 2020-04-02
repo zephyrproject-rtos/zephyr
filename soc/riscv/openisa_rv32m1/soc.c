@@ -196,16 +196,16 @@ static void rv32m1_switch_to_sirc(void)
  */
 static void rv32m1_setup_peripheral_clocks(void)
 {
-#ifdef DT_OPENISA_RV32M1_TPM_PWM_0_BASE_ADDRESS
+#if DT_HAS_NODE(DT_NODELABEL(tpm0))
 	CLOCK_SetIpSrc(kCLOCK_Tpm0, kCLOCK_IpSrcFircAsync);
 #endif
-#ifdef DT_OPENISA_RV32M1_TPM_PWM_1_BASE_ADDRESS
+#if DT_HAS_NODE(DT_NODELABEL(tpm1))
 	CLOCK_SetIpSrc(kCLOCK_Tpm1, kCLOCK_IpSrcFircAsync);
 #endif
-#ifdef DT_OPENISA_RV32M1_TPM_PWM_2_BASE_ADDRESS
+#if DT_HAS_NODE(DT_NODELABEL(tpm2))
 	CLOCK_SetIpSrc(kCLOCK_Tpm2, kCLOCK_IpSrcFircAsync);
 #endif
-#ifdef DT_OPENISA_RV32M1_TPM_PWM_3_BASE_ADDRESS
+#if DT_HAS_NODE(DT_NODELABEL(tpm3))
 	CLOCK_SetIpSrc(kCLOCK_Tpm3, kCLOCK_IpSrcFircAsync);
 #endif
 }
