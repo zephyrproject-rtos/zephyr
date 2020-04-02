@@ -7375,7 +7375,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		}
 	}
 
-	if (param->options & BT_LE_ADV_OPT_SCANNABLE || has_scan_data) {
+	if ((param->options & BT_LE_ADV_OPT_SCANNABLE) || has_scan_data) {
 		cp->props |= BT_HCI_LE_ADV_PROP_SCAN;
 	}
 
