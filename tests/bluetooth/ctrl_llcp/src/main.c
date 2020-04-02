@@ -409,103 +409,103 @@ void helper_pdu_encode_unknown_rsp(struct pdu_data *pdu, void *param)
 	pdu->llctrl.unknown_rsp.type = p->type;
 }
 
-void helper_pdu_verify_version_ind(struct pdu_data *pdu, void *param)
+void helper_pdu_verify_version_ind(const char *file, u32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_version_ind *p = param;
 
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_VERSION_IND, NULL);
-	zassert_equal(pdu->llctrl.version_ind.version_number, p->version_number, NULL);
-	zassert_equal(pdu->llctrl.version_ind.company_id, p->company_id, NULL);
-	zassert_equal(pdu->llctrl.version_ind.sub_version_number, p->sub_version_number, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_VERSION_IND, "Not a LL_VERSION_IND.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.version_ind.version_number, p->version_number, "Wrong version number.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.version_ind.company_id, p->company_id, "Wrong company id.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.version_ind.sub_version_number, p->sub_version_number, "Wrong sub version number.\nCalled at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_enc_req(struct pdu_data *pdu, void *param)
+void helper_pdu_verify_enc_req(const char *file, u32_t line, struct pdu_data *pdu, void *param)
 {
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_ENC_REQ, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_ENC_REQ, "Not a LL_ENC_REQ. Called at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_enc_rsp(struct pdu_data *pdu, void *param)
+void helper_pdu_verify_enc_rsp(const char *file, u32_t line, struct pdu_data *pdu, void *param)
 {
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_ENC_RSP, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_ENC_RSP, "Not a LL_ENC_RSP.\nCalled at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_start_enc_req(struct pdu_data *pdu, void *param)
+void helper_pdu_verify_start_enc_req(const char *file, u32_t line, struct pdu_data *pdu, void *param)
 {
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_START_ENC_REQ, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_START_ENC_REQ, "Not a LL_START_ENC_REQ.\nCalled at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_start_enc_rsp(struct pdu_data *pdu, void *param)
+void helper_pdu_verify_start_enc_rsp(const char *file, u32_t line, struct pdu_data *pdu, void *param)
 {
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_START_ENC_RSP, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_START_ENC_RSP, "Not a LL_START_ENC_RSP.\nCalled at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_reject_ind(struct pdu_data *pdu, void *param)
+void helper_pdu_verify_reject_ind(const char *file, u32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_reject_ind *p = param;
 
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, reject_ind) + sizeof(struct pdu_data_llctrl_reject_ind), NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_REJECT_IND, NULL);
-	zassert_equal(pdu->llctrl.reject_ind.error_code, p->error_code, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, reject_ind) + sizeof(struct pdu_data_llctrl_reject_ind), "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_REJECT_IND, "Not a LL_REJECT_IND.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.reject_ind.error_code, p->error_code, "Error code mismatch.\nCalled at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_reject_ext_ind(struct pdu_data *pdu, void *param)
+void helper_pdu_verify_reject_ext_ind(const char *file, u32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_reject_ext_ind *p = param;
 
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, reject_ext_ind) + sizeof(struct pdu_data_llctrl_reject_ext_ind), NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND, NULL);
-	zassert_equal(pdu->llctrl.reject_ext_ind.reject_opcode, p->reject_opcode, NULL);
-	zassert_equal(pdu->llctrl.reject_ext_ind.error_code, p->error_code, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, reject_ext_ind) + sizeof(struct pdu_data_llctrl_reject_ext_ind), "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND, "Not a LL_REJECT_EXT_IND.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.reject_ext_ind.reject_opcode, p->reject_opcode, "Reject opcode mismatch.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.reject_ext_ind.error_code, p->error_code, "Error code mismatch.\nCalled at %s:%d\n", file, line);
 }
 
-void helper_pdu_verify_phy_req(struct pdu_data *pdu, void *param)
+void helper_pdu_verify_phy_req(const char *file, u32_t line, struct pdu_data *pdu, void *param)
 {
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_req) + sizeof(struct pdu_data_llctrl_phy_req), NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PHY_REQ, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_req) + sizeof(struct pdu_data_llctrl_phy_req), "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PHY_REQ, "Not a LL_PHY_REQ.\nCalled at %s:%d\n", file, line);
 	/* TODO(thoh): Fill in correct data */
 }
 
-void helper_pdu_verify_phy_rsp(struct pdu_data *pdu, void *param)
+void helper_pdu_verify_phy_rsp(const char *file, u32_t line, struct pdu_data *pdu, void *param)
 {
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_rsp) + sizeof(struct pdu_data_llctrl_phy_rsp), NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PHY_RSP, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_rsp) + sizeof(struct pdu_data_llctrl_phy_rsp), "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PHY_RSP, "Not a LL_PHY_RSP.\nCalled at %s:%d\n", file, line);
 	/* TODO(thoh): Fill in correct data */
 }
 
-void helper_pdu_verify_phy_update_ind(struct pdu_data *pdu, void *param)
+void helper_pdu_verify_phy_update_ind(const char *file, u32_t line, struct pdu_data *pdu, void *param)
 {
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_upd_ind) + sizeof(struct pdu_data_llctrl_phy_upd_ind), NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_upd_ind) + sizeof(struct pdu_data_llctrl_phy_upd_ind), "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND, "Not a LL_PHY_UPDATE_IND.\nCalled at %s:%d\n", file, line);
 	/* TODO(thoh): Fill in correct data */
 }
 
-void helper_pdu_verify_unknown_rsp(struct pdu_data *pdu, void *param)
+void helper_pdu_verify_unknown_rsp(const char *file, u32_t line, struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_unknown_rsp *p = param;
 
-	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
-	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, unknown_rsp) + sizeof(struct pdu_data_llctrl_unknown_rsp), NULL);
-	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP, NULL);
-	zassert_equal(pdu->llctrl.unknown_rsp.type, p->type, NULL);
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, unknown_rsp) + sizeof(struct pdu_data_llctrl_unknown_rsp), "Wrong length.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP, "Not a LL_UNKNOWN_RSP.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.unknown_rsp.type, p->type, "Type mismatch.\nCalled at %s:%d\n", file, line);
 }
 
-void helper_node_verify_phy_update(struct node_rx_pdu *rx, void *param)
+void helper_node_verify_phy_update(const char *file, u32_t line, struct node_rx_pdu *rx, void *param)
 {
 	struct node_rx_pu *pdu = (struct node_rx_pu *)rx->pdu;
 	struct node_rx_pu *p = param;
 
-	zassert_equal(rx->hdr.type, NODE_RX_TYPE_PHY_UPDATE, NULL);
-	zassert_equal(pdu->status, p->status, NULL);
+	zassert_equal(rx->hdr.type, NODE_RX_TYPE_PHY_UPDATE, "Not a PHY_UPDATE node.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->status, p->status, "Status mismatch.\nCalled at %s:%d\n", file, line);
 }
 
 typedef enum {
@@ -522,9 +522,10 @@ typedef enum {
 	LL_UNKNOWN_RSP,
 } helper_pdu_opcode_t;
 
-typedef void (helper_pdu_func_t) (struct pdu_data * data, void *param);
+typedef void (helper_pdu_encode_func_t) (struct pdu_data * data, void *param);
+typedef void (helper_pdu_verify_func_t) (const char* file, u32_t line, struct pdu_data * data, void *param);
 
-helper_pdu_func_t * const helper_pdu_encode[] = {
+helper_pdu_encode_func_t * const helper_pdu_encode[] = {
 	helper_pdu_encode_version_ind,
 	NULL,
 	helper_pdu_encode_reject_ext_ind,
@@ -538,7 +539,7 @@ helper_pdu_func_t * const helper_pdu_encode[] = {
 	helper_pdu_encode_unknown_rsp,
 };
 
-helper_pdu_func_t * const helper_pdu_verify[] = {
+helper_pdu_verify_func_t * const helper_pdu_verify[] = {
 	helper_pdu_verify_version_ind,
 	helper_pdu_verify_reject_ind,
 	helper_pdu_verify_reject_ext_ind,
@@ -556,19 +557,21 @@ typedef enum {
 	NODE_PHY_UPDATE
 } helper_node_opcode_t;
 
-typedef void (helper_node_func_t) (struct node_rx_pdu *rx, void *param);
+typedef void (helper_node_verify_func_t) (const char* file, u32_t line, struct node_rx_pdu *rx, void *param);
 
-helper_node_func_t * const helper_node_verify[] = {
+helper_node_verify_func_t * const helper_node_verify[] = {
 	helper_node_verify_phy_update,
 };
 
-void lt_tx(helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, void *param)
+#define lt_tx(_opcode, _conn, _param) lt_tx_real(__FILE__, __LINE__, _opcode, _conn, _param)
+
+static void lt_tx_real(const char *file, u32_t line, helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, void *param)
 {
 	struct pdu_data *pdu;
 	struct node_rx_pdu *rx;
 
 	int ret = k_mem_slab_alloc(&lt_tx_pdu_slab, (void **) &rx, K_NO_WAIT);
-	zassert_equal(0, ret, "k_mem_slab_alloc failed\n");
+	zassert_equal(0, ret, "Out of memory.\nCalled at %s:%d\n", file, line);
 
 	pdu = (struct pdu_data *) rx->pdu;
 	zassert_not_null(helper_pdu_encode[opcode], "PDU encode function cannot be NULL\n");
@@ -577,70 +580,80 @@ void lt_tx(helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, void *param)
 	sys_slist_append(&lt_tx_q, (sys_snode_t *) rx);
 }
 
-void lt_rx(helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, struct node_tx **tx_ref, void *param)
+#define lt_rx(_opcode, _conn, _tx_ref, _param) lt_rx_real(__FILE__, __LINE__, _opcode, _conn, _tx_ref, _param)
+
+static void lt_rx_real(const char* file, u32_t line, helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, struct node_tx **tx_ref, void *param)
 {
 	struct node_tx *tx;
 	struct pdu_data *pdu;
 
 	tx = ull_tx_q_dequeue(&conn->tx_q);
-	zassert_not_null(tx, NULL);
+	zassert_not_null(tx, "Tx Q empty.\nCalled at %s:%d\n", file, line);
 
 	pdu = (struct pdu_data *)tx->pdu;
 	if (helper_pdu_verify[opcode]) {
-		helper_pdu_verify[opcode](pdu, param);
+		helper_pdu_verify[opcode](file, line, pdu, param);
 	}
 
 	*tx_ref = tx;
 }
 
-void lt_rx_q_is_empty()
+#define lt_rx_q_is_empty() lt_rx_q_is_empty_real(__FILE__, __LINE__)
+
+static void lt_rx_q_is_empty_real(const char* file, u32_t line)
 {
 	struct node_tx *tx;
 
 	tx = ull_tx_q_dequeue(&conn.tx_q);
-	zassert_is_null(tx, NULL);
+	zassert_is_null(tx, "Tx Q not empty.\nCalled at %s:%d\n", file, line);
 }
 
-void ut_rx_pdu(helper_pdu_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
+#define ut_rx_pdu(_opcode, _ntf_ref, _param) ut_rx_pdu_real(__FILE__, __LINE__, _opcode, _ntf_ref, _param)
+
+static void ut_rx_pdu_real(const char* file, u32_t line, helper_pdu_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
 {
 	struct pdu_data *pdu;
 	struct node_rx_pdu *ntf;
 
 	ntf = (struct node_rx_pdu *) sys_slist_get(&ut_rx_q);
-	zassert_not_null(ntf, NULL);
+	zassert_not_null(ntf, "Ntf Q empty.\nCalled at %s:%d\n", file, line);
 
-	zassert_equal(ntf->hdr.type, NODE_RX_TYPE_DC_PDU, NULL);
+	zassert_equal(ntf->hdr.type, NODE_RX_TYPE_DC_PDU, "Ntf node is of the wrong type.\nCalled at %s:%d\n", file, line);
 
 	pdu = (struct pdu_data *) ntf->pdu;
 	if (helper_pdu_verify[opcode]) {
-		helper_pdu_verify[opcode](pdu, param);
+		helper_pdu_verify[opcode](file, line, pdu, param);
 	}
 
 	*ntf_ref = ntf;
 }
 
-void ut_rx_node(helper_node_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
+#define ut_rx_node(_opcode, _ntf_ref, _param) ut_rx_node_real(__FILE__, __LINE__, _opcode, _ntf_ref, _param)
+
+static void ut_rx_node_real(const char* file, u32_t line, helper_node_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
 {
 	struct node_rx_pdu *ntf;
 
 	ntf = (struct node_rx_pdu *) sys_slist_get(&ut_rx_q);
-	zassert_not_null(ntf, NULL);
+	zassert_not_null(ntf, "Ntf Q empty.\nCalled at %s:%d\n", file, line);
 
-	zassert_not_equal(ntf->hdr.type, NODE_RX_TYPE_DC_PDU, NULL);
+	zassert_not_equal(ntf->hdr.type, NODE_RX_TYPE_DC_PDU, "Ntf node is of the wrong type.\nCalled at %s:%d\n", file, line);
 
 	if (helper_node_verify[opcode]) {
-		helper_node_verify[opcode](ntf, param);
+		helper_node_verify[opcode](file, line, ntf, param);
 	}
 
 	*ntf_ref = ntf;
 }
 
-void ut_rx_q_is_empty()
+#define ut_rx_q_is_empty() ut_rx_q_is_empty_real(__FILE__, __LINE__)
+
+static void ut_rx_q_is_empty_real(const char* file, u32_t line)
 {
 	struct node_rx_pdu *ntf;
 
 	ntf = (struct node_rx_pdu *) sys_slist_get(&ut_rx_q);
-	zassert_is_null(ntf, NULL);
+	zassert_is_null(ntf, "Ntf Q not empty.\nCalled at %s:%d\n", file, line);
 }
 
 static u16_t lazy = 0;
