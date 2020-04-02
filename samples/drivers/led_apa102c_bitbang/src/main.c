@@ -23,7 +23,7 @@
 #include <device.h>
 #include <drivers/gpio.h>
 /* in millisecond */
-#define SLEEPTIME	250
+#define SLEEPTIME	K_MSEC(250)
 
 #define GPIO_DATA_PIN	16
 #define GPIO_CLK_PIN	19
