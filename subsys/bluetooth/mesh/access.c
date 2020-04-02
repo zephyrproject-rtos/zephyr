@@ -705,7 +705,6 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 	struct bt_mesh_model_pub *pub = model->pub;
 	struct bt_mesh_app_key *key;
 	struct bt_mesh_msg_ctx ctx = {
-		.send_rel = pub->send_rel,
 	};
 	struct bt_mesh_net_tx tx = {
 		.ctx = &ctx,
@@ -743,6 +742,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
 	ctx.addr = pub->addr;
 	ctx.send_ttl = pub->ttl;
+	ctx.send_rel = pub->send_rel;
 	ctx.net_idx = key->net_idx;
 	ctx.app_idx = key->app_idx;
 
