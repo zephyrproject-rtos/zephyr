@@ -345,6 +345,7 @@
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
+			openisa,rv32m1-port = <&porta>;
 		};
 
 		gpiob: gpio@48020040 {
@@ -353,6 +354,7 @@
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
+			openisa,rv32m1-port = <&portb>;
 		};
 
 		gpioc: gpio@48020080 {
@@ -361,6 +363,7 @@
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
+			openisa,rv32m1-port = <&portc>;
 		};
 
 		gpiod: gpio@480200c0 {
@@ -369,6 +372,7 @@
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
+			openisa,rv32m1-port = <&portd>;
 		};
 
 		gpioe: gpio@4100f000 {
@@ -378,6 +382,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			clocks = <&pcc1 0x3c>;
+			openisa,rv32m1-port = <&porte>;
 		};
 
 		lpuart0: lpuart@40042000 {
