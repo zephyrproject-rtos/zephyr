@@ -128,6 +128,17 @@ extern "C" {
 		      prio, api)
 #endif
 
+#define DT_DEVICE_AND_API_INIT(node_id, init_fn, data, cfg_info, level,	  \
+			       prio, api)				  \
+	DEVICE_AND_API_INIT(node_id, DT_LABEL(node_id), init_fn,	  \
+			    data, cfg_info, level, prio, api)
+
+#define DT_INST_DEVICE_AND_API_INIT(inst, init_fn, data, cfg_info, level, \
+			       prio, api)				  \
+	DT_DEVICE_AND_API_INIT(DT_DRV_INST(inst), init_fn, data, cfg_info,\
+			       level, prio, api)
+
+
 /**
  * @def DEVICE_DEFINE
  *
