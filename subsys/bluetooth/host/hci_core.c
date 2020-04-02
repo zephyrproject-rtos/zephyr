@@ -1254,6 +1254,19 @@ static inline bool rpa_timeout_valid_check(void)
 #endif
 }
 
+static inline bool rpa_is_new(void)
+{
+#if defined(CONFIG_BT_PRIVACY)
+	/* RPA is considered new if there is less than half a second since the
+	 * timeout was started.
+	 */
+	return k_delayed_work_remaining_get(&bt_dev.rpa_update) >
+	       (RPA_TIMEOUT - K_MSEC(500));
+#else
+	return false;
+#endif
+}
+
 #if defined(CONFIG_BT_CENTRAL)
 static int le_create_conn_set_random_addr(bool use_filter, u8_t *own_addr_type)
 {
@@ -4303,12 +4316,12 @@ static int start_le_scan_ext(struct bt_hci_ext_scan_phy *phy_1m,
 	if (duration > 0) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_LIMITED);
 
-#if defined(CONFIG_BT_PRIVACY)
-		if (k_delayed_work_remaining_get(&bt_dev.rpa_update) <
-		    (RPA_TIMEOUT - K_MSEC(500))) {
+		/* Allow bt_le_oob_get_local to be called directly before
+		 * starting a scan limited by timeout.
+		 */
+		if (IS_ENABLED(CONFIG_BT_PRIVACY) && !rpa_is_new()) {
 			atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 		}
-#endif /* defined(CONFIG_BT_PRIVACY) */
 	}
 
 	err = le_scan_set_random_addr(active_scan, &own_addr_type);
@@ -8533,14 +8546,13 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 	    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING_IDENTITY)) {
-		/* Don't refresh RPA addresses if there is less than
-		 * half a second since it was refreshed last time.
-		 * This allows back to back calls to this function to not
-		 * invalidate the previously set RPAs.
+		/* Don't refresh RPA addresses if the RPA is new.
+		 * This allows back to back calls to this function or
+		 * bt_le_oob_get_local to not invalidate the previously set
+		 * RPAs.
 		 */
 		if (!atomic_test_bit(adv->flags, BT_ADV_LIMITED) &&
-		    k_delayed_work_remaining_get(&bt_dev.rpa_update) <
-		    (RPA_TIMEOUT - K_MSEC(500))) {
+		    !rpa_is_new()) {
 			if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 			    atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING)) {
 				struct bt_conn *conn;
