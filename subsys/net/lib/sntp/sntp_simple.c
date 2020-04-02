@@ -14,7 +14,7 @@ int sntp_simple(const char *server, u32_t timeout, struct sntp_time *time)
 	static struct addrinfo hints;
 	struct addrinfo *addr;
 	struct sntp_ctx sntp_ctx;
-	u32_t deadline;
+	u64_t deadline;
 	u32_t iter_timeout;
 
 	hints.ai_family = AF_INET;
@@ -36,11 +36,16 @@ int sntp_simple(const char *server, u32_t timeout, struct sntp_time *time)
 		goto freeaddr;
 	}
 
-	deadline = k_uptime_get_32() + timeout;
-	/* Timeout for current iteration */
-	iter_timeout = K_MSEC(100);
+	if (timeout == NET_WAIT_FOREVER) {
+		deadline = (u64_t)timeout;
+	} else {
+		deadline = k_uptime_get() + (u64_t)timeout;
+	}
 
-	while ((s32_t)(deadline - k_uptime_get_32()) > 0) {
+	/* Timeout for current iteration */
+	iter_timeout = 100;
+
+	while (k_uptime_get() < deadline) {
 		res = sntp_query(&sntp_ctx, iter_timeout, time);
 
 		if (res != -ETIMEDOUT) {
@@ -48,7 +53,7 @@ int sntp_simple(const char *server, u32_t timeout, struct sntp_time *time)
 		}
 
 		/* Exponential backoff with limit */
-		if (iter_timeout < K_MSEC(1000)) {
+		if (iter_timeout < 1000) {
 			iter_timeout *= 2;
 		}
 	}
