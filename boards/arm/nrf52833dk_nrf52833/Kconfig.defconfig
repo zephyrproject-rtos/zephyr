@@ -1,12 +1,12 @@
-# nRF52833 PCA10100 board configuration
+# nRF52833 DK NRF52833 board configuration
 
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52833_PCA10100
+if BOARD_NRF52833DK_NRF52833
 
 config BOARD
-	default "nrf52833_pca10100"
+	default "nrf52833dk_nrf52833"
 
 config ADC_0
 	default y
@@ -33,4 +33,4 @@ config IEEE802154_NRF5
 config BT_CTLR
 	default BT
 
-endif # BOARD_NRF52833_PCA10100
+endif # BOARD_NRF52833DK_NRF52833
