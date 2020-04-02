@@ -1,16 +1,15 @@
 .. _nrf9160dk_nrf9160:
 
-nRF9160 DK
-##########
+nRF9160 Development Kit (DK)
+############################
 
 Overview
 ********
 
-The nRF9160 Development Kit (PCA10090) is a single-board development kit
-for evaluation and development on the nRF9160 SiP for LTE-M and NB-IoT.
-The nrf9160dk_nrf9160 board provides support for the Nordic Semiconductor
-nRF9160 ARM Cortex-M33F CPU with ARMv8-M Security Extension and the
-following devices:
+The nRF9160 DK (PCA10090) is a single-board development kit for evaluation and
+development on the nRF9160 SiP for LTE-M and NB-IoT. The nrf9160dk_nrf9160
+board configuration provides support for the Nordic Semiconductor nRF9160 ARM
+Cortex-M33F CPU with ARMv8-M Security Extension and the following devices:
 
 * :abbr:`ADC (Analog to Digital Converter)`
 * CLOCK
@@ -35,7 +34,7 @@ following devices:
      nRF9160 DK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
-`nRF91 DK website`_. The `Nordic Semiconductor Infocenter`_
+`nRF9160 DK website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
 .. note::
@@ -88,8 +87,8 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
-See `nRF91 DK website`_ and `Nordic Semiconductor Infocenter`_
-for a complete list of nRF9160 Development Kit board hardware features.
+See `nRF9160 DK website`_ and `Nordic Semiconductor Infocenter`_
+for a complete list of nRF9160 DK board hardware features.
 
 Connections and IOs
 ===================
@@ -166,7 +165,7 @@ First, run your favorite terminal program to listen for output.
 
    $ minicom -D <tty_device> -b 115200
 
-Replace :code:`<tty_device>` with the port where the board nRF9160 DK
+Replace :code:`<tty_device>` with the port where the nRF9160 DK
 can be found. For example, under Linux, :code:`/dev/ttyACM0`.
 
 Then build and flash the application in the usual way.
@@ -203,5 +202,5 @@ References
 
 .. _IDAU:
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
-.. _nRF91 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF9160-DK
+.. _nRF9160 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF9160-DK
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
