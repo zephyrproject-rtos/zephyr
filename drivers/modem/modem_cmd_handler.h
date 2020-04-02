@@ -33,9 +33,9 @@ static int name_(struct modem_cmd_handler_data *data, u16_t len, \
 	.delim = adelim_, \
 }
 
-#define CMD_RESP	0
+#define CMD_HANDLER	0
 #define CMD_UNSOL	1
-#define CMD_HANDLER	2
+#define CMD_RESP	2
 #define CMD_MAX		3
 
 struct modem_cmd_handler_data;
