@@ -11,8 +11,4 @@ config SOC
 config NUM_IRQS
 	default 83
 
-config GPIO_STM32_PORTH
-	default y
-	depends on GPIO_STM32
-
 endif # SOC_STM32L422XX
