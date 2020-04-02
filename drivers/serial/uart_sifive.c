@@ -393,7 +393,7 @@ static const struct uart_sifive_device_config uart_sifive_dev_cfg_0 = {
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_sifive_0, DT_INST_PROP(0, label),
+DEVICE_AND_API_INIT(uart_sifive_0, DT_INST_LABEL(0),
 		    uart_sifive_init,
 		    &uart_sifive_data_0, &uart_sifive_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -432,7 +432,7 @@ static const struct uart_sifive_device_config uart_sifive_dev_cfg_1 = {
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_sifive_1, DT_INST_PROP(1, label),
+DEVICE_AND_API_INIT(uart_sifive_1, DT_INST_LABEL(1),
 		    uart_sifive_init,
 		    &uart_sifive_data_1, &uart_sifive_dev_cfg_1,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
