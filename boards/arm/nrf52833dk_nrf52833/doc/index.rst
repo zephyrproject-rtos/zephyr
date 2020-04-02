@@ -1,12 +1,12 @@
-.. _nrf52833_pca10100:
+.. _nrf52833dk_nrf52833:
 
-nRF52833-PCA10100
-#################
+nRF52833 DK
+###########
 
 Overview
 ********
 
-The nRF52833 Preview Development Kit (PCA10100) hardware provides
+The nRF52833 Development Kit (PCA10100) hardware provides
 support for the Nordic Semiconductor nRF52833 ARM Cortex-M4F CPU and
 the following devices:
 
@@ -27,20 +27,24 @@ the following devices:
 * :abbr:`WDT (Watchdog Timer)`
 
 More information about the board can be found at the
-`nRF52833 PDK website`_. The `Nordic Semiconductor Infocenter`_
+`nRF52833 DK website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
+
+.. note::
+
+   In previous Zephyr releases this board was named *nrf52833_pca10100*.
 
 Hardware
 ********
 
-nRF52833 PDK has two external oscillators. The frequency of
+nRF52833 DK has two external oscillators. The frequency of
 the slow clock is 32.768 kHz. The frequency of the main clock
 is 32 MHz.
 
 Supported Features
 ==================
 
-The nrf52833_pca10100 board configuration supports the following
+The nrf52833dk_nrf52833 board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -79,7 +83,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
-See `nRF52833 PDK website`_ and `Nordic Semiconductor Infocenter`_
+See `nRF52833 DK website`_ and `Nordic Semiconductor Infocenter`_
 for a complete list of nRF52833 Development Kit board hardware features.
 
 Connections and IOs
@@ -105,7 +109,7 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for the ``nrf52833_pca10100`` board configuration can be
+Applications for the ``nrf52833dk_nrf52833`` board configuration can be
 built and flashed in the usual way (see :ref:`build_an_application`
 and :ref:`application_run` for more details); however, the standard
 debugging targets are not currently available.
@@ -134,7 +138,7 @@ Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf52833_pca10100
+   :board: nrf52833dk_nrf52833
    :goals: build flash
 
 Debugging
@@ -144,8 +148,8 @@ Refer to the :ref:`nordic_segger` page to learn about debugging Nordic boards wi
 Segger IC.
 
 
-Testing the LEDs and buttons in the nRF52833 PDK
-************************************************
+Testing the LEDs and buttons in the nRF52833 DK
+***********************************************
 
 There are 2 samples that allow you to test that the buttons (switches) and LEDs on
 the board are working properly with Zephyr:
@@ -155,7 +159,7 @@ the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf52833_pca10100/nrf52833_pca10100.dts`.
+:zephyr_file:`boards/arm/nrf52833dk_nrf52833/nrf52833dk_nrf52833.dts`.
 
 Using UART1
 ***********
@@ -167,7 +171,7 @@ more than one UART for connecting peripheral devices:
 
    .. code-block:: console
 
-      $ cat nrf52833_pca10100.overlay
+      $ cat nrf52833dk_nrf52833.overlay
       &uart1 {
         compatible = "nordic,nrf-uarte";
         current-speed = <115200>;
@@ -211,7 +215,7 @@ References
 
 .. target-notes::
 
-.. _nRF52833 PDK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52833-DK
+.. _nRF52833 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52833-DK
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com
 .. _J-Link Software and documentation pack: https://www.segger.com/jlink-software.html
 .. _nRF52833 Product Specification: https://infocenter.nordicsemi.com/pdf/nRF52833_OPS_v0.7.pdf

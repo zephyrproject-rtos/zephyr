@@ -1,5 +1,5 @@
-identifier: nrf52833_pca10100
-name: nRF52833-PCA10100
+identifier: nrf52833dk_nrf52833
+name: nRF52833-DK-NRF52833
 type: mcu
 arch: arm
 toolchain:
