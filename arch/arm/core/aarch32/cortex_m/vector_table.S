@@ -66,9 +66,13 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
     .word 0
     .word z_arm_pendsv
-#if defined(CONFIG_SYS_CLOCK_EXISTS)
+#if defined(CONFIG_CPU_CORTEX_M_HAS_SYSTICK)
+#if defined(CONFIG_SYS_CLOCK_EXISTS) && defined(CONFIG_CORTEX_M_SYSTICK)
     .word z_clock_isr
 #else
     .word z_arm_reserved
-#endif
+#endif /* CONFIG_SYS_CLOCK_EXISTS && CONFIG_CORTEX_M_SYSTICK */
+#else
+    .word 0
+#endif /* CONFIG_CPU_CORTEX_M_HAS_SYSTICK */
 
