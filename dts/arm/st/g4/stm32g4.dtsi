@@ -425,6 +425,14 @@
 			label = "RTC_0";
 		};
 
+		rng: rng@50060800 {
+			compatible = "st,stm32-rng";
+			reg = <0x50060800 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x04000000>;
+			status = "disabled";
+			label = "RNG";
+		};
+
 		usb: usb@40005c00 {
 			compatible = "st,stm32-usb";
 			reg = <0x40005c00 0x400>;
