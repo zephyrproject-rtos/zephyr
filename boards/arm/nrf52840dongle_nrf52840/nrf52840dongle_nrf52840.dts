@@ -9,8 +9,8 @@
 #include <nordic/nrf52840_qiaa.dtsi>
 
 / {
-	model = "Nordic PCA10059 Dev Kit";
-	compatible = "nordic,pca10059-dk", "nordic,nrf52840-qiaa",
+	model = "Nordic nRF52840 Dongle NRF52840";
+	compatible = "nordic,nrf52840-dongle-nrf52840", "nordic,nrf52840-qiaa",
 		     "nordic,nrf52840";
 
 	chosen {

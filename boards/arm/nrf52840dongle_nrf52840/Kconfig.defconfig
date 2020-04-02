@@ -1,13 +1,13 @@
-# nRF52 PCA10059 board configuration
+# nRF52840 Dongle NRF52840 board configuration
 #
 # Copyright (c) 2018 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF52840_PCA10059
+if BOARD_NRF52840DONGLE_NRF52840
 
 config BOARD
-	default "nrf52840_pca10059"
+	default "nrf52840dongle_nrf52840"
 
 # To let the nRF5 bootloader load an application, the application
 # must be linked after Nordic MBR, that is factory-programmed on the board.
@@ -49,4 +49,4 @@ config IEEE802154_NRF5
 config BT_CTLR
 	default BT
 
-endif # BOARD_NRF52840_PCA10059
+endif # BOARD_NRF52840DONGLE_NRF52840

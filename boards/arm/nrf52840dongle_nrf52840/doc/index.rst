@@ -1,12 +1,12 @@
-.. _nrf52840_pca10059:
+.. _nrf52840dongle_nrf52840:
 
-nRF52840-PCA10059
-#################
+nRF52840 Dongle
+###############
 
 Overview
 ********
 
-The nRF52840 PCA10059 (USB Dongle) hardware provides support for the Nordic
+The nRF52840 Dongle (PCA10059) hardware provides support for the Nordic
 Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 
 * :abbr:`ADC (Analog to Digital Converter)`
@@ -24,28 +24,32 @@ Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf52840_pca10059.jpg
+.. figure:: img/nrf52840dongle_nrf52840.jpg
      :width: 442px
      :align: center
      :alt: nRF52840 Dongle
 
-     nRF52840 PCA10059
+     nRF52840 Dongle
 
 More information about the board can be found at the
 `nRF52840 Dongle website`_. The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
 
+.. note::
+
+   In previous Zephyr releases this board was named *nrf52840_pca10059*.
+
 Hardware
 ********
 
-The ``nrf52840_pca10059`` has two external oscillators. The frequency of
+The ``nrf52840dongle_nrf52840`` has two external oscillators. The frequency of
 the slow clock is 32.768 kHz. The frequency of the main clock
 is 32 MHz.
 
 Supported Features
 ==================
 
-The ``nrf52840_pca10059`` board configuration supports the following
+The ``nrf52840dongle_nrf52840`` board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -83,7 +87,7 @@ hardware features:
 
 Other hardware features are not supported by the Zephyr kernel.
 See `nRF52840 Dongle website`_ and `Nordic Semiconductor Infocenter`_
-for a complete list of nRF52840 PCA10059 Development Kit board hardware features.
+for a complete list of nRF52840 Dongle board hardware features.
 
 Connections and IOs
 ===================
@@ -105,7 +109,7 @@ Push buttons
 Programming and Debugging
 *************************
 
-Applications for the ``nrf52840_pca10059`` board configuration can be
+Applications for the ``nrf52840dongle_nrf52840`` board configuration can be
 built in the usual way (see :ref:`build_an_application` for more details).
 
 Flashing
@@ -144,7 +148,7 @@ device. Make sure ``nrfutil`` is installed before proceeding.
 
    .. zephyr-app-commands::
       :app: zephyr/samples/basic/blinky
-      :board: nrf52840_pca10059
+      :board: nrf52840dongle_nrf52840
       :goals: build
 
 #. Package the application for the bootloader using ``nrfutil``:
@@ -190,7 +194,7 @@ to the zephyr repository on your computer.
 
    .. zephyr-app-commands::
       :app: mcuboot/boot/zephyr
-      :board: nrf52840_pca10059
+      :board: nrf52840dongle_nrf52840
       :build-dir: mcuboot
       :goals: build
 
@@ -232,7 +236,7 @@ over Bluetooth).
 
    .. zephyr-app-commands::
       :app: zephyr/samples/subsys/mgmt/mcumgr/smp_svr
-      :board: nrf52840_pca10059
+      :board: nrf52840dongle_nrf52840
       :build-dir: smp_svr
       :goals: build
 
@@ -269,7 +273,7 @@ name.
 
    .. zephyr-app-commands::
       :app: zephyr/samples/basic/blinky
-      :board: nrf52840_pca10059
+      :board: nrf52840dongle_nrf52840
       :build-dir: blinky
       :goals: build
       :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y
@@ -287,7 +291,7 @@ For Segger J-Link debug probes, follow the instructions in the
 :ref:`nordic_segger` page to install and configure all the necessary
 software. Further information can be found in :ref:`nordic_segger_flashing`.
 
-Locate the DTS file for the board under: boards/arm/nrf52840_pca10059.
+Locate the DTS file for the board under: boards/arm/nrf52840dongle_nrf52840.
 This file requires a small modification to use a different partition table.
 Edit the include directive to include "fstab-debugger" instead of "fstab-stock".
 
@@ -298,7 +302,7 @@ Here is an example for the :ref:`blinky-sample` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: nrf52840_pca10059
+   :board: nrf52840dongle_nrf52840
    :goals: build flash
 
 Observe the LED on the board blinking.
@@ -306,13 +310,13 @@ Observe the LED on the board blinking.
 Debugging
 =========
 
-The ``nrf52840_pca10059`` board does not have an on-board J-Link debug IC
+The ``nrf52840dongle_nrf52840`` board does not have an on-board J-Link debug IC
 as some nRF5x development boards, however, instructions from the
 :ref:`nordic_segger` page also apply to this board, with the additional step
 of connecting an external debugger.
 
-Testing the LEDs and buttons on the nRF52840 PCA10059
-*****************************************************
+Testing the LEDs and buttons on the nRF52840 Dongle
+***************************************************
 
 There are 2 samples that allow you to test that the buttons (switches) and LEDs on
 the board are working properly with Zephyr:
