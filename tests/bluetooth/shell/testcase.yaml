@@ -3,7 +3,7 @@ tests:
     extra_configs:
       - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
     platform_whitelist: qemu_cortex_m3 qemu_x86 native_posix native_posix_64 nrf52840dk_nrf52840
-    platform_exclude: nrf52810_pca10040
+    platform_exclude: nrf52dk_nrf52810
     tags: bluetooth
     harness: keyboard
     min_flash: 145
@@ -12,7 +12,7 @@ tests:
       - CONFIG_NATIVE_UART_0_ON_STDINOUT=y
     extra_args: CONF_FILE="prj_br.conf"
     platform_whitelist: qemu_cortex_m3 qemu_x86 native_posix native_posix_64
-    platform_exclude: nrf52810_pca10040
+    platform_exclude: nrf52dk_nrf52810
     tags: bluetooth
     harness: keyboard
   bluetooth.shell.adv_ext:
