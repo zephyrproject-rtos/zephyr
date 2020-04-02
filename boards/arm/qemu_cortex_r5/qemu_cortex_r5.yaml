@@ -13,6 +13,5 @@ testing:
   default: true
   ignore_tags:
     - benchmark
-    - interrupt
     - memory_protection
     - userspace

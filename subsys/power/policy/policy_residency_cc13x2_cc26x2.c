@@ -32,14 +32,8 @@ extern PowerCC26X2_ModuleState PowerCC26X2_module;
 /* PM Policy based on SoC/Platform residency requirements */
 static const unsigned int pm_min_residency[] = {
 #ifdef CONFIG_SYS_POWER_SLEEP_STATES
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_1
 	CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_1 * SECS_TO_TICKS / MSEC_PER_SEC,
-#endif
-
-#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_2
 	CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_2 * SECS_TO_TICKS / MSEC_PER_SEC,
-#endif
-
 #endif /* CONFIG_SYS_POWER_SLEEP_STATES */
 };
 
@@ -139,4 +133,13 @@ enum power_states sys_pm_policy_next_state(s32_t ticks)
 
 	LOG_DBG("No suitable power state found!");
 	return SYS_POWER_STATE_ACTIVE;
+}
+
+__weak bool sys_pm_policy_low_power_devices(enum power_states pm_state)
+{
+#ifdef CONFIG_SYS_POWER_SLEEP_STATES
+	return (pm_state == SYS_POWER_STATE_SLEEP_2);
+#else
+	return false;
+#endif
 }

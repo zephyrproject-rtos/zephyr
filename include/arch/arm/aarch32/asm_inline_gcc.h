@@ -23,7 +23,7 @@
 #include <irq.h>
 
 #if defined(CONFIG_CPU_CORTEX_R)
-#include <arch/arm/cortex_r/cpu.h>
+#include <arch/arm/aarch32/cortex_a_r/cpu.h>
 #endif
 
 #ifdef __cplusplus

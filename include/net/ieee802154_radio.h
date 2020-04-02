@@ -73,6 +73,12 @@ enum ieee802154_config_type {
 	 *  (NULL pointer) should disable it for all enabled addresses.
 	 */
 	IEEE802154_CONFIG_ACK_FPB,
+
+	/** Indicates whether the device is a PAN coordinator. */
+	IEEE802154_CONFIG_PAN_COORDINATOR,
+
+	/** Enable/disable promiscuous mode. */
+	IEEE802154_CONFIG_PROMISCUOUS,
 };
 
 /** IEEE802.15.4 driver configuration data. */
@@ -90,6 +96,12 @@ struct ieee802154_config {
 			bool extended;
 			bool enabled;
 		} ack_fpb;
+
+		/** ``IEEE802154_CONFIG_PAN_COORDINATOR`` */
+		bool pan_coordinator;
+
+		/** ``IEEE802154_CONFIG_PROMISCUOUS`` */
+		bool promiscuous;
 	};
 };
 
@@ -145,15 +157,13 @@ struct ieee802154_radio_api {
 	u16_t (*get_subg_channel_count)(struct device *dev);
 #endif /* CONFIG_NET_L2_IEEE802154_SUB_GHZ */
 
-#ifdef CONFIG_NET_L2_OPENTHREAD
 	/** Run an energy detection scan.
-	 * Note: channel must be set prior to request this function.
-	 * duration parameter is in ms.
+	 *  Note: channel must be set prior to request this function.
+	 *  duration parameter is in ms.
 	 */
 	int (*ed_scan)(struct device *dev,
 		       u16_t duration,
 		       energy_scan_done_cb_t done_cb);
-#endif /* CONFIG_NET_L2_OPENTHREAD */
 };
 
 /* Make sure that the network interface API is properly setup inside

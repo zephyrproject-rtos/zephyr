@@ -35,7 +35,7 @@ is the boot loader used with Zephyr. The source code itself is hosted in the
 In order to use MCUboot with Zephyr you need to take the following into account:
 
 1. You will need to define the :ref:`mcuboot_partitions` required by MCUboot in
-   the :ref:`flash_partitions`.
+   the :ref:`legacy_flash_partitions`.
 2. Your application's :file:`.conf` file needs to enable the
    :option:`CONFIG_BOOTLOADER_MCUBOOT` Kconfig option in order for Zephyr to
    be built in an MCUboot-compatible manner

@@ -43,4 +43,11 @@ config TIMER_DTMR_CMSDK_APB
 
 endif # COUNTER
 
+if IPM
+
+config IPM_MHU
+	default y
+
+endif # IPM
+
 endif

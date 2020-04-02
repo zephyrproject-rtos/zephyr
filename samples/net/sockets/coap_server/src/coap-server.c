@@ -995,7 +995,7 @@ static void update_counter(struct k_work *work)
 		coap_resource_notify(resource_to_notify);
 	}
 
-	k_delayed_work_submit(&observer_work, MSEC_PER_SEC * 5U);
+	k_delayed_work_submit(&observer_work, K_SECONDS(5));
 }
 
 static int create_pending_request(struct coap_packet *response,
@@ -1099,7 +1099,7 @@ static int send_notification_packet(const struct sockaddr *addr,
 		}
 	}
 
-	k_delayed_work_submit(&observer_work, MSEC_PER_SEC * 5U);
+	k_delayed_work_submit(&observer_work, K_SECONDS(5));
 
 	r = send_coap_reply(&response, addr, addr_len);
 

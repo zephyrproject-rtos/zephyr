@@ -22,6 +22,8 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <openthread/cli.h>
 #include <openthread/ip6.h>
 #include <openthread/link.h>
+#include <openthread/link_raw.h>
+#include <openthread/ncp.h>
 #include <openthread/message.h>
 #include <openthread/platform/diag.h>
 #include <openthread/tasklet.h>
@@ -196,7 +198,7 @@ void ot_receive_handler(otMessage *aMessage, void *context)
 		pkt_list_add(ot_context, pkt);
 		pkt = NULL;
 	} else {
-		NET_INFO("Pacet list is full");
+		NET_INFO("Packet list is full");
 	}
 out:
 	if (pkt) {
@@ -341,7 +343,11 @@ static void openthread_start(struct openthread_context *ot_context)
 		otLinkSetPollPeriod(ot_context->instance, OT_POLL_PERIOD);
 	}
 
-	if (otDatasetIsCommissioned(ot_instance)) {
+	if (IS_ENABLED(CONFIG_OPENTHREAD_NCP)) {
+		/* In NCP mode wpantund will instruct what to do. */
+		NET_DBG("OpenThread NCP.");
+		return;
+	} else if (otDatasetIsCommissioned(ot_instance)) {
 		/* OpenThread already has dataset stored - skip the
 		 * configuration.
 		 */
@@ -401,13 +407,25 @@ static int openthread_init(struct net_if *iface)
 		platformShellInit(ot_context->instance);
 	}
 
-	otIp6SetEnabled(ot_context->instance, true);
+	if (IS_ENABLED(CONFIG_OPENTHREAD_NCP)) {
+		otNcpInit(ot_context->instance);
+	}
 
-	otIp6SetReceiveFilterEnabled(ot_context->instance, true);
-	otIp6SetReceiveCallback(ot_context->instance,
-				ot_receive_handler, ot_context);
-	otSetStateChangedCallback(ot_context->instance,
-				  &ot_state_changed_handler, ot_context);
+	if (IS_ENABLED(CONFIG_OPENTHREAD_RAW)) {
+		otLinkRawSetEnable(ot_context->instance, true);
+	} else {
+		otIp6SetEnabled(ot_context->instance, true);
+	}
+
+	if (!IS_ENABLED(CONFIG_OPENTHREAD_NCP)) {
+		otIp6SetReceiveFilterEnabled(ot_context->instance, true);
+		otIp6SetReceiveCallback(ot_context->instance,
+					ot_receive_handler, ot_context);
+		otSetStateChangedCallback(
+					ot_context->instance,
+					&ot_state_changed_handler,
+					ot_context);
+	}
 
 	ll_addr = net_if_get_link_addr(iface);
 

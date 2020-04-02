@@ -6,7 +6,7 @@
  */
 
 #ifdef CONFIG_BT_CTLR_DEBUG_PINS
-#if defined(CONFIG_BOARD_NRF52840_PCA10056)
+#if defined(CONFIG_BOARD_NRF52840DK_NRF52840)
 #define DEBUG_PORT       NRF_P1
 #define DEBUG_PIN0       BIT(1)
 #define DEBUG_PIN1       BIT(2)

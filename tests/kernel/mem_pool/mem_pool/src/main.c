@@ -107,7 +107,7 @@ static int pool_block_get_func(struct k_mem_block *block, struct k_mem_pool *poo
 static int pool_block_get_wt_func(struct k_mem_block *block, struct k_mem_pool *pool,
 			   int size, s32_t timeout)
 {
-	return k_mem_pool_alloc(pool, block, size, timeout);
+	return k_mem_pool_alloc(pool, block, size, K_MSEC(timeout));
 }
 
 /**
@@ -337,10 +337,10 @@ static void test_pool_malloc(void)
 }
 
 K_THREAD_DEFINE(t_alternate, STACKSIZE, alternate_task, NULL, NULL, NULL,
-		6, 0, K_NO_WAIT);
+		6, 0, 0);
 
 K_THREAD_DEFINE(t_helper, STACKSIZE, helper_task, NULL, NULL, NULL,
-		7, 0, K_NO_WAIT);
+		7, 0, 0);
 
 void test_main(void)
 {

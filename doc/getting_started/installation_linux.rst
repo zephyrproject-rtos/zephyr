@@ -280,8 +280,7 @@ As already noted above, the SDK also includes prebuilt host tools.  To use the
 SDK's prebuilt host tools with a toolchain from another source, keep the
 :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable set to the Zephyr SDK
 installation directory. To build without the Zephyr SDK's prebuilt host tools,
-the :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable must be unset before
-you run ``source zephyr-env.sh`` later on in the Getting Started Guide.
+the :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable must be unset.
 
 To make sure this variable is unset, run:
 

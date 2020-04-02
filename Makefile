@@ -2,10 +2,6 @@
 # Top level makefile for documentation build
 #
 
-ifndef ZEPHYR_BASE
-$(error The ZEPHYR_BASE environment variable must be set)
-endif
-
 BUILDDIR ?= doc/_build
 DOC_TAG ?= development
 SPHINXOPTS ?= -q

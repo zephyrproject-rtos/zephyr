@@ -11,6 +11,11 @@ properties:
     label:
       required: true
 
+    peripheral-id:
+      type: int
+      required: true
+      description: peripheral ID
+
     "#gpio-cells":
       const: 2
 

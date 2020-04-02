@@ -221,16 +221,22 @@ if [ -n "$main_ci" ]; then
 	# Possibly the only record of what exact version is being tested:
 	short_git_log='git log -n 5 --oneline --decorate --abbrev=12 '
 
+	# check what files have changed.
+	SC=`./scripts/ci/what_changed.py --commits ${commit_range}`
+
 	if [ -n "$pull_request_nr" ]; then
 		$short_git_log $remote/${branch}
 		# Now let's pray this script is being run from a
 		# different location
 # https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
 		git rebase $remote/${branch}
+	else
+		SC="full"
 	fi
 	$short_git_log
 
-	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" ]; then
+
+	if [ -n "${BSIM_OUT_PATH}" -a -d "${BSIM_OUT_PATH}" -a "$SC" == "full" ]; then
 		echo "Build and run BT simulator tests"
 		# Run BLE tests in simulator on the 1st CI instance:
 		if [ "$matrix" = "1" ]; then
@@ -249,9 +255,18 @@ if [ -n "$main_ci" ]; then
 		get_tests_to_run
 	fi
 
+	if [ "$SC" == "full" ]; then
 	# Save list of tests to be run
 	${sanitycheck} ${sanitycheck_options} --save-tests test_file_3.txt || exit 1
-	cat test_file_1.txt test_file_2.txt test_file_3.txt > test_file.txt
+	else
+	echo "test,arch,platform,status,extra_args,handler,handler_time,ram_size,rom_size" > test_file_3.txt
+	fi
+
+	# Remove headers from all files but the first one to generate one
+	# single file with only one header row
+	tail -n +2 test_file_2.txt > test_file_2_in.txt
+	tail -n +2 test_file_1.txt > test_file_1_in.txt
+	cat test_file_3.txt test_file_2_in.txt test_file_1_in.txt > test_file.txt
 
 	# Run a subset of tests based on matrix size
 	${sanitycheck} ${sanitycheck_options} --load-tests test_file.txt \

@@ -118,7 +118,8 @@ void tracing_trigger_output(bool before_put_is_empty)
 {
 	if (before_put_is_empty) {
 		k_timer_start(&tracing_thread_timer,
-			      CONFIG_TRACING_THREAD_WAIT_THRESHOLD, K_NO_WAIT);
+			      K_MSEC(CONFIG_TRACING_THREAD_WAIT_THRESHOLD),
+			      K_NO_WAIT);
 	}
 }
 

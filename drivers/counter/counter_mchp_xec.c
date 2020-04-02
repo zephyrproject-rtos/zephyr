@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_xec_timer
+
 /**
  * @file
  * @brief Microchip XEC Counter driver
@@ -307,7 +309,7 @@ static int counter_xec_init(struct device *dev)
 	return 0;
 }
 
-#if defined(DT_INST_0_MICROCHIP_XEC_TIMER)
+#if DT_HAS_DRV_INST(0)
 
 static void counder_xec_irq_config_0(void);
 
@@ -315,21 +317,21 @@ static struct counter_xec_data counter_xec_dev_data_0;
 
 static struct counter_xec_config counter_xec_dev_config_0 = {
 	.info = {
-		.max_top_value = DT_INST_0_MICROCHIP_XEC_TIMER_MAX_VALUE,
-		.freq = DT_INST_0_MICROCHIP_XEC_TIMER_CLOCK_FREQUENCY /
-			(1 << DT_INST_0_MICROCHIP_XEC_TIMER_PRESCALER),
+		.max_top_value = DT_INST_PROP(0, max_value),
+		.freq = DT_INST_PROP(0, clock_frequency) /
+			(1 << DT_INST_PROP(0, prescaler)),
 		.flags = 0,
 		.channels = 1,
 	},
 
 	.config_func = counder_xec_irq_config_0,
-	.base_address = DT_INST_0_MICROCHIP_XEC_TIMER_BASE_ADDRESS,
-	.prescaler = DT_INST_0_MICROCHIP_XEC_TIMER_PRESCALER,
-	.girq_id = DT_INST_0_MICROCHIP_XEC_TIMER_GIRQ,
-	.girq_bit = DT_INST_0_MICROCHIP_XEC_TIMER_GIRQ_BIT,
+	.base_address = DT_INST_REG_ADDR(0),
+	.prescaler = DT_INST_PROP(0, prescaler),
+	.girq_id = DT_INST_PROP(0, girq),
+	.girq_bit = DT_INST_PROP(0, girq_bit),
 };
 
-DEVICE_AND_API_INIT(counter_xec_0, DT_INST_0_MICROCHIP_XEC_TIMER_LABEL,
+DEVICE_AND_API_INIT(counter_xec_0, DT_INST_LABEL(0),
 		    counter_xec_init, &counter_xec_dev_data_0,
 		    &counter_xec_dev_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -337,15 +339,15 @@ DEVICE_AND_API_INIT(counter_xec_0, DT_INST_0_MICROCHIP_XEC_TIMER_LABEL,
 
 static void counder_xec_irq_config_0(void)
 {
-	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_TIMER_IRQ_0,
-		    DT_INST_0_MICROCHIP_XEC_TIMER_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    counter_xec_isr, DEVICE_GET(counter_xec_0), 0);
-	irq_enable(DT_INST_0_MICROCHIP_XEC_TIMER_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 }
 
-#endif /* DT_INST_0_MICROCHIP_XEC_TIMER */
+#endif /* DT_HAS_DRV_INST(0) */
 
-#if defined(DT_INST_1_MICROCHIP_XEC_TIMER)
+#if DT_HAS_DRV_INST(1)
 
 static void counder_xec_irq_config_1(void);
 
@@ -353,21 +355,21 @@ static struct counter_xec_data counter_xec_dev_data_1;
 
 static struct counter_xec_config counter_xec_dev_config_1 = {
 	.info = {
-		.max_top_value = DT_INST_1_MICROCHIP_XEC_TIMER_MAX_VALUE,
-		.freq = DT_INST_1_MICROCHIP_XEC_TIMER_CLOCK_FREQUENCY /
-			(1 << DT_INST_1_MICROCHIP_XEC_TIMER_PRESCALER),
+		.max_top_value = DT_INST_PROP(1, max_value),
+		.freq = DT_INST_PROP(1, clock_frequency) /
+			(1 << DT_INST_PROP(1, prescaler)),
 		.flags = 0,
 		.channels = 1,
 	},
 
 	.config_func = counder_xec_irq_config_1,
-	.base_address = DT_INST_1_MICROCHIP_XEC_TIMER_BASE_ADDRESS,
-	.prescaler = DT_INST_1_MICROCHIP_XEC_TIMER_PRESCALER,
-	.girq_id = DT_INST_1_MICROCHIP_XEC_TIMER_GIRQ,
-	.girq_bit = DT_INST_1_MICROCHIP_XEC_TIMER_GIRQ_BIT,
+	.base_address = DT_INST_REG_ADDR(1),
+	.prescaler = DT_INST_PROP(1, prescaler),
+	.girq_id = DT_INST_PROP(1, girq),
+	.girq_bit = DT_INST_PROP(1, girq_bit),
 };
 
-DEVICE_AND_API_INIT(counter_xec_1, DT_INST_1_MICROCHIP_XEC_TIMER_LABEL,
+DEVICE_AND_API_INIT(counter_xec_1, DT_INST_LABEL(1),
 		    counter_xec_init, &counter_xec_dev_data_1,
 		    &counter_xec_dev_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -375,15 +377,15 @@ DEVICE_AND_API_INIT(counter_xec_1, DT_INST_1_MICROCHIP_XEC_TIMER_LABEL,
 
 static void counder_xec_irq_config_1(void)
 {
-	IRQ_CONNECT(DT_INST_1_MICROCHIP_XEC_TIMER_IRQ_0,
-		    DT_INST_1_MICROCHIP_XEC_TIMER_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(1),
+		    DT_INST_IRQ(1, priority),
 		    counter_xec_isr, DEVICE_GET(counter_xec_1), 0);
-	irq_enable(DT_INST_1_MICROCHIP_XEC_TIMER_IRQ_0);
+	irq_enable(DT_INST_IRQN(1));
 }
 
-#endif /* DT_INST_1_MICROCHIP_XEC_TIMER */
+#endif /* DT_HAS_DRV_INST(1) */
 
-#if defined(DT_INST_2_MICROCHIP_XEC_TIMER)
+#if DT_HAS_DRV_INST(2)
 
 static void counder_xec_irq_config_2(void);
 
@@ -391,21 +393,21 @@ static struct counter_xec_data counter_xec_dev_data_2;
 
 static struct counter_xec_config counter_xec_dev_config_2 = {
 	.info = {
-		.max_top_value = DT_INST_2_MICROCHIP_XEC_TIMER_MAX_VALUE,
-		.freq = DT_INST_2_MICROCHIP_XEC_TIMER_CLOCK_FREQUENCY /
-			(1 << DT_INST_2_MICROCHIP_XEC_TIMER_PRESCALER),
+		.max_top_value = DT_INST_PROP(2, max_value),
+		.freq = DT_INST_PROP(2, clock_frequency) /
+			(1 << DT_INST_PROP(2, prescaler)),
 		.flags = 0,
 		.channels = 1,
 	},
 
 	.config_func = counder_xec_irq_config_2,
-	.base_address = DT_INST_2_MICROCHIP_XEC_TIMER_BASE_ADDRESS,
-	.prescaler = DT_INST_2_MICROCHIP_XEC_TIMER_PRESCALER,
-	.girq_id = DT_INST_2_MICROCHIP_XEC_TIMER_GIRQ,
-	.girq_bit = DT_INST_2_MICROCHIP_XEC_TIMER_GIRQ_BIT,
+	.base_address = DT_INST_REG_ADDR(2),
+	.prescaler = DT_INST_PROP(2, prescaler),
+	.girq_id = DT_INST_PROP(2, girq),
+	.girq_bit = DT_INST_PROP(2, girq_bit),
 };
 
-DEVICE_AND_API_INIT(counter_xec_2, DT_INST_2_MICROCHIP_XEC_TIMER_LABEL,
+DEVICE_AND_API_INIT(counter_xec_2, DT_INST_LABEL(2),
 		    counter_xec_init, &counter_xec_dev_data_2,
 		    &counter_xec_dev_config_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -413,10 +415,10 @@ DEVICE_AND_API_INIT(counter_xec_2, DT_INST_2_MICROCHIP_XEC_TIMER_LABEL,
 
 static void counder_xec_irq_config_2(void)
 {
-	IRQ_CONNECT(DT_INST_2_MICROCHIP_XEC_TIMER_IRQ,
-		    DT_INST_2_MICROCHIP_XEC_TIMER_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_INST_PROP(2, irq),
+		    DT_INST_IRQ_BY_NAME(2, priority, irq),
 		    counter_xec_isr, DEVICE_GET(counter_xec_2), 0);
-	irq_enable(DT_INST_2_MICROCHIP_XEC_TIMER_IRQ);
+	irq_enable(DT_INST_PROP(2, irq));
 }
 
-#endif /* DT_INST_2_MICROCHIP_XEC_TIMER */
+#endif /* DT_HAS_DRV_INST(2) */

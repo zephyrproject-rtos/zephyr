@@ -7,7 +7,7 @@
 
 #include <ztest.h>
 
-#define TIMEOUT 100
+#define TIMEOUT K_MSEC(100)
 #define PIPE_LEN 8
 
 static ZTEST_DMEM unsigned char __aligned(4) data[] = "abcd1234";

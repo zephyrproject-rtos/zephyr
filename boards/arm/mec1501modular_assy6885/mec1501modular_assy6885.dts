@@ -75,3 +75,7 @@
 &peci0 {
 	status = "okay";
 };
+
+&tach0 {
+	status = "okay";
+};

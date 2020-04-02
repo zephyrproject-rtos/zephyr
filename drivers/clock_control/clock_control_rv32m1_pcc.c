@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT openisa_rv32m1_pcc
 #include <errno.h>
 #include <soc.h>
 #include <drivers/clock_control.h>
@@ -58,24 +60,24 @@ static const struct clock_control_driver_api rv32m1_pcc_api = {
 	.get_rate = rv32m1_pcc_get_rate,
 };
 
-#if defined(DT_INST_0_OPENISA_RV32M1_PCC)
+#if DT_HAS_DRV_INST(0)
 static struct rv32m1_pcc_config rv32m1_pcc0_config = {
-	.base_address = DT_INST_0_OPENISA_RV32M1_PCC_BASE_ADDRESS
+	.base_address = DT_INST_REG_ADDR(0)
 };
 
-DEVICE_AND_API_INIT(rv32m1_pcc0, DT_INST_0_OPENISA_RV32M1_PCC_LABEL,
+DEVICE_AND_API_INIT(rv32m1_pcc0, DT_INST_LABEL(0),
 		    &rv32m1_pcc_init,
 		    NULL, &rv32m1_pcc0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
 		    &rv32m1_pcc_api);
 #endif
 
-#if defined(DT_INST_1_OPENISA_RV32M1_PCC)
+#if DT_HAS_DRV_INST(1)
 static struct rv32m1_pcc_config rv32m1_pcc1_config = {
-	.base_address = DT_INST_1_OPENISA_RV32M1_PCC_BASE_ADDRESS
+	.base_address = DT_INST_REG_ADDR(1)
 };
 
-DEVICE_AND_API_INIT(rv32m1_pcc1, DT_INST_1_OPENISA_RV32M1_PCC_LABEL,
+DEVICE_AND_API_INIT(rv32m1_pcc1, DT_INST_LABEL(1),
 		    &rv32m1_pcc_init,
 		    NULL, &rv32m1_pcc1_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,

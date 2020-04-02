@@ -1,0 +1,17 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test enum property container
+
+compatible: "vnd,enum-holder"
+
+include: [base.yaml]
+
+properties:
+  val:
+    type: string
+    required: true
+    enum:
+      - "zero"
+      - "one"
+      - "two"

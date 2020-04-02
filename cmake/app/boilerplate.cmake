@@ -1,10 +1,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # This file must be included into the toplevel CMakeLists.txt file of
-# Zephyr applications, e.g. zephyr/samples/hello_world/CMakeLists.txt
-# must start with the line:
+# Zephyr applications.
+# Zephyr CMake package automatically includes this file when CMake function
+# find_package() is used.
 #
-# include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+# To ensure this file is loaded in a Zephyr application it must start with
+# one of those lines:
+#
+# find_package(Zephyr)
+# find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
+#
+# The `HINTS $ENV{ZEPHYR_BASE}` variant is required for any application inside
+# the Zephyr repository.
 #
 # It exists to reduce boilerplate code that Zephyr expects to be in
 # application CMakeLists.txt code.
@@ -75,12 +83,16 @@ add_custom_target(code_data_relocation_target)
 # It is recommended to always use ZEPHYR_BASE instead of PROJECT_SOURCE_DIR
 # when trying to reference ENV${ZEPHYR_BASE}.
 
+set(ENV_ZEPHYR_BASE $ENV{ZEPHYR_BASE})
+# This add support for old style boilerplate include.
+if((NOT DEFINED ZEPHYR_BASE) AND (DEFINED ENV_ZEPHYR_BASE))
+  set(ZEPHYR_BASE ${ENV_ZEPHYR_BASE} CACHE PATH "Zephyr base")
+endif()
+
 # Note any later project() resets PROJECT_SOURCE_DIR
-file(TO_CMAKE_PATH "$ENV{ZEPHYR_BASE}" PROJECT_SOURCE_DIR)
+file(TO_CMAKE_PATH "${ZEPHYR_BASE}" PROJECT_SOURCE_DIR)
 
 set(ZEPHYR_BINARY_DIR ${PROJECT_BINARY_DIR})
-set(ZEPHYR_BASE ${PROJECT_SOURCE_DIR})
-set(ENV{ZEPHYR_BASE}   ${ZEPHYR_BASE})
 
 set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
 # Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
@@ -303,69 +315,70 @@ foreach(root ${BOARD_ROOT})
 
   if(DEFINED SHIELD)
     foreach(s ${SHIELD_AS_LIST})
-      list(REMOVE_ITEM SHIELD ${s})
       list(FIND SHIELD_LIST ${s} _idx)
-      if (NOT _idx EQUAL -1)
-        list(GET shields_refs_list ${_idx} s_path)
-        get_filename_component(s_dir ${s_path} DIRECTORY)
+      if (_idx EQUAL -1)
+        continue()
+      endif()
 
-        # if shield config flag is on, add shield overlay to the shield overlays
-        # list and dts_fixup file to the shield fixup file
+      list(REMOVE_ITEM SHIELD ${s})
+
+      list(GET shields_refs_list ${_idx} s_path)
+      get_filename_component(s_dir ${s_path} DIRECTORY)
+
+      # if shield config flag is on, add shield overlay to the shield overlays
+      # list and dts_fixup file to the shield fixup file
+      list(APPEND
+        shield_dts_files
+        ${shield_dir}/${s_path}
+        )
+      list(APPEND
+        shield_dts_fixups
+        ${shield_dir}/${s_dir}/dts_fixup.h
+        )
+
+      # search for shield/boards/board.overlay file
+      if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.overlay)
+        # add shield/board overlay to the shield overlays list
         list(APPEND
           shield_dts_files
-          ${shield_dir}/${s_path}
-        )
+          ${shield_dir}/${s_dir}/boards/${BOARD}.overlay
+          )
+      endif()
+
+      # search for shield/boards/shield/board.overlay file
+      if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay)
+        # add shield/board overlay to the shield overlays list
         list(APPEND
-          shield_dts_fixups
-          ${shield_dir}/${s_dir}/dts_fixup.h
-        )
-
-        # search for shield/boards/board.overlay file
-        if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.overlay)
-          # add shield/board overlay to the shield overlays list
-          list(APPEND
-            shield_dts_files
-            ${shield_dir}/${s_dir}/boards/${BOARD}.overlay
+          shield_dts_files
+          ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay
           )
-        endif()
+      endif()
 
-        # search for shield/boards/shield/board.overlay file
-        if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay)
-          # add shield/board overlay to the shield overlays list
-          list(APPEND
-            shield_dts_files
-            ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.overlay
+      # search for shield/shield.conf file
+      if(EXISTS ${shield_dir}/${s_dir}/${s}.conf)
+        # add shield.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s_dir}/${s}.conf
           )
-        endif()
+      endif()
 
-        # search for shield/shield.conf file
-        if(EXISTS ${shield_dir}/${s_dir}/${s}.conf)
-          # add shield.conf to the shield config list
-          list(APPEND
-            shield_conf_files
-            ${shield_dir}/${s_dir}/${s}.conf
+      # search for shield/boards/board.conf file
+      if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.conf)
+        # add HW specific board.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s_dir}/boards/${BOARD}.conf
           )
-        endif()
+      endif()
 
-        # search for shield/boards/board.conf file
-        if(EXISTS ${shield_dir}/${s_dir}/boards/${BOARD}.conf)
-          # add HW specific board.conf to the shield config list
-          list(APPEND
-            shield_conf_files
-            ${shield_dir}/${s_dir}/boards/${BOARD}.conf
+      # search for shield/boards/shield/board.conf file
+      if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf)
+        # add HW specific board.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf
           )
-        endif()
-
-        # search for shield/boards/shield/board.conf file
-        if(EXISTS ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf)
-          # add HW specific board.conf to the shield config list
-          list(APPEND
-            shield_conf_files
-            ${shield_dir}/${s_dir}/boards/${s}/${BOARD}.conf
-          )
-        endif()
-      else()
-        list(APPEND NOT_FOUND_SHIELD_LIST ${s})
       endif()
     endforeach()
   endif()
@@ -378,8 +391,8 @@ if(NOT BOARD_DIR)
   message(FATAL_ERROR "Invalid usage")
 endif()
 
-if(DEFINED SHIELD AND DEFINED NOT_FOUND_SHIELD_LIST)
-  foreach (s ${NOT_FOUND_SHIELD_LIST})
+if(DEFINED SHIELD AND NOT (SHIELD STREQUAL ""))
+  foreach (s ${SHIELD})
     message("No shield named '${s}' found")
   endforeach()
   print_usage()

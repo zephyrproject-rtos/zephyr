@@ -65,10 +65,6 @@ GEN_OFFSET_SYM(_callee_saved_t, v6);
 GEN_OFFSET_SYM(_callee_saved_t, v7);
 GEN_OFFSET_SYM(_callee_saved_t, v8);
 GEN_OFFSET_SYM(_callee_saved_t, psp);
-#if defined(CONFIG_CPU_CORTEX_R)
-GEN_OFFSET_SYM(_callee_saved_t, spsr);
-GEN_OFFSET_SYM(_callee_saved_t, lr);
-#endif
 
 /* size of the entire preempt registers structure */
 

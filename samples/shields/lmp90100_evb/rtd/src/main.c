@@ -70,7 +70,7 @@ void main(void)
 		.calibrate = 0
 	};
 
-	lmp90100 = device_get_binding(DT_INST_0_TI_LMP90100_LABEL);
+	lmp90100 = device_get_binding(DT_LABEL(DT_INST(0, ti_lmp90100)));
 	if (!lmp90100) {
 		LOG_ERR("LMP90100 device not found");
 		return;
@@ -86,13 +86,13 @@ void main(void)
 		err = adc_read(lmp90100, &seq);
 		if (err) {
 			LOG_ERR("failed to read ADC (err %d)", err);
-			return;
+		} else {
+			resistance = (buffer / 8388608.0) * 2000;
+			printf("R: %.02f ohm\n", resistance);
+			printf("T: %.02f degC\n",
+				rtd_temperature(RTD_NOMINAL_RESISTANCE,
+						resistance));
 		}
-
-		resistance = (buffer / 8388608.0) * 2000;
-		printf("R: %.02f ohm\n", resistance);
-		printf("T: %.02f degC\n",
-		       rtd_temperature(RTD_NOMINAL_RESISTANCE, resistance));
 
 		k_sleep(1000);
 	}

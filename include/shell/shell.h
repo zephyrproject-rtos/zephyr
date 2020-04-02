@@ -162,10 +162,10 @@ struct shell_static_entry {
 					mandatory, optional) \
 		), \
 		(\
-		static shell_cmd_handler dummy_##syntax##_handler \
-			__attribute__((unused)) = handler;\
+		static shell_cmd_handler dummy_##syntax##_handler __unused = \
+								handler;\
 		static const struct shell_cmd_entry *dummy_subcmd_##syntax \
-			__attribute__((unused)) = subcmd\
+			__unused = subcmd\
 		)\
 	)
 /**
@@ -501,8 +501,8 @@ struct shell_flags {
 	u32_t last_nl     :8; /*!< Last received new line character */
 };
 
-BUILD_ASSERT_MSG((sizeof(struct shell_flags) == sizeof(u32_t)),
-		 "Structure must fit in 4 bytes");
+BUILD_ASSERT((sizeof(struct shell_flags) == sizeof(u32_t)),
+	     "Structure must fit in 4 bytes");
 
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 O.S.Systems
+ * Copyright (c) 2018-2020 O.S.Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,8 +35,13 @@ LOG_MODULE_REGISTER(updatehub);
 #define NETWORK_TIMEOUT K_SECONDS(2)
 #define UPDATEHUB_POLL_INTERVAL K_MINUTES(CONFIG_UPDATEHUB_POLL_INTERVAL)
 #define MAX_PATH_SIZE 255
-#define MAX_PAYLOAD_SIZE 500
-#define MAX_DOWNLOAD_DATA 1100
+/* MAX_PAYLOAD_SIZE must reflect size COAP_BLOCK_x option */
+#define MAX_PAYLOAD_SIZE 1024
+/* MAX_DOWNLOAD_DATA must be equal or bigger than:
+ * MAX_PAYLOAD_SIZE + (len + header + options)
+ * otherwise download size will be less than real size.
+ */
+#define MAX_DOWNLOAD_DATA (MAX_PAYLOAD_SIZE + 32)
 #define COAP_MAX_RETRY 3
 #define MAX_IP_SIZE 30
 
@@ -66,6 +71,8 @@ static struct update_info {
 	int image_size;
 } update_info;
 
+static struct k_delayed_work updatehub_work_handle;
+
 static void wait_fds(void)
 {
 	if (poll(ctx.fds, ctx.nfds, NETWORK_TIMEOUT) < 0) {
@@ -76,7 +83,7 @@ static void wait_fds(void)
 static void prepare_fds(void)
 {
 	ctx.fds[ctx.nfds].fd = ctx.sock;
-	ctx.fds[ctx.nfds].events = 1;
+	ctx.fds[ctx.nfds].events = POLLIN;
 	ctx.nfds++;
 }
 
@@ -288,7 +295,7 @@ static int send_request(enum coap_msgtype msgtype, enum coap_method method,
 		}
 
 		ret = coap_packet_append_payload(&request_packet,
-						 &ctx.payload,
+						 ctx.payload,
 						 strlen(ctx.payload));
 		if (ret < 0) {
 			LOG_ERR("Not able to append payload");
@@ -315,12 +322,40 @@ error:
 	return ret;
 }
 
+static bool install_update_cb_sha256(void)
+{
+	u8_t image_hash[TC_SHA256_DIGEST_SIZE];
+	char buffer[3], sha256_image_dowloaded[TC_SHA256_BLOCK_SIZE + 1];
+	int i, buffer_len = 0;
+
+	if (tc_sha256_final(image_hash, &ctx.sha256sum) < 1) {
+		LOG_ERR("Could not finish sha256sum");
+		return false;
+	}
+
+	memset(&sha256_image_dowloaded, 0, TC_SHA256_BLOCK_SIZE + 1);
+	for (i = 0; i < TC_SHA256_DIGEST_SIZE; i++) {
+		snprintk(buffer, sizeof(buffer), "%02x", image_hash[i]);
+		buffer_len = buffer_len + strlen(buffer);
+		strncat(&sha256_image_dowloaded[i], buffer,
+			MIN(TC_SHA256_BLOCK_SIZE, buffer_len));
+	}
+
+	if (strncmp(sha256_image_dowloaded,
+		update_info.sha256sum_image,
+		strlen(update_info.sha256sum_image)) != 0) {
+		LOG_ERR("SHA256SUM of image are not the same");
+		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
+		return false;
+	}
+
+	return true;
+}
+
 static void install_update_cb(void)
 {
 	struct coap_packet response_packet;
-	char buffer[3], sha256_image_dowloaded[TC_SHA256_BLOCK_SIZE + 1];
 	u8_t *data = k_malloc(MAX_DOWNLOAD_DATA);
-	int i, buffer_len = 0;
 	int rcvd = -1;
 
 	if (data == NULL) {
@@ -370,32 +405,15 @@ static void install_update_cb(void)
 	}
 
 	if (coap_next_block(&response_packet, &ctx.block) == 0) {
-		LOG_ERR("Could not get the next");
-		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
-		goto cleanup;
-	}
-
-	if (ctx.downloaded_size == ctx.block.total_size) {
-		u8_t image_hash[TC_SHA256_DIGEST_SIZE];
-
-		if (tc_sha256_final(image_hash, &ctx.sha256sum) < 1) {
-			LOG_ERR("Could not finish sha256sum");
+		if (ctx.downloaded_size != ctx.block.total_size) {
+			LOG_ERR("Could not get the next coap block");
 			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 			goto cleanup;
 		}
 
-		memset(&sha256_image_dowloaded, 0, TC_SHA256_BLOCK_SIZE + 1);
-		for (i = 0; i < TC_SHA256_DIGEST_SIZE; i++) {
-			snprintk(buffer, sizeof(buffer), "%02x", image_hash[i]);
-			buffer_len = buffer_len + strlen(buffer);
-			strncat(&sha256_image_dowloaded[i], buffer,
-				MIN(TC_SHA256_BLOCK_SIZE, buffer_len));
-		}
-
-		if (strncmp(sha256_image_dowloaded,
-			    update_info.sha256sum_image,
-			    strlen(update_info.sha256sum_image)) != 0) {
-			LOG_ERR("SHA256SUM of image are not the same");
+		LOG_INF("Firmware downloaded successfully");
+		if (!install_update_cb_sha256()) {
+			LOG_ERR("Firmware validation has failed");
 			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 			goto cleanup;
 		}
@@ -614,8 +632,6 @@ enum updatehub_response updatehub_probe(void)
 		goto error;
 	}
 
-	k_sem_init(&ctx.semaphore, 0, 1);
-
 	if (!boot_is_img_confirmed()) {
 		LOG_ERR("The current image is not confirmed");
 		ctx.code_status = UPDATEHUB_UNCONFIRMED_IMAGE;
@@ -741,6 +757,12 @@ enum updatehub_response updatehub_update(void)
 		goto error;
 	}
 
+	if (boot_request_upgrade(BOOT_UPGRADE_TEST)) {
+		LOG_ERR("Could not reporting downloaded state");
+		ctx.code_status = UPDATEHUB_INSTALL_ERROR;
+		goto error;
+	}
+
 	if (report(UPDATEHUB_STATE_INSTALLED) < 0) {
 		LOG_ERR("Could not reporting installed state");
 		goto error;
@@ -765,7 +787,7 @@ error:
 	return ctx.code_status;
 }
 
-static void autohandler(struct k_delayed_work *work)
+static void autohandler(struct k_work *work)
 {
 	switch (updatehub_probe()) {
 	case UPDATEHUB_UNCONFIRMED_IMAGE:
@@ -794,13 +816,11 @@ static void autohandler(struct k_delayed_work *work)
 		break;
 	}
 
-	k_delayed_work_submit(work, UPDATEHUB_POLL_INTERVAL);
+	k_delayed_work_submit(&updatehub_work_handle, UPDATEHUB_POLL_INTERVAL);
 }
 
 void updatehub_autohandler(void)
 {
-	static struct k_delayed_work work;
-
-	k_delayed_work_init(&work, autohandler);
-	k_delayed_work_submit(&work, K_NO_WAIT);
+	k_delayed_work_init(&updatehub_work_handle, autohandler);
+	k_delayed_work_submit(&updatehub_work_handle, K_NO_WAIT);
 }

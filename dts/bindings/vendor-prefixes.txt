@@ -440,6 +440,7 @@ virtio	Virtual I/O Device Specification, developed by the OASIS consortium
 vishay	Vishay Intertechnology, Inc
 vitesse	Vitesse Semiconductor Corporation
 vivante	Vivante Corporation
+vnd	A stand-in for a real vendor which can be used in examples and tests
 vocore VoCore Studio
 voipac	Voipac Technologies s.r.o.
 vot	Vision Optical Technology Co., Ltd.

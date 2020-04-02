@@ -417,7 +417,7 @@ static u8_t ticker_enqueue(struct ticker_instance *instance, u8_t id)
 		 */
 		if (ticks_to_expire == 0 && (ticker_new->lazy_current >
 					     ticker_current->lazy_current)) {
-			ticks_to_expire = ticker_current->ticks_to_expire;
+			ticks_to_expire = ticks_to_expire_current;
 			break;
 		}
 
@@ -638,15 +638,10 @@ static u32_t ticker_dequeue(struct ticker_instance *instance, u8_t id)
 static u8_t ticker_resolve_collision(struct ticker_node *nodes,
 				     struct ticker_node *ticker)
 {
-	u8_t  skipped = 0;
-	s32_t lazy_current = ticker->lazy_current;
+	if ((ticker->priority != TICKER_PRIORITY_CRITICAL) &&
+	    (ticker->next != TICKER_NULL)) {
+		s32_t lazy_current = ticker->lazy_current;
 
-	if (ticker->lazy_periodic > lazy_current) {
-		/* Programmed latency must be respected */
-		skipped = 1;
-
-	} else if ((ticker->priority != TICKER_PRIORITY_CRITICAL) &&
-		   (ticker->next != TICKER_NULL)) {
 		/* Check if this ticker node will starve next node which has
 		 * latency or higher priority
 		 */
@@ -654,7 +649,7 @@ static u8_t ticker_resolve_collision(struct ticker_node *nodes,
 			lazy_current -= ticker->lazy_periodic;
 		}
 		u8_t  id_head = ticker->next;
-		u32_t acc_ticks_to_expire = 0;
+		u32_t acc_ticks_to_expire = 0U;
 
 		/* Age is time since last expiry */
 		u32_t current_age = ticker->ticks_periodic +
@@ -670,7 +665,7 @@ static u8_t ticker_resolve_collision(struct ticker_node *nodes,
 			}
 
 			/* We only care about nodes with slot reservation */
-			if (ticker_next->ticks_slot == 0) {
+			if (ticker_next->ticks_slot == 0U) {
 				id_head = ticker_next->next;
 				continue;
 			}
@@ -725,13 +720,13 @@ static u8_t ticker_resolve_collision(struct ticker_node *nodes,
 			    (next_has_priority && !current_is_older) ||
 			    (equal_priority && next_is_older))) {
 				/* This node must be skipped - check window */
-				skipped = 1;
-				break;
+				return 1U;
 			}
 			id_head = ticker_next->next;
 		}
 	}
-	return skipped;
+
+	return 0U;
 }
 #endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
 
@@ -1007,7 +1002,6 @@ static u8_t ticker_remainder_inc(struct ticker_node *ticker)
 #endif
 }
 
-#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 /**
  * @brief Decrement remainder
  *
@@ -1037,7 +1031,6 @@ static u8_t ticker_remainder_dec(struct ticker_node *ticker)
 	return 0;
 #endif
 }
-#endif /* CONFIG_BT_TICKER_COMPATIBILITY_MODE */
 
 /**
  * @brief Invoke user operation callback
@@ -1093,7 +1086,6 @@ static inline void ticker_job_node_update(struct ticker_node *ticker,
 	if ((ticker->ticks_periodic != 0U) &&
 	    (user_op->params.update.lazy != 0U)) {
 		user_op->params.update.lazy--;
-#if defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 		while ((ticks_to_expire > ticker->ticks_periodic) &&
 		       (ticker->lazy_current > user_op->params.update.lazy)) {
 			ticks_to_expire -= ticker->ticks_periodic +
@@ -1106,7 +1098,6 @@ static inline void ticker_job_node_update(struct ticker_node *ticker,
 					   ticker_remainder_inc(ticker);
 			ticker->lazy_current++;
 		}
-#endif /* CONFIG_BT_TICKER_COMPATIBILITY_MODE */
 		ticker->lazy_periodic = user_op->params.update.lazy;
 	}
 
@@ -1365,9 +1356,18 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 	struct ticker_node *node;
 	u32_t ticks_expired;
 
+#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+	u32_t ticks_latency;
+	u32_t ticks_now;
+
+	ticks_now = cntr_cnt_get();
+	ticks_latency = ticker_ticks_diff_get(ticks_now, ticks_previous);
+#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+
 	node = &instance->nodes[0];
 	ticks_expired = 0U;
 	while (instance->ticker_id_head != TICKER_NULL) {
+		u8_t is_must_expire_skip = 0U;
 		struct ticker_node *ticker;
 		u32_t ticks_to_expire;
 		u8_t id_expired;
@@ -1388,32 +1388,29 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 		ticks_expired += ticks_to_expire;
 
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
-		if (ticker->lazy_current != 0U &&
-		    !TICKER_RESCHEDULE_PENDING(ticker)) {
+		ticks_latency -= ticks_to_expire;
+
+		is_must_expire_skip = (ticker->must_expire &&
+				       (ticker->lazy_current != 0U));
+#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+
+		/* decrement ticks_slot_previous */
+		if (instance->ticks_slot_previous > ticks_to_expire) {
+			instance->ticks_slot_previous -= ticks_to_expire;
+		} else {
 			instance->ticker_id_slot_previous = TICKER_NULL;
 			instance->ticks_slot_previous = 0U;
-		} else
-#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
-		{
-			/* decrement ticks_slot_previous */
-			if (instance->ticks_slot_previous > ticks_to_expire) {
-				instance->ticks_slot_previous -=
-				ticks_to_expire;
-			} else {
-				instance->ticker_id_slot_previous = TICKER_NULL;
-				instance->ticks_slot_previous = 0U;
-			}
+		}
 
-			/* If a reschedule is set pending, we will need to keep
-			 * the slot_previous information
-			 */
-			if (!TICKER_RESCHEDULE_PENDING(ticker) &&
-			    ticker->ticks_slot != 0U) {
-				instance->ticker_id_slot_previous =
-					id_expired;
-				instance->ticks_slot_previous =
-					ticker->ticks_slot;
-			}
+		/* If a reschedule is set pending, we will need to keep
+		 * the slot_previous information
+		 */
+		if ((ticker->ticks_slot != 0U) &&
+		    (((ticker->req - ticker->ack) & 0xff) == 2U) &&
+		    !is_must_expire_skip &&
+		    !TICKER_RESCHEDULE_PENDING(ticker)) {
+			instance->ticker_id_slot_previous = id_expired;
+			instance->ticks_slot_previous = ticker->ticks_slot;
 		}
 
 		/* ticker expired, set ticks_to_expire zero */
@@ -1432,12 +1429,62 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 				 * restarted
 				 */
 				ticker->ticks_to_expire = ticks_elapsed;
+
+				/* Reset ticker state, so that its put
+				 * back in requested state later down
+				 * in the code.
+				 */
+				ticker->req = ticker->ack;
 			} else {
-				/* Reload ticks_to_expire with one period */
-				ticker->ticks_to_expire =
-					ticker->ticks_periodic;
-				ticker->ticks_to_expire +=
-					ticker_remainder_inc(ticker);
+				u16_t lazy_periodic;
+				u32_t count;
+				u16_t lazy;
+
+				/* If not skipped, apply lazy_periodic */
+				if (!ticker->lazy_current) {
+					lazy_periodic = ticker->lazy_periodic;
+				} else {
+					lazy_periodic = 0U;
+
+					/* Reset ticker state, so that its put
+					 * back in requested state later down
+					 * in the code.
+					 */
+					ticker->req = ticker->ack;
+				}
+
+				/* Reload ticks_to_expire with atleast one
+				 * period.
+				 */
+				ticks_to_expire = 0U;
+				count = 1 + lazy_periodic;
+				while (count--) {
+					ticks_to_expire +=
+						ticker->ticks_periodic;
+					ticks_to_expire +=
+						ticker_remainder_inc(ticker);
+				}
+
+				/* Skip intervals that have elapsed w.r.t.
+				 * current ticks.
+				 */
+				lazy = 0U;
+				if (!ticker->must_expire) {
+					while (ticks_to_expire <
+					       ticks_latency) {
+						ticks_to_expire +=
+							ticker->ticks_periodic;
+						ticks_to_expire +=
+						  ticker_remainder_inc(ticker);
+						lazy++;
+					}
+				}
+
+				/* Use the calculated ticks to expire and
+				 * laziness.
+				 */
+				ticker->ticks_to_expire = ticks_to_expire;
+				ticker->lazy_current += (lazy_periodic + lazy);
 			}
 
 			ticks_to_expire_prep(ticker, instance->ticks_current,
@@ -2083,6 +2130,7 @@ static inline void ticker_job_compare_update(struct ticker_instance *instance,
 	if (instance->ticker_id_head == TICKER_NULL) {
 		if (cntr_stop() == 0) {
 			instance->ticks_slot_previous = 0U;
+			instance->ticks_current = cntr_cnt_get();
 		}
 		return;
 	}

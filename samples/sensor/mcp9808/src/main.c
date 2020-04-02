@@ -96,7 +96,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
 
 void main(void)
 {
-	const char *const devname = DT_INST_0_MICROCHIP_MCP9808_LABEL;
+	const char *const devname = DT_LABEL(DT_INST(0, microchip_mcp9808));
 	struct device *dev = device_get_binding(devname);
 	int rc;
 

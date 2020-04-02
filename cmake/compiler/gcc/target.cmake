@@ -86,7 +86,6 @@ if(SYSROOT_DIR)
     )
 
   set(LIBC_LIBRARY_DIR "\"${SYSROOT_DIR}\"/lib/${NEWLIB_DIR}")
-  set(LIBC_INCLUDE_DIR ${SYSROOT_DIR}/include)
 endif()
 
 # For CMake to be able to test if a compiler flag is supported by the

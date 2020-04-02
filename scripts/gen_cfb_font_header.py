@@ -5,7 +5,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
-import os
 import sys
 
 from PIL import ImageFont
@@ -96,8 +95,6 @@ def extract_image_glyphs():
 def generate_header():
     """Generate CFB font header file"""
 
-    zephyr_base = os.environ.get('ZEPHYR_BASE', "")
-
     clean_cmd = []
     for arg in sys.argv:
         if arg.startswith("--bindir"):
@@ -109,7 +106,11 @@ def generate_header():
             clean_cmd.append(arg[striplen:])
             continue
 
-        clean_cmd.append(arg.replace(zephyr_base, '"${ZEPHYR_BASE}"'))
+        if args.zephyr_base is not None:
+            clean_cmd.append(arg.replace(args.zephyr_base, '"${ZEPHYR_BASE}"'))
+        else:
+            clean_cmd.append(arg)
+
 
     args.output.write("""/*
  * This file was automatically generated using the following command:
@@ -157,6 +158,10 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Character Frame Buffer (CFB) font header file generator",
         formatter_class=argparse.RawDescriptionHelpFormatter)
+
+    parser.add_argument(
+        "-z", "--zephyr-base",
+        help="Zephyr base directory")
 
     parser.add_argument(
         "-d", "--dump", action="store_true",

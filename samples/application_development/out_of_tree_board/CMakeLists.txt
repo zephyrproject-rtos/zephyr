@@ -5,12 +5,12 @@ cmake_minimum_required(VERSION 3.13.1)
 # $ZEPHYR_BASE to this directory.
 set(BOARD_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
-# This sample is only compatible with nrf52840_pca10065 because it has
+# This sample is only compatible with nrf52840dk_nrf52840 because it has
 # re-directed the 'boards' directory to a directory that only contains
 # this board.
-set(BOARD nrf52840_pca10056)
+set(BOARD nrf52840dk_nrf52840)
 
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(out_of_tree_board)
 
 target_sources(app PRIVATE src/main.c)

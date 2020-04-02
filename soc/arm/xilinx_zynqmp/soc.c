@@ -8,7 +8,7 @@
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
-#include <arch/arm/aarch32/cortex_r/cmsis.h>
+#include <arch/arm/aarch32/cortex_a_r/cmsis.h>
 
 /**
  *

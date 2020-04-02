@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT espressif_esp32_uart
+
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <rom/ets_sys.h>
 #include <soc/dport_reg.h>
@@ -117,9 +119,9 @@ struct uart_esp32_data {
 #define UART_GET_RX_FLOW(conf1_reg)     ((conf1_reg >> 23) & 0x1)
 
 /* FIXME: This should be removed when interrupt support added to ESP32 dts */
-#define DT_INST_0_ESPRESSIF_ESP32_UART_IRQ_0	12
-#define DT_INST_1_ESPRESSIF_ESP32_UART_IRQ_0	17
-#define DT_INST_2_ESPRESSIF_ESP32_UART_IRQ_0	18
+#define INST_0_ESPRESSIF_ESP32_UART_IRQ_0	12
+#define INST_1_ESPRESSIF_ESP32_UART_IRQ_0	17
+#define INST_2_ESPRESSIF_ESP32_UART_IRQ_0	18
 
 /* ESP-IDF Naming is not consistent for UART0 with UART1/2 */
 #define DPORT_UART0_CLK_EN DPORT_UART_CLK_EN
@@ -461,13 +463,13 @@ static const struct uart_driver_api uart_esp32_api = {
 	static void uart_esp32_irq_config_func_##idx(struct device *dev)     \
 	{								     \
 		esp32_rom_intr_matrix_set(0, ETS_UART##idx##_INTR_SOURCE,    \
-					  DT_INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0); \
-		IRQ_CONNECT(DT_INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0,	     \
+					  INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0); \
+		IRQ_CONNECT(INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0,	     \
 			    1,						     \
 			    uart_esp32_isr,				     \
 			    DEVICE_GET(uart_esp32_##idx),		     \
 			    0);						     \
-		irq_enable(DT_INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0);	     \
+		irq_enable(INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0);	     \
 	}
 #else
 #define ESP32_UART_IRQ_HANDLER_DECL(idx)
@@ -480,9 +482,9 @@ ESP32_UART_IRQ_HANDLER_DECL(idx);					       \
 static const struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
 	.dev_conf = {							       \
 		.base =							       \
-		    (u8_t *)DT_INST_##idx##_ESPRESSIF_ESP32_UART_BASE_ADDRESS, \
+		    (u8_t *)DT_INST_REG_ADDR(idx), \
 		.sys_clk_freq =						       \
-			DT_INST_0_CADENCE_TENSILICA_XTENSA_LX6_CLOCK_FREQUENCY,\
+			DT_PROP(DT_INST(0, cadence_tensilica_xtensa_lx6), clock_frequency),\
 		ESP32_UART_IRQ_HANDLER_FUNC(idx)			       \
 	},								       \
 									       \
@@ -499,35 +501,35 @@ static const struct uart_esp32_config uart_esp32_cfg_port_##idx = {	       \
 	},								       \
 									       \
 	.pins = {							       \
-		.tx = DT_INST_##idx##_ESPRESSIF_ESP32_UART_TX_PIN,	       \
-		.rx = DT_INST_##idx##_ESPRESSIF_ESP32_UART_RX_PIN,	       \
+		.tx = DT_INST_PROP(idx, tx_pin),	       \
+		.rx = DT_INST_PROP(idx, rx_pin),	       \
 		IF_ENABLED(						       \
-			DT_INST_##idx##_ESPRESSIF_ESP32_UART_HW_FLOW_CONTROL,  \
-			(.rts = DT_INST_##idx##_ESPRESSIF_ESP32_UART_RTS_PIN,  \
-			.cts = DT_INST_##idx##_ESPRESSIF_ESP32_UART_CTS_PIN,   \
+			DT_INST_PROP(idx, hw_flow_control),  \
+			(.rts = DT_INST_PROP(idx, rts_pin),  \
+			.cts = DT_INST_PROP(idx, cts_pin),   \
 			))						       \
 	},								       \
 									       \
 	.irq = {							       \
 		.source = ETS_UART##idx##_INTR_SOURCE,			       \
-		.line = DT_INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0,	       \
+		.line = INST_##idx##_ESPRESSIF_ESP32_UART_IRQ_0,	       \
 	}								       \
 };									       \
 									       \
 static struct uart_esp32_data uart_esp32_data_##idx = {			       \
 	.uart_config = {						       \
-		.baudrate = DT_INST_##idx##_ESPRESSIF_ESP32_UART_CURRENT_SPEED,\
+		.baudrate = DT_INST_PROP(idx, current_speed),\
 		.parity = UART_CFG_PARITY_NONE,				       \
 		.stop_bits = UART_CFG_STOP_BITS_1,			       \
 		.data_bits = UART_CFG_DATA_BITS_8,			       \
 		.flow_ctrl = IS_ENABLED(				       \
-			DT_INST_##idx##_ESPRESSIF_ESP32_UART_HW_FLOW_CONTROL) ?\
+			DT_INST_PROP(idx, hw_flow_control)) ?\
 			UART_CFG_FLOW_CTRL_RTS_CTS : UART_CFG_FLOW_CTRL_NONE   \
 	}								       \
 };									       \
 									       \
 DEVICE_AND_API_INIT(uart_esp32_##idx,					       \
-		    DT_INST_##idx##_ESPRESSIF_ESP32_UART_LABEL,		       \
+		    DT_INST_LABEL(idx),		       \
 		    uart_esp32_init,					       \
 		    &uart_esp32_data_##idx,				       \
 		    &uart_esp32_cfg_port_##idx,				       \
@@ -537,14 +539,14 @@ DEVICE_AND_API_INIT(uart_esp32_##idx,					       \
 									       \
 ESP32_UART_IRQ_HANDLER(idx)
 
-#ifdef DT_INST_0_ESPRESSIF_ESP32_UART
+#if DT_HAS_DRV_INST(0)
 ESP32_UART_INIT(0);
 #endif
 
-#ifdef DT_INST_1_ESPRESSIF_ESP32_UART
+#if DT_HAS_DRV_INST(1)
 ESP32_UART_INIT(1);
 #endif
 
-#ifdef DT_INST_2_ESPRESSIF_ESP32_UART
+#if DT_HAS_DRV_INST(2)
 ESP32_UART_INIT(2);
 #endif

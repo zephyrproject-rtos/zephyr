@@ -129,7 +129,7 @@
 		};
 
 		gpio@40006100 {
-			compatible = "silabs,efm32-gpio";
+			compatible = "silabs,gecko-gpio";
 			reg = <0x40006100 0xf00>;
 			interrupts = <1 2 11 2>;
 			interrupt-names = "GPIO_EVEN", "GPIO_ODD";
@@ -140,51 +140,63 @@
 			#size-cells = <1>;
 
 			gpioa: gpio@40006000 {
-				compatible = "silabs,efm32-gpio-port";
+				compatible = "silabs,gecko-gpio-port";
 				reg = <0x40006000 0x24>;
+				peripheral-id = <0>;
 				label = "GPIO_A";
 				gpio-controller;
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpiob: gpio@40006024 {
-				compatible = "silabs,efm32-gpio-port";
+				compatible = "silabs,gecko-gpio-port";
 				reg = <0x40006024 0x24>;
+				peripheral-id = <1>;
 				label = "GPIO_B";
 				gpio-controller;
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpioc: gpio@40006048 {
-				compatible = "silabs,efm32-gpio-port";
+				compatible = "silabs,gecko-gpio-port";
 				reg = <0x40006048 0x24>;
+				peripheral-id = <2>;
 				label = "GPIO_C";
 				gpio-controller;
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpiod: gpio@4000606c {
-				compatible = "silabs,efm32-gpio-port";
+				compatible = "silabs,gecko-gpio-port";
 				reg = <0x4000606c 0x24>;
+				peripheral-id = <3>;
 				label = "GPIO_D";
 				gpio-controller;
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpioe: gpio@40006090 {
-				compatible = "silabs,efm32-gpio-port";
+				compatible = "silabs,gecko-gpio-port";
 				reg = <0x40006090 0x24>;
+				peripheral-id = <4>;
 				label = "GPIO_E";
 				gpio-controller;
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpiof: gpio@400060b4 {
-				compatible = "silabs,efm32-gpio-port";
+				compatible = "silabs,gecko-gpio-port";
 				reg = <0x400060b4 0x24>;
+				peripheral-id = <5>;
 				label = "GPIO_F";
 				gpio-controller;
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 		};
 	};

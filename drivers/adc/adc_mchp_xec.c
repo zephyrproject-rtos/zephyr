@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_xec_adc
+
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_mchp_xec);
@@ -48,7 +50,7 @@ struct adc_xec_regs {
 };
 
 #define ADC_XEC_REG_BASE						\
-	((struct adc_xec_regs *)(DT_INST_0_MICROCHIP_XEC_ADC_BASE_ADDRESS))
+	((struct adc_xec_regs *)(DT_INST_REG_ADDR(0)))
 
 
 DEVICE_DECLARE(adc_xec);
@@ -293,10 +295,10 @@ static int adc_xec_init(struct device *dev)
 	MCHP_GIRQ_SRC(MCHP_ADC_GIRQ) = MCHP_ADC_SNG_DONE_GIRQ_VAL;
 	MCHP_GIRQ_ENSET(MCHP_ADC_GIRQ) = MCHP_ADC_SNG_DONE_GIRQ_VAL;
 
-	IRQ_CONNECT(DT_INST_0_MICROCHIP_XEC_ADC_IRQ_0,
-		    DT_INST_0_MICROCHIP_XEC_ADC_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    adc_xec_isr, DEVICE_GET(adc_xec), 0);
-	irq_enable(DT_INST_0_MICROCHIP_XEC_ADC_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
@@ -309,7 +311,7 @@ static struct adc_xec_data adc_xec_dev_data_0 = {
 	ADC_CONTEXT_INIT_SYNC(adc_xec_dev_data_0, ctx),
 };
 
-DEVICE_AND_API_INIT(adc_xec, DT_INST_0_MICROCHIP_XEC_ADC_LABEL,
+DEVICE_AND_API_INIT(adc_xec, DT_INST_LABEL(0),
 		    adc_xec_init, &adc_xec_dev_data_0, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &adc_xec_api);

@@ -51,7 +51,7 @@ void main(void)
 {
 	int ret;
 	struct device *dev = device_get_binding(
-				DT_INST_0_PANASONIC_AMG88XX_LABEL);
+				DT_LABEL(DT_INST(0, panasonic_amg88xx)));
 
 	if (dev == NULL) {
 		printk("Could not get AMG88XX device\n");

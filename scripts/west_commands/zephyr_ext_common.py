@@ -16,6 +16,14 @@ from west.commands import WestCommand
 
 from runners.core import RunnerConfig
 
+# This relies on this file being zephyr/scripts/foo/bar.py.
+# If you move this file, you'll break it, so be careful.
+THIS_ZEPHYR = Path(__file__).parent.parent.parent
+ZEPHYR_BASE = Path(os.environ.get('ZEPHYR_BASE', THIS_ZEPHYR))
+
+# FIXME we need a nicer way to handle imports from scripts and cmake than this.
+ZEPHYR_SCRIPTS = ZEPHYR_BASE / 'scripts'
+ZEPHYR_CMAKE = ZEPHYR_BASE / 'cmake'
 
 class Forceable(WestCommand):
     '''WestCommand subclass for commands with a --force option.'''
@@ -55,12 +63,3 @@ def cached_runner_config(build_dir, cache):
                         elf_file, hex_file, bin_file,
                         gdb=gdb, openocd=openocd,
                         openocd_search=openocd_search)
-
-# FIXME we should think of a nicer way to manage sys.path
-# for shared Zephyr code.
-def zephyr_scripts_path():
-    # This relies on this file being zephyr/scripts/foo/bar.py.
-    zephyr_base = Path(os.environ.get('ZEPHYR_BASE',
-                       Path(__file__).parent.parent.parent))
-
-    return str(zephyr_base / 'scripts')

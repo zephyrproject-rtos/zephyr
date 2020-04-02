@@ -1,3 +1,7 @@
 parser.out
 parsetab.py
-
+tests/.mypy_cache
+tests/sanitycheck/.pytest_cache
+tests/sanitycheck/htmlcov
+tests/sanitycheck/__pycache__
+tests/sanitycheck/.coverage

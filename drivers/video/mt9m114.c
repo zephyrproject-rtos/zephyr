@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define DT_DRV_COMPAT aptina_mt9m114
 #include <zephyr.h>
 #include <device.h>
 
@@ -388,20 +390,20 @@ static int mt9m114_init_0(struct device *dev)
 {
 	struct mt9m114_data *drv_data = dev->driver_data;
 
-	drv_data->i2c = device_get_binding(DT_INST_0_APTINA_MT9M114_BUS_NAME);
+	drv_data->i2c = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (drv_data->i2c == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
-			DT_INST_0_APTINA_MT9M114_LABEL);
+			DT_INST_LABEL(0));
 			return -EINVAL;
 	}
 
-	drv_data->i2c_addr = DT_INST_0_APTINA_MT9M114_BASE_ADDRESS;
+	drv_data->i2c_addr = DT_INST_REG_ADDR(0);
 
 
 	return mt9m114_init(dev);
 }
 
-DEVICE_AND_API_INIT(mt9m114, DT_INST_0_APTINA_MT9M114_LABEL, &mt9m114_init_0,
+DEVICE_AND_API_INIT(mt9m114, DT_INST_LABEL(0), &mt9m114_init_0,
 		    &mt9m114_data_0, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mt9m114_driver_api);

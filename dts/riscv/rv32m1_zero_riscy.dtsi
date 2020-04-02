@@ -214,3 +214,8 @@
 	interrupt-parent = <&event1>;
 	interrupts = <15>;
 };
+
+&trng {
+	interrupt-parent = <&event1>;
+	interrupts = <12>;
+};

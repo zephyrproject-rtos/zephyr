@@ -821,7 +821,7 @@ void wait_for_usb_dfu(void)
 			break;
 		}
 
-		k_sleep(INTERMITTENT_CHECK_DELAY);
+		k_msleep(INTERMITTENT_CHECK_DELAY);
 	}
 }
 

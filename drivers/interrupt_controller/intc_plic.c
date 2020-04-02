@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT sifive_plic_1_0_0
+
 /**
  * @brief Platform Level Interrupt Controller (PLIC) driver
  *        for RISC-V processors
@@ -17,10 +19,10 @@
 
 #include <sw_isr_table.h>
 
-#define PLIC_MAX_PRIO	DT_INST_0_SIFIVE_PLIC_1_0_0_RISCV_MAX_PRIORITY
-#define PLIC_PRIO	DT_INST_0_SIFIVE_PLIC_1_0_0_PRIO_BASE_ADDRESS
-#define PLIC_IRQ_EN	DT_INST_0_SIFIVE_PLIC_1_0_0_IRQ_EN_BASE_ADDRESS
-#define PLIC_REG	DT_INST_0_SIFIVE_PLIC_1_0_0_REG_BASE_ADDRESS
+#define PLIC_MAX_PRIO	DT_INST_PROP(0, riscv_max_priority)
+#define PLIC_PRIO	DT_INST_REG_ADDR_BY_NAME(0, prio)
+#define PLIC_IRQ_EN	DT_INST_REG_ADDR_BY_NAME(0, irq_en)
+#define PLIC_REG	DT_INST_REG_ADDR_BY_NAME(0, reg)
 
 #define PLIC_IRQS        (CONFIG_NUM_IRQS - CONFIG_2ND_LVL_ISR_TBL_OFFSET)
 #define PLIC_EN_SIZE     ((PLIC_IRQS >> 5) + 1)

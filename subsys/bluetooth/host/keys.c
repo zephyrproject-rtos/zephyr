@@ -236,8 +236,7 @@ void bt_keys_clear(struct bt_keys *keys)
 {
 	BT_DBG("%s (keys 0x%04x)", bt_addr_le_str(&keys->addr), keys->keys);
 
-	if ((IS_ENABLED(CONFIG_BT_CENTRAL) && IS_ENABLED(CONFIG_BT_PRIVACY)) ||
-	    keys->keys & BT_KEYS_IRK) {
+	if (keys->state & BT_KEYS_ID_ADDED) {
 		bt_id_del(keys);
 	}
 

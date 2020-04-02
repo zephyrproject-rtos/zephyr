@@ -58,6 +58,16 @@ config SPI_MCUX_LPSPI
 	default y if HAS_MCUX_LPSPI
 	depends on SPI
 
+if CODE_SEMC
+
+config FLASH_SIZE
+	default $(dt_node_reg_size_int,/memory@80000000,0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_node_reg_addr_hex,/memory@80000000)
+
+endif # CODE_SEMC
+
 if CODE_ITCM
 
 config FLASH_SIZE

@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <soc.h>
 #include <device.h>
 #include <init.h>
+#include <debug/stack.h>
 #include <net/net_if.h>
 #include <net/net_pkt.h>
 
@@ -182,7 +183,6 @@ static int nrf5_set_channel(struct device *dev, u16_t channel)
 	return 0;
 }
 
-#ifdef CONFIG_NET_L2_OPENTHREAD
 static int nrf5_energy_scan_start(struct device *dev,
 				  u16_t duration,
 				  energy_scan_done_cb_t done_cb)
@@ -204,7 +204,6 @@ static int nrf5_energy_scan_start(struct device *dev,
 
 	return err;
 }
-#endif /* CONFIG_NET_L2_OPENTHREAD */
 
 static int nrf5_set_pan_id(struct device *dev, u16_t pan_id)
 {
@@ -490,6 +489,14 @@ int nrf5_configure(struct device *dev, enum ieee802154_config_type type,
 
 		break;
 
+	case IEEE802154_CONFIG_PAN_COORDINATOR:
+		nrf_802154_pan_coord_set(config->pan_coordinator);
+		break;
+
+	case IEEE802154_CONFIG_PROMISCUOUS:
+		nrf_802154_promiscuous_set(config->promiscuous);
+		break;
+
 	default:
 		return -EINVAL;
 	}
@@ -601,9 +608,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.start = nrf5_start,
 	.stop = nrf5_stop,
 	.tx = nrf5_tx,
-#ifdef CONFIG_NET_L2_OPENTHREAD
 	.ed_scan = nrf5_energy_scan_start,
-#endif /* CONFIG_NET_L2_OPENTHREAD */
 	.configure = nrf5_configure,
 };
 
@@ -619,7 +624,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 
 #if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_OPENTHREAD)
 NET_DEVICE_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
-		nrf5_init, &nrf5_data, &nrf5_radio_cfg,
+		nrf5_init, device_pm_control_nop, &nrf5_data, &nrf5_radio_cfg,
 		CONFIG_IEEE802154_NRF5_INIT_PRIO,
 		&nrf5_radio_api, L2,
 		L2_CTX_TYPE, MTU);

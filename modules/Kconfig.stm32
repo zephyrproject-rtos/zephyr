@@ -127,6 +127,11 @@ config USE_STM32_HAL_ETH
 	help
 	  Enable STM32Cube Ethernet (ETH) HAL module driver
 
+config USE_STM32_HAL_ETH_EX
+	bool
+	help
+	  Enable STM32Cube Extended Ethernet (ETH) HAL module driver
+
 config USE_STM32_HAL_EXTI
 	bool
 	help
@@ -341,6 +346,12 @@ config USE_STM32_HAL_PCD_EX
 	help
 	  Enable STM32Cube Extended USB Peripheral Controller (PCD) HAL module
 	  driver
+
+config USE_STM32_HAL_PSSI
+	bool
+	help
+	  Enable STM32Cube Parallel Synchronous Slave Interface (PSSI)
+	  HAL module driver
 
 config USE_STM32_HAL_PWR
 	bool

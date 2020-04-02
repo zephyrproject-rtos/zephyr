@@ -342,7 +342,7 @@ static void publish_message(void)
 
 end:
 		k_delayed_work_submit(&pub_message,
-				      MSEC_PER_SEC * timeout_for_publish());
+				      K_SECONDS(timeout_for_publish()));
 		k_sem_take(&publish_msg, K_FOREVER);
 	}
 }
@@ -470,7 +470,7 @@ static void check_network_connection(struct k_work *work)
 	LOG_INF("waiting for DHCP to acquire addr");
 
 end:
-	k_delayed_work_submit(&check_network_conn, 3 * MSEC_PER_SEC);
+	k_delayed_work_submit(&check_network_conn, K_SECONDS(3));
 }
 #endif
 
@@ -493,7 +493,7 @@ static void l4_event_handler(struct net_mgmt_event_callback *cb,
 
 	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
 		/* Wait for DHCP to be back in BOUND state */
-		k_delayed_work_submit(&check_network_conn, 3 * MSEC_PER_SEC);
+		k_delayed_work_submit(&check_network_conn, K_SECONDS(3));
 
 		return;
 	}

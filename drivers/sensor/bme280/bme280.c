@@ -169,6 +169,21 @@ static int bme280_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
+#ifdef CONFIG_BME280_MODE_FORCED
+	ret = bm280_reg_write(data, BME280_REG_CTRL_MEAS, BME280_CTRL_MEAS_VAL);
+	if (ret < 0) {
+		return ret;
+	}
+
+	do {
+		k_sleep(K_MSEC(3));
+		ret = bm280_reg_read(data, BME280_REG_STATUS, buf, 1);
+		if (ret < 0) {
+			return ret;
+		}
+	} while (buf[0] & 0x08);
+#endif
+
 	if (data->chip_id == BME280_CHIP_ID) {
 		size = 8;
 	}

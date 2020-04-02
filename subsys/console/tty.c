@@ -186,7 +186,8 @@ static ssize_t tty_read_unbuf(struct tty_serial *tty, void *buf, size_t size)
 			size--;
 		}
 
-		if (size == 0 || (timeout != K_FOREVER && timeout-- == 0U)) {
+		if (size == 0 ||
+		    (!K_TIMEOUT_EQ(timeout, K_FOREVER) && timeout-- == 0U)) {
 			break;
 		}
 

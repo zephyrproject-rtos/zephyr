@@ -47,9 +47,6 @@
 #define MEM_VECT_SIZE				(MEM_VECT_TEXT_SIZE +\
 						MEM_VECT_LIT_SIZE)
 
-/* The memerror vector address is copied as is from core-isa.h */
-#define XCHAL_MEMERROR_VECTOR_PADDR		0xBEFE0400
-
 #define MEM_ERROR_TEXT_SIZE			0x180
 #define MEM_ERROR_LIT_SIZE			0x8
 
@@ -71,5 +68,8 @@
 /* low power ram where DMA buffers are typically placed */
 #define LPRAM_BASE				(DT_LP_SRAM_BASE)
 #define LPRAM_SIZE				(DT_LP_SRAM_SIZE)
+
+/* Boot vector resideing in LP-SRAM for core #1 */
+#define LPSRAM_BOOT_VECTOR_ADDR			(DT_LP_SRAM_BASE + 0x08)
 
 #endif /* __INC_MEMORY_H */

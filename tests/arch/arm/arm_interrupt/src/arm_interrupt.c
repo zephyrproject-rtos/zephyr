@@ -54,7 +54,7 @@ void test_arm_interrupt(void)
 {
 	/* Determine an NVIC IRQ line that is not currently in use. */
 	int i;
-	int init_flag, post_flag;
+	int init_flag, post_flag, reason;
 
 	init_flag = test_flag;
 
@@ -101,8 +101,9 @@ void test_arm_interrupt(void)
 	/* Verify that the spurious ISR has led to the fault and the
 	 * expected reason variable is reset.
 	 */
-	zassert_true(expected_reason == -1,
-		"expected_reason has not been reset\n");
+	reason = expected_reason;
+	zassert_equal(reason, -1,
+		"expected_reason has not been reset (%d)\n", reason);
 	NVIC_DisableIRQ(i);
 
 	arch_irq_connect_dynamic(i, 0 /* highest priority */,

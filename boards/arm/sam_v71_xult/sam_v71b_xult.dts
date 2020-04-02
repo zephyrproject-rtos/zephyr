@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <atmel/samv71q21b.dtsi>
+
+#include "sam_v71_xult-common.dtsi"

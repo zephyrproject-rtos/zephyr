@@ -67,7 +67,7 @@ The following commands build the application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/nrf/mesh/onoff_level_lighting_vnd_app
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :goals: build flash
    :compact:
 

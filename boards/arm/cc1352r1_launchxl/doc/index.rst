@@ -175,6 +175,22 @@ so-called backdoor is enabled (via option
 down during reset. See the bootloader documentation in chapter 10 of the `TI
 CC13x2 / CC26x2 Technical Reference Manual`_ for additional information.
 
+Power Management and UART
+=========================
+When system power management is turned on (CONFIG_SYS_POWER_MANAGEMENT=y),
+sleep state 2 (standby mode) is allowed, and polling is used to retrieve input
+by calling uart_poll_in(), it is possible for characters to be missed if the
+system enters standby mode between calls to uart_poll_in(). This is because
+the UART is inactive while the system is in standby mode. The workaround is to
+disable sleep state 2 while polling:
+
+.. code-block:: c
+
+    sys_pm_ctrl_disable_state(SYS_POWER_STATE_SLEEP_2);
+    <code that calls uart_poll_in() and expects input at any point in time>
+    sys_pm_ctrl_enable_state(SYS_POWER_STATE_SLEEP_2);
+
+
 References
 **********
 

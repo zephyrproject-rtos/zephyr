@@ -201,6 +201,7 @@ execute_process(
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/kconfig/kconfig.py
+  --zephyr-base=${ZEPHYR_BASE}
   ${input_configs_are_handwritten}
   ${KCONFIG_ROOT}
   ${DOTCONFIG}

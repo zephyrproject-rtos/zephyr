@@ -74,13 +74,13 @@ struct rng_pool {
 
 #define RNG_POOL_DEFINE(name, len) u8_t name[sizeof(struct rng_pool) + (len)]
 
-BUILD_ASSERT_MSG((CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE &
-		 (CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE - 1)) == 0,
-		 "The CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE must be a power of 2!");
+BUILD_ASSERT((CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE &
+	      (CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE - 1)) == 0,
+	     "The CONFIG_ENTROPY_NRF5_ISR_POOL_SIZE must be a power of 2!");
 
-BUILD_ASSERT_MSG((CONFIG_ENTROPY_NRF5_THR_POOL_SIZE &
-		 (CONFIG_ENTROPY_NRF5_THR_POOL_SIZE - 1)) == 0,
-		 "The CONFIG_ENTROPY_NRF5_THR_POOL_SIZE must be a power of 2!");
+BUILD_ASSERT((CONFIG_ENTROPY_NRF5_THR_POOL_SIZE &
+	      (CONFIG_ENTROPY_NRF5_THR_POOL_SIZE - 1)) == 0,
+	     "The CONFIG_ENTROPY_NRF5_THR_POOL_SIZE must be a power of 2!");
 
 struct entropy_nrf5_dev_data {
 	struct k_sem sem_lock;

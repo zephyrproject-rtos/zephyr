@@ -54,7 +54,7 @@ void z_soc_irq_enable(u32_t irq)
 
 	switch (CAVS_IRQ_NUMBER(irq)) {
 	case DW_ICTL_IRQ_CAVS_OFFSET:
-		dev_ictl = device_get_binding(DT_INST_0_SNPS_DESIGNWARE_INTC_LABEL);
+		dev_ictl = device_get_binding(DT_LABEL(DT_INST(0, snps_designware_intc)));
 		break;
 	default:
 		/* The source of the interrupt is in CAVS interrupt logic */
@@ -112,7 +112,7 @@ void z_soc_irq_disable(u32_t irq)
 
 	switch (CAVS_IRQ_NUMBER(irq)) {
 	case DW_ICTL_IRQ_CAVS_OFFSET:
-		dev_ictl = device_get_binding(DT_INST_0_SNPS_DESIGNWARE_INTC_LABEL);
+		dev_ictl = device_get_binding(DT_LABEL(DT_INST(0, snps_designware_intc)));
 		break;
 	default:
 		/* The source of the interrupt is in CAVS interrupt logic */
@@ -179,7 +179,7 @@ int z_soc_irq_is_enabled(unsigned int irq)
 
 	switch (CAVS_IRQ_NUMBER(irq)) {
 	case DW_ICTL_IRQ_CAVS_OFFSET:
-		dev_ictl = device_get_binding(DT_INST_0_SNPS_DESIGNWARE_INTC_LABEL);
+		dev_ictl = device_get_binding(DT_LABEL(DT_INST(0, snps_designware_intc)));
 		break;
 	default:
 		/* The source of the interrupt is in CAVS interrupt logic */
@@ -284,8 +284,7 @@ static inline void soc_set_power_and_clock(void)
 
 	dsp_shim_regs->clkctl |= SOC_CLKCTL_REQ_FAST_CLK |
 		SOC_CLKCTL_OCS_FAST_CLK;
-	dsp_shim_regs->pwrctl |= SOC_PWRCTL_DISABLE_PWR_GATING_DSP1 |
-		SOC_PWRCTL_DISABLE_PWR_GATING_DSP0;
+	dsp_shim_regs->pwrctl |= SOC_PWRCTL_DISABLE_PWR_GATING_DSP0;
 
 	soc_set_dmic_power();
 	soc_set_gna_power();

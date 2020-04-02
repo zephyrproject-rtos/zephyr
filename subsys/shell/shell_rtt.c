@@ -9,9 +9,9 @@
 #include <SEGGER_RTT.h>
 #include <logging/log.h>
 
-BUILD_ASSERT_MSG(!(IS_ENABLED(CONFIG_LOG_BACKEND_RTT) &&
-		 COND_CODE_0(CONFIG_LOG_BACKEND_RTT_BUFFER, (1), (0))),
-		 "Conflicting log RTT backend enabled on the same channel");
+BUILD_ASSERT(!(IS_ENABLED(CONFIG_LOG_BACKEND_RTT) &&
+	       COND_CODE_0(CONFIG_LOG_BACKEND_RTT_BUFFER, (1), (0))),
+	     "Conflicting log RTT backend enabled on the same channel");
 
 SHELL_RTT_DEFINE(shell_transport_rtt);
 SHELL_DEFINE(shell_rtt, CONFIG_SHELL_PROMPT_RTT, &shell_transport_rtt,
@@ -44,8 +44,8 @@ static int init(const struct shell_transport *transport,
 
 	k_timer_init(&sh_rtt->timer, timer_handler, NULL);
 	k_timer_user_data_set(&sh_rtt->timer, (void *)sh_rtt);
-	k_timer_start(&sh_rtt->timer, CONFIG_SHELL_RTT_RX_POLL_PERIOD,
-			CONFIG_SHELL_RTT_RX_POLL_PERIOD);
+	k_timer_start(&sh_rtt->timer, K_MSEC(CONFIG_SHELL_RTT_RX_POLL_PERIOD),
+		      K_MSEC(CONFIG_SHELL_RTT_RX_POLL_PERIOD));
 
 	return 0;
 }

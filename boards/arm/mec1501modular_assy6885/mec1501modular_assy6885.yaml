@@ -25,3 +25,4 @@ supported:
   - ps2
   - peci
   - kscan
+  - tach

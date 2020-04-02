@@ -69,6 +69,9 @@ extern "C" {
  * \li POST_KERNEL: Used for devices that require kernel services during
  * configuration.
  * \n
+ * \li POST_KERNEL_SMP: Used for devices that require kernel services during
+ * configuration after SMP initialization.
+ * \n
  * \li APPLICATION: Used for application components (i.e. non-kernel components)
  * that need automatic configuration. These devices can use all services
  * provided by the kernel during configuration.
@@ -595,7 +598,8 @@ static inline int device_pm_get_sync(struct device *dev) { return -ENOTSUP; }
 static inline int device_pm_put(struct device *dev) { return -ENOTSUP; }
 static inline int device_pm_put_sync(struct device *dev) { return -ENOTSUP; }
 #endif
-
+#else
+#define device_pm_control_nop(...) NULL
 #endif
 
 /**

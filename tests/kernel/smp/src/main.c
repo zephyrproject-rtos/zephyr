@@ -208,7 +208,8 @@ static void spawn_threads(int prio, int thread_num,
 		tinfo[i].tid = k_thread_create(&tthread[i], tstack[i],
 					       STACK_SIZE, thread_entry,
 					       INT_TO_POINTER(i), NULL, NULL,
-					       tinfo[i].priority, 0, delay);
+					       tinfo[i].priority, 0,
+					       K_MSEC(delay));
 		if (delay) {
 			/* Increase delay for each thread */
 			delay = delay + 10;
@@ -348,7 +349,7 @@ void test_sleep_threads(void)
 	spawn_threads(K_PRIO_COOP(10), THREADS_NUM, !EQUAL_PRIORITY,
 		      &thread_entry, !THREAD_DELAY);
 
-	k_sleep(TIMEOUT);
+	k_msleep(TIMEOUT);
 
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tinfo[i].executed == 1,
@@ -367,7 +368,7 @@ static void thread_wakeup_entry(void *p1, void *p2, void *p3)
 
 	thread_started[thread_num] = 1;
 
-	k_sleep(DELAY_US * 1000);
+	k_msleep(DELAY_US * 1000);
 
 	tinfo[thread_num].executed  = 1;
 }

@@ -18,6 +18,30 @@ Security Vulnerability Related
 
 No security vulnerabilities received.
 
+API Changes
+***********
+
+Deprecated in this release
+==========================
+
+* Bluetooth
+
+  * BT_LE_SCAN_FILTER_DUPLICATE, use BT_LE_SCAN_OPT_FILTER_DUPLICATE instead
+  * BT_LE_SCAN_FILTER_WHITELIST, use BT_LE_SCAN_OPT_FILTER_WHITELIST instead
+  * bt_le_scan_param::filter_dup, use bt_le_scan_param::options instead
+  * bt_conn_create_le(), use bt_conn_le_create() instead
+  * bt_conn_create_auto_le(), use bt_conn_le_create_auto() instead
+  * bt_conn_create_slave_le(), use bt_conn_le_create_slave() instead
+  * BT_LE_ADV_* macros, use BT_HCI_ADV_* macros instead
+
+Removed APIs in this release
+============================
+
+
+Stable API changes in this release
+==================================
+
+
 Kernel
 ******
 
@@ -227,8 +251,16 @@ Build and Infrastructure
 
 * <TBD>
 
+* Devicetree
+
+  * A new :ref:`devicetree_api` was added. This API is not generated, but is
+    still included via ``<devicetree.h>``. The :ref:`dt-legacy-macros` are now
+    deprecated; users should replace the generated macros with new API. The
+    :ref:`dt-howtos` page has been extended for the new API, and a new
+    :ref:`dt-from-c` API usage guide was also added.
+
 Libraries / Subsystems
-***********************
+**********************
 
 * Random
 

@@ -57,7 +57,7 @@ static int ti_hdc_sample_fetch(struct device *dev, enum sensor_channel chan)
 	k_sem_take(&drv_data->data_sem, K_FOREVER);
 #else
 	/* wait for the conversion to finish */
-	k_sleep(HDC_CONVERSION_TIME);
+	k_msleep(HDC_CONVERSION_TIME);
 #endif
 
 	if (i2c_read(drv_data->i2c, buf, 4, DT_INST_0_TI_HDC_BASE_ADDRESS) < 0) {

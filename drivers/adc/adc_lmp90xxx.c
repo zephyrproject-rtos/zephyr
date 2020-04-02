@@ -15,6 +15,7 @@
 #include <drivers/spi.h>
 #include <kernel.h>
 #include <sys/byteorder.h>
+#include <sys/crc.h>
 #include <zephyr.h>
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
@@ -119,7 +120,6 @@ struct lmp90xxx_config {
 };
 
 struct lmp90xxx_data {
-	struct device *dev;
 	struct adc_context ctx;
 	struct device *spi_dev;
 	struct spi_cs_control spi_cs;
@@ -129,7 +129,7 @@ struct lmp90xxx_data {
 	s32_t *buffer;
 	s32_t *repeat_buffer;
 	u32_t channels;
-	u32_t channel_id;
+	bool calibrate;
 	u8_t channel_odr[LMP90XXX_MAX_CHANNELS];
 #ifdef CONFIG_ADC_LMP90XXX_GPIO
 	struct k_mutex gpio_lock;
@@ -137,7 +137,8 @@ struct lmp90xxx_data {
 	u8_t gpio_dat;
 #endif /* CONFIG_ADC_LMP90XXX_GPIO */
 	struct k_thread thread;
-	struct k_sem sem;
+	struct k_sem acq_sem;
+	struct k_sem drdyb_sem;
 
 	K_THREAD_STACK_MEMBER(stack,
 			CONFIG_ADC_LMP90XXX_ACQUISITION_THREAD_STACK_SIZE);
@@ -190,6 +191,11 @@ static int lmp90xxx_read_reg(struct device *dev, u8_t addr, u8_t *dptr,
 	if (len == 0) {
 		LOG_ERR("attempt to read 0 bytes from register 0x%02x", addr);
 		return -EINVAL;
+	}
+
+	if (k_is_in_isr()) {
+		/* Prevent SPI transactions from an ISR */
+		return -EWOULDBLOCK;
 	}
 
 	k_mutex_lock(&data->ura_lock, K_FOREVER);
@@ -256,6 +262,11 @@ static int lmp90xxx_write_reg(struct device *dev, u8_t addr, u8_t *dptr,
 	if (len == 0) {
 		LOG_ERR("attempt write 0 bytes to register 0x%02x", addr);
 		return -EINVAL;
+	}
+
+	if (k_is_in_isr()) {
+		/* Prevent SPI transactions from an ISR */
+		return -EWOULDBLOCK;
 	}
 
 	k_mutex_lock(&data->ura_lock, K_FOREVER);
@@ -487,11 +498,16 @@ static int lmp90xxx_adc_start_read(struct device *dev,
 {
 	const struct lmp90xxx_config *config = dev->config->config_info;
 	struct lmp90xxx_data *data = dev->driver_data;
-	u8_t bgcalcn = LMP90XXX_BGCALN(0x3); /* Default to BgCalMode3 */
 	int err;
 
 	if (sequence->resolution != config->resolution) {
 		LOG_ERR("unsupported resolution %d", sequence->resolution);
+		return -ENOTSUP;
+	}
+
+	if (!lmp90xxx_has_channel(dev, find_msb_set(sequence->channels) - 1)) {
+		LOG_ERR("unsupported channels in mask: 0x%08x",
+			sequence->channels);
 		return -ENOTSUP;
 	}
 
@@ -501,18 +517,8 @@ static int lmp90xxx_adc_start_read(struct device *dev,
 		return err;
 	}
 
-	if (sequence->calibrate) {
-		/* Use BgCalMode2 */
-		bgcalcn = LMP90XXX_BGCALN(0x2);
-	}
-
-	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_BGCALCN, bgcalcn);
-	if (err) {
-		LOG_ERR("failed to setup background calibration (err %d)", err);
-		return err;
-	}
-
 	data->buffer = sequence->buffer;
+	data->calibrate = sequence->calibrate;
 	adc_context_start_read(&data->ctx, sequence);
 
 	return adc_context_wait_for_completion(&data->ctx);
@@ -538,43 +544,6 @@ static int lmp90xxx_adc_read(struct device *dev,
 	return lmp90xxx_adc_read_async(dev, sequence, NULL);
 }
 
-static void lmp90xxx_adc_start_channel(struct device *dev)
-{
-	const struct lmp90xxx_config *config = dev->config->config_info;
-	struct lmp90xxx_data *data = dev->driver_data;
-	u8_t ch_scan;
-	int err;
-
-	data->channel_id = find_lsb_set(data->channels) - 1;
-
-	LOG_DBG("starting channel %d", data->channel_id);
-
-	/* Single channel, single scan mode */
-	ch_scan = LMP90XXX_CH_SCAN_SEL(0x1) |
-		  LMP90XXX_FIRST_CH(data->channel_id) |
-		  LMP90XXX_LAST_CH(data->channel_id);
-
-	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_CH_SCAN, ch_scan);
-	if (err) {
-		LOG_ERR("failed to setup scan channels (err %d)", err);
-		adc_context_complete(&data->ctx, err);
-		return;
-	}
-
-	/* Start scan */
-	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_PWRCN, LMP90XXX_PWRCN(0));
-	if (err) {
-		LOG_ERR("failed to set active mode (err %d)", err);
-		adc_context_complete(&data->ctx, err);
-		return;
-	}
-
-	if (!LMP90XXX_HAS_DRDYB(config)) {
-		/* Signal thread to start polling for data ready */
-		k_sem_give(&data->sem);
-	}
-}
-
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct lmp90xxx_data *data =
@@ -583,7 +552,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	data->channels = ctx->sequence.channels;
 	data->repeat_buffer = data->buffer;
 
-	lmp90xxx_adc_start_channel(data->dev);
+	k_sem_give(&data->acq_sem);
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx,
@@ -597,105 +566,135 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 	}
 }
 
-static u8_t lmp90xxx_crc8(u8_t val, const void *buf, size_t cnt)
-{
-	const u8_t *p = buf;
-	int i, j;
-
-	for (i = 0; i < cnt; i++) {
-		val ^= p[i];
-
-		for (j = 0; j < 8; j++) {
-			if (val & 0x80) {
-				val = (val << 1) ^ 0x31;
-			} else {
-				val <<= 1;
-			}
-		}
-	}
-
-	return val ^ 0xFFU;
-}
-
-static void lmp90xxx_acquisition_thread(struct device *dev)
+static int lmp90xxx_adc_read_channel(struct device *dev, u8_t channel,
+				     s32_t *result)
 {
 	const struct lmp90xxx_config *config = dev->config->config_info;
 	struct lmp90xxx_data *data = dev->driver_data;
-	s32_t result = 0;
 	u8_t adc_done;
+	u8_t ch_scan;
 	u8_t buf[4]; /* ADC_DOUT + CRC */
 	s32_t delay;
 	u8_t odr;
 	int err;
 
-	while (true) {
-		k_sem_take(&data->sem, K_FOREVER);
+	/* Single channel, single scan mode */
+	ch_scan = LMP90XXX_CH_SCAN_SEL(0x1) | LMP90XXX_FIRST_CH(channel) |
+		  LMP90XXX_LAST_CH(channel);
 
-		if (!LMP90XXX_HAS_DRDYB(config)) {
-			odr = data->channel_odr[data->channel_id];
-			delay = lmp90xxx_odr_delay_tbl[odr];
-			LOG_DBG("sleeping for %d ms", delay);
-			k_sleep(delay);
+	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_CH_SCAN, ch_scan);
+	if (err) {
+		LOG_ERR("failed to setup scan channels (err %d)", err);
+		return err;
+	}
 
-			/* Poll for data ready */
-			do {
-				err = lmp90xxx_read_reg8(dev,
-							 LMP90XXX_REG_ADC_DONE,
-							 &adc_done);
-				if (adc_done == 0xFFU) {
-					LOG_DBG("sleeping for 1 ms");
-					k_sleep(1);
-				} else {
-					break;
-				}
-			} while (true);
-		}
+	/* Start scan */
+	err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_PWRCN, LMP90XXX_PWRCN(0));
+	if (err) {
+		LOG_ERR("failed to set active mode (err %d)", err);
+		return err;
+	}
 
-		if (IS_ENABLED(CONFIG_ADC_LMP90XXX_CRC)) {
-			err = lmp90xxx_read_reg(dev, LMP90XXX_REG_ADC_DOUT,
-						buf, sizeof(buf));
-		} else {
-			err = lmp90xxx_read_reg(dev, LMP90XXX_REG_ADC_DOUT,
-						buf, config->resolution / 8);
-		}
+	if (LMP90XXX_HAS_DRDYB(config)) {
+		k_sem_take(&data->drdyb_sem, K_FOREVER);
+	} else {
+		odr = data->channel_odr[channel];
+		delay = lmp90xxx_odr_delay_tbl[odr];
+		LOG_DBG("sleeping for %d ms", delay);
+		k_sleep(delay);
 
-		if (err) {
-			LOG_ERR("failed to read ADC DOUT (err %d)", err);
-			adc_context_complete(&data->ctx, err);
-			return;
-		}
-
-		if (IS_ENABLED(CONFIG_ADC_LMP90XXX_CRC)) {
-			u8_t crc = lmp90xxx_crc8(0, buf, 3);
-
-			if (buf[3] != crc) {
-				LOG_ERR("CRC mismatch (0x%02x vs. 0x%02x)",
-					buf[3], crc);
-				adc_context_complete(&data->ctx, -EIO);
-				return;
+		/* Poll for data ready */
+		do {
+			err = lmp90xxx_read_reg8(dev, LMP90XXX_REG_ADC_DONE,
+						&adc_done);
+			if (adc_done == 0xFFU) {
+				LOG_DBG("sleeping for 1 ms");
+				k_sleep(1);
+			} else {
+				break;
 			}
+		} while (true);
+	}
+
+	if (IS_ENABLED(CONFIG_ADC_LMP90XXX_CRC)) {
+		err = lmp90xxx_read_reg(dev, LMP90XXX_REG_ADC_DOUT, buf,
+					sizeof(buf));
+	} else {
+		err = lmp90xxx_read_reg(dev, LMP90XXX_REG_ADC_DOUT, buf,
+					config->resolution / 8);
+	}
+
+	if (err) {
+		LOG_ERR("failed to read ADC DOUT (err %d)", err);
+		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_ADC_LMP90XXX_CRC)) {
+		u8_t crc = crc8(buf, 3, 0x31, 0, false) ^ 0xFFU;
+
+		if (buf[3] != crc) {
+			LOG_ERR("CRC mismatch (0x%02x vs. 0x%02x)", buf[3],
+				crc);
+			return err;
+		}
+	}
+
+	/* Read result, get rid of CRC, and sign extend result */
+	*result = (s32_t)sys_get_be32(buf);
+	*result >>= (32 - config->resolution);
+
+	return 0;
+}
+
+static void lmp90xxx_acquisition_thread(struct device *dev)
+{
+	struct lmp90xxx_data *data = dev->driver_data;
+	u8_t bgcalcn = LMP90XXX_BGCALN(0x3); /* Default to BgCalMode3 */
+	s32_t result = 0;
+	u8_t channel;
+	int err;
+
+	while (true) {
+		k_sem_take(&data->acq_sem, K_FOREVER);
+
+		if (data->calibrate) {
+			/* Use BgCalMode2 */
+			bgcalcn = LMP90XXX_BGCALN(0x2);
 		}
 
-		/* Read result, get rid of CRC, and sign extend result */
-		result = (s32_t)sys_get_be32(buf);
-		result >>= (32 - config->resolution);
-
-		LOG_DBG("finished channel %d, result = %d", data->channel_id,
-			result);
-
-		/*
-		 * ADC samples are stored as s32_t regardless of the
-		 * resolution in order to provide a uniform interface
-		 * for the driver.
-		 */
-		*data->buffer++ = result;
-		data->channels &= ~BIT(data->channel_id);
-
-		if (data->channels) {
-			lmp90xxx_adc_start_channel(dev);
-		} else {
-			adc_context_on_sampling_done(&data->ctx, dev);
+		LOG_DBG("using BGCALCN = 0x%02x", bgcalcn);
+		err = lmp90xxx_write_reg8(dev, LMP90XXX_REG_BGCALCN, bgcalcn);
+		if (err) {
+			LOG_ERR("failed to setup background calibration "
+				"(err %d)", err);
+				adc_context_complete(&data->ctx, err);
+				break;
 		}
+
+		while (data->channels) {
+			channel = find_lsb_set(data->channels) - 1;
+
+			LOG_DBG("reading channel %d", channel);
+
+			err = lmp90xxx_adc_read_channel(dev, channel, &result);
+			if (err) {
+				adc_context_complete(&data->ctx, err);
+				break;
+			}
+
+			LOG_DBG("finished channel %d, result = %d", channel,
+				result);
+
+			/*
+			 * ADC samples are stored as s32_t regardless of the
+			 * resolution in order to provide a uniform interface
+			 * for the driver.
+			 */
+			*data->buffer++ = result;
+			WRITE_BIT(data->channels, channel, 0);
+		}
+
+		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 }
 
@@ -706,7 +705,7 @@ static void lmp90xxx_drdyb_callback(struct device *port,
 		CONTAINER_OF(cb, struct lmp90xxx_data, drdyb_cb);
 
 	/* Signal thread that data is now ready */
-	k_sem_give(&data->sem);
+	k_sem_give(&data->drdyb_sem);
 }
 
 #ifdef CONFIG_ADC_LMP90XXX_GPIO
@@ -919,9 +918,9 @@ static int lmp90xxx_init(struct device *dev)
 	struct device *drdyb_dev;
 	int err;
 
-	data->dev = dev;
 	k_mutex_init(&data->ura_lock);
-	k_sem_init(&data->sem, 0, 1);
+	k_sem_init(&data->acq_sem, 0, 1);
+	k_sem_init(&data->drdyb_sem, 0, 1);
 #ifdef CONFIG_ADC_LMP90XXX_GPIO
 	k_mutex_init(&data->gpio_lock);
 #endif /* CONFIG_ADC_LMP90XXX_GPIO */
@@ -1051,44 +1050,64 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 };
 
 #define ASSERT_LMP90XXX_CURRENT_VALID(v) \
-	BUILD_ASSERT_MSG(v == 0 || v == 100 || v == 200 || v == 300 || \
-			 v == 400 || v == 500 || v == 600 || v == 700 || \
-			 v == 800 || v == 900 || v == 1000, \
-			 "unsupported RTD current (" #v ")")
+	BUILD_ASSERT(v == 0 || v == 100 || v == 200 || v == 300 ||	\
+		     v == 400 || v == 500 || v == 600 || v == 700 ||	\
+		     v == 800 || v == 900 || v == 1000,			\
+		     "unsupported RTD current (" #v ")")
 
 #define LMP90XXX_UAMPS_TO_RTD_CUR_SEL(x) (x / 100)
 
+#define DT_INST_LMP90XXX(inst, t) DT_INST(inst, ti_lmp##t)
+
 #define LMP90XXX_DEVICE(t, n, res, ch) \
-	ASSERT_LMP90XXX_CURRENT_VALID(DT_INST_##n##_TI_LMP##t##_RTD_CURRENT); \
+	ASSERT_LMP90XXX_CURRENT_VALID(UTIL_AND(	\
+		DT_NODE_HAS_PROP(DT_INST_LMP90XXX(n, t), rtd_current), \
+		DT_PROP(DT_INST_LMP90XXX(n, t),	rtd_current))); \
 	static struct lmp90xxx_data lmp##t##_data_##n = { \
 		ADC_CONTEXT_INIT_TIMER(lmp##t##_data_##n, ctx), \
 		ADC_CONTEXT_INIT_LOCK(lmp##t##_data_##n, ctx), \
 		ADC_CONTEXT_INIT_SYNC(lmp##t##_data_##n, ctx), \
 	}; \
 	static const struct lmp90xxx_config lmp##t##_config_##n = { \
-		.spi_dev_name = DT_INST_##n##_TI_LMP##t##_BUS_NAME, \
-		.spi_cs_dev_name = \
-			DT_INST_##n##_TI_LMP##t##_CS_GPIOS_CONTROLLER, \
-		.spi_cs_pin = DT_INST_##n##_TI_LMP##t##_CS_GPIOS_PIN, \
+		.spi_dev_name = DT_BUS_LABEL(DT_INST_LMP90XXX(n, t)), \
+		.spi_cs_dev_name = UTIL_AND( \
+			DT_SPI_DEV_HAS_CS_GPIOS(DT_INST_LMP90XXX(n, t)), \
+			DT_SPI_DEV_CS_GPIOS_LABEL(DT_INST_LMP90XXX(n, t)) \
+			), \
+		.spi_cs_pin = UTIL_AND( \
+			DT_SPI_DEV_HAS_CS_GPIOS(DT_INST_LMP90XXX(n, t)), \
+			DT_SPI_DEV_CS_GPIOS_PIN(DT_INST_LMP90XXX(n, t)) \
+			), \
 		.spi_cfg = { \
 			.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | \
 				     SPI_WORD_SET(8)), \
-			.frequency = \
-				DT_INST_##n##_TI_LMP##t##_SPI_MAX_FREQUENCY, \
-			.slave = DT_INST_##n##_TI_LMP##t##_BASE_ADDRESS, \
+			.frequency = DT_PROP(DT_INST_LMP90XXX(n, t), \
+					spi_max_frequency), \
+			.slave = DT_REG_ADDR(DT_INST_LMP90XXX(n, t)), \
 			.cs = &lmp##t##_data_##n.spi_cs, \
 		}, \
-		.drdyb_dev_name = \
-			DT_INST_##n##_TI_LMP##t##_DRDYB_GPIOS_CONTROLLER, \
-		.drdyb_pin = DT_INST_##n##_TI_LMP##t##_DRDYB_GPIOS_PIN, \
-		.drdyb_flags = DT_INST_##n##_TI_LMP##t##_DRDYB_GPIOS_FLAGS, \
-		.rtd_current = LMP90XXX_UAMPS_TO_RTD_CUR_SEL( \
-			DT_INST_##n##_TI_LMP##t##_RTD_CURRENT), \
+		.drdyb_dev_name = UTIL_AND( \
+			DT_NODE_HAS_PROP(DT_INST_LMP90XXX(n, t), drdyb_gpios), \
+			DT_GPIO_LABEL(DT_INST_LMP90XXX(n, t), drdyb_gpios) \
+			), \
+		.drdyb_pin = UTIL_AND( \
+			DT_NODE_HAS_PROP(DT_INST_LMP90XXX(n, t), drdyb_gpios), \
+			DT_GPIO_PIN(DT_INST_LMP90XXX(n, t), drdyb_gpios) \
+			), \
+		.drdyb_flags = UTIL_AND( \
+			DT_NODE_HAS_PROP(DT_INST_LMP90XXX(n, t), drdyb_gpios), \
+			DT_GPIO_FLAGS(DT_INST_LMP90XXX(n, t), drdyb_gpios) \
+			), \
+		.rtd_current = UTIL_AND( \
+			DT_NODE_HAS_PROP(DT_INST_LMP90XXX(n, t), rtd_current), \
+			LMP90XXX_UAMPS_TO_RTD_CUR_SEL( \
+				DT_PROP(DT_INST_LMP90XXX(n, t), rtd_current)) \
+			), \
 		.resolution = res, \
 		.channels = ch, \
 	}; \
 	DEVICE_AND_API_INIT(lmp##t##_##n, \
-			    DT_INST_##n##_TI_LMP##t##_LABEL, \
+			    DT_LABEL(DT_INST_LMP90XXX(n, t)), \
 			    &lmp90xxx_init, &lmp##t##_data_##n, \
 			    &lmp##t##_config_##n, POST_KERNEL, \
 			    CONFIG_ADC_LMP90XXX_INIT_PRIORITY, \
@@ -1097,143 +1116,55 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 /*
  * LMP90077: 16 bit, 2 diff/4 se (4 channels), 0 currents
  */
-#if DT_INST_0_TI_LMP90077
-#ifndef DT_INST_0_TI_LMP90077_CS_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90077_CS_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90077_CS_GPIOS_PIN 0
-#endif /* DT_INST_0_TI_LMP90077_CS_GPIOS_CONTROLLER */
-#ifndef DT_INST_0_TI_LMP90077_DRDYB_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90077_DRDYB_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90077_DRDYB_GPIOS_PIN 0
-#define DT_INST_0_TI_LMP90077_DRDYB_GPIOS_FLAGS 0
-#endif /* !DT_INST_0_TI_LMP90077_DRDYB_GPIOS_CONTROLLER */
-#define DT_INST_0_TI_LMP90077_RTD_CURRENT 0
+#if DT_HAS_COMPAT(ti_lmp90077)
 LMP90XXX_DEVICE(90077, 0, 16, 4);
-#endif /* DT_INST_0_TI_LMP90077 */
+#endif
 
 /*
  * LMP90078: 16 bit, 2 diff/4 se (4 channels), 2 currents
  */
-#if DT_INST_0_TI_LMP90078
-#ifndef DT_INST_0_TI_LMP90078_CS_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90078_CS_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90078_CS_GPIOS_PIN 0
-#endif /* DT_INST_0_TI_LMP90078_CS_GPIOS_CONTROLLER */
-#ifndef DT_INST_0_TI_LMP90078_DRDYB_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90078_DRDYB_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90078_DRDYB_GPIOS_PIN 0
-#define DT_INST_0_TI_LMP90078_DRDYB_GPIOS_FLAGS 0
-#endif /* !DT_INST_0_TI_LMP90078_DRDYB_GPIOS_CONTROLLER */
-#ifndef DT_INST_0_TI_LMP90078_RTD_CURRENT
-#define DT_INST_0_TI_LMP90078_RTD_CURRENT 0
-#endif /* DT_INST_0_TI_LMP90078_RTD_CURRENT */
+#if DT_HAS_COMPAT(ti_lmp90078)
 LMP90XXX_DEVICE(90078, 0, 16, 4);
-#endif /* DT_INST_0_TI_LMP90078 */
+#endif
 
 /*
  * LMP90079: 16 bit, 4 diff/7 se (7 channels), 0 currents, has VIN3-5
  */
-#if DT_INST_0_TI_LMP90079
-#ifndef DT_INST_0_TI_LMP90079_CS_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90079_CS_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90079_CS_GPIOS_PIN 0
-#endif /* DT_INST_0_TI_LMP90079_CS_GPIOS_CONTROLLER */
-#ifndef DT_INST_0_TI_LMP90079_DRDYB_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90079_DRDYB_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90079_DRDYB_GPIOS_PIN 0
-#define DT_INST_0_TI_LMP90079_DRDYB_GPIOS_FLAGS 0
-#endif /* !DT_INST_0_TI_LMP90079_DRDYB_GPIOS_CONTROLLER */
-#define DT_INST_0_TI_LMP90079_RTD_CURRENT 0
+#if DT_HAS_COMPAT(ti_lmp90079)
 LMP90XXX_DEVICE(90079, 0, 16, 7);
-#endif /* DT_INST_0_TI_LMP90079 */
+#endif
 
 /*
  * LMP90080: 16 bit, 4 diff/7 se (7 channels), 2 currents, has VIN3-5
  */
-#if DT_INST_0_TI_LMP90080
-#ifndef DT_INST_0_TI_LMP90080_CS_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90080_CS_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90080_CS_GPIOS_PIN 0
-#endif /* DT_INST_0_TI_LMP90080_CS_GPIOS_CONTROLLER */
-#ifndef DT_INST_0_TI_LMP90080_DRDYB_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90080_DRDYB_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90080_DRDYB_GPIOS_PIN 0
-#define DT_INST_0_TI_LMP90080_DRDYB_GPIOS_FLAGS 0
-#endif /* !DT_INST_0_TI_LMP90080_DRDYB_GPIOS_CONTROLLER */
-#ifndef DT_INST_0_TI_LMP90080_RTD_CURRENT
-#define DT_INST_0_TI_LMP90080_RTD_CURRENT 0
-#endif /* DT_INST_0_TI_LMP90080_RTD_CURRENT */
+#if DT_HAS_COMPAT(ti_lmp90080)
 LMP90XXX_DEVICE(90080, 0, 16, 7);
-#endif /* DT_INST_0_TI_LMP90080 */
+#endif
 
 /*
  * LMP90097: 24 bit, 2 diff/4 se (4 channels), 0 currents
  */
-#if DT_INST_0_TI_LMP90097
-#ifndef DT_INST_0_TI_LMP90097_CS_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90097_CS_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90097_CS_GPIOS_PIN 0
-#endif /* DT_INST_0_TI_LMP90097_CS_GPIOS_CONTROLLER */
-#ifndef DT_INST_0_TI_LMP90097_DRDYB_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90097_DRDYB_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90097_DRDYB_GPIOS_PIN 0
-#define DT_INST_0_TI_LMP90097_DRDYB_GPIOS_FLAGS 0
-#endif /* !DT_INST_0_TI_LMP90097_DRDYB_GPIOS_CONTROLLER */
-#define DT_INST_0_TI_LMP90097_RTD_CURRENT 0
+#if DT_HAS_COMPAT(ti_lmp90097)
 LMP90XXX_DEVICE(90097, 0, 24, 4);
-#endif /* DT_INST_0_TI_LMP90097 */
+#endif
 
 /*
  * LMP90098: 24 bit, 2 diff/4 se (4 channels), 2 currents
  */
-#if DT_INST_0_TI_LMP90098
-#ifndef DT_INST_0_TI_LMP90098_CS_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90098_CS_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90098_CS_GPIOS_PIN 0
-#endif /* DT_INST_0_TI_LMP90098_CS_GPIOS_CONTROLLER */
-#ifndef DT_INST_0_TI_LMP90098_DRDYB_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90098_DRDYB_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90098_DRDYB_GPIOS_PIN 0
-#define DT_INST_0_TI_LMP90098_DRDYB_GPIOS_FLAGS 0
-#endif /* !DT_INST_0_TI_LMP90098_DRDYB_GPIOS_CONTROLLER */
-#ifndef DT_INST_0_TI_LMP90098_RTD_CURRENT
-#define DT_INST_0_TI_LMP90098_RTD_CURRENT 0
-#endif /* DT_INST_0_TI_LMP90098_RTD_CURRENT */
+#if DT_HAS_COMPAT(ti_lmp90098)
 LMP90XXX_DEVICE(90098, 0, 24, 4);
-#endif /* DT_INST_0_TI_LMP90098 */
+#endif
 
 /*
  * LMP90099: 24 bit, 4 diff/7 se (7 channels), 0 currents, has VIN3-5
  */
-#if DT_INST_0_TI_LMP90099
-#ifndef DT_INST_0_TI_LMP90099_CS_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90099_CS_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90099_CS_GPIOS_PIN 0
-#endif /* DT_INST_0_TI_LMP90099_CS_GPIOS_CONTROLLER */
-#ifndef DT_INST_0_TI_LMP90099_DRDYB_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90099_DRDYB_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90099_DRDYB_GPIOS_PIN 0
-#define DT_INST_0_TI_LMP90099_DRDYB_GPIOS_FLAGS 0
-#endif /* !DT_INST_0_TI_LMP90099_DRDYB_GPIOS_CONTROLLER */
-#define DT_INST_0_TI_LMP90099_RTD_CURRENT 0
+#if DT_HAS_COMPAT(ti_lmp90099)
 LMP90XXX_DEVICE(90099, 0, 24, 7);
-#endif /* DT_INST_0_TI_LMP90099 */
+#endif
 
 /*
  * LMP90100: 24 bit, 4 diff/7 se (7 channels), 2 currents, has VIN3-5
  */
-#if DT_INST_0_TI_LMP90100
-#ifndef DT_INST_0_TI_LMP90100_CS_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90100_CS_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90100_CS_GPIOS_PIN 0
-#endif /* DT_INST_0_TI_LMP90100_CS_GPIOS_CONTROLLER */
-#ifndef DT_INST_0_TI_LMP90100_DRDYB_GPIOS_CONTROLLER
-#define DT_INST_0_TI_LMP90100_DRDYB_GPIOS_CONTROLLER NULL
-#define DT_INST_0_TI_LMP90100_DRDYB_GPIOS_PIN 0
-#define DT_INST_0_TI_LMP90100_DRDYB_GPIOS_FLAGS 0
-#endif /* !DT_INST_0_TI_LMP90100_DRDYB_GPIOS_CONTROLLER */
-#ifndef DT_INST_0_TI_LMP90100_RTD_CURRENT
-#define DT_INST_0_TI_LMP90100_RTD_CURRENT 0
-#endif /* DT_INST_0_TI_LMP90100_RTD_CURRENT */
+#if DT_HAS_COMPAT(ti_lmp90100)
 LMP90XXX_DEVICE(90100, 0, 24, 7);
-#endif /* DT_INST_0_TI_LMP90100 */
+#endif

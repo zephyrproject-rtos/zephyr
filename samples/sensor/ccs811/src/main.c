@@ -106,13 +106,13 @@ static void do_main(struct device *dev)
 			printk("Timed fetch failed: %d\n", rc);
 			break;
 		}
-		k_sleep(1000);
+		k_msleep(1000);
 	}
 }
 
 void main(void)
 {
-	struct device *dev = device_get_binding(DT_INST_0_AMS_CCS811_LABEL);
+	struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, ams_ccs811)));
 	struct ccs811_configver_type cfgver;
 	int rc;
 

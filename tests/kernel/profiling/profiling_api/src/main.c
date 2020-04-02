@@ -99,7 +99,7 @@ void test_call_stacks_analyze_main(void)
 void test_call_stacks_analyze_idle(void)
 {
 	TC_PRINT("from idle thread:\n");
-	k_sleep(SLEEP_MS);
+	k_msleep(SLEEP_MS);
 }
 
 /**

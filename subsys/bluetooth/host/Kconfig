@@ -34,6 +34,7 @@ config BT_RX_BUF_COUNT
 config BT_RX_BUF_LEN
 	int "Maximum supported HCI RX buffer length"
 	default 264 if BT_BREDR
+	default 258 if BT_EXT_ADV
 	default 77 if BT_MESH_PROXY
 	default 76
 	range 73 2000
@@ -63,7 +64,7 @@ config BT_DISCARDABLE_BUF_COUNT
 config BT_DISCARDABLE_BUF_SIZE
 	int "Size of discardable event buffers"
 	range 45 257
-	default 257 if BT_BREDR
+	default 257 if BT_BREDR || BT_EXT_ADV
 	default 45
 	help
 	  Size of buffers in the separate discardable event buffer pool.

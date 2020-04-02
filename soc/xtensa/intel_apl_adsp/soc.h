@@ -42,6 +42,8 @@
 #define CAVS_L2_AGG_INT_LEVEL4			DT_CAVS_ICTL_2_IRQ
 #define CAVS_L2_AGG_INT_LEVEL5			DT_CAVS_ICTL_3_IRQ
 
+#define CAVS_ICTL_INT_CPU_OFFSET(x)		(0x40 * x)
+
 #define IOAPIC_EDGE				0
 #define IOAPIC_HIGH				0
 
@@ -198,22 +200,48 @@ struct soc_dmic_shim_regs {
 #define SOC_PWRCTL_DISABLE_PWR_GATING_DSP0	BIT(0)
 #define SOC_PWRCTL_DISABLE_PWR_GATING_DSP1	BIT(1)
 
+/* DSP Wall Clock Timers (0 and 1) */
+#define DSP_WCT_IRQ(x) \
+	SOC_AGGREGATE_IRQ((22 + x), CAVS_L2_AGG_INT_LEVEL2)
+
+#define DSP_WCT_CS_TA(x)			BIT(x)
+#define DSP_WCT_CS_TT(x)			BIT(4 + x)
+
 struct soc_dsp_shim_regs {
 	u32_t	reserved[8];
-	u64_t	walclk;
-	u64_t	dspwctcs;
-	u64_t	dspwct0c;
-	u64_t	dspwct1c;
-	u32_t	reserved1[14];
+	union {
+		struct {
+			u32_t walclk32_lo;
+			u32_t walclk32_hi;
+		};
+		u64_t	walclk;
+	};
+	u32_t	dspwctcs;
+	u32_t	reserved1[1];
+	union {
+		struct {
+			u32_t dspwct0c32_lo;
+			u32_t dspwct0c32_hi;
+		};
+		u64_t	dspwct0c;
+	};
+	union {
+		struct {
+			u32_t dspwct1c32_lo;
+			u32_t dspwct1c32_hi;
+		};
+		u64_t	dspwct1c;
+	};
+	u32_t	reserved2[14];
 	u32_t	clkctl;
 	u32_t	clksts;
-	u32_t	reserved2[4];
+	u32_t	reserved3[4];
 	u16_t	pwrctl;
 	u16_t	pwrsts;
 	u32_t	lpsctl;
 	u32_t	lpsdmas0;
 	u32_t	lpsdmas1;
-	u32_t	reserved3[22];
+	u32_t	reserved4[22];
 };
 
 /* macros for data cache operations */

@@ -249,6 +249,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 
 #ifdef CONFIG_SMP
 	z_smp_init();
+	z_sys_device_do_config_level(_SYS_INIT_LEVEL_SMP);
 #endif
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT

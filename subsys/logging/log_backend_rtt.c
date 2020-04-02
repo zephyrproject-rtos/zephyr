@@ -177,7 +177,7 @@ static void on_failed_write(int retry_cnt)
 		k_busy_wait(USEC_PER_MSEC *
 				CONFIG_LOG_BACKEND_RTT_RETRY_DELAY_MS);
 	} else {
-		k_sleep(CONFIG_LOG_BACKEND_RTT_RETRY_DELAY_MS);
+		k_msleep(CONFIG_LOG_BACKEND_RTT_RETRY_DELAY_MS);
 	}
 }
 

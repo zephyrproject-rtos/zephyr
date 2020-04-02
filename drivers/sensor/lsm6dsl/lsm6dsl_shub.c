@@ -150,7 +150,7 @@ static inline void lsm6dsl_shub_wait_completed(struct lsm6dsl_data *data)
 	u16_t freq;
 
 	freq = (data->accel_freq == 0U) ? 26 : data->accel_freq;
-	k_sleep((2000U / freq) + 1);
+	k_msleep((2000U / freq) + 1);
 }
 
 static inline void lsm6dsl_shub_embedded_en(struct lsm6dsl_data *data, bool on)

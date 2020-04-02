@@ -28,7 +28,7 @@ static void tfifo_thread_thread(struct k_fifo *pfifo)
 				      t_cancel_wait_entry, pfifo, NULL, NULL,
 				      K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 	u32_t start_t = k_uptime_get_32();
-	void *ret = k_fifo_get(pfifo, 500);
+	void *ret = k_fifo_get(pfifo, K_MSEC(500));
 	u32_t dur = k_uptime_get_32() - start_t;
 
 	/* While we observed the side effect of the last statement

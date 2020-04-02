@@ -29,7 +29,7 @@ manifest:
       revision: a2b82e79bd8ac156fb283d5f52fa0a2373962cf9
       path: modules/hal/cmsis
     - name: hal_atmel
-      revision: 5a44c9d54dffd685fb6664a646922cfe41c5cf8e
+      revision: 917bfefa5188a473ff49087f1fa207cbb42bf592
       path: modules/hal/atmel
     - name: hal_altera
       revision: 23c1c1dd7a0c1cc9a399509d1819375847c95b97
@@ -53,7 +53,7 @@ manifest:
       revision: a12d92816a53a521d79cefcf5c38b9dc8a4fed6e
       path: modules/hal/cypress
     - name: hal_nordic
-      revision: f6d5eca68e07551d6a36359b67600f9e98736839
+      revision: 59d33bc1dd59df14feb26f0010d527c1ea7a89e8
       path: modules/hal/nordic
     - name: hal_openisa
       revision: 3b54187649cc9b37161d49918f1ad28ff7c7f830
@@ -68,13 +68,13 @@ manifest:
       revision: fa481784b3c49780f18d50bafe00390ccb62b2ec
       path: modules/hal/st
     - name: hal_stm32
-      revision: dee4413253623ec575bb8b58abd56f91afe903bb
+      revision: 37dcc0e120bb2bb99d3ee3b99dbbcf2bffe50258
       path: modules/hal/stm32
     - name: hal_ti
       revision: b25d4b83b16e52f501f8cd360f4efb8c31ffb578
       path: modules/hal/ti
     - name: libmetal
-      revision: 45e630d6152824f807d3f919958605c4626cbdff
+      revision: 11a4d140f58b3c220f90fc3591c3d6e05840cca6
       path: modules/hal/libmetal
     - name: lvgl
       revision: 74fc2e753a997bd71cefa34dd9c56dcb954b42e2
@@ -83,32 +83,32 @@ manifest:
       revision: cf7020eb4c7ef93319f2d6d2403a21e12a879bf6
       path: modules/crypto/mbedtls
     - name: mcuboot
-      revision: fab12e052437a68487b647fcfba7069801657c1b
+      revision: 7e7b4ad1999bf148f88059195f8d2e1d3dccf190
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: 301892dad2eb97294f634b632c4ab6a6c56426b5
+      revision: dcf32c7f340a10e6e6482feb311cb4fa71953fd3
       path: modules/lib/mcumgr
     - name: net-tools
-      revision: a1fcd0c5949095194b26e6fb45768073bb3fd9de
+      revision: 1080094bc246357c6c35e80e8b2d5d0ce7e0d963
       path: tools/net-tools
     - name: hal_nxp
       revision: 2f896f74a5fc7220546cc23b50351506cd72ea96
       path: modules/hal/nxp
     - name: open-amp
-      revision: 9b591b289e1f37339bd038b5a1f0e6c8ad39c63a
+      revision: 697716812a38fc05c1689cb9c6768bd412bf7153
       path: modules/lib/open-amp
     - name: loramac-node
       revision: 29e516ec585b1a909af2b5f1c60d83e7d4d563e3
       path: modules/lib/loramac-node
     - name: openthread
-      revision: 46194ba9053d71966ddbf7c159c0ff68f93d6497
+      revision: 497590aa126c331eb1447f699f1c710e0de714c0
       path: modules/lib/openthread
     - name: segger
       revision: 6fcf61606d6012d2c44129edc033f59331e268bc
       path: modules/debug/segger
     - name: tinycbor
       path: modules/lib/tinycbor
-      revision: 3cb8555348358d437893d3ab8e8de4e3b916afae
+      revision: 40daca97b478989884bffb5226e9ab73ca54b8c4
     - name: tinycrypt
       path: modules/crypto/tinycrypt
       revision: 3e9a49d2672ec01435ffbf0d788db6d95ef28de0
@@ -122,7 +122,7 @@ manifest:
       path: modules/bsim_hw_models/nrf_hw_models
       revision: fec69703cb1ca06fcdab6d5fde01274f0fc5c759
     - name: hal_xtensa
-      revision: 382b309b481adc85dd517d50b8a458bcb86f15d4
+      revision: e7a57d0c252f9c5f3cab9d5ceadda8753cacee5b
       path: modules/hal/xtensa
     - name: edtt
       path: tools/edtt

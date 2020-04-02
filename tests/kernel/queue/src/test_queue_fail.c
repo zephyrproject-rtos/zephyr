@@ -6,7 +6,7 @@
 
 #include "test_queue.h"
 
-#define TIMEOUT 100
+#define TIMEOUT K_MSEC(100)
 
 /*test cases*/
 /**

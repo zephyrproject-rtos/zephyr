@@ -12,4 +12,5 @@ zephyr_library_sources(
   spi.c
   )
 
+zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_NCP uart.c)
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_SHELL shell.c)

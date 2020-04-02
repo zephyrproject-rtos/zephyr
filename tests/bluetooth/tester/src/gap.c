@@ -386,7 +386,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 {
 	/* if General/Limited Discovery - parse Advertising data to get flags */
 	if (!(discovery_flags & GAP_DISCOVERY_FLAG_LE_OBSERVE) &&
-	    (evtype != BT_LE_ADV_SCAN_RSP)) {
+	    (evtype != BT_GAP_ADV_TYPE_SCAN_RSP)) {
 		u8_t flags = get_ad_flags(ad);
 
 		/* ignore non-discoverable devices */
@@ -404,7 +404,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 	}
 
 	/* attach Scan Response data */
-	if (evtype == BT_LE_ADV_SCAN_RSP) {
+	if (evtype == BT_GAP_ADV_TYPE_SCAN_RSP) {
 		struct gap_device_found_ev *ev;
 		bt_addr_le_t a;
 
@@ -449,7 +449,8 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 
 	/* if Active Scan and scannable event - wait for Scan Response */
 	if ((discovery_flags & GAP_DISCOVERY_FLAG_LE_ACTIVE_SCAN) &&
-	    (evtype == BT_LE_ADV_IND || evtype == BT_LE_ADV_SCAN_IND)) {
+	    (evtype == BT_GAP_ADV_TYPE_ADV_IND ||
+	     evtype == BT_GAP_ADV_TYPE_ADV_SCAN_IND)) {
 		LOG_DBG("Waiting for scan response");
 		return;
 	}
@@ -506,11 +507,12 @@ static void connect(const u8_t *data, u16_t len)
 {
 	struct bt_conn *conn;
 	u8_t status;
+	int err;
 
-	conn = bt_conn_create_le((bt_addr_le_t *) data,
-				 BT_LE_CONN_PARAM_DEFAULT);
-	if (!conn) {
-		LOG_ERR("Failed to create connection");
+	err = bt_conn_le_create((bt_addr_le_t *) data, BT_CONN_LE_CREATE_CONN,
+				 BT_LE_CONN_PARAM_DEFAULT, &conn);
+	if (err) {
+		LOG_ERR("Failed to create connection (%d)", err);
 		status = BTP_STATUS_FAILED;
 		goto rsp;
 	}

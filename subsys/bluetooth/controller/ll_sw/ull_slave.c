@@ -79,7 +79,13 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	       sizeof(lll->data_chan_map));
 	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
 			       sizeof(lll->data_chan_map));
+	if (lll->data_chan_count < 2) {
+		return;
+	}
 	lll->data_chan_hop = pdu_adv->connect_ind.hop;
+	if ((lll->data_chan_hop < 5) || (lll->data_chan_hop > 16)) {
+		return;
+	}
 	interval = sys_le16_to_cpu(pdu_adv->connect_ind.interval);
 	lll->interval = interval;
 	lll->latency = sys_le16_to_cpu(pdu_adv->connect_ind.latency);

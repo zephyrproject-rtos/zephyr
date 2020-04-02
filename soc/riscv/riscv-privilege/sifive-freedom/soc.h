@@ -15,7 +15,7 @@
 #include <devicetree.h>
 
 /* PINMUX Configuration */
-#define SIFIVE_PINMUX_0_BASE_ADDR     (DT_INST_0_SIFIVE_GPIO0_BASE_ADDRESS + 0x38)
+#define SIFIVE_PINMUX_0_BASE_ADDR     (DT_REG_ADDR(DT_INST(0, sifive_gpio0)) + 0x38)
 
 /* PINMUX IO Hardware Functions */
 #define SIFIVE_PINMUX_IOF0            0x00

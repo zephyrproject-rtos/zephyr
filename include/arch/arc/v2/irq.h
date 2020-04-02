@@ -81,7 +81,7 @@ extern void z_irq_spurious(void *unused);
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
-	BUILD_ASSERT_MSG(priority_p || !IS_ENABLED(CONFIG_ARC_FIRQ) || \
+	BUILD_ASSERT(priority_p || !IS_ENABLED(CONFIG_ARC_FIRQ) || \
 	(IS_ENABLED(CONFIG_ARC_FIRQ_STACK) && \
 	!IS_ENABLED(CONFIG_ARC_STACK_CHECKING)), \
 	"irq priority cannot be set to 0 when CONFIG_ARC_FIRQ_STACK" \

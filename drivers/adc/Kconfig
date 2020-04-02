@@ -59,4 +59,6 @@ source "drivers/adc/Kconfig.xec"
 
 source "drivers/adc/Kconfig.lmp90xxx"
 
+source "drivers/adc/Kconfig.mcp320x"
+
 endif # ADC

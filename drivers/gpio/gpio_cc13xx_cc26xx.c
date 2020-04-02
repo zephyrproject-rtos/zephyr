@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_cc13xx_cc26xx_gpio
+
 #include <zephyr/types.h>
 #include <sys/__assert.h>
 #include <device.h>
@@ -14,6 +16,11 @@
 #include <driverlib/interrupt.h>
 #include <driverlib/ioc.h>
 #include <driverlib/prcm.h>
+
+#include <inc/hw_aon_event.h>
+
+#include <ti/drivers/Power.h>
+#include <ti/drivers/power/PowerCC26XX.h>
 
 #include "gpio_utils.h"
 
@@ -33,7 +40,7 @@ struct gpio_cc13xx_cc26xx_data {
 static struct gpio_cc13xx_cc26xx_data gpio_cc13xx_cc26xx_data_0;
 
 static const struct gpio_driver_config gpio_cc13xx_cc26xx_cfg_0 = {
-	.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_0_TI_CC13XX_CC26XX_GPIO_NGPIOS),
+	.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
 };
 
 static int gpio_cc13xx_cc26xx_port_set_bits_raw(struct device *port,
@@ -230,6 +237,10 @@ static int gpio_cc13xx_cc26xx_init(struct device *dev)
 {
 	struct gpio_cc13xx_cc26xx_data *data = dev->driver_data;
 
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+	/* Set dependency on gpio resource to turn on power domains */
+	Power_setDependency(PowerCC26XX_PERIPH_GPIO);
+#else
 	/* Enable peripheral power domain */
 	PRCMPowerDomainOn(PRCM_DOMAIN_PERIPH);
 
@@ -241,12 +252,19 @@ static int gpio_cc13xx_cc26xx_init(struct device *dev)
 	while (!PRCMLoadGet()) {
 		continue;
 	}
+#endif
+
+	/* Enable edge detection on any pad as a wakeup source */
+	HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) =
+		(HWREG(AON_EVENT_BASE + AON_EVENT_O_MCUWUSEL) &
+		(~AON_EVENT_MCUWUSEL_WU1_EV_M)) |
+		AON_EVENT_MCUWUSEL_WU1_EV_PAD;
 
 	/* Enable IRQ */
-	IRQ_CONNECT(DT_INST_0_TI_CC13XX_CC26XX_GPIO_IRQ_0,
-		    DT_INST_0_TI_CC13XX_CC26XX_GPIO_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    gpio_cc13xx_cc26xx_isr, DEVICE_GET(gpio_cc13xx_cc26xx), 0);
-	irq_enable(DT_INST_0_TI_CC13XX_CC26XX_GPIO_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	/* Disable callbacks */
 	data->pin_callback_enables = 0;
@@ -274,7 +292,7 @@ static const struct gpio_driver_api gpio_cc13xx_cc26xx_driver_api = {
 	.get_pending_int = gpio_cc13xx_cc26xx_get_pending_int
 };
 
-DEVICE_AND_API_INIT(gpio_cc13xx_cc26xx, DT_INST_0_TI_CC13XX_CC26XX_GPIO_LABEL,
+DEVICE_AND_API_INIT(gpio_cc13xx_cc26xx, DT_INST_LABEL(0),
 		    gpio_cc13xx_cc26xx_init, &gpio_cc13xx_cc26xx_data_0,
 		    &gpio_cc13xx_cc26xx_cfg_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

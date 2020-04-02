@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT silabs_gecko_trng
+
  #include <drivers/entropy.h>
  #include <string.h>
  #include "soc.h"
@@ -95,7 +97,7 @@ static struct entropy_driver_api entropy_gecko_trng_api_funcs = {
 	.get_entropy_isr = entropy_gecko_trng_get_entropy_isr
 };
 
-DEVICE_AND_API_INIT(entropy_gecko_trng, CONFIG_ENTROPY_NAME,
+DEVICE_AND_API_INIT(entropy_gecko_trng, DT_INST_LABEL(0),
 			entropy_gecko_trng_init, NULL, NULL,
 			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			&entropy_gecko_trng_api_funcs);

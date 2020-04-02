@@ -111,6 +111,7 @@ class FirmwareLoader():
 
         self.dev.core_power_up(plat_def.CORE_MASK)
         self.dev.core_run(plat_def.CORE_0)
+        self.dev.core_run(plat_def.CORE_1)
         logging.debug("Wait for IPC DONE bit from ROM")
         while True:
             ipc_ack = self.dev.dsp_hipcie.value

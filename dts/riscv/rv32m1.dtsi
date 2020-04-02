@@ -525,6 +525,14 @@
 			#pwm-cells = <3>;
 		};
 
+		trng: random@41029000{
+			compatible = "openisa,rv32m1-trng";
+			reg = <0x41029000 0x1000>;
+			status = "okay";
+			interrupts = <13 0>;
+			label = "TRNG";
+		};
+
 		pwm3: pwm@4102d000 {
 			compatible = "openisa,rv32m1-tpm";
 			reg = <0x4102d000 0x88>;

@@ -99,11 +99,11 @@ enum sdhc_app_ext_cmd {
 #define SDHC_RESPONSE_WRITE_ERR 0x0E
 
 #define SDHC_MIN_TRIES 20
-#define SDHC_RETRY_DELAY K_MSEC(20)
+#define SDHC_RETRY_DELAY 20
 /* Time to wait for the card to initialise */
-#define SDHC_INIT_TIMEOUT K_MSEC(5000)
+#define SDHC_INIT_TIMEOUT 5000
 /* Time to wait for the card to respond or come ready */
-#define SDHC_READY_TIMEOUT K_MSEC(500)
+#define SDHC_READY_TIMEOUT 500
 
 enum sdhc_rsp_type {
 	SDHC_RSP_TYPE_NONE = 0U,
@@ -568,7 +568,7 @@ static inline bool sdhc_retry_ok(struct sdhc_retry *retry)
 	if (retry->tries < SDHC_MIN_TRIES) {
 		retry->tries++;
 		if (retry->sleep != 0U) {
-			k_sleep(retry->sleep);
+			k_msleep(retry->sleep);
 		}
 
 		return true;
@@ -576,7 +576,7 @@ static inline bool sdhc_retry_ok(struct sdhc_retry *retry)
 
 	if (remain >= 0) {
 		if (retry->sleep > 0) {
-			k_sleep(retry->sleep);
+			k_msleep(retry->sleep);
 		} else {
 			k_yield();
 		}

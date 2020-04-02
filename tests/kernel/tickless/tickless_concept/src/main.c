@@ -79,7 +79,7 @@ void test_tickless_sysclock(void)
 
 	ALIGN_MS_BOUNDARY();
 	t0 = k_uptime_get_32();
-	k_sleep(SLEEP_TICKLESS);
+	k_msleep(SLEEP_TICKLESS);
 	t1 = k_uptime_get_32();
 	TC_PRINT("time %d, %d\n", t0, t1);
 	/**TESTPOINT: verify system clock recovery after exiting tickless idle*/
@@ -87,7 +87,7 @@ void test_tickless_sysclock(void)
 
 	ALIGN_MS_BOUNDARY();
 	t0 = k_uptime_get_32();
-	k_sem_take(&sema, SLEEP_TICKFUL);
+	k_sem_take(&sema, K_MSEC(SLEEP_TICKFUL));
 	t1 = k_uptime_get_32();
 	TC_PRINT("time %d, %d\n", t0, t1);
 	/**TESTPOINT: verify system clock recovery after exiting tickful idle*/
@@ -112,7 +112,8 @@ void test_tickless_slice(void)
 	for (int i = 0; i < NUM_THREAD; i++) {
 		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
 					 thread_tslice, NULL, NULL, NULL,
-					 K_PRIO_PREEMPT(0), 0, SLICE_SIZE);
+					 K_PRIO_PREEMPT(0), 0,
+					 K_MSEC(SLICE_SIZE));
 	}
 	k_uptime_delta(&elapsed_slice);
 	/*relinquish CPU and wait for each thread to complete*/

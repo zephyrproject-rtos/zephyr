@@ -20,11 +20,11 @@ Building and Running
 ********************
 
 This sample can be built for multiple boards, in this example we will build it
-for the nrf52840_pca10056 board:
+for the nrf52840dk_nrf52840 board:
 
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/usb/hid-cdc
-	:board: nrf52840_pca10056
+	:board: nrf52840dk_nrf52840
 	:goals: build
 	:compact:
 

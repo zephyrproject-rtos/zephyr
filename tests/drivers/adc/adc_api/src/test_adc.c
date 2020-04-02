@@ -17,7 +17,16 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#if defined(CONFIG_BOARD_NRF51DK_NRF51422)
+#if defined(CONFIG_SHIELD_MIKROE_ADC_CLICK)
+#define ADC_DEVICE_NAME		DT_LABEL(DT_INST(0, microchip_mcp3204))
+#define ADC_RESOLUTION		12
+#define ADC_GAIN		ADC_GAIN_1
+#define ADC_REFERENCE		ADC_REF_EXTERNAL0
+#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
+#define ADC_1ST_CHANNEL_ID	0
+#define ADC_2ND_CHANNEL_ID	1
+
+#elif defined(CONFIG_BOARD_NRF51DK_NRF51422)
 
 #include <hal/nrf_adc.h>
 #define ADC_DEVICE_NAME		DT_ADC_0_NAME
@@ -31,7 +40,8 @@
 #define ADC_2ND_CHANNEL_INPUT	NRF_ADC_CONFIG_INPUT_3
 
 #elif defined(CONFIG_BOARD_NRF52_PCA10040) || \
-	defined(CONFIG_BOARD_NRF52840_PCA10056) || \
+	defined(CONFIG_BOARD_NRF52840DK_NRF52840) || \
+	defined(CONFIG_BOARD_NRF52840_PCA10059) || \
 	defined(CONFIG_BOARD_NRF52840_BLIP) || \
 	defined(CONFIG_BOARD_NRF52840_PAPYR) || \
 	defined(CONFIG_BOARD_NRF52833_PCA10100) || \
@@ -118,7 +128,7 @@
 
 #elif defined(CONFIG_SOC_FAMILY_SAM0)
 #include <soc.h>
-#define ADC_DEVICE_NAME         DT_INST_0_ATMEL_SAM0_ADC_LABEL
+#define ADC_DEVICE_NAME         DT_LABEL(DT_INST(0, atmel_sam0_adc))
 #define ADC_RESOLUTION          12
 #define ADC_GAIN                ADC_GAIN_1
 #define ADC_REFERENCE           ADC_REF_INTERNAL

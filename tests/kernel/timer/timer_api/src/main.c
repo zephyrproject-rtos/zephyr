@@ -131,7 +131,7 @@ void test_timer_duration_period(void)
 {
 	init_timer_data();
 	/** TESTPOINT: init timer via k_timer_init */
-	k_timer_start(&duration_timer, DURATION, PERIOD);
+	k_timer_start(&duration_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
 	/** TESTPOINT: check expire and stop times */
@@ -161,7 +161,7 @@ void test_timer_period_0(void)
 {
 	init_timer_data();
 	/** TESTPOINT: set period 0 */
-	k_timer_start(&period0_timer, DURATION, K_NO_WAIT);
+	k_timer_start(&period0_timer, K_MSEC(DURATION), K_NO_WAIT);
 	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + 1);
 
@@ -192,7 +192,7 @@ void test_timer_expirefn_null(void)
 {
 	init_timer_data();
 	/** TESTPOINT: expire function NULL */
-	k_timer_start(&expire_timer, DURATION, PERIOD);
+	k_timer_start(&expire_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
 
 	k_timer_stop(&expire_timer);
@@ -244,7 +244,7 @@ void test_timer_periodicity(void)
 
 	init_timer_data();
 	/** TESTPOINT: set duration 0 */
-	k_timer_start(&periodicity_timer, K_NO_WAIT, PERIOD);
+	k_timer_start(&periodicity_timer, K_NO_WAIT, K_MSEC(PERIOD));
 
 	/* clear the expiration that would have happened due to
 	 * whatever duration that was set. Since timer is likely
@@ -298,7 +298,7 @@ void test_timer_periodicity(void)
 void test_timer_status_get(void)
 {
 	init_timer_data();
-	k_timer_start(&status_timer, DURATION, PERIOD);
+	k_timer_start(&status_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	/** TESTPOINT: status get upon timer starts */
 	TIMER_ASSERT(k_timer_status_get(&status_timer) == 0, &status_timer);
 	/** TESTPOINT: remaining get upon timer starts */
@@ -327,7 +327,8 @@ void test_timer_status_get(void)
 void test_timer_status_get_anytime(void)
 {
 	init_timer_data();
-	k_timer_start(&status_anytime_timer, DURATION, PERIOD);
+	k_timer_start(&status_anytime_timer, K_MSEC(DURATION),
+		      K_MSEC(PERIOD));
 	busy_wait_ms(DURATION + PERIOD * (EXPIRE_TIMES - 1) + PERIOD / 2);
 
 	/** TESTPOINT: status get at any time */
@@ -357,7 +358,7 @@ void test_timer_status_get_anytime(void)
 void test_timer_status_sync(void)
 {
 	init_timer_data();
-	k_timer_start(&status_sync_timer, DURATION, PERIOD);
+	k_timer_start(&status_sync_timer, K_MSEC(DURATION), K_MSEC(PERIOD));
 
 	for (int i = 0; i < EXPIRE_TIMES; i++) {
 		/** TESTPOINT: check timer not expire */
@@ -392,7 +393,7 @@ void test_timer_k_define(void)
 {
 	init_timer_data();
 	/** TESTPOINT: init timer via k_timer_init */
-	k_timer_start(&ktimer, DURATION, PERIOD);
+	k_timer_start(&ktimer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
 
@@ -405,14 +406,14 @@ void test_timer_k_define(void)
 
 	init_timer_data();
 	/** TESTPOINT: init timer via k_timer_init */
-	k_timer_start(&ktimer, DURATION, PERIOD);
+	k_timer_start(&ktimer, K_MSEC(DURATION), K_MSEC(PERIOD));
 
 	/* Call the k_timer_start() again to make sure that
 	 * the initial timeout request gets cancelled and new
 	 * one will get added.
 	 */
 	busy_wait_ms(DURATION / 2);
-	k_timer_start(&ktimer, DURATION, PERIOD);
+	k_timer_start(&ktimer, K_MSEC(DURATION), K_MSEC(PERIOD));
 	tdata.timestamp = k_uptime_get();
 	busy_wait_ms(DURATION + PERIOD * EXPIRE_TIMES + PERIOD / 2);
 
@@ -487,10 +488,11 @@ void test_timer_user_data(void)
 	}
 
 	for (ii = 0; ii < 5; ii++) {
-		k_timer_start(user_data_timer[ii], 50 + ii * 50, K_NO_WAIT);
+		k_timer_start(user_data_timer[ii], K_MSEC(50 + ii * 50),
+			      K_NO_WAIT);
 	}
 
-	k_sleep(50 * ii + 50);
+	k_msleep(50 * ii + 50);
 
 	for (ii = 0; ii < 5; ii++) {
 		k_timer_stop(user_data_timer[ii]);
@@ -516,14 +518,21 @@ void test_timer_user_data(void)
  * k_timer_remaining_get()
  */
 
-void test_timer_remaining_get(void)
+void test_timer_remaining(void)
 {
-	u32_t remaining;
+	u32_t dur_ticks = k_ms_to_ticks_ceil32(DURATION);
+	u32_t rem_ms, rem_ticks, exp_ticks;
+	u64_t now;
+
+	k_usleep(1); /* align to tick */
 
 	init_timer_data();
-	k_timer_start(&remain_timer, DURATION, K_NO_WAIT);
+	k_timer_start(&remain_timer, K_MSEC(DURATION), K_NO_WAIT);
 	busy_wait_ms(DURATION / 2);
-	remaining = k_timer_remaining_get(&remain_timer);
+	now = k_uptime_ticks();
+	rem_ms = k_timer_remaining_get(&remain_timer);
+	rem_ticks = k_timer_remaining_ticks(&remain_timer);
+	exp_ticks = k_timer_expires_ticks(&remain_timer);
 	k_timer_stop(&remain_timer);
 
 	/*
@@ -532,7 +541,47 @@ void test_timer_remaining_get(void)
 	 * the value obtained through k_timer_remaining_get() could be larger
 	 * than actual remaining time with maximum error equal to one tick.
 	 */
-	zassert_true(remaining <= (DURATION / 2) + k_ticks_to_ms_floor64(1), NULL);
+	zassert_true(rem_ms <= (DURATION / 2) + k_ticks_to_ms_floor64(1),
+		     NULL);
+
+	zassert_true(rem_ticks <= dur_ticks / 2, NULL);
+	zassert_true((exp_ticks - now) <= dur_ticks / 2, NULL);
+}
+
+void test_timeout_abs(void)
+{
+#ifdef CONFIG_TIMEOUT_64BIT
+	const int expiration = 10000000; /* 10M ticks */
+	k_timeout_t t = K_TIMEOUT_ABS_TICKS(10000000), t2;
+
+	/* Check the other generator macros to make sure they produce
+	 * the same (whiteboxed) converted values
+	 */
+	t2 = K_TIMEOUT_ABS_MS(k_ticks_to_ms_ceil64(expiration));
+	zassert_true(t2.ticks == t.ticks, NULL);
+
+	t2 = K_TIMEOUT_ABS_US(k_ticks_to_us_ceil64(expiration));
+	zassert_true(t2.ticks == t.ticks, NULL);
+
+	t2 = K_TIMEOUT_ABS_NS(k_ticks_to_ns_ceil64(expiration));
+	zassert_true(t2.ticks == t.ticks, NULL);
+
+	t2 = K_TIMEOUT_ABS_CYC(k_ticks_to_cyc_ceil64(expiration));
+	zassert_true(t2.ticks == t.ticks, NULL);
+
+	/* Now set the timeout and make sure the expiration time is
+	 * correct vs. current time.  Tick units and tick alignment
+	 * makes this math exact: remember to add one to match the
+	 * convention (i.e. a timer of "1 tick" will expire at "now
+	 * plus 2 ticks", because "now plus one" will always be
+	 * somewhat less than a tick).
+	 */
+	k_usleep(1); /* align to tick */
+	k_timer_start(&remain_timer, t, K_FOREVER);
+	zassert_true(k_timer_remaining_ticks(&remain_timer)
+		     + k_uptime_ticks() + 1 == expiration, NULL);
+	k_timer_stop(&remain_timer);
+#endif
 }
 
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
@@ -568,6 +617,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_timer_status_sync),
 			 ztest_user_unit_test(test_timer_k_define),
 			 ztest_user_unit_test(test_timer_user_data),
-			 ztest_user_unit_test(test_timer_remaining_get));
+			 ztest_user_unit_test(test_timer_remaining),
+			 ztest_user_unit_test(test_timeout_abs));
 	ztest_run_test_suite(timer_api);
 }

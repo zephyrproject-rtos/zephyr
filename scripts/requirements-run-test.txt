@@ -10,3 +10,6 @@ pyocd>=0.24.0
 
 # used by sanitycheck for board/hardware map
 tabulate
+
+# used by mcuboot
+cbor>=1.0.0

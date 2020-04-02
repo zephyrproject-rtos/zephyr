@@ -1069,7 +1069,13 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		conn->data_chan_count =
 			util_ones_count_get(&conn->data_chan_map[0],
 					    sizeof(conn->data_chan_map));
+		if (conn->data_chan_count < 2) {
+			return 1;
+		}
 		conn->data_chan_hop = pdu_adv->connect_ind.hop;
+		if ((conn->data_chan_hop < 5) || (conn->data_chan_hop > 16)) {
+			return 1;
+		}
 		conn->conn_interval =
 			pdu_adv->connect_ind.interval;
 		conn_interval_us =
@@ -2484,9 +2490,7 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 	     * with response.
 	     */
 	    ((_radio.conn_curr->llcp_length.req ==
-	      _radio.conn_curr->llcp_length.ack) &&
-	     (pdu_data_rx->llctrl.opcode ==
-	      PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)) ||
+	      _radio.conn_curr->llcp_length.ack) && node_tx) ||
 	    /* or Local has active... */
 	    ((_radio.conn_curr->llcp_length.req !=
 	      _radio.conn_curr->llcp_length.ack) &&
@@ -2496,19 +2500,13 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 	     ((((_radio.conn_curr->llcp_length.state ==
 		 LLCP_LENGTH_STATE_REQ) ||
 		(_radio.conn_curr->llcp_length.state ==
-		 LLCP_LENGTH_STATE_REQ_ACK_WAIT)) &&
-	       (pdu_data_rx->llctrl.opcode ==
-		PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)) ||
+		 LLCP_LENGTH_STATE_REQ_ACK_WAIT)) && node_tx) ||
 	      /* with Local waiting for response, and Peer response then
 	       * complete the Local procedure or Peer request then complete the
 	       * Peer procedure with response.
 	       */
-	      ((_radio.conn_curr->llcp_length.state ==
-		LLCP_LENGTH_STATE_RSP_WAIT) &&
-	       ((pdu_data_rx->llctrl.opcode ==
-		 PDU_DATA_LLCTRL_TYPE_LENGTH_RSP) ||
-		(pdu_data_rx->llctrl.opcode ==
-		 PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)))))) {
+	      (_radio.conn_curr->llcp_length.state ==
+		LLCP_LENGTH_STATE_RSP_WAIT)))) {
 		struct pdu_data_llctrl_length_req *lr;
 
 		lr = &pdu_data_rx->llctrl.length_req;
@@ -2694,9 +2692,21 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 			*rx_enqueue = 1U;
 		}
 	} else {
-		/* Drop response with no Local initiated request. */
-		LL_ASSERT(pdu_data_rx->llctrl.opcode ==
-			  PDU_DATA_LLCTRL_TYPE_LENGTH_RSP);
+		/* Drop response with no Local initiated request and duplicate
+		 * requests.
+		 */
+		if (pdu_data_rx->llctrl.opcode !=
+		    PDU_DATA_LLCTRL_TYPE_LENGTH_RSP) {
+			mem_release(node_tx, &_radio.pkt_tx_ctrl_free);
+
+			/* Defer new request if previous in resize state */
+			if (_radio.conn_curr->llcp_length.state ==
+			    LLCP_LENGTH_STATE_RESIZE) {
+				return 1U;
+			}
+		}
+
+		return 0;
 	}
 
 send_length_resp:
@@ -4894,9 +4904,10 @@ static inline void isr_close_conn(void)
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 	/* break latency based on ctrl procedure pending */
-	if ((_radio.conn_curr->llcp_ack != _radio.conn_curr->llcp_req) &&
-	    ((_radio.conn_curr->llcp_type == LLCP_CONN_UPD) ||
-	     (_radio.conn_curr->llcp_type == LLCP_CHAN_MAP))) {
+	if (((_radio.conn_curr->llcp_ack != _radio.conn_curr->llcp_req) &&
+	     ((_radio.conn_curr->llcp_type == LLCP_CONN_UPD) ||
+	      (_radio.conn_curr->llcp_type == LLCP_CHAN_MAP))) ||
+	    (_radio.conn_curr->llcp_cu.req != _radio.conn_curr->llcp_cu.ack)) {
 		_radio.conn_curr->latency_event = 0U;
 	}
 
@@ -5378,7 +5389,7 @@ static void k32src_wait(void)
 	done = true;
 
 	struct device *clock = device_get_binding(
-		DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+		DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 
 	LL_ASSERT(clock);
 

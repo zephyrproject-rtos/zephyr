@@ -14,6 +14,33 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #include <device.h>
 #include <drivers/display.h>
 
+#if DT_HAS_NODE(DT_INST(0, ilitek_ili9340))
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, ilitek_ili9340))
+#endif
+
+#if DT_HAS_NODE(DT_INST(0, solomon_ssd1306fb))
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, solomon_ssd1306fb))
+#endif
+
+#if DT_HAS_NODE(DT_INST(0, gooddisplay_gdeh0213b1))
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, gooddisplay_gdeh0213b1))
+#endif
+
+#if DT_HAS_NODE(DT_INST(0, sitronix_st7789v))
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, sitronix_st7789v))
+#endif
+
+#if DT_HAS_NODE(DT_INST(0, fsl_imx6sx_lcdif))
+#define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, fsl_imx6sx_lcdif))
+#endif
+
+#ifdef CONFIG_SDL_DISPLAY_DEV_NAME
+#define DISPLAY_DEV_NAME CONFIG_SDL_DISPLAY_DEV_NAME
+#endif
+
+#ifdef CONFIG_DUMMY_DISPLAY_DEV_NAME
+#define DISPLAY_DEV_NAME CONFIG_DUMMY_DISPLAY_DEV_NAME
+#endif
 #ifdef CONFIG_ARCH_POSIX
 #include "posix_board_if.h"
 #endif
@@ -207,9 +234,9 @@ void main(void)
 	rect_h *= scale;
 
 	if (capabilities.screen_info & SCREEN_INFO_EPD) {
-		grey_scale_sleep = K_MSEC(10000);
+		grey_scale_sleep = 10000;
 	} else {
-		grey_scale_sleep = K_MSEC(100);
+		grey_scale_sleep = 100;
 	}
 
 	buf_size = rect_w * rect_h;
@@ -292,7 +319,7 @@ void main(void)
 		fill_buffer_fnc(BOTTOM_LEFT, grey_count, buf, buf_size);
 		display_write(display_dev, x, y, &buf_desc, buf);
 		++grey_count;
-		k_sleep(grey_scale_sleep);
+		k_msleep(grey_scale_sleep);
 #if CONFIG_TEST
 		if (grey_count >= 1024) {
 			break;

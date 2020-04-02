@@ -138,15 +138,17 @@
 #define __subsystem
 
 #ifndef BUILD_ASSERT
-/* compile-time assertion that makes the build fail */
-#define BUILD_ASSERT(EXPR) \
+/* Compile-time assertion that makes the build to fail.
+ * Common implementation swallows the message.
+ */
+#define BUILD_ASSERT(EXPR, MSG)				 \
 	enum _CONCAT(__build_assert_enum, __COUNTER__) { \
 		_CONCAT(__build_assert, __COUNTER__) = 1 / !!(EXPR) \
 	}
 #endif
+
 #ifndef BUILD_ASSERT_MSG
-/* build assertion with message -- common implementation swallows message. */
-#define BUILD_ASSERT_MSG(EXPR, MSG) BUILD_ASSERT(EXPR)
+#define BUILD_ASSERT_MSG(EXPR, MSG) __DEPRECATED_MACRO BUILD_ASSERT(EXPR, MSG)
 #endif
 
 /*

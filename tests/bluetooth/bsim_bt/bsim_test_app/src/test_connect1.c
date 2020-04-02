@@ -291,6 +291,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 
 		for (i = 0; i < data->data_len; i += sizeof(u16_t)) {
 			struct bt_uuid *uuid;
+			struct bt_le_conn_param *param;
 			u16_t u16;
 			int err;
 
@@ -306,8 +307,13 @@ static bool eir_found(struct bt_data *data, void *user_data)
 				continue;
 			}
 
-			default_conn = bt_conn_create_le(addr,
-							 BT_LE_CONN_PARAM_DEFAULT);
+			param = BT_LE_CONN_PARAM_DEFAULT;
+			err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN,
+						param, &default_conn);
+			if (err) {
+				printk("Create conn failed (err %d)\n", err);
+			}
+
 			return false;
 		}
 	}
@@ -325,7 +331,8 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 			dev, type, ad->len, rssi);
 
 	/* We're only interested in connectable events */
-	if (type == BT_LE_ADV_IND || type == BT_LE_ADV_DIRECT_IND) {
+	if (type == BT_GAP_ADV_TYPE_ADV_IND ||
+	    type == BT_GAP_ADV_TYPE_ADV_DIRECT_IND) {
 		bt_data_parse(ad, eir_found, (void *)addr);
 	}
 }

@@ -18,10 +18,10 @@ struct device_info {
 };
 
 static struct device_info dev_info[] = {
-	{ NULL, DT_INST_0_TI_HDC1010_LABEL },
-	{ NULL, DT_INST_0_NXP_MMA8652FC_LABEL },
-	{ NULL, DT_INST_0_AVAGO_APDS9960_LABEL },
-	{ NULL, DT_INST_0_SOLOMON_SSD16XXFB_LABEL },
+	{ NULL, DT_LABEL(DT_INST(0, ti_hdc1010)) },
+	{ NULL, DT_LABEL(DT_INST(0, nxp_mma8652fc)) },
+	{ NULL, DT_LABEL(DT_INST(0, avago_apds9960)) },
+	{ NULL, DT_LABEL(DT_INST(0, solomon_ssd16xxfb)) },
 };
 
 int get_hdc1010_val(struct sensor_value *val)

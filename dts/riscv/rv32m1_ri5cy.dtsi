@@ -215,3 +215,8 @@
 	interrupt-parent = <&intmux0_ch1>;
 	interrupts = <23>;
 };
+
+&trng {
+	interrupt-parent = <&intmux0_ch1>;
+	interrupts = <20>;
+};

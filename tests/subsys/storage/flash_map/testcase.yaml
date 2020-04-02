@@ -4,6 +4,6 @@ tests:
     tags: flash_map
   storage.flash_map.mpu:
     extra_args: OVERLAY_CONFIG=overlay-mpu.conf
-    platform_whitelist: nrf52840_pca10056 nrf52_pca10040 frdm_k64f hexiwear_k64
+    platform_whitelist: nrf52840dk_nrf52840 nrf52_pca10040 frdm_k64f hexiwear_k64
                         twr_ke18f
     tags: flash_map

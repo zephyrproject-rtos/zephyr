@@ -2,8 +2,8 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(NONE)
 
-target_include_directories(app PRIVATE $ENV{ZEPHYR_BASE}/drivers)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers)
 target_sources(app PRIVATE src/main.c)

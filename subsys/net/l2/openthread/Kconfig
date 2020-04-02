@@ -201,6 +201,70 @@ config OPENTHREAD_DHCP6_SERVER
 	help
 	  Enable DHCPv6 server capability in OpenThread stack
 
+config OPENTHREAD_SLAAC
+	bool "SLAAC support"
+	help
+	  Enable SLAAC capability in OpenThread stack
+
+config OPENTHREAD_ENABLE_SERVICE
+	bool "Service support"
+	help
+	  Enable service capability in OpenThread stack
+
+config OPENTHREAD_RAW
+	bool "Raw Link support"
+	help
+	  Enable raw link support in OpenThread stack
+
+config OPENTHREAD_BORDER_AGENT
+	bool "Border Agent support"
+	help
+	  Enable border agent support in OpenThread stack
+
+config OPENTHREAD_BORDER_ROUTER
+	bool "Border Router support"
+	help
+	  Enable border router support in OpenThread stack
+
+config OPENTHREAD_NCP
+	bool "Network Co-Processor"
+	select RING_BUFFER
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Enable NCP in OpenThread stack
+
+config OPENTHREAD_NCP_RADIO
+	bool "Network Co-Processor as Radio"
+	depends on OPENTHREAD_NCP
+	help
+	  Enable NCP in OpenThread stack as radio-only
+
+
+config OPENTHREAD_NCP_SPINEL_ON_UART_DEV_NAME
+	string "UART device to use for NCP SPINEL"
+	default "UART_0"
+	depends on OPENTHREAD_NCP
+	help
+	  UART device to use for NCP SPINEL
+
+config OPENTHREAD_NCP_UART_RING_BUFFER_SIZE
+	int "Set NCP UART ring buffer size"
+	default 4096
+	depends on OPENTHREAD_NCP
+	help
+	  TX buffer size for the OpenThread NCP UART
+
+config OPENTHREAD_NCP_SPINEL_ON_UART_ACM
+	bool "Run SPINEL over USB-ACM"
+	depends on OPENTHREAD_NCP && USB_CDC_ACM
+	help
+	  Is the SPINEL device a USB-CDC-ACM device
+
+config OPENTHREAD_UDP_FORWARD
+	bool "UDP forward support"
+	help
+	  Enable UDP forward support in OpenThread stack
+
 config OPENTHREAD_PLATFORM_INFO
 	string "Platform information for OpenThread"
 	default "ZEPHYR"

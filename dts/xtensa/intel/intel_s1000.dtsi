@@ -87,6 +87,14 @@
 			interrupt-parent = <&core_intc>;
 		};
 
+		idc: idc@1200 {
+			compatible = "intel,cavs-idc";
+			label = "CAVS_IDC";
+			reg = <0x1200 0x80>;
+			interrupts = <8 0 0>;
+			interrupt-parent = <&cavs0>;
+		};
+
 		dw_intc: intc@81800  {
 			compatible = "snps,designware-intc";
 			reg = <0x00081800 0x400>;

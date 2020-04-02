@@ -44,6 +44,11 @@ current :ref:`stability level <api_lifecycle>`.
      - 1.0
      - 2.2
 
+   * - :ref:`devicetree_api`
+     - Experimental
+     - 2.2
+     - 2.2
+
    * - :ref:`display_api`
      - Unstable
      - 1.14
@@ -120,7 +125,7 @@ current :ref:`stability level <api_lifecycle>`.
      - 2.2
 
    * - :ref:`hwinfo_api`
-     - Unstable
+     - Stable
      - 1.14
      - 1.14
 

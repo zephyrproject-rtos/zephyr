@@ -10,7 +10,7 @@ if (NOT DEFINED ENV{BSIM_COMPONENTS_PATH})
  https://babblesim.github.io/folder_structure_and_env.html")
 endif()
 
-include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(hci_test_app)
 
 target_sources(app PRIVATE
@@ -19,8 +19,8 @@ target_sources(app PRIVATE
 )
 
 zephyr_library_include_directories(
-  $ENV{ZEPHYR_BASE}/samples/bluetooth
-  $ENV{ZEPHYR_BASE}/subsys/bluetooth
+  ${ZEPHYR_BASE}/samples/bluetooth
+  ${ZEPHYR_BASE}/subsys/bluetooth
   ../common/
   $ENV{BSIM_COMPONENTS_PATH}/libUtilv1/src/
   $ENV{BSIM_COMPONENTS_PATH}/libPhyComv1/src/

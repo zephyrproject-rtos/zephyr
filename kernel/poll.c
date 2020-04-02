@@ -244,7 +244,8 @@ static int k_poll_poller_cb(struct k_poll_event *event, u32_t state)
 	return 0;
 }
 
-int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
+int z_impl_k_poll(struct k_poll_event *events, int num_events,
+		  k_timeout_t timeout)
 {
 	int events_registered;
 	k_spinlock_key_t key;
@@ -257,7 +258,7 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 	__ASSERT(num_events >= 0, "<0 events\n");
 
 	events_registered = register_events(events, num_events, &poller,
-					    (timeout == K_NO_WAIT));
+					    K_TIMEOUT_EQ(timeout, K_NO_WAIT));
 
 	key = k_spin_lock(&lock);
 
@@ -274,7 +275,7 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 
 	poller.is_polling = false;
 
-	if (timeout == K_NO_WAIT) {
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_spin_unlock(&lock, key);
 		return -EAGAIN;
 	}
@@ -301,7 +302,7 @@ int z_impl_k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_k_poll(struct k_poll_event *events,
-				int num_events, s32_t timeout)
+				int num_events, k_timeout_t timeout)
 {
 	int ret;
 	k_spinlock_key_t key;
@@ -582,7 +583,7 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 				struct k_work_poll *work,
 				struct k_poll_event *events,
 				int num_events,
-				s32_t timeout)
+				k_timeout_t timeout)
 {
 	int events_registered;
 	k_spinlock_key_t key;
@@ -626,7 +627,7 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 					    &work->poller, false);
 
 	key = k_spin_lock(&lock);
-	if (work->poller.is_polling && timeout != K_NO_WAIT) {
+	if (work->poller.is_polling && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		/*
 		 * Poller is still polling.
 		 * No event is ready and all are watched.
@@ -634,11 +635,15 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 		__ASSERT(num_events == events_registered,
 			 "Some events were not registered!\n");
 
+#ifdef CONFIG_LEGACY_TIMEOUT_API
+		timeout = k_ms_to_ticks_ceil32(timeout);
+#endif
+
 		/* Setup timeout if such action is requested */
-		if (timeout != K_FOREVER) {
+		if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 			z_add_timeout(&work->timeout,
 				      triggered_work_expiration_handler,
-				      k_ms_to_ticks_ceil32(timeout));
+				      timeout);
 		}
 
 		/* From now, any event will result in submitted work. */

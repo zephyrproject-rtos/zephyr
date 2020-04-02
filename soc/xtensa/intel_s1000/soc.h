@@ -39,11 +39,13 @@
 #define CAVS_L2_AGG_INT_LEVEL4			DT_CAVS_ICTL_2_IRQ
 #define CAVS_L2_AGG_INT_LEVEL5			DT_CAVS_ICTL_3_IRQ
 
+#define CAVS_ICTL_INT_CPU_OFFSET(x)		(0x40 * x)
+
 #define IOAPIC_EDGE				0
 #define IOAPIC_HIGH				0
 
 /* DW interrupt controller */
-#define DW_ICTL_IRQ_CAVS_OFFSET			CAVS_IRQ_NUMBER(DT_INST_0_SNPS_DESIGNWARE_INTC_IRQ_0)
+#define DW_ICTL_IRQ_CAVS_OFFSET			CAVS_IRQ_NUMBER(DT_IRQN(DT_INST(0, snps_designware_intc)))
 #define DW_ICTL_NUM_IRQS			9
 
 /* GPIO */
@@ -100,6 +102,13 @@ struct soc_mclk_control_regs {
 #define SOC_NUM_LPGPDMAC			3
 #define SOC_NUM_CHANNELS_IN_DMAC		8
 
+/* DSP Wall Clock Timers (0 and 1) */
+#define DSP_WCT_IRQ(x)	\
+	SOC_AGGREGATE_IRQ(0, (23 + x), CAVS_L2_AGG_INT_LEVEL2)
+
+#define DSP_WCT_CS_TA(x)			BIT(x)
+#define DSP_WCT_CS_TT(x)			BIT(4 + x)
+
 /* SOC Resource Allocation Registers */
 #define SOC_RESOURCE_ALLOC_REG_BASE		0x00071A60
 /* bit field definition for LP GPDMA ownership register */
@@ -125,6 +134,11 @@ struct soc_resource_alloc_regs {
 	u32_t	geno;
 };
 
+/* L2 Local Memory Registers */
+#define SOC_L2RAM_LOCAL_MEM_REG_BASE		0x00071D00
+#define SOC_L2RAM_LOCAL_MEM_REG_LSPGCTL		\
+	(SOC_L2RAM_LOCAL_MEM_REG_BASE + 0x50)
+
 /* DMIC SHIM Registers */
 #define SOC_DMIC_SHIM_REG_BASE			0x00071E80
 #define SOC_DMIC_SHIM_DMICLCTL_SPA		BIT(0)
@@ -147,20 +161,39 @@ struct soc_dmic_shim_regs {
 
 struct soc_dsp_shim_regs {
 	u32_t	reserved[8];
-	u64_t	walclk;
-	u64_t	dspwctcs;
-	u64_t	dspwct0c;
-	u64_t	dspwct1c;
-	u32_t	reserved1[14];
+	union {
+		struct {
+			u32_t walclk32_lo;
+			u32_t walclk32_hi;
+		};
+		u64_t	walclk;
+	};
+	u32_t	dspwctcs;
+	u32_t	reserved1[1];
+	union {
+		struct {
+			u32_t dspwct0c32_lo;
+			u32_t dspwct0c32_hi;
+		};
+		u64_t	dspwct0c;
+	};
+	union {
+		struct {
+			u32_t dspwct1c32_lo;
+			u32_t dspwct1c32_hi;
+		};
+		u64_t	dspwct1c;
+	};
+	u32_t	reserved2[14];
 	u32_t	clkctl;
 	u32_t	clksts;
-	u32_t	reserved2[4];
+	u32_t	reserved3[4];
 	u16_t	pwrctl;
 	u16_t	pwrsts;
 	u32_t	lpsctl;
 	u32_t	lpsdmas0;
 	u32_t	lpsdmas1;
-	u32_t	reserved3[22];
+	u32_t	reserved4[22];
 };
 
 /* Global Control registers */
@@ -170,15 +203,22 @@ struct soc_dsp_shim_regs {
 #define SOC_GNA_POWER_CONTROL_CPA		(BIT(8))
 #define SOC_GNA_POWER_CONTROL_CLK_EN		(BIT(16))
 
+#define SOC_S1000_GLB_CTRL_DSP1_PWRCTL_CRST	BIT(1)
+#define SOC_S1000_GLB_CTRL_DSP1_PWRCTL_CSTALL	BIT(9)
+#define SOC_S1000_GLB_CTRL_DSP1_PWRCTL_SPA	BIT(17)
+#define SOC_S1000_GLB_CTRL_DSP1_PWRCTL_CPA	BIT(25)
+
 #define SOC_S1000_STRAP_REF_CLK			(BIT_MASK(2) << 3)
 #define SOC_S1000_STRAP_REF_CLK_38P4		(0 << 3)
 #define SOC_S1000_STRAP_REF_CLK_19P2		(1 << 3)
 #define SOC_S1000_STRAP_REF_CLK_24P576		(2 << 3)
 
 struct soc_global_regs {
-	u32_t	reserved1[8];
+	u32_t	reserved1[5];
+	u32_t	cavs_dsp1power_control;
+	u32_t	reserved2[2];
 	u32_t	gna_power_control;
-	u32_t	reserved2[7];
+	u32_t	reserved3[7];
 	u32_t	straps;
 };
 

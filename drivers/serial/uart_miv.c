@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microsemi_coreuart
+
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <drivers/uart.h>
@@ -379,7 +381,7 @@ static const struct uart_driver_api uart_miv_driver_api = {
 #endif
 };
 
-#ifdef DT_INST_0_MICROSEMI_COREUART
+#if DT_HAS_DRV_INST(0)
 
 static struct uart_miv_data uart_miv_data_0;
 
@@ -388,16 +390,16 @@ static void uart_miv_irq_cfg_func_0(struct device *dev);
 #endif
 
 static const struct uart_miv_device_config uart_miv_dev_cfg_0 = {
-	.uart_addr    = DT_INST_0_MICROSEMI_COREUART_BASE_ADDRESS,
-	.sys_clk_freq = DT_INST_0_MICROSEMI_COREUART_CLOCK_FREQUENCY,
+	.uart_addr    = DT_INST_REG_ADDR(0),
+	.sys_clk_freq = DT_INST_PROP(0, clock_frequency),
 	.line_config  = MIV_UART_0_LINECFG,
-	.baud_rate    = DT_INST_0_MICROSEMI_COREUART_CURRENT_SPEED,
+	.baud_rate    = DT_INST_PROP(0, current_speed),
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.cfg_func     = uart_miv_irq_cfg_func_0,
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_miv_0, DT_INST_0_MICROSEMI_COREUART_LABEL,
+DEVICE_AND_API_INIT(uart_miv_0, DT_INST_LABEL(0),
 		    uart_miv_init, &uart_miv_data_0, &uart_miv_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&uart_miv_driver_api);
@@ -412,4 +414,4 @@ static void uart_miv_irq_cfg_func_0(struct device *dev)
 }
 #endif
 
-#endif /* DT_INST_0_MICROSEMI_COREUART */
+#endif /* DT_HAS_DRV_INST(0) */

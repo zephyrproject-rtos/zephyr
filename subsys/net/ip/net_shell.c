@@ -306,6 +306,12 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
+#ifdef CONFIG_NET_POWER_MANAGEMENT
+	if (net_if_is_suspended(iface)) {
+		PR_INFO("Interface is suspended, thus not able to tx/rx.\n");
+	}
+#endif
+
 	if (net_if_get_link_addr(iface) &&
 	    net_if_get_link_addr(iface)->addr) {
 		PR("Link addr : %s\n",
@@ -842,6 +848,25 @@ static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
 #endif /* NET_TC_RX_COUNT > 1 */
 }
 
+static void print_net_pm_stats(const struct shell *shell, struct net_if *iface)
+{
+#if defined(CONFIG_NET_STATISTICS_POWER_MANAGEMENT)
+	PR("PM suspend stats:\n");
+	PR("\tLast time     : %u ms\n",
+	   GET_STAT(iface, pm.last_suspend_time));
+	PR("\tAverage time  : %u ms\n",
+	   (u32_t)(GET_STAT(iface, pm.overall_suspend_time) /
+		   GET_STAT(iface, pm.suspend_count)));
+	PR("\tTotal time    : %llu ms\n",
+	   GET_STAT(iface, pm.overall_suspend_time));
+	PR("\tHow many times: %u\n",
+	   GET_STAT(iface, pm.suspend_count));
+#else
+	ARG_UNUSED(shell);
+	ARG_UNUSED(iface);
+#endif
+}
+
 static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
@@ -977,6 +1002,8 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 		}
 	}
 #endif /* CONFIG_NET_STATISTICS_PPP && CONFIG_NET_STATISTICS_USER_API */
+
+	print_net_pm_stats(shell, iface);
 }
 #endif /* CONFIG_NET_STATISTICS */
 
@@ -3926,6 +3953,91 @@ usage:
 	return 0;
 }
 
+static int cmd_net_suspend(const struct shell *shell, size_t argc,
+			   char *argv[])
+{
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+	if (argv[1]) {
+		struct net_if *iface = NULL;
+		struct device *dev;
+		int idx;
+		int ret;
+
+		idx = get_iface_idx(shell, argv[1]);
+		if (idx < 0) {
+			return -ENOEXEC;
+		}
+
+		iface = net_if_get_by_index(idx);
+		if (!iface) {
+			PR_WARNING("No such interface in index %d\n", idx);
+			return -ENOEXEC;
+		}
+
+		dev = net_if_get_device(iface);
+
+		ret = device_set_power_state(dev, DEVICE_PM_SUSPEND_STATE,
+					     NULL, NULL);
+		if (ret != 0) {
+			PR_INFO("Iface could not be suspended: ");
+
+			if (ret == -EBUSY) {
+				PR_INFO("device is busy\n");
+			} else if (ret == -EALREADY) {
+				PR_INFO("dehive is already suspended\n");
+			}
+		}
+	} else {
+		PR("Usage:\n");
+		PR("\tsuspend <iface index>\n");
+	}
+#else
+	PR_INFO("You need a network driver supporting Power Management.\n");
+#endif /* CONFIG_NET_POWER_MANAGEMENT */
+
+	return 0;
+}
+
+static int cmd_net_resume(const struct shell *shell, size_t argc,
+			  char *argv[])
+{
+#if defined(CONFIG_NET_POWER_MANAGEMENT)
+	if (argv[1]) {
+		struct net_if *iface = NULL;
+		struct device *dev;
+		int idx;
+		int ret;
+
+		idx = get_iface_idx(shell, argv[1]);
+		if (idx < 0) {
+			return -ENOEXEC;
+		}
+
+		iface = net_if_get_by_index(idx);
+		if (!iface) {
+			PR_WARNING("No such interface in index %d\n", idx);
+			return -ENOEXEC;
+		}
+
+		dev = net_if_get_device(iface);
+
+		ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE,
+					     NULL, NULL);
+		if (ret != 0) {
+			PR_INFO("Iface could not be resumed\n");
+		}
+
+	} else {
+		PR("Usage:\n");
+		PR("\tresume <iface index>\n");
+	}
+#else
+	PR_INFO("You need a network driver supporting Power Management.\n");
+#endif /* CONFIG_NET_POWER_MANAGEMENT */
+
+	return 0;
+}
+
 #if defined(CONFIG_WEBSOCKET_CLIENT)
 static void websocket_context_cb(struct websocket_context *context,
 				 void *user_data)
@@ -4299,11 +4411,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
 		  cmd_net_nbr),
 	SHELL_CMD(ping, &net_cmd_ping, "Ping a network host.", cmd_net_ping),
 	SHELL_CMD(ppp, &net_cmd_ppp, "PPP information.", cmd_net_ppp_status),
+	SHELL_CMD(resume, NULL, "Resume a network interface", cmd_net_resume),
 	SHELL_CMD(route, NULL, "Show network route.", cmd_net_route),
 	SHELL_CMD(stacks, NULL, "Show network stacks information.",
 		  cmd_net_stacks),
 	SHELL_CMD(stats, &net_cmd_stats, "Show network statistics.",
 		  cmd_net_stats),
+	SHELL_CMD(suspend, NULL, "Suspend a network interface",
+		  cmd_net_suspend),
 	SHELL_CMD(tcp, &net_cmd_tcp, "Connect/send/close TCP connection.",
 		  cmd_net_tcp),
 	SHELL_CMD(vlan, &net_cmd_vlan, "Show VLAN information.", cmd_net_vlan),

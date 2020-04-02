@@ -15,37 +15,6 @@ config CMU_HFXO_FREQ
 config CMU_LFXO_FREQ
 	default 32768
 
-if GPIO_GECKO
-
-config GPIO_GECKO_PORTA
-	default y
-
-config GPIO_GECKO_PORTB
-	default y
-
-config GPIO_GECKO_PORTC
-	default y
-
-config GPIO_GECKO_PORTD
-	default y
-
-config GPIO_GECKO_PORTE
-	default y
-
-config GPIO_GECKO_PORTF
-	default y
-
-config GPIO_GECKO_PORTG
-	default y
-
-config GPIO_GECKO_PORTH
-	default y
-
-config GPIO_GECKO_PORTI
-	default y
-
-endif # GPIO_GECKO
-
 config COUNTER_GECKO_RTCC
 	default y
 	depends on COUNTER

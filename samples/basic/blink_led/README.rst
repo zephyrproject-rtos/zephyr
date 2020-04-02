@@ -42,19 +42,19 @@ Hexiwear K64
 No special board setup is necessary because there is an on-board RGB LED
 connected to the K64 PWM.
 
-nrf52840_pca10056
-=================
+nrf52840dk_nrf52840
+===================
 No special board setup is necessary because there is an on-board LED connected.
 
 Building and Running
 ********************
 
 This sample can be built for multiple boards, in this example we will build it
-for the nrf52840_pca10056 board:
+for the nrf52840dk_nrf52840 board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blink_led
-   :board: nrf52840_pca10056
+   :board: nrf52840dk_nrf52840
    :goals: build flash
    :compact:
 

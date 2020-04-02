@@ -94,6 +94,9 @@ config PS2_XEC_1
 
 endif # PS2
 
+config TACH_XEC
+	default y
+	depends on SENSOR
 
 # power management stuff
 if SYS_POWER_MANAGEMENT

@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_rtc
+
 #include <drivers/counter.h>
 #include <fsl_rtc.h>
 #include <logging/log.h>
@@ -265,26 +267,26 @@ static struct mcux_rtc_data mcux_rtc_data_0;
 static void mcux_rtc_irq_config_0(struct device *dev);
 
 static struct mcux_rtc_config mcux_rtc_config_0 = {
-	.base = (RTC_Type *)DT_INST_0_NXP_KINETIS_RTC_BASE_ADDRESS,
+	.base = (RTC_Type *)DT_INST_REG_ADDR(0),
 	.irq_config_func = mcux_rtc_irq_config_0,
 	.info = {
 		.max_top_value = UINT32_MAX,
-		.freq = DT_INST_0_NXP_KINETIS_RTC_CLOCK_FREQUENCY /
-				DT_INST_0_NXP_KINETIS_RTC_PRESCALER,
+		.freq = DT_INST_PROP(0, clock_frequency) /
+				DT_INST_PROP(0, prescaler),
 		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 		.channels = 1,
 	},
 };
 
-DEVICE_AND_API_INIT(rtc, DT_INST_0_NXP_KINETIS_RTC_LABEL, &mcux_rtc_init,
+DEVICE_AND_API_INIT(rtc, DT_INST_LABEL(0), &mcux_rtc_init,
 		    &mcux_rtc_data_0, &mcux_rtc_config_0.info,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_rtc_driver_api);
 
 static void mcux_rtc_irq_config_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_0_NXP_KINETIS_RTC_IRQ_0,
-		    DT_INST_0_NXP_KINETIS_RTC_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    mcux_rtc_isr, DEVICE_GET(rtc), 0);
-	irq_enable(DT_INST_0_NXP_KINETIS_RTC_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 }

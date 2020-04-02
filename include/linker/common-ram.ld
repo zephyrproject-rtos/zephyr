@@ -150,16 +150,6 @@
 		__net_if_dev_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#if defined(CONFIG_NET_SHELL)
-	SECTION_DATA_PROLOGUE(net_stack,,SUBALIGN(4))
-	{
-		__net_stack_start = .;
-		*(".net_stack.*")
-		KEEP(*(SORT_BY_NAME(".net_stack*")))
-		__net_stack_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif /* CONFIG_NET_SHELL */
-
 	SECTION_DATA_PROLOGUE(net_l2_data,,SUBALIGN(4))
 	{
 		__net_l2_data_start = .;

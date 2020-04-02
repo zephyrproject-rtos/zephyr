@@ -82,7 +82,7 @@ osStatus osTimerStart(osTimerId timer_id, uint32_t millisec)
 	if (timer->type == osTimerOnce) {
 		k_timer_start(&timer->ztimer, millisec, K_NO_WAIT);
 	} else if (timer->type == osTimerPeriodic) {
-		k_timer_start(&timer->ztimer, K_NO_WAIT, millisec);
+		k_timer_start(&timer->ztimer, millisec, millisec);
 	}
 
 	timer->status = ACTIVE;

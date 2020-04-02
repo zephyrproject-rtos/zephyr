@@ -16,7 +16,7 @@ Zephyr shall obtain its hardware descriptions exclusively from devicetree.
 Examples
 ========
 
-- New device drivers shall use :ref:`existence macros <dt-existence-macros>` to
+- New device drivers shall use devicetree APIs such as :c:func:`DT_HAS_NODE` to
   determine whether a device is available and enabled.
 
 - In-tree sample applications shall use :ref:`aliases <dt-alias-chosen>` to
@@ -27,7 +27,7 @@ Examples
 Example remaining work
 ======================
 
-- Zephyr's :ref:`sanitycheck_script` currently uses :file:`board.yaml` files to
+- Zephyr's :ref:`sanitycheck_script` currently use :file:`board.yaml` files to
   determine the hardware supported by a board. This should be obtained from
   devicetree instead.
 
@@ -79,8 +79,8 @@ Example remaining work
   capable of representing in Zephyr's own bindings.
 
 - Due to namespace collisions and inflexibility in the bindings language,
-  Zephyr-specific :ref:`dt-macros` do not support the full set of possible node
-  paths and bindings supported by Linux.
+  Zephyr cannot support the full set of possible node paths and bindings
+  supported by Linux.
 
 - Devicetree source sharing between Zephyr and Linux is not done.
 

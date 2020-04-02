@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_mpxxdtyy
+
 #include "mpxxdtyy.h"
 
 #define LOG_LEVEL CONFIG_AUDIO_DMIC_LOG_LEVEL
@@ -150,10 +152,10 @@ static int mpxxdtyy_initialize(struct device *dev)
 {
 	struct mpxxdtyy_data *const data = DEV_DATA(dev);
 
-	data->comm_master = device_get_binding(DT_INST_0_ST_MPXXDTYY_BUS_NAME);
+	data->comm_master = device_get_binding(DT_INST_BUS_LABEL(0));
 
 	if (data->comm_master == NULL) {
-		LOG_ERR("master %s not found", DT_INST_0_ST_MPXXDTYY_BUS_NAME);
+		LOG_ERR("master %s not found", DT_INST_BUS_LABEL(0));
 		return -EINVAL;
 	}
 
@@ -163,6 +165,6 @@ static int mpxxdtyy_initialize(struct device *dev)
 
 static struct mpxxdtyy_data mpxxdtyy_data;
 
-DEVICE_AND_API_INIT(mpxxdtyy, DT_INST_0_ST_MPXXDTYY_LABEL, mpxxdtyy_initialize,
+DEVICE_AND_API_INIT(mpxxdtyy, DT_INST_LABEL(0), mpxxdtyy_initialize,
 		&mpxxdtyy_data, NULL, POST_KERNEL,
 		CONFIG_AUDIO_DMIC_INIT_PRIORITY, &mpxxdtyy_driver_api);

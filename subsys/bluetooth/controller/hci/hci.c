@@ -940,7 +940,7 @@ static void le_set_adv_param(struct net_buf *buf, struct net_buf **evt)
 	min_interval = sys_le16_to_cpu(cmd->min_interval);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK) &&
-	    (cmd->type != BT_LE_ADV_DIRECT_IND)) {
+	    (cmd->type != BT_HCI_ADV_DIRECT_IND)) {
 		u16_t max_interval = sys_le16_to_cpu(cmd->max_interval);
 
 		if ((min_interval > max_interval) ||
@@ -2446,7 +2446,7 @@ static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
 	dir_info = (void *)(((u8_t *)drp) + sizeof(*drp));
 
 	/* Directed Advertising */
-	dir_info->evt_type = BT_LE_ADV_DIRECT_IND;
+	dir_info->evt_type = BT_HCI_ADV_DIRECT_IND;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (rl_idx < ll_rl_size_get()) {

@@ -23,6 +23,7 @@
 
 .global __start
 .type	z_cstart, @function
+.type	z_mp_entry, @function
 
 
 /* Macros to abstract away ABI differences */
@@ -136,6 +137,14 @@ _start:
 	/* Clear a0 again as possible CALLX to __memmap_init changed it. */
 	movi	a0, 0
 # endif
+
+# ifdef CONFIG_SMP
+	/* Only clear BSS when running on core 0 */
+	rsr	a3, PRID
+	extui	a3, a3, 0, 8	/* extract core ID */
+	bnez	a3, .L3zte
+# endif
+
 	/*
 	 *  Clear the BSS (uninitialized data) segments.
 	 *  This code supports multiple zeroed sections (*.bss).
@@ -176,6 +185,19 @@ _start:
 .L3zte:
 
 #endif /* !XCHAL_HAVE_BOOTLOADER */
+
+#ifdef CONFIG_SMP
+	/*
+	 * z_cstart() is only for CPU #0.
+	 * Other CPUs have different entry point.
+	 */
+	rsr     a3, PRID
+	extui   a3, a3, 0, 8	/* extract core ID */
+	beqz    a3, 2f
+	CALL    z_mp_entry
+
+2:
+#endif /* CONFIG_SMP */
 
 	/* Enter C domain, never returns from here */
 	CALL	z_cstart

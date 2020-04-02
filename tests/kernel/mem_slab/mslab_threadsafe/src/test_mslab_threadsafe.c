@@ -10,7 +10,7 @@
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define THREAD_NUM 4
 #define SLAB_NUM 2
-#define TIMEOUT 200
+#define TIMEOUT K_MSEC(200)
 #define BLK_NUM 3
 #define BLK_ALIGN 8
 #define BLK_SIZE1 16

@@ -79,7 +79,7 @@ int sys_sem_give(struct sys_sem *sem)
 	return ret;
 }
 
-int sys_sem_take(struct sys_sem *sem, s32_t timeout)
+int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout)
 {
 	int ret = 0;
 	atomic_t old_value;
@@ -120,7 +120,7 @@ int sys_sem_give(struct sys_sem *sem)
 	return 0;
 }
 
-int sys_sem_take(struct sys_sem *sem, s32_t timeout)
+int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout)
 {
 	int ret_value = 0;
 

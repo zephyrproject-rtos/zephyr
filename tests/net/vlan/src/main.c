@@ -170,7 +170,8 @@ static int eth_vlan_init(struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_vlan_test, "eth_vlan_test", eth_vlan_init,
+ETH_NET_DEVICE_INIT(eth_vlan_test, "eth_vlan_test",
+		    eth_vlan_init, device_pm_control_nop,
 		    &eth_vlan_context, NULL, CONFIG_ETH_INIT_PRIORITY,
 		    &api_funcs, NET_ETH_MTU);
 
@@ -187,9 +188,9 @@ static int eth_init(struct device *dev)
  * is quite unlikely that this would be done in real life but for testing
  * purposes create it here.
  */
-NET_DEVICE_INIT(eth_test, "eth_test", eth_init, &eth_vlan_context,
-		NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
-		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),
+NET_DEVICE_INIT(eth_test, "eth_test", eth_init, device_pm_control_nop,
+		&eth_vlan_context, NULL, CONFIG_ETH_INIT_PRIORITY,
+		&api_funcs, ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),
 		NET_ETH_MTU);
 
 struct net_if_test {
@@ -251,6 +252,7 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 "iface1",
 			 iface1,
 			 net_iface_dev_init,
+			 device_pm_control_nop,
 			 &net_iface1_data,
 			 NULL,
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -263,6 +265,7 @@ NET_DEVICE_INIT_INSTANCE(net_iface2_test,
 			 "iface2",
 			 iface2,
 			 net_iface_dev_init,
+			 device_pm_control_nop,
 			 &net_iface2_data,
 			 NULL,
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

@@ -120,6 +120,12 @@ class EDT:
                 ...
         };
 
+    chosen_nodes:
+      A collections.OrderedDict that maps the properties defined on the
+      devicetree's /chosen node to their values. 'chosen' is indexed by
+      property name (a string), and values are converted to Node objects.
+      Note that properties of the /chosen node which can't be converted
+      to a Node are not included in the value.
 
     dts_path:
       The .dts path passed to __init__()
@@ -179,22 +185,32 @@ class EDT:
         except DTError as e:
             _err(e)
 
+    @property
+    def chosen_nodes(self):
+        ret = OrderedDict()
+
+        try:
+            chosen = self._dt.get_node("/chosen")
+        except DTError:
+            return ret
+
+        for name, prop in chosen.props.items():
+            try:
+                node = prop.to_path()
+            except DTError:
+                # DTS value is not phandle or string, or path doesn't exist
+                continue
+
+            ret[name] = self._node2enode[node]
+
+        return ret
+
     def chosen_node(self, name):
         """
         Returns the Node pointed at by the property named 'name' in /chosen, or
         None if the property is missing
         """
-        try:
-            chosen = self._dt.get_node("/chosen")
-        except DTError:
-            # No /chosen node
-            return None
-
-        if name not in chosen.props:
-            return None
-
-        # to_path() checks that the node exists
-        return self._node2enode[chosen.props[name].to_path()]
+        return self.chosen_nodes.get(name)
 
     @property
     def dts_source(self):
@@ -1245,8 +1261,14 @@ class Node:
                               .format(address_cells, size_cells)):
             reg = Register()
             reg.node = self
-            reg.addr = _translate(to_num(raw_reg[:4*address_cells]), node)
-            reg.size = to_num(raw_reg[4*address_cells:])
+            if address_cells == 0:
+                reg.addr = None
+            else:
+                reg.addr = _translate(to_num(raw_reg[:4*address_cells]), node)
+            if size_cells == 0:
+                reg.size = None
+            else:
+                reg.size = to_num(raw_reg[4*address_cells:])
             if size_cells != 0 and reg.size == 0:
                 _err("zero-sized 'reg' in {!r} seems meaningless (maybe you "
                      "want a size of one or #size-cells = 0 instead)"
@@ -1395,8 +1417,8 @@ class Register:
       there is no 'reg-names' property
 
     addr:
-      The starting address of the register, in the parent address space. Any
-      'ranges' properties are taken into account.
+      The starting address of the register, in the parent address space, or None
+      if #address-cells is zero. Any 'ranges' properties are taken into account.
 
     size:
       The length of the register in bytes
@@ -1406,8 +1428,10 @@ class Register:
 
         if self.name is not None:
             fields.append("name: " + self.name)
-        fields.append("addr: " + hex(self.addr))
-        fields.append("size: " + hex(self.size))
+        if self.addr is not None:
+            fields.append("addr: " + hex(self.addr))
+        if self.size is not None:
+            fields.append("size: " + hex(self.size))
 
         return "<Register, {}>".format(", ".join(fields))
 

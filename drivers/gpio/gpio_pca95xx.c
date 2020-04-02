@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_pca95xx
+
 /**
  * @file Driver for PCA95XX I2C-based GPIO driver.
  */
@@ -489,12 +491,12 @@ static int gpio_pca95xx_init(struct device *dev)
 #define GPIO_PCA95XX_DEVICE_INSTANCE(inst)				\
 static const struct gpio_pca95xx_config gpio_pca95xx_##inst##_cfg = {	\
 	.common = {							\
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_##inst##_NXP_PCA95XX_NGPIOS), \
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(inst, ngpios)), \
 	},								\
-	.i2c_master_dev_name = DT_INST_##inst##_NXP_PCA95XX_BUS_NAME,	\
-	.i2c_slave_addr = DT_INST_##inst##_NXP_PCA95XX_BASE_ADDRESS,	\
+	.i2c_master_dev_name = DT_INST_BUS_LABEL(inst),	\
+	.i2c_slave_addr = DT_INST_REG_ADDR(inst),	\
 	.capabilities =							\
-		(DT_INST_##inst##_NXP_PCA95XX_HAS_PUD ?			\
+		(DT_INST_PROP(inst, has_pud) ?			\
 			PCA_HAS_PUD : 0) |				\
 		0,							\
 };									\
@@ -507,7 +509,7 @@ static struct gpio_pca95xx_drv_data gpio_pca95xx_##inst##_drvdata = {	\
 };									\
 									\
 DEVICE_AND_API_INIT(gpio_pca95xx_##inst,				\
-	DT_INST_##inst##_NXP_PCA95XX_LABEL,				\
+	DT_INST_LABEL(inst),				\
 	gpio_pca95xx_init,						\
 	&gpio_pca95xx_##inst##_drvdata,					\
 	&gpio_pca95xx_##inst##_cfg,					\
@@ -515,18 +517,18 @@ DEVICE_AND_API_INIT(gpio_pca95xx_##inst,				\
 	&gpio_pca95xx_drv_api_funcs)
 
 
-#ifdef DT_INST_0_NXP_PCA95XX
+#if DT_HAS_DRV_INST(0)
 GPIO_PCA95XX_DEVICE_INSTANCE(0);
-#endif /* DT_INST_0_NXP_PCA95XX */
+#endif /* DT_HAS_DRV_INST(0) */
 
-#ifdef DT_INST_1_NXP_PCA95XX
+#if DT_HAS_DRV_INST(1)
 GPIO_PCA95XX_DEVICE_INSTANCE(1);
-#endif /* DT_INST_1_NXP_PCA95XX */
+#endif /* DT_HAS_DRV_INST(1) */
 
-#ifdef DT_INST_2_NXP_PCA95XX
+#if DT_HAS_DRV_INST(2)
 GPIO_PCA95XX_DEVICE_INSTANCE(2);
-#endif /* DT_INST_2_NXP_PCA95XX */
+#endif /* DT_HAS_DRV_INST(2) */
 
-#ifdef DT_INST_3_NXP_PCA95XX
+#if DT_HAS_DRV_INST(3)
 GPIO_PCA95XX_DEVICE_INSTANCE(3);
-#endif /* DT_INST_3_NXP_PCA95XX */
+#endif /* DT_HAS_DRV_INST(3) */

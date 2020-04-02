@@ -14,11 +14,11 @@
 /* NB: W25Q16DV is a JEDEC spi-nor device, but has a separate driver. */
 #define FLASH_DEVICE CONFIG_SPI_FLASH_W25QXXDV_DRV_NAME
 #define FLASH_NAME "W25QXXDV"
-#elif (CONFIG_SPI_NOR - 0) || defined(DT_INST_0_JEDEC_SPI_NOR_LABEL)
-#define FLASH_DEVICE DT_INST_0_JEDEC_SPI_NOR_LABEL
+#elif (CONFIG_SPI_NOR - 0) || DT_HAS_NODE(DT_INST(0, jedec_spi_nor))
+#define FLASH_DEVICE DT_LABEL(DT_INST(0, jedec_spi_nor))
 #define FLASH_NAME "JEDEC SPI-NOR"
-#elif (CONFIG_NORDIC_QSPI_NOR - 0) || defined(DT_INST_0_NORDIC_QSPI_NOR_LABEL)
-#define FLASH_DEVICE DT_INST_0_NORDIC_QSPI_NOR_LABEL
+#elif (CONFIG_NORDIC_QSPI_NOR - 0) || DT_HAS_NODE(DT_INST(0, nordic_qspi_nor))
+#define FLASH_DEVICE DT_LABEL(DT_INST(0, nordic_qspi_nor))
 #define FLASH_NAME "JEDEC QSPI-NOR"
 #else
 #error Unsupported flash driver

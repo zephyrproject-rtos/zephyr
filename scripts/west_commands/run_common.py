@@ -8,7 +8,9 @@
 import argparse
 import logging
 from os import close, getcwd, path
+from pathlib import Path
 from subprocess import CalledProcessError
+import sys
 import tempfile
 import textwrap
 import traceback
@@ -146,7 +148,8 @@ def do_run_common(command, user_args, user_runner_args):
 
     # Get a concrete ZephyrBinaryRunner subclass to use based on
     # runners.yaml and command line arguments.
-    runner_cls = use_runner_cls(command, board, user_args, runner_config)
+    runner_cls = use_runner_cls(command, board, user_args, runner_config,
+                                cache)
     runner_name = runner_cls.name()
 
     # Set up runner logging to delegate to west.log commands.
@@ -289,7 +292,7 @@ def load_runners_yaml(path, args):
 
     return config
 
-def use_runner_cls(command, board, args, runner_config):
+def use_runner_cls(command, board, args, runner_config, cache):
     # Get the ZephyrBinaryRunner class from its name, and make sure it
     # supports the command. Print a message about the choice, and
     # return the class.
@@ -303,8 +306,14 @@ def use_runner_cls(command, board, args, runner_config):
 
     available = runner_config.get('runners', [])
     if runner not in available:
-        log.wrn(f'runner {runner} is not configured for use with {board}, '
-                'this may not work')
+        if 'BOARD_DIR' in cache:
+            board_cmake = Path(cache['BOARD_DIR']) / 'board.cmake'
+        else:
+            board_cmake = 'board.cmake'
+        log.err(f'board {board} does not support runner {runner}',
+                fatal=True)
+        log.inf(f'To fix, configure this runner in {board_cmake} and rebuild.')
+        sys.exit(1)
     runner_cls = get_runner_cls(runner)
     if command.name not in runner_cls.capabilities().commands:
         log.die(f'runner {runner} does not support command {command.name}')

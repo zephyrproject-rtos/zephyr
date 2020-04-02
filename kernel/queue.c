@@ -293,45 +293,32 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 }
 
 #if defined(CONFIG_POLL)
-static void *k_queue_poll(struct k_queue *queue, s32_t timeout)
+static void *k_queue_poll(struct k_queue *queue, k_timeout_t timeout)
 {
 	struct k_poll_event event;
-	int err, elapsed = 0, done = 0;
+	int err;
 	k_spinlock_key_t key;
 	void *val;
-	u32_t start;
 
 	k_poll_event_init(&event, K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 			  K_POLL_MODE_NOTIFY_ONLY, queue);
 
-	if (timeout != K_FOREVER) {
-		start = k_uptime_get_32();
+	event.state = K_POLL_STATE_NOT_READY;
+	err = k_poll(&event, 1, timeout);
+
+	if (err && err != -EAGAIN) {
+		return NULL;
 	}
 
-	do {
-		event.state = K_POLL_STATE_NOT_READY;
-
-		err = k_poll(&event, 1, timeout - elapsed);
-
-		if (err && err != -EAGAIN) {
-			return NULL;
-		}
-
-		key = k_spin_lock(&queue->lock);
-		val = z_queue_node_peek(sys_sflist_get(&queue->data_q), true);
-		k_spin_unlock(&queue->lock, key);
-
-		if ((val == NULL) && (timeout != K_FOREVER)) {
-			elapsed = k_uptime_get_32() - start;
-			done = elapsed > timeout;
-		}
-	} while (!val && !done);
+	key = k_spin_lock(&queue->lock);
+	val = z_queue_node_peek(sys_sflist_get(&queue->data_q), true);
+	k_spin_unlock(&queue->lock, key);
 
 	return val;
 }
 #endif /* CONFIG_POLL */
 
-void *z_impl_k_queue_get(struct k_queue *queue, s32_t timeout)
+void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 {
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	void *data;
@@ -345,7 +332,7 @@ void *z_impl_k_queue_get(struct k_queue *queue, s32_t timeout)
 		return data;
 	}
 
-	if (timeout == K_NO_WAIT) {
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_spin_unlock(&queue->lock, key);
 		return NULL;
 	}
@@ -363,7 +350,8 @@ void *z_impl_k_queue_get(struct k_queue *queue, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline void *z_vrfy_k_queue_get(struct k_queue *queue, s32_t timeout)
+static inline void *z_vrfy_k_queue_get(struct k_queue *queue,
+				       k_timeout_t timeout)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 	return z_impl_k_queue_get(queue, timeout);

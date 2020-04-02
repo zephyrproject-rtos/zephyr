@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT silabs_gecko_gpio_port
+
 #include <errno.h>
 #include <drivers/gpio.h>
 #include <soc.h>
@@ -301,7 +303,6 @@ static const struct gpio_driver_api gpio_gecko_common_driver_api = {
 	.disable_callback = gpio_gecko_disable_callback,
 };
 
-#ifdef CONFIG_GPIO_GECKO
 static int gpio_gecko_common_init(struct device *dev);
 
 static const struct gpio_gecko_common_config gpio_gecko_common_config = {
@@ -309,7 +310,7 @@ static const struct gpio_gecko_common_config gpio_gecko_common_config = {
 
 static struct gpio_gecko_common_data gpio_gecko_common_data;
 
-DEVICE_AND_API_INIT(gpio_gecko_common, DT_GPIO_GECKO_COMMON_NAME,
+DEVICE_AND_API_INIT(gpio_gecko_common, DT_LABEL(DT_INST(0, silabs_gecko_gpio)),
 		    gpio_gecko_common_init,
 		    &gpio_gecko_common_data, &gpio_gecko_common_config,
 		    POST_KERNEL, CONFIG_GPIO_GECKO_COMMON_INIT_PRIORITY,
@@ -318,10 +319,12 @@ DEVICE_AND_API_INIT(gpio_gecko_common, DT_GPIO_GECKO_COMMON_NAME,
 static int gpio_gecko_common_init(struct device *dev)
 {
 	gpio_gecko_common_data.count = 0;
-	IRQ_CONNECT(GPIO_EVEN_IRQn, DT_GPIO_GECKO_COMMON_EVEN_PRI,
+	IRQ_CONNECT(GPIO_EVEN_IRQn,
+		    DT_IRQ_BY_NAME(DT_INST(0, silabs_gecko_gpio), gpio_even, priority),
 		    gpio_gecko_common_isr, DEVICE_GET(gpio_gecko_common), 0);
 
-	IRQ_CONNECT(GPIO_ODD_IRQn, DT_GPIO_GECKO_COMMON_ODD_PRI,
+	IRQ_CONNECT(GPIO_ODD_IRQn,
+		    DT_IRQ_BY_NAME(DT_INST(0, silabs_gecko_gpio), gpio_odd, priority),
 		    gpio_gecko_common_isr, DEVICE_GET(gpio_gecko_common), 0);
 
 	irq_enable(GPIO_EVEN_IRQn);
@@ -329,74 +332,32 @@ static int gpio_gecko_common_init(struct device *dev)
 
 	return 0;
 }
-#endif /* CONFIG_GPIO_GECKO */
 
-#define GPIO_PORT_INIT(pl, pu) \
-static int gpio_gecko_port##pl##_init(struct device *dev); \
+#define GPIO_PORT_INIT(idx) \
+static int gpio_gecko_port##idx##_init(struct device *dev); \
 \
-static const struct gpio_gecko_config gpio_gecko_port##pl##_config = { \
+static const struct gpio_gecko_config gpio_gecko_port##idx##_config = { \
 	.common = { \
 		.port_pin_mask = (gpio_port_pins_t)(-1), \
 	}, \
-	.gpio_base = &GPIO->P[gpioPort##pu], \
-	.gpio_index = gpioPort##pu, \
+	.gpio_base = (GPIO_P_TypeDef *)DT_INST_REG_ADDR(idx), \
+	.gpio_index = DT_INST_PROP(idx, peripheral_id), \
 }; \
 \
-static struct gpio_gecko_data gpio_gecko_port##pl##_data; \
+static struct gpio_gecko_data gpio_gecko_port##idx##_data; \
 \
-DEVICE_AND_API_INIT(gpio_gecko_port##pl, DT_GPIO_GECKO_PORT##pu##_NAME, \
-		    gpio_gecko_port##pl##_init, \
-		    &gpio_gecko_port##pl##_data, \
-		    &gpio_gecko_port##pl##_config, \
+DEVICE_AND_API_INIT(gpio_gecko_port##idx, \
+		    DT_INST_LABEL(idx), \
+		    gpio_gecko_port##idx##_init, \
+		    &gpio_gecko_port##idx##_data, \
+		    &gpio_gecko_port##idx##_config, \
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, \
 		    &gpio_gecko_driver_api); \
 \
-static int gpio_gecko_port##pl##_init(struct device *dev) \
+static int gpio_gecko_port##idx##_init(struct device *dev) \
 { \
 	gpio_gecko_add_port(&gpio_gecko_common_data, dev); \
 	return 0; \
 }
 
-#ifdef CONFIG_GPIO_GECKO_PORTA
-GPIO_PORT_INIT(a, A)
-#endif /* CONFIG_GPIO_GECKO_PORTA */
-
-#ifdef CONFIG_GPIO_GECKO_PORTB
-GPIO_PORT_INIT(b, B)
-#endif /* CONFIG_GPIO_GECKO_PORTB */
-
-#ifdef CONFIG_GPIO_GECKO_PORTC
-GPIO_PORT_INIT(c, C)
-#endif /* CONFIG_GPIO_GECKO_PORTC */
-
-#ifdef CONFIG_GPIO_GECKO_PORTD
-GPIO_PORT_INIT(d, D)
-#endif /* CONFIG_GPIO_GECKO_PORTD */
-
-#ifdef CONFIG_GPIO_GECKO_PORTE
-GPIO_PORT_INIT(e, E)
-#endif /* CONFIG_GPIO_GECKO_PORTE */
-
-#ifdef CONFIG_GPIO_GECKO_PORTF
-GPIO_PORT_INIT(f, F)
-#endif /* CONFIG_GPIO_GECKO_PORTF */
-
-#ifdef CONFIG_GPIO_GECKO_PORTG
-GPIO_PORT_INIT(g, G)
-#endif /* CONFIG_GPIO_GECKO_PORTG */
-
-#ifdef CONFIG_GPIO_GECKO_PORTH
-GPIO_PORT_INIT(h, H)
-#endif /* CONFIG_GPIO_GECKO_PORTH */
-
-#ifdef CONFIG_GPIO_GECKO_PORTI
-GPIO_PORT_INIT(i, I)
-#endif /* CONFIG_GPIO_GECKO_PORTI */
-
-#ifdef CONFIG_GPIO_GECKO_PORTJ
-GPIO_PORT_INIT(j, J)
-#endif /* CONFIG_GPIO_GECKO_PORTJ */
-
-#ifdef CONFIG_GPIO_GECKO_PORTK
-GPIO_PORT_INIT(k, K)
-#endif /* CONFIG_GPIO_GECKO_PORTK */
+DT_INST_FOREACH(GPIO_PORT_INIT)

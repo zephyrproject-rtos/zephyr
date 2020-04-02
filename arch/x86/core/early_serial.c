@@ -10,7 +10,7 @@
 
 /* Super-primitive 8250/16550 serial output-only driver, 115200 8n1 */
 
-#define PORT ((io_port_t)DT_INST_0_NS16550_BASE_ADDRESS)
+#define PORT ((io_port_t)DT_REG_ADDR(DT_INST(0, ns16550)))
 
 #define REG_IER 0x01	/* Interrupt enable reg.          */
 #define REG_LCR 0x03	/* Line control reg.              */

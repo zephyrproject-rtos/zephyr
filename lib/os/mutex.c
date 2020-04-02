@@ -30,7 +30,7 @@ static bool check_sys_mutex_addr(struct sys_mutex *addr)
 	return Z_SYSCALL_MEMORY_WRITE(addr, sizeof(struct sys_mutex));
 }
 
-int z_impl_z_sys_mutex_kernel_lock(struct sys_mutex *mutex, s32_t timeout)
+int z_impl_z_sys_mutex_kernel_lock(struct sys_mutex *mutex, k_timeout_t timeout)
 {
 	struct k_mutex *kernel_mutex = get_k_mutex(mutex);
 
@@ -42,7 +42,7 @@ int z_impl_z_sys_mutex_kernel_lock(struct sys_mutex *mutex, s32_t timeout)
 }
 
 static inline int z_vrfy_z_sys_mutex_kernel_lock(struct sys_mutex *mutex,
-						 s32_t timeout)
+						 k_timeout_t timeout)
 {
 	if (check_sys_mutex_addr(mutex)) {
 		return -EACCES;

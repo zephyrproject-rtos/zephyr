@@ -35,8 +35,6 @@ struct _callee_saved {
 	u64_t x28;
 	u64_t x29; /* FP */
 	u64_t x30; /* LR */
-	u64_t spsr;
-	u64_t elr;
 	u64_t sp;
 };
 

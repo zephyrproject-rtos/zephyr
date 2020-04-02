@@ -660,7 +660,7 @@ void main(void)
 	LOG_INF("DTR on CDC ACM 1 set");
 
 	/* Wait 1 sec for the host to do all settings */
-	k_busy_wait(K_SECONDS(1) * USEC_PER_MSEC);
+	k_busy_wait(USEC_PER_SEC);
 
 	uart_irq_callback_set(cdc0_dev, cdc_mouse_int_handler);
 	uart_irq_callback_set(cdc1_dev, cdc_kbd_int_handler);

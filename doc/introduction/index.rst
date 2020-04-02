@@ -100,8 +100,8 @@ Zephyr offers a large and ever growing number of features including:
    platforms that have common devices/IP blocks
 
 **Devicetree Support**
-   Use of :ref:`devicetree` to describe hardware. Information from devicetree
-   is used to create the application image.
+   Use of :ref:`devicetree <dt-guide>` to describe hardware.
+   Information from devicetree is used to create the application image.
 
 **Native Networking Stack supporting multiple protocols**
    Networking support is fully featured and optimized, including LwM2M and BSD

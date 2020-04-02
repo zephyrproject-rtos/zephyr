@@ -24,7 +24,7 @@ s64_t timespec_to_timeoutms(const struct timespec *abstime)
 	nsecs = abstime->tv_nsec - curtime.tv_nsec;
 
 	if (secs < 0 || (secs == 0 && nsecs < NSEC_PER_MSEC)) {
-		milli_secs = K_NO_WAIT;
+		milli_secs = 0;
 	} else {
 		milli_secs =  secs * MSEC_PER_SEC + nsecs / NSEC_PER_MSEC;
 	}

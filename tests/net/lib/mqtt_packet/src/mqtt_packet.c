@@ -90,6 +90,15 @@ static int eval_msg_connect(struct mqtt_test *mqtt_test);
 static int eval_msg_publish(struct mqtt_test *mqtt_test);
 
 /**
+ * @brief eval_msg_corrupted_publish Evaluate the given mqtt_test against the
+ *				     corrupted publish message.
+ * @param [in] mqtt_test	     MQTT test structure
+ * @return			     TC_PASS on success
+ * @return			     TC_FAIL on error
+ */
+static int eval_msg_corrupted_publish(struct mqtt_test *mqtt_test);
+
+/**
  * @brief eval_msg_subscribe	Evaluate the given mqtt_test against the
  *				subscribe packing/unpacking routines.
  * @param [in] mqtt_test	MQTT test structure
@@ -171,6 +180,24 @@ static int eval_msg_unsuback(struct mqtt_test *mqtt_test);
 static int eval_msg_disconnect(struct mqtt_test *mqtt_test);
 
 /**
+ * @brief eval_max_pkt_len	Evaluate header with maximum allowed packet
+ *				length.
+ * @param [in] mqtt_test	MQTT test structure
+ * @return			TC_PASS on success
+ * @return			TC_FAIL on error
+ */
+static int eval_max_pkt_len(struct mqtt_test *mqtt_test);
+
+/**
+ * @brief eval_corrupted_pkt_len Evaluate header exceeding maximum
+ *				 allowed packet length.
+ * @param [in] mqtt_test	 MQTT test structure
+ * @return			 TC_PASS on success
+ * @return			 TC_FAIL on error
+ */
+static int eval_corrupted_pkt_len(struct mqtt_test *mqtt_test);
+
+/**
  * @brief eval_buffers		Evaluate if two given buffers are equal
  * @param [in] buf		Input buffer 1, mostly used as the 'computed'
  *				buffer
@@ -181,6 +208,7 @@ static int eval_msg_disconnect(struct mqtt_test *mqtt_test);
  */
 static int eval_buffers(const struct buf_ctx *buf,
 			const u8_t *expected, u16_t len);
+
 
 /**
  * @brief print_array		Prints the array 'a' of 'size' elements
@@ -403,6 +431,14 @@ static ZTEST_DMEM struct mqtt_publish_param msg_publish4 = {
 	.message.payload.len = 2,
 };
 
+static ZTEST_DMEM
+u8_t publish_corrupted[] = {0x30, 0x07, 0x00, 0x07, 0x73, 0x65, 0x6e, 0x73,
+			    0x6f, 0x72, 0x73, 0x00, 0x01, 0x4f, 0x4b};
+static ZTEST_DMEM struct buf_ctx publish_corrupted_buf = {
+	.cur = publish_corrupted,
+	.end = publish_corrupted + sizeof(publish_corrupted)
+};
+
 /*
  * MQTT SUBSCRIBE msg:
  * pkt_id: 1, topic: sensors, qos: 0
@@ -514,6 +550,19 @@ u8_t unsuback1[] = {0xb0, 0x02, 0x00, 0x01};
 static ZTEST_DMEM struct mqtt_unsuback_param msg_unsuback1 = {.message_id = 1};
 
 static ZTEST_DMEM
+u8_t max_pkt_len[] = {0x30, 0xff, 0xff, 0xff, 0x7f};
+static ZTEST_DMEM struct buf_ctx max_pkt_len_buf = {
+	.cur = max_pkt_len, .end = max_pkt_len + sizeof(max_pkt_len)
+};
+
+static ZTEST_DMEM
+u8_t corrupted_pkt_len[] = {0x30, 0xff, 0xff, 0xff, 0xff, 0x01};
+static ZTEST_DMEM struct buf_ctx corrupted_pkt_len_buf = {
+	.cur = corrupted_pkt_len,
+	.end = corrupted_pkt_len + sizeof(corrupted_pkt_len)
+};
+
+static ZTEST_DMEM
 struct mqtt_test mqtt_tests[] = {
 
 	{.test_name = "CONNECT, new session, zeros",
@@ -559,6 +608,9 @@ struct mqtt_test mqtt_tests[] = {
 	{.test_name = "PUBLISH, qos = 2",
 	 .ctx = &msg_publish4, .eval_fcn = eval_msg_publish,
 	 .expected = publish4, .expected_len = sizeof(publish4)},
+
+	{.test_name = "PUBLISH, corrupted message length (smaller than topic)",
+	 .ctx = &publish_corrupted_buf, .eval_fcn = eval_msg_corrupted_publish},
 
 	{.test_name = "SUBSCRIBE, one topic, qos = 0",
 	 .ctx = &msg_subscribe1, .eval_fcn = eval_msg_subscribe,
@@ -607,6 +659,12 @@ struct mqtt_test mqtt_tests[] = {
 	{.test_name = "UNSUBACK",
 	 .ctx = &msg_unsuback1, .eval_fcn = eval_msg_unsuback,
 	 .expected = unsuback1, .expected_len = sizeof(unsuback1)},
+
+	{.test_name = "Maximum packet length",
+	 .ctx = &max_pkt_len_buf, .eval_fcn = eval_max_pkt_len},
+
+	{.test_name = "Corrupted packet length",
+	 .ctx = &corrupted_pkt_len_buf, .eval_fcn = eval_corrupted_pkt_len},
 
 	/* last test case, do not remove it */
 	{.test_name = NULL}
@@ -757,6 +815,23 @@ static int eval_msg_publish(struct mqtt_test *mqtt_test)
 	zassert_equal(dec_param.message.payload.len,
 		      param->message.payload.len,
 		      "payload len error");
+
+	return TC_PASS;
+}
+
+static int eval_msg_corrupted_publish(struct mqtt_test *mqtt_test)
+{
+	struct buf_ctx *buf = (struct buf_ctx *)mqtt_test->ctx;
+	int rc;
+	u8_t type_and_flags;
+	u32_t length;
+	struct mqtt_publish_param dec_param;
+
+	rc = fixed_header_decode(buf, &type_and_flags, &length);
+	zassert_equal(rc, 0, "fixed_header_decode failed");
+
+	rc = publish_decode(type_and_flags, length, buf, &dec_param);
+	zassert_equal(rc, -EINVAL, "publish_decode should fail");
 
 	return TC_PASS;
 }
@@ -1014,6 +1089,36 @@ static int eval_msg_unsuback(struct mqtt_test *mqtt_test)
 
 	zassert_equal(dec_param.message_id, param->message_id,
 		      "packet identifier error");
+
+	return TC_PASS;
+}
+
+static int eval_max_pkt_len(struct mqtt_test *mqtt_test)
+{
+	struct buf_ctx *buf = (struct buf_ctx *)mqtt_test->ctx;
+	int rc;
+	u8_t flags;
+	u32_t length;
+
+	rc = fixed_header_decode(buf, &flags, &length);
+
+	zassert_equal(rc, 0, "fixed_header_decode failed");
+	zassert_equal(length, MQTT_MAX_PAYLOAD_SIZE,
+		      "Invalid packet length decoded");
+
+	return TC_PASS;
+}
+
+static int eval_corrupted_pkt_len(struct mqtt_test *mqtt_test)
+{
+	struct buf_ctx *buf = (struct buf_ctx *)mqtt_test->ctx;
+	int rc;
+	u8_t flags;
+	u32_t length;
+
+	rc = fixed_header_decode(buf, &flags, &length);
+
+	zassert_equal(rc, -EINVAL, "fixed_header_decode should fail");
 
 	return TC_PASS;
 }

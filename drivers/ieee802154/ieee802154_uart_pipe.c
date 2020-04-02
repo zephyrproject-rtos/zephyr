@@ -384,7 +384,8 @@ static struct ieee802154_radio_api upipe_radio_api = {
 };
 
 NET_DEVICE_INIT(upipe_15_4, CONFIG_IEEE802154_UPIPE_DRV_NAME,
-		upipe_init, &upipe_context_data, NULL,
+		upipe_init, device_pm_control_nop,
+		&upipe_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&upipe_radio_api, IEEE802154_L2,
 		NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);
