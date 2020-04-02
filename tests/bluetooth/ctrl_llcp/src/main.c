@@ -13,6 +13,10 @@
 #define CONFIG_BT_CTLR_SUBVERSION_NUMBER 0x5678
 #define CONFIG_BT_CTLR_LE_ENC 1
 
+#define CONFIG_BT_MAX_CONN 1
+#define CONFIG_BT_CONN 1
+#define CONFIG_BT_CTLR_PHY 1
+
 #define ULL_LLCP_UNITTEST
 
 #define PROC_CTX_BUF_NUM 2
@@ -367,6 +371,31 @@ void helper_pdu_encode_reject_ext_ind(struct pdu_data *pdu, void *param)
 	pdu->llctrl.reject_ext_ind.error_code = p->error_code;
 }
 
+
+void helper_pdu_encode_phy_req(struct pdu_data *pdu, void *param)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, phy_req) + sizeof(struct pdu_data_llctrl_phy_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_REQ;
+	/* TODO(thoh): Fill in correct data */
+}
+
+void helper_pdu_encode_phy_rsp(struct pdu_data *pdu, void *param)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, phy_rsp) + sizeof(struct pdu_data_llctrl_phy_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_RSP;
+	/* TODO(thoh): Fill in correct data */
+}
+
+void helper_pdu_encode_phy_update_ind(struct pdu_data *pdu, void *param)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, phy_upd_ind) + sizeof(struct pdu_data_llctrl_phy_upd_ind);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
+	/* TODO(thoh): Fill in correct data */
+}
+
 void helper_pdu_verify_version_ind(struct pdu_data *pdu, void *param)
 {
 	struct pdu_data_llctrl_version_ind *p = param;
@@ -423,6 +452,35 @@ void helper_pdu_verify_reject_ext_ind(struct pdu_data *pdu, void *param)
 	zassert_equal(pdu->llctrl.reject_ext_ind.error_code, p->error_code, NULL);
 }
 
+void helper_pdu_verify_phy_req(struct pdu_data *pdu, void *param)
+{
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_req) + sizeof(struct pdu_data_llctrl_phy_req), NULL);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PHY_REQ, NULL);
+	/* TODO(thoh): Fill in correct data */
+}
+
+void helper_pdu_verify_phy_rsp(struct pdu_data *pdu, void *param)
+{
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_rsp) + sizeof(struct pdu_data_llctrl_phy_rsp), NULL);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PHY_RSP, NULL);
+	/* TODO(thoh): Fill in correct data */
+}
+
+void helper_pdu_verify_phy_update_ind(struct pdu_data *pdu, void *param)
+{
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, NULL);
+	zassert_equal(pdu->len, offsetof(struct pdu_data_llctrl, phy_upd_ind) + sizeof(struct pdu_data_llctrl_phy_upd_ind), NULL);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND, NULL);
+	/* TODO(thoh): Fill in correct data */
+}
+
+void helper_node_verify_phy_update(struct node_rx_pdu *rx)
+{
+	zassert_equal(rx->hdr.type, NODE_RX_TYPE_PHY_UPDATE, NULL);
+}
+
 typedef enum {
 	LL_VERSION_IND,
 	LL_REJECT_IND,
@@ -431,6 +489,9 @@ typedef enum {
 	LL_ENC_RSP,
 	LL_START_ENC_REQ,
 	LL_START_ENC_RSP,
+	LL_PHY_REQ,
+	LL_PHY_RSP,
+	LL_PHY_UPDATE_IND,
 } helper_pdu_opcode_t;
 
 typedef void (helper_pdu_func_t) (struct pdu_data * data, void *param);
@@ -442,7 +503,10 @@ helper_pdu_func_t * const helper_pdu_encode[] = {
 	helper_pdu_encode_enc_req,
 	helper_pdu_encode_enc_rsp,
 	helper_pdu_encode_start_enc_req,
-	helper_pdu_encode_start_enc_rsp
+	helper_pdu_encode_start_enc_rsp,
+	helper_pdu_encode_phy_req,
+	helper_pdu_encode_phy_rsp,
+	helper_pdu_encode_phy_update_ind,
 };
 
 helper_pdu_func_t * const helper_pdu_verify[] = {
@@ -452,7 +516,20 @@ helper_pdu_func_t * const helper_pdu_verify[] = {
 	helper_pdu_verify_enc_req,
 	helper_pdu_verify_enc_rsp,
 	helper_pdu_verify_start_enc_req,
-	helper_pdu_verify_start_enc_rsp
+	helper_pdu_verify_start_enc_rsp,
+	helper_pdu_verify_phy_req,
+	helper_pdu_verify_phy_rsp,
+	helper_pdu_verify_phy_update_ind,
+};
+
+typedef enum {
+	NODE_PHY_UPDATE
+} helper_node_opcode_t;
+
+typedef void (helper_node_func_t) (struct node_rx_pdu *rx);
+
+helper_node_func_t * const helper_node_verify[] = {
+	helper_node_verify_phy_update,
 };
 
 void lt_tx(helper_pdu_opcode_t opcode, struct ull_cp_conn *conn, void *param)
@@ -512,6 +589,22 @@ void ut_rx_pdu(helper_pdu_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *p
 	*ntf_ref = ntf;
 }
 
+void ut_rx_node(helper_node_opcode_t opcode, struct node_rx_pdu **ntf_ref, void *param)
+{
+	struct node_rx_pdu *ntf;
+
+	ntf = (struct node_rx_pdu *) sys_slist_get(&ut_rx_q);
+	zassert_not_null(ntf, NULL);
+
+	zassert_not_equal(ntf->hdr.type, NODE_RX_TYPE_DC_PDU, NULL);
+
+	if (helper_node_verify[opcode]) {
+		helper_node_verify[opcode](ntf);
+	}
+
+	*ntf_ref = ntf;
+}
+
 void ut_rx_q_is_empty()
 {
 	struct node_rx_pdu *ntf;
@@ -520,12 +613,33 @@ void ut_rx_q_is_empty()
 	zassert_is_null(ntf, NULL);
 }
 
+static u16_t lazy = 0;
+
 void prepare(struct ull_cp_conn *conn)
 {
+	struct mocked_lll_conn *lll;
+
 	/*** ULL Prepare ***/
 
 	/* Handle any LL Control Procedures */
 	ull_cp_run(conn);
+
+	/*** LLL Prepare ***/
+	lll = &conn->lll;
+
+	/* Save the latency for use in event */
+	lll->latency_prepare += lazy;
+
+	/* Calc current event counter value */
+	u16_t event_counter = lll->event_counter + lll->latency_prepare;
+
+	/* Store the next event counter value */
+	lll->event_counter = event_counter + 1;
+
+	lll->latency_prepare = 0;
+
+	/* Rest lazy */
+	lazy = 0;
 }
 
 void done(struct ull_cp_conn *conn)
@@ -536,6 +650,26 @@ void done(struct ull_cp_conn *conn)
 		ull_cp_rx(conn, rx);
 		k_mem_slab_free(&lt_tx_pdu_slab, (void **) &rx);
 	}
+}
+
+static u16_t event_counter(struct ull_cp_conn *conn)
+{
+	/* TODO(thoh): Mocked lll_conn */
+	struct mocked_lll_conn *lll;
+	u16_t event_counter;
+
+	/**/
+	lll = &conn->lll;
+
+	/* Calculate current event counter */
+	event_counter = lll->event_counter + lll->latency_prepare + lazy;
+
+	return event_counter;
+}
+
+static bool is_instant_reached(struct ull_cp_conn *conn, u16_t instant)
+{
+	return ((event_counter(conn) - instant) & 0xFFFF) <= 0x7FFF;
 }
 
 
@@ -1506,6 +1640,98 @@ void test_encryption_start_mas_rem_no_ltk(void)
 	zassert_equal(conn.lll.enc_rx, 0U, NULL);
 }
 
+/* +-----+                +-------+              +-----+
+ * | UT  |                | LL_A  |              | LT  |
+ * +-----+                +-------+              +-----+
+ *    |                       |                     |
+ */
+void test_phy_update_mas_loc(void)
+{
+	u8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	struct pdu_data *pdu;
+	u16_t instant;
+
+	/* Setup */
+	sys_slist_init(&ut_rx_q);
+	sys_slist_init(&lt_tx_q);
+	ull_cp_init();
+	ull_tx_q_init(&conn.tx_q);
+	ull_cp_conn_init(&conn);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate an PHY Update Procedure */
+	err = ull_cp_phy_update(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PHY_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
+
+	/* Rx */
+	lt_tx(LL_PHY_RSP, &conn, NULL);
+
+	/* Done */
+	done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PHY_UPDATE_IND, &conn, &tx, NULL);
+	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
+
+	/* Save Instant */
+	pdu = (struct pdu_data *)tx->pdu;
+	instant = sys_le16_to_cpu(pdu->llctrl.phy_upd_ind.instant);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* */
+	while (!is_instant_reached(&conn, instant))
+	{
+		/* Prepare */
+		prepare(&conn);
+
+		/* Tx Queue should NOT have a LL Control PDU */
+		lt_rx_q_is_empty();
+
+		/* Done */
+		done(&conn);
+
+		/* There should NOT be a host notification */
+		ut_rx_q_is_empty();
+	}
+
+	/* Prepare */
+	prepare(&conn);
+
+	/* Tx Queue should NOT have a LL Control PDU */
+	lt_rx_q_is_empty();
+
+	/* Done */
+	done(&conn);
+
+	/* There should be one host notification */
+	ut_rx_node(NODE_PHY_UPDATE, &ntf, NULL);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+}
 
 
 void test_main(void)
@@ -1540,8 +1766,13 @@ void test_main(void)
 			 ztest_unit_test(test_encryption_start_mas_rem_no_ltk)
 			);
 
+	ztest_test_suite(phy,
+			 ztest_unit_test(test_phy_update_mas_loc)
+			);
+
 	ztest_run_test_suite(internal);
 	ztest_run_test_suite(public);
 	ztest_run_test_suite(version_exchange);
 	ztest_run_test_suite(encryption);
+	ztest_run_test_suite(phy);
 }
