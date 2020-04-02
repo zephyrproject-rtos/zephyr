@@ -3826,7 +3826,8 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		struct ccc_store ccc_store[CCC_STORE_MAX];
 		struct ccc_load load;
 		bt_addr_le_t addr;
-		int len, err;
+		ssize_t len;
+		int err;
 		const char *next;
 
 		settings_name_next(name, &next);
@@ -4200,7 +4201,8 @@ static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	struct gatt_sc_cfg *cfg;
 	u8_t id;
 	bt_addr_le_t addr;
-	int len, err;
+	ssize_t len;
+	int err;
 	const char *next;
 
 	if (!name) {
@@ -4276,7 +4278,8 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	struct gatt_cf_cfg *cfg;
 	bt_addr_le_t addr;
 	const char *next;
-	int len, err;
+	ssize_t len;
+	int err;
 	u8_t id;
 
 	if (!name) {
@@ -4331,7 +4334,7 @@ static u8_t stored_hash[16];
 static int db_hash_set(const char *name, size_t len_rd,
 		       settings_read_cb read_cb, void *cb_arg)
 {
-	int len;
+	ssize_t len;
 
 	len = read_cb(cb_arg, stored_hash, sizeof(stored_hash));
 	if (len < 0) {
