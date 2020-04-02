@@ -1,0 +1,16 @@
+# Nordic Semiconductor nRF52820 MCU
+
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NRF52820_QDAA
+
+config SOC
+	string
+	default "nRF52820_QDAA"
+
+config NUM_IRQS
+	int
+	default 40
+
+endif # SOC_NRF52820_QDAA
