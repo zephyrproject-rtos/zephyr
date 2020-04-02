@@ -482,8 +482,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_0 = {
 			.device = DT_INST_REG_ADDR(0),},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_0,
-		    DT_INST_LABEL(0),
+DT_INST_DEVICE_AND_API_INIT(0,
 		    &uart_cmsdk_apb_init,
 		    &uart_cmsdk_apb_dev_data_0,
 		    &uart_cmsdk_apb_dev_cfg_0, PRE_KERNEL_1,
@@ -497,7 +496,7 @@ static void uart_cmsdk_apb_irq_config_func_0(struct device *dev)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
 		    uart_cmsdk_apb_isr,
-		    DEVICE_GET(uart_cmsdk_apb_0),
+		    DEVICE_GET(DT_DRV_INST(0)),
 		    0);
 	irq_enable(DT_INST_IRQN(0));
 }
