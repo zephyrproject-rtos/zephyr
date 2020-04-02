@@ -28,7 +28,7 @@ void main(void)
 	struct device *led_dev;
 	int i, ret;
 
-	led_dev = device_get_binding(LED_DEV_NAME);
+	led_dev = DEVICE_GET(DT_INST(0, nxp_pca9633));
 	if (led_dev) {
 		LOG_INF("Found LED device %s", LED_DEV_NAME);
 	} else {
