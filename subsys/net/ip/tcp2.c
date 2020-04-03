@@ -1007,10 +1007,13 @@ int net_tcp_connect(struct net_context *context,
 		    const struct sockaddr *remote_addr,
 		    struct sockaddr *local_addr,
 		    u16_t remote_port, u16_t local_port,
-		    s32_t timeout, net_context_connect_cb_t cb, void *user_data)
+		    k_timeout_t timeout, net_context_connect_cb_t cb,
+		    void *user_data)
 {
 	struct tcp *conn;
 	int ret;
+
+	ARG_UNUSED(timeout);
 
 	NET_DBG("context: %p, local: %s, remote: %s", context,
 		log_strdup(tcp_endpoint_to_string((void *)local_addr)),
