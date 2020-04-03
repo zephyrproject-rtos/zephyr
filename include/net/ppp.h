@@ -611,7 +611,8 @@ static inline void ppp_mgmt_raise_carrier_off_event(struct net_if *iface)
  * @brief Send PPP Echo-Request to peer. We expect to receive Echo-Reply back.
  *
  * @param idx PPP network interface index
- * @param timeout Amount of time to wait Echo-Reply.
+ * @param timeout Amount of time to wait Echo-Reply. The value is in
+ * milliseconds.
  *
  * @return 0 if Echo-Reply was received, < 0 if there is a timeout or network
  * index is not a valid PPP network index.
