@@ -1,12 +1,12 @@
-.. _nrf5340_dk_nrf5340:
+.. _nrf5340pdk_nrf5340:
 
-nRF5340-DK
-##########
+nRF5340 PDK
+###########
 
 Overview
 ********
 
-The nRF5340 DK is a single-board development kit for evaluation
+The nRF5340 PDK (PCA10095) is a single-board development kit for evaluation
 and development on the Nordic nRF5340 System-on-Chip (SoC).
 
 The nRF5340 is a dual-core SoC based on the Arm® Cortex®-M33 architecture, with:
@@ -17,8 +17,8 @@ The nRF5340 is a dual-core SoC based on the Arm® Cortex®-M33 architecture, wit
 * a secondary ARM Cortex-M33 core, with a reduced feature set, running at
   a fixed 64 MHz, referred to as the **Network MCU**.
 
-The nrf5340_dk_nrf5340_cpuapp provides support for the Application MCU on
-nRF5340 SoC. The nrf5340_dn_nrf5340_cpunet provides support for the Network
+The nrf5340pdk_nrf5340_cpuapp provides support for the Application MCU on
+nRF5340 SoC. The nrf5340pdk_nrf5340_cpunet provides support for the Network
 MCU on nRF5340 SoC.
 
 nRF5340 SoC provides support for the following devices:
@@ -40,29 +40,33 @@ nRF5340 SoC provides support for the following devices:
 * :abbr:`USB (Universal Serial Bus)`
 * :abbr:`WDT (Watchdog Timer)`
 
-.. figure:: img/nrf5340_dk.png
+.. figure:: img/nrf5340pdk.png
      :width: 711px
      :align: center
-     :alt: nRF5340 DK
+     :alt: nRF5340 PDK
 
-     nRF5340 DK (Credit: Nordic Semiconductor)
+     nRF5340 PDK (Credit: Nordic Semiconductor)
 
 More information about the board can be found at the
-`nRF5340 DK website`_.
+`nRF5340 PDK website`_.
 The `Nordic Semiconductor Infocenter`_
 contains the processor's information and the datasheet.
+
+.. note::
+
+   In previous Zephyr releases this board was named *nrf5340_dk_nrf5340*.
 
 Hardware
 ********
 
-nRF5340 DK has two external oscillators. The frequency of
+nRF5340 PDK has two external oscillators. The frequency of
 the slow clock is 32.768 kHz. The frequency of the main clock
 is 32 MHz.
 
 Supported Features
 ==================
 
-The nrf5340_dk_nrf5340_cpuapp board configuration supports the following
+The nrf5340pdk_nrf5340_cpuapp board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -99,7 +103,7 @@ hardware features:
 | WDT       | on-chip    | watchdog             |
 +-----------+------------+----------------------+
 
-The nrf5340_dk_nrf5340_cpunet board configuration supports the following
+The nrf5340pdk_nrf5340_cpunet board configuration supports the following
 hardware features:
 
 +-----------+------------+----------------------+
@@ -173,7 +177,7 @@ Programming and Debugging
 *************************
 
 nRF5340 Application MCU supports the Armv8m Security Extension.
-Applications build for the nrf5340_dk_nrf5340_cpuapp board by default
+Applications build for the nrf5340pdk_nrf5340_cpuapp board by default
 boot in the Secure state.
 
 nRF5340 Network MCU does not support the Armv8m Security Extension.
@@ -187,14 +191,14 @@ Building Secure/Non-Secure Zephyr applications
 The process requires the following steps:
 
 1. Build the Secure Zephyr application for the Application MCU
-   using ``-DBOARD=nrf5340_dk_nrf5340_cpuapp`` and
+   using ``-DBOARD=nrf5340pdk_nrf5340_cpuapp`` and
    ``CONFIG_TRUSTED_EXECUTION_SECURE=y`` in the application
    project configuration file.
 2. Build the Non-Secure Zephyr application for the Application MCU
-   using ``-DBOARD=nrf5340_dk_nrf5340_cpuappns``.
+   using ``-DBOARD=nrf5340pdk_nrf5340_cpuappns``.
 3. Merge the two binaries together.
 4. Build the application firmware for the Network MCU using
-   ``-DBOARD=nrf5340_dk_nrf5340_cpunet``.
+   ``-DBOARD=nrf5340pdk_nrf5340_cpunet``.
 
 When building a Secure/Non-Secure application for the nRF5340 Application MCU,
 the Secure application will have to set the IDAU (SPU) configuration to allow
@@ -206,9 +210,9 @@ Building a Secure only application
 ==================================
 
 Build the Zephyr app in the usual way (see :ref:`build_an_application`
-and :ref:`application_run`), using ``-DBOARD=nrf5340_dk_nrf5340_cpuapp`` for
+and :ref:`application_run`), using ``-DBOARD=nrf5340pdk_nrf5340_cpuapp`` for
 the firmware running on the nRF5340 Application MCU, and using
-``-DBOARD=nrf5340_dk_nrf5340_cpunet`` for the firmware running
+``-DBOARD=nrf5340pdk_nrf5340_cpunet`` for the firmware running
 on the nRF5340 Network MCU.
 
 Flashing
@@ -229,14 +233,14 @@ First, run your favorite terminal program to listen for output.
 
    $ minicom -D <tty_device> -b 115200
 
-Replace :code:`<tty_device>` with the port where the board nRF5340 DK
+Replace :code:`<tty_device>` with the port where the board nRF5340 PDK
 can be found. For example, under Linux, :code:`/dev/ttyACM0`.
 
 Then build and flash the application in the usual way.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nrf5340_dk_nrf5340_cpuapp
+   :board: nrf5340pdk_nrf5340_cpuapp
    :goals: build flash
 
 Debugging
@@ -246,8 +250,8 @@ Refer to the :ref:`nordic_segger` page to learn about debugging Nordic
 boards with a Segger IC.
 
 
-Testing the LEDs and buttons in the nRF5340 DK
-**********************************************
+Testing the LEDs and buttons in the nRF5340 PDK
+***********************************************
 
 There are 2 samples that allow you to test that the buttons (switches) and
 LEDs on the board are working properly with Zephyr:
@@ -257,7 +261,7 @@ LEDs on the board are working properly with Zephyr:
 
 You can build and flash the examples to make sure Zephyr is running correctly on
 your board. The button and LED definitions can be found in
-:zephyr_file:`boards/arm/nrf5340_dk_nrf5340/nrf5340_dk_nrf5340_cpuapp_common.dts`.
+:zephyr_file:`boards/arm/nrf5340pdk_nrf5340/nrf5340pdk_nrf5340_cpuapp_common.dts`.
 
 References
 **********
@@ -266,6 +270,6 @@ References
 
 .. _IDAU:
    https://developer.arm.com/docs/100690/latest/attribution-units-sau-and-idau
-.. _nRF5340 DK website:
+.. _nRF5340 PDK website:
    https://www.nordicsemi.com/Software-and-tools/Development-Kits/nRF5340-PDK
 .. _Nordic Semiconductor Infocenter: https://infocenter.nordicsemi.com

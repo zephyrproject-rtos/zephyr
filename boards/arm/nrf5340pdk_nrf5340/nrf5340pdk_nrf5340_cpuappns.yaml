@@ -1,5 +1,5 @@
-identifier: nrf5340_dk_nrf5340_cpuappns
-name: NRF5340-DK-NRF5340-application-MCU-Non-Secure
+identifier: nrf5340pdk_nrf5340_cpuappns
+name: NRF5340-PDK-NRF5340-application-MCU-Non-Secure
 type: mcu
 arch: arm
 toolchain:
