@@ -137,7 +137,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		if (len < sizeof(bt_dev.id_addr[0])) {
 			if (len < 0) {
 				BT_ERR("Failed to read ID address from storage"
-				       " (err %zu)", len);
+				       " (err %zd)", len);
 			} else {
 				BT_ERR("Invalid length ID address in storage");
 				BT_HEXDUMP_DBG(&bt_dev.id_addr, len,
@@ -164,7 +164,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		len = read_cb(cb_arg, &bt_dev.name, sizeof(bt_dev.name) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read device name from storage"
-			       " (err %zu)", len);
+			       " (err %zd)", len);
 		} else {
 			bt_dev.name[len] = '\0';
 
@@ -180,7 +180,7 @@ static int set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		if (len < sizeof(bt_dev.irk[0])) {
 			if (len < 0) {
 				BT_ERR("Failed to read IRK from storage"
-				       " (err %zu)", len);
+				       " (err %zd)", len);
 			} else {
 				BT_ERR("Invalid length IRK in storage");
 				(void)memset(bt_dev.irk, 0, sizeof(bt_dev.irk));

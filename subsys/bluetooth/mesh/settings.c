@@ -170,14 +170,14 @@ static inline int mesh_x_set(settings_read_cb read_cb, void *cb_arg, void *out,
 
 	len = read_cb(cb_arg, out, read_len);
 	if (len < 0) {
-		BT_ERR("Failed to read value (err %zu)", len);
+		BT_ERR("Failed to read value (err %zd)", len);
 		return len;
 	}
 
 	BT_HEXDUMP_DBG(out, len, "val");
 
 	if (len != read_len) {
-		BT_ERR("Unexpected value length (%zu != %zu)", len, read_len);
+		BT_ERR("Unexpected value length (%zd != %zu)", len, read_len);
 		return -EINVAL;
 	}
 
@@ -574,7 +574,7 @@ static int mod_set_bind(struct bt_mesh_model *mod, size_t len_rd,
 
 	len = read_cb(cb_arg, mod->keys, sizeof(mod->keys));
 	if (len < 0) {
-		BT_ERR("Failed to read value (err %zu)", len);
+		BT_ERR("Failed to read value (err %zd)", len);
 		return len;
 	}
 
@@ -598,7 +598,7 @@ static int mod_set_sub(struct bt_mesh_model *mod, size_t len_rd,
 
 	len = read_cb(cb_arg, mod->groups, sizeof(mod->groups));
 	if (len < 0) {
-		BT_ERR("Failed to read value (err %zu)", len);
+		BT_ERR("Failed to read value (err %zd)", len);
 		return len;
 	}
 
