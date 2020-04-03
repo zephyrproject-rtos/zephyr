@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2015 Wind River Systems, Inc.
+ * Copyright (c) 2020 Nordic Semiconductor ASA.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,7 +56,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
     .word z_arm_secure_fault
 #else
-    .word z_arm_reserved
+    .word z_arm_exc_spurious
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 #else
     .word 0
@@ -74,7 +75,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && defined(CONFIG_CORTEX_M_SYSTICK)
     .word z_clock_isr
 #else
-    .word z_arm_reserved
+    .word z_arm_exc_spurious
 #endif /* CONFIG_SYS_CLOCK_EXISTS && CONFIG_CORTEX_M_SYSTICK */
 #else
     .word 0
