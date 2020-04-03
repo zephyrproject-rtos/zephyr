@@ -56,7 +56,7 @@ static void lldp_submit_work(u32_t timeout)
 	if (!k_delayed_work_remaining_get(&lldp_tx_timer) ||
 	    timeout < k_delayed_work_remaining_get(&lldp_tx_timer)) {
 		k_delayed_work_cancel(&lldp_tx_timer);
-		k_delayed_work_submit(&lldp_tx_timer, timeout);
+		k_delayed_work_submit(&lldp_tx_timer, K_MSEC(timeout));
 
 		NET_DBG("Next wakeup in %d ms",
 			k_delayed_work_remaining_get(&lldp_tx_timer));
@@ -187,7 +187,7 @@ static void lldp_tx_timeout(struct k_work *work)
 	if (timeout_update < (UINT32_MAX - 1)) {
 		NET_DBG("Waiting for %u ms", timeout_update);
 
-		k_delayed_work_submit(&lldp_tx_timer, timeout_update);
+		k_delayed_work_submit(&lldp_tx_timer, K_MSEC(timeout_update));
 	}
 }
 
@@ -201,7 +201,7 @@ static void lldp_start_timer(struct ethernet_context *ctx,
 
 	ctx->lldp[slot].tx_timer_start = k_uptime_get();
 	ctx->lldp[slot].tx_timer_timeout =
-		K_SECONDS(CONFIG_NET_LLDP_TX_INTERVAL);
+				CONFIG_NET_LLDP_TX_INTERVAL * MSEC_PER_SEC;
 
 	lldp_submit_work(ctx->lldp[slot].tx_timer_timeout);
 }
