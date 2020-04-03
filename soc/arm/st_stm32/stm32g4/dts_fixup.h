@@ -107,4 +107,6 @@
 
 #define DT_WDT_0_NAME				DT_LABEL(DT_INST(0, st_stm32_watchdog))
 
+#define CONFIG_ENTROPY_NAME		DT_LABEL(DT_INST(0, st_stm32_rng))
+
 /* End of SoC Level DTS fixup file */

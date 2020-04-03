@@ -55,3 +55,7 @@
 	bus-speed = <125000>;
 	status = "okay";
 };
+
+&rng {
+	status = "okay";
+};

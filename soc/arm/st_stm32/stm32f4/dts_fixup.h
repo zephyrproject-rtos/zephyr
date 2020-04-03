@@ -309,4 +309,6 @@
 
 #define DT_FLASH_DEV_NAME		DT_LABEL(DT_INST(0, st_stm32f4_flash_controller))
 
+#define CONFIG_ENTROPY_NAME		DT_LABEL(DT_INST(0, st_stm32_rng))
+
 /* End of SoC Level DTS fixup file */
