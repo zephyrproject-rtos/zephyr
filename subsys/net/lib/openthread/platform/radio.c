@@ -282,6 +282,13 @@ static void openthread_handle_received_frame(otInstance *instance,
 	recv_frame.mInfo.mRxInfo.mLqi = net_pkt_ieee802154_lqi(pkt);
 	recv_frame.mInfo.mRxInfo.mRssi = net_pkt_ieee802154_rssi(pkt);
 
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	struct net_ptp_time *time = net_pkt_timestamp(pkt);
+
+	recv_frame.mInfo.mRxInfo.mTimestamp = time->second * USEC_PER_SEC +
+					      time->nanosecond / NSEC_PER_USEC;
+#endif
+
 	if (IS_ENABLED(OPENTHREAD_ENABLE_DIAG) && otPlatDiagModeGet()) {
 		otPlatDiagRadioReceiveDone(instance,
 					   &recv_frame, OT_ERROR_NONE);
