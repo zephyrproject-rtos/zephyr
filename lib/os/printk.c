@@ -355,7 +355,7 @@ void vprintk(const char *fmt, va_list ap)
 
 void z_impl_k_str_out(char *c, size_t n)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < n; i++) {
 		_char_out(c[i]);

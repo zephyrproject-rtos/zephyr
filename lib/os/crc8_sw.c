@@ -15,7 +15,7 @@ static const u8_t crc8_ccitt_small_table[16] = {
 
 u8_t crc8_ccitt(u8_t val, const void *buf, size_t cnt)
 {
-	int i;
+	size_t i;
 	const u8_t *p = buf;
 
 	for (i = 0; i < cnt; i++) {
