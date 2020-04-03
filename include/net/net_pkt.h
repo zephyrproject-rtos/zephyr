@@ -1034,27 +1034,27 @@ static inline bool net_pkt_is_being_overwritten(struct net_pkt *pkt)
  */
 
 struct net_buf *net_pkt_get_reserve_data_debug(struct net_buf_pool *pool,
-					       s32_t timeout,
+					       k_timeout_t timeout,
 					       const char *caller,
 					       int line);
 
 #define net_pkt_get_reserve_data(pool, timeout)				\
 	net_pkt_get_reserve_data_debug(pool, timeout, __func__, __LINE__)
 
-struct net_buf *net_pkt_get_reserve_rx_data_debug(s32_t timeout,
+struct net_buf *net_pkt_get_reserve_rx_data_debug(k_timeout_t timeout,
 						  const char *caller,
 						  int line);
 #define net_pkt_get_reserve_rx_data(timeout)				\
 	net_pkt_get_reserve_rx_data_debug(timeout, __func__, __LINE__)
 
-struct net_buf *net_pkt_get_reserve_tx_data_debug(s32_t timeout,
+struct net_buf *net_pkt_get_reserve_tx_data_debug(k_timeout_t timeout,
 						  const char *caller,
 						  int line);
 #define net_pkt_get_reserve_tx_data(timeout)				\
 	net_pkt_get_reserve_tx_data_debug(timeout, __func__, __LINE__)
 
 struct net_buf *net_pkt_get_frag_debug(struct net_pkt *pkt,
-				       s32_t timeout,
+				       k_timeout_t timeout,
 				       const char *caller, int line);
 #define net_pkt_get_frag(pkt, timeout)					\
 	net_pkt_get_frag_debug(pkt, timeout, __func__, __LINE__)
@@ -1118,13 +1118,12 @@ void net_pkt_print_frags(struct net_pkt *pkt);
  *
  * @param timeout Affects the action taken should the net buf pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
- *        wait as long as necessary. Otherwise, wait up to the specified
- *        number of milliseconds before timing out.
+ *        wait as long as necessary. Otherwise, wait up to the specified time.
  *
  * @return Network buffer if successful, NULL otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_buf *net_pkt_get_reserve_rx_data(s32_t timeout);
+struct net_buf *net_pkt_get_reserve_rx_data(k_timeout_t timeout);
 #endif
 
 /**
@@ -1136,13 +1135,12 @@ struct net_buf *net_pkt_get_reserve_rx_data(s32_t timeout);
  *
  * @param timeout Affects the action taken should the net buf pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
- *        wait as long as necessary. Otherwise, wait up to the specified
- *        number of milliseconds before timing out.
+ *        wait as long as necessary. Otherwise, wait up to the specified time.
  *
  * @return Network buffer if successful, NULL otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_buf *net_pkt_get_reserve_tx_data(s32_t timeout);
+struct net_buf *net_pkt_get_reserve_tx_data(k_timeout_t timeout);
 #endif
 
 /**
@@ -1152,13 +1150,12 @@ struct net_buf *net_pkt_get_reserve_tx_data(s32_t timeout);
  * @param pkt Network packet.
  * @param timeout Affects the action taken should the net buf pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
- *        wait as long as necessary. Otherwise, wait up to the specified
- *        number of milliseconds before timing out.
+ *        wait as long as necessary. Otherwise, wait up to the specified time.
  *
  * @return Network buffer if successful, NULL otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_buf *net_pkt_get_frag(struct net_pkt *pkt, s32_t timeout);
+struct net_buf *net_pkt_get_frag(struct net_pkt *pkt, k_timeout_t timeout);
 #endif
 
 /**
@@ -1299,31 +1296,31 @@ const char *net_pkt_pool2str(struct net_buf_pool *pool);
  */
 #if defined(NET_PKT_DEBUG_ENABLED)
 
-struct net_pkt *net_pkt_alloc_debug(s32_t timeout,
+struct net_pkt *net_pkt_alloc_debug(k_timeout_t timeout,
 				    const char *caller, int line);
 #define net_pkt_alloc(_timeout)					\
 	net_pkt_alloc_debug(_timeout, __func__, __LINE__)
 
 struct net_pkt *net_pkt_alloc_from_slab_debug(struct k_mem_slab *slab,
-					      s32_t timeout,
+					      k_timeout_t timeout,
 					      const char *caller, int line);
 #define net_pkt_alloc_from_slab(_slab, _timeout)			\
 	net_pkt_alloc_from_slab_debug(_slab, _timeout, __func__, __LINE__)
 
-struct net_pkt *net_pkt_rx_alloc_debug(s32_t timeout,
+struct net_pkt *net_pkt_rx_alloc_debug(k_timeout_t timeout,
 				       const char *caller, int line);
 #define net_pkt_rx_alloc(_timeout)				\
 	net_pkt_rx_alloc_debug(_timeout, __func__, __LINE__)
 
 struct net_pkt *net_pkt_alloc_on_iface_debug(struct net_if *iface,
-					     s32_t timeout,
+					     k_timeout_t timeout,
 					     const char *caller,
 					     int line);
 #define net_pkt_alloc_on_iface(_iface, _timeout)			\
 	net_pkt_alloc_on_iface_debug(_iface, _timeout, __func__, __LINE__)
 
 struct net_pkt *net_pkt_rx_alloc_on_iface_debug(struct net_if *iface,
-						s32_t timeout,
+						k_timeout_t timeout,
 						const char *caller,
 						int line);
 #define net_pkt_rx_alloc_on_iface(_iface, _timeout)			\
@@ -1333,7 +1330,7 @@ struct net_pkt *net_pkt_rx_alloc_on_iface_debug(struct net_if *iface,
 int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
 			       size_t size,
 			       enum net_ip_protocol proto,
-			       s32_t timeout,
+			       k_timeout_t timeout,
 			       const char *caller, int line);
 #define net_pkt_alloc_buffer(_pkt, _size, _proto, _timeout)		\
 	net_pkt_alloc_buffer_debug(_pkt, _size, _proto, _timeout,	\
@@ -1343,7 +1340,7 @@ struct net_pkt *net_pkt_alloc_with_buffer_debug(struct net_if *iface,
 						size_t size,
 						sa_family_t family,
 						enum net_ip_protocol proto,
-						s32_t timeout,
+						k_timeout_t timeout,
 						const char *caller,
 						int line);
 #define net_pkt_alloc_with_buffer(_iface, _size, _family,		\
@@ -1356,7 +1353,7 @@ struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
 						   size_t size,
 						   sa_family_t family,
 						   enum net_ip_protocol proto,
-						   s32_t timeout,
+						   k_timeout_t timeout,
 						   const char *caller,
 						   int line);
 #define net_pkt_rx_alloc_with_buffer(_iface, _size, _family,		\
@@ -1373,12 +1370,12 @@ struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
  * @details for the time being, 2 pools are used. One for TX and one for RX.
  *          This allocator has to be used for TX.
  *
- * @param timeout Maximum time in milliseconds to wait for an allocation.
+ * @param timeout Maximum time to wait for an allocation.
  *
  * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_pkt *net_pkt_alloc(s32_t timeout);
+struct net_pkt *net_pkt_alloc(k_timeout_t timeout);
 #endif
 
 /**
@@ -1391,13 +1388,13 @@ struct net_pkt *net_pkt_alloc(s32_t timeout);
  *          then buffer on its local slab/pool (if any).
  *
  * @param slab    The slab to use for allocating the packet
- * @param timeout Maximum time in milliseconds to wait for an allocation.
+ * @param timeout Maximum time to wait for an allocation.
  *
  * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_pkt *net_pkt_alloc_from_slab(struct k_mem_slab *slab,
-					s32_t timeout);
+					k_timeout_t timeout);
 #endif
 
 /**
@@ -1406,27 +1403,29 @@ struct net_pkt *net_pkt_alloc_from_slab(struct k_mem_slab *slab,
  * @details for the time being, 2 pools are used. One for TX and one for RX.
  *          This allocator has to be used for RX.
  *
- * @param timeout Maximum time in milliseconds to wait for an allocation.
+ * @param timeout Maximum time to wait for an allocation.
  *
  * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_pkt *net_pkt_rx_alloc(s32_t timeout);
+struct net_pkt *net_pkt_rx_alloc(k_timeout_t timeout);
 #endif
 
 /**
  * @brief Allocate a network packet for a specific network interface.
  *
  * @param iface The network interface the packet is supposed to go through.
- * @param timeout Maximum time in milliseconds to wait for an allocation.
+ * @param timeout Maximum time to wait for an allocation.
  *
  * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_pkt *net_pkt_alloc_on_iface(struct net_if *iface, s32_t timeout);
+struct net_pkt *net_pkt_alloc_on_iface(struct net_if *iface,
+				       k_timeout_t timeout);
 
 /* Same as above but specifically for RX packet */
-struct net_pkt *net_pkt_rx_alloc_on_iface(struct net_if *iface, s32_t timeout);
+struct net_pkt *net_pkt_rx_alloc_on_iface(struct net_if *iface,
+					  k_timeout_t timeout);
 #endif
 
 /**
@@ -1440,7 +1439,7 @@ struct net_pkt *net_pkt_rx_alloc_on_iface(struct net_if *iface, s32_t timeout);
  * @param pkt     The network packet requiring buffer to be allocated.
  * @param size    The size of buffer being requested.
  * @param proto   The IP protocol type (can be 0 for none).
- * @param timeout Maximum time in milliseconds to wait for an allocation.
+ * @param timeout Maximum time to wait for an allocation.
  *
  * @return 0 on success, negative errno code otherwise.
  */
@@ -1448,7 +1447,7 @@ struct net_pkt *net_pkt_rx_alloc_on_iface(struct net_if *iface, s32_t timeout);
 int net_pkt_alloc_buffer(struct net_pkt *pkt,
 			 size_t size,
 			 enum net_ip_protocol proto,
-			 s32_t timeout);
+			 k_timeout_t timeout);
 #endif
 
 /**
@@ -1458,7 +1457,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
  * @param size    The size of buffer.
  * @param family  The family to which the packet belongs.
  * @param proto   The IP protocol type (can be 0 for none).
- * @param timeout Maximum time in milliseconds to wait for an allocation.
+ * @param timeout Maximum time to wait for an allocation.
  *
  * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
  */
@@ -1467,14 +1466,14 @@ struct net_pkt *net_pkt_alloc_with_buffer(struct net_if *iface,
 					  size_t size,
 					  sa_family_t family,
 					  enum net_ip_protocol proto,
-					  s32_t timeout);
+					  k_timeout_t timeout);
 
 /* Same as above but specifically for RX packet */
 struct net_pkt *net_pkt_rx_alloc_with_buffer(struct net_if *iface,
 					     size_t size,
 					     sa_family_t family,
 					     enum net_ip_protocol proto,
-					     s32_t timeout);
+					     k_timeout_t timeout);
 #endif
 
 /**
@@ -1629,7 +1628,7 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
  *
  * @return NULL if error, cloned packet otherwise.
  */
-struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout);
+struct net_pkt *net_pkt_clone(struct net_pkt *pkt, k_timeout_t timeout);
 
 /**
  * @brief Clone pkt and increase the refcount of its buffer.
@@ -1639,7 +1638,8 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout);
  *
  * @return NULL if error, cloned packet otherwise.
  */
-struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt, s32_t timeout);
+struct net_pkt *net_pkt_shallow_clone(struct net_pkt *pkt,
+				      k_timeout_t timeout);
 
 /**
  * @brief Read some data from a net_pkt
