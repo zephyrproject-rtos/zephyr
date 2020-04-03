@@ -824,9 +824,10 @@ int net_context_create_ipv4_new(struct net_context *context,
 				const struct in_addr *src,
 				const struct in_addr *dst)
 {
-	NET_ASSERT(((struct sockaddr_in_ptr *)&context->local)->sin_addr);
-
 	if (!src) {
+		NET_ASSERT(((
+			struct sockaddr_in_ptr *)&context->local)->sin_addr);
+
 		src = ((struct sockaddr_in_ptr *)&context->local)->sin_addr;
 	}
 
@@ -853,9 +854,10 @@ int net_context_create_ipv6_new(struct net_context *context,
 				const struct in6_addr *src,
 				const struct in6_addr *dst)
 {
-	NET_ASSERT(((struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
-
 	if (!src) {
+		NET_ASSERT(((
+			struct sockaddr_in6_ptr *)&context->local)->sin6_addr);
+
 		src = ((struct sockaddr_in6_ptr *)&context->local)->sin6_addr;
 	}
 
