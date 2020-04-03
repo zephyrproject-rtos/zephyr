@@ -227,6 +227,7 @@ void main(void)
 	unsigned int total_bytes = 0U;
 	int resolve_attempts = 10;
 	bool is_tls = false;
+	int num_iterations = CONFIG_SAMPLE_BIG_HTTP_DL_NUM_ITER;
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 	tls_credential_add(CA_CERTIFICATE_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
@@ -308,14 +309,16 @@ void main(void)
 		fatal("Can't setup mbedTLS hash engine");
 	}
 
-	while (1) {
+	do {
 		download(res, is_tls);
 
 		total_bytes += cur_bytes;
 		printf("Total downloaded so far: %uMB\n", total_bytes / (1024 * 1024));
 
 		sleep(3);
-	}
+	} while (--num_iterations != 0);
+
+	printf("Finished downloading.\n");
 
 	mbedtls_md_free(&hash_ctx);
 }

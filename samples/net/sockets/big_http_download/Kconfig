@@ -11,4 +11,10 @@ config SAMPLE_BIG_HTTP_DL_URL
 	help
 	  URL to download.
 
+config SAMPLE_BIG_HTTP_DL_NUM_ITER
+	int "Limit number of iterations"
+	default 0
+	help
+	  Number of download iterations (0 - unlimited).
+
 source "Kconfig.zephyr"
