@@ -110,6 +110,16 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		net_pkt_set_ieee802154_lqi(pkt, rx_frame->lqi);
 		net_pkt_set_ieee802154_rssi(pkt, rx_frame->rssi);
 
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+		struct net_ptp_time timestamp = {
+			.second = rx_frame->time / USEC_PER_SEC,
+			.nanosecond =
+				(rx_frame->time % USEC_PER_SEC) * NSEC_PER_USEC
+		};
+
+		net_pkt_set_timestamp(pkt, &timestamp);
+#endif
+
 		LOG_DBG("Caught a packet (%u) (LQI: %u)",
 			 pkt_len, rx_frame->lqi);
 
@@ -531,7 +541,8 @@ int nrf5_configure(struct device *dev, enum ieee802154_config_type type,
 
 /* nRF5 radio driver callbacks */
 
-void nrf_802154_received_raw(uint8_t *data, int8_t power, uint8_t lqi)
+void nrf_802154_received_timestamp_raw(uint8_t *data, int8_t power, uint8_t lqi,
+				       uint32_t time)
 {
 	for (u32_t i = 0; i < ARRAY_SIZE(nrf5_data.rx_frames); i++) {
 		if (nrf5_data.rx_frames[i].psdu != NULL) {
@@ -539,6 +550,7 @@ void nrf_802154_received_raw(uint8_t *data, int8_t power, uint8_t lqi)
 		}
 
 		nrf5_data.rx_frames[i].psdu = data;
+		nrf5_data.rx_frames[i].time = time;
 		nrf5_data.rx_frames[i].rssi = power;
 		nrf5_data.rx_frames[i].lqi = lqi;
 

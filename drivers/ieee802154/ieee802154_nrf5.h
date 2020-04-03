@@ -17,6 +17,7 @@
 struct nrf5_802154_rx_frame {
 	void *fifo_reserved; /* 1st word reserved for use by fifo. */
 	u8_t *psdu; /* Pointer to a received frame. */
+	u32_t time; /* RX timestamp. */
 	u8_t lqi; /* Last received frame LQI value. */
 	s8_t rssi; /* Last received frame RSSI value. */
 };
