@@ -49,15 +49,31 @@ void tmpool_alloc_wait_ok(void *p1, void *p2, void *p3)
  */
 void test_mpool_alloc_wait_prio(void)
 {
-	struct k_mem_block block[BLK_NUM_MIN];
+	struct k_mem_block block[2 * BLK_NUM_MIN];
 	k_tid_t tid[THREAD_NUM];
+	int nb;
 
 	k_sem_init(&sync_sema, 0, THREAD_NUM);
+
 	/*allocated up all blocks*/
-	for (int i = 0; i < BLK_NUM_MIN; i++) {
-		zassert_true(k_mem_pool_alloc(&mpool1, &block[i], BLK_SIZE_MIN,
-					      K_NO_WAIT) == 0, NULL);
+	for (nb = 0; nb < ARRAY_SIZE(block); nb++) {
+		if (k_mem_pool_alloc(&mpool1, &block[nb], BLK_SIZE_MIN,
+				     K_NO_WAIT) != 0) {
+			break;
+		}
 	}
+
+	/* The original mem_pool would always be able to allocate
+	 * exactly "min blocks" before running out of space, the
+	 * heuristics used to size the sys_heap backend are more
+	 * flexible.
+	 */
+#ifdef CONFIG_MEM_POOL_HEAP_BACKEND
+	zassert_true(nb >= BLK_NUM_MIN, "nb %d want %d", nb, BLK_NUM_MIN);
+#else
+	zassert_true(nb == BLK_NUM_MIN, NULL);
+#endif
+
 
 	/**
 	 * TESTPOINT: when a suitable memory block becomes available, it is
@@ -93,7 +109,7 @@ void test_mpool_alloc_wait_prio(void)
 		k_thread_abort(tid[i]);
 	}
 	k_mem_pool_free(&block_ok);
-	for (int i = 1; i < BLK_NUM_MIN; i++) {
+	for (int i = 1; i < nb; i++) {
 		k_mem_pool_free(&block[i]);
 	}
 }

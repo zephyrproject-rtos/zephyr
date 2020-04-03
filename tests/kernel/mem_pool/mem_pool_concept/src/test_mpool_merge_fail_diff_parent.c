@@ -25,6 +25,15 @@ extern struct k_mem_pool mpool1;
  */
 void test_mpool_alloc_merge_failed_diff_parent(void)
 {
+	/* The heap backend doesn't use the splitting mechanism tested
+	 * here, and in fact is significantly more fragmentation
+	 * resistant and succeeds at the "failed" allocation desired
+	 * below.
+	 */
+	if (IS_ENABLED(CONFIG_MEM_POOL_HEAP_BACKEND)) {
+		ztest_test_skip();
+	}
+
 	struct k_mem_block block[BLK_NUM_MIN], block_fail;
 
 	for (int i = 0; i < BLK_NUM_MIN; i++) {

@@ -102,6 +102,14 @@ void test_mpool_alloc_size(void)
 	size_t size = BLK_SIZE_MAX;
 	int i = 0;
 
+	/* The sys_heap backend doesn't use the specific block
+	 * breaking algorithm tested here.  This is a test of the
+	 * legacy sys_mem_pool allocator only.
+	 */
+	if (IS_ENABLED(CONFIG_MEM_POOL_HEAP_BACKEND)) {
+		ztest_test_skip();
+	}
+
 	/**TESTPOINT: The memory pool allows blocks to be repeatedly partitioned
 	 * into quarters, down to blocks of @a min_size bytes long.
 	 */
@@ -144,13 +152,28 @@ void test_mpool_alloc_size(void)
  */
 void test_mpool_alloc_timeout(void)
 {
-	static struct k_mem_block block[BLK_NUM_MIN], fblock;
+	static struct k_mem_block block[2 * BLK_NUM_MIN], fblock;
 	s64_t tms;
+	int nb;
 
-	for (int i = 0; i < BLK_NUM_MIN; i++) {
-		zassert_equal(k_mem_pool_alloc(&kmpool, &block[i], BLK_SIZE_MIN,
-					       K_NO_WAIT), 0, NULL);
+	/* allocate all blocks */
+	for (nb = 0; nb < ARRAY_SIZE(block); nb++) {
+		if (k_mem_pool_alloc(&kmpool, &block[nb], BLK_SIZE_MIN,
+				     K_NO_WAIT) != 0) {
+			break;
+		}
 	}
+
+	/* The original mem_pool would always be able to allocate
+	 * exactly "min blocks" before running out of space, the
+	 * heuristics used to size the sys_heap backend are more
+	 * flexible.
+	 */
+#ifdef CONFIG_MEM_POOL_HEAP_BACKEND
+	zassert_true(nb >= BLK_NUM_MIN, NULL);
+#else
+	zassert_true(nb == BLK_NUM_MIN, NULL);
+#endif
 
 	/** TESTPOINT: Use K_NO_WAIT to return without waiting*/
 	/** TESTPOINT: @retval -ENOMEM Returned without waiting*/
@@ -166,7 +189,7 @@ void test_mpool_alloc_timeout(void)
 	 */
 	zassert_true(k_uptime_delta(&tms) >= TIMEOUT_MS, NULL);
 
-	for (int i = 0; i < BLK_NUM_MIN; i++) {
+	for (int i = 0; i < nb; i++) {
 		k_mem_pool_free(&block[i]);
 		block[i].data = NULL;
 	}

@@ -30,6 +30,15 @@ K_MEM_POOL_DEFINE(mpool3, BLK_SIZE_MIN, BLK_SIZE_MAX, BLK_NUM_MAX, BLK_ALIGN);
  */
 void test_mpool_alloc_merge_failed_diff_size(void)
 {
+	/* The heap backend doesn't use the splitting mechanism tested
+	 * here, and in fact is significantly more fragmentation
+	 * resistant and succeeds at the "failed" allocation desired
+	 * below.
+	 */
+	if (IS_ENABLED(CONFIG_MEM_POOL_HEAP_BACKEND)) {
+		ztest_test_skip();
+	}
+
 	struct k_mem_block block[BLK_NUM_MIN], block_fail;
 	size_t block_size[] = {
 		BLK_SIZE_MIN, BLK_SIZE_MIN, BLK_SIZE_MIN, BLK_SIZE_MIN,
