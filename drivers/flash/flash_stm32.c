@@ -6,10 +6,29 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT soc_nv_flash
-
 #include <kernel.h>
 #include <device.h>
+
+#if DT_HAS_NODE(DT_INST(0, st_stm32f0_flash_controller))
+#define DT_DRV_COMPAT st_stm32f0_flash_controller
+#elif DT_HAS_NODE(DT_INST(0, st_stm32f1_flash_controller))
+#define DT_DRV_COMPAT st_stm32f1_flash_controller
+#elif DT_HAS_NODE(DT_INST(0, st_stm32f3_flash_controller))
+#define DT_DRV_COMPAT st_stm32f3_flash_controller
+#elif DT_HAS_NODE(DT_INST(0, st_stm32f4_flash_controller))
+#define DT_DRV_COMPAT st_stm32f4_flash_controller
+#elif DT_HAS_NODE(DT_INST(0, st_stm32f7_flash_controller))
+#define DT_DRV_COMPAT st_stm32f7_flash_controller
+#elif DT_HAS_NODE(DT_INST(0, st_stm32g0_flash_controller))
+#define DT_DRV_COMPAT st_stm32g0_flash_controller
+#elif DT_HAS_NODE(DT_INST(0, st_stm32g4_flash_controller))
+#define DT_DRV_COMPAT st_stm32g4_flash_controller
+#elif DT_HAS_NODE(DT_INST(0, st_stm32l4_flash_controller))
+#define DT_DRV_COMPAT st_stm32l4_flash_controller
+#elif DT_HAS_NODE(DT_INST(0, st_stm32wb_flash_controller))
+#define DT_DRV_COMPAT st_stm32wb_flash_controller
+#endif /* DT_HAS_NODE(DT_INST(0, st_stm32xx_flash_controller)) */
+
 #include <string.h>
 #include <drivers/flash.h>
 #include <init.h>
@@ -301,8 +320,8 @@ static const struct flash_driver_api flash_stm32_api = {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif
-#if DT_INST_NODE_HAS_PROP(0, write_block_size)
-	.write_block_size = DT_INST_PROP(0, write_block_size),
+#if DT_PROP(DT_INST(0, soc_nv_flash), write_block_size)
+	.write_block_size = DT_PROP(DT_INST(0, soc_nv_flash), write_block_size),
 #else
 #error Flash write block size not available
 	/* Flash Write block size is extracted from device tree */
