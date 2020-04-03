@@ -7,25 +7,6 @@ config BOARD
 	default "rv32m1_vega_ri5cy" if SOC_OPENISA_RV32M1_RI5CY
 	default "rv32m1_vega_zero_riscy" if SOC_OPENISA_RV32M1_ZERO_RISCY
 
-if PINMUX_RV32M1
-
-config PINMUX_RV32M1_PORTA
-	default y
-
-config PINMUX_RV32M1_PORTB
-	default y
-
-config PINMUX_RV32M1_PORTC
-	default y
-
-config PINMUX_RV32M1_PORTD
-	default y
-
-config PINMUX_RV32M1_PORTE
-	default y if RV32M1_INTMUX
-
-endif # PINMUX_RV32M1
-
 if GPIO_RV32M1
 
 config GPIO_RV32M1_PORTA

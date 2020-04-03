@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT openisa_rv32m1_pinmux
+
 #include <errno.h>
 #include <device.h>
 #include <drivers/pinmux.h>
@@ -63,67 +65,17 @@ static const struct pinmux_driver_api pinmux_rv32m1_driver_api = {
 	.input = pinmux_rv32m1_input,
 };
 
-#ifdef CONFIG_PINMUX_RV32M1_PORTA
-static const struct pinmux_rv32m1_config pinmux_rv32m1_porta_config = {
-	.base = (PORT_Type *)DT_OPENISA_RV32M1_PINMUX_PINMUX_A_BASE_ADDRESS,
-	.clock_ip_name = kCLOCK_PortA,
-};
+#define PINMUX_RV32M1_INIT(n)						\
+	static const struct pinmux_rv32m1_config pinmux_rv32m1_##n##_config = {\
+		.base = (PORT_Type *)DT_INST_REG_ADDR(n),		\
+		.clock_ip_name = INST_DT_CLOCK_IP_NAME(n),		\
+	};								\
+									\
+	DEVICE_AND_API_INIT(pinmux_rv32m1_##n, DT_INST_LABEL(n),	\
+			    &pinmux_rv32m1_init,			\
+			    NULL, &pinmux_rv32m1_##n##_config,		\
+			    PRE_KERNEL_1,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+			    &pinmux_rv32m1_driver_api)
 
-DEVICE_AND_API_INIT(pinmux_porta, CONFIG_PINMUX_RV32M1_PORTA_NAME,
-		    &pinmux_rv32m1_init,
-		    NULL, &pinmux_rv32m1_porta_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_rv32m1_driver_api);
-#endif
-
-#ifdef CONFIG_PINMUX_RV32M1_PORTB
-static const struct pinmux_rv32m1_config pinmux_rv32m1_portb_config = {
-	.base = (PORT_Type *)DT_OPENISA_RV32M1_PINMUX_PINMUX_B_BASE_ADDRESS,
-	.clock_ip_name = kCLOCK_PortB,
-};
-
-DEVICE_AND_API_INIT(pinmux_portb, CONFIG_PINMUX_RV32M1_PORTB_NAME,
-		    &pinmux_rv32m1_init,
-		    NULL, &pinmux_rv32m1_portb_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_rv32m1_driver_api);
-#endif
-
-#ifdef CONFIG_PINMUX_RV32M1_PORTC
-static const struct pinmux_rv32m1_config pinmux_rv32m1_portc_config = {
-	.base = (PORT_Type *)DT_OPENISA_RV32M1_PINMUX_PINMUX_C_BASE_ADDRESS,
-	.clock_ip_name = kCLOCK_PortC,
-};
-
-DEVICE_AND_API_INIT(pinmux_portc, CONFIG_PINMUX_RV32M1_PORTC_NAME,
-		    &pinmux_rv32m1_init,
-		    NULL, &pinmux_rv32m1_portc_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_rv32m1_driver_api);
-#endif
-
-#ifdef CONFIG_PINMUX_RV32M1_PORTD
-static const struct pinmux_rv32m1_config pinmux_rv32m1_portd_config = {
-	.base = (PORT_Type *)DT_OPENISA_RV32M1_PINMUX_PINMUX_D_BASE_ADDRESS,
-	.clock_ip_name = kCLOCK_PortD,
-};
-
-DEVICE_AND_API_INIT(pinmux_portd, CONFIG_PINMUX_RV32M1_PORTD_NAME,
-		    &pinmux_rv32m1_init,
-		    NULL, &pinmux_rv32m1_portd_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_rv32m1_driver_api);
-#endif
-
-#ifdef CONFIG_PINMUX_RV32M1_PORTE
-static const struct pinmux_rv32m1_config pinmux_rv32m1_porte_config = {
-	.base = (PORT_Type *)DT_OPENISA_RV32M1_PINMUX_PINMUX_E_BASE_ADDRESS,
-	.clock_ip_name = kCLOCK_PortE,
-};
-
-DEVICE_AND_API_INIT(pinmux_porte, CONFIG_PINMUX_RV32M1_PORTE_NAME,
-		    &pinmux_rv32m1_init,
-		    NULL, &pinmux_rv32m1_porte_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_rv32m1_driver_api);
-#endif
+DT_INST_FOREACH(PINMUX_RV32M1_INIT)

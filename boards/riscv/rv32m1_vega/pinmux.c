@@ -21,23 +21,23 @@ static int rv32m1_vega_pinmux_init(struct device *dev)
 
 #if DT_HAS_NODE(DT_NODELABEL(porta))
 	__unused struct device *porta =
-		device_get_binding(CONFIG_PINMUX_RV32M1_PORTA_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(porta)));
 #endif
 #if DT_HAS_NODE(DT_NODELABEL(portb))
 	__unused struct device *portb =
-		device_get_binding(CONFIG_PINMUX_RV32M1_PORTB_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(portb)));
 #endif
 #if DT_HAS_NODE(DT_NODELABEL(portc))
 	__unused struct device *portc =
-		device_get_binding(CONFIG_PINMUX_RV32M1_PORTC_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(portc)));
 #endif
 #if DT_HAS_NODE(DT_NODELABEL(portd))
 	__unused struct device *portd =
-		device_get_binding(CONFIG_PINMUX_RV32M1_PORTD_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(portd)));
 #endif
 #if DT_HAS_NODE(DT_NODELABEL(porte))
 	__unused struct device *porte =
-		device_get_binding(CONFIG_PINMUX_RV32M1_PORTE_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(porte)));
 #endif
 
 #if DT_HAS_NODE(DT_NODELABEL(lpuart0))

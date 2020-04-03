@@ -308,30 +308,35 @@
 			compatible = "openisa,rv32m1-pinmux";
 			reg = <0x40046000 0xd0>;
 			clocks = <&pcc0 0x118>;
+			label = "porta";
 		};
 
 		portb: pinmux@40047000 {
 			compatible = "openisa,rv32m1-pinmux";
 			reg = <0x40047000 0xd0>;
 			clocks = <&pcc0 0x11c>;
+			label = "portb";
 		};
 
 		portc: pinmux@40048000 {
 			compatible = "openisa,rv32m1-pinmux";
 			reg = <0x40048000 0xd0>;
 			clocks = <&pcc0 0x120>;
+			label = "portc";
 		};
 
 		portd: pinmux@40049000 {
 			compatible = "openisa,rv32m1-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&pcc0 0x124>;
+			label = "portd";
 		};
 
 		porte: pinmux@41037000 {
 			compatible = "openisa,rv32m1-pinmux";
 			reg = <0x41037000 0xd0>;
 			clocks = <&pcc1 0xdc>;
+			label = "porte";
 		};
 
 		gpioa: gpio@48020000 {
