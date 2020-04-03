@@ -4807,7 +4807,7 @@ struct k_mem_pool {
 			.flags = SYS_MEM_POOL_KERNEL			\
 		} \
 	}; \
-	BUILD_ASSERT(WB_UP(maxsz) >= _MPOOL_MINBLK)
+	BUILD_ASSERT(WB_UP(maxsz) >= _MPOOL_MINBLK, "K_MEM_POOL_DEFINE: size of the largest block (parameter maxsz) is too small")
 
 /**
  * @brief Allocate memory from a memory pool.
