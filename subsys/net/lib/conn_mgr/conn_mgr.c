@@ -172,7 +172,7 @@ static void conn_mgr(void)
 
 K_THREAD_DEFINE(conn_mgr_thread, CONFIG_NET_CONNECTION_MANAGER_STACK_SIZE,
 		(k_thread_entry_t)conn_mgr, NULL, NULL, NULL,
-		K_PRIO_COOP(2), 0, K_NO_WAIT);
+		K_PRIO_COOP(2), 0, 0);
 
 void net_conn_mgr_resend_status(void)
 {
