@@ -740,14 +740,14 @@ int net_tcp_connect(struct net_context *context,
 		    struct sockaddr *laddr,
 		    u16_t rport,
 		    u16_t lport,
-		    s32_t timeout,
+		    k_timeout_t timeout,
 		    net_context_connect_cb_t cb,
 		    void *user_data);
 #else
 static inline int net_tcp_connect(struct net_context *context,
 				  const struct sockaddr *addr,
 				  struct sockaddr *laddr,
-				  u16_t rport, u16_t lport, s32_t timeout,
+				  u16_t rport, u16_t lport, k_timeout_t timeout,
 				  net_context_connect_cb_t cb, void *user_data)
 {
 	ARG_UNUSED(context);

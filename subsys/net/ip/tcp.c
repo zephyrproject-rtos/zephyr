@@ -55,12 +55,15 @@ static struct tcp_backlog_entry {
 } tcp_backlog[CONFIG_NET_TCP_BACKLOG_SIZE];
 
 #if defined(CONFIG_NET_TCP_ACK_TIMEOUT)
-#define ACK_TIMEOUT CONFIG_NET_TCP_ACK_TIMEOUT
+#define ACK_TIMEOUT_MS CONFIG_NET_TCP_ACK_TIMEOUT
+#define ACK_TIMEOUT K_MSEC(ACK_TIMEOUT_MS)
 #else
-#define ACK_TIMEOUT K_SECONDS(1)
+#define ACK_TIMEOUT_MS (1 * MSEC_PER_SEC)
+#define ACK_TIMEOUT K_MSEC(MSEC_PER_SEC)
 #endif
 
-#define FIN_TIMEOUT K_SECONDS(1)
+#define FIN_TIMEOUT_MS (1 * MSEC_PER_SEC)
+#define FIN_TIMEOUT K_MSEC(MSEC_PER_SEC)
 
 /* Declares a wrapper function for a net_conn callback that refs the
  * context around the invocation (to protect it from premature
@@ -161,10 +164,10 @@ static void net_tcp_trace(struct net_pkt *pkt,
 		ntohs(tcp_hdr->chksum));
 }
 
-static inline u32_t retry_timeout(const struct net_tcp *tcp)
+static inline k_timeout_t retry_timeout(const struct net_tcp *tcp)
 {
-	return ((u32_t)1 << tcp->retry_timeout_shift) *
-				CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
+	return K_MSEC(((u32_t)1 << tcp->retry_timeout_shift) *
+		      CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT);
 }
 
 #define is_6lo_technology(pkt)						\
@@ -1051,7 +1054,7 @@ static void restart_timer(struct net_tcp *tcp)
 		 * fin_sent is true it must have been ACKd
 		 */
 		k_delayed_work_submit(&tcp->retry_timer,
-				      CONFIG_NET_TCP_TIME_WAIT_DELAY);
+				      K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 		net_context_ref(tcp->context);
 	} else {
 		k_delayed_work_cancel(&tcp->retry_timer);
@@ -1509,7 +1512,7 @@ int net_tcp_put(struct net_context *context)
 		    && context->tcp
 		    && !context->tcp->fin_rcvd) {
 			NET_DBG("TCP connection in active close, not "
-				"disposing yet (waiting %dms)", FIN_TIMEOUT);
+				"disposing yet (waiting %dms)", FIN_TIMEOUT_MS);
 			k_delayed_work_submit(&context->tcp->fin_timer,
 					      FIN_TIMEOUT);
 			queue_fin(context);
@@ -1566,7 +1569,7 @@ static void backlog_ack_timeout(struct k_work *work)
 	struct tcp_backlog_entry *backlog =
 		CONTAINER_OF(work, struct tcp_backlog_entry, ack_timer);
 
-	NET_DBG("Did not receive ACK in %dms", ACK_TIMEOUT);
+	NET_DBG("Did not receive ACK in %dms", ACK_TIMEOUT_MS);
 
 	/* TODO: If net_context is bound to unspecified IPv6 address
 	 * and some port number, local address is not available.
@@ -1760,7 +1763,7 @@ static void handle_fin_timeout(struct k_work *work)
 	struct net_tcp *tcp =
 		CONTAINER_OF(work, struct net_tcp, fin_timer);
 
-	NET_DBG("Did not receive FIN in %dms", FIN_TIMEOUT);
+	NET_DBG("Did not receive FIN in %dms", FIN_TIMEOUT_MS);
 
 	net_context_unref(tcp->context);
 }
@@ -1770,7 +1773,7 @@ static void handle_ack_timeout(struct k_work *work)
 	/* This means that we did not receive ACK response in time. */
 	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp, ack_timer);
 
-	NET_DBG("Did not receive ACK in %dms while in %s", ACK_TIMEOUT,
+	NET_DBG("Did not receive ACK in %dms while in %s", ACK_TIMEOUT_MS,
 		net_tcp_state_str(net_tcp_get_state(tcp)));
 
 	if (net_tcp_get_state(tcp) == NET_TCP_LAST_ACK) {
@@ -2215,7 +2218,7 @@ resend_ack:
 clean_up:
 	if (net_tcp_get_state(context->tcp) == NET_TCP_TIME_WAIT) {
 		k_delayed_work_submit(&context->tcp->timewait_timer,
-				      CONFIG_NET_TCP_TIME_WAIT_DELAY);
+				      K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 	}
 
 	if (net_tcp_get_state(context->tcp) == NET_TCP_CLOSED) {
@@ -2680,7 +2683,7 @@ int net_tcp_connect(struct net_context *context,
 		    struct sockaddr *laddr,
 		    u16_t rport,
 		    u16_t lport,
-		    s32_t timeout,
+		    k_timeout_t timeout,
 		    net_context_connect_cb_t cb,
 		    void *user_data)
 {
@@ -2715,7 +2718,8 @@ int net_tcp_connect(struct net_context *context,
 	send_syn(context, addr);
 
 	/* in tcp_synack_received() we give back this semaphore */
-	if (timeout != 0 && k_sem_take(&context->tcp->connect_wait, timeout)) {
+	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
+	    k_sem_take(&context->tcp->connect_wait, timeout)) {
 		return -ETIMEDOUT;
 	}
 
