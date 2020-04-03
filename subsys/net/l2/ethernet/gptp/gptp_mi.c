@@ -352,9 +352,9 @@ static void gptp_mi_pss_rcv_compute(int port)
 static void start_rcv_sync_timer(struct gptp_port_ds *port_ds,
 				 struct gptp_pss_rcv_state *state)
 {
-	s32_t duration;
+	k_timeout_t duration;
 
-	duration = port_ds->sync_receipt_timeout_time_itv;
+	duration = K_MSEC(port_ds->sync_receipt_timeout_time_itv);
 
 	k_timer_start(&state->rcv_sync_receipt_timeout_timer, duration,
 		      K_NO_WAIT);
@@ -455,7 +455,7 @@ static void gptp_mi_pss_send_state_machine(int port)
 	struct gptp_pss_send_state *state;
 	struct gptp_port_ds *port_ds;
 	struct gptp_global_ds *global_ds;
-	s32_t duration;
+	k_timeout_t duration;
 
 	global_ds = GPTP_GLOBAL_DS();
 	state = &GPTP_PORT_STATE(port)->pss_send;
@@ -503,8 +503,8 @@ static void gptp_mi_pss_send_state_machine(int port)
 		state->send_sync_receipt_timeout_timer_expired = false;
 
 		/* Convert ns to ms. */
-		duration = gptp_uscaled_ns_to_timer_ms(
-						&port_ds->half_sync_itv);
+		duration = K_MSEC(gptp_uscaled_ns_to_timer_ms(
+					  &port_ds->half_sync_itv));
 
 		/* Start 0.5 * syncInterval timeout timer. */
 		k_timer_start(&state->half_sync_itv_timer, duration,
@@ -546,8 +546,9 @@ static void gptp_mi_pss_send_state_machine(int port)
 			k_timer_stop(&state->send_sync_receipt_timeout_timer);
 			state->send_sync_receipt_timeout_timer_expired = false;
 
-			duration = port_ds->sync_receipt_timeout_time_itv /
-				(NSEC_PER_USEC * USEC_PER_MSEC);
+			duration =
+				K_MSEC(port_ds->sync_receipt_timeout_time_itv /
+				       (NSEC_PER_USEC * USEC_PER_MSEC));
 
 			k_timer_start(&state->send_sync_receipt_timeout_timer,
 				      duration, K_NO_WAIT);
@@ -1492,8 +1493,8 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 		k_timer_stop(&state->ann_rcpt_expiry_timer);
 		state->ann_expired = false;
 		k_timer_start(&state->ann_rcpt_expiry_timer,
-			      gptp_uscaled_ns_to_timer_ms(
-				   &bmca_data->ann_rcpt_timeout_time_interval),
+			      K_MSEC(gptp_uscaled_ns_to_timer_ms(
+				  &bmca_data->ann_rcpt_timeout_time_interval)),
 			      K_NO_WAIT);
 		/* Fallthrough. */
 
@@ -1890,8 +1891,8 @@ static void gptp_mi_port_announce_transmit_state_machine(int port)
 		k_timer_stop(&state->ann_send_periodic_timer);
 		state->ann_trigger = false;
 		k_timer_start(&state->ann_send_periodic_timer,
-			      gptp_uscaled_ns_to_timer_ms(
-				      &bmca_data->announce_interval),
+			      K_MSEC(gptp_uscaled_ns_to_timer_ms(
+					     &bmca_data->announce_interval)),
 			      K_NO_WAIT);
 
 		state->state = GPTP_PA_TRANSMIT_POST_IDLE;
