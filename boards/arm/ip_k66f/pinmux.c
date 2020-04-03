@@ -22,6 +22,11 @@ static int ip_k66f_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTB_NAME);
 #endif
 
+#ifdef CONFIG_PINMUX_MCUX_PORTE
+	struct device *porte =
+		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
+#endif
+
 	/* Red0, Red2 LEDs */
 	pinmux_pin_set(porta, 8, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porta, 10, PORT_PCR_MUX(kPORT_MuxAsGpio));
@@ -36,6 +41,10 @@ static int ip_k66f_pinmux_init(struct device *dev)
 	pinmux_pin_set(porta, 24, PORT_PCR_MUX(kPORT_MuxAsGpio));/* !ETH_RST */
 	pinmux_pin_set(porta, 25, PORT_PCR_MUX(kPORT_MuxAsGpio));/* !ETH_PME */
 	pinmux_pin_set(porta, 26, PORT_PCR_MUX(kPORT_MuxAsGpio));/* !ETH_INT */
+#ifdef CONFIG_PINMUX_MCUX_PORTE
+	/* RMII_REF_CLK */
+	pinmux_pin_set(porte, 26, PORT_PCR_MUX(kPORT_MuxAlt2));
+#endif
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay) && CONFIG_SPI
