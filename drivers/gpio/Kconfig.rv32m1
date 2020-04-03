@@ -6,7 +6,6 @@
 menuconfig GPIO_RV32M1
 	bool "RV32M1 GPIO driver"
 	depends on SOC_OPENISA_RV32M1_RISCV32
-	select HAS_DTS_GPIO
 	help
 	  Enable the RV32M1 GPIO driver.
 

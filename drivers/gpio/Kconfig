@@ -5,6 +5,7 @@
 
 menuconfig GPIO
 	bool "GPIO Drivers"
+	select HAS_DTS_GPIO
 	help
 	  Include GPIO drivers in system config
 

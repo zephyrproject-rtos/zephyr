@@ -6,7 +6,6 @@
 menuconfig GPIO_ESP32
 	bool "ESP32 GPIO"
 	depends on SOC_ESP32
-	select HAS_DTS_GPIO
 	help
 	  Enables the ESP32 GPIO driver
 
