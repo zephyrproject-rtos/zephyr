@@ -108,7 +108,7 @@ static void msg_free(struct log_msg *msg)
 
 	/* Free any transient string found in arguments. */
 	if (log_msg_is_std(msg) && nargs) {
-		int i;
+		u32_t i;
 		u32_t smask = 0;
 
 		for (i = 0; i < nargs; i++) {
