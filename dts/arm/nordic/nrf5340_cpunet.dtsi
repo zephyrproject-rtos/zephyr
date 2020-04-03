@@ -158,7 +158,7 @@
 		rng: random@41009000 {
 			compatible = "nordic,nrf-rng";
 			reg = <0x41009000 0x1000>;
-			interrupts = <9 0>;
+			interrupts = <9 1>;
 			status = "okay";
 			label = "RNG";
 		};

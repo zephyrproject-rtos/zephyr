@@ -134,6 +134,14 @@
 			label = "QDEC";
 		};
 
+		rng: random@4000d000 {
+			compatible = "nordic,nrf-rng";
+			reg = <0x4000d000 0x1000>;
+			interrupts = <13 1>;
+			status = "okay";
+			label = "RNG";
+		};
+
 		spi0: spi@40004000 {
 			/*
 			 * This spi node can be SPI, SPIM, or SPIS,
