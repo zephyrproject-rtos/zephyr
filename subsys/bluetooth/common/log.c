@@ -25,7 +25,7 @@ const char *bt_hex_real(const void *buf, size_t len)
 	static const char hex[] = "0123456789abcdef";
 	static char str[129];
 	const u8_t *b = buf;
-	int i;
+	size_t i;
 
 	len = MIN(len, (sizeof(str) - 1) / 2);
 

@@ -434,7 +434,7 @@ static int cmd_hci_cmd(const struct shell *shell, size_t argc, char *argv[])
 	ocf = strtoul(argv[2], NULL, 16);
 
 	if (argc > 3) {
-		int i;
+		size_t i;
 
 		buf = bt_hci_cmd_create(BT_OP(ogf, ocf), argc - 3);
 

@@ -1162,7 +1162,7 @@ static u16_t find_static_attr(const struct bt_gatt_attr *attr)
 	u16_t handle = 1;
 
 	Z_STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
-		for (int i = 0; i < static_svc->attr_count; i++, handle++) {
+		for (size_t i = 0; i < static_svc->attr_count; i++, handle++) {
 			if (attr == &static_svc->attrs[i]) {
 				return handle;
 			}
@@ -1305,7 +1305,7 @@ static void foreach_attr_type_dyndb(u16_t start_handle, u16_t end_handle,
 				    bt_gatt_attr_func_t func, void *user_data)
 {
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
-	int i;
+	size_t i;
 	struct bt_gatt_service *svc;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&db, svc, node) {
@@ -1341,7 +1341,7 @@ void bt_gatt_foreach_attr_type(u16_t start_handle, u16_t end_handle,
 			       const void *attr_data, uint16_t num_matches,
 			       bt_gatt_attr_func_t func, void *user_data)
 {
-	int i;
+	size_t i;
 
 	if (!num_matches) {
 		num_matches = UINT16_MAX;
@@ -3860,7 +3860,7 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 			load.entry = ccc_store;
 			load.count = len / sizeof(*ccc_store);
 
-			for (int i = 0; i < load.count; i++) {
+			for (size_t i = 0; i < load.count; i++) {
 				BT_DBG("Read CCC: handle 0x%04x value 0x%04x",
 				       ccc_store[i].handle, ccc_store[i].value);
 			}
@@ -4183,7 +4183,7 @@ int bt_gatt_store_ccc(u8_t id, const bt_addr_le_t *addr)
 	BT_DBG("Stored CCCs for %s (%s)", bt_addr_le_str(addr),
 	       log_strdup(key));
 	if (len) {
-		for (int i = 0; i < save.count; i++) {
+		for (size_t i = 0; i < save.count; i++) {
 			BT_DBG("  CCC: handle 0x%04x value 0x%04x",
 			       save.store[i].handle, save.store[i].value);
 		}
