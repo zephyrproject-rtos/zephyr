@@ -1391,12 +1391,13 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 			responded = true;
 			NET_DBG("tcp_send(\"%s\")", tp->data);
 			{
-				struct net_pkt *pkt = tcp_pkt_alloc(0);
-				struct net_buf *nb =
-					net_pkt_get_frag(pkt, K_NO_WAIT);
-				memcpy(net_buf_add(nb, len), buf, len);
-				net_pkt_frag_insert(pkt, nb);
-				net_tcp_queue_data(conn->context, pkt);
+				struct net_pkt *data_pkt;
+
+				data_pkt = tcp_pkt_alloc(pkt->iface,
+							 pkt->family, len);
+				net_pkt_write(data_pkt, buf, len);
+				net_pkt_cursor_init(data_pkt);
+				net_tcp_queue_data(conn->context, data_pkt);
 			}
 		}
 		break;

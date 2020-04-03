@@ -118,9 +118,9 @@ size_t tp_str_to_hex(void *buf, size_t bufsize, const char *s);
 
 void _tp_output(sa_family_t af, struct net_if *iface, void *data,
 		size_t data_len, const char *file, int line);
-#define tp_output(_af, _iface, _data, _data_len)			\
-	_tp_output(_af, _iface, _data, _data_len, tp_basename(__FILE__),\
-		   __LINE__)
+#define tp_output(_af, _iface, _data, _data_len)	\
+	_tp_output(_af, _iface, _data, _data_len,	\
+		   tp_basename(__FILE__), __LINE__)
 
 void tp_pkt_adj(struct net_pkt *pkt, int req_len);
 
@@ -139,8 +139,9 @@ struct net_buf *tp_nbuf_clone(struct net_buf *buf, const char *file, int line,
 void tp_nbuf_unref(struct net_buf *nbuf, const char *file, int line,
 			const char *func);
 void tp_nbuf_stat(void);
+void tp_pkt_alloc(struct net_pkt *pkt,
+		  const char *file, int line);
 
-struct net_pkt *tp_pkt_alloc(size_t len, const char *file, int line);
 struct net_pkt *tp_pkt_clone(struct net_pkt *pkt, const char *file, int line);
 void tp_pkt_unref(struct net_pkt *pkt, const char *file, int line);
 void tp_pkt_stat(void);
