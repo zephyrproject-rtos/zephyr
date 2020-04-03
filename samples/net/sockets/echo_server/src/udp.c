@@ -25,11 +25,11 @@ static void process_udp6(void);
 
 K_THREAD_DEFINE(udp4_thread_id, STACK_SIZE,
 		process_udp4, NULL, NULL, NULL,
-		THREAD_PRIORITY, 0, K_FOREVER);
+		THREAD_PRIORITY, 0, -1);
 
 K_THREAD_DEFINE(udp6_thread_id, STACK_SIZE,
 		process_udp6, NULL, NULL, NULL,
-		THREAD_PRIORITY, 0, K_FOREVER);
+		THREAD_PRIORITY, 0, -1);
 
 static int start_udp_proto(struct data *data, struct sockaddr *bind_addr,
 			   socklen_t bind_addrlen)
