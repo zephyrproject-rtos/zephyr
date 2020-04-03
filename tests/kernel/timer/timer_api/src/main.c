@@ -545,7 +545,16 @@ void test_timer_remaining(void)
 		     NULL);
 
 	zassert_true(rem_ticks <= dur_ticks / 2, NULL);
-	zassert_true((exp_ticks - now) <= dur_ticks / 2, NULL);
+
+	/* Note +1 tick precision: even though we're calcluating in
+	 * ticks, we're waiting in k_busy_wait(), not for a timer
+	 * interrupt, so it's possible for that to take 1 tick longer
+	 * than expected on systems where the requested microsecond
+	 * delay cannot be exactly represented as an integer number of
+	 * ticks.
+	 */
+	zassert_true(((s64_t)exp_ticks - (s64_t)now) <= (dur_ticks / 2) + 1,
+		     NULL);
 }
 
 void test_timeout_abs(void)
