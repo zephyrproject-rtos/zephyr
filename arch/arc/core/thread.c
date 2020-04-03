@@ -84,8 +84,13 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 
 	if (options & K_USER) {
+#ifdef CONFIG_GEN_PRIV_STACKS
 		thread->arch.priv_stack_start =
 			(u32_t)z_priv_stack_find(thread->stack_obj);
+#else
+		thread->arch.priv_stack_start =
+			(u32_t)(stackEnd + STACK_GUARD_SIZE);
+#endif
 
 		priv_stack_end = (char *)Z_STACK_PTR_ALIGN(
 				thread->arch.priv_stack_start +
@@ -108,8 +113,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 
 	} else {
-		pStackMem += ARCH_THREAD_STACK_RESERVED;
-		stackEnd += ARCH_THREAD_STACK_RESERVED;
+		pStackMem += STACK_GUARD_SIZE;
+		stackEnd += STACK_GUARD_SIZE;
 
 		thread->arch.priv_stack_start = 0;
 
@@ -148,7 +153,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 */
 	pInitCtx->status32 |= _ARC_V2_STATUS32_US;
 #else /* For no USERSPACE feature */
-	pStackMem += ARCH_THREAD_STACK_RESERVED;
+	pStackMem += STACK_GUARD_SIZE;
 	stackEnd = pStackMem + stackSize;
 
 	z_new_thread_init(thread, pStackMem, stackSize);
@@ -226,9 +231,14 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 
 
 	_current->stack_info.start = (u32_t)_current->stack_obj;
-
+#ifdef CONFIG_GEN_PRIV_STACKS
 	_current->arch.priv_stack_start =
 			(u32_t)z_priv_stack_find(_current->stack_obj);
+#else
+	_current->arch.priv_stack_start =
+			(u32_t)(_current->stack_info.start +
+				_current->stack_info.size + STACK_GUARD_SIZE);
+#endif
 
 
 #ifdef CONFIG_ARC_STACK_CHECKING
