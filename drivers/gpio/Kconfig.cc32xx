@@ -5,7 +5,6 @@
 menuconfig GPIO_CC32XX
 	bool "TI CC32XX GPIO driver"
 	depends on SOC_FAMILY_TISIMPLELINK
-	select HAS_DTS_GPIO
 	help
 	  Enable the GPIO driver on TI SimpleLink CC32xx boards
 

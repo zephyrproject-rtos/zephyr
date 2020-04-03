@@ -6,7 +6,6 @@
 menuconfig GPIO_IMX
 	bool "IMX GPIO driver"
 	depends on HAS_IMX_GPIO
-	select HAS_DTS_GPIO
 	help
 	  Enable the IMX GPIO driver.
 
