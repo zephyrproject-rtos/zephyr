@@ -218,7 +218,7 @@ static int spi_cc13xx_cc26xx_set_power_state(struct device *dev,
 	if ((new_state == DEVICE_PM_ACTIVE_STATE) &&
 		(new_state != get_dev_data(dev)->pm_state)) {
 		if (get_dev_config(dev)->base ==
-			DT_TI_CC13XX_CC26XX_SPI_40000000_BASE_ADDRESS) {
+			DT_INST_REG_ADDR(0)) {
 			Power_setDependency(PowerCC26XX_PERIPH_SSI0);
 		} else {
 			Power_setDependency(PowerCC26XX_PERIPH_SSI1);
@@ -235,7 +235,7 @@ static int spi_cc13xx_cc26xx_set_power_state(struct device *dev,
 			 * Release power dependency
 			 */
 			if (get_dev_config(dev)->base ==
-				DT_TI_CC13XX_CC26XX_SPI_40000000_BASE_ADDRESS) {
+				DT_INST_REG_ADDR(0)) {
 				Power_releaseDependency(
 					PowerCC26XX_PERIPH_SSI0);
 			} else {
@@ -323,12 +323,12 @@ static int spi_cc13xx_cc26xx_init_0(struct device *dev)
 }
 
 static const struct spi_cc13xx_cc26xx_config spi_cc13xx_cc26xx_config_0 = {
-	.base = DT_TI_CC13XX_CC26XX_SPI_40000000_BASE_ADDRESS,
-	.sck_pin = DT_TI_CC13XX_CC26XX_SPI_40000000_SCK_PIN,
-	.mosi_pin = DT_TI_CC13XX_CC26XX_SPI_40000000_MOSI_PIN,
-	.miso_pin = DT_TI_CC13XX_CC26XX_SPI_40000000_MISO_PIN,
+	.base = DT_INST_REG_ADDR(0),
+	.sck_pin = DT_PROP(DT_NODELABEL(spi0), sck_pin),
+	.mosi_pin = DT_PROP(DT_NODELABEL(spi0), mosi_pin),
+	.miso_pin = DT_PROP(DT_NODELABEL(spi0), miso_pin),
 #ifdef DT_TI_CC13XX_CC26XX_SPI_40000000_CS_PIN
-	.cs_pin = DT_TI_CC13XX_CC26XX_SPI_40000000_CS_PIN,
+	.cs_pin = DT_PROP(DT_NODELABEL(spi0), cs_pin),
 #else
 	.cs_pin = IOID_UNUSED,
 #endif
@@ -340,14 +340,14 @@ static struct spi_cc13xx_cc26xx_data spi_cc13xx_cc26xx_data_0 = {
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_DEFINE(spi_cc13xx_cc26xx_0, DT_TI_CC13XX_CC26XX_SPI_40000000_LABEL,
+DEVICE_DEFINE(spi_cc13xx_cc26xx_0, DT_INST_LABEL(0),
 		spi_cc13xx_cc26xx_init_0,
 		spi_cc13xx_cc26xx_pm_control,
 		&spi_cc13xx_cc26xx_data_0, &spi_cc13xx_cc26xx_config_0,
 		POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		&spi_cc13xx_cc26xx_driver_api);
 #else
-DEVICE_AND_API_INIT(spi_cc13xx_cc26xx_0, DT_TI_CC13XX_CC26XX_SPI_40000000_LABEL,
+DEVICE_AND_API_INIT(spi_cc13xx_cc26xx_0, DT_INST_LABEL(0),
 		    spi_cc13xx_cc26xx_init_0, &spi_cc13xx_cc26xx_data_0,
 		    &spi_cc13xx_cc26xx_config_0, POST_KERNEL,
 		    CONFIG_SPI_INIT_PRIORITY, &spi_cc13xx_cc26xx_driver_api);
@@ -393,12 +393,12 @@ static int spi_cc13xx_cc26xx_init_1(struct device *dev)
 }
 
 static const struct spi_cc13xx_cc26xx_config spi_cc13xx_cc26xx_config_1 = {
-	.base = DT_TI_CC13XX_CC26XX_SPI_40008000_BASE_ADDRESS,
-	.sck_pin = DT_TI_CC13XX_CC26XX_SPI_40008000_SCK_PIN,
-	.mosi_pin = DT_TI_CC13XX_CC26XX_SPI_40008000_MOSI_PIN,
-	.miso_pin = DT_TI_CC13XX_CC26XX_SPI_40008000_MISO_PIN,
+	.base = DT_INST_REG_ADDR(1),
+	.sck_pin = DT_PROP(DT_NODELABEL(spi1), sck_pin),
+	.mosi_pin = DT_PROP(DT_NODELABEL(spi1), mosi_pin),
+	.miso_pin = DT_PROP(DT_NODELABEL(spi1), miso_pin),
 #ifdef DT_TI_CC13XX_CC26XX_SPI_40008000_CS_PIN
-	.cs_pin = DT_TI_CC13XX_CC26XX_SPI_40008000_CS_PIN,
+	.cs_pin = DT_PROP(DT_NODELABEL(spi1), cs_pin),
 #else
 	.cs_pin = IOID_UNUSED,
 #endif /* DT_TI_CC13XX_CC26XX_SPI_1_CS_PIN */
@@ -410,14 +410,14 @@ static struct spi_cc13xx_cc26xx_data spi_cc13xx_cc26xx_data_1 = {
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_DEFINE(spi_cc13xx_cc26xx_1, DT_TI_CC13XX_CC26XX_SPI_40008000_LABEL,
+DEVICE_DEFINE(spi_cc13xx_cc26xx_1, DT_INST_LABEL(1),
 		spi_cc13xx_cc26xx_init_1,
 		spi_cc13xx_cc26xx_pm_control,
 		&spi_cc13xx_cc26xx_data_1, &spi_cc13xx_cc26xx_config_1,
 		POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 		&spi_cc13xx_cc26xx_driver_api);
 #else
-DEVICE_AND_API_INIT(spi_cc13xx_cc26xx_1, DT_TI_CC13XX_CC26XX_SPI_40008000_LABEL,
+DEVICE_AND_API_INIT(spi_cc13xx_cc26xx_1, DT_INST_LABEL(1),
 		    spi_cc13xx_cc26xx_init_1, &spi_cc13xx_cc26xx_data_1,
 		    &spi_cc13xx_cc26xx_config_1, POST_KERNEL,
 		    CONFIG_SPI_INIT_PRIORITY, &spi_cc13xx_cc26xx_driver_api);

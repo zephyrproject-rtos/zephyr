@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT ti_cc13xx_cc26xx_uart
+
 #include <device.h>
 #include <errno.h>
 #include <sys/__assert.h>
@@ -374,9 +376,9 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 	/* Reconfigure the hardware if returning from standby */
 	if (eventType == PowerCC26XX_AWAKE_STANDBY) {
 		if (get_dev_conf(dev)->regs ==
-			DT_TI_CC13XX_CC26XX_UART_40001000_BASE_ADDRESS) {
+			DT_INST_REG_ADDR(0)) {
 			res_id = PowerCC26XX_PERIPH_UART0;
-		} else { /* DT_TI_CC13XX_CC26XX_UART_4000B000_BASE_ADDRESS */
+		} else { /* DT_INST_REG_ADDR(1) */
 			res_id = PowerCC26X2_PERIPH_UART1;
 		}
 
@@ -405,7 +407,7 @@ static int uart_cc13xx_cc26xx_set_power_state(struct device *dev,
 	if ((new_state == DEVICE_PM_ACTIVE_STATE) &&
 		(new_state != get_dev_data(dev)->pm_state)) {
 		if (get_dev_conf(dev)->regs ==
-			DT_TI_CC13XX_CC26XX_UART_40001000_BASE_ADDRESS) {
+			DT_INST_REG_ADDR(0)) {
 			Power_setDependency(PowerCC26XX_PERIPH_UART0);
 		} else {
 			Power_setDependency(PowerCC26X2_PERIPH_UART1);
@@ -428,7 +430,7 @@ static int uart_cc13xx_cc26xx_set_power_state(struct device *dev,
 			 * down serial domain.
 			 */
 			if (get_dev_conf(dev)->regs ==
-			    DT_TI_CC13XX_CC26XX_UART_40001000_BASE_ADDRESS) {
+			    DT_INST_REG_ADDR(0)) {
 				Power_releaseDependency(
 					PowerCC26XX_PERIPH_UART0);
 			} else {
@@ -532,9 +534,9 @@ static int uart_cc13xx_cc26xx_init_0(struct device *dev)
 	}
 #endif
 	/* Configure IOC module to map UART signals to pins */
-	IOCPortConfigureSet(DT_TI_CC13XX_CC26XX_UART_40001000_TX_PIN,
+	IOCPortConfigureSet(DT_PROP(DT_NODELABEL(uart0), tx_pin),
 			    IOC_PORT_MCU_UART0_TX, IOC_STD_OUTPUT);
-	IOCPortConfigureSet(DT_TI_CC13XX_CC26XX_UART_40001000_RX_PIN,
+	IOCPortConfigureSet(DT_PROP(DT_NODELABEL(uart0), rx_pin),
 			    IOC_PORT_MCU_UART0_RX, IOC_STD_INPUT);
 
 	/* Configure and enable UART */
@@ -545,11 +547,11 @@ static int uart_cc13xx_cc26xx_init_0(struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	UARTIntClear(get_dev_conf(dev)->regs, UART_INT_RX);
 
-	IRQ_CONNECT(DT_TI_CC13XX_CC26XX_UART_40001000_IRQ_0,
-		    DT_TI_CC13XX_CC26XX_UART_40001000_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0),
+		    DT_INST_IRQ(0, priority),
 		    uart_cc13xx_cc26xx_isr, DEVICE_GET(uart_cc13xx_cc26xx_0),
 		    0);
-	irq_enable(DT_TI_CC13XX_CC26XX_UART_40001000_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	/* Causes an initial TX ready interrupt when TX interrupt is enabled */
 	UARTCharPutNonBlocking(get_dev_conf(dev)->regs, '\0');
@@ -559,13 +561,13 @@ static int uart_cc13xx_cc26xx_init_0(struct device *dev)
 }
 
 static const struct uart_device_config uart_cc13xx_cc26xx_config_0 = {
-	.regs = DT_TI_CC13XX_CC26XX_UART_40001000_BASE_ADDRESS,
-	.sys_clk_freq = DT_TI_CC13XX_CC26XX_UART_40001000_CLOCKS_CLOCK_FREQUENCY,
+	.regs = DT_INST_REG_ADDR(0),
+	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency)
 };
 
 static struct uart_cc13xx_cc26xx_data uart_cc13xx_cc26xx_data_0 = {
 	.uart_config = {
-		.baudrate = DT_TI_CC13XX_CC26XX_UART_40001000_CURRENT_SPEED,
+		.baudrate = DT_PROP(DT_NODELABEL(uart0), current_speed),
 		.parity = UART_CFG_PARITY_NONE,
 		.stop_bits = UART_CFG_STOP_BITS_1,
 		.data_bits = UART_CFG_DATA_BITS_8,
@@ -578,7 +580,7 @@ static struct uart_cc13xx_cc26xx_data uart_cc13xx_cc26xx_data_0 = {
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_DEFINE(uart_cc13xx_cc26xx_0, DT_TI_CC13XX_CC26XX_UART_40001000_LABEL,
+DEVICE_DEFINE(uart_cc13xx_cc26xx_0, DT_INST_LABEL(0),
 		uart_cc13xx_cc26xx_init_0,
 		uart_cc13xx_cc26xx_pm_control,
 		&uart_cc13xx_cc26xx_data_0, &uart_cc13xx_cc26xx_config_0,
@@ -586,7 +588,7 @@ DEVICE_DEFINE(uart_cc13xx_cc26xx_0, DT_TI_CC13XX_CC26XX_UART_40001000_LABEL,
 		&uart_cc13xx_cc26xx_driver_api);
 #else
 DEVICE_AND_API_INIT(uart_cc13xx_cc26xx_0,
-		    DT_TI_CC13XX_CC26XX_UART_40001000_LABEL,
+		    DT_INST_LABEL(0),
 		    uart_cc13xx_cc26xx_init_0, &uart_cc13xx_cc26xx_data_0,
 		    &uart_cc13xx_cc26xx_config_0, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -635,9 +637,9 @@ static int uart_cc13xx_cc26xx_init_1(struct device *dev)
 #endif
 
 	/* Configure IOC module to map UART signals to pins */
-	IOCPortConfigureSet(DT_TI_CC13XX_CC26XX_UART_4000B000_TX_PIN,
+	IOCPortConfigureSet(DT_PROP(DT_NODELABEL(uart1), tx_pin),
 			    IOC_PORT_MCU_UART1_TX, IOC_STD_OUTPUT);
-	IOCPortConfigureSet(DT_TI_CC13XX_CC26XX_UART_4000B000_RX_PIN,
+	IOCPortConfigureSet(DT_PROP(DT_NODELABEL(uart1), rx_pin),
 			    IOC_PORT_MCU_UART1_RX, IOC_STD_INPUT);
 
 	/* Configure and enable UART */
@@ -648,11 +650,11 @@ static int uart_cc13xx_cc26xx_init_1(struct device *dev)
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	UARTIntClear(get_dev_conf(dev)->regs, UART_INT_RX);
 
-	IRQ_CONNECT(DT_TI_CC13XX_CC26XX_UART_4000B000_IRQ_0,
-		    DT_TI_CC13XX_CC26XX_UART_4000B000_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(1),
+		    DT_INST_IRQ(1, priority),
 		    uart_cc13xx_cc26xx_isr, DEVICE_GET(uart_cc13xx_cc26xx_1),
 		    0);
-	irq_enable(DT_TI_CC13XX_CC26XX_UART_4000B000_IRQ_0);
+	irq_enable(DT_INST_IRQN(1));
 
 	/* Causes an initial TX ready interrupt when TX interrupt is enabled */
 	UARTCharPutNonBlocking(get_dev_conf(dev)->regs, '\0');
@@ -662,13 +664,13 @@ static int uart_cc13xx_cc26xx_init_1(struct device *dev)
 }
 
 static const struct uart_device_config uart_cc13xx_cc26xx_config_1 = {
-	.regs = DT_TI_CC13XX_CC26XX_UART_4000B000_BASE_ADDRESS,
-	.sys_clk_freq = DT_TI_CC13XX_CC26XX_UART_4000B000_CLOCKS_CLOCK_FREQUENCY,
+	.regs = DT_INST_REG_ADDR(1),
+	.sys_clk_freq = DT_INST_PROP_BY_PHANDLE(1, clocks, clock_frequency)
 };
 
 static struct uart_cc13xx_cc26xx_data uart_cc13xx_cc26xx_data_1 = {
 	.uart_config = {
-		.baudrate = DT_TI_CC13XX_CC26XX_UART_4000B000_CURRENT_SPEED,
+		.baudrate = DT_PROP(DT_NODELABEL(uart1), current_speed),
 		.parity = UART_CFG_PARITY_NONE,
 		.stop_bits = UART_CFG_STOP_BITS_1,
 		.data_bits = UART_CFG_DATA_BITS_8,
@@ -681,7 +683,7 @@ static struct uart_cc13xx_cc26xx_data uart_cc13xx_cc26xx_data_1 = {
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_DEFINE(uart_cc13xx_cc26xx_1, DT_TI_CC13XX_CC26XX_UART_4000B000_LABEL,
+DEVICE_DEFINE(uart_cc13xx_cc26xx_1, DT_INST_LABEL(1),
 		uart_cc13xx_cc26xx_init_1,
 		uart_cc13xx_cc26xx_pm_control,
 		&uart_cc13xx_cc26xx_data_1, &uart_cc13xx_cc26xx_config_1,
@@ -689,7 +691,7 @@ DEVICE_DEFINE(uart_cc13xx_cc26xx_1, DT_TI_CC13XX_CC26XX_UART_4000B000_LABEL,
 		&uart_cc13xx_cc26xx_driver_api);
 #else
 DEVICE_AND_API_INIT(uart_cc13xx_cc26xx_1,
-		DT_TI_CC13XX_CC26XX_UART_4000B000_LABEL,
+		DT_INST_LABEL(1),
 		uart_cc13xx_cc26xx_init_1, &uart_cc13xx_cc26xx_data_1,
 		&uart_cc13xx_cc26xx_config_1, POST_KERNEL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
