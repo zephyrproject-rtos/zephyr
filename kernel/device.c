@@ -180,17 +180,69 @@ void device_busy_clear(struct device *busy_dev)
 #endif
 }
 
+#ifdef CONFIG_DEVICE_CALL_TIMEOUT
+static void device_call_set_timeout(struct device *dev, k_timeout_t timeout)
+{
+	struct device_context *dc =
+		(struct device_context *)__device_context_start +
+		(dev - __device_start);
+
+	dc->timeout = timeout;
+}
+
+static void device_call_cancel(struct device *dev)
+{
+	if (dev->cancel != NULL) {
+		dev->cancel(dev);
+	}
+}
+#else
+#define device_call_set_timeout(...)
+#define device_call_cancel(...)
+#endif
+
 int device_lock_timeout(struct device *dev, k_timeout_t timeout)
 {
 #ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
 	struct device_context *dc =
 		(struct device_context *)__device_context_start +
 		(dev - __device_start);
+	k_timeout_t lock_timeout = timeout;
 
-	if (k_sem_take(&dc->lock, timeout) != 0) {
-		return -EAGAIN;
+#ifdef CONFIG_DEVICE_CALL_TIMEOUT
+#ifdef CONFIG_DEVICE_NO_LOCK_TIMEOUT
+	lock_timeout = K_FOREVER;
+#else
+	u32_t time_spent;
+
+	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+		time_spent = k_uptime_get_32();
 	}
 #endif
+#endif /* CONFIG_DEVICE_CALL_TIMEOUT */
+
+	if (k_sem_take(&dc->lock, lock_timeout) != 0) {
+		return -EAGAIN;
+	}
+
+#if defined(CONFIG_DEVICE_CALL_TIMEOUT) &&	\
+	!defined(CONFIG_DEVICE_NO_LOCK_TIMEOUT)
+
+	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+		if (k_uptime_get_32() < time_spent) {
+			time_spent = k_uptime_get_32() +
+				(UINT32_MAX - time_spent);
+		} else {
+			time_spent = k_uptime_get_32() + time_spent;
+		}
+
+		timeout = K_MSEC(k_ticks_to_ms_floor32(tiemout) - time_spent);
+	}
+#endif /* CONFIG_DEVICE_CALL_TIMEOUT */
+
+#endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
+
+	device_call_set_timeout(dev, timeout);
 
 	return 0;
 }
@@ -212,7 +264,14 @@ int device_release(struct device *dev)
 		(dev - __device_start);
 	u32_t status;
 
+#ifdef CONFIG_DEVICE_CALL_TIMEOUT
+	if (k_sem_take(&dc->sync, dc->timeout) == -EAGAIN) {
+		device_call_cancel(dev);
+		status = -ECANCELED;
+	}
+#else
 	k_sem_take(&dc->sync, K_FOREVER);
+#endif /* CONFIG_DEVICE_CALL_TIMEOUT */
 
 	status = dc->call_status;
 
