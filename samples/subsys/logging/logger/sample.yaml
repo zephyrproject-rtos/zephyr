@@ -5,6 +5,7 @@ sample:
 tests:
   sample.logger.basic:
     tags: logging
+    filter: not CONFIG_LOG_BACKEND_RB
     harness: console
     harness_config:
       type: one_line
