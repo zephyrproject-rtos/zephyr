@@ -49,6 +49,7 @@ typedef u32_t k_ticks_t;
 #endif
 
 #define K_TICKS_FOREVER ((k_ticks_t) -1)
+#define K_MS_FOREVER ((k_ticks_t) -1)
 
 #ifndef CONFIG_LEGACY_TIMEOUT_API
 
