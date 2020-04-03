@@ -14,6 +14,12 @@
 #define GPIO_PORT_PIN_MASK_FROM_NGPIOS(ngpios)			\
 	((gpio_port_pins_t)(((u64_t)1 << (ngpios)) - 1U))
 
+#define GPIO_PORT_PIN_MASK_FROM_DT_NODE(node_id)		\
+	GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_PROP(node_id, ngpios))
+
+#define GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)			\
+	GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(inst, ngpios))
+
 /**
  * @brief Generic function to insert or remove a callback from a callback list
  *
