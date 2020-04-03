@@ -190,6 +190,30 @@ config IPM_CONSOLE_ON_DEV_NAME
 	help
 	  IPM device name used by IPM console driver.
 
+config IPM_CONSOLE_IMMEDIATE
+	bool "Immediate logging over IPM"
+	default y
+	depends on IPM_CONSOLE
+	help
+	  When enabled console output is processed in the context of the call. Output
+	  is blocked until read by the Host.
+
+if !IPM_CONSOLE_IMMEDIATE
+
+config IPM_CONSOLE_THREAD
+	bool
+	default y
+	select MULTITHREADING
+
+config IPM_CONSOLE_QUEUE_SIZE
+	int "IPM console queue size"
+	default 4096
+	depends on IPM_CONSOLE
+	help
+	  IPM console queue size
+
+endif #IPM_CONSOLE_IMMEDIATE
+
 config UART_PIPE
 	bool "Enable pipe UART driver"
 	select UART_INTERRUPT_DRIVEN
