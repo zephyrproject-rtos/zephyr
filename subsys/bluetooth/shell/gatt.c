@@ -266,7 +266,8 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_mread(const struct shell *shell, size_t argc, char *argv[])
 {
 	u16_t h[8];
-	int i, err;
+	size_t i;
+	int err;
 
 	if (!default_conn) {
 		shell_error(shell, "Not connected");
@@ -382,8 +383,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	write_params.func = write_func;
 
 	if (argc == 5) {
-		size_t len;
-		int i;
+		size_t len, i;
 
 		len = MIN(strtoul(argv[4], NULL, 16), sizeof(gatt_write_buf));
 
@@ -977,7 +977,7 @@ static u8_t set_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct set_data *data = user_data;
 	u8_t buf[256];
-	int i;
+	size_t i;
 	ssize_t ret;
 
 	if (!attr->write) {

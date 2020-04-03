@@ -2192,7 +2192,7 @@ bool bt_le_conn_params_valid(const struct bt_le_conn_param *param)
 
 	if (param->timeout < 10 || param->timeout > 3200 ||
 	    ((param->timeout * 4U) <=
-	     ((1 + param->latency) * param->interval_max))) {
+	     ((1U + param->latency) * param->interval_max))) {
 		return false;
 	}
 
@@ -6965,7 +6965,7 @@ static bool valid_adv_param(const struct bt_le_adv_param *param, bool dir_adv)
 
 static inline bool ad_has_name(const struct bt_data *ad, size_t ad_len)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < ad_len; i++) {
 		if (ad[i].type == BT_DATA_NAME_COMPLETE ||
