@@ -14,10 +14,3 @@ properties:
     wifi-reset-gpios:
       type: phandle-array
       required: false
-
-    wifi-uart-speed:
-      type: int
-      required: true
-
-    wifi-uart-flow-control:
-      type: boolean
