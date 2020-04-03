@@ -596,7 +596,7 @@ void gptp_handle_sync(int port, struct net_pkt *pkt)
 	struct gptp_port_ds *port_ds;
 	struct gptp_hdr *hdr;
 	u64_t upstream_sync_itv;
-	s32_t duration;
+	k_timeout_t duration;
 
 	state = &GPTP_PORT_STATE(port)->sync_rcv;
 	port_ds = GPTP_PORT_DS(port);
@@ -605,7 +605,7 @@ void gptp_handle_sync(int port, struct net_pkt *pkt)
 	upstream_sync_itv = NSEC_PER_SEC * GPTP_POW2(hdr->log_msg_interval);
 
 	/* Convert ns to ms. */
-	duration = (upstream_sync_itv / 1000000U);
+	duration = K_MSEC((upstream_sync_itv / 1000000U));
 
 	/* Start timeout timer. */
 	k_timer_start(&state->follow_up_discard_timer, duration, K_NO_WAIT);
