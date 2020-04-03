@@ -549,6 +549,10 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 			OT_RADIO_CAPS_TRANSMIT_RETRIES;
 	}
 
+	if (radio_caps & IEEE802154_HW_TX_RX_ACK) {
+		caps |= OT_RADIO_CAPS_ACK_TIMEOUT;
+	}
+
 	return caps;
 }
 
