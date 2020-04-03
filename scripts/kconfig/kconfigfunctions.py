@@ -195,6 +195,19 @@ def _node_reg_size(node, index, unit):
     return node.regs[int(index)].size >> _dt_units_to_scale(unit)
 
 
+def _node_int_prop(node, prop):
+    if not node:
+        return 0
+
+    if prop not in node.props:
+        return 0
+
+    if node.props[prop].type != "int":
+        return 0
+
+    return node.props[prop].val
+
+
 def _dt_chosen_reg_addr(kconf, chosen, index=0, unit=None):
     """
     This function takes a 'chosen' property and treats that property as a path
@@ -340,6 +353,29 @@ def dt_node_has_bool_prop(kconf, _, path, prop):
     return "n"
 
 
+def dt_node_int_prop(kconf, name, path, prop):
+    """
+    This function takes a 'path' and property name ('prop') looks for an EDT
+    node at that path. If it finds an EDT node, it will look to see if that
+    node has a property called 'prop' and if that 'prop' is an integer type
+    will return the value of the property 'prop' as either a string int or
+    string hex value, if not we return 0.
+    """
+
+    if doc_mode or edt is None:
+        return "0"
+
+    try:
+        node = edt.get_node(path)
+    except edtlib.EDTError:
+        return "0"
+
+    if name == "dt_node_int_prop_int":
+        return str(_node_int_prop(node, prop))
+    if name == "dt_node_int_prop_hex":
+        return hex(_node_int_prop(node, prop))
+
+
 def dt_compat_enabled(kconf, _, compat):
     """
     This function takes a 'compat' and returns "y" if we find an "enabled"
@@ -402,6 +438,8 @@ functions = {
         "dt_node_reg_size_int": (dt_node_reg, 1, 3),
         "dt_node_reg_size_hex": (dt_node_reg, 1, 3),
         "dt_node_has_bool_prop": (dt_node_has_bool_prop, 2, 2),
+        "dt_node_int_prop_int": (dt_node_int_prop, 2, 2),
+        "dt_node_int_prop_hex": (dt_node_int_prop, 2, 2),
         "dt_nodelabel_has_compat": (dt_nodelabel_has_compat, 2, 2),
         "shields_list_contains": (shields_list_contains, 1, 1),
 }
