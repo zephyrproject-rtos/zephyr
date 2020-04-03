@@ -279,7 +279,7 @@ static const struct gpio_driver_api api_funcs = {
 #ifdef CONFIG_GPIO_CC32XX_A0
 static const struct gpio_cc32xx_config gpio_cc32xx_a0_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
 	},
 	.port_base = DT_GPIO_CC32XX_A0_BASE_ADDRESS,
 	.irq_num = DT_GPIO_CC32XX_A0_IRQ+16,
@@ -313,7 +313,7 @@ DEVICE_AND_API_INIT(gpio_cc32xx_a0, DT_GPIO_CC32XX_A0_NAME,
 #ifdef CONFIG_GPIO_CC32XX_A1
 static const struct gpio_cc32xx_config gpio_cc32xx_a1_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(1, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
 	},
 	.port_base = DT_GPIO_CC32XX_A1_BASE_ADDRESS,
 	.irq_num = DT_GPIO_CC32XX_A1_IRQ+16,
@@ -347,7 +347,7 @@ DEVICE_AND_API_INIT(gpio_cc32xx_a1, DT_GPIO_CC32XX_A1_NAME,
 #ifdef CONFIG_GPIO_CC32XX_A2
 static const struct gpio_cc32xx_config gpio_cc32xx_a2_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(2, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
 	},
 	.port_base = DT_GPIO_CC32XX_A2_BASE_ADDRESS,
 	.irq_num = DT_GPIO_CC32XX_A2_IRQ+16,
@@ -381,7 +381,7 @@ DEVICE_AND_API_INIT(gpio_cc32xx_a2, DT_GPIO_CC32XX_A2_NAME,
 #ifdef CONFIG_GPIO_CC32XX_A3
 static const struct gpio_cc32xx_config gpio_cc32xx_a3_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(3, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
 	},
 	.port_base = DT_GPIO_CC32XX_A3_BASE_ADDRESS,
 	.irq_num = DT_GPIO_CC32XX_A3_IRQ+16,

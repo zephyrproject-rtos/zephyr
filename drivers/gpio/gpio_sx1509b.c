@@ -412,7 +412,7 @@ static const struct gpio_driver_api api_table = {
 
 static const struct sx1509b_config sx1509b_cfg = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
 	},
 	.i2c_master_dev_name = DT_INST_BUS_LABEL(0),
 	.i2c_slave_addr = DT_INST_REG_ADDR(0),

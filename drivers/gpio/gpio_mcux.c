@@ -282,7 +282,7 @@ static int gpio_mcux_porta_init(struct device *dev);
 
 static const struct gpio_mcux_config gpio_mcux_porta_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
 	},
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_A_BASE_ADDRESS,
 	.port_base = PORTA,
@@ -318,7 +318,7 @@ static int gpio_mcux_portb_init(struct device *dev);
 
 static const struct gpio_mcux_config gpio_mcux_portb_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(1, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
 	},
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_B_BASE_ADDRESS,
 	.port_base = PORTB,
@@ -354,7 +354,7 @@ static int gpio_mcux_portc_init(struct device *dev);
 
 static const struct gpio_mcux_config gpio_mcux_portc_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(2, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
 	},
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_C_BASE_ADDRESS,
 	.port_base = PORTC,
@@ -390,7 +390,7 @@ static int gpio_mcux_portd_init(struct device *dev);
 
 static const struct gpio_mcux_config gpio_mcux_portd_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(3, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
 	},
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_D_BASE_ADDRESS,
 	.port_base = PORTD,
@@ -426,7 +426,7 @@ static int gpio_mcux_porte_init(struct device *dev);
 
 static const struct gpio_mcux_config gpio_mcux_porte_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(4, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(4),
 	},
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_E_BASE_ADDRESS,
 	.port_base = PORTE,
