@@ -8,6 +8,7 @@ config ENTROPY_STM32_RNG
 	depends on SOC_FAMILY_STM32
 	select ENTROPY_HAS_DRIVER
 	select USE_STM32_LL_RNG
+	select HAS_DTS_ENTROPY
 	help
 	  This option enables the RNG processor, which is a entropy number
 	  generator, based on a continuous analog noise, that provides
