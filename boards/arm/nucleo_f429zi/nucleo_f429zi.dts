@@ -91,6 +91,10 @@
 	status = "okay";
 };
 
+&rng {
+	status = "okay";
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
