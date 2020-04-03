@@ -4619,6 +4619,69 @@ static inline u32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
  */
 
 /**
+ * @brief Initialize a k_heap
+ *
+ * This constructs a synchronized k_heap object over a memory region
+ * specified by the user.  Note that while any alignment and size can
+ * be passed as valid parameters, internal alignment restrictions
+ * inside the inner sys_heap mean that not all bytes may be usable as
+ * allocated memory.
+ *
+ * @param h Heap struct to initialize
+ * @param mem Pointer to memory.
+ * @param bytes Size of memory region, in bytes
+ */
+void k_heap_init(struct k_heap *h, void *mem, size_t bytes);
+
+/**
+ * @brief Allocate memory from a k_heap
+ *
+ * Allocates and returns a memory buffer from the memory region owned
+ * by the heap.  If no memory is available immediately, the call will
+ * block for the specified timeout (constructed via the standard
+ * timeout API, or K_NO_WAIT or K_FOREVER) waiting for memory to be
+ * freed.  If the allocation cannot be performed by the expiration of
+ * the timeout, NULL will be returned.
+ *
+ * @param h Heap from which to allocate
+ * @param bytes Desired size of block to allocate
+ * @param timeout How long to wait, or K_NO_WAIT
+ * @return A pointer to valid heap memory, or NULL
+ */
+void *k_heap_alloc(struct k_heap *h, size_t bytes, k_timeout_t timeout);
+
+/**
+ * @brief Free memory allocated by k_heap_alloc()
+ *
+ * Returns the specified memory block, which must have been returned
+ * from k_heap_alloc(), to the heap for use by other callers.  Passing
+ * a NULL block is legal, and has no effect.
+ *
+ * @param h Heap to which to return the memory
+ * @param mem A valid memory block, or NULL
+ */
+void k_heap_free(struct k_heap *h, void *mem);
+
+/**
+ * @brief Define a static k_heap
+ *
+ * This macro defines and initializes a static memory region and
+ * k_heap of the requested size.  After kernel start, &name can be
+ * used as if k_heap_init() had been called.
+ *
+ * @param name Symbol name for the struct k_heap object
+ * @param bytes Size of memory region, in bytes
+ */
+#define K_HEAP_DEFINE(name, bytes)				\
+	char __aligned(sizeof(void *)) kheap_##name[bytes];	\
+	Z_STRUCT_SECTION_ITERABLE(k_heap, name) = {		\
+		.heap = {					\
+			.init_mem = kheap_##name,		\
+			.init_bytes = (bytes),			\
+		 },						\
+	}
+
+/**
  * @brief Statically define and initialize a memory pool.
  *
  * The memory pool's buffer contains @a n_max blocks that are @a max_size bytes

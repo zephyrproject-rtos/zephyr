@@ -8,6 +8,7 @@ add_library(kernel
   fatal.c
   idle.c
   init.c
+  kheap.c
   mailbox.c
   mem_slab.c
   mempool.c
