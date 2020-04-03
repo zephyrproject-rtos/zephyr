@@ -7,7 +7,8 @@ Description:
 The first test verifies that we can handle system fault conditions
 while running in handler mode (i.e. in an ISR). Only for ARM
 Cortex-M targets. The test also verifies the behavior of the
-spurious interrupt handler.
+spurious interrupt handler, as well as the ARM spurious exception
+handler.
 
 The second test verifies that threads in user mode, despite being able to call
 the irq_lock() and irq_unlock() functions without triggering a CPU fault,
