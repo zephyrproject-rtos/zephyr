@@ -1130,6 +1130,19 @@ static int set_le_scan_enable(u8_t enable)
 }
 #endif /* CONFIG_BT_OBSERVER */
 
+static inline bool rpa_is_new(void)
+{
+#if defined(CONFIG_BT_PRIVACY)
+	/* RPA is considered new if there is less than half a second since the
+	 * timeout was started.
+	 */
+	return k_delayed_work_remaining_get(&bt_dev.rpa_update) >
+	       (RPA_TIMEOUT - K_MSEC(500));
+#else
+	return false;
+#endif
+}
+
 #if defined(CONFIG_BT_CONN)
 static void hci_acl(struct net_buf *buf)
 {
@@ -1251,19 +1264,6 @@ static inline bool rpa_timeout_valid_check(void)
 	       K_SECONDS(CONFIG_BT_CREATE_CONN_TIMEOUT);
 #else
 	return true;
-#endif
-}
-
-static inline bool rpa_is_new(void)
-{
-#if defined(CONFIG_BT_PRIVACY)
-	/* RPA is considered new if there is less than half a second since the
-	 * timeout was started.
-	 */
-	return k_delayed_work_remaining_get(&bt_dev.rpa_update) >
-	       (RPA_TIMEOUT - K_MSEC(500));
-#else
-	return false;
 #endif
 }
 
