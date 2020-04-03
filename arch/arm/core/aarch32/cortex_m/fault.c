@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2020 Nordic Semiconductor ASA.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
