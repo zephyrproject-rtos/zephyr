@@ -16,6 +16,7 @@ menuconfig ENTROPY_NRF5_RNG
 	depends on !ENTROPY_NRF_FORCE_ALT
 	depends on HAS_HW_NRF_RNG
 	select ENTROPY_HAS_DRIVER
+	select HAS_DTS_ENTROPY
 	default y
 	help
 	  This option enables the RNG peripheral, which is a random number
@@ -66,14 +67,5 @@ config ENTROPY_NRF5_ISR_THRESHOLD
 	  ISR consumers. As soon as the number of available bytes in the
 	  buffer goes below this number hardware entropy generation will be
 	  started.
-
-config ENTROPY_NRF5_PRI
-	int "RNG interrupt priority"
-	range 0 2 if SOC_SERIES_NRF51X
-	range 0 5 if SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X
-	default 2 if SOC_SERIES_NRF51X
-	default 5 if SOC_COMPATIBLE_NRF52X || SOC_SERIES_NRF53X
-	help
-	  nRF5X RNG IRQ priority.
 
 endif # ENTROPY_NRF5_RNG
