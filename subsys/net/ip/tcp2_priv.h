@@ -33,7 +33,7 @@
 #endif
 
 #if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
-#define tcp_pkt_alloc(_len) tp_pkt_alloc(_len, tp_basename(__FILE__), __LINE__)
+#define tp_pkt_alloc(_pkt) tp_pkt_alloc(_pkt, tp_basename(__FILE__), __LINE__)
 #define tcp_pkt_clone(_pkt) tp_pkt_clone(_pkt, tp_basename(__FILE__), __LINE__)
 #define tcp_pkt_unref(_pkt) tp_pkt_unref(_pkt, tp_basename(__FILE__), __LINE__)
 #else

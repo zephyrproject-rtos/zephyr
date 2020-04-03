@@ -8,6 +8,9 @@
 #include <stdlib.h>
 #include "tp.h"
 #include "tp_priv.h"
+#include "ipv4.h"
+#include "ipv6.h"
+#include "udp_internal.h"
 
 static sys_slist_t tp_mem = SYS_SLIST_STATIC_INIT(&tp_mem);
 static sys_slist_t tp_nbufs = SYS_SLIST_STATIC_INIT(&tp_nbufs);
@@ -212,39 +215,19 @@ void tp_nbuf_stat(void)
 	}
 }
 
-static struct net_pkt *tp_pkt_get(size_t len)
+void tp_pkt_alloc(struct net_pkt *pkt,
+		  const char *file, int line)
 {
-	struct net_pkt *pkt = net_pkt_alloc(K_NO_WAIT);
-
-	pkt->family = AF_INET;
-
-	tp_assert(pkt, "");
-
-	if (len) {
-		struct net_buf *buf = net_pkt_get_frag(pkt, K_NO_WAIT);
-
-		net_buf_add(buf, len);
-		net_pkt_frag_insert(pkt, buf);
-		tp_assert(buf, "");
-	}
-
-	return pkt;
-}
-
-struct net_pkt *tp_pkt_alloc(size_t len, const char *file, int line)
-{
-	struct net_pkt *pkt = tp_pkt_get(len);
 	struct tp_pkt *tp_pkt = k_malloc(sizeof(struct tp_pkt));
 
 	tp_assert(tp_pkt, "");
+	tp_assert(pkt, "");
 
 	tp_pkt->pkt = pkt;
 	tp_pkt->file = file;
 	tp_pkt->line = line;
 
 	sys_slist_append(&tp_pkts, (sys_snode_t *) tp_pkt);
-
-	return pkt;
 }
 
 struct net_pkt *tp_pkt_clone(struct net_pkt *pkt, const char *file, int line)
@@ -368,73 +351,46 @@ out:
 	return type;
 }
 
-static void ip_header_add(struct net_pkt *pkt)
+static void udp_finalize_pkt(struct net_pkt *pkt)
 {
-	struct net_buf *buf = net_pkt_get_frag(pkt, K_NO_WAIT);
+	int ret = 0;
 
-	switch (pkt->family) {
-	case AF_INET: {
-		struct net_ipv4_hdr ip;
+	net_pkt_cursor_init(pkt);
 
-		memset(&ip, 0, sizeof(ip));
-
-		ip.vhl = 0x45;
-		ip.ttl = 64;
-		ip.proto = IPPROTO_UDP;
-		ip.len = htons(net_pkt_get_len(pkt) + sizeof(ip));
-
-		net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR,
-			      &ip.src);
-		net_addr_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
-			      &ip.dst);
-		memcpy(net_buf_add(buf, sizeof(ip)), &ip, sizeof(ip));
-
-		net_pkt_frag_insert(pkt, buf);
-
-		net_pkt_set_ip_hdr_len(pkt, buf->len);
-
-		break;
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		ret = net_ipv4_finalize(pkt, IPPROTO_UDP);
 	}
-	case AF_INET6: {
-		struct net_ipv6_hdr ip6;
 
-		memset(&ip6, 0, sizeof(ip6));
-
-		ip6.vtc = 0x60;
-		ip6.nexthdr = IPPROTO_UDP;
-		ip6.len = htons(net_pkt_get_len(pkt));
-
-		net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR,
-			      &ip6.src);
-		net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
-			      &ip6.dst);
-
-		memcpy(net_buf_add(buf, sizeof(ip6)), &ip6, sizeof(ip6));
-
-		net_pkt_frag_insert(pkt, buf);
-
-		net_pkt_set_ip_hdr_len(pkt, buf->len);
-
-		break;
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
+		ret = net_ipv6_finalize(pkt, IPPROTO_UDP);
 	}
-	}
+
+	NET_ASSERT(ret == 0);
 }
 
-static void udp_header_add(struct net_pkt *pkt)
+static int ip_header_add(struct net_pkt *pkt)
 {
-	struct net_buf *buf = net_pkt_get_frag(pkt, K_NO_WAIT);
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		struct in_addr src;
+		struct in_addr dst;
 
-	struct net_udp_hdr uh;
+		net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &src);
+		net_addr_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR, &dst);
 
-	memset(&uh, 0, sizeof(uh));
+		return net_ipv4_create(pkt, &src, &dst);
+	}
 
-	uh.src_port = htons(4242);
-	uh.dst_port = htons(4242);
-	uh.len = htons(sizeof(uh) + net_pkt_get_len(pkt));
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
+		struct in6_addr src;
+		struct in6_addr dst;
 
-	memcpy(net_buf_add(buf, sizeof(uh)), &uh, sizeof(uh));
+		net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR, &src);
+		net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR, &dst);
 
-	net_pkt_frag_insert(pkt, buf);
+		return net_ipv6_create(pkt, &src, &dst);
+	}
+
+	return -EINVAL;
 }
 
 static void tp_pkt_send(struct net_pkt *pkt)
@@ -448,35 +404,59 @@ static void tp_pkt_send(struct net_pkt *pkt)
 	tp_pkt_unref(pkt, tp_basename(__FILE__), __LINE__);
 }
 
+static struct net_pkt *tp_output_pkt_alloc(sa_family_t af,
+					   struct net_if *iface,
+					   size_t len,
+					   const char *file, int line)
+{
+	struct tp_pkt *tp_pkt = k_malloc(sizeof(struct tp_pkt));
+
+	tp_assert(tp_pkt, "");
+
+	tp_pkt->pkt = net_pkt_alloc_with_buffer(iface,
+					sizeof(struct net_udp_hdr) + len,
+					af, IPPROTO_UDP, K_NO_WAIT);
+	tp_assert(tp_pkt->pkt, "");
+
+	tp_pkt->file = file;
+	tp_pkt->line = line;
+
+	sys_slist_append(&tp_pkts, (sys_snode_t *) tp_pkt);
+
+	return tp_pkt->pkt;
+}
+
 void _tp_output(sa_family_t af, struct net_if *iface, void *data,
 		size_t data_len, const char *file, int line)
 {
-	struct net_pkt *pkt = tp_pkt_alloc(0, file, line);
-	size_t total = data_len, len;
-	struct net_buf *buf;
+	struct net_pkt *pkt = tp_output_pkt_alloc(af, iface, data_len,
+						  file, line);
+	int ret;
 
-	pkt->family = af;
-
-	for ( ; total; total -= len, data = (u8_t *)data + len) {
-
-		buf = net_pkt_get_frag(pkt, K_NO_WAIT);
-
-		len = MIN(buf->size, total);
-
-		memcpy(net_buf_add(buf, len), data, len);
-
-		net_pkt_frag_add(pkt, buf);
+	ret = ip_header_add(pkt);
+	if (ret < 0) {
+		goto fail;
 	}
 
-	udp_header_add(pkt);
+	ret = net_udp_create(pkt, htons(4242), htons(4242));
+	if (ret < 0) {
+		goto fail;
+	}
 
-	ip_header_add(pkt);
+	ret = net_pkt_write(pkt, data, data_len);
+	if (ret < 0) {
+		goto fail;
+	}
 
-	pkt->iface = iface;
+	udp_finalize_pkt(pkt);
 
 	NET_ASSERT(net_pkt_get_len(pkt) <= net_if_get_mtu(pkt->iface));
 
 	tp_pkt_send(pkt);
+
+	return;
+fail:
+	NET_ASSERT(false);
 }
 
 struct tp *json_to_tp(void *data, size_t data_len)
