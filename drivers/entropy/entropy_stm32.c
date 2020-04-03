@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT st_stm32_rng
+
 #include <kernel.h>
 #include <device.h>
 #include <drivers/entropy.h>
@@ -16,14 +18,6 @@
 #include <sys/printk.h>
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
-
-#if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F4X) && !defined(CONFIG_SOC_SERIES_STM32F7X) && !defined(CONFIG_SOC_SERIES_STM32G4X)
-#error RNG only available on STM32F4, STM32F7, STM32L4 and STM32G4 series
-#elif defined(CONFIG_SOC_STM32F401XE)
-#error RNG not available on STM32F401 based SoCs
-#elif defined(CONFIG_SOC_STM32F411XE)
-#error RNG not available on STM32F411 based SoCs
-#else
 
 struct entropy_stm32_rng_dev_cfg {
 	struct stm32_pclken pclken;
@@ -209,18 +203,16 @@ static const struct entropy_driver_api entropy_stm32_rng_api = {
 };
 
 static const struct entropy_stm32_rng_dev_cfg entropy_stm32_rng_config = {
-	.pclken	= { .bus = STM32_CLOCK_BUS_AHB2,
-		    .enr = LL_AHB2_GRP1_PERIPH_RNG },
+	.pclken	= { .bus = DT_INST_CLOCKS_CELL(0, bus),
+		    .enr = DT_INST_CLOCKS_CELL(0, bits) },
 };
 
 static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data = {
-	.rng = RNG,
+	.rng = (RNG_TypeDef *)DT_INST_REG_ADDR(0),
 };
 
-DEVICE_AND_API_INIT(entropy_stm32_rng, CONFIG_ENTROPY_NAME,
+DEVICE_AND_API_INIT(entropy_stm32_rng, DT_INST_LABEL(0),
 		    entropy_stm32_rng_init,
 		    &entropy_stm32_rng_data, &entropy_stm32_rng_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_stm32_rng_api);
-
-#endif
