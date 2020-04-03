@@ -279,6 +279,9 @@ struct device {
 	const void *config_info;
 	const void *driver_api;
 	void * const driver_data;
+#ifdef CONFIG_DEVICE_CALL_TIMEOUT
+	void (*cancel)(struct device *dev);
+#endif
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	int (*device_pm_control)(struct device *device, u32_t command,
 				 void *context, device_pm_cb cb, void *arg);
@@ -292,6 +295,7 @@ struct device {
  * @param sync A semaphore used for API call synchronization
  * @param call_status The status to return from the call
  * @param lock A semaphore used to protect against concurrent access
+ * @param timeout A timeout for the on-going call
  */
 struct device_context {
 	struct k_sem sync;
@@ -299,12 +303,15 @@ struct device_context {
 #ifdef CONFIG_DEVICE_CONCURRENT_ACCESS
 	struct k_sem lock;
 #endif
+#ifdef CONFIG_DEVICE_CALL_TIMEOUT
+	k_timeout_t timeout;
+#endif
 };
 
-#if CONFIG_DEVICE_LOCK_TIMEOUT_VALUE == -1
-#define DEVICE_LOCK_TIMEOUT K_FOREVER
+#if CONFIG_DEVICE_CALL_TIMEOUT_VALUE == -1
+#define DEVICE_CALL_TIMEOUT K_FOREVER
 #else
-#define DEVICE_LOCK_TIMEOUT K_MSEC(CONFIG_DEVICE_LOCK_TIMEOUT_VALUE)
+#define DEVICE_CALL_TIMEOUT K_MSEC(CONFIG_DEVICE_CALL_TIMEOUT_VALUE)
 #endif
 
 /**
@@ -329,7 +336,7 @@ int device_lock_timeout(struct device *dev, k_timeout_t timeout);
  */
 static inline int device_lock(struct device *dev)
 {
-	return device_lock_timeout(dev, DEVICE_LOCK_TIMEOUT);
+	return device_lock_timeout(dev, DEVICE_CALL_TIMEOUT);
 }
 
 /**

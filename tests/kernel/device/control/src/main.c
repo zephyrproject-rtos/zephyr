@@ -106,6 +106,7 @@ void test_lock(void)
 	zassert_true((ret == 0), NULL);
 	zassert_true((value == 4), NULL);
 
+#ifndef CONFIG_DEVICE_NO_LOCK_TIMEOUT
 	trigger = TEST_TRIGGER_LOCK_TIMEOUT;
 	k_sem_give(&concurrent_trigger);
 	k_yield();
@@ -113,6 +114,7 @@ void test_lock(void)
 	/* It must timeout as concurrent_thread is already calling */
 	ret = fake_no_timeout_call(dev, &value);
 	zassert_true((ret == -EAGAIN), NULL);
+#endif
 }
 #else
 void test_lock(void)
