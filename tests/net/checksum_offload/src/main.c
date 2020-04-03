@@ -740,8 +740,8 @@ static void rx_chksum_offload_disabled_test_v6(void)
 	test_started = true;
 	start_receiving = true;
 
-	ret = net_context_recv(udp_v6_ctx_1, recv_cb_offload_disabled, 0,
-			       NULL);
+	ret = net_context_recv(udp_v6_ctx_1, recv_cb_offload_disabled,
+			       K_NO_WAIT, NULL);
 	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
 
 	start_receiving = false;
@@ -796,8 +796,8 @@ static void rx_chksum_offload_disabled_test_v4(void)
 	test_started = true;
 	start_receiving = true;
 
-	ret = net_context_recv(udp_v4_ctx_1, recv_cb_offload_disabled, 0,
-			       NULL);
+	ret = net_context_recv(udp_v4_ctx_1, recv_cb_offload_disabled,
+			       K_NO_WAIT, NULL);
 	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
 
 	start_receiving = false;
@@ -852,8 +852,8 @@ static void rx_chksum_offload_enabled_test_v6(void)
 	test_started = true;
 	start_receiving = true;
 
-	ret = net_context_recv(udp_v6_ctx_2, recv_cb_offload_enabled, 0,
-			       NULL);
+	ret = net_context_recv(udp_v6_ctx_2, recv_cb_offload_enabled,
+			       K_NO_WAIT, NULL);
 	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
 
 	ret = net_context_sendto(udp_v6_ctx_2, test_data, len,
@@ -906,8 +906,8 @@ static void rx_chksum_offload_enabled_test_v4(void)
 	test_started = true;
 	start_receiving = true;
 
-	ret = net_context_recv(udp_v4_ctx_2, recv_cb_offload_enabled, 0,
-			       NULL);
+	ret = net_context_recv(udp_v4_ctx_2, recv_cb_offload_enabled,
+			       K_NO_WAIT, NULL);
 	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
 
 	ret = net_context_sendto(udp_v4_ctx_2, test_data, len,

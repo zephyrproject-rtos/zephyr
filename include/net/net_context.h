@@ -866,7 +866,7 @@ int net_context_connect(struct net_context *context,
 			const struct sockaddr *addr,
 			socklen_t addrlen,
 			net_context_connect_cb_t cb,
-			s32_t timeout,
+			k_timeout_t timeout,
 			void *user_data);
 
 /**
@@ -896,7 +896,7 @@ int net_context_connect(struct net_context *context,
  */
 int net_context_accept(struct net_context *context,
 		       net_tcp_accept_cb_t cb,
-		       s32_t timeout,
+		       k_timeout_t timeout,
 		       void *user_data);
 
 /**
@@ -922,7 +922,7 @@ int net_context_send(struct net_context *context,
 		     const void *buf,
 		     size_t len,
 		     net_context_send_cb_t cb,
-		     s32_t timeout,
+		     k_timeout_t timeout,
 		     void *user_data);
 
 /**
@@ -952,7 +952,7 @@ int net_context_sendto(struct net_context *context,
 		       const struct sockaddr *dst_addr,
 		       socklen_t addrlen,
 		       net_context_send_cb_t cb,
-		       s32_t timeout,
+		       k_timeout_t timeout,
 		       void *user_data);
 
 /**
@@ -977,7 +977,7 @@ int net_context_sendmsg(struct net_context *context,
 			const struct msghdr *msghdr,
 			int flags,
 			net_context_send_cb_t cb,
-			s32_t timeout,
+			k_timeout_t timeout,
 			void *user_data);
 
 /**
@@ -1018,7 +1018,7 @@ int net_context_sendmsg(struct net_context *context,
  */
 int net_context_recv(struct net_context *context,
 		     net_context_recv_cb_t cb,
-		     s32_t timeout,
+		     k_timeout_t timeout,
 		     void *user_data);
 
 /**

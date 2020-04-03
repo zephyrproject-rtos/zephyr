@@ -65,7 +65,7 @@ static bool test_sending;
 
 static struct k_sem wait_data;
 
-#define WAIT_TIME 250
+#define WAIT_TIME K_MSEC(250)
 #define WAIT_TIME_LONG MSEC_PER_SEC
 #define SENDING 93244
 #define MY_PORT 1969
@@ -678,7 +678,7 @@ void timeout_thread(struct net_context *ctx, void *param2, void *param3)
 	s32_t timeout = POINTER_TO_INT(param3);
 	int ret;
 
-	ret = net_context_recv(ctx, recv_cb_timeout, timeout,
+	ret = net_context_recv(ctx, recv_cb_timeout, K_MSEC(timeout),
 			       INT_TO_POINTER(family));
 	if (ret != -ETIMEDOUT && expecting_cb_failure) {
 		zassert_true(expecting_cb_failure,
@@ -781,10 +781,10 @@ static void net_ctx_recv_v6_timeout_forever(void)
 	recv_cb_timeout_called = false;
 
 	/* Start a thread that will send data to receiver. */
-	tid = start_timeout_v6_thread(K_FOREVER);
+	tid = start_timeout_v6_thread(NET_WAIT_FOREVER);
 
 	/* Wait a bit so that we see if recv waited or not */
-	k_sleep(K_MSEC(WAIT_TIME));
+	k_sleep(WAIT_TIME);
 
 	net_ctx_send_v6();
 
@@ -807,10 +807,10 @@ static void net_ctx_recv_v4_timeout_forever(void)
 	recv_cb_timeout_called = false;
 
 	/* Start a thread that will send data to receiver. */
-	tid = start_timeout_v4_thread(K_FOREVER);
+	tid = start_timeout_v4_thread(NET_WAIT_FOREVER);
 
 	/* Wait a bit so that we see if recv waited or not */
-	k_sleep(K_MSEC(WAIT_TIME));
+	k_sleep(WAIT_TIME);
 
 	net_ctx_send_v4();
 
