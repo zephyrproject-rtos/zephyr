@@ -6,6 +6,7 @@
 menuconfig BT
 	bool "Bluetooth"
 	select NET_BUF
+	select LEGACY_TIMEOUT_API
 	help
 	  This option enables Bluetooth support.
 

@@ -7,7 +7,6 @@ menu "Networking"
 
 config NET_BUF
 	bool "Network buffer support"
-	select LEGACY_TIMEOUT_API
 	help
 	  This option enables support for generic network protocol
 	  buffers.
@@ -69,6 +68,7 @@ config NETWORKING
 	select NET_BUF
 	select POLL
 	select ENTROPY_GENERATOR
+	select LEGACY_TIMEOUT_API
 	help
 	  This option enabled generic link layer and IP networking support.
 
