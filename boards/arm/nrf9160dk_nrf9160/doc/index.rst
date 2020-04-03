@@ -1,7 +1,7 @@
 .. _nrf9160dk_nrf9160:
 
-nRF9160 Development Kit (DK)
-############################
+nRF9160 DK
+##########
 
 Overview
 ********
