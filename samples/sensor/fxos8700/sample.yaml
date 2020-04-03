@@ -15,5 +15,5 @@ tests:
       - CONFIG_FXOS8700_MOTION_INT1=y
       - CONFIG_FXOS8700_PM_LOW_POWER=y
   sample.sensor.fxos8700.accel:
-    platform_whitelist: frdm_kl25z bbc_microbit reel_board
+    platform_whitelist: frdm_kl25z bbc_microbit lpcxpresso55s69_cpu0 reel_board
     extra_args: CONF_FILE=prj_accel.conf
