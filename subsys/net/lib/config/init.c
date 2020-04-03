@@ -357,7 +357,7 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 				break;
 			}
 
-			if (k_sem_take(&waiter, loop)) {
+			if (k_sem_take(&waiter, K_MSEC(loop))) {
 				if (!k_sem_count_get(&counter)) {
 					break;
 				}
@@ -402,7 +402,7 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 	 * to wait multiple events, sleep smaller amounts of data.
 	 */
 	while (count--) {
-		if (k_sem_take(&waiter, loop)) {
+		if (k_sem_take(&waiter, K_MSEC(loop))) {
 			if (!k_sem_count_get(&counter)) {
 				break;
 			}
@@ -452,7 +452,7 @@ static int init_app(struct device *device)
 
 	/* Initialize the application automatically if needed */
 	ret = net_config_init("Initializing network", flags,
-			      K_SECONDS(CONFIG_NET_CONFIG_INIT_TIMEOUT));
+			      CONFIG_NET_CONFIG_INIT_TIMEOUT * MSEC_PER_SEC);
 	if (ret < 0) {
 		NET_ERR("Network initialization failed (%d)", ret);
 	}
