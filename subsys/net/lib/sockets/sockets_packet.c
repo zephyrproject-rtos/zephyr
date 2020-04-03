@@ -28,7 +28,8 @@ extern const struct socket_op_vtable sock_fd_op_vtable;
 
 static const struct socket_op_vtable packet_sock_fd_op_vtable;
 
-static inline int k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
+static inline int k_fifo_wait_non_empty(struct k_fifo *fifo,
+					k_timeout_t timeout)
 {
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
@@ -146,7 +147,7 @@ ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			   int flags, const struct sockaddr *dest_addr,
 			   socklen_t addrlen)
 {
-	s32_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_FOREVER;
 	int status;
 
 	if (!dest_addr) {
@@ -184,7 +185,7 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 			     socklen_t *addrlen)
 {
 	size_t recv_len = 0;
-	s32_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_FOREVER;
 	struct net_pkt *pkt;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {

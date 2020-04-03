@@ -56,7 +56,8 @@ static void zsock_received_cb(struct net_context *ctx,
 			      int status,
 			      void *user_data);
 
-static inline int k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
+static inline int k_fifo_wait_non_empty(struct k_fifo *fifo,
+					k_timeout_t timeout)
 {
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
@@ -409,7 +410,7 @@ static inline int z_vrfy_zsock_listen(int sock, int backlog)
 int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 		     socklen_t *addrlen)
 {
-	s32_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_FOREVER;
 	struct net_context *ctx;
 	struct net_pkt *last_pkt;
 	int fd;
@@ -525,7 +526,7 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			 int flags,
 			 const struct sockaddr *dest_addr, socklen_t addrlen)
 {
-	s32_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_FOREVER;
 	int status;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
@@ -588,7 +589,7 @@ ssize_t z_vrfy_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 ssize_t zsock_sendmsg_ctx(struct net_context *ctx, const struct msghdr *msg,
 			  int flags)
 {
-	s32_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_FOREVER;
 	int status;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
@@ -731,7 +732,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 				       struct sockaddr *src_addr,
 				       socklen_t *addrlen)
 {
-	s32_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_FOREVER;
 	size_t recv_len = 0;
 	struct net_pkt_cursor backup;
 	struct net_pkt *pkt;
@@ -821,7 +822,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 					size_t max_len,
 					int flags)
 {
-	s32_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_FOREVER;
 	size_t recv_len = 0;
 	struct net_pkt_cursor backup;
 	int res;
@@ -1050,21 +1051,27 @@ static inline int time_left(u32_t start, u32_t timeout)
 	return timeout - elapsed;
 }
 
-int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
+int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 {
 	bool retry;
 	int ret = 0;
-	int i, remaining_time;
+	int i;
 	struct zsock_pollfd *pfd;
 	struct k_poll_event poll_events[CONFIG_NET_SOCKETS_POLL_MAX];
 	struct k_poll_event *pev;
 	struct k_poll_event *pev_end = poll_events + ARRAY_SIZE(poll_events);
 	const struct fd_op_vtable *vtable;
-	u32_t entry_time = k_uptime_get_32();
+	k_timeout_t timeout;
+	u64_t end;
 
-	if (timeout < 0) {
+	if (poll_timeout < 0) {
 		timeout = K_FOREVER;
+		poll_timeout = NET_WAIT_FOREVER;
+	} else {
+		timeout = K_MSEC(poll_timeout);
 	}
+
+	end = z_timeout_end_calc(timeout);
 
 	pev = poll_events;
 	for (pfd = fds, i = nfds; i--; pfd++) {
@@ -1102,17 +1109,26 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 			 */
 			return z_fdtable_call_ioctl(vtable, ctx,
 						    ZFD_IOCTL_POLL_OFFLOAD,
-						    fds, nfds, timeout);
+						    fds, nfds, poll_timeout);
 		} else if (result != 0) {
 			errno = -result;
 			return -1;
 		}
 	}
 
-	remaining_time = timeout;
+	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
+	    !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+		s64_t remaining = end - z_tick_get();
+
+		if (remaining <= 0) {
+			timeout = K_NO_WAIT;
+		} else {
+			timeout = Z_TIMEOUT_TICKS(remaining);
+		}
+	}
 
 	do {
-		ret = k_poll(poll_events, pev - poll_events, remaining_time);
+		ret = k_poll(poll_events, pev - poll_events, timeout);
 		/* EAGAIN when timeout expired, EINTR when cancelled (i.e. EOF) */
 		if (ret != 0 && ret != -EAGAIN && ret != -EINTR) {
 			errno = -ret;
@@ -1161,15 +1177,17 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 				break;
 			}
 
-			if (timeout == K_NO_WAIT) {
+			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				break;
 			}
 
-			if (timeout != K_FOREVER) {
-				/* Recalculate the timeout value. */
-				remaining_time = time_left(entry_time, timeout);
-				if (remaining_time <= 0) {
+			if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+				s64_t remaining = end - z_tick_get();
+
+				if (remaining <= 0) {
 					break;
+				} else {
+					timeout = Z_TIMEOUT_TICKS(remaining);
 				}
 			}
 		}

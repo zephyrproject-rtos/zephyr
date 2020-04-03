@@ -475,13 +475,15 @@ static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
 	return sent;
 }
 
-static int dtls_rx(void *ctx, unsigned char *buf, size_t len, uint32_t timeout)
+static int dtls_rx(void *ctx, unsigned char *buf, size_t len,
+		   uint32_t dtls_timeout)
 {
 	struct net_context *net_ctx = ctx;
 	bool is_block = !((net_ctx->tls->flags & ZSOCK_MSG_DONTWAIT) ||
 			  sock_is_nonblock(net_ctx));
-	int remaining_time = (timeout == 0U) ? K_FOREVER : timeout;
-	u32_t entry_time = k_uptime_get_32();
+	k_timeout_t timeout = (dtls_timeout == 0U) ? K_FOREVER :
+						     K_MSEC(dtls_timeout);
+	u64_t end = z_timeout_end_calc(timeout);
 	socklen_t addrlen = sizeof(struct sockaddr);
 	struct sockaddr addr;
 	int err;
@@ -501,7 +503,7 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len, uint32_t timeout)
 			pev.mode = K_POLL_MODE_NOTIFY_ONLY;
 			pev.state = K_POLL_STATE_NOT_READY;
 
-			if (k_poll(&pev, 1, remaining_time) == -EAGAIN) {
+			if (k_poll(&pev, 1, timeout) == -EAGAIN) {
 				return MBEDTLS_ERR_SSL_TIMEOUT;
 			}
 		}
@@ -539,12 +541,15 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len, uint32_t timeout)
 			/* Received data from different peer, ignore it. */
 			retry = true;
 
-			if (remaining_time != K_FOREVER) {
+			if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 				/* Recalculate the timeout value. */
-				remaining_time = time_left(entry_time, timeout);
-				if (remaining_time <= 0) {
+				s64_t remaining = end - z_tick_get();
+
+				if (remaining <= 0) {
 					return MBEDTLS_ERR_SSL_TIMEOUT;
 				}
+
+				timeout = Z_TIMEOUT_TICKS(remaining);
 			}
 		}
 	} while (retry);
