@@ -1,5 +1,5 @@
-identifier: nrf5340_dk_nrf5340_cpunet
-name: NRF5340-DK-NRF5340-network-MCU
+identifier: nrf5340pdk_nrf5340_cpuapp
+name: NRF5340-PDK-NRF5340-application-MCU
 type: mcu
 arch: arm
 toolchain:
@@ -9,4 +9,6 @@ toolchain:
 ram: 64
 flash: 256
 supported:
+  - i2c
+  - pwm
   - watchdog

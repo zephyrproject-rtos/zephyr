@@ -1,13 +1,16 @@
 /*
- * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright (c) 2019-2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/dts-v1/;
+#include <nordic/nrf5340_cpunet_qkaa.dtsi>
+
 / {
-	model = "Nordic NRF5340 Dev Kit";
-	compatible = "nordic,nrf5340-dk", "nordic,nrf5340-cpuapp-qkaa",
-		     "nordic,nrf5340-cpuapp";
+	model = "Nordic NRF5340 PDK NRF5340 Network";
+	compatible = "nordic,nrf5340-pdk-nrf5340-cpunet",
+		"nordic,nrf5340-cpunet-qkaa", "nordic,nrf5340-cpunet";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -15,6 +18,9 @@
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,bt-c2h-uart = &uart0;
+		zephyr,sram = &sram1;
+		zephyr,flash = &flash1;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
@@ -70,10 +76,6 @@
 	};
 };
 
-&adc {
-	status = "okay";
-};
-
 &gpiote {
 	status = "okay";
 };
@@ -86,33 +88,13 @@
 	status = "okay";
 };
 
-&i2c1 {
-	compatible = "nordic,nrf-twim";
-	status = "okay";
-	sda-pin = <30>;
-	scl-pin = <31>;
-};
-
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	tx-pin = <20>;
-	rx-pin = <22>;
-	rts-pin = <19>;
-	cts-pin = <21>;
-};
-
-&pwm0 {
-	status = "okay";
-	ch0-pin = <28>;
-};
-
-&spi2 {
-	compatible = "nordic,nrf-spim";
-	status = "okay";
-	sck-pin = <32>;
-	mosi-pin = <32>;
-	miso-pin = <36>;
+	tx-pin = <25>;
+	rx-pin = <26>;
+	rts-pin = <10>;
+	cts-pin = <12>;
 };
 
 &timer0 {
@@ -127,7 +109,7 @@
 	status = "okay";
 };
 
-&flash0 {
+&flash1 {
 	/*
 	 * For more information, see:
 	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
@@ -139,49 +121,26 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x00000000 0x10000>;
+			reg = <0x00000000 0xc000>;
 		};
-		slot0_partition: partition@10000 {
+		slot0_partition: partition@c000 {
 			label = "image-0";
+			reg = <0x0000C000 0x12000>;
 		};
-		slot0_ns_partition: partition@40000 {
-			label = "image-0-nonsecure";
-		};
-		slot1_partition: partition@80000 {
+		slot1_partition: partition@1e000 {
 			label = "image-1";
+			reg = <0x0001E000 0x12000>;
 		};
-		slot1_ns_partition: partition@b0000 {
-			label = "image-1-nonsecure";
-		};
-		scratch_partition: partition@f0000 {
+		scratch_partition: partition@30000 {
 			label = "image-scratch";
-			reg = <0x000f0000 0xa000>;
+			reg = <0x00030000 0xa000>;
 		};
-		storage_partition: partition@fa000 {
+		storage_partition: partition@3a000 {
 			label = "storage";
-			reg = <0x000fa000 0x00006000>;
+			reg = <0x0003a000 0x6000>;
 		};
 	};
 };
 
-&sram0 {
-
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		/* SRAM allocated to the Secure image */
-		sram0_s: memory@20000000 {
-			label = "secure_sram_partition";
-		};
-
-		/* SRAM allocated to the Non-Secure image */
-		sram0_ns: memory@20010000 {
-			label = "non_secure_sram_partition";
-		};
-	};
-};
-
-/* Include partition configuration file */
-#include "nrf5340_dk_nrf5340_cpuapp_partition_conf.dts"
+/* Include shared RAM configuration file */
+#include "nrf5340pdk_nrf5340_shared_sram_planning_conf.dts"

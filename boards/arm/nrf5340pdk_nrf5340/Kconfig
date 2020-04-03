@@ -1,9 +1,9 @@
-# nRF5340 DK NRF5340 board configuration
+# nRF5340 PDK board configuration
 
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_NRF5340_DK_NRF5340_CPUAPP || BOARD_NRF5340_DK_NRF5340_CPUAPPNS
+if BOARD_NRF5340PDK_NRF5340_CPUAPP || BOARD_NRF5340PDK_NRF5340_CPUAPPNS
 
 config BOARD_ENABLE_DCDC_APP
 	bool "Enable Application MCU DCDC converter"
@@ -43,9 +43,9 @@ config BOARD_ENABLE_CPUNET
 	  may already have started the Network MCU.
 	default y if (BT || NET_L2_IEEE802154)
 
-endif # BOARD_NRF5340_DK_NRF5340_CPUAPP || BOARD_NRF5340_DK_NRF5340_CPUAPPNS
+endif # BOARD_NRF5340PDK_NRF5340_CPUAPP || BOARD_NRF5340PDK_NRF5340_CPUAPPNS
 
-if BOARD_NRF5340_DK_NRF5340_CPUNET
+if BOARD_NRF5340PDK_NRF5340_CPUNET
 
 # BT_CTLR depends on BT. When BT is enabled we should default to also
 # enabling the controller.
@@ -55,4 +55,4 @@ config BT_CTLR
 config BT_ECC
 	default y if BT
 
-endif # BOARD_NRF5340_DK_NRF5340_CPUNET
+endif # BOARD_NRF5340PDK_NRF5340_CPUNET
