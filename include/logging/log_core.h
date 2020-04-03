@@ -15,19 +15,19 @@
 #include <sys/util.h>
 #include <sys/printk.h>
 
-#define LOG_LEVEL_NONE 0
-#define LOG_LEVEL_ERR  1
-#define LOG_LEVEL_WRN  2
-#define LOG_LEVEL_INF  3
-#define LOG_LEVEL_DBG  4
+#define LOG_LEVEL_NONE 0U
+#define LOG_LEVEL_ERR  1U
+#define LOG_LEVEL_WRN  2U
+#define LOG_LEVEL_INF  3U
+#define LOG_LEVEL_DBG  4U
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifndef CONFIG_LOG
-#define CONFIG_LOG_DEFAULT_LEVEL 0
-#define CONFIG_LOG_MAX_LEVEL 0
+#define CONFIG_LOG_DEFAULT_LEVEL 0U
+#define CONFIG_LOG_MAX_LEVEL 0U
 #endif
 
 #if !defined(CONFIG_LOG) || defined(CONFIG_LOG_MINIMAL)
@@ -357,7 +357,7 @@ static inline char z_log_minimal_level_to_char(int level)
 /******************************************************************************/
 
 /** @brief Number of bits used to encode log level. */
-#define LOG_LEVEL_BITS 3
+#define LOG_LEVEL_BITS 3U
 
 /** @brief Filter slot size. */
 #define LOG_FILTER_SLOT_SIZE LOG_LEVEL_BITS
@@ -366,7 +366,7 @@ static inline char z_log_minimal_level_to_char(int level)
 #define LOG_FILTERS_NUM_OF_SLOTS (32 / LOG_FILTER_SLOT_SIZE)
 
 /** @brief Slot mask. */
-#define LOG_FILTER_SLOT_MASK (BIT(LOG_FILTER_SLOT_SIZE) - 1)
+#define LOG_FILTER_SLOT_MASK (BIT(LOG_FILTER_SLOT_SIZE) - 1U)
 
 /** @brief Bit offset of a slot.
  *
