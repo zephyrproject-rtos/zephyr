@@ -355,7 +355,7 @@ static int lpc_gpio_0_init(struct device *dev);
 
 static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port0_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
 	},
 	.gpio_base = GPIO,
 	.pint_base = PINT, /* TODO: SECPINT issue #16330 */
@@ -425,7 +425,7 @@ static int lpc_gpio_1_init(struct device *dev);
 
 static const struct gpio_mcux_lpc_config gpio_mcux_lpc_port1_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(1, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
 	},
 	.gpio_base = GPIO,
 	.pint_base = PINT,

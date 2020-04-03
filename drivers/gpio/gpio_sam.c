@@ -335,7 +335,7 @@ static void port_a_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_a_sam_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
 	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTA_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTA_PERIPHERAL_ID,
@@ -363,7 +363,7 @@ static void port_b_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_b_sam_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(1, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
 	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTB_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTB_PERIPHERAL_ID,
@@ -391,7 +391,7 @@ static void port_c_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_c_sam_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(2, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
 	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTC_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTC_PERIPHERAL_ID,
@@ -419,7 +419,7 @@ static void port_d_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_d_sam_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(3, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
 	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTD_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTD_PERIPHERAL_ID,
@@ -447,7 +447,7 @@ static void port_e_sam_config_func(struct device *dev);
 
 static const struct gpio_sam_config port_e_sam_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(4, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(4),
 	},
 	.regs = (Pio *)DT_GPIO_SAM_PORTE_BASE_ADDRESS,
 	.periph_id = DT_GPIO_SAM_PORTE_PERIPHERAL_ID,

@@ -336,7 +336,7 @@ static int gpio_xec_port000_036_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port000_036_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(0, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
 	},
 	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO000_036_BASE_ADDR,
 	.port_num = MCHP_GPIO_000_036,
@@ -379,7 +379,7 @@ static int gpio_xec_port040_076_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port040_076_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(1, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
 	},
 	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO040_076_BASE_ADDR,
 	.port_num = MCHP_GPIO_040_076,
@@ -422,7 +422,7 @@ static int gpio_xec_port100_136_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port100_136_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(2, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
 	},
 	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO100_136_BASE_ADDR,
 	.port_num = MCHP_GPIO_100_136,
@@ -465,7 +465,7 @@ static int gpio_xec_port140_176_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port140_176_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(3, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
 	},
 	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO140_176_BASE_ADDR,
 	.port_num = MCHP_GPIO_140_176,
@@ -508,7 +508,7 @@ static int gpio_xec_port200_236_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port200_236_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(4, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(4),
 	},
 	.pcr1_base = (u32_t *) DT_GPIO_XEC_GPIO200_236_BASE_ADDR,
 	.port_num = MCHP_GPIO_200_236,
@@ -551,7 +551,7 @@ static int gpio_xec_port240_276_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port240_276_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(5, ngpios)),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(5),
 	},
 	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO240_276_BASE_ADDR,
 	.port_num = MCHP_GPIO_240_276,
