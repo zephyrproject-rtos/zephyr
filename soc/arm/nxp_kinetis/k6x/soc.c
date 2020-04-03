@@ -104,6 +104,9 @@ static ALWAYS_INLINE void clock_init(void)
 #if CONFIG_ETH_MCUX
 	CLOCK_SetEnetTime0Clock(TIMESRC_OSCERCLK);
 #endif
+#if CONFIG_ETH_MCUX_RMII_EXT_CLK
+	CLOCK_SetRmii0Clock(1);
+#endif
 #if CONFIG_USB_KINETIS
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
 				DT_ARM_CORTEX_M4F_0_CLOCK_FREQUENCY);
