@@ -37,24 +37,6 @@
 #define tcp_pkt_clone(_pkt) tp_pkt_clone(_pkt, tp_basename(__FILE__), __LINE__)
 #define tcp_pkt_unref(_pkt) tp_pkt_unref(_pkt, tp_basename(__FILE__), __LINE__)
 #else
-static struct net_pkt *tcp_pkt_alloc(size_t len)
-{
-	struct net_pkt *pkt = net_pkt_alloc(K_NO_WAIT);
-
-	pkt->family = AF_INET;
-
-	NET_ASSERT(pkt);
-
-	if (len) {
-		struct net_buf *buf = net_pkt_get_frag(pkt, K_NO_WAIT);
-
-		net_buf_add(buf, len);
-		net_pkt_frag_insert(pkt, buf);
-		NET_ASSERT(buf);
-	}
-
-	return pkt;
-}
 #define tcp_pkt_clone(_pkt) net_pkt_clone(_pkt, K_NO_WAIT)
 #define tcp_pkt_unref(_pkt) net_pkt_unref(_pkt)
 #endif
