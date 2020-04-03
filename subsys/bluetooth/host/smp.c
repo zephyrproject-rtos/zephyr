@@ -1823,10 +1823,13 @@ static void smp_pairing_complete(struct bt_smp *smp, u8_t status)
 	} else {
 		u8_t auth_err = auth_err_get(status);
 
-		/*
-		 * Clear the key pool entry in case of pairing failure.
+		/* Clear the key pool entry in case of pairing failure if the
+		 * keys already existed before the pairing procedure or the
+		 * pairing failed during key distribution.
 		 */
-		if (smp->chan.chan.conn->le.keys) {
+		if (smp->chan.chan.conn->le.keys &&
+		    (!smp->chan.chan.conn->le.keys->enc_size ||
+		     atomic_test_bit(smp->flags, SMP_FLAG_KEYS_DISTR))) {
 			bt_keys_clear(smp->chan.chan.conn->le.keys);
 			smp->chan.chan.conn->le.keys = NULL;
 		}
