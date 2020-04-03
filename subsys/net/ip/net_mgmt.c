@@ -261,7 +261,7 @@ static int mgmt_event_wait_call(struct net_if *iface,
 				struct net_if **event_iface,
 				const void **info,
 				size_t *info_length,
-				int timeout)
+				k_timeout_t timeout)
 {
 	struct mgmt_event_wait sync_data = {
 		.sync_call = Z_SEM_INITIALIZER(sync_data.sync_call, 0, 1),
@@ -353,7 +353,7 @@ int net_mgmt_event_wait(u32_t mgmt_event_mask,
 			struct net_if **iface,
 			const void **info,
 			size_t *info_length,
-			int timeout)
+			k_timeout_t timeout)
 {
 	return mgmt_event_wait_call(NULL, mgmt_event_mask,
 				    raised_event, iface, info, info_length,
@@ -365,7 +365,7 @@ int net_mgmt_event_wait_on_iface(struct net_if *iface,
 				 u32_t *raised_event,
 				 const void **info,
 				 size_t *info_length,
-				 int timeout)
+				 k_timeout_t timeout)
 {
 	NET_ASSERT(NET_MGMT_ON_IFACE(mgmt_event_mask));
 	NET_ASSERT(iface);
