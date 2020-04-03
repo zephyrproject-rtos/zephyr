@@ -355,6 +355,7 @@ html_redirect_pages = [
 		('boards/arm/nrf52_pca20020/doc/nrf52_pca20020', 'boards/arm/thingy52_nrf52832/doc/index'),
 		('boards/arm/nrf52_pca20020/doc/nrf52_pca20020/index', 'boards/arm/thingy52_nrf52832/doc/index'),
 		('boards/arm/nrf52_vbluno52/doc/nrf52_vbluno52', 'boards/arm/nrf52_vbluno52/doc/index'),
+		('boards/arm/nrf5340_dk_nrf5340/doc/index', 'boards/arm/nrf5340pdk_nrf5340/doc/index'),
 		('boards/arm/nucleo_f030r8/doc/nucleof030r8', 'boards/arm/nucleo_f030r8/doc/index'),
 		('boards/arm/nucleo_f070rb/doc/nucleof070rb', 'boards/arm/nucleo_f070rb/doc/index'),
 		('boards/arm/nucleo_f091rc/doc/nucleof091rc', 'boards/arm/nucleo_f091rc/doc/index'),
