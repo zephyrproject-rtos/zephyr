@@ -908,7 +908,7 @@ static u16_t pkt_recv_data_len;
 
 #define WAIT_TIME K_SECONDS(1)
 
-#define ALLOC_TIMEOUT 500
+#define ALLOC_TIMEOUT K_MSEC(500)
 
 struct net_if_test {
 	u8_t idx;
