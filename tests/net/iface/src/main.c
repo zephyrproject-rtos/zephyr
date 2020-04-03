@@ -440,7 +440,7 @@ static bool send_iface(struct net_if *iface, int val, bool expect_fail)
 		return false;
 	}
 
-	if (!expect_fail && k_sem_take(&wait_data, WAIT_TIME)) {
+	if (!expect_fail && k_sem_take(&wait_data, K_MSEC(WAIT_TIME))) {
 		DBG("Timeout while waiting interface %d data\n", val);
 		return false;
 	}
