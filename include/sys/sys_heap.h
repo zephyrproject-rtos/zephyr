@@ -6,7 +6,9 @@
 #ifndef ZEPHYR_INCLUDE_SYS_SYS_HEAP_H_
 #define ZEPHYR_INCLUDE_SYS_SYS_HEAP_H_
 
-#include <kernel.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <zephyr/types.h>
 
 /* Simple, fast heap implementation.
  *

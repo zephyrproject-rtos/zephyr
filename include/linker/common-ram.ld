@@ -76,6 +76,13 @@
 		_k_mem_pool_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+	SECTION_DATA_PROLOGUE(_k_heap_area,,SUBALIGN(4))
+	{
+		_k_heap_list_start = .;
+		KEEP(*("._k_heap.static.*"))
+		_k_heap_list_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 	SECTION_DATA_PROLOGUE(_k_sem_area,,SUBALIGN(4))
 	{
 		_k_sem_list_start = .;
