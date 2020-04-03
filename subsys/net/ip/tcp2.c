@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include <net/net_context.h>
 #include <net/udp.h>
 #include "ipv4.h"
+#include "ipv6.h"
 #include "connection.h"
 #include "net_stats.h"
 #include "net_private.h"
@@ -465,113 +466,122 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 	return len;
 }
 
-static void tcp_header_add(struct tcp *conn, struct net_pkt *pkt, u8_t flags)
+static int tcp_finalize_pkt(struct net_pkt *pkt)
 {
-	struct net_buf *buf = net_pkt_get_frag(pkt, K_NO_WAIT);
-	struct tcphdr th;
+	net_pkt_cursor_init(pkt);
 
-	memset(&th, 0, sizeof(th));
-
-	th.th_sport = conn->src->sin.sin_port;
-	th.th_dport = conn->dst->sin.sin_port;
-
-	th.th_off = 5;
-	th.th_flags = flags;
-	th.th_win = htons(conn->win);
-	th.th_seq = htonl(conn->seq);
-
-	if (ACK & flags) {
-		th.th_ack = htonl(conn->ack);
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		return net_ipv4_finalize(pkt, IPPROTO_TCP);
 	}
 
-	memcpy(net_buf_add(buf, sizeof(th)), &th, sizeof(th));
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
+		return net_ipv6_finalize(pkt, IPPROTO_TCP);
+	}
 
-	net_pkt_frag_insert(pkt, buf);
+	return -EINVAL;
 }
 
-static void ip_header_add(struct tcp *conn, struct net_pkt *pkt)
+static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, u8_t flags)
 {
-	struct net_buf *buf = net_pkt_get_frag(pkt, K_NO_WAIT);
+	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct tcphdr);
+	struct tcphdr *th;
 
-	pkt->family = net_context_get_family(conn->context);
-
-	switch (pkt->family) {
-	case AF_INET: {
-		struct net_ipv4_hdr ip;
-
-		memset(&ip, 0, sizeof(ip));
-
-		ip.vhl = 0x45;
-		ip.ttl = 64;
-		ip.proto = IPPROTO_TCP;
-		ip.len = htons(net_pkt_get_len(pkt) + sizeof(ip));
-
-		ip.src = conn->src->sin.sin_addr;
-		ip.dst = conn->dst->sin.sin_addr;
-
-		memcpy(net_buf_add(buf, sizeof(ip)), &ip, sizeof(ip));
-
-		net_pkt_frag_insert(pkt, buf);
-
-		net_pkt_set_ip_hdr_len(pkt, buf->len);
-
-		net_pkt_cursor_init(pkt);
-
-		net_ipv4_finalize(pkt, IPPROTO_TCP);
-		break;
+	th = (struct tcphdr *)net_pkt_get_data(pkt, &tcp_access);
+	if (!th) {
+		return -ENOBUFS;
 	}
-	case AF_INET6: {
-		struct net_ipv6_hdr ip6;
 
-		memset(&ip6, 0, sizeof(ip6));
+	memset(th, 0, sizeof(struct tcphdr));
 
-		ip6.vtc = 0x60;
-		ip6.nexthdr = IPPROTO_TCP;
-		ip6.len = htons(net_pkt_get_len(pkt));
+	th->th_sport = conn->src->sin.sin_port;
+	th->th_dport = conn->dst->sin.sin_port;
 
-		ip6.src = conn->src->sin6.sin6_addr;
-		ip6.dst = conn->dst->sin6.sin6_addr;
+	th->th_off = 5;
+	th->th_flags = flags;
+	th->th_win = htons(conn->win);
+	th->th_seq = htonl(conn->seq);
 
-		memcpy(net_buf_add(buf, sizeof(ip6)), &ip6, sizeof(ip6));
-
-		net_pkt_frag_insert(pkt, buf);
-
-		net_pkt_set_ip_hdr_len(pkt, buf->len);
-
-		break;
+	if (ACK & flags) {
+		th->th_ack = htonl(conn->ack);
 	}
+
+	return net_pkt_set_data(pkt, &tcp_access);
+}
+
+static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		return net_context_create_ipv4_new(conn->context, pkt,
+						&conn->src->sin.sin_addr,
+						&conn->dst->sin.sin_addr);
 	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
+		return net_context_create_ipv6_new(conn->context, pkt,
+						&conn->src->sin6.sin6_addr,
+						&conn->dst->sin6.sin6_addr);
+	}
+
+	return -EINVAL;
+}
+
+static struct net_pkt *tcp_pkt_alloc(struct net_if *iface,
+				     sa_family_t family, size_t len)
+{
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(iface, len, family,
+					IPPROTO_TCP, K_NO_WAIT);
+
+#if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
+	tp_pkt_alloc(pkt);
+#endif
+	return pkt;
 }
 
 static void tcp_out(struct tcp *conn, u8_t flags, ...)
 {
 	struct net_pkt *pkt;
 	size_t len = 0;
+	int r;
+
+	pkt = tcp_pkt_alloc(conn->iface, net_context_get_family(conn->context),
+			    sizeof(struct tcphdr));
+	if (!pkt) {
+		goto fail;
+	}
 
 	if (PSH & flags) {
+		struct net_pkt *data_pkt;
 		va_list ap;
 		va_start(ap, flags);
-		pkt = va_arg(ap, struct net_pkt *);
+		data_pkt = va_arg(ap, struct net_pkt *);
 		va_end(ap);
 
-		len = net_pkt_get_len(pkt);
-	} else {
-		pkt = tcp_pkt_alloc(0);
+		len = net_pkt_get_len(data_pkt);
+		/* Append the data buffer to pkt */
+		net_pkt_append_buffer(pkt, data_pkt->buffer);
+
+		data_pkt->buffer = NULL;
+		tcp_pkt_unref(data_pkt);
 	}
 
 	pkt->iface = conn->iface;
 
-	tcp_header_add(conn, pkt, flags);
+	r = ip_header_add(conn, pkt);
+	if (r < 0) {
+		goto fail;
+	}
 
-	ip_header_add(conn, pkt);
+	r = tcp_header_add(conn, pkt, flags);
+	if (r < 0) {
+		goto fail;
+	}
 
-	net_pkt_cursor_init(pkt);
-	net_pkt_set_overwrite(pkt, true);
-
-	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
-		     net_pkt_ip_opts_len(pkt));
-
-	net_tcp_finalize(pkt);
+	r = tcp_finalize_pkt(pkt);
+	if (r < 0) {
+		goto fail;
+	}
 
 	if (len) {
 		conn_seq(conn, + len);
@@ -589,6 +599,11 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 	tcp_send_process((struct k_work *)&conn->send_timer);
 out:
 	return;
+
+fail:
+	if (pkt) {
+		tcp_pkt_unref(pkt);
+	}
 }
 
 static void tcp_conn_ref(struct tcp *conn)
