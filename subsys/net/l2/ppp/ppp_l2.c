@@ -373,7 +373,7 @@ int net_ppp_ping(int idx, s32_t timeout)
 		return ret;
 	}
 
-	ret = k_sem_take(&ctx->shell.wait_echo_reply, timeout);
+	ret = k_sem_take(&ctx->shell.wait_echo_reply, K_MSEC(timeout));
 
 	ctx->shell.echo_reply.cb = NULL;
 

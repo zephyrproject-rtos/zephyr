@@ -3213,7 +3213,7 @@ static int cmd_net_ppp_ping(const struct shell *shell, size_t argc,
 			return -ENOEXEC;
 		}
 
-		ret = net_ppp_ping(idx, K_SECONDS(1));
+		ret = net_ppp_ping(idx, MSEC_PER_SEC * 1);
 		if (ret < 0) {
 			if (ret == -EAGAIN) {
 				PR_INFO("PPP Echo-Req timeout.\n");
