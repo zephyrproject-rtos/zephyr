@@ -79,7 +79,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	       sizeof(lll->data_chan_map));
 	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
 			       sizeof(lll->data_chan_map));
-	if (lll->data_chan_count < 2) {
+	if (!lll->data_chan_count) {
 		return;
 	}
 	lll->data_chan_hop = pdu_adv->connect_ind.hop;
