@@ -73,7 +73,7 @@ static int test_recv_buf(u8_t *feed_buf, size_t feed_len,
 	ctx_ptr = POINTER_TO_INT(&test_data);
 
 	return websocket_recv_msg(ctx_ptr, recv_buf, recv_len,
-				  msg_type, remaining, K_NO_WAIT);
+				  msg_type, remaining, 0);
 }
 
 /* Websocket frame, header is 6 bytes, FIN bit is set, opcode is text (1),
@@ -347,7 +347,7 @@ static void test_send_and_recv_lorem_ipsum(void)
 	ret = websocket_send_msg(POINTER_TO_INT(&ctx),
 				 lorem_ipsum, test_msg_len,
 				 WEBSOCKET_OPCODE_DATA_TEXT, true, true,
-				 K_FOREVER);
+				 NET_WAIT_FOREVER);
 	zassert_equal(ret, test_msg_len,
 		      "Should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);
@@ -367,7 +367,7 @@ static void test_recv_two_large_split_msg(void)
 
 	ret = websocket_send_msg(POINTER_TO_INT(&ctx), lorem_ipsum,
 				 test_msg_len, WEBSOCKET_OPCODE_DATA_TEXT,
-				 false, true, K_FOREVER);
+				 false, true, NET_WAIT_FOREVER);
 	zassert_equal(ret, test_msg_len,
 		      "1st should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);

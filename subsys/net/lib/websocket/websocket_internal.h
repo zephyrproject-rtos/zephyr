@@ -78,10 +78,6 @@ struct websocket_context {
 	/** Websocket connection masking value */
 	u32_t masking_value;
 
-	/** Timeout for Websocket operations.
-	 */
-	s32_t timeout;
-
 	/** Amount of data received. */
 	u64_t total_read;
 

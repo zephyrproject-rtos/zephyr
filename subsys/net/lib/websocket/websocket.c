@@ -271,7 +271,6 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	ctx->real_sock = sock;
 	ctx->tmp_buf = wreq->tmp_buf;
 	ctx->tmp_buf_len = wreq->tmp_buf_len;
-	ctx->timeout = timeout;
 	ctx->sec_accept_key = sec_accept_key;
 	ctx->http_cb = wreq->http_cb;
 
@@ -475,8 +474,14 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 	 */
 	return verify_sent_and_received_msg(&msg, !(header[1] & BIT(7)));
 #else
+	k_timeout_t tout = K_FOREVER;
+
+	if (timeout != NET_WAIT_FOREVER) {
+		tout = K_MSEC(timeout);
+	}
+
 	return sendmsg(ctx->real_sock, &msg,
-		       timeout == K_NO_WAIT ? MSG_DONTWAIT : 0);
+		       K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0);
 #endif /* CONFIG_NET_TEST */
 }
 
@@ -659,6 +664,11 @@ int websocket_recv_msg(int ws_sock, u8_t *buf, size_t buf_len,
 	int recv_len = 0;
 	size_t can_copy, left;
 	int ret;
+	k_timeout_t tout = K_FOREVER;
+
+	if (timeout != NET_WAIT_FOREVER) {
+		tout = K_MSEC(timeout);
+	}
 
 #if defined(CONFIG_NET_TEST)
 	/* Websocket unit test does not use socket layer but feeds
@@ -697,7 +707,7 @@ int websocket_recv_msg(int ws_sock, u8_t *buf, size_t buf_len,
 #else
 		ret = recv(ctx->real_sock, &ctx->tmp_buf[ctx->tmp_buf_pos],
 			   ctx->tmp_buf_len - ctx->tmp_buf_pos,
-			   timeout == K_NO_WAIT ? MSG_DONTWAIT : 0);
+			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0);
 #endif /* CONFIG_NET_TEST */
 
 		if (ret < 0) {
@@ -783,7 +793,7 @@ int websocket_recv_msg(int ws_sock, u8_t *buf, size_t buf_len,
 		ret = input_len;
 #else
 		ret = recv(ctx->real_sock, ctx->tmp_buf, ctx->tmp_buf_len,
-			   timeout == K_NO_WAIT ? MSG_DONTWAIT : 0);
+			   K_TIMEOUT_EQ(tout, K_NO_WAIT) ? MSG_DONTWAIT : 0);
 #endif /* CONFIG_NET_TEST */
 
 		if (ret < 0) {
@@ -903,13 +913,13 @@ static int websocket_recv(struct websocket_context *ctx, u8_t *buf,
 
 static ssize_t websocket_read_vmeth(void *obj, void *buffer, size_t count)
 {
-	return (ssize_t)websocket_recv(obj, buffer, count, K_FOREVER);
+	return (ssize_t)websocket_recv(obj, buffer, count, NET_WAIT_FOREVER);
 }
 
 static ssize_t websocket_write_vmeth(void *obj, const void *buffer,
 				     size_t count)
 {
-	return (ssize_t)websocket_send(obj, buffer, count, K_FOREVER);
+	return (ssize_t)websocket_send(obj, buffer, count, NET_WAIT_FOREVER);
 }
 
 static ssize_t websocket_sendto_ctx(void *obj, const void *buf, size_t len,
@@ -918,10 +928,10 @@ static ssize_t websocket_sendto_ctx(void *obj, const void *buf, size_t len,
 				    socklen_t addrlen)
 {
 	struct websocket_context *ctx = obj;
-	s32_t timeout = K_FOREVER;
+	s32_t timeout = NET_WAIT_FOREVER;
 
 	if (flags & ZSOCK_MSG_DONTWAIT) {
-		timeout = K_NO_WAIT;
+		timeout = 0;
 	}
 
 	ARG_UNUSED(dest_addr);
@@ -935,10 +945,10 @@ static ssize_t websocket_recvfrom_ctx(void *obj, void *buf, size_t max_len,
 				      socklen_t *addrlen)
 {
 	struct websocket_context *ctx = obj;
-	s32_t timeout = K_FOREVER;
+	s32_t timeout = NET_WAIT_FOREVER;
 
 	if (flags & ZSOCK_MSG_DONTWAIT) {
-		timeout = K_NO_WAIT;
+		timeout = 0;
 	}
 
 	ARG_UNUSED(src_addr);

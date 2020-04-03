@@ -175,7 +175,7 @@ static size_t how_much_to_send(size_t max_len)
 static ssize_t sendall_with_ws_api(int sock, const void *buf, size_t len)
 {
 	return websocket_send_msg(sock, buf, len, WEBSOCKET_OPCODE_DATA_TEXT,
-				  true, true, K_FOREVER);
+				  true, true, NET_WAIT_FOREVER);
 }
 
 static ssize_t sendall_with_bsd_api(int sock, const void *buf, size_t len)
@@ -199,7 +199,7 @@ static void recv_data_wso_api(int sock, size_t amount, u8_t *buf,
 					 buf_len - read_pos,
 					 &message_type,
 					 &remaining,
-					 K_NO_WAIT);
+					 0);
 		if (ret <= 0) {
 			if (ret == -EAGAIN) {
 				k_sleep(K_MSEC(50));
@@ -326,7 +326,7 @@ void main(void)
 	};
 	int sock4 = -1, sock6 = -1;
 	int websock4 = -1, websock6 = -1;
-	s32_t timeout = K_SECONDS(3);
+	s32_t timeout = 3 * MSEC_PER_SEC;
 	struct sockaddr_in6 addr6;
 	struct sockaddr_in addr4;
 	size_t amount;
