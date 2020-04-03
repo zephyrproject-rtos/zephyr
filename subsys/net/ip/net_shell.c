@@ -2970,7 +2970,7 @@ static int ping_ipv6(const struct shell *shell,
 			break;
 		}
 
-		k_sleep(interval);
+		k_msleep(interval);
 	}
 
 	remove_ipv6_ping_handler();
@@ -3075,7 +3075,7 @@ static int ping_ipv4(const struct shell *shell,
 			break;
 		}
 
-		k_sleep(interval);
+		k_msleep(interval);
 	}
 
 	remove_ipv4_ping_handler();
