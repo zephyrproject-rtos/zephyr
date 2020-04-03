@@ -179,7 +179,7 @@ static void prepare_ra_message(struct net_pkt *pkt)
 	pkt->buffer = NULL;
 
 	net_pkt_alloc_buffer(pkt, sizeof(struct net_eth_hdr) +
-			     sizeof(icmpv6_ra), AF_UNSPEC, 0);
+			     sizeof(icmpv6_ra), AF_UNSPEC, K_NO_WAIT);
 	net_pkt_cursor_init(pkt);
 
 	hdr.type = htons(NET_ETH_PTYPE_IPV6);
@@ -565,7 +565,7 @@ static void test_prefix_timeout_long(void)
 	zassert_equal(ifprefix->lifetime.wrap_counter, 2000,
 		      "Wrap counter wrong (%d)",
 		      ifprefix->lifetime.wrap_counter);
-	remaining = K_SECONDS((u64_t)lifetime) -
+	remaining = MSEC_PER_SEC * (u64_t)lifetime -
 		NET_TIMEOUT_MAX_VALUE * (u64_t)ifprefix->lifetime.wrap_counter;
 
 	zassert_equal(remaining, ifprefix->lifetime.timer_timeout,
@@ -925,7 +925,7 @@ static void test_address_lifetime(void)
 				     0, 0, 0, 0, 0, 0, 0x20, 0x1 } } };
 	struct net_if *iface = net_if_get_default();
 	u32_t vlifetime = 0xffff;
-	u64_t timeout = K_SECONDS((u64_t)vlifetime);
+	u64_t timeout = (u64_t)vlifetime * MSEC_PER_SEC;
 	struct net_if_addr *ifaddr;
 	u64_t remaining;
 	bool ret;
@@ -953,7 +953,7 @@ static void test_address_lifetime(void)
 
 	zassert_equal(ifaddr->lifetime.wrap_counter, 2,
 		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
-	remaining = K_SECONDS((u64_t)vlifetime) -
+	remaining = MSEC_PER_SEC * (u64_t)vlifetime -
 		NET_TIMEOUT_MAX_VALUE * (u64_t)ifaddr->lifetime.wrap_counter;
 
 	zassert_equal(remaining, ifaddr->lifetime.timer_timeout,
@@ -966,8 +966,8 @@ static void test_address_lifetime(void)
 	zassert_equal(ifaddr->lifetime.wrap_counter, 2,
 		      "Wrap counter wrong (%d)", ifaddr->lifetime.wrap_counter);
 
-	ifaddr->lifetime.timer_timeout = K_MSEC(10);
-	ifaddr->lifetime.timer_start = k_uptime_get_32() - K_MSEC(10);
+	ifaddr->lifetime.timer_timeout = 10;
+	ifaddr->lifetime.timer_start = k_uptime_get_32() - 10;
 	ifaddr->lifetime.wrap_counter = 0;
 
 	net_address_lifetime_timeout();
@@ -1258,7 +1258,7 @@ static void net_ctx_recv(struct net_context *ctx)
 {
 	int ret;
 
-	ret = net_context_recv(ctx, recv_cb, 0, NULL);
+	ret = net_context_recv(ctx, recv_cb, K_NO_WAIT, NULL);
 	zassert_equal(ret, 0, "Context recv IPv6 UDP failed");
 }
 

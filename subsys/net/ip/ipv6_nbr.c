@@ -77,8 +77,8 @@ static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, s64_t time);
 /* Protocol constants from RFC 4861 Chapter 10 */
 #define MAX_MULTICAST_SOLICIT 3
 #define MAX_UNICAST_SOLICIT   3
-#define DELAY_FIRST_PROBE_TIME K_SECONDS(5)
-#define RETRANS_TIMER K_MSEC(1000)
+#define DELAY_FIRST_PROBE_TIME (5 * MSEC_PER_SEC)
+#define RETRANS_TIMER 1000 /* ms */
 
 extern void net_neighbor_data_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
@@ -333,7 +333,7 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
 	return true;
 }
 
-#define NS_REPLY_TIMEOUT K_SECONDS(1)
+#define NS_REPLY_TIMEOUT (1 * MSEC_PER_SEC)
 
 static void ipv6_ns_reply_timeout(struct k_work *work)
 {
@@ -367,7 +367,7 @@ static void ipv6_ns_reply_timeout(struct k_work *work)
 			if (!k_delayed_work_remaining_get(
 						&ipv6_ns_reply_timer)) {
 				k_delayed_work_submit(&ipv6_ns_reply_timer,
-						remaining);
+						      K_MSEC(remaining));
 			}
 
 			continue;
@@ -1395,7 +1395,7 @@ static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, s64_t time)
 
 	remaining = k_delayed_work_remaining_get(&ipv6_nd_reachable_timer);
 	if (!remaining || remaining > time) {
-		k_delayed_work_submit(&ipv6_nd_reachable_timer, time);
+		k_delayed_work_submit(&ipv6_nd_reachable_timer, K_MSEC(time));
 	}
 }
 
@@ -1913,7 +1913,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 		/* Let's start the timer if necessary */
 		if (!k_delayed_work_remaining_get(&ipv6_ns_reply_timer)) {
 			k_delayed_work_submit(&ipv6_ns_reply_timer,
-					      NS_REPLY_TIMEOUT);
+					      K_MSEC(NS_REPLY_TIMEOUT));
 		}
 	}
 
@@ -2131,7 +2131,7 @@ static inline u32_t remaining_lifetime(struct net_if_addr *ifaddr)
 		(u64_t)time_diff(k_uptime_get_32(),
 				 ifaddr->lifetime.timer_start);
 
-	return (u32_t)(remaining / K_MSEC(1000));
+	return (u32_t)(remaining / MSEC_PER_SEC);
 }
 
 static inline void handle_prefix_autonomous(struct net_pkt *pkt,
