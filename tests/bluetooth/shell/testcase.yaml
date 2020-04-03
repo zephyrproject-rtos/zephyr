@@ -15,3 +15,13 @@ tests:
     platform_exclude: nrf52810_pca10040
     tags: bluetooth
     harness: keyboard
+  bluetooth.shell.adv_ext:
+    build_only: true
+    extra_args: OVERLAY_CONFIG=ext_adv.conf
+    platform_whitelist: native_posix
+    tags: bluetooth
+  bluetooth.shell.adv_ext_no_privacy:
+    build_only: true
+    extra_args: OVERLAY_CONFIG=ext_adv_no_priv.conf
+    platform_whitelist: native_posix
+    tags: bluetooth
