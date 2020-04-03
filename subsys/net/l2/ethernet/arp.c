@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_arp, CONFIG_NET_ARP_LOG_LEVEL);
 #include "net_private.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
-#define ARP_REQUEST_TIMEOUT K_SECONDS(2)
+#define ARP_REQUEST_TIMEOUT (2 * MSEC_PER_SEC)
 
 static bool arp_cache_initialized;
 static struct arp_entry arp_entries[CONFIG_NET_ARP_TABLE_SIZE];
@@ -173,7 +173,7 @@ static void arp_entry_register_pending(struct arp_entry *entry)
 	/* Let's start the timer if necessary */
 	if (!k_delayed_work_remaining_get(&arp_request_timer)) {
 		k_delayed_work_submit(&arp_request_timer,
-				      ARP_REQUEST_TIMEOUT);
+				      K_MSEC(ARP_REQUEST_TIMEOUT));
 	}
 }
 
@@ -201,8 +201,8 @@ static void arp_request_timeout(struct k_work *work)
 
 	if (entry) {
 		k_delayed_work_submit(&arp_request_timer,
-				      entry->req_start +
-				      ARP_REQUEST_TIMEOUT - current);
+				      K_MSEC(entry->req_start +
+					     ARP_REQUEST_TIMEOUT - current));
 	}
 }
 
