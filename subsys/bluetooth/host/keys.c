@@ -309,7 +309,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 
 	len = read_cb(cb_arg, val, sizeof(val));
 	if (len < 0) {
-		BT_ERR("Failed to read value (err %zu)", len);
+		BT_ERR("Failed to read value (err %zd)", len);
 		return -EINVAL;
 	}
 
@@ -361,7 +361,7 @@ static int keys_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 				continue;
 			}
 
-			BT_ERR("Invalid key length %zu != %zu", len,
+			BT_ERR("Invalid key length %zd != %zu", len,
 			       BT_KEYS_STORAGE_LEN);
 			bt_keys_clear(keys);
 

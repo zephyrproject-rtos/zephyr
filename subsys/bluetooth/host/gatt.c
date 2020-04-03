@@ -3853,7 +3853,7 @@ static int ccc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 			len = read_cb(cb_arg, ccc_store, sizeof(ccc_store));
 
 			if (len < 0) {
-				BT_ERR("Failed to decode value (err %d)", len);
+				BT_ERR("Failed to decode value (err %zd)", len);
 				return len;
 			}
 
@@ -4240,10 +4240,11 @@ static int sc_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	if (len_rd) {
 		len = read_cb(cb_arg, &cfg->data, sizeof(cfg->data));
 		if (len < 0) {
-			BT_ERR("Failed to decode value (err %d)", len);
+			BT_ERR("Failed to decode value (err %zd)", len);
 			return len;
 		}
-		BT_DBG("Read SC: len %d", len);
+
+		BT_DBG("Read SC: len %zd", len);
 
 		BT_DBG("Restored SC for %s", bt_addr_le_str(&addr));
 	} else if (cfg) {
@@ -4313,11 +4314,11 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 	if (len_rd) {
 		len = read_cb(cb_arg, cfg->data, sizeof(cfg->data));
 		if (len < 0) {
-			BT_ERR("Failed to decode value (err %d)", len);
+			BT_ERR("Failed to decode value (err %zd)", len);
 			return len;
 		}
 
-		BT_DBG("Read CF: len %d", len);
+		BT_DBG("Read CF: len %zd", len);
 	} else {
 		clear_cf_cfg(cfg);
 	}
@@ -4338,7 +4339,7 @@ static int db_hash_set(const char *name, size_t len_rd,
 
 	len = read_cb(cb_arg, stored_hash, sizeof(stored_hash));
 	if (len < 0) {
-		BT_ERR("Failed to decode value (err %d)", len);
+		BT_ERR("Failed to decode value (err %zd)", len);
 		return len;
 	}
 

@@ -154,7 +154,7 @@ static int dis_set(const char *name, size_t len_rd,
 		len = read_cb(store, &dis_manuf, sizeof(dis_manuf) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read manufacturer from storage"
-				       " (err %d)", len);
+				       " (err %zd)", len);
 		} else {
 			dis_manuf[len] = '\0';
 
@@ -166,7 +166,7 @@ static int dis_set(const char *name, size_t len_rd,
 		len = read_cb(store, &dis_model, sizeof(dis_model) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read model from storage"
-				       " (err %d)", len);
+				       " (err %zd)", len);
 		} else {
 			dis_model[len] = '\0';
 
@@ -180,7 +180,7 @@ static int dis_set(const char *name, size_t len_rd,
 			   sizeof(dis_serial_number) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read serial number from storage"
-				       " (err %d)", len);
+				       " (err %zd)", len);
 		} else {
 			dis_serial_number[len] = '\0';
 
@@ -194,7 +194,7 @@ static int dis_set(const char *name, size_t len_rd,
 		len = read_cb(store, &dis_fw_rev, sizeof(dis_fw_rev) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read firmware revision from storage"
-				       " (err %d)", len);
+				       " (err %zd)", len);
 		} else {
 			dis_fw_rev[len] = '\0';
 
@@ -208,7 +208,7 @@ static int dis_set(const char *name, size_t len_rd,
 		len = read_cb(store, &dis_hw_rev, sizeof(dis_hw_rev) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read hardware revision from storage"
-				       " (err %d)", len);
+				       " (err %zd)", len);
 		} else {
 			dis_hw_rev[len] = '\0';
 
@@ -222,7 +222,7 @@ static int dis_set(const char *name, size_t len_rd,
 		len = read_cb(store, &dis_sw_rev, sizeof(dis_sw_rev) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read software revision from storage"
-				       " (err %d)", len);
+				       " (err %zd)", len);
 		} else {
 			dis_sw_rev[len] = '\0';
 
