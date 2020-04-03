@@ -17,10 +17,6 @@ config I2C_STM32_V2
 	default y
 	depends on I2C_STM32
 
-config ENTROPY_STM32_RNG
-	default y
-	depends on ENTROPY_GENERATOR
-
 config DMA_STM32_V2
 	default y
 	depends on DMA_STM32

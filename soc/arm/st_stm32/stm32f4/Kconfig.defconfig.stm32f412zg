@@ -11,8 +11,4 @@ config SOC
 config NUM_IRQS
 	default 97
 
-config ENTROPY_STM32_RNG
-	default y
-	depends on ENTROPY_GENERATOR
-
 endif # SOC_STM32F412ZG
