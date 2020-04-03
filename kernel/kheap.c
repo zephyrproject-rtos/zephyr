@@ -56,5 +56,38 @@ void k_heap_free(struct k_heap *h, void *mem)
 	k_spinlock_key_t key = k_spin_lock(&h->lock);
 
 	sys_heap_free(&h->heap, mem);
-	k_spin_unlock(&h->lock, key);
+
+	if (z_unpend_all(&h->wait_q) != 0) {
+		z_reschedule(&h->lock, key);
+	} else {
+		k_spin_unlock(&h->lock, key);
+	}
 }
+
+#ifdef CONFIG_MEM_POOL_HEAP_BACKEND
+/* Compatibility layer for legacy k_mem_pool code on top of a k_heap
+ * backend.
+ */
+
+int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
+		     size_t size, k_timeout_t timeout)
+{
+	block->id.heap = p->heap;
+	block->data = k_heap_alloc(p->heap, size, timeout);
+
+	/* The legacy API returns -EAGAIN on timeout expiration, but
+	 * -ENOMEM if the timeout was K_NO_WAIT. Don't ask.
+	 */
+	if (size != 0 && block->data == NULL) {
+		return K_TIMEOUT_EQ(timeout, K_NO_WAIT) ? -ENOMEM : -EAGAIN;
+	} else {
+		return 0;
+	}
+}
+
+void k_mem_pool_free_id(struct k_mem_block_id *id)
+{
+	k_heap_free(id->heap, id->data);
+}
+
+#endif /* CONFIG_MEM_POOL_HEAP_BACKEND */

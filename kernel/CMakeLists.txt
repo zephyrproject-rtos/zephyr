@@ -12,7 +12,6 @@ add_library(kernel
   mailbox.c
   mem_slab.c
   mempool.c
-  mempool_sys.c
   msg_q.c
   mutex.c
   pipes.c
@@ -41,6 +40,11 @@ target_sources_ifdef(CONFIG_STACK_CANARIES        kernel PRIVATE compiler_stack_
 target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout.c timer.c)
 target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_if_kconfig(                        kernel PRIVATE poll.c)
+
+if(${CONFIG_MEM_POOL_HEAP_BACKEND})
+else()
+  target_sources(kernel PRIVATE mempool_sys.c)
+endif()
 
 # The last 2 files inside the target_sources_ifdef should be
 # userspace_handler.c and userspace.c. If not the linker would complain.
