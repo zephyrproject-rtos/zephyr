@@ -34,9 +34,13 @@ GEN_OFFSET_SYM(_thread_arch_t, k_stack_top);
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(_thread_arch_t, u_stack_base);
 GEN_OFFSET_SYM(_thread_arch_t, u_stack_top);
+#endif
+#endif
+
+#ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
 #endif
-#endif
+
 
 /* ARCv2-specific IRQ stack frame structure member offsets */
 GEN_OFFSET_SYM(_isf_t, r0);

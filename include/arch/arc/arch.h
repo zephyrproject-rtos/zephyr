@@ -107,11 +107,9 @@ extern "C" {
 
 #if  defined(CONFIG_USERSPACE)
 
-
-/* don't need a stack guard for used stack kernel */
-#define ARCH_THREAD_STACK_RESERVED 0
-
 #if CONFIG_ARC_MPU_VER == 2
+/* MPU stack guard does not works for MPUv2 as it uses GEN_PRIV_STACK */
+#define ARCH_THREAD_STACK_RESERVED 0
 #define Z_PRIVILEGE_STACK_ALIGN CONFIG_PRIVILEGED_STACK_SIZE
 /*
  * user stack are protected using MPU regions, so need to adhere to
@@ -121,10 +119,13 @@ extern "C" {
 #define ARCH_THREAD_STACK_LEN(size) Z_ARC_MPU_SIZE_ALIGN(size)
 
 #elif CONFIG_ARC_MPU_VER == 3
+#define ARCH_THREAD_STACK_RESERVED \
+		(STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE)
 #define Z_PRIVILEGE_STACK_ALIGN (STACK_ALIGN)
 
 #define Z_ARC_THREAD_STACK_ALIGN(size) (STACK_ALIGN)
-#define ARCH_THREAD_STACK_LEN(size) Z_ARC_MPU_SIZE_ALIGN(size)
+#define ARCH_THREAD_STACK_LEN(size) \
+		(Z_ARC_MPU_SIZE_ALIGN(size) + ARCH_THREAD_STACK_RESERVED)
 
 #endif /* CONFIG_ARC_MPU_VER == 2 */
 
