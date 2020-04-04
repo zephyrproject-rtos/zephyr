@@ -31,6 +31,11 @@
 	};
 };
 
-arduino_i2c: &i2c4 {};
+arduino_i2c: &flexcomm4 {
+	compatible = "nxp,lpc-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
 
 arduino_spi: &spi5 {};
