@@ -71,6 +71,6 @@
 	status = "okay";
 };
 
-&spi5 {
+&flexcomm5 {
 	status = "okay";
 };

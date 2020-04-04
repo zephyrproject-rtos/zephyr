@@ -12,7 +12,6 @@
 		gpio-0 = &gpio0;
 		gpio-1 = &gpio1;
 		mailbox-0 = &mailbox0;
-		spi-5 = &spi5;
 	};
 
 	cpus {
@@ -99,14 +98,12 @@
 			status = "disabled";
 		};
 
-		spi5: spi@40096000 {
-			compatible = "nxp,lpc-spi";
+		flexcomm5: flexcomm@40096000 {
+			compatible = "nxp,lpc-flexcomm";
 			reg = <0x40096000 0x1000>;
 			interrupts = <19 0>;
-			label = "SPI_5";
+			label = "FLEXCOMM_5";
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 	};
 };
