@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Gerson Fernando Budke
+ * Copyright (c) 2019-2020 Gerson Fernando Budke <nandojve@gmail.com>
  * Copyright (c) 2018 Vincent van der Locht
  * Copyright (c) 2017 Justin Watson
  * Copyright (c) 2016 Intel Corporation.
@@ -14,6 +14,8 @@
 
 #ifndef _ATMEL_SAM4E_SOC_H_
 #define _ATMEL_SAM4E_SOC_H_
+
+#include <sys/util.h>
 
 #ifndef _ASMLANGUAGE
 
