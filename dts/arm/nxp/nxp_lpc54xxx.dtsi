@@ -92,15 +92,12 @@
 			status = "disabled";
 		};
 
-		i2c4: i2c@4008a000 {
-			compatible = "nxp,lpc-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
+		flexcomm4: flexcomm@4008a000 {
+			compatible = "nxp,lpc-flexcomm";
 			reg = <0x4008a000 0x1000>;
 			interrupts = <18 0>;
-			label = "I2C_4";
+			label = "FLEXCOMM_4";
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 
 		spi5: spi@40096000 {

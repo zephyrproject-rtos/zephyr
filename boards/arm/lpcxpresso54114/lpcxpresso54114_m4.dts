@@ -68,7 +68,7 @@
 	status = "okay";
 };
 
-&i2c4 {
+&flexcomm4 {
 	status = "okay";
 };
 
