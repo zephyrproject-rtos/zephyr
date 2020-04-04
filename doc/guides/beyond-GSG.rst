@@ -128,6 +128,26 @@ Export Zephyr CMake package
 The :ref:`cmake_pkg` can be exported to CMake's user package registry if it has
 not already been done as part of :ref:`getting_started`.
 
+Board Aliases
+*************
+
+Developers who work with multiple boards may find explicit board names
+cumbersome and want to use aliases for common targets.  This is
+supported by a CMake file with content like this:
+
+.. code-block:: cmake
+
+   # Variable foo_BOARD_ALIAS=bar replaces BOARD=foo with BOARD=bar and
+   # sets BOARD_ALIAS=foo in the CMake cache.
+   set(pca10028_BOARD_ALIAS nrf51dk_nrf51422)
+   set(pca10056_BOARD_ALIAS nrf52840dk_nrf52840)
+   set(k64f_BOARD_ALIAS frdm_k64f)
+   set(sltb004a_BOARD_ALIAS efr32mg_sltb004a)
+
+and specifying its location in :envvar:`ZEPHYR_BOARD_ALIASES`.  This
+enables use of aliases ``pca10028`` in contexts like
+``cmake -DBOARD=pca10028`` and ``west -b pca10028``.
+
 Build and Run an Application
 ****************************
 
