@@ -14,7 +14,6 @@
 		gpio-1 = &gpio1;
 		gpio-2 = &gpio2;
 		gpio-3 = &gpio3;
-		spi-8 = &spi8;
 	};
 
 	cpus {
@@ -140,14 +139,12 @@
 			status = "disabled";
 		};
 
-		spi8: spi@4009f000 {
-			compatible = "nxp,lpc-spi";
+		flexcomm8: flexcomm@4009f000 {
+			compatible = "nxp,lpc-flexcomm";
 			reg = <0x4009f000 0x1000>;
 			interrupts = <59 0>;
-			label = "SPI_8";
+			label = "FLEXCOMM_8";
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 	};
 };

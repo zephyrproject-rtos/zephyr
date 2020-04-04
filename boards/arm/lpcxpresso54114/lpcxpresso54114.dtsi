@@ -9,6 +9,7 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
+		spi-5 = &flexcomm5;
 		usart-0 = &flexcomm0;
 	};
 
@@ -44,4 +45,8 @@ arduino_i2c: &flexcomm4 {
 	#size-cells = <0>;
 };
 
-arduino_spi: &spi5 {};
+arduino_spi: &flexcomm5 {
+	compatible = "nxp,lpc-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};

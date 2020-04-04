@@ -71,6 +71,6 @@
 	status = "okay";
 };
 
-&spi8 {
+&flexcomm8 {
 	status = "okay";
 };
