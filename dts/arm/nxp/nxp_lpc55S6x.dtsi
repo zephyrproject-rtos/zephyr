@@ -142,11 +142,59 @@
 			status = "disabled";
 		};
 
+		flexcomm1: flexcomm@50087000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x50087000 0x1000>;
+			interrupts = <15 0>;
+			label = "FLEXCOMM_1";
+			status = "disabled";
+		};
+
+		flexcomm2: flexcomm@50088000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x50088000 0x1000>;
+			interrupts = <16 0>;
+			label = "FLEXCOMM_2";
+			status = "disabled";
+		};
+
+		flexcomm3: flexcomm@50089000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x50089000 0x1000>;
+			interrupts = <17 0>;
+			label = "FLEXCOMM_3";
+			status = "disabled";
+		};
+
 		flexcomm4: flexcomm@5008a000 {
 			compatible = "nxp,lpc-flexcomm";
 			reg = <0x5008a000 0x1000>;
 			interrupts = <18 0>;
 			label = "FLEXCOMM_4";
+			status = "disabled";
+		};
+
+		flexcomm5: flexcomm@50096000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x50096000 0x1000>;
+			interrupts = <19 0>;
+			label = "FLEXCOMM_5";
+			status = "disabled";
+		};
+
+		flexcomm6: flexcomm@50097000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x50097000 0x1000>;
+			interrupts = <20 0>;
+			label = "FLEXCOMM_6";
+			status = "disabled";
+		};
+
+		flexcomm7: flexcomm@50098000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x50098000 0x1000>;
+			interrupts = <21 0>;
+			label = "FLEXCOMM_7";
 			status = "disabled";
 		};
 
