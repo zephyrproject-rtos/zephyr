@@ -9,6 +9,7 @@
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
+		usart-0 = &flexcomm0;
 	};
 
 	leds {
@@ -29,6 +30,11 @@
 			status = "disabled";
 		};
 	};
+};
+
+&flexcomm0 {
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
 };
 
 arduino_i2c: &flexcomm4 {
