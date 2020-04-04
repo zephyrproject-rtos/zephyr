@@ -26,6 +26,8 @@ struct tach_xec_data {
 #define COUNT_100KHZ_SEC	100000U
 #define SEC_TO_MINUTE		60U
 #define PIN_STS_TIMEOUT		20U
+#define TACH_CTRL_EDGES	        (CONFIG_TACH_XEC_EDGES << \
+				MCHP_TACH_CTRL_NUM_EDGES_POS)
 
 #define TACH_XEC_REG_BASE(_dev)				\
 	((TACH_Type *)					\
@@ -102,7 +104,7 @@ static int tach_xec_init(struct device *dev)
 	TACH_Type *tach = TACH_XEC_REG_BASE(dev);
 
 	tach->CONTROL = MCHP_TACH_CTRL_READ_MODE_100K_CLOCK	|
-			MCHP_TACH_CTRL_EDGES_5			|
+			TACH_CTRL_EDGES	                        |
 			MCHP_TACH_CTRL_FILTER_EN		|
 			MCHP_TACH_CTRL_EN;
 
