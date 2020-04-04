@@ -269,15 +269,12 @@ static int gpio_cmsdk_ahb_init(struct device *dev)
 	return 0;
 }
 
-#define PORT_PIN_MASK(n) \
-	GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(n, ngpios))
-
 #define CMSDK_AHB_GPIO_DEVICE(n)						\
 	static void gpio_cmsdk_port_##n##_config_func(struct device *dev);	\
 										\
 	static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_port_##n##_config = {	\
 		.common = {							\
-			.port_pin_mask = PORT_PIN_MASK(n),			\
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
 		},								\
 		.port = ((volatile struct gpio_cmsdk_ahb *)DT_INST_REG_ADDR(n)),\
 		.gpio_config_func = gpio_cmsdk_port_##n##_config_func,		\

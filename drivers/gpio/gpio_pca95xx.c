@@ -491,7 +491,7 @@ static int gpio_pca95xx_init(struct device *dev)
 #define GPIO_PCA95XX_DEVICE_INSTANCE(inst)				\
 static const struct gpio_pca95xx_config gpio_pca95xx_##inst##_cfg = {	\
 	.common = {							\
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(inst, ngpios)), \
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),	\
 	},								\
 	.i2c_master_dev_name = DT_INST_BUS_LABEL(inst),	\
 	.i2c_slave_addr = DT_INST_REG_ADDR(inst),	\

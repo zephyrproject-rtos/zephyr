@@ -255,9 +255,6 @@ static const struct gpio_driver_api gpio_stellaris_driver_api = {
 	.disable_callback = gpio_stellaris_disable_callback,
 };
 
-#define PORT_PIN_MASK(n) \
-	GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(n, ngpios))
-
 #define STELLARIS_GPIO_DEVICE(n)							\
 	static void port_## n ##_stellaris_config_func(struct device *dev);		\
 											\
@@ -265,7 +262,7 @@ static const struct gpio_driver_api gpio_stellaris_driver_api = {
 											\
 	static const struct gpio_stellaris_config gpio_stellaris_port_## n ##_config = {\
 		.common = {								\
-			.port_pin_mask = PORT_PIN_MASK(n),				\
+			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),		\
 		},									\
 		.base = DT_INST_REG_ADDR(n),			\
 		.port_map = BIT_MASK(DT_INST_PROP(n, ngpios)),		\
