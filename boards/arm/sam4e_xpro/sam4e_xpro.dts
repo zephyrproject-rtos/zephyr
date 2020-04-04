@@ -13,10 +13,10 @@
 	compatible = "atmel,sam4e_xpro", "atmel,sam4e16e", "atmel,sam4e";
 
 	aliases {
-		i2c-0 = &i2c0;
+		i2c-0 = &twi0;
 		led0 = &yellow_led_1;
 		sw0 = &user_button;
-		wdog = &wdog;
+		wdog = &wdt;
 	};
 
 	chosen {
@@ -29,7 +29,7 @@
 	leds {
 		compatible = "gpio-leds";
 		yellow_led_1: led_1 {
-			gpios = <&portd 22 GPIO_ACTIVE_LOW>;
+			gpios = <&piod 22 GPIO_ACTIVE_LOW>;
 			label = "LED 1";
 		};
 	};
@@ -38,7 +38,7 @@
 		compatible = "gpio-keys";
 		user_button: button_1 {
 			label = "User Button";
-			gpios = <&porta 2 (GPIO_PULL_UP |
+			gpios = <&pioa 2 (GPIO_PULL_UP |
 					   GPIO_ACTIVE_LOW)>;
 		};
 	};
@@ -57,6 +57,6 @@
 	status = "okay";
 };
 
-&wdog {
+&wdt {
 	status = "okay";
 };

@@ -12,9 +12,9 @@
 	compatible = "atmel,sam_v71_xult", "atmel,samv71q21", "atmel,samv71";
 
 	aliases {
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		i2c-2 = &i2c2;
+		i2c-0 = &twihs0;
+		i2c-1 = &twihs1;
+		i2c-2 = &twihs2;
 		led0 = &yellow_led0;
 		led1 = &yellow_led1;
 		sw0 = &sw0_user_button;
@@ -32,11 +32,11 @@
 	leds {
 		compatible = "gpio-leds";
 		yellow_led0: led_0 {
-			gpios = <&porta 23 GPIO_ACTIVE_LOW>;
+			gpios = <&pioa 23 GPIO_ACTIVE_LOW>;
 			label = "User LED 0";
 		};
 		yellow_led1: led_1 {
-			gpios = <&portc 9 GPIO_ACTIVE_LOW>;
+			gpios = <&pioc 9 GPIO_ACTIVE_LOW>;
 			label = "User LED 1";
 		};
 	};
@@ -50,11 +50,11 @@
 		 */
 		sw0_user_button: button_1 {
 			label = "User Button 0";
-			gpios = <&porta 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			gpios = <&pioa 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 		sw1_user_button: button_2 {
 			label = "User Button 1";
-			gpios = <&portb 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			gpios = <&piob 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 	};
 };
@@ -63,19 +63,19 @@
 	clock-frequency = <300000000>;
 };
 
-&adc0 {
+&afec0 {
 	status = "okay";
 };
 
-&adc1 {
+&afec1 {
 	status = "okay";
 };
 
-&i2c0 {
+&twihs0 {
 	status = "okay";
 };
 
-&i2c2 {
+&twihs2 {
 	status = "okay";
 };
 
@@ -88,7 +88,7 @@
 	status = "okay";
 };
 
-&wdog {
+&wdt {
 	status = "okay";
 };
 
@@ -104,23 +104,23 @@
 	status = "okay";
 };
 
-&porta {
+&pioa {
 	status = "okay";
 };
 
-&portb {
+&piob {
 	status = "okay";
 };
 
-&portc {
+&pioc {
 	status = "okay";
 };
 
-&portd {
+&piod {
 	status = "okay";
 };
 
-&porte {
+&pioe {
 	status = "okay";
 };
 

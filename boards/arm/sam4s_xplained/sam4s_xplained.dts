@@ -12,8 +12,8 @@
 	compatible = "atmel,sam4s_xplained", "atmel,sam4s16c", "atmel,sam4s";
 
 	aliases {
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
+		i2c-0 = &twi0;
+		i2c-1 = &twi1;
 		led0 = &yellow_led_1;
 		led1 = &yellow_led_2;
 		sw0 = &user_button;
@@ -29,11 +29,11 @@
 	leds {
 		compatible = "gpio-leds";
 		yellow_led_1: led_1 {
-			gpios = <&portc 10 GPIO_ACTIVE_LOW>;
+			gpios = <&pioc 10 GPIO_ACTIVE_LOW>;
 			label = "LED 1";
 		};
 		yellow_led_2: led_2 {
-			gpios = <&portc 17 GPIO_ACTIVE_LOW>;
+			gpios = <&pioc 17 GPIO_ACTIVE_LOW>;
 			label = "LED 2";
 		};
 	};
@@ -42,7 +42,7 @@
 		compatible = "gpio-keys";
 		user_button: button_1 {
 			label = "User Button";
-			gpios = <&porta 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			gpios = <&pioa 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 	};
 };
@@ -51,7 +51,7 @@
 	clock-frequency = <120000000>;
 };
 
-&i2c0 {
+&twi0 {
 	status = "okay";
 };
 
@@ -69,6 +69,6 @@
 	status = "okay";
 };
 
-&wdog {
+&wdt {
 	status = "okay";
 };

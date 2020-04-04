@@ -7,16 +7,16 @@
 &spi0 {
         status = "okay";
         label = "SPI_RF2XX";
-        cs-gpios = <&portd 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+        cs-gpios = <&piod 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 
         rf2xx@0 {
                 compatible = "atmel,rf2xx";
                 reg = <0x0>;
                 label = "RF2XX_0";
                 spi-max-frequency = <6000000>;
-                irq-gpios = <&portb 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
-                reset-gpios = <&porta 3 GPIO_ACTIVE_LOW>;
-                slptr-gpios = <&portb 1 GPIO_ACTIVE_HIGH>;
+                irq-gpios = <&piob 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+                reset-gpios = <&pioa 3 GPIO_ACTIVE_LOW>;
+                slptr-gpios = <&piob 1 GPIO_ACTIVE_HIGH>;
                 status = "okay";
         };
 };
