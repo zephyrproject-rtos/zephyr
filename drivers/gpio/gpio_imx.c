@@ -243,7 +243,7 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 	static const struct imx_gpio_config imx_gpio_##n##_config = {	\
 		.common = {						\
 			.port_pin_mask =				\
-				GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_PROP(n, ngpios)), \
+				GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
 		},							\
 		.base = (GPIO_Type *)DT_INST_REG_ADDR(n),		\
 	};								\
