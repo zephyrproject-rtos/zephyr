@@ -15,7 +15,6 @@
 		gpio-2 = &gpio2;
 		gpio-3 = &gpio3;
 		spi-8 = &spi8;
-		usart-0 = &usart0;
 	};
 
 	cpus {
@@ -99,14 +98,6 @@
 			};
 		};
 
-		usart0: usart@40086000 {
-			compatible = "nxp,lpc-usart";
-			reg = <0x40086000 0xe44>;
-			interrupts = <14 0>;
-			label = "USART_0";
-			status = "disabled";
-		};
-
 		gpio0: gpio@0 {
 			compatible = "nxp,kinetis-gpio";
 			reg = <0x4008c000 0x2488>;
@@ -139,6 +130,14 @@
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
+		};
+
+		flexcomm0: flexcomm@40086000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x40086000 0x1000>;
+			interrupts = <14 0>;
+			label = "FLEXCOMM_0";
+			status = "disabled";
 		};
 
 		spi8: spi@4009f000 {

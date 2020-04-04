@@ -13,7 +13,6 @@
 		gpio-1 = &gpio1;
 		mailbox-0 = &mailbox0;
 		spi-5 = &spi5;
-		usart-0 = &usart0;
 	};
 
 	cpus {
@@ -58,14 +57,6 @@
 			reg = <0 0x40000>;
 		};
 
-		usart0:usart@40086000 {
-			compatible = "nxp,lpc-usart";
-			reg = <0x40086000 0xE44>;
-			interrupts = <14 0>;
-			label = "USART_0";
-			status = "disabled";
-		};
-
 		gpio0: gpio@0 {
 			compatible = "nxp,lpc-gpio";
 			reg = <0x4008c000 0x2488>;
@@ -89,6 +80,14 @@
 			reg = <0x4008b000 0xEC>;
 			interrupts = <31 0>;
 			label = "MAILBOX_0";
+			status = "disabled";
+		};
+
+		flexcomm0: flexcomm@40086000 {
+			compatible = "nxp,lpc-flexcomm";
+			reg = <0x40086000 0x1000>;
+			interrupts = <14 0>;
+			label = "FLEXCOMM_0";
 			status = "disabled";
 		};
 

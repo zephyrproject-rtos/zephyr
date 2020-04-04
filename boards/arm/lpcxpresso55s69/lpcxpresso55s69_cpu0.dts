@@ -27,8 +27,8 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &sramx;
-		zephyr,console = &usart0;
-		zephyr,shell-uart = &usart0;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
 	};
 
 	gpio_keys {
@@ -48,11 +48,6 @@
 	};
 };
 
-&usart0 {
-	status = "okay";
-	current-speed = <115200>;
-};
-
 &gpio0 {
 	status = "okay";
 };
@@ -66,6 +61,10 @@
 };
 
 &red_led {
+	status = "okay";
+};
+
+&flexcomm0 {
 	status = "okay";
 };
 
