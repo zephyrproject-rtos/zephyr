@@ -1,0 +1,15 @@
+# Copyright (c) 2020 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC Flexcomm node
+
+compatible: "nxp,lpc-flexcomm"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true

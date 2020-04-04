@@ -5,11 +5,4 @@ description: LPC I2C node
 
 compatible: "nxp,lpc-i2c"
 
-include: i2c-controller.yaml
-
-properties:
-    reg:
-      required: true
-
-    interrupts:
-      required: true
+include: [i2c-controller.yaml, "nxp,lpc-flexcomm.yaml"]
