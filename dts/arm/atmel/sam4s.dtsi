@@ -11,7 +11,7 @@
 
 / {
 	aliases {
-		watchdog0 = &wdog;
+		watchdog0 = &wdt;
 	};
 
 	cpus {
@@ -36,7 +36,7 @@
 
 	soc {
 		/* Only used for HWINFO device ID */
-		flash-controller@400e0a00 {
+		eefc: flash-controller@400e0a00 {
 			compatible = "atmel,sam-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x400e0a00 0x200>;
@@ -46,7 +46,7 @@
 			#size-cells = <1>;
 		};
 
-		wdog: watchdog@400e1450 {
+		wdt: watchdog@400e1450 {
 			compatible = "atmel,sam-watchdog";
 			reg = <0x400e1450 0xc>;
 			interrupts = <4 0>;
@@ -54,7 +54,8 @@
 			label = "WATCHDOG_0";
 			status = "disabled";
 		};
-		i2c0: i2c@40018000 {
+
+		twi0: i2c@40018000 {
 			compatible = "atmel,sam-i2c-twi";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40018000 0x128>;
@@ -66,7 +67,7 @@
 			#size-cells = <0>;
 		};
 
-		i2c1: i2c@4001c000 {
+		twi1: i2c@4001c000 {
 			compatible = "atmel,sam-i2c-twi";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x4001c000 0x128>;
@@ -125,7 +126,7 @@
 			label = "USART_1";
 		};
 
-		porta: gpio@400e0e00 {
+		pioa: gpio@400e0e00 {
 			compatible = "atmel,sam-gpio";
 			reg = <0x400e0e00 0x190>;
 			interrupts = <11 1>;
@@ -135,7 +136,7 @@
 			#gpio-cells = <2>;
 		};
 
-		portb: gpio@400e1000 {
+		piob: gpio@400e1000 {
 			compatible = "atmel,sam-gpio";
 			reg = <0x400e1000 0x190>;
 			interrupts = <12 1>;
@@ -145,7 +146,7 @@
 			#gpio-cells = <2>;
 		};
 
-		portc: gpio@400e1200 {
+		pioc: gpio@400e1200 {
 			compatible = "atmel,sam-gpio";
 			reg = <0x400e1200 0x190>;
 			interrupts = <13 1>;

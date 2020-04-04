@@ -11,9 +11,9 @@
 	compatible = "atmel,sam_e70_xplained", "atmel,same70q21", "atmel,same70";
 
 	aliases {
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-		i2c-2 = &i2c2;
+		i2c-0 = &twihs0;
+		i2c-1 = &twihs1;
+		i2c-2 = &twihs2;
 		led0 = &green_led;
 		sw0 = &sw0_user_button;
 	};
@@ -29,7 +29,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led_0 {
-			gpios = <&portc 8 GPIO_ACTIVE_LOW>;
+			gpios = <&pioc 8 GPIO_ACTIVE_LOW>;
 			label = "User LED";
 		};
 	};
@@ -42,7 +42,7 @@
 		 */
 		sw0_user_button: button_1 {
 			label = "User Button";
-			gpios = <&porta 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			gpios = <&pioa 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 		};
 	};
 };
@@ -51,19 +51,19 @@
 	clock-frequency = <300000000>;
 };
 
-&adc0 {
+&afec0 {
 	status = "okay";
 };
 
-&adc1 {
+&afec1 {
 	status = "okay";
 };
 
-&i2c0 {
+&twihs0 {
 	status = "okay";
 };
 
-&i2c2 {
+&twihs2 {
 	status = "okay";
 };
 
@@ -76,7 +76,7 @@
 	status = "okay";
 };
 
-&wdog {
+&wdt {
 	status = "okay";
 };
 

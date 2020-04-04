@@ -9,7 +9,7 @@
 
 / {
 	aliases {
-		watchdog0 = &wdog;
+		watchdog0 = &wdt;
 	};
 
 	cpus {
@@ -36,7 +36,7 @@
 
 	soc {
 		/* Only used for HWINFO device ID */
-		flash-controller@400e0a00 {
+		eefc: flash-controller@400e0a00 {
 			compatible = "atmel,sam-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x400e0a00 0x200>;
@@ -46,7 +46,7 @@
 			#size-cells = <1>;
 		};
 
-		wdog: watchdog@400e1a50 {
+		wdt: watchdog@400e1a50 {
 			compatible = "atmel,sam-watchdog";
 			reg = <0x400e1a50 0xc>;
 			interrupts = <4 0>;
@@ -55,7 +55,7 @@
 			status = "disabled";
 		};
 
-		i2c0: i2c@4008c000 {
+		twi0: i2c@4008c000 {
 			compatible = "atmel,sam-i2c-twi";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x4008c000 0x128>;
@@ -67,7 +67,7 @@
 			#size-cells = <0>;
 		};
 
-		i2c1: i2c@40090000 {
+		twi1: i2c@40090000 {
 			compatible = "atmel,sam-i2c-twi";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40090000 0x128>;
@@ -79,7 +79,7 @@
 			#size-cells = <0>;
 		};
 
-		uart0: uart@400e0800 {
+		uart: uart@400e0800 {
 			compatible = "atmel,sam-uart";
 			reg = <0x400e0800 0x124>;
 			interrupts = <8 1>;

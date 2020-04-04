@@ -11,7 +11,7 @@
 
 / {
 	aliases {
-		watchdog0 = &wdog;
+		watchdog0 = &wdt;
 	};
 
 	cpus {
@@ -38,7 +38,7 @@
 	};
 
 	soc {
-		flash-controller@400e0c00 {
+		eefc: flash-controller@400e0c00 {
 			compatible = "atmel,sam-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x400e0c00 0x200>;
@@ -58,7 +58,7 @@
 
 		};
 
-		wdog: watchdog@400e1850 {
+		wdt: watchdog@400e1850 {
 			compatible = "atmel,sam-watchdog";
 			reg = <0x400e1850 0xc>;
 			interrupts = <4 0>;
@@ -67,7 +67,7 @@
 			status = "disabled";
 		};
 
-		i2c0: i2c@40018000 {
+		twihs0: i2c@40018000 {
 			compatible = "atmel,sam-i2c-twihs";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -79,7 +79,7 @@
 			status = "disabled";
 		};
 
-		i2c1: i2c@4001c000 {
+		twihs1: i2c@4001c000 {
 			compatible = "atmel,sam-i2c-twihs";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -91,7 +91,7 @@
 			status = "disabled";
 		};
 
-		i2c2: i2c@40060000 {
+		twihs2: i2c@40060000 {
 			compatible = "atmel,sam-i2c-twihs";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -197,7 +197,7 @@
 			label = "USART_2";
 		};
 
-		adc0: adc@4003c000 {
+		afec0: adc@4003c000 {
 			compatible = "atmel,sam-afec";
 			reg = <0x4003c000 0x100>;
 			interrupts = <29 0>;
@@ -207,7 +207,7 @@
 			#io-channel-cells = <1>;
 		};
 
-		adc1: adc@40064000 {
+		afec1: adc@40064000 {
 			compatible = "atmel,sam-afec";
 			reg = <0x40064000 0x100>;
 			interrupts = <40 0>;
@@ -217,7 +217,7 @@
 			#io-channel-cells = <1>;
 		};
 
-		porta: gpio@400e0e00 {
+		pioa: gpio@400e0e00 {
 			compatible = "atmel,sam-gpio";
 			reg = <0x400e0e00 0x190>;
 			interrupts = <10 1>;
@@ -227,7 +227,7 @@
 			#gpio-cells = <2>;
 		};
 
-		portb: gpio@400e1000 {
+		piob: gpio@400e1000 {
 			compatible = "atmel,sam-gpio";
 			reg = <0x400e1000 0x190>;
 			interrupts = <11 1>;
@@ -237,7 +237,7 @@
 			#gpio-cells = <2>;
 		};
 
-		portc: gpio@400e1200 {
+		pioc: gpio@400e1200 {
 			compatible = "atmel,sam-gpio";
 			reg = <0x400e1200 0x190>;
 			interrupts = <12 1>;
@@ -247,7 +247,7 @@
 			#gpio-cells = <2>;
 		};
 
-		portd: gpio@400e1400 {
+		piod: gpio@400e1400 {
 			compatible = "atmel,sam-gpio";
 			reg = <0x400e1400 0x190>;
 			interrupts = <16 1>;
@@ -257,7 +257,7 @@
 			#gpio-cells = <2>;
 		};
 
-		porte: gpio@400e1600 {
+		pioe: gpio@400e1600 {
 			compatible = "atmel,sam-gpio";
 			reg = <0x400e1600 0x190>;
 			interrupts = <17 1>;

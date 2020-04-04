@@ -9,17 +9,17 @@
 	compatible = "arduino,due", "atmel,sam3x8e", "atmel,sam3x";
 
 	aliases {
-		uart-0 = &uart0;
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
+		uart-0 = &uart;
+		i2c-0 = &twi0;
+		i2c-1 = &twi1;
 		led0 = &yellow_led;
 	};
 
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,console = &uart;
+		zephyr,shell-uart = &uart;
 	};
 
 	leds {
@@ -36,19 +36,19 @@
 	clock-frequency = <84000000>;
 };
 
-&wdog {
+&wdt {
 	status = "okay";
 };
 
-&i2c0 {
+&twi0 {
 	status = "okay";
 };
 
-&i2c1 {
+&twi1 {
 	status = "okay";
 };
 
-&uart0 {
+&uart {
 	status = "okay";
 	current-speed = <115200>;
 };
