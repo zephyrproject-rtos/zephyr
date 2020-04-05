@@ -44,7 +44,7 @@ extern "C" {
 #endif
 
 #define _UART_CUR \
-	STRINGIFY(DT_INST_PROP(0, uart_speed))",8,1,0,"_FLOW_CONTROL
+	STRINGIFY(DT_INST_PROP(0, wifi_uart_speed))",8,1,0,"_FLOW_CONTROL
 
 #define CONN_CMD_MAX_LEN (sizeof("AT+"_CWJAP"=\"\",\"\"") + \
 			  WIFI_SSID_MAX_LEN + WIFI_PSK_MAX_LEN)
