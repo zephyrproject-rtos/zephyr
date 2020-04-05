@@ -60,8 +60,8 @@ LOG_MODULE_REGISTER(usb_dfu);
 
 #define USB_DFU_MAX_XFER_SIZE		CONFIG_USB_REQUEST_BUFFER_SIZE
 
-#define FIRMWARE_IMAGE_0_LABEL "image-1"
-#define FIRMWARE_IMAGE_1_LABEL "image-0"
+#define FIRMWARE_IMAGE_0_LABEL "image-0"
+#define FIRMWARE_IMAGE_1_LABEL "image-1"
 
 /* MCUBoot waits for CONFIG_USB_DFU_WAIT_DELAY_MS time in total to let DFU to
  * be commenced. It intermittently checks every INTERMITTENT_CHECK_DELAY
