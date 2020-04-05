@@ -907,7 +907,8 @@ int net_context_connect(struct net_context *context,
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 	    addr->sa_family == AF_PACKET) {
-		return -EOPNOTSUPP;
+		ret = -EOPNOTSUPP;
+		goto unlock;
 	}
 
 	if (net_context_get_state(context) == NET_CONTEXT_LISTENING) {
