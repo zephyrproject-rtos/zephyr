@@ -337,7 +337,7 @@ static size_t put_end_tlv(struct lwm2m_output_context *out, u16_t mark_pos,
 	tlv_setup(&tlv, tlv_type, tlv_id, len);
 	len = oma_tlv_put(&tlv, out, NULL, true) - tlv.length;
 
-	return 0;
+	return len;
 }
 
 static size_t put_begin_oi(struct lwm2m_output_context *out,
