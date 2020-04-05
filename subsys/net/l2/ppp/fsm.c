@@ -359,14 +359,14 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	if (!iface) {
 		struct ppp_context *ctx;
 
-		if (fsm->protocol == PPP_LCP) {
+		if (fsm && fsm->protocol == PPP_LCP) {
 			ctx = CONTAINER_OF(fsm, struct ppp_context, lcp.fsm);
 #if defined(CONFIG_NET_IPV4)
-		} else if (fsm->protocol == PPP_IPCP) {
+		} else if (fsm && fsm->protocol == PPP_IPCP) {
 			ctx = CONTAINER_OF(fsm, struct ppp_context, ipcp.fsm);
 #endif
 #if defined(CONFIG_NET_IPV6)
-		} else if (fsm->protocol == PPP_IPV6CP) {
+		} else if (fsm && fsm->protocol == PPP_IPV6CP) {
 			ctx = CONTAINER_OF(fsm, struct ppp_context,
 					   ipv6cp.fsm);
 #endif
