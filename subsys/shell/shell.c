@@ -1186,13 +1186,13 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 		err = k_poll(shell->ctx->events, SHELL_SIGNAL_TXDONE,
 			     K_FOREVER);
 
-		k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
-
 		if (err != 0) {
 			shell_internal_fprintf(shell, SHELL_ERROR,
 					       "Shell thread error: %d", err);
 			return;
 		}
+
+		k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 
 		if (shell->iface->api->update) {
 			shell->iface->api->update(shell->iface);
