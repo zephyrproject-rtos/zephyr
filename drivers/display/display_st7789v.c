@@ -265,11 +265,11 @@ static void st7789v_lcd_init(struct st7789v_data *p_st7789v)
 
 	st7789v_set_lcd_margins(p_st7789v, 0, 0);
 
-	st7789v_transmit(p_st7789v, ST7789V_CMD_PORCTRL, st7789v_porch_param,
-			 sizeof(st7789v_porch_param));
-
 	st7789v_transmit(p_st7789v, ST7789V_CMD_CMD2EN, st7789v_cmd2en_param,
 			 sizeof(st7789v_cmd2en_param));
+
+	st7789v_transmit(p_st7789v, ST7789V_CMD_PORCTRL, st7789v_porch_param,
+			 sizeof(st7789v_porch_param));
 
 	/* Digital Gamma Enable, default disabled */
 	tmp = 0x00;
