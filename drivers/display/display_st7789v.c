@@ -263,7 +263,8 @@ static void st7789v_lcd_init(struct st7789v_data *p_st7789v)
 {
 	u8_t tmp;
 
-	st7789v_set_lcd_margins(p_st7789v, 0, 0);
+	st7789v_set_lcd_margins(p_st7789v, p_st7789v->x_offset,
+				p_st7789v->y_offset);
 
 	st7789v_transmit(p_st7789v, ST7789V_CMD_CMD2EN, st7789v_cmd2en_param,
 			 sizeof(st7789v_cmd2en_param));
