@@ -139,6 +139,9 @@
 			status = "okay";
 			clock-frequency = < 2000000 >;
 
+			dmas = <&test_dma1 1 2>, <&test_dma2 3 4>;
+			dma-names = "tx", "rx";
+
 			cs-gpios = <&test_gpio_1 0x10 0x20>,
 					<&test_gpio_2 0x30 0x40>,
 					<&test_gpio_2 0x50 0x60>;
@@ -256,6 +259,24 @@
 			compatible = "vnd,clock";
                         label = "TEST_CLOCK";
 			#clock-cells = <2>;
+		};
+
+		test_dma1: dma@44443333 {
+			compatible = "vnd,dma";
+			#dma-cells = <2>;
+			reg = < 0x44443333 0x1000 >;
+			interrupts = <11 3>;
+			label = "TEST_DMA_CTRL_1";
+			status = "okay";
+		};
+
+		test_dma2: dma@44442222 {
+			compatible = "vnd,dma";
+			#dma-cells = <2>;
+			reg = < 0x44442222 0x1000 >;
+			interrupts = <12 3>;
+			label = "TEST_DMA_CTRL_2";
+			status = "okay";
 		};
 	};
 };

@@ -881,6 +881,76 @@ static void test_io_channels(void)
 	zassert_equal(DT_INST_IO_CHANNELS_INPUT(0), 10, "input 0 implicit");
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_spi
+static void test_dma(void)
+{
+	zassert_true(!strcmp(DT_LABEL(DT_DRV_INST(0)), "TEST_SPI_CTLR"),
+		      "TEST_SPI instance is expected to be 0");
+
+	zassert_true(!strcmp(DT_DMAS_LABEL_BY_NAME(TEST_SPI, rx),
+			     "TEST_DMA_CTRL_2"),
+		     "dma-controller label rx channel");
+	zassert_true(!strcmp(DT_INST_DMAS_LABEL_BY_NAME(0, rx),
+			     "TEST_DMA_CTRL_2"),
+		     "dma-controller label rx channel");
+	zassert_true(!strcmp(DT_DMAS_LABEL_BY_NAME(TEST_SPI, tx),
+			     "TEST_DMA_CTRL_1"),
+		     "dma-controller label tx channel");
+	zassert_true(!strcmp(DT_INST_DMAS_LABEL_BY_NAME(0, tx),
+			     "TEST_DMA_CTRL_1"),
+		     "dma-controller label tx channel");
+
+	zassert_true(!strcmp(DT_DMAS_LABEL_BY_IDX(TEST_SPI, 1),
+			     "TEST_DMA_CTRL_2"),
+		     "dma-controller label channel idx 1");
+	zassert_true(!strcmp(DT_INST_DMAS_LABEL_BY_IDX(0, 1),
+			     "TEST_DMA_CTRL_2"),
+		     "dma-controller label channel idx 1");
+	zassert_true(!strcmp(DT_DMAS_LABEL_BY_IDX(TEST_SPI, 0),
+			     "TEST_DMA_CTRL_1"),
+		     "dma-controller label channel idx 0");
+	zassert_true(!strcmp(DT_INST_DMAS_LABEL_BY_IDX(0, 0),
+			     "TEST_DMA_CTRL_1"),
+		     "dma-controller label channel idx 0");
+
+	zassert_equal(DT_DMAS_CELLS_BY_NAME(TEST_SPI, rx, channel), 3,
+		      "channel cell of rx dma channel");
+	zassert_equal(DT_INST_DMAS_CELLS_BY_NAME(0, rx, channel), 3,
+		      "channel cell of rx dma channel");
+	zassert_equal(DT_DMAS_CELLS_BY_NAME(TEST_SPI, rx, slot), 4,
+		      "slot cell of rx dma channel");
+	zassert_equal(DT_INST_DMAS_CELLS_BY_NAME(0, rx, slot), 4,
+		      "slot cell of rx dma channel");
+
+	zassert_equal(DT_DMAS_CELLS_BY_IDX(TEST_SPI, 1, channel), 3,
+		      "channel cell of idx 1 dma channel");
+	zassert_equal(DT_INST_DMAS_CELLS_BY_IDX(0, 1, channel), 3,
+	 	      "channel cell of idx 1 dma channel");
+	zassert_equal(DT_DMAS_CELLS_BY_IDX(TEST_SPI, 1, slot), 4,
+		      "slot cell of idx 1 dma channel");
+	zassert_equal(DT_INST_DMAS_CELLS_BY_IDX(0, 1, slot), 4,
+		      "slot cell of idx 1 dma channel");
+
+	zassert_true(DT_DMAS_HAS_NAME(TEST_SPI, tx),
+		     "tx dma channel available");
+	zassert_true(DT_INST_DMAS_HAS_NAME(0, tx),
+	             "tx dma channel available");
+	zassert_false(DT_DMAS_HAS_NAME(TEST_SPI, output),
+		      "output dma channel not available");
+	zassert_false(DT_INST_DMAS_HAS_NAME(0, output),
+		      "output dma channel not available");
+
+	zassert_true(DT_DMAS_HAS_IDX(TEST_SPI, 1),
+		     "Idx 1 dma channel available");
+	zassert_true(DT_INST_DMAS_HAS_IDX(0, 1),
+	             "Idx 1 dma channel available");
+	zassert_false(DT_DMAS_HAS_IDX(TEST_SPI, 2),
+		      "Idx 2 dma channel not available");
+	zassert_false(DT_INST_DMAS_HAS_IDX(0, 2),
+		      "Idx 2 dma channel not available");
+}
+
 #define TO_STRING(x) TO_STRING_(x)
 #define TO_STRING_(x) #x
 
@@ -1149,6 +1219,7 @@ void test_main(void)
 			 ztest_unit_test(test_phandles),
 			 ztest_unit_test(test_gpio),
 			 ztest_unit_test(test_io_channels),
+			 ztest_unit_test(test_dma),
 			 ztest_unit_test(test_macro_names),
 			 ztest_unit_test(test_arrays),
 			 ztest_unit_test(test_devices),
