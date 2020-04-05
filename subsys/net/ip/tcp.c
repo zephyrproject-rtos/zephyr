@@ -1506,6 +1506,7 @@ int net_tcp_put(struct net_context *context)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
 		if ((net_context_get_state(context) == NET_CONTEXT_CONNECTED ||
 		     net_context_get_state(context) == NET_CONTEXT_LISTENING)
+		    && context->tcp
 		    && !context->tcp->fin_rcvd) {
 			NET_DBG("TCP connection in active close, not "
 				"disposing yet (waiting %dms)", FIN_TIMEOUT);
