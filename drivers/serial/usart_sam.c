@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2018 Justin Watson
  * Copyright (c) 2016 Piotr Mienkowski
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,40 +14,14 @@
  *   are currently implemented.
  */
 
+#define DT_DRV_COMPAT atmel_sam_usart
+
 #include <errno.h>
 #include <sys/__assert.h>
 #include <device.h>
 #include <init.h>
 #include <soc.h>
 #include <drivers/uart.h>
-
-/*
- * Verify Kconfig configuration
- */
-
-#if CONFIG_USART_SAM_PORT_0 == 1
-
-#if DT_USART_SAM_PORT_0_BAUD_RATE == 0
-#error "DT_USART_SAM_PORT_0_BAUD_RATE has to be bigger than 0"
-#endif
-
-#endif
-
-#if CONFIG_USART_SAM_PORT_1 == 1
-
-#if DT_USART_SAM_PORT_1_BAUD_RATE == 0
-#error "DT_USART_SAM_PORT_1_BAUD_RATE has to be bigger than 0"
-#endif
-
-#endif
-
-#if CONFIG_USART_SAM_PORT_2 == 1
-
-#if DT_USART_SAM_PORT_2_BAUD_RATE == 0
-#error "DT_USART_SAM_PORT_2_BAUD_RATE has to be bigger than 0"
-#endif
-
-#endif
 
 /* Device constant configuration parameters */
 struct usart_sam_dev_cfg {
@@ -349,125 +325,75 @@ static const struct uart_driver_api usart_sam_driver_api = {
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-/* USART0 */
-
-#ifdef CONFIG_USART_SAM_PORT_0
-
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-/* Forward declare function */
-static void usart0_sam_irq_config_func(struct device *port);
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct usart_sam_dev_cfg usart0_sam_config = {
-	.regs = USART0,
-	.periph_id = DT_USART_SAM_PORT_0_PERIPHERAL_ID,
-	.pin_rx = PIN_USART0_RXD,
-	.pin_tx = PIN_USART0_TXD,
+#define USART_SAM_IRQ_CALLBACK(n)					\
+	.irq_config_func = usart##n##_sam_irq_config_func,
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = usart0_sam_irq_config_func,
-#endif
-};
+#define USART_SAM_IRQ_CONNECT(n)					\
+do {									\
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(usart##n)),			\
+		    DT_IRQ(DT_NODELABEL(usart##n), priority),		\
+		    usart_sam_isr, DEVICE_GET(usart##n##_sam), 0);	\
+	irq_enable(DT_IRQN(DT_NODELABEL(usart##n)));			\
+} while (0)
 
-static struct usart_sam_dev_data usart0_sam_data = {
-	.baud_rate = DT_USART_SAM_PORT_0_BAUD_RATE,
-};
+#define USART_SAM_IRQ_HANDLER_DECL(n)					\
+static void usart##n##_sam_irq_config_func(struct device *port);
 
-DEVICE_AND_API_INIT(usart0_sam, DT_USART_SAM_PORT_0_NAME, &usart_sam_init,
-		    &usart0_sam_data, &usart0_sam_config, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &usart_sam_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void usart0_sam_irq_config_func(struct device *port)
-{
-	IRQ_CONNECT(DT_USART_SAM_PORT_0_IRQ,
-		    DT_USART_SAM_PORT_0_IRQ_PRIO,
-		    usart_sam_isr,
-		    DEVICE_GET(usart0_sam), 0);
-	irq_enable(DT_USART_SAM_PORT_0_IRQ);
+#define USART_SAM_IRQ_HANDLER(n)					\
+static void usart##n##_sam_irq_config_func(struct device *port)	\
+{									\
+	USART_SAM_IRQ_CONNECT(n);					\
 }
+
+#else
+
+#define USART_SAM_IRQ_CALLBACK(n)
+#define USART_SAM_IRQ_HANDLER_DECL(n)
+#define USART_SAM_IRQ_HANDLER(n)
+
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#define USART_PROP(n, p)						\
+	UTIL_AND(DT_NODE_HAS_PROP(DT_NODELABEL(usart##n), p),		\
+		 DT_PROP(DT_NODELABEL(usart##n), p))
+
+#define USART_SAM_DEVICE_INIT(n)					\
+BUILD_ASSERT(USART_PROP(n, current_speed),				\
+	     "usart"#n" current-speed property should exists and"	\
+	     " has to be bigger than 0.");				\
+BUILD_ASSERT(USART_PROP(n, peripheral_id),				\
+	     "usart"#n" peripheral_id property should exists.");	\
+									\
+USART_SAM_IRQ_HANDLER_DECL(n)						\
+static const struct usart_sam_dev_cfg usart##n##_sam_config = {	\
+	.regs = (Usart *)DT_REG_ADDR(DT_NODELABEL(usart##n)),		\
+	.periph_id = USART_PROP(n, peripheral_id),			\
+	.pin_rx = PIN_USART##n##_RXD,					\
+	.pin_tx = PIN_USART##n##_TXD,					\
+	USART_SAM_IRQ_CALLBACK(n)					\
+};									\
+									\
+static struct usart_sam_dev_data usart##n##_sam_data = {		\
+	.baud_rate = USART_PROP(n, current_speed),			\
+};									\
+									\
+DEVICE_AND_API_INIT(usart##n##_sam, DT_LABEL(DT_NODELABEL(usart##n)),	\
+		    &usart_sam_init, &usart##n##_sam_data,		\
+		    &usart##n##_sam_config, PRE_KERNEL_1,		\
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+		    &usart_sam_driver_api);				\
+USART_SAM_IRQ_HANDLER(n)
+
+#if DT_HAS_NODE(DT_NODELABEL(usart0))
+USART_SAM_DEVICE_INIT(0);
 #endif
 
-/* USART1 */
-
-#ifdef CONFIG_USART_SAM_PORT_1
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-/* Forward declare function */
-static void usart1_sam_irq_config_func(struct device *port);
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
-static const struct usart_sam_dev_cfg usart1_sam_config = {
-	.regs = USART1,
-	.periph_id = DT_USART_SAM_PORT_1_PERIPHERAL_ID,
-	.pin_rx = PIN_USART1_RXD,
-	.pin_tx = PIN_USART1_TXD,
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = usart1_sam_irq_config_func,
-#endif
-};
-
-static struct usart_sam_dev_data usart1_sam_data = {
-	.baud_rate = DT_USART_SAM_PORT_1_BAUD_RATE,
-};
-
-DEVICE_AND_API_INIT(usart1_sam, DT_USART_SAM_PORT_1_NAME, &usart_sam_init,
-		    &usart1_sam_data, &usart1_sam_config, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &usart_sam_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void usart1_sam_irq_config_func(struct device *port)
-{
-	IRQ_CONNECT(DT_USART_SAM_PORT_1_IRQ,
-		    DT_USART_SAM_PORT_1_IRQ_PRIO,
-		    usart_sam_isr,
-		    DEVICE_GET(usart1_sam), 0);
-	irq_enable(DT_USART_SAM_PORT_1_IRQ);
-}
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
+#if DT_HAS_NODE(DT_NODELABEL(usart1))
+USART_SAM_DEVICE_INIT(1);
 #endif
 
-/* USART2 */
-
-#ifdef CONFIG_USART_SAM_PORT_2
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-/* Forward declare function */
-static void usart2_sam_irq_config_func(struct device *port);
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
-static const struct usart_sam_dev_cfg usart2_sam_config = {
-	.regs = USART2,
-	.periph_id = DT_USART_SAM_PORT_2_PERIPHERAL_ID,
-	.pin_rx = PIN_USART2_RXD,
-	.pin_tx = PIN_USART2_TXD,
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = usart2_sam_irq_config_func,
-#endif
-};
-
-static struct usart_sam_dev_data usart2_sam_data = {
-	.baud_rate = DT_USART_SAM_PORT_2_BAUD_RATE,
-};
-
-DEVICE_AND_API_INIT(usart2_sam, DT_USART_SAM_PORT_2_NAME, &usart_sam_init,
-		    &usart2_sam_data, &usart2_sam_config, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &usart_sam_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void usart2_sam_irq_config_func(struct device *port)
-{
-	IRQ_CONNECT(DT_USART_SAM_PORT_2_IRQ,
-		    DT_USART_SAM_PORT_2_IRQ_PRIO,
-		    usart_sam_isr,
-		    DEVICE_GET(usart2_sam), 0);
-	irq_enable(DT_USART_SAM_PORT_2_IRQ);
-}
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
-
+#if DT_HAS_NODE(DT_NODELABEL(usart2))
+USART_SAM_DEVICE_INIT(2);
 #endif
