@@ -75,6 +75,24 @@ static struct update_info {
 
 static struct k_delayed_work updatehub_work_handle;
 
+static int bin2hex_str(u8_t *bin, size_t bin_len, char *str, size_t str_buf_len)
+{
+	if (bin == NULL || str == NULL) {
+		return -1;
+	}
+
+	/* ensures at least an empty string */
+	if (str_buf_len < 1) {
+		return -2;
+	}
+
+	memset(str, 0, str_buf_len);
+	/* str_buf_len - 1 ensure space for \0 */
+	bin2hex(bin, bin_len, str, str_buf_len - 1);
+
+	return 0;
+}
+
 static void wait_fds(void)
 {
 	if (poll(ctx.fds, ctx.nfds, NETWORK_TIMEOUT) < 0) {
@@ -93,8 +111,6 @@ static int metadata_hash_get(char *metadata)
 {
 	struct tc_sha256_state_struct sha256sum;
 	unsigned char hash[TC_SHA256_DIGEST_SIZE];
-	char buffer[3];
-	int buffer_len = 0;
 
 	if (tc_sha256_init(&sha256sum) == 0) {
 		return -1;
@@ -108,13 +124,9 @@ static int metadata_hash_get(char *metadata)
 		return -1;
 	}
 
-	memset(update_info.package_uid, 0, SHA256_HEX_DIGEST_SIZE);
-	for (int i = 0; i < TC_SHA256_DIGEST_SIZE; i++) {
-		snprintk(buffer, sizeof(buffer), "%02x",
-			 hash[i]);
-		buffer_len = buffer_len + strlen(buffer);
-		strncat(&update_info.package_uid[i], buffer,
-			MIN(SHA256_HEX_DIGEST_SIZE - 1, buffer_len));
+	if (bin2hex_str(hash, TC_SHA256_DIGEST_SIZE,
+		update_info.package_uid, SHA256_HEX_DIGEST_SIZE)) {
+		return -1;
 	}
 
 	return 0;
@@ -326,26 +338,22 @@ error:
 
 static bool install_update_cb_sha256(void)
 {
-	u8_t image_hash[TC_SHA256_DIGEST_SIZE];
-	char buffer[3], sha256_image_dowloaded[SHA256_HEX_DIGEST_SIZE];
-	int i, buffer_len = 0;
+	u8_t hash[TC_SHA256_DIGEST_SIZE];
+	char sha256[SHA256_HEX_DIGEST_SIZE];
 
-	if (tc_sha256_final(image_hash, &ctx.sha256sum) < 1) {
+	if (tc_sha256_final(hash, &ctx.sha256sum) < 1) {
 		LOG_ERR("Could not finish sha256sum");
 		return false;
 	}
 
-	memset(&sha256_image_dowloaded, 0, SHA256_HEX_DIGEST_SIZE);
-	for (i = 0; i < TC_SHA256_DIGEST_SIZE; i++) {
-		snprintk(buffer, sizeof(buffer), "%02x", image_hash[i]);
-		buffer_len = buffer_len + strlen(buffer);
-		strncat(&sha256_image_dowloaded[i], buffer,
-			MIN(SHA256_HEX_DIGEST_SIZE - 1, buffer_len));
+	if (bin2hex_str(hash, TC_SHA256_DIGEST_SIZE,
+		sha256, SHA256_HEX_DIGEST_SIZE)) {
+		LOG_ERR("Could not create sha256sum hex representation");
+		return false;
 	}
 
-	if (strncmp(sha256_image_dowloaded,
-		update_info.sha256sum_image,
-		strlen(update_info.sha256sum_image)) != 0) {
+	if (strncmp(sha256, update_info.sha256sum_image,
+		    SHA256_HEX_DIGEST_SIZE) != 0) {
 		LOG_ERR("SHA256SUM of image are not the same");
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		return false;
@@ -499,7 +507,7 @@ static int report(enum updatehub_state state)
 	struct report report;
 	int ret = -1;
 	const char *exec = state_name(state);
-	char *device_id = k_malloc(DEVICE_ID_MAX_SIZE);
+	char *device_id = k_malloc(DEVICE_ID_HEX_MAX_SIZE);
 	char *firmware_version = k_malloc(BOOT_IMG_VER_STRLEN_MAX);
 
 	if (device_id == NULL || firmware_version == NULL) {
@@ -507,7 +515,7 @@ static int report(enum updatehub_state state)
 		goto error;
 	}
 
-	if (!updatehub_get_device_identity(device_id, DEVICE_ID_MAX_SIZE)) {
+	if (!updatehub_get_device_identity(device_id, DEVICE_ID_HEX_MAX_SIZE)) {
 		goto error;
 	}
 
@@ -624,7 +632,7 @@ enum updatehub_response updatehub_probe(void)
 
 	char *metadata = k_malloc(MAX_PAYLOAD_SIZE);
 	char *metadata_copy = k_malloc(MAX_PAYLOAD_SIZE);
-	char *device_id = k_malloc(DEVICE_ID_MAX_SIZE);
+	char *device_id = k_malloc(DEVICE_ID_HEX_MAX_SIZE);
 	char *firmware_version = k_malloc(BOOT_IMG_VER_STRLEN_MAX);
 
 	size_t sha256size;
@@ -647,7 +655,7 @@ enum updatehub_response updatehub_probe(void)
 		goto error;
 	}
 
-	if (!updatehub_get_device_identity(device_id, DEVICE_ID_MAX_SIZE)) {
+	if (!updatehub_get_device_identity(device_id, DEVICE_ID_HEX_MAX_SIZE)) {
 		ctx.code_status = UPDATEHUB_METADATA_ERROR;
 		goto error;
 	}
