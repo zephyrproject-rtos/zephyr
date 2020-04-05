@@ -219,6 +219,8 @@
 			label = "TEST_TEMP";
 			io-channels = <&test_adc_1 10>, <&test_adc_2 20>;
 			io-channel-names = "ch1", "ch2";
+			dmas = <&test_dma1 1 2>, <&test_dma2 3 4>;
+			dma-names = "tx", "rx";
 			clocks = <&test_clk 3 7>, <&test_fixed_clk>, <&test_clk 8 2>;
 		};
 
@@ -256,6 +258,24 @@
 			compatible = "vnd,clock";
                         label = "TEST_CLOCK";
 			#clock-cells = <2>;
+		};
+
+		test_dma1: dma@44443333 {
+			compatible = "vnd,dma";
+			#dma-cells = <2>;
+			reg = < 0x44443333 0x1000 >;
+			interrupts = <11 3>;
+			label = "TEST_DMA_CTRL_1";
+			status = "okay";
+		};
+
+		test_dma2: dma@44442222 {
+			compatible = "vnd,dma";
+			#dma-cells = <2>;
+			reg = < 0x44442222 0x1000 >;
+			interrupts = <12 3>;
+			label = "TEST_DMA_CTRL_2";
+			status = "okay";
 		};
 	};
 };
