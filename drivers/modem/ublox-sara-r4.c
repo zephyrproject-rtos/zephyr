@@ -969,7 +969,7 @@ static int offload_close(struct modem_socket *sock)
 		return 0;
 	}
 
-	if (sock->is_connected) {
+	if (sock->is_connected || sock->ip_proto == IPPROTO_UDP) {
 		snprintk(buf, sizeof(buf), "AT+USOCL=%d", sock->id);
 
 		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
