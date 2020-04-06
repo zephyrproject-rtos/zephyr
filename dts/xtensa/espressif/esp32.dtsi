@@ -8,6 +8,10 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng0;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

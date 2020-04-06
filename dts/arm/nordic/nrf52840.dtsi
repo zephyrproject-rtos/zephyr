@@ -6,6 +6,10 @@
 #include "nrf5_common.dtsi"
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

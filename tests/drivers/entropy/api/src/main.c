@@ -71,7 +71,7 @@ static int get_entropy(void)
 	u8_t buffer[BUFFER_LENGTH] = { 0 };
 	int ret;
 
-	dev = device_get_binding(CONFIG_ENTROPY_NAME);
+	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	if (!dev) {
 		TC_PRINT("error: no random device\n");
 		return TC_FAIL;

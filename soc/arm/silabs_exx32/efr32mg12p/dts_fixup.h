@@ -18,6 +18,5 @@
 
 #define DT_WDT_0_NAME			DT_LABEL(DT_INST(0, silabs_gecko_wdog))
 #define DT_WDT_1_NAME			DT_LABEL(DT_INST(1, silabs_gecko_wdog))
-#define CONFIG_ENTROPY_NAME		DT_SILABS_GECKO_TRNG_4001D000_LABEL
 
 /* End of SoC Level DTS fixup file */

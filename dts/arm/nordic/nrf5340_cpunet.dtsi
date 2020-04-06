@@ -9,6 +9,10 @@
 #include <dt-bindings/gpio/gpio.h>
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

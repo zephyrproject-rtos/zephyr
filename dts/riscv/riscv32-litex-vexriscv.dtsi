@@ -9,6 +9,12 @@
 	#size-cells = <1>;
 	compatible = "litex,vexriscv", "litex-dev";
 	model = "litex,vexriscv";
+
+
+	chosen {
+		zephyr,entropy = &prbs0;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

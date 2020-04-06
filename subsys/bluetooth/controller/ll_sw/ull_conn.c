@@ -606,7 +606,7 @@ int ull_conn_init(void)
 {
 	int err;
 
-	entropy = device_get_binding(CONFIG_ENTROPY_NAME);
+	entropy = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	if (!entropy) {
 		return -ENODEV;
 	}

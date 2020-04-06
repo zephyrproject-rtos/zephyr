@@ -14,6 +14,10 @@
 		watchdog0 = &wdt;
 	};
 
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

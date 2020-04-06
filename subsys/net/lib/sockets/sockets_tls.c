@@ -260,7 +260,7 @@ static int tls_init(struct device *unused)
 	struct device *dev = NULL;
 
 #if defined(CONFIG_ENTROPY_HAS_DRIVER)
-	dev = device_get_binding(CONFIG_ENTROPY_NAME);
+	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 
 	if (!dev) {
 		NET_ERR("Failed to obtain entropy device");

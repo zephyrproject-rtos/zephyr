@@ -30,7 +30,7 @@ otError otPlatEntropyGet(uint8_t *aOutput, uint16_t aOutputLength)
 	}
 
 	if (dev == NULL) {
-		dev = device_get_binding(CONFIG_ENTROPY_NAME);
+		dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 		if (dev == NULL) {
 			LOG_ERR("Failed to obtain entropy device");
 			return OT_ERROR_FAILED;

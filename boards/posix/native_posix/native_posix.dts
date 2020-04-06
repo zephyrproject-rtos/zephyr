@@ -16,6 +16,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-mcumgr = &uart0;
 		zephyr,flash = &flash0;
+		zephyr,entropy = &rng;
 	};
 
 	aliases {
@@ -85,7 +86,7 @@
 		current-speed = <0>;
 	};
 
-	rng {
+	rng: rng {
 		status = "okay";
 		compatible = "zephyr,native-posix-rng";
 		label = "ENTROPY_0";

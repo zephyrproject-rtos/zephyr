@@ -49,6 +49,10 @@
 		tc-6 = &tc6;
 	};
 
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	soc {
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
