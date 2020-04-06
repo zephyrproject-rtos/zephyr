@@ -467,6 +467,7 @@ config NUM_PIPE_ASYNC_MSGS
 
 config MEM_POOL_HEAP_BACKEND
 	bool "Use k_heap as the backend for k_mem_pool"
+	default y
 	help
 	  This selects a backend implementation for k_mem_pool based
 	  on the sys_heap abstraction instead of the legacy
