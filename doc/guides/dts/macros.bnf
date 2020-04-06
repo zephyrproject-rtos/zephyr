@@ -125,6 +125,10 @@ prop-suf = 1*( "_" gen-name ["_" dt-name] )
 other-macro =  %s"DT_N_" alternate-id
 ; Total count of enabled instances of a compatible.
 other-macro =/ %s"DT_N_INST_" dt-name %s"_NUM"
+; These are used internally by DT_INST_FOREACH, which iterates over
+; each enabled instance of a compatible.
+other-macro =/ %s"DT_FOREACH_INST_" dt-name
+other-macro =/ %s"DT_FOREACH_IMPL_" DIGIT
 ; E.g.: #define DT_CHOSEN_zephyr_flash
 other-macro =/ %s"DT_CHOSEN_" dt-name
 ; Declares that a compatible has at least one node on a bus.
