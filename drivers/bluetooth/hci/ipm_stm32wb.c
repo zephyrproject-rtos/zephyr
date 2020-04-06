@@ -228,7 +228,7 @@ void shci_cmd_resp_release(uint32_t flag)
 
 void shci_cmd_resp_wait(uint32_t timeout)
 {
-	k_sem_take(&ble_sys_wait_cmd_rsp, timeout);
+	k_sem_take(&ble_sys_wait_cmd_rsp, K_MSEC(timeout));
 }
 
 void ipcc_reset(void)
