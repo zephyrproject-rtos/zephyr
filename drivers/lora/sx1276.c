@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Manivannan Sadhasivam
+ * Copyright (c) 2020 Grinn
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,14 +24,43 @@ LOG_MODULE_REGISTER(sx1276);
 #define GPIO_RESET_FLAGS	DT_INST_GPIO_FLAGS(0, reset_gpios)
 #define GPIO_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
 
-#define PA_PIN			DT_ENUM_IDX(DT_DRV_INST(0),	\
-					    power_amplifier_output)
+#define GPIO_RFI_ENABLE_PIN			\
+	DT_INST_GPIO_PIN(0, rfi_enable_gpios)
+#define GPIO_RFI_ENABLE_FLAGS			\
+	DT_INST_GPIO_FLAGS(0, rfi_enable_gpios)
+
+#define GPIO_RFO_ENABLE_PIN			\
+	DT_INST_GPIO_PIN(0, rfo_enable_gpios)
+#define GPIO_RFO_ENABLE_FLAGS			\
+	DT_INST_GPIO_FLAGS(0, rfo_enable_gpios)
+
+#define GPIO_PA_BOOST_ENABLE_PIN			\
+	DT_INST_GPIO_PIN(0, pa_boost_enable_gpios)
+#define GPIO_PA_BOOST_ENABLE_FLAGS			\
+	DT_INST_GPIO_FLAGS(0, pa_boost_enable_gpios)
 
 /*
  * Those macros must be in sync with 'power-amplifier-output' dts property.
  */
 #define SX1276_PA_RFO				0
 #define SX1276_PA_BOOST				1
+
+#if DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios) &&	\
+	DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
+#define SX1276_PA_OUTPUT(power)				\
+	((power) > 14 ? SX1276_PA_BOOST : SX1276_PA_RFO)
+#elif DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios)
+#define SX1276_PA_OUTPUT(power)		SX1276_PA_RFO
+#elif DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
+#define SX1276_PA_OUTPUT(power)		SX1276_PA_BOOST
+#elif DT_INST_NODE_HAS_PROP(0, power_amplifier_output)
+#define SX1276_PA_OUTPUT(power)				\
+	DT_ENUM_IDX(DT_DRV_INST(0), power_amplifier_output)
+#else
+BUILD_ASSERT(0, "None of rfo-enable-gpios, pa-boost-enable-gpios and "
+	     "power-amplifier-output has been specified. "
+	     "Look at semtech,sx1276.yaml to fix that.");
+#endif
 
 #define SX1276_REG_PA_CONFIG			0x09
 #define SX1276_REG_PA_DAC			0x4d
@@ -63,6 +93,19 @@ static const struct sx1276_dio sx1276_dios[] = { SX1276_DIO_GPIO_INIT(0) };
 
 static struct sx1276_data {
 	struct device *reset;
+#if DT_INST_NODE_HAS_PROP(0, rfi_enable_gpios)
+	struct device *rfi_enable;
+#endif
+#if DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios)
+	struct device *rfo_enable;
+#endif
+#if DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
+	struct device *pa_boost_enable;
+#endif
+#if DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios) &&	\
+	DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
+	uint8_t tx_power;
+#endif
 	struct device *spi;
 	struct spi_config spi_cfg;
 	struct device *dio_dev[SX1276_MAX_DIO];
@@ -86,9 +129,38 @@ bool SX1276CheckRfFrequency(uint32_t frequency)
 	return true;
 }
 
-void SX1276SetAntSwLowPower(bool status)
+static inline void sx1276_rfi_enable(int val)
 {
-	/* TODO */
+#if DT_INST_NODE_HAS_PROP(0, rfi_enable_gpios)
+	gpio_pin_set(dev_data.rfi_enable, GPIO_RFI_ENABLE_PIN, val);
+#endif
+}
+
+static inline void sx1276_rfo_enable(int val)
+{
+#if DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios)
+	gpio_pin_set(dev_data.rfo_enable, GPIO_RFO_ENABLE_PIN, val);
+#endif
+}
+
+static inline void sx1276_pa_boost_enable(int val)
+{
+#if DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
+	gpio_pin_set(dev_data.pa_boost_enable,
+		     GPIO_PA_BOOST_ENABLE_PIN, val);
+#endif
+}
+
+void SX1276SetAntSwLowPower(bool low_power)
+{
+	if (low_power) {
+		/* force inactive (low power) state of all antenna paths */
+		sx1276_rfi_enable(0);
+		sx1276_rfo_enable(0);
+		sx1276_pa_boost_enable(0);
+	} else {
+		/* rely on SX1276SetAntSw() to configure proper antenna path */
+	}
 }
 
 void SX1276SetBoardTcxo(uint8_t state)
@@ -98,7 +170,24 @@ void SX1276SetBoardTcxo(uint8_t state)
 
 void SX1276SetAntSw(uint8_t opMode)
 {
-	/* TODO */
+	switch (opMode) {
+	case RFLR_OPMODE_TRANSMITTER:
+		sx1276_rfi_enable(0);
+
+		if (SX1276_PA_OUTPUT(dev_data.tx_power) == SX1276_PA_BOOST) {
+			sx1276_rfo_enable(0);
+			sx1276_pa_boost_enable(1);
+		} else {
+			sx1276_pa_boost_enable(0);
+			sx1276_rfo_enable(1);
+		}
+		break;
+	default:
+		sx1276_rfo_enable(0);
+		sx1276_pa_boost_enable(0);
+		sx1276_rfi_enable(1);
+		break;
+	}
 }
 
 void SX1276Reset(void)
@@ -248,29 +337,34 @@ void SX1276SetRfTxPower(int8_t power)
 
 	pa_dac &= RF_PADAC_20DBM_MASK;
 
-#if PA_PIN == SX1276_PA_BOOST
-	power = clamp_int8(power, 2, 20);
+	if (SX1276_PA_OUTPUT(power) == SX1276_PA_BOOST) {
+		power = clamp_int8(power, 2, 20);
 
-	pa_config |= RF_PACONFIG_PASELECT_PABOOST;
-	if (power > 17) {
-		pa_dac |= RF_PADAC_20DBM_ON;
-		pa_config |= (power - 5) & 0x0F;
+		pa_config |= RF_PACONFIG_PASELECT_PABOOST;
+		if (power > 17) {
+			pa_dac |= RF_PADAC_20DBM_ON;
+			pa_config |= (power - 5) & 0x0F;
+		} else {
+			pa_dac |= RF_PADAC_20DBM_OFF;
+			pa_config |= (power - 2) & 0x0F;
+		}
 	} else {
+		power = clamp_int8(power, -4, 15);
+
 		pa_dac |= RF_PADAC_20DBM_OFF;
-		pa_config |= (power - 2) & 0x0F;
+		if (power > 0) {
+			/* Set the power range to 0 -- 10.8+0.6*7 dBm. */
+			pa_config |= 7 << SX1276_PA_CONFIG_MAX_POWER_SHIFT;
+			pa_config |= (power & 0x0F);
+		} else {
+			/* Set the power range to -4.2 -- 10.8+0.6*0 dBm */
+			pa_config |= ((power + 4) & 0x0F);
+		}
 	}
-#elif PA_PIN == SX1276_PA_RFO
-	power = clamp_int8(power, -4, 15);
 
-	pa_dac |= RF_PADAC_20DBM_OFF;
-	if (power > 0) {
-		/* Set the power range to 0 -- 10.8+0.6*7 dBm. */
-		pa_config |= 7 << SX1276_PA_CONFIG_MAX_POWER_SHIFT;
-		pa_config |= (power & 0x0F);
-	} else {
-		/* Set the power range to -4.2 -- 10.8+0.6*0 dBm */
-		pa_config |= ((power + 4) & 0x0F);
-	}
+#if DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios) &&	\
+	DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
+	dev_data.tx_power = power;
 #endif
 
 	ret = sx1276_write(SX1276_REG_PA_CONFIG, &pa_config, 1);
@@ -310,6 +404,54 @@ const struct Radio_s Radio = {
 	.SetRxDutyCycle = NULL,
 	.SetTxContinuousWave = SX1276SetTxContinuousWave,
 };
+
+static int sx1276_antenna_configure(void)
+{
+	int ret = 0;
+
+#if DT_INST_NODE_HAS_PROP(0, rfi_enable_gpios)
+	dev_data.rfi_enable = device_get_binding(
+			DT_INST_GPIO_LABEL(0, rfi_enable_gpios));
+	if (!dev_data.rfi_enable) {
+		LOG_ERR("Cannot get pointer to %s device",
+		       DT_INST_GPIO_LABEL(0, rfi_enable_gpios));
+		return -EIO;
+	}
+
+	ret = gpio_pin_configure(dev_data.rfi_enable, GPIO_RFI_ENABLE_PIN,
+				 GPIO_OUTPUT_INACTIVE | GPIO_RFI_ENABLE_FLAGS);
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, rfo_enable_gpios)
+	dev_data.rfo_enable = device_get_binding(
+			DT_INST_GPIO_LABEL(0, rfo_enable_gpios));
+	if (!dev_data.rfo_enable) {
+		LOG_ERR("Cannot get pointer to %s device",
+		       DT_INST_GPIO_LABEL(0, rfo_enable_gpios));
+		return -EIO;
+	}
+
+	ret = gpio_pin_configure(dev_data.rfo_enable, GPIO_RFO_ENABLE_PIN,
+				 GPIO_OUTPUT_INACTIVE | GPIO_RFO_ENABLE_FLAGS);
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
+	dev_data.pa_boost_enable = device_get_binding(
+			DT_INST_GPIO_LABEL(0, pa_boost_enable_gpios));
+	if (!dev_data.pa_boost_enable) {
+		LOG_ERR("Cannot get pointer to %s device",
+		       DT_INST_GPIO_LABEL(0, pa_boost_enable_gpios));
+		return -EIO;
+	}
+
+	ret = gpio_pin_configure(dev_data.pa_boost_enable,
+				 GPIO_PA_BOOST_ENABLE_PIN,
+				 GPIO_OUTPUT_INACTIVE |
+					GPIO_PA_BOOST_ENABLE_FLAGS);
+#endif
+
+	return ret;
+}
 
 static int sx1276_lora_init(struct device *dev)
 {
@@ -363,6 +505,12 @@ static int sx1276_lora_init(struct device *dev)
 	ret = sx1276_read(SX1276_REG_VERSION, &regval, 1);
 	if (ret < 0) {
 		LOG_ERR("Unable to read version info");
+		return -EIO;
+	}
+
+	ret = sx1276_antenna_configure();
+	if (ret < 0) {
+		LOG_ERR("Unable to configure antenna");
 		return -EIO;
 	}
 
