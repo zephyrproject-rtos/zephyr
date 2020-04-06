@@ -24,6 +24,10 @@
 		uart-0 = &lpuart0;
 	};
 
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

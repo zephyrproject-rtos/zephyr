@@ -7,7 +7,6 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
-
 	aliases {
 		adc-0 = &adc0;
 		adc-1 = &adc1;
@@ -41,6 +40,10 @@
 		uart-5 = &uart5;
 		usbd-0 = &usbd;
 		watchdog0 = &wdog;
+	};
+
+	chosen {
+		zephyr,entropy = &rnga;
 	};
 
 	cpus {

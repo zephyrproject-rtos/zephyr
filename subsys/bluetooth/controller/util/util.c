@@ -46,11 +46,11 @@ int util_rand(void *buf, size_t len)
 		/* Only one entropy device exists, so this is safe even
 		 * if the whole operation isn't atomic.
 		 */
-		dev = device_get_binding(CONFIG_ENTROPY_NAME);
+		dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 		__ASSERT((dev != NULL),
-			"Device driver for %s (CONFIG_ENTROPY_NAME) not found. "
+			"Device driver for %s (DT_CHOSEN_ZEPHYR_ENTROPY_LABEL) not found. "
 			"Check your build configuration!",
-			CONFIG_ENTROPY_NAME);
+			DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	}
 
 	return entropy_get_entropy(dev, (u8_t *)buf, len);

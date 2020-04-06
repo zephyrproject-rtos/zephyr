@@ -6,6 +6,10 @@
 #include "gpio_gecko.h"
 
 / {
+	chosen {
+		zephyr,entropy = &trng0;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

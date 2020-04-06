@@ -42,6 +42,10 @@
 		pwm-3 = &tpm3;
 	};
 
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

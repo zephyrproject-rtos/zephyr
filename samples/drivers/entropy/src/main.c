@@ -14,7 +14,7 @@ void main(void)
 
 	printf("Entropy Example! %s\n", CONFIG_ARCH);
 
-	dev = device_get_binding(CONFIG_ENTROPY_NAME);
+	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	if (!dev) {
 		printf("error: no entropy device\n");
 		return;

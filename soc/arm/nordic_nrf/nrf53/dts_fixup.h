@@ -6,10 +6,6 @@
 
 /* SoC level DTS fixup file */
 
-#ifndef CONFIG_ENTROPY_NAME
-#define CONFIG_ENTROPY_NAME		DT_LABEL(DT_INST(0, nordic_nrf_rng))
-#endif
-
 #define DT_NUM_IRQ_PRIO_BITS \
 	DT_ARM_V8M_NVIC_E000E100_ARM_NUM_IRQ_PRIORITY_BITS
 
