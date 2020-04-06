@@ -413,14 +413,12 @@ static int video_mcux_csi_init_0(struct device *dev)
 
 	irq_enable(DT_VIDEO_MCUX_CSI_IRQ);
 
-	video_mcux_csi_init(dev);
-
-	return 0;
+	return video_mcux_csi_init(dev);
 }
 
 DEVICE_AND_API_INIT(video_mcux_csi, DT_VIDEO_MCUX_CSI_NAME,
 		    &video_mcux_csi_init_0, &video_mcux_csi_data_0,
 		    &video_mcux_csi_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &video_mcux_csi_driver_api);
 #endif

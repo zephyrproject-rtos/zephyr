@@ -273,5 +273,5 @@ static int video_sw_generator_init(struct device *dev)
 
 DEVICE_AND_API_INIT(video_sw_generator, "VIDEO_SW_GENERATOR",
 		    &video_sw_generator_init, &video_sw_generator_data_0, NULL,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY,
 		    &video_sw_generator_driver_api);
