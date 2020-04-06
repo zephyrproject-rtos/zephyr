@@ -22,12 +22,13 @@
 #include "bs_pc_base_fifo_user.h"
 
 /* Recheck if something arrived from the EDTT every 5ms */
-#define EDTT_IF_RECHECK_DELTA 5 /*ms*/
+#define EDTT_IF_RECHECK_DELTA 5 /* ms */
 
 /* We want the runs to be deterministic => we want to resync with the Phy
  * before we retry any read so the bridge device may also run
  */
-#define EDTT_SIMU_RESYNC_TIME_WITH_EDTT (EDTT_IF_RECHECK_DELTA*1e3-1)
+#define EDTT_SIMU_RESYNC_TIME_WITH_EDTT \
+	(EDTT_IF_RECHECK_DELTA * MSEC_PER_SEC - 1)
 
 int edtt_mode_enabled;
 
@@ -113,7 +114,7 @@ int edtt_read(u8_t *ptr, size_t size, int flags)
 				bs_trace_raw_time(9, "EDTT: No enough data yet,"
 						"sleeping for %i ms\n",
 						EDTT_IF_RECHECK_DELTA);
-				k_sleep(EDTT_IF_RECHECK_DELTA);
+				k_sleep(K_MSEC(EDTT_IF_RECHECK_DELTA));
 			} else {
 				bs_trace_raw_time(9, "EDTT: No enough data yet,"
 						"returning\n");
