@@ -340,35 +340,6 @@ u32_t z_timer_cycle_get_32(void)
 #endif
 }
 
-/**
- *
- * @brief Stop announcing ticks into the kernel
- *
- * This routine disables timer interrupt generation and delivery.
- * Note that the timer's counting cannot be stopped by software.
- *
- * @return N/A
- */
-void sys_clock_disable(void)
-{
-	unsigned int key;  /* interrupt lock level */
-	u32_t control; /* timer control register value */
-
-	key = irq_lock();
-
-	/* disable interrupt generation */
-
-	control = timer0_control_register_get();
-	timer0_control_register_set(control & ~_ARC_V2_TMR_CTRL_IE);
-
-	irq_unlock(key);
-
-	/* disable interrupt in the interrupt controller */
-
-	irq_disable(IRQ_TIMER0);
-}
-
-
 #if SMP_TIMER_DRIVER
 void smp_timer_init(void)
 {
