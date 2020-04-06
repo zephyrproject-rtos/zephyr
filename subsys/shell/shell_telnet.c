@@ -28,7 +28,7 @@ struct shell_telnet *sh_telnet;
 /* Various definitions mapping the TELNET service configuration options */
 #define TELNET_PORT      CONFIG_SHELL_TELNET_PORT
 #define TELNET_LINE_SIZE CONFIG_SHELL_TELNET_LINE_BUF_SIZE
-#define TELNET_TIMEOUT   K_MSEC(CONFIG_SHELL_TELNET_SEND_TIMEOUT)
+#define TELNET_TIMEOUT   CONFIG_SHELL_TELNET_SEND_TIMEOUT
 
 #define TELNET_MIN_MSG 2
 
@@ -232,7 +232,7 @@ static void telnet_accept(struct net_context *client,
 		goto error;
 	}
 
-	if (net_context_recv(client, telnet_recv, 0, NULL)) {
+	if (net_context_recv(client, telnet_recv, K_NO_WAIT, NULL)) {
 		LOG_ERR("Unable to setup reception (family %u)",
 			net_context_get_family(client));
 		goto error;
@@ -422,7 +422,7 @@ static int write(const struct shell_transport *transport,
 		 */
 		timeout = (timeout == 0) ? TELNET_TIMEOUT : timeout;
 
-		k_delayed_work_submit(&sh_telnet->send_work, timeout);
+		k_delayed_work_submit(&sh_telnet->send_work, K_MSEC(timeout));
 	}
 
 	sh_telnet->shell_handler(SHELL_TRANSPORT_EVT_TX_RDY,
