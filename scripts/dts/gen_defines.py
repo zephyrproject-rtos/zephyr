@@ -484,10 +484,14 @@ def controller_and_data_macros(entry, i, macro):
         return ret
 
     name = str2ident(entry.name)
+    # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS
+    ret[f"{macro}_IDX_{i}_EXISTS"] = 1
     # DT_N_<node-id>_P_<prop-id>_IDX_<i>_NAME
     ret[f"{macro}_IDX_{i}_NAME"] = quote_str(entry.name)
     # DT_N_<node-id>_P_<prop-id>_NAME_<NAME>_PH
     ret[f"{macro}_NAME_{name}_PH"] = f"DT_{entry.controller.z_path_id}"
+    # DT_N_<node-id>_P_<prop-id>_NAME_<NAME>_EXISTS
+    ret[f"{macro}_NAME_{name}_EXISTS"] = 1
     # DT_N_<node-id>_P_<prop-id>_NAME_<NAME>_VAL_<VAL>
     for cell, val in data.items():
         cell_ident = str2ident(cell)

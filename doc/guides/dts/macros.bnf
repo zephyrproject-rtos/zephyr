@@ -102,10 +102,11 @@ prop-id = dt-name
 ; - with array types (uint8-array, phandle-array, etc.)
 ; - with "enum:" in their bindings
 ; - zephyr device API specific macros for phandle-arrays
+; - phandle specifier names ("foo-names")
 ;
 ; Here are some examples:
 ;
-; - _EXISTS: property existence flag
+; - _EXISTS: property, index or name existence flag
 ; - _SIZE: logical property length
 ; - _IDX_<i>: values of individual array elements
 ; - _IDX_<DIGIT>_VAL_<dt-name>: values of individual specifier
