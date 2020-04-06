@@ -108,48 +108,4 @@
 					 BME280_FILTER |  \
 					 BME280_SPI_3W_DISABLE)
 
-struct bme280_data {
-#if DT_ANY_INST_ON_BUS(i2c)
-	struct device *i2c_master;
-	u16_t i2c_slave_addr;
-#elif DT_ANY_INST_ON_BUS(spi)
-	struct device *spi;
-	struct spi_config spi_cfg;
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	struct spi_cs_control spi_cs_control;
-#endif
-#else
-#error "BME280 device type not specified"
-#endif
-	/* Compensation parameters. */
-	u16_t dig_t1;
-	s16_t dig_t2;
-	s16_t dig_t3;
-	u16_t dig_p1;
-	s16_t dig_p2;
-	s16_t dig_p3;
-	s16_t dig_p4;
-	s16_t dig_p5;
-	s16_t dig_p6;
-	s16_t dig_p7;
-	s16_t dig_p8;
-	s16_t dig_p9;
-	u8_t dig_h1;
-	s16_t dig_h2;
-	u8_t dig_h3;
-	s16_t dig_h4;
-	s16_t dig_h5;
-	s8_t dig_h6;
-
-	/* Compensated values. */
-	s32_t comp_temp;
-	u32_t comp_press;
-	u32_t comp_humidity;
-
-	/* Carryover between temperature and pressure/humidity compensation. */
-	s32_t t_fine;
-
-	u8_t chip_id;
-};
-
 #endif /* ZEPHYR_DRIVERS_SENSOR_BME280_BME280_H_ */
