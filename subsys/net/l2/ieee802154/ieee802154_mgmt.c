@@ -156,7 +156,7 @@ static int ieee802154_scan(u32_t mgmt_request, struct net_if *iface,
 		}
 
 		/* Context aware sleep */
-		k_sleep(scan->duration);
+		k_sleep(K_MSEC(scan->duration));
 
 		if (!ctx->scan_ctx) {
 			NET_DBG("Scan request cancelled");
