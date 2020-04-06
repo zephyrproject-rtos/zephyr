@@ -177,6 +177,10 @@ void SX1276IoIrqInit(DioIrqHandler **irqHandlers)
 
 	/* Setup DIO gpios */
 	for (i = 0; i < SX1276_MAX_DIO; i++) {
+		if (!irqHandlers[i]) {
+			continue;
+		}
+
 		dev_data.dio_dev[i] = device_get_binding(sx1276_dios[i].port);
 		if (dev_data.dio_dev[i] == NULL) {
 			LOG_ERR("Cannot get pointer to %s device",
