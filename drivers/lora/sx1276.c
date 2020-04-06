@@ -55,6 +55,7 @@ struct sx1276_data {
 	struct device *spi;
 	struct spi_config spi_cfg;
 	struct device *dio_dev[SX1276_MAX_DIO];
+	struct k_work dio_work[SX1276_MAX_DIO];
 	struct k_sem data_sem;
 	RadioEvents_t sx1276_event;
 	u8_t *rx_buf;
@@ -156,6 +157,13 @@ void DelayMsMcu(uint32_t ms)
 	k_sleep(ms);
 }
 
+static void sx1276_dio_work_handle(struct k_work *work)
+{
+	int dio = work - dev_data.dio_work;
+
+	(*DioIrq[dio])(NULL);
+}
+
 static void sx1276_irq_callback(struct device *dev,
 				struct gpio_callback *cb, u32_t pins)
 {
@@ -166,7 +174,7 @@ static void sx1276_irq_callback(struct device *dev,
 	for (i = 0; i < SX1276_MAX_DIO; i++) {
 		if (dev == dev_data.dio_dev[i] &&
 		    pin == sx1276_dios[i].pin) {
-			(*DioIrq[i])(NULL);
+			k_work_submit(&dev_data.dio_work[i]);
 		}
 	}
 }
@@ -188,6 +196,8 @@ void SX1276IoIrqInit(DioIrqHandler **irqHandlers)
 				sx1276_dios[i].port);
 			return;
 		}
+
+		k_work_init(&dev_data.dio_work[i], sx1276_dio_work_handle);
 
 		gpio_pin_configure(dev_data.dio_dev[i], sx1276_dios[i].pin,
 				   GPIO_INPUT | GPIO_INT_DEBOUNCE
