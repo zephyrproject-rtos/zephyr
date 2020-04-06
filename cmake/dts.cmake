@@ -246,6 +246,18 @@ if(SUPPORTS_DTS)
   file(WRITE ${PROJECT_BINARY_DIR}/${BOARD}.dts_compiled
        "See zephyr.dts for the final merged devicetree.")
 
+  add_custom_target(
+    nrf_pin_report
+    DEPENDS
+    ${ZEPHYR_BASE}/scripts/dts/nrf_pin_report.py
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/dts/nrf_pin_report.py
+    --dts ${ZEPHYR_DTS}
+    --bindings-dirs ${DTS_ROOT_BINDINGS}
+    USES_TERMINAL
+    )
+
 else()
   file(WRITE ${DEVICETREE_UNFIXED_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")
   file(WRITE ${DEVICETREE_UNFIXED_LEGACY_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")
