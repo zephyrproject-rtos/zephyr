@@ -1022,6 +1022,7 @@ static void test_devices(void)
 	struct device *dev0;
 	struct device *dev1;
 	struct device *dev_abcd;
+	unsigned int val;
 
 	zassert_true(DT_HAS_NODE(INST(0)), "inst 0 device");
 	zassert_true(DT_HAS_NODE(INST(1)), "inst 1 device");
@@ -1044,6 +1045,25 @@ static void test_devices(void)
 	zassert_not_null(dev_abcd, "abcd");
 	zassert_equal(to_info(dev_abcd)->reg_addr, 0xabcd1234, "abcd addr");
 	zassert_equal(to_info(dev_abcd)->reg_len, 0x500, "abcd len");
+
+	/*
+	 * Make sure DT_INST_FOREACH can be called from functions
+	 * using macros with side effects in the current scope.
+	 */
+#undef SET_BIT
+#define SET_BIT(i) do { unsigned int bit = BIT(i); val |= bit; } while (0)
+	val = 0;
+	DT_INST_FOREACH(SET_BIT);
+	zassert_equal(val, 0x3, "foreach vnd_gpio");
+
+	/*
+	 * Make sure DT_INST_FOREACH works with 0 instances, and does
+	 * not expand its argument at all.
+	 */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT xxxx
+#define BUILD_BUG_ON_EXPANSION (there is a bug in devicetree.h)
+	DT_INST_FOREACH(BUILD_BUG_ON_EXPANSION);
 }
 
 static void test_cs_gpios(void)

@@ -1389,7 +1389,8 @@
  * Has to accept instance_number as only parameter.
  */
 #define DT_INST_FOREACH(inst_expr) \
-	UTIL_LISTIFY(DT_NUM_INST(DT_DRV_COMPAT), DT_CALL_WITH_ARG, inst_expr)
+	COND_CODE_1(DT_HAS_COMPAT(DT_DRV_COMPAT), \
+		    (UTIL_CAT(DT_FOREACH_INST_, DT_DRV_COMPAT)(inst_expr)), ())
 
 /**
  * @brief Does a DT_DRV_COMPAT instance have a property?
@@ -1489,7 +1490,5 @@
 #define DT_DASH(...) MACRO_MAP_CAT(DT_DASH_PREFIX, __VA_ARGS__)
 /** @internal helper for DT_DASH(): prepends _ to a name */
 #define DT_DASH_PREFIX(name) _##name
-/** @internal DT_INST_FOREACH helper */
-#define DT_CALL_WITH_ARG(arg, expr) expr(arg);
 
 #endif /* DEVICETREE_H */

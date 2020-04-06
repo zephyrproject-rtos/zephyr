@@ -525,9 +525,24 @@ def write_global_compat_info(edt):
             if bus is not None and bus not in compat2buses[compat]:
                 compat2buses[compat].append(bus)
 
-    out_comment("Number of enabled instances of each compatible\n")
+    out_comment("Helpers for calling a macro/function a fixed number of times"
+                "\n")
+    for numinsts in range(1, max(compat2numinst.values(), default=0) + 1):
+        out_define(f"DT_FOREACH_IMPL_{numinsts}(fn)",
+                   " ".join([f"fn({i});" for i in range(numinsts)]))
+
+    out_comment("Macros for enabled instances of each compatible\n")
+    n_inst_macros = {}
+    for_each_macros = {}
     for compat, numinst in compat2numinst.items():
-        out_define(f"DT_N_INST_{str2ident(compat)}_NUM", numinst)
+        ident = str2ident(compat)
+        n_inst_macros[f"DT_N_INST_{ident}_NUM"] = numinst
+        for_each_macros[f"DT_FOREACH_INST_{ident}(fn)"] = \
+            f"DT_FOREACH_IMPL_{numinst}(fn)"
+    for macro, value in n_inst_macros.items():
+        out_define(macro, value)
+    for macro, value in for_each_macros.items():
+        out_define(macro, value)
 
     out_comment("Bus information for enabled nodes of each compatible\n")
     for compat, buses in compat2buses.items():
