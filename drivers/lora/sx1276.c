@@ -164,7 +164,8 @@ static void sx1276_irq_callback(struct device *dev,
 	pin = find_lsb_set(pins) - 1;
 
 	for (i = 0; i < SX1276_MAX_DIO; i++) {
-		if (pin == sx1276_dios[i].pin) {
+		if (dev == dev_data.dio_dev[i] &&
+		    pin == sx1276_dios[i].pin) {
 			(*DioIrq[i])(NULL);
 		}
 	}
