@@ -45,7 +45,7 @@ static u8_t l2cap_policy;
 static struct bt_conn *l2cap_whitelist[CONFIG_BT_MAX_CONN];
 
 static u32_t l2cap_rate;
-static u32_t l2cap_recv_delay;
+static u32_t l2cap_recv_delay_ms;
 static K_FIFO_DEFINE(l2cap_recv_fifo);
 struct l2ch {
 	struct k_delayed_work recv_work;
@@ -107,13 +107,13 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		shell_hexdump(ctx_shell, buf->data, buf->len);
 	}
 
-	if (l2cap_recv_delay) {
+	if (l2cap_recv_delay_ms > 0) {
 		/* Submit work only if queue is empty */
 		if (k_fifo_is_empty(&l2cap_recv_fifo)) {
 			shell_print(ctx_shell, "Delaying response in %u ms...",
-				    l2cap_recv_delay);
+				    l2cap_recv_delay_ms);
 			k_delayed_work_submit(&l2ch->recv_work,
-					      l2cap_recv_delay);
+					      K_MSEC(l2cap_recv_delay_ms));
 		}
 		net_buf_put(&l2cap_recv_fifo, buf);
 		return -EINPROGRESS;
@@ -346,10 +346,10 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 static int cmd_recv(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (argc > 1) {
-		l2cap_recv_delay = strtoul(argv[1], NULL, 10);
+		l2cap_recv_delay_ms = strtoul(argv[1], NULL, 10);
 	} else {
 		shell_print(shell, "l2cap receive delay: %u ms",
-			    l2cap_recv_delay);
+			    l2cap_recv_delay_ms);
 	}
 
 	return 0;
