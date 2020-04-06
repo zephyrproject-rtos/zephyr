@@ -263,7 +263,7 @@ struct net_buf *bt_att_create_pdu(struct bt_conn *conn, u8_t op,
 				  size_t len);
 
 /* Allocate a new request */
-struct bt_att_req *bt_att_req_alloc(s32_t timeout);
+struct bt_att_req *bt_att_req_alloc(k_timeout_t timeout);
 
 /* Free a request */
 void bt_att_req_free(struct bt_att_req *req);

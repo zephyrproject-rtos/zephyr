@@ -2265,7 +2265,7 @@ u16_t bt_att_get_mtu(struct bt_conn *conn)
 	return att->chan.tx.mtu;
 }
 
-struct bt_att_req *bt_att_req_alloc(s32_t timeout)
+struct bt_att_req *bt_att_req_alloc(k_timeout_t timeout)
 {
 	struct bt_att_req *req = NULL;
 

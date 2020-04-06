@@ -411,7 +411,7 @@ static struct net_buf *l2cap_create_le_sig_pdu(struct net_buf *buf,
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 static void l2cap_chan_send_req(struct bt_l2cap_le_chan *chan,
-				struct net_buf *buf, s32_t timeout)
+				struct net_buf *buf, k_timeout_t timeout)
 {
 	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part A] page 126:
 	 *
@@ -422,11 +422,7 @@ static void l2cap_chan_send_req(struct bt_l2cap_le_chan *chan,
 	 * final expiration, when the response is received, or the physical
 	 * link is lost.
 	 */
-	if (timeout) {
-		k_delayed_work_submit(&chan->chan.rtx_work, timeout);
-	} else {
-		k_delayed_work_cancel(&chan->chan.rtx_work);
-	}
+	k_delayed_work_submit(&chan->chan.rtx_work, timeout);
 
 	bt_l2cap_send(chan->chan.conn, BT_L2CAP_CID_LE_SIG, buf);
 }
@@ -496,7 +492,8 @@ void bt_l2cap_encrypt_change(struct bt_conn *conn, u8_t hci_status)
 }
 
 struct net_buf *bt_l2cap_create_pdu_timeout(struct net_buf_pool *pool,
-					    size_t reserve, s32_t timeout)
+					    size_t reserve,
+					    k_timeout_t timeout)
 {
 	return bt_conn_create_pdu_timeout(pool,
 					  sizeof(struct bt_l2cap_hdr) + reserve,
@@ -1644,7 +1641,7 @@ int bt_l2cap_chan_recv_complete(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return 0;
 }
 
-static struct net_buf *l2cap_alloc_frag(s32_t timeout, void *user_data)
+static struct net_buf *l2cap_alloc_frag(k_timeout_t timeout, void *user_data)
 {
 	struct bt_l2cap_le_chan *chan = user_data;
 	struct net_buf *frag = NULL;

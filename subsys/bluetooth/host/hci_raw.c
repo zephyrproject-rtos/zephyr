@@ -65,7 +65,7 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv)
 	return 0;
 }
 
-struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
+struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 {
 	struct net_buf *buf;
 
@@ -89,7 +89,7 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 	return buf;
 }
 
-struct net_buf *bt_buf_get_tx(enum bt_buf_type type, s32_t timeout,
+struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 			      const void *data, size_t size)
 {
 	struct net_buf *buf;
@@ -139,12 +139,12 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, s32_t timeout,
 	return buf;
 }
 
-struct net_buf *bt_buf_get_cmd_complete(s32_t timeout)
+struct net_buf *bt_buf_get_cmd_complete(k_timeout_t timeout)
 {
 	return bt_buf_get_rx(BT_BUF_EVT, timeout);
 }
 
-struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, s32_t timeout)
+struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, k_timeout_t timeout)
 {
 	return bt_buf_get_rx(BT_BUF_EVT, timeout);
 }
