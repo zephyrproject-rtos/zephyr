@@ -757,7 +757,7 @@ static struct net_linkaddr server_link_addr = {
 #define MY_IPV6_ADDR "2001:db8:100::1"
 #define PEER_IPV6_ADDR "2001:db8:100::2"
 #define TEST_TXTIME 0xff112233445566ff
-#define WAIT_TIME 250
+#define WAIT_TIME K_MSEC(250)
 
 static void eth_fake_iface_init(struct net_if *iface)
 {
