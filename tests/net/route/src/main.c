@@ -85,7 +85,7 @@ static int msg_sending;
 
 K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
-#define WAIT_TIME 250
+#define WAIT_TIME K_MSEC(250)
 
 struct net_route_test {
 	u8_t mac_addr[sizeof(struct net_eth_addr)];
