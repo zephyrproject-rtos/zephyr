@@ -235,7 +235,7 @@ static int usb_dw_set_fifo(u8_t ep)
 }
 
 static int usb_dw_ep_set(u8_t ep,
-			 u32_t ep_mps, enum usb_dc_ep_type ep_type)
+			 u32_t ep_mps, enum usb_dc_ep_transfer_type ep_type)
 {
 	volatile u32_t *p_depctl;
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);

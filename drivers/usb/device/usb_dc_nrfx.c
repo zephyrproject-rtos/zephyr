@@ -74,14 +74,14 @@ enum usbd_event_type {
  * @param max_sz  Max packet size supported by endpoint.
  * @param en      Enable/Disable flag.
  * @param addr    Endpoint address.
- * @param type    Endpoint type.
+ * @param type    Endpoint transfer type.
  */
 struct nrf_usbd_ep_cfg {
 	usb_dc_ep_callback cb;
 	u32_t max_sz;
 	bool en;
 	u8_t addr;
-	enum usb_dc_ep_type type;
+	enum usb_dc_ep_transfer_type type;
 
 };
 

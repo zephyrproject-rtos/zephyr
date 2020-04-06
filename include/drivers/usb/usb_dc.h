@@ -84,9 +84,9 @@ enum usb_dc_ep_cb_status_code {
 };
 
 /**
- * @brief USB Endpoint type
+ * @brief USB Endpoint Transfer Type
  */
-enum usb_dc_ep_type {
+enum usb_dc_ep_transfer_type {
 	/** Control type endpoint */
 	USB_DC_EP_CONTROL = 0,
 	/** Isochronous type endpoint */
@@ -111,10 +111,10 @@ struct usb_dc_ep_cfg_data {
 	u8_t ep_addr;
 	/** Endpoint max packet size */
 	u16_t ep_mps;
-	/** Endpoint type. May be Bulk, Interrupt or Control. Isochronous
-	 *  endpoints are not supported for now.
+	/** Endpoint Transfer Type.
+	 * May be Bulk, Interrupt, Control or Isochronous
 	 */
-	enum usb_dc_ep_type ep_type;
+	enum usb_dc_ep_transfer_type ep_type;
 };
 
 /**
