@@ -57,7 +57,7 @@ void z_arc_firq_stack_set(void)
 /* the z_arc_firq_stack_set must be called when irq diasbled, as
  * it can be called not only in the init phase but also other places
  */
-	unsigned int key = irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	__asm__ volatile (
 /* only ilink will not be banked, so use ilink as channel
@@ -79,7 +79,7 @@ void z_arc_firq_stack_set(void)
 	  "i"(_ARC_V2_STATUS32_RB(1)),
 	  "i"(~_ARC_V2_STATUS32_RB(7))
 	);
-	irq_unlock(key);
+	arch_irq_unlock(key);
 }
 #endif
 
@@ -95,10 +95,7 @@ void z_arc_firq_stack_set(void)
 
 void arch_irq_enable(unsigned int irq)
 {
-	unsigned int key = irq_lock();
-
 	z_arc_v2_irq_unit_int_enable(irq);
-	irq_unlock(key);
 }
 
 /*
@@ -112,10 +109,7 @@ void arch_irq_enable(unsigned int irq)
 
 void arch_irq_disable(unsigned int irq)
 {
-	unsigned int key = irq_lock();
-
 	z_arc_v2_irq_unit_int_disable(irq);
-	irq_unlock(key);
 }
 
 /**
@@ -147,8 +141,6 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 {
 	ARG_UNUSED(flags);
 
-	unsigned int key = irq_lock();
-
 	__ASSERT(prio < CONFIG_NUM_IRQ_PRIO_LEVELS,
 		 "invalid priority %d for irq %d", prio, irq);
 /* 0 -> CONFIG_NUM_IRQ_PRIO_LEVELS allocted to secure world
@@ -162,7 +154,6 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 		 ARC_N_IRQ_START_LEVEL : prio;
 #endif
 	z_arc_v2_irq_unit_prio_set(irq, prio);
-	irq_unlock(key);
 }
 
 /*
