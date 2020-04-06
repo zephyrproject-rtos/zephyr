@@ -2430,10 +2430,11 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *bt_conn_create_frag_timeout_debug(size_t reserve, s32_t timeout,
+struct net_buf *bt_conn_create_frag_timeout_debug(size_t reserve,
+						  k_timeout_t timeout,
 						  const char *func, int line)
 #else
-struct net_buf *bt_conn_create_frag_timeout(size_t reserve, s32_t timeout)
+struct net_buf *bt_conn_create_frag_timeout(size_t reserve, k_timeout_t timeout)
 #endif
 {
 	struct net_buf_pool *pool = NULL;
@@ -2452,11 +2453,12 @@ struct net_buf *bt_conn_create_frag_timeout(size_t reserve, s32_t timeout)
 
 #if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *bt_conn_create_pdu_timeout_debug(struct net_buf_pool *pool,
-						 size_t reserve, s32_t timeout,
+						 size_t reserve,
+						 k_timeout_t timeout,
 						 const char *func, int line)
 #else
 struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
-					   size_t reserve, s32_t timeout)
+					   size_t reserve, k_timeout_t timeout)
 #endif
 {
 	struct net_buf *buf;
@@ -2496,7 +2498,7 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 	}
 
 	if (!buf) {
-		BT_WARN("Unable to allocate buffer: timeout %d", timeout);
+		BT_WARN("Unable to allocate buffer within timeout");
 		return NULL;
 	}
 

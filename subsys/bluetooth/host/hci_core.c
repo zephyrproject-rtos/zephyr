@@ -53,7 +53,8 @@
 
 /* Peripheral timeout to initialize Connection Parameter Update procedure */
 #define CONN_UPDATE_TIMEOUT  K_MSEC(CONFIG_BT_CONN_PARAM_UPDATE_TIMEOUT)
-#define RPA_TIMEOUT          K_SECONDS(CONFIG_BT_RPA_TIMEOUT)
+#define RPA_TIMEOUT_MS       (CONFIG_BT_RPA_TIMEOUT * MSEC_PER_SEC)
+#define RPA_TIMEOUT          K_MSEC(RPA_TIMEOUT_MS)
 
 #define HCI_CMD_TIMEOUT      K_SECONDS(10)
 
@@ -1234,7 +1235,7 @@ static inline bool rpa_is_new(void)
 	 * timeout was started.
 	 */
 	return k_delayed_work_remaining_get(&bt_dev.rpa_update) >
-	       (RPA_TIMEOUT - K_MSEC(500));
+	       (RPA_TIMEOUT_MS - 500);
 #else
 	return false;
 #endif
@@ -8273,7 +8274,7 @@ int bt_le_set_chan_map(u8_t chan_map[5])
 				    buf, NULL);
 }
 
-struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
+struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 {
 	struct net_buf *buf;
 
@@ -8298,7 +8299,7 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 	return buf;
 }
 
-struct net_buf *bt_buf_get_cmd_complete(s32_t timeout)
+struct net_buf *bt_buf_get_cmd_complete(k_timeout_t timeout)
 {
 	struct net_buf *buf;
 	unsigned int key;
@@ -8321,7 +8322,7 @@ struct net_buf *bt_buf_get_cmd_complete(s32_t timeout)
 	return bt_buf_get_rx(BT_BUF_EVT, timeout);
 }
 
-struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, s32_t timeout)
+struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, k_timeout_t timeout)
 {
 	switch (evt) {
 #if defined(CONFIG_BT_CONN)
