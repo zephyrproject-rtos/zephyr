@@ -130,7 +130,7 @@ void board_play_tune(const char *str)
 					 0);
 		}
 
-		k_sleep(duration);
+		k_sleep(K_MSEC(duration));
 
 		/* Disable the PWM */
 		pwm_pin_set_usec(pwm, BUZZER_PIN, 0, 0, 0);

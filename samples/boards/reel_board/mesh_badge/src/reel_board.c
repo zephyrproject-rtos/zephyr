@@ -138,7 +138,7 @@ void board_blink_leds(void)
 	k_delayed_work_submit(&led_timer, K_MSEC(100));
 }
 
-void board_show_text(const char *text, bool center, s32_t duration)
+void board_show_text(const char *text, bool center, k_timeout_t duration)
 {
 	int i;
 
@@ -164,7 +164,7 @@ void board_show_text(const char *text, bool center, s32_t duration)
 
 	cfb_framebuffer_finalize(epd_dev);
 
-	if (duration != K_FOREVER) {
+	if (!K_TIMEOUT_EQ(duration, K_FOREVER)) {
 		k_delayed_work_submit(&epd_work, duration);
 	}
 }
@@ -344,7 +344,7 @@ static void show_statistics(void)
 	cfb_framebuffer_finalize(epd_dev);
 }
 
-static void show_sensors_data(s32_t interval)
+static void show_sensors_data(k_timeout_t interval)
 {
 	struct sensor_value val[3];
 	u8_t line = 0U;
