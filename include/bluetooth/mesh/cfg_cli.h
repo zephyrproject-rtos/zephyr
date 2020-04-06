@@ -832,7 +832,7 @@ int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr,
 
 /** @brief Get the current transmission timeout value.
  *
- *  @return The configured transmission timeout.
+ *  @return The configured transmission timeout in milliseconds.
  */
 s32_t bt_mesh_cfg_cli_timeout_get(void);
 

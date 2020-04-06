@@ -182,7 +182,7 @@ int bt_mesh_health_attention_set(u16_t addr, u16_t app_idx, u8_t attention,
 
 /** @brief Get the current transmission timeout value.
  *
- *  @return The configured transmission timeout.
+ *  @return The configured transmission timeout in milliseconds.
  */
 s32_t bt_mesh_health_cli_timeout_get(void);
 

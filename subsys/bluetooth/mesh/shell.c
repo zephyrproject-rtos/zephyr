@@ -1851,33 +1851,27 @@ static int cmd_provision(const struct shell *shell, size_t argc, char *argv[])
 
 int cmd_timeout(const struct shell *shell, size_t argc, char *argv[])
 {
-	s32_t timeout;
+	s32_t timeout_ms;
 
-	if (argc < 2) {
-		timeout = bt_mesh_cfg_cli_timeout_get();
-		if (timeout == K_FOREVER) {
-			shell_print(shell, "Message timeout: forever");
+	if (argc == 2) {
+		s32_t timeout_s;
+
+		timeout_s = strtol(argv[1], NULL, 0);
+		if (timeout_s < 0 || timeout_s > (INT32_MAX / 1000)) {
+			timeout_ms = SYS_FOREVER_MS;
 		} else {
-			shell_print(shell, "Message timeout: %u seconds",
-				    timeout / 1000);
+			timeout_ms = timeout_s * MSEC_PER_SEC;
 		}
 
-		return 0;
+		bt_mesh_cfg_cli_timeout_set(timeout_ms);
 	}
 
-	timeout = strtol(argv[1], NULL, 0);
-	if (timeout < 0 || timeout > (INT32_MAX / 1000)) {
-		timeout = K_FOREVER;
-	} else {
-		timeout = timeout * 1000;
-	}
-
-	bt_mesh_cfg_cli_timeout_set(timeout);
-	if (timeout == K_FOREVER) {
+	timeout_ms = bt_mesh_cfg_cli_timeout_get();
+	if (timeout_ms == SYS_FOREVER_MS) {
 		shell_print(shell, "Message timeout: forever");
 	} else {
 		shell_print(shell, "Message timeout: %u seconds",
-			    timeout / 1000);
+			    timeout_ms / 1000);
 	}
 
 	return 0;

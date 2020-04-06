@@ -25,7 +25,7 @@
 #include "net.h"
 #include "foundation.h"
 
-static s32_t msg_timeout = K_SECONDS(2);
+static s32_t msg_timeout;
 
 static struct bt_mesh_health_cli *health_cli;
 
@@ -199,7 +199,7 @@ static int cli_wait(void)
 {
 	int err;
 
-	err = k_sem_take(&health_cli->op_sync, msg_timeout);
+	err = k_sem_take(&health_cli->op_sync, SYS_TIMEOUT_MS(msg_timeout));
 
 	cli_reset();
 
@@ -497,6 +497,7 @@ int bt_mesh_health_cli_set(struct bt_mesh_model *model)
 	}
 
 	health_cli = model->user_data;
+	msg_timeout = 2 * MSEC_PER_SEC;
 
 	return 0;
 }
