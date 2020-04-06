@@ -216,7 +216,7 @@
 			num-bidir-endpoints = <4>;
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
-			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x20000000>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000080>;
 			phys = <&otgfs_phy>;
 			status = "disabled";
 			label = "OTGFS";
