@@ -28,9 +28,29 @@ properties:
 
     power-amplifier-output:
       type: string
-      required: true
+      required: false
       description: |
-        Selects power amplifier output pin.
+        Selects power amplifier output pin. This is required when neither
+        'rfo-enable-gpios' nor 'pa-boost-enable-gpios' is specified. In other
+        case this property is simply ignored.
       enum:
          - "rfo"
          - "pa-boost"
+
+    rfi-enable-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        RFI antenna input enable pin.
+
+    rfo-enable-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        RFO antenna output enable pin.
+
+    pa-boost-enable-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        PA_BOOST antenna output enable pin.
