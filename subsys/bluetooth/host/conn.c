@@ -364,9 +364,8 @@ static void conn_update_timeout(struct k_work *work)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_GAP_AUTO_UPDATE_CONN_PARAMS)) {
-#if defined(CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
 		/* if application set own params use those, otherwise
-		 * use defaults
+		 * use defaults.
 		 */
 		if (atomic_test_and_clear_bit(conn->flags,
 					      BT_CONN_SLAVE_PARAM_SET)) {
@@ -376,24 +375,15 @@ static void conn_update_timeout(struct k_work *work)
 						conn->le.pending_timeout);
 			send_conn_le_param_update(conn, param);
 		} else {
+#if defined(CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
 			param = BT_LE_CONN_PARAM(
 					CONFIG_BT_PERIPHERAL_PREF_MIN_INT,
 					CONFIG_BT_PERIPHERAL_PREF_MAX_INT,
 					CONFIG_BT_PERIPHERAL_PREF_SLAVE_LATENCY,
 					CONFIG_BT_PERIPHERAL_PREF_TIMEOUT);
 			send_conn_le_param_update(conn, param);
-		}
-#else
-		/* update only if application set own params */
-		if (atomic_test_and_clear_bit(conn->flags,
-					      BT_CONN_SLAVE_PARAM_SET)) {
-			param = BT_LE_CONN_PARAM(conn->le.interval_min,
-						conn->le.interval_max,
-						conn->le.latency,
-						conn->le.timeout);
-			send_conn_le_param_update(conn, param);
-		}
 #endif
+		}
 	}
 
 	atomic_set_bit(conn->flags, BT_CONN_SLAVE_PARAM_UPDATE);
