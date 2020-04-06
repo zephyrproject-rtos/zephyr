@@ -5,13 +5,16 @@ description: STM32 I2S controller
 
 compatible: "st,stm32-i2s"
 
-include: [i2s-controller.yaml, dma.yaml]
+include: [i2s-controller.yaml]
 
 properties:
     reg:
       required: true
 
     interrupts:
+      required: true
+
+    dmas:
       required: true
 
     dma-names:
