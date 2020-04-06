@@ -984,7 +984,7 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	k_delayed_work_submit(&retransmit_work, pending->timeout);
+	k_delayed_work_submit(&retransmit_work, K_MSEC(pending->timeout));
 }
 
 static void update_counter(struct k_work *work)
@@ -1021,7 +1021,7 @@ static int create_pending_request(struct coap_packet *response,
 		return 0;
 	}
 
-	k_delayed_work_submit(&retransmit_work, pending->timeout);
+	k_delayed_work_submit(&retransmit_work, K_MSEC(pending->timeout));
 
 	return 0;
 }

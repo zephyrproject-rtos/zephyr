@@ -42,7 +42,7 @@ static struct coap_block_context blk_ctx;
 
 static void wait(void)
 {
-	if (poll(fds, nfds, K_FOREVER) < 0) {
+	if (poll(fds, nfds, -1) < 0) {
 		LOG_ERR("Error in poll:%d", errno);
 	}
 }
