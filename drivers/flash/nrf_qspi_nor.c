@@ -479,13 +479,13 @@ static inline int qspi_nor_read_id(struct device *dev,
 static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 			 size_t size)
 {
-	if (!dest) {
+	/* destination must be aligned to a 32-bit word. */
+	if ((dest == NULL) || (((uintptr_t)dest % sizeof(u32_t)) != 0)) {
 		return -EINVAL;
 	}
 
-	/* read size must be multiple of 4 bytes */
-	if (size % sizeof(uint32_t) ||
-	    !(size > 0)) {
+	/* read size must be multiple of 32-bit words */
+	if ((size == 0) || ((size % sizeof(u32_t)) != 0)) {
 		return -EINVAL;
 	}
 
@@ -518,7 +518,7 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 	}
 
 	/* write size must be multiple of 4 bytes */
-	if (size % sizeof(uint32_t) ||
+	if (size % sizeof(u32_t) ||
 	    !(size > 0)) {
 		return -EINVAL;
 	}
