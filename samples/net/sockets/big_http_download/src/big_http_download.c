@@ -29,7 +29,7 @@
 #include "ca_certificate.h"
 #endif
 
-#define sleep(x) k_sleep(x * 1000)
+#define sleep(x) k_sleep(K_MSEC((x) * MSEC_PER_SEC))
 
 #endif
 
