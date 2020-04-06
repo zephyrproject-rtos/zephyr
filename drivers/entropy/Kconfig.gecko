@@ -7,7 +7,6 @@ config ENTROPY_GECKO_TRNG
 	bool "GECKO TRNG driver"
 	depends on SOC_GECKO_TRNG
 	select ENTROPY_HAS_DRIVER
-	select HAS_DTS_ENTROPY
 	default y
 	help
 	  This option enables the true random number generator

@@ -4,7 +4,6 @@ config FAKE_ENTROPY_NATIVE_POSIX
 	bool "Native posix entropy driver"
 	depends on ARCH_POSIX
 	select ENTROPY_HAS_DRIVER
-	select HAS_DTS_ENTROPY
 	help
 	  This option enables the test random number generator for the
 	  native_posix board (ARCH_POSIX). This is based on the host random() API.

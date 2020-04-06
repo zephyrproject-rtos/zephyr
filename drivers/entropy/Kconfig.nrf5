@@ -16,7 +16,6 @@ menuconfig ENTROPY_NRF5_RNG
 	depends on !ENTROPY_NRF_FORCE_ALT
 	depends on HAS_HW_NRF_RNG
 	select ENTROPY_HAS_DRIVER
-	select HAS_DTS_ENTROPY
 	default y
 	help
 	  This option enables the RNG peripheral, which is a random number
