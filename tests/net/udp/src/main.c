@@ -225,7 +225,7 @@ u8_t ipv6_hop_by_hop_ext_hdr[] = {
 0x3E, 0x3F, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45,
 };
 
-#define TIMEOUT 200
+#define TIMEOUT K_MSEC(200)
 
 static bool send_ipv6_udp_msg(struct net_if *iface,
 			      struct in6_addr *src,
