@@ -409,7 +409,7 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, k_timeout_t timeout)
 {
 	struct net_buf *buf, *frag;
 
-	NET_BUF_DBG("%s():%d: fifo %p timeout %d", func, line, fifo, timeout);
+	NET_BUF_DBG("%s():%d: fifo %p", func, line, fifo);
 
 	buf = k_fifo_get(fifo, timeout);
 	if (!buf) {
