@@ -51,6 +51,14 @@ static int remoteproc_mgr_boot(struct device *dev)
 	remoteproc_mgr_config();
 #endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
+#if (DT_IPC_SHM_BASE_ADDRESS != 0)
+	/* Initialize inter-processor shared memory block to zero. It is
+	 * assumed that the application image has access to the shared
+	 * memory at this point (see #24147).
+	 */
+	memset((void *) DT_IPC_SHM_BASE_ADDRESS, 0, KB(DT_IPC_SHM_SIZE));
+#endif
+
 	/* Release the Network MCU, 'Release force off signal' */
 	NRF_RESET->NETWORK.FORCEOFF = RESET_NETWORK_FORCEOFF_FORCEOFF_Release;
 
