@@ -6,18 +6,29 @@
 
 #include <zephyr.h>
 #include <device.h>
+#include <devicetree.h>
 #include <drivers/sensor.h>
+
+#define BME280 DT_INST(0, bosch_bme280)
+
+#if DT_HAS_NODE(BME280)
+#define BME280_LABEL DT_LABEL(BME280)
+#else
+#error Your devicetree has no enabled nodes with compatible "bosch,bme280"
+#define BME280_LABEL "<none>"
+#endif
 
 void main(void)
 {
-	struct device *dev = device_get_binding("BME280");
+	struct device *dev = device_get_binding(BME280_LABEL);
 
 	if (dev == NULL) {
-		printk("Could not get BME280 device\n");
+		printk("No device \"%s\" found; did initialization fail?\n",
+		       BME280_LABEL);
 		return;
+	} else {
+		printk("Found device \"%s\"\n", BME280_LABEL);
 	}
-
-	printk("dev %p name %s\n", dev, dev->config->name);
 
 	while (1) {
 		struct sensor_value temp, press, humidity;
