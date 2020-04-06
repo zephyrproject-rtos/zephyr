@@ -216,8 +216,8 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 		 * we do not need to start to cancel any pending DNS queries.
 		 */
 		int ret = k_sem_take(&ai_state.sem,
-				     CONFIG_NET_SOCKETS_DNS_TIMEOUT +
-				     K_MSEC(100));
+				     K_MSEC(CONFIG_NET_SOCKETS_DNS_TIMEOUT +
+					    100));
 		if (ret == -EAGAIN) {
 			return DNS_EAI_AGAIN;
 		}
@@ -243,9 +243,9 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	if (family == AF_UNSPEC && IS_ENABLED(CONFIG_NET_IPV6)) {
 		ret = exec_query(host, AF_INET6, &ai_state);
 		if (ret == 0) {
-			int ret = k_sem_take(&ai_state.sem,
-					     CONFIG_NET_SOCKETS_DNS_TIMEOUT +
-					     K_MSEC(100));
+			int ret = k_sem_take(
+				&ai_state.sem,
+				K_MSEC(CONFIG_NET_SOCKETS_DNS_TIMEOUT + 100));
 			if (ret == -EAGAIN) {
 				return DNS_EAI_AGAIN;
 			}
