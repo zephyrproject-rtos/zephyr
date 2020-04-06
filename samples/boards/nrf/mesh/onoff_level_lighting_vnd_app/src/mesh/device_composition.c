@@ -160,7 +160,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		return;
 	}
 
@@ -227,7 +227,7 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		gen_onoff_get(model, ctx, buf);
 		return;
 	}
@@ -358,7 +358,7 @@ static void gen_level_set_unack(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		return;
 	}
 
@@ -422,7 +422,7 @@ static void gen_level_set(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		gen_level_get(model, ctx, buf);
 		return;
 	}
@@ -490,7 +490,7 @@ static void gen_delta_set_unack(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 
 		if (ctl->light->delta == delta) {
 			return;
@@ -570,7 +570,7 @@ static void gen_delta_set(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 
 		if (ctl->light->delta == delta) {
 			gen_level_get(model, ctx, buf);
@@ -653,7 +653,7 @@ static void gen_move_set_unack(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		return;
 	}
 
@@ -726,7 +726,7 @@ static void gen_move_set(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		gen_level_get(model, ctx, buf);
 		return;
 	}
@@ -1008,7 +1008,7 @@ static void vnd_set_unack(struct bt_mesh_model *model,
 	if (state->last_tid == tid &&
 	    state->last_src_addr == ctx->addr &&
 	    state->last_dst_addr == ctx->recv_dst &&
-	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - state->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		return;
 	}
 
@@ -1105,7 +1105,7 @@ static void light_lightness_set_unack(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		return;
 	}
 
@@ -1169,7 +1169,7 @@ static void light_lightness_set(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		light_lightness_get(model, ctx, buf);
 		return;
 	}
@@ -1287,7 +1287,7 @@ static void light_lightness_linear_set_unack(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		return;
 	}
 
@@ -1351,7 +1351,7 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		light_lightness_linear_get(model, ctx, buf);
 		return;
 	}
@@ -1731,7 +1731,7 @@ static void light_ctl_set_unack(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		return;
 	}
 
@@ -1808,7 +1808,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		light_ctl_get(model, ctx, buf);
 		return;
 	}
@@ -2208,7 +2208,7 @@ static void light_ctl_temp_set_unack(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		return;
 	}
 
@@ -2281,7 +2281,7 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		light_ctl_temp_get(model, ctx, buf);
 		return;
 	}
@@ -2401,7 +2401,7 @@ static void gen_level_set_unack_temp(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		return;
 	}
 
@@ -2465,7 +2465,7 @@ static void gen_level_set_temp(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		gen_level_get_temp(model, ctx, buf);
 		return;
 	}
@@ -2533,7 +2533,7 @@ static void gen_delta_set_unack_temp(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 
 		if (ctl->temp->delta == delta) {
 			return;
@@ -2613,7 +2613,7 @@ static void gen_delta_set_temp(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 
 		if (ctl->temp->delta == delta) {
 			gen_level_get_temp(model, ctx, buf);
@@ -2696,7 +2696,7 @@ static void gen_move_set_unack_temp(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		return;
 	}
 
@@ -2769,7 +2769,7 @@ static void gen_move_set_temp(struct bt_mesh_model *model,
 	if (ctl->last_tid == tid &&
 	    ctl->last_src_addr == ctx->addr &&
 	    ctl->last_dst_addr == ctx->recv_dst &&
-	    (now - ctl->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - ctl->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		gen_level_get_temp(model, ctx, buf);
 		return;
 	}
