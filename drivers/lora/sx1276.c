@@ -45,7 +45,7 @@ struct sx1276_dio {
 #define SX1276_DIO_GPIO_INIT(n) \
 	UTIL_LISTIFY(DT_INST_PROP_LEN(n, dio_gpios), SX1276_DIO_GPIO_ELEM, n)
 
-static struct sx1276_dio sx1276_dios[] = { SX1276_DIO_GPIO_INIT(0) };
+static const struct sx1276_dio sx1276_dios[] = { SX1276_DIO_GPIO_INIT(0) };
 
 #define SX1276_MAX_DIO ARRAY_SIZE(sx1276_dios)
 
