@@ -344,6 +344,7 @@ int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp)
 {
 	struct k_sem sync_sem;
+	u8_t status;
 	int err;
 
 	if (!buf) {
@@ -364,31 +365,30 @@ int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 	net_buf_put(&bt_dev.cmd_tx_queue, buf);
 
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
-	__ASSERT(err == 0, "k_sem_take failed with err %d", err);
+	BT_ASSERT_MSG(err == 0, "k_sem_take failed with err %d", err);
 
-	BT_DBG("opcode 0x%04x status 0x%02x", opcode, cmd(buf)->status);
-
-	if (cmd(buf)->status) {
-		switch (cmd(buf)->status) {
-		case BT_HCI_ERR_CONN_LIMIT_EXCEEDED:
-			err = -ECONNREFUSED;
-			break;
-		default:
-			err = -EIO;
-			break;
-		}
-
+	status = cmd(buf)->status;
+	if (status) {
+		BT_WARN("opcode 0x%04x status 0x%02x", opcode, status);
 		net_buf_unref(buf);
-	} else {
-		err = 0;
-		if (rsp) {
-			*rsp = buf;
-		} else {
-			net_buf_unref(buf);
+
+		switch (status) {
+		case BT_HCI_ERR_CONN_LIMIT_EXCEEDED:
+			return -ECONNREFUSED;
+		default:
+			return -EIO;
 		}
 	}
 
-	return err;
+	BT_DBG("rsp %p opcode 0x%04x len %u", buf, opcode, buf->len);
+
+	if (rsp) {
+		*rsp = buf;
+	} else {
+		net_buf_unref(buf);
+	}
+
+	return 0;
 }
 
 #if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_CONN)
