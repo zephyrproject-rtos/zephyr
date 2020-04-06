@@ -93,7 +93,7 @@ struct prov_bearer {
 	 *
 	 *  @return Zero on success, or (negative) error code otherwise.
 	 */
-	int (*link_open)(const u8_t uuid[16], s32_t timeout,
+	int (*link_open)(const u8_t uuid[16], k_timeout_t timeout,
 			 const struct prov_bearer_cb *cb, void *cb_data);
 
 	/** @brief Close the current link.

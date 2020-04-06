@@ -35,7 +35,7 @@ struct comp_data {
 	struct net_buf_simple *comp;
 };
 
-static s32_t msg_timeout = K_SECONDS(2);
+static s32_t msg_timeout;
 
 static struct bt_mesh_cfg_cli *cli;
 
@@ -709,6 +709,7 @@ static int cfg_cli_init(struct bt_mesh_model *model)
 
 	cli = model->user_data;
 	cli->model = model;
+	msg_timeout = 2 * MSEC_PER_SEC;
 
 	/*
 	 * Configuration Model security is device-key based and both the local
@@ -753,7 +754,7 @@ static int cli_wait(void)
 {
 	int err;
 
-	err = k_sem_take(&cli->op_sync, msg_timeout);
+	err = k_sem_take(&cli->op_sync, SYS_TIMEOUT_MS(msg_timeout));
 
 	cli_reset();
 

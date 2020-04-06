@@ -158,11 +158,11 @@ static void adv_thread(void *p1, void *p2, void *p3)
 		if (IS_ENABLED(CONFIG_BT_MESH_PROXY)) {
 			buf = net_buf_get(&adv_queue, K_NO_WAIT);
 			while (!buf) {
-				s32_t timeout;
+				k_timeout_t timeout;
 
 				timeout = bt_mesh_proxy_adv_start();
-				BT_DBG("Proxy Advertising up to %d ms",
-				       timeout);
+				BT_DBG("Proxy Advertising");
+
 				buf = net_buf_get(&adv_queue, timeout);
 				bt_mesh_proxy_adv_stop();
 			}
@@ -197,7 +197,7 @@ void bt_mesh_adv_update(void)
 struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 					     bt_mesh_adv_alloc_t get_id,
 					     enum bt_mesh_adv_type type,
-					     u8_t xmit, s32_t timeout)
+					     u8_t xmit, k_timeout_t timeout)
 {
 	struct bt_mesh_adv *adv;
 	struct net_buf *buf;
@@ -224,7 +224,7 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 }
 
 struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, u8_t xmit,
-				   s32_t timeout)
+				   k_timeout_t timeout)
 {
 	return bt_mesh_adv_create_from_pool(&adv_buf_pool, adv_alloc, type,
 					    xmit, timeout);

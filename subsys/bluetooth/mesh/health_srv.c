@@ -363,7 +363,7 @@ int bt_mesh_fault_update(struct bt_mesh_elem *elem)
 	/* Let periodic publishing, if enabled, take care of sending the
 	 * Health Current Status.
 	 */
-	if (bt_mesh_model_pub_period_get(mod)) {
+	if (bt_mesh_model_pub_period_get(mod) > 0) {
 		return 0;
 	}
 
@@ -435,12 +435,12 @@ void bt_mesh_attention(struct bt_mesh_model *model, u8_t time)
 		srv = model->user_data;
 	}
 
-	if (time) {
+	if (time > 0) {
 		if (srv->cb && srv->cb->attn_on) {
 			srv->cb->attn_on(model);
 		}
 
-		k_delayed_work_submit(&srv->attn_timer, time * 1000U);
+		k_delayed_work_submit(&srv->attn_timer, K_SECONDS(time));
 	} else {
 		k_delayed_work_cancel(&srv->attn_timer);
 

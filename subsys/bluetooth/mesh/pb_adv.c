@@ -47,8 +47,8 @@
 
 #define RETRANSMIT_TIMEOUT  K_MSEC(500)
 #define BUF_TIMEOUT         K_MSEC(400)
-#define CLOSING_TIMEOUT     K_SECONDS(3)
-#define TRANSACTION_TIMEOUT K_SECONDS(30)
+#define CLOSING_TIMEOUT     (3 * MSEC_PER_SEC)
+#define TRANSACTION_TIMEOUT (30 * MSEC_PER_SEC)
 
 /* Acked messages, will do retransmissions manually, taking acks into account:
  */
@@ -534,7 +534,8 @@ static void send_reliable(void)
 
 static void prov_retransmit(struct k_work *work)
 {
-	int i, timeout;
+	s32_t timeout_ms;
+	int i;
 
 	BT_DBG("");
 
@@ -549,12 +550,12 @@ static void prov_retransmit(struct k_work *work)
 	 * message until CLOSING_TIMEOUT has elapsed.
 	 */
 	if (atomic_test_bit(link.flags, LINK_CLOSING)) {
-		timeout = CLOSING_TIMEOUT;
+		timeout_ms = CLOSING_TIMEOUT;
 	} else {
-		timeout = TRANSACTION_TIMEOUT;
+		timeout_ms = TRANSACTION_TIMEOUT;
 	}
 
-	if (k_uptime_get() - link.tx.start > timeout) {
+	if (k_uptime_get() - link.tx.start > timeout_ms) {
 		if (atomic_test_bit(link.flags, LINK_CLOSING)) {
 			close_link(PROV_BEARER_LINK_STATUS_SUCCESS);
 		} else {
@@ -778,7 +779,7 @@ void bt_mesh_pb_adv_recv(struct net_buf_simple *buf)
 	gen_prov_recv(&rx, buf);
 }
 
-static int prov_link_open(const u8_t uuid[16], s32_t timeout,
+static int prov_link_open(const u8_t uuid[16], k_timeout_t timeout,
 			  const struct prov_bearer_cb *cb, void *cb_data)
 {
 	BT_DBG("uuid %s", bt_hex(uuid, 16));
