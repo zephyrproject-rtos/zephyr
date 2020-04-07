@@ -26,30 +26,13 @@ LOG_MODULE_REGISTER(usb_bt_h4);
 static K_FIFO_DEFINE(rx_queue);
 static K_FIFO_DEFINE(tx_queue);
 
-/* ACL data TX buffers */
-#if defined(CONFIG_BT_CTLR_TX_BUFFERS)
-#define BUF_COUNT (CONFIG_BT_HCI_CMD_COUNT + CONFIG_BT_CTLR_TX_BUFFERS)
-#else
-#define BUF_COUNT (CONFIG_BT_HCI_CMD_COUNT + 4)
-#endif
-
-#if defined(CONFIG_BT_CTLR_TX_BUFFER_SIZE)
-#define BT_L2CAP_MTU (CONFIG_BT_CTLR_TX_BUFFER_SIZE - BT_L2CAP_HDR_SIZE)
-#else
-#define BT_L2CAP_MTU 64
-#endif
-
-/* Data size needed for CMD and ACL buffers */
-#define BUF_SIZE MAX(BT_BUF_RX_SIZE, BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU))
-NET_BUF_POOL_DEFINE(rx_pool, BUF_COUNT, BUF_SIZE, sizeof(u8_t), NULL);
-
 #define BT_H4_OUT_EP_ADDR               0x01
 #define BT_H4_IN_EP_ADDR                0x81
 
 #define BT_H4_OUT_EP_IDX                0
 #define BT_H4_IN_EP_IDX                 1
 
-#define BT_H4_BULK_EP_MPS               MIN(BUF_SIZE, USB_MAX_FS_BULK_MPS)
+#define BT_H4_BULK_EP_MPS               MIN(BT_BUF_TX_SIZE, USB_MAX_FS_BULK_MPS)
 
 /* HCI RX/TX threads */
 static K_THREAD_STACK_DEFINE(rx_thread_stack, 512);
@@ -111,25 +94,23 @@ static struct usb_ep_cfg_data bt_h4_ep_data[] = {
 
 static void bt_h4_read(u8_t ep, int size, void *priv)
 {
-	struct net_buf *buf = priv;
+	static u8_t data[BT_H4_BULK_EP_MPS];
 
 	if (size > 0) {
-		buf->len += size;
+		struct net_buf *buf;
+
+		buf = bt_buf_get_tx(BT_BUF_H4, K_FOREVER, data, size);
+		if (!buf) {
+			LOG_ERR("Cannot get free TX buffer\n");
+			return;
+		}
+
 		net_buf_put(&rx_queue, buf);
-		buf = NULL;
 	}
-
-	if (buf) {
-		net_buf_unref(buf);
-	}
-
-	buf = net_buf_alloc(&rx_pool, K_FOREVER);
-
-	net_buf_reserve(buf, BT_BUF_RESERVE);
 
 	/* Start a new read transfer */
-	usb_transfer(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr, buf->data,
-		     BUF_SIZE, USB_TRANS_READ, bt_h4_read, buf);
+	usb_transfer(bt_h4_ep_data[BT_H4_OUT_EP_IDX].ep_addr, data,
+		     BT_H4_BULK_EP_MPS, USB_TRANS_READ, bt_h4_read, NULL);
 }
 
 static void hci_tx_thread(void)

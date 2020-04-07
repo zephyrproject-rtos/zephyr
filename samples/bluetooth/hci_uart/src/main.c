@@ -33,29 +33,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 static struct device *hci_uart_dev;
 static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread tx_thread_data;
-
-/* HCI command buffers */
-#define CMD_BUF_SIZE BT_BUF_RX_SIZE
-NET_BUF_POOL_FIXED_DEFINE(cmd_tx_pool, CONFIG_BT_HCI_CMD_COUNT, CMD_BUF_SIZE,
-			  NULL);
-
-#if defined(CONFIG_BT_CTLR_TX_BUFFER_SIZE)
-#define BT_L2CAP_MTU (CONFIG_BT_CTLR_TX_BUFFER_SIZE - BT_L2CAP_HDR_SIZE)
-#else
-#define BT_L2CAP_MTU 65 /* 64-byte public key + opcode */
-#endif /* CONFIG_BT_CTLR */
-
-/** Data size needed for ACL buffers */
-#define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
-
-#if defined(CONFIG_BT_CTLR_TX_BUFFERS)
-#define TX_BUF_COUNT CONFIG_BT_CTLR_TX_BUFFERS
-#else
-#define TX_BUF_COUNT 6
-#endif
-
-NET_BUF_POOL_FIXED_DEFINE(acl_tx_pool, TX_BUF_COUNT, BT_BUF_ACL_SIZE, NULL);
-
 static K_FIFO_DEFINE(tx_queue);
 
 #define H4_CMD 0x01
@@ -115,11 +92,8 @@ static struct net_buf *h4_cmd_recv(int *remaining)
 
 	*remaining = hdr.param_len;
 
-	buf = net_buf_alloc(&cmd_tx_pool, K_NO_WAIT);
-	if (buf) {
-		bt_buf_set_type(buf, BT_BUF_CMD);
-		net_buf_add_mem(buf, &hdr, sizeof(hdr));
-	} else {
+	buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, &hdr, sizeof(hdr));
+	if (!buf) {
 		LOG_ERR("No available command buffers!");
 	}
 
@@ -136,11 +110,8 @@ static struct net_buf *h4_acl_recv(int *remaining)
 	/* We can ignore the return value since we pass len == min */
 	h4_read(hci_uart_dev, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
-	buf = net_buf_alloc(&acl_tx_pool, K_NO_WAIT);
-	if (buf) {
-		bt_buf_set_type(buf, BT_BUF_ACL_OUT);
-		net_buf_add_mem(buf, &hdr, sizeof(hdr));
-	} else {
+	buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_NO_WAIT, &hdr, sizeof(hdr));
+	if (!buf) {
 		LOG_ERR("No available ACL buffers!");
 	}
 
