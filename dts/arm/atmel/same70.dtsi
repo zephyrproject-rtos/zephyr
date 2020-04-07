@@ -9,6 +9,8 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
 
+#include "same70-pinctrl.dtsi"
+
 / {
 	aliases {
 		watchdog0 = &wdt;
@@ -136,6 +138,7 @@
 			peripheral-id = <7>;
 			status = "disabled";
 			label = "UART_0";
+			pinctrl-0 = <&pa9a_uart0_urxd0 &pa10a_uart0_utxd0>;
 		};
 
 		uart1: uart@400e0a00 {
@@ -181,6 +184,7 @@
 			peripheral-id = <13>;
 			status = "disabled";
 			label = "USART_0";
+			pinctrl-0 = <&pb0c_usart0_rxd0 &pb1c_usart0_txd0>;
 		};
 
 		usart1: usart@40028000 {
@@ -190,6 +194,7 @@
 			peripheral-id = <14>;
 			status = "disabled";
 			label = "USART_1";
+			pinctrl-0 = <&pa21a_usart1_rxd1 &pb4d_usart1_txd1>;
 		};
 
 		usart2: usart@4002c000 {
@@ -199,6 +204,7 @@
 			peripheral-id = <15>;
 			status = "disabled";
 			label = "USART_2";
+			pinctrl-0 = <&pd15b_usart2_rxd2 &pd16b_usart2_txd2>;
 		};
 
 		afec0: adc@4003c000 {

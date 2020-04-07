@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2020 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "pinctrl_atmel_sam.h"
+
+/ {
+	soc {
+		pinctrl@400e0e00 {
+			/* instance, signal, pio, pin, peripheral */
+			DT_ATMEL_PIN(uart, urxd, a, 8, a);
+			DT_ATMEL_PIN(uart, utxd, a, 9, a);
+			DT_ATMEL_PIN(usart0, cts0, b, 26, a);
+			DT_ATMEL_PIN(usart0, rts0, b, 25, a);
+			DT_ATMEL_PIN(usart0, rxd0, a, 10, a);
+			DT_ATMEL_PIN(usart0, sck0, a, 17, b);
+			DT_ATMEL_PIN(usart0, txd0, a, 11, a);
+			DT_ATMEL_PIN(usart1, cts1, a, 15, a);
+			DT_ATMEL_PIN(usart1, rts1, a, 14, a);
+			DT_ATMEL_PIN(usart1, rxd1, a, 12, a);
+			DT_ATMEL_PIN(usart1, sck1, a, 16, a);
+			DT_ATMEL_PIN(usart1, txd1, a, 13, a);
+			DT_ATMEL_PIN(usart2, cts2, b, 23, a);
+			DT_ATMEL_PIN(usart2, rts2, b, 22, a);
+			DT_ATMEL_PIN(usart2, rxd2, b, 21, a);
+			DT_ATMEL_PIN(usart2, sck2, b, 24, a);
+			DT_ATMEL_PIN(usart2, txd2, b, 20, a);
+		};
+	};
+};

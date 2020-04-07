@@ -14,3 +14,9 @@ properties:
     "#size-cells":
       required: true
       const: 1
+
+child-binding:
+    description: atmel pins
+    properties:
+      "atmel,pins":
+        type: phandle-array

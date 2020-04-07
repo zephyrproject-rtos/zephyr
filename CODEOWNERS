@@ -242,6 +242,7 @@
 /dts/arm/atmel/sam*5*.dtsi                @benpicco
 /dts/arm/atmel/same70*                    @nandojve
 /dts/arm/atmel/samv71*                    @nandojve
+/dts/arm/atmel/                           @galak
 /dts/arm/broadcom/                        @sbranden
 /dts/arm/qemu-virt/                       @carlocaione
 /dts/arm/st/                              @erwango
