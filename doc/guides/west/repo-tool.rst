@@ -68,8 +68,7 @@ manifest directory, and they can be inside of arbitrary subdirectories inside
 the workspace's root directory. By default, the Zephyr build system uses
 west to get the locations of all the projects in the workspace, so any code
 they contain can be used by applications. This behavior can be overridden using
-the ``ZEPHYR_MODULES`` CMake variable; see
-:zephyr_file:`cmake/zephyr_module.cmake` for details.
+the ``ZEPHYR_MODULES`` CMake variable; see :ref:`modules` for details.
 
 Finally, any repository managed by a west workspace can contain
 :ref:`extension commands <west-extensions>`, which are extra west commands
