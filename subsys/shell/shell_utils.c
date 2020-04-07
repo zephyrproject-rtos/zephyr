@@ -252,8 +252,7 @@ void shell_cmd_get(const struct shell *shell,
 	*entry = NULL;
 
 	if (lvl == SHELL_CMD_ROOT_LVL) {
-		if (shell_in_select_mode(shell)	&&
-		    IS_ENABLED(CONFIG_SHELL_CMDS_SELECT)) {
+		if (shell_in_select_mode(shell)) {
 			const struct shell_static_entry *ptr =
 						       shell->ctx->selected_cmd;
 			if (ptr->subcmd->u.entry[idx].syntax != NULL) {
@@ -360,6 +359,23 @@ const struct shell_static_entry *shell_get_last_command(
 	}
 
 	return entry;
+}
+
+int shell_set_root_cmd(const char *cmd)
+{
+	const struct shell_static_entry *entry;
+
+	entry = cmd ? shell_root_cmd_find(cmd) : NULL;
+
+	if (cmd && (entry == NULL)) {
+		return -EINVAL;
+	}
+
+	Z_STRUCT_SECTION_FOREACH(shell, sh) {
+		sh->ctx->selected_cmd = entry;
+	}
+
+	return 0;
 }
 
 int shell_command_add(char *buff, u16_t *buff_len,

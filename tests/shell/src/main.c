@@ -295,6 +295,27 @@ static void test_cmd_select(void)
 	test_shell_execute_cmd("on", -ENOEXEC);
 }
 
+static void test_set_root_cmd(void)
+{
+	int err;
+
+	test_shell_execute_cmd("shell colors on", 0);
+	err = shell_set_root_cmd("__shell__");
+	zassert_equal(err, -EINVAL, "Unexpected error %d", err);
+
+	err = shell_set_root_cmd("shell");
+	zassert_equal(err, 0, "Unexpected error %d", err);
+
+	test_shell_execute_cmd("shell colors", -ENOEXEC);
+	test_shell_execute_cmd("colors on", 0);
+
+	err = shell_set_root_cmd(NULL);
+	zassert_equal(err, 0, "Unexpected error %d", err);
+
+	test_shell_execute_cmd("colors", -ENOEXEC);
+	test_shell_execute_cmd("shell colors on", 0);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(shell_test_suite,
@@ -303,6 +324,7 @@ void test_main(void)
 			ztest_unit_test(test_cmd_shell),
 			ztest_unit_test(test_cmd_history),
 			ztest_unit_test(test_cmd_select),
+			ztest_unit_test(test_set_root_cmd),
 			ztest_unit_test(test_cmd_resize),
 			ztest_unit_test(test_shell_module),
 			ztest_unit_test(test_shell_wildcards_static),

@@ -837,6 +837,19 @@ void shell_help(const struct shell *shell);
  */
 int shell_execute_cmd(const struct shell *shell, const char *cmd);
 
+/** @brief Set root command for all shell instances.
+ *
+ * It allows setting from the code the root command. It is an equivalent of
+ * calling select command with one of the root commands as the argument
+ * (e.g "select log") except it sets command for all shell instances.
+ *
+ * @param cmd String with one of the root commands or null pointer to reset.
+ *
+ * @retval 0 if root command is set.
+ * @retval -EINVAL if invalid root command is provided.
+ */
+int shell_set_root_cmd(const char *cmd);
+
 /**
  * @}
  */
