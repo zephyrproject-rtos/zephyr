@@ -28,41 +28,6 @@ LOG_MODULE_REGISTER(usb_bluetooth);
 static K_FIFO_DEFINE(rx_queue);
 static K_FIFO_DEFINE(tx_queue);
 
-/* HCI command buffers */
-#define CMD_BUF_SIZE BT_BUF_RX_SIZE
-NET_BUF_POOL_DEFINE(rx_pool, CONFIG_BT_HCI_CMD_COUNT, CMD_BUF_SIZE,
-		    sizeof(u8_t), NULL);
-
-/* ACL data TX buffers */
-#if defined(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4)
-#if defined(CONFIG_BT_CTLR_TX_BUFFERS)
-#define ACL_BUF_COUNT (CONFIG_BT_HCI_CMD_COUNT + CONFIG_BT_CTLR_TX_BUFFERS)
-#else
-#define ACL_BUF_COUNT (CONFIG_BT_HCI_CMD_COUNT + 4)
-#endif
-#else
-#if defined(CONFIG_BT_CTLR_TX_BUFFERS)
-#define ACL_BUF_COUNT CONFIG_BT_CTLR_TX_BUFFERS
-#else
-#define ACL_BUF_COUNT 4
-#endif
-#endif /* CONFIG_USB_DEVICE_BLUETOOTH_VS_H4 */
-
-#if defined(CONFIG_BT_CTLR_TX_BUFFER_SIZE)
-#define BT_L2CAP_MTU (CONFIG_BT_CTLR_TX_BUFFER_SIZE - BT_L2CAP_HDR_SIZE)
-#else
-#define BT_L2CAP_MTU 64
-#endif
-
-/* Data size needed for ACL buffers */
-#if defined(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4)
-#define BT_BUF_ACL_SIZE MAX(BT_BUF_RX_SIZE, BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU))
-#else
-#define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
-#endif
-NET_BUF_POOL_DEFINE(acl_rx_pool, ACL_BUF_COUNT, BT_BUF_ACL_SIZE,
-		    sizeof(u8_t), NULL);
-
 #define BLUETOOTH_INT_EP_ADDR		0x81
 #define BLUETOOTH_OUT_EP_ADDR		0x02
 #define BLUETOOTH_IN_EP_ADDR		0x82
@@ -205,26 +170,30 @@ static void hci_rx_thread(void)
 
 static void acl_read_cb(u8_t ep, int size, void *priv)
 {
-	struct net_buf *buf = priv;
+	static u8_t data[BLUETOOTH_BULK_EP_MPS];
 
 	if (size > 0) {
-		buf->len += size;
-		bt_buf_set_type(buf, BT_BUF_ACL_OUT);
+		struct net_buf *buf;
+
+		if (IS_ENABLED(CONFIG_USB_DEVICE_BLUETOOTH_VS_H4) &&
+		    bt_hci_raw_get_mode() == BT_HCI_RAW_MODE_H4) {
+			buf = bt_buf_get_tx(BT_BUF_H4, K_FOREVER, data, size);
+		} else {
+			buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER, data,
+					    size);
+		}
+
+		if (!buf) {
+			LOG_ERR("Cannot get free TX buffer\n");
+			return;
+		}
+
 		net_buf_put(&rx_queue, buf);
-		buf = NULL;
 	}
-
-	if (buf) {
-		net_buf_unref(buf);
-	}
-
-	buf = net_buf_alloc(&acl_rx_pool, K_FOREVER);
-
-	net_buf_reserve(buf, BT_BUF_RESERVE);
 
 	/* Start a new read transfer */
-	usb_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, buf->data,
-		     BT_BUF_ACL_SIZE, USB_TRANS_READ, acl_read_cb, buf);
+	usb_transfer(bluetooth_ep_data[HCI_OUT_EP_IDX].ep_addr, data,
+		     BT_BUF_ACL_SIZE, USB_TRANS_READ, acl_read_cb, NULL);
 }
 
 static void bluetooth_status_cb(struct usb_cfg_data *cfg,
@@ -331,21 +300,11 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 
 	LOG_DBG("len %u", *len);
 
-	if (!*len || *len > CMD_BUF_SIZE) {
-		LOG_ERR("Incorrect length: %d\n", *len);
-		return -EINVAL;
-	}
-
-	buf = net_buf_alloc(&rx_pool, K_NO_WAIT);
+	buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, *data, *len);
 	if (!buf) {
 		LOG_ERR("Cannot get free buffer\n");
 		return -ENOMEM;
 	}
-
-	net_buf_reserve(buf, BT_BUF_RESERVE);
-	bt_buf_set_type(buf, BT_BUF_CMD);
-
-	net_buf_add_mem(buf, *data, *len);
 
 	net_buf_put(&rx_queue, buf);
 

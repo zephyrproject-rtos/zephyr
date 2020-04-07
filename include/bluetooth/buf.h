@@ -32,6 +32,8 @@ enum bt_buf_type {
 	BT_BUF_ACL_OUT,
 	/** Incoming ACL data */
 	BT_BUF_ACL_IN,
+	/** H:4 data */
+	BT_BUF_H4,
 };
 
 /** Minimum amount of user data size for buffers passed to the stack. */
@@ -60,6 +62,22 @@ enum bt_buf_type {
  *  @return A new buffer.
  */
 struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout);
+
+/** Allocate a buffer for outgoing data
+ *
+ *  This will set the buffer type so bt_buf_set_type() does not need to
+ *  be explicitly called before bt_send().
+ *
+ *  @param type    Type of buffer. Only BT_BUF_CMD, BT_BUF_ACL_OUT or
+ *                 BT_BUF_H4, when operating on H:4 mode, are allowed.
+ *  @param timeout Timeout in milliseconds, or one of the special values
+ *                 K_NO_WAIT and K_FOREVER.
+ *  @param data    Initial data to append to buffer.
+ *  @param size    Initial data size.
+ *  @return A new buffer.
+ */
+struct net_buf *bt_buf_get_tx(enum bt_buf_type type, s32_t timeout,
+			      const void *data, size_t size);
 
 /** Allocate a buffer for an HCI Command Complete/Status Event
  *

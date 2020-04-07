@@ -21,6 +21,23 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_BT_CTLR_TX_BUFFER_SIZE)
+#define BT_L2CAP_MTU (CONFIG_BT_CTLR_TX_BUFFER_SIZE - BT_L2CAP_HDR_SIZE)
+#else
+#define BT_L2CAP_MTU 65 /* 64-byte public key + opcode */
+#endif /* CONFIG_BT_CTLR */
+
+/** Data size needed for ACL buffers */
+#define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
+
+#if defined(CONFIG_BT_CTLR_TX_BUFFERS)
+#define BT_HCI_ACL_COUNT CONFIG_BT_CTLR_TX_BUFFERS
+#else
+#define BT_HCI_ACL_COUNT 6
+#endif
+
+#define BT_BUF_TX_SIZE MAX(BT_BUF_RX_SIZE, BT_BUF_ACL_SIZE)
+
 /** @brief Send packet to the Bluetooth controller
  *
  * Send packet to the Bluetooth controller. Caller needs to
