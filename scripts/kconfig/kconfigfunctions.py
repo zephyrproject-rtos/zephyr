@@ -51,70 +51,6 @@ def _dt_units_to_scale(unit):
     if unit in {'g', 'G'}:
         return 30
 
-def dt_int_val(kconf, _, name, unit=None):
-    """
-    This function looks up 'name' in the DTS generated "conf" style database
-    (devicetree.conf in <build_dir>/zephyr/include/generated/) and if it's
-    found it will return the value as an decimal integer.  The function will
-    divide the value based on 'unit':
-        None        No division
-        'k' or 'K'  divide by 1024 (1 << 10)
-        'm' or 'M'  divide by 1,048,576 (1 << 20)
-        'g' or 'G'  divide by 1,073,741,824 (1 << 30)
-    """
-    if doc_mode or name not in dt_defines:
-        return "0"
-
-    _warn(kconf, "dt_int_val is deprecated.")
-
-    d = dt_defines[name]
-    if d.startswith(('0x', '0X')):
-        d = int(d, 16)
-    else:
-        d = int(d)
-    d >>= _dt_units_to_scale(unit)
-
-    return str(d)
-
-def dt_hex_val(kconf, _, name, unit=None):
-    """
-    This function looks up 'name' in the DTS generated "conf" style database
-    (devicetree.conf in <build_dir>/zephyr/include/generated/) and if it's
-    found it will return the value as an hex integer.  The function will divide
-    the value based on 'unit':
-        None        No division
-        'k' or 'K'  divide by 1024 (1 << 10)
-        'm' or 'M'  divide by 1,048,576 (1 << 20)
-        'g' or 'G'  divide by 1,073,741,824 (1 << 30)
-    """
-    if doc_mode or name not in dt_defines:
-        return "0x0"
-
-    _warn(kconf, "dt_hex_val is deprecated.")
-
-    d = dt_defines[name]
-    if d.startswith(('0x', '0X')):
-        d = int(d, 16)
-    else:
-        d = int(d)
-    d >>= _dt_units_to_scale(unit)
-
-    return hex(d)
-
-def dt_str_val(kconf, _, name):
-    """
-    This function looks up 'name' in the DTS generated "conf" style database
-    (devicetree.conf in <build_dir>/zephyr/include/generated/) and if it's
-    found it will return the value as string.  If it's not found we return an
-    empty string.
-    """
-    if doc_mode or name not in dt_defines:
-        return ""
-
-    _warn(kconf, "dt_str_val is deprecated.")
-
-    return dt_defines[name].strip('"')
-
 
 def dt_chosen_label(kconf, _, chosen):
     """
@@ -422,9 +358,6 @@ def shields_list_contains(kconf, _, shield):
 
 
 functions = {
-        "dt_int_val": (dt_int_val, 1, 2),
-        "dt_hex_val": (dt_hex_val, 1, 2),
-        "dt_str_val": (dt_str_val, 1, 1),
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
