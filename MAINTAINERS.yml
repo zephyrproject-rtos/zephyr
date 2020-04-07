@@ -217,6 +217,16 @@ CMSIS API layer:
     files:
          - lib/cmsis_rtos_v*/
 
+Common arch:
+    status: maintained
+    maintainers:
+        - andrewboie
+    files:
+        - arch/common/
+        - include/arch/common/
+    labels:
+        - "area: Architectures"
+
 Debug:
     # Provisional entry, to be corrected
     status: maintained
