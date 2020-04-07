@@ -629,7 +629,7 @@ extern void shell_print_stream(const void *user_ctx, const char *data,
 	SHELL_STATS_DEFINE(_name);					      \
 	static K_THREAD_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \
 	static struct k_thread _name##_thread;				      \
-	static const struct shell _name = {				      \
+	static const Z_STRUCT_SECTION_ITERABLE(shell, _name) = {	      \
 		.default_prompt = _prompt,				      \
 		.iface = _transport_iface,				      \
 		.ctx = &UTIL_CAT(_name, _ctx),				      \

@@ -147,6 +147,13 @@
 		__log_backends_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+	SECTION_DATA_PROLOGUE(shell_sections,,)
+	{
+		_shell_list_start = .;
+		KEEP(*(SORT(._shell.static.*)));
+		_shell_list_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
 	SECTION_DATA_PROLOGUE(shell_root_cmds_sections,,)
 	{
 		__shell_root_cmds_start = .;
