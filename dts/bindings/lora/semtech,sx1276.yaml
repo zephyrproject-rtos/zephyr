@@ -37,6 +37,12 @@ properties:
          - "rfo"
          - "pa-boost"
 
+    antenna-enable-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Antenna power enable pin.
+
     rfi-enable-gpios:
       type: phandle-array
       required: false

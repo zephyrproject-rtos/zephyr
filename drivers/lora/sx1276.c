@@ -24,6 +24,11 @@ LOG_MODULE_REGISTER(sx1276);
 #define GPIO_RESET_FLAGS	DT_INST_GPIO_FLAGS(0, reset_gpios)
 #define GPIO_CS_PIN		DT_INST_SPI_DEV_CS_GPIOS_PIN(0)
 
+#define GPIO_ANTENNA_ENABLE_PIN				\
+	DT_INST_GPIO_PIN(0, antenna_enable_gpios)
+#define GPIO_ANTENNA_ENABLE_FLAGS			\
+	DT_INST_GPIO_FLAGS(0, antenna_enable_gpios)
+
 #define GPIO_RFI_ENABLE_PIN			\
 	DT_INST_GPIO_PIN(0, rfi_enable_gpios)
 #define GPIO_RFI_ENABLE_FLAGS			\
@@ -103,6 +108,9 @@ static const struct sx1276_dio sx1276_dios[] = { SX1276_DIO_GPIO_INIT(0) };
 
 static struct sx1276_data {
 	struct device *reset;
+#if DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
+	struct device *antenna_enable;
+#endif
 #if DT_INST_NODE_HAS_PROP(0, rfi_enable_gpios)
 	struct device *rfi_enable;
 #endif
@@ -143,6 +151,13 @@ bool SX1276CheckRfFrequency(uint32_t frequency)
 	return true;
 }
 
+static inline void sx1276_antenna_enable(int val)
+{
+#if DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
+	gpio_pin_set(dev_data.antenna_enable, GPIO_ANTENNA_ENABLE_PIN, val);
+#endif
+}
+
 static inline void sx1276_rfi_enable(int val)
 {
 #if DT_INST_NODE_HAS_PROP(0, rfi_enable_gpios)
@@ -172,7 +187,11 @@ void SX1276SetAntSwLowPower(bool low_power)
 		sx1276_rfi_enable(0);
 		sx1276_rfo_enable(0);
 		sx1276_pa_boost_enable(0);
+
+		sx1276_antenna_enable(0);
 	} else {
+		sx1276_antenna_enable(1);
+
 		/* rely on SX1276SetAntSw() to configure proper antenna path */
 	}
 }
@@ -442,6 +461,21 @@ const struct Radio_s Radio = {
 static int sx1276_antenna_configure(void)
 {
 	int ret = 0;
+
+#if DT_INST_NODE_HAS_PROP(0, antenna_enable_gpios)
+	dev_data.antenna_enable = device_get_binding(
+			DT_INST_GPIO_LABEL(0, antenna_enable_gpios));
+	if (!dev_data.antenna_enable) {
+		LOG_ERR("Cannot get pointer to %s device",
+		       DT_INST_GPIO_LABEL(0, antenna_enable_gpios));
+		return -EIO;
+	}
+
+	ret = gpio_pin_configure(dev_data.antenna_enable,
+				 GPIO_ANTENNA_ENABLE_PIN,
+				 GPIO_OUTPUT_INACTIVE |
+					GPIO_ANTENNA_ENABLE_FLAGS);
+#endif
 
 #if DT_INST_NODE_HAS_PROP(0, rfi_enable_gpios)
 	dev_data.rfi_enable = device_get_binding(
