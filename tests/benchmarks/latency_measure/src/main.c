@@ -12,6 +12,7 @@
 #include <timestamp.h>
 #include "utils.h"
 #include <tc_util.h>
+#include "timing_info.h"
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 
@@ -31,6 +32,7 @@ void test_thread(void *arg1, void *arg2, void *arg3)
 	PRINT_TIME_BANNER();
 
 	bench_test_init();
+	benchmark_timer_init();
 
 	int_to_thread();
 	print_dash_line();

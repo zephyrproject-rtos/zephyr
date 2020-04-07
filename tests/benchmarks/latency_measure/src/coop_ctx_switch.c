@@ -17,8 +17,8 @@
  * stop and the average time of context switch is displayed.
  */
 
-#include "timestamp.h"
 #include "utils.h"
+#include "timing_info.h"
 
 #include <arch/cpu.h>
 
@@ -34,7 +34,8 @@ static K_THREAD_STACK_DEFINE(thread_two_stack, STACKSIZE);
 static struct k_thread thread_one_data;
 static struct k_thread thread_two_data;
 
-static u32_t timestamp;
+static u32_t timestamp_start;
+static u32_t timestamp_end;
 
 /* context switches counter */
 static volatile u32_t ctx_switch_counter;
@@ -56,13 +57,18 @@ K_SEM_DEFINE(sync_sema, 0, 1);
 static void thread_one(void)
 {
 	k_sem_take(&sync_sema, K_FOREVER);
-	timestamp = TIME_STAMP_DELTA_GET(0);
+
+	TIMING_INFO_PRE_READ();
+	timestamp_start = TIMING_INFO_OS_GET_TIME();
+
 	while (ctx_switch_counter < NCTXSWITCH) {
 		k_yield();
 		ctx_switch_counter++;
 		ctx_switch_balancer--;
 	}
-	timestamp = TIME_STAMP_DELTA_GET(timestamp);
+
+	TIMING_INFO_PRE_READ();
+	timestamp_end = TIMING_INFO_OS_GET_TIME();
 }
 
 /**
@@ -96,7 +102,9 @@ int coop_ctx_switch(void)
 	ctx_switch_counter = 0U;
 	ctx_switch_balancer = 0;
 
+	benchmark_timer_start();
 	bench_test_start();
+
 	k_thread_create(&thread_one_data, thread_one_stack, STACKSIZE,
 			(k_thread_entry_t) thread_one, NULL, NULL, NULL,
 			6, 0, K_NO_WAIT);
@@ -110,12 +118,17 @@ int coop_ctx_switch(void)
 		error_count++;
 		PRINT_OVERFLOW_ERROR();
 	} else {
+		u32_t diff;
+
+		diff = TIMING_INFO_GET_DELTA(timestamp_start, timestamp_end);
+
 		PRINT_FORMAT(" Average context switch time is %u tcs = %u"
 			     " nsec",
-			     timestamp / ctx_switch_counter,
-			     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp,
-							   ctx_switch_counter));
+			     diff / ctx_switch_counter,
+			     CYCLES_TO_NS_AVG(diff, ctx_switch_counter));
 	}
+
+	benchmark_timer_stop();
 
 	return 0;
 }
