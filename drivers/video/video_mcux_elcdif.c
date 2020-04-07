@@ -347,6 +347,10 @@ static int video_mcux_elcdif_init(struct device *dev)
 	/* todo remove */
 	ELCDIF_RgbModeInit(config->base, &data->elcdif_config);
 
+#ifdef CONFIG_VIDEO_DISPLAY
+	display_video_init(dev);
+#endif
+
 	return 0;
 }
 
@@ -380,6 +384,18 @@ static const struct video_driver_api video_mcux_elcdif_driver_api = {
 	.get_caps = video_mcux_elcdif_get_caps,
 #ifdef CONFIG_POLL
 	.set_signal = video_mcux_elcdif_set_signal,
+#endif
+#ifdef CONFIG_VIDEO_DISPLAY
+	.display_drv_api.blanking_on = display_video_blanking_on,
+	.display_drv_api.blanking_off = display_video_blanking_off,
+	.display_drv_api.write = display_video_write,
+	.display_drv_api.read = display_video_read,
+	.display_drv_api.get_framebuffer = display_video_get_framebuffer,
+	.display_drv_api.set_brightness = display_video_set_brightness,
+	.display_drv_api.set_contrast = display_video_set_contrast,
+	.display_drv_api.get_capabilities = display_video_get_capabilities,
+	.display_drv_api.set_pixel_format = display_video_set_pixel_format,
+	.display_drv_api.set_orientation = display_video_set_orientation,
 #endif
 };
 
