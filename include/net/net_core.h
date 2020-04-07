@@ -20,6 +20,8 @@
 #include <sys/__assert.h>
 #include <kernel.h>
 
+#include <net/net_timeout.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
