@@ -206,7 +206,7 @@ static int try_to_connect(struct mqtt_client *client)
 
 		rc = mqtt_connect(client);
 		if (rc != 0) {
-			k_sleep(APP_SLEEP_MSECS);
+			k_sleep(K_MSEC(APP_SLEEP_MSECS));
 			continue;
 		}
 

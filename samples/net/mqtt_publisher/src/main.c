@@ -337,7 +337,7 @@ static void client_init(struct mqtt_client *client)
 	client->transport.websocket.config.tmp_buf = temp_ws_rx_buf;
 	client->transport.websocket.config.tmp_buf_len =
 						sizeof(temp_ws_rx_buf);
-	client->transport.websocket.timeout = K_SECONDS(5);
+	client->transport.websocket.timeout = 5 * MSEC_PER_SEC;
 #endif
 
 #if defined(CONFIG_SOCKS)
@@ -360,7 +360,7 @@ static int try_to_connect(struct mqtt_client *client)
 		rc = mqtt_connect(client);
 		if (rc != 0) {
 			PRINT_RESULT("mqtt_connect", rc);
-			k_sleep(APP_SLEEP_MSECS);
+			k_sleep(K_MSEC(APP_SLEEP_MSECS));
 			continue;
 		}
 
