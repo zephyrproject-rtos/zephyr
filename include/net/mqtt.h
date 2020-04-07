@@ -419,7 +419,7 @@ struct mqtt_transport {
 		/** Socket descriptor */
 		int sock;
 
-		/** Websocket timeout */
+		/** Websocket timeout, in milliseconds. */
 		s32_t timeout;
 	} websocket;
 #endif
