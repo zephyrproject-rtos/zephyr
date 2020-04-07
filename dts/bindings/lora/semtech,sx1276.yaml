@@ -54,3 +54,15 @@ properties:
       required: false
       description: |
         PA_BOOST antenna output enable pin.
+
+    tcxo-power-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        TCXO power enable pin.
+
+    tcxo-power-startup-delay-ms:
+      type: int
+      required: false
+      description: |
+        Delay which has to be applied after enabling TCXO power.

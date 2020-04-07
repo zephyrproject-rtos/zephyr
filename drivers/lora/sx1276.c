@@ -39,6 +39,16 @@ LOG_MODULE_REGISTER(sx1276);
 #define GPIO_PA_BOOST_ENABLE_FLAGS			\
 	DT_INST_GPIO_FLAGS(0, pa_boost_enable_gpios)
 
+#define GPIO_TCXO_POWER_PIN	DT_INST_GPIO_PIN(0, tcxo_power_gpios)
+#define GPIO_TCXO_POWER_FLAGS	DT_INST_GPIO_FLAGS(0, tcxo_power_gpios)
+
+#if DT_INST_NODE_HAS_PROP(0, tcxo_power_startup_delay_ms)
+#define TCXO_POWER_STARTUP_DELAY_MS			\
+	DT_INST_PROP(0, tcxo_power_startup_delay_ms)
+#else
+#define TCXO_POWER_STARTUP_DELAY_MS		0
+#endif
+
 /*
  * Those macros must be in sync with 'power-amplifier-output' dts property.
  */
@@ -106,6 +116,10 @@ static struct sx1276_data {
 	DT_INST_NODE_HAS_PROP(0, pa_boost_enable_gpios)
 	uint8_t tx_power;
 #endif
+#if DT_INST_NODE_HAS_PROP(0, tcxo_power_gpios)
+	struct device *tcxo_power;
+	bool tcxo_power_enabled;
+#endif
 	struct device *spi;
 	struct spi_config spi_cfg;
 	struct device *dio_dev[SX1276_MAX_DIO];
@@ -165,7 +179,25 @@ void SX1276SetAntSwLowPower(bool low_power)
 
 void SX1276SetBoardTcxo(uint8_t state)
 {
-	/* TODO */
+#if DT_INST_NODE_HAS_PROP(0, tcxo_power_gpios)
+	bool enable = state;
+
+	if (enable == dev_data.tcxo_power_enabled) {
+		return;
+	}
+
+	if (enable) {
+		gpio_pin_set(dev_data.tcxo_power, GPIO_TCXO_POWER_PIN, 1);
+
+		if (TCXO_POWER_STARTUP_DELAY_MS > 0) {
+			k_sleep(K_MSEC(TCXO_POWER_STARTUP_DELAY_MS));
+		}
+	} else {
+		gpio_pin_set(dev_data.tcxo_power, GPIO_TCXO_POWER_PIN, 0);
+	}
+
+	dev_data.tcxo_power_enabled = enable;
+#endif
 }
 
 void SX1276SetAntSw(uint8_t opMode)
@@ -192,6 +224,8 @@ void SX1276SetAntSw(uint8_t opMode)
 
 void SX1276Reset(void)
 {
+	SX1276SetBoardTcxo(true);
+
 	gpio_pin_configure(dev_data.reset, GPIO_RESET_PIN,
 			   GPIO_OUTPUT_ACTIVE | GPIO_RESET_FLAGS);
 
@@ -483,6 +517,19 @@ static int sx1276_lora_init(struct device *dev)
 	}
 
 	dev_data.spi_cfg.cs = &spi_cs;
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, tcxo_power_gpios)
+	dev_data.tcxo_power = device_get_binding(
+			DT_INST_GPIO_LABEL(0, tcxo_power_gpios));
+	if (!dev_data.tcxo_power) {
+		LOG_ERR("Cannot get pointer to %s device",
+		       DT_INST_GPIO_LABEL(0, tcxo_power_gpios));
+		return -EIO;
+	}
+
+	gpio_pin_configure(dev_data.tcxo_power, GPIO_TCXO_POWER_PIN,
+			   GPIO_OUTPUT_INACTIVE | GPIO_TCXO_POWER_FLAGS);
 #endif
 
 	/* Setup Reset gpio */
