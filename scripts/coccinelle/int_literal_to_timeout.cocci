@@ -172,14 +172,6 @@ coccilib.report.print_report(p[0], msg);
 // ** Convert timeout-valued delays in K_THREAD_DEFINE with durations
 // ** in milliseconds
 
-// Identify declarers where an identifier is used for the delay
-@r_thread_decl_id@
-declarer name K_THREAD_DEFINE;
-identifier C;
-position p;
-@@
-K_THREAD_DEFINE@p(..., C);
-
 // Select declarers where the startup delay is a timeout expression
 // and replace with the corresponding millisecond duration.
 @r_thread_decl_patch
@@ -188,7 +180,7 @@ declarer name K_THREAD_DEFINE;
 identifier K_NO_WAIT =~ "^K_NO_WAIT$";
 identifier K_FOREVER =~ "^K_FOREVER$";
 expression E;
-position p != r_thread_decl_id.p;
+position p;
 @@
 K_THREAD_DEFINE@p(...,
 (
@@ -210,7 +202,7 @@ declarer name K_THREAD_DEFINE;
 identifier K_NO_WAIT =~ "^K_NO_WAIT$";
 identifier K_FOREVER =~ "^K_FOREVER$";
 expression V;
-position p != r_thread_decl_id.p;
+position p;
 @@
 K_THREAD_DEFINE@p(...,
 (
