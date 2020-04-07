@@ -261,6 +261,15 @@ Devicetree:
     labels:
         - "area: Device Tree"
 
+Disk:
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - subsys/disk/
+        - include/disk/
+    labels:
+        - "area: Disk Access"
+
 Display drivers:
     status: maintained
     maintainers:
@@ -608,6 +617,14 @@ Documentation:
     labels:
         - "area: PCI"
 
+"Drivers: peci":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - drivers/peci/
+        - include/drivers/peci.h
+        - samples/drivers/peci/
+
 "Drivers: Pinmux":
     # Provisional entry, to be corrected
     status: maintained
@@ -676,6 +693,16 @@ Documentation:
     labels:
         - "area: Timer"
 
+"Drivers: video":
+    # Provisional entry, to be corrected
+    status: orphaned
+    files:
+        - drivers/video/
+        - include/drivers/video.h
+        - include/drivers/video-controls.h
+    labels:
+        - "area: Video"
+
 "Drivers: Watchdog":
     # Provisional entry, to be corrected
     status: orphaned
@@ -728,6 +755,11 @@ Filesystems:
     labels:
         - "area: File System"
 
+JSON Web Token:
+    status: orphaned
+    files:
+        - subsys/jwt/
+
 Kconfig:
     status: maintained
     maintainers:
@@ -779,6 +811,15 @@ MAINTAINERS file:
         - "area: Process"
     description:
         Zephyr Maintainers File
+
+MCU Manager:
+    status: oprhaned
+    files:
+        - subsys/mgmt/
+        - include/mgmt/
+        - samples/subsys/mgmt/
+    labels:
+        - "area: mcumgr"
 
 Native POSIX and POSIX arch:
     status: maintained
@@ -1001,6 +1042,22 @@ STM32:
     description: >-
         STM32 SOCs, dts files and related drivers. ST nucleo, disco and eval
         boards.
+
+Storage:
+    status: orphaned
+    files:
+        - subsys/storage/
+        - include/storage/
+    labels:
+        - "area: Storage"
+
+Tracing:
+    status: orphaned
+    files:
+        - subsys/tracing/
+        - include/tracing/
+    labels:
+        - "area: tracing"
 
 USB:
     # Provisional entry, to be corrected
