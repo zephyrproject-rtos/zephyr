@@ -165,7 +165,7 @@ static int process_dns(void)
 
 K_THREAD_DEFINE(dns_server_thread_id, STACK_SIZE,
 		process_dns, NULL, NULL, NULL,
-		THREAD_PRIORITY, 0, K_FOREVER);
+		THREAD_PRIORITY, 0, -1);
 
 void test_getaddrinfo_setup(void)
 {

@@ -142,4 +142,4 @@ static void dmic_sample_app(void *p1, void *p2, void *p3)
 }
 
 K_THREAD_DEFINE(dmic_sample, 1024, dmic_sample_app, NULL, NULL, NULL, 10, 0,
-		K_NO_WAIT);
+		0);

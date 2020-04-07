@@ -127,4 +127,4 @@ void hid_thread(void)
 }
 
 K_THREAD_DEFINE(hid_thread_id, STACKSIZE, hid_thread, NULL, NULL, NULL,
-		PRIORITY, 0, K_NO_WAIT);
+		PRIORITY, 0, 0);

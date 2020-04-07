@@ -63,7 +63,7 @@ static bool audio_io_started;
 
 K_THREAD_DEFINE(audio_drv_thread_id, AUDIO_DRIVER_THREAD_STACKSIZE,
 		audio_drv_thread, NULL, NULL, NULL,
-		AUDIO_DRIVER_THREAD_PRIORITY, 0, K_NO_WAIT);
+		AUDIO_DRIVER_THREAD_PRIORITY, 0, 0);
 
 static void audio_driver_process_audio_input(void)
 {
