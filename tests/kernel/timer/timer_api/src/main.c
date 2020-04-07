@@ -560,22 +560,23 @@ void test_timer_remaining(void)
 void test_timeout_abs(void)
 {
 #ifdef CONFIG_TIMEOUT_64BIT
-	const int expiration = 10000000; /* 10M ticks */
-	k_timeout_t t = K_TIMEOUT_ABS_TICKS(10000000), t2;
+	const u64_t exp_ms = 10000000;
+	u64_t exp_ticks = k_ms_to_ticks_ceil64(exp_ms);
+	k_timeout_t t = K_TIMEOUT_ABS_TICKS(exp_ticks), t2;
 
 	/* Check the other generator macros to make sure they produce
 	 * the same (whiteboxed) converted values
 	 */
-	t2 = K_TIMEOUT_ABS_MS(k_ticks_to_ms_ceil64(expiration));
+	t2 = K_TIMEOUT_ABS_MS(exp_ms);
 	zassert_true(t2.ticks == t.ticks, NULL);
 
-	t2 = K_TIMEOUT_ABS_US(k_ticks_to_us_ceil64(expiration));
+	t2 = K_TIMEOUT_ABS_US(1000 * exp_ms);
 	zassert_true(t2.ticks == t.ticks, NULL);
 
-	t2 = K_TIMEOUT_ABS_NS(k_ticks_to_ns_ceil64(expiration));
+	t2 = K_TIMEOUT_ABS_NS(1000 * 1000 * exp_ms);
 	zassert_true(t2.ticks == t.ticks, NULL);
 
-	t2 = K_TIMEOUT_ABS_CYC(k_ticks_to_cyc_ceil64(expiration));
+	t2 = K_TIMEOUT_ABS_CYC(k_ms_to_cyc_ceil64(exp_ms));
 	zassert_true(t2.ticks == t.ticks, NULL);
 
 	/* Now set the timeout and make sure the expiration time is
@@ -588,7 +589,7 @@ void test_timeout_abs(void)
 	k_usleep(1); /* align to tick */
 	k_timer_start(&remain_timer, t, K_FOREVER);
 	zassert_true(k_timer_remaining_ticks(&remain_timer)
-		     + k_uptime_ticks() + 1 == expiration, NULL);
+		     + k_uptime_ticks() + 1 == exp_ticks, NULL);
 	k_timer_stop(&remain_timer);
 #endif
 }
