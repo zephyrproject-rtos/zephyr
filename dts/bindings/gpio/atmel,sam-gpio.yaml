@@ -22,6 +22,17 @@ properties:
     "#gpio-cells":
       const: 2
 
+    "#atmel,pin-cells":
+      type: int
+      required: true
+      const: 2
+      description: Number of items to expect in a atmel,pins specifier
+
+
 gpio-cells:
   - pin
   - flags
+
+atmel,pin-cells:
+  - pin
+  - peripheral

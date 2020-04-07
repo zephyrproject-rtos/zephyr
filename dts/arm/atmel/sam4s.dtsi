@@ -140,6 +140,7 @@
 				label = "PORTA";
 				gpio-controller;
 				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
 			};
 
 			piob: gpio@400e1000 {
@@ -150,6 +151,7 @@
 				label = "PORTB";
 				gpio-controller;
 				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
 			};
 
 			pioc: gpio@400e1200 {
@@ -160,6 +162,7 @@
 				label = "PORTC";
 				gpio-controller;
 				#gpio-cells = <2>;
+				#atmel,pin-cells = <2>;
 			};
 		};
 	};
