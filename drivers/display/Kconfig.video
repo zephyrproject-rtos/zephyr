@@ -1,0 +1,10 @@
+# Configuration options for display to video layer
+
+# Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_DISPLAY
+	bool "Add display to video API support"
+	depends on VIDEO
+	help
+	  Enable display to video API support.

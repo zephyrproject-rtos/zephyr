@@ -27,6 +27,10 @@
 
 #include <drivers/video-controls.h>
 
+#ifdef CONFIG_VIDEO_DISPLAY
+#include <drivers/display.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -227,6 +231,10 @@ typedef int (*video_api_set_signal_t)(struct device *dev,
 				      struct k_poll_signal *signal);
 
 struct video_driver_api {
+#ifdef CONFIG_VIDEO_DISPLAY
+	/* Basic inheritance from display API, keep this first */
+	const struct display_driver_api display_drv_api;
+#endif
 	/* mandatory callbacks */
 	video_api_set_format_t set_format;
 	video_api_get_format_t get_format;
@@ -541,7 +549,6 @@ struct video_buffer *video_buffer_alloc(size_t size);
  * @param buf Pointer to the video buffer to release.
  */
 void video_buffer_release(struct video_buffer *buf);
-
 
 /* fourcc - four-character-code */
 #define video_fourcc(a, b, c, d)\
