@@ -363,8 +363,10 @@ static const struct adc_driver_api mcp320x_adc_api = {
  */
 #define MCP3208_DEVICE(n) MCP320X_DEVICE(3208, n, 8)
 
+#define CALL_WITH_ARG(arg, expr) expr(arg);
+
 #define DT_INST_MCP320X_FOREACH(t, inst_expr) \
-	UTIL_LISTIFY(DT_NUM_INST(microchip_mcp##t), DT_CALL_WITH_ARG, inst_expr)
+	UTIL_LISTIFY(DT_NUM_INST(microchip_mcp##t), CALL_WITH_ARG, inst_expr)
 
 DT_INST_MCP320X_FOREACH(3204, MCP3204_DEVICE);
 DT_INST_MCP320X_FOREACH(3208, MCP3208_DEVICE);
