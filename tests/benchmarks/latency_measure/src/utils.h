@@ -12,6 +12,8 @@
  * used in latency measurement.
  */
 
+#include "timing_info.h"
+
 #define INT_IMM8_OFFSET   1
 #define IRQ_PRIORITY      3
 
@@ -65,7 +67,7 @@ static inline void print_dash_line(void)
 #define PRINT_TIME_BANNER()						\
 	do {								\
 	PRINT_FORMAT("  tcs = timer clock cycles: 1 tcs is %u nsec",	\
-		     (u32_t)k_cyc_to_ns_floor64(1));			\
+		     CYCLES_TO_NS(1));					\
 	print_dash_line();						\
 	} while (0)
 
