@@ -327,4 +327,4 @@ static void i2s_audio_sample_app(void *p1, void *p2, void *p3)
 }
 
 K_THREAD_DEFINE(i2s_sample, 1024, i2s_audio_sample_app, NULL, NULL, NULL,
-		10, 0, K_NO_WAIT);
+		10, 0, 0);
