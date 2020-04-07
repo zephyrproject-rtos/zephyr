@@ -217,54 +217,61 @@
 			#io-channel-cells = <1>;
 		};
 
-		pioa: gpio@400e0e00 {
-			compatible = "atmel,sam-gpio";
-			reg = <0x400e0e00 0x190>;
-			interrupts = <10 1>;
-			peripheral-id = <10>;
-			label = "PORTA";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
+		pinctrl@400e0e00 {
+			compatible = "atmel,sam-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x400e0e00 0x400e0e00 0xa00>;
 
-		piob: gpio@400e1000 {
-			compatible = "atmel,sam-gpio";
-			reg = <0x400e1000 0x190>;
-			interrupts = <11 1>;
-			peripheral-id = <11>;
-			label = "PORTB";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
+			pioa: gpio@400e0e00 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e0e00 0x190>;
+				interrupts = <10 1>;
+				peripheral-id = <10>;
+				label = "PORTA";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
 
-		pioc: gpio@400e1200 {
-			compatible = "atmel,sam-gpio";
-			reg = <0x400e1200 0x190>;
-			interrupts = <12 1>;
-			peripheral-id = <12>;
-			label = "PORTC";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
+			piob: gpio@400e1000 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1000 0x190>;
+				interrupts = <11 1>;
+				peripheral-id = <11>;
+				label = "PORTB";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
 
-		piod: gpio@400e1400 {
-			compatible = "atmel,sam-gpio";
-			reg = <0x400e1400 0x190>;
-			interrupts = <16 1>;
-			peripheral-id = <16>;
-			label = "PORTD";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
+			pioc: gpio@400e1200 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1200 0x190>;
+				interrupts = <12 1>;
+				peripheral-id = <12>;
+				label = "PORTC";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
 
-		pioe: gpio@400e1600 {
-			compatible = "atmel,sam-gpio";
-			reg = <0x400e1600 0x190>;
-			interrupts = <17 1>;
-			peripheral-id = <17>;
-			label = "PORTE";
-			gpio-controller;
-			#gpio-cells = <2>;
+			piod: gpio@400e1400 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1400 0x190>;
+				interrupts = <16 1>;
+				peripheral-id = <16>;
+				label = "PORTD";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			pioe: gpio@400e1600 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1600 0x190>;
+				interrupts = <17 1>;
+				peripheral-id = <17>;
+				label = "PORTE";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
 		};
 
 		pwm0: pwm0@40020000 {
