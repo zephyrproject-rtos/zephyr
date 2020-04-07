@@ -63,6 +63,15 @@ void test_mheap_min_block_size(void)
 {
 	void *block[BLK_NUM_MAX], *block_fail;
 
+	/* The k_heap backend doesn't have the splitting behavior
+	 * expected here, this test is too specific, and a more
+	 * general version of the same test is available in
+	 * test_mheap_malloc_free()
+	 */
+	if (IS_ENABLED(CONFIG_MEM_POOL_HEAP_BACKEND)) {
+		ztest_test_skip();
+	}
+
 	/**
 	 * TESTPOINT: The heap memory pool also defines a minimum block
 	 * size of 64 bytes.

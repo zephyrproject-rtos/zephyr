@@ -62,6 +62,9 @@ static char data[MAX_INFO_TYPE][MAIL_LEN] = {
 	"specify target/source thread, using a memory block"
 };
 
+static char big_msg_data[256]
+	= "Large message buffer, too big for mem_pool to receive";
+
 static void async_put_sema_give(void *p1, void *p2, void *p3)
 {
 	k_sem_give(&sync_sema);
@@ -199,8 +202,8 @@ static void tmbox_put(struct k_mbox *pmbox)
 		 * but size is bigger than what the mem_pool can handle at
 		 * that point of time
 		 */
-		mmsg.size = sizeof(data[1]) * 2;
-		mmsg.tx_data = data[1];
+		mmsg.size = sizeof(big_msg_data);
+		mmsg.tx_data = big_msg_data;
 		mmsg.tx_block.data = NULL;
 		mmsg.tx_target_thread = K_ANY;
 		zassert_true(k_mbox_put(pmbox, &mmsg, TIMEOUT) == 0, NULL);
@@ -414,7 +417,7 @@ static void tmbox_get(struct k_mbox *pmbox)
 		 * pool block via data_block_get
 		 */
 		mmsg.rx_source_thread = K_ANY;
-		mmsg.size = MAIL_LEN * 2;
+		mmsg.size = sizeof(big_msg_data);
 		zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 			     NULL);
 
