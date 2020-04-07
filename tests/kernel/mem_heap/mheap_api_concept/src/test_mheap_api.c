@@ -24,23 +24,25 @@
  */
 void test_mheap_malloc_free(void)
 {
-	void *block[BLK_NUM_MAX], *block_fail;
+	void *block[2 * BLK_NUM_MAX], *block_fail;
+	int nb;
 
-	for (int i = 0; i < BLK_NUM_MAX; i++) {
+	for (nb = 0; nb < ARRAY_SIZE(block); nb++) {
 		/**
 		 * TESTPOINT: This routine provides traditional malloc()
 		 * semantics. Memory is allocated from the heap memory pool.
 		 */
-		block[i] = k_malloc(i);
-		/** TESTPOINT: Address of the allocated memory if successful;*/
-		zassert_not_null(block[i], NULL);
+		block[nb] = k_malloc(BLK_SIZE_MIN);
+		if (block[nb] == NULL) {
+			break;
+		}
 	}
 
 	block_fail = k_malloc(BLK_SIZE_MIN);
 	/** TESTPOINT: Return NULL if fail.*/
 	zassert_is_null(block_fail, NULL);
 
-	for (int i = 0; i < BLK_NUM_MAX; i++) {
+	for (int i = 0; i < nb; i++) {
 		/**
 		 * TESTPOINT: This routine provides traditional free()
 		 * semantics. The memory being returned must have been allocated

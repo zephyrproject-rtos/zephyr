@@ -307,7 +307,7 @@ void test_msgq_alloc(void)
 	k_msgq_cleanup(&kmsgq_test_alloc);
 
 	/** Requesting buffer allocation from the test pool.*/
-	ret = k_msgq_alloc_init(&kmsgq_test_alloc, MSG_SIZE * 64, MSGQ_LEN);
+	ret = k_msgq_alloc_init(&kmsgq_test_alloc, MSG_SIZE * 128, MSGQ_LEN);
 	zassert_true(ret == -ENOMEM,
 		"resource pool is smaller then requested buffer");
 

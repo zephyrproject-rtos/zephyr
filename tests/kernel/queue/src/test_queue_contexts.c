@@ -273,6 +273,16 @@ static void tqueue_alloc(struct k_queue *pqueue)
  */
 void test_queue_alloc(void)
 {
+	struct k_mem_block block;
+
+	/* The mem_pool_fail pool is supposed to be too small to
+	 * succeed any allocations, but in fact with the heap backend
+	 * there's some base minimal memory in there that can be used.
+	 * Make sure it's really truly full.
+	 */
+	while (k_mem_pool_alloc(&mem_pool_fail, &block, 1, K_NO_WAIT) == 0) {
+	}
+
 	k_queue_init(&queue);
 
 	tqueue_alloc(&queue);
