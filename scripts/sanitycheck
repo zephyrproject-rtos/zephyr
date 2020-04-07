@@ -1013,7 +1013,7 @@ def main():
     suite.summary(options.disable_unrecognized_section_test)
 
     if options.coverage:
-        if not options.gcov_tools:
+        if not options.gcov_tool:
             use_system_gcov = False
 
             for plat in options.coverage_platform:
@@ -1029,6 +1029,7 @@ def main():
 
         logger.info("Generating coverage files...")
         coverage_tool = CoverageTool.factory(options.coverage_tool)
+        coverage_tool.gcov_tool = options.gcov_tool
         coverage_tool.base_dir = ZEPHYR_BASE
         coverage_tool.add_ignore_file('generated')
         coverage_tool.add_ignore_directory('tests')

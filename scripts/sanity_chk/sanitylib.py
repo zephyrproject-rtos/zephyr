@@ -3015,7 +3015,6 @@ class CoverageTool:
             logger.error("Unsupported coverage tool specified: {}".format(tool))
             return None
 
-        t.gcov_tool = tool
         return t
 
     @staticmethod
