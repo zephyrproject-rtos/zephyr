@@ -13,6 +13,14 @@ config COMPRESSED_ISA
 	bool
 	default y if 64BIT
 
+config FLOAT_HARD
+	bool "Enable hard-float calling convention"
+	default y
+	depends on FLOAT
+	select COMPRESSED_ISA
+	help
+	  This option enables the hard-float calling convention.
+
 menu "RISCV Processor Options"
 
 config INCLUDE_RESET_VECTOR
