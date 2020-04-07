@@ -599,8 +599,10 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 #define EEPROM_AT24_DEVICE(n) EEPROM_AT2X_DEVICE(n, 24)
 #define EEPROM_AT25_DEVICE(n) EEPROM_AT2X_DEVICE(n, 25)
 
+#define CALL_WITH_ARG(arg, expr) expr(arg);
+
 #define DT_INST_AT2X_FOREACH(t, inst_expr) \
-	UTIL_LISTIFY(DT_NUM_INST(atmel_at##t), DT_CALL_WITH_ARG, inst_expr)
+	UTIL_LISTIFY(DT_NUM_INST(atmel_at##t), CALL_WITH_ARG, inst_expr)
 
 #ifdef CONFIG_EEPROM_AT24
 DT_INST_AT2X_FOREACH(24, EEPROM_AT24_DEVICE);
