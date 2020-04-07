@@ -1,0 +1,8 @@
+# NXP MCUX CSI driver configuration options
+
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_MCUX_ELCDIF
+	bool "NXP MCUX Enhanced LCD Interface (ELCDIF) driver"
+	depends on HAS_MCUX_ELCDIF

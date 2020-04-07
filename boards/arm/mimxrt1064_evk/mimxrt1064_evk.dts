@@ -17,6 +17,8 @@
 		pwm-led0 = &green_pwm_led;
 		sw0 = &user_button;
 		kscan0 = &touch_controller;
+		camera0 = &csi;
+		display0 = &lcdif;
 	};
 
 	chosen {
@@ -84,7 +86,7 @@
 			   <21 0 &gpio1 16 0>;	/* D15 */
 	};
 
-	panel {
+	lcd: panel {
 		compatible = "rocktech,rk043fn02h-ct";
 		label = "rk043fn02h-ct";
 		port {
@@ -99,6 +101,7 @@ arduino_i2c: &lpi2c1 {};
 
 &lcdif {
 	status = "okay";
+	lcd = <&lcd>;
 	port {
 		lcd_panel_out: endpoint {
 			remote-endpoint = <&lcd_panel_in>;
