@@ -533,79 +533,189 @@ individual documents describing their security architecture.
 Additionally, their impact on the system level security shall be
 considered and documented.
 
+Security Vulnerability Reporting
+================================
+
+Vulnerabilities to the Zephyr project may be reported via email to the
+vulnerabilities@zephyrproject.org mailing list.  These reports will be
+acknowledged and analyzed by the security response team within 1 week.
+Each vulnerability will be entered into the Zephyr Project security
+tracking JIRA_.  The original submitter will be granted permission to
+view the issues that they have reported.
+
+.. _JIRA: https://zephyrprojectsec.atlassian.net/
+
+Reporters may also submit reports by directly submitting them to the
+Zephyr Product security tracking JIRA.
+
 Security Issue Management
 =========================
 
-In order to quickly respond to security threats towards the Zephyr RTOS,
-a well-defined security issue management needs to be established.
+Issues within this bug tracking system will transition through a
+number of states according to this diagram:
 
-Such issues shall be reported through the Zephyr Jira bug tracking
-system. Some JIRA modifications will be necessary to accommodate
-management of security issues. In addition, there will be guidelines
-that govern visibility, control, and resolution of security issues. The
-following is the current proposal:
+.. figure:: media/zepsec-workflow.png
 
--  A boolean field shall be added to JIRA bugs to mark it security
-   sensitive (or any other name that makes sense). This renders the
-   entry invisible to anyone except as described below.
+- New: This state represents new reports that have been entered
+  directly by a reporter.  When entered by the response team in
+  response to an email, the issue shall be transitioned directly to
+  Triage.
 
--  Security sensitive bugs are only accessible (view/modify) to members
-   of the Security Group; members of this Security Group are:
+- Triage: This issue is awaiting Triage by the response team.  The
+  response team will analyze the issue, determine a responsible
+  entity, assign the JIRA ticket to that individual, and move the
+  issue to the Assigned state.  Part of triage will be to set the
+  issue's priority.
 
-   -  members of the Zephyr Security Subcommittee
+- Assigned: The issue has been assigned, and is awaiting a fix by the
+  assignee.
 
-   -  others, as proposed and ratified by the Zephyr Security Subcommittee
+- Review: Once there is a Zephyr pull request for the issue, the PR
+  link will be added to a comment in the issue, and the issue moved to
+  the Review state.
 
-   -  the reporter
+- Accepted: Indicates that this issue has been merged into the
+  appropriate branch within Zephyr.
 
--  Members of this Security Group have the authority to add or remove other
-   users for individual issues.
+- Release: The PR has been included in a released version of Zephyr.
 
--  Zephyr Security Subcommittee meetings have to review the embargoed bugs on
-   every meeting with more than three people in attendance. Said
-   review process shall decide if new issues needs to be embargoed
-   or not.
+- Public: The embargo period has ended.  The issue will be made
+  publically visible, the associated CVE updated, and the
+  vulnerabilities page in the docs updated to include the detailed
+  information.
 
--  Security sensitive bugs shall be made public (by removing the
-   security sensitive indicator) after an embargo period of 60
-   days. The Zephyr Security Subcommittee is the only entity with authority
-   to extend the embargo period on a case by case basis; the JIRA
-   entry should be updated with the rationale for the embargo
-   extension so at some point said rationale will be made public.If
-   the Zephyr Security Subcommittee does not act upon a security sensitive
-   bug after its 60 days of embargo are over, it shall be
-   automatically made public by removing the security sensitive
-   setting.
+The issues created in this JIRA instance are kept private, due to the
+sensitive nature of security reports.  The issues are only visible to
+certain parties:
 
--  Likewise, there shall be code repositories marked as security
-   sensitive, accessible only to the Security Group members where
-   the code to fix said issues is being worked on and reviewed. The
-   person/s contributing the fix shall also have access, but fix
-   contributors shall have only access to the tree for said fix, not
-   to other security sensitive trees.
+- Members of the PSIRT mailing list
 
--  A CVE space shall be allocated to assign Zephyr issues when the
-   Zephyr Security Subcommittee decides such is needed.
+- the reporter
 
--  The severity of the issue with regard to security shall be entered by
-   the reporter.
+- others, as proposed and ratified by the Zephyr Security
+  Subcommittee.  In the general case, this will include:
 
--  All security relevant issues shall trigger an automated notification
-   on the Zephyr security mailing list
-   (vulnerabilities@zephyrproject.org).  Any member of the security
-   board can then triage the severity of the issue according to [CVSS]_.
+  - The code owner responsible for the fix.
 
--  Depending on the resulting severity score of the issue, the issue is
-   prioritized and assigned to the owner of the affected module.
-   Additionally, the system security architect and the security
-   architect of the module are notified and shall take the
-   responsibility to mitigate the issue and review the solution or
-   counter-measure. In any case, the security issue shall be
-   documented centrally, including the affected modules, software
-   releases, and applicable workarounds for immediate mitigation. A
-   list of known security issues per public release of the Zephyr
-   shall be published and maintained by the Zephyr Security Subcommittee after a
-   risk assessment.
+  - The Zephyr release owners for the relevant releases affected by
+    this vulnerability.
+
+The Zephyr Security Subcommittee shall review the reported
+vulnerabilities during any meeting with more than three people in
+attendance.  During this review, they shall determine if new issues
+need to be embargoed.
+
+The guideline for embargo will be based on: 1. Severity of the issue,
+and 2. Exploitability of the issue.  Issues that the subcommittee
+decides do not need an embargo will be reproduced in the regular
+Zephyr project bug tracking system, and a comment added to the JIRA
+issue pointing to the bug tracking issue.  These issues will be marked
+as being tracked within the Zephyr bug tracking system.
+
+Security sensitive vulnerabilities shall be made public after an
+embargo period of at most 90 days.  The intent is to allow 30 days
+within the Zephyr project to fix the issues, and 60 days for external
+parties building products using Zephyr to be able to apply and
+distribute these fixes.
+
+Fixes to the code shall be made through pull requests PR in the Zephyr
+project github.  Developers shall make an attempt to not reveal the
+sensitive nature of what is being fixed, and shall not refer to CVE
+numbers that have been assigned to the issue.  The developer instead
+should merely describe what has been fixed.
+
+The security subcommittee will maintain information mapping embargoed
+CVEs to these PRs (this information is within the JIRA issues), and
+produce regular reports of the state of security issues.
+
+Each JIRA issue that is considered a security vulnerability shall be
+assigned a CVE number.  As fixes are created, it may be necessary to
+allocate additional CVE numbers, or to retire numbers that were
+assigned.
+
+Vulnerability Notification
+==========================
+
+Each Zephyr release shall contain a report of CVEs that were fixed in
+that release.  Because of the sensitive nature of these
+vulnerabilities, the release shall merely include a list of CVEs that
+have been fixed.  After the embargo period, the vulnerabilities page
+shall be updated to include additional details of these
+vulnerabilities.  The vulnerability page shall give credit to the
+reporter(s) unless a reporter specifically requests anonymity.
+
+The Zephyr project shall maintain a vulnerability-alerts mailing list.
+This list will be seeded initially with a contact from each project
+member.  Additional parties can request to join this list by filling
+out the form at the `Vulnerability Registry`_.  These parties will be
+vetted by the project director to determine that they have a
+legimitate interest in knowing about security vulnerabilities during
+the embargo period.
+
+.. _Vulnerability Registry: https://www.zephyrproject.org/vulnerability-registry/ 
+
+Periodically, the security subcommittee will send information to this
+mailing list describing known embargoed issues, and their backport
+status within the project.  This information is intended to allow them
+to determine if they need to backport these changes to any internal
+trees.
+
+When issues have been triaged, this list will be informed of:
+
+- The Zephyr Project security JIRA link (ZEPSEC).
+
+- The CVE number assigned.
+
+- The subsystem involved.
+
+- The severity of the issue.
+
+After acceptance of a PR fixing the issue (merged), in addition to the
+above, the list will be informed of:
+
+- The association between the CVE number and the PR fixing it.
+
+- Backport plans within the Zephyr project.
+
+Backporting of Security Vulnerabilities
+=======================================
+
+Each security issue fixed within zephyr shall be backported to the
+following releases:
+
+- The current Long Term Stable (LTS) release.
+
+- The most recent two releases.
+
+The developer of the fix shall be responsible for any necessary
+backports, and apply them to any of the above listed release branches,
+unless the fix does not apply (the vulnerability was introduced after
+this release was made).
+
+Backports will be tracked on the security JIRA instance using a
+subtask issue of type "backport".
+
+Need to Know
+============
+
+Due to the sensitive nature of security vulnerabilities, it is
+important to share details and fixes only with those parties that have
+a need to know.  The following parties will need to know details about
+security vulnerabilities before the embargo period ends:
+
+- Maintainers will have access to all information within their domain
+  area only.
+
+- The current release manager, and the release manager for historical
+  releases affected by the vulnerability (see backporting above).
+
+- The Project Security Incident Response (PSIRT) team will have full
+  access to information.  The PSIRT is made up of representatives from
+  platinum members, and volunteers who do work on triage from other
+  members.
+
+- As needed, release managers and maintainers may be invited to attend
+  additional security meetings to discuss vulnerabilties.
 
 Threat Modeling and Mitigation
 ==============================
