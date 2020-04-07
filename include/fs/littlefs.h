@@ -68,8 +68,8 @@ struct fs_littlefs {
  * @param lookahead_sz see :option:`CONFIG_FS_LITTLEFS_LOOKAHEAD_SIZE`
  */
 #define FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(name, read_sz, prog_sz, cache_sz, lookahead_sz) \
-	static u8_t name ## _read_buffer[cache_sz];					  \
-	static u8_t name ## _prog_buffer[cache_sz];					  \
+	static u8_t __aligned(4) name ## _read_buffer[cache_sz];			  \
+	static u8_t __aligned(4) name ## _prog_buffer[cache_sz];			  \
 	static u32_t name ## _lookahead_buffer[(lookahead_sz) / sizeof(u32_t)];		  \
 	static struct fs_littlefs name = {						  \
 		.cfg = {								  \
