@@ -7,6 +7,8 @@
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/i2c/i2c.h>
 
+#include "sam3x-pinctrl.dtsi"
+
 / {
 	aliases {
 		watchdog0 = &wdt;
@@ -86,6 +88,7 @@
 			peripheral-id = <8>;
 			status = "disabled";
 			label = "UART_0";
+			pinctrl-0 = <&pa8a_uart_urxd &pa9a_uart_utxd>;
 		};
 
 		usart0: usart@40098000 {

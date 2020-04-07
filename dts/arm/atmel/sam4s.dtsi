@@ -9,6 +9,8 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
 
+#include "sam4s-pinctrl.dtsi"
+
 / {
 	aliases {
 		watchdog0 = &wdt;
@@ -97,6 +99,7 @@
 			peripheral-id = <8>;
 			status = "disabled";
 			label = "UART_0";
+			pinctrl-0 = <&pa9a_uart0_urxd0 &pa10a_uart0_utxd0>;
 		};
 
 		uart1: uart@400e0800 {
@@ -106,6 +109,7 @@
 			peripheral-id = <9>;
 			status = "disabled";
 			label = "UART_1";
+			pinctrl-0 = <&pb2a_uart1_urxd1 &pb3a_uart1_utxd1>;
 		};
 
 		usart0: usart@40024000 {
