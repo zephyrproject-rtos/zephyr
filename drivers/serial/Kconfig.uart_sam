@@ -4,98 +4,10 @@
 # Copyright (c) 2018 Justin Watson
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig UART_SAM
+config UART_SAM
 	bool "Atmel SAM MCU family UART driver"
 	depends on SOC_FAMILY_SAM
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the UARTx driver for Atmel SAM MCUs.
-
-# ---------- Port 0 ----------
-
-config UART_SAM_PORT_0
-	bool "Enable UART0"
-	depends on UART_SAM
-	help
-	  Enable UART0 at boot.
-
-# ---------- Port 1 ----------
-
-config UART_SAM_PORT_1
-	bool "Enable UART1"
-	depends on UART_SAM
-	help
-	  Enable UART1 at boot.
-
-choice UART_SAM_PORT_1_PIN_TX
-	prompt "TX pin"
-	depends on UART_SAM_PORT_1
-	depends on SOC_SERIES_SAME70 || \
-		   SOC_SERIES_SAMV71
-
-	config UART_SAM_PORT_1_PIN_TX_PA4
-		bool "PA4"
-
-	config UART_SAM_PORT_1_PIN_TX_PA6
-		bool "PA6"
-
-	config UART_SAM_PORT_1_PIN_TX_PD26
-		bool "PD26"
-endchoice
-
-# ---------- Port 2 ----------
-
-config UART_SAM_PORT_2
-	bool "Enable UART2"
-	depends on UART_SAM
-	depends on SOC_SERIES_SAME70 || \
-		   SOC_SERIES_SAMV71
-	help
-	  Enable UART2 at boot
-
-# ---------- Port 3 ----------
-
-config UART_SAM_PORT_3
-	bool "Enable UART3"
-	depends on UART_SAM
-	depends on SOC_SERIES_SAME70 || \
-		   SOC_SERIES_SAMV71
-	help
-	  Enable UART3 at boot
-
-choice UART_SAM_PORT_3_PIN_TX
-	prompt "TX pin"
-	depends on UART_SAM_PORT_3
-	depends on SOC_SERIES_SAME70 || \
-		   SOC_SERIES_SAMV71
-
-	config UART_SAM_PORT_3_PIN_TX_PD30
-		bool "PD30"
-
-	config UART_SAM_PORT_3_PIN_TX_PD31
-		bool "PD31"
-endchoice
-
-# ---------- Port 4 ----------
-
-config UART_SAM_PORT_4
-	bool "Enable UART4"
-	depends on UART_SAM
-	depends on SOC_SERIES_SAME70 || \
-		   SOC_SERIES_SAMV71
-	help
-	  Enable UART4 at boot
-
-choice UART_SAM_PORT_4_PIN_TX
-	prompt "TX pin"
-	depends on UART_SAM_PORT_4
-	depends on SOC_SERIES_SAME70 || \
-		   SOC_SERIES_SAMV71
-
-	config UART_SAM_PORT_4_PIN_TX_PD3
-		bool "PD3"
-
-	config UART_SAM_PORT_4_PIN_TX_PD19
-		bool "PD19"
-endchoice
