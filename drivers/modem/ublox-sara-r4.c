@@ -387,7 +387,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 {
 	int rssi;
 
-	rssi = ATOI(argv[1], 0, "qual");
+	rssi = ATOI(argv[0], 0, "signal_power");
 	if (rssi == 31) {
 		mctx.data_rssi = -46;
 	} else if (rssi >= 0 && rssi <= 31) {
@@ -397,7 +397,7 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 		mctx.data_rssi = -1000;
 	}
 
-	LOG_INF("QUAL: %d", mctx.data_rssi);
+	LOG_INF("RSSI: %d", mctx.data_rssi);
 	return 0;
 }
 #endif
