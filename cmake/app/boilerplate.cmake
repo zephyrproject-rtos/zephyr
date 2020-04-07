@@ -292,6 +292,16 @@ endif()
 foreach(root ${BOARD_ROOT})
   # NB: find_path will return immediately if the output variable is
   # already set
+  if (BOARD_ALIAS)
+    find_path(BOARD_HIDDEN_DIR
+      NAMES ${BOARD_ALIAS}_defconfig
+      PATHS ${root}/boards/*/*
+      NO_DEFAULT_PATH
+      )
+    if(BOARD_HIDDEN_DIR)
+      message("Board alias ${BOARD_ALIAS} is hiding the real board of same name")
+    endif()
+  endif()
   find_path(BOARD_DIR
     NAMES ${BOARD}_defconfig
     PATHS ${root}/boards/*/*
