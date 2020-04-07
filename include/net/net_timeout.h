@@ -28,6 +28,12 @@
 extern "C" {
 #endif
 
+/**
+ * Symbol to indicate that the caller wants the timeout to be waited forever.
+ * This can be used when a network API expects a millisecond timeout.
+ */
+#define NET_WAIT_FOREVER (-1)
+
 /** Let the max timeout be 100 ms lower because of
  * possible rounding in delayed work implementation.
  */
