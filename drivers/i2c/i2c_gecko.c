@@ -82,6 +82,9 @@ static int i2c_gecko_configure(struct device *dev, u32_t dev_config_raw)
 		baudrate = KHZ(100);
 		break;
 	case I2C_SPEED_FAST:
+		baudrate = KHZ(400);
+		break;
+	case I2C_SPEED_FAST_PLUS:
 		baudrate = MHZ(1);
 		break;
 	default:
