@@ -126,34 +126,41 @@
 			label = "USART_1";
 		};
 
-		pioa: gpio@400e0e00 {
-			compatible = "atmel,sam-gpio";
-			reg = <0x400e0e00 0x190>;
-			interrupts = <11 1>;
-			peripheral-id = <11>;
-			label = "PORTA";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
+		pinctrl@400e0e00 {
+			compatible = "atmel,sam-pinctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x400e0e00 0x400e0e00 0x600>;
 
-		piob: gpio@400e1000 {
-			compatible = "atmel,sam-gpio";
-			reg = <0x400e1000 0x190>;
-			interrupts = <12 1>;
-			peripheral-id = <12>;
-			label = "PORTB";
-			gpio-controller;
-			#gpio-cells = <2>;
-		};
+			pioa: gpio@400e0e00 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e0e00 0x190>;
+				interrupts = <11 1>;
+				peripheral-id = <11>;
+				label = "PORTA";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
 
-		pioc: gpio@400e1200 {
-			compatible = "atmel,sam-gpio";
-			reg = <0x400e1200 0x190>;
-			interrupts = <13 1>;
-			peripheral-id = <13>;
-			label = "PORTC";
-			gpio-controller;
-			#gpio-cells = <2>;
+			piob: gpio@400e1000 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1000 0x190>;
+				interrupts = <12 1>;
+				peripheral-id = <12>;
+				label = "PORTB";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			pioc: gpio@400e1200 {
+				compatible = "atmel,sam-gpio";
+				reg = <0x400e1200 0x190>;
+				interrupts = <13 1>;
+				peripheral-id = <13>;
+				label = "PORTC";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
 		};
 	};
 };
