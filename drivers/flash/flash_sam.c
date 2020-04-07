@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(flash_sam0);
  * We only use block mode erases. The datasheet gives a maximum erase time
  * of 200ms for a 8KiB block.
  */
-#define SAM_FLASH_TIMEOUT (K_MSEC(220))
+#define SAM_FLASH_TIMEOUT_MS 220
 
 struct flash_sam_dev_cfg {
 	Efc *regs;
@@ -87,7 +87,7 @@ static int flash_sam_wait_ready(struct device *dev)
 {
 	Efc *const efc = DEV_CFG(dev)->regs;
 
-	u64_t timeout_time = k_uptime_get() + SAM_FLASH_TIMEOUT;
+	u64_t timeout_time = k_uptime_get() + SAM_FLASH_TIMEOUT_MS;
 	u32_t fsr;
 
 	do {
