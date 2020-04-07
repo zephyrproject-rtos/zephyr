@@ -128,7 +128,8 @@ int lll_init(void)
 	int err;
 
 	/* Get reference to entropy device */
-	dev_entropy = device_get_binding(CONFIG_ENTROPY_NAME);
+	dev_entropy =
+		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_rng)));
 	if (!dev_entropy) {
 		return -ENODEV;
 	}

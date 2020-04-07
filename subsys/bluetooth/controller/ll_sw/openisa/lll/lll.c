@@ -115,7 +115,8 @@ int lll_init(void)
 	ARG_UNUSED(clk_k32);
 
 	/* Get reference to entropy device */
-	dev_entropy = device_get_binding(CONFIG_ENTROPY_NAME);
+	dev_entropy =
+		device_get_binding(DT_LABEL(DT_INST(0, openisa_rv32m1_trng)));
 	if (!dev_entropy) {
 		dev_entropy = NULL;
 		/* return -ENODEV; */
