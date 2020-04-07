@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menuconfig LORA_SX1276
+config LORA_SX1276
 	bool "Semtech SX1276 driver"
 	select HAS_SEMTECH_RADIO_DRIVERS
 	select HAS_SEMTECH_LORAMAC
@@ -12,22 +12,3 @@ menuconfig LORA_SX1276
 	depends on SPI
 	help
 	  Enable LoRa driver for Semtech SX1276.
-
-choice
-	prompt "SX1276 PA Output pin"
-	default PA_BOOST_PIN
-	depends on LORA_SX1276
-	help
-	  Antenna connection type.
-
-config PA_RFO_PIN
-	bool "PA_RFO_PIN"
-	help
-	  Antenna connected to PA_RFO pin.
-
-config PA_BOOST_PIN
-	bool "PA_BOOST_PIN"
-	help
-	  Antenna connected to PA_BOOST pin.
-
-endchoice
