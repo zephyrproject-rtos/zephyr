@@ -82,44 +82,32 @@ static size_t h4_discard(struct device *uart, size_t len)
 	return uart_fifo_read(uart, buf, MIN(len, sizeof(buf)));
 }
 
-static struct net_buf *h4_cmd_recv(int *remaining)
+static void h4_cmd_recv(struct net_buf *buf, int *remaining)
 {
 	struct bt_hci_cmd_hdr hdr;
-	struct net_buf *buf;
 
 	/* We can ignore the return value since we pass len == min */
 	h4_read(hci_uart_dev, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
 	*remaining = hdr.param_len;
 
-	buf = bt_buf_get_tx(BT_BUF_CMD, K_NO_WAIT, &hdr, sizeof(hdr));
-	if (!buf) {
-		LOG_ERR("No available command buffers!");
-	}
+	net_buf_add_mem(buf, &hdr, sizeof(hdr));
 
 	LOG_DBG("len %u", hdr.param_len);
-
-	return buf;
 }
 
-static struct net_buf *h4_acl_recv(int *remaining)
+static void h4_acl_recv(struct net_buf *buf, int *remaining)
 {
 	struct bt_hci_acl_hdr hdr;
-	struct net_buf *buf;
 
 	/* We can ignore the return value since we pass len == min */
 	h4_read(hci_uart_dev, (void *)&hdr, sizeof(hdr), sizeof(hdr));
 
-	buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_NO_WAIT, &hdr, sizeof(hdr));
-	if (!buf) {
-		LOG_ERR("No available ACL buffers!");
-	}
+	net_buf_add_mem(buf, &hdr, sizeof(hdr));
 
 	*remaining = sys_le16_to_cpu(hdr.len);
 
 	LOG_DBG("len %u", *remaining);
-
-	return buf;
 }
 
 static void bt_uart_isr(struct device *unused)
@@ -154,12 +142,18 @@ static void bt_uart_isr(struct device *unused)
 				continue;
 			}
 
-			switch (type) {
-			case H4_CMD:
-				buf = h4_cmd_recv(&remaining);
+			buf = bt_buf_get_tx(BT_BUF_H4, K_NO_WAIT, &type,
+					    sizeof(type));
+			if (!buf) {
+				return;
+			}
+
+			switch (bt_buf_get_type(buf)) {
+			case BT_BUF_CMD:
+				h4_cmd_recv(buf, &remaining);
 				break;
-			case H4_ACL:
-				buf = h4_acl_recv(&remaining);
+			case BT_BUF_ACL_OUT:
+				h4_acl_recv(buf, &remaining);
 				break;
 			default:
 				LOG_ERR("Unknown H4 type %u", type);
@@ -168,7 +162,7 @@ static void bt_uart_isr(struct device *unused)
 
 			LOG_DBG("need to get %u bytes", remaining);
 
-			if (buf && remaining > net_buf_tailroom(buf)) {
+			if (remaining > net_buf_tailroom(buf)) {
 				LOG_ERR("Not enough space in buffer");
 				net_buf_unref(buf);
 				buf = NULL;
@@ -225,19 +219,6 @@ static int h4_send(struct net_buf *buf)
 {
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
 		    buf->len);
-
-	switch (bt_buf_get_type(buf)) {
-	case BT_BUF_ACL_IN:
-		uart_poll_out(hci_uart_dev, H4_ACL);
-		break;
-	case BT_BUF_EVT:
-		uart_poll_out(hci_uart_dev, H4_EVT);
-		break;
-	default:
-		LOG_ERR("Unknown type %u", bt_buf_get_type(buf));
-		net_buf_unref(buf);
-		return -EINVAL;
-	}
 
 	while (buf->len) {
 		uart_poll_out(hci_uart_dev, net_buf_pull_u8(buf));
