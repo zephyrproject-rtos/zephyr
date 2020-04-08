@@ -8,8 +8,6 @@
 #include <spinlock.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
-void z_arm_exc_exit(void);
-
 #define COUNTER_MAX 0x00ffffff
 #define TIMER_STOPPED 0xff000000
 
@@ -148,7 +146,7 @@ void z_clock_isr(void *arg)
 	} else {
 		z_clock_announce(1);
 	}
-	z_arm_exc_exit();
+	z_arm_int_exit();
 }
 
 int z_clock_driver_init(struct device *device)
