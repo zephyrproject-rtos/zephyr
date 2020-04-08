@@ -124,8 +124,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 	adv->lll.phy_p = BIT(0);
 
-	/* extended */
-	if (adv_type > 0x04) {
+	/* extended adv param set */
+	if (adv_type == PDU_ADV_TYPE_EXT_IND) {
 		/* legacy */
 		if (evt_prop & BIT(4)) {
 			uint8_t const leg_adv_type[] = { 0x03, 0x04, 0x02, 0x00};
@@ -145,7 +145,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
-			adv_type = 0x05; /* PDU_ADV_TYPE_EXT_IND */
+			adv_type = 0x05; /* PDU_ADV_TYPE_EXT_IND in */
+					 /* pdu_adv_type array. */
 
 			adv->lll.phy_p = phy_p;
 		}
