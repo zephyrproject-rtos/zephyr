@@ -47,7 +47,7 @@
 static int init_reset(void);
 static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		      void *param);
-static u8_t disable(u16_t handle);
+static u8_t disable(u8_t handle);
 
 #define BT_CTLR_SCAN_MAX 1
 static struct ll_scan_set ll_scan[BT_CTLR_SCAN_MAX];
@@ -121,7 +121,7 @@ int ull_scan_init(void)
 
 int ull_scan_reset(void)
 {
-	u16_t handle;
+	u8_t handle;
 	int err;
 
 	for (handle = 0U; handle < BT_CTLR_SCAN_MAX; handle++) {
@@ -265,7 +265,7 @@ u8_t ull_scan_enable(struct ll_scan_set *scan)
 	return 0;
 }
 
-u8_t ull_scan_disable(u16_t handle, struct ll_scan_set *scan)
+u8_t ull_scan_disable(u8_t handle, struct ll_scan_set *scan)
 {
 	volatile u32_t ret_cb = TICKER_STATUS_BUSY;
 	void *mark;
@@ -295,7 +295,7 @@ u8_t ull_scan_disable(u16_t handle, struct ll_scan_set *scan)
 	return 0;
 }
 
-struct ll_scan_set *ull_scan_set_get(u16_t handle)
+struct ll_scan_set *ull_scan_set_get(u8_t handle)
 {
 	if (handle >= BT_CTLR_SCAN_MAX) {
 		return NULL;
@@ -304,17 +304,17 @@ struct ll_scan_set *ull_scan_set_get(u16_t handle)
 	return &ll_scan[handle];
 }
 
-u16_t ull_scan_handle_get(struct ll_scan_set *scan)
+u8_t ull_scan_handle_get(struct ll_scan_set *scan)
 {
 	return ((u8_t *)scan - (u8_t *)ll_scan) / sizeof(*scan);
 }
 
-u16_t ull_scan_lll_handle_get(struct lll_scan *lll)
+u8_t ull_scan_lll_handle_get(struct lll_scan *lll)
 {
 	return ull_scan_handle_get((void *)lll->hdr.parent);
 }
 
-struct ll_scan_set *ull_scan_is_enabled_get(u16_t handle)
+struct ll_scan_set *ull_scan_is_enabled_get(u8_t handle)
 {
 	struct ll_scan_set *scan;
 
@@ -326,7 +326,7 @@ struct ll_scan_set *ull_scan_is_enabled_get(u16_t handle)
 	return scan;
 }
 
-struct ll_scan_set *ull_scan_is_disabled_get(u16_t handle)
+struct ll_scan_set *ull_scan_is_disabled_get(u8_t handle)
 {
 	struct ll_scan_set *scan;
 
@@ -338,7 +338,7 @@ struct ll_scan_set *ull_scan_is_disabled_get(u16_t handle)
 	return scan;
 }
 
-u32_t ull_scan_is_enabled(u16_t handle)
+u32_t ull_scan_is_enabled(u8_t handle)
 {
 	struct ll_scan_set *scan;
 
@@ -358,7 +358,7 @@ u32_t ull_scan_is_enabled(u16_t handle)
 		0);
 }
 
-u32_t ull_scan_filter_pol_get(u16_t handle)
+u32_t ull_scan_filter_pol_get(u8_t handle)
 {
 	struct ll_scan_set *scan;
 
@@ -426,7 +426,7 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	DEBUG_RADIO_PREPARE_O(1);
 }
 
-static u8_t disable(u16_t handle)
+static u8_t disable(u8_t handle)
 {
 	struct ll_scan_set *scan;
 	u8_t ret;
