@@ -48,4 +48,4 @@ int lll_scan_reset(void);
 
 void lll_scan_prepare(void *param);
 
-extern uint16_t ull_scan_lll_handle_get(struct lll_scan *lll);
+extern uint8_t ull_scan_lll_handle_get(struct lll_scan *lll);
