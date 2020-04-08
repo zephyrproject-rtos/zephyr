@@ -67,10 +67,22 @@ enum {
 				 BIT(BT_DEV_PRESET_ID))
 
 enum {
+	/* Advertising set has been created in the host. */
 	BT_ADV_CREATED,
-
+	/* Advertising parameters has been set in the controller.
+	 * This implies that the advertising set has been created in the
+	 * controller.
+	 */
+	BT_ADV_PARAMS_SET,
+	/* Advertising random address pending to be set in the controller. */
+	BT_ADV_RANDOM_ADDR_PENDING,
+	/* The private random address of the advertiser is valid for this cycle
+	 * of the RPA timeout.
+	 */
 	BT_ADV_RPA_VALID,
-
+	/* The advertiser set is limited by a timeout, or number of advertising
+	 * events, or both.
+	 */
 	BT_ADV_LIMITED,
 
 	BT_ADV_NUM_FLAGS,
