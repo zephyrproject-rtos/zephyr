@@ -347,7 +347,7 @@ static const struct flash_driver_api flash_sam_api = {
 };
 
 static const struct flash_sam_dev_cfg flash_sam_cfg = {
-	.regs = (Efc *)DT_FLASH_DEV_BASE_ADDRESS,
+	.regs = (Efc *)DT_REG_ADDR(DT_INST(0, atmel_sam_flash_controller)),
 };
 
 static struct flash_sam_dev_data flash_sam_data;
