@@ -171,6 +171,6 @@ static int flash_mcux_init(struct device *dev)
 	return (rc == kStatus_Success) ? 0 : -EIO;
 }
 
-DEVICE_AND_API_INIT(flash_mcux, DT_FLASH_DEV_NAME,
+DEVICE_AND_API_INIT(flash_mcux, DT_INST_LABEL(0),
 			flash_mcux_init, &flash_data, NULL, POST_KERNEL,
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_mcux_api);
