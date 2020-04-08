@@ -606,6 +606,13 @@ static int set_adv_random_address(struct bt_le_ext_adv *adv,
 
 	BT_DBG("%s", bt_addr_str(addr));
 
+	if (!atomic_test_bit(adv->flags, BT_ADV_PARAMS_SET)) {
+		bt_addr_copy(&adv->random_addr.a, addr);
+		adv->random_addr.type = BT_ADDR_LE_RANDOM;
+		atomic_set_bit(adv->flags, BT_ADV_RANDOM_ADDR_PENDING);
+		return 0;
+	}
+
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR,
 				sizeof(*cp));
 	if (!buf) {
@@ -7401,6 +7408,15 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
 	net_buf_unref(rsp);
+
+	atomic_set_bit(adv->flags, BT_ADV_PARAMS_SET);
+
+	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_PENDING)) {
+		err = set_adv_random_address(adv, &adv->random_addr.a);
+		if (err) {
+			return err;
+		}
+	}
 
 	/* Todo: Figure out how keep advertising works with multiple adv sets */
 	atomic_set_bit_to(bt_dev.flags, BT_DEV_KEEP_ADVERTISING, false);
