@@ -3000,7 +3000,7 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 		h = (void *)p->ext_hdr_adi_adv_data;
 		ptr = (uint8_t *)h + sizeof(*h);
 
-		BT_INFO("Ext. adv mode= 0x%x, hdr len= %u", p->adv_mode,
+		BT_INFO("    Ext. adv mode= 0x%x, hdr len= %u", p->adv_mode,
 			p->ext_hdr_len);
 
 		if (!p->ext_hdr_len) {
@@ -3014,7 +3014,7 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 			memcpy(&addr.a.val[0], ptr, sizeof(bt_addr_t));
 			ptr += BDADDR_SIZE;
 
-			BT_INFO("AdvA: %s", bt_addr_le_str(&addr));
+			BT_INFO("    AdvA: %s", bt_addr_le_str(&addr));
 		}
 
 		if (h->tgt_addr) {
@@ -3024,7 +3024,7 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 			memcpy(&addr.a.val[0], ptr, sizeof(bt_addr_t));
 			ptr += BDADDR_SIZE;
 
-			BT_INFO("TgtA: %s", bt_addr_le_str(&addr));
+			BT_INFO("    TgtA: %s", bt_addr_le_str(&addr));
 		}
 
 		if (h->adi) {
@@ -3033,7 +3033,7 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 			adi = (void *)ptr;
 			ptr += sizeof(*adi);
 
-			BT_INFO("AdvDataInfo DID = 0x%x, SID = 0x%x",
+			BT_INFO("    AdvDataInfo DID = 0x%x, SID = 0x%x",
 				adi->did, adi->sid);
 		}
 
@@ -3043,8 +3043,8 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 			aux = (void *)ptr;
 			ptr += sizeof(*aux);
 
-			BT_INFO("AuxPtr chan_idx = %u, ca = %u, offs_units = %u"
-				" offs = 0x%x, phy = 0x%x", aux->chan_idx,
+			BT_INFO("    AuxPtr chan_idx = %u, ca = %u, offs_units "
+				"= %u offs = 0x%x, phy = 0x%x", aux->chan_idx,
 				aux->ca, aux->offs_units, aux->offs, aux->phy);
 		}
 
@@ -3054,7 +3054,7 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 			tx_pwr = *(int8_t *)ptr;
 			ptr++;
 
-			BT_INFO("Tx pwr= %d dB", tx_pwr);
+			BT_INFO("    Tx pwr= %d dB", tx_pwr);
 		}
 
 		/* TODO: length check? */
