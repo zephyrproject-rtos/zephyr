@@ -33,7 +33,7 @@ ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length)
  */
 __ramfunc static void hwinfo_sam_read_device_id(void)
 {
-	Efc *efc = (Efc *)DT_FLASH_DEV_BASE_ADDRESS;
+	Efc *efc = (Efc *)DT_REG_ADDR(DT_INST(0, atmel_sam_flash_controller));
 	u8_t *flash = (u8_t *)CONFIG_FLASH_BASE_ADDRESS;
 	int i;
 
@@ -64,7 +64,7 @@ __ramfunc static void hwinfo_sam_read_device_id(void)
 
 static int hwinfo_sam_init(struct device *arg)
 {
-	Efc *efc = (Efc *)DT_FLASH_DEV_BASE_ADDRESS;
+	Efc *efc = (Efc *)DT_REG_ADDR(DT_INST(0, atmel_sam_flash_controller));
 	u32_t fmr;
 	int key;
 
