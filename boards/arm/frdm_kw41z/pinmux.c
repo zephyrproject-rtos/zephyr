@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright 2017, 2020 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,9 +28,15 @@ static int frdm_kw41z_pinmux_init(struct device *dev)
 	/* Red, green, blue LEDs. Note the red LED and accel INT1 are both
 	 * wired to PTC1.
 	 */
+#if defined(CONFIG_PWM) && DT_HAS_NODE(DT_NODELABEL(pwm0))
+	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAlt5));
+	pinmux_pin_set(porta, 19, PORT_PCR_MUX(kPORT_MuxAlt5));
+	pinmux_pin_set(porta, 18, PORT_PCR_MUX(kPORT_MuxAlt5));
+#else
 	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porta, 19, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porta, 18, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
 
 #if DT_HAS_NODE(DT_NODELABEL(i2c1))
 	/* I2C1 SCL, SDA */
@@ -61,6 +67,16 @@ static int frdm_kw41z_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portc, 18, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portc, 19, PORT_PCR_MUX(kPORT_MuxAlt2));
+#endif
+
+#if defined(CONFIG_PWM) && DT_HAS_NODE(DT_NODELABEL(pwm1))
+	pinmux_pin_set(porta,  0, PORT_PCR_MUX(kPORT_MuxAlt4));
+	pinmux_pin_set(porta,  1, PORT_PCR_MUX(kPORT_MuxAlt4));
+#endif
+
+#if defined(CONFIG_PWM) && DT_HAS_NODE(DT_NODELABEL(pwm2))
+	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt4));
+	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt4));
 #endif
 
 	return 0;

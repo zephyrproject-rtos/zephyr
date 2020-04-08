@@ -1,7 +1,12 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright 2020 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <arm/armv6-m.dtsi>
 #include <dt-bindings/clock/kinetis_sim.h>
+#include <dt-bindings/clock/kinetis_mcg.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 
@@ -46,6 +51,8 @@
 		mcg: clock-controller@40064000 {
 			compatible = "nxp,kw41z-mcg";
 			reg = <0x40064000 0x13>;
+			label = "MCG";
+			#clock-cells = <1>;
 		};
 
 		osc: clock-controller@40065000 {
@@ -196,27 +203,36 @@
 		};
 
 		tpm0: pwm@40038000 {
-			compatible = "nxp,kw41z-pwm";
+			compatible = "nxp,kinetis-tpm";
 			reg = <0x40038000 0x88>;
-			prescaler = <2>;
-			period = <1000>;
+			interrupts = <0x84 0>;
 			/* channel information needed - fixme */
+			label = "PWM_0";
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 24>;
+			status = "disabled";
+			#pwm-cells = <3>;
 		};
 
 		tpm1: pwm@40039000 {
-			compatible = "nxp,kw41z-pwm";
+			compatible = "nxp,kinetis-tpm";
 			reg = <0x40039000 0x88>;
-			prescaler = <2>;
-			period = <1000>;
+			interrupts = <0x88 0>;
 			/* channel information needed - fixme */
+			label = "PWM_1";
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 25>;
+			status = "disabled";
+			#pwm-cells = <3>;
 		};
 
 		tpm2: pwm@4003a000 {
-			compatible = "nxp,kw41z-pwm";
+			compatible = "nxp,kinetis-tpm";
 			reg = <0x4003a000 0x88>;
-			prescaler = <2>;
-			period = <1000>;
+			interrupts = <0x8C 0>;
 			/* channel information needed - fixme */
+			label = "PWM_2";
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 26>;
+			status = "disabled";
+			#pwm-cells = <3>;
 		};
 
 		adc0: adc@4003b000{
