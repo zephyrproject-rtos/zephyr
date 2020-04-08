@@ -24,7 +24,7 @@
 #elif defined(CONFIG_ARCH_POSIX)
 # define MEMSZ (2 * 1024 * 1024)
 #else
-# define MEMSZ (1024 * CONFIG_SRAM_SIZE)
+# define MEMSZ (1024 * (size_t) CONFIG_SRAM_SIZE)
 #endif
 
 #define BIG_HEAP_SZ MIN(256 * 1024, MEMSZ / 3)
@@ -108,18 +108,18 @@ void testfree(void *arg, void *p)
 	sys_heap_validate(arg);
 }
 
-static void log_result(u32_t sz, struct z_heap_stress_result *r)
+static void log_result(size_t sz, struct z_heap_stress_result *r)
 {
 	u32_t tot = r->total_allocs + r->total_frees;
 	u32_t avg = (u32_t)((r->accumulated_in_use_bytes + tot/2) / tot);
-	u32_t avg_pct = (u32_t)(100ULL * avg + sz / 2) / sz;
+	u32_t avg_pct = (u32_t)((100ULL * avg + sz / 2) / sz);
 	u32_t succ_pct = ((100ULL * r->successful_allocs + r->total_allocs / 2)
 			  / r->total_allocs);
 
 	TC_PRINT("successful allocs: %d/%d (%d%%), frees: %d,"
 		 "  avg usage: %d/%d (%d%%)\n",
 		 r->successful_allocs, r->total_allocs, succ_pct,
-		 r->total_frees, avg, sz, avg_pct);
+		 r->total_frees, avg, (int) sz, avg_pct);
 }
 
 /* Do a heavy test over a small heap, with many iterations that need
@@ -132,7 +132,7 @@ static void test_small_heap(void)
 	struct sys_heap heap;
 	struct z_heap_stress_result result;
 
-	TC_PRINT("Testing small (%d byte) heap\n", SMALL_HEAP_SZ);
+	TC_PRINT("Testing small (%d byte) heap\n", (int) SMALL_HEAP_SZ);
 
 	sys_heap_init(&heap, heapmem, SMALL_HEAP_SZ);
 	zassert_true(sys_heap_validate(&heap), "");
@@ -161,7 +161,7 @@ static void test_fragmentation(void)
 	struct z_heap_stress_result result;
 
 	TC_PRINT("Testing maximally fragmented (%d byte) heap\n",
-		 SMALL_HEAP_SZ);
+		 (int) SMALL_HEAP_SZ);
 
 	sys_heap_init(&heap, heapmem, SMALL_HEAP_SZ);
 	zassert_true(sys_heap_validate(&heap), "");
@@ -183,7 +183,7 @@ static void test_big_heap(void)
 	struct sys_heap heap;
 	struct z_heap_stress_result result;
 
-	TC_PRINT("Testing big (%d byte) heap\n", BIG_HEAP_SZ);
+	TC_PRINT("Testing big (%d byte) heap\n", (int) BIG_HEAP_SZ);
 
 	sys_heap_init(&heap, heapmem, BIG_HEAP_SZ);
 	zassert_true(sys_heap_validate(&heap), "");
