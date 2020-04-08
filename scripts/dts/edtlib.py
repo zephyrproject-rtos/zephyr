@@ -424,6 +424,9 @@ class EDT:
                 _err("'include:' in {} should be a string or a list of strings"
                      .format(binding_path))
 
+        if "child-binding" in binding and "include" in binding["child-binding"]:
+            self._merge_included_bindings(binding["child-binding"], binding_path)
+
         # Legacy syntax
         if "inherits" in binding:
             self._warn("the 'inherits:' syntax in {} is deprecated and will "
