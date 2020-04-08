@@ -94,13 +94,22 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 	}
 
 	/* Get the advertising set instance */
-	adv = ull_adv_set_get(handle);
+	adv = ull_adv_is_created_get(handle);
 	if (!adv) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	lll = &adv->lll;
 
+	/* Do not use Common Extended Advertising Header Format if not extended
+	 * advertising.
+	 */
+	_pri = lll_adv_data_peek(lll);
+	if (_pri->type != PDU_ADV_TYPE_EXT_IND) {
+		return adv_data_set(adv, len, data);
+	}
+
+	/* Allocate or existing Auxiliary channel instance */
 	lll_aux = lll->aux;
 	if (!lll_aux) {
 		aux = aux_acquire();
@@ -118,15 +127,6 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 		aux->is_started = 0;
 	} else {
 		aux = (void *)HDR_LLL2EVT(lll_aux);
-	}
-
-	/* Do not update data if not extended advertising. */
-	_pri = lll_adv_data_peek(lll);
-	if (_pri->type != PDU_ADV_TYPE_EXT_IND) {
-		/* Advertising Handle has not been created using
-		 * Set Extended Advertising Parameter command
-		 */
-		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	/* Get reference to previous primary PDU data */
@@ -426,8 +426,44 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 u8_t ll_adv_aux_sr_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 			    u8_t *data)
 {
+	struct ll_adv_set *adv;
+	struct pdu_adv *_pri;
+	struct lll_adv *lll;
+
+	/* op param definitions:
+	 * 0x00 - Intermediate fragment of fragmented extended advertising data
+	 * 0x01 - First fragment of fragmented extended advertising data
+	 * 0x02 - Last fragemnt of fragemented extended advertising data
+	 * 0x03 - Complete extended advertising data
+	 * 0x04 - Unchanged data (just update the advertising data)
+	 * All other values, Reserved for future use
+	 */
+
+	/* TODO: handle other op values */
+	if ((op != 0x03) && (op != 0x04)) {
+		/* FIXME: error code */
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Get the advertising set instance */
+	adv = ull_adv_is_created_get(handle);
+	if (!adv) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lll = &adv->lll;
+
+	/* Do not use Common Extended Advertising Header Format if not extended
+	 * advertising.
+	 */
+	_pri = lll_adv_data_peek(lll);
+	if (_pri->type != PDU_ADV_TYPE_EXT_IND) {
+		return scan_rsp_set(adv, len, data);
+	}
+
 	/* TODO: */
-	return 0;
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 
 u16_t ll_adv_aux_max_data_length_get(void)
