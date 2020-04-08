@@ -37,6 +37,7 @@
 			label = "RTC_0";
 		};
 
+		/* Driver does not currently support the l0 flash controller */
 		flash-controller@40022000 {
 			compatible = "st,stm32l0-flash-controller";
 			label = "FLASH_CTRL";
