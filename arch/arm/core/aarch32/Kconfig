@@ -25,6 +25,7 @@ config CPU_CORTEX_R
 	select CPU_CORTEX
 	select HAS_CMSIS_CORE
 	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_HAS_THREAD_ABORT
 	help
 	  This option signifies the use of a CPU of the Cortex-R family.
 

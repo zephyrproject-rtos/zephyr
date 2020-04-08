@@ -48,37 +48,20 @@ GDATA(_kernel)
  * 	z_arm_int_exit();
  * }
  */
-
 SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_int_exit)
-
-/* z_arm_int_exit falls through to z_arm_exc_exit (they are aliases of each
- * other)
- */
-
-/**
- *
- * @brief Kernel housekeeping when exiting exception handler installed
- * 		directly in vector table
- *
- * See z_arm_int_exit().
- *
- * @return N/A
- */
-
-SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
 
 #ifdef CONFIG_PREEMPT_ENABLED
 	/* Do not context switch if exiting a nested interrupt */
 	ldr r3, =_kernel
 	ldr r0, [r3, #_kernel_offset_to_nested]
 	cmp r0, #1
-	bhi _EXIT_EXC
+	bhi __EXIT_INT
 
 	ldr r1, [r3, #_kernel_offset_to_current]
 	ldr r0, [r3, #_kernel_offset_to_ready_q_cache]
 	cmp r0, r1
 	blne z_arm_pendsv
-_EXIT_EXC:
+__EXIT_INT:
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 #ifdef CONFIG_STACK_SENTINEL
@@ -108,4 +91,69 @@ _EXIT_EXC:
 	 */
 	cps #MODE_SYS
 	pop {r0-r3, r12, lr}
+	rfeia sp!
+
+/**
+ * @brief Kernel housekeeping when exiting exception handler
+ *
+ * The exception exit routine performs appropriate housekeeping tasks depending
+ * on the mode of exit:
+ *
+ * If exiting a nested or non-fatal exception, the exit routine restores the
+ * saved exception stack frame to resume the excepted context.
+ *
+ * If exiting a non-nested fatal exception, the exit routine, assuming that the
+ * current faulting thread is aborted, discards the saved exception stack
+ * frame containing the aborted thread context and switches to the next
+ * scheduled thread.
+ *
+ * void z_arm_exc_exit(bool fatal)
+ *
+ * @param fatal True if exiting from a fatal fault; otherwise, false
+ */
+SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
+	/* Do not context switch if exiting a nested exception */
+	ldr r3, =_kernel
+	ldr r1, [r3, #_kernel_offset_to_nested]
+	cmp r1, #1
+	bhi __EXIT_EXC
+
+	/* If the fault is not fatal, return to the current thread context */
+	cmp r0, #0
+	beq __EXIT_EXC
+
+	/*
+	 * If the fault is fatal, the current thread must have been aborted by
+	 * the exception handler. Clean up the exception stack frame and switch
+	 * to the next scheduled thread.
+	 */
+
+	/* Clean up exception stack frame */
+	add sp, #32
+
+	/* Switch in the next scheduled thread */
+	bl z_arm_pendsv
+
+	/* Decrement exception nesting count */
+	ldr r0, [r3, #_kernel_offset_to_nested]
+	sub r0, r0, #1
+	str r0, [r3, #_kernel_offset_to_nested]
+
+	/* Return to the switched thread */
+	cps #MODE_SYS
+	pop {r0-r3, r12, lr}
+	rfeia sp!
+
+__EXIT_EXC:
+	/* Decrement exception nesting count */
+	ldr r0, [r3, #_kernel_offset_to_nested]
+	sub r0, r0, #1
+	str r0, [r3, #_kernel_offset_to_nested]
+
+	/*
+	 * Restore r0-r3, r12, lr, lr_und and spsr_und from the exception stack
+	 * and return to the current thread.
+	 */
+	ldmia sp, {r0-r3, r12, lr}^
+	add sp, #24
 	rfeia sp!
