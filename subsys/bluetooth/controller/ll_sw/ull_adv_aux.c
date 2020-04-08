@@ -53,14 +53,30 @@ static void *adv_aux_free;
 
 u8_t ll_adv_aux_random_addr_set(u8_t handle, u8_t *addr)
 {
-	/* TODO: store in adv set instance */
+	struct ll_adv_set *adv;
+
+	adv = ull_adv_is_created_get(handle);
+	if (!adv) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* TODO: Fail if connectable advertising is enabled */
+	if (0) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	memcpy(adv->rnd_addr, addr, BDADDR_SIZE);
+
 	return 0;
 }
 
-u8_t *ll_adv_aux_random_addr_get(u8_t handle, u8_t *addr)
+u8_t *ll_adv_aux_random_addr_get(struct ll_adv_set *adv, u8_t *addr)
 {
-	/* TODO: copy adv set instance addr into addr and/or return reference */
-	return NULL;
+	if (addr) {
+		memcpy(addr, adv->rnd_addr, BDADDR_SIZE);
+	}
+
+	return adv->rnd_addr;
 }
 
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)

@@ -480,9 +480,10 @@ u8_t ll_adv_enable(u8_t enable)
 
 		/* AdvA, fill here at enable */
 		if (h->adv_addr) {
-			u8_t *tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
+			u8_t *tx_addr = ll_adv_aux_random_addr_get(adv, NULL);
 
-			/* TODO: Privacy check */
+			/* TODO: Privacy */
+
 			if (pdu_adv->tx_addr && !mem_nz(tx_addr, BDADDR_SIZE)) {
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
@@ -502,10 +503,11 @@ u8_t ll_adv_enable(u8_t enable)
 			ps = (u8_t *)hs + sizeof(*hs);
 
 			if (hs->adv_addr) {
-				u8_t *tx_addr = ll_addr_get(pdu_aux->tx_addr,
-							    NULL);
+				u8_t *tx_addr =
+					ll_adv_aux_random_addr_get(adv,	NULL);
 
-				/* TODO: Privacy check */
+				/* TODO: Privacy */
+
 				if (pdu_aux->tx_addr &&
 				    !mem_nz(tx_addr, BDADDR_SIZE)) {
 					return BT_HCI_ERR_INVALID_PARAM;

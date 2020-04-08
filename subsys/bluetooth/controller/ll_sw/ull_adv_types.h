@@ -16,6 +16,7 @@ struct ll_adv_set {
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	u32_t interval;
+	u8_t  rnd_addr[BDADDR_SIZE];
 	u8_t  sid:4;
 	u8_t  is_created:1;
 #else /* !CONFIG_BT_CTLR_ADV_EXT */

@@ -22,7 +22,6 @@ u8_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
 u8_t ll_adv_data_set(u8_t handle, u8_t len, u8_t const *const p_data);
 u8_t ll_adv_scan_rsp_set(u8_t handle, u8_t len, u8_t const *const p_data);
 u8_t ll_adv_aux_random_addr_set(u8_t handle, u8_t *addr);
-u8_t *ll_adv_aux_random_addr_get(u8_t handle, u8_t *addr);
 u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 			    u8_t *data);
 u8_t ll_adv_aux_sr_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
