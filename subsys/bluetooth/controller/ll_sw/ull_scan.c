@@ -44,67 +44,152 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+#define SCAN_HANDLE_1M        0
+#define SCAN_HANDLE_PHY_CODED 1
+
 static int init_reset(void);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t lazy,
 		      void *param);
 static uint8_t disable(uint8_t handle);
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#define BT_CTLR_SCAN_MAX 2
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 #define BT_CTLR_SCAN_MAX 1
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
 static struct ll_scan_set ll_scan[BT_CTLR_SCAN_MAX];
 
 uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 			uint8_t own_addr_type, uint8_t filter_policy)
 {
 	struct ll_scan_set *scan;
+	struct lll_scan *lll;
 
-	scan = ull_scan_is_disabled_get(0);
+	scan = ull_scan_is_disabled_get(SCAN_HANDLE_1M);
 	if (!scan) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	struct ll_scan_set *scan_coded;
+	uint8_t phy;
+
+	scan_coded = ull_scan_is_disabled_get(SCAN_HANDLE_PHY_CODED);
+	if (!scan_coded) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	phy  = type >> 1;
+	if (phy & BT_HCI_LE_EXT_SCAN_PHY_CODED) {
+		scan = scan_coded;
+	}
+
+	lll = &scan->lll;
+	lll->phy = phy;
+
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+	lll = &scan->lll;
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
 	scan->own_addr_type = own_addr_type;
 
-	ull_scan_params_set(&scan->lll, type, interval, window, filter_policy);
+	ull_scan_params_set(lll, type, interval, window, filter_policy);
 
 	return 0;
 }
 
 uint8_t ll_scan_enable(uint8_t enable)
 {
+	struct ll_scan_set *scan_coded = NULL;
 	struct ll_scan_set *scan;
+	uint8_t own_addr_type = 0U;
+	uint8_t is_coded_phy = 0U;
+	uint8_t err;
 
 	if (!enable) {
-		return disable(0);
+		err = disable(SCAN_HANDLE_1M);
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
+			uint8_t err_coded;
+
+			err_coded = disable(SCAN_HANDLE_PHY_CODED);
+			if (!err_coded) {
+				err = 0U;
+			}
+		}
+
+		return err;
 	}
 
-	scan = ull_scan_is_disabled_get(0);
+	scan = ull_scan_is_disabled_get(SCAN_HANDLE_1M);
 	if (!scan) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	if (scan->own_addr_type & 0x1) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
+		scan_coded = ull_scan_is_disabled_get(SCAN_HANDLE_PHY_CODED);
+		if (!scan_coded) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		own_addr_type = scan_coded->own_addr_type;
+		is_coded_phy = (scan_coded->lll.type >> 1) &
+				BT_HCI_LE_EXT_SCAN_PHY_CODED;
+	}
+
+	if ((IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) && is_coded_phy &&
+	     (own_addr_type & 0x1)) ||
+	    (scan->own_addr_type & 0x1)) {
 		if (!mem_nz(ll_addr_get(1, NULL), BDADDR_SIZE)) {
 			return BT_HCI_ERR_INVALID_PARAM;
 		}
 	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	struct lll_scan *lll = &scan->lll;
+	struct lll_scan *lll;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) && is_coded_phy) {
+		lll = &scan_coded->lll;
+
+		/* TODO: Privacy support in Advertising Extensions */
+	} else {
+		lll = &scan->lll;
+		own_addr_type = scan->own_addr_type;
+	}
+
 	ull_filter_scan_update(lll->filter_policy);
 
 	lll->rl_idx = FILTER_IDX_NONE;
 	lll->rpa_gen = 0;
 
 	if ((lll->type & 0x1) &&
-	    (scan->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
-	     scan->own_addr_type == BT_ADDR_LE_RANDOM_ID)) {
+	    (own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
+	     own_addr_type == BT_ADDR_LE_RANDOM_ID)) {
 		/* Generate RPAs if required */
 		ull_filter_rpa_update(false);
 		lll->rpa_gen = 1;
 	}
 #endif
 
-	return ull_scan_enable(scan);
+	if (!IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) ||
+	    !is_coded_phy ||
+	    ((scan->lll.type >> 1) & BIT(0))) {
+		err = ull_scan_enable(scan);
+		if (err) {
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+	    is_coded_phy) {
+		err = ull_scan_enable(scan_coded);
+		if (err) {
+			return err;
+		}
+	}
+
+	return 0;
 }
 
 int ull_scan_init(void)
@@ -152,11 +237,6 @@ void ull_scan_params_set(struct lll_scan *lll, uint8_t type, uint16_t interval,
 	 * 1001b - Ext. Coded active
 	 */
 	lll->type = type;
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-	lll->phy = type >> 1;
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-
 	lll->filter_policy = filter_policy;
 	lll->interval = interval;
 	lll->ticks_window = HAL_TICKER_US_TO_TICKS((uint64_t)window * 625U);
@@ -234,8 +314,10 @@ uint8_t ull_scan_enable(struct ll_scan_set *scan)
 	}
 #endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
+	uint8_t handle = ull_scan_handle_get(scan);
+
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
-			   TICKER_USER_ID_THREAD, TICKER_ID_SCAN_BASE,
+			   TICKER_USER_ID_THREAD, TICKER_ID_SCAN_BASE + handle,
 			   ticks_anchor, 0, ticks_interval,
 			   HAL_TICKER_REMAINDER((uint64_t)lll->interval * 625U),
 			   TICKER_NULL_LAZY,
