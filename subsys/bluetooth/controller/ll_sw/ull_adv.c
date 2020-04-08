@@ -136,6 +136,9 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 			if (evt_prop & BIT(3)) {
 				adv_type = 0x01;
 			}
+
+			/* Mark the adv set as created */
+			adv->is_created = 1;
 		} else {
 			/* - Connectable and scannable not allowed;
 			 * - High duty cycle directed connectable not allowed
@@ -387,46 +390,13 @@ uint8_t ll_adv_data_set(uint8_t len, uint8_t const *const data)
 	const uint8_t handle = 0;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 	struct ll_adv_set *adv;
-	struct pdu_adv *prev;
-	struct pdu_adv *pdu;
-	uint8_t idx;
 
 	adv = ull_adv_set_get(handle);
 	if (!adv) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* Dont update data if directed or extended advertising. */
-	prev = lll_adv_data_peek(&adv->lll);
-	if ((prev->type == PDU_ADV_TYPE_DIRECT_IND) ||
-	    (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
-	     (prev->type == PDU_ADV_TYPE_EXT_IND))) {
-		/* TODO: remember data, to be used if type is changed using
-		 * parameter set function ll_adv_params_set afterwards.
-		 */
-		return 0;
-	}
-
-	/* update adv pdu fields. */
-	pdu = lll_adv_data_alloc(&adv->lll, &idx);
-	pdu->type = prev->type;
-	pdu->rfu = 0U;
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
-		pdu->chan_sel = prev->chan_sel;
-	} else {
-		pdu->chan_sel = 0U;
-	}
-
-	pdu->tx_addr = prev->tx_addr;
-	pdu->rx_addr = prev->rx_addr;
-	memcpy(&pdu->adv_ind.addr[0], &prev->adv_ind.addr[0], BDADDR_SIZE);
-	memcpy(&pdu->adv_ind.data[0], data, len);
-	pdu->len = BDADDR_SIZE + len;
-
-	lll_adv_data_enqueue(&adv->lll, idx);
-
-	return 0;
+	return adv_data_set(adv, len, data);
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -439,30 +409,13 @@ uint8_t ll_adv_scan_rsp_set(uint8_t len, uint8_t const *const data)
 	const uint8_t handle = 0;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 	struct ll_adv_set *adv;
-	struct pdu_adv *prev;
-	struct pdu_adv *pdu;
-	uint8_t idx;
 
 	adv = ull_adv_set_get(handle);
 	if (!adv) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	/* update scan pdu fields. */
-	prev = lll_adv_scan_rsp_peek(&adv->lll);
-	pdu = lll_adv_scan_rsp_alloc(&adv->lll, &idx);
-	pdu->type = PDU_ADV_TYPE_SCAN_RSP;
-	pdu->rfu = 0;
-	pdu->chan_sel = 0;
-	pdu->tx_addr = prev->tx_addr;
-	pdu->rx_addr = 0;
-	pdu->len = BDADDR_SIZE + len;
-	memcpy(&pdu->scan_rsp.addr[0], &prev->scan_rsp.addr[0], BDADDR_SIZE);
-	memcpy(&pdu->scan_rsp.data[0], data, len);
-
-	lll_adv_scan_rsp_enqueue(&adv->lll, idx);
-
-	return 0;
+	return scan_rsp_set(adv, len, data);
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
@@ -1222,6 +1175,70 @@ struct ll_adv_set *ull_adv_is_created_get(uint8_t handle)
 	return adv;
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+uint8_t adv_data_set(struct ll_adv_set *adv, uint8_t len,
+		     uint8_t const *const data)
+{
+	struct pdu_adv *prev;
+	struct pdu_adv *pdu;
+	uint8_t idx;
+
+	/* Dont update data if directed or extended advertising. */
+	prev = lll_adv_data_peek(&adv->lll);
+	if ((prev->type == PDU_ADV_TYPE_DIRECT_IND) ||
+	    (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+	     (prev->type == PDU_ADV_TYPE_EXT_IND))) {
+		/* TODO: remember data, to be used if type is changed using
+		 * parameter set function ll_adv_params_set afterwards.
+		 */
+		return 0;
+	}
+
+	/* update adv pdu fields. */
+	pdu = lll_adv_data_alloc(&adv->lll, &idx);
+	pdu->type = prev->type;
+	pdu->rfu = 0U;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
+		pdu->chan_sel = prev->chan_sel;
+	} else {
+		pdu->chan_sel = 0U;
+	}
+
+	pdu->tx_addr = prev->tx_addr;
+	pdu->rx_addr = prev->rx_addr;
+	memcpy(&pdu->adv_ind.addr[0], &prev->adv_ind.addr[0], BDADDR_SIZE);
+	memcpy(&pdu->adv_ind.data[0], data, len);
+	pdu->len = BDADDR_SIZE + len;
+
+	lll_adv_data_enqueue(&adv->lll, idx);
+
+	return 0;
+}
+
+uint8_t scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
+		     uint8_t const *const data)
+{
+	struct pdu_adv *prev;
+	struct pdu_adv *pdu;
+	uint8_t idx;
+
+	/* update scan pdu fields. */
+	prev = lll_adv_scan_rsp_peek(&adv->lll);
+	pdu = lll_adv_scan_rsp_alloc(&adv->lll, &idx);
+	pdu->type = PDU_ADV_TYPE_SCAN_RSP;
+	pdu->rfu = 0;
+	pdu->chan_sel = 0;
+	pdu->tx_addr = prev->tx_addr;
+	pdu->rx_addr = 0;
+	pdu->len = BDADDR_SIZE + len;
+	memcpy(&pdu->scan_rsp.addr[0], &prev->scan_rsp.addr[0], BDADDR_SIZE);
+	memcpy(&pdu->scan_rsp.data[0], data, len);
+
+	lll_adv_scan_rsp_enqueue(&adv->lll, idx);
+
+	return 0;
+}
 
 static int init_reset(void)
 {
