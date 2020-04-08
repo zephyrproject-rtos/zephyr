@@ -21,7 +21,7 @@ void gsm_mux_recv_buf(struct gsm_mux *mux, u8_t *buf, int len);
 int gsm_mux_send(struct gsm_mux *mux, u8_t dlci_address,
 		 const u8_t *buf, size_t size);
 struct gsm_mux *gsm_mux_create(struct device *uart);
-int gsm_mux_disconnect(struct gsm_mux *mux, int timeout);
+int gsm_mux_disconnect(struct gsm_mux *mux, k_timeout_t timeout);
 void gsm_mux_init(void);
 
 typedef void (*gsm_mux_dlci_created_cb_t)(struct gsm_dlci *dlci,
