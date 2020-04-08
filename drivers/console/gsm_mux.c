@@ -303,7 +303,7 @@ static bool gsm_mux_read_msg_len(struct gsm_mux *mux, u8_t recv_byte)
 	return ret;
 }
 
-static struct net_buf *gsm_mux_alloc_buf(s32_t timeout, void *user_data)
+static struct net_buf *gsm_mux_alloc_buf(k_timeout_t timeout, void *user_data)
 {
 	struct net_buf *buf;
 
@@ -634,8 +634,8 @@ static void gsm_mux_t2_timeout(struct k_work *work)
 
 	if (entry) {
 		k_delayed_work_submit(&mux->t2_timer,
-				      entry->req_start + T2_MSEC -
-				      current_time);
+				      K_MSEC(entry->req_start + T2 -
+					     current_time));
 	}
 }
 
@@ -695,7 +695,8 @@ static int gsm_dlci_opening_or_closing(struct gsm_dlci *dlci,
 
 	/* Let's start the timer if necessary */
 	if (!k_delayed_work_remaining_get(&t1_timer)) {
-		k_delayed_work_submit(&t1_timer, dlci->mux->t1_timeout_value);
+		k_delayed_work_submit(&t1_timer,
+				      K_MSEC(dlci->mux->t1_timeout_value));
 	}
 
 	sys_slist_append(&dlci_active_t1_timers, &dlci->node);
@@ -728,7 +729,7 @@ static int gsm_dlci_opening(struct gsm_dlci *dlci, dlci_command_cb_t cb)
 					   cb);
 }
 
-int gsm_mux_disconnect(struct gsm_mux *mux, int timeout)
+int gsm_mux_disconnect(struct gsm_mux *mux, k_timeout_t timeout)
 {
 	struct gsm_dlci *dlci;
 
@@ -1468,8 +1469,8 @@ struct gsm_mux *gsm_mux_create(struct device *uart)
 		mux->mru = CONFIG_GSM_MUX_MRU_DEFAULT_LEN;
 		mux->retries = N2;
 		mux->t1_timeout_value = CONFIG_GSM_MUX_T1_TIMEOUT ?
-			K_MSEC(CONFIG_GSM_MUX_T1_TIMEOUT) : K_MSEC(T1_MSEC);
-		mux->t2_timeout_value = T2_MSEC;
+			CONFIG_GSM_MUX_T1_TIMEOUT : T1;
+		mux->t2_timeout_value = T2;
 		mux->is_initiator = CONFIG_GSM_MUX_INITIATOR;
 		mux->state = GSM_MUX_SOF;
 		mux->buf = NULL;
