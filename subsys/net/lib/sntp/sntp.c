@@ -158,6 +158,7 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 
 	ret = connect(ctx->sock.fd, addr, addr_len);
 	if (ret < 0) {
+		(void)close(ctx->sock.fd);
 		NET_ERR("Cannot connect to UDP remote : %d", errno);
 		return -errno;
 	}
