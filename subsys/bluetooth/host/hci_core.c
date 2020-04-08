@@ -7445,7 +7445,7 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 	};
 	bool dir_adv = (peer != NULL);
 	struct bt_conn *conn = NULL;
-	int err = 0;
+	int err;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EAGAIN;
@@ -7461,8 +7461,11 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 
 	adv->id = param->id;
 
-	le_ext_adv_param_set(adv, param, peer,
-			     sd || (param->options & BT_LE_ADV_OPT_USE_NAME));
+	err = le_ext_adv_param_set(adv, param, peer, sd ||
+				   (param->options & BT_LE_ADV_OPT_USE_NAME));
+	if (err) {
+		return err;
+	}
 
 	if (!dir_adv) {
 		err = le_adv_update(adv, ad, ad_len, sd, sd_len,
