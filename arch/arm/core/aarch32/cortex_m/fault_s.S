@@ -7,9 +7,9 @@
 
 /**
  * @file
- * @brief Fault handlers for ARM Cortex-M and Cortex-R
+ * @brief Fault handlers for ARM Cortex-M
  *
- * Fault handlers for ARM Cortex-M and Cortex-R processors.
+ * Fault handlers for ARM Cortex-M processors.
  */
 
 #include <toolchain.h>
@@ -20,7 +20,6 @@ _ASM_FILE_PROLOGUE
 GTEXT(z_arm_fault)
 
 GTEXT(z_arm_hard_fault)
-#if defined(CONFIG_CPU_CORTEX_M)
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 /* HardFault is used for all fault conditions on ARMv6-M. */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
@@ -31,34 +30,25 @@ GTEXT(z_arm_usage_fault)
 GTEXT(z_arm_secure_fault)
 #endif /* CONFIG_ARM_SECURE_FIRMWARE*/
 GTEXT(z_arm_debug_monitor)
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-GTEXT(z_arm_exc_spurious)
-#elif defined(CONFIG_CPU_CORTEX_R)
-GTEXT(z_arm_undef_instruction)
-GTEXT(z_arm_prefetch_abort)
-GTEXT(z_arm_data_abort)
-GTEXT(z_arm_reserved)
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+GTEXT(z_arm_exc_spurious)
 
 /**
  *
- * @brief Fault handler installed in the fault and reserved vectors
+ * @brief Fault handler installed in the fault vectors
  *
  * Entry point for the HardFault, MemManageFault, BusFault, UsageFault,
- * SecureFault, Debug Monitor, and reserved exceptions.
+ * SecureFault and Debug Monitor exceptions.
  *
- * For Cortex-M: the function supplies the values of
+ * The function supplies the values of
  * - the MSP
  * - the PSP
  * - the EXC_RETURN value
  * as parameters to the z_arm_fault() C function that will perform the
  * rest of the fault handling (i.e. z_arm_fault(MSP, PSP, EXC_RETURN)).
- *
- * For Cortex-R: the function simply invokes z_arm_fault() with currently
- * unused arguments.
- *
+
  * Provides these symbols:
  *
  *   z_arm_hard_fault
@@ -68,11 +58,9 @@ GTEXT(z_arm_reserved)
  *   z_arm_secure_fault
  *   z_arm_debug_monitor
  *   z_arm_exc_spurious
- *   z_arm_reserved
  */
 
 SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_hard_fault)
-#if defined(CONFIG_CPU_CORTEX_M)
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 /* HardFault is used for all fault conditions on ARMv6-M. */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
@@ -83,41 +71,19 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_usage_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_secure_fault)
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_debug_monitor)
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_exc_spurious)
-#elif defined(CONFIG_CPU_CORTEX_R)
-SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_undef_instruction)
-SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_prefetch_abort)
-SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_data_abort)
-SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_reserved)
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_CPU_CORTEX_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+SECTION_SUBSEC_FUNC(TEXT,__fault,z_arm_exc_spurious)
 
-#if defined(CONFIG_CPU_CORTEX_M)
 	mrs r0, MSP
 	mrs r1, PSP
 	mov r2, lr /* EXC_RETURN */
 
 	push {r0, lr}
-#elif defined(CONFIG_CPU_CORTEX_R)
-	/*
-	 * Pass null for the esf to z_arm_fault for now. A future PR will add
-	 * better exception debug for Cortex-R that subsumes what esf
-	 * provides.
-	 */
-	mov r0, #0
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE || CONFIG_ARMv7_M_ARMV8_M_MAINLINE */
 
 	bl z_arm_fault
 
-#if defined(CONFIG_CPU_CORTEX_M)
 	pop {r0, pc}
-#elif defined(CONFIG_CPU_CORTEX_R)
-	pop {r0, lr}
-	subs pc, lr, #8
-#endif
 
 	.end

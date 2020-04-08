@@ -12,7 +12,6 @@ zephyr_library_sources(
   irq_manage.c
   thread.c
   cpu_idle.S
-  fault_s.S
   fatal.c
   nmi.c
   nmi_on_reset.S
