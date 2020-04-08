@@ -747,7 +747,7 @@ struct bt_le_scan_param {
 
 	union {
 		/** Bit-field of scanning filter options. */
-		u8_t  filter_dup __deprecated;
+		u32_t filter_dup __deprecated;
 
 		/** Bit-field of scanning options. */
 		u32_t options;
