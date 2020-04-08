@@ -2876,7 +2876,7 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 	lecc->status = 0x00;
 	lecc->handle = sys_cpu_to_le16(handle);
 	lecc->role = node_rx->role;
-	lecc->peer_addr.type = node_rx->peer_addr_type;
+	lecc->peer_addr.type = node_rx->peer_addr_type & 0x1;
 	memcpy(&lecc->peer_addr.a.val[0], &node_rx->peer_addr[0], BDADDR_SIZE);
 	lecc->interval = sys_cpu_to_le16(node_rx->interval);
 	lecc->latency = sys_cpu_to_le16(node_rx->latency);
