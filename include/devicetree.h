@@ -1474,12 +1474,6 @@
  * @}
  */
 
-#include <devicetree/adc.h>
-#include <devicetree/clocks.h>
-#include <devicetree/gpio.h>
-#include <devicetree/spi.h>
-#include <devicetree/dma.h>
-
 /** @internal pay no attention to the man behind the curtain! */
 #define DT_PATH_INTERNAL(...) \
 	UTIL_CAT(DT_ROOT, MACRO_MAP_CAT(DT_S_PREFIX, __VA_ARGS__))
@@ -1491,5 +1485,12 @@
 #define DT_DASH(...) MACRO_MAP_CAT(DT_DASH_PREFIX, __VA_ARGS__)
 /** @internal helper for DT_DASH(): prepends _ to a name */
 #define DT_DASH_PREFIX(name) _##name
+
+/* have these last so the have access to all previously defined macros */
+#include <devicetree/adc.h>
+#include <devicetree/clocks.h>
+#include <devicetree/gpio.h>
+#include <devicetree/spi.h>
+#include <devicetree/dma.h>
 
 #endif /* DEVICETREE_H */
