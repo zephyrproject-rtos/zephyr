@@ -190,7 +190,7 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 			ad = 1;
 		} else {
 			handle = strtoul(argv[2], NULL, 16);
-			if (handle >= BT_CTLR_ADV_MAX) {
+			if (handle >= CONFIG_BT_CTLR_ADV_SET) {
 				return -EINVAL;
 			}
 		}
@@ -205,7 +205,7 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 			ad = 1;
 		} else {
 			handle = strtoul(argv[3], NULL, 16);
-			if (handle >= BT_CTLR_ADV_MAX) {
+			if (handle >= CONFIG_BT_CTLR_ADV_SET) {
 				return -EINVAL;
 			}
 		}
@@ -218,7 +218,7 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 			ad = 1;
 		} else {
 			handle = strtoul(argv[4], NULL, 16);
-			if (handle >= BT_CTLR_ADV_MAX) {
+			if (handle >= CONFIG_BT_CTLR_ADV_SET) {
 				return -EINVAL;
 			}
 		}
@@ -229,7 +229,7 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 			ad = 1;
 		} else {
 			handle = strtoul(argv[5], NULL, 16);
-			if (handle >= BT_CTLR_ADV_MAX) {
+			if (handle >= CONFIG_BT_CTLR_ADV_SET) {
 				return -EINVAL;
 			}
 		}
@@ -237,7 +237,7 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 
 	if (argc > 6) {
 		handle = strtoul(argv[6], NULL, 16);
-		if (handle >= BT_CTLR_ADV_MAX) {
+		if (handle >= CONFIG_BT_CTLR_ADV_SET) {
 			return -EINVAL;
 		}
 	}

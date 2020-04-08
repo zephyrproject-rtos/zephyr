@@ -439,8 +439,7 @@ u16_t ll_adv_aux_max_data_length_get(void)
 
 u8_t ll_adv_aux_set_count_get(void)
 {
-	/*  TODO: return a Kconfig value */
-	return 0;
+	return CONFIG_BT_CTLR_ADV_SET;
 }
 
 u8_t ll_adv_aux_set_remove(u8_t handle)
