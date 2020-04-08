@@ -380,6 +380,11 @@ static int cmd_resize(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static bool no_args(const struct shell_static_entry *entry)
+{
+	return (entry->args.mandatory == 1) && (entry->args.optional == 0);
+}
+
 static int cmd_select(const struct shell *shell, size_t argc, char **argv)
 {
 	const struct shell_static_entry *candidate = NULL;
@@ -391,7 +396,8 @@ static int cmd_select(const struct shell *shell, size_t argc, char **argv)
 	candidate = shell_get_last_command(shell, argc, argv, &matching_argc,
 					   &entry, true);
 
-	if ((candidate != NULL) && (argc == matching_argc)) {
+	if ((candidate != NULL) && !no_args(candidate)
+	    && (argc == matching_argc)) {
 		shell->ctx->selected_cmd = candidate;
 		return 0;
 	}
