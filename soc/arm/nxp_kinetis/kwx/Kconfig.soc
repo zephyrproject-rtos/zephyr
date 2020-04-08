@@ -53,6 +53,7 @@ config SOC_MKW41Z4
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_RTC
 	select HAS_MCUX_SIM
+	select HAS_MCUX_TPM
 	select HAS_MCUX_TRNG
 	select HAS_OSC
 	select HAS_MCG

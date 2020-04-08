@@ -182,4 +182,10 @@ config HAS_MCUX_DAC32
 	bool
 	help
 	  Set if the Digital-to-Analog (DAC32) module is present in the SoC.
+
+config HAS_MCUX_TPM
+	bool
+	help
+	  Set if the Timer/PWM Module is present in the SoC
+
 endif # HAS_MCUX
