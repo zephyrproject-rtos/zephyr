@@ -5,11 +5,11 @@
  */
 /* macros for channel-config */
 #define STM32_DMA_CONFIG_DIRECTION(config)		(config & 0x3 << 6)
-#define STM32_DMA_CONFIG_PERIPH_ADDR_INC(config)	(config & 0x1 << 9)
-#define STM32_DMA_CONFIG_MEM_ADDR_INC(config)		(config & 0x1 << 10)
-#define STM32_DMA_CONFIG_PERIPH_DATA_SIZE(config)	(config & (0x3 << 11))
-#define STM32_DMA_CONFIG_MEM_DATA_SIZE(config)		(config & (0x3 << 13))
-#define STM32_DMA_CONFIG_PERIPH_INC_FIXED(config)	(config & 0x1 << 15)
+#define STM32_DMA_CONFIG_PERIPHERAL_ADDR_INC(config)	(config & 0x1 << 9)
+#define STM32_DMA_CONFIG_MEMORY_ADDR_INC(config)	(config & 0x1 << 10)
+#define STM32_DMA_CONFIG_PERIPHERAL_DATA_SIZE(config)	(config & (0x3 << 11))
+#define STM32_DMA_CONFIG_MEMORY_DATA_SIZE(config)	(config & (0x3 << 13))
+#define STM32_DMA_CONFIG_PERIPHERAL_INC_FIXED(config)	(config & 0x1 << 15)
 #define STM32_DMA_CONFIG_PRIORITY(config)		((config >> 16) & 0x3)
 
 /* macros for features */

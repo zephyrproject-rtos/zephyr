@@ -839,7 +839,7 @@ static struct device *get_dev_from_tx_dma_channel(u32_t dma_channel)
 	return active_dma_tx_channel[dma_channel];
 }
 
-/* src_dev and dest_dev should be 'MEM' or 'PERIPH'. */
+/* src_dev and dest_dev should be 'MEMORY' or 'PERIPHERAL'. */
 #define I2S_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)	\
 .dir = {								\
 	.dma_name = DT_I2S_##index##_DMA_CONTROLLER_##dir_cap,		\
@@ -847,7 +847,7 @@ static struct device *get_dev_from_tx_dma_channel(u32_t dma_channel)
 	.dma_cfg = {							\
 		.block_count = 2,					\
 		.dma_slot = DT_I2S_##index##_DMA_SLOT_##dir_cap,	\
-		.channel_direction = PERIPHERAL_TO_MEMORY,		\
+		.channel_direction = src_dev##_TO_##dest_dev,		\
 		.source_data_size = 2,  /* 16bit default */		\
 		.dest_data_size = 2,    /* 16bit default */		\
 		.source_burst_length = 0, /* SINGLE transfer */		\
@@ -888,8 +888,8 @@ struct queue_item rx_##index##_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];\
 struct queue_item tx_##index##_ring_buf[CONFIG_I2S_STM32_TX_BLOCK_COUNT + 1];\
 									\
 static struct i2s_stm32_data i2s_stm32_data_##index = {			\
-	I2S_DMA_CHANNEL_INIT(index, rx, RX, PERIPH, MEM),		\
-	I2S_DMA_CHANNEL_INIT(index, tx, TX, MEM, PERIPH),		\
+	I2S_DMA_CHANNEL_INIT(index, rx, RX, PERIPHERAL, MEMORY),	\
+	I2S_DMA_CHANNEL_INIT(index, tx, TX, MEMORY, PERIPHERAL),	\
 };									\
 DEVICE_AND_API_INIT(i2s_stm32_##index, DT_I2S_##index##_NAME,		\
 		    &i2s_stm32_initialize, &i2s_stm32_data_##index,	\
