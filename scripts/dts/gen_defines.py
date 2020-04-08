@@ -139,17 +139,15 @@ def write_node_comment(node):
     # Writes a comment describing 'node' to the header and configuration file
 
     s = f"""\
-Devicetree node:
-  {node.path}
+Devicetree node: {node.path}
+
+Node's generated path identifier: DT_{node.z_path_id}
 """
 
     if node.matching_compat:
         s += f"""
 Binding (compatible = {node.matching_compat}):
   {relativize(node.binding_path)}
-"""
-        s += f"""
-Node's path identifier in this file: {node.z_path_id}
 """
 
     s += f"\nDependency Ordinal: {node.dep_ordinal}\n"
