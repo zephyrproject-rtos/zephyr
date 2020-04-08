@@ -39,6 +39,9 @@ uint8_t scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 int ull_adv_aux_init(void);
 int ull_adv_aux_reset(void);
 
+/* Helper to read back random address */
+uint8_t *ll_adv_aux_random_addr_get(struct ll_adv_set *adv, uint8_t *addr);
+
 /* helper function to start auxiliary advertising */
 uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 			uint32_t volatile *ret_cb);
