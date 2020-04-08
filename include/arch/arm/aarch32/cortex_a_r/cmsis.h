@@ -40,4 +40,6 @@ extern "C" {
 #error "Unknown device"
 #endif
 
+#include <arch/arm/aarch32/cortex_a_r/cmsis_ext.h>
+
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_AARCH32_CORTEX_A_R_CMSIS_H_ */
