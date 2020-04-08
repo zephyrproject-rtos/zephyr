@@ -5,6 +5,7 @@ zephyr_library()
 zephyr_library_sources(
   vector_table.S
   reset.S
+  fault_s.S
   fault.c
   exc_exit.S
   scb.c
