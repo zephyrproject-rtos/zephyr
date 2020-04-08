@@ -82,6 +82,8 @@ The frdm_kw41z board configuration supports the following hardware features:
 | SENSOR    | off-chip   | fxos8700 polling:                   |
 |           |            | fxos8700 trigger                    |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | tpm                                 |
++--------------------------------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
