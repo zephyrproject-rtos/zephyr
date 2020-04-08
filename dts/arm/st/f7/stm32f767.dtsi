@@ -56,5 +56,16 @@
 			status = "disabled";
 			label = "I2C_4";
 		};
+
+		spi6: spi@40015400 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00200000>;
+			interrupts = <86 5>;
+			status = "disabled";
+			label = "SPI_6";
+		};
 	};
 };
