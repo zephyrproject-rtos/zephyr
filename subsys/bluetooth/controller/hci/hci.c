@@ -1635,6 +1635,21 @@ static void le_enh_tx_test(struct net_buf *buf, struct net_buf **evt)
 #endif /* CONFIG_BT_CTLR_DTM_HCI */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_BROADCASTER)
+
+static void le_set_adv_set_random_addr(struct net_buf *buf,
+				       struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_adv_set_random_addr *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	uint8_t status;
+
+	status = ll_adv_aux_random_addr_set(cmd->handle, &cmd->bdaddr.val[0]);
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+
 static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_ext_adv_param *cmd = (void *)buf->data;
@@ -1663,6 +1678,186 @@ static void le_set_ext_adv_param(struct net_buf *buf, struct net_buf **evt)
 	rp->status = 0x00;
 	rp->tx_power = tx_pwr;
 }
+
+static void le_set_ext_adv_data(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_ext_adv_data *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	uint8_t status;
+
+	status = ll_adv_aux_ad_data_set(cmd->handle, cmd->op, cmd->frag_pref,
+					cmd->len, cmd->data);
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+
+static void le_set_ext_scan_rsp_data(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_ext_scan_rsp_data *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	uint8_t status;
+
+	status = ll_adv_aux_sr_data_set(cmd->handle, cmd->op, cmd->frag_pref,
+					cmd->len, cmd->data);
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+
+static void le_set_ext_adv_enable(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_ext_adv_enable *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	struct bt_hci_ext_adv_set *s;
+	uint8_t set_num;
+	uint8_t enable;
+	uint8_t status;
+
+	set_num = cmd->set_num;
+	if (!set_num) {
+		ccst = hci_cmd_complete(evt, sizeof(*ccst));
+		ccst->status = BT_HCI_ERR_INVALID_PARAM;
+
+		return;
+	}
+
+	s = (void *) cmd->s;
+	enable = cmd->enable;
+	while (set_num--) {
+		/* TODO: duration and events parameter use. */
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+		status = ll_adv_enable(s->handle, cmd->enable, 0, 0, 0, 0, 0);
+#else /* !CONFIG_BT_HCI_MESH_EXT */
+		status = ll_adv_enable(s->handle, cmd->enable);
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
+		if (status) {
+			/* TODO: how to handle succeeded ones before this
+			 * error.
+			 */
+			break;
+		}
+
+		s++;
+	}
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+
+static void le_read_max_adv_data_len(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_rp_le_read_max_adv_data_len *rp;
+	uint16_t max_adv_data_len;
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+
+	max_adv_data_len = ll_adv_aux_max_data_length_get();
+
+	rp->max_adv_data_len = sys_cpu_to_le16(max_adv_data_len);
+	rp->status = 0x00;
+}
+
+static void le_read_num_adv_sets(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_rp_le_read_num_adv_sets *rp;
+
+	rp = hci_cmd_complete(evt, sizeof(*rp));
+
+	rp->num_sets = ll_adv_aux_set_count_get();
+	rp->status = 0x00;
+}
+
+static void le_remove_adv_set(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_remove_adv_set *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	uint8_t status;
+
+	status = ll_adv_aux_set_remove(cmd->handle);
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+
+static void le_clear_adv_sets(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_evt_cc_status *ccst;
+	uint8_t status;
+
+	status = ll_adv_aux_set_clear();
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_OBSERVER)
+static void le_set_ext_scan_param(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_ext_scan_param *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	struct bt_hci_ext_scan_phy *p;
+	uint8_t own_addr_type;
+	uint8_t filter_policy;
+	uint8_t phys_bitmask;
+	uint8_t status;
+	uint8_t phys;
+
+	/* TODO: add parameter checks */
+
+	own_addr_type = cmd->own_addr_type;
+	filter_policy = cmd->filter_policy;
+	phys = cmd->phys;
+	p = cmd->p;
+
+	phys_bitmask = BT_HCI_LE_EXT_SCAN_PHY_CODED | BT_HCI_LE_EXT_SCAN_PHY_1M;
+	do {
+		uint16_t interval;
+		uint16_t window;
+		uint8_t type;
+		uint8_t phy;
+
+		phy = BIT(find_lsb_set(phys_bitmask) - 1);
+		type = (phy << 1);
+
+		if (phys & phy) {
+			type |= (p->type & 0x01);
+			interval = sys_le16_to_cpu(p->interval);
+			window = sys_le16_to_cpu(p->window);
+			p++;
+		} else {
+			interval = 0U;
+			window = 0U;
+		}
+
+		status = ll_scan_params_set(type, interval, window,
+					    own_addr_type, filter_policy);
+		if (status) {
+			break;
+		}
+
+		phys_bitmask &= (phys_bitmask - 1);
+	} while (phys_bitmask);
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+
+static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_ext_scan_enable *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	uint8_t status;
+
+	/* TODO: duplicate filtering */
+
+	status = ll_scan_enable(cmd->enable);
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+#endif /* CONFIG_BT_OBSERVER */
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
@@ -1836,9 +2031,53 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_BROADCASTER)
+	case BT_OCF(BT_HCI_OP_LE_SET_ADV_SET_RANDOM_ADDR):
+		le_set_adv_set_random_addr(cmd, evt);
+		break;
+
 	case BT_OCF(BT_HCI_OP_LE_SET_EXT_ADV_PARAM):
 		le_set_ext_adv_param(cmd, evt);
 		break;
+
+	case BT_OCF(BT_HCI_OP_LE_SET_EXT_ADV_DATA):
+		le_set_ext_adv_data(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_SET_EXT_SCAN_RSP_DATA):
+		le_set_ext_scan_rsp_data(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_SET_EXT_ADV_ENABLE):
+		le_set_ext_adv_enable(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_READ_MAX_ADV_DATA_LEN):
+		le_read_max_adv_data_len(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_READ_NUM_ADV_SETS):
+		le_read_num_adv_sets(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_REMOVE_ADV_SET):
+		le_remove_adv_set(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_CLEAR_ADV_SETS):
+		le_clear_adv_sets(cmd, evt);
+		break;
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_OBSERVER)
+	case BT_OCF(BT_HCI_OP_LE_SET_EXT_SCAN_PARAM):
+		le_set_ext_scan_param(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE):
+		le_set_ext_scan_enable(cmd, evt);
+		break;
+#endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
