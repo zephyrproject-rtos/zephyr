@@ -142,8 +142,8 @@ static const struct flash_driver_api flash_mcux_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = flash_mcux_pages_layout,
 #endif
-#ifdef DT_FLASH_WRITE_BLOCK_SIZE
-	.write_block_size = DT_FLASH_WRITE_BLOCK_SIZE,
+#if DT_INST_NODE_HAS_PROP(0, write_block_size)
+	.write_block_size = DT_INST_PROP(0, write_block_size),
 #else
 	.write_block_size = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE,
 #endif
