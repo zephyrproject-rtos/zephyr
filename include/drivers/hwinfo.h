@@ -37,6 +37,12 @@ extern "C" {
  * If the device ID is smaller then length, the rest of the buffer is left unchanged.
  * The ID depends on the hardware and is not guaranteed unique.
  *
+ * Drivers are responsible for ensuring that the ID data structure is a
+ * sequence of bytes.  The returned ID value is not supposed to be interpreted
+ * based on vendor-specific assumptions of byte order. It should express the
+ * identifier as a raw byte sequence, doing any endian conversion necessary so
+ * that a hex representation of the bytes produces the intended serial number.
+ *
  * @param buffer  Buffer to write the ID to.
  * @param length  Max length of the buffer.
  *
