@@ -225,6 +225,13 @@ static int i2s_stm32_configure(struct device *dev, enum i2s_dir dir,
 		return ret;
 	}
 
+	/* set I2S Master Clock */
+	if (stream->master) {
+		LL_I2S_EnableMasterClock(cfg->i2s);
+	} else {
+		LL_I2S_DisableMasterClock(cfg->i2s);
+	}
+
 	/* set I2S Data Format */
 	if (i2s_cfg->word_size == 16U) {
 		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_16B);
