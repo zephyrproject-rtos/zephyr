@@ -272,7 +272,7 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 	}
 
 #ifdef CONFIG_DMA_STM32_V1
-	if ((stream->direction == MEMORY_TO_MEMORY) &&
+	if ((config->channel_direction == MEMORY_TO_MEMORY) &&
 		(!dev_config->support_m2m)) {
 		LOG_ERR("Memcopy not supported for device %s",
 			dev->config->name);
