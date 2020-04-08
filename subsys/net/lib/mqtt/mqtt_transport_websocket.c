@@ -141,13 +141,26 @@ int mqtt_client_websocket_read(struct mqtt_client *client, u8_t *data,
 			       u32_t buflen, bool shall_block)
 {
 	s32_t timeout = K_FOREVER;
+	u32_t message_type = 0U;
+	int ret;
 
 	if (!shall_block) {
 		timeout = K_NO_WAIT;
 	}
 
-	return websocket_recv_msg(client->transport.websocket.sock,
-				  data, buflen, NULL, NULL, timeout);
+	ret = websocket_recv_msg(client->transport.websocket.sock,
+				 data, buflen, &message_type, NULL, timeout);
+	if (ret > 0 && message_type > 0) {
+		if (message_type & WEBSOCKET_FLAG_CLOSE) {
+			return 0;
+		}
+
+		if (!(message_type & WEBSOCKET_FLAG_BINARY)) {
+			return -EAGAIN;
+		}
+	}
+
+	return ret;
 }
 
 int mqtt_client_websocket_disconnect(struct mqtt_client *client)
