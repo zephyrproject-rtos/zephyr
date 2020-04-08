@@ -48,8 +48,7 @@ def main():
         write_top_comment(edt)
 
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
-            node.z_path_id = "N_" + "_".join(
-                f"S_{str2ident(name)}" for name in node.path[1:].split("/"))
+            node.z_path_id = node_z_path_id(node)
             write_node_comment(node)
 
             if not node.enabled:
@@ -67,6 +66,24 @@ def main():
         write_chosen(edt)
         write_global_compat_info(edt)
 
+
+def node_z_path_id(node):
+    # Return the node specific bit of the node's path identifier:
+    #
+    # - the root node's path "/" has path identifier "N"
+    # - "/foo" has "N_S_foo"
+    # - "/foo/bar" has "N_S_foo_S_bar"
+    # - "/foo/bar@123" has "N_S_foo_S_bar_123"
+    #
+    # This is used throughout this file to generate macros related to
+    # the node.
+
+    components = ["N"]
+    if node.parent is not None:
+        components.extend(f"S_{str2ident(component)}" for component in
+                          node.path.split("/")[1:])
+
+    return "_".join(components)
 
 def parse_args():
     # Returns parsed command-line arguments
