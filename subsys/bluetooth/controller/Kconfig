@@ -445,9 +445,10 @@ config BT_CTLR_CHAN_SEL_2
 	  the Controller.
 
 config BT_CTLR_ADV_EXT
-	bool "LE Advertising Extensions"
+	bool "LE Advertising Extensions [EXPERIMENTAL]"
 	depends on BT_CTLR_ADV_EXT_SUPPORT
 	select BT_CTLR_SCAN_REQ_NOTIFY
+	default y if BT_EXT_ADV
 	help
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
 	  Controller.
@@ -456,6 +457,7 @@ config BT_CTLR_ADV_SET
 	int "LE Advertising Extensions Sets"
 	depends on BT_CTLR_ADV_EXT
 	range 1 64
+	default BT_EXT_ADV_MAX_ADV_SET if BT_EXT_ADV
 	help
 	  Maximum supported advertising sets.
 
@@ -465,7 +467,7 @@ config BT_CTLR_ADV_AUX_SET
 	range 1 BT_CTLR_ADV_SET if BT_CTLR_ADV_PERIODIC
 	range 0 BT_CTLR_ADV_SET
 	default 1 if BT_CTLR_ADV_PERIODIC
-	default 0
+	default BT_CTLR_ADV_SET
 	help
 	  Maximum supported advertising auxiliary channel sets.
 
