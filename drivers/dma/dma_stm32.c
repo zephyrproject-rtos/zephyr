@@ -391,6 +391,7 @@ int dma_stm32_disable_stream(DMA_TypeDef *dma, u32_t id)
 
 	for (;;) {
 		if (!stm32_dma_disable_stream(dma, id)) {
+			return 0;
 		}
 		/* After trying for 5 seconds, give up */
 		if (count++ > (5 * 1000)) {
