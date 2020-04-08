@@ -27,6 +27,14 @@ uint32_t ull_adv_filter_pol_get(uint8_t handle);
 /* Return ll_adv_set context if created */
 struct ll_adv_set *ull_adv_is_created_get(uint8_t handle);
 
+/* Helper function to construct AD data */
+uint8_t adv_data_set(struct ll_adv_set *adv, uint8_t len,
+		     uint8_t const *const data);
+
+/* Helper function to construct SR data */
+uint8_t scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
+		     uint8_t const *const data);
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 int ull_adv_aux_init(void);
 int ull_adv_aux_reset(void);
