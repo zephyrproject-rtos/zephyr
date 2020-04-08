@@ -252,7 +252,7 @@ static bool tab_prepare(const struct shell *shell,
 	/* root command completion */
 	if ((*argc == 0) || ((space == 0) && (*argc == 1))) {
 		*complete_arg_idx = SHELL_CMD_ROOT_LVL;
-		*cmd = NULL;
+		*cmd = shell->ctx->selected_cmd;
 		return true;
 	}
 
@@ -294,39 +294,25 @@ static void find_completion_candidates(const struct shell *shell,
 {
 	size_t incompl_cmd_len = shell_strlen(incompl_cmd);
 	const struct shell_static_entry *candidate;
-	struct shell_static_entry dynamic_entry;
-	bool found = false;
+	struct shell_static_entry dloc;
 	size_t idx = 0;
 
 	*longest = 0U;
 	*cnt = 0;
 
-	while (true) {
-		bool is_empty;
+	while ((candidate = shell_cmd_get(cmd, idx, &dloc)) != NULL) {
 		bool is_candidate;
 
-		shell_cmd_get(shell, cmd ? cmd->subcmd : NULL, cmd ? 1 : 0,
-			      idx, &candidate, &dynamic_entry);
-
-		if (!candidate) {
-			break;
-		}
-
-		is_empty = is_empty_cmd(candidate);
 		is_candidate = is_completion_candidate(candidate->syntax,
 						incompl_cmd, incompl_cmd_len);
-		if (!is_empty && is_candidate) {
-			size_t slen = strlen(candidate->syntax);
-
-			*longest = (slen > *longest) ? slen : *longest;
-			(*cnt)++;
-
-			if (!found) {
+		if (!is_empty_cmd(candidate) && is_candidate) {
+			*longest = Z_MAX(strlen(candidate->syntax), *longest);
+			if (*cnt == 0) {
 				*first_idx = idx;
 			}
-
-			found = true;
+			(*cnt)++;
 		}
+
 		idx++;
 	}
 }
@@ -343,8 +329,8 @@ static void autocomplete(const struct shell *shell,
 	/* shell->ctx->active_cmd can be safely used outside of command context
 	 * to save stack
 	 */
-	shell_cmd_get(shell, cmd ? cmd->subcmd : NULL, cmd ? 1 : 0,
-		      subcmd_idx, &match, &shell->ctx->active_cmd);
+	match = shell_cmd_get(cmd, subcmd_idx, &shell->ctx->active_cmd);
+	__ASSERT_NO_MSG(match != NULL);
 	cmd_len = shell_strlen(match->syntax);
 
 	/* no exact match found */
@@ -408,8 +394,8 @@ static void tab_options_print(const struct shell *shell,
 		/* shell->ctx->active_cmd can be safely used outside of command
 		 * context to save stack
 		 */
-		shell_cmd_get(shell, cmd ? cmd->subcmd : NULL, cmd ? 1 : 0,
-			      idx, &match, &shell->ctx->active_cmd);
+		match = shell_cmd_get(cmd, idx, &shell->ctx->active_cmd);
+		__ASSERT_NO_MSG(match != NULL);
 		idx++;
 		is_empty = is_empty_cmd(match);
 		if (is_empty || (str && match->syntax &&
@@ -437,8 +423,8 @@ static u16_t common_beginning_find(const struct shell *shell,
 
 	__ASSERT_NO_MSG(cnt > 1);
 
-	shell_cmd_get(shell, cmd ? cmd->subcmd : NULL, cmd ? 1 : 0,
-		      first, &match, &dynamic_entry);
+	match = shell_cmd_get(cmd, first, &dynamic_entry);
+	__ASSERT_NO_MSG(match);
 	strncpy(shell->ctx->temp_buff, match->syntax,
 			sizeof(shell->ctx->temp_buff) - 1);
 
@@ -449,9 +435,7 @@ static u16_t common_beginning_find(const struct shell *shell,
 		const struct shell_static_entry *match2;
 		int curr_common;
 
-		shell_cmd_get(shell, cmd ? cmd->subcmd : NULL, cmd ? 1 : 0,
-			      idx++, &match2, &dynamic_entry2);
-
+		match2 = shell_cmd_get(cmd, idx++, &dynamic_entry2);
 		if (match2 == NULL) {
 			break;
 		}
@@ -535,10 +519,10 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
  */
 static int execute(const struct shell *shell)
 {
-	struct shell_static_entry d_entry; /* Memory for dynamic commands. */
+	struct shell_static_entry dloc; /* Memory for dynamic commands. */
 	char *argv[CONFIG_SHELL_ARGC_MAX + 1]; /* +1 reserved for NULL */
-	const struct shell_static_entry *p_static_entry = NULL;
-	const struct shell_cmd_entry *p_cmd = NULL;
+	const struct shell_static_entry *parent = shell->ctx->selected_cmd;
+	const struct shell_static_entry *entry = NULL;
 	struct shell_static_entry help_entry;
 	size_t cmd_lvl = SHELL_CMD_ROOT_LVL;
 	size_t cmd_with_handler_lvl = 0;
@@ -607,7 +591,7 @@ static int execute(const struct shell *shell)
 		if (IS_ENABLED(CONFIG_SHELL_WILDCARD) && (cmd_lvl > 0)) {
 			enum shell_wildcard_status status;
 
-			status = shell_wildcard_process(shell, p_cmd,
+			status = shell_wildcard_process(shell, entry,
 							argv[cmd_lvl]);
 			/* Wildcard character found but there is no matching
 			 * command.
@@ -626,10 +610,9 @@ static int execute(const struct shell *shell)
 			}
 		}
 
-		shell_cmd_get(shell, p_cmd, cmd_lvl, cmd_idx++, &p_static_entry,
-			      &d_entry);
+		entry = shell_cmd_get(parent, cmd_idx++, &dloc);
 
-		if ((cmd_idx == 0) || (p_static_entry == NULL)) {
+		if ((cmd_idx == 0) || (entry == NULL)) {
 			if (cmd_lvl == 0 &&
 				(!shell_in_select_mode(shell) ||
 				 shell->ctx->selected_cmd->handler == NULL)) {
@@ -640,16 +623,16 @@ static int execute(const struct shell *shell)
 			}
 			if (shell_in_select_mode(shell)		 &&
 			    shell->ctx->selected_cmd->handler != NULL) {
-				p_static_entry = shell->ctx->selected_cmd;
-				shell->ctx->active_cmd = *p_static_entry;
+				entry = shell->ctx->selected_cmd;
+				shell->ctx->active_cmd = *entry;
 				cmd_with_handler_lvl = cmd_lvl;
 			}
 			break;
 		}
 
-		if (strcmp(argv[cmd_lvl], p_static_entry->syntax) == 0) {
+		if (strcmp(argv[cmd_lvl], entry->syntax) == 0) {
 			/* checking if command has a handler */
-			if (p_static_entry->handler != NULL) {
+			if (entry->handler != NULL) {
 				if (IS_ENABLED(CONFIG_SHELL_WILDCARD) &&
 				    (wildcard_found)) {
 					shell_op_cursor_end_move(shell);
@@ -668,17 +651,17 @@ static int execute(const struct shell *shell)
 					return -ENOEXEC;
 				}
 
-				shell->ctx->active_cmd = *p_static_entry;
+				shell->ctx->active_cmd = *entry;
 				cmd_with_handler_lvl = cmd_lvl;
 			}
 			/* checking if function has a help handler */
-			if (p_static_entry->help != NULL) {
-				help_entry = *p_static_entry;
+			if (entry->help != NULL) {
+				help_entry = *entry;
 			}
 
 			cmd_lvl++;
 			cmd_idx = 0;
-			p_cmd = p_static_entry->subcmd;
+			parent = entry;
 		}
 	}
 

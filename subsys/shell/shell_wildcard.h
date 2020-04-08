@@ -45,8 +45,8 @@ bool shell_wildcard_character_exist(const char *str);
  * @param[in] pattern	Pointer to wildcard pattern.
  */
 enum shell_wildcard_status shell_wildcard_process(const struct shell *shell,
-					      const struct shell_cmd_entry *cmd,
-					      const char *pattern);
+					const struct shell_static_entry *cmd,
+					const char *pattern);
 
 /* Function finalizing wildcard expansion procedure.
  *
