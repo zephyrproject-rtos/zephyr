@@ -46,10 +46,6 @@ static void protocol_timeout(struct k_work *work)
 
 	BT_DBG("Protocol timeout");
 
-	if (link.conn) {
-		bt_mesh_pb_gatt_close(link.conn);
-	}
-
 	reset_state();
 
 	cb->link_closed(&pb_gatt, link.cb_data,
