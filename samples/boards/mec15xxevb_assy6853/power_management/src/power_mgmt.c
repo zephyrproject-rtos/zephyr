@@ -134,6 +134,15 @@ static void create_tasks(void)
 
 }
 
+static void destroy_tasks(void)
+{
+	k_thread_abort(&threadA_id);
+	k_thread_abort(&threadB_id);
+
+	k_thread_join(&threadA_id, K_FOREVER);
+	k_thread_join(&threadB_id, K_FOREVER);
+}
+
 static void suspend_all_tasks(void)
 {
 	k_thread_suspend(&threadA_id);
@@ -190,6 +199,8 @@ int test_pwr_mgmt_multithread(bool use_logging, u8_t cycles)
 		LOG_INF("Resume");
 		resume_all_tasks();
 	}
+
+	destroy_tasks();
 
 	pm_reset_counters();
 
