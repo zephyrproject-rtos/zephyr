@@ -1218,6 +1218,22 @@ static void test_clocks(void)
 		      "fixed clk freq");
 }
 
+static void test_parent(void)
+{
+	/* The label of a child node's parent is the label of the parent. */
+	zassert_true(!strcmp(DT_LABEL(DT_PARENT(TEST_SPI_DEV_0)),
+			     DT_LABEL(TEST_SPI_BUS_0)),
+		     "dev 0 parent");
+	/*
+	 * We should be able to use DT_PARENT() even with nodes, like /test,
+	 * that have no matching compatible.
+	 */
+	zassert_true(!strcmp(DT_LABEL(DT_CHILD(DT_PARENT(TEST_SPI_BUS_0),
+					       spi_33334444)),
+			     DT_LABEL(TEST_SPI_BUS_0)),
+		     "round trip through node with no compatible");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(devicetree_api,
@@ -1243,7 +1259,8 @@ void test_main(void)
 			 ztest_unit_test(test_cs_gpios),
 			 ztest_unit_test(test_chosen),
 			 ztest_unit_test(test_enums),
-			 ztest_unit_test(test_clocks)
+			 ztest_unit_test(test_clocks),
+			 ztest_unit_test(test_parent)
 		);
 	ztest_run_test_suite(devicetree_api);
 }

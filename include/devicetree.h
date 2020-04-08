@@ -213,6 +213,26 @@
 #define DT_INST(inst, compat) UTIL_CAT(DT_N_INST, DT_DASH(inst, compat))
 
 /**
+ * @brief Get a node identifier for a parent node
+ *
+ * Example devicetree fragment:
+ *
+ *     parent: parent-node {
+ *             child: child-node {
+ *                     ...
+ *             };
+ *     };
+ *
+ * The following generate equivalent node identifiers:
+ *
+ *     DT_NODELABEL(parent)
+ *     DT_PARENT(DT_NODELABEL(child))
+ *
+ * @param node_id node identifier
+ */
+#define DT_PARENT(node_id) UTIL_CAT(node_id, _PARENT)
+
+/**
  * @brief Get a node identifier for a child node
  *
  * Example devicetree fragment:

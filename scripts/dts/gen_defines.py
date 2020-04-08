@@ -51,11 +51,16 @@ def main():
             node.z_path_id = node_z_path_id(node)
             write_node_comment(node)
 
+            if node.parent is not None:
+                out_comment(f"Node parent ({node.parent.path}) identifier:")
+                out_dt_define(f"{node.z_path_id}_PARENT",
+                              f"DT_{node.parent.z_path_id}")
+
             if not node.enabled:
-                out_comment("No macros: node is disabled")
+                out_comment("No node macros: node is disabled")
                 continue
             if not node.matching_compat:
-                out_comment("No macros: node has no matching binding")
+                out_comment("No node macros: node has no matching binding")
                 continue
 
             write_idents_and_existence(node)
