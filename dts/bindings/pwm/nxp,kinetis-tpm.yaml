@@ -1,0 +1,24 @@
+# Copyright (c) 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: MCUX Timer/PWM Module (TPM)
+
+compatible: "nxp,kinetis-tpm"
+
+include: [pwm-controller.yaml, base.yaml]
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    "#pwm-cells":
+      const: 3
+
+pwm-cells:
+  - channel
+# period in terms of nanoseconds
+  - period
+  - flags
