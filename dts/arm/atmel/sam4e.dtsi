@@ -24,16 +24,11 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-	};
-
-	flash0: flash@400000 {
-		compatible = "soc-nv-flash";
-		label = "FLASH_0";
-	};
-
 	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
 		/* Only used for HWINFO device ID */
 		eefc: flash-controller@400e0a00 {
 			compatible = "atmel,sam-flash-controller";
@@ -43,6 +38,11 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			flash0: flash@400000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_0";
+			};
 		};
 
 		wdt: watchdog@400e1850 {
