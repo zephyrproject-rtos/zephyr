@@ -193,6 +193,7 @@ static u32_t slave_tx_mem[MAX_OOB_BUFFER_SIZE];
 static int espi_xec_configure(struct device *dev, struct espi_cfg *cfg)
 {
 	u8_t iomode = 0;
+	u8_t cap0 = ESPI_CAP_REGS->GLB_CAP0;
 	u8_t cap1 = ESPI_CAP_REGS->GLB_CAP1;
 	u8_t cur_iomode = (cap1 & MCHP_ESPI_GBL_CAP1_IO_MODE_MASK) >>
 			   MCHP_ESPI_GBL_CAP1_IO_MODE_POS;
@@ -232,6 +233,41 @@ static int espi_xec_configure(struct device *dev, struct espi_cfg *cfg)
 		cap1 |= (iomode << MCHP_ESPI_GBL_CAP1_IO_MODE_POS);
 	}
 
+	/* Validdate and translate eSPI API channels to MEC capabilities */
+	cap0 &= ~MCHP_ESPI_GBL_CAP0_MASK;
+	if (cfg->channel_caps & ESPI_CHANNEL_PERIPHERAL) {
+		if (IS_ENABLED(CONFIG_ESPI_PERIPHERAL_CHANNEL)) {
+			cap0 |= MCHP_ESPI_GBL_CAP0_PC_SUPP;
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	if (cfg->channel_caps & ESPI_CHANNEL_VWIRE) {
+		if (IS_ENABLED(CONFIG_ESPI_VWIRE_CHANNEL)) {
+			cap0 |= MCHP_ESPI_GBL_CAP0_VW_SUPP;
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	if (cfg->channel_caps & ESPI_CHANNEL_OOB) {
+		if (IS_ENABLED(CONFIG_ESPI_OOB_CHANNEL)) {
+			cap0 |= MCHP_ESPI_GBL_CAP0_OOB_SUPP;
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	if (cfg->channel_caps & ESPI_CHANNEL_FLASH) {
+		if (IS_ENABLED(CONFIG_ESPI_FLASH_CHANNEL)) {
+			cap0 |= MCHP_ESPI_GBL_CAP0_FC_SUPP;
+		} else {
+			return -EINVAL;
+		}
+	}
+
+	ESPI_CAP_REGS->GLB_CAP0 = cap0;
 	ESPI_CAP_REGS->GLB_CAP1 = cap1;
 
 	/* Activate the eSPI block *.
