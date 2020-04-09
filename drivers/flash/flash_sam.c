@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT soc_nv_flash
+#define DT_DRV_COMPAT atmel_sam_flash_controller
+#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
+
+#define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
+#define FLASH_ERASE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 
 #include <device.h>
 #include <drivers/flash.h>
@@ -168,10 +172,10 @@ static int flash_sam_write(struct device *dev, off_t offset,
 	 * Check that the offset and length are multiples of the write
 	 * block size.
 	 */
-	if ((offset % DT_INST_PROP(0, write_block_size)) != 0) {
+	if ((offset % FLASH_WRITE_BLK_SZ) != 0) {
 		return -EINVAL;
 	}
-	if ((len % DT_INST_PROP(0, write_block_size)) != 0) {
+	if ((len % FLASH_WRITE_BLK_SZ) != 0) {
 		return -EINVAL;
 	}
 
@@ -255,17 +259,17 @@ static int flash_sam_erase(struct device *dev, off_t offset, size_t len)
 	 * Check that the offset and length are multiples of the write
 	 * erase block size.
 	 */
-	if ((offset % DT_INST_PROP(0, erase_block_size)) != 0) {
+	if ((offset % FLASH_ERASE_BLK_SZ) != 0) {
 		return -EINVAL;
 	}
-	if ((len % DT_INST_PROP(0, erase_block_size)) != 0) {
+	if ((len % FLASH_ERASE_BLK_SZ) != 0) {
 		return -EINVAL;
 	}
 
 	flash_sam_sem_take(dev);
 
 	/* Loop through the pages to erase */
-	for (i = offset; i < offset + len; i += DT_INST_PROP(0, erase_block_size)) {
+	for (i = offset; i < offset + len; i += FLASH_ERASE_BLK_SZ) {
 		rc = flash_sam_erase_block(dev, i);
 		if (rc < 0) {
 			goto done;
@@ -313,8 +317,8 @@ done:
  * Here a page refers to the granularity at which the flash can be erased.
  */
 static const struct flash_pages_layout flash_sam_pages_layout = {
-	.pages_count = (CONFIG_FLASH_SIZE * 1024) / DT_INST_PROP(0, erase_block_size),
-	.pages_size = DT_INST_PROP(0, erase_block_size),
+	.pages_count = DT_REG_SIZE(SOC_NV_FLASH_NODE) / FLASH_ERASE_BLK_SZ,
+	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 };
 
 void flash_sam_page_layout(struct device *dev,
@@ -343,11 +347,11 @@ static const struct flash_driver_api flash_sam_api = {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sam_page_layout,
 #endif
-	.write_block_size = DT_INST_PROP(0, write_block_size),
+	.write_block_size = FLASH_WRITE_BLK_SZ,
 };
 
 static const struct flash_sam_dev_cfg flash_sam_cfg = {
-	.regs = (Efc *)DT_REG_ADDR(DT_INST(0, atmel_sam_flash_controller)),
+	.regs = (Efc *)DT_INST_REG_ADDR(0),
 };
 
 static struct flash_sam_dev_data flash_sam_data;
