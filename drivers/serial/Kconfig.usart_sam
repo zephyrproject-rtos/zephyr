@@ -3,36 +3,10 @@
 # Copyright (c) 2016 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig USART_SAM
+config USART_SAM
 	bool "Atmel SAM MCU family USART driver"
 	depends on SOC_FAMILY_SAM
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the USARTx driver for Atmel SAM MCUs.
-
-# ---------- Port 0 ----------
-
-config USART_SAM_PORT_0
-	bool "Enable USART0"
-	depends on USART_SAM
-	help
-	  Enable USART0 at boot
-
-# ---------- Port 1 ----------
-
-config USART_SAM_PORT_1
-	bool "Enable USART1"
-	depends on USART_SAM
-	help
-	  Enable USART1 at boot
-
-# ---------- Port 2 ----------
-
-config USART_SAM_PORT_2
-	bool "Enable USART2"
-	depends on USART_SAM
-	depends on SOC_SERIES_SAME70 || \
-		   SOC_SERIES_SAMV71
-	help
-	  Enable USART2 at boot
