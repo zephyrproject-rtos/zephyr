@@ -16,6 +16,20 @@
 #include <string.h>
 #include <nrfx_nvmc.h>
 
+#if DT_HAS_NODE(DT_INST(0, nordic_nrf51_flash_controller))
+#define DT_DRV_COMPAT nordic_nrf51_flash_controller
+#elif DT_HAS_NODE(DT_INST(0, nordic_nrf52_flash_controller))
+#define DT_DRV_COMPAT nordic_nrf52_flash_controller
+#elif DT_HAS_NODE(DT_INST(0, nordic_nrf53_flash_controller))
+#define DT_DRV_COMPAT nordic_nrf53_flash_controller
+#elif DT_HAS_NODE(DT_INST(0, nordic_nrf91_flash_controller))
+#define DT_DRV_COMPAT nordic_nrf91_flash_controller
+#else
+#error No matching compatible for soc_flash_nrf.c
+#endif
+
+#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
+
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 #include <sys/__assert.h>
 #include <bluetooth/hci.h>
@@ -153,7 +167,7 @@ static int flash_nrf_read(struct device *dev, off_t addr,
 			    void *data, size_t len)
 {
 	if (is_regular_addr_valid(addr, len)) {
-		addr += DT_FLASH_BASE_ADDRESS;
+		addr += DT_REG_ADDR(SOC_NV_FLASH_NODE);
 	} else if (!is_uicr_addr_valid(addr, len)) {
 		return -EINVAL;
 	}
@@ -173,7 +187,7 @@ static int flash_nrf_write(struct device *dev, off_t addr,
 	int ret;
 
 	if (is_regular_addr_valid(addr, len)) {
-		addr += DT_FLASH_BASE_ADDRESS;
+		addr += DT_REG_ADDR(SOC_NV_FLASH_NODE);
 	} else if (!is_uicr_addr_valid(addr, len)) {
 		return -EINVAL;
 	}
@@ -220,7 +234,7 @@ static int flash_nrf_erase(struct device *dev, off_t addr, size_t size)
 			return 0;
 		}
 
-		addr += DT_FLASH_BASE_ADDRESS;
+		addr += DT_REG_ADDR(SOC_NV_FLASH_NODE);
 #ifdef CONFIG_SOC_FLASH_NRF_UICR
 	} else if (addr != (off_t)NRF_UICR || size != sizeof(*NRF_UICR)) {
 		return -EINVAL;
@@ -295,7 +309,7 @@ static int nrf_flash_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(nrf_flash, DT_FLASH_DEV_NAME, nrf_flash_init,
+DEVICE_AND_API_INIT(nrf_flash, DT_INST_LABEL(0), nrf_flash_init,
 		NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&flash_nrf_api);
 
