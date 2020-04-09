@@ -37,6 +37,12 @@ osource "$(TOOLCHAIN_KCONFIG_DIR)/Kconfig"
 
 menu "Build and Link Features"
 
+config THIRD_PARTY_BINARY_BLOBS
+	bool "Allow third party binary blobs"
+	help
+	  Allow linking with third party software that is released in a form of
+	  a binary blob for which no source code is available.
+
 menu "Linker Options"
 
 choice
