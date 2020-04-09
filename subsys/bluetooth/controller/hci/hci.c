@@ -2979,31 +2979,135 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
+				     struct node_rx_pdu *node_rx,
+				     struct net_buf *buf)
+{
+	const u8_t c_adv_type[] = { 0x13, 0x15, 0x10, 0xff,
+				    0x1a, /* SCAN_RSP to an ADV_SCAN_IND */
+				    0x1b, /* SCAN_RSP to an ADV_IND */
+				    0x12 };
+	struct bt_hci_evt_le_ext_advertising_info *adv_info;
+	struct bt_hci_evt_le_ext_advertising_report *sep;
+	struct pdu_adv *adv = (void *)pdu_data;
+	u8_t data_len;
+	u8_t info_len;
+	s8_t rssi;
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	u8_t rl_idx;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+	u8_t direct;
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_EXT_ADVERTISING_REPORT)) {
+		return;
+	}
+
+	/* The Link Layer currently returns RSSI as an absolute value */
+	rssi = -(node_rx->hdr.rx_ftr.rssi);
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	rl_idx = node_rx->hdr.rx_ftr.rl_idx;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+	direct = node_rx->hdr.rx_ftr.direct;
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	if (adv->tx_addr) {
+		/* Update current RPA */
+		ll_rl_crpa_set(0x00, NULL, rl_idx, &adv->adv_ind.addr[0]);
+	}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+#if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
+	if (dup_found(adv)) {
+		return;
+	}
+#endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
+
+	if (adv->type != PDU_ADV_TYPE_DIRECT_IND) {
+		data_len = (adv->len - BDADDR_SIZE);
+	} else {
+		data_len = 0U;
+	}
+
+	info_len = sizeof(struct bt_hci_evt_le_ext_advertising_info) +
+		   data_len;
+	sep = meta_evt(buf, BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT,
+		       sizeof(*sep) + info_len);
+
+	sep->num_reports = 1U;
+	adv_info = (void *)(((u8_t *)sep) + sizeof(*sep));
+
+	adv_info->evt_type = c_adv_type[adv->type];
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	if (rl_idx < ll_rl_size_get()) {
+		/* Store identity address */
+		ll_rl_id_addr_get(rl_idx, &adv_info->addr.type,
+				  &adv_info->addr.a.val[0]);
+		/* Mark it as identity address from RPA (0x02, 0x03) */
+		adv_info->addr.type += 2U;
+	} else
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+	{
+		adv_info->addr.type = adv->tx_addr;
+		memcpy(&adv_info->addr.a.val[0], &adv->adv_ind.addr[0],
+		       sizeof(bt_addr_t));
+	}
+
+	adv_info->prim_phy = BT_HCI_LE_EXT_SCAN_PHY_1M;
+	adv_info->sec_phy = 0U;
+	adv_info->sid = 0xff;
+	adv_info->tx_power = 0x7f;
+	adv_info->rssi = rssi;
+	adv_info->interval = 0U;
+
+	if (direct) {
+		adv_info->direct_addr.type = 0x1;
+		memcpy(&adv_info->direct_addr.a.val[0],
+		       &adv->direct_ind.tgt_addr[0], sizeof(bt_addr_t));
+	} else {
+		adv_info->direct_addr.type = 0U;
+		memset(&adv_info->direct_addr.a.val[0], 0, sizeof(bt_addr_t));
+	}
+
+	adv_info->length = data_len;
+	memcpy(&adv_info->data[0], &adv->adv_ind.data[0], data_len);
+}
+
 static void le_adv_ext_report(struct pdu_data *pdu_data,
 			      struct node_rx_pdu *node_rx,
 			      struct net_buf *buf, u8_t phy)
 {
 	struct pdu_adv *adv = (void *)pdu_data;
-	s8_t rssi;
-#if !defined(CONFIG_BT_LL_SW_SPLIT)
-	u8_t *extra;
-#endif
-
-#if defined(CONFIG_BT_LL_SW_SPLIT)
-	/* The Link Layer currently returns RSSI as an absolute value */
-	rssi = -(node_rx->hdr.rx_ftr.rssi);
-#else
-	extra = &adv->payload[adv->len];
-	rssi = -(*extra);
-#endif /* CONFIG_BT_LL_SW_SPLIT */
-
-	BT_INFO("phy= 0x%x, type= 0x%x, len= %u, tat= %u, rat= %u, rssi=%d dB",
-		phy, adv->type, adv->len, adv->tx_addr, adv->rx_addr, rssi);
 
 	if ((adv->type == PDU_ADV_TYPE_EXT_IND) && adv->len) {
 		struct pdu_adv_com_ext_adv *p;
 		struct ext_adv_hdr *h;
 		u8_t *ptr;
+		s8_t rssi;
+
+#if !defined(CONFIG_BT_LL_SW_SPLIT)
+		u8_t *extra;
+#endif
+
+#if defined(CONFIG_BT_LL_SW_SPLIT)
+		/* The Link Layer currently returns RSSI as an absolute value */
+		rssi = -(node_rx->hdr.rx_ftr.rssi);
+#else
+		extra = &adv->payload[adv->len];
+		rssi = -(*extra);
+#endif /* CONFIG_BT_LL_SW_SPLIT */
+
+		BT_INFO("phy= 0x%x, type= 0x%x, len= %u, tat= %u, rat= %u,"
+			" rssi=%d dB", phy, adv->type, adv->len, adv->tx_addr,
+			adv->rx_addr, rssi);
 
 		p = (void *)&adv->adv_ext_ind;
 		h = (void *)p->ext_hdr_adi_adv_data;
@@ -3067,6 +3171,8 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 		}
 
 		/* TODO: length check? */
+	} else {
+		le_ext_adv_legacy_report(pdu_data, node_rx, buf);
 	}
 
 no_ext_hdr:
