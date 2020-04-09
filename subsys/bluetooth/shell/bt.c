@@ -875,6 +875,22 @@ static bool adv_param_parse(size_t argc, char *argv[],
 			param->options |= BT_LE_ADV_OPT_FILTER_CONN;
 		} else if (!strcmp(arg, "identity")) {
 			param->options |= BT_LE_ADV_OPT_USE_IDENTITY;
+		} else if (!strcmp(arg, "low")) {
+			param->options |= BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY;
+		} else if (!strcmp(arg, "directed")) {
+			static bt_addr_le_t addr;
+
+			if ((argn + 2) >= argc) {
+				return false;
+			}
+
+			if (bt_addr_le_from_str(argv[argn + 1], argv[argn + 2],
+						&addr)) {
+				return false;
+			}
+
+			param->peer = &addr;
+			argn += 2;
 		} else {
 			return false;
 		}
@@ -882,8 +898,14 @@ static bool adv_param_parse(size_t argc, char *argv[],
 
 	param->id = selected_id;
 	param->sid = 0;
-	param->interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
-	param->interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
+	if (param->peer &&
+	    !(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
+		param->interval_min = 0;
+		param->interval_max = 0;
+	} else {
+		param->interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
+		param->interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
+	}
 
 	return true;
 }
@@ -936,38 +958,73 @@ static int cmd_adv_param(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_adv_data(const struct shell *shell, size_t argc, char *argv[])
 {
-	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
-	struct bt_data ad[4];
-	size_t ad_len = 0;
 	u8_t discov_data = (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR);
+	struct bt_le_ext_adv *adv = adv_sets[selected_adv];
+	static u8_t hex_data[1650];
+	struct bt_data *data;
+	struct bt_data ad[8];
+	struct bt_data sd[8];
+	size_t hex_data_len;
+	size_t ad_len = 0;
+	size_t sd_len = 0;
+	size_t *data_len;
 	int err;
 
 	if (!adv) {
 		return -EINVAL;
 	}
 
+	hex_data_len = 0;
+	data = ad;
+	data_len = &ad_len;
+
 	for (size_t argn = 1; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
+		if (strcmp(arg, "scan-response") &&
+		    *data_len == ARRAY_SIZE(ad)) {
+			/* Maximum entries limit reached. */
+			return -ENOEXEC;
+		}
+
 		if (!strcmp(arg, "discov")) {
-			ad[ad_len].type = BT_DATA_FLAGS;
-			ad[ad_len].data_len = sizeof(discov_data);
-			ad[ad_len].data = &discov_data;
-			ad_len++;
+			data[*data_len].type = BT_DATA_FLAGS;
+			data[*data_len].data_len = sizeof(discov_data);
+			data[*data_len].data = &discov_data;
+			(*data_len)++;
 		} else if (!strcmp(arg, "name")) {
 			const char *name = bt_get_name();
 
-			ad[ad_len].type = BT_DATA_NAME_COMPLETE;
-			ad[ad_len].data_len = strlen(name);
-			ad[ad_len].data = name;
-			ad_len++;
+			data[*data_len].type = BT_DATA_NAME_COMPLETE;
+			data[*data_len].data_len = strlen(name);
+			data[*data_len].data = name;
+			(*data_len)++;
+		} else if (!strcmp(arg, "scan-response")) {
+			if (data == sd) {
+				return -ENOEXEC;
+			}
+
+			data = sd;
+			data_len = &sd_len;
 		} else {
-			shell_help(shell);
-			return -ENOEXEC;
+			size_t len;
+
+			len = hex2bin(arg, strlen(arg), &hex_data[hex_data_len],
+				      sizeof(hex_data) - hex_data_len);
+
+			if (!len || (len - 1) != (hex_data[hex_data_len])) {
+				return -ENOEXEC;
+			}
+
+			data[*data_len].type = hex_data[hex_data_len + 1];
+			data[*data_len].data_len = hex_data[hex_data_len];
+			data[*data_len].data = &hex_data[hex_data_len + 2];
+			(*data_len)++;
+			hex_data_len += len;
 		}
 	}
 
-	err = bt_le_ext_adv_set_data(adv, ad, ad_len, NULL, 0);
+	err = bt_le_ext_adv_set_data(adv, ad, ad_len, sd, sd_len);
 	if (err) {
 		shell_print(shell, "Failed to set advertising set data (%d)",
 			    err);
@@ -2197,7 +2254,8 @@ static int cmd_auth_oob_tk(const struct shell *shell, size_t argc, char *argv[])
 #define EXT_ADV_CONN_OPT " [coded] [2m] [no-1m]"
 #define EXT_ADV_PARAM "<type: conn-scan conn-nscan, nconn-scan nconn-nscan> " \
 		      "[ext-adv] [no-2m] [coded] "                            \
-		      "[whitelist: wl, wl-scan, wl-conn] [identity]"
+		      "[whitelist: wl, wl-scan, wl-conn] [identity] "         \
+		      "[directed "HELP_ADDR_LE"] [mode: low] "
 #else
 #define EXT_ADV_SCAN_OPT ""
 #define EXT_ADV_CONN_OPT ""
@@ -2232,8 +2290,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_EXT_ADV)
 	SHELL_CMD_ARG(adv-create, NULL, EXT_ADV_PARAM, cmd_adv_create, 2, 5),
 	SHELL_CMD_ARG(adv-param, NULL, EXT_ADV_PARAM, cmd_adv_param, 2, 5),
-	SHELL_CMD_ARG(adv-data, NULL, "<type: discov, name>", cmd_adv_data,
-		      1, 2),
+	SHELL_CMD_ARG(adv-data, NULL, "<data> [scan-response <data>] "
+				      "<type: discov, name, hex>", cmd_adv_data,
+		      1, 16),
 	SHELL_CMD_ARG(adv-start, NULL, "[timeout] [num_events]", cmd_adv_start,
 		      1, 2),
 	SHELL_CMD_ARG(adv-stop, NULL, "", cmd_adv_stop, 1, 0),
