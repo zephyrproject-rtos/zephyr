@@ -45,6 +45,7 @@
 
 #include "../common/soc_pmc.h"
 #include "../common/soc_gpio.h"
+#include "../common/atmel_sam_dt.h"
 
 /** Processor Clock (HCLK) Frequency */
 #define SOC_ATMEL_SAM_HCLK_FREQ_HZ DT_ARM_CORTEX_M3_0_CLOCK_FREQUENCY
