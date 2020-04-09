@@ -313,8 +313,8 @@ __weak u8_t *usb_update_sn_string_descriptor(void)
 	if (hwinfo_get_device_id(hwid, sizeof(hwid)) > 0) {
 		LOG_HEXDUMP_DBG(hwid, sizeof(hwid), "Serial Number");
 		for (int i = 0; i < sizeof(hwid); i++) {
-			sn[i * 2] = hex[hwid[(sizeof(hwid) - 1) - i] >> 4];
-			sn[i * 2 + 1] = hex[hwid[(sizeof(hwid) - 1) - i] & 0xF];
+			sn[i * 2] = hex[hwid[i] >> 4];
+			sn[i * 2 + 1] = hex[hwid[i] & 0xF];
 		}
 	}
 
