@@ -171,6 +171,9 @@ static inline int bt_conn_send(struct bt_conn *conn, struct net_buf *buf)
 	return bt_conn_send_cb(conn, buf, NULL, NULL);
 }
 
+/* Check if a connection object with the peer already exists */
+bool bt_conn_exists_le(u8_t id, const bt_addr_le_t *peer);
+
 /* Add a new LE connection */
 struct bt_conn *bt_conn_add_le(u8_t id, const bt_addr_le_t *peer);
 

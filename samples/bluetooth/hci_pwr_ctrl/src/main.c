@@ -38,9 +38,9 @@ static K_THREAD_STACK_DEFINE(pwr_thread_stack, 320);
 
 static const s8_t txp[DEVICE_BEACON_TXPOWER_NUM] = {4, 0, -3, -8,
 						    -15, -18, -23, -30};
-static const struct bt_le_adv_param *param = BT_LE_ADV_PARAM
-	(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME,
-	0x0020, 0x0020);
+static const struct bt_le_adv_param *param =
+	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_USE_NAME,
+			0x0020, 0x0020, NULL);
 
 static void read_conn_rssi(u16_t handle, s8_t *rssi)
 {

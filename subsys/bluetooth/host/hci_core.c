@@ -1753,7 +1753,7 @@ static struct bt_conn *find_pending_connect(u8_t role, bt_addr_le_t *peer_addr)
 
 	/*
 	 * Make lookup to check if there's a connection object in
-	 * CONNECT or DIR_ADV state associated with passed peer LE address.
+	 * CONNECT or CONNECT_AUTO state associated with passed peer LE address.
 	 */
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) && role == BT_HCI_ROLE_MASTER) {
 		conn = bt_conn_lookup_state_le(BT_ID_DEFAULT, peer_addr,
@@ -6934,8 +6934,30 @@ bool bt_addr_le_is_bonded(u8_t id, const bt_addr_le_t *addr)
 	}
 }
 
-static bool valid_adv_param(const struct bt_le_adv_param *param, bool dir_adv)
+static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 {
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+		if (param->peer &&
+		    !(param->options & BT_LE_ADV_OPT_EXT_ADV) &&
+		    !(param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
+			/* Cannot do directed non-connectable advertising
+			 * without extended advertising.
+			 */
+			return false;
+		}
+
+		if (!(param->options & BT_LE_ADV_OPT_EXT_ADV) &&
+		    param->options & (BT_LE_ADV_OPT_EXT_ADV |
+				      BT_LE_ADV_OPT_NO_2M |
+				      BT_LE_ADV_OPT_CODED |
+				      BT_LE_ADV_OPT_ANONYMOUS |
+				      BT_LE_ADV_OPT_USE_TX_POWER)) {
+			/* Extended options require extended advertising. */
+			return false;
+		}
+	}
+
 	if (param->id >= bt_dev.id_count ||
 	    !bt_addr_le_cmp(&bt_dev.id_addr[param->id], BT_ADDR_LE_ANY)) {
 		return false;
@@ -6954,7 +6976,8 @@ static bool valid_adv_param(const struct bt_le_adv_param *param, bool dir_adv)
 		}
 	}
 
-	if ((param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) || !dir_adv) {
+	if ((param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) ||
+	    !param->peer) {
 		if (param->interval_min > param->interval_max ||
 		    param->interval_min < 0x0020 ||
 		    param->interval_max > 0x4000) {
@@ -6963,6 +6986,19 @@ static bool valid_adv_param(const struct bt_le_adv_param *param, bool dir_adv)
 	}
 
 	return true;
+}
+
+static bool valid_adv_param(const struct bt_le_adv_param *param)
+{
+	if (param->options & BT_LE_ADV_OPT_EXT_ADV) {
+		return false;
+	}
+
+	if (param->peer && !(param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
+		return false;
+	}
+
+	return valid_adv_ext_param(param);
 }
 
 static inline bool ad_has_name(const struct bt_data *ad, size_t ad_len)
@@ -7077,8 +7113,8 @@ static u8_t get_filter_policy(u8_t options)
 	}
 }
 
-int le_adv_set_random_addr(struct bt_le_ext_adv *adv, u32_t options,
-			   bool dir_adv, u8_t *own_addr_type)
+static int le_adv_set_random_addr(struct bt_le_ext_adv *adv, u32_t options,
+				  bool dir_adv, u8_t *own_addr_type)
 {
 	const bt_addr_le_t *id_addr;
 	int err = 0;
@@ -7173,15 +7209,63 @@ int le_adv_set_random_addr(struct bt_le_ext_adv *adv, u32_t options,
 	return 0;
 }
 
+static int le_adv_start_add_conn(const struct bt_le_ext_adv *adv,
+				 struct bt_conn **out_conn)
+{
+	struct bt_conn *conn;
+
+	if (!bt_addr_le_cmp(&adv->target_addr, BT_ADDR_LE_ANY)) {
+		/* Undirected advertising */
+		conn = bt_conn_add_le(adv->id, BT_ADDR_LE_NONE);
+		if (!conn) {
+			return -ENOMEM;
+		}
+
+		bt_conn_set_state(conn, BT_CONN_CONNECT_ADV);
+		*out_conn = conn;
+		return 0;
+	}
+
+	if (bt_conn_exists_le(adv->id, &adv->target_addr)) {
+		return -EINVAL;
+	}
+
+	conn = bt_conn_add_le(adv->id, &adv->target_addr);
+	if (!conn) {
+		return -ENOMEM;
+	}
+
+	bt_conn_set_state(conn, BT_CONN_CONNECT_DIR_ADV);
+	*out_conn = conn;
+	return 0;
+}
+
+static void le_adv_stop_free_conn(const struct bt_le_ext_adv *adv)
+{
+	struct bt_conn *conn;
+
+	if (!bt_addr_le_cmp(&adv->target_addr, BT_ADDR_LE_ANY)) {
+		conn = bt_conn_lookup_state_le(adv->id, BT_ADDR_LE_NONE,
+					       BT_CONN_CONNECT_ADV);
+	} else {
+		conn = bt_conn_lookup_state_le(adv->id, &adv->target_addr,
+					       BT_CONN_CONNECT_DIR_ADV);
+	}
+
+	if (conn) {
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+		bt_conn_unref(conn);
+	}
+}
+
 int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 			   const struct bt_data *ad, size_t ad_len,
-			   const struct bt_data *sd, size_t sd_len,
-			   const bt_addr_le_t *peer)
+			   const struct bt_data *sd, size_t sd_len)
 {
 	struct bt_hci_cp_le_set_adv_param set_param;
 	struct bt_conn *conn = NULL;
 	struct net_buf *buf;
-	bool dir_adv = (peer != NULL);
+	bool dir_adv = (param->peer != NULL);
 	int err;
 	struct bt_le_ext_adv *adv;
 
@@ -7189,7 +7273,7 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 		return -EAGAIN;
 	}
 
-	if (!valid_adv_param(param, dir_adv)) {
+	if (!valid_adv_param(param)) {
 		return -EINVAL;
 	}
 
@@ -7225,6 +7309,12 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 		return err;
 	}
 
+	if (dir_adv) {
+		bt_addr_le_copy(&adv->target_addr, param->peer);
+	} else {
+		bt_addr_le_copy(&adv->target_addr, BT_ADDR_LE_ANY);
+	}
+
 	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
 		if (dir_adv) {
 			if (param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) {
@@ -7233,7 +7323,7 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 				set_param.type = BT_HCI_ADV_DIRECT_IND;
 			}
 
-			bt_addr_le_copy(&set_param.direct_addr, peer);
+			bt_addr_le_copy(&set_param.direct_addr, param->peer);
 		} else {
 			set_param.type = BT_HCI_ADV_IND;
 		}
@@ -7264,15 +7354,13 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 		if (err) {
 			return err;
 		}
+	}
 
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-		    param->options & BT_LE_ADV_OPT_CONNECTABLE) {
-			conn = bt_conn_add_le(param->id, BT_ADDR_LE_NONE);
-			if (!conn) {
-				return -ENOMEM;
-			}
-
-			bt_conn_set_state(conn, BT_CONN_CONNECT_ADV);
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	    (param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
+		err = le_adv_start_add_conn(adv, &conn);
+		if (err) {
+			return err;
 		}
 	}
 
@@ -7283,6 +7371,7 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			bt_conn_unref(conn);
 		}
+
 		return err;
 	}
 
@@ -7295,7 +7384,7 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 		bt_conn_unref(conn);
 	}
 
-	atomic_set_bit_to(bt_dev.flags, BT_DEV_KEEP_ADVERTISING,
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_KEEP_ADVERTISING, !dir_adv &&
 			  !(param->options & BT_LE_ADV_OPT_ONE_TIME));
 
 	atomic_set_bit_to(bt_dev.flags, BT_DEV_ADVERTISING_NAME,
@@ -7312,11 +7401,10 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 
 static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 				const struct bt_le_adv_param *param,
-				const bt_addr_le_t *peer,
 				bool  has_scan_data)
 {
 	struct bt_hci_cp_le_set_ext_adv_param *cp;
-	bool dir_adv = peer != NULL;
+	bool dir_adv = param->peer != NULL;
 	struct net_buf *buf, *rsp;
 	int err;
 
@@ -7332,6 +7420,12 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 				     &cp->own_addr_type);
 	if (err) {
 		return err;
+	}
+
+	if (dir_adv) {
+		bt_addr_le_copy(&adv->target_addr, param->peer);
+	} else {
+		bt_addr_le_copy(&adv->target_addr, BT_ADDR_LE_ANY);
 	}
 
 	sys_put_le24(param->interval_min, cp->prim_min_interval);
@@ -7372,15 +7466,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 
 	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
 		cp->props |= BT_HCI_LE_ADV_PROP_CONN;
-		if (dir_adv) {
-			cp->props |= BT_HCI_LE_ADV_PROP_DIRECT;
-			if (!(param->options &
-			      BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
-				cp->props |= BT_HCI_LE_ADV_PROP_HI_DC_CONN;
-			}
-
-			bt_addr_le_copy(&cp->peer_addr, peer);
-		} else if (!(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
+		if (!dir_adv && !(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
 			/* When using non-extended adv packets then undirected
 			 * advertising has to be scannable as well.
 			 * We didn't require this option to be set before, so
@@ -7392,6 +7478,15 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 
 	if ((param->options & BT_LE_ADV_OPT_SCANNABLE) || has_scan_data) {
 		cp->props |= BT_HCI_LE_ADV_PROP_SCAN;
+	}
+
+	if (dir_adv) {
+		cp->props |= BT_HCI_LE_ADV_PROP_DIRECT;
+		if (!(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
+			cp->props |= BT_HCI_LE_ADV_PROP_HI_DC_CONN;
+		}
+
+		bt_addr_le_copy(&cp->peer_addr, param->peer);
 	}
 
 	cp->sid = param->sid;
@@ -7436,14 +7531,13 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 			const struct bt_le_adv_param *param,
 			const struct bt_data *ad, size_t ad_len,
-			const struct bt_data *sd, size_t sd_len,
-			const bt_addr_le_t *peer)
+			const struct bt_data *sd, size_t sd_len)
 {
 	struct bt_le_ext_adv_start_param start_param = {
 		.timeout = 0,
 		.num_events = 0,
 	};
-	bool dir_adv = (peer != NULL);
+	bool dir_adv = (param->peer != NULL);
 	struct bt_conn *conn = NULL;
 	int err;
 
@@ -7451,7 +7545,7 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 		return -EAGAIN;
 	}
 
-	if (!valid_adv_param(param, dir_adv)) {
+	if (!valid_adv_param(param)) {
 		return -EINVAL;
 	}
 
@@ -7461,7 +7555,7 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 
 	adv->id = param->id;
 
-	err = le_ext_adv_param_set(adv, param, peer, sd ||
+	err = le_ext_adv_param_set(adv, param, sd ||
 				   (param->options & BT_LE_ADV_OPT_USE_NAME));
 	if (err) {
 		return err;
@@ -7474,19 +7568,20 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 		if (err) {
 			return err;
 		}
-
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-		    param->options & BT_LE_ADV_OPT_CONNECTABLE) {
-			conn = bt_conn_add_le(param->id, BT_ADDR_LE_NONE);
-			if (!conn) {
-				return -ENOMEM;
-			}
-
-			bt_conn_set_state(conn, BT_CONN_CONNECT_ADV);
+	} else {
+		if (!(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
+			start_param.timeout =
+				BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT;
+			atomic_set_bit(adv->flags, BT_ADV_LIMITED);
 		}
-	} else if (!(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
-		start_param.timeout = BT_HCI_LE_EXT_ADV_DURATION_HI_DC_MAX;
-		atomic_set_bit(adv->flags, BT_ADV_LIMITED);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	    (param->options & BT_LE_ADV_OPT_CONNECTABLE)) {
+		err = le_adv_start_add_conn(adv, &conn);
+		if (err) {
+			return err;
+		}
 	}
 
 	err = set_le_adv_enable_ext(adv, true, &start_param);
@@ -7518,10 +7613,9 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 	return 0;
 }
 
-int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
-			     const struct bt_data *ad, size_t ad_len,
-			     const struct bt_data *sd, size_t sd_len,
-			     const bt_addr_le_t *peer)
+int bt_le_adv_start(const struct bt_le_adv_param *param,
+		    const struct bt_data *ad, size_t ad_len,
+		    const struct bt_data *sd, size_t sd_len)
 {
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
@@ -7532,8 +7626,7 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 			return -ENOMEM;
 		}
 
-		err = bt_le_adv_start_ext(adv, param, ad, ad_len, sd, sd_len,
-					  peer);
+		err = bt_le_adv_start_ext(adv, param, ad, ad_len, sd, sd_len);
 		if (err) {
 			adv_delete_legacy();
 		}
@@ -7541,18 +7634,7 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 		return err;
 	}
 
-	return bt_le_adv_start_legacy(param, ad, ad_len, sd, sd_len, peer);
-}
-
-int bt_le_adv_start(const struct bt_le_adv_param *param,
-		    const struct bt_data *ad, size_t ad_len,
-		    const struct bt_data *sd, size_t sd_len)
-{
-	if (param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) {
-		return -EINVAL;
-	}
-
-	return bt_le_adv_start_internal(param, ad, ad_len, sd, sd_len, NULL);
+	return bt_le_adv_start_legacy(param, ad, ad_len, sd, sd_len);
 }
 
 int bt_le_adv_stop(void)
@@ -7565,27 +7647,19 @@ int bt_le_adv_stop(void)
 	atomic_clear_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING);
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+		/* Legacy advertiser exists, but is not currently advertising.
+		 * This happens when keep advertising behavior is active but
+		 * no conn object is available to do connectable advertising.
+		 */
 		adv_delete_legacy();
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING_CONNECTABLE)) {
 		struct bt_le_ext_adv *adv = bt_adv_lookup_legacy();
-		struct bt_conn *conn;
 
-		conn = bt_conn_lookup_state_le(adv->id, BT_ADDR_LE_NONE,
-					       BT_CONN_CONNECT_ADV);
-		if (conn) {
-			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-			bt_conn_unref(conn);
-		}
-
-		conn = bt_conn_lookup_state_le(adv->id, NULL,
-					       BT_CONN_CONNECT_DIR_ADV);
-		if (conn) {
-			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-			bt_conn_unref(conn);
-		}
+		le_adv_stop_free_conn(adv);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
@@ -7631,7 +7705,7 @@ int bt_le_adv_stop(void)
 void bt_le_adv_resume(void)
 {
 	struct bt_le_ext_adv *adv = bt_adv_lookup_legacy();
-	struct bt_conn *adv_conn;
+	struct bt_conn *conn;
 	int err;
 
 	if (!adv) {
@@ -7641,13 +7715,13 @@ void bt_le_adv_resume(void)
 
 	BT_ASSERT(atomic_test_bit(bt_dev.flags,
 				  BT_DEV_ADVERTISING_CONNECTABLE));
-
-	adv_conn = bt_conn_add_le(adv->id, BT_ADDR_LE_NONE);
-	if (!adv_conn) {
+	err = le_adv_start_add_conn(adv, &conn);
+	if (err) {
+		BT_DBG("Cannot resume connectable advertising (%d)", err);
 		return;
 	}
 
-	bt_conn_set_state(adv_conn, BT_CONN_CONNECT_ADV);
+	BT_DBG("Resuming connectable advertising");
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 	    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING_IDENTITY)) {
@@ -7656,23 +7730,17 @@ void bt_le_adv_resume(void)
 
 	err = set_le_adv_enable(adv, true);
 	if (err) {
-		bt_conn_set_state(adv_conn, BT_CONN_DISCONNECTED);
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 	}
 
 	/* Since we don't give the application a reference to manage in
 	 * this case, we need to release this reference here.
 	 */
-	bt_conn_unref(adv_conn);
+	bt_conn_unref(conn);
 }
-
 #endif /* defined(CONFIG_BT_PERIPHERAL) */
 
 #if defined(CONFIG_BT_EXT_ADV)
-static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
-{
-	return valid_adv_param(param, false);
-}
-
 int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
 			   struct bt_le_ext_adv_info *info)
 {
@@ -7705,7 +7773,7 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 	adv->id = param->id;
 	adv->cb = cb;
 
-	err = le_ext_adv_param_set(adv, param, NULL, false);
+	err = le_ext_adv_param_set(adv, param, false);
 	if (err) {
 		adv_delete(adv);
 		return err;
@@ -7730,7 +7798,7 @@ int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
 		atomic_clear_bit(adv->flags, BT_ADV_RPA_VALID);
 	}
 
-	return le_ext_adv_param_set(adv, param, NULL, false);
+	return le_ext_adv_param_set(adv, param, false);
 }
 
 int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
@@ -7741,12 +7809,10 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 	    atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING_CONNECTABLE)) {
-		conn = bt_conn_add_le(adv->id, BT_ADDR_LE_NONE);
-		if (!conn) {
-			return -ENOMEM;
+		err = le_adv_start_add_conn(adv, &conn);
+		if (err) {
+			return err;
 		}
-
-		bt_conn_set_state(conn, BT_CONN_CONNECT_ADV);
 	}
 
 	atomic_set_bit_to(adv->flags, BT_ADV_LIMITED, param &&
@@ -7793,22 +7859,9 @@ int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv)
 #endif
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
-		struct bt_conn *conn;
-
-		conn = bt_conn_lookup_state_le(adv->id, BT_ADDR_LE_NONE,
-					       BT_CONN_CONNECT_ADV);
-		if (conn) {
-			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-			bt_conn_unref(conn);
-		}
-
-		conn = bt_conn_lookup_state_le(adv->id, NULL,
-					       BT_CONN_CONNECT_DIR_ADV);
-		if (conn) {
-			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-			bt_conn_unref(conn);
-		}
+	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
+	    atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING_CONNECTABLE)) {
+		le_adv_stop_free_conn(adv);
 	}
 
 	return set_le_adv_enable_ext(adv, false, NULL);
