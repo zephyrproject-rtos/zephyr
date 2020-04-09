@@ -19,11 +19,6 @@
 		reg = <0x20000000 (64*1024)>;
 	};
 
-	flash0: flash@0 {
-		compatible = "soc-nv-flash";
-		reg = <0x00000000 (256*1024)>;
-	};
-
 	sysclk: system-clock {
 		compatible = "fixed-clock";
 		clock-frequency = <12000000>;
@@ -31,6 +26,20 @@
 	};
 
 	soc {
+
+		flash-controller@400fd000 {
+			compatible = "ti,stellaris-flash-controller";
+			reg = <0x400fd000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			label = "FLASH_CTRL";
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x00000000 (256*1024)>;
+			};
+		};
+
 		uart0: uart@4000c000 {
 			compatible = "ti,stellaris-uart";
 			reg = <0x4000c000 0x4c>;
