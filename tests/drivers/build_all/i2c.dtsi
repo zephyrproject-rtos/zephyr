@@ -529,3 +529,10 @@ test_i2c_dps310: dps310@48 {
 		label = "DPS310";
 		reg = <0x48>;
 };
+
+test_i2c_iis2dh: iis2dh@18 {
+	compatible = "st,iis2dh";
+	label = "IIS2DH";
+	reg = <0x18>;
+	drdy-gpios = <&test_gpio 0 0>;
+};

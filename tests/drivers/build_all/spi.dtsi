@@ -483,3 +483,10 @@ test_spi_mmc_spi_slot: mmc-spi-slot@2f {
 	spi-max-frequency = <0>;
 };
 
+test_spi_iis2dh: iis2dh@30 {
+	compatible = "st,iis2dh";
+	label = "IIS2DH";
+	reg = <0x30>;
+	spi-max-frequency = <0>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
