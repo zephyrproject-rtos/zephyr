@@ -54,8 +54,9 @@ Deprecated in this release
   * bt_le_scan_param::filter_dup, use bt_le_scan_param::options instead
   * bt_conn_create_le(), use bt_conn_le_create() instead
   * bt_conn_create_auto_le(), use bt_conn_le_create_auto() instead
-  * bt_conn_create_slave_le(), use bt_conn_le_create_slave() instead
-  * BT_LE_ADV_* macros, use BT_HCI_ADV_* macros instead
+  * bt_conn_create_slave_le(), use bt_le_adv_start() instead with
+    bt_le_adv_param::peer set to the remote peers address.
+  * BT_LE_ADV_* macros, use BT_GAP_ADV_* enums instead
 
 Removed APIs in this release
 ============================
