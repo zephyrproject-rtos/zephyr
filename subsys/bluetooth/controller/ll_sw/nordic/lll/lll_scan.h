@@ -24,6 +24,7 @@ struct lll_scan {
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	u8_t  phy:3;
+	u8_t  is_adv_ind:1;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)

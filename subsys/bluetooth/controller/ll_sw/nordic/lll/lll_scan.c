@@ -74,7 +74,6 @@ static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp);
 static u32_t isr_rx_scan_report(struct lll_scan *lll, u8_t rssi_ready,
 				u8_t rl_idx, bool dir_report);
 
-
 int lll_scan_init(void)
 {
 	int err;
@@ -146,6 +145,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	lll->state = 0U;
 
 	radio_reset();
+
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	radio_tx_power_set(lll->tx_pwr_lvl);
 #else
@@ -156,6 +156,8 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	/* TODO: if coded we use S8? */
 	radio_phy_set(lll->phy, 1);
 	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, (lll->phy << 1));
+
+	lll->is_adv_ind = 0U;
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	radio_phy_set(0, 0);
 	radio_pkt_configure(8, PDU_AC_PAYLOAD_SIZE_MAX, 0);
@@ -503,6 +505,10 @@ static void isr_done(void *param)
 	isr_common_done(param);
 
 	lll->state = 0U;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	lll->is_adv_ind = 0U;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 	start_us = radio_tmr_start_now(0);
@@ -909,6 +915,13 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 
 		/* switch scanner state to active */
 		lll->state = 1U;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		if (pdu_adv_rx->type == PDU_ADV_TYPE_ADV_IND) {
+			lll->is_adv_ind = 1U;
+		}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 		radio_isr_set(isr_tx, lll);
 
 		return 0;
@@ -1040,7 +1053,6 @@ static u32_t isr_rx_scan_report(struct lll_scan *lll, u8_t rssi_ready,
 				u8_t rl_idx, bool dir_report)
 {
 	struct node_rx_pdu *node_rx;
-	struct pdu_adv *pdu_adv_rx;
 
 	node_rx = ull_pdu_rx_alloc_peek(3);
 	if (!node_rx) {
@@ -1060,6 +1072,8 @@ static u32_t isr_rx_scan_report(struct lll_scan *lll, u8_t rssi_ready,
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (lll->phy) {
+		struct pdu_adv *pdu_adv_rx;
+
 		switch (lll->phy) {
 		case BIT(0):
 			node_rx->hdr.type = NODE_RX_TYPE_EXT_1M_REPORT;
@@ -1073,12 +1087,16 @@ static u32_t isr_rx_scan_report(struct lll_scan *lll, u8_t rssi_ready,
 			LL_ASSERT(0);
 			break;
 		}
+
+		pdu_adv_rx = (void *)node_rx->pdu;
+		if ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
+		    lll->is_adv_ind) {
+			pdu_adv_rx->type = PDU_ADV_TYPE_ADV_IND_SCAN_RSP;
+		}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	} else {
 		node_rx->hdr.type = NODE_RX_TYPE_REPORT;
 	}
-
-	pdu_adv_rx = (void *)node_rx->pdu;
 
 	node_rx->hdr.rx_ftr.rssi = (rssi_ready) ?
 				   (radio_rssi_get() & 0x7f)
