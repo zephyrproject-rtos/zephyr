@@ -800,10 +800,10 @@ static int cmd_directed_adv(const struct shell *shell,
 {
 	int err;
 	bt_addr_le_t addr;
-	struct bt_conn *conn;
-	struct bt_le_adv_param *param = BT_LE_ADV_CONN_DIR;
+	struct bt_le_adv_param param;
 
 	err = bt_addr_le_from_str(argv[1], argv[2], &addr);
+	param = *BT_LE_ADV_CONN_DIR(&addr);
 	if (err) {
 		shell_error(shell, "Invalid peer address (err %d)", err);
 		return err;
@@ -811,23 +811,20 @@ static int cmd_directed_adv(const struct shell *shell,
 
 	if (argc > 3) {
 		if (!strcmp(argv[3], "low")) {
-			param = BT_LE_ADV_CONN_DIR_LOW_DUTY;
+			param = *BT_LE_ADV_CONN_DIR_LOW_DUTY(&addr);
 		} else {
 			shell_help(shell);
 			return -ENOEXEC;
 		}
 	}
 
-	err = bt_conn_le_create_slave(&addr, param, &conn);
+	err = bt_le_adv_start(&param, NULL, 0, NULL, 0);
 	if (err) {
 		shell_error(shell, "Failed to start directed advertising (%d)",
 			    err);
 		return -ENOEXEC;
 	} else {
 		shell_print(shell, "Started directed advertising");
-
-		/* unref connection obj in advance as app user */
-		bt_conn_unref(conn);
 	}
 
 	return 0;
@@ -839,6 +836,7 @@ static bool adv_param_parse(size_t argc, char *argv[],
 			   struct bt_le_adv_param *param)
 {
 	param->options = 0;
+	param->peer = NULL;
 
 	if (!strcmp(argv[1], "conn-scan")) {
 		param->options |= BT_LE_ADV_OPT_CONNECTABLE;

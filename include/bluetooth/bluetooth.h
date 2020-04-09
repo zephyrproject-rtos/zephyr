@@ -321,6 +321,8 @@ enum {
 	 *  connection happens. If this option is not set the stack will
 	 *  take care of keeping advertising enabled even as connections
 	 *  occur.
+	 *  If Advertising directed and connectable then this behaviour is
+	 *  the default behaviour and this flag has no effect.
 	 */
 	BT_LE_ADV_OPT_ONE_TIME = BIT(1),
 
@@ -337,8 +339,7 @@ enum {
 	BT_LE_ADV_OPT_USE_NAME = BIT(3),
 
 	/** Use low duty directed advertising mode, otherwise high duty mode
-	 *  will be used. This option is only effective when used with
-	 *  bt_conn_create_slave_le().
+	 *  will be used.
 	 */
 	BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY = BIT(4),
 
@@ -450,13 +451,27 @@ struct bt_le_adv_param {
 	u8_t  secondary_max_skip;
 
 	/** Bit-field of advertising options */
-	u32_t  options;
+	u32_t options;
 
 	/** Minimum Advertising Interval (N * 0.625) */
 	u32_t interval_min;
 
 	/** Maximum Advertising Interval (N * 0.625) */
 	u32_t interval_max;
+
+	/** Directed advertising to peer
+	 *
+	 *  When this parameter is set the advertiser will send directed
+	 *  advertising to the remote device.
+	 *
+	 *  The advertising type will either be high duty cycle, or low duty
+	 *  cycle if the BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY option is enabled.
+	 *
+	 *  In case of connectable high duty cycle if the connection could not
+	 *  be established within the timeout the connected() callback will be
+	 *  called with the status set to @ref BT_HCI_ERR_ADV_TIMEOUT.
+	 */
+	const bt_addr_le_t *peer;
 };
 
 /** Helper to declare advertising parameters inline
@@ -464,8 +479,10 @@ struct bt_le_adv_param {
  *  @param _options   Advertising Options
  *  @param _int_min   Minimum advertising interval
  *  @param _int_max   Maximum advertising interval
+ *  @param _peer      Peer address, set to NULL for undirected advertising or
+ *                    address of peer for directed advertising.
  */
-#define BT_LE_ADV_PARAM(_options, _int_min, _int_max) \
+#define BT_LE_ADV_PARAM(_options, _int_min, _int_max, _peer) \
 		((struct bt_le_adv_param[]) { { \
 			.id = BT_ID_DEFAULT, \
 			.sid = 0, \
@@ -473,36 +490,45 @@ struct bt_le_adv_param {
 			.options = (_options), \
 			.interval_min = (_int_min), \
 			.interval_max = (_int_max), \
+			.peer = (_peer), \
 		 } })
+
+#define BT_LE_ADV_CONN_DIR(_peer) BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE |  \
+						  BT_LE_ADV_OPT_ONE_TIME, 0, 0,\
+						  _peer)
+
 
 #define BT_LE_ADV_CONN BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE, \
 				       BT_GAP_ADV_FAST_INT_MIN_2, \
-				       BT_GAP_ADV_FAST_INT_MAX_2)
+				       BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
 #define BT_LE_ADV_CONN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
 					    BT_LE_ADV_OPT_USE_NAME, \
 					    BT_GAP_ADV_FAST_INT_MIN_2, \
-					    BT_GAP_ADV_FAST_INT_MAX_2)
+					    BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
-#define BT_LE_ADV_CONN_DIR_LOW_DUTY \
+#define BT_LE_ADV_CONN_DIR_LOW_DUTY(_peer) \
 	BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME | \
 			BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY, \
-			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2)
-
-#define BT_LE_ADV_CONN_DIR BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
-					   BT_LE_ADV_OPT_ONE_TIME, 0, 0)
+			BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, \
+			_peer)
 
 #define BT_LE_ADV_NCONN BT_LE_ADV_PARAM(0, BT_GAP_ADV_FAST_INT_MIN_2, \
-					BT_GAP_ADV_FAST_INT_MAX_2)
+					BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
 #define BT_LE_ADV_NCONN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_USE_NAME, \
 					     BT_GAP_ADV_FAST_INT_MIN_2, \
-					     BT_GAP_ADV_FAST_INT_MAX_2)
+					     BT_GAP_ADV_FAST_INT_MAX_2, NULL)
 
 /** @brief Start advertising
  *
  *  Set advertisement data, scan response data, advertisement parameters
  *  and start advertising.
+ *
+ *  When the advertisement parameter peer address has been set the advertising
+ *  will be directed to the peer. In this case advertisement data and scan
+ *  response data parameters are ignored. If the mode is high duty cycle
+ *  the timeout will be @ref BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT.
  *
  *  @param param Advertising parameters.
  *  @param ad Data to be used in advertisement packets.
@@ -568,6 +594,10 @@ struct bt_le_ext_adv_start_param {
 	 *
 	 *  Application will be notified by the advertiser sent callback.
 	 *  Set to zero for no timeout.
+	 *
+	 *  When using high duty cycle directed connectable advertising then
+	 *  this parameters must be set to a non-zero value less than or equal
+	 *  to the maximum of @ref BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT.
 	 *
 	 *  If privacy :option:`CONFIG_BT_PRIVACY` is enabled then the timeout
 	 *  must be less than :option:`CONFIG_BT_RPA_TIMEOUT`.

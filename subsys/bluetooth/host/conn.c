@@ -1553,6 +1553,27 @@ void bt_conn_process_tx(struct bt_conn *conn)
 	}
 }
 
+bool bt_conn_exists_le(u8_t id, const bt_addr_le_t *peer)
+{
+	struct bt_conn *conn = bt_conn_lookup_addr_le(id, peer);
+
+	if (conn) {
+		/* Connection object already exists.
+		 * If the connection state is not "disconnected",then the
+		 * connection was created but has not yet been disconnected.
+		 * If the connection state is "disconnected" then the connection
+		 * still has valid references. The last reference of the stack
+		 * is released after the disconnected callback.
+		 */
+		BT_WARN("Found valid connection in %s state",
+			state2str(conn->state));
+		bt_conn_unref(conn);
+		return true;
+	}
+
+	return false;
+}
+
 struct bt_conn *bt_conn_add_le(u8_t id, const bt_addr_le_t *peer)
 {
 	struct bt_conn *conn = conn_new();
@@ -2068,6 +2089,7 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 		}
 		return 0;
 	case BT_CONN_CONNECT_DIR_ADV:
+		BT_WARN("Deprecated: Use bt_le_adv_stop instead");
 		conn->err = reason;
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 		if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
@@ -2273,19 +2295,7 @@ int bt_conn_le_create(const bt_addr_le_t *peer,
 		return -EINVAL;
 	}
 
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, peer);
-	if (conn) {
-		/* Connection object already exists.
-		 * If the connection state is "connect" or "connected" then
-		 * this connection object was created using this API but has not
-		 * yet been disconnected.
-		 * If the connection state is "disconnected" then the connection
-		 * still has valid references. The last reference of the stack
-		 * is released after the disconnected callback.
-		 */
-		BT_WARN("Found valid connection in %s state",
-			state2str(conn->state));
-		bt_conn_unref(conn);
+	if (bt_conn_exists_le(BT_ID_DEFAULT, peer)) {
 		return -EINVAL;
 	}
 
@@ -2397,53 +2407,6 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 }
 #endif /* !defined(CONFIG_BT_WHITELIST) */
 #endif /* CONFIG_BT_CENTRAL */
-
-#if defined(CONFIG_BT_PERIPHERAL)
-int bt_conn_le_create_slave(const bt_addr_le_t *peer,
-			    const struct bt_le_adv_param *param,
-			    struct bt_conn **ret_conn)
-{
-	int err;
-	struct bt_conn *conn;
-	struct bt_le_adv_param param_int;
-
-	memcpy(&param_int, param, sizeof(param_int));
-	param_int.options |= (BT_LE_ADV_OPT_CONNECTABLE |
-			      BT_LE_ADV_OPT_ONE_TIME);
-
-	conn = bt_conn_lookup_addr_le(param->id, peer);
-	if (conn) {
-		/* Connection object already exists.
-		 * If the connection state is "connect-dir-adv" or "connected"
-		 * then this connection object was created using this API but
-		 * has not yet been disconnected.
-		 * If the connection state is "disconnected" then the connection
-		 * still has valid references. The last reference of the stack
-		 * is released after the disconnected callback.
-		 */
-		BT_WARN("Found valid connection in %s state",
-			state2str(conn->state));
-		bt_conn_unref(conn);
-		return -EINVAL;
-	}
-
-	conn = bt_conn_add_le(param->id, peer);
-	if (!conn) {
-		return -ENOMEM;
-	}
-
-	bt_conn_set_state(conn, BT_CONN_CONNECT_DIR_ADV);
-
-	err = bt_le_adv_start_internal(&param_int, NULL, 0, NULL, 0, peer);
-	if (err) {
-		bt_conn_unref(conn);
-		return err;
-	}
-
-	*ret_conn = conn;
-	return 0;
-}
-#endif /* CONFIG_BT_PERIPHERAL */
 
 int bt_conn_le_conn_update(struct bt_conn *conn,
 			   const struct bt_le_conn_param *param)

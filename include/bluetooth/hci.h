@@ -1088,12 +1088,6 @@ struct bt_hci_cp_le_set_ext_scan_rsp_data {
 	u8_t  data[251];
 } __packed;
 
-/* If the advertising is high duty cycle connectable directed advertising, then
- * Duration[i] shall be less than or equal to 1.28 seconds and shall not be
- * equal to 0.
- */
-#define BT_HCI_LE_EXT_ADV_DURATION_HI_DC_MAX    128
-
 #define BT_HCI_OP_LE_SET_EXT_ADV_ENABLE         BT_OP(BT_OGF_LE, 0x0039)
 struct bt_hci_ext_adv_set {
 	u8_t  handle;

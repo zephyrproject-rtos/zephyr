@@ -98,6 +98,9 @@ struct bt_le_ext_adv {
 	/* Current local Random Address */
 	bt_addr_le_t		random_addr;
 
+	/* Current target address */
+	bt_addr_le_t            target_addr;
+
 	ATOMIC_DEFINE(flags, BT_ADV_NUM_FLAGS);
 
 #if defined(CONFIG_BT_EXT_ADV)

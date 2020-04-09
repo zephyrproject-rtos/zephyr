@@ -471,27 +471,26 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *  The caller gets a new reference to the connection object which must be
  *  released with bt_conn_unref() once done using the object.
  *
- *  @param[in]  peer  Remote address.
- *  @param[in]  param Directed advertising parameters.
- *  @param[out] conn  Valid connection object on success.
+ *  @param peer  Remote address.
+ *  @param param Directed advertising parameters.
  *
- *  @return Zero on success or (negative) error code on failure.
+ *  @return Valid connection object on success or NULL otherwise.
  */
-int bt_conn_le_create_slave(const bt_addr_le_t *peer,
-			    const struct bt_le_adv_param *param,
-			    struct bt_conn **conn);
-
 __deprecated static inline
 struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 					const struct bt_le_adv_param *param)
 {
-	struct bt_conn *conn;
+	struct bt_le_adv_param adv_param = *param;
 
-	if (bt_conn_le_create_slave(peer, param, &conn)) {
+	adv_param.options |= (BT_LE_ADV_OPT_CONNECTABLE |
+			      BT_LE_ADV_OPT_ONE_TIME);
+	adv_param.peer = peer;
+
+	if (!bt_le_adv_start(&adv_param, NULL, 0, NULL, 0)) {
 		return NULL;
 	}
 
-	return conn;
+	return bt_conn_lookup_addr_le(param->id, peer);
 }
 
 /** Security level. */
@@ -622,9 +621,9 @@ struct bt_conn_cb {
 	 *    @ref bt_conn_disconnect or by the timeout in the host through
 	 *    @ref bt_conn_le_create_param timeout parameter, which defaults to
 	 *    :option:`CONFIG_BT_CREATE_CONN_TIMEOUT` seconds.
-	 *  - @p BT_HCI_ERR_ADV_TIMEOUT Directed advertiser started by @ref
-	 *    bt_conn_create_slave_le with high duty cycle timed out after 1.28
-	 *    seconds.
+	 *  - @p BT_HCI_ERR_ADV_TIMEOUT High duty cycle directed connectable
+	 *    advertiser started by @ref bt_le_adv_start or bt_le_ext_adv_start
+	 *    failed to be connected within the timeout.
 	 */
 	void (*connected)(struct bt_conn *conn, u8_t err);
 
