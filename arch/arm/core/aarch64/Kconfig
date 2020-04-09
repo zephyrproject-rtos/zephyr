@@ -17,6 +17,13 @@ config CPU_CORTEX_A53
 	help
 	  This option signifies the use of a Cortex-A53 CPU
 
+config CPU_CORTEX_A72
+	bool
+	select CPU_CORTEX_A
+	select ARMV8_A
+	help
+	  This option signifies the use of a Cortex-A72 CPU
+
 config SWITCH_TO_EL1
 	bool "Switch to EL1 at boot"
 	default y
