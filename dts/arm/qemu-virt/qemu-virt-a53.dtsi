@@ -59,8 +59,13 @@
 		};
 
 		flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0x0 DT_SIZE_K(64)>;
+			compatible = "cfi-flash";
+			bank-width = <4>;
+			/* As this is pointed to by zephyr,flash we can only handle
+			 * one value in the reg property, so we comment out the
+			 * second flash bank for now
+			 */
+			reg = <0x0 DT_SIZE_M(64) /* 0x4000000 DT_SIZE_M(64) */>;
 		};
 
 		arch_timer: timer {
