@@ -82,10 +82,9 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	iap: flash-controller@34000 {
+	iap: flash-controller {
 		compatible = "nxp,lpc-iap";
 		label = "FLASH_IAP";
-		reg = <0x34000 0x18>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		flash0: flash@0 {

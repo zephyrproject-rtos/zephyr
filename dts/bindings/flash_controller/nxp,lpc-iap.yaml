@@ -5,4 +5,8 @@ description: NXP LPC IAP (In-Application Programming) flash memory controller
 
 compatible: "nxp,lpc-iap"
 
-include: flash-controller.yaml
+include: base.yaml
+
+properties:
+    label:
+      required: true
