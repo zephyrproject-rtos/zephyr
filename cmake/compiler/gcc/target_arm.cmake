@@ -15,6 +15,23 @@ else()
     list(APPEND TOOLCHAIN_LD_FLAGS  -mthumb)
   endif()
 
+  set(ARCH_FOR_cortex-m0        armv6s-m        )
+  set(ARCH_FOR_cortex-m0plus    armv6s-m        )
+  set(ARCH_FOR_cortex-m3        armv7-m         )
+  set(ARCH_FOR_cortex-m4        armv7e-m        )
+  set(ARCH_FOR_cortex-m23       armv8-m.base    )
+  set(ARCH_FOR_cortex-m33       armv8-m.main+dsp)
+  set(ARCH_FOR_cortex-m33+nodsp armv8-m.main    )
+  set(ARCH_FOR_cortex-r4        armv7-r         )
+  set(ARCH_FOR_cortex-r5        armv7-r+idiv    )
+
+  if(ARCH_FOR_${GCC_M_CPU})
+      set(ARCH_FLAG -march=${ARCH_FOR_${GCC_M_CPU}})
+  endif()
+
+  list(APPEND TOOLCHAIN_C_FLAGS -mabi=aapcs ${ARCH_FLAG})
+  list(APPEND TOOLCHAIN_LD_FLAGS -mabi=aapcs ${ARCH_FLAG})
+
   # Defines a mapping from GCC_M_CPU to FPU
 
   if(CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION)
