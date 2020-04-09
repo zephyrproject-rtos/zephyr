@@ -66,6 +66,7 @@
 
 #include "../common/soc_pmc.h"
 #include "../common/soc_gpio.h"
+#include "../common/atmel_sam_dt.h"
 
 /* Add include for DTS generated information */
 #include <devicetree.h>
