@@ -144,6 +144,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 		return 0;
 	}
 
+	lll->state = 0U;
+
 	radio_reset();
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	radio_tx_power_set(lll->tx_pwr_lvl);
@@ -516,9 +518,12 @@ static void isr_common_done(void *param)
 
 static void isr_done(void *param)
 {
+	struct lll_scan *lll = param;
 	uint32_t start_us;
 
 	isr_common_done(param);
+
+	lll->state = 0U;
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 	start_us = radio_tmr_start_now(0);
