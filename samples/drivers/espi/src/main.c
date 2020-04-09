@@ -162,7 +162,8 @@ int espi_init(void)
 	 */
 	struct espi_cfg cfg = {
 		ESPI_IO_MODE_SINGLE_LINE,
-		ESPI_CHANNEL_VWIRE | ESPI_CHANNEL_PERIPHERAL,
+		ESPI_CHANNEL_VWIRE | ESPI_CHANNEL_PERIPHERAL |
+		ESPI_CHANNEL_OOB,
 		MIN_ESPI_FREQ,
 	};
 
@@ -354,6 +355,11 @@ int get_pch_temp(struct device *dev)
 int espi_test(void)
 {
 	int ret;
+
+	/* Account for the time serial port is detected so log messages can
+	 * be seen
+	 */
+	k_sleep(K_SECONDS(1));
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
 	gpio_dev0 = device_get_binding(CONFIG_ESPI_GPIO_DEV0);
