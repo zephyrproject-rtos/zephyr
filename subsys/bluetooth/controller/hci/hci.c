@@ -1085,6 +1085,7 @@ static void le_set_scan_enable(struct net_buf *buf, struct net_buf **evt)
 		dup_count = -1;
 	}
 #endif
+
 	status = ll_scan_enable(cmd->enable);
 
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
@@ -1850,7 +1851,15 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	uint8_t status;
 
-	/* TODO: duplicate filtering */
+#if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
+	/* initialize duplicate filtering */
+	if (cmd->enable && cmd->filter_dup) {
+		dup_count = 0;
+		dup_curr = 0U;
+	} else {
+		dup_count = -1;
+	}
+#endif
 
 	status = ll_scan_enable(cmd->enable);
 
