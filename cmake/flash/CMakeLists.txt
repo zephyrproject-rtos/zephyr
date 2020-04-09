@@ -73,7 +73,7 @@ function(create_runners_yaml)
       endforeach()
     else()
       # If the runner doesn't need any arguments, just use an empty list.
-      runner_yml_write(" []\n")
+      runner_yml_write("    []\n")
     endif()
   endforeach()
 
