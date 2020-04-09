@@ -153,8 +153,8 @@ void flash_stm32_page_layout(struct device *dev,
 	ARG_UNUSED(dev);
 
 	if (stm32f3_flash_layout.pages_count == 0) {
-		stm32f3_flash_layout.pages_count = DT_FLASH_SIZE \
-						* 1024 / FLASH_PAGE_SIZE;
+		stm32f3_flash_layout.pages_count =
+			DT_REG_SIZE(DT_INST(0, soc_nv_flash)) / FLASH_PAGE_SIZE;
 		stm32f3_flash_layout.pages_size = FLASH_PAGE_SIZE;
 	}
 
