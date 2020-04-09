@@ -8,22 +8,31 @@
 #include <sys/sys_heap.h>
 
 /* Guess at a value for heap size based on available memory on the
- * platform.
- *
- * Note that mps2_an521 blows up if allowed to link into large area,
- * even though the link is successful and it claims the memory is
- * there.  We get hard faults on boot before entry to cstart() once
- * MEMSZ is allowed to get near 256kb.
- *
- * And native_posix doesn't support CONFIG_SRAM_SIZE at all (because
+ * platform, with workarounds.
+ */
+
+#if defined(CONFIG_BOARD_MPS2_AN521)
+/* mps2_an521 blows up if allowed to link into large area, even though
+ * the link is successful and it claims the memory is there.  We get
+ * hard faults on boot in qemu before entry to cstart() once MEMSZ is
+ * allowed to get near 256kb.
+ */
+# define MEMSZ (192 * 1024)
+#elif defined(CONFIG_ARCH_POSIX)
+/* native_posix doesn't support CONFIG_SRAM_SIZE at all (because
  * it can link anything big enough to fit on the host), so just use a
  * reasonable value.
  */
-#if defined(CONFIG_BOARD_MPS2_AN521)
-# define MEMSZ (192 * 1024)
-#elif defined(CONFIG_ARCH_POSIX)
 # define MEMSZ (2 * 1024 * 1024)
+#elif defined(CONFIG_SOC_ARC_EMSDP) || defined(CONFIG_SOC_EMSK)
+/* Various ARC platforms set CONFIG_SRAM_SIZE to 16-128M, but have a
+ * much lower limit of (32-64k) in their linker scripts.  Pick a
+ * conservative fallback.
+ */
+# define MEMSZ (16 * 1024)
 #else
+/* Otherwise just trust CONFIG_SRAM_SIZE
+ */
 # define MEMSZ (1024 * (size_t) CONFIG_SRAM_SIZE)
 #endif
 
