@@ -8,6 +8,7 @@ set(ARCH_FOR_cortex-m23       armv8-m.base    )
 set(ARCH_FOR_cortex-m33       armv8-m.main+dsp)
 set(ARCH_FOR_cortex-m33+nodsp armv8-m.main    )
 set(ARCH_FOR_cortex-r4        armv7-r         )
+set(ARCH_FOR_cortex-r5        armv7-r+idiv    )
 
 if(ARCH_FOR_${GCC_M_CPU})
     set(ARCH_FLAG -march=${ARCH_FOR_${GCC_M_CPU}})
