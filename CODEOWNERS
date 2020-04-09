@@ -200,6 +200,7 @@
 /drivers/sensor/st*/                      @avisconti
 /drivers/serial/uart_altera_jtag_hal.c    @wentongwu
 /drivers/serial/*ns16550*                 @andrewboie
+/drivers/serial/*nrfx*                    @Mierunski @anangl
 /drivers/serial/Kconfig.litex             @mateusz-holenko @kgugala @pgielda
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
 /drivers/serial/Kconfig.rtt               @carlescufi @pkral78
