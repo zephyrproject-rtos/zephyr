@@ -111,6 +111,8 @@ static int write_dword(struct device *dev, off_t offset, u64_t val)
 	return rc;
 }
 
+#define SOC_NV_FLASH_SIZE DT_REG_SIZE(DT_INST(0, soc_nv_flash))
+
 static int erase_page(struct device *dev, unsigned int page)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
@@ -120,13 +122,14 @@ static int erase_page(struct device *dev, unsigned int page)
 
 #if !defined(FLASH_OPTR_DUALBANK) && !defined(FLASH_OPTR_DBANK)
 	/* Single bank device. Each page is of 2KB size */
-	pages_per_bank = DT_FLASH_SIZE >> 1;
+	pages_per_bank = SOC_NV_FLASH_SIZE >> 11;
 #elif defined(FLASH_OPTR_DUALBANK)
 	/* L4 series (2K page size) with configurable Dual Bank (default y) */
 	/* Dual Bank is only option for 1M devices */
-	if ((regs->OPTR & FLASH_OPTR_DUALBANK) || (DT_FLASH_SIZE == 1024)) {
+	if ((regs->OPTR & FLASH_OPTR_DUALBANK) ||
+	    (SOC_NV_FLASH_SIZE == (1024*1024))) {
 		/* Dual Bank configuration (nbr pages = flash size / 2 / 2K) */
-		pages_per_bank = DT_FLASH_SIZE >> 2;
+		pages_per_bank = SOC_NV_FLASH_SIZE >> 12;
 	} else {
 		/* Single bank configuration. This has not been validated. */
 		/* Not supported for now. */
@@ -136,7 +139,7 @@ static int erase_page(struct device *dev, unsigned int page)
 	/* L4+ series (4K page size) with configurable Dual Bank (default y)*/
 	if (regs->OPTR & FLASH_OPTR_DBANK) {
 		/* Dual Bank configuration (nbre pags = flash size / 2 / 4K) */
-		pages_per_bank = DT_FLASH_SIZE >> 3;
+		pages_per_bank = SOC_NV_FLASH_SIZE >> 13;
 	} else {
 		/* Single bank configuration */
 		/* Requires 128 bytes data read. This config is not supported */
