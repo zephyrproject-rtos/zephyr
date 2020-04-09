@@ -50,9 +50,16 @@
 			reg = <0x40000000 0x8000>;
 		};
 
-		flash0:flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0 0x40000>;
+		flash-controller {
+			compatible = "nxp,lpc-iap";
+			label = "FLASH_IAP";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0:flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 0x40000>;
+			};
 		};
 
 		gpio0: gpio@0 {
