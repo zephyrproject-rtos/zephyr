@@ -382,18 +382,26 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	.set_guard_period = set_guard_period,
 };
 
-#define COUNTER_NRFX_TIMER_DEVICE(idx)					\
-	BUILD_ASSERT(DT_NORDIC_NRF_TIMER_TIMER_##idx##_PRESCALER <=	\
-		     TIMER_PRESCALER_PRESCALER_Msk,			\
-		     "TIMER prescaler out of range");			\
+/*
+ * Device instantiation is done with node labels due to HAL API
+ * requirements. In particular, TIMERx_MAX_SIZE values from HALs
+ * are indexed by peripheral number, so DT_INST APIs won't work.
+ */
+
+#define TIMER(idx)		DT_NODELABEL(timer##idx)
+#define TIMER_PROP(idx, prop)	DT_PROP(TIMER(idx), prop)
+
+#define COUNTER_NRFX_TIMER_DEVICE(idx)					       \
+	BUILD_ASSERT(TIMER_PROP(idx, prescaler) <=			       \
+			TIMER_PRESCALER_PRESCALER_Msk,			       \
+		     "TIMER prescaler out of range");			       \
 	DEVICE_DECLARE(timer_##idx);					       \
 	static int counter_##idx##_init(struct device *dev)		       \
 	{								       \
-		IRQ_CONNECT(DT_NORDIC_NRF_TIMER_TIMER_##idx##_IRQ_0,	       \
-			    DT_NORDIC_NRF_TIMER_TIMER_##idx##_IRQ_0_PRIORITY,  \
+		IRQ_CONNECT(DT_IRQN(TIMER(idx)), DT_IRQ(TIMER(idx), priority), \
 			    irq_handler, DEVICE_GET(timer_##idx), 0);	       \
 		static const struct counter_timer_config config = {	       \
-			.freq =	DT_NORDIC_NRF_TIMER_TIMER_##idx##_PRESCALER,   \
+			.freq = TIMER_PROP(idx, prescaler),		       \
 			.mode = NRF_TIMER_MODE_TIMER,			       \
 			.bit_width = (TIMER##idx##_MAX_SIZE == 32) ?	       \
 					NRF_TIMER_BIT_WIDTH_32 :	       \
@@ -410,16 +418,16 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			.max_top_value = (TIMER##idx##_MAX_SIZE == 32) ?       \
 					0xffffffff : 0x0000ffff,	       \
 			.freq = TIMER_CLOCK /				       \
-			   (1 << DT_NORDIC_NRF_TIMER_TIMER_##idx##_PRESCALER), \
+					(1 << TIMER_PROP(idx, prescaler)),     \
 			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		       \
 			.channels = CC_TO_ID(TIMER##idx##_CC_NUM),	       \
 		},							       \
 		.ch_data = counter##idx##_ch_data,			       \
-		.timer = NRF_TIMER##idx,				       \
+		.timer = (NRF_TIMER_Type *)DT_REG_ADDR(TIMER(idx)),	       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
 	DEVICE_AND_API_INIT(timer_##idx,				       \
-			    DT_NORDIC_NRF_TIMER_TIMER_##idx##_LABEL,	       \
+			    DT_LABEL(TIMER(idx)),			       \
 			    counter_##idx##_init,			       \
 			    &counter_##idx##_data,			       \
 			    &nrfx_counter_##idx##_config.info,		       \
