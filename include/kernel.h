@@ -591,7 +591,6 @@ struct k_thread {
 
 	/**
 	 * abort function
-	 * @req K-THREAD-002
 	 * */
 	void (*fn_abort)(void);
 
@@ -741,7 +740,6 @@ extern void k_thread_foreach_unlocked(
 
 /**
  * @brief system thread that must not abort
- * @req K-THREAD-000
  * */
 #define K_ESSENTIAL (BIT(0))
 
@@ -814,7 +812,6 @@ extern void k_thread_foreach_unlocked(
  *
  * @return ID of new thread.
  *
- * @req K-THREAD-001
  */
 __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
 				  k_thread_stack_t *stack,
@@ -830,7 +827,6 @@ __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
  * @param p1 1st entry point parameter
  * @param p2 2nd entry point parameter
  * @param p3 3rd entry point parameter
- * @req K-THREAD-003
  */
 extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 						   void *p1, void *p2,
@@ -848,7 +844,6 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  *
  * @param thread Thread to grant access to objects
  * @param ... list of kernel object pointers
- * @req K-THREAD-004
  */
 #define k_thread_access_grant(thread, ...) \
 	FOR_EACH_FIXED_ARG(k_object_access_grant, thread, __VA_ARGS__)
@@ -866,7 +861,6 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  * @param thread Target thread to assign a memory pool for resource requests,
  *               or NULL if the thread should no longer have a memory pool.
  * @param pool Memory pool to use for resources.
- * @req K-THREAD-005
  */
 static inline void k_thread_resource_pool_assign(struct k_thread *thread,
 						 struct k_mem_pool *pool)
@@ -911,7 +905,6 @@ __syscall int k_thread_stack_space_get(const struct k_thread *thread,
  *
  * @param thread Target thread to assign the system heap for resource requests
  *
- * @req K-THREAD-004
  */
 void k_thread_system_pool_assign(struct k_thread *thread);
 #endif /* (CONFIG_HEAP_MEM_POOL_SIZE > 0) */
@@ -997,7 +990,6 @@ __syscall void k_busy_wait(u32_t usec_to_wait);
  * of the same or higher priority, the routine returns immediately.
  *
  * @return N/A
- * @req K-THREAD-015
  */
 __syscall void k_yield(void);
 
@@ -1011,7 +1003,6 @@ __syscall void k_yield(void);
  * @param thread ID of thread to wake.
  *
  * @return N/A
- * @req K-THREAD-014
  */
 __syscall void k_wakeup(k_tid_t thread);
 
@@ -1020,7 +1011,6 @@ __syscall void k_wakeup(k_tid_t thread);
  *
  * @return ID of current thread.
  *
- * @req K-THREAD-013
  */
 __syscall k_tid_t k_current_get(void);
 
@@ -1037,7 +1027,6 @@ __syscall k_tid_t k_current_get(void);
  * @param thread ID of thread to abort.
  *
  * @return N/A
- * @req K-THREAD-012
  */
 __syscall void k_thread_abort(k_tid_t thread);
 
@@ -1050,7 +1039,6 @@ __syscall void k_thread_abort(k_tid_t thread);
  * on it.
  *
  * @param thread thread to start
- * @req K-THREAD-011
  */
 __syscall void k_thread_start(k_tid_t thread);
 
@@ -1158,7 +1146,6 @@ struct _static_thread_data {
  * @param options Thread options.
  * @param delay Scheduling delay (in milliseconds), or K_NO_WAIT (for no delay).
  *
- * @req K-THREAD-010
  *
  * @internal It has been observed that the x86 compiler by default aligns
  * these _static_thread_data structures to 32-byte boundaries, thereby
@@ -1185,7 +1172,6 @@ struct _static_thread_data {
  * @param thread ID of thread whose priority is needed.
  *
  * @return Priority of @a thread.
- * @req K-THREAD-009
  */
 __syscall int k_thread_priority_get(k_tid_t thread);
 
@@ -1215,7 +1201,6 @@ __syscall int k_thread_priority_get(k_tid_t thread);
  * priority inheritance may result in undefined behavior.
  *
  * @return N/A
- * @req K-THREAD-008
  */
 __syscall void k_thread_priority_set(k_tid_t thread, int prio);
 
@@ -1254,7 +1239,6 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * @param thread A thread on which to set the deadline
  * @param deadline A time delta, in cycle units
  *
- * @req K-THREAD-007
  */
 __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
 #endif
@@ -1345,7 +1329,6 @@ int k_thread_cpu_mask_disable(k_tid_t thread, int cpu);
  * @param thread ID of thread to suspend.
  *
  * @return N/A
- * @req K-THREAD-005
  */
 __syscall void k_thread_suspend(k_tid_t thread);
 
@@ -1360,7 +1343,6 @@ __syscall void k_thread_suspend(k_tid_t thread);
  * @param thread ID of thread to resume.
  *
  * @return N/A
- * @req K-THREAD-006
  */
 __syscall void k_thread_resume(k_tid_t thread);
 
@@ -1503,7 +1485,6 @@ extern void k_sched_unlock(void);
  *
  * @return N/A
  *
- * @req K-THREAD-016
  */
 __syscall void k_thread_custom_data_set(void *value);
 
@@ -1513,7 +1494,6 @@ __syscall void k_thread_custom_data_set(void *value);
  * This routine returns the custom data for the current thread.
  *
  * @return Current custom data value.
- * @req K-THREAD-007
  */
 __syscall void *k_thread_custom_data_get(void);
 
@@ -2641,7 +2621,6 @@ struct k_fifo {
  * @param fifo Address of the FIFO queue.
  *
  * @return N/A
- * @req K-FIFO-001
  */
 #define k_fifo_init(fifo) \
 	k_queue_init(&(fifo)->_queue)
@@ -2658,7 +2637,6 @@ struct k_fifo {
  * @param fifo Address of the FIFO queue.
  *
  * @return N/A
- * @req K-FIFO-001
  */
 #define k_fifo_cancel_wait(fifo) \
 	k_queue_cancel_wait(&(fifo)->_queue)
@@ -2676,7 +2654,6 @@ struct k_fifo {
  * @param data Address of the data item.
  *
  * @return N/A
- * @req K-FIFO-001
  */
 #define k_fifo_put(fifo, data) \
 	k_queue_append(&(fifo)->_queue, data)
@@ -2696,7 +2673,6 @@ struct k_fifo {
  *
  * @retval 0 on success
  * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
- * @req K-FIFO-001
  */
 #define k_fifo_alloc_put(fifo, data) \
 	k_queue_alloc_append(&(fifo)->_queue, data)
@@ -2716,7 +2692,6 @@ struct k_fifo {
  * @param tail Pointer to last node in singly-linked list.
  *
  * @return N/A
- * @req K-FIFO-001
  */
 #define k_fifo_put_list(fifo, head, tail) \
 	k_queue_append_list(&(fifo)->_queue, head, tail)
@@ -2735,7 +2710,6 @@ struct k_fifo {
  * @param list Pointer to sys_slist_t object.
  *
  * @return N/A
- * @req K-FIFO-001
  */
 #define k_fifo_put_slist(fifo, list) \
 	k_queue_merge_slist(&(fifo)->_queue, list)
@@ -2754,7 +2728,6 @@ struct k_fifo {
  *
  * @return Address of the data item if successful; NULL if returned
  * without waiting, or waiting period timed out.
- * @req K-FIFO-001
  */
 #define k_fifo_get(fifo, timeout) \
 	k_queue_get(&(fifo)->_queue, timeout)
@@ -2771,7 +2744,6 @@ struct k_fifo {
  *
  * @return Non-zero if the FIFO queue is empty.
  * @return 0 if data is available.
- * @req K-FIFO-001
  */
 #define k_fifo_is_empty(fifo) \
 	k_queue_is_empty(&(fifo)->_queue)
@@ -2788,7 +2760,6 @@ struct k_fifo {
  * @param fifo Address of the FIFO queue.
  *
  * @return Head element, or NULL if the FIFO queue is empty.
- * @req K-FIFO-001
  */
 #define k_fifo_peek_head(fifo) \
 	k_queue_peek_head(&(fifo)->_queue)
@@ -2803,7 +2774,6 @@ struct k_fifo {
  * @param fifo Address of the FIFO queue.
  *
  * @return Tail element, or NULL if a FIFO queue is empty.
- * @req K-FIFO-001
  */
 #define k_fifo_peek_tail(fifo) \
 	k_queue_peek_tail(&(fifo)->_queue)
@@ -2816,7 +2786,6 @@ struct k_fifo {
  * @code extern struct k_fifo <name>; @endcode
  *
  * @param name Name of the FIFO queue.
- * @req K-FIFO-002
  */
 #define K_FIFO_DEFINE(name) \
 	Z_STRUCT_SECTION_ITERABLE(k_fifo, name) = \
@@ -2857,7 +2826,6 @@ struct k_lifo {
  * @param lifo Address of the LIFO queue.
  *
  * @return N/A
- * @req K-LIFO-001
  */
 #define k_lifo_init(lifo) \
 	k_queue_init(&(lifo)->_queue)
@@ -2875,7 +2843,6 @@ struct k_lifo {
  * @param data Address of the data item.
  *
  * @return N/A
- * @req K-LIFO-001
  */
 #define k_lifo_put(lifo, data) \
 	k_queue_prepend(&(lifo)->_queue, data)
@@ -2895,7 +2862,6 @@ struct k_lifo {
  *
  * @retval 0 on success
  * @retval -ENOMEM if there isn't sufficient RAM in the caller's resource pool
- * @req K-LIFO-001
  */
 #define k_lifo_alloc_put(lifo, data) \
 	k_queue_alloc_prepend(&(lifo)->_queue, data)
@@ -2914,7 +2880,6 @@ struct k_lifo {
  *
  * @return Address of the data item if successful; NULL if returned
  * without waiting, or waiting period timed out.
- * @req K-LIFO-001
  */
 #define k_lifo_get(lifo, timeout) \
 	k_queue_get(&(lifo)->_queue, timeout)
@@ -2927,7 +2892,6 @@ struct k_lifo {
  * @code extern struct k_lifo <name>; @endcode
  *
  * @param name Name of the fifo.
- * @req K-LIFO-002
  */
 #define K_LIFO_DEFINE(name) \
 	Z_STRUCT_SECTION_ITERABLE(k_lifo, name) = \
@@ -2983,7 +2947,6 @@ struct k_stack {
  * @param num_entries Maximum number of values that can be stacked.
  *
  * @return N/A
- * @req K-STACK-001
  */
 void k_stack_init(struct k_stack *stack,
 		  stack_data_t *buffer, u32_t num_entries);
@@ -3001,7 +2964,6 @@ void k_stack_init(struct k_stack *stack,
  * @param num_entries Maximum number of values that can be stacked.
  *
  * @return -ENOMEM if memory couldn't be allocated
- * @req K-STACK-001
  */
 
 __syscall s32_t k_stack_alloc_init(struct k_stack *stack,
@@ -3017,7 +2979,6 @@ __syscall s32_t k_stack_alloc_init(struct k_stack *stack,
  * @param stack Address of the stack.
  * @retval 0 on success
  * @retval -EAGAIN when object is still in use
- * @req K-STACK-001
  */
 int k_stack_cleanup(struct k_stack *stack);
 
@@ -3033,7 +2994,6 @@ int k_stack_cleanup(struct k_stack *stack);
  *
  * @retval 0 on success
  * @retval -ENOMEM if stack is full
- * @req K-STACK-001
  */
 __syscall int k_stack_push(struct k_stack *stack, stack_data_t data);
 
@@ -3054,7 +3014,6 @@ __syscall int k_stack_push(struct k_stack *stack, stack_data_t data);
  * @retval 0 Element popped from stack.
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
- * @req K-STACK-001
  */
 __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
 			  k_timeout_t timeout);
@@ -3068,7 +3027,6 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
  *
  * @param name Name of the stack.
  * @param stack_num_entries Maximum number of values that can be stacked.
- * @req K-STACK-002
  */
 #define K_STACK_DEFINE(name, stack_num_entries)                \
 	stack_data_t __noinit                                  \
@@ -3105,7 +3063,6 @@ struct _poller {
  * @param work Address of the work item.
  *
  * @return N/A
- * @req K-WORK-001
  */
 typedef void (*k_work_handler_t)(struct k_work *work);
 
@@ -3169,7 +3126,6 @@ extern struct k_work_q k_sys_work_q;
  *
  * @param work Symbol name for work item object
  * @param work_handler Function to invoke each time work item is processed.
- * @req K-WORK-002
  */
 #define K_WORK_DEFINE(work, work_handler) \
 	struct k_work work = Z_WORK_INITIALIZER(work_handler)
@@ -3183,7 +3139,6 @@ extern struct k_work_q k_sys_work_q;
  * @param handler Function to invoke each time work item is processed.
  *
  * @return N/A
- * @req K-WORK-001
  */
 static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
 {
@@ -3210,7 +3165,6 @@ static inline void k_work_init(struct k_work *work, k_work_handler_t handler)
  * @param work Address of work item.
  *
  * @return N/A
- * @req K-WORK-001
  */
 static inline void k_work_submit_to_queue(struct k_work_q *work_q,
 					  struct k_work *work)
@@ -3239,7 +3193,6 @@ static inline void k_work_submit_to_queue(struct k_work_q *work_q,
  * @retval -EBUSY if the work item was already in some workqueue
  * @retval -ENOMEM if no memory for thread resource pool allocation
  * @retval 0 Success
- * @req K-WORK-001
  */
 static inline int k_work_submit_to_user_queue(struct k_work_q *work_q,
 					      struct k_work *work)
@@ -3271,7 +3224,6 @@ static inline int k_work_submit_to_user_queue(struct k_work_q *work_q,
  * @param work Address of work item.
  *
  * @return true if work item is pending, or false if it is not pending.
- * @req K-WORK-001
  */
 static inline bool k_work_pending(struct k_work *work)
 {
@@ -3293,7 +3245,6 @@ static inline bool k_work_pending(struct k_work *work)
  * @param prio Priority of the work queue's thread.
  *
  * @return N/A
- * @req K-WORK-001
  */
 extern void k_work_q_start(struct k_work_q *work_q,
 			   k_thread_stack_t *stack,
@@ -3317,7 +3268,6 @@ extern void k_work_q_start(struct k_work_q *work_q,
  * @param prio Priority of the work queue's thread.
  *
  * @return N/A
- * @req K-WORK-001
  */
 extern void k_work_q_user_start(struct k_work_q *work_q,
 				k_thread_stack_t *stack,
@@ -3333,7 +3283,6 @@ extern void k_work_q_user_start(struct k_work_q *work_q,
  * @param handler Function to invoke each time work item is processed.
  *
  * @return N/A
- * @req K-DWORK-001
  */
 extern void k_delayed_work_init(struct k_delayed_work *work,
 				k_work_handler_t handler);
@@ -3367,7 +3316,6 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  * @retval 0 Work item countdown started.
  * @retval -EINVAL Work item is being processed or has completed its work.
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
- * @req K-DWORK-001
  */
 extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 					  struct k_delayed_work *work,
@@ -3391,7 +3339,6 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
  * @retval 0 Work item countdown canceled.
  * @retval -EINVAL Work item is being processed.
  * @retval -EALREADY Work item has already been completed.
- * @req K-DWORK-001
  */
 extern int k_delayed_work_cancel(struct k_delayed_work *work);
 
@@ -3415,7 +3362,6 @@ extern int k_delayed_work_cancel(struct k_delayed_work *work);
  * @param work Address of work item.
  *
  * @return N/A
- * @req K-WORK-001
  */
 static inline void k_work_submit(struct k_work *work)
 {
@@ -3452,7 +3398,6 @@ static inline void k_work_submit(struct k_work *work)
  * @retval 0 Work item countdown started.
  * @retval -EINVAL Work item is being processed or has completed its work.
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
- * @req K-DWORK-001
  */
 static inline int k_delayed_work_submit(struct k_delayed_work *work,
 					k_timeout_t delay)
@@ -3470,7 +3415,6 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
  * @param work     Delayed work item.
  *
  * @return Uptime of execution (in ticks).
- * @req K-DWORK-001
  */
 static inline k_ticks_t k_delayed_work_expires_ticks(
 				       struct k_delayed_work *work)
@@ -3489,7 +3433,6 @@ static inline k_ticks_t k_delayed_work_expires_ticks(
  * @param work     Delayed work item.
  *
  * @return Remaining time (in ticks).
- * @req K-DWORK-001
  */
 static inline k_ticks_t k_delayed_work_remaining_ticks(
 				       struct k_delayed_work *work)
@@ -3507,7 +3450,6 @@ static inline k_ticks_t k_delayed_work_remaining_ticks(
  * @param work     Delayed work item.
  *
  * @return Remaining time (in milliseconds).
- * @req K-DWORK-001
  */
 static inline s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 {
@@ -3677,7 +3619,6 @@ struct k_mutex {
  * @code extern struct k_mutex <name>; @endcode
  *
  * @param name Name of the mutex.
- * @req K-MUTEX-001
  */
 #define K_MUTEX_DEFINE(name) \
 	Z_STRUCT_SECTION_ITERABLE(k_mutex, name) = \
@@ -3694,7 +3635,6 @@ struct k_mutex {
  *
  * @retval 0 Mutex object created
  *
- * @req K-MUTEX-002
  */
 __syscall int k_mutex_init(struct k_mutex *mutex);
 
@@ -3717,7 +3657,6 @@ __syscall int k_mutex_init(struct k_mutex *mutex);
  * @retval 0 Mutex locked.
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
- * @req K-MUTEX-002
  */
 __syscall int k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout);
 
@@ -3737,7 +3676,6 @@ __syscall int k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout);
  * @retval -EPERM The current thread does not own the mutex
  * @retval -EINVAL The mutex is not locked
  *
- * @req K-MUTEX-002
  */
 __syscall int k_mutex_unlock(struct k_mutex *mutex);
 
@@ -3792,7 +3730,6 @@ struct k_sem {
  * @retval 0 Semaphore created successfully
  * @retval -EINVAL Invalid values
  *
- * @req K-SEM-001
  */
 __syscall int k_sem_init(struct k_sem *sem, unsigned int initial_count,
 			  unsigned int limit);
@@ -3811,7 +3748,6 @@ __syscall int k_sem_init(struct k_sem *sem, unsigned int initial_count,
  * @retval 0 Semaphore taken.
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
- * @req K-SEM-001
  */
 __syscall int k_sem_take(struct k_sem *sem, k_timeout_t timeout);
 
@@ -3826,7 +3762,6 @@ __syscall int k_sem_take(struct k_sem *sem, k_timeout_t timeout);
  * @param sem Address of the semaphore.
  *
  * @return N/A
- * @req K-SEM-001
  */
 __syscall void k_sem_give(struct k_sem *sem);
 
@@ -3838,7 +3773,6 @@ __syscall void k_sem_give(struct k_sem *sem);
  * @param sem Address of the semaphore.
  *
  * @return N/A
- * @req K-SEM-001
  */
 __syscall void k_sem_reset(struct k_sem *sem);
 
@@ -3858,7 +3792,6 @@ static inline void z_impl_k_sem_reset(struct k_sem *sem)
  * @param sem Address of the semaphore.
  *
  * @return Current semaphore count.
- * @req K-SEM-001
  */
 __syscall unsigned int k_sem_count_get(struct k_sem *sem);
 
@@ -3880,7 +3813,6 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
  * @param name Name of the semaphore.
  * @param initial_count Initial semaphore count.
  * @param count_limit Maximum permitted semaphore count.
- * @req K-SEM-002
  */
 #define K_SEM_DEFINE(name, initial_count, count_limit) \
 	Z_STRUCT_SECTION_ITERABLE(k_sem, name) = \
@@ -3982,7 +3914,6 @@ struct k_msgq_attrs {
  * @param q_max_msgs Maximum number of messages that can be queued.
  * @param q_align Alignment of the message queue's ring buffer.
  *
- * @req K-MSGQ-001
  */
 #define K_MSGQ_DEFINE(q_name, q_msg_size, q_max_msgs, q_align)		\
 	static char __noinit __aligned(q_align)				\
@@ -4008,7 +3939,6 @@ struct k_msgq_attrs {
  * @param max_msgs Maximum number of messages that can be queued.
  *
  * @return N/A
- * @req K-MSGQ-002
  */
 void k_msgq_init(struct k_msgq *q, char *buffer, size_t msg_size,
 		 u32_t max_msgs);
@@ -4031,7 +3961,6 @@ void k_msgq_init(struct k_msgq *q, char *buffer, size_t msg_size,
  * @return 0 on success, -ENOMEM if there was insufficient memory in the
  *	thread's resource pool, or -EINVAL if the size parameters cause
  *	an integer overflow.
- * @req K-MSGQ-002
  */
 __syscall int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 				u32_t max_msgs);
@@ -4064,7 +3993,6 @@ int k_msgq_cleanup(struct k_msgq *msgq);
  * @retval 0 Message sent.
  * @retval -ENOMSG Returned without waiting or queue purged.
  * @retval -EAGAIN Waiting period timed out.
- * @req K-MSGQ-002
  */
 __syscall int k_msgq_put(struct k_msgq *msgq, void *data, k_timeout_t timeout);
 
@@ -4085,7 +4013,6 @@ __syscall int k_msgq_put(struct k_msgq *msgq, void *data, k_timeout_t timeout);
  * @retval 0 Message received.
  * @retval -ENOMSG Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
- * @req K-MSGQ-002
  */
 __syscall int k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout);
 
@@ -4102,7 +4029,6 @@ __syscall int k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout);
  *
  * @retval 0 Message read.
  * @retval -ENOMSG Returned when the queue has no message.
- * @req K-MSGQ-002
  */
 __syscall int k_msgq_peek(struct k_msgq *msgq, void *data);
 
@@ -4116,7 +4042,6 @@ __syscall int k_msgq_peek(struct k_msgq *msgq, void *data);
  * @param msgq Address of the message queue.
  *
  * @return N/A
- * @req K-MSGQ-002
  */
 __syscall void k_msgq_purge(struct k_msgq *msgq);
 
@@ -4129,7 +4054,6 @@ __syscall void k_msgq_purge(struct k_msgq *msgq);
  * @param msgq Address of the message queue.
  *
  * @return Number of unused ring buffer entries.
- * @req K-MSGQ-002
  */
 __syscall u32_t k_msgq_num_free_get(struct k_msgq *msgq);
 
@@ -4142,7 +4066,6 @@ __syscall u32_t k_msgq_num_free_get(struct k_msgq *msgq);
  * @param attrs pointer to message queue attribute structure.
  *
  * @return N/A
- * @req K-MSGQ-003
  */
 __syscall void  k_msgq_get_attrs(struct k_msgq *msgq,
 				 struct k_msgq_attrs *attrs);
@@ -4161,7 +4084,6 @@ static inline u32_t z_impl_k_msgq_num_free_get(struct k_msgq *msgq)
  * @param msgq Address of the message queue.
  *
  * @return Number of messages.
- * @req K-MSGQ-002
  */
 __syscall u32_t k_msgq_num_used_get(struct k_msgq *msgq);
 
@@ -4269,7 +4191,6 @@ struct k_mbox {
  * @code extern struct k_mbox <name>; @endcode
  *
  * @param name Name of the mailbox.
- * @req K-MBOX-001
  */
 #define K_MBOX_DEFINE(name) \
 	Z_STRUCT_SECTION_ITERABLE(k_mbox, name) = \
@@ -4283,7 +4204,6 @@ struct k_mbox {
  * @param mbox Address of the mailbox.
  *
  * @return N/A
- * @req K-MBOX-002
  */
 extern void k_mbox_init(struct k_mbox *mbox);
 
@@ -4305,7 +4225,6 @@ extern void k_mbox_init(struct k_mbox *mbox);
  * @retval 0 Message sent.
  * @retval -ENOMSG Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
- * @req K-MBOX-002
  */
 extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 		      k_timeout_t timeout);
@@ -4324,7 +4243,6 @@ extern int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
  * @param sem Address of a semaphore, or NULL if none is needed.
  *
  * @return N/A
- * @req K-MBOX-002
  */
 extern void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			     struct k_sem *sem);
@@ -4345,7 +4263,6 @@ extern void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
  * @retval 0 Message received.
  * @retval -ENOMSG Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
- * @req K-MBOX-002
  */
 extern int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
 		      void *buffer, k_timeout_t timeout);
@@ -4364,7 +4281,6 @@ extern int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
  *               the data.
  *
  * @return N/A
- * @req K-MBOX-002
  */
 extern void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
 
@@ -4397,7 +4313,6 @@ extern void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
  * @retval 0 Data retrieved.
  * @retval -ENOMEM Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
- * @req K-MBOX-002
  */
 extern int k_mbox_data_block_get(struct k_mbox_msg *rx_msg,
 				 struct k_mem_pool *pool,
@@ -4470,7 +4385,6 @@ struct k_pipe {
  *                         or zero if no ring buffer is used.
  * @param pipe_align Alignment of the pipe's ring buffer (power of 2).
  *
- * @req K-PIPE-001
  */
 #define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)		\
 	static unsigned char __noinit __aligned(pipe_align)	\
@@ -4490,7 +4404,6 @@ struct k_pipe {
  *             buffer is used.
  *
  * @return N/A
- * @req K-PIPE-002
  */
 void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size);
 
@@ -4504,7 +4417,6 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size);
  * @param pipe Address of the pipe.
  * @retval 0 on success
  * @retval -EAGAIN nothing to cleanup
- * @req K-PIPE-002
  */
 int k_pipe_cleanup(struct k_pipe *pipe);
 
@@ -4522,7 +4434,6 @@ int k_pipe_cleanup(struct k_pipe *pipe);
  *             buffer is used.
  * @retval 0 on success
  * @retval -ENOMEM if memory couldn't be allocated
- * @req K-PIPE-002
  */
 __syscall int k_pipe_alloc_init(struct k_pipe *pipe, size_t size);
 
@@ -4543,7 +4454,6 @@ __syscall int k_pipe_alloc_init(struct k_pipe *pipe, size_t size);
  * @retval -EIO Returned without waiting; zero data bytes were written.
  * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
  *                 minus one data bytes were written.
- * @req K-PIPE-002
  */
 __syscall int k_pipe_put(struct k_pipe *pipe, void *data,
 			 size_t bytes_to_write, size_t *bytes_written,
@@ -4567,7 +4477,6 @@ __syscall int k_pipe_put(struct k_pipe *pipe, void *data,
  * @retval -EIO Returned without waiting; zero data bytes were read.
  * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
  *                 minus one data bytes were read.
- * @req K-PIPE-002
  */
 __syscall int k_pipe_get(struct k_pipe *pipe, void *data,
 			 size_t bytes_to_read, size_t *bytes_read,
@@ -4586,7 +4495,6 @@ __syscall int k_pipe_get(struct k_pipe *pipe, void *data,
  * @param sem Semaphore to signal upon completion (else NULL)
  *
  * @return N/A
- * @req K-PIPE-002
  */
 extern void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
 			     size_t size, struct k_sem *sem);
@@ -4652,7 +4560,6 @@ struct k_mem_slab {
  * @param slab_block_size Size of each memory block (in bytes).
  * @param slab_num_blocks Number memory blocks.
  * @param slab_align Alignment of the memory slab's buffer (power of 2).
- * @req K-MSLAB-001
  */
 #define K_MEM_SLAB_DEFINE(name, slab_block_size, slab_num_blocks, slab_align) \
 	char __noinit __aligned(WB_UP(slab_align)) \
@@ -4681,7 +4588,6 @@ struct k_mem_slab {
  * @retval 0 on success
  * @retval -EINVAL invalid data supplied
  *
- * @req K-MSLAB-002
  */
 extern int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 			   size_t block_size, u32_t num_blocks);
@@ -4702,7 +4608,6 @@ extern int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  * @retval -ENOMEM Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  * @retval -EINVAL Invalid data supplied
- * @req K-MSLAB-002
  */
 extern int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
 			    k_timeout_t timeout);
@@ -4717,7 +4622,6 @@ extern int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
  * @param mem Pointer to block address area (as set by k_mem_slab_alloc()).
  *
  * @return N/A
- * @req K-MSLAB-002
  */
 extern void k_mem_slab_free(struct k_mem_slab *slab, void **mem);
 
@@ -4730,7 +4634,6 @@ extern void k_mem_slab_free(struct k_mem_slab *slab, void **mem);
  * @param slab Address of the memory slab.
  *
  * @return Number of allocated memory blocks.
- * @req K-MSLAB-002
  */
 static inline u32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
 {
@@ -4746,7 +4649,6 @@ static inline u32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
  * @param slab Address of the memory slab.
  *
  * @return Number of unallocated memory blocks.
- * @req K-MSLAB-002
  */
 static inline u32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 {
@@ -4791,7 +4693,6 @@ struct k_mem_pool {
  * @param maxsz Size of the largest blocks in the pool (in bytes).
  * @param nmax Number of maximum sized blocks in the pool.
  * @param align Alignment of the pool's buffer (power of 2).
- * @req K-MPOOL-001
  */
 #define K_MEM_POOL_DEFINE(name, minsz, maxsz, nmax, align)		\
 	char __aligned(WB_UP(align)) _mpool_buf_##name[WB_UP(maxsz) * nmax \
@@ -4825,7 +4726,6 @@ struct k_mem_pool {
  *         is set to the starting address of the memory block.
  * @retval -ENOMEM Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
- * @req K-MPOOL-002
  */
 extern int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 			    size_t size, k_timeout_t timeout);
@@ -4838,7 +4738,6 @@ extern int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
  * @param pool Address of the memory pool.
  * @param size Amount of memory to allocate (in bytes).
  * @return Address of the allocated memory if successful, otherwise NULL
- * @req K-MPOOL-002
  */
 extern void *k_mem_pool_malloc(struct k_mem_pool *pool, size_t size);
 
@@ -4851,7 +4750,6 @@ extern void *k_mem_pool_malloc(struct k_mem_pool *pool, size_t size);
  * @param block Pointer to block descriptor for the allocated memory.
  *
  * @return N/A
- * @req K-MPOOL-002
  */
 extern void k_mem_pool_free(struct k_mem_block *block);
 
@@ -4864,7 +4762,6 @@ extern void k_mem_pool_free(struct k_mem_block *block);
  * @param id Memory block identifier.
  *
  * @return N/A
- * @req K-MPOOL-002
  */
 extern void k_mem_pool_free_id(struct k_mem_block_id *id);
 
@@ -4887,7 +4784,6 @@ extern void k_mem_pool_free_id(struct k_mem_block_id *id);
  * @param size Amount of memory requested (in bytes).
  *
  * @return Address of the allocated memory if successful; otherwise NULL.
- * @req K-HEAP-001
  */
 extern void *k_malloc(size_t size);
 
@@ -4903,7 +4799,6 @@ extern void *k_malloc(size_t size);
  * @param ptr Pointer to previously allocated memory.
  *
  * @return N/A
- * @req K-HEAP-001
  */
 extern void k_free(void *ptr);
 
@@ -4917,7 +4812,6 @@ extern void k_free(void *ptr);
  * @param size Size of each array element (in bytes).
  *
  * @return Address of the allocated memory if successful; otherwise NULL.
- * @req K-HEAP-001
  */
 extern void *k_calloc(size_t nmemb, size_t size);
 
@@ -5107,7 +5001,6 @@ struct k_poll_event {
  * @param obj Kernel object or poll signal.
  *
  * @return N/A
- * @req K-POLL-001
  */
 
 extern void k_poll_event_init(struct k_poll_event *event, u32_t type,
@@ -5154,7 +5047,6 @@ extern void k_poll_event_init(struct k_poll_event *event, u32_t type,
  *         K_POLL_STATE_CANCELLED.
  * @retval -ENOMEM Thread resource pool insufficient memory (user mode only)
  * @retval -EINVAL Bad parameters (user mode only)
- * @req K-POLL-001
  */
 
 __syscall int k_poll(struct k_poll_event *events, int num_events,
@@ -5168,7 +5060,6 @@ __syscall int k_poll(struct k_poll_event *events, int num_events,
  * @param signal A poll signal.
  *
  * @return N/A
- * @req K-POLL-001
  */
 
 __syscall void k_poll_signal_init(struct k_poll_signal *signal);
@@ -5177,7 +5068,6 @@ __syscall void k_poll_signal_init(struct k_poll_signal *signal);
  * @brief Reset a poll signal object's state to unsignaled.
  *
  * @param signal A poll signal object
- * @req K-POLL-001
  */
 __syscall void k_poll_signal_reset(struct k_poll_signal *signal);
 
@@ -5195,7 +5085,6 @@ static inline void z_impl_k_poll_signal_reset(struct k_poll_signal *signal)
  * @param result An integer destination buffer which will be written with the
  *		   result value if the object was signaled, or an undefined
  *		   value if it was not.
- * @req K-POLL-001
  */
 __syscall void k_poll_signal_check(struct k_poll_signal *signal,
 				   unsigned int *signaled, int *result);
@@ -5222,7 +5111,6 @@ __syscall void k_poll_signal_check(struct k_poll_signal *signal,
  *
  * @retval 0 The signal was delivered successfully.
  * @retval -EAGAIN The polling thread's timeout is in the process of expiring.
- * @req K-POLL-001
  */
 
 __syscall int k_poll_signal_raise(struct k_poll_signal *signal, int result);
@@ -5253,7 +5141,6 @@ extern void z_handle_obj_poll_events(sys_dlist_t *events, u32_t state);
  * unconditionally.
  *
  * @return N/A
- * @req K-CPU-IDLE-001
  */
 static inline void k_cpu_idle(void)
 {
@@ -5269,7 +5156,6 @@ static inline void k_cpu_idle(void)
  * @param key Interrupt locking key obtained from irq_lock().
  *
  * @return N/A
- * @req K-CPU-IDLE-002
  */
 static inline void k_cpu_atomic_idle(unsigned int key)
 {
@@ -5320,7 +5206,6 @@ extern void z_sys_power_save_idle_exit(s32_t ticks);
  *
  * If this is called from ISR context, the default system fatal error handler
  * will treat it as an unrecoverable system error, just like k_panic().
- * @req K-MISC-003
  */
 #define k_oops()	z_except_reason(K_ERR_KERNEL_OOPS)
 
@@ -5331,7 +5216,6 @@ extern void z_sys_power_save_idle_exit(s32_t ticks);
  * unrecoverable runtime condition and needs to terminate. What this ultimately
  * means is determined by the _fatal_error_handler() implementation, which
  * will be called will reason code K_ERR_KERNEL_PANIC.
- * @req K-MISC-004
  */
 #define k_panic()	z_except_reason(K_ERR_KERNEL_PANIC)
 
@@ -5379,7 +5263,6 @@ extern void z_timer_expiration_handler(struct _timeout *t);
  * elsewhere into scope.
  *
  * @param sym Thread stack symbol name
- * @req K-MISC-005
  */
 #define K_THREAD_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
 
@@ -5421,7 +5304,6 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  *
  * @param sym Thread stack symbol name
  * @param size Size of the stack memory region
- * @req K-TSTACK-001
  */
 #define K_THREAD_STACK_DEFINE(sym, size) \
 	struct z_thread_stack_element __noinit __aligned(STACK_ALIGN) sym[size]
@@ -5435,7 +5317,6 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * K_THREAD_STACK_ARRAY_DEFINE definition to see how this is used.
  *
  * @param size Size of the stack memory region
- * @req K-TSTACK-001
  */
 #define K_THREAD_STACK_LEN(size) (size)
 
@@ -5451,7 +5332,6 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * @param sym Thread stack symbol name
  * @param nmemb Number of stacks to declare
  * @param size Size of the stack memory region
- * @req K-TSTACK-001
  */
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct z_thread_stack_element __noinit \
@@ -5468,7 +5348,6 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  *
  * @param sym Thread stack symbol name
  * @param size Size of the stack memory region
- * @req K-TSTACK-001
  */
 #define K_THREAD_STACK_MEMBER(sym, size) \
 	struct z_thread_stack_element __aligned(STACK_ALIGN) sym[size]
@@ -5485,7 +5364,6 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  *
  * @param sym Stack memory symbol
  * @return Size of the stack
- * @req K-TSTACK-001
  */
 #define K_THREAD_STACK_SIZEOF(sym) sizeof(sym)
 
@@ -5509,7 +5387,6 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  *
  * @param sym Declared stack symbol name
  * @return The buffer itself, a char *
- * @req K-TSTACK-001
  */
 static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
@@ -5527,7 +5404,6 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 /**
  * @def K_MEM_PARTITION_DEFINE
  * @brief Used to declare a memory partition
- * @req K-MP-001
  */
 #ifdef _ARCH_MEM_PARTITION_ALIGN_CHECK
 #define K_MEM_PARTITION_DEFINE(name, start, size, attr) \
@@ -5580,7 +5456,6 @@ struct k_mem_domain {
  * @param num_parts The number of array items of "parts" parameter.
  * @param parts An array of pointers to the memory partitions. Can be NULL
  *              if num_parts is zero.
- * @req K-MD-001
  */
 extern void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
 			      struct k_mem_partition *parts[]);
@@ -5590,7 +5465,6 @@ extern void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
  * Destroy a memory domain.
  *
  * @param domain The memory domain to be destroyed.
- * @req K-MD-001
  */
 extern void k_mem_domain_destroy(struct k_mem_domain *domain);
 
@@ -5616,7 +5490,6 @@ extern void k_mem_domain_destroy(struct k_mem_domain *domain);
  *
  * @param domain The memory domain to be added a memory partition.
  * @param part The memory partition to be added
- * @req K-MD-001
  */
 extern void k_mem_domain_add_partition(struct k_mem_domain *domain,
 				      struct k_mem_partition *part);
@@ -5628,7 +5501,6 @@ extern void k_mem_domain_add_partition(struct k_mem_domain *domain,
  *
  * @param domain The memory domain to be removed a memory partition.
  * @param part The memory partition to be removed
- * @req K-MD-001
  */
 extern void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 					 struct k_mem_partition *part);
@@ -5641,7 +5513,6 @@ extern void k_mem_domain_remove_partition(struct k_mem_domain *domain,
  * @param domain The memory domain that the thread is going to be added into.
  * @param thread ID of thread going to be added into the memory domain.
  *
- * @req K-MD-001
  */
 extern void k_mem_domain_add_thread(struct k_mem_domain *domain,
 				    k_tid_t thread);
@@ -5652,7 +5523,6 @@ extern void k_mem_domain_add_thread(struct k_mem_domain *domain,
  * Remove a thread from its memory domain.
  *
  * @param thread ID of thread going to be removed from its memory domain.
- * @req K-MD-001
  */
 extern void k_mem_domain_remove_thread(k_tid_t thread);
 
@@ -5665,7 +5535,6 @@ extern void k_mem_domain_remove_thread(k_tid_t thread);
  * @param c String of characters to print
  * @param n The length of the string
  *
- * @req K-MISC-006
  */
 __syscall void k_str_out(char *c, size_t n);
 #endif
