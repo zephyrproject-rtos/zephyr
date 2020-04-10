@@ -133,7 +133,7 @@ static void canopen_tx_retry(struct k_work *item)
 			msg.rtr = (buffer->rtr ? 1 : 0);
 			memcpy(msg.data, buffer->data, buffer->DLC);
 
-			err = can_send(CANmodule->dev, &msg, K_NO_WAIT,
+			err = can_send(CANmodule->dev, &msg, 0,
 				       canopen_tx_isr_callback, CANmodule);
 			if (err == CAN_TIMEOUT) {
 				break;
@@ -345,7 +345,7 @@ CO_ReturnError_t CO_CANsend(CO_CANmodule_t *CANmodule, CO_CANtx_t *buffer)
 	msg.rtr = (buffer->rtr ? 1 : 0);
 	memcpy(msg.data, buffer->data, buffer->DLC);
 
-	err = can_send(CANmodule->dev, &msg, K_NO_WAIT, canopen_tx_isr_callback,
+	err = can_send(CANmodule->dev, &msg, 0, canopen_tx_isr_callback,
 		       CANmodule);
 	if (err == CAN_TIMEOUT) {
 		buffer->bufferFull = true;
