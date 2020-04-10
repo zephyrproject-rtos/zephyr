@@ -8,10 +8,6 @@ if BOARD_ACTINIUS_ICARUS || BOARD_ACTINIUS_ICARUS_NS
 config BOARD
 	default "actinius_icarus"
 
-config ADC_0
-	default y
-	depends on ADC
-
 config PWM_0
 	default y
 	depends on PWM

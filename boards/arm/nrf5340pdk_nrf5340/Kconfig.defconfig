@@ -8,10 +8,6 @@ if BOARD_NRF5340PDK_NRF5340_CPUAPP || BOARD_NRF5340PDK_NRF5340_CPUAPPNS
 config BOARD
 	default "nrf5340pdk_nrf5340_cpuapp"
 
-config ADC_0
-	default y
-	depends on ADC
-
 config PWM_0
 	default y
 	depends on PWM

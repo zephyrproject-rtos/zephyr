@@ -8,10 +8,6 @@ if BOARD_NRF51DONGLE_NRF51422
 config BOARD
 	default "nrf51dongle_nrf51422"
 
-config ADC_0
-	default y
-	depends on ADC
-
 config BT_CTLR
 	default BT
 
