@@ -31,6 +31,9 @@ config ETH_MCUX
 config ETH_MCUX_0
 	default y if ETH_MCUX
 
+config ETH_MCUX_RMII_EXT_CLK
+	default y if ETH_MCUX
+
 endif # NETWORKING
 
 if PINMUX_MCUX
