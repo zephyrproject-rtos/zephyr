@@ -60,7 +60,7 @@ void main(void)
 
 	if (rc < 0) {
 		LOG_ERR("Error initializing stats system [%d]", rc);
-}
+	}
 
 	/* Register the built-in mcumgr command handlers. */
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
@@ -83,7 +83,14 @@ void main(void)
 #ifdef CONFIG_MCUMGR_SMP_BT
 	start_smp_bluetooth();
 #endif
+#ifdef CONFIG_MCUMGR_SMP_UDP
+	start_smp_udp();
+#endif
 
+	/* using __TIME__ ensure that a new binary will be built on every
+	 * compile which is convient when testing firmware upgrade.
+	 */
+	LOG_INF("build time: " __DATE__ " " __TIME__);
 
 	/* The system work queue handles all incoming mcumgr requests.  Let the
 	 * main thread idle while the mcumgr server runs.

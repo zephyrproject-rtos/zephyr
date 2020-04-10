@@ -384,6 +384,7 @@
 /samples/shields/                         @avisconti
 /samples/subsys/logging/                  @nordic-krch @jakub-uC
 /samples/subsys/shell/                    @jakub-uC @nordic-krch
+/samples/subsys/mgmt/mcumgr/smp_svr/      @aunsbjerg
 /samples/subsys/usb/                      @jfischer-phytec-iot @finikorg
 /samples/subsys/power/                    @wentongwu @pabigot
 /samples/userspace/                       @andrewboie
