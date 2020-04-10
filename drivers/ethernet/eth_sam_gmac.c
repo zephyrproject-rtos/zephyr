@@ -49,6 +49,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /*
  * Verify Kconfig configuration
  */
+#if CONFIG_ETH_SAM_GMAC_QUEUES > DT_INST_PROP(0, num_queues)
+#error Number of active hardware TX and RX queues is invalid
+#endif
+
 /* No need to verify things for unit tests */
 #if !defined(CONFIG_NET_TEST)
 #if CONFIG_NET_BUF_DATA_SIZE * CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT \
