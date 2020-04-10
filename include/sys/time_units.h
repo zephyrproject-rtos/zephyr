@@ -11,6 +11,19 @@
 extern "C" {
 #endif
 
+/** @brief System-wide macro to denote "forever" in milliseconds
+ *
+ *  Usage of this macro is limited to APIs that want to expose a timeout value
+ *  that can optionally be unlimited, or "forever".
+ *  This macro can not be fed into kernel functions or macros directly. Use
+ *  @ref SYS_TIMEOUT_MS instead.
+ */
+#define SYS_FOREVER_MS (-1)
+
+/** @brief System-wide macro to convert milliseconds to kernel timeouts
+ */
+#define SYS_TIMEOUT_MS (ms) ((ms) == SYS_FOREVER_MS ? K_FOREVER : K_MSEC(ms))
+
 /* Exhaustively enumerated, highly optimized time unit conversion API */
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
