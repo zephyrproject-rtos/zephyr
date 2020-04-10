@@ -286,7 +286,7 @@ static void i2c_stm32_irq_config_func_##name(struct device *dev)	\
 
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
-#define STM32_I2C_INIT(name)						\
+#define STM32_I2C_INIT(name, n)						\
 STM32_I2C_IRQ_HANDLER_DECL(name);					\
 									\
 static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
@@ -301,7 +301,7 @@ static const struct i2c_stm32_config i2c_stm32_cfg_##name = {		\
 									\
 static struct i2c_stm32_data i2c_stm32_dev_data_##name;			\
 									\
-DEVICE_AND_API_INIT(i2c_stm32_##name, DT_##name##_NAME,			\
+DEVICE_AND_API_INIT(i2c_stm32_##name, DT_LABEL(DT_NODELABEL(i2c##n)),	\
 		    &i2c_stm32_init, &i2c_stm32_dev_data_##name,	\
 		    &i2c_stm32_cfg_##name,				\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
@@ -312,11 +312,11 @@ STM32_I2C_IRQ_HANDLER(name)
 /* I2C instances declaration */
 
 #ifdef CONFIG_I2C_1
-STM32_I2C_INIT(I2C_1);
+STM32_I2C_INIT(I2C_1, 1);
 #endif /* CONFIG_I2C_1 */
 
 #ifdef CONFIG_I2C_2
-STM32_I2C_INIT(I2C_2);
+STM32_I2C_INIT(I2C_2, 2);
 #endif /* CONFIG_I2C_2 */
 
 #ifdef CONFIG_I2C_3
@@ -325,7 +325,7 @@ STM32_I2C_INIT(I2C_2);
 #error "I2C_3 is not available on the platform that you selected"
 #endif /* I2C3_BASE */
 
-STM32_I2C_INIT(I2C_3);
+STM32_I2C_INIT(I2C_3, 3);
 #endif /* CONFIG_I2C_3 */
 
 #ifdef CONFIG_I2C_4
@@ -334,7 +334,7 @@ STM32_I2C_INIT(I2C_3);
 #error "I2C_4 is not available on the platform that you selected"
 #endif /* I2C4_BASE */
 
-STM32_I2C_INIT(I2C_4);
+STM32_I2C_INIT(I2C_4, 4);
 #endif /* CONFIG_I2C_4 */
 
 
@@ -344,5 +344,5 @@ STM32_I2C_INIT(I2C_4);
 #error "I2C_5 is not available on the platform that you selected"
 #endif /* I2C5_BASE */
 
-STM32_I2C_INIT(I2C_5);
+STM32_I2C_INIT(I2C_5, 5);
 #endif /* CONFIG_I2C_5 */
