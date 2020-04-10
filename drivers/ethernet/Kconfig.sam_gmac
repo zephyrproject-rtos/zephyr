@@ -15,7 +15,9 @@ if ETH_SAM_GMAC
 config ETH_SAM_GMAC_QUEUES
 	int "Number of active hardware TX and RX queues"
 	default 1
-	range 1 $(dt_node_int_prop_int,/soc/ethernet@40050088,num-queues)
+	range 1 $(dt_node_int_prop_int,/soc/ethernet@40050088,num-queues) if SOC_SERIES_SAME70 || \
+									     SOC_SERIES_SAMV71
+	range 1 $(dt_node_int_prop_int,/soc/ethernet@40034000,num-queues) if SOC_SERIES_SAM4E
 	help
 	  Select the number of hardware queues used by the driver. Packets will be
 	  routed to appropriate queues based on their priority.
