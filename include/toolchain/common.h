@@ -141,7 +141,7 @@
 /* Compile-time assertion that makes the build to fail.
  * Common implementation swallows the message.
  */
-#define BUILD_ASSERT(EXPR, MSG)				 \
+#define BUILD_ASSERT(EXPR, MSG...) \
 	enum _CONCAT(__build_assert_enum, __COUNTER__) { \
 		_CONCAT(__build_assert, __COUNTER__) = 1 / !!(EXPR) \
 	}
