@@ -19,7 +19,6 @@ import sys
 import edtlib
 
 def main():
-    global conf_file
     global header_file
     global flash_area_num
 
@@ -33,7 +32,6 @@ def main():
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 
-    conf_file = open(args.conf_out, "w", encoding="utf-8")
     header_file = open(args.header_out, "w", encoding="utf-8")
     flash_area_num = 0
 
@@ -69,7 +67,6 @@ def main():
     write_addr_size(edt, "zephyr,ipc_shm", "IPC_SHM")
     write_flash(edt)
 
-    conf_file.close()
     header_file.close()
 
 
@@ -86,8 +83,6 @@ def parse_args():
                         "we allow multiple")
     parser.add_argument("--header-out", required=True,
                         help="path to write header to")
-    parser.add_argument("--conf-out", required=True,
-                        help="path to write configuration file to")
 
     return parser.parse_args()
 
@@ -749,21 +744,9 @@ def out(ident, val, aliases=(), deprecation_msg=None):
     out_define(ident, val, deprecation_msg, header_file)
     primary_ident = f"DT_{ident}"
 
-    # Exclude things that aren't single token values from .conf.  At
-    # the moment the only such items are unquoted string
-    # representations of initializer lists, which begin with a curly
-    # brace.
-    output_to_conf = not (isinstance(val, str) and val.startswith("{"))
-    if output_to_conf:
-        print(f"{primary_ident}={val}", file=conf_file)
-
     for alias in aliases:
         if alias != ident:
             out_define(alias, "DT_" + ident, deprecation_msg, header_file)
-            if output_to_conf:
-                # For the configuration file, the value is just repeated for all
-                # the aliases
-                print(f"DT_{alias}={val}", file=conf_file)
 
     return primary_ident
 
@@ -786,7 +769,6 @@ def out_comment(s, blank_before=True):
 
     if blank_before:
         print(file=header_file)
-        print(file=conf_file)
 
     if "\n" in s:
         # Format multi-line comments like
@@ -809,9 +791,6 @@ def out_comment(s, blank_before=True):
         #
         #   /* foo bar */
         print("/* " + s + " */", file=header_file)
-
-    print("\n".join("# " + line if line.strip() else "#"
-                    for line in s.splitlines()), file=conf_file)
 
 
 def escape(s):
