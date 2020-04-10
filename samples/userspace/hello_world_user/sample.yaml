@@ -1,0 +1,14 @@
+sample:
+  description: Hello World sample, the simplest userspace
+    Zephyr application
+  name: hello world user
+common:
+    tags: introduction
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello World from UserSpace! (.*)"
+tests:
+  sample.helloworld:
+    tags: introduction
