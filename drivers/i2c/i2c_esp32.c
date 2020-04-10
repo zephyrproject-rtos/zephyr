@@ -286,7 +286,7 @@ static int i2c_esp32_transmit(struct device *dev)
 
 	/* Start transmission and wait for the ISR to give the semaphore */
 	sys_set_bit(I2C_CTR_REG(config->index), I2C_TRANS_START_S);
-	if (k_sem_take(&data->fifo_sem, I2C_ESP32_TIMEOUT_MS) < 0) {
+	if (k_sem_take(&data->fifo_sem, K_MSEC(I2C_ESP32_TIMEOUT_MS)) < 0) {
 		return -ETIMEDOUT;
 	}
 
