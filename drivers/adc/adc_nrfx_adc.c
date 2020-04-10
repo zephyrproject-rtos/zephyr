@@ -12,6 +12,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_nrfx_adc);
 
+#define DT_DRV_COMPAT nordic_nrf_adc
+
 struct driver_data {
 	struct adc_context ctx;
 
@@ -259,8 +261,7 @@ static int init_adc(struct device *dev)
 		return -EBUSY;
 	}
 
-	IRQ_CONNECT(DT_NORDIC_NRF_ADC_ADC_0_IRQ_0,
-		    DT_NORDIC_NRF_ADC_ADC_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nrfx_isr, nrfx_adc_irq_handler, 0);
 
 	adc_context_unlock_unconditionally(&m_data.ctx);
@@ -277,9 +278,9 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 	.ref_internal  = 1200,
 };
 
-#ifdef CONFIG_ADC_0
-DEVICE_AND_API_INIT(adc_0, DT_NORDIC_NRF_ADC_ADC_0_LABEL,
+#if DT_HAS_DRV_INST(0)
+DEVICE_AND_API_INIT(adc_0, DT_INST_LABEL(0),
 		    init_adc, NULL, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &adc_nrfx_driver_api);
-#endif /* CONFIG_ADC_0 */
+#endif

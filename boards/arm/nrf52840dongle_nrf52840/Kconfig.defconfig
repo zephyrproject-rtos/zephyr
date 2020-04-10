@@ -24,10 +24,6 @@ config FLASH_LOAD_OFFSET
 	default 0x1000
 	depends on BOARD_HAS_NRF5_BOOTLOADER && !USE_DT_CODE_PARTITION
 
-config ADC_0
-	default y
-	depends on ADC
-
 config PWM_0
 	default y
 	depends on PWM

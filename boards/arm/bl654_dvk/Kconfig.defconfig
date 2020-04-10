@@ -8,10 +8,6 @@ if BOARD_BL654_DVK
 config BOARD
 	default "bl654_dvk"
 
-config ADC_0
-	default y
-	depends on ADC
-
 config PWM_0
 	default y
 	depends on PWM

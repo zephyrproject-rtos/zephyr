@@ -8,10 +8,6 @@ if BOARD_NRF52833DK_NRF52833
 config BOARD
 	default "nrf52833dk_nrf52833"
 
-config ADC_0
-	default y
-	depends on ADC
-
 config PWM_0
 	default y
 	depends on PWM

@@ -8,10 +8,6 @@ if BOARD_THINGY52_NRF52832
 config BOARD
 	default "thingy52_nrf52832"
 
-config ADC_0
-	default y
-	depends on ADC
-
 config I2C
 	default y
 

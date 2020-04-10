@@ -8,10 +8,6 @@ if BOARD_NRF9160DK_NRF9160 || BOARD_NRF9160DK_NRF9160NS
 config BOARD
 	default "nrf9160dk_nrf9160"
 
-config ADC_0
-	default y
-	depends on ADC
-
 config PWM_0
 	default y
 	depends on PWM

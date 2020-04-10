@@ -8,8 +8,4 @@ if BOARD_NRF52DK_NRF52810
 config BOARD
 	default "nrf52dk_nrf52810"
 
-config ADC_0
-	default y
-	depends on ADC
-
 endif # BOARD_NRF52DK_NRF52810

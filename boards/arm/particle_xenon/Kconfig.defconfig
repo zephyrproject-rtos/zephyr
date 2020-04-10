@@ -9,10 +9,6 @@ if BOARD_PARTICLE_XENON
 config BOARD
 	default "particle_xenon"
 
-config ADC_0
-	default y
-	depends on ADC
-
 if USB
 
 config USB_NRFX
