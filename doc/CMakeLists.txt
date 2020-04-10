@@ -347,6 +347,12 @@ add_custom_target(
 )
 add_dependencies(htmldocs html)
 
+
+add_custom_target(
+  doxygen
+)
+add_dependencies(doxygen doxy_real_modified_times)
+
 add_dependencies(latex content doxy_real_modified_times kconfig)
 
 add_custom_target(
