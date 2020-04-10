@@ -18,6 +18,7 @@ LICENSE
 Makefile
 tests/*
 samples/*
+doc/*
 *.rst
 *.md
 # if we change this file or associated script, it should not trigger a full
