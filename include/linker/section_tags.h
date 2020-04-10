@@ -34,6 +34,8 @@
 
 #if defined(CONFIG_NOCACHE_MEMORY)
 #define __nocache __in_section_unique(_NOCACHE_SECTION_NAME)
+#else
+#define __nocache
 #endif /* CONFIG_NOCACHE_MEMORY */
 
 #endif /* !_ASMLANGUAGE */
