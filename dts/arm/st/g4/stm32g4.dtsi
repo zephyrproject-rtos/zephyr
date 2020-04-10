@@ -31,6 +31,29 @@
 	};
 
 	soc {
+		/*
+		 * Both adc instances cannot be used in parallel right now.
+		 */
+		adc0: adc@50000000 {
+			compatible = "st,stm32-adc";
+			reg = <0x50000000 0x100>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_0";
+			#io-channel-cells = <1>;
+		};
+
+		adc1: adc@50000100 {
+			compatible = "st,stm32-adc";
+			reg = <0x50000100 0x100>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00002000>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_1";
+			#io-channel-cells = <1>;
+		};
+
 		flash-controller@40022000 {
 			compatible = "st,stm32g4-flash-controller";
 			label = "FLASH_CTRL";
