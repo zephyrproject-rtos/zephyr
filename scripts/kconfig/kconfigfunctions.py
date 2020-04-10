@@ -317,6 +317,21 @@ def dt_compat_enabled(kconf, _, compat):
     return "n"
 
 
+def dt_compat_on_bus(kconf, _, compat, bus):
+    """
+    This function takes a 'compat' and returns "y" if we find an "enabled"
+    compatible node in the EDT which is on bus 'bus'. It returns "n" otherwise.
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    for node in edt.compat2enabled[compat]:
+        if node.on_bus is not None and node.on_bus == bus:
+            return "y"
+
+    return "n"
+
+
 def dt_nodelabel_has_compat(kconf, _, label, compat):
     """
     This function takes a 'label' and returns "y" if an "enabled" node with
@@ -349,6 +364,7 @@ def shields_list_contains(kconf, _, shield):
 
 functions = {
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
+        "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
         "dt_nodelabel_enabled": (dt_nodelabel_enabled, 1, 1),
