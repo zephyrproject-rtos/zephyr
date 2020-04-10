@@ -296,6 +296,12 @@ class Build(Forceable):
         if not self.cmake_cache:
             return          # That's all we can check without a cache.
 
+        if "CMAKE_PROJECT_NAME" not in self.cmake_cache:
+            # This happens sometimes when a build system is not
+            # completely generated due to an error during the
+            # CMake configuration phase.
+            self.run_cmake = True
+
         cached_app = self.cmake_cache.get('APPLICATION_SOURCE_DIR')
         log.dbg('APPLICATION_SOURCE_DIR:', cached_app,
                 level=log.VERBOSE_EXTREME)
