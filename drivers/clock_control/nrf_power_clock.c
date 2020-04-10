@@ -14,6 +14,8 @@
 
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
+#define DT_DRV_COMPAT nordic_nrf_clock
+
 /* Helper logging macros which prepends subsys name to the log. */
 #ifdef CONFIG_LOG
 #define CLOCK_LOG(lvl, dev, subsys, ...) \
@@ -300,11 +302,10 @@ void nrf_power_clock_isr(void *arg);
 
 static int clk_init(struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0,
-		    DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nrf_power_clock_isr, 0, 0);
 
-	irq_enable(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
+	irq_enable(DT_INST_IRQN(0));
 
 	nrf_clock_lf_src_set(NRF_CLOCK, CLOCK_CONTROL_NRF_K32SRC);
 
@@ -347,8 +348,7 @@ static const struct nrf_clock_control_config config = {
 	}
 };
 
-DEVICE_AND_API_INIT(clock_nrf,
-		    DT_INST_0_NORDIC_NRF_CLOCK_LABEL,
+DEVICE_AND_API_INIT(clock_nrf, DT_INST_LABEL(0),
 		    clk_init, &data, &config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &clock_control_api);
@@ -449,7 +449,7 @@ void nrf5_power_usb_power_int_enable(bool enable)
 
 	if (enable) {
 		nrf_power_int_enable(NRF_POWER, mask);
-		irq_enable(DT_INST_0_NORDIC_NRF_CLOCK_IRQ_0);
+		irq_enable(DT_INST_IRQN(0));
 	} else {
 		nrf_power_int_disable(NRF_POWER, mask);
 	}

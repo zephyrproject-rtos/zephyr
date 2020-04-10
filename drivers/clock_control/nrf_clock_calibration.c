@@ -30,9 +30,6 @@ LOG_MODULE_DECLARE(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
  * is ongoing, it is requested by the calibration process and released when
  * calibration is done.
  */
-#ifndef DT_INST_0_NORDIC_NRF_TEMP_LABEL
-#define DT_INST_0_NORDIC_NRF_TEMP_LABEL ""
-#endif
 
 static atomic_t cal_process_in_progress;
 static s16_t prev_temperature; /* Previous temperature measurement. */
@@ -215,6 +212,17 @@ static void measure_temperature(struct k_work *work)
 			started ? "started" : "skipped", diff);
 }
 
+#define TEMP_NODE DT_INST(0, nordic_nrf_temp)
+
+#if DT_HAS_NODE(TEMP_NODE)
+static inline struct device *temp_device(void)
+{
+	return device_get_binding(DT_LABEL(TEMP_NODE));
+}
+#else
+#define temp_device() NULL
+#endif
+
 void z_nrf_clock_calibration_init(struct device *dev)
 {
 	/* Anomaly 36: After watchdog timeout reset, CPU lockup reset, soft
@@ -224,8 +232,7 @@ void z_nrf_clock_calibration_init(struct device *dev)
 	nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_DONE_MASK);
 
 	if (CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP != 0) {
-		temp_sensor =
-			device_get_binding(DT_INST_0_NORDIC_NRF_TEMP_LABEL);
+		temp_sensor = temp_device();
 	}
 
 	clk_dev = dev;
