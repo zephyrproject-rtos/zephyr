@@ -294,8 +294,8 @@ enum i2s_trigger_cmd {
  * @param mem_slab memory slab to store RX/TX data.
  * @param block_size Size of one RX/TX memory block (buffer) in bytes.
  * @param timeout Read/Write timeout. Number of milliseconds to wait in case TX
- *        queue is full, RX queue is empty or one of the special values
- *        K_NO_WAIT, K_FOREVER.
+ *        queue is full, RX queue is empty, or 0 for non-blocking operations,
+ *        or -1 to wait forever.
  */
 struct i2s_config {
 	u8_t word_size;
@@ -388,7 +388,7 @@ static inline struct i2s_config *i2s_config_get(struct device *dev,
  *
  * If there is no data in the RX queue the function will block waiting for
  * the next RX memory block to fill in. This operation can timeout as defined
- * by i2s_configure. If the timeout value is set to K_NO_WAIT the function
+ * by i2s_configure. If the timeout value is set to 0 the function
  * is non-blocking.
  *
  * Reading from the RX queue is possible in any state other than NOT_READY.
@@ -452,7 +452,7 @@ __syscall int i2s_buf_read(struct device *dev, void *buf, size_t *size);
  * If there are no free slots in the TX queue the function will block waiting
  * for the next TX memory block to be send and removed from the queue. This
  * operation can timeout as defined by i2s_configure. If the timeout value is
- * set to K_NO_WAIT the function is non-blocking.
+ * set to 0 the function is non-blocking.
  *
  * Writing to the TX queue is only possible if the interface is in READY or
  * RUNNING state.
