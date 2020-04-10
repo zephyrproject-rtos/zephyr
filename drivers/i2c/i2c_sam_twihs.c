@@ -348,7 +348,8 @@ static const struct i2c_sam_twihs_dev_cfg i2c0_sam_config = {
 
 static struct i2c_sam_twihs_dev_data i2c0_sam_data;
 
-DEVICE_AND_API_INIT(i2c0_sam, DT_I2C_0_NAME, &i2c_sam_twihs_initialize,
+DEVICE_AND_API_INIT(i2c0_sam, DT_LABEL(DT_NODELABEL(twihs0)),
+		    &i2c_sam_twihs_initialize,
 		    &i2c0_sam_data, &i2c0_sam_config, POST_KERNEL,
 		    CONFIG_I2C_INIT_PRIORITY, &i2c_sam_twihs_driver_api);
 #endif
@@ -378,7 +379,8 @@ static const struct i2c_sam_twihs_dev_cfg i2c1_sam_config = {
 
 static struct i2c_sam_twihs_dev_data i2c1_sam_data;
 
-DEVICE_AND_API_INIT(i2c1_sam, DT_I2C_1_NAME, &i2c_sam_twihs_initialize,
+DEVICE_AND_API_INIT(i2c1_sam, DT_LABEL(DT_NODELABEL(twihs1)),
+		    &i2c_sam_twihs_initialize,
 		    &i2c1_sam_data, &i2c1_sam_config, POST_KERNEL,
 		    CONFIG_I2C_INIT_PRIORITY, &i2c_sam_twihs_driver_api);
 #endif
@@ -408,7 +410,8 @@ static const struct i2c_sam_twihs_dev_cfg i2c2_sam_config = {
 
 static struct i2c_sam_twihs_dev_data i2c2_sam_data;
 
-DEVICE_AND_API_INIT(i2c2_sam, DT_I2C_2_NAME, &i2c_sam_twihs_initialize,
+DEVICE_AND_API_INIT(i2c2_sam, DT_LABEL(DT_NODELABEL(twihs2)),
+		    &i2c_sam_twihs_initialize,
 		    &i2c2_sam_data, &i2c2_sam_config, POST_KERNEL,
 		    CONFIG_I2C_INIT_PRIORITY, &i2c_sam_twihs_driver_api);
 #endif
