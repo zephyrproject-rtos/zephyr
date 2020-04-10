@@ -18,7 +18,6 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 set(ZEPHYR_DTS                  ${PROJECT_BINARY_DIR}/zephyr.dts)
 set(DEVICETREE_UNFIXED_H        ${PROJECT_BINARY_DIR}/include/generated/devicetree_unfixed.h)
 set(DEVICETREE_UNFIXED_LEGACY_H ${PROJECT_BINARY_DIR}/include/generated/devicetree_legacy_unfixed.h)
-set(DEVICETREE_CONF             ${PROJECT_BINARY_DIR}/include/generated/devicetree.conf)
 set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/${BOARD}.dts.pre.tmp)
 
 set_ifndef(DTS_SOURCE ${BOARD_DIR}/${BOARD}.dts)
@@ -217,7 +216,6 @@ if(SUPPORTS_DTS)
   --dtc-flags '${EXTRA_DTC_FLAGS}'
   --bindings-dirs ${DTS_ROOT_BINDINGS}
   --header-out ${DEVICETREE_UNFIXED_LEGACY_H}
-  --conf-out ${DEVICETREE_CONF}
   )
 
   execute_process(
