@@ -12,6 +12,8 @@
 / {
 	aliases {
 		watchdog0 = &wdt;
+
+		eth-0 = &gmac;
 	};
 
 	cpus {
