@@ -12,6 +12,5 @@ cmake_minimum_required(VERSION 3.13.1)
 find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(smp_svr)
 
-target_sources(app PRIVATE
-    src/main.c
-)
+target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_MCUMGR_SMP_BT app PRIVATE src/bluetooth.c)

@@ -5,8 +5,9 @@ common:
     harness: bluetooth
     tags: bluetooth
 tests:
-  sample.mcumg.smp_svr.nrf51:
-    extra_args: CONF_FILE="prj_tiny.conf"
+  sample.mcumg.smp_svr.bt_tiny:
+    extra_args: OVERLAY_CONFIG="overlay-bt-tiny.conf"
     platform_whitelist: nrf51dk_nrf51422
-  sample.mcumg.smp_svr.nrf52:
+  sample.mcumg.smp_svr.bt:
+    extra_args: OVERLAY_CONFIG="overlay-bt.conf"
     platform_whitelist: nrf52dk_nrf52832 nrf52840dk_nrf52840
