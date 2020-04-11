@@ -1,11 +1,9 @@
 tests:
   kernel.memory_protection:
-    min_ram: 32
     filter: CONFIG_ARCH_HAS_USERSPACE
     platform_exclude: twr_ke18f
     tags: kernel security userspace ignore_faults
   kernel.memory_protection.gap_filling:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS
     extra_args: CONFIG_MPU_GAP_FILLING=y
-    min_ram: 32
     tags: kernel security userspace ignore_faults

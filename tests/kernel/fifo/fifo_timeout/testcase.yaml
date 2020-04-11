@@ -1,8 +1,6 @@
 tests:
   kernel.fifo.timeout:
-    min_ram: 32
     tags: kernel
   kernel.fifo.timeout.poll:
-    min_ram: 32
     extra_args: CONF_FILE="prj_poll.conf"
     tags: kernel

@@ -3,23 +3,19 @@ tests:
     filter: not CONFIG_SCHED_MULTIQ
     extra_configs:
       - CONFIG_TIMESLICING=y
-    min_ram: 40
     tags: kernel threads sched userspace
   kernel.scheduler.no_timeslicing:
     filter: not CONFIG_SCHED_MULTIQ
     extra_configs:
       - CONFIG_TIMESLICING=n
-    min_ram: 40
     tags: kernel threads sched userspace
   kernel.scheduler.multiq:
     extra_args: CONF_FILE=prj_multiq.conf
     extra_configs:
       - CONFIG_TIMESLICING=y
-    min_ram: 40
     tags: kernel threads sched userspace
   kernel.scheduler.multiq_no_timeslicing:
     extra_args: CONF_FILE=prj_multiq.conf
     extra_configs:
       - CONFIG_TIMESLICING=n
-    min_ram: 40
     tags: kernel threads sched userspace
