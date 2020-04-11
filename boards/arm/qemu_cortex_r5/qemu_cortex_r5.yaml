@@ -11,7 +11,3 @@ ram: 65536
 flash: 32768
 testing:
   default: true
-  ignore_tags:
-    - benchmark
-    - memory_protection
-    - userspace
