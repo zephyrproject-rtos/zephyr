@@ -17,6 +17,7 @@ if ADC
 
 config ADC_SHELL
 	bool "Enable ADC Shell"
+	depends on SHELL
 	help
 	  Enable ADC Shell for testing.
 
