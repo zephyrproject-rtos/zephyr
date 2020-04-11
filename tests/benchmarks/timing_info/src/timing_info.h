@@ -33,7 +33,7 @@
  *
  * NOTE: Needed only when reading value from end of swap operation
  */
-#ifdef CONFIG_NRF_RTC_TIMER
+#if defined(CONFIG_NRF_RTC_TIMER)
 
 /* To get current count of timer, first 1 need to be written into
  * Capture Register and Current Count will be copied into corresponding
@@ -44,37 +44,37 @@
 #define TIMING_INFO_GET_TIMER_VALUE() (TIMING_INFO_OS_GET_TIME())
 #define SUBTRACT_CLOCK_CYCLES(val)    (val)
 
-#elif CONFIG_SOC_SERIES_MEC1501X
+#elif defined(CONFIG_SOC_SERIES_MEC1501X)
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()     (B32TMR1_REGS->CNT)
 #define TIMING_INFO_GET_TIMER_VALUE() (TIMING_INFO_OS_GET_TIME())
 #define SUBTRACT_CLOCK_CYCLES(val)    (val)
 
-#elif CONFIG_X86
+#elif defined(CONFIG_X86)
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()      (z_tsc_read())
 #define TIMING_INFO_GET_TIMER_VALUE()  (TIMING_INFO_OS_GET_TIME())
 #define SUBTRACT_CLOCK_CYCLES(val)     (val)
 
-#elif CONFIG_ARM64
+#elif defined(CONFIG_ARM64)
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()      (k_cycle_get_32())
 #define TIMING_INFO_GET_TIMER_VALUE()  (k_cycle_get_32())
 #define SUBTRACT_CLOCK_CYCLES(val)     ((u32_t)val)
 
-#elif CONFIG_ARM
+#elif defined(CONFIG_ARM)
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()      (k_cycle_get_32())
 #define TIMING_INFO_GET_TIMER_VALUE()  (SysTick->VAL)
 #define SUBTRACT_CLOCK_CYCLES(val)     (SysTick->LOAD - (u32_t)val)
 
-#elif CONFIG_ARC
+#elif defined(CONFIG_ARC)
 #define TIMING_INFO_PRE_READ()
 #define TIMING_INFO_OS_GET_TIME()     (k_cycle_get_32())
 #define TIMING_INFO_GET_TIMER_VALUE() (z_arc_v2_aux_reg_read(_ARC_V2_TMR0_COUNT))
 #define SUBTRACT_CLOCK_CYCLES(val)    ((u32_t)val)
 
-#elif CONFIG_NIOS2
+#elif defined(CONFIG_NIOS2)
 #include "altera_avalon_timer_regs.h"
 #define TIMING_INFO_PRE_READ()         \
 	(IOWR_ALTERA_AVALON_TIMER_SNAPL(TIMER_0_BASE, 10))
@@ -104,7 +104,7 @@
 /* NRF RTC TIMER runs ar very slow rate (32KHz), So in order to measure
  * Kernel starts a dedicated timer to measure kernel stats.
  */
-#ifdef CONFIG_NRF_RTC_TIMER
+#if defined(CONFIG_NRF_RTC_TIMER)
 #define NANOSECS_PER_SEC (1000000000)
 #define CYCLES_PER_SEC   (16000000/(1 << NRF_TIMER2->PRESCALER))
 
@@ -139,7 +139,7 @@ static inline u32_t get_core_freq_MHz(void)
 	return SystemCoreClock/1000000;
 }
 
-#elif CONFIG_SOC_SERIES_MEC1501X
+#elif defined(CONFIG_SOC_SERIES_MEC1501X)
 
 #define NANOSECS_PER_SEC	(1000000000)
 #define CYCLES_PER_SEC		(48000000)
