@@ -2,7 +2,7 @@
 import re
 from collections import OrderedDict
 
-result_re = re.compile("(PASS|FAIL|SKIP) - (test_)?(.*)")
+result_re = re.compile(".*(PASS|FAIL|SKIP) - (test_)?(.*)")
 
 class Harness:
     GCOV_START = "GCOV_COVERAGE_DUMP_START"
