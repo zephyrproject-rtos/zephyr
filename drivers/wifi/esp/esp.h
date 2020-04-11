@@ -29,13 +29,34 @@ extern "C" {
 #define _CWJAP  "CWJAP_CUR"
 #define _CIPSTA "CIPSTA_CUR"
 #define _CIPSTAMAC "CIPSTAMAC_CUR"
+#define _CIPRECVDATA "+CIPRECVDATA,"
+#define _CIPRECVDATA_END ':'
 #else
 #define _CWMODE "CWMODE"
 #define _CWSAP  "CWSAP"
 #define _CWJAP  "CWJAP"
 #define _CIPSTA "CIPSTA"
 #define _CIPSTAMAC "CIPSTAMAC"
+#define _CIPRECVDATA "+CIPRECVDATA:"
+#define _CIPRECVDATA_END ','
 #endif
+
+/*
+ * Passive mode differs a bit between firmware versions and the macro
+ * ESP_PROTO_PASSIVE is therefore used to determine what protocol operates in
+ * passive mode. For AT version 1.7 passive mode only affects TCP but in AT
+ * version 2.0 it affects both TCP and UDP.
+ */
+#if defined(CONFIG_WIFI_ESP_PASSIVE_MODE)
+#if defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
+#define ESP_PROTO_PASSIVE(proto) (proto == IPPROTO_TCP)
+#else
+#define ESP_PROTO_PASSIVE(proto) \
+	(proto == IPPROTO_TCP || proto == IPPROTO_UDP)
+#endif /* CONFIG_WIFI_ESP_AT_VERSION_1_7 */
+#else
+#define ESP_PROTO_PASSIVE(proto) 0
+#endif /* CONFIG_WIFI_ESP_PASSIVE_MODE */
 
 #define ESP_BUS DT_BUS(DT_DRV_INST(0))
 
@@ -163,9 +184,10 @@ struct esp_data {
 
 	scan_result_cb_t scan_cb;
 
-	/* response semaphore */
+	/* semaphores */
 	struct k_sem sem_tx_ready;
 	struct k_sem sem_response;
+	struct k_sem sem_if_ready;
 	struct k_sem sem_if_up;
 };
 

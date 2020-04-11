@@ -42,12 +42,20 @@ config WIFI_ESP_WORKQ_THREAD_PRIORITY
 	help
 	  Priority of thread used for processing driver work queue items.
 
-config WIFI_ESP_PASSIVE_TCP
-	bool "Use passive TCP"
+config WIFI_ESP_PASSIVE_MODE
+	bool "Use passive mode"
 	help
 	  This lets the ESP handle the TCP window so that data can flow
 	  at a rate that the driver can handle. Without this, data might get
 	  lost if the driver cannot empty the device buffer quickly enough.
+
+config WIFI_ESP_RESET_TIMEOUT
+	int "Reset timeout"
+	default 3000
+	help
+	  How long to wait for device to become ready after AT+RST has been
+	  sent. This can vary with chipset (ESP8266/ESP32) and firmware
+	  version. This is ignored if a reset pin is configured.
 
 choice WIFI_ESP_AT_VERSION
 	prompt "AT version"
