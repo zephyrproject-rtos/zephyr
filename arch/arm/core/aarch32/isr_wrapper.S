@@ -188,16 +188,9 @@ _idle_state_cleared:
 
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	stm sp!,{r0-r3} /* Save r0 to r3 into stack */
-	push {r0, lr}
+	push {r0, r3}	/* Save r0 and r3 into stack */
 	bl read_timer_end_of_isr
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	pop {r0, r3}
-	mov lr,r3
-#else
-	pop {r0, lr}
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-	ldm sp!,{r0-r3} /* Restore r0 to r3 regs */
+	pop {r0, r3}	/* Restore r0 and r3 regs */
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 	blx r3		/* call ISR */
 
