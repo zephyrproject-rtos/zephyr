@@ -18,6 +18,7 @@ config ETH_SAM_GMAC_QUEUES
 	range 1 $(dt_node_int_prop_int,/soc/ethernet@40050088,num-queues) if SOC_SERIES_SAME70 || \
 									     SOC_SERIES_SAMV71
 	range 1 $(dt_node_int_prop_int,/soc/ethernet@40034000,num-queues) if SOC_SERIES_SAM4E
+	range 1 $(dt_node_int_prop_int,/soc/ethernet@42000800,num-queues) if SOC_SERIES_SAME54
 	help
 	  Select the number of hardware queues used by the driver. Packets will be
 	  routed to appropriate queues based on their priority.
