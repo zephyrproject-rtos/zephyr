@@ -28,6 +28,13 @@ config ETH_MCUX_RMII_EXT_CLK
 	  Setting this option will configure MCUX clock block to feed RMII
 	  reference clock from external source (ENET_1588_CLKIN)
 
+config ETH_MCUX_NO_PHY_SMI
+	bool "Do not use SMI for PHY communication"
+	help
+	  Some PHY devices, with DSA capabilities do not use SMI for
+	  communication with MAC ENET controller. Other busses - like SPI
+	  or I2C are used instead.
+
 config ETH_MCUX_PHY_TICK_MS
 	int "PHY poll period (ms)"
 	default 1000
