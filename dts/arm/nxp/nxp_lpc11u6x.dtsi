@@ -35,6 +35,33 @@
 		flash0:flash@0 {
 			compatible = "soc-nv-flash";
 		};
+
+		/* PIO0_0 to PIO0_23. */
+		pinmux0: pinmux@40044000 {
+			compatible = "nxp,lpc11u6x-pinmux";
+			#pinmux-cells = <2>;
+			reg = <0x40044000 0x60>;
+			label = "PINMUX_0";
+			status = "okay";
+		};
+
+		/* PIO1_0 to PIO1_31. */
+		pinmux1: pinmux@40044060 {
+			compatible = "nxp,lpc11u6x-pinmux";
+			#pinmux-cells = <2>;
+			reg = <0x40044060 0x80>;
+			label = "PINMUX_1";
+			status = "okay";
+		};
+
+		/* PIO2_0 to PIO2_23. */
+		pinmux2: pinmux@400440f0 {
+			compatible = "nxp,lpc11u6x-pinmux";
+			#pinmux-cells = <2>;
+			reg = <0x400440f0 0x64>;
+			label = "PINMUX_2";
+			status = "okay";
+		};
 	};
 };
 
