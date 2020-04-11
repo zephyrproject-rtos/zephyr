@@ -283,11 +283,16 @@ static inline struct net_if *get_iface(struct eth_context *ctx, u16_t vlan_tag)
 static void eth_mcux_phy_enter_reset(struct eth_context *context)
 {
 	/* Reset the PHY. */
+#ifndef CONFIG_ETH_MCUX_NO_PHY_SMI
 	ENET_StartSMIWrite(context->base, context->phy_addr,
 			   PHY_BASICCONTROL_REG,
 			   kENET_MiiWriteValidFrame,
 			   PHY_BCTL_RESET_MASK);
+#endif
 	context->phy_state = eth_mcux_phy_state_reset;
+#ifdef CONFIG_ETH_MCUX_NO_PHY_SMI
+	k_work_submit(&context->phy_work);
+#endif
 }
 
 static void eth_mcux_phy_start(struct eth_context *context)
@@ -303,10 +308,19 @@ static void eth_mcux_phy_start(struct eth_context *context)
 	case eth_mcux_phy_state_initial:
 		ENET_ActiveRead(context->base);
 		/* Reset the PHY. */
+#ifndef CONFIG_ETH_MCUX_NO_PHY_SMI
 		ENET_StartSMIWrite(context->base, context->phy_addr,
 				   PHY_BASICCONTROL_REG,
 				   kENET_MiiWriteValidFrame,
 				   PHY_BCTL_RESET_MASK);
+#else
+		/*
+		 * With no SMI communication one needs to wait for
+		 * iface being up by the network core.
+		 */
+		k_work_submit(&context->phy_work);
+		break;
+#endif
 #ifdef CONFIG_SOC_SERIES_IMX_RT
 		context->phy_state = eth_mcux_phy_state_initial;
 #else
@@ -392,6 +406,17 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		}
 		context->phy_state = eth_mcux_phy_state_reset;
 #endif
+#ifdef CONFIG_ETH_MCUX_NO_PHY_SMI
+		/*
+		 * When the iface is available proceed with the eth link setup,
+		 * otherwise reschedule the eth_mcux_phy_event and check after
+		 * 1ms
+		 */
+		if (context->iface)
+		       context->phy_state = eth_mcux_phy_state_reset;
+
+	        k_delayed_work_submit(&context->delayed_phy_work, 1);
+#endif
 		break;
 	case eth_mcux_phy_state_closing:
 		if (context->enabled) {
@@ -403,6 +428,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		break;
 	case eth_mcux_phy_state_reset:
 		/* Setup PHY autonegotiation. */
+#ifndef CONFIG_ETH_MCUX_NO_PHY_SMI
 		ENET_StartSMIWrite(context->base, context->phy_addr,
 				   PHY_AUTONEG_ADVERTISE_REG,
 				   kENET_MiiWriteValidFrame,
@@ -410,24 +436,38 @@ static void eth_mcux_phy_event(struct eth_context *context)
 				    PHY_100BASETX_HALFDUPLEX_MASK |
 				    PHY_10BASETX_FULLDUPLEX_MASK |
 				    PHY_10BASETX_HALFDUPLEX_MASK | 0x1U));
+#endif
 		context->phy_state = eth_mcux_phy_state_autoneg;
+#ifdef CONFIG_ETH_MCUX_NO_PHY_SMI
+		k_work_submit(&context->phy_work);
+#endif
 		break;
 	case eth_mcux_phy_state_autoneg:
+#ifndef CONFIG_ETH_MCUX_NO_PHY_SMI
 		/* Setup PHY autonegotiation. */
 		ENET_StartSMIWrite(context->base, context->phy_addr,
 				   PHY_BASICCONTROL_REG,
 				   kENET_MiiWriteValidFrame,
 				   (PHY_BCTL_AUTONEG_MASK |
 				    PHY_BCTL_RESTART_AUTONEG_MASK));
+#endif
 		context->phy_state = eth_mcux_phy_state_restart;
+#ifdef CONFIG_ETH_MCUX_NO_PHY_SMI
+		k_work_submit(&context->phy_work);
+#endif
 		break;
 	case eth_mcux_phy_state_wait:
 	case eth_mcux_phy_state_restart:
 		/* Start reading the PHY basic status. */
+#ifndef CONFIG_ETH_MCUX_NO_PHY_SMI
 		ENET_StartSMIRead(context->base, context->phy_addr,
 				  PHY_BASICSTATUS_REG,
 				  kENET_MiiReadValidFrame);
+#endif
 		context->phy_state = eth_mcux_phy_state_read_status;
+#ifdef CONFIG_ETH_MCUX_NO_PHY_SMI
+		k_work_submit(&context->phy_work);
+#endif
 		break;
 	case eth_mcux_phy_state_read_status:
 		/* PHY Basic status is available. */
@@ -435,9 +475,11 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		link_up =  status & PHY_BSTATUS_LINKSTATUS_MASK;
 		if (link_up && !context->link_up) {
 			/* Start reading the PHY control register. */
+#ifndef CONFIG_ETH_MCUX_NO_PHY_SMI
 			ENET_StartSMIRead(context->base, context->phy_addr,
 					  PHY_CONTROL1_REG,
 					  kENET_MiiReadValidFrame);
+#endif
 			context->link_up = link_up;
 			context->phy_state = eth_mcux_phy_state_read_duplex;
 
@@ -446,6 +488,9 @@ static void eth_mcux_phy_event(struct eth_context *context)
 				net_eth_carrier_on(context->iface);
 				k_sleep(USEC_PER_MSEC);
 			}
+#ifdef CONFIG_ETH_MCUX_NO_PHY_SMI
+		        k_work_submit(&context->phy_work);
+#endif
 		} else if (!link_up && context->link_up) {
 			LOG_INF("%s link down", eth_name(context->base));
 			context->link_up = link_up;
@@ -948,7 +993,9 @@ static void eth_mcux_init(struct device *dev)
 	ENET_GetDefaultConfig(&enet_config);
 	enet_config.interrupt |= kENET_RxFrameInterrupt;
 	enet_config.interrupt |= kENET_TxFrameInterrupt;
+#ifndef CONFIG_ETH_MCUX_NO_PHY_SMI
 	enet_config.interrupt |= kENET_MiiInterrupt;
+#endif
 
 	if (IS_ENABLED(CONFIG_ETH_MCUX_PROMISCUOUS_MODE)) {
 		enet_config.macSpecialConfig |= kENET_ControlPromiscuousEnable;
@@ -995,8 +1042,9 @@ static void eth_mcux_init(struct device *dev)
 	ENET_AddMulticastGroup(context->base, mdns_multicast);
 #endif
 
+#ifndef CONFIG_ETH_MCUX_NO_PHY_SMI
 	ENET_SetSMI(context->base, sys_clock, false);
-
+#endif
 	/* handle PHY setup after SMI initialization */
 	eth_mcux_phy_setup(context);
 
