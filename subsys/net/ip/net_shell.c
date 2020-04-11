@@ -3744,6 +3744,34 @@ static void tcp_sent_cb(struct net_context *context,
 {
 	PR_SHELL(tcp_shell, "Message sent\n");
 }
+
+static void tcp_recv_cb(struct net_context *context, struct net_pkt *pkt,
+			union net_ip_header *ip_hdr,
+			union net_proto_header *proto_hdr,
+			int status, void *user_data)
+{
+	int ret;
+
+	if (pkt == NULL) {
+		if (!tcp_ctx || !net_context_is_used(tcp_ctx)) {
+			return;
+		}
+
+		ret = net_context_put(tcp_ctx);
+		if (ret < 0) {
+			PR_SHELL(tcp_shell,
+				 "Cannot close the connection (%d)\n", ret);
+			return;
+		}
+
+		PR_SHELL(tcp_shell, "Connection closed by remote peer.\n");
+		tcp_ctx = NULL;
+
+		return;
+	}
+
+	PR_SHELL(tcp_shell, "%d bytes received\n", net_pkt_get_len(pkt));
+}
 #endif
 
 static int cmd_net_tcp_connect(const struct shell *shell, size_t argc,
@@ -3816,6 +3844,35 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 			       TCP_TIMEOUT, &user_data);
 	if (ret < 0) {
 		PR_WARNING("Cannot send msg (%d)\n", ret);
+		return -ENOEXEC;
+	}
+
+#else
+	PR_INFO("Set %s to enable %s support.\n",
+		"CONFIG_NET_TCP and CONFIG_NET_NATIVE", "TCP");
+#endif /* CONFIG_NET_NATIVE_TCP */
+
+	return 0;
+}
+
+static int cmd_net_tcp_recv(const struct shell *shell, size_t argc,
+			    char *argv[])
+{
+#if defined(CONFIG_NET_TCP1) && defined(CONFIG_NET_NATIVE_TCP)
+	int ret;
+	struct net_shell_user_data user_data;
+
+	/* tcp recv */
+	if (!tcp_ctx || !net_context_is_used(tcp_ctx)) {
+		PR_WARNING("Not connected\n");
+		return -ENOEXEC;
+	}
+
+	user_data.shell = shell;
+
+	ret = net_context_recv(tcp_ctx, tcp_recv_cb, K_NO_WAIT, &user_data);
+	if (ret < 0) {
+		PR_WARNING("Cannot recv data (%d)\n", ret);
 		return -ENOEXEC;
 	}
 
@@ -4469,6 +4526,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_tcp,
 	SHELL_CMD(send, NULL,
 		  "'net tcp send <data>' sends data to peer using TCP.",
 		  cmd_net_tcp_send),
+	SHELL_CMD(recv, NULL,
+		  "'net tcp recv' receives data using TCP.",
+		  cmd_net_tcp_recv),
 	SHELL_CMD(close, NULL,
 		  "'net tcp close' closes TCP connection.", cmd_net_tcp_close),
 	SHELL_SUBCMD_SET_END
