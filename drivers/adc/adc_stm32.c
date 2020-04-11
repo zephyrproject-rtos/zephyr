@@ -568,6 +568,7 @@ static int adc_stm32_init(struct device *dev)
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
 	defined(CONFIG_SOC_SERIES_STM32G4X)
 	if (LL_ADC_IsActiveFlag_ADRDY(adc)) {
