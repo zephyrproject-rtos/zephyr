@@ -1,0 +1,22 @@
+# Copyright (c) 2020 Seagate Technology LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC11U6X pinmux (aka IOCON) node
+
+compatible: "nxp,lpc11u6x-pinmux"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    "#pinmux-cells":
+      type: int
+      required: true
+      const: 2
+      description: number of items in a pinmux specifier
+
+pinmux-cells:
+  - pin
+  - function
