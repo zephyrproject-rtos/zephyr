@@ -1,6 +1,4 @@
 tests:
   kernel.poll:
     tags: kernel userspace
-    min_ram: 16
-    min_flash: 34
     platform_exclude: nrf52dk_nrf52810
