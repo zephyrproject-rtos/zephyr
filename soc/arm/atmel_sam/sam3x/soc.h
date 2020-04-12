@@ -38,9 +38,6 @@
 /* Add include for DTS generated information */
 #include <devicetree.h>
 
-#define ID_UART0   ID_UART
-#define UART0      UART
-
 #include "soc_pinmap.h"
 
 #include "../common/soc_pmc.h"
