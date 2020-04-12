@@ -14,8 +14,4 @@ config IPM_STM32_IPCC
 	default y
 	depends on IPM
 
-config I2C_STM32_V2
-	default y
-	depends on I2C_STM32
-
 endif # SOC_SERIES_STM32MP1X

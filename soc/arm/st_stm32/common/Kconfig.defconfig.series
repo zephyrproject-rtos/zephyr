@@ -49,10 +49,6 @@ config SPI_STM32
 	default y
 	depends on SPI
 
-config I2C_STM32
-	default y
-	depends on I2C
-
 config USB_DC_STM32
 	default y
 	depends on USB

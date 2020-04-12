@@ -12,8 +12,4 @@ source "soc/arm/st_stm32/stm32h7/Kconfig.defconfig.stm32h7*"
 config SOC_SERIES
 	default "stm32h7"
 
-config I2C_STM32_V2
-	default y
-	depends on I2C_STM32
-
 endif # SOC_SERIES_STM32H7X

@@ -44,7 +44,7 @@
 #include <stm32l0xx_ll_rcc.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
-#ifdef CONFIG_I2C_STM32_V2
+#ifdef CONFIG_I2C_STM32
 #include <stm32l0xx_ll_i2c.h>
 #endif
 
