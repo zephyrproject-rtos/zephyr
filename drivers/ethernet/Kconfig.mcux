@@ -35,6 +35,44 @@ config ETH_MCUX_NO_PHY_SMI
 	  communication with MAC ENET controller. Other busses - like SPI or I2C
 	  are used instead.
 
+config ETH_MCUX_FIXED_PHY
+	bool "Enable fixed PHY setup"
+	help
+	  Some PHY devices, with DSA capabilities, have the communicaton between
+	  ENET and switch fixed.
+
+if ETH_MCUX_FIXED_PHY
+
+choice ETH_MCUX_FIXED_PHY_SPEED
+	prompt "Fixed PHY speed"
+	default ETH_MCUX_FIXED_PHY_SPEED_100
+	help
+	  Choose transmission speed for fixed PHY
+
+config ETH_MCUX_FIXED_PHY_SPEED_100
+       bool "Set fixed PHY transmission speed to 100 Mbps"
+
+config ETH_MCUX_FIXED_PHY_SPEED_10
+       bool "Set fixed PHY transmission speed to 10 Mbps"
+
+endchoice
+
+choice ETH_MCUX_FIXED_PHY_DUPLEX
+	prompt "Fixed PHY duplex"
+	default ETH_MCUX_FIXED_PHY_DUPLEX_FULL
+	help
+	  Choose duplex setup for fixed PHY
+
+config ETH_MCUX_FIXED_PHY_DUPLEX_FULL
+       bool "Set fixed PHY transmission to full duplex"
+
+config ETH_MCUX_FIXED_PHY_DUPLEX_HALF
+       bool "Set fixed PHY transmission to half duplex"
+
+endchoice
+
+endif # ETH_MCUX_FIXED_PHY
+
 config ETH_MCUX_PHY_TICK_MS
 	int "PHY poll period (ms)"
 	default 1000
