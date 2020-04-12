@@ -458,7 +458,8 @@ static enum updatehub_response install_update(void)
 		goto error;
 	}
 
-	if (coap_block_transfer_init(&ctx.block, COAP_BLOCK_1024,
+	if (coap_block_transfer_init(&ctx.block,
+				     CONFIG_UPDATEHUB_COAP_BLOCK_SIZE_EXP,
 				     update_info.image_size) < 0) {
 		LOG_ERR("Unable init block transfer");
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
