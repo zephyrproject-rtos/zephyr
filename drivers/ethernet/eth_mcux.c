@@ -42,12 +42,22 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "fsl_clock.h"
 #include <drivers/clock_control.h>
 #endif
+#include <devicetree.h>
 
 #include "eth.h"
 
 #define FREESCALE_OUI_B0 0x00
 #define FREESCALE_OUI_B1 0x04
 #define FREESCALE_OUI_B2 0x9f
+
+#define ETH_MCUX_FIXED_LINK_NODE \
+	DT_CHILD(DT_ALIAS(eth), fixed_link)
+#define ETH_MCUX_FIXED_LINK \
+	DT_NODE_EXISTS(ETH_MCUX_FIXED_LINK_NODE)
+#define ETH_MCUX_FIXED_LINK_SPEED \
+	DT_PROP(ETH_MCUX_FIXED_LINK_NODE, speed)
+#define ETH_MCUX_FIXED_LINK_FULL_DUPLEX \
+	DT_PROP(ETH_MCUX_FIXED_LINK_NODE, full_duplex)
 
 enum eth_mcux_phy_state {
 	eth_mcux_phy_state_initial,
@@ -242,6 +252,22 @@ out:
 #define ETH_MCUX_PM_FUNC device_pm_control_nop
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
+#if ETH_MCUX_FIXED_LINK
+static void eth_mcux_get_phy_params(phy_duplex_t *p_phy_duplex,
+				    phy_speed_t *p_phy_speed)
+{
+	*p_phy_duplex = kPHY_HalfDuplex;
+#if ETH_MCUX_FIXED_LINK_FULL_DUPLEX
+	*p_phy_duplex = kPHY_FullDuplex;
+#endif
+
+	*p_phy_speed = kPHY_Speed10M;
+#if ETH_MCUX_FIXED_LINK_SPEED == 100
+	*p_phy_speed = kPHY_Speed100M;
+#endif
+}
+#else
+
 static void eth_mcux_decode_duplex_and_speed(uint32_t status,
 					     phy_duplex_t *p_phy_duplex,
 					     phy_speed_t *p_phy_speed)
@@ -265,6 +291,7 @@ static void eth_mcux_decode_duplex_and_speed(uint32_t status,
 		break;
 	}
 }
+#endif /* ETH_MCUX_FIXED_LINK */
 
 static inline struct net_if *get_iface(struct eth_context *ctx, uint16_t vlan_tag)
 {
@@ -378,7 +405,9 @@ void eth_mcux_phy_stop(struct eth_context *context)
 
 static void eth_mcux_phy_event(struct eth_context *context)
 {
+#if !(defined(CONFIG_ETH_MCUX_NO_PHY_SMI) && ETH_MCUX_FIXED_LINK)
 	uint32_t status;
+#endif
 	bool link_up;
 #ifdef CONFIG_SOC_SERIES_IMX_RT
 	status_t res;
@@ -476,8 +505,12 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		break;
 	case eth_mcux_phy_state_read_status:
 		/* PHY Basic status is available. */
+#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI) && ETH_MCUX_FIXED_LINK
+		link_up = true;
+#else
 		status = ENET_ReadSMIData(context->base);
 		link_up =  status & PHY_BSTATUS_LINKSTATUS_MASK;
+#endif
 		if (link_up && !context->link_up) {
 			/* Start reading the PHY control register. */
 #ifndef CONFIG_ETH_MCUX_NO_PHY_SMI
@@ -512,10 +545,15 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		break;
 	case eth_mcux_phy_state_read_duplex:
 		/* PHY control register is available. */
+#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI) && ETH_MCUX_FIXED_LINK
+		eth_mcux_get_phy_params(&phy_duplex, &phy_speed);
+		LOG_INF("%s - Fixed Link", eth_name(context->base));
+#else
 		status = ENET_ReadSMIData(context->base);
 		eth_mcux_decode_duplex_and_speed(status,
 						 &phy_duplex,
 						 &phy_speed);
+#endif
 		if (phy_speed != context->phy_speed ||
 		    phy_duplex != context->phy_duplex) {
 			context->phy_speed = phy_speed;
