@@ -10,8 +10,4 @@ source "soc/arm/st_stm32/stm32wb/Kconfig.defconfig.stm32wb*"
 config SOC_SERIES
 	default "stm32wb"
 
-config I2C_STM32_V2
-	default y
-	depends on I2C_STM32
-
 endif # SOC_SERIES_STM32WBX
