@@ -2329,9 +2329,11 @@ class TestSuite:
             outdir = self.outdir
 
         if not no_update:
-            self.xunit_report(filename + ".xml", only_failed)
+            self.xunit_report(filename + ".xml", full_report=False, append=only_failed)
+            self.xunit_report(filename + "_report.xml", full_report=True, append=only_failed)
             self.csv_report(filename + ".csv")
-            self.target_report(outdir)
+
+            self.target_report(outdir, append=only_failed)
             if self.discards:
                 self.discard_report(filename + "_discard.csv")
 
@@ -2798,23 +2800,37 @@ class TestSuite:
                            "reason": reason}
                 cw.writerow(rowdict)
 
-    def target_report(self, outdir):
-        run = "Sanitycheck"
-        eleTestsuite = None
-
+    def target_report(self, outdir, append=False):
         platforms = {inst.platform.name for _, inst in self.instances.items()}
         for platform in platforms:
-            errors = 0
-            passes = 0
-            fails = 0
-            duration = 0
-            skips = 0
-            for _, instance in self.instances.items():
-                if instance.platform.name != platform:
-                    continue
+            filename = os.path.join(outdir,"{}.xml".format(platform))
+            self.xunit_report(filename, platform, full_report=True, append=append)
 
-                handler_time = instance.metrics.get('handler_time', 0)
-                duration += handler_time
+
+    @staticmethod
+    def process_log(log_file):
+        filtered_string = ""
+        if os.path.exists(log_file):
+            with open(log_file, "rb") as f:
+                log = f.read().decode("utf-8")
+                filtered_string = ''.join(filter(lambda x: x in string.printable, log))
+
+        return filtered_string
+
+    def xunit_report(self, filename, platform=None, full_report=False, append=False):
+        fails = 0
+        passes = 0
+        errors = 0
+        skips = 0
+        duration = 0
+
+        for _, instance in self.instances.items():
+            if platform and instance.platform.name != platform:
+                continue
+
+            handler_time = instance.metrics.get('handler_time', 0)
+            duration += handler_time
+            if full_report:
                 for k in instance.results.keys():
                     if instance.results[k] == 'PASS':
                         passes += 1
@@ -2824,25 +2840,59 @@ class TestSuite:
                         skips += 1
                     else:
                         fails += 1
+            else:
+                if instance.status in ["failed", "timeout"]:
+                    if instance.reason in ['build_error', 'handler_crash']:
+                        errors += 1
+                    else:
+                        fails += 1
+                elif instance.status == 'skipped':
+                    skips += 1
+                else:
+                    passes += 1
 
+        run = "Sanitycheck"
+        eleTestsuite = None
+
+        # When we re-run the tests, we re-use the results and update only with
+        # the newly run tests.
+        if os.path.exists(filename) and append:
+            tree = ET.parse(filename)
+            eleTestsuites = tree.getroot()
+            eleTestsuite = tree.findall('testsuite')[0]
+            eleTestsuite.attrib['failures'] = "%d" % fails
+            eleTestsuite.attrib['errors'] = "%d" % errors
+            eleTestsuite.attrib['skip'] = "%d" % skips
+
+        else:
             eleTestsuites = ET.Element('testsuites')
             eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
                                          name=run, time="%f" % duration,
-                                         tests="%d" % (errors + passes + fails),
+                                         tests="%d" % (errors + passes + fails + skips),
                                          failures="%d" % fails,
-                                         errors="%d" % errors, skipped="%d" % skips)
+                                         errors="%d" % (errors), skip="%s" % (skips))
 
-            handler_time = 0
+        for _, instance in self.instances.items():
+            if platform and instance.platform.name != platform:
+                continue
 
-            # print out test results
-            for _, instance in self.instances.items():
-                if instance.platform.name != platform:
-                    continue
-                handler_time = instance.metrics.get('handler_time', 0)
+            if full_report:
+                tname = os.path.basename(instance.testcase.name)
+            else:
+                tname = instance.testcase.name
+            # remove testcases that are being re-run from exiting reports
+            if append:
+                for tc in eleTestsuite.findall('testcase'):
+                    if tc.get('classname') == "%s:%s" % (instance.platform.name, tname):
+                        eleTestsuite.remove(tc)
+
+            handler_time = instance.metrics.get('handler_time', 0)
+
+            if full_report:
                 for k in instance.results.keys():
                     eleTestcase = ET.SubElement(
                         eleTestsuite, 'testcase',
-                        classname="%s:%s" % (instance.platform.name, os.path.basename(instance.testcase.name)),
+                        classname="%s:%s" % (instance.platform.name, tname),
                         name="%s" % (k), time="%f" % handler_time)
                     if instance.results[k] in ['FAIL', 'BLOCK']:
                         if instance.results[k] == 'FAIL':
@@ -2859,12 +2909,7 @@ class TestSuite:
                                 message="failed")
                         p = os.path.join(self.outdir, instance.platform.name, instance.testcase.name)
                         log_file = os.path.join(p, "handler.log")
-
-                        if os.path.exists(log_file):
-                            with open(log_file, "rb") as f:
-                                log = f.read().decode("utf-8")
-                                filtered_string = ''.join(filter(lambda x: x in string.printable, log))
-                                el.text = filtered_string
+                        el.text = self.process_log(log_file)
 
                     elif instance.results[k] == 'SKIP':
                         el = ET.SubElement(
@@ -2872,97 +2917,37 @@ class TestSuite:
                             'skipped',
                             type="skipped",
                             message="Skipped")
-
-            result = ET.tostring(eleTestsuites)
-            with open(os.path.join(outdir, platform + ".xml"), 'wb') as f:
-                f.write(result)
-
-    def xunit_report(self, filename, append=False):
-        fails = 0
-        passes = 0
-        errors = 0
-        skips = 0
-        duration = 0
-
-        for instance in self.instances.values():
-            handler_time = instance.metrics.get('handler_time', 0)
-            duration += handler_time
-            if instance.status in ["failed", "timeout"]:
-                if instance.reason in ['build_error', 'handler_crash']:
-                    errors += 1
-                else:
-                    fails += 1
-            elif instance.status == 'skipped':
-                skips += 1
             else:
-                passes += 1
+                eleTestcase = ET.SubElement(eleTestsuite, 'testcase',
+                    classname="%s:%s" % (instance.platform.name, instance.testcase.name),
+                    name="%s" % (instance.testcase.name),
+                    time="%f" % handler_time)
+                if instance.status in ["failed", "timeout"]:
+                    failure = ET.SubElement(
+                        eleTestcase,
+                        'failure',
+                        type="failure",
+                        message=instance.reason)
+                    p = ("%s/%s/%s" % (self.outdir, instance.platform.name, instance.testcase.name))
+                    bl = os.path.join(p, "build.log")
+                    hl = os.path.join(p, "handler.log")
+                    log_file = bl
+                    if instance.reason != 'Build error':
+                        if os.path.exists(hl):
+                            log_file = hl
+                        else:
+                            log_file = bl
 
-        run = "Sanitycheck"
-        eleTestsuite = None
+                    failure.text = self.process_log(log_file)
 
-        # When we re-run the tests, we re-use the results and update only with
-        # the newly run tests.
-        if os.path.exists(filename) and append:
-            tree = ET.parse(filename)
-            eleTestsuites = tree.getroot()
-            eleTestsuite = tree.findall('testsuite')[0]
-        else:
-            eleTestsuites = ET.Element('testsuites')
-            eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
-                                         name=run, time="%f" % duration,
-                                         tests="%d" % (errors + passes + fails + skips),
-                                         failures="%d" % fails,
-                                         errors="%d" % (errors), skip="%s" % (skips))
+                elif instance.status == "skipped":
+                    ET.SubElement(eleTestcase, 'skipped', type="skipped", message="Skipped")
 
-        for instance in self.instances.values():
-
-            # remove testcases that are a re-run
-            if append:
-                for tc in eleTestsuite.findall('testcase'):
-                    if tc.get('classname') == "%s:%s" % (
-                            instance.platform.name, instance.testcase.name):
-                        eleTestsuite.remove(tc)
-
-            handler_time = 0
-            if instance.status != "failed" and instance.handler:
-                handler_time = instance.metrics.get("handler_time", 0)
-
-
-            eleTestcase = ET.SubElement(
-                eleTestsuite,
-                'testcase',
-                classname="%s:%s" % (instance.platform.name, instance.testcase.name),
-                name="%s" % (instance.testcase.name),
-                time="%f" % handler_time)
-
-            if instance.status in ["failed", "timeout"]:
-                failure = ET.SubElement(
-                    eleTestcase,
-                    'failure',
-                    type="failure",
-                    message=instance.reason)
-                p = ("%s/%s/%s" % (self.outdir, instance.platform.name, instance.testcase.name))
-                bl = os.path.join(p, "build.log")
-                hl = os.path.join(p, "handler.log")
-                log_file = bl
-                if instance.reason != 'Build error':
-                    if os.path.exists(hl):
-                        log_file = hl
-                    else:
-                        log_file = bl
-
-                if os.path.exists(log_file):
-                    with open(log_file, "rb") as f:
-                        log = f.read().decode("utf-8")
-                        filtered_string = ''.join(filter(lambda x: x in string.printable, log))
-                        failure.text = filtered_string
-                        f.close()
-            elif instance.status == "skipped":
-                ET.SubElement(eleTestcase, 'skipped', type="skipped", message="Skipped")
 
         result = ET.tostring(eleTestsuites)
         with open(filename, 'wb') as report:
             report.write(result)
+
 
     def csv_report(self, filename):
         with open(filename, "wt") as csvfile:
