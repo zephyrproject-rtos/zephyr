@@ -238,6 +238,23 @@ out:
 #define ETH_MCUX_PM_FUNC device_pm_control_nop
 #endif /* CONFIG_NET_POWER_MANAGEMENT */
 
+#ifdef CONFIG_ETH_MCUX_FIXED_PHY
+static void eth_mcux_fixed_phy_duplex_and_speed(phy_duplex_t *p_phy_duplex,
+						phy_speed_t *p_phy_speed)
+{
+#ifdef CONFIG_ETH_MCUX_FIXED_PHY_DUPLEX_FULL
+	*p_phy_duplex = kPHY_FullDuplex;
+#elif CONFIG_ETH_MCUX_FIXED_PHY_DUPLEX_HALF
+	*p_phy_duplex = kPHY_HalfDuplex;
+#endif
+
+#ifdef CONFIG_ETH_MCUX_FIXED_PHY_SPEED_100
+	*p_phy_speed = kPHY_Speed100M;
+#elif CONFIG_ETH_MCUX_FIXED_PHY_SPEED_10
+	*p_phy_speed = kPHY_Speed10M;
+#endif
+}
+#else
 static void eth_mcux_decode_duplex_and_speed(u32_t status,
 					     phy_duplex_t *p_phy_duplex,
 					     phy_speed_t *p_phy_speed)
@@ -261,6 +278,7 @@ static void eth_mcux_decode_duplex_and_speed(u32_t status,
 		break;
 	}
 }
+#endif /* CONFIG_ETH_MCUX_FIXED_PHY */
 
 static inline struct net_if *get_iface(struct eth_context *ctx, u16_t vlan_tag)
 {
@@ -374,7 +392,9 @@ void eth_mcux_phy_stop(struct eth_context *context)
 
 static void eth_mcux_phy_event(struct eth_context *context)
 {
+#if !(defined(CONFIG_ETH_MCUX_NO_PHY_SMI) && defined(CONFIG_ETH_MCUX_FIXED_PHY))
 	u32_t status;
+#endif
 	bool link_up;
 #ifdef CONFIG_SOC_SERIES_IMX_RT
 	status_t res;
@@ -471,8 +491,12 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		break;
 	case eth_mcux_phy_state_read_status:
 		/* PHY Basic status is available. */
+#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI) && defined(CONFIG_ETH_MCUX_FIXED_PHY)
+		link_up = 1;
+#else
 		status = ENET_ReadSMIData(context->base);
 		link_up =  status & PHY_BSTATUS_LINKSTATUS_MASK;
+#endif
 		if (link_up && !context->link_up) {
 			/* Start reading the PHY control register. */
 #ifndef CONFIG_ETH_MCUX_NO_PHY_SMI
@@ -507,10 +531,14 @@ static void eth_mcux_phy_event(struct eth_context *context)
 		break;
 	case eth_mcux_phy_state_read_duplex:
 		/* PHY control register is available. */
+#if defined(CONFIG_ETH_MCUX_NO_PHY_SMI) && defined(CONFIG_ETH_MCUX_FIXED_PHY)
+	        eth_mcux_fixed_phy_duplex_and_speed(&phy_duplex, &phy_speed);
+#else
 		status = ENET_ReadSMIData(context->base);
 		eth_mcux_decode_duplex_and_speed(status,
 						 &phy_duplex,
 						 &phy_speed);
+#endif
 		if (phy_speed != context->phy_speed ||
 		    phy_duplex != context->phy_duplex) {
 			context->phy_speed = phy_speed;
