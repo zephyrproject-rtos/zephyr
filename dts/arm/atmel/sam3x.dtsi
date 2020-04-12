@@ -18,7 +18,7 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "arm,cortex-m4";
+			compatible = "arm,cortex-m3";
 			reg = <0>;
 		};
 	};
