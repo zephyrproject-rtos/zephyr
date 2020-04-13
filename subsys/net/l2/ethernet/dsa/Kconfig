@@ -1,0 +1,19 @@
+# Copyright (c) 2020 Denx Software Engineering GmbH.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_DSA
+	bool "Enable Distributed Switch Architecture support (DSA)"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	help
+	  Enable Distributed Switch Architecture  support.
+
+if NET_DSA
+
+module = NET_DSA
+module-dep = NET_LOG
+module-str = Log level for DSA
+module-help = Enables core DSA code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_DSA

@@ -29,6 +29,10 @@
 #include <net/net_if.h>
 #include <net/ethernet_vlan.h>
 
+#if defined(CONFIG_NET_DSA)
+#include <net/dsa.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -126,6 +130,10 @@ enum ethernet_hw_caps {
 
 	/** VLAN Tag stripping */
 	ETHERNET_HW_VLAN_TAG_STRIP	= BIT(14),
+
+	/** DSA switch */
+	ETHERNET_DSA_SLAVE_PORT	= BIT(15),
+	ETHERNET_DSA_MASTER_PORT	= BIT(16),
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -375,6 +383,13 @@ struct ethernet_context {
 	s8_t vlan_enabled;
 #endif
 
+#if defined(CONFIG_NET_DSA)
+	/** Switch physical port number */
+	u8_t dsa_port_idx;
+
+	/** DSA RX callback function - for custom processing */
+	net_dsa_recv_cb_t cb;
+#endif
 	/** Is this context already initialized */
 	bool is_init;
 };

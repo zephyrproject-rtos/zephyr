@@ -28,6 +28,9 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include <net/dns_resolve.h>
 #include <net/gptp.h>
 #include <net/websocket.h>
+#if defined(CONFIG_NET_DSA)
+#include <net/dsa.h>
+#endif
 
 #if defined(CONFIG_NET_LLDP)
 #include <net/lldp.h>
@@ -391,6 +394,9 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_cursor_init(pkt);
 
+#if defined(CONFIG_NET_DSA)
+	iface = dsa_recv_set_iface(iface, &pkt);
+#endif
 	NET_DBG("prio %d iface %p pkt %p len %zu", net_pkt_priority(pkt),
 		iface, pkt, net_pkt_get_len(pkt));
 

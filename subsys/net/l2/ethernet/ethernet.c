@@ -24,6 +24,10 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #include <net/can.h>
 #endif
 
+#if defined(CONFIG_NET_DSA)
+#include <net/dsa.h>
+#endif
+
 #include "arp.h"
 #include "eth_stats.h"
 #include "net_private.h"
@@ -176,6 +180,11 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	u16_t type = ntohs(hdr->type);
 	struct net_linkaddr *lladdr;
 	sa_family_t family;
+
+#if defined(CONFIG_NET_DSA)
+	if(net_dsa_recv(iface, pkt) == NET_DROP)
+		return NET_DROP;
+#endif
 
 	if (net_eth_is_vlan_enabled(ctx, iface) &&
 	    type == NET_ETH_PTYPE_VLAN &&
@@ -1136,7 +1145,6 @@ void ethernet_init(struct net_if *iface)
 		}
 	}
 #endif
-
 	net_arp_init();
 
 	ctx->is_init = true;
