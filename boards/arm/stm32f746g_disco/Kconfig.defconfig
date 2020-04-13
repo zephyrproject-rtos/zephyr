@@ -26,9 +26,6 @@ config UART_6
 	default y
 	depends on SERIAL
 
-config I2C_1
-	default y
-	depends on I2C
 
 config SPI_2
 	default y

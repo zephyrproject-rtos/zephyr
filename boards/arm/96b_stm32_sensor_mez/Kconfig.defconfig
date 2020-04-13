@@ -12,15 +12,6 @@ config UART_4
 	default y
 	depends on UART_CONSOLE
 
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_2
-	default y
-
-endif # I2C
 
 if I2S
 

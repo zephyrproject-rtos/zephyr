@@ -13,9 +13,6 @@ config UART_2
 	default y
 	depends on UART_CONSOLE
 
-config I2C_1
-	default y
-	depends on I2C
 
 config ADC_1
 	default y
