@@ -34,8 +34,13 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/gptp.h>
 #endif
 
+#ifdef CONFIG_NET_DSA
+#include <net/dsa.h>
+#endif
+
 #include "fsl_enet.h"
 #include "fsl_phy.h"
+
 #ifdef CONFIG_NET_POWER_MANAGEMENT
 #include "fsl_clock.h"
 #include <drivers/clock_control.h>
@@ -1191,6 +1196,9 @@ static enum ethernet_hw_caps eth_mcux_get_capabilities(struct device *dev)
 	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 		ETHERNET_PTP |
+#endif
+#if defined(CONFIG_NET_DSA)
+		ETHERNET_DSA_MASTER_PORT |
 #endif
 #if defined(CONFIG_ETH_MCUX_HW_ACCELERATION)
 		ETHERNET_HW_TX_CHKSUM_OFFLOAD |
