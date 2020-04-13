@@ -176,10 +176,20 @@ import multiprocessing
 from itertools import islice
 import csv
 from colorama import Fore
+from pathlib import Path
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
-    sys.exit("$ZEPHYR_BASE environment variable undefined")
+    # This file has been zephyr/scripts/sanitycheck for years,
+    # and that is not going to change anytime soon. Let the user
+    # run this script as ./scripts/sanitycheck without making them
+    # set ZEPHYR_BASE.
+    ZEPHYR_BASE = str(Path(__file__).resolve().parents[1])
+
+    # Propagate this decision to child processes.
+    os.environ['ZEPHYR_BASE'] = ZEPHYR_BASE
+
+    print(f'ZEPHYR_BASE unset, using "{ZEPHYR_BASE}"')
 
 try:
     from anytree import RenderTree, Node, find
