@@ -32,3 +32,4 @@ User and Developer Guides
    west/index
    optimizations/index
    zephyr_cmake_package.rst
+   platformio/index.rst
