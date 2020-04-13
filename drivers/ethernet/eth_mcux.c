@@ -36,6 +36,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/gptp.h>
 #endif
 
+#if IS_ENABLED(CONFIG_NET_DSA)
+#include <net/dsa.h>
+#endif
+
 #include "fsl_enet.h"
 #include "fsl_phy.h"
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
@@ -706,6 +710,7 @@ static void eth_rx(struct eth_context *context)
 {
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	uint32_t frame_length = 0U;
+	struct net_if *iface;
 	struct net_pkt *pkt;
 	status_t status;
 	unsigned int imask;
@@ -807,7 +812,11 @@ static void eth_rx(struct eth_context *context)
 
 	irq_unlock(imask);
 
-	if (net_recv_data(get_iface(context, vlan_tag), pkt) < 0) {
+	iface = get_iface(context, vlan_tag);
+#if IS_ENABLED(CONFIG_NET_DSA)
+	iface = dsa_net_recv(iface, &pkt);
+#endif
+	if (net_recv_data(iface, pkt) < 0) {
 		net_pkt_unref(pkt);
 		goto error;
 	}
@@ -1058,6 +1067,9 @@ static void eth_iface_init(struct net_if *iface)
 		context->iface = iface;
 	}
 
+#if IS_ENABLED(CONFIG_NET_DSA)
+	dsa_register_master_tx(iface, &eth_tx);
+#endif
 	ethernet_init(iface);
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 
@@ -1071,6 +1083,9 @@ static enum ethernet_hw_caps eth_mcux_get_capabilities(const struct device *dev)
 	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 		ETHERNET_PTP |
+#endif
+#if IS_ENABLED(CONFIG_NET_DSA)
+		ETHERNET_DSA_MASTER_PORT |
 #endif
 #if defined(CONFIG_ETH_MCUX_HW_ACCELERATION)
 		ETHERNET_HW_TX_CHKSUM_OFFLOAD |
@@ -1124,7 +1139,11 @@ static const struct ethernet_api api_funcs = {
 #endif
 	.get_capabilities	= eth_mcux_get_capabilities,
 	.set_config		= eth_mcux_set_config,
+#if IS_ENABLED(CONFIG_NET_DSA)
+	.send                   = dsa_tx,
+#else
 	.send			= eth_tx,
+#endif
 };
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
