@@ -19,3 +19,12 @@ config HAS_CMSIS_CORE_M
 	bool
 
 endif
+
+menuconfig CMSIS_DSP
+	bool "CMSIS-DSP Library Support"
+	depends on CPU_CORTEX
+	depends on NEWLIB_LIBC
+
+if CMSIS_DSP
+source "modules/Kconfig.cmsis_dsp"
+endif
