@@ -21,10 +21,10 @@ static const struct pin_config pinconf[] = {
 #ifdef CONFIG_PWM_STM32_2
 	{STM32_PIN_PA0, STM32F4_PINMUX_FUNC_PA0_PWM2_CH1},
 #endif	/* CONFIG_PWM_STM32_2 */
-#ifdef CONFIG_I2C_2
+#if DT_HAS_NODE(DT_NODELABEL(i2c2))
 	{STM32_PIN_PB3, STM32F4_PINMUX_FUNC_PB3_I2C2_SDA},
 	{STM32_PIN_PB10, STM32F4_PINMUX_FUNC_PB10_I2C2_SCL},
-#endif	/* CONFIG_I2C_2	*/
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)

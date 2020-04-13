@@ -26,17 +26,5 @@ config SPI_1
 
 endif # SPI
 
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_2
-	default y
-
-config I2C_3
-	default y
-
-endif # I2C
 
 endif # BOARD_STM32F723E_DISCO

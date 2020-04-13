@@ -32,9 +32,6 @@ config ETH_STM32_HAL
 
 endif # NETWORKING
 
-config I2C_1
-	default y
-	depends on I2C
 
 config PWM_STM32_1
 	default y

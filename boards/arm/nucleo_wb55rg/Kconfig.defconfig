@@ -24,15 +24,6 @@ config LPUART_1
 	default y
 	depends on SERIAL
 
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_3
-	default y
-
-endif # I2C
 
 config SPI_1
 	default y

@@ -12,9 +12,6 @@ config UART_1
 	default y
 	depends on UART_CONSOLE
 
-config I2C_3
-	default y
-	depends on I2C
 
 config SPI_5
 	default y

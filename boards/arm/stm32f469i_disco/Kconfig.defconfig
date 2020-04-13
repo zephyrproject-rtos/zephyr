@@ -26,8 +26,5 @@ config SPI_2
 
 endif # SPI
 
-config I2C_1
-	default y
-	depends on I2C
 
 endif # BOARD_STM32F469I_DISCO

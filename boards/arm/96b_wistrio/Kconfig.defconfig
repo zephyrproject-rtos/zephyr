@@ -12,8 +12,4 @@ config UART_1
 	default y
 	depends on UART_CONSOLE
 
-config I2C_1
-	default y
-	depends on I2C
-
 endif # BOARD_96B_WISTRIO

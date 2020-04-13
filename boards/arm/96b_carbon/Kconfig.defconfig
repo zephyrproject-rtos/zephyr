@@ -22,16 +22,6 @@ config UART_6
 
 endif # SERIAL
 
-if I2C
-
-config I2C_1
-	default y
-
-config I2C_2
-	default y
-
-endif # I2C
-
 if SPI
 
 config SPI_1
