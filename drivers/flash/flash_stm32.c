@@ -9,25 +9,7 @@
 #include <kernel.h>
 #include <device.h>
 
-#if DT_HAS_NODE(DT_INST(0, st_stm32f0_flash_controller))
-#define DT_DRV_COMPAT st_stm32f0_flash_controller
-#elif DT_HAS_NODE(DT_INST(0, st_stm32f1_flash_controller))
-#define DT_DRV_COMPAT st_stm32f1_flash_controller
-#elif DT_HAS_NODE(DT_INST(0, st_stm32f3_flash_controller))
-#define DT_DRV_COMPAT st_stm32f3_flash_controller
-#elif DT_HAS_NODE(DT_INST(0, st_stm32f4_flash_controller))
-#define DT_DRV_COMPAT st_stm32f4_flash_controller
-#elif DT_HAS_NODE(DT_INST(0, st_stm32f7_flash_controller))
-#define DT_DRV_COMPAT st_stm32f7_flash_controller
-#elif DT_HAS_NODE(DT_INST(0, st_stm32g0_flash_controller))
-#define DT_DRV_COMPAT st_stm32g0_flash_controller
-#elif DT_HAS_NODE(DT_INST(0, st_stm32g4_flash_controller))
-#define DT_DRV_COMPAT st_stm32g4_flash_controller
-#elif DT_HAS_NODE(DT_INST(0, st_stm32l4_flash_controller))
-#define DT_DRV_COMPAT st_stm32l4_flash_controller
-#elif DT_HAS_NODE(DT_INST(0, st_stm32wb_flash_controller))
-#define DT_DRV_COMPAT st_stm32wb_flash_controller
-#endif /* DT_HAS_NODE(DT_INST(0, st_stm32xx_flash_controller)) */
+#define DT_DRV_COMPAT st_stm32_flash_controller
 
 #include <string.h>
 #include <drivers/flash.h>
