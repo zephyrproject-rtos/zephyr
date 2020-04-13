@@ -3,30 +3,18 @@
 # Copyright (c) 2020 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
 
-if GPIO
-
 config GPIO_GECKO
 	default y
-
-endif # GPIO
-
-if I2C
+	depends on GPIO
 
 config I2C_GECKO
 	default y
-
-endif # I2C
-
-if FLASH
+	depends on I2C
 
 config SOC_FLASH_GECKO
 	default y
-
-endif # FLASH
-
-if SPI
+	depends on FLASH
 
 config SPI_GECKO
 	default y
-
-endif # SPI
+	depends on SPI
