@@ -408,7 +408,8 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 			addr += SPI_NOR_BLOCK_SIZE;
 			size -= SPI_NOR_BLOCK_SIZE;
 		} else if ((size >= SPI_NOR_BLOCK32_SIZE)
-			   && SPI_NOR_IS_BLOCK32_ALIGNED(addr)) {
+			   && SPI_NOR_IS_BLOCK32_ALIGNED(addr)
+			   && params->has_be32k) {
 			/* 32 KiB block erase */
 			spi_nor_cmd_addr_write(dev, SPI_NOR_CMD_BE_32K, addr,
 					       NULL, 0);
