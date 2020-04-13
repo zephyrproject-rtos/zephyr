@@ -31,7 +31,7 @@ extern void test_clock_cycle(void);
 extern void test_clock_uptime(void);
 extern void test_multilib(void);
 extern void test_thread_context(void);
-extern void test_verify_bootdelay(void);
+extern void test_bootdelay(void);
 extern void test_irq_offload(void);
 
 /**
@@ -99,7 +99,7 @@ static void test_bounds_check_mitigation(void)
 void test_main(void)
 {
 	ztest_test_suite(common,
-			 ztest_unit_test(test_verify_bootdelay),
+			 ztest_unit_test(test_bootdelay),
 			 ztest_unit_test(test_irq_offload),
 			 ztest_unit_test(test_byteorder_memcpy_swap),
 			 ztest_unit_test(test_byteorder_mem_swap),
