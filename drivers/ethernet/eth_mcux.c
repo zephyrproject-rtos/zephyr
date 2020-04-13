@@ -36,6 +36,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "fsl_enet.h"
 #include "fsl_phy.h"
+#include "dsa.h"
 #ifdef CONFIG_NET_POWER_MANAGEMENT
 #include "fsl_clock.h"
 #include <drivers/clock_control.h>
@@ -1042,6 +1043,9 @@ static void eth_mcux_init(struct device *dev)
 			kENET_RxAccelProtoCheckEnabled;
 	}
 
+#ifdef CONFIG_DSA
+	dsa_init(dev);
+#endif
 	ENET_Init(context->base,
 		  &context->enet_handle,
 		  &enet_config,
