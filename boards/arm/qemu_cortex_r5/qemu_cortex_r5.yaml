@@ -7,8 +7,8 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
-ram: 128
-flash: 1024
+ram: 65536
+flash: 32768
 testing:
   default: true
   ignore_tags:
