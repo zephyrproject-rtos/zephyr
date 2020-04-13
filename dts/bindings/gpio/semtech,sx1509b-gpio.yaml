@@ -18,6 +18,13 @@ properties:
       required: true
       const: 16
 
+    nint-gpios:
+      type: phandle-array
+      required: false
+      description: |
+        Connection for the NINT signal. This signal is active-low when
+        produced by sx1509b GPIO node.
+
     init-out-low:
       type: int
       required: false
