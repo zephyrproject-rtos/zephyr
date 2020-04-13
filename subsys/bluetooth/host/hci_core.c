@@ -553,6 +553,7 @@ static int set_le_adv_enable_ext(const struct bt_le_ext_adv *adv,
 				 const struct bt_le_ext_adv_start_param *param)
 {
 	struct net_buf *buf;
+	struct cmd_state_set state;
 	int err;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_EXT_ADV_ENABLE, 6);
@@ -572,12 +573,14 @@ static int set_le_adv_enable_ext(const struct bt_le_ext_adv *adv,
 	net_buf_add_le16(buf, param ? sys_cpu_to_le16(param->timeout) : 0);
 	net_buf_add_u8(buf, param ? param->num_events : 0);
 
+	/* Update advertising flag */
+	cmd_state_set_init(&state, bt_dev.flags, BT_DEV_ADVERTISING, enable);
+	cmd(buf)->state = &state;
+
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_EXT_ADV_ENABLE, buf, NULL);
 	if (err) {
 		return err;
 	}
-
-	atomic_set_bit_to(bt_dev.flags, BT_DEV_ADVERTISING, enable);
 
 	return 0;
 }
