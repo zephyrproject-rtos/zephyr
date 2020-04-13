@@ -517,3 +517,9 @@ test_i2c_bq274xx: bq27xx@47 {
 	taper-current = <45>;
 	terminate-voltage = <3000>;
 };
+
+test_i2c_mpr: mpr@18 {
+	compatible = "honeywell,mpr";
+	label = "MPR";
+	reg = <0x18>;
+};

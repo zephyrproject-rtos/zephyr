@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Honeywell Digital Pressure Sensor. For details see here:
+    https://sensing.honeywell.com/micropressure-mpr-series
+
+compatible: "honeywell,mpr"
+
+include: i2c-device.yaml
