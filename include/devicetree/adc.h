@@ -18,6 +18,7 @@ extern "C" {
 
 /**
  * @defgroup devicetree-adc Devicetree ADC API
+ * @ingroup devicetree
  * @{
  */
 

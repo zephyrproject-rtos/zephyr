@@ -24,6 +24,9 @@
 
 /**
  * @brief devicetree.h API
+ * @defgroup devicetree Devicetree
+ * @{
+ * @}
  */
 
 /*
@@ -51,6 +54,7 @@
 
 /**
  * @defgroup devicetree-generic-id Node identifiers
+ * @ingroup devicetree
  * @{
  */
 
@@ -240,6 +244,7 @@
 
 /**
  * @defgroup devicetree-generic-prop Property accessors
+ * @ingroup devicetree
  * @{
  */
 
@@ -818,6 +823,7 @@
 
 /**
  * @defgroup devicetree-generic-chosen Chosen nodes
+ * @ingroup devicetree
  * @{
  */
 
@@ -836,6 +842,7 @@
 
 /**
  * @defgroup devicetree-generic-exist Existence checks
+ * @ingroup devicetree
  * @{
  */
 
@@ -997,6 +1004,7 @@
 
 /**
  * @defgroup devicetree-generic-bus Bus helpers
+ * @ingroup devicetree
  * @{
  */
 
@@ -1093,6 +1101,7 @@
 
 /**
  * @defgroup devicetree-inst Instance-based devicetree APIs
+ * @ingroup devicetree
  * @{
  */
 

@@ -18,6 +18,7 @@ extern "C" {
 
 /**
  * @defgroup devicetree-dmas Devicetree dma API
+ * @ingroup devicetree
  * @{
  */
 
