@@ -28,7 +28,7 @@
 
 	soc {
 		flash-controller@58004000 {
-			compatible = "st,stm32wb-flash-controller";
+			compatible = "st,stm32-flash-controller", "st,stm32wb-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x58004000 0x400>;
 			interrupts = <4 0>;

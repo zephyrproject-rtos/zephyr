@@ -33,7 +33,7 @@
 
 	soc {
 		flash-controller@52002000 {
-			compatible = "st,stm32h7-flash-controller";
+			compatible = "st,stm32-flash-controller", "st,stm32h7-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x52002000 0x400>;
 			interrupts = <4 0>;
