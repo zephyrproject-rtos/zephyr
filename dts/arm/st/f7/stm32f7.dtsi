@@ -36,7 +36,7 @@
 
 	soc {
 		flash-controller@40023c00 {
-			compatible = "st,stm32f7-flash-controller";
+			compatible = "st,stm32-flash-controller", "st,stm32f7-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x40023c00 0x400>;
 			interrupts = <4 0>;
