@@ -324,6 +324,13 @@ static void test_kernel_cpu_idle_atomic(void)
 
 static void test_kernel_cpu_idle(void)
 {
+/*
+ * Fixme: remove the skip code when sleep instruction in
+ * nsim_hs_smp is fixed.
+ */
+#if defined(CONFIG_SOC_NSIM) && defined(CONFIG_SMP)
+	ztest_test_skip();
+#endif
 	_test_kernel_cpu_idle(0);
 }
 
