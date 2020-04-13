@@ -14,6 +14,7 @@
 
 /**
  * @defgroup devicetree-zephyr Zephyr's /chosen nodes
+ * @ingroup devicetree
  * @{
  */
 
