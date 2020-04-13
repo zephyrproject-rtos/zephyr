@@ -11,8 +11,19 @@ This is an LTS maintenance release with fixes.
 Security Vulnerability Related
 ******************************
 
-The following security vulnerability (CVE) was addressed in this
+The following security vulnerabilities (CVEs) were addressed in this
 release:
+
+* CVE-2020-10019
+* CVE-2020-10021
+* CVE-2020-10022
+* CVE-2020-10023
+* CVE-2020-10024
+* CVE-2020-10027
+* CVE-2020-10028
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
 Issues Fixed
 ************
