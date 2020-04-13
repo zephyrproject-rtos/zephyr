@@ -23,6 +23,8 @@ config IEEE802154_RAW_MODE
 
 source "drivers/ieee802154/Kconfig.cc2520"
 
+source "drivers/ieee802154/Kconfig.gecko"
+
 source "drivers/ieee802154/Kconfig.kw41z"
 
 source "drivers/ieee802154/Kconfig.mcr20a"

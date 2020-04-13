@@ -5,3 +5,11 @@ source "soc/arm/silabs_exx32/*/Kconfig.defconfig.series"
 config SOC_GECKO_EMU
 	default y
 	depends on SYS_POWER_MANAGEMENT
+
+config IEEE802154_GECKO
+	default y
+	depends on SOC_GECKO_HAS_IEEE802154_RADIO && IEEE802154
+
+config NET_CONFIG_IEEE802154_DEV_NAME
+	default IEEE802154_GECKO_DRV_NAME
+	depends on IEEE802154_GECKO

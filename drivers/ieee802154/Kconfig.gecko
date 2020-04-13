@@ -1,0 +1,35 @@
+# SiLabs Gecko IEEE 802.15.4 Driver configuration options
+
+# Copyright (c) 2020 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_GECKO
+	bool "SiLabs Gecko IEEE 802.15.4 Driver"
+	depends on NETWORKING && SOC_GECKO_HAS_IEEE802154_RADIO
+	select SOC_GECKO_RAIL_LIB
+	select SOC_GECKO_RAIL_LIB_IEEE802154
+
+if IEEE802154_GECKO
+
+config IEEE802154_GECKO_DRV_NAME
+	string "SiLabs Gecko Driver's name"
+	default "IEEE802154_GECKO"
+	help
+	  This option sets the driver name. Do not change it unless
+	  you know what you are doing.
+
+config IEEE802154_GECKO_TXPOWER_RAW
+	int "Radio TX Power"
+	default 254
+	help
+	  Standard transmission power in RAIL raw units. Value 254 indicates the
+	  highest power level available on the current PA.
+
+config IEEE802154_GECKO_INIT_PRIORITY
+	int "SiLabs Gecko Driver initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not change it unless
+	  you know what you are doing. It has to start before the net stack.
+
+endif # IEEE802154_GECKO
