@@ -30,6 +30,7 @@ from pathlib import Path
 from distutils.spawn import find_executable
 from colorama import Fore
 import yaml
+import platform
 
 try:
     import serial
@@ -3228,8 +3229,30 @@ class HardwareMap:
         for i in self.connected_hardware:
             i['counter'] = 0
 
-    def scan_hw(self):
+    def scan_hw(self, persistent=False):
         from serial.tools import list_ports
+
+        if persistent and platform.system() == 'Linux':
+            # On Linux, /dev/serial/by-id provides symlinks to
+            # '/dev/ttyACMx' nodes using names which are unique as
+            # long as manufacturers fill out USB metadata nicely.
+            #
+            # This creates a map from '/dev/ttyACMx' device nodes
+            # to '/dev/serial/by-id/usb-...' symlinks. The symlinks
+            # go into the hardware map because they stay the same
+            # even when the user unplugs / replugs the device.
+            #
+            # Some inexpensive USB/serial adapters don't result
+            # in unique names here, though, so use of this feature
+            # requires explicitly setting persistent=True.
+            by_id = Path('/dev/serial/by-id')
+            def readlink(link):
+                return str((by_id / link).resolve())
+
+            persistent_map = {readlink(link): str(link)
+                              for link in by_id.iterdir()}
+        else:
+            persistent_map = {}
 
         serial_devices = list_ports.comports()
         logger.info("Scanning connected hardware...")
@@ -3243,7 +3266,7 @@ class HardwareMap:
                 s_dev = {}
                 s_dev['platform'] = "unknown"
                 s_dev['id'] = d.serial_number
-                s_dev['serial'] = d.device
+                s_dev['serial'] = persistent_map.get(d.device, d.device)
                 s_dev['product'] = d.product
                 s_dev['runner'] = 'unknown'
                 for runner, _ in self.runner_mapping.items():

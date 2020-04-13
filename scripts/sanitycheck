@@ -561,6 +561,12 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
                         --device-testing
                         """)
 
+    parser.add_argument("--persistent-hardware-map", action='store_true',
+                        help="""With --generate-hardware-map, tries to use
+                        persistent names for serial devices on platforms
+                        that support this feature (currently only Linux).
+                        """)
+
     parser.add_argument("--hardware-map",
                         help="""Load hardware map from a file. This will be used
                         for testing on hardware that is listed in the file.
@@ -695,7 +701,7 @@ def main():
 
     hwm = HardwareMap()
     if options.generate_hardware_map:
-        hwm.scan_hw()
+        hwm.scan_hw(persistent=options.persistent_hardware_map)
         hwm.write_map(options.generate_hardware_map)
         return
 
