@@ -19,7 +19,7 @@
 #include <toolchain.h>
 #include "float_context.h"
 
-#ifdef CONFIG_FLOAT_64BIT
+#ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
 #define RV_FPREG_WIDTH 8
 #define RV_FPREG_SAVE "fsd "
 #define RV_FPREG_LOAD "fld "

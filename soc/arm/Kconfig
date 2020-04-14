@@ -57,14 +57,6 @@ config NRF_SPU_RAM_REGION_SIZE
 	  RAM region size for the NRF_SPU peripheral
 endif
 
-config CPU_HAS_FPU_DOUBLE_PRECISION
-	bool
-	depends on CPU_CORTEX_M7
-	select CPU_HAS_FPU
-	help
-	  When enabled, indicates that the SoC has a double
-	  floating point precision unit.
-
 config HAS_SWO
 	bool
 	help

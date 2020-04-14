@@ -40,7 +40,7 @@
 #define RV_REGSHIFT 2
 #endif
 
-#ifdef CONFIG_FLOAT_64BIT
+#ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
 #define RV_OP_LOADFPREG fld
 #define RV_OP_STOREFPREG fsd
 #else

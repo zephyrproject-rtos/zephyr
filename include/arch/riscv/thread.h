@@ -23,7 +23,7 @@
 #include <zephyr/types.h>
 
 #if !defined(RV_FP_TYPE) && defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
-#ifdef CONFIG_FLOAT_64BIT
+#ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
 #define RV_FP_TYPE u64_t
 #else
 #define RV_FP_TYPE u32_t
