@@ -13,6 +13,7 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#include <devicetree.h>
 #include <storage/flash_map.h>
 
 #include <kernel.h>

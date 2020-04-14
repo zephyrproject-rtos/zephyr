@@ -217,4 +217,75 @@ struct device *flash_area_get_device(const struct flash_area *fa);
  * @}
  */
 
+/* Generate list of partitions only if 'fixed-partitions' compatible exist.
+ * */
+#if DT_HAS_COMPAT(fixed_partitions)
+/* Get partition id/index from label */
+#define FLASH_AREA_ID(lbl)	FLASH_AREA_ID_(DT_NODELABEL(lbl))
+#define FLASH_AREA_ID_(id)	FLASH_AREA_ID__(id)
+#define FLASH_AREA_ID__(id)	flash_area_##id
+
+/* Generate sequential identifiers for flash areas. */
+#define FLASH_AREA_ID_GEN(id)	FLASH_AREA_ID_GEN_(id)
+#define FLASH_AREA_ID_GEN_(id)	flash_area_##id,
+
+/* Generate list of al 'fixed-partitions' partition tables. */
+#define FLASH_AREA_PTABLES \
+	LIST_DROP_EMPTY(UTIL_LISTIFY(DT_N_INST_fixed_partitions_NUM, \
+				     _FLASH_AREA_PTABLE_))
+
+#define _FLASH_AREA_PTABLE_(p, _) \
+	EMPTY, DT_INST(p, fixed_partitions)
+
+
+/* Generate list paths to all paritions */
+#define _LIST_PARTITIONS_ELEM__(n) EMPTY, n
+#define _LIST_PARTITIONS_ELEM_(p, n) \
+	_LIST_PARTITIONS_ELEM__(DT_CHILD(p, n))
+#define _LIST_PARTITIONS_(p) DT_FOR_EACH_CHILD(p, _LIST_PARTITIONS_ELEM_)
+
+#define FLASH_AREA_PARTITIONS_LIST \
+	LIST_DROP_EMPTY(FOR_EACH(_LIST_PARTITIONS_, FLASH_AREA_PTABLES))
+
+
+/* Generate enumerators that will serve as partition identifiers. */
+enum flash_area_partitions {
+	FOR_EACH(FLASH_AREA_ID_GEN, FLASH_AREA_PARTITIONS_LIST)
+};
+
+
+/*
+ * Below macros get FLASH_AREA_ parameters by path to DT node representing
+ * the partition, e.g.:
+ *  FLASH_AREA_OFFSET(DT_N_S_soc_S_flash_0_S_partitions_S_partition_0)
+ */
+#define FLASH_AREA_OFFSET(path)	DT_REG_ADDR(path)
+#define FLASH_AREA_SIZE(path)	DT_REG_SIZE(path)
+#define FLASH_AREA_DEV(path) \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_PARENT(DT_PARENT(path)), soc_nv_flash), \
+	(DT_PARENT(DT_PARENT(DT_PARENT(path)))), \
+	(DT_PARENT(DT_PARENT(path))))
+
+#define FLASH_AREA_DEV_LABEL(path)DT_LABEL(FLASH_AREA_DEV(path))
+
+/*
+ * Below macros get FLASH_AREA_ parameters by partition label, e.g.:
+ *  FLASH_AREA_OFFSET_BY_LABEL(boot_partition)
+ */
+#define FLASH_AREA_OFFSET_BY_LABEL(lbl)	\
+	FLASH_AREA_OFFSET(DT_NODELABEL(lbl))
+#define FLASH_AREA_SIZE_BY_LABEL(lbl) \
+	FLASH_AREA_SIZE(DT_NODELABEL(lbl))
+#define FLASH_AREA_DEV_BY_LABEL(lbl) \
+	FLASH_AREA_DEV(DT_NDELABEL(lbl))
+#define FLASH_AREA_DEV_LABEL_BY_LABEL(lbl) \
+	FLASH_AREA_DEV_LABEL(DT_NODELABEL(lbl))
+
+#else
+/* No 'fixed-partitions' compatible found */
+
+#define FLASH_AREA_PARTITIONS_LIST
+
+#endif
+
 #endif /* ZEPHYR_INCLUDE_STORAGE_FLASH_MAP_H_ */

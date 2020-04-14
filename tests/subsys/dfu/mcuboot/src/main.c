@@ -6,6 +6,7 @@
 
 #include <ztest.h>
 #include <storage/flash_map.h>
+#include <flash_pm.h>
 #include <dfu/mcuboot.h>
 
 #define BOOT_MAGIC_VAL_W0 0xf395c277
@@ -23,7 +24,7 @@ void test_bank_erase(void)
 	off_t offs;
 	int ret;
 
-	ret = flash_area_open(DT_FLASH_AREA_IMAGE_1_ID, &fa);
+	ret = flash_area_open(FLASH_AREA_ID(slot1_partition), &fa);
 	if (ret) {
 		printf("Flash driver was not found!\n");
 		return;
@@ -38,7 +39,7 @@ void test_bank_erase(void)
 		}
 	}
 
-	zassert(boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID) == 0,
+	zassert(boot_erase_img_bank(FLASH_AREA_ID(slot1_partition)) == 0,
 		"pass", "fail");
 
 	for (offs = 0; offs < fa->fa_size; offs += sizeof(temp)) {
@@ -62,7 +63,7 @@ void test_request_upgrade(void)
 	u32_t readout[ARRAY_SIZE(expectation)];
 	int ret;
 
-	ret = flash_area_open(DT_FLASH_AREA_IMAGE_1_ID, &fa);
+	ret = flash_area_open(FLASH_AREA_ID(slot1_partition), &fa);
 	if (ret) {
 		printf("Flash driver was not found!\n");
 		return;
@@ -77,7 +78,7 @@ void test_request_upgrade(void)
 	zassert(memcmp(expectation, readout, sizeof(expectation)) == 0,
 		"pass", "fail");
 
-	boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID);
+	boot_erase_img_bank(FLASH_AREA_ID(slot1_partition));
 
 	zassert(boot_request_upgrade(true) == 0, "pass", "fail");
 
@@ -98,13 +99,13 @@ void test_write_confirm(void)
 	const struct flash_area *fa;
 	int ret;
 
-	ret = flash_area_open(DT_FLASH_AREA_IMAGE_0_ID, &fa);
+	ret = flash_area_open(FLASH_AREA_ID(slot0_partition), &fa);
 	if (ret) {
 		printf("Flash driver was not found!\n");
 		return;
 	}
 
-	zassert(boot_erase_img_bank(DT_FLASH_AREA_IMAGE_0_ID) == 0,
+	zassert(boot_erase_img_bank(FLASH_AREA_ID(slot0_partition)) == 0,
 		"pass", "fail");
 
 	ret = flash_area_read(fa, fa->fa_size - sizeof(img_magic),
