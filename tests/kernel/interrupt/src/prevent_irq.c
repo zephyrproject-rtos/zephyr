@@ -46,14 +46,14 @@ void test_prevent_interruption(void)
 	 * locked -- but since they are, check_lock_new isn't updated.
 	 */
 	k_timer_start(&irqlock_timer, K_MSEC(DURATION), K_NO_WAIT);
-	k_busy_wait(MS_TO_US(1000));
+	k_busy_wait(MS_TO_US(2 * DURATION));
 	zassert_not_equal(handler_result, HANDLER_TOKEN,
 		"timer interrupt was serviced while interrupts are locked");
 
 	printk("unlocking interrupts\n");
 	irq_unlock(key);
 
-	k_busy_wait(MS_TO_US(1000));
+	k_busy_wait(MS_TO_US(DURATION));
 
 	zassert_equal(handler_result, HANDLER_TOKEN,
 		"timer should have fired");
