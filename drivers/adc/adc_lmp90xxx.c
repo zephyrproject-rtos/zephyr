@@ -601,7 +601,7 @@ static int lmp90xxx_adc_read_channel(struct device *dev, u8_t channel,
 		odr = data->channel_odr[channel];
 		delay = lmp90xxx_odr_delay_tbl[odr];
 		LOG_DBG("sleeping for %d ms", delay);
-		k_sleep(delay);
+		k_msleep(delay);
 
 		/* Poll for data ready */
 		do {
@@ -609,7 +609,7 @@ static int lmp90xxx_adc_read_channel(struct device *dev, u8_t channel,
 						&adc_done);
 			if (adc_done == 0xFFU) {
 				LOG_DBG("sleeping for 1 ms");
-				k_sleep(K_MSEC(1));
+				k_msleep(1);
 			} else {
 				break;
 			}
