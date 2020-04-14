@@ -218,7 +218,7 @@ static inline u16_t completion_space_get(const struct shell *shell)
 /* Prepare arguments and return number of space available for completion. */
 static bool tab_prepare(const struct shell *shell,
 			const struct shell_static_entry **cmd,
-			char ***argv, size_t *argc,
+			const char ***argv, size_t *argc,
 			size_t *complete_arg_idx,
 			struct shell_static_entry *d_entry)
 {
@@ -260,8 +260,8 @@ static bool tab_prepare(const struct shell *shell,
 
 	search_argc = space ? *argc : *argc - 1;
 
-	*cmd = shell_get_last_command(shell, search_argc, *argv,
-				      complete_arg_idx,	d_entry, false);
+	*cmd = shell_get_last_command(shell->ctx->selected_cmd, search_argc,
+				      *argv, complete_arg_idx,	d_entry, false);
 
 	/* if search_argc == 0 (empty command line) shell_get_last_command will
 	 * return NULL tab is allowed, otherwise not.
@@ -469,7 +469,7 @@ static void partial_autocomplete(const struct shell *shell,
 	}
 }
 
-static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
+static int exec_cmd(const struct shell *shell, size_t argc, const char **argv,
 		    const struct shell_static_entry *help_entry)
 {
 	int ret_val = 0;
@@ -492,8 +492,10 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
 	}
 
 	if (shell->ctx->active_cmd.args.mandatory) {
-		u8_t mand = shell->ctx->active_cmd.args.mandatory;
-		u8_t opt = shell->ctx->active_cmd.args.optional;
+		u32_t mand = shell->ctx->active_cmd.args.mandatory;
+		u8_t opt8 = shell->ctx->active_cmd.args.optional;
+		u32_t opt = (opt8 == SHELL_OPT_ARG_CHECK_SKIP) ?
+				UINT16_MAX : opt8;
 		bool in_range = (argc >= mand) && (argc <= (mand + opt));
 
 		/* Check if argc is within allowed range */
@@ -506,7 +508,8 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
 		 */
 		k_mutex_unlock(&shell->ctx->wr_mtx);
 		flag_cmd_ctx_set(shell, 1);
-		ret_val = shell->ctx->active_cmd.handler(shell, argc, argv);
+		ret_val = shell->ctx->active_cmd.handler(shell, argc,
+							 (char **)argv);
 		flag_cmd_ctx_set(shell, 0);
 		/* Bring back mutex to shell thread. */
 		k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
@@ -515,23 +518,74 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
 	return ret_val;
 }
 
+static void active_cmd_prepare(const struct shell_static_entry *entry,
+				struct shell_static_entry *active_cmd,
+				struct shell_static_entry *help_entry,
+				size_t *lvl, size_t *handler_lvl,
+				size_t *args_left)
+{
+	if (entry->handler) {
+		*handler_lvl = *lvl;
+		*active_cmd = *entry;
+		if ((entry->subcmd == NULL)
+		    && entry->args.optional == SHELL_OPT_ARG_RAW) {
+			*args_left = entry->args.mandatory - 1;
+			*lvl = *lvl + 1;
+		}
+	}
+	if (entry->help) {
+		*help_entry = *entry;
+	}
+}
+
+static bool wildcard_check_report(const struct shell *shell, bool found,
+				  const struct shell_static_entry *entry)
+{
+	/* An error occurred, fnmatch  argument cannot be followed by argument
+	 * with a handler to avoid multiple function calls.
+	 */
+	if (IS_ENABLED(CONFIG_SHELL_WILDCARD) && found && entry->handler) {
+		shell_op_cursor_end_move(shell);
+		shell_op_cond_next_line(shell);
+
+		shell_internal_fprintf(shell, SHELL_ERROR,
+			"Error: requested multiple function executions\n");
+		return false;
+	}
+
+	return true;
+}
+
 /* Function is analyzing the command buffer to find matching commands. Next, it
  * invokes the  last recognized command which has a handler and passes the rest
  * of command buffer as arguments.
+ *
+ * By default command buffer is parsed and spaces are treated by arguments
+ * separators. Complex arguments are provided in quotation marks with quotation
+ * marks escaped within the argument. Argument parser is removing quotation
+ * marks at argument boundary as well as escape characters within the argument.
+ * However, it is possible to indicate that command shall treat remaining part
+ * of command buffer as the last argument without parsing. This can be used for
+ * commands which expects whole command buffer to be passed directly to
+ * the command handler without any preprocessing.
+ * Because of that feature, command buffer is processed argument by argument and
+ * decision on further processing is based on currently processed command.
  */
 static int execute(const struct shell *shell)
 {
 	struct shell_static_entry dloc; /* Memory for dynamic commands. */
-	char *argv[CONFIG_SHELL_ARGC_MAX + 1]; /* +1 reserved for NULL */
+	const char *argv[CONFIG_SHELL_ARGC_MAX + 1]; /* +1 reserved for NULL */
 	const struct shell_static_entry *parent = shell->ctx->selected_cmd;
 	const struct shell_static_entry *entry = NULL;
 	struct shell_static_entry help_entry;
-	size_t cmd_lvl = SHELL_CMD_ROOT_LVL;
+	size_t cmd_lvl = 0;
 	size_t cmd_with_handler_lvl = 0;
 	bool wildcard_found = false;
-	size_t cmd_idx = 0;
-	size_t argc;
+	size_t argc = 0, args_left = SIZE_MAX;
 	char quote;
+	const char **argvp;
+	char *cmd_buf = shell->ctx->cmd_buff;
+	bool has_last_handler = false;
 
 	shell_op_cursor_end_move(shell);
 	if (!shell_cursor_in_empty_line(shell)) {
@@ -549,33 +603,37 @@ static int execute(const struct shell *shell)
 		shell_wildcard_prepare(shell);
 	}
 
-	/* create argument list */
-	quote = shell_make_argv(&argc, &argv[0], shell->ctx->cmd_buff,
-				CONFIG_SHELL_ARGC_MAX);
-
-	if (!argc) {
-		return -ENOEXEC;
+	/* Parent present means we are in select mode. */
+	if (parent != NULL) {
+		argv[0] = parent->syntax;
+		argv[1] = cmd_buf;
+		argvp = &argv[1];
+		active_cmd_prepare(parent, &shell->ctx->active_cmd, &help_entry,
+				   &cmd_lvl, &cmd_with_handler_lvl, &args_left);
+		cmd_lvl++;
+	} else {
+		help_entry.help = NULL;
+		argvp = &argv[0];
 	}
-
-	if (quote != 0) {
-		shell_internal_fprintf(shell, SHELL_ERROR,
-				       "not terminated: %c\n",
-				       quote);
-		return -ENOEXEC;
-	}
-
-	/* Initialize help variable */
-	help_entry.help = NULL;
 
 	/* Below loop is analyzing subcommands of found root command. */
-	while (true) {
-		if (cmd_lvl >= argc) {
-			break;
+	while ((argc != 1) && (cmd_lvl <= CONFIG_SHELL_ARGC_MAX)
+		&& args_left > 0) {
+		quote = shell_make_argv(&argc, argvp, cmd_buf, 2);
+		cmd_buf = (char *)argvp[1];
+
+		if (argc == 0) {
+			return -ENOEXEC;
+		} else if ((argc == 1) && (quote != 0)) {
+			shell_internal_fprintf(shell, SHELL_ERROR,
+					"not terminated: %c\n",
+					quote);
+			return -ENOEXEC;
 		}
 
 		if (IS_ENABLED(CONFIG_SHELL_HELP) && (cmd_lvl > 0) &&
-		    (!strcmp(argv[cmd_lvl], "-h") ||
-		     !strcmp(argv[cmd_lvl], "--help"))) {
+		    (!strcmp(argvp[0], "-h") ||
+		     !strcmp(argvp[0], "--help"))) {
 			/* Command called with help option so it makes no sense
 			 * to search deeper commands.
 			 */
@@ -594,7 +652,7 @@ static int execute(const struct shell *shell)
 			enum shell_wildcard_status status;
 
 			status = shell_wildcard_process(shell, entry,
-							argv[cmd_lvl]);
+							argvp[0]);
 			/* Wildcard character found but there is no matching
 			 * command.
 			 */
@@ -612,59 +670,33 @@ static int execute(const struct shell *shell)
 			}
 		}
 
-		entry = shell_cmd_get(parent, cmd_idx++, &dloc);
+		if (has_last_handler == false) {
+			entry = shell_find_cmd(parent, argvp[0], &dloc);
+		}
 
-		if ((cmd_idx == 0) || (entry == NULL)) {
-			if (cmd_lvl == 0 &&
-				(!shell_in_select_mode(shell) ||
-				 shell->ctx->selected_cmd->handler == NULL)) {
-				shell_internal_fprintf(shell, SHELL_ERROR,
-						       "%s%s\n", argv[0],
-						       SHELL_MSG_CMD_NOT_FOUND);
+		argvp++;
+		args_left--;
+		if (entry) {
+			if (wildcard_check_report(shell, wildcard_found, entry)
+				== false) {
 				return -ENOEXEC;
 			}
-			if (shell_in_select_mode(shell)		 &&
-			    shell->ctx->selected_cmd->handler != NULL) {
-				entry = shell->ctx->selected_cmd;
-				shell->ctx->active_cmd = *entry;
-				cmd_with_handler_lvl = cmd_lvl;
-			}
-			break;
-		}
 
-		if (strcmp(argv[cmd_lvl], entry->syntax) == 0) {
-			/* checking if command has a handler */
-			if (entry->handler != NULL) {
-				if (IS_ENABLED(CONFIG_SHELL_WILDCARD) &&
-				    (wildcard_found)) {
-					shell_op_cursor_end_move(shell);
-					shell_op_cond_next_line(shell);
-
-					/* An error occurred, fnmatch  argument
-					 * cannot be followed by argument with
-					 * a handler to avoid multiple function
-					 * calls.
-					 */
-					shell_internal_fprintf(shell,
-						SHELL_ERROR,
-						"Error: requested multiple"
-						" function executions\n");
-
-					return -ENOEXEC;
-				}
-
-				shell->ctx->active_cmd = *entry;
-				cmd_with_handler_lvl = cmd_lvl;
-			}
-			/* checking if function has a help handler */
-			if (entry->help != NULL) {
-				help_entry = *entry;
-			}
-
-			cmd_lvl++;
-			cmd_idx = 0;
+			active_cmd_prepare(entry, &shell->ctx->active_cmd,
+					  &help_entry, &cmd_lvl,
+					  &cmd_with_handler_lvl, &args_left);
 			parent = entry;
+		} else {
+			/* last handler found - no need to search commands in
+			 * the next iteration.
+			 */
+			has_last_handler = true;
 		}
+
+		if (args_left || (argc == 2)) {
+			cmd_lvl++;
+		}
+
 	}
 
 	if (IS_ENABLED(CONFIG_SHELL_WILDCARD) && wildcard_found) {
@@ -673,24 +705,32 @@ static int execute(const struct shell *shell)
 		 * with all expanded commands. Hence shell_make_argv needs to
 		 * be called again.
 		 */
-		(void)shell_make_argv(&argc, &argv[0],
+		(void)shell_make_argv(&cmd_lvl,
+				      &argv[shell->ctx->selected_cmd ? 1 : 0],
 				      shell->ctx->cmd_buff,
 				      CONFIG_SHELL_ARGC_MAX);
+
+		if (shell->ctx->selected_cmd) {
+			/* Apart from what is in the command buffer, there is
+			 * a selected command.
+			 */
+			cmd_lvl++;
+		}
 	}
 
 	/* Executing the deepest found handler. */
-	return exec_cmd(shell, argc - cmd_with_handler_lvl,
+	return exec_cmd(shell, cmd_lvl - cmd_with_handler_lvl,
 			&argv[cmd_with_handler_lvl], &help_entry);
 }
 
 static void tab_handle(const struct shell *shell)
 {
 	/* +1 reserved for NULL in function shell_make_argv */
-	char *__argv[CONFIG_SHELL_ARGC_MAX + 1];
+	const char *__argv[CONFIG_SHELL_ARGC_MAX + 1];
 	/* d_entry - placeholder for dynamic command */
 	struct shell_static_entry d_entry;
 	const struct shell_static_entry *cmd;
-	char **argv = __argv;
+	const char **argv = __argv;
 	size_t first = 0;
 	size_t arg_idx;
 	u16_t longest;
@@ -853,8 +893,7 @@ static void state_collect(const struct shell *shell)
 		switch (shell->ctx->receive_state) {
 		case SHELL_RECEIVE_DEFAULT:
 			if (process_nl(shell, data)) {
-				if (!shell->ctx->cmd_buff_len &&
-				    shell->ctx->selected_cmd == NULL) {
+				if (!shell->ctx->cmd_buff_len) {
 					history_mode_exit(shell);
 					cursor_next_line_move(shell);
 				} else {
