@@ -19,8 +19,8 @@
 	};
 
 	chosen {
-		zephyr,console = &uart1;
-		zephyr,shell-uart = &uart1;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
 	};
 
 	sdram0: memory@80000000 {
@@ -50,7 +50,7 @@
 };
 
 
-&flexspi0 {
+&flexspi {
 	reg = <0x402a8000 0x4000>, <0x60000000 0x800000>;
 	is25wp064: is25wp064@0 {
 		compatible = "issi,is25wp064", "jedec,spi-nor";
@@ -63,12 +63,12 @@
 	};
 };
 
-&uart1 {
+&lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
 };
 
-&usbd1 {
+&usb1 {
 	status = "okay";
 };
 

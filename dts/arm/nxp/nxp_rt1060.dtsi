@@ -12,7 +12,7 @@
  * ram (OCRAM2) mapped at 0x20200000. In order to have a continuous
  * region, we describe them in one 768Kb unique node.
  */
-&ocram0 {
+&ocram {
 	compatible = "mmio-sram";
 	reg = <0x20200000 0xC0000>;
 };
@@ -20,11 +20,11 @@
 /* i.MX rt1060 has a second Ethernet controller. */
 / {
 	aliases {
-		eth1 = &eth1;
+		enet2 = &enet2;
 	};
 
 	soc {
-		eth1: ethernet@402d4000 {
+		enet2: ethernet@402d4000 {
 			compatible = "nxp,kinetis-ethernet";
 			reg = <0x402D4000 0x628>;
 			interrupts = <152 0>;

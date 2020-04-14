@@ -11,30 +11,30 @@
 
 / {
 	aliases {
-		eth = &eth;
+		eth = &enet;
 		gpio-1 = &gpio1;
 		gpio-2 = &gpio2;
 		gpio-3 = &gpio3;
 		gpio-4 = &gpio4;
 		gpio-5 = &gpio5;
-		i2c-1 = &i2c1;
-		i2c-2 = &i2c2;
-		i2c-3 = &i2c3;
-		i2c-4 = &i2c4;
-		spi-1 = &spi1;
-		spi-2 = &spi2;
-		spi-3 = &spi3;
-		spi-4 = &spi4;
-		uart-1 = &uart1;
-		uart-2 = &uart2;
-		uart-3 = &uart3;
-		uart-4 = &uart4;
-		uart-5 = &uart5;
-		uart-6 = &uart6;
-		uart-7 = &uart7;
-		uart-8 = &uart8;
-		usbd-1 = &usbd1;
-		usbd-2 = &usbd2;
+		i2c-1 = &lpi2c1;
+		i2c-2 = &lpi2c2;
+		i2c-3 = &lpi2c3;
+		i2c-4 = &lpi2c4;
+		spi-1 = &lpspi1;
+		spi-2 = &lpspi2;
+		spi-3 = &lpspi3;
+		spi-4 = &lpspi4;
+		uart-1 = &lpuart1;
+		uart-2 = &lpuart2;
+		uart-3 = &lpuart3;
+		uart-4 = &lpuart4;
+		uart-5 = &lpuart5;
+		uart-6 = &lpuart6;
+		uart-7 = &lpuart7;
+		uart-8 = &lpuart8;
+		usbd-1 = &usb1;
+		usbd-2 = &usb2;
 	};
 
 	chosen {
@@ -67,7 +67,7 @@
 	};
 
 	soc {
-		flexram0: flexram@400b0000 {
+		flexram: flexram@400b0000 {
 			compatible = "nxp,imx-flexram";
 			reg = <0x400b0000 0x4000>;
 			interrupts = <38 0>;
@@ -75,32 +75,32 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			itcm0: itcm@0 {
+			itcm: itcm@0 {
 				compatible = "nxp,imx-itcm";
 				reg = <0x00000000 0x20000>;
 			};
 
-			dtcm0: dtcm@20000000 {
+			dtcm: dtcm@20000000 {
 				compatible = "nxp,imx-dtcm";
 				reg = <0x20000000 0x20000>;
 			};
 
-			ocram0: ocram@20200000 {
+			ocram: ocram@20200000 {
 				compatible = "mmio-sram";
 				reg = <0x20200000 0x40000>;
 			};
 		};
 
-		flexspi0: spi@402a8000 {
+		flexspi: spi@402a8000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x402a8000 0x4000>;
 			interrupts = <108 0>;
-			label = "FLEXSPI0";
+			label = "FLEXSPI";
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
 
-		flexspi1: spi@402a4000 {
+		flexspi2: spi@402a4000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x402a4000 0x4000>;
 			interrupts = <107 0>;
@@ -109,7 +109,7 @@
 			#size-cells = <0>;
 		};
 
-		semc0: semc0@402f0000 {
+		semc: semc0@402f0000 {
 			compatible = "nxp,imx-semc";
 			reg = <0x402f0000 0x4000>;
 			interrupts = <109 0>;
@@ -185,7 +185,7 @@
 			#gpio-cells = <2>;
 		};
 
-		i2c1: i2c@403f0000 {
+		lpi2c1: i2c@403f0000 {
 			compatible = "nxp,imx-lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -197,7 +197,7 @@
 			status = "disabled";
 		};
 
-		i2c2: i2c@403f4000 {
+		lpi2c2: i2c@403f4000 {
 			compatible = "nxp,imx-lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -209,7 +209,7 @@
 			status = "disabled";
 		};
 
-		i2c3: i2c@403f8000 {
+		lpi2c3: i2c@403f8000 {
 			compatible = "nxp,imx-lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -221,7 +221,7 @@
 			status = "disabled";
 		};
 
-		i2c4: i2c@403fc000 {
+		lpi2c4: i2c@403fc000 {
 			compatible = "nxp,imx-lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
@@ -238,7 +238,7 @@
 			label = "PINMUX_0";
 		};
 
-		lcdif1: display-controller@402b8000 {
+		lcdif: display-controller@402b8000 {
 			compatible = "fsl,imx6sx-lcdif";
 			reg = <0x402b8000 0x4000>;
 			interrupts = <42 0>;
@@ -246,7 +246,7 @@
 			status = "disabled";
 		};
 
-		spi1: spi@40394000 {
+		lpspi1: spi@40394000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0x40394000 0x4000>;
 			interrupts = <32 3>;
@@ -257,7 +257,7 @@
 			#size-cells = <0>;
 		};
 
-		spi2: spi@40398000 {
+		lpspi2: spi@40398000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0x40398000 0x4000>;
 			interrupts = <33 3>;
@@ -268,7 +268,7 @@
 			#size-cells = <0>;
 		};
 
-		spi3: spi@4039c000 {
+		lpspi3: spi@4039c000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0x4039c000 0x4000>;
 			interrupts = <34 3>;
@@ -279,7 +279,7 @@
 			#size-cells = <0>;
 		};
 
-		spi4: spi@403a0000 {
+		lpspi4: spi@403a0000 {
 			compatible = "nxp,imx-lpspi";
 			reg = <0x403a0000 0x4000>;
 			interrupts = <35 3>;
@@ -290,7 +290,7 @@
 			#size-cells = <0>;
 		};
 
-		uart1: uart@40184000 {
+		lpuart1: uart@40184000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x40184000 0x4000>;
 			interrupts = <20 0>;
@@ -299,7 +299,7 @@
 			status = "disabled";
 		};
 
-		uart2: uart@40188000 {
+		lpuart2: uart@40188000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x40188000 0x4000>;
 			interrupts = <21 0>;
@@ -308,7 +308,7 @@
 			status = "disabled";
 		};
 
-		uart3: uart@4018c000 {
+		lpuart3: uart@4018c000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x4018c000 0x4000>;
 			interrupts = <22 0>;
@@ -317,7 +317,7 @@
 			status = "disabled";
 		};
 
-		uart4: uart@40190000 {
+		lpuart4: uart@40190000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x40190000 0x4000>;
 			interrupts = <23 0>;
@@ -326,7 +326,7 @@
 			status = "disabled";
 		};
 
-		uart5: uart@40194000 {
+		lpuart5: uart@40194000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x40194000 0x4000>;
 			interrupts = <24 0>;
@@ -335,7 +335,7 @@
 			status = "disabled";
 		};
 
-		uart6: uart@40198000 {
+		lpuart6: uart@40198000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x40198000 0x4000>;
 			interrupts = <25 0>;
@@ -344,7 +344,7 @@
 			status = "disabled";
 		};
 
-		uart7: uart@4019c000 {
+		lpuart7: uart@4019c000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x4019c000 0x4000>;
 			interrupts = <26 0>;
@@ -353,7 +353,7 @@
 			status = "disabled";
 		};
 
-		uart8: uart@401a0000 {
+		lpuart8: uart@401a0000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x401a0000 0x4000>;
 			interrupts = <27 0>;
@@ -514,7 +514,7 @@
 			};
 		};
 
-		eth: ethernet@402d8000 {
+		enet: ethernet@402d8000 {
 			compatible = "nxp,kinetis-ethernet";
 			reg = <0x402D8000 0x628>;
 			interrupts = <114 0>;
@@ -538,7 +538,7 @@
 			label = "TRNG";
 		};
 
-		usbd1: usbd@402e0000 {
+		usb1: usbd@402e0000 {
 			compatible = "nxp,kinetis-usbd";
 			reg = <0x402E0000 0x200>;
 			interrupts = <113 1>;
@@ -550,7 +550,7 @@
 			label = "USBD_1";
 		};
 
-		usbd2: usbd@402e0200 {
+		usb2: usbd@402e0200 {
 			compatible = "nxp,kinetis-usbd";
 			reg = <0x402E0200 0x200>;
 			interrupts = <112 1>;
