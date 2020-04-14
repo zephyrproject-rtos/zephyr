@@ -459,7 +459,7 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		))
 
 #ifdef CONFIG_NRF52832_SPIM_PAN58_WORKAROUND
-#define NRF52832_CONFIG_PAN58_WORKAROUND(idx)                        \
+#define NRF52832_CONFIG_PAN58_WORKAROUND(idx) ,                       \
 		.ppi_ch = CONFIG_SPIM_##idx##_NRF52832_PAN58_PPI_CH, \
 		.gpiote_ch = CONFIG_SPIM_##idx##_NRF52832_PAN58_GPIOTE_CH,
 #else
