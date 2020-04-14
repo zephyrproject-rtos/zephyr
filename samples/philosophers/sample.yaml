@@ -1,7 +1,7 @@
 sample:
   name: Dining Philosophers
 common:
-  extra_args: "-DDEBUG_PRINTF=1"
+  extra_args: DEBUG_PRINTF=1
   tags: introduction
   harness: console
   harness_config:
