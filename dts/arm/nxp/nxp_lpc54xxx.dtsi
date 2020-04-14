@@ -29,27 +29,26 @@
 		};
 	};
 
-	sram0:memory@20000000 {
-		compatible = "mmio-sram";
-		reg = <0x20000000 0x10000>;
-	};
-
-	sram1:memory@20010000 {
-		compatible = "mmio-sram";
-		reg = <0x20010000 0x10000>;
-	};
-
-	sram2:memory@20020000 {
-		compatible = "mmio-sram";
-		reg = <0x20020000 0x8000>;
-	};
-
-	sramx:memory@40000000{
-		compatible = "mmio-sram";
-		reg = <0x40000000 0x8000>;
-	};
-
 	soc {
+		sram0:memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 0x10000>;
+		};
+
+		sram1:memory@20010000 {
+			compatible = "mmio-sram";
+			reg = <0x20010000 0x10000>;
+		};
+
+		sram2:memory@20020000 {
+			compatible = "mmio-sram";
+			reg = <0x20020000 0x8000>;
+		};
+
+		sramx:memory@40000000{
+			compatible = "mmio-sram";
+			reg = <0x40000000 0x8000>;
+		};
 
 		flash0:flash@0 {
 			compatible = "soc-nv-flash";
