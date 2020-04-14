@@ -1747,7 +1747,9 @@ static void pending_id_keys_update(void)
 }
 #endif /* defined(CONFIG_BT_SMP) */
 
-static struct bt_conn *find_pending_connect(u8_t role, bt_addr_le_t *peer_addr)
+static struct bt_conn *find_pending_connect(u8_t role,
+					bt_addr_le_t *peer_addr,
+					struct bt_le_ext_adv *adv)
 {
 	struct bt_conn *conn;
 
@@ -1768,10 +1770,7 @@ static struct bt_conn *find_pending_connect(u8_t role, bt_addr_le_t *peer_addr)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && role == BT_HCI_ROLE_SLAVE) {
-#if defined(CONFIG_BT_EXT_ADV)
-		/* TODO: handle multiple advertising set */
-		struct bt_le_ext_adv *adv = bt_adv_lookup_handle(0);
-#else
+#if !defined(CONFIG_BT_EXT_ADV)
 		struct bt_le_ext_adv *adv = bt_adv_lookup_legacy();
 #endif
 		conn = bt_conn_lookup_state_le(adv->id, peer_addr,
@@ -1865,6 +1864,27 @@ static void le_conn_cancel_complete(struct bt_conn *conn)
 
 static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 {
+	process_enh_conn_complete(evt, NULL);
+}
+
+static void process_enh_conn_complete(
+		struct bt_hci_evt_le_enh_conn_complete *evt,
+		struct bt_le_ext_adv *adv)
+{
+#if defined(CONFIG_BT_EXT_ADV)
+	static struct bt_hci_evt_le_enh_conn_complete conn_cmplt_evt;
+
+	/* If the evt buffer is know and adv is still
+	 * unknown, save the evt until adv_set_terminated
+	 * is called.
+	 */
+
+	if (evt && !adv) {
+		conn_cmplt_evt = *evt;
+	} else if (!evt && adv) {
+		/* Now, adv is known */
+		evt = &conn_cmplt_evt;
+#endif
 	u16_t handle = sys_le16_to_cpu(evt->handle);
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
@@ -1894,7 +1914,8 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 			 * There is no need to check ID address as only one
 			 * connection in slave role can be in pending state.
 			 */
-			conn = find_pending_connect(BT_HCI_ROLE_SLAVE, NULL);
+			conn = find_pending_connect(BT_HCI_ROLE_SLAVE, NULL,
+									adv);
 			if (!conn) {
 				BT_ERR("No pending slave connection");
 				return;
@@ -1914,7 +1935,8 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 			 * There is no need to check ID address as only one
 			 * connection in master role can be in pending state.
 			 */
-			conn = find_pending_connect(BT_HCI_ROLE_MASTER, NULL);
+			conn = find_pending_connect(BT_HCI_ROLE_MASTER, NULL,
+									adv);
 			if (!conn) {
 				BT_ERR("No pending master connection");
 				return;
@@ -1944,9 +1966,6 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		u8_t id = evt->role == BT_HCI_ROLE_SLAVE ? bt_dev.adv.id :
 							   BT_ID_DEFAULT;
 #else
-		/* TODO: handle multiple advertising set */
-		struct bt_le_ext_adv *adv = bt_adv_lookup_handle(0);
-
 		u8_t id = evt->role == BT_HCI_ROLE_SLAVE ? adv->id :
 							   BT_ID_DEFAULT;
 #endif
@@ -1956,7 +1975,7 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		bt_addr_le_copy(&peer_addr, &evt->peer_addr);
 	}
 
-	conn = find_pending_connect(evt->role, &id_addr);
+	conn = find_pending_connect(evt->role, &id_addr, adv);
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
 	    evt->role == BT_HCI_ROLE_SLAVE) {
@@ -2050,6 +2069,9 @@ done:
 	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
 		bt_le_scan_update(false);
 	}
+#if defined(CONFIG_BT_EXT_ADV)
+	}
+#endif
 }
 
 static void le_enh_conn_complete(struct net_buf *buf)
@@ -2059,6 +2081,13 @@ static void le_enh_conn_complete(struct net_buf *buf)
 
 static void le_legacy_conn_complete(struct net_buf *buf)
 {
+	/* TODO: This needs redesign in case that an
+	 * ext adv set rather than bt_dev.adv gets
+	 * connected, while the enhanced connection
+	 * complete event is masked. In this case,
+	 * bt_adv_lookup_legacy will retrieve the
+	 * wrong adv object
+	 */
 	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
 	struct bt_le_ext_adv *adv = bt_adv_lookup_legacy();
 	struct bt_hci_evt_le_enh_conn_complete enh;
@@ -4761,6 +4790,11 @@ static void le_adv_set_terminated(struct net_buf *buf)
 	evt = (void *)buf->data;
 	adv = bt_adv_lookup_handle(evt->adv_handle);
 
+	if (!adv) {
+		BT_ERR("No valid adv");
+		return;
+	}
+
 	BT_DBG("status 0x%02x adv_handle %u conn_handle 0x%02x num %u",
 	       evt->status, evt->adv_handle, evt->conn_handle,
 	       evt->num_completed_ext_adv_evts);
@@ -4785,11 +4819,6 @@ static void le_adv_set_terminated(struct net_buf *buf)
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 			bt_conn_unref(conn);
 		}
-	}
-
-	if (!adv) {
-		BT_ERR("No valid adv");
-		return;
 	}
 
 	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_LIMITED)) {
@@ -4820,6 +4849,14 @@ static void le_adv_set_terminated(struct net_buf *buf)
 
 			bt_conn_unref(conn);
 		}
+	}
+
+	if (!evt->status) {
+		/* Process enhanced connection complete
+		 * event, after knowing the adv set
+		 * that has turned into connection
+		 */
+		process_enh_conn_complete(NULL, adv);
 	}
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING) &&
