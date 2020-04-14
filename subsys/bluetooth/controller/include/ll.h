@@ -80,10 +80,19 @@ uint8_t ll_rl_enable(uint8_t enable);
 void  ll_rl_timeout_set(uint16_t timeout);
 uint8_t ll_priv_mode_set(bt_addr_le_t *id_addr, uint8_t mode);
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
+			  uint8_t filter_policy, uint8_t peer_addr_type,
+			  uint8_t *peer_addr, uint8_t own_addr_type,
+			  uint16_t interval, uint16_t latency, uint16_t timeout,
+			  uint8_t phy);
+uint8_t ll_connect_enable(uint8_t is_coded_included);
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 			  uint8_t filter_policy, uint8_t peer_addr_type,
 			  uint8_t *peer_addr, uint8_t own_addr_type,
 			  uint16_t interval, uint16_t latency, uint16_t timeout);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_connect_disable(void **rx);
 uint8_t ll_conn_update(uint16_t handle, uint8_t cmd, uint8_t status, uint16_t interval_min,
 		    uint16_t interval_max, uint16_t latency, uint16_t timeout);
