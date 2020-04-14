@@ -37,6 +37,30 @@ extern "C" {
 #define SHELL_CMD_ROOT_LVL		(0u)
 
 /**
+ * @brief Flag indicates that optional arguments will be treated as one,
+ *	  unformatted argument.
+ *
+ * By default, shell is parsing all arguments, treats all spaces as argument
+ * separators unless they are within quotation marks which are removed in that
+ * case. If command rely on unformatted argument then this flag shall be used
+ * in place of number of optional arguments in command definition to indicate
+ * that only mandatory arguments shall be parsed and remaining command string is
+ * passed as a raw string.
+ */
+#define SHELL_OPT_ARG_RAW	(0xFE)
+
+/**
+ * @brief Flag indicateding that number of optional arguments is not limited.
+ */
+#define SHELL_OPT_ARG_CHECK_SKIP (0xFF)
+
+/**
+ * @brief Flag indicating maximum number of optional arguments that can be
+ *	  validated.
+ */
+#define SHELL_OPT_ARG_MAX		(0xFD)
+
+/**
  * @brief Shell API
  * @defgroup shell_api Shell API
  * @ingroup shell

@@ -12,7 +12,7 @@ extern const struct shell_cmd_entry __shell_root_cmds_end[0];
 
 static inline const struct shell_cmd_entry *shell_root_cmd_get(u32_t id)
 {
-	return  &__shell_root_cmds_start[id];
+	return &__shell_root_cmds_start[id];
 }
 
 /* Calculates relative line number of given position in buffer */
@@ -169,7 +169,7 @@ static char make_argv(char **ppcmd, u8_t c)
 }
 
 
-char shell_make_argv(size_t *argc, char **argv, char *cmd, u8_t max_argc)
+char shell_make_argv(size_t *argc, const char **argv, char *cmd, u8_t max_argc)
 {
 	char quote = 0;
 	char c;
@@ -187,8 +187,11 @@ char shell_make_argv(size_t *argc, char **argv, char *cmd, u8_t max_argc)
 		}
 
 		argv[(*argc)++] = cmd;
+		if (*argc == max_argc) {
+			break;
+		}
 		quote = make_argv(&cmd, c);
-	} while (*argc < max_argc);
+	} while (true);
 
 	argv[*argc] = 0;
 
@@ -272,7 +275,6 @@ const struct shell_static_entry *shell_cmd_get(
 
 /* Function returns pointer to a command matching given pattern.
  *
- * @param shell		Shell instance.
  * @param cmd		Pointer to commands array that will be searched.
  * @param lvl		Root command indicator. If set to 0 shell will search
  *			for pattern in parent commands.
@@ -281,10 +283,9 @@ const struct shell_static_entry *shell_cmd_get(
  *
  * @return		Pointer to found command.
  */
-static const struct shell_static_entry *find_cmd(
-					const struct shell *shell,
+const struct shell_static_entry *shell_find_cmd(
 					const struct shell_static_entry *parent,
-					char *cmd_str,
+					const char *cmd_str,
 					struct shell_static_entry *dloc)
 {
 	const struct shell_static_entry *entry;
@@ -300,15 +301,14 @@ static const struct shell_static_entry *find_cmd(
 }
 
 const struct shell_static_entry *shell_get_last_command(
-					     const struct shell *shell,
-					     size_t argc,
-					     char *argv[],
-					     size_t *match_arg,
-					     struct shell_static_entry *dloc,
-					     bool only_static)
+					const struct shell_static_entry *entry,
+					size_t argc,
+					const char *argv[],
+					size_t *match_arg,
+					struct shell_static_entry *dloc,
+					bool only_static)
 {
 	const struct shell_static_entry *prev_entry = NULL;
-	const struct shell_static_entry *entry = shell->ctx->selected_cmd;
 
 	*match_arg = SHELL_CMD_ROOT_LVL;
 
@@ -323,7 +323,7 @@ const struct shell_static_entry *shell_get_last_command(
 		}
 
 		prev_entry = entry;
-		entry = find_cmd(shell, entry, argv[*match_arg], dloc);
+		entry = shell_find_cmd(entry, argv[*match_arg], dloc);
 		if (entry) {
 			(*match_arg)++;
 		} else {
