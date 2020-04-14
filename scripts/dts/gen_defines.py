@@ -239,6 +239,7 @@ def write_regs(node):
         idx_vals.append((f"{path_id}_REG_NUM", len(node.regs)))
 
     for i, reg in enumerate(node.regs):
+        idx_vals.append((f"{path_id}_REG_IDX_{i}_EXISTS", 1))
         if reg.addr is not None:
             idx_macro = f"{path_id}_REG_IDX_{i}_VAL_ADDRESS"
             idx_vals.append((idx_macro,
@@ -312,6 +313,7 @@ def write_interrupts(node):
                     cell_value = map_arm_gic_irq_type(irq, cell_value)
                 cell_value = encode_zephyr_multi_level_irq(irq, cell_value)
 
+            idx_vals.append((f"{path_id}_IRQ_IDX_{i}_EXISTS", 1))
             idx_macro = f"{path_id}_IRQ_IDX_{i}_VAL_{name}"
             idx_vals.append((idx_macro, cell_value))
             idx_vals.append((idx_macro + "_EXISTS", 1))
