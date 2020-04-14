@@ -1,0 +1,18 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC I/O Pin Configuration (IOCON)
+
+compatible: "nxp,lpc-iocon"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    label:
+      required: true
+
+    clocks:
+      required: true
