@@ -18,8 +18,8 @@
 	};
 
 	chosen {
-		zephyr,console = &uart1;
-		zephyr,shell-uart = &uart1;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
 	};
 
 	sdram0: memory@80000000 {
@@ -84,9 +84,9 @@
 	};
 };
 
-arduino_serial: &uart3 {};
+arduino_serial: &lpuart3 {};
 
-&flexspi0 {
+&flexspi {
 	reg = <0x402a8000 0x4000>, <0x60000000 0x4000000>;
 	hyperflash0: hyperflash@0 {
 		compatible = "cypress,s26ks512s";
@@ -95,7 +95,7 @@ arduino_serial: &uart3 {};
 	};
 };
 
-&lcdif1 {
+&lcdif {
 	status = "okay";
 	port {
 		lcd_panel_out: endpoint {
@@ -104,7 +104,7 @@ arduino_serial: &uart3 {};
 	};
 };
 
-&i2c1 {
+&lpi2c1 {
 	status = "okay";
 
 	fxos8700@1f {
@@ -129,23 +129,23 @@ arduino_serial: &uart3 {};
 	};
 };
 
-&uart1 {
+&lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
 };
 
-&spi3 {
+&lpspi3 {
 	status = "okay";
 };
 
-&eth {
+&enet {
 	status = "okay";
 	ptp {
 		status = "okay";
 	};
 };
 
-&usbd1 {
+&usb1 {
 	status = "okay";
 };
 

@@ -15,15 +15,15 @@
  * DTCM: 32KB
  * OCRAM: 64KB
  */
-&itcm0 {
+&itcm {
 	reg = <0x00000000 0x8000>;
 };
 
-&dtcm0 {
+&dtcm {
 	reg = <0x20000000 0x8000>;
 };
 
-&ocram0 {
+&ocram {
 	reg = <0x20200000 0x10000>;
 };
 
@@ -43,11 +43,11 @@
 	interrupts = <31 0>;
 };
 
-&usbd1 {
+&usb1 {
 	interrupts = <25 0>;
 };
 
-&flexspi0 {
+&flexspi {
 	interrupts = <26 0>;
 };
 
@@ -73,11 +73,15 @@
 
 / {
 	aliases {
-		gpio-2 = &gpio2_rt1010;
+		/delete-property/ gpio-3;
+		/delete-property/ gpio-4;
 	};
 
 	soc {
-		gpio2_rt1010: gpio@42000000 {
+		/* Fixup GPIO2 its a different location on RT1010 */
+		/delete-node/ gpio@401bc000;
+
+		gpio2: gpio@42000000 {
 			compatible = "nxp,imx-gpio";
 			reg = <0x42000000 0x4000>;
 			interrupts = <72 0>;
@@ -85,5 +89,9 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
+
+		/* Remove GPIO3 & GPIO4, they dont exist on RT1010 */
+		/delete-node/ gpio@401c0000;
+		/delete-node/ gpio@401c4000;
 	};
 };

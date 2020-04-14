@@ -7,7 +7,7 @@
 #include "mimxrt1060_evk.dts"
 
 /delete-node/ &is25wp064;
-&flexspi0 {
+&flexspi {
 	reg = <0x402a8000 0x4000>, <0x60000000 0x4000000>;
 	hyperflash0: hyperflash@0 {
 		compatible = "cypress,s26ks512s";

@@ -18,8 +18,8 @@
 	};
 
 	chosen {
-		zephyr,console = &uart1;
-		zephyr,shell-uart = &uart1;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
 	};
 
 	leds {
@@ -68,9 +68,9 @@
 	};
 };
 
-arduino_serial: &uart4 {};
+arduino_serial: &lpuart4 {};
 
-&flexspi0 {
+&flexspi {
 	reg = <0x402a8000 0x4000>, <0x60000000 0x1000000>;
 	at25sf128a: at25sf128a@0 {
 		compatible = "adesto,at25sf128a", "jedec,spi-nor";
@@ -83,15 +83,15 @@ arduino_serial: &uart4 {};
 	};
 };
 
-&i2c1 {
+&lpi2c1 {
 	status = "okay";
 };
 
-&uart1 {
+&lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
 };
 
-&usbd1 {
+&usb1 {
 	status = "okay";
 };
