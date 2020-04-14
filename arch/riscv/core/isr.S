@@ -495,6 +495,15 @@ skip_store_fp_caller_saved_benchmark:
 
 	call read_timer_end_of_swap
 
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	/* Determine if we need to restore floating-point registers. */
+	RV_OP_LOADREG t2, __z_arch_esf_t_fp_state_OFFSET(sp)
+	beqz t2, skip_load_fp_caller_saved_benchmark
+	LOAD_FP_CALLER_SAVED(sp)
+
+skip_load_fp_caller_saved_benchmark:
+#endif
+
 	RV_OP_LOADREG ra, __z_arch_esf_t_ra_OFFSET(sp)
 	RV_OP_LOADREG gp, __z_arch_esf_t_gp_OFFSET(sp)
 	RV_OP_LOADREG tp, __z_arch_esf_t_tp_OFFSET(sp)
@@ -513,15 +522,6 @@ skip_store_fp_caller_saved_benchmark:
 	RV_OP_LOADREG a5, __z_arch_esf_t_a5_OFFSET(sp)
 	RV_OP_LOADREG a6, __z_arch_esf_t_a6_OFFSET(sp)
 	RV_OP_LOADREG a7, __z_arch_esf_t_a7_OFFSET(sp)
-
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
-	/* Determine if we need to restore floating-point registers. */
-	RV_OP_LOADREG t2, __z_arch_esf_t_fp_state_OFFSET(sp)
-	beqz t2, skip_load_fp_caller_saved_benchmark
-	LOAD_FP_CALLER_SAVED(sp)
-
-skip_load_fp_caller_saved_benchmark:
-#endif
 
 	/* Release stack space */
 	addi sp, sp, __z_arch_esf_t_SIZEOF
@@ -542,6 +542,19 @@ no_reschedule:
 	RV_OP_LOADREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 	csrw mstatus, t0
 
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	/*
+	 * Determine if we need to restore floating-point registers. This needs
+	 * to happen before restoring integer registers to avoid stomping on
+	 * t0.
+	 */
+	RV_OP_LOADREG t0, __z_arch_esf_t_fp_state_OFFSET(sp)
+	beqz t0, skip_load_fp_caller_saved
+	LOAD_FP_CALLER_SAVED(sp)
+
+skip_load_fp_caller_saved:
+#endif
+
 	/* Restore caller-saved registers from thread stack */
 	RV_OP_LOADREG ra, __z_arch_esf_t_ra_OFFSET(sp)
 	RV_OP_LOADREG gp, __z_arch_esf_t_gp_OFFSET(sp)
@@ -561,15 +574,6 @@ no_reschedule:
 	RV_OP_LOADREG a5, __z_arch_esf_t_a5_OFFSET(sp)
 	RV_OP_LOADREG a6, __z_arch_esf_t_a6_OFFSET(sp)
 	RV_OP_LOADREG a7, __z_arch_esf_t_a7_OFFSET(sp)
-
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
-	/* Determine if we need to restore floating-point registers. */
-	RV_OP_LOADREG t0, __z_arch_esf_t_fp_state_OFFSET(sp)
-	beqz t0, skip_load_fp_caller_saved
-	LOAD_FP_CALLER_SAVED(sp)
-
-skip_load_fp_caller_saved:
-#endif
 
 	/* Release stack space */
 	addi sp, sp, __z_arch_esf_t_SIZEOF
