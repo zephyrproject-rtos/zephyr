@@ -78,7 +78,7 @@ void test_k_float_disable_common(void)
 		"usr_fp_thread FP options not set (0x%0x)",
 		usr_fp_thread.base.user_options);
 
-#if defined(CONFIG_ARM) || defined(RISCV)
+#if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
 	/* Verify FP mode can only be disabled for current thread */
 	zassert_true((k_float_disable(&usr_fp_thread) == -EINVAL),
 		"k_float_disable() successful on thread other than current!");

@@ -464,6 +464,13 @@ config CPU_HAS_FPU
 	  This option is enabled when the CPU has hardware floating point
 	  unit.
 
+config CPU_HAS_FPU_DOUBLE_PRECISION
+	bool
+	select CPU_HAS_FPU
+	help
+	  When enabled, this indicates that the CPU has a double floating point
+	  precision unit.
+
 config CPU_HAS_MPU
 	bool
 	help
@@ -530,13 +537,6 @@ config FP_SHARING
 	help
 	  This option allows multiple threads to use the floating point
 	  registers.
-
-config FLOAT_64BIT
-	bool "Double precision floating point"
-	depends on FLOAT
-	depends on RISCV
-	help
-	  This option means that floating point registers are 64bit width.
 
 config ARCH
 	string
