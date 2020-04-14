@@ -9,10 +9,8 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <nrfx_twim.h>
 
-#define LOG_DOMAIN "i2c_nrfx_twim"
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(i2c_nrfx_twim);
+LOG_MODULE_REGISTER(i2c_nrfx_twim, CONFIG_I2C_LOG_LEVEL);
 
 struct i2c_nrfx_twim_data {
 	struct k_sem transfer_sync;
