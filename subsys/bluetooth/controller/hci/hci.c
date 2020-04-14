@@ -1111,12 +1111,28 @@ static void le_create_connection(struct net_buf *buf, struct net_buf **evt)
 	conn_latency = sys_le16_to_cpu(cmd->conn_latency);
 	supervision_timeout = sys_le16_to_cpu(cmd->supervision_timeout);
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	status = ll_create_connection(scan_interval, scan_window,
+				      cmd->filter_policy,
+				      cmd->peer_addr.type,
+				      &cmd->peer_addr.a.val[0],
+				      cmd->own_addr_type, conn_interval_max,
+				      conn_latency, supervision_timeout, 0U);
+	if (status) {
+		*evt = cmd_status(status);
+		return;
+	}
+
+	status = ll_connect_enable(0U);
+
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 	status = ll_create_connection(scan_interval, scan_window,
 				      cmd->filter_policy,
 				      cmd->peer_addr.type,
 				      &cmd->peer_addr.a.val[0],
 				      cmd->own_addr_type, conn_interval_max,
 				      conn_latency, supervision_timeout);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	*evt = cmd_status(status);
 }
@@ -1867,6 +1883,75 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	ccst->status = status;
 }
 #endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_CENTRAL)
+static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_ext_create_conn *cmd = (void *)buf->data;
+	struct bt_hci_ext_conn_phy *p;
+	u8_t peer_addr_type;
+	u8_t own_addr_type;
+	u8_t filter_policy;
+	u8_t phys_bitmask;
+	u8_t *peer_addr;
+	u8_t status;
+	u8_t phys;
+
+	/* TODO: add parameter checks */
+
+	filter_policy = cmd->filter_policy;
+	own_addr_type = cmd->own_addr_type;
+	peer_addr_type = cmd->peer_addr.type;
+	peer_addr = cmd->peer_addr.a.val;
+	phys = cmd->phys;
+	p = cmd->p;
+
+	phys_bitmask = BT_HCI_LE_EXT_SCAN_PHY_CODED | BT_HCI_LE_EXT_SCAN_PHY_1M;
+	do {
+		u16_t supervision_timeout;
+		u16_t conn_interval_max;
+		u16_t scan_interval;
+		u16_t conn_latency;
+		u16_t scan_window;
+		u8_t phy;
+
+		phy = BIT(find_lsb_set(phys_bitmask) - 1);
+
+		if (phys & phy) {
+			scan_interval = sys_le16_to_cpu(p->scan_interval);
+			scan_window = sys_le16_to_cpu(p->scan_window);
+			conn_interval_max =
+				sys_le16_to_cpu(p->conn_interval_max);
+			conn_latency = sys_le16_to_cpu(p->conn_latency);
+			supervision_timeout =
+				sys_le16_to_cpu(p->supervision_timeout);
+
+			status = ll_create_connection(scan_interval,
+						      scan_window,
+						      filter_policy,
+						      peer_addr_type,
+						      peer_addr,
+						      own_addr_type,
+						      conn_interval_max,
+						      conn_latency,
+						      supervision_timeout,
+						      phy);
+			if (status) {
+				*evt = cmd_status(status);
+				return;
+			}
+
+			p++;
+		}
+
+		phys_bitmask &= (phys_bitmask - 1);
+	} while (phys_bitmask);
+
+	status = ll_connect_enable(phys & BT_HCI_LE_EXT_SCAN_PHY_CODED);
+
+	*evt = cmd_status(status);
+}
+#endif /* CONFIG_BT_CENTRAL */
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
@@ -2087,6 +2172,12 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 		le_set_ext_scan_enable(cmd, evt);
 		break;
 #endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_CONN)
+	case BT_OCF(BT_HCI_OP_LE_EXT_CREATE_CONN):
+		le_ext_create_connection(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CONN */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
