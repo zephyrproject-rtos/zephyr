@@ -9,7 +9,7 @@
 #include <fsl_gpio.h>
 #include <soc.h>
 
-#ifdef CONFIG_ETH_MCUX_0
+#if DT_HAS_NODE(DT_NODELABEL(enet))
 static gpio_pin_config_t enet_gpio_config = {
 	.direction = kGPIO_DigitalOutput,
 	.outputLogic = 0,
@@ -17,7 +17,7 @@ static gpio_pin_config_t enet_gpio_config = {
 };
 #endif
 
-#ifdef CONFIG_DISK_ACCESS_USDHC1
+#if DT_HAS_NODE(DT_NODELABEL(usdhc1)) && CONFIG_DISK_ACCESS_USDHC1
 
 /*Drive Strength Field: R0(260 Ohm @ 3.3V, 150 Ohm@1.8V, 240 Ohm for DDR)
  *Speed Field: medium(100MHz)
@@ -133,7 +133,7 @@ static int mm_swiftio_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 
 
-#ifdef CONFIG_UART_MCUX_LPUART_1
+#if DT_HAS_NODE(DT_NODELABEL(lpuart1))
 	/* LPUART1 TX/RX */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_12_LPUART1_TX, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_13_LPUART1_RX, 0);
@@ -149,7 +149,7 @@ static int mm_swiftio_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#ifdef CONFIG_I2C_1
+#if DT_HAS_NODE(DT_NODELABEL(lpi2c1))
 		IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_00_LPI2C1_SCL, 1);
 		IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_01_LPI2C1_SDA, 1);
 
@@ -168,7 +168,7 @@ static int mm_swiftio_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#ifdef CONFIG_I2C_3
+#if DT_HAS_NODE(DT_NODELABEL(lpi2c3))
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_07_LPI2C3_SCL, 1);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_06_LPI2C3_SDA, 1);
 
@@ -187,7 +187,7 @@ static int mm_swiftio_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#ifdef CONFIG_SPI_3
+#if DT_HAS_NODE(DT_NODELABEL(lpspi3))
 	/* LPSPI3 SCK, SDO, SDI, PCS0 */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_00_LPSPI3_SCK, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_01_LPSPI3_SDO, 0);
@@ -215,7 +215,7 @@ static int mm_swiftio_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#ifdef CONFIG_DISK_ACCESS_USDHC1
+#if DT_HAS_NODE(DT_NODELABEL(usdhc1)) && CONFIG_DISK_ACCESS_USDHC1
 	mm_swiftio_usdhc_pinmux(0, true, 2, 1);
 	imxrt_usdhc_pinmux_cb_register(mm_swiftio_usdhc_pinmux);
 #endif
