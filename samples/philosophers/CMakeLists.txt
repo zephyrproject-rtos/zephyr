@@ -5,7 +5,7 @@ find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
 project(philosophers)
 
 if(DEFINED DEBUG_PRINTF)
-  zephyr_compile_definitions(DEBUG_PRINTF)
+  zephyr_compile_definitions(DEBUG_PRINTF=${DEBUG_PRINTF})
 endif()
 if(DEFINED SAME_PRIO)
   zephyr_compile_definitions(SAME_PRIO)
