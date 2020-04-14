@@ -655,7 +655,8 @@
  * @return 1 if "idx" is a valid register block index,
  *         0 otherwise.
  */
-#define DT_REG_HAS_IDX(node_id, idx) ((idx) < DT_NUM_REGS(node_id))
+#define DT_REG_HAS_IDX(node_id, idx) \
+	IS_ENABLED(DT_CAT(node_id, _REG_IDX_##idx##_EXISTS))
 
 /**
  * @brief Get the base address of the register block at index "idx"
@@ -740,7 +741,8 @@
  * @return 1 if the idx is valid for the interrupt property
  *         0 otherwise.
  */
-#define DT_IRQ_HAS_IDX(node_id, idx) ((idx) < DT_NUM_IRQS(node_id))
+#define DT_IRQ_HAS_IDX(node_id, idx) \
+	IS_ENABLED(DT_CAT(node_id, _IRQ_IDX_##idx##_EXISTS))
 
 /**
  * @brief Get a value within an interrupt specifier at an index
