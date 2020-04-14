@@ -111,6 +111,8 @@ source "drivers/sensor/lsm9ds0_mfd/Kconfig"
 
 source "drivers/sensor/max30101/Kconfig"
 
+source "drivers/sensor/max31855/Kconfig"
+
 source "drivers/sensor/max44009/Kconfig"
 
 source "drivers/sensor/mcp9808/Kconfig"

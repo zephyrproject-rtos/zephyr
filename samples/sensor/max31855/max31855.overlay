@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2020 Christian Hirsch
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi2 {
+	status = "okay";
+	max31855@0 {
+		compatible = "maxim,max31855";
+		reg = <0>;
+		label = "MAX31855";
+		spi-max-frequency = <125000>;
+	};
+};

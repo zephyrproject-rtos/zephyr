@@ -1,0 +1,11 @@
+sample:
+  name: MAX31855 Sensor sample
+tests:
+  sample.sensor.max31855:
+    harness: console
+    tags: sensors
+    depends_on: spi max31855
+    harness_config:
+        type: one_line
+        regex:
+            - "ambient temp: (.*) C; die temp: (.*) C"
