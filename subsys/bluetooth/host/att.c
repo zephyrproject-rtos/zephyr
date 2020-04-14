@@ -2091,7 +2091,8 @@ static void att_reset(struct bt_att *att)
 	/* Notify pending requests */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&att->reqs, req, tmp, node) {
 		if (req->func) {
-			req->func(NULL, BT_ATT_ERR_UNLIKELY, NULL, 0, req);
+			req->func(NULL, BT_ATT_ERR_UNLIKELY, NULL, 0,
+				  req->user_data);
 		}
 
 		att_req_destroy(req);
