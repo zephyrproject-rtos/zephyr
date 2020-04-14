@@ -536,7 +536,7 @@ static int hf_clock_enable(bool on, bool blocking)
 	struct device *clock;
 	static bool clock_requested;
 
-	clock = device_get_binding(DT_INST_0_NORDIC_NRF_CLOCK_LABEL);
+	clock = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 	if (!clock) {
 		LOG_ERR("NRF HF Clock device not found!");
 		return ret;
