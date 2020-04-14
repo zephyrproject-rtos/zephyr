@@ -16,16 +16,6 @@ choice DATA_LOCATION
 	default DATA_SEMC
 endchoice
 
-if GPIO_MCUX_IGPIO
-
-config GPIO_MCUX_IGPIO_1
-	default y
-
-config GPIO_MCUX_IGPIO_5
-	default y
-
-endif # GPIO_MCUX_IGPIO
-
 config I2C
 	default y if LVGL
 
