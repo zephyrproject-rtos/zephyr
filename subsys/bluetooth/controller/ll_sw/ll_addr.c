@@ -51,9 +51,16 @@ u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
 
 u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 {
-	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
-	    ull_adv_is_enabled(0)) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		u32_t status = ull_adv_is_enabled(0);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		if ((status & 5U) == 1U) {
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+		if (status) {
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_OBSERVER) &&

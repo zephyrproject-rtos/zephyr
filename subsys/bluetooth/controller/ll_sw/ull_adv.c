@@ -122,8 +122,6 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 	 * evt_prop bits.
 	 */
 
-	adv->lll.phy_p = BIT(0);
-
 	/* extended adv param set */
 	if (adv_type == PDU_ADV_TYPE_EXT_IND) {
 		/* legacy */
@@ -137,8 +135,7 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 				adv_type = 0x01;
 			}
 
-			/* Mark the adv set as created */
-			adv->is_created = 1;
+			adv->lll.phy_p = BIT(0);
 		} else {
 			/* - Connectable and scannable not allowed;
 			 * - High duty cycle directed connectable not allowed
@@ -153,6 +150,14 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 
 			adv->lll.phy_p = phy_p;
 		}
+
+		/* Mark the adv set as created by extended advertising cmd */
+		adv->is_created = 3U;
+	} else {
+		adv->lll.phy_p = BIT(0);
+
+		/* Mark the adv set as created by legacy advertising cmd */
+		adv->is_created = 1U;
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -353,9 +358,6 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 		/* NOTE: TargetA, filled at enable and RPA timeout */
 
 		/* NOTE: AdvA, filled at enable and RPA timeout */
-
-		/* Mark the adv set as created */
-		adv->is_created = 1;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	} else if (pdu->len == 0) {
@@ -1147,7 +1149,11 @@ u32_t ull_adv_is_enabled(u8_t handle)
 		return 0;
 	}
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	return BIT(0) | ((u32_t)adv->is_created << 1);
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 	return BIT(0);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 }
 
 u32_t ull_adv_filter_pol_get(u8_t handle)
