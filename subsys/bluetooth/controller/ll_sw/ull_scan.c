@@ -124,16 +124,16 @@ u8_t ll_scan_enable(u8_t enable)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
-		scan_coded = ull_scan_is_disabled_get(SCAN_HANDLE_PHY_CODED);
-		if (!scan_coded) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
-
-		own_addr_type = scan_coded->own_addr_type;
-		is_coded_phy = (scan_coded->lll.type >> 1) &
-				BT_HCI_LE_EXT_SCAN_PHY_CODED;
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	scan_coded = ull_scan_is_disabled_get(SCAN_HANDLE_PHY_CODED);
+	if (!scan_coded) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+	own_addr_type = scan_coded->own_addr_type;
+	is_coded_phy = (scan_coded->lll.phy &
+			BT_HCI_LE_EXT_SCAN_PHY_CODED);
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 	if ((IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) && is_coded_phy &&
 	     (own_addr_type & 0x1)) ||
@@ -169,9 +169,10 @@ u8_t ll_scan_enable(u8_t enable)
 	}
 #endif
 
-	if (!IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) ||
-	    !is_coded_phy ||
-	    ((scan->lll.type >> 1) & BIT(0))) {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (!is_coded_phy || (scan->lll.phy & BT_HCI_LE_EXT_SCAN_PHY_1M))
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+	{
 		err = ull_scan_enable(scan);
 		if (err) {
 			return err;
