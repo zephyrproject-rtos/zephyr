@@ -20,25 +20,6 @@ config DISK_ACCESS_USDHC1
 	default y
 	depends on DISK_ACCESS_USDHC
 
-if GPIO_MCUX_IGPIO
-
-config GPIO_MCUX_IGPIO_1
-	default y
-
-config GPIO_MCUX_IGPIO_2
-	default y if DISK_ACCESS_USDHC1
-
-config GPIO_MCUX_IGPIO_3
-	default n
-
-config GPIO_MCUX_IGPIO_4
-	default n
-
-config GPIO_MCUX_IGPIO_5
-	default y
-
-endif # GPIO_MCUX_IGPIO
-
 config I2C
 	default y if LVGL
 
