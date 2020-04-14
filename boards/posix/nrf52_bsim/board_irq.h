@@ -27,15 +27,12 @@ void posix_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags);
  * @param isr_p Interrupt service routine
  * @param isr_param_p ISR parameter
  * @param flags_p IRQ options
- *
- * @return The vector assigned to this interrupt
  */
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-({ \
+{ \
 	posix_isr_declare(irq_p, 0, isr_p, isr_param_p); \
 	posix_irq_priority_set(irq_p, priority_p, flags_p); \
-	irq_p; \
-})
+}
 
 
 /**
@@ -44,12 +41,11 @@ void posix_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags);
  * See include/irq.h for details.
  */
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
-({ \
+{ \
 	posix_isr_declare(irq_p, ISR_FLAG_DIRECT, (void (*)(void *))isr_p, \
 			  NULL); \
 	posix_irq_priority_set(irq_p, priority_p, flags_p); \
-	irq_p; \
-})
+}
 
 /**
  * POSIX Architecture (board) specific ISR_DIRECT_DECLARE(),

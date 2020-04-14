@@ -177,7 +177,7 @@ typedef struct s_isrList {
  * between the vector and the IRQ line as well as triggering flags
  */
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-({ \
+{ \
 	__asm__ __volatile__(							\
 		".pushsection .intList\n\t" \
 		".long %c[isr]_irq%c[irq]_stub\n\t"	/* ISR_LIST.fnc */ \
@@ -202,16 +202,14 @@ typedef struct s_isrList {
 		  [irq] "i" (irq_p)); \
 	z_irq_controller_irq_config(Z_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), \
 				   (flags_p)); \
-	Z_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
-})
+}
 
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
-({ \
+{ \
 	NANO_CPU_INT_REGISTER(isr_p, irq_p, priority_p, -1, 0); \
 	z_irq_controller_irq_config(Z_IRQ_TO_INTERRUPT_VECTOR(irq_p), (irq_p), \
 				   (flags_p)); \
-	Z_IRQ_TO_INTERRUPT_VECTOR(irq_p); \
-})
+}
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 /*

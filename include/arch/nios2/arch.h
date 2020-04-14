@@ -39,10 +39,9 @@ extern "C" {
  * controller and no flags are currently supported.
  */
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-({ \
+{ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	irq_p; \
-})
+}
 
 extern void z_irq_spurious(void *unused);
 
