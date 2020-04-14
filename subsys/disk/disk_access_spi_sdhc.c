@@ -764,6 +764,7 @@ static int disk_spi_sdhc_init(struct device *dev);
 
 static int sdhc_spi_init(struct device *dev)
 {
+	static struct spi_cs_control spi_cs_control_0;
 	struct sdhc_spi_data *data = dev->driver_data;
 
 	data->spi = device_get_binding(DT_INST_0_ZEPHYR_MMC_SPI_SLOT_BUS_NAME);
@@ -777,6 +778,11 @@ static int sdhc_spi_init(struct device *dev)
 
 	data->pin = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_PIN;
 	data->flags = DT_INST_0_ZEPHYR_MMC_SPI_SLOT_CS_GPIOS_FLAGS;
+
+	spi_cs_control_0.gpio_dev = data->cs;
+	spi_cs_control_0.gpio_pin = data->pin;
+	spi_cs_control_0.delay = 10;
+	data->cfg.cs = &spi_cs_control_0;
 
 	disk_spi_sdhc_init(dev);
 

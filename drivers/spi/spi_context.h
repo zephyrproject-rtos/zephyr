@@ -356,7 +356,7 @@ static inline size_t spi_context_longest_current_buf(struct spi_context *ctx)
 		return ctx->rx_len;
 	} else if (!ctx->rx_len) {
 		return ctx->tx_len;
-	} else if (ctx->tx_len < ctx->rx_len) {
+	} else if (ctx->tx_len > ctx->rx_len) {
 		return ctx->tx_len;
 	}
 

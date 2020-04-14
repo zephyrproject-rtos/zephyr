@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(spi_nrfx_spim);
 
 #include "spi_context.h"
 
+
 struct spi_nrfx_data {
 	struct spi_context ctx;
 	size_t chunk_len;
@@ -28,9 +29,13 @@ struct spi_nrfx_data {
 };
 
 struct spi_nrfx_config {
-	nrfx_spim_t	   spim;
-	size_t		   max_chunk_len;
+	nrfx_spim_t        spim;
+	size_t             max_chunk_len;
 	nrfx_spim_config_t config;
+#ifdef CONFIG_NRF52832_SPIM_PAN58_WORKAROUND
+	u8_t               ppi_ch;
+	u8_t               gpiote_ch;
+#endif
 };
 
 static inline struct spi_nrfx_data *get_dev_data(struct device *dev)
@@ -149,6 +154,69 @@ static int configure(struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_NRF52832_SPIM_PAN58_WORKAROUND
+/*
+ * brief Work-around for transmitting 1 byte with SPIM.
+ *
+ * param spim: The SPIM instance that is in use.
+ * param ppi_channel: An unused PPI channel that will be used by the
+ *                    workaround.
+ * param gpiote_channel: An unused GPIOTE channel that will be used by the
+ *                       workaround.
+ *
+ * warning Must not be used when transmitting multiple bytes.
+ *
+ * warning After this workaround is used, the user must reset the PPI
+ * channel and the GPIOTE channel before attempting to transmit multiple
+ * bytes.
+ */
+static void setup_workaround_for_ftpan_58(NRF_SPIM_Type *spim, u32_t ppi_ch,
+	u32_t gpiote_ch)
+{
+	if (NRF_GPIOTE->CONFIG[gpiote_ch] != 0) {
+		LOG_WRN("NRF_GPIOTE->CONFIG[gpiote_ch] should be zero");
+	}
+	if (NRF_PPI->CH[ppi_ch].EEP != 0) {
+		LOG_WRN("NRF_PPI->CH[ppi_ch].EEP should be zero");
+	}
+	if (NRF_PPI->CH[ppi_ch].TEP != 0) {
+		LOG_WRN("NRF_PPI->CH[ppi_ch].TEP should be zero");
+	}
+	if ((NRF_PPI->CHEN & (1U << ppi_ch)) != 0) {
+		LOG_WRN("(NRF_PPI->CHEN & (1U << ppi_ch)) should be zero");
+	}
+
+	/* Create an event when SCK toggles */
+	NRF_GPIOTE->CONFIG[gpiote_ch] =
+		(GPIOTE_CONFIG_MODE_Event << GPIOTE_CONFIG_MODE_Pos) |
+		(spim->PSEL.SCK << GPIOTE_CONFIG_PSEL_Pos) |
+		(GPIOTE_CONFIG_POLARITY_Toggle << GPIOTE_CONFIG_POLARITY_Pos);
+
+	/* Stop the spim instance when SCK toggles */
+	NRF_PPI->CH[ppi_ch].EEP = (u32_t)&NRF_GPIOTE->EVENTS_IN[gpiote_ch];
+	NRF_PPI->CH[ppi_ch].TEP = (u32_t)&spim->TASKS_STOP;
+	NRF_PPI->CHENSET = 1U << ppi_ch;
+
+	/* The spim instance cannot be stopped mid-byte, so it will finish
+	 * transmitting the first byte and then stop. Effectively ensuring
+	 * that only 1 byte is transmitted.
+	 */
+}
+
+static void clear_workaround_for_ftpan_58(NRF_SPIM_Type *spim, u32_t ppi_ch,
+	u32_t gpiote_ch)
+{
+	NRF_PPI->CHENCLR = 1U << ppi_ch;
+
+	/* Disable SCK toggles event */
+	NRF_GPIOTE->CONFIG[gpiote_ch] = 0;
+
+	/* Clear Event and Task End Points */
+	NRF_PPI->CH[ppi_ch].EEP = 0;
+	NRF_PPI->CH[ppi_ch].TEP = 0;
+}
+#endif
+
 static void transfer_next_chunk(struct device *dev)
 {
 	struct spi_nrfx_data *dev_data = get_dev_data(dev);
@@ -183,21 +251,27 @@ static void transfer_next_chunk(struct device *dev)
 		xfer.p_rx_buffer = ctx->rx_buf;
 		xfer.rx_length   = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
 
-		/* This SPIM driver is only used by the NRF52832 if
-		   SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58 is enabled */
-		if (IS_ENABLED(CONFIG_SOC_NRF52832) &&
-		   (xfer.rx_length == 1 && xfer.tx_length <= 1)) {
-			LOG_WRN("Transaction aborted since it would trigger nRF52832 PAN 58");
-			error = -EIO;
-		}
-
-		if (!error) {
+#ifdef CONFIG_NRF52832_SPIM_PAN58_WORKAROUND
+		if ((xfer.rx_length == 1 && xfer.tx_length <= 1)) {
+			setup_workaround_for_ftpan_58(
+				dev_config->spim.p_reg,
+				dev_config->ppi_ch,
+				dev_config->gpiote_ch);
 			result = nrfx_spim_xfer(&dev_config->spim, &xfer, 0);
-			if (result == NRFX_SUCCESS) {
-				return;
-			}
-			error = -EIO;
+			clear_workaround_for_ftpan_58(
+				dev_config->spim.p_reg,
+				dev_config->ppi_ch,
+				dev_config->gpiote_ch);
+		} else {
+			result = nrfx_spim_xfer(&dev_config->spim, &xfer, 0);
 		}
+#else
+		result = nrfx_spim_xfer(&dev_config->spim, &xfer, 0);
+#endif
+		if (result == NRFX_SUCCESS) {
+			return;
+		}
+		error = -EIO;
 	}
 
 	spi_context_cs_control(ctx, false);
@@ -384,6 +458,14 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			(.rx_delay = CONFIG_SPI_##idx##_NRF_RX_DELAY,))	\
 		))
 
+#ifdef CONFIG_NRF52832_SPIM_PAN58_WORKAROUND
+#define NRF52832_CONFIG_PAN58_WORKAROUND(idx) ,                       \
+		.ppi_ch = CONFIG_SPIM_##idx##_NRF52832_PAN58_PPI_CH, \
+		.gpiote_ch = CONFIG_SPIM_##idx##_NRF52832_PAN58_GPIOTE_CH,
+#else
+#define NRF52832_CONFIG_PAN58_WORKAROUND(idx)
+#endif
+
 #define SPI_NRFX_SPIM_DEVICE(idx)					       \
 	BUILD_ASSERT_MSG(						       \
 		!SPIM_NRFX_MISO_PULL_UP(idx) || !SPIM_NRFX_MISO_PULL_DOWN(idx),\
@@ -416,6 +498,7 @@ static int spim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			.miso_pull = SPIM_NRFX_MISO_PULL(idx),		       \
 			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
 		}							       \
+		NRF52832_CONFIG_PAN58_WORKAROUND(idx)                          \
 	};								       \
 	DEVICE_DEFINE(spi_##idx,					       \
 		      DT_NORDIC_NRF_SPIM_SPI_##idx##_LABEL,		       \
