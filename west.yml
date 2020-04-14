@@ -86,7 +86,7 @@ manifest:
       revision: 80a76f4af4314635bef83272779ddbed6021fc32
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: dcf32c7f340a10e6e6482feb311cb4fa71953fd3
+      revision: 1843fdce2b008b45f9cc8b38dd9a57a575ab50f6
       path: modules/lib/mcumgr
     - name: net-tools
       revision: 1080094bc246357c6c35e80e8b2d5d0ce7e0d963
