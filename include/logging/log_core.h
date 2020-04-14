@@ -53,11 +53,16 @@ extern "C" {
 #define Z_LOG_RESOLVED_LEVEL1(_level, _default) \
 	__COND_CODE(_LOG_XXXX##_level, (_level), (_default))
 
-#define _LOG_XXXX0 _LOG_YYYY,
-#define _LOG_XXXX1 _LOG_YYYY,
-#define _LOG_XXXX2 _LOG_YYYY,
-#define _LOG_XXXX3 _LOG_YYYY,
-#define _LOG_XXXX4 _LOG_YYYY,
+#define _LOG_XXXX0  _LOG_YYYY,
+#define _LOG_XXXX0U _LOG_YYYY,
+#define _LOG_XXXX1  _LOG_YYYY,
+#define _LOG_XXXX1U _LOG_YYYY,
+#define _LOG_XXXX2  _LOG_YYYY,
+#define _LOG_XXXX2U _LOG_YYYY,
+#define _LOG_XXXX3  _LOG_YYYY,
+#define _LOG_XXXX3U _LOG_YYYY,
+#define _LOG_XXXX4  _LOG_YYYY,
+#define _LOG_XXXX4U _LOG_YYYY,
 
 /**
  * @brief Macro for conditional code generation if provided log level allows.
@@ -79,10 +84,14 @@ extern "C" {
 #define Z_LOG_EVAL1(_eval_level, _iftrue, _iffalse) \
 	__COND_CODE(_LOG_ZZZZ##_eval_level, _iftrue, _iffalse)
 
-#define _LOG_ZZZZ1 _LOG_YYYY,
-#define _LOG_ZZZZ2 _LOG_YYYY,
-#define _LOG_ZZZZ3 _LOG_YYYY,
-#define _LOG_ZZZZ4 _LOG_YYYY,
+#define _LOG_ZZZZ1  _LOG_YYYY,
+#define _LOG_ZZZZ1U _LOG_YYYY,
+#define _LOG_ZZZZ2  _LOG_YYYY,
+#define _LOG_ZZZZ2U _LOG_YYYY,
+#define _LOG_ZZZZ3  _LOG_YYYY,
+#define _LOG_ZZZZ3U _LOG_YYYY,
+#define _LOG_ZZZZ4  _LOG_YYYY,
+#define _LOG_ZZZZ4U _LOG_YYYY,
 
 /** @brief Macro for getting log level for given module.
  *
