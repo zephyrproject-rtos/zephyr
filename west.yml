@@ -126,7 +126,7 @@ manifest:
       revision: 957d46bc3ce0d5f628f0d525196bb4db207672ee
     - name: nrf_hw_models
       path: modules/bsim_hw_models/nrf_hw_models
-      revision: fec69703cb1ca06fcdab6d5fde01274f0fc5c759
+      revision: 9e594dace1af29252903938064b8ecb1b8b77678
     - name: hal_xtensa
       revision: e7a57d0c252f9c5f3cab9d5ceadda8753cacee5b
       path: modules/hal/xtensa
