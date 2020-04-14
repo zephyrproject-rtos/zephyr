@@ -54,10 +54,18 @@ static void ticker_op_stop_scan_cb(u32_t status, void *params);
 static void ticker_op_cb(u32_t status, void *params);
 static inline void conn_release(struct ll_scan_set *scan);
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
+			  u8_t filter_policy, u8_t peer_addr_type,
+			  u8_t *peer_addr, u8_t own_addr_type,
+			  u16_t interval, u16_t latency, u16_t timeout,
+			  u8_t phy)
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 			  u8_t filter_policy, u8_t peer_addr_type,
 			  u8_t *peer_addr, u8_t own_addr_type,
 			  u16_t interval, u16_t latency, u16_t timeout)
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 {
 	struct lll_conn *conn_lll;
 	struct ll_scan_set *scan;
@@ -68,14 +76,53 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	u8_t hop;
 	int err;
 
-	scan = ull_scan_is_disabled_get(0);
+	scan = ull_scan_is_disabled_get(SCAN_HANDLE_1M);
 	if (!scan) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	lll = &scan->lll;
-	if (lll->conn) {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	struct ll_scan_set *scan_coded;
+	struct lll_scan *lll_coded;
+
+	scan_coded = ull_scan_is_disabled_get(SCAN_HANDLE_PHY_CODED);
+	if (!scan_coded) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lll = &scan->lll;
+	lll_coded = &scan_coded->lll;
+
+	if (phy & BT_HCI_LE_EXT_SCAN_PHY_CODED) {
+		if (!lll_coded->conn) {
+			lll_coded->conn = lll->conn;
+		}
+		scan = scan_coded;
+		lll = lll_coded;
+	} else {
+		if (!lll->conn) {
+			lll->conn = lll_coded->conn;
+		}
+	}
+
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
+	if (phy & ~BT_HCI_LE_EXT_SCAN_PHY_1M) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lll = &scan->lll;
+
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
+
+	lll->phy = phy;
+
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+	lll = &scan->lll;
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
+	if (lll->conn) {
+		goto conn_is_valid;
 	}
 
 	link = ll_rx_link_alloc();
@@ -249,6 +296,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	ull_hdr_init(&conn->ull);
 	lll_hdr_init(&conn->lll, conn);
 
+conn_is_valid:
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	ull_filter_scan_update(filter_policy);
 
@@ -272,6 +320,9 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 	scan->own_addr_type = own_addr_type;
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	return 0;
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
 	/* wait for stable clocks */
 	err = lll_clock_wait();
 	if (err) {
@@ -281,7 +332,44 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	}
 
 	return ull_scan_enable(scan);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+u8_t ll_connect_enable(u8_t is_coded_included)
+{
+	u8_t err = BT_HCI_ERR_CMD_DISALLOWED;
+	struct ll_scan_set *scan;
+
+	scan = ull_scan_set_get(SCAN_HANDLE_1M);
+
+	/* wait for stable clocks */
+	err = lll_clock_wait();
+	if (err) {
+		conn_release(scan);
+
+		return BT_HCI_ERR_HW_FAILURE;
+	}
+
+	if (!is_coded_included ||
+	    (scan->lll.phy & BIT(0))) {
+		err = ull_scan_enable(scan);
+		if (err) {
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED) && is_coded_included) {
+		scan = ull_scan_set_get(SCAN_HANDLE_PHY_CODED);
+		err = ull_scan_enable(scan);
+		if (err) {
+			return err;
+		}
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 u8_t ll_connect_disable(void **rx)
 {

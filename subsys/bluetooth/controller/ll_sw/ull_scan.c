@@ -44,9 +44,6 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-#define SCAN_HANDLE_1M        0
-#define SCAN_HANDLE_PHY_CODED 1
-
 static int init_reset(void);
 static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		      void *param);
