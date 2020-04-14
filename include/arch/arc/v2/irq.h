@@ -51,11 +51,10 @@ extern void z_irq_spurious(void *unused);
  * runtime.
  */
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-({ \
+{ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	z_irq_priority_set(irq_p, priority_p, flags_p); \
-	irq_p; \
-})
+}
 
 /**
  * Configure a 'direct' static interrupt.
@@ -79,7 +78,7 @@ extern void z_irq_spurious(void *unused);
  * All arguments must be computable at build time.
  */
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
-({ \
+{ \
 	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
 	BUILD_ASSERT(priority_p || !IS_ENABLED(CONFIG_ARC_FIRQ) || \
 	(IS_ENABLED(CONFIG_ARC_FIRQ_STACK) && \
@@ -88,8 +87,7 @@ extern void z_irq_spurious(void *unused);
 	"is not configured or CONFIG_ARC_FIRQ_STACK " \
 	"and CONFIG_ARC_STACK_CHECKING are configured together"); \
 	z_irq_priority_set(irq_p, priority_p, flags_p); \
-	irq_p; \
-})
+}
 
 
 static inline void arch_isr_direct_header(void)

@@ -83,18 +83,16 @@ extern void z_arm64_interrupt_init(void);
  * runtime.
  */
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
-({ \
+{ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
 	z_arm64_irq_priority_set(irq_p, priority_p, flags_p); \
-	irq_p; \
-})
+}
 
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
-({ \
+{ \
 	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
 	z_arm64_irq_priority_set(irq_p, priority_p, flags_p); \
-	irq_p; \
-})
+}
 
 /* Spurious interrupt handler. Throws an error if called */
 extern void z_irq_spurious(void *unused);
