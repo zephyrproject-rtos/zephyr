@@ -38,6 +38,7 @@
 /soc/arm/infineon_xmc/                    @parthitce
 /soc/arm/nxp*/                            @MaureenHelm
 /soc/arm/nordic_nrf/                      @ioannisg
+/soc/arm/nuvoton/                         @ssekar15
 /soc/arm/qemu_cortex_a53/                 @carlocaione
 /soc/arm/st_stm32/                        @erwango
 /soc/arm/st_stm32/stm32f4/                @idlethread
@@ -260,6 +261,7 @@
 /dts/arm/ti/cc26?2*                       @bwitherspoon
 /dts/arm/ti/cc3235*                       @vanti
 /dts/arm/nordic/                          @ioannisg @carlescufi
+/dts/arm/nuvoton/                         @ssekar15
 /dts/arm/nxp/                             @MaureenHelm
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /dts/arm/silabs/efm32gg11b*               @oanerer

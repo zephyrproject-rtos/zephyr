@@ -61,6 +61,9 @@ manifest:
     - name: hal_openisa
       revision: 40d049f69c50b58ea20473bee14cf93f518bf262
       path: modules/hal/openisa
+    - name: hal_nuvoton
+      revision: b4d31f33238713a568e23618845702fadd67386f
+      path: modules/hal/nuvoton
     - name: hal_microchip
       revision: aad89bf0531a30dcd6c87e4065f1b973fb31c11f
       path: modules/hal/microchip
