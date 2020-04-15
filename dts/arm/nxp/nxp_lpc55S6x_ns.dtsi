@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
 	aliases {
@@ -85,9 +86,9 @@
 				write-block-size = <512>;
 			};
 
-			flash_reserved: flash@0009d800 {
+			flash_reserved: flash@9d800 {
 				compatible = "soc-nv-flash";
-				reg = <0x0009d800 DT_SIZE_K(10)>;
+				reg = <0x9d800 DT_SIZE_K(10)>;
 				status = "disabled";
 			};
 
@@ -98,7 +99,7 @@
 		};
 
 		gpio0: gpio@0 {
-			compatible = "nxp,kinetis-gpio";
+			compatible = "nxp,lpc-gpio";
 			reg = <0x4008c000 0x2488>;
 			interrupts = <2 2>;
 			label = "GPIO_0";
@@ -107,7 +108,7 @@
 		};
 
 		gpio1: gpio@1 {
-			compatible = "nxp,kinetis-gpio";
+			compatible = "nxp,lpc-gpio";
 			reg = <0x4008c000 0x2488>;
 			interrupts = <3 2>;
 			label = "GPIO_1";
@@ -117,7 +118,7 @@
 
 		gpio2: gpio@2 {
 			compatible = "nxp,lpc-gpio";
-			reg = <0x5008c000 0x2488>;
+			reg = <0x4008c000 0x2488>;
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -125,7 +126,7 @@
 
 		gpio3: gpio@3 {
 			compatible = "nxp,lpc-gpio";
-			reg = <0x5008c000 0x2488>;
+			reg = <0x4008c000 0x2488>;
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
