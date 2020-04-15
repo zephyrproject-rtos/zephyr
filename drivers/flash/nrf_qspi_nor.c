@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nordic_qspi_nor
+
 #include <errno.h>
 #include <drivers/flash.h>
 #include <init.h>
@@ -22,7 +24,7 @@
 #define QSPI_BLOCK_SIZE SPI_NOR_BLOCK_SIZE
 
 /* instance 0 flash size in bytes */
-#define INST_0_BYTES (DT_INST_0_NORDIC_QSPI_NOR_SIZE / 8)
+#define INST_0_BYTES (DT_INST_PROP(0, size) / 8)
 
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
@@ -369,30 +371,30 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 	initstruct->pins.io3_pin = DT_NORDIC_NRF_QSPI_QSPI_0_IO_PINS_3;
 
 	/* Configure Protocol interface */
-#ifdef DT_INST_0_NORDIC_QSPI_NOR_READOC_ENUM
+#if DT_INST_NODE_HAS_PROP(0, readoc_enum)
 	initstruct->prot_if.readoc =
-		(nrf_qspi_writeoc_t)qspi_get_lines_read(DT_INST_0_NORDIC_QSPI_NOR_READOC_ENUM);
+		(nrf_qspi_writeoc_t)qspi_get_lines_read(DT_INST_PROP(0, readoc_enum));
 #else
 	initstruct->prot_if.readoc = NRF_QSPI_READOC_FASTREAD;
 #endif
 
-#ifdef DT_INST_0_NORDIC_QSPI_NOR_WRITEOC_ENUM
+#if DT_INST_NODE_HAS_PROP(0, writeoc_enum)
 	initstruct->prot_if.writeoc =
-		(nrf_qspi_writeoc_t)qspi_get_lines_write(DT_INST_0_NORDIC_QSPI_NOR_WRITEOC_ENUM);
+		(nrf_qspi_writeoc_t)qspi_get_lines_write(DT_INST_PROP(0, writeoc_enum));
 #else
 	initstruct->prot_if.writeoc = NRF_QSPI_WRITEOC_PP;
 #endif
 	initstruct->prot_if.addrmode =
-		qspi_get_address_size(DT_INST_0_NORDIC_QSPI_NOR_ADDRESS_SIZE_32);
+		qspi_get_address_size(DT_INST_PROP(0, address_size_32));
 
 	initstruct->prot_if.dpmconfig = false;
 
 	/* Configure physical interface */
 	initstruct->phy_if.sck_freq =
-		get_nrf_qspi_prescaler(DT_INST_0_NORDIC_QSPI_NOR_SCK_FREQUENCY);
-	initstruct->phy_if.sck_delay = DT_INST_0_NORDIC_QSPI_NOR_SCK_DELAY;
-	initstruct->phy_if.spi_mode = qspi_get_mode(DT_INST_0_NORDIC_QSPI_NOR_CPOL,
-						    DT_INST_0_NORDIC_QSPI_NOR_CPHA);
+		get_nrf_qspi_prescaler(DT_INST_PROP(0, sck_frequency));
+	initstruct->phy_if.sck_delay = DT_INST_PROP(0, sck_delay);
+	initstruct->phy_if.spi_mode = qspi_get_mode(DT_INST_PROP(0, cpol),
+						    DT_INST_PROP(0, cpha));
 
 	initstruct->phy_if.dpmen = false;
 }
@@ -671,11 +673,11 @@ static const struct flash_driver_api qspi_nor_api = {
 
 
 static const struct qspi_nor_config flash_id = {
-	.id = DT_INST_0_NORDIC_QSPI_NOR_JEDEC_ID,
+	.id = DT_INST_PROP(0, jedec_id),
 	.size = INST_0_BYTES,
 };
 
-DEVICE_AND_API_INIT(qspi_flash_memory, DT_INST_0_NORDIC_QSPI_NOR_LABEL,
+DEVICE_AND_API_INIT(qspi_flash_memory, DT_INST_LABEL(0),
 		    &qspi_nor_init, &qspi_nor_memory_data,
 		    &flash_id, POST_KERNEL, CONFIG_NORDIC_QSPI_NOR_INIT_PRIORITY,
 		    &qspi_nor_api);
