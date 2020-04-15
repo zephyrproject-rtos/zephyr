@@ -48,13 +48,13 @@
 		compatible = "pwm-leds";
 
 		red_pwm_led: red_pwm_led {
-			pwms = <&pwm3 4 15625000 PWM_POLARITY_INVERTED>;
+			pwms = <&ftm3 4 15625000 PWM_POLARITY_INVERTED>;
 		};
 		green_pwm_led: green_pwm_led {
-			pwms = <&pwm3 0 15625000 PWM_POLARITY_INVERTED>;
+			pwms = <&ftm3 0 15625000 PWM_POLARITY_INVERTED>;
 		};
 		blue_pwm_led: blue_pwm_led {
-			pwms = <&pwm3 5 15625000 PWM_POLARITY_INVERTED>;
+			pwms = <&ftm3 5 15625000 PWM_POLARITY_INVERTED>;
 		};
 	};
 };
@@ -71,7 +71,7 @@
 	status = "okay";
 };
 
-&pwm3 {
+&ftm3 {
 	status = "okay";
 };
 
