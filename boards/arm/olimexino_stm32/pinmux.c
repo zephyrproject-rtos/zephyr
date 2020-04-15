@@ -58,10 +58,10 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PA11, STM32F1_PINMUX_FUNC_PA11_USB_DM},
 	{STM32_PIN_PA12, STM32F1_PINMUX_FUNC_PA12_USB_DP},
 #endif /* CONFIG_USB_DC_STM32 */
-#ifdef CONFIG_CAN_1
+#if DT_HAS_NODE(DT_NODELABEL(can1))
 	{STM32_PIN_PB8, STM32F1_PINMUX_FUNC_PB8_CAN_RX},
 	{STM32_PIN_PB9, STM32F1_PINMUX_FUNC_PB9_CAN_TX},
-#endif /* CONFIG_CAN_1 */
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)
@@ -69,10 +69,10 @@ static int pinmux_stm32_init(struct device *port)
 	ARG_UNUSED(port);
 
 	stm32_setup_pins(pinconf, ARRAY_SIZE(pinconf));
-#ifdef CONFIG_CAN_1
+#if DT_HAS_NODE(DT_NODELABEL(can1))
 	/* Set pin-mux so that CAN1 is on PB8 and PB9 */
 	AFIO->MAPR |= AFIO_MAPR_CAN_REMAP_REMAP2;
-#endif /* CONFIG_CAN_1 */
+#endif
 
 	return 0;
 }

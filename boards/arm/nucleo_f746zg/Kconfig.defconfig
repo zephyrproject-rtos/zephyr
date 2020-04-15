@@ -23,10 +23,6 @@ config PWM_STM32_1
 	default y
 	depends on PWM
 
-config CAN_1
-	default y
-	depends on CAN
-
 config ADC_1
 	default y
 	depends on ADC
