@@ -16,8 +16,4 @@ config PWM_STM32_1
 	default y
 	depends on PWM
 
-config CAN_1
-	default y
-	depends on CAN
-
 endif # BOARD_OLIMEXINO_STM32

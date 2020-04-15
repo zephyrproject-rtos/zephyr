@@ -83,7 +83,7 @@
 
 &can1 {
 	bus-speed = <125000>;
-	status = "okay";
+	status = "disabled";
 };
 
 &can2 {
