@@ -14,7 +14,7 @@
 		led2 = &red_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_2;
-		can-primary = &can0;
+		can-primary = &flexcan0;
 	};
 
 	chosen {
@@ -124,7 +124,7 @@ arduino_spi: &spi0 {
 	status = "okay";
 };
 
-&pwm3 {
+&ftm3 {
 	status = "okay";
 };
 
@@ -133,7 +133,7 @@ arduino_spi: &spi0 {
 	current-speed = <115200>;
 };
 
-&usbd {
+&usbotg {
 	compatible = "nxp,kinetis-usbd";
 	status = "okay";
 	num-bidir-endpoints = <8>;
@@ -180,14 +180,14 @@ arduino_spi: &spi0 {
 	};
 };
 
-&eth {
+&enet {
 	status = "okay";
 	ptp {
 		status = "okay";
 	};
 };
 
-&can0 {
+&flexcan0 {
 	status = "okay";
 	bus-speed = <125000>;
 };

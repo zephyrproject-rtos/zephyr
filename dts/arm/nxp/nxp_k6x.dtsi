@@ -10,8 +10,8 @@
 	aliases {
 		adc-0 = &adc0;
 		adc-1 = &adc1;
-		can-0 = &can0;
-		eth = &eth;
+		can-0 = &flexcan0;
+		eth = &enet;
 		gpio-a = &gpioa;
 		gpio-b = &gpiob;
 		gpio-c = &gpioc;
@@ -20,15 +20,15 @@
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
 		i2c-2 = &i2c2;
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
-		pinmux-c = &pinmux_c;
-		pinmux-d = &pinmux_d;
-		pinmux-e = &pinmux_e;
-		pwm-0 = &pwm0;
-		pwm-1 = &pwm1;
-		pwm-2 = &pwm2;
-		pwm-3 = &pwm3;
+		pinmux-a = &porta;
+		pinmux-b = &portb;
+		pinmux-c = &portc;
+		pinmux-d = &portd;
+		pinmux-e = &porte;
+		pwm-0 = &ftm0;
+		pwm-1 = &ftm1;
+		pwm-2 = &ftm2;
+		pwm-3 = &ftm3;
 		spi-0 = &spi0;
 		spi-1 = &spi1;
 		spi-2 = &spi2;
@@ -38,7 +38,7 @@
 		uart-3 = &uart3;
 		uart-4 = &uart4;
 		uart-5 = &uart5;
-		usbd-0 = &usbd;
+		usbd-0 = &usbotg;
 		watchdog0 = &wdog;
 	};
 
@@ -101,8 +101,7 @@
 	};
 
 	soc {
-
-		mpu@4000d000 {
+		mpu: mpu@4000d000 {
 			compatible = "nxp,k64f-mpu";
 			reg = <0x4000d000 0x824>;
 
@@ -116,14 +115,14 @@
 			#clock-cells = <1>;
 		};
 
-		clock-controller@40065000 {
+		osc: clock-controller@40065000 {
 			compatible = "nxp,k64f-osc";
 			reg = <0x40065000 0x4>;
 
 			enable-external-reference;
 		};
 
-		rtc0: rtc@4003d000 {
+		rtc: rtc@4003d000 {
 			compatible = "nxp,kinetis-rtc";
 			reg = <0x4003d000 0x1000>;
 			interrupts = <46 0>, <47 0>;
@@ -262,31 +261,31 @@
 			status = "disabled";
 		};
 
-		pinmux_a: pinmux@40049000 {
+		porta: pinmux@40049000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
 		};
 
-		pinmux_b: pinmux@4004a000 {
+		portb: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
 		};
 
-		pinmux_c: pinmux@4004b000 {
+		portc: pinmux@4004b000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
 		};
 
-		pinmux_d: pinmux@4004c000 {
+		portd: pinmux@4004c000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
 		};
 
-		pinmux_e: pinmux@4004d000 {
+		porte: pinmux@4004d000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
@@ -299,7 +298,7 @@
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&pinmux_a>;
+			nxp,kinetis-port = <&porta>;
 		};
 
 		gpiob: gpio@400ff040 {
@@ -309,7 +308,7 @@
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&pinmux_b>;
+			nxp,kinetis-port = <&portb>;
 		};
 
 		gpioc: gpio@400ff080 {
@@ -319,7 +318,7 @@
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&pinmux_c>;
+			nxp,kinetis-port = <&portc>;
 		};
 
 		gpiod: gpio@400ff0c0 {
@@ -329,7 +328,7 @@
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&pinmux_d>;
+			nxp,kinetis-port = <&portd>;
 		};
 
 		gpioe: gpio@400ff100 {
@@ -339,7 +338,7 @@
 			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&pinmux_e>;
+			nxp,kinetis-port = <&porte>;
 		};
 
 		spi0: spi@4002c000 {
@@ -382,7 +381,7 @@
 			label = "WDT_0";
 		};
 
-		pwm0: pwm@40038000{
+		ftm0: pwm@40038000{
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40038000 0x98>;
 			interrupts = <42 0>;
@@ -392,7 +391,7 @@
 			#pwm-cells = <3>;
 		};
 
-		pwm1: pwm@40039000{
+		ftm1: pwm@40039000{
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40039000 0x98>;
 			interrupts = <43 0>;
@@ -402,7 +401,7 @@
 			#pwm-cells = <3>;
 		};
 
-		pwm2: pwm@4003a000{
+		ftm2: pwm@4003a000{
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x4003a000 0x98>;
 			interrupts = <44 0>;
@@ -412,7 +411,7 @@
 			#pwm-cells = <3>;
 		};
 
-		pwm3: pwm@400b9000{
+		ftm3: pwm@400b9000{
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x400b9000 0x98>;
 			interrupts = <71 0>;
@@ -440,7 +439,7 @@
 			#io-channel-cells = <1>;
 		};
 
-		usbd: usbd@40072000 {
+		usbotg: usbd@40072000 {
 			compatible = "nxp,kinetis-usbd";
 			reg = <0x40072000 0x1000>;
 			interrupts = <53 1>;
@@ -450,7 +449,7 @@
 			label = "USBD";
 		};
 
-		eth: ethernet@400c0004 {
+		enet: ethernet@400c0004 {
 			compatible = "nxp,kinetis-ethernet";
 			reg = <0x400c0004 0x620>;
 			interrupts = <83 0>, <84 0>, <85 0>;
@@ -475,7 +474,7 @@
 			label = "RNGA";
 		};
 
-		can0: can@40024000 {
+		flexcan0: can@40024000 {
 			compatible = "nxp,kinetis-flexcan";
 			reg = <0x40024000 0x1000>;
 			interrupts = <75 0>, <76 0>, <77 0>, <78 0>, <79 0>, <80 0>;
