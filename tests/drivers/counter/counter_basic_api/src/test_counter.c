@@ -768,6 +768,7 @@ static void test_cancelled_alarm_does_not_expire_instance(const char *dev_name)
 	struct device *dev = device_get_binding(dev_name);
 	u32_t us = 1000;
 	u32_t ticks = counter_us_to_ticks(dev, us);
+	u32_t top = counter_get_top_value(dev);
 
 	us = (u32_t)counter_ticks_to_us(dev, ticks);
 
@@ -787,6 +788,7 @@ static void test_cancelled_alarm_does_not_expire_instance(const char *dev_name)
 			     dev_name, err);
 
 		alarm_cfg.ticks	+= ticks;
+		alarm_cfg.ticks = alarm_cfg.ticks % top;
 		err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 		zassert_equal(0, err, "%s: Failed to set an alarm (err: %d)",
 				dev_name, err);
@@ -797,7 +799,8 @@ static void test_cancelled_alarm_does_not_expire_instance(const char *dev_name)
 
 		k_busy_wait(us/2 + i);
 
-		alarm_cfg.ticks = alarm_cfg.ticks + 2*alarm_cfg.ticks;
+		alarm_cfg.ticks = alarm_cfg.ticks + 2*ticks;
+		alarm_cfg.ticks = alarm_cfg.ticks % top;
 		err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 		zassert_equal(0, err, "%s: Failed to set an alarm (err: %d)",
 				dev_name, err);
@@ -811,8 +814,8 @@ static void test_cancelled_alarm_does_not_expire_instance(const char *dev_name)
 
 		alarm_cnt = k_sem_count_get(&alarm_cnt_sem);
 		zassert_equal(0, alarm_cnt,
-				"%s: Expected %d callbacks, got %d\n",
-				dev_name, 0, alarm_cnt);
+				"%s: Expected %d callbacks, got %d (i:%d)\n",
+				dev_name, 0, alarm_cnt, i);
 	}
 }
 
