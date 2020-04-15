@@ -75,6 +75,6 @@
 	status = "okay";
 };
 
-&flexcomm8 {
+&hs_lspi {
 	status = "okay";
 };
