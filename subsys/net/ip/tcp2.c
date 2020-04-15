@@ -702,8 +702,8 @@ static bool tcp_endpoint_cmp(union tcp_endpoint *ep, struct net_pkt *pkt,
 
 static bool tcp_conn_cmp(struct tcp *conn, struct net_pkt *pkt)
 {
-	return tcp_endpoint_cmp(conn->src, pkt, DST) &&
-		tcp_endpoint_cmp(conn->dst, pkt, SRC);
+	return tcp_endpoint_cmp(conn->src, pkt, TCP_EP_DST) &&
+		tcp_endpoint_cmp(conn->dst, pkt, TCP_EP_SRC);
 }
 
 static struct tcp *tcp_conn_search(struct net_pkt *pkt)
@@ -789,8 +789,8 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 
 	net_context_set_family(conn->context, pkt->family);
 
-	conn->dst = tcp_endpoint_new(pkt, SRC);
-	conn->src = tcp_endpoint_new(pkt, DST);
+	conn->dst = tcp_endpoint_new(pkt, TCP_EP_SRC);
+	conn->src = tcp_endpoint_new(pkt, TCP_EP_DST);
 
 	NET_DBG("conn: src: %s, dst: %s",
 		log_strdup(tcp_endpoint_to_string(conn->src)),
@@ -1259,8 +1259,8 @@ static enum net_verdict tcp_input(struct net_conn *net_conn,
 			net_tcp_get(context);
 			net_context_set_family(context, pkt->family);
 			conn = context->tcp;
-			conn->dst = tcp_endpoint_new(pkt, SRC);
-			conn->src = tcp_endpoint_new(pkt, DST);
+			conn->dst = tcp_endpoint_new(pkt, TCP_EP_SRC);
+			conn->src = tcp_endpoint_new(pkt, TCP_EP_DST);
 			/* Make an extra reference, the sanity check suite
 			 * will delete the connection explicitly
 			 */
@@ -1379,8 +1379,8 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 				net_tcp_get(context);
 				net_context_set_family(context, pkt->family);
 				conn = context->tcp;
-				conn->dst = tcp_endpoint_new(pkt, SRC);
-				conn->src = tcp_endpoint_new(pkt, DST);
+				conn->dst = tcp_endpoint_new(pkt, TCP_EP_SRC);
+				conn->src = tcp_endpoint_new(pkt, TCP_EP_DST);
 				conn->iface = pkt->iface;
 				tcp_conn_ref(conn);
 			}
