@@ -13,12 +13,12 @@
 		gpio-c = &gpioc;
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
-		pinmux-c = &pinmux_c;
-		pwm-0 = &pwm0;
-		pwm-1 = &pwm1;
-		pwm-2 = &pwm2;
+		pinmux-a = &porta;
+		pinmux-b = &portb;
+		pinmux-c = &portc;
+		pwm-0 = &tpm0;
+		pwm-1 = &tpm1;
+		pwm-2 = &tpm2;
 		spi-0 = &spi0;
 		spi-1 = &spi1;
 		uart-0 = &lpuart0;
@@ -50,13 +50,13 @@
 			reg = <0x40064000 0x13>;
 		};
 
-		clock-controller@40065000 {
+		osc: clock-controller@40065000 {
 			compatible = "nxp,kw41z-osc";
 			reg = <0x40065000 0x4>;
 			enable-external-reference;
 		};
 
-		rtc@4003d000 {
+		rtc: rtc@4003d000 {
 			compatible = "nxp,kw41z-rtc";
 			reg = <0x4003d000 0x20>;
 			clock-frequency = <32768>;
@@ -122,19 +122,19 @@
 			status = "disabled";
 		};
 
-		pinmux_a: pinmux@40049000 {
+		porta: pinmux@40049000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xa4>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
 		};
 
-		pinmux_b: pinmux@4004a000 {
+		portb: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xa4>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
 		};
 
-		pinmux_c: pinmux@4004b000 {
+		portc: pinmux@4004b000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0xa4>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
@@ -147,7 +147,7 @@
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&pinmux_a>;
+			nxp,kinetis-port = <&porta>;
 		};
 
 		gpiob: gpio@400ff040 {
@@ -156,7 +156,7 @@
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&pinmux_b>;
+			nxp,kinetis-port = <&portb>;
 		};
 
 		gpioc: gpio@400ff080 {
@@ -166,7 +166,7 @@
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
-			nxp,kinetis-port = <&pinmux_c>;
+			nxp,kinetis-port = <&portc>;
 		};
 
 		spi0: spi@4002c000 {
@@ -191,7 +191,7 @@
 			#size-cells = <0>;
 		};
 
-		pwm0: pwm@40038000 {
+		tpm0: pwm@40038000 {
 			compatible = "nxp,kw41z-pwm";
 			reg = <0x40038000 0x88>;
 			prescaler = <2>;
@@ -199,7 +199,7 @@
 			/* channel information needed - fixme */
 		};
 
-		pwm1: pwm@40039000 {
+		tpm1: pwm@40039000 {
 			compatible = "nxp,kw41z-pwm";
 			reg = <0x40039000 0x88>;
 			prescaler = <2>;
@@ -207,7 +207,7 @@
 			/* channel information needed - fixme */
 		};
 
-		pwm2: pwm@4003a000 {
+		tpm2: pwm@4003a000 {
 			compatible = "nxp,kw41z-pwm";
 			reg = <0x4003a000 0x88>;
 			prescaler = <2>;
