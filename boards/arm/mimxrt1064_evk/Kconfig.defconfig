@@ -79,8 +79,4 @@ endchoice
 
 endif # LVGL
 
-config FLEXPWM2_PWM3
-	default y
-	depends on PWM_MCUX
-
 endif # BOARD_MIMXRT1064_EVK
