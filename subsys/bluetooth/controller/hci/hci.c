@@ -136,7 +136,6 @@ void *hci_cmd_complete(struct net_buf **buf, u8_t plen)
 	return net_buf_add(*buf, plen);
 }
 
-#if defined(CONFIG_BT_CONN)
 static struct net_buf *cmd_status(u8_t status)
 {
 	struct bt_hci_evt_cmd_status *cs;
@@ -152,7 +151,6 @@ static struct net_buf *cmd_status(u8_t status)
 
 	return buf;
 }
-#endif
 
 static void *meta_evt(struct net_buf *buf, u8_t subevt, u8_t melen)
 {
@@ -2233,7 +2231,6 @@ int hci_vendor_cmd_handle_common(u16_t ocf, struct net_buf *cmd,
 
 struct net_buf *hci_cmd_handle(struct net_buf *cmd, void **node_rx)
 {
-	struct bt_hci_evt_cc_status *ccst;
 	struct bt_hci_cmd_hdr *chdr;
 	struct net_buf *evt = NULL;
 	u16_t ocf;
@@ -2282,8 +2279,7 @@ struct net_buf *hci_cmd_handle(struct net_buf *cmd, void **node_rx)
 	}
 
 	if (err == -EINVAL) {
-		ccst = hci_cmd_complete(&evt, sizeof(*ccst));
-		ccst->status = BT_HCI_ERR_UNKNOWN_CMD;
+		evt = cmd_status(BT_HCI_ERR_UNKNOWN_CMD);
 	}
 
 	return evt;
