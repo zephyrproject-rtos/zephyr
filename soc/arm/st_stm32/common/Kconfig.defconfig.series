@@ -57,10 +57,6 @@ config COUNTER_RTC_STM32
 	default y
 	depends on COUNTER
 
-config CAN_STM32
-	default y
-	depends on CAN
-
 config ADC_STM32
 	default y
 	depends on ADC
