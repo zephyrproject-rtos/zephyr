@@ -32,3 +32,6 @@ CONFIG_NETWORKING=y
 
 # The KSZ8794 needs SPI to get MII registers data
 CONFIG_SPI=y
+
+# Set default LOG level to DBG
+#CONFIG_LOG_DEFAULT_LEVEL=4
