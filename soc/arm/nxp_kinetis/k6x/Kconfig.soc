@@ -117,4 +117,11 @@ config K6X_FLASH_CLOCK_DIVIDER
 	  This option specifies the divide value for the K6X flash clock from the
 	  system clock.
 
+config K6X_HSRUN
+	bool "High Speed RUN mode"
+	depends on SOC_MK66F18
+	default y
+	help
+	  This options enables support for High Speed RUN mode on K66F SoC.
+
 endif # SOC_SERIES_KINETIS_K6X
