@@ -18,6 +18,12 @@ module = LORA
 module-str = lora
 source "subsys/logging/Kconfig.template.log_config"
 
+config LORA_SHELL
+	bool "Enable LoRa Shell"
+	depends on SHELL
+	help
+	  Enable LoRa Shell for testing.
+
 config LORA_INIT_PRIORITY
 	int "LoRa initialization priority"
 	default 90
