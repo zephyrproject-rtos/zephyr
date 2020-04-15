@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_usbd
+
 #include <soc.h>
 #include <string.h>
 #include <drivers/usb/usb_dc.h>
@@ -37,7 +39,7 @@ extern void USB_DeviceEhciIsrFunction(void *deviceHandle);
 #define EP_ADDR2DIR(ep)		((ep) & USB_EP_DIR_MASK)
 #define EP_ABS_IDX(ep)		(((ep) & ~USB_EP_DIR_MASK) * 2 + \
 					(((ep) & USB_EP_DIR_MASK) >> 7))
-#define NUM_OF_EP_MAX		DT_USBD_MCUX_EHCI_NUM_BIDIR_EP
+#define NUM_OF_EP_MAX		DT_INST_PROP(0, num_bidir_endpoints)
 
 /* The minimum value is 1 */
 #define EP_BUF_NUMOF_BLOCKS	((NUM_OF_EP_MAX + 3) / 4)
@@ -91,9 +93,9 @@ int usb_dc_attach(void)
 	}
 
 	/* Connect and enable USB interrupt */
-	IRQ_CONNECT(DT_USBD_MCUX_EHCI_IRQ, DT_USBD_MCUX_EHCI_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    usb_isr_handler, 0, 0);
-	irq_enable(DT_USBD_MCUX_EHCI_IRQ);
+	irq_enable(DT_INST_IRQN(0));
 	dev_data.attached = true;
 	status = dev_data.interface->deviceControl(dev_data.controllerHandle,
 						   kUSB_DeviceControlRun, NULL);
