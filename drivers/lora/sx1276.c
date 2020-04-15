@@ -446,6 +446,13 @@ static int sx1276_lora_config(struct device *dev,
 	return 0;
 }
 
+static int sx1276_lora_test_cw(struct device *dev, u32_t frequency,
+			       s8_t tx_power, u16_t duration)
+{
+	Radio.SetTxContinuousWave(frequency, tx_power, duration);
+	return 0;
+}
+
 /* Initialize Radio driver callbacks */
 const struct Radio_s Radio = {
 	.Init = SX1276Init,
@@ -468,6 +475,7 @@ const struct Radio_s Radio = {
 	.IrqProcess = NULL,
 	.RxBoosted = NULL,
 	.SetRxDutyCycle = NULL,
+	.SetTxContinuousWave = SX1276SetTxContinuousWave,
 };
 
 static int sx1276_lora_init(struct device *dev)
@@ -538,6 +546,7 @@ static const struct lora_driver_api sx1276_lora_api = {
 	.config = sx1276_lora_config,
 	.send = sx1276_lora_send,
 	.recv = sx1276_lora_recv,
+	.test_cw = sx1276_lora_test_cw,
 };
 
 DEVICE_AND_API_INIT(sx1276_lora, DT_INST_LABEL(0),
