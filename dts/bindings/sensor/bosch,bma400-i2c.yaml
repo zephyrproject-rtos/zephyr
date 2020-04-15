@@ -1,0 +1,10 @@
+# Copyright (c) 2020, Bosch Sensortec GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The BMA400 is an ultra-low power accelerometer. See more info at:
+    https://www.bosch-sensortec.com/products/motion-sensors/accelerometers/bma400.html
+
+compatible: "bosch,bma400"
+
+include: i2c-device.yaml
