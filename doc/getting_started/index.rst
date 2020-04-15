@@ -331,7 +331,9 @@ including: compiler, assembler, linker, and their dependencies.
 
       |p|
 
-      #. Download the latest SDK as a self-extracting installation binary:
+      #. Download the `latest SDK
+	 <https://github.com/zephyrproject-rtos/sdk-ng/releases>`_ as a
+	 self-extracting installation binary:
 
          .. code-block:: bash
 
