@@ -73,6 +73,12 @@ Deprecated in this release
   * nrf52_pca20020 has been renamed to thingy52_nrf52832
   * nrf5340_dk_nrf5340 has been renamed to nrf5340pdk_nrf5340
 
+* Devicetree
+
+  * The C macros generated from devicetree. Use the new ``<devicetree.h>``
+    accessor API instead; see :ref:`dt-guide` for details. Use of the legacy
+    macros requires enabling :option:`CONFIG_LEGACY_DEVICETREE_MACROS`.
+
 Removed APIs in this release
 ============================
 
