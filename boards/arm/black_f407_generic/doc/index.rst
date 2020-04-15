@@ -169,6 +169,10 @@ Default Zephyr Peripheral Mapping:
 - CAN1_TX : PD1
 - CAN2_RX : PB12
 - CAN2_TX : PB13
+- SPI1 MISO : PB4
+- SPI1 MOSI : PB5
+- SPI1 SCK : PB3
+- SPI1 Flash CS : PB0
 - SPI2 MISO : PC2
 - SPI2 MOSI : PC3
 - SPI2 SCK : PB10
