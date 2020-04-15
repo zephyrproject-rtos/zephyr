@@ -9,6 +9,8 @@
  * @brief Execute initialization routines referenced in .init_array section
  */
 
+#include <kernel.h>
+
 typedef void (*func_ptr)(void);
 
 extern func_ptr __init_array_start[0];
@@ -22,8 +24,9 @@ extern func_ptr __init_array_end[0];
 void __do_init_array_aux(void)
 {
 	for (func_ptr *func = __init_array_start;
-		func < __init_array_end;
-		func++) {
+	     func < __init_array_end;
+	     func++) {
+		__ASSERT(*func, "Incorrect function in init_array section");
 		(*func)();
 	}
 }
