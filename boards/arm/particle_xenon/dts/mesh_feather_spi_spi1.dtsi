@@ -9,7 +9,7 @@
  * NOTE: This file is replicated in particle_{argon,xenon}.
  * Changes should be made in all instances. */
 
-&spi1 { /* feather SPI */
+feather_spi: &spi1 { /* feather SPI */
 	status = "okay";
 	sck-pin = <47>;
 	mosi-pin = <45>;
