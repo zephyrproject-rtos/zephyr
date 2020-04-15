@@ -204,12 +204,14 @@
 		status = "disabled";
 	};
 
-	flexcomm8: flexcomm@9f000 {
-		compatible = "nxp,lpc-flexcomm";
+	hs_lspi: spi@9f000 {
+		compatible = "nxp,lpc-spi";
 		reg = <0x9f000 0x1000>;
 		interrupts = <59 0>;
-		label = "FLEXCOMM_8";
+		label = "HS_LSPI";
 		status = "disabled";
+		#address-cells = <1>;
+		#size-cells = <0>;
 	};
 };
 
