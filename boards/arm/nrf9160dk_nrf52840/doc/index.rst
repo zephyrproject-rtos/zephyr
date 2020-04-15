@@ -1,6 +1,6 @@
 .. _nrf9160dk_nrf52840:
 
-nRF9160 DK - NRF52840
+nRF9160 DK - nRF52840
 #####################
 
 Overview
