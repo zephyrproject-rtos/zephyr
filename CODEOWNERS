@@ -38,7 +38,7 @@
 /soc/arm/nordic_nrf/                      @ioannisg
 /soc/arm/qemu_cortex_a53/                 @carlocaione
 /soc/arm/st_stm32/                        @erwango
-/soc/arm/st_stm32/stm32f4/                @rsalveti @idlethread
+/soc/arm/st_stm32/stm32f4/                @idlethread
 /soc/arm/st_stm32/stm32mp1/               @arnopo
 /soc/arm/ti_simplelink/cc13x2_cc26x2/     @bwitherspoon
 /soc/arm/ti_simplelink/cc32xx/            @vanti
@@ -59,7 +59,7 @@
 /boards/arm/                              @MaureenHelm @galak
 /boards/arm/96b_argonkey/                 @avisconti
 /boards/arm/96b_avenger96/                @Mani-Sadhasivam
-/boards/arm/96b_carbon/                   @rsalveti @idlethread
+/boards/arm/96b_carbon/                   @idlethread
 /boards/arm/96b_meerkat96/                @Mani-Sadhasivam
 /boards/arm/96b_nitrogen/                 @idlethread
 /boards/arm/96b_neonkey/                  @Mani-Sadhasivam
@@ -84,7 +84,7 @@
 /boards/arm/msp_exp432p401r_launchxl/     @Mani-Sadhasivam
 /boards/arm/nrf*/                         @carlescufi @lemrey @ioannisg
 /boards/arm/nucleo*/                      @erwango
-/boards/arm/nucleo_f401re/                @rsalveti @idlethread
+/boards/arm/nucleo_f401re/                @idlethread
 /boards/arm/qemu_cortex_a53/              @carlocaione
 /boards/arm/qemu_cortex_r*/               @stephanosio
 /boards/arm/qemu_cortex_m*/               @ioannisg
@@ -188,7 +188,7 @@
 /drivers/lora/                            @Mani-Sadhasivam
 /drivers/modem/                           @mike-scott
 /drivers/pcie/                            @andrewboie
-/drivers/pinmux/stm32/                    @rsalveti @idlethread
+/drivers/pinmux/stm32/                    @idlethread
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pwm/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/sensor/                          @MaureenHelm
