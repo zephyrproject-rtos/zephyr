@@ -186,7 +186,7 @@ int z_clock_driver_init(struct device *device)
 	/* Set up bus clock and GCLK generator. */
 	PM->APBAMASK.reg |= PM_APBAMASK_RTC;
 	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(RTC_GCLK_ID) | GCLK_CLKCTRL_CLKEN
-			    | GCLK_GEN(DT_INST_CLOCKS_CELL(0, generator));
+			    | GCLK_GEN(DT_INST_PROP(0, clock_generator));
 
 	/* Synchronize GCLK. */
 	while (GCLK->STATUS.bit.SYNCBUSY) {
