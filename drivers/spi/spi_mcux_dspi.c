@@ -185,6 +185,8 @@ static int spi_mcux_configure(struct device *dev,
 	DSPI_MasterTransferCreateHandle(base, &data->handle,
 					spi_mcux_master_transfer_callback, dev);
 
+	DSPI_SetDummyData(base, 0);
+
 	data->ctx.config = spi_cfg;
 	spi_context_cs_configure(&data->ctx);
 
