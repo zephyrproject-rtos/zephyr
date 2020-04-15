@@ -15,6 +15,22 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(mpu);
 
+#if defined(CONFIG_ARMV8_M_BASELINE) || defined(CONFIG_ARMV8_M_MAINLINE)
+/* The order here is on purpose since ARMv8-M SoCs may define
+ * CONFIG_ARMV6_M_ARMV8_M_BASELINE or CONFIG_ARMV7_M_ARMV8_M_MAINLINE
+ * so we want to check for ARMv8-M first.
+ */
+#define MPU_NODEID DT_INST(0, arm_armv8m_mpu)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+#define MPU_NODEID DT_INST(0, arm_armv7m_mpu)
+#elif defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+#define MPU_NODEID DT_INST(0, arm_armv6m_mpu)
+#endif
+
+#if DT_NODE_HAS_PROP(MPU_NODEID, arm_num_mpu_regions)
+#define NUM_MPU_REGIONS   DT_PROP(MPU_NODEID, arm_num_mpu_regions)
+#endif
+
 /*
  * Global status variable holding the number of HW MPU region indices, which
  * have been reserved by the MPU driver to program the static (fixed) memory
@@ -34,9 +50,9 @@ static inline u8_t get_num_regions(void)
 	 * have a fixed number of 8 MPU regions.
 	 */
 	return 8;
-#elif defined(DT_NUM_MPU_REGIONS)
+#elif defined(NUM_MPU_REGIONS)
 	/* Retrieve the number of regions from DTS configuration. */
-	return DT_NUM_MPU_REGIONS;
+	return NUM_MPU_REGIONS;
 #else
 
 	u32_t type = MPU->TYPE;
@@ -327,10 +343,10 @@ static int arm_mpu_init(struct device *arg)
 	__ASSERT(
 		(MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos == 8,
 		"Invalid number of MPU regions\n");
-#elif defined(DT_NUM_MPU_REGIONS)
+#elif defined(NUM_MPU_REGIONS)
 	__ASSERT(
 		(MPU->TYPE & MPU_TYPE_DREGION_Msk) >> MPU_TYPE_DREGION_Pos ==
-		DT_NUM_MPU_REGIONS,
+		NUM_MPU_REGIONS,
 		"Invalid number of MPU regions\n");
 #endif /* CORTEX_M0PLUS || CPU_CORTEX_M3 || CPU_CORTEX_M4 */
 	return 0;
