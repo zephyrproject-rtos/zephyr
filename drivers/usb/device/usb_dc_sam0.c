@@ -107,6 +107,14 @@ static void usb_sam0_isr(void)
 		data->cb(USB_DC_RESET, NULL);
 	}
 
+	if ((intflag & USB_DEVICE_INTFLAG_SUSPEND) != 0U) {
+		data->cb(USB_DC_SUSPEND, NULL);
+	}
+
+	if ((intflag & USB_DEVICE_INTFLAG_EORSM) != 0U) {
+		data->cb(USB_DC_RESUME, NULL);
+	}
+
 	/* Dispatch the endpoint interrupts */
 	for (ep = 0U; epint != 0U; epint >>= 1) {
 		/* Scan bit-by-bit as the Cortex-M0 doesn't have ffs */
@@ -234,7 +242,9 @@ int usb_dc_attach(void)
 	(void)memset(data->descriptors, 0, sizeof(data->descriptors));
 	regs->DESCADD.reg = (uintptr_t)&data->descriptors[0];
 
-	regs->INTENSET.reg = USB_DEVICE_INTENSET_EORST;
+	regs->INTENSET.reg = USB_DEVICE_INTENSET_EORST |
+			     USB_DEVICE_INTENSET_EORSM |
+			     USB_DEVICE_INTENSET_SUSPEND;
 
 	/* Connect and enable the interrupt */
 #if DT_INST_IRQ_HAS_CELL(0, irq)
@@ -262,10 +272,11 @@ int usb_dc_attach(void)
 int usb_dc_detach(void)
 {
 	UsbDevice *regs = &REGS->DEVICE;
+	struct usb_sam0_data *data = usb_sam0_get_data();
 
 	regs->CTRLB.bit.DETACH = 1;
 	usb_sam0_wait_syncbusy();
-
+	data->cb(USB_DC_DISCONNECTED, NULL);
 	return 0;
 }
 
@@ -273,11 +284,13 @@ int usb_dc_detach(void)
 int usb_dc_reset(void)
 {
 	UsbDevice *regs = &REGS->DEVICE;
+	struct usb_sam0_data *data = usb_sam0_get_data();
 
 	irq_disable(DT_INST_IRQN(0));
 
 	regs->CTRLA.bit.SWRST = 1;
 	usb_sam0_wait_syncbusy();
+	data->cb(USB_DC_RESET, NULL);
 
 	return 0;
 }
