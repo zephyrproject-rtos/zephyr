@@ -68,8 +68,8 @@
 #define TCPOPT_WINDOW	3
 
 enum pkt_addr {
-	SRC = 1,
-	DST = 0
+	TCP_EP_SRC = 1,
+	TCP_EP_DST = 0
 };
 
 struct tcphdr {
