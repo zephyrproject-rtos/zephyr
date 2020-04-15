@@ -32,7 +32,7 @@ config PINMUX_MCUX_PORTC
 	default y
 
 config PINMUX_MCUX_PORTD
-	default y if SPI_0 || "$(dt_nodelabel_enabled,uart2)"
+	default y if "$(dt_nodelabel_enabled,spi0)" || "$(dt_nodelabel_enabled,uart2)"
 
 config PINMUX_MCUX_PORTE
 	default y

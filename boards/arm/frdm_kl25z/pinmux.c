@@ -33,7 +33,7 @@ static int frdm_kl25z_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
 #endif
 
-#ifdef CONFIG_UART_MCUX_LPSCI_0
+#if DT_HAS_NODE(DT_NODELABEL(uart0))
 	/* UART0 RX, TX */
 	pinmux_pin_set(porta, 1, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAlt2));
@@ -52,7 +52,7 @@ static int frdm_kl25z_pinmux_init(struct device *dev)
 	pinmux_pin_set(porta, 14, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porta, 15, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#if defined(CONFIG_I2C_0)
+#if DT_HAS_NODE(DT_NODELABEL(i2c0))
 	/* I2C0 SCL, SDA */
 	pinmux_pin_set(porte,  24, PORT_PCR_MUX(kPORT_MuxAlt5)
 					| PORT_PCR_PS_MASK);
@@ -60,7 +60,7 @@ static int frdm_kl25z_pinmux_init(struct device *dev)
 					| PORT_PCR_PS_MASK);
 #endif
 
-#if CONFIG_ADC_0
+#if DT_HAS_NODE(DT_NODELABEL(adc0))
 	/* ADC0_SE12 */
 	pinmux_pin_set(portb,  2, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif

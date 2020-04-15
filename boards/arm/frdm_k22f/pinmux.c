@@ -64,7 +64,7 @@ static int frdm_k22f_pinmux_init(struct device *dev)
 	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portd, 5, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#ifdef CONFIG_SPI_0
+#if DT_HAS_NODE(DT_NODELABEL(spi0))
 	/* SPI0 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(portd, 4, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portd, 1, PORT_PCR_MUX(kPORT_MuxAlt2));
@@ -73,7 +73,7 @@ static int frdm_k22f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
-#if CONFIG_I2C_0
+#if DT_HAS_NODE(DT_NODELABEL(i2c0))
 	/* I2C0 SCL, SDA */
 	pinmux_pin_set(portb, 2, PORT_PCR_MUX(kPORT_MuxAlt2)
 					| PORT_PCR_ODE_MASK);

@@ -34,43 +34,43 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
 #endif
 
-#ifdef CONFIG_PWM_0
+#if DT_HAS_NODE(DT_NODELABEL(ftm0))
 	/* Tri-color LED as PWM */
 	pinmux_pin_set(portb, 5, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portd, 15, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portd, 16, PORT_PCR_MUX(kPORT_MuxAlt2));
-#else /* !CONFIG_PWM_0 */
+#else
 	/* Tri-color LED as GPIO */
 	pinmux_pin_set(portb, 5, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portd, 15, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portd, 16, PORT_PCR_MUX(kPORT_MuxAsGpio));
-#endif /* !CONFIG_PWM_0 */
+#endif
 
-#ifdef CONFIG_PWM_3
+#if DT_HAS_NODE(DT_NODELABEL(ftm3))
 	/* User LEDs as PWM */
 	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portc, 12, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portc, 13, PORT_PCR_MUX(kPORT_MuxAlt2));
-#else /* !CONFIG_PWM_3 */
+#else
 	/* User LEDs as GPIO */
 	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc, 12, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc, 13, PORT_PCR_MUX(kPORT_MuxAsGpio));
-#endif /* !CONFIG_PWM_3 */
+#endif
 
 	/* Buttons */
 	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portd, 6, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#ifdef CONFIG_UART_MCUX_LPUART_0
+#if DT_HAS_NODE(DT_NODELABEL(lpuart0))
 	/* UART0 RX, TX */
 	pinmux_pin_set(portb, 0, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portb, 1, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#ifdef CONFIG_SPI_0
+#if DT_HAS_NODE(DT_NODELABEL(lpspi0))
 	/* SPI0 SCK, SIN, SOUT */
 	pinmux_pin_set(porte, 0, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(porte, 1, PORT_PCR_MUX(kPORT_MuxAlt2));
@@ -83,7 +83,7 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 	pinmux_pin_set(porte, 6, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
-#ifdef CONFIG_SPI_1
+#if DT_HAS_NODE(DT_NODELABEL(lpspi1))
 	/* SPI1 SCK, SIN, SOUT */
 	pinmux_pin_set(portd, 0, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portd, 1, PORT_PCR_MUX(kPORT_MuxAlt3));
@@ -107,19 +107,19 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 	pinmux_pin_set(porte, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#if CONFIG_I2C_0
+#if DT_HAS_NODE(DT_NODELABEL(lpi2c0))
 	/* LPI2C0 SCL, SDA - FXOS8700 */
 	pinmux_pin_set(porta, 3, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#if CONFIG_I2C_1
+#if DT_HAS_NODE(DT_NODELABEL(lpi2c1))
 	/* LPI2C1 SCL, SDA - Elevator connector */
 	pinmux_pin_set(portd, 9, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portd, 8, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#if CONFIG_CAN_0
+#if DT_HAS_NODE(DT_NODELABEL(flexcan0))
 	/* FlexCAN0 RX, TX */
 	pinmux_pin_set(porte, 4, PORT_PCR_MUX(kPORT_MuxAlt5));
 	pinmux_pin_set(porte, 5, PORT_PCR_MUX(kPORT_MuxAlt5));
@@ -134,7 +134,7 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 #endif
 	pinmux_pin_set(portc, 15, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#ifdef DT_NXP_KINETIS_ADC12_ADC_0_BASE_ADDRESS
+#if DT_HAS_NODE(DT_NODELABEL(adc0))
 	/* Thermistor A, B */
 	pinmux_pin_set(porta, 0, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 	pinmux_pin_set(porta, 1, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
