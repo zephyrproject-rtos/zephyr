@@ -1,0 +1,10 @@
+# BMA400 3 Axis Accelerometer configuration
+
+# Copyright (c) 2020 Bosch Sensortec GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BMA400
+	bool "BMA400 Three Axis Ultra Low power Accelerometer"
+	depends on I2C
+	help
+	  Enable driver for BMA400 I2C-based triaxial accelerometer sensor
