@@ -107,7 +107,7 @@ arduino_spi: &spi0 {
 	status = "okay";
 };
 
-&pwm3 {
+&ftm3 {
 	status = "okay";
 };
 
@@ -116,7 +116,7 @@ arduino_spi: &spi0 {
 	current-speed = <115200>;
 };
 
-&usbd {
+&usbotg {
 	compatible = "nxp,kinetis-usbd";
 	status = "okay";
 	num-bidir-endpoints = <8>;
