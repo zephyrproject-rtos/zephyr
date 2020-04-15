@@ -49,7 +49,7 @@ static int twr_kv58f220m_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 18, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc, 19, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#ifdef CONFIG_I2C_1
+#if DT_HAS_NODE(DT_NODELABEL(i2c1))
 	/* I2C1 SCL, SDA */
 	pinmux_pin_set(portd, 8, PORT_PCR_MUX(kPORT_MuxAlt2)
 					| PORT_PCR_ODE_MASK);
