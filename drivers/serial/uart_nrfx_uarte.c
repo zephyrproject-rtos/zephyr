@@ -1403,11 +1403,15 @@ static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
 			return;
 		}
 #endif
-		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
-		while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO)) {
-			/* Busy wait for event to register */
+		if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
+			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
+			while (!nrf_uarte_event_check(uarte,
+						      NRF_UARTE_EVENT_RXTO)) {
+				/* Busy wait for event to register */
+			}
+			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
+			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
 		}
-		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
 		nrf_uarte_disable(uarte);
 		uarte_nrfx_pins_enable(dev, false);
 	}
