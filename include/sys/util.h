@@ -20,6 +20,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Helper to pass a int as a pointer or vice-versa. */
 #define POINTER_TO_UINT(x) ((uintptr_t) (x))
 #define UINT_TO_POINTER(x) ((void *) (uintptr_t) (x))
@@ -49,12 +53,13 @@
 					      __typeof__(&(array)[0])))
 
 #if defined(__cplusplus)
+extern "C++" {
 template < class T, size_t N >
 #if __cplusplus >= 201103L
 constexpr
 #endif /* >= C++11 */
 size_t ARRAY_SIZE(T(&)[N]) { return N; }
-
+}
 #else
 /* Evaluates to number of elements in an array; compile error if not
  * an array (e.g. pointer)
@@ -967,5 +972,9 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 		     z_rep_10, z_rep_9, z_rep_8, z_rep_7, z_rep_6,	\
 		     z_rep_5, z_rep_4, z_rep_3, z_rep_2, z_rep_1, z_rep_0) \
 	 (fixed_arg, x, ##__VA_ARGS__)}
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* ZEPHYR_INCLUDE_SYS_UTIL_H_ */
