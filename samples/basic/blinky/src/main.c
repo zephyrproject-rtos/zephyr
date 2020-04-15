@@ -8,9 +8,10 @@
 #include <device.h>
 #include <devicetree.h>
 #include <drivers/gpio.h>
+#include <stdio.h>
 
 /* 1000 msec = 1 sec */
-#define SLEEP_TIME_MS   1000
+#define SLEEP_TIME_MS   10
 
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
@@ -47,6 +48,12 @@ void main(void)
 	if (ret < 0) {
 		return;
 	}
+
+	printf("Core: %d Bus: %d Flex bus: %d Flash: %d\n",
+	       CLOCK_GetCoreSysClkFreq(),
+	       CLOCK_GetBusClkFreq(),
+	       CLOCK_GetFlexBusClkFreq(),
+	       CLOCK_GetFlashClkFreq());
 
 	while (1) {
 		gpio_pin_set(dev, PIN, (int)led_is_on);
