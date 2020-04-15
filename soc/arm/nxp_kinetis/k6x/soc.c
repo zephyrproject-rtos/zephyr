@@ -33,6 +33,8 @@
 
 #define TIMESRC_OSCERCLK        (2)
 
+#define RUNM_HSRUN              (3)
+
 static const osc_config_t oscConfig = {
 	.freq = CONFIG_OSC_XTAL0_FREQ,
 	.capLoad = 0,
@@ -156,7 +158,13 @@ static int k6x_init(struct device *arg)
 	SYSMPU->CESR = temp_reg;
 #endif /* !CONFIG_ARM_MPU */
 
-	/* Initialize PLL/system clock to 120 MHz */
+#ifdef CONFIG_K6X_HSRUN
+	/* Switch to HSRUN mode */
+	SMC->PMPROT |= SMC_PMPROT_AHSRUN_MASK;
+	SMC->PMCTRL = (SMC->PMCTRL & ~SMC_PMCTRL_RUNM_MASK) |
+		SMC_PMCTRL_RUNM(RUNM_HSRUN);
+#endif
+	/* Initialize PLL/system clock up to 180 MHz */
 	clock_init();
 
 	/*
