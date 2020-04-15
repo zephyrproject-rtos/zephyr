@@ -1292,6 +1292,8 @@ int shell_start(const struct shell *shell)
 		return -ENOTSUP;
 	}
 
+	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
+
 	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
 		shell_vt100_color_set(shell, SHELL_NORMAL);
 	}
@@ -1299,6 +1301,8 @@ int shell_start(const struct shell *shell)
 	shell_raw_fprintf(shell->fprintf_ctx, "\n\n");
 
 	state_set(shell, SHELL_STATE_ACTIVE);
+
+	k_mutex_unlock(&shell->ctx->wr_mtx);
 
 	return 0;
 }
@@ -1363,6 +1367,11 @@ void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
 	__ASSERT_NO_MSG(shell->ctx);
 	__ASSERT_NO_MSG(shell->fprintf_ctx);
 	__ASSERT_NO_MSG(fmt);
+
+	if (shell->ctx->state == SHELL_STATE_UNINITIALIZED ||
+	    shell->ctx->state == SHELL_STATE_INITIALIZED) {
+		return;
+	}
 
 	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 	if (!flag_cmd_ctx_get(shell)) {
