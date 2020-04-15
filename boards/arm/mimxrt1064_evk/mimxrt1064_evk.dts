@@ -156,3 +156,7 @@ arduino_i2c: &lpi2c1 {};
 		};
 	};
 };
+
+&flexpwm2_pwm3 {
+	status = "okay";
+};
