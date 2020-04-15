@@ -1,0 +1,101 @@
+/*
+ * Copyright (c) 2020 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <mem.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	flash0: flash@0 {
+		compatible = "serial-flash";
+		label = "FLASH_NUVOTON";
+		erase-block-size = <4096>;
+		write-block-size = <1>;
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <192000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		uart0: serial@40070000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40070000 0x1000>;
+			status = "disabled";
+			label = "UART_0";
+		};
+
+		uart1: serial@40071000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40071000 0x1000>;
+			status = "disabled";
+			label = "UART_1";
+		};
+
+		uart2: serial@40072000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40072000 0x1000>;
+			status = "disabled";
+			label = "UART_2";
+		};
+
+		uart3: serial@40073000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40073000 0x1000>;
+			status = "disabled";
+			label = "UART_3";
+		};
+
+		uart4: serial@40074000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40074000 0x1000>;
+			status = "disabled";
+			label = "UART_4";
+		};
+
+		uart5: serial@40075000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40075000 0x1000>;
+			status = "disabled";
+			label = "UART_5";
+		};
+
+		uart6: serial@40076000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40076000 0x1000>;
+			status = "disabled";
+			label = "UART_6";
+		};
+
+		uart7: serial@40077000 {
+			compatible = "nuvoton,numicro-uart";
+			reg = <0x40077000 0x1000>;
+			status = "disabled";
+			label = "UART_7";
+		};
+
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
