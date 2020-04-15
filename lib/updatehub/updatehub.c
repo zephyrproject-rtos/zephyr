@@ -45,6 +45,8 @@ LOG_MODULE_REGISTER(updatehub);
 #define COAP_MAX_RETRY 3
 #define MAX_IP_SIZE 30
 
+#define SHA256_HEX_DIGEST_SIZE	((TC_SHA256_DIGEST_SIZE * 2) + 1)
+
 #if defined(CONFIG_UPDATEHUB_CE)
 #define UPDATEHUB_SERVER CONFIG_UPDATEHUB_SERVER
 #else
@@ -66,8 +68,8 @@ static struct updatehub_context {
 } ctx;
 
 static struct update_info {
-	char package_uid[TC_SHA256_BLOCK_SIZE + 1];
-	char sha256sum_image[TC_SHA256_BLOCK_SIZE + 1];
+	char package_uid[SHA256_HEX_DIGEST_SIZE];
+	char sha256sum_image[SHA256_HEX_DIGEST_SIZE];
 	int image_size;
 } update_info;
 
@@ -106,13 +108,13 @@ static int metadata_hash_get(char *metadata)
 		return -1;
 	}
 
-	memset(update_info.package_uid, 0, TC_SHA256_BLOCK_SIZE + 1);
+	memset(update_info.package_uid, 0, SHA256_HEX_DIGEST_SIZE);
 	for (int i = 0; i < TC_SHA256_DIGEST_SIZE; i++) {
 		snprintk(buffer, sizeof(buffer), "%02x",
 			 hash[i]);
 		buffer_len = buffer_len + strlen(buffer);
 		strncat(&update_info.package_uid[i], buffer,
-			MIN(TC_SHA256_BLOCK_SIZE, buffer_len));
+			MIN(SHA256_HEX_DIGEST_SIZE - 1, buffer_len));
 	}
 
 	return 0;
@@ -325,7 +327,7 @@ error:
 static bool install_update_cb_sha256(void)
 {
 	u8_t image_hash[TC_SHA256_DIGEST_SIZE];
-	char buffer[3], sha256_image_dowloaded[TC_SHA256_BLOCK_SIZE + 1];
+	char buffer[3], sha256_image_dowloaded[SHA256_HEX_DIGEST_SIZE];
 	int i, buffer_len = 0;
 
 	if (tc_sha256_final(image_hash, &ctx.sha256sum) < 1) {
@@ -333,12 +335,12 @@ static bool install_update_cb_sha256(void)
 		return false;
 	}
 
-	memset(&sha256_image_dowloaded, 0, TC_SHA256_BLOCK_SIZE + 1);
+	memset(&sha256_image_dowloaded, 0, SHA256_HEX_DIGEST_SIZE);
 	for (i = 0; i < TC_SHA256_DIGEST_SIZE; i++) {
 		snprintk(buffer, sizeof(buffer), "%02x", image_hash[i]);
 		buffer_len = buffer_len + strlen(buffer);
 		strncat(&sha256_image_dowloaded[i], buffer,
-			MIN(TC_SHA256_BLOCK_SIZE, buffer_len));
+			MIN(SHA256_HEX_DIGEST_SIZE - 1, buffer_len));
 	}
 
 	if (strncmp(sha256_image_dowloaded,
@@ -625,6 +627,8 @@ enum updatehub_response updatehub_probe(void)
 	char *device_id = k_malloc(DEVICE_ID_MAX_SIZE);
 	char *firmware_version = k_malloc(BOOT_IMG_VER_STRLEN_MAX);
 
+	size_t sha256size;
+
 	if (device_id == NULL || firmware_version == NULL ||
 	    metadata == NULL || metadata_copy == NULL) {
 		LOG_ERR("Could not alloc probe memory");
@@ -703,9 +707,18 @@ enum updatehub_response updatehub_probe(void)
 			goto cleanup;
 		}
 
+		sha256size = strlen(
+			metadata_any_boards.objects[1].objects.sha256sum) + 1;
+
+		if (sha256size != SHA256_HEX_DIGEST_SIZE) {
+			LOG_ERR("SHA256 size is invalid");
+			ctx.code_status = UPDATEHUB_METADATA_ERROR;
+			goto cleanup;
+		}
+
 		memcpy(update_info.sha256sum_image,
 		       metadata_any_boards.objects[1].objects.sha256sum,
-		       strlen(metadata_any_boards.objects[1].objects.sha256sum));
+		       SHA256_HEX_DIGEST_SIZE);
 		update_info.image_size = metadata_any_boards.objects[1].objects.size;
 	} else {
 		if (!is_compatible_hardware(&metadata_some_boards)) {
@@ -714,10 +727,19 @@ enum updatehub_response updatehub_probe(void)
 				UPDATEHUB_INCOMPATIBLE_HARDWARE;
 			goto cleanup;
 		}
+
+		sha256size = strlen(
+			metadata_any_boards.objects[1].objects.sha256sum) + 1;
+
+		if (sha256size != SHA256_HEX_DIGEST_SIZE) {
+			LOG_ERR("SHA256 size is invalid");
+			ctx.code_status = UPDATEHUB_METADATA_ERROR;
+			goto cleanup;
+		}
+
 		memcpy(update_info.sha256sum_image,
 		       metadata_some_boards.objects[1].objects.sha256sum,
-		       strlen(metadata_some_boards.objects[1]
-			      .objects.sha256sum));
+		       SHA256_HEX_DIGEST_SIZE);
 		update_info.image_size =
 			metadata_some_boards.objects[1].objects.size;
 	}
