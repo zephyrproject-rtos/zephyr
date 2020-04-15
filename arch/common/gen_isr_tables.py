@@ -32,8 +32,7 @@ def debug(text):
         sys.stdout.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
 
 def error(text):
-    sys.stderr.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
-    raise Exception()
+    sys.exit(os.path.basename(sys.argv[0]) + ": error: " + text + "\n")
 
 def endian_prefix():
     if args.big_endian:
@@ -304,6 +303,7 @@ def main():
 
             if swt[table_index] != (0, spurious_handler):
                 error(f"multiple registrations at table_index {table_index} for irq {irq} (0x{irq:x})"
+                      + f"\nExisting handler 0x{swt[table_index][1]:x}, new handler 0x{func:x}"
                       + "\nHas IRQ_CONNECT or IRQ_DIRECT_CONNECT accidentally been invoked on the same irq multiple times?"
                 )
 
