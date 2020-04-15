@@ -393,7 +393,7 @@ static bool tcp_options_check(void *buf, ssize_t len)
 			continue;
 		} else {
 			if (len < 2) { /* Only END and NOP can have length 1 */
-				NET_ERR("Illegal option %d with length %d",
+				NET_ERR("Illegal option %d with length %zd",
 					opt, len);
 				result = false;
 				break;
