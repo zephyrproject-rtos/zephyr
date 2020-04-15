@@ -240,6 +240,26 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
 	return rc;
 }
 
+int flash_area_sync(const struct flash_area *fa)
+{
+	struct device *flash_dev;
+	int rc;
+
+	flash_dev = device_get_binding(fa->fa_dev_name);
+
+	rc = flash_write_protection_set(flash_dev, false);
+	if (rc) {
+		return rc;
+	}
+
+	rc = flash_sync(flash_dev);
+
+	/* Ignore errors here - this does not affect write operation */
+	(void) flash_write_protection_set(flash_dev, true);
+
+	return rc;
+}
+
 u8_t flash_area_align(const struct flash_area *fa)
 {
 	struct device *dev;

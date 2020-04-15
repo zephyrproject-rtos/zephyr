@@ -145,6 +145,8 @@ int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
  */
 int flash_area_erase(const struct flash_area *fa, off_t off, size_t len);
 
+int flash_area_sync(const struct flash_area *fa);
+
 /**
  * @brief Get write block size of the flash area
  *

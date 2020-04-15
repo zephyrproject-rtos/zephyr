@@ -166,7 +166,11 @@ static int lfs_api_erase(const struct lfs_config *c, lfs_block_t block)
 
 static int lfs_api_sync(const struct lfs_config *c)
 {
-	return LFS_ERR_OK;
+	const struct flash_area *fa = c->context;
+
+	int rc = flash_area_sync(fa);
+
+	return errno_to_lfs(rc);
 }
 
 static void release_file_data(struct fs_file_t *fp)

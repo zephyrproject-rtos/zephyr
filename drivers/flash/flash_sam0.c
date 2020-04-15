@@ -338,6 +338,11 @@ done:
 	return err;
 }
 
+static int flash_sam0_sync(struct device *dev)
+{
+	return 0;
+}
+
 static int flash_sam0_write_protection(struct device *dev, bool enable)
 {
 	off_t offset;
@@ -411,6 +416,7 @@ static int flash_sam0_init(struct device *dev)
 
 static const struct flash_driver_api flash_sam0_api = {
 	.write_protection = flash_sam0_write_protection,
+	.sync = flash_sam0_sync,
 	.erase = flash_sam0_erase,
 	.write = flash_sam0_write,
 	.read = flash_sam0_read,

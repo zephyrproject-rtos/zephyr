@@ -41,6 +41,7 @@ typedef int (*flash_api_read)(struct device *dev, off_t offset, void *data,
 typedef int (*flash_api_write)(struct device *dev, off_t offset,
 			       const void *data, size_t len);
 typedef int (*flash_api_erase)(struct device *dev, off_t offset, size_t size);
+typedef int (*flash_api_sync)(struct device *dev);
 typedef int (*flash_api_write_protection)(struct device *dev, bool enable);
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
@@ -74,6 +75,7 @@ __subsystem struct flash_driver_api {
 	flash_api_read read;
 	flash_api_write write;
 	flash_api_erase erase;
+	flash_api_sync sync;
 	flash_api_write_protection write_protection;
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	flash_api_pages_layout page_layout;
@@ -162,6 +164,16 @@ static inline int z_impl_flash_erase(struct device *dev, off_t offset,
 		(const struct flash_driver_api *)dev->driver_api;
 
 	return api->erase(dev, offset, size);
+}
+
+__syscall int flash_sync(struct device *dev);
+
+static inline int z_impl_flash_sync(struct device *dev)
+{
+	const struct flash_driver_api *api =
+		(const struct flash_driver_api *)dev->driver_api;
+
+	return api->sync(dev);
 }
 
 /**
