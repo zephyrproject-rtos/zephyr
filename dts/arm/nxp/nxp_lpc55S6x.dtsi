@@ -39,39 +39,38 @@
 		};
 	};
 
-	sram0: memory@30000000 {
-		compatible = "mmio-sram";
-		reg = <0x30000000 DT_SIZE_K(64)>;
-	};
-
-	sram1: memory@30010000 {
-		compatible = "mmio-sram";
-		reg = <0x30010000 DT_SIZE_K(64)>;
-	};
-
-	sram2: memory@30020000 {
-		compatible = "mmio-sram";
-		reg = <0x30020000 DT_SIZE_K(64)>;
-	};
-
-	sram3: memory@30030000 {
-		compatible = "mmio-sram";
-		reg = <0x30030000 DT_SIZE_K(64)>;
-	};
-
-	sram4: memory@30040000 {
-		/* Conencted to USB bus*/
-		compatible = "mmio-sram";
-		reg = <0x30040000 DT_SIZE_K(16)>;
-	};
-
-	sramx: memory@14000000 {
-		/* connected to code bus */
-		compatible = "mmio-sram";
-		reg = <0x14000000 DT_SIZE_K(32)>;
-	};
-
 	soc {
+		sram0: memory@30000000 {
+			compatible = "mmio-sram";
+			reg = <0x30000000 DT_SIZE_K(64)>;
+		};
+
+		sram1: memory@30010000 {
+			compatible = "mmio-sram";
+			reg = <0x30010000 DT_SIZE_K(64)>;
+		};
+
+		sram2: memory@30020000 {
+			compatible = "mmio-sram";
+			reg = <0x30020000 DT_SIZE_K(64)>;
+		};
+
+		sram3: memory@30030000 {
+			compatible = "mmio-sram";
+			reg = <0x30030000 DT_SIZE_K(64)>;
+		};
+
+		sram4: memory@30040000 {
+			/* Conencted to USB bus*/
+			compatible = "mmio-sram";
+			reg = <0x30040000 DT_SIZE_K(16)>;
+		};
+
+		sramx: memory@14000000 {
+			/* connected to code bus */
+			compatible = "mmio-sram";
+			reg = <0x14000000 DT_SIZE_K(32)>;
+		};
 
 		flash-controller@50034000 {
 			compatible = "nxp,lpc-iap";
