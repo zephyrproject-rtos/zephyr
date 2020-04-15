@@ -50,10 +50,10 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PA11, STM32F3_PINMUX_FUNC_PA11_USB_DM},
 	{STM32_PIN_PA12, STM32F3_PINMUX_FUNC_PA12_USB_DP},
 #endif	/* CONFIG_USB_DC_STM32 */
-#ifdef CONFIG_CAN_1
+#if DT_HAS_NODE(DT_NODELABEL(can1))
 	{STM32_PIN_PD0, STM32F3_PINMUX_FUNC_PD0_CAN1_RX},
 	{STM32_PIN_PD1, STM32F3_PINMUX_FUNC_PD1_CAN1_TX},
-#endif /* CONFIG_CAN_1 */
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)
