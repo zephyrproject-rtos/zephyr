@@ -40,9 +40,6 @@ Zephyr, the following board configurations are supported:
 * em_starterkit_em7d
   * secure application: em_starterkit_em7d_secure
   * normal application: em_starterkit_em7d_normal
-* nsim_sem
-  * secure application: nsim_sem
-  * normal application: nsim_sem_normal
 
 Building and Running
 ********************
@@ -72,7 +69,7 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/philosophers
-   :board: em_starterkit_em7d_normal nsim_sem_normal
+   :board: em_starterkit_em7d_normal
    :goals: build
    :compact:
 
