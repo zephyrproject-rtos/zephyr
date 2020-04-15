@@ -23,7 +23,7 @@ typedef enum {
 
 #define __CM4_REV              0
 #define __MPU_PRESENT          1
-#define __NVIC_PRIO_BITS       DT_NUM_IRQ_PRIO_BITS
+#define __NVIC_PRIO_BITS       NUM_IRQ_PRIO_BITS
 #define __Vendor_SysTickConfig 0
 #define __FPU_PRESENT          1
 

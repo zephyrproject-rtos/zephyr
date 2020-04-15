@@ -280,6 +280,6 @@ typedef enum IRQn {
  */
 
 #define __MPU_PRESENT           1
-#define __NVIC_PRIO_BITS        DT_NUM_IRQ_PRIO_BITS
+#define __NVIC_PRIO_BITS        NUM_IRQ_PRIO_BITS
 
 #endif

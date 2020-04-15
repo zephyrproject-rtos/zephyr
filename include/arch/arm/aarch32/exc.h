@@ -17,8 +17,10 @@
 
 #include <devicetree.h>
 
+#include <arch/arm/aarch32/cortex_m/nvic.h>
+
 /* for assembler, only works with constants */
-#define Z_EXC_PRIO(pri) (((pri) << (8 - DT_NUM_IRQ_PRIO_BITS)) & 0xff)
+#define Z_EXC_PRIO(pri) (((pri) << (8 - NUM_IRQ_PRIO_BITS)) & 0xff)
 
 /*
  * In architecture variants with non-programmable fault exceptions
