@@ -58,7 +58,8 @@ struct _isr_list {
 /** This interrupt gets put directly in the vector table */
 #define ISR_FLAG_DIRECT BIT(0)
 
-#define _MK_ISR_NAME(x, y) __isr_ ## x ## _irq_ ## y
+#define _MK_ISR_NAME(x, y) __MK_ISR_NAME(x, y)
+#define __MK_ISR_NAME(x, y) __isr_ ## x ## _irq_ ## y
 
 /* Create an instance of struct _isr_list which gets put in the .intList
  * section. This gets consumed by gen_isr_tables.py which creates the vector
