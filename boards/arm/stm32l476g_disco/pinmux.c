@@ -14,10 +14,10 @@
 
 /* pin assignments for STM32L476G DISCOVERY board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_2
+#if DT_HAS_NODE(DT_NODELABEL(usart2))
 	{STM32_PIN_PD5, STM32L4X_PINMUX_FUNC_PD5_USART2_TX},
 	{STM32_PIN_PD6, STM32L4X_PINMUX_FUNC_PD6_USART2_RX},
-#endif	/* CONFIG_UART_2 */
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)

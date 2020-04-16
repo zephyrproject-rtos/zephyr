@@ -8,8 +8,4 @@ if BOARD_96B_WISTRIO
 config BOARD
 	default "96b_wistrio"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
 endif # BOARD_96B_WISTRIO

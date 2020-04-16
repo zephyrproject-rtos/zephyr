@@ -8,12 +8,4 @@ if BOARD_96B_AVENGER96
 config BOARD
 	default "96b_avenger96"
 
-config UART_7
-	default y
-	depends on UART_CONSOLE
-
-config UART_4
-	default y
-	depends on SERIAL
-
 endif # BOARD_96B_AVENGER96

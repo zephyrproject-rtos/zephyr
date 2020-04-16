@@ -8,10 +8,6 @@ if BOARD_NUCLEO_F103RB
 config BOARD
 	default "nucleo_f103rb"
 
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
 config PWM_STM32_1
 	default y
 	depends on PWM

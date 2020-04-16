@@ -8,8 +8,4 @@ if BOARD_NUCLEO_F030R8
 config BOARD
 	default "nucleo_f030r8"
 
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
 endif # BOARD_NUCLEO_F030R8

@@ -14,14 +14,14 @@
 
 /* pin assignments for Avenger96 board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_4
+#if DT_HAS_NODE(DT_NODELABEL(uart4))
 	{ STM32_PIN_PB2, STM32MP1X_PINMUX_FUNC_PB2_UART4_RX },
 	{ STM32_PIN_PD1, STM32MP1X_PINMUX_FUNC_PD1_UART4_TX },
-#endif  /* CONFIG_UART_4 */
-#ifdef CONFIG_UART_7
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(uart7))
 	{ STM32_PIN_PE7, STM32MP1X_PINMUX_FUNC_PE7_UART7_RX },
 	{ STM32_PIN_PE8, STM32MP1X_PINMUX_FUNC_PE8_UART7_TX },
-#endif  /* CONFIG_UART_7 */
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)

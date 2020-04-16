@@ -8,8 +8,4 @@ if BOARD_OLIMEX_STM32_E407
 config BOARD
 	default "olimex_stm32_e407"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
 endif # BOARD_OLIMEX_STM32_E407

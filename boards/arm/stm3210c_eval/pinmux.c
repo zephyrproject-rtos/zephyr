@@ -14,10 +14,10 @@
 
 /* pin assignments for STM3210C-EVAL board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_2
+#if DT_HAS_NODE(DT_NODELABEL(usart2))
 	{STM32_PIN_PD5, STM32F1_PINMUX_FUNC_PD5_USART2_TX},
 	{STM32_PIN_PD6, STM32F1_PINMUX_FUNC_PD6_USART2_RX},
-#endif	/* CONFIG_UART_2 */
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)

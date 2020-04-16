@@ -14,14 +14,14 @@
 
 /* pin assignments for Dragino LSN50 board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_1
+#if DT_HAS_NODE(DT_NODELABEL(usart1))
 	{STM32_PIN_PB6, STM32L0_PINMUX_FUNC_PB6_USART1_TX},
 	{STM32_PIN_PB7, STM32L0_PINMUX_FUNC_PB7_USART1_RX},
-#endif	/* CONFIG_UART_1 */
-#ifdef CONFIG_UART_2
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(usart2))
 	{STM32_PIN_PA2, STM32L0_PINMUX_FUNC_PA2_USART2_TX},
 	{STM32_PIN_PA3, STM32L0_PINMUX_FUNC_PA3_USART2_RX},
-#endif	/* CONFIG_UART_2 */
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)

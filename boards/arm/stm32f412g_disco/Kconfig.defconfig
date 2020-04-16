@@ -7,8 +7,4 @@ if BOARD_STM32F412G_DISCO
 config BOARD
 	default "stm32f412g_disco"
 
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
 endif # BOARD_STM32F412G_DISCO
