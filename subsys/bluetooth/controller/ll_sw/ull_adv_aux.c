@@ -477,7 +477,12 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		return scan_rsp_set(adv, len, data);
 	}
 
-	/* TODO: */
+	/* FIXME: Workaround to not fail when no data is supplied */
+	if (!len) {
+		return 0;
+	}
+
+	/* TODO: Populate extended scan response data */
 
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
