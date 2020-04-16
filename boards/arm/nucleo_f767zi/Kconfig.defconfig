@@ -31,10 +31,6 @@ config PWM_STM32_1
 	default y
 	depends on PWM
 
-config SPI_1
-	default y
-	depends on SPI
-
 config CAN_1
 	default y
 	depends on CAN

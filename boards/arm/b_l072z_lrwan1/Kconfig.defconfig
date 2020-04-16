@@ -20,14 +20,6 @@ config I2C_1
 	default y
 	depends on I2C
 
-if SPI
-config SPI_1
-	default y
-
-config SPI_2
-	default y
-endif # SPI
-
 choice COUNTER_RTC_STM32_CLOCK_SRC
 	default COUNTER_RTC_STM32_CLOCK_LSE
 	depends on COUNTER

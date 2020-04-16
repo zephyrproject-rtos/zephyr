@@ -20,14 +20,6 @@ config CAN_2
 	default y
 	depends on CAN
 
-config SPI_1
-	default y
-	depends on SPI
-
-config SPI_2
-	default y
-	depends on SPI
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI

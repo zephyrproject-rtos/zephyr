@@ -18,14 +18,6 @@ config PWM_STM32_1
 	default y
 	depends on PWM
 
-if SPI
 
-config SPI_1
-	default y
-
-config SPI_2
-	default y
-
-endif # SPI
 
 endif # BOARD_STM32_MIN_DEV_BLUE || BOARD_STM32_MIN_DEV_BLACK

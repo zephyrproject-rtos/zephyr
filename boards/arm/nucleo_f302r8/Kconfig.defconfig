@@ -17,10 +17,6 @@ config UART_3
 	depends on SERIAL
 
 
-config SPI_2
-	default y
-	depends on SPI
-
 config PWM_STM32_2
 	default y
 	depends on PWM
