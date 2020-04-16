@@ -15,6 +15,7 @@ supported:
   - arduino_spi
   - ble
   - counter
+  - i2c
   - ieee802154
   - pwm
   - spi
