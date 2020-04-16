@@ -493,27 +493,37 @@ static void gpiote_event_handler(void)
 	}
 }
 
+#define GPIOTE_NODE DT_INST(0, nordic_nrf_gpiote)
+
 static int gpio_nrfx_init(struct device *port)
 {
 	static bool gpio_initialized;
 
 	if (!gpio_initialized) {
 		gpio_initialized = true;
-		IRQ_CONNECT(DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ_0,
-			    DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ_0_PRIORITY,
+		IRQ_CONNECT(DT_IRQN(GPIOTE_NODE), DT_IRQ(GPIOTE_NODE, priority),
 			    gpiote_event_handler, NULL, 0);
 
-		irq_enable(DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ_0);
+		irq_enable(DT_IRQN(GPIOTE_NODE));
 		nrf_gpiote_int_enable(NRF_GPIOTE, NRF_GPIOTE_INT_PORT_MASK);
 	}
 
 	return 0;
 }
 
+/*
+ * Device instantiation is done with node labels because 'port_num' is
+ * the peripheral number by SoC numbering. We therefore cannot use
+ * DT_INST APIs here without wider changes.
+ */
+
+#define GPIO(id) DT_NODELABEL(gpio##id)
+
 #define GPIO_NRF_DEVICE(id)						\
 	static const struct gpio_nrfx_cfg gpio_nrfx_p##id##_cfg = {	\
 		.common = {						\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(DT_INST_##id##_NORDIC_NRF_GPIO_NGPIOS), \
+			.port_pin_mask =				\
+			GPIO_PORT_PIN_MASK_FROM_DT_NODE(GPIO(id)),	\
 		},							\
 		.port = NRF_P##id,					\
 		.port_num = id						\
@@ -522,7 +532,7 @@ static int gpio_nrfx_init(struct device *port)
 	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;		\
 									\
 	DEVICE_AND_API_INIT(gpio_nrfx_p##id,				\
-			    DT_NORDIC_NRF_GPIO_GPIO_##id##_LABEL,	\
+			    DT_LABEL(GPIO(id)),				\
 			    gpio_nrfx_init,				\
 			    &gpio_nrfx_p##id##_data,			\
 			    &gpio_nrfx_p##id##_cfg,			\
