@@ -13,6 +13,7 @@
 #include <soc.h>
 #include <drivers/uart.h>
 #include <drivers/dma.h>
+#include <string.h>
 
 #ifndef SERCOM_USART_CTRLA_MODE_USART_INT_CLK
 #define SERCOM_USART_CTRLA_MODE_USART_INT_CLK SERCOM_USART_CTRLA_MODE(0x1)
@@ -44,6 +45,7 @@ struct uart_sam0_dev_cfg {
 
 /* Device run time data */
 struct uart_sam0_dev_data {
+	struct uart_config config_cache;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t cb;
 	void *cb_data;
@@ -112,6 +114,7 @@ static int uart_sam0_set_baudrate(SercomUsart *const usart, u32_t baudrate,
 
 	return 0;
 }
+
 
 #if CONFIG_UART_ASYNC_API
 
@@ -379,10 +382,121 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 
 #endif
 
+static int uart_sam0_configure(struct device *dev,
+			       const struct uart_config *new_cfg)
+{
+	int retval;
+
+	const struct uart_sam0_dev_cfg *const cfg = DEV_CFG(dev);
+	struct uart_sam0_dev_data *const dev_data = DEV_DATA(dev);
+	SercomUsart * const usart = cfg->regs;
+
+	wait_synchronization(usart);
+
+	usart->CTRLA.bit.ENABLE = 0;
+	wait_synchronization(usart);
+
+	if (new_cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
+		/* Flow control not yet supported though in principle possible
+		 * on this soc family.
+		 */
+		return -ENOTSUP;
+	}
+
+	dev_data->config_cache.flow_ctrl = new_cfg->flow_ctrl;
+
+	SERCOM_USART_CTRLA_Type CTRLA_temp = usart->CTRLA;
+	SERCOM_USART_CTRLB_Type CTRLB_temp = usart->CTRLB;
+
+	switch (new_cfg->parity) {
+	case UART_CFG_PARITY_NONE:
+		CTRLA_temp.bit.FORM = 0x0;
+		break;
+	case UART_CFG_PARITY_ODD:
+		CTRLA_temp.bit.FORM = 0x1;
+		CTRLB_temp.bit.PMODE = 1;
+		break;
+	case UART_CFG_PARITY_EVEN:
+		CTRLA_temp.bit.FORM = 0x1;
+		CTRLB_temp.bit.PMODE = 0;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	dev_data->config_cache.parity = new_cfg->parity;
+
+	switch (new_cfg->stop_bits) {
+	case UART_CFG_STOP_BITS_1:
+		CTRLB_temp.bit.SBMODE = 0;
+		break;
+	case UART_CFG_STOP_BITS_2:
+		CTRLB_temp.bit.SBMODE = 1;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	dev_data->config_cache.stop_bits = new_cfg->stop_bits;
+
+	switch (new_cfg->data_bits) {
+	case UART_CFG_DATA_BITS_5:
+		CTRLB_temp.bit.CHSIZE = 0x5;
+		break;
+	case UART_CFG_DATA_BITS_6:
+		CTRLB_temp.bit.CHSIZE = 0x6;
+		break;
+	case UART_CFG_DATA_BITS_7:
+		CTRLB_temp.bit.CHSIZE = 0x7;
+		break;
+	case UART_CFG_DATA_BITS_8:
+		CTRLB_temp.bit.CHSIZE = 0x0;
+		break;
+	case UART_CFG_DATA_BITS_9:
+		CTRLB_temp.bit.CHSIZE = 0x1;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	dev_data->config_cache.data_bits = new_cfg->data_bits;
+
+	usart->CTRLA = CTRLA_temp;
+	wait_synchronization(usart);
+
+	usart->CTRLB = CTRLB_temp;
+	wait_synchronization(usart);
+
+	retval = uart_sam0_set_baudrate(usart, new_cfg->baudrate,
+					SOC_ATMEL_SAM0_GCLK0_FREQ_HZ);
+	if (retval != 0) {
+		return retval;
+	}
+
+	dev_data->config_cache.baudrate = new_cfg->baudrate;
+
+	usart->CTRLA.bit.ENABLE = 1;
+	wait_synchronization(usart);
+
+	return 0;
+}
+
+static int uart_sam0_config_get(struct device *dev,
+				struct uart_config *out_cfg)
+{
+	struct uart_sam0_dev_data *const dev_data = DEV_DATA(dev);
+	memcpy(out_cfg, &(dev_data->config_cache),
+				sizeof(dev_data->config_cache));
+
+	return 0;
+}
+
 static int uart_sam0_init(struct device *dev)
 {
 	int retval;
 	const struct uart_sam0_dev_cfg *const cfg = DEV_CFG(dev);
+	struct uart_sam0_dev_data *const dev_data = DEV_DATA(dev);
+
 	SercomUsart *const usart = cfg->regs;
 
 #ifdef MCLK
@@ -418,6 +532,11 @@ static int uart_sam0_init(struct device *dev)
 	    SERCOM_USART_CTRLA_CPOL | SERCOM_USART_CTRLA_DORD;
 	wait_synchronization(usart);
 
+	dev_data->config_cache.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+	dev_data->config_cache.parity = UART_CFG_PARITY_NONE;
+	dev_data->config_cache.stop_bits = UART_CFG_STOP_BITS_1;
+	dev_data->config_cache.data_bits = UART_CFG_DATA_BITS_8;
+
 	/* Enable receiver and transmitter */
 	usart->CTRLB.reg = SERCOM_USART_CTRLB_CHSIZE(0) |
 			   SERCOM_USART_CTRLB_RXEN | SERCOM_USART_CTRLB_TXEN;
@@ -428,6 +547,7 @@ static int uart_sam0_init(struct device *dev)
 	if (retval != 0) {
 		return retval;
 	}
+	dev_data->config_cache.data_bits = cfg->baudrate;
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
 	cfg->irq_config_func(dev);
@@ -902,6 +1022,8 @@ static int uart_sam0_rx_disable(struct device *dev)
 static const struct uart_driver_api uart_sam0_driver_api = {
 	.poll_in = uart_sam0_poll_in,
 	.poll_out = uart_sam0_poll_out,
+	.configure = uart_sam0_configure,
+	.config_get = uart_sam0_config_get,
 #if CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = uart_sam0_fifo_fill,
 	.fifo_read = uart_sam0_fifo_read,
