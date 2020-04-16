@@ -80,7 +80,7 @@ static void usb_transfer_work(struct k_work *item)
 
 	if (trans->status != -EBUSY) {
 		/* transfer cancelled or already completed */
-		LOG_WRN("Transfer cancelled or completed, ep 0x%02x", ep);
+		LOG_DBG("Transfer cancelled or completed, ep 0x%02x", ep);
 		goto done;
 	}
 
