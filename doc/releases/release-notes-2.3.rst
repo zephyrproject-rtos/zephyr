@@ -44,8 +44,8 @@ Deprecated in this release
 
     * All timeout values are now encapsulated k_timeout_t opaque structure when
       passing them to the kernel. If you want to revert to the previous s32_t
-      type for the timeout parameter pleae enable the
-      CONFIG_LEGACY_TIMEOUT_API Kconfig option
+      type for the timeout parameter, please enable
+      :option:`CONFIG_LEGACY_TIMEOUT_API`
 
 * Bluetooth
 
