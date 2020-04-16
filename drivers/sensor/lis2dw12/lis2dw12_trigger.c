@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/lis2dw12.pdf
  */
 
+#define DT_DRV_COMPAT st_lis2dw12
+
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>

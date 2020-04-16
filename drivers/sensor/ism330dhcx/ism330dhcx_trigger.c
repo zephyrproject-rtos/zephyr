@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/ism330dhcx.pdf
  */
 
+#define DT_DRV_COMPAT st_ism330dhcx
+
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>

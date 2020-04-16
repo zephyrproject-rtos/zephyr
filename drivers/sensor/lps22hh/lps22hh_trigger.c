@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/lps22hh.pdf
  */
 
+#define DT_DRV_COMPAT st_lps22hh
+
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>

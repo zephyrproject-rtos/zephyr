@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/iis2dlpc.pdf
  */
 
+#define DT_DRV_COMPAT st_iis2dlpc
+
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>

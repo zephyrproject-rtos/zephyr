@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/lis2mdl.pdf
  */
 
+#define DT_DRV_COMPAT st_lis2mdl
+
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>

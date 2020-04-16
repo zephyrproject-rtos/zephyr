@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT adi_adxl362
+
 #include <device.h>
 #include <drivers/gpio.h>
 #include <sys/util.h>
