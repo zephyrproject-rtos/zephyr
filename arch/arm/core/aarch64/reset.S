@@ -19,7 +19,11 @@
 
 _ASM_FILE_PROLOGUE
 
-/* Platform may do platform specific EL3 init */
+/*
+ * Platform may do platform specific init at EL3.
+ * The function implementation must preserve callee saved registers as per
+ * Aarch64 ABI PCS.
+ */
 WTEXT(z_arch_el3_plat_init)
 SECTION_FUNC(TEXT,z_arch_el3_plat_init)
 ret
@@ -50,12 +54,12 @@ GTEXT(__start)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 	/* Setup vector table */
-	adr	x9, _vector_table
+	adr	x19, _vector_table
 
 	switch_el x1, 3f, 2f, 1f
 3:
 	/* Initialize VBAR */
-	msr	vbar_el3, x9
+	msr	vbar_el3, x19
 	isb
 
 	/* Initialize sctlr_el3 to reset value */
@@ -129,7 +133,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 2:
 	/* Initialize VBAR */
-	msr	vbar_el2, x9
+	msr	vbar_el2, x19
 
 	/* SError, IRQ and FIQ routing enablement in EL2 */
 	mrs	x0, hcr_el2
@@ -151,7 +155,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 1:
 	/* Initialize VBAR */
-	msr	vbar_el1, x9
+	msr	vbar_el1, x19
 
 	/* Disable access trapping in EL1 for NEON/FP */
 	mov	x0, #(CPACR_EL1_FPEN_NOTRAP)
