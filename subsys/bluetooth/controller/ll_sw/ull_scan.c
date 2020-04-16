@@ -83,6 +83,13 @@ uint8_t ll_scan_params_set(uint8_t type, uint16_t interval, uint16_t window,
 	}
 
 	lll = &scan->lll;
+
+	if (!interval) {
+		lll->phy = 0U;
+
+		return 0;
+	}
+
 	lll->phy = phy;
 
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
