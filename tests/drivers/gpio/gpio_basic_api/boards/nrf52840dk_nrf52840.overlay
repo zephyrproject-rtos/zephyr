@@ -11,3 +11,7 @@
 		in-gpios = <&gpio1 2 0>;  /* Arduino D1 */
 	};
 };
+
+&uart1 {
+	status = "disabled";
+};
