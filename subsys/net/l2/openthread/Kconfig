@@ -226,6 +226,11 @@ config OPENTHREAD_BORDER_ROUTER
 	help
 	  Enable border router support in OpenThread stack
 
+config OPENTHREAD_COAP
+	bool "OpenThread CoAP support"
+	help
+	  Enable CoAP api for the application communicates with use of OpenThread stack
+
 config OPENTHREAD_NCP
 	bool "Network Co-Processor"
 	select RING_BUFFER
