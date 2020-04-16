@@ -126,7 +126,7 @@ manifest:
       path: modules/hal/xtensa
     - name: edtt
       path: tools/edtt
-      revision: 8d3ebb28863b252731b0813dff45a3d71b31a6e7
+      revision: c39888ff74acf421eeff9a7514fa9b172c3373f7
 
   self:
     path: zephyr
