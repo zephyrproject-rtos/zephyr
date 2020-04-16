@@ -217,16 +217,17 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	: bitrate == I2C_BITRATE_FAST     ? NRF_TWIM_FREQ_400K		       \
 					  : I2C_NRFX_TWIM_INVALID_FREQUENCY)
 
+#define I2C(idx) DT_NODELABEL(i2c##idx)
+#define I2C_FREQUENCY(idx)						       \
+	I2C_NRFX_TWIM_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
+
 #define I2C_NRFX_TWIM_DEVICE(idx)					       \
-	BUILD_ASSERT(							       \
-		I2C_NRFX_TWIM_FREQUENCY(				       \
-			DT_NORDIC_NRF_TWIM_I2C_##idx##_CLOCK_FREQUENCY)	       \
-		!= I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
-		"Wrong I2C " #idx " frequency setting in dts");		       \
+	BUILD_ASSERT(I2C_FREQUENCY(idx) !=				       \
+		     I2C_NRFX_TWIM_INVALID_FREQUENCY,			       \
+		     "Wrong I2C " #idx " frequency setting in dts");	       \
 	static int twim_##idx##_init(struct device *dev)		       \
 	{								       \
-		IRQ_CONNECT(DT_NORDIC_NRF_TWIM_I2C_##idx##_IRQ_0,	       \
-			    DT_NORDIC_NRF_TWIM_I2C_##idx##_IRQ_0_PRIORITY,     \
+		IRQ_CONNECT(DT_IRQN(I2C(idx)), DT_IRQ(I2C(idx), priority),     \
 			    nrfx_isr, nrfx_twim_##idx##_irq_handler, 0);       \
 		return init_twim(dev);					       \
 	}								       \
@@ -239,14 +240,13 @@ static int twim_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	static const struct i2c_nrfx_twim_config twim_##idx##z_config = {      \
 		.twim = NRFX_TWIM_INSTANCE(idx),			       \
 		.config = {						       \
-			.scl       = DT_NORDIC_NRF_TWIM_I2C_##idx##_SCL_PIN,   \
-			.sda       = DT_NORDIC_NRF_TWIM_I2C_##idx##_SDA_PIN,   \
-			.frequency = I2C_NRFX_TWIM_FREQUENCY(		       \
-				DT_NORDIC_NRF_TWIM_I2C_##idx##_CLOCK_FREQUENCY)\
+			.scl       = DT_PROP(I2C(idx), scl_pin),	       \
+			.sda       = DT_PROP(I2C(idx), sda_pin),	       \
+			.frequency = I2C_FREQUENCY(idx),		       \
 		}							       \
 	};								       \
 	DEVICE_DEFINE(twim_##idx,					       \
-		      DT_NORDIC_NRF_TWIM_I2C_##idx##_LABEL,		       \
+		      DT_LABEL(I2C(idx)),				       \
 		      twim_##idx##_init,				       \
 		      twim_nrfx_pm_control,				       \
 		      &twim_##idx##_data,				       \
