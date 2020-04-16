@@ -1,0 +1,18 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARMv6-M Memory Protection Unit (MPU)
+
+compatible: "arm,armv6m-mpu"
+
+include: base.yaml
+
+properties:
+    reg:
+      required: true
+
+    arm,num-mpu-regions:
+      required: true
+      type: int
+      const: 8
+      description: number of MPU regions supported by hardware
