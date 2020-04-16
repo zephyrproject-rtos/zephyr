@@ -19,6 +19,11 @@
 #include <ti/drivers/Power.h>
 #include <ti/drivers/power/PowerCC26X2.h>
 
+#define GET_PIN(n, pin_name) \
+	DT_INST_PROP_BY_IDX(n, pin_name, 0)
+#define GET_PORT(n, pin_name) \
+	DT_INST_PROP_BY_IDX(n, pin_name, 1)
+
 struct uart_cc13xx_cc26xx_data {
 	struct uart_config uart_config;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -534,10 +539,10 @@ static int uart_cc13xx_cc26xx_init_0(struct device *dev)
 	}
 #endif
 	/* Configure IOC module to map UART signals to pins */
-	IOCPortConfigureSet(DT_PROP(DT_NODELABEL(uart0), tx_pin),
-			    IOC_PORT_MCU_UART0_TX, IOC_STD_OUTPUT);
-	IOCPortConfigureSet(DT_PROP(DT_NODELABEL(uart0), rx_pin),
-			    IOC_PORT_MCU_UART0_RX, IOC_STD_INPUT);
+	IOCPortConfigureSet(GET_PIN(0, tx_pin), GET_PORT(0, tx_pin),
+		IOC_STD_OUTPUT);
+	IOCPortConfigureSet(GET_PIN(0, rx_pin), GET_PORT(0, rx_pin),
+		IOC_STD_INPUT);
 
 	/* Configure and enable UART */
 	ret = uart_cc13xx_cc26xx_configure(dev,
@@ -637,10 +642,10 @@ static int uart_cc13xx_cc26xx_init_1(struct device *dev)
 #endif
 
 	/* Configure IOC module to map UART signals to pins */
-	IOCPortConfigureSet(DT_PROP(DT_NODELABEL(uart1), tx_pin),
-			    IOC_PORT_MCU_UART1_TX, IOC_STD_OUTPUT);
-	IOCPortConfigureSet(DT_PROP(DT_NODELABEL(uart1), rx_pin),
-			    IOC_PORT_MCU_UART1_RX, IOC_STD_INPUT);
+	IOCPortConfigureSet(GET_PIN(1, tx_pin), GET_PORT(1, tx_pin),
+		IOC_STD_OUTPUT);
+	IOCPortConfigureSet(GET_PIN(1, rx_pin), GET_PORT(1, rx_pin),
+		IOC_STD_INPUT);
 
 	/* Configure and enable UART */
 	ret = uart_cc13xx_cc26xx_configure(dev,

@@ -15,11 +15,11 @@ properties:
       required: true
 
     tx-pin:
-      type: int
+      type: array
       required: true
       description: TX pin
 
     rx-pin:
-      type: int
+      type: array
       required: true
       description: RX pin
