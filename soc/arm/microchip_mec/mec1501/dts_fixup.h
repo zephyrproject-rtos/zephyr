@@ -66,8 +66,6 @@
 
 #define DT_RTC_0_NAME				DT_LABEL(DT_INST(0, microchip_xec_timer))
 
-#define DT_WDT_0_NAME				DT_LABEL(DT_INST(0, microchip_xec_watchdog))
-
 #define DT_KSCAN_0_NAME				DT_LABEL(DT_INST(0, microchip_xec_kscan))
 
 #define DT_SPI_XEC_QMSPI_0_LABEL \
