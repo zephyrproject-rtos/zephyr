@@ -217,6 +217,10 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 	bt_mesh_shell_blob_cmds_init();
 #endif
 
+	if (IS_ENABLED(CONFIG_BT_MESH_RPR_SRV)) {
+		bt_mesh_prov_enable(BT_MESH_PROV_REMOTE);
+	}
+
 	return 0;
 }
 
@@ -407,6 +411,8 @@ static const char *bearer2str(bt_mesh_prov_bearer_t bearer)
 		return "PB-ADV";
 	case BT_MESH_PROV_GATT:
 		return "PB-GATT";
+	case BT_MESH_PROV_REMOTE:
+		return "PB-REMOTE";
 	default:
 		return "unknown";
 	}
@@ -423,6 +429,16 @@ static void prov_complete(uint16_t net_idx, uint16_t addr)
 
 	bt_mesh_shell_target_ctx.net_idx = net_idx,
 	bt_mesh_shell_target_ctx.dst = addr;
+}
+
+static void reprovisioned(uint16_t addr)
+{
+	shell_print(bt_mesh_shell_ctx_shell, "Local node re-provisioned, new address 0x%04x",
+		    addr);
+
+	if (bt_mesh_shell_target_ctx.dst == bt_mesh_primary_addr()) {
+		bt_mesh_shell_target_ctx.dst = addr;
+	}
 }
 
 static void prov_node_added(uint16_t net_idx, uint8_t uuid[16], uint16_t addr,
@@ -553,6 +569,7 @@ struct bt_mesh_prov bt_mesh_shell_prov = {
 	.link_open = link_open,
 	.link_close = link_close,
 	.complete = prov_complete,
+	.reprovisioned = reprovisioned,
 	.node_added = prov_node_added,
 	.reset = prov_reset,
 	.static_val = NULL,
@@ -916,6 +933,12 @@ static int cmd_provision_local(const struct shell *sh, size_t argc, char *argv[]
 		shell_error(sh, "Provisioning failed (err %d)", err);
 	}
 
+	return 0;
+}
+
+static int cmd_comp_change(const struct shell *sh, size_t argc, char *argv[])
+{
+	bt_mesh_comp_change_prepare();
 	return 0;
 }
 #endif /* CONFIG_BT_MESH_SHELL_PROV */
@@ -1549,6 +1572,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(uuid, NULL, "[UUID: 1-16 hex values]", cmd_uuid, 1, 1),
 	SHELL_CMD_ARG(beacon-listen, NULL, "<Val: off, on>", cmd_beacon_listen, 2, 0),
 #endif
+
+	SHELL_CMD_ARG(comp-change, NULL, NULL, cmd_comp_change, 1, 0),
 
 /* Provisioning operations */
 #if defined(CONFIG_BT_MESH_PROV_DEVICE)

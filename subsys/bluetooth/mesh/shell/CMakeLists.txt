@@ -9,6 +9,8 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_HEALTH_CLI health.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_CFG_CLI cfg.c)
 
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL_RPR_CLI rpr.c)
+
 if(CONFIG_BT_MESH_SHELL_BLOB_CLI OR CONFIG_BT_MESH_SHELL_BLOB_SRV OR
 	CONFIG_BT_MESH_SHELL_BLOB_IO_FLASH)
 zephyr_library_sources(blob.c)
