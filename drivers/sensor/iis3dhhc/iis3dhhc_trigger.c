@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/iis3dhhc.pdf
  */
 
+#define DT_DRV_COMPAT st_iis3dhhc
+
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>

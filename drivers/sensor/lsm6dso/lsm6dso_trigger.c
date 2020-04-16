@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/lsm6dso.pdf
  */
 
+#define DT_DRV_COMPAT st_lsm6dso
+
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>

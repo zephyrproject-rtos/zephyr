@@ -8,6 +8,8 @@
  * https://www.st.com/resource/en/datasheet/stts751.pdf
  */
 
+#define DT_DRV_COMPAT st_stts751
+
 #include <kernel.h>
 #include <drivers/sensor.h>
 #include <drivers/gpio.h>
