@@ -10,11 +10,11 @@ ram: 32
 supported:
   - adc
   - ble
+  - counter
   - nvs
   - pwm
   - spi
   - watchdog
-  - counter
 testing:
   ignore_tags:
     - net
