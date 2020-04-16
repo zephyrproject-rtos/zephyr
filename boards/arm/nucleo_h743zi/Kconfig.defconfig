@@ -8,10 +8,6 @@ if BOARD_NUCLEO_H743ZI
 config BOARD
 	default "nucleo_h743zi"
 
-config UART_3
-	default y
-	depends on UART_CONSOLE
-
 
 config PWM_STM32_12
 	default y

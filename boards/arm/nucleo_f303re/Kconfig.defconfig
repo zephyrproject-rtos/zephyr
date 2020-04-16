@@ -8,11 +8,4 @@ if BOARD_NUCLEO_F303RE
 config BOARD
 	default "nucleo_f303re"
 
-if UART_CONSOLE
-
-config UART_2
-	default y
-
-endif # UART_CONSOLE
-
 endif # BOARD_NUCLEO_F303RE

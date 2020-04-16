@@ -8,8 +8,4 @@ if BOARD_ADAFRUIT_FEATHER_STM32F405
 config BOARD
 	default "adafruit_feather_stm32f405"
 
-config UART_3
-	default y
-	depends on UART_CONSOLE
-
 endif # BOARD_ADAFRUIT_FEATHER_STM32F405

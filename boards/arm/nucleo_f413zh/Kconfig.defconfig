@@ -8,14 +8,6 @@ if BOARD_NUCLEO_F413ZH
 config BOARD
 	default "nucleo_f413zh"
 
-config UART_3
-	default y
-	depends on UART_CONSOLE
-
-config UART_6
-	default y
-	depends on SERIAL
-
 if NETWORKING
 
 config USB

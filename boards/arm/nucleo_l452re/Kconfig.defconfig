@@ -9,10 +9,6 @@ if BOARD_NUCLEO_L452RE
 config BOARD
 	default "nucleo_l452re"
 
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
 config PWM_STM32_2
 	default y
 	depends on PWM

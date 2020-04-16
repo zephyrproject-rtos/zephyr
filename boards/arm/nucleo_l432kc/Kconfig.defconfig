@@ -9,10 +9,6 @@ if BOARD_NUCLEO_L432KC
 config BOARD
 	default "nucleo_l432kc"
 
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
 config PWM_STM32_2
 	default y
 	depends on PWM

@@ -9,14 +9,6 @@ if BOARD_STM32L496G_DISCO
 config BOARD
 	default "stm32l496g_disco"
 
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
-config LPUART_1
-	default y
-	depends on SERIAL
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI

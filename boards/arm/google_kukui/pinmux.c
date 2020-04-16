@@ -13,10 +13,10 @@
 #include <pinmux/stm32/pinmux_stm32.h>
 
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_1
+#if DT_HAS_NODE(DT_NODELABEL(usart1))
 	{STM32_PIN_PA9, STM32F0_PINMUX_FUNC_PA9_USART1_TX},
 	{STM32_PIN_PA10, STM32F0_PINMUX_FUNC_PA10_USART1_RX},
-#endif	/* CONFIG_UART_1 */
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)

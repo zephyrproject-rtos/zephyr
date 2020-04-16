@@ -8,12 +8,6 @@ if BOARD_STM32F3_DISCO
 config BOARD
 	default "stm32f3_disco"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
-
-
 config CAN_1
 	default y
 	depends on CAN

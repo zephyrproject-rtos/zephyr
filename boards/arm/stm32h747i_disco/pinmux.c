@@ -14,14 +14,14 @@
 
 /* pin assignments for STM32H747I-DISCO board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_1
+#if DT_HAS_NODE(DT_NODELABEL(usart1))
 	{STM32_PIN_PA9, STM32H7_PINMUX_FUNC_PA9_USART1_TX},
 	{STM32_PIN_PA10, STM32H7_PINMUX_FUNC_PA10_USART1_RX},
-#endif	/* CONFIG_UART_1 */
-#ifdef CONFIG_UART_8
+#endif
+#if DT_HAS_NODE(DT_NODELABEL(uart8))
 	{STM32_PIN_PJ8, STM32H7_PINMUX_FUNC_PJ8_UART8_TX},
 	{STM32_PIN_PJ9, STM32H7_PINMUX_FUNC_PJ9_UART8_RX},
-#endif	/* CONFIG_UART_8 */
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)

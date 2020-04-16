@@ -8,10 +8,6 @@ if BOARD_NUCLEO_L073RZ
 config BOARD
 	default "nucleo_l073rz"
 
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI

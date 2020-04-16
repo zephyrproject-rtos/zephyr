@@ -8,10 +8,6 @@ if BOARD_NUCLEO_G474RE
 config BOARD
 	default "nucleo_g474re"
 
-config LPUART_1
-	default y
-	depends on UART_CONSOLE
-
 
 config PWM_STM32_2
 	default y

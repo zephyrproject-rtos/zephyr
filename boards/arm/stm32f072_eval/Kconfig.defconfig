@@ -8,8 +8,4 @@ if BOARD_STM32F072_EVAL
 config BOARD
 	default "stm32f072_eval"
 
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
 endif # BOARD_STM32F072_EVAL

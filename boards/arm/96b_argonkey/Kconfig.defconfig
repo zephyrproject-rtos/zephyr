@@ -8,10 +8,6 @@ if BOARD_96B_ARGONKEY
 config BOARD
 	default "96b_argonkey"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
 if I2S
 
 config I2S_STM32

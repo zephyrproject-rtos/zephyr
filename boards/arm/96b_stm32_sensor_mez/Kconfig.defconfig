@@ -8,10 +8,6 @@ if BOARD_96B_STM32_SENSOR_MEZ
 config BOARD
 	default "96b_stm32_sensor_mez"
 
-config UART_4
-	default y
-	depends on UART_CONSOLE
-
 if I2S
 
 config I2S_STM32

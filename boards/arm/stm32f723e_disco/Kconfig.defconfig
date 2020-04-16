@@ -8,14 +8,6 @@ if BOARD_STM32F723E_DISCO
 config BOARD
 	default "stm32f723e_disco"
 
-config UART_6
-	default y
-	depends on UART_CONSOLE
-
-config UART_2
-	default y
-	depends on SERIAL
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI

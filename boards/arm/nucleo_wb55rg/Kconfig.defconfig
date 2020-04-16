@@ -16,22 +16,10 @@ choice STM32_LPTIM_CLOCK
 	depends on STM32_LPTIM_TIMER
 endchoice
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
-config LPUART_1
-	default y
-	depends on SERIAL
-
 
 config ADC_1
 	default y
 	depends on ADC
-
-config LPUART_1
-	default y
-	depends on BT_DEBUG_MONITOR
 
 choice BT_HCI_BUS_TYPE
 	default BT_STM32_IPM

@@ -6,8 +6,4 @@ if BOARD_STM32F030_DEMO
 config BOARD
 	default "stm32f030_demo"
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
 endif # BOARD_STM32F030_DEMO

@@ -9,10 +9,6 @@ config BOARD
 	default "stm32_min_dev_blue" if BOARD_STM32_MIN_DEV_BLUE
 	default "stm32_min_dev_black" if BOARD_STM32_MIN_DEV_BLACK
 
-config UART_1
-	default y
-	depends on UART_CONSOLE
-
 
 config PWM_STM32_1
 	default y

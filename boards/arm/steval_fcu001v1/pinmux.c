@@ -14,10 +14,10 @@
 
 /* pin assignments for STEVAL-FCU001V1 */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_1
+#if DT_HAS_NODE(DT_NODELABEL(usart1))
 	{STM32_PIN_PA9, STM32F4_PINMUX_FUNC_PA9_USART1_TX},
 	{STM32_PIN_PA10, STM32F4_PINMUX_FUNC_PA10_USART1_RX},
-#endif	/* CONFIG_UART_1 */
+#endif
 #ifdef CONFIG_PWM_STM32_2
 	{STM32_PIN_PA0, STM32F4_PINMUX_FUNC_PA0_PWM2_CH1},
 #endif	/* CONFIG_PWM_STM32_2 */

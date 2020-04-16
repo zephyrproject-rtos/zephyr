@@ -8,14 +8,6 @@ if BOARD_B_L072Z_LRWAN1
 config BOARD
 	default "b_l072z_lrwan1"
 
-config UART_1
-	default y
-	depends on SERIAL
-
-config UART_2
-	default y
-	depends on UART_CONSOLE
-
 config I2C_1
 	default y
 	depends on I2C
