@@ -19,6 +19,11 @@
 
 _ASM_FILE_PROLOGUE
 
+/* Platform may do platform specific EL3 init */
+WTEXT(z_arch_el3_plat_init)
+SECTION_FUNC(TEXT,z_arch_el3_plat_init)
+ret
+
 /**
  *
  * @brief Reset vector
@@ -44,18 +49,63 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset)
 GTEXT(__start)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
-#ifdef CONFIG_SWITCH_TO_EL1
+	/* Setup vector table */
+	adr	x9, _vector_table
+
 	switch_el x1, 3f, 2f, 1f
 3:
-	/* Disable MMU and async exceptions routing to EL1 */
-	msr	sctlr_el1, xzr
+	/* Initialize VBAR */
+	msr	vbar_el3, x9
+	isb
+
+	/* Initialize sctlr_el3 to reset value */
+	mov_imm	x1, SCTLR_EL3_RES1
+	mrs     x0, sctlr_el3
+	orr	x0, x0, x1
+	msr	sctlr_el3, x0
+	isb
+
+	/* SError, IRQ and FIQ routing enablement in EL3 */
+	mrs	x0, scr_el3
+	orr	x0, x0, #(SCR_EL3_IRQ | SCR_EL3_FIQ | SCR_EL3_EA)
+	msr	scr_el3, x0
+
+	/*
+	* Disable access traps to EL3 for CPACR, Trace, FP, ASIMD,
+	* SVE from lower EL.
+	*/
+	mov_imm	x0, CPTR_EL3_RES_VAL
+	mov_imm	x1, (CPTR_EL3_TTA | CPTR_EL3_TFP | CPTR_EL3_TCPAC)
+	bic	x0, x0, x1
+	orr	x0, x0, #(CPTR_EL3_EZ)
+	msr	cptr_el3, x0
+	isb
+
+	/* Platform specific configurations needed in EL3 */
+	bl	z_arch_el3_plat_init
+
+#ifdef CONFIG_SWITCH_TO_EL1
+	/*
+	* Zephyr entry happened in EL3. Do EL3 specific init before
+	* dropping to lower EL.
+	*/
+	/* Enable access control configuration from lower EL */
+	mrs	x0, actlr_el3
+	orr     x0, x0, #(ACTLR_EL3_L2ACTLR | ACTLR_EL3_L2ECTLR \
+			 | ACTLR_EL3_L2CTLR)
+	orr     x0, x0, #(ACTLR_EL3_CPUACTLR | ACTLR_EL3_CPUECTLR)
+	msr	actlr_el3, x0
+
+	/* Initialize sctlr_el1 to reset value */
+	mov_imm	x0, SCTLR_EL1_RES1
+	msr	sctlr_el1, x0
 
 	/* Disable EA/IRQ/FIQ routing to EL3 and set EL1 to AArch64 */
 	mov	x0, xzr
 	orr	x0, x0, #(SCR_EL3_RW)
 	msr	scr_el3, x0
 
-	/* On eret return to EL1 with DAIF masked */
+	/* On eret return to secure EL1h with DAIF masked */
 	mov	x0, xzr
 	orr	x0, x0, #(DAIF_MASK)
 	orr	x0, x0, #(SPSR_EL3_TO_EL1)
@@ -65,39 +115,21 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 	adr	x0, 1f
 	msr	elr_el3, x0
 	eret
-2:
-	/* Boot from EL2 not supported */
-	bl	.
-1:
 #endif
-	/* Setup vector table */
-	adr	x0, _vector_table
-
-	switch_el x1, 3f, 2f, 1f
-3:
-	/* Initialize VBAR */
-	msr	vbar_el3, x0
-
-	/* SError, IRQ and FIQ routing enablement in EL3 */
-	mrs	x0, scr_el3
-	orr	x0, x0, #(SCR_EL3_IRQ | SCR_EL3_FIQ | SCR_EL3_EA)
-	msr	scr_el3, x0
-
-	/* Disable access trapping in EL3 for NEON/FP */
-	msr	cptr_el3, xzr
-
 	/*
 	 * Enable the instruction cache, stack pointer and data access
-	 * alignment checks and disable speculative loads.
+	 * alignment checks.
 	 */
 	mov	x1, #(SCTLR_I_BIT | SCTLR_A_BIT | SCTLR_SA_BIT)
 	mrs	x0, sctlr_el3
 	orr	x0, x0, x1
 	msr	sctlr_el3, x0
+	isb
 	b	0f
+
 2:
 	/* Initialize VBAR */
-	msr	vbar_el2, x0
+	msr	vbar_el2, x9
 
 	/* SError, IRQ and FIQ routing enablement in EL2 */
 	mrs	x0, hcr_el2
@@ -109,29 +141,30 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 	/*
 	 * Enable the instruction cache, stack pointer and data access
-	 * alignment checks and disable speculative loads.
+	 * alignment checks.
 	 */
 	mov	x1, #(SCTLR_I_BIT | SCTLR_A_BIT | SCTLR_SA_BIT)
 	mrs	x0, sctlr_el2
 	orr	x0, x0, x1
 	msr	sctlr_el2, x0
 	b	0f
+
 1:
 	/* Initialize VBAR */
-	msr	vbar_el1, x0
+	msr	vbar_el1, x9
 
 	/* Disable access trapping in EL1 for NEON/FP */
-	mov	x1, #(CPACR_EL1_FPEN_NOTRAP)
-	msr	cpacr_el1, x1
+	mov	x0, #(CPACR_EL1_FPEN_NOTRAP)
+	msr	cpacr_el1, x0
 
 	/*
-	 * Enable the instruction cache, stack pointer and data access
-	 * alignment checks and disable speculative loads.
+	 * Enable the instruction cache and el1 stack alignment check.
 	 */
-	mov	x1, #(SCTLR_I_BIT | SCTLR_A_BIT | SCTLR_SA_BIT)
+	mov	x1, #(SCTLR_I_BIT | SCTLR_SA_BIT)
 	mrs	x0, sctlr_el1
 	orr	x0, x0, x1
 	msr	sctlr_el1, x0
+
 0:
 	isb
 
