@@ -361,10 +361,26 @@ static const char *tcp_conn_state(struct tcp *conn, struct net_pkt *pkt)
 	return buf;
 }
 
-static bool tcp_options_check(void *buf, ssize_t len)
+static u8_t *tcp_options_get(struct net_pkt *pkt, int tcp_options_len)
+{
+	static u8_t options[40]; /* TCP header max options size is 40 */
+	struct net_pkt_cursor backup;
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) +
+		     sizeof(struct tcphdr));
+	net_pkt_read(pkt, options, tcp_options_len);
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return options;
+}
+
+static bool tcp_options_check(struct net_pkt *pkt, ssize_t len)
 {
 	bool result = len > 0 && ((len % 4) == 0) ? true : false;
-	u8_t *options = buf, opt, opt_len;
+	u8_t *options = tcp_options_get(pkt, len);
+	u8_t opt, opt_len;
 
 	NET_DBG("len=%zd", len);
 
@@ -424,8 +440,7 @@ static size_t tcp_data_len(struct net_pkt *pkt)
 	ssize_t len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
 		net_pkt_ip_opts_len(pkt) - sizeof(*th) - tcp_options_len;
 
-	if (tcp_options_len && tcp_options_check((th + 1), tcp_options_len)
-			== false) {
+	if (tcp_options_len && !tcp_options_check(pkt, tcp_options_len)) {
 		len = 0;
 	}
 
@@ -846,7 +861,7 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		goto next_state;
 	}
 
-	if (tcp_options_len && !tcp_options_check((th + 1), tcp_options_len)) {
+	if (tcp_options_len && !tcp_options_check(pkt, tcp_options_len)) {
 		NET_DBG("DROP: Invalid TCP option list");
 		tcp_out(conn, RST);
 		conn_state(conn, TCP_CLOSED);
