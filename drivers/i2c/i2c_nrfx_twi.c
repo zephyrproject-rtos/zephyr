@@ -244,7 +244,7 @@ static int twi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 					  : I2C_NRFX_TWI_INVALID_FREQUENCY)
 
 #define I2C_NRFX_TWI_DEVICE(idx)					       \
-	BUILD_ASSERT(						       \
+	BUILD_ASSERT(							       \
 		I2C_NRFX_TWI_FREQUENCY(					       \
 			DT_NORDIC_NRF_TWI_I2C_##idx##_CLOCK_FREQUENCY)	       \
 		!= I2C_NRFX_TWI_INVALID_FREQUENCY,			       \
@@ -260,7 +260,7 @@ static int twi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		.transfer_sync = Z_SEM_INITIALIZER(                            \
 			twi_##idx##_data.transfer_sync, 1, 1),                 \
 		.completion_sync = Z_SEM_INITIALIZER(                          \
-			twi_##idx##_data.completion_sync, 0, 1)	               \
+			twi_##idx##_data.completion_sync, 0, 1)		       \
 	};								       \
 	static const struct i2c_nrfx_twi_config twi_##idx##z_config = {	       \
 		.twi = NRFX_TWI_INSTANCE(idx),				       \
