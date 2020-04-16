@@ -41,7 +41,6 @@ static struct parameter *alloc_parameter(void)
 
 void z_init_mock(void)
 {
-
 }
 
 void printk(const char *fmt, ...)
@@ -64,12 +63,11 @@ void vprintk(const char *fmt, va_list ap)
  * been fixed to void* or similar GH-2825
  */
 #define BITS_PER_UL (8 * sizeof(unsigned long int))
-#define DEFINE_BITFIELD(name, bits)					\
-	unsigned long int (name)[((bits) + BITS_PER_UL - 1) / BITS_PER_UL]
+#define DEFINE_BITFIELD(name, bits)                                            \
+	unsigned long int(name)[((bits) + BITS_PER_UL - 1) / BITS_PER_UL]
 
-static inline
-int sys_bitfield_find_first_clear(const unsigned long *bitmap,
-				  unsigned int bits)
+static inline int sys_bitfield_find_first_clear(const unsigned long *bitmap,
+						unsigned int bits)
 {
 	unsigned int words = (bits + BITS_PER_UL - 1) / BITS_PER_UL;
 	unsigned int cnt;
@@ -81,12 +79,13 @@ int sys_bitfield_find_first_clear(const unsigned long *bitmap,
 	 */
 	for (cnt = 0U; cnt < words; cnt++) {
 		neg_bitmap = ~bitmap[cnt];
-		if (neg_bitmap == 0)	/* all full */
+		if (neg_bitmap == 0) /* all full */
 			continue;
-		else if (neg_bitmap == ~0UL)	/* first bit */
+		else if (neg_bitmap == ~0UL) /* first bit */
 			return cnt * BITS_PER_UL;
 		else
-			return cnt * BITS_PER_UL + __builtin_ffsl(neg_bitmap) - 1;
+			return cnt * BITS_PER_UL + __builtin_ffsl(neg_bitmap) -
+			       1;
 	}
 	return -1;
 }
@@ -94,8 +93,7 @@ int sys_bitfield_find_first_clear(const unsigned long *bitmap,
 static DEFINE_BITFIELD(params_allocation, CONFIG_ZTEST_PARAMETER_COUNT);
 static struct parameter params[CONFIG_ZTEST_PARAMETER_COUNT];
 
-static
-void free_parameter(struct parameter *param)
+static void free_parameter(struct parameter *param)
 {
 	unsigned int allocation_index = param - params;
 
@@ -104,12 +102,10 @@ void free_parameter(struct parameter *param)
 	__ASSERT(allocation_index < CONFIG_ZTEST_PARAMETER_COUNT,
 		 "param %p given to free is not in the static buffer %p:%u",
 		 param, params, CONFIG_ZTEST_PARAMETER_COUNT);
-	sys_bitfield_clear_bit((mem_addr_t) params_allocation,
-			       allocation_index);
+	sys_bitfield_clear_bit((mem_addr_t)params_allocation, allocation_index);
 }
 
-static
-struct parameter *alloc_parameter(void)
+static struct parameter *alloc_parameter(void)
 {
 	int allocation_index;
 	struct parameter *param;
@@ -120,7 +116,7 @@ struct parameter *alloc_parameter(void)
 		printk("No more mock parameters available for allocation\n");
 		ztest_test_fail();
 	}
-	sys_bitfield_set_bit((mem_addr_t) params_allocation, allocation_index);
+	sys_bitfield_set_bit((mem_addr_t)params_allocation, allocation_index);
 	param = params + allocation_index;
 	(void)memset(param, 0, sizeof(*param));
 	return param;
@@ -133,8 +129,7 @@ void z_init_mock(void)
 #endif
 
 static struct parameter *find_and_delete_value(struct parameter *param,
-					       const char *fn,
-					       const char *name)
+					       const char *fn, const char *name)
 {
 	struct parameter *value;
 
@@ -182,7 +177,7 @@ void z_ztest_expect_value(const char *fn, const char *name, uintptr_t val)
 }
 
 void z_ztest_check_expected_value(const char *fn, const char *name,
-				 uintptr_t val)
+				  uintptr_t val)
 {
 	struct parameter *param;
 	uintptr_t expected;
@@ -200,23 +195,57 @@ void z_ztest_check_expected_value(const char *fn, const char *name,
 		/* We need to cast these values since the toolchain doesn't
 		 * provide inttypes.h
 		 */
-		PRINT("%s received wrong value: Got %lu, expected %lu\n",
-		      fn, (unsigned long)val, (unsigned long)expected);
+		PRINT("%s:%s received wrong value: Got %lu, expected %lu\n", fn,
+		      name, (unsigned long)val, (unsigned long)expected);
 		ztest_test_fail();
 	}
 }
 
-void  z_ztest_returns_value(const char *fn, uintptr_t value)
+void z_ztest_expect_data(const char *fn, const char *name, void *val)
+{
+	insert_value(&parameter_list, fn, name, (uintptr_t)val);
+}
+
+void z_ztest_check_expected_data(const char *fn, const char *name, void *data,
+				 u32_t length)
+{
+	struct parameter *param;
+	void *expected;
+
+	param = find_and_delete_value(&parameter_list, fn, name);
+	if (!param) {
+		PRINT("Failed to find parameter %s for %s\n", name, fn);
+		ztest_test_fail();
+	}
+
+	expected = (void *)param->value;
+	free_parameter(param);
+
+	if (expected == NULL && data != NULL) {
+		PRINT("%s:%s received null pointer\n", fn, name);
+		ztest_test_fail();
+	} else if (data == NULL && expected != NULL) {
+		PRINT("%s:%s received data fhile expected null pointer\n", fn,
+		      name);
+		ztest_test_fail();
+	} else if (data != NULL) {
+		if (memcmp(data, expected, length) != 0) {
+			PRINT("%s:%s data provided dont match\n", fn, name);
+			ztest_test_fail();
+		}
+	}
+}
+
+void z_ztest_returns_value(const char *fn, uintptr_t value)
 {
 	insert_value(&return_value_list, fn, "", value);
 }
 
-
 uintptr_t z_ztest_get_return_value(const char *fn)
 {
 	uintptr_t value;
-	struct parameter *param = find_and_delete_value(&return_value_list,
-							fn, "");
+	struct parameter *param =
+		find_and_delete_value(&return_value_list, fn, "");
 
 	if (!param) {
 		PRINT("Failed to find return value for function %s\n", fn);
@@ -245,9 +274,14 @@ int z_cleanup_mock(void)
 	int fail = 0;
 
 	if (parameter_list.next) {
+		PRINT("Parameter not used by mock: %s:%s\n",
+		      parameter_list.next->fn,
+		      parameter_list.next->name);
 		fail = 1;
 	}
 	if (return_value_list.next) {
+		PRINT("Return value no used by mock: %s\n",
+		      return_value_list.next->fn);
 		fail = 2;
 	}
 
