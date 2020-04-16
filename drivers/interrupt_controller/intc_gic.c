@@ -55,7 +55,7 @@ bool arm_gic_irq_is_enabled(unsigned int irq)
 void arm_gic_irq_set_priority(
 	unsigned int irq, unsigned int prio, u32_t flags)
 {
-	unsigned int int_grp, int_off;
+	int int_grp, int_off;
 	u32_t val;
 
 	/* Set priority */
