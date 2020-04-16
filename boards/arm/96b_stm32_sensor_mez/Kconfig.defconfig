@@ -12,7 +12,6 @@ config UART_4
 	default y
 	depends on UART_CONSOLE
 
-
 if I2S
 
 config I2S_STM32
@@ -36,21 +35,9 @@ config I2S_2
 
 endif # I2S
 
-if SPI
-
-config SPI_1
-	default y
-
-config SPI_2
-	default y
-
-config SPI_4
-	default y
-
 config SPI_STM32_INTERRUPT
 	default y
-
-endif # SPI
+	depends on SPI
 
 if PWM
 

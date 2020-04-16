@@ -12,16 +12,6 @@ config UART_1
 	default y
 	depends on UART_CONSOLE
 
-if SPI
-
-config SPI_1
-	default y
-
-config SPI_2
-	default y
-
-endif # SPI
-
 if SERIAL
 
 config UART_2

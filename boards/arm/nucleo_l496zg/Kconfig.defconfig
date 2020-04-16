@@ -16,15 +16,9 @@ config LPUART_1
 	default y
 	depends on SERIAL
 
-if SPI
-
 config SPI_STM32_INTERRUPT
 	default y
-
-config SPI_1
-	default y
-
-endif # SPI
+	depends on SPI
 
 if PWM
 

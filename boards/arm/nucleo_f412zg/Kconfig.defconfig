@@ -16,11 +16,6 @@ config UART_6
 	default y
 	depends on SERIAL
 
-
-config SPI_1
-	default y
-	depends on SPI
-
 if NETWORKING
 
 config USB

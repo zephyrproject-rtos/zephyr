@@ -12,15 +12,9 @@ config UART_1
 	default y
 	depends on UART_CONSOLE
 
-if SPI
-
-config SPI_1
-	default y
-
 config SPI_STM32_INTERRUPT
 	default y
-
-endif # SPI
+	depends on SPI
 
 config CAN_1
 	default y

@@ -17,14 +17,8 @@ config PWM_STM32_2
 	default y
 	depends on PWM
 
-if SPI
-
-config SPI_1
-	default y
-
 config SPI_STM32_INTERRUPT
 	default y
-
-endif # SPI
+	depends on SPI
 
 endif # BOARD_NUCLEO_G431RB

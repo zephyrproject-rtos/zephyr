@@ -25,10 +25,6 @@ config LPUART_1
 	depends on SERIAL
 
 
-config SPI_1
-	default y
-	depends on SPI
-
 config ADC_1
 	default y
 	depends on ADC

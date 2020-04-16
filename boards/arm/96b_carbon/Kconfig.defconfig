@@ -22,18 +22,9 @@ config UART_6
 
 endif # SERIAL
 
-if SPI
-
-config SPI_1
-	default y
-
-config SPI_2
-	default y
-
 config SPI_STM32_INTERRUPT
 	default y
-
-endif # SPI
+	depends on SPI
 
 if BT
 
