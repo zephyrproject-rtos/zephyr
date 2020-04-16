@@ -2,8 +2,6 @@
 
 /* SoC level DTS fixup file */
 
-#define DT_WDT_0_NAME			DT_LABEL(DT_INST(0, st_stm32_watchdog))
-
 #define DT_ADC_1_NAME			DT_ST_STM32_ADC_40012400_LABEL
 
 #define DT_CAN_1_BASE_ADDRESS		DT_ST_STM32_CAN_40006400_BASE_ADDRESS

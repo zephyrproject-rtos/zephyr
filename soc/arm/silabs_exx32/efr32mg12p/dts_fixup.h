@@ -15,7 +15,4 @@
 
 #define DT_GPIO_GECKO_SWO_LOCATION	DT_SILABS_GECKO_GPIO_4000A400_LOCATION_SWO
 
-#define DT_WDT_0_NAME			DT_LABEL(DT_INST(0, silabs_gecko_wdog))
-#define DT_WDT_1_NAME			DT_LABEL(DT_INST(1, silabs_gecko_wdog))
-
 /* End of SoC Level DTS fixup file */

@@ -13,6 +13,4 @@
 
 #define DT_RTC_0_NAME				DT_LABEL(DT_INST(0, st_stm32_rtc))
 
-#define DT_WDT_0_NAME				DT_LABEL(DT_INST(0, st_stm32_watchdog))
-
 /* End of SoC Level DTS fixup file */
