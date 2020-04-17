@@ -75,6 +75,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 static s8_t net_bearer;
 static s8_t rss;
 static u8_t link_quality;
+static u32_t cellid;
 static u16_t mnc;
 static u16_t mcc;
 
@@ -89,7 +90,7 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(CONNMON_ROUTER_IP_ADDRESSES, R_OPT, STRING),
 	OBJ_FIELD_DATA(CONNMON_LINK_UTILIZATION, R_OPT, U8),
 	OBJ_FIELD_DATA(CONNMON_APN, R_OPT, STRING),
-	OBJ_FIELD_DATA(CONNMON_CELLID, R_OPT, S32),
+	OBJ_FIELD_DATA(CONNMON_CELLID, R_OPT, U32),
 	OBJ_FIELD_DATA(CONNMON_SMNC, R_OPT, U16),
 	OBJ_FIELD_DATA(CONNMON_SMCC, R_OPT, U16)
 };
@@ -128,6 +129,8 @@ static struct lwm2m_engine_obj_inst *connmon_create(u16_t obj_inst_id)
 				   false);
 	INIT_OBJ_RES_MULTI_OPTDATA(CONNMON_APN, res, i, res_inst, j,
 				   CONNMON_APN_MAX, false);
+	INIT_OBJ_RES_DATA(CONNMON_CELLID, res, i, res_inst, j, &cellid,
+			  sizeof(cellid));
 	INIT_OBJ_RES_DATA(CONNMON_SMNC, res, i, res_inst, j, &mnc, sizeof(mnc));
 	INIT_OBJ_RES_DATA(CONNMON_SMCC, res, i, res_inst, j, &mcc, sizeof(mcc));
 
