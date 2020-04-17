@@ -311,7 +311,9 @@ const struct Radio_s Radio = {
 
 static int sx1276_lora_init(struct device *dev)
 {
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	static struct spi_cs_control spi_cs;
+#endif
 	int ret;
 	uint8_t regval;
 
@@ -326,6 +328,7 @@ static int sx1276_lora_init(struct device *dev)
 	dev_data.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	dev_data.spi_cfg.slave = DT_INST_REG_ADDR(0);
 
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	spi_cs.gpio_pin = GPIO_CS_PIN,
 	spi_cs.gpio_dev = device_get_binding(
 			DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
@@ -336,6 +339,7 @@ static int sx1276_lora_init(struct device *dev)
 	}
 
 	dev_data.spi_cfg.cs = &spi_cs;
+#endif
 
 	/* Setup Reset gpio */
 	dev_data.reset = device_get_binding(
