@@ -29,6 +29,11 @@
 #endif
 
 #if use_builtin(__builtin_add_overflow)
+static inline bool u16_add_overflow(u16_t a, u16_t b, u16_t *result)
+{
+	return __builtin_add_overflow(a, b, result);
+}
+
 static inline bool u32_add_overflow(u32_t a, u32_t b, u32_t *result)
 {
 	return __builtin_add_overflow(a, b, result);
@@ -44,6 +49,15 @@ static inline bool size_add_overflow(size_t a, size_t b, size_t *result)
 	return __builtin_add_overflow(a, b, result);
 }
 #else /* !use_builtin(__builtin_add_overflow) */
+static inline bool u16_add_overflow(u16_t a, u16_t b, u16_t *result)
+{
+	u16_t c = a + b;
+
+	*result = c;
+
+	return c < a;
+}
+
 static inline bool u32_add_overflow(u32_t a, u32_t b, u32_t *result)
 {
 	u32_t c = a + b;
@@ -73,6 +87,11 @@ static inline bool size_add_overflow(size_t a, size_t b, size_t *result)
 #endif /* use_builtin(__builtin_add_overflow) */
 
 #if use_builtin(__builtin_mul_overflow)
+static inline bool u16_mul_overflow(u16_t a, u16_t b, u16_t *result)
+{
+	return __builtin_mul_overflow(a, b, result);
+}
+
 static inline bool u32_mul_overflow(u32_t a, u32_t b, u32_t *result)
 {
 	return __builtin_mul_overflow(a, b, result);
@@ -88,6 +107,15 @@ static inline bool size_mul_overflow(size_t a, size_t b, size_t *result)
 	return __builtin_mul_overflow(a, b, result);
 }
 #else /* !use_builtin(__builtin_mul_overflow) */
+static inline bool u16_mul_overflow(u16_t a, u16_t b, u16_t *result)
+{
+	u16_t c = a * b;
+
+	*result = c;
+
+	return a != 0 && (c / a) != b;
+}
+
 static inline bool u32_mul_overflow(u32_t a, u32_t b, u32_t *result)
 {
 	u32_t c = a * b;
