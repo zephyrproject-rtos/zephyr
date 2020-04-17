@@ -61,7 +61,7 @@ def main():
                 out_dt_define(f"{node.z_path_id}_PARENT",
                               f"DT_{node.parent.z_path_id}")
 
-            write_child_functions(node)
+            write_child_identifiers(node)
 
             if not node.enabled:
                 out_comment("No node macros: node is disabled")
@@ -77,6 +77,16 @@ def main():
 
         write_chosen(edt)
         write_global_compat_info(edt)
+
+
+def node_id(node):
+    # Get node identifier, in C acceptable from, for the given node, e.g.:
+    #
+    # - "/foo" will return "foo"
+    # - "/foo/bar@123" will return  "bar_123"
+    if node.parent is not None:
+        component = node.path.split("/")[-1]
+        return f"{str2ident(component)}"
 
 
 def node_z_path_id(node):
@@ -366,21 +376,24 @@ def write_compatibles(node):
             f"{node.z_path_id}_COMPAT_MATCHES_{str2ident(compat)}", 1)
 
 
-def write_child_functions(node):
-    # Writes macro that are helpers that will call a macro/function
-    # for each child node.
-
+def write_child_identifiers(node):
+    # Writes macro that lists identifiers of all children per node.
     if node.children:
-        functions = ''
+        identifiers = ''
         # For each subnode with non-empty list of labels add the
         # first (non-alias) label to the string of ', ' separated
         # list of labels.
         for subnode in node.children.values():
-            functions = functions + f"fn(DT_{subnode.z_path_id}) "
+            subid = node_id(subnode)
+            if subid:
+                identifiers = identifiers + subid  + ', '
 
-        if functions:
-            macro = f"{node.z_path_id}_FOREACH_CHILD(fn)"
-            out_dt_define(macro, functions)
+        # Out list of identifiers only if non empty and remove trailing
+        # ', ' prior.
+        if identifiers:
+            out_comment(f"Node children ({node.path}) identifiers:")
+            out_dt_define(node.z_path_id + '_CHILD_IDENTIFIERS',
+                          identifiers[:-2])
 
 
 def write_vanilla_props(node):

@@ -1367,30 +1367,18 @@ static void test_parent(void)
 
 static void test_child_nodes_list(void)
 {
-	#define TEST_FUNC(child) { DT_PROP(child, val) },
-	#define TEST_MKSTR(a) _TEST_MKSTR(a)
-	#define _TEST_MKSTR(a) #a
-	#define TEST_PARENT DT_PATH(test, test_children)
-	static struct {
-		const char *v;
-	} vals[] = {
-		DT_FOREACH_CHILD(TEST_PARENT, TEST_FUNC)
+	#define TEST_MKSTR(i) #i,
+	#define TEST_LIST DT_CHILDREN(DT_PATH(test, test_children))
+	static const char * const arr[] = {
+		FOR_EACH(TEST_MKSTR, TEST_LIST)
 	};
 
-	zassert_equal(ARRAY_SIZE(vals), 3,
+	zassert_equal(sizeof(arr) / sizeof(char *), 3,
 		      "Bad number of children");
 
-	zassert_false(strlen(TEST_MKSTR(TEST_PARENT)) == 0,
-		      "TEST_PARENT evaluated to empty string");
-
-	zassert_equal(vals[0].v, "zero", "Child 0 did not match");
-	zassert_equal(vals[1].v, "one", "Child 1 did not match");
-	zassert_equal(vals[2].v, "two", "Child 2 did not match");
-
-	#undef TEST_MKSTR
-	#undef _TEST_MKSTR
-	#undef TEST_PARENT
-	#undef TEST_FUNC
+	zassert_equal(arr[0], "child_alpha", "Child 0 did not match");
+	zassert_equal(arr[1], "child_beta", "Child 1 did not match");
+	zassert_equal(arr[2], "child_charlie", "Child 2 did not match");
 }
 
 void test_main(void)

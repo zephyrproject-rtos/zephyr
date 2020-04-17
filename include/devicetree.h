@@ -158,6 +158,15 @@
 #define DT_NODELABEL(label) DT_CAT(DT_N_NODELABEL_, label)
 
 /**
+ * @brief returns list of child node identifiers.
+ * List contains only primary child nodes (no aliases).
+ *
+ * @param path parent node path
+ * @return list of child node identifiers under path.
+ */
+#define DT_CHILDREN(path) DT_CAT(path, _CHILD_IDENTIFIERS)
+
+/**
  * @brief Get a node identifier for an alias
  *
  * Example devicetree fragment:
