@@ -254,22 +254,33 @@ void test_set_top_value_without_alarm(void)
 static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
 			  void *user_data)
 {
+	/* Arbitrary limit for alarm processing - time between hw expiration
+	 * and read-out from counter in the handler.
+	 */
+	static const u64_t processing_limit_us = 1000;
 	u32_t now;
 	int err;
+	u32_t top;
+	u32_t diff;
 
 	err = counter_get_value(dev, &now);
 	zassert_true(err == 0, "%s: Counter read failed (err: %d)",
 		     dev->config->name, err);
 
+	top = counter_get_top_value(dev);
 	if (counter_is_counting_up(dev)) {
-		zassert_true(now >= counter,
-			"%s: Alarm (%d) too early now: %d (counting up).",
-			dev->config->name, counter, now);
+		diff =  (now < counter) ?
+			(now + top - counter) : (now - counter);
 	} else {
-		zassert_true(now <= counter,
-			"%s: Alarm (%d) too early now: %d (counting down).",
-			dev->config->name, counter, now);
+		diff = (now > counter) ?
+			(counter + top - now) : (counter - now);
 	}
+
+	zassert_true(diff < counter_us_to_ticks(dev, processing_limit_us),
+			"Unexpected distance between reported alarm value(%u) "
+			"and actual counter value (%u), top:%d (processing "
+			"time limit (%d us) might be exceeded?",
+			counter, now, top, processing_limit_us);
 
 	if (user_data) {
 		zassert_true(&alarm_cfg == user_data,
