@@ -238,7 +238,9 @@ struct http_request {
 	/** Payload, may be NULL */
 	const char *payload;
 
-	/** Payload length, may be 0. Only used if payload field is not NULL */
+	/** Payload length is used to calculate Content-Length. Set to 0
+	 * for chunked transfers.
+	 */
 	size_t payload_len;
 
 	/** User supplied callback function to call when optional headers need
