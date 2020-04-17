@@ -29,7 +29,10 @@ static struct device *ipm_rx_handle;
 
 /* Configuration defines */
 
-#define SHM_START_ADDR      (DT_IPC_SHM_BASE_ADDRESS + 0x400)
+#define SHM_NODE            DT_CHOSEN(zephyr_ipc_shm)
+#define SHM_BASE_ADDRESS    DT_REG_ADDR(SHM_NODE)
+
+#define SHM_START_ADDR      (SHM_BASE_ADDRESS + 0x400)
 #define SHM_SIZE            0x7c00
 #define SHM_DEVICE_NAME     "sram0.shm"
 
@@ -39,7 +42,7 @@ static struct device *ipm_rx_handle;
 #define VRING_ALIGNMENT     4
 #define VRING_SIZE          16
 
-#define VDEV_STATUS_ADDR    DT_IPC_SHM_BASE_ADDRESS
+#define VDEV_STATUS_ADDR    SHM_BASE_ADDRESS
 
 /* End of configuration defines */
 
