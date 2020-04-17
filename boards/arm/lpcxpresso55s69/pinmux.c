@@ -13,14 +13,14 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#ifdef CONFIG_PINMUX_MCUX_LPC_PORT0
+#if DT_HAS_NODE(DT_NODELABEL(pio0))
 	struct device *port0 =
-		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT0_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(pio0)));
 #endif
 
-#ifdef CONFIG_PINMUX_MCUX_LPC_PORT1
+#if DT_HAS_NODE(DT_NODELABEL(pio1))
 	struct device *port1 =
-		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT1_NAME);
+		device_get_binding(DT_LABEL(DT_NODELABEL(pio1)));
 #endif
 
 #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(flexcomm0)) && \

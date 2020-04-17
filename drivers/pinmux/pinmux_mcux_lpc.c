@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_lpc_iocon_pio
+
 #include <stdint.h>
 #include <errno.h>
 #include <device.h>
@@ -13,22 +15,17 @@
 #include <fsl_iocon.h>
 #include <fsl_device_registers.h>
 
-#define PORT0_IDX	0u
-#define PORT1_IDX	1u
-
 struct pinmux_mcux_lpc_config {
 	clock_ip_name_t clock_ip_name;
-	IOCON_Type *base;
-	u32_t port_no;
+	u32_t *base;
 };
 
 static int pinmux_mcux_lpc_set(struct device *dev, u32_t pin, u32_t func)
 {
 	const struct pinmux_mcux_lpc_config *config = dev->config->config_info;
-	IOCON_Type *base = config->base;
-	u32_t port = config->port_no;
+	u32_t *base = config->base;
 
-	base->PIO[port][pin] = func;
+	base[pin] = func;
 
 	return 0;
 }
@@ -36,10 +33,9 @@ static int pinmux_mcux_lpc_set(struct device *dev, u32_t pin, u32_t func)
 static int pinmux_mcux_lpc_get(struct device *dev, u32_t pin, u32_t *func)
 {
 	const struct pinmux_mcux_lpc_config *config = dev->config->config_info;
-	IOCON_Type *base = config->base;
-	u32_t port = config->port_no;
+	u32_t *base = config->base;
 
-	*func = base->PIO[port][pin];
+	*func = base[pin];
 
 	return 0;
 }
@@ -70,30 +66,18 @@ static const struct pinmux_driver_api pinmux_mcux_driver_api = {
 	.input = pinmux_mcux_lpc_input,
 };
 
-#ifdef CONFIG_PINMUX_MCUX_LPC_PORT0
-static const struct pinmux_mcux_lpc_config pinmux_mcux_lpc_port0_config = {
-	.base = IOCON,
-	.clock_ip_name = kCLOCK_Iocon,
-	.port_no = PORT0_IDX,
-};
+#define PINMUX_LPC_INIT(n)						\
+	static const struct pinmux_mcux_lpc_config			\
+		pinmux_mcux_lpc_port##n##_cfg = {			\
+			.base = (u32_t *)DT_INST_REG_ADDR(n),		\
+			.clock_ip_name = kCLOCK_Iocon,			\
+		};							\
+									\
+	DEVICE_AND_API_INIT(pinmux_port##n, DT_INST_LABEL(n),		\
+			    &pinmux_mcux_lpc_init,			\
+			    NULL, &pinmux_mcux_lpc_port##n##_cfg,	\
+			    PRE_KERNEL_1,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
+			    &pinmux_mcux_driver_api);
 
-DEVICE_AND_API_INIT(pinmux_port0, CONFIG_PINMUX_MCUX_LPC_PORT0_NAME,
-		    &pinmux_mcux_lpc_init,
-		    NULL, &pinmux_mcux_lpc_port0_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_mcux_driver_api);
-#endif /* CONFIG_PINMUX_MCUX_LPC_PORT0 */
-
-#ifdef CONFIG_PINMUX_MCUX_LPC_PORT1
-static const struct pinmux_mcux_lpc_config pinmux_mcux_lpc_port1_config = {
-	.base = IOCON,
-	.clock_ip_name = kCLOCK_Iocon,
-	.port_no = PORT1_IDX,
-};
-
-DEVICE_AND_API_INIT(pinmux_port1, CONFIG_PINMUX_MCUX_LPC_PORT1_NAME,
-		    &pinmux_mcux_lpc_init,
-		    NULL, &pinmux_mcux_lpc_port1_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		    &pinmux_mcux_driver_api);
-#endif /* CONFIG_PINMUX_MCUX_LPC_PORT1 */
+DT_INST_FOREACH(PINMUX_LPC_INIT)

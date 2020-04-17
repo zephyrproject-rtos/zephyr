@@ -3,32 +3,8 @@
 # Copyright (c) 2017, NXP
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig PINMUX_MCUX_LPC
+config PINMUX_MCUX_LPC
 	bool "MCUX LPC pinmux driver"
 	depends on HAS_MCUX
 	help
 	  Enable the MCUX LPC pinmux driver.
-
-if PINMUX_MCUX_LPC
-
-config PINMUX_MCUX_LPC_PORT0
-	bool "Port 0"
-	help
-	  Enable Port 0.
-
-config PINMUX_MCUX_LPC_PORT0_NAME
-	string "Pinmux Port 0 driver name"
-	depends on PINMUX_MCUX_LPC_PORT0
-	default "port0"
-
-config PINMUX_MCUX_LPC_PORT1
-	bool "Port 1"
-	help
-	  Enable Port 1.
-
-config PINMUX_MCUX_LPC_PORT1_NAME
-	string "Pinmux Port 1 driver name"
-	depends on PINMUX_MCUX_LPC_PORT1
-	default "port1"
-
-endif # PINMUX_MCUX_LPC

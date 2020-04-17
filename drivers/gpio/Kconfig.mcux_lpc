@@ -13,13 +13,13 @@ if GPIO_MCUX_LPC
 
 config GPIO_MCUX_LPC_PORT0
 	bool "Port 0"
-	depends on PINMUX_MCUX_LPC_PORT0
+	depends on $(dt_nodelabel_enabled,pio0)
 	help
 	  Enable Port 0.
 
 config GPIO_MCUX_LPC_PORT1
 	bool "Port 1"
-	depends on PINMUX_MCUX_LPC_PORT1
+	depends on $(dt_nodelabel_enabled,pio1)
 	help
 	  Enable Port 1.
 
