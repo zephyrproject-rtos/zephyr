@@ -363,11 +363,19 @@ static int pwm_nrfx_pm_control(struct device *dev,
 
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
-#define PWM_NRFX_IS_INVERTED(dev_idx, ch_idx)				      \
-	IS_ENABLED(DT_NORDIC_NRF_PWM_PWM_##dev_idx##_CH##ch_idx##_INVERTED)
+#define PWM(dev_idx) DT_NODELABEL(pwm##dev_idx)
+#define PWM_PROP(dev_idx, prop) DT_PROP(PWM(dev_idx), prop)
+
+#define PWM_NRFX_IS_INVERTED(dev_idx, ch_idx) \
+	PWM_PROP(dev_idx, ch##ch_idx##_inverted)
+
+#define PWM_NRFX_CH_PIN(dev_idx, ch_idx)				      \
+	COND_CODE_1(DT_NODE_HAS_PROP(PWM(dev_idx), ch##ch_idx##_pin),	      \
+		    (PWM_PROP(dev_idx, ch##ch_idx##_pin)),		      \
+		    (NRFX_PWM_PIN_NOT_USED))
 
 #define PWM_NRFX_OUTPUT_PIN(dev_idx, ch_idx)				      \
-	(DT_NORDIC_NRF_PWM_PWM_##dev_idx##_CH##ch_idx##_PIN |		      \
+	(PWM_NRFX_CH_PIN(dev_idx, ch_idx) |				      \
 	 (PWM_NRFX_IS_INVERTED(dev_idx, ch_idx) ? NRFX_PWM_PIN_INVERTED : 0))
 
 #define PWM_NRFX_DEFAULT_VALUE(dev_idx, ch_idx)				      \
@@ -375,7 +383,7 @@ static int pwm_nrfx_pm_control(struct device *dev,
 	 PWM_NRFX_CH_VALUE_INVERTED : PWM_NRFX_CH_VALUE_NORMAL)
 
 #define PWM_NRFX_COUNT_MODE(dev_idx)                                          \
-	(IS_ENABLED(DT_NORDIC_NRF_PWM_PWM_##dev_idx##_CENTER_ALIGNED) ?	      \
+	(PWM_PROP(dev_idx, center_aligned) ?				      \
 	 NRF_PWM_MODE_UP_AND_DOWN : NRF_PWM_MODE_UP)
 
 #define PWM_NRFX_DEVICE(idx)						      \
@@ -407,7 +415,7 @@ static int pwm_nrfx_pm_control(struct device *dev,
 	};								      \
 	PWM_NRFX_PM_CONTROL(idx)					      \
 	DEVICE_DEFINE(pwm_nrfx_##idx,					      \
-		      DT_NORDIC_NRF_PWM_PWM_##idx##_LABEL,		      \
+		      DT_LABEL(PWM(idx)),				      \
 		      pwm_nrfx_init, pwm_##idx##_nrfx_pm_control,	      \
 		      &pwm_nrfx_##idx##_data,				      \
 		      &pwm_nrfx_##idx##config,				      \
@@ -415,65 +423,17 @@ static int pwm_nrfx_pm_control(struct device *dev,
 		      &pwm_nrfx_drv_api_funcs)
 
 #ifdef CONFIG_PWM_0
-#ifndef DT_NORDIC_NRF_PWM_PWM_0_CH0_PIN
-#define DT_NORDIC_NRF_PWM_PWM_0_CH0_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_0_CH1_PIN
-#define DT_NORDIC_NRF_PWM_PWM_0_CH1_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_0_CH2_PIN
-#define DT_NORDIC_NRF_PWM_PWM_0_CH2_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_0_CH3_PIN
-#define DT_NORDIC_NRF_PWM_PWM_0_CH3_PIN NRFX_PWM_PIN_NOT_USED
-#endif
 PWM_NRFX_DEVICE(0);
 #endif
 
 #ifdef CONFIG_PWM_1
-#ifndef DT_NORDIC_NRF_PWM_PWM_1_CH0_PIN
-#define DT_NORDIC_NRF_PWM_PWM_1_CH0_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_1_CH1_PIN
-#define DT_NORDIC_NRF_PWM_PWM_1_CH1_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_1_CH2_PIN
-#define DT_NORDIC_NRF_PWM_PWM_1_CH2_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_1_CH3_PIN
-#define DT_NORDIC_NRF_PWM_PWM_1_CH3_PIN NRFX_PWM_PIN_NOT_USED
-#endif
 PWM_NRFX_DEVICE(1);
 #endif
 
 #ifdef CONFIG_PWM_2
-#ifndef DT_NORDIC_NRF_PWM_PWM_2_CH0_PIN
-#define DT_NORDIC_NRF_PWM_PWM_2_CH0_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_2_CH1_PIN
-#define DT_NORDIC_NRF_PWM_PWM_2_CH1_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_2_CH2_PIN
-#define DT_NORDIC_NRF_PWM_PWM_2_CH2_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_2_CH3_PIN
-#define DT_NORDIC_NRF_PWM_PWM_2_CH3_PIN NRFX_PWM_PIN_NOT_USED
-#endif
 PWM_NRFX_DEVICE(2);
 #endif
 
 #ifdef CONFIG_PWM_3
-#ifndef DT_NORDIC_NRF_PWM_PWM_3_CH0_PIN
-#define DT_NORDIC_NRF_PWM_PWM_3_CH0_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_3_CH1_PIN
-#define DT_NORDIC_NRF_PWM_PWM_3_CH1_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_3_CH2_PIN
-#define DT_NORDIC_NRF_PWM_PWM_3_CH2_PIN NRFX_PWM_PIN_NOT_USED
-#endif
-#ifndef DT_NORDIC_NRF_PWM_PWM_3_CH3_PIN
-#define DT_NORDIC_NRF_PWM_PWM_3_CH3_PIN NRFX_PWM_PIN_NOT_USED
-#endif
 PWM_NRFX_DEVICE(3);
 #endif
