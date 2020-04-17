@@ -70,6 +70,7 @@ static struct modem_pin modem_pins[] = {
 #define MDM_CMD_CONN_TIMEOUT		K_SECONDS(120)
 #define MDM_REGISTRATION_TIMEOUT	K_SECONDS(180)
 #define MDM_PROMPT_CMD_DELAY		K_MSEC(75)
+#define MDM_SENDMSG_SLEEP       K_MSEC(1)
 
 #define MDM_MAX_DATA_LENGTH		1024
 #define MDM_RECV_MAX_BUF		30
@@ -1248,6 +1249,40 @@ static ssize_t offload_write(void *obj, const void *buffer, size_t count)
 	return offload_sendto(obj, buffer, count, 0, NULL, 0);
 }
 
+static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
+{
+	ssize_t sent = 0;
+	int rc;
+
+	LOG_DBG("msg_iovlen:%d flags:%d", msg->msg_iovlen, flags);
+
+	for (int i = 0; i < msg->msg_iovlen; i++) {
+
+		const char *buf = msg->msg_iov[i].iov_base;
+		size_t len = msg->msg_iov[i].iov_len;
+
+		while (len > 0) {
+			rc = offload_sendto(obj, buf, len, flags,
+							msg->msg_name,
+							msg->msg_namelen);
+			if (rc < 0) {
+				if (rc == -EAGAIN) {
+					k_sleep(MDM_SENDMSG_SLEEP);
+				} else {
+					sent = rc;
+					break;
+				}
+			} else {
+				sent += rc;
+				buf += rc;
+				len -= rc;
+			}
+		}
+	}
+
+	return (ssize_t)sent;
+}
+
 static const struct socket_op_vtable offload_socket_fd_op_vtable = {
 	.fd_vtable = {
 		.read = offload_read,
@@ -1260,7 +1295,7 @@ static const struct socket_op_vtable offload_socket_fd_op_vtable = {
 	.recvfrom = offload_recvfrom,
 	.listen = NULL,
 	.accept = NULL,
-	.sendmsg = NULL,
+	.sendmsg = offload_sendmsg,
 	.getsockopt = NULL,
 	.setsockopt = NULL,
 };
