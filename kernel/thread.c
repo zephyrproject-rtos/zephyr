@@ -512,11 +512,12 @@ void z_new_thread_init(struct k_thread *thread,
  * The caller must guarantee that the stack_size passed here corresponds
  * to the amount of stack memory available for the thread.
  */
-void z_setup_new_thread(struct k_thread *new_thread,
-		       k_thread_stack_t *stack, size_t stack_size,
-		       k_thread_entry_t entry,
-		       void *p1, void *p2, void *p3,
-		       int prio, u32_t options, const char *name)
+
+size_t z_setup_new_thread(struct k_thread *new_thread,
+			  k_thread_stack_t *stack, size_t stack_size,
+			  k_thread_entry_t entry,
+			  void *p1, void *p2, void *p3,
+			  int prio, u32_t options, const char *name)
 {
 #ifdef CONFIG_USERSPACE
 	z_object_init(new_thread);
@@ -588,7 +589,7 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	/* _current may be null if the dummy thread is not used */
 	if (!_current) {
 		new_thread->resource_pool = NULL;
-		return;
+		return stack_size;
 	}
 #endif
 #ifdef CONFIG_USERSPACE
@@ -607,6 +608,8 @@ void z_setup_new_thread(struct k_thread *new_thread,
 #endif
 	new_thread->resource_pool = _current->resource_pool;
 	sys_trace_thread_create(new_thread);
+
+	return stack_size;
 }
 
 #ifdef CONFIG_MULTITHREADING

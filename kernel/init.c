@@ -303,11 +303,13 @@ static void init_idle_thread(struct k_thread *thread, k_thread_stack_t *stack)
  * Note that all fields of "_kernel" are set to zero on entry, which may
  * be all the initialization many of them require.
  *
- * @return N/A
+ * @return main thread stack size
  */
 #ifdef CONFIG_MULTITHREADING
-static void prepare_multithreading(struct k_thread *dummy_thread)
+static size_t prepare_multithreading(struct k_thread *dummy_thread)
 {
+	size_t ret;
+
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	ARG_UNUSED(dummy_thread);
 #else
@@ -346,10 +348,11 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	_kernel.ready_q.cache = &z_main_thread;
 #endif
 
-	z_setup_new_thread(&z_main_thread, z_main_stack,
-			   CONFIG_MAIN_STACK_SIZE, bg_thread_main,
-			   NULL, NULL, NULL,
-			   CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL, "main");
+	ret = z_setup_new_thread(&z_main_thread, z_main_stack,
+				 CONFIG_MAIN_STACK_SIZE, bg_thread_main,
+				 NULL, NULL, NULL,
+				 CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL,
+				 "main");
 	z_mark_thread_as_started(&z_main_thread);
 	z_ready_thread(&z_main_thread);
 
@@ -363,13 +366,15 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	}
 
 	initialize_timeouts();
+
+	return ret;
 }
 
-static FUNC_NORETURN void switch_to_main_thread(void)
+static FUNC_NORETURN void switch_to_main_thread(size_t stack_size)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	arch_switch_to_main_thread(&z_main_thread, z_main_stack,
-				   K_THREAD_STACK_SIZEOF(z_main_stack),
+				   stack_size,
 				   bg_thread_main);
 #else
 	/*
@@ -475,6 +480,7 @@ FUNC_NORETURN void z_cstart(void)
 	};
 
 	_current_cpu->current = &dummy_thread;
+	size_t stack_size;
 #endif
 
 	/* perform basic hardware initialization */
@@ -488,8 +494,8 @@ FUNC_NORETURN void z_cstart(void)
 #endif	/* CONFIG_STACK_CANARIES */
 
 #ifdef CONFIG_MULTITHREADING
-	prepare_multithreading(&dummy_thread);
-	switch_to_main_thread();
+	stack_size = prepare_multithreading(&dummy_thread);
+	switch_to_main_thread(stack_size);
 #else
 	bg_thread_main(NULL, NULL, NULL);
 
