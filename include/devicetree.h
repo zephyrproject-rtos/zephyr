@@ -145,6 +145,30 @@
  */
 #define DT_NODELABEL(label) DT_CAT(DT_N_NODELABEL_, label)
 
+
+/**
+ * @brief Get node name from its name or label.
+ *
+ * Example, in deficetree fragment:
+ *
+ *     serial0: serial@40002000 {
+ *             status = "okay";
+ *             current-speed = <115200>;
+ *             ...
+ *     };
+ *
+ * Node name is serial@40002000, which in definitions takes from
+ * serial_40002000, and serial0 is label, which takes form serial_0.
+ * Invoking:
+ *
+ *     DT_NODE_NAME(serial_40002000)
+ *     DT_NODE_NAME(serial_0)
+ *
+ * will in both cases evaluate to serial_40002000.
+ */
+#define DT_NODE_NAME(name) DT_CAT(DT_, name##_NODE_NAME))
+
+
 /**
  * @brief Get a node identifier for an alias
  *

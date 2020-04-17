@@ -67,9 +67,31 @@ def main():
             write_bus(node)
             write_special_props(node)
             write_vanilla_props(node)
+            write_node_name_map(node)
 
         write_chosen(edt)
         write_global_compat_info(edt)
+
+
+def write_node_name_map(node):
+    # Generate mappings of node name, from labels and node name itself.
+    if node.parent:
+        out_comment("Node specific translations from labels to node name")
+        node_name = node_id(node)
+        labels = [node_name] + node.labels[:]
+
+        for lbl in labels:
+            out_dt_define(f"{lbl}_NODE_NAME", f"{node_name}")
+
+
+def node_id(node):
+    # Get node identifier, in C acceptable from, for the given node, e.g.:
+    #
+    # - "/foo" will return "foo"
+    # - "/foo/bar@123" will return  "bar_123"
+    if node.parent is not None:
+        component = node.path.split("/")[-1]
+        return f"{str2ident(component)}"
 
 
 def node_z_path_id(node):
