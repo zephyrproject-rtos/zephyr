@@ -93,6 +93,11 @@
 
 &enet {
 	status = "okay";
+
+	fixed-link {
+		speed = <100>;
+		full-duplex;
+	};
 };
 
 &spi1 {
