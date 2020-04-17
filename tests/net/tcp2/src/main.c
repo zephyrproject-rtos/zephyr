@@ -149,13 +149,13 @@ static void test_sem_give(void)
 	k_sem_give(&test_sem);
 }
 
-static void test_sem_take(k_timeout_t timeout)
+static void test_sem_take(k_timeout_t timeout, int line)
 {
 	sem = true;
 	k_sem_take(&test_sem, timeout);
 
 	if (sem) {
-		zassert_true(false, "semaphore timed out");
+		zassert_true(false, "semaphore timed out (line %d)", line);
 	}
 }
 
@@ -467,7 +467,7 @@ static void test_client_ipv4(void)
 	/* Peer will release the semaphone after it receives
 	 * proper ACK to SYN | ACK
 	 */
-	test_sem_take(K_MSEC(100));
+	test_sem_take(K_MSEC(100), __LINE__);
 
 	ret = net_context_send(ctx, &data, 1, NULL, K_NO_WAIT, NULL);
 	if (ret < 0) {
@@ -475,14 +475,14 @@ static void test_client_ipv4(void)
 	}
 
 	/* Peer will release the semaphone after it sends ACK for data */
-	test_sem_take(K_MSEC(100));
+	test_sem_take(K_MSEC(100), __LINE__);
 
 	net_tcp_put(ctx);
 
 	/* Peer will release the semaphone after it receives
 	 * proper ACK to FIN | ACK
 	 */
-	test_sem_take(K_MSEC(100));
+	test_sem_take(K_MSEC(100), __LINE__);
 }
 
 /* Test case scenario IPv6
@@ -522,7 +522,7 @@ static void test_client_ipv6(void)
 	/* Peer will release the semaphone after it receives
 	 * proper ACK to SYN | ACK
 	 */
-	test_sem_take(K_MSEC(100));
+	test_sem_take(K_MSEC(100), __LINE__);
 
 	ret = net_context_send(ctx, &data, 1, NULL, K_NO_WAIT, NULL);
 	if (ret < 0) {
@@ -530,14 +530,14 @@ static void test_client_ipv6(void)
 	}
 
 	/* Peer will release the semaphone after it sends ACK for data */
-	test_sem_take(K_MSEC(100));
+	test_sem_take(K_MSEC(100), __LINE__);
 
 	net_tcp_put(ctx);
 
 	/* Peer will release the semaphone after it receives
 	 * proper ACK to FIN | ACK
 	 */
-	test_sem_take(K_MSEC(100));
+	test_sem_take(K_MSEC(100), __LINE__);
 }
 
 static void handle_server_test(sa_family_t af, struct tcphdr *th)
@@ -681,7 +681,7 @@ static void test_server_ipv4(void)
 	/* test_tcp_accept_cb will release the semaphone after succesfull
 	 * connection.
 	 */
-	test_sem_take(K_MSEC(100));
+	test_sem_take(K_MSEC(100), __LINE__);
 
 	/* Trigger the peer to send DATA  */
 	k_delayed_work_submit(&test_server, K_NO_WAIT);
@@ -744,7 +744,7 @@ static void test_server_with_options_ipv4(void)
 	/* test_tcp_accept_cb will release the semaphone after succesfull
 	 * connection.
 	 */
-	test_sem_take(K_MSEC(100));
+	test_sem_take(K_MSEC(100), __LINE__);
 
 	/* Trigger the peer to send DATA  */
 	k_delayed_work_submit(&test_server, K_NO_WAIT);
@@ -807,7 +807,7 @@ static void test_server_ipv6(void)
 	/* test_tcp_accept_cb will release the semaphone after succesfull
 	 * connection.
 	 */
-	test_sem_take(K_MSEC(100));
+	test_sem_take(K_MSEC(100), __LINE__);
 
 	/* Trigger the peer to send DATA  */
 	k_delayed_work_submit(&test_server, K_NO_WAIT);
@@ -863,7 +863,7 @@ static void test_client_syn_resend(void)
 	}
 
 	/* test handler will release the sem once it receives SYN again */
-	test_sem_take(K_MSEC(500));
+	test_sem_take(K_MSEC(500), __LINE__);
 
 	net_context_put(ctx);
 }
