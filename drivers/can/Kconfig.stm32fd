@@ -1,0 +1,35 @@
+# STM32 CAN configuration options
+if CAN_MCAN && SOC_SERIES_STM32G4X
+
+config CAN_STM32FD
+	bool
+	default y
+
+config CAN_MAX_STD_ID_FILTER
+	int "Maximum number of std ID filters"
+	default 28
+	range 0 28
+	help
+	  Defines the maximum number of filters with standard ID (11-bit)
+	  that can be attached.
+
+config CAN_MAX_EXT_ID_FILTER
+	int "Maximum number of ext ID filters"
+	default 8
+	range 0 8
+	help
+	  Defines the maximum number of filters with extended ID (29-bit)
+	  that can be attached.
+
+config CAN_CKDIV
+	int "CKDIV register value"
+	range 0 15
+	default 0
+	help
+	  This value is written to the CKDIV register.
+	  The APB clock is divided according to this value before it is feed to
+	  CAN core. Note that the the divider affects all CAN controllers.
+	  The values of the register are multiplied by two and zero corresponds
+	  to one. The value six, for example results in a clock divided by 12.
+
+endif #CAN_MCAN

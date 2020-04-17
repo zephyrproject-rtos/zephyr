@@ -1,0 +1,12 @@
+description: Bosch m_can CAN-FD controller
+
+compatible: "bosch,m-can"
+
+include: can-fd-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true

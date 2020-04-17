@@ -23,7 +23,7 @@
 #include <zephyr/types.h>
 #include <device.h>
 #include <string.h>
-#include <misc/util.h>
+#include <sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -197,9 +197,11 @@ struct zcan_frame {
 
 	/** The length of the message (max. 8) in bytes.*/
 	u8_t dlc;
-	/** @cond INTERNAL_HIDDEN */
-	u8_t pad;   /* padding for alignment.*/
-	/** @endcond */
+	/** Bit Rate Switch. Increade rate during data phase. */
+	u8_t brs : 1;
+	/** Reserved for future flags */
+	u8_t res : 7;
+
 #if defined(CONFIG_CAN_RX_TIMESTAMP)
 	/** Timer value of the CAN free running timer.
 	 * The timer is incremented every bit time and captured at the start
@@ -348,15 +350,9 @@ typedef int (*can_configure_t)(struct device *dev, enum can_mode mode,
 			       struct can_timing *timing,
 			       struct can_timing *timing_data);
 
-#ifdef CONFIG_CAN_FD_MODE
-typedef int (*can_send_t)(struct device *dev, const struct zcan_frame *msg,
-			  bool brs, s32_t timeout,
-			  can_tx_callback_t callback_isr, void *callback_arg);
-#else
 typedef int (*can_send_t)(struct device *dev, const struct zcan_frame *msg,
 			  k_timeout_t timeout, can_tx_callback_t callback_isr,
 			  void *callback_arg);
-#endif /* CONFIG_CAN_FD_MODE */
 
 typedef int (*can_attach_msgq_t)(struct device *dev, struct k_msgq *msg_q,
 				 const struct zcan_filter *filter);
@@ -462,45 +458,6 @@ static inline u8_t can_bytes_to_dlc(u8_t num_bytes)
 	       15;
 }
 
-#ifdef CONFIG_CAN_FD_MODE
-
-/**
- * @brief Perform data transfer to CAN bus with flexible datarate option.
- *
- * This routine provides a generic interface to perform data transfer
- * to the can bus with options for CAN-FD
- * *
- * @param dev          Pointer to the device structure for the driver instance.
- * @param frame        Frame to transfer.
- * @param brs          Baudrate Switch. If true, switch to fast br in dataphase.
- * @param timeout      Waiting for empty tx mailbox timeout in ms or K_FOREVER.
- * @param callback_isr Is called when message was sent or a transmission error
- *                     occurred. If NULL, this function is blocking until
- *                     message is sent. This must be NULL if called from user
- *                     mode.
- * @param callback_arg This will be passed whenever the isr is called.
- *
- * @retval 0 If successful.
- * @retval CAN_TX_* on failure.
- */
-__syscall int can_fd_send(struct device *dev, const struct zcan_frame *frame,
-		       bool brs, s32_t timeout,
-		       can_tx_callback_t callback_isr,
-		       void *callback_arg);
-
-static inline int z_impl_can_fd_send(struct device *dev,
-				     const struct zcan_frame *frame,
-				     bool brs, s32_t timeout,
-				     can_tx_callback_t callback_isr,
-				     void *callback_arg)
-{
-	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
-
-	return api->send(dev, frame, timeout, brs, callback_isr, callback_arg);
-}
-#endif /* CONFIG_CAN_FD_MODE */
-
 /**
  * @brief Perform data transfer to CAN bus.
  *
@@ -528,15 +485,10 @@ static inline int z_impl_can_send(struct device *dev,
 				 k_timeout_t timeout, can_tx_callback_t callback_isr,
 				 void *callback_arg)
 {
-#ifdef CONFIG_CAN_FD_MODE
-	return can_fd_send(dev, frame, false, false, timeout, callback_isr,
-			   callback_arg);
-#else
 	const struct can_driver_api *api =
 		(const struct can_driver_api *)dev->driver_api;
 
 	return api->send(dev, frame, timeout, callback_isr, callback_arg);
-#endif
 }
 
 /*
