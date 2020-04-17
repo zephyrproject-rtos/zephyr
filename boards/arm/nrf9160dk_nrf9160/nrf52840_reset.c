@@ -22,7 +22,7 @@ int bt_hci_transport_setup(struct device *h4)
 	char c;
 	struct device *port;
 
-	port = device_get_binding(DT_GPIO_P0_DEV_NAME);
+	port = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
 	if (!port) {
 		return -EIO;
 	}

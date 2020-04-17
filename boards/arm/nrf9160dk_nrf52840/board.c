@@ -289,15 +289,17 @@ static int init(struct device *dev)
 	struct device *p0;
 	struct device *p1;
 
-	p0 = device_get_binding(DT_GPIO_P0_DEV_NAME);
+	p0 = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
 	if (!p0) {
-		LOG_ERR("GPIO device " DT_GPIO_P0_DEV_NAME "not found!");
+		LOG_ERR("GPIO device " DT_LABEL(DT_NODELABEL(gpio0))
+			" not found!");
 		return -EIO;
 	}
 
-	p1 = device_get_binding(DT_GPIO_P1_DEV_NAME);
+	p1 = device_get_binding(DT_LABEL(DT_NODELABEL(gpio1)));
 	if (!p1) {
-		LOG_ERR("GPIO device " DT_GPIO_P1_DEV_NAME " not found!");
+		LOG_ERR("GPIO device " DT_LABEL(DT_NODELABEL(gpio1))
+			" not found!");
 		return -EIO;
 	}
 

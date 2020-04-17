@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(board_control, CONFIG_BOARD_ICARUS_LOG_LEVEL);
 
 static void select_sim(void)
 {
-	struct device *port = device_get_binding(DT_GPIO_P0_DEV_NAME);
+	struct device *port = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
 
 	if (!port) {
 		LOG_ERR("Could not get GPIO Device Binding");
