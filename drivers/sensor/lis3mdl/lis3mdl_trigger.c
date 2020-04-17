@@ -23,12 +23,16 @@ int lis3mdl_trigger_set(struct device *dev,
 {
 	struct lis3mdl_data *drv_data = dev->driver_data;
 	s16_t buf[3];
+	int ret;
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
 	/* dummy read: re-trigger interrupt */
-	i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
-			   LIS3MDL_REG_SAMPLE_START, (u8_t *)buf, 6);
+	ret = i2c_burst_read(drv_data->i2c, DT_INST_REG_ADDR(0),
+			     LIS3MDL_REG_SAMPLE_START, (u8_t *)buf, 6);
+	if (ret != 0) {
+		return ret;
+	}
 
 	gpio_pin_interrupt_configure(drv_data->gpio,
 			DT_INST_GPIO_PIN(0, irq_gpios),
