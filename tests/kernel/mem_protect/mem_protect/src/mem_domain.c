@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2017, 2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "mem_protect.h"
+#include <sys/mempool.h>
 
 #define ERROR_STR \
 	("Fault didn't occur when we accessed a unassigned memory domain.")
@@ -14,6 +15,36 @@ K_THREAD_STACK_DEFINE(mem_domain_1_stack, MEM_DOMAIN_STACK_SIZE);
 K_THREAD_STACK_DEFINE(mem_domain_2_stack, MEM_DOMAIN_STACK_SIZE);
 K_THREAD_STACK_DEFINE(mem_domain_6_stack, MEM_DOMAIN_STACK_SIZE);
 struct k_thread mem_domain_1_tid, mem_domain_2_tid, mem_domain_6_tid;
+struct k_mem_domain domain0, domain1, domain4, name_domain, overlap_domain;
+
+struct k_thread user_thread0, parent_thr_md, child_thr_md;
+k_tid_t usr_tid0, usr_tid1, child_tid;
+K_THREAD_STACK_DEFINE(user_thread0_stack, STACK_SIZE_MD);
+K_THREAD_STACK_DEFINE(child_thr_stack_md, STACK_SIZE_MD);
+K_THREAD_STACK_DEFINE(parent_thr_stack_md, STACK_SIZE_MD);
+
+struct k_sem sync_sem_md;
+
+uint8_t __aligned(MEM_REGION_ALLOC) buf0[MEM_REGION_ALLOC];
+K_MEM_PARTITION_DEFINE(part0, buf0, sizeof(buf0),
+		K_MEM_PARTITION_P_RW_U_RW);
+
+K_APPMEM_PARTITION_DEFINE(part1);
+K_APP_BMEM(part1) uint8_t __aligned(MEM_REGION_ALLOC) buf1[MEM_REGION_ALLOC];
+struct k_mem_partition *app1_parts[] = {
+	&part1
+};
+K_APPMEM_PARTITION_DEFINE(part_arch);
+K_APP_BMEM(part_arch) uint8_t __aligned(MEM_REGION_ALLOC) \
+buf_arc[MEM_REGION_ALLOC];
+
+K_APPMEM_PARTITION_DEFINE(part2);
+K_APP_DMEM(part2) int part2_var = 1356;
+K_APP_BMEM(part2) int part2_zeroed_var = 20420;
+K_APP_BMEM(part2) int part2_bss_var;
+
+SYS_MEM_POOL_DEFINE(data_pool, NULL, BLK_SIZE_MIN_MD, BLK_SIZE_MAX_MD,
+		BLK_NUM_MAX_MD, BLK_ALIGN_MD, K_APP_DMEM_SECTION(part2));
 
 /****************************************************************************/
 /* The mem domains needed.*/
@@ -527,4 +558,226 @@ void test_mem_domain_remove_partitions(void)
 			-1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_thread_join(&mem_domain_6_tid, K_FOREVER);
+}
+
+/**
+ * @brief Test access memory domain APIs allowed to supervisor threads only
+ *
+ * @details
+ * - Create a test case to use a memory domain APIs k_mem_domain_init()
+ *   and k_mem_domain_add_partition()
+ * - Run that test in kernel mode -no errors should happen.
+ * - Run that test in user mode -Zephyr fatal error will happen (reason 0),
+ *   because user threads can't use memory domain APIs.
+ * - At the same time test that system support the definition of memory domains.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_domain_init(), k_mem_domain_add_partition()
+ */
+void test_mem_domain_api_kernel_thread_only(void)
+{
+	set_fault_valid(true);
+
+	k_mem_domain_init(&domain0, 0, NULL);
+	k_mem_domain_add_partition(&domain0, &part0);
+}
+
+void user_handler_func(void *p1, void *p2, void *p3)
+{
+	/* Read the partition */
+	uint8_t read_data = buf1[0];
+
+	/* Just to avoid compiler warning */
+	(void) read_data;
+
+	/* Writing to the partition, this should generate fault
+	 * as the partition has read only permission for
+	 * user threads
+	 */
+	buf1[0] = 10U;
+}
+
+/**
+ * @brief Test system auto determine memory partition base addresses and sizes
+ *
+ * @details
+ * - Ensure that system automatically determine memory partition
+ *   base address and size according to its content correctly by taking
+ *   memory partition's size and compare it with size of content.
+ * - If size of memory partition is equal to the size of content -test passes.
+ * - If possible to take base address of the memory partition -test passes.
+ * - Test that system supports the definition of memory partitions and it has
+ *   a starting address and a size.
+ * - Test that OS supports removing thread from its memory domain assignment.
+ * - Test that user thread can't write into memory partition. Try to write data,
+ *   that will lead to the fatal error.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_mem_part_auto_determ_size(void)
+{
+	set_fault_valid(true);
+
+	k_sem_init(&sync_sem_md, SYNC_SEM_INIT_COUNT, SYNC_SEM_MAX_COUNT);
+	k_thread_access_grant(&user_thread0, &sync_sem_md);
+
+	/* check that size of memory partition is correct */
+	zassert_true(part1.size == MEM_REGION_ALLOC, "Size of memory partition"
+			" determined not correct according to its content");
+	/* check base address of memory partition determined at build time */
+	zassert_true(part1.start, "Base address of memory partition"
+			" not determined at build time");
+
+	k_mem_domain_init(&domain1, ARRAY_SIZE(app1_parts), app1_parts);
+
+	/* That line below is a replacament for the obsolete API call
+	 * k_mem_domain_remove_thread(k_current_get())
+	 * Test possibility to remove thread from its domain memory assignment,
+	 * so the current thread assigned to the domain1 will be removed
+	 */
+	k_mem_domain_add_thread(&domain0, k_current_get());
+
+	usr_tid0 = k_thread_create(&user_thread0, user_thread0_stack,
+					K_THREAD_STACK_SIZEOF(
+						user_thread0_stack),
+					user_handler_func,
+					NULL, NULL, NULL,
+					PRIORITY_MD,
+					K_USER, K_NO_WAIT);
+
+	/* Add user thread to the memory domain, and try to write to its
+	 * partition. That will generate fatal error, because user thread not
+	 * allowed to write*/
+	k_mem_domain_add_thread(&domain1, usr_tid0);
+}
+
+/**
+ * @brief Test partitions sized per the constraints of the MPU hardware
+ *
+ * @details
+ * - Test that system automatically determine memory partition size according
+ *   to the constraints of the platform's MPU hardware.
+ * - Different platforms like x86, ARM and ARC have different MPU hardware for
+ *   memory management.
+ * - That test checks that MPU hardware works as expected and gives for the
+ *   memory partition the most suitable and possible size.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_mem_part_auto_determ_size_per_mpu(void)
+{
+	zassert_true(part_arch.size == MEM_REGION_ALLOC, NULL);
+}
+
+void child_thr_handler(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+}
+
+void parent_thr_handler(void *p1, void *p2, void *p3)
+{
+	k_tid_t child_tid = k_thread_create(&child_thr_md, child_thr_stack_md,
+					K_THREAD_STACK_SIZEOF(child_thr_stack_md),
+					child_thr_handler,
+					NULL, NULL, NULL,
+					PRIORITY_MD, 0, K_NO_WAIT);
+	struct k_thread *thread = child_tid;
+
+	zassert_true(thread->mem_domain_info.mem_domain == &domain4, NULL);
+	k_sem_give(&sync_sem_md);
+}
+
+/**
+ * @brief Test memory partition is inherited by the child thread
+ *
+ * @details
+ * - Define memory partition and add it to the parent thread.
+ * - Parent thread creates a child thread. That child thread should be already
+ *   added to the parent's memory domain too.
+ * - It will be checked by using thread->mem_domain_info.mem_domain
+ * - If that child thread structure is equal to the current
+ *   memory domain address, then pass the test. It means child thread inherited
+ *   the memory domain assignment of their parent.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_mem_add_thread(), k_mem_remove_thread()
+ */
+void test_mem_part_inherit_by_child_thr(void)
+{
+	k_sem_reset(&sync_sem_md);
+	k_mem_domain_init(&domain4, 0, NULL);
+	k_mem_domain_add_partition(&domain4, &part0);
+	/* that line below is a replacament for
+	 * k_mem_domain_remove_thread(k_current_get())
+	 */
+	k_mem_domain_add_thread(&domain0, k_current_get());
+
+	k_tid_t parent_tid = k_thread_create(&parent_thr_md, parent_thr_stack_md,
+					K_THREAD_STACK_SIZEOF(parent_thr_stack_md),
+					parent_thr_handler,
+					NULL, NULL, NULL,
+					PRIORITY_MD, 0, K_NO_WAIT);
+	k_mem_domain_add_thread(&domain4, parent_tid);
+	k_sem_take(&sync_sem_md, K_FOREVER);
+}
+
+/**
+ * @brief Test system provide means to obtain names of the data and BSS sections
+ *
+ * @details
+ * - Define memory partition and define system memory pool using macros
+ *   SYS_MEM_POOL_DEFINE
+ * - Section name of the destination binary section for pool data will be
+ *   obtained at build time by macros K_APP_DMEM_SECTION() which obtaines
+ *   a section name.
+ * - Then to check that system memory pool initialized correctly by allocating
+ *   a block from it and check that it is not NULL.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see K_APP_DMEM_SECTION()
+ */
+void test_macros_obtain_names_data_bss(void)
+{
+	sys_mem_pool_init(&data_pool);
+	void *block;
+
+	block = sys_mem_pool_alloc(&data_pool, BLK_SIZE_MAX_MD - DESC_SIZE);
+	zassert_not_null(block, NULL);
+}
+
+/**
+ * @brief Test assigning global data and BSS variables to memory partitions
+ *
+ * @details Test that system supports application assigning global data and BSS
+ * variables using macros K_APP_BMEM() and K_APP_DMEM
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_mem_part_assign_bss_vars_zero(void)
+{
+	uint32_t read_data;
+	/* The global variable part2_var will be inside the bounds of part2
+	 * and be initialized with 1356 at boot.
+	 */
+	read_data = part2_var;
+	zassert_true(read_data == 1356, NULL);
+
+	/* The global variable part2_zeroed_var will be inside the bounds of
+	 * part2 and must be zeroed at boot size K_APP_BMEM() was used,
+	 * indicating a BSS variable.
+	 */
+	read_data = part2_zeroed_var;
+	zassert_true(read_data == 0, NULL);
+
+	/* The global variable part2_var will be inside the bounds of
+	 * part2 and must be zeroed at boot size K_APP_BMEM() was used,
+	 * indicating a BSS variable.
+	 */
+	read_data = part2_bss_var;
+	zassert_true(read_data == 0, NULL);
 }
