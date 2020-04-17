@@ -127,10 +127,10 @@ struct uarte_nrfx_config {
 };
 
 struct uarte_init_config {
-	u32_t  pseltxd; /* TXD pin number */
-	u32_t  pselrxd; /* RXD pin number */
-	u32_t  pselcts; /* CTS pin number */
-	u32_t  pselrts; /* RTS pin number */
+	u32_t  pseltxd; /* PSEL.TXD register value */
+	u32_t  pselrxd; /* PSEL.RXD register value */
+	u32_t  pselcts; /* PSEL.CTS register value */
+	u32_t  pselrts; /* PSEL.RTS register value */
 };
 
 static inline struct uarte_nrfx_data *get_dev_data(struct device *dev)
@@ -1436,6 +1436,25 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 }
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
+#define UARTE(idx)			DT_NODELABEL(uart##idx)
+#define UARTE_HAS_PROP(idx, prop)	DT_NODE_HAS_PROP(UARTE(idx), prop)
+#define UARTE_PROP(idx, prop)		DT_PROP(UARTE(idx), prop)
+
+#define UARTE_PSEL(idx, pin_prop)					       \
+	COND_CODE_1(UARTE_HAS_PROP(idx, pin_prop),			       \
+		    (UARTE_PROP(idx, pin_prop)),			       \
+		    (NRF_UARTE_PSEL_DISCONNECTED))
+
+#define UARTE_RTS_CTS_PINS_SET(idx)					       \
+	(UARTE_HAS_PROP(idx, rts_pin) && UARTE_HAS_PROP(idx, cts_pin))
+
+#define UARTE_IRQ_CONFIGURE(idx, isr_handler)				       \
+	do {								       \
+		IRQ_CONNECT(DT_IRQN(UARTE(idx)), DT_IRQ(UARTE(idx), priority), \
+			    isr_handler, DEVICE_GET(uart_nrfx_uarte##idx), 0); \
+		irq_enable(DT_IRQN(UARTE(idx)));			       \
+	} while (0)
+
 #define UART_NRF_UARTE_DEVICE(idx)					       \
 	DEVICE_DECLARE(uart_nrfx_uarte##idx);				       \
 	UARTE_INT_DRIVEN(idx);						       \
@@ -1448,9 +1467,8 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			    (.int_driven = &uarte##idx##_int_driven,))	       \
 	};								       \
 	static const struct uarte_nrfx_config uarte_##idx##z_config = {	       \
-		.uarte_regs = (NRF_UARTE_Type *)			       \
-			DT_NORDIC_NRF_UARTE_UART_##idx##_BASE_ADDRESS,	       \
-		.rts_cts_pins_set = IS_ENABLED(UARTE_##idx##_CONFIG_RTS_CTS),  \
+		.uarte_regs = (NRF_UARTE_Type *)DT_REG_ADDR(UARTE(idx)),       \
+		.rts_cts_pins_set = UARTE_RTS_CTS_PINS_SET(idx),	       \
 		.gpio_mgmt = IS_ENABLED(CONFIG_UART_##idx##_GPIO_MANAGEMENT),  \
 		IF_ENABLED(CONFIG_UART_##idx##_NRF_HW_ASYNC,		       \
 			(.timer = NRFX_TIMER_INSTANCE(			       \
@@ -1459,33 +1477,22 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 	static int uarte_##idx##_init(struct device *dev)		       \
 	{								       \
 		const struct uarte_init_config init_config = {		       \
-			.pseltxd = DT_NORDIC_NRF_UARTE_UART_##idx##_TX_PIN,    \
-			.pselrxd = DT_NORDIC_NRF_UARTE_UART_##idx##_RX_PIN,    \
-			UARTE_NRF_RTS_CTS_PINS(idx),			       \
+			.pseltxd = UARTE_PROP(idx, tx_pin),  /* must be set */ \
+			.pselrxd = UARTE_PSEL(idx, rx_pin),  /* optional */    \
+			.pselcts = UARTE_PSEL(idx, cts_pin), /* optional */    \
+			.pselrts = UARTE_PSEL(idx, rts_pin), /* optional */    \
 		};							       \
 		IF_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN,	       \
-			(IRQ_CONNECT(					       \
-				NRFX_IRQ_NUMBER_GET(NRF_UARTE##idx),	       \
-				DT_NORDIC_NRF_UARTE_UART_##idx##_IRQ_0_PRIORITY, \
-				uarte_nrfx_isr_int,			       \
-				DEVICE_GET(uart_nrfx_uarte##idx),	       \
-				0);					       \
-			irq_enable(DT_NORDIC_NRF_UARTE_UART_##idx##_IRQ_0);))  \
+			   (UARTE_IRQ_CONFIGURE(idx, uarte_nrfx_isr_int);))    \
 		IF_ENABLED(CONFIG_UART_##idx##_ASYNC,			       \
-			(IRQ_CONNECT(					       \
-				NRFX_IRQ_NUMBER_GET(NRF_UARTE##idx),	       \
-				DT_NORDIC_NRF_UARTE_UART_##idx##_IRQ_0_PRIORITY, \
-				uarte_nrfx_isr_async,			       \
-				DEVICE_GET(uart_nrfx_uarte##idx),	       \
-				0);					       \
-			irq_enable(DT_NORDIC_NRF_UARTE_UART_##idx##_IRQ_0);))  \
+			   (UARTE_IRQ_CONFIGURE(idx, uarte_nrfx_isr_async);))  \
 		return uarte_instance_init(				       \
 			dev,						       \
 			&init_config,					       \
 			IS_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN));     \
 	}								       \
 	DEVICE_DEFINE(uart_nrfx_uarte##idx,				       \
-		      DT_NORDIC_NRF_UARTE_UART_##idx##_LABEL,		       \
+		      DT_LABEL(UARTE(idx)),				       \
 		      uarte_##idx##_init,				       \
 		      uarte_nrfx_pm_control,				       \
 		      &uarte_##idx##_data,				       \
@@ -1496,7 +1503,7 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 
 #define UARTE_CONFIG(idx)						       \
 	.uart_config = {						       \
-		.baudrate = DT_NORDIC_NRF_UARTE_UART_##idx##_CURRENT_SPEED,    \
+		.baudrate = UARTE_PROP(idx, current_speed),		       \
 		.data_bits = UART_CFG_DATA_BITS_8,			       \
 		.stop_bits = UART_CFG_STOP_BITS_1,			       \
 		.parity = IS_ENABLED(CONFIG_UART_##idx##_NRF_PARITY_BIT)       \
@@ -1506,14 +1513,6 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			     ? UART_CFG_FLOW_CTRL_RTS_CTS		       \
 			     : UART_CFG_FLOW_CTRL_NONE,			       \
 	}
-
-#define UARTE_NRF_RTS_CTS_PINS(idx)					       \
-	.pselcts = COND_CODE_1(UARTE_##idx##_CONFIG_RTS_CTS,		       \
-			       (DT_NORDIC_NRF_UARTE_UART_##idx##_CTS_PIN),     \
-			       (NRF_UARTE_PSEL_DISCONNECTED)),		       \
-	.pselrts = COND_CODE_1(UARTE_##idx##_CONFIG_RTS_CTS,		       \
-			       (DT_NORDIC_NRF_UARTE_UART_##idx##_RTS_PIN),     \
-			       (NRF_UARTE_PSEL_DISCONNECTED))
 
 #define UARTE_ASYNC(idx)						       \
 	IF_ENABLED(CONFIG_UART_##idx##_ASYNC,				       \
@@ -1534,49 +1533,17 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			};))
 
 #ifdef CONFIG_UART_0_NRF_UARTE
-	#if defined(DT_NORDIC_NRF_UARTE_UART_0_RTS_PIN) && \
-	    defined(DT_NORDIC_NRF_UARTE_UART_0_CTS_PIN)
-		#define UARTE_0_CONFIG_RTS_CTS 1
-	#endif
-	#if !defined(DT_NORDIC_NRF_UARTE_UART_0_RX_PIN)
-	#define DT_NORDIC_NRF_UARTE_UART_0_RX_PIN NRF_UARTE_PSEL_DISCONNECTED
-	#endif
-
-	UART_NRF_UARTE_DEVICE(0);
-#endif /* CONFIG_UART_0_NRF_UARTE */
+UART_NRF_UARTE_DEVICE(0);
+#endif
 
 #ifdef CONFIG_UART_1_NRF_UARTE
-	#if defined(DT_NORDIC_NRF_UARTE_UART_1_RTS_PIN) && \
-	    defined(DT_NORDIC_NRF_UARTE_UART_1_CTS_PIN)
-		#define UARTE_1_CONFIG_RTS_CTS 1
-	#endif
-	#if !defined(DT_NORDIC_NRF_UARTE_UART_1_RX_PIN)
-	#define DT_NORDIC_NRF_UARTE_UART_1_RX_PIN NRF_UARTE_PSEL_DISCONNECTED
-	#endif
-
-	UART_NRF_UARTE_DEVICE(1);
-#endif /* CONFIG_UART_1_NRF_UARTE */
+UART_NRF_UARTE_DEVICE(1);
+#endif
 
 #ifdef CONFIG_UART_2_NRF_UARTE
-	#if defined(DT_NORDIC_NRF_UARTE_UART_2_RTS_PIN) && \
-	    defined(DT_NORDIC_NRF_UARTE_UART_2_CTS_PIN)
-		#define UARTE_2_CONFIG_RTS_CTS 1
-	#endif
-	#if !defined(DT_NORDIC_NRF_UARTE_UART_2_RX_PIN)
-	#define DT_NORDIC_NRF_UARTE_UART_2_RX_PIN NRF_UARTE_PSEL_DISCONNECTED
-	#endif
-
-	UART_NRF_UARTE_DEVICE(2);
-#endif /* CONFIG_UART_2_NRF_UARTE */
+UART_NRF_UARTE_DEVICE(2);
+#endif
 
 #ifdef CONFIG_UART_3_NRF_UARTE
-	#if defined(DT_NORDIC_NRF_UARTE_UART_3_RTS_PIN) && \
-	    defined(DT_NORDIC_NRF_UARTE_UART_3_CTS_PIN)
-		#define UARTE_3_CONFIG_RTS_CTS 1
-	#endif
-	#if !defined(DT_NORDIC_NRF_UARTE_UART_3_RX_PIN)
-	#define DT_NORDIC_NRF_UARTE_UART_3_RX_PIN NRF_UARTE_PSEL_DISCONNECTED
-	#endif
-
-	UART_NRF_UARTE_DEVICE(3);
-#endif /* CONFIG_UART_3_NRF_UARTE */
+UART_NRF_UARTE_DEVICE(3);
+#endif
