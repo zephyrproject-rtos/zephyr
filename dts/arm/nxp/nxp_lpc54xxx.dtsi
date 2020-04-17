@@ -7,6 +7,10 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 
+#define LPC_AHB_CLK_CTRL0 0
+#define LPC_AHB_CLK_CTRL1 1
+#define LPC_AHB_CLK_CTRL2 2
+
 / {
 	aliases{
 		gpio-0 = &gpio0;
@@ -38,11 +42,13 @@
 		sram1:memory@20010000 {
 			compatible = "mmio-sram";
 			reg = <0x20010000 0x10000>;
+			clocks = <&syscon LPC_AHB_CLK_CTRL0 3>;
 		};
 
 		sram2:memory@20020000 {
 			compatible = "mmio-sram";
 			reg = <0x20020000 0x8000>;
+			clocks = <&syscon LPC_AHB_CLK_CTRL0 4>;
 		};
 
 		sramx:memory@40000000{
@@ -55,6 +61,14 @@
 			reg = <0 0x40000>;
 		};
 
+		syscon: syscon@40000000 {
+			compatible = "nxp,lpc-syscon";
+			reg = <0x40000000 0x1000>;
+			label = "SYSCON";
+
+			#clock-cells = <2>;
+		};
+
 		gpio0: gpio@0 {
 			compatible = "nxp,lpc-gpio";
 			reg = <0x4008c000 0x2488>;
@@ -62,6 +76,7 @@
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
+			clocks = <&syscon LPC_AHB_CLK_CTRL0 14>;
 		};
 
 		gpio1: gpio@1 {
@@ -71,6 +86,7 @@
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
+			clocks = <&syscon LPC_AHB_CLK_CTRL0 15>;
 		};
 
 		mailbox0:mailbox@4008b000 {
@@ -79,6 +95,7 @@
 			interrupts = <31 0>;
 			label = "MAILBOX_0";
 			status = "disabled";
+			clocks = <&syscon LPC_AHB_CLK_CTRL0 26>;
 		};
 
 		flexcomm0: flexcomm@40086000 {
@@ -87,6 +104,7 @@
 			interrupts = <14 0>;
 			label = "FLEXCOMM_0";
 			status = "disabled";
+			clocks = <&syscon LPC_AHB_CLK_CTRL1 11>;
 		};
 
 		flexcomm1: flexcomm@40087000 {
@@ -95,6 +113,7 @@
 			interrupts = <15 0>;
 			label = "FLEXCOMM_1";
 			status = "disabled";
+			clocks = <&syscon LPC_AHB_CLK_CTRL1 12>;
 		};
 
 		flexcomm2: flexcomm@40088000 {
@@ -103,6 +122,7 @@
 			interrupts = <16 0>;
 			label = "FLEXCOMM_2";
 			status = "disabled";
+			clocks = <&syscon LPC_AHB_CLK_CTRL1 13>;
 		};
 
 		flexcomm3: flexcomm@40089000 {
@@ -111,6 +131,7 @@
 			interrupts = <17 0>;
 			label = "FLEXCOMM_3";
 			status = "disabled";
+			clocks = <&syscon LPC_AHB_CLK_CTRL1 14>;
 		};
 
 		flexcomm4: flexcomm@4008a000 {
@@ -119,6 +140,7 @@
 			interrupts = <18 0>;
 			label = "FLEXCOMM_4";
 			status = "disabled";
+			clocks = <&syscon LPC_AHB_CLK_CTRL1 15>;
 		};
 
 		flexcomm5: flexcomm@40096000 {
@@ -127,6 +149,7 @@
 			interrupts = <19 0>;
 			label = "FLEXCOMM_5";
 			status = "disabled";
+			clocks = <&syscon LPC_AHB_CLK_CTRL1 16>;
 		};
 
 		flexcomm6: flexcomm@40097000 {
@@ -135,6 +158,7 @@
 			interrupts = <20 0>;
 			label = "FLEXCOMM_6";
 			status = "disabled";
+			clocks = <&syscon LPC_AHB_CLK_CTRL1 17>;
 		};
 
 		flexcomm7: flexcomm@40098000 {
@@ -143,6 +167,7 @@
 			interrupts = <21 0>;
 			label = "FLEXCOMM_7";
 			status = "disabled";
+			clocks = <&syscon LPC_AHB_CLK_CTRL1 18>;
 		};
 	};
 };
