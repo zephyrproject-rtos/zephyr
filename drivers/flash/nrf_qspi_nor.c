@@ -26,6 +26,10 @@
 /* instance 0 flash size in bytes */
 #define INST_0_BYTES (DT_INST_PROP(0, size) / 8)
 
+/* for accessing devicetree properties of the bus node */
+#define QSPI_NODE DT_BUS(DT_DRV_INST(0))
+#define QSPI_PROP_AT(prop, idx) DT_PROP_BY_IDX(QSPI_NODE, prop, idx)
+
 LOG_MODULE_REGISTER(qspi_nor, CONFIG_FLASH_LOG_LEVEL);
 
 /**
@@ -369,12 +373,12 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 	initstruct->xip_offset = 0;
 
 	/* Configure pins */
-	initstruct->pins.sck_pin = DT_NORDIC_NRF_QSPI_QSPI_0_SCK_PIN;
-	initstruct->pins.csn_pin = DT_NORDIC_NRF_QSPI_QSPI_0_CSN_PINS_0;
-	initstruct->pins.io0_pin = DT_NORDIC_NRF_QSPI_QSPI_0_IO_PINS_0;
-	initstruct->pins.io1_pin = DT_NORDIC_NRF_QSPI_QSPI_0_IO_PINS_1;
-	initstruct->pins.io2_pin = DT_NORDIC_NRF_QSPI_QSPI_0_IO_PINS_2;
-	initstruct->pins.io3_pin = DT_NORDIC_NRF_QSPI_QSPI_0_IO_PINS_3;
+	initstruct->pins.sck_pin = DT_PROP(QSPI_NODE, sck_pin);
+	initstruct->pins.csn_pin = QSPI_PROP_AT(csn_pins, 0);
+	initstruct->pins.io0_pin = QSPI_PROP_AT(io_pins, 0);
+	initstruct->pins.io1_pin = QSPI_PROP_AT(io_pins, 1);
+	initstruct->pins.io2_pin = QSPI_PROP_AT(io_pins, 2);
+	initstruct->pins.io3_pin = QSPI_PROP_AT(io_pins, 3);
 
 	/* Configure Protocol interface */
 #if DT_INST_NODE_HAS_PROP(0, readoc_enum)
@@ -642,8 +646,7 @@ static int qspi_nor_configure(struct device *dev)
  */
 static int qspi_nor_init(struct device *dev)
 {
-	IRQ_CONNECT(DT_NORDIC_NRF_QSPI_QSPI_0_IRQ_0,
-		    DT_NORDIC_NRF_QSPI_QSPI_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_IRQN(QSPI_NODE), DT_IRQ(QSPI_NODE, priority),
 		    nrfx_isr, nrfx_qspi_irq_handler, 0);
 	return qspi_nor_configure(dev);
 }
