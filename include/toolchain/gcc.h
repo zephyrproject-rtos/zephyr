@@ -415,7 +415,7 @@ do {                                                                    \
 
 #define GEN_ABSOLUTE_SYM(name, value)               \
 	__asm__(".globl\t" #name "\n\t.equ\t" #name \
-		",%p0"                              \
+		",%c0"                              \
 		"\n\t.type\t" #name ",@object" :  : "n"(value))
 
 #elif defined(CONFIG_ARC) || defined(CONFIG_ARM64)
