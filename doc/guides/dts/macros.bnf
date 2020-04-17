@@ -43,6 +43,9 @@ node-macro =/ %s"DT_N" path-id %s"_IRQ_NAME_" dt-name
 node-macro =/ %s"DT_N" path-id %s"_COMPAT_MATCHES_" dt-name
 ; The node identifier for the node's parent in the devicetree.
 node-macro =/ %s"DT_N" path-id %s"_PARENT"
+; These are used internally by DT_FOREACH_CHILD, which iterates over
+; each child node.
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD"
 
 ; --------------------------------------------------------------------
 ; property-macro: a macro related to a node property

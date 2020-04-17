@@ -1365,6 +1365,34 @@ static void test_parent(void)
 		     "round trip through node with no compatible");
 }
 
+static void test_child_nodes_list(void)
+{
+	#define TEST_FUNC(child) { DT_PROP(child, val) },
+	#define TEST_MKSTR(a) _TEST_MKSTR(a)
+	#define _TEST_MKSTR(a) #a
+	#define TEST_PARENT DT_PATH(test, test_children)
+	static struct {
+		const char *v;
+	} vals[] = {
+		DT_FOREACH_CHILD(TEST_PARENT, TEST_FUNC)
+	};
+
+	zassert_equal(ARRAY_SIZE(vals), 3,
+		      "Bad number of children");
+
+	zassert_false(strlen(TEST_MKSTR(TEST_PARENT)) == 0,
+		      "TEST_PARENT evaluated to empty string");
+
+	zassert_equal(vals[0].v, "zero", "Child 0 did not match");
+	zassert_equal(vals[1].v, "one", "Child 1 did not match");
+	zassert_equal(vals[2].v, "two", "Child 2 did not match");
+
+	#undef TEST_MKSTR
+	#undef _TEST_MKSTR
+	#undef TEST_PARENT
+	#undef TEST_FUNC
+}
+
 void test_main(void)
 {
 	ztest_test_suite(devicetree_api,
@@ -1392,7 +1420,8 @@ void test_main(void)
 			 ztest_unit_test(test_chosen),
 			 ztest_unit_test(test_enums),
 			 ztest_unit_test(test_clocks),
-			 ztest_unit_test(test_parent)
+			 ztest_unit_test(test_parent),
+			 ztest_unit_test(test_child_nodes_list)
 		);
 	ztest_run_test_suite(devicetree_api);
 }

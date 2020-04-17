@@ -311,5 +311,20 @@
 			label = "TEST_PWM_CTRL_2";
 			status = "okay";
 		};
+
+		test_children: test-children {
+			test_child_alpha: child-alpha {
+				compatible = "vnd,enum-holder";
+				val = "zero";
+			};
+			test_child_beta: child-beta {
+				compatible = "vnd,enum-holder";
+				val = "one";
+			};
+			test_child_charlie: child-charlie {
+				compatible = "vnd,enum-holder";
+				val = "two";
+			};
+		};
 	};
 };

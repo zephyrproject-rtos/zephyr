@@ -48,14 +48,20 @@ def main():
     with open(args.header_out, "w", encoding="utf-8") as header_file:
         write_top_comment(edt)
 
+        # populate all z_path_id first so any children references will
+        # work correctly.
         for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
             node.z_path_id = node_z_path_id(node)
+
+        for node in sorted(edt.nodes, key=lambda node: node.dep_ordinal):
             write_node_comment(node)
 
             if node.parent is not None:
                 out_comment(f"Node parent ({node.parent.path}) identifier:")
                 out_dt_define(f"{node.z_path_id}_PARENT",
                               f"DT_{node.parent.z_path_id}")
+
+            write_child_functions(node)
 
             if not node.enabled:
                 out_comment("No node macros: node is disabled")
@@ -358,6 +364,23 @@ def write_compatibles(node):
     for compat in node.compats:
         out_dt_define(
             f"{node.z_path_id}_COMPAT_MATCHES_{str2ident(compat)}", 1)
+
+
+def write_child_functions(node):
+    # Writes macro that are helpers that will call a macro/function
+    # for each child node.
+
+    if node.children:
+        functions = ''
+        # For each subnode with non-empty list of labels add the
+        # first (non-alias) label to the string of ', ' separated
+        # list of labels.
+        for subnode in node.children.values():
+            functions = functions + f"fn(DT_{subnode.z_path_id}) "
+
+        if functions:
+            macro = f"{node.z_path_id}_FOREACH_CHILD(fn)"
+            out_dt_define(macro, functions)
 
 
 def write_vanilla_props(node):
