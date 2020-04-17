@@ -568,9 +568,26 @@ int http_client_req(int sock, struct http_request *req,
 		total_sent += ret;
 	}
 
-	if (req->payload_cb) {
-		ret = http_send_data(sock, send_buf, send_buf_max_len,
+	if (req->payload || req->payload_cb) {
+		if (req->payload_len) {
+			char content_len_str[HTTP_CONTENT_LEN_SIZE];
+
+			ret = snprintk(content_len_str, HTTP_CONTENT_LEN_SIZE,
+				       "%zd", req->payload_len);
+			if (ret <= 0 || ret >= HTTP_CONTENT_LEN_SIZE) {
+				ret = -ENOMEM;
+				goto out;
+			}
+
+			ret = http_send_data(sock, send_buf, send_buf_max_len,
+					     &send_buf_pos, "Content-Length", ": ",
+					     content_len_str, HTTP_CRLF,
+					     HTTP_CRLF, NULL);
+		} else {
+			ret = http_send_data(sock, send_buf, send_buf_max_len,
 				     &send_buf_pos, HTTP_CRLF, NULL);
+		}
+
 		if (ret < 0) {
 			goto out;
 		}
@@ -585,39 +602,29 @@ int http_client_req(int sock, struct http_request *req,
 		send_buf_pos = 0;
 		total_sent += ret;
 
-		ret = req->payload_cb(sock, req, user_data);
-		if (ret < 0) {
-			goto out;
+		if (req->payload_cb) {
+			ret = req->payload_cb(sock, req, user_data);
+			if (ret < 0) {
+				goto out;
+			}
+
+			total_sent += ret;
+		} else {
+			u32_t length;
+
+			if (req->payload_len == 0) {
+				length = strlen(req->payload);
+			} else {
+				length = req->payload_len;
+			}
+
+			ret = sendall(sock, req->payload, length);
+			if (ret < 0) {
+				goto out;
+			}
+
+			total_sent += length;
 		}
-
-		total_sent += ret;
-	} else if (req->payload) {
-		char content_len_str[HTTP_CONTENT_LEN_SIZE];
-
-		ret = snprintk(content_len_str, HTTP_CONTENT_LEN_SIZE,
-			       "%zd", req->payload_len);
-		if (ret <= 0 || ret >= HTTP_CONTENT_LEN_SIZE) {
-			ret = -ENOMEM;
-			goto out;
-		}
-
-		ret = http_send_data(sock, send_buf, send_buf_max_len,
-				     &send_buf_pos, "Content-Length", ": ",
-				     content_len_str, HTTP_CRLF,
-				     HTTP_CRLF, NULL);
-		if (ret < 0) {
-			goto out;
-		}
-
-		total_sent += ret;
-
-		ret = http_send_data(sock, send_buf, send_buf_max_len,
-				     &send_buf_pos, req->payload, NULL);
-		if (ret < 0) {
-			goto out;
-		}
-
-		total_sent += ret;
 	} else {
 		ret = http_send_data(sock, send_buf, send_buf_max_len,
 				     &send_buf_pos, HTTP_CRLF, NULL);
