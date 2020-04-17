@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
+#include "feather_connector.dtsi"
 
 / {
 	model = "Adafruit Feather nRF52840 Express";
