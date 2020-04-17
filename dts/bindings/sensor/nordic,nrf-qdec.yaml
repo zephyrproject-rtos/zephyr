@@ -1,7 +1,7 @@
 # Copyright (c) 2018, Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nordic nRF QDEC node
+description: Nordic nRF quadrature decoder (QDEC) node
 
 compatible: "nordic,nrf-qdec"
 
