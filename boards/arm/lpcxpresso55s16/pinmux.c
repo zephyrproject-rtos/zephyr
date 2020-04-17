@@ -13,14 +13,16 @@ static int lpcxpresso_55s16_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#ifdef CONFIG_PINMUX_MCUX_LPC_PORT0
-	__unused const struct device *port0 =
-		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT0_NAME);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pio0), okay)
+	const struct device *port0 = DEVICE_DT_GET(DT_NODELABEL(pio0));
+
+	__ASSERT_NO_MSG(device_is_ready(port0));
 #endif
 
-#ifdef CONFIG_PINMUX_MCUX_LPC_PORT1
-	__unused const struct device *port1 =
-		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT1_NAME);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pio1), okay)
+	const struct device *port1 = DEVICE_DT_GET(DT_NODELABEL(pio1));
+
+	__ASSERT_NO_MSG(device_is_ready(port1));
 #endif
 
 #if DT_PHA_HAS_CELL(DT_ALIAS(sw0), gpios, pin)

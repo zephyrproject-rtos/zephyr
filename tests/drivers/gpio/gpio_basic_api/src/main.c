@@ -98,8 +98,7 @@ static void board_setup(void)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #elif defined(CONFIG_SOC_FAMILY_LPC)
 	/* Assumes ARDUINO pins are mapped on PORT0 on all boards*/
-	const struct device *port0 =
-		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT0_NAME);
+	const struct device *port0 = DEVICE_DT_GET(DT_NODELABEL(pio0));
 	const uint32_t pin_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_INV_DI |

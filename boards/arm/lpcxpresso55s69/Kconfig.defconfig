@@ -9,16 +9,6 @@ config BOARD
 	default "lpcxpresso55S69_cpu0" if BOARD_LPCXPRESSO55S69_CPU0
 	default "lpcxpresso55S69_cpu1" if BOARD_LPCXPRESSO55S69_CPU1
 
-if PINMUX_MCUX_LPC
-
-config PINMUX_MCUX_LPC_PORT0
-	default y
-
-config PINMUX_MCUX_LPC_PORT1
-	default y
-
-endif # PINMUX_MCUX_LPC
-
 if GPIO_MCUX_LPC
 
 config GPIO_MCUX_LPC_PORT0
