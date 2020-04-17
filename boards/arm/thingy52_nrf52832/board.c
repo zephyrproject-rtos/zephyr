@@ -48,7 +48,7 @@ static int pwr_ctrl_init(struct device *dev)
 #endif
 
 static const struct pwr_ctrl_cfg vdd_pwr_ctrl_cfg = {
-	.port = DT_GPIO_P0_DEV_NAME,
+	.port = DT_LABEL(DT_NODELABEL(gpio0)),
 	.pin = VDD_PWR_CTRL_GPIO_PIN,
 };
 
