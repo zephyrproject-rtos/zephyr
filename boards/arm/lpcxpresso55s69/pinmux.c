@@ -15,14 +15,16 @@ static int lpcxpresso_55s69_pinmux_init(const struct device *dev)
 
 #ifdef CONFIG_BOARD_LPCXPRESSO55S69_CPU0
 /* Only CPU0 configures GPIO port inputs. */
-#ifdef CONFIG_PINMUX_MCUX_LPC_PORT0
-	const struct device *port0 =
-		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT0_NAME);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pio0), okay)
+	const struct device *port0 = DEVICE_DT_GET(DT_NODELABEL(pio0));
+
+	__ASSERT_NO_MSG(device_is_ready(port0));
 #endif
 
-#ifdef CONFIG_PINMUX_MCUX_LPC_PORT1
-	const struct device *port1 =
-		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT1_NAME);
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(pio1), okay)
+	const struct device *port1 = DEVICE_DT_GET(DT_NODELABEL(pio1));
+
+	__ASSERT_NO_MSG(device_is_ready(port1));
 #endif
 #endif
 
