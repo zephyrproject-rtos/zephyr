@@ -85,6 +85,13 @@
 
 &enet {
 	status = "okay";
+
+	fixed-link {
+		compatible = "ethernet,fixed-link";
+
+		speed = <100>;
+		full-duplex;
+	};
 };
 
 &spi1 {
