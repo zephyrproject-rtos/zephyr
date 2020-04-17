@@ -28,6 +28,7 @@
  * true if the operation overflowed.
  */
 /**@{*/
+static bool u16_add_overflow(u16_t a, u16_t b, u16_t *result);
 static bool u32_add_overflow(u32_t a, u32_t b, u32_t *result);
 static bool u64_add_overflow(u64_t a, u64_t b, u64_t *result);
 static bool size_add_overflow(size_t a, size_t b, size_t *result);
@@ -40,6 +41,7 @@ static bool size_add_overflow(size_t a, size_t b, size_t *result);
  * true if the operation overflowed.
  */
 /**@{*/
+static bool u16_mul_overflow(u16_t a, u16_t b, u16_t *result);
 static bool u32_mul_overflow(u32_t a, u32_t b, u32_t *result);
 static bool u64_mul_overflow(u64_t a, u64_t b, u64_t *result);
 static bool size_mul_overflow(size_t a, size_t b, size_t *result);
