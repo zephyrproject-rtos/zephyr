@@ -12,6 +12,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_nrfx_twi, CONFIG_I2C_LOG_LEVEL);
 
+#define I2C_TRANSFER_TIMEOUT_MSEC		K_MSEC(100)
+
 struct i2c_nrfx_twi_data {
 	struct k_sem transfer_sync;
 	struct k_sem completion_sync;
@@ -44,6 +46,10 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 	int ret = 0;
 
 	k_sem_take(&(get_dev_data(dev)->transfer_sync), K_FOREVER);
+
+	/* Dummy take on completion_sync sem to be sure that it is empty */
+	k_sem_take(&(get_dev_data(dev)->completion_sync), K_NO_WAIT);
+
 	nrfx_twi_enable(&get_dev_config(dev)->twi);
 
 	for (size_t i = 0; i < num_msgs; i++) {
@@ -103,7 +109,24 @@ static int i2c_nrfx_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 			}
 		}
 
-		k_sem_take(&(get_dev_data(dev)->completion_sync), K_FOREVER);
+		ret = k_sem_take(&(get_dev_data(dev)->completion_sync),
+				 I2C_TRANSFER_TIMEOUT_MSEC);
+		if (ret != 0) {
+			/* Whatever the frequency, completion_sync should have
+			 * been give by the event handler.
+			 *
+			 * If it hasn't it's probably due to an hardware issue
+			 * on the I2C line, for example a short between SDA and
+			 * GND.
+			 *
+			 * Note to fully recover from this issue one should
+			 * reinit nrfx twi.
+			 */
+			LOG_ERR("Error on I2C line occurred for message %d", i);
+			ret = -EIO;
+			break;
+		}
+
 		res = get_dev_data(dev)->res;
 		if (res != NRFX_SUCCESS) {
 			LOG_ERR("Error %d occurred for message %d", res, i);
