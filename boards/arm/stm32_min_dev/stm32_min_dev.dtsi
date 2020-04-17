@@ -75,3 +75,7 @@
 &usb {
 	status = "okay";
 };
+
+&adc1 {
+	status = "okay";
+};
