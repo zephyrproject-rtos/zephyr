@@ -381,7 +381,7 @@
 			label = "USBD";
 		};
 
-		wdt: watchdog@40010000 {
+		wdt: wdt0: watchdog@40010000 {
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x40010000 0x1000>;
 			interrupts = <16 1>;
