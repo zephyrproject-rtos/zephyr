@@ -253,7 +253,7 @@
 			status = "okay";
 		};
 
-		wdt: watchdog@4100b000 {
+		wdt: wdt0: watchdog@4100b000 {
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x4100b000 0x1000>;
 			interrupts = <11 1>;

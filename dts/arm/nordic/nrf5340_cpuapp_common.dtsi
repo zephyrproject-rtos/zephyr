@@ -379,12 +379,20 @@ power: power@5000 {
 	status = "okay";
 };
 
-wdt: watchdog@18000 {
+wdt: wdt0: watchdog@18000 {
 	compatible = "nordic,nrf-watchdog";
 	reg = <0x18000 0x1000>;
 	interrupts = <24 1>;
 	status = "okay";
 	label = "WDT";
+};
+
+wdt1: watchdog@19000 {
+	compatible = "nordic,nrf-watchdog";
+	reg = <0x19000 0x1000>;
+	interrupts = <25 1>;
+	status = "disabled";
+	label = "WDT_1";
 };
 
 timer0: timer@f000 {

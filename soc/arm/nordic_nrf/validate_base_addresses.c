@@ -131,4 +131,6 @@ CHECK_DT_REG(uart3, NRF_UARTE3);
 CHECK_DT_REG(uicr, NRF_UICR);
 CHECK_DT_REG(usbd, NRF_USBD);
 CHECK_DT_REG(vmc, NRF_VMC);
-CHECK_DT_REG(wdt, NRF_WDT0);
+CHECK_DT_REG(wdt, NRF_WDT0);	/* this should be the same node as wdt0 */
+CHECK_DT_REG(wdt0, NRF_WDT0);
+CHECK_DT_REG(wdt1, NRF_WDT1);
