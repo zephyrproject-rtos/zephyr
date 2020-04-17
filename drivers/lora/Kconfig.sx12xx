@@ -5,6 +5,8 @@
 #
 
 DT_COMPAT_SEMTECH_SX1276 := semtech,sx1276
+DT_COMPAT_SEMTECH_SX1261 := semtech,sx1261
+DT_COMPAT_SEMTECH_SX1262 := semtech,sx1262
 
 menuconfig LORA_SX12XX
 	bool "Semtech SX-series driver"
@@ -19,6 +21,8 @@ if LORA_SX12XX
 choice
 	prompt "LoRa Radio chipset"
 	default LORA_SX1276 if $(dt_compat_enabled,$(DT_COMPAT_SEMTECH_SX1276))
+	default LORA_SX126X if $(dt_compat_enabled,$(DT_COMPAT_SEMTECH_SX1261))
+	default LORA_SX126X if $(dt_compat_enabled,$(DT_COMPAT_SEMTECH_SX1262))
 	help
 	  Select the LoRa modem used on your board. The default value
 	  is discovered from the device tree and should be correct for
@@ -29,6 +33,12 @@ config LORA_SX1276
 	select HAS_SEMTECH_SX1276
 	help
 	  Enable LoRa driver for Semtech SX1276.
+
+config LORA_SX126X
+	bool "Semtech SX126x driver"
+	select HAS_SEMTECH_SX126X
+	help
+	  Enable LoRa driver for Semtech SX1261 and SX1262.
 
 endchoice
 
