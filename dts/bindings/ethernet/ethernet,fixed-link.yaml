@@ -1,0 +1,26 @@
+# Copyright (c) 2020, DENX Software Engineering GmbH
+#		      Lukasz Majewski <lukma@denx.de>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ethernet fixed link configuration for PHY communication
+
+compatible: "ethernet,fixed-link"
+
+properties:
+    speed:
+      type: int
+      required: true
+      description: The speed of fixed link
+      enum:
+           - 100
+           - 10
+
+    full-duplex:
+      type: boolean
+      required: false
+      description: The fixed link operates in full duplex mode
+
+    half-duplex:
+      type: boolean
+      required: false
+      description: The fixed link operates in half duplex mode
