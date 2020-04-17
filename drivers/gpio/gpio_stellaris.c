@@ -270,7 +270,7 @@ static const struct gpio_driver_api gpio_stellaris_driver_api = {
 	};										\
 											\
 	DEVICE_AND_API_INIT(gpio_stellaris_port_## n,					\
-			    DT_INST_## n ## _TI_STELLARIS_GPIO_LABEL,			\
+			    DT_INST_LABEL(n),						\
 			    gpio_stellaris_init,					\
 			    &port_## n ##_stellaris_runtime,				\
 			    &gpio_stellaris_port_## n ##_config,			\
@@ -287,30 +287,4 @@ static const struct gpio_driver_api gpio_stellaris_driver_api = {
 		irq_enable(DT_INST_IRQN(n));			\
 	}
 
-#if DT_HAS_DRV_INST(0)
-STELLARIS_GPIO_DEVICE(0)
-#endif
-
-#if DT_HAS_DRV_INST(1)
-STELLARIS_GPIO_DEVICE(1)
-#endif
-
-#if DT_HAS_DRV_INST(2)
-STELLARIS_GPIO_DEVICE(2)
-#endif
-
-#if DT_HAS_DRV_INST(3)
-STELLARIS_GPIO_DEVICE(3)
-#endif
-
-#if DT_HAS_DRV_INST(4)
-STELLARIS_GPIO_DEVICE(4)
-#endif
-
-#if DT_HAS_DRV_INST(5)
-STELLARIS_GPIO_DEVICE(5)
-#endif
-
-#if DT_HAS_DRV_INST(6)
-STELLARIS_GPIO_DEVICE(6)
-#endif
+DT_INST_FOREACH(STELLARIS_GPIO_DEVICE)
