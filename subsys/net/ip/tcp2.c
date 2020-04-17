@@ -1064,7 +1064,7 @@ int net_tcp_connect(struct net_context *context,
 		ip4 = net_if_ipv4_select_src_addr(net_context_get_iface(context),
 						  (struct in_addr *)remote_addr);
 		conn->src->sin.sin_addr = *ip4;
-		conn->dst->sa = *remote_addr;
+		conn->dst->sin.sin_addr = ((struct sockaddr_in *)remote_addr)->sin_addr;
 		break;
 
 	case AF_INET6:
