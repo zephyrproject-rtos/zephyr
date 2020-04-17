@@ -29,6 +29,10 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(uart_stm32);
 
+#define HAS_LPUART_1 (DT_HAS_NODE(DT_NODELABEL(lpuart1)) && \
+		      DT_NODE_HAS_COMPAT(DT_NODELABEL(lpuart1), \
+					 st_stm32_lpuart))
+
 /* convenience defines */
 #define DEV_CFG(dev)							\
 	((const struct uart_stm32_config * const)(dev)->config->config_info)
@@ -56,7 +60,7 @@ static inline void uart_stm32_set_baudrate(struct device *dev, u32_t baud_rate)
 	}
 
 
-#ifdef CONFIG_LPUART_1
+#if HAS_LPUART_1
 	if (IS_LPUART_INSTANCE(UartInstance)) {
 		LL_LPUART_SetBaudRate(UartInstance,
 				      clock_rate,
@@ -65,7 +69,7 @@ static inline void uart_stm32_set_baudrate(struct device *dev, u32_t baud_rate)
 #endif
 				      baud_rate);
 	} else {
-#endif /* CONFIG_LPUART_1 */
+#endif /* HAS_LPUART_1 */
 
 		LL_USART_SetBaudRate(UartInstance,
 				     clock_rate,
@@ -77,9 +81,9 @@ static inline void uart_stm32_set_baudrate(struct device *dev, u32_t baud_rate)
 #endif
 				     baud_rate);
 
-#ifdef CONFIG_LPUART_1
+#if HAS_LPUART_1
 	}
-#endif /* CONFIG_LPUART_1 */
+#endif /* HAS_LPUART_1 */
 }
 
 static inline void uart_stm32_set_parity(struct device *dev, u32_t parity)
@@ -290,7 +294,7 @@ static int uart_stm32_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
-#if defined(LL_USART_STOPBITS_0_5) && defined(CONFIG_LPUART_1)
+#if defined(LL_USART_STOPBITS_0_5) && HAS_LPUART_1
 	if (IS_LPUART_INSTANCE(UartInstance) &&
 	    UART_CFG_STOP_BITS_0_5 == cfg->stop_bits) {
 		return -ENOTSUP;
@@ -301,7 +305,7 @@ static int uart_stm32_configure(struct device *dev,
 	}
 #endif
 
-#if defined(LL_USART_STOPBITS_1_5) && defined(CONFIG_LPUART_1)
+#if defined(LL_USART_STOPBITS_1_5) && HAS_LPUART_1
 	if (IS_LPUART_INSTANCE(UartInstance) &&
 	    UART_CFG_STOP_BITS_1_5 == cfg->stop_bits) {
 		return -ENOTSUP;
