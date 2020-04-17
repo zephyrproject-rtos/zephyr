@@ -14,3 +14,6 @@ supported:
   - ieee802154
   - watchdog
   - counter
+  - feather_serial
+  - feather_i2c
+  - feather_spi
