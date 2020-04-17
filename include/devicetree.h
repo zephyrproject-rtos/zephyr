@@ -271,6 +271,18 @@
 #define DT_CHILD(node_id, child) UTIL_CAT(node_id, DT_S_PREFIX(child))
 
 /**
+ * @brief Invokes given macro for all child nodes of a parent.
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ *
+ * Macro should be defined to take one parameter, which will be a node
+ * identifier for each child node of node_id.
+ */
+#define DT_FOREACH_CHILD(node_id, fn) \
+	DT_CAT(node_id, _FOREACH_CHILD)(fn)
+
+/**
  * @}
  */
 
