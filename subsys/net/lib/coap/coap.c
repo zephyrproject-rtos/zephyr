@@ -464,7 +464,9 @@ static int parse_option(u8_t *data, u16_t offset, u16_t *pos,
 			return -EINVAL;
 		}
 
-		*opt_len += hdr_len;
+		if (__builtin_add_overflow(*opt_len, hdr_len, opt_len)) {
+			return -EINVAL;
+		}
 	}
 
 	if (len > COAP_OPTION_NO_EXT) {
@@ -475,11 +477,15 @@ static int parse_option(u8_t *data, u16_t offset, u16_t *pos,
 			return -EINVAL;
 		}
 
-		*opt_len += hdr_len;
+		if (__builtin_add_overflow(*opt_len, hdr_len, opt_len)) {
+			return -EINVAL;
+		}
 	}
 
-	*opt_delta += delta;
-	*opt_len += len;
+	if (__builtin_add_overflow(*opt_delta, delta, opt_delta) ||
+	    __builtin_add_overflow(*opt_len, len, opt_len)) {
+		return -EINVAL;
+	}
 
 	if (r == 0) {
 		if (len == 0U) {
@@ -514,7 +520,10 @@ static int parse_option(u8_t *data, u16_t offset, u16_t *pos,
 			return -EINVAL;
 		}
 	} else {
-		*pos += len;
+		if (__builtin_add_overflow(*pos, len, pos)) {
+			return -EINVAL;
+		}
+
 		r = max_len - *pos;
 	}
 
