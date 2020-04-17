@@ -32,6 +32,22 @@ config CAN_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
+config CAN_FD_MODE
+	bool
+	help
+	  Enable CAN-FD compatible API
+
+config CAN_DL
+	int "CAN-Frame Data length"
+	default 8 if !CAN_FD_MODE
+	default 64 if CAN_FD_MODE
+	range 8 64
+	help
+	  Defines the data length for CAN frames.
+	  Note that CAN-FD is capable of transmitting up to 64 bytes.
+	  If a frame with a size greater than this option arrives,
+	  it will be discarded.
+
 config CAN_WORKQ_FRAMES_BUF_CNT
 	int "Work queue buffer frame count"
 	default 4

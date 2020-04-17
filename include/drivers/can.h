@@ -34,7 +34,11 @@ extern "C" {
 #define CAN_STD_ID_MASK CAN_MAX_STD_ID
 #define CAN_EXT_ID_MASK (0x1FFFFFFF)
 #define CAN_MAX_DLC    (8)
-#define CAN_MAX_DLEN    8
+#ifdef CONFIG_CAN_DL
+#define CAN_MAX_DLEN   CONFIG_CAN_DL
+#else
+#define CAN_MAX_DLEN   (8)
+#endif
 
 /* CAN_TX_* are the error flags from tx_callback and send.*/
 /** send successfully */
@@ -344,10 +348,15 @@ typedef int (*can_configure_t)(struct device *dev, enum can_mode mode,
 			       struct can_timing *timing,
 			       struct can_timing *timing_data);
 
+#ifdef CONFIG_CAN_FD_MODE
+typedef int (*can_send_t)(struct device *dev, const struct zcan_frame *msg,
+			  bool brs, s32_t timeout,
+			  can_tx_callback_t callback_isr, void *callback_arg);
+#else
 typedef int (*can_send_t)(struct device *dev, const struct zcan_frame *msg,
 			  k_timeout_t timeout, can_tx_callback_t callback_isr,
 			  void *callback_arg);
-
+#endif /* CONFIG_CAN_FD_MODE */
 
 typedef int (*can_attach_msgq_t)(struct device *dev, struct k_msgq *msg_q,
 				 const struct zcan_filter *filter);
@@ -414,6 +423,85 @@ __subsystem struct can_driver_api {
 };
 
 /**
+ * @brief Convert the DLC to the number of bytes
+ *
+ * This function converts a the Data Length Code to the number of bytes.
+ *
+ * @param dlc The Data Length Code
+ *
+ * @retval Number of bytes
+ */
+
+static inline u8_t can_dlc_to_bytes(u8_t dlc)
+{
+	static const u8_t dlc_table[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 12,
+					 16, 20, 24, 32, 48, 64};
+
+	return dlc > 0x0F ? 64 : dlc_table[dlc];
+}
+
+/**
+ * @brief Convert a number of bytes to the DLC
+ *
+ * This function converts a number of bytes to the Data Length Code
+ *
+ * @param num_bytes The number of bytes
+ *
+ * @retval The DLC
+ */
+
+static inline u8_t can_bytes_to_dlc(u8_t num_bytes)
+{
+	return num_bytes <= 8  ? num_bytes :
+	       num_bytes <= 12 ? 9 :
+	       num_bytes <= 16 ? 10 :
+	       num_bytes <= 20 ? 11 :
+	       num_bytes <= 24 ? 12 :
+	       num_bytes <= 32 ? 13 :
+	       num_bytes <= 48 ? 14 :
+	       15;
+}
+
+#ifdef CONFIG_CAN_FD_MODE
+
+/**
+ * @brief Perform data transfer to CAN bus with flexible datarate option.
+ *
+ * This routine provides a generic interface to perform data transfer
+ * to the can bus with options for CAN-FD
+ * *
+ * @param dev          Pointer to the device structure for the driver instance.
+ * @param frame        Frame to transfer.
+ * @param brs          Baudrate Switch. If true, switch to fast br in dataphase.
+ * @param timeout      Waiting for empty tx mailbox timeout in ms or K_FOREVER.
+ * @param callback_isr Is called when message was sent or a transmission error
+ *                     occurred. If NULL, this function is blocking until
+ *                     message is sent. This must be NULL if called from user
+ *                     mode.
+ * @param callback_arg This will be passed whenever the isr is called.
+ *
+ * @retval 0 If successful.
+ * @retval CAN_TX_* on failure.
+ */
+__syscall int can_fd_send(struct device *dev, const struct zcan_frame *frame,
+		       bool brs, s32_t timeout,
+		       can_tx_callback_t callback_isr,
+		       void *callback_arg);
+
+static inline int z_impl_can_fd_send(struct device *dev,
+				     const struct zcan_frame *frame,
+				     bool brs, s32_t timeout,
+				     can_tx_callback_t callback_isr,
+				     void *callback_arg)
+{
+	const struct can_driver_api *api =
+		(const struct can_driver_api *)dev->driver_api;
+
+	return api->send(dev, frame, timeout, brs, callback_isr, callback_arg);
+}
+#endif /* CONFIG_CAN_FD_MODE */
+
+/**
  * @brief Perform data transfer to CAN bus.
  *
  * This routine provides a generic interface to perform data transfer
@@ -431,20 +519,24 @@ __subsystem struct can_driver_api {
  * @retval 0 If successful.
  * @retval CAN_TX_* on failure.
  */
-__syscall int can_send(struct device *dev, const struct zcan_frame *msg,
+__syscall int can_send(struct device *dev, const struct zcan_frame *frame,
 		       k_timeout_t timeout, can_tx_callback_t callback_isr,
 		       void *callback_arg);
 
 static inline int z_impl_can_send(struct device *dev,
-				 const struct zcan_frame *msg,
-				 k_timeout_t timeout,
-				 can_tx_callback_t callback_isr,
+				 const struct zcan_frame *frame,
+				 k_timeout_t timeout, can_tx_callback_t callback_isr,
 				 void *callback_arg)
 {
+#ifdef CONFIG_CAN_FD_MODE
+	return can_fd_send(dev, frame, false, false, timeout, callback_isr,
+			   callback_arg);
+#else
 	const struct can_driver_api *api =
 		(const struct can_driver_api *)dev->driver_api;
 
-	return api->send(dev, msg, timeout, callback_isr, callback_arg);
+	return api->send(dev, frame, timeout, callback_isr, callback_arg);
+#endif
 }
 
 /*
