@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_lpc_spi
+
 #include <errno.h>
 #include <drivers/spi.h>
 #include <fsl_spi.h>
@@ -271,7 +273,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	static void spi_mcux_config_func_##id(struct device *dev);	\
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
 		.base =							\
-		(SPI_Type *)DT_NXP_LPC_SPI_SPI_##id##_BASE_ADDRESS,	\
+		(SPI_Type *)DT_INST_REG_ADDR(id),			\
 		.irq_config_func = spi_mcux_config_func_##id,		\
 	};								\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
@@ -279,7 +281,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##id, ctx),		\
 	};								\
 	DEVICE_AND_API_INIT(spi_mcux_##id,				\
-			    DT_NXP_LPC_SPI_SPI_##id##_LABEL,		\
+			    DT_INST_LABEL(id),				\
 			    &spi_mcux_init,				\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\
@@ -288,45 +290,11 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 			    &spi_mcux_driver_api);			\
 	static void spi_mcux_config_func_##id(struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_NXP_LPC_SPI_SPI_##id##_IRQ_0,		\
-			    DT_NXP_LPC_SPI_SPI_##id##_IRQ_0_PRIORITY,	\
+		IRQ_CONNECT(DT_INST_IRQN(id),				\
+			    DT_INST_IRQ(id, priority),			\
 			    spi_mcux_isr, DEVICE_GET(spi_mcux_##id),	\
 			    0);						\
-		irq_enable(DT_NXP_LPC_SPI_SPI_##id##_IRQ_0);		\
+		irq_enable(DT_INST_IRQN(id));				\
 	}
 
-#ifdef CONFIG_SPI_0
-SPI_MCUX_FLEXCOMM_DEVICE(0)
-#endif
-
-#ifdef CONFIG_SPI_1
-SPI_MCUX_FLEXCOMM_DEVICE(1)
-#endif
-
-#ifdef CONFIG_SPI_2
-SPI_MCUX_FLEXCOMM_DEVICE(2)
-#endif
-
-#ifdef CONFIG_SPI_3
-SPI_MCUX_FLEXCOMM_DEVICE(3)
-#endif
-
-#ifdef CONFIG_SPI_4
-SPI_MCUX_FLEXCOMM_DEVICE(4)
-#endif
-
-#ifdef CONFIG_SPI_5
-SPI_MCUX_FLEXCOMM_DEVICE(5)
-#endif
-
-#ifdef CONFIG_SPI_6
-SPI_MCUX_FLEXCOMM_DEVICE(6)
-#endif
-
-#ifdef CONFIG_SPI_7
-SPI_MCUX_FLEXCOMM_DEVICE(7)
-#endif
-
-#ifdef CONFIG_SPI_8
-SPI_MCUX_FLEXCOMM_DEVICE(8)
-#endif
+DT_INST_FOREACH(SPI_MCUX_FLEXCOMM_DEVICE)
