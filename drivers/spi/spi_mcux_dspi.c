@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT	nxp_kinetis_dspi
+
 #include <errno.h>
 #include <drivers/spi.h>
 #include <drivers/clock_control.h>
@@ -278,11 +280,10 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 #define SPI_MCUX_DSPI_DEVICE(id)					\
 	static void spi_mcux_config_func_##id(struct device *dev);	\
 	static const struct spi_mcux_config spi_mcux_config_##id = {	\
-		.base =							\
-		(SPI_Type *)DT_NXP_KINETIS_DSPI_SPI_##id##_BASE_ADDRESS,\
-		.clock_name = DT_NXP_KINETIS_DSPI_SPI_##id##_CLOCK_CONTROLLER,\
+		.base = (SPI_Type *)DT_INST_REG_ADDR(id),		\
+		.clock_name = DT_INST_CLOCKS_LABEL(id),			\
 		.clock_subsys = 					\
-		(clock_control_subsys_t)DT_NXP_KINETIS_DSPI_SPI_##id##_CLOCK_NAME,\
+		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),	\
 		.irq_config_func = spi_mcux_config_func_##id,		\
 	};								\
 	static struct spi_mcux_data spi_mcux_data_##id = {		\
@@ -290,7 +291,7 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_mcux_data_##id, ctx),		\
 	};								\
 	DEVICE_AND_API_INIT(spi_mcux_##id,				\
-			    DT_NXP_KINETIS_DSPI_SPI_##id##_LABEL,	\
+			    DT_INST_LABEL(id),				\
 			    &spi_mcux_init,				\
 			    &spi_mcux_data_##id,			\
 			    &spi_mcux_config_##id,			\
@@ -299,21 +300,11 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 			    &spi_mcux_driver_api);			\
 	static void spi_mcux_config_func_##id(struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_NXP_KINETIS_DSPI_SPI_##id##_IRQ_0,	\
-			    DT_NXP_KINETIS_DSPI_SPI_##id##_IRQ_0_PRIORITY,\
+		IRQ_CONNECT(DT_INST_IRQN(id),				\
+			    DT_INST_IRQ(id, priority),			\
 			    spi_mcux_isr, DEVICE_GET(spi_mcux_##id),	\
 			    0);						\
-		irq_enable(DT_NXP_KINETIS_DSPI_SPI_##id##_IRQ_0);	\
+		irq_enable(DT_INST_IRQN(id));				\
 	}
 
-#ifdef CONFIG_SPI_0
-SPI_MCUX_DSPI_DEVICE(0)
-#endif /* CONFIG_SPI_0 */
-
-#ifdef CONFIG_SPI_1
-SPI_MCUX_DSPI_DEVICE(1)
-#endif /* CONFIG_SPI_1 */
-
-#ifdef CONFIG_SPI_2
-SPI_MCUX_DSPI_DEVICE(2)
-#endif /* CONFIG_SPI_2 */
+DT_INST_FOREACH(SPI_MCUX_DSPI_DEVICE)
