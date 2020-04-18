@@ -126,7 +126,7 @@ config BT_EXT_ADV_LEGACY_SUPPORT
 
 config BT_EXT_ADV_MAX_ADV_SET
 	int "Maximum number of simultaneous advertising sets"
-	range 1 1
+	range 1 64
 	default 1
 	help
 	  Maximum number of simultaneous Bluetooth advertising sets

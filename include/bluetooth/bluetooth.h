@@ -434,7 +434,16 @@ enum {
 
 /** LE Advertising Parameters. */
 struct bt_le_adv_param {
-	/** Local identity */
+	/** Local identity.
+	 *
+	 *  @note When extended advertising :option:`CONFIG_BT_EXT_ADV` is not
+	 *        enabled or not supported by the controller it is not possible
+	 *        to scan and advertise simultaneously using two different
+	 *        random addresses.
+	 *
+	 *  @note It is not possible to have multiple connectable advertising
+	 *        sets advertising simultaneously using different identities.
+	 */
 	u8_t  id;
 
 	/** Advertising Set Identifier, valid range 0x00 - 0x0f.
@@ -1038,7 +1047,7 @@ struct bt_le_oob {
  *        cases:
  *        - Creating a connection in progress, wait for the connected callback.
  *       In addition when extended advertising :option:`CONFIG_BT_EXT_ADV` is
- *       not enabled or supported by the controller:
+ *       not enabled or not supported by the controller:
  *        - Advertiser is enabled using a Random Static Identity Address for a
  *          different local identity.
  *        - The local identity conflicts with the local identity used by other
