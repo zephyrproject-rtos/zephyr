@@ -18,10 +18,12 @@ config ARC_CORE_MPU
 
 config MPU_STACK_GUARD
 	bool "Thread Stack Guards"
-	depends on ARC_CORE_MPU
+	depends on ARC_CORE_MPU && ARC_MPU_VER !=2
 	help
 	  Enable thread stack guards via MPU. ARC supports built-in stack protection.
-	  If your core supports that, it is preferred over MPU stack guard
+	  If your core supports that, it is preferred over MPU stack guard.
+	  For ARC_MPU_VER == 2, it requires 2048 extra bytes and a strong start address
+	  alignment, this will bring big waste of memory, so no support for it.
 
 config ARC_MPU
 	bool "ARC MPU Support"

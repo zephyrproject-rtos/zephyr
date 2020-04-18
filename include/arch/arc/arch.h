@@ -52,7 +52,6 @@ extern "C" {
 		 * start address of MPU region should be aligned to the
 		 * region size
 		 */
-		/* The STACK_GUARD_SIZE is the size of stack guard region */
 			#define STACK_ALIGN  2048
 		#elif CONFIG_ARC_MPU_VER == 3
 			#define STACK_ALIGN 32
@@ -69,9 +68,7 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_MPU_STACK_GUARD)
-	#if CONFIG_ARC_MPU_VER == 2
-	#define STACK_GUARD_SIZE 2048
-	#elif CONFIG_ARC_MPU_VER == 3
+	#if CONFIG_ARC_MPU_VER == 3
 	#define STACK_GUARD_SIZE 32
 	#endif
 #else /* CONFIG_MPU_STACK_GUARD */
@@ -134,10 +131,8 @@ extern "C" {
  * For MPU STACK_GUARD  kernel stacks do not need a MPU region to protect,
  * only guard needs to be protected and aligned. For MPUv3, MPU_STACK_GUARD
  * requires start 32 bytes aligned, also for size which is decided by stack
- * array and USERSPACE; For MPUv2, MPU_STACK_GUARD requires
- * start 2048 bytes aligned, also for size which is decided by stack array.
+ * array and USERSPACE.
  *
-
  * When no-mpu and no USERSPACE/MPU_STACK_GUARD, everything is 4 bytes
  * aligned
  */

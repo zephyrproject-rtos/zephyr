@@ -98,7 +98,7 @@ SECTION_FUNC(TEXT, z_arc_userspace_enter)
 
 	/* the end of user stack in r5 */
 	add r5, r4, r5
-	/* get start of privilege stack */
+	/* get start of privilege stack, r6 points to current thread */
 	ld blink, [r6, _thread_offset_to_priv_stack_start]
 	add blink, blink, CONFIG_PRIVILEGED_STACK_SIZE
 
