@@ -56,7 +56,7 @@ config ISOTP_WORKQUEUE_PRIO
 
 config ISOTP_WORKQ_STACK_SIZE
 	int "Work queue stack size"
-	default 256
+	default 512
 	help
 	  This value defines the stack size of the work queue thread that
 	  handles flow control, consecutive sending, receiving and callbacks.

@@ -56,7 +56,7 @@ static void receive_pool_free(struct net_buf *buf)
 
 	SYS_SLIST_FOR_EACH_NODE(&global_ctx.alloc_list, ctx_node) {
 		ctx = CONTAINER_OF(ctx_node, struct isotp_recv_ctx, alloc_node);
-		k_work_submit(&ctx->work);
+		k_work_submit_to_queue(&isotp_workq, &ctx->work);
 	}
 }
 
@@ -69,7 +69,7 @@ static void receive_ff_sf_pool_free(struct net_buf *buf)
 
 	SYS_SLIST_FOR_EACH_NODE(&global_ctx.ff_sf_alloc_list, ctx_node) {
 		ctx = CONTAINER_OF(ctx_node, struct isotp_recv_ctx, alloc_node);
-		k_work_submit(&ctx->work);
+		k_work_submit_to_queue(&isotp_workq, &ctx->work);
 	}
 }
 
@@ -97,7 +97,7 @@ void receive_can_tx_isr(u32_t err_flags, void *arg)
 	if (err_flags) {
 		LOG_ERR("Error sending FC frame (%d)", err_flags);
 		receive_report_error(ctx, ISOTP_N_ERROR);
-		k_work_submit(&ctx->work);
+		k_work_submit_to_queue(&isotp_workq, &ctx->work);
 	}
 }
 
@@ -207,7 +207,7 @@ static void receive_timeout_handler(struct _timeout *to)
 		break;
 	}
 
-	k_work_submit(&ctx->work);
+	k_work_submit_to_queue(&isotp_workq, &ctx->work);
 }
 
 static int receive_alloc_buffer(struct isotp_recv_ctx *ctx)
@@ -455,7 +455,7 @@ static void process_cf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 		LOG_DBG("Waiting for CF but got something else (%d)",
 			frame->data[index] >> ISOTP_PCI_TYPE_POS);
 		receive_report_error(ctx, ISOTP_N_UNEXP_PDU);
-		k_work_submit(&ctx->work);
+		k_work_submit_to_queue(&isotp_workq, &ctx->work);
 		return;
 	}
 
@@ -466,7 +466,7 @@ static void process_cf(struct isotp_recv_ctx *ctx, struct zcan_frame *frame)
 	if ((frame->data[index++] & ISOTP_PCI_SN_MASK) != ctx->sn_expected++) {
 		LOG_ERR("Sequence number missmatch");
 		receive_report_error(ctx, ISOTP_N_WRONG_SN);
-		k_work_submit(&ctx->work);
+		k_work_submit_to_queue(&isotp_workq, &ctx->work);
 		return;
 	}
 
@@ -524,7 +524,7 @@ static void receive_can_rx_isr(struct zcan_frame *frame, void *arg)
 		LOG_INF("Got a frame in a state where it is unexpected.");
 	}
 
-	k_work_submit(&ctx->work);
+	k_work_submit_to_queue(&isotp_workq, &ctx->work);
 }
 
 static inline int attach_ff_filter(struct isotp_recv_ctx *ctx)
@@ -722,7 +722,7 @@ static void send_can_tx_isr(u32_t err_flags, void *arg)
 		ctx->state = ISOTP_TX_WAIT_FIN;
 	}
 
-	k_work_submit(&ctx->work);
+	k_work_submit_to_queue(&isotp_workq, &ctx->work);
 }
 
 static void send_timeout_handler(struct _timeout *to)
@@ -735,7 +735,7 @@ static void send_timeout_handler(struct _timeout *to)
 		LOG_ERR("Reception of next FC has timed out");
 	}
 
-	k_work_submit(&ctx->work);
+	k_work_submit_to_queue(&isotp_workq, &ctx->work);
 }
 
 static void send_process_fc(struct isotp_send_ctx *ctx,
@@ -802,7 +802,7 @@ static void send_can_rx_isr(struct zcan_frame *frame, void *arg)
 		send_report_error(ctx, ISOTP_N_UNEXP_PDU);
 	}
 
-	k_work_submit(&ctx->work);
+	k_work_submit_to_queue(&isotp_workq, &ctx->work);
 }
 
 static size_t get_ctx_data_length(struct isotp_send_ctx *ctx)
@@ -1137,7 +1137,7 @@ static int send(struct isotp_send_ctx *ctx, struct device *can_dev,
 
 		LOG_DBG("Starting work to send FF");
 		ctx->state = ISOTP_TX_SEND_FF;
-		k_work_submit(&ctx->work);
+		k_work_submit_to_queue(&isotp_workq, &ctx->work);
 	} else {
 		LOG_DBG("Sending single frame");
 		ctx->filter_id = -1;
