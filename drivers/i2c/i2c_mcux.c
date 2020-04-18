@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_i2c
+
 #include <errno.h>
 #include <drivers/i2c.h>
 #include <soc.h>
@@ -205,16 +207,16 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 	static void i2c_mcux_config_func_ ## n(struct device *dev);	\
 									\
 	static const struct i2c_mcux_config i2c_mcux_config_ ## n = {	\
-		.base = (I2C_Type *)DT_NXP_KINETIS_I2C_I2C_ ## n ## _BASE_ADDRESS,\
+		.base = (I2C_Type *)DT_INST_REG_ADDR(n),\
 		.clock_source = I2C ## n ## _CLK_SRC,			\
 		.irq_config_func = i2c_mcux_config_func_ ## n,		\
-		.bitrate = DT_NXP_KINETIS_I2C_I2C_ ## n ## _CLOCK_FREQUENCY,\
+		.bitrate = DT_INST_PROP(n, clock_frequency),		\
 	};								\
 									\
 	static struct i2c_mcux_data i2c_mcux_data_ ## n;		\
 									\
 	DEVICE_AND_API_INIT(i2c_mcux_ ## n,				\
-			DT_NXP_KINETIS_I2C_I2C_ ## n ## _LABEL,		\
+			DT_INST_LABEL(n),				\
 			&i2c_mcux_init, &i2c_mcux_data_ ## n,		\
 			&i2c_mcux_config_ ## n, POST_KERNEL,		\
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
@@ -222,26 +224,12 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 									\
 	static void i2c_mcux_config_func_ ## n(struct device *dev)	\
 	{								\
-		IRQ_CONNECT(DT_NXP_KINETIS_I2C_I2C_ ## n ## _IRQ_0,	\
-			DT_NXP_KINETIS_I2C_I2C_ ## n ## _IRQ_0_PRIORITY,\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			DT_INST_IRQ(n, priority),			\
 			i2c_mcux_isr,					\
 			DEVICE_GET(i2c_mcux_ ## n), 0);			\
 									\
-		irq_enable(DT_NXP_KINETIS_I2C_I2C_ ## n ## _IRQ_0);	\
+		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-#ifdef CONFIG_I2C_0
-	I2C_DEVICE_INIT_MCUX(0)
-#endif
-
-#ifdef CONFIG_I2C_1
-	I2C_DEVICE_INIT_MCUX(1)
-#endif
-
-#ifdef CONFIG_I2C_2
-	I2C_DEVICE_INIT_MCUX(2)
-#endif
-
-#ifdef CONFIG_I2C_3
-	I2C_DEVICE_INIT_MCUX(3)
-#endif
+DT_INST_FOREACH(I2C_DEVICE_INIT_MCUX)
