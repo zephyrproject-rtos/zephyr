@@ -270,7 +270,7 @@ def write_bus(node):
         err(f"missing 'label' property on bus node {node.bus_node!r}")
 
     # #define DT_<DEV-IDENT>_BUS_NAME <BUS-LABEL>
-    out_node_s(node, "BUS_NAME", str2ident(node.bus_node.label))
+    out_node_s(node, "BUS_NAME", str2ident(node.bus_node.label), "Macro is deprecated")
 
     for compat in node.compats:
         # #define DT_<COMPAT>_BUS_<BUS-TYPE> 1
