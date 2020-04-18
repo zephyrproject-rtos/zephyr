@@ -254,134 +254,49 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 #define TO_ADC12_CLOCK_SRC(val) _DO_CONCAT(kADC12_ClockSourceAlt, val)
 #define TO_ADC12_CLOCK_DIV(val) _DO_CONCAT(kADC12_ClockDivider, val)
 
-#if DT_HAS_DRV_INST(0)
-static void mcux_adc12_config_func_0(struct device *dev);
+#define ADC12_REF_SRC(n)						\
+	COND_CODE_1(DT_INST_PROP(0, alternate_voltage_reference),	\
+				 (kADC12_ReferenceVoltageSourceValt),	\
+				 (kADC12_ReferenceVoltageSourceVref))
 
-ASSERT_WITHIN_RANGE(DT_INST_PROP(0, clk_source), 0, 3,
-		    "Invalid clock source");
-ASSERT_ADC12_CLK_DIV_VALID(DT_INST_PROP(0, clk_divider),
-			   "Invalid clock divider");
-ASSERT_WITHIN_RANGE(DT_INST_PROP(0, sample_time), 2, 256,
-		    "Invalid sample time");
-static const struct mcux_adc12_config mcux_adc12_config_0 = {
-	.base = (ADC_Type *)DT_INST_REG_ADDR(0),
-	.clock_src = TO_ADC12_CLOCK_SRC(DT_INST_PROP(0, clk_source)),
-	.clock_div =
-		TO_ADC12_CLOCK_DIV(DT_INST_PROP(0, clk_divider)),
-#if DT_INST_PROP(0, alternate_voltage_reference) == 1
-	.ref_src = kADC12_ReferenceVoltageSourceValt,
-#else
-	.ref_src = kADC12_ReferenceVoltageSourceVref,
-#endif
-	.sample_clk_count = DT_INST_PROP(0, sample_time),
-	.irq_config_func = mcux_adc12_config_func_0,
-};
+#define ACD12_MCUX_INIT(n)						\
+	static void mcux_adc12_config_func_##n(struct device *dev);	\
+									\
+	ASSERT_WITHIN_RANGE(DT_INST_PROP(n, clk_source), 0, 3,		\
+			    "Invalid clock source");			\
+	ASSERT_ADC12_CLK_DIV_VALID(DT_INST_PROP(n, clk_divider),	\
+				   "Invalid clock divider");		\
+	ASSERT_WITHIN_RANGE(DT_INST_PROP(n, sample_time), 2, 256,	\
+			    "Invalid sample time");			\
+	static const struct mcux_adc12_config mcux_adc12_config_##n = {	\
+		.base = (ADC_Type *)DT_INST_REG_ADDR(n),		\
+		.clock_src = TO_ADC12_CLOCK_SRC(DT_INST_PROP(n, clk_source)),\
+		.clock_div =						\
+			TO_ADC12_CLOCK_DIV(DT_INST_PROP(n, clk_divider)),\
+		.ref_src = ADC12_REF_SRC(n),				\
+		.sample_clk_count = DT_INST_PROP(n, sample_time),	\
+		.irq_config_func = mcux_adc12_config_func_##n,		\
+	};								\
+									\
+	static struct mcux_adc12_data mcux_adc12_data_##n = {		\
+		ADC_CONTEXT_INIT_TIMER(mcux_adc12_data_##n, ctx),	\
+		ADC_CONTEXT_INIT_LOCK(mcux_adc12_data_##n, ctx),	\
+		ADC_CONTEXT_INIT_SYNC(mcux_adc12_data_##n, ctx),	\
+	};								\
+									\
+	DEVICE_AND_API_INIT(mcux_adc12_##n, DT_INST_LABEL(n),		\
+			    &mcux_adc12_init, &mcux_adc12_data_##n,	\
+			    &mcux_adc12_config_##n, POST_KERNEL,	\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &mcux_adc12_driver_api);			\
+									\
+	static void mcux_adc12_config_func_##n(struct device *dev)	\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			    DT_INST_IRQ(n, priority), mcux_adc12_isr,	\
+			    DEVICE_GET(mcux_adc12_##n), 0);		\
+									\
+		irq_enable(DT_INST_IRQN(n));				\
+	}
 
-static struct mcux_adc12_data mcux_adc12_data_0 = {
-	ADC_CONTEXT_INIT_TIMER(mcux_adc12_data_0, ctx),
-	ADC_CONTEXT_INIT_LOCK(mcux_adc12_data_0, ctx),
-	ADC_CONTEXT_INIT_SYNC(mcux_adc12_data_0, ctx),
-};
-
-DEVICE_AND_API_INIT(mcux_adc12_0, DT_INST_LABEL(0),
-		    &mcux_adc12_init, &mcux_adc12_data_0, &mcux_adc12_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_adc12_driver_api);
-
-static void mcux_adc12_config_func_0(struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority), mcux_adc12_isr,
-		    DEVICE_GET(mcux_adc12_0), 0);
-
-	irq_enable(DT_INST_IRQN(0));
-}
-#endif /* DT_HAS_DRV_INST(0) */
-
-#if DT_HAS_DRV_INST(1)
-static void mcux_adc12_config_func_1(struct device *dev);
-
-ASSERT_WITHIN_RANGE(DT_INST_PROP(1, clk_source), 0, 3,
-		    "Invalid clock source");
-ASSERT_ADC12_CLK_DIV_VALID(DT_INST_PROP(1, clk_divider),
-			   "Invalid clock divider");
-ASSERT_WITHIN_RANGE(DT_INST_PROP(1, sample_time), 2, 256,
-		    "Invalid sample time");
-static const struct mcux_adc12_config mcux_adc12_config_1 = {
-	.base = (ADC_Type *)DT_INST_REG_ADDR(1),
-	.clock_src = TO_ADC12_CLOCK_SRC(DT_INST_PROP(1, clk_source)),
-	.clock_div =
-		TO_ADC12_CLOCK_DIV(DT_INST_PROP(1, clk_divider)),
-#if DT_INST_PROP(1, alternate_voltage_reference) == 1
-	.ref_src = kADC12_ReferenceVoltageSourceValt,
-#else
-	.ref_src = kADC12_ReferenceVoltageSourceVref,
-#endif
-	.sample_clk_count = DT_INST_PROP(1, sample_time),
-	.irq_config_func = mcux_adc12_config_func_1,
-};
-
-static struct mcux_adc12_data mcux_adc12_data_1 = {
-	ADC_CONTEXT_INIT_TIMER(mcux_adc12_data_1, ctx),
-	ADC_CONTEXT_INIT_LOCK(mcux_adc12_data_1, ctx),
-	ADC_CONTEXT_INIT_SYNC(mcux_adc12_data_1, ctx),
-};
-
-DEVICE_AND_API_INIT(mcux_adc12_1, DT_INST_LABEL(1),
-		    &mcux_adc12_init, &mcux_adc12_data_1, &mcux_adc12_config_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_adc12_driver_api);
-
-static void mcux_adc12_config_func_1(struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(1),
-		    DT_INST_IRQ(1, priority), mcux_adc12_isr,
-		    DEVICE_GET(mcux_adc12_1), 0);
-
-	irq_enable(DT_INST_IRQN(1));
-}
-#endif /* DT_HAS_DRV_INST(1) */
-
-#if DT_HAS_DRV_INST(2)
-static void mcux_adc12_config_func_2(struct device *dev);
-
-ASSERT_WITHIN_RANGE(DT_INST_PROP(2, clk_source), 0, 3,
-		    "Invalid clock source");
-ASSERT_ADC12_CLK_DIV_VALID(DT_INST_PROP(2, clk_divider),
-			   "Invalid clock divider");
-ASSERT_WITHIN_RANGE(DT_INST_PROP(2, sample_time), 2, 256,
-		    "Invalid sample time");
-static const struct mcux_adc12_config mcux_adc12_config_2 = {
-	.base = (ADC_Type *)DT_INST_REG_ADDR(2),
-	.clock_src = TO_ADC12_CLOCK_SRC(DT_INST_PROP(2, clk_source)),
-	.clock_div =
-		TO_ADC12_CLOCK_DIV(DT_INST_PROP(2, clk_divider)),
-#if DT_INST_PROP(2, alternate_voltage_reference) == 1
-	.ref_src = kADC12_ReferenceVoltageSourceValt,
-#else
-	.ref_src = kADC12_ReferenceVoltageSourceVref,
-#endif
-	.sample_clk_count = DT_INST_PROP(2, sample_time),
-	.irq_config_func = mcux_adc12_config_func_2,
-};
-
-static struct mcux_adc12_data mcux_adc12_data_2 = {
-	ADC_CONTEXT_INIT_TIMER(mcux_adc12_data_2, ctx),
-	ADC_CONTEXT_INIT_LOCK(mcux_adc12_data_2, ctx),
-	ADC_CONTEXT_INIT_SYNC(mcux_adc12_data_2, ctx),
-};
-
-DEVICE_AND_API_INIT(mcux_adc12_2, DT_INST_LABEL(2),
-		    &mcux_adc12_init, &mcux_adc12_data_2, &mcux_adc12_config_2,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_adc12_driver_api);
-
-static void mcux_adc12_config_func_2(struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(2),
-		    DT_INST_IRQ(2, priority), mcux_adc12_isr,
-		    DEVICE_GET(mcux_adc12_2), 0);
-
-	irq_enable(DT_INST_IRQN(2));
-}
-#endif /* DT_HAS_DRV_INST(2) */
+DT_INST_FOREACH(ACD12_MCUX_INIT)
