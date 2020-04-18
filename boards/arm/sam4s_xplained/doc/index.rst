@@ -47,9 +47,11 @@ features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
+| SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
-| Watchdog  | on-chip    | watchdog                            |
+| WATCHDOG  | on-chip    | watchdog                            |
++-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
@@ -60,8 +62,8 @@ The default configuration can be found in the Kconfig
 Connections and IOs
 ===================
 
-The `SAM4S Xplained Online User Guide`_ has detailed information about board
-connections. Download the `SAM4S Xplained Schematic`_ for more detail.
+Download the `SAM4S Xplained Design Files`_ for more information. It has
+full schematic and gerbers files.
 
 System Clock
 ============
@@ -136,10 +138,10 @@ References
 .. target-notes::
 
 .. _SAM4S Xplained Online User Guide:
-    http://www.atmel.com/webdoc/sam4s16xplained/index.html
+    http://ww1.microchip.com/downloads/en/devicedoc/atmel-42075-sam4s-xplained-pro_user-guide.pdf
 
 .. _JLink Downloads Page:
     https://www.segger.com/downloads/jlink
 
-.. _SAM4S Xplained Schematic:
-    http://www.atmel.com/tools/sam4s-xpld.aspx?tab=documents
+.. _SAM4S Xplained Design Files:
+    http://ww1.microchip.com/downloads/en/DeviceDoc/SAM4S-XPLD__KitsFiles.zip
