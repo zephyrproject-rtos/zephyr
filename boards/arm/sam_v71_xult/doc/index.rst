@@ -1,13 +1,14 @@
 .. _sam_v71_xplained_ultra:
 
-SAM V71 Xplained Ultra
-######################
+SAM V71(B) Xplained Ultra
+#########################
 
 Overview
 ********
 
 The SAM V71 Xplained Ultra evaluation kit is a development platform to
-evaluate the Atmel SAM V71 series microcontrollers.
+evaluate the Atmel SAM V71 series microcontrollers. The current version
+allows to use both IC variations ATSAMV71Q21A(B).
 
 .. image:: img/atsamv71-xult.jpg
      :width: 500px
@@ -17,7 +18,7 @@ evaluate the Atmel SAM V71 series microcontrollers.
 Hardware
 ********
 
-- ATSAMV71Q21 ARM Cortex-M7 Processor
+- ATSAMV71Q21A(B) ARM Cortex-M7 Processor
 - 12 MHz crystal oscillator
 - 32.768 kHz crystal oscillator
 - Supercap backup
@@ -138,6 +139,15 @@ Flashing
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
       :board: sam_v71_xult
+      :goals: build flash
+
+   You should see "Hello World! arm" in your terminal.
+
+#. To use the SoC variation B IC, you need type "sam_v71b_xult".
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: sam_v71b_xult
       :goals: build flash
 
    You should see "Hello World! arm" in your terminal.
