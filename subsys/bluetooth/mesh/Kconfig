@@ -445,6 +445,12 @@ config BT_MESH_FRIEND_SUB_LIST_SIZE
 	  Size of the Subscription List that can be supported by a
 	  Friend node for a Low Power node.
 
+config BT_MESH_LPN_SUB_ALL_NODES_ADDR
+	bool "Automatically subscribe all nodes address"
+	help
+	  Automatically subscribe all nodes address when friendship
+	  established.
+
 config BT_MESH_FRIEND_LPN_COUNT
 	int "Number of supported LPN nodes"
 	range 1 1000
