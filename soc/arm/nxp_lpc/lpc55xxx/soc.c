@@ -36,7 +36,7 @@
 
 static ALWAYS_INLINE void clock_init(void)
 {
-#ifdef CONFIG_SOC_LPC55S69_CPU0
+#if defined(CONFIG_SOC_LPC55S16) || defined(CONFIG_SOC_LPC55S69_CPU0)
     /*!< Set up the clock sources */
     /*!< Configure FRO192M */
 	/*!< Ensure FRO is on  */
@@ -90,7 +90,7 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int nxp_lpc55s69_init(struct device *arg)
+static int nxp_lpc55xxx_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -122,4 +122,4 @@ static int nxp_lpc55s69_init(struct device *arg)
 	return 0;
 }
 
-SYS_INIT(nxp_lpc55s69_init, PRE_KERNEL_1, 0);
+SYS_INIT(nxp_lpc55xxx_init, PRE_KERNEL_1, 0);
