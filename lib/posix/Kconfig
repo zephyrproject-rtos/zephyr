@@ -42,6 +42,28 @@ config SEM_VALUE_MAX
 
 endif # PTHREAD_IPC
 
+config POSIX_PIPE
+	bool "POSIX pipe support"
+	default y if POSIX_API
+	help
+	  This enables a mostly-standards-compliant implementation of
+	  pipe(2) for inter-process communication. The resulting file
+	  descriptors can be used with read(2), write(2), close(2),
+	  fcntl(2), fstat(2), and ioctl(2).
+
+if POSIX_PIPE
+# min and max to support fcntl F_SETPIPE_SZ?
+# allow size to be 0?
+config POSIX_PIPE_SIZE
+	int "POSIX Pipe capacity"
+	default 64
+	range 64 1048576
+	help
+	  This option specifies the fixed size of POSIX pipes. For more
+	  information see 'man 7 pipe'.
+
+endif # POSIX_PIPE
+
 config POSIX_CLOCK
 	bool "POSIX clock, timer, and sleep APIs"
 	default y if POSIX_API

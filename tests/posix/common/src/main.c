@@ -19,6 +19,9 @@ extern void test_posix_pthread_execution(void);
 extern void test_posix_pthread_termination(void);
 extern void test_posix_multiple_threads_single_key(void);
 extern void test_posix_single_thread_multiple_keys(void);
+extern void test_posix_pipe_read_write(void);
+extern void test_posix_pipe_select(void);
+extern void test_posix_pipe_poll(void);
 
 void test_main(void)
 {
@@ -34,7 +37,10 @@ void test_main(void)
 			ztest_unit_test(test_posix_mqueue),
 			ztest_unit_test(test_posix_realtime),
 			ztest_unit_test(test_posix_timer),
-			ztest_unit_test(test_posix_rw_lock)
+			ztest_unit_test(test_posix_rw_lock),
+			ztest_unit_test(test_posix_pipe_read_write),
+			ztest_unit_test(test_posix_pipe_select),
+			ztest_unit_test(test_posix_pipe_poll)
 			);
 	ztest_run_test_suite(posix_apis);
 }

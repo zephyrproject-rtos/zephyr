@@ -28,6 +28,9 @@ extern ssize_t write(int file, const void *buffer, size_t count);
 extern ssize_t read(int file, void *buffer, size_t count);
 extern off_t lseek(int file, off_t offset, int whence);
 
+/* Non-network communications */
+extern int pipe(int fildes[2]);
+
 /* File System related operations */
 extern int rename(const char *old, const char *newp);
 extern int unlink(const char *path);
