@@ -75,18 +75,12 @@ static inline int get_region_index_by_type(u32_t type)
 		       - THREAD_STACK_REGION;
 	case THREAD_STACK_REGION:
 	case THREAD_APP_DATA_REGION:
-	case THREAD_STACK_GUARD_REGION:
-		return get_num_regions() - mpu_config.num_regions - type;
 	case THREAD_DOMAIN_PARTITION_REGION:
-#if defined(CONFIG_MPU_STACK_GUARD) && !defined(CONFIG_USERSPACE)
-		return get_num_regions() - mpu_config.num_regions - type;
-#else
 		/*
 		 * Start domain partition region from stack guard region
-		 * since stack guard is not enabled.
+		 * since stack guard is not supported.
 		 */
 		return get_num_regions() - mpu_config.num_regions - type + 1;
-#endif
 	default:
 		__ASSERT(0, "Unsupported type");
 		return -EINVAL;
@@ -201,27 +195,6 @@ void arc_core_mpu_disable(void)
  */
 void arc_core_mpu_configure_thread(struct k_thread *thread)
 {
-
-#if defined(CONFIG_MPU_STACK_GUARD)
-#if defined(CONFIG_USERSPACE)
-	/* no stack guard when USERSPACE is enabled, because
-	 * - no need to set mpu stack guard for user stack as it is surrounded
-	     by kernel memory.
-	 * - privileged stack is generated automatically without space
-	 *   for stack guard
-	 * - better to use hardware stack checking as mpu stack guard will
-	     consume MPU entry.
-	 */
-#else
-	if (_mpu_configure(THREAD_STACK_GUARD_REGION,
-		thread->stack_info.start - STACK_GUARD_SIZE,
-		STACK_GUARD_SIZE) < 0) {
-		LOG_ERR("thread %p's stack guard failed", thread);
-		return;
-	}
-#endif
-#endif
-
 #if defined(CONFIG_USERSPACE)
 	/* configure stack region of user thread */
 	if (thread->base.user_options & K_USER) {
