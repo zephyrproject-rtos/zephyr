@@ -1841,8 +1841,23 @@ static void conn_auto_initiate(struct bt_conn *conn)
 	}
 }
 
-static void le_conn_cancel_complete(struct bt_conn *conn)
+static void le_conn_complete_cancel(void)
 {
+	struct bt_conn *conn;
+
+	/* Handle create connection cancel.
+	 *
+	 * There is no need to check ID address as only one
+	 * connection in master role can be in pending state.
+	 */
+	conn = find_pending_connect(BT_HCI_ROLE_MASTER, NULL);
+	if (!conn) {
+		BT_ERR("No pending master connection");
+		return;
+	}
+
+	conn->err = BT_HCI_ERR_UNKNOWN_CONN_ID;
+
 	/* Handle cancellation of outgoing connection attempt. */
 	if (!IS_ENABLED(CONFIG_BT_WHITELIST)) {
 		/* We notify before checking autoconnect flag
@@ -1864,6 +1879,8 @@ static void le_conn_cancel_complete(struct bt_conn *conn)
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
 		}
 	}
+
+	bt_conn_unref(conn);
 }
 
 static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
@@ -1906,27 +1923,14 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 			conn->err = evt->status;
 
 			bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
-			goto done;
+			return;
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 		    evt->status == BT_HCI_ERR_UNKNOWN_CONN_ID) {
-			/*
-			 * Handle create connection cancel.
-			 *
-			 * There is no need to check ID address as only one
-			 * connection in master role can be in pending state.
-			 */
-			conn = find_pending_connect(BT_HCI_ROLE_MASTER, NULL);
-			if (!conn) {
-				BT_ERR("No pending master connection");
-				return;
-			}
-
-			conn->err = evt->status;
-
-			le_conn_cancel_complete(conn);
-			goto done;
+			le_conn_complete_cancel();
+			bt_le_scan_update(false);
+			return;
 		}
 
 		BT_WARN("Unexpected status 0x%02x", evt->status);
@@ -2048,9 +2052,10 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	/* Start auto-initiated procedures */
 	conn_auto_initiate(conn);
 
-done:
 	bt_conn_unref(conn);
-	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
+	    conn->role == BT_HCI_ROLE_MASTER) {
 		bt_le_scan_update(false);
 	}
 }
