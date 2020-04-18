@@ -622,8 +622,8 @@ struct bt_conn_cb {
 	 *    @ref bt_conn_le_create_param timeout parameter, which defaults to
 	 *    :option:`CONFIG_BT_CREATE_CONN_TIMEOUT` seconds.
 	 *  - @p BT_HCI_ERR_ADV_TIMEOUT High duty cycle directed connectable
-	 *    advertiser started by @ref bt_le_adv_start or bt_le_ext_adv_start
-	 *    failed to be connected within the timeout.
+	 *    advertiser started by @ref bt_le_adv_start failed to be connected
+	 *    within the timeout.
 	 */
 	void (*connected)(struct bt_conn *conn, u8_t err);
 

@@ -33,11 +33,6 @@ enum {
 	BT_DEV_HAS_PUB_KEY,
 	BT_DEV_PUB_KEY_BUSY,
 
-	BT_DEV_ADVERTISING,
-	BT_DEV_ADVERTISING_NAME,
-	BT_DEV_ADVERTISING_CONNECTABLE,
-	BT_DEV_ADVERTISING_IDENTITY,
-	BT_DEV_KEEP_ADVERTISING,
 	BT_DEV_SCANNING,
 	BT_DEV_EXPLICIT_SCAN,
 	BT_DEV_ACTIVE_SCAN,
@@ -84,6 +79,22 @@ enum {
 	 * events, or both.
 	 */
 	BT_ADV_LIMITED,
+	/* Advertiser set is currently advertising in the controller. */
+	BT_ADV_ENABLED,
+	/* Advertiser should include name in advertising data */
+	BT_ADV_INCLUDE_NAME,
+	/* Advertiser set is connectable */
+	BT_ADV_CONNECTABLE,
+	/* Advertiser set has disabled the use of private addresses and is using
+	 * the identity address instead.
+	 */
+	BT_ADV_USE_IDENTITY,
+	/* Advertiser has been configured to keep advertising after a connection
+	 * has been established as long as there are connections available.
+	 */
+	BT_ADV_PERSIST,
+	/* Advertiser has been temporarily disabled. */
+	BT_ADV_PAUSED,
 
 	BT_ADV_NUM_FLAGS,
 };
@@ -153,7 +164,7 @@ struct bt_dev_br {
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
 	/* Local Identity Address(es) */
-	bt_addr_le_t		id_addr[CONFIG_BT_ID_MAX];
+	bt_addr_le_t            id_addr[CONFIG_BT_ID_MAX];
 	u8_t                    id_count;
 
 	struct bt_conn_le_create_param create_param;
@@ -167,6 +178,7 @@ struct bt_dev {
 #endif
 	/* Current local Random Address */
 	bt_addr_le_t            random_addr;
+	u8_t                    adv_conn_id;
 
 	/* Controller version & manufacturer information */
 	u8_t			hci_version;

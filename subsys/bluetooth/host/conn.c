@@ -340,9 +340,7 @@ static void conn_update_timeout(struct k_work *work)
 		/* A new reference likely to have been released here,
 		 * Resume advertising.
 		 */
-		if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
-		    atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING) &&
-		    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
+		if (IS_ENABLED(CONFIG_BT_PERIPHERAL)) {
 			bt_le_adv_resume();
 		}
 
@@ -1639,7 +1637,7 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 	BT_DBG("%s -> %s", state2str(conn->state), state2str(state));
 
 	if (conn->state == state) {
-		BT_WARN("no transition");
+		BT_WARN("no transition %s", state2str(state));
 		return;
 	}
 
