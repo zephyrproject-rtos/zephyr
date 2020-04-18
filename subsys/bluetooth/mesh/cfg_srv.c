@@ -1262,6 +1262,9 @@ static size_t mod_sub_list_clear(struct bt_mesh_model *mod)
 	/* Unref stored labels related to this model */
 	for (i = 0, clear_count = 0; i < ARRAY_SIZE(mod->groups); i++) {
 		if (mod->groups[i] != BT_MESH_ADDR_UNASSIGNED) {
+			if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+				bt_mesh_lpn_group_del(&mod->groups[i], 1);
+			}
 			mod->groups[i] = BT_MESH_ADDR_UNASSIGNED;
 			clear_count++;
 		}

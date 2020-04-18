@@ -32,6 +32,7 @@
 #include "foundation.h"
 #include "proxy.h"
 #include "settings.h"
+#include "lpn.h"
 
 /* Tracking of what storage changes are pending for App and Net Keys. We
  * track this in a separate array here instead of within the respective
@@ -1095,6 +1096,16 @@ static void commit_mod(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		if (ms) {
 			BT_DBG("Starting publish timer (period %u ms)", ms);
 			k_delayed_work_submit(&mod->pub->timer, ms);
+		}
+	}
+
+	if (!IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		return;
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(mod->groups); i++) {
+		if (mod->groups[i] != BT_MESH_ADDR_UNASSIGNED) {
+			bt_mesh_lpn_group_add(mod->groups[i]);
 		}
 	}
 }
