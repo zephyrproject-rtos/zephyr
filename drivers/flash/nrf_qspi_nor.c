@@ -201,7 +201,7 @@ static struct qspi_nor_data qspi_nor_memory_data = {
 /**
  * @brief Converts NRFX return codes to the zephyr ones
  */
-static inline int qspi_get_zephyr_ret_code(int res)
+static inline int qspi_get_zephyr_ret_code(nrfx_err_t res)
 {
 	switch (res) {
 	case NRFX_SUCCESS:
@@ -237,11 +237,16 @@ static inline void qspi_unlock(struct device *dev)
 	k_sem_give(&dev_data->sem);
 }
 
-static inline void qspi_wait_for_completion(struct device *dev)
+static inline void qspi_wait_for_completion(struct device *dev,
+					    nrfx_err_t res)
 {
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
-	k_sem_take(&dev_data->sync, K_FOREVER);
+	if (res == NRFX_SUCCESS) {
+		k_sem_take(&dev_data->sync, K_FOREVER);
+	} else {
+		qspi_unlock(dev);
+	}
 }
 
 static inline void qspi_complete(struct device *dev)
@@ -310,44 +315,45 @@ static int qspi_erase(struct device *dev, u32_t addr, u32_t size)
 		return -EINVAL;
 	}
 
-	int res = 0;
+	int rv = -EIO;
 	const struct qspi_nor_config *params = dev->config->config_info;
 
 	while (size) {
+		nrfx_err_t res = !NRFX_SUCCESS;
+		u32_t adj = 0;
+
+		qspi_lock(dev);
 		if (size == params->size) {
 			/* chip erase */
-			qspi_lock(dev);
 			res = nrfx_qspi_chip_erase();
-			qspi_wait_for_completion(dev);
-			size = 0;
+			adj = size;
 		} else if ((size >= QSPI_BLOCK_SIZE) &&
 			   QSPI_IS_BLOCK_ALIGNED(addr)) {
 			/* 64 kB block erase */
-			qspi_lock(dev);
 			res = nrfx_qspi_erase(NRF_QSPI_ERASE_LEN_64KB, addr);
-			qspi_wait_for_completion(dev);
-			addr += QSPI_BLOCK_SIZE;
-			size -= QSPI_BLOCK_SIZE;
+			adj = QSPI_BLOCK_SIZE;
 		} else if ((size >= QSPI_SECTOR_SIZE) &&
 			   QSPI_IS_SECTOR_ALIGNED(addr)) {
 			/* 4kB sector erase */
-			qspi_lock(dev);
 			res = nrfx_qspi_erase(NRF_QSPI_ERASE_LEN_4KB, addr);
-			qspi_wait_for_completion(dev);
-			addr += QSPI_SECTOR_SIZE;
-			size -= QSPI_SECTOR_SIZE;
+			adj = QSPI_SECTOR_SIZE;
 		} else {
 			/* minimal erase size is at least a sector size */
 			LOG_ERR("unsupported at 0x%lx size %zu", (long)addr, size);
-			return -EINVAL;
+			rv = -EINVAL;
 		}
-		if (res != NRFX_SUCCESS) {
+
+		qspi_wait_for_completion(dev, res);
+		if (res == NRFX_SUCCESS) {
+			addr += adj;
+			size -= adj;
+		} else {
 			LOG_ERR("erase error at 0x%lx size %zu", (long)addr, size);
-			return -EIO;
+			return rv;
 		}
 	}
 
-	return qspi_get_zephyr_ret_code(res);
+	return 0;
 }
 
 /**
@@ -411,7 +417,7 @@ static int qspi_nrfx_configure(struct device *dev)
 
 	qspi_fill_init_struct(&QSPIconfig);
 
-	int res = nrfx_qspi_init(&QSPIconfig, qspi_handler, dev);
+	nrfx_err_t res = nrfx_qspi_init(&QSPIconfig, qspi_handler, dev);
 
 	if (res == NRFX_SUCCESS) {
 		/* If quad transfer was chosen - enable it now */
@@ -485,9 +491,12 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 		return -EINVAL;
 	}
 
-	/* read size must be multiple of 4 bytes */
-	if (size % sizeof(uint32_t) ||
-	    !(size > 0)) {
+	/* read size must be non-zero multiple of 4 bytes */
+	if (((size % 4U) != 0) || (size == 0)) {
+		return -EINVAL;
+	}
+	/* address must be 4-byte aligned */
+	if ((addr % 4U) != 0) {
 		return -EINVAL;
 	}
 
@@ -506,10 +515,11 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 
 	qspi_lock(dev);
 
-	int ret = nrfx_qspi_read(dest, size, addr);
+	nrfx_err_t res = nrfx_qspi_read(dest, size, addr);
 
-	qspi_wait_for_completion(dev);
-	return qspi_get_zephyr_ret_code(ret);
+	qspi_wait_for_completion(dev, res);
+
+	return qspi_get_zephyr_ret_code(res);
 }
 
 static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
@@ -519,9 +529,12 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 		return -EINVAL;
 	}
 
-	/* write size must be multiple of 4 bytes */
-	if (size % sizeof(uint32_t) ||
-	    !(size > 0)) {
+	/* write size must be non-zero multiple of 4 bytes */
+	if (((size % 4U) != 0) || (size == 0)) {
+		return -EINVAL;
+	}
+	/* address must be 4-byte aligned */
+	if ((addr % 4U) != 0) {
 		return -EINVAL;
 	}
 
@@ -545,10 +558,11 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 
 	qspi_lock(dev);
 
-	int ret = nrfx_qspi_write(src, size, addr);
+	nrfx_err_t res = nrfx_qspi_write(src, size, addr);
 
-	qspi_wait_for_completion(dev);
-	return qspi_get_zephyr_ret_code(ret);
+	qspi_wait_for_completion(dev, res);
+
+	return qspi_get_zephyr_ret_code(res);
 }
 
 static int qspi_nor_erase(struct device *dev, off_t addr, size_t size)
