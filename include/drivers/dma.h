@@ -31,7 +31,8 @@ extern "C" {
 enum dma_channel_direction {
 	MEMORY_TO_MEMORY = 0x0,
 	MEMORY_TO_PERIPHERAL,
-	PERIPHERAL_TO_MEMORY
+	PERIPHERAL_TO_MEMORY,
+	PERIPHERAL_TO_PERIPHERAL /*only supported in NXP EDMA*/
 };
 
 /** Valid values for @a source_addr_adj and @a dest_addr_adj */
@@ -98,25 +99,30 @@ struct dma_block_config {
 /**
  * @brief DMA configuration structure.
  *
- *     dma_slot             [ 0 : 5 ]   - which peripheral and direction
+ *     dma_slot             [ 0 : 6 ]   - which peripheral and direction
  *                                        (HW specific)
- *     channel_direction    [ 6 : 8 ]   - 000-memory to memory, 001-memory to
- *                                        peripheral, 010-peripheral to memory,
+ *     channel_direction    [ 7 : 9 ]   - 000-memory to memory,
+ *                                        001-memory to peripheral,
+ *                                        010-peripheral to memory,
+ *                                        011-peripheral to peripheral,
  *                                        ...
- *     complete_callback_en [ 9 ]       - 0-callback invoked at completion only
+ *     complete_callback_en [ 10 ]       - 0-callback invoked at completion only
  *                                        1-callback invoked at completion of
  *                                          each block
- *     error_callback_en    [ 10 ]      - 0-error callback enabled
+ *     error_callback_en    [ 11 ]      - 0-error callback enabled
  *                                        1-error callback disabled
- *     source_handshake     [ 11 ]      - 0-HW, 1-SW
- *     dest_handshake       [ 12 ]      - 0-HW, 1-SW
- *     channel_priority     [ 13 : 16 ] - DMA channel priority
- *     source_chaining_en   [ 17 ]      - enable/disable source block chaining
+ *     source_handshake     [ 12 ]      - 0-HW, 1-SW
+ *     dest_handshake       [ 13 ]      - 0-HW, 1-SW
+ *     channel_priority     [ 14 : 17 ] - DMA channel priority
+ *     source_chaining_en   [ 18 ]      - enable/disable source block chaining
  *                                        0-disable, 1-enable
- *     dest_chaining_en     [ 18 ]      - enable/disable destination block
+ *     dest_chaining_en     [ 19 ]      - enable/disable destination block
  *                                        chaining.
  *                                        0-disable, 1-enable
- *     reserved             [ 19 : 31 ]
+ *     linked_channel       [ 20 : 26 ] - after channel count exhaust will
+ *                                        initiate a channel service request
+ *                                        at this channel
+ *     reserved             [ 27 : 31 ]
  *
  *     source_data_size    [ 0 : 15 ]   - width of source data (in bytes)
  *     dest_data_size      [ 16 : 31 ]  - width of dest data (in bytes)
@@ -133,7 +139,7 @@ struct dma_block_config {
  *              (error_code: zero-transfer success, non zero-error happens).
  */
 struct dma_config {
-	uint32_t  dma_slot :             6;
+	uint32_t  dma_slot :             7;
 	uint32_t  channel_direction :    3;
 	uint32_t  complete_callback_en : 1;
 	uint32_t  error_callback_en :    1;
@@ -142,7 +148,8 @@ struct dma_config {
 	uint32_t  channel_priority :     4;
 	uint32_t  source_chaining_en :   1;
 	uint32_t  dest_chaining_en :     1;
-	uint32_t  reserved :            13;
+	uint32_t  linked_channel   :     7;
+	uint32_t  reserved :             5;
 	uint32_t  source_data_size :    16;
 	uint32_t  dest_data_size :      16;
 	uint32_t  source_burst_length : 16;
