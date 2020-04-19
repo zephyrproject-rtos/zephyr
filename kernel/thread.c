@@ -473,6 +473,8 @@ void z_setup_new_thread(struct k_thread *new_thread,
 		       void *p1, void *p2, void *p3,
 		       int prio, u32_t options, const char *name)
 {
+	Z_ASSERT_VALID_PRIO(prio, entry);
+
 #ifdef CONFIG_USERSPACE
 	z_object_init(new_thread);
 	z_object_init(stack);
