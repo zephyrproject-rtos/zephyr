@@ -19,7 +19,7 @@
 static struct device *flash_dev;
 
 /* flash read-copy-erase-write operation */
-static u8_t read_copy_buf[CONFIG_DISK_ERASE_BLOCK_SIZE];
+static u8_t __aligned(4) read_copy_buf[CONFIG_DISK_ERASE_BLOCK_SIZE];
 static u8_t *fs_buff = read_copy_buf;
 
 /* calculate number of blocks required for a given size */
