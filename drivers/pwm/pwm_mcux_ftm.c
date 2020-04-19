@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_kinetis_ftm
+#define DT_DRV_COMPAT nxp_kinetis_ftm_pwm
 
 #include <drivers/clock_control.h>
 #include <errno.h>

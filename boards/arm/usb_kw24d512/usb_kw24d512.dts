@@ -55,8 +55,10 @@
 	status = "okay";
 };
 
-&pwm1 {
+&ftm1 {
 	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
 };
 
 &uart0 {

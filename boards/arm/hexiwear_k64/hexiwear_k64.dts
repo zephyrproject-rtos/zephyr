@@ -73,6 +73,8 @@
 
 &ftm3 {
 	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
 };
 
 &i2c0 {
