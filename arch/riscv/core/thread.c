@@ -22,7 +22,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	struct __esf *stack_init;
 
-	z_new_thread_init(thread, stack_memory, stack_size, priority, options);
+	z_new_thread_init(thread, stack_memory, stack_size);
 
 	/* Initial stack frame for thread */
 	stack_init = (struct __esf *)
