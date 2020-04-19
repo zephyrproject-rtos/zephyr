@@ -11,6 +11,8 @@
 #ifndef _ATMEL_SAM_DT_H_
 #define _ATMEL_SAM_DT_H_
 
+#include <devicetree.h>
+
 /* Devicetree related macros to construct pin mux config data */
 
 /* Get a node id from a pinctrl-0 prop at index 'i' */
@@ -42,5 +44,10 @@
 		ATMEL_SAM_PIN_2_PIO_PERIPH_ID(inst, idx),	\
 		ATMEL_SAM_PIN_PERIPH(inst, idx) << 16		\
 	}
+
+/* Devicetree macros related to clock */
+
+#define ATMEL_SAM_DT_CPU_CLK_FREQ_HZ \
+		DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
 #endif /* _ATMEL_SAM_SOC_DT_H_ */
