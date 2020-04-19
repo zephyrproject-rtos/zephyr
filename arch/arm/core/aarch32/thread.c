@@ -38,8 +38,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* Offset between the top of stack and the high end of stack area. */
 	u32_t top_of_stack_offset = 0U;
 
-	Z_ASSERT_VALID_PRIO(priority, pEntry);
-
 #if defined(CONFIG_USERSPACE)
 	/* Truncate the stack size to align with the MPU region granularity.
 	 * This is done proactively to account for the case when the thread
