@@ -26,8 +26,16 @@
 #define DMA_DEVICE_NAME CONFIG_DMA_0_NAME
 #define RX_BUFF_SIZE (48)
 
-static const char tx_data[] = "It is harder to be kind than to be wise";
+#ifdef CONFIG_NOCACHE_MEMORY
+static __aligned(32) char tx_data[RX_BUFF_SIZE] __used
+	__attribute__((__section__(".nocache")));
+static const char TX_DATA[] = "It is harder to be kind than to be wise........";
+static __aligned(32) char rx_data[RX_BUFF_SIZE] __used
+	__attribute__((__section__(".nocache.dma")));
+#else
+static const char tx_data[] = "It is harder to be kind than to be wise........";
 static char rx_data[RX_BUFF_SIZE] = { 0 };
+#endif
 
 static void test_done(void *arg, uint32_t id, int error_code)
 {
@@ -40,14 +48,18 @@ static void test_done(void *arg, uint32_t id, int error_code)
 
 static int test_task(uint32_t chan_id, uint32_t blen)
 {
-	struct dma_config dma_cfg = {0};
-	struct dma_block_config dma_block_cfg = {0};
+	struct dma_config dma_cfg = { 0 };
+	struct dma_block_config dma_block_cfg = { 0 };
 	struct device *dma = device_get_binding(DMA_DEVICE_NAME);
 
 	if (!dma) {
 		TC_PRINT("Cannot get dma controller\n");
 		return TC_FAIL;
 	}
+
+#ifdef CONFIG_NOCACHE_MEMORY
+	memcpy(tx_data, TX_DATA, sizeof(TX_DATA));
+#endif
 
 	dma_cfg.channel_direction = MEMORY_TO_MEMORY;
 	dma_cfg.source_data_size = 1U;
@@ -59,9 +71,12 @@ static int test_task(uint32_t chan_id, uint32_t blen)
 	dma_cfg.error_callback_en = 1U;
 	dma_cfg.block_count = 1U;
 	dma_cfg.head_block = &dma_block_cfg;
+#ifdef CONFIG_DMA_MCUX_TEST_SLOT_START
+	dma_cfg.dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
+#endif
 
 	TC_PRINT("Preparing DMA Controller: Chan_ID=%u, BURST_LEN=%u\n",
-			chan_id, blen >> 3);
+		 chan_id, blen >> 3);
 
 	TC_PRINT("Starting the transfer\n");
 	(void)memset(rx_data, 0, sizeof(rx_data));
