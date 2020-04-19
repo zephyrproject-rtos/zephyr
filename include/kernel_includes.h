@@ -42,5 +42,6 @@
 #include <spinlock.h>
 #include <fatal.h>
 #include <irq.h>
+#include <sys/thread_stack.h>
 
 #endif /* ZEPHYR_INCLUDE_KERNEL_INCLUDES_H_ */
