@@ -66,7 +66,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	CLOCK_SetSimConfig(&simConfig);
 
-#if CONFIG_UART_MCUX_LPUART_0
+#if DT_HAS_NODE(DT_NODELABEL(lpuart0))
 	CLOCK_SetLpuartClock(LPUART0SRC_OSCERCLK);
 #endif
 }

@@ -84,8 +84,4 @@ config SPI_1
 	default y
 	depends on SPI
 
-config UART_MCUX_LPUART_4
-	default y if UART_CONSOLE
-	depends on UART_MCUX_LPUART
-
 endif # BOARD_FRDM_K82F

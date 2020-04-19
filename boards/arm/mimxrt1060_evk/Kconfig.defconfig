@@ -24,16 +24,6 @@ config I2C_1
 	default y
 	depends on I2C_MCUX_LPI2C
 
-if UART_MCUX_LPUART
-
-config UART_MCUX_LPUART_1
-	default y
-
-config UART_MCUX_LPUART_3
-	default y if BT_UART
-
-endif # UART_MCUX_LPUART
-
 config KSCAN
 	default y if LVGL
 

@@ -39,13 +39,9 @@ config GPIO_MCUX_PORTB
 	default n
 
 config GPIO_MCUX_PORTC
-	default y if UART_MCUX_LPUART_0 || I2C_1
+	default y if "$(dt_nodelabel_enabled,lpuart0)" || "$(dt_nodelabel_enabled,i2c1)"
 
 endif # GPIO_MCUX
-
-config UART_MCUX_LPUART_0
-	default y
-	depends on UART_MCUX_LPUART
 
 config I2C_1
 	default y
