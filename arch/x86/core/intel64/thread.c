@@ -18,7 +18,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 {
 	void *switch_entry;
 
-	Z_ASSERT_VALID_PRIO(priority, entry);
 	z_new_thread_init(thread, Z_THREAD_STACK_BUFFER(stack), stack_size);
 
 #if CONFIG_X86_STACK_PROTECTION
