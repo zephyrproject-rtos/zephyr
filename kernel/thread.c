@@ -462,51 +462,6 @@ static inline size_t adjust_stack_size(size_t stack_size)
 
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 
-void z_new_thread_init(struct k_thread *thread,
-					    char *pStack, size_t stackSize,
-					    int prio, unsigned int options)
-{
-#if !defined(CONFIG_INIT_STACKS) && !defined(CONFIG_THREAD_STACK_INFO)
-	ARG_UNUSED(pStack);
-	ARG_UNUSED(stackSize);
-#endif
-
-#ifdef CONFIG_INIT_STACKS
-	memset(pStack, 0xaa, stackSize);
-#endif
-#ifdef CONFIG_STACK_SENTINEL
-	/* Put the stack sentinel at the lowest 4 bytes of the stack area.
-	 * We periodically check that it's still present and kill the thread
-	 * if it isn't.
-	 */
-	*((u32_t *)pStack) = STACK_SENTINEL;
-#endif /* CONFIG_STACK_SENTINEL */
-	/* Initialize various struct k_thread members */
-	z_init_thread_base(&thread->base, prio, _THREAD_PRESTART, options);
-
-	/* static threads overwrite it afterwards with real value */
-	thread->init_data = NULL;
-	thread->fn_abort = NULL;
-
-#ifdef CONFIG_THREAD_CUSTOM_DATA
-	/* Initialize custom data field (value is opaque to kernel) */
-	thread->custom_data = NULL;
-#endif
-
-#ifdef CONFIG_THREAD_NAME
-	thread->name[0] = '\0';
-#endif
-
-#if defined(CONFIG_USERSPACE)
-	thread->mem_domain_info.mem_domain = NULL;
-#endif /* CONFIG_USERSPACE */
-
-#if defined(CONFIG_THREAD_STACK_INFO)
-	thread->stack_info.start = (uintptr_t)pStack;
-	thread->stack_info.size = (u32_t)stackSize;
-#endif /* CONFIG_THREAD_STACK_INFO */
-}
-
 /*
  * Note:
  * The caller must guarantee that the stack_size passed here corresponds
@@ -522,6 +477,7 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	z_object_init(new_thread);
 	z_object_init(stack);
 	new_thread->stack_obj = stack;
+	new_thread->mem_domain_info.mem_domain = NULL;
 
 	/* Any given thread has access to itself */
 	k_object_access_grant(new_thread, new_thread);
@@ -537,9 +493,14 @@ void z_setup_new_thread(struct k_thread *new_thread,
 			- sizeof(*new_thread->userspace_local_data));
 #endif
 #endif
+	/* Initialize various struct k_thread members */
+	z_init_thread_base(&new_thread->base, prio, _THREAD_PRESTART, options);
 
 	arch_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options);
+	/* static threads overwrite it afterwards with real value */
+	new_thread->init_data = NULL;
+	new_thread->fn_abort = NULL;
 
 #ifdef CONFIG_USE_SWITCH
 	/* switch_handle must be non-null except when inside z_swap()
@@ -549,7 +510,13 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	__ASSERT(new_thread->switch_handle != NULL,
 		 "arch layer failed to initialize switch_handle");
 #endif
-
+#ifdef CONFIG_STACK_SENTINEL
+	/* Put the stack sentinel at the lowest 4 bytes of the stack area.
+	 * We periodically check that it's still present and kill the thread
+	 * if it isn't.
+	 */
+	*((u32_t *)new_thread->stack_info.start) = STACK_SENTINEL;
+#endif /* CONFIG_STACK_SENTINEL */
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 #ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
 	/* don't set again if the arch's own code in arch_new_thread() has
@@ -560,7 +527,10 @@ void z_setup_new_thread(struct k_thread *new_thread,
 		(Z_THREAD_STACK_BUFFER(stack) + stack_size);
 #endif
 #endif
-
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+	/* Initialize custom data field (value is opaque to kernel) */
+	new_thread->custom_data = NULL;
+#endif
 #ifdef CONFIG_THREAD_MONITOR
 	new_thread->entry.pEntry = entry;
 	new_thread->entry.parameter1 = p1;
@@ -579,6 +549,8 @@ void z_setup_new_thread(struct k_thread *new_thread,
 			CONFIG_THREAD_MAX_NAME_LEN - 1);
 		/* Ensure NULL termination, truncate if longer */
 		new_thread->name[CONFIG_THREAD_MAX_NAME_LEN - 1] = '\0';
+	} else {
+		new_thread->name[0] = '\0';
 	}
 #endif
 #ifdef CONFIG_SCHED_CPU_MASK
