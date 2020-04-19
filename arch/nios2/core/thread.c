@@ -40,7 +40,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	/* Initial stack frame data, stored at the base of the stack */
 	iframe = (struct init_stack_frame *)
-		STACK_ROUND_DOWN(stack_memory + stack_size - sizeof(*iframe));
+		Z_STACK_PTR_ALIGN(stack_memory + stack_size - sizeof(*iframe));
 
 	/* Setup the initial stack frame */
 	iframe->entry_point = thread_func;

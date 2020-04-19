@@ -168,12 +168,4 @@ typedef struct _callee_saved_stack _callee_saved_stack_t;
 
 #endif /* _ASMLANGUAGE */
 
-/* stacks */
-
-#define STACK_ALIGN_SIZE 4
-
-#define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
-#define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
-
-
 #endif /* ZEPHYR_ARCH_ARC_INCLUDE_KERNEL_ARCH_DATA_H_ */

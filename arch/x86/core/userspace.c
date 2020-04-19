@@ -73,7 +73,7 @@ FUNC_NORETURN static void drop_to_user(k_thread_entry_t user_entry,
 	/* Transition will reset stack pointer to initial, discarding
 	 * any old context since this is a one-way operation
 	 */
-	stack_end = STACK_ROUND_DOWN(_current->stack_info.start +
+	stack_end = Z_STACK_PTR_ALIGN(_current->stack_info.start +
 				     _current->stack_info.size);
 
 	z_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,

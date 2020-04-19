@@ -48,7 +48,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	/* Reserve space on top of stack for local data. */
-	u32_t p_local_data = STACK_ROUND_DOWN(pStackMem + stackSize
+	u32_t p_local_data = Z_STACK_PTR_ALIGN(pStackMem + stackSize
 		- sizeof(*thread->userspace_local_data));
 
 	thread->userspace_local_data =
@@ -100,7 +100,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * stack frame (state context), because no FP operations have been
 	 * performed yet for this thread.
 	 */
-	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd -
+	pInitCtx = (struct __esf *)(Z_STACK_PTR_ALIGN(stackEnd -
 		(char *)top_of_stack_offset - sizeof(struct __basic_sf)));
 
 #if defined(CONFIG_USERSPACE)
@@ -401,7 +401,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
 	start_of_main_stack =
 		Z_THREAD_STACK_BUFFER(main_stack) + main_stack_size;
 
-	start_of_main_stack = (char *)STACK_ROUND_DOWN(start_of_main_stack);
+	start_of_main_stack = (char *)Z_STACK_PTR_ALIGN(start_of_main_stack);
 
 	_current = main_thread;
 #ifdef CONFIG_TRACING

@@ -25,7 +25,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	/* Initial stack frame for thread */
 	stack_init = (struct __esf *)
-		STACK_ROUND_DOWN(stack_memory +
+		Z_STACK_PTR_ALIGN(stack_memory +
 				 stack_size - sizeof(struct __esf));
 
 	/* Setup the initial stack frame */

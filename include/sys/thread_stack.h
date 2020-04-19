@@ -15,6 +15,7 @@
 
 #if !defined(_ASMLANGUAGE)
 #include <arch/cpu.h>
+#include <sys/util.h>
 
 /* Using typedef deliberately here, this is quite intended to be an opaque
  * type.
@@ -41,6 +42,16 @@ struct __packed z_thread_stack_element {
  *
  * @see z_thread_stack_element
  */
+
+
+/**
+ * @brief Properly align a CPU stack pointer value
+ *
+ * Take the provided value and round it down such that the value is aligned
+ * to the CPU and ABI requirements. This is not used for any memory protection
+ * hardware requirements.
+ */
+#define Z_STACK_PTR_ALIGN(ptr) ROUND_DOWN((ptr), ARCH_STACK_PTR_ALIGN)
 
 /**
  * @brief Obtain an extern reference to a stack
@@ -74,8 +85,8 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  *
  * This declares a region of memory suitable for use as a thread's stack.
  *
- * This is the generic, historical definition. Align to STACK_ALIGN and put in
- * 'noinit' section so that it isn't zeroed at boot
+ * This is the generic, historical definition. Align to ARCH_STACK_PTR_ALIGN
+ * and put in 'noinit' section so that it isn't zeroed at boot
  *
  * The declared symbol will always be a k_thread_stack_t which can be passed to
  * k_thread_create(), but should otherwise not be manipulated. If the buffer
@@ -96,7 +107,8 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_DEFINE(sym, size) \
-	struct z_thread_stack_element __noinit __aligned(STACK_ALIGN) sym[size]
+	struct z_thread_stack_element __noinit \
+		__aligned(ARCH_STACK_PTR_ALIGN) sym[size]
 
 /**
  * @brief Calculate size of stacks to be allocated in a stack array
@@ -116,8 +128,8 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * Create an array of equally sized stacks. See K_THREAD_STACK_DEFINE
  * definition for additional details and constraints.
  *
- * This is the generic, historical definition. Align to STACK_ALIGN and put in
- * 'noinit' section so that it isn't zeroed at boot
+ * This is the generic, historical definition. Align to ARCH_STACK_PTR_ALIGN
+ * and put in 'noinit' section so that it isn't zeroed at boot
  *
  * @param sym Thread stack symbol name
  * @param nmemb Number of stacks to declare
@@ -125,7 +137,8 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  */
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct z_thread_stack_element __noinit \
-		__aligned(STACK_ALIGN) sym[nmemb][K_THREAD_STACK_LEN(size)]
+		__aligned(ARCH_STACK_PTR_ALIGN) \
+		sym[nmemb][K_THREAD_STACK_LEN(size)]
 
 /**
  * @brief Declare an embedded stack memory region
@@ -140,7 +153,7 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_MEMBER(sym, size) \
-	struct z_thread_stack_element __aligned(STACK_ALIGN) sym[size]
+	struct z_thread_stack_element __aligned(ARCH_STACK_PTR_ALIGN) sym[size]
 
 /**
  * @brief Return the size in bytes of a stack memory region

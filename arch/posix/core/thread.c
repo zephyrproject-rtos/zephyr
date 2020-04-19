@@ -40,7 +40,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * "initial stack frame"
 	 */
 	thread_status = (posix_thread_status_t *)
-		STACK_ROUND_DOWN(stack_memory + stack_size
+		Z_STACK_PTR_ALIGN(stack_memory + stack_size
 				- sizeof(*thread_status));
 
 	/* z_thread_entry() arguments */

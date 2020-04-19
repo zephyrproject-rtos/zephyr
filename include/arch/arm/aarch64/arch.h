@@ -35,14 +35,13 @@ extern "C" {
 #endif
 
 /**
- * @brief Declare the STACK_ALIGN_SIZE
+ * @brief Declare the ARCH_STACK_PTR_ALIGN
  *
  * Denotes the required alignment of the stack pointer on public API
  * boundaries
  *
  */
-#define STACK_ALIGN		16
-#define STACK_ALIGN_SIZE	STACK_ALIGN
+#define ARCH_STACK_PTR_ALIGN	16
 
 #ifdef __cplusplus
 }

@@ -26,7 +26,7 @@
 #include <devicetree.h>
 
 /* stacks, for RISCV architecture stack should be 16byte-aligned */
-#define STACK_ALIGN  16
+#define ARCH_STACK_PTR_ALIGN  16
 
 #ifdef CONFIG_64BIT
 #define RV_OP_LOADREG ld
@@ -65,8 +65,7 @@
 extern "C" {
 #endif
 
-#define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN)
-#define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN)
+#define STACK_ROUND_UP(x) ROUND_UP(x, ARCH_STACK_PTR_ALIGN)
 
 /* macros convert value of its argument to a string */
 #define DO_TOSTR(s) #s

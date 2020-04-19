@@ -102,7 +102,8 @@ SECTION_FUNC(TEXT, __start)
 #ifdef CONFIG_INIT_STACKS
 	/* Pre-populate all bytes in z_interrupt_stacks with 0xAA
 	 * init.c enforces that the z_interrupt_stacks pointer
-	 * and CONFIG_ISR_STACK_SIZE are a multiple of STACK_ALIGN (4) */
+	 * and CONFIG_ISR_STACK_SIZE are a multiple of ARCH_STACK_PTR_ALIGN (4)
+	 */
 	movhi r1, %hi(z_interrupt_stacks)
 	ori r1, r1, %lo(z_interrupt_stacks)
 	movhi r2, %hi(CONFIG_ISR_STACK_SIZE)

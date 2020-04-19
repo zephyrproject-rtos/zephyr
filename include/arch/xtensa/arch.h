@@ -27,7 +27,7 @@
 #include <xtensa/config/core.h>
 #include <arch/common/addr_types.h>
 
-#define STACK_ALIGN 16
+#define ARCH_STACK_PTR_ALIGN 16
 
 /* Xtensa GPRs are often designated by two different names */
 #define sys_define_gpr_with_alias(name1, name2) union { u32_t name1, name2; }
