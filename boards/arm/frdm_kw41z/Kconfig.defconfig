@@ -43,10 +43,6 @@ config GPIO_MCUX_PORTC
 
 endif # GPIO_MCUX
 
-config UART_MCUX_LPUART_0
-	default y if UART_CONSOLE
-	depends on UART_MCUX_LPUART
-
 config I2C_1
 	default y
 	depends on I2C

@@ -26,16 +26,6 @@ config I2C_4
 
 endif # I2C_MCUX_LPI2C
 
-if UART_MCUX_LPUART
-
-config UART_MCUX_LPUART_1
-	default y
-
-config UART_MCUX_LPUART_2
-	default y if BT_UART
-
-endif # UART_MCUX_LPUART
-
 if NETWORKING
 
 config NET_L2_ETHERNET
