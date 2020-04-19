@@ -94,8 +94,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	struct __esf *pInitCtx;
 
-	z_new_thread_init(thread, pStackMem, stackSize, priority,
-			 options);
+	z_new_thread_init(thread, pStackMem, stackSize);
 
 	/* Carve the thread entry struct from the "base" of the stack
 	 *

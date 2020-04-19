@@ -137,7 +137,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 	}
 
-	z_new_thread_init(thread, pStackMem, stackAdjSize, priority, options);
+	z_new_thread_init(thread, pStackMem, stackAdjSize);
 
 	/* carve the thread entry struct from the "base" of
 		the privileged stack */
@@ -164,7 +164,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pStackMem += ARCH_THREAD_STACK_RESERVED;
 	stackEnd = pStackMem + stackSize;
 
-	z_new_thread_init(thread, pStackMem, stackSize, priority, options);
+	z_new_thread_init(thread, pStackMem, stackSize);
 
 	stackAdjEnd = stackEnd;
 
