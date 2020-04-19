@@ -33,10 +33,6 @@
 		adc-0 = &adc0;
 		adc-1 = &adc1;
 		adc-2 = &adc2;
-		pwm-0 = &ftm0;
-		pwm-1 = &ftm1;
-		pwm-2 = &ftm2;
-		pwm-3 = &ftm3;
 	};
 
 	chosen {
@@ -403,43 +399,39 @@
 			#io-channel-cells = <1>;
 		};
 
-		ftm0: pwm@40038000 {
+		ftm0: ftm@40038000 {
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40038000 0x1000>;
 			interrupts = <42 0>;
 			clocks = <&pcc 0xe0 KINETIS_PCC_SRC_FIRC_ASYNC>;
-			label = "PWM_0";
-			#pwm-cells = <3>;
+			label = "FTM_0";
 			status = "disabled";
 		};
 
-		ftm1: pwm@40039000 {
+		ftm1: ftm@40039000 {
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40039000 0x1000>;
 			interrupts = <43 0>;
 			clocks = <&pcc 0xe4 KINETIS_PCC_SRC_FIRC_ASYNC>;
-			label = "PWM_1";
-			#pwm-cells = <3>;
+			label = "FTM_1";
 			status = "disabled";
 		};
 
-		ftm2: pwm@4003a000 {
+		ftm2: ftm@4003a000 {
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x4003a000 0x1000>;
 			interrupts = <44 0>;
 			clocks = <&pcc 0xe8 KINETIS_PCC_SRC_FIRC_ASYNC>;
-			label = "PWM_2";
-			#pwm-cells = <3>;
+			label = "FTM_2";
 			status = "disabled";
 		};
 
-		ftm3: pwm@40026000 {
+		ftm3: ftm@40026000 {
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40026000 0x1000>;
 			interrupts = <71 0>;
 			clocks = <&pcc 0x98 KINETIS_PCC_SRC_FIRC_ASYNC>;
-			label = "PWM_3";
-			#pwm-cells = <3>;
+			label = "FTM_3";
 			status = "disabled";
 		};
 	};

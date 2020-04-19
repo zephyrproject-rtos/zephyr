@@ -177,6 +177,8 @@
 
 &ftm3 {
 	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
 };
 
 &spi1 {
