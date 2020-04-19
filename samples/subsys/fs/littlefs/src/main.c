@@ -52,8 +52,9 @@ void main(void)
 		printk("Erasing flash area ... ");
 		rc = flash_area_erase(pfa, 0, pfa->fa_size);
 		printk("%d\n", rc);
-		flash_area_close(pfa);
 	}
+
+	flash_area_close(pfa);
 
 	rc = fs_mount(mp);
 	if (rc < 0) {
