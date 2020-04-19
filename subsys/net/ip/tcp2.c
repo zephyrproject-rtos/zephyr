@@ -942,14 +942,33 @@ next_state:
 			conn_ack(conn, + 1);
 			tcp_out(conn, ACK);
 			next = TCP_TIME_WAIT;
+		} else if (th && FL(&fl, ==, FIN, th_seq(th) == conn->ack)) {
+			tcp_send_timer_cancel(conn);
+			conn_ack(conn, + 1);
+			tcp_out(conn, ACK);
+			next = TCP_CLOSING;
+		} else if (th && FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
+			tcp_send_timer_cancel(conn);
+			next = TCP_FIN_WAIT_2;
+		}
+		break;
+	case TCP_FIN_WAIT_2:
+		if (th && FL(&fl, ==, FIN, th_seq(th) == conn->ack)) {
+			conn_ack(conn, + 1);
+			tcp_out(conn, ACK);
+			next = TCP_TIME_WAIT;
+		}
+		break;
+	case TCP_CLOSING:
+		if (th && FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
+			tcp_send_timer_cancel(conn);
+			next = TCP_TIME_WAIT;
 		}
 		break;
 	case TCP_TIME_WAIT:
 		k_delayed_work_submit(&conn->timewait_timer,
 				      K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 		break;
-	case TCP_FIN_WAIT_2:
-	case TCP_CLOSING:
 	default:
 		NET_ASSERT(false, "%s is unimplemented",
 			   tcp_state_to_str(conn->state, true));
