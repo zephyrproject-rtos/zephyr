@@ -50,12 +50,12 @@
 #include "../common/soc_gpio.h"
 #include "../common/atmel_sam_dt.h"
 
-#endif /* !_ASMLANGUAGE */
-
 /** Processor Clock (HCLK) Frequency */
-#define SOC_ATMEL_SAM_HCLK_FREQ_HZ DT_ARM_CORTEX_M4_0_CLOCK_FREQUENCY
+#define SOC_ATMEL_SAM_HCLK_FREQ_HZ ATMEL_SAM_DT_CPU_CLK_FREQ_HZ
 
 /** Master Clock (MCK) Frequency */
 #define SOC_ATMEL_SAM_MCK_FREQ_HZ SOC_ATMEL_SAM_HCLK_FREQ_HZ
+
+#endif /* !_ASMLANGUAGE */
 
 #endif /* _ATMEL_SAM4S_SOC_H_ */
