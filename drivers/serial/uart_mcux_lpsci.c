@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_kinetis_lpsci
+
 #include <errno.h>
 #include <device.h>
 #include <drivers/uart.h>
@@ -282,40 +284,52 @@ static const struct uart_driver_api mcux_lpsci_driver_api = {
 #endif
 };
 
-#ifdef CONFIG_UART_MCUX_LPSCI_0
-
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void mcux_lpsci_config_func_0(struct device *dev);
+#define MCUX_LPSCI_CONFIG_FUNC(n)					\
+	static void mcux_lpsci_config_func_##n(struct device *dev)	\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			    DT_INST_IRQ(n, priority),			\
+			    mcux_lpsci_isr, DEVICE_GET(uart_##n), 0);	\
+									\
+		irq_enable(DT_INST_IRQN(n));				\
+	}
+#define MCUX_LPSCI_IRQ_CFG_FUNC_INIT(n)					\
+	.irq_config_func = mcux_lpsci_config_func_##n
+#define MCUX_LPSCI_INIT_CFG(n)						\
+	MCUX_LPSCI_DECLARE_CFG(n, MCUX_LPSCI_IRQ_CFG_FUNC_INIT(n))
+#else
+#define MCUX_LPSCI_CONFIG_FUNC(n)
+#define MCUX_LPSCI_IRQ_CFG_FUNC_INIT
+#define MCUX_LPSCI_INIT_CFG(n)						\
+	MCUX_LPSCI_DECLARE_CFG(n, MCUX_LPSCI_IRQ_CFG_FUNC_INIT)
 #endif
 
-static const struct mcux_lpsci_config mcux_lpsci_0_config = {
-	.base = UART0,
-	.clock_name = DT_NXP_KINETIS_LPSCI_UART_0_CLOCK_CONTROLLER,
-	.clock_subsys =
-		(clock_control_subsys_t)DT_NXP_KINETIS_LPSCI_UART_0_CLOCK_NAME,
-	.baud_rate = DT_NXP_KINETIS_LPSCI_UART_0_CURRENT_SPEED,
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	.irq_config_func = mcux_lpsci_config_func_0,
-#endif
-};
-
-static struct mcux_lpsci_data mcux_lpsci_0_data;
-
-DEVICE_AND_API_INIT(uart_0, DT_NXP_KINETIS_LPSCI_UART_0_LABEL,
-		    &mcux_lpsci_init,
-		    &mcux_lpsci_0_data, &mcux_lpsci_0_config,
-		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_lpsci_driver_api);
-
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void mcux_lpsci_config_func_0(struct device *dev)
-{
-	IRQ_CONNECT(DT_NXP_KINETIS_LPSCI_UART_0_IRQ_0,
-		    DT_NXP_KINETIS_LPSCI_UART_0_IRQ_0_PRIORITY,
-		    mcux_lpsci_isr, DEVICE_GET(uart_0), 0);
-
-	irq_enable(DT_NXP_KINETIS_LPSCI_UART_0_IRQ_0);
+#define MCUX_LPSCI_DECLARE_CFG(n, IRQ_FUNC_INIT)			\
+static const struct mcux_lpsci_config mcux_lpsci_##n##_config = {	\
+	.base = (UART0_Type *)DT_INST_REG_ADDR(n),			\
+	.clock_name = DT_INST_CLOCKS_LABEL(n),				\
+	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+	.baud_rate = DT_INST_PROP(n, current_speed),			\
+	IRQ_FUNC_INIT							\
 }
-#endif
 
-#endif /* CONFIG_UART_MCUX_LPSCI_0 */
+#define MCUX_LPSCI_INIT(n)						\
+									\
+	static struct mcux_lpsci_data mcux_lpsci_##n##_data;		\
+									\
+	static const struct mcux_lpsci_config mcux_lpsci_##n##_config;	\
+									\
+	DEVICE_AND_API_INIT(uart_##n, DT_INST_LABEL(n),			\
+			    &mcux_lpsci_init,				\
+			    &mcux_lpsci_##n##_data,			\
+			    &mcux_lpsci_##n##_config,			\
+			    PRE_KERNEL_1,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &mcux_lpsci_driver_api);			\
+									\
+	MCUX_LPSCI_CONFIG_FUNC(n)					\
+									\
+	MCUX_LPSCI_INIT_CFG(n)
+
+DT_INST_FOREACH(MCUX_LPSCI_INIT)
