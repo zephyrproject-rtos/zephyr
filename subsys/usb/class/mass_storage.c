@@ -113,8 +113,11 @@ static volatile u32_t defered_wr_sz;
  * Keep block buffer larger than BLOCK_SIZE for the case
  * the dCBWDataTransferLength is multiple of the BLOCK_SIZE and
  * the length of the transferred data is not aligned to the BLOCK_SIZE.
+ *
+ * Align for cases where the underlying disk access requires word-aligned
+ * addresses.
  */
-static u8_t page[BLOCK_SIZE + CONFIG_MASS_STORAGE_BULK_EP_MPS];
+static u8_t __aligned(4) page[BLOCK_SIZE + CONFIG_MASS_STORAGE_BULK_EP_MPS];
 
 /* Initialized during mass_storage_init() */
 static u32_t memory_size;
