@@ -951,6 +951,9 @@ next_state:
 	case TCP_FIN_WAIT_1:
 		if (th && FL(&fl, ==, (FIN | ACK), th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
+			conn_seq(conn, + 1);
+			conn_ack(conn, + 1);
+			tcp_out(conn, ACK);
 			next = TCP_TIME_WAIT;
 		}
 		break;
@@ -984,9 +987,9 @@ int net_tcp_put(struct net_context *context)
 	NET_DBG("%s", conn ? log_strdup(tcp_conn_state(conn, NULL)) : "");
 
 	if (conn) {
-		tcp_out(conn, FIN | ACK);
-
 		conn_state(conn, TCP_FIN_WAIT_1);
+
+		tcp_out(conn, FIN | ACK);
 	}
 
 	net_context_unref(context);
