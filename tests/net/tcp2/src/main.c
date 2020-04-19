@@ -412,8 +412,13 @@ static void handle_client_test(sa_family_t af, struct tcphdr *th)
 		test_sem_give();
 		break;
 	case T_FIN:
+		ack = ntohs(th->th_seq) + 1U;
+		t_state = T_FIN_ACK;
+		reply = prepare_fin_ack_packet(af, htons(MY_PORT),
+					       th->th_sport);
+		break;
+	case T_FIN_ACK:
 		test_sem_give();
-		/* TODO in TCP2: it sends FIN, but doesn't wait for FIN | ACK */
 		return;
 	default:
 		zassert_true(false, "%s unexpected state", __func__);
