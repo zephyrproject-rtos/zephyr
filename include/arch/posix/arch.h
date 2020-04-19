@@ -33,11 +33,9 @@ extern "C" {
 #endif
 
 #ifdef CONFIG_64BIT
-#define STACK_ALIGN 8
-#define STACK_ALIGN_SIZE 8
+#define ARCH_STACK_PTR_ALIGN 8
 #else
-#define STACK_ALIGN 4
-#define STACK_ALIGN_SIZE 4
+#define ARCH_STACK_PTR_ALIGN 4
 #endif
 
 struct __esf {

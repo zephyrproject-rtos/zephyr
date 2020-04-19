@@ -46,16 +46,16 @@ extern "C" {
 #endif
 
 /**
- * @brief Declare the STACK_ALIGN_SIZE
+ * @brief Declare the ARCH_STACK_PTR_ALIGN
  *
  * Denotes the required alignment of the stack pointer on public API
  * boundaries
  *
  */
 #ifdef CONFIG_STACK_ALIGN_DOUBLE_WORD
-#define STACK_ALIGN_SIZE 8
+#define ARCH_STACK_PTR_ALIGN 8
 #else
-#define STACK_ALIGN_SIZE 4
+#define ARCH_STACK_PTR_ALIGN 4
 #endif
 
 /**
@@ -70,7 +70,7 @@ extern "C" {
 #if defined(CONFIG_USERSPACE)
 #define Z_THREAD_MIN_STACK_ALIGN CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
 #else
-#define Z_THREAD_MIN_STACK_ALIGN STACK_ALIGN_SIZE
+#define Z_THREAD_MIN_STACK_ALIGN ARCH_STACK_PTR_ALIGN
 #endif
 
 /**
@@ -97,7 +97,7 @@ extern "C" {
  * |  Some thread data   | <---- Defined when thread is created
  * |        ...          |
  * |---------------------| <---- Actual initial stack ptr
- * |  Initial Stack Ptr  |       aligned to STACK_ALIGN_SIZE
+ * |  Initial Stack Ptr  |       aligned to ARCH_STACK_PTR_ALIGN
  * |        ...          |
  * |        ...          |
  * |        ...          |
@@ -174,7 +174,7 @@ extern "C" {
  * the MPU Stack Guard feature).
  */
 #if defined(CONFIG_USERSPACE)
-#define Z_PRIVILEGE_STACK_ALIGN MAX(STACK_ALIGN_SIZE, Z_MPU_GUARD_ALIGN)
+#define Z_PRIVILEGE_STACK_ALIGN MAX(ARCH_STACK_PTR_ALIGN, Z_MPU_GUARD_ALIGN)
 #endif
 
 /**

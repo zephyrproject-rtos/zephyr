@@ -18,11 +18,6 @@
 extern "C" {
 #endif
 
-/* stack alignment related macros: STACK_ALIGN_SIZE is defined above */
-
-#define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
-#define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN_SIZE)
-
 extern void FatalErrorHandler(void);
 extern void ReservedInterruptHandler(unsigned int intNo);
 extern void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf);

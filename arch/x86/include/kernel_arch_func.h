@@ -35,10 +35,6 @@ static inline bool arch_is_in_isr(void)
 #endif
 }
 
-/* stack alignment related macros: STACK_ALIGN is defined in arch.h */
-#define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN)
-#define STACK_ROUND_DOWN(x) ROUND_DOWN(x, STACK_ALIGN)
-
 struct multiboot_info;
 
 extern FUNC_NORETURN void z_x86_prep_c(void *arg);

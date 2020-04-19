@@ -65,7 +65,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, u16_t cs)
 		 * The normal stack buffer is what we will check.
 		 */
 		start = _current->stack_info.start;
-		end = STACK_ROUND_DOWN(_current->stack_info.start +
+		end = Z_STACK_PTR_ALIGN(_current->stack_info.start +
 				       _current->stack_info.size);
 	} else {
 		/* User thread was doing a syscall, check kernel stack bounds */

@@ -13,7 +13,7 @@
 #error "Check ISR stack configuration (CONFIG_ISR_*)"
 #endif
 
-#if CONFIG_ISR_SUBSTACK_SIZE % STACK_ALIGN
+#if CONFIG_ISR_SUBSTACK_SIZE % ARCH_STACK_PTR_ALIGN
 #error "CONFIG_ISR_SUBSTACK_SIZE must be a multiple of 16"
 #endif
 
