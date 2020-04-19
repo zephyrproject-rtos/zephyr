@@ -90,19 +90,19 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		thread->arch.priv_stack_start =
 			(u32_t)(stackEnd + STACK_GUARD_SIZE);
 
-		stackAdjEnd = (char *)STACK_ROUND_DOWN(stackEnd +
+		stackAdjEnd = (char *)Z_STACK_PTR_ALIGN(stackEnd +
 				ARCH_THREAD_STACK_RESERVED);
 
 		/* reserve 4 bytes for the start of user sp */
 		stackAdjEnd -= 4;
-		(*(u32_t *)stackAdjEnd) = STACK_ROUND_DOWN(
+		(*(u32_t *)stackAdjEnd) = Z_STACK_PTR_ALIGN(
 			(u32_t)stackEnd - offset);
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 		/* reserve stack space for the userspace local data struct */
 		thread->userspace_local_data =
 			(struct _thread_userspace_local_data *)
-			STACK_ROUND_DOWN(stackEnd -
+			Z_STACK_PTR_ALIGN(stackEnd -
 			sizeof(*thread->userspace_local_data) - offset);
 		/* update the start of user sp */
 		(*(u32_t *)stackAdjEnd) = (u32_t) thread->userspace_local_data;
@@ -127,12 +127,12 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 		/* reserve stack space for the userspace local data struct */
-		stackAdjEnd = (char *)STACK_ROUND_DOWN(stackEnd
+		stackAdjEnd = (char *)Z_STACK_PTR_ALIGN(stackEnd
 			- sizeof(*thread->userspace_local_data) - offset);
 		thread->userspace_local_data =
 			(struct _thread_userspace_local_data *)stackAdjEnd;
 #else
-		stackAdjEnd = (char *)STACK_ROUND_DOWN(stackEnd - offset);
+		stackAdjEnd = (char *)Z_STACK_PTR_ALIGN(stackEnd - offset);
 #endif
 	}
 
@@ -168,7 +168,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stackAdjEnd = stackEnd;
 
 	pInitCtx = (struct init_stack_frame *)(
-		STACK_ROUND_DOWN(stackAdjEnd) -
+		Z_STACK_PTR_ALIGN(stackAdjEnd) -
 		sizeof(struct init_stack_frame));
 
 	pInitCtx->status32 = 0U;

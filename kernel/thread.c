@@ -491,7 +491,7 @@ void z_setup_new_thread(struct k_thread *new_thread,
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 #ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
 	/* reserve space on top of stack for local data */
-	stack_size = STACK_ROUND_DOWN(stack_size
+	stack_size = Z_STACK_PTR_ALIGN(stack_size
 			- sizeof(*new_thread->userspace_local_data));
 #endif
 #endif

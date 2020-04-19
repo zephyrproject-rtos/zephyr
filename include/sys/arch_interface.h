@@ -108,8 +108,15 @@ static inline u32_t arch_k_cycle_get_32(void);
  * @see K_THREAD_STACK_RESERVED
  */
 
+/**
+ * @def ARCH_STACK_PTR_ALIGN
+ *
+ * Required alignment of the CPU's stack pointer register value, dictated by
+ * hardware constraints and the ABI calling convention.
+ *
+ * @see Z_STACK_PTR_ALIGN
+ */
 /** @} */
-
 
 /**
  * @addtogroup arch-pm

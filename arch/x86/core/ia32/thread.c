@@ -88,7 +88,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	swap_entry = z_thread_entry;
 #endif
 
-	stack_high = (char *)STACK_ROUND_DOWN(stack_buf + stack_size);
+	stack_high = (char *)Z_STACK_PTR_ALIGN(stack_buf + stack_size);
 
 	/* Create an initial context on the stack expected by z_swap() */
 	initial_frame = (struct _x86_initial_frame *)

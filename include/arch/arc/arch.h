@@ -42,6 +42,8 @@
 extern "C" {
 #endif
 
+#define ARCH_STACK_PTR_ALIGN	4
+
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 	#if defined(CONFIG_ARC_CORE_MPU)
 		#if CONFIG_ARC_MPU_VER == 2

@@ -24,7 +24,7 @@
 #include <arch/common/sys_io.h>
 #include <arch/common/ffs.h>
 
-#define STACK_ALIGN  4
+#define ARCH_STACK_PTR_ALIGN  4
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
