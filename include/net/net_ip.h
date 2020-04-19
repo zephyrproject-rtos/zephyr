@@ -45,6 +45,8 @@ extern "C" {
 #define PF_PACKET       3          /**< Packet family.                */
 #define PF_CAN          4          /**< Controller Area Network.      */
 #define PF_NET_MGMT     5          /**< Network management info.      */
+#define PF_LOCAL        6          /**< Inter-process communication   */
+#define PF_UNIX         PF_LOCAL   /**< Inter-process communication   */
 
 /* Address families. */
 #define AF_UNSPEC      PF_UNSPEC   /**< Unspecified address family.   */
@@ -53,6 +55,8 @@ extern "C" {
 #define AF_PACKET      PF_PACKET   /**< Packet family.                */
 #define AF_CAN         PF_CAN      /**< Controller Area Network.      */
 #define AF_NET_MGMT    PF_NET_MGMT /**< Network management info.      */
+#define AF_LOCAL       PF_LOCAL    /**< Inter-process communication   */
+#define AF_UNIX        PF_UNIX     /**< Inter-process communication   */
 
 /** Protocol numbers from IANA/BSD */
 enum net_ip_protocol {
@@ -339,6 +343,12 @@ struct sockaddr_ptr {
 struct sockaddr_storage {
 	sa_family_t ss_family;
 	char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
+};
+
+/* Socket address struct for UNIX domain sockets */
+struct sockaddr_un {
+	sa_family_t sun_family;    /* AF_UNIX */
+	char        sun_path[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
 };
 
 struct net_addr {

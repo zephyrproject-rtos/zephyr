@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
+ * Copyright (c) 2020 Friedt Professional Engineering Services, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,11 @@ extern "C" {
 static inline int socket(int family, int type, int proto)
 {
 	return zsock_socket(family, type, proto);
+}
+
+static inline int socketpair(int family, int type, int proto, int sv[2])
+{
+	return zsock_socketpair(family, type, proto, sv);
 }
 
 #define SHUT_RD ZSOCK_SHUT_RD

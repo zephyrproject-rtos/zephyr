@@ -1,0 +1,6 @@
+common:
+  depends_on:
+tests:
+  net.socket.socketpair:
+    min_ram: 21
+    tags: net socket userspace

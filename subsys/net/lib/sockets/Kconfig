@@ -139,6 +139,12 @@ config NET_SOCKETS_CAN_RECEIVERS
 	  The value tells how many sockets can receive data from same
 	  Socket-CAN interface.
 
+config NET_SOCKETS_UNIX
+	bool "Enable local / UNIX socket support [EXPERIMENTAL]"
+	help
+	  Choose y here if you would like to use the socketpair(2)
+	  system call.
+
 config NET_SOCKETS_NET_MGMT
 	bool "Enable network management socket support [EXPERIMENTAL]"
 	depends on NET_MGMT_EVENT
