@@ -77,7 +77,9 @@ enum test_state {
 	T_DATA,
 	T_DATA_ACK,
 	T_FIN,
-	T_FIN_ACK
+	T_FIN_ACK,
+	T_FIN_2,
+	T_CLOSING
 };
 
 static enum test_state t_state;
@@ -90,6 +92,8 @@ static int tester_send(struct device *dev, struct net_pkt *pkt);
 static void handle_client_test(sa_family_t af, struct tcphdr *th);
 static void handle_server_test(sa_family_t af, struct tcphdr *th);
 static void handle_syn_resend(void);
+static void handle_client_fin_wait_2_test(sa_family_t af, struct tcphdr *th);
+static void handle_client_closing_test(sa_family_t af, struct tcphdr *th);
 
 struct net_tcp_context {
 	u8_t mac_addr[sizeof(struct net_eth_addr)];
@@ -301,6 +305,12 @@ static struct net_pkt *prepare_fin_ack_packet(sa_family_t af, u16_t src_port,
 				      NULL, 0U);
 }
 
+static struct net_pkt *prepare_fin_packet(sa_family_t af, u16_t src_port,
+					  u16_t dst_port)
+{
+	return tester_prepare_tcp_pkt(af, src_port, dst_port, FIN, NULL, 0U);
+}
+
 static int read_tcp_header(struct net_pkt *pkt, struct tcphdr *th)
 {
 	int ret;
@@ -348,6 +358,12 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 		break;
 	case 6:
 		handle_syn_resend();
+		break;
+	case 7:
+		handle_client_fin_wait_2_test(net_pkt_family(pkt), &th);
+		break;
+	case 8:
+		handle_client_closing_test(net_pkt_family(pkt), &th);
 		break;
 	default:
 		zassert_true(false, "Undefined test case");
@@ -412,8 +428,13 @@ static void handle_client_test(sa_family_t af, struct tcphdr *th)
 		test_sem_give();
 		break;
 	case T_FIN:
+		ack = ntohs(th->th_seq) + 1U;
+		t_state = T_FIN_ACK;
+		reply = prepare_fin_ack_packet(af, htons(MY_PORT),
+					       th->th_sport);
+		break;
+	case T_FIN_ACK:
 		test_sem_give();
-		/* TODO in TCP2: it sends FIN, but doesn't wait for FIN | ACK */
 		return;
 	default:
 		zassert_true(false, "%s unexpected state", __func__);
@@ -456,6 +477,8 @@ static void test_client_ipv4(void)
 		zassert_true(false, "Failed to get net_context");
 	}
 
+	net_context_ref(ctx);
+
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
 				  sizeof(struct sockaddr_in),
 				  NULL,
@@ -483,6 +506,11 @@ static void test_client_ipv4(void)
 	 * proper ACK to FIN | ACK
 	 */
 	test_sem_take(K_MSEC(100), __LINE__);
+
+	/* Connection is in TIME_WAIT state, context will be released
+	 * after K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY), so wait for it.
+	 */
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
 /* Test case scenario IPv6
@@ -511,6 +539,8 @@ static void test_client_ipv6(void)
 		zassert_true(false, "Failed to get net_context");
 	}
 
+	net_context_ref(ctx);
+
 	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_v6_s,
 				  sizeof(struct sockaddr_in6),
 				  NULL,
@@ -538,6 +568,11 @@ static void test_client_ipv6(void)
 	 * proper ACK to FIN | ACK
 	 */
 	test_sem_take(K_MSEC(100), __LINE__);
+
+	/* Connection is in TIME_WAIT state, context will be released
+	 * after K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY), so wait for it.
+	 */
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
 static void handle_server_test(sa_family_t af, struct tcphdr *th)
@@ -868,6 +903,242 @@ static void test_client_syn_resend(void)
 	net_context_put(ctx);
 }
 
+static void handle_client_fin_wait_2_test(sa_family_t af, struct tcphdr *th)
+{
+	struct net_pkt *reply;
+	int ret;
+
+send_next:
+	switch (t_state) {
+	case T_SYN:
+		seq = 0U;
+		ack = ntohs(th->th_seq) + 1U;
+		reply = prepare_syn_ack_packet(af, htons(MY_PORT),
+					       th->th_sport);
+		t_state = T_SYN_ACK;
+		break;
+	case T_SYN_ACK:
+		/* connection is success */
+		t_state = T_DATA;
+		test_sem_give();
+		return;
+	case T_DATA:
+		seq++;
+		ack = ack + 1U;
+		reply = prepare_ack_packet(af, htons(MY_PORT), th->th_sport);
+		t_state = T_FIN;
+		test_sem_give();
+		break;
+	case T_FIN:
+		ack = ntohs(th->th_seq) + 1U;
+		t_state = T_FIN_2;
+		reply = prepare_ack_packet(af, htons(MY_PORT), th->th_sport);
+		break;
+	case T_FIN_2:
+		t_state = T_FIN_ACK;
+		reply = prepare_fin_packet(af, htons(MY_PORT), th->th_sport);
+		break;
+	case T_FIN_ACK:
+		test_sem_give();
+		return;
+	default:
+		zassert_true(false, "%s unexpected state", __func__);
+		return;
+	}
+
+	ret = net_recv_data(iface, reply);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	if (t_state == T_FIN_2) {
+		goto send_next;
+	}
+
+	return;
+fail:
+	zassert_true(false, "%s failed", __func__);
+}
+
+/* Test case scenario IPv4
+ *   send SYN,
+ *   expect SYN ACK,
+ *   send ACK,
+ *   send Data,
+ *   expect ACK,
+ *   send FIN,
+ *   expect ACK,
+ *   expect FIN,
+ *   send ACK,
+ *   any failures cause test case to fail.
+ */
+static void test_client_fin_wait_2_ipv4(void)
+{
+	struct net_context *ctx;
+	u8_t data = 0x41; /* "A" */
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = 7;
+	seq = ack = 0;
+
+	ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP, &ctx);
+	if (ret < 0) {
+		zassert_true(false, "Failed to get net_context");
+	}
+
+	net_context_ref(ctx);
+
+	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_s,
+				  sizeof(struct sockaddr_in),
+				  NULL,
+				  K_NO_WAIT, NULL);
+	if (ret < 0) {
+		zassert_true(false, "Failed to connect to peer");
+	}
+
+	/* Peer will release the semaphone after it receives
+	 * proper ACK to SYN | ACK
+	 */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	ret = net_context_send(ctx, &data, 1, NULL, K_NO_WAIT, NULL);
+	if (ret < 0) {
+		zassert_true(false, "Failed to send data to peer");
+	}
+
+	/* Peer will release the semaphone after it sends ACK for data */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	net_tcp_put(ctx);
+
+	/* Peer will release the semaphone after it receives
+	 * proper ACK to FIN | ACK
+	 */
+	test_sem_take(K_MSEC(300), __LINE__);
+
+	/* Connection is in TIME_WAIT state, context will be released
+	 * after K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY), so wait for it.
+	 */
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+}
+
+static void handle_client_closing_test(sa_family_t af, struct tcphdr *th)
+{
+	struct net_pkt *reply;
+	int ret;
+
+	switch (t_state) {
+	case T_SYN:
+		seq = 0U;
+		ack = ntohs(th->th_seq) + 1U;
+		reply = prepare_syn_ack_packet(af, htons(MY_PORT),
+					       th->th_sport);
+		t_state = T_SYN_ACK;
+		break;
+	case T_SYN_ACK:
+		/* connection is success */
+		t_state = T_DATA;
+		test_sem_give();
+		return;
+	case T_DATA:
+		seq++;
+		ack = ack + 1U;
+		reply = prepare_ack_packet(af, htons(MY_PORT), th->th_sport);
+		t_state = T_FIN;
+		test_sem_give();
+		break;
+	case T_FIN:
+		ack = ntohs(th->th_seq) + 1U;
+		t_state = T_CLOSING;
+		reply = prepare_fin_packet(af, htons(MY_PORT), th->th_sport);
+		break;
+	case T_CLOSING:
+		t_state = T_FIN_ACK;
+		reply = prepare_ack_packet(af, htons(MY_PORT), th->th_sport);
+		break;
+	default:
+		zassert_true(false, "%s unexpected state", __func__);
+		return;
+	}
+
+	ret = net_recv_data(iface, reply);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	if (t_state == T_FIN_ACK) {
+		test_sem_give();
+	}
+
+	return;
+fail:
+	zassert_true(false, "%s failed", __func__);
+}
+
+/* Test case scenario IPv6
+ *   send SYN,
+ *   expect SYN ACK,
+ *   send ACK,
+ *   send Data,
+ *   expect ACK,
+ *   send FIN,
+ *   expect FIN,
+ *   send ACK,
+ *   expect ACK,
+ *   any failures cause test case to fail.
+ */
+static void test_client_closing_ipv6(void)
+{
+	struct net_context *ctx;
+	u8_t data = 0x41; /* "A" */
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = 8;
+	seq = ack = 0;
+
+	ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP, &ctx);
+	if (ret < 0) {
+		zassert_true(false, "Failed to get net_context");
+	}
+
+	net_context_ref(ctx);
+
+	ret = net_context_connect(ctx, (struct sockaddr *)&peer_addr_v6_s,
+				  sizeof(struct sockaddr_in6),
+				  NULL,
+				  K_NO_WAIT, NULL);
+	if (ret < 0) {
+		zassert_true(false, "Failed to connect to peer");
+	}
+
+	/* Peer will release the semaphone after it receives
+	 * proper ACK to SYN | ACK
+	 */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	ret = net_context_send(ctx, &data, 1, NULL, K_NO_WAIT, NULL);
+	if (ret < 0) {
+		zassert_true(false, "Failed to send data to peer");
+	}
+
+	/* Peer will release the semaphone after it sends ACK for data */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	net_tcp_put(ctx);
+
+	/* Peer will release the semaphone after it receives
+	 * proper ACK to FIN | ACK
+	 */
+	test_sem_take(K_MSEC(300), __LINE__);
+
+	/* Connection is in TIME_WAIT state, context will be released
+	 * after K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY), so wait for it.
+	 */
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+}
+
 /** Test case main entry */
 void test_main(void)
 {
@@ -878,7 +1149,9 @@ void test_main(void)
 			 ztest_unit_test(test_server_ipv4),
 			 ztest_unit_test(test_server_with_options_ipv4),
 			 ztest_unit_test(test_server_ipv6),
-			 ztest_unit_test(test_client_syn_resend)
+			 ztest_unit_test(test_client_syn_resend),
+			 ztest_unit_test(test_client_fin_wait_2_ipv4),
+			 ztest_unit_test(test_client_closing_ipv6)
 			 );
 
 	ztest_run_test_suite(test_tcp_fn);
