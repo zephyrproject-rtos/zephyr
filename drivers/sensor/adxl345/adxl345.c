@@ -71,7 +71,7 @@ static int adxl345_sample_fetch(struct device *dev, enum sensor_channel chan)
 		return rc;
 	}
 
-	__ASSERT_NO_MSG(samples_count < ADXL345_MAX_FIFO_SIZE);
+	__ASSERT_NO_MSG(samples_count <= ARRAY_SIZE(data->bufx));
 
 	for (u8_t s = 0; s < samples_count; s++) {
 		rc = adxl345_read_sample(dev, &sample);
@@ -93,7 +93,7 @@ static int adxl345_channel_get(struct device *dev,
 {
 	struct adxl345_dev_data *data = dev->driver_data;
 
-	if (data->sample_number > 32) {
+	if (data->sample_number >= ARRAY_SIZE(data->bufx)) {
 		data->sample_number = 0;
 	}
 
