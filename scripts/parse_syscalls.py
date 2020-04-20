@@ -35,15 +35,16 @@ __syscall\s+                    # __syscall attribute, must be first
 ''', re.MULTILINE | re.VERBOSE)
 
 subsys_regex = re.compile(r'''
-__subsystem\s+                  # __subsystem attribute, must be first
-struct\s+                       # struct keyword is next
-([^{]+)                         # name of subsystem
+__subsystem                     # __subsystem attribute, must be first
+(/\*(?P<base>\w+)\*/)?          # optional base subsystem for extensions
+\s+struct\s+                    # struct keyword is next
+(?P<name>[^{]+)                 # name of subsystem
 [{]                             # Open curly bracket
 ''', re.MULTILINE | re.VERBOSE)
 
 def analyze_headers(multiple_directories):
     syscall_ret = []
-    subsys_ret = []
+    subsys_ret = {}
 
     for base_path in multiple_directories:
         for root, dirs, files in os.walk(base_path, topdown=True):
@@ -63,14 +64,16 @@ def analyze_headers(multiple_directories):
                 try:
                     syscall_result = [(mo.groups(), fn)
                                       for mo in syscall_regex.finditer(contents)]
-                    subsys_result = [mo.groups()[0].strip()
-                                     for mo in subsys_regex.finditer(contents)]
+                    subsys_result = {}
+                    for mo in subsys_regex.finditer(contents):
+                        subsys_name = mo.group('name').strip()
+                        subsys_result[subsys_name] = mo.group('base') or subsys_name
                 except Exception:
                     sys.stderr.write("While parsing %s\n" % fn)
                     raise
 
                 syscall_ret.extend(syscall_result)
-                subsys_ret.extend(subsys_result)
+                subsys_ret.update(subsys_result)
 
     return syscall_ret, subsys_ret
 

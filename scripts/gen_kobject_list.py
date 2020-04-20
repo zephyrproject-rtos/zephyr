@@ -106,16 +106,18 @@ def kobject_to_enum(kobj):
 
     return "K_OBJ_%s" % name.upper()
 
-subsystems = [
+subsystems = {
     # Editing the list is deprecated, add the __subsystem sentinal to your driver
     # api declaration instead. e.x.
     #
     # __subsystem struct my_driver_api {
     #    ....
     #};
-]
+}
 
 def subsystem_to_enum(subsys):
+    # Map from extended subsystem to base subsystem if different
+    subsys = subsystems[subsys]
     return "K_OBJ_DRIVER_" + subsys[:-11].upper()
 
 # --- debug stuff ---
@@ -839,7 +841,7 @@ def write_validation_output(fp):
 		 Z_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op))
                 """)
 
-    for subsystem in subsystems:
+    for subsystem in set(subsystems.values()):
         subsystem = subsystem.replace("_driver_api", "")
 
         fp.write(driver_macro_tpl % {
@@ -866,7 +868,7 @@ def write_kobj_types_output(fp):
             fp.write("#endif\n")
 
     fp.write("/* Driver subsystems */\n")
-    for subsystem in subsystems:
+    for subsystem in set(subsystems.values()):
         subsystem = subsystem.replace("_driver_api", "").upper()
         fp.write("K_OBJ_DRIVER_%s,\n" % subsystem)
 
@@ -887,7 +889,7 @@ def write_kobj_otype_output(fp):
             fp.write("#endif\n")
 
     fp.write("/* Driver subsystems */\n")
-    for subsystem in subsystems:
+    for subsystem in set(subsystems.values()):
         subsystem = subsystem.replace("_driver_api", "")
         fp.write('case K_OBJ_DRIVER_%s: ret = "%s driver"; break;\n' % (
             subsystem.upper(),
@@ -916,7 +918,7 @@ def write_kobj_size_output(fp):
 def parse_subsystems_list_file(path):
     with open(path, "r") as fp:
         subsys_list = json.load(fp)
-    subsystems.extend(subsys_list)
+    subsystems.update(subsys_list)
 
 def parse_args():
     global args
