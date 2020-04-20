@@ -136,7 +136,7 @@ static struct cavs_ictl_runtime cavs_0_runtime = {
 	.base_addr = DT_CAVS_ICTL_BASE_ADDR,
 };
 
-DEVICE_AND_API_INIT(cavs_ictl_0, CONFIG_CAVS_ICTL_0_NAME,
+DEVICE_AND_API_INIT(cavs_ictl_0, DT_LABEL(DT_NODELABEL(cavs0)),
 		    cavs_ictl_0_initialize, &cavs_0_runtime, &cavs_config_0,
 		    PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
 
@@ -164,7 +164,7 @@ static struct cavs_ictl_runtime cavs_1_runtime = {
 	.base_addr = DT_CAVS_ICTL_BASE_ADDR + sizeof(struct cavs_registers),
 };
 
-DEVICE_AND_API_INIT(cavs_ictl_1, CONFIG_CAVS_ICTL_1_NAME,
+DEVICE_AND_API_INIT(cavs_ictl_1, DT_LABEL(DT_NODELABEL(cavs1)),
 		    cavs_ictl_1_initialize, &cavs_1_runtime, &cavs_config_1,
 		    PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
 
@@ -192,7 +192,7 @@ static struct cavs_ictl_runtime cavs_2_runtime = {
 	.base_addr = DT_CAVS_ICTL_BASE_ADDR + sizeof(struct cavs_registers) * 2,
 };
 
-DEVICE_AND_API_INIT(cavs_ictl_2, CONFIG_CAVS_ICTL_2_NAME,
+DEVICE_AND_API_INIT(cavs_ictl_2, DT_LABEL(DT_NODELABEL(cavs2)),
 		    cavs_ictl_2_initialize, &cavs_2_runtime, &cavs_config_2,
 		    PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
 
@@ -220,7 +220,7 @@ static struct cavs_ictl_runtime cavs_3_runtime = {
 	.base_addr = DT_CAVS_ICTL_BASE_ADDR + sizeof(struct cavs_registers) * 3,
 };
 
-DEVICE_AND_API_INIT(cavs_ictl_3, CONFIG_CAVS_ICTL_3_NAME,
+DEVICE_AND_API_INIT(cavs_ictl_3, DT_LABEL(DT_NODELABEL(cavs3)),
 		    cavs_ictl_3_initialize, &cavs_3_runtime, &cavs_config_3,
 		    PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
 

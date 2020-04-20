@@ -19,22 +19,24 @@ LOG_MODULE_REGISTER(soc);
 
 static u32_t ref_clk_freq;
 
+#define CAVS_INTC_NODE(n) DT_INST(n, intel_cavs_intc)
+
 void z_soc_irq_enable(u32_t irq)
 {
 	struct device *dev_cavs, *dev_ictl;
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
-	case DT_CAVS_ICTL_0_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_0_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(0)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(0)));
 		break;
-	case DT_CAVS_ICTL_1_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_1_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(1)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(1)));
 		break;
-	case DT_CAVS_ICTL_2_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_2_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(2)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(2)));
 		break;
-	case DT_CAVS_ICTL_3_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_3_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(3)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(3)));
 		break;
 	default:
 		/* regular interrupt */
@@ -83,17 +85,17 @@ void z_soc_irq_disable(u32_t irq)
 	struct device *dev_cavs, *dev_ictl;
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
-	case DT_CAVS_ICTL_0_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_0_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(0)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(0)));
 		break;
-	case DT_CAVS_ICTL_1_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_1_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(1)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(1)));
 		break;
-	case DT_CAVS_ICTL_2_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_2_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(2)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(2)));
 		break;
-	case DT_CAVS_ICTL_3_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_3_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(3)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(3)));
 		break;
 	default:
 		/* regular interrupt */
@@ -153,17 +155,17 @@ int z_soc_irq_is_enabled(unsigned int irq)
 	int ret = -EINVAL;
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
-	case DT_CAVS_ICTL_0_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_0_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(0)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(0)));
 		break;
-	case DT_CAVS_ICTL_1_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_1_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(1)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(1)));
 		break;
-	case DT_CAVS_ICTL_2_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_2_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(2)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(2)));
 		break;
-	case DT_CAVS_ICTL_3_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_3_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(3)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(3)));
 		break;
 	default:
 		/* regular interrupt */
