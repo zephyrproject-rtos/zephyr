@@ -1173,6 +1173,11 @@ static void test_clocks(void)
 			     "TEST_CLOCK"),
 		     "label 0");
 
+	/* DT_CLOCKS_LABEL_BY_NAME */
+	zassert_true(!strcmp(DT_CLOCKS_LABEL_BY_NAME(TEST_TEMP, clk_b),
+			     "TEST_CLOCK"),
+		     "label b");
+
 	/* DT_CLOCKS_LABEL */
 	zassert_true(!strcmp(DT_CLOCKS_LABEL(TEST_TEMP), "TEST_CLOCK"),
 		     "label 0");
@@ -1181,6 +1186,12 @@ static void test_clocks(void)
 	zassert_equal(DT_CLOCKS_CELL_BY_IDX(TEST_TEMP, bits, 2), 2,
 		      "clk 2 bits");
 	zassert_equal(DT_CLOCKS_CELL_BY_IDX(TEST_TEMP, bus, 2), 8, "clk 2 bus");
+
+	/* DT_CLOCKS_CELL_BY_NAME */
+	zassert_equal(DT_CLOCKS_CELL_BY_NAME(TEST_TEMP, clk_a, bits), 7,
+		      "clk-a bits");
+	zassert_equal(DT_CLOCKS_CELL_BY_NAME(TEST_TEMP, clk_b, bus), 8,
+		      "clk-b bus");
 
 	/* DT_CLOCKS_CELL */
 	zassert_equal(DT_CLOCKS_CELL(TEST_TEMP, bits), 7, "clk bits");
@@ -1199,6 +1210,11 @@ static void test_clocks(void)
 			     "TEST_CLOCK"),
 		     "label 0");
 
+	/* DT_INST_CLOCKS_LABEL_BY_NAME */
+	zassert_true(!strcmp(DT_INST_CLOCKS_LABEL_BY_NAME(0, clk_b),
+			     "TEST_CLOCK"),
+		     "label b");
+
 	/* DT_INST_CLOCKS_LABEL */
 	zassert_true(!strcmp(DT_INST_CLOCKS_LABEL(0), "TEST_CLOCK"),
 		     "label 0");
@@ -1207,6 +1223,12 @@ static void test_clocks(void)
 	zassert_equal(DT_INST_CLOCKS_CELL_BY_IDX(0, bits, 2), 2,
 		      "clk 2 bits");
 	zassert_equal(DT_INST_CLOCKS_CELL_BY_IDX(0, bus, 2), 8, "clk 2 bus");
+
+	/* DT_INST_CLOCKS_CELL_BY_NAME */
+	zassert_equal(DT_INST_CLOCKS_CELL_BY_NAME(0, clk_a, bits), 7,
+		      "clk-a bits");
+	zassert_equal(DT_INST_CLOCKS_CELL_BY_NAME(0, clk_b, bus), 8,
+		      "clk-b bus");
 
 	/* DT_INST_CLOCKS_CELL */
 	zassert_equal(DT_INST_CLOCKS_CELL(0, bits), 7, "clk bits");

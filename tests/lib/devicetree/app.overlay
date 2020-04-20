@@ -222,6 +222,7 @@
 			dmas = <&test_dma1 1 2>, <&test_dma2 3 4>;
 			dma-names = "tx", "rx";
 			clocks = <&test_clk 3 7>, <&test_fixed_clk>, <&test_clk 8 2>;
+			clock-names = "clk-a", "clk-fixed", "clk-b";
 		};
 
 		/* there should only be one of these */
