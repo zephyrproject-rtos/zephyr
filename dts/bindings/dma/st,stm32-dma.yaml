@@ -87,3 +87,22 @@ description: |
          status = "disabled";
          label = "DMA_2";
         };
+
+  For the client part, example for stm32f411 DMA V1 on DMA2 instance
+    Tx using stream 5 on channel 3 (stream 2 on channel 2 is also possible)
+    Rx using stream 2 on channel 3 (stream 0 on channel 3 is also possible)
+    spi1 {
+     dmas = <&dma2 5 3 0x28440 0x03>,
+           <&dma2 2 3 0x28480 0x03>;
+     dma-names = "tx", "rx";
+     };
+
+  For the client part, example for stm32l476 DMA V2 on DMA1 instance
+    Tx using channel 3 with request 1
+    Rx using channel 2 with request 1
+    spi1 {
+     compatible = "st,stm32-spi";
+     dmas = <&dma1 3 1 0x20440 0x04>,
+           <&dma1 2 1 0x20480 0x04>;
+     dma-names = "tx", "rx";
+   };
