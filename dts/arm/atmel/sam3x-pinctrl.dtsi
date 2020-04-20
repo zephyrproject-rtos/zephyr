@@ -10,6 +10,10 @@
 	soc {
 		pinctrl@400e0e00 {
 			/* instance, signal, pio, pin, peripheral */
+			DT_ATMEL_PIN(twi0, twck0, a, 18, a);
+			DT_ATMEL_PIN(twi0, twd0, a, 17, a);
+			DT_ATMEL_PIN(twi1, twck1, b, 13, a);
+			DT_ATMEL_PIN(twi1, twd1, b, 12, a);
 			DT_ATMEL_PIN(uart, urxd, a, 8, a);
 			DT_ATMEL_PIN(uart, utxd, a, 9, a);
 			DT_ATMEL_PIN(usart0, cts0, b, 26, a);
