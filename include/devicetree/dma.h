@@ -186,31 +186,29 @@ extern "C" {
  *
  * Example usage:
  *
- *     DT_DMAS_CELL_BY_NAME(DT_NODELABEL(n), channel, tx) // 1
- *     DT_DMAS_CELL_BY_NAME(DT_NODELABEL(n), config, rx) // 0x404
+ *     DT_DMAS_CELL_BY_NAME(DT_NODELABEL(n), tx, channel) // 1
+ *     DT_DMAS_CELL_BY_NAME(DT_NODELABEL(n), rx, config) // 0x404
  *
  * @param node_id node identifier
- * @param cell_name binding's cell name within the specifier referenced
- * as "name"
  * @param name lowercase-and-underscores dma channel specifier name
+ * @param cell binding's cell name within the specifier referenced as "name"
  * @return the value of "cell" inside the dma channel specifier
  * @see DT_PHA_PHANDLE_IDX()
  */
 
-#define DT_DMAS_CELL_BY_NAME(node_id, cell_name, name) \
-	DT_PHA_BY_NAME(node_id, dmas, cell_name, name)
+#define DT_DMAS_CELL_BY_NAME(node_id, name, cell) \
+	DT_PHA_BY_NAME(node_id, dmas, name, cell)
 
 /**
  * @brief Get dma channel specifier cell value by name
  * (see @ref DT_DMAS_CELL_BY_NAME)
  * @param inst instance number
  * @param name lowercase-and-underscores dma channel specifier name
- * @param cell_name binding's cell name within the specifier referenced
- * as "name"
+ * @param cell binding's cell name within the specifier referenced as "name"
  * @return the value of "cell" inside the specifier
  */
-#define DT_INST_DMAS_CELL_BY_NAME(inst, cell_name, name) \
-	DT_DMAS_CELL_BY_NAME(DT_DRV_INST(inst), cell_name, name)
+#define DT_INST_DMAS_CELL_BY_NAME(inst, name, cell) \
+	DT_DMAS_CELL_BY_NAME(DT_DRV_INST(inst), name, cell)
 
 /**
  * @brief Does a DMA client have a channel specifier at an index?
