@@ -157,6 +157,9 @@ enum ethernet_hw_caps {
 
 	/** IEEE 802.1Qbu (frame preemption) supported */
 	ETHERNET_QBU			= BIT(18),
+
+	/** TXTIME supported */
+	ETHERNET_TXTIME			= BIT(19),
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -169,6 +172,7 @@ enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_QAV_PARAM,
 	ETHERNET_CONFIG_TYPE_QBV_PARAM,
 	ETHERNET_CONFIG_TYPE_QBU_PARAM,
+	ETHERNET_CONFIG_TYPE_TXTIME_PARAM,
 	ETHERNET_CONFIG_TYPE_PROMISC_MODE,
 	ETHERNET_CONFIG_TYPE_PRIORITY_QUEUES_NUM,
 	ETHERNET_CONFIG_TYPE_FILTER,
@@ -340,6 +344,23 @@ struct ethernet_filter {
 };
 
 /** @cond INTERNAL_HIDDEN */
+
+enum ethernet_txtime_param_type {
+	ETHERNET_TXTIME_PARAM_TYPE_ENABLE_QUEUES,
+};
+
+/** @endcond */
+
+struct ethernet_txtime_param {
+	/** Type of TXTIME parameter */
+	enum ethernet_txtime_param_type type;
+	/** Queue number for configuring TXTIME */
+	int queue_id;
+	/** Enable or disable TXTIME per queue */
+	bool enable_txtime;
+};
+
+/** @cond INTERNAL_HIDDEN */
 struct ethernet_config {
 	union {
 		bool auto_negotiation;
@@ -357,6 +378,7 @@ struct ethernet_config {
 		struct ethernet_qav_param qav_param;
 		struct ethernet_qbv_param qbv_param;
 		struct ethernet_qbu_param qbu_param;
+		struct ethernet_txtime_param txtime_param;
 
 		int priority_queues_num;
 		int ports_num;
