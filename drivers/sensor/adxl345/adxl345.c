@@ -46,7 +46,7 @@ static int adxl345_read_sample(struct device *dev,
 	return 0;
 }
 
-static void adxl345_accel_convert(struct sensor_value *val, unsigned int sample)
+static void adxl345_accel_convert(struct sensor_value *val, s16_t sample)
 {
 	if (sample & BIT(9)) {
 		sample |= ADXL345_COMPLEMENT;
@@ -64,8 +64,8 @@ static int adxl345_sample_fetch(struct device *dev, enum sensor_channel chan)
 	int rc;
 
 	data->sample_number = 0;
-	rc = i2c_reg_read_byte(dev, data->i2c_addr, ADXL345_FIFO_STATUS_REG,
-			&samples_count);
+	rc = i2c_reg_read_byte(data->i2c_master, data->i2c_addr,
+		ADXL345_FIFO_STATUS_REG, &samples_count);
 	if (rc < 0) {
 		LOG_ERR("Failed to read FIFO status rc = %d\n", rc);
 		return rc;
@@ -144,36 +144,36 @@ static int adxl345_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	rc = i2c_reg_read_byte(dev, data->i2c_addr, ADXL345_DEVICE_ID_REG,
-			&dev_id);
+	rc = i2c_reg_read_byte(data->i2c_master, data->i2c_addr,
+		ADXL345_DEVICE_ID_REG, &dev_id);
 	if (rc < 0 || dev_id != ADXL345_PART_ID) {
 		LOG_ERR("Read PART ID failed: 0x%x\n", rc);
 		return -ENODEV;
 	}
 
-	rc = i2c_reg_write_byte(dev, data->i2c_addr, ADXL345_FIFO_CTL_REG,
-			ADXL345_FIFO_STREAM_MODE);
+	rc = i2c_reg_write_byte(data->i2c_master, data->i2c_addr,
+		ADXL345_FIFO_CTL_REG, ADXL345_FIFO_STREAM_MODE);
 	if (rc < 0) {
 		LOG_ERR("FIFO enable failed\n");
 		return -EIO;
 	}
 
-	rc = i2c_reg_write_byte(dev, data->i2c_addr, ADXL345_DATA_FORMAT_REG,
-			ADXL345_RANGE_16G);
+	rc = i2c_reg_write_byte(data->i2c_master, data->i2c_addr,
+		ADXL345_DATA_FORMAT_REG, ADXL345_RANGE_16G);
 	if (rc < 0) {
 		LOG_ERR("Data format set failed\n");
 		return -EIO;
 	}
 
-	rc = i2c_reg_write_byte(dev, data->i2c_addr, ADXL345_RATE_REG,
-			ADXL345_RATE_25HZ);
+	rc = i2c_reg_write_byte(data->i2c_master, data->i2c_addr,
+		ADXL345_RATE_REG, ADXL345_RATE_25HZ);
 	if (rc < 0) {
 		LOG_ERR("Rate setting failed\n");
 		return -EIO;
 	}
 
-	rc = i2c_reg_write_byte(dev, data->i2c_addr, ADXL345_POWER_CTL_REG,
-			ADXL345_ENABLE_MEASURE_BIT);
+	rc = i2c_reg_write_byte(data->i2c_master, data->i2c_addr,
+		ADXL345_POWER_CTL_REG, ADXL345_ENABLE_MEASURE_BIT);
 	if (rc < 0) {
 		LOG_ERR("Enable measure bit failed\n");
 		return -EIO;
