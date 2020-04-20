@@ -58,6 +58,21 @@ Deprecated in this release
     bt_le_adv_param::peer set to the remote peers address.
   * BT_LE_ADV_* macros, use BT_GAP_ADV_* enums instead
 
+* Boards
+
+  * nrf51_pca10028 has been renamed to nrf51dk_nrf51422
+  * nrf51_pca10031 has been renamed to nrf51dongle_nrf51422
+  * nrf52810_pca10040 has been renamed to nrf52dk_nrf52810
+  * nrf52_pca10040 has been renamed to nrf52dk_nrf52832
+  * nrf52833_pca10100 has been renamed to nrf52833dk_nrf52833
+  * nrf52811_pca10056 has been renamed to nrf52840dk_nrf52811
+  * nrf52840_pca10056 has been renamed to nrf52840dk_nrf52840
+  * nrf52840_pca10059 has been renamed to nrf52840dongle_nrf52840
+  * nrf9160_pca10090 has been renamed to nrf9160dk_nrf9160
+  * nrf52840_pca10090 has been renamed to nrf9160dk_nrf52840
+  * nrf52_pca20020 has been renamed to thingy52_nrf52832
+  * nrf5340_dk_nrf5340 has been renamed to nrf5340pdk_nrf5340
+
 Removed APIs in this release
 ============================
 
