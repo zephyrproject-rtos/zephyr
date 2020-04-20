@@ -39,26 +39,38 @@
 
 &sercom0 {
 	interrupts = <7 0>;
+	clocks = <&gclk 0xd>, <&pm 0x20 2>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom1 {
 	interrupts = <8 0>;
+	clocks = <&gclk 0xe>, <&pm 0x20 3>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom2 {
 	interrupts = <9 0>;
+	clocks = <&gclk 0xf>, <&pm 0x20 4>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom3 {
 	interrupts = <10 0>;
+	clocks = <&gclk 0x10>, <&pm 0x20 5>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom4 {
 	interrupts = <11 0>;
+	clocks = <&gclk 0x11>, <&pm 0x20 6>;
+	clock-names = "GCLK", "PM";
 };
 
 &sercom5 {
 	interrupts = <12 0>;
+	clocks = <&gclk 0x12>, <&pm 0x20 7>;
+	clock-names = "GCLK", "PM";
 };
 
 &tc4 {
