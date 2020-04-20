@@ -167,6 +167,18 @@ static int client_write_msg(struct mqtt_client *client,
 	MQTT_TRC("[%p]: Transport writing message.", client);
 
 	err_code = mqtt_transport_write_msg(client, message);
+	if (err_code == ENOTSUP) {
+		for (int i = 0; i < message->msg_iovlen; i++) {
+			err_code = client_write(client,
+						   message->msg_iov[i].iov_base,
+						   message->msg_iov[i].iov_len
+						   );
+			if (err_code < 0) {
+				break;
+			}
+		}
+	}
+
 	if (err_code < 0) {
 		MQTT_TRC("Transport write failed, err_code = %d, "
 			 "closing connection", err_code);
