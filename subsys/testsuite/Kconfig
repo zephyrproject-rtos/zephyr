@@ -85,7 +85,7 @@ config TEST_LOGGING_DEFAULTS
 	bool "Enable test case logging defaults"
 	depends on TEST
 	select LOG
-	select LOG_MINIMAL
+	imply LOG_MINIMAL
 	default y
 	help
 	  Option which implements default policy of enabling logging in
