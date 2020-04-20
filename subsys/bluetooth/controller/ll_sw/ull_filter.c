@@ -588,7 +588,14 @@ void ull_filter_adv_pdu_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
 		memcpy(adva, rl[idx].local_rpa->val, BDADDR_SIZE);
 	} else {
 		pdu->tx_addr = adv->own_addr_type & 0x1;
-		ll_addr_get(adv->own_addr_type & 0x1, adva);
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		if ((adv->is_created & BIT(1)) && pdu->tx_addr) {
+			ll_adv_aux_random_addr_get(adv, adva);
+		} else
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+		{
+			ll_addr_get(pdu->tx_addr, adva);
+		}
 	}
 
 	/* TargetA */
