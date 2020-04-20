@@ -53,6 +53,7 @@
 			#interrupt-cells = <3>;
 			interrupts = <6 0 0>;
 			interrupt-parent = <&core_intc>;
+			label = "CAVS_0";
 		};
 
 		cavs1: cavs@1610  {
@@ -62,6 +63,7 @@
 			#interrupt-cells = <3>;
 			interrupts = <0xA 0 0>;
 			interrupt-parent = <&core_intc>;
+			label = "CAVS_1";
 		};
 
 		cavs2: cavs@1620  {
@@ -71,6 +73,7 @@
 			#interrupt-cells = <3>;
 			interrupts = <0XD 0 0>;
 			interrupt-parent = <&core_intc>;
+			label = "CAVS_2";
 		};
 
 		cavs3: cavs@1630  {
@@ -80,6 +83,7 @@
 			#interrupt-cells = <3>;
 			interrupts = <0x10 0 0>;
 			interrupt-parent = <&core_intc>;
+			label = "CAVS_3";
 		};
 
 		idc: idc@1200 {
