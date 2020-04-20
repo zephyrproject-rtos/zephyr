@@ -57,11 +57,11 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_stm32);
 
-#if defined(DT_COMPAT_ST_STM32_OTGFS) && defined(DT_COMPAT_ST_STM32_OTGHS)
+#if DT_HAS_COMPAT(st_stm32_otgfs) && DT_HAS_COMPAT(st_stm32_otghs)
 #error "Only one interface should be enabled at a time, OTG FS or OTG HS"
 #endif
 
-#if defined(DT_COMPAT_ST_STM32_OTGHS)
+#if DT_HAS_COMPAT(st_stm32_otghs)
 #define DT_USB_BASE_ADDRESS		DT_REG_ADDR(DT_INST(0, st_stm32_otghs))
 #define DT_USB_IRQ			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_otghs), otghs, irq)
 #define DT_USB_IRQ_PRI			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_otghs), otghs, priority)
@@ -70,7 +70,7 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #define DT_USB_MAXIMUM_SPEED		DT_PROP(DT_INST(0, st_stm32_otghs), maximum_speed)
 #define DT_USB_CLOCK_BITS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_otghs), bits)
 #define DT_USB_CLOCK_BUS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_otghs), bus)
-#elif defined(DT_COMPAT_ST_STM32_OTGFS)
+#elif DT_HAS_COMPAT(st_stm32_otgfs)
 #define DT_USB_BASE_ADDRESS		DT_REG_ADDR(DT_INST(0, st_stm32_otgfs))
 #define DT_USB_IRQ			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_otgfs), otgfs, irq)
 #define DT_USB_IRQ_PRI			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_otgfs), otgfs, priority)
@@ -79,7 +79,7 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #define DT_USB_MAXIMUM_SPEED		DT_PROP(DT_INST(0, st_stm32_otgfs), maximum_speed)
 #define DT_USB_CLOCK_BITS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_otgfs), bits)
 #define DT_USB_CLOCK_BUS		DT_CLOCKS_CELL(DT_INST(0, st_stm32_otgfs), bus)
-#elif defined(DT_COMPAT_ST_STM32_USB)
+#elif DT_HAS_COMPAT(st_stm32_usb)
 #define DT_USB_BASE_ADDRESS		DT_REG_ADDR(DT_INST(0, st_stm32_usb))
 #define DT_USB_IRQ			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_usb), usb, irq)
 #define DT_USB_IRQ_PRI			DT_IRQ_BY_NAME(DT_INST(0, st_stm32_usb), usb, priority)
@@ -126,11 +126,12 @@ LOG_MODULE_REGISTER(usb_dc_stm32);
 #endif /* CONFIG_SOC_SERIES_STM32L4X */
 
 #define EP0_MPS USB_OTG_MAX_EP0_SIZE
-#ifdef DT_COMPAT_ST_STM32_OTGHS
+
+#if DT_HAS_COMPAT(st_stm32_otghs)
 #define EP_MPS USB_OTG_HS_MAX_PACKET_SIZE
-#elif defined(DT_COMPAT_ST_STM32_OTGFS) || defined(DT_COMPAT_ST_STM32_USB)
+#elif DT_HAS_COMPAT(st_stm32_otgfs) || DT_HAS_COMPAT(st_stm32_usb)
 #define EP_MPS USB_OTG_FS_MAX_PACKET_SIZE
-#endif /* DT_COMPAT_ST_STM32_OTGHS */
+#endif
 
 /* We need one RX FIFO and n TX-IN FIFOs */
 #define FIFO_NUM (1 + DT_USB_NUM_BIDIR_ENDPOINTS)
@@ -282,19 +283,16 @@ static int usb_dc_stm32_clock_enable(void)
 		return -EIO;
 	}
 
-#ifdef DT_COMPAT_ST_STM32_OTGHS
-
-
-#ifdef DT_COMPAT_ST_STM32_USBPHYC
+#if DT_HAS_COMPAT(st_stm32_otghs)
+#if DT_HAS_COMPAT(st_stm32_usbphyc)
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
 #else
 	/* Disable ULPI interface (for external high-speed PHY) clock */
 	LL_AHB1_GRP1_DisableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	LL_AHB1_GRP1_DisableClockLowPower(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
-#endif /* DT_COMPAT_ST_STM32_USBPHYC */
-
-#endif /* DT_COMPAT_ST_STM32_OTGHS */
+#endif
+#endif
 
 	return 0;
 }
@@ -306,22 +304,22 @@ static u32_t usb_dc_stm32_get_maximum_speed(void)
 	 * If max-speed is not passed via DT, set it to USB controller's
 	 * maximum hardware capability.
 	 */
-#if defined(DT_COMPAT_ST_STM32_USBPHYC) && defined(DT_COMPAT_ST_STM32_OTGHS)
+#if DT_HAS_COMPAT(st_stm32_usbphyc) && DT_HAS_COMPAT(st_stm32_otghs)
 	u32_t speed = USB_OTG_SPEED_HIGH;
 #else
 	u32_t speed = USB_OTG_SPEED_FULL;
-#endif /* DT_COMPAT_ST_STM32_USBPHYC && DT_COMPAT_ST_STM32_OTGHS */
+#endif
 
 #ifdef DT_USB_MAXIMUM_SPEED
 
 	if (!strncmp(DT_USB_MAXIMUM_SPEED, "high-speed", 10)) {
 		speed = USB_OTG_SPEED_HIGH;
 	} else if (!strncmp(DT_USB_MAXIMUM_SPEED, "full-speed", 10)) {
-#if defined(DT_COMPAT_ST_STM32_USBPHYC) && defined(DT_COMPAT_ST_STM32_OTGHS)
+#if DT_HAS_COMPAT(st_stm32_usbphyc) && DT_HAS_COMPAT(st_stm32_otghs)
 		speed = USB_OTG_SPEED_HIGH_IN_FULL;
 #else
 		speed = USB_OTG_SPEED_FULL;
-#endif /* DT_COMPAT_ST_STM32_USBPHYC && DT_COMPAT_ST_STM32_OTGHS */
+#endif
 	} else {
 		LOG_DBG("Unsupported maximum speed defined in device tree. "
 			"USB controller will default to its maximum HW "
@@ -346,18 +344,18 @@ static int usb_dc_stm32_init(void)
 	usb_dc_stm32_state.pcd.Init.ep0_mps = PCD_EP0MPS_64;
 	usb_dc_stm32_state.pcd.Init.low_power_enable = 0;
 #else /* USB_OTG_FS || USB_OTG_HS */
-#ifdef DT_COMPAT_ST_STM32_OTGHS
+#if DT_HAS_COMPAT(st_stm32_otghs)
 	usb_dc_stm32_state.pcd.Instance = USB_OTG_HS;
 #else
 	usb_dc_stm32_state.pcd.Instance = USB_OTG_FS;
 #endif
 	usb_dc_stm32_state.pcd.Init.dev_endpoints = DT_USB_NUM_BIDIR_ENDPOINTS;
 	usb_dc_stm32_state.pcd.Init.speed = usb_dc_stm32_get_maximum_speed();
-#if defined(DT_COMPAT_ST_STM32_USBPHYC) && defined(DT_COMPAT_ST_STM32_OTGHS)
+#if DT_HAS_COMPAT(st_stm32_usbphyc) && DT_HAS_COMPAT(st_stm32_otghs)
 	usb_dc_stm32_state.pcd.Init.phy_itface = USB_OTG_HS_EMBEDDED_PHY;
 #else
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
-#endif /* DT_COMPAT_ST_STM32_USBPHYC */
+#endif
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
 	usb_dc_stm32_state.pcd.Init.vbus_sensing_enable = DISABLE;
 
