@@ -524,7 +524,8 @@ static void gsm_configure(struct k_work *work)
 	if (ret < 0) {
 		LOG_DBG("modem not ready %d", ret);
 
-		(void)k_delayed_work_submit(&gsm->gsm_configure_work, 0);
+		(void)k_delayed_work_submit(&gsm->gsm_configure_work,
+					    K_NO_WAIT);
 
 		return;
 	}
@@ -550,7 +551,7 @@ static void gsm_configure(struct k_work *work)
 					    mux_setup);
 
 			(void)k_delayed_work_submit(&gsm->gsm_configure_work,
-						    0);
+						    K_NO_WAIT);
 			return;
 		}
 	}
