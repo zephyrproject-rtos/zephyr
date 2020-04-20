@@ -13,9 +13,6 @@ if I2C
 config I2C_SAM_TWI
 	default y
 
-config I2C_0
-	default y
-
 endif # I2C
 
 endif # BOARD_SAM4S_XPLAINED

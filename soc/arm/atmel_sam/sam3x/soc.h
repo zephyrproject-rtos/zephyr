@@ -41,8 +41,6 @@
 #define ID_UART0   ID_UART
 #define UART0      UART
 
-#include "soc_pinmap.h"
-
 #include "../common/soc_pmc.h"
 #include "../common/soc_gpio.h"
 #include "../common/atmel_sam_dt.h"
