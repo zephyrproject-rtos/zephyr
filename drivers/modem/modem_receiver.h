@@ -32,7 +32,11 @@ struct mdm_receiver_context {
 	char *data_manufacturer;
 	char *data_model;
 	char *data_revision;
+#if defined(CONFIG_MODEM_SIM_NUMBERS)
 	char *data_imei;
+	char *data_imsi;
+#endif
+	char *data_iccid;
 	int   data_rssi;
 };
 
