@@ -66,6 +66,27 @@ static int cmd_i2c_scan(const struct shell *shell,
 	return 0;
 }
 
+static int cmd_i2c_recover(const struct shell *shell,
+			   size_t argc, char **argv)
+{
+	struct device *dev;
+	int err;
+
+	dev = device_get_binding(argv[1]);
+	if (!dev) {
+		shell_error(shell, "I2C: Device driver %s not found.", argv[1]);
+		return -ENODEV;
+	}
+
+	err = i2c_recover_bus(dev);
+	if (err) {
+		shell_error(shell, "I2C: Bus recovery failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry);
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
@@ -96,6 +117,8 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_i2c_cmds,
 			       SHELL_CMD(scan, &dsub_device_name,
 					 "Scan I2C devices", cmd_i2c_scan),
+			       SHELL_CMD(recover, &dsub_device_name,
+					 "Recover I2C bus", cmd_i2c_recover),
 			       SHELL_SUBCMD_SET_END     /* Array terminated. */
 			       );
 

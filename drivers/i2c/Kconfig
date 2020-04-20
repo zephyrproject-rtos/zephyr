@@ -21,7 +21,7 @@ config I2C_SHELL
 	help
 	  Enable I2C Shell.
 
-	  The I2C shell currently support scanning.
+	  The I2C shell currently support scanning and bus recovery.
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overridden (by defining symbols in multiple locations)
