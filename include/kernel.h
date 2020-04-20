@@ -1124,7 +1124,7 @@ struct _static_thread_data {
  * @param p3 3rd entry point parameter.
  * @param prio Thread priority.
  * @param options Thread options.
- * @param delay Scheduling delay (in milliseconds), or K_NO_WAIT (for no delay).
+ * @param delay Scheduling delay (in milliseconds), zero for no delay.
  *
  *
  * @internal It has been observed that the x86 compiler by default aligns
