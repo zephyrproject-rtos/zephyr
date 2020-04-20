@@ -770,6 +770,50 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
  */
 #define UTIL_LISTIFY(LEN, F, ...) UTIL_EVAL(UTIL_REPEAT(LEN, F, __VA_ARGS__))
 
+/**
+ * @brief Get the number of items in a list
+ *
+ * This macro works with lists contianing 0 to 64 items. It works
+ * correctly with empty lists, but if used with a macro as a parameter,
+ * the macro needs to be defined, otherwise UTIL_LIST_LEN() will
+ * incorrectly return 1.
+ *
+ * Example:
+ *
+ *    #define LIST led0, led1, led5
+ *    UTIL_LIST_LEN(LIST) // 3
+ *
+ *    #undef LIST
+ *    UTIL_LIST_LEN(LIST) // 1 -- be careful with undefined parameters
+ */
+#define UTIL_LIST_LEN(...) UTIL_LIST_LEN_(__VA_ARGS__)
+#define UTIL_LIST_LEN_(...)						\
+		UTIL_LIST_LEN__(UTIL_LIST_##__VA_ARGS__##LEN_IS_0,	\
+				UTIL_LIST_LEN_NUMBERS			\
+		)
+
+#define UTIL_LIST_LEN__(...) UTIL_LIST_LEN___(__VA_ARGS__)
+#define UTIL_LIST_LEN___(					\
+				       _64, _63, _62, _61,	\
+	_60, _59, _58, _57, _56_, _55, _54, _53, _52, _51,	\
+	_50, _49, _48, _47, _46_, _45, _44, _43, _42, _41,	\
+	_40, _39, _38, _37, _36_, _35, _34, _33, _32, _31,	\
+	_30, _29, _28, _27, _26_, _25, _24, _23, _22, _21,	\
+	_20, _19, _18, _17, _16_, _15, _14, _13, _12, _11,	\
+	_10, _9, _8, _7, _6_, _5, _4, _3, _2, _1, N, ...) N
+
+#define UTIL_LIST_LEN_NUMBERS					\
+				64, 63, 62, 61,			\
+	60, 59, 58, 57, 56, 55, 54, 53, 52, 51,			\
+	50, 49, 48, 47, 46, 45, 44, 43, 42, 41,			\
+	40, 39, 38, 37, 36, 35, 34, 33, 32, 31,			\
+	30, 29, 28, 27, 26, 25, 24, 23, 22, 21,			\
+	20, 19, 18, 17, 16, 15, 14, 13, 12, 11,			\
+	10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
+
+#define UTIL_LIST_LEN_IS_0 UTIL_LIST_LEN_NUMBERS
+
+
 /**@brief Implementation details for NUM_VAR_ARGS */
 #define NUM_VA_ARGS_LESS_1_IMPL(				\
 	_ignored,						\
@@ -845,6 +889,55 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 #define MACRO_MAP_13(macro, a, ...) macro(a)MACRO_MAP_12(macro, __VA_ARGS__,)
 #define MACRO_MAP_14(macro, a, ...) macro(a)MACRO_MAP_13(macro, __VA_ARGS__,)
 #define MACRO_MAP_15(macro, a, ...) macro(a)MACRO_MAP_14(macro, __VA_ARGS__,)
+#define MACRO_MAP_16(macro, a, ...) macro(a)MACRO_MAP_15(macro, __VA_ARGS__,)
+#define MACRO_MAP_17(macro, a, ...) macro(a)MACRO_MAP_16(macro, __VA_ARGS__,)
+#define MACRO_MAP_18(macro, a, ...) macro(a)MACRO_MAP_17(macro, __VA_ARGS__,)
+#define MACRO_MAP_19(macro, a, ...) macro(a)MACRO_MAP_18(macro, __VA_ARGS__,)
+#define MACRO_MAP_20(macro, a, ...) macro(a)MACRO_MAP_19(macro, __VA_ARGS__,)
+#define MACRO_MAP_21(macro, a, ...) macro(a)MACRO_MAP_20(macro, __VA_ARGS__,)
+#define MACRO_MAP_22(macro, a, ...) macro(a)MACRO_MAP_21(macro, __VA_ARGS__,)
+#define MACRO_MAP_23(macro, a, ...) macro(a)MACRO_MAP_22(macro, __VA_ARGS__,)
+#define MACRO_MAP_24(macro, a, ...) macro(a)MACRO_MAP_23(macro, __VA_ARGS__,)
+#define MACRO_MAP_25(macro, a, ...) macro(a)MACRO_MAP_24(macro, __VA_ARGS__,)
+#define MACRO_MAP_26(macro, a, ...) macro(a)MACRO_MAP_25(macro, __VA_ARGS__,)
+#define MACRO_MAP_27(macro, a, ...) macro(a)MACRO_MAP_26(macro, __VA_ARGS__,)
+#define MACRO_MAP_28(macro, a, ...) macro(a)MACRO_MAP_27(macro, __VA_ARGS__,)
+#define MACRO_MAP_29(macro, a, ...) macro(a)MACRO_MAP_28(macro, __VA_ARGS__,)
+#define MACRO_MAP_30(macro, a, ...) macro(a)MACRO_MAP_29(macro, __VA_ARGS__,)
+#define MACRO_MAP_31(macro, a, ...) macro(a)MACRO_MAP_30(macro, __VA_ARGS__,)
+#define MACRO_MAP_32(macro, a, ...) macro(a)MACRO_MAP_31(macro, __VA_ARGS__,)
+#define MACRO_MAP_33(macro, a, ...) macro(a)MACRO_MAP_32(macro, __VA_ARGS__,)
+#define MACRO_MAP_34(macro, a, ...) macro(a)MACRO_MAP_33(macro, __VA_ARGS__,)
+#define MACRO_MAP_35(macro, a, ...) macro(a)MACRO_MAP_34(macro, __VA_ARGS__,)
+#define MACRO_MAP_36(macro, a, ...) macro(a)MACRO_MAP_35(macro, __VA_ARGS__,)
+#define MACRO_MAP_37(macro, a, ...) macro(a)MACRO_MAP_36(macro, __VA_ARGS__,)
+#define MACRO_MAP_38(macro, a, ...) macro(a)MACRO_MAP_37(macro, __VA_ARGS__,)
+#define MACRO_MAP_39(macro, a, ...) macro(a)MACRO_MAP_38(macro, __VA_ARGS__,)
+#define MACRO_MAP_40(macro, a, ...) macro(a)MACRO_MAP_39(macro, __VA_ARGS__,)
+#define MACRO_MAP_41(macro, a, ...) macro(a)MACRO_MAP_40(macro, __VA_ARGS__,)
+#define MACRO_MAP_42(macro, a, ...) macro(a)MACRO_MAP_41(macro, __VA_ARGS__,)
+#define MACRO_MAP_43(macro, a, ...) macro(a)MACRO_MAP_42(macro, __VA_ARGS__,)
+#define MACRO_MAP_44(macro, a, ...) macro(a)MACRO_MAP_43(macro, __VA_ARGS__,)
+#define MACRO_MAP_45(macro, a, ...) macro(a)MACRO_MAP_44(macro, __VA_ARGS__,)
+#define MACRO_MAP_46(macro, a, ...) macro(a)MACRO_MAP_45(macro, __VA_ARGS__,)
+#define MACRO_MAP_47(macro, a, ...) macro(a)MACRO_MAP_46(macro, __VA_ARGS__,)
+#define MACRO_MAP_48(macro, a, ...) macro(a)MACRO_MAP_47(macro, __VA_ARGS__,)
+#define MACRO_MAP_49(macro, a, ...) macro(a)MACRO_MAP_48(macro, __VA_ARGS__,)
+#define MACRO_MAP_50(macro, a, ...) macro(a)MACRO_MAP_49(macro, __VA_ARGS__,)
+#define MACRO_MAP_51(macro, a, ...) macro(a)MACRO_MAP_50(macro, __VA_ARGS__,)
+#define MACRO_MAP_52(macro, a, ...) macro(a)MACRO_MAP_51(macro, __VA_ARGS__,)
+#define MACRO_MAP_53(macro, a, ...) macro(a)MACRO_MAP_52(macro, __VA_ARGS__,)
+#define MACRO_MAP_54(macro, a, ...) macro(a)MACRO_MAP_53(macro, __VA_ARGS__,)
+#define MACRO_MAP_55(macro, a, ...) macro(a)MACRO_MAP_54(macro, __VA_ARGS__,)
+#define MACRO_MAP_56(macro, a, ...) macro(a)MACRO_MAP_55(macro, __VA_ARGS__,)
+#define MACRO_MAP_57(macro, a, ...) macro(a)MACRO_MAP_56(macro, __VA_ARGS__,)
+#define MACRO_MAP_58(macro, a, ...) macro(a)MACRO_MAP_57(macro, __VA_ARGS__,)
+#define MACRO_MAP_59(macro, a, ...) macro(a)MACRO_MAP_58(macro, __VA_ARGS__,)
+#define MACRO_MAP_60(macro, a, ...) macro(a)MACRO_MAP_59(macro, __VA_ARGS__,)
+#define MACRO_MAP_61(macro, a, ...) macro(a)MACRO_MAP_60(macro, __VA_ARGS__,)
+#define MACRO_MAP_62(macro, a, ...) macro(a)MACRO_MAP_61(macro, __VA_ARGS__,)
+#define MACRO_MAP_63(macro, a, ...) macro(a)MACRO_MAP_62(macro, __VA_ARGS__,)
+#define MACRO_MAP_64(macro, a, ...) macro(a)MACRO_MAP_63(macro, __VA_ARGS__,)
 
 /**
  * @brief Mapping macro that pastes results together
@@ -902,6 +995,55 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 #define MACRO_MC_13(m, a, ...) UTIL_CAT(m(a), MACRO_MC_12(m, __VA_ARGS__,))
 #define MACRO_MC_14(m, a, ...) UTIL_CAT(m(a), MACRO_MC_13(m, __VA_ARGS__,))
 #define MACRO_MC_15(m, a, ...) UTIL_CAT(m(a), MACRO_MC_14(m, __VA_ARGS__,))
+#define MACRO_MC_16(m, a, ...) UTIL_CAT(m(a), MACRO_MC_15(m, __VA_ARGS__,))
+#define MACRO_MC_17(m, a, ...) UTIL_CAT(m(a), MACRO_MC_16(m, __VA_ARGS__,))
+#define MACRO_MC_18(m, a, ...) UTIL_CAT(m(a), MACRO_MC_17(m, __VA_ARGS__,))
+#define MACRO_MC_19(m, a, ...) UTIL_CAT(m(a), MACRO_MC_18(m, __VA_ARGS__,))
+#define MACRO_MC_20(m, a, ...) UTIL_CAT(m(a), MACRO_MC_19(m, __VA_ARGS__,))
+#define MACRO_MC_21(m, a, ...) UTIL_CAT(m(a), MACRO_MC_20(m, __VA_ARGS__,))
+#define MACRO_MC_22(m, a, ...) UTIL_CAT(m(a), MACRO_MC_21(m, __VA_ARGS__,))
+#define MACRO_MC_23(m, a, ...) UTIL_CAT(m(a), MACRO_MC_22(m, __VA_ARGS__,))
+#define MACRO_MC_24(m, a, ...) UTIL_CAT(m(a), MACRO_MC_23(m, __VA_ARGS__,))
+#define MACRO_MC_25(m, a, ...) UTIL_CAT(m(a), MACRO_MC_24(m, __VA_ARGS__,))
+#define MACRO_MC_26(m, a, ...) UTIL_CAT(m(a), MACRO_MC_25(m, __VA_ARGS__,))
+#define MACRO_MC_27(m, a, ...) UTIL_CAT(m(a), MACRO_MC_26(m, __VA_ARGS__,))
+#define MACRO_MC_28(m, a, ...) UTIL_CAT(m(a), MACRO_MC_27(m, __VA_ARGS__,))
+#define MACRO_MC_29(m, a, ...) UTIL_CAT(m(a), MACRO_MC_28(m, __VA_ARGS__,))
+#define MACRO_MC_30(m, a, ...) UTIL_CAT(m(a), MACRO_MC_29(m, __VA_ARGS__,))
+#define MACRO_MC_31(m, a, ...) UTIL_CAT(m(a), MACRO_MC_30(m, __VA_ARGS__,))
+#define MACRO_MC_32(m, a, ...) UTIL_CAT(m(a), MACRO_MC_31(m, __VA_ARGS__,))
+#define MACRO_MC_33(m, a, ...) UTIL_CAT(m(a), MACRO_MC_32(m, __VA_ARGS__,))
+#define MACRO_MC_34(m, a, ...) UTIL_CAT(m(a), MACRO_MC_33(m, __VA_ARGS__,))
+#define MACRO_MC_35(m, a, ...) UTIL_CAT(m(a), MACRO_MC_34(m, __VA_ARGS__,))
+#define MACRO_MC_36(m, a, ...) UTIL_CAT(m(a), MACRO_MC_35(m, __VA_ARGS__,))
+#define MACRO_MC_37(m, a, ...) UTIL_CAT(m(a), MACRO_MC_36(m, __VA_ARGS__,))
+#define MACRO_MC_38(m, a, ...) UTIL_CAT(m(a), MACRO_MC_37(m, __VA_ARGS__,))
+#define MACRO_MC_39(m, a, ...) UTIL_CAT(m(a), MACRO_MC_38(m, __VA_ARGS__,))
+#define MACRO_MC_40(m, a, ...) UTIL_CAT(m(a), MACRO_MC_39(m, __VA_ARGS__,))
+#define MACRO_MC_41(m, a, ...) UTIL_CAT(m(a), MACRO_MC_40(m, __VA_ARGS__,))
+#define MACRO_MC_42(m, a, ...) UTIL_CAT(m(a), MACRO_MC_41(m, __VA_ARGS__,))
+#define MACRO_MC_43(m, a, ...) UTIL_CAT(m(a), MACRO_MC_42(m, __VA_ARGS__,))
+#define MACRO_MC_44(m, a, ...) UTIL_CAT(m(a), MACRO_MC_43(m, __VA_ARGS__,))
+#define MACRO_MC_45(m, a, ...) UTIL_CAT(m(a), MACRO_MC_44(m, __VA_ARGS__,))
+#define MACRO_MC_46(m, a, ...) UTIL_CAT(m(a), MACRO_MC_45(m, __VA_ARGS__,))
+#define MACRO_MC_47(m, a, ...) UTIL_CAT(m(a), MACRO_MC_46(m, __VA_ARGS__,))
+#define MACRO_MC_48(m, a, ...) UTIL_CAT(m(a), MACRO_MC_47(m, __VA_ARGS__,))
+#define MACRO_MC_49(m, a, ...) UTIL_CAT(m(a), MACRO_MC_48(m, __VA_ARGS__,))
+#define MACRO_MC_50(m, a, ...) UTIL_CAT(m(a), MACRO_MC_49(m, __VA_ARGS__,))
+#define MACRO_MC_51(m, a, ...) UTIL_CAT(m(a), MACRO_MC_50(m, __VA_ARGS__,))
+#define MACRO_MC_52(m, a, ...) UTIL_CAT(m(a), MACRO_MC_51(m, __VA_ARGS__,))
+#define MACRO_MC_53(m, a, ...) UTIL_CAT(m(a), MACRO_MC_52(m, __VA_ARGS__,))
+#define MACRO_MC_54(m, a, ...) UTIL_CAT(m(a), MACRO_MC_53(m, __VA_ARGS__,))
+#define MACRO_MC_55(m, a, ...) UTIL_CAT(m(a), MACRO_MC_54(m, __VA_ARGS__,))
+#define MACRO_MC_56(m, a, ...) UTIL_CAT(m(a), MACRO_MC_55(m, __VA_ARGS__,))
+#define MACRO_MC_57(m, a, ...) UTIL_CAT(m(a), MACRO_MC_56(m, __VA_ARGS__,))
+#define MACRO_MC_58(m, a, ...) UTIL_CAT(m(a), MACRO_MC_57(m, __VA_ARGS__,))
+#define MACRO_MC_59(m, a, ...) UTIL_CAT(m(a), MACRO_MC_58(m, __VA_ARGS__,))
+#define MACRO_MC_60(m, a, ...) UTIL_CAT(m(a), MACRO_MC_59(m, __VA_ARGS__,))
+#define MACRO_MC_61(m, a, ...) UTIL_CAT(m(a), MACRO_MC_60(m, __VA_ARGS__,))
+#define MACRO_MC_62(m, a, ...) UTIL_CAT(m(a), MACRO_MC_61(m, __VA_ARGS__,))
+#define MACRO_MC_63(m, a, ...) UTIL_CAT(m(a), MACRO_MC_62(m, __VA_ARGS__,))
+#define MACRO_MC_64(m, a, ...) UTIL_CAT(m(a), MACRO_MC_63(m, __VA_ARGS__,))
 
 /*
  * The following provides variadic preprocessor macro support to
