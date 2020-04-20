@@ -21,22 +21,24 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(soc);
 
+#define CAVS_INTC_NODE(n) DT_INST(n, intel_cavs_intc)
+
 void z_soc_irq_enable(u32_t irq)
 {
 	struct device *dev_cavs;
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
-	case DT_CAVS_ICTL_0_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_0_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(0)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(0)));
 		break;
-	case DT_CAVS_ICTL_1_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_1_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(1)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(1)));
 		break;
-	case DT_CAVS_ICTL_2_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_2_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(2)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(2)));
 		break;
-	case DT_CAVS_ICTL_3_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_3_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(3)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(3)));
 		break;
 	default:
 		/* regular interrupt */
@@ -64,17 +66,17 @@ void z_soc_irq_disable(u32_t irq)
 	struct device *dev_cavs;
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
-	case DT_CAVS_ICTL_0_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_0_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(0)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(0)));
 		break;
-	case DT_CAVS_ICTL_1_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_1_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(1)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(1)));
 		break;
-	case DT_CAVS_ICTL_2_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_2_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(2)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(2)));
 		break;
-	case DT_CAVS_ICTL_3_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_3_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(3)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(3)));
 		break;
 	default:
 		/* regular interrupt */
@@ -105,17 +107,17 @@ int z_soc_irq_is_enabled(unsigned int irq)
 	int ret = 0;
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
-	case DT_CAVS_ICTL_0_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_0_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(0)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(0)));
 		break;
-	case DT_CAVS_ICTL_1_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_1_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(1)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(1)));
 		break;
-	case DT_CAVS_ICTL_2_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_2_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(2)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(2)));
 		break;
-	case DT_CAVS_ICTL_3_IRQ:
-		dev_cavs = device_get_binding(CONFIG_CAVS_ICTL_3_NAME);
+	case DT_IRQN(CAVS_INTC_NODE(3)):
+		dev_cavs = device_get_binding(DT_LABEL(CAVS_INTC_NODE(3)));
 		break;
 	default:
 		/* regular interrupt */
@@ -142,7 +144,7 @@ int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			      void *parameter, u32_t flags)
 {
 	uint32_t table_idx;
-	uint32_t cavs_irq;
+	uint32_t cavs_irq, cavs_idx;
 	int ret;
 
 	ARG_UNUSED(flags);
@@ -160,26 +162,25 @@ int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 	/* Figure out the base index. */
 	switch (XTENSA_IRQ_NUMBER(irq)) {
-	case DT_CAVS_ICTL_0_IRQ:
-		table_idx = CONFIG_CAVS_ISR_TBL_OFFSET;
+	case DT_IRQN(CAVS_INTC_NODE(0)):
+		cavs_idx = 0;
 		break;
-	case DT_CAVS_ICTL_1_IRQ:
-		table_idx = CONFIG_CAVS_ISR_TBL_OFFSET +
-			    CONFIG_MAX_IRQ_PER_AGGREGATOR;
+	case DT_IRQN(CAVS_INTC_NODE(1)):
+		cavs_idx = 1;
 		break;
-	case DT_CAVS_ICTL_2_IRQ:
-		table_idx = CONFIG_CAVS_ISR_TBL_OFFSET +
-			    CONFIG_MAX_IRQ_PER_AGGREGATOR * 2;
+	case DT_IRQN(CAVS_INTC_NODE(2)):
+		cavs_idx = 2;
 		break;
-	case DT_CAVS_ICTL_3_IRQ:
-		table_idx = CONFIG_CAVS_ISR_TBL_OFFSET +
-			    CONFIG_MAX_IRQ_PER_AGGREGATOR * 3;
+	case DT_IRQN(CAVS_INTC_NODE(3)):
+		cavs_idx = 3;
 		break;
 	default:
 		ret = -EINVAL;
 		goto irq_connect_out;
 	}
 
+	table_idx = CONFIG_CAVS_ISR_TBL_OFFSET +
+		CONFIG_MAX_IRQ_PER_AGGREGATOR * cavs_idx;
 	table_idx += cavs_irq;
 
 	_sw_isr_table[table_idx].arg = parameter;

@@ -18,33 +18,17 @@ config CAVS_ISR_TBL_OFFSET
 	  This indicates the offset in the SW_ISR_TABLE beginning from where
 	  the ISRs for CAVS Interrupt Controller are assigned.
 
-config CAVS_ICTL_0_NAME
-	string "CAVS 0 Driver name"
-	default "CAVS_0"
-
 config CAVS_ICTL_0_OFFSET
 	int "Parent interrupt number to which CAVS_0 maps"
 	default 0
-
-config CAVS_ICTL_1_NAME
-	string "CAVS 1 Driver name"
-	default "CAVS_1"
 
 config CAVS_ICTL_1_OFFSET
 	int "Parent interrupt number to which CAVS_1 maps"
 	default 0
 
-config CAVS_ICTL_2_NAME
-	string "CAVS 2 Driver name"
-	default "CAVS_2"
-
 config CAVS_ICTL_2_OFFSET
 	int "Parent interrupt number to which CAVS_2 maps"
 	default 0
-
-config CAVS_ICTL_3_NAME
-	string "CAVS 3 Driver name"
-	default "CAVS_3"
 
 config CAVS_ICTL_3_OFFSET
 	int "Parent interrupt number to which CAVS_3 maps"
