@@ -139,11 +139,19 @@ config NET_SOCKETS_CAN_RECEIVERS
 	  The value tells how many sockets can receive data from same
 	  Socket-CAN interface.
 
-config NET_SOCKETS_UNIX
-	bool "Enable local / UNIX socket support [EXPERIMENTAL]"
+config NET_SOCKETPAIR
+	bool "Support for the socketpair syscall [EXPERIMENTAL]"
 	help
 	  Choose y here if you would like to use the socketpair(2)
 	  system call.
+
+config NET_SOCKETPAIR_BUFFER_SIZE
+	int "Size of the intermediate buffer, in bytes"
+	default 64
+	range 64 1048576
+	depends on NET_SOCKETPAIR
+	help
+	  Buffer size for socketpair(2)
 
 config NET_SOCKETS_NET_MGMT
 	bool "Enable network management socket support [EXPERIMENTAL]"

@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2020 Friedt Professional Engineering Services, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -21,12 +20,67 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include "sockets_internal.h"
 
+enum {
+	SPAIR_CANCEL,
+	SPAIR_CAN_READ,
+	SPAIR_CAN_WRITE,
+};
+
+struct spair {
+	int remote;
+	struct k_pipe recv_q;
+	struct k_poll_signal signal;
+	struct k_poll_event events[1];
+	bool blocking :1;
+	u8_t __aligned(4) buf[CONFIG_NET_SOCKETPAIR_BUFFER_SIZE];
+};
+
 const struct socket_op_vtable spair_fd_op_vtable;
 
-int z_impl_zsock_socketpair(int family, int type, int proto, int sv[2]) {
+static void spair_init(struct spair *spair) {
+
+	spair->remote = -1;
+
+	k_pipe_init(&spair->recv_q, spair->buf, sizeof(spair->buf));
+
+	k_poll_signal_init(&spair->signal);
+
+	k_poll_event_init(&spair->events[0],
+		K_POLL_TYPE_SIGNAL,
+		K_POLL_MODE_NOTIFY_ONLY,
+		&spair->signal);
+
+	spair->blocking = true;
+}
+
+static void spair_fini(struct spair *spair)
+{
+	k_free(spair);
+}
+
+static size_t k_pipe_write_avail(struct k_pipe *pipe)
+{
+	if (pipe->write_index >= pipe->read_index) {
+		return pipe->size - (pipe->write_index - pipe->read_index);
+	}
+
+	return pipe->read_index - pipe->write_index;
+}
+
+static size_t k_pipe_read_avail(struct k_pipe *pipe)
+{
+	if (pipe->read_index >= pipe->write_index) {
+		return pipe->size - (pipe->read_index - pipe->write_index);
+	}
+
+	return pipe->write_index - pipe->read_index;
+}
+
+int z_impl_zsock_socketpair(int family, int type, int proto, int sv[2])
+{
 	int res;
-	int tmp[2];
-	struct net_context *ctx[2];
+	int tmp[2] = {-1, -1};
+	struct spair *obj[2] = {};
 
 	if (family != AF_UNIX) {
 		errno = EAFNOSUPPORT;
@@ -53,41 +107,52 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int sv[2]) {
 		goto out;
 	}
 
-	res = z_impl_zsock_socket(family, type, proto);
-	if (res == -1) {
-		goto out;
-	}
-	tmp[0] = res;
-
-	res = z_impl_zsock_socket(family, type, proto);
-	if (res == -1) {
-		goto close_fd_0;
-	}
-	tmp[1] = res;
-
-	ctx[0] = z_get_fd_obj(tmp[0], (const struct fd_op_vtable *)&spair_fd_op_vtable, 0);
-	if (ctx[0] == NULL) {
-		goto close_fd_1;
+	for(size_t i = 0; i < 2; ++i) {
+		tmp[i] = z_reserve_fd();
+		if (tmp[i] == -1) {
+			errno = ENFILE;
+			goto free_fds;
+		}
 	}
 
-	ctx[1] = z_get_fd_obj(tmp[1], (const struct fd_op_vtable *)&spair_fd_op_vtable, 0);
-	if (ctx[1] == NULL) {
-		goto close_fd_1;
+	for(size_t i = 0; i < 2; ++i) {
+		obj[i] = k_malloc(sizeof(*obj));
+		if (obj[i] == NULL) {
+			errno = ENOMEM;
+			goto free_objs;
+		}
 	}
 
-	/* TODO: create 2 struct spair_obj and connect them */
+	for(size_t i = 0; i < 2; ++i) {
+		spair_init(obj[i]);
+		z_finalize_fd(tmp[i], obj[i], (const struct fd_op_vtable *) &spair_fd_op_vtable);
+	}
+
+	obj[0]->remote = tmp[1];
+	obj[1]->remote = tmp[0];
 
 	sv[0] = tmp[0];
 	sv[1] = tmp[1];
+
 	res = 0;
 
 	goto out;
 
-close_fd_1:
-	// z_impl_zsock_close(tmp[1]);
+free_objs:
+	for(size_t i = 0; i < 2; ++i) {
+		if (obj[i] != NULL) {
+			k_free(obj[i]);
+			obj[i] = NULL;
+		}
+	}
 
-close_fd_0:
-	// z_impl_zsock_close(tmp[0]);
+free_fds:
+	for(size_t i = 0; i < 2; ++i) {
+		if (tmp[i] != -1) {
+			z_free_fd(tmp[i]);
+			tmp[i] = -1;
+		}
+	}
 
 out:
 	return res;
@@ -107,29 +172,58 @@ static inline int z_vrfy_zsock_socketpair(int family, int type, int proto, int s
 #endif /* CONFIG_USERSPACE */
 
 
-static ssize_t spair_read_vmeth(void *obj, void *buffer, size_t count)
+static ssize_t spair_read(void *obj, void *buffer, size_t count)
 {
 	errno = ENOSYS;
 	return -1;
 }
 
-static ssize_t spair_write_vmeth(void *obj, const void *buffer, size_t count)
+static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 {
-	errno = ENOSYS;
-	return -1;
+	struct spair *const spair = (struct spair *)obj;
+	struct spair *const remote = z_get_fd_obj(spair->remote, (const struct fd_op_vtable *) &spair_fd_op_vtable, 0);
+
+	int res;
+
+	size_t written;
+
+	if (remote == NULL) {
+		errno = EPIPE;
+		return -1;
+	}
+
+	if (count == 0) {
+		return 0;
+	}
+
+	res = k_pipe_put(&remote->recv_q, (void *)buffer, count, & written, 0, K_NO_WAIT);
+	if (res < 0) {
+		errno = -res;
+		return -1;
+	}
+
+	return written;
 }
 
-static int spair_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int spair_ioctl(void *obj, unsigned int request, va_list args)
 {
+	if (obj == NULL) {
+		errno = EBADF;
+		return -1;
+	}
+
 	switch (request) {
 	case ZFD_IOCTL_CLOSE:
+		spair_fini((struct spair *)obj);
+		return 0;
+
 	default:
 		errno = EOPNOTSUPP;
 		return -1;
 	}
 }
 
-static int spair_bind_vmeth(void *obj, const struct sockaddr *addr,
+static int spair_bind(void *obj, const struct sockaddr *addr,
 			   socklen_t addrlen)
 {
 	(void) obj;
@@ -140,7 +234,7 @@ static int spair_bind_vmeth(void *obj, const struct sockaddr *addr,
 	return -1;
 }
 
-static int spair_connect_vmeth(void *obj, const struct sockaddr *addr,
+static int spair_connect(void *obj, const struct sockaddr *addr,
 			      socklen_t addrlen)
 {
 	(void) obj;
@@ -151,7 +245,7 @@ static int spair_connect_vmeth(void *obj, const struct sockaddr *addr,
 	return -1;
 }
 
-static int spair_listen_vmeth(void *obj, int backlog)
+static int spair_listen(void *obj, int backlog)
 {
 	(void) obj;
 	(void) backlog;
@@ -160,7 +254,7 @@ static int spair_listen_vmeth(void *obj, int backlog)
 	return -1;
 }
 
-static int spair_accept_vmeth(void *obj, struct sockaddr *addr,
+static int spair_accept(void *obj, struct sockaddr *addr,
 			     socklen_t *addrlen)
 {
 	(void) obj;
@@ -171,7 +265,7 @@ static int spair_accept_vmeth(void *obj, struct sockaddr *addr,
 	return -1;
 }
 
-static ssize_t spair_sendto_vmeth(void *obj, const void *buf, size_t len,
+static ssize_t spair_sendto(void *obj, const void *buf, size_t len,
 				 int flags, const struct sockaddr *dest_addr,
 				 socklen_t addrlen)
 {
@@ -186,7 +280,7 @@ static ssize_t spair_sendto_vmeth(void *obj, const void *buf, size_t len,
 	return -1;
 }
 
-static ssize_t spair_sendmsg_vmeth(void *obj, const struct msghdr *msg,
+static ssize_t spair_sendmsg(void *obj, const struct msghdr *msg,
 				  int flags)
 {
 	(void) obj;
@@ -197,7 +291,7 @@ static ssize_t spair_sendmsg_vmeth(void *obj, const struct msghdr *msg,
 	return -1;
 }
 
-static ssize_t spair_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
+static ssize_t spair_recvfrom(void *obj, void *buf, size_t max_len,
 				   int flags, struct sockaddr *src_addr,
 				   socklen_t *addrlen)
 {
@@ -212,7 +306,7 @@ static ssize_t spair_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
 	return -1;
 }
 
-static int spair_getsockopt_vmeth(void *obj, int level, int optname,
+static int spair_getsockopt(void *obj, int level, int optname,
 				 void *optval, socklen_t *optlen)
 {
 	(void) obj;
@@ -225,7 +319,7 @@ static int spair_getsockopt_vmeth(void *obj, int level, int optname,
 	return -1;
 }
 
-static int spair_setsockopt_vmeth(void *obj, int level, int optname,
+static int spair_setsockopt(void *obj, int level, int optname,
 				 const void *optval, socklen_t optlen)
 {
 	(void) obj;
@@ -240,17 +334,17 @@ static int spair_setsockopt_vmeth(void *obj, int level, int optname,
 
 const struct socket_op_vtable spair_fd_op_vtable = {
 	.fd_vtable = {
-		.read = spair_read_vmeth,
-		.write = spair_write_vmeth,
-		.ioctl = spair_ioctl_vmeth,
+		.read = spair_read,
+		.write = spair_write,
+		.ioctl = spair_ioctl,
 	},
-	.bind = spair_bind_vmeth,
-	.connect = spair_connect_vmeth,
-	.listen = spair_listen_vmeth,
-	.accept = spair_accept_vmeth,
-	.sendto = spair_sendto_vmeth,
-	.sendmsg = spair_sendmsg_vmeth,
-	.recvfrom = spair_recvfrom_vmeth,
-	.getsockopt = spair_getsockopt_vmeth,
-	.setsockopt = spair_setsockopt_vmeth,
+	.bind = spair_bind,
+	.connect = spair_connect,
+	.listen = spair_listen,
+	.accept = spair_accept,
+	.sendto = spair_sendto,
+	.sendmsg = spair_sendmsg,
+	.recvfrom = spair_recvfrom,
+	.getsockopt = spair_getsockopt,
+	.setsockopt = spair_setsockopt,
 };
