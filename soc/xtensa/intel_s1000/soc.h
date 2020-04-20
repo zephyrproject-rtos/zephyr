@@ -34,10 +34,10 @@
 	(((cavs_irq) & CAVS_IRQ_NUM_MASK) << CAVS_IRQ_NUM_SHIFT) |	\
 	(((ictl_irq) & INTR_CNTL_IRQ_NUM_MASK) << INTR_CNTL_IRQ_NUM_SHIFT))
 
-#define CAVS_L2_AGG_INT_LEVEL2			DT_CAVS_ICTL_0_IRQ
-#define CAVS_L2_AGG_INT_LEVEL3			DT_CAVS_ICTL_1_IRQ
-#define CAVS_L2_AGG_INT_LEVEL4			DT_CAVS_ICTL_2_IRQ
-#define CAVS_L2_AGG_INT_LEVEL5			DT_CAVS_ICTL_3_IRQ
+#define CAVS_L2_AGG_INT_LEVEL2			DT_IRQN(DT_INST(0, intel_cavs_intc))
+#define CAVS_L2_AGG_INT_LEVEL3			DT_IRQN(DT_INST(1, intel_cavs_intc))
+#define CAVS_L2_AGG_INT_LEVEL4			DT_IRQN(DT_INST(2, intel_cavs_intc))
+#define CAVS_L2_AGG_INT_LEVEL5			DT_IRQN(DT_INST(3, intel_cavs_intc))
 
 #define CAVS_ICTL_INT_CPU_OFFSET(x)		(0x40 * x)
 
