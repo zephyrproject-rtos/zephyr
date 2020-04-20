@@ -57,10 +57,10 @@
  * Note: formula is valid for 1M, 2M and Coded S8
  * see BT spec Version 5.1 Vol 6. Part B, chapters 2.1 and 2.2
  * for packet formats and thus lengths
- *
- * Payload overhead size is the Data Channel PDU Header + the MIC
  */
-#define PAYLOAD_OVERHEAD_SIZE (2 + 4)
+
+#define PDU_HEADER_SIZE 2
+#define PDU_MIC_SIZE    4
 
 #define PHY_1M    BIT(0)
 #define PHY_2M    BIT(1)
@@ -74,33 +74,40 @@
 #define CODED_PHY_CRC_SIZE               24
 #define CODED_PHY_TERM2_SIZE             3
 
-#define FEC_BLOCK1_TIME_US (CODED_PHY_ACCESS_ADDRESS_TIME_US + \
-			    CODED_PHY_CI_TIME_US + \
-			    CODED_PHY_TERM1_TIME_US)
-#define FEC_BLOCK2_TIME_US(octets) ((((PAYLOAD_OVERHEAD_SIZE + \
-				       (octets)) * 8) + \
-				     CODED_PHY_CRC_SIZE + \
-				     CODED_PHY_TERM2_SIZE) * 8)
+#define FEC_BLOCK1_TIME_US               ((CODED_PHY_ACCESS_ADDRESS_TIME_US) + \
+					  (CODED_PHY_CI_TIME_US) + \
+					  (CODED_PHY_TERM1_TIME_US))
+#define FEC_BLOCK2_TIME_US(octets, mic)  (((((PDU_HEADER_SIZE) + \
+					     (octets) + \
+					     (mic))<<3) + \
+					    (CODED_PHY_CRC_SIZE) + \
+					    (CODED_PHY_TERM2_SIZE))<<3)
 
-#define PKT_US(octets, phy) (((phy) & PHY_CODED) ?		   \
-			     (CODED_PHY_PREAMBLE_TIME_US + \
-			      FEC_BLOCK1_TIME_US + \
-			      FEC_BLOCK2_TIME_US(octets)) : \
-			     (((PREAMBLE_SIZE(phy) + \
-				ACCESS_ADDR_SIZE + \
-				PAYLOAD_OVERHEAD_SIZE + \
-				(octets) + \
-				CRC_SIZE) * 8) / \
-			      BIT(((phy) & 0x03) >> 1)))
+#define PKT_DC_US(octets, mic, phy) (((phy) & PHY_CODED) ? \
+				     ((CODED_PHY_PREAMBLE_TIME_US) + \
+				      (FEC_BLOCK1_TIME_US) + \
+				      FEC_BLOCK2_TIME_US((octets), (mic))) : \
+				     (((PREAMBLE_SIZE(phy) + \
+					(ACCESS_ADDR_SIZE) + \
+					(PDU_HEADER_SIZE) + \
+					(octets) + \
+					(mic) + \
+					(CRC_SIZE))<<3) / \
+				      BIT(((phy) & 0x03) >> 1)))
 
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
-#define PKT_US(octets, phy) ((((PREAMBLE_SIZE(phy)) +	\
-			       ACCESS_ADDR_SIZE + \
-			       PAYLOAD_OVERHEAD_SIZE + \
-			       (octets) + \
-			       CRC_SIZE) * 8) / \
-			      BIT(((phy) & 0x03) >> 1))
+#define PKT_DC_US(octets, mic, phy) (((PREAMBLE_SIZE(phy) + \
+				       (ACCESS_ADDR_SIZE) + \
+				       (PDU_HEADER_SIZE) + \
+				       (octets) + \
+				       (mic) + \
+				       (CRC_SIZE))<<3) / \
+				     BIT(((phy) & 0x03) >> 1))
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
+
+#define PKT_US(octets, phy) PKT_DC_US((octets), (PDU_MIC_SIZE), (phy))
+
+#define PKT_AC_US(octets, mic, phy) PKT_DC_US((octets), (mic), (phy))
 
 /* Extra bytes for enqueued node_rx metadata: rssi (always), resolving
  * index, directed adv report, and mesh channel and instant.
