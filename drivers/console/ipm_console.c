@@ -15,13 +15,15 @@ LOG_MODULE_REGISTER(ipm_console, CONFIG_IPM_LOG_LEVEL);
 #if defined(CONFIG_IPM_CONSOLE_IMMEDIATE)
 struct device *ipm_dev;
 #else
+
 /*
  * Stack for the message queue handling thread
  */
 static K_THREAD_STACK_DEFINE(thread_stack, 1024);
 static struct k_thread thread_data;
 
-K_MSGQ_DEFINE(msg_queue, sizeof(char), CONFIG_IPM_CONSOLE_QUEUE_SIZE, 4);
+K_MSGQ_DEFINE(msg_queue, CONFIG_IPM_CONSOLE_LINE_BUF_LEN,
+	      CONFIG_IPM_CONSOLE_QUEUE_SIZE, 4);
 
 static void msgq_thread(void *arg1, void *arg2, void *arg3)
 {
@@ -33,17 +35,16 @@ static void msgq_thread(void *arg1, void *arg2, void *arg3)
 	LOG_DBG("started thread");
 
 	while (true) {
-		int character = 0;
+		char buf[CONFIG_IPM_CONSOLE_LINE_BUF_LEN];
 		int ret;
 
 		/* Get character from message queue */
-		k_msgq_get(&msg_queue, &character, K_FOREVER);
+		k_msgq_get(&msg_queue, buf, K_FOREVER);
 
 		/* Blocking write over IPM */
-		ret = ipm_send(ipm_dev, 1, character, NULL, 0);
+		ret = ipm_send(ipm_dev, 1, sizeof(buf), buf, sizeof(buf));
 		if (ret) {
-			LOG_ERR("Error sending character %c over IPM, ret %d",
-				character, ret);
+			LOG_ERR("Error sending buf over IPM, ret %d", ret);
 		}
 
 		k_yield();
@@ -53,21 +54,29 @@ static void msgq_thread(void *arg1, void *arg2, void *arg3)
 
 static int console_out(int c)
 {
+	static char buf[CONFIG_IPM_CONSOLE_LINE_BUF_LEN];
+	static size_t len;
 	int ret;
 
+	if (c != '\n' && len < sizeof(buf)) {
+		buf[len++] = c;
+		return c;
+	}
+
 #if defined(CONFIG_IPM_CONSOLE_IMMEDIATE)
-	ret = ipm_send(ipm_dev, 1, c & ~BIT(31), NULL, 0);
+	ret = ipm_send(ipm_dev, 1, len & ~BIT(31), buf, len);
 	if (ret) {
 		LOG_ERR("Error sending character %c over IPM, ret %d", c, ret);
 	}
 #else
-	char character = c;
-
-	ret = k_msgq_put(&msg_queue, &character, K_NO_WAIT);
+	ret = k_msgq_put(&msg_queue, buf, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("Error queueing character %c, ret %d", character, ret);
+		LOG_ERR("Error queueing buf, ret %d", ret);
 	}
 #endif
+
+	memset(buf, 0, sizeof(buf));
+	len = 0;
 
 	return c;
 }

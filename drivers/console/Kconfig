@@ -190,6 +190,14 @@ config IPM_CONSOLE_ON_DEV_NAME
 	help
 	  IPM device name used by IPM console driver.
 
+config IPM_CONSOLE_LINE_BUF_LEN
+	int "IPM console line buffer length"
+	default 128
+	depends on IPM_CONSOLE
+	help
+	  IPM console line buffer length specify amount of the buffer
+	  where characters are stored before sending the whole line.
+
 config IPM_CONSOLE_IMMEDIATE
 	bool "Immediate logging over IPM"
 	default y
@@ -207,7 +215,7 @@ config IPM_CONSOLE_THREAD
 
 config IPM_CONSOLE_QUEUE_SIZE
 	int "IPM console queue size"
-	default 4096
+	default 16
 	depends on IPM_CONSOLE
 	help
 	  IPM console queue size
