@@ -47,10 +47,6 @@ config ADC_0
 	default y
 	depends on ADC
 
-config I2C_0
-	default y
-	depends on I2C
-
 if NETWORKING
 
 config NET_L2_ETHERNET
