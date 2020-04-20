@@ -135,10 +135,11 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	pipe->bytes_used = 0;
 	pipe->read_index = 0;
 	pipe->write_index = 0;
-	pipe->flags = 0;
+	pipe->lock = (struct k_spinlock){};
 	z_waitq_init(&pipe->wait_q.writers);
 	z_waitq_init(&pipe->wait_q.readers);
 	SYS_TRACING_OBJ_INIT(k_pipe, pipe);
+	pipe->flags = 0;
 	z_object_init(pipe);
 }
 
