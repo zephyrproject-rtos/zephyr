@@ -172,7 +172,7 @@ void smp_timer_init(void)
 	 * FIXME: Done in this way because we don't have an API
 	 * to enable interrupts per CPU.
 	 */
-	sys_set_bit(DT_CAVS_ICTL_BASE_ADDR
+	sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0))
 			+ CAVS_ICTL_INT_CPU_OFFSET(arch_curr_cpu()->id)
 			+ 0x04,
 		    22 + TIMER);

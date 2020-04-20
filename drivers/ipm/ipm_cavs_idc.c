@@ -193,7 +193,7 @@ static int cavs_idc_set_enabled(struct device *dev, int enable)
 		idc_write(REG_IDCCTL, i, mask);
 
 		/* FIXME: when we have API to enable IRQ on specific core. */
-		sys_set_bit(DT_CAVS_ICTL_BASE_ADDR + 0x04 +
+		sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x04 +
 			    CAVS_ICTL_INT_CPU_OFFSET(i),
 			    CAVS_IRQ_NUMBER(DT_INST_IRQN(0)));
 	}

@@ -185,7 +185,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	idc_reg = idc_read(REG_IDCCTL, cpu_num);
 	idc_reg |= REG_IDCCTL_IDCTBIE(0);
 	idc_write(REG_IDCCTL, cpu_num, idc_reg);
-	sys_set_bit(DT_CAVS_ICTL_BASE_ADDR + 0x04 +
+	sys_set_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x04 +
 		    CAVS_ICTL_INT_CPU_OFFSET(cpu_num), 8);
 
 	/* Send power up message to the other core */
@@ -198,7 +198,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	idc_reg = idc_read(REG_IDCCTL, cpu_num);
 	idc_reg &= ~REG_IDCCTL_IDCTBIE(0);
 	idc_write(REG_IDCCTL, cpu_num, idc_reg);
-	sys_clear_bit(DT_CAVS_ICTL_BASE_ADDR + 0x04 +
+	sys_clear_bit(DT_REG_ADDR(DT_NODELABEL(cavs0)) + 0x04 +
 		      CAVS_ICTL_INT_CPU_OFFSET(cpu_num), 8);
 
 	do {
