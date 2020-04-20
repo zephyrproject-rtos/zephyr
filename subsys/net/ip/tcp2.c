@@ -252,6 +252,12 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	tcp_send_queue_flush(conn);
 
+	if (conn->unacked_data) {
+		tcp_pkt_unref(conn->unacked_data);
+		conn->unacked_data = NULL;
+	}
+
+	k_delayed_work_cancel(&conn->data_timer);
 	k_delayed_work_cancel(&conn->timewait_timer);
 
 	memset(conn, 0, sizeof(*conn));
@@ -278,6 +284,165 @@ int net_tcp_unref(struct net_context *context)
 	return ref_count;
 }
 
+static int tcp_finalize_pkt(struct net_pkt *pkt)
+{
+	net_pkt_cursor_init(pkt);
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		return net_ipv4_finalize(pkt, IPPROTO_TCP);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
+		return net_ipv6_finalize(pkt, IPPROTO_TCP);
+	}
+
+	return -EINVAL;
+}
+
+static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, u8_t flags)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct tcphdr);
+	struct tcphdr *th;
+
+	th = (struct tcphdr *)net_pkt_get_data(pkt, &tcp_access);
+	if (!th) {
+		return -ENOBUFS;
+	}
+
+	memset(th, 0, sizeof(struct tcphdr));
+
+	th->th_sport = conn->src.sin.sin_port;
+	th->th_dport = conn->dst.sin.sin_port;
+
+	th->th_off = 5;
+	th->th_flags = flags;
+	th->th_win = htons(conn->recv_win);
+	th->th_seq = htonl(conn->seq);
+
+	if (ACK & flags) {
+		th->th_ack = htonl(conn->ack);
+	}
+
+	return net_pkt_set_data(pkt, &tcp_access);
+}
+
+static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		return net_context_create_ipv4_new(conn->context, pkt,
+						&conn->src.sin.sin_addr,
+						&conn->dst.sin.sin_addr);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
+		return net_context_create_ipv6_new(conn->context, pkt,
+						&conn->src.sin6.sin6_addr,
+						&conn->dst.sin6.sin6_addr);
+	}
+
+	return -EINVAL;
+}
+
+static void tcp_send_queued_data(struct tcp *conn, bool do_resend)
+{
+	struct net_pkt *pkt;
+	int len;
+	int ret;
+
+	if (conn->send_win == 0) {
+		NET_DBG("Conn %p window closed, cannot send", conn);
+		return;
+	}
+
+	if (do_resend) {
+		len = net_pkt_get_len(conn->unacked_data);
+	} else {
+		len = net_pkt_get_len(conn->unacked_data) - conn->unacked_len;
+	}
+
+	if (len < 0) {
+		NET_DBG("Packet %p len %zd is shorter than pending data %zd",
+			conn->unacked_data,
+			net_pkt_get_len(conn->unacked_data),
+			conn->unacked_len);
+		return;
+	}
+
+	/* TODO: We should adjust the amount of data to sent according to
+	 * our number of available buffers etc.
+	 */
+	len = MIN(conn->send_win, len);
+
+	NET_DBG("Sending %d win %zd pending %zd seq %u ack %u total %zd", len,
+		conn->send_win, conn->unacked_len, conn->seq, conn->ack,
+		net_pkt_get_len(conn->unacked_data));
+
+	pkt = tcp_pkt_alloc(conn, len);
+	if (!pkt) {
+		NET_DBG("Cannot allocate pkt");
+		return;
+	}
+
+	ret = ip_header_add(conn, pkt);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	ret = tcp_header_add(conn, pkt, PSH | ACK);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	ret = net_pkt_skip(conn->unacked_data, conn->unacked_len);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	ret = net_pkt_copy(pkt, conn->unacked_data, len);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	/* If cursor is reset by net_pkt_copy(), it means that we copied all
+	 * data from it.
+	 */
+	if (!conn->unacked_data->cursor.buf) {
+		NET_DBG("Copied all data (%d bytes) from net_pkt %p (len %zd)",
+			len, conn->unacked_data,
+			net_pkt_get_len(conn->unacked_data));
+		net_pkt_cursor_init(conn->unacked_data);
+	}
+
+	ret = tcp_finalize_pkt(pkt);
+	if (ret < 0) {
+		goto fail;
+	}
+
+	conn->unacked_len += len;
+	conn_seq(conn, + len);
+
+	NET_DBG("%s", log_strdup(tcp_th(pkt)));
+
+	(void)k_delayed_work_cancel(&conn->data_timer);
+	k_delayed_work_submit(&conn->data_timer, K_MSEC(tcp_rto));
+
+	tcp_send(pkt);
+	return;
+
+fail:
+	tcp_pkt_unref(pkt);
+}
+
+static void tcp_resend_queued_data(struct k_work *work)
+{
+	struct tcp *conn = CONTAINER_OF(work, struct tcp, data_timer);
+
+	NET_DBG("Resending data conn %p", conn);
+
+	/* Resend any pending data */
+	tcp_send_queued_data(conn, true);
+}
+
 static void tcp_send_process(struct k_work *work)
 {
 	struct tcp *conn = CONTAINER_OF(work, struct tcp, send_timer);
@@ -302,6 +467,13 @@ static void tcp_send_process(struct k_work *work)
 
 		pkt = forget ? tcp_slist(&conn->send_queue, get, struct net_pkt,
 						next) : tcp_pkt_clone(pkt);
+		if (!pkt) {
+			NET_ERR("net_pkt alloc failure");
+			tcp_conn_unref(conn);
+			conn = NULL;
+			return;
+		}
+
 		tcp_send(pkt);
 
 		if (forget == false && !k_delayed_work_remaining_get(
@@ -475,7 +647,12 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 
 	if (len > 0) {
 		if (conn->context->recv_cb) {
-			struct net_pkt *up = net_pkt_clone(pkt, K_NO_WAIT);
+			struct net_pkt *up =
+				net_pkt_clone(pkt, TCP_PKT_ALLOC_TIMEOUT);
+
+			if (!up) {
+				return 0;
+			}
 
 			net_pkt_cursor_init(up);
 			net_pkt_set_overwrite(up, true);
@@ -491,89 +668,20 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 	return len;
 }
 
-static int tcp_finalize_pkt(struct net_pkt *pkt)
-{
-	net_pkt_cursor_init(pkt);
-
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		return net_ipv4_finalize(pkt, IPPROTO_TCP);
-	}
-
-	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
-		return net_ipv6_finalize(pkt, IPPROTO_TCP);
-	}
-
-	return -EINVAL;
-}
-
-static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, u8_t flags)
-{
-	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct tcphdr);
-	struct tcphdr *th;
-
-	th = (struct tcphdr *)net_pkt_get_data(pkt, &tcp_access);
-	if (!th) {
-		return -ENOBUFS;
-	}
-
-	memset(th, 0, sizeof(struct tcphdr));
-
-	th->th_sport = conn->src.sin.sin_port;
-	th->th_dport = conn->dst.sin.sin_port;
-
-	th->th_off = 5;
-	th->th_flags = flags;
-	th->th_win = htons(conn->win);
-	th->th_seq = htonl(conn->seq);
-
-	if (ACK & flags) {
-		th->th_ack = htonl(conn->ack);
-	}
-
-	return net_pkt_set_data(pkt, &tcp_access);
-}
-
-static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
-{
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		return net_context_create_ipv4_new(conn->context, pkt,
-						&conn->src.sin.sin_addr,
-						&conn->dst.sin.sin_addr);
-	}
-
-	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
-		return net_context_create_ipv6_new(conn->context, pkt,
-						&conn->src.sin6.sin6_addr,
-						&conn->dst.sin6.sin6_addr);
-	}
-
-	return -EINVAL;
-}
-
-static void tcp_out(struct tcp *conn, u8_t flags, ...)
+static void tcp_out(struct tcp *conn, u8_t flags)
 {
 	struct net_pkt *pkt;
 	size_t len = 0;
 	int r;
 
+	if (PSH & flags) {
+		tcp_send_queued_data(conn, false);
+		return;
+	}
+
 	pkt = tcp_pkt_alloc(conn, sizeof(struct tcphdr));
 	if (!pkt) {
 		goto fail;
-	}
-
-	if (PSH & flags) {
-		struct net_pkt *data_pkt;
-		va_list ap;
-		va_start(ap, flags);
-		data_pkt = va_arg(ap, struct net_pkt *);
-		va_end(ap);
-
-		len = net_pkt_get_len(data_pkt);
-		/* Append the data buffer to pkt */
-		net_pkt_append_buffer(pkt, data_pkt->buffer);
-
-		data_pkt->buffer = NULL;
-		tcp_pkt_unref(data_pkt);
 	}
 
 	r = ip_header_add(conn, pkt);
@@ -646,17 +754,18 @@ static struct tcp *tcp_conn_alloc(void)
 
 	conn->state = TCP_LISTEN;
 
-	conn->win = tcp_window;
+	conn->recv_win = tcp_window;
 
 	sys_slist_init(&conn->send_queue);
 
 	k_delayed_work_init(&conn->send_timer, tcp_send_process);
-
+	k_delayed_work_init(&conn->data_timer, tcp_resend_queued_data);
 	k_delayed_work_init(&conn->timewait_timer, tcp_timewait_timeout);
 
 	tcp_conn_ref(conn);
 
 	conn->seq = tcp_init_isn();
+	conn->last_seq = conn->seq + 1;
 
 	sys_slist_append(&tcp_conns, (sys_snode_t *)conn);
 out:
@@ -845,6 +954,89 @@ err:
 	return conn;
 }
 
+static void trim_unacked_data(struct tcp *conn)
+{
+	/* Make sure there is no empty buffers in the beginning
+	 * of the chain as we just pulled data from it (so there
+	 * should not be any)
+	 */
+	if (conn->unacked_data->buffer &&
+	    conn->unacked_data->buffer->len == 0) {
+		/* TODO: Fix net_pkt_pull() so that this check can be removed.
+		 */
+		struct net_buf *buf = conn->unacked_data->buffer;
+
+		while (buf) {
+			if (buf->len) {
+				break;
+			}
+
+			conn->unacked_data->buffer = buf->frags;
+			buf->frags = NULL;
+
+			net_buf_unref(buf);
+			if (!conn->unacked_data->buffer) {
+				break;
+			}
+
+			buf = conn->unacked_data->buffer->frags;
+		}
+	}
+}
+
+static u32_t calc_acked_data(struct tcp *conn, struct tcphdr *th)
+{
+	u32_t acked_len = th_ack(th) - conn->last_seq;
+
+	if (!conn->unacked_data || acked_len == 0) {
+		return 0U;
+	}
+
+	NET_DBG("Peer acked %u bytes", acked_len);
+
+	return acked_len;
+}
+
+static void update_acked_data(struct tcp *conn, u32_t acked_len)
+{
+	int ret;
+
+	/* If there is any pending data, remove them from re-send as peer
+	 * just acked it.
+	 */
+	net_pkt_cursor_init(conn->unacked_data);
+	net_pkt_set_overwrite(conn->unacked_data, true);
+
+	/* TODO: Check that pull would succeed beforehand. For this we need
+	 * to know the length of unacked_data. But the net_pkt_get_len() is
+	 * expensive, and as we need to know the length information in many
+	 * places, fix this by keeping track of length separately. The length
+	 * calculations in tcp_send_queued_data() would need to be changed too.
+	 */
+	ret = net_pkt_pull(conn->unacked_data, acked_len);
+	if (ret < 0 && conn->unacked_len != (int)acked_len) {
+		NET_ERR("Trying to ack more data (%d) that was in the "
+			"queue (%u)", acked_len, conn->unacked_len);
+		conn->unacked_len = 0;
+	} else {
+		conn->unacked_len -= acked_len;
+		if (conn->unacked_len < 0) {
+			NET_DBG("Pending length underflow by %d",
+				conn->unacked_len);
+			conn->unacked_len = 0;
+		}
+
+		trim_unacked_data(conn);
+	}
+
+	conn->last_seq += acked_len;
+
+	/* Cancel the resend timer only if we don't have things waiting ACKs */
+	if (conn->unacked_len == 0) {
+		(void)k_delayed_work_cancel(&conn->data_timer);
+	}
+}
+
 /* TCP state machine, everything happens here */
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 {
@@ -869,6 +1061,10 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		tcp_out(conn, RST);
 		conn_state(conn, TCP_CLOSED);
 		goto next_state;
+	}
+
+	if (th) {
+		conn->send_win = ntohs(th->th_win);
 	}
 
 	if (FL(&fl, &, RST)) {
@@ -898,9 +1094,10 @@ next_state:
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
 			if (len) {
-				tcp_data_get(conn, pkt);
-				conn_ack(conn, + len);
-				tcp_out(conn, ACK);
+				if (tcp_data_get(conn, pkt)) {
+					conn_ack(conn, + len);
+					tcp_out(conn, ACK);
+				}
 			}
 		}
 		break;
@@ -915,7 +1112,9 @@ next_state:
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
 			if (FL(&fl, &, PSH)) {
-				tcp_data_get(conn, pkt);
+				if (!tcp_data_get(conn, pkt)) {
+					break;
+				}
 			}
 			if (FL(&fl, &, SYN)) {
 				conn_ack(conn, th_seq(th) + 1);
@@ -937,12 +1136,22 @@ next_state:
 			break;
 		}
 
+		if (th && !net_tcp_seq_greater(th_ack(th), conn->seq)) {
+			u32_t acked_len = calc_acked_data(conn, th);
+
+			if (acked_len) {
+				update_acked_data(conn, acked_len);
+			}
+		}
+
 		if (len) {
 			if (th_seq(th) == conn->ack) {
-				tcp_data_get(conn, pkt);
-				conn_ack(conn, + len);
-				tcp_out(conn, ACK);
-			} else if (th_seq(th) < conn->ack) {
+				if (tcp_data_get(conn, pkt)) {
+					conn_ack(conn, + len);
+					tcp_out(conn, ACK);
+				}
+			} else if (net_tcp_seq_greater(conn->ack,
+						       th_seq(th))) {
 				tcp_out(conn, ACK); /* peer has resent */
 			}
 		}
@@ -1061,7 +1270,22 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 		goto out;
 	}
 
-	tcp_out(conn, PSH | ACK, pkt);
+	/* How the data is send:
+	 * - if there is no pending data yet, allocate net_pkt
+	 * - append data to existing list of pending data
+	 * - trigger send
+	 * - the send function will figure out how much data to
+	 *   send according to send window size and mss
+	 */
+
+	conn->unacked_data = tcp_pkt_alloc(conn, 0);
+
+	/* Append the data buffer to pkt */
+	net_pkt_append_buffer(conn->unacked_data, pkt->buffer);
+	pkt->buffer = NULL;
+	tcp_pkt_unref(pkt);
+
+	tcp_out(conn, PSH | ACK);
 out:
 	return ret;
 }
