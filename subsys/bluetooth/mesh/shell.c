@@ -1737,8 +1737,8 @@ static int cmd_fault_get(const struct shell *shell, size_t argc, char *argv[])
 	cid = strtoul(argv[1], NULL, 0);
 	fault_count = sizeof(faults);
 
-	err = bt_mesh_health_fault_get(net.net_idx, net.dst, net.app_idx, cid,
-				       &test_id, faults, &fault_count);
+	err = bt_mesh_health_fault_get(net.dst, net.app_idx, cid, &test_id,
+				 faults, &fault_count);
 	if (err) {
 		shell_error(shell, "Failed to send Health Fault Get (err %d)",
 			    err);
@@ -1765,8 +1765,8 @@ static int cmd_fault_clear(const struct shell *shell, size_t argc,
 	cid = strtoul(argv[1], NULL, 0);
 	fault_count = sizeof(faults);
 
-	err = bt_mesh_health_fault_clear(net.net_idx, net.dst, net.app_idx,
-					 cid, &test_id, faults, &fault_count);
+	err = bt_mesh_health_fault_clear(net.dst, net.app_idx, cid,
+				 &test_id, faults, &fault_count);
 	if (err) {
 		shell_error(shell, "Failed to send Health Fault Clear (err %d)",
 			    err);
@@ -1789,8 +1789,8 @@ static int cmd_fault_clear_unack(const struct shell *shell, size_t argc,
 
 	cid = strtoul(argv[1], NULL, 0);
 
-	err = bt_mesh_health_fault_clear(net.net_idx, net.dst, net.app_idx,
-					 cid, NULL, NULL, NULL);
+	err = bt_mesh_health_fault_clear(net.dst, net.app_idx, cid,
+					 NULL, NULL, NULL);
 	if (err) {
 		shell_error(shell, "Health Fault Clear Unacknowledged failed "
 			    "(err %d)", err);
@@ -1815,8 +1815,8 @@ static int cmd_fault_test(const struct shell *shell, size_t argc, char *argv[])
 	test_id = strtoul(argv[2], NULL, 0);
 	fault_count = sizeof(faults);
 
-	err = bt_mesh_health_fault_test(net.net_idx, net.dst, net.app_idx,
-					cid, test_id, faults, &fault_count);
+	err = bt_mesh_health_fault_test(net.dst, net.app_idx, cid,
+				 test_id, faults, &fault_count);
 	if (err) {
 		shell_error(shell, "Failed to send Health Fault Test (err %d)",
 			    err);
@@ -1841,8 +1841,8 @@ static int cmd_fault_test_unack(const struct shell *shell, size_t argc,
 	cid = strtoul(argv[1], NULL, 0);
 	test_id = strtoul(argv[2], NULL, 0);
 
-	err = bt_mesh_health_fault_test(net.net_idx, net.dst, net.app_idx,
-					cid, test_id, NULL, NULL);
+	err = bt_mesh_health_fault_test(net.dst, net.app_idx, cid,
+				 test_id, NULL, NULL);
 	if (err) {
 		shell_error(shell, "Health Fault Test Unacknowledged failed "
 			    "(err %d)", err);
@@ -1856,8 +1856,7 @@ static int cmd_period_get(const struct shell *shell, size_t argc, char *argv[])
 	u8_t divisor;
 	int err;
 
-	err = bt_mesh_health_period_get(net.net_idx, net.dst, net.app_idx,
-					&divisor);
+	err = bt_mesh_health_period_get(net.dst, net.app_idx, &divisor);
 	if (err) {
 		shell_error(shell, "Failed to send Health Period Get (err %d)",
 			    err);
@@ -1879,8 +1878,8 @@ static int cmd_period_set(const struct shell *shell, size_t argc, char *argv[])
 
 	divisor = strtoul(argv[1], NULL, 0);
 
-	err = bt_mesh_health_period_set(net.net_idx, net.dst, net.app_idx,
-					divisor, &updated_divisor);
+	err = bt_mesh_health_period_set(net.dst, net.app_idx, divisor,
+				 &updated_divisor);
 	if (err) {
 		shell_error(shell, "Failed to send Health Period Set (err %d)",
 			    err);
@@ -1904,8 +1903,7 @@ static int cmd_period_set_unack(const struct shell *shell, size_t argc,
 
 	divisor = strtoul(argv[1], NULL, 0);
 
-	err = bt_mesh_health_period_set(net.net_idx, net.dst, net.app_idx,
-					divisor, NULL);
+	err = bt_mesh_health_period_set(net.dst, net.app_idx, divisor, NULL);
 	if (err) {
 		shell_print(shell, "Failed to send Health Period Set (err %d)",
 			    err);
@@ -1920,7 +1918,7 @@ static int cmd_attention_get(const struct shell *shell, size_t argc,
 	u8_t attention;
 	int err;
 
-	err = bt_mesh_health_attention_get(net.net_idx, net.dst, net.app_idx,
+	err = bt_mesh_health_attention_get(net.dst, net.app_idx,
 					   &attention);
 	if (err) {
 		shell_error(shell, "Failed to send Health Attention Get "
@@ -1944,8 +1942,8 @@ static int cmd_attention_set(const struct shell *shell, size_t argc,
 
 	attention = strtoul(argv[1], NULL, 0);
 
-	err = bt_mesh_health_attention_set(net.net_idx, net.dst, net.app_idx,
-					   attention, &updated_attention);
+	err = bt_mesh_health_attention_set(net.dst, net.app_idx, attention,
+				 &updated_attention);
 	if (err) {
 		shell_error(shell, "Failed to send Health Attention Set "
 			    "(err %d)", err);
@@ -1969,8 +1967,8 @@ static int cmd_attention_set_unack(const struct shell *shell, size_t argc,
 
 	attention = strtoul(argv[1], NULL, 0);
 
-	err = bt_mesh_health_attention_set(net.net_idx, net.dst, net.app_idx,
-					   attention, NULL);
+	err = bt_mesh_health_attention_set(net.dst, net.app_idx, attention,
+				 NULL);
 	if (err) {
 		shell_error(shell, "Failed to send Health Attention Set "
 			    "(err %d)", err);

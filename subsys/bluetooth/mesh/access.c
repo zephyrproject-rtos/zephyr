@@ -688,6 +688,18 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
 		       struct net_buf_simple *msg,
 		       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
+	struct bt_mesh_app_key *app_key;
+
+	if (!BT_MESH_IS_DEV_KEY(ctx->app_idx)) {
+		app_key = bt_mesh_app_key_find(ctx->app_idx);
+		if (!app_key) {
+			BT_ERR("Unknown app_idx 0x%04x", ctx->app_idx);
+			return -EINVAL;
+		}
+
+		ctx->net_idx = app_key->net_idx;
+	}
+
 	struct bt_mesh_net_tx tx = {
 		.sub = bt_mesh_subnet_get(ctx->net_idx),
 		.ctx = ctx,

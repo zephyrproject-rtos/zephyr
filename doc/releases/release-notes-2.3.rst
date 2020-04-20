@@ -80,7 +80,6 @@ Removed APIs in this release
 Stable API changes in this release
 ==================================
 
-
 Kernel
 ******
 

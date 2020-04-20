@@ -438,7 +438,6 @@ static void send_hello(struct k_work *work)
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 3 + HELLO_MAX + 4);
 	struct bt_mesh_msg_ctx ctx = {
-		.net_idx = NET_IDX,
 		.app_idx = APP_IDX,
 		.addr = GROUP_ADDR,
 		.send_ttl = DEFAULT_TTL,
@@ -466,7 +465,6 @@ static void send_baduser(struct k_work *work)
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 3 + HELLO_MAX + 4);
 	struct bt_mesh_msg_ctx ctx = {
-		.net_idx = NET_IDX,
 		.app_idx = APP_IDX,
 		.addr = GROUP_ADDR,
 		.send_ttl = DEFAULT_TTL,

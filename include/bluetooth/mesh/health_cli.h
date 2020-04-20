@@ -74,7 +74,6 @@ int bt_mesh_health_cli_set(struct bt_mesh_model *model);
  *
  *  @see bt_mesh_health_faults
  *
- *  @param net_idx     Network index to encrypt with.
  *  @param addr        Target node element address.
  *  @param app_idx     Application index to encrypt with.
  *  @param cid         Company ID to get the registered faults of.
@@ -84,15 +83,14 @@ int bt_mesh_health_cli_set(struct bt_mesh_model *model);
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_health_fault_get(u16_t net_idx, u16_t addr, u16_t app_idx,
-			     u16_t cid, u8_t *test_id, u8_t *faults,
-			     size_t *fault_count);
+int bt_mesh_health_fault_get(u16_t addr, u16_t app_idx, u16_t cid,
+				 u8_t *test_id, u8_t *faults,
+				 size_t *fault_count);
 
 /** @brief Clear the registered faults for the given Company ID.
  *
  *  @see bt_mesh_health_faults
  *
- *  @param net_idx     Network index to encrypt with.
  *  @param addr        Target node element address.
  *  @param app_idx     Application index to encrypt with.
  *  @param cid         Company ID to clear the registered faults for.
@@ -102,13 +100,12 @@ int bt_mesh_health_fault_get(u16_t net_idx, u16_t addr, u16_t app_idx,
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_health_fault_clear(u16_t net_idx, u16_t addr, u16_t app_idx,
-			       u16_t cid, u8_t *test_id, u8_t *faults,
-			       size_t *fault_count);
+int bt_mesh_health_fault_clear(u16_t addr, u16_t app_idx, u16_t cid,
+				 u8_t *test_id, u8_t *faults,
+				 size_t *fault_count);
 
 /** @brief Invoke a self-test procedure for the given Company ID.
  *
- *  @param net_idx     Network index to encrypt with.
  *  @param addr        Target node element address.
  *  @param app_idx     Application index to encrypt with.
  *  @param cid         Company ID to invoke the test for.
@@ -118,9 +115,9 @@ int bt_mesh_health_fault_clear(u16_t net_idx, u16_t addr, u16_t app_idx,
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_health_fault_test(u16_t net_idx, u16_t addr, u16_t app_idx,
-			      u16_t cid, u8_t test_id, u8_t *faults,
-			      size_t *fault_count);
+int bt_mesh_health_fault_test(u16_t addr, u16_t app_idx, u16_t cid,
+				 u8_t test_id, u8_t *faults,
+				 size_t *fault_count);
 
 /** @brief Get the target node's Health fast period divisor.
  *
@@ -132,15 +129,13 @@ int bt_mesh_health_fault_test(u16_t net_idx, u16_t addr, u16_t app_idx,
  *  Health fast period divisor is 5, the Health server will publish with an
  *  interval of 500 ms when a fault is registered.
  *
- *  @param net_idx Network index to encrypt with.
  *  @param addr    Target node element address.
  *  @param app_idx Application index to encrypt with.
  *  @param divisor Health period divisor response buffer.
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_health_period_get(u16_t net_idx, u16_t addr, u16_t app_idx,
-			      u8_t *divisor);
+int bt_mesh_health_period_get(u16_t addr, u16_t app_idx, u8_t *divisor);
 
 /** @brief Set the target node's Health fast period divisor.
  *
@@ -152,7 +147,6 @@ int bt_mesh_health_period_get(u16_t net_idx, u16_t addr, u16_t app_idx,
  *  Health fast period divisor is 5, the Health server will publish with an
  *  interval of 500 ms when a fault is registered.
  *
- *  @param net_idx         Network index to encrypt with.
  *  @param addr            Target node element address.
  *  @param app_idx         Application index to encrypt with.
  *  @param divisor         New Health period divisor.
@@ -160,24 +154,21 @@ int bt_mesh_health_period_get(u16_t net_idx, u16_t addr, u16_t app_idx,
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_health_period_set(u16_t net_idx, u16_t addr, u16_t app_idx,
-			      u8_t divisor, u8_t *updated_divisor);
+int bt_mesh_health_period_set(u16_t addr, u16_t app_idx, u8_t divisor,
+				 u8_t *updated_divisor);
 
 /** @brief Get the current attention timer value.
  *
- *  @param net_idx   Network index to encrypt with.
  *  @param addr      Target node element address.
  *  @param app_idx   Application index to encrypt with.
  *  @param attention Attention timer response buffer, measured in seconds.
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_health_attention_get(u16_t net_idx, u16_t addr, u16_t app_idx,
-				 u8_t *attention);
+int bt_mesh_health_attention_get(u16_t addr, u16_t app_idx, u8_t *attention);
 
 /** @brief Set the attention timer.
  *
- *  @param net_idx           Network index to encrypt with.
  *  @param addr              Target node element address.
  *  @param app_idx           Application index to encrypt with.
  *  @param attention         New attention timer time, in seconds.
@@ -186,8 +177,8 @@ int bt_mesh_health_attention_get(u16_t net_idx, u16_t addr, u16_t app_idx,
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_health_attention_set(u16_t net_idx, u16_t addr, u16_t app_idx,
-				 u8_t attention, u8_t *updated_attention);
+int bt_mesh_health_attention_set(u16_t addr, u16_t app_idx, u8_t attention,
+				 u8_t *updated_attention);
 
 /** @brief Get the current transmission timeout value.
  *
