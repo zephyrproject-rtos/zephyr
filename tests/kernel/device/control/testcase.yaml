@@ -9,3 +9,9 @@ tests:
     extra_configs:
       - CONFIG_DEVICE_CONCURRENT_ACCESS=n
     platform_whitelist: native_posix native_posix_64 qemu_x86
+  kernel.device_control.status_report:
+    tags: device
+    extra_configs:
+      - CONFIG_DEVICE_STATUS_REPORT=y
+      - CONFIG_DEVICE_STRICT_CHECK=y
+    platform_whitelist: native_posix native_posix_64 qemu_x86

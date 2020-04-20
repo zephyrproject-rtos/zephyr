@@ -122,12 +122,43 @@ void test_lock(void)
 }
 #endif /* CONFIG_DEVICE_CONCURRENT_ACCESS */
 
+#if defined(CONFIG_DEVICE_STATUS_REPORT)
+void test_status(void)
+{
+	int ret;
+
+	ret = fake_status_test(dev, 2);
+	zassert_equal(ret, 0, NULL);
+
+	ret = fake_status_test(dev, 1);
+	zassert_equal(ret, -EINVAL, NULL);
+
+	ret = fake_status_test(dev, 2);
+	zassert_equal(ret, 0, NULL);
+
+	ret = fake_status_test(dev, INT_MAX);
+	zassert_equal(ret, -EIO, NULL);
+
+	ret = fake_status_test(dev, 2);
+#ifdef CONFIG_DEVICE_STRICT_CHECK
+	zassert_equal(ret, -EIO, NULL);
+#else
+	zassert_equal(ret, 0, NULL);
+#endif
+}
+#else
+void test_status(void)
+{
+}
+#endif /* CONFIG_DEVICE_STATUS_REPORT */
+
 void test_main(void)
 {
 	ztest_test_suite(device_control,
 			 ztest_unit_test(test_init),
 			 ztest_unit_test(test_sync),
-			 ztest_unit_test(test_lock));
+			 ztest_unit_test(test_lock),
+			 ztest_unit_test(test_status));
 
 	ztest_run_test_suite(device_control);
 }

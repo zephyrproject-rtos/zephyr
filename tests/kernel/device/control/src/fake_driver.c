@@ -36,8 +36,11 @@ static void fake_irq(void)
 
 static int fake_sync_interrupt_call(struct device *dev)
 {
-	if (device_lock(dev) != 0) {
-		return -EAGAIN;
+	int ret;
+
+	ret = device_lock(dev);
+	if (ret != 0) {
+		return ret;
 	}
 
 	timeout = K_MSEC(10);
@@ -49,8 +52,11 @@ static int fake_sync_interrupt_call(struct device *dev)
 
 static int fake_sync_polling_call(struct device *dev)
 {
-	if (device_lock(dev) != 0) {
-		return -EAGAIN;
+	int ret;
+
+	ret = device_lock(dev);
+	if (ret != 0) {
+		return ret;
 	}
 
 	device_call_complete(dev, 0);
@@ -60,8 +66,11 @@ static int fake_sync_polling_call(struct device *dev)
 
 static int fake_lock_interrupt_call(struct device *dev, int *val)
 {
-	if (device_lock(dev) != 0) {
-		return -EAGAIN;
+	int ret;
+
+	ret = device_lock(dev);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret_val = val;
@@ -75,8 +84,11 @@ static int fake_lock_interrupt_call(struct device *dev, int *val)
 
 static int fake_lock_polling_call(struct device *dev, int *val)
 {
-	if (device_lock(dev) != 0) {
-		return -EAGAIN;
+	int ret;
+
+	ret = device_lock(dev);
+	if (ret != 0) {
+		return ret;
 	}
 
 	value++;
@@ -90,8 +102,11 @@ static int fake_lock_polling_call(struct device *dev, int *val)
 
 static int fake_no_to_call(struct device *dev, int *val)
 {
-	if (device_lock_timeout(dev, K_NO_WAIT) != 0) {
-		return -EAGAIN;
+	int ret;
+
+	ret = device_lock_timeout(dev, K_NO_WAIT);
+	if (ret != 0) {
+		return ret;
 	}
 
 	value++;
@@ -99,6 +114,28 @@ static int fake_no_to_call(struct device *dev, int *val)
 	k_sleep(K_MSEC(100));
 
 	device_call_complete(dev, 0);
+
+	return device_release(dev);
+}
+
+static int fake_status(struct device *dev, int val)
+{
+	int ret;
+
+	ret = device_lock(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (val % 2) {
+		ret = -EINVAL;
+	}
+
+	if (val == INT_MAX) {
+		ret = -EIO;
+	}
+
+	device_call_complete(dev, ret);
 
 	return device_release(dev);
 }
@@ -115,7 +152,7 @@ static int fake_driver_init(struct device *dev)
 			(k_thread_entry_t)fake_irq,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-	return 0;
+	return device_init_done(dev, 0);
 }
 
 static const struct fake_api api = {
@@ -124,6 +161,7 @@ static const struct fake_api api = {
 	.lock_int_call = fake_lock_interrupt_call,
 	.lock_poll_call = fake_lock_polling_call,
 	.no_to_call = fake_no_to_call,
+	.status_test = fake_status
 };
 
 
