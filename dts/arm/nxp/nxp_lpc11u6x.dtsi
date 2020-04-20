@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <arm/armv6-m.dtsi>
+#include <dt-bindings/clock/lpc11u6x_clock.h>
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -61,6 +62,60 @@
 			reg = <0x400440f0 0x64>;
 			label = "PINMUX_2";
 			status = "okay";
+		};
+
+		/* GPIO0_0 to GPIO0_23 */
+		gpio0: gpio@0 {
+			compatible = "nxp,lpc11u6x-gpio";
+			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
+			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
+				     <4 2>, <5 2>, <6 2>, <7 2>;
+
+			label = "GPIO_0";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <24>;
+
+			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
+			pinmux-port = <&pinmux0>;
+
+			status = "disabled";
+		};
+
+		/* GPIO1_0 to GPIO1_31 */
+		gpio1: gpio@1 {
+			compatible = "nxp,lpc11u6x-gpio";
+			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
+			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
+				     <4 2>, <5 2>, <6 2>, <7 2>;
+
+			label = "GPIO_1";
+			gpio-controller;
+			#gpio-cells = <2>;
+
+			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
+			pinmux-port = <&pinmux1>;
+
+			status = "disabled";
+		};
+
+		/* GPIO2_2 to GPIO2_23 */
+		gpio2: gpio@2 {
+			compatible = "nxp,lpc11u6x-gpio";
+			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
+			interrupts = <0 2>, <1 2>, <2 2>, <3 2>, \
+				     <4 2>, <5 2>, <6 2>, <7 2>;
+
+			label = "GPIO_2";
+			gpio-controller;
+			#gpio-cells = <2>;
+			base = <2>;
+			ngpios = <22>;
+
+			clocks = <&syscon LPC11U6X_CLOCK_GPIO>;
+			pinmux-port = <&pinmux2>;
+
+			status = "disabled";
 		};
 
 		syscon: clock-controller@40048000 {
