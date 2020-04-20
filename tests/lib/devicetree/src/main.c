@@ -911,22 +911,22 @@ static void test_dma(void)
 			     "TEST_DMA_CTRL_1"),
 		     "dma-controller label channel idx 0");
 
-	zassert_equal(DT_DMAS_CELLS_BY_NAME(TEST_TEMP, rx, channel), 3,
+	zassert_equal(DT_DMAS_CELL_BY_NAME(TEST_TEMP, rx, channel), 3,
 		      "channel cell of rx dma channel");
-	zassert_equal(DT_INST_DMAS_CELLS_BY_NAME(0, rx, channel), 3,
+	zassert_equal(DT_INST_DMAS_CELL_BY_NAME(0, rx, channel), 3,
 		      "channel cell of rx dma channel");
-	zassert_equal(DT_DMAS_CELLS_BY_NAME(TEST_TEMP, rx, slot), 4,
+	zassert_equal(DT_DMAS_CELL_BY_NAME(TEST_TEMP, rx, slot), 4,
 		      "slot cell of rx dma channel");
-	zassert_equal(DT_INST_DMAS_CELLS_BY_NAME(0, rx, slot), 4,
+	zassert_equal(DT_INST_DMAS_CELL_BY_NAME(0, rx, slot), 4,
 		      "slot cell of rx dma channel");
 
-	zassert_equal(DT_DMAS_CELLS_BY_IDX(TEST_TEMP, 1, channel), 3,
+	zassert_equal(DT_DMAS_CELL_BY_IDX(TEST_TEMP, 1, channel), 3,
 		      "channel cell of idx 1 dma channel");
-	zassert_equal(DT_INST_DMAS_CELLS_BY_IDX(0, 1, channel), 3,
+	zassert_equal(DT_INST_DMAS_CELL_BY_IDX(0, 1, channel), 3,
 		      "channel cell of idx 1 dma channel");
-	zassert_equal(DT_DMAS_CELLS_BY_IDX(TEST_TEMP, 1, slot), 4,
+	zassert_equal(DT_DMAS_CELL_BY_IDX(TEST_TEMP, 1, slot), 4,
 		      "slot cell of idx 1 dma channel");
-	zassert_equal(DT_INST_DMAS_CELLS_BY_IDX(0, 1, slot), 4,
+	zassert_equal(DT_INST_DMAS_CELL_BY_IDX(0, 1, slot), 4,
 		      "slot cell of idx 1 dma channel");
 
 	zassert_true(DT_DMAS_HAS_NAME(TEST_TEMP, tx),

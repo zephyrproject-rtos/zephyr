@@ -853,26 +853,26 @@ static struct device *get_dev_from_tx_dma_channel(u32_t dma_channel)
 .dir = {								\
 	.dma_name = DT_DMAS_LABEL_BY_NAME(DT_NODELABEL(i2s##index), dir),\
 	.dma_channel = \
-		DT_DMAS_CELLS_BY_NAME(DT_NODELABEL(i2s##index), dir, channel),\
+		DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, channel),\
 	.dma_cfg = {							\
 		.block_count = 2,					\
 		.dma_slot = \
-		    DT_DMAS_CELLS_BY_NAME(DT_NODELABEL(i2s##index), dir, slot),\
+		    DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, slot),\
 		.channel_direction = src_dev##_TO_##dest_dev,		\
 		.source_data_size = 2,  /* 16bit default */		\
 		.dest_data_size = 2,    /* 16bit default */		\
 		.source_burst_length = 0, /* SINGLE transfer */		\
 		.dest_burst_length = 1,					\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
-	 DT_DMAS_CELLS_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
+	 DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
 		.dma_callback = dma_##dir##_callback,			\
 	},								\
 	.src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(	\
-	 DT_DMAS_CELLS_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
+	 DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
 	.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(	\
-	 DT_DMAS_CELLS_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
+	 DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
 	.fifo_threshold = STM32_DMA_FEATURES_FIFO_THRESHOLD(		\
-	 DT_DMAS_CELLS_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
+	 DT_DMAS_CELL_BY_NAME(DT_NODELABEL(i2s##index), dir, channel_config)),\
 	.stream_start = dir##_stream_start,				\
 	.stream_disable = dir##_stream_disable,				\
 	.queue_drop = dir##_queue_drop,					\
