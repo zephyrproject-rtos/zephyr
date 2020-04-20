@@ -10,7 +10,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <stdio.h>
 #include <string.h>
-#include <sys/socket.h>
+#include <net/socket.h>
 #include <sys/util.h>
 #include <unistd.h>
 
