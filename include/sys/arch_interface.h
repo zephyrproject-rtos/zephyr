@@ -116,6 +116,16 @@ static inline uint32_t arch_k_cycle_get_32(void);
  *
  * @see Z_STACK_PTR_ALIGN
  */
+
+/**
+ * @def ARCH_THREAD_STACK_OBJ_ALIGN(size)
+ *
+ * Required alignment of the lowest address of a stack object.
+ *
+ * Optional definition.
+ *
+ * @see Z_THREAD_STACK_OBJ_ALIGN
+ */
 /** @} */
 
 /**
