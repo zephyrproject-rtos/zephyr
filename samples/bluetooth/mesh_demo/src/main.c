@@ -234,7 +234,6 @@ void board_button_1_pressed(void)
 {
 	NET_BUF_SIMPLE_DEFINE(msg, 3 + 4);
 	struct bt_mesh_msg_ctx ctx = {
-		.net_idx = net_idx,
 		.app_idx = app_idx,
 		.addr = target,
 		.send_ttl = BT_MESH_TTL_DEFAULT,
