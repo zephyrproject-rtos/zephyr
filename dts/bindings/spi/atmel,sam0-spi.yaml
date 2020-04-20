@@ -11,6 +11,12 @@ properties:
     reg:
       required: true
 
+    clocks:
+      required: true
+
+    clock-names:
+      required: true
+
     dipo:
       type: int
       required: true

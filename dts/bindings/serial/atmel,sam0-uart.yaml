@@ -11,6 +11,12 @@ properties:
     interrupts:
       required: true
 
+    clocks:
+      required: true
+
+    clock-names:
+      required: true
+
     rxpo:
       type: int
       required: true
