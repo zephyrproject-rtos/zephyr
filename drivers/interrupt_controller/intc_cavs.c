@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT intel_cavs_intc
+
 #include <device.h>
 #include <irq_nextlevel.h>
 #include "intc_cavs.h"
@@ -119,113 +121,35 @@ static const struct irq_next_level_api cavs_apis = {
 	.intr_get_line_state = cavs_ictl_irq_get_line_state,
 };
 
-static int cavs_ictl_0_initialize(struct device *port)
-{
-	return 0;
-}
+#define CAVS_ICTL_INIT(n)						\
+	static int cavs_ictl_##n##_initialize(struct device *port)	\
+	{								\
+		return 0;						\
+	}								\
+									\
+	static void cavs_config_##n##_irq(struct device *port);		\
+									\
+	static const struct cavs_ictl_config cavs_config_##n = {	\
+		.irq_num = DT_INST_IRQN(n),				\
+		.isr_table_offset = CONFIG_CAVS_ISR_TBL_OFFSET +	\
+				    CONFIG_MAX_IRQ_PER_AGGREGATOR*n,	\
+		.config_func = cavs_config_##n##_irq,			\
+	};								\
+									\
+	static struct cavs_ictl_runtime cavs_##n##_runtime = {		\
+		.base_addr = DT_INST_REG_ADDR(n),			\
+	};								\
+	DEVICE_AND_API_INIT(cavs_ictl_##n, DT_INST_LABEL(n),		\
+			    cavs_ictl_##n##_initialize,			\
+			    &cavs_##n##_runtime, &cavs_config_##n,	\
+			    PRE_KERNEL_1,				\
+			    CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);\
+									\
+	static void cavs_config_##n##_irq(struct device *port)		\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
+			    cavs_ictl_isr, DEVICE_GET(cavs_ictl_##n),	\
+			    DT_INST_IRQ(n, sense));			\
+	}
 
-static void cavs_config_0_irq(struct device *port);
-
-static const struct cavs_ictl_config cavs_config_0 = {
-	.irq_num = DT_CAVS_ICTL_0_IRQ,
-	.isr_table_offset = CONFIG_CAVS_ISR_TBL_OFFSET,
-	.config_func = cavs_config_0_irq,
-};
-
-static struct cavs_ictl_runtime cavs_0_runtime = {
-	.base_addr = DT_CAVS_ICTL_BASE_ADDR,
-};
-
-DEVICE_AND_API_INIT(cavs_ictl_0, DT_LABEL(DT_NODELABEL(cavs0)),
-		    cavs_ictl_0_initialize, &cavs_0_runtime, &cavs_config_0,
-		    PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
-
-static void cavs_config_0_irq(struct device *port)
-{
-	IRQ_CONNECT(DT_CAVS_ICTL_0_IRQ, DT_CAVS_ICTL_0_IRQ_PRI, cavs_ictl_isr,
-		    DEVICE_GET(cavs_ictl_0), DT_CAVS_ICTL_0_IRQ_FLAGS);
-}
-
-static int cavs_ictl_1_initialize(struct device *port)
-{
-	return 0;
-}
-
-static void cavs_config_1_irq(struct device *port);
-
-static const struct cavs_ictl_config cavs_config_1 = {
-	.irq_num = DT_CAVS_ICTL_1_IRQ,
-	.isr_table_offset = CONFIG_CAVS_ISR_TBL_OFFSET +
-			    CONFIG_MAX_IRQ_PER_AGGREGATOR,
-	.config_func = cavs_config_1_irq,
-};
-
-static struct cavs_ictl_runtime cavs_1_runtime = {
-	.base_addr = DT_CAVS_ICTL_BASE_ADDR + sizeof(struct cavs_registers),
-};
-
-DEVICE_AND_API_INIT(cavs_ictl_1, DT_LABEL(DT_NODELABEL(cavs1)),
-		    cavs_ictl_1_initialize, &cavs_1_runtime, &cavs_config_1,
-		    PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
-
-static void cavs_config_1_irq(struct device *port)
-{
-	IRQ_CONNECT(DT_CAVS_ICTL_1_IRQ, DT_CAVS_ICTL_1_IRQ_PRI, cavs_ictl_isr,
-		    DEVICE_GET(cavs_ictl_1), DT_CAVS_ICTL_1_IRQ_FLAGS);
-}
-
-static int cavs_ictl_2_initialize(struct device *port)
-{
-	return 0;
-}
-
-static void cavs_config_2_irq(struct device *port);
-
-static const struct cavs_ictl_config cavs_config_2 = {
-	.irq_num = DT_CAVS_ICTL_2_IRQ,
-	.isr_table_offset = CONFIG_CAVS_ISR_TBL_OFFSET +
-			    CONFIG_MAX_IRQ_PER_AGGREGATOR * 2,
-	.config_func = cavs_config_2_irq,
-};
-
-static struct cavs_ictl_runtime cavs_2_runtime = {
-	.base_addr = DT_CAVS_ICTL_BASE_ADDR + sizeof(struct cavs_registers) * 2,
-};
-
-DEVICE_AND_API_INIT(cavs_ictl_2, DT_LABEL(DT_NODELABEL(cavs2)),
-		    cavs_ictl_2_initialize, &cavs_2_runtime, &cavs_config_2,
-		    PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
-
-static void cavs_config_2_irq(struct device *port)
-{
-	IRQ_CONNECT(DT_CAVS_ICTL_2_IRQ, DT_CAVS_ICTL_2_IRQ_PRI, cavs_ictl_isr,
-		    DEVICE_GET(cavs_ictl_2), DT_CAVS_ICTL_2_IRQ_FLAGS);
-}
-
-static int cavs_ictl_3_initialize(struct device *port)
-{
-	return 0;
-}
-
-static void cavs_config_3_irq(struct device *port);
-
-static const struct cavs_ictl_config cavs_config_3 = {
-	.irq_num = DT_CAVS_ICTL_3_IRQ,
-	.isr_table_offset = CONFIG_CAVS_ISR_TBL_OFFSET +
-			    CONFIG_MAX_IRQ_PER_AGGREGATOR*3,
-	.config_func = cavs_config_3_irq,
-};
-
-static struct cavs_ictl_runtime cavs_3_runtime = {
-	.base_addr = DT_CAVS_ICTL_BASE_ADDR + sizeof(struct cavs_registers) * 3,
-};
-
-DEVICE_AND_API_INIT(cavs_ictl_3, DT_LABEL(DT_NODELABEL(cavs3)),
-		    cavs_ictl_3_initialize, &cavs_3_runtime, &cavs_config_3,
-		    PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
-
-static void cavs_config_3_irq(struct device *port)
-{
-	IRQ_CONNECT(DT_CAVS_ICTL_3_IRQ, DT_CAVS_ICTL_3_IRQ_PRI, cavs_ictl_isr,
-		    DEVICE_GET(cavs_ictl_3), DT_CAVS_ICTL_3_IRQ_FLAGS);
-}
+DT_INST_FOREACH(CAVS_ICTL_INIT)
