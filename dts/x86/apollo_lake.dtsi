@@ -35,19 +35,6 @@
 		#interrupt-cells = <3>;
 	};
 
-	aliases {
-		gpio-n-000 = &gpio_n_000_031;
-		gpio-n-032 = &gpio_n_032_063;
-		gpio-n-064 = &gpio_n_064_077;
-		gpio-nw-000 = &gpio_nw_000_031;
-		gpio-nw-032 = &gpio_nw_032_063;
-		gpio-nw-064 = &gpio_nw_064_076;
-		gpio-w-000 = &gpio_w_000_031;
-		gpio-w-032 = &gpio_w_032_046;
-		gpio-sw-000 = &gpio_sw_000_031;
-		gpio-sw-032 = &gpio_sw_032_042;
-	};
-
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
