@@ -554,9 +554,6 @@ static int uart_sam0_init(struct device *dev)
 #endif
 
 #ifdef CONFIG_UART_ASYNC_API
-
-	struct uart_sam0_dev_data *const dev_data = DEV_DATA(dev);
-
 	dev_data->cfg = cfg;
 	dev_data->dma = device_get_binding(CONFIG_DMA_0_NAME);
 
