@@ -20,6 +20,8 @@
 	_x;								\
 })
 
+#define TCP_PKT_ALLOC_TIMEOUT K_MSEC(100)
+
 #if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
 #define tcp_malloc(_size) \
 	tp_malloc(_size, tp_basename(__FILE__), __LINE__, __func__)
@@ -35,12 +37,18 @@
 #if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
 #define tcp_pkt_alloc(_conn, _len)					\
 ({									\
-	sa_family_t _family = net_context_get_family((_conn)->context);	\
-	struct net_pkt *_pkt = net_pkt_alloc_with_buffer((_conn)->iface,\
-							 (_len),	\
-							 _family,	\
-							 IPPROTO_TCP,	\
-							 K_NO_WAIT);	\
+	struct net_pkt *_pkt;						\
+									\
+	if ((_len) > 0) {						\
+		_pkt = net_pkt_alloc_with_buffer(			\
+			(_conn)->iface,					\
+			(_len),						\
+			net_context_get_family((_conn)->context),	\
+			IPPROTO_TCP,					\
+			TCP_PKT_ALLOC_TIMEOUT);				\
+	} else {							\
+		_pkt = net_pkt_alloc(TCP_PKT_ALLOC_TIMEOUT);		\
+	}								\
 									\
 	tp_pkt_alloc(_pkt, tp_basename(__FILE__), __LINE__);		\
 									\
@@ -50,11 +58,24 @@
 #define tcp_pkt_unref(_pkt) tp_pkt_unref(_pkt, tp_basename(__FILE__), __LINE__)
 #else
 #define tcp_pkt_alloc(_conn, _len)					\
-	net_pkt_alloc_with_buffer((_conn)->iface, (_len),		\
-				  net_context_get_family((_conn)->context), \
-				  IPPROTO_TCP, K_NO_WAIT)
+({									\
+	struct net_pkt *_pkt;						\
+									\
+	if ((_len) > 0) {						\
+		_pkt = net_pkt_alloc_with_buffer(			\
+			(_conn)->iface,					\
+			(_len),						\
+			net_context_get_family((_conn)->context),	\
+			IPPROTO_TCP,					\
+			TCP_PKT_ALLOC_TIMEOUT);				\
+	} else {							\
+		_pkt = net_pkt_alloc(TCP_PKT_ALLOC_TIMEOUT);		\
+	}								\
+									\
+	_pkt;								\
+})
 
-#define tcp_pkt_clone(_pkt) net_pkt_clone(_pkt, K_NO_WAIT)
+#define tcp_pkt_clone(_pkt) net_pkt_clone(_pkt, TCP_PKT_ALLOC_TIMEOUT)
 #define tcp_pkt_unref(_pkt) net_pkt_unref(_pkt)
 #endif
 #define tcp_pkt_ref(_pkt) net_pkt_ref(_pkt)
@@ -152,12 +173,16 @@ struct tcp { /* TCP connection */
 	enum tcp_state state;
 	u32_t seq;
 	u32_t ack;
+	u32_t last_seq;
 	union tcp_endpoint src;
 	union tcp_endpoint dst;
-	u16_t win;
+	u16_t recv_win;
+	u16_t send_win;
 	struct tcp_options recv_options;
 	struct k_delayed_work send_timer;
 	sys_slist_t send_queue;
+	struct net_pkt *pending_data;
+	int pending_len;
 	bool in_retransmission;
 	size_t send_retries;
 	struct k_delayed_work timewait_timer;
