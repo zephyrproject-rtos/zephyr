@@ -557,7 +557,15 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
 		if (!priv) {
-			uint8_t *tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
+			uint8_t *tx_addr;
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+			if ((adv->is_created & BIT(1)) && pdu_adv->tx_addr) {
+				tx_addr = ll_adv_aux_random_addr_get(adv, NULL);
+			} else
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+			{
+				tx_addr = ll_addr_get(pdu_adv->tx_addr, NULL);
+			}
 
 			memcpy(&pdu_adv->adv_ind.addr[0], tx_addr,
 			       BDADDR_SIZE);
