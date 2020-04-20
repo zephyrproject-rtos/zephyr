@@ -83,6 +83,7 @@
 			peripheral-id = <19>;
 			label = "I2C_0";
 			status = "disabled";
+			pinctrl-0 = <&pa4a_twihs0_twck0 &pa3a_twihs0_twd0>;
 		};
 
 		twihs1: i2c@4001c000 {
@@ -95,6 +96,7 @@
 			peripheral-id = <20>;
 			label = "I2C_1";
 			status = "disabled";
+			pinctrl-0 = <&pb5a_twihs1_twck1 &pb4a_twihs1_twd1>;
 		};
 
 		twihs2: i2c@40060000 {
@@ -107,6 +109,7 @@
 			peripheral-id = <41>;
 			label = "I2C_2";
 			status = "disabled";
+			pinctrl-0 = <&pd28c_twihs2_twck2 &pd27c_twihs2_twd2>;
 		};
 
 		spi0: spi@40008000 {
