@@ -78,6 +78,14 @@
 #include <stm32wbxx_ll_system.h>
 #endif
 
+#ifdef CONFIG_DMA_STM32
+#include <stm32wbxx_ll_dma.h>
+#endif
+
+#ifdef CONFIG_DMAMUX_STM32
+#include <stm32wbxx_ll_dmamux.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32WBX_SOC_H_ */
