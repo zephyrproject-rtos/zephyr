@@ -17,12 +17,6 @@ if I2C
 config I2C_SAM_TWI
 	default y
 
-config I2C_0
-	default y
-
-config I2C_1
-	default y
-
 endif # I2C
 
 endif # BOARD_ARDUINO_DUE
