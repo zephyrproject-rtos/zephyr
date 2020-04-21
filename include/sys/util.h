@@ -441,7 +441,97 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 #define UTIL_INC_16 17
 #define UTIL_INC_17 18
 #define UTIL_INC_18 19
-#define UTIL_INC_19 19
+#define UTIL_INC_19 20
+#define UTIL_INC_20 21
+#define UTIL_INC_21 22
+#define UTIL_INC_22 23
+#define UTIL_INC_23 24
+#define UTIL_INC_24 25
+#define UTIL_INC_25 26
+#define UTIL_INC_26 27
+#define UTIL_INC_27 28
+#define UTIL_INC_28 29
+#define UTIL_INC_29 30
+#define UTIL_INC_30 31
+#define UTIL_INC_31 32
+#define UTIL_INC_32 33
+#define UTIL_INC_33 34
+#define UTIL_INC_34 35
+#define UTIL_INC_35 36
+#define UTIL_INC_36 37
+#define UTIL_INC_37 38
+#define UTIL_INC_38 39
+#define UTIL_INC_39 40
+#define UTIL_INC_40 41
+#define UTIL_INC_41 42
+#define UTIL_INC_42 43
+#define UTIL_INC_43 44
+#define UTIL_INC_44 45
+#define UTIL_INC_45 46
+#define UTIL_INC_46 47
+#define UTIL_INC_47 48
+#define UTIL_INC_48 49
+#define UTIL_INC_49 50
+#define UTIL_INC_50 51
+#define UTIL_INC_51 52
+#define UTIL_INC_52 53
+#define UTIL_INC_53 54
+#define UTIL_INC_54 55
+#define UTIL_INC_55 56
+#define UTIL_INC_56 57
+#define UTIL_INC_57 58
+#define UTIL_INC_58 59
+#define UTIL_INC_59 60
+#define UTIL_INC_50 51
+#define UTIL_INC_51 52
+#define UTIL_INC_52 53
+#define UTIL_INC_53 54
+#define UTIL_INC_54 55
+#define UTIL_INC_55 56
+#define UTIL_INC_56 57
+#define UTIL_INC_57 58
+#define UTIL_INC_58 59
+#define UTIL_INC_59 60
+#define UTIL_INC_60 61
+#define UTIL_INC_61 62
+#define UTIL_INC_62 63
+#define UTIL_INC_63 64
+#define UTIL_INC_64 65
+#define UTIL_INC_65 66
+#define UTIL_INC_66 67
+#define UTIL_INC_67 68
+#define UTIL_INC_68 69
+#define UTIL_INC_69 70
+#define UTIL_INC_70 71
+#define UTIL_INC_71 72
+#define UTIL_INC_72 73
+#define UTIL_INC_73 74
+#define UTIL_INC_74 75
+#define UTIL_INC_75 76
+#define UTIL_INC_76 77
+#define UTIL_INC_77 78
+#define UTIL_INC_78 79
+#define UTIL_INC_79 80
+#define UTIL_INC_80 81
+#define UTIL_INC_81 82
+#define UTIL_INC_82 83
+#define UTIL_INC_83 84
+#define UTIL_INC_84 85
+#define UTIL_INC_85 86
+#define UTIL_INC_86 87
+#define UTIL_INC_87 88
+#define UTIL_INC_88 89
+#define UTIL_INC_89 90
+#define UTIL_INC_90 91
+#define UTIL_INC_91 92
+#define UTIL_INC_92 93
+#define UTIL_INC_93 94
+#define UTIL_INC_94 95
+#define UTIL_INC_95 96
+#define UTIL_INC_96 97
+#define UTIL_INC_97 98
+#define UTIL_INC_98 99
+#define UTIL_INC_99 100
 
 #define UTIL_DEC(x) UTIL_PRIMITIVE_CAT(UTIL_DEC_, x)
 #define UTIL_DEC_0 0
@@ -778,6 +868,87 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
  * behavior.
  */
 #define UTIL_LISTIFY(LEN, F, ...) UTIL_EVAL(UTIL_REPEAT(LEN, F, __VA_ARGS__))
+
+/* Set of internal macros used for FOR_EACH series of macros. */
+#define Z_FOR_EACH_IDX(count, n, macro, semicolon, fixed_arg0, fixed_arg1, ...)\
+	UTIL_WHEN(count)						\
+	(								\
+		UTIL_OBSTRUCT(macro)					\
+		(							\
+			fixed_arg0, fixed_arg1, n, GET_ARG1(__VA_ARGS__)\
+		)semicolon						\
+		UTIL_OBSTRUCT(Z_FOR_EACH_IDX_INDIRECT) ()		\
+		(							\
+			UTIL_DEC(count), UTIL_INC(n), macro, semicolon, \
+			fixed_arg0, fixed_arg1,				\
+			GET_ARGS_LESS_1(__VA_ARGS__)			\
+		)							\
+	)
+
+#define Z_FOR_EACH_IDX_INDIRECT() Z_FOR_EACH_IDX
+
+#define Z_FOR_EACH_IDX2(count, iter, macro, sc, fixed_arg0, fixed_arg1, ...) \
+	UTIL_EVAL(Z_FOR_EACH_IDX(count, iter, macro, sc,\
+				 fixed_arg0, fixed_arg1, __VA_ARGS__))
+
+#define Z_FOR_EACH_SWALLOW_NOTHING(F, fixed_arg, index, arg) \
+	F(index, arg, fixed_arg)
+
+#define Z_FOR_EACH_SWALLOW_FIXED_ARG(F, fixed_arg, index, arg) F(index, arg)
+
+#define Z_SWALLOW_INDEX_FIXED_ARG(F, fixed_arg, index, arg) F(arg)
+#define Z_SWALLOW_INDEX(F, fixed_arg, index, arg) F(arg, fixed_arg)
+
+/**
+ * @brief Calls macro F for each provided argument with index as first argument
+ *	  and nth parameter as the second argument.
+ *
+ * Example:
+ *
+ *     #define F(idx, x) int a##idx = x;
+ *     FOR_EACH_IDX(F, 4, 5, 6)
+ *
+ * will result in following code:
+ *
+ *     int a0 = 4;
+ *     int a1 = 5;
+ *     int a2 = 6;
+ *
+ * @param F Macro takes index and first argument and nth variable argument as
+ *	    the second one.
+ * @param ... Variable list of argument. For each argument macro F is executed.
+ */
+#define FOR_EACH_IDX(F, ...) \
+	Z_FOR_EACH_IDX2(NUM_VA_ARGS_LESS_1(__VA_ARGS__, _), \
+			0, Z_FOR_EACH_SWALLOW_FIXED_ARG, /*no ;*/, \
+			F, 0, __VA_ARGS__)
+
+/**
+ * @brief Calls macro F for each provided argument with index as first argument
+ *	  and nth parameter as the second argument and fixed argument as the
+ *	  third one.
+ *
+ * Example:
+ *
+ *     #define F(idx, x, fixed_arg) int fixed_arg##idx = x;
+ *     FOR_EACH_IDX_FIXED_ARG(F, a, 4, 5, 6)
+ *
+ * will result in following code:
+ *
+ *     int a0 = 4;
+ *     int a1 = 5;
+ *     int a2 = 6;
+ *
+ * @param F Macro takes index and first argument and nth variable argument as
+ *	    the second one and fixed argumnet as the third.
+ * @param fixed_arg Fixed argument passed to F macro.
+ * @param ... Variable list of argument. For each argument macro F is executed.
+ */
+#define FOR_EACH_IDX_FIXED_ARG(F, fixed_arg, ...) \
+	Z_FOR_EACH_IDX2(NUM_VA_ARGS_LESS_1(__VA_ARGS__, _), \
+			0, Z_FOR_EACH_SWALLOW_NOTHING, /*no ;*/, \
+			F, fixed_arg, __VA_ARGS__)
+
 
 /**@brief Implementation details for NUM_VAR_ARGS */
 #define NUM_VA_ARGS_LESS_1_IMPL(				\
