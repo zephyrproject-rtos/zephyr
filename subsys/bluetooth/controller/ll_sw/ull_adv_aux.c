@@ -41,7 +41,7 @@ static int init_reset(void);
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 static inline struct ll_adv_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_adv_aux_set *aux);
-static inline u16_t aux_handle_get(struct ll_adv_aux_set *aux);
+static inline u8_t aux_handle_get(struct ll_adv_aux_set *aux);
 static void mfy_aux_offset_get(void *param);
 static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		      void *param);
@@ -538,7 +538,7 @@ int ull_adv_aux_reset(void)
 }
 
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
-u16_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
+u8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
 {
 	return aux_handle_get((void *)lll->hdr.parent);
 }
@@ -651,7 +651,7 @@ static inline void aux_release(struct ll_adv_aux_set *aux)
 	mem_release(aux, &adv_aux_free);
 }
 
-static inline u16_t aux_handle_get(struct ll_adv_aux_set *aux)
+static inline u8_t aux_handle_get(struct ll_adv_aux_set *aux)
 {
 	return mem_index_get(aux, ll_adv_aux_pool,
 			     sizeof(struct ll_adv_aux_set));
@@ -754,6 +754,7 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		}
 	}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
 	DEBUG_RADIO_PREPARE_A(1);
 }
 

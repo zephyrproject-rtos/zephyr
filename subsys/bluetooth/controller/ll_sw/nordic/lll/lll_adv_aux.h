@@ -11,4 +11,4 @@ void lll_adv_aux_offset_fill(u32_t ticks_offset, u32_t start_us,
 			     struct pdu_adv *pdu);
 
 
-extern u16_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll);
+extern u8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll);
