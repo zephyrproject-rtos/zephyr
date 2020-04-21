@@ -64,4 +64,8 @@ config SOC_FLASH_NRF_EMULATE_ONE_BYTE_WRITE_ACCESS
 	  block size parameter (imposed by manufacturer) is possible but operation
 	  is more complex and requires basic user knowledge about NVMC controller.
 
+	  Note that this makes flash write operations non-atomic, and power loss
+	  during writes will easily result in significant loss of the contents of
+	  flash.
+
 endif # SOC_FLASH_NRF
