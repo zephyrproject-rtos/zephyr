@@ -30,6 +30,7 @@ zephyr_library_sources_if_kconfig(uart_rv32m1_lpuart.c)
 zephyr_library_sources_if_kconfig(uart_liteuart.c)
 zephyr_library_sources_ifdef(CONFIG_UART_RTT_DRIVER uart_rtt.c)
 zephyr_library_sources_if_kconfig(uart_xlnx_ps.c)
+zephyr_library_sources_if_kconfig(uart_xmc4xxx.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
 

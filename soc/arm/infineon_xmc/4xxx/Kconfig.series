@@ -12,5 +12,6 @@ config SOC_SERIES_XMC_4XXX
 	select SOC_FAMILY_XMC
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
+	select HAS_XMCLIB_UART
 	help
 	  Enable support for XMC 4xxx MCU series
