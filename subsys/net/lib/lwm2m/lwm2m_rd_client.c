@@ -891,6 +891,7 @@ void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 			   lwm2m_ctx_event_cb_t event_cb)
 {
 	client.ctx = client_ctx;
+	client.ctx->sock_fd = -1;
 	client.event_cb = event_cb;
 
 	set_sm_state(ENGINE_INIT);
