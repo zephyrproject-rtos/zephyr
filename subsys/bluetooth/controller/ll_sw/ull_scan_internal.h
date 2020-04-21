@@ -39,3 +39,13 @@ uint32_t ull_scan_is_enabled(uint8_t handle);
 
 /* Return filter policy used */
 uint32_t ull_scan_filter_pol_get(uint8_t handle);
+
+int ull_scan_aux_init(void);
+int ull_scan_aux_reset(void);
+
+/* Helper to setup scanning on auxiliary channel */
+void ull_scan_aux_setup(struct node_rx_hdr *rx, uint8_t phy,
+			struct ll_scan_aux_set *aux);
+
+/* Helper to clean up auxiliary channel scanning */
+void ull_scan_aux_done(struct node_rx_event_done *done);

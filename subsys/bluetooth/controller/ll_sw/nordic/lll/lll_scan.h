@@ -44,6 +44,18 @@ struct lll_scan {
 #endif /* CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL */
 };
 
+struct lll_scan_aux {
+	struct lll_hdr hdr;
+
+	struct lll_scan *scan;
+
+	uint8_t chan:6;
+
+	uint8_t phy:3;
+
+	uint32_t window_widening_us;
+};
+
 int lll_scan_init(void);
 int lll_scan_reset(void);
 
