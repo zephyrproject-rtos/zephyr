@@ -200,8 +200,7 @@ struct node_rx_ftr {
 	void  *param;
 	void  *extra;
 	uint32_t ticks_anchor;
-	uint32_t us_radio_end;
-	uint32_t us_radio_rdy;
+	uint32_t radio_end_us;
 	uint8_t  rssi;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	uint8_t  lrpa_used:1;
@@ -304,6 +303,8 @@ int lll_reset(void);
 void lll_resume(void *param);
 void lll_disable(void *param);
 uint32_t lll_radio_is_idle(void);
+uint32_t lll_radio_tx_ready_delay_get(uint8_t phy, uint8_t flags);
+uint32_t lll_radio_rx_ready_delay_get(uint8_t phy, uint8_t flags);
 int8_t lll_radio_tx_pwr_min_get(void);
 int8_t lll_radio_tx_pwr_max_get(void);
 int8_t lll_radio_tx_pwr_floor(int8_t tx_pwr_lvl);
