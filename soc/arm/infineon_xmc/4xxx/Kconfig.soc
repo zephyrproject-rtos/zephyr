@@ -1,0 +1,30 @@
+# XMC 4xxx MCU line
+#
+# Copyright (c) 2020 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "XMC 4xxx MCU Selection"
+	depends on SOC_SERIES_XMC_4XXX
+
+config SOC_XMC4500
+	bool "SOC_XMC4500"
+	select HAS_XMCLIB
+
+endchoice
+
+if SOC_SERIES_XMC_4XXX
+
+config SOC_PART_NUMBER_F100X1024
+	bool
+
+config SOC_PART_NUMBER_XMC_4XXX
+	string
+	default "F100x1024" if SOC_PART_NUMBER_F100X1024
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+endif # SOC_SERIES_XMC_4XXX

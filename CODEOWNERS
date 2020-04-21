@@ -34,6 +34,7 @@
 /soc/arm/atmel_sam/same70/                @nandojve
 /soc/arm/atmel_sam/samv71/                @nandojve
 /soc/arm/bcm*/                            @sbranden
+/soc/arm/infineon_xmc/                    @parthitce
 /soc/arm/nxp*/                            @MaureenHelm
 /soc/arm/nordic_nrf/                      @ioannisg
 /soc/arm/qemu_cortex_a53/                 @carlocaione
@@ -247,6 +248,7 @@
 /dts/arm/atmel/samv71*                    @nandojve
 /dts/arm/atmel/                           @galak
 /dts/arm/broadcom/                        @sbranden
+/dts/arm/infineon/                        @parthitce
 /dts/arm/qemu-virt/                       @carlocaione
 /dts/arm/st/                              @erwango
 /dts/arm/ti/cc13?2*                       @bwitherspoon
