@@ -383,6 +383,16 @@ uint32_t lll_radio_is_idle(void)
 	return radio_is_idle();
 }
 
+uint32_t lll_radio_tx_ready_delay_get(uint8_t phy, uint8_t flags)
+{
+	return radio_tx_ready_delay_get(phy, flags);
+}
+
+uint32_t lll_radio_rx_ready_delay_get(uint8_t phy, uint8_t flags)
+{
+	return radio_rx_ready_delay_get(phy, flags);
+}
+
 int8_t lll_radio_tx_pwr_min_get(void)
 {
 	return radio_tx_power_min_get();

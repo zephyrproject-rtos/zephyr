@@ -17,10 +17,6 @@
 #include "hal/ccm.h"
 #include "hal/ticker.h"
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
-#include "hal/radio.h"
-#endif /* CONFIG_SOC_FAMILY_NRF */
-
 #include "util/util.h"
 #include "util/mem.h"
 #include "util/mfifo.h"

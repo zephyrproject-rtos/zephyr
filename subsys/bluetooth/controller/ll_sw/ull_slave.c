@@ -14,7 +14,6 @@
 
 #include "hal/ticker.h"
 #include "hal/ccm.h"
-#include "hal/radio.h"
 
 #include "ticker/ticker.h"
 
@@ -59,6 +58,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	struct ll_adv_set *adv;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
+	uint32_t ready_delay_us;
 	uint32_t ticker_status;
 	uint8_t peer_addr_type;
 	uint16_t win_offset;
@@ -216,6 +216,12 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	ll_rx_put(link, rx);
 	ll_rx_sched();
 
+#if defined(CONFIG_BT_CTLR_PHY)
+	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy_rx, 1);
+#else
+	ready_delay_us = lll_radio_rx_ready_delay_get(0, 0);
+#endif
+
 	/* TODO: active_to_start feature port */
 	conn->evt.ticks_active_to_start = 0U;
 	conn->evt.ticks_xtal_to_start =
@@ -224,8 +230,8 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	conn->evt.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ftr->us_radio_rdy + 328 + EVENT_IFS_US +
-				       328);
+				       ready_delay_us +
+				       328 + EVENT_IFS_US + 328);
 
 	ticks_slot_offset = MAX(conn->evt.ticks_active_to_start,
 				conn->evt.ticks_xtal_to_start);
@@ -238,12 +244,12 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 
 	conn_interval_us -= lll->slave.window_widening_periodic_us;
 
-	conn_offset_us = ftr->us_radio_end;
+	conn_offset_us = ftr->radio_end_us;
 	conn_offset_us += ((uint64_t)win_offset + 1) * 1250U;
 	conn_offset_us -= EVENT_OVERHEAD_START_US;
 	conn_offset_us -= EVENT_TICKER_RES_MARGIN_US;
 	conn_offset_us -= EVENT_JITTER_US;
-	conn_offset_us -= ftr->us_radio_rdy;
+	conn_offset_us -= ready_delay_us;
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* disable ticker job, in order to chain stop and start to avoid RTC
