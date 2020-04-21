@@ -12,7 +12,7 @@
 / {
 	soc {
 		sram: sram@14000000 {
-			ranges = <0x400000 0x1400000 0x20000000>;
+			ranges = <0x4000000 0x14000000 0x20000000>;
 		};
 
 		peripheral: peripheral@50000000 {
