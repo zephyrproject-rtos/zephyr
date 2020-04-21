@@ -486,6 +486,13 @@ config BT_CTLR_ADV_SYNC_SET
 	help
 	  Maximum supported periodic advertising sets.
 
+config BT_CTLR_SCAN_AUX_SET
+	int "Auxiliary Channel Scan Sets"
+	depends on BT_CTLR_ADV_EXT
+	range 1 64
+	help
+	  Maximum supported auxiliary channel scan sets.
+
 config BT_CTLR_DTM
 	bool
 	help

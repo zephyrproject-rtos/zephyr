@@ -91,8 +91,15 @@
 
 #if defined(CONFIG_BT_OBSERVER)
 #define BT_SCAN_TICKER_NODES ((TICKER_ID_SCAN_LAST) - (TICKER_ID_SCAN_STOP) + 1)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#define BT_SCAN_AUX_TICKER_NODES ((TICKER_ID_SCAN_AUX_LAST) - \
+				  (TICKER_ID_SCAN_AUX_BASE) + 1)
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+#define BT_SCAN_AUX_TICKER_NODES 0
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 #else
 #define BT_SCAN_TICKER_NODES 0
+#define BT_SCAN_AUX_TICKER_NODES 0
 #endif
 
 #if defined(CONFIG_BT_CONN)
@@ -120,6 +127,7 @@
 				   BT_ADV_AUX_TICKER_NODES + \
 				   BT_ADV_SYNC_TICKER_NODES + \
 				   BT_SCAN_TICKER_NODES + \
+				   BT_SCAN_AUX_TICKER_NODES + \
 				   BT_CONN_TICKER_NODES + \
 				   FLASH_TICKER_NODES + \
 				   USER_TICKER_NODES)
@@ -629,7 +637,9 @@ void ll_rx_dequeue(void)
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+		/* fallthrough */
 	case NODE_RX_TYPE_EXT_1M_REPORT:
+	case NODE_RX_TYPE_EXT_2M_REPORT:
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -788,7 +798,9 @@ void ll_rx_mem_release(void **node_rx)
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+			/* fallthrough */
 		case NODE_RX_TYPE_EXT_1M_REPORT:
+		case NODE_RX_TYPE_EXT_2M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -1563,6 +1575,39 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 	break;
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	case NODE_RX_TYPE_EXT_1M_REPORT:
+	case NODE_RX_TYPE_EXT_2M_REPORT:
+	case NODE_RX_TYPE_EXT_CODED_REPORT:
+	{
+		u8_t phy = 0U;
+
+		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+
+		switch (rx->type) {
+		case NODE_RX_TYPE_EXT_1M_REPORT:
+			phy = BIT(0);
+			break;
+		case NODE_RX_TYPE_EXT_2M_REPORT:
+			phy = BIT(1);
+			break;
+		case NODE_RX_TYPE_EXT_CODED_REPORT:
+			phy = BIT(2);
+			break;
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+
+		/* TODO: below interface is WIP */
+		ull_scan_aux_setup(rx, phy, NULL);
+
+		ll_rx_put(link, rx);
+		ll_rx_sched();
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 #if defined(CONFIG_BT_CONN)
 	case NODE_RX_TYPE_CONNECTION:
 	{
@@ -1602,11 +1647,6 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
 #endif /* CONFIG_BT_OBSERVER */
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-	case NODE_RX_TYPE_EXT_1M_REPORT:
-	case NODE_RX_TYPE_EXT_CODED_REPORT:
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
@@ -1671,6 +1711,15 @@ static inline void rx_demux_event_done(memq_link_t *link,
 		ull_conn_done(done);
 		break;
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_OBSERVER)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		/* fallthrough checkpatch workaround! */
+	case EVENT_DONE_EXTRA_TYPE_SCAN_AUX:
+		ull_scan_aux_done(done);
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 	case EVENT_DONE_EXTRA_TYPE_USER_START

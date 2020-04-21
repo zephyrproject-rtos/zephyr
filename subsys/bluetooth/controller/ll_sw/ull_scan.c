@@ -200,6 +200,13 @@ int ull_scan_init(void)
 {
 	int err;
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
+		err = ull_scan_aux_init();
+		if (err) {
+			return err;
+		}
+	}
+
 	err = init_reset();
 	if (err) {
 		return err;
@@ -215,6 +222,13 @@ int ull_scan_reset(void)
 
 	for (handle = 0U; handle < BT_CTLR_SCAN_MAX; handle++) {
 		(void)disable(handle);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
+		err = ull_scan_aux_reset();
+		if (err) {
+			return err;
+		}
 	}
 
 	err = init_reset();
