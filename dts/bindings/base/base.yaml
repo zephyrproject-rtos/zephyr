@@ -61,6 +61,11 @@ properties:
         required: false
         description: Clock gate information
 
+    clock-names:
+        type: string-array
+        required: false
+        description: name of each clock
+
     "#address-cells":
         type: int
         required: false
