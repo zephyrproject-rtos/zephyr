@@ -1026,9 +1026,9 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 	10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, ~)
 
 /**
- * @brief Mapping macro
- *
  * Macro that process all arguments using given macro
+ *
+ * @deprecated Use FOR_EACH instead.
  *
  * @param ... Macro name to be used for argument processing followed by
  *            arguments to process. Macro should have following
@@ -1036,43 +1036,7 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
  *
  * @return All arguments processed by given macro
  */
-#define MACRO_MAP(...) MACRO_MAP_(__VA_ARGS__)
-#define MACRO_MAP_(...)							\
-	/* To make sure it works also for 2 arguments in total */	\
-	MACRO_MAP_N(NUM_VA_ARGS_LESS_1(__VA_ARGS__), __VA_ARGS__)
-
-/**
- * @brief Mapping N arguments macro
- *
- * Macro similar to @ref MACRO_MAP but maps exact number of arguments.
- * If there is more arguments given, the rest would be ignored.
- *
- * @param N   Number of arguments to map
- * @param ... Macro name to be used for argument processing followed by
- *            arguments to process. Macro should have following
- *            form: MACRO(argument).
- *
- * @return Selected number of arguments processed by given macro
- */
-#define MACRO_MAP_N(N, ...) MACRO_MAP_N_(N, __VA_ARGS__)
-#define MACRO_MAP_N_(N, ...) UTIL_CAT(MACRO_MAP_, N)(__VA_ARGS__,)
-
-#define MACRO_MAP_0(...)
-#define MACRO_MAP_1(macro, a, ...)  macro(a)
-#define MACRO_MAP_2(macro, a, ...)  macro(a)MACRO_MAP_1(macro, __VA_ARGS__,)
-#define MACRO_MAP_3(macro, a, ...)  macro(a)MACRO_MAP_2(macro, __VA_ARGS__,)
-#define MACRO_MAP_4(macro, a, ...)  macro(a)MACRO_MAP_3(macro, __VA_ARGS__,)
-#define MACRO_MAP_5(macro, a, ...)  macro(a)MACRO_MAP_4(macro, __VA_ARGS__,)
-#define MACRO_MAP_6(macro, a, ...)  macro(a)MACRO_MAP_5(macro, __VA_ARGS__,)
-#define MACRO_MAP_7(macro, a, ...)  macro(a)MACRO_MAP_6(macro, __VA_ARGS__,)
-#define MACRO_MAP_8(macro, a, ...)  macro(a)MACRO_MAP_7(macro, __VA_ARGS__,)
-#define MACRO_MAP_9(macro, a, ...)  macro(a)MACRO_MAP_8(macro, __VA_ARGS__,)
-#define MACRO_MAP_10(macro, a, ...) macro(a)MACRO_MAP_9(macro, __VA_ARGS__,)
-#define MACRO_MAP_11(macro, a, ...) macro(a)MACRO_MAP_10(macro, __VA_ARGS__,)
-#define MACRO_MAP_12(macro, a, ...) macro(a)MACRO_MAP_11(macro, __VA_ARGS__,)
-#define MACRO_MAP_13(macro, a, ...) macro(a)MACRO_MAP_12(macro, __VA_ARGS__,)
-#define MACRO_MAP_14(macro, a, ...) macro(a)MACRO_MAP_13(macro, __VA_ARGS__,)
-#define MACRO_MAP_15(macro, a, ...) macro(a)MACRO_MAP_14(macro, __VA_ARGS__,)
+#define MACRO_MAP(...) __DEPRECATED_MACRO FOR_EACH(__VA_ARGS__)
 
 /**
  * @brief Mapping macro that pastes results together
