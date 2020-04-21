@@ -2,7 +2,7 @@ description: Atmel SAM0 DMA controller
 
 compatible: "atmel,sam0-dmac"
 
-include: base.yaml
+include: dma-controller.yaml
 
 properties:
     reg:
@@ -10,3 +10,10 @@ properties:
 
     interrupts:
       required: true
+
+    "#dma-cells":
+      const: 2
+
+dma-cells:
+  - channel
+  - trigsrc
