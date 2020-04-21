@@ -47,6 +47,8 @@
 
 #endif /* _ASMLANGUAGE */
 
+#include "../common/atmel_sam0_dt.h"
+
 /** Processor Clock (HCLK) Frequency */
 #define SOC_ATMEL_SAM0_HCLK_FREQ_HZ DT_ARM_CORTEX_M0PLUS_0_CLOCK_FREQUENCY
 /** Master Clock (MCK) Frequency */
