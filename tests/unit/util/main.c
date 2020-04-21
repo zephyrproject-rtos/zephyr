@@ -231,6 +231,20 @@ static void test_FOR_EACH(void)
 	zassert_equal(array[2], 3, "Unexpected value %d", array[2]);
 }
 
+static void fsum(u32_t incr, u32_t *sum)
+{
+	*sum = *sum + incr;
+}
+
+static void test_FOR_EACH_FIXED_ARG(void)
+{
+	u32_t sum = 0;
+
+	FOR_EACH_FIXED_ARG(fsum, &sum, 1, 2, 3)
+
+	zassert_equal(sum, 6, "Unexpected value %d", sum);
+}
+
 static void test_FOR_EACH_IDX(void)
 {
 	#define FOR_EACH_IDX_MACRO_TEST(n, arg) u8_t a##n = arg;
