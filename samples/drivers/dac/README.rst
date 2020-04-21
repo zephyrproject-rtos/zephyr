@@ -38,6 +38,19 @@ follows:
 DAC output is available on pin A32 of the primary TWR elevator
 connector.
 
+Building and Running for NXP FRDM-K64F
+======================================
+The sample can be built and executed for the :ref:`frdm_k64f` as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: frdm_k64f
+   :goals: build flash
+   :compact:
+
+DAC output is available on connector J4 pin 11.
+
 Sample output
 =============
 
