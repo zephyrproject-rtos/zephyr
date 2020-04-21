@@ -40,12 +40,19 @@ struct spi_cs_control spi_cs = {
 u8_t buffer_tx[] = "0123456789abcdef\0";
 u8_t buffer_rx[BUF_SIZE] = {};
 
+#define BUF2_SIZE 36
+u8_t buffer2_tx[] = "Thequickbrownfoxjumpsoverthelazydog\0";
+u8_t buffer2_rx[BUF2_SIZE] = {};
+
 /*
  * We need 5x(buffer size) + 1 to print a comma-separated list of each
  * byte in hex, plus a null.
  */
 u8_t buffer_print_tx[BUF_SIZE * 5 + 1];
 u8_t buffer_print_rx[BUF_SIZE * 5 + 1];
+
+u8_t buffer_print_tx2[BUF2_SIZE * 5 + 1];
+u8_t buffer_print_rx2[BUF2_SIZE * 5 + 1];
 
 static void to_display_format(const u8_t *src, size_t size, char *dst)
 {
@@ -93,6 +100,72 @@ static int cs_ctrl_gpio_config(void)
 	return 0;
 }
 #endif /* CONFIG_SPI_LOOPBACK_CS_GPIO */
+
+/* test transferring different buffers on the same dma channels */
+static int spi_complete_multiple(struct device *dev,
+				 struct spi_config *spi_conf)
+{
+	struct spi_buf tx_bufs[2];
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
+	tx_bufs[0].buf = buffer_tx;
+	tx_bufs[0].len = BUF_SIZE;
+
+	tx_bufs[1].buf = buffer2_tx;
+	tx_bufs[1].len = BUF2_SIZE;
+
+
+	struct spi_buf rx_bufs[2];
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = ARRAY_SIZE(rx_bufs)
+	};
+
+	rx_bufs[0].buf = buffer_rx;
+	rx_bufs[0].len = BUF_SIZE;
+
+	rx_bufs[1].buf = buffer2_rx;
+	rx_bufs[1].len = BUF2_SIZE;
+
+	int ret;
+
+	LOG_INF("Start complete multiple");
+
+	ret = spi_transceive(dev, spi_conf, &tx, &rx);
+	if (ret) {
+		LOG_ERR("Code %d", ret);
+		zassert_false(ret, "SPI transceive failed");
+		return ret;
+	}
+
+	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
+		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
+		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
+		LOG_ERR("Buffer contents are different: %s",
+			    buffer_print_tx);
+		LOG_ERR("                           vs: %s",
+			    buffer_print_rx);
+		zassert_false(1, "Buffer contents are different");
+		return -1;
+	}
+
+	if (memcmp(buffer2_tx, buffer2_rx, BUF2_SIZE)) {
+		to_display_format(buffer2_tx, BUF2_SIZE, buffer_print_tx2);
+		to_display_format(buffer2_rx, BUF2_SIZE, buffer_print_rx2);
+		LOG_ERR("Buffer 2 contents are different: %s",
+			    buffer_print_tx2);
+		LOG_ERR("                           vs: %s",
+			    buffer_print_rx2);
+		zassert_false(1, "Buffer contents are different");
+		return -1;
+	}
+
+	LOG_INF("Passed");
+
+	return 0;
+}
 
 static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
 {
@@ -143,7 +216,6 @@ static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
 
 	return 0;
 }
-
 
 static int spi_null_tx_buf(struct device *dev, struct spi_config *spi_conf)
 {
@@ -531,7 +603,8 @@ void test_spi_loopback(void)
 
 	LOG_INF("SPI test slow config");
 
-	if (spi_complete_loop(spi_slow, &spi_cfg_slow) ||
+	if (spi_complete_multiple(spi_slow, &spi_cfg_slow) ||
+	    spi_complete_loop(spi_slow, &spi_cfg_slow) ||
 	    spi_null_tx_buf(spi_slow, &spi_cfg_slow) ||
 	    spi_rx_half_start(spi_slow, &spi_cfg_slow) ||
 	    spi_rx_half_end(spi_slow, &spi_cfg_slow) ||
@@ -545,7 +618,8 @@ void test_spi_loopback(void)
 
 	LOG_INF("SPI test fast config");
 
-	if (spi_complete_loop(spi_fast, &spi_cfg_fast) ||
+	if (spi_complete_multiple(spi_fast, &spi_cfg_fast) ||
+	    spi_complete_loop(spi_fast, &spi_cfg_fast) ||
 	    spi_null_tx_buf(spi_fast, &spi_cfg_fast) ||
 	    spi_rx_half_start(spi_fast, &spi_cfg_fast) ||
 	    spi_rx_half_end(spi_fast, &spi_cfg_fast) ||
