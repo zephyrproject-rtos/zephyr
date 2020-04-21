@@ -123,6 +123,7 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int sv[2])
 			res = -1;
 			goto free_objs;
 		}
+		memset(obj[i], 0, sizeof(*(obj[i])));
 	}
 
 	for(size_t i = 0; i < 2; ++i) {
@@ -176,8 +177,23 @@ static inline int z_vrfy_zsock_socketpair(int family, int type, int proto, int s
 
 static ssize_t spair_read(void *obj, void *buffer, size_t count)
 {
-	errno = ENOSYS;
-	return -1;
+	struct spair *const spair = (struct spair *)obj;
+
+	int res;
+
+	size_t bytes_read;
+
+	if (count == 0) {
+		return 0;
+	}
+
+	res = k_pipe_get(&spair->recv_q, (void *)buffer, count, & bytes_read, 0, K_NO_WAIT);
+	if (res < 0) {
+		errno = -res;
+		return -1;
+	}
+
+	return bytes_read;
 }
 
 static ssize_t spair_write(void *obj, const void *buffer, size_t count)
@@ -187,7 +203,7 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 
 	int res;
 
-	size_t written;
+	size_t bytes_written;
 
 	if (remote == NULL) {
 		errno = EPIPE;
@@ -198,13 +214,13 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 		return 0;
 	}
 
-	res = k_pipe_put(&remote->recv_q, (void *)buffer, count, & written, 0, K_NO_WAIT);
+	res = k_pipe_put(&remote->recv_q, (void *)buffer, count, & bytes_written, 0, K_NO_WAIT);
 	if (res < 0) {
 		errno = -res;
 		return -1;
 	}
 
-	return written;
+	return bytes_written;
 }
 
 static int spair_ioctl(void *obj, unsigned int request, va_list args)
@@ -293,15 +309,11 @@ static ssize_t spair_recvfrom(void *obj, void *buf, size_t max_len,
 				   int flags, struct sockaddr *src_addr,
 				   socklen_t *addrlen)
 {
-	(void) obj;
-	(void) buf;
-	(void) max_len;
 	(void) flags;
 	(void) src_addr;
 	(void) addrlen;
 
-	errno = ENOSYS;
-	return -1;
+	return spair_read(obj, buf, max_len);
 }
 
 static int spair_getsockopt(void *obj, int level, int optname,

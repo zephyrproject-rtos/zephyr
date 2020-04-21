@@ -48,6 +48,8 @@ static void happy_path_inner(
 	/* sockets are bidirectional. test functions from both ends */
 	for(size_t l = 0; l < 2; ++l) {
 
+		printf("data direction: %d -> %d\n", sv[l], sv[(!l) & 1]);
+
 		/*
 		 * Test with write(2) / read(2)
 		 */
