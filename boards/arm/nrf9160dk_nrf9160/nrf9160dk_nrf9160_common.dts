@@ -180,6 +180,11 @@
 };
 
 / {
+	/* SRAM allocated to the Secure image */
+	sram0_s: memory@20000000 {
+		label = "secure_sram_memory";
+	};
+
 	/* SRAM allocated and used by the BSD library */
 	sram0_bsd: memory@20010000 {
 		compatible = "mmio-sram";
