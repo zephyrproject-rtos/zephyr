@@ -54,6 +54,8 @@ struct zsock_pollfd {
 
 /** zsock_recv: Read data without removing it from socket input queue */
 #define ZSOCK_MSG_PEEK 0x02
+/** zsock_recv: Control received data truncation */
+#define ZSOCK_MSG_TRUNC 0x10
 /** zsock_recv/zsock_send: Override operation to non-blocking */
 #define ZSOCK_MSG_DONTWAIT 0x40
 
@@ -730,6 +732,7 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define POLLNVAL ZSOCK_POLLNVAL
 
 #define MSG_PEEK ZSOCK_MSG_PEEK
+#define MSG_TRUNC ZSOCK_MSG_TRUNC
 #define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
 
 #define SHUT_RD ZSOCK_SHUT_RD
@@ -755,6 +758,7 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 /** sockopt: Async error (ignored, for compatibility) */
 #define SO_ERROR 4
 #define SO_RCVTIMEO 20
+#define SO_SNDTIMEO 21
 #define SO_BINDTODEVICE 25
 
 /** sockopt: Timestamp TX packets */
