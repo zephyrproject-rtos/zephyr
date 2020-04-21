@@ -212,6 +212,7 @@
 /drivers/serial/uart_rtt.c                @carlescufi @pkral78
 /drivers/serial/Kconfig.xlnx              @wjliang
 /drivers/serial/uart_xlnx_ps.c            @wjliang
+/drivers/serial/*xmc4xxx*                 @parthitce
 /drivers/net/                             @jukkar @tbursztyka
 /drivers/ptp_clock/                       @jukkar
 /drivers/pwm/*rv32m1*                     @henrikbrixandersen
