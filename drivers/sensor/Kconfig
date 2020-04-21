@@ -179,6 +179,8 @@ source "drivers/sensor/tmp112/Kconfig"
 
 source "drivers/sensor/tmp116/Kconfig"
 
+source "drivers/sensor/vcnl4040/Kconfig"
+
 source "drivers/sensor/vl53l0x/Kconfig"
 
 source "drivers/sensor/nxp_kinetis_temp/Kconfig"
