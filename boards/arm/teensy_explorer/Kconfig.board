@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Installed Teensy"
+
+config TEENSY_3_6
+	bool "TEENSY 3.6"
+	select SOC_PART_NUMBER_MK66FX1M0VMD18
+
+config TEENSY_3_5
+	bool "TEENSY 3.5"
+	select SOC_PART_NUMBER_MK64FX512VMD12
+
+endchoice
+
+config BOARD_TEENSY_EXPLORER
+	bool "Teensy Explorer"
+	depends on SOC_SERIES_KINETIS_K6X
+

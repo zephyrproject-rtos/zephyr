@@ -1,0 +1,177 @@
+# Teensy 3.5/3.6 board
+
+# Copyright (c) 2016, Freescale Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_TEENSY_EXPLORER
+
+config SAS_UART_MCUX_3
+	bool "SASUART 3"
+	default y
+	help
+	  Enable SASUART 3.
+
+if TEENSY_3_6
+
+config BOARD
+	default "Teensy 3.6 Explorer"
+
+choice K6x_SOC
+	default SOC_MK66F18
+endchoice
+
+config TEENSY
+	bool
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 180000000
+
+config OSC_XTAL0_FREQ
+	default 16000000
+
+config MCG_PRDIV0
+	default 0x01
+
+config MCG_VDIV0
+	default 0x1D
+
+config MCG_FCRDIV
+	default 1
+
+config K6X_CORE_CLOCK_DIVIDER
+	default 1
+config K6X_BUS_CLOCK_DIVIDER
+	default 3
+config K6X_FLEXBUS_CLOCK_DIVIDER
+	default 3
+config K6X_FLASH_CLOCK_DIVIDER
+	default 7
+
+endif #TEENSY_3_6
+
+if TEENSY_3_5
+
+choice K6x_SOC
+	default SOC_MK64F12
+endchoice
+
+config BOARD
+	default "Teensy 3.5 Explorer"
+
+config TEENSY
+	bool
+	default y
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 120000000
+
+config OSC_XTAL0_FREQ
+	default 16000000
+
+config MCG_PRDIV0
+	default 0x03
+
+config MCG_VDIV0
+	default 0x06
+
+config MCG_FCRDIV
+	default 1
+
+config K6X_CORE_CLOCK_DIVIDER
+	default 1
+config K6X_BUS_CLOCK_DIVIDER
+	default 2
+config K6X_FLEXBUS_CLOCK_DIVIDER
+	default 3
+config K6X_FLASH_CLOCK_DIVIDER
+	default 5
+
+endif #TEENSY_3_5
+
+if UART_MCUX
+
+config UART_MCUX_0
+	default y if UART_CONSOLE
+
+config UART_MCUX_3
+	default y if BT_UART
+
+config SAS_UART_MCUX_3
+	default n
+
+endif # UART_MCUX
+
+if PINMUX_MCUX
+
+config PINMUX_MCUX_PORTA
+	default y
+
+config PINMUX_MCUX_PORTB
+	default y
+
+config PINMUX_MCUX_PORTC
+	default y
+
+config PINMUX_MCUX_PORTD
+	default y
+
+config PINMUX_MCUX_PORTE
+	default y
+
+endif # PINMUX_MCUX
+
+if GPIO_MCUX
+
+config GPIO_MCUX_PORTA
+	default y
+
+config GPIO_MCUX_PORTB
+	default y
+
+config GPIO_MCUX_PORTC
+	default y
+
+config GPIO_MCUX_PORTD
+	default y
+
+config GPIO_MCUX_PORTE
+	default y
+
+endif # GPIO_MCUX
+
+config I2C_0
+	default y
+	depends on I2C
+
+config ADC_1
+	default y
+	depends on ADC
+
+config TEMP_KINETIS
+	default y
+	depends on SENSOR
+
+config PWM_3
+	default y
+	depends on PWM_MCUX_FTM
+
+config SPI_0
+	default y
+	depends on SPI
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y if !MODEM
+
+config ETH_MCUX_0
+	default y if NET_L2_ETHERNET
+
+endif # NETWORKING
+
+config CAN_0
+	default y
+	depends on CAN
+
+endif # BOARD_TEENSY_EXPLORER

@@ -1,0 +1,24 @@
+identifier: teensy36
+name: TEENSY36
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - can
+  - counter
+  - gpio
+  - i2c
+  - netif:eth
+  - nvs
+  - pwm
+  - spi
+  - usb_device
+  - watchdog
+testing:
+  default: true
