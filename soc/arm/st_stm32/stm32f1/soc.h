@@ -75,6 +75,10 @@
 #include <stm32f1xx_ll_utils.h>
 #endif
 
+#ifdef CONFIG_PWM_STM32
+#include <stm32f1xx_ll_tim.h>
+#endif /* CONFIG_PWM_STM32 */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F1_SOC_H_ */
