@@ -55,12 +55,22 @@ struct ticker_node {
 	u16_t lazy_current;		 /* Current number of timeouts
 					  * skipped = slave latency
 					  */
-	u32_t remainder_periodic;	 /* Sub-microsecond tick remainder
-					  * for each period
-					  */
-	u32_t remainder_current;	 /* Current sub-microsecond tick
+	union {
+		u32_t remainder_periodic;  /* Sub-microsecond tick remainder
+					    * for each period
+					    */
+		ticker_op_func fp_op_func; /* Operation completion callback */
+	};
+
+	union {
+		u32_t remainder_current; /* Current sub-microsecond tick
 					  * remainder
 					  */
+		void  *op_context;       /* Context passed in completion
+					  * callback
+					  */
+	};
+
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
 #if  defined(CONFIG_BT_TICKER_EXT)
 	struct ticker_ext *ext_data;	 /* Ticker extension data */
@@ -1515,6 +1525,14 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 			/* set schedule status of node as restarting. */
 			ticker->req++;
 		} else {
+#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+			if ((((ticker->req - ticker->ack) & 0xff) == 1U) &&
+			    ticker->fp_op_func) {
+				ticker->fp_op_func(TICKER_STATUS_FAILURE,
+						   ticker->op_context);
+			}
+#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
+
 			/* reset schedule status of node */
 			ticker->req = ticker->ack;
 		}
@@ -2008,6 +2026,15 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 
 			if (user_op) {
 				ticker_job_op_cb(user_op, status);
+
+#if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
+				if (ticker->ticks_periodic == 0U) {
+					ticker->fp_op_func =
+						user_op->fp_op_func;
+					ticker->op_context =
+						user_op->op_context;
+				}
+#endif /* !CONFIG_BT_TICKER_COMPATIBILITY_MODE */
 			}
 		}
 	}
