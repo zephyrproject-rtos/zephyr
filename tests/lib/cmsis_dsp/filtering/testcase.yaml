@@ -1,31 +1,23 @@
+common:
+  platform_whitelist: frdm_k64f sam_e70_xplained mps2_an521
+  tags: cmsis_dsp
+
 tests:
   libraries.cmsis_dsp.filtering:
-    arch_whitelist: arm
-    filter: CONFIG_HAS_CMSIS_CORE
-    tags: cmsis_dsp
     skip: true
   libraries.cmsis_dsp.filtering.biquad:
-    arch_whitelist: arm
-    filter: CONFIG_HAS_CMSIS_CORE
-    tags: cmsis_dsp
     min_flash: 128
     min_ram: 64
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_FILTERING_BIQUAD=y
   libraries.cmsis_dsp.filtering.fir:
-    arch_whitelist: arm
-    filter: CONFIG_HAS_CMSIS_CORE
-    tags: cmsis_dsp
     min_flash: 128
     min_ram: 64
     extra_args: CONF_FILE=prj_base.conf
     extra_configs:
       - CONFIG_CMSIS_DSP_TEST_FILTERING_FIR=y
   libraries.cmsis_dsp.filtering.misc:
-    arch_whitelist: arm
-    filter: CONFIG_HAS_CMSIS_CORE
-    tags: cmsis_dsp
     min_flash: 256
     min_ram: 64
     extra_args: CONF_FILE=prj_base.conf
