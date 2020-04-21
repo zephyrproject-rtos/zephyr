@@ -205,19 +205,7 @@ A device-specific API definition typically looks like this:
 
    #include <drivers/subsystem.h>
 
-   typedef int (*specific_do_this_t)(struct device *device, int foo);
-
-   struct specific_api {
-     subsystem_driver_api subsystem_api;    /* this must be first */
-     specific_do_this_t do_this;
-   };
-
-   static inline int specific_do_this(struct device *device, int foo)
-   {
-     struct specific_api *api = (struct specific_api*)device->driver_api;
-
-     return api->do_this(device, foo);
-   }
+   int specific_do_this(struct device *device, int foo);
 
 A driver implementing extensions to the subsystem will define the real
 implementation of both the subsystem API and the specific APIs:
@@ -234,16 +222,8 @@ implementation of both the subsystem API and the specific APIs:
       ...
    }
 
-   static const struct specific_api driver_api = {
-     .subsystem_api = {
-       .do_whatever = generic_do_whatever,
-     },
-     .do_this = specific_do_this,
-   };
-
 Applications use the device through both the subsystem and specific
-APIs.  The subsystem APIs will directly access the subsystem part of the
-specific API structure.
+APIs.
 
 Single Driver, Multiple Instances
 *********************************
