@@ -47,6 +47,9 @@ u32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, u32_t ticks_anchor,
 /* helper function to stop auxiliary advertising */
 u8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux);
 
+/* helper function to release auxiliary advertising instance */
+void ull_adv_aux_release(struct ll_adv_aux_set *aux);
+
 /* helper function to schedule a mayfly to get aux offset */
 void ull_adv_aux_offset_get(struct ll_adv_set *adv);
 

@@ -619,6 +619,11 @@ u8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux)
 	return 0;
 }
 
+void ull_adv_aux_release(struct ll_adv_aux_set *aux)
+{
+	aux_release(aux);
+}
+
 void ull_adv_aux_offset_get(struct ll_adv_set *adv)
 {
 	static memq_link_t link;
