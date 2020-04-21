@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#define DT_DRV_COMPAT atmel_sam0_spi
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
@@ -723,122 +724,50 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 };
 
 #if CONFIG_SPI_ASYNC
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_0_TXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_0_TXDMA 0xFF
-#endif
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_0_RXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_0_RXDMA 0xFF
-#endif
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_1_TXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_1_TXDMA 0xFF
-#endif
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_1_RXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_1_RXDMA 0xFF
-#endif
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_2_TXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_2_TXDMA 0xFF
-#endif
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_2_RXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_2_RXDMA 0xFF
-#endif
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_3_TXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_3_TXDMA 0xFF
-#endif
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_3_RXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_3_RXDMA 0xFF
-#endif
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_4_TXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_4_TXDMA 0xFF
-#endif
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_4_RXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_4_RXDMA 0xFF
-#endif
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_5_TXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_5_TXDMA 0xFF
-#endif
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_5_RXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_5_RXDMA 0xFF
-#endif
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_6_TXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_6_TXDMA 0xFF
-#endif
-#ifndef DT_ATMEL_SAM0_SPI_SERCOM_7_RXDMA
-#define DT_ATMEL_SAM0_SPI_SERCOM_7_RXDMA 0xFF
-#endif
-
-#define SPI_SAM0_DMA_CHANNELS(n)                                             \
-	.tx_dma_request = SERCOM##n##_DMAC_ID_TX,                            \
-	.tx_dma_channel = DT_ATMEL_SAM0_SPI_SERCOM_##n##_TXDMA,              \
-	.rx_dma_request = SERCOM##n##_DMAC_ID_RX,                            \
-	.rx_dma_channel = DT_ATMEL_SAM0_SPI_SERCOM_##n##_RXDMA
+#define SPI_SAM0_DMA_CHANNELS(n)					\
+	.tx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),	\
+	.tx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, tx),	\
+	.rx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, rx),	\
+	.rx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, rx),
 #else
 #define SPI_SAM0_DMA_CHANNELS(n)
 #endif
 
 #define SPI_SAM0_SERCOM_PADS(n) \
-	SERCOM_SPI_CTRLA_DIPO(DT_ATMEL_SAM0_SPI_SERCOM_##n##_DIPO) | \
-	SERCOM_SPI_CTRLA_DOPO(DT_ATMEL_SAM0_SPI_SERCOM_##n##_DOPO)
+	SERCOM_SPI_CTRLA_DIPO(DT_INST_PROP(n, dipo)) | \
+	SERCOM_SPI_CTRLA_DOPO(DT_INST_PROP(n, dopo))
 
 #ifdef MCLK
-#define SPI_SAM0_DEFINE_CONFIG(n)						\
-	static const struct spi_sam0_config spi_sam0_config_##n = {		\
-		.regs = (SercomSpi *)DT_ATMEL_SAM0_SPI_SERCOM_##n##_BASE_ADDRESS,\
-		.mclk = MCLK_SERCOM##n,						\
-		.mclk_mask = MCLK_SERCOM##n##_MASK,				\
-		.gclk_core_id = SERCOM##n##_GCLK_ID_CORE,			\
-		.pads = SPI_SAM0_SERCOM_PADS(n)					\
-	}
+#define SPI_SAM0_DEFINE_CONFIG(n)					\
+static const struct spi_sam0_config spi_sam0_config_##n = {		\
+	.regs = (SercomSpi *)DT_INST_REG_ADDR(n),			\
+	.mclk = (volatile uint32_t *)MCLK_MASK_DT_INT_REG_ADDR(n),	\
+	.mclk_mask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, bit)),	\
+	.gclk_core_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, periph_ch),\
+	.pads = SPI_SAM0_SERCOM_PADS(n)					\
+}
 #else
-#define SPI_SAM0_DEFINE_CONFIG(n)                                            \
-	static const struct spi_sam0_config spi_sam0_config_##n = {          \
-		.regs = (SercomSpi *)DT_ATMEL_SAM0_SPI_SERCOM_##n##_BASE_ADDRESS,\
-		.pm_apbcmask = PM_APBCMASK_SERCOM##n,                        \
-		.gclk_clkctrl_id = GCLK_CLKCTRL_ID_SERCOM##n##_CORE,         \
-		.pads = SPI_SAM0_SERCOM_PADS(n),                             \
-		SPI_SAM0_DMA_CHANNELS(n)                                     \
-	}
+#define SPI_SAM0_DEFINE_CONFIG(n)					\
+static const struct spi_sam0_config spi_sam0_config_##n = {		\
+	.regs = (SercomSpi *)DT_INST_REG_ADDR(n),			\
+	.pm_apbcmask = BIT(DT_INST_CLOCKS_CELL_BY_NAME(n, pm, bit)),	\
+	.gclk_clkctrl_id = DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, clkctrl_id),\
+	.pads = SPI_SAM0_SERCOM_PADS(n),				\
+	SPI_SAM0_DMA_CHANNELS(n)					\
+}
 #endif /* MCLK */
 
-#define SPI_SAM0_DEVICE_INIT(n)                                              \
-	SPI_SAM0_DEFINE_CONFIG(n);                                           \
-	static struct spi_sam0_data spi_sam0_dev_data_##n = {                \
-		SPI_CONTEXT_INIT_LOCK(spi_sam0_dev_data_##n, ctx),           \
-		SPI_CONTEXT_INIT_SYNC(spi_sam0_dev_data_##n, ctx),           \
-	};                                                                   \
-	DEVICE_AND_API_INIT(spi_sam0_##n, \
-			    DT_ATMEL_SAM0_SPI_SERCOM_##n##_LABEL,            \
-			    &spi_sam0_init, &spi_sam0_dev_data_##n,          \
-			    &spi_sam0_config_##n, POST_KERNEL,               \
-			    CONFIG_SPI_INIT_PRIORITY, &spi_sam0_driver_api)
+#define SPI_SAM0_DEVICE_INIT(n)						\
+	SPI_SAM0_DEFINE_CONFIG(n);					\
+	static struct spi_sam0_data spi_sam0_dev_data_##n = {		\
+		SPI_CONTEXT_INIT_LOCK(spi_sam0_dev_data_##n, ctx),	\
+		SPI_CONTEXT_INIT_SYNC(spi_sam0_dev_data_##n, ctx),	\
+	};								\
+	DEVICE_AND_API_INIT(spi_sam0_##n,				\
+			    DT_INST_LABEL(n),				\
+			    &spi_sam0_init, &spi_sam0_dev_data_##n,	\
+			    &spi_sam0_config_##n, POST_KERNEL,		\
+			    CONFIG_SPI_INIT_PRIORITY,			\
+			    &spi_sam0_driver_api)
 
-#if DT_ATMEL_SAM0_SPI_SERCOM_0_BASE_ADDRESS
-SPI_SAM0_DEVICE_INIT(0);
-#endif
-
-#if DT_ATMEL_SAM0_SPI_SERCOM_1_BASE_ADDRESS
-SPI_SAM0_DEVICE_INIT(1);
-#endif
-
-#if DT_ATMEL_SAM0_SPI_SERCOM_2_BASE_ADDRESS
-SPI_SAM0_DEVICE_INIT(2);
-#endif
-
-#if DT_ATMEL_SAM0_SPI_SERCOM_3_BASE_ADDRESS
-SPI_SAM0_DEVICE_INIT(3);
-#endif
-
-#if DT_ATMEL_SAM0_SPI_SERCOM_4_BASE_ADDRESS
-SPI_SAM0_DEVICE_INIT(4);
-#endif
-
-#if DT_ATMEL_SAM0_SPI_SERCOM_5_BASE_ADDRESS
-SPI_SAM0_DEVICE_INIT(5);
-#endif
-
-#if DT_ATMEL_SAM0_SPI_SERCOM_6_BASE_ADDRESS
-SPI_SAM0_DEVICE_INIT(6);
-#endif
-
-#if DT_ATMEL_SAM0_SPI_SERCOM_7_BASE_ADDRESS
-SPI_SAM0_DEVICE_INIT(7);
-#endif
+DT_INST_FOREACH(SPI_SAM0_DEVICE_INIT)
