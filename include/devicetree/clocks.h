@@ -30,11 +30,11 @@ extern "C" {
  *
  * Example devicetree fragment:
  *
- *     clk1: clkctrl@... {
+ *     clk1: clock-controller@... {
  *             label = "CLK_1";
  *     };
  *
- *     clk2: clkctrl@... {
+ *     clk2: clock-controller@... {
  *             label = "CLK_2";
  *     };
  *
@@ -62,11 +62,11 @@ extern "C" {
  *
  * Example devicetree fragment:
  *
- *     clk1: clkctrl@... {
+ *     clk1: clock-controller@... {
  *             label = "CLK_1";
  *     };
  *
- *     clk2: clkctrl@... {
+ *     clk2: clock-controller@... {
  *             label = "CLK_2";
  *     };
  *
@@ -100,7 +100,7 @@ extern "C" {
  *
  * Example devicetree fragment:
  *
- *     clk1: clkctrl@... {
+ *     clk1: clock-controller@... {
  *             label = "CLK_1";
  *             #clock-cells = < 2 >;
  *     };
@@ -134,7 +134,7 @@ extern "C" {
  *
  * Example devicetree fragment:
  *
- *     clk1: clkctrl@... {
+ *     clk1: clock-controller@... {
  *             label = "CLK_1";
  *             #clock-cells = < 2 >;
  *     };
