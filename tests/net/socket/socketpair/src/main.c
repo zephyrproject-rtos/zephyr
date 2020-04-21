@@ -16,6 +16,12 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <ztest_assert.h>
 
+#undef read
+#define read(fd, buf, len) zsock_recv(fd, buf, len, 0)
+
+#undef write
+#define write(fd, buf, len) zsock_send(fd, buf, len, 0)
+
 static void happy_path_inner(
 	const unsigned family, const char *family_s,
 	const unsigned type, const char *type_s,

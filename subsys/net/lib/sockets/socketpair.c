@@ -269,15 +269,11 @@ static ssize_t spair_sendto(void *obj, const void *buf, size_t len,
 				 int flags, const struct sockaddr *dest_addr,
 				 socklen_t addrlen)
 {
-	(void) obj;
-	(void) buf;
-	(void) len;
 	(void) flags;
 	(void) dest_addr;
 	(void) addrlen;
 
-	errno = ENOSYS;
-	return -1;
+	return spair_write(obj, buf, len);
 }
 
 static ssize_t spair_sendmsg(void *obj, const struct msghdr *msg,
