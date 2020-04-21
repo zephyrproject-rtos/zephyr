@@ -701,9 +701,12 @@ static u8_t ticker_resolve_collision(struct ticker_node *nodes,
 					  ticker_next->ticks_periodic);
 
 			/* Was the current node scheduled earlier? */
-			u8_t current_is_older = current_age > next_age;
+			u8_t current_is_older =
+				(ticker->ticks_periodic == 0U) ||
+				(current_age > next_age);
 			/* Was next node scheduled earlier (legacy priority)? */
-			u8_t next_is_older = next_age > current_age;
+			u8_t next_is_older = (ticker->ticks_periodic != 0U) &&
+					     (next_age > current_age);
 
 			/* Is force requested for next node (e.g. update) -
 			 * more so than for current node?
@@ -727,8 +730,8 @@ static u8_t ticker_resolve_collision(struct ticker_node *nodes,
 			if (!lazy_next_periodic_skip &&
 			    (next_force ||
 			     next_is_critical ||
-			    (next_has_priority && !current_is_older) ||
-			    (equal_priority && next_is_older))) {
+			     (next_has_priority && !current_is_older) ||
+			     (equal_priority && next_is_older))) {
 				/* This node must be skipped - check window */
 				return 1U;
 			}
