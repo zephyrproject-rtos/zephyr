@@ -178,7 +178,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
                       pre_init_cmd + ['-c', 'init',
                                        '-c', 'targets',
-                                       '-c', 'halt',
+                                       '-c', 'reset halt',
                                        '-c', 'load_image ' + self.elf_name,
                                        '-c', 'resume ' + ep_addr,
                                        '-c', 'shutdown'])
