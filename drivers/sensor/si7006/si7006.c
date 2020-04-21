@@ -54,17 +54,20 @@ static int si7006_get_humidity(struct device *i2c_dev,
 /**
  * @brief function to get temperature
  *
+ * Note that si7006_get_humidity must be called before calling
+ * si7006_get_old_temperature.
+ *
  * @return int 0 on success
  */
 
-static int si7006_get_temperature(struct device *i2c_dev,
-				  struct si7006_data *si_data)
+static int si7006_get_old_temperature(struct device *i2c_dev,
+				      struct si7006_data *si_data)
 {
 	u8_t temp[2];
 	int retval;
 
 	retval = i2c_burst_read(i2c_dev, DT_INST_REG_ADDR(0),
-		SI7006_MEAS_TEMP_MASTER_MODE, temp, sizeof(temp));
+		SI7006_READ_OLD_TEMP, temp, sizeof(temp));
 
 	if (retval == 0) {
 		si_data->temperature = (temp[0] << 8) | temp[1];
@@ -85,9 +88,9 @@ static int si7006_sample_fetch(struct device *dev, enum sensor_channel chan)
 	int retval;
 	struct si7006_data *si_data = dev->driver_data;
 
-	retval = si7006_get_temperature(si_data->i2c_dev, si_data);
+	retval = si7006_get_humidity(si_data->i2c_dev, si_data);
 	if (retval == 0) {
-		retval = si7006_get_humidity(si_data->i2c_dev, si_data);
+		retval = si7006_get_old_temperature(si_data->i2c_dev, si_data);
 	}
 
 	return retval;
