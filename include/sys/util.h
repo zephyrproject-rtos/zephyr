@@ -844,7 +844,8 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 #define UTIL_REPEAT_INDIRECT() UTIL_REPEAT
 
 /**
- * Generates a sequence of code.
+ * @brief Generates a sequence of code.
+ *
  * Useful for generating code like;
  *
  * NRF_PWM0, NRF_PWM1, NRF_PWM2,
@@ -1009,7 +1010,8 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 	_51, _52, _53, _54, _55, _56, _57, _58, _59, _60,	\
 	_61, _62, N, ...) N
 
-/**@brief Macro to get the number of arguments in a call variadic macro call.
+/**
+ * @brief Macro to get the number of arguments in a call variadic macro call.
  * First argument is not counted.
  *
  * param[in]    ...     List of arguments
