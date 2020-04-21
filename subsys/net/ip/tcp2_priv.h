@@ -128,8 +128,8 @@ struct tcp { /* TCP connection */
 	enum tcp_state state;
 	u32_t seq;
 	u32_t ack;
-	union tcp_endpoint *src;
-	union tcp_endpoint *dst;
+	union tcp_endpoint src;
+	union tcp_endpoint dst;
 	u16_t win;
 	struct k_delayed_work send_timer;
 	sys_slist_t send_queue;

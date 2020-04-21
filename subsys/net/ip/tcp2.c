@@ -58,87 +58,56 @@ static size_t tcp_endpoint_len(sa_family_t af)
 		sizeof(struct sockaddr_in6);
 }
 
-static union tcp_endpoint *tcp_endpoint_new(struct net_pkt *pkt)
+static int tcp_endpoint_set(union tcp_endpoint *ep, struct net_pkt *pkt,
+			    enum pkt_addr src)
 {
-	sa_family_t af = net_pkt_family(pkt);
-	union tcp_endpoint *ep = tcp_calloc(1, tcp_endpoint_len(af));
+	int ret = 0;
 
-	if (ep) {
-		ep->sa.sa_family = af;
-	}
-
-	return ep;
-}
-
-static union tcp_endpoint *tcp_endpoint_set(union tcp_endpoint *ep,
-					    struct net_pkt *pkt,
-					    enum pkt_addr src)
-{
-	if (!ep) {
-		return NULL;
-	}
-
-	switch (ep->sa.sa_family) {
+	switch (net_pkt_family(pkt)) {
 	case AF_INET:
 		if (IS_ENABLED(CONFIG_NET_IPV4)) {
-			struct net_ipv4_hdr *ip = (struct net_ipv4_hdr *)
-				net_pkt_ip_data(pkt);
+			struct net_ipv4_hdr *ip = NET_IPV4_HDR(pkt);
 			struct tcphdr *th = th_get(pkt);
+
+			memset(ep, 0, sizeof(*ep));
 
 			ep->sin.sin_port = src == TCP_EP_SRC ? th->th_sport :
 							       th->th_dport;
-			ep->sin.sin_addr = src == TCP_EP_SRC ? ip->src :
-							       ip->dst;
+			net_ipaddr_copy(&ep->sin.sin_addr,
+					src == TCP_EP_SRC ?
+							&ip->src : &ip->dst);
+			ep->sa.sa_family = AF_INET;
+		} else {
+			ret = -EINVAL;
 		}
 
 		break;
 
 	case AF_INET6:
 		if (IS_ENABLED(CONFIG_NET_IPV6)) {
-			struct net_ipv6_hdr *ip = (struct net_ipv6_hdr *)
-				net_pkt_ip_data(pkt);
+			struct net_ipv6_hdr *ip = NET_IPV6_HDR(pkt);
 			struct tcphdr *th = th_get(pkt);
+
+			memset(ep, 0, sizeof(*ep));
 
 			ep->sin6.sin6_port = src == TCP_EP_SRC ? th->th_sport :
 								 th->th_dport;
-			ep->sin6.sin6_addr = src == TCP_EP_SRC ? ip->src :
-								 ip->dst;
+			net_ipaddr_copy(&ep->sin6.sin6_addr,
+					src == TCP_EP_SRC ?
+							&ip->src : &ip->dst);
+			ep->sa.sa_family = AF_INET6;
+		} else {
+			ret = -EINVAL;
 		}
 
 		break;
 
 	default:
-		NET_ERR("Unknown address family: %hu", ep->sa.sa_family);
+		NET_ERR("Unknown address family: %hu", net_pkt_family(pkt));
+		ret = -EINVAL;
 	}
 
-	return ep;
-}
-
-static char *tcp_endpoint_to_string(union tcp_endpoint *ep)
-{
-#define NBUFS 2
-#define BUF_SIZE 80
-	sa_family_t af = ep->sa.sa_family;
-	static char buf[NBUFS][BUF_SIZE];
-	char addr[INET6_ADDRSTRLEN];
-	static int i;
-	char *s = buf[++i % NBUFS];
-
-	switch (af) {
-	case 0:
-		snprintk(s, BUF_SIZE, ":%hu", ntohs(ep->sin.sin_port));
-		break;
-	case AF_INET: case AF_INET6:
-		net_addr_ntop(af, &ep->sin.sin_addr, addr, sizeof(addr));
-		snprintk(s, BUF_SIZE, "%s:%hu", addr, ntohs(ep->sin.sin_port));
-		break;
-	default:
-		s = NULL;
-		NET_ERR("Unknown address family: %hu", af);
-	}
-#undef BUF_SIZE
-#undef NBUFS
-	return s;
+	return ret;
 }
 
 static const char *tcp_flags(u8_t flags)
@@ -273,9 +242,6 @@ static int tcp_conn_unref(struct tcp *conn)
 	tcp_send_queue_flush(conn);
 
 	k_delayed_work_cancel(&conn->timewait_timer);
-
-	tcp_free(conn->src);
-	tcp_free(conn->dst);
 
 	memset(conn, 0, sizeof(*conn));
 
@@ -520,8 +486,8 @@ static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, u8_t flags)
 
 	memset(th, 0, sizeof(struct tcphdr));
 
-	th->th_sport = conn->src->sin.sin_port;
-	th->th_dport = conn->dst->sin.sin_port;
+	th->th_sport = conn->src.sin.sin_port;
+	th->th_dport = conn->dst.sin.sin_port;
 
 	th->th_off = 5;
 	th->th_flags = flags;
@@ -539,14 +505,14 @@ static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
 		return net_context_create_ipv4_new(conn->context, pkt,
-						&conn->src->sin.sin_addr,
-						&conn->dst->sin.sin_addr);
+						&conn->src.sin.sin_addr,
+						&conn->dst.sin.sin_addr);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
 		return net_context_create_ipv6_new(conn->context, pkt,
-						&conn->src->sin6.sin6_addr,
-						&conn->dst->sin6.sin6_addr);
+						&conn->src.sin6.sin6_addr,
+						&conn->dst.sin6.sin6_addr);
 	}
 
 	return -EINVAL;
@@ -710,19 +676,19 @@ out:
 static bool tcp_endpoint_cmp(union tcp_endpoint *ep, struct net_pkt *pkt,
 			     enum pkt_addr which)
 {
-	union tcp_endpoint ep_tmp = { 0 }, *ep_ptr;
+	union tcp_endpoint ep_tmp;
 
-	ep_tmp.sa.sa_family = net_pkt_family(pkt);
+	if (tcp_endpoint_set(&ep_tmp, pkt, which) < 0) {
+		return false;
+	}
 
-	ep_ptr = tcp_endpoint_set(&ep_tmp, pkt, which);
-
-	return !memcmp(ep, ep_ptr, tcp_endpoint_len(ep->sa.sa_family));
+	return !memcmp(ep, &ep_tmp, tcp_endpoint_len(ep->sa.sa_family));
 }
 
 static bool tcp_conn_cmp(struct tcp *conn, struct net_pkt *pkt)
 {
-	return tcp_endpoint_cmp(conn->src, pkt, TCP_EP_DST) &&
-		tcp_endpoint_cmp(conn->dst, pkt, TCP_EP_SRC);
+	return tcp_endpoint_cmp(&conn->src, pkt, TCP_EP_DST) &&
+		tcp_endpoint_cmp(&conn->dst, pkt, TCP_EP_SRC);
 }
 
 static struct tcp *tcp_conn_search(struct net_pkt *pkt)
@@ -732,12 +698,7 @@ static struct tcp *tcp_conn_search(struct net_pkt *pkt)
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&tcp_conns, conn, next) {
 
-		if (NULL == conn->src || NULL == conn->dst) {
-			continue;
-		}
-
 		found = tcp_conn_cmp(conn, pkt);
-
 		if (found) {
 			break;
 		}
@@ -772,7 +733,7 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 
 		conn = tcp_conn_new(pkt);
 
-		conn_old->context->remote = conn->dst->sa;
+		net_ipaddr_copy(&conn_old->context->remote, &conn->dst.sa);
 
 		conn_old->accept_cb(conn->context,
 				    &conn_old->context->remote,
@@ -806,16 +767,27 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 	conn = context->tcp;
 	conn->iface = pkt->iface;
 
-	net_context_set_family(conn->context, pkt->family);
+	net_context_set_family(conn->context, net_pkt_family(pkt));
 
-	conn->dst = tcp_endpoint_set(tcp_endpoint_new(pkt), pkt, TCP_EP_SRC);
-	conn->src = tcp_endpoint_set(tcp_endpoint_new(pkt), pkt, TCP_EP_DST);
+	if (tcp_endpoint_set(&conn->dst, pkt, TCP_EP_SRC) < 0) {
+		net_context_unref(context);
+		conn = NULL;
+		goto err;
+	}
+
+	if (tcp_endpoint_set(&conn->src, pkt, TCP_EP_DST) < 0) {
+		net_context_unref(context);
+		conn = NULL;
+		goto err;
+	}
 
 	NET_DBG("conn: src: %s, dst: %s",
-		log_strdup(tcp_endpoint_to_string(conn->src)),
-		log_strdup(tcp_endpoint_to_string(conn->dst)));
+		log_strdup(net_sprint_addr(conn->src.sa.sa_family,
+				(const void *)&conn->src.sin.sin_addr)),
+		log_strdup(net_sprint_addr(conn->dst.sa.sa_family,
+				(const void *)&conn->dst.sin.sin_addr)));
 
-	memcpy(&context->remote, conn->dst, sizeof(context->remote));
+	memcpy(&context->remote, &conn->dst, sizeof(context->remote));
 	context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
 
 	((struct sockaddr_in *)&context->local)->sin_family = af;
@@ -826,8 +798,8 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 
 	ret = net_conn_register(IPPROTO_TCP, af,
 				&context->remote, (void *)&context->local,
-				ntohs(conn->dst->sin.sin_port),/* local port */
-				ntohs(conn->src->sin.sin_port),/* remote port */
+				ntohs(conn->dst.sin.sin_port),/* local port */
+				ntohs(conn->src.sin.sin_port),/* remote port */
 				tcp_recv, context,
 				&context->conn_handler);
 	if (ret < 0) {
@@ -1067,51 +1039,54 @@ int net_tcp_connect(struct net_context *context,
 		const struct in6_addr *ip6;
 
 	case AF_INET:
-		conn->src = tcp_calloc(1, tcp_endpoint_len(AF_INET));
-		conn->dst = tcp_calloc(1, tcp_endpoint_len(AF_INET));
+		memset(&conn->src, 0, sizeof(struct sockaddr_in));
+		memset(&conn->dst, 0, sizeof(struct sockaddr_in));
 
-		conn->src->sa.sa_family = AF_INET;
-		conn->dst->sa.sa_family = AF_INET;
+		conn->src.sa.sa_family = AF_INET;
+		conn->dst.sa.sa_family = AF_INET;
 
-		conn->dst->sin.sin_port = remote_port;
-		conn->src->sin.sin_port = local_port;
+		conn->dst.sin.sin_port = remote_port;
+		conn->src.sin.sin_port = local_port;
 
 		/* we have to select the source address here as
 		 * net_context_create_ipv4_new() is not called in the packet
 		 * output chain
 		 */
-		ip4 = net_if_ipv4_select_src_addr(net_context_get_iface(context),
-						  (struct in_addr *)remote_addr);
-		conn->src->sin.sin_addr = *ip4;
-		conn->dst->sin.sin_addr = ((struct sockaddr_in *)remote_addr)->sin_addr;
+		ip4 = net_if_ipv4_select_src_addr(
+			net_context_get_iface(context),
+			&net_sin(remote_addr)->sin_addr);
+		conn->src.sin.sin_addr = *ip4;
+		net_ipaddr_copy(&conn->dst.sin.sin_addr,
+				&net_sin(remote_addr)->sin_addr);
 		break;
 
 	case AF_INET6:
-		conn->src = tcp_calloc(1, tcp_endpoint_len(AF_INET6));
-		conn->dst = tcp_calloc(1, tcp_endpoint_len(AF_INET6));
+		memset(&conn->src, 0, sizeof(struct sockaddr_in6));
+		memset(&conn->dst, 0, sizeof(struct sockaddr_in6));
 
-		memset(conn->src, 0, tcp_endpoint_len(AF_INET6));
-		memset(conn->dst, 0, tcp_endpoint_len(AF_INET6));
+		conn->src.sin6.sin6_family = AF_INET6;
+		conn->dst.sin6.sin6_family = AF_INET6;
 
-		conn->src->sin6.sin6_family = AF_INET6;
-		conn->dst->sin6.sin6_family = AF_INET6;
+		conn->dst.sin6.sin6_port = remote_port;
+		conn->src.sin6.sin6_port = local_port;
 
-		conn->dst->sin6.sin6_port = remote_port;
-		conn->src->sin6.sin6_port = local_port;
-
-		ip6 = net_if_ipv6_select_src_addr(net_context_get_iface(context),
-						  (struct in6_addr *)remote_addr);
-		conn->src->sin6.sin6_addr = *ip6;
-		conn->dst->sin6.sin6_addr = ((struct sockaddr_in6 *)remote_addr)->sin6_addr;
+		ip6 = net_if_ipv6_select_src_addr(
+					net_context_get_iface(context),
+					&net_sin6(remote_addr)->sin6_addr);
+		conn->src.sin6.sin6_addr = *ip6;
+		net_ipaddr_copy(&conn->dst.sin6.sin6_addr,
+				&net_sin6(remote_addr)->sin6_addr);
 		break;
 
 	default:
 		return -EPROTONOSUPPORT;
 	}
 
-	NET_DBG("conn: %p, local: %s, remote: %s", conn,
-		log_strdup(tcp_endpoint_to_string(conn->src)),
-		log_strdup(tcp_endpoint_to_string(conn->dst)));
+	NET_DBG("conn: %p src: %s, dst: %s", conn,
+		log_strdup(net_sprint_addr(conn->src.sa.sa_family,
+				(const void *)&conn->src.sin.sin_addr)),
+		log_strdup(net_sprint_addr(conn->dst.sa.sa_family,
+				(const void *)&conn->dst.sin.sin_addr)));
 
 	net_context_set_state(context, NET_CONTEXT_CONNECTING);
 
@@ -1276,12 +1251,10 @@ static enum net_verdict tcp_input(struct net_conn *net_conn,
 			struct net_context *context =
 				tcp_calloc(1, sizeof(struct net_context));
 			net_tcp_get(context);
-			net_context_set_family(context, pkt->family);
+			net_context_set_family(context, net_pkt_family(pkt));
 			conn = context->tcp;
-			conn->dst = tcp_endpoint_set(tcp_endpoint_new(pkt),
-						     pkt, TCP_EP_SRC);
-			conn->src = tcp_endpoint_set(tcp_endpoint_new(pkt),
-						     pkt, TCP_EP_DST);
+			tcp_endpoint_set(&conn->dst, pkt, TCP_EP_SRC);
+			tcp_endpoint_set(&conn->src, pkt, TCP_EP_DST);
 			/* Make an extra reference, the sanity check suite
 			 * will delete the connection explicitly
 			 */
@@ -1398,14 +1371,11 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 				struct net_context *context = tcp_calloc(1,
 						sizeof(struct net_context));
 				net_tcp_get(context);
-				net_context_set_family(context, pkt->family);
+				net_context_set_family(context,
+						       net_pkt_family(pkt));
 				conn = context->tcp;
-				conn->dst =
-					tcp_endpoint_set(tcp_endpoint_new(pkt),
-							 pkt, TCP_EP_SRC);
-				conn->src =
-					tcp_endpoint_set(tcp_endpoint_new(pkt),
-							 pkt, TCP_EP_DST);
+				tcp_endpoint_set(&conn->dst, pkt, TCP_EP_SRC);
+				tcp_endpoint_set(&conn->src, pkt, TCP_EP_DST);
 				conn->iface = pkt->iface;
 				tcp_conn_ref(conn);
 			}
