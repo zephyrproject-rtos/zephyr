@@ -10,7 +10,6 @@
 
 #include "hal/ccm.h"
 #include "hal/ticker.h"
-#include "hal/radio.h"
 
 #include "util/util.h"
 #include "util/mem.h"

@@ -14,7 +14,6 @@
 
 #include "hal/ticker.h"
 #include "hal/ccm.h"
-#include "hal/radio.h"
 
 #include "ticker/ticker.h"
 
@@ -528,11 +527,12 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	u8_t ticker_id_scan, ticker_id_conn;
 	u8_t peer_addr[BDADDR_SIZE];
 	u32_t ticks_slot_overhead;
-	u32_t ticks_slot_offset;
 	struct ll_scan_set *scan;
+	u32_t ticks_slot_offset;
+	struct pdu_adv *pdu_tx;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
-	struct pdu_adv *pdu_tx;
+	u32_t ready_delay_us;
 	u8_t peer_addr_type;
 	u32_t ticker_status;
 	u8_t chan_sel;
@@ -634,6 +634,13 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	ll_rx_put(link, rx);
 	ll_rx_sched();
 
+#if defined(CONFIG_BT_CTLR_PHY)
+	ready_delay_us = lll_radio_tx_ready_delay_get(lll->phy_tx,
+						      lll->phy_flags);
+#else
+	ready_delay_us = lll_radio_tx_ready_delay_get(0, 0);
+#endif
+
 	/* TODO: active_to_start feature port */
 	conn->evt.ticks_active_to_start = 0U;
 	conn->evt.ticks_xtal_to_start =
@@ -642,8 +649,8 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	conn->evt.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ftr->us_radio_rdy + 328 + EVENT_IFS_US +
-				       328);
+				       ready_delay_us +
+				       328 + EVENT_IFS_US + 328);
 
 	ticks_slot_offset = MAX(conn->evt.ticks_active_to_start,
 				conn->evt.ticks_xtal_to_start);
@@ -655,10 +662,10 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	}
 
 	conn_interval_us = lll->interval * 1250;
-	conn_offset_us = ftr->us_radio_end;
+	conn_offset_us = ftr->radio_end_us;
 	conn_offset_us += HAL_TICKER_TICKS_TO_US(1);
 	conn_offset_us -= EVENT_OVERHEAD_START_US;
-	conn_offset_us -= ftr->us_radio_rdy;
+	conn_offset_us -= ready_delay_us;
 
 #if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	/* disable ticker job, in order to chain stop and start to avoid RTC
