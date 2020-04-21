@@ -722,7 +722,7 @@ static const struct bt_data ad_discov[] = {
 
 static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 {
-	struct bt_le_adv_param param;
+	struct bt_le_adv_param param = {};
 	const struct bt_data *ad;
 	size_t ad_len;
 	int err;
@@ -738,7 +738,6 @@ static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 		return 0;
 	}
 
-	param.peer = NULL;
 	param.id = selected_id;
 	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
 	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
@@ -836,8 +835,7 @@ static int cmd_directed_adv(const struct shell *shell,
 static bool adv_param_parse(size_t argc, char *argv[],
 			   struct bt_le_adv_param *param)
 {
-	param->options = 0;
-	param->peer = NULL;
+	memset(param, 0, sizeof(struct bt_le_adv_param));
 
 	if (!strcmp(argv[1], "conn-scan")) {
 		param->options |= BT_LE_ADV_OPT_CONNECTABLE;
