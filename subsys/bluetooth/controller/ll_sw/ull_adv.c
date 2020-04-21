@@ -177,9 +177,44 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	pdu = lll_adv_data_peek(&adv->lll);
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (pdu->type != pdu_adv_type[adv_type]) {
+		is_pdu_type_changed = 1;
+
+		if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
+			struct lll_adv_aux *lll_aux = adv->lll.aux;
+
+			if (lll_aux) {
+				struct ll_adv_aux_set *aux;
+
+				/* FIXME: copy AD data from auxiliary channel
+				 * PDU.
+				 */
+				pdu->len = 0;
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+				/* FIXME: release periodic adv set */
+				LL_ASSERT(!adv->lll.sync);
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
+				/* Release auxiliary channel set */
+				aux = (void *)HDR_LLL2EVT(lll_aux);
+				ull_adv_aux_release(aux);
+
+				adv->lll.aux = NULL;
+			} else {
+				/* No previous AD data in auxiliary channel
+				 * PDU.
+				 */
+				pdu->len = 0;
+			}
+		}
+
 		pdu->type = pdu_adv_type[adv_type];
 
-		is_pdu_type_changed = 1;
+		if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
+			/* TODO: Copy AD data from legacy PDU into auxiliary
+			 * PDU.
+			 */
+		}
 	}
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	pdu->type = pdu_adv_type[adv_type];
