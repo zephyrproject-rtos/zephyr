@@ -13,7 +13,6 @@ config SOC_SERIES_SAME70
 	select ASF
 	select XIP
 	select CPU_HAS_ARM_MPU
-	select ARM_MPU
 	select HAS_SWO
 	help
 	  Enable support for Atmel SAM E70 ARM Cortex-M7 Microcontrollers.
