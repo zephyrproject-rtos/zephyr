@@ -86,6 +86,10 @@
 #include <stm32wbxx_ll_dmamux.h>
 #endif
 
+#ifdef CONFIG_PWM_STM32
+#include <stm32wbxx_ll_tim.h>
+#endif /* CONFIG_PWM_STM32 */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32WBX_SOC_H_ */
