@@ -111,6 +111,7 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int sv[2])
 		tmp[i] = z_reserve_fd();
 		if (tmp[i] == -1) {
 			errno = ENFILE;
+			res = -1;
 			goto free_fds;
 		}
 	}
@@ -119,6 +120,7 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int sv[2])
 		obj[i] = k_malloc(sizeof(*obj));
 		if (obj[i] == NULL) {
 			errno = ENOMEM;
+			res = -1;
 			goto free_objs;
 		}
 	}
