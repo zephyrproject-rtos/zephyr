@@ -217,6 +217,63 @@ static void test_z_max_z_min(void)
 	zassert_equal(inc_func(), 4, "Unexpected return value");
 }
 
+static void test_FOR_EACH(void)
+{
+	#define FOR_EACH_MACRO_TEST(arg) *buf++ = arg;
+
+	u8_t array[3] = {0};
+	u8_t *buf = array;
+
+	FOR_EACH(FOR_EACH_MACRO_TEST, 1, 2, 3)
+
+	zassert_equal(array[0], 1, "Unexpected value %d", array[0]);
+	zassert_equal(array[1], 2, "Unexpected value %d", array[1]);
+	zassert_equal(array[2], 3, "Unexpected value %d", array[2]);
+}
+
+static void test_FOR_EACH_IDX(void)
+{
+	#define FOR_EACH_IDX_MACRO_TEST(n, arg) u8_t a##n = arg;
+
+	FOR_EACH_IDX(FOR_EACH_IDX_MACRO_TEST, 1, 2, 3)
+
+	zassert_equal(a0, 1, "Unexpected value %d", a0);
+	zassert_equal(a1, 2, "Unexpected value %d", a1);
+	zassert_equal(a2, 3, "Unexpected value %d", a2);
+
+	#define FOR_EACH_IDX_MACRO_TEST2(n, arg) array[n] = arg;
+	u8_t array[32] = {0};
+
+	FOR_EACH_IDX(FOR_EACH_IDX_MACRO_TEST2, 1, 2, 3, 4, 5, 6, 7, 8,
+						9, 10, 11, 12, 13, 14, 15);
+	for (int i = 0; i < 15; i++) {
+		zassert_equal(array[i], i + 1,
+				"Unexpected value: %d", array[i]);
+	}
+	zassert_equal(array[15], 0, "Unexpected value: %d", array[15]);
+
+	#define FOR_EACH_IDX_MACRO_TEST3(n, arg) &a##n,
+
+	u8_t *a[] = {
+		FOR_EACH_IDX(FOR_EACH_IDX_MACRO_TEST3, 1, 2, 3)
+	};
+
+	zassert_equal(ARRAY_SIZE(a), 3, "Unexpected value:%d", ARRAY_SIZE(a));
+}
+
+static void test_FOR_EACH_IDX_FIXED_ARG(void)
+{
+	#undef FOO
+	#define FOO(n, arg, fixed_arg) \
+		u8_t fixed_arg##n = arg;
+
+	FOR_EACH_IDX_FIXED_ARG(FOO, a, 1, 2, 3)
+
+	zassert_equal(a0, 1, "Unexpected value %d", a0);
+	zassert_equal(a1, 2, "Unexpected value %d", a1);
+	zassert_equal(a2, 3, "Unexpected value %d", a2);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_lib_sys_util_tests,
@@ -228,7 +285,11 @@ void test_main(void)
 			 ztest_unit_test(test_IF_ENABLED),
 			 ztest_unit_test(test_UTIL_LISTIFY),
 			 ztest_unit_test(test_MACRO_MAP_CAT),
-			 ztest_unit_test(test_z_max_z_min)
+			 ztest_unit_test(test_z_max_z_min),
+			 ztest_unit_test(test_FOR_EACH),
+			 ztest_unit_test(test_FOR_EACH_FIXED_ARG),
+			 ztest_unit_test(test_FOR_EACH_IDX),
+			 ztest_unit_test(test_FOR_EACH_IDX_FIXED_ARG)
 	);
 
 	ztest_run_test_suite(test_lib_sys_util_tests);
