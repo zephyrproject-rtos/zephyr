@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+
+source "soc/arm/infineon_xmc/*/Kconfig.defconfig.series"

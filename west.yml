@@ -52,6 +52,9 @@ manifest:
     - name: hal_cypress
       revision: a12d92816a53a521d79cefcf5c38b9dc8a4fed6e
       path: modules/hal/cypress
+    - name: hal_infineon
+      revision: f1fa8241f8786198ba41155413243de36ed878a5
+      path: modules/hal/infineon
     - name: hal_nordic
       revision: e1168a2f3290f5ca17ec0c47efbf6c601c60108a
       path: modules/hal/nordic
