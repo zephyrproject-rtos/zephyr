@@ -32,6 +32,13 @@
 #define USB_EP_TRANSFER_TYPE_MASK 0x3
 
 /**
+ * USB endpoint Synchronization Type mask.
+ *
+ * @note Valid only for Isochronous Endpoints
+ */
+#define USB_EP_SYNCHRONIZATION_TYPE_MASK (0x3 << 2U)
+
+/**
  * @brief USB Device Controller API
  * @defgroup _usb_device_controller_api USB Device Controller API
  * @{
@@ -95,6 +102,22 @@ enum usb_dc_ep_transfer_type {
 	USB_DC_EP_BULK,
 	/** Interrupt type endpoint  */
 	USB_DC_EP_INTERRUPT
+};
+
+/**
+ * @brief USB Endpoint Synchronization Type
+ *
+ * @note Valid only for Isochronous Endpoints
+ */
+enum usb_dc_ep_synchronozation_type {
+	/** No Synchronization */
+	USB_DC_EP_NO_SYNCHRONIZATION = (0U << 2U),
+	/** Asynchronous */
+	USB_DC_EP_ASYNCHRONOUS = (1U << 2U),
+	/** Adaptive */
+	USB_DC_EP_ADAPTIVE = (2U << 2U),
+	/** Synchronous*/
+	USB_DC_EP_SYNCHRONOUS = (3U << 2U)
 };
 
 /**
