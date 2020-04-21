@@ -149,6 +149,9 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	if (h->adi) {
 		ptr += sizeof(struct ext_adv_adi);
 	}
+
+	LL_ASSERT((pri->type == PDU_ADV_TYPE_EXT_IND) && h->aux_ptr);
+
 	aux = (void *)ptr;
 
 #if !defined(BT_CTLR_ADV_EXT_PBACK)

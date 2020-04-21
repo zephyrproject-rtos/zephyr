@@ -1007,10 +1007,18 @@ u8_t ll_adv_enable(u8_t enable)
 
 			aux = (void *)HDR_LLL2EVT(lll_aux);
 			ull_hdr_init(&aux->ull);
+
+			/* Keep aux interval equal or higher than primary PDU
+			 * interval.
+			 */
 			aux->interval =
 				adv->interval +
 				(HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY) /
 				 625U);
+
+			/* schedule after primary channel PDUs */
+			ticks_anchor += ticks_slot;
+			ticks_anchor += HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
 
 			ret = ull_adv_aux_start(aux, ticks_anchor, &ret_cb);
 
