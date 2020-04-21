@@ -21,11 +21,12 @@
 			label = "USB0";
 		};
 
-		dma: dmac@41004800 {
+		dmac: dmac@41004800 {
 			compatible = "atmel,sam0-dmac";
 			reg = <0x41004800 0x50>;
 			interrupts = <6 0>;
 			label = "DMA_0";
+			#dma-cells = <2>;
 		};
 
 		tc6: tc@42003800 {
