@@ -95,7 +95,7 @@ static inline void adv_send(struct net_buf *buf)
 				   ADV_INT_FAST_MS : ADV_INT_DEFAULT_MS);
 	const struct bt_mesh_send_cb *cb = BT_MESH_ADV(buf)->cb;
 	void *cb_data = BT_MESH_ADV(buf)->cb_data;
-	struct bt_le_adv_param param;
+	struct bt_le_adv_param param = {};
 	u16_t duration, adv_int;
 	struct bt_data ad;
 	int err;
