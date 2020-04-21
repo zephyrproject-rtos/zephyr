@@ -665,11 +665,6 @@ int net_tcp_get(struct net_context *context)
 out:
 	irq_unlock(key);
 
-	NET_DBG("context: %p (local: %s, remote: %s), conn: %p", context,
-		log_strdup(tcp_endpoint_to_string((void *)&context->local)),
-		log_strdup(tcp_endpoint_to_string((void *)&context->remote)),
-		conn);
-
 	return ret;
 }
 
@@ -756,6 +751,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 	struct tcp *conn = NULL;
 	struct net_context *context = NULL;
 	sa_family_t af = net_pkt_family(pkt);
+	struct sockaddr local_addr = { 0 };
 	int ret;
 
 	ret = net_context_get(af, SOCK_STREAM, IPPROTO_TCP, &context);
@@ -790,14 +786,34 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 	memcpy(&context->remote, &conn->dst, sizeof(context->remote));
 	context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
 
-	((struct sockaddr_in *)&context->local)->sin_family = af;
+	net_sin_ptr(&context->local)->sin_family = af;
+
+	local_addr.sa_family = net_context_get_family(context);
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    net_context_get_family(context) == AF_INET6) {
+		if (net_sin6_ptr(&context->local)->sin6_addr) {
+			net_ipaddr_copy(&net_sin6(&local_addr)->sin6_addr,
+				     net_sin6_ptr(&context->local)->sin6_addr);
+		}
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		   net_context_get_family(context) == AF_INET) {
+		if (net_sin_ptr(&context->local)->sin_addr) {
+			net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
+				      net_sin_ptr(&context->local)->sin_addr);
+		}
+	}
 
 	NET_DBG("context: local: %s, remote: %s",
-		log_strdup(tcp_endpoint_to_string((void *)&context->local)),
-		log_strdup(tcp_endpoint_to_string((void *)&context->remote)));
+		log_strdup(net_sprint_addr(
+		      local_addr.sa_family,
+		      (const void *)&net_sin(&local_addr)->sin_addr)),
+		log_strdup(net_sprint_addr(
+		      context->remote.sa_family,
+		      (const void *)&net_sin(&context->remote)->sin_addr)));
 
 	ret = net_conn_register(IPPROTO_TCP, af,
-				&context->remote, (void *)&context->local,
+				&context->remote, &local_addr,
 				ntohs(conn->dst.sin.sin_port),/* local port */
 				ntohs(conn->src.sin.sin_port),/* remote port */
 				tcp_recv, context,
@@ -1028,8 +1044,12 @@ int net_tcp_connect(struct net_context *context,
 	ARG_UNUSED(timeout);
 
 	NET_DBG("context: %p, local: %s, remote: %s", context,
-		log_strdup(tcp_endpoint_to_string((void *)local_addr)),
-		log_strdup(tcp_endpoint_to_string((void *)remote_addr)));
+		log_strdup(net_sprint_addr(
+			    local_addr->sa_family,
+			    (const void *)&net_sin(local_addr)->sin_addr)),
+		log_strdup(net_sprint_addr(
+			    remote_addr->sa_family,
+			    (const void *)&net_sin(remote_addr)->sin_addr)));
 
 	conn = context->tcp;
 	conn->iface = net_context_get_iface(context);
