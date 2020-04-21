@@ -1966,9 +1966,7 @@ void *net_pkt_get_data(struct net_pkt *pkt,
 
 		return pkt->cursor.pos;
 	} else {
-		if (net_pkt_is_contiguous(pkt, access->size)) {
-			access->data = pkt->cursor.pos;
-		} else if (net_pkt_is_being_overwritten(pkt)) {
+		if (!net_pkt_is_contiguous(pkt, access->size)) {
 			struct net_pkt_cursor backup;
 
 			if (!access->data) {
@@ -1985,9 +1983,11 @@ void *net_pkt_get_data(struct net_pkt *pkt,
 			}
 
 			net_pkt_cursor_restore(pkt, &backup);
+
+			return access->data;
 		}
 
-		return access->data;
+		return pkt->cursor.pos;
 	}
 
 	return NULL;
