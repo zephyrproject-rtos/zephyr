@@ -896,8 +896,8 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 
 #define Z_FOR_EACH_SWALLOW_FIXED_ARG(F, fixed_arg, index, arg) F(index, arg)
 
-#define Z_SWALLOW_INDEX_FIXED_ARG(F, fixed_arg, index, arg) F(arg)
-#define Z_SWALLOW_INDEX(F, fixed_arg, index, arg) F(arg, fixed_arg)
+#define Z_FOR_EACH_SWALLOW_INDEX_FIXED_ARG(F, fixed_arg, index, arg) F(arg)
+#define Z_FOR_EACH_SWALLOW_INDEX(F, fixed_arg, index, arg) F(arg, fixed_arg)
 
 /**
  * @brief Calls macro F for each provided argument with index as first argument
@@ -949,6 +949,54 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 			0, Z_FOR_EACH_SWALLOW_NOTHING, /*no ;*/, \
 			F, fixed_arg, __VA_ARGS__)
 
+/**
+ * @brief Calls macro F for each provided argument.
+ *
+ * Example:
+ *
+ *     #define F(x) int a##x;
+ *     FOR_EACH(F, 4, 5, 6)
+ *
+ * will result in following code:
+ *
+ *     int a4;
+ *     int a5;
+ *     int a6;
+ *
+ * @param F Macro takes nth variable argument as the argument.
+ * @param ... Variable list of argument. For each argument macro F is executed.
+ */
+#define FOR_EACH(F, ...) \
+	Z_FOR_EACH_IDX2(NUM_VA_ARGS_LESS_1(__VA_ARGS__, _), \
+			0, Z_FOR_EACH_SWALLOW_INDEX_FIXED_ARG, /*no ;*/, \
+			F, 0, __VA_ARGS__)
+
+/**
+ * @brief Calls macro F for each provided argument with additional fixed
+ *	  argument.
+ *
+ * After each iteration semicolon is added.
+ *
+ * Example:
+ *
+ *     static void func(int val, void *dev);
+ *     FOR_EACH_FIXED_ARG(func, dev, 4, 5, 6)
+ *
+ * will result in following code:
+ *
+ *     func(4, dev);
+ *     func(5, dev);
+ *     func(6, dev);
+ *
+ * @param F Macro takes nth variable argument as the first parameter and
+ *	     fixed argument as the second parameter.
+ * @param fixed_arg Fixed argument forward to macro execution for each argument.
+ * @param ... Variable list of argument. For each argument macro F is executed.
+ */
+#define FOR_EACH_FIXED_ARG(F, fixed_arg, ...) \
+	Z_FOR_EACH_IDX2(NUM_VA_ARGS_LESS_1(__VA_ARGS__, _), \
+			0, Z_FOR_EACH_SWALLOW_INDEX, ;, \
+			F, fixed_arg, __VA_ARGS__)
 
 /**@brief Implementation details for NUM_VAR_ARGS */
 #define NUM_VA_ARGS_LESS_1_IMPL(				\
@@ -1082,71 +1130,6 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
 #define MACRO_MC_13(m, a, ...) UTIL_CAT(m(a), MACRO_MC_12(m, __VA_ARGS__,))
 #define MACRO_MC_14(m, a, ...) UTIL_CAT(m(a), MACRO_MC_13(m, __VA_ARGS__,))
 #define MACRO_MC_15(m, a, ...) UTIL_CAT(m(a), MACRO_MC_14(m, __VA_ARGS__,))
-
-/*
- * The following provides variadic preprocessor macro support to
- * help eliminate multiple, repetitive function/macro calls.  This
- * allows up to 10 "arguments" in addition to z_call .
- * Note - derived from work on:
- * https://codecraft.co/2014/11/25/variadic-macros-tricks/
- */
-
-#define Z_GET_ARG(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
-
-#define _for_0(z_call, ...)
-#define _for_1(z_call, x) z_call(x)
-#define _for_2(z_call, x, ...) z_call(x) _for_1(z_call, ##__VA_ARGS__)
-#define _for_3(z_call, x, ...) z_call(x) _for_2(z_call, ##__VA_ARGS__)
-#define _for_4(z_call, x, ...) z_call(x) _for_3(z_call, ##__VA_ARGS__)
-#define _for_5(z_call, x, ...) z_call(x) _for_4(z_call, ##__VA_ARGS__)
-#define _for_6(z_call, x, ...) z_call(x) _for_5(z_call, ##__VA_ARGS__)
-#define _for_7(z_call, x, ...) z_call(x) _for_6(z_call, ##__VA_ARGS__)
-#define _for_8(z_call, x, ...) z_call(x) _for_7(z_call, ##__VA_ARGS__)
-#define _for_9(z_call, x, ...) z_call(x) _for_8(z_call, ##__VA_ARGS__)
-#define _for_10(z_call, x, ...) z_call(x) _for_9(z_call, ##__VA_ARGS__)
-
-#define FOR_EACH(x, ...) \
-	Z_GET_ARG(__VA_ARGS__, \
-	_for_10, _for_9, _for_8, _for_7, _for_6, _for_5, \
-	_for_4, _for_3, _for_2, _for_1, _for_0)(x, ##__VA_ARGS__)
-
-/* FOR_EACH_FIXED_ARG is used for calling the same function
- * With one fixed argument and changing 2nd argument.
- */
-
-#define z_rep_0(_fn, f, ...)
-#define z_rep_1(_fn, f, x) {_fn(x, f); z_rep_0(_fn, f)}
-#define z_rep_2(_fn, f, x, ...) {_fn(x, f); z_rep_1(_fn, f, ##__VA_ARGS__)}
-#define z_rep_3(_fn, f, x, ...) {_fn(x, f); z_rep_2(_fn, f, ##__VA_ARGS__)}
-#define z_rep_4(_fn, f, x, ...) {_fn(x, f); z_rep_3(_fn, f, ##__VA_ARGS__)}
-#define z_rep_5(_fn, f, x, ...) {_fn(x, f); z_rep_4(_fn, f, ##__VA_ARGS__)}
-#define z_rep_6(_fn, f, x, ...) {_fn(x, f); z_rep_5(_fn, f, ##__VA_ARGS__)}
-#define z_rep_7(_fn, f, x, ...) {_fn(x, f); z_rep_6(_fn, f, ##__VA_ARGS__)}
-#define z_rep_8(_fn, f, x, ...) {_fn(x, f); z_rep_7(_fn, f, ##__VA_ARGS__)}
-#define z_rep_9(_fn, f, x, ...) {_fn(x, f); z_rep_8(_fn, f, ##__VA_ARGS__)}
-#define z_rep_10(_fn, f, x, ...) {_fn(x, f); z_rep_9(_fn, f, ##__VA_ARGS__)}
-#define z_rep_11(_fn, f, x, ...) {_fn(x, f); z_rep_10(_fn, f, ##__VA_ARGS__)}
-#define z_rep_12(_fn, f, x, ...) {_fn(x, f); z_rep_11(_fn, f, ##__VA_ARGS__)}
-#define z_rep_13(_fn, f, x, ...) {_fn(x, f); z_rep_12(_fn, f, ##__VA_ARGS__)}
-#define z_rep_14(_fn, f, x, ...) {_fn(x, f); z_rep_13(_fn, f, ##__VA_ARGS__)}
-#define z_rep_15(_fn, f, x, ...) {_fn(x, f); z_rep_14(_fn, f, ##__VA_ARGS__)}
-#define z_rep_16(_fn, f, x, ...) {_fn(x, f); z_rep_15(_fn, f, ##__VA_ARGS__)}
-#define z_rep_17(_fn, f, x, ...) {_fn(x, f); z_rep_16(_fn, f, ##__VA_ARGS__)}
-#define z_rep_18(_fn, f, x, ...) {_fn(x, f); z_rep_17(_fn, f, ##__VA_ARGS__)}
-#define z_rep_19(_fn, f, x, ...) {_fn(x, f); z_rep_18(_fn, f, ##__VA_ARGS__)}
-#define z_rep_20(_fn, f, x, ...) {_fn(x, f); z_rep_19(_fn, f, ##__VA_ARGS__)}
-
-
-#define Z_GET_ARG_2(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, \
-		   _14, _15, _16, _17, _18, _19, _20, N, ...) N
-
-#define FOR_EACH_FIXED_ARG(fixed_arg, x, ...) \
-	{Z_GET_ARG_2(__VA_ARGS__,				\
-		     z_rep_20, z_rep_19, z_rep_18, z_rep_17, z_rep_16,	\
-		     z_rep_15, z_rep_14, z_rep_13, z_rep_12, z_rep_11,	\
-		     z_rep_10, z_rep_9, z_rep_8, z_rep_7, z_rep_6,	\
-		     z_rep_5, z_rep_4, z_rep_3, z_rep_2, z_rep_1, z_rep_0) \
-	 (fixed_arg, x, ##__VA_ARGS__)}
 
 #ifdef __cplusplus
 }
