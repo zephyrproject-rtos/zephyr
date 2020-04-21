@@ -3277,6 +3277,13 @@ static void le_adv_ext_1M_report(struct pdu_data *pdu_data,
 	le_adv_ext_report(pdu_data, node_rx, buf, BIT(0));
 }
 
+static void le_adv_ext_2M_report(struct pdu_data *pdu_data,
+				 struct node_rx_pdu *node_rx,
+				 struct net_buf *buf)
+{
+	le_adv_ext_report(pdu_data, node_rx, buf, BIT(1));
+}
+
 static void le_adv_ext_coded_report(struct pdu_data *pdu_data,
 				    struct node_rx_pdu *node_rx,
 				    struct net_buf *buf)
@@ -3585,6 +3592,10 @@ static void encode_control(struct node_rx_pdu *node_rx,
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	case NODE_RX_TYPE_EXT_1M_REPORT:
 		le_adv_ext_1M_report(pdu_data, node_rx, buf);
+		break;
+
+	case NODE_RX_TYPE_EXT_2M_REPORT:
+		le_adv_ext_2M_report(pdu_data, node_rx, buf);
 		break;
 
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
@@ -3986,7 +3997,9 @@ uint8_t hci_get_class(struct node_rx_pdu *node_rx)
 		case NODE_RX_TYPE_REPORT:
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+			/* fallthrough */
 		case NODE_RX_TYPE_EXT_1M_REPORT:
+		case NODE_RX_TYPE_EXT_2M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
