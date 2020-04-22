@@ -198,8 +198,9 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	radio_tmr_aa_capture();
 	radio_tmr_aa_save(0);
 
-	hcto = remainder_us + EVENT_JITTER_US + (EVENT_JITTER_US << 2) +
-	       (lll->slave.window_widening_event_us << 1) +
+	hcto = remainder_us +
+	       ((EVENT_JITTER_US + EVENT_TICKER_RES_MARGIN_US +
+		 lll->slave.window_widening_event_us) << 1) +
 	       lll->slave.window_size_event_us;
 
 #if defined(CONFIG_BT_CTLR_PHY)
