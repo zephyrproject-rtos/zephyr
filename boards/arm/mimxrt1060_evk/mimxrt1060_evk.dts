@@ -82,8 +82,6 @@
 			};
 		};
 	};
-
-	/delete-node/ eth1;
 };
 
 arduino_serial: &lpuart3 {};
