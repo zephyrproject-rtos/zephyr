@@ -241,6 +241,7 @@ static int i2c_cc13xx_cc26xx_transfer(struct device *dev, struct i2c_msg *msgs,
 	return ret;
 }
 
+#define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 static int i2c_cc13xx_cc26xx_configure(struct device *dev, u32_t dev_config)
 {
 	bool fast;
@@ -270,8 +271,7 @@ static int i2c_cc13xx_cc26xx_configure(struct device *dev, u32_t dev_config)
 	}
 
 	/* Enables and configures I2C master */
-	I2CMasterInitExpClk(get_dev_config(dev)->base,
-		DT_CPU_CLOCK_FREQUENCY, fast);
+	I2CMasterInitExpClk(get_dev_config(dev)->base, CPU_FREQ, fast);
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	get_dev_data(dev)->dev_config = dev_config;
