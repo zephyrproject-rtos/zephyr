@@ -533,28 +533,13 @@ static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
 	return -EINVAL;
 }
 
-static struct net_pkt *tcp_pkt_alloc(struct net_if *iface,
-				     sa_family_t family, size_t len)
-{
-	struct net_pkt *pkt;
-
-	pkt = net_pkt_alloc_with_buffer(iface, len, family,
-					IPPROTO_TCP, K_NO_WAIT);
-
-#if IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)
-	tp_pkt_alloc(pkt);
-#endif
-	return pkt;
-}
-
 static void tcp_out(struct tcp *conn, u8_t flags, ...)
 {
 	struct net_pkt *pkt;
 	size_t len = 0;
 	int r;
 
-	pkt = tcp_pkt_alloc(conn->iface, net_context_get_family(conn->context),
-			    sizeof(struct tcphdr));
+	pkt = tcp_pkt_alloc(conn, sizeof(struct tcphdr));
 	if (!pkt) {
 		goto fail;
 	}
@@ -573,8 +558,6 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 		data_pkt->buffer = NULL;
 		tcp_pkt_unref(data_pkt);
 	}
-
-	pkt->iface = conn->iface;
 
 	r = ip_header_add(conn, pkt);
 	if (r < 0) {
@@ -1487,8 +1470,7 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 			{
 				struct net_pkt *data_pkt;
 
-				data_pkt = tcp_pkt_alloc(pkt->iface,
-							 pkt->family, len);
+				data_pkt = tcp_pkt_alloc(conn, len);
 				net_pkt_write(data_pkt, buf, len);
 				net_pkt_cursor_init(data_pkt);
 				net_tcp_queue_data(conn->context, data_pkt);
