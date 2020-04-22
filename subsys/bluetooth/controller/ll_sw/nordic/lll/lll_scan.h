@@ -53,7 +53,7 @@ struct lll_scan_aux {
 
 	uint8_t phy:3;
 
-	uint32_t window_widening_us;
+	uint32_t window_size_us;
 };
 
 int lll_scan_init(void);
