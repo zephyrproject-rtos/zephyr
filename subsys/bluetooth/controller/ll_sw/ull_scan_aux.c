@@ -173,7 +173,9 @@ void ull_scan_aux_setup(struct node_rx_hdr *rx, uint8_t phy,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	aux->evt.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ready_delay_us + 10000 +
+				       ready_delay_us +
+				       PKT_AC_US(PDU_AC_EXT_PAYLOAD_SIZE_MAX,
+						 0, lll->phy) +
 				       EVENT_OVERHEAD_END_US);
 
 	ticks_slot_offset = MAX(aux->evt.ticks_active_to_start,
