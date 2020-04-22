@@ -359,6 +359,15 @@ void le_data_len_updated(struct bt_conn *conn,
 }
 #endif
 
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+void le_phy_updated(struct bt_conn *conn,
+		    struct bt_conn_le_phy_info *info)
+{
+	shell_print(ctx_shell, "LE PHY updated: TX PHY %s, RX PHY %s",
+		    phy2str(info->tx_phy), phy2str(info->rx_phy));
+}
+#endif
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
@@ -375,6 +384,9 @@ static struct bt_conn_cb conn_callbacks = {
 #endif
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 	.le_data_len_updated = le_data_len_updated,
+#endif
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	.le_phy_updated = le_phy_updated,
 #endif
 };
 #endif /* CONFIG_BT_CONN */
@@ -1548,6 +1560,31 @@ static int cmd_conn_data_len_update(const struct shell *shell, size_t argc,
 }
 #endif
 
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+static int cmd_conn_phy_update(const struct shell *shell, size_t argc,
+			       char *argv[])
+{
+	struct bt_conn_le_phy_param param;
+	int err;
+
+	param.pref_tx_phy = strtoul(argv[1], NULL, 16);
+	if (argc > 2) {
+		param.pref_rx_phy = strtoul(argv[2], NULL, 16);
+	} else {
+		param.pref_rx_phy = param.pref_tx_phy;
+	}
+
+	err = bt_conn_le_phy_update(default_conn, &param);
+	if (err) {
+		shell_error(shell, "PHY update failed (err %d).", err);
+	} else {
+		shell_print(shell, "PHY update initiated.");
+	}
+
+	return err;
+}
+#endif
+
 #if defined(CONFIG_BT_CENTRAL)
 static int cmd_chan_map(const struct shell *shell, size_t argc, char *argv[])
 {
@@ -2392,6 +2429,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 	SHELL_CMD_ARG(data-len-update, NULL, "<tx_max_len> [tx_max_time]",
 		      cmd_conn_data_len_update, 2, 1),
+#endif
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	SHELL_CMD_ARG(phy-update, NULL, "<tx_phy> [rx_phy]",
+		      cmd_conn_phy_update, 2, 1),
 #endif
 #if defined(CONFIG_BT_CENTRAL)
 	SHELL_CMD_ARG(channel-map, NULL, "<channel-map: XXXXXXXXXX> (36-0)",
