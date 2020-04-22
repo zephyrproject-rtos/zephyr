@@ -1261,6 +1261,22 @@ static int hci_le_read_max_data_len(u16_t *tx_octets, u16_t *tx_time)
 	return 0;
 }
 
+#if defined(CONFIG_BT_EXT_ADV) || defined(CONFIG_BT_USER_PHY_UPDATE)
+static u8_t get_phy(u8_t hci_phy)
+{
+	switch (hci_phy) {
+	case BT_HCI_LE_PHY_1M:
+		return BT_GAP_LE_PHY_1M;
+	case BT_HCI_LE_PHY_2M:
+		return BT_GAP_LE_PHY_2M;
+	case BT_HCI_LE_PHY_CODED:
+		return BT_GAP_LE_PHY_CODED;
+	default:
+		return 0;
+	}
+}
+#endif /* defined(CONFIG_BT_EXT_ADV) || defined(CONFIG_BT_USER_PHY_UPDATE) */
+
 #if defined(CONFIG_BT_CONN)
 static void hci_acl(struct net_buf *buf)
 {
@@ -1746,7 +1762,7 @@ int bt_le_set_data_len(struct bt_conn *conn, u16_t tx_octets, u16_t tx_time)
 	return bt_hci_cmd_send(BT_HCI_OP_LE_SET_DATA_LEN, buf);
 }
 
-static int hci_le_set_phy(struct bt_conn *conn)
+int bt_le_set_phy(struct bt_conn *conn, u8_t pref_tx_phy, u8_t pref_rx_phy)
 {
 	struct bt_hci_cp_le_set_phy *cp;
 	struct net_buf *buf;
@@ -1759,12 +1775,11 @@ static int hci_le_set_phy(struct bt_conn *conn)
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
 	cp->all_phys = 0U;
-	cp->tx_phys = BT_HCI_LE_PHY_PREFER_2M;
-	cp->rx_phys = BT_HCI_LE_PHY_PREFER_2M;
+	cp->tx_phys = pref_tx_phy;
+	cp->rx_phys = pref_rx_phy;
 	cp->phy_opts = BT_HCI_LE_PHY_CODED_ANY;
-	bt_hci_cmd_send(BT_HCI_OP_LE_SET_PHY, buf);
 
-	return 0;
+	return bt_hci_cmd_send(BT_HCI_OP_LE_SET_PHY, buf);
 }
 
 static void slave_update_conn_param(struct bt_conn *conn)
@@ -1888,11 +1903,15 @@ static void conn_auto_initiate(struct bt_conn *conn)
 	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
 	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_PHY_COMPLETE) &&
 	    BT_FEAT_LE_PHY_2M(bt_dev.le.features)) {
-		err = hci_le_set_phy(conn);
+		err = bt_le_set_phy(conn,
+				    BT_HCI_LE_PHY_PREFER_2M,
+				    BT_HCI_LE_PHY_PREFER_2M);
 		if (!err) {
 			atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE);
 			return;
 		}
+
+		BT_ERR("Failed to set LE PHY (%d)", err);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
@@ -2076,6 +2095,11 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	conn->le.data_len.tx_max_time = BT_GAP_DATA_TIME_DEFAULT;
 	conn->le.data_len.rx_max_len = BT_GAP_DATA_LEN_DEFAULT;
 	conn->le.data_len.rx_max_time = BT_GAP_DATA_TIME_DEFAULT;
+#endif
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	conn->le.phy.tx_phy = BT_GAP_LE_PHY_1M;
+	conn->le.phy.rx_phy = BT_GAP_LE_PHY_1M;
 #endif
 	/*
 	 * Use connection address (instead of identity address) as initiator
@@ -2281,16 +2305,20 @@ static void le_phy_update_complete(struct net_buf *buf)
 	BT_DBG("PHY updated: status: 0x%02x, tx: %u, rx: %u",
 	       evt->status, evt->tx_phy, evt->rx_phy);
 
-	if (!IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) ||
-	    !atomic_test_and_clear_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE)) {
-		goto done;
+	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
+	    atomic_test_and_clear_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE)) {
+		atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_COMPLETE);
+
+		/* Continue with auto-initiated procedures */
+		conn_auto_initiate(conn);
 	}
 
-	atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_COMPLETE);
-	/* Continue with auto-initiated procedures */
-	conn_auto_initiate(conn);
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	conn->le.phy.tx_phy = get_phy(evt->tx_phy);
+	conn->le.phy.rx_phy = get_phy(evt->rx_phy);
+	notify_le_phy_updated(conn);
+#endif
 
-done:
 	bt_conn_unref(conn);
 }
 #endif /* CONFIG_BT_PHY_UPDATE */
@@ -4771,20 +4799,6 @@ static u8_t get_adv_type(u8_t evt_type)
 
 	default:
 		return BT_GAP_ADV_TYPE_EXT_ADV;
-	}
-}
-
-static u8_t get_phy(u8_t hci_phy)
-{
-	switch (hci_phy) {
-	case BT_HCI_LE_PHY_1M:
-		return BT_GAP_LE_PHY_1M;
-	case BT_HCI_LE_PHY_2M:
-		return BT_GAP_LE_PHY_2M;
-	case BT_HCI_LE_PHY_CODED:
-		return BT_GAP_LE_PHY_CODED;
-	default:
-		return 0;
 	}
 }
 

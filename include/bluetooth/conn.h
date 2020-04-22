@@ -75,6 +75,59 @@ struct bt_le_conn_param {
 						  BT_GAP_INIT_CONN_INT_MAX, \
 						  0, 400)
 
+/** Connection PHY information for LE connections */
+struct bt_conn_le_phy_info {
+	u8_t tx_phy; /** Connection transmit PHY */
+	u8_t rx_phy; /** Connection receive PHY */
+};
+
+/** Preferred PHY parameters for LE connections */
+struct bt_conn_le_phy_param {
+	u8_t pref_tx_phy; /** Bitmask of preferred transmit PHYs */
+	u8_t pref_rx_phy; /** Bitmask of preferred receive PHYs */
+};
+
+/** Initialize PHY parameters
+ *
+ * @param _pref_tx_phy Bitmask of preferred transmit PHYs.
+ * @param _pref_rx_phy Bitmask of preferred receive PHYs.
+ */
+#define BT_CONN_LE_PHY_PARAM_INIT(_pref_tx_phy, _pref_rx_phy) \
+{ \
+	.pref_tx_phy = (_pref_tx_phy), \
+	.pref_rx_phy = (_pref_rx_phy), \
+}
+
+/** Helper to declare PHY parameters inline
+ *
+ * @param _pref_tx_phy Bitmask of preferred transmit PHYs.
+ * @param _pref_rx_phy Bitmask of preferred receive PHYs.
+ */
+#define BT_CONN_LE_PHY_PARAM(_pref_tx_phy, _pref_rx_phy) \
+	((struct bt_conn_le_phy_param []) { \
+		BT_CONN_LE_PHY_PARAM_INIT(_pref_tx_phy, _pref_rx_phy) \
+	 })
+
+/** Only LE 1M PHY */
+#define BT_CONN_LE_PHY_PARAM_1M BT_CONN_LE_PHY_PARAM(BT_GAP_LE_PHY_1M, \
+						     BT_GAP_LE_PHY_1M)
+
+/** Only LE 2M PHY */
+#define BT_CONN_LE_PHY_PARAM_2M BT_CONN_LE_PHY_PARAM(BT_GAP_LE_PHY_2M, \
+						     BT_GAP_LE_PHY_2M)
+
+/** Only LE Coded PHY. */
+#define BT_CONN_LE_PHY_PARAM_CODED BT_CONN_LE_PHY_PARAM(BT_GAP_LE_PHY_CODED, \
+							BT_GAP_LE_PHY_CODED)
+
+/** All LE PHYs. */
+#define BT_CONN_LE_PHY_PARAM_ALL BT_CONN_LE_PHY_PARAM(BT_GAP_LE_PHY_1M |   \
+						      BT_GAP_LE_PHY_2M |   \
+						      BT_GAP_LE_PHY_CODED, \
+						      BT_GAP_LE_PHY_1M |   \
+						      BT_GAP_LE_PHY_2M |   \
+						      BT_GAP_LE_PHY_CODED)
+
 /** Connection data length information for LE connections */
 struct bt_conn_le_data_len_info {
 	/** Maximum Link Layer transmission payload size in bytes. */
@@ -215,6 +268,10 @@ struct bt_conn_le_info {
 	u16_t latency; /** Connection slave latency */
 	u16_t timeout; /** Connection supervision timeout */
 
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	const struct bt_conn_le_phy_info      *phy;
+#endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
+
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 	/* Connection maximum single fragment parameters */
 	const struct bt_conn_le_data_len_info *data_len;
@@ -339,6 +396,16 @@ int bt_conn_le_param_update(struct bt_conn *conn,
  */
 int bt_conn_le_data_len_update(struct bt_conn *conn,
 			       const struct bt_conn_le_data_len_param *param);
+
+/** @brief Update the connection PHY parameters.
+ *
+ *  @param conn Connection object.
+ *  @param param Updated connection parameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_phy_update(struct bt_conn *conn,
+			  const struct bt_conn_le_phy_param *param);
 
 /** @brief Disconnect from a remote device or cancel pending connection.
  *
@@ -807,6 +874,19 @@ struct bt_conn_cb {
 	void (*remote_info_available)(struct bt_conn *conn,
 				      struct bt_conn_remote_info *remote_info);
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	/** @brief The PHY of the connection has changed.
+	 *
+	 *  This callback notifies the application that the PHY of the
+	 *  connection has changed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param info Connection LE PHY information.
+	 */
+	void (*le_phy_updated)(struct bt_conn *conn,
+			       struct bt_conn_le_phy_info *param);
+#endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
 
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 	/** @brief The data length parameters of the connection has changed.

@@ -213,6 +213,19 @@ void notify_le_data_len_updated(struct bt_conn *conn)
 }
 #endif
 
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+void notify_le_phy_updated(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->le_phy_updated) {
+			cb->le_phy_updated(conn, &conn->le.phy);
+		}
+	}
+}
+#endif
+
 bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
 	struct bt_conn_cb *cb;
@@ -1978,6 +1991,9 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 		info->le.interval = conn->le.interval;
 		info->le.latency = conn->le.latency;
 		info->le.timeout = conn->le.timeout;
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+		info->le.phy = &conn->le.phy;
+#endif
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 		info->le.data_len = &conn->le.data_len;
 #endif
@@ -2095,6 +2111,24 @@ int bt_conn_le_data_len_update(struct bt_conn *conn,
 	}
 
 	return bt_le_set_data_len(conn, param->tx_max_len, param->tx_max_time);
+}
+#endif
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+int bt_conn_le_phy_update(struct bt_conn *conn,
+			  const struct bt_conn_le_phy_param *param)
+{
+	if (conn->le.phy.tx_phy == param->pref_tx_phy &&
+	    conn->le.phy.rx_phy == param->pref_rx_phy) {
+		return -EALREADY;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
+	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_PHY_COMPLETE)) {
+		return -EAGAIN;
+	}
+
+	return bt_le_set_phy(conn, param->pref_tx_phy, param->pref_rx_phy);
 }
 #endif
 

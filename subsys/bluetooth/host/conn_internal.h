@@ -60,6 +60,11 @@ struct bt_conn_le {
 	u8_t			features[8];
 
 	struct bt_keys		*keys;
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	struct bt_conn_le_phy_info      phy;
+#endif
+
 #if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
 	struct bt_conn_le_data_len_info data_len;
 #endif
@@ -235,6 +240,8 @@ void notify_remote_info(struct bt_conn *conn);
 void notify_le_param_updated(struct bt_conn *conn);
 
 void notify_le_data_len_updated(struct bt_conn *conn);
+
+void notify_le_phy_updated(struct bt_conn *conn);
 
 bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 
