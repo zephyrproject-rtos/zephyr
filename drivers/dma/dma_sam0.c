@@ -151,7 +151,7 @@ static int dma_sam0_config(struct device *dev, u32_t channel,
 				     DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
 	} else {
 		/* One peripheral trigger per beat */
-		chcfg->CHCTRLA.reg = DMAC_CHCTRLA_TRIGACT_BLOCK |
+		chcfg->CHCTRLA.reg = DMAC_CHCTRLA_TRIGACT_BURST |
 				     DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
 	}
 
@@ -162,6 +162,22 @@ static int dma_sam0_config(struct device *dev, u32_t channel,
 	}
 
 	chcfg->CHPRILVL.bit.PRILVL = config->channel_priority;
+
+	/* Set the burst length */
+	if (config->source_burst_length != config->dest_burst_length) {
+		LOG_ERR("Source and destination burst lengths must be equal");
+		goto inval;
+	}
+
+	if (config->source_burst_length > 16U) {
+		LOG_ERR("Invalid burst length");
+		goto inval;
+	}
+
+	if (config->source_burst_length > 0U) {
+		chcfg->CHCTRLA.reg |= DMAC_CHCTRLA_BURSTLEN(
+			config->source_burst_length - 1U);
+	}
 
 	/* Enable the interrupts */
 	chcfg->CHINTENSET.reg = DMAC_CHINTENSET_TCMPL;
