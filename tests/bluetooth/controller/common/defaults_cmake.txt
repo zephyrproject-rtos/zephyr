@@ -1,0 +1,29 @@
+#
+# Common include directories and source files for bluetooth unit tests
+#
+
+include_directories(
+        $ENV{ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/include
+        $ENV{ZEPHYR_BASE}/tests/bluetooth/controller/common/include
+        $ENV{ZEPHYR_BASE}/include/bluetooth
+        $ENV{ZEPHYR_BASE}/subsys/bluetooth
+        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller
+        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/util
+        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/include
+        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw
+)
+
+FILE(GLOB ll_sw_sources
+        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/util/mem.c
+        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/util/memq.c
+        $ENV{ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/ull_tx_queue.c
+)
+
+FILE(GLOB mock_sources
+        $ENV{ZEPHYR_BASE}/tests/bluetooth/controller/mock_ctrl/src/ll.c
+)
+
+FILE(GLOB common_sources
+        $ENV{ZEPHYR_BASE}/tests/bluetooth/controller/common/src/helper_pdu.c
+        $ENV{ZEPHYR_BASE}/tests/bluetooth/controller/common/src/helper_util.c
+)
