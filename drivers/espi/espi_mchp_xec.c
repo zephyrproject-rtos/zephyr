@@ -574,6 +574,15 @@ static void espi_init_flash(struct device *dev)
 }
 #endif
 
+static void espi_bus_init(struct device *dev)
+{
+	const struct espi_xec_config *config = dev->config->config_info;
+
+	/* Enable bus interrupts */
+	MCHP_GIRQ_ENSET(config->bus_girq_id) = MCHP_ESPI_ESPI_RST_GIRQ_VAL |
+		MCHP_ESPI_VW_EN_GIRQ_VAL | MCHP_ESPI_PC_GIRQ_VAL;
+}
+
 static void espi_rst_isr(struct device *dev)
 {
 	u8_t rst_sts;
@@ -586,7 +595,7 @@ static void espi_rst_isr(struct device *dev)
 	ESPI_CAP_REGS->ERST_STS |= MCHP_ESPI_RST_ISTS;
 
 	if (rst_sts & MCHP_ESPI_RST_ISTS) {
-		if (rst_sts & ~MCHP_ESPI_RST_ISTS_PIN_RO_HI) {
+		if (rst_sts & MCHP_ESPI_RST_ISTS_PIN_RO_HI) {
 			data->espi_rst_asserted = 1;
 		} else {
 			data->espi_rst_asserted = 0;
@@ -600,6 +609,7 @@ static void espi_rst_isr(struct device *dev)
 #ifdef CONFIG_ESPI_FLASH_CHANNEL
 		espi_init_flash(dev);
 #endif
+		espi_bus_init(dev);
 	}
 }
 
