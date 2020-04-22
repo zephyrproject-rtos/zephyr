@@ -1272,8 +1272,8 @@ static int espi_xec_init(struct device *dev)
 	/* Enable aggregated block interrupts for VWires */
 	MCHP_GIRQ_ENSET(config->vw_girq_id) = MEC_ESPI_MSVW00_SRC0_VAL |
 		MEC_ESPI_MSVW00_SRC1_VAL | MEC_ESPI_MSVW00_SRC2_VAL |
-		MEC_ESPI_MSVW01_SRC1_VAL | MEC_ESPI_MSVW02_SRC0_VAL |
-		MEC_ESPI_MSVW03_SRC0_VAL;
+		MEC_ESPI_MSVW01_SRC1_VAL | MEC_ESPI_MSVW01_SRC2_VAL |
+		MEC_ESPI_MSVW02_SRC0_VAL | MEC_ESPI_MSVW03_SRC0_VAL;
 
 	/* Enable aggregated block interrupts for peripherals supported */
 #ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
