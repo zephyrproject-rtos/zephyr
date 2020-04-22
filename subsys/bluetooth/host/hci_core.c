@@ -2071,6 +2071,12 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	conn->role = evt->role;
 	conn->err = 0U;
 
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+	conn->le.data_len.tx_max_len = BT_GAP_DATA_LEN_DEFAULT;
+	conn->le.data_len.tx_max_time = BT_GAP_DATA_TIME_DEFAULT;
+	conn->le.data_len.rx_max_len = BT_GAP_DATA_LEN_DEFAULT;
+	conn->le.data_len.rx_max_time = BT_GAP_DATA_TIME_DEFAULT;
+#endif
 	/*
 	 * Use connection address (instead of identity address) as initiator
 	 * or responder address. Only slave needs to be updated. For master all
@@ -2243,7 +2249,17 @@ static void le_data_len_change(struct net_buf *buf)
 	BT_DBG("max. tx: %u (%uus), max. rx: %u (%uus)", max_tx_octets,
 	       max_tx_time, max_rx_octets, max_rx_time);
 
-	/* TODO use those */
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE)) {
+		atomic_set_bit(conn->flags, BT_CONN_AUTO_DATA_LEN_COMPLETE);
+	}
+
+	conn->le.data_len.tx_max_len = max_tx_octets;
+	conn->le.data_len.tx_max_time = max_tx_time;
+	conn->le.data_len.rx_max_len = max_rx_octets;
+	conn->le.data_len.rx_max_time = max_rx_time;
+	notify_le_data_len_updated(conn);
+#endif
 
 	bt_conn_unref(conn);
 }

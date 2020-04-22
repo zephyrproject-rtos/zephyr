@@ -200,6 +200,19 @@ void notify_le_param_updated(struct bt_conn *conn)
 	}
 }
 
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+void notify_le_data_len_updated(struct bt_conn *conn)
+{
+	struct bt_conn_cb *cb;
+
+	for (cb = callback_list; cb; cb = cb->_next) {
+		if (cb->le_data_len_updated) {
+			cb->le_data_len_updated(conn, &conn->le.data_len);
+		}
+	}
+}
+#endif
+
 bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
 	struct bt_conn_cb *cb;
@@ -1965,6 +1978,9 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 		info->le.interval = conn->le.interval;
 		info->le.latency = conn->le.latency;
 		info->le.timeout = conn->le.timeout;
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+		info->le.data_len = &conn->le.data_len;
+#endif
 		return 0;
 #if defined(CONFIG_BT_BREDR)
 	case BT_CONN_TYPE_BR:
@@ -2063,6 +2079,24 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+int bt_conn_le_data_len_update(struct bt_conn *conn,
+			       const struct bt_conn_le_data_len_param *param)
+{
+	if (conn->le.data_len.tx_max_len == param->tx_max_len &&
+	    conn->le.data_len.tx_max_time == param->tx_max_time) {
+		return -EALREADY;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
+	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_DATA_LEN_COMPLETE)) {
+		return -EAGAIN;
+	}
+
+	return bt_le_set_data_len(conn, param->tx_max_len, param->tx_max_time);
+}
+#endif
 
 int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 {

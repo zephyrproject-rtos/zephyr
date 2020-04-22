@@ -135,6 +135,12 @@ enum {
  */
 #define BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT  128
 
+#define BT_GAP_DATA_LEN_DEFAULT                 0x001b /* 27 bytes */
+#define BT_GAP_DATA_LEN_MAX                     0x00fb /* 251 bytes */
+
+#define BT_GAP_DATA_TIME_DEFAULT                0x0148 /* 328 us */
+#define BT_GAP_DATA_TIME_MAX                    0x4290 /* 17040 us */
+
 /**
  * @}
  */
