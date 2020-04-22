@@ -874,8 +874,7 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 	}
 }
 
-#if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC) || \
-    defined(CONFIG_ETH_MCUX_1_RANDOM_MAC)
+#if defined(CONFIG_ETH_MCUX_RANDOM_MAC)
 static void generate_random_mac(u8_t *mac_addr)
 {
 	u32_t entropy;
@@ -890,8 +889,7 @@ static void generate_random_mac(u8_t *mac_addr)
 }
 #endif
 
-#if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC) || \
-    defined(CONFIG_ETH_MCUX_1_UNIQUE_MAC)
+#if defined(CONFIG_ETH_MCUX_UNIQUE_MAC)
 static void generate_eth0_unique_mac(u8_t *mac_addr)
 {
 	/* Trivially "hash" up to 128 bits of MCU unique identifier */
@@ -910,7 +908,7 @@ static void generate_eth0_unique_mac(u8_t *mac_addr)
 }
 #endif
 
-#if defined(CONFIG_ETH_MCUX_1_UNIQUE_MAC)
+#if defined(CONFIG_ETH_MCUX_UNIQUE_MAC) && defined(CONFIG_ETH_MCUX_1)
 static void generate_eth1_unique_mac(u8_t *mac_addr)
 {
 	generate_eth0_unique_mac(mac_addr);
@@ -1207,13 +1205,13 @@ static struct eth_context eth_0_context = {
 	.phy_addr = 0U,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
-#if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC)
+#if defined(CONFIG_ETH_MCUX_UNIQUE_MAC)
 	.generate_mac = generate_eth0_unique_mac,
 #endif
-#if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
+#if defined(CONFIG_ETH_MCUX_RANDOM_MAC)
 	.generate_mac = generate_random_mac,
 #endif
-#if defined(CONFIG_ETH_MCUX_0_MANUAL_MAC)
+#if defined(CONFIG_ETH_MCUX_MANUAL_MAC)
 	.mac_addr = DT_ETH_MCUX_0_MAC,
 	.generate_mac = NULL,
 #endif
@@ -1269,13 +1267,13 @@ static struct eth_context eth_1_context = {
 	.phy_addr = 0U,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
-#if defined(CONFIG_ETH_MCUX_1_UNIQUE_MAC)
+#if defined(CONFIG_ETH_MCUX_UNIQUE_MAC)
 	.generate_mac = generate_eth1_unique_mac,
 #endif
-#if defined(CONFIG_ETH_MCUX_1_RANDOM_MAC)
+#if defined(CONFIG_ETH_MCUX_RANDOM_MAC)
 	.generate_mac = generate_random_mac,
 #endif
-#if defined(CONFIG_ETH_MCUX_1_MANUAL_MAC)
+#if defined(CONFIG_ETH_MCUX_MANUAL_MAC)
 	.mac_addr = DT_ETH_MCUX_1_MAC,
 	.generate_mac = NULL,
 #endif
