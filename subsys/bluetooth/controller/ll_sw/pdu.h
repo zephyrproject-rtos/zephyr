@@ -12,8 +12,12 @@
 /*
  * PDU Sizes
  */
-/* Advertisement channel maximum payload size */
+/* Advertisement channel maximum legacy payload size */
 #define PDU_AC_PAYLOAD_SIZE_MAX 37
+
+/* Advertising physical channel maximum payload size */
+#define PDU_AC_EXT_PAYLOAD_SIZE_MAX 251
+
 /* Link Layer header size of Adv PDU. Assumes pdu_adv is packed */
 #define PDU_AC_LL_HEADER_SIZE  (offsetof(struct pdu_adv, payload))
 /* Advertisement channel maximum PDU size */
