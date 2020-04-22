@@ -261,16 +261,25 @@ config BT_CONN_TX_MAX
 	  callback. Normally this can be left to the default value, which
 	  is equal to the number of TX buffers in the stack-internal pool.
 
+config BT_USER_PHY_UPDATE
+	bool "User control of PHY Update Procedure"
+	depends on BT_PHY_UPDATE
+	help
+	  Enable application access to initiate the PHY Update Procedure.
+	  The application can also register a callback to be notified about PHY
+	  changes on the connection. The current PHY info is available in the
+	  connection info.
+
 config BT_AUTO_PHY_UPDATE
 	bool "Auto-initiate PHY Update Procedure"
 	depends on BT_PHY_UPDATE
-	default y
+	default y if !BT_USER_PHY_UPDATE
 	help
 	  Initiate PHY Update Procedure on connection establishment.
 
 	  Disable this if you want the PHY Update Procedure feature supported
 	  but want to rely on the remote device to initiate the procedure at its
-	  discretion.
+	  discretion or want to initiate manually.
 
 config BT_USER_DATA_LEN_UPDATE
 	bool "User control of Data Length Update Procedure"
