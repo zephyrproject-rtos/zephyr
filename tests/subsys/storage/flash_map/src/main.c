@@ -30,7 +30,8 @@ void test_flash_area_get_sectors(void)
 	zassert_true(rc == 0, "flash_area_open() fail");
 
 	/* First erase the area so it's ready for use. */
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	flash_dev =
+		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
 	rc = flash_write_protection_set(flash_dev, false);
 	zassert_false(rc, "failed to disable flash write protection");

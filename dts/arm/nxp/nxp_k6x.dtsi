@@ -44,6 +44,7 @@
 
 	chosen {
 		zephyr,entropy = &rnga;
+		zephyr,flash-controller = &ftfe;
 	};
 
 	cpus {
@@ -140,7 +141,7 @@
 			#clock-cells = <3>;
 		};
 
-		flash-controller@40020000 {
+		ftfe: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfe";
 			label = "FLASH_CTRL";
 			reg = <0x40020000 0x18>;

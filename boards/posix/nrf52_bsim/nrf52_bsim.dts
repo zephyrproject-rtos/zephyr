@@ -30,6 +30,10 @@
 		/delete-property/ qdec-0;
 	};
 
+	chosen {
+		/delete-property/ zephyr,flash-controller;
+	};
+
 	soc {
 		/delete-node/ flash-controller@4001e000;
 		/delete-node/ memory@20000000;

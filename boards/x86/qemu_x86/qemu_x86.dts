@@ -33,6 +33,7 @@
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &sim_flash;
 	};
 
 	soc {
@@ -47,7 +48,7 @@
 		};
 	};
 
-	sim_flash {
+	sim_flash: sim_flash {
 		compatible = "zephyr,sim-flash";
 		label = "FLASH_SIMULATOR";
 

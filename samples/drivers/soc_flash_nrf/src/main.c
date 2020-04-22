@@ -43,7 +43,8 @@ void main(void)
 	printf("\nNordic nRF5 Flash Testing\n");
 	printf("=========================\n");
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	flash_dev =
+		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
 	if (!flash_dev) {
 		printf("Nordic nRF5 flash driver was not found!\n");
