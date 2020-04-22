@@ -381,7 +381,8 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 			as->sid = adv->sid;
 		}
 
-		if ((op == 0x04) || len || (_pri_len != pri_len)) {
+		if ((op == 0x04) || len || (_pri_len != pri_len) ||
+		    (_sec->len != sec->len)) {
 			did++;
 		}
 
