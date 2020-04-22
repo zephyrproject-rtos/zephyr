@@ -254,6 +254,7 @@ extern const struct bt_conn_auth_cb *bt_auth;
 int bt_hci_disconnect(u16_t handle, u8_t reason);
 
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
+int bt_le_set_data_len(struct bt_conn *conn, u16_t tx_octets, u16_t tx_time);
 
 int bt_le_scan_update(bool fast_scan);
 

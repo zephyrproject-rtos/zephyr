@@ -1241,6 +1241,26 @@ static inline bool rpa_is_new(void)
 #endif
 }
 
+static int hci_le_read_max_data_len(u16_t *tx_octets, u16_t *tx_time)
+{
+	struct bt_hci_rp_le_read_max_data_len *rp;
+	struct net_buf *rsp;
+	int err;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_MAX_DATA_LEN, NULL, &rsp);
+	if (err) {
+		BT_ERR("Failed to read DLE max data len");
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	*tx_octets = sys_le16_to_cpu(rp->max_tx_octets);
+	*tx_time = sys_le16_to_cpu(rp->max_tx_time);
+	net_buf_unref(rsp);
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_CONN)
 static void hci_acl(struct net_buf *buf)
 {
@@ -1702,45 +1722,28 @@ static int hci_read_remote_version(struct bt_conn *conn)
 	cp->handle = sys_cpu_to_le16(conn->handle);
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_READ_REMOTE_VERSION_INFO, buf,
-				   NULL);
+				    NULL);
 }
 
 /* LE Data Length Change Event is optional so this function just ignore
  * error and stack will continue to use default values.
  */
-static void hci_le_set_data_len(struct bt_conn *conn)
+int bt_le_set_data_len(struct bt_conn *conn, u16_t tx_octets, u16_t tx_time)
 {
-	struct bt_hci_rp_le_read_max_data_len *rp;
 	struct bt_hci_cp_le_set_data_len *cp;
-	struct net_buf *buf, *rsp;
-	u16_t tx_octets, tx_time;
-	int err;
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_MAX_DATA_LEN, NULL, &rsp);
-	if (err) {
-		BT_ERR("Failed to read DLE max data len");
-		return;
-	}
-
-	rp = (void *)rsp->data;
-	tx_octets = sys_le16_to_cpu(rp->max_tx_octets);
-	tx_time = sys_le16_to_cpu(rp->max_tx_time);
-	net_buf_unref(rsp);
+	struct net_buf *buf;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_DATA_LEN, sizeof(*cp));
 	if (!buf) {
-		BT_ERR("Failed to create LE Set Data Length Command");
-		return;
+		return -ENOBUFS;
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
 	cp->tx_octets = sys_cpu_to_le16(tx_octets);
 	cp->tx_time = sys_cpu_to_le16(tx_time);
-	err = bt_hci_cmd_send(BT_HCI_OP_LE_SET_DATA_LEN, buf);
-	if (err) {
-		BT_ERR("Failed to send LE Set Data Length Command");
-	}
+
+	return bt_hci_cmd_send(BT_HCI_OP_LE_SET_DATA_LEN, buf);
 }
 
 static int hci_le_set_phy(struct bt_conn *conn)
@@ -1894,7 +1897,15 @@ static void conn_auto_initiate(struct bt_conn *conn)
 
 	if (IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
 	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
-		hci_le_set_data_len(conn);
+		u16_t tx_octets, tx_time;
+
+		err = hci_le_read_max_data_len(&tx_octets, &tx_time);
+		if (!err) {
+			err = bt_le_set_data_len(conn, tx_octets, tx_time);
+			if (err) {
+				BT_ERR("Failed to set data len (%d)", err);
+			}
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) &&
@@ -5551,6 +5562,7 @@ static int le_init(void)
 	if (err) {
 		return err;
 	}
+
 	read_le_features_complete(rsp);
 	net_buf_unref(rsp);
 
@@ -5600,19 +5612,12 @@ static int le_init(void)
 	    IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
 	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
 		struct bt_hci_cp_le_write_default_data_len *cp;
-		struct bt_hci_rp_le_read_max_data_len *rp;
 		u16_t tx_octets, tx_time;
 
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_MAX_DATA_LEN, NULL,
-					   &rsp);
+		err = hci_le_read_max_data_len(&tx_octets, &tx_time);
 		if (err) {
 			return err;
 		}
-
-		rp = (void *)rsp->data;
-		tx_octets = sys_le16_to_cpu(rp->max_tx_octets);
-		tx_time = sys_le16_to_cpu(rp->max_tx_time);
-		net_buf_unref(rsp);
 
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_WRITE_DEFAULT_DATA_LEN,
 					sizeof(*cp));
