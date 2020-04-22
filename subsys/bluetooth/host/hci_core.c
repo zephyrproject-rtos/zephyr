@@ -1762,6 +1762,36 @@ int bt_le_set_data_len(struct bt_conn *conn, u16_t tx_octets, u16_t tx_time)
 	return bt_hci_cmd_send(BT_HCI_OP_LE_SET_DATA_LEN, buf);
 }
 
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+static int hci_le_read_phy(struct bt_conn *conn)
+{
+	struct bt_hci_cp_le_read_phy *cp;
+	struct bt_hci_rp_le_read_phy *rp;
+	struct net_buf *buf, *rsp;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_READ_PHY, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_PHY, buf, &rsp);
+	if (!buf) {
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+	conn->le.phy.tx_phy = get_phy(rp->tx_phy);
+	conn->le.phy.rx_phy = get_phy(rp->rx_phy);
+	net_buf_unref(rsp);
+
+	return 0;
+}
+#endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
+
 int bt_le_set_phy(struct bt_conn *conn, u8_t pref_tx_phy, u8_t pref_rx_phy)
 {
 	struct bt_hci_cp_le_set_phy *cp;
@@ -2175,6 +2205,26 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 					&bt_dev.id_addr[conn->id]);
 		}
 	}
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+		int err;
+
+		err = hci_le_read_phy(conn);
+		if (err) {
+			BT_WARN("Failed to read PHY (%d)", err);
+		} else {
+			if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
+			    conn->le.phy.tx_phy == BT_HCI_LE_PHY_PREFER_2M &&
+			    conn->le.phy.rx_phy == BT_HCI_LE_PHY_PREFER_2M) {
+				/* Already on 2M, skip auto-phy update. */
+				atomic_set_bit(conn->flags,
+					       BT_CONN_AUTO_PHY_COMPLETE);
+			}
+		}
+	}
+#endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
 
 	bt_conn_set_state(conn, BT_CONN_CONNECTED);
 
