@@ -104,7 +104,11 @@ void stm32_exti_enable(int line)
 	}
 
 	/* Enable requested line interrupt */
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
+	LL_C2_EXTI_EnableIT_0_31(1 << line);
+#else
 	LL_EXTI_EnableIT_0_31(1 << line);
+#endif
 
 	/* Enable exti irq interrupt */
 	irq_enable(irqnum);
@@ -113,7 +117,11 @@ void stm32_exti_enable(int line)
 void stm32_exti_disable(int line)
 {
 	if (line < 32) {
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
+		LL_C2_EXTI_DisableIT_0_31(1 << line);
+#else
 		LL_EXTI_DisableIT_0_31(1 << line);
+#endif
 	} else {
 		__ASSERT_NO_MSG(line);
 	}
@@ -130,6 +138,8 @@ static inline int stm32_exti_is_pending(int line)
 #if defined(CONFIG_SOC_SERIES_STM32MP1X) || defined(CONFIG_SOC_SERIES_STM32G0X)
 		return (LL_EXTI_IsActiveRisingFlag_0_31(1 << line) ||
 			LL_EXTI_IsActiveFallingFlag_0_31(1 << line));
+#elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
+		return LL_C2_EXTI_IsActiveFlag_0_31(1 << line);
 #else
 		return LL_EXTI_IsActiveFlag_0_31(1 << line);
 #endif
@@ -150,6 +160,8 @@ static inline void stm32_exti_clear_pending(int line)
 #if defined(CONFIG_SOC_SERIES_STM32MP1X) || defined(CONFIG_SOC_SERIES_STM32G0X)
 		LL_EXTI_ClearRisingFlag_0_31(1 << line);
 		LL_EXTI_ClearFallingFlag_0_31(1 << line);
+#elif defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
+		LL_C2_EXTI_ClearFlag_0_31(1 << line);
 #else
 		LL_EXTI_ClearFlag_0_31(1 << line);
 #endif

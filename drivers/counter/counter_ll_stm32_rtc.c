@@ -254,7 +254,11 @@ void rtc_stm32_isr(void *arg)
 		}
 	}
 
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
+	LL_C2_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
+#else
 	LL_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
+#endif
 }
 
 
@@ -333,7 +337,11 @@ static int rtc_stm32_init(struct device *dev)
 	LL_RTC_EnableWriteProtection(RTC);
 #endif /* RTC_CR_BYPSHAD */
 
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
+	LL_C2_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
+#else
 	LL_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
+#endif
 	LL_EXTI_EnableRisingTrig_0_31(RTC_EXTI_LINE);
 
 	rtc_stm32_irq_config(dev);
