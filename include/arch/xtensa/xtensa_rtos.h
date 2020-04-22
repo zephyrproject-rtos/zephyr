@@ -47,7 +47,7 @@
 #endif
 
 #undef  XT_CLOCK_FREQ
-#define XT_CLOCK_FREQ DT_CPU_CLOCK_FREQUENCY
+#define XT_CLOCK_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
 #ifndef XT_TIMER_INDEX
   #if defined configXT_TIMER_INDEX
