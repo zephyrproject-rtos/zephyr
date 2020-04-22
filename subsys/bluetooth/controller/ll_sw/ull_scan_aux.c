@@ -75,6 +75,7 @@ void ull_scan_aux_setup(struct node_rx_hdr *rx, uint8_t phy,
 	struct ext_adv_aux_ptr *aux_ptr;
 	struct pdu_adv_com_ext_adv *p;
 	uint32_t ticks_slot_overhead;
+	uint32_t window_widening_us;
 	struct lll_scan_aux *lll;
 	struct node_rx_ftr *ftr;
 	uint32_t ticks_slot_offset;
@@ -139,27 +140,30 @@ void ull_scan_aux_setup(struct node_rx_hdr *rx, uint8_t phy,
 	lll->chan = aux_ptr->chan_idx;
 	lll->phy = BIT(aux_ptr->phy);
 
-	/* TODO: apply clock accuracy to the aux_offset_us and calculate
-	 * window widening. Use aux_ptr->ca value.
-	 */
-	lll->window_widening_us = 1000;
-
 	aux_offset_us = ftr->radio_end_us - PKT_AC_US(pdu->len, 0, phy);
 	if (aux_ptr->offs_units) {
-		aux_offset_us += (uint32_t)aux_ptr->offs * 300U;
+		lll->window_size_us = 300U;
 	} else {
-		aux_offset_us += (uint32_t)aux_ptr->offs * 30U;
+		lll->window_size_us = 30U;
+	}
+	aux_offset_us += (uint32_t)aux_ptr->offs * lll->window_size_us;
+
+	if (aux_ptr->ca) {
+		window_widening_us = aux_offset_us / 2000U;
+	} else {
+		window_widening_us = aux_offset_us / 20000U;
 	}
 
-	/* TODO: apply clock accuracy to the aux_offset_us and calculate
-	 * window widening. Use aux_ptr->ca value.
-	 */
+	lll->window_size_us += (EVENT_TICKER_RES_MARGIN_US +
+				(EVENT_JITTER_US << 1) +
+				window_widening_us);
 
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, 1);
 
 	aux_offset_us -= EVENT_OVERHEAD_START_US;
 	aux_offset_us -= EVENT_JITTER_US;
 	aux_offset_us -= ready_delay_us;
+	aux_offset_us -= window_widening_us;
 
 	/* TODO: active_to_start feature port */
 	aux->evt.ticks_active_to_start = 0;
