@@ -20,13 +20,20 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include "sockets_internal.h"
 
+#define SPAIR_MAGIC 0x9a12
+
+#define D(fmt, args...) printk("D: %s(): %d: " fmt "\n", __func__, __LINE__, ##args)
+
 enum {
 	SPAIR_CANCEL,
 	SPAIR_CAN_READ,
 	SPAIR_CAN_WRITE,
 };
 
+
+
 struct spair {
+	u32_t magic;
 	int remote;
 	struct k_pipe recv_q;
 	struct k_poll_signal signal;
@@ -35,10 +42,11 @@ struct spair {
 	u8_t __aligned(4) buf[CONFIG_NET_SOCKETPAIR_BUFFER_SIZE];
 };
 
-const struct socket_op_vtable spair_fd_op_vtable;
+static const struct socket_op_vtable spair_fd_op_vtable;
 
 static void spair_init(struct spair *spair) {
 
+	spair->magic = SPAIR_MAGIC;
 	spair->remote = -1;
 
 	k_pipe_init(&spair->recv_q, spair->buf, sizeof(spair->buf));
@@ -55,6 +63,7 @@ static void spair_init(struct spair *spair) {
 
 static void spair_fini(struct spair *spair)
 {
+	memset(spair, 0, sizeof(*spair));
 	k_free(spair);
 }
 
@@ -76,7 +85,7 @@ static size_t k_pipe_read_avail(struct k_pipe *pipe)
 	return pipe->write_index - pipe->read_index;
 }
 
-int z_impl_zsock_socketpair(int family, int type, int proto, int sv[2])
+int z_impl_zsock_socketpair(int family, int type, int proto, int *sv)
 {
 	int res;
 	int tmp[2] = {-1, -1};
@@ -108,48 +117,48 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int sv[2])
 	}
 
 	for(size_t i = 0; i < 2; ++i) {
+
 		tmp[i] = z_reserve_fd();
 		if (tmp[i] == -1) {
 			errno = ENFILE;
 			res = -1;
-			goto free_fds;
+			goto cleanup;
 		}
-	}
+		D("reserved fd %d", tmp[i]);
 
-	for(size_t i = 0; i < 2; ++i) {
 		obj[i] = k_malloc(sizeof(*obj));
 		if (obj[i] == NULL) {
 			errno = ENOMEM;
 			res = -1;
-			goto free_objs;
+			goto cleanup;
 		}
 		memset(obj[i], 0, sizeof(*(obj[i])));
+		D("allocated spair[%u] at %p", i, obj[i]);
+
+		spair_init(obj[i]);
+		D("initialized spair[%u] at %p", i, obj[i]);
+
+		z_finalize_fd(tmp[i], obj[i], (const struct fd_op_vtable *) &spair_fd_op_vtable);
+		D("finalized fd: %d spair: %p vtable: %p &recv_q: %p", tmp[i], obj[i], &spair_fd_op_vtable, &obj[i]->recv_q);
 	}
 
 	for(size_t i = 0; i < 2; ++i) {
-		spair_init(obj[i]);
-		z_finalize_fd(tmp[i], obj[i], (const struct fd_op_vtable *) &spair_fd_op_vtable);
+		obj[i]->remote = tmp[(!i) & 1];
+		sv[i] = tmp[i];
 	}
-
-	obj[0]->remote = tmp[1];
-	obj[1]->remote = tmp[0];
-
-	sv[0] = tmp[0];
-	sv[1] = tmp[1];
 
 	res = 0;
 
 	goto out;
 
-free_objs:
+cleanup:
 	for(size_t i = 0; i < 2; ++i) {
 		if (obj[i] != NULL) {
-			k_free(obj[i]);
+			spair_fini(obj[i]);
 			obj[i] = NULL;
 		}
 	}
 
-free_fds:
 	for(size_t i = 0; i < 2; ++i) {
 		if (tmp[i] != -1) {
 			z_free_fd(tmp[i]);
@@ -162,7 +171,7 @@ out:
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_zsock_socketpair(int family, int type, int proto, int sv[2])
+static inline int z_vrfy_zsock_socketpair(int family, int type, int proto, int *sv)
 {
 	int ret;
 	int tmp[2];
@@ -179,6 +188,18 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 {
 	struct spair *const spair = (struct spair *)obj;
 
+	if ( spair->magic != SPAIR_MAGIC ) {
+		D(
+			"invalid magic for struct spair * at %p:\n"
+			"actual:   %u\n"
+			"expected: %u",
+			spair,
+			spair->magic,
+			SPAIR_MAGIC
+		);
+	}
+	__ASSERT(spair->magic == SPAIR_MAGIC, "");
+
 	int res;
 
 	size_t bytes_read;
@@ -187,11 +208,17 @@ static ssize_t spair_read(void *obj, void *buffer, size_t count)
 		return 0;
 	}
 
+	D("calling k_pipe_get(%p, %p, %u)", &spair->recv_q, buffer, count);
+	D("recv_q: buffer: %p size: %u bytes_used: %u read_index: %u write_index: %u flags: %u",
+		spair->recv_q.buffer, spair->recv_q.size, spair->recv_q.bytes_used,
+		spair->recv_q.read_index, spair->recv_q.write_index, spair->recv_q.flags);
 	res = k_pipe_get(&spair->recv_q, (void *)buffer, count, & bytes_read, 0, K_NO_WAIT);
+	D("k_pipe_get() returned %d", res);
 	if (res < 0) {
 		errno = -res;
 		return -1;
 	}
+	D("read %u bytes", bytes_read);
 
 	return bytes_read;
 }
@@ -202,8 +229,19 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 	struct spair *const remote = z_get_fd_obj(spair->remote, (const struct fd_op_vtable *) &spair_fd_op_vtable, 0);
 
 	int res;
-
 	size_t bytes_written;
+
+	if ( spair->magic != SPAIR_MAGIC ) {
+		D(
+			"invalid magic for struct spair * at %p:\n"
+			"actual:   %u\n"
+			"expected: %u",
+			spair,
+			spair->magic,
+			SPAIR_MAGIC
+		);
+	}
+	__ASSERT(spair->magic == SPAIR_MAGIC, "");
 
 	if (remote == NULL) {
 		errno = EPIPE;
@@ -214,21 +252,37 @@ static ssize_t spair_write(void *obj, const void *buffer, size_t count)
 		return 0;
 	}
 
+	D("calling k_pipe_put(%p, %p, %u)", &remote->recv_q, buffer, count);
+	D("recv_q: buffer: %p size: %u bytes_used: %u read_index: %u write_index: %u flags: %u",
+		remote->recv_q.buffer, remote->recv_q.size, remote->recv_q.bytes_used,
+		remote->recv_q.read_index, remote->recv_q.write_index, remote->recv_q.flags);
 	res = k_pipe_put(&remote->recv_q, (void *)buffer, count, & bytes_written, 0, K_NO_WAIT);
+	D("k_pipe_put() returned %d", res);
 	if (res < 0) {
 		errno = -res;
 		return -1;
 	}
+	D("wrote %u bytes", bytes_written);
 
 	return bytes_written;
 }
 
 static int spair_ioctl(void *obj, unsigned int request, va_list args)
 {
-	if (obj == NULL) {
-		errno = EBADF;
-		return -1;
+
+	struct spair *const spair = (struct spair *)obj;
+
+	if ( spair->magic != SPAIR_MAGIC ) {
+		D(
+			"invalid magic for struct spair * at %p:\n"
+			"actual:   %u\n"
+			"expected: %u",
+			spair,
+			spair->magic,
+			SPAIR_MAGIC
+		);
 	}
+	__ASSERT(spair->magic == SPAIR_MAGIC, "");
 
 	switch (request) {
 	case ZFD_IOCTL_CLOSE:
@@ -342,7 +396,7 @@ static int spair_setsockopt(void *obj, int level, int optname,
 	return -1;
 }
 
-const struct socket_op_vtable spair_fd_op_vtable = {
+static const struct socket_op_vtable spair_fd_op_vtable = {
 	.fd_vtable = {
 		.read = spair_read,
 		.write = spair_write,

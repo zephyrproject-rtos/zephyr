@@ -43,20 +43,23 @@ static void happy_path_inner(
 		     "socketpair returned an unspecified value");
 	zassert_equal(res, 0, "socketpair failed");
 
+	printf("sv: {%d, %d}\n", sv[0], sv[1]);
+
 	socklen_t len;
 
 	/* sockets are bidirectional. test functions from both ends */
-	for(size_t l = 0; l < 2; ++l) {
+	for(int i = 1; i > 0; --i) {
 
-		printf("data direction: %d -> %d\n", sv[l], sv[(!l) & 1]);
+		printf("data direction: %d -> %d\n", sv[i], sv[(!i) & 1]);
 
 		/*
 		 * Test with write(2) / read(2)
 		 */
 
 		printf("testing write(2)\n");
-		res = write(sv[l], expected_msg, expected_msg_len);
+		res = write(sv[i], expected_msg, expected_msg_len);
 
+		zassert_not_equal(res, -1, "write(2) failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 				  "did not write entire message");
@@ -64,9 +67,9 @@ static void happy_path_inner(
 		memset(actual_msg, 0, sizeof(actual_msg));
 
 		printf("testing read(2)\n");
-		res = read(sv[(!l) & 1], actual_msg, sizeof(actual_msg));
+		res = read(sv[(!i) & 1], actual_msg, sizeof(actual_msg));
 
-		zassert_not_equal(res, -1, "read(2) encountered an error");
+		zassert_not_equal(res, -1, "read(2) failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 			      "wrong return value");
@@ -80,8 +83,9 @@ static void happy_path_inner(
 		 */
 
 		printf("testing send(2)\n");
-		res = send(sv[l], expected_msg, expected_msg_len, 0);
+		res = send(sv[i], expected_msg, expected_msg_len, 0);
 
+		zassert_not_equal(res, -1, "send(2) failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 				  "did not send entire message");
@@ -89,9 +93,9 @@ static void happy_path_inner(
 		memset(actual_msg, 0, sizeof(actual_msg));
 
 		printf("testing recv(2)\n");
-		res = recv(sv[(!l) & 1], actual_msg, sizeof(actual_msg), 0);
+		res = recv(sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0);
 
-		zassert_not_equal(res, -1, "recv(2) encountered an error");
+		zassert_not_equal(res, -1, "recv(2) failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 			      "wrong return value");
@@ -105,8 +109,9 @@ static void happy_path_inner(
 		 */
 
 		printf("testing sendto(2)\n");
-		res = sendto(sv[l], expected_msg, expected_msg_len, 0, NULL, 0);
+		res = sendto(sv[i], expected_msg, expected_msg_len, 0, NULL, 0);
 
+		zassert_not_equal(res, -1, "sendto(2) failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 				  "did not sendto entire message");
@@ -114,9 +119,9 @@ static void happy_path_inner(
 		memset(actual_msg, 0, sizeof(actual_msg));
 
 		printf("testing recvfrom(2)\n");
-		res = recvfrom(sv[(!l) & 1], actual_msg, sizeof(actual_msg), 0, NULL, &len);
+		res = recvfrom(sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0, NULL, &len);
 
-		zassert_not_equal(res, -1, "recvfrom(2) encountered an error");
+		zassert_not_equal(res, -1, "recvfrom(2) failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 			      "wrong return value");
@@ -131,8 +136,9 @@ static void happy_path_inner(
 		 */
 
 		printf("testing sendmsg(2)\n");
-		res = sendmsg(sv[l], expected_msg, expected_msg_len, 0);
+		res = sendmsg(sv[i], expected_msg, expected_msg_len, 0);
 
+		zassert_not_equal(res, -1, "sendmsg(2) failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 				  "did not sendmsg entire message");
@@ -140,9 +146,9 @@ static void happy_path_inner(
 		memset(actual_msg, 0, sizeof(actual_msg));
 
 		printf("testing recvmsg(2)\n");
-		res = recvmsg(sv[(!l) & 1], actual_msg, sizeof(actual_msg), 0);
+		res = recvmsg(sv[(!i) & 1], actual_msg, sizeof(actual_msg), 0);
 
-		zassert_not_equal(res, -1, "recvmsg(2) encountered an error");
+		zassert_not_equal(res, -1, "recvmsg(2) failed: %d", errno);
 		actual_msg_len = res;
 		zassert_equal(actual_msg_len, expected_msg_len,
 			      "wrong return value");
@@ -154,9 +160,11 @@ static void happy_path_inner(
 
 	}
 
+	printf("closing sv[0]: fd %d\n", sv[0]);
 	res = close(sv[0]);
 	zassert_equal(res, 0, "close failed");
 
+	printf("closing sv[1]: fd %d\n", sv[1]);
 	res = close(sv[1]);
 	zassert_equal(res, 0, "close failed");
 }
@@ -173,7 +181,7 @@ void test_socket_socketpair_happy_path(void)
 	};
 	static const struct unstr socket_type[] = {
 		{ SOCK_STREAM, "SOCK_STREAM" },
-		{ SOCK_RAW,    "SOCK_RAW"    },
+		//{ SOCK_RAW,    "SOCK_RAW"    },
 	};
 	static const struct unstr protocol[] = {
 		{ 0, "0" },
@@ -184,8 +192,8 @@ void test_socket_socketpair_happy_path(void)
 			for(size_t k = 0; k < ARRAY_SIZE(protocol); ++k) {
 				happy_path_inner(
 					address_family[i].u, address_family[i].s,
-					socket_type[i].u, socket_type[i].s,
-					protocol[i].u, protocol[i].s
+					socket_type[j].u, socket_type[j].s,
+					protocol[k].u, protocol[k].s
 				);
 			}
 		}
@@ -247,6 +255,7 @@ void test_socket_socketpair_unsupported_calls(void)
 
 	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
 	zassert_equal(res, 0, "socketpair(AF_UNIX, SOCK_STREAM, 0, sv) failed");
+
 
 	for(size_t i = 0; i < 2; ++i) {
 
