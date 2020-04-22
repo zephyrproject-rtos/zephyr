@@ -336,6 +336,12 @@ Artificially long but functional example:
         help="""Create a report with a custom name.
         """)
 
+    parser.add_argument(
+        "--report-suffix",
+        help="""Add a suffix to all generated file names, for example to add a
+        version or a commit ID.
+        """)
+
     parser.add_argument("--report-excluded",
                         action="store_true",
                         help="""List all tests that are never run based on current scope and
@@ -904,7 +910,11 @@ def main():
 
     discards = []
 
-    last_run = os.path.join(options.outdir, "sanitycheck.csv")
+    if options.report_suffix:
+        last_run = os.path.join(options.outdir, "sanitycheck_{}.csv".format(options.report_suffix))
+    else:
+        last_run = os.path.join(options.outdir, "sanitycheck.csv")
+
     if options.only_failed:
         suite.load_from_file(last_run, filter_status=['skipped', 'passed'])
         suite.selected_platforms = set(p.platform.name for p in suite.instances.values())
@@ -1063,6 +1073,7 @@ def main():
         print(tabulate(table, headers=header, tablefmt="github"))
 
     suite.save_reports(options.report_name,
+                       options.report_suffix,
                        options.report_dir,
                        options.no_update,
                        options.release,

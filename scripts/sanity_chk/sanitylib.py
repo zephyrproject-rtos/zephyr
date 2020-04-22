@@ -2313,7 +2313,7 @@ class TestSuite:
                 (100 * len(self.selected_platforms) / len(self.platforms))
             ))
 
-    def save_reports(self, name, report_dir, no_update, release, only_failed):
+    def save_reports(self, name, suffix, report_dir, no_update, release, only_failed):
         if not self.instances:
             return
 
@@ -2330,12 +2330,15 @@ class TestSuite:
             filename = os.path.join(self.outdir, report_name)
             outdir = self.outdir
 
+        if suffix:
+            filename = "{}_{}".format(filename, suffix)
+
         if not no_update:
             self.xunit_report(filename + ".xml", full_report=False, append=only_failed)
             self.xunit_report(filename + "_report.xml", full_report=True, append=only_failed)
             self.csv_report(filename + ".csv")
 
-            self.target_report(outdir, append=only_failed)
+            self.target_report(outdir, suffix, append=only_failed)
             if self.discards:
                 self.discard_report(filename + "_discard.csv")
 
@@ -2802,10 +2805,13 @@ class TestSuite:
                            "reason": reason}
                 cw.writerow(rowdict)
 
-    def target_report(self, outdir, append=False):
+    def target_report(self, outdir, suffix, append=False):
         platforms = {inst.platform.name for _, inst in self.instances.items()}
         for platform in platforms:
-            filename = os.path.join(outdir,"{}.xml".format(platform))
+            if suffix:
+                filename = os.path.join(outdir,"{}_{}.xml".format(platform, suffix))
+            else:
+                filename = os.path.join(outdir,"{}.xml".format(platform))
             self.xunit_report(filename, platform, full_report=True, append=append)
 
 
