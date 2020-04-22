@@ -1,0 +1,801 @@
+/*
+ * Copyright (c) 2020 Demant
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/types.h>
+#include <ztest.h>
+#include "kconfig.h"
+
+#define ULL_LLCP_UNITTEST
+
+/* Implementation Under Test Begin */
+#include "ll_sw/ull_llcp.c"
+/* Implementation Under Test End */
+
+#include "helper_pdu.h"
+#include "helper_util.h"
+
+struct ull_cp_conn conn;
+
+void test_int_mem_proc_ctx(void)
+{
+	struct proc_ctx *ctx1;
+	struct proc_ctx *ctx2;
+
+	ull_cp_init();
+
+	for (int i = 0U; i < PROC_CTX_BUF_NUM; i++) {
+		ctx1 = proc_ctx_acquire();
+
+		/* The previous acquire should be valid */
+		zassert_not_null(ctx1, NULL);
+	}
+
+	ctx2 = proc_ctx_acquire();
+
+	/* The last acquire should fail */
+	zassert_is_null(ctx2, NULL);
+
+	proc_ctx_release(ctx1);
+	ctx1 = proc_ctx_acquire();
+
+	/* Releasing returns the context to the avilable pool */
+	zassert_not_null(ctx1, NULL);
+}
+
+
+
+static void setup(void)
+{
+	test_setup(&conn);
+}
+
+
+/* +-----+                     +-------+              +-----+
+ * | UT  |                     | LL_A  |              | LT  |
+ * +-----+                     +-------+              +-----+
+ *    |                            |                     |
+ *    | Initiate                   |                     |
+ *    | Encryption Start Proc.     |                     |
+ *    |--------------------------->|                     |
+ *    |         -----------------\ |                     |
+ *    |         | Empty Tx queue |-|                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_ENC_REQ          |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |          LL_ENC_RSP |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |                            |    LL_START_ENC_REQ |
+ *    |                            |<--------------------|
+ *    |          ----------------\ |                     |
+ *    |          | Tx Encryption |-|                     |
+ *    |          | Rx Decryption | |                     |
+ *    |          |---------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_START_ENC_RSP    |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |    LL_START_ENC_RSP |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |     Encryption Start Proc. |                     |
+ *    |                   Complete |                     |
+ *    |<---------------------------|                     |
+ *    |                            |                     |
+ */
+void test_encryption_start_mas_loc(void)
+{
+	u8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate an Encryption Start Procedure */
+	err = ull_cp_encryption_start(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Rx */
+	lt_tx(LL_ENC_RSP, &conn, NULL);
+
+	/* Rx */
+	lt_tx(LL_START_ENC_REQ, &conn, NULL);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Rx */
+	lt_tx(LL_START_ENC_RSP, &conn, NULL);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Tx Encryption should be enabled */
+	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+
+	/* Rx Decryption should be enabled */
+	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+}
+
+/* +-----+                     +-------+              +-----+
+ * | UT  |                     | LL_A  |              | LT  |
+ * +-----+                     +-------+              +-----+
+ *    |         -----------------\ |                     |
+ *    |         | Reserver all   |-|                     |
+ *    |         | Tx/Ntf buffers | |                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    | Initiate                   |                     |
+ *    | Encryption Start Proc.     |                     |
+ *    |--------------------------->|                     |
+ *    |         -----------------\ |                     |
+ *    |         | Empty Tx queue |-|                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_ENC_REQ          |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |          LL_ENC_RSP |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |                            |    LL_START_ENC_REQ |
+ *    |                            |<--------------------|
+ *    |          ----------------\ |                     |
+ *    |          | Tx Encryption |-|                     |
+ *    |          | Rx Decryption | |                     |
+ *    |          |---------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_START_ENC_RSP    |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |    LL_START_ENC_RSP |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |     Encryption Start Proc. |                     |
+ *    |                   Complete |                     |
+ *    |<---------------------------|                     |
+ *    |                            |                     |
+ */
+void test_encryption_start_mas_loc_limited_memory(void)
+{
+	u8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Steal all tx buffers */
+	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
+		tx = tx_alloc();
+		zassert_not_null(tx, NULL);
+	}
+
+	/* Steal all ntf buffers */
+	for (int i = 0U; i < NTF_BUF_NUM; i++) {
+		ntf = ntf_alloc();
+		zassert_not_null(ntf, NULL);
+	}
+
+	/* Initiate an Encryption Start Procedure */
+	err = ull_cp_encryption_start(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have no LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx */
+	lt_tx(LL_ENC_RSP, &conn, NULL);
+
+	/* Rx */
+	lt_tx(LL_START_ENC_REQ, &conn, NULL);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Tx Queue should have no LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have no LL Control PDU */
+	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Rx */
+	lt_tx(LL_START_ENC_RSP, &conn, NULL);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be no host notifications */
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Tx Encryption should be enabled */
+	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+
+	/* Rx Decryption should be enabled */
+	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+}
+
+/* +-----+                     +-------+              +-----+
+ * | UT  |                     | LL_A  |              | LT  |
+ * +-----+                     +-------+              +-----+
+ *    |                            |                     |
+ *    | Initiate                   |                     |
+ *    | Encryption Start Proc.     |                     |
+ *    |--------------------------->|                     |
+ *    |         -----------------\ |                     |
+ *    |         | Empty Tx queue |-|                     |
+ *    |         |----------------| |                     |
+ *    |                            |                     |
+ *    |                            | LL_ENC_REQ          |
+ *    |                            |-------------------->|
+ *    |                            |                     |
+ *    |                            |          LL_ENC_RSP |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |                            |   LL_REJECT_EXT_IND |
+ *    |                            |<--------------------|
+ *    |                            |                     |
+ *    |     Encryption Start Proc. |                     |
+ *    |                   Complete |                     |
+ *    |<---------------------------|                     |
+ *    |                            |                     |
+ */
+void test_encryption_start_mas_loc_no_ltk(void)
+{
+	u8_t err;
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	struct pdu_data_llctrl_reject_ind reject_ind = {
+		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
+	};
+
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ,
+		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate an Encryption Start Procedure */
+	err = ull_cp_encryption_start(&conn);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Rx */
+	lt_tx(LL_ENC_RSP, &conn, NULL);
+
+	/* Rx */
+	lt_tx(LL_REJECT_EXT_IND, &conn, &reject_ext_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_REJECT_IND, &ntf, &reject_ind);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Tx Encryption should be disabled */
+	zassert_equal(conn.lll.enc_tx, 0U, NULL);
+
+	/* Rx Decryption should be disabled */
+	zassert_equal(conn.lll.enc_rx, 0U, NULL);
+}
+
+/* +-----+                +-------+              +-----+
+ * | UT  |                | LL_A  |              | LT  |
+ * +-----+                +-------+              +-----+
+ *    |                       |                     |
+ *    |                       |          LL_ENC_REQ |
+ *    |                       |<--------------------|
+ *    |    -----------------\ |                     |
+ *    |    | Empty Tx queue |-|                     |
+ *    |    |----------------| |                     |
+ *    |                       |                     |
+ *    |                       | LL_ENC_RSP          |
+ *    |                       |-------------------->|
+ *    |                       |                     |
+ *    |           LTK Request |                     |
+ *    |<----------------------|                     |
+ *    |                       |                     |
+ *    | LTK Request Reply     |                     |
+ *    |---------------------->|                     |
+ *    |                       |                     |
+ *    |                       | LL_START_ENC_REQ    |
+ *    |                       |-------------------->|
+ *    |     ----------------\ |                     |
+ *    |     | Rx Decryption |-|                     |
+ *    |     |---------------| |                     |
+ *    |                       |                     |
+ *    |                       |    LL_START_ENC_RSP |
+ *    |                       |<--------------------|
+ *    |                       |                     |
+ *    |     Encryption Change |                     |
+ *    |<----------------------|                     |
+ *    |                       |                     |
+ *    |                       | LL_START_ENC_RSP    |
+ *    |                       |-------------------->|
+ *    |     ----------------\ |                     |
+ *    |     | Tx Encryption |-|                     |
+ *    |     |---------------| |                     |
+ *    |                       |                     |
+ */
+void test_encryption_start_mas_rem(void)
+{
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_ENC_REQ, &conn, NULL);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* There should be a host notification */
+	ut_rx_pdu(LL_ENC_REQ, &ntf, NULL);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* LTK request reply */
+	ull_cp_ltk_req_reply(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_START_ENC_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Rx Decryption should be enabled */
+	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_START_ENC_RSP, &conn, NULL);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be a host notification */
+	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_q_is_empty();
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* Tx Encryption should be enabled */
+	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+}
+
+/* +-----+                +-------+              +-----+
+ * | UT  |                | LL_A  |              | LT  |
+ * +-----+                +-------+              +-----+
+ *    |    -----------------\ |                     |
+ *    |    | Reserver all   |-|                     |
+ *    |    | Tx/Ntf buffers | |                     |
+ *    |    |----------------| |                     |
+ *    |                       |                     |
+ *    |                       |          LL_ENC_REQ |
+ *    |                       |<--------------------|
+ *    |    -----------------\ |                     |
+ *    |    | Empty Tx queue |-|                     |
+ *    |    |----------------| |                     |
+ *    |                       |                     |
+ *    |                       | LL_ENC_RSP          |
+ *    |                       |-------------------->|
+ *    |                       |                     |
+ *    |           LTK Request |                     |
+ *    |<----------------------|                     |
+ *    |                       |                     |
+ *    | LTK Request Reply     |                     |
+ *    |---------------------->|                     |
+ *    |                       |                     |
+ *    |                       | LL_START_ENC_REQ    |
+ *    |                       |-------------------->|
+ *    |     ----------------\ |                     |
+ *    |     | Rx Decryption |-|                     |
+ *    |     |---------------| |                     |
+ *    |                       |                     |
+ *    |                       |    LL_START_ENC_RSP |
+ *    |                       |<--------------------|
+ *    |                       |                     |
+ *    |     Encryption Change |                     |
+ *    |<----------------------|                     |
+ *    |                       |                     |
+ *    |                       | LL_START_ENC_RSP    |
+ *    |                       |-------------------->|
+ *    |     ----------------\ |                     |
+ *    |     | Tx Encryption |-|                     |
+ *    |     |---------------| |                     |
+ *    |                       |                     |
+ */
+void test_encryption_start_mas_rem_limited_memory(void)
+{
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Steal all tx buffers */
+	for (int i = 0U; i < TX_CTRL_BUF_NUM; i++) {
+		tx = tx_alloc();
+		zassert_not_null(tx, NULL);
+	}
+
+	/* Steal all ntf buffers */
+	for (int i = 0U; i < NTF_BUF_NUM; i++) {
+		ntf = ntf_alloc();
+		zassert_not_null(ntf, NULL);
+	}
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_ENC_REQ, &conn, NULL);
+
+	/* Tx Queue should not have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release tx */
+	ull_cp_release_tx(tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should not be a host notification */
+	ut_rx_q_is_empty();
+
+	/* Release ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_ENC_REQ, &ntf, NULL);
+	ut_rx_q_is_empty();
+
+	/* Done */
+	event_done(&conn);
+
+	/* LTK request reply */
+	ull_cp_ltk_req_reply(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should not have one LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release tx */
+	ull_cp_release_tx(tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_START_ENC_REQ, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Rx Decryption should be enabled */
+	zassert_equal(conn.lll.enc_rx, 1U, NULL);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_START_ENC_RSP, &conn, NULL);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should not be a host notification */
+	ut_rx_q_is_empty();
+
+	/* Release ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* There should be one host notification */
+	ut_rx_pdu(LL_START_ENC_RSP, &ntf, NULL);
+	ut_rx_q_is_empty();
+
+	/* Tx Queue should not have a LL Control PDU */
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release tx */
+	ull_cp_release_tx(tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_START_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Tx Encryption should be enabled */
+	zassert_equal(conn.lll.enc_tx, 1U, NULL);
+}
+
+/* +-----+                +-------+              +-----+
+ * | UT  |                | LL_A  |              | LT  |
+ * +-----+                +-------+              +-----+
+ *    |                       |                     |
+ *    |                       |          LL_ENC_REQ |
+ *    |                       |<--------------------|
+ *    |    -----------------\ |                     |
+ *    |    | Empty Tx queue |-|                     |
+ *    |    |----------------| |                     |
+ *    |                       |                     |
+ *    |                       | LL_ENC_RSP          |
+ *    |                       |-------------------->|
+ *    |                       |                     |
+ *    |           LTK Request |                     |
+ *    |<----------------------|                     |
+ *    |                       |                     |
+ *    | LTK Request Reply     |                     |
+ *    |---------------------->|                     |
+ *    |                       |                     |
+ *    |                       | LL_REJECT_EXT_IND   |
+ *    |                       |-------------------->|
+ */
+void test_encryption_start_mas_rem_no_ltk(void)
+{
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+
+	struct pdu_data_llctrl_reject_ext_ind reject_ext_ind = {
+		.reject_opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ,
+		.error_code = BT_HCI_ERR_PIN_OR_KEY_MISSING
+	};
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_ENC_REQ, &conn, NULL);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_ENC_RSP, &conn, &tx, NULL);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* There should be a host notification */
+	ut_rx_pdu(LL_ENC_REQ, &ntf, NULL);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	ull_cp_release_ntf(ntf);
+
+	/* LTK request reply */
+	ull_cp_ltk_req_neq_reply(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_REJECT_EXT_IND, &conn, &tx, &reject_ext_ind);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(tx);
+
+	/* There should not be a host notification */
+	ut_rx_q_is_empty();
+
+	/* Tx Encryption should be disabled */
+	zassert_equal(conn.lll.enc_tx, 0U, NULL);
+
+	/* Rx Decryption should be disabled */
+	zassert_equal(conn.lll.enc_rx, 0U, NULL);
+}
+
+
+void test_main(void)
+{
+
+
+
+	ztest_test_suite(encryption,
+			 ztest_unit_test_setup_teardown(test_encryption_start_mas_loc, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_limited_memory, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_encryption_start_mas_loc_no_ltk, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_encryption_start_mas_rem, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_encryption_start_mas_rem_limited_memory, setup, unit_test_noop),
+			 ztest_unit_test_setup_teardown(test_encryption_start_mas_rem_no_ltk, setup, unit_test_noop)
+			);
+
+
+
+
+	ztest_run_test_suite(encryption);
+
+}
