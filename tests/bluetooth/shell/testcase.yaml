@@ -15,13 +15,8 @@ tests:
     platform_exclude: nrf52dk_nrf52810
     tags: bluetooth
     harness: keyboard
-  bluetooth.shell.adv_ext:
+  bluetooth.shell.no_privacy:
     build_only: true
-    extra_args: OVERLAY_CONFIG=ext_adv.conf
-    platform_whitelist: native_posix
-    tags: bluetooth
-  bluetooth.shell.adv_ext_no_privacy:
-    build_only: true
-    extra_args: OVERLAY_CONFIG=ext_adv_no_priv.conf
+    extra_args: CONFIG_BT_PRIVACY=n
     platform_whitelist: native_posix
     tags: bluetooth
