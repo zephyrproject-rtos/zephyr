@@ -1,0 +1,6 @@
+common:
+    tags: test_framework bluetooth version ull_llcp
+tests:
+  bluetooth.controller.ctrl_version.test:
+     type: unit
+
