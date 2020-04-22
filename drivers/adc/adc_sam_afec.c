@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam_afec
+
 /** @file
  * @brief Atmel SAM MCU family ADC (AFEC) driver.
  *
@@ -347,60 +349,34 @@ static void adc_sam_isr(void *arg)
 	}
 }
 
-#ifdef CONFIG_ADC_0
-static void adc0_sam_cfg_func(struct device *dev);
+#define ADC_SAM_INIT(n)							\
+	static void adc##n##_sam_cfg_func(struct device *dev);		\
+									\
+	static const struct adc_sam_cfg adc##n##_sam_cfg = {		\
+		.regs = (Afec *)DT_INST_REG_ADDR(n),			\
+		.cfg_func = adc##n##_sam_cfg_func,			\
+		.periph_id = DT_INST_PROP(n, peripheral_id),		\
+		.afec_trg_pin = ATMEL_SAM_DT_PIN(n, 0),			\
+	};								\
+									\
+	static struct adc_sam_data adc##n##_sam_data = {		\
+		ADC_CONTEXT_INIT_TIMER(adc##n##_sam_data, ctx),		\
+		ADC_CONTEXT_INIT_LOCK(adc##n##_sam_data, ctx),		\
+		ADC_CONTEXT_INIT_SYNC(adc##n##_sam_data, ctx),		\
+	};								\
+									\
+	DEVICE_AND_API_INIT(adc##n##_sam, DT_INST_LABEL(n),		\
+			    adc_sam_init, &adc##n##_sam_data,		\
+			    &adc##n##_sam_cfg, POST_KERNEL,		\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &adc_sam_api);				\
+									\
+	static void adc##n##_sam_cfg_func(struct device *dev)		\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	\
+			    adc_sam_isr,				\
+			    DEVICE_GET(adc##n##_sam), 0);		\
+		irq_enable(DT_INST_IRQN(n));				\
+	}
 
-static const struct adc_sam_cfg adc0_sam_cfg = {
-	.regs = (Afec *)DT_ADC_0_BASE_ADDRESS,
-	.cfg_func = adc0_sam_cfg_func,
-	.periph_id = DT_ADC_0_PERIPHERAL_ID,
-	.afec_trg_pin = PIN_AFE0_ADTRG,
-};
-
-static struct adc_sam_data adc0_sam_data = {
-	ADC_CONTEXT_INIT_TIMER(adc0_sam_data, ctx),
-	ADC_CONTEXT_INIT_LOCK(adc0_sam_data, ctx),
-	ADC_CONTEXT_INIT_SYNC(adc0_sam_data, ctx),
-};
-
-DEVICE_AND_API_INIT(adc0_sam, DT_ADC_0_NAME, adc_sam_init,
-		    &adc0_sam_data, &adc0_sam_cfg, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &adc_sam_api);
-
-static void adc0_sam_cfg_func(struct device *dev)
-{
-	IRQ_CONNECT(DT_ADC_0_IRQ, DT_ADC_0_IRQ_PRI, adc_sam_isr,
-		    DEVICE_GET(adc0_sam), 0);
-	irq_enable(DT_ADC_0_IRQ);
-}
-
-#endif /* CONFIG_ADC_0 */
-
-#ifdef CONFIG_ADC_1
-static void adc1_sam_cfg_func(struct device *dev);
-
-static const struct adc_sam_cfg adc1_sam_cfg = {
-	.regs = (Afec *)DT_ADC_1_BASE_ADDRESS,
-	.cfg_func = adc1_sam_cfg_func,
-	.periph_id = DT_ADC_1_PERIPHERAL_ID,
-	.afec_trg_pin = PIN_AFE1_ADTRG,
-};
-
-static struct adc_sam_data adc1_sam_data = {
-	ADC_CONTEXT_INIT_TIMER(adc1_sam_data, ctx),
-	ADC_CONTEXT_INIT_LOCK(adc1_sam_data, ctx),
-	ADC_CONTEXT_INIT_SYNC(adc1_sam_data, ctx),
-};
-
-DEVICE_AND_API_INIT(adc1_sam, DT_ADC_1_NAME, adc_sam_init,
-		    &adc1_sam_data, &adc1_sam_cfg, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &adc_sam_api);
-
-static void adc1_sam_cfg_func(struct device *dev)
-{
-	IRQ_CONNECT(DT_ADC_1_IRQ, DT_ADC_1_IRQ_PRI, adc_sam_isr,
-		    DEVICE_GET(adc1_sam), 0);
-	irq_enable(DT_ADC_1_IRQ);
-}
-
-#endif /* CONFIG_ADC_1 */
+DT_INST_FOREACH(ADC_SAM_INIT)
