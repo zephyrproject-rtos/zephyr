@@ -13,6 +13,10 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
+	chosen {
+		zephyr,flash-controller = &flash;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -29,7 +33,7 @@
 	};
 
 	soc {
-		flash-controller@40022000 {
+		flash: flash-controller@40022000 {
 			compatible = "st,stm32-flash-controller", "st,stm32g0-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x40022000 0x400>;

@@ -34,6 +34,10 @@
 		uart-5 = &uart5;
 	};
 
+	chosen {
+		zephyr,flash-controller = &ftfe;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -71,7 +75,7 @@
 			enable-external-reference;
 		};
 
-		flash_controller: flash-controller@40020000 {
+		ftfe: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfe";
 			label = "FLASH_CTRL";
 			reg = <0x40020000 0x1000>;

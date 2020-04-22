@@ -249,7 +249,7 @@ void board_init(u16_t *addr)
 {
 	struct mb_display *disp = mb_display_get();
 
-	nvm = device_get_binding(DT_FLASH_DEV_NAME);
+	nvm = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	pwm = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_sw_pwm)));
 
 	*addr = NRF_UICR->CUSTOMER[0];

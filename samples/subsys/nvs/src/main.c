@@ -74,15 +74,16 @@ void main(void)
 	 *	starting at DT_FLASH_AREA_STORAGE_OFFSET
 	 */
 	fs.offset = DT_FLASH_AREA_STORAGE_OFFSET;
-	rc = flash_get_page_info_by_offs(device_get_binding(DT_FLASH_DEV_NAME),
-					 fs.offset, &info);
+	rc = flash_get_page_info_by_offs(
+		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL),
+		fs.offset, &info);
 	if (rc) {
 		printk("Unable to get page info");
 	}
 	fs.sector_size = info.size;
 	fs.sector_count = 3U;
 
-	rc = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	rc = nvs_init(&fs, DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 	if (rc) {
 		printk("Flash Init failed\n");
 	}

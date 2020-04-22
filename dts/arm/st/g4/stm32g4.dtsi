@@ -13,6 +13,7 @@
 / {
 	chosen {
 		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flash;
 	};
 
 	cpus {
@@ -54,7 +55,7 @@
 			#io-channel-cells = <1>;
 		};
 
-		flash-controller@40022000 {
+		flash: flash-controller@40022000 {
 			compatible = "st,stm32-flash-controller", "st,stm32g4-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x40022000 0x400>;

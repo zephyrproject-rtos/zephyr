@@ -580,7 +580,7 @@ static int erase_storage(void)
 {
 	struct device *dev;
 
-	dev = device_get_binding(DT_FLASH_DEV_NAME);
+	dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
 	return flash_erase(dev, DT_FLASH_AREA_STORAGE_OFFSET,
 			   DT_FLASH_AREA_STORAGE_SIZE);

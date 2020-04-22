@@ -67,6 +67,10 @@
 		arm-cryptocell-310 = &cryptocell310;
 	};
 
+	chosen {
+		zephyr,flash-controller = &flash_controller;
+	};
+
 	soc {
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";

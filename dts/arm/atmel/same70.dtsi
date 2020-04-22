@@ -17,6 +17,10 @@
 	};
 
 	chosen {
+		zephyr,flash-controller = &eefc;
+	};
+
+	chosen {
 		zephyr,entropy = &trng;
 	};
 

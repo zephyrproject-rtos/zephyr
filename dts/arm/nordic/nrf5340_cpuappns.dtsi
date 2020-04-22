@@ -61,6 +61,10 @@
 		timer-2 = &timer2;
 	};
 
+	chosen {
+		zephyr,flash-controller = &flash_controller;
+	};
+
 	soc {
 		sram0: memory@20000000 {
 			device_type = "memory";
