@@ -200,13 +200,15 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		hs->adv_addr = 1;
 
 		/* NOTE: AdvA is filled at enable */
-		sec->tx_addr = pri->tx_addr;
+		sec->tx_addr = _pri->tx_addr;
 	}
 	pri->tx_addr = 0U;
 	pri->rx_addr = 0U;
 
 	if (_hs.adv_addr) {
 		_ps += BDADDR_SIZE;
+
+		/* Prepare to copy AdvA from previous double buffered PDU */
 		hs->adv_addr = 1;
 	}
 	if (hs->adv_addr) {
