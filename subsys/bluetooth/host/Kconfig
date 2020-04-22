@@ -268,9 +268,20 @@ config BT_AUTO_PHY_UPDATE
 	help
 	  Initiate PHY Update Procedure on connection establishment.
 
-	  Disable this if you want PHY Update Procedure feature supported but
-	  want to rely on remote device to initiate the procedure at its
+	  Disable this if you want the PHY Update Procedure feature supported
+	  but want to rely on the remote device to initiate the procedure at its
 	  discretion.
+
+config BT_AUTO_DATA_LEN_UPDATE
+	bool "Auto-initiate Data Length Update procedure"
+	depends on BT_DATA_LEN_UPDATE
+	default y
+	help
+	  Initiate Data Length Update Procedure on connection establishment.
+
+	  Disable this if you want the Data Length Update Procedure feature
+	  supported but want to rely on the remote device to initiate the
+	  procedure at its discretion.
 
 config BT_REMOTE_INFO
 	bool "Enable application access to remote information"

@@ -1895,7 +1895,7 @@ static void conn_auto_initiate(struct bt_conn *conn)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_DATA_LEN_UPDATE) &&
+	if (IS_ENABLED(CONFIG_BT_AUTO_DATA_LEN_UPDATE) &&
 	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
 		u16_t tx_octets, tx_time;
 
