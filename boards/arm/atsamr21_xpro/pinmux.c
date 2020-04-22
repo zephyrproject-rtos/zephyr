@@ -28,7 +28,10 @@ static int board_pinmux_init(struct device *dev)
 #warning Pin mapping may not be configured
 #endif
 #if DT_ATMEL_SAM0_UART_SERCOM_3_BASE_ADDRESS
-#warning Pin mapping may not be configured
+	/* NOTE: SERCOM3 UART is used by the UART driver tests */
+	/* SERCOM3 on RX=PA22, TX=PA23 */
+	pinmux_pin_set(muxa, 22, PINMUX_FUNC_C);
+	pinmux_pin_set(muxa, 23, PINMUX_FUNC_C);
 #endif
 #if DT_ATMEL_SAM0_UART_SERCOM_4_BASE_ADDRESS
 #warning Pin mapping may not be configured
