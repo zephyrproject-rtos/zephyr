@@ -141,7 +141,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	remainder = p->remainder;
 	remainder_us = radio_tmr_start(0, ticks_at_start, remainder);
 
-	hcto = remainder_us + lll->window_widening_us;
+	hcto = remainder_us + lll->window_size_us;
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(lll->phy, 1);
