@@ -356,6 +356,12 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 		goto done;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) && !net_if_l2(iface)) {
+		NET_WARN("no l2 for iface %p, discard pkt", iface);
+		verdict = NET_DROP;
+		goto done;
+	}
+
 	/* If the ll address is not set at all, then we must set
 	 * it here.
 	 * Workaround Linux bug, see:
