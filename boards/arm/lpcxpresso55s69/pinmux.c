@@ -49,7 +49,7 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 
 #endif
 
-#ifdef DT_GPIO_KEYS_SW0_GPIOS_CONTROLLER
+#if DT_PHA_HAS_CELL(DT_ALIAS(sw0), gpios, pin)
 	const u32_t sw0_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
@@ -59,10 +59,11 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 			IOCON_PIO_SLEW_STANDARD |
 			IOCON_PIO_OPENDRAIN_DI
 			);
-	pinmux_pin_set(port0, DT_ALIAS_SW0_GPIOS_PIN, sw0_config);
+	pinmux_pin_set(port0, DT_GPIO_PIN(DT_ALIAS(sw0), gpios), sw0_config);
 #endif
 
-#ifdef DT_GPIO_KEYS_SW1_GPIOS_CONTROLLER
+
+#if DT_PHA_HAS_CELL(DT_ALIAS(sw1), gpios, pin)
 	const u32_t sw1_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
@@ -72,10 +73,10 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 			IOCON_PIO_SLEW_STANDARD |
 			IOCON_PIO_OPENDRAIN_DI
 			);
-	pinmux_pin_set(port1, DT_ALIAS_SW1_GPIOS_PIN, sw1_config);
+	pinmux_pin_set(port1, DT_GPIO_PIN(DT_ALIAS(sw1), gpios), sw1_config);
 #endif
 
-#ifdef DT_GPIO_KEYS_SW2_GPIOS_CONTROLLER
+#if DT_PHA_HAS_CELL(DT_ALIAS(sw2), gpios, pin)
 	const u32_t sw2_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
@@ -85,7 +86,7 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 			IOCON_PIO_SLEW_STANDARD |
 			IOCON_PIO_OPENDRAIN_DI
 			);
-	pinmux_pin_set(port1, DT_ALIAS_SW2_GPIOS_PIN, sw2_config);
+	pinmux_pin_set(port1, DT_GPIO_PIN(DT_ALIAS(sw2), gpios), sw2_config);
 #endif
 
 #if DT_HAS_NODE(DT_NODELABEL(flexcomm4)) && \
