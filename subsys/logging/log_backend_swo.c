@@ -18,8 +18,8 @@
  * this frequency should much the one set by the SWO viewer program.
  *
  * The initialization code assumes that SWO core frequency is equal to HCLK
- * as defined by DT_CPU_CLOCK_FREQUENCY. This may require additional,
- * vendor specific configuration.
+ * as defined by the clock-frequency property in the CPU node. This may require
+ * additional, vendor specific configuration.
  */
 
 #include <logging/log_backend.h>
@@ -36,7 +36,12 @@
 #if CONFIG_LOG_BACKEND_SWO_FREQ_HZ == 0
 #define SWO_FREQ_DIV  1
 #else
-#define SWO_FREQ (DT_CPU_CLOCK_FREQUENCY + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2))
+#if DT_NODE_HAS_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
+#define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
+#else
+#error "Missing DT 'clock-frequency' property on cpu@0 node"
+#endif
+#define SWO_FREQ (CPU_FREQ + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2))
 #define SWO_FREQ_DIV  (SWO_FREQ / CONFIG_LOG_BACKEND_SWO_FREQ_HZ)
 #if SWO_FREQ_DIV > 0xFFFF
 #error CONFIG_LOG_BACKEND_SWO_FREQ_HZ is too low. SWO clock divider is 16-bit. \

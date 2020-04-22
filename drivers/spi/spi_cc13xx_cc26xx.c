@@ -37,6 +37,8 @@ struct spi_cc13xx_cc26xx_data {
 #endif
 };
 
+#define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
+
 static inline struct spi_cc13xx_cc26xx_data *get_dev_data(struct device *dev)
 {
 	return dev->driver_data;
@@ -91,7 +93,7 @@ static int spi_cc13xx_cc26xx_configure(struct device *dev,
 		return -EINVAL;
 	}
 
-	if (2 * config->frequency > DT_CPU_CLOCK_FREQUENCY) {
+	if (2 * config->frequency > CPU_FREQ) {
 		LOG_ERR("Frequency greater than supported in master mode");
 		return -EINVAL;
 	}
@@ -121,7 +123,7 @@ static int spi_cc13xx_cc26xx_configure(struct device *dev,
 	SSIDisable(cfg->base);
 
 	/* Configure SSI */
-	SSIConfigSetExpClk(cfg->base, DT_CPU_CLOCK_FREQUENCY, prot,
+	SSIConfigSetExpClk(cfg->base, CPU_FREQ, prot,
 			   SSI_MODE_MASTER, config->frequency, 8);
 
 	if (SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) {
