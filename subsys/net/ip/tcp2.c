@@ -376,13 +376,17 @@ static u8_t *tcp_options_get(struct net_pkt *pkt, int tcp_options_len)
 	return options;
 }
 
-static bool tcp_options_check(struct net_pkt *pkt, ssize_t len)
+static bool tcp_options_check(struct tcp_options *recv_options,
+			      struct net_pkt *pkt, ssize_t len)
 {
 	bool result = len > 0 && ((len % 4) == 0) ? true : false;
 	u8_t *options = tcp_options_get(pkt, len);
 	u8_t opt, opt_len;
 
 	NET_DBG("len=%zd", len);
+
+	recv_options->mss_found = false;
+	recv_options->wnd_found = false;
 
 	for ( ; len >= 1; options += opt_len, len -= opt_len) {
 		opt = options[0];
@@ -414,12 +418,18 @@ static bool tcp_options_check(struct net_pkt *pkt, ssize_t len)
 				result = false;
 				goto end;
 			}
+
+			recv_options->mss = opt;
+			recv_options->mss_found = true;
 			break;
 		case TCPOPT_WINDOW:
 			if (opt_len != 3) {
 				result = false;
 				goto end;
 			}
+
+			recv_options->window = opt;
+			recv_options->wnd_found = true;
 			break;
 		default:
 			continue;
@@ -439,10 +449,6 @@ static size_t tcp_data_len(struct net_pkt *pkt)
 	size_t tcp_options_len = (th->th_off - 5) * 4;
 	ssize_t len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
 		net_pkt_ip_opts_len(pkt) - sizeof(*th) - tcp_options_len;
-
-	if (tcp_options_len && !tcp_options_check(pkt, tcp_options_len)) {
-		len = 0;
-	}
 
 	return len > 0 ? len : 0;
 }
@@ -861,7 +867,8 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		goto next_state;
 	}
 
-	if (tcp_options_len && !tcp_options_check(pkt, tcp_options_len)) {
+	if (tcp_options_len && !tcp_options_check(&conn->recv_options, pkt,
+						  tcp_options_len)) {
 		NET_DBG("DROP: Invalid TCP option list");
 		tcp_out(conn, RST);
 		conn_state(conn, TCP_CLOSED);
