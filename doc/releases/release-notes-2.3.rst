@@ -80,6 +80,11 @@ Removed APIs in this release
 Stable API changes in this release
 ==================================
 
+* Bluetooth Mesh
+
+  * The net_idx parameter has been removed from the Health Client model
+    APIs since it can be derived (by the stack) from the app_idx parameter
+
 Kernel
 ******
 
