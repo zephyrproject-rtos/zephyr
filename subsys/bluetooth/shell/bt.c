@@ -348,6 +348,17 @@ static void remote_info_available(struct bt_conn *conn,
 }
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
 
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+void le_data_len_updated(struct bt_conn *conn,
+			 struct bt_conn_le_data_len_info *info)
+{
+	shell_print(ctx_shell,
+		    "LE data len updated: TX (len: %d time: %d)"
+		    " RX (len: %d time: %d)", info->tx_max_len,
+		    info->tx_max_time, info->rx_max_len, info->rx_max_time);
+}
+#endif
+
 static struct bt_conn_cb conn_callbacks = {
 	.connected = connected,
 	.disconnected = disconnected,
@@ -361,6 +372,9 @@ static struct bt_conn_cb conn_callbacks = {
 #endif
 #if defined(CONFIG_BT_REMOTE_INFO)
 	.remote_info_available = remote_info_available,
+#endif
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+	.le_data_len_updated = le_data_len_updated,
 #endif
 };
 #endif /* CONFIG_BT_CONN */
@@ -1454,8 +1468,7 @@ done:
 	return err;
 }
 
-static int cmd_conn_update(const struct shell *shell,
-			    size_t argc, char *argv[])
+static int cmd_conn_update(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct bt_le_conn_param param;
 	int err;
@@ -1474,6 +1487,66 @@ static int cmd_conn_update(const struct shell *shell,
 
 	return err;
 }
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+static u16_t tx_time_calc(u8_t phy, u16_t max_len)
+{
+	/* Access address + header + payload + MIC + CRC */
+	u16_t total_len = 4 + 2 + max_len + 4 + 3;
+
+	switch (phy) {
+	case BT_GAP_LE_PHY_1M:
+		/* 1 byte preamble, 8 us per byte */
+		return 8 * (1 + total_len);
+	case BT_GAP_LE_PHY_2M:
+		/* 2 byte preamble, 4 us per byte */
+		return 4 * (2 + total_len);
+	case BT_GAP_LE_PHY_CODED:
+		/* S8: Preamble + CI + TERM1 + 64 us per byte + TERM2 */
+		return 80 + 16 + 24 + 64 * (total_len) + 24;
+	default:
+		return 0;
+	}
+}
+
+static int cmd_conn_data_len_update(const struct shell *shell, size_t argc,
+				    char *argv[])
+{
+	struct bt_conn_le_data_len_param param;
+	int err;
+
+	param.tx_max_len = strtoul(argv[1], NULL, 10);
+
+	if (argc > 2) {
+		param.tx_max_time = strtoul(argv[2], NULL, 10);
+	} else {
+		/* Assume 1M if not able to retrieve PHY */
+		u8_t phy = BT_GAP_LE_PHY_1M;
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+		struct bt_conn_info info;
+
+		err = bt_conn_get_info(default_conn, &info);
+		if (!err) {
+			phy = info.le.phy->tx_phy;
+		}
+#endif
+		param.tx_max_time = tx_time_calc(phy, param.tx_max_len);
+		shell_print(shell, "Calculated tx time: %d", param.tx_max_time);
+	}
+
+
+
+	err = bt_conn_le_data_len_update(default_conn, &param);
+	if (err) {
+		shell_error(shell, "data len update failed (err %d).", err);
+	} else {
+		shell_print(shell, "data len update initiated.");
+	}
+
+	return err;
+}
+#endif
 
 #if defined(CONFIG_BT_CENTRAL)
 static int cmd_chan_map(const struct shell *shell, size_t argc, char *argv[])
@@ -2316,6 +2389,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(info, NULL, HELP_ADDR_LE, cmd_info, 1, 2),
 	SHELL_CMD_ARG(conn-update, NULL, "<min> <max> <latency> <timeout>",
 		      cmd_conn_update, 5, 0),
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+	SHELL_CMD_ARG(data-len-update, NULL, "<tx_max_len> [tx_max_time]",
+		      cmd_conn_data_len_update, 2, 1),
+#endif
 #if defined(CONFIG_BT_CENTRAL)
 	SHELL_CMD_ARG(channel-map, NULL, "<channel-map: XXXXXXXXXX> (36-0)",
 		      cmd_chan_map, 2, 1),
