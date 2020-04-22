@@ -120,6 +120,13 @@ union tcp_endpoint {
 	struct sockaddr_in6 sin6;
 };
 
+struct tcp_options {
+	u16_t mss;
+	u16_t window;
+	bool mss_found : 1;
+	bool wnd_found : 1;
+};
+
 struct tcp { /* TCP connection */
 	sys_snode_t next;
 	struct net_context *context;
@@ -131,6 +138,7 @@ struct tcp { /* TCP connection */
 	union tcp_endpoint src;
 	union tcp_endpoint dst;
 	u16_t win;
+	struct tcp_options recv_options;
 	struct k_delayed_work send_timer;
 	sys_slist_t send_queue;
 	bool in_retransmission;
