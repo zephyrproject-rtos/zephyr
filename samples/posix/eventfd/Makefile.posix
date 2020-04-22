@@ -1,0 +1,4 @@
+# This makefile builds the sample for a POSIX system, like Linux
+
+eventfd: src/main.c
+	$(CC) $^ -o $@
