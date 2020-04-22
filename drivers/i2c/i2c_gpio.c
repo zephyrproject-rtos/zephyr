@@ -102,9 +102,17 @@ static int i2c_gpio_transfer(struct device *dev, struct i2c_msg *msgs,
 				    slave_address);
 }
 
+static int i2c_gpio_recover_bus(struct device *dev)
+{
+	struct i2c_gpio_context *context = dev->driver_data;
+
+	return i2c_bitbang_recover_bus(&context->bitbang);
+}
+
 static struct i2c_driver_api api = {
 	.configure = i2c_gpio_configure,
 	.transfer = i2c_gpio_transfer,
+	.recover_bus = i2c_gpio_recover_bus,
 };
 
 static int i2c_gpio_init(struct device *dev)
