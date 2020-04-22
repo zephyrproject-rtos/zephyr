@@ -800,6 +800,9 @@ struct bt_conn_cb {
 	 *
 	 *  This callback notifies the application that the remote information
 	 *  has been retrieved from the remote peer.
+	 *
+	 *  @param conn Connection object.
+	 *  @param remote_info Connection information of remote device.
 	 */
 	void (*remote_info_available)(struct bt_conn *conn,
 				      struct bt_conn_remote_info *remote_info);
