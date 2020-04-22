@@ -1133,13 +1133,15 @@ static void uarte_nrfx_irq_tx_disable(struct device *dev)
 static int uarte_nrfx_irq_tx_ready_complete(struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	struct uarte_nrfx_data *data = get_dev_data(dev);
 
 	/* ENDTX flag is always on so that ISR is called when we enable TX IRQ.
 	 * Because of that we have to explicitly check if ENDTX interrupt is
 	 * enabled, otherwise this function would always return true no matter
 	 * what would be the source of interrupt.
 	 */
-	return nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX) &&
+	return !data->int_driven->disable_tx_irq &&
+	       nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX) &&
 	       nrf_uarte_int_enable_check(uarte, NRF_UARTE_INT_ENDTX_MASK);
 }
 
