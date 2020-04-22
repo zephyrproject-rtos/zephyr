@@ -12,6 +12,7 @@
 / {
 	chosen {
 		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flash_controller;
 	};
 
 	cpus {

@@ -14,6 +14,7 @@
 / {
 	chosen {
 		zephyr,entropy = &rng;
+		zephyr,flash-controller = &flash;
 	};
 
 	cpus {
@@ -32,7 +33,7 @@
 	};
 
 	soc {
-		flash-controller@40022000 {
+		flash: flash-controller@40022000 {
 			compatible = "st,stm32-flash-controller", "st,stm32l4-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x40022000 0x400>;

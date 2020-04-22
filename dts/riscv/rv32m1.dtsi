@@ -44,6 +44,7 @@
 
 	chosen {
 		zephyr,entropy = &trng;
+		zephyr,flash-controller = &ftfe;
 	};
 
 	cpus {
@@ -556,7 +557,7 @@
 			#pwm-cells = <3>;
 		};
 
-		flash-controller@40023000 {
+		ftfe: flash-controller@40023000 {
 			compatible = "openisa,rv32m1-ftfe";
 			label = "FLASH_CTRL";
 			reg = <0x40023000 0x18>;

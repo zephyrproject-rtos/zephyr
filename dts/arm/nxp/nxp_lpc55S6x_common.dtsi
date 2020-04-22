@@ -15,6 +15,10 @@
 		gpio-1 = &gpio1;
 	};
 
+	chosen {
+		zephyr,flash-controller = &iap;
+	};
+
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;

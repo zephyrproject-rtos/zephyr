@@ -50,7 +50,8 @@ static int cmd_write_mcux(const struct shell *shell, size_t argc, char *argv[])
 	u32_t value[2];
 	u32_t offset;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	flash_dev =
+		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
 	/* 128K reserved to the application */
 	offset = FLASH_MEM + 0x20000;
@@ -80,7 +81,8 @@ static int cmd_write_stm32(const struct shell *shell, size_t argc, char *argv[])
 
 	struct device *flash_dev;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	flash_dev =
+		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
 	/* 16K reserved to the application */
 	u32_t offset = FLASH_MEM + 0x4000;

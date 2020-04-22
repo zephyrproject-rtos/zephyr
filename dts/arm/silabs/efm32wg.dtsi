@@ -6,6 +6,10 @@
 #include "gpio_gecko.h"
 
 / {
+	chosen {
+		zephyr,flash-controller = &msc;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -21,7 +25,7 @@
 	};
 
 	soc {
-		flash-controller@400c0000 {
+		msc: flash-controller@400c0000 {
 			compatible = "silabs,gecko-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x400c0000 0x78>;

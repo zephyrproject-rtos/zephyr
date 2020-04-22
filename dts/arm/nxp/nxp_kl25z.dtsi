@@ -14,6 +14,10 @@
 		usbd-0 = &usbotg;
 	};
 
+	chosen {
+		zephyr,flash-controller = &ftfa;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -31,7 +35,7 @@
 	};
 
 	soc {
-		flash-controller@40020000 {
+		ftfa: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfa";
 			label = "FLASH_CTRL";
 			reg = <0x40020000 0x14>;

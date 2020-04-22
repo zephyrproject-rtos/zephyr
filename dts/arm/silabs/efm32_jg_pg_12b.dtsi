@@ -13,6 +13,7 @@
 / {
 	chosen {
 		zephyr,entropy = &trng0;
+		zephyr,flash-controller = &msc;
 	};
 
 	cpus {
@@ -26,7 +27,7 @@
 	};
 
 	soc {
-		flash-controller@400e0000 {
+		msc: flash-controller@400e0000 {
 			compatible = "silabs,gecko-flash-controller";
 			label = "FLASH_CTRL";
 			reg = <0x400e0000 0x104>;
