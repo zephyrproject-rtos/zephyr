@@ -36,6 +36,7 @@ enum {
 	BT_CONN_AUTO_PHY_COMPLETE,      /* Auto-initiated PHY procedure done */
 	BT_CONN_AUTO_FEATURE_EXCH,	/* Auto-initiated LE Feat done */
 	BT_CONN_AUTO_VERSION_INFO,      /* Auto-initiated LE version done */
+	BT_CONN_AUTO_DATA_LEN_COMPLETE, /* Auto-initiated Data Length done */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
@@ -59,6 +60,9 @@ struct bt_conn_le {
 	u8_t			features[8];
 
 	struct bt_keys		*keys;
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+	struct bt_conn_le_data_len_info data_len;
+#endif
 };
 
 #if defined(CONFIG_BT_BREDR)
@@ -229,6 +233,8 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 void notify_remote_info(struct bt_conn *conn);
 
 void notify_le_param_updated(struct bt_conn *conn);
+
+void notify_le_data_len_updated(struct bt_conn *conn);
 
 bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 

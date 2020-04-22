@@ -75,6 +75,57 @@ struct bt_le_conn_param {
 						  BT_GAP_INIT_CONN_INT_MAX, \
 						  0, 400)
 
+/** Connection data length information for LE connections */
+struct bt_conn_le_data_len_info {
+	/** Maximum Link Layer transmission payload size in bytes. */
+	u16_t tx_max_len;
+	/** Maximum Link Layer transmission payload time in us. */
+	u16_t tx_max_time;
+	/** Maximum Link Layer reception payload size in bytes. */
+	u16_t rx_max_len;
+	/** Maximum Link Layer reception payload time in us. */
+	u16_t rx_max_time;
+};
+
+/** Connection data length parameters for LE connections */
+struct bt_conn_le_data_len_param {
+	/** Maximum Link Layer transmission payload size in bytes. */
+	u16_t tx_max_len;
+	/** Maximum Link Layer transmission payload time in us. */
+	u16_t tx_max_time;
+};
+
+/** Initialize transmit data length parameters
+ *
+ * @param  _tx_max_len  Maximum Link Layer transmission payload size in bytes.
+ * @param  _tx_max_time Maximum Link Layer transmission payload time in us.
+ */
+#define BT_CONN_LE_DATA_LEN_PARAM_INIT(_tx_max_len, _tx_max_time) \
+{ \
+	.tx_max_len = (_tx_max_len), \
+	.tx_max_time = (_tx_max_time), \
+}
+
+/** Helper to declare transmit data length parameters inline
+ *
+ * @param  _tx_max_len  Maximum Link Layer transmission payload size in bytes.
+ * @param  _tx_max_time Maximum Link Layer transmission payload time in us.
+ */
+#define BT_CONN_LE_DATA_LEN_PARAM(_tx_max_len, _tx_max_time) \
+	((struct bt_conn_le_data_len_param[]) { \
+		BT_CONN_LE_DATA_LEN_PARAM_INIT(_tx_max_len, _tx_max_time) \
+	 })
+
+/** Default LE data length parameters. */
+#define BT_LE_DATA_LEN_PARAM_DEFAULT \
+	BT_CONN_LE_DATA_LEN_PARAM(BT_GAP_DATA_LEN_DEFAULT, \
+				  BT_GAP_DATA_TIME_DEFAULT)
+
+/** Maximum LE data length parameters. */
+#define BT_LE_DATA_LEN_PARAM_MAX \
+	BT_CONN_LE_DATA_LEN_PARAM(BT_GAP_DATA_LEN_MAX, \
+				  BT_GAP_DATA_TIME_MAX)
+
 /** @brief Increment a connection's reference count.
  *
  *  Increment the reference count of a connection object.
@@ -163,6 +214,11 @@ struct bt_conn_le_info {
 	u16_t interval; /** Connection interval */
 	u16_t latency; /** Connection slave latency */
 	u16_t timeout; /** Connection supervision timeout */
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+	/* Connection maximum single fragment parameters */
+	const struct bt_conn_le_data_len_info *data_len;
+#endif /* defined(CONFIG_BT_USER_DATA_LEN_UPDATE) */
 };
 
 /** BR/EDR Connection Info Structure */
@@ -273,6 +329,16 @@ int bt_conn_get_remote_info(struct bt_conn *conn,
  */
 int bt_conn_le_param_update(struct bt_conn *conn,
 			    const struct bt_le_conn_param *param);
+
+/** @brief Update the connection transmit data length parameters.
+ *
+ *  @param conn  Connection object.
+ *  @param param Updated data length parameters.
+ *
+ *  @return Zero on success or (negative) error code on failure.
+ */
+int bt_conn_le_data_len_update(struct bt_conn *conn,
+			       const struct bt_conn_le_data_len_param *param);
 
 /** @brief Disconnect from a remote device or cancel pending connection.
  *
@@ -738,6 +804,19 @@ struct bt_conn_cb {
 	void (*remote_info_available)(struct bt_conn *conn,
 				      struct bt_conn_remote_info *remote_info);
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+	/** @brief The data length parameters of the connection has changed.
+	 *
+	 *  This callback notifies the application that the maximum Link Layer
+	 *  payload length or transmission time has changed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param info Connection data length information.
+	 */
+	void (*le_data_len_updated)(struct bt_conn *conn,
+				    struct bt_conn_le_data_len_info *info);
+#endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
 
 	struct bt_conn_cb *_next;
 };

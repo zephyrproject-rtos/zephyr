@@ -272,16 +272,25 @@ config BT_AUTO_PHY_UPDATE
 	  but want to rely on the remote device to initiate the procedure at its
 	  discretion.
 
+config BT_USER_DATA_LEN_UPDATE
+	bool "User control of Data Length Update Procedure"
+	depends on BT_DATA_LEN_UPDATE
+	help
+	  Enable application access to initiate the Data Length Update
+	  Procedure. The application can also a register callback to be notified
+	  about Data Length changes on the connection. The current Data Length
+	  info is available in the connection info.
+
 config BT_AUTO_DATA_LEN_UPDATE
 	bool "Auto-initiate Data Length Update procedure"
 	depends on BT_DATA_LEN_UPDATE
-	default y
+	default y if !BT_USER_DATA_LEN_UPDATE
 	help
 	  Initiate Data Length Update Procedure on connection establishment.
 
 	  Disable this if you want the Data Length Update Procedure feature
 	  supported but want to rely on the remote device to initiate the
-	  procedure at its discretion.
+	  procedure at its discretion or want to initiate manually.
 
 config BT_REMOTE_INFO
 	bool "Enable application access to remote information"
