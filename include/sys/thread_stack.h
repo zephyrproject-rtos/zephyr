@@ -50,8 +50,15 @@ struct __packed z_thread_stack_element {
  * Take the provided value and round it down such that the value is aligned
  * to the CPU and ABI requirements. This is not used for any memory protection
  * hardware requirements.
+ *
+ * @param ptr Proposed stack pointer address
+ * @return Properly aligned stack pointer address
  */
-#define Z_STACK_PTR_ALIGN(ptr) ROUND_DOWN((ptr), ARCH_STACK_PTR_ALIGN)
+static inline char *z_stack_ptr_align(char *ptr)
+{
+	return (char *)ROUND_DOWN(ptr, ARCH_STACK_PTR_ALIGN);
+}
+#define Z_STACK_PTR_ALIGN(ptr) ((uintptr_t)z_stack_ptr_align((char *)(ptr)))
 
 /**
  * @brief Properly align the lowest address of a stack object
