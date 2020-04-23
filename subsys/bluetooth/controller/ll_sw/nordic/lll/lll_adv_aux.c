@@ -133,9 +133,12 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	/* FIXME: get latest only when primary PDU without Aux PDUs */
 	sec = lll_adv_aux_data_latest_get(lll, &upd);
 
-	/* Get reference to primary PDU aux_ptr */
+	/* Get reference to primary PDU */
 	lll_adv = lll->adv;
 	pri = lll_adv_data_curr_get(lll_adv);
+	LL_ASSERT(pri->type == PDU_ADV_TYPE_EXT_IND);
+
+	/* Get reference to extended header */
 	p = (void *)&pri->adv_ext_ind;
 	h = (void *)p->ext_hdr_adi_adv_data;
 	ptr = (u8_t *)h + sizeof(*h);
@@ -150,9 +153,13 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 		ptr += sizeof(struct ext_adv_adi);
 	}
 
-	LL_ASSERT((pri->type == PDU_ADV_TYPE_EXT_IND) && h->aux_ptr);
-
 	aux = (void *)ptr;
+
+	/* Abort if no aux_ptr filled */
+	if (!h->aux_ptr || !aux->offs) {
+		radio_isr_set(lll_isr_abort, lll);
+		radio_disable();
+	}
 
 #if !defined(BT_CTLR_ADV_EXT_PBACK)
 	/* Set up Radio H/W */
