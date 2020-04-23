@@ -86,21 +86,6 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 	net_buf_reserve(buf, BT_BUF_RESERVE);
 	bt_buf_set_type(buf, type);
 
-	if (IS_ENABLED(CONFIG_BT_HCI_RAW_H4) &&
-	    raw_mode == BT_HCI_RAW_MODE_H4) {
-		switch (type) {
-		case BT_BUF_EVT:
-			net_buf_push_u8(buf, H4_EVT);
-			break;
-		case BT_BUF_ACL_IN:
-			net_buf_push_u8(buf, H4_ACL);
-			break;
-		default:
-			LOG_ERR("Invalid H4 type %u", type);
-			return NULL;
-		}
-	}
-
 	return buf;
 }
 
@@ -169,6 +154,21 @@ int bt_recv(struct net_buf *buf)
 	BT_DBG("buf %p len %u", buf, buf->len);
 
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
+
+	if (IS_ENABLED(CONFIG_BT_HCI_RAW_H4) &&
+	    raw_mode == BT_HCI_RAW_MODE_H4) {
+		switch (bt_buf_get_type(buf)) {
+		case BT_BUF_EVT:
+			net_buf_push_u8(buf, H4_EVT);
+			break;
+		case BT_BUF_ACL_IN:
+			net_buf_push_u8(buf, H4_ACL);
+			break;
+		default:
+			BT_ERR("Unknown type %u", bt_buf_get_type(buf));
+			return -EINVAL;
+		}
+	}
 
 	/* Queue to RAW rx queue */
 	net_buf_put(raw_rx, buf);
