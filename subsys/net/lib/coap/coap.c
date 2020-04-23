@@ -1226,6 +1226,16 @@ void coap_pending_clear(struct coap_pending *pending)
 	pending->data = NULL;
 }
 
+void coap_pendings_clear(struct coap_pending *pendings, size_t len)
+{
+	struct coap_pending *p;
+	size_t i;
+
+	for (i = 0, p = pendings; i < len; i++, p++) {
+		coap_pending_clear(p);
+	}
+}
+
 static int get_observe_option(const struct coap_packet *cpkt)
 {
 	struct coap_option option = {};
@@ -1316,6 +1326,16 @@ void coap_reply_init(struct coap_reply *reply,
 void coap_reply_clear(struct coap_reply *reply)
 {
 	(void)memset(reply, 0, sizeof(*reply));
+}
+
+void coap_replies_clear(struct coap_reply *replies, size_t len)
+{
+	struct coap_reply *r;
+	size_t i;
+
+	for (i = 0, r = replies; i < len; i++, r++) {
+		coap_reply_clear(r);
+	}
 }
 
 int coap_resource_notify(struct coap_resource *resource)
