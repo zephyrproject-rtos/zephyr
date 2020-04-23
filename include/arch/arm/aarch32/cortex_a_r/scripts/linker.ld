@@ -81,9 +81,6 @@ _region_min_align = 4;
 MEMORY
 {
     FLASH    (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
-#ifdef DT_CCM_BASE_ADDRESS
-    CCM      (rw) : ORIGIN = DT_CCM_BASE_ADDRESS, LENGTH = DT_CCM_SIZE * 1K
-#endif
     SRAM     (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST (wx) : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K

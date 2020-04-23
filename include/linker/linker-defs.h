@@ -215,7 +215,7 @@ extern char __gcov_bss_size[];
 /* end address of image, used by newlib for the heap */
 extern char _end[];
 
-#ifdef DT_CCM_BASE_ADDRESS
+#if DT_HAS_NODE(DT_CHOSEN(zephyr_ccm))
 extern char __ccm_data_rom_start[];
 extern char __ccm_start[];
 extern char __ccm_data_start[];
@@ -225,7 +225,7 @@ extern char __ccm_bss_end[];
 extern char __ccm_noinit_start[];
 extern char __ccm_noinit_end[];
 extern char __ccm_end[];
-#endif /* DT_CCM_BASE_ADDRESS */
+#endif
 
 #if DT_HAS_NODE(DT_CHOSEN(zephyr_dtcm))
 extern char __dtcm_data_start[];

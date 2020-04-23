@@ -106,7 +106,7 @@ extern void idle(void *unused1, void *unused2, void *unused3);
 void z_bss_zero(void)
 {
 	(void)memset(__bss_start, 0, __bss_end - __bss_start);
-#ifdef DT_CCM_BASE_ADDRESS
+#if DT_HAS_NODE(DT_CHOSEN(zephyr_ccm))
 	(void)memset(&__ccm_bss_start, 0,
 		     ((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
 #endif
@@ -147,7 +147,7 @@ void z_data_copy(void)
 	(void)memcpy(&_ramfunc_ram_start, &_ramfunc_rom_start,
 		 (uintptr_t) &_ramfunc_ram_size);
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
-#ifdef DT_CCM_BASE_ADDRESS
+#if DT_HAS_NODE(DT_CHOSEN(zephyr_ccm))
 	(void)memcpy(&__ccm_data_start, &__ccm_data_rom_start,
 		 __ccm_data_end - __ccm_data_start);
 #endif
