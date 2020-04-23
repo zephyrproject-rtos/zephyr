@@ -59,6 +59,7 @@ static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
 static void isr_race(void *param);
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
+static void ticker_stop_op_cb(uint32_t status, void *param);
 static void ticker_start_op_cb(uint32_t status, void *param);
 static void preempt_ticker_start(struct lll_prepare_param *prepare_param);
 static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
@@ -558,9 +559,18 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 
 	err = prepare_cb(prepare_param);
 
-	/* NOTE: Should the preempt timeout be stopped, check for any more
-	 *       in pipeline?
-	 */
+#if !defined(CONFIG_BT_CTLR_LOW_LAT)
+	uint32_t ret;
+
+	/* Stop any scheduled preempt ticker */
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR,
+			  TICKER_USER_ID_LLL,
+			  TICKER_ID_LLL_PREEMPT,
+			  ticker_stop_op_cb, NULL);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_FAILURE) ||
+		  (ret == TICKER_STATUS_BUSY));
+#endif /* !CONFIG_BT_CTLR_LOW_LAT */
 
 	return err;
 }
@@ -583,6 +593,17 @@ static void isr_race(void *param)
 }
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
+static void ticker_stop_op_cb(uint32_t status, void *param)
+{
+	/* NOTE: this callback is present only for addition of debug messages
+	 * when needed, else can be dispensed with.
+	 */
+	ARG_UNUSED(param);
+
+	LL_ASSERT((status == TICKER_STATUS_SUCCESS) ||
+		  (status == TICKER_STATUS_FAILURE));
+}
+
 static void ticker_start_op_cb(uint32_t status, void *param)
 {
 	/* NOTE: this callback is present only for addition of debug messages
