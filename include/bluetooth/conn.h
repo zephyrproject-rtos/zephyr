@@ -276,21 +276,21 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason);
 
 enum {
 	/** Convenience value when no options are specified. */
-	BT_LE_CONN_OPT_NONE = 0,
+	BT_CONN_LE_OPT_NONE = 0,
 
 	/** @brief Enable LE Coded PHY.
 	 *
 	 *  Enable scanning on the LE Coded PHY.
 	 */
-	BT_LE_CONN_OPT_CODED = BIT(0),
+	BT_CONN_LE_OPT_CODED = BIT(0),
 
 	/** @brief Disable LE 1M PHY.
 	 *
 	 *  Disable scanning on the LE 1M PHY.
 	 *
-	 *  @note Requires @ref BT_LE_CONN_OPT_CODED.
+	 *  @note Requires @ref BT_CONN_LE_OPT_CODED.
 	 */
-	BT_LE_CONN_OPT_NO_1M = BIT(1),
+	BT_CONN_LE_OPT_NO_1M = BIT(1),
 };
 
 struct bt_conn_le_create_param {
@@ -346,7 +346,7 @@ struct bt_conn_le_create_param {
  *  Scan continuously by setting scan interval equal to scan window.
  */
 #define BT_CONN_LE_CREATE_CONN \
-	BT_CONN_LE_CREATE_PARAM(BT_LE_CONN_OPT_NONE, \
+	BT_CONN_LE_CREATE_PARAM(BT_CONN_LE_OPT_NONE, \
 				BT_GAP_SCAN_FAST_INTERVAL, \
 				BT_GAP_SCAN_FAST_INTERVAL)
 
@@ -355,7 +355,7 @@ struct bt_conn_le_create_param {
  *  Scan interval: 60 ms.
  */
 #define BT_CONN_LE_CREATE_CONN_AUTO \
-	BT_CONN_LE_CREATE_PARAM(BT_LE_CONN_OPT_NONE, \
+	BT_CONN_LE_CREATE_PARAM(BT_CONN_LE_OPT_NONE, \
 				BT_GAP_SCAN_FAST_INTERVAL, \
 				BT_GAP_SCAN_FAST_WINDOW)
 

@@ -1210,9 +1210,9 @@ static int cmd_connect_le(const struct shell *shell, size_t argc, char *argv[])
 		const char *arg = argv[argn];
 
 		if (!strcmp(arg, "coded")) {
-			options |= BT_LE_CONN_OPT_CODED;
+			options |= BT_CONN_LE_OPT_CODED;
 		} else if (!strcmp(arg, "no-1m")) {
-			options |= BT_LE_CONN_OPT_NO_1M;
+			options |= BT_CONN_LE_OPT_NO_1M;
 		} else {
 			shell_help(shell);
 			return SHELL_CMD_HELP_PRINTED;
@@ -2130,9 +2130,9 @@ static int cmd_wl_connect(const struct shell *shell, size_t argc, char *argv[])
 		const char *arg = argv[argn];
 
 		if (!strcmp(arg, "coded")) {
-			options |= BT_LE_CONN_OPT_CODED;
+			options |= BT_CONN_LE_OPT_CODED;
 		} else if (!strcmp(arg, "no-1m")) {
-			options |= BT_LE_CONN_OPT_NO_1M;
+			options |= BT_CONN_LE_OPT_NO_1M;
 		} else {
 			shell_help(shell);
 			return SHELL_CMD_HELP_PRINTED;
