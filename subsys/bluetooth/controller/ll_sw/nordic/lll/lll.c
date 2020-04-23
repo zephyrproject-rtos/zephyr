@@ -484,7 +484,7 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 {
 	uint8_t idx = UINT8_MAX;
 	struct lll_event *p;
-	int ret, err;
+	int err;
 
 	/* Find the ready prepare in the pipeline */
 	p = ull_prepare_dequeue_iter(&idx);
@@ -506,9 +506,9 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		}
 
 		/* Store the next prepare for deferred call */
-		ret = ull_prepare_enqueue(is_abort_cb, abort_cb, prepare_param,
+		err = ull_prepare_enqueue(is_abort_cb, abort_cb, prepare_param,
 					  prepare_cb, prio, is_resume);
-		LL_ASSERT(!ret);
+		LL_ASSERT(!err);
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		if (is_resume) {
@@ -536,15 +536,15 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 
 		if (next) {
 			/* check if resume requested by curr */
-			ret = event.curr.is_abort_cb(NULL, 0, event.curr.param,
+			err = event.curr.is_abort_cb(NULL, 0, event.curr.param,
 						     &resume_cb, &resume_prio);
-			LL_ASSERT(ret);
+			LL_ASSERT(err);
 
-			if (ret == -EAGAIN) {
-				ret = resume_enqueue(resume_cb, resume_prio);
-				LL_ASSERT(!ret);
+			if (err == -EAGAIN) {
+				err = resume_enqueue(resume_cb, resume_prio);
+				LL_ASSERT(!err);
 			} else {
-				LL_ASSERT(ret == -ECANCELED);
+				LL_ASSERT(err == -ECANCELED);
 			}
 		}
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
@@ -599,7 +599,7 @@ static void preempt_ticker_start(struct lll_prepare_param *prepare_param)
 	uint32_t preempt_anchor;
 	struct evt_hdr *evt;
 	uint32_t preempt_to;
-	int ret;
+	uint32_t ret;
 
 	/* Calc the preempt timeout */
 	evt = HDR_LLL2EVT(prepare_param->param);
