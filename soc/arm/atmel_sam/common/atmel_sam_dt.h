@@ -45,6 +45,18 @@
 		ATMEL_SAM_PIN_PERIPH(inst, idx) << 16		\
 	}
 
+/* Get the number of pins for pinctrl-0 */
+#define ATMEL_SAM_DT_NUM_PINS(inst) DT_INST_PROP_LEN(inst, pinctrl_0)
+
+/* internal macro to structure things for use with UTIL_LISTIFY */
+#define ATMEL_SAM_DT_PIN_ELEM(idx, inst) ATMEL_SAM_DT_PIN(inst, idx),
+
+/* Construct an array intializer for soc_gpio_pin for a device instance */
+#define ATMEL_SAM_DT_PINS(inst)					\
+	{ UTIL_LISTIFY(ATMEL_SAM_DT_NUM_PINS(inst),		\
+		       ATMEL_SAM_DT_PIN_ELEM, inst)		\
+	}
+
 /* Devicetree macros related to clock */
 
 #define ATMEL_SAM_DT_CPU_CLK_FREQ_HZ \
