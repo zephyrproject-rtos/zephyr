@@ -34,25 +34,9 @@ struct init_stack_frame {
 };
 
 /*
- * @brief Initialize a new thread from its stack space
- *
- * The thread control structure is put at the lower address of the stack. An
- * initial context, to be "restored" by __return_from_coop(), is put at
- * the other end of the stack, and thus reusable by the stack when not
- * needed anymore.
- *
  * The initial context is a basic stack frame that contains arguments for
  * z_thread_entry() return address, that points at z_thread_entry()
  * and status register.
- *
- * @param pStackmem the pointer to aligned stack memory
- * @param stackSize the stack size in bytes
- * @param pEntry thread entry point routine
- * @param parameter1 first param to entry point
- * @param parameter2 second param to entry point
- * @param parameter3 third param to entry point
- *
- * @return N/A
  */
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     size_t stackSize, k_thread_entry_t pEntry,

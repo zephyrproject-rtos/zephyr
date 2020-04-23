@@ -16,26 +16,6 @@
 #include <wait_q.h>
 #include <arch/cpu.h>
 
-/**
- *
- * @brief Initialize a new thread from its stack space
- *
- * The control structure (thread) is put at the lower address of the stack. An
- * initial context, to be "restored" by z_arm64_context_switch(), is put at the
- * other end of the stack, and thus reusable by the stack when not needed
- * anymore.
- *
- * <options> is currently unused.
- *
- * @param stack      pointer to the aligned stack memory
- * @param stackSize  size of the available stack memory in bytes
- * @param pEntry the entry point
- * @param parameter1 entry point to the first param
- * @param parameter2 entry point to the second param
- * @param parameter3 entry point to the third param
- *
- * @return N/A
- */
 
 void z_thread_entry_wrapper(k_thread_entry_t k, void *p1, void *p2, void *p3);
 
@@ -58,6 +38,11 @@ struct init_stack_frame {
 	/* least recently pushed */
 };
 
+/*
+ * An initial context, to be "restored" by z_arm64_context_switch(), is put at
+ * the other end of the stack, and thus reusable by the stack when not needed
+ * anymore.
+ */
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     size_t stackSize, k_thread_entry_t pEntry,
 		     void *parameter1, void *parameter2, void *parameter3)
