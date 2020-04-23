@@ -86,6 +86,22 @@ static inline const struct pwm_stm32_config *to_config(struct device *dev)
 }
 
 /**
+ * Obtain LL polarity from PWM flags.
+ *
+ * @param flags PWM flags.
+ *
+ * @return LL polarity.
+ */
+static uint32_t get_polarity(pwm_flags_t flags)
+{
+	if (flags & PWM_POLARITY_NORMAL) {
+		return LL_TIM_OCPOLARITY_HIGH;
+	}
+
+	return LL_TIM_OCPOLARITY_LOW;
+}
+
+/**
  * Obtain timer clock speed.
  *
  * @param pclken  Timer clock control subsystem.
@@ -209,7 +225,7 @@ static int pwm_stm32_pin_set(struct device *dev, uint32_t pwm,
 		oc_init.OCMode = LL_TIM_OCMODE_PWM1;
 		oc_init.OCState = LL_TIM_OCSTATE_ENABLE;
 		oc_init.CompareValue = pulse_cycles;
-		oc_init.OCPolarity = LL_TIM_OCPOLARITY_HIGH;
+		oc_init.OCPolarity = get_polarity(flags);
 		oc_init.OCIdleState = LL_TIM_OCIDLESTATE_LOW;
 
 		if (LL_TIM_OC_Init(cfg->timer, channel, &oc_init) != SUCCESS) {
@@ -219,6 +235,7 @@ static int pwm_stm32_pin_set(struct device *dev, uint32_t pwm,
 
 		LL_TIM_OC_EnablePreload(cfg->timer, channel);
 	} else {
+		LL_TIM_OC_SetPolarity(cfg->timer, channel, get_polarity(flags));
 		set_timer_compare[pwm - 1u](cfg->timer, pulse_cycles);
 	}
 

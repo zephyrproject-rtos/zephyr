@@ -10,6 +10,7 @@
 #include <dt-bindings/clock/stm32_clock.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	chosen {
@@ -309,7 +310,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_1";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -327,7 +328,7 @@
 				status = "disabled";
 				st,prescaler = <0>;
 				label = "PWM_2";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -345,7 +346,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_3";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -363,7 +364,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_4";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -381,7 +382,7 @@
 				status = "disabled";
 				st,prescaler = <0>;
 				label = "PWM_5";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -399,7 +400,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_6";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -417,7 +418,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_7";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -435,7 +436,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_8";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -453,7 +454,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_12";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -471,7 +472,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_13";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -489,7 +490,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_14";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -507,7 +508,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_15";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -525,7 +526,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_16";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -543,7 +544,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_17";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 

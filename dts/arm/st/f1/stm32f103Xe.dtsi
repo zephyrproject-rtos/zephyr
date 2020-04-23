@@ -53,7 +53,7 @@
 				status = "disabled";
 				st,prescaler = <0>;
 				label = "PWM_5";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -69,7 +69,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_6";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -85,7 +85,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_7";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -134,7 +134,7 @@
 				status = "disabled";
 				st,prescaler = <10000>;
 				label = "PWM_8";
-				#pwm-cells = <2>;
+				#pwm-cells = <3>;
 			};
 		};
 

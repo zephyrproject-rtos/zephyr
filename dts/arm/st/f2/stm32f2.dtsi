@@ -8,6 +8,7 @@
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/clock/stm32_clock.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pwm/pwm.h>
 
 / {
 	chosen {
