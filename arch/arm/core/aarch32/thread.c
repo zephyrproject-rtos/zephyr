@@ -29,8 +29,8 @@
  * of the ESF.
  */
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stackSize, k_thread_entry_t pEntry,
-		     void *parameter1, void *parameter2, void *parameter3)
+		     size_t stack_size, k_thread_entry_t entry,
+		     void *p1, void *p2, void *p3)
 {
 	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
 	char *stackEnd;
@@ -53,11 +53,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * switches to user mode (thus, its stack area will need to be MPU-
 	 * programmed to be assigned unprivileged RW access permission).
 	 */
-	stackSize &= ~(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1);
+	stack_size &= ~(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1);
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 	/* Reserve space on top of stack for local data. */
-	uint32_t p_local_data = Z_STACK_PTR_ALIGN(pStackMem + stackSize
+	uint32_t p_local_data = Z_STACK_PTR_ALIGN(pStackMem + stack_size
 		- sizeof(*thread->userspace_local_data));
 
 	thread->userspace_local_data =
@@ -65,7 +65,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	/* Top of actual stack must be moved below the user local data. */
 	top_of_stack_offset = (uint32_t)
-		(pStackMem + stackSize - ((char *)p_local_data));
+		(pStackMem + stack_size - ((char *)p_local_data));
 
 #endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
 #endif /* CONFIG_USERSPACE */
@@ -83,15 +83,15 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	if ((thread->base.user_options & K_FP_REGS) != 0) {
 		pStackMem += MPU_GUARD_ALIGN_AND_SIZE_FLOAT
 			- MPU_GUARD_ALIGN_AND_SIZE;
-		stackSize -= MPU_GUARD_ALIGN_AND_SIZE_FLOAT
+		stack_size -= MPU_GUARD_ALIGN_AND_SIZE_FLOAT
 			- MPU_GUARD_ALIGN_AND_SIZE;
 	}
 #endif
-	stackEnd = pStackMem + stackSize;
+	stackEnd = pStackMem + stack_size;
 
 	struct __esf *pInitCtx;
 
-	z_new_thread_init(thread, pStackMem, stackSize);
+	z_new_thread_init(thread, pStackMem, stack_size);
 
 	/* Carve the thread entry struct from the "base" of the stack
 	 *
@@ -117,10 +117,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->basic.pc &= 0xfffffffe;
 #endif
 
-	pInitCtx->basic.a1 = (uint32_t)pEntry;
-	pInitCtx->basic.a2 = (uint32_t)parameter1;
-	pInitCtx->basic.a3 = (uint32_t)parameter2;
-	pInitCtx->basic.a4 = (uint32_t)parameter3;
+	pInitCtx->basic.a1 = (uint32_t)entry;
+	pInitCtx->basic.a2 = (uint32_t)p1;
+	pInitCtx->basic.a3 = (uint32_t)p2;
+	pInitCtx->basic.a4 = (uint32_t)p3;
 
 #if defined(CONFIG_CPU_CORTEX_M)
 	pInitCtx->basic.xpsr =

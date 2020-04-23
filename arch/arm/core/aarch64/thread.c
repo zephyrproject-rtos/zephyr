@@ -44,29 +44,29 @@ struct init_stack_frame {
  * anymore.
  */
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stackSize, k_thread_entry_t pEntry,
-		     void *parameter1, void *parameter2, void *parameter3)
+		     size_t stack_size, k_thread_entry_t entry,
+		     void *p1, void *p2, void *p3)
 {
 	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
 	char *stackEnd;
 	struct init_stack_frame *pInitCtx;
 
-	stackEnd = pStackMem + stackSize;
+	stackEnd = pStackMem + stack_size;
 
-	z_new_thread_init(thread, pStackMem, stackSize);
+	z_new_thread_init(thread, pStackMem, stack_size);
 
 	pInitCtx = (struct init_stack_frame *)(Z_STACK_PTR_ALIGN(stackEnd -
 				    sizeof(struct init_stack_frame)));
 
-	pInitCtx->entry_point = (uint64_t)pEntry;
-	pInitCtx->arg1 = (uint64_t)parameter1;
-	pInitCtx->arg2 = (uint64_t)parameter2;
-	pInitCtx->arg3 = (uint64_t)parameter3;
+	pInitCtx->entry_point = (uint64_t)entry;
+	pInitCtx->arg1 = (uint64_t)p1;
+	pInitCtx->arg2 = (uint64_t)p2;
+	pInitCtx->arg3 = (uint64_t)p3;
 
 	/*
 	 * - ELR_ELn: to be used by eret in z_thread_entry_wrapper() to return
-	 *   to z_thread_entry() with pEntry in x0(entry_point) and the parameters
-	 *   already in place in x1(arg1), x2(arg2), x3(arg3).
+	 *   to z_thread_entry() with entry in x0(entry_point) and the
+	 *   parameters already in place in x1(arg1), x2(arg2), x3(arg3).
 	 * - SPSR_ELn: to enable IRQs (we are masking debug exceptions, SError
 	 *   interrupts and FIQs).
 	 */
@@ -76,7 +76,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/*
 	 * We are saving:
 	 *
-	 * - SP: to pop out pEntry and parameters when going through
+	 * - SP: to pop out entry and parameters when going through
 	 *   z_thread_entry_wrapper().
 	 * - x30: to be used by ret in z_arm64_context_switch() when the new
 	 *   task is first scheduled.

@@ -57,16 +57,16 @@ void *xtensa_init_stack(int *stack_top,
 }
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t sz, k_thread_entry_t entry,
+		     size_t stack_size, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
 {
 	char *base = Z_THREAD_STACK_BUFFER(stack);
-	char *top = base + sz;
+	char *top = base + stack_size;
 
 	/* Align downward.  The API as specified requires a runtime check. */
 	top = (char *)(((unsigned int)top) & ~3);
 
-	z_new_thread_init(thread, base, sz);
+	z_new_thread_init(thread, base, stack_size);
 
 	thread->switch_handle = xtensa_init_stack((void *)top, entry,
 						  p1, p2, p3);

@@ -13,7 +13,7 @@ extern void x86_sse_init(struct k_thread *); /* in locore.S */
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     size_t stack_size, k_thread_entry_t entry,
-		     void *parameter1, void *parameter2, void *parameter3)
+		     void *p1, void *p2, void *p3)
 {
 	void *switch_entry;
 
@@ -44,9 +44,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * thread->callee_saved.rip
 	 */
 	thread->arch.rdi = (long) entry;
-	thread->arch.rsi = (long) parameter1;
-	thread->arch.rdx = (long) parameter2;
-	thread->arch.rcx = (long) parameter3;
+	thread->arch.rsi = (long) p1;
+	thread->arch.rdx = (long) p2;
+	thread->arch.rcx = (long) p3;
 
 	x86_sse_init(thread);
 
