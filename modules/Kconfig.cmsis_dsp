@@ -662,6 +662,11 @@ config CMSIS_DSP_NEON
 #	  This option enables the ARMv8.1-M M-Profile Vector Extension (MVE)
 #	  integer instruction set.
 
+config CMSIS_DSP_POWERQUAD
+	bool "PowerQuad hardware acceleration"
+	depends on HAS_MCUX_POWERQUAD
+	default y
+
 comment "Features"
 
 config CMSIS_DSP_LOOPUNROLL

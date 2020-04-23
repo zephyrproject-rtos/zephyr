@@ -21,12 +21,15 @@ manifest:
   remotes:
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
+    - name: nxpmicro
+      url-base: https://github.com/nxpmicro
 
   #
   # Please add items below based on alphabetical order
   projects:
     - name: cmsis
-      revision: 542b2296e6d515b265e25c6b7208e8fea3014f90
+      remote: nxpmicro
+      revision: powerquad
       path: modules/hal/cmsis
     - name: hal_atmel
       revision: 1fe96f0a5e1a11d8101b258a3b84d35dc7178401
@@ -98,7 +101,8 @@ manifest:
       revision: 1c4fdba512b268033a4cf926bddd323866c3261a
       path: tools/net-tools
     - name: hal_nxp
-      revision: 478f03a71256aeb2890e685ebf5a1dc6832a6b5f
+      remote: nxpmicro
+      revision: powerquad
       path: modules/hal/nxp
     - name: open-amp
       revision: 724f7e2a4519d7e1d40ef330042682dea950c991

@@ -36,6 +36,11 @@ config HAS_MCUX_PCC
 	  Set if the peripheral clock controller module (PCC) module is
 	  present in the SoC.
 
+config HAS_MCUX_POWERQUAD
+	bool
+	help
+	  Set if the PowerQuad DSP hardware accelerator is present in the SoC.
+
 config HAS_MCUX_ELCDIF
 	bool
 	help

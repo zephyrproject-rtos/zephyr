@@ -77,6 +77,11 @@ static ALWAYS_INLINE void clock_init(void)
 	RESET_PeripheralReset(kHSLSPI_RST_SHIFT_RSTn);
 #endif
 
+#ifdef CONFIG_CMSIS_DSP_POWERQUAD
+	CLOCK_EnableClock(kCLOCK_PowerQuad);
+	RESET_PeripheralReset(kPOWERQUAD_RST_SHIFT_RSTn);
+#endif
+
 #endif /* CONFIG_SOC_LPC55S69_CPU0 */
 }
 
