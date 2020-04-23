@@ -54,42 +54,11 @@ config ETH_MCUX_0
 	help
 	  Include port 0 driver
 
-if ETH_MCUX_0
-
-choice ETH_MCUX_0_MAC_SELECT
-	prompt "MAC address"
-	help
-	  Choose how to configure MAC address.
-
-config ETH_MCUX_0_UNIQUE_MAC
-	bool "Stable MAC address"
-	help
-	  Generate MAC address from MCU's unique identification register.
-endchoice
-
-endif # ETH_MCUX_0
-
 config ETH_MCUX_1
 	bool "MCUX Ethernet port 1"
 	depends on SOC_MIMXRT1062 || SOC_MIMXRT1064
 	help
 	  Include port 1 driver
-
-if ETH_MCUX_1
-
-choice ETH_MCUX_1_MAC_SELECT
-	prompt "MAC address"
-	help
-	  Choose how to configure MAC address.
-
-config ETH_MCUX_1_UNIQUE_MAC
-	bool "Stable MAC address"
-	help
-	  Generate MAC address from MCU's unique identification register.
-
-endchoice
-
-endif # ETH_MCUX_1
 
 config ETH_MCUX_HW_ACCELERATION
 	bool "Enable hardware acceleration"

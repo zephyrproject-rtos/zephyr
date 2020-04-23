@@ -887,8 +887,8 @@ static void generate_random_mac(u8_t *mac_addr)
 }
 #endif
 
-#if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC) || \
-    defined(CONFIG_ETH_MCUX_1_UNIQUE_MAC)
+#if !DT_INST_NODE_HAS_PROP(0, local_mac_address) || \
+    DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1)) && !DT_INST_NODE_HAS_PROP(1, local_mac_address)
 static void generate_eth0_unique_mac(u8_t *mac_addr)
 {
 	/* Trivially "hash" up to 128 bits of MCU unique identifier */
@@ -907,7 +907,7 @@ static void generate_eth0_unique_mac(u8_t *mac_addr)
 }
 #endif
 
-#if defined(CONFIG_ETH_MCUX_1_UNIQUE_MAC)
+#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1)) && !DT_INST_NODE_HAS_PROP(1, local_mac_address)
 static void generate_eth1_unique_mac(u8_t *mac_addr)
 {
 	generate_eth0_unique_mac(mac_addr);
@@ -1204,15 +1204,14 @@ static struct eth_context eth_0_context = {
 	.phy_addr = 0U,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
-#if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC)
-	.generate_mac = generate_eth0_unique_mac,
-#endif
 #if DT_INST_PROP(0, zephyr_random_mac_address)
 	.generate_mac = generate_random_mac,
 #endif
 #if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
 	.mac_addr = DT_INST_PROP(0, local_mac_address),
 	.generate_mac = NULL,
+#else
+	.generate_mac = generate_eth0_unique_mac,
 #endif
 };
 
@@ -1271,15 +1270,14 @@ static struct eth_context eth_1_context = {
 	.phy_addr = 0U,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
-#if defined(CONFIG_ETH_MCUX_1_UNIQUE_MAC)
-	.generate_mac = generate_eth1_unique_mac,
-#endif
 #if DT_INST_PROP(1, zephyr_random_mac_address)
 	.generate_mac = generate_random_mac,
 #endif
 #if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(1))
 	.mac_addr = DT_INST_PROP(1, local_mac_address),
 	.generate_mac = NULL,
+#else
+	.generate_mac = generate_eth1_unique_mac,
 #endif
 };
 
