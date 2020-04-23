@@ -12,6 +12,9 @@
 
 struct dma_stm32_stream {
 	u32_t direction;
+#ifdef CONFIG_DMAMUX_STM32
+	int mux_channel; /* stores the dmamux channel */
+#endif /* CONFIG_DMAMUX_STM32 */
 	bool source_periph;
 	bool busy;
 	u32_t src_size;
@@ -70,5 +73,15 @@ u32_t stm32_dma_get_fifo_threshold(u16_t fifo_mode_control);
 u32_t stm32_dma_get_mburst(struct dma_config *config, bool source_periph);
 u32_t stm32_dma_get_pburst(struct dma_config *config, bool source_periph);
 #endif
+
+#ifdef CONFIG_DMAMUX_STM32
+/* dma_stm32_ api functions are exported to the dmamux_stm32 */
+int dma_stm32_configure(struct device *dev, u32_t id,
+			       struct dma_config *config);
+int dma_stm32_reload(struct device *dev, u32_t id,
+			    u32_t src, u32_t dst, size_t size);
+int dma_stm32_start(struct device *dev, u32_t id);
+int dma_stm32_stop(struct device *dev, u32_t id);
+#endif /* CONFIG_DMAMUX_STM32 */
 
 #endif /* DMA_STM32_H_*/
