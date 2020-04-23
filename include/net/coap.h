@@ -769,12 +769,29 @@ bool coap_pending_cycle(struct coap_pending *pending);
 void coap_pending_clear(struct coap_pending *pending);
 
 /**
+ * @brief Cancels all pending retransmissions, so they become
+ * available again.
+ *
+ * @param pendings Pointer to the array of #coap_pending structures
+ * @param len Size of the array of #coap_pending structures
+ */
+void coap_pendings_clear(struct coap_pending *pendings, size_t len);
+
+/**
  * @brief Cancels awaiting for this reply, so it becomes available
  * again. User responsibility to free the memory associated with data.
  *
  * @param reply The reply to be canceled
  */
 void coap_reply_clear(struct coap_reply *reply);
+
+/**
+ * @brief Cancels all replies, so they become available again.
+ *
+ * @param replies Pointer to the array of #coap_reply structures
+ * @param len Size of the array of #coap_reply structures
+ */
+void coap_replies_clear(struct coap_reply *replies, size_t len);
 
 /**
  * @brief Indicates that this resource was updated and that the @a
