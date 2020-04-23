@@ -21,6 +21,10 @@ LOG_MODULE_REGISTER(modem_ublox_sara_r4, CONFIG_MODEM_LOG_LEVEL);
 #include <net/net_offload.h>
 #include <net/socket_offload.h>
 
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
+#include <stdio.h>
+#endif
+
 #include "modem_context.h"
 #include "modem_socket.h"
 #include "modem_cmd_handler.h"
@@ -89,6 +93,8 @@ static struct modem_pin modem_pins[] = {
 #define MDM_MODEL_LENGTH		16
 #define MDM_REVISION_LENGTH		64
 #define MDM_IMEI_LENGTH			16
+#define MDM_IMSI_LENGTH			16
+#define MDM_APN_LENGTH			32
 
 #define RSSI_TIMEOUT_SECS		30
 
@@ -145,10 +151,15 @@ struct modem_data {
 	char mdm_model[MDM_MODEL_LENGTH];
 	char mdm_revision[MDM_REVISION_LENGTH];
 	char mdm_imei[MDM_IMEI_LENGTH];
+	char mdm_imsi[MDM_IMSI_LENGTH];
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 	/* modem variant */
 	int mdm_variant;
+#endif
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
+	/* APN */
+	char mdm_apn[MDM_APN_LENGTH];
 #endif
 
 	/* modem state */
@@ -198,6 +209,90 @@ static int modem_atoi(const char *s, const int err_value,
 
 	return ret;
 }
+
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
+
+/* the list of SIM profiles. Global scope, so the app can change it */
+const char *modem_sim_profiles =
+	CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN_PROFILES;
+
+int find_apn(char *apn, int apnlen, const char *profiles, const char *imsi)
+{
+	int rc = -1;
+
+	/* try to find a match */
+	char *s = strstr(profiles, imsi);
+
+	if (s) {
+		char *eos;
+
+		/* find the assignment operator preceding the match */
+		while (s >= profiles && !strchr("=", *s)) {
+			s--;
+		}
+		/* find the apn preceding the assignment operator */
+		while (s >= profiles && strchr(" =", *s)) {
+			s--;
+		}
+
+		/* mark end of apn string */
+		eos = s+1;
+
+		/* find first character of the apn */
+		while (s >= profiles && !strchr(" ,", *s)) {
+			s--;
+		}
+		s++;
+
+		/* copy the key */
+		if (s >= profiles) {
+			int len = eos - s;
+
+			if (len < apnlen) {
+				memcpy(apn, s, len);
+				apn[len] = '\0';
+				rc = 0;
+			} else {
+				LOG_ERR("buffer overflow");
+			}
+		}
+	}
+
+	return rc;
+}
+
+/* try to detect APN automatically, based on IMSI */
+int modem_detect_apn(const char *imsi)
+{
+	int rc = -1;
+
+	if (imsi != NULL && strlen(imsi) >= 5) {
+
+		/* extract MMC and MNC from IMSI */
+		char mmcmnc[6];
+		*mmcmnc = 0;
+		strncat(mmcmnc, imsi, sizeof(mmcmnc)-1);
+
+		/* try to find a matching IMSI, and assign the APN */
+		rc = find_apn(mdata.mdm_apn,
+			sizeof(mdata.mdm_apn),
+			modem_sim_profiles,
+			mmcmnc);
+		if (rc < 0) {
+			rc = find_apn(mdata.mdm_apn,
+				sizeof(mdata.mdm_apn),
+				modem_sim_profiles,
+				"*");
+		}
+	}
+
+	if (rc == 0) {
+		LOG_INF("Assign APN: \"%s\"", log_strdup(mdata.mdm_apn));
+	}
+
+	return rc;
+}
+#endif
 
 /* send binary data via the +USO[ST/WR] commands */
 static ssize_t send_socket_data(struct modem_socket *sock,
@@ -377,6 +472,24 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imei)
 				    data->rx_buf, 0, len);
 	mdata.mdm_imei[out_len] = '\0';
 	LOG_INF("IMEI: %s", log_strdup(mdata.mdm_imei));
+	return 0;
+}
+
+/* Handler: <IMSI> */
+MODEM_CMD_DEFINE(on_cmd_atcmdinfo_imsi)
+{
+	size_t out_len;
+
+	out_len = net_buf_linearize(mdata.mdm_imsi, sizeof(mdata.mdm_imsi) - 1,
+				    data->rx_buf, 0, len);
+	mdata.mdm_imsi[out_len] = '\0';
+	LOG_INF("IMSI: %s", log_strdup(mdata.mdm_imsi));
+
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
+	/* set the APN automatically */
+	modem_detect_apn(mdata.mdm_imsi);
+#endif
+
 	return 0;
 }
 
@@ -802,18 +915,23 @@ static void modem_reset(void)
 		SETUP_CMD("AT+CGMM", "", on_cmd_atcmdinfo_model, 0U, ""),
 		SETUP_CMD("AT+CGMR", "", on_cmd_atcmdinfo_revision, 0U, ""),
 		SETUP_CMD("AT+CGSN", "", on_cmd_atcmdinfo_imei, 0U, ""),
+		SETUP_CMD("AT+CIMI", "", on_cmd_atcmdinfo_imsi, 0U, ""),
+#if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* setup PDP context definition */
 		SETUP_CMD_NOHANDLE("AT+CGDCONT=1,\"IP\",\""
 					CONFIG_MODEM_UBLOX_SARA_R4_APN "\""),
 		/* start functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
+#endif
 	};
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 	static struct setup_cmd post_setup_cmds_u2[] = {
+#if !defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
 		/* set the APN */
 		SETUP_CMD_NOHANDLE("AT+UPSD=0,1,\""
 				CONFIG_MODEM_UBLOX_SARA_R4_APN "\""),
+#endif
 		/* set dynamic IP */
 		SETUP_CMD_NOHANDLE("AT+UPSD=0,7,\"0.0.0.0\""),
 		/* activate the GPRS connection */
@@ -837,6 +955,14 @@ static void modem_reset(void)
 	};
 
 restart:
+
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
+	mdata.mdm_apn[0] = '\0';
+	strncat(mdata.mdm_apn,
+		CONFIG_MODEM_UBLOX_SARA_R4_APN,
+		sizeof(mdata.mdm_apn)-1);
+#endif
+
 	/* stop RSSI delay work */
 	k_delayed_work_cancel(&mdata.rssi_query_work);
 
@@ -871,6 +997,25 @@ restart:
 		goto error;
 	}
 
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
+	/* autodetect APN from IMSI */
+	char cmd[sizeof("AT+CGDCONT=1,\"IP\",\"\"")+MDM_APN_LENGTH];
+
+	snprintf(cmd, sizeof(cmd), "AT+CGDCONT=1,\"IP\",\"%s\"", mdata.mdm_apn);
+
+	/* setup PDP context definition */
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+		NULL, 0,
+		(const char *)cmd,
+		&mdata.sem_response,
+		MDM_REGISTRATION_TIMEOUT);
+
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+		NULL, 0,
+		"AT+CFUN=1",
+		&mdata.sem_response,
+		MDM_REGISTRATION_TIMEOUT);
+#endif
 
 	if (strlen(CONFIG_MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO) > 0) {
 		/* use manual MCC/MNO entry */
@@ -950,6 +1095,18 @@ restart:
 
 #if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 	if (mdata.mdm_variant == MDM_VARIANT_UBLOX_U2) {
+
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_APN)
+		/* setup PDP context definition */
+		char cmd[sizeof("AT+UPSD=0,1,\"%s\"")+MDM_APN_LENGTH];
+
+		snprintf(cmd, sizeof(cmd), "AT+UPSD=0,1,\"%s\"", mdata.mdm_apn);
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+			NULL, 0,
+			(const char *)cmd,
+			&mdata.sem_response,
+			MDM_REGISTRATION_TIMEOUT);
+#endif
 		ret = modem_cmd_handler_setup_cmds(&mctx.iface,
 			&mctx.cmd_handler,
 			post_setup_cmds_u2,
