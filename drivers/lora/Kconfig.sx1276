@@ -10,7 +10,6 @@ menuconfig LORA_SX1276
 	select HAS_SEMTECH_LORAMAC
 	select HAS_SEMTECH_SX1276
 	depends on SPI
-	depends on COUNTER
 	help
 	  Enable LoRa driver for Semtech SX1276.
 
