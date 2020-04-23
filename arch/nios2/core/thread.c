@@ -29,17 +29,13 @@ struct init_stack_frame {
 
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stack_size, k_thread_entry_t entry,
+		     char *stack_ptr, k_thread_entry_t entry,
 		     void *arg1, void *arg2, void *arg3)
 {
-	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
 	struct init_stack_frame *iframe;
 
-	z_new_thread_init(thread, stack_memory, stack_size);
-
 	/* Initial stack frame data, stored at the base of the stack */
-	iframe = (struct init_stack_frame *)
-		Z_STACK_PTR_ALIGN(stack_memory + stack_size - sizeof(*iframe));
+	iframe = Z_STACK_PTR_TO_FRAME(struct init_stack_frame, stack_ptr);
 
 	/* Setup the initial stack frame */
 	iframe->entry_point = entry;

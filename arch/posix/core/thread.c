@@ -25,22 +25,16 @@
  * pthreads stack and therefore we ignore the stack size
  */
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stack_size, k_thread_entry_t entry,
+		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
 {
 
-	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
-
 	posix_thread_status_t *thread_status;
-
-	z_new_thread_init(thread, stack_memory, stack_size);
 
 	/* We store it in the same place where normal archs store the
 	 * "initial stack frame"
 	 */
-	thread_status = (posix_thread_status_t *)
-		Z_STACK_PTR_ALIGN(stack_memory + stack_size
-				- sizeof(*thread_status));
+	thread_status = Z_STACK_PTR_TO_FRAME(posix_thread_status_t, stack_ptr);
 
 	/* z_thread_entry() arguments */
 	thread_status->entry_point = entry;

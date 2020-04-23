@@ -58,18 +58,23 @@ void arch_busy_wait(uint32_t usec_to_wait);
  * be called with the true bounds of the available stack buffer within the
  * thread's stack object.
  *
+ * The provided stack pointer is guaranteed to be properly aligned with respect
+ * to the CPU and ABI requirements. There may be space reserved between the
+ * stack pointer and the bounds of the stack buffer for initial stack pointer
+ * randomization and thread-local storage.
+ *
  * Fields in thread->base will be initialized when this is called.
  *
  * @param thread Pointer to uninitialized struct k_thread
  * @param stack Pointer to the stack object
- * @param stack_size Stack object buffer size in bytes
+ * @param stack_ptr Aligned initial stack pointer
  * @param entry Thread entry function
  * @param p1 1st entry point parameter
  * @param p2 2nd entry point parameter
  * @param p3 3rd entry point parameter
  */
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stack_size, k_thread_entry_t entry,
+		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3);
 
 #ifdef CONFIG_USE_SWITCH

@@ -16,6 +16,13 @@
 #include <ksched.h>
 #include <wait_q.h>
 
+#if (MPU_GUARD_ALIGN_AND_SIZE_FLOAT > MPU_GUARD_ALIGN_AND_SIZE)
+#define FP_GUARD_EXTRA_SIZE	(MPU_GUARD_ALIGN_AND_SIZE_FLOAT - \
+				 MPU_GUARD_ALIGN_AND_SIZE)
+#else
+#define FP_GUARD_EXTRA_SIZE	0
+#endif
+
 /* An initial context, to be "restored" by z_arm_pendsv(), is put at the other
  * end of the stack, and thus reusable by the stack when not needed anymore.
  *
@@ -29,111 +36,63 @@
  * of the ESF.
  */
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stack_size, k_thread_entry_t entry,
+		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
 {
-	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
-	char *stackEnd;
-	/* Offset between the top of stack and the high end of stack area. */
-	uint32_t top_of_stack_offset = 0U;
+	struct __basic_sf *iframe;
 
-#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) \
-	&& defined(CONFIG_USERSPACE)
-	/* This is required to work-around the case where the thread
-	 * is created without using K_THREAD_STACK_SIZEOF() macro in
-	 * k_thread_create(). If K_THREAD_STACK_SIZEOF() is used, the
-	 * Guard size has already been take out of stackSize.
+#ifdef CONFIG_MPU_STACK_GUARD
+#if CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	/* Guard area is carved-out of the buffer, instead of reserved,
+	 * in this configuration, due to buffer alignment constraints
 	 */
-	stackSize -= MPU_GUARD_ALIGN_AND_SIZE;
-#endif
-
-#if defined(CONFIG_USERSPACE)
-	/* Truncate the stack size to align with the MPU region granularity.
-	 * This is done proactively to account for the case when the thread
-	 * switches to user mode (thus, its stack area will need to be MPU-
-	 * programmed to be assigned unprivileged RW access permission).
-	 */
-	stack_size &= ~(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1);
-
-#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
-	/* Reserve space on top of stack for local data. */
-	uint32_t p_local_data = Z_STACK_PTR_ALIGN(pStackMem + stack_size
-		- sizeof(*thread->userspace_local_data));
-
-	thread->userspace_local_data =
-		(struct _thread_userspace_local_data *)(p_local_data);
-
-	/* Top of actual stack must be moved below the user local data. */
-	top_of_stack_offset = (uint32_t)
-		(pStackMem + stack_size - ((char *)p_local_data));
-
-#endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
-#endif /* CONFIG_USERSPACE */
-
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) \
-	&& defined(CONFIG_MPU_STACK_GUARD)
-	/* For a thread which intends to use the FP services, it is required to
-	 * allocate a wider MPU guard region, to always successfully detect an
-	 * overflow of the stack.
-	 *
-	 * Note that the wider MPU regions requires re-adjusting the stack_info
-	 * .start and .size.
-	 *
-	 */
+	thread->stack_info.start += MPU_GUARD_ALIGN_AND_SIZE;
+	thread->stack_info.size -= MPU_GUARD_ALIGN_AND_SIZE;
+#endif /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+#if FP_GUARD_EXTRA_SIZE > 0
 	if ((thread->base.user_options & K_FP_REGS) != 0) {
-		pStackMem += MPU_GUARD_ALIGN_AND_SIZE_FLOAT
-			- MPU_GUARD_ALIGN_AND_SIZE;
-		stack_size -= MPU_GUARD_ALIGN_AND_SIZE_FLOAT
-			- MPU_GUARD_ALIGN_AND_SIZE;
+		/* Larger guard needed due to lazy stacking of FP regs may
+		 * overshoot the guard area without writing anything. We
+		 * carve it out of the stack buffer as-needed instead of
+		 * unconditionally reserving it.
+		 */
+		thread->stack_info.start += FP_GUARD_EXTRA_SIZE;
+		thread->stack_info.size -= FP_GUARD_EXTRA_SIZE;
 	}
-#endif
-	stackEnd = pStackMem + stack_size;
+#endif /* FP_GUARD_EXTRA_SIZE */
+#endif /* CONFIG_MPU_STACK_GUARD */
 
-	struct __esf *pInitCtx;
-
-	z_new_thread_init(thread, pStackMem, stack_size);
-
-	/* Carve the thread entry struct from the "base" of the stack
-	 *
-	 * The initial carved stack frame only needs to contain the basic
-	 * stack frame (state context), because no FP operations have been
-	 * performed yet for this thread.
-	 */
-	pInitCtx = (struct __esf *)(Z_STACK_PTR_ALIGN(stackEnd -
-		(char *)top_of_stack_offset - sizeof(struct __basic_sf)));
-
+	iframe = Z_STACK_PTR_TO_FRAME(struct __basic_sf, stack_ptr);
 #if defined(CONFIG_USERSPACE)
 	if ((thread->base.user_options & K_USER) != 0) {
-		pInitCtx->basic.pc = (uint32_t)arch_user_mode_enter;
+		iframe->pc = (uint32_t)arch_user_mode_enter;
 	} else {
-		pInitCtx->basic.pc = (uint32_t)z_thread_entry;
+		iframe->pc = (uint32_t)z_thread_entry;
 	}
 #else
-	pInitCtx->basic.pc = (uint32_t)z_thread_entry;
+	iframe->pc = (uint32_t)z_thread_entry;
 #endif
 
 #if defined(CONFIG_CPU_CORTEX_M)
 	/* force ARM mode by clearing LSB of address */
-	pInitCtx->basic.pc &= 0xfffffffe;
+	iframe->pc &= 0xfffffffe;
 #endif
-
-	pInitCtx->basic.a1 = (uint32_t)entry;
-	pInitCtx->basic.a2 = (uint32_t)p1;
-	pInitCtx->basic.a3 = (uint32_t)p2;
-	pInitCtx->basic.a4 = (uint32_t)p3;
+	iframe->a1 = (uint32_t)entry;
+	iframe->a2 = (uint32_t)p1;
+	iframe->a3 = (uint32_t)p2;
+	iframe->a4 = (uint32_t)p3;
 
 #if defined(CONFIG_CPU_CORTEX_M)
-	pInitCtx->basic.xpsr =
+	iframe->xpsr =
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
 #else
-	pInitCtx->basic.xpsr = A_BIT | MODE_SYS;
+	iframe->xpsr = A_BIT | MODE_SYS;
 #if defined(CONFIG_COMPILER_ISA_THUMB2)
-	pInitCtx->basic.xpsr |= T_BIT;
+	iframe->xpsr |= T_BIT;
 #endif /* CONFIG_COMPILER_ISA_THUMB2 */
 #endif /* CONFIG_CPU_CORTEX_M */
 
-	thread->callee_saved.psp = (uint32_t)pInitCtx;
-
+	thread->callee_saved.psp = (uint32_t)iframe;
 	thread->arch.basepri = 0;
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
@@ -142,9 +101,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->arch.priv_stack_start = 0;
 #endif
 #endif
-
-	/* swap_return_value can contain garbage */
-
 	/*
 	 * initial values in all other registers/thread entries are
 	 * irrelevant.
@@ -152,7 +108,6 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 }
 
 #ifdef CONFIG_USERSPACE
-
 FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					void *p1, void *p2, void *p3)
 {
@@ -161,6 +116,24 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	_current->arch.priv_stack_start =
 		(uint32_t)z_priv_stack_find(_current->stack_obj);
 #if defined(CONFIG_MPU_STACK_GUARD)
+#if defined(CONFIG_THREAD_STACK_INFO)
+	/* We're dropping to user mode which means the guard area is no
+	 * longer used here, it instead is moved to the privilege stack
+	 * to catch stack overflows there. Un-do the calculations done
+	 * which accounted for memory borrowed from the thread stack.
+	 */
+#if FP_GUARD_EXTRA_SIZE > 0
+	if ((_current->base.user_options & K_FP_REGS) != 0) {
+		_current->stack_info.start -= FP_GUARD_EXTRA_SIZE;
+		_current->stack_info.size += FP_GUARD_EXTRA_SIZE;
+	}
+#endif /* FP_GUARD_EXTRA_SIZE */
+#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	_current->stack_info.start -= MPU_GUARD_ALIGN_AND_SIZE;
+	_current->stack_info.size += MPU_GUARD_ALIGN_AND_SIZE;
+#endif /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+#endif /* CONFIG_THREAD_STACK_INFO */
+
 	/* Stack guard area reserved at the bottom of the thread's
 	 * privileged stack. Adjust the available (writable) stack
 	 * buffer area accordingly.
@@ -176,7 +149,8 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 
 	z_arm_userspace_enter(user_entry, p1, p2, p3,
 			     (uint32_t)_current->stack_info.start,
-			     _current->stack_info.size);
+			     _current->stack_info.size -
+			     _current->stack_info.delta);
 	CODE_UNREACHABLE;
 }
 

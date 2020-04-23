@@ -11,13 +11,17 @@
 
 extern void x86_sse_init(struct k_thread *); /* in locore.S */
 
+struct x86_initial_frame {
+	/* zeroed return address for ABI */
+	uint64_t rip;
+};
+
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stack_size, k_thread_entry_t entry,
+		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
 {
 	void *switch_entry;
-
-	z_new_thread_init(thread, Z_THREAD_STACK_BUFFER(stack), stack_size);
+	struct x86_initial_frame *iframe;
 
 #if CONFIG_X86_STACK_PROTECTION
 	struct z_x86_thread_stack_header *header =
@@ -35,8 +39,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #else
 	switch_entry = z_thread_entry;
 #endif
-	thread->callee_saved.rsp = (long) Z_THREAD_STACK_BUFFER(stack);
-	thread->callee_saved.rsp += (stack_size - 8); /* fake RIP for ABI */
+	iframe = Z_STACK_PTR_TO_FRAME(struct x86_initial_frame, stack_ptr);
+	iframe->rip = 0;
+	thread->callee_saved.rsp = (long) iframe;
 	thread->callee_saved.rip = (long) switch_entry;
 	thread->callee_saved.rflags = EFLAGS_INITIAL;
 

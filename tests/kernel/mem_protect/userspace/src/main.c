@@ -310,7 +310,7 @@ static void test_write_kernel_data(void)
 K_APP_DMEM(part0) volatile char *priv_stack_ptr;
 #if defined(CONFIG_ARC)
 K_APP_DMEM(part0) int32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
-			       STACK_GUARD_SIZE);
+				 Z_ARC_STACK_GUARD_SIZE);
 #endif
 
 /**

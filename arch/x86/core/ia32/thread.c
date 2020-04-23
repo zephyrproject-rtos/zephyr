@@ -61,16 +61,11 @@ int arch_float_disable(struct k_thread *thread)
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stack_size, k_thread_entry_t entry,
+		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
 {
-	char *stack_buf;
-	char *stack_high;
 	void *swap_entry;
 	struct _x86_initial_frame *initial_frame;
-
-	stack_buf = Z_THREAD_STACK_BUFFER(stack);
-	z_new_thread_init(thread, stack_buf, stack_size);
 
 #if CONFIG_X86_STACK_PROTECTION
 	struct z_x86_thread_stack_header *header =
@@ -88,11 +83,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	swap_entry = z_thread_entry;
 #endif
 
-	stack_high = (char *)Z_STACK_PTR_ALIGN(stack_buf + stack_size);
-
 	/* Create an initial context on the stack expected by z_swap() */
-	initial_frame = (struct _x86_initial_frame *)
-		(stack_high - sizeof(struct _x86_initial_frame));
+	initial_frame = Z_STACK_PTR_TO_FRAME(struct _x86_initial_frame,
+					     stack_ptr);
+
 	/* z_thread_entry() arguments */
 	initial_frame->entry = entry;
 	initial_frame->p1 = p1;
