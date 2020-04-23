@@ -349,6 +349,20 @@ def dt_nodelabel_has_compat(kconf, _, label, compat):
     return "n"
 
 
+def dt_nodelabel_path(kconf, _, label):
+    """
+    This function takes a node label (not a label property) and
+    returns the path to the node which has that label, or an empty
+    string if there is no such node.
+    """
+    if doc_mode or edt is None:
+        return ""
+
+    node = edt.label2node.get(label)
+
+    return node.path if node else ""
+
+
 def shields_list_contains(kconf, _, shield):
     """
     Return "n" if cmake environment variable 'SHIELD_AS_LIST' doesn't exist.
@@ -381,5 +395,6 @@ functions = {
         "dt_node_int_prop_int": (dt_node_int_prop, 2, 2),
         "dt_node_int_prop_hex": (dt_node_int_prop, 2, 2),
         "dt_nodelabel_has_compat": (dt_nodelabel_has_compat, 2, 2),
+        "dt_nodelabel_path": (dt_nodelabel_path, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
 }
