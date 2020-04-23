@@ -32,6 +32,11 @@ config MODEM_UBLOX_SARA_U2
 	help
 	  Enable support for SARA-U2 modem
 
+config MODEM_UBLOX_SARA_AUTODETECT_VARIANT
+	bool "detect automatically"
+	help
+	  Enable automatic detection of modem variant (SARA-R4 or SARA-U2)
+
 endchoice
 
 config MODEM_UBLOX_SARA_R4_NAME

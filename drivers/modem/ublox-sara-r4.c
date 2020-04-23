@@ -92,6 +92,11 @@ static struct modem_pin modem_pins[] = {
 
 #define RSSI_TIMEOUT_SECS		30
 
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
+#define MDM_VARIANT_UBLOX_R4 4
+#define MDM_VARIANT_UBLOX_U2 2
+#endif
+
 NET_BUF_POOL_DEFINE(mdm_recv_pool, MDM_RECV_MAX_BUF, MDM_RECV_BUF_SIZE,
 		    0, NULL);
 
@@ -140,6 +145,11 @@ struct modem_data {
 	char mdm_model[MDM_MODEL_LENGTH];
 	char mdm_revision[MDM_REVISION_LENGTH];
 	char mdm_imei[MDM_IMEI_LENGTH];
+
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
+	/* modem variant */
+	int mdm_variant;
+#endif
 
 	/* modem state */
 	int ev_creg;
@@ -329,6 +339,19 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_model)
 				    data->rx_buf, 0, len);
 	mdata.mdm_model[out_len] = '\0';
 	LOG_INF("Model: %s", log_strdup(mdata.mdm_model));
+
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
+	/* Set modem type */
+	if (strstr(mdata.mdm_model, "R4")) {
+		mdata.mdm_variant = MDM_VARIANT_UBLOX_R4;
+	} else {
+		if (strstr(mdata.mdm_model, "U2")) {
+			mdata.mdm_variant = MDM_VARIANT_UBLOX_U2;
+		}
+	}
+	LOG_INF("Variant: %d", mdata.mdm_variant);
+#endif
+
 	return 0;
 }
 
@@ -382,7 +405,8 @@ MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_cesq)
 }
 #endif
 
-#if defined(CONFIG_MODEM_UBLOX_SARA_U2)
+#if defined(CONFIG_MODEM_UBLOX_SARA_U2) \
+	|| defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
 /* Handler: +CSQ: <signal_power>[0],<qual>[1] */
 MODEM_CMD_DEFINE(on_cmd_atcmdinfo_rssi_csq)
 {
@@ -686,6 +710,42 @@ static int pin_init(void)
 	return 0;
 }
 
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
+static void modem_rssi_query_work(struct k_work *work)
+{
+	struct modem_cmd cmds[] = {
+		  MODEM_CMD("+CSQ: ", on_cmd_atcmdinfo_rssi_csq, 2U, ","),
+		  MODEM_CMD("+CESQ: ", on_cmd_atcmdinfo_rssi_cesq, 6U, ","),
+	};
+	const char *send_cmd_u2 = "AT+CSQ";
+	const char *send_cmd_r4 = "AT+CESQ";
+	int ret;
+
+	/* choose cmd according to variant */
+	const char *send_cmd = send_cmd_r4;
+
+	if (mdata.mdm_variant == MDM_VARIANT_UBLOX_U2) {
+		send_cmd = send_cmd_u2;
+	}
+
+	/* query modem RSSI */
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+		cmds, ARRAY_SIZE(cmds),
+		send_cmd,
+		&mdata.sem_response,
+		MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("AT+C[E]SQ ret:%d", ret);
+	}
+
+	/* re-start RSSI query work */
+	if (work) {
+		k_delayed_work_submit_to_queue(&modem_workq,
+			&mdata.rssi_query_work,
+			K_SECONDS(RSSI_TIMEOUT_SECS));
+	}
+}
+#else
 static void modem_rssi_query_work(struct k_work *work)
 {
 	struct modem_cmd cmd =
@@ -713,6 +773,7 @@ static void modem_rssi_query_work(struct k_work *work)
 					       K_SECONDS(RSSI_TIMEOUT_SECS));
 	}
 }
+#endif
 
 static void modem_reset(void)
 {
@@ -747,6 +808,18 @@ static void modem_reset(void)
 		/* start functionality */
 		SETUP_CMD_NOHANDLE("AT+CFUN=1"),
 	};
+
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
+	static struct setup_cmd post_setup_cmds_u2[] = {
+		/* set the APN */
+		SETUP_CMD_NOHANDLE("AT+UPSD=0,1,\""
+				CONFIG_MODEM_UBLOX_SARA_R4_APN "\""),
+		/* set dynamic IP */
+		SETUP_CMD_NOHANDLE("AT+UPSD=0,7,\"0.0.0.0\""),
+		/* activate the GPRS connection */
+		SETUP_CMD_NOHANDLE("AT+UPSDA=0,3"),
+	};
+#endif
 
 	static struct setup_cmd post_setup_cmds[] = {
 #if defined(CONFIG_MODEM_UBLOX_SARA_U2)
@@ -875,11 +948,25 @@ restart:
 		goto restart;
 	}
 
-	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler,
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
+	if (mdata.mdm_variant == MDM_VARIANT_UBLOX_U2) {
+		ret = modem_cmd_handler_setup_cmds(&mctx.iface,
+			&mctx.cmd_handler,
+			post_setup_cmds_u2,
+			ARRAY_SIZE(post_setup_cmds_u2),
+			&mdata.sem_response,
+			MDM_REGISTRATION_TIMEOUT);
+	} else {
+#endif
+		ret = modem_cmd_handler_setup_cmds(&mctx.iface,
+					   &mctx.cmd_handler,
 					   post_setup_cmds,
 					   ARRAY_SIZE(post_setup_cmds),
 					   &mdata.sem_response,
 					   MDM_REGISTRATION_TIMEOUT);
+#if defined(CONFIG_MODEM_UBLOX_SARA_AUTODETECT_VARIANT)
+	}
+#endif
 	if (ret < 0) {
 		goto error;
 	}
