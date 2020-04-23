@@ -30,4 +30,9 @@
 #define ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, name) \
 	ATMEL_SAM0_DT_INST_DMA_CELL(n, name, channel)
 
+/* Use to check if a sercom 'n' is enabled for a given 'compat' */
+#define ATMEL_SAM0_DT_SERCOM_CHECK(n, compat) \
+	DT_HAS_NODE(DT_NODELABEL(sercom##n)) && \
+	DT_NODE_HAS_COMPAT(DT_NODELABEL(sercom##n), compat)
+
 #endif /* _ATMEL_SAM0_SOC_DT_H_ */
