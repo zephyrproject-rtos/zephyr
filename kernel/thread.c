@@ -484,8 +484,7 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	/* Initialize various struct k_thread members */
 	z_init_thread_base(&new_thread->base, prio, _THREAD_PRESTART, options);
 
-	arch_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
-			  prio, options);
+	arch_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3);
 	/* static threads overwrite it afterwards with real value */
 	new_thread->init_data = NULL;
 	new_thread->fn_abort = NULL;

@@ -33,8 +33,6 @@
  * @param parameter1 entry point to the first param
  * @param parameter2 entry point to the second param
  * @param parameter3 entry point to the third param
- * @param priority   thread priority
- * @param options    thread options: K_ESSENTIAL, K_FP_REGS
  *
  * @return N/A
  */
@@ -62,8 +60,7 @@ struct init_stack_frame {
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     size_t stackSize, k_thread_entry_t pEntry,
-		     void *parameter1, void *parameter2, void *parameter3,
-		     int priority, unsigned int options)
+		     void *parameter1, void *parameter2, void *parameter3)
 {
 	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
 	char *stackEnd;
