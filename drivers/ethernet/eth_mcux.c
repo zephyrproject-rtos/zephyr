@@ -43,6 +43,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <drivers/clock_control.h>
 #endif
 
+#include "eth.h"
+
 #define FREESCALE_OUI_B0 0x00
 #define FREESCALE_OUI_B1 0x04
 #define FREESCALE_OUI_B2 0x9f
@@ -880,15 +882,8 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
     defined(CONFIG_ETH_MCUX_1_RANDOM_MAC)
 static void generate_random_mac(u8_t *mac_addr)
 {
-	u32_t entropy;
-
-	entropy = sys_rand32_get();
-
-	mac_addr[0] |= 0x02; /* force LAA bit */
-
-	mac_addr[3] = entropy >> 8;
-	mac_addr[4] = entropy >> 16;
-	mac_addr[5] = entropy >> 0;
+	gen_random_mac(mac_addr, FREESCALE_OUI_B0,
+		       FREESCALE_OUI_B1, FREESCALE_OUI_B2);
 }
 #endif
 

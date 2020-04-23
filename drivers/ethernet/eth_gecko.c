@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(eth_gecko, CONFIG_ETHERNET_LOG_LEVEL);
 #include "phy_gecko.h"
 #include "eth_gecko_priv.h"
 
+#include "eth.h"
 
 static u8_t dma_tx_buffer[ETH_TX_BUF_COUNT][ETH_TX_BUF_SIZE]
 __aligned(ETH_BUF_ALIGNMENT);
@@ -490,21 +491,7 @@ static int eth_init(struct device *dev)
 #if defined(CONFIG_ETH_GECKO_RANDOM_MAC)
 static void generate_random_mac(u8_t mac_addr[6])
 {
-	u32_t entropy;
-
-	entropy = sys_rand32_get();
-
-	/* SiLabs' OUI */
-	mac_addr[0] = SILABS_OUI_B0;
-	mac_addr[1] = SILABS_OUI_B1;
-	mac_addr[2] = SILABS_OUI_B2;
-
-	mac_addr[3] = entropy >> 0;
-	mac_addr[4] = entropy >> 8;
-	mac_addr[5] = entropy >> 16;
-
-	/* Set MAC address locally administered, unicast (LAA) */
-	mac_addr[0] |= 0x02;
+	gen_random_mac(mac_addr, SILABS_OUI_B0, SILABS_OUI_B1, SILABS_OUI_B2);
 }
 #endif
 
