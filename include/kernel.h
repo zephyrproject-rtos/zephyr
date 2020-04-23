@@ -781,10 +781,9 @@ extern void k_thread_foreach_unlocked(
  * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
  * them using "|" (the logical OR operator).
  *
- * Historically, users often would use the beginning of the stack memory region
- * to store the struct k_thread data, although corruption will occur if the
- * stack overflows this region and stack protection features may not detect this
- * situation.
+ * The stack_size parameter must be the same size value used when the stack
+ * object was defined, or the return value of K_THREAD_STACK_SIZEOF() on the
+ * stack object.
  *
  * @param new_thread Pointer to uninitialized struct k_thread
  * @param stack Pointer to the stack space.
