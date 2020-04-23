@@ -126,6 +126,29 @@ static inline uint32_t arch_k_cycle_get_32(void);
  *
  * @see Z_THREAD_STACK_OBJ_ALIGN
  */
+
+/**
+ * @def ARCH_THREAD_STACK_SIZE_ADJUST(size)
+ * @brief Round up a stack buffer size to alignment constraints
+ *
+ * Adjust a requested stack buffer size to the true size of its underlying
+ * buffer, defined as the area usable for thread stack context and thread-
+ * local storage.
+ *
+ * The size value passed here does not include storage reserved for platform
+ * data.
+ *
+ * The returned value is either the same size provided (if already properly
+ * aligned), or rounded up to satisfy alignment constraints.  Calculations
+ * performed here *must* be idempotent.
+ *
+ * Optional definition. If undefined, stack buffer sizes are either:
+ * - Rounded up to the next power of two if user mode is enabled on an arch
+ *   with an MPU that requires such alignment
+ * - Rounded up to ARCH_STACK_PTR_ALIGN
+ *
+ * @see Z_THREAD_STACK_SIZE_ADJUST
+ */
 /** @} */
 
 /**

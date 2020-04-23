@@ -114,6 +114,41 @@ static inline char *z_stack_ptr_align(char *ptr)
 #endif /* ARCH_THREAD_STACK_OBJ_ALIGN */
 
 /**
+ * @def Z_THREAD_STACK_SIZE_ADJUST
+ * @brief Round up a requested stack size to satisfy constraints
+ *
+ * Given a requested stack buffer size, return an adjusted size value for
+ * the entire stack object which takes into consideration:
+ *
+ * - Reserved memory for platform data
+ * - Alignment of stack buffer bounds to CPU/ABI constraints
+ * - Alignment of stack buffer bounds to satisfy memory management hardware
+ *   constraints such that a protection region can cover the stack buffer area
+ *
+ * If CONFIG_USERSPACE is enabled, this determines the size of stack objects
+ * which  may be used by user mode threads, or threads running in supervisor
+ * mode which may later drop privileges to user mode.
+ *
+ * Arches define this with ARCH_THREAD_STACK_SIZE_ADJUST().
+ *
+ * If ARCH_THREAD_STACK_SIZE_ADJUST is not defined, assume rounding up to
+ * ARCH_STACK_PTR_ALIGN is appropriate.
+ *
+ * Any memory reserved for platform data is also included in the total
+ * returned.
+ *
+ * @param size Requested size of the stack buffer
+ * @return Adjusted size of the stack object
+ */
+#if defined(ARCH_THREAD_STACK_SIZE_ADJUST)
+#define Z_THREAD_STACK_SIZE_ADJUST(size) \
+	(ARCH_THREAD_STACK_SIZE_ADJUST(size) + K_THREAD_STACK_RESERVED)
+#else
+#define Z_THREAD_STACK_SIZE_ADJUST(size) \
+	(ROUND_UP((size), ARCH_STACK_PTR_ALIGN) + K_THREAD_STACK_RESERVED)
+#endif /* ARCH_THREAD_STACK_SIZE_ADJUST */
+
+/**
  * @brief Obtain an extern reference to a stack
  *
  * This macro properly brings the symbol of a thread stack declared
