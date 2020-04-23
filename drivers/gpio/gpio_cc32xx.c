@@ -48,8 +48,6 @@ struct gpio_cc32xx_config {
 	struct gpio_driver_config common;
 	/* base address of GPIO port */
 	unsigned long port_base;
-	/* GPIO IRQ number */
-	unsigned long irq_num;
 	/* GPIO port number */
 	u8_t port_num;
 };
@@ -281,8 +279,7 @@ static const struct gpio_cc32xx_config gpio_cc32xx_a0_config = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
 	},
-	.port_base = DT_GPIO_CC32XX_A0_BASE_ADDRESS,
-	.irq_num = DT_GPIO_CC32XX_A0_IRQ+16,
+	.port_base = DT_INST_REG_ADDR(0),
 	.port_num = 0
 };
 
@@ -293,16 +290,16 @@ static int gpio_cc32xx_a0_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(DT_GPIO_CC32XX_A0_IRQ, DT_GPIO_CC32XX_A0_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    gpio_cc32xx_port_isr, DEVICE_GET(gpio_cc32xx_a0), 0);
 
-	MAP_IntPendClear(DT_GPIO_CC32XX_A0_IRQ+16);
-	irq_enable(DT_GPIO_CC32XX_A0_IRQ);
+	MAP_IntPendClear(DT_INST_IRQN(0) + 16);
+	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
 
-DEVICE_AND_API_INIT(gpio_cc32xx_a0, DT_GPIO_CC32XX_A0_NAME,
+DEVICE_AND_API_INIT(gpio_cc32xx_a0, DT_INST_LABEL(0),
 		    &gpio_cc32xx_a0_init, &gpio_cc32xx_a0_data,
 		    &gpio_cc32xx_a0_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -315,8 +312,7 @@ static const struct gpio_cc32xx_config gpio_cc32xx_a1_config = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
 	},
-	.port_base = DT_GPIO_CC32XX_A1_BASE_ADDRESS,
-	.irq_num = DT_GPIO_CC32XX_A1_IRQ+16,
+	.port_base = DT_INST_REG_ADDR(1),
 	.port_num = 1
 };
 
@@ -327,16 +323,16 @@ static int gpio_cc32xx_a1_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(DT_GPIO_CC32XX_A1_IRQ, DT_GPIO_CC32XX_A1_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_IRQN(1), DT_INST_IRQ(1, priority),
 		    gpio_cc32xx_port_isr, DEVICE_GET(gpio_cc32xx_a1), 0);
 
-	MAP_IntPendClear(DT_GPIO_CC32XX_A1_IRQ+16);
-	irq_enable(DT_GPIO_CC32XX_A1_IRQ);
+	MAP_IntPendClear(DT_INST_IRQN(1) + 16);
+	irq_enable(DT_INST_IRQN(1));
 
 	return 0;
 }
 
-DEVICE_AND_API_INIT(gpio_cc32xx_a1, DT_GPIO_CC32XX_A1_NAME,
+DEVICE_AND_API_INIT(gpio_cc32xx_a1, DT_INST_LABEL(1),
 		    &gpio_cc32xx_a1_init, &gpio_cc32xx_a1_data,
 		    &gpio_cc32xx_a1_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -349,8 +345,7 @@ static const struct gpio_cc32xx_config gpio_cc32xx_a2_config = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
 	},
-	.port_base = DT_GPIO_CC32XX_A2_BASE_ADDRESS,
-	.irq_num = DT_GPIO_CC32XX_A2_IRQ+16,
+	.port_base = DT_INST_REG_ADDR(2),
 	.port_num = 2
 };
 
@@ -361,16 +356,16 @@ static int gpio_cc32xx_a2_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(DT_GPIO_CC32XX_A2_IRQ, DT_GPIO_CC32XX_A2_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_IRQN(2), DT_INST_IRQ(2, priority),
 		    gpio_cc32xx_port_isr, DEVICE_GET(gpio_cc32xx_a2), 0);
 
-	MAP_IntPendClear(DT_GPIO_CC32XX_A2_IRQ+16);
-	irq_enable(DT_GPIO_CC32XX_A2_IRQ);
+	MAP_IntPendClear(DT_INST_IRQN(2) + 16);
+	irq_enable(DT_INST_IRQN(2));
 
 	return 0;
 }
 
-DEVICE_AND_API_INIT(gpio_cc32xx_a2, DT_GPIO_CC32XX_A2_NAME,
+DEVICE_AND_API_INIT(gpio_cc32xx_a2, DT_INST_LABEL(2),
 		    &gpio_cc32xx_a2_init, &gpio_cc32xx_a2_data,
 		    &gpio_cc32xx_a2_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -383,8 +378,7 @@ static const struct gpio_cc32xx_config gpio_cc32xx_a3_config = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
 	},
-	.port_base = DT_GPIO_CC32XX_A3_BASE_ADDRESS,
-	.irq_num = DT_GPIO_CC32XX_A3_IRQ+16,
+	.port_base = DT_INST_REG_ADDR(3),
 	.port_num = 3
 };
 
@@ -395,16 +389,16 @@ static int gpio_cc32xx_a3_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(DT_GPIO_CC32XX_A3_IRQ, DT_GPIO_CC32XX_A3_IRQ_PRI,
+	IRQ_CONNECT(DT_INST_IRQN(3), DT_INST_IRQ(3, priority),
 		    gpio_cc32xx_port_isr, DEVICE_GET(gpio_cc32xx_a3), 0);
 
-	MAP_IntPendClear(DT_GPIO_CC32XX_A3_IRQ+16);
-	irq_enable(DT_GPIO_CC32XX_A3_IRQ);
+	MAP_IntPendClear(DT_INST_IRQN(3) + 16);
+	irq_enable(DT_INST_IRQN(3));
 
 	return 0;
 }
 
-DEVICE_AND_API_INIT(gpio_cc32xx_a3, DT_GPIO_CC32XX_A3_NAME,
+DEVICE_AND_API_INIT(gpio_cc32xx_a3, DT_INST_LABEL(3),
 		    &gpio_cc32xx_a3_init, &gpio_cc32xx_a3_data,
 		    &gpio_cc32xx_a3_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
