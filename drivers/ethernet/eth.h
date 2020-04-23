@@ -9,6 +9,26 @@
 
 #include <zephyr/types.h>
 
+/* helper macro to return mac address octet from local_mac_address prop */
+#define NODE_MAC_ADDR_OCTET(node, n) DT_PROP_BY_IDX(node, local_mac_address, n)
+
+/* Determine if a mac address is all 0's */
+#define NODE_MAC_ADDR_NULL(node) \
+	((NODE_MAC_ADDR_OCTET(node, 0) == 0) && \
+	 (NODE_MAC_ADDR_OCTET(node, 1) == 0) && \
+	 (NODE_MAC_ADDR_OCTET(node, 2) == 0) && \
+	 (NODE_MAC_ADDR_OCTET(node, 3) == 0) && \
+	 (NODE_MAC_ADDR_OCTET(node, 4) == 0) && \
+	 (NODE_MAC_ADDR_OCTET(node, 5) == 0))
+
+/* Given a device tree node for an ethernet controller will
+ * returns false if there is no local-mac-address property or
+ * the property is all zero's.  Otherwise will return True
+ */
+#define NODE_HAS_VALID_MAC_ADDR(node) \
+	UTIL_AND(DT_NODE_HAS_PROP(node, local_mac_address),\
+			(!NODE_MAC_ADDR_NULL(node)))
+
 static inline void gen_random_mac(u8_t *mac_addr, u8_t b0, u8_t b1, u8_t b2)
 {
 	u32_t entropy;
