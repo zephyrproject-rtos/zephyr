@@ -1967,7 +1967,7 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_ERRNO" \
                          "CONFIG_EXECUTION_BENCHMARKING" \
                          "CONFIG_FLASH_PAGE_LAYOUT" \
-                         "CONFIG_FLOAT" \
+                         "CONFIG_FPU" \
                          "CONFIG_FP_SHARING" \
                          "CONFIG_NET_L2_ETHERNET_MGMT" \
                          "CONFIG_NET_MGMT_EVENT" \

@@ -12,7 +12,7 @@ else()
     string(CONCAT riscv_march ${riscv_march} "32ima")
 endif()
 
-if(CONFIG_FLOAT)
+if(CONFIG_FPU)
     if(CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION)
         if(CONFIG_FLOAT_HARD)
             string(CONCAT riscv_mabi ${riscv_mabi} "d")

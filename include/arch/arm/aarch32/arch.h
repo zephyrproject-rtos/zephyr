@@ -129,7 +129,7 @@ extern "C" {
  * upon exception entry. Therefore, a wide guard region is required to
  * guarantee that stack-overflow detection will always be successful.
  */
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING) \
+#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING) \
 	&& defined(CONFIG_MPU_STACK_GUARD)
 #define MPU_GUARD_ALIGN_AND_SIZE_FLOAT CONFIG_MPU_STACK_GUARD_MIN_SIZE_FLOAT
 #else
