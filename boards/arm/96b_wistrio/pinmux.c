@@ -47,17 +47,17 @@ static int pinmux_stm32_init(struct device *port)
 
 	stm32_setup_pins(pinconf, ARRAY_SIZE(pinconf));
 
-	gpioa = device_get_binding(DT_ST_STM32_GPIO_40020000_LABEL);
+	gpioa = device_get_binding(DT_LABEL(DT_NODELABEL(gpioa)));
 	if (!gpioa) {
 		return -ENODEV;
 	}
 
-	gpiob = device_get_binding(DT_ST_STM32_GPIO_40020400_LABEL);
+	gpiob = device_get_binding(DT_LABEL(DT_NODELABEL(gpiob)));
 	if (!gpiob) {
 		return -ENODEV;
 	}
 
-	gpioh = device_get_binding(DT_ST_STM32_GPIO_40021400_LABEL);
+	gpioh = device_get_binding(DT_LABEL(DT_NODELABEL(gpioh)));
 	if (!gpioh) {
 		return -ENODEV;
 	}
