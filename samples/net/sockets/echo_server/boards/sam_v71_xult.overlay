@@ -7,6 +7,7 @@
 &spi0 {
         status = "okay";
         label = "SPI_RF2XX";
+        pinctrl-0 = <&pc26c_spi1_miso &pc27c_spi1_mosi &pc24c_spi1_spck &pd25b_spi0_npcs1>;
         cs-gpios = <&piod 25 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 
         rf2xx@0 {
