@@ -39,11 +39,6 @@ choice ETH_GECKO_MAC_SELECT
 	help
 	  Choose how to configure MAC address.
 
-config ETH_GECKO_RANDOM_MAC
-	bool "Random MAC address"
-	help
-	  Generate a random MAC address dynamically.
-
 config ETH_GECKO_MAC_MANUAL
 	bool "Manual"
 	help

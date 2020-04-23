@@ -878,8 +878,8 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 	}
 }
 
-#if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC) || \
-    defined(CONFIG_ETH_MCUX_1_RANDOM_MAC)
+#if DT_INST_PROP(0, zephyr_random_mac_address) || \
+    DT_INST_PROP(1, zephyr_random_mac_address)
 static void generate_random_mac(u8_t *mac_addr)
 {
 	gen_random_mac(mac_addr, FREESCALE_OUI_B0,
@@ -1207,7 +1207,7 @@ static struct eth_context eth_0_context = {
 #if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC)
 	.generate_mac = generate_eth0_unique_mac,
 #endif
-#if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
+#if DT_INST_PROP(0, zephyr_random_mac_address)
 	.generate_mac = generate_random_mac,
 #endif
 #if defined(CONFIG_ETH_MCUX_0_MANUAL_MAC)
@@ -1274,7 +1274,7 @@ static struct eth_context eth_1_context = {
 #if defined(CONFIG_ETH_MCUX_1_UNIQUE_MAC)
 	.generate_mac = generate_eth1_unique_mac,
 #endif
-#if defined(CONFIG_ETH_MCUX_1_RANDOM_MAC)
+#if DT_INST_PROP(1, zephyr_random_mac_address)
 	.generate_mac = generate_random_mac,
 #endif
 #if defined(CONFIG_ETH_MCUX_1_MANUAL_MAC)
