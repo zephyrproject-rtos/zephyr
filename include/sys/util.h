@@ -14,10 +14,14 @@
 #ifndef ZEPHYR_INCLUDE_SYS_UTIL_H_
 #define ZEPHYR_INCLUDE_SYS_UTIL_H_
 
+/* needs to be outside _ASMLANGUAGE so 'true' and 'false' can turn
+ * into '1' and '0' for asm or linker scripts
+ */
+#include <stdbool.h>
+
 #ifndef _ASMLANGUAGE
 
 #include <zephyr/types.h>
-#include <stdbool.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
