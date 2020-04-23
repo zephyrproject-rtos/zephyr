@@ -126,14 +126,6 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	memcpy((void *)&conn->slave.force, &lll->access_addr[0],
 	       sizeof(conn->slave.force));
 
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	u8_t own_addr_type = pdu_adv->rx_addr;
-	u8_t own_addr[BDADDR_SIZE];
-	u8_t rl_idx = ftr->rl_idx;
-
-	memcpy(own_addr, &pdu_adv->connect_ind.adv_addr[0], BDADDR_SIZE);
-#endif
-
 	peer_addr_type = pdu_adv->tx_addr;
 	memcpy(peer_addr, pdu_adv->connect_ind.init_addr, BDADDR_SIZE);
 
@@ -144,8 +136,14 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	cc->role = 1U;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	cc->own_addr_type = own_addr_type;
-	memcpy(&cc->own_addr[0], &own_addr[0], BDADDR_SIZE);
+	u8_t rl_idx = ftr->rl_idx;
+
+	if (ull_filter_lll_lrpa_used(adv->lll.rl_idx)) {
+		memcpy(&cc->local_rpa[0], &pdu_adv->connect_ind.adv_addr[0],
+		       BDADDR_SIZE);
+	} else {
+		memset(&cc->local_rpa[0], 0x0, BDADDR_SIZE);
+	}
 
 	if (rl_idx != FILTER_IDX_NONE) {
 		/* TODO: store rl_idx instead if safe */
