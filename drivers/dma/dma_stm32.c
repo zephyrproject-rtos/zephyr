@@ -78,24 +78,46 @@ static void dma_stm32_irq_handler(void *arg)
 	}
 
 	stream = &data->streams[id];
-	stream->busy = false;
+
+	if (!IS_ENABLED(CONFIG_DMAMUX_STM32)) {
+		stream->busy = false;
+	}
 
 	/* the dma stream id is in range from STREAM_OFFSET..<dma-requests> */
 	if (func_ll_is_active_tc[id](dma)) {
 		func_ll_clear_tc[id](dma);
+
+#ifdef CONFIG_DMAMUX_STM32
+		stream->busy = false;
+		/* the callback function expects the dmamux channel nb */
+		stream->dma_callback(stream->callback_arg,
+					stream->mux_channel, 0);
+#else
 		stream->dma_callback(stream->callback_arg, id + STREAM_OFFSET,
 				     0);
+#endif /* CONFIG_DMAMUX_STM32 */
 	} else if (stm32_dma_is_unexpected_irq_happened(dma, id)) {
 		LOG_ERR("Unexpected irq happened.");
+
+#ifdef CONFIG_DMAMUX_STM32
+		stream->dma_callback(stream->callback_arg,
+					stream->mux_channel, -EIO);
+#else
 		stream->dma_callback(stream->callback_arg, id + STREAM_OFFSET,
 				     -EIO);
+#endif /* CONFIG_DMAMUX_STM32 */
 	} else {
 		LOG_ERR("Transfer Error.");
 		dma_stm32_dump_stream_irq(dev, id);
 		dma_stm32_clear_stream_irq(dev, id);
 
+#ifdef CONFIG_DMAMUX_STM32
+		stream->dma_callback(stream->callback_arg,
+					stream->mux_channel, -EIO);
+#else
 		stream->dma_callback(stream->callback_arg, id + STREAM_OFFSET,
 				     -EIO);
+#endif /* CONFIG_DMAMUX_STM32 */
 	}
 }
 
@@ -210,8 +232,13 @@ static int dma_stm32_get_periph_increment(enum dma_addr_adj increment,
 	return 0;
 }
 
+#ifdef CONFIG_DMAMUX_STM32
+int dma_stm32_configure(struct device *dev, u32_t id,
+			       struct dma_config *config)
+#else
 static int dma_stm32_configure(struct device *dev, u32_t id,
 			       struct dma_config *config)
+#endif /* CONFIG_DMAMUX_STM32 */
 {
 	struct dma_stm32_data *data = dev->driver_data;
 	struct dma_stm32_stream *stream = &data->streams[id - STREAM_OFFSET];
@@ -399,9 +426,10 @@ static int dma_stm32_configure(struct device *dev, u32_t id,
 		DMA_InitStruct.NbData = config->head_block->block_size /
 					config->dest_data_size;
 	}
-#if defined(CONFIG_DMA_STM32_V2)
+
+#if defined(CONFIG_DMA_STM32_V2) || defined(CONFIG_DMAMUX_STM32)
 	/*
-	 * the with dma V2,
+	 * the with dma V2 and dma mux,
 	 * the request ID is stored in the dma_slot
 	 */
 	DMA_InitStruct.PeriphRequest = config->dma_slot;
@@ -441,8 +469,13 @@ static int dma_stm32_disable_stream(DMA_TypeDef *dma, u32_t id)
 	return 0;
 }
 
+#ifdef CONFIG_DMAMUX_STM32
+int dma_stm32_reload(struct device *dev, u32_t id,
+			    u32_t src, u32_t dst, size_t size)
+#else
 static int dma_stm32_reload(struct device *dev, u32_t id,
 			    u32_t src, u32_t dst, size_t size)
+#endif /* CONFIG_DMAMUX_STM32 */
 {
 	const struct dma_stm32_config *config = dev->config->config_info;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
@@ -485,7 +518,11 @@ static int dma_stm32_reload(struct device *dev, u32_t id,
 	return 0;
 }
 
+#ifdef CONFIG_DMAMUX_STM32
+int dma_stm32_start(struct device *dev, u32_t id)
+#else
 static int dma_stm32_start(struct device *dev, u32_t id)
+#endif /* CONFIG_DMAMUX_STM32 */
 {
 	const struct dma_stm32_config *config = dev->config->config_info;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
@@ -506,7 +543,11 @@ static int dma_stm32_start(struct device *dev, u32_t id)
 	return 0;
 }
 
+#ifdef CONFIG_DMAMUX_STM32
+int dma_stm32_stop(struct device *dev, u32_t id)
+#else
 static int dma_stm32_stop(struct device *dev, u32_t id)
+#endif /* CONFIG_DMAMUX_STM32 */
 {
 	struct dma_stm32_data *data = dev->driver_data;
 	struct dma_stm32_stream *stream = &data->streams[id - STREAM_OFFSET];
@@ -521,7 +562,10 @@ static int dma_stm32_stop(struct device *dev, u32_t id)
 		return -EINVAL;
 	}
 
+#ifndef CONFIG_DMAMUX_STM32
 	LL_DMA_DisableIT_TC(dma, table_ll_stream[id]);
+#endif /* CONFIG_DMAMUX_STM32 */
+
 #if defined(CONFIG_DMA_STM32_V1)
 	stm32_dma_disable_fifo_irq(dma, id);
 #endif
@@ -560,8 +604,17 @@ static int dma_stm32_init(struct device *dev)
 	}
 	memset(data->streams, 0, size_stream);
 
+#ifdef CONFIG_DMAMUX_STM32
+	int offset = ((dev == device_get_binding((const char *)"DMA_1"))
+			? 0 : data->max_streams);
+#endif /* CONFIG_DMAMUX_STM32 */
+
 	for (int i = 0; i < data->max_streams; i++) {
 		data->streams[i].busy = false;
+#ifdef CONFIG_DMAMUX_STM32
+		/* each further stream->mux_channel is fixed here */
+		data->streams[i].mux_channel = i + offset;
+#endif /* CONFIG_DMAMUX_STM32 */
 	}
 
 	return 0;
