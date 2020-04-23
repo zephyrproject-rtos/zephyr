@@ -536,7 +536,6 @@
 			interrupts = <114 0>;
 			interrupt-names = "COMMON";
 			status = "disabled";
-			local-mac-address = [00 00 00 00 00 00];
 			label = "ETH_0";
 			ptp {
 				compatible = "nxp,kinetis-ptp";
