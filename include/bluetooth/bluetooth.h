@@ -396,6 +396,7 @@ enum {
 	 *  the 37 secondary advertising channels.
 	 *  The advertiser will send primary advertising on LE 1M PHY, and
 	 *  secondary advertising on LE 2M PHY.
+	 *  Connections will be established on LE 2M PHY.
 	 *
 	 *  Without this option the advertiser will send advertising data on the
 	 *  three primary advertising channels.
@@ -412,6 +413,7 @@ enum {
 	 *  support the LE 2M PHY.
 	 *  The advertiser will send primary advertising on LE 1M PHY, and
 	 *  secondary advertising on LE 1M PHY.
+	 *  Connections will be established on LE 1M PHY.
 	 *
 	 *  @note Cannot be set if BT_LE_ADV_OPT_CODED is set.
 	 *
@@ -424,6 +426,7 @@ enum {
 	 *  The advertiser will send both primary and secondary advertising
 	 *  on the LE Coded PHY. This gives the advertiser increased range with
 	 *  the trade-off of lower data rate and higher power consumption.
+	 *  Connections will be established on LE Coded PHY.
 	 *
 	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
 	 */

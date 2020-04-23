@@ -1211,8 +1211,6 @@ static int cmd_connect_le(const struct shell *shell, size_t argc, char *argv[])
 
 		if (!strcmp(arg, "coded")) {
 			options |= BT_LE_CONN_OPT_CODED;
-		} else if (!strcmp(arg, "2m")) {
-			options |= BT_LE_CONN_OPT_2M;
 		} else if (!strcmp(arg, "no-1m")) {
 			options |= BT_LE_CONN_OPT_NO_1M;
 		} else {
@@ -2133,8 +2131,6 @@ static int cmd_wl_connect(const struct shell *shell, size_t argc, char *argv[])
 
 		if (!strcmp(arg, "coded")) {
 			options |= BT_LE_CONN_OPT_CODED;
-		} else if (!strcmp(arg, "2m")) {
-			options |= BT_LE_CONN_OPT_2M;
 		} else if (!strcmp(arg, "no-1m")) {
 			options |= BT_LE_CONN_OPT_NO_1M;
 		} else {
@@ -2254,14 +2250,12 @@ static int cmd_auth_oob_tk(const struct shell *shell, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_EXT_ADV)
 #define EXT_ADV_SCAN_OPT " [coded] [no-1m]"
-#define EXT_ADV_CONN_OPT " [coded] [2m] [no-1m]"
 #define EXT_ADV_PARAM "<type: conn-scan conn-nscan, nconn-scan nconn-nscan> " \
 		      "[ext-adv] [no-2m] [coded] "                            \
 		      "[whitelist: wl, wl-scan, wl-conn] [identity] "         \
 		      "[directed "HELP_ADDR_LE"] [mode: low] "
 #else
 #define EXT_ADV_SCAN_OPT ""
-#define EXT_ADV_CONN_OPT ""
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
@@ -2307,7 +2301,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #endif /* CONFIG_BT_BROADCASTER */
 #if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
-	SHELL_CMD_ARG(connect, NULL, HELP_ADDR_LE EXT_ADV_CONN_OPT,
+	SHELL_CMD_ARG(connect, NULL, HELP_ADDR_LE EXT_ADV_SCAN_OPT,
 		      cmd_connect_le, 3, 3),
 #if !defined(CONFIG_BT_WHITELIST)
 	SHELL_CMD_ARG(auto-conn, NULL, HELP_ADDR_LE, cmd_auto_conn, 3, 0),
@@ -2355,7 +2349,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 	SHELL_CMD_ARG(wl-clear, NULL, HELP_NONE, cmd_wl_clear, 1, 0),
 
 #if defined(CONFIG_BT_CENTRAL)
-	SHELL_CMD_ARG(wl-connect, NULL, "<on, off>" EXT_ADV_CONN_OPT,
+	SHELL_CMD_ARG(wl-connect, NULL, "<on, off>" EXT_ADV_SCAN_OPT,
 		      cmd_wl_connect, 2, 3),
 #endif /* CONFIG_BT_CENTRAL */
 #endif /* defined(CONFIG_BT_WHITELIST) */

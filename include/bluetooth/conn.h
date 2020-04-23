@@ -293,24 +293,16 @@ enum {
 	/** @brief Enable LE Coded PHY.
 	 *
 	 *  Enable scanning on the LE Coded PHY.
-	 *  Enable connection initiation on the LE Coded PHY.
 	 */
 	BT_LE_CONN_OPT_CODED = BIT(0),
-
-	/** @brief Enable LE 2M PHY.
-	 *
-	 *  Enable connection initiaton on the LE 2M PHY.
-	 */
-	BT_LE_CONN_OPT_2M = BIT(1),
 
 	/** @brief Disable LE 1M PHY.
 	 *
 	 *  Disable scanning on the LE 1M PHY.
-	 *  Disable connection initiation on the LE 1M PHY.
 	 *
 	 *  @note Requires @ref BT_LE_CONN_OPT_CODED.
 	 */
-	BT_LE_CONN_OPT_NO_1M = BIT(2),
+	BT_LE_CONN_OPT_NO_1M = BIT(1),
 };
 
 struct bt_conn_le_create_param {
