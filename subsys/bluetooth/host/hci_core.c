@@ -1444,8 +1444,6 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	num_phys = (!(bt_dev.create_param.options &
 		      BT_LE_CONN_OPT_NO_1M) ? 1 : 0) +
 		   ((bt_dev.create_param.options &
-		      BT_LE_CONN_OPT_2M) ? 1 : 0) +
-		   ((bt_dev.create_param.options &
 		      BT_LE_CONN_OPT_CODED) ? 1 : 0);
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_EXT_CREATE_CONN, sizeof(*cp) +
@@ -1480,16 +1478,6 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 
 	if (!(bt_dev.create_param.options & BT_LE_CONN_OPT_NO_1M)) {
 		cp->phys |= BT_HCI_LE_EXT_SCAN_PHY_1M;
-		phy = net_buf_add(buf, sizeof(*phy));
-		phy->scan_interval = sys_cpu_to_le16(
-			bt_dev.create_param.interval);
-		phy->scan_window = sys_cpu_to_le16(
-			bt_dev.create_param.window);
-		set_phy_conn_param(conn, phy);
-	}
-
-	if (bt_dev.create_param.options & BT_LE_CONN_OPT_2M) {
-		cp->phys |= BT_HCI_LE_EXT_SCAN_PHY_2M;
 		phy = net_buf_add(buf, sizeof(*phy));
 		phy->scan_interval = sys_cpu_to_le16(
 			bt_dev.create_param.interval);
