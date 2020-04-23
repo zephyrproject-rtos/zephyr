@@ -26,8 +26,8 @@ config BOARD
 # If the secure firmware is to be combined with a non-secure image
 # (TRUSTED_EXECUTION_SECURE=y), the secure FW image SRAM shall always
 # be restricted to the secure image SRAM partition (sram-secure-partition).
-# Otherwise (if TRUSTED_EXECUTION_SECURE is not set) the whole sram0 may be
-# used by the image.
+# Otherwise (if TRUSTED_EXECUTION_SECURE is not set) the whole zephyr,sram
+# may be used by the image.
 #
 # For the non-secure version of the board, the firmware image SRAM is
 # always restricted to the allocated non-secure SRAM partition.

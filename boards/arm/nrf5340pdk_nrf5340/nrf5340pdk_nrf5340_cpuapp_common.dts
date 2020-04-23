@@ -164,21 +164,23 @@
 	};
 };
 
-&sram0 {
+/ {
 
-	partitions {
-		compatible = "fixed-partitions";
+	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
-		/* SRAM allocated to the Secure image */
-		sram0_s: memory@20000000 {
-			label = "secure_sram_partition";
+		sram0_image: image@20000000 {
+			/* Zephyr image(s) memory */
 		};
 
-		/* SRAM allocated to the Non-Secure image */
-		sram0_ns: memory@20010000 {
-			label = "non_secure_sram_partition";
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_ns: image_ns@20010000 {
+			/* Non-Secure image memory */
 		};
 	};
 };
