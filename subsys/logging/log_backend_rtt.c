@@ -222,7 +222,7 @@ static int data_out_block_mode(uint8_t *data, size_t length, void *ctx)
 		}
 	} while ((ret == 0) && host_present);
 
-	return ((ret == 0) && host_present) ? 0 : length;
+	return ret ? length : 0;
 }
 
 LOG_OUTPUT_DEFINE(log_output, IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK) ?
