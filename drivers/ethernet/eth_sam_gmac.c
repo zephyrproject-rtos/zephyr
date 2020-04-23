@@ -1800,17 +1800,7 @@ static void get_mac_addr_from_i2c_eeprom(u8_t mac_addr[6])
 #if defined(CONFIG_ETH_SAM_GMAC_RANDOM_MAC)
 static void generate_random_mac(u8_t mac_addr[6])
 {
-	u32_t entropy;
-
-	entropy = sys_rand32_get();
-
-	mac_addr[0] = ATMEL_OUI_B0 | 0x02; /* force LAA bit */
-	mac_addr[1] = ATMEL_OUI_B1;
-	mac_addr[2] = ATMEL_OUI_B2;
-
-	mac_addr[3] = entropy >> 8;
-	mac_addr[4] = entropy >> 16;
-	mac_addr[5] = entropy >> 0;
+	gen_random_mac(mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
 }
 #endif
 

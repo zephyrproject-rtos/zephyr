@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 
+#include "eth.h"
 #include "eth_stm32_hal_priv.h"
 
 #if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
@@ -362,15 +363,7 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth_handle)
 #if defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC)
 static void generate_mac(u8_t *mac_addr)
 {
-	u32_t entropy;
-
-	entropy = sys_rand32_get();
-
-	mac_addr[0] |= 0x02; /* force LAA bit */
-
-	mac_addr[3] = entropy >> 16;
-	mac_addr[4] = entropy >> 8;
-	mac_addr[5] = entropy >> 0;
+	gen_random_mac(mac_addr, ST_OUI_B0, ST_OUI_B1, ST_OUI_B2);
 }
 #endif
 

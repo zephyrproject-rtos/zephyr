@@ -22,6 +22,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <sys/printk.h>
 
+#include "eth.h"
+
 /* flags */
 #define LITEETH_EV_TX		0x1
 #define LITEETH_EV_RX		0x1
@@ -177,15 +179,7 @@ static void eth_irq_handler(struct device *port)
 
 #ifdef CONFIG_ETH_LITEETH_0_RANDOM_MAC
 static void generate_mac(u8_t *mac_addr)
-{
-	u32_t entropy;
-
-	entropy = sys_rand32_get();
-
-	mac_addr[3] = entropy >> 8;
-	mac_addr[4] = entropy >> 16;
-	/* Locally administered, unicast */
-	mac_addr[5] = ((entropy >> 0) & 0xfc) | 0x02;
+	gen_random_mac(mac_addr, 0x10, 0xe2, 0xd5);
 }
 #endif
 
