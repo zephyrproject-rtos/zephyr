@@ -8,7 +8,7 @@ if SOC_MCIMX6X_M4
 config SOC
 	default "mcimx6x"
 
-config FLOAT
+config FPU
 	default y
 
 config GPIO_IMX

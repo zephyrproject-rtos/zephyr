@@ -36,7 +36,7 @@ GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
 #endif
 #endif
 
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
 GEN_OFFSET_SYM(_thread_arch_t, preempt_float);
 #endif
 
@@ -49,7 +49,7 @@ GEN_OFFSET_SYM(_basic_sf_t, lr);
 GEN_OFFSET_SYM(_basic_sf_t, pc);
 GEN_OFFSET_SYM(_basic_sf_t, xpsr);
 
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
 GEN_OFFSET_SYM(_esf_t, s);
 GEN_OFFSET_SYM(_esf_t, fpscr);
 #endif
@@ -82,7 +82,7 @@ GEN_ABSOLUTE_SYM(___thread_stack_info_t_SIZEOF,
  * point registers.
  */
 
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread) -
 					    sizeof(struct _preempt_float));
 #else

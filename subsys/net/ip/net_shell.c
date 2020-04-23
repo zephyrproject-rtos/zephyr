@@ -2895,7 +2895,7 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 #ifdef CONFIG_IEEE802154
 		 "rssi=%d "
 #endif
-#ifdef CONFIG_FLOAT
+#ifdef CONFIG_FPU
 		 "time=%.2f ms\n",
 #else
 		 "time=%d ms\n",
@@ -2909,7 +2909,7 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 #ifdef CONFIG_IEEE802154
 		 net_pkt_ieee802154_rssi(pkt),
 #endif
-#ifdef CONFIG_FLOAT
+#ifdef CONFIG_FPU
 		 ((u32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
 #else
 		 ((u32_t)k_cyc_to_ns_floor64(cycles) / 1000000));
@@ -3022,7 +3022,7 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 	cycles = k_cycle_get_32() - cycles;
 
 	PR_SHELL(shell_for_ping, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
-#ifdef CONFIG_FLOAT
+#ifdef CONFIG_FPU
 		 "time=%.2f ms\n",
 #else
 		 "time=%d ms\n",
@@ -3033,7 +3033,7 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 		 net_sprint_ipv4_addr(&ip_hdr->dst),
 		 ntohs(icmp_echo->sequence),
 		 ip_hdr->ttl,
-#ifdef CONFIG_FLOAT
+#ifdef CONFIG_FPU
 		 ((u32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f));
 #else
 		 ((u32_t)k_cyc_to_ns_floor64(cycles) / 1000000));

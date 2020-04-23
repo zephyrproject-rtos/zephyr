@@ -9,8 +9,8 @@
 
 #include "test_common.h"
 
-#ifndef CONFIG_FLOAT
-#error Rebuild with the FLOAT config option enabled
+#ifndef CONFIG_FPU
+#error Rebuild with the FPU config option enabled
 #endif
 
 #ifndef CONFIG_FP_SHARING

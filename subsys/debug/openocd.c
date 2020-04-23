@@ -78,11 +78,11 @@ size_t _kernel_openocd_offsets[] = {
 
 	[OPENOCD_OFFSET_T_NAME] = offsetof(struct k_thread, name),
 	[OPENOCD_OFFSET_T_ARCH] = offsetof(struct k_thread, arch),
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING) && defined(CONFIG_ARM)
+#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING) && defined(CONFIG_ARM)
 	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
 						    preempt_float),
 	[OPENOCD_OFFSET_T_COOP_FLOAT] = OPENOCD_UNIMPLEMENTED,
-#elif defined(CONFIG_FLOAT) && defined(CONFIG_X86)
+#elif defined(CONFIG_FPU) && defined(CONFIG_X86)
 #if defined(CONFIG_X86_64)
 	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch, sse),
 #else

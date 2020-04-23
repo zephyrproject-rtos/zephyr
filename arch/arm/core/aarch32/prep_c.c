@@ -86,7 +86,7 @@ static inline void z_arm_floating_point_init(void)
 	 */
 	SCB->CPACR &= (~(CPACR_CP10_Msk | CPACR_CP11_Msk));
 
-#if defined(CONFIG_FLOAT)
+#if defined(CONFIG_FPU)
 	/*
 	 * Enable CP10 and CP11 Co-Processors to enable access to floating
 	 * point registers.
@@ -143,7 +143,7 @@ static inline void z_arm_floating_point_init(void)
 	 * of floating point instructions.
 	 */
 
-#endif /* CONFIG_FLOAT */
+#endif /* CONFIG_FPU */
 
 	/*
 	 * Upon reset, the CONTROL.FPCA bit is, normally, cleared. However,
@@ -154,7 +154,7 @@ static inline void z_arm_floating_point_init(void)
 	 * In Sharing FP Registers mode CONTROL.FPCA is cleared before switching
 	 * to main, so it may be skipped here (saving few boot cycles).
 	 */
-#if !defined(CONFIG_FLOAT) || !defined(CONFIG_FP_SHARING)
+#if !defined(CONFIG_FPU) || !defined(CONFIG_FP_SHARING)
 	__set_CONTROL(__get_CONTROL() & (~(CONTROL_FPCA_Msk)));
 #endif
 }

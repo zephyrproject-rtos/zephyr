@@ -64,7 +64,7 @@ void test_sprintf_double(void)
 	char buffer[400];
 	union raw_double_u var;
 
-#ifndef CONFIG_FLOAT
+#ifndef CONFIG_FPU
 	ztest_test_skip();
 	return;
 #endif
