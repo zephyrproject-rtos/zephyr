@@ -421,7 +421,7 @@ static inline void fire_callbacks(struct device *port, u32_t pins)
 		 */
 		if ((cb->pin_mask & pins) & data->int_en) {
 			__ASSERT(cb->handler, "No callback handler!");
-			cb->handler(port, cb, pins);
+			cb->handler(port, cb, cb->pin_mask & pins);
 		}
 	}
 }
