@@ -42,6 +42,7 @@ struct lll_resolvelist {
 #endif
 };
 
+bool ull_filter_lll_lrpa_used(u8_t rl_idx);
 extern bt_addr_t *ull_filter_lll_lrpa_get(u8_t rl_idx);
 extern u8_t *ull_filter_lll_irks_get(u8_t *count);
 extern u8_t ull_filter_lll_rl_idx(bool whitelist, u8_t devmatch_id);

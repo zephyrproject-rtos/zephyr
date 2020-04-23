@@ -191,6 +191,7 @@ struct node_rx_ftr {
 	u32_t us_radio_rdy;
 	u8_t  rssi;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
+	u8_t  lrpa_used:1;
 	u8_t  rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)

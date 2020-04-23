@@ -435,7 +435,6 @@ u8_t ll_adv_enable(u8_t enable)
 	u32_t ticks_anchor;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 	volatile u32_t ret_cb = TICKER_STATUS_BUSY;
-	u8_t   rl_idx = FILTER_IDX_NONE;
 	u32_t ticks_slot_overhead;
 	struct pdu_adv *pdu_scan;
 	struct pdu_adv *pdu_adv;
@@ -491,22 +490,24 @@ u8_t ll_adv_enable(u8_t enable)
 		bool priv = false;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
+		lll->rl_idx = FILTER_IDX_NONE;
+
 		/* Prepare whitelist and optionally resolving list */
 		ull_filter_adv_update(lll->filter_policy);
 
 		if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
 		    adv->own_addr_type == BT_ADDR_LE_RANDOM_ID) {
 			/* Look up the resolving list */
-			rl_idx = ull_filter_rl_find(adv->id_addr_type,
-						    adv->id_addr, NULL);
+			lll->rl_idx = ull_filter_rl_find(adv->id_addr_type,
+							 adv->id_addr, NULL);
 
-			if (rl_idx != FILTER_IDX_NONE) {
+			if (lll->rl_idx != FILTER_IDX_NONE) {
 				/* Generate RPAs if required */
 				ull_filter_rpa_update(false);
 			}
 
-			ull_filter_adv_pdu_update(adv, rl_idx, pdu_adv);
-			ull_filter_adv_pdu_update(adv, rl_idx, pdu_scan);
+			ull_filter_adv_pdu_update(adv, pdu_adv);
+			ull_filter_adv_pdu_update(adv, pdu_scan);
 
 			priv = true;
 		}
@@ -713,12 +714,6 @@ u8_t ll_adv_enable(u8_t enable)
 		}
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
-
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	lll->rl_idx = rl_idx;
-#else
-	ARG_UNUSED(rl_idx);
-#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	const u8_t phy = lll->phy_p;
