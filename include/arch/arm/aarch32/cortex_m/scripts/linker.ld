@@ -98,8 +98,8 @@ MEMORY
 #ifdef DT_CCM_BASE_ADDRESS
     CCM                   (rw) : ORIGIN = DT_CCM_BASE_ADDRESS, LENGTH = DT_CCM_SIZE * 1K
 #endif
-#ifdef DT_DTCM_BASE_ADDRESS
-    DTCM                  (rw) : ORIGIN = DT_DTCM_BASE_ADDRESS, LENGTH = DT_DTCM_SIZE * 1K
+#if DT_HAS_NODE(DT_CHOSEN(zephyr_dtcm))
+    DTCM                  (rw) : ORIGIN = DT_REG_ADDR(DT_CHOSEN(zephyr_dtcm)), LENGTH = DT_REG_SIZE(DT_CHOSEN(zephyr_dtcm))
 #endif
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
 #ifdef CONFIG_BT_STM32_IPM
@@ -388,7 +388,7 @@ SECTIONS
 
     GROUP_END(RAMABLE_REGION)
 
-#ifdef DT_DTCM_BASE_ADDRESS
+#if DT_HAS_NODE(DT_CHOSEN(zephyr_dtcm))
 GROUP_START(DTCM)
 
 	SECTION_PROLOGUE(_DTCM_BSS_SECTION_NAME, (NOLOAD),SUBALIGN(4))
@@ -423,7 +423,7 @@ GROUP_START(DTCM)
 	__dtcm_data_rom_start = LOADADDR(_DTCM_DATA_SECTION_NAME);
 
 GROUP_END(DTCM)
-#endif /* DT_DTCM_BASE_ADDRESS */
+#endif
 #ifdef CONFIG_CUSTOM_SECTIONS_LD
 /* Located in project source directory */
 #include <custom-sections.ld>
