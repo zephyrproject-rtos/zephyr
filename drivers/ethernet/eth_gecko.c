@@ -488,17 +488,10 @@ static int eth_init(struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_ETH_GECKO_RANDOM_MAC)
-static void generate_random_mac(u8_t mac_addr[6])
-{
-	gen_random_mac(mac_addr, SILABS_OUI_B0, SILABS_OUI_B1, SILABS_OUI_B2);
-}
-#endif
-
 static void generate_mac(u8_t mac_addr[6])
 {
-#if defined(CONFIG_ETH_GECKO_RANDOM_MAC)
-	generate_random_mac(mac_addr);
+#if DT_INST_PROP(0, zephyr_random_mac_address)
+	gen_random_mac(mac_addr, SILABS_OUI_B0, SILABS_OUI_B1, SILABS_OUI_B2);
 #endif
 }
 

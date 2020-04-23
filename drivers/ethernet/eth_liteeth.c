@@ -177,12 +177,6 @@ static void eth_irq_handler(struct device *port)
 	}
 }
 
-#ifdef CONFIG_ETH_LITEETH_0_RANDOM_MAC
-static void generate_mac(u8_t *mac_addr)
-	gen_random_mac(mac_addr, 0x10, 0xe2, 0xd5);
-}
-#endif
-
 #ifdef CONFIG_ETH_LITEETH_0
 
 static struct eth_liteeth_dev_data eth_data = {
@@ -211,9 +205,9 @@ static void eth_iface_init(struct net_if *iface)
 	/* initialize ethernet L2 */
 	ethernet_init(iface);
 
-#ifdef CONFIG_ETH_LITEETH_0_RANDOM_MAC
+#if DT_INST_PROP(0, zephyr_random_mac_address)
 	/* generate random MAC address */
-	generate_mac(context->mac_addr);
+	gen_random_mac(context->mac_addr, 0x10, 0xe2, 0xd5);
 #endif
 
 	/* set MAC address */

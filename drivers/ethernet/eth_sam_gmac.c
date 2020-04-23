@@ -41,6 +41,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "phy_sam_gmac.h"
 #include "eth_sam_gmac_priv.h"
 
+#include "eth.h"
+
 #ifdef CONFIG_SOC_FAMILY_SAM0
 #include "eth_sam0_gmac.h"
 #endif
@@ -1797,19 +1799,12 @@ static void get_mac_addr_from_i2c_eeprom(u8_t mac_addr[6])
 }
 #endif
 
-#if defined(CONFIG_ETH_SAM_GMAC_RANDOM_MAC)
-static void generate_random_mac(u8_t mac_addr[6])
-{
-	gen_random_mac(mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
-}
-#endif
-
 static void generate_mac(u8_t mac_addr[6])
 {
 #if defined(CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM)
 	get_mac_addr_from_i2c_eeprom(mac_addr);
-#elif defined(CONFIG_ETH_SAM_GMAC_RANDOM_MAC)
-	generate_random_mac(mac_addr);
+#elif DT_INST_PROP(0, zephyr_random_mac_address)
+	gen_random_mac(mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
 #endif
 }
 
