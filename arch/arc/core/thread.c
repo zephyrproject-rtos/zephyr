@@ -39,8 +39,8 @@ struct init_stack_frame {
  * and status register.
  */
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stackSize, k_thread_entry_t pEntry,
-		     void *parameter1, void *parameter2, void *parameter3)
+		     size_t stack_size, k_thread_entry_t entry,
+		     void *p1, void *p2, void *p3)
 {
 	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
 
@@ -54,13 +54,11 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	size_t offset = 0;
 	bool is_user = (thread->base.user_options & K_USER) != 0;
 
-
-	stackAdjSize = Z_ARC_MPU_SIZE_ALIGN(stackSize);
-
+	stackAdjSize = Z_ARC_MPU_SIZE_ALIGN(stack_size);
 	stackEnd = pStackMem + stackAdjSize;
 
 #ifdef CONFIG_STACK_POINTER_RANDOM
-	offset = stackAdjSize - stackSize;
+	offset = stackAdjSize - stack_size;
 #endif
 
 	if (is_user) {
@@ -134,9 +132,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->status32 |= _ARC_V2_STATUS32_US;
 #else /* For no USERSPACE feature */
 	pStackMem += STACK_GUARD_SIZE;
-	stackEnd = pStackMem + stackSize;
+	stackEnd = pStackMem + stack_size;
 
-	z_new_thread_init(thread, pStackMem, stackSize);
+	z_new_thread_init(thread, pStackMem, stack_size);
 
 	priv_stack_end = stackEnd;
 
@@ -152,10 +150,10 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->sec_stat = z_arc_v2_aux_reg_read(_ARC_V2_SEC_STAT);
 #endif
 
-	pInitCtx->r0 = (uint32_t)pEntry;
-	pInitCtx->r1 = (uint32_t)parameter1;
-	pInitCtx->r2 = (uint32_t)parameter2;
-	pInitCtx->r3 = (uint32_t)parameter3;
+	pInitCtx->r0 = (uint32_t)entry;
+	pInitCtx->r1 = (uint32_t)p1;
+	pInitCtx->r2 = (uint32_t)p2;
+	pInitCtx->r3 = (uint32_t)p3;
 
 /* stack check configuration */
 #ifdef CONFIG_ARC_STACK_CHECKING

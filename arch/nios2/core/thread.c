@@ -29,7 +29,7 @@ struct init_stack_frame {
 
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stack_size, k_thread_entry_t thread_func,
+		     size_t stack_size, k_thread_entry_t entry,
 		     void *arg1, void *arg2, void *arg3)
 {
 	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
@@ -42,7 +42,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		Z_STACK_PTR_ALIGN(stack_memory + stack_size - sizeof(*iframe));
 
 	/* Setup the initial stack frame */
-	iframe->entry_point = thread_func;
+	iframe->entry_point = entry;
 	iframe->arg1 = arg1;
 	iframe->arg2 = arg2;
 	iframe->arg3 = arg3;

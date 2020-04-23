@@ -62,7 +62,7 @@ int arch_float_disable(struct k_thread *thread)
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     size_t stack_size, k_thread_entry_t entry,
-		     void *parameter1, void *parameter2, void *parameter3)
+		     void *p1, void *p2, void *p3)
 {
 	char *stack_buf;
 	char *stack_high;
@@ -95,9 +95,9 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		(stack_high - sizeof(struct _x86_initial_frame));
 	/* z_thread_entry() arguments */
 	initial_frame->entry = entry;
-	initial_frame->p1 = parameter1;
-	initial_frame->p2 = parameter2;
-	initial_frame->p3 = parameter3;
+	initial_frame->p1 = p1;
+	initial_frame->p2 = p2;
+	initial_frame->p3 = p3;
 	initial_frame->eflags = EFLAGS_INITIAL;
 #ifdef _THREAD_WRAPPER_REQUIRED
 	initial_frame->edi = (uint32_t)swap_entry;
