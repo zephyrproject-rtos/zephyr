@@ -12,6 +12,24 @@
 			/* instance, signal, pio, pin, peripheral */
 			DT_ATMEL_PIN(afec0, adtrg, a, 8, b);
 			DT_ATMEL_PIN(afec1, adtrg, d, 9, c);
+			DT_ATMEL_PIN(spi0, miso, d, 20, b);
+			DT_ATMEL_PIN(spi0, mosi, d, 21, b);
+			DT_ATMEL_PIN(spi0, npcs0, b, 2, d);
+			DT_ATMEL_PIN(spi0, npcs1, a, 31, a);
+			DT_ATMEL_PIN(spi0, npcs1, d, 25, b);
+			DT_ATMEL_PIN(spi0, npcs2, d, 12, c);
+			DT_ATMEL_PIN(spi0, npcs3, d, 27, b);
+			DT_ATMEL_PIN(spi0, spck, d, 22, b);
+			DT_ATMEL_PIN(spi1, miso, c, 26, c);
+			DT_ATMEL_PIN(spi1, mosi, c, 27, c);
+			DT_ATMEL_PIN(spi1, npcs0, c, 25, c);
+			DT_ATMEL_PIN(spi1, npcs1, c, 28, c);
+			DT_ATMEL_PIN(spi1, npcs1, d, 0, c);
+			DT_ATMEL_PIN(spi1, npcs2, c, 29, c);
+			DT_ATMEL_PIN(spi1, npcs2, d, 1, c);
+			DT_ATMEL_PIN(spi1, npcs3, c, 30, c);
+			DT_ATMEL_PIN(spi1, npcs3, d, 2, c);
+			DT_ATMEL_PIN(spi1, spck, c, 24, c);
 			DT_ATMEL_PIN(twihs0, twck0, a, 4, a);
 			DT_ATMEL_PIN(twihs0, twd0, a, 3, a);
 			DT_ATMEL_PIN(twihs1, twck1, b, 5, a);
