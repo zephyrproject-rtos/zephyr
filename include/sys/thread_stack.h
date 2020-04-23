@@ -61,6 +61,28 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define Z_STACK_PTR_ALIGN(ptr) ((uintptr_t)z_stack_ptr_align((char *)(ptr)))
 
 /**
+ * @def K_THREAD_STACK_RESERVED
+ * @brief Indicate how much additional memory is reserved for stack objects
+ *
+ * Any given stack declaration may have additional memory in it for guard
+ * areas, supervisor mode stacks, or platform-specific data.  This macro
+ * indicates how much space is reserved for this.
+ *
+ * This value only indicates memory that is permanently reserved in the stack
+ * object. Memory that is "borrowed" from the thread's stack buffer is never
+ * accounted for here.
+ *
+ * Reserved memory is at the beginning of the stack object. The reserved area
+ * must be appropriately sized such that the stack buffer immediately following
+ * it is correctly aligned.
+ */
+#ifdef ARCH_THREAD_STACK_RESERVED
+#define K_THREAD_STACK_RESERVED		((size_t)(ARCH_THREAD_STACK_RESERVED))
+#else
+#define K_THREAD_STACK_RESERVED		((size_t)0U)
+#endif
+
+/**
  * @brief Properly align the lowest address of a stack object
  *
  * Return an alignment value for the lowest address of a stack object, taking
@@ -112,7 +134,6 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define K_THREAD_STACK_LEN(size) ARCH_THREAD_STACK_LEN(size)
 #define K_THREAD_STACK_MEMBER(sym, size) ARCH_THREAD_STACK_MEMBER(sym, size)
 #define K_THREAD_STACK_SIZEOF(sym) ARCH_THREAD_STACK_SIZEOF(sym)
-#define K_THREAD_STACK_RESERVED ((size_t)ARCH_THREAD_STACK_RESERVED)
 static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return ARCH_THREAD_STACK_BUFFER(sym);
@@ -210,18 +231,6 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * @return Size of the stack
  */
 #define K_THREAD_STACK_SIZEOF(sym) sizeof(sym)
-
-
-/**
- * @brief Indicate how much additional memory is reserved for stack objects
- *
- * Any given stack declaration may have additional memory in it for guard
- * areas or supervisor mode stacks. This macro indicates how much space
- * is reserved for this. The memory reserved may not be contiguous within
- * the stack object, and does not account for additional space used due to
- * enforce alignment.
- */
-#define K_THREAD_STACK_RESERVED		((size_t)0U)
 
 /**
  * @brief Get a pointer to the physical stack buffer
