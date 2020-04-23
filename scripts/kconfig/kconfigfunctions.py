@@ -81,6 +81,19 @@ def dt_chosen_enabled(kconf, _, chosen):
     return "y" if node and node.enabled else "n"
 
 
+def dt_chosen_path(kconf, _, chosen):
+    """
+    This function takes a /chosen node property and returns the path
+    to the node in the property value, or the empty string.
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    node = edt.chosen_node(chosen)
+
+    return node.path if node else ""
+
+
 def dt_nodelabel_enabled(kconf, _, label):
     """
     This function takes a 'label' and returns "y" if we find an "enabled"
@@ -382,6 +395,7 @@ functions = {
         "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
         "dt_chosen_label": (dt_chosen_label, 1, 1),
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
+        "dt_chosen_path": (dt_chosen_path, 1, 1),
         "dt_nodelabel_enabled": (dt_nodelabel_enabled, 1, 1),
         "dt_chosen_reg_addr_int": (dt_chosen_reg, 1, 3),
         "dt_chosen_reg_addr_hex": (dt_chosen_reg, 1, 3),
