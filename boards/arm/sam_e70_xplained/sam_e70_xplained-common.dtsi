@@ -67,6 +67,7 @@
 
 &spi0 {
 	status = "okay";
+	pinctrl-0 = <&pc26c_spi1_miso &pc27c_spi1_mosi &pc24c_spi1_spck &pd27b_spi0_npcs3>;
 };
 
 &usart1 {
