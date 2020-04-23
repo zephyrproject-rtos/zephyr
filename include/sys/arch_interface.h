@@ -67,43 +67,7 @@ static inline uint32_t arch_k_cycle_get_32(void);
  */
 
 /**
- * @def ARCH_THREAD_STACK_DEFINE(sym, size)
- *
- * @see K_THREAD_STACK_DEFINE()
- */
-
-/**
- * @def ARCH_THREAD_STACK_ARRAY_DEFINE(sym, size)
- *
- * @see K_THREAD_STACK_ARRAY_DEFINE()
- */
-
-/**
- * @def ARCH_THREAD_STACK_LEN(size)
- *
- * @see K_THREAD_STACK_LEN()
- */
-
-/**
- * @def ARCH_THREAD_STACK_MEMBER(sym, size)
- *
- * @see K_THREAD_STACK_MEMBER()
- */
-
-/*
- * @def ARCH_THREAD_STACK_SIZEOF(sym)
- *
- * @see K_THREAD_STACK_SIZEOF()
- */
-
-/**
  * @def ARCH_THREAD_STACK_RESERVED
- *
- * @see K_THREAD_STACK_RESERVED
- */
-
-/**
- * @def ARCH_THREAD_STACK_BUFFER(sym)
  *
  * @see K_THREAD_STACK_RESERVED
  */

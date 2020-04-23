@@ -408,15 +408,10 @@ static void schedule_new_thread(struct k_thread *thread, k_timeout_t delay)
 }
 #endif
 
-#if !CONFIG_STACK_POINTER_RANDOM
-static inline size_t adjust_stack_size(size_t stack_size)
-{
-	return stack_size;
-}
-#else
+#if CONFIG_STACK_POINTER_RANDOM
 int z_stack_adjust_initialized;
 
-static inline size_t adjust_stack_size(size_t stack_size)
+static size_t random_offset(size_t stack_size)
 {
 	size_t random_val;
 
@@ -435,22 +430,82 @@ static inline size_t adjust_stack_size(size_t stack_size)
 	const size_t fuzz = random_val % CONFIG_STACK_POINTER_RANDOM;
 
 	if (unlikely(fuzz * 2 > stack_size)) {
-		return stack_size;
+		return 0;
 	}
 
-	return stack_size - fuzz;
+	return fuzz;
 }
 #if defined(CONFIG_STACK_GROWS_UP)
 	/* This is so rare not bothering for now */
 #error "Stack pointer randomization not implemented for upward growing stacks"
 #endif /* CONFIG_STACK_GROWS_UP */
-
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 
+static char *setup_thread_stack(struct k_thread *new_thread,
+				k_thread_stack_t *stack, size_t stack_size)
+{
+	size_t stack_obj_size;
+	size_t delta = 0;
+	char *stack_ptr;
+
+	stack_obj_size = Z_THREAD_STACK_SIZE_ADJUST(stack_size);
+	stack_ptr = (char *)stack + stack_obj_size;
+
+#if defined(CONFIG_INIT_STACKS) || defined(CONFIG_THREAD_STACK_INFO) || \
+		defined(CONFIG_STACK_SENTINEL)
+	char *stack_buf_start;
+
+	stack_buf_start = Z_THREAD_STACK_BUFFER(stack);
+#endif
+#if defined(CONFIG_INIT_STACKS) || defined(CONFIG_THREAD_STACK_INFO) || \
+		CONFIG_STACK_POINTER_RANDOM
+	size_t stack_buf_size;
+
+	stack_buf_size = stack_obj_size - K_THREAD_STACK_RESERVED;
+#endif
+#ifdef CONFIG_INIT_STACKS
+	memset(stack_buf_start, 0xaa, stack_buf_size);
+#endif
+#ifdef CONFIG_STACK_SENTINEL
+	/* Put the stack sentinel at the lowest 4 bytes of the stack area.
+	 * We periodically check that it's still present and kill the thread
+	 * if it isn't.
+	 */
+	*((uint32_t *)stack_buf_start) = STACK_SENTINEL;
+#endif /* CONFIG_STACK_SENTINEL */
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
+	size_t tls_size = sizeof(struct _thread_userspace_local_data);
+
+	/* reserve space on highest memory of stack buffer for local data */
+	delta += tls_size;
+	new_thread->userspace_local_data =
+		(struct _thread_userspace_local_data *)(stack_ptr - delta);
+#endif
+#if CONFIG_STACK_POINTER_RANDOM
+	delta += random_offset(stack_buf_size);
+#endif
+	delta = ROUND_UP(delta, ARCH_STACK_PTR_ALIGN);
+#ifdef CONFIG_THREAD_STACK_INFO
+	/* Initial values. Arches which implement MPU guards that "borrow"
+	 * memory from the stack buffer (not tracked in K_THREAD_STACK_RESERVED)
+	 * will need to appropriately update this.
+	 *
+	 * The bounds tracked here correspond to the area of the stack object
+	 * that the thread can access, which includes TLS.
+	 */
+	new_thread->stack_info.start = (uintptr_t)stack_buf_start;
+	new_thread->stack_info.size = stack_buf_size;
+	new_thread->stack_info.delta = delta;
+#endif
+	stack_ptr -= delta;
+
+	return stack_ptr;
+}
+
 /*
- * Note:
- * The caller must guarantee that the stack_size passed here corresponds
- * to the amount of stack memory available for the thread.
+ * The provided stack_size value is presumed to be either the result of
+ * K_THREAD_STACK_SIZEOF(stack), or the size value passed to the instance
+ * of K_THREAD_STACK_DEFINE() which defined 'stack'.
  */
 void z_setup_new_thread(struct k_thread *new_thread,
 		       k_thread_stack_t *stack, size_t stack_size,
@@ -458,6 +513,8 @@ void z_setup_new_thread(struct k_thread *new_thread,
 		       void *p1, void *p2, void *p3,
 		       int prio, uint32_t options, const char *name)
 {
+	char *stack_ptr;
+
 	Z_ASSERT_VALID_PRIO(prio, entry);
 
 #ifdef CONFIG_USERSPACE
@@ -470,21 +527,14 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	/* Any given thread has access to itself */
 	k_object_access_grant(new_thread, new_thread);
 #endif
-	stack_size = adjust_stack_size(stack_size);
-
 	z_waitq_init(&new_thread->base.join_waiters);
 
-#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
-#ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
-	/* reserve space on top of stack for local data */
-	stack_size = Z_STACK_PTR_ALIGN(stack_size
-			- sizeof(*new_thread->userspace_local_data));
-#endif
-#endif
 	/* Initialize various struct k_thread members */
 	z_init_thread_base(&new_thread->base, prio, _THREAD_PRESTART, options);
+	stack_ptr = setup_thread_stack(new_thread, stack, stack_size);
 
-	arch_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3);
+	arch_new_thread(new_thread, stack, stack_ptr, entry, p1, p2, p3);
+
 	/* static threads overwrite it afterwards with real value */
 	new_thread->init_data = NULL;
 	new_thread->fn_abort = NULL;
@@ -496,23 +546,6 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	 */
 	__ASSERT(new_thread->switch_handle != NULL,
 		 "arch layer failed to initialize switch_handle");
-#endif
-#ifdef CONFIG_STACK_SENTINEL
-	/* Put the stack sentinel at the lowest 4 bytes of the stack area.
-	 * We periodically check that it's still present and kill the thread
-	 * if it isn't.
-	 */
-	*((uint32_t *)new_thread->stack_info.start) = STACK_SENTINEL;
-#endif /* CONFIG_STACK_SENTINEL */
-#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
-#ifndef CONFIG_THREAD_USERSPACE_LOCAL_DATA_ARCH_DEFER_SETUP
-	/* don't set again if the arch's own code in arch_new_thread() has
-	 * already set the pointer.
-	 */
-	new_thread->userspace_local_data =
-		(struct _thread_userspace_local_data *)
-		(Z_THREAD_STACK_BUFFER(stack) + stack_size);
-#endif
 #endif
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 	/* Initialize custom data field (value is opaque to kernel) */

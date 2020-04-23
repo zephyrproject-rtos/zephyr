@@ -61,6 +61,22 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define Z_STACK_PTR_ALIGN(ptr) ((uintptr_t)z_stack_ptr_align((char *)(ptr)))
 
 /**
+ * @brief Helper macro for getting a stack frame struct
+ *
+ * It is very common for architectures to define a struct which contains
+ * all the data members that are pre-populated in arch_new_thread().
+ *
+ * Given a type and an initial stack pointer, return a properly cast
+ * pointer to the frame struct.
+ *
+ * @param type Type of the initial stack frame struct
+ * @param ptr Initial aligned stack pointer value
+ * @return Pointer to stack frame struct within the stack buffer
+ */
+#define Z_STACK_PTR_TO_FRAME(type, ptr) \
+	(type *)((ptr) - sizeof(type))
+
+/**
  * @def K_THREAD_STACK_RESERVED
  * @brief Indicate how much additional memory is reserved for stack objects
  *
@@ -158,22 +174,22 @@ static inline char *z_stack_ptr_align(char *ptr)
  */
 #define K_THREAD_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
 
-/* arch/cpu.h may declare an architecture or platform-specific macro
- * for properly declaring stacks, compatible with MMU/MPU constraints if
- * enabled
+/**
+ * @brief Return the size in bytes of a stack memory region
+ *
+ * Convenience macro for passing the desired stack size to k_thread_create()
+ * since the underlying implementation may actually create something larger
+ * (for instance a guard area).
+ *
+ * The value returned here is not guaranteed to match the 'size' parameter
+ * passed to K_THREAD_STACK_DEFINE and may be larger, but is always safe to
+ * pass to k_thread_create() for the associated stack object.
+ *
+ * @param sym Stack memory symbol
+ * @return Size of the stack buffer
  */
-#ifdef ARCH_THREAD_STACK_DEFINE
-#define K_THREAD_STACK_DEFINE(sym, size) ARCH_THREAD_STACK_DEFINE(sym, size)
-#define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-		ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
-#define K_THREAD_STACK_LEN(size) ARCH_THREAD_STACK_LEN(size)
-#define K_THREAD_STACK_MEMBER(sym, size) ARCH_THREAD_STACK_MEMBER(sym, size)
-#define K_THREAD_STACK_SIZEOF(sym) ARCH_THREAD_STACK_SIZEOF(sym)
-static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
-{
-	return ARCH_THREAD_STACK_BUFFER(sym);
-}
-#else
+#define K_THREAD_STACK_SIZEOF(sym)	(sizeof(sym) - K_THREAD_STACK_RESERVED)
+
 /**
  * @brief Declare a toplevel thread stack memory region
  *
@@ -203,7 +219,7 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_THREAD_STACK_DEFINE(sym, size) \
 	struct z_thread_stack_element __noinit \
 		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
-		sym[size]
+		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
 
 /**
  * @brief Calculate size of stacks to be allocated in a stack array
@@ -212,10 +228,15 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * inside a stack array. It accepts the indicated "size" as a parameter
  * and if required, pads some extra bytes (e.g. for MPU scenarios). Refer
  * K_THREAD_STACK_ARRAY_DEFINE definition to see how this is used.
+ * The returned size ensures each array member will be aligned to the
+ * required stack base alignment.
  *
  * @param size Size of the stack memory region
+ * @return Appropriate size for an array member
  */
-#define K_THREAD_STACK_LEN(size) (size)
+#define K_THREAD_STACK_LEN(size) \
+	ROUND_UP(Z_THREAD_STACK_SIZE_ADJUST(size), \
+		 Z_THREAD_STACK_OBJ_ALIGN(Z_THREAD_STACK_SIZE_ADJUST(size)))
 
 /**
  * @brief Declare a toplevel array of thread stack memory regions
@@ -250,22 +271,7 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_THREAD_STACK_MEMBER(sym, size) \
 	struct z_thread_stack_element \
 		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
-		sym[size]
-
-/**
- * @brief Return the size in bytes of a stack memory region
- *
- * Convenience macro for passing the desired stack size to k_thread_create()
- * since the underlying implementation may actually create something larger
- * (for instance a guard area).
- *
- * The value returned here is not guaranteed to match the 'size' parameter
- * passed to K_THREAD_STACK_DEFINE and may be larger.
- *
- * @param sym Stack memory symbol
- * @return Size of the stack
- */
-#define K_THREAD_STACK_SIZEOF(sym) sizeof(sym)
+		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
 
 /**
  * @brief Get a pointer to the physical stack buffer
@@ -278,8 +284,7 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  */
 static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
-	return (char *)sym;
+	return (char *)sym + K_THREAD_STACK_RESERVED;
 }
-#endif /* _ARCH_DECLARE_STACK */
 #endif /* _ASMLANGUAGE */
 #endif /* ZEPHYR_INCLUDE_SYS_THREAD_STACK_H */

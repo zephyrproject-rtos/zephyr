@@ -47,7 +47,7 @@ static inline void set_fault_valid(bool valid)
 #if defined(CONFIG_X86)
 #define MEM_REGION_ALLOC (4096)
 #elif defined(CONFIG_ARC)
-#define MEM_REGION_ALLOC (STACK_ALIGN)
+#define MEM_REGION_ALLOC (Z_ARC_MPU_ALIGN)
 #elif defined(CONFIG_ARM)
 #define MEM_REGION_ALLOC (Z_THREAD_MIN_STACK_ALIGN)
 #else

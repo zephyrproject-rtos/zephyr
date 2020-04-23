@@ -44,19 +44,12 @@ struct init_stack_frame {
  * anymore.
  */
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
-		     size_t stack_size, k_thread_entry_t entry,
+		     char *stack_ptr, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3)
 {
-	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
-	char *stackEnd;
 	struct init_stack_frame *pInitCtx;
 
-	stackEnd = pStackMem + stack_size;
-
-	z_new_thread_init(thread, pStackMem, stack_size);
-
-	pInitCtx = (struct init_stack_frame *)(Z_STACK_PTR_ALIGN(stackEnd -
-				    sizeof(struct init_stack_frame)));
+	pInitCtx = Z_STACK_PTR_TO_FRAME(struct init_stack_frame, stack_ptr);
 
 	pInitCtx->entry_point = (uint64_t)entry;
 	pInitCtx->arg1 = (uint64_t)p1;

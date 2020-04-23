@@ -31,95 +31,73 @@ static const struct z_exc_handle exceptions[] = {
 #endif
 
 #if defined(CONFIG_MPU_STACK_GUARD)
-
-#define IS_MPU_GUARD_VIOLATION(guard_start, fault_addr, stack_ptr) \
-	((fault_addr >= guard_start) && \
-	(fault_addr < (guard_start + STACK_GUARD_SIZE)) && \
-	(stack_ptr <= (guard_start + STACK_GUARD_SIZE)))
-
 /**
  * @brief Assess occurrence of current thread's stack corruption
  *
- * This function performs an assessment whether a memory fault (on a
- * given memory address) is the result of stack memory corruption of
- * the current thread.
+ * This function performs an assessment whether a memory fault (on a given
+ * memory address) is the result of a stack overflow of the current thread.
  *
- * Thread stack corruption for supervisor threads or user threads in
- * privilege mode (when User Space is supported) is reported upon an
- * attempt to access the stack guard area (if MPU Stack Guard feature
- * is supported). Additionally the current thread stack pointer
- * must be pointing inside or below the guard area.
- *
- * Thread stack corruption for user threads in user mode is reported,
- * if the current stack pointer is pointing below the start of the current
- * thread's stack.
- *
- * Notes:
- * - we assume a fully descending stack,
- * - we assume a stacking error has occurred,
- * - the function shall be called when handling MPU privilege violation
- *
- * If stack corruption is detected, the function returns the lowest
- * allowed address where the Stack Pointer can safely point to, to
- * prevent from errors when un-stacking the corrupted stack frame
- * upon exception return.
+ * When called, we know at this point that we received an ARC
+ * protection violation, with any cause code, with the protection access
+ * error either "MPU" or "Secure MPU". In other words, an MPU fault of
+ * some kind. Need to determine whether this is a general MPU access
+ * exception or the specific case of a stack overflow.
  *
  * @param fault_addr memory address on which memory access violation
  *                   has been reported.
  * @param sp stack pointer when exception comes out
- *
- * @return The lowest allowed stack frame pointer, if error is a
- *         thread stack corruption, otherwise return 0.
+ * @retval True if this appears to be a stack overflow
+ * @retval False if this does not appear to be a stack overflow
  */
-static uint32_t z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
+static bool z_check_thread_stack_fail(const uint32_t fault_addr, uint32_t sp)
 {
 	const struct k_thread *thread = _current;
+	uint32_t guard_end, guard_start;
 
 	if (!thread) {
-		return 0;
+		/* TODO: Under what circumstances could we get here ? */
+		return false;
 	}
-#if defined(CONFIG_USERSPACE)
-	if (thread->arch.priv_stack_start) {
-		/* User thread */
-		if (z_arc_v2_aux_reg_read(_ARC_V2_ERSTATUS)
-			& _ARC_V2_STATUS32_U) {
-			/* Thread's user stack corruption */
-#ifdef CONFIG_ARC_HAS_SECURE
-			sp = z_arc_v2_aux_reg_read(_ARC_V2_SEC_U_SP);
-#else
-			sp = z_arc_v2_aux_reg_read(_ARC_V2_USER_SP);
-#endif
-			if (sp <= (uint32_t)thread->stack_obj) {
-				return (uint32_t)thread->stack_obj;
-			}
+
+#ifdef CONFIG_USERSPACE
+	if ((thread->base.user_options & K_USER) != 0) {
+		if ((z_arc_v2_aux_reg_read(_ARC_V2_ERSTATUS) &
+		     _ARC_V2_STATUS32_U) != 0) {
+			/* Normal user mode context. There is no specific
+			 * "guard" installed in this case, instead what's
+			 * happening is that the stack pointer is crashing
+			 * into the privilege mode stack buffer which
+			 * immediately precededs it.
+			 */
+			guard_end = thread->stack_info.start;
+			guard_start = (uint32_t)thread->stack_obj;
 		} else {
-			/* User thread in privilege mode */
-			if (IS_MPU_GUARD_VIOLATION(
-			thread->arch.priv_stack_start - STACK_GUARD_SIZE,
-			fault_addr, sp)) {
-				/* Thread's privilege stack corruption */
-				return thread->arch.priv_stack_start;
-			}
+			/* Special case: handling a syscall on privilege stack.
+			 * There is guard memory reserved immediately before
+			 * it.
+			 */
+			guard_end = thread->arch.priv_stack_start;
+			guard_start = guard_end - Z_ARC_STACK_GUARD_SIZE;
 		}
-	} else {
-		/* Supervisor thread */
-		if (IS_MPU_GUARD_VIOLATION((uint32_t)thread->stack_obj,
-			fault_addr, sp)) {
-			/* Supervisor thread stack corruption */
-			return (uint32_t)thread->stack_obj + STACK_GUARD_SIZE;
-		}
-	}
-#else /* CONFIG_USERSPACE */
-	if (IS_MPU_GUARD_VIOLATION(thread->stack_info.start,
-			fault_addr, sp)) {
-		/* Thread stack corruption */
-		return thread->stack_info.start + STACK_GUARD_SIZE;
-	}
+	} else
 #endif /* CONFIG_USERSPACE */
+	{
+		/* Supervisor thread */
+		guard_end = thread->stack_info.start;
+		guard_start = guard_end - Z_ARC_STACK_GUARD_SIZE;
+	}
 
-	return 0;
+	 /* treat any MPU exceptions within the guard region as a stack
+	  * overflow if the stack pointer is at or below the end of the guard
+	  * region.
+	  */
+	if (sp <= guard_end && fault_addr < guard_end &&
+	    fault_addr >= guard_start) {
+		return true;
+	}
+
+	return false;
 }
-
 #endif
 
 #ifdef CONFIG_ARC_EXCEPTION_DEBUG

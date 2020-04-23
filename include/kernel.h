@@ -527,11 +527,20 @@ struct _thread_stack_info {
 	 */
 	uintptr_t start;
 
-	/* Stack Size - Thread writable stack buffer size. Represents
-	 * the size of the actual area, starting from the start member,
-	 * that should be writable by the thread
+	/* Thread writable stack buffer size. Represents the size of the actual
+	 * buffer, starting from the 'start' member, that should be writable by
+	 * the thread. This comprises of the thread stack area, any area reserved
+	 * for local thread data storage, as well as any area left-out due to
+	 * random adjustments applied to the initial thread stack pointer during
+	 * thread initialization.
 	 */
 	size_t size;
+
+	/* Adjustment value to the size member, removing any storage
+	 * used for TLS or random stack base offsets. (start + size - delta)
+	 * is the initial stack pointer for a thread. May be 0.
+	 */
+	size_t delta;
 };
 
 typedef struct _thread_stack_info _thread_stack_info_t;

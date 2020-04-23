@@ -545,50 +545,38 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 	_mpu_reset_dynamic_regions();
 #endif
 #if defined(CONFIG_MPU_STACK_GUARD)
+	uint32_t guard_start;
+
+	/* Set location of guard area when the thread is running in
+	 * supervisor mode. For a supervisor thread, this is just low
+	 * memory in the stack buffer. For a user thread, it only runs
+	 * in supervisor mode when handling a system call on the privilege
+	 * elevation stack.
+	 */
 #if defined(CONFIG_USERSPACE)
 	if ((thread->base.user_options & K_USER) != 0U) {
-		/* the areas before and after the user stack of thread is
-		 * kernel only. These area can be used as stack guard.
-		 * -----------------------
-		 * |  kernel only area   |
-		 * |---------------------|
-		 * |  user stack         |
-		 * |---------------------|
-		 * |privilege stack guard|
-		 * |---------------------|
-		 * |  privilege stack    |
-		 * -----------------------
-		 */
-		if (_mpu_configure(THREAD_STACK_GUARD_REGION,
-			thread->arch.priv_stack_start - STACK_GUARD_SIZE,
-			STACK_GUARD_SIZE) < 0) {
-			LOG_ERR("thread %p's stack guard failed", thread);
-			return;
-		}
-	} else {
-		if (_mpu_configure(THREAD_STACK_GUARD_REGION,
-			thread->stack_info.start - STACK_GUARD_SIZE,
-			STACK_GUARD_SIZE) < 0) {
-			LOG_ERR("thread %p's stack guard failed", thread);
-			return;
-		}
+		guard_start = thread->arch.priv_stack_start;
+	} else
+#endif
+	{
+		guard_start = thread->stack_info.start;
 	}
-#else
-	if (_mpu_configure(THREAD_STACK_GUARD_REGION,
-		thread->stack_info.start - STACK_GUARD_SIZE,
-		STACK_GUARD_SIZE) < 0) {
+	guard_start -= Z_ARC_STACK_GUARD_SIZE;
+
+	if (_mpu_configure(THREAD_STACK_GUARD_REGION, guard_start,
+		Z_ARC_STACK_GUARD_SIZE) < 0) {
 		LOG_ERR("thread %p's stack guard failed", thread);
 		return;
 	}
-#endif
-#endif
+#endif /* CONFIG_MPU_STACK_GUARD */
 
 #if defined(CONFIG_USERSPACE)
 	/* configure stack region of user thread */
 	if (thread->base.user_options & K_USER) {
 		LOG_DBG("configure user thread %p's stack", thread);
 		if (_mpu_configure(THREAD_STACK_USER_REGION,
-		(uint32_t)thread->stack_obj, thread->stack_info.size) < 0) {
+				   (uint32_t)thread->stack_info.start,
+				   thread->stack_info.size) < 0) {
 			LOG_ERR("thread %p's stack failed", thread);
 			return;
 		}
