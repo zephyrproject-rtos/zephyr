@@ -1075,6 +1075,7 @@ int coap_pending_init(struct coap_pending *pending,
 
 	pending->data = request->data;
 	pending->len = request->offset;
+	pending->t0 = k_uptime_get_32();
 
 	return 0;
 }
@@ -1168,9 +1169,17 @@ struct coap_pending *coap_pending_next_to_expire(
 {
 	struct coap_pending *p, *found = NULL;
 	size_t i;
+	u32_t expiry, min_expiry;
 
 	for (i = 0, p = pendings; i < len; i++, p++) {
-		if (p->timeout && (!found || found->timeout < p->timeout)) {
+		if (!p->timeout) {
+			continue;
+		}
+
+		expiry = p->t0 + p->timeout;
+
+		if (!found || (s32_t)(expiry - min_expiry) < 0) {
+			min_expiry = expiry;
 			found = p;
 		}
 	}
@@ -1205,6 +1214,7 @@ bool coap_pending_cycle(struct coap_pending *pending)
 {
 	s32_t old = pending->timeout;
 
+	pending->t0 += pending->timeout;
 	pending->timeout = next_timeout(pending->timeout);
 
 	return (old != pending->timeout);
