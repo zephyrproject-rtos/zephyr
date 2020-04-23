@@ -456,6 +456,8 @@ static int dma_stm32_reload(struct device *dev, u32_t id,
 		return -EINVAL;
 	}
 
+	stm32_dma_disable_stream(dma, id);
+
 	switch (stream->direction) {
 	case MEMORY_TO_PERIPHERAL:
 		LL_DMA_SetMemoryAddress(dma, table_ll_stream[id], src);
@@ -477,6 +479,9 @@ static int dma_stm32_reload(struct device *dev, u32_t id,
 		LL_DMA_SetDataLength(dma, table_ll_stream[id],
 				     size / stream->dst_size);
 	}
+
+	stm32_dma_enable_stream(dma, id);
+
 	return 0;
 }
 
