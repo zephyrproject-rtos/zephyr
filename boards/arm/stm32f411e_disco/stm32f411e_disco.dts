@@ -41,7 +41,7 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		green_pwm_led: green_pwm_led {
-			pwms = <&pwm4 1 0>;
+			pwms = <&pwm4 1 0 PWM_POLARITY_NORMAL>;
 		};
 	};
 
