@@ -46,7 +46,7 @@ loop_slave_core:
 
 boot_master_core:
 
-#ifdef CONFIG_FLOAT
+#ifdef CONFIG_FPU
 	/*
 	 * Enable floating-point.
 	 */

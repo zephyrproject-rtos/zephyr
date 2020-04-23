@@ -30,7 +30,7 @@ between *visible* and *invisible* symbols.
 
   .. code-block:: none
 
-     config FLOAT
+     config FPU
      	bool "Support floating point operations"
      	depends on HAS_FPU
 
@@ -75,12 +75,12 @@ Assignments in configuration files use this syntax:
 There should be no spaces around the equals sign.
 
 ``bool`` symbols can be enabled or disabled by setting them to ``y`` or ``n``,
-respectively. The ``FLOAT`` symbol from the example above could be enabled like
+respectively. The ``FPU`` symbol from the example above could be enabled like
 this:
 
 .. code-block:: none
 
-   CONFIG_FLOAT=y
+   CONFIG_FPU=y
 
 .. note::
 

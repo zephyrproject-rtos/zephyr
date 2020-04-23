@@ -85,7 +85,7 @@ __csSet:
 #endif /* CONFIG_SET_GDT */
 
 
-#if !defined(CONFIG_FLOAT)
+#if !defined(CONFIG_FPU)
 	/*
 	 * Force an #NM exception for floating point instructions
 	 * since FP support hasn't been configured
@@ -126,7 +126,7 @@ __csSet:
 
   #endif /* CONFIG_SSE */
 
-#endif /* !CONFIG_FLOAT */
+#endif /* !CONFIG_FPU */
 
 	/*
 	 * Set the stack pointer to the area used for the interrupt stack.

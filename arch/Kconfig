@@ -520,7 +520,7 @@ config MPU_GAP_FILLING
 	  documentation for more information on how this option is
 	  used.
 
-menuconfig FLOAT
+menuconfig FPU
 	bool "Floating point"
 	depends on CPU_HAS_FPU
 	depends on ARC || ARM || RISCV || X86
@@ -533,7 +533,7 @@ menuconfig FLOAT
 
 config FP_SHARING
 	bool "Floating point register sharing"
-	depends on FLOAT
+	depends on FPU
 	help
 	  This option allows multiple threads to use the floating point
 	  registers.

@@ -111,7 +111,7 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
     mov r13, #0         /* r13_sys */
     mov r14, #0         /* r14_sys */
 
-#if defined(CONFIG_FLOAT)
+#if defined(CONFIG_FPU)
     /*
      * Initialise FPU registers to a defined state.
      */
@@ -142,7 +142,7 @@ SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
     fmdrr d13, r1, r1
     fmdrr d14, r1, r1
     fmdrr d15, r1, r1
-#endif /* CONFIG_FLOAT */
+#endif /* CONFIG_FPU */
 
 #endif /* CONFIG_CPU_HAS_DCLS */
 

@@ -805,11 +805,11 @@ void z_spin_lock_set_owner(struct k_spinlock *l)
 
 int z_impl_k_float_disable(struct k_thread *thread)
 {
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
 	return arch_float_disable(thread);
 #else
 	return -ENOSYS;
-#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
 }
 
 #ifdef CONFIG_USERSPACE

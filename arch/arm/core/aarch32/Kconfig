@@ -214,7 +214,7 @@ config ARM_NONSECURE_FIRMWARE
 choice
 	prompt "Floating point ABI"
 	default FP_HARDABI
-	depends on FLOAT
+	depends on FPU
 
 config FP_HARDABI
 	bool "Floating point Hard ABI"

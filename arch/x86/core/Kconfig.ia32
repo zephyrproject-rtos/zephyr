@@ -80,7 +80,7 @@ depends on CPU_HAS_FPU
 
 config SSE
 	bool "SSE registers"
-	depends on FLOAT
+	depends on FPU
 	help
 	  This option enables the use of SSE registers by threads.
 
@@ -100,7 +100,7 @@ config SSE_FP_MATH
 
 config EAGER_FP_SHARING
 	bool
-	depends on FLOAT
+	depends on FPU
 	depends on USERSPACE
 	default y if !X86_NO_LAZY_FP
 	help
@@ -110,12 +110,12 @@ config EAGER_FP_SHARING
 	  Mitigates CVE-2018-3665, but incurs a performance hit.
 
 	  For vulnerable systems that process sensitive information in the
-	  FPU register set, should be used any time CONFIG_FLOAT is
+	  FPU register set, should be used any time CONFIG_FPU is
 	  enabled, regardless if the FPU is used by one thread or multiple.
 
 config LAZY_FP_SHARING
 	bool
-	depends on FLOAT
+	depends on FPU
 	depends on !EAGER_FP_SHARING
 	depends on FP_SHARING
 	default y if X86_NO_LAZY_FP || !USERSPACE

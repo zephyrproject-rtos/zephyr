@@ -229,7 +229,7 @@ way, without having to look for particular architectures:
 
 .. code-block:: none
 
-   config FLOAT
+   config FPU
    	bool "Support floating point operations"
    	depends on CPU_HAS_FPU
 
@@ -238,7 +238,7 @@ duplicated in several spots:
 
 .. code-block:: none
 
-   config FLOAT
+   config FPU
    	bool "Support floating point operations"
    	depends on SOC_FOO || SOC_BAR || ...
 
