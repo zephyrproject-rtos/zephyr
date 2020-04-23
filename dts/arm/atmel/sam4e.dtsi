@@ -99,6 +99,7 @@
 			peripheral-id = <19>;
 			label = "SPI_0";
 			status = "disabled";
+			pinctrl-0 = <&pa12a_spi_miso &pa13a_spi_mosi &pa14a_spi_spck>;
 		};
 
 		uart0: uart@400e0600 {
