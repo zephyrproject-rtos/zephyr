@@ -2201,7 +2201,7 @@ static const struct eth_sam_dev_cfg eth0_config = {
 };
 
 static struct eth_sam_dev_data eth0_data = {
-#ifdef CONFIG_ETH_SAM_GMAC_MAC_MANUAL
+#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
 	.mac_addr = DT_INST_PROP(0, local_mac_address),
 #endif
 	.queue_list = {

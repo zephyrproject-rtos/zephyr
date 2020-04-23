@@ -65,12 +65,6 @@ config ETH_MCUX_0_UNIQUE_MAC
 	bool "Stable MAC address"
 	help
 	  Generate MAC address from MCU's unique identification register.
-
-config ETH_MCUX_0_MANUAL_MAC
-	bool "Manual MAC address"
-	help
-	  Get MAC address from the device tree.
-
 endchoice
 
 endif # ETH_MCUX_0
@@ -92,11 +86,6 @@ config ETH_MCUX_1_UNIQUE_MAC
 	bool "Stable MAC address"
 	help
 	  Generate MAC address from MCU's unique identification register.
-
-config ETH_MCUX_1_MANUAL_MAC
-	bool "Manual MAC address"
-	help
-	  Get MAC address from the device tree.
 
 endchoice
 

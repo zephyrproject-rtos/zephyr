@@ -1210,7 +1210,7 @@ static struct eth_context eth_0_context = {
 #if DT_INST_PROP(0, zephyr_random_mac_address)
 	.generate_mac = generate_random_mac,
 #endif
-#if defined(CONFIG_ETH_MCUX_0_MANUAL_MAC)
+#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
 	.mac_addr = DT_INST_PROP(0, local_mac_address),
 	.generate_mac = NULL,
 #endif
@@ -1277,7 +1277,7 @@ static struct eth_context eth_1_context = {
 #if DT_INST_PROP(1, zephyr_random_mac_address)
 	.generate_mac = generate_random_mac,
 #endif
-#if defined(CONFIG_ETH_MCUX_1_MANUAL_MAC)
+#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(1))
 	.mac_addr = DT_INST_PROP(1, local_mac_address),
 	.generate_mac = NULL,
 #endif

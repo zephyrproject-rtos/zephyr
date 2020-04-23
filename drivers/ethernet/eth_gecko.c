@@ -659,15 +659,8 @@ static const struct eth_gecko_dev_cfg eth0_config = {
 };
 
 static struct eth_gecko_dev_data eth0_data = {
-#ifdef CONFIG_ETH_GECKO_MAC_MANUAL
-	.mac_addr = {
-		CONFIG_ETH_GECKO_MAC0,
-		CONFIG_ETH_GECKO_MAC1,
-		CONFIG_ETH_GECKO_MAC2,
-		CONFIG_ETH_GECKO_MAC3,
-		CONFIG_ETH_GECKO_MAC4,
-		CONFIG_ETH_GECKO_MAC5,
-	},
+#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
+	.mac_addr = DT_INST_PROP(0, local_mac_address),
 #endif
 };
 
