@@ -95,8 +95,8 @@ MEMORY
 #ifdef CONFIG_HAS_TI_CCFG
     FLASH_CCFG            (rwx): ORIGIN = CCFG_ADDR, LENGTH = CCFG_SIZE
 #endif
-#ifdef DT_CCM_BASE_ADDRESS
-    CCM                   (rw) : ORIGIN = DT_CCM_BASE_ADDRESS, LENGTH = DT_CCM_SIZE * 1K
+#if DT_HAS_NODE(DT_CHOSEN(zephyr_ccm))
+    CCM                   (rw) : ORIGIN = DT_REG_ADDR(DT_CHOSEN(zephyr_ccm)), LENGTH = DT_REG_SIZE(DT_CHOSEN(zephyr_ccm))
 #endif
 #if DT_HAS_NODE(DT_CHOSEN(zephyr_dtcm))
     DTCM                  (rw) : ORIGIN = DT_REG_ADDR(DT_CHOSEN(zephyr_dtcm)), LENGTH = DT_REG_SIZE(DT_CHOSEN(zephyr_dtcm))
