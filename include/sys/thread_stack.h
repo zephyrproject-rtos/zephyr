@@ -276,8 +276,13 @@ static inline char *z_stack_ptr_align(char *ptr)
 /**
  * @brief Get a pointer to the physical stack buffer
  *
- * This macro is deprecated. If a stack buffer needs to be examined, the
- * bounds should be obtained from the associated thread's stack_info struct.
+ * Obtain a pointer to the non-reserved area of a stack object.
+ * This is not guaranteed to be the beginning of the thread-writable region;
+ * this does not account for any memory carved-out for MPU stack overflow
+ * guards.
+ *
+ * Use with care. The true bounds of the stack buffer are available in the
+ * stack_info member of its associated thread.
  *
  * @param sym Declared stack symbol name
  * @return The buffer itself, a char *
