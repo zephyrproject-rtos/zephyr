@@ -14,8 +14,7 @@ void z_thread_entry_wrapper(k_thread_entry_t thread,
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     size_t stack_size, k_thread_entry_t thread_func,
-		     void *arg1, void *arg2, void *arg3,
-		     int priority, unsigned int options)
+		     void *arg1, void *arg2, void *arg3)
 {
 	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
 

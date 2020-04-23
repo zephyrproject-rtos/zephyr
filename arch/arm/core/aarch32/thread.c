@@ -30,8 +30,7 @@
  */
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     size_t stackSize, k_thread_entry_t pEntry,
-		     void *parameter1, void *parameter2, void *parameter3,
-		     int priority, unsigned int options)
+		     void *parameter1, void *parameter2, void *parameter3)
 {
 	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
 	char *stackEnd;
@@ -81,7 +80,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * .start and .size.
 	 *
 	 */
-	if ((options & K_FP_REGS) != 0) {
+	if ((thread->base.user_options & K_FP_REGS) != 0) {
 		pStackMem += MPU_GUARD_ALIGN_AND_SIZE_FLOAT
 			- MPU_GUARD_ALIGN_AND_SIZE;
 		stackSize -= MPU_GUARD_ALIGN_AND_SIZE_FLOAT
@@ -104,7 +103,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		(char *)top_of_stack_offset - sizeof(struct __basic_sf)));
 
 #if defined(CONFIG_USERSPACE)
-	if ((options & K_USER) != 0) {
+	if ((thread->base.user_options & K_USER) != 0) {
 		pInitCtx->basic.pc = (uint32_t)arch_user_mode_enter;
 	} else {
 		pInitCtx->basic.pc = (uint32_t)z_thread_entry;

@@ -62,8 +62,7 @@ int arch_float_disable(struct k_thread *thread)
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     size_t stack_size, k_thread_entry_t entry,
-		     void *parameter1, void *parameter2, void *parameter3,
-		     int priority, unsigned int options)
+		     void *parameter1, void *parameter2, void *parameter3)
 {
 	char *stack_buf;
 	char *stack_high;

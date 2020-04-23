@@ -45,23 +45,18 @@ struct init_stack_frame {
  * z_thread_entry() return address, that points at z_thread_entry()
  * and status register.
  *
- * <options> is currently unused.
- *
  * @param pStackmem the pointer to aligned stack memory
  * @param stackSize the stack size in bytes
  * @param pEntry thread entry point routine
  * @param parameter1 first param to entry point
  * @param parameter2 second param to entry point
  * @param parameter3 third param to entry point
- * @param priority thread priority
- * @param options thread options: K_ESSENTIAL
  *
  * @return N/A
  */
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     size_t stackSize, k_thread_entry_t pEntry,
-		     void *parameter1, void *parameter2, void *parameter3,
-		     int priority, unsigned int options)
+		     void *parameter1, void *parameter2, void *parameter3)
 {
 	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
 
@@ -73,6 +68,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	size_t stackAdjSize;
 	size_t offset = 0;
+	bool is_user = (thread->base.user_options & K_USER) != 0;
 
 
 	stackAdjSize = Z_ARC_MPU_SIZE_ALIGN(stackSize);
@@ -83,7 +79,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	offset = stackAdjSize - stackSize;
 #endif
 
-	if (options & K_USER) {
+	if (is_user) {
 #ifdef CONFIG_GEN_PRIV_STACKS
 		thread->arch.priv_stack_start =
 			(uint32_t)z_priv_stack_find(thread->stack_obj);
@@ -138,7 +134,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	/* fill init context */
 	pInitCtx->status32 = 0U;
-	if (options & K_USER) {
+	if (is_user) {
 		pInitCtx->pc = ((uint32_t)z_user_thread_entry_wrapper);
 	} else {
 		pInitCtx->pc = ((uint32_t)z_thread_entry_wrapper);
@@ -185,7 +181,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->status32 |= _ARC_V2_STATUS32_SC;
 #endif
 #ifdef CONFIG_USERSPACE
-	if (options & K_USER) {
+	if (is_user) {
 		thread->arch.u_stack_top = (uint32_t)pStackMem;
 		thread->arch.u_stack_base = (uint32_t)stackEnd;
 		thread->arch.k_stack_top =
