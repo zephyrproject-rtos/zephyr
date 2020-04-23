@@ -61,15 +61,15 @@ void arch_busy_wait(uint32_t usec_to_wait);
  * Fields in thread->base will be initialized when this is called.
  *
  * @param thread Pointer to uninitialized struct k_thread
- * @param pStack Pointer to the stack space.
- * @param stackSize Stack size in bytes.
- * @param entry Thread entry function.
- * @param p1 1st entry point parameter.
- * @param p2 2nd entry point parameter.
- * @param p3 3rd entry point parameter.
+ * @param stack Pointer to the stack object
+ * @param stack_size Stack object buffer size in bytes
+ * @param entry Thread entry function
+ * @param p1 1st entry point parameter
+ * @param p2 2nd entry point parameter
+ * @param p3 3rd entry point parameter
  */
-void arch_new_thread(struct k_thread *thread, k_thread_stack_t *pStack,
-		     size_t stackSize, k_thread_entry_t entry,
+void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+		     size_t stack_size, k_thread_entry_t entry,
 		     void *p1, void *p2, void *p3);
 
 #ifdef CONFIG_USE_SWITCH
