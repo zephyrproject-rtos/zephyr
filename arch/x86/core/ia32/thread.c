@@ -68,13 +68,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	struct _x86_initial_frame *initial_frame;
 
 #if CONFIG_X86_STACK_PROTECTION
-	struct z_x86_thread_stack_header *header =
-		(struct z_x86_thread_stack_header *)stack;
-
-	/* Set guard area to read-only to catch stack overflows */
-	z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->guard_page,
-			    MMU_PAGE_SIZE, MMU_ENTRY_READ, Z_X86_MMU_RW,
-			    true);
+	z_x86_set_stack_guard(stack);
 #endif
 
 #ifdef CONFIG_USERSPACE
@@ -121,7 +115,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 				k_thread_entry_t _main)
 {
 	struct k_thread *dummy_thread = (struct k_thread *)
-		ROUND_UP(Z_THREAD_STACK_BUFFER(z_interrupt_stacks[0]),
+		ROUND_UP(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]),
 			 FP_REG_SET_ALIGN);
 
 	__ASSERT(((uintptr_t)(&dummy_thread->arch.preempFloatReg) %

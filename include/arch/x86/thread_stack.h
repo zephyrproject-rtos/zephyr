@@ -203,5 +203,13 @@ struct z_x86_thread_stack_header {
 #define ARCH_THREAD_STACK_RESERVED \
 	sizeof(struct z_x86_thread_stack_header)
 
+#ifdef CONFIG_HW_STACK_PROTECTION
+#define ARCH_KERNEL_STACK_RESERVED	MMU_PAGE_SIZE
+#define ARCH_KERNEL_STACK_OBJ_ALIGN	MMU_PAGE_SIZE
+#else
+#define ARCH_KERNEL_STACK_RESERVED	0
+#define ARCH_KERNEL_STACK_OBJ_ALIGN	ARCH_STACK_PTR_ALIGN
+#endif
+
 #endif /* !_ASMLANGUAGE */
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_THREAD_STACK_H */

@@ -113,6 +113,26 @@ static inline uint32_t arch_k_cycle_get_32(void);
  *
  * @see Z_THREAD_STACK_SIZE_ADJUST
  */
+
+/**
+ * @def ARCH_KERNEL_STACK_RESERVED
+ * @brief MPU guard size for kernel-only stacks
+ *
+ * If MPU stack guards are used to catch stack overflows, specify the
+ * amount of space reserved in kernel stack objects. If guard sizes are
+ * context dependent, this should be in the minimum guard size, with
+ * remaining space carved out if needed.
+ *
+ * Optional definition, defaults to 0.
+ *
+ * @see K_KERNEL_STACK_RESERVED
+ */
+
+/**
+ * @def ARCH_KERNEL_STACK_OBJ_ALIGN
+ * @brief Required alignment of the lowest address of a kernel-only stack.
+ */
+
 /** @} */
 
 /**

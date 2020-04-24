@@ -40,9 +40,9 @@ FUNC_NORETURN void z_x86_prep_c(void *arg)
 #endif
 
 #if CONFIG_X86_STACK_PROTECTION
-	z_x86_mmu_set_flags(&z_x86_kernel_ptables, z_interrupt_stacks[0],
-			    MMU_PAGE_SIZE, MMU_ENTRY_READ, Z_X86_MMU_RW,
-			    true);
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		z_x86_set_stack_guard(z_interrupt_stacks[i]);
+	}
 #endif
 
 #if defined(CONFIG_SMP)

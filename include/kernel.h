@@ -781,9 +781,25 @@ extern void k_thread_foreach_unlocked(
  * K_FP_REGS, and K_SSE_REGS. Multiple options may be specified by separating
  * them using "|" (the logical OR operator).
  *
- * The stack_size parameter must be the same size value used when the stack
- * object was defined, or the return value of K_THREAD_STACK_SIZEOF() on the
- * stack object.
+ * Stack objects passed to this function must be originally defined with
+ * either of these macros in order to be portable:
+ *
+ * - K_THREAD_STACK_DEFINE() - For stacks that may support either user or
+ *   supervisor threads.
+ * - K_KERNEL_STACK_DEFINE() - For stacks that may support supervisor
+ *   threads only. These stacks use less memory if CONFIG_USERSPACE is
+ *   enabled.
+ *
+ * The stack_size parameter has constraints. It must either be:
+ *
+ * - The original size value passed to K_THREAD_STACK_DEFINE() or
+ *   K_KERNEL_STACK_DEFINE()
+ * - The return value of K_THREAD_STACK_SIZEOF(stack) if the stack was
+ *   defined with K_THREAD_STACK_DEFINE()
+ * - The return value of K_KERNEL_STACK_SIZEOF(stack) if the stack was
+ *   defined with K_KERNEL_STACK_DEFINE().
+ *
+ * Using other values, or sizeof(stack) may produce undefined behavior.
  *
  * @param new_thread Pointer to uninitialized struct k_thread
  * @param stack Pointer to the stack space.

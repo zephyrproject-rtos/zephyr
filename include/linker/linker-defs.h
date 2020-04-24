@@ -245,6 +245,8 @@ extern char _ramfunc_rom_start[];
 #ifdef CONFIG_USERSPACE
 extern char z_priv_stacks_ram_start[];
 extern char z_priv_stacks_ram_end[];
+extern char z_user_stacks_start[];
+extern char z_user_stacks_end[];
 #endif /* CONFIG_USERSPACE */
 
 #endif /* ! _ASMLANGUAGE */

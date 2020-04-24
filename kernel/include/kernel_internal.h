@@ -124,6 +124,10 @@ extern K_THREAD_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 #endif
 
+#ifdef CONFIG_USERSPACE
+bool z_stack_is_user_capable(k_thread_stack_t *stack);
+#endif /* CONFIG_USERSPACE */
+
 #ifdef __cplusplus
 }
 #endif

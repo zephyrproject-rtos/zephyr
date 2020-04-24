@@ -168,44 +168,16 @@ extern "C" {
 #endif
 #endif
 
-/**
- * @brief Define alignment of a privilege stack buffer
- *
- * This is used to determine the required alignment of threads'
- * privilege stacks when building with support for user mode.
- *
- * @note
- * The privilege stacks do not need to respect the minimum MPU
- * region alignment requirement (unless this is enforced via
- * the MPU Stack Guard feature).
+#ifdef CONFIG_MPU_STACK_GUARD
+/* Kernel-only stacks need an MPU guard region programmed at the beginning of
+ * the stack object, so align the object appropriately.
  */
-#if defined(CONFIG_USERSPACE)
-#define Z_PRIVILEGE_STACK_ALIGN MAX(ARCH_STACK_PTR_ALIGN, Z_MPU_GUARD_ALIGN)
+#define ARCH_KERNEL_STACK_RESERVED	MPU_GUARD_ALIGN_AND_SIZE
+#define ARCH_KERNEL_STACK_OBJ_ALIGN	Z_MPU_GUARD_ALIGN
 #endif
 
-/* On arm, the MPU guard can take a few different forms: completely
- * reserved, completely borrowed, or a combination of the two.
- *
- * On devices without power-of-two MPU region requirements, the MPU
- * guard is reserved as extra memory in the beginning of the stack
- * object.  If we need a larger floating point guard, this is carved
- * out of the thread stack buffer.
- *
- * On devices with power-of-two MPU requirements, the guard is
- * completely carved out of the thread stack buffer.
- *
- * thread->stack_info is updated any time the guard configuration
- * changes. For instance, if a thread drops down to user mode, then
- * the guard is no longer necessary and it gets moved to guard the
- * privilege mode stack instead./
- */
-#if !defined(CONFIG_USERSPACE) || \
-	!defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-/* TODO: Convert all non power-of-two ARM MPUs to not use separate privilege
- * stack generation, right now this is done unconditionally
- */
-#define ARCH_THREAD_STACK_RESERVED MPU_GUARD_ALIGN_AND_SIZE
-#endif
+/* On arm, all MPU guards are carve-outs. */
+#define ARCH_THREAD_STACK_RESERVED 0
 
 /* Legacy case: retain containing extern "C" with C++ */
 #ifdef CONFIG_ARM_MPU

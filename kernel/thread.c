@@ -28,6 +28,10 @@
 #include <sys/check.h>
 #include <random/rand32.h>
 
+#define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(os);
+
 #ifdef CONFIG_THREAD_MONITOR
 /* This lock protects the linked list of active threads; i.e. the
  * initial _kernel.threads pointer and the linked list made up of
@@ -444,25 +448,34 @@ static size_t random_offset(size_t stack_size)
 static char *setup_thread_stack(struct k_thread *new_thread,
 				k_thread_stack_t *stack, size_t stack_size)
 {
-	size_t stack_obj_size;
+	size_t stack_obj_size, stack_buf_size;
+	char *stack_ptr, *stack_buf_start;
 	size_t delta = 0;
-	char *stack_ptr;
 
-	stack_obj_size = Z_THREAD_STACK_SIZE_ADJUST(stack_size);
+#ifdef CONFIG_USERSPACE
+	if (z_stack_is_user_capable(stack)) {
+		stack_obj_size = Z_THREAD_STACK_SIZE_ADJUST(stack_size);
+		stack_buf_start = Z_THREAD_STACK_BUFFER(stack);
+		stack_buf_size = stack_obj_size - K_THREAD_STACK_RESERVED;
+	} else
+#endif
+	{
+		/* Object cannot host a user mode thread */
+		stack_obj_size = Z_KERNEL_STACK_SIZE_ADJUST(stack_size);
+		stack_buf_start = Z_KERNEL_STACK_BUFFER(stack);
+		stack_buf_size = stack_obj_size - K_KERNEL_STACK_RESERVED;
+	}
+
+	/* Initial stack pointer at the high end of the stack object, may
+	 * be reduced later in this function by TLS or random offset
+	 */
 	stack_ptr = (char *)stack + stack_obj_size;
 
-#if defined(CONFIG_INIT_STACKS) || defined(CONFIG_THREAD_STACK_INFO) || \
-		defined(CONFIG_STACK_SENTINEL)
-	char *stack_buf_start;
+	LOG_DBG("stack %p for thread %p: obj_size=%zu buf_start=%p "
+		" buf_size %zu stack_ptr=%p",
+		stack, new_thread, stack_obj_size, stack_buf_start,
+		stack_buf_size, stack_ptr);
 
-	stack_buf_start = Z_THREAD_STACK_BUFFER(stack);
-#endif
-#if defined(CONFIG_INIT_STACKS) || defined(CONFIG_THREAD_STACK_INFO) || \
-		CONFIG_STACK_POINTER_RANDOM
-	size_t stack_buf_size;
-
-	stack_buf_size = stack_obj_size - K_THREAD_STACK_RESERVED;
-#endif
 #ifdef CONFIG_INIT_STACKS
 	memset(stack_buf_start, 0xaa, stack_buf_size);
 #endif
@@ -518,6 +531,9 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	Z_ASSERT_VALID_PRIO(prio, entry);
 
 #ifdef CONFIG_USERSPACE
+	__ASSERT((options & K_USER) == 0 || z_stack_is_user_capable(stack),
+		 "user thread %p with kernel-only stack %p",
+		 new_thread, stack);
 	z_object_init(new_thread);
 	z_object_init(stack);
 	new_thread->stack_obj = stack;
@@ -631,6 +647,11 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 
 
 #ifdef CONFIG_USERSPACE
+bool z_stack_is_user_capable(k_thread_stack_t *stack)
+{
+	return z_object_find(stack) != NULL;
+}
+
 k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 			       k_thread_stack_t *stack,
 			       size_t stack_size, k_thread_entry_t entry,
@@ -642,6 +663,10 @@ k_tid_t z_vrfy_k_thread_create(struct k_thread *new_thread,
 
 	/* The thread and stack objects *must* be in an uninitialized state */
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD));
+
+	/* No need to check z_stack_is_user_capable(), it won't be in the
+	 * object table if it isn't
+	 */
 	stack_object = z_object_find(stack);
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(z_obj_validation_check(stack_object, stack,
 						K_OBJ_THREAD_STACK_ELEMENT,
@@ -785,6 +810,8 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 	_current->entry.parameter3 = p3;
 #endif
 #ifdef CONFIG_USERSPACE
+	__ASSERT(z_stack_is_user_capable(_current->stack_obj),
+		 "dropping to user mode with kernel-only stack object");
 	memset(_current->userspace_local_data, 0,
 	       sizeof(struct _thread_userspace_local_data));
 	arch_user_mode_enter(entry, p1, p2, p3);
