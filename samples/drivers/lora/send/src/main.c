@@ -10,6 +10,11 @@
 #include <sys/util.h>
 #include <zephyr.h>
 
+#define DEFAULT_RADIO_NODE DT_ALIAS(lora0)
+BUILD_ASSERT(DT_HAS_NODE_STATUS_OKAY(DEFAULT_RADIO_NODE),
+	     "No default LoRa radio specified in DT");
+#define DEFAULT_RADIO DT_LABEL(DEFAULT_RADIO_NODE)
+
 #define MAX_DATA_LEN 10
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
@@ -24,9 +29,9 @@ void main(void)
 	struct lora_modem_config config;
 	int ret;
 
-	lora_dev = device_get_binding(DT_LABEL(DT_INST(0, semtech_sx1276)));
+	lora_dev = device_get_binding(DEFAULT_RADIO);
 	if (!lora_dev) {
-		LOG_ERR("%s Device not found", DT_LABEL(DT_INST(0, semtech_sx1276)));
+		LOG_ERR("%s Device not found", DEFAULT_RADIO);
 		return;
 	}
 
