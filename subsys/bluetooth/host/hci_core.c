@@ -2082,13 +2082,30 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	    conn->role == BT_HCI_ROLE_SLAVE) {
 		bt_addr_le_copy(&conn->le.init_addr, &peer_addr);
 
-		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-		    bt_addr_cmp(&evt->local_rpa, BT_ADDR_ANY) != 0) {
-			bt_addr_copy(&conn->le.resp_addr.a, &evt->local_rpa);
-			conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
+		if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+		      BT_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+			struct bt_le_ext_adv *adv = bt_adv_lookup_legacy();
+
+			if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+			    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+				conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
+				if (bt_addr_cmp(&evt->local_rpa,
+						BT_ADDR_ANY) != 0) {
+					bt_addr_copy(&conn->le.resp_addr.a,
+						     &evt->local_rpa);
+				} else {
+					bt_addr_copy(&conn->le.resp_addr.a,
+						     &bt_dev.random_addr.a);
+				}
+			} else {
+				bt_addr_le_copy(&conn->le.resp_addr,
+						&bt_dev.id_addr[conn->id]);
+			}
 		} else {
-			bt_addr_le_copy(&conn->le.resp_addr,
-					&bt_dev.id_addr[conn->id]);
+			/* Copy the local RPA and handle this in advertising set
+			 * terminated event.
+			 */
+			bt_addr_copy(&conn->le.resp_addr.a, &evt->local_rpa);
 		}
 
 		/* if the controller supports, lets advertise for another
@@ -2116,10 +2133,15 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	    conn->role == BT_HCI_ROLE_MASTER) {
 		bt_addr_le_copy(&conn->le.resp_addr, &peer_addr);
 
-		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-		    bt_addr_cmp(&evt->local_rpa, BT_ADDR_ANY) != 0) {
-			bt_addr_copy(&conn->le.init_addr.a, &evt->local_rpa);
+		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
 			conn->le.init_addr.type = BT_ADDR_LE_RANDOM;
+			if (bt_addr_cmp(&evt->local_rpa, BT_ADDR_ANY) != 0) {
+				bt_addr_copy(&conn->le.init_addr.a,
+					     &evt->local_rpa);
+			} else {
+				bt_addr_copy(&conn->le.init_addr.a,
+					     &bt_dev.random_addr.a);
+			}
 		} else {
 			bt_addr_le_copy(&conn->le.init_addr,
 					&bt_dev.id_addr[conn->id]);
@@ -4869,18 +4891,34 @@ static void le_adv_set_terminated(struct net_buf *buf)
 		le_adv_stop_free_conn(adv, adv == bt_dev.adv ? evt->status : 0);
 	}
 
-	if (!evt->status && adv->cb && adv->cb->connected) {
+	if (IS_ENABLED(CONFIG_BT_CONN) && !evt->status) {
 		struct bt_conn *conn = bt_conn_lookup_handle(evt->conn_handle);
 
 		if (conn) {
-			struct bt_le_ext_adv_connected_info info = {
-				.conn = conn,
-			};
+			if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+			    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+				/* Set Responder address unless already set */
+				conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
+				if (bt_addr_cmp(&conn->le.resp_addr.a,
+						BT_ADDR_ANY) == 0) {
+					bt_addr_copy(&conn->le.resp_addr.a,
+						     &adv->random_addr.a);
+				}
+			} else {
+				bt_addr_le_copy(&conn->le.resp_addr,
+					&bt_dev.id_addr[conn->id]);
+			}
 
-			adv->cb->connected(adv, &info);
+			if (adv->cb && adv->cb->connected) {
+				struct bt_le_ext_adv_connected_info info = {
+					.conn = conn,
+				};
+
+				adv->cb->connected(adv, &info);
+			}
+
+			bt_conn_unref(conn);
 		}
-
-		bt_conn_unref(conn);
 	}
 
 	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_LIMITED)) {
