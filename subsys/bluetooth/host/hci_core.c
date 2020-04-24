@@ -2147,7 +2147,6 @@ static void le_enh_conn_complete(struct net_buf *buf)
 static void le_legacy_conn_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
-	struct bt_le_ext_adv *adv = bt_adv_lookup_legacy();
 	struct bt_hci_evt_le_enh_conn_complete enh;
 
 	BT_DBG("status 0x%02x role %u %s", evt->status, evt->role,
@@ -2164,13 +2163,7 @@ static void le_legacy_conn_complete(struct net_buf *buf)
 	bt_addr_le_copy(&enh.peer_addr, &evt->peer_addr);
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		if (evt->role == BT_HCI_ROLE_SLAVE &&
-		    IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-		    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-			bt_addr_copy(&enh.local_rpa, &adv->random_addr.a);
-		} else {
-			bt_addr_copy(&enh.local_rpa, &bt_dev.random_addr.a);
-		}
+		bt_addr_copy(&enh.local_rpa, &bt_dev.random_addr.a);
 	} else {
 		bt_addr_copy(&enh.local_rpa, BT_ADDR_ANY);
 	}
