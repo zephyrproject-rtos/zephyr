@@ -34,6 +34,8 @@
 			reg = <0x42003800 0x20>;
 			interrupts = <21 0>;
 			label = "TIMER_6";
+			clocks = <&gclk 0x1d>, <&pm 0x20 14>;
+			clock-names = "GCLK", "PM";
 		};
 	};
 };
@@ -76,8 +78,12 @@
 
 &tc4 {
 	interrupts = <19 0>;
+	clocks = <&gclk 0x1c>, <&pm 0x20 12>;
+	clock-names = "GCLK", "PM";
 };
 
 &adc {
+	clocks = <&gclk 0x1e>, <&pm 0x20 16>;
+	clock-names = "GCLK", "PM";
 	interrupts = <23 0>;
 };
