@@ -520,23 +520,38 @@ config MPU_GAP_FILLING
 	  documentation for more information on how this option is
 	  used.
 
-menuconfig FPU
-	bool "Floating point"
+menu "Floating Point Options"
+
+config FPU
+	bool "Enable floating point unit (FPU)"
 	depends on CPU_HAS_FPU
 	depends on ARC || ARM || RISCV || X86
 	help
-	  This option allows threads to use the floating point registers.
-	  By default, only a single thread may use the registers.
+	  This option enables the hardware Floating Point Unit (FPU), in order to
+	  support using the floating point registers and instructions.
 
-	  Disabling this option means that any thread that uses a
-	  floating point register will get a fatal exception.
+	  When this option is enabled, by default, threads may use the floating
+	  point registers only in an exclusive manner, and this usually means that
+	  only one thread may perform floating point operations.
+
+	  If it is necessary for multiple threads to perform concurrent floating
+	  point operations, the "FPU register sharing" option must be enabled to
+	  preserve the floating point registers across context switches.
+
+	  Note that this option cannot be selected for the platforms that do not
+	  include a hardware floating point unit; the floating point support for
+	  those platforms is dependent on the availability of the toolchain-
+	  provided software floating point library.
 
 config FP_SHARING
-	bool "Floating point register sharing"
+	bool "FPU register sharing"
 	depends on FPU
 	help
-	  This option allows multiple threads to use the floating point
-	  registers.
+	  This option enables preservation of the hardware floating point registers
+	  across context switches to allow multiple threads to perform concurrent
+	  floating point operations.
+
+endmenu
 
 config ARCH
 	string
