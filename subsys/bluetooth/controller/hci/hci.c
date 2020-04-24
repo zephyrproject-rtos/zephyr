@@ -3349,7 +3349,7 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (!status) {
-	/* Update current RPA */
+		/* Update current RPA */
 		ll_rl_crpa_set(node_rx->peer_addr_type,
 			       &node_rx->peer_addr[0], 0xff,
 			       &node_rx->peer_rpa[0]);
@@ -3358,11 +3358,11 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    (!(le_event_mask & BT_EVT_MASK_LE_CONN_COMPLETE) &&
-#if defined(CONFIG_BT_CTLR_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY) || defined(CONFIG_BT_CTLR_ADV_EXT)
 	     !(le_event_mask & BT_EVT_MASK_LE_ENH_CONN_COMPLETE))) {
 #else
 	     1)) {
-#endif /* CONFIG_BT_CTLR_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY || CONFIG_BT_CTLR_ADV_EXT */
 		return;
 	}
 
@@ -3370,7 +3370,7 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 		conn_count++;
 	}
 
-#if defined(CONFIG_BT_CTLR_PRIVACY)
+#if defined(CONFIG_BT_CTLR_PRIVACY) || defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (le_event_mask & BT_EVT_MASK_LE_ENH_CONN_COMPLETE) {
 		struct bt_hci_evt_le_enh_conn_complete *leecc;
 
@@ -3391,10 +3391,15 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 		memcpy(&leecc->peer_addr.a.val[0], &node_rx->peer_addr[0],
 		       BDADDR_SIZE);
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 		memcpy(&leecc->local_rpa.val[0], &node_rx->local_rpa[0],
 		       BDADDR_SIZE);
 		memcpy(&leecc->peer_rpa.val[0], &node_rx->peer_rpa[0],
 		       BDADDR_SIZE);
+#else /* !CONFIG_BT_CTLR_PRIVACY */
+		memset(&leecc->local_rpa.val[0], 0, BDADDR_SIZE);
+		memset(&leecc->peer_rpa.val[0], 0, BDADDR_SIZE);
+#endif /* !CONFIG_BT_CTLR_PRIVACY */
 
 		leecc->interval = sys_cpu_to_le16(node_rx->interval);
 		leecc->latency = sys_cpu_to_le16(node_rx->latency);
@@ -3402,7 +3407,7 @@ static void le_conn_complete(struct pdu_data *pdu_data, u16_t handle,
 		leecc->clock_accuracy = node_rx->sca;
 		return;
 	}
-#endif /* CONFIG_BT_CTLR_PRIVACY */
+#endif /* CONFIG_BT_CTLR_PRIVACY || CONFIG_BT_CTLR_ADV_EXT */
 
 	lecc = meta_evt(buf, BT_HCI_EVT_LE_CONN_COMPLETE, sizeof(*lecc));
 
