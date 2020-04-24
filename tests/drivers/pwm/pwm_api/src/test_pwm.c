@@ -32,14 +32,14 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#if defined(DT_ALIAS_PWM_0_LABEL)
-#define PWM_DEV_NAME DT_ALIAS_PWM_0_LABEL
-#elif defined(DT_ALIAS_PWM_1_LABEL)
-#define PWM_DEV_NAME DT_ALIAS_PWM_1_LABEL
-#elif defined(DT_ALIAS_PWM_2_LABEL)
-#define PWM_DEV_NAME DT_ALIAS_PWM_2_LABEL
-#elif defined(DT_ALIAS_PWM_3_LABEL)
-#define PWM_DEV_NAME DT_ALIAS_PWM_3_LABEL
+#if defined(DT_LABEL(DT_ALIAS(pwm_0)))
+#define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_0))
+#elif defined(DT_LABEL(DT_ALIAS(pwm_1)))
+#define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_1))
+#elif defined(DT_LABEL(DT_ALIAS(pwm_2)))
+#define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_2))
+#elif defined(DT_LABEL(DT_ALIAS(pwm_3)))
+#define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_3))
 #else
 #error "Define a PWM device"
 #endif
