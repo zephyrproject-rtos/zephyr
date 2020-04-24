@@ -1056,7 +1056,7 @@ struct _static_thread_data {
 	const char *init_name;
 };
 
-#define _THREAD_INITIALIZER(thread, stack, stack_size,           \
+#define Z_THREAD_INITIALIZER(thread, stack, stack_size,           \
 			    entry, p1, p2, p3,                   \
 			    prio, options, delay, abort, tname)  \
 	{                                                        \
@@ -1113,7 +1113,7 @@ struct _static_thread_data {
 	K_THREAD_STACK_DEFINE(_k_thread_stack_##name, stack_size);	 \
 	struct k_thread _k_thread_obj_##name;				 \
 	Z_STRUCT_SECTION_ITERABLE(_static_thread_data, _k_thread_data_##name) =\
-		_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
+		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
 				    _k_thread_stack_##name, stack_size,  \
 				entry, p1, p2, p3, prio, options, delay, \
 				NULL, name);				 	 \
@@ -2159,7 +2159,7 @@ struct k_queue {
 	_OBJECT_TRACING_LINKED_FLAG
 };
 
-#define _K_QUEUE_INITIALIZER(obj) \
+#define Z_QUEUE_INITIALIZER(obj) \
 	{ \
 	.data_q = SYS_SLIST_STATIC_INIT(&obj.data_q), \
 	.lock = { }, \
@@ -2170,7 +2170,7 @@ struct k_queue {
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_QUEUE_INITIALIZER __DEPRECATED_MACRO _K_QUEUE_INITIALIZER
+#define K_QUEUE_INITIALIZER __DEPRECATED_MACRO Z_QUEUE_INITIALIZER
 
 extern void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free);
 
@@ -2462,7 +2462,7 @@ static inline void *z_impl_k_queue_peek_tail(struct k_queue *queue)
  */
 #define K_QUEUE_DEFINE(name) \
 	Z_STRUCT_SECTION_ITERABLE(k_queue, name) = \
-		_K_QUEUE_INITIALIZER(name)
+		Z_QUEUE_INITIALIZER(name)
 
 /** @} */
 
@@ -2553,7 +2553,7 @@ struct k_fifo {
  */
 #define Z_FIFO_INITIALIZER(obj) \
 	{ \
-	._queue = _K_QUEUE_INITIALIZER(obj._queue) \
+	._queue = Z_QUEUE_INITIALIZER(obj._queue) \
 	}
 
 #define K_FIFO_INITIALIZER __DEPRECATED_MACRO Z_FIFO_INITIALIZER
@@ -2756,12 +2756,12 @@ struct k_lifo {
  * @cond INTERNAL_HIDDEN
  */
 
-#define _K_LIFO_INITIALIZER(obj) \
+#define Z_LIFO_INITIALIZER(obj) \
 	{ \
-	._queue = _K_QUEUE_INITIALIZER(obj._queue) \
+	._queue = Z_QUEUE_INITIALIZER(obj._queue) \
 	}
 
-#define K_LIFO_INITIALIZER __DEPRECATED_MACRO _K_LIFO_INITIALIZER
+#define K_LIFO_INITIALIZER __DEPRECATED_MACRO Z_LIFO_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -2850,7 +2850,7 @@ struct k_lifo {
  */
 #define K_LIFO_DEFINE(name) \
 	Z_STRUCT_SECTION_ITERABLE(k_lifo, name) = \
-		_K_LIFO_INITIALIZER(name)
+		Z_LIFO_INITIALIZER(name)
 
 /** @} */
 
@@ -2871,7 +2871,7 @@ struct k_stack {
 	u8_t flags;
 };
 
-#define _K_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
+#define Z_STACK_INITIALIZER(obj, stack_buffer, stack_num_entries) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q),	\
 	.base = stack_buffer, \
@@ -2880,7 +2880,7 @@ struct k_stack {
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_STACK_INITIALIZER __DEPRECATED_MACRO _K_STACK_INITIALIZER
+#define K_STACK_INITIALIZER __DEPRECATED_MACRO Z_STACK_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -2987,7 +2987,7 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
 	stack_data_t __noinit                                  \
 		_k_stack_buf_##name[stack_num_entries];        \
 	Z_STRUCT_SECTION_ITERABLE(k_stack, name) = \
-		_K_STACK_INITIALIZER(name, _k_stack_buf_##name, \
+		Z_STACK_INITIALIZER(name, _k_stack_buf_##name, \
 				    stack_num_entries)
 
 /** @} */
@@ -3551,7 +3551,7 @@ struct k_mutex {
 /**
  * @cond INTERNAL_HIDDEN
  */
-#define _K_MUTEX_INITIALIZER(obj) \
+#define Z_MUTEX_INITIALIZER(obj) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.owner = NULL, \
@@ -3560,7 +3560,7 @@ struct k_mutex {
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_MUTEX_INITIALIZER __DEPRECATED_MACRO _K_MUTEX_INITIALIZER
+#define K_MUTEX_INITIALIZER __DEPRECATED_MACRO Z_MUTEX_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -3577,7 +3577,7 @@ struct k_mutex {
  */
 #define K_MUTEX_DEFINE(name) \
 	Z_STRUCT_SECTION_ITERABLE(k_mutex, name) = \
-		_K_MUTEX_INITIALIZER(name)
+		Z_MUTEX_INITIALIZER(name)
 
 /**
  * @brief Initialize a mutex.
@@ -3817,7 +3817,7 @@ struct k_msgq {
  */
 
 
-#define _K_MSGQ_INITIALIZER(obj, q_buffer, q_msg_size, q_max_msgs) \
+#define Z_MSGQ_INITIALIZER(obj, q_buffer, q_msg_size, q_max_msgs) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.msg_size = q_msg_size, \
@@ -3829,7 +3829,7 @@ struct k_msgq {
 	.used_msgs = 0, \
 	_OBJECT_TRACING_INIT \
 	}
-#define K_MSGQ_INITIALIZER __DEPRECATED_MACRO _K_MSGQ_INITIALIZER
+#define K_MSGQ_INITIALIZER __DEPRECATED_MACRO Z_MSGQ_INITIALIZER
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -3874,7 +3874,7 @@ struct k_msgq_attrs {
 	static char __noinit __aligned(q_align)				\
 		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
 	Z_STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
-	       _K_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
+	       Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
 				  q_msg_size, q_max_msgs)
 
 /**
@@ -4101,14 +4101,14 @@ struct k_mbox {
  * @cond INTERNAL_HIDDEN
  */
 
-#define _K_MBOX_INITIALIZER(obj) \
+#define Z_MBOX_INITIALIZER(obj) \
 	{ \
 	.tx_msg_queue = Z_WAIT_Q_INIT(&obj.tx_msg_queue), \
 	.rx_msg_queue = Z_WAIT_Q_INIT(&obj.rx_msg_queue), \
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_MBOX_INITIALIZER __DEPRECATED_MACRO _K_MBOX_INITIALIZER
+#define K_MBOX_INITIALIZER __DEPRECATED_MACRO Z_MBOX_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -4125,7 +4125,7 @@ struct k_mbox {
  */
 #define K_MBOX_DEFINE(name) \
 	Z_STRUCT_SECTION_ITERABLE(k_mbox, name) = \
-		_K_MBOX_INITIALIZER(name) \
+		Z_MBOX_INITIALIZER(name) \
 
 /**
  * @brief Initialize a mailbox.
@@ -4282,7 +4282,7 @@ struct k_pipe {
  */
 #define K_PIPE_FLAG_ALLOC	BIT(0)	/** Buffer was allocated */
 
-#define _K_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)     \
+#define Z_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)     \
 	{                                                           \
 	.buffer = pipe_buffer,                                      \
 	.size = pipe_buffer_size,                                   \
@@ -4298,7 +4298,7 @@ struct k_pipe {
 	.flags = 0                                                  \
 	}
 
-#define K_PIPE_INITIALIZER __DEPRECATED_MACRO _K_PIPE_INITIALIZER
+#define K_PIPE_INITIALIZER __DEPRECATED_MACRO Z_PIPE_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -4321,7 +4321,7 @@ struct k_pipe {
 	static unsigned char __noinit __aligned(pipe_align)	\
 		_k_pipe_buf_##name[pipe_buffer_size];			\
 	Z_STRUCT_SECTION_ITERABLE(k_pipe, name) = \
-		_K_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
+		Z_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
 
 /**
  * @brief Initialize a pipe.
@@ -4448,7 +4448,7 @@ struct k_mem_slab {
 	_OBJECT_TRACING_LINKED_FLAG
 };
 
-#define _K_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
+#define Z_MEM_SLAB_INITIALIZER(obj, slab_buffer, slab_block_size, \
 			       slab_num_blocks) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
@@ -4460,7 +4460,7 @@ struct k_mem_slab {
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_MEM_SLAB_INITIALIZER __DEPRECATED_MACRO _K_MEM_SLAB_INITIALIZER
+#define K_MEM_SLAB_INITIALIZER __DEPRECATED_MACRO Z_MEM_SLAB_INITIALIZER
 
 
 /**
@@ -4496,7 +4496,7 @@ struct k_mem_slab {
 	char __noinit __aligned(WB_UP(slab_align)) \
 	   _k_mem_slab_buf_##name[(slab_num_blocks) * WB_UP(slab_block_size)]; \
 	Z_STRUCT_SECTION_ITERABLE(k_mem_slab, name) = \
-		_K_MEM_SLAB_INITIALIZER(name, _k_mem_slab_buf_##name, \
+		Z_MEM_SLAB_INITIALIZER(name, _k_mem_slab_buf_##name, \
 					WB_UP(slab_block_size), slab_num_blocks)
 
 /**
