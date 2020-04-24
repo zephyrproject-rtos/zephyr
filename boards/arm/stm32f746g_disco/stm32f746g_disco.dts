@@ -92,3 +92,8 @@ arduino_serial: &usart6 {};
 &rtc {
 	status = "okay";
 };
+
+&sdmmc1 {
+	status = "okay";
+	cd-gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+};
