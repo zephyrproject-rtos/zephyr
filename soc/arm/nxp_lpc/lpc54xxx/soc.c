@@ -33,6 +33,7 @@
  * @return N/A
  *
  */
+#define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
 static ALWAYS_INLINE void clock_init(void)
 {
@@ -50,10 +51,10 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_AttachClk(kFRO12M_to_MAIN_CLK);
 
 	/* Set FLASH wait states for core */
-	CLOCK_SetFLASHAccessCyclesForFreq(DT_ARM_CORTEX_M4F_0_CLOCK_FREQUENCY);
+	CLOCK_SetFLASHAccessCyclesForFreq(CPU_FREQ);
 
 	/* Set up high frequency FRO output to selected frequency */
-	CLOCK_SetupFROClocking(DT_ARM_CORTEX_M4F_0_CLOCK_FREQUENCY);
+	CLOCK_SetupFROClocking(CPU_FREQ);
 
 	/* Set up dividers */
 	/* Set AHBCLKDIV divider to value 1 */
