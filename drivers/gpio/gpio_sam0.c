@@ -302,13 +302,13 @@ static const struct gpio_driver_api gpio_sam0_api = {
 static int gpio_sam0_init(struct device *dev) { return 0; }
 
 /* Port A */
-#if DT_ATMEL_SAM0_GPIO_PORT_A_BASE_ADDRESS
+#if DT_HAS_NODE(DT_NODELABEL(porta))
 
 static const struct gpio_sam0_config gpio_sam0_config_0 = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
 	},
-	.regs = (PortGroup *)DT_ATMEL_SAM0_GPIO_PORT_A_BASE_ADDRESS,
+	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(porta)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 0,
 #endif
@@ -316,20 +316,20 @@ static const struct gpio_sam0_config gpio_sam0_config_0 = {
 
 static struct gpio_sam0_data gpio_sam0_data_0;
 
-DEVICE_AND_API_INIT(gpio_sam0_0, DT_ATMEL_SAM0_GPIO_PORT_A_LABEL,
+DEVICE_AND_API_INIT(gpio_sam0_0, DT_LABEL(DT_NODELABEL(porta)),
 		    gpio_sam0_init, &gpio_sam0_data_0, &gpio_sam0_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam0_api);
 #endif
 
 /* Port B */
-#if DT_ATMEL_SAM0_GPIO_PORT_B_BASE_ADDRESS
+#if DT_HAS_NODE(DT_NODELABEL(portb))
 
 static const struct gpio_sam0_config gpio_sam0_config_1 = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
 	},
-	.regs = (PortGroup *)DT_ATMEL_SAM0_GPIO_PORT_B_BASE_ADDRESS,
+	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(portb)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 1,
 #endif
@@ -337,20 +337,20 @@ static const struct gpio_sam0_config gpio_sam0_config_1 = {
 
 static struct gpio_sam0_data gpio_sam0_data_1;
 
-DEVICE_AND_API_INIT(gpio_sam0_1, DT_ATMEL_SAM0_GPIO_PORT_B_LABEL,
+DEVICE_AND_API_INIT(gpio_sam0_1, DT_LABEL(DT_NODELABEL(portb)),
 		    gpio_sam0_init, &gpio_sam0_data_1, &gpio_sam0_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam0_api);
 #endif
 
 /* Port C */
-#if DT_ATMEL_SAM0_GPIO_PORT_C_BASE_ADDRESS
+#if DT_HAS_NODE(DT_NODELABEL(portc))
 
 static const struct gpio_sam0_config gpio_sam0_config_2 = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
 	},
-	.regs = (PortGroup *)DT_ATMEL_SAM0_GPIO_PORT_C_BASE_ADDRESS,
+	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(portc)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 2,
 #endif
@@ -358,20 +358,20 @@ static const struct gpio_sam0_config gpio_sam0_config_2 = {
 
 static struct gpio_sam0_data gpio_sam0_data_2;
 
-DEVICE_AND_API_INIT(gpio_sam0_2, DT_ATMEL_SAM0_GPIO_PORT_C_LABEL,
+DEVICE_AND_API_INIT(gpio_sam0_2, DT_LABEL(DT_NODELABEL(portc)),
 		    gpio_sam0_init, &gpio_sam0_data_2, &gpio_sam0_config_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam0_api);
 #endif
 
 /* Port D */
-#if DT_ATMEL_SAM0_GPIO_PORT_D_BASE_ADDRESS
+#if DT_HAS_NODE(DT_NODELABEL(portd))
 
 static const struct gpio_sam0_config gpio_sam0_config_3 = {
 	.common = {
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
 	},
-	.regs = (PortGroup *)DT_ATMEL_SAM0_GPIO_PORT_D_BASE_ADDRESS,
+	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(portd)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 3,
 #endif
@@ -379,7 +379,7 @@ static const struct gpio_sam0_config gpio_sam0_config_3 = {
 
 static struct gpio_sam0_data gpio_sam0_data_3;
 
-DEVICE_AND_API_INIT(gpio_sam0_3, DT_ATMEL_SAM0_GPIO_PORT_D_LABEL,
+DEVICE_AND_API_INIT(gpio_sam0_3, DT_LABEL(DT_NODELABEL(portd)),
 		    gpio_sam0_init, &gpio_sam0_data_3, &gpio_sam0_config_3,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam0_api);
