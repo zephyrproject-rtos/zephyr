@@ -221,6 +221,11 @@ static u32_t filter_remove(struct ll_filter *filter, u8_t addr_type,
 #endif
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
+bool ctrl_lrpa_used(u8_t rl_idx)
+{
+	return rl_idx < ARRAY_SIZE(rl) && rl[rl_idx].lirk;
+}
+
 bt_addr_t *ctrl_lrpa_get(u8_t rl_idx)
 {
 	if ((rl_idx >= ARRAY_SIZE(rl)) || !rl[rl_idx].lirk ||
