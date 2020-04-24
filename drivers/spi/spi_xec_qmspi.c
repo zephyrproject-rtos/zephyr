@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT microchip_xec_qmspi
+
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_xec, CONFIG_SPI_LOG_LEVEL);
 
@@ -142,12 +144,12 @@ static u32_t qmspi_config_get_lines(const struct spi_config *config)
 	case SPI_LINES_SINGLE:
 		qlines = MCHP_QMSPI_C_IFM_1X;
 		break;
-#if DT_SPI_XEC_QMSPI_0_LINES > 1
+#if DT_INST_PROP(0, lines) > 1
 	case SPI_LINES_DUAL:
 		qlines = MCHP_QMSPI_C_IFM_2X;
 		break;
 #endif
-#if DT_SPI_XEC_QMSPI_0_LINES > 2
+#if DT_INST_PROP(0, lines) > 2
 	case SPI_LINES_QUAD:
 		qlines = MCHP_QMSPI_C_IFM_4X;
 		break;
@@ -207,7 +209,7 @@ static int qmspi_configure(struct device *dev,
 
 	/* chip select */
 	smode = regs->MODE & ~(MCHP_QMSPI_M_CS_MASK);
-#if DT_SPI_XEC_QMSPI_0_CHIP_SELECT == 0
+#if DT_INST_PROP(0, chip_select) == 0
 	smode |= MCHP_QMSPI_M_CS0;
 #else
 	smode |= MCHP_QMSPI_M_CS1;
@@ -649,22 +651,22 @@ static const struct spi_driver_api spi_qmspi_driver_api = {
 
 
 #define XEC_QMSPI_0_CS_TIMING XEC_QMSPI_CS_TIMING_VAL(			\
-				DT_SPI_XEC_QMSPI_0_DCSCKON,		\
-				DT_SPI_XEC_QMSPI_0_DCKCSOFF,		\
-				DT_SPI_XEC_QMSPI_0_DLDH,		\
-				DT_SPI_XEC_QMSPI_0_DCSDA)
+				DT_INST_PROP(0, dcsckon),		\
+				DT_INST_PROP(0, dckcsoff),		\
+				DT_INST_PROP(0, dldh),			\
+				DT_INST_PROP(0, dcsda))
 
-#ifdef DT_SPI_XEC_QMSPI_0_BASE_ADDRESS
+#if DT_HAS_NODE(DT_INST(0, microchip_xec_qmspi))
 
 static const struct spi_qmspi_config spi_qmspi_0_config = {
-	.regs = (QMSPI_Type *)DT_SPI_XEC_QMSPI_0_BASE_ADDRESS,
+	.regs = (QMSPI_Type *)DT_INST_REG_ADDR(0),
 	.cs_timing = XEC_QMSPI_0_CS_TIMING,
 	.girq = MCHP_QMSPI_GIRQ_NUM,
 	.girq_pos = MCHP_QMSPI_GIRQ_POS,
 	.girq_nvic_direct = MCHP_QMSPI_GIRQ_NVIC_DIRECT,
-	.irq_pri = DT_SPI_XEC_QMSPI_0_IRQ_PRI,
-	.chip_sel = DT_SPI_XEC_QMSPI_0_CHIP_SELECT,
-	.width = DT_SPI_XEC_QMSPI_0_LINES
+	.irq_pri = DT_INST_IRQ(0, priority),
+	.chip_sel = DT_INST_PROP(0, chip_select),
+	.width = DT_INST_PROP(0, lines)
 };
 
 static struct spi_qmspi_data spi_qmspi_0_dev_data = {
@@ -673,9 +675,9 @@ static struct spi_qmspi_data spi_qmspi_0_dev_data = {
 };
 
 DEVICE_AND_API_INIT(spi_xec_qmspi_0,
-		    DT_SPI_XEC_QMSPI_0_LABEL,
+		    DT_INST_LABEL(0),
 		    &qmspi_init, &spi_qmspi_0_dev_data,
 		    &spi_qmspi_0_config, POST_KERNEL,
 		    CONFIG_SPI_INIT_PRIORITY, &spi_qmspi_driver_api);
 
-#endif /* DT_SPI_XEC_QMSPI_0_BASE_ADDRESS */
+#endif /* DT_HAS_NODE(DT_INST(0, microchip_xec_qmspi)) */
