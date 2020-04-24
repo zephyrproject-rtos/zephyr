@@ -88,6 +88,7 @@
 /boards/arm/nrf*/                         @carlescufi @lemrey @ioannisg
 /boards/arm/nucleo*/                      @erwango
 /boards/arm/nucleo_f401re/                @idlethread
+/boards/arm/nuvoton_pfm_m487/             @ssekar15
 /boards/arm/qemu_cortex_a53/              @carlocaione
 /boards/arm/qemu_cortex_r*/               @stephanosio
 /boards/arm/qemu_cortex_m*/               @ioannisg
