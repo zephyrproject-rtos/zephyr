@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# NUVOTON UART configuration
+#
+# Copyright (c) 2020 Linumiz
+# Author: Saravanan Sekar <saravanan@linumiz.com>
+
+config UART_NUVOTON
+	bool "NUVOTON MCU serial driver"
+	select SERIAL_HAS_DRIVER
+	select HAS_NUMICRO_UART
+	depends on SOC_FAMILY_NUMICRO
+	help
+	  This option enables the UART driver for Nuvoton Numicro
+	  family of processors.
+	  Say y to use serial port on Nuvoton MCU.
