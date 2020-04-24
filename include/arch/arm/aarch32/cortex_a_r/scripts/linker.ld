@@ -271,22 +271,7 @@ SECTIONS
         __bss_end = ALIGN(4);
     } GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
-    SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
-    {
-        /*
-         * This section is used for non-initialized objects that
-         * will not be cleared during the boot process.
-         */
-        *(.noinit)
-        *(".noinit.*")
-        *(".kernel_noinit.*")
-
-/* Located in generated directory. This file is populated by the
- * zephyr_linker_sources() Cmake function.
- */
-#include <snippets-noinit.ld>
-
-    } GROUP_LINK_IN(RAMABLE_REGION)
+#include <linker/common-noinit.ld>
 
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
     {

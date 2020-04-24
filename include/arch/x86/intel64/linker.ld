@@ -153,12 +153,7 @@ SECTIONS
 
 	__bss_num_dwords = (__bss_end - __bss_start) >> 2;
 
-	SECTION_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD), ALIGN(16))
-	{
-	*(.noinit)
-	*(.noinit.*)
-	#include <snippets-noinit.ld>
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+#include <linker/common-noinit.ld>
 
 #include <snippets-sections.ld>
 
