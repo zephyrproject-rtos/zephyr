@@ -3711,7 +3711,7 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
 			lwm2m_reset_message(msg, true);
 		}
 	} else {
-		LOG_ERR("No handler for response");
+		LOG_DBG("No handler for response");
 	}
 }
 
