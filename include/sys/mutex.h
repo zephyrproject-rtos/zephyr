@@ -120,7 +120,7 @@ struct sys_mutex {
 
 #define SYS_MUTEX_DEFINE(name) \
 	struct sys_mutex name = { \
-		.kernel_mutex = _K_MUTEX_INITIALIZER(name.kernel_mutex) \
+		.kernel_mutex = Z_MUTEX_INITIALIZER(name.kernel_mutex) \
 	}
 
 static inline void sys_mutex_init(struct sys_mutex *mutex)

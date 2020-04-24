@@ -223,7 +223,7 @@ are embedded within some larger struct and initialized statically.
     };
 
     struct foo my_foo = {
-        .sem = _K_SEM_INITIALIZER(my_foo.sem, 0, 1),
+        .sem = Z_SEM_INITIALIZER(my_foo.sem, 0, 1),
         ...
     };
 

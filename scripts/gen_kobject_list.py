@@ -710,7 +710,7 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
         fp.write("static struct k_mutex kernel_mutexes[%d] = {\n"
                  % sys_mutex_counter)
         for i in range(sys_mutex_counter):
-            fp.write("_K_MUTEX_INITIALIZER(kernel_mutexes[%d])" % i)
+            fp.write("Z_MUTEX_INITIALIZER(kernel_mutexes[%d])" % i)
             if i != sys_mutex_counter - 1:
                 fp.write(", ")
         fp.write("};\n")
