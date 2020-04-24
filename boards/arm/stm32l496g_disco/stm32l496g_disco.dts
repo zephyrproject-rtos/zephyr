@@ -95,3 +95,7 @@ arduino_serial: &lpuart1 {};
 &rtc {
 	status = "okay";
 };
+
+&sdmmc1 {
+	status = "okay";
+};
