@@ -257,8 +257,7 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 		 * protect with a stack guard.
 		 */
 		guard_start = thread->stack_info.start - guard_size;
-
-		__ASSERT((uint32_t)thread->stack_obj == guard_start,
+	__ASSERT((uint32_t)thread->stack_obj == guard_start,
 		"Guard start (0x%x) not beginning at stack object (0x%x)\n",
 		guard_start, (uint32_t)thread->stack_obj);
 	}

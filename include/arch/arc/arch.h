@@ -70,6 +70,23 @@ extern "C" {
 #define Z_ARC_STACK_GUARD_SIZE	0
 #endif
 
+/* Kernel-only stacks have the following layout if a stack guard is enabled:
+ *
+ * +------------+ <- thread.stack_obj
+ * | Guard      | } Z_ARC_STACK_GUARD_SIZE
+ * +------------+ <- thread.stack_info.start
+ * | Kernel     |
+ * | stack      |
+ * |            |
+ * +............|
+ * | TLS        | } thread.stack_info.delta
+ * +------------+ <- thread.stack_info.start + thread.stack_info.size
+ */
+#ifdef CONFIG_MPU_STACK_GUARD
+#define ARCH_KERNEL_STACK_RESERVED	Z_ARC_STACK_GUARD_SIZE
+#define ARCH_KERNEL_STACK_OBJ_ALIGN	Z_ARC_MPU_ALIGN
+#endif
+
 #ifdef CONFIG_USERSPACE
 /* Any thread running In user mode will have full access to the region denoted
  * by thread.stack_info.
@@ -112,7 +129,7 @@ BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
  * in another area of memory generated at build time by gen_kobject_list.py
  *
  * +------------+ <- thread.arch.priv_stack_start
- * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE
+ * | Priv Stack | } Z_KERNEL_STACK_LEN(CONFIG_PRIVILEGED_STACK_SIZE)
  * +------------+
  *
  * +------------+ <- thread.stack_obj = thread.stack_info.start
@@ -123,7 +140,6 @@ BUILD_ASSERT(CONFIG_PRIVILEGED_STACK_SIZE % Z_ARC_MPU_ALIGN == 0,
  * | TLS        | } thread.stack_info.delta
  * +------------+ <- thread.stack_info.start + thread.stack_info.size
  */
-#define Z_PRIVILEGE_STACK_ALIGN			ARCH_STACK_PTR_ALIGN
 #define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
 		Z_POW2_CEIL(ROUND_UP((size), Z_ARC_MPU_ALIGN))
 #define ARCH_THREAD_STACK_OBJ_ALIGN(size) \

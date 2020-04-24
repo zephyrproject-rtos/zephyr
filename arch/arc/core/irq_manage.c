@@ -32,10 +32,10 @@
  */
 #if defined(CONFIG_ARC_FIRQ_STACK)
 #if defined(CONFIG_SMP)
-K_THREAD_STACK_ARRAY_DEFINE(_firq_interrupt_stack, CONFIG_MP_NUM_CPUS,
+K_KERNEL_STACK_ARRAY_DEFINE(_firq_interrupt_stack, CONFIG_MP_NUM_CPUS,
 			    CONFIG_ARC_FIRQ_STACK_SIZE);
 #else
-K_THREAD_STACK_DEFINE(_firq_interrupt_stack, CONFIG_ARC_FIRQ_STACK_SIZE);
+K_KERNEL_STACK_DEFINE(_firq_interrupt_stack, CONFIG_ARC_FIRQ_STACK_SIZE);
 #endif
 
 /*
@@ -46,11 +46,11 @@ K_THREAD_STACK_DEFINE(_firq_interrupt_stack, CONFIG_ARC_FIRQ_STACK_SIZE);
 void z_arc_firq_stack_set(void)
 {
 #ifdef CONFIG_SMP
-	char *firq_sp = Z_THREAD_STACK_BUFFER(
+	char *firq_sp = Z_KERNEL_STACK_BUFFER(
 		  _firq_interrupt_stack[z_arc_v2_core_id()]) +
 		  CONFIG_ARC_FIRQ_STACK_SIZE;
 #else
-	char *firq_sp = Z_THREAD_STACK_BUFFER(_firq_interrupt_stack) +
+	char *firq_sp = Z_KERNEL_STACK_BUFFER(_firq_interrupt_stack) +
 		  CONFIG_ARC_FIRQ_STACK_SIZE;
 #endif
 

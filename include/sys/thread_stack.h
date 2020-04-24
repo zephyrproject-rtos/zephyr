@@ -76,6 +76,108 @@ static inline char *z_stack_ptr_align(char *ptr)
 #define Z_STACK_PTR_TO_FRAME(type, ptr) \
 	(type *)((ptr) - sizeof(type))
 
+#ifdef ARCH_KERNEL_STACK_RESERVED
+#define K_KERNEL_STACK_RESERVED	((size_t)ARCH_KERNEL_STACK_RESERVED)
+#else
+#define K_KERNEL_STACK_RESERVED	((size_t)0)
+#endif
+
+#define Z_KERNEL_STACK_SIZE_ADJUST(size) (ROUND_UP(size, \
+						   ARCH_STACK_PTR_ALIGN) + \
+					  K_KERNEL_STACK_RESERVED)
+
+#ifdef ARCH_KERNEL_STACK_OBJ_ALIGN
+#define Z_KERNEL_STACK_OBJ_ALIGN	ARCH_KERNEL_STACK_OBJ_ALIGN
+#else
+#define Z_KERNEL_STACK_OBJ_ALIGN	ARCH_STACK_PTR_ALIGN
+#endif
+
+/**
+ * @brief Obtain an extern reference to a stack
+ *
+ * This macro properly brings the symbol of a thread stack declared
+ * elsewhere into scope.
+ *
+ * @param sym Thread stack symbol name
+ */
+#define K_KERNEL_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
+
+/**
+ * @def K_KERNEL_STACK_DEFINE
+ * @brief Define a toplevel kernel stack memory region
+ *
+ * This declares a region of memory for use as a thread stack, for threads
+ * that exclusively run in supervisor mode. This is also suitable for
+ * declaring special stacks for interrupt or exception handling.
+ *
+ * Stacks declared with this macro may not host user mode threads.
+ *
+ * It is legal to precede this definition with the 'static' keyword.
+ *
+ * It is NOT legal to take the sizeof(sym) and pass that to the stackSize
+ * parameter of k_thread_create(), it may not be the same as the
+ * 'size' parameter. Use K_KERNEL_STACK_SIZEOF() instead.
+ *
+ * The total amount of memory allocated may be increased to accommodate
+ * fixed-size stack overflow guards.
+ *
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ */
+#define K_KERNEL_STACK_DEFINE(sym, size) \
+	struct z_thread_stack_element __noinit \
+		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
+		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
+
+#define Z_KERNEL_STACK_LEN(size) \
+	ROUND_UP(Z_KERNEL_STACK_SIZE_ADJUST(size), Z_KERNEL_STACK_OBJ_ALIGN)
+
+/**
+ * @def K_KERNEL_STACK_ARRAY_DEFINE
+ * @brief Define a toplevel array of kernel stack memory regions
+ *
+ * Stacks declared with this macro may not host user mode threads.
+ *
+ * @param sym Kernel stack array symbol name
+ * @param nmemb Number of stacks to declare
+ * @param size Size of the stack memory region
+ */
+#define K_KERNEL_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+	struct z_thread_stack_element __noinit \
+		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
+		sym[nmemb][Z_KERNEL_STACK_LEN(size)]
+
+/**
+ * @def K_KERNEL_STACK_MEMBER
+ * @brief Declare an embedded stack memory region
+ *
+ * Used for kernel stacks embedded within other data structures.
+ *
+ * Stacks declared with this macro may not host user mode threads.
+ * @param sym Thread stack symbol name
+ * @param size Size of the stack memory region
+ */
+#define K_KERNEL_STACK_MEMBER(sym, size) \
+	struct z_thread_stack_element \
+		__aligned(Z_KERNEL_STACK_OBJ_ALIGN) \
+		sym[Z_KERNEL_STACK_SIZE_ADJUST(size)]
+
+#define K_KERNEL_STACK_SIZEOF(sym) (sizeof(sym) - K_KERNEL_STACK_RESERVED)
+
+static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
+{
+	return (char *)sym + K_KERNEL_STACK_RESERVED;
+}
+#ifndef CONFIG_USERSPACE
+#define K_THREAD_STACK_RESERVED		K_KERNEL_STACK_RESERVED
+#define K_THREAD_STACK_SIZEOF		K_KERNEL_STACK_SIZEOF
+#define K_THREAD_STACK_LEN		Z_KERNEL_STACK_LEN
+#define K_THREAD_STACK_DEFINE		K_KERNEL_STACK_DEFINE
+#define K_THREAD_STACK_ARRAY_DEFINE	K_KERNEL_STACK_ARRAY_DEFINE
+#define K_THREAD_STACK_MEMBER		K_KERNEL_STACK_MEMBER
+#define Z_THREAD_STACK_BUFFER		Z_KERNEL_STACK_BUFFER
+#define K_THREAD_STACK_EXTERN		K_KERNEL_STACK_EXTERN
+#else
 /**
  * @def K_THREAD_STACK_RESERVED
  * @brief Indicate how much additional memory is reserved for stack objects
@@ -217,7 +319,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_DEFINE(sym, size) \
-	struct z_thread_stack_element __noinit \
+	struct z_thread_stack_element Z_GENERIC_SECTION(.user_stacks) \
 		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
 		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
 
@@ -252,7 +354,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct z_thread_stack_element __noinit \
+	struct z_thread_stack_element Z_GENERIC_SECTION(.user_stacks) \
 		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
 		sym[nmemb][K_THREAD_STACK_LEN(size)]
 
@@ -264,6 +366,12 @@ static inline char *z_stack_ptr_align(char *ptr)
  * it is very important that any RAM preceding this member not be writable
  * by threads else a stack overflow will lead to silent corruption. In other
  * words, the containing data structure should live in RAM owned by the kernel.
+ *
+ * A user thread can only be started with a stack defined in this way if
+ * the thread starting it is in supervisor mode.
+ *
+ * This is now deprecated, as stacks defined in this way are not usable from
+ * user mode. Use K_KERNEL_STACK_MEMBER.
  *
  * @param sym Thread stack symbol name
  * @param size Size of the stack memory region
@@ -291,5 +399,6 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return (char *)sym + K_THREAD_STACK_RESERVED;
 }
+#endif /* CONFIG_USERSPACE */
 #endif /* _ASMLANGUAGE */
 #endif /* ZEPHYR_INCLUDE_SYS_THREAD_STACK_H */

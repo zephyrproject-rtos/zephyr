@@ -19,11 +19,13 @@ struct k_thread test_thread;
 #define STEST_STACKSIZE	(512 + CONFIG_TEST_EXTRA_STACKSIZE)
 K_THREAD_STACK_DEFINE(user_stack, STEST_STACKSIZE);
 K_THREAD_STACK_ARRAY_DEFINE(user_stack_array, NUM_STACKS, STEST_STACKSIZE);
+K_KERNEL_STACK_DEFINE(kern_stack, STEST_STACKSIZE);
+K_KERNEL_STACK_ARRAY_DEFINE(kern_stack_array, NUM_STACKS, STEST_STACKSIZE);
 
 struct foo {
 	int bar;
 
-	K_THREAD_STACK_MEMBER(stack, STEST_STACKSIZE);
+	K_KERNEL_STACK_MEMBER(stack, STEST_STACKSIZE);
 	int baz;
 };
 
@@ -58,11 +60,13 @@ static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
 #include <syscalls/check_perms_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
+void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size,
+			    bool is_user_stack)
 {
-	size_t stack_size, unused, carveout;
+	size_t stack_size, unused, carveout, reserved, alignment;
 	uint8_t val;
 	char *stack_start, *stack_ptr, *stack_end, *obj_start, *obj_end;
+	char *stack_buf;
 	volatile char *pos;
 	int ret, expected;
 	uintptr_t base = (uintptr_t)stack_obj;
@@ -73,11 +77,23 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 #else
 	is_usermode = false;
 #endif
-
 	/* Dump interesting information */
 	stack_info_get(&stack_start, &stack_size);
 	printk("   - Thread reports buffer %p size %zu\n", stack_start,
 	       stack_size);
+
+#ifdef CONFIG_USERSPACE
+	if (is_user_stack) {
+		reserved = K_THREAD_STACK_RESERVED;
+		stack_buf = Z_THREAD_STACK_BUFFER(stack_obj);
+		alignment = Z_THREAD_STACK_OBJ_ALIGN(stack_size);
+	} else
+#endif
+	{
+		reserved = K_KERNEL_STACK_RESERVED;
+		stack_buf = Z_KERNEL_STACK_BUFFER(stack_obj);
+		alignment = Z_KERNEL_STACK_OBJ_ALIGN;
+	}
 
 	stack_end = stack_start + stack_size;
 	obj_end = (char *)stack_obj + obj_size;
@@ -86,7 +102,7 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 	/* Assert that the created stack object, with the reserved data
 	 * removed, can hold a thread buffer of STEST_STACKSIZE
 	 */
-	zassert_true(STEST_STACKSIZE <= (obj_size - K_THREAD_STACK_RESERVED),
+	zassert_true(STEST_STACKSIZE <= (obj_size - reserved),
 		      "bad stack size in object");
 
 	/* Check that the stack info in the thread marks a region
@@ -98,9 +114,9 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		     "stack size in thread struct out of bounds (underflow)");
 
 	/* Check that the base of the stack is aligned properly. */
-	zassert_true(base % Z_THREAD_STACK_OBJ_ALIGN(stack_size) == 0,
+	zassert_true(base % alignment == 0,
 		     "stack base address %p not aligned to %zu",
-		     stack_obj, Z_THREAD_STACK_OBJ_ALIGN(stack_size));
+		     stack_obj, alignment);
 
 	/* Check that the entire stack buffer is read/writable */
 	printk("   - check read/write to stack buffer\n");
@@ -143,12 +159,12 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		zassert_true(check_perms(stack_end, 1, 0),
 			     "user mode access to memory %p past end of stack object",
 			     obj_end);
-		zassert_true(stack_size <= obj_size - K_THREAD_STACK_RESERVED,
+		zassert_true(stack_size <= obj_size - reserved,
 			      "bad stack size %zu in thread struct",
 			      stack_size);
 	}
 #endif
-	carveout = stack_start - Z_THREAD_STACK_BUFFER(stack_obj);
+	carveout = stack_start - stack_buf;
 	printk("   - Carved-out space in buffer: %zu\n", carveout);
 	zassert_true(carveout < stack_size,
 		     "Suspicious carve-out space reported");
@@ -168,27 +184,35 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 	}
 }
 
+ZTEST_BMEM struct scenario_data {
+	k_thread_stack_t *stack;
+	bool is_user;
+	size_t metadata_size;
+	size_t object_size;
+} scenario_data;
+
 void stest_thread_entry(void *p1, void *p2, void *p3)
 {
-	bool drop = (bool)p3;
+	bool drop = (bool)p1;
 
 	if (drop) {
-		k_thread_user_mode_enter(stest_thread_entry, p1, p2,
-					 (void *)false);
+		k_thread_user_mode_enter(stest_thread_entry, (void *)false,
+					 p2, p3);
 	} else {
-		stack_buffer_scenarios((k_thread_stack_t *)p1, (size_t)p2);
+		stack_buffer_scenarios(scenario_data.stack,
+				       scenario_data.object_size,
+				       scenario_data.is_user);
 	}
 }
 
-void stest_thread_launch(void *stack_obj, size_t obj_size, uint32_t flags,
-			 bool drop)
+void stest_thread_launch(uint32_t flags, bool drop)
 {
 	int ret;
 	size_t unused;
 
-	k_thread_create(&test_thread, stack_obj, STEST_STACKSIZE,
-			stest_thread_entry, stack_obj, (void *)obj_size,
-			(void *)drop,
+	k_thread_create(&test_thread, scenario_data.stack, STEST_STACKSIZE,
+			stest_thread_entry,
+			(void *)drop, NULL, NULL,
 			-1, flags, K_NO_WAIT);
 	k_thread_join(&test_thread, K_FOREVER);
 
@@ -199,15 +223,46 @@ void stest_thread_launch(void *stack_obj, size_t obj_size, uint32_t flags,
 
 void scenario_entry(void *stack_obj, size_t obj_size)
 {
+	bool is_user;
+	size_t metadata_size;
+
+#ifdef CONFIG_USERSPACE
+	struct z_object *zo;
+
+	zo = z_object_find(stack_obj);
+	if (zo != NULL) {
+		is_user = true;
+#ifdef CONFIG_GEN_PRIV_STACKS
+		metadata_size = zo->data.stack_data->size;
+#else
+		metadata_size = zo->data.stack_size;
+#endif /* CONFIG_GEN_PRIV_STACKS */
+		printk("stack may host user thread, size in metadata is %zu\n",
+		       metadata_size);
+	} else
+#endif /* CONFIG_USERSPACE */
+	{
+		metadata_size = 0;
+		is_user = false;
+	}
+
+	scenario_data.stack = stack_obj;
+	scenario_data.object_size = obj_size;
+	scenario_data.is_user = is_user;
+	scenario_data.metadata_size = metadata_size;
+
 	printk("Stack object %p[%zu]\n", stack_obj, obj_size);
 	printk(" - Testing supervisor mode\n");
-	stest_thread_launch(stack_obj, obj_size, 0, false);
-	printk(" - Testing user mode (direct launch)\n");
-	stest_thread_launch(stack_obj, obj_size, K_USER | K_INHERIT_PERMS,
-			    false);
-	printk(" - Testing user mode (drop)\n");
-	stest_thread_launch(stack_obj, obj_size, K_INHERIT_PERMS,
-			    true);
+	stest_thread_launch(0, false);
+
+#ifdef CONFIG_USERSPACE
+	if (is_user) {
+		printk(" - Testing user mode (direct launch)\n");
+		stest_thread_launch(K_USER | K_INHERIT_PERMS, false);
+		printk(" - Testing user mode (drop)\n");
+		stest_thread_launch(K_INHERIT_PERMS, true);
+	}
+#endif /* CONFIG_USERSPACE */
 }
 
 /**
@@ -223,6 +278,9 @@ void test_stack_buffer(void)
 {
 	printk("Reserved space (thread stacks): %zu\n",
 	       K_THREAD_STACK_RESERVED);
+	printk("Reserved space (kernel stacks): %zu\n",
+	       K_KERNEL_STACK_RESERVED);
+
 	printk("CONFIG_ISR_STACK_SIZE %zu\n", (size_t)CONFIG_ISR_STACK_SIZE);
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 		printk("irq stack %d: %p size %zu\n",
@@ -231,16 +289,28 @@ void test_stack_buffer(void)
 	}
 
 	printk("Provided stack size: %u\n", STEST_STACKSIZE);
-	scenario_entry(stest_stack, sizeof(stest_stack));
+
+	printk("\ntesting user_stack\n");
+	scenario_entry(user_stack, sizeof(user_stack));
 
 	for (int i = 0; i < NUM_STACKS; i++) {
-		scenario_entry(stest_stack_array[i],
-			       sizeof(stest_stack_array[i]));
+		printk("\ntesting user_stack_array[%d]\n", i);
+		scenario_entry(user_stack_array[i],
+			       sizeof(user_stack_array[i]));
 	}
 
+	printk("\ntesting kern_stack\n");
+	scenario_entry(kern_stack, sizeof(kern_stack));
+
+	for (int i = 0; i < NUM_STACKS; i++) {
+		printk("\ntesting kern_stack_array[%d]\n", i);
+		scenario_entry(kern_stack_array[i],
+			       sizeof(kern_stack_array[i]));
+	}
+
+	printk("\ntesting stest_member_stack\n");
 	scenario_entry(&stest_member_stack.stack,
 		       sizeof(stest_member_stack.stack));
-
 }
 
 void test_main(void)

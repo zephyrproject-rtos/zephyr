@@ -892,6 +892,30 @@ void z_x86_paging_init(void)
 #endif
 }
 
+#ifdef CONFIG_X86_STACK_PROTECTION
+void z_x86_set_stack_guard(k_thread_stack_t *stack)
+{
+#ifdef CONFIG_USERSPACE
+	if (z_stack_is_user_capable(stack)) {
+		struct z_x86_thread_stack_header *header =
+			(struct z_x86_thread_stack_header *)stack;
+
+		/* Set guard area to read-only to catch stack overflows */
+		z_x86_mmu_set_flags(&z_x86_kernel_ptables, &header->guard_page,
+				    MMU_PAGE_SIZE, MMU_ENTRY_READ, Z_X86_MMU_RW,
+				    true);
+
+	} else
+#endif /* CONFIG_USERSPACE */
+	{
+		/* Kernel-only stacks have the guard be the first page */
+		z_x86_mmu_set_flags(&z_x86_kernel_ptables, stack,
+				    MMU_PAGE_SIZE, MMU_ENTRY_READ, Z_X86_MMU_RW,
+				    true);
+	}
+}
+#endif /* CONFIG_X86_STACK_PROTECTION */
+
 #ifdef CONFIG_X86_USERSPACE
 int arch_buffer_validate(void *addr, size_t size, int write)
 {

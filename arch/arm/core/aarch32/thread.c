@@ -42,13 +42,15 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	struct __basic_sf *iframe;
 
 #ifdef CONFIG_MPU_STACK_GUARD
-#if CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-	/* Guard area is carved-out of the buffer, instead of reserved,
-	 * in this configuration, due to buffer alignment constraints
-	 */
-	thread->stack_info.start += MPU_GUARD_ALIGN_AND_SIZE;
-	thread->stack_info.size -= MPU_GUARD_ALIGN_AND_SIZE;
-#endif /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+#if defined(CONFIG_USERSPACE)
+	if (z_stack_is_user_capable(stack)) {
+		/* Guard area is carved-out of the buffer instead of reserved
+		 * for stacks that can host user threads
+		 */
+		thread->stack_info.start += MPU_GUARD_ALIGN_AND_SIZE;
+		thread->stack_info.size -= MPU_GUARD_ALIGN_AND_SIZE;
+	}
+#endif /* CONFIG_USERSPACE */
 #if FP_GUARD_EXTRA_SIZE > 0
 	if ((thread->base.user_options & K_FP_REGS) != 0) {
 		/* Larger guard needed due to lazy stacking of FP regs may
@@ -128,10 +130,8 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 		_current->stack_info.size += FP_GUARD_EXTRA_SIZE;
 	}
 #endif /* FP_GUARD_EXTRA_SIZE */
-#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	_current->stack_info.start -= MPU_GUARD_ALIGN_AND_SIZE;
 	_current->stack_info.size += MPU_GUARD_ALIGN_AND_SIZE;
-#endif /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
 #endif /* CONFIG_THREAD_STACK_INFO */
 
 	/* Stack guard area reserved at the bottom of the thread's
