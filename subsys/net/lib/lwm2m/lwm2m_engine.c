@@ -1037,13 +1037,16 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 	}
 
 	if (msg->type == COAP_TYPE_CON) {
-		/* don't re-queue the retransmit work on retransmits */
-		if (msg->send_attempts > 1) {
-			return 0;
-		}
+		s32_t remaining = k_delayed_work_remaining_get(
+					&msg->ctx->retransmit_work);
 
-		k_delayed_work_submit(&msg->ctx->retransmit_work,
-				      K_MSEC(msg->pending->timeout));
+		/* If the item is already pending and its timeout is smaller
+		 * than the new one, skip the submission.
+		 */
+		if (remaining == 0 || remaining > msg->pending->timeout) {
+			k_delayed_work_submit(&msg->ctx->retransmit_work,
+					      K_MSEC(msg->pending->timeout));
+		}
 	} else {
 		lwm2m_reset_message(msg, true);
 	}
@@ -3717,6 +3720,7 @@ static void retransmit_request(struct k_work *work)
 	struct lwm2m_ctx *client_ctx;
 	struct lwm2m_message *msg;
 	struct coap_pending *pending;
+	s32_t remaining;
 
 	client_ctx = CONTAINER_OF(work, struct lwm2m_ctx, retransmit_work);
 	pending = coap_pending_next_to_expire(client_ctx->pendings,
@@ -3725,10 +3729,19 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
+	remaining = pending->t0 + pending->timeout - k_uptime_get_32();
+	if (remaining > 0) {
+		/* First message to expire was removed from the list,
+		 * schedule next.
+		 */
+		goto next;
+	}
+
 	msg = find_msg(pending, NULL);
 	if (!msg) {
 		LOG_ERR("pending has no valid LwM2M message!");
-		return;
+		coap_pending_clear(pending);
+		goto next;
 	}
 
 	if (!coap_pending_cycle(pending)) {
@@ -3742,7 +3755,7 @@ static void retransmit_request(struct k_work *work)
 		 * which balances the ref we made in coap_pending_cycle()
 		 */
 		lwm2m_reset_message(msg, true);
-		return;
+		goto next;
 	}
 
 	LOG_INF("Resending message: %p", msg);
@@ -3752,8 +3765,19 @@ static void retransmit_request(struct k_work *work)
 		/* don't error here, retry until timeout */
 	}
 
-	k_delayed_work_submit(&client_ctx->retransmit_work,
-			      K_MSEC(pending->timeout));
+next:
+	pending = coap_pending_next_to_expire(client_ctx->pendings,
+					      CONFIG_LWM2M_ENGINE_MAX_PENDING);
+	if (!pending) {
+		return;
+	}
+
+	remaining = pending->t0 + pending->timeout - k_uptime_get_32();
+	if (remaining < 0) {
+		remaining = 0;
+	}
+
+	k_delayed_work_submit(&client_ctx->retransmit_work, K_MSEC(remaining));
 }
 
 static int notify_message_reply_cb(const struct coap_packet *response,
