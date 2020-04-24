@@ -10,9 +10,26 @@
 
 #define ULL_LLCP_UNITTEST
 
-/* Implementation Under Test Begin */
-#include "ll_sw/ull_llcp.c"
-/* Implementation Under Test End */
+#include <bluetooth/hci.h>
+#include <sys/byteorder.h>
+#include <sys/slist.h>
+#include <sys/util.h>
+#include "hal/ccm.h"
+
+#include "util/mem.h"
+#include "util/memq.h"
+
+#include "pdu.h"
+#include "ll.h"
+#include "ll_settings.h"
+
+#include "lll.h"
+#include "lll_conn.h"
+
+#include "ull_conn_types.h"
+#include "ull_tx_queue.h"
+#include "ull_llcp.h"
+#include "ull_llcp_internal.h"
 
 #include "helper_pdu.h"
 #include "helper_util.h"
@@ -27,32 +44,6 @@ static void setup(void)
 static bool is_instant_reached(struct ull_cp_conn *conn, u16_t instant)
 {
 	return ((event_counter(conn) - instant) & 0xFFFF) <= 0x7FFF;
-}
-
-void test_int_mem_proc_ctx(void)
-{
-	struct proc_ctx *ctx1;
-	struct proc_ctx *ctx2;
-
-	ull_cp_init();
-
-	for (int i = 0U; i < PROC_CTX_BUF_NUM; i++) {
-		ctx1 = proc_ctx_acquire();
-
-		/* The previous acquire should be valid */
-		zassert_not_null(ctx1, NULL);
-	}
-
-	ctx2 = proc_ctx_acquire();
-
-	/* The last acquire should fail */
-	zassert_is_null(ctx2, NULL);
-
-	proc_ctx_release(ctx1);
-	ctx1 = proc_ctx_acquire();
-
-	/* Releasing returns the context to the avilable pool */
-	zassert_not_null(ctx1, NULL);
 }
 
 /* +-----+                +-------+              +-----+
