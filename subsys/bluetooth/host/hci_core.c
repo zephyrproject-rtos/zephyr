@@ -1997,8 +1997,10 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
 
-	BT_DBG("status 0x%02x handle %u role %u %s", evt->status, handle,
-	       evt->role, bt_addr_le_str(&evt->peer_addr));
+	BT_DBG("status 0x%02x handle %u role %u peer %s peer RPA %s",
+	       evt->status, handle, evt->role, bt_addr_le_str(&evt->peer_addr),
+	       bt_addr_str(&evt->peer_rpa));
+	BT_DBG("local RPA %s", bt_addr_str(&evt->local_rpa));
 
 #if defined(CONFIG_BT_SMP)
 	pending_id_keys_update();
