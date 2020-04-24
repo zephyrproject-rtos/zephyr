@@ -13,3 +13,8 @@ properties:
 
     clocks:
       required: true
+
+    master-can-reg:
+      type: int
+      required: false
+      description: master can reg when different from current instance
