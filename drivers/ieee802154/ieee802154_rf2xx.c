@@ -319,7 +319,7 @@ static inline u8_t *get_mac(struct device *dev)
 
 	/*
 	 * Clear bit 0 to ensure it isn't a multicast address and set
-	 * bit 1 to indicate address is locally administrered and may
+	 * bit 1 to indicate address is locally administered and may
 	 * not be globally unique.
 	 */
 	ctx->mac_addr[0] = (ctx->mac_addr[0] & ~0x01) | 0x02;
@@ -791,6 +791,11 @@ static void rf2xx_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 
 	ctx->iface = iface;
+
+#if defined(CONFIG_IEEE802154_RF2XX_NET_IF_NO_AUTO_START)
+	LOG_DBG("Interface auto start disabled. Waiting configuration...");
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+#endif
 
 	ieee802154_init(iface);
 }
