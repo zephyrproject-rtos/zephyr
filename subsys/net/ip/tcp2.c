@@ -914,10 +914,16 @@ next_state:
 		/* full-close */
 		if (th && FL(&fl, ==, (FIN | ACK), th_seq(th) == conn->ack)) {
 			conn_ack(conn, + 1);
+			tcp_out(conn, FIN | ACK);
+			next = TCP_LAST_ACK;
+			break;
+		} else if (th && FL(&fl, ==, FIN, th_seq(th) == conn->ack)) {
+			conn_ack(conn, + 1);
 			tcp_out(conn, ACK);
 			next = TCP_CLOSE_WAIT;
 			break;
 		}
+
 		if (len) {
 			if (th_seq(th) == conn->ack) {
 				tcp_data_get(conn, pkt);
@@ -927,13 +933,13 @@ next_state:
 				tcp_out(conn, ACK); /* peer has resent */
 			}
 		}
-		break; /* TODO: Catch all the rest here */
+		break;
 	case TCP_CLOSE_WAIT:
-		tcp_out(conn, FIN | ACK);
+		tcp_out(conn, FIN);
 		next = TCP_LAST_ACK;
 		break;
 	case TCP_LAST_ACK:
-		if (FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
+		if (th && FL(&fl, ==, ACK, th_seq(th) == conn->ack)) {
 			tcp_send_timer_cancel(conn);
 			next = TCP_CLOSED;
 		}
