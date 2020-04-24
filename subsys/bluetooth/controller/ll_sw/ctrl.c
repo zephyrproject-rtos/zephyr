@@ -1118,9 +1118,14 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		radio_le_conn_cmplt->status = 0x00;
 		radio_le_conn_cmplt->role = 0x01;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-		radio_le_conn_cmplt->own_addr_type = pdu_adv->rx_addr;
-		memcpy(&radio_le_conn_cmplt->own_addr[0],
-		       &pdu_adv->connect_ind.adv_addr[0], BDADDR_SIZE);
+		if (ctrl_lrpa_used(_radio.advertiser.rl_idx)) {
+			memcpy(&radio_le_conn_cmplt->local_rpa[0],
+			       &pdu_adv->connect_ind.adv_addr[0], BDADDR_SIZE);
+		} else {
+			memset(&radio_le_conn_cmplt->local_rpa[0], 0x0,
+			       BDADDR_SIZE);
+		}
+
 		if (irkmatch_ok && rl_idx != FILTER_IDX_NONE) {
 			/* TODO: store rl_idx instead if safe */
 			/* Store identity address */
@@ -1644,10 +1649,14 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		radio_le_conn_cmplt->status = 0x00;
 		radio_le_conn_cmplt->role = 0x00;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-		radio_le_conn_cmplt->own_addr_type = pdu_adv_tx->tx_addr;
-		memcpy(&radio_le_conn_cmplt->own_addr[0],
-		       &pdu_adv_tx->connect_ind.init_addr[0],
-		       BDADDR_SIZE);
+		if (_radio.scanner.rpa_gen && lrpa) {
+			memcpy(&radio_le_conn_cmplt->local_rpa[0],
+			       &pdu_adv_tx->connect_ind.init_addr[0],
+			       BDADDR_SIZE);
+		} else {
+			memset(&radio_le_conn_cmplt->local_rpa[0], 0x0,
+			       BDADDR_SIZE);
+		}
 
 		if (irkmatch_ok && rl_idx != FILTER_IDX_NONE) {
 			/* TODO: store rl_idx instead if safe */
