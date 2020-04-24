@@ -40,11 +40,11 @@ FUNC_NORETURN void z_cstart(void);
 extern FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 			  void *p1, void *p2, void *p3);
 
-extern void z_setup_new_thread(struct k_thread *new_thread,
-			      k_thread_stack_t *stack, size_t stack_size,
-			      k_thread_entry_t entry,
-			      void *p1, void *p2, void *p3,
-			      int prio, uint32_t options, const char *name);
+extern char *z_setup_new_thread(struct k_thread *new_thread,
+				k_thread_stack_t *stack, size_t stack_size,
+				k_thread_entry_t entry,
+				void *p1, void *p2, void *p3,
+				int prio, uint32_t options, const char *name);
 
 /**
  * @brief Allocate some memory from the current thread's resource pool

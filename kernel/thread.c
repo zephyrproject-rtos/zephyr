@@ -507,11 +507,11 @@ static char *setup_thread_stack(struct k_thread *new_thread,
  * K_THREAD_STACK_SIZEOF(stack), or the size value passed to the instance
  * of K_THREAD_STACK_DEFINE() which defined 'stack'.
  */
-void z_setup_new_thread(struct k_thread *new_thread,
-		       k_thread_stack_t *stack, size_t stack_size,
-		       k_thread_entry_t entry,
-		       void *p1, void *p2, void *p3,
-		       int prio, uint32_t options, const char *name)
+char *z_setup_new_thread(struct k_thread *new_thread,
+			 k_thread_stack_t *stack, size_t stack_size,
+			 k_thread_entry_t entry,
+			 void *p1, void *p2, void *p3,
+			 int prio, uint32_t options, const char *name)
 {
 	char *stack_ptr;
 
@@ -580,7 +580,7 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	/* _current may be null if the dummy thread is not used */
 	if (!_current) {
 		new_thread->resource_pool = NULL;
-		return;
+		return stack_ptr;
 	}
 #endif
 #ifdef CONFIG_USERSPACE
@@ -599,6 +599,8 @@ void z_setup_new_thread(struct k_thread *new_thread,
 #endif
 	new_thread->resource_pool = _current->resource_pool;
 	sys_trace_thread_create(new_thread);
+
+	return stack_ptr;
 }
 
 #ifdef CONFIG_MULTITHREADING

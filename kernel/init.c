@@ -314,11 +314,13 @@ static void init_idle_thread(int i)
  * Note that all fields of "_kernel" are set to zero on entry, which may
  * be all the initialization many of them require.
  *
- * @return N/A
+ * @return initial stack pointer for the main thread
  */
 #ifdef CONFIG_MULTITHREADING
-static void prepare_multithreading(void)
+static char *prepare_multithreading(void)
 {
+	char *stack_ptr;
+
 	/* _kernel.ready_q is all zeroes */
 	z_sched_init();
 
@@ -334,11 +336,11 @@ static void prepare_multithreading(void)
 	 */
 	_kernel.ready_q.cache = &z_main_thread;
 #endif
-
-	z_setup_new_thread(&z_main_thread, z_main_stack,
-			   CONFIG_MAIN_STACK_SIZE, bg_thread_main,
-			   NULL, NULL, NULL,
-			   CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL, "main");
+	stack_ptr = z_setup_new_thread(&z_main_thread, z_main_stack,
+				       CONFIG_MAIN_STACK_SIZE, bg_thread_main,
+				       NULL, NULL, NULL,
+				       CONFIG_MAIN_THREAD_PRIORITY,
+				       K_ESSENTIAL, "main");
 	z_mark_thread_as_started(&z_main_thread);
 	z_ready_thread(&z_main_thread);
 
@@ -352,15 +354,16 @@ static void prepare_multithreading(void)
 	}
 
 	initialize_timeouts();
+
+	return stack_ptr;
 }
 
-static FUNC_NORETURN void switch_to_main_thread(void)
+static FUNC_NORETURN void switch_to_main_thread(char *stack_ptr)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-	arch_switch_to_main_thread(&z_main_thread, z_main_stack,
-				   K_THREAD_STACK_SIZEOF(z_main_stack),
-				   bg_thread_main);
+	arch_switch_to_main_thread(&z_main_thread, stack_ptr, bg_thread_main);
 #else
+	ARG_UNUSED(stack_ptr);
 	/*
 	 * Context switch to main task (entry function is _main()): the
 	 * current fake thread is not on a wait queue or ready queue, so it
@@ -473,8 +476,7 @@ FUNC_NORETURN void z_cstart(void)
 #endif	/* CONFIG_STACK_CANARIES */
 
 #ifdef CONFIG_MULTITHREADING
-	prepare_multithreading();
-	switch_to_main_thread();
+	switch_to_main_thread(prepare_multithreading());
 #else
 	bg_thread_main(NULL, NULL, NULL);
 

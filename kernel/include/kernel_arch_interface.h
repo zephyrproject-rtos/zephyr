@@ -159,14 +159,11 @@ arch_thread_return_value_set(struct k_thread *thread, unsigned int value);
  * in early boot context to "switch out" of isn't workable.
  *
  * @param main_thread main thread object
- * @param main_stack main thread's stack object
- * @param main_stack_size Size of the stack object's buffer
+ * @param stack_ptr Initial stack pointer
  * @param _main Entry point for application main function.
  */
-void arch_switch_to_main_thread(struct k_thread *main_thread,
-				  k_thread_stack_t *main_stack,
-				  size_t main_stack_size,
-				  k_thread_entry_t _main);
+void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
+				k_thread_entry_t _main);
 #endif /* CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN */
 
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)

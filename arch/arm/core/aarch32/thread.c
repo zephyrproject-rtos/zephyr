@@ -340,9 +340,7 @@ int arch_float_disable(struct k_thread *thread)
 }
 #endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
-void arch_switch_to_main_thread(struct k_thread *main_thread,
-				k_thread_stack_t *main_stack,
-				size_t main_stack_size,
+void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 				k_thread_entry_t _main)
 {
 #if defined(CONFIG_FPU)
@@ -367,15 +365,6 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
 	 */
 	z_arm_configure_static_mpu_regions();
 #endif
-
-	/* get high address of the stack, i.e. its start (stack grows down) */
-	char *start_of_main_stack;
-
-	start_of_main_stack =
-		Z_THREAD_STACK_BUFFER(main_stack) + main_stack_size;
-
-	start_of_main_stack = (char *)Z_STACK_PTR_ALIGN(start_of_main_stack);
-
 	_current = main_thread;
 #ifdef CONFIG_TRACING
 	sys_trace_thread_switched_in();
@@ -394,7 +383,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 	/* Set PSPLIM register for built-in stack guarding of main thread. */
 #if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
-	__set_PSPLIM((uint32_t)main_stack);
+	__set_PSPLIM(main_thread->stack_info.start);
 #else
 #error "Built-in PSP limit checks not supported by HW"
 #endif
@@ -407,7 +396,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
 	__asm__ volatile (
 	"mov   r0,  %0\n\t"	/* Store _main in R0 */
 #if defined(CONFIG_CPU_CORTEX_M)
-	"msr   PSP, %1\n\t"	/* __set_PSP(start_of_main_stack) */
+	"msr   PSP, %1\n\t"	/* __set_PSP(stack_ptr) */
 #endif
 
 	"movs r1, #0\n\t"
@@ -425,7 +414,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
 	"movs r3, #0\n\t"
 	"bl z_thread_entry\n\t"	/* z_thread_entry(_main, 0, 0, 0); */
 	:
-	: "r" (_main), "r" (start_of_main_stack)
+	: "r" (_main), "r" (stack_ptr)
 	: "r0" /* not to be overwritten by msr PSP, %1 */
 	);
 
