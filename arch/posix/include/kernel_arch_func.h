@@ -18,12 +18,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN)
-void arch_switch_to_main_thread(struct k_thread *main_thread,
-				k_thread_stack_t *main_stack,
-				size_t main_stack_size, k_thread_entry_t _main);
-#endif
-
 static inline void arch_kernel_init(void)
 {
 	/* Nothing to be done */

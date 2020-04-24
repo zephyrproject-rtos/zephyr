@@ -117,9 +117,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
  * Use some sufficiently aligned bytes in the lower memory of the interrupt
  * stack instead, otherwise the logic is more or less the same.
  */
-void arch_switch_to_main_thread(struct k_thread *main_thread,
-				k_thread_stack_t *main_stack,
-				size_t main_stack_size,
+void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 				k_thread_entry_t _main)
 {
 	struct k_thread *dummy_thread = (struct k_thread *)

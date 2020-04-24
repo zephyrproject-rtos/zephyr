@@ -73,10 +73,12 @@ int arch_swap(unsigned int key)
  * Note that we will never come back to this thread: posix_main_thread_start()
  * does never return.
  */
-void arch_switch_to_main_thread(struct k_thread *main_thread,
-				k_thread_stack_t *main_stack,
-				size_t main_stack_size, k_thread_entry_t _main)
+void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
+				k_thread_entry_t _main)
 {
+	ARG_UNUSED(stack_ptr);
+	ARG_UNUSED(_main);
+
 	posix_thread_status_t *ready_thread_ptr =
 			(posix_thread_status_t *)
 			_kernel.ready_q.cache->callee_saved.thread_status;
