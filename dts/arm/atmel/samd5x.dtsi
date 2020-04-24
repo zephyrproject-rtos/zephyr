@@ -303,6 +303,8 @@
 			gclk = <2>;
 			prescaler = <4>;
 			#io-channel-cells = <1>;
+			clocks = <&gclk 40>, <&mclk 0x20 7>;
+			clock-names = "GCLK", "MCLK";
 		};
 
 		adc1: adc@43002000 {
@@ -320,6 +322,8 @@
 			gclk = <2>;
 			prescaler = <4>;
 			#io-channel-cells = <1>;
+			clocks = <&gclk 41>, <&mclk 0x20 8>;
+			clock-names = "GCLK", "MCLK";
 		};
 
 		tc0: tc@40003800 {
@@ -327,6 +331,8 @@
 			reg = <0x40003800 0x34>;
 			interrupts = <107 0>;
 			label = "TIMER_0";
+			clocks = <&gclk 9>, <&mclk 0x14 14>;
+			clock-names = "GCLK", "MCLK";
 		};
 
 		tc2: tc@4101A000 {
@@ -334,6 +340,8 @@
 			reg = <0x4101A000 0x34>;
 			interrupts = <109 0>;
 			label = "TIMER_2";
+			clocks = <&gclk 26>, <&mclk 0x18 13>;
+			clock-names = "GCLK", "MCLK";
 		};
 
 		tc4: tc@42001400 {
@@ -341,6 +349,8 @@
 			reg = <0x42001400 0x34>;
 			interrupts = <111 0>;
 			label = "TIMER_4";
+			clocks = <&gclk 30>, <&mclk 0x1c 5>;
+			clock-names = "GCLK", "MCLK";
 		};
 
 		tc6: tc@43001400 {
@@ -348,6 +358,8 @@
 			reg = <0x43001400 0x34>;
 			interrupts = <113 0>;
 			label = "TIMER_6";
+			clocks = <&gclk 39>, <&mclk 0x20 5>;
+			clock-names = "GCLK", "MCLK";
 		};
 	};
 };

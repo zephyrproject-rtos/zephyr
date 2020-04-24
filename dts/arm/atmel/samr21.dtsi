@@ -84,8 +84,12 @@
 
 &tc4 {
 	interrupts = <19 0>;
+	clocks = <&gclk 0x1c>, <&pm 0x20 12>;
+	clock-names = "GCLK", "PM";
 };
 
 &adc {
+	clocks = <&gclk 0x1e>, <&pm 0x20 16>;
+	clock-names = "GCLK", "PM";
 	interrupts = <23 0>;
 };
