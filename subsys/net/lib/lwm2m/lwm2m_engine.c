@@ -53,7 +53,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_rd_client.h"
 #endif
 
-#define ENGINE_UPDATE_INTERVAL K_MSEC(500)
+#define ENGINE_UPDATE_INTERVAL_MS 500
 
 #define WELL_KNOWN_CORE_PATH	"</.well-known/core>"
 
@@ -116,8 +116,8 @@ static struct observe_node observe_node_data[CONFIG_LWM2M_ENGINE_MAX_OBSERVER];
 struct service_node {
 	sys_snode_t node;
 	k_work_handler_t service_work;
-	u32_t min_call_period;
-	u64_t last_timestamp;
+	u32_t min_call_period; /* ms */
+	u64_t last_timestamp; /* ms */
 };
 
 static struct service_node service_node_data[MAX_PERIODIC_SERVICE];
@@ -140,7 +140,7 @@ static int sock_nfds;
 #define NUM_BLOCK1_CONTEXT	CONFIG_LWM2M_NUM_BLOCK1_CONTEXT
 
 /* TODO: figure out what's correct value */
-#define TIMEOUT_BLOCKWISE_TRANSFER K_SECONDS(30)
+#define TIMEOUT_BLOCKWISE_TRANSFER_MS (MSEC_PER_SEC * 30)
 
 #define GET_BLOCK_NUM(v)	((v) >> 4)
 #define GET_BLOCK_SIZE(v)	(((v) & 0x7))
@@ -262,7 +262,7 @@ init_block_ctx(const u8_t *token, u8_t tkl, struct block_context **ctx)
 		}
 
 		if (timestamp - block1_contexts[i].timestamp >
-		    TIMEOUT_BLOCKWISE_TRANSFER) {
+		    TIMEOUT_BLOCKWISE_TRANSFER_MS) {
 			*ctx = &block1_contexts[i];
 			/* TODO: notify application for block
 			 * transfer timeout
@@ -1043,7 +1043,7 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 		}
 
 		k_delayed_work_submit(&msg->ctx->retransmit_work,
-				      msg->pending->timeout);
+				      K_MSEC(msg->pending->timeout));
 	} else {
 		lwm2m_reset_message(msg, true);
 	}
@@ -3752,7 +3752,8 @@ static void retransmit_request(struct k_work *work)
 		/* don't error here, retry until timeout */
 	}
 
-	k_delayed_work_submit(&client_ctx->retransmit_work, pending->timeout);
+	k_delayed_work_submit(&client_ctx->retransmit_work,
+			      K_MSEC(pending->timeout));
 }
 
 static int notify_message_reply_cb(const struct coap_packet *response,
@@ -3881,8 +3882,7 @@ s32_t engine_next_service_timeout_ms(u32_t max_timeout)
 	u32_t timeout = max_timeout;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_service_list, srv, node) {
-		time_left_ms = srv->last_timestamp +
-				  K_MSEC(srv->min_call_period);
+		time_left_ms = srv->last_timestamp + srv->min_call_period;
 
 		/* service is due */
 		if (time_left_ms < timestamp) {
@@ -3945,7 +3945,7 @@ static int lwm2m_engine_service(void)
 		 */
 		if (obs->event_timestamp > obs->last_timestamp &&
 		    timestamp > obs->last_timestamp +
-				K_SECONDS(obs->min_period_sec)) {
+				MSEC_PER_SEC * obs->min_period_sec) {
 			obs->last_timestamp = k_uptime_get();
 			generate_notify_message(obs, true);
 
@@ -3954,7 +3954,7 @@ static int lwm2m_engine_service(void)
 		 * - current timestamp > last_timestamp + max_period_sec
 		 */
 		} else if (timestamp > obs->last_timestamp +
-				K_SECONDS(obs->max_period_sec)) {
+				MSEC_PER_SEC * obs->max_period_sec) {
 			obs->last_timestamp = k_uptime_get();
 			generate_notify_message(obs, false);
 		}
@@ -3964,7 +3964,7 @@ static int lwm2m_engine_service(void)
 	timestamp = k_uptime_get();
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_service_list, srv, node) {
 		service_due_timestamp = srv->last_timestamp +
-					K_MSEC(srv->min_call_period);
+					srv->min_call_period;
 		/* service is due */
 		if (timestamp >= service_due_timestamp) {
 			srv->last_timestamp = k_uptime_get();
@@ -3973,7 +3973,7 @@ static int lwm2m_engine_service(void)
 	}
 
 	/* calculate how long to sleep till the next service */
-	return engine_next_service_timeout_ms(ENGINE_UPDATE_INTERVAL);
+	return engine_next_service_timeout_ms(ENGINE_UPDATE_INTERVAL_MS);
 }
 
 int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
@@ -4062,7 +4062,7 @@ static void socket_receive_loop(void)
 	while (1) {
 		/* wait for sockets */
 		if (sock_nfds < 1) {
-			k_sleep(lwm2m_engine_service());
+			k_msleep(lwm2m_engine_service());
 			continue;
 		}
 
@@ -4073,14 +4073,14 @@ static void socket_receive_loop(void)
 		if (poll(sock_fds, sock_nfds, lwm2m_engine_service()) < 0) {
 			LOG_ERR("Error in poll:%d", errno);
 			errno = 0;
-			k_sleep(ENGINE_UPDATE_INTERVAL);
+			k_msleep(ENGINE_UPDATE_INTERVAL_MS);
 			continue;
 		}
 
 		for (i = 0; i < sock_nfds; i++) {
 			if (sock_fds[i].revents & POLLERR) {
 				LOG_ERR("Error in poll.. waiting a moment.");
-				k_sleep(ENGINE_UPDATE_INTERVAL);
+				k_msleep(ENGINE_UPDATE_INTERVAL_MS);
 				continue;
 			}
 

@@ -62,7 +62,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define LWM2M_RD_CLIENT_URI "rd"
 
 #define SECONDS_TO_UPDATE_EARLY	6
-#define STATE_MACHINE_UPDATE_INTERVAL K_MSEC(500)
+#define STATE_MACHINE_UPDATE_INTERVAL_MS 500
 
 /* Leave room for 32 hexadeciaml digits (UUID) + NULL */
 #define CLIENT_EP_LEN		33
@@ -912,7 +912,7 @@ void lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 static int lwm2m_rd_client_init(struct device *dev)
 {
 	return lwm2m_engine_add_service(lwm2m_rd_client_service,
-					STATE_MACHINE_UPDATE_INTERVAL);
+					STATE_MACHINE_UPDATE_INTERVAL_MS);
 }
 
 SYS_INIT(lwm2m_rd_client_init, APPLICATION,
