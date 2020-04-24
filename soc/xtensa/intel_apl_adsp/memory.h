@@ -9,12 +9,15 @@
 /* L2 HP SRAM */
 #define HP_RAM_RESERVE_HEADER_SPACE		0x00010000
 
+#define L2_SRAM_BASE				(DT_REG_ADDR(DT_NODELABEL(sram0)))
+#define L2_SRAM_SIZE				(DT_REG_SIZE(DT_NODELABEL(sram0)))
+
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
-#define SRAM_BASE (DT_L2_SRAM_BASE + CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
-#define SRAM_SIZE (DT_L2_SRAM_SIZE - CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
+#define SRAM_BASE (L2_SRAM_BASE + CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
+#define SRAM_SIZE (L2_SRAM_SIZE - CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
 #else
-#define SRAM_BASE (DT_L2_SRAM_BASE)
-#define SRAM_SIZE (DT_L2_SRAM_SIZE)
+#define SRAM_BASE (L2_SRAM_BASE)
+#define SRAM_SIZE (L2_SRAM_SIZE)
 #endif
 
 /* The reset vector address in SRAM and its size */
@@ -91,8 +94,8 @@
 #define IDT_SIZE				0x2000
 
 /* low power ram where DMA buffers are typically placed */
-#define LPRAM_BASE				(DT_LP_SRAM_BASE)
-#define LPRAM_SIZE				(DT_LP_SRAM_SIZE)
+#define LPRAM_BASE				(DT_REG_ADDR(DT_NODELABEL(sram1)))
+#define LPRAM_SIZE				(DT_REG_SIZE(DT_NODELABEL(sram1)))
 
 #include <platform/memory.h>
 
