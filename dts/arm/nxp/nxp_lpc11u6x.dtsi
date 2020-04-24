@@ -126,6 +126,51 @@
 			pinmuxs = <&pinmux2 0 1>, <&pinmux2 1 1>;
 			pinmux-names = "XTALIN", "XTALOUT";
 		};
+
+		uart0: serial@40008000 {
+			compatible = "nxp,lpc11u6x-uart";
+			clocks = <&syscon LPC11U6X_CLOCK_USART0>;
+			interrupts = <21 0>;
+			reg = <0x40008000 0x60>;
+			label = "UART_0";
+			status = "disabled";
+		};
+
+		uart1: serial@4006c000 {
+			compatible = "nxp,lpc11u6x-uart";
+			clocks = <&syscon LPC11U6X_CLOCK_USART1>;
+			interrupts = <11 0>;
+			reg = <0x4006C000 0x30>;
+			label = "UART_1";
+			status = "disabled";
+		};
+
+		uart2: serial@40070000 {
+			compatible = "nxp,lpc11u6x-uart";
+			clocks = <&syscon LPC11U6X_CLOCK_USART2>;
+			interrupts = <12 0>;
+			reg = <0x40070000 0x30>;
+			label = "UART_2";
+			status = "disabled";
+		};
+
+		uart3: serial@40074000 {
+			compatible = "nxp,lpc11u6x-uart";
+			clocks = <&syscon LPC11U6X_CLOCK_USART3>;
+			interrupts = <12 0>;
+			reg = <0x40074000 0x30>;
+			label = "UART_3";
+			status = "disabled";
+		};
+
+		uart4: serial@4004c000 {
+			compatible = "nxp,lpc11u6x-uart";
+			clocks = <&syscon LPC11U6X_CLOCK_USART4>;
+			interrupts = <11 0>;
+			reg = <0x4004C000 0x30>;
+			label = "UART_4";
+			status = "disabled";
+		};
 	};
 };
 
