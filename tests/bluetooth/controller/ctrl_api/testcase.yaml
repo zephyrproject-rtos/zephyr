@@ -1,0 +1,6 @@
+common:
+    tags: test_framework bluetooth api ull_llcp
+tests:
+  bluetooth.controller.ctrl_api.test:
+     type: unit
+
