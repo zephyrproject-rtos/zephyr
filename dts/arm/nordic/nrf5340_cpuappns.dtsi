@@ -29,7 +29,7 @@
 	};
 
 	chosen {
-		zephyr,entropy = &rng_hci;
+		zephyr,entropy = &cryptocell_sw;
 		zephyr,flash-controller = &flash_controller;
 	};
 
@@ -53,6 +53,14 @@
 	/* Default IPC description */
 	ipc {
 		#include "nrf5340_cpuapp_ipc.dtsi"
+	};
+
+	/* For cryptocell access via platform library; see above */
+	cryptocell_sw: cryptocell-sw {
+		compatible = "nordic,nrf-cc312-sw";
+		#address-cells = <0>;
+		label = "CRYPTOCELL_SW";
+		status = "okay";
 	};
 };
 

@@ -13,10 +13,10 @@ config HAS_HW_NRF_BPROT
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_BPROT))
 
 config HAS_HW_NRF_CC310
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC310))
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC310)) || $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC310_SW))
 
 config HAS_HW_NRF_CC312
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC312))
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC312)) || $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CC312_SW))
 
 config HAS_HW_NRF_CCM
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_CCM))
