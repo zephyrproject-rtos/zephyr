@@ -91,10 +91,11 @@ static bt_le_scan_cb_t *scan_dev_found_cb;
 #if defined(CONFIG_BT_OBSERVER)
 static int set_le_scan_enable(u8_t enable);
 static sys_slist_t scan_cbs = SYS_SLIST_STATIC_INIT(&scan_cbs);
+#endif /* defined(CONFIG_BT_OBSERVER) */
+
 #if defined(CONFIG_BT_EXT_ADV)
 static struct bt_le_ext_adv adv_pool[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
 #endif
-#endif /* defined(CONFIG_BT_OBSERVER) */
 
 #if defined(CONFIG_BT_HCI_VS_EVT_USER)
 static bt_hci_vnd_evt_cb_t *hci_vnd_evt_cb;
@@ -391,7 +392,7 @@ int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 	return 0;
 }
 
-#if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_BROADCASTER)
 const bt_addr_le_t *bt_lookup_id_addr(u8_t id, const bt_addr_le_t *addr)
 {
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
@@ -447,6 +448,7 @@ static void adv_delete(struct bt_le_ext_adv *adv)
 	atomic_clear_bit(adv->flags, BT_ADV_CREATED);
 }
 
+#if defined(CONFIG_BT_BROADCASTER)
 static struct bt_le_ext_adv *bt_adv_lookup_handle(u8_t handle)
 {
 	if (handle < ARRAY_SIZE(adv_pool) &&
@@ -456,7 +458,7 @@ static struct bt_le_ext_adv *bt_adv_lookup_handle(u8_t handle)
 
 	return NULL;
 }
-
+#endif /* CONFIG_BT_BROADCASTER */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
 static void bt_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
