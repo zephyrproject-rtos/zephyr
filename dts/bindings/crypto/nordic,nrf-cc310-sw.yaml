@@ -1,0 +1,17 @@
+# Copyright (c) 2020, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Stub access to cryptocell via platform driver
+
+  Non-secure configurations can use this compatible to declare
+  devicetree nodes which access the CC310 via callbacks into secure
+  code.
+
+compatible: "nordic,nrf-cc310-sw"
+
+include: base.yaml
+
+properties:
+  label:
+    required: true
