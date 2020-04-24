@@ -12,6 +12,13 @@
 
 LOG_MODULE_REGISTER(nrf5340pdk_nrf5340_cpuapp, CONFIG_LOG_DEFAULT_LEVEL);
 
+/* Shared memory definitions */
+#if DT_HAS_CHOSEN(zephyr_ipc_shm)
+#define SHM_NODE            DT_CHOSEN(zephyr_ipc_shm)
+#define SHM_BASE_ADDRESS    DT_REG_ADDR(SHM_NODE)
+#define SHM_SIZE            DT_REG_SIZE(SHM_NODE)
+#endif
+
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 
 /* This should come from DTS, possibly an overlay. */
@@ -51,12 +58,13 @@ static int remoteproc_mgr_boot(struct device *dev)
 	remoteproc_mgr_config();
 #endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
-#if (DT_IPC_SHM_BASE_ADDRESS != 0)
+#if defined(SHM_BASE_ADDRESS) && (SHM_BASE_ADDRESS != 0)
+
 	/* Initialize inter-processor shared memory block to zero. It is
 	 * assumed that the application image has access to the shared
 	 * memory at this point (see #24147).
 	 */
-	memset((void *) DT_IPC_SHM_BASE_ADDRESS, 0, KB(DT_IPC_SHM_SIZE));
+	memset((void *) SHM_BASE_ADDRESS, 0, SHM_SIZE);
 #endif
 
 	/* Release the Network MCU, 'Release force off signal' */
