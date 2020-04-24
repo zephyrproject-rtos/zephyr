@@ -15,7 +15,7 @@
 #include <device.h>
 #include <drivers/pwm.h>
 
-#ifndef DT_ALIAS_PWM_0_LABEL
+#if !DT_LABEL(DT_ALIAS(pwm_0))
 #error "Choose supported board or add new board for the application"
 #endif
 
@@ -38,7 +38,7 @@ void main(void)
 
 	printk("PWM demo app-servo control\n");
 
-	pwm_dev = device_get_binding(DT_ALIAS_PWM_0_LABEL);
+	pwm_dev = device_get_binding(DT_LABEL(DT_ALIAS(pwm_0)));
 	if (!pwm_dev) {
 		printk("Cannot find PWM device!\n");
 		return;

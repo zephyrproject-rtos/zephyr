@@ -45,7 +45,7 @@ void main(void)
 				 DT_ALIAS_SW0_GPIOS_FLAGS | GPIO_INPUT);
 	if (ret != 0) {
 		printk("Error %d: failed to configure pin %d '%s'\n",
-			ret, DT_ALIAS_SW0_GPIOS_PIN, DT_ALIAS_SW0_LABEL);
+			ret, DT_LABEL(DT_ALIAS(sw0_gpios_pin, dt_alias_sw0)));
 		return;
 	}
 
@@ -53,7 +53,7 @@ void main(void)
 					   GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
 		printk("Error %d: failed to configure interrupt on pin %d '%s'\n",
-			ret, DT_ALIAS_SW0_GPIOS_PIN, DT_ALIAS_SW0_LABEL);
+			ret, DT_LABEL(DT_ALIAS(sw0_gpios_pin, dt_alias_sw0)));
 		return;
 	}
 
@@ -75,11 +75,11 @@ void main(void)
 				 DT_ALIAS_LED0_GPIOS_FLAGS | GPIO_OUTPUT);
 	if (ret != 0) {
 		printk("Error %d: failed to configure pin %d '%s'\n",
-			ret, DT_ALIAS_LED0_GPIOS_PIN, DT_ALIAS_LED0_LABEL);
+			ret, DT_LABEL(DT_ALIAS(led0_gpios_pin, dt_alias_led0)));
 		return;
 	}
 #endif
-	printk("Press %s on the board\n", DT_ALIAS_SW0_LABEL);
+	printk("Press %s on the board\n", DT_LABEL(DT_ALIAS(sw0)));
 
 	while (1) {
 #ifdef DT_ALIAS_LED0_GPIOS_CONTROLLER

@@ -50,7 +50,7 @@ int led_init(void)
 				 | DT_ALIAS_LED0_GPIOS_FLAGS);
 	if (ret < 0) {
 		LOG_ERR("Error %d: failed to configure pin %d '%s'\n",
-		ret, LED, DT_ALIAS_LED0_LABEL);
+		ret, LED, DT_LABEL(DT_ALIAS(led0)));
 		return ret;
 	}
 

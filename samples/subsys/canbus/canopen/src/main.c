@@ -15,9 +15,9 @@
 LOG_MODULE_REGISTER(app);
 
 
-#define CAN_INTERFACE DT_ALIAS_CAN_PRIMARY_LABEL
+#define CAN_INTERFACE DT_LABEL(DT_ALIAS(can_primary))
 #define CAN_BITRATE (DT_ALIAS_CAN_PRIMARY_BUS_SPEED / 1000)
-#if !defined(DT_ALIAS_CAN_PRIMARY_LABEL)
+#if !defined(DT_LABEL(DT_ALIAS(can_primary)))
 #error CANopen CAN interface not set
 #endif
 

@@ -195,7 +195,7 @@ void main(void)
 	k_tid_t rx_tid, get_state_tid;
 	int ret;
 
-	can_dev = device_get_binding(DT_ALIAS_CAN_PRIMARY_LABEL);
+	can_dev = device_get_binding(DT_LABEL(DT_ALIAS(can_primary)));
 
 	if (!can_dev) {
 		printk("CAN: Device driver not found.\n");

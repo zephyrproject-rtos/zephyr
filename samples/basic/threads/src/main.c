@@ -79,7 +79,7 @@ void blink1(void)
 {
 	const struct led led1 = {
 		.gpio_dev_name = DT_ALIAS_LED0_GPIOS_CONTROLLER,
-		.gpio_pin_name = DT_ALIAS_LED0_LABEL,
+		.gpio_pin_name = DT_LABEL(DT_ALIAS(led0)),
 		.gpio_pin = DT_ALIAS_LED0_GPIOS_PIN,
 		.gpio_flags = GPIO_OUTPUT | DT_ALIAS_LED0_GPIOS_FLAGS,
 	};
@@ -91,7 +91,7 @@ void blink2(void)
 {
 	const struct led led2 = {
 		.gpio_dev_name = DT_ALIAS_LED1_GPIOS_CONTROLLER,
-		.gpio_pin_name = DT_ALIAS_LED1_LABEL,
+		.gpio_pin_name = DT_LABEL(DT_ALIAS(led1)),
 		.gpio_pin = DT_ALIAS_LED1_GPIOS_PIN,
 		.gpio_flags = GPIO_OUTPUT | DT_ALIAS_LED1_GPIOS_FLAGS,
 	};
