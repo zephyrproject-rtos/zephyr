@@ -28,18 +28,6 @@ if GPIO
 config GPIO_CC32XX
 	default y
 
-config GPIO_CC32XX_A0
-	default n
-
-config GPIO_CC32XX_A1
-	default y
-
-config GPIO_CC32XX_A2
-	default y
-
-config GPIO_CC32XX_A3
-	default n
-
 endif # GPIO
 
 if !XIP
