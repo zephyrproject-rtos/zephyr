@@ -205,6 +205,7 @@
 			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
 			interrupt-names = "TX", "RX0", "RX1", "SCE";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x06000000>;
+			master-can-reg = <0x40006400>;
 			status = "disabled";
 			label = "CAN_2";
 			bus-speed = <125000>;
