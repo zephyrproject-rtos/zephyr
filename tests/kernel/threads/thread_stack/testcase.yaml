@@ -1,0 +1,4 @@
+tests:
+  kernel.threads.thread_stack:
+    tags: kernel security userspace ignore_faults
+    min_ram: 36
