@@ -36,21 +36,21 @@
 			/* GPIO156/LED0 on schematic,
 			 * LED2 on silkscreen.
 			 */
-			gpios = <&gpiod 14 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio_140_176 14 GPIO_ACTIVE_LOW>;
 			label = "LED 2";
 		};
 		led3: led_1 {
 			/* GPIO157/LED1 on schematic,
 			 * LED3 on silkscreen.
 			 */
-			gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio_140_176 15 GPIO_ACTIVE_LOW>;
 			label = "LED 3";
 		};
 		led4: led_2 {
 			/* GPIO153/LED2 on schematic,
 			 * LED4 on silkscreen.
 			 */
-			gpios = <&gpiod 11 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio_140_176 11 GPIO_ACTIVE_LOW>;
 			label = "LED 4";
 		};
 	};
