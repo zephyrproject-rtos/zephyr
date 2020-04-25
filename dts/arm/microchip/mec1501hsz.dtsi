@@ -41,27 +41,27 @@
 		compatible = "microchip,xec-pinmux";
 
 		pinmux_000_036: pinmux-0 {
-			ph-reg = <&gpioa>;
+			ph-reg = <&gpio_000_036>;
 			label = "PINMUX000_036";
 		};
 		pinmux_040_076: pinmux-1 {
-			ph-reg = <&gpiob>;
+			ph-reg = <&gpio_040_076>;
 			label = "PINMUX040_076";
 		};
 		pinmux_100_136: pinmux-2 {
-			ph-reg = <&gpioc>;
+			ph-reg = <&gpio_100_136>;
 			label = "PINMUX100_136";
 		};
 		pinmux_140_176: pinmux-3 {
-			ph-reg = <&gpiod>;
+			ph-reg = <&gpio_140_176>;
 			label = "PINMUX140_176";
 		};
 		pinmux_200_236: pinmux-4 {
-			ph-reg = <&gpioe>;
+			ph-reg = <&gpio_200_236>;
 			label = "PINMUX200_236";
 		};
 		pinmux_240_276: pinmux-5 {
-			ph-reg = <&gpiof>;
+			ph-reg = <&gpio_240_276>;
 			label = "PINMUX240_276";
 		};
 	};
@@ -111,7 +111,7 @@
 			reg-shift = <0>;
 			status = "disabled";
 		};
-		gpioa: gpio@40081000 {
+		gpio_000_036: gpio@40081000 {
 			compatible = "microchip,xec-gpio";
 			reg = <0x40081000 0x80>;
 			interrupts = <3 2>;
@@ -119,7 +119,7 @@
 			label="GPIO000_036";
 			#gpio-cells=<2>;
 		};
-		gpiob: gpio@40081080 {
+		gpio_040_076: gpio@40081080 {
 			compatible = "microchip,xec-gpio";
 			reg = <0x40081080 0x80>;
 			interrupts = <2 2>;
@@ -127,7 +127,7 @@
 			label="GPIO040_076";
 			#gpio-cells=<2>;
 		};
-		gpioc: gpio@40081100 {
+		gpio_100_136: gpio@40081100 {
 			compatible = "microchip,xec-gpio";
 			reg = <0x40081100 0x80>;
 			gpio-controller;
@@ -135,7 +135,7 @@
 			label="GPIO100_136";
 			#gpio-cells=<2>;
 		};
-		gpiod: gpio@40081180 {
+		gpio_140_176: gpio@40081180 {
 			compatible = "microchip,xec-gpio";
 			reg = <0x40081180 0x80>;
 			gpio-controller;
@@ -143,7 +143,7 @@
 			label="GPIO140_176";
 			#gpio-cells=<2>;
 		};
-		gpioe: gpio@40081200 {
+		gpio_200_236: gpio@40081200 {
 			compatible = "microchip,xec-gpio";
 			reg = <0x40081200 0x80>;
 			gpio-controller;
@@ -151,7 +151,7 @@
 			label="GPIO200_236";
 			#gpio-cells=<2>;
 		};
-		gpiof: gpio@40081280 {
+		gpio_240_276: gpio@40081280 {
 			compatible = "microchip,xec-gpio";
 			reg = <0x40081280 0x80>;
 			gpio-controller;
