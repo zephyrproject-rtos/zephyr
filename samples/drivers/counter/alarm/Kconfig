@@ -7,4 +7,8 @@ config COUNTER_RTC0
 	bool
 	default y if SOC_FAMILY_NRF
 
+config COUNTER_SAM0_TC32
+	bool
+	default y if BOARD_ATSAMD20_XPRO
+
 source "Kconfig.zephyr"

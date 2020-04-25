@@ -15,6 +15,12 @@
 
 struct counter_alarm_cfg alarm_cfg;
 
+#if defined(CONFIG_BOARD_ATSAMD20_XPRO)
+#define TIMER DT_LABEL(DT_NODELABEL(tc4))
+#else
+#define TIMER DT_RTC_0_NAME
+#endif
+
 static void test_counter_interrupt_fn(struct device *counter_dev,
 				      u8_t chan_id, u32_t ticks,
 				      void *user_data)
@@ -58,7 +64,7 @@ void main(void)
 	int err;
 
 	printk("Counter alarm sample\n\n");
-	counter_dev = device_get_binding(DT_RTC_0_NAME);
+	counter_dev = device_get_binding(TIMER);
 	if (counter_dev == NULL) {
 		printk("Device not found\n");
 		return;
