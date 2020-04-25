@@ -86,8 +86,8 @@ struct x86_cpuboot x86_cpuboot[] = {
 	{
 		.tr = X86_KERNEL_CPU0_TR,
 		.gs_base = &tss0,
-		.sp = (uint64_t) (z_interrupt_stacks[0] + CONFIG_ISR_STACK_SIZE +
-			       ARCH_THREAD_STACK_RESERVED),
+		.sp = (uint64_t) z_interrupt_stacks[0] +
+			Z_KERNEL_STACK_SIZE_ADJUST(CONFIG_ISR_STACK_SIZE),
 		.fn = z_x86_prep_c,
 #ifdef CONFIG_X86_MMU
 		.ptables = &z_x86_flat_ptables,
@@ -124,7 +124,7 @@ void arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 	uint8_t vector = ((unsigned long) x86_ap_start) >> 12;
 	uint8_t apic_id = x86_cpu_loapics[cpu_num];
 
-	x86_cpuboot[cpu_num].sp = (uint64_t) Z_THREAD_STACK_BUFFER(stack) + sz;
+	x86_cpuboot[cpu_num].sp = (uint64_t) Z_KERNEL_STACK_BUFFER(stack) + sz;
 	x86_cpuboot[cpu_num].fn = fn;
 	x86_cpuboot[cpu_num].arg = arg;
 #ifdef CONFIG_X86_MMU

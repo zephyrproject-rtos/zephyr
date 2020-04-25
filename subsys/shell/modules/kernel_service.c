@@ -149,8 +149,8 @@ static int cmd_kernel_stacks(const struct shell *shell,
 	 * stack buffers.
 	 */
 	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
-		buf = Z_THREAD_STACK_BUFFER(z_interrupt_stacks[i]);
-		size = K_THREAD_STACK_SIZEOF(z_interrupt_stacks[i]);
+		buf = Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[i]);
+		size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[i]);
 
 		for (size_t i = 0; i < size; i++) {
 			if (buf[i] == 0xAAU) {

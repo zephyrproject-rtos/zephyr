@@ -64,7 +64,7 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 #else
 		cpu_id = 0;
 #endif
-		start = (uintptr_t)Z_THREAD_STACK_BUFFER(
+		start = (uintptr_t)Z_KERNEL_STACK_BUFFER(
 		    z_interrupt_stacks[cpu_id]);
 		end = start + CONFIG_ISR_STACK_SIZE;
 	} else if ((cs & 0x3U) != 0U ||
