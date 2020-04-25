@@ -175,6 +175,7 @@ void main(void)
 	}
 
 	bt_ready();
+	k_sleep(100);
 
 	light_default_status_init();
 
