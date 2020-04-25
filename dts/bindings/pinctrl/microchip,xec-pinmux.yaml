@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC Pinmux node
+
+compatible: "microchip,xec-pinmux"
+
+child-binding:
+    description: pinmux child node
+    properties:
+       ph-reg:
+          type: phandle
+          required: true
+       label:
+          required: true
+          type: string
+          description: Human readable string describing the device (used by Zephyr for API name)
