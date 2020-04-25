@@ -331,16 +331,17 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 	.disable_callback = gpio_xec_disable_callback,
 };
 
-#ifdef CONFIG_GPIO_XEC_GPIO000_036
+#if DT_HAS_NODE(DT_NODELABEL(gpio_000_036))
 static int gpio_xec_port000_036_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port000_036_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
+					DT_NODELABEL(gpio_000_036)),
 	},
-	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO000_036_BASE_ADDR,
+	.pcr1_base = (u32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_000_036)),
 	.port_num = MCHP_GPIO_000_036,
-#ifdef DT_GPIO_XEC_GPIO000_036_IRQ
+#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_000_036), irq)
 	.girq_id = MCHP_GIRQ11_ID,
 	.flags = GPIO_INT_ENABLE,
 #else
@@ -350,7 +351,8 @@ static const struct gpio_xec_config gpio_xec_port000_036_config = {
 
 static struct gpio_xec_data gpio_xec_port000_036_data;
 
-DEVICE_AND_API_INIT(gpio_xec_port000_036, DT_GPIO_XEC_GPIO000_036_LABEL,
+DEVICE_AND_API_INIT(gpio_xec_port000_036,
+		DT_LABEL(DT_NODELABEL(gpio_000_036)),
 		gpio_xec_port000_036_init,
 		&gpio_xec_port000_036_data, &gpio_xec_port000_036_config,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -358,32 +360,33 @@ DEVICE_AND_API_INIT(gpio_xec_port000_036, DT_GPIO_XEC_GPIO000_036_LABEL,
 
 static int gpio_xec_port000_036_init(struct device *dev)
 {
-#ifdef DT_GPIO_XEC_GPIO000_036_IRQ
+#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_000_036), irq)
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
-	IRQ_CONNECT(DT_GPIO_XEC_GPIO000_036_IRQ,
-		DT_GPIO_XEC_GPIO000_036_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_000_036), irq),
+		DT_IRQ(DT_NODELABEL(gpio_000_036), priority),
 		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port000_036), 0U);
 
-	irq_enable(DT_GPIO_XEC_GPIO000_036_IRQ);
+	irq_enable(DT_IRQ(DT_NODELABEL(gpio_000_036), irq));
 #endif
 	return 0;
 }
-#endif /* CONFIG_GPIO_XEC_GPIO000_036 */
+#endif /* DT_HAS_NODE(DT_NODELABEL(gpio_000_036)) */
 
-#ifdef CONFIG_GPIO_XEC_GPIO040_076
+#if DT_HAS_NODE(DT_NODELABEL(gpio_040_076))
 static int gpio_xec_port040_076_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port040_076_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
+					DT_NODELABEL(gpio_040_076)),
 	},
-	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO040_076_BASE_ADDR,
+	.pcr1_base = (u32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_040_076)),
 	.port_num = MCHP_GPIO_040_076,
-#ifdef DT_GPIO_XEC_GPIO040_076_IRQ
+#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_040_076), irq)
 	.girq_id = MCHP_GIRQ10_ID,
 	.flags = GPIO_INT_ENABLE,
 #else
@@ -393,7 +396,8 @@ static const struct gpio_xec_config gpio_xec_port040_076_config = {
 
 static struct gpio_xec_data gpio_xec_port040_076_data;
 
-DEVICE_AND_API_INIT(gpio_xec_port040_076, DT_GPIO_XEC_GPIO040_076_LABEL,
+DEVICE_AND_API_INIT(gpio_xec_port040_076,
+		DT_LABEL(DT_NODELABEL(gpio_040_076)),
 		gpio_xec_port040_076_init,
 		&gpio_xec_port040_076_data, &gpio_xec_port040_076_config,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -401,32 +405,33 @@ DEVICE_AND_API_INIT(gpio_xec_port040_076, DT_GPIO_XEC_GPIO040_076_LABEL,
 
 static int gpio_xec_port040_076_init(struct device *dev)
 {
-#ifdef DT_GPIO_XEC_GPIO040_076_IRQ
+#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_040_076), irq)
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
-	IRQ_CONNECT(DT_GPIO_XEC_GPIO040_076_IRQ,
-		DT_GPIO_XEC_GPIO040_076_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_040_076), irq),
+		DT_IRQ(DT_NODELABEL(gpio_040_076), priority),
 		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port040_076), 0U);
 
-	irq_enable(DT_GPIO_XEC_GPIO040_076_IRQ);
+	irq_enable(DT_IRQ(DT_NODELABEL(gpio_040_076), irq));
 #endif
 	return 0;
 }
-#endif /* CONFIG_GPIO_XEC_GPIO040_076 */
+#endif /* DT_HAS_NODE(DT_NODELABEL(gpio_040_076)) */
 
-#ifdef CONFIG_GPIO_XEC_GPIO100_136
+#if DT_HAS_NODE(DT_NODELABEL(gpio_100_136))
 static int gpio_xec_port100_136_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port100_136_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
+					DT_NODELABEL(gpio_100_136)),
 	},
-	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO100_136_BASE_ADDR,
+	.pcr1_base = (u32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_100_136)),
 	.port_num = MCHP_GPIO_100_136,
-#ifdef DT_GPIO_XEC_GPIO100_136_IRQ
+#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_100_136), irq)
 	.girq_id = MCHP_GIRQ09_ID,
 	.flags = GPIO_INT_ENABLE,
 #else
@@ -436,7 +441,8 @@ static const struct gpio_xec_config gpio_xec_port100_136_config = {
 
 static struct gpio_xec_data gpio_xec_port100_136_data;
 
-DEVICE_AND_API_INIT(gpio_xec_port100_136, DT_GPIO_XEC_GPIO100_136_LABEL,
+DEVICE_AND_API_INIT(gpio_xec_port100_136,
+		DT_LABEL(DT_NODELABEL(gpio_100_136)),
 		gpio_xec_port100_136_init,
 		&gpio_xec_port100_136_data, &gpio_xec_port100_136_config,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -444,32 +450,33 @@ DEVICE_AND_API_INIT(gpio_xec_port100_136, DT_GPIO_XEC_GPIO100_136_LABEL,
 
 static int gpio_xec_port100_136_init(struct device *dev)
 {
-#ifdef DT_GPIO_XEC_GPIO100_136_IRQ
+#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_100_136), irq)
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
-	IRQ_CONNECT(DT_GPIO_XEC_GPIO100_136_IRQ,
-		DT_GPIO_XEC_GPIO100_136_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_100_136), irq),
+		DT_IRQ(DT_NODELABEL(gpio_100_136), priority),
 		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port100_136), 0U);
 
-	irq_enable(DT_GPIO_XEC_GPIO100_136_IRQ);
+	irq_enable(DT_IRQ(DT_NODELABEL(gpio_100_136), irq));
 #endif
 	return 0;
 }
-#endif /* CONFIG_GPIO_XEC_GPIO100_136 */
+#endif /* DT_HAS_NODE(DT_NODELABEL(gpio_100_136)) */
 
-#ifdef CONFIG_GPIO_XEC_GPIO140_176
+#if DT_HAS_NODE(DT_NODELABEL(gpio_140_176))
 static int gpio_xec_port140_176_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port140_176_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
+					DT_NODELABEL(gpio_140_176)),
 	},
-	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO140_176_BASE_ADDR,
+	.pcr1_base = (u32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_140_176)),
 	.port_num = MCHP_GPIO_140_176,
-#ifdef DT_GPIO_XEC_GPIO140_176_IRQ
+#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_140_176), irq)
 	.girq_id = MCHP_GIRQ08_ID,
 	.flags = GPIO_INT_ENABLE,
 #else
@@ -479,7 +486,8 @@ static const struct gpio_xec_config gpio_xec_port140_176_config = {
 
 static struct gpio_xec_data gpio_xec_port140_176_data;
 
-DEVICE_AND_API_INIT(gpio_xec_port140_176, DT_GPIO_XEC_GPIO140_176_LABEL,
+DEVICE_AND_API_INIT(gpio_xec_port140_176,
+		DT_LABEL(DT_NODELABEL(gpio_140_176)),
 		gpio_xec_port140_176_init,
 		&gpio_xec_port140_176_data, &gpio_xec_port140_176_config,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -487,32 +495,33 @@ DEVICE_AND_API_INIT(gpio_xec_port140_176, DT_GPIO_XEC_GPIO140_176_LABEL,
 
 static int gpio_xec_port140_176_init(struct device *dev)
 {
-#ifdef DT_GPIO_XEC_GPIO140_176_IRQ
+#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_140_176), irq)
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
-	IRQ_CONNECT(DT_GPIO_XEC_GPIO140_176_IRQ,
-		DT_GPIO_XEC_GPIO140_176_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_140_176), irq),
+		DT_IRQ(DT_NODELABEL(gpio_140_176), priority),
 		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port140_176), 0U);
 
-	irq_enable(DT_GPIO_XEC_GPIO140_176_IRQ);
+	irq_enable(DT_IRQ(DT_NODELABEL(gpio_140_176), irq));
 #endif
 	return 0;
 }
-#endif /* CONFIG_GPIO_XEC_GPIO140_176 */
+#endif /* DT_HAS_NODE(DT_NODELABEL(gpio_140_176)) */
 
-#ifdef CONFIG_GPIO_XEC_GPIO200_236
+#if DT_HAS_NODE(DT_NODELABEL(gpio_200_236))
 static int gpio_xec_port200_236_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port200_236_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(4),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
+					DT_NODELABEL(gpio_200_236)),
 	},
-	.pcr1_base = (u32_t *) DT_GPIO_XEC_GPIO200_236_BASE_ADDR,
+	.pcr1_base = (u32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_200_236)),
 	.port_num = MCHP_GPIO_200_236,
-#ifdef DT_GPIO_XEC_GPIO200_236_IRQ
+#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_200_236), irq)
 	.girq_id = MCHP_GIRQ12_ID,
 	.flags = GPIO_INT_ENABLE,
 #else
@@ -522,7 +531,8 @@ static const struct gpio_xec_config gpio_xec_port200_236_config = {
 
 static struct gpio_xec_data gpio_xec_port200_236_data;
 
-DEVICE_AND_API_INIT(gpio_xec_port200_236, DT_GPIO_XEC_GPIO200_236_LABEL,
+DEVICE_AND_API_INIT(gpio_xec_port200_236,
+		DT_LABEL(DT_NODELABEL(gpio_200_236)),
 		gpio_xec_port200_236_init,
 		&gpio_xec_port200_236_data, &gpio_xec_port200_236_config,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -530,32 +540,33 @@ DEVICE_AND_API_INIT(gpio_xec_port200_236, DT_GPIO_XEC_GPIO200_236_LABEL,
 
 static int gpio_xec_port200_236_init(struct device *dev)
 {
-#ifdef DT_GPIO_XEC_GPIO200_236_IRQ
+#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_200_236), irq)
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
-	IRQ_CONNECT(DT_GPIO_XEC_GPIO200_236_IRQ,
-		DT_GPIO_XEC_GPIO200_236_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_200_236), irq),
+		DT_IRQ(DT_NODELABEL(gpio_200_236), priority),
 		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port200_236), 0U);
 
-	irq_enable(DT_GPIO_XEC_GPIO200_236_IRQ);
+	irq_enable(DT_IRQ(DT_NODELABEL(gpio_200_236), irq));
 #endif
 	return 0;
 }
-#endif /* CONFIG_GPIO_XEC_GPIO200_236 */
+#endif /* DT_HAS_NODE(DT_NODELABEL(gpio_200_236)) */
 
-#ifdef CONFIG_GPIO_XEC_GPIO240_276
+#if DT_HAS_NODE(DT_NODELABEL(gpio_240_276))
 static int gpio_xec_port240_276_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port240_276_config = {
 	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(5),
+		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(
+					DT_NODELABEL(gpio_240_276)),
 	},
-	.pcr1_base = (u32_t *)  DT_GPIO_XEC_GPIO240_276_BASE_ADDR,
+	.pcr1_base = (u32_t *) DT_REG_ADDR(DT_NODELABEL(gpio_240_276)),
 	.port_num = MCHP_GPIO_240_276,
-#ifdef DT_GPIO_XEC_GPIO240_276_IRQ
+#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_240_276), irq)
 	.girq_id = MCHP_GIRQ26_ID,
 	.flags = GPIO_INT_ENABLE,
 #else
@@ -565,7 +576,8 @@ static const struct gpio_xec_config gpio_xec_port240_276_config = {
 
 static struct gpio_xec_data gpio_xec_port240_276_data;
 
-DEVICE_AND_API_INIT(gpio_xec_port240_276, DT_GPIO_XEC_GPIO240_276_LABEL,
+DEVICE_AND_API_INIT(gpio_xec_port240_276,
+		DT_LABEL(DT_NODELABEL(gpio_240_276)),
 		gpio_xec_port240_276_init,
 		&gpio_xec_port240_276_data, &gpio_xec_port240_276_config,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -573,18 +585,18 @@ DEVICE_AND_API_INIT(gpio_xec_port240_276, DT_GPIO_XEC_GPIO240_276_LABEL,
 
 static int gpio_xec_port240_276_init(struct device *dev)
 {
-#ifdef DT_GPIO_XEC_GPIO240_276_IRQ
+#if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_240_276), irq)
 	const struct gpio_xec_config *config = dev->config->config_info;
 
 	/* Turn on the block enable in the EC aggregator */
 	MCHP_GIRQ_BLK_SETEN(config->girq_id);
 
-	IRQ_CONNECT(DT_GPIO_XEC_GPIO240_276_IRQ,
-		DT_GPIO_XEC_GPIO240_276_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_IRQ(DT_NODELABEL(gpio_240_276), irq),
+		DT_IRQ(DT_NODELABEL(gpio_240_276), priority),
 		gpio_gpio_xec_port_isr, DEVICE_GET(gpio_xec_port240_276), 0U);
 
-	irq_enable(DT_GPIO_XEC_GPIO240_276_IRQ);
+	irq_enable(DT_IRQ(DT_NODELABEL(gpio_240_276), irq));
 #endif
 	return 0;
 }
-#endif /* CONFIG_GPIO_XEC_GPIO240_276 */
+#endif /* DT_HAS_NODE(DT_NODELABEL(gpio_240_276)) */
