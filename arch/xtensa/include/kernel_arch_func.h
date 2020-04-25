@@ -25,7 +25,7 @@ extern void z_xtensa_fatal_error(unsigned int reason, const z_arch_esf_t *esf);
 /* Defined in xtensa_context.S */
 extern void z_xt_coproc_init(void);
 
-extern K_THREAD_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
+extern K_KERNEL_STACK_ARRAY_DEFINE(z_interrupt_stacks, CONFIG_MP_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
 
 static ALWAYS_INLINE void arch_kernel_init(void)
@@ -43,8 +43,8 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	WSR(CONFIG_XTENSA_KERNEL_CPU_PTR_SR, cpu0);
 
 #ifdef CONFIG_INIT_STACKS
-	memset(Z_THREAD_STACK_BUFFER(z_interrupt_stacks[0]), 0xAA,
-	       CONFIG_ISR_STACK_SIZE);
+	memset(Z_KERNEL_STACK_BUFFER(z_interrupt_stacks[0]), 0xAA,
+	       K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[0]));
 #endif
 }
 
