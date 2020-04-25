@@ -231,21 +231,11 @@ void SX1276SetRfTxPower(int8_t power)
 	uint8_t pa_config = 0;
 	uint8_t pa_dac = 0;
 
-	ret = sx1276_read(SX1276_REG_PA_CONFIG, &pa_config, 1);
-	if (ret < 0) {
-		LOG_ERR("Unable to read PA config");
-		return;
-	}
-
 	ret = sx1276_read(SX1276_REG_PA_DAC, &pa_dac, 1);
 	if (ret < 0) {
 		LOG_ERR("Unable to read PA dac");
 		return;
 	}
-
-	pa_config &= RF_PACONFIG_MAX_POWER_MASK;
-	pa_config &= RF_PACONFIG_OUTPUTPOWER_MASK;
-	pa_config &= RF_PACONFIG_PASELECT_MASK;
 
 	pa_dac &= RF_PADAC_20DBM_MASK;
 
