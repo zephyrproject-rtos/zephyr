@@ -440,6 +440,7 @@ void net_access_grant_rx(struct k_thread *thread)
 
 	net_pkt_access_grant_rx(thread);
 	net_context_access_grant(thread);
+	net_ipv6_access_grant(thread);
 	net_tc_access_grant_rx(thread);
 	net_if_access_grant_rx(thread);
 }
@@ -450,6 +451,7 @@ void net_access_grant_tx(struct k_thread *thread)
 
 	net_pkt_access_grant_tx(thread);
 	net_context_access_grant(thread);
+	net_ipv6_access_grant(thread);
 	net_tc_access_grant_tx(thread);
 	net_if_access_grant_tx(thread);
 }

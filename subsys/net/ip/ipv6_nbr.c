@@ -61,9 +61,9 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
  * state will be removed from the table and new entry will be
  * added.
  */
-static u32_t stale_counter;
+NET_BMEM static u32_t stale_counter;
 
-static struct k_sem nbr_lock;
+NET_BMEM static struct k_sem nbr_lock;
 #endif
 
 #if defined(CONFIG_NET_IPV6_ND)
@@ -2457,13 +2457,13 @@ drop:
 #endif /* CONFIG_NET_IPV6_ND */
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
-static struct net_icmpv6_handler ns_input_handler = {
+NET_DMEM static struct net_icmpv6_handler ns_input_handler = {
 	.type = NET_ICMPV6_NS,
 	.code = 0,
 	.handler = handle_ns_input,
 };
 
-static struct net_icmpv6_handler na_input_handler = {
+NET_DMEM static struct net_icmpv6_handler na_input_handler = {
 	.type = NET_ICMPV6_NA,
 	.code = 0,
 	.handler = handle_na_input,
@@ -2471,12 +2471,40 @@ static struct net_icmpv6_handler na_input_handler = {
 #endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
 #if defined(CONFIG_NET_IPV6_ND)
-static struct net_icmpv6_handler ra_input_handler = {
+NET_DMEM static struct net_icmpv6_handler ra_input_handler = {
 	.type = NET_ICMPV6_RA,
 	.code = 0,
 	.handler = handle_ra_input,
 };
 #endif /* CONFIG_NET_IPV6_ND */
+
+#if defined(CONFIG_NET_USER_MODE)
+void net_ipv6_access_grant(struct k_thread *thread)
+{
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		const char *name = k_thread_name_get(thread);
+
+		NET_DBG("Granting access to thread %p (%s)", thread,
+			name ? log_strdup(name) : "?");
+	} else {
+		NET_DBG("Granting access to thread %p", thread);
+	}
+
+#if defined(CONFIG_NET_IPV6_NBR_CACHE) || defined(CONFIG_NET_IPV6_ND)
+	k_thread_access_grant(thread, &stale_counter, &nbr_lock);
+#endif
+
+#if defined(CONFIG_NET_IPV6_NBR_CACHE)
+	k_thread_access_grant(thread, &ns_input_handler, &na_input_handler);
+	k_thread_access_grant(thread, &ipv6_ns_reply_timer);
+#endif
+
+#if defined(CONFIG_NET_IPV6_ND)
+	k_thread_access_grant(thread, &ipv6_nd_reachable_timer,
+			      &ra_input_handler);
+#endif
+}
+#endif
 
 void net_ipv6_nbr_init(void)
 {

@@ -76,7 +76,7 @@ struct net_nbr {
 
 /* This is an array of struct net_nbr + some additional data */
 #define NET_NBR_POOL_INIT(_name, _count, _size, _remove, _extra_size)	\
-	struct {							\
+	NET_DMEM struct {						\
 		struct net_nbr nbr;					\
 		u8_t data[ROUND_UP(_size, 4)] __net_nbr_align;	\
 		u8_t extra[ROUND_UP(_extra_size, 4)] __net_nbr_align;\
@@ -105,7 +105,7 @@ struct net_nbr_table {
 /* Type of the table can be NET_NBR_LOCAL or NET_NBR_GLOBAL
  */
 #define NET_NBR_TABLE_INIT(_type, _name, _pool, _clear)			\
-	_type struct net_nbr_table_##_name {				\
+	NET_DMEM _type struct net_nbr_table_##_name {			\
 		struct net_nbr_table table;				\
 	} net_##_name __used = {					\
 		.table = {						\
