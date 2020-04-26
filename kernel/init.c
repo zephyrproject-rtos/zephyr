@@ -256,6 +256,16 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_timestamp_main = k_cycle_get_32();
 #endif
 
+#if IS_ENABLED(NETWORKING) && IS_ENABLED(CONFIG_NET_USER_MODE) && \
+	!IS_ENABLED(CONFIG_NET_TEST)
+	/* If we have user mode networking enabled, grant the application
+	 * access to networking subsystem. For Ztest, this is already done
+	 * so skip it in that case.
+	 */
+	extern void net_access_grant_app(struct k_thread *);
+	net_access_grant_app(k_current_get());
+#endif
+
 	extern void main(void);
 
 	main();
