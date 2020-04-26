@@ -62,7 +62,7 @@ struct k_thread z_main_thread;
 
 #ifdef CONFIG_MULTITHREADING
 struct k_thread z_idle_threads[CONFIG_MP_NUM_CPUS];
-static K_THREAD_STACK_ARRAY_DEFINE(z_idle_stacks, CONFIG_MP_NUM_CPUS,
+static K_KERNEL_STACK_ARRAY_DEFINE(z_idle_stacks, CONFIG_MP_NUM_CPUS,
 				   CONFIG_IDLE_STACK_SIZE);
 #endif /* CONFIG_MULTITHREADING */
 
