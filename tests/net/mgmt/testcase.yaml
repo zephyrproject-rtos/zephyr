@@ -1,6 +1,13 @@
 common:
   depends_on: netif
+  min_ram: 16
+  tags: net mgmt
 tests:
-  net.management:
-    min_ram: 16
-    tags: net mgmt
+  net.management.kernel_mode:
+    extra_configs:
+      - CONFIG_NET_USER_MODE=n
+      - CONFIG_USERSPACE=n
+  net.management.user_mode:
+    extra_configs:
+      - CONFIG_NET_USER_MODE=y
+      - CONFIG_USERSPACE=y

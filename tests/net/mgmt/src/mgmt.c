@@ -30,22 +30,21 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 static u32_t event2throw;
 static u32_t throw_times;
 static u32_t throw_sleep;
-static bool with_info;
+NET_BMEM static bool with_info;
 static K_THREAD_STACK_DEFINE(thrower_stack, 512 + CONFIG_TEST_EXTRA_STACKSIZE);
 static struct k_thread thrower_thread_data;
 static struct k_sem thrower_lock;
 
 /* Receiver infra */
-static u32_t rx_event;
-static u32_t rx_calls;
-static size_t info_length_in_test;
-static struct net_mgmt_event_callback rx_cb;
-static char *info_string = TEST_INFO_STRING;
+NET_BMEM static u32_t rx_event;
+NET_BMEM static u32_t rx_calls;
+NET_BMEM static size_t info_length_in_test;
+NET_BMEM static struct net_mgmt_event_callback rx_cb;
+NET_DMEM static char *info_string = TEST_INFO_STRING;
+NET_BMEM static char info_data[TEST_MGMT_EVENT_INFO_SIZE];
 
 static struct in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
 				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-
-static char info_data[TEST_MGMT_EVENT_INFO_SIZE];
 
 static int test_mgmt_request(u32_t mgmt_request,
 			     struct net_if *iface, void *data, u32_t len)
@@ -124,7 +123,6 @@ static void thrower_thread(void)
 				net_mgmt_event_notify(event2throw,
 						      net_if_get_default());
 			}
-
 		}
 	}
 }
@@ -150,7 +148,7 @@ static void receiver_cb(struct net_mgmt_event_callback *cb,
 	rx_calls++;
 }
 
-static int sending_event(u32_t times, bool receiver, bool info)
+static int sending_event(u32_t times, bool receiver, bool info, int line)
 {
 	TC_PRINT("- Sending event %u times, %s a receiver, %s info\n",
 		 times, receiver ? "with" : "without",
@@ -172,8 +170,11 @@ static int sending_event(u32_t times, bool receiver, bool info)
 		TC_PRINT("\tReceived 0x%08X %u times\n",
 			 rx_event, rx_calls);
 
-		zassert_equal(rx_event, event2throw, "rx_event check failed");
-		zassert_equal(rx_calls, times, "rx_calls check failed");
+		zassert_equal(rx_event, event2throw,
+			      "rx_event check failed, line %d", line);
+		zassert_equal(rx_calls, times,
+			      "rx_calls check failed (%d vs %d), line %d",
+			      rx_calls, times, line);
 
 		net_mgmt_del_event_callback(&rx_cb);
 		rx_event = rx_calls = 0U;
@@ -182,14 +183,14 @@ static int sending_event(u32_t times, bool receiver, bool info)
 	return TC_PASS;
 }
 
-static int test_sending_event(u32_t times, bool receiver)
+static int test_sending_event(u32_t times, bool receiver, int line)
 {
-	return sending_event(times, receiver, false);
+	return sending_event(times, receiver, false, line);
 }
 
-static int test_sending_event_info(u32_t times, bool receiver)
+static int test_sending_event_info(u32_t times, bool receiver, int line)
 {
-	return sending_event(times, receiver, true);
+	return sending_event(times, receiver, true, line);
 }
 
 static int test_synchronous_event_listener(u32_t times, bool on_iface)
@@ -202,7 +203,7 @@ static int test_synchronous_event_listener(u32_t times, bool on_iface)
 
 	event2throw = TEST_MGMT_EVENT | (on_iface ? NET_MGMT_IFACE_BIT : 0);
 	throw_times = times;
-	throw_sleep = 200;
+	throw_sleep = 200; /* ms */
 
 	event_mask = event2throw;
 
@@ -220,6 +221,10 @@ static int test_synchronous_event_listener(u32_t times, bool on_iface)
 	if (ret < 0) {
 		if (ret == -ETIMEDOUT) {
 			TC_ERROR("Call timed out\n");
+		}
+
+		if (ret == -EACCES && IS_ENABLED(CONFIG_NET_USER_MODE)) {
+			return TC_PASS;
 		}
 
 		return TC_FAIL;
@@ -303,41 +308,43 @@ void test_mgmt(void)
 
 	initialize_event_tests();
 
-	zassert_false(test_sending_event(1, false),
-		      "test_sending_event failed");
+	zassert_false(test_sending_event(1, false, __LINE__),
+		      "test_sending_event failed (line %d)", __LINE__);
 
-	zassert_false(test_sending_event(2, false),
-		      "test_sending_event failed");
+	zassert_false(test_sending_event(2, false, __LINE__),
+		      "test_sending_event failed (line %d)", __LINE__);
 
-	zassert_false(test_sending_event(1, true),
-		      "test_sending_event failed");
+	zassert_false(test_sending_event(1, true, __LINE__),
+		      "test_sending_event failed (line %d)", __LINE__);
 
-	zassert_false(test_sending_event(2, true),
-		      "test_sending_event failed");
+	zassert_false(test_sending_event(2, true, __LINE__),
+		      "test_sending_event failed (line %d)", __LINE__);
 
-	zassert_false(test_sending_event_info(1, false),
-		      "test_sending_event failed");
+	zassert_false(test_sending_event_info(1, false, __LINE__),
+		      "test_sending_event failed (line %d)", __LINE__);
 
-	zassert_false(test_sending_event_info(2, false),
-		      "test_sending_event failed");
+	zassert_false(test_sending_event_info(2, false, __LINE__),
+		      "test_sending_event failed (line %d)", __LINE__);
 
-	zassert_false(test_sending_event_info(1, true),
-		      "test_sending_event failed");
+	zassert_false(test_sending_event_info(1, true, __LINE__),
+		      "test_sending_event failed (line %d)", __LINE__);
 
-	zassert_false(test_sending_event_info(2, true),
-		      "test_sending_event failed");
+	zassert_false(test_sending_event_info(2, true, __LINE__),
+		      "test_sending_event failed (line %d)", __LINE__);
 
 	zassert_false(test_core_event(NET_EVENT_IPV6_ADDR_ADD, _iface_ip6_add),
-		      "test_core_event failed");
+		      "test_core_event failed (line %d)", __LINE__);
 
 	zassert_false(test_core_event(NET_EVENT_IPV6_ADDR_DEL, _iface_ip6_del),
-		      "test_core_event failed");
+		      "test_core_event failed (line %d)", __LINE__);
 
 	zassert_false(test_synchronous_event_listener(2, false),
-		      "test_synchronous_event_listener failed");
+		      "test_synchronous_event_listener failed (line %d)",
+		      __LINE__);
 
 	zassert_false(test_synchronous_event_listener(2, true),
-		      "test_synchronous_event_listener failed");
+		      "test_synchronous_event_listener failed (line %d)",
+		      __LINE__);
 }
 
 void test_main(void)
