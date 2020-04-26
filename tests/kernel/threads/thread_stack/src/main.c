@@ -7,6 +7,7 @@
 #include <zephyr.h>
 #include <ztest.h>
 #include <syscall_handler.h>
+#include <kernel_internal.h>
 
 #include "test_syscall.h"
 
@@ -220,7 +221,15 @@ void scenario_entry(void *stack_obj, size_t obj_size)
  */
 void test_stack_buffer(void)
 {
-	printk("Reserved space: %zu\n", K_THREAD_STACK_RESERVED);
+	printk("Reserved space (thread stacks): %zu\n",
+	       K_THREAD_STACK_RESERVED);
+	printk("CONFIG_ISR_STACK_SIZE %zu\n", (size_t)CONFIG_ISR_STACK_SIZE);
+	for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
+		printk("irq stack %d: %p size %zu\n",
+		       i, &z_interrupt_stacks[i],
+		       sizeof(z_interrupt_stacks[i]));
+	}
+
 	printk("Provided stack size: %u\n", STEST_STACKSIZE);
 	scenario_entry(stest_stack, sizeof(stest_stack));
 
