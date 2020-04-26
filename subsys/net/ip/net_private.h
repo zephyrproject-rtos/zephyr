@@ -59,6 +59,8 @@ static inline void net_tc_rx_init(void) { }
 #if defined(CONFIG_NET_USER_MODE)
 void net_tc_access_grant_tx(struct k_thread *thread);
 void net_tc_access_grant_rx(struct k_thread *thread);
+void net_if_access_grant_tx(struct k_thread *thread);
+void net_if_access_grant_rx(struct k_thread *thread);
 #else
 static inline void net_tc_access_grant_tx(struct k_thread *thread)
 {
@@ -66,6 +68,16 @@ static inline void net_tc_access_grant_tx(struct k_thread *thread)
 }
 
 static inline void net_tc_access_grant_rx(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+
+static inline void net_if_access_grant_tx(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+
+static inline void net_if_access_grant_rx(struct k_thread *thread)
 {
 	ARG_UNUSED(thread);
 }

@@ -43,9 +43,9 @@ extern struct net_if_dev __net_if_dev_start[];
 extern struct net_if_dev __net_if_dev_end[];
 
 #if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
-static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
-static struct k_delayed_work router_timer;
-static sys_slist_t active_router_timers;
+NET_BMEM static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
+NET_BMEM static struct k_delayed_work router_timer;
+NET_BMEM static sys_slist_t active_router_timers;
 #endif
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
@@ -53,33 +53,33 @@ static sys_slist_t active_router_timers;
 static struct k_delayed_work address_lifetime_timer;
 
 /* Track currently active address lifetime timers */
-static sys_slist_t active_address_lifetime_timers;
+NET_BMEM static sys_slist_t active_address_lifetime_timers;
 
 /* Timer that triggers IPv6 prefix lifetime */
 static struct k_delayed_work prefix_lifetime_timer;
 
 /* Track currently active IPv6 prefix lifetime timers */
-static sys_slist_t active_prefix_lifetime_timers;
+NET_BMEM static sys_slist_t active_prefix_lifetime_timers;
 
 #if defined(CONFIG_NET_IPV6_DAD)
 /** Duplicate address detection (DAD) timer */
 static struct k_delayed_work dad_timer;
-static sys_slist_t active_dad_timers;
+NET_BMEM static sys_slist_t active_dad_timers;
 #endif
 
 #if defined(CONFIG_NET_IPV6_ND)
 static struct k_delayed_work rs_timer;
-static sys_slist_t active_rs_timers;
+NET_BMEM static sys_slist_t active_rs_timers;
 #endif
 
-static struct {
+NET_BMEM static struct {
 	struct net_if_ipv6 ipv6;
 	struct net_if *iface;
 } ipv6_addresses[CONFIG_NET_IF_MAX_IPV6_COUNT];
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_NATIVE_IPV4)
-static struct {
+NET_BMEM static struct {
 	struct net_if_ipv4 ipv4;
 	struct net_if *iface;
 } ipv4_addresses[CONFIG_NET_IF_MAX_IPV4_COUNT];
@@ -87,12 +87,12 @@ static struct {
 
 /* We keep track of the link callbacks in this list.
  */
-static sys_slist_t link_callbacks;
+NET_BMEM static sys_slist_t link_callbacks;
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 /* Multicast join/leave tracking.
  */
-static sys_slist_t mcast_monitor_callbacks;
+NET_BMEM static sys_slist_t mcast_monitor_callbacks;
 #endif
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
@@ -3789,3 +3789,66 @@ void net_if_post_init(void)
 		}
 	}
 }
+
+#if defined(CONFIG_NET_USER_MODE)
+static void net_if_access_grant(struct k_thread *thread)
+{
+	struct net_if_dev *ifdev;
+	struct net_if *iface;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		k_thread_access_grant(thread, iface);
+	}
+
+	for (ifdev = __net_if_dev_start; ifdev != __net_if_dev_end; ifdev++) {
+		k_thread_access_grant(thread, ifdev);
+	}
+
+	k_thread_access_grant(thread, __net_if_start, __net_if_end,
+			      __net_if_dev_start, __net_if_dev_end,
+			      &link_callbacks);
+
+#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
+	k_thread_access_grant(thread, routers, &router_timer,
+			      &active_router_timers);
+#endif
+
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	k_thread_access_grant(thread, &address_lifetime_timer,
+			      &active_address_lifetime_timers,
+			      &prefix_lifetime_timer,
+			      &active_prefix_lifetime_timers,
+			      ipv6_addresses, &mcast_monitor_callbacks);
+
+#if defined(CONFIG_NET_IPV6_DAD)
+	k_thread_access_grant(thread, &dad_timer, &active_dad_timers);
+#endif
+#if defined(CONFIG_NET_IPV6_ND)
+	k_thread_access_grant(thread, &rs_timer, &active_rs_timers);
+#endif
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_NATIVE_IPV4)
+	k_thread_access_grant(thread, ipv4_addresses);
+#endif /* CONFIG_NET_IPV4 */
+}
+
+void net_if_access_grant_tx(struct k_thread *thread)
+{
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		const char *name = k_thread_name_get(thread);
+
+		NET_DBG("Granting access to thread %p (%s)", thread,
+			name ? log_strdup(name) : "?");
+	} else {
+		NET_DBG("Granting access to thread %p", thread);
+	}
+
+	net_if_access_grant(thread);
+}
+
+void net_if_access_grant_rx(struct k_thread *thread)
+{
+	net_if_access_grant(thread);
+}
+#endif
