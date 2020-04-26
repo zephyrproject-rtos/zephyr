@@ -150,7 +150,7 @@ struct net_pkt_alloc {
 			    CONFIG_NET_BUF_TX_COUNT + \
 			    CONFIG_NET_DEBUG_NET_PKT_EXTERNALS)
 
-static struct net_pkt_alloc net_pkt_allocs[MAX_NET_PKT_ALLOCS];
+NET_BMEM static struct net_pkt_alloc net_pkt_allocs[MAX_NET_PKT_ALLOCS];
 
 static void net_pkt_alloc_add(void *alloc_data, bool is_pkt,
 			      const char *func, int line)
@@ -2006,6 +2006,44 @@ int net_pkt_set_data(struct net_pkt *pkt,
 
 	return net_pkt_write(pkt, access->data, access->size);
 }
+
+#if defined(CONFIG_NET_USER_MODE)
+void net_pkt_access_grant_rx(struct k_thread *thread)
+{
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		const char *name = k_thread_name_get(thread);
+
+		NET_DBG("Granting access to thread %p (%s)", thread,
+			name ? log_strdup(name) : "?");
+	} else {
+		NET_DBG("Granting access to thread %p", thread);
+	}
+
+	k_thread_access_grant(thread, &rx_pkts, &rx_bufs);
+
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
+	k_thread_access_grant(thread, net_pkt_allocs);
+#endif
+}
+
+void net_pkt_access_grant_tx(struct k_thread *thread)
+{
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		const char *name = k_thread_name_get(thread);
+
+		NET_DBG("Granting access to thread %p (%s)", thread,
+			name ? log_strdup(name) : "?");
+	} else {
+		NET_DBG("Granting access to thread %p", thread);
+	}
+
+	k_thread_access_grant(thread, &tx_pkts, &tx_bufs);
+
+#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
+	k_thread_access_grant(thread, net_pkt_allocs);
+#endif
+}
+#endif
 
 void net_pkt_init(void)
 {

@@ -1382,6 +1382,21 @@ struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
 					   _proto, _timeout,		\
 					   __func__, __LINE__)
 #endif /* NET_PKT_DEBUG_ENABLED */
+
+#if defined(CONFIG_NET_USER_MODE)
+void net_pkt_access_grant_tx(struct k_thread *thread);
+void net_pkt_access_grant_rx(struct k_thread *thread);
+#else
+static inline void net_pkt_access_grant_tx(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+
+static inline void net_pkt_access_grant_rx(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+#endif
 /** @endcond */
 
 /**
