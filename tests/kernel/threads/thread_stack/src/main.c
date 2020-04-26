@@ -60,7 +60,7 @@ static inline int z_vrfy_check_perms(void *addr, size_t size, int write)
 
 void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 {
-	size_t stack_size, unused;
+	size_t stack_size, unused, carveout;
 	uint8_t val;
 	char *stack_start, *stack_ptr, *stack_end, *obj_start, *obj_end;
 	volatile char *pos;
@@ -148,12 +148,12 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 			      stack_size);
 	}
 #endif
-
-	/* This API is being removed just whine about it for now */
-	if (Z_THREAD_STACK_BUFFER(stack_obj) != stack_start) {
-		printk("WARNING: Z_THREAD_STACK_BUFFER() reports %p\n",
-		       Z_THREAD_STACK_BUFFER(stack_obj));
-	}
+	carveout = stack_start - Z_THREAD_STACK_BUFFER(stack_obj);
+	printk("   - Carved-out space in buffer: %zu\n", carveout);
+	zassert_true(carveout < stack_size,
+		     "Suspicious carve-out space reported");
+	/* Generally 0 unless this is a stack array */
+	printk("   - Unused object space: %zu\n", obj_end - stack_end);
 
 	ret = k_thread_stack_space_get(k_current_get(), &unused);
 	if (!is_usermode && IS_ENABLED(CONFIG_NO_UNUSED_STACK_INSPECTION)) {
