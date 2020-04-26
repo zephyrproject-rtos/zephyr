@@ -136,10 +136,10 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 		 * alignment constraints, we test the end of the stack object
 		 * and not the buffer.
 		 */
-		zassert_true(check_perms(obj_start - 1, 1, 0),
+		zassert_true(check_perms(stack_start - 1, 1, 0),
 			     "user mode access to memory %p before start of stack object",
 			     obj_start - 1);
-		zassert_true(check_perms(obj_end, 1, 0),
+		zassert_true(check_perms(stack_end, 1, 0),
 			     "user mode access to memory %p past end of stack object",
 			     obj_end);
 		zassert_true(stack_size <= obj_size - K_THREAD_STACK_RESERVED,
