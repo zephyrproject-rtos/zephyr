@@ -130,3 +130,13 @@ API Reference
 
 .. doxygengroup:: semaphore_apis
    :project: Zephyr
+
+User Mode Semaphore API Reference
+*********************************
+
+The sys_sem exists in user memory working as counter semaphore for user mode
+thread when user mode enabled. When user mode isn't enabled, sys_sem behaves
+like k_sem.
+
+.. doxygengroup:: user_semaphore_apis
+   :project: Zephyr
