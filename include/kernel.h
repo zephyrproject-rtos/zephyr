@@ -4948,7 +4948,7 @@ struct k_poll_event {
 	.state = K_POLL_STATE_NOT_READY, \
 	.mode = event_mode, \
 	.unused = 0, \
-	{ .obj = event_obj }, \
+	.obj = event_obj, \
 	}
 
 #define K_POLL_EVENT_STATIC_INITIALIZER(event_type, event_mode, event_obj, \
@@ -4959,7 +4959,7 @@ struct k_poll_event {
 	.state = K_POLL_STATE_NOT_READY, \
 	.mode = event_mode, \
 	.unused = 0, \
-	{ .obj = event_obj }, \
+	.obj = event_obj, \
 	}
 
 /**
