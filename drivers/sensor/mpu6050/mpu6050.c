@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifdef CONFIG_MPU6050_MPU9250_MODE
+#define DT_DRV_COMPAT invensense_mpu9250
+#else
 #define DT_DRV_COMPAT invensense_mpu6050
+#endif
 
 #include <drivers/i2c.h>
 #include <init.h>
@@ -82,6 +86,16 @@ static int mpu6050_channel_get(struct device *dev,
 		mpu6050_convert_accel(val, drv_data->accel_z,
 				      drv_data->accel_sensitivity_shift);
 		break;
+#ifdef CONFIG_MPU6050_MPU9250_WITH_AK
+	case SENSOR_CHAN_MAGN_XYZ:
+		mpu6050_ak89xx_convert_magn( val, drv_data->magn_x,
+					    drv_data->magn_scale_x );
+		mpu6050_ak89xx_convert_magn( val + 1, drv_data->magn_y,
+					    drv_data->magn_scale_y );
+		mpu6050_ak89xx_convert_magn( val + 2, drv_data->magn_z,
+					    drv_data->magn_scale_z );
+		break;
+#endif
 	case SENSOR_CHAN_GYRO_XYZ:
 		mpu6050_convert_gyro(val, drv_data->gyro_x,
 				     drv_data->gyro_sensitivity_x10);
@@ -102,25 +116,35 @@ static int mpu6050_channel_get(struct device *dev,
 		mpu6050_convert_gyro(val, drv_data->gyro_z,
 				     drv_data->gyro_sensitivity_x10);
 		break;
-	default: /* chan == SENSOR_CHAN_DIE_TEMP */
+	case SENSOR_CHAN_DIE_TEMP:
 		mpu6050_convert_temp(val, drv_data->temp);
+		break;
+	default:
+		LOG_ERR("Invalid channel requested: %d", chan );
+		return -ENOTSUP;
+		break;
 	}
 
 	return 0;
 }
 
+#ifdef CONFIG_MPU6050_MPU9250_WITH_AK
+#define MPU6050_BURST_READ_N 11
+#else
+#define MPU6050_BURST_READ_N 7
+#endif
+
 static int mpu6050_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct mpu6050_data *drv_data = dev->driver_data;
 	const struct mpu6050_config *cfg = dev->config->config_info;
-	s16_t buf[7];
+	s16_t buf[MPU6050_BURST_READ_N];
 
 	if (i2c_burst_read(drv_data->i2c, cfg->i2c_addr,
-			   MPU6050_REG_DATA_START, (u8_t *)buf, 14) < 0) {
+			   MPU6050_REG_DATA_START, (u8_t *)buf, sizeof(buf) ) < 0) {
 		LOG_ERR("Failed to read data sample.");
 		return -EIO;
 	}
-
 	drv_data->accel_x = sys_be16_to_cpu(buf[0]);
 	drv_data->accel_y = sys_be16_to_cpu(buf[1]);
 	drv_data->accel_z = sys_be16_to_cpu(buf[2]);
@@ -128,7 +152,11 @@ static int mpu6050_sample_fetch(struct device *dev, enum sensor_channel chan)
 	drv_data->gyro_x = sys_be16_to_cpu(buf[4]);
 	drv_data->gyro_y = sys_be16_to_cpu(buf[5]);
 	drv_data->gyro_z = sys_be16_to_cpu(buf[6]);
-
+#ifdef CONFIG_MPU6050_MPU9250_WITH_AK
+	drv_data->magn_x = sys_le16_to_cpu(buf[7]);
+	drv_data->magn_y = sys_le16_to_cpu(buf[8]);
+	drv_data->magn_z = sys_le16_to_cpu(buf[9]);
+#endif /* MPU6050_MPU9250_WITH_AK */
 	return 0;
 }
 
@@ -160,18 +188,19 @@ int mpu6050_init(struct device *dev)
 		return -EIO;
 	}
 
-	if (id != MPU6050_CHIP_ID) {
-		LOG_ERR("Invalid chip ID.");
+	if (id != MPU6050_REG_VALUE_CHIP_ID) {
+		LOG_ERR("Invalid chip ID: 0x%X", id );
 		return -EINVAL;
 	}
 
-	/* wake up chip */
-	if (i2c_reg_update_byte(drv_data->i2c, cfg->i2c_addr,
-				MPU6050_REG_PWR_MGMT1, MPU6050_SLEEP_EN,
-				0) < 0) {
-		LOG_ERR("Failed to wake up chip.");
+	/* Reset the chip (clear all settings)  */
+	if (i2c_reg_write_byte(drv_data->i2c, cfg->i2c_addr,
+				MPU6050_REG_PWR_MGMT1, MPU6050_REG_VALUE_PWR_MGMT1_RESET ) < 0) {
+		LOG_ERR("Failed to reset chip.");
 		return -EIO;
 	}
+	/* Wait for a moment for the chip to reset */
+	k_sleep(K_MSEC(1));
 
 	/* set accelerometer full-scale range */
 	for (i = 0U; i < 4; i++) {
@@ -214,14 +243,24 @@ int mpu6050_init(struct device *dev)
 	}
 
 	drv_data->gyro_sensitivity_x10 = mpu6050_gyro_sensitivity_x10[i];
-
-#ifdef CONFIG_MPU6050_TRIGGER
-	if (mpu6050_init_interrupt(dev) < 0) {
-		LOG_DBG("Failed to initialize interrupts.");
+#ifdef CONFIG_MPU6050_MPU9250_WITH_AK
+	if ( mpu6050_ak89xx_init( dev ) < 0) {
 		return -EIO;
 	}
 #endif
-
+	/* Set clock to more accurate PLL if ready, otherwise internal clock */
+	if (i2c_reg_write_byte(drv_data->i2c, cfg->i2c_addr,
+			MPU6050_REG_PWR_MGMT1,
+			MPU6050_REG_VALUE_PWR_MGMT1_CLOCK_PLL) < 0) {
+		LOG_ERR("Failed to set clock chip.");
+		return -EIO;
+	}
+#ifdef CONFIG_MPU6050_TRIGGER
+	if (mpu6050_init_interrupt(dev) < 0) {
+		LOG_ERR("Failed to initialize interrupts.");
+		return -EIO;
+	}
+#endif
 	return 0;
 }
 
@@ -236,7 +275,22 @@ static const struct mpu6050_config mpu6050_cfg = {
 #endif /* CONFIG_MPU6050_TRIGGER */
 };
 
+#if DT_HAS_NODE(DT_INST(0, invensense_mpu6050))
+#if DT_HAS_NODE(DT_INST(0, invensense_mpu9250))
+#error "Driver does not support both using both mpu6050 and mpu9250 ."
+#endif /* DT_HAS_NODE invensense_mpu6050 */
+#endif /* DT_HAS_NODE invensense_mpu9250 */
+
+#if DT_HAS_NODE(DT_INST(0, invensense_mpu9250))
+DEVICE_AND_API_INIT(mpu9250, DT_INST_LABEL(0),
+		    mpu6050_init, &mpu6050_driver, &mpu6050_cfg,
+		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &mpu6050_driver_api);
+#endif /* DT_HAS_NODE invensense_mpu9250 */
+
+#if DT_HAS_NODE(DT_INST(0, invensense_mpu6050))
 DEVICE_AND_API_INIT(mpu6050, DT_INST_LABEL(0),
 		    mpu6050_init, &mpu6050_driver, &mpu6050_cfg,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &mpu6050_driver_api);
+#endif /* DT_HAS_NODE invensense_mpu6050 */

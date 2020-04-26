@@ -7,7 +7,7 @@ menuconfig MPU6050
 	bool "MPU6050 Six-Axis Motion Tracking Device"
 	depends on I2C
 	help
-	  Enable driver for MPU6050 I2C-based six-axis motion tracking device.
+	  Enable driver for MPU6050 or MPU9250 I2C-based motion tracking device.
 
 if MPU6050
 
@@ -34,6 +34,28 @@ endchoice
 
 config MPU6050_TRIGGER
 	bool
+
+choice
+	prompt "MPU9250 mode"
+	default MPU6050_MPU9250_DISABLED
+	help
+	  Usage of MPU9250 driver.
+
+config MPU6050_MPU9250_DISABLED
+	bool "Use MPU6050 driver"
+
+config MPU6050_MPU9250_WITH_AK
+	bool "Use MPU9250 with on-chip AK89XX magnetometer"
+	select MPU6050_MPU9250_MODE
+
+config MPU6050_MPU9250_NO_AK
+	bool "Use MPU9250 without magnetometer"
+	select MPU6050_MPU9250_MODE
+
+endchoice
+
+config MPU6050_MPU9250_MODE
+        bool
 
 config MPU6050_THREAD_PRIORITY
 	int "Thread priority"

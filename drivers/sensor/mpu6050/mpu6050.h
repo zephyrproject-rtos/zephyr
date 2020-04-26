@@ -13,7 +13,11 @@
 #include <zephyr/types.h>
 
 #define MPU6050_REG_CHIP_ID		0x75
-#define MPU6050_CHIP_ID			0x68
+#ifdef CONFIG_MPU6050_MPU9250_MODE
+#define MPU6050_REG_VALUE_CHIP_ID	0x71
+#else
+#define MPU6050_REG_VALUE_CHIP_ID	0x68
+#endif
 
 #define MPU6050_REG_GYRO_CFG		0x1B
 #define MPU6050_GYRO_FS_SHIFT		3
@@ -26,8 +30,33 @@
 
 #define MPU6050_REG_DATA_START		0x3B
 
-#define MPU6050_REG_PWR_MGMT1		0x6B
-#define MPU6050_SLEEP_EN		BIT(6)
+#define MPU6050_REG_PWR_MGMT1			0x6B
+#define MPU6050_REG_VALUE_PWR_MGMT1_RESET	0x80
+#define MPU6050_REG_VALUE_PWR_MGMT1_CLOCK_PLL	0x01
+
+#ifdef CONFIG_MPU6050_MPU9250_WITH_AK
+#define MPU9250_AK89XX_REG_CNTL1			0x0A
+#define MPU9250_AK89XX_REG_VALUE_CNTL1_POWERDOWN	0x00
+#define MPU9250_AK89XX_REG_VALUE_CNTL1_FUSE_ROM	0x0F
+#define MPU9250_AK89XX_REG_VALUE_CNTL1_16BIT_100HZ	0x16
+#define MPU9250_AK89XX_REG_DATA			0x03
+#define MPU9250_AK89XX_REG_ID				0x00
+#define MPU9250_AK89XX_REG_VALUE_ID			0x48
+#define MPU9250_AK89XX_REG_CNTL2			0x0B
+#define MPU9250_AK89XX_REG_VALUE_CNTL2_RESET		0x01
+#define MPU9250_AK89XX_REG_ADJ_DATA			0x10
+#define MPU9250_REG_I2C_MST_CTRL			0x24
+#define MPU9250_REG_VALUE_I2C_MST_CTRL_WAIT_MAG_400KHZ	0x4D
+#define MPU9250_REG_I2C_SLV0_ADDR			0x25
+#define MPU9250_REG_VALUE_I2C_SLV0_ADDR_AK89XX		0x0C
+#define MPU9250_REG_I2C_SLV0_REG			0x26
+#define MPU9250_REG_I2C_SLV0_CTRL			0x27
+#define MPU9250_REG_I2C_SLV0_DATA0			0x63
+#define MPU9250_REG_VALUE_I2C_SLV0_CTRL		0x80
+#define MPU9250_REG_USER_CTRL				0x6A
+#define MPU9250_REG_VALUE_USER_CTRL_I2C_MASTERMODE	0x20
+#define MPU9250_REG_EXT_DATA00				0x49
+#endif /* CONFIG_MPU6050_MPU9250_WITH_AK */
 
 /* measured in degrees/sec x10 to avoid floating point */
 static const u16_t mpu6050_gyro_sensitivity_x10[] = {
@@ -48,6 +77,14 @@ struct mpu6050_data {
 	s16_t gyro_y;
 	s16_t gyro_z;
 	u16_t gyro_sensitivity_x10;
+#ifdef CONFIG_MPU6050_MPU9250_WITH_AK
+	s16_t magn_x;
+	s16_t magn_y;
+	s16_t magn_z;
+	s16_t magn_scale_x;
+	s16_t magn_scale_y;
+	s16_t magn_scale_z;
+#endif /* CONFIG_MPU6050_MPU9250_WITH_AK */
 
 #ifdef CONFIG_MPU6050_TRIGGER
 	struct device *dev;
@@ -84,6 +121,12 @@ int mpu6050_trigger_set(struct device *dev,
 			sensor_trigger_handler_t handler);
 
 int mpu6050_init_interrupt(struct device *dev);
-#endif
+#endif /* CONFIG_MPU6050_TRIGGER */
+
+#ifdef CONFIG_MPU6050_MPU9250_WITH_AK
+int mpu6050_ak89xx_init(struct device *dev);
+void mpu6050_ak89xx_convert_magn(struct sensor_value *val, s16_t raw_val,
+				  s16_t scale);
+#endif /* CONFIG_MPU6050_MPU9250_WITH_AK */
 
 #endif /* __SENSOR_MPU6050__ */
