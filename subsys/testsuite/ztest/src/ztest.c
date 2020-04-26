@@ -11,6 +11,7 @@
 #include <sys/libc-hooks.h>
 #endif
 #include <power/reboot.h>
+#include <net/net_core.h>
 
 #ifdef KERNEL
 static struct k_thread ztest_thread;
@@ -313,13 +314,19 @@ static int run_test(struct unit_test *test)
 	int ret = TC_PASS;
 
 	TC_START(test->name);
+
 	k_thread_create(&ztest_thread, ztest_thread_stack,
 			K_THREAD_STACK_SIZEOF(ztest_thread_stack),
 			(k_thread_entry_t) test_cb, (struct unit_test *)test,
 			NULL, NULL, CONFIG_ZTEST_THREAD_PRIORITY,
 			test->thread_options | K_INHERIT_PERMS,
-				K_NO_WAIT);
+			K_FOREVER);
+	k_thread_name_set(&ztest_thread, "ztest");
 
+#if defined(Z_NET_PARTITION_EXISTS) && defined(CONFIG_NET_TEST)
+	net_access_grant_app(&ztest_thread);
+#endif
+	k_thread_start(&ztest_thread);
 	k_thread_join(&ztest_thread, K_FOREVER);
 
 	phase = TEST_PHASE_TEARDOWN;
@@ -410,6 +417,10 @@ void main(void)
 		/* Required for access to malloc arena */
 		&z_malloc_partition,
 #endif
+#if defined(Z_NET_PARTITION_EXISTS) && defined(CONFIG_NET_TEST)
+		/* Required for access to networking APIs */
+		&net_partition,
+#endif
 		&ztest_mem_partition
 	};
 
@@ -419,6 +430,10 @@ void main(void)
 	 */
 	k_mem_domain_init(&ztest_mem_domain, ARRAY_SIZE(parts), parts);
 	k_mem_domain_add_thread(&ztest_mem_domain, k_current_get());
+
+#if defined(Z_NET_PARTITION_EXISTS) && defined(CONFIG_NET_TEST)
+	net_mem_domain_add_thread(k_current_get());
+#endif
 #endif /* CONFIG_USERSPACE */
 
 	z_init_mock();
