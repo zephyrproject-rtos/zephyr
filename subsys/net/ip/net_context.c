@@ -50,7 +50,7 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 
 #define NET_MAX_CONTEXT CONFIG_NET_MAX_CONTEXTS
 
-static struct net_context contexts[NET_MAX_CONTEXT];
+NET_BMEM static struct net_context contexts[NET_MAX_CONTEXT];
 
 /* We need to lock the contexts array as these APIs are typically called
  * from applications which are usually run in task context.
@@ -2161,6 +2161,22 @@ void net_context_foreach(net_context_cb_t cb, void *user_data)
 
 	k_sem_give(&contexts_lock);
 }
+
+#if defined(CONFIG_NET_USER_MODE)
+void net_context_access_grant(struct k_thread *thread)
+{
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		const char *name = k_thread_name_get(thread);
+
+		NET_DBG("Granting access to thread %p (%s)", thread,
+			name ? log_strdup(name) : "?");
+	} else {
+		NET_DBG("Granting access to thread %p", thread);
+	}
+
+	k_thread_access_grant(thread, &contexts_lock);
+}
+#endif
 
 void net_context_init(void)
 {
