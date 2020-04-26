@@ -56,6 +56,21 @@ static inline void net_tc_tx_init(void) { }
 static inline void net_tc_rx_init(void) { }
 #endif
 
+#if defined(CONFIG_NET_USER_MODE)
+void net_tc_access_grant_tx(struct k_thread *thread);
+void net_tc_access_grant_rx(struct k_thread *thread);
+#else
+static inline void net_tc_access_grant_tx(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+
+static inline void net_tc_access_grant_rx(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+#endif
+
 #if defined(CONFIG_NET_NATIVE)
 enum net_verdict net_ipv4_input(struct net_pkt *pkt);
 enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback);

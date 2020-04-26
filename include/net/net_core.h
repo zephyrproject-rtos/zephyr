@@ -98,7 +98,61 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt);
  */
 int net_send_data(struct net_pkt *pkt);
 
+/**
+ * @brief Add a thread to network memory domain
+ *
+ * @details Mark a thread to be able to access networking memory. This
+ * is used in user mode only.
+ *
+ * @param thread Pointer to the thread
+ */
+void net_mem_domain_add_thread(struct k_thread *thread);
+
+/**
+ * @brief Remove a thread from network memory domain.
+ *
+ * @param thread ID of thread going to be removed from network memory domain.
+ */
+void net_mem_domain_remove_thread(struct k_thread *thread);
+
+/**
+ * @brief Grant application access to networking domain.
+ *
+ * @param thread ID of thread granting the access.
+ */
+void net_access_grant_app(struct k_thread *thread);
+
 /** @cond INTERNAL_HIDDEN */
+
+#if defined(CONFIG_NET_USER_MODE)
+#include <app_memory/app_memdomain.h>
+
+#define NET_THREAD_FLAGS K_USER
+
+extern struct k_mem_partition net_partition;
+
+#define Z_NET_PARTITION_EXISTS 1
+
+#define NET_BMEM K_APP_BMEM(net_partition)
+#define NET_DMEM K_APP_DMEM(net_partition)
+
+void net_access_grant_rx(struct k_thread *thread);
+void net_access_grant_tx(struct k_thread *thread);
+#else
+#define NET_THREAD_FLAGS 0
+#define NET_BMEM
+#define NET_DMEM
+
+static inline void net_access_grant_rx(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+
+static inline void net_access_grant_tx(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+#endif /* CONFIG_NET_USER_MODE */
 
 /* Some helper defines for traffic class support */
 #if defined(CONFIG_NET_TC_TX_COUNT) && defined(CONFIG_NET_TC_RX_COUNT)

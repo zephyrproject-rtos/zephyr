@@ -405,6 +405,77 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	return 0;
 }
 
+#if defined(CONFIG_NET_USER_MODE)
+
+static struct k_mem_domain net_domain;
+K_APPMEM_PARTITION_DEFINE(net_partition);
+
+static void net_mem_domain_init(void)
+{
+	struct k_mem_partition *parts[] = {
+#if Z_LIBC_PARTITION_EXISTS
+                &z_libc_partition,
+#endif
+                &net_partition,
+	};
+
+	k_mem_domain_init(&net_domain, ARRAY_SIZE(parts), parts);
+}
+
+void net_mem_domain_add_thread(struct k_thread *thread)
+{
+	if (!thread->mem_domain_info.mem_domain) {
+		k_mem_domain_add_thread(&net_domain, thread);
+	}
+}
+
+void net_mem_domain_remove_thread(struct k_thread *thread)
+{
+	k_mem_domain_remove_thread(thread);
+}
+
+void net_access_grant_rx(struct k_thread *thread)
+{
+	net_mem_domain_add_thread(thread);
+
+	net_tc_access_grant_rx(thread);
+}
+
+void net_access_grant_tx(struct k_thread *thread)
+{
+	net_mem_domain_add_thread(thread);
+
+	net_tc_access_grant_tx(thread);
+}
+
+void net_access_grant_app(struct k_thread *thread)
+{
+	net_mem_domain_add_thread(thread);
+
+	net_context_access_grant(thread);
+	net_tc_access_grant_tx(thread);
+}
+
+#else /* CONFIG_NET_USER_MODE */
+
+#define net_mem_domain_init()
+
+void net_mem_domain_add_thread(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+
+void net_mem_domain_remove_thread(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+
+void net_access_grant_app(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+}
+#endif /* CONFIG_NET_USER_MODE */
+
 static inline void l3_init(void)
 {
 	net_icmpv4_init();
@@ -448,6 +519,19 @@ static inline int services_init(void)
 
 static int net_init(struct device *unused)
 {
+	NET_DBG("%s networking in %s mode",
+		IS_ENABLED(CONFIG_NET_NATIVE) ? "Native" : "Offloading",
+		IS_ENABLED(CONFIG_NET_USER_MODE) ? "user" : "kernel");
+
+	net_mem_domain_init();
+
+	/* main thread needs to access net objects so that network interface
+	 * and related activities related to IPv6 and IPv4 can be done when
+	 * interface is taken up.
+	 */
+	net_access_grant_rx(k_current_get());
+	net_access_grant_tx(k_current_get());
+
 	net_hostname_init();
 
 	NET_DBG("Priority %d", CONFIG_NET_INIT_PRIO);

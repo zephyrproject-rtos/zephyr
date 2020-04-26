@@ -49,6 +49,12 @@ module-help = Enables offload layer to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_OFFLOAD
 
+config NET_USER_MODE
+	bool "User mode networking stack"
+	depends on NET_NATIVE && USERSPACE
+	help
+	  Run the networking stack in user mode instead of kernel mode.
+
 config NET_RAW_MODE
 	bool
 	help

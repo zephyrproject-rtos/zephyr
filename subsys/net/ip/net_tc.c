@@ -29,20 +29,105 @@ K_THREAD_STACK_ARRAY_DEFINE(rx_stack, NET_TC_RX_COUNT,
 static struct net_traffic_class tx_classes[NET_TC_TX_COUNT];
 static struct net_traffic_class rx_classes[NET_TC_RX_COUNT];
 
+#if defined(CONFIG_NET_USER_MODE)
+
+/* In order to place net_pkt work into work queue, we need to allocate
+ * a memory pool for the worker thread. This is only used in user mode.
+ */
+static K_MEM_POOL_DEFINE(net_tc_mem_pool, sizeof(uintptr_t), 128,
+			 NET_TC_TX_COUNT + NET_TC_RX_COUNT,
+			 sizeof(uintptr_t));
+
+static void net_tc_assign_mem_pool_tx(struct k_thread *thread)
+{
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		const char *name = k_thread_name_get(thread);
+
+		NET_DBG("Assigning TX pool to thread %p (%s)", thread,
+			name ? log_strdup(name) : "?");
+	} else {
+		NET_DBG("Assigning TX pool to thread %p", thread);
+	}
+
+	k_thread_resource_pool_assign(thread, &net_tc_mem_pool);
+}
+
+static void net_tc_assign_mem_pool_rx(struct k_thread *thread)
+{
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		const char *name = k_thread_name_get(thread);
+
+		NET_DBG("Assigning RX pool to thread %p (%s)", thread,
+			name ? log_strdup(name) : "?");
+	} else {
+		NET_DBG("Assigning RX pool to thread %p", thread);
+	}
+
+	k_thread_resource_pool_assign(thread, &net_tc_mem_pool);
+}
+
+void net_tc_access_grant_tx(struct k_thread *thread)
+{
+	net_tc_assign_mem_pool_tx(thread);
+	k_thread_access_grant(thread, tx_classes, &net_tc_mem_pool);
+}
+
+void net_tc_access_grant_rx(struct k_thread *thread)
+{
+	net_tc_assign_mem_pool_rx(thread);
+	k_thread_access_grant(thread, rx_classes, &net_tc_mem_pool);
+}
+
+#define start_workqueue(q, s, l, p)  k_work_q_user_start(q, s, l, p)
+#define submit_workqueue(s, p, q, w)					     \
+	({								     \
+		int ret = k_work_submit_to_user_queue(q, w);		     \
+		if (ret < 0) {						     \
+			NET_ERR("net_pkt %p cannot submit to %s workq "      \
+				"in thread %p (%d)", p, s,		     \
+				k_current_get(), ret);			     \
+		}							     \
+									     \
+		ret;							     \
+	})
+#else
+#define start_workqueue(q, s, l, p)  k_work_q_start(q, s, l, p)
+#define submit_workqueue(s, p, q, w)					     \
+	({								     \
+		int ret = k_work_submit_to_queue(q, w);			     \
+		if (ret < 0) {						     \
+			NET_ERR("net_pkt %p cannot submit to %s workq (%d)", \
+				p, s, ret);				     \
+		}							     \
+									     \
+		ret;							     \
+	})
+
+#define net_tc_assign_mem_pool_rx(thread)
+#define net_tc_assign_mem_pool_tx(thread)
+#endif
+
 bool net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt)
 {
+	int ret;
+
 	if (k_work_pending(net_pkt_work(pkt))) {
 		return false;
 	}
 
-	k_work_submit_to_queue(&tx_classes[tc].work_q, net_pkt_work(pkt));
+	ret = submit_workqueue("TX", pkt, &tx_classes[tc].work_q,
+			       net_pkt_work(pkt));
+	if (ret < 0) {
+		return false;
+	}
 
 	return true;
 }
 
 void net_tc_submit_to_rx_queue(u8_t tc, struct net_pkt *pkt)
 {
-	k_work_submit_to_queue(&rx_classes[tc].work_q, net_pkt_work(pkt));
+	submit_workqueue("RX", pkt, &rx_classes[tc].work_q,
+			 net_pkt_work(pkt));
 }
 
 int net_tx_priority2tc(enum net_priority prio)
@@ -232,17 +317,20 @@ void net_tc_tx_init(void)
 		thread_priority = tx_tc2thread(i);
 		tx_classes[i].tc = thread_priority;
 
-		NET_DBG("[%d] Starting TX queue %p stack size %zd "
+		NET_DBG("[%d] Starting TX queue %p thread %p stack size %zd "
 			"prio %d (%d)", i,
 			&tx_classes[i].work_q.queue,
+			&tx_classes[i].work_q.thread,
 			K_THREAD_STACK_SIZEOF(tx_stack[i]),
 			thread_priority, K_PRIO_COOP(thread_priority));
 
-		k_work_q_start(&tx_classes[i].work_q,
-			       tx_stack[i],
-			       K_THREAD_STACK_SIZEOF(tx_stack[i]),
-			       K_PRIO_COOP(thread_priority));
+		start_workqueue(&tx_classes[i].work_q,
+				tx_stack[i],
+				K_THREAD_STACK_SIZEOF(tx_stack[i]),
+				K_PRIO_COOP(thread_priority));
 		k_thread_name_set(&tx_classes[i].work_q.thread, "tx_workq");
+
+		net_access_grant_tx(&tx_classes[i].work_q.thread);
 	}
 }
 
@@ -262,16 +350,19 @@ void net_tc_rx_init(void)
 		thread_priority = rx_tc2thread(i);
 		rx_classes[i].tc = thread_priority;
 
-		NET_DBG("[%d] Starting RX queue %p stack size %zd "
+		NET_DBG("[%d] Starting RX queue %p thread %p stack size %zd "
 			"prio %d (%d)", i,
 			&rx_classes[i].work_q.queue,
+			&rx_classes[i].work_q.thread,
 			K_THREAD_STACK_SIZEOF(rx_stack[i]),
 			thread_priority, K_PRIO_COOP(thread_priority));
 
-		k_work_q_start(&rx_classes[i].work_q,
-			       rx_stack[i],
-			       K_THREAD_STACK_SIZEOF(rx_stack[i]),
-			       K_PRIO_COOP(thread_priority));
+		start_workqueue(&rx_classes[i].work_q,
+				rx_stack[i],
+				K_THREAD_STACK_SIZEOF(rx_stack[i]),
+				K_PRIO_COOP(thread_priority));
 		k_thread_name_set(&rx_classes[i].work_q.thread, "rx_workq");
+
+		net_access_grant_rx(&rx_classes[i].work_q.thread);
 	}
 }
