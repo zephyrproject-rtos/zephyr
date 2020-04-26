@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 /* Notifier infra */
 static u32_t event2throw;
 static u32_t throw_times;
-static k_timeout_t throw_sleep;
+static u32_t throw_sleep;
 static bool with_info;
 static K_THREAD_STACK_DEFINE(thrower_stack, 512 + CONFIG_TEST_EXTRA_STACKSIZE);
 static struct k_thread thrower_thread_data;
@@ -113,7 +113,7 @@ static void thrower_thread(void)
 			 event2throw, throw_times);
 
 		for (; throw_times; throw_times--) {
-			k_sleep(throw_sleep);
+			k_msleep(throw_sleep);
 
 			if (with_info) {
 				net_mgmt_event_notify_with_info(
@@ -202,7 +202,7 @@ static int test_synchronous_event_listener(u32_t times, bool on_iface)
 
 	event2throw = TEST_MGMT_EVENT | (on_iface ? NET_MGMT_IFACE_BIT : 0);
 	throw_times = times;
-	throw_sleep = K_MSEC(200);
+	throw_sleep = 200;
 
 	event_mask = event2throw;
 
@@ -232,7 +232,7 @@ static void initialize_event_tests(void)
 {
 	event2throw = 0U;
 	throw_times = 0U;
-	throw_sleep = K_NO_WAIT;
+	throw_sleep = 0;
 	with_info = false;
 
 	rx_event = 0U;
