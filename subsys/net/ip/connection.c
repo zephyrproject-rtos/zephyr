@@ -54,10 +54,10 @@ LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 
 #define NET_CONN_RANK(_flags)		(_flags & 0x78)
 
-static struct net_conn conns[CONFIG_NET_MAX_CONN];
+NET_BMEM static struct net_conn conns[CONFIG_NET_MAX_CONN];
 
-static sys_slist_t conn_unused;
-static sys_slist_t conn_used;
+NET_BMEM static sys_slist_t conn_unused;
+NET_BMEM static sys_slist_t conn_used;
 
 #if (CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG)
 static inline
