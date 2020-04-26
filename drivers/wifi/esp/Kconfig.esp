@@ -49,13 +49,13 @@ config WIFI_ESP_PASSIVE_TCP
 	  at a rate that the driver can handle. Without this, data might get
 	  lost if the driver cannot empty the device buffer quickly enough.
 
-choice
+choice WIFI_ESP_AT_VERSION
 	prompt "AT version"
 	default WIFI_ESP_AT_VERSION_2_0
 	help
 	  Select which version of AT command set should be used.
 
-config  WIFI_ESP_AT_VERSION_1_7
+config WIFI_ESP_AT_VERSION_1_7
 	bool "AT version 1.7"
 	help
 	  Use AT command set version 1.7.
