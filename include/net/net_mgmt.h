@@ -271,6 +271,9 @@ static inline int net_mgmt_event_wait(u32_t mgmt_event_mask,
 
 /**
  * @brief Used to wait synchronously on an event mask for a specific iface
+ * @details Note that the synchronous API cannot be used if networking
+ *          stack is running in user mode as the net_mgmt thread cannot
+ *          access the data in the synchronous API context.
  * @param iface a pointer on a valid network interface to listen event to
  * @param mgmt_event_mask A mask of relevant events to wait on. Listened
  *        to events should be relevant to iface events and thus have the bit
@@ -287,6 +290,8 @@ static inline int net_mgmt_event_wait(u32_t mgmt_event_mask,
  * @return 0 on success, a negative error code otherwise. -ETIMEDOUT will
  *         be specifically returned if the timeout kick-in instead of an
  *         actual event.
+ * @return -EACCES is returned if this is called when CONFIG_NET_USER_MODE is
+ *         enabled.
  */
 #ifdef CONFIG_NET_MGMT_EVENT
 int net_mgmt_event_wait_on_iface(struct net_if *iface,
