@@ -16,11 +16,12 @@ def read_bytes(buffer):
 class Loglist:
     """Loglist class"""
 
-    def __init__(self, argument, debug=False):
+    def __init__(self, argument, debug=False, offset=0):
         """Constructor for the loglist takes argument filename or buffer"""
 
         if isinstance(argument, str):
             f = open(argument, "rb")
+            f.seek(offset)
             self.buffer = f.read(SLOT_NUM * SLOT_LEN)
         elif isinstance(argument, int):
             self.buffer = string_at(argument, SLOT_NUM * SLOT_LEN)
