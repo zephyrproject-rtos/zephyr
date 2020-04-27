@@ -3,6 +3,16 @@
 Memory Pools
 ############
 
+.. note::
+
+    The ``k_mem_pool`` data structure defined here has been deprecated
+    in current Zephyr code.  It still exists for applications which
+    require the specific memory allocation and alignment patterns
+    detailed below, but the default heap implementation (including the
+    default backend to the k_mem_pool APIs) is now a :c:type:`struct
+    k_heap` allocator, which is a better choice for general purpose
+    code.
+
 A :dfn:`memory pool` is a kernel object that allows memory blocks
 to be dynamically allocated from a designated memory region.
 The memory blocks in a memory pool can be of any size,

@@ -1,71 +1,121 @@
 .. _heap_v2:
 
-Heap Memory Pool
-################
+Memory Heaps
+############
 
-The :dfn:`heap memory pool` is a predefined memory pool object that allows
-threads to dynamically allocate memory from a common memory region
-in a :cpp:func:`malloc()`-like manner.
+Zephyr provides a collection of utilities that allow threads to
+dynamically allocate memory.
 
-.. contents::
-    :local:
-    :depth: 2
+Synchronized Heap Allocator
+***************************
 
-Concepts
-********
+Creating a Heap
+===============
 
-Only a single heap memory pool can be defined. Unlike other memory pools,
-the heap memory pool cannot be directly referenced using its memory address.
+The simplest way to define a heap is statically, with the
+:c:macro:`K_HEAP_DEFINE` macro.  This creates a static :c:type:`struct
+k_heap` variable with a given name that manages a memory region of the
+specified size.
 
-The size of the heap memory pool is configurable. The following sizes
-are supported: 256 bytes, 1024 bytes, 4096 bytes, and 16384 bytes.
+Heaps can also be created to manage arbitrary regions of
+application-controlled memory using :cpp:func:`k_heap_init()`.
 
-A thread can dynamically allocate a chunk of heap memory by calling
-:cpp:func:`k_malloc()`. The address of the allocated chunk is guaranteed
-to be aligned on a multiple of 4 bytes. If a suitable chunk of heap memory
-cannot be found :c:macro:`NULL` is returned.
+Allocating Memory
+=================
 
-When the thread is finished with a chunk of heap memory it can release
-the chunk back to the heap memory pool by calling :cpp:func:`k_free()`.
+Memory can be allocated from a heap using :cpp:func:`k_heap_alloc()`,
+passing it the address of the heap object and the number of bytes
+desired.  This functions similarly to standard C ``malloc()``,
+returning a NULL pointer on an allocation failure.
 
-Internal Operation
-==================
+The heap supports blocking operation, allowing threads to go to sleep
+until memory is available.  The final argument is a
+:c:type:`k_timeout_t` timeout value indicating how long the thread may
+sleep before returning, or else one of the constant timeout values
+:c:macro:`K_NO_WAIT` or :c:macro:`K_FOREVER`.
 
-The heap memory pool defines a single maximum size block that contains
-the entire heap; that is, a single block of 256, 1024, 4096, or 16384 bytes.
-The heap memory pool also defines a minimum block size of 64 bytes.
-Consequently, the maximum number of blocks of each size that the heap
-memory pool can support is shown in the following table.
+Releasing Memory
+================
 
-+-------+---------+----------+-----------+-----------+------------+
-| heap  | 64 byte | 256 byte | 1024 byte | 4096 byte | 16384 byte |
-| size  | blocks  | blocks   | blocks    | blocks    | blocks     |
-+=======+=========+==========+===========+===========+============+
-| 256   | 4       | 1        | 0         | 0         | 0          |
-+-------+---------+----------+-----------+-----------+------------+
-| 1024  | 16      | 4        | 1         | 0         | 0          |
-+-------+---------+----------+-----------+-----------+------------+
-| 4096  | 64      | 16       | 4         | 1         | 0          |
-+-------+---------+----------+-----------+-----------+------------+
-| 16384 | 256     | 64       | 16        | 4         | 1          |
-+-------+---------+----------+-----------+-----------+------------+
+Memory allocated with :cpp:func:`k_heap_alloc()` must be released using
+:cpp:func:`k_heap_free()`.  Similar to stanard C ``free()``, the pointer
+provided must be either a ``NULL`` value or a pointer previously
+returned by :cpp:func:`k_heap_alloc()` for the same heap.  Freeing a
+``NULL`` value is defined to have no effect.
 
-.. note::
-    The number of blocks of a given size that can be allocated
-    simultaneously is typically smaller than the value shown in the table.
-    For example, each allocation of a 256 byte block from a 1024 byte
-    heap reduces the number of 64 byte blocks available for allocation
-    by 4. Fragmentation of the memory pool's buffer can also further
-    reduce the availability of blocks.
+Low Level Heap Allocator
+************************
 
-The kernel uses the first 16 bytes of any memory block allocated
-from the heap memory pool to save the block descriptor information
-it needs to later free the block. Consequently, an application's request
-for an N byte chunk of heap memory requires a block that is at least
-(N+16) bytes long.
+The underlying implementation of the :c:type:`struct k_heap`
+abstraction is provided a data structure named :c:type:`struct
+sys_heap`.  This implements exactly the same allocation semantics, but
+provides no kernel synchronization tools.  It is available for
+applications that want to manage their own blocks of memory in
+contexts (for example, userspace) where synchronization is unavailable
+or more complicated.  Unlike ``k_heap``, all calls to any ``sys_heap``
+functions on a single heap must be serialized by the caller.
+Simultaneous use from separate threads is disallowed.
 
 Implementation
-**************
+==============
+
+Internally, the ``sys_heap`` memory block is partitioned into "chunks"
+of 8 bytes.  All allocations are made out of a contiguous region of
+chunks.  The first chunk of every allocation or unused block is
+prefixed by a chunk header that stores the length of the chunk, the
+length of the next lower ("left") chunk in physical memory, a bit
+indicating whether the chunk is in use, and chunk-indexed link
+pointers to the previous and next chunk in a "free list" to which
+unused chunks are added.
+
+The heap code takes reasonable care to avoid fragmentation.  Free
+block lists are stored in "buckets" by their size, each bucket storing
+blocks within one power of two (i.e. a bucket for blocks of 3-4
+chunks, another for 5-8, 9-16, etc...) this allows new allocations to
+be made from the smallest/most-fragmented blocks available.  Also, as
+allocations are freed and added to the heap, they are automatically
+combined with adjacent free blocks to prevent fragmentation.
+
+All metadata is stored at the beginning of the contiguous block of
+heap memory, including the variable-length list of bucket list heads
+(which depend on heap size).  The only external memory required is the
+:c:type:`struct sys_heap` structure itself.
+
+The ``sys_heap`` functions are unsynchronized.  Care must be taken by
+any users to prevent concurrent access.  Only one context may be
+inside one of the API functions at a time.
+
+The heap code takes care to present high performance and reliable
+latency.  All ``sys_heap`` API functions are guaranteed to complete
+within constant time.  On typical architectures, they will all
+complete within 1-200 cycles.  One complexity is that the search of
+the minimum bucket size for an allocation (the set of free blocks that
+"might fit") has a compile-time upper bound of iterations to prevent
+unbounded list searches, at the expense of some fragmentation
+resistance.  This :c:option:`CONFIG_SYS_HEAP_ALLOC_LOOPS` value may be
+chosen by the user at build time, and defaults to a value of 3.
+
+System Heap
+***********
+
+The :dfn:`system heap` is a predefined memory allocator that allows
+threads to dynamically allocate memory from a common memory region in
+a :cpp:func:`malloc()`-like manner.
+
+Only a single system heap is be defined. Unlike other heaps or memory
+pools, the system heap cannot be directly referenced using its
+memory address.
+
+The size of the system heap is configurable to arbitrary sizes,
+subject to space availability.
+
+A thread can dynamically allocate a chunk of heap memory by calling
+:cpp:func:`k_malloc()`. The address of the allocated chunk is
+guaranteed to be aligned on a multiple of pointer sizes. If a suitable
+chunk of heap memory cannot be found :c:macro:`NULL` is returned.
+
+When the thread is finished with a chunk of heap memory it can release
+the chunk back to the system heap by calling :cpp:func:`k_free()`.
 
 Defining the Heap Memory Pool
 =============================
@@ -117,20 +167,20 @@ pool is actually used to satisfy the request.)
     k_free(mem_ptr);
 
 Suggested Uses
-**************
+==============
 
 Use the heap memory pool to dynamically allocate memory in a
 :cpp:func:`malloc()`-like manner.
 
 Configuration Options
-*********************
+=====================
 
 Related configuration options:
 
 * :option:`CONFIG_HEAP_MEM_POOL_SIZE`
 
 API Reference
-*************
+=============
 
 .. doxygengroup:: heap_apis
    :project: Zephyr

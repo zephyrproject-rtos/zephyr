@@ -90,9 +90,9 @@ These pages cover memory allocation and management services.
 .. toctree::
    :maxdepth: 1
 
+   memory/heap.rst
    memory/slabs.rst
    memory/pools.rst
-   memory/heap.rst
 
 Timing
 ******
