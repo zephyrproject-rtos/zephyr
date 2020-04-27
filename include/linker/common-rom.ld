@@ -9,7 +9,7 @@
 		 * instruction.  See include/sw_isr_table.h.
 		 */
 		. = ALIGN(CONFIG_ARCH_SW_ISR_TABLE_ALIGN);
-		*(SW_ISR_TABLE)
+		*(_SW_ISR_TABLE_SECTION_NAME)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
 #ifdef CONFIG_CPLUSPLUS
