@@ -91,7 +91,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		lll->sync = lll_sync;
 		lll_sync->adv = lll;
 
-		ull_hdr_init(&sync->ull);
+		/* NOTE: ull_hdr_init(&sync->ull); is done on start */
 		lll_hdr_init(lll_sync, sync);
 
 		util_aa_to_le32(lll_sync->access_addr);

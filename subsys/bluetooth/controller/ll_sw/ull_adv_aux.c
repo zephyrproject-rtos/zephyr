@@ -422,6 +422,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		uint32_t ret;
 
 		ull_hdr_init(&aux->ull);
+
 		aux->interval =	adv->interval +
 				(HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY) /
 				 625U);
