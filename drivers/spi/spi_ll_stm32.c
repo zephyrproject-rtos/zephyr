@@ -836,10 +836,10 @@ static int spi_stm32_init(struct device *dev)
 #define STM32_SPI_IRQ_HANDLER(id)					\
 static void spi_stm32_irq_config_func_##id(struct device *dev)		\
 {									\
-	IRQ_CONNECT(DT_INST_IRQN(id),			\
-		    DT_INST_IRQ(id, priority),		\
+	IRQ_CONNECT(DT_INST_IRQN(id),					\
+		    DT_INST_IRQ(id, priority),				\
 		    spi_stm32_isr, DEVICE_GET(spi_stm32_##id), 0);	\
-	irq_enable(DT_INST_IRQN(id));			\
+	irq_enable(DT_INST_IRQN(id));					\
 }
 #else
 #define STM32_SPI_IRQ_HANDLER_DECL(id)
@@ -853,7 +853,6 @@ static void spi_stm32_irq_config_func_##id(struct device *dev)		\
 		DT_INST_DMAS_CELL_BY_NAME(id, dir, features)
 
 #define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)	\
-.dma_##dir = {								\
 	.dma_name = DT_INST_DMAS_LABEL_BY_NAME(index, dir),		\
 	.channel =							\
 		DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),		\
@@ -861,11 +860,11 @@ static void spi_stm32_irq_config_func_##id(struct device *dev)		\
 		.dma_slot =						\
 		   DT_INST_DMAS_CELL_BY_NAME(index, dir, slot),		\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(	\
-					DMA_CHANNEL_CONFIG(index, dir)),\
-		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(\
-					DMA_CHANNEL_CONFIG(index, dir)),\
-		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(\
-				DMA_CHANNEL_CONFIG(index, dir)),\
+					DMA_CHANNEL_CONFIG(index, dir)),       \
+		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(    \
+					DMA_CHANNEL_CONFIG(index, dir)),       \
+		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(     \
+				DMA_CHANNEL_CONFIG(index, dir)),	\
 		.source_burst_length = 1, /* SINGLE transfer */		\
 		.dest_burst_length = 1, /* SINGLE transfer */		\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(		\
@@ -874,19 +873,30 @@ static void spi_stm32_irq_config_func_##id(struct device *dev)		\
 		.block_count = 2,					\
 	},								\
 	.src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(	\
-				DMA_CHANNEL_CONFIG(index, dir)),\
+				DMA_CHANNEL_CONFIG(index, dir)),	\
 	.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(	\
-				DMA_CHANNEL_CONFIG(index, dir)),\
+				DMA_CHANNEL_CONFIG(index, dir)),	\
 	.transfer_complete = false,					\
 	.fifo_threshold = STM32_DMA_FEATURES_FIFO_THRESHOLD(		\
-					DMA_FEATURES(index, dir))	\
-}
+					DMA_FEATURES(index, dir)),	\
+
+
+#if CONFIG_SPI_STM32_DMA
+#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)			\
+.dma_##dir = {								\
+	 COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, dir),			\
+		     (SPI_DMA_CHANNEL_INIT(id, dir, DIR, src, dest)),	\
+		     NULL)						\
+	     },
+#else
+#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)
+#endif
 
 #define STM32_SPI_INIT(id)						\
 STM32_SPI_IRQ_HANDLER_DECL(id);						\
 									\
 static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
-	.spi = (SPI_TypeDef *) DT_INST_REG_ADDR(id),\
+	.spi = (SPI_TypeDef *) DT_INST_REG_ADDR(id),			\
 	.pclken = {							\
 		.enr = DT_INST_CLOCKS_CELL(id, bits),			\
 		.bus = DT_INST_CLOCKS_CELL(id, bus)			\
@@ -897,13 +907,11 @@ static const struct spi_stm32_config spi_stm32_cfg_##id = {		\
 static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_##id, ctx),		\
 	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_##id, ctx),		\
-	UTIL_AND(DT_INST_DMAS_HAS_NAME(id, rx),				\
-		SPI_DMA_CHANNEL_INIT(id, rx, RX, PERIPHERAL, MEMORY)),	\
-	UTIL_AND(DT_INST_DMAS_HAS_NAME(id, tx),				\
-		SPI_DMA_CHANNEL_INIT(id, tx, TX, MEMORY, PERIPHERAL)),	\
+	SPI_DMA_CHANNEL(id, rx, RX, PERIPHERAL, MEMORY)			\
+	SPI_DMA_CHANNEL(id, tx, TX, MEMORY, PERIPHERAL)			\
 };									\
 									\
-DEVICE_AND_API_INIT(spi_stm32_##id, DT_INST_LABEL(id),	\
+DEVICE_AND_API_INIT(spi_stm32_##id, DT_INST_LABEL(id),			\
 		    &spi_stm32_init,					\
 		    &spi_stm32_dev_data_##id, &spi_stm32_cfg_##id,	\
 		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,		\
