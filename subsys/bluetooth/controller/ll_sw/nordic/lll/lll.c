@@ -67,6 +67,7 @@ static void preempt_ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 static void preempt(void *param);
 #else /* CONFIG_BT_CTLR_LOW_LAT */
 #if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+static void mfy_ticker_job_idle_get(void *param);
 static void ticker_op_job_disable(uint32_t status, void *op_context);
 #endif
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
@@ -245,15 +246,17 @@ int lll_prepare_done(void *param)
 {
 #if defined(CONFIG_BT_CTLR_LOW_LAT) && \
 	    (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mfy_ticker_job_idle_get};
 	uint32_t ret;
 
-	/* Ticker Job Silence */
-	ret = ticker_job_idle_get(TICKER_INSTANCE_ID_CTLR,
-				  TICKER_USER_ID_LLL,
-				  ticker_op_job_disable, NULL);
+	ret = mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_LOW,
+			     1, &mfy);
+	if (ret) {
+		return -EFAULT;
+	}
 
-	return ((ret == TICKER_STATUS_SUCCESS) ||
-		(ret == TICKER_STATUS_BUSY)) ? 0 : -EFAULT;
+	return 0;
 #else
 	return 0;
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
@@ -731,6 +734,18 @@ preempt_next:
 #else /* CONFIG_BT_CTLR_LOW_LAT */
 
 #if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+static void mfy_ticker_job_idle_get(void *param)
+{
+	uint32_t ret;
+
+	/* Ticker Job Silence */
+	ret = ticker_job_idle_get(TICKER_INSTANCE_ID_CTLR,
+				  TICKER_USER_ID_LLL,
+				  ticker_op_job_disable, NULL);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
+}
+
 static void ticker_op_job_disable(uint32_t status, void *op_context)
 {
 	ARG_UNUSED(status);
