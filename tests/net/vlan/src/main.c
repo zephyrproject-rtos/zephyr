@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #define DBG(fmt, ...)
 #endif
 
-#define PORT 9999
+#define TEST_PORT 9999
 
 #define VLAN_TAG_1 100
 #define VLAN_TAG_2 200
@@ -719,7 +719,7 @@ static void test_vlan_send_data(void)
 	int ret;
 	struct sockaddr_in6 dst_addr6 = {
 		.sin6_family = AF_INET6,
-		.sin6_port = htons(PORT),
+		.sin6_port = htons(TEST_PORT),
 	};
 	struct sockaddr_in6 src_addr6 = {
 		.sin6_family = AF_INET6,
