@@ -18,6 +18,19 @@ operation-specific data from requests that include a notification
 element, and for invoking callbacks with the parameters required by the
 API.
 
+A limitation is that this API is not suitable for :ref:`syscalls`
+because:
+
+* :c:type:`struct sys_notify` is not a kernel object;
+* copying the notification content from userspace will break use of
+  :c:macro:`CONTAINER_OF` in the implementing function;
+* neither the spin-wait nor callback notification methods can be
+  accepted from userspace callers.
+
+Where a notification is required for an asynchronous operation invoked
+from a user mode thread the subsystem or driver should provide a syscall
+API that uses :c:type:`struct k_poll_signal` for notification.
+
 API Reference
 *************
 
