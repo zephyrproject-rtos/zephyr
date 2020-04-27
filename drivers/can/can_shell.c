@@ -240,14 +240,21 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 		mode = CAN_NORMAL_MODE;
 	}
 
+	ret = can_set_mode(can_dev, mode);
+	if (ret) {
+		shell_error(shell, "Failed to set mode [%d]",
+			    ret);
+		return ret;
+	}
+
 	pos = read_bitrate(shell, pos, argv, &bitrate);
 	if (pos < 0) {
 		return -EINVAL;
 	}
 
-	ret = can_configure(can_dev, mode, bitrate);
+	ret = can_set_bitrate(can_dev, bitrate, 0);
 	if (ret) {
-		shell_error(shell, "Failed to configure CAN controller [%d]",
+		shell_error(shell, "Failed to set bitrate [%d]",
 			    ret);
 		return ret;
 	}
