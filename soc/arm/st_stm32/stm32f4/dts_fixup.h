@@ -36,6 +36,4 @@
 #define DT_CAN_2_CLOCK_BUS		DT_ST_STM32_CAN_40006800_CLOCK_BUS
 #define DT_CAN_2_CLOCK_BITS		DT_ST_STM32_CAN_40006800_CLOCK_BITS
 
-#define DT_FLASH_DEV_NAME		DT_LABEL(DT_INST(0, st_stm32f4_flash_controller))
-
 /* End of SoC Level DTS fixup file */

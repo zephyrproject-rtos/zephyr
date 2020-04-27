@@ -12,8 +12,6 @@
 
 #define DT_UART_1_NAME			DT_NORDIC_NRF_UARTE_UART_1_LABEL
 
-#define DT_FLASH_DEV_NAME		DT_LABEL(DT_INST(0, nordic_nrf52_flash_controller))
-
 #if defined(DT_NORDIC_NRF_SPIM_SPI_0_LABEL)
 #define DT_SPI_0_NAME			DT_NORDIC_NRF_SPIM_SPI_0_LABEL
 #else
