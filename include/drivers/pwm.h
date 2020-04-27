@@ -59,6 +59,11 @@ __subsystem struct pwm_driver_api {
 
 /**
  * @brief Set the period and pulse width for a single PWM output.
+ * 
+ * Passing 0 to the @param pulse will cause the pin to be driven to a constant
+ * inactive level.
+ * Passing a @param pulse equal @param period will cause the pin to be driven
+ * to a constant active level.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param pwm PWM pin.
