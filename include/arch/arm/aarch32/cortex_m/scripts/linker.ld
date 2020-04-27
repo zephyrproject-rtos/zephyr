@@ -247,7 +247,7 @@ SECTIONS
 #ifdef CONFIG_HAS_TI_CCFG
     SECTION_PROLOGUE(.ti_ccfg,,)
     {
-    KEEP(*(TI_CCFG))
+    KEEP(*(_TI_CCFG_SECTION_NAME))
     } > FLASH_CCFG
 #endif
 
