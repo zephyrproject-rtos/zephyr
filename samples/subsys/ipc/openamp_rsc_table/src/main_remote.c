@@ -22,9 +22,14 @@ LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 #define RPMSG_CHAN_NAME	"rpmsg-client-sample"
 #define SHM_DEVICE_NAME	"shm"
 
-/* constant derivated from linker symbols */
-#define SHM_START_ADDR	DT_IPC_SHM_BASE_ADDRESS
-#define SHM_SIZE	(DT_IPC_SHM_SIZE * 1024)
+#if !DT_HAS_CHOSEN(zephyr_ipc_shm)
+#error "Sample requires definition of shared memory for rpmsg"
+#endif
+
+/* Constants derived from device tree */
+#define SHM_NODE		DT_CHOSEN(zephyr_ipc_shm)
+#define SHM_START_ADDR	DT_REG_ADDR(SHM_NODE)
+#define SHM_SIZE		DT_REG_SIZE(SHM_NODE)
 
 #define APP_TASK_STACK_SIZE (512)
 K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
