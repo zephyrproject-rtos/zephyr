@@ -948,6 +948,111 @@ static void test_dma(void)
 		      "Idx 2 dma channel not available");
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_phandle_holder
+static void test_pwms(void)
+{
+	/* DT_PWMS_LABEL_BY_IDX */
+	zassert_true(!strcmp(DT_PWMS_LABEL_BY_IDX(TEST_PH, 0),
+			     "TEST_PWM_CTRL_1"),
+		     "label 0");
+
+	/* DT_PWMS_LABEL_BY_NAME */
+	zassert_true(!strcmp(DT_PWMS_LABEL_BY_NAME(TEST_PH, red),
+			     "TEST_PWM_CTRL_1"),
+		     "label red");
+
+	/* DT_PWMS_LABEL */
+	zassert_true(!strcmp(DT_PWMS_LABEL(TEST_PH), "TEST_PWM_CTRL_1"),
+		     "label 0");
+
+	/* DT_PWMS_CELL_BY_IDX */
+	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, channel, 1), 5,
+		      "pwm 2 channel");
+	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, flags, 1), 1,
+		      "pwm 2 flags");
+
+	/* DT_PWMS_CELL_BY_NAME */
+	zassert_equal(DT_PWMS_CELL_BY_NAME(TEST_PH, red, channel), 8,
+		      "pwm-red channel");
+	zassert_equal(DT_PWMS_CELL_BY_NAME(TEST_PH, red, flags), 3,
+		      "pwm-red flags");
+
+	/* DT_PWMS_CELL */
+	zassert_equal(DT_PWMS_CELL(TEST_PH, channel), 8, "pwm channel");
+	zassert_equal(DT_PWMS_CELL(TEST_PH, flags), 3, "pwm flags");
+
+	/* DT_PWMS_CHANNEL_BY_IDX */
+	zassert_equal(DT_PWMS_CHANNEL_BY_IDX(TEST_PH, 1), 5, "pwm channel");
+
+	/* DT_PWMS_CHANNEL_BY_NAME */
+	zassert_equal(DT_PWMS_CHANNEL_BY_NAME(TEST_PH, green), 5,
+		      "pwm channel");
+
+	/* DT_PWMS_CHANNEL */
+	zassert_equal(DT_PWMS_CHANNEL(TEST_PH), 8, "pwm channel");
+
+	/* DT_PWMS_FLAGS_BY_IDX */
+	zassert_equal(DT_PWMS_FLAGS_BY_IDX(TEST_PH, 1), 1, "pwm channel");
+
+	/* DT_PWMS_FLAGS_BY_NAME */
+	zassert_equal(DT_PWMS_FLAGS_BY_NAME(TEST_PH, green), 1,
+		      "pwm channel");
+
+	/* DT_PWMS_FLAGS */
+	zassert_equal(DT_PWMS_FLAGS(TEST_PH), 3, "pwm channel");
+
+	/* DT_INST */
+	zassert_equal(DT_NUM_INST(DT_DRV_COMPAT), 1, "one instance");
+
+	/* DT_INST_PWMS_LABEL_BY_IDX */
+	zassert_true(!strcmp(DT_INST_PWMS_LABEL_BY_IDX(0, 0),
+			     "TEST_PWM_CTRL_1"),
+		     "label 0");
+
+	/* DT_INST_PWMS_LABEL_BY_NAME */
+	zassert_true(!strcmp(DT_INST_PWMS_LABEL_BY_NAME(0, green),
+			     "TEST_PWM_CTRL_2"),
+		     "label green");
+
+	/* DT_INST_PWMS_LABEL */
+	zassert_true(!strcmp(DT_INST_PWMS_LABEL(0), "TEST_PWM_CTRL_1"),
+		     "label 0");
+
+	/* DT_INST_PWMS_CELL_BY_IDX */
+	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, channel, 1), 5,
+		      "pwm 2 channel");
+	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, flags, 1), 1, "pwm 2 flags");
+
+	/* DT_INST_PWMS_CELL_BY_NAME */
+	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, channel), 5,
+		      "pwm-green channel");
+	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, flags), 1,
+		      "pwm-green flags");
+
+	/* DT_INST_PWMS_CELL */
+	zassert_equal(DT_INST_PWMS_CELL(0, channel), 8, "pwm channel");
+	zassert_equal(DT_INST_PWMS_CELL(0, flags), 3, "pwm flags");
+
+	/* DT_INST_PWMS_CHANNEL_BY_IDX */
+	zassert_equal(DT_INST_PWMS_CHANNEL_BY_IDX(0, 1), 5, "pwm channel");
+
+	/* DT_INST_PWMS_CHANNEL_BY_NAME */
+	zassert_equal(DT_INST_PWMS_CHANNEL_BY_NAME(0, green), 5, "pwm channel");
+
+	/* DT_INST_PWMS_CHANNEL */
+	zassert_equal(DT_INST_PWMS_CHANNEL(0), 8, "pwm channel");
+
+	/* DT_INST_PWMS_FLAGS_BY_IDX */
+	zassert_equal(DT_INST_PWMS_FLAGS_BY_IDX(0, 1), 1, "pwm channel");
+
+	/* DT_INST_PWMS_FLAGS_BY_NAME */
+	zassert_equal(DT_INST_PWMS_FLAGS_BY_NAME(0, red), 3, "pwm channel");
+
+	/* DT_INST_PWMS_FLAGS */
+	zassert_equal(DT_INST_PWMS_FLAGS(0), 3, "pwm channel");
+}
+
 #define TO_STRING(x) TO_STRING_(x)
 #define TO_STRING_(x) #x
 
@@ -1275,6 +1380,7 @@ void test_main(void)
 			 ztest_unit_test(test_gpio),
 			 ztest_unit_test(test_io_channels),
 			 ztest_unit_test(test_dma),
+			 ztest_unit_test(test_pwms),
 			 ztest_unit_test(test_macro_names),
 			 ztest_unit_test(test_arrays),
 			 ztest_unit_test(test_devices),

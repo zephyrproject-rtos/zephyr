@@ -40,6 +40,8 @@
 			pha-gpios = <&test_gpio_1 50 60>, <&test_gpio_3 70>, <&test_gpio_2 80 90>;
 			foos = <&test_gpio_1 100>, <&test_gpio_2 110>;
 			foo-names = "A", "b-c";
+			pwms = <&test_pwm1 8 3>, <&test_pwm2 5 1>;
+			pwm-names = "red", "green";
 		};
 
 		test_enum_0: enum-0 {
@@ -276,6 +278,22 @@
 			reg = < 0x44442222 0x1000 >;
 			interrupts = <12 3>;
 			label = "TEST_DMA_CTRL_2";
+			status = "okay";
+		};
+
+		test_pwm1: pwm@55551111 {
+			compatible = "vnd,pwm";
+			#pwm-cells = <2>;
+			reg = < 0x55551111 0x1000 >;
+			label = "TEST_PWM_CTRL_1";
+			status = "okay";
+		};
+
+		test_pwm2: pwm@55552222 {
+			compatible = "vnd,pwm";
+			#pwm-cells = <2>;
+			reg = < 0x55552222 0x1000 >;
+			label = "TEST_PWM_CTRL_2";
 			status = "okay";
 		};
 	};

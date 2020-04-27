@@ -1535,6 +1535,7 @@
 #include <devicetree/gpio.h>
 #include <devicetree/spi.h>
 #include <devicetree/dma.h>
+#include <devicetree/pwms.h>
 #include <devicetree/zephyr.h>
 
 #endif /* DEVICETREE_H */
