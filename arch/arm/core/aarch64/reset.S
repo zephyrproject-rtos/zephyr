@@ -15,7 +15,7 @@
 #include <linker/sections.h>
 #include <arch/cpu.h>
 #include "vector_table.h"
-#include "macro.inc"
+#include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE
 
