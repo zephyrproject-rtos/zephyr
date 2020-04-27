@@ -205,25 +205,65 @@ A device-specific API definition typically looks like this:
 
    #include <drivers/subsystem.h>
 
-   int specific_do_this(struct device *device, int foo);
+   /* When extensions need not be invoked from user mode threads */
+   int specific_do_that(struct device *device, int foo);
+
+   /* When extensions must be invokable from user mode threads */
+   __syscall int specific_from_user(struct device *device, int bar);
+
+   /* Only needed when extensions include syscalls */
+   #include <syscalls/specific.h>
 
 A driver implementing extensions to the subsystem will define the real
 implementation of both the subsystem API and the specific APIs:
 
 .. code-block:: C
 
-   static int generic_do_whatever(struct device *device, void *arg)
+   static int generic_do_this(struct device *device, void *arg)
    {
       ...
    }
 
-   static int specific_do_this(struct device *device, int foo)
+   static struct generic_api api {
+      ...
+      .do_this = generic_do_this,
+      ...
+   };
+
+   /* supervisor-only API is globally visible */
+   int specific_do_that(struct device *device, int foo)
    {
       ...
    }
+
+   /* syscall API passes through a translation */
+   int z_impl_specific_from_user(struct device *device, int bar)
+   {
+      ...
+   }
+
+   #ifdef CONFIG_USERSPACE
+
+   #include <syscall_handler.h>
+
+   int z_vrfy_specific_from_user(struct device *device, int bar)
+   {
+       Z_OOPS(Z_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_GENERIC, &api));
+       return z_impl_specific_do_that(device, bar)
+   }
+
+   #include <syscalls/specific_from_user_mrsh.c>
+
+   #endif /* CONFIG_USERSPACE */
 
 Applications use the device through both the subsystem and specific
 APIs.
+
+.. note::
+   Public API for device-specific extensions should be prefixed with the
+   compatible for the device to which it applies.  For example, if
+   adding special functions to support the Maxim DS3231 the identifier
+   fragment ``specific`` in the examples above would be ``maxim_ds3231``.
 
 Single Driver, Multiple Instances
 *********************************
