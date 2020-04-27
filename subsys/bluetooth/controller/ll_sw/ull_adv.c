@@ -822,7 +822,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
-		/* TBD */
+		/* FIXME: Calculate the slot_us */
 		slot_us += 1500;
 	} else
 #endif
@@ -967,6 +967,63 @@ uint8_t ll_adv_enable(uint8_t enable)
 	{
 		const uint32_t ticks_slot = adv->evt.ticks_slot +
 					 ticks_slot_overhead;
+
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+		if (lll->aux) {
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+			if (lll->sync) {
+				struct lll_adv_sync *lll_sync = lll->sync;
+
+				sync = (void *)HDR_LLL2EVT(lll_sync);
+
+				if (sync->is_enabled && !sync->is_started) {
+					ret = ull_ticker_status_take(ret,
+								     &ret_cb);
+					if (ret != TICKER_STATUS_SUCCESS) {
+						goto failure_cleanup;
+					}
+
+					ull_hdr_init(&sync->ull);
+
+					ret = ull_adv_sync_start(sync,
+								 ticks_anchor,
+								 &ret_cb);
+					if (ret) {
+						goto failure_cleanup;
+					}
+
+					sync_is_started = 1U;
+				}
+			}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+
+			struct lll_adv_aux *lll_aux = lll->aux;
+
+			/* Initialise ULL header */
+			aux = (void *)HDR_LLL2EVT(lll_aux);
+			ull_hdr_init(&aux->ull);
+
+			/* Keep aux interval equal or higher than primary PDU
+			 * interval.
+			 */
+			aux->interval =
+				adv->interval +
+				(HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY) /
+				 625U);
+
+			/* schedule after primary channel PDUs */
+			uint32_t ticks_anchor_aux = ticks_anchor + ticks_slot +
+				HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
+
+			ret = ull_adv_aux_start(aux, ticks_anchor_aux, &ret_cb);
+			if (ret) {
+				goto failure_cleanup;
+			}
+
+			aux_is_started = 1U;
+		}
+#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
+
 #if defined(CONFIG_BT_TICKER_EXT)
 		ll_adv_ticker_ext[handle].ticks_slot_window =
 			ULL_ADV_RANDOM_DELAY + ticks_slot;
@@ -998,57 +1055,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 				   &ll_adv_ticker_ext[handle]
 #endif /* CONFIG_BT_TICKER_EXT */
 				   );
-
-#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
-		if (lll->aux) {
-			struct lll_adv_aux *lll_aux = lll->aux;
-
-			ret = ull_ticker_status_take(ret, &ret_cb);
-			if (ret != TICKER_STATUS_SUCCESS) {
-				goto failure_cleanup;
-			}
-
-			aux = (void *)HDR_LLL2EVT(lll_aux);
-			ull_hdr_init(&aux->ull);
-
-			/* Keep aux interval equal or higher than primary PDU
-			 * interval.
-			 */
-			aux->interval =
-				adv->interval +
-				(HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY) /
-				 625U);
-
-			/* schedule after primary channel PDUs */
-			ticks_anchor += ticks_slot;
-			ticks_anchor += HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
-
-			ret = ull_adv_aux_start(aux, ticks_anchor, &ret_cb);
-
-			aux_is_started = 1U;
-
-#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
-			if (lll->sync) {
-				struct lll_adv_sync *lll_sync = lll->sync;
-
-				sync = (void *)HDR_LLL2EVT(lll_sync);
-				if (sync->is_enabled && !sync->is_started) {
-					ret = ull_ticker_status_take(ret,
-								     &ret_cb);
-					if (ret != TICKER_STATUS_SUCCESS) {
-						goto failure_cleanup;
-					}
-
-					ret = ull_adv_sync_start(sync,
-								 ticks_anchor,
-								 &ret_cb);
-
-					sync_is_started = 1U;
-				}
-			}
-#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
-		}
-#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 	}
 
 	ret = ull_ticker_status_take(ret, &ret_cb);
@@ -1087,6 +1093,17 @@ uint8_t ll_adv_enable(uint8_t enable)
 	return 0;
 
 failure_cleanup:
+#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
+	if (aux_is_started) {
+		/* TODO: Stop extended advertising and release resources */
+	}
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	if (sync_is_started) {
+		/* TODO: Stop periodic advertising and release resources */
+	}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
+#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 #if defined(CONFIG_BT_PERIPHERAL)
 	if (adv->lll.conn) {
