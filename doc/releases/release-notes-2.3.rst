@@ -91,6 +91,13 @@ Stable API changes in this release
   * The net_idx parameter has been removed from the Health Client model
     APIs since it can be derived (by the stack) from the app_idx parameter
 
+* Networking
+
+  * The NET_DEVICE_INIT(), NET_DEVICE_INIT_INSTANCE(), NET_DEVICE_OFFLOAD_INIT()
+    and ETH_NET_DEVICE_INIT() macros changed and take a device power management
+    function pointer parameter. If networking PM is not implemented for the
+    specific network device, the device_pm_control_nop value can be used.
+
 Kernel
 ******
 
