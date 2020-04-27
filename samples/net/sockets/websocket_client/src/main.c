@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(net_websocket_client_sample, LOG_LEVEL_DBG);
 
 #include "ca_certificate.h"
 
-#define PORT 9001
+#define SERVER_PORT 9001
 
 #if defined(CONFIG_NET_CONFIG_PEER_IPV6_ADDR)
 #define SERVER_ADDR6  CONFIG_NET_CONFIG_PEER_IPV6_ADDR
@@ -345,13 +345,13 @@ void main(void)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		(void)connect_socket(AF_INET, SERVER_ADDR4, PORT,
+		(void)connect_socket(AF_INET, SERVER_ADDR4, SERVER_PORT,
 				     &sock4, (struct sockaddr *)&addr4,
 				     sizeof(addr4));
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		(void)connect_socket(AF_INET6, SERVER_ADDR6, PORT,
+		(void)connect_socket(AF_INET6, SERVER_ADDR6, SERVER_PORT,
 				     &sock6, (struct sockaddr *)&addr6,
 				     sizeof(addr6));
 	}
@@ -375,7 +375,8 @@ void main(void)
 
 		websock4 = websocket_connect(sock4, &req, timeout, "IPv4");
 		if (websock4 < 0) {
-			LOG_ERR("Cannot connect to %s:%d", SERVER_ADDR4, PORT);
+			LOG_ERR("Cannot connect to %s:%d", SERVER_ADDR4,
+				SERVER_PORT);
 			close(sock4);
 		}
 	}
@@ -395,7 +396,7 @@ void main(void)
 		websock6 = websocket_connect(sock6, &req, timeout, "IPv6");
 		if (websock6 < 0) {
 			LOG_ERR("Cannot connect to [%s]:%d", SERVER_ADDR6,
-				PORT);
+				SERVER_PORT);
 			close(sock6);
 		}
 	}
