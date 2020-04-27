@@ -23,6 +23,21 @@
 extern "C" {
 #endif
 
+static ALWAYS_INLINE void __DSB(void)
+{
+	__asm__ volatile ("dsb sy" : : : "memory");
+}
+
+static ALWAYS_INLINE void __DMB(void)
+{
+	__asm__ volatile ("dmb sy" : : : "memory");
+}
+
+static ALWAYS_INLINE void __ISB(void)
+{
+	__asm__ volatile ("isb" : : : "memory");
+}
+
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
