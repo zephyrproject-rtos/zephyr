@@ -21,6 +21,11 @@ config IEEE802154_RAW_MODE
 	  be built). Used only for very specific cases, such as wpan_serial
 	  and wpanusb samples.
 
+config IEEE802154_RDEV
+	bool
+	help
+	  PHY is a ranging-capable device (RDEV)
+
 source "drivers/ieee802154/Kconfig.cc2520"
 
 source "drivers/ieee802154/Kconfig.kw41z"
@@ -34,6 +39,8 @@ source "drivers/ieee802154/Kconfig.cc1200"
 source "drivers/ieee802154/Kconfig.cc13xx_cc26xx"
 
 source "drivers/ieee802154/Kconfig.rf2xx"
+
+source "drivers/ieee802154/Kconfig.dw1000"
 
 menuconfig IEEE802154_UPIPE
 	bool "UART PIPE fake radio driver support for QEMU"
