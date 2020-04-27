@@ -17,7 +17,7 @@
 #include <offsets_short.h>
 #include <arch/cpu.h>
 #include <syscall.h>
-#include "macro.inc"
+#include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE
 
