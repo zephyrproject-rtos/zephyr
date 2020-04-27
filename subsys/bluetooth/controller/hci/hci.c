@@ -3243,13 +3243,16 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 
 		if (h->aux_ptr) {
 			struct ext_adv_aux_ptr *aux;
+			u8_t aux_phy;
 
 			aux = (void *)ptr;
 			ptr += sizeof(*aux);
 
+			aux_phy = BIT(aux->phy);
+
 			BT_INFO("    AuxPtr chan_idx = %u, ca = %u, offs_units "
 				"= %u offs = 0x%x, phy = 0x%x", aux->chan_idx,
-				aux->ca, aux->offs_units, aux->offs, aux->phy);
+				aux->ca, aux->offs_units, aux->offs, aux_phy);
 		}
 
 		if (h->tx_pwr) {
@@ -3261,7 +3264,28 @@ static void le_adv_ext_report(struct pdu_data *pdu_data,
 			BT_INFO("    Tx pwr= %d dB", tx_pwr);
 		}
 
-		/* TODO: length check? */
+		u8_t len = ptr - (u8_t *)p;
+		u8_t hdr_len = len - offsetof(struct pdu_adv_com_ext_adv,
+					      ext_hdr_adi_adv_data);
+		if (hdr_len > p->ext_hdr_len) {
+			BT_WARN("    Header length %u/%u, INVALID.", hdr_len,
+				p->ext_hdr_len);
+		} else {
+			u8_t acad_len = p->ext_hdr_len - hdr_len;
+
+			if (acad_len) {
+				ptr += acad_len;
+				len += acad_len;
+
+				BT_INFO("ACAD: <todo>");
+			}
+
+			if (len < adv->len) {
+				u8_t ad_len = adv->len - len;
+
+				BT_INFO("    AD Data (%u): <todo>", ad_len);
+			}
+		}
 	} else {
 		le_ext_adv_legacy_report(pdu_data, node_rx, buf);
 	}
