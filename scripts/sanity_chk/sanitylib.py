@@ -435,6 +435,8 @@ class BinaryHandler(Handler):
             self.instance.reason = "Valgrind error"
         elif harness.state:
             self.set_state(harness.state, handler_time)
+            if harness.state == "failed":
+                self.instance.reason = "Failed"
         else:
             self.set_state("timeout", handler_time)
             self.instance.reason = "Timeout"
