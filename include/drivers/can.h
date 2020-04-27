@@ -99,7 +99,9 @@ enum can_mode {
 	/*Controller is in loopback mode (receive own messages)*/
 	CAN_LOOPBACK_MODE,
 	/*Combination of loopback and silent*/
-	CAN_SILENT_LOOPBACK_MODE
+	CAN_SILENT_LOOPBACK_MODE,
+	/*Value that can be passed to can_config without changing the mode*/
+	CAN_NO_MODE_CHANGE,
 };
 
 /**
@@ -272,6 +274,43 @@ struct can_bus_err_cnt {
 	u8_t rx_err_cnt;
 };
 
+
+/**
+ * @brief canbus timings
+ *
+ * Used to pass bus timing values to the config and bitrate calculator function.
+ *
+ * The propagation segment represents the time of the signal propagation.
+ * Phase segment 1 and phase segment 2 define the sampling point.
+ * prop_seg and phase_seg1 affect the sampling-point in the same way and some
+ * controllers only have a register for the sum of those two. The sync segment
+ * always has a length of 1 tq
+ * +---------+----------+------------+------------+
+ * |sync_seg | prop_seg | phase_seg1 | phase_seg2 |
+ * +---------+----------+------------+------------+
+ *                                   ^
+ *                             Sampling-Point
+ * 1 tq (time quantum) has the length of 1/(core_clock / prescaler)
+ * The bitrate is defined by the core clock divided by the prescaler and the
+ * sum of the segments.
+ * br = (core_clock / prescaler) / (1 + prop_seg + phase_seg1 + phase_seg2)
+ * The resynchronization jump width (SJW) defines the amount of time quantum
+ * the sample point can be moved.
+ * The sample point is moved when resynchronization is needed.
+ */
+struct can_timing {
+	/** Synchronisation jup width*/
+	u16_t sjw;
+	/** Propagation Segment */
+	u16_t prop_seg;
+	/** Phase Segment 1 */
+	u16_t phase_seg1;
+	/** Phase Segment 2 */
+	u16_t phase_seg2;
+	/** Prescaler value*/
+	u16_t prescaler;
+};
+
 /**
  * @typedef can_tx_callback_t
  * @brief Define the application callback handler function signature
@@ -302,7 +341,8 @@ typedef void(*can_state_change_isr_t)(enum can_state state,
 					  struct can_bus_err_cnt err_cnt);
 
 typedef int (*can_configure_t)(struct device *dev, enum can_mode mode,
-				u32_t bitrate);
+			       struct can_timing *timing,
+			       struct can_timing *timing_data);
 
 typedef int (*can_send_t)(struct device *dev, const struct zcan_frame *msg,
 			  k_timeout_t timeout, can_tx_callback_t callback_isr,
@@ -325,6 +365,8 @@ typedef enum can_state (*can_get_state_t)(struct device *dev,
 
 typedef void(*can_register_state_change_isr_t)(struct device *dev,
 					       can_state_change_isr_t isr);
+
+typedef u32_t (*can_get_core_clock_t)(struct device *dev);
 
 #ifndef CONFIG_CAN_WORKQ_FRAMES_BUF_CNT
 #define CONFIG_CAN_WORKQ_FRAMES_BUF_CNT 4
@@ -358,7 +400,17 @@ __subsystem struct can_driver_api {
 #endif
 	can_get_state_t get_state;
 	can_register_state_change_isr_t register_state_change_isr;
-
+	can_get_core_clock_t get_core_clock;
+	/* Min values for the timing registers */
+	struct can_timing timing_min;
+	/* Max values for the timing registers */
+	struct can_timing timing_max;
+#ifdef CONFIG_CAN_FD_MODE
+	/* Min values for the timing registers during the data phase */
+	struct can_timing timing_min_data;
+	/* Max values for the timing registers during the data phase */
+	struct can_timing timing_max_data;
+#endif
 };
 
 /**
@@ -541,26 +593,207 @@ static inline void z_impl_can_detach(struct device *dev, int filter_id)
 }
 
 /**
+ * @brief Read the core clock value
+ *
+ * Returns the core clock value. One time quantum is 1/core clock.
+ * *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval Core clock value
+ * @retval -EIO on error
+ */
+__syscall u32_t can_get_core_clock(struct device *dev);
+
+static inline u32_t z_impl_can_get_core_clock(struct device *dev)
+{
+	const struct can_driver_api *api =
+		(const struct can_driver_api *)dev->driver_api;
+
+	return api->get_core_clock(dev);
+}
+
+/**
+ * @brief Calculate timing parameters from bitrate and sample point
+ *
+ * Calculate the timing parameters from a given bitrate in bits/s and the
+ * sampling point in permill (1/1000) of the entire bit time.
+ * The bitrate must alway match perfectly. If no result can be given for the,
+ * give parameters, -EINVAL is returned.
+ * The sample_pnt does not always match perfectly. The algorithm tries to find
+ * the best match possible.
+ *
+ * @param dev        Pointer to the device structure for the driver instance.
+ * @param res        Result is written into the can_timing struct provided.
+ * @param bitrate    Target bitrate in bits/s
+ * @param sample_pnt Sampling point in permill of the entire bit time.
+ *
+ * @retval Positive sample point error on success
+ * @retval -EINVAL if there is no solution for the desired values
+ */
+int can_calc_timing(struct device *dev, struct can_timing *res,
+		    u32_t bitrate, u16_t sample_pnt);
+
+#ifdef CONFIG_CAN_FD_MODE
+/**
+ * @brief Calculate timing parameters for the data pase
+ *
+ * Same as can_calc_timing but with the max and min values from the data phase.
+ *
+ * @param dev        Pointer to the device structure for the driver instance.
+ * @param res        Result is written into the can_timing struct provided.
+ * @param bitrate    Target bitrate for the datapase in bits/s
+ * @param sample_pnt Sampling point datapase in permill of the entire bit time.
+ *
+ * @retval Positive sample point error on success
+ * @retval -EINVAL if there is no solution for the desired values
+ */
+int can_calc_timing_data(struct device *dev, struct can_timing *res,
+			 u32_t bitrate, u16_t sample_pnt);
+#endif
+
+/**
+ * @brief Fill in the prescaler value for a given bitrate and timing
+ *
+ * Fill the prescaler value in the timing struct.
+ * sjw, prop_seg, phase_seg1 and phase_seg2 must be given.
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param timing  Result is written into the can_timing struct provided.
+ * @param bitrate Target bitrate.
+ *
+ * @retval bitrate error
+ */
+int can_calc_prescaler(struct device *dev, struct can_timing *timing,
+		       u32_t bitrate);
+
+/**
  * @brief Configure operation of a host controller.
  *
+ * The timing structs can either be valid timings or NULL. If NULL is passed,
+ * the bus timing does not change. timing_data is only relevant for CAN-FD
+ * If the controller does not support CAN-FD or the FD mode is not enabled,
+ * this parameter is ignored.
+ *
  * @param dev Pointer to the device structure for the driver instance.
- * @param mode Operation mode
- * @param bitrate bus-speed in Baud/s
+ * @param mode   Operation mode
+ * @param timing Bus timings
+ * @param timing Bus timings for the dataphase (CAN-FD only)
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error, failed to configure device.
  */
 __syscall int can_configure(struct device *dev, enum can_mode mode,
-			    u32_t bitrate);
+			    struct can_timing *timing,
+			    struct can_timing *timing_data);
 
 static inline int z_impl_can_configure(struct device *dev, enum can_mode mode,
-				      u32_t bitrate)
+				       struct can_timing *timing,
+				       struct can_timing *timing_data)
 {
 	const struct can_driver_api *api =
 		(const struct can_driver_api *)dev->driver_api;
 
-	return api->configure(dev, mode, bitrate);
+	return api->configure(dev, mode, timing, timing_data);
 }
+
+/**
+ * @brief Set the controller to the given mode
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param mode   Operation mode
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error, failed to configure device.
+ */
+static inline int can_set_mode(struct device *dev, enum can_mode mode)
+{
+	return can_configure(dev, mode, NULL, NULL);
+}
+
+/**
+ * @brief Set the bitrate of the controller
+ *
+ * The sample point is set to the CiA DS 301 reccommended value of 87.5%
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param bitrate Desired bitrate
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL bitrate cannot be reached.
+ * @retval -EIO General input / output error, failed to configure device.
+ */
+static inline int can_set_bitrate(struct device *dev, u32_t bitrate)
+{
+	struct can_timing timing = {.sjw = 1};
+	int ret;
+
+	ret = can_calc_timing(dev, &timing, bitrate, 875);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	return can_configure(dev, CAN_NO_MODE_CHANGE, &timing, NULL);
+}
+
+#ifdef CONFIG_CAN_FD_MODE
+/**
+ * @brief Set the dataphase bitrate of the controller
+ *
+ * The sample point is set to the CiA DS 301 reccommended value of 87.5%
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param bitrate Desired dataphase bitrate
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL bitrate cannot be reached.
+ * @retval -EIO General input / output error, failed to configure device.
+ */
+static inline int can_set_bitrate_data(struct device *dev, u32_t bitrate)
+{
+	struct can_timing timing = {.sjw = 1};
+	int ret;
+
+	ret = can_calc_timing_data(dev, &timing, bitrate, 875);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	return can_configure(dev, CAN_NO_MODE_CHANGE, NULL, &timing);
+}
+
+/**
+ * @brief Set the bitrate of the CAN-FD controller
+ *
+ * The sample point is set to the CiA DS 301 reccommended value of 87.5%
+ *
+ * @param dev          Pointer to the device structure for the driver instance.
+ * @param bitrate      Desired arbitration phase bitrate
+ * @param bitrate_data Desired data phase bitrate
+ *
+ * @retval 0 If successful.
+ * @retval -EINVAL bitrate cannot be reached.
+ * @retval -EIO General input / output error, failed to configure device.
+ */
+static inline int can_set_bitrate_fd(struct device *dev, u32_t bitrate,
+				     u32_t bitrate_data)
+{
+	struct can_timing timing;
+	struct can_timing timing_data;
+	int ret;
+
+	ret = can_calc_timing_data(dev, &timing, bitrate, 875);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	ret = can_calc_timing_data(dev, &timing_data, bitrate, 875);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	return can_configure(dev, CAN_NO_MODE_CHANGE, &timing, &timing_data);
+}
+#endif /* CONFIG_CAN_FD_MODE */
 
 /**
  * @brief Get current state

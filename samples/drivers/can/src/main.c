@@ -204,7 +204,7 @@ void main(void)
 	}
 
 #ifdef CONFIG_LOOPBACK_MODE
-	can_configure(can_dev, CAN_LOOPBACK_MODE, 125000);
+	can_set_mode(can_dev, CAN_LOOPBACK_MODE);
 #endif
 
 #if DT_PHA_HAS_CELL(DT_ALIAS(led0), gpios, pin) && \

@@ -412,7 +412,7 @@ static void test_set_loopback(void)
 {
 	int ret;
 
-	ret = can_configure(can_dev, CAN_LOOPBACK_MODE, 0);
+	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
 	zassert_equal(ret, 0, "Can't set loopback-mode. Err: %d", ret);
 }
 

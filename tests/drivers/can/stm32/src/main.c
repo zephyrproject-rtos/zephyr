@@ -132,7 +132,7 @@ static void test_filter_handling(void)
 
 	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
 
-	ret = can_configure(can_dev, CAN_LOOPBACK_MODE, 0);
+	ret = can_set_mode(can_dev, CAN_LOOPBACK_MODE);
 
 	filter_id_1 = can_attach_msgq(can_dev, &can_msgq, &test_ext_masked_filter);
 	zassert_not_equal(filter_id_1, CAN_NO_FREE_FILTER,

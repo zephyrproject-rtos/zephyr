@@ -18,6 +18,16 @@ static inline int z_vrfy_can_configure(struct device *dev, enum can_mode mode,
 }
 #include <syscalls/can_configure_mrsh.c>
 
+
+static inline u32_t z_vrfy_can_get_core_clock(struct device *dev)
+{
+
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, get_core_clock));
+
+	return z_impl_can_get_core_clock((struct device *)dev);
+}
+#include <syscalls/can_configure_mrsh.c>
+
 static inline int z_vrfy_can_send(struct device *dev,
 				  const struct zcan_frame *msg,
 				  k_timeout_t timeout,

@@ -213,7 +213,13 @@ CO_ReturnError_t CO_CANmodule_init(CO_CANmodule_t *CANmodule,
 		txArray[i].bufferFull = false;
 	}
 
-	err = can_configure(CANmodule->dev, CAN_NORMAL_MODE, KHZ(CANbitRate));
+	err = can_set_bitrate(CANmodule->dev, KHZ(CANbitRate));
+	if (err) {
+		LOG_ERR("failed to configure CAN bitrate (err %d)", err);
+		return CO_ERROR_ILLEGAL_ARGUMENT;
+	}
+
+	err = can_set_mode(CANmodule->dev, CAN_NORMAL_MODE);
 	if (err) {
 		LOG_ERR("failed to configure CAN interface (err %d)", err);
 		return CO_ERROR_ILLEGAL_ARGUMENT;
