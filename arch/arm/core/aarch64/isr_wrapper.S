@@ -14,7 +14,7 @@
 #include <offsets_short.h>
 #include <arch/cpu.h>
 #include <sw_isr_table.h>
-#include "macro.inc"
+#include "macro_priv.inc"
 
 _ASM_FILE_PROLOGUE
 

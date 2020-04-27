@@ -25,6 +25,7 @@
 #include <arch/arm/aarch64/misc.h>
 #include <arch/arm/aarch64/asm_inline.h>
 #include <arch/arm/aarch64/cpu.h>
+#include <arch/arm/aarch64/macro.inc>
 #include <arch/arm/aarch64/sys_io.h>
 #include <arch/arm/aarch64/timer.h>
 #include <arch/common/addr_types.h>
