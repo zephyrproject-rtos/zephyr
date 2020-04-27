@@ -106,9 +106,6 @@
 
 #endif  /* !_ASMLANGUAGE */
 
-#define __ISB()			__asm__ volatile ("isb sy" : : : "memory")
-#define __DMB()			__asm__ volatile ("dmb sy" : : : "memory")
-
 #define MODE_EL_SHIFT		(0x2)
 #define MODE_EL_MASK		(0x3)
 
