@@ -290,69 +290,14 @@ static int can_leave_sleep_mode(CAN_TypeDef *can)
 	return 0;
 }
 
-int can_stm32_runtime_configure(const struct device *dev, enum can_mode mode,
-				uint32_t bitrate)
+int can_stm32_set_mode(const struct device *dev, enum can_mode mode)
 {
-	CAN_HandleTypeDef hcan;
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	CAN_TypeDef *can = cfg->can;
 	struct can_stm32_data *data = DEV_DATA(dev);
-	const struct device *clock;
-	uint32_t clock_rate;
-	uint32_t prescaler;
-	uint32_t reg_mode;
-	uint32_t ts1;
-	uint32_t ts2;
-	uint32_t sjw;
 	int ret;
 
-	clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
-	__ASSERT_NO_MSG(clock);
-	hcan.Instance = can;
-	ret = clock_control_get_rate(clock, (clock_control_subsys_t *) &cfg->pclken,
-				     &clock_rate);
-	if (ret != 0) {
-		LOG_ERR("Failed call clock_control_get_rate: return [%d]", ret);
-		return -EIO;
-	}
-
-	if (!bitrate) {
-		bitrate = cfg->bus_speed;
-	}
-
-	prescaler = clock_rate / (BIT_SEG_LENGTH(cfg) * bitrate);
-	if (prescaler == 0U || prescaler > 1024) {
-		LOG_ERR("HAL_CAN_Init failed: prescaler > max (%d > 1024)",
-					prescaler);
-		return -EINVAL;
-	}
-
-	if (clock_rate % (BIT_SEG_LENGTH(cfg) * bitrate)) {
-		LOG_ERR("Prescaler is not a natural number! "
-			    "prescaler = clock_rate / ((PROP_SEG1 + SEG2 + 1)"
-			    " * bus_speed); "
-			    "prescaler = %d / ((%d + %d + 1) * %d)",
-			    clock_rate,
-			    cfg->prop_ts1,
-			    cfg->ts2,
-			    bitrate);
-	}
-
-	__ASSERT(cfg->sjw >= 1,      "SJW minimum is 1");
-	__ASSERT(cfg->sjw <= 4,      "SJW maximum is 4");
-	__ASSERT(cfg->prop_ts1 >= 1, "PROP_TS1 minimum is 1");
-	__ASSERT(cfg->prop_ts1 <= 16, "PROP_TS1 maximum is 16");
-	__ASSERT(cfg->ts2 >= 1,      "TS2 minimum is 1");
-	__ASSERT(cfg->ts2 <= 8,      "TS2 maximum is 8");
-
-	ts1 = ((cfg->prop_ts1 - 1) & 0x0F) << CAN_BTR_TS1_Pos;
-	ts2 = ((cfg->ts2      - 1) & 0x07) << CAN_BTR_TS2_Pos;
-	sjw = ((cfg->sjw      - 1) & 0x07) << CAN_BTR_SJW_Pos;
-
-	reg_mode =  (mode == CAN_NORMAL_MODE)   ? 0U   :
-		    (mode == CAN_LOOPBACK_MODE) ? CAN_BTR_LBKM :
-		    (mode == CAN_SILENT_MODE)   ? CAN_BTR_SILM :
-						CAN_BTR_LBKM | CAN_BTR_SILM;
+	LOG_DBG("Set mode %d", mode);
 
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 	ret = can_enter_init_mode(can);
@@ -361,19 +306,89 @@ int can_stm32_runtime_configure(const struct device *dev, enum can_mode mode,
 		goto done;
 	}
 
-	can->BTR = reg_mode | sjw | ts1 | ts2 | (prescaler - 1U);
+	switch (mode) {
+	case CAN_NORMAL_MODE:
+		can->BTR &= ~(CAN_BTR_LBKM | CAN_BTR_SILM);
+		break;
+	case CAN_LOOPBACK_MODE:
+		can->BTR &= ~(CAN_BTR_SILM);
+		can->BTR |= CAN_BTR_LBKM;
+		break;
+	case CAN_SILENT_MODE:
+		can->BTR &= ~(CAN_BTR_LBKM);
+		can->BTR |= CAN_BTR_SILM;
+		break;
+	case CAN_SILENT_LOOPBACK_MODE:
+		can->BTR |= CAN_BTR_LBKM | CAN_BTR_SILM;
+		break;
+	default:
+		break;
+	}
+
+done:
+	ret = can_leave_init_mode(can);
+	if (ret) {
+		LOG_ERR("Failed to leave init mode");
+	}
+	k_mutex_unlock(&data->inst_mutex);
+	return ret;
+}
+
+int can_stm32_set_timing(const struct device *dev,
+			 const struct can_timing *timing,
+			 const struct can_timing *timing_data)
+{
+	const struct can_stm32_config *cfg = DEV_CFG(dev);
+	CAN_TypeDef *can = cfg->can;
+	struct can_stm32_data *data = DEV_DATA(dev);
+	int ret = -EIO;
+
+	ARG_UNUSED(timing_data);
+
+	k_mutex_lock(&data->inst_mutex, K_FOREVER);
+	ret = can_enter_init_mode(can);
+	if (ret) {
+		LOG_ERR("Failed to enter init mode");
+		goto done;
+	}
+
+	can->BTR &= ~(CAN_BTR_BRP_Msk | CAN_BTR_TS1_Msk |
+		      CAN_BTR_TS2_Msk | CAN_BTR_SJW_Msk);
+
+	can->BTR |= (((timing->phase_seg1 - 1) & 0x0F) << CAN_BTR_TS1_Pos) |
+		    (((timing->phase_seg2 - 1) & 0x07) << CAN_BTR_TS2_Pos) |
+		    (((timing->sjw        - 1) & 0x07) << CAN_BTR_SJW_Pos);
 
 	ret = can_leave_init_mode(can);
 	if (ret) {
 		LOG_ERR("Failed to leave init mode");
-		goto done;
+	} else {
+		ret = 0;
 	}
 
-	LOG_DBG("Runtime configure of %s done", dev->name);
-	ret = 0;
 done:
 	k_mutex_unlock(&data->inst_mutex);
 	return ret;
+}
+
+int can_stm32_get_core_clock(const struct device *dev, uint32_t *rate)
+{
+	const struct can_stm32_config *cfg = DEV_CFG(dev);
+	const struct device *clock;
+	int ret;
+
+	clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	__ASSERT_NO_MSG(clock);
+
+	ret = clock_control_get_rate(clock,
+				     (clock_control_subsys_t *) &cfg->pclken,
+				     rate);
+	if (ret != 0) {
+		LOG_ERR("Failed call clock_control_get_rate: return [%d]", ret);
+		return -EIO;
+	}
+
+	return 0;
 }
 
 static int can_stm32_init(const struct device *dev)
@@ -381,6 +396,7 @@ static int can_stm32_init(const struct device *dev)
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
 	CAN_TypeDef *can = cfg->can;
+	struct can_timing timing;
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay)
 	CAN_TypeDef *master_can = cfg->master_can;
 #endif
@@ -445,8 +461,36 @@ static int can_stm32_init(const struct device *dev)
 #ifdef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	can->MCR |= CAN_MCR_ABOM;
 #endif
+	timing.sjw = cfg->sjw;
+	if (cfg->sample_point) {
+		ret = can_calc_timing(dev, &timing, cfg->bus_speed,
+				      cfg->sample_point);
+		if (ret == -EINVAL) {
+			LOG_ERR("Can't find timing for given param");
+			return -EIO;
+		}
+		LOG_DBG("Presc: %d, TS1: %d, TS2: %d",
+			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
+		LOG_DBG("Sample-point err : %d", ret);
+	} else if (cfg->prop_ts1) {
+		timing.prop_seg = 0;
+		timing.phase_seg1 = cfg->prop_ts1;
+		timing.phase_seg2 = cfg->ts2;
+		ret = can_calc_prescaler(dev, &timing, cfg->bus_speed);
+		if (ret) {
+			LOG_WRN("Bitrate error: %d", ret);
+		}
+	} else {
+		LOG_ERR("Timing not configured");
+		return -EINVAL;
+	}
 
-	ret = can_stm32_runtime_configure(dev, CAN_NORMAL_MODE, 0);
+	ret = can_stm32_set_timing(dev, &timing, NULL);
+	if (ret) {
+		return ret;
+	}
+
+	ret = can_stm32_set_mode(dev, CAN_NORMAL_MODE);
 	if (ret) {
 		return ret;
 	}
@@ -1037,7 +1081,8 @@ void can_stm32_detach(const struct device *dev, int filter_nr)
 }
 
 static const struct can_driver_api can_api_funcs = {
-	.configure = can_stm32_runtime_configure,
+	.set_mode = can_stm32_set_mode,
+	.set_timing = can_stm32_set_timing,
 	.send = can_stm32_send,
 	.attach_isr = can_stm32_attach_isr,
 	.detach = can_stm32_detach,
@@ -1045,7 +1090,22 @@ static const struct can_driver_api can_api_funcs = {
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	.recover = can_stm32_recover,
 #endif
-	.register_state_change_isr = can_stm32_register_state_change_isr
+	.register_state_change_isr = can_stm32_register_state_change_isr,
+	.get_core_clock = can_stm32_get_core_clock,
+	.timing_min = {
+		.sjw = 0x1,
+		.prop_seg = 0x00,
+		.phase_seg1 = 0x01,
+		.phase_seg2 = 0x01,
+		.prescaler = 0x01
+	},
+	.timing_max = {
+		.sjw = 0x07,
+		.prop_seg = 0x00,
+		.phase_seg1 = 0x0F,
+		.phase_seg2 = 0x07,
+		.prescaler = 0x400
+	}
 };
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can1), st_stm32_can, okay)
@@ -1059,10 +1119,16 @@ static const struct can_stm32_config can_stm32_cfg_1 = {
 	.can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can1)),
 	.master_can = (CAN_TypeDef *)DT_REG_ADDR(DT_NODELABEL(can1)),
 	.bus_speed = DT_PROP(DT_NODELABEL(can1), bus_speed),
+#if DT_PROP(DT_NODELABEL(can1), sample_point) > 0
+	.sample_point = DT_PROP(DT_NODELABEL(can1), sample_point),
+#endif
 	.sjw = DT_PROP(DT_NODELABEL(can1), sjw),
+#if DT_PROP(DT_NODELABEL(can1), phase_seg1) > 0 && \
+    DT_PROP(DT_NODELABEL(can1), phase_seg2) > 0
 	.prop_ts1 = DT_PROP(DT_NODELABEL(can1), prop_seg) +
-					DT_PROP(DT_NODELABEL(can1), phase_seg1),
+		    DT_PROP(DT_NODELABEL(can1), phase_seg1),
 	.ts2 = DT_PROP(DT_NODELABEL(can1), phase_seg2),
+#endif
 	.pclken = {
 		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can1), bits),
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can1), bus),
@@ -1154,10 +1220,16 @@ static const struct can_stm32_config can_stm32_cfg_2 = {
 	.master_can = (CAN_TypeDef *)DT_PROP(DT_NODELABEL(can2),
 								master_can_reg),
 	.bus_speed = DT_PROP(DT_NODELABEL(can2), bus_speed),
+#if DT_PROP(DT_NODELABEL(can2), sample_point) > 0
+	.sample_point = DT_PROP(DT_NODELABEL(can2), sample_point),
+#endif
 	.sjw = DT_PROP(DT_NODELABEL(can2), sjw),
+#if DT_PROP(DT_NODELABEL(can2), phase_seg1) > 0 && \
+    DT_PROP(DT_NODELABEL(can2), phase_seg2) > 0
 	.prop_ts1 = DT_PROP(DT_NODELABEL(can2), prop_seg) +
-					DT_PROP(DT_NODELABEL(can2), phase_seg1),
+		    DT_PROP(DT_NODELABEL(can2), phase_seg1),
 	.ts2 = DT_PROP(DT_NODELABEL(can2), phase_seg2),
+#endif
 	.pclken = {
 		.enr = DT_CLOCKS_CELL(DT_NODELABEL(can2), bits),
 		.bus = DT_CLOCKS_CELL(DT_NODELABEL(can2), bus),

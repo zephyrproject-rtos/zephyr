@@ -254,7 +254,7 @@ static void mcp2515_convert_mcp2515frame_to_zcanframe(const uint8_t *source,
 	}
 }
 
-const int mcp2515_set_mode(const struct device *dev, uint8_t mcp2515_mode)
+const int mcp2515_set_mode_int(const struct device *dev, uint8_t mcp2515_mode)
 {
 	uint8_t canstat;
 
@@ -290,34 +290,41 @@ static int mcp2515_get_mode(const struct device *dev, uint8_t *mode)
 	return 0;
 }
 
-static int mcp2515_configure(const struct device *dev, enum can_mode mode,
-			     uint32_t bitrate)
+static int mcp2515_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const struct mcp2515_config *dev_cfg = DEV_CFG(dev);
+
+	*rate = dev_cfg->osc_freq / 2;
+	return 0;
+}
+
+
+static int mcp2515_set_timing(const struct device *dev,
+			      const struct can_timing *timing,
+			      const struct can_timing *timing_data)
+{
+	ARG_UNUSED(timing_data);
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	int ret;
+
+	if (!timing) {
+		return -EINVAL;
+	}
 
 	/* CNF3, CNF2, CNF1, CANINTE */
 	uint8_t config_buf[4];
 	uint8_t reset_mode;
 
-	if (bitrate == 0) {
-		bitrate = dev_cfg->bus_speed;
-	}
-
-	const uint8_t bit_length = 1 + dev_cfg->tq_prop + dev_cfg->tq_bs1 +
-				dev_cfg->tq_bs2;
-
 	/* CNF1; SJW<7:6> | BRP<5:0> */
-	uint8_t brp = (dev_cfg->osc_freq / (bit_length * bitrate * 2)) - 1;
-	const uint8_t sjw = (dev_cfg->tq_sjw - 1) << 6;
+	uint8_t brp = timing->prescaler;
+	const uint8_t sjw = (timing->sjw - 1) << 6;
 	uint8_t cnf1 = sjw | brp;
 
 	/* CNF2; BTLMODE<7>|SAM<6>|PHSEG1<5:3>|PRSEG<2:0> */
 	const uint8_t btlmode = 1 << 7;
 	const uint8_t sam = 0 << 6;
-	const uint8_t phseg1 = (dev_cfg->tq_bs1 - 1) << 3;
-	const uint8_t prseg = (dev_cfg->tq_prop - 1);
+	const uint8_t phseg1 = (timing->phase_seg1 - 1) << 3;
+	const uint8_t prseg = (timing->prop_seg - 1);
 
 	const uint8_t cnf2 = btlmode | sam | phseg1 | prseg;
 
@@ -325,7 +332,7 @@ static int mcp2515_configure(const struct device *dev, enum can_mode mode,
 	const uint8_t sof = 0 << 7;
 	const uint8_t wakfil = 0 << 6;
 	const uint8_t und = 0 << 3;
-	const uint8_t phseg2 = (dev_cfg->tq_bs2 - 1);
+	const uint8_t phseg2 = (timing->phase_seg2 - 1);
 
 	const uint8_t cnf3 = sof | wakfil | und | phseg2;
 
@@ -338,26 +345,17 @@ static int mcp2515_configure(const struct device *dev, enum can_mode mode,
 	const uint8_t rx0_ctrl = BIT(6) | BIT(5) | BIT(2);
 	const uint8_t rx1_ctrl = BIT(6) | BIT(5);
 
-	__ASSERT((dev_cfg->tq_sjw >= 1) && (dev_cfg->tq_sjw <= 4),
+	__ASSERT((timing->sjw >= 1) && (timing->sjw <= 4),
 		 "1 <= SJW <= 4");
-	__ASSERT((dev_cfg->tq_prop >= 1) && (dev_cfg->tq_prop <= 8),
+	__ASSERT((timing->prop_seg >= 1) && (timing->prop_seg <= 8),
 		 "1 <= PROP <= 8");
-	__ASSERT((dev_cfg->tq_bs1 >= 1) && (dev_cfg->tq_bs1 <= 8),
+	__ASSERT((timing->phase_seg1 >= 1) && (timing->phase_seg1 <= 8),
 		 "1 <= BS1 <= 8");
-	__ASSERT((dev_cfg->tq_bs2 >= 2) && (dev_cfg->tq_bs2 <= 8),
+	__ASSERT((timing->phase_seg2 >= 2) && (timing->phase_seg2 <= 8),
 		 "2 <= BS2 <= 8");
-	__ASSERT(dev_cfg->tq_prop + dev_cfg->tq_bs1 >= dev_cfg->tq_bs2,
+	__ASSERT(timing->prop_seg + timing->phase_seg1 >= timing->phase_seg2,
 		 "PROP + BS1 >= BS2");
-	__ASSERT(dev_cfg->tq_bs2 > dev_cfg->tq_sjw, "BS2 > SJW");
-
-	if (dev_cfg->osc_freq % (bit_length * bitrate * 2)) {
-		LOG_ERR("Prescaler is not a natural number! "
-			"prescaler = osc_rate / ((PROP + SEG1 + SEG2 + 1) "
-			"* bitrate * 2)\n"
-			"prescaler = %d / ((%d + %d + %d + 1) * %d * 2)",
-			dev_cfg->osc_freq, dev_cfg->tq_prop,
-			dev_cfg->tq_bs1, dev_cfg->tq_bs2, bitrate);
-	}
+	__ASSERT(timing->phase_seg2 > timing->sjw, "BS2 > SJW");
 
 	config_buf[0] = cnf3;
 	config_buf[1] = cnf2;
@@ -366,10 +364,7 @@ static int mcp2515_configure(const struct device *dev, enum can_mode mode,
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
-	/* Wait 128 OSC1 clock cycles at 1MHz (minimum clock in frequency)
-	 * see MCP2515 datasheet section 8.1 Oscillator Start-up Timer
-	 */
-	k_usleep(128);
+	k_usleep(MCP2515_OSC_STARTUP_US);
 
 	/* will enter configuration mode automatically */
 	ret = mcp2515_cmd_soft_reset(dev);
@@ -378,7 +373,7 @@ static int mcp2515_configure(const struct device *dev, enum can_mode mode,
 		goto done;
 	}
 
-	k_usleep(128);
+	k_usleep(MCP2515_OSC_STARTUP_US);
 
 	ret = mcp2515_get_mode(dev, &reset_mode);
 	if (ret < 0) {
@@ -413,8 +408,20 @@ static int mcp2515_configure(const struct device *dev, enum can_mode mode,
 	}
 
 done:
-	ret = mcp2515_set_mode(dev,
-			       mcp2515_convert_canmode_to_mcp2515mode(mode));
+	k_mutex_unlock(&dev_data->mutex);
+	return ret;
+}
+
+static int mcp2515_set_mode(const struct device *dev, enum can_mode mode)
+{
+	struct mcp2515_data *dev_data = DEV_DATA(dev);
+	int ret;
+
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
+	k_usleep(MCP2515_OSC_STARTUP_US);
+
+	ret = mcp2515_set_mode_int(dev,
+			mcp2515_convert_canmode_to_mcp2515mode(mode));
 	if (ret < 0) {
 		LOG_ERR("Failed to set the mode [%d]", ret);
 	}
@@ -772,7 +779,8 @@ static void mcp2515_int_gpio_callback(const struct device *dev,
 }
 
 static const struct can_driver_api can_api_funcs = {
-	.configure = mcp2515_configure,
+	.set_timing = mcp2515_set_timing,
+	.set_mode = mcp2515_set_mode,
 	.send = mcp2515_send,
 	.attach_isr = mcp2515_attach_isr,
 	.detach = mcp2515_detach,
@@ -780,7 +788,22 @@ static const struct can_driver_api can_api_funcs = {
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	.recover = mcp2515_recover,
 #endif
-	.register_state_change_isr = mcp2515_register_state_change_isr
+	.register_state_change_isr = mcp2515_register_state_change_isr,
+	.get_core_clock = mcp2515_get_core_clock,
+	.timing_min = {
+		.sjw = 0x1,
+		.prop_seg = 0x01,
+		.phase_seg1 = 0x01,
+		.phase_seg2 = 0x01,
+		.prescaler = 0x01
+	},
+	.timing_max = {
+		.sjw = 0x04,
+		.prop_seg = 0x08,
+		.phase_seg1 = 0x08,
+		.phase_seg2 = 0x08,
+		.prescaler = 0x20
+	}
 };
 
 
@@ -789,6 +812,7 @@ static int mcp2515_init(const struct device *dev)
 	const struct mcp2515_config *dev_cfg = DEV_CFG(dev);
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	int ret;
+	struct can_timing timing;
 
 	k_sem_init(&dev_data->int_sem, 0, 1);
 	k_mutex_init(&dev_data->mutex);
@@ -867,7 +891,33 @@ static int mcp2515_init(const struct device *dev)
 	(void)memset(dev_data->filter, 0, sizeof(dev_data->filter));
 	dev_data->old_state = CAN_ERROR_ACTIVE;
 
-	ret = mcp2515_configure(dev, CAN_NORMAL_MODE, dev_cfg->bus_speed);
+	timing.sjw = dev_cfg->tq_sjw;
+	if (dev_cfg->sample_point) {
+		ret = can_calc_timing(dev, &timing, dev_cfg->bus_speed,
+				      dev_cfg->sample_point);
+		if (ret == -EINVAL) {
+			LOG_ERR("Can't find timing for given param");
+			return -EIO;
+		}
+		LOG_DBG("Presc: %d, BS1: %d, BS2: %d",
+			timing.prescaler, timing.phase_seg1, timing.phase_seg2);
+		LOG_DBG("Sample-point err : %d", ret);
+	} else {
+		timing.prop_seg = dev_cfg->tq_prop;
+		timing.phase_seg1 = dev_cfg->tq_bs1;
+		timing.phase_seg2 = dev_cfg->tq_bs2;
+		ret = can_calc_prescaler(dev, &timing, dev_cfg->bus_speed);
+		if (ret) {
+			LOG_WRN("Bitrate error: %d", ret);
+		}
+	}
+
+	ret = can_set_mode(dev, CAN_NORMAL_MODE);
+	if (ret) {
+		return ret;
+	}
+
+	ret = can_set_timing(dev, &timing, NULL);
 
 	return ret;
 }
@@ -900,11 +950,18 @@ static const struct mcp2515_config mcp2515_config_1 = {
 	.spi_cs_flags = DT_INST_SPI_DEV_CS_GPIOS_FLAGS(0),
 #endif  /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 	.tq_sjw = DT_INST_PROP(0, sjw),
+#if DT_INST_PROP(0, prop_seg) > 0 && \
+    DT_INST_PROP(0, phase_seg1) > 0 && \
+    DT_INST_PROP(0, phase_seg2) > 0
 	.tq_prop = DT_INST_PROP(0, prop_seg),
 	.tq_bs1 = DT_INST_PROP(0, phase_seg1),
 	.tq_bs2 = DT_INST_PROP(0, phase_seg2),
+#endif
 	.bus_speed = DT_INST_PROP(0, bus_speed),
 	.osc_freq = DT_INST_PROP(0, osc_freq)
+#if DT_INST_PROP(0, sample_point)
+	.sample_point = DT_INST_PROP(0, sample_point),
+#endif
 };
 
 DEVICE_AND_API_INIT(can_mcp2515_1, DT_INST_LABEL(0), &mcp2515_init,

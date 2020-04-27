@@ -193,14 +193,21 @@ void can_loopback_detach(const struct device *dev, int filter_id)
 	k_mutex_unlock(&data->mtx);
 }
 
-int can_loopback_configure(const struct device *dev, enum can_mode mode,
-				uint32_t bitrate)
+int can_loopback_set_mode(const struct device *dev, enum can_mode mode)
 {
 	struct can_loopback_data *data = DEV_DATA(dev);
 
-	ARG_UNUSED(bitrate);
-
 	data->loopback = mode == CAN_LOOPBACK_MODE ? 1 : 0;
+	return 0;
+}
+
+int can_loopback_set_timing(const struct device *dev,
+			 const struct can_timing *timing,
+			 const struct can_timing *timing_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(timing);
+	ARG_UNUSED(timing_data);
 	return 0;
 }
 
@@ -234,8 +241,16 @@ static void can_loopback_register_state_change_isr(const struct device *dev,
 	ARG_UNUSED(isr);
 }
 
+int can_loopback_get_core_clock(const struct device *dev, uint32_t *rate)
+{
+	/* Return 16MHz as an realistic value for the testcases */
+	*rate = 16000000;
+	return 0;
+}
+
 static const struct can_driver_api can_api_funcs = {
-	.configure = can_loopback_configure,
+	.set_mode = can_loopback_set_mode,
+	.set_timing = can_loopback_set_timing,
 	.send = can_loopback_send,
 	.attach_isr = can_loopback_attach_isr,
 	.detach = can_loopback_detach,
@@ -243,9 +258,23 @@ static const struct can_driver_api can_api_funcs = {
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
 	.recover = can_loopback_recover,
 #endif
-	.register_state_change_isr = can_loopback_register_state_change_isr
+	.register_state_change_isr = can_loopback_register_state_change_isr,
+	.get_core_clock = can_loopback_get_core_clock,
+	.timing_min = {
+		.sjw = 0x1,
+		.prop_seg = 0x00,
+		.phase_seg1 = 0x01,
+		.phase_seg2 = 0x01,
+		.prescaler = 0x01
+	},
+	.timing_max = {
+		.sjw = 0x0F,
+		.prop_seg = 0x0F,
+		.phase_seg1 = 0x0F,
+		.phase_seg2 = 0x0F,
+		.prescaler = 0xFFFF
+	}
 };
-
 
 static int can_loopback_init(const struct device *dev)
 {

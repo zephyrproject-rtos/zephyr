@@ -7,18 +7,39 @@
 #include <syscall_handler.h>
 #include <drivers/can.h>
 
-static inline int z_vrfy_can_configure(const struct device *dev,
-				       enum can_mode mode,
-				       uint32_t bitrate)
+static inline int z_vrfy_can_set_timing(const struct device *dev,
+					const struct can_timing *timing,
+					const struct can_timing *timing_data);
+{
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_timing));
+
+	return z_impl_can_set_timing((const struct device *)dev,
+				     (const struct can_timing *)timing,
+				     (const struct can_timing *)timing_data);
+}
+#include <syscalls/can_set_timing_mrsh.c>
+
+static inline int z_vrfy_can_set_bitrate(const struct device *dev,
+					 uint32_t bitrate)
 {
 
-	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, configure));
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, set_bitrate));
 
-	return z_impl_can_configure((const struct device *)dev,
-				    (enum can_mode)mode,
-				    (uint32_t)bitrate);
+	return z_impl_can_set_bitrate((const struct device *)dev,
+				      (uint32_t)bitrate);
 }
-#include <syscalls/can_configure_mrsh.c>
+#include <syscalls/can_set_bitrate_mrsh.c>
+
+static inline int z_vrfy_can_get_core_clock(const struct device *dev,
+					    uint32_t *rate)
+{
+
+	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, get_core_clock));
+	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(rate, sizeof(rate)));
+
+	return z_impl_can_get_core_clock(dev, rate);
+}
+#include <syscalls/can_get_core_clock_mrsh.c>
 
 static inline int z_vrfy_can_send(const struct device *dev,
 				  const struct zcan_frame *msg,
