@@ -8,7 +8,7 @@
 #include <syscall_handler.h>
 
 static inline int z_vrfy_kscan_config(struct device *dev,
-				      kscan_callback_t callback_isr)
+				      kscan_callback_t callback)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_KSCAN(dev, config));
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(callback_isr == 0,

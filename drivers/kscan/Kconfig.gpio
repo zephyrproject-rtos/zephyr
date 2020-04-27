@@ -1,0 +1,10 @@
+# Generic GPIO Keyboard Matrix
+
+# Copyright (c) 2020 Peter Johanson <peter@peterjohanson.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config KSCAN_GPIO
+	bool "GPIO Keyboard Matrix KSCAN driver"
+	depends on GPIO && HAS_DTS_GPIO
+	help
+	  Enable the generic GPIO keyboard matrix driver.
