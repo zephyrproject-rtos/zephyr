@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #define DBG(fmt, ...)
 #endif
 
-#define PORT 9999
+#define TEST_PORT 9999
 
 static char *test_data = "Test data to be sent";
 
@@ -465,7 +465,7 @@ static void tx_chksum_offload_disabled_test_v6(void)
 	int ret, len;
 	struct sockaddr_in6 dst_addr6 = {
 		.sin6_family = AF_INET6,
-		.sin6_port = htons(PORT),
+		.sin6_port = htons(TEST_PORT),
 	};
 	struct sockaddr_in6 src_addr6 = {
 		.sin6_family = AF_INET6,
@@ -516,7 +516,7 @@ static void tx_chksum_offload_disabled_test_v4(void)
 	int ret, len;
 	struct sockaddr_in dst_addr4 = {
 		.sin_family = AF_INET,
-		.sin_port = htons(PORT),
+		.sin_port = htons(TEST_PORT),
 	};
 	struct sockaddr_in src_addr4 = {
 		.sin_family = AF_INET,
@@ -567,7 +567,7 @@ static void tx_chksum_offload_enabled_test_v6(void)
 	int ret, len;
 	struct sockaddr_in6 dst_addr6 = {
 		.sin6_family = AF_INET6,
-		.sin6_port = htons(PORT),
+		.sin6_port = htons(TEST_PORT),
 	};
 	struct sockaddr_in6 src_addr6 = {
 		.sin6_family = AF_INET6,
@@ -618,7 +618,7 @@ static void tx_chksum_offload_enabled_test_v4(void)
 	int ret, len;
 	struct sockaddr_in dst_addr4 = {
 		.sin_family = AF_INET,
-		.sin_port = htons(PORT),
+		.sin_port = htons(TEST_PORT),
 	};
 	struct sockaddr_in src_addr4 = {
 		.sin_family = AF_INET,
@@ -712,7 +712,7 @@ static void rx_chksum_offload_disabled_test_v6(void)
 	int ret, len;
 	struct sockaddr_in6 dst_addr6 = {
 		.sin6_family = AF_INET6,
-		.sin6_port = htons(PORT),
+		.sin6_port = htons(TEST_PORT),
 	};
 	struct sockaddr_in6 src_addr6 = {
 		.sin6_family = AF_INET6,
@@ -768,7 +768,7 @@ static void rx_chksum_offload_disabled_test_v4(void)
 	int ret, len;
 	struct sockaddr_in dst_addr4 = {
 		.sin_family = AF_INET,
-		.sin_port = htons(PORT),
+		.sin_port = htons(TEST_PORT),
 	};
 	struct sockaddr_in src_addr4 = {
 		.sin_family = AF_INET,
@@ -824,7 +824,7 @@ static void rx_chksum_offload_enabled_test_v6(void)
 	int ret, len;
 	struct sockaddr_in6 dst_addr6 = {
 		.sin6_family = AF_INET6,
-		.sin6_port = htons(PORT),
+		.sin6_port = htons(TEST_PORT),
 	};
 	struct sockaddr_in6 src_addr6 = {
 		.sin6_family = AF_INET6,
@@ -878,7 +878,7 @@ static void rx_chksum_offload_enabled_test_v4(void)
 	int ret, len;
 	struct sockaddr_in dst_addr4 = {
 		.sin_family = AF_INET,
-		.sin_port = htons(PORT),
+		.sin_port = htons(TEST_PORT),
 	};
 	struct sockaddr_in src_addr4 = {
 		.sin_family = AF_INET,

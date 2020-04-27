@@ -52,7 +52,7 @@ static enum net_priority recv_priorities[MAX_TC][MAX_PKT_TO_RECV];
 static enum net_priority tx_tc2prio[NET_TC_TX_COUNT];
 static enum net_priority rx_tc2prio[NET_TC_RX_COUNT];
 
-#define PORT 9999
+#define TEST_PORT 9999
 
 static const char *test_data = "Test data to be sent";
 
@@ -79,7 +79,7 @@ static struct in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
 
 static struct sockaddr_in6 dst_addr6 = {
 	.sin6_family = AF_INET6,
-	.sin6_port = htons(PORT),
+	.sin6_port = htons(TEST_PORT),
 };
 
 static struct {
