@@ -1854,6 +1854,8 @@ class ProjectBuilder(FilterBuilder):
         elif instance.testcase.type == "unit":
             instance.handler = BinaryHandler(instance, "unit")
             instance.handler.binary = os.path.join(instance.build_dir, "testbinary")
+            if self.coverage:
+                args.append("COVERAGE=1")
         elif instance.platform.type == "native":
             handler = BinaryHandler(instance, "native")
 
