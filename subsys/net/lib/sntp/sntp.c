@@ -24,9 +24,9 @@ static void sntp_pkt_dump(struct sntp_pkt *pkt)
 		return;
 	}
 
-	NET_DBG("li               %x", LVM_GET_LI(pkt->lvm));
-	NET_DBG("vn               %x", LVM_GET_VN(pkt->lvm));
-	NET_DBG("mode             %x", LVM_GET_MODE(pkt->lvm));
+	NET_DBG("li               %x", SNTP_GET_LI(pkt->lvm));
+	NET_DBG("vn               %x", SNTP_GET_VN(pkt->lvm));
+	NET_DBG("mode             %x", SNTP_GET_MODE(pkt->lvm));
 	NET_DBG("stratum:         %x", pkt->stratum);
 	NET_DBG("poll:            %x", pkt->poll);
 	NET_DBG("precision:       %x", pkt->precision);
@@ -57,12 +57,12 @@ static s32_t parse_response(u8_t *data, u16_t len, u32_t orig_ts,
 		return -EINVAL;
 	}
 
-	if (LVM_GET_MODE(pkt->lvm) != SNTP_MODE_SERVER) {
+	if (SNTP_GET_MODE(pkt->lvm) != SNTP_MODE_SERVER) {
 		/* For unicast and manycast, server should return 4.
 		 * For broadcast (which is not supported now), server should
 		 * return 5.
 		 */
-		NET_DBG("Unexpected mode: %d", LVM_GET_MODE(pkt->lvm));
+		NET_DBG("Unexpected mode: %d", SNTP_GET_MODE(pkt->lvm));
 		return -EINVAL;
 	}
 
@@ -190,9 +190,9 @@ int sntp_query(struct sntp_ctx *ctx, u32_t timeout, struct sntp_time *time)
 	}
 
 	/* prepare request pkt */
-	LVM_SET_LI(tx_pkt.lvm, 0);
-	LVM_SET_VN(tx_pkt.lvm, SNTP_VERSION_NUMBER);
-	LVM_SET_MODE(tx_pkt.lvm, SNTP_MODE_CLIENT);
+	SNTP_SET_LI(tx_pkt.lvm, 0);
+	SNTP_SET_VN(tx_pkt.lvm, SNTP_VERSION_NUMBER);
+	SNTP_SET_MODE(tx_pkt.lvm, SNTP_MODE_CLIENT);
 	ctx->expected_orig_ts = get_uptime_in_sec() + OFFSET_1970_JAN_1;
 	tx_pkt.tx_tm_s = htonl(ctx->expected_orig_ts);
 
