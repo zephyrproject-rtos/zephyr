@@ -2,6 +2,7 @@
  * Copyright (c) 2018 Kokoon Technology Limited
  * Copyright (c) 2019 Song Qiang <songqiang1304521@gmail.com>
  * Copyright (c) 2019 Endre Karlson
+ * Copyright (c) 2020 Teslabs Engineering S.L.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,12 +71,20 @@ static const u32_t table_seq_len[] = {
 
 #define RES(n)		LL_ADC_RESOLUTION_##n##B
 static const u32_t table_resolution[] = {
-#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
+	RES(12),
+#elif !defined(CONFIG_SOC_SERIES_STM32H7X)
 	RES(6),
 	RES(8),
 	RES(10),
-#endif
 	RES(12),
+#else
+	RES(8),
+	RES(10),
+	RES(12),
+	RES(14),
+	RES(16),
+#endif
 };
 
 #define SMP_TIME(x, y)		LL_ADC_SAMPLINGTIME_##x##CYCLE##y
@@ -175,10 +184,22 @@ static const u32_t table_samp_time[] = {
 	SMP_TIME(192, S),
 	SMP_TIME(384, S),
 };
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+static const u16_t acq_time_tbl[8] = {2, 3, 9, 17, 33, 65, 388, 811};
+static const u32_t table_samp_time[] = {
+	SMP_TIME(1,   _5),
+	SMP_TIME(2,   S_5),
+	SMP_TIME(8,   S_5),
+	SMP_TIME(16,  S_5),
+	SMP_TIME(32,  S_5),
+	SMP_TIME(64,  S_5),
+	SMP_TIME(387, S_5),
+	SMP_TIME(810, S_5),
+};
 #endif
 
-/* 16 external channels. */
-#define STM32_CHANNEL_COUNT		16
+/* External channels (maximum). */
+#define STM32_CHANNEL_COUNT		20
 
 struct adc_stm32_data {
 	struct adc_context ctx;
@@ -234,7 +255,8 @@ static void adc_stm32_start_conversion(struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_REG_StartConversion(adc);
 #else
 	LL_ADC_REG_StartConversionSWStart(adc);
@@ -250,7 +272,11 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	int err;
 
 	switch (sequence->resolution) {
-#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32F1X)
+	case 12:
+		resolution = table_resolution[0];
+		break;
+#elif !defined(CONFIG_SOC_SERIES_STM32H7X)
 	case 6:
 		resolution = table_resolution[0];
 		break;
@@ -264,8 +290,20 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 		resolution = table_resolution[3];
 		break;
 #else
-	case 12:
+	case 8:
 		resolution = table_resolution[0];
+		break;
+	case 10:
+		resolution = table_resolution[1];
+		break;
+	case 12:
+		resolution = table_resolution[2];
+		break;
+	case 14:
+		resolution = table_resolution[3];
+		break;
+	case 16:
+		resolution = table_resolution[4];
 		break;
 #endif
 	default:
@@ -280,6 +318,15 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 
 	index = find_lsb_set(channels) - 1;
 	u32_t channel = __LL_ADC_DECIMAL_NB_TO_CHANNEL(index);
+#if defined(CONFIG_SOC_SERIES_STM32H7X)
+	/*
+	 * Each channel in the sequence must be previously enabled in PCSEL.
+	 * This register controls the analog switch integrated in the IO level.
+	 * NOTE: There is no LL API to control this register yet.
+	 */
+	adc->PCSEL |= channels & ADC_PCSEL_PCSEL_Msk;
+#endif
+
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	LL_ADC_REG_SetSequencerChannels(adc, channel);
@@ -303,7 +350,8 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_EnableIT_EOC(adc);
 #elif defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_ADC_EnableIT_EOS(adc);
@@ -486,6 +534,8 @@ static void adc_stm32_calib(struct device *dev)
 #elif defined(CONFIG_SOC_SERIES_STM32F0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L0X)
 	LL_ADC_StartCalibration(adc);
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET, LL_ADC_SINGLE_ENDED);
 #endif
 	while (LL_ADC_IsCalibrationOnGoing(adc)) {
 	}
@@ -520,11 +570,12 @@ static int adc_stm32_init(struct device *dev)
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
 	/*
-	 * L4, WB and G4 series STM32 needs to be awaken from deep sleep mode,
-	 * and restore its calibration parameters if there are some previously
-	 * stored calibration parameters.
+	 * L4, WB, G4 and H7 series STM32 needs to be awaken from deep sleep
+	 * mode, and restore its calibration parameters if there are some
+	 * previously stored calibration parameters.
 	 */
 	LL_ADC_DisableDeepPowerDown(adc);
 #endif
@@ -535,7 +586,8 @@ static int adc_stm32_init(struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32F3X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_EnableInternalRegulator(adc);
 	k_busy_wait(LL_ADC_DELAY_INTERNAL_REGUL_STAB_US);
 #endif
@@ -546,9 +598,10 @@ static int adc_stm32_init(struct device *dev)
 #elif defined(CONFIG_SOC_SERIES_STM32F3X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
-			LL_ADC_CLOCK_SYNC_PCLK_DIV4);
+			      LL_ADC_CLOCK_SYNC_PCLK_DIV4);
 #elif defined(CONFIG_SOC_SERIES_STM32L1X)
 	LL_ADC_SetCommonClock(__LL_ADC_COMMON_INSTANCE(adc),
 			LL_ADC_CLOCK_ASYNC_DIV4);
@@ -570,17 +623,18 @@ static int adc_stm32_init(struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
 	if (LL_ADC_IsActiveFlag_ADRDY(adc)) {
 		LL_ADC_ClearFlag_ADRDY(adc);
 	}
 
 	/*
-	 * These two series STM32 has one internal voltage reference source
+	 * These STM32 series has one internal voltage reference source
 	 * to be enabled.
 	 */
 	LL_ADC_SetCommonPathInternalCh(__LL_ADC_COMMON_INSTANCE(adc),
-				      LL_ADC_PATH_INTERNAL_VREFINT);
+				       LL_ADC_PATH_INTERNAL_VREFINT);
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
@@ -588,7 +642,8 @@ static int adc_stm32_init(struct device *dev)
 	defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
 	/*
 	 * ADC modules on these series have to wait for some cycles to be
 	 * enabled.
@@ -611,7 +666,8 @@ static int adc_stm32_init(struct device *dev)
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
-	defined(CONFIG_SOC_SERIES_STM32G4X)
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X)
 	/*
 	 * Enabling ADC modules in L4, WB and G4 series may fail if they are
 	 * still not stabilized, this will wait for a short time to ensure ADC
