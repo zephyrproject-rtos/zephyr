@@ -105,8 +105,10 @@ struct lll_conn {
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	u8_t  rssi_latest;
+#if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
 	u8_t  rssi_reported;
 	u8_t  rssi_sample_count;
+#endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 #if defined(CONFIG_BT_CTLR_CONN_META)

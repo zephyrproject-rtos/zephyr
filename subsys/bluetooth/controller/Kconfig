@@ -807,6 +807,12 @@ config BT_CTLR_CONN_RSSI
 	help
 	  Enable connection RSSI measurement.
 
+config BT_CTLR_CONN_RSSI_EVENT
+	bool "Connection RSSI event"
+	depends on BT_CTLR_CONN_RSSI
+	help
+	  Generate events for connection RSSI measurement.
+
 endif # BT_CONN
 
 config BT_CTLR_ADV_INDICATION

@@ -328,6 +328,7 @@ lll_conn_isr_rx_exit:
 
 		lll->rssi_latest = rssi;
 
+#if defined(CONFIG_BT_CTLR_CONN_RSSI_EVENT)
 		if (((lll->rssi_reported - rssi) & 0xFF) >
 		    LLL_CONN_RSSI_THRESHOLD) {
 			if (lll->rssi_sample_count) {
@@ -336,6 +337,7 @@ lll_conn_isr_rx_exit:
 		} else {
 			lll->rssi_sample_count = LLL_CONN_RSSI_SAMPLE_COUNT;
 		}
+#endif /* CONFIG_BT_CTLR_CONN_RSSI_EVENT */
 	}
 #else /* !CONFIG_BT_CTLR_CONN_RSSI */
 	ARG_UNUSED(rssi_ready);
