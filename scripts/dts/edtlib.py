@@ -102,6 +102,10 @@ class EDT:
     nodes:
       A list of Node objects for the nodes that appear in the devicetree
 
+    alias2node:
+      A collections.OrderedDict that maps an /aliases property to the node
+      pointed to by that alias.
+
     compat2enabled:
       A collections.defaultdict that maps each 'compatible' string that appears
       on some enabled Node to a list of enabled Nodes.
@@ -548,14 +552,19 @@ class EDT:
             node._init_pinctrls()
 
     def _init_luts(self):
-        # Initialize node lookup tables (LUTs).
+        # Initialize alias2node, compat2enabled, and label2node
+        # lookup tables (LUTs).
 
+        self.alias2node = OrderedDict()
         self.label2node = OrderedDict()
         self.compat2enabled = defaultdict(list)
         self.compat2nodes = defaultdict(list)
         self.compat2okay = defaultdict(list)
 
         for node in self.nodes:
+            for alias in node.aliases:
+                self.alias2node[alias] = node
+
             for label in node.labels:
                 self.label2node[label] = node
 
