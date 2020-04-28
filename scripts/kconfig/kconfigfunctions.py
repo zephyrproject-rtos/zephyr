@@ -107,6 +107,20 @@ def dt_nodelabel_enabled(kconf, _, label):
     return "y" if node and node.enabled else "n"
 
 
+def dt_alias_enabled(kconf, _, alias):
+    """
+    This function takes an /aliases property 'alias' and returns "y" if we find
+    that alias is defined and points to an "enabled" node in the EDT;
+    otherwise, we return "n"
+    """
+    if doc_mode or edt is None:
+        return "n"
+
+    node = edt.alias2node.get(alias)
+
+    return "y" if node and node.enabled else "n"
+
+
 def _node_reg_addr(node, index, unit):
     if not node:
         return 0
@@ -397,6 +411,7 @@ functions = {
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
         "dt_chosen_path": (dt_chosen_path, 1, 1),
         "dt_nodelabel_enabled": (dt_nodelabel_enabled, 1, 1),
+        "dt_alias_enabled": (dt_alias_enabled, 1, 1),
         "dt_chosen_reg_addr_int": (dt_chosen_reg, 1, 3),
         "dt_chosen_reg_addr_hex": (dt_chosen_reg, 1, 3),
         "dt_chosen_reg_size_int": (dt_chosen_reg, 1, 3),
