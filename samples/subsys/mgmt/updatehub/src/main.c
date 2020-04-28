@@ -9,6 +9,7 @@
 #include <net/net_mgmt.h>
 #include <net/net_event.h>
 #include <net/net_conn_mgr.h>
+#include <net/wifi_mgmt.h>
 #include <dfu/mcuboot.h>
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
@@ -108,6 +109,27 @@ void main(void)
 	if (ret < 0) {
 		LOG_ERR("Error to confirm the image");
 	}
+
+#if defined(CONFIG_WIFI)
+	struct net_if *iface = net_if_get_default();
+	static struct wifi_connect_req_params cnx_params = {
+		.ssid = CONFIG_UPDATEHUB_SAMPLE_WIFI_SSID,
+		.ssid_length = 0,
+		.psk = CONFIG_UPDATEHUB_SAMPLE_WIFI_PSK,
+		.psk_length = 0,
+		.channel = 0,
+		.security = WIFI_SECURITY_TYPE_PSK,
+	};
+
+	cnx_params.ssid_length = strlen(CONFIG_UPDATEHUB_SAMPLE_WIFI_SSID);
+	cnx_params.psk_length = strlen(CONFIG_UPDATEHUB_SAMPLE_WIFI_PSK);
+
+	if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
+		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
+		LOG_ERR("Error connecting to WiFi");
+		return;
+	}
+#endif
 
 	net_mgmt_init_event_callback(&mgmt_cb, event_handler, EVENT_MASK);
 	net_mgmt_add_event_callback(&mgmt_cb);
