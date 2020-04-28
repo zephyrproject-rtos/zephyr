@@ -1953,6 +1953,7 @@ class ProjectBuilder(FilterBuilder):
             'handler.log',
             'build.log',
             'device.log',
+            'recording.csv',
             ]
         whitelist = [os.path.join(self.instance.build_dir, file) for file in whitelist]
 
