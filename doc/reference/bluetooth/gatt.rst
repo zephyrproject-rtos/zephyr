@@ -97,15 +97,18 @@ API Reference
 
 .. doxygengroup:: bt_gatt
    :project: Zephyr
+   :members:
 
 GATT Server
 ===========
 
 .. doxygengroup:: bt_gatt_server
    :project: Zephyr
+   :members:
 
 GATT Client
 ===========
 
 .. doxygengroup:: bt_gatt_client
    :project: Zephyr
+   :members:

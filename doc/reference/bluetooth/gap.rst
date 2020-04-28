@@ -8,3 +8,4 @@ API Reference
 
 .. doxygengroup:: bt_gap
    :project: Zephyr
+   :members:
