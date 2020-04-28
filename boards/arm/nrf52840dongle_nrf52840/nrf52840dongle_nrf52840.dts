@@ -10,8 +10,7 @@
 
 / {
 	model = "Nordic nRF52840 Dongle NRF52840";
-	compatible = "nordic,nrf52840-dongle-nrf52840", "nordic,nrf52840-qiaa",
-		     "nordic,nrf52840";
+	compatible = "nordic,nrf52840-dongle-nrf52840";
 
 	chosen {
 		zephyr,console = &uart0;

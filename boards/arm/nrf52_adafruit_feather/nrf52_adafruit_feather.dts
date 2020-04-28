@@ -11,8 +11,7 @@
 
 / {
 	model = "nRF52 Adafruit Feather";
-	compatible = "adafruit,nrf52_adafruit_feather", "nordic,nrf52832-qfaa",
-		     "nordic,nrf52832";
+	compatible = "adafruit,nrf52_adafruit_feather";
 
 	chosen {
 		zephyr,console = &uart0;

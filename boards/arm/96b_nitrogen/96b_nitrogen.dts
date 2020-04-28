@@ -10,8 +10,7 @@
 
 / {
 	model = "Seeed Studio Nitrogen 96board";
-	compatible = "seeed,nitrogen", "nordic,nrf52832-qfaa",
-		     "nordic,nrf52832";
+	compatible = "seeed,nitrogen";
 
 	chosen {
 		zephyr,console = &uart0;

@@ -9,8 +9,7 @@
 
 / {
 	model = "Nordic nRF52833 DK NRF52833";
-	compatible = "nordic,nrf52833-dk-nrf52833", "nordic,nrf52833-qiaa",
-		     "nordic,nrf52833";
+	compatible = "nordic,nrf52833-dk-nrf52833";
 
 	chosen {
 		zephyr,console = &uart0;

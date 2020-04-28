@@ -9,8 +9,7 @@
 
 / {
 	model = "Seeed Studio Carbon nRF51 96board";
-	compatible = "seeed,carbon_nrf51", "nordic,nrf51822-qfac",
-		     "nordic,nrf51822";
+	compatible = "seeed,carbon_nrf51";
 
 	chosen {
 		zephyr,console = &uart0;

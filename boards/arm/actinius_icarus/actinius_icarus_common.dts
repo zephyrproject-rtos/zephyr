@@ -6,8 +6,7 @@
 
 / {
 	model = "Actinius Icarus IoT Dev Board";
-	compatible = "actinius,icarus", "nordic,nrf9160-sica",
-			 "nordic,nrf9160";
+	compatible = "actinius,icarus";
 
 	chosen {
 		zephyr,console = &uart0;
