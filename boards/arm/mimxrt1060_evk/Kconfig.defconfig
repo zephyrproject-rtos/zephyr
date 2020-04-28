@@ -17,6 +17,10 @@ choice DATA_LOCATION
 	default DATA_SEMC
 endchoice
 
+config DISK_ACCESS_USDHC1
+	default y
+	depends on DISK_ACCESS_USDHC
+
 config I2C
 	default y if KSCAN
 
