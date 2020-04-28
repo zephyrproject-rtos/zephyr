@@ -9,8 +9,7 @@
 
 / {
 	model = "Decawave DWM1001-DEV";
-	compatible = "decawave,dwm1001", "nordic,nrf52832-qfaa",
-		     "nordic,nrf52832";
+	compatible = "decawave,dwm1001";
 
 	chosen {
 		zephyr,console        = &uart0;

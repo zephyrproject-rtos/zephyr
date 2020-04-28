@@ -9,8 +9,7 @@
 
 / {
 	model = "VNG VBLUno51 BLE board";
-	compatible = "vng,vbluno51", "nordic,nrf51822-qfac",
-		     "nordic,nrf51822";
+	compatible = "vng,vbluno51";
 
 	chosen {
 		zephyr,console = &uart0;

@@ -11,8 +11,7 @@
 
 / {
 	model = "reel board v2";
-	compatible = "phytec,reel_board_v2", "nordic,nrf52840-qiaa",
-		     "nordic,nrf52840";
+	compatible = "phytec,reel_board_v2";
 
 	chosen {
 		zephyr,console = &uart0;
