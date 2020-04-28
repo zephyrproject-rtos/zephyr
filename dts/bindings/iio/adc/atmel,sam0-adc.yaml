@@ -33,5 +33,16 @@ properties:
     "#io-channel-cells":
       const: 1
 
+    calib-offset:
+      type: int
+      required: false
+      description: |
+        bit position offset in NVM SW Calib for start of ADC0 BIASCOMP field.
+        This property is expected to be set on SAM{D,E}5x family of SoCs.
+        For ADC0 this should be 0, and for ADC1 this should be 14.
+      enum:
+        - 0
+        - 14
+
 io-channel-cells:
     - input
