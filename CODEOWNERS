@@ -378,7 +378,7 @@
 /samples/drivers/lora/                    @Mani-Sadhasivam
 /samples/net/                             @jukkar @tbursztyka @pfalcon
 /samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
-/samples/net/lwm2m_client/                @mike-scott
+/samples/net/lwm2m_client/                @rlubos
 /samples/net/mqtt_publisher/              @jukkar @tbursztyka
 /samples/net/sockets/coap_*/              @rveerama1
 /samples/net/sockets/                     @jukkar @tbursztyka @pfalcon
@@ -444,7 +444,7 @@
 /subsys/net/ip/                           @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/                          @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/dns/                      @jukkar @tbursztyka @pfalcon
-/subsys/net/lib/lwm2m/                    @mike-scott
+/subsys/net/lib/lwm2m/                    @rlubos
 /subsys/net/lib/config/                   @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/mqtt/                     @jukkar @tbursztyka @rlubos
 /subsys/net/lib/openthread/               @rlubos
