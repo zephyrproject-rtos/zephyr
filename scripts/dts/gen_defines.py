@@ -59,9 +59,6 @@ def main():
             if not node.enabled:
                 out_comment("No node macros: node is disabled")
                 continue
-            if not node.matching_compat:
-                out_comment("No node macros: node has no matching binding")
-                continue
 
             write_idents_and_existence(node)
             write_bus(node)
