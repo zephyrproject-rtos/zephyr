@@ -52,12 +52,14 @@
  * many pages we need.
  */
 
+#define PHYS_RAM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define PHYS_RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+
 /* Define a range [Z_X86_PT_START, Z_X86_PT_END) which is the memory range
  * covered by all the page tables needed for system RAM
  */
-#define Z_X86_PT_START	((uintptr_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, Z_X86_PT_AREA))
-#define Z_X86_PT_END	((uintptr_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
-					     (DT_RAM_SIZE * 1024UL), \
+#define Z_X86_PT_START	((uintptr_t)ROUND_DOWN(PHYS_RAM_ADDR, Z_X86_PT_AREA))
+#define Z_X86_PT_END	((uintptr_t)ROUND_UP(PHYS_RAM_ADDR + PHYS_RAM_SIZE, \
 					     Z_X86_PT_AREA))
 
 /* Number of page tables needed to cover system RAM. Depends on the specific
@@ -68,9 +70,8 @@
 /* Same semantics as above, but for the page directories needed to cover
  * system RAM.
  */
-#define Z_X86_PD_START	((uintptr_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, Z_X86_PD_AREA))
-#define Z_X86_PD_END	((uintptr_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
-					     (DT_RAM_SIZE * 1024UL), \
+#define Z_X86_PD_START	((uintptr_t)ROUND_DOWN(PHYS_RAM_ADDR, Z_X86_PD_AREA))
+#define Z_X86_PD_END	((uintptr_t)ROUND_UP(PHYS_RAM_ADDR + PHYS_RAM_SIZE, \
 					     Z_X86_PD_AREA))
 /* Number of page directories needed to cover system RAM. Depends on the
  * specific bounds of system RAM, but roughly 1 page directory per 1GB of RAM
@@ -81,10 +82,9 @@
 /* Same semantics as above, but for the page directory pointer tables needed
  * to cover system RAM. On 32-bit there is just one 4-entry PDPT.
  */
-#define Z_X86_PDPT_START	((uintptr_t)ROUND_DOWN(DT_PHYS_RAM_ADDR, \
+#define Z_X86_PDPT_START	((uintptr_t)ROUND_DOWN(PHYS_RAM_ADDR, \
 						       Z_X86_PDPT_AREA))
-#define Z_X86_PDPT_END	((uintptr_t)ROUND_UP(DT_PHYS_RAM_ADDR + \
-					     (DT_RAM_SIZE * 1024UL), \
+#define Z_X86_PDPT_END	((uintptr_t)ROUND_UP(PHYS_RAM_ADDR + PHYS_RAM_SIZE, \
 					     Z_X86_PDPT_AREA))
 /* Number of PDPTs needed to cover system RAM. Depends on the
  * specific bounds of system RAM, but roughly 1 PDPT per 512GB of RAM
