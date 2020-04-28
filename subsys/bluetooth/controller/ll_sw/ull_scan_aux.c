@@ -36,7 +36,8 @@
 static int init_reset(void);
 static inline struct ll_scan_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_scan_aux_set *aux);
-static inline uint16_t aux_handle_get(struct ll_scan_aux_set *aux);
+static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux);
+static void rx_flush_release(struct ll_scan_aux_set *aux);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
 		      uint16_t lazy, void *param);
 static void ticker_op_cb(uint32_t status, void *param);
@@ -69,11 +70,11 @@ int ull_scan_aux_reset(void)
 	return 0;
 }
 
-void ull_scan_aux_setup(struct node_rx_hdr *rx, uint8_t phy,
-			struct ll_scan_aux_set *aux)
+void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 {
 	struct ext_adv_aux_ptr *aux_ptr;
 	struct pdu_adv_com_ext_adv *p;
+	struct ll_scan_aux_set *aux;
 	uint32_t ticks_slot_overhead;
 	uint32_t window_widening_us;
 	struct lll_scan_aux *lll;
@@ -87,33 +88,45 @@ void ull_scan_aux_setup(struct node_rx_hdr *rx, uint8_t phy,
 	uint8_t aux_handle;
 	uint8_t *ptr;
 
+	ftr = &rx->rx_ftr;
+	lll = ftr->param;
+	aux = lll->hdr.parent;
+	if (((uint8_t *)aux < (uint8_t *)ll_scan_aux_pool) ||
+	    ((uint8_t *)aux > ((uint8_t *)ll_scan_aux_pool +
+			    (sizeof(struct ll_scan_aux_set) *
+			     (CONFIG_BT_CTLR_SCAN_AUX_SET - 1))))) {
+		aux = NULL;
+	}
+
 	pdu = (void *)((struct node_rx_pdu *)rx)->pdu;
-	if ((pdu->type != PDU_ADV_TYPE_EXT_IND) || !pdu->len) {
-		return;
+	if (pdu->type != PDU_ADV_TYPE_EXT_IND) {
+		aux = NULL;
+		goto ull_scan_aux_rx_flush;
 	}
 
 	p = (void *)&pdu->adv_ext_ind;
 	if (!p->ext_hdr_len) {
-		return;
+		goto ull_scan_aux_rx_flush;
 	}
 
 	h = (void *)p->ext_hdr_adi_adv_data;
 	if (!h->aux_ptr) {
-		return;
+		goto ull_scan_aux_rx_flush;
 	}
 
 	if (!aux) {
 		aux = aux_acquire();
 		if (!aux) {
-			return;
+			goto ull_scan_aux_rx_flush;
 		}
 
+		aux->rx_last = NULL;
 		lll = &aux->lll;
 
 		ull_hdr_init((void *)lll);
 		lll_hdr_init(lll, aux);
 	} else {
-		lll = &aux->lll;
+		LL_ASSERT(0);
 	}
 
 	ptr = (uint8_t *)h + sizeof(*h);
@@ -134,9 +147,20 @@ void ull_scan_aux_setup(struct node_rx_hdr *rx, uint8_t phy,
 	}
 
 	aux_ptr = (void *)ptr;
+	if (!aux_ptr->offs) {
+		goto ull_scan_aux_rx_flush;
+	}
 
-	ftr = &rx->rx_ftr;
-	lll->scan = ftr->param;
+	/* Enqueue the rx in aux context */
+	link->next = NULL;
+	link->mem = rx;
+	if (aux->rx_last) {
+		aux->rx_last->next = link;
+	} else {
+		aux->rx_head = link;
+	}
+	aux->rx_last = link;
+
 	lll->chan = aux_ptr->chan_idx;
 	lll->phy = BIT(aux_ptr->phy);
 
@@ -204,6 +228,16 @@ void ull_scan_aux_setup(struct node_rx_hdr *rx, uint8_t phy,
 				     ticker_cb, aux, ticker_op_cb, aux);
 	LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 		  (ticker_status == TICKER_STATUS_BUSY));
+
+	return;
+
+ull_scan_aux_rx_flush:
+	if (aux) {
+		rx_flush_release(aux);
+	}
+
+	ll_rx_put(link, rx);
+	ll_rx_sched();
 }
 
 void ull_scan_aux_done(struct node_rx_event_done *done)
@@ -211,7 +245,7 @@ void ull_scan_aux_done(struct node_rx_event_done *done)
 	struct lll_scan_aux *lll = (void *)HDR_ULL2LLL(done->param);
 	struct ll_scan_aux_set *aux = (void *)HDR_LLL2EVT(lll);
 
-	aux_release(aux);
+	rx_flush_release(aux);
 }
 
 uint8_t ull_scan_aux_lll_handle_get(struct lll_scan_aux *lll)
@@ -239,10 +273,30 @@ static inline void aux_release(struct ll_scan_aux_set *aux)
 	mem_release(aux, &scan_aux_free);
 }
 
-static inline uint16_t aux_handle_get(struct ll_scan_aux_set *aux)
+static inline uint8_t aux_handle_get(struct ll_scan_aux_set *aux)
 {
 	return mem_index_get(aux, ll_scan_aux_pool,
 			     sizeof(struct ll_scan_aux_set));
+}
+
+static void rx_flush_release(struct ll_scan_aux_set *aux)
+{
+	if (aux->rx_last) {
+		memq_link_t *head = aux->rx_head;
+
+		do {
+			struct node_rx_hdr *rx = head->mem;
+			memq_link_t *link = head;
+
+			head = link->next;
+
+			ll_rx_put(link, rx);
+		} while (head);
+
+		ll_rx_sched();
+	}
+
+	aux_release(aux);
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,
@@ -288,12 +342,12 @@ static void ticker_op_cb(uint32_t status, void *param)
 
 	mfy.param = param;
 
-	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_ULL_HIGH,
 			     0, &mfy);
 	LL_ASSERT(!ret);
 }
 
 static void ticker_op_aux_failure(void *param)
 {
-	aux_release(param);
+	rx_flush_release(param);
 }
