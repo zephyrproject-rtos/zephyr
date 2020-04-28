@@ -675,6 +675,41 @@ extern uint64_t arch_timing_value_swap_temp;
 
 /** @} */
 
+/**
+ * @defgroup arch_cache Architecture-specific cache functions
+ * @ingroup arch-interface
+ * @{
+ */
+
+#ifdef CONFIG_CACHE_FLUSHING
+/**
+ *
+ * @brief Flush d-cache lines to main memory
+ *
+ * @see sys_cache_flush
+ */
+void arch_dcache_flush(void *addr, size_t size);
+
+/**
+ *
+ * @brief Invalidate d-cache lines
+ *
+ * @see sys_cache_invd
+ */
+void arch_dcache_invd(void *addr, size_t size);
+
+#ifndef CONFIG_CACHE_LINE_SIZE
+/**
+ *
+ * @brief Get d-cache line size
+ *
+ * @see sys_cache_line_size_get
+ */
+size_t arch_cache_line_size_get(void);
+#endif
+#endif
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
