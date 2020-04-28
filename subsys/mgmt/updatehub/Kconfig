@@ -15,7 +15,7 @@ menuconfig UPDATEHUB
 	select NET_SOCKETS
 	select NET_SOCKETS_POSIX_NAMES
 	select COAP
-	select NET_CONFIG_SETTINGS
+	select NET_CONFIG_SETTINGS if !MODEM && !WIFI
 	select DNS_RESOLVER
 	select JSON_LIBRARY
 	select TINYCRYPT
