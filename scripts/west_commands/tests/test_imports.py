@@ -24,6 +24,7 @@ def test_runner_imports():
                     'hifive1',
                     'intel_s1000',
                     'jlink',
+                    'mdb',
                     'misc-flasher',
                     'nios2',
                     'nrfjprog',
