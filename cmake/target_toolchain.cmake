@@ -50,6 +50,7 @@ add_custom_target(bintools)
 
 include(${TOOLCHAIN_ROOT}/cmake/compiler/${COMPILER}/target.cmake OPTIONAL)
 include(${TOOLCHAIN_ROOT}/cmake/linker/${LINKER}/target.cmake OPTIONAL)
+include(${CMAKE_CURRENT_LIST_DIR}/bintools/bintools_template.cmake)
 include(${TOOLCHAIN_ROOT}/cmake/bintools/${BINTOOLS}/target.cmake OPTIONAL)
 
 # Uniquely identify the toolchain wrt. it's capabilities.
