@@ -529,7 +529,20 @@ int z_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		return 0;
 	}
 
-	/* Not all data was copied. */
+	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)
+	    && num_bytes_written >= min_xfer
+	    && min_xfer > 0) {
+		*bytes_written = num_bytes_written;
+#if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
+		if (async_desc != NULL) {
+			pipe_async_finish(async_desc);
+		}
+#endif
+		k_sched_unlock();
+		return 0;
+	}
+
+	/* Not all data was copied */
 
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
 	if (async_desc != NULL) {
@@ -695,7 +708,17 @@ int z_impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		return 0;
 	}
 
-	/* Not all data was read. */
+	if (!K_TIMEOUT_EQ(timeout, K_NO_WAIT)
+	    && num_bytes_read >= min_xfer
+	    && min_xfer > 0) {
+		k_sched_unlock();
+
+		*bytes_read = num_bytes_read;
+
+		return 0;
+	}
+
+	/* Not all data was read */
 
 	struct k_pipe_desc  pipe_desc;
 
