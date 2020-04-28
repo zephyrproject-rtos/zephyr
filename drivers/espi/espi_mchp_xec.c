@@ -282,7 +282,7 @@ static int espi_xec_configure(struct device *dev, struct espi_cfg *cfg)
 	 * de-assertion and after pinmux
 	 */
 	ESPI_EIO_BAR_REGS->IO_ACTV = 1;
-	LOG_DBG("eSPI block activated successfully\n");
+	LOG_DBG("eSPI block activated successfully");
 
 	return 0;
 }
@@ -459,7 +459,7 @@ static int espi_xec_send_oob(struct device *dev, struct espi_oob_packet *pckt)
 			MCHP_ESPI_OOB_TX_STS_OVRUN |
 			MCHP_ESPI_OOB_TX_STS_BADREQ;
 
-	LOG_DBG("%s\n", __func__);
+	LOG_DBG("%s", __func__);
 
 	if (!(ESPI_OOB_REGS->TX_STS & MCHP_ESPI_OOB_TX_STS_CHEN)) {
 		LOG_ERR("OOB channel is disabled");
@@ -489,6 +489,8 @@ static int espi_xec_send_oob(struct device *dev, struct espi_oob_packet *pckt)
 	}
 
 	if (ESPI_OOB_REGS->TX_STS & err_mask) {
+		LOG_ERR("Tx failed %x", ESPI_OOB_REGS->TX_STS);
+		ESPI_OOB_REGS->TX_STS = err_mask;
 		return -EIO;
 	}
 
@@ -706,7 +708,7 @@ static void espi_rst_isr(struct device *dev)
 	rst_sts = ESPI_CAP_REGS->ERST_STS;
 
 	/* eSPI reset status register is clear on write register */
-	ESPI_CAP_REGS->ERST_STS |= MCHP_ESPI_RST_ISTS;
+	ESPI_CAP_REGS->ERST_STS = MCHP_ESPI_RST_ISTS;
 
 	if (rst_sts & MCHP_ESPI_RST_ISTS) {
 		if (rst_sts & MCHP_ESPI_RST_ISTS_PIN_RO_HI) {
@@ -795,7 +797,7 @@ static void setup_espi_io_config(struct device *dev, u16_t host_address)
 	config_sub_devices(dev);
 	configure_sirq();
 
-	ESPI_PC_REGS->PC_STATUS |= (MCHP_ESPI_PC_STS_EN_CHG |
+	ESPI_PC_REGS->PC_STATUS = (MCHP_ESPI_PC_STS_EN_CHG |
 				    MCHP_ESPI_PC_STS_BM_EN_CHG_POS);
 	ESPI_PC_REGS->PC_IEN |= MCHP_ESPI_PC_IEN_EN_CHG;
 	ESPI_CAP_REGS->PC_RDY = 1;
@@ -846,9 +848,10 @@ static void espi_oob_down_isr(struct device *dev)
 
 	status = ESPI_OOB_REGS->RX_STS;
 
-	LOG_DBG("%s %x\n", __func__, status);
+	LOG_DBG("%s %x", __func__, status);
 	if (status & MCHP_ESPI_OOB_RX_STS_DONE) {
-		ESPI_OOB_REGS->RX_STS |= MCHP_ESPI_OOB_RX_STS_DONE;
+		/* Register is write-on-clear, ensure only 1 bit is affected */
+		ESPI_OOB_REGS->RX_STS = MCHP_ESPI_OOB_RX_STS_DONE;
 
 		k_sem_give(&data->rx_lock);
 	}
@@ -860,10 +863,11 @@ static void espi_oob_up_isr(struct device *dev)
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
 
 	status = ESPI_OOB_REGS->TX_STS;
-	LOG_DBG("%s sts:%x\n", __func__, status);
+	LOG_DBG("%s sts:%x", __func__, status);
 
 	if (status & MCHP_ESPI_OOB_TX_STS_DONE) {
-		ESPI_OOB_REGS->TX_STS |= MCHP_ESPI_OOB_TX_STS_DONE;
+		/* Register is write-on-clear, ensure only 1 bit is affected */
+		ESPI_OOB_REGS->TX_STS = MCHP_ESPI_OOB_TX_STS_DONE;
 		k_sem_give(&data->tx_lock);
 	}
 
@@ -875,7 +879,8 @@ static void espi_oob_up_isr(struct device *dev)
 						MCHP_ESPI_OOB_TX_IEN_DONE;
 			ESPI_OOB_REGS->RX_IEN |= MCHP_ESPI_OOB_RX_IEN;
 		}
-		ESPI_OOB_REGS->TX_STS |= MCHP_ESPI_OOB_TX_STS_CHG_EN;
+
+		ESPI_OOB_REGS->TX_STS = MCHP_ESPI_OOB_TX_STS_CHG_EN;
 	}
 }
 #endif
@@ -1259,9 +1264,9 @@ static int espi_xec_init(struct device *dev)
 #endif
 
 	/* Clear reset interrupt status and enable interrupts */
-	ESPI_CAP_REGS->ERST_STS |= MCHP_ESPI_RST_ISTS;
+	ESPI_CAP_REGS->ERST_STS = MCHP_ESPI_RST_ISTS;
 	ESPI_CAP_REGS->ERST_IEN |= MCHP_ESPI_RST_IEN;
-	ESPI_PC_REGS->PC_STATUS |= MCHP_ESPI_PC_STS_EN_CHG;
+	ESPI_PC_REGS->PC_STATUS = MCHP_ESPI_PC_STS_EN_CHG;
 	ESPI_PC_REGS->PC_IEN |= MCHP_ESPI_PC_IEN_EN_CHG;
 
 	/* Enable VWires interrupts */
