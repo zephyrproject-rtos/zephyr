@@ -88,10 +88,44 @@ def dt_chosen_path(kconf, _, chosen):
     return node.path if node else ""
 
 
+def dt_node_enabled(kconf, name, node):
+    """
+    This function is used to test if a node is enabled (has status
+    'okay') or not.
+
+    The 'node' argument is a string which is either a path or an
+    alias, or both, depending on 'name'.
+
+    If 'name' is 'dt_path_enabled', 'node' is an alias or a path. If
+    'name' is 'dt_alias_enabled, 'node' is an alias.
+    """
+
+    if doc_mode or edt is None:
+        return "n"
+
+    if name == "dt_alias_enabled":
+        if node.startswith("/"):
+            # EDT.get_node() works with either aliases or paths. If we
+            # are specifically being asked about an alias, reject paths.
+            return "n"
+    else:
+        # Make sure this is being called appropriately.
+        assert name == "dt_path_enabled"
+
+    try:
+        node = edt.get_node(node)
+    except edtlib.EDTError:
+        return "n"
+
+    return "y" if node and node.enabled else "n"
+
+
 def dt_nodelabel_enabled(kconf, _, label):
     """
-    This function takes a 'label' and returns "y" if we find an "enabled"
-    node that has a 'nodelabel' of 'label' in the EDT otherwise we return "n"
+    This function is like dt_node_enabled(), but the 'label' argument
+    should be a node label, like "foo" is here:
+
+       foo: some-node { ... };
     """
     if doc_mode or edt is None:
         return "n"
@@ -390,6 +424,8 @@ functions = {
         "dt_chosen_label": (dt_chosen_label, 1, 1),
         "dt_chosen_enabled": (dt_chosen_enabled, 1, 1),
         "dt_chosen_path": (dt_chosen_path, 1, 1),
+        "dt_path_enabled": (dt_node_enabled, 1, 1),
+        "dt_alias_enabled": (dt_node_enabled, 1, 1),
         "dt_nodelabel_enabled": (dt_nodelabel_enabled, 1, 1),
         "dt_chosen_reg_addr_int": (dt_chosen_reg, 1, 3),
         "dt_chosen_reg_addr_hex": (dt_chosen_reg, 1, 3),
