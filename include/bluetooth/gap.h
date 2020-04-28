@@ -86,7 +86,7 @@ enum {
 	BT_GAP_LE_PHY_CODED                   = BIT(2),
 };
 
-/* Advertising PDU types */
+/** Advertising PDU types */
 enum {
 	/** Scannable and connectable advertising. */
 	BT_GAP_ADV_TYPE_ADV_IND               = 0x00,
@@ -102,7 +102,7 @@ enum {
 	BT_GAP_ADV_TYPE_EXT_ADV               = 0x05,
 };
 
-/* Advertising PDU properties */
+/** Advertising PDU properties */
 enum {
 	/** Connectable advertising. */
 	BT_GAP_ADV_PROP_CONNECTABLE           = BIT(0),
@@ -118,7 +118,7 @@ enum {
 
 /** Maximum advertising data length. */
 #define BT_GAP_ADV_MAX_ADV_DATA_LEN             31
-/** Maximum extendend advertising data length.
+/** Maximum extended advertising data length.
  *
  *  @note The maximum advertising data length that can be sent by an extended
  *        advertiser is defined by the controller.

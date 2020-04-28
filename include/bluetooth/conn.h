@@ -164,24 +164,19 @@ enum {
 	BT_CONN_ROLE_SLAVE,
 };
 
-/** @brief Connection Info Structure
- *
- *  @param type Connection Type
- *  @param role Connection Role
- *  @param id Which local identity the connection was created with
- *  @param le LE Connection specific Info
- *  @param br BR/EDR Connection specific Info
- */
+/** Connection Info Structure */
 struct bt_conn_info {
+	/** Connection Type. */
 	u8_t type;
-
+	/** Connection Role. */
 	u8_t role;
-
+	/** Which local identity the connection was created with */
 	u8_t id;
-
+	/** Connection Type specific Info.*/
 	union {
+		/** LE Connection specific Info. */
 		struct bt_conn_le_info le;
-
+		/** BR/EDR Connection specific Info. */
 		struct bt_conn_br_info br;
 	};
 };
@@ -283,20 +278,20 @@ enum {
 	/** Convenience value when no options are specified. */
 	BT_LE_CONN_OPT_NONE = 0,
 
-	/** Enable LE Coded PHY.
+	/** @brief Enable LE Coded PHY.
 	 *
 	 *  Enable scanning on the LE Coded PHY.
 	 *  Enable connection initiation on the LE Coded PHY.
 	 */
 	BT_LE_CONN_OPT_CODED = BIT(0),
 
-	/** Enable LE 2M PHY.
+	/** @brief Enable LE 2M PHY.
 	 *
 	 *  Enable connection initiaton on the LE 2M PHY.
 	 */
 	BT_LE_CONN_OPT_2M = BIT(1),
 
-	/** Disable LE 1M PHY.
+	/** @brief Disable LE 1M PHY.
 	 *
 	 *  Disable scanning on the LE 1M PHY.
 	 *  Disable connection initiation on the LE 1M PHY.
@@ -317,19 +312,19 @@ struct bt_conn_le_create_param {
 	/** Scan window (N * 0.625 ms) */
 	u16_t window;
 
-	/** Scan interval LE Coded PHY (N * 0.625 MS)
+	/** @brief Scan interval LE Coded PHY (N * 0.625 MS)
 	 *
 	 *  Set zero to use same as LE 1M PHY scan interval
 	 */
 	u16_t interval_coded;
 
-	/** Scan window LE Coded PHY (N * 0.625 MS)
+	/** @brief Scan window LE Coded PHY (N * 0.625 MS)
 	 *
 	 *  Set zero to use same as LE 1M PHY scan window.
 	 */
 	u16_t window_coded;
 
-	/** Connection initiation timeout (N * 10 MS)
+	/** @brief Connection initiation timeout (N * 10 MS)
 	 *
 	 *  Set zero to use the default :option:`CONFIG_BT_CREATE_CONN_TIMEOUT`
 	 *  timeout.
@@ -731,7 +726,7 @@ struct bt_conn_cb {
  */
 void bt_conn_cb_register(struct bt_conn_cb *cb);
 
-/** Enable/disable bonding.
+/** @brief Enable/disable bonding.
  *
  *  Set/clear the Bonding flag in the Authentication Requirements of
  *  SMP Pairing Request/Response data.
@@ -743,7 +738,7 @@ void bt_conn_cb_register(struct bt_conn_cb *cb);
  */
 void bt_set_bondable(bool enable);
 
-/** Allow/disallow remote OOB data to be used for pairing.
+/** @brief Allow/disallow remote OOB data to be used for pairing.
  *
  *  Set/clear the OOB data flag for SMP Pairing Request/Response data.
  *  The initial value of this flag depends on BT_OOB_DATA_PRESENT Kconfig
