@@ -27,7 +27,7 @@
 };
 
 / {
-	aliases {
-		can-primary = &can1;
+	chosen {
+		zephyr,can-primary = &can1;
 	};
 };
