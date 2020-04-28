@@ -9,21 +9,21 @@
 
 #include <zephyr/types.h>
 
-#define LI_MASK   0xC0
-#define VN_MASK   0x38
-#define MODE_MASK 0x07
+#define SNTP_LI_MASK   0xC0
+#define SNTP_VN_MASK   0x38
+#define SNTP_MODE_MASK 0x07
 
-#define LI_SHIFT   6
-#define VN_SHIFT   3
-#define MODE_SHIFT 0
+#define SNTP_LI_SHIFT   6
+#define SNTP_VN_SHIFT   3
+#define SNTP_MODE_SHIFT 0
 
-#define LVM_GET_LI(x)    ((x & LI_MASK) >> LI_SHIFT)
-#define LVM_GET_VN(x)    ((x & VN_MASK) >> VN_SHIFT)
-#define LVM_GET_MODE(x)  ((x & MODE_MASK) >> MODE_SHIFT)
+#define SNTP_GET_LI(x)    ((x & SNTP_LI_MASK) >> SNTP_LI_SHIFT)
+#define SNTP_GET_VN(x)    ((x & SNTP_VN_MASK) >> SNTP_VN_SHIFT)
+#define SNTP_GET_MODE(x)  ((x & SNTP_MODE_MASK) >> SNTP_MODE_SHIFT)
 
-#define LVM_SET_LI(x, v)   (x = x | (v << LI_SHIFT))
-#define LVM_SET_VN(x, v)   (x = x | (v << VN_SHIFT))
-#define LVM_SET_MODE(x, v) (x = x | (v << MODE_SHIFT))
+#define SNTP_SET_LI(x, v)   (x = x | (v << SNTP_LI_SHIFT))
+#define SNTP_SET_VN(x, v)   (x = x | (v << SNTP_VN_SHIFT))
+#define SNTP_SET_MODE(x, v) (x = x | (v << SNTP_MODE_SHIFT))
 
 struct sntp_pkt {
 	u8_t lvm;		/* li, vn, and mode in big endian fashion */
