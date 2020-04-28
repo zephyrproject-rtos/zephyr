@@ -97,6 +97,15 @@ static void init_cache_line_size(void)
 #define init_cache_line_size() do { } while ((0))
 #endif
 
+size_t arch_cache_line_size_get(void)
+{
+#if defined(CONFIG_CACHE_LINE_SIZE_DETECT)
+	return sys_cache_line_size;
+#else
+	return 0;
+#endif
+}
+
 static int init_cache(struct device *unused)
 {
 	ARG_UNUSED(unused);
