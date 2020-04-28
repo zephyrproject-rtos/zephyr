@@ -218,10 +218,10 @@ int espi_init(void)
 }
 
 static int wait_for_pin(struct device *dev, u8_t pin, u16_t timeout,
-			u32_t exp_level)
+			int exp_level)
 {
 	u16_t loop_cnt = timeout;
-	u32_t level;
+	int level;
 
 	do {
 		level = gpio_pin_get(dev, pin);
