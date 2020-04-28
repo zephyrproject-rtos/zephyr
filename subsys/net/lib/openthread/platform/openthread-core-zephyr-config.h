@@ -85,7 +85,8 @@
  * is set in your SOC dts file.
  *
  */
-#define SETTINGS_CONFIG_PAGE_SIZE          DT_FLASH_ERASE_BLOCK_SIZE
+#define SETTINGS_CONFIG_PAGE_SIZE \
+	DT_PROP(DT_CHOSEN(zephyr_flash), erase_block_size)
 
 /**
  * @def SETTINGS_CONFIG_PAGE_NUM

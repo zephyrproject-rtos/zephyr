@@ -31,9 +31,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define FLASH_AREA_IMAGE_SECONDARY DT_FLASH_AREA_IMAGE_1_ID
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
-BUILD_ASSERT((CONFIG_IMG_BLOCK_BUF_SIZE % DT_FLASH_WRITE_BLOCK_SIZE == 0),
+#define FLASH_WRITE_BLOCK_SIZE \
+	DT_PROP(DT_CHOSEN(zephyr_flash), write_block_size)
+
+BUILD_ASSERT((CONFIG_IMG_BLOCK_BUF_SIZE % FLASH_WRITE_BLOCK_SIZE == 0),
 	     "CONFIG_IMG_BLOCK_BUF_SIZE is not a multiple of "
-	     "DT_FLASH_WRITE_BLOCK_SIZE");
+	     "FLASH_WRITE_BLOCK_SIZE");
 
 static bool flash_verify(const struct flash_area *fa, off_t offset,
 			 u8_t *data, size_t len)

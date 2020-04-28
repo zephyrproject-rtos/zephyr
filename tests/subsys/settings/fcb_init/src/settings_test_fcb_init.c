@@ -25,9 +25,11 @@ static u32_t val32;
 
 /* leverage that this area has to be embededd flash part */
 #ifdef DT_FLASH_AREA_IMAGE_0_ID
+#define FLASH_WRITE_BLOCK_SIZE \
+	DT_PROP(DT_CHOSEN(zephyr_flash), write_block_size)
 static const volatile __attribute__((section(".rodata")))
-__aligned(DT_FLASH_WRITE_BLOCK_SIZE)
-u8_t prepared_mark[DT_FLASH_WRITE_BLOCK_SIZE] = {ERASED_VAL};
+__aligned(FLASH_WRITE_BLOCK_SIZE)
+u8_t prepared_mark[FLASH_WRITE_BLOCK_SIZE] = {ERASED_VAL};
 #endif
 
 static int c1_set(const char *name, size_t len, settings_read_cb read_cb,
@@ -88,7 +90,7 @@ void test_prepare_storage(void)
 	int err;
 	const struct flash_area *fa;
 	struct device *dev;
-	u8_t new_val[DT_FLASH_WRITE_BLOCK_SIZE];
+	u8_t new_val[FLASH_WRITE_BLOCK_SIZE];
 
 	if (prepared_mark[0] == ERASED_VAL) {
 		TC_PRINT("First run: erasing the storage\r\n");
@@ -107,7 +109,7 @@ void test_prepare_storage(void)
 		zassert_true(err == 0, "can't unprotect flash");
 
 		(void)memset(new_val, (~ERASED_VAL) & 0xFF,
-			     DT_FLASH_WRITE_BLOCK_SIZE);
+			     FLASH_WRITE_BLOCK_SIZE);
 		err = flash_write(dev, (off_t)&prepared_mark, &new_val,
 				  sizeof(new_val));
 		zassert_true(err == 0, "can't write prepared_mark");
