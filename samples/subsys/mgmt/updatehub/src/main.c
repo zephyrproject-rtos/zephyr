@@ -17,6 +17,38 @@
 
 LOG_MODULE_REGISTER(main);
 
+#if defined(CONFIG_WIFI)
+#include <net/wifi_mgmt.h>
+
+static int connected;
+static struct net_mgmt_event_callback wifi_shell_mgmt_cb;
+
+static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_status *status = (const struct wifi_status *)
+					   cb->info;
+
+	if (status->status) {
+		LOG_ERR("Connection request failed (%d)", status->status);
+	} else {
+		LOG_INF("WIFI Connected");
+		connected = 1;
+	}
+}
+
+static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
+				    u32_t mgmt_event, struct net_if *iface)
+{
+	switch (mgmt_event) {
+	case NET_EVENT_WIFI_CONNECT_RESULT:
+		handle_wifi_connect_result(cb);
+		break;
+	default:
+		break;
+	}
+}
+#endif
+
 void main(void)
 {
 	int ret = -1;
@@ -47,6 +79,38 @@ void main(void)
 	if (ret < 0) {
 		LOG_ERR("Error to confirm the image");
 	}
+
+#if defined(CONFIG_WIFI)
+	net_mgmt_init_event_callback(&wifi_shell_mgmt_cb,
+				     wifi_mgmt_event_handler,
+				     NET_EVENT_WIFI_CONNECT_RESULT);
+
+	net_mgmt_add_event_callback(&wifi_shell_mgmt_cb);
+
+	struct net_if *iface = net_if_get_default();
+	static struct wifi_connect_req_params cnx_params = {
+		.ssid = CONFIG_UPDATEHUB_WIFI_SSID,
+		.ssid_length = 0,
+		.psk = CONFIG_UPDATEHUB_WIFI_PSK,
+		.psk_length = 0,
+		.channel = 0,
+		.security = WIFI_SECURITY_TYPE_PSK,
+	};
+
+	cnx_params.ssid_length = strlen(CONFIG_UPDATEHUB_WIFI_SSID);
+	cnx_params.psk_length = strlen(CONFIG_UPDATEHUB_WIFI_PSK);
+
+	connected = 0;
+
+	if (net_mgmt(NET_REQUEST_WIFI_CONNECT, iface,
+		     &cnx_params, sizeof(struct wifi_connect_req_params))) {
+		return;
+	}
+
+	while (connected == 0) {
+		k_msleep(100);
+	}
+#endif
 
 #if defined(CONFIG_UPDATEHUB_POLLING)
 	LOG_INF("Starting UpdateHub polling mode");

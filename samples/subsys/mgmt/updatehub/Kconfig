@@ -20,4 +20,13 @@ config UPDATEHUB_POLLING
 	  intervention.
 endif #!UPDATEHUB_MANUAL
 
+if WIFI
+config UPDATEHUB_WIFI_SSID
+	string "WIFI SSID - Network name"
+	default "my_network"
+config UPDATEHUB_WIFI_PSK
+	string "WIFI PSK - Network password key"
+	default "secret_passwd"
+endif
+
 source "Kconfig.zephyr"
