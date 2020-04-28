@@ -345,6 +345,9 @@ class BinaryHandler(Handler):
         # so we need to use try_kill_process_by_pid.
         self.try_kill_process_by_pid()
         proc.terminate()
+        # sleep for a while before attempting to kill
+        time.sleep(0.5)
+        proc.kill()
         self.terminated = True
 
     def _output_reader(self, proc, harness):
