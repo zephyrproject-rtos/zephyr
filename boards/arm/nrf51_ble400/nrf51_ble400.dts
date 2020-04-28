@@ -9,7 +9,7 @@
 
 / {
 	model = "Waveshare BLE400";
-	compatible = "waveshare,BLE400", "nordic,nrf51822-qfaa", "nordic,nrf51822";
+	compatible = "waveshare,BLE400";
 
 	chosen {
 		zephyr,console = &uart0;

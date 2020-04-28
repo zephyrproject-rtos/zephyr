@@ -11,8 +11,7 @@
 
 / {
 	model = "Nordic Thingy52 NRF52832";
-	compatible = "nordic,thingy52-nrf52832", "nordic,nrf52832-qfaa",
-		"nordic,nrf52832";
+	compatible = "nordic,thingy52-nrf52832";
 
 	chosen {
 		zephyr,console = &uart0;

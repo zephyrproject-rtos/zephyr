@@ -11,8 +11,7 @@
 
 / {
 	model = "Particle Argon";
-	compatible = "particle,argon", "particle,feather",
-		"nordic,nrf52840-qiaa", "nordic,nrf52840";
+	compatible = "particle,argon", "particle,feather";
 
 	sky13351 {
 		compatible = "skyworks,sky13351";

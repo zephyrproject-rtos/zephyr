@@ -10,8 +10,7 @@
 
 / {
 	model = "Sparkfun nRF52832 Breakout";
-	compatible = "sparkfun,nrf52832", "nordic,nrf52832-qfaa",
-		     "nordic,nrf52832";
+	compatible = "sparkfun,nrf52832";
 
 	chosen {
 		zephyr,console = &uart0;

@@ -10,7 +10,7 @@
 
 / {
 	model = "nrf52 bsim";
-	compatible = "nordic,nrf52832";
+	compatible = "bsim,nrf52832";
 
 	/* We need to remove aliases to nodes we delete */
 	aliases {
