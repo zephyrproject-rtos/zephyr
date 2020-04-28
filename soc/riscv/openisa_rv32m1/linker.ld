@@ -49,8 +49,8 @@
 
 #else
 
-#define ROM_BASE DT_FLASH_BASE_ADDRESS
-#define ROM_SIZE (KB(DT_FLASH_SIZE) - VECTOR_SIZE)
+#define ROM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
+#define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_flash)) - VECTOR_SIZE)
 
 #define VECTOR_BASE (ROM_BASE + ROM_SIZE)
 
