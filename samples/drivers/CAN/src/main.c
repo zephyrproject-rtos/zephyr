@@ -195,7 +195,7 @@ void main(void)
 	k_tid_t rx_tid, get_state_tid;
 	int ret;
 
-	can_dev = device_get_binding(DT_ALIAS_CAN_PRIMARY_LABEL);
+	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
 
 	if (!can_dev) {
 		printk("CAN: Device driver not found.\n");
