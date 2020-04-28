@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <settings/settings.h>
+#include <devicetree.h>
 #include <storage/flash_map.h>
 #include <drivers/flash.h>
 
@@ -94,13 +95,13 @@ void test_prepare_storage(void)
 
 	if (prepared_mark[0] == ERASED_VAL) {
 		TC_PRINT("First run: erasing the storage\r\n");
-		err = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fa);
+		err = flash_area_open(FLASH_AREA_ID(storage_partition), &fa);
 		zassert_true(err == 0, "Can't open storage flash area");
 
 		err = flash_area_erase(fa, 0, fa->fa_size);
 		zassert_true(err == 0, "Can't erase storage flash area");
 
-		err = flash_area_open(DT_FLASH_AREA_IMAGE_0_ID, &fa);
+		err = flash_area_open(FLASH_AREA_ID(slot0_partition), &fa);
 		zassert_true(err == 0, "Can't open storage flash area");
 
 		dev = flash_area_get_device(fa);
