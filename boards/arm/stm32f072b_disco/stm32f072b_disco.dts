@@ -16,6 +16,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,can-primary = &can1;
 	};
 
 	leds {
@@ -52,7 +53,6 @@
 		led2 = &green_right_led_5;
 		led3 = &blue_low_led_6;
 		sw0 = &user_button;
-		can-primary = &can1;
 	};
 };
 

@@ -17,6 +17,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
+		zephyr,can-primary = &can1;
 	};
 
 	leds {
@@ -38,7 +39,6 @@
 	aliases {
 		led0 = &green_led_1;
 		sw0 = &user_button;
-		can-primary = &can1;
 	};
 };
 
