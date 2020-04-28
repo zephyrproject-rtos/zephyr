@@ -1792,6 +1792,14 @@ static int offload_put(struct net_context *context)
 	sock->context->send_cb = NULL;
 	socket_put(sock);
 	net_context_unref(context);
+	if (sock->type == SOCK_STREAM) {
+		/* TCP contexts are referenced twice,
+		 *  once for the app and once for the stack.
+		 *  Since TCP stack is not used for offload,
+		 *  unref a second time.
+		 */
+		net_context_unref(context);
+	}
 
 	return 0;
 }
