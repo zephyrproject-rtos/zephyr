@@ -47,8 +47,6 @@ struct lll_scan {
 struct lll_scan_aux {
 	struct lll_hdr hdr;
 
-	struct lll_scan *scan;
-
 	u8_t chan:6;
 
 	u8_t phy:3;

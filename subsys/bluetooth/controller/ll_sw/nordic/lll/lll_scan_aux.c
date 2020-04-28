@@ -39,6 +39,8 @@ static void isr_rx(void *param);
 static int isr_rx_pdu(struct lll_scan_aux *lll, u8_t rssi_ready);
 static void isr_done(void *param);
 
+static u16_t trx_cnt; /* TODO: move to a union in lll.c, common to all roles */
+
 int lll_scan_aux_init(void)
 {
 	int err;
@@ -93,6 +95,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	u32_t hcto;
 
 	DEBUG_RADIO_START_O(1);
+
+	trx_cnt = 0U;
 
 	radio_reset();
 
@@ -283,11 +287,13 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, u8_t rssi_ready)
 	}
 
 	pdu = (void *)node_rx->pdu;
-	if (pdu->type != PDU_ADV_TYPE_EXT_IND) {
+	if ((pdu->type != PDU_ADV_TYPE_EXT_IND) || !pdu->len) {
 		return -EINVAL;
 	}
 
 	ull_pdu_rx_alloc();
+
+	trx_cnt++;
 
 	switch (lll->phy) {
 	case BIT(0):
@@ -308,7 +314,7 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, u8_t rssi_ready)
 	}
 
 	ftr = &(node_rx->hdr.rx_ftr);
-	ftr->param = lll->scan;
+	ftr->param = lll;
 	ftr->ticks_anchor = radio_tmr_start_get();
 	ftr->radio_end_us = radio_tmr_end_get() -
 			    radio_rx_chain_delay_get(lll->phy, 1);
@@ -325,10 +331,12 @@ static void isr_done(void *param)
 
 	lll_isr_status_reset();
 
-	e = ull_event_done_extra_get();
-	LL_ASSERT(e);
+	if (!trx_cnt) {
+		e = ull_event_done_extra_get();
+		LL_ASSERT(e);
 
-	e->type = EVENT_DONE_EXTRA_TYPE_SCAN_AUX;
+		e->type = EVENT_DONE_EXTRA_TYPE_SCAN_AUX;
+	}
 
 	lll_isr_cleanup(param);
 }

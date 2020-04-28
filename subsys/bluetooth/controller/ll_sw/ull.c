@@ -1600,10 +1600,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		}
 
 		/* TODO: below interface is WIP */
-		ull_scan_aux_setup(rx, phy, NULL);
-
-		ll_rx_put(link, rx);
-		ll_rx_sched();
+		ull_scan_aux_setup(link, rx, phy);
 	}
 	break;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
