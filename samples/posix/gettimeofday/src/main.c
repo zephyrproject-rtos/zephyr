@@ -10,7 +10,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-void main(void)
+int main(void)
 {
 	struct timeval tv;
 
