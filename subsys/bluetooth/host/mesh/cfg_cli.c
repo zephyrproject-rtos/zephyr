@@ -149,7 +149,7 @@ static void net_key_status(struct bt_mesh_model *model,
 			   struct net_buf_simple *buf)
 {
 	struct net_key_param *param;
-	u16_t net_idx, app_idx;
+	u16_t net_idx;
 	u8_t status;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
@@ -162,7 +162,7 @@ static void net_key_status(struct bt_mesh_model *model,
 	}
 
 	status = net_buf_simple_pull_u8(buf);
-	key_idx_unpack(buf, &net_idx, &app_idx);
+	net_idx = net_buf_simple_pull_le16(buf) & 0xfff;
 
 	param = cli->op_param;
 	if (param->net_idx != net_idx) {
