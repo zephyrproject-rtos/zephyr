@@ -15,6 +15,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Bluetooth Generic Access Profile defines and Assigned Numbers.
+ * @defgroup bt_gap_defines Defines and Assigned Numbers
+ * @ingroup bluetooth
+ * @{
+ */
+
 /** Company Identifiers (see Bluetooth Assigned Numbers) */
 #define BT_COMP_ID_LF           0x05f1 /* The Linux Foundation */
 
@@ -127,6 +134,10 @@ enum {
  * seconds in 10 ms unit.
  */
 #define BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT  128
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
