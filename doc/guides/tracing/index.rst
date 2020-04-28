@@ -7,54 +7,8 @@ Overview
 ********
 
 The tracing feature provides hooks that permits you to collect data from
-your application and allows enabled backends to visualize the inner-working of
+your application and allows tools running on a host to visualize the inner-working of
 the kernel and various subsystems.
-
-Applications and tracing tools can create a backend that redefines the
-macros declared in :zephyr_file:`include/tracing/tracing.h` that are called
-across the kernel in key spots.
-
-.. doxygengroup:: tracing_apis
-   :project: Zephyr
-
-SEGGER SystemView Support
-*************************
-
-Zephyr provides built-in support for `SEGGER SystemView`_ that can be enabled in
-any application for platforms that have the required hardware support.
-
-To enable tracing support with `SEGGER SystemView`_ add the configuration option
-:option:`CONFIG_SEGGER_SYSTEMVIEW` to your project configuration file and set
-it to *y*. For example, this can be added to the
-:ref:`synchronization_sample` to visualize fast switching between threads::
-
-    CONFIG_STDOUT_CONSOLE=y
-    # enable to use thread names
-    CONFIG_THREAD_NAME=y
-    CONFIG_SEGGER_SYSTEMVIEW=y
-    CONFIG_USE_SEGGER_RTT=y
-
-
-.. figure:: segger_systemview.png
-    :align: center
-    :alt: SEGGER SystemView
-    :figclass: align-center
-    :width: 80%
-
-.. _SEGGER SystemView: https://www.segger.com/products/development-tools/systemview/
-
-.. _ctf:
-
-Common Trace Format (CTF) Support
-*********************************
-
-Common Trace Format, CTF, is an open format and language to describe trace
-formats. This enables tool reuse, of which line-textual (babeltrace) and
-graphical (TraceCompass) variants already exist.
-
-CTF should look familiar to C programmers but adds stronger typing.
-See `CTF - A Flexible, High-performance Binary Trace Format
-<http://diamon.org/ctf/>`_.
 
 Every system has application-specific events to trace out.  Historically,
 that has implied:
@@ -66,28 +20,47 @@ that has implied:
 5. Writing the PC-side deserializer/parser,
 6. Writing custom ad-hoc tools for filtering and presentation.
 
-CTF allows us to formally describe #1 and #2, which enables common
-infrastructure for #5 and #6.  This leaves #3 serialization code and #4
-I/O mechanics up to a custom implementation.
+An application can use one of the existing formats or define a custom
+format by overriding the macros declared
+in :zephyr_file:`include/tracing/tracing.h`.
 
-This CTF debug module aims at providing a common #1 and #2 for Zephyr
-("top"), while providing a lean & generic interface for I/O ("bottom").
-Currently, only one CTF bottom-layer exists, POSIX ``fwrite``, but many others
-are possible:
+.. doxygengroup:: tracing_apis
+   :project: Zephyr
 
-- Async UART
-- Async DMA
-- Sync GPIO
-- ... and many more.
+Different formats, transports and host tools are avialable and supported in
+Zephyr.
 
 In fact, I/O varies greatly from system to system.  Therefore, it is
 instructive to create a taxonomy for I/O types when we must ensure the
-interface between CTF-top and CTF-bottom is generic and efficient
-enough to model these. See the *I/O taxonomy* section below.
+interface between payload/format (Top Layer) and the transport mechanics
+(bottom Layer) is generic and efficient enough to model these. See the
+*I/O taxonomy* section below.
+
+
+Serialization Formats
+**********************
+
+.. _ctf:
+
+Common Trace Format (CTF) Support
+=================================
+
+Common Trace Format, CTF, is an open format and language to describe trace
+formats. This enables tool reuse, of which line-textual (babeltrace) and
+graphical (TraceCompass) variants already exist.
+
+CTF should look familiar to C programmers but adds stronger typing.
+See `CTF - A Flexible, High-performance Binary Trace Format
+<http://diamon.org/ctf/>`_.
+
+
+CTF allows us to formally describe application specific payload and the
+serialization format, which enables common infrastructure for host tools
+and parsers and tools for filtering and presentation.
 
 
 A Generic Interface
-====================
+--------------------
 
 In CTF, an event is serialized to a packet containing one or more fields.
 As seen from *I/O taxonomy* section below, a bottom layer may:
@@ -98,19 +71,8 @@ As seen from *I/O taxonomy* section below, a bottom layer may:
 - perform actions at transaction-stop (e.g. mutex-release, emit of concat
   buffer).
 
-The bottom-layer then needs to implement the following macros:
-
-- ``CTF_BOTTOM_LOCK``:   No-op or how to lock the I/O transaction
-- ``CTF_BOTTOM_UNLOCK``: No-op or how to release the I/O transaction
-- ``CTF_BOTTOM_FIELDS``: Var-args of fields. May process each field with ``MAP``
-- ``CTF_BOTTOM_TIMESTAMPED_INTERNALLY``: Tells where timestamping is done
-
-These macros along with inline functions of the top-layer can yield a
-very low-overhead tracing infrastructure.
-
-
 CTF Top-Layer Example
-=========================
+----------------------
 
 The CTF_EVENT macro will serialize each argument to a field::
 
@@ -130,32 +92,96 @@ How to serialize and emit fields as well as handling alignment, can be done
 internally and statically at compile-time in the bottom-layer.
 
 
-How to Activate?
-================
-
-Make sure :option:`CONFIG_TRACING_CTF` is set to ``y``
-
-
-How to Use?
-===========
-
-The resulting CTF output can be visualized using babeltrace or TraceCompass:
-
-- The CTF output file can be specified in native posix using the ``-ctf-path``
-  command line option
-
-- Create a new empty directory and copy into it:
-
-  - The TSDL file (``subsys/tracing/ctf/tsdl/metadata``)
-
-  - The CTF output file renaming it to ``channel0_0``
-
-- The trace can be opened by pointing TraceCompass or babeltrace to this new
-  directory
+The CTF top layer is enabled using the configuration option
+:option:`CONFIG_TRACING_CTF` and can be used with the different transport
+backends both in synchronous and asynchronous modes.
 
 
-What is TraceCompass?
-=====================
+SEGGER SystemView Support
+=========================
+
+Zephyr provides built-in support for `SEGGER SystemView`_ that can be enabled in
+any application for platforms that have the required hardware support.
+
+The payload and format used with SystemView is custom to the application and
+relies on RTT as a transport. Newer versions of SystemView support other
+transports, for example UART or using snapshot mode (both still not
+supported in Zephyr).
+
+To enable tracing support with `SEGGER SystemView`_ add the configuration option
+:option:`CONFIG_SEGGER_SYSTEMVIEW` to your project configuration file and set
+it to *y*. For example, this can be added to the
+:ref:`synchronization_sample` to visualize fast switching between threads::
+
+    CONFIG_STDOUT_CONSOLE=y
+    # enable to use thread names
+    CONFIG_THREAD_NAME=y
+    CONFIG_SEGGER_SYSTEMVIEW=y
+    CONFIG_USE_SEGGER_RTT=y
+    CONFIG_TRACING=y
+
+
+.. figure:: segger_systemview.png
+    :align: center
+    :alt: SEGGER SystemView
+    :figclass: align-center
+    :width: 80%
+
+.. _SEGGER SystemView: https://www.segger.com/products/development-tools/systemview/
+
+
+CPU Stats
+=========
+
+A special tracing format which provides information about percentage of CPU
+usage based on tracing hooks for threads switching in and out, interrupts enters
+and exits (only distinguishes between idle thread, non idle thread and scheduler).
+
+Enable this format with the :option:`CONFIG_TRACING_CPU_STATS` option.
+
+
+Transport Backends
+******************
+
+The following backends are currently supported:
+
+* UART
+* USB
+* File (Using native posix port)
+* RTT (With SystemView)
+
+Using Tracing
+*************
+
+The sample :zephyr_file:`samples/subsys/tracing` demonstrates tracing with
+different formats and backends.
+
+To get started, the simplest way is to use the CTF format with the ``native_posix``
+port, build the sample as follows:
+
+.. zephyr-app-commands::
+   :tool: all
+   :app: samples/subsys/tracing
+   :board: native_posix
+   :gen-args: -DCONF_FILE=prj_native_posix_ctf.conf
+   :goals: build
+
+You can then run the resulting binary with the option ``-trace-file`` to generate
+the tracing data::
+
+    mkdir data
+    cp $ZEPHYR_BASE/subsys/tracing/ctf/tsdl/metadata data/
+    ./build/zephyr/zephyr.exe -trace-file=data/channel0_0
+
+The resulting CTF output can be visualized using babeltrace or TraceCompass
+by pointing the tool to the ``data`` directory with the metadata and trace files.
+
+
+Visualisation Tools
+*******************
+
+TraceCompass
+=============
 
 TraceCompass is an open source tool that visualizes CTF events such as thread
 scheduling and interrupts, and is helpful to find unintended interactions and
@@ -166,8 +192,9 @@ See also the presentation by Ericsson,
 <https://wiki.eclipse.org/images/0/0e/TechTalkOnlineDemoFeb2017_v1.pdf>`_.
 
 
+
 Future LTTng Inspiration
-========================
+************************
 
 Currently, the top-layer provided here is quite simple and bare-bones,
 and needlessly copied from Zephyr's Segger SystemView debug module.
