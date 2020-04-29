@@ -333,7 +333,8 @@ __subsystem struct can_driver_api {
  * *
  * @param dev          Pointer to the device structure for the driver instance.
  * @param msg          Message to transfer.
- * @param timeout      Waiting for empty tx mailbox timeout in ms or K_FOREVER.
+ * @param timeout      Waiting for empty tx mailbox timeout in ms or
+ *                     SYS_FOREVER_MS.
  * @param callback_isr Is called when message was sent or a transmission error
  *                     occurred. If NULL, this function is blocking until
  *                     message is sent. This must be NULL if called from user
@@ -372,7 +373,8 @@ static inline int z_impl_can_send(struct device *dev,
  * @param length Number of bytes to write (max. 8).
  * @param id  Identifier of the can message.
  * @param rtr Send remote transmission request or data frame
- * @param timeout Waiting for empty tx mailbox timeout in ms or K_FOREVER
+ * @param timeout Waiting for empty tx mailbox timeout in ms or
+ *                SYS_FOREVER_MS
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
