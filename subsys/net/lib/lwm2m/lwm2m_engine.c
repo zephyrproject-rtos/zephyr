@@ -4114,9 +4114,14 @@ static void socket_receive_loop(void)
 		}
 
 		for (i = 0; i < sock_nfds; i++) {
-			if (sock_fds[i].revents & POLLERR) {
-				LOG_ERR("Error in poll.. waiting a moment.");
-				k_msleep(ENGINE_UPDATE_INTERVAL_MS);
+			if ((sock_fds[i].revents & POLLERR) ||
+			    (sock_fds[i].revents & POLLNVAL) ||
+			    (sock_fds[i].revents & POLLHUP)) {
+				LOG_ERR("Poll reported a socket error, %02x.",
+					sock_fds[i].revents);
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+				engine_trigger_restart();
+#endif
 				continue;
 			}
 
@@ -4133,6 +4138,9 @@ static void socket_receive_loop(void)
 
 			if (len < 0) {
 				LOG_ERR("Error reading response: %d", errno);
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+				engine_trigger_restart();
+#endif
 				continue;
 			}
 
