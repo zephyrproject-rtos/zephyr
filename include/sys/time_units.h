@@ -22,7 +22,7 @@ extern "C" {
 
 /** @brief System-wide macro to convert milliseconds to kernel timeouts
  */
-#define SYS_TIMEOUT_MS (ms) ((ms) == SYS_FOREVER_MS ? K_FOREVER : K_MSEC(ms))
+#define SYS_TIMEOUT_MS(ms) ((ms) == SYS_FOREVER_MS ? K_FOREVER : K_MSEC(ms))
 
 /* Exhaustively enumerated, highly optimized time unit conversion API */
 
