@@ -162,10 +162,12 @@ static int stm32_clock_control_get_subsys_rate(struct device *clock,
 	 * since it will be updated after clock configuration and hence
 	 * more likely to contain actual clock speed
 	 */
-	u32_t sys_d1cpre_ck = get_bus_clock(SystemCoreClock,
-				CONFIG_CLOCK_STM32_D1CPRE);
-	u32_t ahb_clock = get_bus_clock(sys_d1cpre_ck,
+#if defined(CONFIG_CPU_CORTEX_M4)
+	u32_t ahb_clock = SystemCoreClock;
+#else
+	u32_t ahb_clock = get_bus_clock(SystemCoreClock,
 				CONFIG_CLOCK_STM32_HPRE);
+#endif
 	u32_t apb1_clock = get_bus_clock(ahb_clock,
 				CONFIG_CLOCK_STM32_D2PPRE1);
 	u32_t apb2_clock = get_bus_clock(ahb_clock,
