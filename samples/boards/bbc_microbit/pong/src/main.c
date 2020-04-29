@@ -394,7 +394,7 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 			   u32_t pins)
 {
 	/* Filter out spurious presses */
-	if (pins & BIT(DT_ALIAS_SW0_GPIOS_PIN)) {
+	if (pins & BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios))) {
 		printk("A pressed\n");
 		if (k_uptime_delta(&a_timestamp) < K_MSEC(100)) {
 			printk("Too quick A presses\n");
@@ -422,7 +422,7 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 		return;
 	}
 
-	if (pins & BIT(DT_ALIAS_SW0_GPIOS_PIN)) {
+	if (pins & BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios))) {
 		if (select) {
 			pong_select_change();
 			return;
@@ -485,22 +485,22 @@ static void configure_buttons(void)
 	static struct gpio_callback button_cb_data;
 	struct device *gpio;
 
-	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
 
-	gpio_pin_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-			   DT_ALIAS_SW0_GPIOS_FLAGS | GPIO_INPUT);
-	gpio_pin_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
-			   DT_ALIAS_SW1_GPIOS_FLAGS | GPIO_INPUT);
+	gpio_pin_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
+			   DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios) | GPIO_INPUT);
+	gpio_pin_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw1), gpios),
+			   DT_GPIO_FLAGS(DT_ALIAS(sw1), gpios) | GPIO_INPUT);
 
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
+	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
+	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw1), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	gpio_init_callback(&button_cb_data, button_pressed,
-			   BIT(DT_ALIAS_SW0_GPIOS_PIN) |
-			   BIT(DT_ALIAS_SW1_GPIOS_PIN));
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios)) |
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw1), gpios)));
 
 	gpio_add_callback(gpio, &button_cb_data);
 }

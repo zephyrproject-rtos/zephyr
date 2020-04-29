@@ -115,7 +115,7 @@ void main(void)
 {
 	static struct gpio_callback line_sensors;
 
-	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
 	i2c_dev = device_get_binding(I2C_DEV);
 	/* Setup gpio to read data from digital line sensors of the robot */
 	gpio_pin_configure(gpio, EXT_P13_GPIO_PIN, GPIO_INPUT);

@@ -25,14 +25,14 @@ struct printk_data_t {
 
 K_FIFO_DEFINE(printk_fifo);
 
-#ifdef DT_ALIAS_LED0_GPIOS_FLAGS
-#define LED0_FLAGS DT_ALIAS_LED0_GPIOS_FLAGS
+#if DT_PHA_HAS_CELL(DT_ALIAS(led0), gpios, flags)
+#define LED0_FLAGS DT_GPIO_FLAGS(DT_ALIAS(led0), gpios)
 #else
 #define LED0_FLAGS 0
 #endif
 
-#ifdef DT_ALIAS_LED1_GPIOS_FLAGS
-#define LED1_FLAGS DT_ALIAS_LED1_GPIOS_FLAGS
+#if DT_PHA_HAS_CELL(DT_ALIAS(led1), gpios, flags)
+#define LED1_FLAGS DT_GPIO_FLAGS(DT_ALIAS(led1), gpios)
 #else
 #define LED1_FLAGS 0
 #endif
@@ -82,9 +82,9 @@ void blink(const struct led *led, u32_t sleep_ms, u32_t id)
 void blink1(void)
 {
 	const struct led led1 = {
-		.gpio_dev_name = DT_ALIAS_LED0_GPIOS_CONTROLLER,
-		.gpio_pin_name = DT_ALIAS_LED0_LABEL,
-		.gpio_pin = DT_ALIAS_LED0_GPIOS_PIN,
+		.gpio_dev_name = DT_GPIO_LABEL(DT_ALIAS(led0), gpios),
+		.gpio_pin_name = DT_LABEL(DT_ALIAS(led0)),
+		.gpio_pin = DT_GPIO_PIN(DT_ALIAS(led0), gpios),
 		.gpio_flags = GPIO_OUTPUT | LED0_FLAGS,
 	};
 
@@ -94,9 +94,9 @@ void blink1(void)
 void blink2(void)
 {
 	const struct led led2 = {
-		.gpio_dev_name = DT_ALIAS_LED1_GPIOS_CONTROLLER,
-		.gpio_pin_name = DT_ALIAS_LED1_LABEL,
-		.gpio_pin = DT_ALIAS_LED1_GPIOS_PIN,
+		.gpio_dev_name = DT_GPIO_LABEL(DT_ALIAS(led1), gpios),
+		.gpio_pin_name = DT_LABEL(DT_ALIAS(led1)),
+		.gpio_pin = DT_GPIO_PIN(DT_ALIAS(led1), gpios),
 		.gpio_flags = GPIO_OUTPUT | LED1_FLAGS,
 	};
 
