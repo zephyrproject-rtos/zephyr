@@ -128,6 +128,8 @@ The MIMXRT1060 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_10 | GPIO/ENET_INT   | GPIO/Ethernet             |
 +---------------+-----------------+---------------------------+
+| GPIO_AD_B0_11 | GPIO            | Touch Interrupt           |
++---------------+-----------------+---------------------------+
 | GPIO_AD_B0_12 | LPUART1_TX      | UART Console              |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_13 | LPUART1_RX      | UART Console              |
