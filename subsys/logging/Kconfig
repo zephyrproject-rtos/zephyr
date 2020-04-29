@@ -523,6 +523,13 @@ config LOG_BACKEND_RB_SLOT_SIZE
 	  Size of the message slot inside ring buffer. All log messages
 	  are split to similar sized logging slots.
 
+config LOG_BACKEND_RB_CLEAR
+	bool "Clear ring buffer slot"
+	default y
+	help
+	  Clearing ring buffer slot helps to write more easy tools to read logs
+	  on different platforms.
+
 endif # LOG_BACKEND_RB
 
 config LOG_BACKEND_SHOW_COLOR

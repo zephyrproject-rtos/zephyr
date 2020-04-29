@@ -8,6 +8,7 @@
 #include <logging/log_core.h>
 #include <logging/log_msg.h>
 #include <logging/log_output.h>
+#include <sys/byteorder.h>
 #include <sys/ring_buffer.h>
 
 static struct ring_buf ringbuf;
@@ -40,7 +41,6 @@ static void trace(const u8_t *data, size_t length)
 	static u16_t log_id;
 	volatile u8_t *t, *region;
 	int space;
-	int i;
 
 	space = ring_buf_space_get(&ringbuf);
 	if (space < CONFIG_LOG_BACKEND_RB_SLOT_SIZE) {
@@ -57,15 +57,23 @@ static void trace(const u8_t *data, size_t length)
 	region = t;
 
 	/* Add magic number at the beginning of the slot */
-	*(u16_t *)t = magic;
+	sys_put_le16(magic, (u8_t *)t);
 	t += 2;
 
 	/* Add log id */
-	*(u16_t *)t = log_id++;
+	sys_put_le16(log_id++, (u8_t *)t);
 	t += 2;
 
-	for (i = 0; i < MIN(length, CONFIG_LOG_BACKEND_RB_SLOT_SIZE - 4); i++) {
-		*t++ = data[i];
+	length = MIN(length, CONFIG_LOG_BACKEND_RB_SLOT_SIZE - 4);
+
+	memcpy((void *)t, data, length);
+	t += length;
+
+	/* Clear logging slot */
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_RB_CLEAR) &&
+	    length < CONFIG_LOG_BACKEND_RB_SLOT_SIZE - 4) {
+		memset((void *)t, 0,
+		       CONFIG_LOG_BACKEND_RB_SLOT_SIZE - 4 - length);
 	}
 
 	SOC_DCACHE_FLUSH((void *)region, CONFIG_LOG_BACKEND_RB_SLOT_SIZE);
@@ -146,7 +154,7 @@ static void sync_hexdump(const struct log_backend *const backend,
 	irq_unlock(key);
 }
 
-const struct log_backend_api log_backend_adsp_api = {
+const struct log_backend_api log_backend_rb_api = {
 	.put = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : put,
 	.put_sync_string = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
 			sync_string : NULL,
@@ -157,4 +165,4 @@ const struct log_backend_api log_backend_adsp_api = {
 	.dropped = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : dropped,
 };
 
-LOG_BACKEND_DEFINE(log_backend_adsp, log_backend_adsp_api, true);
+LOG_BACKEND_DEFINE(log_backend_adsp, log_backend_rb_api, true);
