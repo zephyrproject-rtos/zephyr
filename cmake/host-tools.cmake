@@ -2,7 +2,7 @@
 
 include(${ZEPHYR_BASE}/cmake/toolchain/zephyr/host-tools.cmake)
 
-# west is optional
+# west is an optional dependency
 find_program(
   WEST
   west
@@ -46,10 +46,7 @@ else()
       )
 endif()
 
-# dtc is an optional dependency. Search for it on PATH and in
-# TOOLCHAIN_HOME. Usually DTC will be provided by an SDK, but for
-# SDK-less projects like gnuarmemb, it is up to the user to install
-# dtc.
+# dtc is an optional dependency
 find_program(
   DTC
   dtc
