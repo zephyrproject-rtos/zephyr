@@ -16,12 +16,12 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#if defined(DT_ALIAS_I2C_0_LABEL)
-#define I2C_DEV_NAME	DT_ALIAS_I2C_0_LABEL
-#elif defined(DT_ALIAS_I2C_1_LABEL)
-#define I2C_DEV_NAME	DT_ALIAS_I2C_1_LABEL
-#elif defined(DT_ALIAS_I2C_2_LABEL)
-#define I2C_DEV_NAME	DT_ALIAS_I2C_2_LABEL
+#if DT_HAS_NODE(DT_ALIAS(i2c_0))
+#define I2C_DEV_NAME	DT_LABEL(DT_ALIAS(i2c_0))
+#elif DT_HAS_NODE(DT_ALIAS(i2c_1))
+#define I2C_DEV_NAME	DT_LABEL(DT_ALIAS(i2c_1))
+#elif DT_HAS_NODE(DT_ALIAS(i2c_2))
+#define I2C_DEV_NAME	DT_LABEL(DT_ALIAS(i2c_2))
 #else
 #error "Please set the correct I2C device"
 #endif
