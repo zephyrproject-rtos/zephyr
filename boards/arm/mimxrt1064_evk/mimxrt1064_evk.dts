@@ -125,7 +125,7 @@ arduino_i2c: &lpi2c1 {};
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
 		label = "FT5336";
-		int-gpios = <&gpio1 11 0>;
+		int-gpios = <&gpio1 11 GPIO_ACTIVE_LOW>;
 	};
 };
 
