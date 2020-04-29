@@ -417,7 +417,11 @@ static const struct flash_driver_api flash_sam0_api = {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sam0_page_layout,
 #endif
+#if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
+	.write_block_size = 1,
+#else
 	.write_block_size = FLASH_PAGE_SIZE,
+#endif
 };
 
 static struct flash_sam0_data flash_sam0_data_0;
