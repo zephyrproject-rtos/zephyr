@@ -521,6 +521,12 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 	  the provided k_busy_wait(), but instead must do something custom. It must
 	  enable this option in that case.
 
+config ARCH_CUSTOM_BUSY_WAIT_THRESHOLD
+	int "Maximum period measured with custom busy wait (in microseconds)"
+	default 0
+	help
+	  If 0 then custom busy wait is used when enabled.
+
 config SYS_CLOCK_TICKS_PER_SEC
 	int "System tick frequency (in ticks/second)"
 	default 100 if QEMU_TARGET || SOC_POSIX

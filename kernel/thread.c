@@ -115,28 +115,39 @@ bool z_is_thread_essential(void)
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
+
 void z_impl_k_busy_wait(u32_t usec_to_wait)
 {
-#if !defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
-	/* use 64-bit math to prevent overflow when multiplying */
-	u32_t cycles_to_wait = (u32_t)(
-		(u64_t)usec_to_wait *
-		(u64_t)sys_clock_hw_cycles_per_sec() /
-		(u64_t)USEC_PER_SEC
-	);
-	u32_t start_cycles = k_cycle_get_32();
+	u32_t cycles_to_wait;
 
-	for (;;) {
-		u32_t current_cycles = k_cycle_get_32();
+	if (!IS_ENABLED(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT) ||
+	   ((CONFIG_ARCH_CUSTOM_BUSY_WAIT_THRESHOLD > 0)
+	    && (usec_to_wait > CONFIG_ARCH_CUSTOM_BUSY_WAIT_THRESHOLD))) {
+		/* use 64-bit math to prevent overflow when multiplying */
+		cycles_to_wait = (u32_t)(
+			(u64_t)usec_to_wait *
+			(u64_t)sys_clock_hw_cycles_per_sec() /
+			(u64_t)USEC_PER_SEC
+		);
+		u32_t start_cycles = k_cycle_get_32();
 
-		/* this handles the rollover on an unsigned 32-bit value */
-		if ((current_cycles - start_cycles) >= cycles_to_wait) {
-			break;
+		for (;;) {
+			u32_t current_cycles = k_cycle_get_32();
+
+			/* this handles the rollover on an unsigned 32-bit
+			 * value.
+			 */
+			if ((current_cycles - start_cycles) >= cycles_to_wait) {
+				break;
+			}
 		}
+
+		return;
 	}
-#else
-	arch_busy_wait(usec_to_wait);
-#endif /* CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT */
+
+	if (IS_ENABLED(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)) {
+		arch_busy_wait(usec_to_wait);
+	}
 }
 
 #ifdef CONFIG_USERSPACE
