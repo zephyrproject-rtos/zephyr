@@ -188,7 +188,7 @@ SECTIONS
 	_end = .;
 
 	/* All unused memory also owned by the kernel for heaps */
-	__kernel_ram_end = PHYS_RAM_ADDR + KB(DT_RAM_SIZE);
+	__kernel_ram_end = PHYS_RAM_ADDR + PHYS_RAM_SIZE;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
 #include <linker/debug-sections.ld>
