@@ -1,4 +1,3 @@
 tests:
   drivers.device_id:
     tags: driver
-    filter: CONFIG_HWINFO
