@@ -25,12 +25,16 @@ struct printk_data_t {
 
 K_FIFO_DEFINE(printk_fifo);
 
-#ifndef DT_ALIAS_LED0_GPIOS_FLAGS
-#define DT_ALIAS_LED0_GPIOS_FLAGS 0
+#ifdef DT_ALIAS_LED0_GPIOS_FLAGS
+#define LED0_FLAGS DT_ALIAS_LED0_GPIOS_FLAGS
+#else
+#define LED0_FLAGS 0
 #endif
 
-#ifndef DT_ALIAS_LED1_GPIOS_FLAGS
-#define DT_ALIAS_LED1_GPIOS_FLAGS 0
+#ifdef DT_ALIAS_LED1_GPIOS_FLAGS
+#define LED1_FLAGS DT_ALIAS_LED1_GPIOS_FLAGS
+#else
+#define LED1_FLAGS 0
 #endif
 
 struct led {
@@ -81,7 +85,7 @@ void blink1(void)
 		.gpio_dev_name = DT_ALIAS_LED0_GPIOS_CONTROLLER,
 		.gpio_pin_name = DT_ALIAS_LED0_LABEL,
 		.gpio_pin = DT_ALIAS_LED0_GPIOS_PIN,
-		.gpio_flags = GPIO_OUTPUT | DT_ALIAS_LED0_GPIOS_FLAGS,
+		.gpio_flags = GPIO_OUTPUT | LED0_FLAGS,
 	};
 
 	blink(&led1, 100, 0);
@@ -93,7 +97,7 @@ void blink2(void)
 		.gpio_dev_name = DT_ALIAS_LED1_GPIOS_CONTROLLER,
 		.gpio_pin_name = DT_ALIAS_LED1_LABEL,
 		.gpio_pin = DT_ALIAS_LED1_GPIOS_PIN,
-		.gpio_flags = GPIO_OUTPUT | DT_ALIAS_LED1_GPIOS_FLAGS,
+		.gpio_flags = GPIO_OUTPUT | LED1_FLAGS,
 	};
 
 	blink(&led2, 1000, 1);
