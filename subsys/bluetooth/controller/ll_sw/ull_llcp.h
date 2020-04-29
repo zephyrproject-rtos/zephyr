@@ -11,6 +11,12 @@ struct ull_cp_conn {
 	struct ull_tx_q tx_q;
 
 	struct {
+		/* Execution Info */
+		struct {
+			u32_t ticks_at_expire;
+			u16_t lazy;
+		} info;
+
 		/* Local Request */
 		struct {
 			sys_slist_t pend_proc_list;
@@ -91,7 +97,7 @@ void ull_cp_release_ntf(struct node_rx_pdu *ntf);
 /**
  * @breif Run pending LL Control Procedures.
  */
-void ull_cp_run(struct ull_cp_conn *conn);
+void ull_cp_run(struct ull_cp_conn *conn, u32_t ticks_at_expire, u16_t lazy);
 
 /**
  * @brief Handle received LL Control PDU.

@@ -283,8 +283,12 @@ void ull_cp_release_ntf(struct node_rx_pdu *ntf)
 	ntf_release(ntf);
 }
 
-void ull_cp_run(struct ull_cp_conn *conn)
+void ull_cp_run(struct ull_cp_conn *conn, u32_t ticks_at_expire, u16_t lazy)
 {
+	/* Store Execution Information */
+	conn->llcp.info.ticks_at_expire = ticks_at_expire;
+	conn->llcp.info.lazy = lazy;
+
 	rr_run(conn);
 	lr_run(conn);
 }

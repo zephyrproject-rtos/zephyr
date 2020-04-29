@@ -35,6 +35,7 @@
 #include "helper_util.h"
 
 static u32_t event_active;
+static u32_t ticks_at_expire;
 static u16_t lazy;
 sys_slist_t ut_rx_q;
 static sys_slist_t lt_tx_q;
@@ -125,6 +126,7 @@ void test_setup(struct ull_cp_conn *conn)
 	ull_cp_conn_init(conn);
 
 	event_active = 0;
+	ticks_at_expire = 0;
 	lazy = 0;
 }
 
@@ -145,7 +147,7 @@ void event_prepare(struct ull_cp_conn *conn)
 	/*** ULL Prepare ***/
 
 	/* Handle any LL Control Procedures */
-	ull_cp_run(conn);
+	ull_cp_run(conn, ticks_at_expire, lazy);
 
 	/*** LLL Prepare ***/
 	lll = &conn->lll;
