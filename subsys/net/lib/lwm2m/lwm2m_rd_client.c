@@ -193,6 +193,18 @@ static void sm_handle_timeout_state(struct lwm2m_message *msg,
 	}
 }
 
+/* force state machine restart */
+void engine_trigger_restart(void)
+{
+	lwm2m_engine_context_close(client.ctx);
+
+	/* Jump directly to the registration phase. In case there is no valid
+	 * security object for the LWM2M server, it will fall back to the
+	 * bootstrap procedure.
+	 */
+	set_sm_state(ENGINE_DO_REGISTRATION);
+}
+
 /* force re-update with remote peer */
 void engine_trigger_update(void)
 {
