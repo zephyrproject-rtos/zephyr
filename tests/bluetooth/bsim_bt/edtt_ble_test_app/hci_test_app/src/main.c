@@ -68,11 +68,6 @@ static void error_response(int error)
 	waiting_opcode = 0;
 }
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX)
-#define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(CONFIG_BT_CTLR_DATA_LENGTH_MAX)
-#else
-#define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(60)
-#endif
 NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_HCI_CMD_COUNT,
 			  BT_BUF_RX_SIZE, NULL);
 NET_BUF_POOL_FIXED_DEFINE(hci_data_pool, CONFIG_BT_CTLR_TX_BUFFERS + 4,
