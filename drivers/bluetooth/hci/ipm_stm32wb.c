@@ -157,7 +157,7 @@ static void bt_ipm_rx_thread(void)
 
 		hcievt = k_fifo_get(&ipm_rx_events_fifo, K_FOREVER);
 
-		k_sem_take(&ipm_busy, K_NO_WAIT);
+		k_sem_take(&ipm_busy, K_FOREVER);
 
 		switch (hcievt->evtserial.type) {
 		case HCI_EVT:
