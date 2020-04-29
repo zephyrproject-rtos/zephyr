@@ -9,4 +9,7 @@ config BOARD
 config BUILD_OUTPUT_BIN
 	default n
 
+config HWINFO_STM32
+	default n
+
 endif # BOARD_QEMU_CORTEX_M4
