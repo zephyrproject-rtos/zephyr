@@ -109,6 +109,15 @@ static int mimxrt1050_evk_init(struct device *dev)
 	CLOCK_EnableClock(kCLOCK_Iomuxc);
 	CLOCK_EnableClock(kCLOCK_IomuxcSnvs);
 
+#if DT_NODE_HAS_PROP(DT_INST(0, focaltech_ft5336), int_gpios)
+	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_11_GPIO1_IO11, 0);
+
+	IOMUXC_SetPinConfig(IOMUXC_GPIO_AD_B0_11_GPIO1_IO11,
+			    IOMUXC_SW_PAD_CTL_PAD_PKE_MASK |
+			    IOMUXC_SW_PAD_CTL_PAD_SPEED(2) |
+			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
+#endif
+
 #if !DT_HAS_NODE(DT_NODELABEL(enet))
 	/* LED */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_09_GPIO1_IO09, 0);

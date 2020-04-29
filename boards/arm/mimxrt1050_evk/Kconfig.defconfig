@@ -39,6 +39,9 @@ if KSCAN
 config KSCAN_FT5336
 	default y
 
+config KSCAN_FT5336_INTERRUPT
+	default y
+
 config KSCAN_INIT_PRIORITY
 	default 60
 
