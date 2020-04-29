@@ -920,20 +920,20 @@ static void i2s_stm32_irq_config_func_##index(struct device *dev)	\
 
 #if DT_HAS_NODE(DT_NODELABEL(i2s1))
 I2S_INIT(1, 2)
-#endif /* CONFIG_I2S_1 */
+#endif
 
 #if DT_HAS_NODE(DT_NODELABEL(i2s2))
 I2S_INIT(2, 1)
-#endif /* CONFIG_I2S_2 */
+#endif
 
 #if DT_HAS_NODE(DT_NODELABEL(i2s3))
 I2S_INIT(3, 1)
-#endif /* CONFIG_I2S_3 */
+#endif
 
 #if DT_HAS_NODE(DT_NODELABEL(i2s4))
 I2S_INIT(4, 2)
-#endif /* CONFIG_I2S_4 */
+#endif
 
 #if DT_HAS_NODE(DT_NODELABEL(i2s5))
 I2S_INIT(5, 2)
-#endif /* CONFIG_I2S_5 */
+#endif

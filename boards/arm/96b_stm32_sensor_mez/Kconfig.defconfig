@@ -26,9 +26,6 @@ config I2S_STM32_PLLI2S_PLLN
 config I2S_STM32_PLLI2S_PLLR
 	default 3
 
-config I2S_2
-	default y
-
 endif # I2S
 
 config SPI_STM32_INTERRUPT

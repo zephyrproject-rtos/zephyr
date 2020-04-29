@@ -50,10 +50,10 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PB14, STM32F4_PINMUX_FUNC_PB14_SPI2_MISO},
 	{STM32_PIN_PB15, STM32F4_PINMUX_FUNC_PB15_SPI2_MOSI},
 #endif
-#ifdef CONFIG_I2S_5
+#if DT_HAS_NODE(DT_NODELABEL(i2s5))
 	{STM32_PIN_PB0, STM32F4_PINMUX_FUNC_PB0_I2S5_CK},
 	{STM32_PIN_PB8, STM32F4_PINMUX_FUNC_PB8_I2S5_SD},
-#endif	/* CONFIG_I2S_5 */
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)
