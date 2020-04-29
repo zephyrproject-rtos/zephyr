@@ -550,47 +550,47 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 	BUILD_ASSERT(size % page == 0U,					\
 		     "Size is not an integer multiple of page size")
 
-#define DT_INST_AT2X(inst, t) DT_INST(inst, atmel_at##t)
+#define INST_DT_AT2X(inst, t) DT_INST(inst, atmel_at##t)
 
 #define EEPROM_AT2X_DEVICE(n, t) \
-	ASSERT_PAGESIZE_IS_POWER_OF_2(DT_PROP(DT_INST_AT2X(n, t), pagesize)); \
-	ASSERT_SIZE_PAGESIZE_VALID(DT_PROP(DT_INST_AT2X(n, t), size), \
-				   DT_PROP(DT_INST_AT2X(n, t), pagesize)); \
-	ASSERT_AT##t##_ADDR_W_VALID(DT_PROP(DT_INST_AT2X(n, t), \
+	ASSERT_PAGESIZE_IS_POWER_OF_2(DT_PROP(INST_DT_AT2X(n, t), pagesize)); \
+	ASSERT_SIZE_PAGESIZE_VALID(DT_PROP(INST_DT_AT2X(n, t), size), \
+				   DT_PROP(INST_DT_AT2X(n, t), pagesize)); \
+	ASSERT_AT##t##_ADDR_W_VALID(DT_PROP(INST_DT_AT2X(n, t), \
 					    address_width)); \
 	static const struct eeprom_at2x_config eeprom_at##t##_config_##n = { \
-		.bus_dev_name = DT_BUS_LABEL(DT_INST_AT2X(n, t)), \
-		.bus_addr = DT_REG_ADDR(DT_INST_AT2X(n, t)), \
+		.bus_dev_name = DT_BUS_LABEL(INST_DT_AT2X(n, t)), \
+		.bus_addr = DT_REG_ADDR(INST_DT_AT2X(n, t)), \
 		.max_freq = UTIL_AND( \
-			DT_NODE_HAS_PROP(DT_INST_AT2X(n, t), \
+			DT_NODE_HAS_PROP(INST_DT_AT2X(n, t), \
 					 spi_max_frequency), \
-			DT_PROP(DT_INST_AT2X(n, t), spi_max_frequency)), \
+			DT_PROP(INST_DT_AT2X(n, t), spi_max_frequency)), \
 		.spi_cs_dev_name = UTIL_AND( \
-			DT_SPI_DEV_HAS_CS_GPIOS(DT_INST_AT2X(n, t)), \
-			DT_SPI_DEV_CS_GPIOS_LABEL(DT_INST_AT2X(n, t))),	\
+			DT_SPI_DEV_HAS_CS_GPIOS(INST_DT_AT2X(n, t)), \
+			DT_SPI_DEV_CS_GPIOS_LABEL(INST_DT_AT2X(n, t))),	\
 		.spi_cs_pin = UTIL_AND( \
-			DT_SPI_DEV_HAS_CS_GPIOS(DT_INST_AT2X(n, t)), \
-			DT_SPI_DEV_CS_GPIOS_PIN(DT_INST_AT2X(n, t))), \
+			DT_SPI_DEV_HAS_CS_GPIOS(INST_DT_AT2X(n, t)), \
+			DT_SPI_DEV_CS_GPIOS_PIN(INST_DT_AT2X(n, t))), \
 		.wp_gpio_pin = UTIL_AND( \
-			DT_NODE_HAS_PROP(DT_INST_AT2X(n, t), wp_gpios), \
-			DT_GPIO_PIN(DT_INST_AT2X(n, t), wp_gpios)), \
+			DT_NODE_HAS_PROP(INST_DT_AT2X(n, t), wp_gpios), \
+			DT_GPIO_PIN(INST_DT_AT2X(n, t), wp_gpios)), \
 		.wp_gpio_flags = UTIL_AND( \
-			DT_NODE_HAS_PROP(DT_INST_AT2X(n, t), wp_gpios), \
-			DT_GPIO_FLAGS(DT_INST_AT2X(n, t), wp_gpios)), \
+			DT_NODE_HAS_PROP(INST_DT_AT2X(n, t), wp_gpios), \
+			DT_GPIO_FLAGS(INST_DT_AT2X(n, t), wp_gpios)), \
 		.wp_gpio_name = UTIL_AND( \
-			DT_NODE_HAS_PROP(DT_INST_AT2X(n, t), wp_gpios), \
-			DT_GPIO_LABEL(DT_INST_AT2X(n, t), wp_gpios)), \
-		.size = DT_PROP(DT_INST_AT2X(n, t), size), \
-		.pagesize = DT_PROP(DT_INST_AT2X(n, t), pagesize), \
-		.addr_width = DT_PROP(DT_INST_AT2X(n, t), address_width), \
-		.readonly = DT_PROP(DT_INST_AT2X(n, t), read_only), \
-		.timeout = DT_PROP(DT_INST_AT2X(n, t), timeout), \
+			DT_NODE_HAS_PROP(INST_DT_AT2X(n, t), wp_gpios), \
+			DT_GPIO_LABEL(INST_DT_AT2X(n, t), wp_gpios)), \
+		.size = DT_PROP(INST_DT_AT2X(n, t), size), \
+		.pagesize = DT_PROP(INST_DT_AT2X(n, t), pagesize), \
+		.addr_width = DT_PROP(INST_DT_AT2X(n, t), address_width), \
+		.readonly = DT_PROP(INST_DT_AT2X(n, t), read_only), \
+		.timeout = DT_PROP(INST_DT_AT2X(n, t), timeout), \
 		.read_fn = eeprom_at##t##_read, \
 		.write_fn = eeprom_at##t##_write, \
 	}; \
 	static struct eeprom_at2x_data eeprom_at##t##_data_##n; \
 	DEVICE_AND_API_INIT(eeprom_at##t##_##n, \
-			    DT_LABEL(DT_INST_AT2X(n, t)), \
+			    DT_LABEL(INST_DT_AT2X(n, t)), \
 			    &eeprom_at2x_init, &eeprom_at##t##_data_##n, \
 			    &eeprom_at##t##_config_##n, POST_KERNEL, \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
@@ -601,13 +601,13 @@ static const struct eeprom_driver_api eeprom_at2x_api = {
 
 #define CALL_WITH_ARG(arg, expr) expr(arg);
 
-#define DT_INST_AT2X_FOREACH(t, inst_expr) \
+#define INST_DT_AT2X_FOREACH(t, inst_expr) \
 	UTIL_LISTIFY(DT_NUM_INST(atmel_at##t), CALL_WITH_ARG, inst_expr)
 
 #ifdef CONFIG_EEPROM_AT24
-DT_INST_AT2X_FOREACH(24, EEPROM_AT24_DEVICE);
+INST_DT_AT2X_FOREACH(24, EEPROM_AT24_DEVICE);
 #endif
 
 #ifdef CONFIG_EEPROM_AT25
-DT_INST_AT2X_FOREACH(25, EEPROM_AT25_DEVICE);
+INST_DT_AT2X_FOREACH(25, EEPROM_AT25_DEVICE);
 #endif
