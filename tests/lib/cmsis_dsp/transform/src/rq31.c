@@ -108,7 +108,7 @@ static void test_arm_rifft_q31(
 	arm_rfft_init_q31(&inst, length, true, true);
 
 	/* Allocate buffers */
-	scratch = malloc(length * sizeof(q31_t));
+	scratch = calloc(length + 2, sizeof(q31_t)); /* see #24701 */
 	zassert_not_null(scratch, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	output = malloc(2 * length * sizeof(q31_t));
