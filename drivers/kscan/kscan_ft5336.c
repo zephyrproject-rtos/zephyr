@@ -69,6 +69,8 @@ static int ft5336_read(struct device *dev)
 	row = ((buffer[2] & 0x0f) << 8) | buffer[3];
 	column = ((buffer[4] & 0x0f) << 8) | buffer[5];
 
+	LOG_DBG("row: %d, col: %d, pressed: %d", row, column, pressed);
+
 	data->callback(dev, row, column, pressed);
 
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
