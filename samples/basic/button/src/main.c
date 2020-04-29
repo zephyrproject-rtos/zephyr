@@ -13,12 +13,16 @@
 
 #define SLEEP_TIME_MS	1
 
-#ifndef DT_ALIAS_SW0_GPIOS_FLAGS
-#define DT_ALIAS_SW0_GPIOS_FLAGS 0
+#ifdef DT_ALIAS_SW0_GPIOS_FLAGS
+#define SW0_FLAGS DT_ALIAS_SW0_GPIOS_FLAGS
+#else
+#define SW0_FLAGS 0
 #endif
 
-#ifndef DT_ALIAS_LED0_GPIOS_FLAGS
-#define DT_ALIAS_LED0_GPIOS_FLAGS 0
+#ifdef DT_ALIAS_LED0_GPIOS_FLAGS
+#define LED0_FLAGS DT_ALIAS_LED0_GPIOS_FLAGS
+#else
+#define LED0_FLAGS 0
 #endif
 
 void button_pressed(struct device *dev, struct gpio_callback *cb,
@@ -42,7 +46,7 @@ void main(void)
 	}
 
 	ret = gpio_pin_configure(dev_button, DT_ALIAS_SW0_GPIOS_PIN,
-				 DT_ALIAS_SW0_GPIOS_FLAGS | GPIO_INPUT);
+				 SW0_FLAGS | GPIO_INPUT);
 	if (ret != 0) {
 		printk("Error %d: failed to configure pin %d '%s'\n",
 			ret, DT_ALIAS_SW0_GPIOS_PIN, DT_ALIAS_SW0_LABEL);
@@ -72,7 +76,7 @@ void main(void)
 	}
 
 	ret = gpio_pin_configure(dev_led, DT_ALIAS_LED0_GPIOS_PIN,
-				 DT_ALIAS_LED0_GPIOS_FLAGS | GPIO_OUTPUT);
+				 LED0_FLAGS | GPIO_OUTPUT);
 	if (ret != 0) {
 		printk("Error %d: failed to configure pin %d '%s'\n",
 			ret, DT_ALIAS_LED0_GPIOS_PIN, DT_ALIAS_LED0_LABEL);
