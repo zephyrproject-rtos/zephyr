@@ -59,7 +59,7 @@ def main():
     out_comment("Compatibles appearing on enabled nodes")
     for compat in sorted(edt.compat2enabled):
         #define DT_COMPAT_<COMPAT> 1
-        out(f"COMPAT_{str2ident(compat)}", 1)
+        out(f"COMPAT_{str2ident(compat)}", 1, deprecation_msg = "Macro is deprecated")
 
     # Definitions derived from /chosen nodes
     write_addr_size(edt, "zephyr,ccm", "CCM")
@@ -274,7 +274,7 @@ def write_bus(node):
 
     for compat in node.compats:
         # #define DT_<COMPAT>_BUS_<BUS-TYPE> 1
-        out(f"{str2ident(compat)}_BUS_{str2ident(node.on_bus)}", 1)
+        out(f"{str2ident(compat)}_BUS_{str2ident(node.on_bus)}", 1, deprecation_msg = "Macro is deprecated")
 
 
 def write_existence_flags(node):
@@ -286,7 +286,7 @@ def write_existence_flags(node):
 
     for compat in node.compats:
         instance_no = node.edt.compat2enabled[compat].index(node)
-        out(f"INST_{instance_no}_{str2ident(compat)}", 1)
+        out(f"INST_{instance_no}_{str2ident(compat)}", 1, deprecation_msg = "Macro is deprecated")
 
 
 def node_ident(node):
@@ -366,8 +366,8 @@ def write_addr_size(edt, prop_name, prefix):
             f"/chosen/{prop_name} ({node!r})")
 
     out_comment(f"/chosen/{prop_name} ({node.path})")
-    out(f"{prefix}_BASE_ADDRESS", hex(node.regs[0].addr))
-    out(f"{prefix}_SIZE", node.regs[0].size//1024)
+    out(f"{prefix}_BASE_ADDRESS", hex(node.regs[0].addr), deprecation_msg = "Macro is deprecated")
+    out(f"{prefix}_SIZE", node.regs[0].size//1024, deprecation_msg = "Macro is deprecated")
 
 
 def write_flash(edt):
@@ -391,8 +391,8 @@ def write_flash_node(edt):
 
     if not node:
         # No flash node. Write dummy values.
-        out("FLASH_BASE_ADDRESS", 0)
-        out("FLASH_SIZE", 0)
+        out("FLASH_BASE_ADDRESS", 0, deprecation_msg = "Macro is deprecated")
+        out("FLASH_SIZE", 0, deprecation_msg = "Macro is deprecated")
         return
 
     if len(node.regs) != 1:
@@ -404,15 +404,15 @@ def write_flash_node(edt):
     else:
         reg = node.regs[0]
 
-    out("FLASH_BASE_ADDRESS", hex(reg.addr))
+    out("FLASH_BASE_ADDRESS", hex(reg.addr), deprecation_msg = "Macro is deprecated")
     if reg.size:
-        out("FLASH_SIZE", reg.size//1024)
+        out("FLASH_SIZE", reg.size//1024, deprecation_msg = "Macro is deprecated")
 
     if "erase-block-size" in node.props:
-        out("FLASH_ERASE_BLOCK_SIZE", node.props["erase-block-size"].val)
+        out("FLASH_ERASE_BLOCK_SIZE", node.props["erase-block-size"].val, deprecation_msg = "Macro is deprecated")
 
     if "write-block-size" in node.props:
-        out("FLASH_WRITE_BLOCK_SIZE", node.props["write-block-size"].val)
+        out("FLASH_WRITE_BLOCK_SIZE", node.props["write-block-size"].val, deprecation_msg = "Macro is deprecated")
 
 
 def write_code_partition(edt):
@@ -425,15 +425,15 @@ def write_code_partition(edt):
 
     if not node:
         # No code partition. Write dummy values.
-        out("CODE_PARTITION_OFFSET", 0)
-        out("CODE_PARTITION_SIZE", 0)
+        out("CODE_PARTITION_OFFSET", 0, deprecation_msg = "Macro is deprecated")
+        out("CODE_PARTITION_SIZE", 0, deprecation_msg = "Macro is deprecated")
         return
 
     if not node.regs:
         err(f"missing 'regs' property on {node!r}")
 
-    out("CODE_PARTITION_OFFSET", node.regs[0].addr)
-    out("CODE_PARTITION_SIZE", node.regs[0].size)
+    out("CODE_PARTITION_OFFSET", node.regs[0].addr, deprecation_msg = "Macro is deprecated")
+    out("CODE_PARTITION_SIZE", node.regs[0].size, deprecation_msg = "Macro is deprecated")
 
 
 def write_flash_partition(partition_node, index):
@@ -691,6 +691,8 @@ def out_node(node, ident, val, name_alias=None, deprecation_msg=None):
     #
     # Returns the identifier used for the macro that provides the value
     # for 'ident' within 'node', e.g. DT_MFG_MODEL_CTL_GPIOS_PIN.
+
+    deprecation_msg = "Macro is deprecated"
 
     node_prefix = node_ident(node)
 
