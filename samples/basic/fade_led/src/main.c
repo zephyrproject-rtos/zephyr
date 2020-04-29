@@ -15,12 +15,13 @@
 #include <device.h>
 #include <drivers/pwm.h>
 
-#if defined(DT_ALIAS_PWM_LED0_PWMS_CONTROLLER) && defined(DT_ALIAS_PWM_LED0_PWMS_CHANNEL)
+#if DT_NODE_HAS_PROP(DT_ALIAS(pwm_led0), pwms) && \
+    DT_PHA_HAS_CELL(DT_ALIAS(pwm_led0), pwms, channel)
 /* get the defines from dt (based on alias 'pwm-led0') */
-#define PWM_DRIVER	DT_ALIAS_PWM_LED0_PWMS_CONTROLLER
-#define PWM_CHANNEL	DT_ALIAS_PWM_LED0_PWMS_CHANNEL
-#ifdef DT_ALIAS_PWM_LED0_PWMS_FLAGS
-#define PWM_FLAGS	DT_ALIAS_PWM_LED0_PWMS_FLAGS
+#define PWM_DRIVER	DT_PWMS_LABEL(DT_ALIAS(pwm_led0))
+#define PWM_CHANNEL	DT_PWMS_CHANNEL(DT_ALIAS(pwm_led0))
+#if DT_PHA_HAS_CELL(DT_ALIAS(pwm_led0), pwms, flags)
+#define PWM_FLAGS	DT_PWMS_FLAGS(DT_ALIAS(pwm_led0))
 #else
 #define PWM_FLAGS	0
 #endif

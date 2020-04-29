@@ -251,23 +251,25 @@ void main(void)
 	int i, on = 1;
 	int cnt = 1;
 
-	led0 = device_get_binding(DT_ALIAS_LED0_GPIOS_CONTROLLER);
-	gpio_pin_configure(led0, DT_ALIAS_LED0_GPIOS_PIN,
-			   GPIO_OUTPUT_ACTIVE | DT_ALIAS_LED0_GPIOS_FLAGS);
+	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
+	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
+			   GPIO_OUTPUT_ACTIVE |
+			   DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
 
-	led1 = device_get_binding(DT_ALIAS_LED1_GPIOS_CONTROLLER);
-	gpio_pin_configure(led1, DT_ALIAS_LED1_GPIOS_PIN,
-			   GPIO_OUTPUT_INACTIVE | DT_ALIAS_LED1_GPIOS_FLAGS);
+	led1 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led1), gpios));
+	gpio_pin_configure(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios),
+			   GPIO_OUTPUT_INACTIVE |
+			   DT_GPIO_FLAGS(DT_ALIAS(led1), gpios));
 
 	for (i = 0; i < 6; i++) {
-		gpio_pin_set(led0, DT_ALIAS_LED0_GPIOS_PIN, on);
-		gpio_pin_set(led1, DT_ALIAS_LED1_GPIOS_PIN, !on);
+		gpio_pin_set(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios), on);
+		gpio_pin_set(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios), !on);
 		k_sleep(K_MSEC(100));
 		on = (on == 1) ? 0 : 1;
 	}
 
-	gpio_pin_set(led0, DT_ALIAS_LED0_GPIOS_PIN, 0);
-	gpio_pin_set(led1, DT_ALIAS_LED1_GPIOS_PIN, 1);
+	gpio_pin_set(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios), 0);
+	gpio_pin_set(led1, DT_GPIO_PIN(DT_ALIAS(led1), gpios), 1);
 
 	printk("SensorTile.box test!!\n");
 

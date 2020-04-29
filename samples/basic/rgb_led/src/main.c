@@ -15,33 +15,33 @@
 #include <device.h>
 #include <drivers/pwm.h>
 
-#if defined(DT_ALIAS_RED_PWM_LED_PWMS_CONTROLLER) && \
-      defined(DT_ALIAS_RED_PWM_LED_PWMS_CHANNEL) && \
-      defined(DT_ALIAS_GREEN_PWM_LED_PWMS_CONTROLLER) && \
-      defined(DT_ALIAS_GREEN_PWM_LED_PWMS_CHANNEL) && \
-      defined(DT_ALIAS_BLUE_PWM_LED_PWMS_CONTROLLER) && \
-      defined(DT_ALIAS_BLUE_PWM_LED_PWMS_CHANNEL)
+#if DT_NODE_HAS_PROP(DT_ALIAS(red_pwm_led), pwms) && \
+    DT_PHA_HAS_CELL(DT_ALIAS(red_pwm_led), pwms, channel) && \
+    DT_NODE_HAS_PROP(DT_ALIAS(green_pwm_led), pwms) && \
+    DT_PHA_HAS_CELL(DT_ALIAS(green_pwm_led), pwms, channel) && \
+    DT_NODE_HAS_PROP(DT_ALIAS(blue_pwm_led), pwms) && \
+    DT_PHA_HAS_CELL(DT_ALIAS(blue_pwm_led), pwms, channel)
 /* Get the defines from dt (based on aliases 'red-pwm-led', 'green-pwm-led' &
  * 'blue-pwm-led')
  */
-#define PWM_DEV0	DT_ALIAS_RED_PWM_LED_PWMS_CONTROLLER
-#define PWM_CH0		DT_ALIAS_RED_PWM_LED_PWMS_CHANNEL
-#ifdef DT_ALIAS_RED_PWM_LED_PWMS_FLAGS
-#define PWM_FLAGS0	DT_ALIAS_RED_PWM_LED_PWMS_FLAGS
+#define PWM_DEV0	DT_PWMS_LABEL(DT_ALIAS(red_pwm_led))
+#define PWM_CH0		DT_PWMS_CHANNEL(DT_ALIAS(red_pwm_led))
+#if DT_PHA_HAS_CELL(DT_ALIAS(red_pwm_led), pwms, flags)
+#define PWM_FLAGS0	DT_PWMS_FLAGS(DT_ALIAS(red_pwm_led))
 #else
 #define PWM_FLAGS0	0
 #endif
-#define PWM_DEV1	DT_ALIAS_GREEN_PWM_LED_PWMS_CONTROLLER
-#define PWM_CH1		DT_ALIAS_GREEN_PWM_LED_PWMS_CHANNEL
-#ifdef DT_ALIAS_GREEN_PWM_LED_PWMS_FLAGS
-#define PWM_FLAGS1	DT_ALIAS_GREEN_PWM_LED_PWMS_FLAGS
+#define PWM_DEV1	DT_PWMS_LABEL(DT_ALIAS(green_pwm_led))
+#define PWM_CH1		DT_PWMS_CHANNEL(DT_ALIAS(green_pwm_led))
+#if DT_PHA_HAS_CELL(DT_ALIAS(green_pwm_led), pwms, flags)
+#define PWM_FLAGS1	DT_PWMS_FLAGS(DT_ALIAS(green_pwm_led))
 #else
 #define PWM_FLAGS1	0
 #endif
-#define PWM_DEV2	DT_ALIAS_BLUE_PWM_LED_PWMS_CONTROLLER
-#define PWM_CH2		DT_ALIAS_BLUE_PWM_LED_PWMS_CHANNEL
-#ifdef DT_ALIAS_BLUE_PWM_LED_PWMS_FLAGS
-#define PWM_FLAGS2	DT_ALIAS_BLUE_PWM_LED_PWMS_FLAGS
+#define PWM_DEV2	DT_PWMS_LABEL(DT_ALIAS(blue_pwm_led))
+#define PWM_CH2		DT_PWMS_CHANNEL(DT_ALIAS(blue_pwm_led))
+#if DT_PHA_HAS_CELL(DT_ALIAS(blue_pwm_led), pwms, flags)
+#define PWM_FLAGS2	DT_PWMS_FLAGS(DT_ALIAS(blue_pwm_led))
 #else
 #define PWM_FLAGS2	0
 #endif

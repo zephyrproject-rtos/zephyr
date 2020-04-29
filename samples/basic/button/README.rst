@@ -18,8 +18,8 @@ have defined the SW0_* variables.
 To use this sample, you will require a board that defines the user switch in its
 header file. The :file:`board.h` must define the following variables:
 
-- SW0_GPIO_NAME (or DT_ALIAS_SW0_GPIOS_CONTROLLER)
-- DT_ALIAS_SW0_GPIOS_PIN
+- SW0_GPIO_NAME (or DT_GPIO_LABEL(DT_ALIAS(sw0), gpios))
+- DT_GPIO_PIN(DT_ALIAS(sw0), gpios)
 
 Alternatively, this could also be done by defining 'sw0' alias in the board
 devicetree description file.

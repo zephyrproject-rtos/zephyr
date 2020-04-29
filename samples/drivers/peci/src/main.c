@@ -176,7 +176,7 @@ static void monitor_temperature_func(void *dummy1, void *dummy2, void *dummy3)
 
 void main(void)
 {
-#ifdef DT_ALIAS_PECI_0_LABEL
+#if DT_HAS_NODE(DT_ALIAS(peci_0))
 	int ret;
 #endif
 
@@ -186,8 +186,8 @@ void main(void)
 		monitor_temperature_func, NULL, NULL, NULL, PRIORITY,
 		K_INHERIT_PERMS, K_FOREVER);
 
-#ifdef DT_ALIAS_PECI_0_LABEL
-	peci_dev = device_get_binding(DT_ALIAS_PECI_0_LABEL);
+#if DT_HAS_NODE(DT_ALIAS(peci_0))
+	peci_dev = device_get_binding(DT_LABEL(DT_ALIAS(peci_0)));
 	if (!peci_dev) {
 		printk("Err: PECI device not found\n");
 		return;

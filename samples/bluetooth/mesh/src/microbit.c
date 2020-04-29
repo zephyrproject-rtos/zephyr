@@ -30,14 +30,15 @@ static void configure_button(void)
 {
 	static struct gpio_callback button_cb;
 
-	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
 
-	gpio_pin_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-			   GPIO_INPUT | DT_ALIAS_SW0_GPIOS_FLAGS);
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
+	gpio_pin_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
+			   GPIO_INPUT | DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios));
+	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
-	gpio_init_callback(&button_cb, button_pressed, BIT(DT_ALIAS_SW0_GPIOS_PIN));
+	gpio_init_callback(&button_cb, button_pressed,
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios)));
 
 	gpio_add_callback(gpio, &button_cb);
 }
@@ -53,7 +54,7 @@ void board_output_number(bt_mesh_output_action_t action, u32_t number)
 
 	oob_number = number;
 
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
+	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, K_FOREVER, &arrow, 1);
@@ -69,7 +70,7 @@ void board_prov_complete(void)
 					 { 0, 1, 1, 1, 0 });
 
 
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
+	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
 				     GPIO_INT_DISABLE);
 
 	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, K_SECONDS(10),
