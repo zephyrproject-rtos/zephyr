@@ -168,8 +168,8 @@ static void bt_ipm_rx_thread(void)
 				/* Vendor events are currently unsupported */
 				BT_ERR("Unknown evtcode type 0x%02x",
 				       hcievt->evtserial.evt.evtcode);
-				k_sem_give(&ipm_busy);
-				break;
+				TL_MM_EvtDone(hcievt);
+				goto end_loop;
 			default:
 				buf = bt_buf_get_evt(
 					hcievt->evtserial.evt.evtcode,
@@ -194,7 +194,7 @@ static void bt_ipm_rx_thread(void)
 			BT_ERR("Unknown BT buf type %d",
 			       hcievt->evtserial.type);
 			TL_MM_EvtDone(hcievt);
-			k_sem_give(&ipm_busy);
+			goto end_loop;
 		}
 
 		TL_MM_EvtDone(hcievt);
@@ -206,6 +206,7 @@ static void bt_ipm_rx_thread(void)
 			bt_recv(buf);
 		}
 
+end_loop:
 		k_sem_give(&ipm_busy);
 	}
 
