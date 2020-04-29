@@ -403,16 +403,16 @@ void test_forever_timeout(void)
 	memset(rx_buf, 0, sizeof(rx_buf));
 	memset(tx_buf, 1, sizeof(tx_buf));
 
-	uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), K_FOREVER);
+	uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), SYS_FOREVER_MS);
 
-	uart_tx(uart_dev, tx_buf, 5, K_FOREVER);
+	uart_tx(uart_dev, tx_buf, 5, SYS_FOREVER_MS);
 	zassert_not_equal(k_sem_take(&tx_aborted, K_MSEC(1000)), 0,
 			  "TX_ABORTED timeout");
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
 	zassert_not_equal(k_sem_take(&rx_rdy, K_MSEC(1000)), 0,
 			  "RX_RDY timeout");
 
-	uart_tx(uart_dev, tx_buf, 95, K_FOREVER);
+	uart_tx(uart_dev, tx_buf, 95, SYS_FOREVER_MS);
 
 	zassert_not_equal(k_sem_take(&tx_aborted, K_MSEC(1000)), 0,
 			  "TX_ABORTED timeout");
