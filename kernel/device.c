@@ -23,6 +23,8 @@ extern const struct init_entry __init_SMP_start[];
 extern struct device __device_start[];
 extern struct device __device_end[];
 
+extern uint32_t __device_init_status_start[];
+
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 extern uint32_t __device_busy_start[];
 extern uint32_t __device_busy_end[];
@@ -57,21 +59,18 @@ void z_sys_init_run_level(int32_t level)
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
 		struct device *dev = entry->dev;
-		int retval;
 
 		if (dev != NULL) {
 			z_object_init(dev);
 		}
 
-		retval = entry->init(dev);
-		if (retval != 0) {
-			if (dev) {
-				/* Initialization failed. Clear the API struct
-				 * so that device_get_binding() will not succeed
-				 * for it.
-				 */
-				dev->api = NULL;
-			}
+		if ((entry->init(dev) == 0) && (dev != NULL)) {
+			/* Initialization was successful.
+			 * Set the init status bit so device is declared ready.
+			 */
+			sys_bitfield_set_bit(
+				(mem_addr_t) __device_init_status_start,
+				(dev - __device_start));
 		}
 	}
 }
@@ -119,6 +118,12 @@ size_t z_device_get_all_static(struct device **devices)
 {
 	*devices = __device_start;
 	return __device_end - __device_start;
+}
+
+bool z_device_ready(const struct device *dev)
+{
+	return !!(sys_bitfield_test_bit((mem_addr_t)__device_init_status_start,
+					(dev - __device_start)));
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
