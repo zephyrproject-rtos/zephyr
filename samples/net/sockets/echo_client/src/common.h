@@ -6,9 +6,13 @@
  */
 
 /* Value of 0 will cause the IP stack to select next free port */
-#define MY_PORT 0
+#ifndef CONFIG_NET_CONFIG_MY_PORT
+#define CONFIG_NET_CONFIG_MY_PORT 0
+#endif
 
-#define PEER_PORT 4242
+#ifndef CONFIG_NET_CONFIG_PEER_PORT
+#define CONFIG_NET_CONFIG_PEER_PORT 4242
+#endif
 
 struct data {
 	const char *proto;

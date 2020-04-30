@@ -130,8 +130,12 @@ static bool recv_cb_called;
 #define WAIT_TIME 250
 #define WAIT_TIME_LONG MSEC_PER_SEC
 #define SENDING 93244
-#define MY_PORT 1969
-#define PEER_PORT 16233
+#ifndef CONFIG_NET_CONFIG_MY_PORT
+#define CONFIG_NET_CONFIG_MY_PORT 1969
+#endif
+#ifndef CONFIG_NET_CONFIG_PEER_PORT
+#define CONFIG_NET_CONFIG_PEER_PORT 16233
+#endif
 
 struct net_test_ipv6 {
 	u8_t mac_addr[sizeof(struct net_eth_addr)];

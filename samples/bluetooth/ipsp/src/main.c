@@ -38,7 +38,9 @@ struct in6_addr in6addr_mcast = MCAST_IP6ADDR;
 
 static struct in6_addr in6addr_my = MY_IP6ADDR;
 
-#define MY_PORT 4242
+#ifndef CONFIG_NET_CONFIG_MY_PORT
+#define CONFIG_NET_CONFIG_MY_PORT 4242
+#endif
 
 #define STACKSIZE 2000
 K_THREAD_STACK_DEFINE(thread_stack, STACKSIZE);
@@ -103,7 +105,7 @@ static inline bool get_context(struct net_context **udp_recv6,
 	mcast_addr6.sin6_family = AF_INET6;
 
 	my_addr6.sin6_family = AF_INET6;
-	my_addr6.sin6_port = htons(MY_PORT);
+	my_addr6.sin6_port = htons(CONFIG_NET_CONFIG_MY_PORT);
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP, udp_recv6);
 	if (ret < 0) {

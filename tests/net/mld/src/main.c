@@ -58,8 +58,12 @@ K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
 #define WAIT_TIME 500
 #define WAIT_TIME_LONG MSEC_PER_SEC
-#define MY_PORT 1969
-#define PEER_PORT 13856
+#ifndef CONFIG_NET_CONFIG_MY_PORT
+#define CONFIG_NET_CONFIG_MY_PORT 1969
+#endif
+#ifndef CONFIG_NET_CONFIG_PEER_PORT
+#define CONFIG_NET_CONFIG_PEER_PORT 13856
+#endif
 
 struct net_test_mld {
 	u8_t mac_addr[sizeof(struct net_eth_addr)];

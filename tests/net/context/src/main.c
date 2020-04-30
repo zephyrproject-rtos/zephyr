@@ -68,8 +68,12 @@ static struct k_sem wait_data;
 #define WAIT_TIME K_MSEC(250)
 #define WAIT_TIME_LONG MSEC_PER_SEC
 #define SENDING 93244
-#define MY_PORT 1969
-#define PEER_PORT 16233
+#ifndef CONFIG_NET_CONFIG_MY_PORT
+#define CONFIG_NET_CONFIG_MY_PORT 1969
+#endif
+#ifndef CONFIG_NET_CONFIG_PEER_PORT
+#define CONFIG_NET_CONFIG_PEER_PORT 16233
+#endif
 
 static void net_ctx_get_fail(void)
 {
@@ -199,7 +203,7 @@ static void net_ctx_bind_uni_success_v6(void)
 {
 	struct sockaddr_in6 addr = {
 		.sin6_family = AF_INET6,
-		.sin6_port = htons(MY_PORT),
+		.sin6_port = htons(CONFIG_NET_CONFIG_MY_PORT),
 		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				   0, 0, 0, 0, 0, 0, 0, 0x1 } } },
 	};
@@ -215,7 +219,7 @@ static void net_ctx_bind_uni_success_v4(void)
 {
 	struct sockaddr_in addr = {
 		.sin_family = AF_INET,
-		.sin_port = htons(MY_PORT),
+		.sin_port = htons(CONFIG_NET_CONFIG_MY_PORT),
 		.sin_addr = { { { 192, 0, 2, 1 } } },
 	};
 	int ret;
@@ -231,7 +235,7 @@ static void net_ctx_bind_mcast_success(void)
 	int ret;
 	struct sockaddr_in6 addr = {
 		.sin6_family = AF_INET6,
-		.sin6_port = htons(MY_PORT),
+		.sin6_port = htons(CONFIG_NET_CONFIG_MY_PORT),
 		.sin6_addr = { { { 0 } } },
 	};
 
@@ -284,7 +288,7 @@ static void net_ctx_connect_v6(void)
 {
 	struct sockaddr_in6 addr = {
 		.sin6_family = AF_INET6,
-		.sin6_port = htons(PEER_PORT),
+		.sin6_port = htons(CONFIG_NET_CONFIG_PEER_PORT),
 		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				   0, 0, 0, 0, 0, 0, 0, 0x2 } } },
 	};
@@ -310,7 +314,7 @@ static void net_ctx_connect_v4(void)
 {
 	struct sockaddr_in addr = {
 		.sin_family = AF_INET,
-		.sin_port = htons(PEER_PORT),
+		.sin_port = htons(CONFIG_NET_CONFIG_PEER_PORT),
 		.sin_addr = { { { 192, 0, 2, 2 } } },
 	};
 	int ret;
@@ -415,7 +419,7 @@ static void net_ctx_sendto_v6(void)
 	int ret;
 	struct sockaddr_in6 addr = {
 		.sin6_family = AF_INET6,
-		.sin6_port = htons(PEER_PORT),
+		.sin6_port = htons(CONFIG_NET_CONFIG_PEER_PORT),
 		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				   0, 0, 0, 0, 0, 0, 0, 0x2 } } },
 	};
@@ -435,7 +439,7 @@ static void net_ctx_sendto_v4(void)
 	int ret;
 	struct sockaddr_in addr = {
 		.sin_family = AF_INET,
-		.sin_port = htons(PEER_PORT),
+		.sin_port = htons(CONFIG_NET_CONFIG_PEER_PORT),
 		.sin_addr = { { { 192, 0, 2, 2 } } },
 	};
 
@@ -504,7 +508,7 @@ static bool net_ctx_sendto_v6_wrong_src(void)
 	int ret;
 	struct sockaddr_in6 addr = {
 		.sin6_family = AF_INET6,
-		.sin6_port = htons(PEER_PORT),
+		.sin6_port = htons(CONFIG_NET_CONFIG_PEER_PORT),
 		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				   0, 0, 0, 0, 0, 0, 0, 0x3 } } },
 	};
@@ -542,7 +546,7 @@ static bool net_ctx_sendto_v4_wrong_src(void)
 	int ret;
 	struct sockaddr_in addr = {
 		.sin_family = AF_INET,
-		.sin_port = htons(PEER_PORT),
+		.sin_port = htons(CONFIG_NET_CONFIG_PEER_PORT),
 		.sin_addr = { { { 192, 0, 2, 3 } } },
 	};
 

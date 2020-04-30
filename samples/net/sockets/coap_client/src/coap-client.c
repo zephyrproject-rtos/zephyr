@@ -20,7 +20,9 @@ LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
 
 #include "net_private.h"
 
-#define PEER_PORT 5683
+#ifndef CONFIG_NET_CONFIG_PEER_PORT
+#define CONFIG_NET_CONFIG_PEER_PORT 5683
+#endif
 #define MAX_COAP_MSG_LEN 256
 
 /* CoAP socket fd */
@@ -60,7 +62,7 @@ static int start_coap_client(void)
 	struct sockaddr_in6 addr6;
 
 	addr6.sin6_family = AF_INET6;
-	addr6.sin6_port = htons(PEER_PORT);
+	addr6.sin6_port = htons(CONFIG_NET_CONFIG_PEER_PORT);
 	addr6.sin6_scope_id = 0U;
 
 	inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,

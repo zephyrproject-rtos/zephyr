@@ -21,7 +21,9 @@ LOG_MODULE_REGISTER(main);
 #define VIDEO_CAPTURE_DEV "VIDEO_SW_GENERATOR"
 #endif
 
-#define MY_PORT 5000
+#ifndef CONFIG_NET_CONFIG_MY_PORT
+#define CONFIG_NET_CONFIG_MY_PORT 5000
+#endif
 #define MAX_CLIENT_QUEUE 1
 
 static ssize_t sendall(int sock, const void *buf, size_t len)
@@ -51,7 +53,7 @@ void main(void)
 	/* Prepare Network */
 	(void)memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(MY_PORT);
+	addr.sin_port = htons(CONFIG_NET_CONFIG_MY_PORT);
 
 	sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sock < 0) {

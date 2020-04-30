@@ -52,7 +52,9 @@ static struct coap_resource server_resources[] =  {
 	{ },
 };
 
-#define MY_PORT 12345
+#ifndef CONFIG_NET_CONFIG_MY_PORT
+#define CONFIG_NET_CONFIG_MY_PORT 12345
+#endif
 #define peer_addr { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
 			0, 0, 0, 0, 0, 0, 0, 0x2 } } }
 static struct sockaddr_in6 dummy_addr = {

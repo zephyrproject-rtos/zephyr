@@ -14,7 +14,9 @@ LOG_MODULE_REGISTER(net_dumb_http_srv_mt_sample);
 #include <net/socket.h>
 #include <net/tls_credentials.h>
 
-#define MY_PORT 8080
+#ifndef CONFIG_NET_CONFIG_MY_PORT
+#define CONFIG_NET_CONFIG_MY_PORT 8080
+#endif
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
 #define STACK_SIZE 4096
@@ -266,7 +268,7 @@ static void process_tcp4(void)
 
 	(void)memset(&addr4, 0, sizeof(addr4));
 	addr4.sin_family = AF_INET;
-	addr4.sin_port = htons(MY_PORT);
+	addr4.sin_port = htons(CONFIG_NET_CONFIG_MY_PORT);
 
 	ret = setup(&tcp4_listen_sock, (struct sockaddr *)&addr4,
 		    sizeof(addr4));
@@ -275,7 +277,7 @@ static void process_tcp4(void)
 	}
 
 	LOG_DBG("Waiting for IPv4 HTTP connections on port %d, sock %d",
-		MY_PORT, tcp4_listen_sock);
+		CONFIG_NET_CONFIG_MY_PORT, tcp4_listen_sock);
 
 	while (ret == 0) {
 		ret = process_tcp(&tcp4_listen_sock, tcp4_accepted);
@@ -292,7 +294,7 @@ static void process_tcp6(void)
 
 	(void)memset(&addr6, 0, sizeof(addr6));
 	addr6.sin6_family = AF_INET6;
-	addr6.sin6_port = htons(MY_PORT);
+	addr6.sin6_port = htons(CONFIG_NET_CONFIG_MY_PORT);
 
 	ret = setup(&tcp6_listen_sock, (struct sockaddr *)&addr6,
 		    sizeof(addr6));
@@ -301,7 +303,7 @@ static void process_tcp6(void)
 	}
 
 	LOG_DBG("Waiting for IPv6 HTTP connections on port %d, sock %d",
-		MY_PORT, tcp6_listen_sock);
+		CONFIG_NET_CONFIG_MY_PORT, tcp6_listen_sock);
 
 	while (ret == 0) {
 		ret = process_tcp(&tcp6_listen_sock, tcp6_accepted);

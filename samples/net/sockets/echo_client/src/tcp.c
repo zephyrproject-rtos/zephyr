@@ -225,7 +225,7 @@ int start_tcp(void)
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		addr6.sin6_family = AF_INET6;
-		addr6.sin6_port = htons(PEER_PORT);
+		addr6.sin6_port = htons(CONFIG_NET_CONFIG_PEER_PORT);
 		inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 			  &addr6.sin6_addr);
 
@@ -238,7 +238,7 @@ int start_tcp(void)
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		addr4.sin_family = AF_INET;
-		addr4.sin_port = htons(PEER_PORT);
+		addr4.sin_port = htons(CONFIG_NET_CONFIG_PEER_PORT);
 		inet_pton(AF_INET, CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
 			  &addr4.sin_addr);
 

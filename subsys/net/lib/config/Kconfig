@@ -71,6 +71,16 @@ menuconfig NET_CONFIG_SETTINGS
 
 if NET_CONFIG_SETTINGS
 
+config CONFIG_NET_CONFIG_MY_PORT
+	int "My port"
+	help
+	  Port to use in the IP stack where applicable for self.
+
+config CONFIG_NET_CONFIG_PEER_PORT
+	int "Peer port"
+	help
+	  Port to use in the IP stack where applicable for host peer.
+
 if NET_IPV6
 
 config NET_CONFIG_MY_IPV6_ADDR

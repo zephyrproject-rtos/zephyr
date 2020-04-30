@@ -214,7 +214,7 @@ static int process_tcp(struct data *data)
 	socklen_t client_addr_len = sizeof(client_addr);
 
 	LOG_INF("Waiting for TCP connection on port %d (%s)...",
-		MY_PORT, data->proto);
+		CONFIG_NET_CONFIG_MY_PORT, data->proto);
 
 	client = accept(data->tcp.sock, (struct sockaddr *)&client_addr,
 			&client_addr_len);
@@ -274,7 +274,7 @@ static void process_tcp4(void)
 
 	(void)memset(&addr4, 0, sizeof(addr4));
 	addr4.sin_family = AF_INET;
-	addr4.sin_port = htons(MY_PORT);
+	addr4.sin_port = htons(CONFIG_NET_CONFIG_MY_PORT);
 
 	ret = start_tcp_proto(&conf.ipv4, (struct sockaddr *)&addr4,
 			      sizeof(addr4));
@@ -300,7 +300,7 @@ static void process_tcp6(void)
 
 	(void)memset(&addr6, 0, sizeof(addr6));
 	addr6.sin6_family = AF_INET6;
-	addr6.sin6_port = htons(MY_PORT);
+	addr6.sin6_port = htons(CONFIG_NET_CONFIG_MY_PORT);
 
 	ret = start_tcp_proto(&conf.ipv6, (struct sockaddr *)&addr6,
 			      sizeof(addr6));

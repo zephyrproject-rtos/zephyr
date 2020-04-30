@@ -28,20 +28,24 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 
 #include <ztest.h>
 
-#define MY_PORT 4242
-#define PEER_PORT 4242
+#ifndef CONFIG_NET_CONFIG_MY_PORT
+#define CONFIG_NET_CONFIG_MY_PORT 4242
+#endif
+#ifndef CONFIG_NET_CONFIG_PEER_PORT
+#define CONFIG_NET_CONFIG_PEER_PORT 4242
+#endif
 
 static struct in_addr my_addr  = { { { 192, 0, 2, 1 } } };
 static struct sockaddr_in my_addr_s = {
 	.sin_family = AF_INET,
-	.sin_port = htons(PEER_PORT),
+	.sin_port = htons(CONFIG_NET_CONFIG_PEER_PORT),
 	.sin_addr = { { { 192, 0, 2, 1 } } },
 };
 
 static struct in_addr peer_addr  = { { { 192, 0, 2, 2 } } };
 static struct sockaddr_in peer_addr_s = {
 	.sin_family = AF_INET,
-	.sin_port = htons(PEER_PORT),
+	.sin_port = htons(CONFIG_NET_CONFIG_PEER_PORT),
 	.sin_addr = { { { 192, 0, 2, 2 } } },
 };
 
@@ -49,7 +53,7 @@ static struct in6_addr my_addr_v6  = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					   0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 static struct sockaddr_in6 my_addr_v6_s = {
 	.sin6_family = AF_INET6,
-	.sin6_port = htons(PEER_PORT),
+	.sin6_port = htons(CONFIG_NET_CONFIG_PEER_PORT),
 	.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 			   0, 0, 0, 0, 0, 0, 0, 0x1 } } },
 };
@@ -58,7 +62,7 @@ static struct in6_addr peer_addr_v6  = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					     0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 static struct sockaddr_in6 peer_addr_v6_s = {
 	.sin6_family = AF_INET6,
-	.sin6_port = htons(PEER_PORT),
+	.sin6_port = htons(CONFIG_NET_CONFIG_PEER_PORT),
 	.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 			   0, 0, 0, 0, 0, 0, 0, 0x2 } } },
 };
@@ -423,7 +427,7 @@ static void handle_client_test(sa_family_t af, struct tcphdr *th)
 		test_verify_flags(th, SYN);
 		seq = 0U;
 		ack = ntohs(th->th_seq) + 1U;
-		reply = prepare_syn_ack_packet(af, htons(MY_PORT),
+		reply = prepare_syn_ack_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT),
 					       th->th_sport);
 		t_state = T_SYN_ACK;
 		break;
@@ -437,7 +441,7 @@ static void handle_client_test(sa_family_t af, struct tcphdr *th)
 		test_verify_flags(th, PSH | ACK);
 		seq++;
 		ack = ack + 1U;
-		reply = prepare_ack_packet(af, htons(MY_PORT), th->th_sport);
+		reply = prepare_ack_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT), th->th_sport);
 		t_state = T_FIN;
 		test_sem_give();
 		break;
@@ -445,7 +449,7 @@ static void handle_client_test(sa_family_t af, struct tcphdr *th)
 		test_verify_flags(th, FIN | ACK);
 		ack = ntohs(th->th_seq) + 1U;
 		t_state = T_FIN_ACK;
-		reply = prepare_fin_ack_packet(af, htons(MY_PORT),
+		reply = prepare_fin_ack_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT),
 					       th->th_sport);
 		break;
 	case T_FIN_ACK:
@@ -600,36 +604,36 @@ static void handle_server_test(sa_family_t af, struct tcphdr *th)
 	case T_SYN:
 		seq = 0U;
 		ack = 0U;
-		reply = prepare_syn_packet(af, htons(MY_PORT),
-					   htons(PEER_PORT));
+		reply = prepare_syn_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT),
+					   htons(CONFIG_NET_CONFIG_PEER_PORT));
 		t_state = T_SYN_ACK;
 		break;
 	case T_SYN_ACK:
 		test_verify_flags(th, SYN | ACK);
 		seq++;
 		ack = ntohs(th->th_seq) + 1U;
-		reply = prepare_ack_packet(af, htons(MY_PORT),
-					   htons(PEER_PORT));
+		reply = prepare_ack_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT),
+					   htons(CONFIG_NET_CONFIG_PEER_PORT));
 		t_state = T_DATA;
 		break;
 	case T_DATA:
-		reply = prepare_data_packet(af, htons(MY_PORT),
-					    htons(PEER_PORT), "A", 1U);
+		reply = prepare_data_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT),
+					    htons(CONFIG_NET_CONFIG_PEER_PORT), "A", 1U);
 		t_state = T_DATA_ACK;
 		break;
 	case T_DATA_ACK:
 		test_verify_flags(th, ACK);
 		seq++;
-		reply = prepare_fin_ack_packet(af, htons(MY_PORT),
-					       htons(PEER_PORT));
+		reply = prepare_fin_ack_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT),
+					       htons(CONFIG_NET_CONFIG_PEER_PORT));
 		t_state = T_FIN;
 		break;
 	case T_FIN:
 		test_verify_flags(th, FIN | ACK);
 		seq++;
 		ack++;
-		reply = prepare_ack_packet(af, htons(MY_PORT),
-					   htons(PEER_PORT));
+		reply = prepare_ack_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT),
+					   htons(CONFIG_NET_CONFIG_PEER_PORT));
 		t_state = T_FIN_ACK;
 		break;
 	case T_FIN_ACK:
@@ -933,7 +937,7 @@ send_next:
 		test_verify_flags(th, SYN);
 		seq = 0U;
 		ack = ntohs(th->th_seq) + 1U;
-		reply = prepare_syn_ack_packet(af, htons(MY_PORT),
+		reply = prepare_syn_ack_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT),
 					       th->th_sport);
 		t_state = T_SYN_ACK;
 		break;
@@ -947,7 +951,7 @@ send_next:
 		test_verify_flags(th, PSH | ACK);
 		seq++;
 		ack = ack + 1U;
-		reply = prepare_ack_packet(af, htons(MY_PORT), th->th_sport);
+		reply = prepare_ack_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT), th->th_sport);
 		t_state = T_FIN;
 		test_sem_give();
 		break;
@@ -955,11 +959,11 @@ send_next:
 		test_verify_flags(th, FIN | ACK);
 		ack = ntohs(th->th_seq) + 1U;
 		t_state = T_FIN_2;
-		reply = prepare_ack_packet(af, htons(MY_PORT), th->th_sport);
+		reply = prepare_ack_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT), th->th_sport);
 		break;
 	case T_FIN_2:
 		t_state = T_FIN_ACK;
-		reply = prepare_fin_packet(af, htons(MY_PORT), th->th_sport);
+		reply = prepare_fin_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT), th->th_sport);
 		break;
 	case T_FIN_ACK:
 		test_verify_flags(th, ACK);
@@ -1057,7 +1061,7 @@ static void handle_client_closing_test(sa_family_t af, struct tcphdr *th)
 		test_verify_flags(th, SYN);
 		seq = 0U;
 		ack = ntohs(th->th_seq) + 1U;
-		reply = prepare_syn_ack_packet(af, htons(MY_PORT),
+		reply = prepare_syn_ack_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT),
 					       th->th_sport);
 		t_state = T_SYN_ACK;
 		break;
@@ -1071,7 +1075,7 @@ static void handle_client_closing_test(sa_family_t af, struct tcphdr *th)
 		test_verify_flags(th, PSH | ACK);
 		seq++;
 		ack = ack + 1U;
-		reply = prepare_ack_packet(af, htons(MY_PORT), th->th_sport);
+		reply = prepare_ack_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT), th->th_sport);
 		t_state = T_FIN;
 		test_sem_give();
 		break;
@@ -1079,12 +1083,12 @@ static void handle_client_closing_test(sa_family_t af, struct tcphdr *th)
 		test_verify_flags(th, FIN | ACK);
 		ack = ntohs(th->th_seq) + 1U;
 		t_state = T_CLOSING;
-		reply = prepare_fin_packet(af, htons(MY_PORT), th->th_sport);
+		reply = prepare_fin_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT), th->th_sport);
 		break;
 	case T_CLOSING:
 		test_verify_flags(th, ACK);
 		t_state = T_FIN_ACK;
-		reply = prepare_ack_packet(af, htons(MY_PORT), th->th_sport);
+		reply = prepare_ack_packet(af, htons(CONFIG_NET_CONFIG_MY_PORT), th->th_sport);
 		break;
 	default:
 		zassert_true(false, "%s unexpected state", __func__);
