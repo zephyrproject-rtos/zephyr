@@ -872,7 +872,8 @@ static int mcr20a_cca(struct device *dev)
 	}
 
 	k_mutex_unlock(&mcr20a->phy_mutex);
-	retval = k_sem_take(&mcr20a->seq_sync, MCR20A_SEQ_SYNC_TIMEOUT);
+	retval = k_sem_take(&mcr20a->seq_sync,
+			    K_MSEC(MCR20A_SEQ_SYNC_TIMEOUT));
 	if (retval) {
 		LOG_ERR("Timeout occurred, %d", retval);
 		return retval;
@@ -1128,7 +1129,8 @@ static int mcr20a_tx(struct device *dev,
 	}
 
 	k_mutex_unlock(&mcr20a->phy_mutex);
-	retval = k_sem_take(&mcr20a->seq_sync, MCR20A_SEQ_SYNC_TIMEOUT);
+	retval = k_sem_take(&mcr20a->seq_sync,
+			    K_MSEC(MCR20A_SEQ_SYNC_TIMEOUT));
 	if (retval) {
 		LOG_ERR("Timeout occurred, %d", retval);
 		return retval;
