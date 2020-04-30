@@ -203,7 +203,8 @@ static void gptp_md_pdelay_check_multiple_resp(int port)
 		duration = GPTP_MULTIPLE_PDELAY_RESP_WAIT -
 			gptp_uscaled_ns_to_timer_ms(&port_ds->pdelay_req_itv);
 
-		k_timer_start(&state->pdelay_timer, duration, K_NO_WAIT);
+		k_timer_start(&state->pdelay_timer, K_MSEC(duration),
+			      K_NO_WAIT);
 	} else {
 		state->state = GPTP_PDELAY_REQ_SEND_REQ;
 	}
@@ -634,8 +635,8 @@ static void gptp_md_pdelay_req_state_machine(int port)
 		k_timer_stop(&state->pdelay_timer);
 		state->pdelay_timer_expired = false;
 		k_timer_start(&state->pdelay_timer,
-			      gptp_uscaled_ns_to_timer_ms(
-				      &port_ds->pdelay_req_itv),
+			      K_MSEC(gptp_uscaled_ns_to_timer_ms(
+					     &port_ds->pdelay_req_itv)),
 			      K_NO_WAIT);
 		/*
 		 * Transition directly to GPTP_PDELAY_REQ_WAIT_RESP.
