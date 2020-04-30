@@ -11,7 +11,7 @@
 
 void main(void)
 {
-	const char *const devname = DT_INST_0_HONEYWELL_MPR_LABEL;
+	const char *const devname = DT_LABEL(DT_INST(0, honeywell_mpr));
 	struct device *dev = device_get_binding(devname);
 	int rc;
 
