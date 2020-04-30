@@ -137,8 +137,8 @@ Default Zephyr Peripheral Mapping:
 
 - UART_1_TX : PC4
 - UART_1_RX : PC5
-- UART_2_TX : PA2
-- UART_2_RX : PA15
+- LPUART_1_TX : PA2
+- LPUART_1_RX : PA3
 - I2C_1_SCL : PB8
 - I2C_1_SDA : PB9
 - SPI_1_NSS : PB6
@@ -170,9 +170,11 @@ is selected.
 Serial Port
 -----------
 
-Nucleo G474RE board has 3 U(S)ARTs. The Zephyr console output is assigned to UART2.
+Nucleo G474RE board has 3 U(S)ARTs. The Zephyr console output is assigned to LPUART1.
 Default settings are 115200 8N1.
 
+Please note that LPUART1 baudrate is limited to 9600 if the MCU is clocked by LSE (32.768 kHz) in
+low power mode.
 
 Programming and Debugging
 *************************
