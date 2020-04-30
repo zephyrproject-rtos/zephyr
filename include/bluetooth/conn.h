@@ -39,6 +39,21 @@ struct bt_le_conn_param {
 	u16_t timeout;
 };
 
+/** @brief Initialize connection parameters
+ *
+ *  @param int_min  Minimum Connection Interval (N * 1.25 ms)
+ *  @param int_max  Maximum Connection Interval (N * 1.25 ms)
+ *  @param lat      Connection Latency
+ *  @param to       Supervision Timeout (N * 10 ms)
+ */
+#define BT_LE_CONN_PARAM_INIT(int_min, int_max, lat, to) \
+{ \
+	.interval_min = (int_min), \
+	.interval_max = (int_max), \
+	.latency = (lat), \
+	.timeout = (to), \
+}
+
 /** Helper to declare connection parameters inline
  *
  *  @param int_min  Minimum Connection Interval (N * 1.25 ms)
@@ -47,12 +62,9 @@ struct bt_le_conn_param {
  *  @param to       Supervision Timeout (N * 10 ms)
  */
 #define BT_LE_CONN_PARAM(int_min, int_max, lat, to) \
-	((struct bt_le_conn_param[]) { { \
-		.interval_min = (int_min), \
-		.interval_max = (int_max), \
-		.latency = (lat), \
-		.timeout = (to), \
-	 } })
+	((struct bt_le_conn_param[]) { \
+		BT_LE_CONN_PARAM_INIT(int_min, int_max, lat, to) \
+	 })
 
 /** Default LE connection parameters:
  *    Connection Interval: 30-50 ms
@@ -334,6 +346,22 @@ struct bt_conn_le_create_param {
 	u16_t timeout;
 };
 
+/** @brief Initialize create connection parameters
+ *
+ *  @param _options  Create connection options.
+ *  @param _interval Create connection scan interval (N * 0.625 ms).
+ *  @param _window   Create connection scan window (N * 0.625 ms).
+ */
+#define BT_CONN_LE_CREATE_PARAM_INIT(_options, _interval, _window) \
+{ \
+	.options = (_options), \
+	.interval = (_interval), \
+	.window = (_window), \
+	.interval_coded = 0, \
+	.window_coded = 0, \
+	.timeout = 0, \
+}
+
 /** Helper to declare create connection parameters inline
  *
  *  @param _options  Create connection options.
@@ -341,14 +369,9 @@ struct bt_conn_le_create_param {
  *  @param _window   Create connection scan window (N * 0.625 ms).
  */
 #define BT_CONN_LE_CREATE_PARAM(_options, _interval, _window) \
-	((struct bt_conn_le_create_param[]) { { \
-		.options = (_options), \
-		.interval = (_interval), \
-		.window = (_window), \
-		.interval_coded = 0, \
-		.window_coded = 0, \
-		.timeout = 0, \
-	 } })
+	((struct bt_conn_le_create_param[]) { \
+		BT_CONN_LE_CREATE_PARAM_INIT(_options, _interval, _window) \
+	 })
 
 /** Default LE create connection parameters.
  *  Scan continuously by setting scan interval equal to scan window.
@@ -393,8 +416,12 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 				  const struct bt_le_conn_param *conn_param)
 {
 	struct bt_conn *conn;
+	struct bt_conn_le_create_param param = BT_CONN_LE_CREATE_PARAM_INIT(
+						BT_LE_CONN_OPT_NONE,
+						BT_GAP_SCAN_FAST_INTERVAL,
+						BT_GAP_SCAN_FAST_INTERVAL);
 
-	if (bt_conn_le_create(peer, BT_CONN_LE_CREATE_CONN, conn_param,
+	if (bt_conn_le_create(peer, &param, conn_param,
 			      &conn)) {
 		return NULL;
 	}
@@ -423,7 +450,12 @@ int bt_conn_le_create_auto(const struct bt_conn_le_create_param *create_param,
 __deprecated static inline
 int bt_conn_create_auto_le(const struct bt_le_conn_param *conn_param)
 {
-	return bt_conn_le_create_auto(BT_CONN_LE_CREATE_CONN_AUTO, conn_param);
+	struct bt_conn_le_create_param param = BT_CONN_LE_CREATE_PARAM_INIT(
+						BT_LE_CONN_OPT_NONE,
+						BT_GAP_SCAN_FAST_INTERVAL,
+						BT_GAP_SCAN_FAST_WINDOW);
+
+	return bt_conn_le_create_auto(&param, conn_param);
 }
 
 /** @brief Stop automatic connect creation.
@@ -1151,14 +1183,23 @@ struct bt_br_conn_param {
 	bool allow_role_switch;
 };
 
+/** @brief Initialize BR/EDR connection parameters
+ *
+ *  @param role_switch True if role switch is allowed
+ */
+#define BT_BR_CONN_PARAM_INIT(role_switch) \
+{ \
+	.allow_role_switch = (role_switch), \
+}
+
 /** Helper to declare BR/EDR connection parameters inline
   *
   * @param role_switch True if role switch is allowed
   */
 #define BT_BR_CONN_PARAM(role_switch) \
-	((struct bt_br_conn_param[]) { { \
-		.allow_role_switch = (role_switch), \
-	 } })
+	((struct bt_br_conn_param[]) { \
+		BT_BR_CONN_PARAM_INIT(role_switch) \
+	 })
 
 /** Default BR/EDR connection parameters:
  *    Role switch allowed
