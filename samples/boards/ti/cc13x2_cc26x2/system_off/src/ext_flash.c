@@ -11,7 +11,7 @@
 
 #include <driverlib/cpu.h>
 
-#define GPIO_PORT DT_TI_CC13XX_CC26XX_GPIO_40022000_LABEL
+#define GPIO_PORT DT_LABEL(DT_NODELABEL(gpio0))
 #define DIO8_PIN  8
 #define DIO9_PIN  9
 #define DIO10_PIN 10
