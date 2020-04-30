@@ -27,8 +27,8 @@ void main(void)
 	nrfx_err_t err;
 
 	/* Connect GPIOTE_0 IRQ to nrfx_gpiote_irq_handler */
-	IRQ_CONNECT(DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ_0,
-		    DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(gpiote)),
+		    DT_IRQ(DT_NODELABEL(gpiote), priority),
 		    nrfx_isr, nrfx_gpiote_irq_handler, 0);
 
 	/* Initialize GPIOTE (the interrupt priority passed as the parameter
