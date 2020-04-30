@@ -35,7 +35,7 @@ cocci	= all cocci scripts available at scripts/coccinelle/*
 
 If no [DIRECTORY|FILE] is supplied, entire codebase is processed.
 
-For detailed documentation refer: doc/application/coccinelle.rst"
+For detailed documentation refer: doc/guides/coccinelle.rst"
 
 for i in "$@"
 do
