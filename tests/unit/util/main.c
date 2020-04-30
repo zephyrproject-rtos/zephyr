@@ -288,6 +288,37 @@ static void test_FOR_EACH_IDX_FIXED_ARG(void)
 	zassert_equal(a2, 3, "Unexpected value %d", a2);
 }
 
+static void test_IS_EMPTY(void)
+{
+	#define test_IS_EMPTY_REAL_EMPTY
+	#define test_IS_EMPTY_NOT_EMPTY XXX_DO_NOT_REPLACE_XXX
+	zassert_true(IS_EMPTY(test_IS_EMPTY_REAL_EMPTY),
+		     "Expected to be empty");
+	zassert_false(IS_EMPTY(test_IS_EMPTY_NOT_EMPTY),
+		      "Expected to be non-empty");
+}
+
+static void test_LIST_DROP_EMPTY(void)
+{
+	/*
+	 * The real definition should be:
+	 *  #define TEST_BROKEN_LIST ,Henry,,Dorsett,Case,
+	 * but checkpatch complains, so below equivalent is defined.
+	 */
+	#define TEST_BROKEN_LIST EMPTY, Henry, EMPTY, Dorsett, Case,
+	#define TEST_FIXED_LIST LIST_DROP_EMPTY(TEST_BROKEN_LIST)
+	#define TEST_MKSTR(a) #a,
+	static const char *const arr[] = {
+		FOR_EACH(TEST_MKSTR, TEST_FIXED_LIST)
+	};
+
+	zassert_equal(sizeof(arr) / sizeof(char *), 3,
+		      "Failed to cleanup list");
+	zassert_equal(strcmp(arr[0], "Henry"), 0, "Failed at 0");
+	zassert_equal(strcmp(arr[1], "Dorsett"), 0, "Failed at 1");
+	zassert_equal(strcmp(arr[2], "Case"), 0, "Failed at 0");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_lib_sys_util_tests,
@@ -303,7 +334,9 @@ void test_main(void)
 			 ztest_unit_test(test_FOR_EACH),
 			 ztest_unit_test(test_FOR_EACH_FIXED_ARG),
 			 ztest_unit_test(test_FOR_EACH_IDX),
-			 ztest_unit_test(test_FOR_EACH_IDX_FIXED_ARG)
+			 ztest_unit_test(test_FOR_EACH_IDX_FIXED_ARG),
+			 ztest_unit_test(test_IS_EMPTY),
+			 ztest_unit_test(test_LIST_DROP_EMPTY)
 	);
 
 	ztest_run_test_suite(test_lib_sys_util_tests);

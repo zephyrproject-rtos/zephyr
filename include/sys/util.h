@@ -351,6 +351,81 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
  */
 #define IF_ENABLED(_flag, _code) \
 	COND_CODE_1(_flag, _code, ())
+
+
+/**
+ * @brief Check if defined name does have replacement string.
+ *
+ * If defined macro has value this will return true, otherwise
+ * it will return false. It only works with defined macros, so additional
+ * test (if defined) may be needed in some cases.
+ *
+ * This macro may be used, with COND_CODE_* macros, while processing
+ * __VA_ARG__ to avoid processing empty arguments.
+ *
+ * Note that this macro is indented to check macro names that evaluate
+ * to replacement lists being empty or containing numbers or macro name
+ * like tokens.
+ *
+ * Example:
+ *
+ *	#define EMPTY
+ *	#define NON_EMPTY	1
+ *	#undef  UNDEFINED
+ *	IS_EMPTY(EMPTY)
+ *	IS_EMPTY(NON_EMPTY)
+ *	IS_EMPTY(UNDEFINED)
+ *	#if defined(EMPTY) && IS_EMPTY(EMPTY) == true
+ *	...
+ *	#endif
+ *
+ * In above examples, the invocations of IS_EMPTY(...) will return: true,
+ * false, true and conditional code will be included.
+ *
+ * @param a		Makro to check
+ */
+#define IS_EMPTY(a) Z_IS_EMPTY_(a, true, false,)
+#define Z_IS_EMPTY_(...) Z_IS_EMPTY__(__VA_ARGS__)
+#define Z_IS_EMPTY__(a, ...) Z_IS_EMPTY___(_ZZ##a##ZZ0, __VA_ARGS__)
+#define Z_IS_EMPTY___(...) Z_IS_EMPTY____(GET_ARGS_LESS_1(__VA_ARGS__))
+#define Z_IS_EMPTY____(...) GET_ARG2(__VA_ARGS__)
+
+/**
+ * @brief Remove empty arguments from list.
+ *
+ * Due to evaluation, __VA_ARGS__ and other preprocessor generated lists
+ * may contain empty elements, e.g.:
+ *
+ *	#define LIST ,a,b,,d,
+ *
+ * In above example the first, the element between b and d, and the last
+ * are empty.
+ * When processing such lists, by for-each type loops, all empty elements
+ * will be processed, and may require filtering out within a loop.
+ * To make that process easier, it is enough to invoke LIST_DROP_EMPTY
+ * which will remove all empty elements from list.
+ *
+ * Example:
+ *	LIST_DROP_EMPTY(list)
+ * will return:
+ *	a,b,d
+ * Notice that ',' are preceded by space.
+ *
+ * @param ... 		list to be processed
+ */
+#define LIST_DROP_EMPTY(...) \
+	Z_LIST_DROP_FIRST(FOR_EACH(Z_LIST_NO_EMPTIES, __VA_ARGS__))
+
+/* Adding ',' after each element would add empty element at the end of
+ * list, which is hard to remove, so instead precede each element with ',',
+ * this way first element is empty, and this one is easy to drop.
+ */
+#define Z_LIST_ADD_ELEM(e) EMPTY, e
+#define Z_LIST_DROP_FIRST(...) GET_ARGS_LESS_1(__VA_ARGS__)
+#define Z_LIST_NO_EMPTIES(e) \
+	COND_CODE_1(IS_EMPTY(e), (), (Z_LIST_ADD_ELEM(e)))
+
+
 /**
  * @brief Insert code depending on result of flag evaluation.
  *
@@ -381,6 +456,25 @@ u8_t u8_to_dec(char *buf, u8_t buflen, u8_t value);
  * around that argument. It is expected that parameter is provided in brackets
  */
 #define __GET_ARG2_DEBRACKET(ignore_this, val, ...) __DEBRACKET val
+
+/**
+ * @brief Macro with empty replacement list
+ *
+ * This trivial definition is provided to use where macro is expected
+ * to evaluate to empty replacement string or when it is needed to
+ * cheat checkpatch.
+ *
+ * Examples
+ *
+ *	#define LIST_ITEM(n) , item##n
+ *
+ * would cause error with checkpatch, but:
+ *
+ *	#define LIST_TIEM(n) EMPTY, item##m
+ *
+ * would not.
+ */
+#define EMPTY
 
 /**
  * @brief Get first argument from variable list of arguments
