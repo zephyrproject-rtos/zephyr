@@ -564,7 +564,7 @@ static int eth_enc28j60_rx(struct device *dev, u16_t *vlan_tag)
 		/* Get the frame from the buffer */
 		pkt = net_pkt_rx_alloc_with_buffer(
 			get_iface(context, *vlan_tag), frm_len,
-			AF_UNSPEC, 0, config->timeout);
+			AF_UNSPEC, 0, K_MSEC(config->timeout));
 		if (!pkt) {
 			LOG_ERR("Could not allocate rx buffer");
 			eth_stats_update_errors_rx(get_iface(context,
