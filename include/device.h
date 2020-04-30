@@ -245,10 +245,7 @@ size_t z_device_get_all_static(struct device **devices);
  *
  * @return true if and only if the device is available for use.
  */
-static inline bool z_device_ready(const struct device *dev)
-{
-	return dev->api != NULL;
-}
+bool z_device_ready(const struct device *dev);
 
 /**
  * @}
