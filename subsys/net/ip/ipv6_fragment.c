@@ -304,8 +304,6 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 		goto error;
 	}
 
-	net_pkt_cursor_init(pkt);
-
 	/* This one updates the previous header's nexthdr value */
 	if (net_pkt_skip(pkt, net_pkt_ipv6_hdr_prev(pkt)) ||
 	    net_pkt_write_u8(pkt, next_hdr)) {
