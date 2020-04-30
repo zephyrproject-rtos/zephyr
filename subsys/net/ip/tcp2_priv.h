@@ -180,3 +180,19 @@ struct tcp { /* TCP connection */
 
 #define FL(_fl, _op, _mask, _args...)					\
 	_flags(_fl, _op, _mask, strlen("" #_args) ? _args : true)
+
+/*
+ * @brief Generate initial TCP sequence number
+ *
+ * @return Return a random TCP sequence number
+ */
+static inline u32_t tcp_init_isn(void)
+{
+	if (IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) ||
+	    IS_ENABLED(CONFIG_NET_TEST)) {
+		return 0;
+	}
+
+	/* Randomise initial seq number */
+	return sys_rand32_get();
+}

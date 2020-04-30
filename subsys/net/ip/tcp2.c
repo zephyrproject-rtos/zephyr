@@ -645,6 +645,8 @@ static struct tcp *tcp_conn_alloc(void)
 
 	tcp_conn_ref(conn);
 
+	conn->seq = tcp_init_isn();
+
 	sys_slist_append(&tcp_conns, (sys_snode_t *)conn);
 out:
 	NET_DBG("conn: %p", conn);
