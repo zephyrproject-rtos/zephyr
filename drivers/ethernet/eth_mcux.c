@@ -446,18 +446,18 @@ static void eth_mcux_phy_event(struct eth_context *context)
 			/* Network interface might be NULL at this point */
 			if (context->iface) {
 				net_eth_carrier_on(context->iface);
-				k_sleep(USEC_PER_MSEC);
+				k_msleep(USEC_PER_MSEC);
 			}
 		} else if (!link_up && context->link_up) {
 			LOG_INF("%s link down", eth_name(context->base));
 			context->link_up = link_up;
 			k_delayed_work_submit(&context->delayed_phy_work,
-					      CONFIG_ETH_MCUX_PHY_TICK_MS);
+					K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
 			context->phy_state = eth_mcux_phy_state_wait;
 			net_eth_carrier_off(context->iface);
 		} else {
 			k_delayed_work_submit(&context->delayed_phy_work,
-					      CONFIG_ETH_MCUX_PHY_TICK_MS);
+					K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
 			context->phy_state = eth_mcux_phy_state_wait;
 		}
 
@@ -482,7 +482,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 			(phy_speed ? "100" : "10"),
 			(phy_duplex ? "full" : "half"));
 		k_delayed_work_submit(&context->delayed_phy_work,
-				      CONFIG_ETH_MCUX_PHY_TICK_MS);
+				      K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
 		context->phy_state = eth_mcux_phy_state_wait;
 		break;
 	}
