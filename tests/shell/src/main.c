@@ -316,6 +316,33 @@ static void test_set_root_cmd(void)
 	test_shell_execute_cmd("shell colors on", 0);
 }
 
+static void test_shell_fprintf(void)
+{
+	static const char expect[] = "testing 1 2 3";
+	const struct shell *shell;
+	const char *buf;
+	size_t size;
+
+	shell = shell_backend_dummy_get_ptr();
+	zassert_not_null(shell, "Failed to get shell");
+
+	/* Clear the output buffer */
+	shell_backend_dummy_get_output(shell, &size);
+
+	shell_fprintf(shell, SHELL_VT100_COLOR_DEFAULT, "testing %d %s %c",
+		      1, "2", '3');
+	buf = shell_backend_dummy_get_output(shell, &size);
+	zassert_true(size >= sizeof(expect), "Expected size > %u, got %d",
+		     sizeof(expect), size);
+
+	/*
+	 * There are prompts and various ANSI characters in the output, so just
+	 * check that the string is in there somewhere.
+	 */
+	zassert_true(strstr(buf, expect),
+		     "Expected string to contain '%s', got '%s'", expect, buf);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(shell_test_suite,
@@ -328,7 +355,8 @@ void test_main(void)
 			ztest_unit_test(test_cmd_resize),
 			ztest_unit_test(test_shell_module),
 			ztest_unit_test(test_shell_wildcards_static),
-			ztest_unit_test(test_shell_wildcards_dynamic));
+			ztest_unit_test(test_shell_wildcards_dynamic),
+			ztest_unit_test(test_shell_fprintf));
 
 	ztest_run_test_suite(shell_test_suite);
 }

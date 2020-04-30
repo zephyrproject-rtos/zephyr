@@ -727,6 +727,21 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 		   const char *fmt, ...);
 
 /**
+ * @brief vprintf-like function which sends formatted data stream to the shell.
+ *
+ * This function can be used from the command handler or from threads, but not
+ * from an interrupt context. It is similar to shell_fprintf() but takes a
+ * va_list instead of variable arguments.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] color	Printed text color.
+ * @param[in] fmt	Format string.
+ * @param[in] args	List of parameters to print.
+ */
+void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
+		   const char *fmt, va_list args);
+
+/**
  * @brief Print data in hexadecimal format.
  *
  * @param[in] shell	Pointer to the shell instance.
