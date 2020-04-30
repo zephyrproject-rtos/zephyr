@@ -567,7 +567,7 @@ int settings_name_next(const char *name, const char **next);
  *
  * @return 0 on success, non-zero on failure.
  */
-int settings_runtime_set(const char *name, void *data, size_t len);
+int settings_runtime_set(const char *name, const void *data, size_t len);
 
 /**
  * Get a value corresponding to a key from a module handler.
