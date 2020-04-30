@@ -64,7 +64,8 @@ const char *sensor_channel_name[SENSOR_CHAN_ALL] = {
 		 "gauge_desired_charging_current",
 };
 
-static int handle_channel_by_name(const struct shell *shell, struct device *dev,
+static int handle_channel_by_name(const struct shell *shell,
+					const struct device *dev,
 					const char *channel_name)
 {
 	struct sensor_value value[3];
@@ -118,7 +119,7 @@ static int handle_channel_by_name(const struct shell *shell, struct device *dev,
 }
 static int cmd_get_sensor(const struct shell *shell, size_t argc, char *argv[])
 {
-	struct device *dev;
+	const struct device *dev;
 	int err;
 
 	dev = device_get_binding(argv[1]);
@@ -183,7 +184,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_lookup(idx, NULL);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

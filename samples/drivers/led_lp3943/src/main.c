@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(app);
 
 void main(void)
 {
-	struct device *led_dev;
+	const struct device *led_dev;
 	int i, ret;
 
 	led_dev = device_get_binding(LED_DEV_NAME);

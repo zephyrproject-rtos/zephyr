@@ -22,7 +22,7 @@ enum {
 };
 
 struct max17055_data {
-	struct device *i2c;
+	const struct device *i2c;
 	/* Current cell voltage in units of 1.25/16mV */
 	uint16_t voltage;
 	/* Average current in units of 1.5625uV / Rsense */

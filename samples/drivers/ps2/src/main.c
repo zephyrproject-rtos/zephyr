@@ -33,7 +33,7 @@ K_MSGQ_DEFINE(aux_to_host_queue, sizeof(uint8_t), 8, 4);
 /* We use a timer to saturate the queue */
 K_TIMER_DEFINE(block_ps2_timer, saturate_ps2, NULL);
 
-static struct device *ps2_0_dev;
+static const struct device *ps2_0_dev;
 
 static void saturate_ps2(struct k_timer *timer)
 {
@@ -45,7 +45,7 @@ static void saturate_ps2(struct k_timer *timer)
 	ps2_enable_callback(ps2_0_dev);
 }
 
-static void mb_callback(struct device *dev, uint8_t value)
+static void mb_callback(const struct device *dev, uint8_t value)
 {
 	if (k_msgq_put(&aux_to_host_queue, &value, K_NO_WAIT) != 0) {
 		ps2_disable_callback(ps2_0_dev);

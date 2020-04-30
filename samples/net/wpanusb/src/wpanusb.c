@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(wpanusb);
 #define WPANUSB_IN_EP_IDX		0
 
 static struct ieee802154_radio_api *radio_api;
-static struct device *ieee802154_dev;
+static const struct device *ieee802154_dev;
 
 static struct k_fifo tx_queue;
 

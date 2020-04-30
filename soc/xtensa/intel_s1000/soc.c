@@ -23,7 +23,7 @@ static uint32_t ref_clk_freq;
 
 void z_soc_irq_enable(uint32_t irq)
 {
-	struct device *dev_cavs, *dev_ictl;
+	const struct device *dev_cavs, *dev_ictl;
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
 	case DT_IRQN(CAVS_INTC_NODE(0)):
@@ -82,7 +82,7 @@ void z_soc_irq_enable(uint32_t irq)
 
 void z_soc_irq_disable(uint32_t irq)
 {
-	struct device *dev_cavs, *dev_ictl;
+	const struct device *dev_cavs, *dev_ictl;
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
 	case DT_IRQN(CAVS_INTC_NODE(0)):
@@ -151,7 +151,7 @@ void z_soc_irq_disable(uint32_t irq)
 
 int z_soc_irq_is_enabled(unsigned int irq)
 {
-	struct device *dev_cavs, *dev_ictl;
+	const struct device *dev_cavs, *dev_ictl;
 	int ret = -EINVAL;
 
 	switch (XTENSA_IRQ_NUMBER(irq)) {
@@ -317,7 +317,7 @@ static inline void soc_read_bootstraps(void)
 	}
 }
 
-static int soc_init(struct device *dev)
+static int soc_init(const struct device *dev)
 {
 	soc_read_bootstraps();
 

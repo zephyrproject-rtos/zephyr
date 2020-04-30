@@ -444,7 +444,7 @@ struct hl7800_iface_ctx {
 	bool search_no_id_resp;
 
 	/* GPIO PORT devices */
-	struct device *gpio_port_dev[MAX_MDM_CONTROL_PINS];
+	const struct device *gpio_port_dev[MAX_MDM_CONTROL_PINS];
 	struct gpio_callback mdm_vgpio_cb;
 	struct gpio_callback mdm_uart_dsr_cb;
 	struct gpio_callback mdm_gpio6_cb;
@@ -3528,7 +3528,8 @@ static void mdm_vgpio_work_cb(struct k_work *item)
 	hl7800_unlock();
 }
 
-void mdm_vgpio_callback_isr(struct device *port, struct gpio_callback *cb,
+void mdm_vgpio_callback_isr(const struct device *port,
+			    struct gpio_callback *cb,
 			    uint32_t pins)
 {
 	ictx.vgpio_state = (uint32_t)gpio_pin_get(ictx.gpio_port_dev[MDM_VGPIO],
@@ -3556,7 +3557,8 @@ void mdm_vgpio_callback_isr(struct device *port, struct gpio_callback *cb,
 	k_work_submit_to_queue(&hl7800_workq, &ictx.mdm_vgpio_work);
 }
 
-void mdm_uart_dsr_callback_isr(struct device *port, struct gpio_callback *cb,
+void mdm_uart_dsr_callback_isr(const struct device *port,
+			       struct gpio_callback *cb,
 			       uint32_t pins)
 {
 	ictx.dsr_state = (uint32_t)gpio_pin_get(
@@ -3581,7 +3583,8 @@ static void mark_sockets_for_reconfig(void)
 }
 #endif
 
-void mdm_gpio6_callback_isr(struct device *port, struct gpio_callback *cb,
+void mdm_gpio6_callback_isr(const struct device *port,
+			    struct gpio_callback *cb,
 			    uint32_t pins)
 {
 #ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
@@ -3607,7 +3610,8 @@ void mdm_gpio6_callback_isr(struct device *port, struct gpio_callback *cb,
 #endif
 }
 
-void mdm_uart_cts_callback(struct device *port, struct gpio_callback *cb,
+void mdm_uart_cts_callback(const struct device *port,
+			   struct gpio_callback *cb,
 			   uint32_t pins)
 {
 	ictx.cts_state = (uint32_t)gpio_pin_get(
@@ -4625,7 +4629,7 @@ static struct net_offload offload_funcs = {
 	.put = offload_put,
 };
 
-static inline uint8_t *hl7800_get_mac(struct device *dev)
+static inline uint8_t *hl7800_get_mac(const struct device *dev)
 {
 	struct hl7800_iface_ctx *ctx = dev->driver_data;
 
@@ -4696,7 +4700,7 @@ done:
 }
 #endif
 
-static int hl7800_init(struct device *dev)
+static int hl7800_init(const struct device *dev)
 {
 	int i, ret = 0;
 
@@ -4883,7 +4887,7 @@ static int hl7800_init(struct device *dev)
 
 static void offload_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct hl7800_iface_ctx *ctx = dev->driver_data;
 
 	iface->if_dev->offload = &offload_funcs;

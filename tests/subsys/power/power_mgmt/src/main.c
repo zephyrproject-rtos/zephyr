@@ -24,7 +24,7 @@ static bool set_sys_power;
 static bool leave_idle;
 static bool idle_entered;
 
-static struct device *dev;
+static const struct device *dev;
 static struct dummy_driver_api *api;
 /*
  * Weak power hook functions. Used on systems that have not implemented

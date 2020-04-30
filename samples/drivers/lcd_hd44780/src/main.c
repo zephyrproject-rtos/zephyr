@@ -180,7 +180,7 @@ void _set_row_offsets(int8_t row0, int8_t row1, int8_t row2, int8_t row3)
 }
 
 
-void _pi_lcd_toggle_enable(struct device *gpio_dev)
+void _pi_lcd_toggle_enable(const struct device *gpio_dev)
 {
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC25_E, LOW);
 	k_msleep(ENABLE_DELAY);
@@ -191,7 +191,7 @@ void _pi_lcd_toggle_enable(struct device *gpio_dev)
 }
 
 
-void _pi_lcd_4bits_wr(struct device *gpio_dev, uint8_t bits)
+void _pi_lcd_4bits_wr(const struct device *gpio_dev, uint8_t bits)
 {
 	/* High bits */
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC24_D4, LOW);
@@ -236,7 +236,7 @@ void _pi_lcd_4bits_wr(struct device *gpio_dev, uint8_t bits)
 	_pi_lcd_toggle_enable(gpio_dev);
 }
 
-void _pi_lcd_8bits_wr(struct device *gpio_dev, uint8_t bits)
+void _pi_lcd_8bits_wr(const struct device *gpio_dev, uint8_t bits)
 {
 	/* High bits */
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC21_D7, LOW);
@@ -278,7 +278,7 @@ void _pi_lcd_8bits_wr(struct device *gpio_dev, uint8_t bits)
 	_pi_lcd_toggle_enable(gpio_dev);
 }
 
-void _pi_lcd_data(struct device *gpio_dev, uint8_t bits)
+void _pi_lcd_data(const struct device *gpio_dev, uint8_t bits)
 {
 	if (lcd_data.disp_func & LCD_8BIT_MODE) {
 		_pi_lcd_8bits_wr(gpio_dev, bits);
@@ -287,14 +287,14 @@ void _pi_lcd_data(struct device *gpio_dev, uint8_t bits)
 	}
 }
 
-void _pi_lcd_command(struct device *gpio_dev, uint8_t bits)
+void _pi_lcd_command(const struct device *gpio_dev, uint8_t bits)
 {
 	/* mode = False for command */
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC28_RS, LOW);
 	_pi_lcd_data(gpio_dev, bits);
 }
 
-void _pi_lcd_write(struct device *gpio_dev, uint8_t bits)
+void _pi_lcd_write(const struct device *gpio_dev, uint8_t bits)
 {
 	/* mode = True for character */
 	GPIO_PIN_WR(gpio_dev, GPIO_PIN_PC28_RS, HIGH);
@@ -306,14 +306,15 @@ void _pi_lcd_write(struct device *gpio_dev, uint8_t bits)
  * USER can use these APIs
  *************************/
 /** Home */
-void pi_lcd_home(struct device *gpio_dev)
+void pi_lcd_home(const struct device *gpio_dev)
 {
 	_pi_lcd_command(gpio_dev, LCD_RETURN_HOME);
 	k_sleep(K_MSEC(2));			/* wait for 2ms */
 }
 
 /** Set curson position */
-void pi_lcd_set_cursor(struct device *gpio_dev, uint8_t col, uint8_t row)
+void pi_lcd_set_cursor(const struct device *gpio_dev, uint8_t col,
+		       uint8_t row)
 {
 	size_t max_lines;
 
@@ -329,7 +330,7 @@ void pi_lcd_set_cursor(struct device *gpio_dev, uint8_t col, uint8_t row)
 
 
 /** Clear display */
-void pi_lcd_clear(struct device *gpio_dev)
+void pi_lcd_clear(const struct device *gpio_dev)
 {
 	_pi_lcd_command(gpio_dev, LCD_CLEAR_DISPLAY);
 	k_sleep(K_MSEC(2));			/* wait for 2ms */
@@ -337,7 +338,7 @@ void pi_lcd_clear(struct device *gpio_dev)
 
 
 /** Display ON */
-void pi_lcd_display_on(struct device *gpio_dev)
+void pi_lcd_display_on(const struct device *gpio_dev)
 {
 	lcd_data.disp_cntl |= LCD_DISPLAY_ON;
 	_pi_lcd_command(gpio_dev,
@@ -345,7 +346,7 @@ void pi_lcd_display_on(struct device *gpio_dev)
 }
 
 /** Display OFF */
-void pi_lcd_display_off(struct device *gpio_dev)
+void pi_lcd_display_off(const struct device *gpio_dev)
 {
 	lcd_data.disp_cntl &= ~LCD_DISPLAY_ON;
 	_pi_lcd_command(gpio_dev,
@@ -354,7 +355,7 @@ void pi_lcd_display_off(struct device *gpio_dev)
 
 
 /** Turns cursor off */
-void pi_lcd_cursor_off(struct device *gpio_dev)
+void pi_lcd_cursor_off(const struct device *gpio_dev)
 {
 	lcd_data.disp_cntl &= ~LCD_CURSOR_ON;
 	_pi_lcd_command(gpio_dev,
@@ -362,7 +363,7 @@ void pi_lcd_cursor_off(struct device *gpio_dev)
 }
 
 /** Turn cursor on */
-void pi_lcd_cursor_on(struct device *gpio_dev)
+void pi_lcd_cursor_on(const struct device *gpio_dev)
 {
 	lcd_data.disp_cntl |= LCD_CURSOR_ON;
 	_pi_lcd_command(gpio_dev,
@@ -371,7 +372,7 @@ void pi_lcd_cursor_on(struct device *gpio_dev)
 
 
 /** Turn off the blinking cursor */
-void pi_lcd_blink_off(struct device *gpio_dev)
+void pi_lcd_blink_off(const struct device *gpio_dev)
 {
 	lcd_data.disp_cntl &= ~LCD_BLINK_ON;
 	_pi_lcd_command(gpio_dev,
@@ -379,7 +380,7 @@ void pi_lcd_blink_off(struct device *gpio_dev)
 }
 
 /** Turn on the blinking cursor */
-void pi_lcd_blink_on(struct device *gpio_dev)
+void pi_lcd_blink_on(const struct device *gpio_dev)
 {
 	lcd_data.disp_cntl |= LCD_BLINK_ON;
 	_pi_lcd_command(gpio_dev,
@@ -387,21 +388,21 @@ void pi_lcd_blink_on(struct device *gpio_dev)
 }
 
 /** Scroll the display left without changing the RAM */
-void pi_lcd_scroll_left(struct device *gpio_dev)
+void pi_lcd_scroll_left(const struct device *gpio_dev)
 {
 	_pi_lcd_command(gpio_dev, LCD_CURSOR_SHIFT |
 			LCD_DISPLAY_MOVE | LCD_MOVE_LEFT);
 }
 
 /** Scroll the display right without changing the RAM */
-void pi_lcd_scroll_right(struct device *gpio_dev)
+void pi_lcd_scroll_right(const struct device *gpio_dev)
 {
 	_pi_lcd_command(gpio_dev, LCD_CURSOR_SHIFT |
 			LCD_DISPLAY_MOVE | LCD_MOVE_RIGHT);
 }
 
 /** Text that flows from left to right */
-void pi_lcd_left_to_right(struct device *gpio_dev)
+void pi_lcd_left_to_right(const struct device *gpio_dev)
 {
 	lcd_data.disp_mode |= LCD_ENTRY_LEFT;
 	_pi_lcd_command(gpio_dev,
@@ -409,7 +410,7 @@ void pi_lcd_left_to_right(struct device *gpio_dev)
 }
 
 /** Text that flows from right to left */
-void pi_lcd_right_to_left(struct device *gpio_dev)
+void pi_lcd_right_to_left(const struct device *gpio_dev)
 {
 	lcd_data.disp_mode &= ~LCD_ENTRY_LEFT;
 	_pi_lcd_command(gpio_dev,
@@ -417,7 +418,7 @@ void pi_lcd_right_to_left(struct device *gpio_dev)
 }
 
 /** Right justify text from the cursor location */
-void pi_lcd_auto_scroll_right(struct device *gpio_dev)
+void pi_lcd_auto_scroll_right(const struct device *gpio_dev)
 {
 	lcd_data.disp_mode |= LCD_ENTRY_SHIFT_INCREMENT;
 	_pi_lcd_command(gpio_dev,
@@ -425,14 +426,14 @@ void pi_lcd_auto_scroll_right(struct device *gpio_dev)
 }
 
 /** Left justify text from the cursor location */
-void pi_lcd_auto_scroll_left(struct device *gpio_dev)
+void pi_lcd_auto_scroll_left(const struct device *gpio_dev)
 {
 	lcd_data.disp_mode &= ~LCD_ENTRY_SHIFT_INCREMENT;
 	_pi_lcd_command(gpio_dev,
 			LCD_ENTRY_MODE_SET | lcd_data.disp_cntl);
 }
 
-void pi_lcd_string(struct device *gpio_dev, char *msg)
+void pi_lcd_string(const struct device *gpio_dev, char *msg)
 {
 	int i;
 	int len = 0;
@@ -451,7 +452,8 @@ void pi_lcd_string(struct device *gpio_dev, char *msg)
 
 
 /** LCD initialization function */
-void pi_lcd_init(struct device *gpio_dev, uint8_t cols, uint8_t rows, uint8_t dotsize)
+void pi_lcd_init(const struct device *gpio_dev, uint8_t cols, uint8_t rows,
+		 uint8_t dotsize)
 {
 	if (rows > 1) {
 		lcd_data.disp_func |= LCD_2_LINE;
@@ -525,7 +527,7 @@ void pi_lcd_init(struct device *gpio_dev, uint8_t cols, uint8_t rows, uint8_t do
 
 void main(void)
 {
-	struct device *gpio_dev;
+	const struct device *gpio_dev;
 
 	gpio_dev = device_get_binding(GPIO_DRV_NAME);
 	if (!gpio_dev) {

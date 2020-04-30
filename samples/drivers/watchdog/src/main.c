@@ -47,7 +47,7 @@
 #error "Unsupported SoC and no watchdog0 alias in zephyr.dts"
 #endif
 
-static void wdt_callback(struct device *wdt_dev, int channel_id)
+static void wdt_callback(const struct device *wdt_dev, int channel_id)
 {
 	static bool handled_event;
 
@@ -65,7 +65,7 @@ void main(void)
 {
 	int err;
 	int wdt_channel_id;
-	struct device *wdt;
+	const struct device *wdt;
 	struct wdt_timeout_cfg wdt_config;
 
 	printk("Watchdog sample application\n");

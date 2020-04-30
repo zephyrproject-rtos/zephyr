@@ -36,7 +36,7 @@ static uint32_t table_p_size[] = {
 	LL_DMA_PDATAALIGN_WORD,
 };
 
-static void dma_stm32_dump_stream_irq(struct device *dev, uint32_t id)
+static void dma_stm32_dump_stream_irq(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
@@ -44,7 +44,7 @@ static void dma_stm32_dump_stream_irq(struct device *dev, uint32_t id)
 	stm32_dma_dump_stream_irq(dma, id);
 }
 
-static void dma_stm32_clear_stream_irq(struct device *dev, uint32_t id)
+static void dma_stm32_clear_stream_irq(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
@@ -56,7 +56,7 @@ static void dma_stm32_clear_stream_irq(struct device *dev, uint32_t id)
 
 static void dma_stm32_irq_handler(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct dma_stm32_data *data = dev->data;
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
@@ -233,7 +233,7 @@ static int dma_stm32_get_periph_increment(enum dma_addr_adj increment,
 }
 
 #ifdef CONFIG_DMAMUX_STM32
-int dma_stm32_configure(struct device *dev, uint32_t id,
+int dma_stm32_configure(const struct device *dev, uint32_t id,
 			       struct dma_config *config)
 #else
 static int dma_stm32_configure(struct device *dev, uint32_t id,
@@ -470,7 +470,7 @@ static int dma_stm32_disable_stream(DMA_TypeDef *dma, uint32_t id)
 }
 
 #ifdef CONFIG_DMAMUX_STM32
-int dma_stm32_reload(struct device *dev, uint32_t id,
+int dma_stm32_reload(const struct device *dev, uint32_t id,
 			    uint32_t src, uint32_t dst, size_t size)
 #else
 static int dma_stm32_reload(struct device *dev, uint32_t id,
@@ -519,7 +519,7 @@ static int dma_stm32_reload(struct device *dev, uint32_t id,
 }
 
 #ifdef CONFIG_DMAMUX_STM32
-int dma_stm32_start(struct device *dev, uint32_t id)
+int dma_stm32_start(const struct device *dev, uint32_t id)
 #else
 static int dma_stm32_start(struct device *dev, uint32_t id)
 #endif /* CONFIG_DMAMUX_STM32 */
@@ -544,7 +544,7 @@ static int dma_stm32_start(struct device *dev, uint32_t id)
 }
 
 #ifdef CONFIG_DMAMUX_STM32
-int dma_stm32_stop(struct device *dev, uint32_t id)
+int dma_stm32_stop(const struct device *dev, uint32_t id)
 #else
 static int dma_stm32_stop(struct device *dev, uint32_t id)
 #endif /* CONFIG_DMAMUX_STM32 */
@@ -580,11 +580,11 @@ static int dma_stm32_stop(struct device *dev, uint32_t id)
 
 struct k_mem_block block;
 
-static int dma_stm32_init(struct device *dev)
+static int dma_stm32_init(const struct device *dev)
 {
 	struct dma_stm32_data *data = dev->data;
 	const struct dma_stm32_config *config = dev->config;
-	struct device *clk =
+	const struct device *clk =
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
 	if (clock_control_on(clk,
@@ -620,7 +620,7 @@ static int dma_stm32_init(struct device *dev)
 	return 0;
 }
 
-static int dma_stm32_get_status(struct device *dev, uint32_t id,
+static int dma_stm32_get_status(const struct device *dev, uint32_t id,
 				struct dma_status *stat)
 {
 	const struct dma_stm32_config *config = dev->config;
@@ -692,7 +692,7 @@ do {									\
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 DMA_INIT(0);
 
-static void dma_stm32_config_irq_0(struct device *dev)
+static void dma_stm32_config_irq_0(const struct device *dev)
 {
 	struct dma_stm32_data *data = dev->data;
 
@@ -718,7 +718,7 @@ static void dma_stm32_config_irq_0(struct device *dev)
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 DMA_INIT(1);
 
-static void dma_stm32_config_irq_1(struct device *dev)
+static void dma_stm32_config_irq_1(const struct device *dev)
 {
 	struct dma_stm32_data *data = dev->data;
 

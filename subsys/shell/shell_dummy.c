@@ -98,7 +98,7 @@ const struct shell_transport_api shell_dummy_transport_api = {
 	.read = read
 };
 
-static int enable_shell_dummy(struct device *arg)
+static int enable_shell_dummy(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 	shell_init(&shell_dummy, NULL, true, true, LOG_LEVEL_INF);

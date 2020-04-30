@@ -9,9 +9,9 @@
 #include <drivers/gpio.h>
 #include <sys/printk.h>
 
-static int efr32mg_sltb004a_init(struct device *dev)
+static int efr32mg_sltb004a_init(const struct device *dev)
 {
-	struct device *cur_dev;
+	const struct device *cur_dev;
 
 	ARG_UNUSED(dev);
 

@@ -18,7 +18,7 @@ struct mcux_pit_config {
 	PIT_Type *base;
 	bool enableRunInDebug;
 	pit_chnl_t pit_channel;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 };
 
 struct mcux_pit_data {
@@ -28,7 +28,7 @@ struct mcux_pit_data {
 	void *top_user_data;
 };
 
-static uint32_t mcux_pit_get_top_value(struct device *dev)
+static uint32_t mcux_pit_get_top_value(const struct device *dev)
 {
 	const struct mcux_pit_config *config = dev->config;
 	pit_chnl_t channel = config->pit_channel;
@@ -36,7 +36,7 @@ static uint32_t mcux_pit_get_top_value(struct device *dev)
 	return config->base->CHANNEL[channel].LDVAL;
 }
 
-static int mcux_pit_start(struct device *dev)
+static int mcux_pit_start(const struct device *dev)
 {
 	const struct mcux_pit_config *config = dev->config;
 
@@ -47,7 +47,7 @@ static int mcux_pit_start(struct device *dev)
 	return 0;
 }
 
-static int mcux_pit_stop(struct device *dev)
+static int mcux_pit_stop(const struct device *dev)
 {
 	const struct mcux_pit_config *config = dev->config;
 
@@ -58,7 +58,7 @@ static int mcux_pit_stop(struct device *dev)
 	return 0;
 }
 
-static int mcux_pit_get_value(struct device *dev, uint32_t *ticks)
+static int mcux_pit_get_value(const struct device *dev, uint32_t *ticks)
 {
 	const struct mcux_pit_config *config = dev->config;
 
@@ -67,7 +67,7 @@ static int mcux_pit_get_value(struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-static int mcux_pit_set_top_value(struct device *dev,
+static int mcux_pit_set_top_value(const struct device *dev,
 				  const struct counter_top_cfg *cfg)
 {
 	const struct mcux_pit_config *config = dev->config;
@@ -96,7 +96,7 @@ static int mcux_pit_set_top_value(struct device *dev,
 	return 0;
 }
 
-static uint32_t mcux_pit_get_pending_int(struct device *dev)
+static uint32_t mcux_pit_get_pending_int(const struct device *dev)
 {
 	const struct mcux_pit_config *config = dev->config;
 	uint32_t mask = PIT_TFLG_TIF_MASK;
@@ -107,7 +107,7 @@ static uint32_t mcux_pit_get_pending_int(struct device *dev)
 	return ((flags & mask) == mask);
 }
 
-static uint32_t mcux_pit_get_max_relative_alarm(struct device *dev)
+static uint32_t mcux_pit_get_max_relative_alarm(const struct device *dev)
 {
 	const struct mcux_pit_config *config = dev->config;
 
@@ -116,7 +116,7 @@ static uint32_t mcux_pit_get_max_relative_alarm(struct device *dev)
 
 static void mcux_pit_isr(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	const struct mcux_pit_config *config = dev->config;
 	struct mcux_pit_data *data = dev->data;
 	uint32_t flags;
@@ -136,7 +136,7 @@ static void mcux_pit_isr(void *arg)
 	}
 }
 
-static int mcux_pit_set_alarm(struct device *dev, uint8_t chan_id,
+static int mcux_pit_set_alarm(const struct device *dev, uint8_t chan_id,
 			      const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct mcux_pit_config *config = dev->config;
@@ -163,7 +163,7 @@ static int mcux_pit_set_alarm(struct device *dev, uint8_t chan_id,
 	return 0;
 }
 
-static int mcux_pit_cancel_alarm(struct device *dev, uint8_t chan_id)
+static int mcux_pit_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	const struct mcux_pit_config *config = dev->config;
 	struct mcux_pit_data *data = dev->data;
@@ -180,7 +180,7 @@ static int mcux_pit_cancel_alarm(struct device *dev, uint8_t chan_id)
 	return 0;
 }
 
-static int mcux_pit_init(struct device *dev)
+static int mcux_pit_init(const struct device *dev)
 {
 	const struct mcux_pit_config *config =
 		(struct mcux_pit_config *)dev->config;
@@ -221,7 +221,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 
 static struct mcux_pit_data mcux_pit_data_0;
 
-static void mcux_pit_irq_config_0(struct device *dev);
+static void mcux_pit_irq_config_0(const struct device *dev);
 
 static const struct mcux_pit_config mcux_pit_config_0 = {
 	.info = {
@@ -238,7 +238,7 @@ DEVICE_AND_API_INIT(mcux_pit_0, DT_INST_LABEL(0), &mcux_pit_init,
 		    &mcux_pit_data_0, &mcux_pit_config_0, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mcux_pit_driver_api);
 
-static void mcux_pit_irq_config_0(struct device *dev)
+static void mcux_pit_irq_config_0(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq),
 		    DT_INST_IRQ_BY_IDX(0, 0, priority), mcux_pit_isr,

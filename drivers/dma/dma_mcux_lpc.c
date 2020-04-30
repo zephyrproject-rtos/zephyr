@@ -22,13 +22,13 @@ LOG_MODULE_REGISTER(dma_mcux_lpc, CONFIG_DMA_LOG_LEVEL);
 struct dma_mcux_lpc_config {
 	DMA_Type *base;
 	uint32_t num_of_channels;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 };
 
 struct call_back {
 	dma_transfer_config_t *transferConfig;
 	dma_handle_t dma_handle;
-	struct device *dev;
+	const struct device *dev;
 	void *user_data;
 	dma_callback_t dma_callback;
 	enum dma_channel_direction dir;
@@ -75,7 +75,7 @@ static void nxp_lpc_dma_callback(dma_handle_t *handle, void *param,
 /* Handles DMA interrupts and dispatches to the individual channel */
 static void dma_mcux_lpc_irq_handler(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 
 	DMA_IRQHandle(DEV_BASE(dev));
 /*
@@ -89,8 +89,8 @@ static void dma_mcux_lpc_irq_handler(void *arg)
 }
 
 /* Configure a channel */
-static int dma_mcux_lpc_configure(struct device *dev, uint32_t channel,
-			   struct dma_config *config)
+static int dma_mcux_lpc_configure(const struct device *dev, uint32_t channel,
+				  struct dma_config *config)
 {
 	dma_handle_t *p_handle;
 	struct call_back *data;
@@ -240,7 +240,7 @@ static int dma_mcux_lpc_configure(struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dma_mcux_lpc_start(struct device *dev, uint32_t channel)
+static int dma_mcux_lpc_start(const struct device *dev, uint32_t channel)
 {
 	uint32_t virtual_channel = DEV_DATA(dev)->channel_index[channel];
 	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
@@ -252,7 +252,7 @@ static int dma_mcux_lpc_start(struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dma_mcux_lpc_stop(struct device *dev, uint32_t channel)
+static int dma_mcux_lpc_stop(const struct device *dev, uint32_t channel)
 {
 	uint32_t virtual_channel = DEV_DATA(dev)->channel_index[channel];
 	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
@@ -265,8 +265,8 @@ static int dma_mcux_lpc_stop(struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dma_mcux_lpc_reload(struct device *dev, uint32_t channel,
-			   uint32_t src, uint32_t dst, size_t size)
+static int dma_mcux_lpc_reload(const struct device *dev, uint32_t channel,
+			       uint32_t src, uint32_t dst, size_t size)
 {
 	uint32_t virtual_channel = DEV_DATA(dev)->channel_index[channel];
 	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
@@ -277,8 +277,8 @@ static int dma_mcux_lpc_reload(struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dma_mcux_lpc_get_status(struct device *dev, uint32_t channel,
-			       struct dma_status *status)
+static int dma_mcux_lpc_get_status(const struct device *dev, uint32_t channel,
+				   struct dma_status *status)
 {
 	uint32_t virtual_channel = DEV_DATA(dev)->channel_index[channel];
 	struct call_back *data = DEV_CHANNEL_DATA(dev, virtual_channel);
@@ -297,7 +297,7 @@ static int dma_mcux_lpc_get_status(struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dma_mcux_lpc_init(struct device *dev)
+static int dma_mcux_lpc_init(const struct device *dev)
 {
 	struct dma_mcux_lpc_dma_data *data = DEV_DATA(dev);
 	int size_channel_data;
@@ -357,7 +357,7 @@ static const struct dma_driver_api dma_mcux_lpc_api = {
 };
 
 #define DMA_MCUX_LPC_CONFIG_FUNC(n)				\
-	static void dma_mcux_lpc_config_func_##n(struct device *dev)	\
+	static void dma_mcux_lpc_config_func_##n(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\

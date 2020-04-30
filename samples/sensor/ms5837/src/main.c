@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(main);
 void main(void)
 {
 	struct sensor_value oversampling_rate = { 8192, 0 };
-	struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, meas_ms5837)));
+	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, meas_ms5837)));
 
 	if (dev == NULL) {
 		LOG_ERR("Could not find MS5837 device, aborting test.");

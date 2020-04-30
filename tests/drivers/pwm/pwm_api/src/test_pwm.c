@@ -84,7 +84,7 @@ static int test_task(uint32_t port, uint32_t period, uint32_t pulse, uint8_t uni
 	TC_PRINT("[PWM]: %" PRIu8 ", [period]: %" PRIu32 ", [pulse]: %" PRIu32 "\n",
 		port, period, pulse);
 
-	struct device *pwm_dev = device_get_binding(PWM_DEV_NAME);
+	const struct device *pwm_dev = device_get_binding(PWM_DEV_NAME);
 
 	if (!pwm_dev) {
 		TC_PRINT("Cannot get PWM device\n");

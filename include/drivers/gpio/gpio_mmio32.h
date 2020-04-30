@@ -26,7 +26,7 @@ struct gpio_mmio32_context {
 	const struct gpio_mmio32_config *config;
 };
 
-int gpio_mmio32_init(struct device *dev);
+int gpio_mmio32_init(const struct device *dev);
 
 #ifdef CONFIG_GPIO_MMIO32
 

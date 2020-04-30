@@ -82,7 +82,7 @@
 #define SCROLL_DEFAULT_DURATION_MS 80
 
 struct mb_display {
-	struct device  *dev;         /* GPIO device */
+	const struct device *dev;         /* GPIO device */
 
 	struct k_timer  timer;       /* Rendering timer */
 
@@ -426,7 +426,7 @@ struct mb_display *mb_display_get(void)
 	return &display;
 }
 
-static int mb_display_init(struct device *dev)
+static int mb_display_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

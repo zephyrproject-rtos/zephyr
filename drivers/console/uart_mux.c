@@ -42,7 +42,7 @@ static struct k_work_q uart_mux_workq;
  */
 struct uart_mux {
 	/* The real UART device that is shared between muxed UARTs */
-	struct device *uart;
+	const struct device *uart;
 
 	/* GSM mux related to this UART */
 	struct gsm_mux *mux;
@@ -97,7 +97,7 @@ struct uart_mux_dev_data {
 	struct uart_mux_config cfg;
 
 	/* This UART mux device */
-	struct device *dev;
+	const struct device *dev;
 
 	/* The UART device where we are running on top of */
 	struct uart_mux *real_uart;
@@ -228,7 +228,7 @@ static void uart_mux_tx_work(struct k_work *work)
 	ring_buf_get_finish(dev_data->tx_ringbuf, len);
 }
 
-static int uart_mux_init(struct device *dev)
+static int uart_mux_init(const struct device *dev)
 {
 	struct uart_mux_dev_data *dev_data = DEV_DATA(dev);
 
@@ -253,7 +253,7 @@ static int uart_mux_init(struct device *dev)
  * data from it in uart_mux_rx_work(), we push the data to GSM mux API which
  * will call proper callbacks to pass data to correct recipient.
  */
-static void uart_mux_isr(struct device *uart, void *user_data)
+static void uart_mux_isr(const struct device *uart, void *user_data)
 {
 	struct uart_mux *real_uart = user_data;
 	int rx = 0;
@@ -279,7 +279,7 @@ static void uart_mux_isr(struct device *uart, void *user_data)
 	}
 }
 
-static void uart_mux_flush_isr(struct device *dev)
+static void uart_mux_flush_isr(const struct device *dev)
 {
 	uint8_t c;
 
@@ -311,7 +311,7 @@ static void dlci_created_cb(struct gsm_dlci *dlci, bool connected,
 	}
 }
 
-static int init_real_uart(struct device *mux, struct device *uart,
+static int init_real_uart(const struct device *mux, const struct device *uart,
 			  struct uart_mux **mux_uart)
 {
 	bool found = false;
@@ -374,7 +374,7 @@ static int init_real_uart(struct device *mux, struct device *uart,
 }
 
 /* This will bind the physical (real) UART to this muxed UART */
-static int attach(struct device *mux_uart, struct device *uart,
+static int attach(const struct device *mux_uart, const struct device *uart,
 		  int dlci_address, uart_mux_attach_cb_t cb,
 		  void *user_data)
 {
@@ -427,7 +427,7 @@ static int attach(struct device *mux_uart, struct device *uart,
 	return -ENOENT;
 }
 
-static int uart_mux_poll_in(struct device *dev, unsigned char *p_char)
+static int uart_mux_poll_in(const struct device *dev, unsigned char *p_char)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(p_char);
@@ -435,7 +435,8 @@ static int uart_mux_poll_in(struct device *dev, unsigned char *p_char)
 	return -ENOTSUP;
 }
 
-static void uart_mux_poll_out(struct device *dev, unsigned char out_char)
+static void uart_mux_poll_out(const struct device *dev,
+			      unsigned char out_char)
 {
 	struct uart_mux_dev_data *dev_data = DEV_DATA(dev);
 
@@ -446,14 +447,14 @@ static void uart_mux_poll_out(struct device *dev, unsigned char out_char)
 	(void)gsm_dlci_send(dev_data->dlci, &out_char, 1);
 }
 
-static int uart_mux_err_check(struct device *dev)
+static int uart_mux_err_check(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return -ENOTSUP;
 }
 
-static int uart_mux_configure(struct device *dev,
+static int uart_mux_configure(const struct device *dev,
 			      const struct uart_config *cfg)
 {
 	ARG_UNUSED(dev);
@@ -462,7 +463,8 @@ static int uart_mux_configure(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int uart_mux_config_get(struct device *dev, struct uart_config *cfg)
+static int uart_mux_config_get(const struct device *dev,
+			       struct uart_config *cfg)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(cfg);
@@ -470,7 +472,8 @@ static int uart_mux_config_get(struct device *dev, struct uart_config *cfg)
 	return -ENOTSUP;
 }
 
-static int uart_mux_fifo_fill(struct device *dev, const uint8_t *tx_data, int len)
+static int uart_mux_fifo_fill(const struct device *dev,
+			      const uint8_t *tx_data, int len)
 {
 	struct uart_mux_dev_data *dev_data;
 	size_t wrote;
@@ -504,7 +507,8 @@ static int uart_mux_fifo_fill(struct device *dev, const uint8_t *tx_data, int le
 	return wrote;
 }
 
-static int uart_mux_fifo_read(struct device *dev, uint8_t *rx_data, const int size)
+static int uart_mux_fifo_read(const struct device *dev, uint8_t *rx_data,
+			      const int size)
 {
 	struct uart_mux_dev_data *dev_data;
 	uint32_t len;
@@ -531,7 +535,7 @@ static int uart_mux_fifo_read(struct device *dev, uint8_t *rx_data, const int si
 	return len;
 }
 
-static void uart_mux_irq_tx_enable(struct device *dev)
+static void uart_mux_irq_tx_enable(const struct device *dev)
 {
 	struct uart_mux_dev_data *dev_data = DEV_DATA(dev);
 
@@ -546,7 +550,7 @@ static void uart_mux_irq_tx_enable(struct device *dev)
 	}
 }
 
-static void uart_mux_irq_tx_disable(struct device *dev)
+static void uart_mux_irq_tx_disable(const struct device *dev)
 {
 	struct uart_mux_dev_data *dev_data = DEV_DATA(dev);
 
@@ -557,7 +561,7 @@ static void uart_mux_irq_tx_disable(struct device *dev)
 	dev_data->tx_enabled = false;
 }
 
-static int uart_mux_irq_tx_ready(struct device *dev)
+static int uart_mux_irq_tx_ready(const struct device *dev)
 {
 	struct uart_mux_dev_data *dev_data = DEV_DATA(dev);
 
@@ -572,7 +576,7 @@ static int uart_mux_irq_tx_ready(struct device *dev)
 	return dev_data->tx_ready;
 }
 
-static void uart_mux_irq_rx_enable(struct device *dev)
+static void uart_mux_irq_rx_enable(const struct device *dev)
 {
 	struct uart_mux_dev_data *dev_data = DEV_DATA(dev);
 
@@ -587,7 +591,7 @@ static void uart_mux_irq_rx_enable(struct device *dev)
 	}
 }
 
-static void uart_mux_irq_rx_disable(struct device *dev)
+static void uart_mux_irq_rx_disable(const struct device *dev)
 {
 	struct uart_mux_dev_data *dev_data = DEV_DATA(dev);
 
@@ -598,14 +602,14 @@ static void uart_mux_irq_rx_disable(struct device *dev)
 	dev_data->rx_enabled = false;
 }
 
-static int uart_mux_irq_tx_complete(struct device *dev)
+static int uart_mux_irq_tx_complete(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return -ENOTSUP;
 }
 
-static int uart_mux_irq_rx_ready(struct device *dev)
+static int uart_mux_irq_rx_ready(const struct device *dev)
 {
 	struct uart_mux_dev_data *dev_data = DEV_DATA(dev);
 
@@ -620,17 +624,17 @@ static int uart_mux_irq_rx_ready(struct device *dev)
 	return dev_data->rx_ready;
 }
 
-static void uart_mux_irq_err_enable(struct device *dev)
+static void uart_mux_irq_err_enable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
 
-static void uart_mux_irq_err_disable(struct device *dev)
+static void uart_mux_irq_err_disable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
 
-static int uart_mux_irq_is_pending(struct device *dev)
+static int uart_mux_irq_is_pending(const struct device *dev)
 {
 	struct uart_mux_dev_data *dev_data = DEV_DATA(dev);
 
@@ -649,14 +653,14 @@ static int uart_mux_irq_is_pending(struct device *dev)
 	return 0;
 }
 
-static int uart_mux_irq_update(struct device *dev)
+static int uart_mux_irq_update(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return 1;
 }
 
-static void uart_mux_irq_callback_set(struct device *dev,
+static void uart_mux_irq_callback_set(const struct device *dev,
 				      uart_irq_callback_user_data_t cb,
 				      void *user_data)
 {
@@ -694,7 +698,7 @@ static struct uart_mux_driver_api uart_mux_driver_api = {
 	.attach = attach,
 };
 
-struct device *uart_mux_alloc(void)
+const struct device *uart_mux_alloc(void)
 {
 	sys_snode_t *sn, *sns;
 
@@ -715,14 +719,14 @@ struct device *uart_mux_alloc(void)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline struct device *z_vrfy_uart_mux_find(int dlci_address)
+static inline const struct device *z_vrfy_uart_mux_find(int dlci_address)
 {
 	return z_impl_uart_mux_find(dlci_address);
 }
 #include <syscalls/uart_mux_find_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-struct device *z_impl_uart_mux_find(int dlci_address)
+const struct device *z_impl_uart_mux_find(int dlci_address)
 {
 	sys_snode_t *sn, *sns;
 
@@ -746,7 +750,7 @@ struct device *z_impl_uart_mux_find(int dlci_address)
 	return NULL;
 }
 
-int uart_mux_send(struct device *uart, const uint8_t *buf, size_t size)
+int uart_mux_send(const struct device *uart, const uint8_t *buf, size_t size)
 {
 	struct uart_mux_dev_data *dev_data = DEV_DATA(uart);
 
@@ -777,7 +781,8 @@ int uart_mux_send(struct device *uart, const uint8_t *buf, size_t size)
 	return 0;
 }
 
-int uart_mux_recv(struct device *mux, struct gsm_dlci *dlci, uint8_t *data,
+int uart_mux_recv(const struct device *mux, struct gsm_dlci *dlci,
+		  uint8_t *data,
 		  size_t len)
 {
 	struct uart_mux_dev_data *dev_data = DEV_DATA(mux);
@@ -853,7 +858,7 @@ UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_CFG_DATA, _)
 UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEV_DATA, _)
 UTIL_LISTIFY(CONFIG_UART_MUX_DEVICE_COUNT, DEFINE_UART_MUX_DEVICE, _)
 
-static int init_uart_mux(struct device *device)
+static int init_uart_mux(const struct device *device)
 {
 	ARG_UNUSED(device);
 

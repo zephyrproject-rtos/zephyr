@@ -109,7 +109,8 @@ static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2)
 	zassert_equal(cmp_res, 0, "Received data differ");
 }
 
-static void send_test_msg(struct device *can_dev, struct zcan_frame *msg)
+static void send_test_msg(const struct device *can_dev,
+			  struct zcan_frame *msg)
 {
 	int ret;
 
@@ -126,7 +127,7 @@ static void send_test_msg(struct device *can_dev, struct zcan_frame *msg)
  */
 static void test_filter_handling(void)
 {
-	struct device *can_dev;
+	const struct device *can_dev;
 	int ret, filter_id_1, filter_id_2;
 	struct zcan_frame msg_buffer;
 

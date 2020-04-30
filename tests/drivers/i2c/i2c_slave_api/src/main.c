@@ -46,7 +46,7 @@ static void to_display_format(const uint8_t *src, size_t size, char *dst)
 	}
 }
 
-static int run_full_read(struct device *i2c, uint8_t addr,
+static int run_full_read(const struct device *i2c, uint8_t addr,
 			 const uint8_t *comp_buffer)
 {
 	int ret;
@@ -74,7 +74,7 @@ static int run_full_read(struct device *i2c, uint8_t addr,
 	return 0;
 }
 
-static int run_partial_read(struct device *i2c, uint8_t addr,
+static int run_partial_read(const struct device *i2c, uint8_t addr,
 			    const uint8_t *comp_buffer, unsigned int offset)
 {
 	int ret;
@@ -101,7 +101,8 @@ static int run_partial_read(struct device *i2c, uint8_t addr,
 	return 0;
 }
 
-static int run_program_read(struct device *i2c, uint8_t addr, unsigned int offset)
+static int run_program_read(const struct device *i2c, uint8_t addr,
+			    unsigned int offset)
 {
 	int ret, i;
 
@@ -138,12 +139,12 @@ static int run_program_read(struct device *i2c, uint8_t addr, unsigned int offse
 void test_eeprom_slave(void)
 {
 	const char *label_0 = DT_LABEL(NODE_EP0);
-	struct device *eeprom_0 = device_get_binding(label_0);
-	struct device *i2c_0 = device_get_binding(DT_BUS_LABEL(NODE_EP0));
+	const struct device *eeprom_0 = device_get_binding(label_0);
+	const struct device *i2c_0 = device_get_binding(DT_BUS_LABEL(NODE_EP0));
 	int addr_0 = DT_REG_ADDR(NODE_EP0);
 	const char *label_1 = DT_LABEL(NODE_EP1);
-	struct device *eeprom_1 = device_get_binding(label_1);
-	struct device *i2c_1 = device_get_binding(DT_BUS_LABEL(NODE_EP1));
+	const struct device *eeprom_1 = device_get_binding(label_1);
+	const struct device *i2c_1 = device_get_binding(DT_BUS_LABEL(NODE_EP1));
 	int addr_1 = DT_REG_ADDR(NODE_EP1);
 	int ret, offset;
 

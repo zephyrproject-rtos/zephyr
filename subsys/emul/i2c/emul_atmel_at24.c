@@ -21,7 +21,7 @@ struct at24_emul_data {
 	/** I2C emulator detail */
 	struct i2c_emul emul;
 	/** AT24 device being emulated */
-	struct device *i2c;
+	const struct device *i2c;
 	/** Configuration information */
 	const struct at24_emul_cfg *cfg;
 	/** Current register to read (address) */
@@ -137,7 +137,8 @@ static struct i2c_emul_api at24_emul_api = {
  * @param parent Device to emulate (must use AT24 driver)
  * @return 0 indicating success (always)
  */
-static int emul_atmel_at24_init(const struct emul *emul, struct device *parent)
+static int emul_atmel_at24_init(const struct emul *emul,
+				const struct device *parent)
 {
 	const struct at24_emul_cfg *cfg = emul->cfg;
 	struct at24_emul_data *data = cfg->data;

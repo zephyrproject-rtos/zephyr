@@ -54,16 +54,16 @@ struct eeprom_at2x_config {
 };
 
 struct eeprom_at2x_data {
-	struct device *bus_dev;
+	const struct device *bus_dev;
 #ifdef CONFIG_EEPROM_AT25
 	struct spi_config spi_cfg;
 	struct spi_cs_control spi_cs;
 #endif /* CONFIG_EEPROM_AT25 */
-	struct device *wp_gpio_dev;
+	const struct device *wp_gpio_dev;
 	struct k_mutex lock;
 };
 
-static inline int eeprom_at2x_write_protect(struct device *dev)
+static inline int eeprom_at2x_write_protect(const struct device *dev)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->data;
@@ -75,7 +75,7 @@ static inline int eeprom_at2x_write_protect(struct device *dev)
 	return gpio_pin_set(data->wp_gpio_dev, config->wp_gpio_pin, 1);
 }
 
-static inline int eeprom_at2x_write_enable(struct device *dev)
+static inline int eeprom_at2x_write_enable(const struct device *dev)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->data;
@@ -87,7 +87,7 @@ static inline int eeprom_at2x_write_enable(struct device *dev)
 	return gpio_pin_set(data->wp_gpio_dev, config->wp_gpio_pin, 0);
 }
 
-static int eeprom_at2x_read(struct device *dev, off_t offset, void *buf,
+static int eeprom_at2x_read(const struct device *dev, off_t offset, void *buf,
 			    size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
@@ -115,7 +115,8 @@ static int eeprom_at2x_read(struct device *dev, off_t offset, void *buf,
 	return 0;
 }
 
-static size_t eeprom_at2x_limit_write_count(struct device *dev, off_t offset,
+static size_t eeprom_at2x_limit_write_count(const struct device *dev,
+					    off_t offset,
 					    size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
@@ -136,7 +137,8 @@ static size_t eeprom_at2x_limit_write_count(struct device *dev, off_t offset,
 	return count;
 }
 
-static int eeprom_at2x_write(struct device *dev, off_t offset, const void *buf,
+static int eeprom_at2x_write(const struct device *dev, off_t offset,
+			     const void *buf,
 			     size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
@@ -191,7 +193,7 @@ static int eeprom_at2x_write(struct device *dev, off_t offset, const void *buf,
 	return ret;
 }
 
-static size_t eeprom_at2x_size(struct device *dev)
+static size_t eeprom_at2x_size(const struct device *dev)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 
@@ -199,7 +201,7 @@ static size_t eeprom_at2x_size(struct device *dev)
 }
 
 #ifdef CONFIG_EEPROM_AT24
-static int eeprom_at24_read(struct device *dev, off_t offset, void *buf,
+static int eeprom_at24_read(const struct device *dev, off_t offset, void *buf,
 			    size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
@@ -233,7 +235,7 @@ static int eeprom_at24_read(struct device *dev, off_t offset, void *buf,
 	return err;
 }
 
-static int eeprom_at24_write(struct device *dev, off_t offset,
+static int eeprom_at24_write(const struct device *dev, off_t offset,
 			     const void *buf, size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
@@ -280,7 +282,7 @@ static int eeprom_at24_write(struct device *dev, off_t offset,
 #endif /* CONFIG_EEPROM_AT24 */
 
 #ifdef CONFIG_EEPROM_AT25
-static int eeprom_at25_rdsr(struct device *dev, uint8_t *status)
+static int eeprom_at25_rdsr(const struct device *dev, uint8_t *status)
 {
 	struct eeprom_at2x_data *data = dev->data;
 	uint8_t rdsr[2] = { EEPROM_AT25_RDSR, 0 };
@@ -311,7 +313,7 @@ static int eeprom_at25_rdsr(struct device *dev, uint8_t *status)
 	return err;
 }
 
-static int eeprom_at25_wait_for_idle(struct device *dev)
+static int eeprom_at25_wait_for_idle(const struct device *dev)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 	int64_t timeout;
@@ -339,7 +341,7 @@ static int eeprom_at25_wait_for_idle(struct device *dev)
 	return -EBUSY;
 }
 
-static int eeprom_at25_read(struct device *dev, off_t offset, void *buf,
+static int eeprom_at25_read(const struct device *dev, off_t offset, void *buf,
 			    size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
@@ -405,7 +407,7 @@ static int eeprom_at25_read(struct device *dev, off_t offset, void *buf,
 	return spi_transceive(data->bus_dev, &data->spi_cfg, &tx, &rx);
 }
 
-static int eeprom_at25_wren(struct device *dev)
+static int eeprom_at25_wren(const struct device *dev)
 {
 	struct eeprom_at2x_data *data = dev->data;
 	uint8_t cmd = EEPROM_AT25_WREN;
@@ -421,7 +423,7 @@ static int eeprom_at25_wren(struct device *dev)
 	return spi_write(data->bus_dev, &data->spi_cfg, &tx);
 }
 
-static int eeprom_at25_write(struct device *dev, off_t offset,
+static int eeprom_at25_write(const struct device *dev, off_t offset,
 			     const void *buf, size_t len)
 {
 	const struct eeprom_at2x_config *config = dev->config;
@@ -482,7 +484,7 @@ static int eeprom_at25_write(struct device *dev, off_t offset,
 }
 #endif /* CONFIG_EEPROM_AT25 */
 
-static int eeprom_at2x_init(struct device *dev)
+static int eeprom_at2x_init(const struct device *dev)
 {
 	const struct eeprom_at2x_config *config = dev->config;
 	struct eeprom_at2x_data *data = dev->data;

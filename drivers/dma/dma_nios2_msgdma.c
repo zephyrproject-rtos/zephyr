@@ -35,7 +35,7 @@ struct nios2_msgdma_dev_cfg {
 
 static void nios2_msgdma_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct nios2_msgdma_dev_cfg *cfg = DEV_CFG(dev);
 
 	/* Call Altera HAL driver ISR */
@@ -44,7 +44,7 @@ static void nios2_msgdma_isr(void *arg)
 
 static void nios2_msgdma_callback(void *context)
 {
-	struct device *dev = (struct device *)context;
+	const struct device *dev = (const struct device *)context;
 	struct nios2_msgdma_dev_cfg *dev_cfg = DEV_CFG(dev);
 	int err_code;
 	uint32_t status;
@@ -64,7 +64,7 @@ static void nios2_msgdma_callback(void *context)
 	dev_cfg->dma_callback(dev, dev_cfg->user_data, 0, err_code);
 }
 
-static int nios2_msgdma_config(struct device *dev, uint32_t channel,
+static int nios2_msgdma_config(const struct device *dev, uint32_t channel,
 			       struct dma_config *cfg)
 {
 	struct nios2_msgdma_dev_cfg *dev_cfg = DEV_CFG(dev);
@@ -149,7 +149,8 @@ static int nios2_msgdma_config(struct device *dev, uint32_t channel,
 	return status;
 }
 
-static int nios2_msgdma_transfer_start(struct device *dev, uint32_t channel)
+static int nios2_msgdma_transfer_start(const struct device *dev,
+				       uint32_t channel)
 {
 	struct nios2_msgdma_dev_cfg *cfg = DEV_CFG(dev);
 	int status;
@@ -172,7 +173,8 @@ static int nios2_msgdma_transfer_start(struct device *dev, uint32_t channel)
 	return status;
 }
 
-static int nios2_msgdma_transfer_stop(struct device *dev, uint32_t channel)
+static int nios2_msgdma_transfer_stop(const struct device *dev,
+				      uint32_t channel)
 {
 	struct nios2_msgdma_dev_cfg *cfg = DEV_CFG(dev);
 	int ret = -EIO;
@@ -205,7 +207,7 @@ static const struct dma_driver_api nios2_msgdma_driver_api = {
 /* DMA0 */
 DEVICE_DECLARE(dma0_nios2);
 
-static int nios2_msgdma0_initialize(struct device *dev)
+static int nios2_msgdma0_initialize(const struct device *dev)
 {
 	struct nios2_msgdma_dev_cfg *dev_cfg = DEV_CFG(dev);
 

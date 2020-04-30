@@ -9,7 +9,7 @@
 #ifndef ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_
 #define ZEPHYR_DRIVERS_I2C_I2C_LL_STM32_H_
 
-typedef void (*irq_config_func_t)(struct device *port);
+typedef void (*irq_config_func_t)(const struct device *port);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
 /**
@@ -67,12 +67,14 @@ struct i2c_stm32_data {
 #endif
 };
 
-int32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg, uint8_t *flg,
-			  uint16_t sadr);
-int32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg, uint8_t *flg,
-			 uint16_t sadr);
-int32_t stm32_i2c_configure_timing(struct device *dev, uint32_t clk);
-int i2c_stm32_runtime_configure(struct device *dev, uint32_t config);
+int32_t stm32_i2c_msg_write(const struct device *dev, struct i2c_msg *msg,
+			    uint8_t *flg,
+			    uint16_t sadr);
+int32_t stm32_i2c_msg_read(const struct device *dev, struct i2c_msg *msg,
+			   uint8_t *flg,
+			   uint16_t sadr);
+int32_t stm32_i2c_configure_timing(const struct device *dev, uint32_t clk);
+int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config);
 
 void stm32_i2c_event_isr(void *arg);
 void stm32_i2c_error_isr(void *arg);
@@ -81,9 +83,9 @@ void stm32_i2c_combined_isr(void *arg);
 #endif
 
 #ifdef CONFIG_I2C_SLAVE
-int i2c_stm32_slave_register(struct device *dev,
+int i2c_stm32_slave_register(const struct device *dev,
 			     struct i2c_slave_config *config);
-int i2c_stm32_slave_unregister(struct device *dev,
+int i2c_stm32_slave_unregister(const struct device *dev,
 			       struct i2c_slave_config *config);
 #endif
 

@@ -102,9 +102,9 @@ struct itds_device_config {
 
 #define ITDS_SAMPLE_SIZE	3
 struct itds_device_data {
-	struct device *i2c;
+	const struct device *i2c;
 #ifdef	CONFIG_ITDS_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	struct k_work work;
 #endif
@@ -112,15 +112,15 @@ struct itds_device_data {
 	int16_t temprature;
 	uint16_t scale;
 	enum operation_mode op_mode;
-	struct device *dev;
+	const struct device *dev;
 
 #ifdef CONFIG_ITDS_TRIGGER
 	sensor_trigger_handler_t handler_drdy;
 #endif /* CONFIG_ITDS_TRIGGER */
 };
 
-int itds_trigger_mode_init(struct device *dev);
-int itds_trigger_set(struct device *dev,
+int itds_trigger_mode_init(const struct device *dev);
+int itds_trigger_set(const struct device *dev,
 		     const struct sensor_trigger *trig,
 		     sensor_trigger_handler_t handler);
 

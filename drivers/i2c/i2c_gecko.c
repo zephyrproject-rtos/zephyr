@@ -46,7 +46,7 @@ struct i2c_gecko_data {
 	uint32_t dev_config;
 };
 
-void i2c_gecko_config_pins(struct device *dev,
+void i2c_gecko_config_pins(const struct device *dev,
 			   const struct soc_gpio_pin *pin_sda,
 			   const struct soc_gpio_pin *pin_scl)
 {
@@ -74,7 +74,8 @@ void i2c_gecko_config_pins(struct device *dev,
 #endif
 }
 
-static int i2c_gecko_configure(struct device *dev, uint32_t dev_config_raw)
+static int i2c_gecko_configure(const struct device *dev,
+			       uint32_t dev_config_raw)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
 	struct i2c_gecko_data *data = DEV_DATA(dev);
@@ -107,7 +108,7 @@ static int i2c_gecko_configure(struct device *dev, uint32_t dev_config_raw)
 	return 0;
 }
 
-static int i2c_gecko_transfer(struct device *dev, struct i2c_msg *msgs,
+static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs,
 			      uint8_t num_msgs, uint16_t addr)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
@@ -171,7 +172,7 @@ finish:
 	return ret;
 }
 
-static int i2c_gecko_init(struct device *dev)
+static int i2c_gecko_init(const struct device *dev)
 {
 	const struct i2c_gecko_config *config = DEV_CFG(dev);
 	uint32_t bitrate_cfg;

@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(i2c_shell, CONFIG_LOG_DEFAULT_LEVEL);
 static int cmd_i2c_scan(const struct shell *shell,
 			size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	uint8_t cnt = 0, first = 0x04, last = 0x77;
 
 	dev = device_get_binding(argv[1]);
@@ -70,7 +70,7 @@ static int cmd_i2c_scan(const struct shell *shell,
 static int cmd_i2c_recover(const struct shell *shell,
 			   size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	int err;
 
 	dev = device_get_binding(argv[1]);
@@ -92,7 +92,7 @@ static int cmd_i2c_recover(const struct shell *shell,
 static int cmd_i2c_write(const struct shell *shell, size_t argc, char **argv)
 {
 	uint8_t buf[MAX_I2C_BYTES];
-	struct device *dev;
+	const struct device *dev;
 	int num_bytes;
 	int reg_addr;
 	int dev_addr;
@@ -128,7 +128,7 @@ static int cmd_i2c_write(const struct shell *shell, size_t argc, char **argv)
 static int cmd_i2c_write_byte(const struct shell *shell,
 			      size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	int reg_addr;
 	int dev_addr;
 	int out_byte;
@@ -155,7 +155,7 @@ static int cmd_i2c_write_byte(const struct shell *shell,
 static int cmd_i2c_read_byte(const struct shell *shell,
 			     size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	int reg_addr;
 	int dev_addr;
 	uint8_t out;
@@ -184,7 +184,7 @@ static int cmd_i2c_read_byte(const struct shell *shell,
 static int cmd_i2c_read(const struct shell *shell, size_t argc, char **argv)
 {
 	uint8_t buf[MAX_I2C_BYTES];
-	struct device *dev;
+	const struct device *dev;
 	int num_bytes;
 	int reg_addr;
 	int dev_addr;
@@ -221,7 +221,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	struct device *dev = shell_device_lookup(idx, I2C_DEVICE_PREFIX);
+	const struct device *dev = shell_device_lookup(idx, I2C_DEVICE_PREFIX);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

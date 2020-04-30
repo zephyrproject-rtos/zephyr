@@ -61,9 +61,9 @@ static ZTEST_DMEM int num_leds = ARRAY_SIZE(test_led_info)
 
 LED_CONTROLLER_INFO(LED_CTRL_NODE_ID);
 
-static ZTEST_BMEM struct device *led_ctrl;
+static ZTEST_BMEM const struct device *led_ctrl;
 
-struct device *get_led_controller(void)
+const struct device *get_led_controller(void)
 {
 	return device_get_binding(LED_CTRL_DEV_NAME);
 }

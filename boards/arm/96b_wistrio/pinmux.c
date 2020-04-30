@@ -40,10 +40,10 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PB7, STM32_PUSHPULL_PULLUP},
 };
 
-static int pinmux_stm32_init(struct device *port)
+static int pinmux_stm32_init(const struct device *port)
 {
 	ARG_UNUSED(port);
-	struct device *gpioa, *gpiob, *gpioh;
+	const struct device *gpioa, *gpiob, *gpioh;
 
 	stm32_setup_pins(pinconf, ARRAY_SIZE(pinconf));
 

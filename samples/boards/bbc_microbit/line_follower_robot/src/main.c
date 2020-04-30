@@ -15,15 +15,15 @@
 #define EXT_P13_GPIO_PIN 23     /* P13, SPI1 SCK */
 #define EXT_P14_GPIO_PIN 22     /* P14, SPI1 MISO */
 
-static struct device *gpio;
-struct device *i2c_dev;
+static const struct device *gpio;
+const struct device *i2c_dev;
 unsigned int left_line[1];
 unsigned int right_line[1];
 unsigned char buf[3];
 unsigned char speed_hex[1];
 
 /* Setup gpio of the microbit board */
-static void line_detection(struct device *dev, struct gpio_callback *cb,
+static void line_detection(const struct device *dev, struct gpio_callback *cb,
 			   uint32_t pins)
 {
 	left_line[0] = gpio_pin_get_raw(gpio, EXT_P13_GPIO_PIN);

@@ -108,7 +108,7 @@ void arch_sched_ipi(void)
 	}
 }
 
-static int arc_smp_init(struct device *dev)
+static int arc_smp_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	struct arc_connect_bcr bcr;

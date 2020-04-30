@@ -24,7 +24,7 @@ void lvgl_free(void *ptr)
 	sys_mem_pool_free(ptr);
 }
 
-static int lvgl_mem_pool_init(struct device *unused)
+static int lvgl_mem_pool_init(const struct device *unused)
 {
 	sys_mem_pool_init(&lvgl_mem_pool);
 	return 0;

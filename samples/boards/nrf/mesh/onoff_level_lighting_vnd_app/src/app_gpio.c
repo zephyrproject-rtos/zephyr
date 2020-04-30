@@ -10,12 +10,12 @@
 #include "app_gpio.h"
 #include "publisher.h"
 
-struct device *led_device[4];
-struct device *button_device[4];
+const struct device *led_device[4];
+const struct device *button_device[4];
 
 K_WORK_DEFINE(button_work, publish);
 
-static void button_pressed(struct device *dev,
+static void button_pressed(const struct device *dev,
 			   struct gpio_callback *cb, uint32_t pins)
 {
 	k_work_submit(&button_work);

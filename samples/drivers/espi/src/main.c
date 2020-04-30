@@ -62,13 +62,13 @@ struct oob_header {
 #define BRD_PWR_RSMRST_PIN      DT_GPIO_PIN(BRD_PWR_NODE, rsm_gpios)
 #define BRD_PWR_PWRGD_PIN       DT_GPIO_PIN(BRD_PWR_NODE, pwrg_gpios)
 
-static struct device *pwrgd_dev;
-static struct device *rsm_dev;
+static const struct device *pwrgd_dev;
+static const struct device *rsm_dev;
 #endif
 
 #define ESPI_DEV      DT_LABEL(DT_NODELABEL(espi0))
 
-static struct device *espi_dev;
+static const struct device *espi_dev;
 static struct espi_callback espi_bus_cb;
 static struct espi_callback vw_rdy_cb;
 static struct espi_callback vw_cb;
@@ -107,7 +107,7 @@ static void host_warn_handler(uint32_t signal, uint32_t status)
 }
 
 /* eSPI bus event handler */
-static void espi_reset_handler(struct device *dev,
+static void espi_reset_handler(const struct device *dev,
 			       struct espi_callback *cb,
 			       struct espi_event event)
 {
@@ -118,7 +118,8 @@ static void espi_reset_handler(struct device *dev,
 }
 
 /* eSPI logical channels enable/disable event handler */
-static void espi_ch_handler(struct device *dev, struct espi_callback *cb,
+static void espi_ch_handler(const struct device *dev,
+			    struct espi_callback *cb,
 			    struct espi_event event)
 {
 	if (event.evt_type == ESPI_BUS_EVENT_CHANNEL_READY) {
@@ -139,7 +140,7 @@ static void espi_ch_handler(struct device *dev, struct espi_callback *cb,
 }
 
 /* eSPI vwire received event handler */
-static void vwire_handler(struct device *dev, struct espi_callback *cb,
+static void vwire_handler(const struct device *dev, struct espi_callback *cb,
 			  struct espi_event event)
 {
 	if (event.evt_type == ESPI_BUS_EVENT_VWIRE_RECEIVED) {
@@ -162,7 +163,7 @@ static void vwire_handler(struct device *dev, struct espi_callback *cb,
 }
 
 /* eSPI peripheral channel notifications handler */
-static void periph_handler(struct device *dev, struct espi_callback *cb,
+static void periph_handler(const struct device *dev, struct espi_callback *cb,
 			   struct espi_event event)
 {
 	uint8_t periph_type;
@@ -237,7 +238,8 @@ int espi_init(void)
 }
 
 #if DT_NODE_HAS_STATUS(BRD_PWR_NODE, okay)
-static int wait_for_pin(struct device *dev, uint8_t pin, uint16_t timeout,
+static int wait_for_pin(const struct device *dev, uint8_t pin,
+			uint16_t timeout,
 			int exp_level)
 {
 	uint16_t loop_cnt = timeout;
@@ -268,7 +270,7 @@ static int wait_for_pin(struct device *dev, uint8_t pin, uint16_t timeout,
 }
 #endif
 
-static int wait_for_vwire(struct device *espi_dev,
+static int wait_for_vwire(const struct device *espi_dev,
 			  enum espi_vwire_signal signal,
 			  uint16_t timeout, uint8_t exp_level)
 {
@@ -476,7 +478,7 @@ static int espi_flash_test(uint32_t start_flash_addr, uint8_t blocks)
 }
 #endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
-int get_pch_temp(struct device *dev, int *temp)
+int get_pch_temp(const struct device *dev, int *temp)
 {
 	struct espi_oob_packet req_pckt;
 	struct espi_oob_packet resp_pckt;

@@ -68,7 +68,7 @@ static inline void sys_set_mask(mem_addr_t addr, uint32_t mask, uint32_t value)
 
 /* API Functions */
 
-static int pwm_sifive_init(struct device *dev)
+static int pwm_sifive_init(const struct device *dev)
 {
 	const struct pwm_sifive_cfg *config = dev->config;
 
@@ -95,7 +95,7 @@ static int pwm_sifive_init(struct device *dev)
 	return 0;
 }
 
-static int pwm_sifive_pin_set(struct device *dev,
+static int pwm_sifive_pin_set(const struct device *dev,
 			      uint32_t pwm,
 			      uint32_t period_cycles,
 			      uint32_t pulse_cycles,
@@ -188,7 +188,7 @@ static int pwm_sifive_pin_set(struct device *dev,
 	return 0;
 }
 
-static int pwm_sifive_get_cycles_per_sec(struct device *dev,
+static int pwm_sifive_get_cycles_per_sec(const struct device *dev,
 					 uint32_t pwm,
 					 uint64_t *cycles)
 {

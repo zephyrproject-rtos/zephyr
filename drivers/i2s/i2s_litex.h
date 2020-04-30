@@ -104,7 +104,7 @@ struct i2s_litex_cfg {
 	uint32_t base;
 	uint32_t fifo_base;
 	uint16_t fifo_depth;
-	void (*irq_config)(struct device *dev);
+	void (*irq_config)(const struct device *dev);
 };
 
 #endif /* _I2S_LITEI2S__H */

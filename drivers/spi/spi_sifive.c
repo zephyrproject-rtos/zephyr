@@ -26,7 +26,8 @@ static inline void sys_set_mask(mem_addr_t addr, uint32_t mask, uint32_t value)
 	sys_write32(temp, addr);
 }
 
-int spi_config(struct device *dev, uint32_t frequency, uint16_t operation)
+int spi_config(const struct device *dev, uint32_t frequency,
+	       uint16_t operation)
 {
 	uint32_t div;
 	uint32_t fmt_len;
@@ -93,7 +94,7 @@ int spi_config(struct device *dev, uint32_t frequency, uint16_t operation)
 	return 0;
 }
 
-void spi_sifive_send(struct device *dev, uint16_t frame)
+void spi_sifive_send(const struct device *dev, uint16_t frame)
 {
 	while (sys_read32(SPI_REG(dev, REG_TXDATA)) & SF_TXDATA_FULL) {
 	}
@@ -101,7 +102,7 @@ void spi_sifive_send(struct device *dev, uint16_t frame)
 	sys_write32((uint32_t) frame, SPI_REG(dev, REG_TXDATA));
 }
 
-uint16_t spi_sifive_recv(struct device *dev)
+uint16_t spi_sifive_recv(const struct device *dev)
 {
 	uint32_t val;
 
@@ -111,7 +112,7 @@ uint16_t spi_sifive_recv(struct device *dev)
 	return (uint16_t) val;
 }
 
-void spi_sifive_xfer(struct device *dev, const bool hw_cs_control)
+void spi_sifive_xfer(const struct device *dev, const bool hw_cs_control)
 {
 	struct spi_context *ctx = &SPI_DATA(dev)->ctx;
 
@@ -148,7 +149,7 @@ void spi_sifive_xfer(struct device *dev, const bool hw_cs_control)
 
 /* API Functions */
 
-int spi_sifive_init(struct device *dev)
+int spi_sifive_init(const struct device *dev)
 {
 	/* Disable SPI Flash mode */
 	sys_clear_bit(SPI_REG(dev, REG_FCTRL), SF_FCTRL_EN);
@@ -158,7 +159,7 @@ int spi_sifive_init(struct device *dev)
 	return 0;
 }
 
-int spi_sifive_transceive(struct device *dev,
+int spi_sifive_transceive(const struct device *dev,
 			  const struct spi_config *config,
 			  const struct spi_buf_set *tx_bufs,
 			  const struct spi_buf_set *rx_bufs)
@@ -224,7 +225,8 @@ int spi_sifive_transceive(struct device *dev,
 	return rc;
 }
 
-int spi_sifive_release(struct device *dev, const struct spi_config *config)
+int spi_sifive_release(const struct device *dev,
+		       const struct spi_config *config)
 {
 	spi_context_unlock_unconditionally(&SPI_DATA(dev)->ctx);
 	return 0;

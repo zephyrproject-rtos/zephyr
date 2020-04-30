@@ -45,7 +45,7 @@ struct spi_sam0_config {
 struct spi_sam0_data {
 	struct spi_context ctx;
 #ifdef CONFIG_SPI_ASYNC
-	struct device *dma;
+	const struct device *dma;
 	uint32_t dma_segment_len;
 #endif
 };
@@ -65,7 +65,7 @@ static void wait_synchronization(SercomSpi *regs)
 #endif
 }
 
-static int spi_sam0_configure(struct device *dev,
+static int spi_sam0_configure(const struct device *dev,
 			      const struct spi_config *config)
 {
 	const struct spi_sam0_config *cfg = dev->config;
@@ -298,7 +298,7 @@ static void spi_sam0_fast_txrx(SercomSpi *regs,
 }
 
 /* Fast path where every overlapping tx and rx buffer is the same length */
-static void spi_sam0_fast_transceive(struct device *dev,
+static void spi_sam0_fast_transceive(const struct device *dev,
 				     const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs)
@@ -385,7 +385,7 @@ static bool spi_sam0_is_regular(const struct spi_buf_set *tx_bufs,
 	return true;
 }
 
-static int spi_sam0_transceive(struct device *dev,
+static int spi_sam0_transceive(const struct device *dev,
 			       const struct spi_config *config,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
@@ -426,7 +426,7 @@ done:
 	return err;
 }
 
-static int spi_sam0_transceive_sync(struct device *dev,
+static int spi_sam0_transceive_sync(const struct device *dev,
 				    const struct spi_config *config,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs)
@@ -436,10 +436,10 @@ static int spi_sam0_transceive_sync(struct device *dev,
 
 #ifdef CONFIG_SPI_ASYNC
 
-static void spi_sam0_dma_rx_done(struct device *dma_dev, void *arg,
+static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 				 uint32_t id, int error_code);
 
-static int spi_sam0_dma_rx_load(struct device *dev, uint8_t *buf,
+static int spi_sam0_dma_rx_load(const struct device *dev, uint8_t *buf,
 				size_t len)
 {
 	const struct spi_sam0_config *cfg = dev->config;
@@ -481,7 +481,7 @@ static int spi_sam0_dma_rx_load(struct device *dev, uint8_t *buf,
 	return dma_start(data->dma, cfg->rx_dma_channel);
 }
 
-static int spi_sam0_dma_tx_load(struct device *dev, const uint8_t *buf,
+static int spi_sam0_dma_tx_load(const struct device *dev, const uint8_t *buf,
 				size_t len)
 {
 	const struct spi_sam0_config *cfg = dev->config;
@@ -522,7 +522,7 @@ static int spi_sam0_dma_tx_load(struct device *dev, const uint8_t *buf,
 	return dma_start(data->dma, cfg->tx_dma_channel);
 }
 
-static bool spi_sam0_dma_advance_segment(struct device *dev)
+static bool spi_sam0_dma_advance_segment(const struct device *dev)
 {
 	struct spi_sam0_data *data = dev->data;
 	uint32_t segment_len;
@@ -547,7 +547,7 @@ static bool spi_sam0_dma_advance_segment(struct device *dev)
 	return true;
 }
 
-static int spi_sam0_dma_advance_buffers(struct device *dev)
+static int spi_sam0_dma_advance_buffers(const struct device *dev)
 {
 	struct spi_sam0_data *data = dev->data;
 	int retval;
@@ -583,10 +583,10 @@ static int spi_sam0_dma_advance_buffers(struct device *dev)
 	return 0;
 }
 
-static void spi_sam0_dma_rx_done(struct device *dma_dev, void *arg,
+static void spi_sam0_dma_rx_done(const struct device *dma_dev, void *arg,
 				 uint32_t id, int error_code)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	const struct spi_sam0_config *cfg = dev->config;
 	struct spi_sam0_data *data = dev->data;
 	int retval;
@@ -615,7 +615,7 @@ static void spi_sam0_dma_rx_done(struct device *dma_dev, void *arg,
 }
 
 
-static int spi_sam0_transceive_async(struct device *dev,
+static int spi_sam0_transceive_async(const struct device *dev,
 				     const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
@@ -668,7 +668,7 @@ err_unlock:
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_sam0_release(struct device *dev,
+static int spi_sam0_release(const struct device *dev,
 			    const struct spi_config *config)
 {
 	struct spi_sam0_data *data = dev->data;
@@ -678,7 +678,7 @@ static int spi_sam0_release(struct device *dev,
 	return 0;
 }
 
-static int spi_sam0_init(struct device *dev)
+static int spi_sam0_init(const struct device *dev)
 {
 	const struct spi_sam0_config *cfg = dev->config;
 	struct spi_sam0_data *data = dev->data;

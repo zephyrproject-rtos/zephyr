@@ -17,7 +17,7 @@
 
 void test_cmos_rate(void)
 {
-	struct device *cmos;
+	const struct device *cmos;
 	uint32_t start, elapsed;
 	int err;
 

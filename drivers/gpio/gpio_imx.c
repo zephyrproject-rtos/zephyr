@@ -28,7 +28,7 @@ struct imx_gpio_data {
 	sys_slist_t callbacks;
 };
 
-static int imx_gpio_configure(struct device *port, gpio_pin_t pin,
+static int imx_gpio_configure(const struct device *port, gpio_pin_t pin,
 			      gpio_flags_t flags)
 {
 	const struct imx_gpio_config *config = port->config;
@@ -66,7 +66,7 @@ static int imx_gpio_configure(struct device *port, gpio_pin_t pin,
 	return 0;
 }
 
-static int imx_gpio_port_get_raw(struct device *port, uint32_t *value)
+static int imx_gpio_port_get_raw(const struct device *port, uint32_t *value)
 {
 	const struct imx_gpio_config *config = port->config;
 	GPIO_Type *base = config->base;
@@ -76,7 +76,7 @@ static int imx_gpio_port_get_raw(struct device *port, uint32_t *value)
 	return 0;
 }
 
-static int imx_gpio_port_set_masked_raw(struct device *port,
+static int imx_gpio_port_set_masked_raw(const struct device *port,
 					gpio_port_pins_t mask,
 					gpio_port_value_t value)
 {
@@ -89,7 +89,7 @@ static int imx_gpio_port_set_masked_raw(struct device *port,
 	return 0;
 }
 
-static int imx_gpio_port_set_bits_raw(struct device *port,
+static int imx_gpio_port_set_bits_raw(const struct device *port,
 				      gpio_port_pins_t pins)
 {
 	const struct imx_gpio_config *config = port->config;
@@ -100,7 +100,7 @@ static int imx_gpio_port_set_bits_raw(struct device *port,
 	return 0;
 }
 
-static int imx_gpio_port_clear_bits_raw(struct device *port,
+static int imx_gpio_port_clear_bits_raw(const struct device *port,
 					gpio_port_pins_t pins)
 {
 	const struct imx_gpio_config *config = port->config;
@@ -111,7 +111,8 @@ static int imx_gpio_port_clear_bits_raw(struct device *port,
 	return 0;
 }
 
-static int imx_gpio_port_toggle_bits(struct device *port, gpio_port_pins_t pins)
+static int imx_gpio_port_toggle_bits(const struct device *port,
+				     gpio_port_pins_t pins)
 {
 	const struct imx_gpio_config *config = port->config;
 	GPIO_Type *base = config->base;
@@ -121,7 +122,7 @@ static int imx_gpio_port_toggle_bits(struct device *port, gpio_port_pins_t pins)
 	return 0;
 }
 
-static int imx_gpio_pin_interrupt_configure(struct device *port,
+static int imx_gpio_pin_interrupt_configure(const struct device *port,
 					    gpio_pin_t pin,
 					    enum gpio_int_mode mode,
 					    enum gpio_int_trig trig)
@@ -174,7 +175,7 @@ static int imx_gpio_pin_interrupt_configure(struct device *port,
 	return 0;
 }
 
-static int imx_gpio_manage_callback(struct device *port,
+static int imx_gpio_manage_callback(const struct device *port,
 				    struct gpio_callback *cb, bool set)
 {
 	struct imx_gpio_data *data = port->data;
@@ -184,7 +185,7 @@ static int imx_gpio_manage_callback(struct device *port,
 
 static void imx_gpio_port_isr(void *arg)
 {
-	struct device *port = (struct device *)arg;
+	const struct device *port = (const struct device *)arg;
 	const struct imx_gpio_config *config = port->config;
 	struct imx_gpio_data *data = port->data;
 	uint32_t int_status;

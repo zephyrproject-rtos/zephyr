@@ -21,7 +21,7 @@ enum {
 };
 
 static int parse_common_args(const struct shell *shell, char **argv,
-			     struct device **dev, uint32_t *led)
+			     const struct device * *dev, uint32_t *led)
 {
 	char *end_ptr;
 
@@ -44,7 +44,7 @@ static int parse_common_args(const struct shell *shell, char **argv,
 
 static int cmd_off(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	uint32_t led;
 	int err;
 
@@ -65,7 +65,7 @@ static int cmd_off(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_on(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	uint32_t led;
 	int err;
 
@@ -86,7 +86,7 @@ static int cmd_on(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_get_info(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	uint32_t led;
 	int err;
 	const struct led_info *info;
@@ -124,7 +124,7 @@ static int cmd_get_info(const struct shell *shell, size_t argc, char **argv)
 static int cmd_set_brightness(const struct shell *shell,
 			      size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	uint32_t led;
 	int err;
 	char *end_ptr;
@@ -160,7 +160,7 @@ static int cmd_set_brightness(const struct shell *shell,
 
 static int cmd_set_color(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	uint32_t led;
 	int err;
 	size_t num_colors;
@@ -216,7 +216,7 @@ static int cmd_set_color(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_set_channel(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	uint32_t channel;
 	int err;
 	char *end_ptr;
@@ -253,7 +253,7 @@ static int cmd_set_channel(const struct shell *shell, size_t argc, char **argv)
 static int
 cmd_write_channels(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	uint32_t start_channel;
 	int err;
 	size_t num_channels;

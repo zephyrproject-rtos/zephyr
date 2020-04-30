@@ -50,7 +50,7 @@ static ALWAYS_INLINE void cavs_ictl_dispatch_child_isrs(uint32_t intr_status,
 
 static void cavs_ictl_isr(void *arg)
 {
-	struct device *port = (struct device *)arg;
+	const struct device *port = (const struct device *)arg;
 	struct cavs_ictl_runtime *context = port->data;
 
 	const struct cavs_ictl_config *config = port->config;
@@ -62,7 +62,8 @@ static void cavs_ictl_isr(void *arg)
 				      config->isr_table_offset);
 }
 
-static inline void cavs_ictl_irq_enable(struct device *dev, unsigned int irq)
+static inline void cavs_ictl_irq_enable(const struct device *dev,
+					unsigned int irq)
 {
 	struct cavs_ictl_runtime *context = dev->data;
 
@@ -72,7 +73,8 @@ static inline void cavs_ictl_irq_enable(struct device *dev, unsigned int irq)
 	regs->enable_il = (1 << irq);
 }
 
-static inline void cavs_ictl_irq_disable(struct device *dev, unsigned int irq)
+static inline void cavs_ictl_irq_disable(const struct device *dev,
+					 unsigned int irq)
 {
 	struct cavs_ictl_runtime *context = dev->data;
 
@@ -82,7 +84,7 @@ static inline void cavs_ictl_irq_disable(struct device *dev, unsigned int irq)
 	regs->disable_il = (1 << irq);
 }
 
-static inline unsigned int cavs_ictl_irq_get_state(struct device *dev)
+static inline unsigned int cavs_ictl_irq_get_state(const struct device *dev)
 {
 	struct cavs_ictl_runtime *context = dev->data;
 
@@ -100,7 +102,8 @@ static inline unsigned int cavs_ictl_irq_get_state(struct device *dev)
 	return 1;
 }
 
-static int cavs_ictl_irq_get_line_state(struct device *dev, unsigned int irq)
+static int cavs_ictl_irq_get_line_state(const struct device *dev,
+					unsigned int irq)
 {
 	struct cavs_ictl_runtime *context = dev->data;
 

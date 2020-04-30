@@ -16,7 +16,8 @@
 
 #define STM32F7X_SECTOR_MASK		((uint32_t) 0xFFFFFF07)
 
-bool flash_stm32_valid_range(struct device *dev, off_t offset, uint32_t len,
+bool flash_stm32_valid_range(const struct device *dev, off_t offset,
+			     uint32_t len,
 			     bool write)
 {
 	ARG_UNUSED(write);
@@ -24,7 +25,7 @@ bool flash_stm32_valid_range(struct device *dev, off_t offset, uint32_t len,
 	return flash_stm32_range_exists(dev, offset, len);
 }
 
-static int write_byte(struct device *dev, off_t offset, uint8_t val)
+static int write_byte(const struct device *dev, off_t offset, uint8_t val)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
@@ -56,7 +57,7 @@ static int write_byte(struct device *dev, off_t offset, uint8_t val)
 	return rc;
 }
 
-static int erase_sector(struct device *dev, uint32_t sector)
+static int erase_sector(const struct device *dev, uint32_t sector)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	int rc;
@@ -100,7 +101,8 @@ static int erase_sector(struct device *dev, uint32_t sector)
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
+int flash_stm32_block_erase_loop(const struct device *dev,
+				 unsigned int offset,
 				 unsigned int len)
 {
 	struct flash_pages_info info;
@@ -129,7 +131,7 @@ int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
 	return rc;
 }
 
-int flash_stm32_write_range(struct device *dev, unsigned int offset,
+int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 			    const void *data, unsigned int len)
 {
 	int i, rc = 0;
@@ -205,7 +207,7 @@ static const struct flash_pages_layout stm32f7_flash_layout_dual_bank[] = {
 #error "Unknown flash layout"
 #endif/* !defined(FLASH_SECTOR_TOTAL) */
 
-void flash_stm32_page_layout(struct device *dev,
+void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {

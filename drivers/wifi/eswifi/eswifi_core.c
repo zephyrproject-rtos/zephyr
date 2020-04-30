@@ -410,7 +410,7 @@ static void eswifi_iface_init(struct net_if *iface)
 
 }
 
-static int eswifi_mgmt_scan(struct device *dev, scan_result_cb_t cb)
+static int eswifi_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
 {
 	struct eswifi_dev *eswifi = dev->data;
 
@@ -427,7 +427,7 @@ static int eswifi_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 	return 0;
 }
 
-static int eswifi_mgmt_disconnect(struct device *dev)
+static int eswifi_mgmt_disconnect(const struct device *dev)
 {
 	struct eswifi_dev *eswifi = dev->data;
 
@@ -472,7 +472,7 @@ static int __eswifi_sta_config(struct eswifi_dev *eswifi,
 	return 0;
 }
 
-static int eswifi_mgmt_connect(struct device *dev,
+static int eswifi_mgmt_connect(const struct device *dev,
 			       struct wifi_connect_req_params *params)
 {
 	struct eswifi_dev *eswifi = dev->data;
@@ -500,7 +500,7 @@ void eswifi_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 }
 
 #if defined(CONFIG_NET_IPV4)
-static int eswifi_mgmt_ap_enable(struct device *dev,
+static int eswifi_mgmt_ap_enable(const struct device *dev,
 				 struct wifi_connect_req_params *params)
 {
 	struct eswifi_dev *eswifi = dev->data;
@@ -599,7 +599,7 @@ error:
 	return err;
 }
 #else
-static int eswifi_mgmt_ap_enable(struct device *dev,
+static int eswifi_mgmt_ap_enable(const struct device *dev,
 				 struct wifi_connect_req_params *params)
 {
 	LOG_ERR("IPv4 requested for AP mode");
@@ -607,7 +607,7 @@ static int eswifi_mgmt_ap_enable(struct device *dev,
 }
 #endif /* CONFIG_NET_IPV4 */
 
-static int eswifi_mgmt_ap_disable(struct device *dev)
+static int eswifi_mgmt_ap_disable(const struct device *dev)
 {
 	struct eswifi_dev *eswifi = dev->data;
 	char cmd[] = "AE\r";
@@ -628,7 +628,7 @@ static int eswifi_mgmt_ap_disable(struct device *dev)
 	return 0;
 }
 
-static int eswifi_init(struct device *dev)
+static int eswifi_init(const struct device *dev)
 {
 	struct eswifi_dev *eswifi = dev->data;
 

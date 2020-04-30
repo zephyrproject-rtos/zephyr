@@ -68,7 +68,7 @@ struct lpc11u6x_i2c_config {
 	char *clock_drv;
 	char *scl_pinmux_drv;
 	char *sda_pinmux_drv;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 	uint32_t clkid;
 	uint32_t scl_flags;
 	uint32_t sda_flags;

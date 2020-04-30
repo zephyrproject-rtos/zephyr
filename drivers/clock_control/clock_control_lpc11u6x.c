@@ -90,7 +90,7 @@ static void syscon_ahb_clock_enable(struct lpc11u6x_syscon_regs *syscon,
  */
 static void pinmux_enable_sysosc(void)
 {
-	struct device *pinmux_dev;
+	const struct device *pinmux_dev;
 	uint32_t pin, func;
 
 	pinmux_dev = device_get_binding(
@@ -148,7 +148,7 @@ static void syscon_frg_deinit(struct lpc11u6x_syscon_regs *syscon)
 	syscon_peripheral_reset(syscon, LPC11U6X_PRESET_CTRL_FRG, true);
 }
 
-static int lpc11u6x_clock_control_on(struct device *dev,
+static int lpc11u6x_clock_control_on(const struct device *dev,
 				     clock_control_subsys_t sub_system)
 {
 	const struct lpc11u6x_syscon_config *cfg = DEV_CFG(dev);
@@ -220,8 +220,8 @@ static int lpc11u6x_clock_control_on(struct device *dev,
 	return ret;
 }
 
-static int lpc11u6x_clock_control_off(struct device *dev,
-				     clock_control_subsys_t sub_system)
+static int lpc11u6x_clock_control_off(const struct device *dev,
+				      clock_control_subsys_t sub_system)
 {
 	const struct lpc11u6x_syscon_config *cfg = DEV_CFG(dev);
 	struct lpc11u6x_syscon_data *data = DEV_DATA(dev);
@@ -294,7 +294,7 @@ static int lpc11u6x_clock_control_off(struct device *dev,
 
 }
 
-static int lpc11u6x_clock_control_get_rate(struct device *dev,
+static int lpc11u6x_clock_control_get_rate(const struct device *dev,
 					   clock_control_subsys_t sub_system,
 					   uint32_t *rate)
 {
@@ -317,7 +317,7 @@ static int lpc11u6x_clock_control_get_rate(struct device *dev,
 	return 0;
 }
 
-static int lpc11u6x_syscon_init(struct device *dev)
+static int lpc11u6x_syscon_init(const struct device *dev)
 {
 	const struct lpc11u6x_syscon_config *cfg = DEV_CFG(dev);
 	struct lpc11u6x_syscon_data *data = DEV_DATA(dev);

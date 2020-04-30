@@ -93,7 +93,7 @@ LOG_MODULE_REGISTER(app);
 #error Please increase CONFIG_SHELL_ARGC_MAX parameter.
 #endif
 
-static struct device *flash_device;
+static const struct device *flash_device;
 
 static int check_flash_device(const struct shell *shell)
 {
@@ -752,7 +752,7 @@ static int cmd_page_write(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_set_dev(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	const char *name;
 
 	name = argv[1];

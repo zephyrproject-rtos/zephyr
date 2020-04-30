@@ -54,7 +54,8 @@
 
 extern struct k_sem thread_sem;
 
-void test_i2c_write_led(struct device *i2c_dev, uint16_t i2c_slave_led, uint8_t color)
+void test_i2c_write_led(const struct device *i2c_dev, uint16_t i2c_slave_led,
+			uint8_t color)
 {
 	int ret;
 	int led_val[6];
@@ -120,7 +121,7 @@ void test_i2c_write_led(struct device *i2c_dev, uint16_t i2c_slave_led, uint8_t 
 	}
 }
 
-void test_i2c_read_led(struct device *i2c_dev, uint16_t i2c_slave_led)
+void test_i2c_read_led(const struct device *i2c_dev, uint16_t i2c_slave_led)
 {
 	int ret;
 	uint8_t data = 0U;
@@ -136,7 +137,7 @@ void test_i2c_read_led(struct device *i2c_dev, uint16_t i2c_slave_led)
 /* i2c_thread is a static thread that is spawned automatically */
 void i2c_thread(void *dummy1, void *dummy2, void *dummy3)
 {
-	struct device *i2c_dev;
+	const struct device *i2c_dev;
 	int toggle = LED_LIGHT_PAT;
 
 	ARG_UNUSED(dummy1);

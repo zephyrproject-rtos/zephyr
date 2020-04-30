@@ -14,7 +14,7 @@ ZTEST_BMEM static const char *eeprom_label;
 
 static void test_size(void)
 {
-	struct device *eeprom;
+	const struct device *eeprom;
 	size_t size;
 
 	eeprom = device_get_binding(eeprom_label);
@@ -26,7 +26,7 @@ static void test_size(void)
 static void test_out_of_bounds(void)
 {
 	const uint8_t data[4] = { 0x01, 0x02, 0x03, 0x03 };
-	struct device *eeprom;
+	const struct device *eeprom;
 	size_t size;
 	int rc;
 
@@ -42,7 +42,7 @@ static void test_write_and_verify(void)
 	const uint8_t wr_buf1[4] = { 0xFF, 0xEE, 0xDD, 0xCC };
 	const uint8_t wr_buf2[sizeof(wr_buf1)] = { 0xAA, 0xBB, 0xCC, 0xDD };
 	uint8_t rd_buf[sizeof(wr_buf1)];
-	struct device *eeprom;
+	const struct device *eeprom;
 	int rc;
 
 	eeprom = device_get_binding(eeprom_label);
@@ -71,7 +71,7 @@ static void test_zero_length_write(void)
 	const uint8_t wr_buf1[4] = { 0x10, 0x20, 0x30, 0x40 };
 	const uint8_t wr_buf2[sizeof(wr_buf1)] = { 0xAA, 0xBB, 0xCC, 0xDD };
 	uint8_t rd_buf[sizeof(wr_buf1)];
-	struct device *eeprom;
+	const struct device *eeprom;
 	int rc;
 
 	eeprom = device_get_binding(eeprom_label);
@@ -98,7 +98,7 @@ static void test_zero_length_write(void)
 /* Run all of our tests on EEPROM device with the given label */
 static void run_tests_on_eeprom(const char *label)
 {
-	struct device *eeprom = device_get_binding(label);
+	const struct device *eeprom = device_get_binding(label);
 
 	zassert_not_null(eeprom, "Unable to get EEPROM device");
 	k_object_access_grant(eeprom, k_current_get());

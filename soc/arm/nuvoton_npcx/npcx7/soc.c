@@ -9,7 +9,7 @@
 #include <init.h>
 #include <soc.h>
 
-static int soc_init(struct device *dev)
+static int soc_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

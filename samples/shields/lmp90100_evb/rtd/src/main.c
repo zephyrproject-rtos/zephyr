@@ -47,7 +47,7 @@ static double rtd_temperature(int nom, double resistance)
 
 void main(void)
 {
-	struct device *lmp90100;
+	const struct device *lmp90100;
 	double resistance;
 	int32_t buffer;
 	int err;

@@ -7,7 +7,7 @@
 #include <init.h>
 #include "device_imx.h"
 
-static int warp7_m4_pinmux_init(struct device *dev)
+static int warp7_m4_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 #if defined(CONFIG_FXOS8700) || defined(CONFIG_FXAS21002)

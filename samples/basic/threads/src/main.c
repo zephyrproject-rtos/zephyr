@@ -37,7 +37,7 @@ struct led {
 
 void blink(const struct led *led, uint32_t sleep_ms, uint32_t id)
 {
-	struct device *gpio_dev;
+	const struct device *gpio_dev;
 	int cnt = 0;
 	int ret;
 

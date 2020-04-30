@@ -11,7 +11,7 @@
 #include <drivers/gpio.h>
 #include <drivers/sensor.h>
 
-static void fetch_and_display(struct device *sensor)
+static void fetch_and_display(const struct device *sensor)
 {
 	static unsigned int count;
 	struct sensor_value mag;
@@ -32,7 +32,7 @@ static void fetch_and_display(struct device *sensor)
 }
 
 #ifdef CONFIG_SM351LT_TRIGGER
-static void trigger_handler(struct device *dev,
+static void trigger_handler(const struct device *dev,
 			    struct sensor_trigger *trig)
 {
 	fetch_and_display(dev);
@@ -41,7 +41,7 @@ static void trigger_handler(struct device *dev,
 
 void main(void)
 {
-	struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, honeywell_sm351lt)));
+	const struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, honeywell_sm351lt)));
 
 	if (sensor == NULL) {
 		printf("Could not get %s device\n",

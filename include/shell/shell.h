@@ -121,7 +121,7 @@ struct shell_static_args {
  * devices.  Indexing is done relative to devices with names that
  * start with this text.  Pass null if no prefix match is required.
  */
-struct device *shell_device_lookup(size_t idx,
+const struct device *shell_device_lookup(size_t idx,
 				   const char *prefix);
 
 /**

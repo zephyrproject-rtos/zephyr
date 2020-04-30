@@ -183,7 +183,7 @@ struct wncm14a2a_iface_ctx {
 	uint8_t mac_addr[6];
 
 	/* GPIO PORT devices */
-	struct device *gpio_port_dev[MAX_MDM_CONTROL_PINS];
+	const struct device *gpio_port_dev[MAX_MDM_CONTROL_PINS];
 
 	/* RX specific attributes */
 	struct mdm_receiver_context mdm_ctx;
@@ -1441,7 +1441,7 @@ error:
 	return;
 }
 
-static int wncm14a2a_init(struct device *dev)
+static int wncm14a2a_init(const struct device *dev)
 {
 	int i, ret = 0;
 
@@ -1818,7 +1818,7 @@ static struct net_offload offload_funcs = {
 	.put = offload_put,
 };
 
-static inline uint8_t *wncm14a2a_get_mac(struct device *dev)
+static inline uint8_t *wncm14a2a_get_mac(const struct device *dev)
 {
 	struct wncm14a2a_iface_ctx *ctx = dev->data;
 
@@ -1833,7 +1833,7 @@ static inline uint8_t *wncm14a2a_get_mac(struct device *dev)
 
 static void offload_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct wncm14a2a_iface_ctx *ctx = dev->data;
 
 	iface->if_dev->offload = &offload_funcs;

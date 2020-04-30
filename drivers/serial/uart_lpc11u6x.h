@@ -136,7 +136,7 @@ struct lpc11u6x_uart0_config {
 	uint8_t tx_pin;
 	uint8_t tx_func;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
@@ -198,13 +198,13 @@ struct lpc11u6x_uartx_data {
  * notified when said IRQ is raied
  */
 struct lpc11u6x_uartx_shared_irq {
-	struct device *devices[LPC11U6X_UARTX_DEVICE_PER_IRQ];
+	const struct device *devices[LPC11U6X_UARTX_DEVICE_PER_IRQ];
 };
 
 #if CONFIG_UART_INTERRUPT_DRIVEN &&				\
 	(DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay) ||	\
 	 DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay))
-static void lpc11u6x_uartx_isr_config_1(struct device *dev);
+static void lpc11u6x_uartx_isr_config_1(const struct device *dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN &&
 	* (DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) ||
 	* DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay))
@@ -213,7 +213,7 @@ static void lpc11u6x_uartx_isr_config_1(struct device *dev);
 #if CONFIG_UART_INTERRUPT_DRIVEN &&				\
 	(DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) ||	\
 	 DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay))
-static void lpc11u6x_uartx_isr_config_2(struct device *dev);
+static void lpc11u6x_uartx_isr_config_2(const struct device *dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN &&
 	* (DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) ||
 	* DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay))

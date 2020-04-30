@@ -85,7 +85,7 @@ static void mimxrt1064_evk_usdhc_pinmux(uint16_t nusdhc, bool init, uint32_t spe
 }
 #endif
 
-static int mimxrt1064_evk_init(struct device *dev)
+static int mimxrt1064_evk_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -276,7 +276,7 @@ static int mimxrt1064_evk_init(struct device *dev)
 }
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
-static int mimxrt1064_evk_phy_reset(struct device *dev)
+static int mimxrt1064_evk_phy_reset(const struct device *dev)
 {
 	/* RESET PHY chip. */
 	k_busy_wait(USEC_PER_MSEC * 10U);

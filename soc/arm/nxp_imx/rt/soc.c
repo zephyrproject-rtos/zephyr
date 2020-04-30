@@ -254,7 +254,7 @@ void imxrt_usdhc_pinmux(uint16_t nusdhc, bool init,
  * @return 0
  */
 
-static int imxrt_init(struct device *arg)
+static int imxrt_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

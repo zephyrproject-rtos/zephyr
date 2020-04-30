@@ -54,7 +54,7 @@ struct k_mutex *_trace_list_k_mutex;
 /*
  * Complete initialization of statically defined mutexes.
  */
-static int init_mutex_module(struct device *dev)
+static int init_mutex_module(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

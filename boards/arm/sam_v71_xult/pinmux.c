@@ -24,7 +24,7 @@ static const struct soc_gpio_pin pwm_ext2_pin8 = {
 };
 #endif
 
-static int sam_v71_xplained_init(struct device *dev)
+static int sam_v71_xplained_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

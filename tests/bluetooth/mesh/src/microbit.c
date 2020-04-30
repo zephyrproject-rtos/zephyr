@@ -15,9 +15,9 @@
 #include "board.h"
 
 static uint32_t oob_number;
-static struct device *gpio;
+static const struct device *gpio;
 
-static void button_pressed(struct device *dev, struct gpio_callback *cb,
+static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 			   uint32_t pins)
 {
 	struct mb_display *disp = mb_display_get();

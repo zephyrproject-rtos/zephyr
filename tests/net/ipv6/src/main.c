@@ -140,12 +140,12 @@ struct net_test_ipv6 {
 	struct net_linkaddr ll_addr;
 };
 
-int net_test_dev_init(struct device *dev)
+int net_test_dev_init(const struct device *dev)
 {
 	return 0;
 }
 
-static uint8_t *net_test_get_mac(struct device *dev)
+static uint8_t *net_test_get_mac(const struct device *dev)
 {
 	struct net_test_ipv6 *context = dev->data;
 
@@ -227,7 +227,7 @@ out:
 }
 
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_icmp_hdr *icmp;
 
@@ -292,7 +292,7 @@ NET_DEVICE_INIT(net_test_ipv6, "net_test_ipv6",
 		127);
 
 /* dummy interface for multi-interface tests */
-static int dummy_send(struct device *dev, struct net_pkt *pkt)
+static int dummy_send(const struct device *dev, struct net_pkt *pkt)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pkt);

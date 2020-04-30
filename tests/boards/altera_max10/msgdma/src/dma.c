@@ -26,7 +26,7 @@ static char rx_data[DMA_BUFF_SIZE];
 static struct dma_config dma_cfg = {0};
 static struct dma_block_config dma_block_cfg = {0};
 
-static void dma_user_callback(struct device *dma_dev, void *arg,
+static void dma_user_callback(const struct device *dma_dev, void *arg,
 			      uint32_t id, int error_code)
 {
 	if (error_code == 0) {
@@ -40,7 +40,7 @@ static void dma_user_callback(struct device *dma_dev, void *arg,
 
 void test_msgdma(void)
 {
-	struct device *dma;
+	const struct device *dma;
 	static uint32_t chan_id;
 	int i;
 

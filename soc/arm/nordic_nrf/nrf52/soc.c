@@ -55,7 +55,7 @@ void sys_arch_reboot(int type)
 	NVIC_SystemReset();
 }
 
-static int nordicsemi_nrf52_init(struct device *arg)
+static int nordicsemi_nrf52_init(const struct device *arg)
 {
 	uint32_t key;
 

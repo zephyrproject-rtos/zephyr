@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(mcux_flexcomm);
 
 struct mcux_flexcomm_config {
 	I2C_Type *base;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
 };
 
@@ -29,7 +29,8 @@ struct mcux_flexcomm_data {
 	status_t callback_status;
 };
 
-static int mcux_flexcomm_configure(struct device *dev, uint32_t dev_config_raw)
+static int mcux_flexcomm_configure(const struct device *dev,
+				   uint32_t dev_config_raw)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	I2C_Type *base = config->base;
@@ -68,7 +69,7 @@ static int mcux_flexcomm_configure(struct device *dev, uint32_t dev_config_raw)
 static void mcux_flexcomm_master_transfer_callback(I2C_Type *base,
 		i2c_master_handle_t *handle, status_t status, void *userData)
 {
-	struct device *dev = userData;
+	const struct device *dev = userData;
 	struct mcux_flexcomm_data *data = dev->data;
 
 	ARG_UNUSED(handle);
@@ -93,8 +94,9 @@ static uint32_t mcux_flexcomm_convert_flags(int msg_flags)
 	return flags;
 }
 
-static int mcux_flexcomm_transfer(struct device *dev, struct i2c_msg *msgs,
-		uint8_t num_msgs, uint16_t addr)
+static int mcux_flexcomm_transfer(const struct device *dev,
+				  struct i2c_msg *msgs,
+				  uint8_t num_msgs, uint16_t addr)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
@@ -158,7 +160,7 @@ static int mcux_flexcomm_transfer(struct device *dev, struct i2c_msg *msgs,
 
 static void mcux_flexcomm_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;
 	I2C_Type *base = config->base;
@@ -166,7 +168,7 @@ static void mcux_flexcomm_isr(void *arg)
 	I2C_MasterTransferHandleIRQ(base, &data->handle);
 }
 
-static int mcux_flexcomm_init(struct device *dev)
+static int mcux_flexcomm_init(const struct device *dev)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
 	struct mcux_flexcomm_data *data = dev->data;

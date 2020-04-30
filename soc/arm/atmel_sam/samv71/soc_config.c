@@ -21,7 +21,7 @@
  *
  * @return 0
  */
-static int atmel_samv71_config(struct device *dev)
+static int atmel_samv71_config(const struct device *dev)
 {
 #ifdef CONFIG_SOC_ATMEL_SAMV71_DISABLE_ERASE_PIN
 	/* Disable ERASE function on PB12 pin, this is controlled by Bus

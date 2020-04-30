@@ -23,7 +23,7 @@ struct osdp_device {
 	struct k_fifo rx_event_fifo;
 	uint8_t rx_fbuf[CONFIG_OSDP_UART_BUFFER_LENGTH];
 	uint8_t tx_fbuf[CONFIG_OSDP_UART_BUFFER_LENGTH];
-	struct device *dev;
+	const struct device *dev;
 };
 
 static struct osdp osdp_ctx;
@@ -33,7 +33,7 @@ static struct osdp_device osdp_device;
 static struct k_thread osdp_refresh_thread;
 static K_THREAD_STACK_DEFINE(osdp_thread_stack, CONFIG_OSDP_THREAD_STACK_SIZE);
 
-static void osdp_uart_isr(struct device *dev, void *user_data)
+static void osdp_uart_isr(const struct device *dev, void *user_data)
 {
 	uint8_t buf[64];
 	size_t read, wrote, len;
@@ -127,7 +127,7 @@ void osdp_refresh(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static int osdp_init(struct device *arg)
+static int osdp_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 	uint8_t c;

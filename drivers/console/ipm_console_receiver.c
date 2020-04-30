@@ -21,12 +21,12 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 	uint8_t size32;
 	uint16_t type;
 	int ret, key;
-	struct device *d;
+	const struct device *d;
 	const struct ipm_console_receiver_config_info *config_info;
 	struct ipm_console_receiver_runtime_data *driver_data;
 	int pos;
 
-	d = (struct device *)arg1;
+	d = (const struct device *)arg1;
 	driver_data = d->data;
 	config_info = d->config;
 	ARG_UNUSED(arg2);
@@ -84,10 +84,11 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static void ipm_console_receive_callback(struct device *ipm_dev, void *context,
+static void ipm_console_receive_callback(const struct device *ipm_dev,
+					 void *context,
 					 uint32_t id, volatile void *data)
 {
-	struct device *d;
+	const struct device *d;
 	struct ipm_console_receiver_runtime_data *driver_data;
 	int ret;
 
@@ -115,12 +116,12 @@ static void ipm_console_receive_callback(struct device *ipm_dev, void *context,
 }
 
 
-int ipm_console_receiver_init(struct device *d)
+int ipm_console_receiver_init(const struct device *d)
 {
 	const struct ipm_console_receiver_config_info *config_info =
 		d->config;
 	struct ipm_console_receiver_runtime_data *driver_data = d->data;
-	struct device *ipm;
+	const struct device *ipm;
 
 	ipm = device_get_binding(config_info->bind_to);
 

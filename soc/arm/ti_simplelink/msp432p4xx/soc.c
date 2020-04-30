@@ -9,7 +9,7 @@
 #include <init.h>
 #include <soc.h>
 
-static int ti_msp432p4xx_init(struct device *arg)
+static int ti_msp432p4xx_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

@@ -39,7 +39,7 @@
 
 /* Common part of device data */
 struct usb_dev_data {
-	struct device *dev;
+	const struct device *dev;
 	sys_snode_t node;
 };
 

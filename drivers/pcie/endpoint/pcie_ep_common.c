@@ -36,7 +36,7 @@ static int pcie_ep_mapped_copy(uint64_t mapped_addr, uintptr_t local_addr,
  * Helper API to achieve data transfer with memcpy operation
  * through PCIe outbound memory
  */
-int pcie_ep_xfer_data_memcpy(struct device *dev, uint64_t pcie_addr,
+int pcie_ep_xfer_data_memcpy(const struct device *dev, uint64_t pcie_addr,
 			     uintptr_t *local_addr, uint32_t size,
 			     enum pcie_ob_mem_type ob_mem_type,
 			     enum xfer_direction dir)

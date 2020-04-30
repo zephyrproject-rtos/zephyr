@@ -75,12 +75,12 @@ static void (*const set_timer_compare[TIMER_MAX_CH])(TIM_TypeDef *,
 #endif
 };
 
-static inline struct pwm_stm32_data *to_data(struct device *dev)
+static inline struct pwm_stm32_data *to_data(const struct device *dev)
 {
 	return dev->data;
 }
 
-static inline const struct pwm_stm32_config *to_config(struct device *dev)
+static inline const struct pwm_stm32_config *to_config(const struct device *dev)
 {
 	return dev->config;
 }
@@ -112,7 +112,7 @@ static uint32_t get_polarity(pwm_flags_t flags)
 static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 {
 	int r;
-	struct device *clk;
+	const struct device *clk;
 	uint32_t bus_clk, apb_psc;
 
 	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
@@ -183,7 +183,7 @@ static int get_tim_clk(const struct stm32_pclken *pclken, uint32_t *tim_clk)
 	return 0;
 }
 
-static int pwm_stm32_pin_set(struct device *dev, uint32_t pwm,
+static int pwm_stm32_pin_set(const struct device *dev, uint32_t pwm,
 			     uint32_t period_cycles, uint32_t pulse_cycles,
 			     pwm_flags_t flags)
 {
@@ -244,7 +244,8 @@ static int pwm_stm32_pin_set(struct device *dev, uint32_t pwm,
 	return 0;
 }
 
-static int pwm_stm32_get_cycles_per_sec(struct device *dev, uint32_t pwm,
+static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
+					uint32_t pwm,
 					uint64_t *cycles)
 {
 	struct pwm_stm32_data *data = to_data(dev);
@@ -260,13 +261,13 @@ static const struct pwm_driver_api pwm_stm32_driver_api = {
 	.get_cycles_per_sec = pwm_stm32_get_cycles_per_sec,
 };
 
-static int pwm_stm32_init(struct device *dev)
+static int pwm_stm32_init(const struct device *dev)
 {
 	struct pwm_stm32_data *data = to_data(dev);
 	const struct pwm_stm32_config *cfg = to_config(dev);
 
 	int r;
-	struct device *clk;
+	const struct device *clk;
 	LL_TIM_InitTypeDef init;
 
 	/* enable clock and store its speed */

@@ -12,7 +12,7 @@
 #include <driverlib/rom_map.h>
 #include <driverlib/prcm.h>
 
-static int ti_cc32xx_init(struct device *arg)
+static int ti_cc32xx_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

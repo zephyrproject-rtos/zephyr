@@ -35,7 +35,7 @@ void main(void)
 {
 	int ret, led_state;
 	uint32_t cnt = 0;
-	struct device *dev;
+	const struct device *dev;
 	struct osdp_cmd cmd;
 
 	dev = device_get_binding(LED0);

@@ -14,7 +14,7 @@ enum cpu_id_t {
 	MHU_CPU_MAX,
 };
 
-struct device *mhu0;
+const struct device *mhu0;
 
 static void main_cpu_0(void)
 {
@@ -32,7 +32,7 @@ static void main_cpu_1(void)
 	}
 }
 
-static void mhu_isr_callback(struct device *dev, void *context,
+static void mhu_isr_callback(const struct device *dev, void *context,
 			     uint32_t cpu_id, volatile void *data)
 {
 	const uint32_t set_mhu = 1;

@@ -11,7 +11,7 @@
 
 #ifdef CONFIG_UART_NS16550
 
-static int uart_ns16550_init(struct device *dev)
+static int uart_ns16550_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

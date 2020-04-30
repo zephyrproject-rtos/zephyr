@@ -24,7 +24,7 @@ extern int altera_avalon_jtag_uart_read(altera_avalon_jtag_uart_state *sp,
 extern int altera_avalon_jtag_uart_write(altera_avalon_jtag_uart_state *sp,
 		const char *ptr, int count, int flags);
 
-static void uart_altera_jtag_poll_out(struct device *dev,
+static void uart_altera_jtag_poll_out(const struct device *dev,
 					       unsigned char c)
 {
 	const struct uart_device_config *config;
@@ -36,7 +36,7 @@ static void uart_altera_jtag_poll_out(struct device *dev,
 	altera_avalon_jtag_uart_write(&ustate, &c, 1, 0);
 }
 
-static int uart_altera_jtag_init(struct device *dev)
+static int uart_altera_jtag_init(const struct device *dev)
 {
 	/*
 	 * Work around to clear interrupt enable bits

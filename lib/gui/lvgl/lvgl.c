@@ -75,7 +75,7 @@ static void lvgl_log(lv_log_level_t level, const char *file, uint32_t line,
 static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_drv)
 {
 	struct display_capabilities cap;
-	struct device *display_dev = (struct device *)disp_drv->user_data;
+	const struct device *display_dev = (const struct device *)disp_drv->user_data;
 	int err = 0;
 
 	display_get_capabilities(display_dev, &cap);
@@ -113,7 +113,7 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_drv)
 	uint16_t buf_nbr_pixels;
 	uint32_t buf_size;
 	struct display_capabilities cap;
-	struct device *display_dev = (struct device *)disp_drv->user_data;
+	const struct device *display_dev = (const struct device *)disp_drv->user_data;
 
 	display_get_capabilities(display_dev, &cap);
 
@@ -178,7 +178,8 @@ static int lvgl_allocate_rendering_buffers(lv_disp_drv_t *disp_drv)
 K_MSGQ_DEFINE(kscan_msgq, sizeof(lv_indev_data_t),
 	      CONFIG_LVGL_POINTER_KSCAN_MSGQ_COUNT, 4);
 
-static void lvgl_pointer_kscan_callback(struct device *dev, uint32_t row,
+static void lvgl_pointer_kscan_callback(const struct device *dev,
+					uint32_t row,
 					uint32_t col, bool pressed)
 {
 	lv_indev_data_t data = {
@@ -213,7 +214,7 @@ static bool lvgl_pointer_kscan_read(lv_indev_drv_t *drv, lv_indev_data_t *data)
 
 static int lvgl_pointer_kscan_init(void)
 {
-	struct device *kscan_dev =
+	const struct device *kscan_dev =
 		device_get_binding(CONFIG_LVGL_POINTER_KSCAN_DEV_NAME);
 
 	lv_indev_drv_t indev_drv;
@@ -243,11 +244,11 @@ static int lvgl_pointer_kscan_init(void)
 }
 #endif /* CONFIG_LVGL_POINTER_KSCAN */
 
-static int lvgl_init(struct device *dev)
+static int lvgl_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	struct device *display_dev =
+	const struct device *display_dev =
 		device_get_binding(CONFIG_LVGL_DISPLAY_DEV_NAME);
 	int err = 0;
 	lv_disp_drv_t disp_drv;

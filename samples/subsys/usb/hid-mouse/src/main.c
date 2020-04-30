@@ -87,7 +87,7 @@ static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 	usb_status = status;
 }
 
-static void left_button(struct device *gpio, struct gpio_callback *cb,
+static void left_button(const struct device *gpio, struct gpio_callback *cb,
 			uint32_t pins)
 {
 	int ret;
@@ -120,7 +120,7 @@ static void left_button(struct device *gpio, struct gpio_callback *cb,
 }
 
 #if DT_NODE_HAS_STATUS(SW1_NODE, okay)
-static void right_button(struct device *gpio, struct gpio_callback *cb,
+static void right_button(const struct device *gpio, struct gpio_callback *cb,
 			 uint32_t pins)
 {
 	int ret;
@@ -154,7 +154,8 @@ static void right_button(struct device *gpio, struct gpio_callback *cb,
 #endif
 
 #if DT_NODE_HAS_STATUS(SW2_NODE, okay)
-static void x_move(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
+static void x_move(const struct device *gpio, struct gpio_callback *cb,
+		   uint32_t pins)
 {
 	int ret;
 	uint8_t state = status[MOUSE_X_REPORT_POS];
@@ -178,7 +179,8 @@ static void x_move(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
 #endif
 
 #if DT_NODE_HAS_STATUS(SW3_NODE, okay)
-static void y_move(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
+static void y_move(const struct device *gpio, struct gpio_callback *cb,
+		   uint32_t pins)
 {
 	int ret;
 	uint8_t state = status[MOUSE_Y_REPORT_POS];
@@ -201,7 +203,7 @@ static void y_move(struct device *gpio, struct gpio_callback *cb, uint32_t pins)
 }
 #endif
 
-int callbacks_configure(struct device *gpio, uint32_t pin, int flags,
+int callbacks_configure(const struct device *gpio, uint32_t pin, int flags,
 			gpio_callback_handler_t handler,
 			struct gpio_callback *callback, uint8_t *val)
 {
@@ -250,7 +252,7 @@ void main(void)
 {
 	int ret;
 	uint8_t report[4] = { 0x00 };
-	struct device *led_dev, *hid_dev;
+	const struct device *led_dev, *hid_dev;
 
 	led_dev = device_get_binding(LED_PORT);
 	if (led_dev == NULL) {

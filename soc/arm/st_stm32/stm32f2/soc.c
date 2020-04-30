@@ -26,7 +26,7 @@
  *
  * @return 0
  */
-static int stm32f2_init(struct device *arg)
+static int stm32f2_init(const struct device *arg)
 {
 	uint32_t key;
 

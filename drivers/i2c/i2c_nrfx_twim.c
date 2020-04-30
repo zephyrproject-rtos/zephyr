@@ -32,18 +32,19 @@ struct i2c_nrfx_twim_config {
 	nrfx_twim_config_t config;
 };
 
-static inline struct i2c_nrfx_twim_data *get_dev_data(struct device *dev)
+static inline struct i2c_nrfx_twim_data *get_dev_data(const struct device *dev)
 {
 	return dev->data;
 }
 
 static inline
-const struct i2c_nrfx_twim_config *get_dev_config(struct device *dev)
+const struct i2c_nrfx_twim_config *get_dev_config(const struct device *dev)
 {
 	return dev->config;
 }
 
-static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
+static int i2c_nrfx_twim_transfer(const struct device *dev,
+				  struct i2c_msg *msgs,
 				  uint8_t num_msgs, uint16_t addr)
 {
 	int ret = 0;
@@ -180,7 +181,7 @@ static int i2c_nrfx_twim_transfer(struct device *dev, struct i2c_msg *msgs,
 
 static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 {
-	struct device *dev = p_context;
+	const struct device *dev = p_context;
 	struct i2c_nrfx_twim_data *dev_data = get_dev_data(dev);
 
 	switch (p_event->type) {
@@ -201,7 +202,8 @@ static void event_handler(nrfx_twim_evt_t const *p_event, void *p_context)
 	k_sem_give(&dev_data->completion_sync);
 }
 
-static int i2c_nrfx_twim_configure(struct device *dev, uint32_t dev_config)
+static int i2c_nrfx_twim_configure(const struct device *dev,
+				   uint32_t dev_config)
 {
 	nrfx_twim_t const *inst = &(get_dev_config(dev)->twim);
 
@@ -230,7 +232,7 @@ static const struct i2c_driver_api i2c_nrfx_twim_driver_api = {
 	.transfer  = i2c_nrfx_twim_transfer,
 };
 
-static int init_twim(struct device *dev)
+static int init_twim(const struct device *dev)
 {
 	nrfx_err_t result = nrfx_twim_init(&get_dev_config(dev)->twim,
 					   &get_dev_config(dev)->config,
@@ -250,7 +252,8 @@ static int init_twim(struct device *dev)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int twim_nrfx_pm_control(struct device *dev, uint32_t ctrl_command,
+static int twim_nrfx_pm_control(const struct device *dev,
+				uint32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;

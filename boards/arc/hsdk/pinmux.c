@@ -8,11 +8,11 @@
 #include <init.h>
 #include <drivers/pinmux.h>
 
-static int board_pinmux_init(struct device *device)
+static int board_pinmux_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 
-	struct device *pinmux = device_get_binding(CONFIG_PINMUX_NAME);
+	const struct device *pinmux = device_get_binding(CONFIG_PINMUX_NAME);
 
 	if (pinmux == NULL) {
 		return -ENXIO;

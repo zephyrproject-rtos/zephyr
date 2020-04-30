@@ -37,16 +37,16 @@ static uint8_t st7789v_ram_param[] = DT_INST_PROP(0, ram_param);
 static uint8_t st7789v_rgb_param[] = DT_INST_PROP(0, rgb_param);
 
 struct st7789v_data {
-	struct device *spi_dev;
+	const struct device *spi_dev;
 	struct spi_config spi_config;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control cs_ctrl;
 #endif
 
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	struct device *reset_gpio;
+	const struct device *reset_gpio;
 #endif
-	struct device *cmd_data_gpio;
+	const struct device *cmd_data_gpio;
 
 	uint16_t height;
 	uint16_t width;
@@ -334,7 +334,7 @@ static void st7789v_lcd_init(struct st7789v_data *p_st7789v)
 			 sizeof(st7789v_rgb_param));
 }
 
-static int st7789v_init(struct device *dev)
+static int st7789v_init(const struct device *dev)
 {
 	struct st7789v_data *data = (struct st7789v_data *)dev->data;
 
@@ -408,7 +408,7 @@ static void st7789v_enter_sleep(struct st7789v_data *data)
 	st7789v_transmit(data, ST7789V_CMD_SLEEP_IN, NULL, 0);
 }
 
-static int st7789v_pm_control(struct device *dev, uint32_t ctrl_command,
+static int st7789v_pm_control(const struct device *dev, uint32_t ctrl_command,
 				 void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;

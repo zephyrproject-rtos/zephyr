@@ -13,7 +13,7 @@
 
 void main(void)
 {
-	struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, grove_light)));
+	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, grove_light)));
 
 	if (dev == NULL) {
 		printf("device not found.  aborting test.\n");

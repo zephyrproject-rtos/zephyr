@@ -21,7 +21,7 @@ struct fake_dev_context {
 	struct net_if *iface;
 };
 
-static int fake_dev_pm_control(struct device *dev, uint32_t command,
+static int fake_dev_pm_control(const struct device *dev, uint32_t command,
 			       void *context, device_pm_cb cb, void *arg)
 {
 	struct fake_dev_context *ctx = dev->data;
@@ -49,7 +49,7 @@ out:
 }
 
 
-static int fake_dev_send(struct device *dev, struct net_pkt *pkt)
+static int fake_dev_send(const struct device *dev, struct net_pkt *pkt)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pkt);
@@ -74,7 +74,7 @@ static uint8_t *fake_dev_get_mac(struct fake_dev_context *ctx)
 
 static void fake_dev_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct fake_dev_context *ctx = dev->data;
 	uint8_t *mac = fake_dev_get_mac(ctx);
 
@@ -83,7 +83,7 @@ static void fake_dev_iface_init(struct net_if *iface)
 	ctx->iface = iface;
 }
 
-int fake_dev_init(struct device *dev)
+int fake_dev_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -121,7 +121,7 @@ void test_setup(void)
 void test_pm(void)
 {
 	struct net_if *iface = net_if_get_default();
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	char data[] = "some data";
 	struct sockaddr_in addr4;
 	int sock;

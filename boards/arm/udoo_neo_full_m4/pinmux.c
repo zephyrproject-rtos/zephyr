@@ -7,7 +7,7 @@
 #include <init.h>
 #include "device_imx.h"
 
-static int udoo_neo_full_m4_init(struct device *dev)
+static int udoo_neo_full_m4_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

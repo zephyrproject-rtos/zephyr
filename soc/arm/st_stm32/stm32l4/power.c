@@ -109,7 +109,7 @@ void _sys_pm_power_state_exit_post_ops(enum power_states state)
 }
 
 /* Initialize STM32 Power */
-static int stm32_power_init(struct device *dev)
+static int stm32_power_init(const struct device *dev)
 {
 	unsigned int ret;
 

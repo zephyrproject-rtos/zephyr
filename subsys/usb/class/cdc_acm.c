@@ -303,7 +303,7 @@ static void tx_work_handler(struct k_work *work)
 {
 	struct cdc_acm_dev_data_t *dev_data =
 		CONTAINER_OF(work, struct cdc_acm_dev_data_t, tx_work);
-	struct device *dev = dev_data->common.dev;
+	const struct device *dev = dev_data->common.dev;
 	struct usb_cfg_data *cfg = (void *)dev->config;
 	uint8_t ep = cfg->endpoint[ACM_IN_EP_IDX].ep_addr;
 	uint8_t *data;
@@ -417,7 +417,7 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 			  enum usb_dc_status_code status,
 			  const uint8_t *param)
 {
-	struct device *dev = dev_data->common.dev;
+	const struct device *dev = dev_data->common.dev;
 	struct usb_cfg_data *cfg = (void *)dev->config;
 
 	/* Check the USB status and do needed action if required */
@@ -539,7 +539,7 @@ static void cdc_acm_irq_callback_work_handler(struct k_work *work)
  *
  * @return 0 always.
  */
-static int cdc_acm_init(struct device *dev)
+static int cdc_acm_init(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 	int ret = 0;
@@ -566,7 +566,7 @@ static int cdc_acm_init(struct device *dev)
  *
  * @return Number of bytes sent.
  */
-static int cdc_acm_fifo_fill(struct device *dev,
+static int cdc_acm_fifo_fill(const struct device *dev,
 			     const uint8_t *tx_data, int len)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
@@ -603,7 +603,8 @@ static int cdc_acm_fifo_fill(struct device *dev,
  *
  * @return Number of bytes read.
  */
-static int cdc_acm_fifo_read(struct device *dev, uint8_t *rx_data, const int size)
+static int cdc_acm_fifo_read(const struct device *dev, uint8_t *rx_data,
+			     const int size)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 	uint32_t len;
@@ -627,7 +628,7 @@ static int cdc_acm_fifo_read(struct device *dev, uint8_t *rx_data, const int siz
  *
  * @return N/A.
  */
-static void cdc_acm_irq_tx_enable(struct device *dev)
+static void cdc_acm_irq_tx_enable(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
@@ -645,7 +646,7 @@ static void cdc_acm_irq_tx_enable(struct device *dev)
  *
  * @return N/A.
  */
-static void cdc_acm_irq_tx_disable(struct device *dev)
+static void cdc_acm_irq_tx_disable(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
@@ -659,7 +660,7 @@ static void cdc_acm_irq_tx_disable(struct device *dev)
  *
  * @return 1 if a Tx IRQ is pending, 0 otherwise.
  */
-static int cdc_acm_irq_tx_ready(struct device *dev)
+static int cdc_acm_irq_tx_ready(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
@@ -677,7 +678,7 @@ static int cdc_acm_irq_tx_ready(struct device *dev)
  *
  * @return N/A
  */
-static void cdc_acm_irq_rx_enable(struct device *dev)
+static void cdc_acm_irq_rx_enable(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
@@ -695,7 +696,7 @@ static void cdc_acm_irq_rx_enable(struct device *dev)
  *
  * @return N/A.
  */
-static void cdc_acm_irq_rx_disable(struct device *dev)
+static void cdc_acm_irq_rx_disable(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
@@ -709,7 +710,7 @@ static void cdc_acm_irq_rx_disable(struct device *dev)
  *
  * @return 1 if an IRQ is ready, 0 otherwise.
  */
-static int cdc_acm_irq_rx_ready(struct device *dev)
+static int cdc_acm_irq_rx_ready(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
@@ -727,7 +728,7 @@ static int cdc_acm_irq_rx_ready(struct device *dev)
  *
  * @return 1 if a Tx or Rx IRQ is pending, 0 otherwise.
  */
-static int cdc_acm_irq_is_pending(struct device *dev)
+static int cdc_acm_irq_is_pending(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
@@ -747,7 +748,7 @@ static int cdc_acm_irq_is_pending(struct device *dev)
  *
  * @return Always 1
  */
-static int cdc_acm_irq_update(struct device *dev)
+static int cdc_acm_irq_update(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -762,7 +763,7 @@ static int cdc_acm_irq_update(struct device *dev)
  *
  * @return N/A
  */
-static void cdc_acm_irq_callback_set(struct device *dev,
+static void cdc_acm_irq_callback_set(const struct device *dev,
 				     uart_irq_callback_user_data_t cb,
 				     void *cb_data)
 {
@@ -773,7 +774,7 @@ static void cdc_acm_irq_callback_set(struct device *dev,
 }
 
 #if defined(CONFIG_CDC_ACM_DTE_RATE_CALLBACK_SUPPORT)
-int cdc_acm_dte_rate_callback_set(struct device *dev,
+int cdc_acm_dte_rate_callback_set(const struct device *dev,
 				  cdc_dte_rate_callback_t callback)
 {
 	struct cdc_acm_dev_data_t *const dev_data = DEV_DATA(dev);
@@ -800,7 +801,7 @@ int cdc_acm_dte_rate_callback_set(struct device *dev,
  *
  * @return N/A.
  */
-static void cdc_acm_baudrate_set(struct device *dev, uint32_t baudrate)
+static void cdc_acm_baudrate_set(const struct device *dev, uint32_t baudrate)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
@@ -818,7 +819,8 @@ static void cdc_acm_baudrate_set(struct device *dev, uint32_t baudrate)
  *
  * @return  N/A.
  */
-static int cdc_acm_send_notification(struct device *dev, uint16_t serial_state)
+static int cdc_acm_send_notification(const struct device *dev,
+				     uint16_t serial_state)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 	struct usb_cfg_data * const cfg = (void *)dev->config;
@@ -859,7 +861,7 @@ static int cdc_acm_send_notification(struct device *dev, uint16_t serial_state)
  *
  * @return 0 if successful, failed otherwise.
  */
-static int cdc_acm_line_ctrl_set(struct device *dev,
+static int cdc_acm_line_ctrl_set(const struct device *dev,
 				 uint32_t ctrl, uint32_t val)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
@@ -940,7 +942,7 @@ static int cdc_acm_line_ctrl_set(struct device *dev,
  *
  * @return 0 if successful, failed otherwise.
  */
-static int cdc_acm_line_ctrl_get(struct device *dev,
+static int cdc_acm_line_ctrl_get(const struct device *dev,
 				 uint32_t ctrl, uint32_t *val)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
@@ -972,7 +974,7 @@ static int cdc_acm_line_ctrl_get(struct device *dev,
  * exported by CDC ACM driver. Apps should use fifo_read API instead.
  */
 
-static int cdc_acm_poll_in(struct device *dev, unsigned char *c)
+static int cdc_acm_poll_in(const struct device *dev, unsigned char *c)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(c);
@@ -986,7 +988,7 @@ static int cdc_acm_poll_in(struct device *dev, unsigned char *c)
  * The UART poll method for USB UART is simulated by waiting till
  * we get the next BULK In upcall from the USB device controller or 100 ms.
  */
-static void cdc_acm_poll_out(struct device *dev,
+static void cdc_acm_poll_out(const struct device *dev,
 				      unsigned char c)
 {
 	cdc_acm_fifo_fill(dev, &c, 1);

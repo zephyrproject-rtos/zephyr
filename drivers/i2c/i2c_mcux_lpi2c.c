@@ -21,7 +21,7 @@ struct mcux_lpi2c_config {
 	LPI2C_Type *base;
 	char *clock_name;
 	clock_control_subsys_t clock_subsys;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
 	uint32_t bus_idle_timeout_ns;
 };
@@ -32,11 +32,12 @@ struct mcux_lpi2c_data {
 	status_t callback_status;
 };
 
-static int mcux_lpi2c_configure(struct device *dev, uint32_t dev_config_raw)
+static int mcux_lpi2c_configure(const struct device *dev,
+				uint32_t dev_config_raw)
 {
 	const struct mcux_lpi2c_config *config = dev->config;
 	LPI2C_Type *base = config->base;
-	struct device *clock_dev;
+	const struct device *clock_dev;
 	uint32_t clock_freq;
 	uint32_t baudrate;
 
@@ -80,7 +81,7 @@ static int mcux_lpi2c_configure(struct device *dev, uint32_t dev_config_raw)
 static void mcux_lpi2c_master_transfer_callback(LPI2C_Type *base,
 		lpi2c_master_handle_t *handle, status_t status, void *userData)
 {
-	struct device *dev = userData;
+	const struct device *dev = userData;
 	struct mcux_lpi2c_data *data = dev->data;
 
 	ARG_UNUSED(handle);
@@ -105,8 +106,8 @@ static uint32_t mcux_lpi2c_convert_flags(int msg_flags)
 	return flags;
 }
 
-static int mcux_lpi2c_transfer(struct device *dev, struct i2c_msg *msgs,
-		uint8_t num_msgs, uint16_t addr)
+static int mcux_lpi2c_transfer(const struct device *dev, struct i2c_msg *msgs,
+			       uint8_t num_msgs, uint16_t addr)
 {
 	const struct mcux_lpi2c_config *config = dev->config;
 	struct mcux_lpi2c_data *data = dev->data;
@@ -170,7 +171,7 @@ static int mcux_lpi2c_transfer(struct device *dev, struct i2c_msg *msgs,
 
 static void mcux_lpi2c_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct mcux_lpi2c_config *config = dev->config;
 	struct mcux_lpi2c_data *data = dev->data;
 	LPI2C_Type *base = config->base;
@@ -178,12 +179,12 @@ static void mcux_lpi2c_isr(void *arg)
 	LPI2C_MasterTransferHandleIRQ(base, &data->handle);
 }
 
-static int mcux_lpi2c_init(struct device *dev)
+static int mcux_lpi2c_init(const struct device *dev)
 {
 	const struct mcux_lpi2c_config *config = dev->config;
 	struct mcux_lpi2c_data *data = dev->data;
 	LPI2C_Type *base = config->base;
-	struct device *clock_dev;
+	const struct device *clock_dev;
 	uint32_t clock_freq, bitrate_cfg;
 	lpi2c_master_config_t master_config;
 	int error;

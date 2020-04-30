@@ -15,7 +15,7 @@
 #include "itds.h"
 LOG_MODULE_DECLARE(ITDS, CONFIG_SENSOR_LOG_LEVEL);
 
-static int itds_trigger_drdy_set(struct device *dev,
+static int itds_trigger_drdy_set(const struct device *dev,
 				 enum sensor_channel chan,
 				 sensor_trigger_handler_t handler)
 {
@@ -38,7 +38,7 @@ static int itds_trigger_drdy_set(struct device *dev,
 	return 0;
 }
 
-int itds_trigger_set(struct device *dev,
+int itds_trigger_set(const struct device *dev,
 		     const struct sensor_trigger *trig,
 		     sensor_trigger_handler_t handler)
 {
@@ -59,7 +59,7 @@ static void itds_work_handler(struct k_work *work)
 {
 	struct itds_device_data *ddata =
 			CONTAINER_OF(work, struct itds_device_data, work);
-	struct device *dev = (struct device *)ddata->dev;
+	const struct device *dev = (const struct device *)ddata->dev;
 	const struct itds_device_config *cfg = dev->config;
 	uint8_t status;
 	struct sensor_trigger drdy_trigger = {
@@ -79,7 +79,7 @@ static void itds_work_handler(struct k_work *work)
 	}
 }
 
-static void itds_gpio_callback(struct device *port,
+static void itds_gpio_callback(const struct device *port,
 			       struct gpio_callback *cb, uint32_t pin)
 {
 	struct itds_device_data *ddata =
@@ -91,7 +91,7 @@ static void itds_gpio_callback(struct device *port,
 	k_work_submit(&ddata->work);
 }
 
-int itds_trigger_mode_init(struct device *dev)
+int itds_trigger_mode_init(const struct device *dev)
 {
 	struct itds_device_data *ddata = dev->data;
 	const struct itds_device_config *cfg = dev->config;

@@ -42,11 +42,11 @@ static struct {
 } event;
 
 static struct {
-	struct device *clk;
+	const struct device *clk;
 } lll;
 
 /* Entropy device */
-static struct device *dev_entropy;
+static const struct device *dev_entropy;
 
 static int init_reset(void);
 static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
@@ -110,7 +110,7 @@ static void swi_ull_low_rv32m1_isr(void *arg)
 
 int lll_init(void)
 {
-	struct device *clk_k32;
+	const struct device *clk_k32;
 	int err;
 
 	ARG_UNUSED(clk_k32);

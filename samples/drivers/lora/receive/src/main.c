@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(lora_receive);
 
 void main(void)
 {
-	struct device *lora_dev;
+	const struct device *lora_dev;
 	struct lora_modem_config config;
 	int ret, len;
 	uint8_t data[MAX_DATA_LEN] = {0};

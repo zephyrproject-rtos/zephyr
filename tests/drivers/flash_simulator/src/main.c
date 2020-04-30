@@ -32,7 +32,7 @@
 		(((((((0xff & pat) << 8) | (0xff & pat)) << 8) | \
 		   (0xff & pat)) << 8) | (0xff & pat))
 
-static struct device *flash_dev;
+static const struct device *flash_dev;
 static uint8_t test_read_buf[TEST_SIM_FLASH_SIZE];
 
 static uint32_t p32_inc;

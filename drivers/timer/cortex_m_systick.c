@@ -149,7 +149,7 @@ void z_clock_isr(void *arg)
 	z_arm_int_exit();
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 

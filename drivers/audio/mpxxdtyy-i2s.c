@@ -20,7 +20,7 @@ LOG_MODULE_DECLARE(mpxxdtyy);
 
 K_MEM_SLAB_DEFINE(rx_pdm_i2s_mslab, PDM_BLOCK_MAX_SIZE_BYTES, NUM_RX_BLOCKS, 1);
 
-int mpxxdtyy_i2s_read(struct device *dev, uint8_t stream, void **buffer,
+int mpxxdtyy_i2s_read(const struct device *dev, uint8_t stream, void **buffer,
 		      size_t *size, int32_t timeout)
 {
 	int ret;
@@ -51,7 +51,7 @@ int mpxxdtyy_i2s_read(struct device *dev, uint8_t stream, void **buffer,
 	return 0;
 }
 
-int mpxxdtyy_i2s_trigger(struct device *dev, enum dmic_trigger cmd)
+int mpxxdtyy_i2s_trigger(const struct device *dev, enum dmic_trigger cmd)
 {
 	int ret;
 	struct mpxxdtyy_data *const data = DEV_DATA(dev);
@@ -89,7 +89,7 @@ int mpxxdtyy_i2s_trigger(struct device *dev, enum dmic_trigger cmd)
 	return 0;
 }
 
-int mpxxdtyy_i2s_configure(struct device *dev, struct dmic_cfg *cfg)
+int mpxxdtyy_i2s_configure(const struct device *dev, struct dmic_cfg *cfg)
 {
 	int ret;
 	struct mpxxdtyy_data *const data = DEV_DATA(dev);

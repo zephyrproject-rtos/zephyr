@@ -150,7 +150,7 @@ static size_t obj_size_get(enum k_objects otype)
 	switch (otype) {
 #include <otype-to-size.h>
 	default:
-		ret = sizeof(struct device);
+		ret = sizeof(const struct device);
 		break;
 	}
 
@@ -798,7 +798,7 @@ out:
 extern char __app_shmem_regions_start[];
 extern char __app_shmem_regions_end[];
 
-static int app_shmem_bss_zero(struct device *unused)
+static int app_shmem_bss_zero(const struct device *unused)
 {
 	struct z_app_region *region, *end;
 
