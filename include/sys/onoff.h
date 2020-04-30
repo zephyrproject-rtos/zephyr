@@ -471,7 +471,7 @@ static inline int onoff_cancel_or_release(struct onoff_manager *mgr,
  * operation.
  *
  * @retval non-negative the observed state of the machine at the time
- * of the reset, if the reset succeeds.
+ * a reset was successfully initiated.
  * @retval -ENOTSUP if reset is not supported by the service.
  * @retval -EINVAL if the parameters are invalid.
  * @retval -EALREADY if the service does not have a recorded error.
