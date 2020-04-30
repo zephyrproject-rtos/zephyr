@@ -1872,13 +1872,6 @@ int net_pkt_update_length(struct net_pkt *pkt, size_t length)
 int net_pkt_pull(struct net_pkt *pkt, size_t length)
 {
 	struct net_pkt_cursor *c_op = &pkt->cursor;
-	struct net_pkt_cursor backup;
-
-	if (!pkt->buffer) {
-		return -ENOBUFS;
-	}
-
-	net_pkt_cursor_backup(pkt, &backup);
 
 	while (length) {
 		size_t left, rem;
@@ -1910,15 +1903,15 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 				pkt->buffer = buf->frags;
 				buf->frags = NULL;
 				net_buf_unref(buf);
-
-				net_pkt_cursor_init(pkt);
 			}
+
+			net_pkt_cursor_init(pkt);
 		}
 
 		length -= rem;
 	}
 
-	net_pkt_cursor_restore(pkt, &backup);
+	net_pkt_cursor_init(pkt);
 
 	if (length) {
 		NET_DBG("Still some length to go %zu", length);
