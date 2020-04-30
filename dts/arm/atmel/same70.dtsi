@@ -347,6 +347,12 @@
 			local-mac-address = [00 00 00 00 00 00];
 			label = "GMAC";
 			status = "disabled";
+			/* Default to RMII config */
+			pinctrl-0 = <&pd0a_gmac_gtxck &pd1a_gmac_gtxen
+				     &pd2a_gmac_gtx0 &pd3a_gmac_gtx1
+				     &pd4a_gmac_grxdv &pd5a_gmac_grx0
+				     &pd6a_gmac_grx1 &pd7a_gmac_grxer
+				     &pd8a_gmac_gmdc &pd9a_gmac_gmdio>;
 		};
 
 		trng: random@40070000 {
