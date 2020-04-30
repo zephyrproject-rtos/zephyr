@@ -153,7 +153,7 @@ static int gpio_mmio32_pin_interrupt_configure(struct device *dev,
 	return 0;
 }
 
-static const struct gpio_driver_api gpio_mmio32_api = {
+const struct gpio_driver_api gpio_mmio32_api = {
 	.pin_configure = gpio_mmio32_config,
 	.port_get_raw = gpio_mmio32_port_get_raw,
 	.port_set_masked_raw = gpio_mmio32_port_set_masked_raw,
@@ -169,7 +169,6 @@ int gpio_mmio32_init(struct device *dev)
 	const struct gpio_mmio32_config *config = dev->config_info;
 
 	context->config = config;
-	dev->driver_api = &gpio_mmio32_api;
 
 	return 0;
 }
