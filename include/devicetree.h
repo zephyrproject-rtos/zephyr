@@ -1529,6 +1529,49 @@
 /** @internal helper for DT_DASH(): prepends _ to a name */
 #define DT_DASH_PREFIX(name) _##name
 
+/**
+ * @brief Invokes given macro for all child nodes of a parent.
+ *
+ * @param parent parent node to iterate
+ * @param fun 	 macro to invoke
+ *
+ * Macro should be defined to take two parameters, where first will be
+ * the parent node, as provided to the DT_FOR_EACH_CHILD, and the second
+ * will be the child node identifier.
+ */
+#define DT_FOR_EACH_CHILD(parent, fun) DT_FOR_EACH_CHILD_(parent, fun)
+#define DT_FOR_EACH_CHILD_(parent, fun) \
+	DT_FOR_EACH_CHILD__(parent, fun, DT_CHILDREN(parent), ~)
+#define DT_FOR_EACH_CHILD__(parent, fun, ...) \
+	DT_FOR_EACH_CHILD___(fun, parent, NUM_VA_ARGS_LESS_1(__VA_ARGS__),\
+			    __VA_ARGS__)
+#define DT_FOR_EACH_CHILD___(fun, parent, N, ...) \
+	DT_FOR_EACH_CHILD____(fun, parent, N, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____(fun, parent, N, ...) \
+	DT_FOR_EACH_CHILD____##N(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____0(fun, parent, node)
+#define DT_FOR_EACH_CHILD____1(fun, parent, node, ...) \
+	fun(parent, node) DT_FOR_EACH_CHILD____0(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____2(fun, parent, node, ...) \
+	fun(parent, node) DT_FOR_EACH_CHILD____1(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____3(fun, parent, node, ...) \
+	fun(parent, node) DT_FOR_EACH_CHILD____2(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____4(fun, parent, node, ...) \
+	fun(parent, node) DT_FOR_EACH_CHILD____3(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____5(fun, parent, node, ...) \
+	fun(parent, node) DT_FOR_EACH_CHILD____4(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____6(fun, parent, node, ...) \
+	fun(parent, node) DT_FOR_EACH_CHILD____5(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____7(fun, parent, node, ...) \
+	fun(parent, node) DT_FOR_EACH_CHILD____6(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____8(fun, parent, node, ...) \
+	fun(parent, node) DT_FOR_EACH_CHILD____7(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____9(fun, parent, node, ...) \
+	fun(parent, node) DT_FOR_EACH_CHILD____8(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____10(fun, parent, node, ...) \
+	fun(parent, node) DT_FOR_EACH_CHILD____9(fun, parent, __VA_ARGS__)
+
+
 /* have these last so the have access to all previously defined macros */
 #include <devicetree/adc.h>
 #include <devicetree/clocks.h>
