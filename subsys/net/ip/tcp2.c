@@ -37,6 +37,17 @@ int net_tcp_finalize(struct net_pkt *pkt);
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 size_t (*tcp_recv_cb)(struct tcp *conn, struct net_pkt *pkt) = NULL;
 
+static u32_t tcp_init_isn(void)
+{
+	if (IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) ||
+	    IS_ENABLED(CONFIG_NET_TEST)) {
+		return 0;
+	}
+
+	/* Randomise initial seq number */
+	return sys_rand32_get();
+}
+
 static struct tcphdr *th_get(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(th_access, struct tcphdr);
@@ -644,6 +655,8 @@ static struct tcp *tcp_conn_alloc(void)
 	k_delayed_work_init(&conn->timewait_timer, tcp_timewait_timeout);
 
 	tcp_conn_ref(conn);
+
+	conn->seq = tcp_init_isn();
 
 	sys_slist_append(&tcp_conns, (sys_snode_t *)conn);
 out:
