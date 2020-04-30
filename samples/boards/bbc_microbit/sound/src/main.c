@@ -72,7 +72,7 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 	printk("Period is %u us (%u Hz)\n", period, US_TO_HZ(period));
 
 	disp = mb_display_get();
-	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT, K_MSEC(500), "%uHz",
+	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT, 500, "%uHz",
 			 US_TO_HZ(period));
 
 	k_work_submit(&beep_work);

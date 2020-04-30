@@ -22,8 +22,8 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 {
 	struct mb_display *disp = mb_display_get();
 
-	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT, K_MSEC(500),
-			 "%04u", oob_number);
+	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT, 500, "%04u",
+			 oob_number);
 }
 
 static void configure_button(void)
@@ -57,7 +57,8 @@ void board_output_number(bt_mesh_output_action_t action, u32_t number)
 	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
-	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, K_FOREVER, &arrow, 1);
+	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, SYS_FOREVER_MS, &arrow,
+			 1);
 }
 
 void board_prov_complete(void)
@@ -73,7 +74,7 @@ void board_prov_complete(void)
 	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
 				     GPIO_INT_DISABLE);
 
-	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, K_SECONDS(10),
+	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT, 10 * MSEC_PER_SEC,
 			 &arrow, 1);
 }
 
@@ -94,7 +95,7 @@ void board_init(void)
 	};
 
 	mb_display_image(disp, MB_DISPLAY_MODE_DEFAULT | MB_DISPLAY_FLAG_LOOP,
-			 K_SECONDS(1), blink, ARRAY_SIZE(blink));
+			 1 * MSEC_PER_SEC, blink, ARRAY_SIZE(blink));
 
 	configure_button();
 }

@@ -395,12 +395,12 @@ static u32_t adv_timeout(void)
 	u32_t timeout;
 
 	if (bt_rand(&timeout, sizeof(timeout)) < 0) {
-		return K_SECONDS(10);
+		return 10 * MSEC_PER_SEC;
 	}
 
-	timeout %= K_SECONDS(10);
+	timeout %= (10 * MSEC_PER_SEC);
 
-	return timeout + K_SECONDS(1);
+	return timeout + (1 * MSEC_PER_SEC);
 }
 
 static void cancel_connect(void)
@@ -474,7 +474,7 @@ static void ble_timeout(struct k_work *work)
 
 		printk("Advertising successfully started\n");
 		ble_state = BLE_ADVERTISING;
-		k_delayed_work_submit(&ble_work, adv_timeout());
+		k_delayed_work_submit(&ble_work, K_MSEC(adv_timeout()));
 		break;
 	case BLE_ADVERTISING:
 		printk("Timed out advertising\n");
