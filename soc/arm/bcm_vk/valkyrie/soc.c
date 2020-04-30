@@ -16,7 +16,7 @@
  *
  * @return 0
  */
-static int valkyrie_init(struct device *arg)
+static int valkyrie_init(const struct device *arg)
 {
 	uint32_t key;
 

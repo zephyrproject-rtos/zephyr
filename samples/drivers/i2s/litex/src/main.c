@@ -21,8 +21,8 @@
 
 #define I2S_PLAY_BUF_COUNT (500)
 
-static struct device *host_i2s_rx_dev;
-static struct device *host_i2s_tx_dev;
+static const struct device *host_i2s_rx_dev;
+static const struct device *host_i2s_tx_dev;
 static struct k_mem_slab i2s_rx_mem_slab;
 static struct k_mem_slab i2s_tx_mem_slab;
 static char rx_buffers[AUDIO_FRAME_BUF_BYTES * I2S_PLAY_BUF_COUNT];

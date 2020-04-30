@@ -761,7 +761,7 @@ static void dfu_work_handler(struct k_work *item)
 	}
 }
 
-static int usb_dfu_init(struct device *dev)
+static int usb_dfu_init(const struct device *dev)
 {
 	const struct flash_area *fa;
 

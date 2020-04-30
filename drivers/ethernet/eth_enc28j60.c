@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define D10D24S 11
 
-static int eth_enc28j60_soft_reset(struct device *dev)
+static int eth_enc28j60_soft_reset(const struct device *dev)
 {
 	struct eth_enc28j60_runtime *context = dev->data;
 	uint8_t buf[2] = { ENC28J60_SPI_SC, 0xFF };
@@ -44,7 +44,7 @@ static int eth_enc28j60_soft_reset(struct device *dev)
 	return spi_write(context->spi, &context->spi_cfg, &tx);
 }
 
-static void eth_enc28j60_set_bank(struct device *dev, uint16_t reg_addr)
+static void eth_enc28j60_set_bank(const struct device *dev, uint16_t reg_addr)
 {
 	struct eth_enc28j60_runtime *context = dev->data;
 	uint8_t buf[2];
@@ -78,7 +78,8 @@ static void eth_enc28j60_set_bank(struct device *dev, uint16_t reg_addr)
 	}
 }
 
-static void eth_enc28j60_write_reg(struct device *dev, uint16_t reg_addr,
+static void eth_enc28j60_write_reg(const struct device *dev,
+				   uint16_t reg_addr,
 				   uint8_t value)
 {
 	struct eth_enc28j60_runtime *context = dev->data;
@@ -98,7 +99,7 @@ static void eth_enc28j60_write_reg(struct device *dev, uint16_t reg_addr,
 	spi_write(context->spi, &context->spi_cfg, &tx);
 }
 
-static void eth_enc28j60_read_reg(struct device *dev, uint16_t reg_addr,
+static void eth_enc28j60_read_reg(const struct device *dev, uint16_t reg_addr,
 				  uint8_t *value)
 {
 	struct eth_enc28j60_runtime *context = dev->data;
@@ -137,7 +138,8 @@ static void eth_enc28j60_read_reg(struct device *dev, uint16_t reg_addr,
 	}
 }
 
-static void eth_enc28j60_set_eth_reg(struct device *dev, uint16_t reg_addr,
+static void eth_enc28j60_set_eth_reg(const struct device *dev,
+				     uint16_t reg_addr,
 				     uint8_t value)
 {
 	struct eth_enc28j60_runtime *context = dev->data;
@@ -158,7 +160,8 @@ static void eth_enc28j60_set_eth_reg(struct device *dev, uint16_t reg_addr,
 }
 
 
-static void eth_enc28j60_clear_eth_reg(struct device *dev, uint16_t reg_addr,
+static void eth_enc28j60_clear_eth_reg(const struct device *dev,
+				       uint16_t reg_addr,
 				       uint8_t value)
 {
 	struct eth_enc28j60_runtime *context = dev->data;
@@ -178,7 +181,8 @@ static void eth_enc28j60_clear_eth_reg(struct device *dev, uint16_t reg_addr,
 	spi_write(context->spi, &context->spi_cfg, &tx);
 }
 
-static void eth_enc28j60_write_mem(struct device *dev, uint8_t *data_buffer,
+static void eth_enc28j60_write_mem(const struct device *dev,
+				   uint8_t *data_buffer,
 				   uint16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->data;
@@ -220,7 +224,8 @@ static void eth_enc28j60_write_mem(struct device *dev, uint8_t *data_buffer,
 	}
 }
 
-static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
+static void eth_enc28j60_read_mem(const struct device *dev,
+				  uint8_t *data_buffer,
 				  uint16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->data;
@@ -271,7 +276,8 @@ static void eth_enc28j60_read_mem(struct device *dev, uint8_t *data_buffer,
 	}
 }
 
-static void eth_enc28j60_write_phy(struct device *dev, uint16_t reg_addr,
+static void eth_enc28j60_write_phy(const struct device *dev,
+				   uint16_t reg_addr,
 				   int16_t data)
 {
 	uint8_t data_mistat;
@@ -290,7 +296,7 @@ static void eth_enc28j60_write_phy(struct device *dev, uint16_t reg_addr,
 	} while ((data_mistat & ENC28J60_BIT_MISTAT_BUSY));
 }
 
-static void eth_enc28j60_gpio_callback(struct device *dev,
+static void eth_enc28j60_gpio_callback(const struct device *dev,
 				       struct gpio_callback *cb,
 				       uint32_t pins)
 {
@@ -300,7 +306,7 @@ static void eth_enc28j60_gpio_callback(struct device *dev,
 	k_sem_give(&context->int_sem);
 }
 
-static void eth_enc28j60_init_buffers(struct device *dev)
+static void eth_enc28j60_init_buffers(const struct device *dev)
 {
 	uint8_t data_estat;
 
@@ -347,7 +353,7 @@ static void eth_enc28j60_init_buffers(struct device *dev)
 	} while (!(data_estat & ENC28J60_BIT_ESTAT_CLKRDY));
 }
 
-static void eth_enc28j60_init_mac(struct device *dev)
+static void eth_enc28j60_init_mac(const struct device *dev)
 {
 	const struct eth_enc28j60_config *config = dev->config;
 	struct eth_enc28j60_runtime *context = dev->data;
@@ -397,7 +403,7 @@ static void eth_enc28j60_init_mac(struct device *dev)
 			       context->mac_address[0]);
 }
 
-static void eth_enc28j60_init_phy(struct device *dev)
+static void eth_enc28j60_init_phy(const struct device *dev)
 {
 	const struct eth_enc28j60_config *config = dev->config;
 
@@ -431,7 +437,7 @@ static struct net_if *get_iface(struct eth_enc28j60_runtime *ctx,
 #endif
 }
 
-static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt)
+static int eth_enc28j60_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_enc28j60_runtime *context = dev->data;
 	uint16_t tx_bufaddr = ENC28J60_TXSTART;
@@ -504,7 +510,7 @@ static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static int eth_enc28j60_rx(struct device *dev, uint16_t *vlan_tag)
+static int eth_enc28j60_rx(const struct device *dev, uint16_t *vlan_tag)
 {
 	const struct eth_enc28j60_config *config = dev->config;
 	struct eth_enc28j60_runtime *context = dev->data;
@@ -657,7 +663,7 @@ done:
 	return 0;
 }
 
-static void eth_enc28j60_rx_thread(struct device *dev)
+static void eth_enc28j60_rx_thread(const struct device *dev)
 {
 	struct eth_enc28j60_runtime *context = dev->data;
 	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
@@ -677,7 +683,7 @@ static void eth_enc28j60_rx_thread(struct device *dev)
 	}
 }
 
-static enum ethernet_hw_caps eth_enc28j60_get_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_enc28j60_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -690,7 +696,7 @@ static enum ethernet_hw_caps eth_enc28j60_get_capabilities(struct device *dev)
 
 static void eth_enc28j60_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct eth_enc28j60_runtime *context = dev->data;
 
 	net_if_set_link_addr(iface, context->mac_address,
@@ -715,7 +721,7 @@ static const struct ethernet_api api_funcs = {
 	.send			= eth_enc28j60_tx,
 };
 
-static int eth_enc28j60_init(struct device *dev)
+static int eth_enc28j60_init(const struct device *dev)
 {
 	const struct eth_enc28j60_config *config = dev->config;
 	struct eth_enc28j60_runtime *context = dev->data;

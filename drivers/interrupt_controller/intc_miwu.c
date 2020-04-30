@@ -60,7 +60,7 @@
 LOG_MODULE_REGISTER(intc_miwu, LOG_LEVEL_ERR);
 
 /* MIWU module instances forward declaration */
-static struct device *miwu_devs[];
+static const struct device *miwu_devs[];
 
 /* Driver config */
 struct intc_miwu_config {
@@ -257,7 +257,7 @@ void soc_miwu_init_gpio_callback(struct miwu_io_callback *callback,
 void soc_miwu_init_dev_callback(struct miwu_dev_callback *callback,
 				const struct npcx_wui *dev_wui,
 				miwu_dev_callback_handler_t handler,
-				struct device *source)
+				const struct device *source)
 {
 	/* Initialize WUI and input device settings */
 	callback->wui.table = dev_wui->table;
@@ -326,7 +326,7 @@ int soc_miwu_manage_dev_callback(struct miwu_dev_callback *cb, bool set)
 
 /* MIWU init function implementation */
 #define NPCX_MIWU_INIT_FUNC_IMPL(inst)                                         \
-	static int intc_miwu_init##inst(struct device *dev)                    \
+	static int intc_miwu_init##inst(const struct device *dev)                    \
 	{                                                                      \
 		int i;                                                         \
 		uint32_t base = DRV_CONFIG(dev)->base;                         \
@@ -366,7 +366,7 @@ DT_INST_FOREACH_STATUS_OKAY(NPCX_MIWU_INIT)
 /* MIWU module instances */
 #define NPCX_MIWU_DEV(inst) DEVICE_GET(intc_miwu_##inst),
 
-static struct device *miwu_devs[] = {
+static const struct device *miwu_devs[] = {
 	DT_INST_FOREACH_STATUS_OKAY(NPCX_MIWU_DEV)
 };
 

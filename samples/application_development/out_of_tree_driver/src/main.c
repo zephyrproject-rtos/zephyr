@@ -10,7 +10,7 @@
 
 static void user_entry(void *p1, void *p2, void *p3)
 {
-	struct device *dev = p1;
+	const struct device *dev = p1;
 
 	hello_world_print(dev);
 }
@@ -19,7 +19,7 @@ void main(void)
 {
 	printk("Hello World from the app!\n");
 
-	struct device *dev = device_get_binding("CUSTOM_DRIVER");
+	const struct device *dev = device_get_binding("CUSTOM_DRIVER");
 
 	__ASSERT(dev, "Failed to get device binding");
 

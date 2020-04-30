@@ -299,7 +299,7 @@ Get Device List
 
 .. code-block:: c
 
-   size_t z_device_get_all_static(struct device **device_list);
+   size_t z_device_get_all_static(struct device const **device_list);
 
 The Zephyr RTOS kernel internally maintains a list of all devices in the system.
 The SOC interface uses this API to get the device list. The SOC interface can use the list to

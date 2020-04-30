@@ -37,7 +37,7 @@ BUILD_ASSERT(IPM_INTEL_ADSP_MAILBOX_OUT_SIZE >= IPM_INTEL_ADSP_MAX_DATA_SIZE);
 BUILD_ASSERT(IPM_INTEL_ADSP_MAILBOX_IN_SIZE >= IPM_INTEL_ADSP_MAX_DATA_SIZE);
 
 struct ipm_adsp_config {
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 };
 
 struct ipm_adsp_data {
@@ -47,7 +47,7 @@ struct ipm_adsp_data {
 
 static void ipm_adsp_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct ipm_adsp_data *data = dev->data;
 	uint32_t dipcctl, dipcie, dipct;
 
@@ -108,7 +108,7 @@ static void ipm_adsp_isr(void *arg)
 	}
 }
 
-static int ipm_adsp_send(struct device *dev, int wait, uint32_t id,
+static int ipm_adsp_send(const struct device *dev, int wait, uint32_t id,
 			 const void *data, int size)
 {
 	LOG_DBG("Send: id %d data %p size %d", id, data, size);
@@ -141,7 +141,7 @@ static int ipm_adsp_send(struct device *dev, int wait, uint32_t id,
 	return 0;
 }
 
-static void ipm_adsp_register_callback(struct device *dev,
+static void ipm_adsp_register_callback(const struct device *dev,
 				       ipm_callback_t cb,
 				       void *user_data)
 {
@@ -151,7 +151,7 @@ static void ipm_adsp_register_callback(struct device *dev,
 	data->user_data = user_data;
 }
 
-static int ipm_adsp_max_data_size_get(struct device *dev)
+static int ipm_adsp_max_data_size_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -160,7 +160,7 @@ static int ipm_adsp_max_data_size_get(struct device *dev)
 	return IPM_INTEL_ADSP_MAX_DATA_SIZE;
 }
 
-static uint32_t ipm_adsp_max_id_val_get(struct device *dev)
+static uint32_t ipm_adsp_max_id_val_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -169,7 +169,7 @@ static uint32_t ipm_adsp_max_id_val_get(struct device *dev)
 	return IPM_INTEL_ADSP_MAX_ID_VAL;
 }
 
-static int ipm_adsp_set_enabled(struct device *dev, int enable)
+static int ipm_adsp_set_enabled(const struct device *dev, int enable)
 {
 	LOG_DBG("dev %p", dev);
 
@@ -179,7 +179,7 @@ static int ipm_adsp_set_enabled(struct device *dev, int enable)
 	return 0;
 }
 
-static int ipm_adsp_init(struct device *dev)
+static int ipm_adsp_init(const struct device *dev)
 {
 	const struct ipm_adsp_config *config = dev->config;
 
@@ -198,7 +198,7 @@ static const struct ipm_driver_api ipm_adsp_driver_api = {
 	.set_enabled = ipm_adsp_set_enabled,
 };
 
-static void ipm_adsp_config_func(struct device *dev);
+static void ipm_adsp_config_func(const struct device *dev);
 
 static const struct ipm_adsp_config ipm_adsp_config = {
 	.irq_config_func = ipm_adsp_config_func,
@@ -212,7 +212,7 @@ DEVICE_AND_API_INIT(ipm_adsp, DT_INST_LABEL(0),
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &ipm_adsp_driver_api);
 
-static void ipm_adsp_config_func(struct device *dev)
+static void ipm_adsp_config_func(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),

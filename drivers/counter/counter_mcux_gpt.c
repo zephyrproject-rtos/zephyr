@@ -26,7 +26,7 @@ struct mcux_gpt_data {
 	void *top_user_data;
 };
 
-static int mcux_gpt_start(struct device *dev)
+static int mcux_gpt_start(const struct device *dev)
 {
 	const struct mcux_gpt_config *config = dev->config;
 
@@ -35,7 +35,7 @@ static int mcux_gpt_start(struct device *dev)
 	return 0;
 }
 
-static int mcux_gpt_stop(struct device *dev)
+static int mcux_gpt_stop(const struct device *dev)
 {
 	const struct mcux_gpt_config *config = dev->config;
 
@@ -44,7 +44,7 @@ static int mcux_gpt_stop(struct device *dev)
 	return 0;
 }
 
-static int mcux_gpt_get_value(struct device *dev, uint32_t *ticks)
+static int mcux_gpt_get_value(const struct device *dev, uint32_t *ticks)
 {
 	const struct mcux_gpt_config *config = dev->config;
 
@@ -52,7 +52,7 @@ static int mcux_gpt_get_value(struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
-static int mcux_gpt_set_alarm(struct device *dev, uint8_t chan_id,
+static int mcux_gpt_set_alarm(const struct device *dev, uint8_t chan_id,
 			      const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct mcux_gpt_config *config = dev->config;
@@ -84,7 +84,7 @@ static int mcux_gpt_set_alarm(struct device *dev, uint8_t chan_id,
 	return 0;
 }
 
-static int mcux_gpt_cancel_alarm(struct device *dev, uint8_t chan_id)
+static int mcux_gpt_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	const struct mcux_gpt_config *config = dev->config;
 	struct mcux_gpt_data *data = dev->data;
@@ -102,7 +102,7 @@ static int mcux_gpt_cancel_alarm(struct device *dev, uint8_t chan_id)
 
 void mcux_gpt_isr(void *p)
 {
-	struct device *dev = p;
+	const struct device *dev = p;
 	const struct mcux_gpt_config *config = dev->config;
 	struct mcux_gpt_data *data = dev->data;
 	uint32_t current = GPT_GetCurrentTimerCount(config->base);
@@ -126,14 +126,14 @@ void mcux_gpt_isr(void *p)
 	}
 }
 
-static uint32_t mcux_gpt_get_pending_int(struct device *dev)
+static uint32_t mcux_gpt_get_pending_int(const struct device *dev)
 {
 	const struct mcux_gpt_config *config = dev->config;
 
 	return GPT_GetStatusFlags(config->base, kGPT_OutputCompare1Flag);
 }
 
-static int mcux_gpt_set_top_value(struct device *dev,
+static int mcux_gpt_set_top_value(const struct device *dev,
 				  const struct counter_top_cfg *cfg)
 {
 	const struct mcux_gpt_config *config = dev->config;
@@ -153,21 +153,21 @@ static int mcux_gpt_set_top_value(struct device *dev,
 	return 0;
 }
 
-static uint32_t mcux_gpt_get_top_value(struct device *dev)
+static uint32_t mcux_gpt_get_top_value(const struct device *dev)
 {
 	const struct mcux_gpt_config *config = dev->config;
 
 	return config->info.max_top_value;
 }
 
-static uint32_t mcux_gpt_get_max_relative_alarm(struct device *dev)
+static uint32_t mcux_gpt_get_max_relative_alarm(const struct device *dev)
 {
 	const struct mcux_gpt_config *config = dev->config;
 
 	return config->info.max_top_value;
 }
 
-static int mcux_gpt_init(struct device *dev)
+static int mcux_gpt_init(const struct device *dev)
 {
 	const struct mcux_gpt_config *config = dev->config;
 	gpt_config_t gptConfig;

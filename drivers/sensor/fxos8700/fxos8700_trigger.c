@@ -10,7 +10,7 @@
 
 LOG_MODULE_DECLARE(FXOS8700, CONFIG_SENSOR_LOG_LEVEL);
 
-static void fxos8700_gpio_callback(struct device *dev,
+static void fxos8700_gpio_callback(const struct device *dev,
 				   struct gpio_callback *cb,
 				   uint32_t pin_mask)
 {
@@ -31,7 +31,7 @@ static void fxos8700_gpio_callback(struct device *dev,
 #endif
 }
 
-static int fxos8700_handle_drdy_int(struct device *dev)
+static int fxos8700_handle_drdy_int(const struct device *dev)
 {
 	struct fxos8700_data *data = dev->data;
 
@@ -48,7 +48,7 @@ static int fxos8700_handle_drdy_int(struct device *dev)
 }
 
 #ifdef CONFIG_FXOS8700_PULSE
-static int fxos8700_handle_pulse_int(struct device *dev)
+static int fxos8700_handle_pulse_int(const struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config;
 	struct fxos8700_data *data = dev->data;
@@ -86,7 +86,7 @@ static int fxos8700_handle_pulse_int(struct device *dev)
 #endif
 
 #ifdef CONFIG_FXOS8700_MOTION
-static int fxos8700_handle_motion_int(struct device *dev)
+static int fxos8700_handle_motion_int(const struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config;
 	struct fxos8700_data *data = dev->data;
@@ -117,7 +117,7 @@ static int fxos8700_handle_motion_int(struct device *dev)
 #endif
 
 #ifdef CONFIG_FXOS8700_MAG_VECM
-static int fxos8700_handle_m_vecm_int(struct device *dev)
+static int fxos8700_handle_m_vecm_int(const struct device *dev)
 {
 	struct fxos8700_data *data = dev->driver_data;
 
@@ -136,7 +136,7 @@ static int fxos8700_handle_m_vecm_int(struct device *dev)
 
 static void fxos8700_handle_int(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct fxos8700_config *config = dev->config;
 	struct fxos8700_data *data = dev->data;
 	uint8_t int_source;
@@ -191,7 +191,7 @@ static void fxos8700_handle_int(void *arg)
 #ifdef CONFIG_FXOS8700_TRIGGER_OWN_THREAD
 static void fxos8700_thread_main(void *arg1, void *unused1, void *unused2)
 {
-	struct device *dev = (struct device *)arg1;
+	const struct device *dev = (const struct device *)arg1;
 	struct fxos8700_data *data = dev->data;
 
 	ARG_UNUSED(unused1);
@@ -214,7 +214,7 @@ static void fxos8700_work_handler(struct k_work *work)
 }
 #endif
 
-int fxos8700_trigger_set(struct device *dev,
+int fxos8700_trigger_set(const struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
@@ -300,7 +300,7 @@ exit:
 }
 
 #ifdef CONFIG_FXOS8700_PULSE
-static int fxos8700_pulse_init(struct device *dev)
+static int fxos8700_pulse_init(const struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config;
 	struct fxos8700_data *data = dev->data;
@@ -345,7 +345,7 @@ static int fxos8700_pulse_init(struct device *dev)
 #endif
 
 #ifdef CONFIG_FXOS8700_MOTION
-static int fxos8700_motion_init(struct device *dev)
+static int fxos8700_motion_init(const struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config;
 	struct fxos8700_data *data = dev->data;
@@ -373,7 +373,7 @@ static int fxos8700_motion_init(struct device *dev)
 #endif
 
 #ifdef CONFIG_FXOS8700_MAG_VECM
-static int fxos8700_m_vecm_init(struct device *dev)
+static int fxos8700_m_vecm_init(const struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config_info;
 	struct fxos8700_data *data = dev->driver_data;
@@ -410,7 +410,7 @@ static int fxos8700_m_vecm_init(struct device *dev)
 }
 #endif
 
-int fxos8700_trigger_init(struct device *dev)
+int fxos8700_trigger_init(const struct device *dev)
 {
 	const struct fxos8700_config *config = dev->config;
 	struct fxos8700_data *data = dev->data;

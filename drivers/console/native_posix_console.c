@@ -256,7 +256,7 @@ static void native_stdio_runner(void *p1, void *p2, void *p3)
 }
 #endif /* CONFIG_NATIVE_POSIX_STDIN_CONSOLE */
 
-static int native_posix_console_init(struct device *arg)
+static int native_posix_console_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

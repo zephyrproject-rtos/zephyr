@@ -12,7 +12,7 @@
 void main(void)
 {
 	const char *const devname = DT_LABEL(DT_INST(0, honeywell_mpr));
-	struct device *dev = device_get_binding(devname);
+	const struct device *dev = device_get_binding(devname);
 	int rc;
 
 	if (dev == NULL) {

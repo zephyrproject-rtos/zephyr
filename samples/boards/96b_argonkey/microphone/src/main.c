@@ -48,7 +48,7 @@ struct dmic_cfg cfg = {
 
 void signal_sampling_started(void)
 {
-	static struct device *led0, *led1;
+	static const struct device *led0, *led1;
 
 	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
 	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
@@ -63,7 +63,7 @@ void signal_sampling_started(void)
 
 void signal_sampling_stopped(void)
 {
-	static struct device *led0, *led1;
+	static const struct device *led0, *led1;
 
 	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
 	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
@@ -78,7 +78,7 @@ void signal_sampling_stopped(void)
 
 void signal_print_stopped(void)
 {
-	static struct device *led0, *led1;
+	static const struct device *led0, *led1;
 
 	led0 = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
 	gpio_pin_configure(led0, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
@@ -100,7 +100,7 @@ void main(void)
 	uint32_t ms;
 
 #ifdef CONFIG_LP3943
-	static struct device *ledc;
+	static const struct device *ledc;
 
 	ledc = device_get_binding(DT_LABEL(DT_INST(0, ti_lp3943)));
 	if (!ledc) {
@@ -127,7 +127,7 @@ void main(void)
 
 	int ret;
 
-	struct device *mic_dev = device_get_binding(DT_LABEL(DT_INST(0, st_mpxxdtyy)));
+	const struct device *mic_dev = device_get_binding(DT_LABEL(DT_INST(0, st_mpxxdtyy)));
 
 	if (!mic_dev) {
 		printk("Could not get pointer to %s device\n",

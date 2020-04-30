@@ -13,14 +13,14 @@
 #include <sys/util.h>
 
 struct apa102_data {
-	struct device *spi;
+	const struct device *spi;
 	struct spi_config cfg;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control cs_ctl;
 #endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 };
 
-static int apa102_update(struct device *dev, void *buf, size_t size)
+static int apa102_update(const struct device *dev, void *buf, size_t size)
 {
 	struct apa102_data *data = dev->data;
 	static const uint8_t zeros[] = {0, 0, 0, 0};
@@ -53,7 +53,7 @@ static int apa102_update(struct device *dev, void *buf, size_t size)
 	return spi_write(data->spi, &data->cfg, &tx);
 }
 
-static int apa102_update_rgb(struct device *dev, struct led_rgb *pixels,
+static int apa102_update_rgb(const struct device *dev, struct led_rgb *pixels,
 			     size_t count)
 {
 	uint8_t *p = (uint8_t *)pixels;
@@ -77,14 +77,14 @@ static int apa102_update_rgb(struct device *dev, struct led_rgb *pixels,
 	return apa102_update(dev, pixels, sizeof(struct led_rgb) * count);
 }
 
-static int apa102_update_channels(struct device *dev, uint8_t *channels,
+static int apa102_update_channels(const struct device *dev, uint8_t *channels,
 				  size_t num_channels)
 {
 	/* Not implemented */
 	return -EINVAL;
 }
 
-static int apa102_init(struct device *dev)
+static int apa102_init(const struct device *dev)
 {
 	struct apa102_data *data = dev->data;
 

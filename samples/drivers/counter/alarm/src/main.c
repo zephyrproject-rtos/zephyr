@@ -25,7 +25,7 @@ struct counter_alarm_cfg alarm_cfg;
 #define TIMER DT_LABEL(DT_NODELABEL(counter0))
 #endif
 
-static void test_counter_interrupt_fn(struct device *counter_dev,
+static void test_counter_interrupt_fn(const struct device *counter_dev,
 				      uint8_t chan_id, uint32_t ticks,
 				      void *user_data)
 {
@@ -64,7 +64,7 @@ static void test_counter_interrupt_fn(struct device *counter_dev,
 
 void main(void)
 {
-	struct device *counter_dev;
+	const struct device *counter_dev;
 	int err;
 
 	printk("Counter alarm sample\n\n");

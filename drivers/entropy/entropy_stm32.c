@@ -70,7 +70,7 @@ struct entropy_stm32_rng_dev_cfg {
 
 struct entropy_stm32_rng_dev_data {
 	RNG_TypeDef *rng;
-	struct device *clock;
+	const struct device *clock;
 	struct k_sem sem_lock;
 	struct k_sem sem_sync;
 
@@ -241,8 +241,9 @@ static void stm32_rng_isr(void *arg)
 	}
 }
 
-static int entropy_stm32_rng_get_entropy(struct device *device, uint8_t *buf,
-					uint16_t len)
+static int entropy_stm32_rng_get_entropy(const struct device *device,
+					 uint8_t *buf,
+					 uint16_t len)
 {
 	/* Check if this API is called on correct driver instance. */
 	__ASSERT_NO_MSG(&entropy_stm32_rng_data == DEV_DATA(device));
@@ -269,7 +270,8 @@ static int entropy_stm32_rng_get_entropy(struct device *device, uint8_t *buf,
 	return 0;
 }
 
-static int entropy_stm32_rng_get_entropy_isr(struct device *dev, uint8_t *buf,
+static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
+						uint8_t *buf,
 						uint16_t len,
 					uint32_t flags)
 {
@@ -337,7 +339,7 @@ static int entropy_stm32_rng_get_entropy_isr(struct device *dev, uint8_t *buf,
 	return cnt;
 }
 
-static int entropy_stm32_rng_init(struct device *dev)
+static int entropy_stm32_rng_init(const struct device *dev)
 {
 	struct entropy_stm32_rng_dev_data *dev_data;
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg;

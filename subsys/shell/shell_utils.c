@@ -461,13 +461,13 @@ void shell_cmd_trim(const struct shell *shell)
 	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
 }
 
-struct device *shell_device_lookup(size_t idx,
+const struct device *shell_device_lookup(size_t idx,
 				   const char *prefix)
 {
 	size_t match_idx = 0;
-	struct device *dev;
+	const struct device *dev;
 	size_t len = z_device_get_all_static(&dev);
-	struct device *dev_end = dev + len;
+	const struct device *dev_end = dev + len;
 
 	while (dev < dev_end) {
 		if (z_device_ready(dev)

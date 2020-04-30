@@ -14,7 +14,7 @@
 #define DHT_DATA_BITS_NUM			40
 
 struct dht_data {
-	struct device *gpio;
+	const struct device *gpio;
 	uint8_t sample[4];
 };
 

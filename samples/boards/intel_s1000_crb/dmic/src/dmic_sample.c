@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(dmic_sample);
 static struct k_mem_slab dmic_mem_slab;
 __attribute__((section(".dma_buffers")))
 static char audio_buffers[MIC_FRAME_BYTES][MIC_IN_BUF_COUNT];
-static struct device *dmic_device;
+static const struct device *dmic_device;
 
 static void dmic_init(void)
 {

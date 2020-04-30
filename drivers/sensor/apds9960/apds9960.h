@@ -225,11 +225,11 @@ struct apds9960_config {
 };
 
 struct apds9960_data {
-	struct device *i2c;
-	struct device *gpio;
+	const struct device *i2c;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	struct k_work work;
-	struct device *dev;
+	const struct device *dev;
 	uint16_t sample_crgb[4];
 	uint8_t pdata;
 	uint8_t gpio_pin;
@@ -257,12 +257,12 @@ static inline void apds9960_setup_int(struct apds9960_data *drv_data,
 #ifdef CONFIG_APDS9960_TRIGGER
 void apds9960_work_cb(struct k_work *work);
 
-int apds9960_attr_set(struct device *dev,
+int apds9960_attr_set(const struct device *dev,
 		      enum sensor_channel chan,
 		      enum sensor_attribute attr,
 		      const struct sensor_value *val);
 
-int apds9960_trigger_set(struct device *dev,
+int apds9960_trigger_set(const struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler);
 #endif /* CONFIG_APDS9960_TRIGGER */

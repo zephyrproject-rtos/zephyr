@@ -26,7 +26,7 @@
 #define TH02_RD_REG_MODE        0x80
 
 struct th02_data {
-	struct device *i2c;
+	const struct device *i2c;
 	uint16_t t_sample;
 	uint16_t rh_sample;
 };

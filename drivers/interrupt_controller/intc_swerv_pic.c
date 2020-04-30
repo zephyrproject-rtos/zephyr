@@ -141,7 +141,7 @@ static void swerv_pic_irq_handler(void *arg)
 	swerv_pic_write(SWERV_PIC_meigwclr(irq), 0);
 }
 
-static int swerv_pic_init(struct device *dev)
+static int swerv_pic_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	int i;

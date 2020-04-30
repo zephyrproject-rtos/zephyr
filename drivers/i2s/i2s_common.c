@@ -8,16 +8,16 @@
 #include <string.h>
 #include <drivers/i2s.h>
 
-int z_impl_i2s_buf_read(struct device *dev, void *buf, size_t *size)
+int z_impl_i2s_buf_read(const struct device *dev, void *buf, size_t *size)
 {
 	void *mem_block;
 	int ret;
 
-	ret = i2s_read((struct device *)dev, &mem_block, size);
+	ret = i2s_read((const struct device *)dev, &mem_block, size);
 
 	if (!ret) {
 		struct i2s_config *rx_cfg =
-			i2s_config_get((struct device *)dev, I2S_DIR_RX);
+			i2s_config_get((const struct device *)dev, I2S_DIR_RX);
 
 		memcpy(buf, mem_block, *size);
 		k_mem_slab_free(rx_cfg->mem_slab, &mem_block);
@@ -26,13 +26,13 @@ int z_impl_i2s_buf_read(struct device *dev, void *buf, size_t *size)
 	return ret;
 }
 
-int z_impl_i2s_buf_write(struct device *dev, void *buf, size_t size)
+int z_impl_i2s_buf_write(const struct device *dev, void *buf, size_t size)
 {
 	int ret;
 	struct i2s_config *tx_cfg;
 	void *mem_block;
 
-	tx_cfg = i2s_config_get((struct device *)dev, I2S_DIR_TX);
+	tx_cfg = i2s_config_get((const struct device *)dev, I2S_DIR_TX);
 	if (!tx_cfg) {
 		return -EIO;
 	}
@@ -48,7 +48,7 @@ int z_impl_i2s_buf_write(struct device *dev, void *buf, size_t size)
 
 	memcpy(mem_block, (void *)buf, size);
 
-	ret = i2s_write((struct device *)dev, mem_block, size);
+	ret = i2s_write((const struct device *)dev, mem_block, size);
 	if (ret != 0) {
 		k_mem_slab_free(tx_cfg->mem_slab, &mem_block);
 	}

@@ -21,7 +21,7 @@
 
 LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
-static int lps22hh_spi_read(struct device *dev, uint8_t reg_addr,
+static int lps22hh_spi_read(const struct device *dev, uint8_t reg_addr,
 			    uint8_t *value, uint8_t len)
 {
 	struct lps22hh_data *data = dev->data;
@@ -63,7 +63,7 @@ static int lps22hh_spi_read(struct device *dev, uint8_t reg_addr,
 	return 0;
 }
 
-static int lps22hh_spi_write(struct device *dev, uint8_t reg_addr,
+static int lps22hh_spi_write(const struct device *dev, uint8_t reg_addr,
 			     uint8_t *value, uint8_t len)
 {
 	struct lps22hh_data *data = dev->data;
@@ -97,7 +97,7 @@ static int lps22hh_spi_write(struct device *dev, uint8_t reg_addr,
 	return 0;
 }
 
-int lps22hh_spi_init(struct device *dev)
+int lps22hh_spi_init(const struct device *dev)
 {
 	struct lps22hh_data *data = dev->data;
 

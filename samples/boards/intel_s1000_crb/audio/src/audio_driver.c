@@ -49,10 +49,10 @@ __attribute__((section(".dma_buffers"))) static struct {
 	int32_t	mic_in[MIC_IN_BUF_COUNT][MIC_FRAME_SAMPLES];
 } audio_buffers;
 
-static struct device *codec_dev;
-static struct device *i2s_spk_out_dev;
-static struct device *i2s_host_dev;
-static struct device *dmic_device;
+static const struct device *codec_dev;
+static const struct device *i2s_spk_out_dev;
+static const struct device *i2s_host_dev;
+static const struct device *dmic_device;
 
 static struct k_mem_slab mic_in_mem_slab;
 static struct k_mem_slab host_inout_mem_slab;

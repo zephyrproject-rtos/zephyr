@@ -48,7 +48,7 @@ static void cal_lf_callback(struct onoff_manager *mgr,
 static struct onoff_client cli;
 static struct onoff_manager *mgrs;
 
-static struct device *temp_sensor;
+static const struct device *temp_sensor;
 
 static void measure_temperature(struct k_work *work);
 static K_WORK_DEFINE(temp_measure_work, measure_temperature);
@@ -226,7 +226,7 @@ static void measure_temperature(struct k_work *work)
 #define TEMP_NODE DT_INST(0, nordic_nrf_temp)
 
 #if DT_NODE_HAS_STATUS(TEMP_NODE, okay)
-static inline struct device *temp_device(void)
+static inline const struct device *temp_device(void)
 {
 	return device_get_binding(DT_LABEL(TEMP_NODE));
 }
@@ -242,7 +242,7 @@ void z_nrf_clock_calibration_init(struct onoff_manager *onoff_mgrs)
 }
 
 #if CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP
-static int temp_sensor_init(struct device *arg)
+static int temp_sensor_init(const struct device *arg)
 {
 	temp_sensor = temp_device();
 

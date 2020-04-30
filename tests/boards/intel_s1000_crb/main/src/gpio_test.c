@@ -49,15 +49,15 @@
 
 extern struct k_sem thread_sem;
 
-void gpio_test_callback(struct device *port,
-		   struct gpio_callback *cb, uint32_t pins)
+void gpio_test_callback(const struct device *port,
+			struct gpio_callback *cb, uint32_t pins)
 {
 	printk(GPIO_NAME "%d triggered\n", GPIO_INT_PIN);
 }
 
 static struct gpio_callback gpio_cb;
 
-void setup_gpio(struct device *gpio_dev)
+void setup_gpio(const struct device *gpio_dev)
 {
 	int ret;
 
@@ -94,7 +94,7 @@ void setup_gpio(struct device *gpio_dev)
 /* gpio_thread is a static thread that is spawned automatically */
 void gpio_thread(void *dummy1, void *dummy2, void *dummy3)
 {
-	struct device *gpio_dev;
+	const struct device *gpio_dev;
 	int ret;
 
 	ARG_UNUSED(dummy1);

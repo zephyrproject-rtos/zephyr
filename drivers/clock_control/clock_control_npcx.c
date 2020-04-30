@@ -32,7 +32,7 @@ struct npcx_pcc_config {
 	(struct pmc_reg *)(DRV_CONFIG(dev)->base_pmc)
 
 /* Clock controller local functions */
-static inline int npcx_clock_control_on(struct device *dev,
+static inline int npcx_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	ARG_UNUSED(dev);
@@ -44,7 +44,7 @@ static inline int npcx_clock_control_on(struct device *dev,
 	return 0;
 }
 
-static inline int npcx_clock_control_off(struct device *dev,
+static inline int npcx_clock_control_off(const struct device *dev,
 					  clock_control_subsys_t sub_system)
 {
 	ARG_UNUSED(dev);
@@ -56,9 +56,9 @@ static inline int npcx_clock_control_off(struct device *dev,
 	return 0;
 }
 
-static int npcx_clock_control_get_subsys_rate(struct device *dev,
-					 clock_control_subsys_t sub_system,
-					 uint32_t *rate)
+static int npcx_clock_control_get_subsys_rate(const struct device *dev,
+					      clock_control_subsys_t sub_system,
+					      uint32_t *rate)
 {
 	ARG_UNUSED(dev);
 	struct npcx_clk_cfg *clk_cfg = (struct npcx_clk_cfg *)(sub_system);
@@ -101,7 +101,7 @@ static struct clock_control_driver_api npcx_clock_control_api = {
 	.get_rate = npcx_clock_control_get_subsys_rate,
 };
 
-static int npcx_clock_control_init(struct device *dev)
+static int npcx_clock_control_init(const struct device *dev)
 {
 	struct cdcg_reg *inst_cdcg = HAL_CDCG_INST(dev);
 	uint32_t pmc_base = DRV_CONFIG(dev)->base_pmc;

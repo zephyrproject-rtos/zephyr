@@ -40,20 +40,21 @@ otInstance *ot = (otInstance *)0xAAAA;
 otMessage *ip_msg = (otMessage *)0xBBBB;
 
 /* forward declarations */
-static int scan_mock(struct device *dev, uint16_t duration,
+static int scan_mock(const struct device *dev, uint16_t duration,
 		     energy_scan_done_cb_t done_cb);
-static enum ieee802154_hw_caps get_capabilities(struct device *dev);
-static int cca_mock(struct device *dev);
-static int set_channel_mock(struct device *dev, uint16_t channel);
-static int filter_mock(struct device *dev, bool set,
+static enum ieee802154_hw_caps get_capabilities(const struct device *dev);
+static int cca_mock(const struct device *dev);
+static int set_channel_mock(const struct device *dev, uint16_t channel);
+static int filter_mock(const struct device *dev, bool set,
 		       enum ieee802154_filter_type type,
 		       const struct ieee802154_filter *filter);
-static int set_txpower_mock(struct device *dev, int16_t dbm);
-static int tx_mock(struct device *dev, enum ieee802154_tx_mode mode,
+static int set_txpower_mock(const struct device *dev, int16_t dbm);
+static int tx_mock(const struct device *dev, enum ieee802154_tx_mode mode,
 		   struct net_pkt *pkt, struct net_buf *frag);
-static int start_mock(struct device *dev);
-static int stop_mock(struct device *dev);
-static int configure_mock(struct device *dev, enum ieee802154_config_type type,
+static int start_mock(const struct device *dev);
+static int stop_mock(const struct device *dev);
+static int configure_mock(const struct device *dev,
+			  enum ieee802154_config_type type,
 			  const struct ieee802154_config *config);
 
 /* mocks */
@@ -75,7 +76,7 @@ static struct ieee802154_radio_api rapi = {
 
 static struct device radio = { .api = &rapi };
 
-static int scan_mock(struct device *dev, uint16_t duration,
+static int scan_mock(const struct device *dev, uint16_t duration,
 		     energy_scan_done_cb_t done_cb)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
@@ -84,7 +85,7 @@ static int scan_mock(struct device *dev, uint16_t duration,
 	return ztest_get_return_value();
 }
 
-static int rssi_scan_mock(struct device *dev, uint16_t duration,
+static int rssi_scan_mock(const struct device *dev, uint16_t duration,
 			  energy_scan_done_cb_t done_cb)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
@@ -97,7 +98,7 @@ static int rssi_scan_mock(struct device *dev, uint16_t duration,
 	return 0;
 }
 
-static int set_channel_mock(struct device *dev, uint16_t channel)
+static int set_channel_mock(const struct device *dev, uint16_t channel)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
 	ztest_check_expected_value(channel);
@@ -143,7 +144,7 @@ void otPlatRadioTxDone(otInstance *aInstance, otRadioFrame *aFrame,
 	ztest_check_expected_value(aError);
 }
 
-static enum ieee802154_hw_caps get_capabilities(struct device *dev)
+static enum ieee802154_hw_caps get_capabilities(const struct device *dev)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
 
@@ -152,14 +153,15 @@ static enum ieee802154_hw_caps get_capabilities(struct device *dev)
 	       IEEE802154_HW_ENERGY_SCAN | IEEE802154_HW_SLEEP_TO_TX;
 }
 
-static enum ieee802154_hw_caps get_capabilities_caps_mock(struct device *dev)
+static enum ieee802154_hw_caps get_capabilities_caps_mock(const struct device *dev)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
 
 	return ztest_get_return_value();
 }
 
-static int configure_mock(struct device *dev, enum ieee802154_config_type type,
+static int configure_mock(const struct device *dev,
+			  enum ieee802154_config_type type,
 			  const struct ieee802154_config *config)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
@@ -170,7 +172,7 @@ static int configure_mock(struct device *dev, enum ieee802154_config_type type,
 	return 0;
 }
 
-static int configure_match_mock(struct device *dev,
+static int configure_match_mock(const struct device *dev,
 				enum ieee802154_config_type type,
 				const struct ieee802154_config *config)
 {
@@ -197,7 +199,7 @@ static int configure_match_mock(struct device *dev,
 	return 0;
 }
 
-static int configure_promiscuous_mock(struct device *dev,
+static int configure_promiscuous_mock(const struct device *dev,
 				      enum ieee802154_config_type type,
 				      const struct ieee802154_config *config)
 {
@@ -209,14 +211,14 @@ static int configure_promiscuous_mock(struct device *dev,
 	return 0;
 }
 
-static int cca_mock(struct device *dev)
+static int cca_mock(const struct device *dev)
 {
 	/* not using assert to verify function called */
 	ztest_check_expected_value(dev);
 	return 0;
 }
 
-static int filter_mock(struct device *dev, bool set,
+static int filter_mock(const struct device *dev, bool set,
 		       enum ieee802154_filter_type type,
 		       const struct ieee802154_filter *filter)
 {
@@ -241,7 +243,7 @@ static int filter_mock(struct device *dev, bool set,
 	return 0;
 }
 
-static int set_txpower_mock(struct device *dev, int16_t dbm)
+static int set_txpower_mock(const struct device *dev, int16_t dbm)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
 	ztest_check_expected_value(dbm);
@@ -249,7 +251,7 @@ static int set_txpower_mock(struct device *dev, int16_t dbm)
 	return 0;
 }
 
-static int tx_mock(struct device *dev, enum ieee802154_tx_mode mode,
+static int tx_mock(const struct device *dev, enum ieee802154_tx_mode mode,
 		   struct net_pkt *pkt, struct net_buf *frag)
 {
 	zassert_equal(dev, &radio, "Device handle incorrect.");
@@ -258,19 +260,19 @@ static int tx_mock(struct device *dev, enum ieee802154_tx_mode mode,
 	return 0;
 }
 
-static int start_mock(struct device *dev)
+static int start_mock(const struct device *dev)
 {
 	ztest_check_expected_value(dev);
 	return 0;
 }
 
-static int stop_mock(struct device *dev)
+static int stop_mock(const struct device *dev)
 {
 	ztest_check_expected_value(dev);
 	return 0;
 }
 
-struct device *device_get_binding_stub(const char *name)
+const struct device *device_get_binding_stub(const char *name)
 {
 	return &radio;
 }

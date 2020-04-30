@@ -22,7 +22,7 @@
 #define MAX44009_REG_LUX_LOW_BYTE	0x04
 
 struct max44009_data {
-	struct device *i2c;
+	const struct device *i2c;
 	uint16_t sample;
 };
 

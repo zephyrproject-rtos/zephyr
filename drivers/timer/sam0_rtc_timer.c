@@ -175,7 +175,7 @@ static void rtc_isr(void *arg)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 

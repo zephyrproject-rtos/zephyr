@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(i2c_imx);
 
 struct i2c_imx_config {
 	I2C_Type *base;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
 };
 
@@ -47,7 +47,8 @@ struct i2c_imx_data {
 	struct k_sem device_sync_sem;
 };
 
-static bool i2c_imx_write(struct device *dev, uint8_t *txBuffer, uint8_t txSize)
+static bool i2c_imx_write(const struct device *dev, uint8_t *txBuffer,
+			  uint8_t txSize)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = DEV_DATA(dev);
@@ -80,7 +81,8 @@ static bool i2c_imx_write(struct device *dev, uint8_t *txBuffer, uint8_t txSize)
 	return transfer->ack;
 }
 
-static void i2c_imx_read(struct device *dev, uint8_t *rxBuffer, uint8_t rxSize)
+static void i2c_imx_read(const struct device *dev, uint8_t *rxBuffer,
+			 uint8_t rxSize)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = DEV_DATA(dev);
@@ -119,7 +121,8 @@ static void i2c_imx_read(struct device *dev, uint8_t *rxBuffer, uint8_t rxSize)
 
 }
 
-static int i2c_imx_configure(struct device *dev, uint32_t dev_config_raw)
+static int i2c_imx_configure(const struct device *dev,
+			     uint32_t dev_config_raw)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = DEV_DATA(dev);
@@ -173,7 +176,8 @@ static int i2c_imx_configure(struct device *dev, uint32_t dev_config_raw)
 	return 0;
 }
 
-static int i2c_imx_send_addr(struct device *dev, uint16_t addr, uint8_t flags)
+static int i2c_imx_send_addr(const struct device *dev, uint16_t addr,
+			     uint8_t flags)
 {
 	uint8_t byte0 = addr << 1;
 
@@ -181,8 +185,8 @@ static int i2c_imx_send_addr(struct device *dev, uint16_t addr, uint8_t flags)
 	return i2c_imx_write(dev, &byte0, 1);
 }
 
-static int i2c_imx_transfer(struct device *dev, struct i2c_msg *msgs,
-		uint8_t num_msgs, uint16_t addr)
+static int i2c_imx_transfer(const struct device *dev, struct i2c_msg *msgs,
+			    uint8_t num_msgs, uint16_t addr)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = DEV_DATA(dev);
@@ -267,7 +271,7 @@ finish:
 
 static void i2c_imx_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = DEV_DATA(dev);
 	struct i2c_master_transfer *transfer = &data->transfer;
@@ -332,7 +336,7 @@ static void i2c_imx_isr(void *arg)
 	}
 }
 
-static int i2c_imx_init(struct device *dev)
+static int i2c_imx_init(const struct device *dev)
 {
 	const struct i2c_imx_config *config = DEV_CFG(dev);
 	struct i2c_imx_data *data = DEV_DATA(dev);

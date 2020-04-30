@@ -126,13 +126,13 @@ struct net_wifi_mgmt_offload {
 	 * result by the driver. The wifi mgmt part will take care of
 	 * raising the necessary event etc...
 	 */
-	int (*scan)(struct device *dev, scan_result_cb_t cb);
-	int (*connect)(struct device *dev,
+	int (*scan)(const struct device *dev, scan_result_cb_t cb);
+	int (*connect)(const struct device *dev,
 		       struct wifi_connect_req_params *params);
-	int (*disconnect)(struct device *dev);
-	int (*ap_enable)(struct device *dev,
+	int (*disconnect)(const struct device *dev);
+	int (*ap_enable)(const struct device *dev,
 			 struct wifi_connect_req_params *params);
-	int (*ap_disable)(struct device *dev);
+	int (*ap_disable)(const struct device *dev);
 };
 
 /* Make sure that the network interface API is properly setup inside

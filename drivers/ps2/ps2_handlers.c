@@ -30,7 +30,7 @@ Z_SYSCALL_HANDLER(ps2_read, dev, value)
 
 Z_SYSCALL_HANDLER(ps2_enable_callback)
 {
-	return z_impl_ps2_enable_callback((struct device *)dev);
+	return z_impl_ps2_enable_callback((const struct device *)dev);
 }
 
 Z_SYSCALL_HANDLER(ps2_disable_callback, dev)

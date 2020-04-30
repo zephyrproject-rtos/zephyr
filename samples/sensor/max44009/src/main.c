@@ -17,7 +17,7 @@
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	struct sensor_value val;
 	uint32_t lum = 0U;
 

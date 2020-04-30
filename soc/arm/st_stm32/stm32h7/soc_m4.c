@@ -58,7 +58,7 @@ void stm32h7_m4_boot_stop(void)
  *
  * @return 0
  */
-static int stm32h7_m4_init(struct device *arg)
+static int stm32h7_m4_init(const struct device *arg)
 {
 	uint32_t key;
 

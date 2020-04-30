@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 #include <drivers/ipm.h>
 #include <ipm/ipm_cavs_idc.h>
 
-static struct device *idc;
+static const struct device *idc;
 #endif
 extern void __start(void);
 

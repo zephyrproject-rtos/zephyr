@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(i2c_mcux);
 struct i2c_mcux_config {
 	I2C_Type *base;
 	clock_name_t clock_source;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 	uint32_t bitrate;
 };
 
@@ -38,7 +38,8 @@ struct i2c_mcux_data {
 	status_t callback_status;
 };
 
-static int i2c_mcux_configure(struct device *dev, uint32_t dev_config_raw)
+static int i2c_mcux_configure(const struct device *dev,
+			      uint32_t dev_config_raw)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	const struct i2c_mcux_config *config = DEV_CFG(dev);
@@ -76,7 +77,7 @@ static int i2c_mcux_configure(struct device *dev, uint32_t dev_config_raw)
 static void i2c_mcux_master_transfer_callback(I2C_Type *base,
 		i2c_master_handle_t *handle, status_t status, void *userData)
 {
-	struct device *dev = userData;
+	const struct device *dev = userData;
 	struct i2c_mcux_data *data = DEV_DATA(dev);
 
 	ARG_UNUSED(handle);
@@ -101,8 +102,8 @@ static uint32_t i2c_mcux_convert_flags(int msg_flags)
 	return flags;
 }
 
-static int i2c_mcux_transfer(struct device *dev, struct i2c_msg *msgs,
-		uint8_t num_msgs, uint16_t addr)
+static int i2c_mcux_transfer(const struct device *dev, struct i2c_msg *msgs,
+			     uint8_t num_msgs, uint16_t addr)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_mcux_data *data = DEV_DATA(dev);
@@ -164,14 +165,14 @@ static int i2c_mcux_transfer(struct device *dev, struct i2c_msg *msgs,
 
 static void i2c_mcux_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_mcux_data *data = DEV_DATA(dev);
 
 	I2C_MasterTransferHandleIRQ(base, &data->handle);
 }
 
-static int i2c_mcux_init(struct device *dev)
+static int i2c_mcux_init(const struct device *dev)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	const struct i2c_mcux_config *config = DEV_CFG(dev);

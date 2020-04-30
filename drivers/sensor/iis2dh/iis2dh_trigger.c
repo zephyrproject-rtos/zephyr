@@ -20,7 +20,7 @@ LOG_MODULE_DECLARE(IIS2DH, CONFIG_SENSOR_LOG_LEVEL);
 /**
  * iis2dh_enable_int - enable selected int pin to generate interrupt
  */
-static int iis2dh_enable_drdy(struct device *dev,
+static int iis2dh_enable_drdy(const struct device *dev,
 			      enum sensor_trigger_type type, int enable)
 {
 	struct iis2dh_data *iis2dh = dev->data;
@@ -37,7 +37,7 @@ static int iis2dh_enable_drdy(struct device *dev,
 /**
  * iis2dh_trigger_set - link external trigger to event data ready
  */
-int iis2dh_trigger_set(struct device *dev,
+int iis2dh_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
@@ -59,7 +59,7 @@ int iis2dh_trigger_set(struct device *dev,
 	}
 }
 
-static int iis2dh_handle_drdy_int(struct device *dev)
+static int iis2dh_handle_drdy_int(const struct device *dev)
 {
 	struct iis2dh_data *data = dev->data;
 
@@ -81,7 +81,7 @@ static int iis2dh_handle_drdy_int(struct device *dev)
  */
 static void iis2dh_handle_interrupt(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct iis2dh_data *iis2dh = dev->data;
 	const struct iis2dh_device_config *cfg = dev->config;
 
@@ -91,7 +91,7 @@ static void iis2dh_handle_interrupt(void *arg)
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void iis2dh_gpio_callback(struct device *dev,
+static void iis2dh_gpio_callback(const struct device *dev,
 				 struct gpio_callback *cb, uint32_t pins)
 {
 	struct iis2dh_data *iis2dh =
@@ -114,7 +114,7 @@ static void iis2dh_gpio_callback(struct device *dev,
 #ifdef CONFIG_IIS2DH_TRIGGER_OWN_THREAD
 static void iis2dh_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct iis2dh_data *iis2dh = dev->data;
 
 	ARG_UNUSED(unused);
@@ -136,7 +136,7 @@ static void iis2dh_work_cb(struct k_work *work)
 }
 #endif /* CONFIG_IIS2DH_TRIGGER_GLOBAL_THREAD */
 
-int iis2dh_init_interrupt(struct device *dev)
+int iis2dh_init_interrupt(const struct device *dev)
 {
 	struct iis2dh_data *iis2dh = dev->data;
 	const struct iis2dh_device_config *cfg = dev->config;

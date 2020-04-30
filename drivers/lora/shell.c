@@ -89,9 +89,9 @@ static int parse_freq(uint32_t *out, const struct shell *shell, const char *arg)
 	return 0;
 }
 
-static struct device *get_modem(const struct shell *shell)
+static const struct device *get_modem(const struct shell *shell)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	dev = device_get_binding(DEFAULT_RADIO);
 	if (!dev) {
@@ -102,10 +102,10 @@ static struct device *get_modem(const struct shell *shell)
 	return dev;
 }
 
-static struct device *get_configured_modem(const struct shell *shell)
+static const struct device *get_configured_modem(const struct shell *shell)
 {
 	int ret;
-	struct device *dev;
+	const struct device *dev;
 
 	dev = get_modem(shell);
 	if (!dev) {
@@ -232,7 +232,7 @@ static int cmd_lora_send(const struct shell *shell,
 			size_t argc, char **argv)
 {
 	int ret;
-	struct device *dev;
+	const struct device *dev;
 
 	modem_config.tx = true;
 	dev = get_configured_modem(shell);
@@ -252,7 +252,7 @@ static int cmd_lora_send(const struct shell *shell,
 static int cmd_lora_recv(const struct shell *shell, size_t argc, char **argv)
 {
 	static char buf[0xff];
-	struct device *dev;
+	const struct device *dev;
 	long timeout = 0;
 	int ret;
 	int16_t rssi;
@@ -286,7 +286,7 @@ static int cmd_lora_recv(const struct shell *shell, size_t argc, char **argv)
 static int cmd_lora_test_cw(const struct shell *shell,
 			    size_t argc, char **argv)
 {
-	struct device *dev;
+	const struct device *dev;
 	int ret;
 	uint32_t freq;
 	long power, duration;

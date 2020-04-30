@@ -49,7 +49,7 @@ static const struct pin_config pinconf[] = {
 #endif
 };
 
-static int pinmux_black_f407ve_init(struct device *port)
+static int pinmux_black_f407ve_init(const struct device *port)
 {
 	ARG_UNUSED(port);
 

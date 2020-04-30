@@ -528,7 +528,7 @@ struct lsm9ds0_mfd_config {
 };
 
 struct lsm9ds0_mfd_data {
-	struct device *i2c_master;
+	const struct device *i2c_master;
 
 #if !defined(LSM9DS0_MFD_ACCEL_DISABLED)
 	int sample_accel_x, sample_accel_y, sample_accel_z;

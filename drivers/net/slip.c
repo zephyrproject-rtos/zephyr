@@ -106,7 +106,7 @@ static void slip_writeb_esc(unsigned char c)
 	}
 }
 
-static int slip_send(struct device *dev, struct net_pkt *pkt)
+static int slip_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_buf *buf;
 	uint8_t *ptr;
@@ -363,7 +363,7 @@ static uint8_t *recv_cb(uint8_t *buf, size_t *off)
 	return buf;
 }
 
-static int slip_init(struct device *dev)
+static int slip_init(const struct device *dev)
 {
 	struct slip_context *slip = dev->data;
 
@@ -434,7 +434,7 @@ use_random_mac:
 static struct slip_context slip_context_data;
 
 #if defined(CONFIG_SLIP_TAP)
-static enum ethernet_hw_caps eth_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

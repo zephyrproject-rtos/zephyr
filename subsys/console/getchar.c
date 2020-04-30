@@ -49,7 +49,7 @@ int console_getchar(void)
 
 int console_init(void)
 {
-	struct device *uart_dev;
+	const struct device *uart_dev;
 	int ret;
 
 	uart_dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);

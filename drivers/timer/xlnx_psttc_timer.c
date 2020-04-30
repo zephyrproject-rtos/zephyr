@@ -96,7 +96,7 @@ static void ttc_isr(void *arg)
 	z_clock_announce(ticks);
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	uint32_t reg_val;
 

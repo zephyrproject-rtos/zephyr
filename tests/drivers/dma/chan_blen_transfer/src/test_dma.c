@@ -34,7 +34,7 @@ static const char tx_data[] = "It is harder to be kind than to be wise........";
 static char rx_data[RX_BUFF_SIZE] = { 0 };
 #endif
 
-static void test_done(struct device *dma_dev, void *arg,
+static void test_done(const struct device *dma_dev, void *arg,
 		      uint32_t id, int error_code)
 {
 	if (error_code == 0) {
@@ -48,7 +48,7 @@ static int test_task(uint32_t chan_id, uint32_t blen)
 {
 	struct dma_config dma_cfg = { 0 };
 	struct dma_block_config dma_block_cfg = { 0 };
-	struct device *dma = device_get_binding(DMA_DEVICE_NAME);
+	const struct device *dma = device_get_binding(DMA_DEVICE_NAME);
 
 	if (!dma) {
 		TC_PRINT("Cannot get dma controller\n");

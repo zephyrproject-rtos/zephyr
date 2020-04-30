@@ -408,7 +408,7 @@ void z_x86_dump_page_tables(pentry_t *ptables)
 #define DUMP_PAGE_TABLES 0
 
 #if DUMP_PAGE_TABLES
-static int dump_kernel_tables(struct device *unused)
+static int dump_kernel_tables(const struct device *unused)
 {
 	z_x86_dump_page_tables(&z_x86_kernel_ptables);
 

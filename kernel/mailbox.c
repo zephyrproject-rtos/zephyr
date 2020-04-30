@@ -54,7 +54,7 @@ struct k_mbox *_trace_list_k_mbox;
 /*
  * Do run-time initialization of mailbox object subsystem.
  */
-static int init_mbox_module(struct device *dev)
+static int init_mbox_module(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

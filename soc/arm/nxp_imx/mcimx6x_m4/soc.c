@@ -169,7 +169,7 @@ static void SOC_ClockInit(void)
  *
  * @return 0
  */
-static int mcimx6x_m4_init(struct device *arg)
+static int mcimx6x_m4_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

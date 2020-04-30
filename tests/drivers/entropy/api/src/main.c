@@ -24,7 +24,7 @@
 #define BUFFER_LENGTH 10
 #define RECHECK_RANDOM_ENTROPY 0x10
 
-static int random_entropy(struct device *dev, char *buffer, char num)
+static int random_entropy(const struct device *dev, char *buffer, char num)
 {
 	int ret, i;
 	int count = 0;
@@ -67,7 +67,7 @@ static int random_entropy(struct device *dev, char *buffer, char num)
  */
 static int get_entropy(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	uint8_t buffer[BUFFER_LENGTH] = { 0 };
 	int ret;
 

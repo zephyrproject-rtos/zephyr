@@ -333,7 +333,7 @@ USBD_CFG_DATA_DEFINE(primary, hci) struct usb_cfg_data bluetooth_config = {
 	.endpoint = bluetooth_ep_data,
 };
 
-static int bluetooth_init(struct device *dev)
+static int bluetooth_init(const struct device *dev)
 {
 	int ret;
 

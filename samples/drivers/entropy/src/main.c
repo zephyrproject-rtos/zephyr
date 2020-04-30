@@ -10,7 +10,7 @@
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	printf("Entropy Example! %s\n", CONFIG_ARCH);
 

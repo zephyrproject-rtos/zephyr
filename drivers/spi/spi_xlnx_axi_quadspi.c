@@ -82,7 +82,7 @@ LOG_MODULE_REGISTER(xlnx_quadspi, CONFIG_SPI_LOG_LEVEL);
 
 struct xlnx_quadspi_config {
 	mm_reg_t base;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 	uint8_t num_ss_bits;
 	uint8_t num_xfer_bytes;
 };
@@ -91,14 +91,16 @@ struct xlnx_quadspi_data {
 	struct spi_context ctx;
 };
 
-static inline uint32_t xlnx_quadspi_read32(struct device *dev, mm_reg_t offset)
+static inline uint32_t xlnx_quadspi_read32(const struct device *dev,
+					   mm_reg_t offset)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
 
 	return sys_read32(config->base + offset);
 }
 
-static inline void xlnx_quadspi_write32(struct device *dev, uint32_t value,
+static inline void xlnx_quadspi_write32(const struct device *dev,
+					uint32_t value,
 					mm_reg_t offset)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
@@ -106,7 +108,7 @@ static inline void xlnx_quadspi_write32(struct device *dev, uint32_t value,
 	sys_write32(value, config->base + offset);
 }
 
-static void xlnx_quadspi_cs_control(struct device *dev, bool on)
+static void xlnx_quadspi_cs_control(const struct device *dev, bool on)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
 	struct xlnx_quadspi_data *data = dev->data;
@@ -130,7 +132,7 @@ static void xlnx_quadspi_cs_control(struct device *dev, bool on)
 	spi_context_cs_control(ctx, on);
 }
 
-static int xlnx_quadspi_configure(struct device *dev,
+static int xlnx_quadspi_configure(const struct device *dev,
 				  const struct spi_config *spi_cfg)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
@@ -219,7 +221,7 @@ static int xlnx_quadspi_configure(struct device *dev,
 	return 0;
 }
 
-static void xlnx_quadspi_start_tx(struct device *dev)
+static void xlnx_quadspi_start_tx(const struct device *dev)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
 	struct xlnx_quadspi_data *data = dev->data;
@@ -308,7 +310,7 @@ static void xlnx_quadspi_start_tx(struct device *dev)
 	}
 }
 
-static int xlnx_quadspi_transceive(struct device *dev,
+static int xlnx_quadspi_transceive(const struct device *dev,
 				   const struct spi_config *spi_cfg,
 				   const struct spi_buf_set *tx_bufs,
 				   const struct spi_buf_set *rx_bufs,
@@ -340,7 +342,7 @@ out:
 	return ret;
 }
 
-static int xlnx_quadspi_transceive_blocking(struct device *dev,
+static int xlnx_quadspi_transceive_blocking(const struct device *dev,
 					    const struct spi_config *spi_cfg,
 					    const struct spi_buf_set *tx_bufs,
 					    const struct spi_buf_set *rx_bufs)
@@ -350,7 +352,7 @@ static int xlnx_quadspi_transceive_blocking(struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int xlnx_quadspi_transceive_async(struct device *dev,
+static int xlnx_quadspi_transceive_async(const struct device *dev,
 					 const struct spi_config *spi_cfg,
 					 const struct spi_buf_set *tx_bufs,
 					 const struct spi_buf_set *rx_bufs,
@@ -361,7 +363,7 @@ static int xlnx_quadspi_transceive_async(struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int xlnx_quadspi_release(struct device *dev,
+static int xlnx_quadspi_release(const struct device *dev,
 				const struct spi_config *spi_cfg)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
@@ -383,7 +385,7 @@ static int xlnx_quadspi_release(struct device *dev,
 
 static void xlnx_quadspi_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct xlnx_quadspi_config *config = dev->config;
 	struct xlnx_quadspi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
@@ -433,7 +435,7 @@ static void xlnx_quadspi_isr(void *arg)
 	}
 }
 
-static int xlnx_quadspi_init(struct device *dev)
+static int xlnx_quadspi_init(const struct device *dev)
 {
 	const struct xlnx_quadspi_config *config = dev->config;
 	struct xlnx_quadspi_data *data = dev->data;

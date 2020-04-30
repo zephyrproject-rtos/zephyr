@@ -58,7 +58,7 @@ static struct gpio_callback callback[4];
 #define MOUSE_BTN_MIDDLE	BIT(2)
 
 
-static void left_button(struct device *gpio, struct gpio_callback *cb,
+static void left_button(const struct device *gpio, struct gpio_callback *cb,
 			uint32_t pins)
 {
 	uint32_t cur_val;
@@ -78,7 +78,7 @@ static void left_button(struct device *gpio, struct gpio_callback *cb,
 }
 
 #ifdef PORT1
-static void right_button(struct device *gpio, struct gpio_callback *cb,
+static void right_button(const struct device *gpio, struct gpio_callback *cb,
 			 uint32_t pins)
 {
 	uint32_t cur_val;
@@ -98,9 +98,10 @@ static void right_button(struct device *gpio, struct gpio_callback *cb,
 }
 #endif
 
-int callbacks_configure(struct device *gpio, uint32_t pin, int flags,
-			void (*handler)(struct device*, struct gpio_callback*,
-			uint32_t), struct gpio_callback *callback, uint32_t *val)
+int callbacks_configure(const struct device *gpio, uint32_t pin, int flags,
+			void (*handler)(const struct device *, struct gpio_callback*,
+					uint32_t),
+			struct gpio_callback *callback, uint32_t *val)
 {
 	int ret;
 
@@ -125,7 +126,7 @@ int callbacks_configure(struct device *gpio, uint32_t pin, int flags,
 	return 0;
 }
 
-static bool read_accel(struct device *dev)
+static bool read_accel(const struct device *dev)
 {
 	struct sensor_value val[3];
 	int ret;
@@ -158,7 +159,8 @@ static bool read_accel(struct device *dev)
 	}
 }
 
-static void trigger_handler(struct device *dev, struct sensor_trigger *tr)
+static void trigger_handler(const struct device *dev,
+			    struct sensor_trigger *tr)
 {
 	ARG_UNUSED(tr);
 
@@ -179,7 +181,7 @@ void main(void)
 {
 	int ret;
 	uint8_t report[4] = { 0x00 };
-	struct device *led_dev, *accel_dev, *hid_dev;
+	const struct device *led_dev, *accel_dev, *hid_dev;
 
 	led_dev = device_get_binding(LED_PORT);
 	if (led_dev == NULL) {

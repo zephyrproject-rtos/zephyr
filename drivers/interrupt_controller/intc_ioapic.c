@@ -120,7 +120,7 @@ static void IoApicRedUpdateLo(unsigned int irq, uint32_t value,
  *
  * @return N/A
  */
-int ioapic_init(struct device *unused)
+int ioapic_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -237,7 +237,7 @@ uint32_t restore_flags(unsigned int irq)
 }
 
 
-int ioapic_suspend(struct device *port)
+int ioapic_suspend(const struct device *port)
 {
 	int irq;
 	uint32_t rte_lo;
@@ -259,7 +259,7 @@ int ioapic_suspend(struct device *port)
 	return 0;
 }
 
-int ioapic_resume_from_suspend(struct device *port)
+int ioapic_resume_from_suspend(const struct device *port)
 {
 	int irq;
 	uint32_t flags;
@@ -293,7 +293,8 @@ int ioapic_resume_from_suspend(struct device *port)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-static int ioapic_device_ctrl(struct device *device, uint32_t ctrl_command,
+static int ioapic_device_ctrl(const struct device *device,
+			      uint32_t ctrl_command,
 			      void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;

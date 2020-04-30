@@ -42,13 +42,14 @@ struct dacx0508_config {
 };
 
 struct dacx0508_data {
-	struct device *spi_dev;
+	const struct device *spi_dev;
 	struct spi_cs_control spi_cs;
 	struct spi_config spi_cfg;
 	uint8_t configured;
 };
 
-static int dacx0508_reg_read(struct device *dev, uint8_t addr, uint8_t *data)
+static int dacx0508_reg_read(const struct device *dev, uint8_t addr,
+			     uint8_t *data)
 {
 	struct dacx0508_data *dev_data = dev->data;
 	const struct spi_buf buf[2] = {
@@ -96,7 +97,8 @@ static int dacx0508_reg_read(struct device *dev, uint8_t addr, uint8_t *data)
 	return 0;
 }
 
-static int dacx0508_reg_write(struct device *dev, uint8_t addr,	uint8_t *data)
+static int dacx0508_reg_write(const struct device *dev, uint8_t addr,
+			      	uint8_t *data)
 {
 	struct dacx0508_data *dev_data = dev->data;
 	const struct spi_buf buf[2] = {
@@ -122,7 +124,7 @@ static int dacx0508_reg_write(struct device *dev, uint8_t addr,	uint8_t *data)
 	return spi_write(dev_data->spi_dev, &dev_data->spi_cfg, &tx);
 }
 
-int dacx0508_reg_update(struct device *dev, uint8_t addr,
+int dacx0508_reg_update(const struct device *dev, uint8_t addr,
 			 uint16_t mask, bool setting)
 {
 	uint8_t regval[2] = {0, };
@@ -152,7 +154,7 @@ int dacx0508_reg_update(struct device *dev, uint8_t addr,
 	return 0;
 }
 
-static int dacx0508_channel_setup(struct device *dev,
+static int dacx0508_channel_setup(const struct device *dev,
 				   const struct dac_channel_cfg *channel_cfg)
 {
 	const struct dacx0508_config *config = dev->config;
@@ -173,7 +175,7 @@ static int dacx0508_channel_setup(struct device *dev,
 	return 0;
 }
 
-static int dacx0508_write_value(struct device *dev, uint8_t channel,
+static int dacx0508_write_value(const struct device *dev, uint8_t channel,
 				uint32_t value)
 {
 	const struct dacx0508_config *config = dev->config;
@@ -208,7 +210,7 @@ static int dacx0508_write_value(struct device *dev, uint8_t channel,
 	return 0;
 }
 
-static int dacx0508_soft_reset(struct device *dev)
+static int dacx0508_soft_reset(const struct device *dev)
 {
 	uint8_t regval[2] = {0, DACX0508_MASK_TRIGGER_SOFT_RESET};
 	int ret;
@@ -222,7 +224,7 @@ static int dacx0508_soft_reset(struct device *dev)
 	return 0;
 }
 
-static int dacx0508_device_id_check(struct device *dev)
+static int dacx0508_device_id_check(const struct device *dev)
 {
 	const struct dacx0508_config *config = dev->config;
 	uint8_t regval[2] = {0, };
@@ -252,7 +254,7 @@ static int dacx0508_device_id_check(struct device *dev)
 	return 0;
 }
 
-static int dacx0508_setup(struct device *dev)
+static int dacx0508_setup(const struct device *dev)
 {
 	const struct dacx0508_config *config = dev->config;
 	uint8_t regval[2] = {0, }, tmp = 0;
@@ -329,7 +331,7 @@ static int dacx0508_setup(struct device *dev)
 	return 0;
 }
 
-static int dacx0508_init(struct device *dev)
+static int dacx0508_init(const struct device *dev)
 {
 	const struct dacx0508_config *config = dev->config;
 	struct dacx0508_data *data = dev->data;

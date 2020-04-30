@@ -55,7 +55,7 @@ extern void test_mmio_device_map(void);
  */
 void test_dummy_device(void)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	/* Validates device binding for a non-existing device object */
 	dev = device_get_binding(DUMMY_PORT_1);
@@ -84,7 +84,7 @@ void test_dummy_device(void)
  */
 static void test_dynamic_name(void)
 {
-	struct device *mux;
+	const struct device *mux;
 	char name[sizeof(DUMMY_PORT_2)];
 
 	snprintk(name, sizeof(name), "%s", DUMMY_PORT_2);
@@ -102,7 +102,7 @@ static void test_dynamic_name(void)
  */
 static void test_bogus_dynamic_name(void)
 {
-	struct device *mux;
+	const struct device *mux;
 	char name[64];
 
 	snprintk(name, sizeof(name), "ANOTHER_BOGUS_NAME");
@@ -127,22 +127,22 @@ static int add_init_record(bool pre_kernel)
 	return 0;
 }
 
-static int pre1_fn(struct device *dev)
+static int pre1_fn(const struct device *dev)
 {
 	return add_init_record(true);
 }
 
-static int pre2_fn(struct device *dev)
+static int pre2_fn(const struct device *dev)
 {
 	return add_init_record(true);
 }
 
-static int post_fn(struct device *dev)
+static int post_fn(const struct device *dev)
 {
 	return add_init_record(false);
 }
 
-static int app_fn(struct device *dev)
+static int app_fn(const struct device *dev)
 {
 	return add_init_record(false);
 }
@@ -196,7 +196,7 @@ void test_pre_kernel_detection(void)
  */
 static void test_build_suspend_device_list(void)
 {
-	struct device *devices;
+	struct device const *devices;
 	size_t devcount = z_device_get_all_static(&devices);
 
 	zassert_false((devcount == 0), NULL);
@@ -215,7 +215,7 @@ static void test_build_suspend_device_list(void)
  */
 void test_dummy_device_pm(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	int busy, ret;
 
 	dev = device_get_binding(DUMMY_PORT_2);
@@ -343,7 +343,7 @@ void test_device_init_priority(void)
  */
 void test_abstraction_driver_common(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	int ret;
 	int foo = 2;
 	int bar = 1;

@@ -60,16 +60,16 @@ struct ft5336_config {
 /** FT5336 data. */
 struct ft5336_data {
 	/** Device pointer. */
-	struct device *dev;
+	const struct device *dev;
 	/** I2C controller device. */
-	struct device *i2c;
+	const struct device *i2c;
 	/** KSCAN Callback. */
 	kscan_callback_t callback;
 	/** Work queue (for deferred read). */
 	struct k_work work;
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
 	/** Interrupt GPIO controller. */
-	struct device *int_gpio;
+	const struct device *int_gpio;
 	/** Interrupt GPIO callback. */
 	struct gpio_callback int_gpio_cb;
 #else
@@ -78,7 +78,7 @@ struct ft5336_data {
 #endif
 };
 
-static int ft5336_process(struct device *dev)
+static int ft5336_process(const struct device *dev)
 {
 	const struct ft5336_config *config = dev->config;
 	struct ft5336_data *data = dev->data;
@@ -131,7 +131,8 @@ static void ft5336_work_handler(struct k_work *work)
 }
 
 #ifdef CONFIG_KSCAN_FT5336_INTERRUPT
-static void ft5336_isr_handler(struct device *dev, struct gpio_callback *cb, uint32_t pins)
+static void ft5336_isr_handler(const struct device *dev,
+			       struct gpio_callback *cb, uint32_t pins)
 {
 	struct ft5336_data *data = CONTAINER_OF(cb, struct ft5336_data, int_gpio_cb);
 
@@ -146,7 +147,8 @@ static void ft5336_timer_handler(struct k_timer *timer)
 }
 #endif
 
-static int ft5336_configure(struct device *dev, kscan_callback_t callback)
+static int ft5336_configure(const struct device *dev,
+			    kscan_callback_t callback)
 {
 	struct ft5336_data *data = dev->data;
 
@@ -160,7 +162,7 @@ static int ft5336_configure(struct device *dev, kscan_callback_t callback)
 	return 0;
 }
 
-static int ft5336_enable_callback(struct device *dev)
+static int ft5336_enable_callback(const struct device *dev)
 {
 	struct ft5336_data *data = dev->data;
 
@@ -174,7 +176,7 @@ static int ft5336_enable_callback(struct device *dev)
 	return 0;
 }
 
-static int ft5336_disable_callback(struct device *dev)
+static int ft5336_disable_callback(const struct device *dev)
 {
 	struct ft5336_data *data = dev->data;
 
@@ -187,7 +189,7 @@ static int ft5336_disable_callback(struct device *dev)
 	return 0;
 }
 
-static int ft5336_init(struct device *dev)
+static int ft5336_init(const struct device *dev)
 {
 	const struct ft5336_config *config = dev->config;
 	struct ft5336_data *data = dev->data;

@@ -75,7 +75,8 @@ static void set_millis(struct sensor_value *val, int val_millis)
  * @return 0 if successful
  * @return -ENOTSUP for unsupported channels
  */
-static int max17055_channel_get(struct device *dev, enum sensor_channel chan,
+static int max17055_channel_get(const struct device *dev,
+				enum sensor_channel chan,
 				struct sensor_value *valp)
 {
 	const struct max17055_config *const config = dev->config;
@@ -158,7 +159,8 @@ static int max17055_channel_get(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int max17055_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int max17055_sample_fetch(const struct device *dev,
+				 enum sensor_channel chan)
 {
 	struct max17055_data *priv = dev->data;
 	struct {
@@ -197,7 +199,7 @@ static int max17055_sample_fetch(struct device *dev, enum sensor_channel chan)
  * @return 0 for success
  * @return -EINVAL if the I2C controller could not be found
  */
-static int max17055_gauge_init(struct device *dev)
+static int max17055_gauge_init(const struct device *dev)
 {
 	struct max17055_data *priv = dev->data;
 	const struct max17055_config *const config = dev->config;

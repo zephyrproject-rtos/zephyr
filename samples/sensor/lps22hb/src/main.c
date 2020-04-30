@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <sys/util.h>
 
-static void process_sample(struct device *dev)
+static void process_sample(const struct device *dev)
 {
 	static unsigned int obs;
 	struct sensor_value pressure, temp;
@@ -43,7 +43,7 @@ static void process_sample(struct device *dev)
 
 void main(void)
 {
-	struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, st_lps22hb_press)));
+	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, st_lps22hb_press)));
 
 	if (dev == NULL) {
 		printf("Could not get LPS22HB device\n");

@@ -64,16 +64,16 @@ BUILD_ASSERT(DIO2_TX_ENABLE,
 #define SX126X_CALIBRATION_ALL 0x7f
 
 struct sx126x_data {
-	struct device *reset;
-	struct device *busy;
-	struct device *dio1;
+	const struct device *reset;
+	const struct device *busy;
+	const struct device *dio1;
 	struct gpio_callback dio1_irq_callback;
 	struct k_work dio1_irq_work;
 	DioIrqHandler *radio_dio_irq;
 #if HAVE_GPIO_ANTENNA_ENABLE
-	struct device *antenna_enable;
+	const struct device *antenna_enable;
 #endif
-	struct device *spi;
+	const struct device *spi;
 	struct spi_config spi_cfg;
 #if HAVE_GPIO_CS
 	struct spi_cs_control spi_cs;
@@ -354,7 +354,7 @@ static void sx126x_dio1_irq_work_handler(struct k_work *work)
 	}
 }
 
-static void sx126x_dio1_irq_callback(struct device *dev,
+static void sx126x_dio1_irq_callback(const struct device *dev,
 				     struct gpio_callback *cb, uint32_t pins)
 {
 	if (pins & BIT(GPIO_DIO1_PIN)) {
@@ -362,7 +362,7 @@ static void sx126x_dio1_irq_callback(struct device *dev,
 	}
 }
 
-static int sx126x_lora_init(struct device *dev)
+static int sx126x_lora_init(const struct device *dev)
 {
 	int ret;
 

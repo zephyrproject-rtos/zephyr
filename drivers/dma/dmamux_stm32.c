@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(dmamux_stm32, CONFIG_DMA_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32_dmamux
 
-int dmamux_stm32_configure(struct device *dev, uint32_t id,
+int dmamux_stm32_configure(const struct device *dev, uint32_t id,
 				struct dma_config *config)
 {
 	/* device is the dmamux, id is the dmamux channel from 0 */
@@ -75,7 +75,7 @@ int dmamux_stm32_configure(struct device *dev, uint32_t id,
 	return 0;
 }
 
-int dmamux_stm32_start(struct device *dev, uint32_t id)
+int dmamux_stm32_start(const struct device *dev, uint32_t id)
 {
 	const struct dmamux_stm32_config *dev_config = dev->config;
 	struct dmamux_stm32_data *data = dev->data;
@@ -95,7 +95,7 @@ int dmamux_stm32_start(struct device *dev, uint32_t id)
 	return 0;
 }
 
-int dmamux_stm32_stop(struct device *dev, uint32_t id)
+int dmamux_stm32_stop(const struct device *dev, uint32_t id)
 {
 	const struct dmamux_stm32_config *dev_config = dev->config;
 	struct dmamux_stm32_data *data = dev->data;
@@ -115,7 +115,7 @@ int dmamux_stm32_stop(struct device *dev, uint32_t id)
 	return 0;
 }
 
-int dmamux_stm32_reload(struct device *dev, uint32_t id,
+int dmamux_stm32_reload(const struct device *dev, uint32_t id,
 			    uint32_t src, uint32_t dst, size_t size)
 {
 	const struct dmamux_stm32_config *dev_config = dev->config;
@@ -137,11 +137,11 @@ int dmamux_stm32_reload(struct device *dev, uint32_t id,
 	return 0;
 }
 
-static int dmamux_stm32_init(struct device *dev)
+static int dmamux_stm32_init(const struct device *dev)
 {
 	struct dmamux_stm32_data *data = dev->data;
 	const struct dmamux_stm32_config *config = dev->config;
-	struct device *clk =
+	const struct device *clk =
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
 	if (clock_control_on(clk,

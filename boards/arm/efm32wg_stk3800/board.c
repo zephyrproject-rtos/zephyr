@@ -9,9 +9,9 @@
 #include <drivers/gpio.h>
 #include <sys/printk.h>
 
-static int efm32wg_stk3800_init(struct device *dev)
+static int efm32wg_stk3800_init(const struct device *dev)
 {
-	struct device *bce_dev; /* Board Controller Enable Gpio Device */
+	const struct device *bce_dev; /* Board Controller Enable Gpio Device */
 
 	ARG_UNUSED(dev);
 

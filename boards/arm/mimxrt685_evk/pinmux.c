@@ -7,7 +7,7 @@
 #include <fsl_iopctl.h>
 #include <soc.h>
 
-static int mimxrt685_evk_pinmux_init(struct device *dev)
+static int mimxrt685_evk_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

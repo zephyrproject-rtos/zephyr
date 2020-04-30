@@ -19,7 +19,7 @@ void main(void)
 {
 	uint32_t count = 0U;
 	char count_str[11] = {0};
-	struct device *display_dev;
+	const struct device *display_dev;
 	lv_obj_t *hello_world_label;
 	lv_obj_t *count_label;
 

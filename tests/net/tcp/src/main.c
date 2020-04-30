@@ -85,7 +85,7 @@ static bool syn_v6_sent;
 struct net_tcp_context {
 };
 
-int net_tcp_dev_init(struct device *dev)
+int net_tcp_dev_init(const struct device *dev)
 {
 	return 0;
 }
@@ -237,7 +237,7 @@ static void v6_send_syn_ack(struct net_pkt *req)
 
 static int send_status = -EINVAL;
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->buffer) {
 		DBG("No data to send!\n");
@@ -254,7 +254,7 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static int tester_send_peer(struct device *dev, struct net_pkt *pkt)
+static int tester_send_peer(const struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->buffer) {
 		DBG("No data to send!\n");

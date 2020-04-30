@@ -73,7 +73,7 @@
 /* end of default settings */
 
 struct hp206c_device_data {
-	struct device *i2c;
+	const struct device *i2c;
 #if CONFIG_SYS_CLOCK_TICKS_PER_SEC < 1000
 #error "driver needs millisecond tick granularity"
 #endif

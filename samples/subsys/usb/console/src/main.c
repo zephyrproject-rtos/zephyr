@@ -13,7 +13,7 @@
 
 void main(void)
 {
-	struct device *dev = device_get_binding(
+	const struct device *dev = device_get_binding(
 			CONFIG_UART_CONSOLE_ON_DEV_NAME);
 	uint32_t dtr = 0;
 

@@ -7,7 +7,7 @@
 #ifndef TEST_LED_API_H_
 #define TEST_LED_API_H_
 
-struct device *get_led_controller(void);
+const struct device *get_led_controller(void);
 
 void test_led_setup(void);
 void test_led_get_info(void);

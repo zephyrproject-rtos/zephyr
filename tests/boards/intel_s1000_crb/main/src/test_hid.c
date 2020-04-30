@@ -98,7 +98,7 @@ static struct hid_ops ops = {
 void hid_thread(void)
 {
 	uint8_t report_1[2] = { REPORT_ID_1, 0x00 };
-	struct device *hid_dev;
+	const struct device *hid_dev;
 	int ret, wrote;
 
 	LOG_DBG("Starting application");

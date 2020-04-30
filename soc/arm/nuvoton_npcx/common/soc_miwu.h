@@ -65,7 +65,7 @@ struct npcx_wui {
  * of generic hardware. Its parameters contain the device issued interrupt
  * and corresponding WUI source.
  */
-typedef void (*miwu_dev_callback_handler_t)(struct device *source,
+typedef void (*miwu_dev_callback_handler_t)(const struct device *source,
 							struct npcx_wui *wui);
 
 /**
@@ -114,7 +114,7 @@ struct miwu_dev_callback {
 	/** Callback function being called when device event occurred */
 	miwu_dev_callback_handler_t handler;
 	/** Device instance register callback function */
-	struct device *source;
+	const struct device *source;
 	/* Wake-up input source */
 	struct npcx_wui wui;
 };
@@ -176,7 +176,7 @@ void soc_miwu_init_gpio_callback(struct miwu_io_callback *callback,
 void soc_miwu_init_dev_callback(struct miwu_dev_callback *callback,
 				const struct npcx_wui *dev_wui,
 				miwu_dev_callback_handler_t handler,
-				struct device *source);
+				const struct device *source);
 
 /**
  * @brief Function to insert or remove a IO callback from a callback list

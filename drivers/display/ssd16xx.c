@@ -59,10 +59,10 @@ LOG_MODULE_REGISTER(ssd16xx);
 #define SSD16XX_TR_SCALE_FACTOR		256U
 
 struct ssd16xx_data {
-	struct device *reset;
-	struct device *dc;
-	struct device *busy;
-	struct device *spi_dev;
+	const struct device *reset;
+	const struct device *dc;
+	const struct device *busy;
+	const struct device *spi_dev;
 	struct spi_config spi_config;
 #if defined(SSD16XX_CS_CNTRL)
 	struct spi_cs_control cs_ctrl;
@@ -384,7 +384,7 @@ static int ssd16xx_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int ssd16xx_clear_cntlr_mem(struct device *dev, uint8_t ram_cmd,
+static int ssd16xx_clear_cntlr_mem(const struct device *dev, uint8_t ram_cmd,
 				   bool update)
 {
 	struct ssd16xx_data *driver = dev->data;
@@ -433,7 +433,7 @@ static int ssd16xx_clear_cntlr_mem(struct device *dev, uint8_t ram_cmd,
 	return 0;
 }
 
-static inline int ssd16xx_load_ws_from_otp(struct device *dev)
+static inline int ssd16xx_load_ws_from_otp(const struct device *dev)
 {
 	struct ssd16xx_data *driver = dev->data;
 	uint8_t tmp[2];
@@ -500,7 +500,7 @@ static inline int ssd16xx_load_ws_from_otp(struct device *dev)
 #endif
 }
 
-static int ssd16xx_load_ws_initial(struct device *dev)
+static int ssd16xx_load_ws_initial(const struct device *dev)
 {
 #if DT_INST_NODE_HAS_PROP(0, lut_initial)
 	struct ssd16xx_data *driver = dev->data;
@@ -519,7 +519,7 @@ static int ssd16xx_load_ws_initial(struct device *dev)
 	return 0;
 }
 
-static int ssd16xx_load_ws_default(struct device *dev)
+static int ssd16xx_load_ws_default(const struct device *dev)
 {
 #if DT_INST_NODE_HAS_PROP(0, lut_default)
 	struct ssd16xx_data *driver = dev->data;
@@ -536,7 +536,7 @@ static int ssd16xx_load_ws_default(struct device *dev)
 	return 0;
 }
 
-static int ssd16xx_controller_init(struct device *dev)
+static int ssd16xx_controller_init(const struct device *dev)
 {
 	int err;
 	uint8_t tmp[3];
@@ -641,7 +641,7 @@ static int ssd16xx_controller_init(struct device *dev)
 	return ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RAM, true);
 }
 
-static int ssd16xx_init(struct device *dev)
+static int ssd16xx_init(const struct device *dev)
 {
 	struct ssd16xx_data *driver = dev->data;
 

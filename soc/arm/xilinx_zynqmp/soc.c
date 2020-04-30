@@ -17,7 +17,7 @@
  * @return 0
  */
 
-static int soc_init(struct device *arg)
+static int soc_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

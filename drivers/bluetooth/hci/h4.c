@@ -67,7 +67,7 @@ static struct {
 	.fifo = Z_FIFO_INITIALIZER(tx.fifo),
 };
 
-static struct device *h4_dev;
+static const struct device *h4_dev;
 
 static inline void h4_get_type(void)
 {
@@ -219,7 +219,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static size_t h4_discard(struct device *uart, size_t len)
+static size_t h4_discard(const struct device *uart, size_t len)
 {
 	uint8_t buf[33];
 
@@ -391,7 +391,7 @@ static inline void process_rx(void)
 	}
 }
 
-static void bt_uart_isr(struct device *unused, void *user_data)
+static void bt_uart_isr(const struct device *unused, void *user_data)
 {
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
@@ -423,7 +423,7 @@ static int h4_send(struct net_buf *buf)
   *
   * @return 0 on success, negative error value on failure
   */
-int __weak bt_hci_transport_setup(struct device *dev)
+int __weak bt_hci_transport_setup(const struct device *dev)
 {
 	h4_discard(h4_dev, 32);
 	return 0;
@@ -461,7 +461,7 @@ static const struct bt_hci_driver drv = {
 	.send		= h4_send,
 };
 
-static int bt_uart_init(struct device *unused)
+static int bt_uart_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

@@ -63,7 +63,7 @@ void soc_pinctrl_mux_configure(const struct npcx_alt *alts_list,
 }
 
 /* Pin-control driver registration */
-static int npcx_pinctrl_init(struct device *dev)
+static int npcx_pinctrl_init(const struct device *dev)
 {
 	struct scfg_reg *inst = HAL_INSTANCE(dev);
 

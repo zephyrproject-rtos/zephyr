@@ -1925,7 +1925,7 @@ int usb_dc_wakeup_request(void)
 	return 0;
 }
 
-static int usb_init(struct device *arg)
+static int usb_init(const struct device *arg)
 {
 
 #ifdef CONFIG_SOC_SERIES_NRF53X

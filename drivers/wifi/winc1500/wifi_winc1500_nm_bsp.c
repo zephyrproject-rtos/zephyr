@@ -15,7 +15,7 @@ struct winc1500_device winc1500;
 
 void (*isr_function)(void);
 
-static inline void chip_isr(struct device *port,
+static inline void chip_isr(const struct device *port,
 			    struct gpio_callback *cb,
 			    gpio_port_pins_t pins)
 {

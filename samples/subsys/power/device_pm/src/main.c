@@ -10,7 +10,7 @@
 /* Application main Thread */
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	struct dummy_driver_api *api;
 	int ret, val;
 

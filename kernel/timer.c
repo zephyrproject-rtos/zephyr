@@ -22,7 +22,7 @@ struct k_timer *_trace_list_k_timer;
 /*
  * Complete initialization of statically defined timers.
  */
-static int init_timer_module(struct device *dev)
+static int init_timer_module(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

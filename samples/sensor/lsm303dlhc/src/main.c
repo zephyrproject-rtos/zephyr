@@ -10,7 +10,8 @@
 #include <stdio.h>
 #include <sys/util.h>
 
-static int32_t read_sensor(struct device *sensor, enum sensor_channel channel)
+static int32_t read_sensor(const struct device *sensor,
+			   enum sensor_channel channel)
 {
 	struct sensor_value val[3];
 	int32_t ret = 0;
@@ -37,9 +38,9 @@ end:
 
 void main(void)
 {
-	struct device *accelerometer = device_get_binding(
+	const struct device *accelerometer = device_get_binding(
 						DT_LABEL(DT_INST(0, st_lis2dh)));
-	struct device *magnetometer = device_get_binding(
+	const struct device *magnetometer = device_get_binding(
 						DT_LABEL(DT_INST(0, st_lsm303dlhc_magn)));
 
 	if (accelerometer == NULL) {

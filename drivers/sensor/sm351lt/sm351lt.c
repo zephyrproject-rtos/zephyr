@@ -20,7 +20,7 @@
 LOG_MODULE_REGISTER(SM351LT, CONFIG_SENSOR_LOG_LEVEL);
 
 #if CONFIG_SM351LT_TRIGGER
-static int sm351lt_trigger_set(struct device *dev,
+static int sm351lt_trigger_set(const struct device *dev,
 			       const struct sensor_trigger *trig,
 			       sensor_trigger_handler_t handler)
 {
@@ -48,7 +48,7 @@ static int sm351lt_trigger_set(struct device *dev,
 	return ret;
 }
 
-static void sm351lt_gpio_callback(struct device *dev,
+static void sm351lt_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, uint32_t pins)
 {
 	struct sm351lt_data *data =
@@ -63,7 +63,7 @@ static void sm351lt_gpio_callback(struct device *dev,
 
 static void sm351lt_thread_cb(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct sm351lt_data *data = dev->data;
 
 	struct sensor_trigger mag_trigger = {
@@ -81,7 +81,7 @@ static void sm351lt_thread_cb(void *arg)
 #if defined(CONFIG_SM351LT_TRIGGER_OWN_THREAD)
 static void sm351lt_thread(void *arg1, void *unused2, void *unused3)
 {
-	struct device *dev = arg1;
+	const struct device *dev = arg1;
 	struct sm351lt_data *data = dev->data;
 
 	ARG_UNUSED(unused2);
@@ -105,7 +105,7 @@ static void sm351lt_work_cb(struct k_work *work)
 #endif
 #endif
 
-static int sm351lt_sample_fetch(struct device *dev,
+static int sm351lt_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
 	const struct sm351lt_config *config = dev->config;
@@ -120,7 +120,7 @@ static int sm351lt_sample_fetch(struct device *dev,
 	return 0;
 }
 
-static int sm351lt_channel_get(struct device *dev,
+static int sm351lt_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
@@ -137,7 +137,8 @@ static int sm351lt_channel_get(struct device *dev,
 }
 
 #if CONFIG_SM351LT_TRIGGER
-static int sm351lt_attr_set(struct device *dev, enum sensor_channel chan,
+static int sm351lt_attr_set(const struct device *dev,
+			    enum sensor_channel chan,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
@@ -157,7 +158,8 @@ static int sm351lt_attr_set(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int sm351lt_attr_get(struct device *dev, enum sensor_channel chan,
+static int sm351lt_attr_get(const struct device *dev,
+			    enum sensor_channel chan,
 			    enum sensor_attribute attr,
 			    struct sensor_value *val)
 {
@@ -189,7 +191,7 @@ static const struct sensor_driver_api sm351lt_api_funcs = {
 #endif
 };
 
-static int sm351lt_init(struct device *dev)
+static int sm351lt_init(const struct device *dev)
 {
 	const struct sm351lt_config *const config = dev->config;
 	struct sm351lt_data *data = dev->data;

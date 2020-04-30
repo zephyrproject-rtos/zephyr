@@ -120,7 +120,7 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int fsl_frdm_k22f_init(struct device *arg)
+static int fsl_frdm_k22f_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

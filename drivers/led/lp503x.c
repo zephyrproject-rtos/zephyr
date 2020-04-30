@@ -72,7 +72,7 @@ struct lp503x_config {
 };
 
 struct lp503x_data {
-	struct device *i2c;
+	const struct device *i2c;
 	uint8_t *chan_buf;
 };
 
@@ -89,7 +89,7 @@ lp503x_led_to_info(const struct lp503x_config *config, uint32_t led)
 	return NULL;
 }
 
-static int lp503x_get_info(struct device *dev, uint32_t led,
+static int lp503x_get_info(const struct device *dev, uint32_t led,
 			   const struct led_info **info)
 {
 	const struct lp503x_config *config = DEV_CFG(dev);
@@ -104,7 +104,7 @@ static int lp503x_get_info(struct device *dev, uint32_t led,
 	return 0;
 }
 
-static int lp503x_set_brightness(struct device *dev,
+static int lp503x_set_brightness(const struct device *dev,
 				 uint32_t led, uint8_t value)
 {
 	const struct lp503x_config *config = DEV_CFG(dev);
@@ -122,17 +122,17 @@ static int lp503x_set_brightness(struct device *dev,
 	return i2c_write(data->i2c, buf, sizeof(buf), config->i2c_addr);
 }
 
-static int lp503x_on(struct device *dev, uint32_t led)
+static int lp503x_on(const struct device *dev, uint32_t led)
 {
 	return lp503x_set_brightness(dev, led, 100);
 }
 
-static int lp503x_off(struct device *dev, uint32_t led)
+static int lp503x_off(const struct device *dev, uint32_t led)
 {
 	return lp503x_set_brightness(dev, led, 0);
 }
 
-static int lp503x_set_color(struct device *dev, uint32_t led,
+static int lp503x_set_color(const struct device *dev, uint32_t led,
 			    uint8_t num_colors, const uint8_t *color)
 {
 	const struct lp503x_config *config = DEV_CFG(dev);
@@ -152,7 +152,8 @@ static int lp503x_set_color(struct device *dev, uint32_t led,
 	return i2c_write(data->i2c, buf, sizeof(buf), config->i2c_addr);
 }
 
-static int lp503x_write_channels(struct device *dev, uint32_t start_channel,
+static int lp503x_write_channels(const struct device *dev,
+				 uint32_t start_channel,
 				 uint32_t num_channels, const uint8_t *buf)
 {
 	const struct lp503x_config *config = DEV_CFG(dev);
@@ -174,7 +175,7 @@ static int lp503x_write_channels(struct device *dev, uint32_t start_channel,
 			 num_channels + 1, config->i2c_addr);
 }
 
-static int lp503x_init(struct device *dev)
+static int lp503x_init(const struct device *dev)
 {
 	const struct lp503x_config *config = DEV_CFG(dev);
 	struct lp503x_data *data = DEV_DATA(dev);

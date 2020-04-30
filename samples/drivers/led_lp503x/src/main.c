@@ -45,7 +45,7 @@ static uint8_t colors[][3] = {
  * @param lp503x_dev LP503X LED controller device.
  * @param led Number of the LED to test.
  */
-static int run_led_test(struct device *lp503x_dev, uint8_t led)
+static int run_led_test(const struct device *lp503x_dev, uint8_t led)
 {
 	uint8_t idx;
 	int err;
@@ -111,7 +111,7 @@ static int run_led_test(struct device *lp503x_dev, uint8_t led)
  *
  * @param lp503x_dev LP503X LED controller device.
  */
-static int run_channel_test(struct device *lp503x_dev)
+static int run_channel_test(const struct device *lp503x_dev)
 {
 	uint8_t idx;
 	uint8_t buffer[LP503X_COLORS_PER_LED * LP503X_MAX_LEDS];
@@ -213,7 +213,7 @@ static int run_channel_test(struct device *lp503x_dev)
 
 void main(void)
 {
-	struct device *lp503x_dev;
+	const struct device *lp503x_dev;
 	int err;
 	uint8_t led;
 	uint8_t num_leds = 0;

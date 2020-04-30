@@ -43,7 +43,7 @@ uint32_t i2c_emul_get_config(const struct device *dev)
  * @return emulator ro use
  * @return NULL if not found
  */
-static struct i2c_emul *i2c_emul_find(struct device *dev, int addr)
+static struct i2c_emul *i2c_emul_find(const struct device *dev, int addr)
 {
 	struct i2c_emul_data *data = dev->data;
 	sys_snode_t *node;
@@ -60,7 +60,7 @@ static struct i2c_emul *i2c_emul_find(struct device *dev, int addr)
 	return NULL;
 }
 
-static int i2c_emul_configure(struct device *dev, uint32_t dev_config)
+static int i2c_emul_configure(const struct device *dev, uint32_t dev_config)
 {
 	struct i2c_emul_data *data = dev->data;
 
@@ -69,7 +69,7 @@ static int i2c_emul_configure(struct device *dev, uint32_t dev_config)
 	return 0;
 }
 
-static int i2c_emul_transfer(struct device *dev, struct i2c_msg *msgs,
+static int i2c_emul_transfer(const struct device *dev, struct i2c_msg *msgs,
 			     uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_emul *emul;
@@ -98,7 +98,7 @@ static int i2c_emul_transfer(struct device *dev, struct i2c_msg *msgs,
  *
  * @param dev I2C emulation controller device
  */
-static int i2c_emul_init(struct device *dev)
+static int i2c_emul_init(const struct device *dev)
 {
 	struct i2c_emul_data *data = dev->data;
 	const struct emul_list_for_bus *list = dev->config;
@@ -111,7 +111,7 @@ static int i2c_emul_init(struct device *dev)
 	return rc;
 }
 
-int i2c_emul_register(struct device *dev, const char *name,
+int i2c_emul_register(const struct device *dev, const char *name,
 		      struct i2c_emul *emul)
 {
 	struct i2c_emul_data *data = dev->data;

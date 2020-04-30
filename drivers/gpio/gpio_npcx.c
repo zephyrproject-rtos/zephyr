@@ -19,7 +19,7 @@
 LOG_MODULE_REGISTER(gpio_npcx, LOG_LEVEL_ERR);
 
 /* GPIO module instances declarations */
-static struct device *gpio_devs[];
+static const struct device *gpio_devs[];
 static int gpio_devs_count;
 
 /* Driver config */
@@ -51,7 +51,7 @@ struct gpio_npcx_data {
 
 
 /* Soc specific GPIO functions */
-struct device *soc_get_gpio_dev(int port)
+const struct device *soc_get_gpio_dev(int port)
 {
 	if (port >= gpio_devs_count)
 		return NULL;
@@ -60,7 +60,7 @@ struct device *soc_get_gpio_dev(int port)
 }
 
 /* GPIO api functions */
-static int gpio_npcx_config(struct device *dev,
+static int gpio_npcx_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
 	struct gpio_reg *inst = HAL_INSTANCE(dev);
@@ -116,7 +116,8 @@ static int gpio_npcx_config(struct device *dev,
 	return 0;
 }
 
-static int gpio_npcx_port_get_raw(struct device *dev, gpio_port_value_t *value)
+static int gpio_npcx_port_get_raw(const struct device *dev,
+				  gpio_port_value_t *value)
 {
 	struct gpio_reg *inst = HAL_INSTANCE(dev);
 
@@ -126,7 +127,7 @@ static int gpio_npcx_port_get_raw(struct device *dev, gpio_port_value_t *value)
 	return 0;
 }
 
-static int gpio_npcx_port_set_masked_raw(struct device *dev,
+static int gpio_npcx_port_set_masked_raw(const struct device *dev,
 					  gpio_port_pins_t mask,
 					  gpio_port_value_t value)
 {
@@ -138,7 +139,7 @@ static int gpio_npcx_port_set_masked_raw(struct device *dev,
 	return 0;
 }
 
-static int gpio_npcx_port_set_bits_raw(struct device *dev,
+static int gpio_npcx_port_set_bits_raw(const struct device *dev,
 					gpio_port_value_t mask)
 {
 	struct gpio_reg *inst = HAL_INSTANCE(dev);
@@ -149,7 +150,7 @@ static int gpio_npcx_port_set_bits_raw(struct device *dev,
 	return 0;
 }
 
-static int gpio_npcx_port_clear_bits_raw(struct device *dev,
+static int gpio_npcx_port_clear_bits_raw(const struct device *dev,
 						gpio_port_value_t mask)
 {
 	struct gpio_reg *inst = HAL_INSTANCE(dev);
@@ -160,7 +161,7 @@ static int gpio_npcx_port_clear_bits_raw(struct device *dev,
 	return 0;
 }
 
-static int gpio_npcx_port_toggle_bits(struct device *dev,
+static int gpio_npcx_port_toggle_bits(const struct device *dev,
 						gpio_port_value_t mask)
 {
 	struct gpio_reg *inst = HAL_INSTANCE(dev);
@@ -171,9 +172,10 @@ static int gpio_npcx_port_toggle_bits(struct device *dev,
 	return 0;
 }
 
-static int gpio_npcx_pin_interrupt_configure(struct device *dev,
-		gpio_pin_t pin, enum gpio_int_mode mode,
-		enum gpio_int_trig trig)
+static int gpio_npcx_pin_interrupt_configure(const struct device *dev,
+					     gpio_pin_t pin,
+					     enum gpio_int_mode mode,
+					     enum gpio_int_trig trig)
 {
 	const struct gpio_npcx_config *config = DRV_CONFIG(dev);
 	enum miwu_int_mode miwu_mode = NPCX_MIWU_MODE_DISABLED;
@@ -217,7 +219,7 @@ static int gpio_npcx_pin_interrupt_configure(struct device *dev,
 	return 0;
 }
 
-static int gpio_npcx_manage_callback(struct device *dev,
+static int gpio_npcx_manage_callback(const struct device *dev,
 				      struct gpio_callback *callback, bool set)
 {
 	const struct gpio_npcx_config *config = DRV_CONFIG(dev);
@@ -255,7 +257,7 @@ static const struct gpio_driver_api gpio_npcx_driver = {
 	.manage_callback = gpio_npcx_manage_callback,
 };
 
-int gpio_npcx_init(struct device *dev)
+int gpio_npcx_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -291,7 +293,7 @@ DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEVICE_INIT)
 
 /* GPIO module instances */
 #define NPCX_GPIO_DEV(inst) DEVICE_GET(gpio_npcx_##inst),
-static struct device *gpio_devs[] = {
+static const struct device *gpio_devs[] = {
 	DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEV)
 };
 

@@ -172,7 +172,7 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int nxp_rt600_init(struct device *arg)
+static int nxp_rt600_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

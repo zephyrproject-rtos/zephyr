@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <sys/util.h>
 
-static void process_sample(struct device *dev)
+static void process_sample(const struct device *dev)
 {
 	static unsigned int obs;
 	struct sensor_value pressure, temp;
@@ -42,15 +42,15 @@ static void process_sample(struct device *dev)
 
 }
 
-static void lps22hh_handler(struct device *dev,
-			   struct sensor_trigger *trig)
+static void lps22hh_handler(const struct device *dev,
+			    struct sensor_trigger *trig)
 {
 	process_sample(dev);
 }
 
 void main(void)
 {
-	struct device *dev = device_get_binding("LPS22HH");
+	const struct device *dev = device_get_binding("LPS22HH");
 
 	if (dev == NULL) {
 		printf("Could not get LPS22HH device\n");

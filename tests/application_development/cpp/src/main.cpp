@@ -50,7 +50,7 @@ static struct foo foos[5];
 BUILD_ASSERT(ARRAY_SIZE(foos) == 5, "expected 5 elements");
 
 /* Check that SYS_INIT() compiles. */
-static int test_init(struct device *dev)
+static int test_init(const struct device *dev)
 {
 	return 0;
 }

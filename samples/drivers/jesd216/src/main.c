@@ -227,7 +227,7 @@ static void dump_bytes(const struct jesd216_param_header *php,
 
 void main(void)
 {
-	struct device *dev = device_get_binding(FLASH_DEVICE);
+	const struct device *dev = device_get_binding(FLASH_DEVICE);
 
 	if (!dev) {
 		printf("%s: device not found\n", FLASH_DEVICE);

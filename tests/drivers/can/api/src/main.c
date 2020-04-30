@@ -51,7 +51,7 @@ CAN_DEFINE_MSGQ(can_msgq, 5);
 struct k_sem rx_isr_sem;
 struct k_sem rx_cb_sem;
 struct k_sem tx_cb_sem;
-struct device *can_dev;
+const struct device *can_dev;
 
 struct zcan_frame test_std_msg = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
@@ -245,7 +245,8 @@ static void rx_ext_mask_cb(struct zcan_frame *msg, void *arg)
 	k_sem_give(&rx_cb_sem);
 }
 
-static void send_test_msg(struct device *can_dev, struct zcan_frame *msg)
+static void send_test_msg(const struct device *can_dev,
+			  struct zcan_frame *msg)
 {
 	int ret;
 
@@ -255,7 +256,8 @@ static void send_test_msg(struct device *can_dev, struct zcan_frame *msg)
 	zassert_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);
 }
 
-static void send_test_msg_nowait(struct device *can_dev, struct zcan_frame *msg)
+static void send_test_msg_nowait(const struct device *can_dev,
+				 struct zcan_frame *msg)
 {
 	int ret;
 
@@ -282,7 +284,7 @@ static void send_test_msg_nowait(struct device *can_dev, struct zcan_frame *msg)
 	zassert_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);
 }
 
-static inline int attach_msgq(struct device *can_dev,
+static inline int attach_msgq(const struct device *can_dev,
 			      const struct zcan_filter *filter)
 {
 	int filter_id;
@@ -295,8 +297,8 @@ static inline int attach_msgq(struct device *can_dev,
 	return filter_id;
 }
 
-static inline int attach_workq(struct device *can_dev,
-			      const struct zcan_filter *filter)
+static inline int attach_workq(const struct device *can_dev,
+			       const struct zcan_filter *filter)
 {
 	int filter_id;
 
@@ -329,7 +331,7 @@ static inline int attach_workq(struct device *can_dev,
 	return filter_id;
 }
 
-static inline int attach_isr(struct device *can_dev,
+static inline int attach_isr(const struct device *can_dev,
 			     const struct zcan_filter *filter)
 {
 	int filter_id;

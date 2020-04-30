@@ -237,26 +237,26 @@ static inline int qspi_get_zephyr_ret_code(nrfx_err_t res)
 	}
 }
 
-static inline struct qspi_nor_data *get_dev_data(struct device *dev)
+static inline struct qspi_nor_data *get_dev_data(const struct device *dev)
 {
 	return dev->data;
 }
 
-static inline void qspi_lock(struct device *dev)
+static inline void qspi_lock(const struct device *dev)
 {
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
 	k_sem_take(&dev_data->sem, K_FOREVER);
 }
 
-static inline void qspi_unlock(struct device *dev)
+static inline void qspi_unlock(const struct device *dev)
 {
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
 	k_sem_give(&dev_data->sem);
 }
 
-static inline void qspi_wait_for_completion(struct device *dev,
+static inline void qspi_wait_for_completion(const struct device *dev,
 					    nrfx_err_t res)
 {
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
@@ -266,7 +266,7 @@ static inline void qspi_wait_for_completion(struct device *dev,
 	}
 }
 
-static inline void qspi_complete(struct device *dev)
+static inline void qspi_complete(const struct device *dev)
 {
 	struct qspi_nor_data *dev_data = get_dev_data(dev);
 
@@ -282,7 +282,7 @@ static inline void qspi_complete(struct device *dev)
  */
 static void qspi_handler(nrfx_qspi_evt_t event, void *p_context)
 {
-	struct device *dev = p_context;
+	const struct device *dev = p_context;
 
 	if (event == NRFX_QSPI_EVENT_DONE) {
 		qspi_complete(dev);
@@ -291,7 +291,7 @@ static void qspi_handler(nrfx_qspi_evt_t event, void *p_context)
 
 
 /* QSPI send custom command */
-static int qspi_send_cmd(struct device *dev, const struct qspi_cmd *cmd)
+static int qspi_send_cmd(const struct device *dev, const struct qspi_cmd *cmd)
 {
 	/* Check input parameters */
 	if (!cmd) {
@@ -324,7 +324,7 @@ static int qspi_send_cmd(struct device *dev, const struct qspi_cmd *cmd)
 }
 
 /* QSPI erase */
-static int qspi_erase(struct device *dev, uint32_t addr, uint32_t size)
+static int qspi_erase(const struct device *dev, uint32_t addr, uint32_t size)
 {
 	/* address must be sector-aligned */
 	if ((addr % QSPI_SECTOR_SIZE) != 0) {
@@ -434,7 +434,7 @@ static inline void qspi_fill_init_struct(nrfx_qspi_config_t *initstruct)
 }
 
 /* Configures QSPI memory for the transfer */
-static int qspi_nrfx_configure(struct device *dev)
+static int qspi_nrfx_configure(const struct device *dev)
 {
 	if (!dev) {
 		return -ENXIO;
@@ -484,7 +484,7 @@ static int qspi_nrfx_configure(struct device *dev)
  *		  expected JEDEC ID
  * @return 0 on success, negative errno code otherwise
  */
-static inline int qspi_nor_read_id(struct device *dev,
+static inline int qspi_nor_read_id(const struct device *dev,
 				   const struct qspi_nor_config *const flash_id)
 {
 	uint8_t rx_b[QSPI_NOR_MAX_ID_LEN];
@@ -512,7 +512,8 @@ static inline int qspi_nor_read_id(struct device *dev,
 	return 0;
 }
 
-static inline nrfx_err_t read_non_aligned(struct device *dev, off_t addr,
+static inline nrfx_err_t read_non_aligned(const struct device *dev,
+					  off_t addr,
 					  void *dest, size_t size)
 {
 	uint8_t __aligned(WORD_SIZE) buf[WORD_SIZE * 2];
@@ -582,7 +583,7 @@ static inline nrfx_err_t read_non_aligned(struct device *dev, off_t addr,
 	return res;
 }
 
-static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
+static int qspi_nor_read(const struct device *dev, off_t addr, void *dest,
 			 size_t size)
 {
 	if (!dest) {
@@ -617,7 +618,7 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 }
 
 /* addr aligned, sptr not null, slen less than 4 */
-static inline nrfx_err_t write_sub_word(struct device *dev, off_t addr,
+static inline nrfx_err_t write_sub_word(const struct device *dev, off_t addr,
 					const void *sptr, size_t slen)
 {
 	uint8_t __aligned(4) buf[4];
@@ -648,7 +649,7 @@ BUILD_ASSERT((CONFIG_NORDIC_QSPI_NOR_STACK_WRITE_BUFFER_SIZE % 4) == 0,
  *
  * If not enabled return the error the peripheral would have produced.
  */
-static inline nrfx_err_t write_from_nvmc(struct device *dev, off_t addr,
+static inline nrfx_err_t write_from_nvmc(const struct device *dev, off_t addr,
 					 const void *sptr, size_t slen)
 {
 #if NVMC_WRITE_OK
@@ -676,7 +677,8 @@ static inline nrfx_err_t write_from_nvmc(struct device *dev, off_t addr,
 	return res;
 }
 
-static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
+static int qspi_nor_write(const struct device *dev, off_t addr,
+			  const void *src,
 			  size_t size)
 {
 	if (!src) {
@@ -727,7 +729,7 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 	return qspi_get_zephyr_ret_code(res);
 }
 
-static int qspi_nor_erase(struct device *dev, off_t addr, size_t size)
+static int qspi_nor_erase(const struct device *dev, off_t addr, size_t size)
 {
 	struct qspi_nor_data *const driver_data = dev->data;
 	const struct qspi_nor_config *params = dev->config;
@@ -750,7 +752,7 @@ static int qspi_nor_erase(struct device *dev, off_t addr, size_t size)
 	return ret;
 }
 
-static int qspi_nor_write_protection_set(struct device *dev,
+static int qspi_nor_write_protection_set(const struct device *dev,
 					 bool write_protect)
 {
 	struct qspi_nor_data *const driver_data = dev->data;
@@ -776,7 +778,7 @@ static int qspi_nor_write_protection_set(struct device *dev,
  * @param info The flash info structure
  * @return 0 on success, negative errno code otherwise
  */
-static int qspi_nor_configure(struct device *dev)
+static int qspi_nor_configure(const struct device *dev)
 {
 	const struct qspi_nor_config *params = dev->config;
 
@@ -800,7 +802,7 @@ static int qspi_nor_configure(struct device *dev)
  * @param name The flash name
  * @return 0 on success, negative errno code otherwise
  */
-static int qspi_nor_init(struct device *dev)
+static int qspi_nor_init(const struct device *dev)
 {
 	IRQ_CONNECT(DT_IRQN(QSPI_NODE), DT_IRQ(QSPI_NODE, priority),
 		    nrfx_isr, nrfx_qspi_irq_handler, 0);
@@ -832,7 +834,7 @@ qspi_flash_get_parameters(const struct device *dev)
 	return &qspi_flash_parameters;
 }
 
-static void qspi_nor_pages_layout(struct device *dev,
+static void qspi_nor_pages_layout(const struct device *dev,
 				  const struct flash_pages_layout **layout,
 				  size_t *layout_size)
 {

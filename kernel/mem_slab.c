@@ -58,7 +58,7 @@ static int create_free_list(struct k_mem_slab *slab)
  *
  * @return N/A
  */
-static int init_mem_slab_module(struct device *dev)
+static int init_mem_slab_module(const struct device *dev)
 {
 	int rc = 0;
 	ARG_UNUSED(dev);

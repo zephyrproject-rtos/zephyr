@@ -199,7 +199,7 @@ union lis2dh_sample {
 
 struct lis2dh_config {
 	char *bus_name;
-	int (*bus_init)(struct device *dev);
+	int (*bus_init)(const struct device *dev);
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	uint16_t i2c_slv_addr;
 #elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
@@ -214,20 +214,20 @@ struct lis2dh_config {
 };
 
 struct lis2dh_transfer_function {
-	int (*read_data)(struct device *dev, uint8_t reg_addr,
+	int (*read_data)(const struct device *dev, uint8_t reg_addr,
 			 uint8_t *value, uint8_t len);
-	int (*write_data)(struct device *dev, uint8_t reg_addr,
+	int (*write_data)(const struct device *dev, uint8_t reg_addr,
 			  uint8_t *value, uint8_t len);
-	int (*read_reg)(struct device *dev, uint8_t reg_addr,
+	int (*read_reg)(const struct device *dev, uint8_t reg_addr,
 			uint8_t *value);
-	int (*write_reg)(struct device *dev, uint8_t reg_addr,
-			uint8_t value);
-	int (*update_reg)(struct device *dev, uint8_t reg_addr,
+	int (*write_reg)(const struct device *dev, uint8_t reg_addr,
+			 uint8_t value);
+	int (*update_reg)(const struct device *dev, uint8_t reg_addr,
 			  uint8_t mask, uint8_t value);
 };
 
 struct lis2dh_data {
-	struct device *bus;
+	const struct device *bus;
 	const struct lis2dh_transfer_function *hw_tf;
 
 	union lis2dh_sample sample;
@@ -235,8 +235,8 @@ struct lis2dh_data {
 	uint32_t scale;
 
 #ifdef CONFIG_LIS2DH_TRIGGER
-	struct device *gpio_int1;
-	struct device *gpio_int2;
+	const struct device *gpio_int1;
+	const struct device *gpio_int2;
 	struct gpio_callback gpio_int1_cb;
 	struct gpio_callback gpio_int2_cb;
 
@@ -251,7 +251,7 @@ struct lis2dh_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
+	const struct device *dev;
 #endif
 
 #endif /* CONFIG_LIS2DH_TRIGGER */
@@ -266,18 +266,19 @@ int lis2dh_spi_access(struct lis2dh_data *ctx, uint8_t cmd,
 #endif
 
 #ifdef CONFIG_LIS2DH_TRIGGER
-int lis2dh_trigger_set(struct device *dev,
+int lis2dh_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 
-int lis2dh_init_interrupt(struct device *dev);
+int lis2dh_init_interrupt(const struct device *dev);
 
-int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
+int lis2dh_acc_slope_config(const struct device *dev,
+			    enum sensor_attribute attr,
 			    const struct sensor_value *val);
 #endif
 
-int lis2dh_spi_init(struct device *dev);
-int lis2dh_i2c_init(struct device *dev);
+int lis2dh_spi_init(const struct device *dev);
+int lis2dh_i2c_init(const struct device *dev);
 
 
 #endif /* __SENSOR_LIS2DH__ */

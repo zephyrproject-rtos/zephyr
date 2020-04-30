@@ -32,7 +32,7 @@
 
 void main(void)
 {
-	struct device *pwm;
+	const struct device *pwm;
 	uint32_t max_period;
 	uint32_t period;
 	uint8_t dir = 0U;

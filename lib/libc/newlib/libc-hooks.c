@@ -72,7 +72,7 @@ extern void *_heap_sentry;
 #if Z_MALLOC_PARTITION_EXISTS
 struct k_mem_partition z_malloc_partition;
 
-static int malloc_prepare(struct device *unused)
+static int malloc_prepare(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

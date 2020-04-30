@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(led_svc);
 #define LED_PORT DT_GPIO_LABEL(DT_ALIAS(led0), gpios)
 #define LED     DT_GPIO_PIN(DT_ALIAS(led0), gpios)
 
-struct device *led_dev;
+const struct device *led_dev;
 bool led_state;
 
 void led_on_off(bool led_state)

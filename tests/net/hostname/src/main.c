@@ -62,12 +62,12 @@ struct net_if_test {
 	struct net_linkaddr ll_addr;
 };
 
-static int net_iface_dev_init(struct device *dev)
+static int net_iface_dev_init(const struct device *dev)
 {
 	return 0;
 }
 
-static uint8_t *net_iface_get_mac(struct device *dev)
+static uint8_t *net_iface_get_mac(const struct device *dev)
 {
 	struct net_if_test *data = dev->data;
 
@@ -95,7 +95,7 @@ static void net_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
-static int sender_iface(struct device *dev, struct net_pkt *pkt)
+static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->buffer) {
 		DBG("No data to send!\n");
@@ -140,7 +140,7 @@ static struct eth_fake_context eth_fake_data;
 
 static void eth_fake_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct eth_fake_context *ctx = dev->data;
 
 	ctx->iface = iface;
@@ -160,7 +160,7 @@ static void eth_fake_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static int eth_fake_send(struct device *dev,
+static int eth_fake_send(const struct device *dev,
 			 struct net_pkt *pkt)
 {
 	ARG_UNUSED(dev);
@@ -174,7 +174,7 @@ static struct ethernet_api eth_fake_api_funcs = {
 	.send = eth_fake_send,
 };
 
-static int eth_fake_init(struct device *dev)
+static int eth_fake_init(const struct device *dev)
 {
 	struct eth_fake_context *ctx = dev->data;
 
