@@ -1,0 +1,19 @@
+{
+    "objects": [
+        [
+            {
+                "filename": "build/zephyr/zephyr-2.0.0.bin",
+                "mode": "zephyr"
+            }
+        ],
+        [
+            {
+                "filename": "build/zephyr/zephyr-2.0.0.bin",
+                "mode": "zephyr"
+            }
+        ]
+    ],
+    "product": "e4d37cfe6ec48a2d069cc0bbb8b078677e9a0d8df3a027c4d8ea131130c4265f",
+    "supported-hardware": "any",
+    "version": "2.0.0"
+}
