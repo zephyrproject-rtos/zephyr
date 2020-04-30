@@ -17,9 +17,9 @@ void main(void)
 	printk("\n%s system off demo\n", CONFIG_BOARD);
 
 	/* Configure to generate PORT event (wakeup) on button 1 press. */
-	nrf_gpio_cfg_input(DT_GPIO_KEYS_BUTTON_0_GPIOS_PIN,
+	nrf_gpio_cfg_input(DT_GPIO_PIN(DT_NODELABEL(button0), gpios),
 			   NRF_GPIO_PIN_PULLUP);
-	nrf_gpio_cfg_sense_set(DT_GPIO_KEYS_BUTTON_0_GPIOS_PIN,
+	nrf_gpio_cfg_sense_set(DT_GPIO_PIN(DT_NODELABEL(button0), gpios),
 			       NRF_GPIO_PIN_SENSE_LOW);
 
 	/* Prevent deep sleep (system off) from being entered on long
