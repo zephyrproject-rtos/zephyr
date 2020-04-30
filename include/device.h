@@ -126,7 +126,7 @@ extern "C" {
 #define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	\
 		      data_ptr, cfg_ptr, level, prio, api_ptr)		\
 	Z_DEVICE_DEFINE_PM(dev_name)					\
-	static Z_DECL_ALIGN(struct device)				\
+	static const Z_DECL_ALIGN(struct device)			\
 		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
 		.name = drv_name,					\
@@ -167,7 +167,7 @@ extern "C" {
  *
  * @param name Device name
  */
-#define DEVICE_DECLARE(name) static struct device DEVICE_NAME_GET(name)
+#define DEVICE_DECLARE(name) static const struct device DEVICE_NAME_GET(name)
 
 typedef void (*device_pm_cb)(struct device *dev,
 			     int status, void *context, void *arg);
