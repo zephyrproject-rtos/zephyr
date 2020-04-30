@@ -20,7 +20,7 @@
 
 #include "board.h"
 
-#define SCROLL_SPEED   K_MSEC(300)
+#define SCROLL_SPEED   300
 
 #define BUZZER_PIN     EXT_P0_GPIO_PIN
 #define BEEP_DURATION  K_MSEC(60)
@@ -53,10 +53,10 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 
 		if (target > 0x0009) {
 			mb_display_print(disp, MB_DISPLAY_MODE_SINGLE,
-					 K_SECONDS(2), "A");
+					 2 * MSEC_PER_SEC, "A");
 		} else {
 			mb_display_print(disp, MB_DISPLAY_MODE_SINGLE,
-					 K_SECONDS(2), "%X", (target & 0xf));
+					 2 * MSEC_PER_SEC, "%X", (target & 0xf));
 		}
 	}
 }
@@ -172,7 +172,7 @@ void board_heartbeat(u8_t hops, u16_t feat)
 
 	if (hops) {
 		hops = MIN(hops, ARRAY_SIZE(hops_img));
-		mb_display_image(disp, MB_DISPLAY_MODE_SINGLE, K_SECONDS(2),
+		mb_display_image(disp, MB_DISPLAY_MODE_SINGLE, 2 * MSEC_PER_SEC,
 				 &hops_img[hops - 1], 1);
 	}
 }
@@ -183,8 +183,8 @@ void board_other_dev_pressed(u16_t addr)
 
 	printk("board_other_dev_pressed(0x%04x)\n", addr);
 
-	mb_display_print(disp, MB_DISPLAY_MODE_SINGLE, K_SECONDS(2),
-			 "%X", (addr & 0xf));
+	mb_display_print(disp, MB_DISPLAY_MODE_SINGLE, 2 * MSEC_PER_SEC, "%X",
+			 (addr & 0xf));
 }
 
 void board_attention(bool attention)
@@ -216,7 +216,7 @@ void board_attention(bool attention)
 	if (attention) {
 		mb_display_image(disp,
 				 MB_DISPLAY_MODE_DEFAULT | MB_DISPLAY_FLAG_LOOP,
-				 K_MSEC(150), attn_img, ARRAY_SIZE(attn_img));
+				 150, attn_img, ARRAY_SIZE(attn_img));
 	} else {
 		mb_display_stop(disp);
 	}
