@@ -31,7 +31,7 @@ struct net_stats net_stats = { 0 };
 
 #if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT)
 
-#define PRINT_STATISTICS_INTERVAL K_SECONDS(30)
+#define PRINT_STATISTICS_INTERVAL (30 * MSEC_PER_SEC)
 
 #if NET_TC_COUNT > 1
 static const char *priority2str(enum net_priority priority)
