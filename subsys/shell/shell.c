@@ -1304,8 +1304,8 @@ void shell_process(const struct shell *shell)
 /* This function mustn't be used from shell context to avoid deadlock.
  * However it can be used in shell command handlers.
  */
-void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
-		   const char *fmt, ...)
+void shell_vfprintf(const struct shell *shell, enum shell_vt100_color color,
+		   const char *fmt, va_list args)
 {
 	__ASSERT_NO_MSG(shell);
 	__ASSERT(!k_is_in_isr(), "Thread context required.");
@@ -1315,22 +1315,29 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 	__ASSERT_NO_MSG(shell->fprintf_ctx);
 	__ASSERT_NO_MSG(fmt);
 
-	va_list args;
-
 	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
 	if (!flag_cmd_ctx_get(shell)) {
 		shell_cmd_line_erase(shell);
 	}
-
-	va_start(args, fmt);
 	shell_internal_vfprintf(shell, color, fmt, args);
-	va_end(args);
-
 	if (!flag_cmd_ctx_get(shell)) {
 		shell_print_prompt_and_cmd(shell);
 	}
 	transport_buffer_flush(shell);
 	k_mutex_unlock(&shell->ctx->wr_mtx);
+}
+
+/* This function mustn't be used from shell context to avoid deadlock.
+ * However it can be used in shell command handlers.
+ */
+void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
+		   const char *fmt, ...)
+{
+	va_list args;
+
+	va_start(args, fmt);
+	shell_vfprintf(shell, color, fmt, args);
+	va_end(args);
 }
 
 static void shell_hexdump_line(const struct shell *shell, unsigned int offset,
