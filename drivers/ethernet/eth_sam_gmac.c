@@ -1103,7 +1103,7 @@ static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 	/* Setup Network Configuration Register */
 	gmac->GMAC_NCFGR = gmac_ncfgr_val | mck_divisor;
 
-	gmac->GMAC_UR = DT_ENUM_IDX(DT_NODELABEL(gmac), phy_connection_type);
+	gmac->GMAC_UR = DT_ENUM_IDX(DT_DRV_INST(0), phy_connection_type);
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	/* Initialize PTP Clock Registers */
@@ -2201,7 +2201,7 @@ static void eth0_irq_config(void)
 }
 
 #ifdef CONFIG_SOC_FAMILY_SAM
-static const struct soc_gpio_pin pins_eth0[] = PINS_GMAC0;
+static const struct soc_gpio_pin pins_eth0[] = ATMEL_SAM_DT_PINS(0);
 #endif
 
 static const struct eth_sam_dev_cfg eth0_config = {
