@@ -1805,6 +1805,7 @@ int net_pkt_update_length(struct net_pkt *pkt, size_t length);
  *
  * @details net_pkt's cursor should be properly initialized and,
  *          eventually, properly positioned using net_pkt_skip/read/write.
+ *          Note that net_pkt's cursor is reset by this function.
  *
  * @param pkt    Network packet
  * @param length Number of bytes to be removed
