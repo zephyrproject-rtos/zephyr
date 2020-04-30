@@ -61,6 +61,11 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 
 - UART_1 TX/RX : PA10/PA9
+- I2C_1 SCL/SDA : PB8/PB9
+- I2C_2 SCL/SDA : PA11/PA12
+- Volume down : GPIOB pin 11
+- Volume up : GPIOB pin 10
+- Power : GPIOA pin 0
 
 Programming and Debugging
 *************************

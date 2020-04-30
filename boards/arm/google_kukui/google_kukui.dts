@@ -37,3 +37,13 @@
 		};
 	};
 };
+
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};

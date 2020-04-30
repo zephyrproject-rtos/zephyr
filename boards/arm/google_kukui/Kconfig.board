@@ -11,4 +11,4 @@ config BOARD_GOOGLE_KUKUI
 	  Duet and 10e Chromebook Tablet. The EC handles battery charging,
 	  keyboard scanning, USB Power Delivery and sensors.
 
-	  So far for Zephyr only a simple serial console is supported.
+	  So far for Zephyr only a simple serial console and I2C are supported.
