@@ -26,6 +26,7 @@
 #define IEEE802154_ACK_PKT_LENGTH		IEEE802154_MIN_LENGTH
 #define IEEE802154_MFR_LENGTH			2
 
+#define IEEE802154_FCF_SEQ_LENGTH		3
 #define IEEE802154_EXT_ADDR_LENGTH		8
 #define IEEE802154_SHORT_ADDR_LENGTH		2
 #define IEEE802154_SIMPLE_ADDR_LENGTH		1
@@ -341,6 +342,8 @@ struct ieee802154_cmd_assoc_req {
 	} ci;
 } __packed;
 
+#define IEEE802154_CMD_ASSOC_REQ_LENGTH		1
+
 /* See Section 5.3.2 */
 enum ieee802154_association_status_field {
 	IEEE802154_ASF_SUCCESSFUL		= 0x00,
@@ -355,6 +358,8 @@ struct ieee802154_cmd_assoc_res {
 	u8_t status;
 } __packed;
 
+#define IEEE802154_CMD_ASSOC_RES_LENGTH		3
+
 /* See Section 5.3.3 */
 enum ieee802154_disassociation_reason_field {
 	IEEE802154_DRF_RESERVED_1		= 0x00,
@@ -368,6 +373,8 @@ struct ieee802154_cmd_disassoc_note {
 	u8_t reason;
 } __packed;
 
+#define IEEE802154_CMD_DISASSOC_NOTE_LENGTH	1
+
 /* See Section 5.3.8 */
 struct ieee802154_cmd_coord_realign {
 	u16_t pan_id;
@@ -376,6 +383,8 @@ struct ieee802154_cmd_coord_realign {
 	u16_t short_addr;
 	u8_t channel_page; /* Optional */
 } __packed;
+
+#define IEEE802154_CMD_COORD_REALIGN_LENGTH	3
 
 /* See Section 5.3.9 */
 struct ieee802154_gts_request {
@@ -393,6 +402,8 @@ struct ieee802154_gts_request {
 #endif
 	} gts;
 } __packed;
+
+#define IEEE802154_GTS_REQUEST_LENGTH		1
 
 /* See Section 5.3 */
 enum ieee802154_cfi {
@@ -423,6 +434,8 @@ struct ieee802154_command {
 	};
 } __packed;
 
+#define IEEE802154_CMD_CFI_LENGTH		1
+
 /** Frame */
 struct ieee802154_mpdu {
 	struct ieee802154_mhr mhr;
@@ -452,10 +465,11 @@ struct ieee802154_frame_params {
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 struct ieee802154_aux_security_hdr *
-ieee802154_validate_aux_security_hdr(u8_t *buf, u8_t **p_buf);
+ieee802154_validate_aux_security_hdr(u8_t *buf, u8_t **p_buf, u8_t *length);
 #endif
 
-struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(u8_t *buf, u8_t **p_buf);
+struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(u8_t *buf, u8_t **p_buf,
+						      u8_t *length);
 
 bool ieee802154_validate_frame(u8_t *buf, u8_t length,
 			       struct ieee802154_mpdu *mpdu);
