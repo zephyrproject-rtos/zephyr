@@ -277,7 +277,7 @@ struct bt_data {
 /** @brief Helper to declare elements of bt_data arrays
  *
  *  This macro is mainly for creating an array of struct bt_data
- *  elements which is then passed to bt_le_adv_start().
+ *  elements which is then passed to e.g. @ref bt_le_adv_start().
  *
  *  @param _type Type of advertising data field
  *  @param _data Pointer to the data field payload
@@ -293,7 +293,7 @@ struct bt_data {
 /** @brief Helper to declare elements of bt_data arrays
  *
  *  This macro is mainly for creating an array of struct bt_data
- *  elements which is then passed to bt_le_adv_start().
+ *  elements which is then passed to e.g. @ref bt_le_adv_start().
  *
  *  @param _type Type of advertising data field
  *  @param _bytes Variable number of single-byte parameters
@@ -495,6 +495,25 @@ struct bt_le_adv_param {
 	const bt_addr_le_t *peer;
 };
 
+/** @brief Initialize advertising parameters
+ *
+ *  @param _options   Advertising Options
+ *  @param _int_min   Minimum advertising interval
+ *  @param _int_max   Maximum advertising interval
+ *  @param _peer      Peer address, set to NULL for undirected advertising or
+ *                    address of peer for directed advertising.
+ */
+#define BT_LE_ADV_PARAM_INIT(_options, _int_min, _int_max, _peer) \
+{ \
+	.id = BT_ID_DEFAULT, \
+	.sid = 0, \
+	.secondary_max_skip = 0, \
+	.options = (_options), \
+	.interval_min = (_int_min), \
+	.interval_max = (_int_max), \
+	.peer = (_peer), \
+}
+
 /** @brief Helper to declare advertising parameters inline
  *
  *  @param _options   Advertising Options
@@ -504,15 +523,9 @@ struct bt_le_adv_param {
  *                    address of peer for directed advertising.
  */
 #define BT_LE_ADV_PARAM(_options, _int_min, _int_max, _peer) \
-		((struct bt_le_adv_param[]) { { \
-			.id = BT_ID_DEFAULT, \
-			.sid = 0, \
-			.secondary_max_skip = 0, \
-			.options = (_options), \
-			.interval_min = (_int_min), \
-			.interval_max = (_int_max), \
-			.peer = (_peer), \
-		 } })
+	((struct bt_le_adv_param[]) { \
+		BT_LE_ADV_PARAM_INIT(_options, _int_min, _int_max, _peer) \
+	 })
 
 #define BT_LE_ADV_CONN_DIR(_peer) BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE |  \
 						  BT_LE_ADV_OPT_ONE_TIME, 0, 0,\
@@ -878,6 +891,25 @@ struct bt_le_scan_cb {
 	sys_snode_t node;
 };
 
+/** @brief Initialize scan parameters
+ *
+ *  @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
+ *                   BT_LE_SCAN_TYPE_PASSIVE.
+ *  @param _options  Scan options
+ *  @param _interval Scan Interval (N * 0.625 ms)
+ *  @param _window   Scan Window (N * 0.625 ms)
+ */
+#define BT_LE_SCAN_PARAM_INIT(_type, _options, _interval, _window) \
+{ \
+	.type = (_type), \
+	.options = (_options), \
+	.interval = (_interval), \
+	.window = (_window), \
+	.timeout = 0, \
+	.interval_coded = 0, \
+	.window_coded = 0, \
+}
+
 /** @brief Helper to declare scan parameters inline
  *
  *  @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
@@ -887,15 +919,9 @@ struct bt_le_scan_cb {
  *  @param _window   Scan Window (N * 0.625 ms)
  */
 #define BT_LE_SCAN_PARAM(_type, _options, _interval, _window) \
-		((struct bt_le_scan_param[]) { { \
-			.type = (_type), \
-			.options = (_options), \
-			.interval = (_interval), \
-			.window = (_window), \
-			.timeout = 0, \
-			.interval_coded = 0, \
-			.window_coded = 0, \
-		 } })
+	((struct bt_le_scan_param[]) { \
+		BT_LE_SCAN_PARAM_INIT(_type, _options, _interval, _window) \
+	 })
 
 /** Helper macro to enable active scanning to discover new devices. */
 #define BT_LE_SCAN_ACTIVE BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_ACTIVE, \
