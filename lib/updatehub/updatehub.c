@@ -32,26 +32,31 @@ LOG_MODULE_REGISTER(updatehub);
 #include <net/tls_credentials.h>
 #endif
 
+
+
 #define NETWORK_TIMEOUT K_SECONDS(2)
 #define UPDATEHUB_POLL_INTERVAL K_MINUTES(CONFIG_UPDATEHUB_POLL_INTERVAL)
 #define MAX_PATH_SIZE 255
 /* MAX_PAYLOAD_SIZE must reflect size COAP_BLOCK_x option */
-#define MAX_PAYLOAD_SIZE 1024
+#define MAX_PAYLOAD_SIZE 1088	//1024
 /* MAX_DOWNLOAD_DATA must be equal or bigger than:
  * MAX_PAYLOAD_SIZE + (len + header + options)
  * otherwise download size will be less than real size.
  */
 #define MAX_DOWNLOAD_DATA (MAX_PAYLOAD_SIZE + 32)
-#define COAP_MAX_RETRY 3
+#define COAP_MAX_RETRY 5			// origionally it is 3
 #define MAX_IP_SIZE 30
-
-#define SHA256_HEX_DIGEST_SIZE	((TC_SHA256_DIGEST_SIZE * 2) + 1)
 
 #if defined(CONFIG_UPDATEHUB_CE)
 #define UPDATEHUB_SERVER CONFIG_UPDATEHUB_SERVER
 #else
 #define UPDATEHUB_SERVER "coap.updatehub.io"
 #endif
+
+#define GET_NUM_2(v) ((v) >> 4)
+
+int counter = 0;
+
 
 static struct updatehub_context {
 	struct coap_block_context block;
@@ -68,30 +73,12 @@ static struct updatehub_context {
 } ctx;
 
 static struct update_info {
-	char package_uid[SHA256_HEX_DIGEST_SIZE];
-	char sha256sum_image[SHA256_HEX_DIGEST_SIZE];
+	char package_uid[TC_SHA256_BLOCK_SIZE + 1];
+	char sha256sum_image[TC_SHA256_BLOCK_SIZE + 1];
 	int image_size;
 } update_info;
 
 static struct k_delayed_work updatehub_work_handle;
-
-static int bin2hex_str(u8_t *bin, size_t bin_len, char *str, size_t str_buf_len)
-{
-	if (bin == NULL || str == NULL) {
-		return -1;
-	}
-
-	/* ensures at least an empty string */
-	if (str_buf_len < 1) {
-		return -2;
-	}
-
-	memset(str, 0, str_buf_len);
-	/* str_buf_len - 1 ensure space for \0 */
-	bin2hex(bin, bin_len, str, str_buf_len - 1);
-
-	return 0;
-}
 
 static void wait_fds(void)
 {
@@ -100,17 +87,12 @@ static void wait_fds(void)
 	}
 }
 
-static void prepare_fds(void)
-{
-	ctx.fds[ctx.nfds].fd = ctx.sock;
-	ctx.fds[ctx.nfds].events = POLLIN;
-	ctx.nfds++;
-}
-
 static int metadata_hash_get(char *metadata)
 {
 	struct tc_sha256_state_struct sha256sum;
-	unsigned char hash[TC_SHA256_DIGEST_SIZE];
+	unsigned char hash[TC_SHA256_DIGEST_SIZE]= {0};
+	char buffer[3];
+	int buffer_len = 0;
 
 	if (tc_sha256_init(&sha256sum) == 0) {
 		return -1;
@@ -124,11 +106,16 @@ static int metadata_hash_get(char *metadata)
 		return -1;
 	}
 
-	if (bin2hex_str(hash, TC_SHA256_DIGEST_SIZE,
-		update_info.package_uid, SHA256_HEX_DIGEST_SIZE)) {
-		return -1;
+	memset(update_info.package_uid, 0, TC_SHA256_BLOCK_SIZE + 1);
+	for (int i = 0; i < TC_SHA256_DIGEST_SIZE; i++) {
+		snprintk(buffer, sizeof(buffer), "%02x",
+			 hash[i]);
+		buffer_len = buffer_len + strlen(buffer);
+		strncat(&update_info.package_uid[i], buffer,
+			MIN(TC_SHA256_BLOCK_SIZE, buffer_len));
 	}
-
+	bin2hex(hash, TC_SHA256_DIGEST_SIZE,
+		update_info.package_uid, TC_SHA256_BLOCK_SIZE);
 	return 0;
 }
 
@@ -146,20 +133,16 @@ is_compatible_hardware(struct resp_probe_some_boards *metadata_some_boards)
 	return false;
 }
 
+static void prepare_fds(void)
+{
+	ctx.fds[ctx.nfds].fd = ctx.sock;
+	ctx.fds[ctx.nfds].events = POLLIN;
+	ctx.nfds++;
+}
+
 static bool start_coap_client(void)
 {
-	struct addrinfo *addr;
-	struct addrinfo hints;
-	int resolve_attempts = 10;
 	int ret = -1;
-
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		hints.ai_family = AF_INET6;
-		hints.ai_socktype = SOCK_STREAM;
-	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		hints.ai_family = AF_INET;
-		hints.ai_socktype = SOCK_STREAM;
-	}
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 	int verify = TLS_PEER_VERIFY_NONE;
@@ -169,21 +152,8 @@ static bool start_coap_client(void)
 #else
 	int protocol = IPPROTO_UDP;
 	char port[] = "5683";
-#endif
-
-	while (resolve_attempts--) {
-		ret = getaddrinfo(UPDATEHUB_SERVER, port, &hints, &addr);
-		if (ret == 0) {
-			break;
-		}
-		k_sleep(K_SECONDS(1));
-	}
-	if (ret < 0) {
-		LOG_ERR("Could not resolve dns");
-		return false;
-	}
-
-	ctx.sock = socket(addr->ai_family, SOCK_DGRAM, protocol);
+#endif	
+	ctx.sock = socket(AF_INET, SOCK_DGRAM, protocol); // enable IPv4
 	if (ctx.sock < 0) {
 		LOG_ERR("Failed to create UDP socket");
 		return false;
@@ -201,14 +171,40 @@ static bool start_coap_client(void)
 		return false;
 	}
 #endif
+	
+	
+	struct sockaddr ai_addr1;
+	
+	ai_addr1.data[0] = 22;  // fixed byte for IPv4
+	ai_addr1.data[1] = 51;  // fixed byte IPv4
+	char string[] = UPDATEHUB_SERVER;
+	const char delimiters[] = ".";
+	char *token, *cp;
+	
+	
+	cp = strdup (string);                // Make writable copy.  
+	token = strtok (cp, delimiters);      // token => "first byte" 
+	LOG_INF("%d \n",atoi(token));
+	ai_addr1.data[2] = atoi(token); 
+	token = strtok (NULL, delimiters);    // token => "2nd byte" 
+	LOG_INF("%d \n",atoi(token));
+	ai_addr1.data[3] = atoi(token); 
+	token = strtok (NULL, delimiters);    // token => "3rd byte" *
+	LOG_INF("%d \n",atoi(token));
+	ai_addr1.data[4] = atoi(token); 
+	token = strtok (NULL, delimiters);    // token => "4th byte" 
+	LOG_INF("%d \n",atoi(token));
+	ai_addr1.data[5] = atoi(token);   
 
-	if (connect(ctx.sock, addr->ai_addr, addr->ai_addrlen) < 0) {
+	ai_addr1.sa_family = AF_INET;
+
+	
+	if (connect(ctx.sock, &ai_addr1, 8) < 0) {			//length is valid for IPv4
 		LOG_ERR("Cannot connect to UDP remote");
 		return false;
 	}
 
 	prepare_fds();
-
 	return true;
 }
 
@@ -223,25 +219,21 @@ static void cleanup_connection(void)
 	ctx.sock = 0;
 }
 
+
 static int send_request(enum coap_msgtype msgtype, enum coap_method method,
 			enum updatehub_uri_path type)
 {
 	struct coap_packet request_packet;
 	int ret = -1;
 	u8_t content_application_json = 50;
-	u8_t *data = k_malloc(MAX_PAYLOAD_SIZE);
-
-	if (data == NULL) {
-		LOG_ERR("Could not alloc data memory");
-		goto error;
-	}
+	u8_t data[MAX_PAYLOAD_SIZE];
 
 	ret = coap_packet_init(&request_packet, data, MAX_PAYLOAD_SIZE, 1,
 			       COAP_TYPE_CON, 8, coap_next_token(), method,
 			       coap_next_id());
 	if (ret < 0) {
 		LOG_ERR("Could not init packet");
-		goto error;
+		return ret;
 	}
 
 	switch (method) {
@@ -257,21 +249,24 @@ static int send_request(enum coap_msgtype msgtype, enum coap_method method,
 						strlen(ctx.uri_path));
 		if (ret < 0) {
 			LOG_ERR("Unable add option to request path");
-			goto error;
+
+			return ret;
 		}
 
 		ret = coap_append_block2_option(&request_packet,
 						&ctx.block);
 		if (ret < 0) {
 			LOG_ERR("Unable coap append block 2");
-			goto error;
+
+			return ret;
 		}
 
 		ret = coap_packet_append_option(&request_packet, 2048,
 						UPDATEHUB_API_HEADER, strlen(UPDATEHUB_API_HEADER));
 		if (ret < 0) {
 			LOG_ERR("Unable add option to add updatehub header");
-			goto error;
+
+			return ret;
 		}
 
 		break;
@@ -283,7 +278,8 @@ static int send_request(enum coap_msgtype msgtype, enum coap_method method,
 						strlen(uri_path(type)));
 		if (ret < 0) {
 			LOG_ERR("Unable add option to request path");
-			goto error;
+
+			return ret;
 		}
 
 		ret = coap_packet_append_option(&request_packet,
@@ -292,20 +288,23 @@ static int send_request(enum coap_msgtype msgtype, enum coap_method method,
 						sizeof(content_application_json));
 		if (ret < 0) {
 			LOG_ERR("Unable add option to request format");
-			goto error;
+
+			return ret;
 		}
 
 		ret = coap_packet_append_option(&request_packet, 2048,
 						UPDATEHUB_API_HEADER, strlen(UPDATEHUB_API_HEADER));
 		if (ret < 0) {
 			LOG_ERR("Unable add option to add updatehub header");
-			goto error;
+
+			return ret;
 		}
 
 		ret = coap_packet_append_payload_marker(&request_packet);
 		if (ret < 0) {
 			LOG_ERR("Unable to append payload marker");
-			goto error;
+
+			return ret;
 		}
 
 		ret = coap_packet_append_payload(&request_packet,
@@ -313,7 +312,8 @@ static int send_request(enum coap_msgtype msgtype, enum coap_method method,
 						 strlen(ctx.payload));
 		if (ret < 0) {
 			LOG_ERR("Not able to append payload");
-			goto error;
+
+			return ret;
 		}
 
 		break;
@@ -321,39 +321,40 @@ static int send_request(enum coap_msgtype msgtype, enum coap_method method,
 	default:
 		LOG_ERR("Invalid method");
 		ret = -1;
-		goto error;
+
 	}
 
 	ret = send(ctx.sock, request_packet.data, request_packet.offset, 0);
 	if (ret < 0) {
 		LOG_ERR("Could not send request");
-		goto error;
-	}
 
-error:
-	k_free(data);
+	}
 
 	return ret;
 }
 
 static bool install_update_cb_sha256(void)
 {
-	u8_t hash[TC_SHA256_DIGEST_SIZE];
-	char sha256[SHA256_HEX_DIGEST_SIZE];
+	u8_t image_hash[TC_SHA256_DIGEST_SIZE];
+	char buffer[3], sha256_image_dowloaded[TC_SHA256_BLOCK_SIZE + 1];
+	int i, buffer_len = 0;
 
-	if (tc_sha256_final(hash, &ctx.sha256sum) < 1) {
+	if (tc_sha256_final(image_hash, &ctx.sha256sum) < 1) {
 		LOG_ERR("Could not finish sha256sum");
 		return false;
 	}
 
-	if (bin2hex_str(hash, TC_SHA256_DIGEST_SIZE,
-		sha256, SHA256_HEX_DIGEST_SIZE)) {
-		LOG_ERR("Could not create sha256sum hex representation");
-		return false;
+	memset(&sha256_image_dowloaded, 0, TC_SHA256_BLOCK_SIZE + 1);
+	for (i = 0; i < TC_SHA256_DIGEST_SIZE; i++) {
+		snprintk(buffer, sizeof(buffer), "%02x", image_hash[i]);
+		buffer_len = buffer_len + strlen(buffer);
+		strncat(&sha256_image_dowloaded[i], buffer,
+			MIN(TC_SHA256_BLOCK_SIZE, buffer_len));
 	}
-
-	if (strncmp(sha256, update_info.sha256sum_image,
-		    SHA256_HEX_DIGEST_SIZE) != 0) {
+	LOG_INF("comparison, sha256_image_dowloaded: %s, update_info.sha256sum_image: %d",sha256_image_dowloaded, strlen(update_info.sha256sum_image));
+	if (strncmp(sha256_image_dowloaded,
+		update_info.sha256sum_image,
+		strlen(update_info.sha256sum_image)) != 0) {
 		LOG_ERR("SHA256SUM of image are not the same");
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		return false;
@@ -379,16 +380,16 @@ static void install_update_cb(void)
 	rcvd = recv(ctx.sock, data, MAX_DOWNLOAD_DATA, MSG_DONTWAIT);
 	if (rcvd <= 0) {
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
-		LOG_ERR("Could not receive data");
+		LOG_ERR("install_update_cb:(): Could not receive data: %d",ctx.code_status);
 		goto cleanup;
 	}
-
+	
 	if (coap_packet_parse(&response_packet, data, rcvd, NULL, 0) < 0) {
 		LOG_ERR("Invalid data received");
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		goto cleanup;
 	}
-
+	
 	ctx.downloaded_size = ctx.downloaded_size +
 			      (response_packet.max_len - response_packet.offset);
 
@@ -415,6 +416,7 @@ static void install_update_cb(void)
 	}
 
 	if (coap_next_block(&response_packet, &ctx.block) == 0) {
+		LOG_INF("install_update_cb(): ctx.downloaded_size: %d and ctx.block.total_size: %d",ctx.downloaded_size,ctx.block.total_size);
 		if (ctx.downloaded_size != ctx.block.total_size) {
 			LOG_ERR("Could not get the next coap block");
 			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
@@ -432,8 +434,10 @@ static void install_update_cb(void)
 	ctx.code_status = UPDATEHUB_OK;
 
 cleanup:
+
 	k_free(data);
 }
+
 
 static enum updatehub_response install_update(void)
 {
@@ -454,6 +458,7 @@ static enum updatehub_response install_update(void)
 
 	if (!start_coap_client()) {
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
+		LOG_ERR("install_update(): start_coap_client could not start successfully");
 		goto error;
 	}
 
@@ -477,12 +482,19 @@ static enum updatehub_response install_update(void)
 			goto cleanup;
 		}
 
-		install_update_cb();
-
-		if (ctx.code_status != UPDATEHUB_OK) {
+		install_update_cb();		
+	
+		if(ctx.code_status == UPDATEHUB_OK){	
+			attempts_download = 0;
+			goto received_reply;
+		}
+		if(ctx.code_status == UPDATEHUB_DOWNLOAD_ERROR){	
+			LOG_ERR("install_update(): download is not successful \n");
 			goto cleanup;
 		}
 
+received_reply:
+	
 		if (verification_download == ctx.downloaded_size) {
 			if (attempts_download == COAP_MAX_RETRY) {
 				LOG_ERR("Could not get the packet");
@@ -502,20 +514,23 @@ error:
 	return ctx.code_status;
 }
 
+
 static int report(enum updatehub_state state)
 {
 	struct report report;
 	int ret = -1;
 	const char *exec = state_name(state);
-	char *device_id = k_malloc(DEVICE_ID_HEX_MAX_SIZE);
+	char *device_id = k_malloc(DEVICE_ID_BIN_MAX_SIZE);
 	char *firmware_version = k_malloc(BOOT_IMG_VER_STRLEN_MAX);
+	
+	size_t sha256size;	
 
 	if (device_id == NULL || firmware_version == NULL) {
 		LOG_ERR("Could not alloc device_id or firmware_version memory");
 		goto error;
 	}
 
-	if (!updatehub_get_device_identity(device_id, DEVICE_ID_HEX_MAX_SIZE)) {
+	if (!updatehub_get_device_identity(device_id, DEVICE_ID_BIN_MAX_SIZE)) {
 		goto error;
 	}
 
@@ -583,27 +598,25 @@ cleanup:
 error:
 	k_free(firmware_version);
 	k_free(device_id);
-
 	return ret;
 }
 
-static void probe_cb(char *metadata, size_t metadata_size)
+static void probe_cb(char *metadata)
 {
 	struct coap_packet reply;
-	char tmp[MAX_DOWNLOAD_DATA];
-	size_t tmp_len;
+	char tmp[MAX_PAYLOAD_SIZE];
 	int rcvd = -1;
 
 	wait_fds();
 
-	rcvd = recv(ctx.sock, tmp, MAX_DOWNLOAD_DATA, MSG_DONTWAIT);
+	rcvd = recv(ctx.sock, metadata, MAX_PAYLOAD_SIZE, MSG_DONTWAIT);
 	if (rcvd <= 0) {
 		LOG_ERR("Could not receive data");
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
 		return;
 	}
 
-	if (coap_packet_parse(&reply, tmp, rcvd, NULL, 0) < 0) {
+	if (coap_packet_parse(&reply, metadata, rcvd, NULL, 0) < 0) {
 		LOG_ERR("Invalid data received");
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		return;
@@ -615,30 +628,16 @@ static void probe_cb(char *metadata, size_t metadata_size)
 		return;
 	}
 
-	/* check if we have buffer space to receive payload */
-	if (metadata_size < (reply.max_len - reply.offset)) {
-		LOG_ERR("There is no buffer available");
-		ctx.code_status = UPDATEHUB_METADATA_ERROR;
-		return;
-	}
-
-	memcpy(metadata, reply.data + reply.offset,
-	       reply.max_len - reply.offset);
-
-	/* ensures payload have a valid string with size lower
-	 * than metadata_size
-	 */
-	tmp_len = strlen(metadata);
-	if (tmp_len >= metadata_size) {
-		LOG_ERR("Invalid metadata data received");
-		ctx.code_status = UPDATEHUB_METADATA_ERROR;
-		return;
-	}
+	memset(&tmp, 0, MAX_PAYLOAD_SIZE);
+	memcpy(tmp, reply.data + reply.offset, reply.max_len - reply.offset);
+	memset(metadata, 0, MAX_PAYLOAD_SIZE);
+	memcpy(metadata, tmp, strlen(tmp));
 
 	ctx.code_status = UPDATEHUB_OK;
 
-	LOG_INF("Probe metadata received");
+	LOG_INF("Probe metadata received"); 
 }
+
 
 enum updatehub_response updatehub_probe(void)
 {
@@ -646,12 +645,10 @@ enum updatehub_response updatehub_probe(void)
 	struct resp_probe_some_boards metadata_some_boards;
 	struct resp_probe_any_boards metadata_any_boards;
 
-	char *metadata = k_malloc(MAX_DOWNLOAD_DATA);
-	char *metadata_copy = k_malloc(MAX_DOWNLOAD_DATA);
-	char *device_id = k_malloc(DEVICE_ID_HEX_MAX_SIZE);
+	char *metadata = k_malloc(MAX_PAYLOAD_SIZE);
+	char *metadata_copy = k_malloc(MAX_PAYLOAD_SIZE);
+	char *device_id = k_malloc(DEVICE_ID_BIN_MAX_SIZE);
 	char *firmware_version = k_malloc(BOOT_IMG_VER_STRLEN_MAX);
-
-	size_t sha256size;
 
 	if (device_id == NULL || firmware_version == NULL ||
 	    metadata == NULL || metadata_copy == NULL) {
@@ -671,7 +668,7 @@ enum updatehub_response updatehub_probe(void)
 		goto error;
 	}
 
-	if (!updatehub_get_device_identity(device_id, DEVICE_ID_HEX_MAX_SIZE)) {
+	if (!updatehub_get_device_identity(device_id, DEVICE_ID_BIN_MAX_SIZE)) {
 		ctx.code_status = UPDATEHUB_METADATA_ERROR;
 		goto error;
 	}
@@ -696,18 +693,36 @@ enum updatehub_response updatehub_probe(void)
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
 		goto error;
 	}
+	uint8_t i = 0;
+	bool while_condition = true;
 
-	if (send_request(COAP_TYPE_CON, COAP_METHOD_POST, UPDATEHUB_PROBE) < 0) {
-		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
-		goto cleanup;
+	while(while_condition && i < COAP_MAX_RETRY){	
+
+		if (send_request(COAP_TYPE_CON, COAP_METHOD_POST, UPDATEHUB_PROBE) < 0) {
+			ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
+			while_condition = false; 
+			break;
+		}
+
+		memset(metadata, 0, MAX_PAYLOAD_SIZE);
+		probe_cb(metadata);
+	
+		if (ctx.code_status == UPDATEHUB_OK) {
+			LOG_INF("received packet# %d and update found",i);	
+			while_condition = false;
+			break;
+		}
+		
+		i++;
 	}
 
-	probe_cb(metadata, MAX_DOWNLOAD_DATA);
 
 	if (ctx.code_status != UPDATEHUB_OK) {
 		goto cleanup;
 	}
 
+
+	
 	memset(&update_info, 0, sizeof(update_info));
 	if (metadata_hash_get(metadata) < 0) {
 		LOG_ERR("Could not get metadata hash");
@@ -723,25 +738,17 @@ enum updatehub_response updatehub_probe(void)
 
 		if (json_obj_parse(metadata_copy, strlen(metadata_copy),
 				   recv_probe_sh_string_descr,
-				   ARRAY_SIZE(recv_probe_sh_string_descr),
+				
+   ARRAY_SIZE(recv_probe_sh_string_descr),
 				   &metadata_any_boards) < 0) {
 			LOG_ERR("Could not parse json");
 			ctx.code_status = UPDATEHUB_METADATA_ERROR;
 			goto cleanup;
 		}
-
-		sha256size = strlen(
-			metadata_any_boards.objects[1].objects.sha256sum) + 1;
-
-		if (sha256size != SHA256_HEX_DIGEST_SIZE) {
-			LOG_ERR("SHA256 size is invalid");
-			ctx.code_status = UPDATEHUB_METADATA_ERROR;
-			goto cleanup;
-		}
-
+		LOG_ERR("sha256sum: %s image size: %d",metadata_any_boards.objects[1].objects.sha256sum,metadata_any_boards.objects[1].objects.size);
 		memcpy(update_info.sha256sum_image,
 		       metadata_any_boards.objects[1].objects.sha256sum,
-		       SHA256_HEX_DIGEST_SIZE);
+		       strlen(metadata_any_boards.objects[1].objects.sha256sum));
 		update_info.image_size = metadata_any_boards.objects[1].objects.size;
 	} else {
 		if (!is_compatible_hardware(&metadata_some_boards)) {
@@ -750,19 +757,10 @@ enum updatehub_response updatehub_probe(void)
 				UPDATEHUB_INCOMPATIBLE_HARDWARE;
 			goto cleanup;
 		}
-
-		sha256size = strlen(
-			metadata_any_boards.objects[1].objects.sha256sum) + 1;
-
-		if (sha256size != SHA256_HEX_DIGEST_SIZE) {
-			LOG_ERR("SHA256 size is invalid");
-			ctx.code_status = UPDATEHUB_METADATA_ERROR;
-			goto cleanup;
-		}
-
 		memcpy(update_info.sha256sum_image,
 		       metadata_some_boards.objects[1].objects.sha256sum,
-		       SHA256_HEX_DIGEST_SIZE);
+		       strlen(metadata_some_boards.objects[1]
+			      .objects.sha256sum));
 		update_info.image_size =
 			metadata_some_boards.objects[1].objects.size;
 	}
@@ -778,7 +776,7 @@ error:
 	k_free(firmware_version);
 	k_free(device_id);
 
-	return ctx.code_status;
+	return ctx.code_status; 
 }
 
 enum updatehub_response updatehub_update(void)
@@ -863,9 +861,10 @@ static void autohandler(struct k_work *work)
 
 	k_delayed_work_submit(&updatehub_work_handle, UPDATEHUB_POLL_INTERVAL);
 }
-
 void updatehub_autohandler(void)
 {
 	k_delayed_work_init(&updatehub_work_handle, autohandler);
 	k_delayed_work_submit(&updatehub_work_handle, K_NO_WAIT);
 }
+
+
