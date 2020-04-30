@@ -238,7 +238,7 @@ static void setup_udp_recv(struct net_context *udp_recv6)
 {
 	int ret;
 
-	ret = net_context_recv(udp_recv6, udp_received, 0, NULL);
+	ret = net_context_recv(udp_recv6, udp_received, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		LOG_ERR("Cannot receive IPv6 UDP packets");
 	}
@@ -293,7 +293,7 @@ static void tcp_accepted(struct net_context *context,
 
 	net_context_set_accepting(context, false);
 
-	ret = net_context_recv(context, tcp_received, 0, NULL);
+	ret = net_context_recv(context, tcp_received, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		LOG_ERR("Cannot receive TCP packet (family %d)",
 			net_context_get_family(context));
