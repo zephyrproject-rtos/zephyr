@@ -132,6 +132,16 @@ Applications for the ``stm32h747i_disco`` board should be built per core target,
 using either ``stm32h747i_disco_m7`` or ```stm32h747i_disco_m4`` as the target.
 See :ref:`build_an_application` for more information about application builds.
 
+.. note::
+
+   If using OpenOCD you will need a recent development version as the last
+   official release does not support H7 dualcore yet.
+   Also, with OpenOCD, sometimes, flashing is not working. It is necessary to
+   erase the flash (with STM32CubeProgrammer for example) to make it work again.
+   Debugging with OpenOCD is currently working for this board only with Cortex M7,
+   not Cortex M4.
+
+
 Flashing
 ========
 
@@ -170,6 +180,17 @@ Use the following commands to flash either m7 or m4 target:
    $ ./STM32_Programmer_CLI -c port=SWD mode=UR -w <path_to_m7_binary>  0x8000000
    $ ./STM32_Programmer_CLI -c port=SWD mode=UR -w <path_to_m4_binary>  0x8100000
 
+Alternatively it is possible to flash with OpenOcd but with some restrictions:
+Sometimes, flashing is not working. It is necessary to erase the flash
+(with STM32CubeProgrammer for example) to make it work again.
+Debugging with OpenOCD is currently working for this board only with Cortex M7,
+not Cortex M4.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32h747i_disco_m7
+   :goals: build flash
+
 Run a serial host program to connect with your board:
 
 .. code-block:: console
@@ -180,7 +201,7 @@ You should see the following message on the console:
 
 .. code-block:: console
 
-   Hello World! arm
+   Hello World! stm32h747i_disco_m7
 
 Debugging
 =========
