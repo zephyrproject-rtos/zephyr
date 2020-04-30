@@ -739,9 +739,12 @@ struct l2cap_connect_cmd {
 	u8_t address_type;
 	u8_t address[6];
 	u16_t psm;
+	u16_t mtu;
+	u8_t num;
 } __packed;
 struct l2cap_connect_rp {
-	u8_t chan_id;
+	u8_t num;
+	u8_t chan_id[0];
 } __packed;
 
 #define L2CAP_DISCONNECT		0x03
@@ -763,6 +766,8 @@ struct l2cap_send_data_cmd {
 struct l2cap_listen_cmd {
 	u16_t psm;
 	u8_t transport;
+	uint16_t mtu;
+	uint16_t response;
 } __packed;
 
 #define L2CAP_ACCEPT_CONNECTION		0x06
@@ -784,6 +789,10 @@ struct l2cap_connection_req_ev {
 struct l2cap_connected_ev {
 	u8_t chan_id;
 	u16_t psm;
+	u16_t mtu_remote;
+	u16_t mps_remote;
+	u16_t mtu_local;
+	u16_t mps_local;
 	u8_t address_type;
 	u8_t address[6];
 } __packed;
