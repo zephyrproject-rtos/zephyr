@@ -170,6 +170,17 @@
 			label= "I2C_3";
 		};
 
+		quadspi: quadspi@a0001000 {
+			compatible = "st,stm32-quadspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xa0001000 0x34>;
+			interrupts = <71 0>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB3 0x00000100>;
+			status = "disabled";
+			label = "QUADSPI";
+		};
+
 		spi1: spi@40013000 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
