@@ -8,10 +8,6 @@ if BOARD_NUCLEO_G431RB
 config BOARD
 	default "nucleo_g431rb"
 
-config PWM_STM32_2
-	default y
-	depends on PWM
-
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI

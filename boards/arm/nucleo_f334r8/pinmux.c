@@ -38,9 +38,9 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PA6, STM32F3_PINMUX_FUNC_PA6_SPI1_MISO},
 	{STM32_PIN_PA7, STM32F3_PINMUX_FUNC_PA7_SPI1_MOSI},
 #endif
-#ifdef CONFIG_PWM_STM32_1
+#if DT_HAS_NODE(DT_NODELABEL(pwm1))
 	{STM32_PIN_PA8, STM32F3_PINMUX_FUNC_PA8_PWM1_CH1},
-#endif /* CONFIG_PWM_STM32_1 */
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)

@@ -39,7 +39,7 @@
 		compatible = "pwm-leds";
 
 		red_pwm_led: red_pwm_led {
-			pwms = <&{/soc/timers@40014000/pwm} 1 4>;
+			pwms = <&pwm15 1 4>;
 		};
 	};
 
@@ -78,7 +78,7 @@
 &timers1 {
 	status = "okay";
 
-	pwm {
+	pwm1: pwm {
 		status = "okay";
 	};
 };
@@ -86,7 +86,7 @@
 &timers2 {
 	status = "okay";
 
-	pwm {
+	pwm2: pwm {
 		status = "okay";
 	};
 };
@@ -94,7 +94,7 @@
 &timers4 {
 	status = "okay";
 
-	pwm {
+	pwm4: pwm {
 		status = "okay";
 	};
 };
@@ -102,7 +102,7 @@
 &timers15 {
 	status = "okay";
 
-	pwm {
+	pwm15: pwm {
 		status = "okay";
 	};
 };

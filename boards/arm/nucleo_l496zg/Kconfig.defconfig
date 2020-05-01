@@ -12,22 +12,6 @@ config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
 
-if PWM
-
-config PWM_STM32_1
-	default y
-
-config PWM_STM32_2
-	default y
-
-config PWM_STM32_4
-	default y
-
-config PWM_STM32_15
-	default y
-
-endif # PWM
-
 if WATCHDOG
 
 config WWDG_STM32

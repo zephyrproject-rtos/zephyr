@@ -107,7 +107,7 @@
 &timers3 {
 	status = "okay";
 
-	pwm {
+	pwm3: pwm {
 		status = "okay";
 	};
 };
@@ -115,7 +115,7 @@
 &timers4 {
 	status = "okay";
 
-	pwm {
+	pwm4: pwm {
 		status = "okay";
 	};
 };
@@ -123,7 +123,7 @@
 &timers9 {
 	status = "okay";
 
-	pwm {
+	pwm9: pwm {
 		status = "okay";
 	};
 };

@@ -8,9 +8,4 @@ if BOARD_NUCLEO_H743ZI
 config BOARD
 	default "nucleo_h743zi"
 
-
-config PWM_STM32_12
-	default y
-	depends on PWM
-
 endif # BOARD_NUCLEO_H743ZI
