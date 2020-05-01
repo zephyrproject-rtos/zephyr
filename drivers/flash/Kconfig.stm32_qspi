@@ -1,0 +1,12 @@
+# STM32 Quad SPI flash driver configuration options
+
+# Copyright (c) 2020 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_STM32_QSPI
+	bool "STM32 Quad SPI Flash driver"
+	depends on SOC_FAMILY_STM32
+	select USE_STM32_HAL_QSPI
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enable Quad SPI support on the STM32 family of processors.
