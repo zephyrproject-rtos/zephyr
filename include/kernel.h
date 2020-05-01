@@ -813,9 +813,9 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  * Changing a thread's resource pool will not migrate allocations from the
  * previous pool.
  *
- * @param thread Target thread to assign a memory pool for resource requests,
- *               or NULL if the thread should no longer have a memory pool.
- * @param pool Memory pool to use for resources.
+ * @param thread Target thread to assign a memory pool for resource requests.
+ * @param pool Memory pool to use for resources,
+ *             or NULL if the thread should no longer have a memory pool.
  */
 static inline void k_thread_resource_pool_assign(struct k_thread *thread,
 						 struct k_mem_pool *pool)
