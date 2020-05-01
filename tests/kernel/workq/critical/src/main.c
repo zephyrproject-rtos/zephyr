@@ -28,8 +28,8 @@
 #include <linker/sections.h>
 #include <ztest.h>
 
-#define NUM_MILLISECONDS        5000
-#define TEST_TIMEOUT            20000
+#define NUM_MILLISECONDS        50
+#define TEST_TIMEOUT            200
 
 #ifdef CONFIG_COVERAGE
 #define OFFLOAD_WORKQUEUE_STACK_SIZE 4096
