@@ -38,7 +38,10 @@
 #include "ull_conn_internal.h"
 #include "ull_slave_internal.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#include "hal/cntr.h"
+
+//#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define BT_DBG_ENABLED 1
 #define LOG_MODULE_NAME bt_ctlr_ull_slave
 #include "common/log.h"
 #include <soc.h>
@@ -271,6 +274,38 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 
 	/* Start Slave */
 	ticker_id_conn = TICKER_ID_CONN_BASE + ll_conn_handle_get(conn);
+
+#if 1
+	BT_DBG("\nticks now: %u\n"
+			"ticker_start(\n\t"
+			"instance_index: %u\n\t"
+			"user_id: %u\n\t"
+			"ticker_id: %u\n\t"
+			"ticks_anchor: %u\n\t"
+			"ticks_first: %u\n\t"
+			"ticks_periodic: %u\n\t"
+	       "remainder_periodic: %u\n\t"
+			"lazy: %u\n\t"
+			"ticks_slot: %u\n\t"
+	       "fp_timeout_func: %p\n\t"
+			"context: %p\n\t"
+	       "fp_op_func: %p\n\t"
+			"op_context: %p\n"
+			")",
+	       cntr_cnt_get(), TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+	       ticker_id_conn, ftr->ticks_anchor - ticks_slot_offset,
+	       HAL_TICKER_US_TO_TICKS(conn_offset_us),
+	       HAL_TICKER_US_TO_TICKS(conn_interval_us),
+	       HAL_TICKER_REMAINDER(conn_interval_us),
+#if defined(CONFIG_BT_CTLR_CONN_META)
+	       TICKER_LAZY_MUST_EXPIRE,
+#else
+	       TICKER_NULL_LAZY,
+#endif // CONFIG_BT_CTLR_CONN_META
+	       (conn->evt.ticks_slot + ticks_slot_overhead),
+	       ull_slave_ticker_cb, conn, ticker_op_cb, (void *)__LINE__);
+#endif
+
 	ticker_status = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				     TICKER_USER_ID_ULL_HIGH,
 				     ticker_id_conn,

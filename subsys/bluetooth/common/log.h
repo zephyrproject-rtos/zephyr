@@ -25,10 +25,6 @@
 extern "C" {
 #endif
 
-#if !defined(BT_DBG_ENABLED)
-#define BT_DBG_ENABLED 1
-#endif
-
 #if BT_DBG_ENABLED
 #define LOG_LEVEL LOG_LEVEL_DBG
 #else

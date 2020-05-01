@@ -2158,7 +2158,10 @@ static inline void ticker_job_compare_update(struct ticker_instance *instance,
 	do {
 		u32_t ticks_elapsed;
 
-		LL_ASSERT(i);
+		if ( !i ) {
+			break;
+		}
+		//LL_ASSERT(i);
 		i--;
 
 		ctr = cntr_cnt_get();

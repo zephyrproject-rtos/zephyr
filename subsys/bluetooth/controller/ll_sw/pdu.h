@@ -531,11 +531,11 @@ struct pdu_data {
 
 	u8_t len;
 
-#if !defined(CONFIG_SOC_OPENISA_RV32M1_RISCV32)
+#if !(defined(CONFIG_SOC_OPENISA_RV32M1_RISCV32) || defined(CONFIG_SOC_SERIES_CC13X2_CC26X2))
 #if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
 	u8_t resv:8; /* TODO: remove nRF specific code */
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
-#endif /* !CONFIG_SOC_OPENISA_RV32M1_RISCV32 */
+#endif /* !(CONFIG_SOC_OPENISA_RV32M1_RISCV32 || CONFIG_SOC_SERIES_CC13X2_CC26X2) */
 
 	union {
 		struct pdu_data_llctrl llctrl;

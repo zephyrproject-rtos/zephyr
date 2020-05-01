@@ -41,10 +41,13 @@ extern "C" {
 #define BT_HCI_VS_HW_PLAT_INTEL                 0x0001
 #define BT_HCI_VS_HW_PLAT_NORDIC                0x0002
 #define BT_HCI_VS_HW_PLAT_NXP                   0x0003
+#define BT_HCI_VS_HW_PLAT_TI                    0x0004
 
 #define BT_HCI_VS_HW_VAR_NORDIC_NRF51X          0x0001
 #define BT_HCI_VS_HW_VAR_NORDIC_NRF52X          0x0002
 #define BT_HCI_VS_HW_VAR_NORDIC_NRF53X          0x0003
+
+#define BT_HCI_VS_HW_VAR_TI_CC13XX_CC26XX       0x0001
 
 #define BT_HCI_VS_FW_VAR_STANDARD_CTLR          0x0001
 #define BT_HCI_VS_FW_VAR_VS_CTLR                0x0002

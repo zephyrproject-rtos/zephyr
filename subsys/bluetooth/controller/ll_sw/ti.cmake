@@ -1,0 +1,96 @@
+# SPDX-License-Identifier: Apache-2.0
+
+if(CONFIG_BT_LL_SW_LEGACY)
+  zephyr_library_sources(
+    ll_sw/ctrl.c
+    ll_sw/ll.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_BROADCASTER
+    ll_sw/ll_adv.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_OBSERVER
+    ll_sw/ll_scan.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_FILTER
+    ll_sw/ll_filter.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CENTRAL
+    ll_sw/ll_master.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_ADV_EXT
+    ll_sw/ll_adv_aux.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_HCI_MESH_EXT
+    ll_sw/ll_mesh.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_DTM
+    ll_sw/ll_test.c
+    )
+endif()
+
+if(CONFIG_BT_LL_SW_SPLIT)
+  zephyr_library_sources(
+    ll_sw/ti/lll/lll.c
+    ll_sw/ti/lll/lll_clock.c
+    )
+  if(CONFIG_BT_BROADCASTER)
+    zephyr_library_sources(
+      ll_sw/ti/lll/lll_adv.c
+      )
+  endif()
+  if(CONFIG_BT_OBSERVER)
+    zephyr_library_sources(
+      ll_sw/ti/lll/lll_scan.c
+      )
+  endif()
+  if(CONFIG_BT_CONN)
+    zephyr_library_sources(
+      ll_sw/ti/lll/lll_conn.c
+      )
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_PERIPHERAL
+      ll_sw/ti/lll/lll_slave.c
+      )
+    zephyr_library_sources_ifdef(
+      CONFIG_BT_CENTRAL
+      ll_sw/ti/lll/lll_master.c
+      )
+  endif()
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_DTM
+    ll_sw/ti/lll/lll_test.c
+    )
+  zephyr_library_sources_ifdef(
+    CONFIG_BT_CTLR_PROFILE_ISR
+    ll_sw/ti/lll/lll_prof.c
+    )
+  zephyr_library_include_directories(
+    ll_sw/ti/lll
+    )
+endif()
+
+zephyr_library_sources(
+  ll_sw/ti/hal/cc13xx_cc26xx/cntr.c
+  ll_sw/ti/hal/cc13xx_cc26xx/ecb.c
+  ll_sw/ti/hal/cc13xx_cc26xx/radio/radio.c
+  ll_sw/ti/hal/cc13xx_cc26xx/mayfly.c
+  ll_sw/ti/hal/cc13xx_cc26xx/swi.c
+  ll_sw/ti/hal/cc13xx_cc26xx/ticker.c
+  )
+
+zephyr_library_sources_ifdef(
+  CONFIG_SOC_FAMILY_TISIMPLELINK
+  hci/ti/hci_vendor.c
+  )
+
+zephyr_library_include_directories(
+  ll_sw/ti
+  hci/ti
+)

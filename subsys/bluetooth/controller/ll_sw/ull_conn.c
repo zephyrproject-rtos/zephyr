@@ -38,7 +38,8 @@
 #include "ll_feat.h"
 #include "ll_settings.h"
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+//#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
+#define BT_DBG_ENABLED 1
 #define LOG_MODULE_NAME bt_ctlr_ull_conn
 #include "common/log.h"
 #include <soc.h>
@@ -726,11 +727,13 @@ int ull_conn_rx(memq_link_t *link, struct node_rx_pdu **rx)
 	struct pdu_data *pdu_rx;
 	struct ll_conn *conn;
 
+	BT_DBG("");
+
 	conn = ll_connected_get((*rx)->hdr.handle);
 	if (!conn) {
 		/* Mark for buffer for release */
 		(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
-
+		BT_DBG("!conn");
 		return 0;
 	}
 
@@ -4023,6 +4026,8 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	struct node_tx *tx;
 	struct pdu_data *pdu_tx;
 
+	BT_DBG("");
+
 	/* acquire tx mem */
 	tx = mem_acquire(&mem_conn_tx_ctrl.free);
 	if (!tx) {
@@ -5186,6 +5191,8 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 	int nack = 0;
 	u8_t opcode;
 
+	BT_DBG("");
+
 	opcode = pdu_rx->llctrl.opcode;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -5391,12 +5398,14 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
+		BT_DBG("Received PDU_DATA_LLCTRL_TYPE_FEATURE_REQ");
 		if (!conn->lll.role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_FEATURE_REQ,
 				 pdu_rx->len)) {
 			goto ull_conn_rx_unknown_rsp_send;
 		}
 
+		BT_DBG("Queueing up PDU_DATA_LLCTRL_TYPE_FEATURE_RSP");
 		nack = feature_rsp_send(conn, *rx, pdu_rx);
 		break;
 

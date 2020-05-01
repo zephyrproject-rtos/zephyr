@@ -33,4 +33,20 @@ config SYS_PM_MIN_RESIDENCY_SLEEP_2
 	default 5
 
 endif # SYS_POWER_MANAGEMENT
+
+if BT
+
+config BT_CTLR
+	default y
+	select BLE_VENDOR_LLL_TI
+	select BLE_CC13XX_CC26XX
+	select ENTROPY_CC13XX_CC26XX_RNG
+
+# To debug the BLE radio using GPIO, uncomment the line below
+# See the file subsys/bluetooth/controller/ll_sw/ti/hal/cc13xx_cc26xx/debug.h
+# for details
+	select BT_CTLR_DEBUG_PINS
+
+endif # BT
+
 endif # BOARD_CC1352R1_LAUNCHXL
