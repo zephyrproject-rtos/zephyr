@@ -1863,7 +1863,7 @@ static void monitor_work_handler(struct k_work *work)
 finally:
 	/* Submit delayed work */
 	k_delayed_work_submit(&dev_data->monitor_work,
-			      CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD);
+			      K_MSEC(CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD));
 }
 
 static void eth0_iface_init(struct net_if *iface)
@@ -1982,7 +1982,7 @@ static void eth0_iface_init(struct net_if *iface)
 	/* Initialise monitor */
 	k_delayed_work_init(&dev_data->monitor_work, monitor_work_handler);
 	k_delayed_work_submit(&dev_data->monitor_work,
-			      CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD);
+			      K_MSEC(CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD));
 
 	/* Do not start the interface until PHY link is up */
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
