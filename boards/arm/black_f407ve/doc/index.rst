@@ -27,7 +27,7 @@ Here are some highlights of the BLACK_F407VE board:
 - Four push-buttons: RESET, K0, K1 and WK_UP
 - Mini-AB connector
 
-.. image:: img/stm32f4ve.jpg
+.. image:: img/black_f407ve.jpg
      :width: 500px
      :align: center
      :height: 500px
