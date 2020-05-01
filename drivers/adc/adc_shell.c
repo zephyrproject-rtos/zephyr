@@ -10,6 +10,26 @@
 #include <ctype.h>
 #include <sys/util.h>
 
+#if DT_HAS_COMPAT(atmel_sam_afec)
+#define DT_DRV_COMPAT atmel_sam_afec
+#elif DT_HAS_COMPAT(atmel_sam0_adc)
+#define DT_DRV_COMPAT atmel_sam0_adc
+#elif DT_HAS_COMPAT(microchip_xec_adc)
+#define DT_DRV_COMPAT microchip_xec_adc
+#elif DT_HAS_COMPAT(nordic_nrf_adc)
+#define DT_DRV_COMPAT nordic_nrf_adc
+#elif DT_HAS_COMPAT(nordic_nrf_saadc)
+#define DT_DRV_COMPAT nordic_nrf_saadc
+#elif DT_HAS_COMPAT(nxp_kinetis_adc12)
+#define DT_DRV_COMPAT nxp_kinetis_adc12
+#elif DT_HAS_COMPAT(nxp_kinetis_adc16)
+#define DT_DRV_COMPAT nxp_kinetis_adc16
+#elif DT_HAS_COMPAT(st_stm32_adc)
+#define DT_DRV_COMPAT st_stm32_adc
+#else
+#error No known devicetree compatible match for ADC shell
+#endif
+
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_shell);
@@ -21,9 +41,9 @@ struct adc_hdl {
 };
 
 struct adc_hdl adc_list[] = {
-#ifdef CONFIG_ADC_0
+#if DT_HAS_DRV_INST(0)
 	{
-		.device_name = DT_ADC_0_NAME,
+		.device_name = DT_INST_LABEL(0),
 		.channel_config = {
 			.gain = ADC_GAIN_1,
 			.reference = ADC_REF_INTERNAL,
@@ -33,9 +53,9 @@ struct adc_hdl adc_list[] = {
 		.resolution = 0,
 	},
 #endif
-#ifdef CONFIG_ADC_1
+#if DT_HAS_DRV_INST(1)
 	{
-		.device_name = DT_ADC_1_NAME,
+		.device_name = DT_INST_LABEL(1),
 		.channel_config = {
 			.gain = ADC_GAIN_1,
 			.reference = ADC_REF_INTERNAL,
@@ -45,9 +65,9 @@ struct adc_hdl adc_list[] = {
 		.resolution = 0,
 	},
 #endif
-#ifdef CONFIG_ADC_2
+#if DT_HAS_DRV_INST(2)
 	{
-		.device_name = DT_ADC_2_NAME,
+		.device_name = DT_INST_LABEL(2),
 		.channel_config = {
 			.gain = ADC_GAIN_1,
 			.reference = ADC_REF_INTERNAL,
@@ -456,13 +476,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_adc_cmds,
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_adc,
-#ifdef CONFIG_ADC_0
+#if DT_HAS_DRV_INST(0)
 	SHELL_CMD(ADC_0, &sub_adc_cmds, "ADC_0", NULL),
 #endif
-#ifdef CONFIG_ADC_1
+#if DT_HAS_DRV_INST(1)
 	SHELL_CMD(ADC_1, &sub_adc_cmds, "ADC_1", NULL),
 #endif
-#ifdef CONFIG_ADC_2
+#if DT_HAS_DRV_INST(2)
 	SHELL_CMD(ADC_2, &sub_adc_cmds, "ADC_2", NULL),
 #endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */
