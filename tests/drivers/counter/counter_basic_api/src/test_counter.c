@@ -26,6 +26,13 @@ void *exp_user_data = (void *)199;
 struct counter_alarm_cfg alarm_cfg;
 struct counter_alarm_cfg alarm_cfg2;
 
+#define INST_DT_COMPAT_LABEL(n, compat) DT_LABEL(DT_INST(n, compat)),
+/* Generate a list of LABELs for all instances of the "compat" */
+#define LABELS_FOR_DT_COMPAT(compat) \
+	COND_CODE_1(DT_HAS_COMPAT(compat), \
+		   (UTIL_LISTIFY(DT_NUM_INST(compat), \
+				 INST_DT_COMPAT_LABEL, compat)), ())
+
 static const char * const devices[] = {
 #ifdef CONFIG_COUNTER_TIMER0
 	/* Nordic TIMER0 may be reserved for Bluetooth */
@@ -51,26 +58,19 @@ static const char * const devices[] = {
 #ifdef CONFIG_COUNTER_RTC2
 	DT_LABEL(DT_NODELABEL(rtc2)),
 #endif
-#if DT_HAS_NODE(DT_INST(0, nxp_imx_epit))
-	DT_LABEL(DT_INST(0, nxp_imx_epit)),
-#endif
-#if DT_HAS_NODE(DT_INST(1, nxp_imx_epit))
-	DT_LABEL(DT_INST(1, nxp_imx_epit)),
-#endif
-#if DT_HAS_NODE(DT_INST(0, arm_cmsdk_timer))
-	DT_LABEL(DT_INST(0, arm_cmsdk_timer)),
-#endif
-#if DT_HAS_NODE(DT_INST(1, arm_cmsdk_timer))
-	DT_LABEL(DT_INST(1, arm_cmsdk_timer)),
-#endif
-#if DT_HAS_NODE(DT_INST(0, arm_cmsdk_dtimer))
-	DT_LABEL(DT_INST(0, arm_cmsdk_dtimer)),
-#endif
-#ifdef DT_RTC_0_NAME
-	DT_RTC_0_NAME,
-#endif
-
+	/* NOTE: there is no trailing comma, as the DT_LABELS_FOR_COMPAT
+	 * handles it.
+	 */
+	LABELS_FOR_DT_COMPAT(arm_cmsdk_timer)
+	LABELS_FOR_DT_COMPAT(arm_cmsdk_dtimer)
+	LABELS_FOR_DT_COMPAT(microchip_xec_timer)
+	LABELS_FOR_DT_COMPAT(nxp_imx_epit)
+	LABELS_FOR_DT_COMPAT(nxp_imx_gpt)
+	LABELS_FOR_DT_COMPAT(nxp_kinetis_rtc)
+	LABELS_FOR_DT_COMPAT(silabs_gecko_rtcc)
+	LABELS_FOR_DT_COMPAT(st_stm32_rtc)
 };
+
 typedef void (*counter_test_func_t)(const char *dev_name);
 
 typedef bool (*counter_capability_func_t)(const char *dev_name);
