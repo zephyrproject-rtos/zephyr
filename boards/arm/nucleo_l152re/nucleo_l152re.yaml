@@ -1,5 +1,5 @@
 identifier: nucleo_l152re
-name: NUCLEO-L152RE
+name: ST Nucleo L152RE
 type: mcu
 arch: arm
 toolchain:
