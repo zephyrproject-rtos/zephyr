@@ -519,6 +519,13 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "-S", "--enable-slow", action="store_true",
         help="Execute time-consuming test cases that have been marked "
              "as 'slow' in testcase.yaml. Normally these are only built.")
+
+    parser.add_argument(
+        "-K", "--force-platform", action="store_true",
+        help="""Force testing on selected platforms,
+        even if they are excluded in the test configuration"""
+    )
+
     parser.add_argument(
         "--disable-unrecognized-section-test", action="store_true",
         default=False,
@@ -933,7 +940,8 @@ def main():
             force_toolchain=options.force_toolchain,
             all=options.all,
             run_individual_tests=run_individual_tests,
-            device_testing=options.device_testing
+            device_testing=options.device_testing,
+            force_platform=options.force_platform
 
         )
 
