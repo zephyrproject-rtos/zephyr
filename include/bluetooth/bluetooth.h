@@ -499,6 +499,30 @@ struct bt_le_adv_param {
 	const bt_addr_le_t *peer;
 };
 
+
+/** Periodic Advertising options */
+enum {
+	/** Convenience value when no options are specified. */
+	BT_LE_PER_ADV_OPT_NONE = 0,
+
+	/** @brief Advertise with transmit power.
+	 *
+	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
+	 */
+	BT_LE_PER_ADV_OPT_USE_TX_POWER = BIT(1),
+};
+
+struct bt_le_per_adv_param {
+	/** Minimum Periodic Advertising Interval (N * 1.25 ms) */
+	uint16_t interval_min;
+
+	/** Maximum Periodic Advertising Interval (N * 1.25 ms) */
+	uint16_t interval_max;
+
+	/** Bit-field of periodic advertising options */
+	uint32_t options;
+};
+
 /** @brief Initialize advertising parameters
  *
  *  @param _options   Advertising Options
@@ -557,6 +581,34 @@ struct bt_le_adv_param {
 #define BT_LE_ADV_NCONN_NAME BT_LE_ADV_PARAM(BT_LE_ADV_OPT_USE_NAME, \
 					     BT_GAP_ADV_FAST_INT_MIN_2, \
 					     BT_GAP_ADV_FAST_INT_MAX_2, NULL)
+
+/** Helper to declare periodic advertising parameters inline
+ *
+ *  @param _int_min     Minimum periodic advertising interval
+ *  @param _int_max     Maximum periodic advertising interval
+ *  @param _options     Periodic advertising properties bitfield.
+ */
+#define BT_LE_PER_ADV_PARAM_INIT(_int_min, _int_max, _options) \
+{ \
+	.interval_min = (_int_min), \
+	.interval_max = (_int_max), \
+	.options = (_options), \
+}
+
+/** Helper to declare periodic advertising parameters inline
+ *
+ *  @param _int_min     Minimum periodic advertising interval
+ *  @param _int_max     Maximum periodic advertising interval
+ *  @param _options     Periodic advertising properties bitfield.
+ */
+#define BT_LE_PER_ADV_PARAM(_int_min, _int_max, _options) \
+	((struct bt_le_per_adv_param[]) { \
+		BT_LE_PER_ADV_PARAM_INIT(_int_min, _int_max, _options) \
+	})
+
+#define BT_LE_PER_ADV_DEFAULT BT_LE_PER_ADV_PARAM(BT_GAP_ADV_SLOW_INT_MIN, \
+						  BT_GAP_ADV_SLOW_INT_MAX, \
+						  BT_LE_PER_ADV_OPT_NONE)
 
 /** @brief Start advertising
  *
@@ -779,6 +831,65 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
  */
 typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, int8_t rssi,
 			     uint8_t adv_type, struct net_buf_simple *buf);
+
+/** @brief Set or update the periodic advertising parameters.
+ *
+ *  The periodic advertising parameters can only be set or updated on an
+ *  extended advertisement set which is neither scannable, connectable nor
+ *  anonymous.
+ *
+ *  @param adv   Advertising set object.
+ *  @param param Advertising parameters.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
+			    const struct bt_le_per_adv_param *param);
+
+/** @brief Set or update the periodic advertisement data.
+ *
+ *  The periodic advertisement data can only be set or updated on an
+ *  extended advertisement set which is neither scannable, connectable nor
+ *  anonymous.
+ *
+ *  @param adv       Advertising set object.
+ *  @param ad        Advertising data.
+ *  @param ad_len    Advertising data length.
+ *
+ *  @return          Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_set_data(const struct bt_le_ext_adv *adv,
+			   const struct bt_data *ad, size_t ad_len);
+
+/** @brief Starts periodic advertising.
+ *
+ *  Enabling the periodic advertising can be done independently of extended
+ *  advertising, but both periodic advertising and extended advertising
+ *  shall be enabled before any periodic advertising data is sent. The
+ *  periodic advertising and extended advertising can be enabled in any order.
+ *
+ *  Once periodic advertising has been enabled, it will continue advertising
+ *  until @ref bt_le_per_adv_stop() has been called, or if the advertising set
+ *  is deleted by @ref bt_le_ext_adv_delete(). Calling @ref bt_le_ext_adv_stop()
+ *  will not stop the periodic advertising.
+ *
+ *  @param adv      Advertising set object.
+ *
+ *  @return         Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_start(struct bt_le_ext_adv *adv);
+
+/** @brief Stops periodic advertising.
+ *
+ *  Disabling the periodic advertising can be done independently of extended
+ *  advertising. Disabling periodic advertising will not disable extended
+ *  advertising.
+ *
+ *  @param adv      Advertising set object.
+ *
+ *  @return         Zero on success or (negative) error code otherwise.
+ */
+int bt_le_per_adv_stop(struct bt_le_ext_adv *adv);
 
 enum {
 	/** Convenience value when no options are specified. */

@@ -1129,6 +1129,13 @@ struct bt_hci_cp_le_set_per_adv_param {
 	uint16_t props;
 } __packed;
 
+#define BT_HCI_LE_PER_ADV_OP_INTERM_FRAG        0x00
+#define BT_HCI_LE_PER_ADV_OP_FIRST_FRAG         0x01
+#define BT_HCI_LE_PER_ADV_OP_LAST_FRAG          0x02
+#define BT_HCI_LE_PER_ADV_OP_COMPLETE_DATA      0x03
+
+#define BT_HCI_LE_PER_ADV_FRAG_MAX_LEN          252
+
 #define BT_HCI_OP_LE_SET_PER_ADV_DATA           BT_OP(BT_OGF_LE, 0x003f)
 struct bt_hci_cp_le_set_per_adv_data {
 	uint8_t  handle;
