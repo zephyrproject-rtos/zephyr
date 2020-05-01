@@ -456,7 +456,7 @@ static inline int uart_callback_set(struct device *dev,
  * @param buf     Pointer to transmit buffer.
  * @param len     Length of transmit buffer.
  * @param timeout Timeout in milliseconds. Valid only if flow control is
- *		  enabled. SYS_FOREVER_MS disables timeout.
+ *		  enabled. @ref SYS_FOREVER_MS disables timeout.
  *
  * @retval -EBUSY There is already an ongoing transfer.
  * @retval 0	  If successful, negative errno code otherwise.
@@ -504,7 +504,7 @@ static inline int z_impl_uart_tx_abort(struct device *dev)
  * @param dev     UART device structure.
  * @param buf     Pointer to receive buffer.
  * @param len     Buffer length.
- * @param timeout Timeout in milliseconds. SYS_FOREVER_MS disables timeout.
+ * @param timeout Timeout in milliseconds. @ref SYS_FOREVER_MS disables timeout.
  *
  * @retval -EBUSY RX already in progress.
  * @retval 0	  If successful, negative errno code otherwise.
