@@ -1,0 +1,16 @@
+identifier: nucleo_l433rc_p
+name: ST Nucleo L433RC-P
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 256
+supported:
+  - nvs
+  - pwm
+  - can
+  - counter
+  - spi
