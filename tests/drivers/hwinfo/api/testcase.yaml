@@ -1,3 +1,9 @@
 tests:
   drivers.device_id:
     tags: driver
+  drivers.get_reset_cause:
+    tags: driver
+  drivers.clear_reset_cause:
+    tags: driver
+  drivers.get_supported_reset_cause:
+    tags: driver
