@@ -174,3 +174,13 @@
 		KEEP(*("._tracing_backend.*"));
 		_tracing_backend_list_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
+
+#define DEVICE_SECTION(subsys) \
+	SECTION_DATA_PROLOGUE(subsys##_devices_sections,,) \
+	{ \
+		__##subsys##_devices_entry_start = .; \
+		KEEP(*(SORT_BY_NAME(".*devices.*"))) \
+		__##subsys##_devices_entry_end = .; \
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
+	DEVICE_SECTION(adc)

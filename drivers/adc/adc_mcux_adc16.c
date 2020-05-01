@@ -305,3 +305,13 @@ static const struct adc_driver_api mcux_adc16_driver_api = {
 	}
 
 DT_INST_FOREACH(ACD16_MCUX_INIT)
+
+#define SUBSYS_DEVICE_REGISTER(subsys, name) \
+	static const Z_DECL_ALIGN(struct device *) subsys##name \
+	__in_section(_##subsys##_devices, static, subsys##name) __used = \
+	DEVICE_GET(name)
+
+#define ADC_DEVICE_REGISTER(name) SUBSYS_DEVICE_REGISTER(adc, name)
+
+ADC_DEVICE_REGISTER(mcux_adc16_0);
+ADC_DEVICE_REGISTER(mcux_adc16_1);
