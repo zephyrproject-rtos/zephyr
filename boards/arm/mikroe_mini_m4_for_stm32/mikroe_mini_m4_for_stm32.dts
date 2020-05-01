@@ -53,7 +53,7 @@
 &timers3 {
 	status = "okay";
 
-	pwm {
+	pwm3: pwm {
 		status = "okay";
 	};
 };

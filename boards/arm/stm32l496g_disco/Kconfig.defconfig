@@ -13,8 +13,4 @@ config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
 
-config PWM_STM32_2
-	default y
-	depends on PWM
-
 endif # BOARD_STM32L496G_DISCO

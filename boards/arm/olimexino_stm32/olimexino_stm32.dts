@@ -98,7 +98,7 @@ uext_serial: &usart1 {};
 &timers1 {
 	status = "okay";
 
-	pwm {
+	pwm1: pwm {
 		status = "okay";
 	};
 };

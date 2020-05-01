@@ -8,9 +8,4 @@ if BOARD_NUCLEO_F302R8
 config BOARD
 	default "nucleo_f302r8"
 
-
-config PWM_STM32_2
-	default y
-	depends on PWM
-
 endif # BOARD_NUCLEO_F302R8
