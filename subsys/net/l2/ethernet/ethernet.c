@@ -32,10 +32,10 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
 
-static const struct net_eth_addr multicast_eth_addr __unused = {
+NET_DMEM static const struct net_eth_addr multicast_eth_addr __unused = {
 	{ 0x33, 0x33, 0x00, 0x00, 0x00, 0x00 } };
 
-static const struct net_eth_addr broadcast_eth_addr = {
+NET_DMEM static const struct net_eth_addr broadcast_eth_addr = {
 	{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };
 
 const struct net_eth_addr *net_eth_broadcast_addr(void)
