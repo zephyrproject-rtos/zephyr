@@ -131,7 +131,7 @@ Advertising successfully started
 Open up a BLE-compatible device and attempt to pair to the CC1352R1 LaunchXL.
 You should see `Zephyr Heartrate Sensor`.
 
-![BLE ADV](https://github.com/cfriedt/zephyr/raw/simplelink-ble-for-zephyr/subsys/bluetooth/controller/ll_sw/ti/pairing.png)
+<img src="https://raw.githubusercontent.com/cfriedt/zephyr/simplelink-ble-for-zephyr/subsys/bluetooth/controller/ll_sw/ti/pairing.png" width="100">
 
 Once you attempt to pair with the device, there will be [a lot of diagnostic
 logs](https://github.com/cfriedt/zephyr/raw/simplelink-ble-for-zephyr/subsys/bluetooth/controller/ll_sw/ti/ti.txt) output to the terminal.
@@ -142,7 +142,8 @@ If you have an oscilloscope handy, you can use pins 30, 5, 23, and 24 to
 observe TX, RX, ISR, and BLE TX Window events, respectively.
 
 The screenshot below captured some BLE advertisement packets being exchanged.
-![BLE ADV](https://github.com/cfriedt/zephyr/raw/simplelink-ble-for-zephyr/subsys/bluetooth/controller/ll_sw/ti/rx-tx-gpio.png)
+
+<img src="https://raw.githubusercontent.com/cfriedt/zephyr/simplelink-ble-for-zephyr/subsys/bluetooth/controller/ll_sw/ti/rx-tx-gpio.png" width="300">
 
 ## Current State of the Port
 
