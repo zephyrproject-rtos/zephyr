@@ -36,7 +36,8 @@ def main():
         edt = edtlib.EDT(args.dts, args.bindings_dirs,
                          # Suppress this warning if it's suppressed in dtc
                          warn_reg_unit_address_mismatch=
-                             "-Wno-simple_bus_reg" not in args.dtc_flags)
+                             "-Wno-simple_bus_reg" not in args.dtc_flags,
+                         default_prop_types=False)
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 

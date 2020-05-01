@@ -142,7 +142,8 @@ class EDT:
       The bindings directory paths passed to __init__()
     """
     def __init__(self, dts, bindings_dirs, warn_file=None,
-                 warn_reg_unit_address_mismatch=True):
+                 warn_reg_unit_address_mismatch=True,
+                 default_prop_types=True):
         """
         EDT constructor. This is the top-level entry point to the library.
 
@@ -160,12 +161,17 @@ class EDT:
           If True, a warning is printed if a node has a 'reg' property where
           the address of the first entry does not match the unit address of the
           node
+
+        default_prop_types (default: True):
+          If True, default property types will be used when a node has no
+          bindings.
         """
         # Do this indirection with None in case sys.stderr is deliberately
         # overridden
         self._warn_file = sys.stderr if warn_file is None else warn_file
 
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
+        self._default_prop_types = default_prop_types
 
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
@@ -516,7 +522,7 @@ class EDT:
             # These depend on all Node objects having been created, because
             # they (either always or sometimes) reference other nodes, so we
             # run them separately
-            node._init_props()
+            node._init_props(default_prop_types=self._default_prop_types)
             node._init_interrupts()
             node._init_pinctrls()
 
@@ -1081,21 +1087,37 @@ class Node:
         # Same bus node as parent (possibly None)
         return self.parent.bus_node
 
-    def _init_props(self):
+    def _init_props(self, default_prop_types=False):
         # Creates self.props. See the class docstring. Also checks that all
         # properties on the node are declared in its binding.
 
         self.props = OrderedDict()
 
-        if not self._binding:
-            return
+        node = self._node
+        if self._binding:
+            binding_props = self._binding.get("properties")
+        else:
+            binding_props = None
 
         # Initialize self.props
-        if "properties" in self._binding:
-            for name, options in self._binding["properties"].items():
+        if binding_props:
+            for name, options in binding_props.items():
                 self._init_prop(name, options)
-
-        self._check_undeclared_props()
+            self._check_undeclared_props()
+        elif default_prop_types:
+            for name in node.props:
+                if name in _DEFAULT_PROP_TYPES:
+                    prop_type = _DEFAULT_PROP_TYPES[name]
+                    val = self._prop_val(name, prop_type, False, None)
+                    prop = Property()
+                    prop.node = self
+                    prop.name = name
+                    prop.description = None
+                    prop.val = val
+                    prop.type = prop_type
+                    # We don't set enum_index for "compatible"
+                    prop.enum_index = None
+                    self.props[name] = prop
 
     def _init_prop(self, name, options):
         # _init_props() helper for initializing a single property
@@ -2265,3 +2287,15 @@ _BindingLoader.add_constructor("!include", _binding_include)
 _BindingLoader.add_constructor(
     yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
     lambda loader, node: OrderedDict(loader.construct_pairs(node)))
+
+_DEFAULT_PROP_TYPES = {
+    "compatible": "string-array",
+    "status": "string",
+    "reg": "array",
+    "reg-names": "string-array",
+    "label": "string",
+    "interrupt": "array",
+    "interrupts-extended": "compound",
+    "interrupt-names": "string-array",
+    "interrupt-controller": "boolean",
+}
