@@ -27,7 +27,7 @@ Here are some highlights of the BLACK_F407ZG_PRO board:
 - Four push-buttons: RESET, K0, K1 and WK_UP
 - Mini-AB connector
 
-.. image:: img/stm32f407zg_pro.jpg
+.. image:: img/black_f407zg_pro.jpg
      :width: 500px
      :align: center
      :height: 500px
