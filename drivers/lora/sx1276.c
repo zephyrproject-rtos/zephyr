@@ -138,7 +138,7 @@ static void timer_callback(struct k_timer *_timer)
 
 void RtcSetAlarm(u32_t timeout)
 {
-	k_timer_start(&dev_data.timer, timeout, K_NO_WAIT);
+	k_timer_start(&dev_data.timer, K_MSEC(timeout), K_NO_WAIT);
 }
 
 u32_t RtcSetTimerContext(void)
@@ -156,7 +156,7 @@ u32_t RtcGetTimerContext(void)
 
 void DelayMsMcu(u32_t ms)
 {
-	k_sleep(ms);
+	k_sleep(K_MSEC(ms));
 }
 
 u32_t RtcMs2Tick(uint32_t milliseconds)
@@ -384,19 +384,14 @@ static void sx1276_rx_done(u8_t *payload, u16_t size, int16_t rssi, int8_t snr)
 }
 
 static int sx1276_lora_recv(struct device *dev, u8_t *data, u8_t size,
-			    s32_t timeout, s16_t *rssi, s8_t *snr)
+			    k_timeout_t timeout, s16_t *rssi, s8_t *snr)
 {
 	int ret;
 
 	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
 	Radio.Rx(0);
 
-	/*
-	 * As per the API requirement, timeout value can be in ms/K_FOREVER/
-	 * K_NO_WAIT. So, let's handle all cases.
-	 */
-	ret = k_sem_take(&dev_data.data_sem, timeout == K_FOREVER ? K_FOREVER :
-			 timeout == K_NO_WAIT ? K_NO_WAIT : K_MSEC(timeout));
+	ret = k_sem_take(&dev_data.data_sem, timeout);
 	if (ret < 0) {
 		LOG_ERR("Receive timeout!");
 		return ret;

@@ -73,7 +73,7 @@ typedef int (*lora_api_send)(struct device *dev,
  * @see lora_recv() for argument descriptions.
  */
 typedef int (*lora_api_recv)(struct device *dev, u8_t *data, u8_t size,
-			     s32_t timeout, s16_t *rssi, s8_t *snr);
+			     k_timeout_t timeout, s16_t *rssi, s8_t *snr);
 
 struct lora_driver_api {
 	lora_api_config config;
@@ -132,7 +132,7 @@ static inline int lora_send(struct device *dev,
  * @return Length of the data received on success, negative on error
  */
 static inline int lora_recv(struct device *dev, u8_t *data, u8_t size,
-			    s32_t timeout, s16_t *rssi, s8_t *snr)
+			    k_timeout_t timeout, s16_t *rssi, s8_t *snr)
 {
 	const struct lora_driver_api *api = dev->driver_api;
 

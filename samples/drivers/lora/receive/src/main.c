@@ -47,7 +47,7 @@ void main(void)
 
 	while (1) {
 		/* Block until data arrives */
-		len = lora_recv(lora_dev, data, MAX_DATA_LEN, SYS_FOREVER_MS,
+		len = lora_recv(lora_dev, data, MAX_DATA_LEN, K_FOREVER,
 				&rssi, &snr);
 		if (len < 0) {
 			LOG_ERR("LoRa receive failed");
