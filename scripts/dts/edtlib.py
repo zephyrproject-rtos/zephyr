@@ -1087,15 +1087,43 @@ class Node:
 
         self.props = OrderedDict()
 
-        if not self._binding:
-            return
+        node = self._node
+        if self._binding:
+            binding_props = self._binding.get("properties")
+        else:
+            binding_props = None
 
         # Initialize self.props
-        if "properties" in self._binding:
-            for name, options in self._binding["properties"].items():
+        if binding_props:
+            for name, options in binding_props.items():
                 self._init_prop(name, options)
+            self._check_undeclared_props()
+        else:
+            common_prop_types = {
+                "compatible" : "string-array",
+                "status" : "string",
+                "reg" : "array",
+                "reg-names": "string-array",
+                "label" : "string",
+                "interrupt" : "array",
+                "interrupts-extended": "compound",
+                "interrupt-names": "string-array",
+                "interrupt-controller": "boolean",
+            }
 
-        self._check_undeclared_props()
+            for name in node.props:
+                if name in common_prop_types:
+                    prop_type = common_prop_types[name]
+                    val = self._prop_val(name, prop_type, False, None)
+                    prop = Property()
+                    prop.node = self
+                    prop.name = name
+                    prop.description = None
+                    prop.val = val
+                    prop.type = prop_type
+                    # We don't set enum_index for "compatible"
+                    prop.enum_index = None
+                    self.props[name] = prop
 
     def _init_prop(self, name, options):
         # _init_props() helper for initializing a single property
