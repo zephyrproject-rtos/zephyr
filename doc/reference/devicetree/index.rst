@@ -11,6 +11,8 @@ Some of these require a special macro named ``DT_DRV_COMPAT`` to be defined
 before they can be used; these are discussed individually below. These macros
 are generally meant for use within device drivers.
 
+.. _devicetree-generic-apis:
+
 Generic APIs
 ************
 
@@ -84,6 +86,8 @@ Clocks
 
 .. doxygengroup:: devicetree-clocks
    :project: Zephyr
+
+.. _devicetree-gpio-api:
 
 GPIO
 ====
