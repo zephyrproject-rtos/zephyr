@@ -8,11 +8,11 @@ import mmap
 MAP_SIZE = 8192
 SLOT_SIZE = 64
 
-# Location of the log output window within the mapping of the SRAM
-# (BAR4) on the PCI device.  These numbers are cribbed from existing
-# scripting, I don't know what they really mean or where the spec for
-# these protocols is.  The driver on the DSP just hard codes an
-# address.
+# Location of the log output window within the DSP BAR on the PCI
+# device.  The hardware provides 4x 128k "windows" starting at 512kb
+# in the BAR which the DSP software can map to 4k-aligned locations
+# within its own address space.  By convention log output is an 8k
+# region at window index 3.
 WIN_OFFSET = 0x80000
 WIN_ID = 3
 WIN_SIZE = 0x20000
