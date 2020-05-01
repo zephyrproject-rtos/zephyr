@@ -34,8 +34,4 @@ config I2C_1
 	default y
 	depends on I2C
 
-config ADC_0
-	default y
-	depends on ADC
-
 endif # BOARD_HEXIWEAR_KW40Z

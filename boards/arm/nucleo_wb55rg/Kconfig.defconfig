@@ -16,11 +16,6 @@ choice STM32_LPTIM_CLOCK
 	depends on STM32_LPTIM_TIMER
 endchoice
 
-
-config ADC_1
-	default y
-	depends on ADC
-
 choice BT_HCI_BUS_TYPE
 	default BT_STM32_IPM
 	depends on BT
