@@ -7200,6 +7200,151 @@ bool bt_addr_le_is_bonded(uint8_t id, const bt_addr_le_t *addr)
 	}
 }
 
+int bt_le_per_adv_set_param(struct bt_le_ext_adv *adv,
+			    const struct bt_le_per_adv_param *param)
+{
+	struct bt_hci_cp_le_set_per_adv_param *cp;
+	struct net_buf *buf;
+	int err;
+
+	if (atomic_test_bit(adv->flags, BT_ADV_SCANNABLE)) {
+		return -EINVAL;
+	} else if (atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
+		return -EINVAL;
+	} else if (!atomic_test_bit(adv->flags, BT_ADV_EXT_ADV)) {
+		return -EINVAL;
+	}
+
+	if (param->interval_min < 0x0006 ||
+	    param->interval_max > 0xFFFF ||
+	    param->interval_min > param->interval_max) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_PARAM, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+
+	cp->handle = sys_cpu_to_le16(adv->handle);
+	cp->min_interval = sys_cpu_to_le16(param->interval_min);
+	cp->max_interval = sys_cpu_to_le16(param->interval_max);
+
+	if (param->options & BT_LE_PER_ADV_OPT_USE_TX_POWER) {
+		cp->props |= BT_HCI_LE_ADV_PROP_TX_POWER;
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_PARAM, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	atomic_set_bit(adv->flags, BT_PER_ADV_PARAMS_SET);
+
+	return 0;
+}
+
+int bt_le_per_adv_set_data(const struct bt_le_ext_adv *adv,
+			   const struct bt_data *ad, size_t ad_len)
+{
+	struct bt_hci_cp_le_set_per_adv_data *cp;
+	struct net_buf *buf;
+	struct bt_ad d = { .data = ad, .len = ad_len };
+	int err;
+
+	if (!atomic_test_bit(adv->flags, BT_PER_ADV_PARAMS_SET)) {
+		return -EINVAL;
+	}
+
+	if (!ad_len || !ad) {
+		return -EINVAL;
+	}
+
+	if (ad_len > BT_HCI_LE_PER_ADV_FRAG_MAX_LEN) {
+		return -EINVAL;
+	}
+
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_DATA, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+
+	cp->handle = adv->handle;
+
+	/* TODO: If data is longer than what the controller can manage,
+	 * split the data. Read size from controller on boot.
+	 */
+	cp->op = BT_HCI_LE_PER_ADV_OP_COMPLETE_DATA;
+
+	err = set_data_add(cp->data, BT_HCI_LE_PER_ADV_FRAG_MAX_LEN, &d, 1,
+			   &cp->len);
+	if (err) {
+		return err;
+	}
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_DATA, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+static int bt_le_per_adv_enable(struct bt_le_ext_adv *adv, bool enable)
+{
+	struct bt_hci_cp_le_set_per_adv_enable *cp;
+	struct net_buf *buf;
+	struct cmd_state_set state;
+	int err;
+
+	/* TODO: We could setup some default ext adv params if not already set*/
+	if (!atomic_test_bit(adv->flags, BT_PER_ADV_PARAMS_SET)) {
+		return -EINVAL;
+	}
+
+	if (atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) == enable) {
+		return -EALREADY;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_PER_ADV_ENABLE, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	(void)memset(cp, 0, sizeof(*cp));
+
+	cp->handle = adv->handle;
+	cp->enable = enable ? 1 : 0;
+
+	cmd_state_set_init(&state, adv->flags, BT_PER_ADV_ENABLED, enable);
+	cmd(buf)->state = &state;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PER_ADV_ENABLE, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_le_per_adv_start(struct bt_le_ext_adv *adv)
+{
+	return bt_le_per_adv_enable(adv, true);
+}
+
+int bt_le_per_adv_stop(struct bt_le_ext_adv *adv)
+{
+	return bt_le_per_adv_enable(adv, false);
+}
+
 static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 {
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
@@ -8079,6 +8224,19 @@ int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
 {
 	if (!valid_adv_ext_param(param)) {
 		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PER_ADV) &&
+	    atomic_test_bit(adv->flags, BT_PER_ADV_PARAMS_SET)) {
+		/* If params for per adv has been set, do not allow setting
+		 * connectable, scanable or use legacy adv
+		 */
+		if (param->options & BT_LE_ADV_OPT_CONNECTABLE ||
+		    param->options & BT_LE_ADV_OPT_SCANNABLE ||
+		    !(param->options & BT_LE_ADV_OPT_EXT_ADV) ||
+		    param->options & BT_LE_ADV_OPT_ANONYMOUS) {
+			return -EINVAL;
+		}
 	}
 
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {

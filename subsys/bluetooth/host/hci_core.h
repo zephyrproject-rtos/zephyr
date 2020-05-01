@@ -101,6 +101,10 @@ enum {
 	BT_ADV_PERSIST,
 	/* Advertiser has been temporarily disabled. */
 	BT_ADV_PAUSED,
+	/* Periodic Advertising has been enabled in the controller. */
+	BT_PER_ADV_ENABLED,
+	/* Periodic Advertising parameters has been set in the controller. */
+	BT_PER_ADV_PARAMS_SET,
 
 	BT_ADV_NUM_FLAGS,
 };
