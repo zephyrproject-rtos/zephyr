@@ -164,6 +164,11 @@ u32_t RtcMs2Tick(uint32_t milliseconds)
 	return milliseconds;
 }
 
+u32_t RtcTick2Ms(uint32_t tick)
+{
+	return tick;
+}
+
 static void sx1276_dio_work_handle(struct k_work *work)
 {
 	int dio = work - dev_data.dio_work;
