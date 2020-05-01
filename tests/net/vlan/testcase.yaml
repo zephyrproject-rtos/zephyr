@@ -1,6 +1,13 @@
 common:
   depends_on: netif
+  min_ram: 32
+  tags: net vlan
 tests:
-  net.vlan:
-    min_ram: 32
-    tags: net vlan
+  net.vlan.kernel_mode:
+    extra_configs:
+      - CONFIG_NET_USER_MODE=n
+      - CONFIG_USERSPACE=n
+  net.vlan.user_mode:
+    extra_configs:
+      - CONFIG_NET_USER_MODE=y
+      - CONFIG_USERSPACE=y
