@@ -43,10 +43,6 @@ config ETH_SAM_GMAC_MAC_I2C_EEPROM
 
 endif # ETH_SAM_GMAC
 
-config ADC_0
-	default y
-	depends on ADC
-
 if NETWORKING
 
 config NET_L2_ETHERNET

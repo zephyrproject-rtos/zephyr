@@ -51,9 +51,6 @@ endif # I2C
 
 if ADC
 
-config ADC_0
-	default y
-
 config BATTERY_SENSE
 	default y
 

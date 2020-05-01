@@ -18,8 +18,4 @@ config ETH_STM32_HAL
 
 endif # NETWORKING
 
-config ADC_1
-	default y
-	depends on ADC
-
 endif # BOARD_NUCLEO_F207ZG

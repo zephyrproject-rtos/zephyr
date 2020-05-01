@@ -27,8 +27,4 @@ config IWDG_STM32
 
 endif # WATCHDOG
 
-config ADC_1
-	default y
-	depends on ADC
-
 endif # BOARD_NUCLEO_F401RE

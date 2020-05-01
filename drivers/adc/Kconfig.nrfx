@@ -33,10 +33,3 @@ config ADC_NRFX_SAADC
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enable support for nrfx SAADC driver.
-
-# We enable ADC_0 here for the sake of other code in Zephyr that
-# depends on it. Device instantiation within nRF ADC drivers is
-# entirely driven by whether the devicetree nodes with compatibles
-# nordic,nrf-adc and nordic,nrf-saadc are enabled.
-config ADC_0
-	def_bool ADC_NRFX_ADC || ADC_NRFX_SAADC

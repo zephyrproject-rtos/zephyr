@@ -43,12 +43,8 @@ config I2C_0
 	default y
 	depends on I2C
 
-config ADC_1
-	default y
-	depends on ADC
-
 config TEMP_KINETIS
-	default y if ADC_1
+	default y if "$(dt_nodelabel_enabled,adc1)"
 	depends on SENSOR
 
 config PWM_3

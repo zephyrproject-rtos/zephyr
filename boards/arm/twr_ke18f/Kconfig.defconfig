@@ -51,12 +51,8 @@ config PINMUX_MCUX_PORTE
 
 endif # PINMUX_MCUX
 
-config ADC_0
-	default y
-	depends on ADC
-
 config TEMP_KINETIS
-	default y if ADC_0
+	default y if "$(dt_nodelabel_enabled,adc0)"
 	depends on SENSOR
 
 if PWM
