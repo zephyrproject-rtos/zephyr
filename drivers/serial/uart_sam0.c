@@ -354,7 +354,7 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 	if (dev_data->rx_timeout_from_isr) {
 		dev_data->rx_timeout_from_isr = false;
 		k_delayed_work_submit(&dev_data->rx_timeout_work,
-				      dev_data->rx_timeout_chunk);
+				      K_MSEC(dev_data->rx_timeout_chunk));
 		irq_unlock(key);
 		return;
 	}
@@ -375,7 +375,8 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 		u32_t remaining = MIN(dev_data->rx_timeout_time - elapsed,
 				      dev_data->rx_timeout_chunk);
 
-		k_delayed_work_submit(&dev_data->rx_timeout_work, remaining);
+		k_delayed_work_submit(&dev_data->rx_timeout_work,
+				      K_MSEC(remaining));
 	}
 
 	irq_unlock(key);
@@ -839,8 +840,9 @@ static int uart_sam0_tx(struct device *dev, const u8_t *buf, size_t len,
 		return retval;
 	}
 
-	if (timeout != K_FOREVER) {
-		k_delayed_work_submit(&dev_data->tx_timeout_work, timeout);
+	if (timeout != SYS_FOREVER_MS) {
+		k_delayed_work_submit(&dev_data->tx_timeout_work,
+				      K_MSEC(timeout));
 	}
 
 	return dma_start(dev_data->dma, cfg->tx_dma_channel);
