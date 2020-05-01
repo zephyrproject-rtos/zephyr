@@ -79,7 +79,7 @@ void rx_8_0_thread(void *arg1, void *arg2, void *arg3)
 			rem_len = isotp_recv_net(&recv_ctx_8_0, &buf,
 						 K_MSEC(2000));
 			if (rem_len < 0) {
-				printk("Receiving erreor [%d]\n", rem_len);
+				printk("Receiving error [%d]\n", rem_len);
 				break;
 			}
 
