@@ -16,7 +16,7 @@ The simplest module that uses ESP-8266 is ESP-01. This is a generic shield
 configuration that allows any ESP-8266 module variation including ESP-12E/F.
 
 .. image:: ./esp-01.jpeg
-   :width: 720px
+   :width: 634px
    :align: center
    :alt: ESP-01
 
@@ -49,7 +49,7 @@ Requirements
 This shield requires a board which provides a configuration that allows an
 UART interface. (see :ref:`shields` for more details).
 
-The ESP-8266 should be loaded with the ESP8266 AT Bin software which is
+The ESP-8266 should be loaded with the `ESP8266 AT Bin`_ software which is
 available at Espressif Systems web site. The ESP-01 module have up to 1MB of
 flash and the last available stack that fits on this device is ESP8266 AT Bin
 V1.6.2. This version is command compatible with ESP8266 AT Bin 1.7.x which is
@@ -65,7 +65,7 @@ ESP8266 AT Bin 1.7.x available requires the following partition configuration
 to works:
 
 .. image:: ./esp_at_173.png
-   :width: 720px
+   :width: 678px
    :align: center
    :alt: ESP8266 AT Bin V1.7.3
 
