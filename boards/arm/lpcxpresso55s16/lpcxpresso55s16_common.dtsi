@@ -76,3 +76,7 @@ arduino_i2c: &flexcomm4 {
 		int1-gpios = <&gpio1 26 GPIO_ACTIVE_LOW>;
 	};
 };
+
+arduino_spi: &hs_lspi {
+	status = "okay";
+};
