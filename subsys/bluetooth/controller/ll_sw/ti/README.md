@@ -151,7 +151,9 @@ The PR has been open for a long time and is updated periodically.
 
 https://github.com/zephyrproject-rtos/zephyr/pull/21631
 
-Simple advertisement is working. CONNECT_IND is received but there seems to be a timeout for setting up the initial TX Window.
+Simple advertisement is working. CONNECT_IND is received but there seems to be a timeout for subsequent messages.
+
+Additional debug info from the CMD_BLE_SLAVE is available [here](https://github.com/cfriedt/zephyr/raw/simplelink-ble-for-zephyr/subsys/bluetooth/controller/ll_sw/ti/cmd-ble-slave.txt).
 
 There is also another branch with a brief attempt to use several independent
 radio event handlers instead of a single ISR. However, that branch is not currently

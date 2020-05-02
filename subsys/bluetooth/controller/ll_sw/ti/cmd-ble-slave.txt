@@ -1,0 +1,343 @@
+*** Booting Zephyr OS build zephyr-v2.2.0-2074-gb8ceb82d8f87  ***
+Bluetooth initialized
+Advertising successfully started
+[00:00:00.006,591] <dbg> bt_ctlr_hal_ti_radio.ble_cc13xx_cc26xx_data_init: device address: cd:de:1e:b0:6f:c0
+[00:00:00.008,270] <dbg> bt_ctlr_llsw_ti_lll.swi_lll_cc13xx_cc26xx_isr: IRQ 1
+[00:00:00.008,361] <dbg> bt_ctlr_llsw_ti_lll.swi_lll_cc13xx_cc26xx_isr: IRQ 1
+[00:00:00.011,596] <inf> bt_hci_core: HW Platform: Texas Instruments (0x0004)
+[00:00:00.011,627] <inf> bt_hci_core: HW Variant: cc13xx_cc26xx (0x0001)
+[00:00:00.011,657] <inf> bt_hci_core: Firmware: Standard Bluetooth controller (0x00) Version 2.2 Build 99
+[00:00:00.013,977] <inf> bt_hci_core: Identity: c0:6f:b0:1e:de:cd (random)
+[00:00:00.014,038] <inf> bt_hci_core: HCI: version 5.1 (0x0a) revision 0x0000, manufacturer 0x05f1
+[00:00:00.014,038] <inf> bt_hci_core: LMP: version 5.1 (0x0a) subver 0xffff
+[00:00:04.930,877] <dbg> bt_ctlr_hal_ti_radio.transmit_wticks now: 20042435 CONNECT_IND:{
+	init_addr: 45:89:43:1e:80:49
+	adv_addr: c0:6f:b0:1e:de:cd
+	access_addr: 0x3b18b29d
+	crc_init: 0x12345b
+	win_size: 2
+	win_offset: 6
+	interval: 36
+	latency: 0
+	timeout: 500
+	chan_map: 00feffff1f
+	hop: 12
+	sca: 0
+}
+CMD_BLE_SLAVE (params):
+	pRxQ 0x2000ccf8:
+	pTxQ 0x2000cf24:
+	rxConfig:
+		bAutoFlushIgnored: 1
+		bAutoFlushCrcErr: 1
+		bAutoFlushEmpty: 1
+		bIncludeLenByte: 1
+		bIncludeCrc: 1
+		bAppendRssi: 1
+		bAppendStatus: 0
+		bAppendTimestamp: 1
+	seqStat:
+		lastRxSn: 1
+		lastTxSn: 1
+		nextTxSn: 0
+		bFirstPkt: 1
+		bAutoEmpty: 1
+		bLlCtrlTx: 0
+		bLlCtrlAckRx: 0
+		bLlCtrlAckPending: 0
+	maxNack: 0
+	maxPkt: 0
+	accessAddress: 3b18b29d
+	crcInit0: 5b
+	crcInit1: 34
+	crcInit2: 12
+	timeoutTrigger:
+		triggerType: 4
+		bEnaCmd: 0
+		
+
+CMD_BLE_SLAVE (params):
+	pRxQ 0x2000ccf8:
+	pTxQ 0x2000cf24:
+	rxConfig:
+		bAutoFlushIgnored: 1
+		bAutoFlushCrcErr: 1
+		bAutoFlushEmpty: 1
+		bIncludeLenByte: 1
+		bIncludeCrc: 1
+		bAppendRssi: 1
+		bAppendStatus: 0
+		bAppendTimestamp: 1
+	seqStat:
+		lastRxSn: 1
+		lastTxSn: 1
+		nextTxSn: 0
+		bFirstPkt: 1
+		bAutoEmpty: 1
+		bLlCtrlTx: 0
+		bLlCtrlAckRx: 0
+		bLlCtrlAckPending: 0
+	maxNack: 0
+	maxPkt: 0
+	accessAddress: 3b18b29d
+	crcInit0: 5b
+	crcInit1: 34
+	crcInit2: 12
+	timeoutTrigger:
+		triggerType: 4
+		bEnaCmd: 0
+
+Connected
+Disconnected (reason 0x3e)
+indow_debug: TX Window: [19893595,19903595] ticks ([4973398,4975898] us) every 180000 ticks (45000 us)
+[00:00:04.975,891] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20073595,20083595] ticks ([5018398,5020898] us) every 180000 ticks (45000 us)
+[00:00:05.010,437] <dbg> bt_ctlr_hal_ti_radio.pkt_rx: CONNECT_IND: now: 20041928 timestamp: 20039683 (5009920 us)
+[00:00:05.010,467] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20074847,20084847] ticks ([5018711,5021211] us) every 180000 ticks (45000 us)
+[00:00:05.036,315] <dbg> bt_ctlr_ull_slave.ull_slave_setup: 
+ticks now: 20145426
+ticker_start(
+	instance_index: 0
+	user_id: 1
+	ticker_id: 3
+	ticks_anchor: 20033683
+	ticks_first: 34016
+	ticks_periodic: 179820
+	remainder_periodic: 2005282085
+	lazy: 0
+	ticks_slot: 4480
+	fp_timeout_func: 0x00024ce1
+	context: 0x2000164c
+	fp_op_func: 0x00024e01
+	op_context: 0x00000132
+)
+[00:00:05.091,949] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20254847,20264847] ticks ([5063711,5066211] us) every 180000 ticks (45000 us)
+[00:00:05.092,102] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20434847,20444847] ticks ([5108711,5111211] us) every 180000 ticks (45000 us)
+[00:00:05.092,285] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
+[00:00:05.092,315] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
+[00:00:05.092,407] <dbg> bt_ctlr_llsw_ti_lll_slave.prepare_cb: 
+[00:00:05.092,437] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
+[00:00:05.092,498] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
+[00:00:05.092,529] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x2000128c
+[00:00:05.092,559] <dbg> bt_ctlr_hal_ti_radio.radio_set_up_slave_cmd: now: 20370462 ticks (5092615 us)
+[00:00:05.093,383] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: CMD_BLE_SLAVE (params):
+	pRxQ 0x2000ccf8:
+	pTxQ 0x2000cf24:
+	rxConfig:
+		bAutoFlushIgnored: 1
+		bAutoFlushCrcErr: 1
+		bAutoFlushEmpty: 1
+		bIncludeLenByte: 1
+		bIncludeCrc: 1
+		bAppendRssi: 1
+		bAppendStatus: 0
+		bAppendTimestamp: 1
+	seqStat:
+		lastRxSn: 1
+		lastTxSn: 1
+		nextTxSn: 0
+		bFirstPkt: 1
+		bAutoEmpty: 1
+		bLlCtrlTx: 0
+		bLlCtrlAckRx: 0
+		bLlCtrlAckPending: 0
+	maxNack: 0
+	maxPkt: 0
+	accessAddress: 3b18b29d
+	crcInit0: 5b
+	crcInit1: 34
+	crcInit2: 12
+	timeoutTrigger:
+		triggerType: 4
+		bEnaCmd: 0
+		
+
+
+[00:00:05.145,935] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_save: set radio_tmr_aa = 0
+[00:00:05.146,575] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_abort_cb: now: 20586527
+[00:00:05.146,972] <dbg> bt_ctlr_hal_ti_radio.isr_radio: now: 20588107 h: 0x20000010 ch: 249 (CMD_BLE_SLAVE) e: 2000c13800002428
+[00:00:05.147,003] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Last radio operation command in a chain finished.
+[00:00:05.147,033] <dbg> bt_ctlr_hal_ti_radio.describe_ble_status: Running
+[00:00:05.147,064] <dbg> bt_ctlr_hal_ti_radio.isr_radio: CMD_BLE_SLAVE timestamp: 0
+[00:00:05.147,064] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
+[00:00:05.147,094] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
+[00:00:05.147,186] <dbg> bt_ctlr_llsw_ti_lll_slave.prepare_cb: 
+[00:00:05.147,216] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
+[00:00:05.147,277] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
+[00:00:05.147,308] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x2000128c
+[00:00:05.147,338] <dbg> bt_ctlr_hal_ti_radio.radio_set_up_slave_cmd: now: 20589620 ticks (5147405 us)
+[00:00:05.148,193] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: CMD_BLE_SLAVE (params):
+	pRxQ 0x2000ccf8:
+	pTxQ 0x2000cf24:
+	rxConfig:
+		bAutoFlushIgnored: 1
+		bAutoFlushCrcErr: 1
+		bAutoFlushEmpty: 1
+		bIncludeLenByte: 1
+		bIncludeCrc: 1
+		bAppendRssi: 1
+		bAppendStatus: 0
+		bAppendTimestamp: 1
+	seqStat:
+		lastRxSn: 1
+		lastTxSn: 1
+		nextTxSn: 0
+		bFirstPkt: 1
+		bAutoEmpty: 1
+		bLlCtrlTx: 0
+		bLlCtrlAckRx: 0
+		bLlCtrlAckPending: 0
+	maxNack: 0
+	maxPkt: 0
+	accessAddress: 3b18b29d
+	crcInit0: 5b
+	crcInit1: 34
+	crcInit2: 12
+	timeoutTrigger:
+		triggerType: 4
+		bEnaCmd: 0
+		
+
+
+[00:00:05.200,714] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_save: set radio_tmr_aa = 0
+[00:00:05.201,354] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_abort_cb: now: 20805651
+[00:00:05.201,599] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20614847,20624847] ticks ([5153711,5156211] us) every 180000 ticks (45000 us)
+[00:00:05.201,660] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
+[00:00:05.201,690] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
+[00:00:05.201,782] <dbg> bt_ctlr_llsw_ti_lll_slave.prepare_cb: 
+[00:00:05.201,812] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
+[00:00:05.201,873] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
+[00:00:05.201,873] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x2000128c
+[00:00:05.201,904] <dbg> bt_ctlr_hal_ti_radio.radio_set_up_slave_cmd: now: 20807946 ticks (5201986 us)
+[00:00:05.202,789] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: CMD_BLE_SLAVE (params):
+	pRxQ 0x2000ccf8:
+	pTxQ 0x2000cf24:
+	rxConfig:
+		bAutoFlushIgnored: 1
+		bAutoFlushCrcErr: 1
+		bAutoFlushEmpty: 1
+		bIncludeLenByte: 1
+		bIncludeCrc: 1
+		bAppendRssi: 1
+		bAppendStatus: 0
+		bAppendTimestamp: 1
+	seqStat:
+		lastRxSn: 1
+		lastTxSn: 1
+		nextTxSn: 0
+		bFirstPkt: 1
+		bAutoEmpty: 1
+		bLlCtrlTx: 0
+		bLlCtrlAckRx: 0
+		bLlCtrlAckPending: 0
+	maxNack: 0
+	maxPkt: 0
+	accessAddress: 3b18b29d
+	crcInit0: 5b
+	crcInit1: 34
+	crcInit2: 12
+	timeoutTrigger:
+		triggerType: 4
+		bEnaCmd: 0
+		
+
+
+[00:00:05.255,310] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_save: set radio_tmr_aa = 0
+[00:00:05.255,950] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_abort_cb: now: 21024026
+[00:00:05.256,256] <dbg> bt_ctlr_hal_ti_radio.isr_radio: now: 21025259 h: 0x20000010 ch: 251 (CMD_BLE_SLAVE) e: 2000bdd800002428
+[00:00:05.256,286] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Last radio operation command in a chain finished.
+[00:00:05.256,317] <dbg> bt_ctlr_hal_ti_radio.describe_ble_status: Operation aborted by command
+[00:00:05.256,347] <dbg> bt_ctlr_hal_ti_radio.isr_radio: CMD_BLE_SLAVE timestamp: 0
+[00:00:05.256,378] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
+[00:00:05.256,378] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
+[00:00:05.256,469] <dbg> bt_ctlr_llsw_ti_lll_slave.prepare_cb: 
+[00:00:05.256,500] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
+[00:00:05.256,561] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
+[00:00:05.256,591] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x2000128c
+[00:00:05.256,622] <dbg> bt_ctlr_hal_ti_radio.radio_set_up_slave_cmd: now: 21026770 ticks (5256692 us)
+[00:00:05.257,476] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: CMD_BLE_SLAVE (params):
+	pRxQ 0x2000ccf8:
+	pTxQ 0x2000cf24:
+	rxConfig:
+		bAutoFlushIgnored: 1
+		bAutoFlushCrcErr: 1
+		bAutoFlushEmpty: 1
+		bIncludeLenByte: 1
+		bIncludeCrc: 1
+		bAppendRssi: 1
+		bAppendStatus: 0
+		bAppendTimestamp: 1
+	seqStat:
+		lastRxSn: 1
+		lastTxSn: 1
+		nextTxSn: 0
+		bFirstPkt: 1
+		bAutoEmpty: 1
+		bLlCtrlTx: 0
+		bLlCtrlAckRx: 0
+		bLlCtrlAckPending: 0
+	maxNack: 0
+	maxPkt: 0
+	accessAddress: 3b18b29d
+	crcInit0: 5b
+	crcInit1: 34
+	crcInit2: 12
+	timeoutTrigger:
+		triggerType: 4
+		bEnaCmd: 0
+		
+
+
+[00:00:05.310,028] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_save: set radio_tmr_aa = 0
+[00:00:05.310,668] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_abort_cb: now: 21242897
+[00:00:05.310,882] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20794847,20804847] ticks ([5198711,5201211] us) every 180000 ticks (45000 us)
+[00:00:05.311,035] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
+[00:00:05.311,065] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
+[00:00:05.311,218] <dbg> bt_ctlr_llsw_ti_lll_slave.prepare_cb: 
+[00:00:05.311,248] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
+[00:00:05.311,309] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
+[00:00:05.311,340] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x2000128c
+[00:00:05.311,370] <dbg> bt_ctlr_hal_ti_radio.radio_set_up_slave_cmd: now: 21245758 ticks (5311439 us)
+[00:00:05.312,225] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: CMD_BLE_SLAVE (params):
+	pRxQ 0x2000ccf8:
+	pTxQ 0x2000cf24:
+	rxConfig:
+		bAutoFlushIgnored: 1
+		bAutoFlushCrcErr: 1
+		bAutoFlushEmpty: 1
+		bIncludeLenByte: 1
+		bIncludeCrc: 1
+		bAppendRssi: 1
+		bAppendStatus: 0
+		bAppendTimestamp: 1
+	seqStat:
+		lastRxSn: 1
+		lastTxSn: 1
+		nextTxSn: 0
+		bFirstPkt: 1
+		bAutoEmpty: 1
+		bLlCtrlTx: 0
+		bLlCtrlAckRx: 0
+		bLlCtrlAckPending: 0
+	maxNack: 0
+	maxPkt: 0
+	accessAddress: 3b18b29d
+	crcInit0: 5b
+	crcInit1: 34
+	crcInit2: 12
+	timeoutTrigger:
+		triggerType: 4
+		bEnaCmd: 0
+		
+
+
+[00:00:05.364,746] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_save: set radio_tmr_aa = 0
+[00:00:05.364,959] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20974847,20984847] ticks ([5243711,5246211] us) every 180000 ticks (45000 us)
+[00:00:05.365,112] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [21154847,21164847] ticks ([5288711,5291211] us) every 180000 ticks (45000 us)
+[00:00:05.365,264] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [21334847,21344847] ticks ([5333711,5336211] us) every 180000 ticks (45000 us)
+[00:00:05.365,386] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [21514847,21524847] ticks ([5378711,5381211] us) every 180000 ticks (45000 us)
+[00:00:05.381,195] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [21694847,21704847] ticks ([5423711,5426211] us) every 180000 ticks (45000 us)
+[00:00:05.426,208] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [21874847,21884847] ticks ([5468711,5471211] us) every 180000 ticks (45000 us)
+[00:00:05.433,074] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_abort_cb: now: 21732517
+[00:00:05.433,380] <dbg> bt_ctlr_hal_ti_radio.isr_radio: now: 21733782 h: 0x20000010 ch: 253 (CMD_BLE_SLAVE) e: 2000c41800002428
+[00:00:05.433,410] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Last radio operation command in a chain finished.
+
