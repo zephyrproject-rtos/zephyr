@@ -61,3 +61,18 @@
 	compatible = "nxp,lpc-usart";
 	current-speed = <115200>;
 };
+
+arduino_i2c: &flexcomm4 {
+	status = "okay";
+	compatible = "nxp,lpc-i2c";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	fxos8700@1e {
+		compatible = "nxp,fxos8700";
+		reg = <0x1e>;
+		label = "FXOS8700";
+		int1-gpios = <&gpio1 26 GPIO_ACTIVE_LOW>;
+	};
+};

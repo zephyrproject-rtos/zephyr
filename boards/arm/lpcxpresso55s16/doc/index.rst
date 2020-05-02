@@ -63,7 +63,11 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 | USART     | on-chip    | serial port                         |
++-----------+------------+-------------------------------------+
+| SENSOR    | off-chip   | fxos8700 trigger                    |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not currently enabled.
@@ -97,6 +101,12 @@ the functionality of a pin.
 +---------+-----------------+----------------------------+
 | PIO1_18 | GPIO            | Wakeup SW1                 |
 +---------+-----------------+----------------------------+
+| PIO1_20 | I2C             | I2C SCL                    |
++---------+-----------------+----------------------------+
+| PIO1_21 | I2C             | I2C SDA                    |
++---------+-----------------+----------------------------+
+| PIO1_26 | GPIO            | FXOS8700 INT1              |
++---------+-----------------+----------------------------+
 
 System Clock
 ============
@@ -109,8 +119,8 @@ Serial Port
 ===========
 
 The LPC55S16 SoC has 8 FLEXCOMM interfaces for serial
-communication. One is configured as USART for the console and the
-remaining are not used.
+communication. One is configured as USART for the console, one is
+configured for I2C, and the remaining are not used.
 
 Programming and Debugging
 *************************
