@@ -118,6 +118,35 @@ static int lpcxpresso_55s16_pinmux_init(struct device *dev)
 	pinmux_pin_set(port0, 30, port0_pin30_config);
 #endif
 
+#if DT_HAS_NODE(DT_NODELABEL(flexcomm4)) && \
+    DT_NODE_HAS_COMPAT(DT_NODELABEL(flexcomm4), nxp_lpc_i2c)
+	/* PORT1 PIN20 is configured as FC4_TXD_SCL_MISO_WS */
+	pinmux_pin_set(port1, 20, IOCON_PIO_FUNC5  |
+				  IOCON_PIO_MODE_INACT |
+				  IOCON_PIO_SLEW_STANDARD |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_OPENDRAIN_DI);
+
+	/* PORT1 PIN21 is configured as FC4_RXD_SDA_MOSI_DATA */
+	pinmux_pin_set(port1, 21, IOCON_PIO_FUNC5  |
+				  IOCON_PIO_MODE_INACT |
+				  IOCON_PIO_SLEW_STANDARD |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_OPENDRAIN_DI);
+#endif
+
+#ifdef CONFIG_FXOS8700_TRIGGER
+	pinmux_pin_set(port1, 26, IOCON_PIO_FUNC0 |
+				  IOCON_PIO_MODE_PULLUP |
+				  IOCON_PIO_INV_DI |
+				  IOCON_PIO_DIGITAL_EN |
+				  IOCON_PIO_INPFILT_OFF |
+				  IOCON_PIO_SLEW_STANDARD |
+				  IOCON_PIO_OPENDRAIN_DI);
+#endif
+
 	return 0;
 }
 

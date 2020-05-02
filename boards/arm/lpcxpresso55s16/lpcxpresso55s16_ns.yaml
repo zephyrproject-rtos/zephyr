@@ -15,4 +15,6 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - arduino_i2c
   - gpio
+  - i2c
