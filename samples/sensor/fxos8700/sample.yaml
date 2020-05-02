@@ -7,7 +7,7 @@ sample:
 tests:
   sample.sensor.fxos8700.hybrid:
     platform_whitelist: frdm_k64f hexiwear_k64 warp7_m4 frdm_kw41z
-                        rv32m1_vega_ri5cy twr_ke18f
+                        rv32m1_vega_ri5cy twr_ke18f lpcxpresso55s16_ns
     extra_configs:
       - CONFIG_FXOS8700_PULSE=y
       - CONFIG_FXOS8700_PULSE_INT1=y
