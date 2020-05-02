@@ -298,8 +298,11 @@ def node_ident(node):
     ident = ""
 
     if node.bus_node:
-        ident += "{}_{:X}_".format(
-            str2ident(node.bus_node.matching_compat), node.bus_node.unit_addr)
+        if node.bus_node.unit_addr is not None:
+            ident += "{}_{:X}_".format(
+                str2ident(node.bus_node.matching_compat), node.bus_node.unit_addr)
+        else:
+            ident += str2ident(node.bus_node.matching_compat)
 
     ident += f"{str2ident(node.matching_compat)}_"
 
