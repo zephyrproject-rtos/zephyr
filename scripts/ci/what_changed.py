@@ -33,18 +33,19 @@ def main():
     # pylint does not like the 'sh' library
     # pylint: disable=too-many-function-args,unexpected-keyword-arg
     commit = sh.git("diff", "--name-only", args.commits, **sh_special_args)
-    files = commit.split("\n")
+    files = set()
+    files.update(commit.split("\n"))
 
     with open("scripts/ci/sanitycheck_ignore.txt", "r") as sc_ignore:
         ignores = sc_ignore.read().splitlines()
         ignores = filter(lambda x: not x.startswith("#"), ignores)
 
-    found = []
+    found = set()
     files = list(filter(lambda x: x, files))
 
     for pattern in ignores:
         if pattern:
-            found.extend(fnmatch.filter(files, pattern))
+            found.update(fnmatch.filter(files, pattern))
 
     if sorted(files) != sorted(found):
         print("full")
