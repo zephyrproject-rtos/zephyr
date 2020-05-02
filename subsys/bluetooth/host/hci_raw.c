@@ -38,7 +38,8 @@ static u8_t raw_mode;
 NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
 			  BT_BUF_RX_SIZE, NULL);
 
-NET_BUF_POOL_FIXED_DEFINE(hci_tx_pool, CONFIG_BT_HCI_CMD_COUNT + BT_BUF_TX_SIZE,
+NET_BUF_POOL_FIXED_DEFINE(hci_tx_pool,
+			  CONFIG_BT_HCI_CMD_COUNT + BT_HCI_ACL_COUNT,
 			  BT_BUF_TX_SIZE, NULL);
 
 struct bt_dev_raw bt_dev;
