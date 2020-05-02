@@ -74,6 +74,7 @@ argument.
 .. toctree::
    :maxdepth: 1
 
+   data_passing/queues.rst
    data_passing/fifos.rst
    data_passing/lifos.rst
    data_passing/stacks.rst
