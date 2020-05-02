@@ -23,7 +23,16 @@
 
 #define HAL_TICKER_US_TO_TICKS(x) RF_convertUsToRatTicks(x)
 
-#define HAL_TICKER_REMAINDER(x) 0
+/* Macro returning remainder in nanoseconds */
+#define HAL_TICKER_REMAINDER(x) \
+	( \
+		( \
+			((u64_t) (x) * 1000000000UL) \
+			- ((u64_t)HAL_TICKER_US_TO_TICKS(x) \
+			* (1000000000UL/HAL_TICKER_CNTR_CLK_FREQ_HZ)) \
+		) \
+		/ 1000UL \
+	)
 
 #define HAL_TICKER_TICKS_TO_US(x) RF_convertRatTicksToUs(x)
 
@@ -34,7 +43,8 @@
 /* Macro defining the remainder resolution/range
  * ~ 1000000 * HAL_TICKER_TICKS_TO_US(1)
  */
-#define HAL_TICKER_REMAINDER_RANGE 1
+#define HAL_TICKER_REMAINDER_RANGE \
+	HAL_TICKER_TICKS_TO_US(1000000)
 
 /* Macro defining the margin for positioning re-scheduled nodes */
 #define HAL_TICKER_RESCHEDULE_MARGIN \

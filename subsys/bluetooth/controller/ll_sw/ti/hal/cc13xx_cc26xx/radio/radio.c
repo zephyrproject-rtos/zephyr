@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdio.h>
 #include <string.h>
 
 #include <sys/dlist.h>
@@ -125,7 +126,8 @@ struct ble_cc13xx_cc26xx_data {
 	RF_RatConfigCompare rat_hcto_compare;
 	RF_RatHandle rat_hcto_handle;
 
-#if defined(CONFIG_BT_CTLR_DEBUG_PINS)
+#if 1
+//#if defined(CONFIG_BT_CTLR_DEBUG_PINS)
 	u32_t window_begin_ticks;
 	u32_t window_duration_ticks;
 	u32_t window_interval_ticks;
@@ -173,7 +175,8 @@ static void rat_deferred_hcto_callback(RF_Handle h, RF_RatHandle rh,
 				       RF_EventMask e,
 				       u32_t compareCaptureTime);
 
-#if defined(CONFIG_BT_CTLR_DEBUG_PINS)
+//#if defined(CONFIG_BT_CTLR_DEBUG_PINS)
+#if 1
 static void transmit_window_debug(u32_t begin, u32_t duration, u32_t interval);
 #else
 #define transmit_window_debug(a, b, c)
@@ -1534,6 +1537,128 @@ void radio_tmr_tifs_set(u32_t tifs)
 	tmr_tifs = tifs;
 }
 
+static void dumpBleSlave(rfc_CMD_BLE_SLAVE_t *cmd) {
+	static char buf[512];
+	snprintf(
+		buf, sizeof(buf),
+		"\nCMD_BLE_SLAVE:\n\t"
+		"commandNo: %04x\n\t"
+		"status: %u\n\t"
+		"pNextOp: %p\n\t"
+		"startTime: %u\n\t"
+		"startTrigger:\n\t\t"
+		"triggertType: %u\n\tt"
+		"bEnaCmd: %u\n\tt"
+		"triggerNo: %u\n\tt"
+		"pastTrig: %u\n\t"
+		"condition:\n\t\t"
+		"rule: %u\n\t\t"
+		"nSkip: %u\n\t"
+		"channel: %u\n\t"
+		"whitening:\n\t\t"
+		"init: %u\n\t\t"
+		"bOverride: %u\n\t"
+		"pParams: %p\n\t"
+		"pOutput: %p",
+		cmd->commandNo,
+		cmd->status,
+		cmd->pNextOp,
+		cmd->startTime,
+		cmd->startTrigger.triggerType,
+		cmd->startTrigger.bEnaCmd,
+		cmd->startTrigger.triggerNo,
+		cmd->startTrigger.pastTrig,
+		cmd->condition.rule,
+		cmd->condition.nSkip,
+		cmd->channel,
+		cmd->whitening.init,
+		cmd->whitening.bOverride,
+		cmd->pParams,
+		cmd->pOutput
+	);
+	BT_DBG("%s\n\n", buf);
+
+	rfc_bleSlavePar_t *p = (rfc_bleSlavePar_t *)cmd->pParams;
+	snprintf(
+		buf, sizeof(buf),
+		"CMD_BLE_SLAVE (params):\n\t"
+		"pRxQ %p:\n\t"
+		"pTxQ %p:\n\t"
+		"rxConfig:\n\t\t"
+		"bAutoFlushIgnored: %u\n\t\t"
+		"bAutoFlushCrcErr: %u\n\t\t"
+		"bAutoFlushEmpty: %u\n\t\t"
+		"bIncludeLenByte: %u\n\t\t"
+		"bIncludeCrc: %u\n\t\t"
+		"bAppendRssi: %u\n\t\t"
+		"bAppendStatus: %u\n\t\t"
+		"bAppendTimestamp: %u\n\t"
+		"seqStat:\n\t\t"
+		"lastRxSn: %u\n\t\t"
+		"lastTxSn: %u\n\t\t"
+		"nextTxSn: %u\n\t\t"
+		"bFirstPkt: %u\n\t\t"
+		"bAutoEmpty: %u\n\t\t"
+		"bLlCtrlTx: %u\n\t\t"
+		"bLlCtrlAckRx: %u\n\t\t"
+		"bLlCtrlAckPending: %u\n\t"
+		"maxNack: %u\n\t"
+		"maxPkt: %u\n\t"
+		"accessAddress: %x\n\t"
+		"crcInit0: %02x\n\t"
+		"crcInit1: %02x\n\t"
+		"crcInit2: %02x\n\t"
+		"timeoutTrigger:\n\t\t"
+		"triggerType: %u\n\t\t"
+		"bEnaCmd: %u\n\t\t"
+		"triggerNo: %u\n\t\t"
+		"pastTrig: %u\n\t"
+		"timeoutTime: %u\n\t"
+		"endTrigger:\n\t\t"
+		"triggerType: %u\n\t\t"
+		"bEnaCmd: %u\n\t\t"
+		"triggerNo: %u\n\t\t"
+		"pastTrig: %u\n\t"
+		"endTime: %u"
+		,
+		p->pRxQ,
+		p->pTxQ,
+		p->rxConfig.bAutoFlushIgnored,
+		p->rxConfig.bAutoFlushCrcErr,
+		p->rxConfig.bAutoFlushEmpty,
+		p->rxConfig.bIncludeLenByte,
+		p->rxConfig.bIncludeCrc,
+		p->rxConfig.bAppendRssi,
+		p->rxConfig.bAppendStatus,
+		p->rxConfig.bAppendTimestamp,
+		p->seqStat.lastRxSn,
+		p->seqStat.lastTxSn,
+		p->seqStat.nextTxSn,
+		p->seqStat.bFirstPkt,
+		p->seqStat.bAutoEmpty,
+		p->seqStat.bLlCtrlTx,
+		p->seqStat.bLlCtrlAckRx,
+		p->seqStat.bLlCtrlAckPending,
+		p->maxNack,
+		p->maxPkt,
+		p->accessAddress,
+		p->crcInit0,
+		p->crcInit1,
+		p->crcInit2,
+		p->timeoutTrigger.triggerType,
+		p->timeoutTrigger.bEnaCmd,
+		p->timeoutTrigger.triggerNo,
+		p->timeoutTrigger.pastTrig,
+		p->timeoutTime,
+		p->endTrigger.triggerType,
+		p->endTrigger.bEnaCmd,
+		p->endTrigger.triggerNo,
+		p->endTrigger.pastTrig,
+		p->endTime
+	);
+	printk("%s\n\n", buf);
+}
+
 /* Start the radio after ticks_start (ticks) + remainder (us) time */
 static u32_t radio_tmr_start_hlp(u8_t trx, u32_t ticks_start, u32_t remainder)
 {
@@ -1600,6 +1725,7 @@ static u32_t radio_tmr_start_hlp(u8_t trx, u32_t ticks_start, u32_t remainder)
 	}
 
 	if (radio_start_now_cmd) {
+
 		/* trigger Rx/Tx Start Now */
 		radio_start_now_cmd->startTime = now;
 		radio_start_now_cmd->startTrigger.triggerType = TRIG_ABSTIME;
@@ -1609,11 +1735,7 @@ static u32_t radio_tmr_start_hlp(u8_t trx, u32_t ticks_start, u32_t remainder)
 			RF_postCmd(rfHandle, (RF_Op *)radio_start_now_cmd,
 				   RF_PriorityNormal, rf_callback, EVENT_MASK);
 		if ( CMD_BLE_SLAVE == next_radio_cmd->commandNo ) {
-			BT_DBG("now %u: ticks_start: %u submit %s to start at %u",
-				   now,
-				   ticks_start + HAL_TICKER_US_TO_TICKS( remainder ),
-				   command_no_to_string(radio_start_now_cmd->commandNo),
-				   radio_start_now_cmd->startTime);
+			dumpBleSlave(&drv_data->cmd_ble_slave);
 		}
 	} else {
 		if (next_radio_cmd != NULL) {
@@ -1627,11 +1749,9 @@ static u32_t radio_tmr_start_hlp(u8_t trx, u32_t ticks_start, u32_t remainder)
 					   RF_PriorityNormal, rf_callback,
 					   EVENT_MASK);
 			if ( CMD_BLE_SLAVE == next_radio_cmd->commandNo ) {
-				BT_DBG("now %u: ticks_start: %u submit %s to start at %u",
-					   now,
-					   ticks_start + HAL_TICKER_US_TO_TICKS( remainder ),
-					   command_no_to_string(next_radio_cmd->commandNo),
-					   next_radio_cmd->startTime);
+				if ( CMD_BLE_SLAVE == next_radio_cmd->commandNo ) {
+					dumpBleSlave(&drv_data->cmd_ble_slave);
+				}
 			}
 		}
 	}
@@ -1969,6 +2089,10 @@ void radio_set_up_slave_cmd(void)
 	next_radio_cmd = (rfc_bleRadioOp_t *)&drv_data->cmd_ble_slave;
 	drv_data->ignore_next_rx = false;
 
+
+	// explicitly set the start time to the anchor
+	drv_data->cmd_ble_slave.startTime = drv_data->window_begin_ticks;
+
 	// timeout of the first receive operation is relative to the CMD_BLE_SLAVE start time
 	if ( drv_data->cmd_ble_slave_param.seqStat.bFirstPkt ) {
 		// widen the window (FIXME: use proper widening formula)
@@ -1976,6 +2100,8 @@ void radio_set_up_slave_cmd(void)
 	} else {
 		drv_data->cmd_ble_slave_param.timeoutTime = drv_data->window_duration_ticks;
 	}
+
+	//dumpBleSlave(&drv_data->cmd_ble_slave);
 }
 
 void radio_slave_reset(void) {
