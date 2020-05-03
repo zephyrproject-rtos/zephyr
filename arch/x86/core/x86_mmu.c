@@ -666,6 +666,7 @@ __aligned(PTABLES_ALIGN) struct x86_page_tables z_x86_user_ptables;
 
 extern char z_shared_kernel_page_start[];
 
+#ifdef CONFIG_X86_KPTI
 static inline bool is_within_system_ram(uintptr_t addr)
 {
 #ifdef CONFIG_X86_64
@@ -676,6 +677,7 @@ static inline bool is_within_system_ram(uintptr_t addr)
 		(addr < (PHYS_RAM_ADDR + PHYS_RAM_SIZE));
 #endif
 }
+#endif
 
 /* Ignored bit posiition at all levels */
 #define IGNORED		BIT64(11)
