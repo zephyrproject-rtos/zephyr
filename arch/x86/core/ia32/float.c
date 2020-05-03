@@ -17,7 +17,7 @@
  * safely by one or more cooperative threads OR by a single preemptive thread,
  * but not by both.
  *
- * This code is not necessary for systems with CONFIG_EAGER_FP_SHARING, as
+ * This code is not necessary for systems with CONFIG_EAGER_FPU_SHARING, as
  * the floating point context is unconditionally saved/restored with every
  * context switch.
  *

@@ -73,14 +73,14 @@ struct _callee_saved {
 typedef struct _callee_saved _callee_saved_t;
 
 /*
- * The macros CONFIG_{LAZY|EAGER}_FP_SHARING shall be set to indicate that the
+ * The macros CONFIG_{LAZY|EAGER}_FPU_SHARING shall be set to indicate that the
  * saving/restoring of the traditional x87 floating point (and MMX) registers
  * are supported by the kernel's context swapping code. The macro
  * CONFIG_SSE shall _also_ be set if saving/restoring of the XMM
  * registers is also supported in the kernel's context swapping code.
  */
 
-#if defined(CONFIG_EAGER_FP_SHARING) || defined(CONFIG_LAZY_FP_SHARING)
+#if defined(CONFIG_EAGER_FPU_SHARING) || defined(CONFIG_LAZY_FPU_SHARING)
 
 /* definition of a single x87 (floating point / MMX) register */
 
@@ -169,7 +169,7 @@ typedef struct s_FpRegSetEx {
 
 #endif /* CONFIG_SSE == 0 */
 
-#else /* !CONFIG_LAZY_FP_SHARING && !CONFIG_EAGER_FP_SHARING */
+#else /* !CONFIG_LAZY_FPU_SHARING && !CONFIG_EAGER_FPU_SHARING */
 
 /* empty floating point register definition */
 
@@ -179,7 +179,7 @@ typedef struct s_FpRegSet {
 typedef struct s_FpRegSetEx {
 } tFpRegSetEx;
 
-#endif /* CONFIG_LAZY_FP_SHARING || CONFIG_EAGER_FP_SHARING */
+#endif /* CONFIG_LAZY_FPU_SHARING || CONFIG_EAGER_FPU_SHARING */
 
 /*
  * The following structure defines the set of 'volatile' x87 FPU/MMX/SSE
@@ -221,14 +221,14 @@ struct _thread_arch {
 	char *psp;
 #endif
 
-#if defined(CONFIG_LAZY_FP_SHARING)
+#if defined(CONFIG_LAZY_FPU_SHARING)
 	/*
 	 * Nested exception count to maintain setting of EXC_ACTIVE flag across
 	 * outermost exception.  EXC_ACTIVE is used by z_swap() lazy FP
 	 * save/restore and by debug tools.
 	 */
 	unsigned excNestCount; /* nested exception count */
-#endif /* CONFIG_LAZY_FP_SHARING */
+#endif /* CONFIG_LAZY_FPU_SHARING */
 
 	/*
 	 * The location of all floating point related structures/fields MUST be

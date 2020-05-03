@@ -21,7 +21,7 @@ zephyr_library_sources(
 
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD		ia32/irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_X86_USERSPACE	ia32/userspace.S)
-zephyr_library_sources_ifdef(CONFIG_LAZY_FP_SHARING	ia32/float.c)
+zephyr_library_sources_ifdef(CONFIG_LAZY_FPU_SHARING	ia32/float.c)
 
 # Last since we declare default exception handlers here
 zephyr_library_sources(ia32/fatal.c)
