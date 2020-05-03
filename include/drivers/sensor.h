@@ -161,6 +161,8 @@ enum sensor_channel {
 	SENSOR_CHAN_GAUGE_AVG_POWER,
 	/** State of health measurement in % **/
 	SENSOR_CHAN_GAUGE_STATE_OF_HEALTH,
+	/** Pressure in kilopascal relative to atmospheric pressure. */
+	SENSOR_CHAN_GAUGE_PRESS,
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,
