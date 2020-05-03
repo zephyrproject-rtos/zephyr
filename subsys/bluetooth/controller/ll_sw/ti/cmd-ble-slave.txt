@@ -1,106 +1,46 @@
-*** Booting Zephyr OS build zephyr-v2.2.0-2074-gb8ceb82d8f87  ***
+*** Booting Zephyr OS build zephyr-v2.2.0-2078-g1924f672b464  ***
 Bluetooth initialized
 Advertising successfully started
 [00:00:00.006,591] <dbg> bt_ctlr_hal_ti_radio.ble_cc13xx_cc26xx_data_init: device address: cd:de:1e:b0:6f:c0
-[00:00:00.008,270] <dbg> bt_ctlr_llsw_ti_lll.swi_lll_cc13xx_cc26xx_isr: IRQ 1
-[00:00:00.008,361] <dbg> bt_ctlr_llsw_ti_lll.swi_lll_cc13xx_cc26xx_isr: IRQ 1
-[00:00:00.011,596] <inf> bt_hci_core: HW Platform: Texas Instruments (0x0004)
-[00:00:00.011,627] <inf> bt_hci_core: HW Variant: cc13xx_cc26xx (0x0001)
-[00:00:00.011,657] <inf> bt_hci_core: Firmware: Standard Bluetooth controller (0x00) Version 2.2 Build 99
-[00:00:00.013,977] <inf> bt_hci_core: Identity: c0:6f:b0:1e:de:cd (random)
-[00:00:00.014,038] <inf> bt_hci_core: HCI: version 5.1 (0x0a) revision 0x0000, manufacturer 0x05f1
-[00:00:00.014,038] <inf> bt_hci_core: LMP: version 5.1 (0x0a) subver 0xffff
-[00:00:04.930,877] <dbg> bt_ctlr_hal_ti_radio.transmit_wticks now: 20042435 CONNECT_IND:{
-	init_addr: 45:89:43:1e:80:49
+[00:00:00.008,300] <dbg> bt_ctlr_llsw_ti_lll.swi_lll_cc13xx_cc26xx_isr: IRQ 1
+[00:00:00.008,392] <dbg> bt_ctlr_llsw_ti_lll.swi_lll_cc13xx_cc26xx_isr: IRQ 1
+[00:00:00.011,505] <inf> bt_hci_core: HW Platform: Texas Instruments (0x0004)
+[00:00:00.011,505] <inf> bt_hci_core: HW Variant: cc13xx_cc26xx (0x0001)
+[00:00:00.011,566] <inf> bt_hci_core: Firmware: Standard Bluetooth controller (0x00) Version 2.2 Build 99
+[00:00:00.013,793] <inf> bt_hci_core: Identity: c0:6f:b0:1e:de:cd (random)
+[00:00:00.013,824] <inf> bt_hci_core: HCI: version 5.1 (0x0a) revision 0x0000, manufacturer 0x05f1
+[00:00:00.013,824] <inf> bt_hci_core: LMP: version 5.1 (0x0a) subver 0xffff
+[00:00:03.076,416] <dbg> bt_ctlr_hal_ti_radio.isr_radio: Received packet with CRC error
+[00:00:03.787,384] <dbg> bt_ctlr_hal_ti_radio.isr_radio: Received packet with CRC error
+[00:00:05.206,573] <dbg> bt_ctlr_hal_ti_radio.isr_radio: Received packet with CRC error
+[00:00:06.319,244] <dbg> bt_ctlr_hal_ti_radio.isr_radio: Received packet with CRC error
+ticks now: 46374154 CONNECT_IND:{
+	init_addr: 51:be:4a:4f:65:c1
 	adv_addr: c0:6f:b0:1e:de:cd
-	access_addr: 0x3b18b29d
-	crc_init: 0x12345b
+	access_addr: 0x9b7aed70
+	crc_init: 0x7f428a
 	win_size: 2
-	win_offset: 6
+	win_offset: 17
 	interval: 36
 	latency: 0
 	timeout: 500
-	chan_map: 00feffff1f
-	hop: 12
+	chan_map: 07f8ff001f
+	hop: 11
 	sca: 0
 }
-CMD_BLE_SLAVE (params):
-	pRxQ 0x2000ccf8:
-	pTxQ 0x2000cf24:
-	rxConfig:
-		bAutoFlushIgnored: 1
-		bAutoFlushCrcErr: 1
-		bAutoFlushEmpty: 1
-		bIncludeLenByte: 1
-		bIncludeCrc: 1
-		bAppendRssi: 1
-		bAppendStatus: 0
-		bAppendTimestamp: 1
-	seqStat:
-		lastRxSn: 1
-		lastTxSn: 1
-		nextTxSn: 0
-		bFirstPkt: 1
-		bAutoEmpty: 1
-		bLlCtrlTx: 0
-		bLlCtrlAckRx: 0
-		bLlCtrlAckPending: 0
-	maxNack: 0
-	maxPkt: 0
-	accessAddress: 3b18b29d
-	crcInit0: 5b
-	crcInit1: 34
-	crcInit2: 12
-	timeoutTrigger:
-		triggerType: 4
-		bEnaCmd: 0
-		
-
-CMD_BLE_SLAVE (params):
-	pRxQ 0x2000ccf8:
-	pTxQ 0x2000cf24:
-	rxConfig:
-		bAutoFlushIgnored: 1
-		bAutoFlushCrcErr: 1
-		bAutoFlushEmpty: 1
-		bIncludeLenByte: 1
-		bIncludeCrc: 1
-		bAppendRssi: 1
-		bAppendStatus: 0
-		bAppendTimestamp: 1
-	seqStat:
-		lastRxSn: 1
-		lastTxSn: 1
-		nextTxSn: 0
-		bFirstPkt: 1
-		bAutoEmpty: 1
-		bLlCtrlTx: 0
-		bLlCtrlAckRx: 0
-		bLlCtrlAckPending: 0
-	maxNack: 0
-	maxPkt: 0
-	accessAddress: 3b18b29d
-	crcInit0: 5b
-	crcInit1: 34
-	crcInit2: 12
-	timeoutTrigger:
-		triggerType: 4
-		bEnaCmd: 0
-
 Connected
-Disconnected (reason 0x3e)
-indow_debug: TX Window: [19893595,19903595] ticks ([4973398,4975898] us) every 180000 ticks (45000 us)
-[00:00:04.975,891] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20073595,20083595] ticks ([5018398,5020898] us) every 180000 ticks (45000 us)
-[00:00:05.010,437] <dbg> bt_ctlr_hal_ti_radio.pkt_rx: CONNECT_IND: now: 20041928 timestamp: 20039683 (5009920 us)
-[00:00:05.010,467] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20074847,20084847] ticks ([5018711,5021211] us) every 180000 ticks (45000 us)
-[00:00:05.036,315] <dbg> bt_ctlr_ull_slave.ull_slave_setup: 
-ticks now: 20145426
+[00:00:11.085,449] <dbg> bt_ctlr_hal_ti_radio.isr_radio: Received packet with CRC error
+[00:00:11.490,356] <dbg> bt_ctlr_hal_ti_radio.isr_radio: Received packet with CRC error
+[00:00:11.590,881] <dbg> bt_ctlr_hal_ti_radio.pkt_rx: CONNECT_IND: now: 46373620 timestamp: 46371373 (11592843 us)
+[00:00:11.590,911] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [46461537,46471537] ticks ([11615384,11617884] us) every 180000 ticks (45000 us)
+[00:00:11.616,821] <dbg> bt_ctlr_ull_slave.ull_slave_setup: 
+ticks now: 46477388
 ticker_start(
 	instance_index: 0
 	user_id: 1
 	ticker_id: 3
-	ticks_anchor: 20033683
-	ticks_first: 34016
+	ticks_anchor: 46365373
+	ticks_first: 89016
 	ticks_periodic: 179820
 	remainder_periodic: 2005282085
 	lazy: 0
@@ -110,234 +50,124 @@ ticker_start(
 	fp_op_func: 0x00024e01
 	op_context: 0x00000132
 )
-[00:00:05.091,949] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20254847,20264847] ticks ([5063711,5066211] us) every 180000 ticks (45000 us)
-[00:00:05.092,102] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20434847,20444847] ticks ([5108711,5111211] us) every 180000 ticks (45000 us)
-[00:00:05.092,285] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
-[00:00:05.092,315] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
-[00:00:05.092,407] <dbg> bt_ctlr_llsw_ti_lll_slave.prepare_cb: 
-[00:00:05.092,437] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
-[00:00:05.092,498] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
-[00:00:05.092,529] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x2000128c
-[00:00:05.092,559] <dbg> bt_ctlr_hal_ti_radio.radio_set_up_slave_cmd: now: 20370462 ticks (5092615 us)
-[00:00:05.093,383] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: CMD_BLE_SLAVE (params):
-	pRxQ 0x2000ccf8:
-	pTxQ 0x2000cf24:
-	rxConfig:
-		bAutoFlushIgnored: 1
-		bAutoFlushCrcErr: 1
-		bAutoFlushEmpty: 1
-		bIncludeLenByte: 1
-		bIncludeCrc: 1
-		bAppendRssi: 1
-		bAppendStatus: 0
-		bAppendTimestamp: 1
-	seqStat:
-		lastRxSn: 1
-		lastTxSn: 1
-		nextTxSn: 0
-		bFirstPkt: 1
-		bAutoEmpty: 1
-		bLlCtrlTx: 0
-		bLlCtrlAckRx: 0
-		bLlCtrlAckPending: 0
-	maxNack: 0
-	maxPkt: 0
-	accessAddress: 3b18b29d
-	crcInit0: 5b
-	crcInit1: 34
-	crcInit2: 12
-	timeoutTrigger:
-		triggerType: 4
-		bEnaCmd: 0
-		
-
-
-[00:00:05.145,935] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_save: set radio_tmr_aa = 0
-[00:00:05.146,575] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_abort_cb: now: 20586527
-[00:00:05.146,972] <dbg> bt_ctlr_hal_ti_radio.isr_radio: now: 20588107 h: 0x20000010 ch: 249 (CMD_BLE_SLAVE) e: 2000c13800002428
-[00:00:05.147,003] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Last radio operation command in a chain finished.
-[00:00:05.147,033] <dbg> bt_ctlr_hal_ti_radio.describe_ble_status: Running
-[00:00:05.147,064] <dbg> bt_ctlr_hal_ti_radio.isr_radio: CMD_BLE_SLAVE timestamp: 0
-[00:00:05.147,064] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
-[00:00:05.147,094] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
-[00:00:05.147,186] <dbg> bt_ctlr_llsw_ti_lll_slave.prepare_cb: 
-[00:00:05.147,216] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
-[00:00:05.147,277] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
-[00:00:05.147,308] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x2000128c
-[00:00:05.147,338] <dbg> bt_ctlr_hal_ti_radio.radio_set_up_slave_cmd: now: 20589620 ticks (5147405 us)
-[00:00:05.148,193] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: CMD_BLE_SLAVE (params):
-	pRxQ 0x2000ccf8:
-	pTxQ 0x2000cf24:
-	rxConfig:
-		bAutoFlushIgnored: 1
-		bAutoFlushCrcErr: 1
-		bAutoFlushEmpty: 1
-		bIncludeLenByte: 1
-		bIncludeCrc: 1
-		bAppendRssi: 1
-		bAppendStatus: 0
-		bAppendTimestamp: 1
-	seqStat:
-		lastRxSn: 1
-		lastTxSn: 1
-		nextTxSn: 0
-		bFirstPkt: 1
-		bAutoEmpty: 1
-		bLlCtrlTx: 0
-		bLlCtrlAckRx: 0
-		bLlCtrlAckPending: 0
-	maxNack: 0
-	maxPkt: 0
-	accessAddress: 3b18b29d
-	crcInit0: 5b
-	crcInit1: 34
-	crcInit2: 12
-	timeoutTrigger:
-		triggerType: 4
-		bEnaCmd: 0
-		
-
-
-[00:00:05.200,714] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_save: set radio_tmr_aa = 0
-[00:00:05.201,354] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_abort_cb: now: 20805651
-[00:00:05.201,599] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20614847,20624847] ticks ([5153711,5156211] us) every 180000 ticks (45000 us)
-[00:00:05.201,660] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
-[00:00:05.201,690] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
-[00:00:05.201,782] <dbg> bt_ctlr_llsw_ti_lll_slave.prepare_cb: 
-[00:00:05.201,812] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
-[00:00:05.201,873] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
-[00:00:05.201,873] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x2000128c
-[00:00:05.201,904] <dbg> bt_ctlr_hal_ti_radio.radio_set_up_slave_cmd: now: 20807946 ticks (5201986 us)
-[00:00:05.202,789] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: CMD_BLE_SLAVE (params):
-	pRxQ 0x2000ccf8:
-	pTxQ 0x2000cf24:
-	rxConfig:
-		bAutoFlushIgnored: 1
-		bAutoFlushCrcErr: 1
-		bAutoFlushEmpty: 1
-		bIncludeLenByte: 1
-		bIncludeCrc: 1
-		bAppendRssi: 1
-		bAppendStatus: 0
-		bAppendTimestamp: 1
-	seqStat:
-		lastRxSn: 1
-		lastTxSn: 1
-		nextTxSn: 0
-		bFirstPkt: 1
-		bAutoEmpty: 1
-		bLlCtrlTx: 0
-		bLlCtrlAckRx: 0
-		bLlCtrlAckPending: 0
-	maxNack: 0
-	maxPkt: 0
-	accessAddress: 3b18b29d
-	crcInit0: 5b
-	crcInit1: 34
-	crcInit2: 12
-	timeoutTrigger:
-		triggerType: 4
-		bEnaCmd: 0
-		
-
-
-[00:00:05.255,310] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_save: set radio_tmr_aa = 0
-[00:00:05.255,950] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_abort_cb: now: 21024026
-[00:00:05.256,256] <dbg> bt_ctlr_hal_ti_radio.isr_radio: now: 21025259 h: 0x20000010 ch: 251 (CMD_BLE_SLAVE) e: 2000bdd800002428
-[00:00:05.256,286] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Last radio operation command in a chain finished.
-[00:00:05.256,317] <dbg> bt_ctlr_hal_ti_radio.describe_ble_status: Operation aborted by command
-[00:00:05.256,347] <dbg> bt_ctlr_hal_ti_radio.isr_radio: CMD_BLE_SLAVE timestamp: 0
-[00:00:05.256,378] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
-[00:00:05.256,378] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
-[00:00:05.256,469] <dbg> bt_ctlr_llsw_ti_lll_slave.prepare_cb: 
-[00:00:05.256,500] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
-[00:00:05.256,561] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
-[00:00:05.256,591] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x2000128c
-[00:00:05.256,622] <dbg> bt_ctlr_hal_ti_radio.radio_set_up_slave_cmd: now: 21026770 ticks (5256692 us)
-[00:00:05.257,476] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: CMD_BLE_SLAVE (params):
-	pRxQ 0x2000ccf8:
-	pTxQ 0x2000cf24:
-	rxConfig:
-		bAutoFlushIgnored: 1
-		bAutoFlushCrcErr: 1
-		bAutoFlushEmpty: 1
-		bIncludeLenByte: 1
-		bIncludeCrc: 1
-		bAppendRssi: 1
-		bAppendStatus: 0
-		bAppendTimestamp: 1
-	seqStat:
-		lastRxSn: 1
-		lastTxSn: 1
-		nextTxSn: 0
-		bFirstPkt: 1
-		bAutoEmpty: 1
-		bLlCtrlTx: 0
-		bLlCtrlAckRx: 0
-		bLlCtrlAckPending: 0
-	maxNack: 0
-	maxPkt: 0
-	accessAddress: 3b18b29d
-	crcInit0: 5b
-	crcInit1: 34
-	crcInit2: 12
-	timeoutTrigger:
-		triggerType: 4
-		bEnaCmd: 0
-		
-
-
-[00:00:05.310,028] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_save: set radio_tmr_aa = 0
-[00:00:05.310,668] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_abort_cb: now: 21242897
-[00:00:05.310,882] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20794847,20804847] ticks ([5198711,5201211] us) every 180000 ticks (45000 us)
-[00:00:05.311,035] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
-[00:00:05.311,065] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
-[00:00:05.311,218] <dbg> bt_ctlr_llsw_ti_lll_slave.prepare_cb: 
-[00:00:05.311,248] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
-[00:00:05.311,309] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
-[00:00:05.311,340] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x2000128c
-[00:00:05.311,370] <dbg> bt_ctlr_hal_ti_radio.radio_set_up_slave_cmd: now: 21245758 ticks (5311439 us)
-[00:00:05.312,225] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: CMD_BLE_SLAVE (params):
-	pRxQ 0x2000ccf8:
-	pTxQ 0x2000cf24:
-	rxConfig:
-		bAutoFlushIgnored: 1
-		bAutoFlushCrcErr: 1
-		bAutoFlushEmpty: 1
-		bIncludeLenByte: 1
-		bIncludeCrc: 1
-		bAppendRssi: 1
-		bAppendStatus: 0
-		bAppendTimestamp: 1
-	seqStat:
-		lastRxSn: 1
-		lastTxSn: 1
-		nextTxSn: 0
-		bFirstPkt: 1
-		bAutoEmpty: 1
-		bLlCtrlTx: 0
-		bLlCtrlAckRx: 0
-		bLlCtrlAckPending: 0
-	maxNack: 0
-	maxPkt: 0
-	accessAddress: 3b18b29d
-	crcInit0: 5b
-	crcInit1: 34
-	crcInit2: 12
-	timeoutTrigger:
-		triggerType: 4
-		bEnaCmd: 0
-		
-
-
-[00:00:05.364,746] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_save: set radio_tmr_aa = 0
-[00:00:05.364,959] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [20974847,20984847] ticks ([5243711,5246211] us) every 180000 ticks (45000 us)
-[00:00:05.365,112] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [21154847,21164847] ticks ([5288711,5291211] us) every 180000 ticks (45000 us)
-[00:00:05.365,264] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [21334847,21344847] ticks ([5333711,5336211] us) every 180000 ticks (45000 us)
-[00:00:05.365,386] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [21514847,21524847] ticks ([5378711,5381211] us) every 180000 ticks (45000 us)
-[00:00:05.381,195] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [21694847,21704847] ticks ([5423711,5426211] us) every 180000 ticks (45000 us)
-[00:00:05.426,208] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [21874847,21884847] ticks ([5468711,5471211] us) every 180000 ticks (45000 us)
-[00:00:05.433,074] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_abort_cb: now: 21732517
-[00:00:05.433,380] <dbg> bt_ctlr_hal_ti_radio.isr_radio: now: 21733782 h: 0x20000010 ch: 253 (CMD_BLE_SLAVE) e: 2000c41800002428
-[00:00:05.433,410] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Last radio operation command in a chain finished.
-
+[00:00:11.618,011] <dbg> bt_ctlr_hal_ti_radio.transmit_window_debug: TX Window: [46641537,46651537] ticks ([11660384,11662884] us) every 180000 ticks (45000 us)
+[00:00:11.618,255] <dbg> bt_ctlr_llsw_ti_lll_slave.prepare_cb: 
+[00:00:11.618,286] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
+[00:00:11.618,347] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
+[00:00:11.618,438] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_save: set radio_tmr_aa = 0
+[00:00:11.618,682] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_isr_rx: 179: about to call radio_disable()
+[00:00:11.657,592] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_abort_cb: now: 46640514
+[00:00:11.657,958] <dbg> bt_ctlr_hal_ti_radio.isr_radio: now: 46641950 h: 0x20000010 ch: 489 (CMD_BLE_SLAVE) e: 2000c23800002228
+[00:00:11.657,989] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Last radio operation command in a chain finished.
+[00:00:11.658,020] <dbg> bt_ctlr_hal_ti_radio.describe_ble_status: Operation aborted by CMD_ABORT command
+[00:00:11.658,050] <dbg> bt_ctlr_hal_ti_radio.isr_radio: CMD_BLE_SLAVE timestamp: 0
+[00:00:11.658,081] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: CMD_BLE_SLAVE: commandNo: 1801 status: 1029 pNextOp: 0x00000000 startTime: 46641537 start{ triggertType: 2 bEnaCmd: 0 triggerNo: 0 pastTrig: 1 } cond { rule: 1 nSkip: 0 } channel: 11 whitening{ init: 0 bOverride: 0 }
+[00:00:11.658,142] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: params@0x2000d068: pRxQ: 0x2000caf8 pTxQ: 0x2000cd24 rxConfig{ bAutoFlushIgnored: 1 bAutoFlushCrcErr: 1 bAutoFlushEmpty: 1 bIncludeLenByte: 1 bIncludeCrc: 1 bAppendRssi: 1 bAppendStatus: 0 bAppendTimestamp: 1 } 
+[00:00:11.658,172] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: seqStat{ lastRxSn: 1 lastTxSn: 1 nextTxSn: 0 bFirstPkt: 1 bAutoEmpty: 1 bLlCtrlTx: 0 bLlCtrlAckRx: 0 bLlCtrlAckPending: 0 } maxNack: 0maxPkt: 0accessAddress: 9b7aed70crcInit0: 8a crcInit1: 42 crcInit2: 7f 
+[00:00:11.658,233] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: timeout{ triggerType: 4 bEnaCmd: 0 trigggerNo: 0 pastTrig: 0 } timeoutTime: 100000 end{ triggerType: 1 bEnaCmd: 0 trigggerNo: 0 pastTrig: 0 } endTime: 0 
+[00:00:11.658,264] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: pOutput@0x2000d088: nTx: 0 nTxAck: 0 nTxCtrl: 0 nTxCtrlAck: 0 nTxCtrlAckAck: 0 nTxRetrans: 0 nTxEntryDone: 0 nRxOk: 0 nRxCtrl: 0 nRxCtrlAck: 0 nRxNok: 0 nRxIgnored: 0 nRxEmptry: 0 
+[00:00:11.658,325] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: nRxBufFull: 0 lastRssi: 0 pktStatus{ bTimeStampValid: 0 bLastCrcErr: 0 bLastIgnored: 0 bLastEmpty: 0bLastCtrl: 0bLastMd: 0bLastAck: 0} timeStamp: 0
+[00:00:11.658,355] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
+[00:00:11.658,355] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
+[00:00:11.658,447] <dbg> bt_ctlr_llsw_ti_lll_slave.prepare_cb: 
+[00:00:11.658,477] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
+[00:00:11.658,538] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
+[00:00:11.658,569] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x2000128c
+[00:00:11.658,630] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_save: set radio_tmr_aa = 0
+[00:00:11.658,813] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_isr_rx: 179: about to call radio_disable()
+[00:00:11.659,057] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
+[00:00:11.659,057] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
+[00:00:11.659,881] <dbg> bt_ctlr_hal_ti_radio.isr_radio: now: 46649720 h: 0x20000010 ch: 492 (CMD_BLE_SLAVE) e: 2000bd7800002228
+[00:00:11.659,912] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Packet received with CRC OK, payload, and not to be ignored
+[00:00:11.659,942] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Rx queue data entry changing state to Finished
+[00:00:11.659,973] <dbg> bt_ctlr_hal_ti_radio.describe_ble_status: Illegal parameter
+[00:00:11.660,003] <dbg> bt_ctlr_hal_ti_radio.isr_radio: CMD_BLE_SLAVE timestamp: 46648448
+[00:00:11.660,034] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: CMD_BLE_SLAVE: commandNo: 1801 status: 6144 pNextOp: 0x00000000 startTime: 46641537 start{ triggertType: 2 bEnaCmd: 0 triggerNo: 0 pastTrig: 1 } cond { rule: 1 nSkip: 0 } channel: 22 whitening{ init: 0 bOverride: 0 }
+[00:00:11.660,095] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: params@0x2000d068: pRxQ: 0x2000caf8 pTxQ: 0x2000cd24 rxConfig{ bAutoFlushIgnored: 1 bAutoFlushCrcErr: 1 bAutoFlushEmpty: 1 bIncludeLenByte: 1 bIncludeCrc: 1 bAppendRssi: 1 bAppendStatus: 0 bAppendTimestamp: 1 } 
+--- 25 messages dropped ---
+[00:00:11.704,956] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Rx queue data entry changing state to Finished
+--- 1 messages dropped ---
+[00:00:11.704,986] <dbg> bt_ctlr_hal_ti_radio.describe_ble_status: Illegal parameter
+--- 33 messages dropped ---
+[00:00:11.706,390] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
+[00:00:11.706,420] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_restore: return radio_tmr_aa = 3221267109
+--- 16 messages dropped ---
+[00:00:11.741,943] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
+[00:00:11.741,973] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x200012d4
+--- 30 messages dropped ---
+[00:00:11.750,976] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: seqStat{ lastRxSn: 1 lastTxSn: 0 nextTxSn: 1 bFirstPkt: 0 bAutoEmpty: 0 bLlCtrlTx: 0 bLlCtrlAckRx: 0 bLlCtrlAckPending: 0 } maxNack: 0maxPkt: 0accessAddress: 9b7aed70crcInit0: 8a crcInit1: 42 crcInit2: 7f 
+--- 1 messages dropped ---
+[00:00:11.751,068] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: pOutput@0x2000d088: nTx: 1 nTxAck: 1 nTxCtrl: 0 nTxCtrlAck: 0 nTxCtrlAckAck: 0 nTxRetrans: 0 nTxEntryDone: 1 nRxOk: 3 nRxCtrl: 3 nRxCtrlAck: 1 nRxNok: 0 nRxIgnored: 0 nRxEmptry: 1 
+--- 47 messages dropped ---
+[00:00:11.797,088] <dbg> bt_ctlr_hal_ti_radio.describe_ble_status: Running
+[00:00:11.797,119] <dbg> bt_ctlr_hal_ti_radio.isr_radio: CMD_BLE_SLAVE timestamp: 47188449
+[00:00:11.797,149] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: CMD_BLE_SLAVE: commandNo: 1801 status: 2 pNextOp: 0x00000000 startTime: 47181537 start{ triggertType: 2 bEnaCmd: 0 triggerNo: 0 pastTrig: 1 } cond { rule: 1 nSkip: 0 } channel: 18 whitening{ init: 0 bOverride: 0 }
+--- 18 messages dropped ---
+[00:00:11.797,943] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: params@0x2000d068: pRxQ: 0x2000caf8 pTxQ: 0x2000cd24 rxConfig{ bAutoFlushIgnored: 1 bAutoFlushCrcErr: 1 bAutoFlushEmpty: 1 bIncludeLenByte: 1 bIncludeCrc: 1 bAppendRssi: 1 bAppendStatus: 0 bAppendTimestamp: 1 } 
+--- 28 messages dropped ---
+[00:00:11.842,041] <dbg> bt_ctlr_hal_ti_radio.isr_radio: now: 47378257 h: 0x20000010 ch: 501 (CMD_BLE_SLAVE) e: 20008cd800002228
+--- 31 messages dropped ---
+[00:00:11.867,523] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Last radio operation command in a chain finished.
+--- 19 messages dropped ---
+[00:00:11.887,023] <dbg> bt_ctlr_hal_ti_radio.isr_radio: now: 47558255 h: 0x20000010 ch: 504 (CMD_BLE_SLAVE) e: 2000c0d800002228
+[00:00:11.887,054] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Packet transmitted
+--- 25 messages dropped ---
+[00:00:11.888,153] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_isr_tx: 
+--- 1 messages dropped ---
+[00:00:11.888,183] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
+[00:00:11.888,214] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x200012d4
+[00:00:11.912,506] <dbg> bt_ctlr_hal_ti_radio.isr_radio: now: 47660153 h: 0x20000010 ch: 505 (CMD_BLE_SLAVE) e: 2000c09800002228
+--- 50 messages dropped ---
+[00:00:11.933,197] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x200012d4
+[00:00:11.957,153] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_abort_cb: now: 47838748
+[00:00:11.957,458] <dbg> bt_ctlr_hal_ti_radio.isr_radio: now: 47840018 h: 0x20000010 ch: 508 (CMD_BLE_SLAVE) e: 2000bf9800002228
+--- 29 messages dropped ---
+[00:00:11.977,386] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: nRxBufFull: 0 lastRssi: -62 pktStatus{ bTimeStampValid: 1 bLastCrcErr: 0 bLastIgnored: 1 bLastEmpty: 0bLastCtrl: 0bLastMd: 0bLastAck: 0} timeStamp: 47908451
+[00:00:11.977,386] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
+[00:00:11.977,416] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
+--- 48 messages dropped ---
+[00:00:12.067,443] <dbg> bt_ctlr_llsw_ti_lll_conn.empty_tx_enqueue: 48280016
+[00:00:12.067,474] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_tx_pkt_set: 
+[00:00:12.067,535] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_tx_set: PDU DATA: DATA_CONTINUE: {
+	ll_id: 1
+	nesn: 1
+	sn: 0
+	md: 1
+	rfu: 0
+	len: 0
+	}
+--- 28 messages dropped ---
+[00:00:12.091,461] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_done: 
+[00:00:12.091,491] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_restore: return radio_tmr_aa = 3221520351
+[00:00:12.091,522] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_ready_get: return tmr_ready (2902) - rtc_diff_start_us (1073446945) = 3221523253
+[00:00:12.091,552] <dbg> bt_ctlr_llsw_ti_lll_conn.isr_cleanup: 
+--- 1 messages dropped ---
+[00:00:12.091,766] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
+[00:00:12.091,827] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
+--- 13 messages dropped ---
+[00:00:12.112,365] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: nRxBufFull: 0 lastRssi: -60 pktStatus{ bTimeStampValid: 1 bLastCrcErr: 0 bLastIgnored: 1 bLastEmpty: 0bLastCtrl: 0bLastMd: 0bLastAck: 0} timeStamp: 48448454
+--- 51 messages dropped ---
+[00:00:12.177,612] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_abort_cb: now: 48720581
+[00:00:12.177,917] <dbg> bt_ctlr_hal_ti_radio.isr_radio: now: 48721847 h: 0x20000010 ch: 520 (CMD_BLE_SLAVE) e: 2000477800002228
+--- 9 messages dropped ---
+[00:00:12.178,588] <dbg> bt_ctlr_llsw_ti_lll_slave.prepare_cb: 
+--- 4 messages dropped ---
+[00:00:12.178,619] <dbg> bt_ctlr_hal_ti_radio.radio_slave_reset: 
+[00:00:12.178,680] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
+--- 13 messages dropped ---
+[00:00:12.203,002] <dbg> bt_ctlr_hal_ti_radio.dumpBleSlave: nRxBufFull: 0 lastRssi: -64 pktStatus{ bTimeStampValid: 1 bLastCrcErr: 0 bLastIgnored: 1 bLastEmpty: 0bLastCtrl: 0bLastMd: 0bLastAck: 0} timeStamp: 48808457
+--- 4 messages dropped ---
+[00:00:12.203,491] <dbg> bt_ctlr_hal_ti_radio.describe_ble_status: Timeout of subsequent Rx
+--- 11 messages dropped ---
+[00:00:12.218,383] <dbg> bt_ctlr_llsw_ti_lll_conn.lll_conn_rx_pkt_set: 
+[00:00:12.218,414] <dbg> bt_ctlr_hal_ti_radio.radio_pkt_rx_set: rx_packet: 0x200012d4
+--- 3 messages dropped ---
+[00:00:12.247,131] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Packet transmitted
+[00:00:12.247,253] <dbg> bt_ctlr_hal_ti_radio.describe_ble_status: Running
+--- 11 messages dropped ---
+[00:00:12.248,321] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_restore: return radio_tmr_aa = 0
+[00:00:12.248,382] <dbg> bt_ctlr_hal_ti_radio.radio_tmr_aa_get: return tmr_aa (0) - rtc_diff_start_us (1073272918) = 3221694378
+--- 4 messages dropped ---
+[00:00:12.248,779] <dbg> bt_ctlr_hal_ti_radio.describe_ble_status: Running
+--- 12 messages dropped ---
+[00:00:12.265,106] <dbg> bt_ctlr_hal_ti_radio.describe_event_mask: Last radio operation command in a chain fini

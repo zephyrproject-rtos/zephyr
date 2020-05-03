@@ -1541,102 +1541,193 @@ void radio_tmr_tifs_set(u32_t tifs)
 }
 
 static void dumpBleSlave(const char *calling_func, rfc_CMD_BLE_SLAVE_t *cmd) {
-	// Zephyr's logging does not handle large buffers like this well at all
-	// so in order to keep things somewhat coherent, I hold an irq lock and
-	// perform multiple calls to BT_DBG().
 
-	unsigned key = irq_lock();
-
-	BT_DBG("\n%s(): CMD_BLE_SLAVE: ", calling_func);
-
-	BT_DBG("commandNo: %04x", cmd->commandNo);
-	BT_DBG("status: %u", cmd->status);
-	BT_DBG("pNextOp: %p", cmd->pNextOp);
-	BT_DBG("startTime: %u", cmd->startTime);
-	BT_DBG("startTrigger:");
-	BT_DBG("triggertType: %u", cmd->startTrigger.bEnaCmd);
-	BT_DBG("bEnaCmd: %u", cmd->startTrigger.bEnaCmd);
-	BT_DBG("triggerNo: %u", cmd->startTrigger.triggerNo);
-	BT_DBG("pastTrig: %u", cmd->startTrigger.pastTrig);
-	BT_DBG("condition:");
-	BT_DBG("rule: %u", cmd->condition.rule);
-	BT_DBG("nSkip: %u", cmd->condition.nSkip);
-	BT_DBG("channel: %u", cmd->channel);
-	BT_DBG("whitening:");
-	BT_DBG("init: %u", cmd->whitening.init);
-	BT_DBG("bOverride: %u", cmd->whitening.bOverride);
-	BT_DBG("pParams: %p", cmd->pParams);
-	BT_DBG("pOutput: %p", cmd->pOutput);
+	BT_DBG("CMD_BLE_SLAVE: "
+		"commandNo: %04x "
+	    "status: %u "
+		"pNextOp: %p "
+		"startTime: %u "
+		"start{ "
+		"triggertType: %u "
+		"bEnaCmd: %u "
+		"triggerNo: %u "
+		"pastTrig: %u "
+		"} "
+		"cond { "
+		"rule: %u "
+		"nSkip: %u "
+		"} "
+		"channel: %u "
+		"whitening{ "
+		"init: %u "
+		"bOverride: %u "
+		"}"
+		,
+		cmd->commandNo,
+		cmd->status,
+		cmd->pNextOp,
+		cmd->startTime,
+		cmd->startTrigger.triggerType,
+		cmd->startTrigger.bEnaCmd,
+		cmd->startTrigger.triggerNo,
+		cmd->startTrigger.pastTrig,
+		cmd->condition.rule,
+		cmd->condition.nSkip,
+		cmd->channel,
+		cmd->whitening.init,
+		cmd->whitening.bOverride
+	);
 
 	rfc_bleSlavePar_t *p = (rfc_bleSlavePar_t *)cmd->pParams;
-	BT_DBG("\n%s(): CMD_BLE_SLAVE (params)", calling_func);
-	BT_DBG("pRxQ %p:", p->pRxQ);
-	BT_DBG("pTxQ %p:", p->pTxQ);
-	BT_DBG("rxConfig:");
-	BT_DBG("bAutoFlushIgnored: %u", p->rxConfig.bAutoFlushIgnored);
-	BT_DBG("bAutoFlushCrcErr: %u", p->rxConfig.bAutoFlushCrcErr);
-	BT_DBG("bAutoFlushEmpty: %u", p->rxConfig.bAutoFlushEmpty);
-	BT_DBG("bIncludeLenByte: %u", p->rxConfig.bIncludeLenByte);
-	BT_DBG("bIncludeCrc: %u", p->rxConfig.bIncludeCrc);
-	BT_DBG("bAppendRssi: %u", p->rxConfig.bAppendRssi);
-	BT_DBG("bAppendStatus: %u", p->rxConfig.bAppendStatus);
-	BT_DBG("bAppendTimestamp: %u", p->rxConfig.bAppendTimestamp);
-	BT_DBG("seqStat:");
-	BT_DBG("lastRxSn: %u", p->seqStat.lastRxSn);
-	BT_DBG("lastTxSn: %u", p->seqStat.lastTxSn);
-	BT_DBG("nextTxSn: %u", p->seqStat.nextTxSn);
-	BT_DBG("bFirstPkt: %u", p->seqStat.bFirstPkt);
-	BT_DBG("bAutoEmpty: %u", p->seqStat.bAutoEmpty);
-	BT_DBG("bLlCtrlTx: %u", p->seqStat.bLlCtrlTx);
-	BT_DBG("bLlCtrlAckRx: %u", p->seqStat.bLlCtrlAckRx);
-	BT_DBG("bLlCtrlAckPending: %u", p->seqStat.bLlCtrlAckPending);
-	BT_DBG("maxNack: %u", p->maxNack);
-	BT_DBG("maxPkt: %u", p->maxPkt);
-	BT_DBG("accessAddress: %x", p->accessAddress);
-	BT_DBG("crcInit0: %02x", p->crcInit0);
-	BT_DBG("crcInit1: %02x", p->crcInit1);
-	BT_DBG("crcInit2: %02x", p->crcInit2);
-	BT_DBG("timeoutTrigger:");
-	BT_DBG("triggerType: %u", p->timeoutTrigger.triggerType);
-	BT_DBG("bEnaCmd: %u", p->timeoutTrigger.bEnaCmd);
-	BT_DBG("triggerNo: %u", p->timeoutTrigger.triggerNo);
-	BT_DBG("pastTrig: %u", p->timeoutTrigger.pastTrig);
-	BT_DBG("timeoutTime: %u", p->timeoutTime);
-	BT_DBG("endTrigger:");
-	BT_DBG("triggerType: %u", p->endTrigger.triggerType);
-	BT_DBG("bEnaCmd: %u", p->endTrigger.bEnaCmd);
-	BT_DBG("triggerNo: %u", p->endTrigger.triggerNo);
-	BT_DBG("pastTrig: %u", p->endTrigger.pastTrig);
-	BT_DBG("endTime: %u", p->endTime);
+	BT_DBG(
+		"params@%p: "
+		"pRxQ: %p "
+		"pTxQ: %p "
+		"rxConfig{ "
+		"bAutoFlushIgnored: %u "
+		"bAutoFlushCrcErr: %u "
+		"bAutoFlushEmpty: %u "
+		"bIncludeLenByte: %u "
+		"bIncludeCrc: %u "
+		"bAppendRssi: %u "
+		"bAppendStatus: %u "
+		"bAppendTimestamp: %u "
+		"} "
+		,
+		p,
+		p->pRxQ,
+		p->pTxQ,
+		p->rxConfig.bAutoFlushIgnored,
+		p->rxConfig.bAutoFlushCrcErr,
+		p->rxConfig.bAutoFlushEmpty,
+		p->rxConfig.bIncludeLenByte,
+		p->rxConfig.bIncludeCrc,
+		p->rxConfig.bAppendRssi,
+		p->rxConfig.bAppendStatus,
+		p->rxConfig.bAppendTimestamp
+	);
+
+	BT_DBG(
+		"seqStat{ "
+		"lastRxSn: %u "
+		"lastTxSn: %u "
+		"nextTxSn: %u "
+		"bFirstPkt: %u "
+		"bAutoEmpty: %u "
+		"bLlCtrlTx: %u "
+		"bLlCtrlAckRx: %u "
+		"bLlCtrlAckPending: %u "
+		"} "
+		"maxNack: %u"
+		"maxPkt: %u"
+		"accessAddress: %x"
+		"crcInit0: %02x "
+		"crcInit1: %02x "
+		"crcInit2: %02x "
+		,
+		p->seqStat.lastRxSn,
+		p->seqStat.lastTxSn,
+		p->seqStat.nextTxSn,
+		p->seqStat.bFirstPkt,
+		p->seqStat.bAutoEmpty,
+		p->seqStat.bLlCtrlTx,
+		p->seqStat.bLlCtrlAckRx,
+		p->seqStat.bLlCtrlAckPending,
+		p->maxNack,
+		p->maxPkt,
+		p->accessAddress,
+		p->crcInit0,
+		p->crcInit1,
+		p->crcInit2
+	);
+
+	BT_DBG(
+		"timeout{ "
+		"triggerType: %u "
+		"bEnaCmd: %u "
+		"trigggerNo: %u "
+		"pastTrig: %u "
+		"} "
+		"timeoutTime: %u "
+		"end{ "
+		"triggerType: %u "
+		"bEnaCmd: %u "
+		"trigggerNo: %u "
+		"pastTrig: %u "
+		"} "
+		"endTime: %u "
+		,
+		p->timeoutTrigger.triggerType,
+		p->timeoutTrigger.bEnaCmd,
+		p->timeoutTrigger.triggerNo,
+		p->timeoutTrigger.pastTrig,
+		p->timeoutTime,
+		p->endTrigger.triggerType,
+		p->endTrigger.bEnaCmd,
+		p->endTrigger.triggerNo,
+		p->endTrigger.pastTrig,
+		p->endTime
+	);
 
 	rfc_bleMasterSlaveOutput_t *o = (rfc_bleMasterSlaveOutput_t *)cmd->pOutput;
 
-	BT_DBG("\n%s(): CMD_BLE_SLAVE (output)", calling_func);
-	BT_DBG("nTx: %u", o->nTx);
-	BT_DBG("nTxAck: %u", o->nTxAck);
-	BT_DBG("nTxCtrl: %u", o->nTxCtrl);
-	BT_DBG("nTxCtrlAck: %u", o->nTxCtrlAck);
-	BT_DBG("nTxCtrlAckAck: %u", o->nTxCtrlAckAck);
-	BT_DBG("nTxRetrans: %u", o->nTxRetrans);
-	BT_DBG("nTxEntryDone: %u", o->nTxEntryDone);
-	BT_DBG("nRxOk: %u", o->nRxOk);
-	BT_DBG("nRxCtrl: %u", o->nRxCtrl);
-	BT_DBG("nRxCtrlAck: %u", o->nRxCtrlAck);
-	BT_DBG("nRxNok: %u", o->nRxNok);
-	BT_DBG("nRxIgnored: %u", o->nRxIgnored);
-	BT_DBG("nRxEmpty: %u", o->nRxEmpty);
-	BT_DBG("nRxBufFull: %u", o->nRxBufFull);
-	BT_DBG("lastRssi: %d", o->lastRssi);
-	BT_DBG("pktStatus.bTimeStampValid: %u", o->pktStatus.bTimeStampValid);
-	BT_DBG("pktStatus.bLastCrcErr: %u", o->pktStatus.bLastCrcErr);
-	BT_DBG("pktStatus.bLastIgnored: %u", o->pktStatus.bLastIgnored);
-	BT_DBG("pktStatus.bLastEmpty: %u", o->pktStatus.bLastEmpty);
-	BT_DBG("pktStatus.bLastCtrl: %u", o->pktStatus.bLastCtrl);
-	BT_DBG("pktStatus.bLastMd: %u", o->pktStatus.bLastMd);
-	BT_DBG("pktStatus.bLastAck: %u", o->pktStatus.bLastAck);
-	BT_DBG("timeStamp: %u", o->timeStamp);
+	BT_DBG(
+		"pOutput@%p: "
+		"nTx: %u "
+		"nTxAck: %u "
+		"nTxCtrl: %u "
+		"nTxCtrlAck: %u "
+		"nTxCtrlAckAck: %u "
+		"nTxRetrans: %u "
+		"nTxEntryDone: %u "
+		"nRxOk: %u "
+		"nRxCtrl: %u "
+		"nRxCtrlAck: %u "
+		"nRxNok: %u "
+		"nRxIgnored: %u "
+		"nRxEmptry: %u "
+		,
+		o,
+		o->nTx,
+		o->nTxAck,
+		o->nTxCtrl,
+		o->nTxCtrlAck,
+		o->nTxCtrlAckAck,
+		o->nTxRetrans,
+		o->nTxEntryDone,
+		o->nRxOk,
+		o->nRxCtrl,
+		o->nRxCtrlAck,
+		o->nRxNok,
+		o->nRxIgnored,
+		o->nRxEmpty
+	);
 
-	irq_unlock(key);
+	BT_DBG(
+		"nRxBufFull: %u "
+		"lastRssi: %d "
+		"pktStatus{ "
+		"bTimeStampValid: %u "
+		"bLastCrcErr: %u "
+		"bLastIgnored: %u "
+		"bLastEmpty: %u"
+		"bLastCtrl: %u"
+		"bLastMd: %u"
+		"bLastAck: %u"
+		"} "
+		"timeStamp: %u"
+		,
+		o->nRxBufFull,
+		o->lastRssi,
+		o->pktStatus.bTimeStampValid,
+		o->pktStatus.bLastCrcErr,
+		o->pktStatus.bLastIgnored,
+		o->pktStatus.bLastEmpty,
+		o->pktStatus.bLastCtrl,
+		o->pktStatus.bLastMd,
+		o->pktStatus.bLastAck,
+		o->timeStamp
+	);
 }
 
 /* Start the radio after ticks_start (ticks) + remainder (us) time */
