@@ -125,6 +125,16 @@
 	mosi-pin = <20>;
 	miso-pin = <18>;
 	cs-gpios = <&gpio0 17 0>;
+
+	dw1000@0 {
+		compatible = "decawave,dw1000";
+		spi-max-frequency = <8000000>;
+		int-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;	/* P0.19 */
+		reset-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;	/* P0.24 */
+		status = "okay";
+		label = "DW1000";
+		reg = <0>;
+	};
 };
 
 &pwm0 {
