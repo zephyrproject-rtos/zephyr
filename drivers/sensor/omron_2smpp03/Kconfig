@@ -1,0 +1,15 @@
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig OMRON_2SMPP03
+	bool "Omron Gauge Type Pressure Sensor 2SMPP-03"
+	depends on ADC
+	help
+	  Enable driver for Omron Gauge Type Pressure Sensor 2SMPP-03
+
+config OMRON_2SMPP03_ADC_RESOLUTION
+	int "ADC resolution"
+	default 8
+	depends on OMRON_2SMPP03
+	help
+	  ADC sampling resolution (bits)

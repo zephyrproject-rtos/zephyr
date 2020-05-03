@@ -1,0 +1,22 @@
+# Copyright (c) 2020 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Omron 2SMPP03 Pressure Gauge
+
+compatible: "omron,2smpp03"
+
+include: base.yaml
+
+properties:
+  io-channels:
+    type: phandle-array
+    required: true
+    description: IO channel associated with the amplified sensor voltage
+  amplifier-gain:
+    type: int
+    required: true
+    description: Sensor amplifier gain.
+  amplifier-offset:
+    type: int
+    required: true
+    description: Sensor amplifier offset (mV).
