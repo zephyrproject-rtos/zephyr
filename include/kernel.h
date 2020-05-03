@@ -698,7 +698,7 @@ extern void k_thread_foreach_unlocked(
  * */
 #define K_ESSENTIAL (BIT(0))
 
-#if defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU_SHARING)
 /**
  * @brief thread uses floating point registers
  */
@@ -726,7 +726,7 @@ extern void k_thread_foreach_unlocked(
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
 
-#if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_SSE)
 /* thread uses SSEx (and also FP) registers */
 #define K_SSE_REGS (BIT(7))
 #endif

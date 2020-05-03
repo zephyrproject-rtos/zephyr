@@ -543,7 +543,7 @@ config FPU
 	  those platforms is dependent on the availability of the toolchain-
 	  provided software floating point library.
 
-config FP_SHARING
+config FPU_SHARING
 	bool "FPU register sharing"
 	depends on FPU
 	help

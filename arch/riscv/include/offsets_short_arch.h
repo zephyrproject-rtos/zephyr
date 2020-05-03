@@ -59,7 +59,7 @@
 #define _thread_offset_to_swap_return_value \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_swap_return_value_OFFSET)
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 
 #define _thread_offset_to_fcsr \
 	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fcsr_OFFSET)
@@ -100,7 +100,7 @@
 #define _thread_offset_to_fs11 \
 	(___thread_t_callee_saved_OFFSET + ___callee_saved_t_fs11_OFFSET)
 
-#endif /* defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING) */
+#endif /* defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) */
 
 /* end - threads */
 

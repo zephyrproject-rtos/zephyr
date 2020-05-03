@@ -63,7 +63,7 @@
 	st r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
 #endif
 
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_FPU_SHARING
 	ld_s r13, [r2, ___thread_base_t_user_options_OFFSET]
 	/* K_FP_REGS is bit 1 */
 	bbit0 r13, 1, 1f
@@ -99,7 +99,7 @@
 	ld r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
 #endif
 
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_FPU_SHARING
 	ld_s r13, [r2, ___thread_base_t_user_options_OFFSET]
 	/* K_FP_REGS is bit 1 */
 	bbit0 r13, 1, 2f

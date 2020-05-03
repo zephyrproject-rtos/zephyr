@@ -341,13 +341,13 @@ void test_fatal(void)
 	TC_PRINT("test stack HW-based overflow - supervisor 2\n");
 	check_stack_overflow(stack_hw_overflow, 0);
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	TC_PRINT("test stack HW-based overflow (FPU thread) - supervisor 1\n");
 	check_stack_overflow(stack_hw_overflow, K_FP_REGS);
 
 	TC_PRINT("test stack HW-based overflow (FPU thread) - supervisor 2\n");
 	check_stack_overflow(stack_hw_overflow, K_FP_REGS);
-#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 #endif /* CONFIG_HW_STACK_PROTECTION */
 
@@ -365,13 +365,13 @@ void test_fatal(void)
 	TC_PRINT("test stack HW-based overflow - user priv stack 2\n");
 	check_stack_overflow(user_priv_stack_hw_overflow, K_USER);
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	TC_PRINT("test stack HW-based overflow (FPU thread) - user 1\n");
 	check_stack_overflow(stack_hw_overflow, K_USER | K_FP_REGS);
 
 	TC_PRINT("test stack HW-based overflow (FPU thread) - user 2\n");
 	check_stack_overflow(stack_hw_overflow, K_USER | K_FP_REGS);
-#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 #endif /* CONFIG_USERSPACE */
 

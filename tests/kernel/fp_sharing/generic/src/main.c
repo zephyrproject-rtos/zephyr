@@ -13,8 +13,8 @@
 #error Rebuild with the FPU config option enabled
 #endif
 
-#ifndef CONFIG_FP_SHARING
-#error Rebuild with the FP_SHARING config option enabled
+#ifndef CONFIG_FPU_SHARING
+#error Rebuild with the FPU_SHARING config option enabled
 #endif
 
 #if defined(CONFIG_X86) && !defined(CONFIG_SSE)

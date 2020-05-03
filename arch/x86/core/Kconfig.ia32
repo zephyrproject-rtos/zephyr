@@ -117,7 +117,7 @@ config LAZY_FP_SHARING
 	bool
 	depends on FPU
 	depends on !EAGER_FP_SHARING
-	depends on FP_SHARING
+	depends on FPU_SHARING
 	default y if X86_NO_LAZY_FP || !USERSPACE
 	help
 	  This hidden option allows multiple threads to use the floating point

@@ -23,7 +23,7 @@ static void esf_dump(const z_arch_esf_t *esf)
 	LOG_ERR("r3/a4:  0x%08x r12/ip:  0x%08x r14/lr:  0x%08x",
 		esf->basic.a4, esf->basic.ip, esf->basic.lr);
 	LOG_ERR(" xpsr:  0x%08x", esf->basic.xpsr);
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	for (int i = 0; i < 16; i += 4) {
 		LOG_ERR("s[%2d]:  0x%08x  s[%2d]:  0x%08x"
 			"  s[%2d]:  0x%08x  s[%2d]:  0x%08x",

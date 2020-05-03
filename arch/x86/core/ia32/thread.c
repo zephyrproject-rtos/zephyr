@@ -45,7 +45,7 @@ extern void z_x86_syscall_entry_stub(void);
 NANO_CPU_INT_REGISTER(z_x86_syscall_entry_stub, -1, -1, 0x80, 3);
 #endif /* CONFIG_X86_USERSPACE */
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 
 extern int z_float_disable(struct k_thread *thread);
 
@@ -57,7 +57,7 @@ int arch_float_disable(struct k_thread *thread)
 	return -ENOSYS;
 #endif /* CONFIG_LAZY_FP_SHARING */
 }
-#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		     size_t stack_size, k_thread_entry_t entry,
