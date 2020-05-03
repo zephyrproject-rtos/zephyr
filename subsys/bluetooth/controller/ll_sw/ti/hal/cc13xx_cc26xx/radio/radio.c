@@ -1727,23 +1727,29 @@ static u32_t radio_tmr_start_hlp(u8_t trx, u32_t ticks_start, u32_t remainder)
 	if (radio_start_now_cmd) {
 
 		/* trigger Rx/Tx Start Now */
-		radio_start_now_cmd->startTime = now;
-		radio_start_now_cmd->startTrigger.triggerType = TRIG_ABSTIME;
-		radio_start_now_cmd->startTrigger.pastTrig = true;
 		radio_start_now_cmd->channel = drv_data->chan;
+		if ( CMD_BLE_SLAVE == next_radio_cmd->commandNo ) {
+			dumpBleSlave(&drv_data->cmd_ble_slave);
+		} else {
+			radio_start_now_cmd->startTime = now;
+			radio_start_now_cmd->startTrigger.triggerType = TRIG_ABSTIME;
+			radio_start_now_cmd->startTrigger.pastTrig = true;
+		}
 		drv_data->active_command_handle =
 			RF_postCmd(rfHandle, (RF_Op *)radio_start_now_cmd,
 				   RF_PriorityNormal, rf_callback, EVENT_MASK);
-		if ( CMD_BLE_SLAVE == next_radio_cmd->commandNo ) {
-			dumpBleSlave(&drv_data->cmd_ble_slave);
-		}
 	} else {
 		if (next_radio_cmd != NULL) {
 			/* enable T1_CMP to trigger the SEQCMD */
-			next_radio_cmd->startTime = now + remainder;
-			next_radio_cmd->startTrigger.triggerType = TRIG_ABSTIME;
-			next_radio_cmd->startTrigger.pastTrig = true;
+			/* trigger Rx/Tx Start Now */
 			next_radio_cmd->channel = drv_data->chan;
+			if ( CMD_BLE_SLAVE == next_radio_cmd->commandNo ) {
+				dumpBleSlave(&drv_data->cmd_ble_slave);
+			} else {
+				next_radio_cmd->startTime = now + remainder;
+				next_radio_cmd->startTrigger.triggerType = TRIG_ABSTIME;
+				next_radio_cmd->startTrigger.pastTrig = true;
+			}
 			drv_data->active_command_handle =
 				RF_postCmd(rfHandle, (RF_Op *)next_radio_cmd,
 					   RF_PriorityNormal, rf_callback,
@@ -2092,6 +2098,8 @@ void radio_set_up_slave_cmd(void)
 
 	// explicitly set the start time to the anchor
 	drv_data->cmd_ble_slave.startTime = drv_data->window_begin_ticks;
+	drv_data->cmd_ble_slave.startTrigger.triggerType = TRIG_ABSTIME;
+	drv_data->cmd_ble_slave.startTrigger.pastTrig = true;
 
 	// timeout of the first receive operation is relative to the CMD_BLE_SLAVE start time
 	if ( drv_data->cmd_ble_slave_param.seqStat.bFirstPkt ) {
