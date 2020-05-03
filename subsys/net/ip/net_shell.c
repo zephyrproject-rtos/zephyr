@@ -3058,7 +3058,7 @@ static int ping_ipv4(const struct shell *shell,
 		return -EINVAL;
 	}
 
-	struct net_if *iface = net_if_ipv4_select_src_iface(&ipv4_target);
+	struct net_if *iface = net_if_get_by_index(3);
 
 	net_icmpv4_register_handler(&ping4_handler);
 
