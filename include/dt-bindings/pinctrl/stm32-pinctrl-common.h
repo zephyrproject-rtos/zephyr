@@ -28,17 +28,8 @@
 #define STM32_PORTS_MAX (STM32_PORTK + 1)
 #endif
 
-/**
- * @brief helper macro to encode an IO port pin in a numerical format
- */
-#define STM32PIN(_port, _pin) \
-	(_port << 4 | _pin)
-
-
 #define STM32_PINMUX_FUNC_GPIO 0
 #define STM32_PINMUX_FUNC_ANALOG (STM32_PINMUX_FUNC_ALT_MAX)
-
-
 
 /**
  * @brief helper macro to encode an IO port pin in a numerical format
