@@ -44,9 +44,9 @@
 #define _THREAD_WRAPPER_REQUIRED
 #endif
 
-#if defined(CONFIG_LAZY_FP_SHARING) && defined(CONFIG_SSE)
+#if defined(CONFIG_LAZY_FPU_SHARING) && defined(CONFIG_SSE)
 #define _FP_USER_MASK (K_FP_REGS | K_SSE_REGS)
-#elif defined(CONFIG_LAZY_FP_SHARING)
+#elif defined(CONFIG_LAZY_FPU_SHARING)
 #define _FP_USER_MASK (K_FP_REGS)
 #endif
 

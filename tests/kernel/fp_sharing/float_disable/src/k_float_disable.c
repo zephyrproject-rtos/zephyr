@@ -33,7 +33,7 @@ static void usr_fp_thread_entry_1(void)
 }
 
 #if defined(CONFIG_ARM) || defined(CONFIG_RISCV) || \
-	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FP_SHARING))
+	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
 #define K_FLOAT_DISABLE_SYSCALL_RETVAL 0
 #else
 #define K_FLOAT_DISABLE_SYSCALL_RETVAL -ENOSYS
@@ -87,7 +87,7 @@ void test_k_float_disable_common(void)
 	zassert_true(
 		(usr_fp_thread.base.user_options & K_FP_OPTS) != 0,
 		"usr_fp_thread FP options cleared");
-#elif defined(CONFIG_X86) && defined(CONFIG_LAZY_FP_SHARING)
+#elif defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING)
 	zassert_true((k_float_disable(&usr_fp_thread) == 0),
 		"k_float_disable() failure");
 
@@ -96,7 +96,7 @@ void test_k_float_disable_common(void)
 		(usr_fp_thread.base.user_options & K_FP_OPTS) == 0,
 		"usr_fp_thread FP options not clear (0x%0x)",
 		usr_fp_thread.base.user_options);
-#elif defined(CONFIG_X86) && !defined(CONFIG_LAZY_FP_SHARING)
+#elif defined(CONFIG_X86) && !defined(CONFIG_LAZY_FPU_SHARING)
 	/* Verify k_float_disable() is not supported */
 	zassert_true((k_float_disable(&usr_fp_thread) == -ENOSYS),
 		"k_float_disable() successful when not supported");
@@ -131,7 +131,7 @@ void test_k_float_disable_syscall(void)
 	k_yield();
 
 #if defined(CONFIG_ARM) || defined(CONFIG_RISCV) || \
-	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FP_SHARING))
+	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
 
 	/* Verify K_FP_OPTS are now cleared by the user thread itself */
 	zassert_true(

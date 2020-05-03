@@ -232,7 +232,7 @@ alreadyOnIntStack:
 	 * debug tools that a preemptive context switch has occurred.
 	 */
 
-#if defined(CONFIG_LAZY_FP_SHARING)
+#if defined(CONFIG_LAZY_FPU_SHARING)
 	orb	$X86_THREAD_FLAG_INT, _thread_offset_to_flags(%edx)
 #endif
 
@@ -261,7 +261,7 @@ alreadyOnIntStack:
 	 * returning control to it at the point where it was interrupted ...
 	 */
 
-#if defined(CONFIG_LAZY_FP_SHARING)
+#if defined(CONFIG_LAZY_FPU_SHARING)
 	/*
 	 * arch_swap() has restored the floating point registers, if needed.
 	 * Clear X86_THREAD_FLAG_INT in the interrupted thread's state
@@ -270,7 +270,7 @@ alreadyOnIntStack:
 
 	movl	_kernel + _kernel_offset_to_current, %eax
 	andb	$~X86_THREAD_FLAG_INT, _thread_offset_to_flags(%eax)
-#endif /* CONFIG_LAZY_FP_SHARING */
+#endif /* CONFIG_LAZY_FPU_SHARING */
 
 	/* Restore volatile registers and return to the interrupted thread */
 	popl	%edi

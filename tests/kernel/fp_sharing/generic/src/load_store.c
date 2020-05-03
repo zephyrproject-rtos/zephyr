@@ -182,7 +182,7 @@ static void load_store_low(void)
 		 * After every 1000 iterations (arbitrarily chosen), explicitly
 		 * disable floating point operations for the task.
 		 */
-#if (defined(CONFIG_X86) && defined(CONFIG_LAZY_FP_SHARING)) || \
+#if (defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING)) || \
 		defined(CONFIG_ARMV7_M_ARMV8_M_FP)
 		/*
 		 * In x86:
