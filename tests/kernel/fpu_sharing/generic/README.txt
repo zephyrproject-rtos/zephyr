@@ -54,7 +54,7 @@ precision.
 Sample Output:
 
 *** Booting Zephyr OS build zephyr-v2.2.0-845-g8b769de30317  ***
-Running test suite fp_sharing
+Running test suite fpu_sharing
 ===================================================================
 starting test - test_load_store
 Load and store OK after 0 (high) + 63 (low) tests
@@ -73,6 +73,6 @@ Pi calculation OK after 350 (high) + 72 (low) tests (computed 3.141598)
 Pi calculation OK after 450 (high) + 92 (low) tests (computed 3.141598)
 PASS - test_pi
 ===================================================================
-Test suite fp_sharing succeeded
+Test suite fpu_sharing succeeded
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL

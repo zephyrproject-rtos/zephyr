@@ -2,7 +2,7 @@
 
 cmake_minimum_required(VERSION 3.13.1)
 find_package(Zephyr HINTS $ENV{ZEPHYR_BASE})
-project(fp_sharing)
+project(fpu_sharing)
 
 # Some boards are significantly slower than others resulting in the test
 # output being in the range of every few seconds to every few minutes. To

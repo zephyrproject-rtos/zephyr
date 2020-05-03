@@ -35,8 +35,8 @@ void test_main(void)
 	k_sched_time_slice_set(10, THREAD_LOW_PRIORITY);
 
 	/* Run the testsuite */
-	ztest_test_suite(fp_sharing,
+	ztest_test_suite(fpu_sharing,
 			 ztest_unit_test(test_load_store),
 			 ztest_unit_test(test_pi));
-	ztest_run_test_suite(fp_sharing);
+	ztest_run_test_suite(fpu_sharing);
 }
