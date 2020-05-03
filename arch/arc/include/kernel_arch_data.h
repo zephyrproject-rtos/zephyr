@@ -143,7 +143,7 @@ struct _callee_saved_stack {
 	u32_t r59;
 #endif
 
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_FPU_SHARING
 	u32_t fpu_status;
 	u32_t fpu_ctrl;
 #ifdef CONFIG_FP_FPU_DA

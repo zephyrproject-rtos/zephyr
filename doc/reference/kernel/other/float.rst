@@ -265,11 +265,11 @@ Configuration Options
 *********************
 
 To configure unshared FP registers mode, enable the :option:`CONFIG_FPU`
-configuration option and leave the :option:`CONFIG_FP_SHARING` configuration
+configuration option and leave the :option:`CONFIG_FPU_SHARING` configuration
 option disabled.
 
 To configure shared FP registers mode, enable both the :option:`CONFIG_FPU`
-configuration option and the :option:`CONFIG_FP_SHARING` configuration option.
+configuration option and the :option:`CONFIG_FPU_SHARING` configuration option.
 Also, ensure that any thread that uses the floating point registers has
 sufficient added stack space for saving floating point register values
 during context switches, as described above.

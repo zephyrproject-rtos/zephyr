@@ -215,7 +215,7 @@ void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread)
 	u32_t guard_start;
 	u32_t guard_size = MPU_GUARD_ALIGN_AND_SIZE;
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	if ((thread->base.user_options & K_FP_REGS) != 0) {
 		guard_size = MPU_GUARD_ALIGN_AND_SIZE_FLOAT;
 	}

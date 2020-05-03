@@ -124,12 +124,12 @@ extern "C" {
  *        that is using the Floating Point services.
  *
  * For threads that are using the Floating Point services under Shared
- * Registers (CONFIG_FP_SHARING=y) mode, the exception stack frame may
+ * Registers (CONFIG_FPU_SHARING=y) mode, the exception stack frame may
  * contain both the basic stack frame and the FP caller-saved context,
  * upon exception entry. Therefore, a wide guard region is required to
  * guarantee that stack-overflow detection will always be successful.
  */
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING) \
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) \
 	&& defined(CONFIG_MPU_STACK_GUARD)
 #define MPU_GUARD_ALIGN_AND_SIZE_FLOAT CONFIG_MPU_STACK_GUARD_MIN_SIZE_FLOAT
 #else

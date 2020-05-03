@@ -63,7 +63,7 @@ config MPU_STACK_GUARD
 config MPU_STACK_GUARD_MIN_SIZE_FLOAT
 	int
 	depends on MPU_STACK_GUARD
-	depends on FP_SHARING
+	depends on FPU_SHARING
 	default 128
 	help
 	  Minimum size (and alignment when applicable) of an ARM MPU
@@ -72,7 +72,7 @@ config MPU_STACK_GUARD_MIN_SIZE_FLOAT
 	  128, to accommodate the length of a Cortex-M exception stack
 	  frame when the floating point context is active. The FP context
 	  is only stacked in sharing FP registers mode, therefore, the
-	  option is applicable only when FP_SHARING is selected.
+	  option is applicable only when FPU_SHARING is selected.
 
 config MPU_ALLOW_FLASH_WRITE
 	bool "Add MPU access to write to flash"

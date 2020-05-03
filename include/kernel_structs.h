@@ -168,7 +168,7 @@ struct z_kernel {
 	 */
 	struct _ready_q ready_q;
 
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_FPU_SHARING
 	/*
 	 * A 'current_sse' field does not exist in addition to the 'current_fp'
 	 * field since it's not possible to divide the IA-32 non-integer

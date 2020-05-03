@@ -165,7 +165,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
 				  k_thread_entry_t _main);
 #endif /* CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN */
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 /**
  * @brief Disable floating point context preservation
  *
@@ -179,7 +179,7 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
  * @retval -EINVAL If the floating point disabling could not be performed.
  */
 int arch_float_disable(struct k_thread *thread);
-#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 /** @} */
 

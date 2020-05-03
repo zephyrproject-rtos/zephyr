@@ -26,7 +26,7 @@
 #define _thread_offset_to_preempt_float \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_preempt_float_OFFSET)
 
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
 #define _thread_offset_to_mode \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_mode_OFFSET)
 

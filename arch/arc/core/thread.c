@@ -262,7 +262,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 
 #endif
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 int arch_float_disable(struct k_thread *thread)
 {
 	unsigned int key;
@@ -295,4 +295,4 @@ int arch_float_enable(struct k_thread *thread)
 
 	return 0;
 }
-#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */

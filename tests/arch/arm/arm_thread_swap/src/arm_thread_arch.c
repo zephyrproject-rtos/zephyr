@@ -110,7 +110,7 @@ static void verify_callee_saved(const _callee_saved_t *src,
 	);
 }
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 /* Arbitrary values for the floating-point callee-saved registers */
 struct _preempt_float ztest_thread_fp_callee_saved_regs = {
 	.s16 = 0x11111111, .s17 = 0x22222222,
@@ -194,7 +194,7 @@ static void verify_fp_callee_saved(const struct _preempt_float *src,
 	);
 }
 
-#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 static void alt_thread_entry(void)
 {
@@ -239,7 +239,7 @@ static void alt_thread_entry(void)
 	memset(&ztest_thread_callee_saved_regs_container,
 		0, sizeof(_callee_saved_t));
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 
 	/*  Verify that the _current_ (alt) thread is initialized with FPCA cleared. */
 	zassert_true((__get_CONTROL() & CONTROL_FPCA_Msk) == 0,
@@ -268,7 +268,7 @@ static void alt_thread_entry(void)
 	memset(&ztest_thread_fp_callee_saved_regs,
 		0, sizeof(ztest_thread_fp_callee_saved_regs));
 
-#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 	/* Modify the arch.basepri flag of the main test thread, to verify,
 	 * later, that this is passed properly to the BASEPRI.
@@ -341,7 +341,7 @@ void test_arm_thread_swap(void)
 	 * Simulating initial conditions:
 	 * - set arbitrary values at the callee-saved registers
 	 * - set arbitrary values at the FP callee-saved registers,
-	 *   if building with CONFIG_FPU/CONFIG_FP_SHARING
+	 *   if building with CONFIG_FPU/CONFIG_FPU_SHARING
 	 * - zero the thread's callee-saved data structure
 	 * - set thread's priority same as the alternative test thread
 	 */
@@ -389,7 +389,7 @@ void test_arm_thread_swap(void)
 		_current->arch.mode);
 #endif /* CONFIG_USERSPACE */
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* The main test thread is not (yet) actively using the FP registers */
 	zassert_true((_current->arch.mode & CONTROL_FPCA_Msk) == 0,
 		"Thread FPCA flag not clear at initialization 0x%0x\n",
@@ -422,7 +422,7 @@ void test_arm_thread_swap(void)
 	 */
 	zassert_true((_current->arch.mode & CONTROL_FPCA_Msk) == 0,
 		"Thread FPCA flag not clear at initialization\n");
-#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 	/* Create an alternative (supervisor) testing thread */
 	k_thread_create(&alt_thread,
@@ -611,7 +611,7 @@ void test_arm_thread_swap(void)
 		_current->arch.swap_return_value, ztest_swap_return_val);
 #endif
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Dump callee-saved registers to memory. */
 	__asm__ volatile (
 		"vstmia %0, {s16-s31};\n\t"
@@ -632,7 +632,7 @@ void test_arm_thread_swap(void)
 	zassert_true((__get_FPSCR() & 0x1) == 0x1,
 		"FPSCR bit-0 not restored at swap: 0x%x\n", __get_FPSCR());
 
-#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 }
 /**

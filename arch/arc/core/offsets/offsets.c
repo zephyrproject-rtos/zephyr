@@ -104,7 +104,7 @@ GEN_OFFSET_SYM(_callee_saved_stack_t, r30);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r58);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r59);
 #endif
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_FPU_SHARING
 GEN_OFFSET_SYM(_callee_saved_stack_t, fpu_status);
 GEN_OFFSET_SYM(_callee_saved_stack_t, fpu_ctrl);
 #ifdef CONFIG_FP_FPU_DA

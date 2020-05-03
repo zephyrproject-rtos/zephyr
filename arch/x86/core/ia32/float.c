@@ -13,7 +13,7 @@
  * in a thread's stack region when a preemptive context switch occurs.
  *
  * Note: If the kernel has been built without floating point register sharing
- * support (CONFIG_FP_SHARING), the floating point registers can still be used
+ * support (CONFIG_FPU_SHARING), the floating point registers can still be used
  * safely by one or more cooperative threads OR by a single preemptive thread,
  * but not by both.
  *
