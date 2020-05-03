@@ -2923,9 +2923,10 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 static int ping_ipv6(const struct shell *shell,
 		     char *host,
 		     unsigned int count,
-		     unsigned int interval)
+		     unsigned int interval,
+		     int iface_idx)
 {
-	struct net_if *iface = net_if_get_default();
+	struct net_if *iface = net_if_get_by_index(iface_idx);
 	int ret = 0;
 	struct in6_addr ipv6_target;
 	struct net_nbr *nbr;
@@ -2940,11 +2941,15 @@ static int ping_ipv6(const struct shell *shell,
 
 	net_icmpv6_register_handler(&ping6_handler);
 
-	iface = net_if_ipv6_select_src_iface(&ipv6_target);
 	if (!iface) {
-		nbr = net_ipv6_nbr_lookup(NULL, &ipv6_target);
-		if (nbr) {
-			iface = nbr->iface;
+		iface = net_if_ipv6_select_src_iface(&ipv6_target);
+		if (!iface) {
+			nbr = net_ipv6_nbr_lookup(NULL, &ipv6_target);
+			if (nbr) {
+				iface = nbr->iface;
+			} else {
+				iface = net_if_get_default();
+			}
 		}
 	}
 
@@ -3047,16 +3052,20 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 static int ping_ipv4(const struct shell *shell,
 		     char *host,
 		     unsigned int count,
-		     unsigned int interval)
+		     unsigned int interval,
+		     int iface_idx)
 {
 	struct in_addr ipv4_target;
+	struct net_if *iface = net_if_get_by_index(iface_idx);
 	int ret = 0;
 
 	if (net_addr_pton(AF_INET, host, &ipv4_target) < 0) {
 		return -EINVAL;
 	}
 
-	struct net_if *iface = net_if_ipv4_select_src_iface(&ipv4_target);
+	if (!iface) {
+		iface = net_if_ipv4_select_src_iface(&ipv4_target);
+	}
 
 	net_icmpv4_register_handler(&ping4_handler);
 
@@ -3126,6 +3135,7 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 
 	int count = 3;
 	int interval = 1000;
+	int iface_idx = -1;
 
 	for (size_t i = 1; i < argc; ++i) {
 
@@ -3152,6 +3162,14 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 			}
 
 			break;
+
+		case 'I':
+			iface_idx = parse_arg(&i, argc, argv);
+			if (iface_idx < 0 || !net_if_get_by_index(iface_idx)) {
+				PR_WARNING("Parse error: %s\n", argv[i]);
+				return -ENOEXEC;
+			}
+			break;
 		default:
 			PR_WARNING("Unrecognized argument: %s\n", argv[i]);
 			return -ENOEXEC;
@@ -3166,7 +3184,7 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 	shell_for_ping = shell;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		ret = ping_ipv6(shell, host, count, interval);
+		ret = ping_ipv6(shell, host, count, interval, iface_idx);
 		if (!ret) {
 			goto wait_reply;
 		} else if (ret == -EIO) {
@@ -3176,7 +3194,7 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		ret = ping_ipv4(shell, host, count, interval);
+		ret = ping_ipv4(shell, host, count, interval, iface_idx);
 		if (ret) {
 			if (ret == -EIO || ret == -ENETUNREACH) {
 				PR_WARNING("Cannot send IPv4 ping\n");
@@ -4470,7 +4488,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_vlan,
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ping,
 	SHELL_CMD(--help, NULL,
-		  "'net ping [-c count] [-i interval ms] <host>' "
+		  "'net ping [-c count] [-i interval ms] [-I <iface index>] <host>' "
 		  "Send ICMPv4 or ICMPv6 Echo-Request to a network host.",
 		  cmd_net_ping),
 	SHELL_SUBCMD_SET_END
