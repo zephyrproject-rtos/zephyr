@@ -176,8 +176,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, u8_t phy)
 	}
 
 	lll->window_size_us += (EVENT_TICKER_RES_MARGIN_US +
-				(EVENT_JITTER_US << 1) +
-				window_widening_us);
+				((EVENT_JITTER_US + window_widening_us) << 1));
 
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, 1);
 
