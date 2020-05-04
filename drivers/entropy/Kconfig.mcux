@@ -18,3 +18,11 @@ config ENTROPY_MCUX_TRNG
 	help
 	  This option enables the true random number generator (TRNG)
 	  driver based on the MCUX TRNG driver.
+
+config ENTROPY_MCUX_RNG
+	bool "MCUX RNG driver"
+	depends on HAS_MCUX_RNG
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the true random number generator (TRNG)
+	  driver based on the MCUX RNG driver on LPC Family.
