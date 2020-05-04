@@ -4,6 +4,7 @@ zephyr_library()
 
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_CC13XX_CC26XX_RNG  entropy_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_ESP32_RNG          entropy_esp32.c)
+zephyr_library_sources_ifdef(CONFIG_ENTROPY_MCUX_RNG          entropy_mcux_rng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_MCUX_RNGA          entropy_mcux_rnga.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_MCUX_TRNG          entropy_mcux_trng.c)
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_NRF5_RNG           entropy_nrf5.c)
