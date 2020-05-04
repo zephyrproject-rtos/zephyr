@@ -557,6 +557,32 @@ void ll_rx_dequeue(void)
 
 	/* handle object specific clean up */
 	switch (rx->type) {
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	case NODE_RX_TYPE_EXT_1M_REPORT:
+	case NODE_RX_TYPE_EXT_2M_REPORT:
+	case NODE_RX_TYPE_EXT_CODED_REPORT:
+	{
+		struct node_rx_hdr *rx_curr;
+		struct pdu_adv *adv;
+
+		adv = (void *)((struct node_rx_pdu *)rx)->pdu;
+		if (adv->type != PDU_ADV_TYPE_EXT_IND) {
+			break;
+		}
+
+		rx_curr = rx->rx_ftr.extra;
+		while (rx_curr) {
+			memq_link_t *link_free;
+
+			link_free = rx_curr->link;
+			rx_curr = rx_curr->rx_ftr.extra;
+
+			mem_release(link_free, &mem_link_rx.free);
+		}
+	}
+	break;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 #if defined(CONFIG_BT_CONN)
 	case NODE_RX_TYPE_CONNECTION:
 	{
@@ -635,13 +661,6 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
 #endif /* CONFIG_BT_OBSERVER */
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-		/* fallthrough */
-	case NODE_RX_TYPE_EXT_1M_REPORT:
-	case NODE_RX_TYPE_EXT_2M_REPORT:
-	case NODE_RX_TYPE_EXT_CODED_REPORT:
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
@@ -1575,14 +1594,23 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 	break;
 
+#if defined(CONFIG_BT_OBSERVER)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	case NODE_RX_TYPE_EXT_1M_REPORT:
 	case NODE_RX_TYPE_EXT_2M_REPORT:
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
 	{
+		struct pdu_adv *adv;
 		uint8_t phy = 0U;
 
 		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+
+		adv = (void *)((struct node_rx_pdu *)rx)->pdu;
+		if (adv->type != PDU_ADV_TYPE_EXT_IND) {
+			ll_rx_put(link, rx);
+			ll_rx_sched();
+			break;
+		}
 
 		switch (rx->type) {
 		case NODE_RX_TYPE_EXT_1M_REPORT:
@@ -1604,6 +1632,7 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 	break;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CONN)
 	case NODE_RX_TYPE_CONNECTION:
