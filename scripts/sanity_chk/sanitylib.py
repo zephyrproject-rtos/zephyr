@@ -2453,6 +2453,8 @@ class TestSuite:
                         tc.timeout = tc_dict["timeout"]
                         tc.harness = tc_dict["harness"]
                         tc.harness_config = tc_dict["harness_config"]
+                        if tc.harness == 'console' and not tc.harness_config:
+                            raise Exception('Harness config error: console harness defined without a configuration.')
                         tc.build_only = tc_dict["build_only"]
                         tc.build_on_all = tc_dict["build_on_all"]
                         tc.slow = tc_dict["slow"]
