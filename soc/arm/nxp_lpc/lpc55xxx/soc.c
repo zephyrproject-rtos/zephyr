@@ -72,7 +72,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(hs_lspi))
 	/* Attach 12 MHz clock to HSLSPI */
-	CLOCK_AttachClk(kFRO12M_to_HSLSPI);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_HSLSPI);
 
 	/* reset HSLSPI for SPI */
 	RESET_PeripheralReset(kHSLSPI_RST_SHIFT_RSTn);
