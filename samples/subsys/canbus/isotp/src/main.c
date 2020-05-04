@@ -173,7 +173,7 @@ void main(void)
 	printk("Start sending data\n");
 
 	while (1) {
-		k_sleep(K_MSEC(1000));
+		k_msleep(1000);
 		ret = isotp_send(&send_ctx_0_5, can_dev,
 				 tx_data_small, sizeof(tx_data_small),
 				 &tx_addr_0_5, &rx_addr_0_5,

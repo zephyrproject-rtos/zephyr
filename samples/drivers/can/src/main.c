@@ -257,7 +257,7 @@ void main(void)
 	while (1) {
 		change_led_frame.data[0] = toggle++ & 0x01 ? SET_LED : RESET_LED;
 		/* This sending call is none blocking. */
-		can_send(can_dev, &change_led_frame, SYS_FOREVER_MS,
+		can_send(can_dev, &change_led_frame, K_FOREVER,
 			 tx_irq_callback,
 			 "LED change");
 		k_sleep(SLEEP_TIME);

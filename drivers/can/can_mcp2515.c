@@ -382,7 +382,8 @@ done:
 }
 
 static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
-		 s32_t timeout, can_tx_callback_t callback, void *callback_arg)
+		 k_timeout_t timeout, can_tx_callback_t callback,
+		 void *callback_arg)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	u8_t tx_idx = 0U;
@@ -392,7 +393,8 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 	u8_t tx_frame[MCP2515_FRAME_LEN];
 
 	if (msg->dlc > CAN_MAX_DLC) {
-		LOG_ERR("DLC of %d exceeds maximum (%d)", msg->dlc, CAN_MAX_DLC);
+		LOG_ERR("DLC of %d exceeds maximum (%d)",
+			msg->dlc, CAN_MAX_DLC);
 		return CAN_TX_EINVAL;
 	}
 
@@ -630,7 +632,7 @@ static void mcp2515_handle_errors(struct device *dev)
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static void mcp2515_recover(struct device *dev, s32_t timeout)
+static void mcp2515_recover(struct device *dev, k_timeout_t timeout)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(timeout);

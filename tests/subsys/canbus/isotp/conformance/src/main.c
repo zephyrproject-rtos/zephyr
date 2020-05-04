@@ -205,7 +205,7 @@ static void receive_test_data(struct isotp_recv_ctx *recv_ctx,
 		remaining_len -= recv_len;
 
 		if (delay) {
-			k_sleep(delay);
+			k_msleep(delay);
 		}
 	} while (remaining_len);
 

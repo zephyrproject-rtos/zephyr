@@ -159,7 +159,7 @@ int isotp_bind(struct isotp_recv_ctx *ctx, struct device *can_dev,
 	       const struct isotp_msg_id *rx_addr,
 	       const struct isotp_msg_id *tx_addr,
 	       const struct isotp_fc_opts *opts,
-	       s32_t timeout);
+	       k_timeout_t timeout);
 
 /**
  * @brief Unbind a context from the interface
@@ -191,7 +191,7 @@ void isotp_unbind(struct isotp_recv_ctx *ctx);
  * @retval ISOTP_N_* on error
  */
 int isotp_recv(struct isotp_recv_ctx *ctx, u8_t *data, size_t len,
-	       s32_t timeout);
+	       k_timeout_t timeout);
 
 /**
  * @brief Get the net buffer on data reception
@@ -212,7 +212,7 @@ int isotp_recv(struct isotp_recv_ctx *ctx, u8_t *data, size_t len,
  * @retval ISOTP_N_* on error
  */
 int isotp_recv_net(struct isotp_recv_ctx *ctx, struct net_buf **buffer,
-		   s32_t timeout);
+		   k_timeout_t timeout);
 
 /**
  * @brief Send data
@@ -265,7 +265,7 @@ int isotp_send_ctx_buf(struct device *can_dev,
 		       const struct isotp_msg_id *tx_addr,
 		       const struct isotp_msg_id *rx_addr,
 		       isotp_tx_callback_t complete_cb, void *cb_arg,
-		       s32_t timeout);
+		       k_timeout_t timeout);
 
 /**
  * @brief Send data with buffered context
@@ -290,7 +290,7 @@ int isotp_send_net_ctx_buf(struct device *can_dev,
 			   const struct isotp_msg_id *tx_addr,
 			   const struct isotp_msg_id *rx_addr,
 			   isotp_tx_callback_t complete_cb, void *cb_arg,
-			   s32_t timeout);
+			   k_timeout_t timeout);
 
 #endif /*CONFIG_ISOTP_ENABLE_CONTEXT_BUFFERS*/
 
@@ -320,7 +320,7 @@ int isotp_send_buf(struct device *can_dev,
 		   const struct isotp_msg_id *tx_addr,
 		   const struct isotp_msg_id *rx_addr,
 		   isotp_tx_callback_t complete_cb, void *cb_arg,
-		   s32_t timeout);
+		   k_timeout_t timeout);
 #endif
 
 /** @cond INTERNAL_HIDDEN */

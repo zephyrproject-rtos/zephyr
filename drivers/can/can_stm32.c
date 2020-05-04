@@ -19,7 +19,6 @@
 LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
-#define CAN_BOFF_RECOVER_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
 
 #if DT_HAS_NODE(DT_NODELABEL(can1)) && \
 	DT_NODE_HAS_COMPAT(DT_NODELABEL(can1), st_stm32_can) && \
@@ -503,13 +502,13 @@ static enum can_state can_stm32_get_state(struct device *dev,
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-int can_stm32_recover(struct device *dev, s32_t timeout)
+int can_stm32_recover(struct device *dev, k_timeout_t timeout)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
 	CAN_TypeDef *can = cfg->can;
 	int ret = CAN_TIMEOUT;
-	u32_t start_time;
+	s64_t start_time;
 
 	if (!(can->ESR & CAN_ESR_BOFF)) {
 		return 0;
@@ -526,10 +525,11 @@ int can_stm32_recover(struct device *dev, s32_t timeout)
 
 	can_leave_init_mode(can);
 
-	start_time = k_cycle_get_32();
+	start_time = k_uptime_ticks();
 
 	while (can->ESR & CAN_ESR_BOFF) {
-		if (k_cycle_get_32() - start_time >= CAN_BOFF_RECOVER_TIMEOUT) {
+		if (timeout != K_FOREVER &&
+		    k_uptime_ticks() - start_time >= timeout.ticks) {
 			goto done;
 		}
 	}
@@ -544,7 +544,8 @@ done:
 
 
 int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
-		   s32_t timeout, can_tx_callback_t callback, void *callback_arg)
+		   k_timeout_t timeout, can_tx_callback_t callback,
+		   void *callback_arg)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
@@ -578,8 +579,7 @@ int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 	while (!(transmit_status_register & CAN_TSR_TME)) {
 		k_mutex_unlock(&data->inst_mutex);
-		LOG_DBG("Transmit buffer full. Wait with timeout (%dms)",
-			    timeout);
+		LOG_DBG("Transmit buffer full");
 		if (k_sem_take(&data->tx_int_sem, timeout)) {
 			return CAN_TIMEOUT;
 		}
