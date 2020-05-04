@@ -38,7 +38,8 @@ int ull_adv_aux_init(void);
 int ull_adv_aux_reset(void);
 
 /* Helper to read back random address */
-u8_t *ll_adv_aux_random_addr_get(struct ll_adv_set *adv, u8_t *addr);
+u8_t const *ll_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
+				       u8_t *const addr);
 
 /* helper function to start auxiliary advertising */
 u32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, u32_t ticks_anchor,

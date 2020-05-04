@@ -84,7 +84,7 @@ static struct ticker_ext ll_adv_ticker_ext[BT_CTLR_ADV_SET];
 u8_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
 		       u8_t adv_type, u8_t own_addr_type,
 		       u8_t direct_addr_type, u8_t const *const direct_addr,
-		       u8_t chan_map, u8_t filter_policy, u8_t *tx_pwr,
+		       u8_t chan_map, u8_t filter_policy, u8_t *const tx_pwr,
 		       u8_t phy_p, u8_t skip, u8_t phy_s, u8_t sid, u8_t sreq)
 {
 	u8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
@@ -516,11 +516,13 @@ u8_t ll_adv_enable(u8_t enable)
 
 		/* AdvA, fill here at enable */
 		if (h->adv_addr) {
-			u8_t *tx_addr = ll_adv_aux_random_addr_get(adv, NULL);
+			u8_t const *tx_addr =
+				ll_adv_aux_random_addr_get(adv, NULL);
 
 			/* TODO: Privacy */
 
-			if (pdu_adv->tx_addr && !mem_nz(tx_addr, BDADDR_SIZE)) {
+			if (pdu_adv->tx_addr &&
+			    !mem_nz((void *)tx_addr, BDADDR_SIZE)) {
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
@@ -539,13 +541,13 @@ u8_t ll_adv_enable(u8_t enable)
 			ps = (u8_t *)hs + sizeof(*hs);
 
 			if (hs->adv_addr) {
-				u8_t *tx_addr =
+				u8_t const *tx_addr =
 					ll_adv_aux_random_addr_get(adv,	NULL);
 
 				/* TODO: Privacy */
 
 				if (pdu_aux->tx_addr &&
-				    !mem_nz(tx_addr, BDADDR_SIZE)) {
+				    !mem_nz((void *)tx_addr, BDADDR_SIZE)) {
 					return BT_HCI_ERR_INVALID_PARAM;
 				}
 
@@ -589,7 +591,7 @@ u8_t ll_adv_enable(u8_t enable)
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
 		if (!priv) {
-			u8_t *tx_addr;
+			u8_t const *tx_addr;
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 			if ((adv->is_created & BIT(1)) && pdu_adv->tx_addr) {
 				tx_addr = ll_adv_aux_random_addr_get(adv, NULL);

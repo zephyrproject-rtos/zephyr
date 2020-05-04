@@ -119,7 +119,7 @@ u8_t ll_tx_pwr_lvl_get(u8_t handle_type,
 
 
 u8_t ll_tx_pwr_lvl_set(u8_t handle_type, u16_t handle,
-		       s8_t *tx_pwr_lvl)
+		       s8_t const *const tx_pwr_lvl)
 {
 #if defined(CONFIG_BT_CTLR_TX_PWR_DYNAMIC_CONTROL)
 	if (*tx_pwr_lvl == BT_HCI_VS_LL_TX_POWER_LEVEL_NO_PREF) {

@@ -17,22 +17,23 @@ u8_t ll_addr_set(u8_t addr_type, u8_t const *const p_bdaddr);
 u8_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
 		       u8_t adv_type, u8_t own_addr_type,
 		       u8_t direct_addr_type, u8_t const *const direct_addr,
-		       u8_t chan_map, u8_t filter_policy, u8_t *tx_pwr,
-		       u8_t phy_p, u8_t skip, u8_t phy_s, u8_t sid, u8_t sreq);
+		       u8_t chan_map, u8_t filter_policy,
+		       u8_t *const tx_pwr, u8_t phy_p, u8_t skip, u8_t phy_s,
+		       u8_t sid, u8_t sreq);
 u8_t ll_adv_data_set(u8_t handle, u8_t len, u8_t const *const p_data);
 u8_t ll_adv_scan_rsp_set(u8_t handle, u8_t len, u8_t const *const p_data);
-u8_t ll_adv_aux_random_addr_set(u8_t handle, u8_t *addr);
+u8_t ll_adv_aux_random_addr_set(u8_t handle, u8_t const *const addr);
 u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
-			    u8_t *data);
+			    u8_t const *const data);
 u8_t ll_adv_aux_sr_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
-			    u8_t *data);
+			    u8_t const *const data);
 u16_t ll_adv_aux_max_data_length_get(void);
 u8_t ll_adv_aux_set_count_get(void);
 u8_t ll_adv_aux_set_remove(u8_t handle);
 u8_t ll_adv_aux_set_clear(void);
 u8_t ll_adv_sync_param_set(u8_t handle, u16_t interval, u16_t flags);
 u8_t ll_adv_sync_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
-			     u8_t *data);
+			     u8_t const *const data);
 u8_t ll_adv_sync_enable(u8_t handle, u8_t enable);
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
@@ -80,45 +81,46 @@ u8_t ll_priv_mode_set(bt_addr_le_t *id_addr, u8_t mode);
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 			  u8_t filter_policy, u8_t peer_addr_type,
-			  u8_t *peer_addr, u8_t own_addr_type,
+			  u8_t const *const peer_addr, u8_t own_addr_type,
 			  u16_t interval, u16_t latency, u16_t timeout,
 			  u8_t phy);
 u8_t ll_connect_enable(u8_t is_coded_included);
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 			  u8_t filter_policy, u8_t peer_addr_type,
-			  u8_t *peer_addr, u8_t own_addr_type,
+			  u8_t const *const peer_addr, u8_t own_addr_type,
 			  u16_t interval, u16_t latency, u16_t timeout);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 u8_t ll_connect_disable(void **rx);
 u8_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
 		    u16_t interval_max, u16_t latency, u16_t timeout);
-u8_t ll_chm_update(u8_t *chm);
-u8_t ll_chm_get(u16_t handle, u8_t *chm);
-u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv,
-		     u8_t *ltk);
+u8_t ll_chm_update(u8_t const *const chm);
+u8_t ll_chm_get(u16_t handle, u8_t *const chm);
+u8_t ll_enc_req_send(u16_t handle, u8_t const *const rand,
+		     u8_t const *const ediv, u8_t const *const ltk);
 u8_t ll_start_enc_req_send(u16_t handle, u8_t err_code,
 			   u8_t const *const ltk);
 u8_t ll_feature_req_send(u16_t handle);
 u8_t ll_version_ind_send(u16_t handle);
 u8_t ll_terminate_ind_send(u16_t handle, u8_t reason);
-u8_t ll_rssi_get(u16_t handle, u8_t *rssi);
+u8_t ll_rssi_get(u16_t handle, u8_t *const rssi);
 u8_t ll_tx_pwr_lvl_get(u8_t handle_type,
-		       u16_t handle, u8_t type, s8_t *tx_pwr_lvl);
-void ll_tx_pwr_get(s8_t *min, s8_t *max);
+		       u16_t handle, u8_t type, s8_t *const tx_pwr_lvl);
+void ll_tx_pwr_get(s8_t *const min, s8_t *const max);
 u8_t ll_tx_pwr_lvl_set(u8_t handle_type,
-		       u16_t handle, s8_t *tx_pwr_lvl);
+		       u16_t handle, s8_t const *const tx_pwr_lvl);
 
-u8_t ll_apto_get(u16_t handle, u16_t *apto);
+u8_t ll_apto_get(u16_t handle, u16_t *const apto);
 u8_t ll_apto_set(u16_t handle, u16_t apto);
 
 u32_t ll_length_req_send(u16_t handle, u16_t tx_octets, u16_t tx_time);
-void ll_length_default_get(u16_t *max_tx_octets, u16_t *max_tx_time);
+void ll_length_default_get(u16_t *const max_tx_octets,
+			   u16_t *const max_tx_time);
 u32_t ll_length_default_set(u16_t max_tx_octets, u16_t max_tx_time);
-void ll_length_max_get(u16_t *max_tx_octets, u16_t *max_tx_time,
-		       u16_t *max_rx_octets, u16_t *max_rx_time);
+void ll_length_max_get(u16_t *const max_tx_octets, u16_t *const max_tx_time,
+		       u16_t *const max_rx_octets, u16_t *const max_rx_time);
 
-u8_t ll_phy_get(u16_t handle, u8_t *tx, u8_t *rx);
+u8_t ll_phy_get(u16_t handle, u8_t *const tx, u8_t *const rx);
 u8_t ll_phy_default_set(u8_t tx, u8_t rx);
 u8_t ll_phy_req_send(u16_t handle, u8_t tx, u8_t flags, u8_t rx);
 
