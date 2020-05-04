@@ -89,7 +89,7 @@ void tx_thread(void *data_arg, void *arg2, void *arg3)
 }
 
 int can_loopback_send(struct device *dev, const struct zcan_frame *frame,
-		      s32_t timeout, can_tx_callback_t callback,
+		      k_timeout_t timeout, can_tx_callback_t callback,
 		      void *callback_arg)
 {
 	struct can_loopback_data *data = DEV_DATA(dev);
@@ -217,7 +217,7 @@ static enum can_state can_loopback_get_state(struct device *dev,
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-int can_loopback_recover(struct device *dev, s32_t timeout)
+int can_loopback_recover(struct device *dev, k_timeout_t timeout)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(timeout);

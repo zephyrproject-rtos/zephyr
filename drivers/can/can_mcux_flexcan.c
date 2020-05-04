@@ -246,8 +246,8 @@ static int mcux_get_tx_alloc(struct mcux_flexcan_data *data)
 }
 
 static int mcux_flexcan_send(struct device *dev, const struct zcan_frame *msg,
-			     s32_t timeout, can_tx_callback_t callback_isr,
-			     void *callback_arg)
+			     k_timeout_t timeout,
+			     can_tx_callback_t callback_isr, void *callback_arg)
 {
 	const struct mcux_flexcan_config *config = dev->config->config_info;
 	struct mcux_flexcan_data *data = dev->driver_data;
@@ -384,7 +384,7 @@ static enum can_state mcux_flexcan_get_state(struct device *dev,
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-int mcux_flexcan_recover(struct device *dev, s32_t timeout)
+int mcux_flexcan_recover(struct device *dev, k_timeout_t timeout)
 {
 	const struct mcux_flexcan_config *config = dev->config->config_info;
 	int ret = 0;
@@ -394,13 +394,13 @@ int mcux_flexcan_recover(struct device *dev, s32_t timeout)
 		return 0;
 	}
 
-	start_time = k_uptime_get();
+	start_time = k_uptime_ticks();
 	config->base->CTRL1 &= ~CAN_CTRL1_BOFFREC_MASK;
 
 	if (timeout != K_NO_WAIT) {
 		while (mcux_flexcan_get_state(dev, NULL) == CAN_BUS_OFF) {
 			if (timeout != K_FOREVER &&
-			    k_uptime_get() - start_time >= timeout) {
+			    k_uptime_ticks() - start_time >= timeout.ticks) {
 				ret = CAN_TIMEOUT;
 			}
 		}

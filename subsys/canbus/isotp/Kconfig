@@ -6,7 +6,6 @@
 menuconfig ISOTP
 	bool "ISO-TP Transport [EXPERIMENTAL]"
 	select NET_BUF
-	select LEGACY_TIMEOUT_API
 	select POLL
 	help
 	  Enable ISO TP support for CAN

@@ -100,7 +100,7 @@ struct net_can_api {
 
 	/** Send a single CAN frame */
 	int (*send)(struct device *dev, const struct zcan_frame *frame,
-		    can_tx_callback_t cb, void *cb_arg, s32_t timeout);
+		    can_tx_callback_t cb, void *cb_arg, k_timeout_t timeout);
 	/** Attach a filter with it's callback */
 	int (*attach_filter)(struct device *dev, can_rx_callback_t cb,
 			     void *cb_arg, const struct zcan_filter *filter);

@@ -20,7 +20,7 @@ static inline int z_vrfy_can_configure(struct device *dev, enum can_mode mode,
 
 static inline int z_vrfy_can_send(struct device *dev,
 				  const struct zcan_frame *msg,
-				  s32_t timeout,
+				  k_timeout_t timeout,
 				  can_tx_callback_t callback_isr,
 				  void *callback_arg)
 {
@@ -37,7 +37,8 @@ static inline int z_vrfy_can_send(struct device *dev,
 
 	return z_impl_can_send((struct device *)dev,
 			      (const struct zcan_frame *)msg,
-			      (s32_t)timeout, (can_tx_callback_t) callback_isr,
+			      (k_timeout_t)timeout,
+			      (can_tx_callback_t) callback_isr,
 			      (void *)callback_arg);
 }
 #include <syscalls/can_send_mrsh.c>
@@ -84,12 +85,12 @@ enum can_state z_vrfy_can_get_state(struct device *dev,
 
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static inline int z_vrfy_can_recover(struct device *dev, s32_t timeout)
+static inline int z_vrfy_can_recover(struct device *dev, k_timeout_t timeout)
 {
 
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
-	return z_impl_can_recover(dev, s32_t timeout);
+	return z_impl_can_recover(dev, k_timeout_t timeout);
 }
 #include <syscalls/can_recover_mrsh.c>
 #endif /* CONFIG_CAN_AUTO_BUS_OFF_RECOVERY */
