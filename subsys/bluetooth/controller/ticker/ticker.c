@@ -2032,7 +2032,8 @@ static inline void ticker_job_list_insert(struct ticker_instance *instance,
 				ticker_job_op_cb(user_op, status);
 
 #if !defined(CONFIG_BT_TICKER_COMPATIBILITY_MODE)
-				if (ticker->ticks_periodic == 0U) {
+				if ((ticker->ticks_periodic == 0U) &&
+				    user_op) {
 					ticker->fp_op_func =
 						user_op->fp_op_func;
 					ticker->op_context =
