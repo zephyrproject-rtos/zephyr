@@ -93,6 +93,8 @@ else
 	NPROC="$J"
 fi
 
+OPTIONS="--macro-file $ZEPHYR_BASE/scripts/coccinelle/macros.h $OPTIONS"
+
 if [ "$FILE" != "" ] ; then
     OPTIONS="--patch $ZEPHYR_BASE $OPTIONS"
 fi
