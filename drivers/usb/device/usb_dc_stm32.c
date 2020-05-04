@@ -235,7 +235,7 @@ static int usb_dc_stm32_clock_enable(void)
 	 * that instead.  Example reference manual RM0360 for
 	 * STM32F030x4/x6/x8/xC and STM32F070x6/xB.
 	 */
-#if defined(RCC_HSI48_SUPPORT)
+#if defined(RCC_HSI48_SUPPORT) || defined(CONFIG_SOC_SERIES_STM32WBX)
 
 	/*
 	 * In STM32L0 series, HSI48 requires VREFINT and its buffer
@@ -469,6 +469,7 @@ int usb_dc_attach(void)
 	 * DM00310109.
 	 */
 #ifdef PWR_CR2_USV
+#if defined(LL_APB1_GRP1_PERIPH_PWR)
 	if (LL_APB1_GRP1_IsEnabledClock(LL_APB1_GRP1_PERIPH_PWR)) {
 		LL_PWR_EnableVddUSB();
 	} else {
@@ -476,6 +477,9 @@ int usb_dc_attach(void)
 		LL_PWR_EnableVddUSB();
 		LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
 	}
+#else
+	LL_PWR_EnableVddUSB();
+#endif /* defined(LL_APB1_GRP1_PERIPH_PWR) */
 #endif /* PWR_CR2_USV */
 
 	return 0;

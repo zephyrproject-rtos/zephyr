@@ -293,6 +293,25 @@
 			status = "disabled";
 			label = "LPTIM_1";
 		};
+
+		usb: usb@40006800 {
+			compatible = "st,stm32-usb";
+			reg = <0x40006800 0x400>;
+			interrupts = <20 0>, <19 0>;
+			interrupt-names = "usb", "usbhp";
+			num-bidir-endpoints = <8>;
+			ram-size = <1024>;
+			phys = <&usb_fs_phy>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x04000000>;
+			status = "disabled";
+			label = "USB";
+		};
+	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "USB_FS_PHY";
 	};
 };
 
