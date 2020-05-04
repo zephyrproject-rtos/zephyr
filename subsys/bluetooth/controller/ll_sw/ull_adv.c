@@ -974,12 +974,6 @@ u8_t ll_adv_enable(u8_t enable)
 				sync = (void *)HDR_LLL2EVT(lll_sync);
 
 				if (sync->is_enabled && !sync->is_started) {
-					ret = ull_ticker_status_take(ret,
-								     &ret_cb);
-					if (ret != TICKER_STATUS_SUCCESS) {
-						goto failure_cleanup;
-					}
-
 					ull_hdr_init(&sync->ull);
 
 					ret = ull_adv_sync_start(sync,
