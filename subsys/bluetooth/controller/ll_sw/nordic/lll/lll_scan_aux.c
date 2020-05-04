@@ -319,6 +319,8 @@ static int isr_rx_pdu(struct lll_scan_aux *lll, u8_t rssi_ready)
 	ftr->radio_end_us = radio_tmr_end_get() -
 			    radio_rx_chain_delay_get(lll->phy, 1);
 
+	ftr->rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
+
 	ull_rx_put(node_rx->hdr.link, node_rx);
 	ull_rx_sched();
 

@@ -18,6 +18,6 @@ struct ll_scan_aux_set {
 	struct ull_hdr      ull;
 	struct lll_scan_aux lll;
 
-	memq_link_t        *rx_head;
-	memq_link_t        *rx_last;
+	struct node_rx_hdr *rx_head;
+	struct node_rx_hdr *rx_last;
 };

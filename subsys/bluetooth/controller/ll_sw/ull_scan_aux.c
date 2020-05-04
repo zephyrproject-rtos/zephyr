@@ -37,7 +37,7 @@ static int init_reset(void);
 static inline struct ll_scan_aux_set *aux_acquire(void);
 static inline void aux_release(struct ll_scan_aux_set *aux);
 static inline u8_t aux_handle_get(struct ll_scan_aux_set *aux);
-static void rx_flush_release(struct ll_scan_aux_set *aux);
+static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx);
 static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		      void *param);
 static void ticker_op_cb(u32_t status, void *param);
@@ -98,12 +98,10 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, u8_t phy)
 		aux = NULL;
 	}
 
-	pdu = (void *)((struct node_rx_pdu *)rx)->pdu;
-	if (pdu->type != PDU_ADV_TYPE_EXT_IND) {
-		aux = NULL;
-		goto ull_scan_aux_rx_flush;
-	}
+	rx->link = link;
+	ftr->extra = NULL;
 
+	pdu = (void *)((struct node_rx_pdu *)rx)->pdu;
 	p = (void *)&pdu->adv_ext_ind;
 	if (!p->ext_hdr_len) {
 		goto ull_scan_aux_rx_flush;
@@ -112,21 +110,6 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, u8_t phy)
 	h = (void *)p->ext_hdr_adi_adv_data;
 	if (!h->aux_ptr) {
 		goto ull_scan_aux_rx_flush;
-	}
-
-	if (!aux) {
-		aux = aux_acquire();
-		if (!aux) {
-			goto ull_scan_aux_rx_flush;
-		}
-
-		aux->rx_last = NULL;
-		lll = &aux->lll;
-
-		ull_hdr_init((void *)lll);
-		lll_hdr_init(lll, aux);
-	} else {
-		LL_ASSERT(0);
 	}
 
 	ptr = (u8_t *)h + sizeof(*h);
@@ -151,15 +134,29 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, u8_t phy)
 		goto ull_scan_aux_rx_flush;
 	}
 
-	/* Enqueue the rx in aux context */
-	link->next = NULL;
-	link->mem = rx;
-	if (aux->rx_last) {
-		aux->rx_last->next = link;
+	if (!aux) {
+		aux = aux_acquire();
+		if (!aux) {
+			goto ull_scan_aux_rx_flush;
+		}
+
+		aux->rx_last = NULL;
+		lll = &aux->lll;
+
+		ull_hdr_init(&aux->ull);
+		lll_hdr_init(lll, aux);
 	} else {
-		aux->rx_head = link;
+		LL_ASSERT(0);
 	}
-	aux->rx_last = link;
+
+	/* Enqueue the rx in aux context */
+	if (aux->rx_last) {
+		ftr = &aux->rx_last->rx_ftr;
+		ftr->extra = rx;
+	} else {
+		aux->rx_head = rx;
+	}
+	aux->rx_last = rx;
 
 	lll->chan = aux_ptr->chan_idx;
 	lll->phy = BIT(aux_ptr->phy);
@@ -233,7 +230,9 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, u8_t phy)
 
 ull_scan_aux_rx_flush:
 	if (aux) {
-		rx_flush_release(aux);
+		flush(aux, rx);
+
+		return;
 	}
 
 	ll_rx_put(link, rx);
@@ -245,7 +244,7 @@ void ull_scan_aux_done(struct node_rx_event_done *done)
 	struct lll_scan_aux *lll = (void *)HDR_ULL2LLL(done->param);
 	struct ll_scan_aux_set *aux = (void *)HDR_LLL2EVT(lll);
 
-	rx_flush_release(aux);
+	flush(aux, NULL);
 }
 
 u8_t ull_scan_aux_lll_handle_get(struct lll_scan_aux *lll)
@@ -279,20 +278,22 @@ static inline u8_t aux_handle_get(struct ll_scan_aux_set *aux)
 			     sizeof(struct ll_scan_aux_set));
 }
 
-static void rx_flush_release(struct ll_scan_aux_set *aux)
+static void flush(struct ll_scan_aux_set *aux, struct node_rx_hdr *rx)
 {
 	if (aux->rx_last) {
-		memq_link_t *head = aux->rx_head;
+		if (rx) {
+			struct node_rx_ftr *ftr;
 
-		do {
-			struct node_rx_hdr *rx = head->mem;
-			memq_link_t *link = head;
+			ftr = &aux->rx_last->rx_ftr;
+			ftr->extra = rx;
+		}
 
-			head = link->next;
+		rx = aux->rx_head;
 
-			ll_rx_put(link, rx);
-		} while (head);
-
+		ll_rx_put(rx->link, rx);
+		ll_rx_sched();
+	} else if (rx) {
+		ll_rx_put(rx->link, rx);
 		ll_rx_sched();
 	}
 
@@ -349,5 +350,5 @@ static void ticker_op_cb(u32_t status, void *param)
 
 static void ticker_op_aux_failure(void *param)
 {
-	rx_flush_release(param);
+	flush(param, NULL);
 }
