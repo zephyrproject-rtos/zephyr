@@ -1936,7 +1936,14 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 	phys = cmd->phys;
 	p = cmd->p;
 
-	phys_bitmask = BT_HCI_LE_EXT_SCAN_PHY_CODED | BT_HCI_LE_EXT_SCAN_PHY_1M;
+	/* Number of bits set indicate scan sets to be configured by calling
+	 * ll_create_connection function.
+	 */
+	phys_bitmask = BT_HCI_LE_EXT_SCAN_PHY_1M;
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+		phys_bitmask |= BT_HCI_LE_EXT_SCAN_PHY_CODED;
+	}
+
 	do {
 		uint16_t supervision_timeout;
 		uint16_t conn_interval_max;
