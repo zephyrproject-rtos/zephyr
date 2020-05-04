@@ -363,6 +363,15 @@
 			status = "okay";
 			label = "TRNG";
 		};
+
+		xdmac: dma-controller@40078000 {
+			compatible = "atmel,sam-xdmac";
+			reg = <0x40078000 0x400>;
+			interrupts = <58 0>;
+			peripheral-id = <58>;
+			label = "DMA_0";
+			#dma-cells = <2>;
+		};
 	};
 };
 
