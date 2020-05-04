@@ -117,7 +117,8 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 			retval = k_poll(&tid->poll_event, 1, K_FOREVER);
 			break;
 		default:
-			retval = k_poll(&tid->poll_event, 1, timeout_ms);
+			retval = k_poll(&tid->poll_event, 1,
+					K_MSEC(timeout_ms));
 			break;
 		}
 
