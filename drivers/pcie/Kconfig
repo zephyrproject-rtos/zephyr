@@ -24,4 +24,6 @@ config PCIE_SHELL
 	help
 	  Enable commands for debugging PCI(e) using the built-in shell.
 
+source "drivers/pcie/endpoint/Kconfig"
+
 endif # PCIE
