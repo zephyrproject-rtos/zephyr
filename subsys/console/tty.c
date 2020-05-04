@@ -73,7 +73,7 @@ static int tty_putchar(struct tty_serial *tty, u8_t c)
 	int tx_next;
 	int res;
 
-	res = k_sem_take(&tty->tx_sem, tty->tx_timeout);
+	res = k_sem_take(&tty->tx_sem, SYS_TIMEOUT_MS(tty->tx_timeout));
 	if (res < 0) {
 		return res;
 	}
@@ -143,7 +143,7 @@ static int tty_getchar(struct tty_serial *tty)
 	u8_t c;
 	int res;
 
-	res = k_sem_take(&tty->rx_sem, tty->rx_timeout);
+	res = k_sem_take(&tty->rx_sem, SYS_TIMEOUT_MS(tty->rx_timeout));
 	if (res < 0) {
 		return res;
 	}
@@ -187,7 +187,7 @@ static ssize_t tty_read_unbuf(struct tty_serial *tty, void *buf, size_t size)
 		}
 
 		if (size == 0 ||
-		    (!K_TIMEOUT_EQ(timeout, K_FOREVER) && timeout-- == 0U)) {
+		    ((timeout != SYS_FOREVER_MS) && timeout-- == 0U)) {
 			break;
 		}
 
@@ -253,8 +253,8 @@ int tty_init(struct tty_serial *tty, struct device *uart_dev)
 
 	tty->rx_get = tty->rx_put = tty->tx_get = tty->tx_put = 0U;
 
-	tty->rx_timeout = K_FOREVER;
-	tty->tx_timeout = K_FOREVER;
+	tty->rx_timeout = SYS_FOREVER_MS;
+	tty->tx_timeout = SYS_FOREVER_MS;
 
 	uart_irq_callback_user_data_set(uart_dev, tty_uart_isr, tty);
 
