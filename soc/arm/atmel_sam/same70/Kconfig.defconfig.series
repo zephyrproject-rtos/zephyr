@@ -84,4 +84,8 @@ config PWM_SAM
 	default y
 	depends on PWM
 
+config CAN_SAM
+	default y
+	depends on CAN
+
 endif # SOC_SERIES_SAME70

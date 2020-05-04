@@ -381,6 +381,32 @@
 			label = "SSC_0";
 			status = "disabled";
 		};
+
+		can {
+			compatible = "bosch,m-can-base";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			std-filter-elements = <28>;
+			ext-filter-elements = <8>;
+			rx-fifo0-elements = <3>;
+			rx-fifo1-elements = <3>;
+			rx-buffer-elements = <0>;
+			tx-buffer-elements = <3>;
+
+			can0: can@40030000 {
+				compatible = "atmel,mcan";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				reg = <0x40030000 0xF8>;
+				reg-names = "m_can";
+				interrupts = <35 0>, <36 0>;
+				interrupt-names = "LINE_0", "LINE_1";
+				status = "disabled";
+				label = "CAN_0";
+				peripheral-id = <35>;
+				pinctrl-0 = <&pb3a_mcan0_canrx0 &pb2a_mcan0_cantx0>;
+			};
+		};
 	};
 };
 

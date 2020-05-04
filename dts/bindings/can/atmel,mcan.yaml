@@ -1,0 +1,20 @@
+description: Bosch m_can CAN-FD controller
+
+compatible: "atmel,mcan"
+
+include: bosch-mcan.yaml
+
+properties:
+    peripheral-id:
+      type: int
+      required: true
+      description: peripheral ID
+
+    pinctrl-0:
+      type: phandles
+      required: true
+      description: |
+        PIO pin configuration for CAN_RX & CAN_TX signals.  We expect that
+        the phandles will reference pinctrl nodes.  These nodes will
+        have a nodelabel that matches the Atmel SoC HAL defines and
+        be of the form p<port><pin><periph>_<inst>_<signal>.

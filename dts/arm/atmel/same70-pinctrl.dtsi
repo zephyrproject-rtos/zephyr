@@ -108,6 +108,10 @@
 			DT_ATMEL_PIN(usart2, rxd2, d, 15, b);
 			DT_ATMEL_PIN(usart2, sck2, d, 17, b);
 			DT_ATMEL_PIN(usart2, txd2, d, 16, b);
+			DT_ATMEL_PIN(mcan0, canrx0, b, 3, a);
+			DT_ATMEL_PIN(mcan0, cantx0, b, 2, a);
+			DT_ATMEL_PIN(mcan1, canrx1, c, 12, c);
+			DT_ATMEL_PIN(mcan1, cantx1, c, 14, c);
 		};
 	};
 };
