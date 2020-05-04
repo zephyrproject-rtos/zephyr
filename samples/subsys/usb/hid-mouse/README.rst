@@ -22,17 +22,33 @@ Requirements
 This project requires an USB device driver, and there must has at least one
 GPIO button in your board.
 
-To use this sample, you will require a board that defines the user switch in its
-header file. The :file:`board.h` must define the following variables:
+The board hardware must have a push button connected via a GPIO pin. These are
+called "User buttons" on many of Zephyr's :ref:`boards`.
 
-- DT_GPIO_LABEL(DT_ALIAS(sw0), gpios)
-- DT_GPIO_PIN(DT_ALIAS(sw0), gpios)
+The button must be configured using the ``sw0`` :ref:`devicetree <dt-guide>`
+alias, usually in the :ref:`BOARD.dts file <devicetree-in-out-files>`. You will
+see this error if you try to build this sample for an unsupported board:
 
-The following variables are optional and depend on available board buttons:
+.. code-block:: none
 
-- For right-button: DT_GPIO_LABEL(DT_ALIAS(sw1), gpios), DT_GPIO_PIN(DT_ALIAS(sw1), gpios)
-- For X-axis: DT_GPIO_LABEL(DT_ALIAS(sw2), gpios), DT_GPIO_PIN(DT_ALIAS(sw2), gpios)
-- For Y-axis: DT_GPIO_LABEL(DT_ALIAS(sw3), gpios), DT_GPIO_PIN(DT_ALIAS(sw3), gpios)
+   Unsupported board: sw0 devicetree alias is not defined
+
+You may see additional build errors if the ``sw0`` alias exists, but is not
+properly defined.
+
+If the devicetree aliases ``sw1``, ``sw2``, and ``sw3`` are defined, they will
+also be used as follows:
+
+- ``sw1``: right button
+- ``sw2``: move the mouse along the x-axis
+- ``sw3``: move the mouse along the y-axis
+
+An LED must also be configured via the ``led0`` devicetree alias. You may also
+see this error if you try to build this sample for an unsupported board:
+
+.. code-block:: none
+
+   Unsupported board: led0 devicetree alias is not defined
 
 Building and Running
 ********************
