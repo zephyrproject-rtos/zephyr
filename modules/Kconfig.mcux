@@ -104,6 +104,12 @@ config HAS_MCUX_GPT
 	help
 	  Set if the general purpose timer (GPT) module is present in the SoC.
 
+config HAS_MCUX_RNG
+	bool
+	help
+	  Set if the LPC specific random number generator (RNG) module is
+	  present in the SoC.
+
 config HAS_MCUX_RNGA
 	bool
 	help
