@@ -11,6 +11,7 @@
 		zephyr,code-partition = &sramx;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
+		zephyr,entropy = &rng;
 	};
 
 	aliases{
