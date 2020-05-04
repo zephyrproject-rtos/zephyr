@@ -101,7 +101,8 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 			retval = k_poll(thread_def->poll_event, 1, K_FOREVER);
 			break;
 		default:
-			retval = k_poll(thread_def->poll_event, 1, timeout);
+			retval = k_poll(thread_def->poll_event, 1,
+					K_MSEC(timeout));
 			break;
 		}
 

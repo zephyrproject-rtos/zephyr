@@ -8,7 +8,7 @@
 #include <cmsis_os.h>
 #include <string.h>
 
-#define TIME_OUT	100
+#define TIME_OUT	K_MSEC(100)
 
 /**
  * @brief Create and Initialize a memory pool.
