@@ -126,3 +126,12 @@
 		};
 	};
 };
+
+&ssc {
+	status = "okay";
+	label = "I2S_0";
+	dma-names = "rx", "tx";
+	dmas = <&xdmac 22 DMA_PERID_SSC_RX>, <&xdmac 23 DMA_PERID_SSC_TX>;
+	pinctrl-0 = <&pd24b_ssc_rf &pa22a_ssc_rk &pa10c_ssc_rd
+		     &pb0d_ssc_tf &pb1d_ssc_tk &pb5d_ssc_td>;
+};

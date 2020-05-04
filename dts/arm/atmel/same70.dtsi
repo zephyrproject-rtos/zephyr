@@ -372,6 +372,15 @@
 			label = "DMA_0";
 			#dma-cells = <2>;
 		};
+
+		ssc: ssc@40004000 {
+			compatible = "atmel,sam-ssc";
+			reg = <0x40004000 0x400>;
+			interrupts = <22 0>;
+			peripheral-id = <22>;
+			label = "SSC_0";
+			status = "disabled";
+		};
 	};
 };
 
