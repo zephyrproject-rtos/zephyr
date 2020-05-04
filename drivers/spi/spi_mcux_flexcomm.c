@@ -169,13 +169,11 @@ static int spi_mcux_configure(struct device *dev,
 
 	master_config.baudRate_Bps = spi_cfg->frequency;
 
-	/* The clock frequency is currently hardcoded until we can support a
-	 * proper clock_control driver for lpc socs. This requires a new
-	 * MCUXpresso SDK release for lpcxpresso55s69 to fix conflicting
-	 * definitions of kCLOCK_Flexcomm0 in enum clock_name_t and enum
-	 * clock_ip_name_t.
+	/* The clock frequency is hardcoded CPU's speed to allow SPI to
+	 * function at high speeds. The core clock and flexcomm should
+	 * use the same clock source.
 	 */
-	clock_freq = MHZ(12);
+	clock_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 	SPI_MasterInit(base, &master_config, clock_freq);
 
