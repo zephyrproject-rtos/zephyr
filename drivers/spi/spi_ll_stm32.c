@@ -686,8 +686,62 @@ static int transceive_dma(struct device *dev,
 
 	LL_SPI_Enable(spi);
 
-	do {
-	} while (spi_stm32_dma_transfer_ongoing(data));
+	/* store spi peripheral address */
+	u32_t periph_addr = data->dma_tx.dma_cfg.head_block->dest_address;
+
+	for (; ;) {
+		/* wait for SPI busy flag */
+		while (LL_SPI_IsActiveFlag_BSY(spi) == 1) {
+		}
+
+		/* once SPI is no more busy, wait for DMA transfer end */
+		while (spi_stm32_dma_transfer_ongoing(data) == 1) {
+		}
+
+		if ((data->ctx.tx_count <= 1) && (data->ctx.rx_count <= 1)) {
+			/* if it was the last count, then we are done */
+			break;
+		}
+
+		if (data->dma_tx.transfer_complete == true) {
+			LL_SPI_DisableDMAReq_TX(spi);
+			/*
+			 * Update the current Tx buffer, decreasing length of
+			 * data->ctx.tx_count,  by its own length
+			 */
+			spi_context_update_tx(&data->ctx, 1, data->ctx.tx_len);
+			/* keep the same dest (peripheral) */
+			data->dma_tx.transfer_complete = false;
+			/* and reload dma with a new source (memory) buffer */
+			dma_reload(data->dev_dma_tx,
+				data->dma_tx.channel,
+				(u32_t)data->ctx.tx_buf,
+				periph_addr,
+				data->ctx.tx_len);
+		}
+
+		if (data->dma_rx.transfer_complete == true) {
+			LL_SPI_DisableDMAReq_RX(spi);
+			/*
+			 * Update the current Rx buffer, decreasing length of
+			 * data->ctx.rx_count,  by its own length
+			 */
+			spi_context_update_rx(&data->ctx, 1, data->ctx.rx_len);
+			/* keep the same source (peripheral) */
+			data->dma_rx.transfer_complete = false;
+			/* and reload dma with a new dest (memory) buffer */
+			dma_reload(data->dev_dma_rx,
+				data->dma_rx.channel,
+				periph_addr,
+				(u32_t)data->ctx.rx_buf,
+				data->ctx.rx_len);
+		}
+		LL_SPI_EnableDMAReq_RX(spi);
+		LL_SPI_EnableDMAReq_TX(spi);
+	}
+
+	/* end of the transfer : all buffers sent/receceived */
+	LL_SPI_Disable(spi);
 
 	/* This is turned off in spi_stm32_complete(). */
 	spi_context_cs_control(&data->ctx, true);
