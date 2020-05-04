@@ -68,11 +68,6 @@ static void error_response(int error)
 	waiting_opcode = 0;
 }
 
-NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_HCI_CMD_COUNT,
-			  BT_BUF_RX_SIZE, NULL);
-NET_BUF_POOL_FIXED_DEFINE(hci_data_pool, CONFIG_BT_CTLR_TX_BUFFERS + 4,
-			  BT_BUF_ACL_SIZE, NULL);
-
 /**
  * @brief Allocate buffer for HCI command and fill in opCode for the command
  */
@@ -81,11 +76,8 @@ static struct net_buf *hci_cmd_create(u16_t opcode, u8_t param_len)
 	struct bt_hci_cmd_hdr *hdr;
 	struct net_buf *buf;
 
-	buf = net_buf_alloc(&hci_cmd_pool, K_FOREVER);
+	buf = bt_buf_get_tx(BT_BUF_CMD, K_FOREVER, NULL, 0);
 	__ASSERT_NO_MSG(buf);
-
-	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
-	bt_buf_set_type(buf, BT_BUF_CMD);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	hdr->opcode = sys_cpu_to_le16(opcode);
@@ -102,11 +94,8 @@ static struct net_buf *acl_data_create(struct bt_hci_acl_hdr *le_hdr)
 	struct net_buf *buf;
 	struct bt_hci_acl_hdr *hdr;
 
-	buf = net_buf_alloc(&hci_data_pool, K_FOREVER);
+	buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER, NULL, 0);
 	__ASSERT_NO_MSG(buf);
-
-	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
-	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
 
 	hdr = net_buf_add(buf, sizeof(*hdr));
 	*hdr = *le_hdr;
