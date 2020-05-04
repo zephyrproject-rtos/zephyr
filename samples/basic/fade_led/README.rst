@@ -1,57 +1,35 @@
 .. _fade-led-sample:
 
-PWM: Fade LED
-#############
+Fade LED
+########
 
 Overview
 ********
 
-This is a sample app which fades a LED using PWM.
+This application "fades" a LED using the :ref:`PWM API <pwm_api>`.
 
-The LED will start from dark and increases its
-brightness gradually for 10 seconds. Then, the
-brightness reduces gradually for 10 seconds and
-finally the LED becomes dark again. The LED will
-repeat this cycle for ever.
+The LED starts off increases its brightness until it is fully or nearly fully
+on. The brightness then decreases until the LED is off, completing on fade
+cycle. Each cycle takes 2.5 seconds, and the cycles repeat forever.
 
-Wiring
-******
+Requirements and Wiring
+***********************
 
-Nucleo_F401RE, Nucleo_L476RG
-============================
-Connect PWM2(PA0) to LED
-
-Nucleo_F103RB
-=============
-Connect PWM1(PA8) to LED
-
-Nucleo_L496ZG
-=============
-No special board setup is necessary because there are three on-board LEDs (red,
-green, blue) connected to the Nucleo's PWM.
-
-Nucleo_H743ZI
-=============
-No special board setup is necessary because the on-board red LED is connected
-to PWM output 12 (channel 1).
-
-Hexiwear K64
-============
-No special board setup is necessary because there is an on-board RGB LED
-connected to the K64 PWM.
-
-nrf52840dk_nrf52840
-===================
-No special board setup is necessary because there is an on-board LED connected.
+This sample has the same requirements and wiring considerations as the
+:ref:`pwm-blinky-sample`.
 
 Building and Running
 ********************
 
-This sample can be built for multiple boards, in this example we will build it
-for the nrf52840dk_nrf52840 board:
+To build and flash this sample for the :ref:`nrf52840dk_nrf52840`:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/basic/fade_led
+   :zephyr-app: samples/basic/blink_led
    :board: nrf52840dk_nrf52840
    :goals: build flash
    :compact:
+
+Change ``nrf52840dk_nrf52840`` appropriately for other supported boards.
+
+After flashing, the sample starts fading the LED as described above. It also
+prints information to the board's console.
