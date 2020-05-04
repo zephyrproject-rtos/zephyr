@@ -542,6 +542,7 @@ void z_thread_single_abort(struct k_thread *thread)
 		 */
 		while ((waiter = z_waitq_head(&thread->base.join_waiters)) !=
 		       NULL) {
+			(void)z_abort_thread_timeout(waiter);
 			_priq_wait_remove(&pended_on(waiter)->waitq, waiter);
 			z_mark_thread_as_not_pending(waiter);
 			waiter->base.pended_on = NULL;
