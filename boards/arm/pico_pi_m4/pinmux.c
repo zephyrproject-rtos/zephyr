@@ -127,7 +127,7 @@ static int pico_pi_m4_pinmux_init(struct device *dev)
 		IOMUXC_SW_PAD_CTL_PAD_I2C2_SDA_PE_MASK  |
 		IOMUXC_SW_PAD_CTL_PAD_I2C2_SDA_PS(3)    |
 		IOMUXC_SW_PAD_CTL_PAD_I2C2_SDA_DSE(0)   |
-		IOMUXC_SW_PAD_CTL_PAD_I2C2_SDA_HYS_
+		IOMUXC_SW_PAD_CTL_PAD_I2C2_SDA_HYS_MASK;
  #endif
 
 
