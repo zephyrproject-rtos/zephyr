@@ -199,6 +199,13 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 	};
+
+	rng: rng@3a000 {
+		compatible = "nxp,lpc-rng";
+		reg = <0x3a000 0x1000>;
+		status = "okay";
+		label = "RNG";
+	};
 };
 
 &nvic {
