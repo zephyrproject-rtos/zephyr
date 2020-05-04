@@ -75,7 +75,6 @@ config MODEM_IFACE_UART
 config MODEM_CMD_HANDLER
 	bool "Generic modem command handler"
 	select NET_BUF
-	select LEGACY_TIMEOUT_API
 	help
 	  This generic command handler uses a modem interface to process
 	  incoming data and hand it back to the modem driver via callbacks
