@@ -273,7 +273,7 @@ static int video_mcux_csi_enqueue(struct device *dev, enum video_endpoint_id ep,
 
 static int video_mcux_csi_dequeue(struct device *dev, enum video_endpoint_id ep,
 				  struct video_buffer **vbuf,
-				  u32_t timeout)
+				  k_timeout_t timeout)
 {
 	struct video_mcux_csi_data *data = dev->driver_data;
 

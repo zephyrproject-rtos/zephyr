@@ -98,6 +98,11 @@ Stable API changes in this release
     function pointer parameter. If networking PM is not implemented for the
     specific network device, the device_pm_control_nop value can be used.
 
+* Video
+
+  * The video_dequeue() API call now takes a k_timeout_t for the timeout
+    parameter. This reverts to s32_t if CONFIG_LEGACY_TIMEOUT_API is enabled.
+
 Kernel
 ******
 
