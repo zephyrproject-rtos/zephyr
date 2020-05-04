@@ -1,6 +1,6 @@
 .. _stm32f3_disco_board:
 
-ST STM32F3 DISCOVERY
+ST STM32F3 Discovery
 ####################
 
 Overview

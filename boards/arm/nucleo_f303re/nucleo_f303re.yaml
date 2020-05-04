@@ -1,5 +1,5 @@
 identifier: nucleo_f303re
-name: NUCLEO-F303RE
+name: ST Nucleo F303RE
 type: mcu
 arch: arm
 toolchain:

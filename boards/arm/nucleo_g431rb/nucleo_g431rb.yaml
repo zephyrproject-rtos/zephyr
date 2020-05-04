@@ -1,5 +1,5 @@
 identifier: nucleo_g431rb
-name: NUCLEO-G431RB
+name: ST Nucleo G431RB
 type: mcu
 arch: arm
 toolchain:

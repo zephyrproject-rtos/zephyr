@@ -1,7 +1,7 @@
 .. _mikroe_mini_m4_for_stm32:
 
 Mikroe MINI-M4 for STM32
-#########################
+########################
 
 Overview
 ********

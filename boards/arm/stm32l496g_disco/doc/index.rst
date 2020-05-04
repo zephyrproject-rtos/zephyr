@@ -1,7 +1,7 @@
 .. _stm32l496g_disco_board:
 
 ST STM32L496G Discovery
-########################
+#######################
 
 Overview
 ********

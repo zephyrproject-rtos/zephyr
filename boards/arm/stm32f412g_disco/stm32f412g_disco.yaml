@@ -1,5 +1,5 @@
 identifier: stm32f412g_disco
-name: STM32F412G-DISCO
+name: ST STM32F412G Discovery
 type: mcu
 arch: arm
 toolchain:

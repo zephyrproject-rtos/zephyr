@@ -1,7 +1,7 @@
 .. _stm32f4_disco_board:
 
-ST STM32F4DISCOVERY
-###################
+ST STM32F4 Discovery
+####################
 
 Overview
 ********
