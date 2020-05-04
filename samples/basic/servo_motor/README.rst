@@ -1,20 +1,47 @@
 .. _servo-motor-sample:
 
-PWM: Servo motor
-################
+Servomotor
+##########
 
 Overview
 ********
 
-This is a sample app which drives a servo motor using PWM.
+This is a sample app which drives a servomotor using PWM.
 
-This app is targeted for servo motor ROB-09065. With the PWM control signal, the
-servo motor can rotate to any angle between 0 and 180 degrees. The corresponding
-PWM pulse width is between 700 micro seconds and 2300 micro seconds. The motor
-is programmed to rotate back and forth in the 180 degree range.
+The sample rotates a servomotor back and forth in the 180 degree range with a
+PWM control signal.
 
-Since different servo motors may require different PWM pulse width, you may need
-to modify the pulse width in the app if you are using a different servo motor.
+This app is targeted for servomotor ROB-09065. The corresponding PWM pulse
+widths for a 0 to 180 degree range are 700 to 2300 microseconds, respectively.
+Different servomotors may require different PWM pulse widths, and you may need
+to modify the source code if you are using a different servomotor.
+
+Requirements
+************
+
+The servomotor must be connected via PWM. The PWM device must be configured
+using the ``pwm-servo`` :ref:`devicetree <dt-guide>` alias. Usually you will
+need to set this up via a :ref:`devicetree overlay <set-devicetree-overlays>`
+like so:
+
+.. code-block:: DTS
+
+   / {
+   	aliases {
+   		pwm-servo = &foo;
+   	};
+   };
+
+Where ``foo`` is the node label of a PWM device in your system.
+
+You will see this error if you try to build this sample for an unsupported
+board:
+
+.. code-block:: none
+
+   Unsupported board: pwm-servo devicetree alias is not defined
+
+The sample uses PWM channel 0.
 
 Wiring
 ******
@@ -27,6 +54,9 @@ ground and the white wire to pad 0 on the edge connector.
 
 Building and Running
 ********************
+
+The sample has a devicetree overlay for the :ref:`bbc_microbit` which uses
+``pwm0``.
 
 This sample can be built for multiple boards, in this example we will build it
 for the bbc_microbit board:
