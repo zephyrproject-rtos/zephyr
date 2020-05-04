@@ -32,7 +32,6 @@
 
 /* OOB Rx length */
 #define ESPI_XEC_OOB_RX_LEN         0x7F00ul
-#define ESPI_XEC_OOB_RX_LEN_MASK    0x7F00ul
 
 /* BARs as defined in LPC spec chapter 11 */
 #define ESPI_XEC_KBC_BAR_ADDRESS    0x00600000
@@ -514,7 +513,7 @@ static int espi_xec_receive_oob(struct device *dev,
 	}
 
 	/* Check if buffer passed to driver can fit the received buffer */
-	u32_t rcvd_len = ESPI_OOB_REGS->RX_LEN & ESPI_XEC_OOB_RX_LEN_MASK;
+	u32_t rcvd_len = ESPI_OOB_REGS->RX_LEN & MCHP_ESPI_OOB_RX_LEN_MASK;
 
 	if (rcvd_len > pckt->len) {
 		LOG_ERR("space rcvd %d vs %d", rcvd_len, pckt->len);
