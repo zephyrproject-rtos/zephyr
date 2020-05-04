@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,17 +14,41 @@
 
 #define SLEEP_TIME_MS	1
 
-#if DT_PHA_HAS_CELL(DT_ALIAS(sw0), gpios, flags)
-#define SW0_FLAGS DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios)
+/*
+ * Devicetree helper macro which gets the 'flags' cell from a 'gpios'
+ * property, or returns 0 if the property has no 'flags' cell.
+ */
+
+#define FLAGS_OR_ZERO(node)						\
+	COND_CODE_1(DT_PHA_HAS_CELL(node, gpios, flags),		\
+		    (DT_GPIO_FLAGS(node, gpios)),			\
+		    (0))
+
+/*
+ * Get button configuration from the devicetree sw0 alias.
+ *
+ * At least a GPIO device and pin number must be provided. The 'flags'
+ * cell is optional.
+ */
+
+#define SW0_NODE	DT_ALIAS(sw0)
+
+#if DT_NODE_HAS_STATUS(SW0_NODE, okay)
+#define SW0_GPIO_LABEL	DT_GPIO_LABEL(SW0_NODE, gpios)
+#define SW0_GPIO_PIN	DT_GPIO_PIN(SW0_NODE, gpios)
+#define SW0_GPIO_FLAGS	(GPIO_INPUT | FLAGS_OR_ZERO(SW0_NODE))
 #else
-#define SW0_FLAGS 0
+#error "Unsupported board: sw0 devicetree alias is not defined"
+#define SW0_GPIO_LABEL	""
+#define SW0_GPIO_PIN	0
+#define SW0_GPIO_FLAGS	0
 #endif
 
-#if DT_PHA_HAS_CELL(DT_ALIAS(led0), gpios, flags)
-#define LED0_FLAGS DT_GPIO_FLAGS(DT_ALIAS(led0), gpios)
-#else
-#define LED0_FLAGS 0
-#endif
+/* LED helpers, which use the led0 devicetree alias if it's available. */
+static struct device *initialize_led(void);
+static void match_led_to_button(struct device *button, struct device *led);
+
+static struct gpio_callback button_cb_data;
 
 void button_pressed(struct device *dev, struct gpio_callback *cb,
 		    u32_t pins)
@@ -31,71 +56,101 @@ void button_pressed(struct device *dev, struct gpio_callback *cb,
 	printk("Button pressed at %" PRIu32 "\n", k_cycle_get_32());
 }
 
-static struct gpio_callback button_cb_data;
-
 void main(void)
 {
-	struct device *dev_button;
+	struct device *button;
+	struct device *led;
 	int ret;
 
-	dev_button = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
-	if (dev_button == NULL) {
-		printk("Error: didn't find %s device\n",
-			DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
+	button = device_get_binding(SW0_GPIO_LABEL);
+	if (button == NULL) {
+		printk("Error: didn't find %s device\n", SW0_GPIO_LABEL);
 		return;
 	}
 
-	ret = gpio_pin_configure(dev_button, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
-				 SW0_FLAGS | GPIO_INPUT);
+	ret = gpio_pin_configure(button, SW0_GPIO_PIN, SW0_GPIO_FLAGS);
 	if (ret != 0) {
-		printk("Error %d: failed to configure pin %d '%s'\n",
-			ret, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
-			DT_LABEL(DT_ALIAS(sw0)));
+		printk("Error %d: failed to configure %s pin %d\n",
+		       ret, SW0_GPIO_LABEL, SW0_GPIO_PIN);
 		return;
 	}
 
-	ret = gpio_pin_interrupt_configure(dev_button,
-					   DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
+	ret = gpio_pin_interrupt_configure(button,
+					   SW0_GPIO_PIN,
 					   GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
-		printk("Error %d: failed to configure interrupt on pin %d '%s'\n",
-			ret, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
-			DT_LABEL(DT_ALIAS(sw0)));
+		printk("Error %d: failed to configure interrupt on %s pin %d\n",
+			ret, SW0_GPIO_LABEL, SW0_GPIO_PIN);
 		return;
 	}
 
-	gpio_init_callback(&button_cb_data, button_pressed,
-			   BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios)));
-	gpio_add_callback(dev_button, &button_cb_data);
+	gpio_init_callback(&button_cb_data, button_pressed, BIT(SW0_GPIO_PIN));
+	gpio_add_callback(button, &button_cb_data);
+	printk("Set up button at %s pin %d\n", SW0_GPIO_LABEL, SW0_GPIO_PIN);
 
-#if DT_NODE_HAS_PROP(DT_ALIAS(led0), gpios)
-	struct device *dev_led;
+	led = initialize_led();
 
-	dev_led = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
-	if (dev_led == NULL) {
-		printk("Error: didn't find %s device\n",
-			DT_GPIO_LABEL(DT_ALIAS(led0), gpios));
-		return;
-	}
-
-	ret = gpio_pin_configure(dev_led, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
-				 LED0_FLAGS | GPIO_OUTPUT);
-	if (ret != 0) {
-		printk("Error %d: failed to configure pin %d '%s'\n",
-			ret, DT_GPIO_PIN(DT_ALIAS(led0), gpios),
-			DT_LABEL(DT_ALIAS(led0)));
-		return;
-	}
-#endif
-	printk("Press %s on the board\n", DT_LABEL(DT_ALIAS(sw0)));
-
+	printk("Press the button\n");
 	while (1) {
-#if DT_NODE_HAS_PROP(DT_ALIAS(led0), gpios)
-		bool val;
-
-		val = gpio_pin_get(dev_button, DT_GPIO_PIN(DT_ALIAS(sw0), gpios));
-		gpio_pin_set(dev_led, DT_GPIO_PIN(DT_ALIAS(led0), gpios), val);
+		match_led_to_button(button, led);
 		k_msleep(SLEEP_TIME_MS);
-#endif
 	}
 }
+
+/*
+ * The led0 devicetree alias is optional. If present, we'll use it
+ * to turn on the LED whenever the button is pressed.
+ */
+
+#define LED0_NODE	DT_ALIAS(led0)
+
+#if DT_NODE_HAS_STATUS(LED0_NODE, okay) && DT_NODE_HAS_PROP(LED0_NODE, gpios)
+#define LED0_GPIO_LABEL	DT_GPIO_LABEL(LED0_NODE, gpios)
+#define LED0_GPIO_PIN	DT_GPIO_PIN(LED0_NODE, gpios)
+#define LED0_GPIO_FLAGS	(GPIO_OUTPUT | FLAGS_OR_ZERO(LED0_NODE))
+#endif
+
+#ifdef LED0_GPIO_LABEL
+static struct device *initialize_led(void)
+{
+	struct device *led;
+	int ret;
+
+	led = device_get_binding(LED0_GPIO_LABEL);
+	if (led == NULL) {
+		printk("Didn't find LED device %s\n", LED0_GPIO_LABEL);
+		return NULL;
+	}
+
+	ret = gpio_pin_configure(led, LED0_GPIO_PIN, LED0_GPIO_FLAGS);
+	if (ret != 0) {
+		printk("Error %d: failed to configure LED device %s pin %d\n",
+		       ret, LED0_GPIO_LABEL, LED0_GPIO_PIN);
+		return NULL;
+	}
+
+	printk("Set up LED at %s pin %d\n", LED0_GPIO_LABEL, LED0_GPIO_PIN);
+
+	return led;
+}
+
+static void match_led_to_button(struct device *button, struct device *led)
+{
+	bool val;
+
+	val = gpio_pin_get(button, SW0_GPIO_PIN);
+	gpio_pin_set(led, LED0_GPIO_PIN, val);
+}
+
+#else  /* !defined(LED0_GPIO_LABEL) */
+static struct device *initialize_led(void)
+{
+	printk("No LED device was defined\n");
+	return NULL;
+}
+
+static void match_led_to_button(struct device *button, struct device *led)
+{
+	return;
+}
+#endif	/* LED0_GPIO_LABEL */
