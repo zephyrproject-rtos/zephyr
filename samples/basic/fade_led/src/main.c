@@ -1,13 +1,12 @@
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2020 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
- * @file Sample app to demonstrate PWM.
- *
- * This app uses PWM[0].
+ * @file Sample app to demonstrate PWM-based LED fade
  */
 
 #include <zephyr.h>
@@ -15,66 +14,77 @@
 #include <device.h>
 #include <drivers/pwm.h>
 
-#if DT_NODE_HAS_PROP(DT_ALIAS(pwm_led0), pwms) && \
-    DT_PHA_HAS_CELL(DT_ALIAS(pwm_led0), pwms, channel)
-/* get the defines from dt (based on alias 'pwm-led0') */
-#define PWM_DRIVER	DT_PWMS_LABEL(DT_ALIAS(pwm_led0))
-#define PWM_CHANNEL	DT_PWMS_CHANNEL(DT_ALIAS(pwm_led0))
-#if DT_PHA_HAS_CELL(DT_ALIAS(pwm_led0), pwms, flags)
-#define PWM_FLAGS	DT_PWMS_FLAGS(DT_ALIAS(pwm_led0))
+#define PWM_LED0_NODE	DT_ALIAS(pwm_led0)
+
+/*
+ * Devicetree helper macro which gets the 'flags' cell from the node's
+ * pwms property, or returns 0 if the property has no 'flags' cell.
+ */
+
+#define FLAGS_OR_ZERO(node)						\
+	COND_CODE_1(DT_PHA_HAS_CELL(node, pwms, flags),		\
+		    (DT_PWMS_FLAGS(node)),				\
+		    (0))
+
+#if DT_NODE_HAS_STATUS(PWM_LED0_NODE, okay)
+#define PWM_LABEL	DT_PWMS_LABEL(PWM_LED0_NODE)
+#define PWM_CHANNEL	DT_PWMS_CHANNEL(PWM_LED0_NODE)
+#define PWM_FLAGS	FLAGS_OR_ZERO(PWM_LED0_NODE)
 #else
+#error "Unsupported board: pwm-led0 devicetree alias is not defined"
+#define PWM_LABEL	""
+#define PWM_CHANNEL	0
 #define PWM_FLAGS	0
-#endif
-#else
-#error "Choose supported PWM driver"
 #endif
 
 /*
- * 50 is flicker fusion threshold. Modulated light will be perceived
- * as steady by our eyes when blinking rate is at least 50.
+ * This period should be fast enough to be above the flicker fusion
+ * threshold. The steps should also be small enough, and happen
+ * quickly enough, to make the output fade change appear continuous.
  */
-#define PERIOD (USEC_PER_SEC / 50U)
-
-/* in micro second */
-#define FADESTEP	2000
+#define PERIOD_USEC	20000U
+#define NUM_STEPS	50U
+#define STEP_USEC	(PERIOD_USEC / NUM_STEPS)
+#define SLEEP_MSEC	25U
 
 void main(void)
 {
-	struct device *pwm_dev;
+	struct device *pwm;
 	u32_t pulse_width = 0U;
-	u8_t dir = 0U;
+	u8_t dir = 1U;
+	int ret;
 
-	printk("PWM demo app-fade LED\n");
+	printk("PWM-based LED fade\n");
 
-	pwm_dev = device_get_binding(PWM_DRIVER);
-	if (!pwm_dev) {
-		printk("Cannot find %s!\n", PWM_DRIVER);
+	pwm = device_get_binding(PWM_LABEL);
+	if (!pwm) {
+		printk("Error: didn't find %s device\n", PWM_LABEL);
 		return;
 	}
 
 	while (1) {
-		if (pwm_pin_set_usec(pwm_dev, PWM_CHANNEL,
-					PERIOD, pulse_width, PWM_FLAGS)) {
-			printk("pwm pin set fails\n");
+		ret = pwm_pin_set_usec(pwm, PWM_CHANNEL, PERIOD_USEC,
+				       pulse_width, PWM_FLAGS);
+		if (ret) {
+			printk("Error %d: failed to set pulse width\n", ret);
 			return;
 		}
 
 		if (dir) {
-			if (pulse_width < FADESTEP) {
+			pulse_width += STEP_USEC;
+			if (pulse_width >= PERIOD_USEC) {
+				pulse_width = PERIOD_USEC - STEP_USEC;
 				dir = 0U;
-				pulse_width = 0U;
-			} else {
-				pulse_width -= FADESTEP;
 			}
 		} else {
-			pulse_width += FADESTEP;
-
-			if (pulse_width >= PERIOD) {
+			if (pulse_width >= STEP_USEC) {
+				pulse_width -= STEP_USEC;
+			} else {
+				pulse_width = STEP_USEC;
 				dir = 1U;
-				pulse_width = PERIOD;
 			}
 		}
 
-		k_sleep(K_SECONDS(1));
+		k_sleep(K_MSEC(SLEEP_MSEC));
 	}
 }
