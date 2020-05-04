@@ -10,7 +10,7 @@ struct lll_adv_pdu {
 	/* TODO: use,
 	 * struct pdu_adv *pdu[DOUBLE_BUFFER_SIZE];
 	 */
-	uint8_t pdu[DOUBLE_BUFFER_SIZE][PDU_AC_SIZE_MAX];
+	uint8_t pdu[DOUBLE_BUFFER_SIZE][PDU_AC_LL_SIZE_MAX];
 };
 
 struct lll_adv {

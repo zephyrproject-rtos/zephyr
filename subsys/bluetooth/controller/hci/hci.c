@@ -1117,7 +1117,8 @@ static void le_create_connection(struct net_buf *buf, struct net_buf **evt)
 				      cmd->peer_addr.type,
 				      &cmd->peer_addr.a.val[0],
 				      cmd->own_addr_type, conn_interval_max,
-				      conn_latency, supervision_timeout, 0U);
+				      conn_latency, supervision_timeout,
+				      PHY_LEGACY);
 	if (status) {
 		*evt = cmd_status(status);
 		return;

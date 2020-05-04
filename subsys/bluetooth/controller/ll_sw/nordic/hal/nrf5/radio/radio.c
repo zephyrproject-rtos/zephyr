@@ -381,11 +381,9 @@ uint32_t radio_crc_is_valid(void)
 	return (NRF_RADIO->CRCSTATUS != 0);
 }
 
-static uint8_t MALIGN(4) _pkt_empty[PDU_EM_SIZE_MAX];
-static uint8_t MALIGN(4) _pkt_scratch[((HAL_RADIO_PDU_LEN_MAX + 3) >
-				    PDU_AC_SIZE_MAX) ?
-				   (HAL_RADIO_PDU_LEN_MAX + 3) :
-				   PDU_AC_SIZE_MAX];
+static uint8_t MALIGN(4) _pkt_empty[PDU_EM_LL_SIZE_MAX];
+static uint8_t MALIGN(4) _pkt_scratch[MAX((HAL_RADIO_PDU_LEN_MAX + 3),
+				       PDU_AC_LL_SIZE_MAX)];
 
 void *radio_pkt_empty_get(void)
 {
@@ -401,10 +399,9 @@ void *radio_pkt_scratch_get(void)
 	defined(CONFIG_BT_CTLR_LE_ENC) && \
 	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
 	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < (HAL_RADIO_PDU_LEN_MAX - 4)))
-static uint8_t MALIGN(4) _pkt_decrypt[((HAL_RADIO_PDU_LEN_MAX + 3) >
-				    PDU_AC_SIZE_MAX) ?
-				   (HAL_RADIO_PDU_LEN_MAX + 3) :
-				   PDU_AC_SIZE_MAX];
+static uint8_t MALIGN(4) _pkt_decrypt[MAX((HAL_RADIO_PDU_LEN_MAX + 3),
+				       PDU_AC_LL_SIZE_MAX)];
+
 void *radio_pkt_decrypt_get(void)
 {
 	return _pkt_decrypt;
