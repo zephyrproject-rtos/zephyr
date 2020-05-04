@@ -74,7 +74,7 @@ manifest:
       revision: 811363a384cbd2d2b699cae7b8c4375de8218b65
       path: modules/hal/ti
     - name: libmetal
-      revision: 60f40977eccb7e067a83933cec859e266bff4849
+      revision: 3c3c9ec83bbb99390e34f8f2ba273ec86cf2b67c
       path: modules/hal/libmetal
     - name: lvgl
       revision: 74fc2e753a997bd71cefa34dd9c56dcb954b42e2
@@ -95,7 +95,7 @@ manifest:
       revision: a75db450ff25edb854648fce7aebbd52707585e1
       path: modules/hal/nxp
     - name: open-amp
-      revision: 5720c73ef3bd885824b2d2184f606443e03f73c4
+      revision: 724f7e2a4519d7e1d40ef330042682dea950c991
       path: modules/lib/open-amp
     - name: loramac-node
       revision: 29e516ec585b1a909af2b5f1c60d83e7d4d563e3
