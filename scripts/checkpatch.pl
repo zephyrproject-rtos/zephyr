@@ -3095,54 +3095,8 @@ sub process {
 			}
 		}
 
-# check for using SPDX license tag at beginning of files
-		if ($realline == $checklicenseline) {
-			if ($rawline =~ /^[ \+]\s*\#\!\s*\//) {
-				$checklicenseline = 2;
-			} elsif ($rawline =~ /^\+/) {
-				my $comment = "";
-				if ($realfile =~ /\.(h|s|S)$/) {
-					$comment = '/*';
-				} elsif ($realfile =~ /\.(c|dts|dtsi)$/) {
-					$comment = '//';
-				} elsif (($checklicenseline == 2) || $realfile =~ /\.(sh|pl|py|awk|tc)$/) {
-					$comment = '#';
-				} elsif ($realfile =~ /\.rst$/) {
-					$comment = '..';
-				}
-
-# check SPDX comment style for .[chsS] files
-				if ($realfile =~ /\.[chsS]$/ &&
-				    $rawline =~ /SPDX-License-Identifier:/ &&
-				    $rawline !~ m@^\+\s*\Q$comment\E\s*@) {
-					WARN("SPDX_LICENSE_TAG",
-					     "Improper SPDX comment style for '$realfile', please use '$comment' instead\n" . $herecurr);
-				}
-
-				if ($comment !~ /^$/ &&
-				    $rawline !~ m@^\+\Q$comment\E SPDX-License-Identifier: @) {
-					WARN("SPDX_LICENSE_TAG",
-					     "Missing or malformed SPDX-License-Identifier tag in line $checklicenseline\n" . $herecurr);
-				} elsif ($rawline =~ /(SPDX-License-Identifier: .*)/) {
-					my $spdx_license = $1;
-					if (!is_SPDX_License_valid($spdx_license)) {
-						WARN("SPDX_LICENSE_TAG",
-						     "'$spdx_license' is not supported in LICENSES/...\n" . $herecurr);
-					}
-				}
-			}
-		}
-
 # check we are in a valid source file if not then ignore this hunk
 		next if ($realfile !~ /\.(h|c|s|S|sh|dtsi|dts)$/);
-
-# check for using SPDX-License-Identifier on the wrong line number
-		if ($realline != $checklicenseline &&
-		    $rawline =~ /\bSPDX-License-Identifier:/ &&
-		    substr($line, @-, @+ - @-) eq "$;" x (@+ - @-)) {
-			WARN("SPDX_LICENSE_TAG",
-			     "Misplaced SPDX-License-Identifier tag - use line $checklicenseline instead\n" . $herecurr);
-		}
 
 # line length limit (with some exclusions)
 #
