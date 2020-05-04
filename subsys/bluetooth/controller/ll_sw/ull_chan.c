@@ -26,14 +26,14 @@ int ull_chan_reset(void)
 	return 0;
 }
 
-uint8_t ull_chan_map_get(uint8_t *chan_map)
+uint8_t ull_chan_map_get(uint8_t *const chan_map)
 {
 	memcpy(chan_map, map, sizeof(map));
 
 	return count;
 }
 
-void ull_chan_map_set(uint8_t *chan_map)
+void ull_chan_map_set(uint8_t const *const chan_map)
 {
 	memcpy(map, chan_map, sizeof(map));
 	count = util_ones_count_get(map, sizeof(map));

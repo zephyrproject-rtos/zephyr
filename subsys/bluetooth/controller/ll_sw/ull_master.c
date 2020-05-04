@@ -56,13 +56,13 @@ static inline void conn_release(struct ll_scan_set *scan);
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 			  uint8_t filter_policy, uint8_t peer_addr_type,
-			  uint8_t *peer_addr, uint8_t own_addr_type,
+			  uint8_t const *const peer_addr, uint8_t own_addr_type,
 			  uint16_t interval, uint16_t latency, uint16_t timeout,
 			  uint8_t phy)
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 			  uint8_t filter_policy, uint8_t peer_addr_type,
-			  uint8_t *peer_addr, uint8_t own_addr_type,
+			  uint8_t const *const peer_addr, uint8_t own_addr_type,
 			  uint16_t interval, uint16_t latency, uint16_t timeout)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 {
@@ -414,7 +414,7 @@ uint8_t ll_connect_disable(void **rx)
 	return status;
 }
 
-uint8_t ll_chm_update(uint8_t *chm)
+uint8_t ll_chm_update(uint8_t const *const chm)
 {
 	uint16_t handle;
 	uint8_t ret;
@@ -448,7 +448,8 @@ uint8_t ll_chm_update(uint8_t *chm)
 }
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-uint8_t ll_enc_req_send(uint16_t handle, uint8_t *rand, uint8_t *ediv, uint8_t *ltk)
+uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
+		     uint8_t const *const ediv, uint8_t const *const ltk)
 {
 	struct ll_conn *conn;
 	struct node_tx *tx;
