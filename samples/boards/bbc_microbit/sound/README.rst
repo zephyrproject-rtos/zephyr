@@ -6,23 +6,25 @@ BBC micro:bit sound
 Overview
 ********
 
-This is simple example demonstrating how to use a piezo buzzer connected
-to port P0 on the edge connector of the BBC micro:bit board. Note that
-the buzzer is not part of the main micro:bit board, rather it it needs
-to be separately acquired and connected. A well working example is the
-MI:Power board that has a piezo buzzer in addition to a coin-cell
-battery. Resellers of this board can be fairly easily found using online
-search.
+This sample demonstrates how to use a piezo buzzer connected
+to port P0 on the edge connector of the BBC micro:bit board.
 
-Building
-********
+Requirements
+************
+
+A separate piezo buzzer connected to the board. One example is the MI:Power
+board that has a piezo buzzer in addition to a coin-cell battery. Resellers of
+this board can be fairly easily found using online search.
+
+Building and running
+********************
 
 The sample can be built as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/boards/bbc_microbit/sound
    :board: bbc_microbit
-   :goals: build
+   :goals: build flash
    :compact:
 
 Sample Output
