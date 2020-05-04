@@ -17,6 +17,19 @@
 /* scheduling priority used by each thread */
 #define PRIORITY 7
 
+#define LED0_NODE DT_ALIAS(led0)
+#define LED1_NODE DT_ALIAS(led1)
+
+/*
+ * Devicetree helper macro which gets the 'flags' cell from a 'gpios'
+ * property, or returns 0 if the property has no 'flags' cell.
+ */
+
+#define FLAGS_OR_ZERO(node)						\
+	COND_CODE_1(DT_PHA_HAS_CELL(node, gpios, flags),		\
+		    (DT_GPIO_FLAGS(node, gpios)),			\
+		    (0))
+
 struct printk_data_t {
 	void *fifo_reserved; /* 1st word reserved for use by fifo */
 	u32_t led;
@@ -24,18 +37,6 @@ struct printk_data_t {
 };
 
 K_FIFO_DEFINE(printk_fifo);
-
-#if DT_PHA_HAS_CELL(DT_ALIAS(led0), gpios, flags)
-#define LED0_FLAGS DT_GPIO_FLAGS(DT_ALIAS(led0), gpios)
-#else
-#define LED0_FLAGS 0
-#endif
-
-#if DT_PHA_HAS_CELL(DT_ALIAS(led1), gpios, flags)
-#define LED1_FLAGS DT_GPIO_FLAGS(DT_ALIAS(led1), gpios)
-#else
-#define LED1_FLAGS 0
-#endif
 
 struct led {
 	const char *gpio_dev_name;
@@ -51,8 +52,11 @@ void blink(const struct led *led, u32_t sleep_ms, u32_t id)
 	int ret;
 
 	gpio_dev = device_get_binding(led->gpio_dev_name);
-	__ASSERT(gpio_dev != NULL, "Error: didn't find %s device\n",
-			led->gpio_dev_name);
+	if (gpio_dev == NULL) {
+		printk("Error: didn't find %s device\n",
+		       led->gpio_dev_name);
+		return;
+	}
 
 	ret = gpio_pin_configure(gpio_dev, led->gpio_pin, led->gpio_flags);
 	if (ret != 0) {
@@ -79,42 +83,52 @@ void blink(const struct led *led, u32_t sleep_ms, u32_t id)
 	}
 }
 
+void blink0(void)
+{
+	const struct led led0 = {
+#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
+		.gpio_dev_name = DT_GPIO_LABEL(LED0_NODE, gpios),
+		.gpio_pin_name = DT_LABEL(LED0_NODE),
+		.gpio_pin = DT_GPIO_PIN(LED0_NODE, gpios),
+		.gpio_flags = GPIO_OUTPUT | FLAGS_OR_ZERO(LED0_NODE),
+#else
+#error "Unsupported board: led0 devicetree alias is not defined"
+#endif
+	};
+
+	blink(&led0, 100, 0);
+}
+
 void blink1(void)
 {
 	const struct led led1 = {
-		.gpio_dev_name = DT_GPIO_LABEL(DT_ALIAS(led0), gpios),
-		.gpio_pin_name = DT_LABEL(DT_ALIAS(led0)),
-		.gpio_pin = DT_GPIO_PIN(DT_ALIAS(led0), gpios),
-		.gpio_flags = GPIO_OUTPUT | LED0_FLAGS,
+#if DT_NODE_HAS_STATUS(LED1_NODE, okay)
+		.gpio_dev_name = DT_GPIO_LABEL(LED1_NODE, gpios),
+		.gpio_pin_name = DT_LABEL(LED1_NODE),
+		.gpio_pin = DT_GPIO_PIN(LED1_NODE, gpios),
+		.gpio_flags = GPIO_OUTPUT | FLAGS_OR_ZERO(LED1_NODE),
+#else
+#error "Unsupported board: led1 devicetree alias is not defined"
+#endif
 	};
 
-	blink(&led1, 100, 0);
-}
-
-void blink2(void)
-{
-	const struct led led2 = {
-		.gpio_dev_name = DT_GPIO_LABEL(DT_ALIAS(led1), gpios),
-		.gpio_pin_name = DT_LABEL(DT_ALIAS(led1)),
-		.gpio_pin = DT_GPIO_PIN(DT_ALIAS(led1), gpios),
-		.gpio_flags = GPIO_OUTPUT | LED1_FLAGS,
-	};
-
-	blink(&led2, 1000, 1);
+	blink(&led1, 1000, 1);
 }
 
 void uart_out(void)
 {
 	while (1) {
-		struct printk_data_t *rx_data = k_fifo_get(&printk_fifo, K_FOREVER);
-		printk("Toggle USR%d LED: Counter = %d\n", rx_data->led, rx_data->cnt);
+		struct printk_data_t *rx_data = k_fifo_get(&printk_fifo,
+							   K_FOREVER);
+		printk("Toggled led%d; counter=%d\n",
+		       rx_data->led, rx_data->cnt);
 		k_free(rx_data);
 	}
 }
 
-K_THREAD_DEFINE(blink1_id, STACKSIZE, blink1, NULL, NULL, NULL,
+K_THREAD_DEFINE(blink0_id, STACKSIZE, blink0, NULL, NULL, NULL,
 		PRIORITY, 0, 0);
-K_THREAD_DEFINE(blink2_id, STACKSIZE, blink2, NULL, NULL, NULL,
+K_THREAD_DEFINE(blink1_id, STACKSIZE, blink1, NULL, NULL, NULL,
 		PRIORITY, 0, 0);
 K_THREAD_DEFINE(uart_out_id, STACKSIZE, uart_out, NULL, NULL, NULL,
 		PRIORITY, 0, 0);
