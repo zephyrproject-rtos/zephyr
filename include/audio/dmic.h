@@ -273,7 +273,8 @@ static inline int dmic_trigger(struct device *dev, enum dmic_trigger cmd)
  * @param stream Stream identifier
  * @param buffer Pointer to the received buffer address
  * @param size Pointer to the received buffer size
- * @param timeout Timeout value to wait in case audio is not yet received
+ * @param timeout Timeout in milliseconds to wait in case audio is not yet
+ * 		  received, or @ref SYS_FOREVER_MS
  *
  * @return 0 on success, a negative error code on failure
  */
