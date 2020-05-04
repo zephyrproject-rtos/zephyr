@@ -1,7 +1,7 @@
 .. _usb_hid-cdc:
 
 USB HID CDC ACM Application
-################################
+###########################
 
 Overview
 ********
@@ -16,16 +16,33 @@ Requirements
 
 This project requires an USB device driver and multiple endpoints.
 
+The board hardware must have a push button connected via a GPIO pin. These are
+called "User buttons" on many of Zephyr's :ref:`boards`.
+
+The button must be configured using the ``sw0`` :ref:`devicetree <dt-guide>`
+alias, usually in the :ref:`BOARD.dts file <devicetree-in-out-files>`. You will
+see this error if you try to build this sample for an unsupported board:
+
+.. code-block:: none
+
+   Unsupported board: sw0 devicetree alias is not defined
+
+You may see additional build errors if the ``sw0`` alias exists, but is not
+properly defined.
+
+If the devicetree aliases ``sw1``, ``sw2``, and ``sw3`` are defined, they will
+also be used as additional buttons as described below.
+
 Building and Running
 ********************
 
-This sample can be built for multiple boards, in this example we will build it
-for the nrf52840dk_nrf52840 board:
+This sample can be built for multiple boards. To build and flash it
+for the :ref:`nrf52840dk_nrf52840` board:
 
 .. zephyr-app-commands::
 	:zephyr-app: samples/subsys/usb/hid-cdc
 	:board: nrf52840dk_nrf52840
-	:goals: build
+	:goals: build flash
 	:compact:
 
 After you have built and flashed the sample app image to your board, plug the
