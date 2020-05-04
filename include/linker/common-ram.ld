@@ -40,19 +40,8 @@
 #define DEVICE_BUSY_BITFIELD()
 #endif
 
-	SECTION_DATA_PROLOGUE(devices,,)
+	SECTION_DATA_PROLOGUE(devices_data,,)
 	{
-		/* link in devices objects, which are tied to the init ones;
-		 * the objects are thus sorted the same way as their init
-		 * object parent see include/device.h
-		 */
-		__device_start = .;
-		CREATE_OBJ_LEVEL(device, PRE_KERNEL_1)
-		CREATE_OBJ_LEVEL(device, PRE_KERNEL_2)
-		CREATE_OBJ_LEVEL(device, POST_KERNEL)
-		CREATE_OBJ_LEVEL(device, APPLICATION)
-		CREATE_OBJ_LEVEL(device, SMP)
-		__device_end = .;
 		DEVICE_INIT_STATUS_BITFIELD()
 		DEVICE_BUSY_BITFIELD()
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
