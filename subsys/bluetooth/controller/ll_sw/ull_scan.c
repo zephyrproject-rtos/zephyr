@@ -48,13 +48,7 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		      void *param);
 static u8_t disable(u8_t handle);
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-#define BT_CTLR_SCAN_MAX 2
-#else /* !CONFIG_BT_CTLR_ADV_EXT */
-#define BT_CTLR_SCAN_MAX 1
-#endif /* !CONFIG_BT_CTLR_ADV_EXT */
-
-static struct ll_scan_set ll_scan[BT_CTLR_SCAN_MAX];
+static struct ll_scan_set ll_scan[BT_CTLR_SCAN_SET];
 
 u8_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 			u8_t own_addr_type, u8_t filter_policy)
@@ -226,7 +220,7 @@ int ull_scan_reset(void)
 	u8_t handle;
 	int err;
 
-	for (handle = 0U; handle < BT_CTLR_SCAN_MAX; handle++) {
+	for (handle = 0U; handle < BT_CTLR_SCAN_SET; handle++) {
 		(void)disable(handle);
 	}
 
@@ -403,7 +397,7 @@ u8_t ull_scan_disable(u8_t handle, struct ll_scan_set *scan)
 
 struct ll_scan_set *ull_scan_set_get(u8_t handle)
 {
-	if (handle >= BT_CTLR_SCAN_MAX) {
+	if (handle >= BT_CTLR_SCAN_SET) {
 		return NULL;
 	}
 
