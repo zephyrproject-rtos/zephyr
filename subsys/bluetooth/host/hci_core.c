@@ -4916,6 +4916,7 @@ static void le_adv_ext_report(struct net_buf *buf)
 		adv_info.tx_power = evt->tx_power;
 		adv_info.rssi = evt->rssi;
 		adv_info.sid = evt->sid;
+		adv_info.interval = sys_le16_to_cpu(evt->interval);
 
 		adv_info.adv_type = get_adv_type(evt->evt_type);
 		/* Convert "Legacy" property to Extended property. */
