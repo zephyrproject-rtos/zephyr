@@ -6,3 +6,12 @@ description: Nordic nRF family TWIM (TWI master with EasyDMA)
 compatible: "nordic,nrf-twim"
 
 include: nordic,nrf-twi-common.yaml
+
+properties:
+    concat-buf-size:
+        type: int
+        required: false
+        description:
+            If concatenation buffer size is set, then multiple messages in the
+            same direction, will be concatenated into single transfers as long
+            as there is space in buffer and no restart or stop flag is set.
