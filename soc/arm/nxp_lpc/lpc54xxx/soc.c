@@ -79,7 +79,7 @@ static ALWAYS_INLINE void clock_init(void)
 #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(flexcomm5)) && \
     DT_NODE_HAS_COMPAT(DT_NODELABEL(flexcomm5), nxp_lpc_spi)
 	/* Attach 12 MHz clock to FLEXCOMM5 */
-	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM5);
+	CLOCK_AttachClk(kFRO_HF_to_FLEXCOMM5);
 
 	/* reset FLEXCOMM for SPI */
 	RESET_PeripheralReset(kFC5_RST_SHIFT_RSTn);
