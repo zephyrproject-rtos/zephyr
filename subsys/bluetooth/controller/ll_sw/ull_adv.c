@@ -829,22 +829,23 @@ uint8_t ll_adv_enable(uint8_t enable)
 	} else
 #endif
 	{
-		const uint8_t adv_data_len = pdu_adv->len;
-		const uint8_t rsp_data_len = pdu_scan->len;
-		const uint8_t ll_hdr_size  = LL_HEADER_SIZE(phy);
-		uint32_t adv_size		= ll_hdr_size + ADVA_SIZE;
-		const uint8_t ll_hdr_us	= BYTES2US(ll_hdr_size, phy);
+		uint32_t adv_size		= PDU_OVERHEAD_SIZE(phy) +
+					  ADVA_SIZE;
+		const uint16_t conn_ind_us =
+					BYTES2US((PDU_OVERHEAD_SIZE(PHY_1M) +
+						  INITA_SIZE + ADVA_SIZE +
+						  LLDATA_SIZE),
+						 phy);
+		const uint8_t scan_req_us  =
+					BYTES2US((PDU_OVERHEAD_SIZE(PHY_1M) +
+						  SCANA_SIZE + ADVA_SIZE),
+						 phy);
+		const uint16_t scan_rsp_us =
+					BYTES2US((PDU_OVERHEAD_SIZE(PHY_1M) +
+						  ADVA_SIZE + pdu_scan->len),
+						 phy);
 		const uint8_t rx_to_us	= EVENT_RX_TO_US(phy);
 		const uint8_t rxtx_turn_us = EVENT_RX_TX_TURNAROUND(phy);
-		const uint16_t conn_ind_us = ll_hdr_us +
-					  BYTES2US(INITA_SIZE + ADVA_SIZE +
-						   LLDATA_SIZE, phy);
-		const uint8_t scan_req_us  = ll_hdr_us +
-					  BYTES2US(SCANA_SIZE + ADVA_SIZE, phy);
-		/* ll_header plus AdvA and scan response data */
-		const uint16_t scan_rsp_us  = ll_hdr_us +
-					  BYTES2US(ADVA_SIZE + rsp_data_len,
-						   phy);
 
 		if (phy != 0x01) {
 			/* Legacy ADV only supports LE_1M PHY */
@@ -852,7 +853,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		}
 
 		if (pdu_adv->type == PDU_ADV_TYPE_NONCONN_IND) {
-			adv_size += adv_data_len;
+			adv_size += pdu_adv->len;
 			slot_us += BYTES2US(adv_size, phy) * adv_chn_cnt +
 				   rxtx_turn_us * (adv_chn_cnt - 1);
 		} else {
@@ -860,11 +861,11 @@ uint8_t ll_adv_enable(uint8_t enable)
 				adv_size += TARGETA_SIZE;
 				slot_us += conn_ind_us;
 			} else if (pdu_adv->type == PDU_ADV_TYPE_ADV_IND) {
-				adv_size += adv_data_len;
+				adv_size += pdu_adv->len;
 				slot_us += MAX(scan_req_us + EVENT_IFS_MAX_US +
 						scan_rsp_us, conn_ind_us);
 			} else if (pdu_adv->type == PDU_ADV_TYPE_SCAN_IND) {
-				adv_size += adv_data_len;
+				adv_size += pdu_adv->len;
 				slot_us += scan_req_us + EVENT_IFS_MAX_US +
 					   scan_rsp_us;
 			}
