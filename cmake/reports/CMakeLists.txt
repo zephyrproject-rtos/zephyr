@@ -17,3 +17,20 @@ foreach(report ram_report rom_report)
             $<TARGET_PROPERTY:zephyr_property_target,${report}_DEPENDENCIES>
     )
 endforeach()
+
+find_program(PUNCOVER puncover)
+
+if(NOT ${PUNCOVER} STREQUAL PUNCOVER-NOTFOUND)
+  add_custom_target(
+    puncover
+    ${PUNCOVER}
+    --elf_file       ${ZEPHYR_BINARY_DIR}/${KERNEL_ELF_NAME}
+    --gcc_tools_base ${CROSS_COMPILE}
+    --src_root       ${ZEPHYR_BASE}
+    --build_dir      ${CMAKE_BINARY_DIR}
+    DEPENDS ${logical_target_for_zephyr_elf}
+            $<TARGET_PROPERTY:zephyr_property_target,${report}_DEPENDENCIES>
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    USES_TERMINAL
+    )
+endif()
