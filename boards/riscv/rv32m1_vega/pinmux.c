@@ -113,16 +113,16 @@ static int rv32m1_vega_pinmux_init(struct device *dev)
 	pinmux_pin_set(portd, 5, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
 	struct device *gpio_dev =
-		device_get_binding(DT_LABEL(DT_NODELABEL(gpiob));
+		device_get_binding(DT_LABEL(DT_NODELABEL(gpiob)));
 
 	gpio_pin_configure(gpio_dev, 29, GPIO_OUTPUT);
 
-	gpio_dev = device_get_binding(DT_LABEL(DT_NODELABEL(gpioc));
+	gpio_dev = device_get_binding(DT_LABEL(DT_NODELABEL(gpioc)));
 	gpio_pin_configure(gpio_dev, 28, GPIO_OUTPUT);
 	gpio_pin_configure(gpio_dev, 29, GPIO_OUTPUT);
 	gpio_pin_configure(gpio_dev, 30, GPIO_OUTPUT);
 
-	gpio_dev = device_get_binding(DT_LABEL(DT_NODELABEL(gpiod));
+	gpio_dev = device_get_binding(DT_LABEL(DT_NODELABEL(gpiod)));
 	gpio_pin_configure(gpio_dev, 0, GPIO_OUTPUT);
 	gpio_pin_configure(gpio_dev, 1, GPIO_OUTPUT);
 	gpio_pin_configure(gpio_dev, 2, GPIO_OUTPUT);
