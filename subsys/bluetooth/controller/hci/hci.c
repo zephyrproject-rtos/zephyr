@@ -2874,7 +2874,7 @@ static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
 		       sizeof(bt_addr_t));
 	}
 
-	dir_info->dir_addr.type = 0x1;
+	dir_info->dir_addr.type = adv->rx_addr;
 	memcpy(&dir_info->dir_addr.a.val[0],
 	       &adv->direct_ind.tgt_addr[0], sizeof(bt_addr_t));
 
@@ -3163,12 +3163,14 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 	adv_info->rssi = rssi;
 	adv_info->interval = 0U;
 
+	adv_info->direct_addr.type = adv->rx_addr;
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 	if (direct) {
-		adv_info->direct_addr.type = 0x1;
 		memcpy(&adv_info->direct_addr.a.val[0],
 		       &adv->direct_ind.tgt_addr[0], sizeof(bt_addr_t));
-	} else {
-		adv_info->direct_addr.type = 0U;
+	} else
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+	{
 		memset(&adv_info->direct_addr.a.val[0], 0, sizeof(bt_addr_t));
 	}
 
