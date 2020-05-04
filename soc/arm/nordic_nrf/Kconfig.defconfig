@@ -27,6 +27,9 @@ config SYS_CLOCK_TICKS_PER_SEC
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
 
+config ARCH_CUSTOM_BUSY_WAIT_THRESHOLD
+	default 10000
+
 config SYS_POWER_MANAGEMENT
 	default y
 
