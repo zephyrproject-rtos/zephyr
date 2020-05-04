@@ -112,6 +112,9 @@ class Issue():
             if child["Type Name"] != "Sub-Task":
                 continue
             child_id = child["To Issue"]
+            child_ticket = query_ticket(child_id)
+            if child_ticket["Status"].startswith("Rejected"):
+                continue
             child_links = query_weblinks(child_id)
             links.extend([link["URL"] for link in child_links])
 
@@ -137,9 +140,14 @@ class Issue():
                 continue
             child_id = child["To Issue"]
             child_ticket = query_ticket(child_id)
+            if child_ticket["Status"].startswith("Rejected"):
+                continue
             child_links = query_weblinks(child_id)
+            ver = clean_version(child_ticket["Fix versions"])
+            if len(ver) == 0:
+                ver = "branch from " + clean_version(child_ticket["Affects versions"])
             links.extend([{
-                "ver": clean_version(child_ticket["Fix versions"]),
+                "ver": ver,
                 "URL": link["URL"],
                 } for link in child_links])
 
