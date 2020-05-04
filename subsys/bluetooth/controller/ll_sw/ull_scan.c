@@ -68,16 +68,21 @@ u8_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 	}
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	struct ll_scan_set *scan_coded;
 	u8_t phy;
-
-	scan_coded = ull_scan_is_disabled_get(SCAN_HANDLE_PHY_CODED);
-	if (!scan_coded) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
 
 	phy  = type >> 1;
 	if (phy & BT_HCI_LE_EXT_SCAN_PHY_CODED) {
+		struct ll_scan_set *scan_coded;
+
+		if (!IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		scan_coded = ull_scan_is_disabled_get(SCAN_HANDLE_PHY_CODED);
+		if (!scan_coded) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
 		scan = scan_coded;
 	}
 
@@ -113,7 +118,8 @@ u8_t ll_scan_enable(u8_t enable)
 	if (!enable) {
 		err = disable(SCAN_HANDLE_1M);
 
-		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT)) {
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+		    IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 			u8_t err_coded;
 
 			err_coded = disable(SCAN_HANDLE_PHY_CODED);
@@ -130,7 +136,7 @@ u8_t ll_scan_enable(u8_t enable)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_PHY_CODED)
 	scan_coded = ull_scan_is_disabled_get(SCAN_HANDLE_PHY_CODED);
 	if (!scan_coded) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
@@ -139,7 +145,7 @@ u8_t ll_scan_enable(u8_t enable)
 	own_addr_type = scan_coded->own_addr_type;
 	is_coded_phy = (scan_coded->lll.phy &
 			BT_HCI_LE_EXT_SCAN_PHY_CODED);
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_PHY_CODED */
 
 	if ((IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) && is_coded_phy &&
 	     (own_addr_type & 0x1)) ||
@@ -175,9 +181,9 @@ u8_t ll_scan_enable(u8_t enable)
 	}
 #endif
 
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) && defined(CONFIG_BT_CTLR_PHY_CODED)
 	if (!is_coded_phy || (scan->lll.phy & BT_HCI_LE_EXT_SCAN_PHY_1M))
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_ADV_EXT && CONFIG_BT_CTLR_PHY_CODED */
 	{
 		err = ull_scan_enable(scan);
 		if (err) {
