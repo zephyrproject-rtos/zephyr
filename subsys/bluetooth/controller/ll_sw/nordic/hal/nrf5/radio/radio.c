@@ -386,10 +386,11 @@ u32_t radio_crc_is_valid(void)
 	return (NRF_RADIO->CRCSTATUS != 0);
 }
 
-static u8_t MALIGN(4) _pkt_empty[PDU_EM_SIZE_MAX];
-static u8_t MALIGN(4) _pkt_scratch[
-			((RADIO_PDU_LEN_MAX + 3) > PDU_AC_SIZE_MAX) ?
-			(RADIO_PDU_LEN_MAX + 3) : PDU_AC_SIZE_MAX];
+static u8_t MALIGN(4) _pkt_empty[PDU_EM_LL_SIZE_MAX];
+static u8_t MALIGN(4) _pkt_scratch[((RADIO_PDU_LEN_MAX + 3) >
+				    PDU_AC_LL_SIZE_MAX) ?
+				   (RADIO_PDU_LEN_MAX + 3) :
+				   PDU_AC_LL_SIZE_MAX];
 
 void *radio_pkt_empty_get(void)
 {

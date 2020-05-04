@@ -7,35 +7,56 @@
 
 #include <toolchain.h>
 
-#define BDADDR_SIZE 6
-
 /*
- * PDU Sizes
+ * PDU fields sizes
  */
+
+#define PDU_PREAMBLE_SIZE(phy) (phy&0x3)
+#define PDU_ACCESS_ADDR_SIZE   4
+#define PDU_HEADER_SIZE        2
+#define PDU_MIC_SIZE           4
+#define PDU_CRC_SIZE           3
+#define PDU_OVERHEAD_SIZE(phy) (PDU_PREAMBLE_SIZE(phy) + \
+				PDU_ACCESS_ADDR_SIZE + \
+				PDU_HEADER_SIZE + \
+				PDU_CRC_SIZE)
+
+#define BDADDR_SIZE   6
+#define ADVA_SIZE     BDADDR_SIZE
+#define SCANA_SIZE    BDADDR_SIZE
+#define INITA_SIZE    BDADDR_SIZE
+#define TARGETA_SIZE  BDADDR_SIZE
+#define LLDATA_SIZE   22
+#define CTE_INFO_SIZE 1
+#define TX_PWR_SIZE   1
+#define ACAD_SIZE     0
+
+#define BYTES2US(bytes, phy) (((bytes)<<3)/BIT((phy&0x3)>>1))
+
 /* Advertisement channel maximum legacy payload size */
 #define PDU_AC_PAYLOAD_SIZE_MAX 37
-
-/* Advertising physical channel maximum payload size */
+/* Advertisement channel maximum extended payload size */
 #define PDU_AC_EXT_PAYLOAD_SIZE_MAX 251
+/* Advertisement channel minimum extended payload size */
+#define PDU_AC_EXT_PAYLOAD_SIZE_MIN (offsetof(pdu_adv_com_ext_adv, \
+					      ext_hdr_adi_adv_data) + \
+				     ADVA_SIZE + \
+				     TARGETA_SIZE + \
+				     CTE_INFO_SIZE + \
+				     sizeof(struct ext_adv_adi) + \
+				     sizeof(struct ext_adv_aux_ptr) + \
+				     sizeof(struct ext_adv_sync_info) + \
+				     TX_PWR_SIZE + \
+				     ACAD_SIZE)
 
 /* Link Layer header size of Adv PDU. Assumes pdu_adv is packed */
 #define PDU_AC_LL_HEADER_SIZE  (offsetof(struct pdu_adv, payload))
-/* Advertisement channel maximum PDU size */
-#define PDU_AC_SIZE_MAX        (PDU_AC_LL_HEADER_SIZE + PDU_AC_PAYLOAD_SIZE_MAX)
+
+/* Link Layer Advertisement channel maximum PDU buffer size */
+#define PDU_AC_LL_SIZE_MAX     (PDU_AC_LL_HEADER_SIZE + PDU_AC_PAYLOAD_SIZE_MAX)
+
 /* Advertisement channel Access Address */
 #define PDU_AC_ACCESS_ADDR     0x8e89bed6
-
-#define ACCESS_ADDR_SIZE        4
-#define ADVA_SIZE               6
-#define SCANA_SIZE              6
-#define INITA_SIZE              6
-#define TARGETA_SIZE            6
-#define LLDATA_SIZE             22
-#define CRC_SIZE                3
-#define PREAMBLE_SIZE(phy)      (phy&0x3)
-#define LL_HEADER_SIZE(phy)     (PREAMBLE_SIZE(phy) + PDU_AC_LL_HEADER_SIZE \
-				  + ACCESS_ADDR_SIZE + CRC_SIZE)
-#define BYTES2US(bytes, phy)    (((bytes)<<3)/BIT((phy&0x3)>>1))
 
 /* Data channel minimum payload size and time */
 #define PDU_DC_PAYLOAD_SIZE_MIN 27
@@ -44,8 +65,8 @@
 /* Link Layer header size of Data PDU. Assumes pdu_data is packed */
 #define PDU_DC_LL_HEADER_SIZE  (offsetof(struct pdu_data, lldata))
 
-/* Max size of an empty PDU. TODO: Remove; only used in Nordic LLL */
-#define PDU_EM_SIZE_MAX        (PDU_DC_LL_HEADER_SIZE)
+/* Link Layer Max size of an empty PDU. TODO: Remove; only used in Nordic LLL */
+#define PDU_EM_LL_SIZE_MAX     (PDU_DC_LL_HEADER_SIZE)
 
 /* Event interframe timings */
 #define EVENT_IFS_US            150
@@ -62,9 +83,6 @@
  * see BT spec Version 5.1 Vol 6. Part B, chapters 2.1 and 2.2
  * for packet formats and thus lengths
  */
-
-#define PDU_HEADER_SIZE 2
-#define PDU_MIC_SIZE    4
 
 #define PHY_1M    BIT(0)
 #define PHY_2M    BIT(1)
@@ -91,21 +109,21 @@
 				     ((CODED_PHY_PREAMBLE_TIME_US) + \
 				      (FEC_BLOCK1_TIME_US) + \
 				      FEC_BLOCK2_TIME_US((octets), (mic))) : \
-				     (((PREAMBLE_SIZE(phy) + \
-					(ACCESS_ADDR_SIZE) + \
+				     (((PDU_PREAMBLE_SIZE(phy) + \
+					(PDU_ACCESS_ADDR_SIZE) + \
 					(PDU_HEADER_SIZE) + \
 					(octets) + \
 					(mic) + \
-					(CRC_SIZE))<<3) / \
+					(PDU_CRC_SIZE))<<3) / \
 				      BIT(((phy) & 0x03) >> 1)))
 
 #else /* !CONFIG_BT_CTLR_PHY_CODED */
-#define PKT_DC_US(octets, mic, phy) (((PREAMBLE_SIZE(phy) + \
-				       (ACCESS_ADDR_SIZE) + \
+#define PKT_DC_US(octets, mic, phy) (((PDU_PREAMBLE_SIZE(phy) + \
+				       (PDU_ACCESS_ADDR_SIZE) + \
 				       (PDU_HEADER_SIZE) + \
 				       (octets) + \
 				       (mic) + \
-				       (CRC_SIZE))<<3) / \
+				       (PDU_CRC_SIZE))<<3) / \
 				     BIT(((phy) & 0x03) >> 1))
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
@@ -133,10 +151,10 @@
 #define PDU_AC_SIZE_MESH 0
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
-#define PDU_AC_SIZE_EXTRA (PDU_AC_SIZE_RSSI + \
-			   PDU_AC_SIZE_PRIV + \
-			   PDU_AC_SIZE_SCFP + \
-			   PDU_AC_SIZE_MESH)
+#define PDU_AC_LL_SIZE_EXTRA (PDU_AC_SIZE_RSSI + \
+			      PDU_AC_SIZE_PRIV + \
+			      PDU_AC_SIZE_SCFP + \
+			      PDU_AC_SIZE_MESH)
 
 struct pdu_adv_adv_ind {
 	u8_t addr[BDADDR_SIZE];
