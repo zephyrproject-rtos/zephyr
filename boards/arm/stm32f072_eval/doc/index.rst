@@ -1,7 +1,7 @@
 .. _stm32f072_eval_board:
 
-ST STM32F072-EVAL
-###################
+ST STM32F072 Evaluation
+#######################
 
 Overview
 ********

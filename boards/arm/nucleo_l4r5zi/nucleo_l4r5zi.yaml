@@ -1,5 +1,5 @@
 identifier: nucleo_l4r5zi
-name: NUCLEO-L4R5ZI
+name: ST Nucleo L4R5ZI
 type: mcu
 arch: arm
 toolchain:

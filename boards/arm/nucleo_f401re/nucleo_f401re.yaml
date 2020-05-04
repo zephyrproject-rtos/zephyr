@@ -1,5 +1,5 @@
 identifier: nucleo_f401re
-name: NUCLEO-F401RE
+name: ST Nucleo F401RE
 type: mcu
 arch: arm
 toolchain:

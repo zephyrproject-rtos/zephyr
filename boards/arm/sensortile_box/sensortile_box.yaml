@@ -1,5 +1,5 @@
 identifier: sensortile_box
-name: SENSORTILE-BOX
+name: ST SensorTile.box
 type: mcu
 arch: arm
 toolchain:

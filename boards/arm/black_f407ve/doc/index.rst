@@ -1,7 +1,7 @@
 .. _black_f407ve_board:
 
-ST BLACK_F407VE
-###############
+Black STM32 F407VE Development Board
+####################################
 
 Overview
 ********

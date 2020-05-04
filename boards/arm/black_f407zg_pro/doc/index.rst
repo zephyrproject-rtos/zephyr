@@ -1,7 +1,7 @@
 .. _black_f407zg_pro_board:
 
-ST BLACK_F407ZG_PRO
-###################
+Black STM32 F407ZG Pro Development Board
+########################################
 
 Overview
 ********

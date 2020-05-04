@@ -1,7 +1,7 @@
 .. _stm32f411e_disco_board:
 
-STM32F411E-DISCO
-################
+ST STM32F411E Discovery
+#######################
 
 Overview
 ********

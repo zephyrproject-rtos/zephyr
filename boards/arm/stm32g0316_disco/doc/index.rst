@@ -1,7 +1,7 @@
 .. _stm32g0316_disco_board:
 
-STM32G0316-DISCO
-################
+ST STM32G0316 Discovery
+#######################
 
 Overview
 ********

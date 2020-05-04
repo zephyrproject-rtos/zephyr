@@ -1,5 +1,5 @@
 identifier: nucleo_l496zg
-name: NUCLEO-L496ZG
+name: ST Nucleo L496ZG
 type: mcu
 arch: arm
 toolchain:
