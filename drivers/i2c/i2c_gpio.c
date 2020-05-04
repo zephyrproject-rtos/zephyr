@@ -12,11 +12,14 @@
  * @brief Driver for software driven I2C using GPIO lines
  *
  * This driver implements an I2C interface by driving two GPIO lines under
- * software control. The GPIO pins used must be configured (through devicetree and pinmux) with suitable
- * flags, i.e. the SDA pin as open-colector/open-drain with a pull-up resistor
- * (possibly as an external component attached to the pin). When the SDA pin
- * is read it must return the state of the physical hardware line, not just the
- * last state written to it for output.
+ * software control.
+ *
+ * The GPIO pins used must be configured (through devicetree and pinmux) with
+ * suitable flags, i.e. the SDA pin as open-collector/open-drain with a pull-up
+ * resistor (possibly as an external component attached to the pin).
+ *
+ * When the SDA pin is read it must return the state of the physical hardware
+ * line, not just the last state written to it for output.
  *
  * The SCL pin should be configured in the same manner as SDA, or, if it is known
  * that the hardware attached to pin doesn't attempt clock stretching, then the
