@@ -13,7 +13,6 @@
 
 /* LoRaMac-node specific includes */
 #include <sx1276/sx1276.h>
-#include <timer.h>
 
 #define LOG_LEVEL CONFIG_LORA_LOG_LEVEL
 #include <logging/log.h>
@@ -27,7 +26,6 @@ LOG_MODULE_REGISTER(sx1276);
 #define SX1276_REG_PA_DAC			0x4d
 #define SX1276_REG_VERSION			0x42
 
-static uint32_t saved_time;
 extern DioIrqHandler *DioIrq[];
 
 struct sx1276_dio {
@@ -58,7 +56,6 @@ struct sx1276_data {
 	struct device *dio_dev[SX1276_MAX_DIO];
 	struct k_work dio_work[SX1276_MAX_DIO];
 	struct k_sem data_sem;
-	struct k_timer timer;
 	RadioEvents_t sx1276_event;
 	uint8_t *rx_buf;
 	uint8_t rx_len;
@@ -97,76 +94,6 @@ void SX1276Reset(void)
 	gpio_pin_set(dev_data.reset, GPIO_RESET_PIN, 0);
 
 	k_sleep(K_MSEC(6));
-}
-
-void BoardCriticalSectionBegin(uint32_t *mask)
-{
-	*mask = irq_lock();
-}
-
-void BoardCriticalSectionEnd(uint32_t *mask)
-{
-	irq_unlock(*mask);
-}
-
-uint32_t RtcGetTimerValue(void)
-{
-	return k_uptime_get_32();
-}
-
-uint32_t RtcGetTimerElapsedTime(void)
-{
-	return (k_uptime_get_32() - saved_time);
-}
-
-uint32_t RtcGetMinimumTimeout(void)
-{
-	return 1;
-}
-
-void RtcStopAlarm(void)
-{
-	k_timer_stop(&dev_data.timer);
-}
-
-static void timer_callback(struct k_timer *_timer)
-{
-	ARG_UNUSED(_timer);
-
-	TimerIrqHandler();
-}
-
-void RtcSetAlarm(uint32_t timeout)
-{
-	k_timer_start(&dev_data.timer, K_MSEC(timeout), K_NO_WAIT);
-}
-
-uint32_t RtcSetTimerContext(void)
-{
-	saved_time = k_uptime_get_32();
-
-	return saved_time;
-}
-
-/* For us, 1 tick = 1 milli second. So no need to do any conversion here */
-uint32_t RtcGetTimerContext(void)
-{
-	return saved_time;
-}
-
-void DelayMsMcu(uint32_t ms)
-{
-	k_sleep(K_MSEC(ms));
-}
-
-uint32_t RtcMs2Tick(uint32_t milliseconds)
-{
-	return milliseconds;
-}
-
-uint32_t RtcTick2Ms(uint32_t tick)
-{
-	return tick;
 }
 
 static void sx1276_dio_work_handle(struct k_work *work)
@@ -530,8 +457,6 @@ static int sx1276_lora_init(struct device *dev)
 	}
 
 	k_sem_init(&dev_data.data_sem, 0, UINT_MAX);
-
-	k_timer_init(&dev_data.timer, timer_callback, NULL);
 
 	dev_data.sx1276_event.TxDone = sx1276_tx_done;
 	dev_data.sx1276_event.RxDone = sx1276_rx_done;
