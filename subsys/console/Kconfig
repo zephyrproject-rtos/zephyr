@@ -3,7 +3,6 @@
 
 menuconfig CONSOLE_SUBSYS
 	bool "Console subsystem/support routines [EXPERIMENTAL]"
-	select LEGACY_TIMEOUT_API
 	help
 	  Console subsystem and helper functions
 
