@@ -5,9 +5,7 @@
  */
 
 /**
- * @file Sample app to demonstrate PWM.
- *
- * This app uses PWM pins 0, 1, and 2.
+ * @file Sample app to demonstrate PWM-based RGB LED control
  */
 
 #include <zephyr.h>
@@ -15,93 +13,122 @@
 #include <device.h>
 #include <drivers/pwm.h>
 
-#if DT_NODE_HAS_PROP(DT_ALIAS(red_pwm_led), pwms) && \
-    DT_PHA_HAS_CELL(DT_ALIAS(red_pwm_led), pwms, channel) && \
-    DT_NODE_HAS_PROP(DT_ALIAS(green_pwm_led), pwms) && \
-    DT_PHA_HAS_CELL(DT_ALIAS(green_pwm_led), pwms, channel) && \
-    DT_NODE_HAS_PROP(DT_ALIAS(blue_pwm_led), pwms) && \
-    DT_PHA_HAS_CELL(DT_ALIAS(blue_pwm_led), pwms, channel)
-/* Get the defines from dt (based on aliases 'red-pwm-led', 'green-pwm-led' &
- * 'blue-pwm-led')
+/*
+ * Devicetree helper macro which gets the 'flags' cell from a 'pwms'
+ * property, or returns 0 if the property has no 'flags' cell.
  */
-#define PWM_DEV0	DT_PWMS_LABEL(DT_ALIAS(red_pwm_led))
-#define PWM_CH0		DT_PWMS_CHANNEL(DT_ALIAS(red_pwm_led))
-#if DT_PHA_HAS_CELL(DT_ALIAS(red_pwm_led), pwms, flags)
-#define PWM_FLAGS0	DT_PWMS_FLAGS(DT_ALIAS(red_pwm_led))
+
+#define FLAGS_OR_ZERO(node)						\
+	COND_CODE_1(DT_PHA_HAS_CELL(node, pwms, flags),			\
+		    (DT_PWMS_FLAGS(node)),				\
+		    (0))
+
+/*
+ * Extract devicetree configuration.
+ */
+
+#define RED_NODE DT_ALIAS(red_pwm_led)
+#define GREEN_NODE DT_ALIAS(green_pwm_led)
+#define BLUE_NODE DT_ALIAS(blue_pwm_led)
+
+#if DT_NODE_HAS_STATUS(RED_NODE, okay)
+#define RED_LABEL	DT_PWMS_LABEL(RED_NODE)
+#define RED_CHANNEL	DT_PWMS_CHANNEL(RED_NODE)
+#define RED_FLAGS	FLAGS_OR_ZERO(RED_NODE)
 #else
-#define PWM_FLAGS0	0
+#error "Unsupported board: red-pwm-led devicetree alias is not defined"
+#define RED_LABEL	""
+#define RED_CHANNEL	0
+#define RED_FLAGS	0
 #endif
-#define PWM_DEV1	DT_PWMS_LABEL(DT_ALIAS(green_pwm_led))
-#define PWM_CH1		DT_PWMS_CHANNEL(DT_ALIAS(green_pwm_led))
-#if DT_PHA_HAS_CELL(DT_ALIAS(green_pwm_led), pwms, flags)
-#define PWM_FLAGS1	DT_PWMS_FLAGS(DT_ALIAS(green_pwm_led))
+
+#if DT_NODE_HAS_STATUS(GREEN_NODE, okay)
+#define GREEN_LABEL	DT_PWMS_LABEL(GREEN_NODE)
+#define GREEN_CHANNEL	DT_PWMS_CHANNEL(GREEN_NODE)
+#define GREEN_FLAGS	FLAGS_OR_ZERO(GREEN_NODE)
 #else
-#define PWM_FLAGS1	0
+#error "Unsupported board: green-pwm-led devicetree alias is not defined"
+#define GREEN_LABEL	""
+#define GREEN_CHANNEL	0
+#define GREEN_FLAGS	0
 #endif
-#define PWM_DEV2	DT_PWMS_LABEL(DT_ALIAS(blue_pwm_led))
-#define PWM_CH2		DT_PWMS_CHANNEL(DT_ALIAS(blue_pwm_led))
-#if DT_PHA_HAS_CELL(DT_ALIAS(blue_pwm_led), pwms, flags)
-#define PWM_FLAGS2	DT_PWMS_FLAGS(DT_ALIAS(blue_pwm_led))
+
+#if DT_NODE_HAS_STATUS(BLUE_NODE, okay)
+#define BLUE_LABEL	DT_PWMS_LABEL(BLUE_NODE)
+#define BLUE_CHANNEL	DT_PWMS_CHANNEL(BLUE_NODE)
+#define BLUE_FLAGS	FLAGS_OR_ZERO(BLUE_NODE)
 #else
-#define PWM_FLAGS2	0
-#endif
-#else
-#error "Choose supported board or add new board for the application"
+#error "Unsupported board: blue-pwm-led devicetree alias is not defined"
+#define BLUE_LABEL	""
+#define BLUE_CHANNEL	0
+#define BLUE_FLAGS	0
 #endif
 
 /*
  * 50 is flicker fusion threshold. Modulated light will be perceived
  * as steady by our eyes when blinking rate is at least 50.
  */
-#define PERIOD (USEC_PER_SEC / 50U)
+#define PERIOD_USEC	(USEC_PER_SEC / 50U)
+#define STEPSIZE_USEC	2000
 
-/* in micro second */
-#define STEPSIZE	2000
-
-static int write_pin(struct device *pwm_dev, u32_t pwm_pin,
+static int pwm_set(struct device *pwm_dev, u32_t pwm_pin,
 		     u32_t pulse_width, pwm_flags_t flags)
 {
-	return pwm_pin_set_usec(pwm_dev, pwm_pin, PERIOD, pulse_width, flags);
+	return pwm_pin_set_usec(pwm_dev, pwm_pin, PERIOD_USEC,
+				pulse_width, flags);
 }
+
+enum { RED, GREEN, BLUE };
 
 void main(void)
 {
 	struct device *pwm_dev[3];
-	u32_t pulse_width0, pulse_width1, pulse_width2;
+	u32_t pulse_red, pulse_green, pulse_blue; /* pulse widths */
+	int ret;
 
-	printk("PWM demo app-RGB LED\n");
+	printk("PWM-based RGB LED control\n");
 
-	pwm_dev[0] = device_get_binding(PWM_DEV0);
-	pwm_dev[1] = device_get_binding(PWM_DEV1);
-	pwm_dev[2] = device_get_binding(PWM_DEV2);
-	if (!pwm_dev[0] || !pwm_dev[1] || !pwm_dev[2]) {
-		printk("Cannot find PWM device!\n");
+	pwm_dev[RED] = device_get_binding(RED_LABEL);
+	pwm_dev[GREEN] = device_get_binding(GREEN_LABEL);
+	pwm_dev[BLUE] = device_get_binding(BLUE_LABEL);
+	if (!pwm_dev[RED] || !pwm_dev[GREEN] || !pwm_dev[BLUE]) {
+		printk("Error: cannot find one or more PWM devices\n");
 		return;
 	}
 
 	while (1) {
-		for (pulse_width0 = 0U; pulse_width0 <= PERIOD;
-		     pulse_width0 += STEPSIZE) {
-			if (write_pin(pwm_dev[0], PWM_CH0,
-				      pulse_width0, PWM_FLAGS0) != 0) {
-				printk("pin 0 write fails!\n");
+		for (pulse_red = 0U; pulse_red <= PERIOD_USEC;
+		     pulse_red += STEPSIZE_USEC) {
+			ret = pwm_set(pwm_dev[RED], RED_CHANNEL,
+				      pulse_red, RED_FLAGS);
+			if (ret != 0) {
+				printk("Error %d: "
+				       "red write failed\n",
+				       ret);
 				return;
 			}
 
-			for (pulse_width1 = 0U; pulse_width1 <= PERIOD;
-			     pulse_width1 += STEPSIZE) {
-				if (write_pin(pwm_dev[1], PWM_CH1,
-					      pulse_width1, PWM_FLAGS1) != 0) {
-					printk("pin 1 write fails!\n");
+			for (pulse_green = 0U; pulse_green <= PERIOD_USEC;
+			     pulse_green += STEPSIZE_USEC) {
+				ret = pwm_set(pwm_dev[GREEN], GREEN_CHANNEL,
+					      pulse_green, GREEN_FLAGS);
+				if (ret != 0) {
+					printk("Error %d: "
+					       "green write failed\n",
+					       ret);
 					return;
 				}
 
-				for (pulse_width2 = 0U; pulse_width2 <= PERIOD;
-				     pulse_width2 += STEPSIZE) {
-					if (write_pin(pwm_dev[2], PWM_CH2,
-						      pulse_width2,
-						      PWM_FLAGS2) != 0) {
-						printk("pin 2 write fails!\n");
+				for (pulse_blue = 0U; pulse_blue <= PERIOD_USEC;
+				     pulse_blue += STEPSIZE_USEC) {
+					ret = pwm_set(pwm_dev[BLUE],
+						      BLUE_CHANNEL,
+						      pulse_blue,
+						      BLUE_FLAGS);
+					if (ret != 0) {
+						printk("Error %d: "
+						       "blue write failed\n",
+						       ret);
 						return;
 					}
 					k_sleep(K_SECONDS(1));
