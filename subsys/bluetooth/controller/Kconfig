@@ -486,9 +486,16 @@ config BT_CTLR_ADV_SYNC_SET
 	help
 	  Maximum supported periodic advertising sets.
 
+config BT_CTLR_ADV_DATA_LEN_MAX
+	int "Maximum Advertising Data Length"
+	depends on BT_CTLR_ADV_EXT
+	range 31 1650
+	help
+	  Maximum Extended Advertising Data Length.
+
 config BT_CTLR_SCAN_AUX_SET
 	int "Auxiliary Channel Scan Sets"
-	depends on BT_CTLR_ADV_EXT
+	depends on BT_OBSERVER && BT_CTLR_ADV_EXT
 	range 1 64
 	help
 	  Maximum supported auxiliary channel scan sets.

@@ -494,8 +494,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 uint16_t ll_adv_aux_max_data_length_get(void)
 {
-	/* TODO: return a Kconfig value */
-	return 0;
+	return CONFIG_BT_CTLR_ADV_DATA_LEN_MAX;
 }
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
