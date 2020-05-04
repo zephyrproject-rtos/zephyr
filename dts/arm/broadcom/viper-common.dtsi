@@ -28,4 +28,19 @@
 			status = "disabled";
 		};
 	};
+
+	pcie {
+		#address-cells = <2>;
+		#size-cells = <2>;
+
+		pcie0_ep: pcie@4e100000 {
+			compatible = "brcm,iproc-pcie-ep";
+			reg = <0x0 0x4e100000 0x0 0x2100>,
+			      <0x0 0x50000000 0x0 0x8000000>,
+			      <0x4 0x0 0x0 0x8000000>;
+			reg-names = "iproc_pcie_regs", "map_lowmem",
+				    "map_highmem";
+			label = "PCIE_0";
+		};
+	};
 };
