@@ -131,6 +131,21 @@
 			};
 		};
 
+		test_i2c_no_reg: i2c {
+			#address-cells = < 1 >;
+			#size-cells = < 0 >;
+			compatible = "vnd,i2c";
+			label = "TEST_I2C_NO_REG_CTLR";
+			status = "okay";
+			clock-frequency = < 100000 >;
+
+			test-i2c-dev@12 {
+				compatible = "vnd,i2c-device";
+				label = "TEST_I2C_DEV_12";
+				reg = < 0x12 >;
+			};
+		};
+
 		test_spi: spi@33334444 {
 			#address-cells = < 1 >;
 			#size-cells = < 0 >;
