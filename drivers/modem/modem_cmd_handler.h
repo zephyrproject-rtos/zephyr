@@ -96,7 +96,7 @@ struct modem_cmd_handler_data {
 
 	/* allocation info */
 	struct net_buf_pool *buf_pool;
-	s32_t alloc_timeout;
+	k_timeout_t alloc_timeout;
 
 	/* locks */
 	struct k_sem sem_tx_lock;
@@ -145,7 +145,7 @@ int modem_cmd_handler_update_cmds(struct modem_cmd_handler_data *data,
  * @param  *handler: command handler to use
  * @param  *buf: NULL terminated send buffer
  * @param  *sem: wait for response semaphore
- * @param  timeout: timeout of command (in ms)
+ * @param  timeout: timeout of command
  *
  * @retval 0 if ok, < 0 if error.
  */
@@ -153,7 +153,8 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
 			  struct modem_cmd_handler *handler,
 			  struct modem_cmd *handler_cmds,
 			  size_t handler_cmds_len,
-			  const u8_t *buf, struct k_sem *sem, int timeout);
+			  const u8_t *buf, struct k_sem *sem,
+			  k_timeout_t timeout);
 
 /**
  * @brief  send AT command to interface w/ a TX lock
@@ -162,14 +163,14 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
  * @param  *handler: command handler to use
  * @param  *buf: NULL terminated send buffer
  * @param  *sem: wait for response semaphore
- * @param  timeout: timeout of command (in ms)
+ * @param  timeout: timeout of command
  *
  * @retval 0 if ok, < 0 if error.
  */
 int modem_cmd_send(struct modem_iface *iface,
 		   struct modem_cmd_handler *handler,
 		   struct modem_cmd *handler_cmds, size_t handler_cmds_len,
-		   const u8_t *buf, struct k_sem *sem, int timeout);
+		   const u8_t *buf, struct k_sem *sem, k_timeout_t timeout);
 
 /**
  * @brief  send a series of AT commands
@@ -179,14 +180,14 @@ int modem_cmd_send(struct modem_iface *iface,
  * @param  *cmds: array of setup commands to send
  * @param  cmds_len: size of the setup command array
  * @param  *sem: wait for response semaphore
- * @param  timeout: timeout of command (in ms)
+ * @param  timeout: timeout of command
  *
  * @retval 0 if ok, < 0 if error.
  */
 int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 				 struct modem_cmd_handler *handler,
 				 struct setup_cmd *cmds, size_t cmds_len,
-				 struct k_sem *sem, int timeout);
+				 struct k_sem *sem, k_timeout_t timeout);
 
 /**
  * @brief  Init command handler
