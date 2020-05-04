@@ -51,7 +51,7 @@ static struct ll_adv_aux_set ll_adv_aux_pool[CONFIG_BT_CTLR_ADV_AUX_SET];
 static void *adv_aux_free;
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
-uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t *addr)
+uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t const *const addr)
 {
 	struct ll_adv_set *adv;
 
@@ -70,7 +70,8 @@ uint8_t ll_adv_aux_random_addr_set(uint8_t handle, uint8_t *addr)
 	return 0;
 }
 
-uint8_t *ll_adv_aux_random_addr_get(struct ll_adv_set *adv, uint8_t *addr)
+uint8_t const *ll_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
+				       uint8_t *const addr)
 {
 	if (addr) {
 		memcpy(addr, adv->rnd_addr, BDADDR_SIZE);
@@ -81,7 +82,7 @@ uint8_t *ll_adv_aux_random_addr_get(struct ll_adv_set *adv, uint8_t *addr)
 
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, uint8_t len,
-			    uint8_t *data)
+			    uint8_t const *const data)
 {
 	struct pdu_adv_com_ext_adv *p, *_p, *s, *_s;
 	uint8_t pri_len, _pri_len, sec_len, _sec_len;
@@ -444,7 +445,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 }
 
 uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, uint8_t len,
-			    uint8_t *data)
+			    uint8_t const *const data)
 {
 	struct ll_adv_set *adv;
 	struct pdu_adv *_pri;

@@ -444,7 +444,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 }
 
 uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
-				uint8_t len, uint8_t *data)
+				uint8_t len, uint8_t const *const data)
 {
 	/* TODO */
 	return BT_HCI_ERR_CMD_DISALLOWED;

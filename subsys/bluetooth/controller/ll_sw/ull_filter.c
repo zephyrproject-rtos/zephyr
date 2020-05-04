@@ -613,7 +613,8 @@ void ull_filter_adv_pdu_update(struct ll_adv_set *adv, struct pdu_adv *pdu)
 }
 #endif /* CONFIG_BT_BROADCASTER */
 
-uint8_t ull_filter_rl_find(uint8_t id_addr_type, uint8_t *id_addr, uint8_t *free)
+uint8_t ull_filter_rl_find(uint8_t id_addr_type, uint8_t const *const id_addr,
+			uint8_t *const free)
 {
 	uint8_t i;
 

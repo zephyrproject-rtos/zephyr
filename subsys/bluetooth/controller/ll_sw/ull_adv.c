@@ -84,8 +84,9 @@ static struct ticker_ext ll_adv_ticker_ext[BT_CTLR_ADV_SET];
 uint8_t ll_adv_params_set(uint8_t handle, uint16_t evt_prop, uint32_t interval,
 		       uint8_t adv_type, uint8_t own_addr_type,
 		       uint8_t direct_addr_type, uint8_t const *const direct_addr,
-		       uint8_t chan_map, uint8_t filter_policy, uint8_t *tx_pwr,
-		       uint8_t phy_p, uint8_t skip, uint8_t phy_s, uint8_t sid, uint8_t sreq)
+		       uint8_t chan_map, uint8_t filter_policy,
+		       uint8_t *const tx_pwr, uint8_t phy_p, uint8_t skip,
+		       uint8_t phy_s, uint8_t sid, uint8_t sreq)
 {
 	uint8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
 				     PDU_ADV_TYPE_DIRECT_IND,
@@ -517,12 +518,13 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 		/* AdvA, fill here at enable */
 		if (h->adv_addr) {
-			uint8_t *tx_addr =
+			uint8_t const *tx_addr =
 					ll_adv_aux_random_addr_get(adv, NULL);
 
 			/* TODO: Privacy */
 
-			if (pdu_adv->tx_addr && !mem_nz(tx_addr, BDADDR_SIZE)) {
+			if (pdu_adv->tx_addr &&
+			    !mem_nz((void *)tx_addr, BDADDR_SIZE)) {
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
@@ -541,13 +543,13 @@ uint8_t ll_adv_enable(uint8_t enable)
 			ps = (uint8_t *)hs + sizeof(*hs);
 
 			if (hs->adv_addr) {
-				uint8_t *tx_addr =
+				uint8_t const *tx_addr =
 					ll_adv_aux_random_addr_get(adv,	NULL);
 
 				/* TODO: Privacy */
 
 				if (pdu_aux->tx_addr &&
-				    !mem_nz(tx_addr, BDADDR_SIZE)) {
+				    !mem_nz((void *)tx_addr, BDADDR_SIZE)) {
 					return BT_HCI_ERR_INVALID_PARAM;
 				}
 
@@ -591,7 +593,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 
 		if (!priv) {
-			uint8_t *tx_addr;
+			uint8_t const *tx_addr;
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 			if ((adv->is_created & BIT(1)) && pdu_adv->tx_addr) {
 				tx_addr = ll_adv_aux_random_addr_get(adv, NULL);
@@ -977,12 +979,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 				sync = (void *)HDR_LLL2EVT(lll_sync);
 
 				if (sync->is_enabled && !sync->is_started) {
-					ret = ull_ticker_status_take(ret,
-								     &ret_cb);
-					if (ret != TICKER_STATUS_SUCCESS) {
-						goto failure_cleanup;
-					}
-
 					ull_hdr_init(&sync->ull);
 
 					ret = ull_adv_sync_start(sync,
