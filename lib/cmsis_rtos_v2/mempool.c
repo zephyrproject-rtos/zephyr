@@ -109,7 +109,7 @@ void *osMemoryPoolAlloc(osMemoryPoolId_t mp_id, uint32_t timeout)
 	} else {
 		retval = k_mem_slab_alloc(
 			(struct k_mem_slab *)(&mslab->z_mslab),
-			(void **)&ptr, k_ticks_to_ms_floor64(timeout));
+			(void **)&ptr, K_TICKS(timeout));
 	}
 
 	if (retval == 0) {

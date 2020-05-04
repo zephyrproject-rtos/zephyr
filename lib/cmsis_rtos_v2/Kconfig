@@ -9,7 +9,6 @@ config CMSIS_RTOS_V2
 	depends on THREAD_MONITOR
 	depends on INIT_STACKS
 	depends on NUM_PREEMPT_PRIORITIES >= 56
-	select LEGACY_TIMEOUT_API
 	help
 	  This enables CMSIS RTOS v2 API support. This is an OS-integration
 	  layer which allows applications using CMSIS RTOS V2 APIs to build
