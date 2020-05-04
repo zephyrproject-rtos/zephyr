@@ -163,6 +163,10 @@ def add_ref(refs, text):
         "refsource": "CONFIRM",
         "url": text})
 
+def get_pr(link):
+    """Convert a link into a PR number"""
+    return link.split('/')[-1]
+
 if __name__ == '__main__':
     args = sys.argv[1:]
     if len(args) != 2:
@@ -222,12 +226,12 @@ if __name__ == '__main__':
         print("This has been fixed in releases {}.".format(
             ", ".join(aff)))
         print()
-        print("- `CVS <{}#{}>`_".format(vul_doc, cve_id))
+        print("- `{} <{}#{}>`_".format(cve_id, vul_doc, cve_id))
         print()
-        print("- `Zephyr project bug tracker")
+        print("- `Zephyr project bug tracker {}".format(ticket))
         print("  <{}{}>`_".format(url_base, ticket))
         print()
         for link in issue.get_full_links():
-            print("- `PR fix for {}".format(link["ver"]))
+            print("- `PR{} fix for {}".format(get_pr(link["URL"]), link["ver"]))
             print("  <{}>`_".format(link["URL"]))
             print()
