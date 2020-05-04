@@ -6,8 +6,6 @@
 
 /* SoC level DTS fixup file */
 
-#define DT_ADC_0_NAME			DT_LABEL(DT_NODELABEL(adc))
-
 #define DT_UART_0_NAME			DT_LABEL(DT_NODELABEL(uart0))
 #define DT_UART_1_NAME			DT_LABEL(DT_NODELABEL(uart1))
 
