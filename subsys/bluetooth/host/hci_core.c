@@ -7601,7 +7601,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		}
 	}
 
-	/* Todo: Figure out how keep advertising works with multiple adv sets */
+	/* Flag only used by bt_le_adv_start API. */
 	atomic_set_bit_to(adv->flags, BT_ADV_PERSIST, false);
 
 	/* Todo: need to handle setting advertising name in correct adv/scan */

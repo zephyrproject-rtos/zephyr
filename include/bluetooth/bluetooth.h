@@ -325,8 +325,9 @@ enum {
 	 *  connection happens. If this option is not set the stack will
 	 *  take care of keeping advertising enabled even as connections
 	 *  occur.
-	 *  If Advertising directed and connectable then this behaviour is
-	 *  the default behaviour and this flag has no effect.
+	 *  If Advertising directed or the advertiser was started with
+	 *  @ref bt_le_ext_adv_start then this behavior is the default behavior
+	 *  and this flag has no effect.
 	 */
 	BT_LE_ADV_OPT_ONE_TIME = BIT(1),
 
