@@ -269,17 +269,15 @@ static void spi_sam0_fast_txrx(SercomSpi *regs,
 	regs->DATA.reg = *tx++;
 
 	while (tx != txend) {
-		/* Load byte N+1 into the transmit register.  TX is
-		 * single buffered and we have at most one byte in
-		 * flight so skip the DRE check.
-		 */
-		regs->DATA.reg = *tx++;
 
 		/* Read byte N+0 from the receive register */
 		while (!regs->INTFLAG.bit.RXC) {
 		}
 
 		*rx++ = regs->DATA.reg;
+
+		/* We just received the response, send the next byte */
+		regs->DATA.reg = *tx++;
 	}
 
 	/* Read the final incoming byte */
