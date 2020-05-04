@@ -21,4 +21,11 @@ config CLOCK_CONTROL_LPC11U6X
 
 endif # CLOCK_CONTROL
 
+if SERIAL
+
+config UART_LPC11U6X
+	default y
+
+endif # SERIAL
+
 endif # SOC_SERIES_LPC11U6X
