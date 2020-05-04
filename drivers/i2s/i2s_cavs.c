@@ -779,7 +779,8 @@ static int i2s_cavs_read(struct device *dev, void **mem_block, size_t *size)
 		return -EIO;
 	}
 
-	ret = k_msgq_get(&strm->out_queue, &buffer, dev_data->cfg.timeout);
+	ret = k_msgq_get(&strm->out_queue, &buffer,
+			 SYS_TIMEOUT_MS(dev_data->cfg.timeout));
 	if (ret != 0) {
 		return -EAGAIN;
 	}
@@ -803,7 +804,8 @@ static int i2s_cavs_write(struct device *dev, void *mem_block, size_t size)
 
 	SOC_DCACHE_FLUSH(mem_block, size);
 
-	ret = k_msgq_put(&strm->in_queue, &mem_block, dev_data->cfg.timeout);
+	ret = k_msgq_put(&strm->in_queue, &mem_block,
+			 SYS_TIMEOUT_MS(dev_data->cfg.timeout));
 	if (ret) {
 		LOG_ERR("k_msgq_put failed %d", ret);
 		return ret;
