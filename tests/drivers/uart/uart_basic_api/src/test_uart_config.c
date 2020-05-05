@@ -46,6 +46,10 @@ static int test_configure(void)
 	/* Verify configure() - set device configuration using data in cfg */
 	int ret = uart_configure(uart_dev, &uart_cfg);
 
+	if (ret == -ENOTSUP) {
+		return TC_SKIP;
+	}
+
 	/* 0 if successful, - error code otherwise */
 	return (ret == 0) ? TC_PASS : TC_FAIL;
 
@@ -67,6 +71,10 @@ static int test_config_get(void)
 	/* 0 if successful, - error code otherwise */
 	int ret = uart_configure(uart_dev, &uart_cfg);
 
+	if (ret == -ENOTSUP) {
+		return TC_SKIP;
+	}
+
 	zassert_true(ret == 0, "set config error");
 
 	/* Verify config_get() - get device configuration, put in cfg */
@@ -85,10 +93,14 @@ static int test_config_get(void)
 
 void test_uart_configure(void)
 {
-	zassert_true(test_configure() == TC_PASS, NULL);
+	int ret = test_configure();
+
+	zassert_true((ret == TC_PASS) || (ret == TC_SKIP), NULL);
 }
 
 void test_uart_config_get(void)
 {
-	zassert_true(test_config_get() == TC_PASS, NULL);
+	int ret = test_config_get();
+
+	zassert_true((ret == TC_PASS) || (ret == TC_SKIP), NULL);
 }
