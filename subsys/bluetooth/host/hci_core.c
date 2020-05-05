@@ -7703,17 +7703,9 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 		bt_conn_unref(conn);
 	}
 
+	/* Flag always set to false by le_ext_adv_param_set */
 	atomic_set_bit_to(adv->flags, BT_ADV_PERSIST, !dir_adv &&
 			  !(param->options & BT_LE_ADV_OPT_ONE_TIME));
-
-	atomic_set_bit_to(adv->flags, BT_ADV_INCLUDE_NAME,
-			  param->options & BT_LE_ADV_OPT_USE_NAME);
-
-	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE,
-			  param->options & BT_LE_ADV_OPT_CONNECTABLE);
-
-	atomic_set_bit_to(adv->flags, BT_ADV_USE_IDENTITY,
-			  param->options & BT_LE_ADV_OPT_USE_IDENTITY);
 
 	return 0;
 }
