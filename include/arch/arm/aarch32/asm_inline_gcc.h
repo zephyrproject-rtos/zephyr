@@ -24,6 +24,8 @@
 
 #if defined(CONFIG_CPU_CORTEX_R)
 #include <arch/arm/aarch32/cortex_a_r/cpu.h>
+#elif defined(CONFIG_CPU_CORTEX_M)
+#include <arch/arm/aarch32/cortex_m/cmsis.h>
 #endif
 
 #ifdef __cplusplus
