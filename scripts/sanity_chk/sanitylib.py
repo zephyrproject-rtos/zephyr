@@ -802,7 +802,6 @@ class QEMUHandler(Handler):
         in_fp.close()
         if os.path.exists(pid_fn):
             pid = int(open(pid_fn).read())
-            os.unlink(pid_fn)
 
             try:
                 if pid:
@@ -848,8 +847,29 @@ class QEMUHandler(Handler):
 
         with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
             logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
-            proc.wait()
-            self.returncode = proc.returncode
+            try:
+                proc.wait(self.timeout)
+            except subprocess.TimeoutExpired:
+                #sometimes QEMU can't handle SIGTERM signal correctly
+                #in that case kill -9 QEMU process directly and leave
+                #sanitycheck judge testing result by console output
+                if os.path.exists(self.pid_fn):
+                    qemu_pid = int(open(self.pid_fn).read())
+                    try:
+                        os.kill(qemu_pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    proc.wait()
+                    self.returncode = 0
+                else:
+                    proc.terminate()
+                    proc.kill()
+                    self.returncode = proc.returncode
+            else:
+                self.returncode = proc.returncode
+
+            if os.path.exists(self.pid_fn):
+                os.unlink(self.pid_fn)
 
         if self.returncode != 0:
             self.set_state("failed", 0)
