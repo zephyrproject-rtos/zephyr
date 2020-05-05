@@ -976,8 +976,8 @@ Create a Debugger Configuration
 
    - In the SVD Path tab:
 
-     - File path: :file:`<zephyr
-       base>\\modules\\hal\\nxp\\mcux\\devices\\MK64F12\\MK64F12.xml`
+     - File path: :file:`<workspace
+       top>\\modules\\hal\\nxp\\mcux\\devices\\MK64F12\\MK64F12.xml`
 
      .. note::
 	This is optional. It provides the SoC's memory-mapped register
