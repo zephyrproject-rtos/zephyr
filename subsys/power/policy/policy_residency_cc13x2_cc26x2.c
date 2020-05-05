@@ -49,7 +49,7 @@ enum power_states sys_pm_policy_next_state(s32_t ticks)
 	/* query the declared constraints */
 	constraints = Power_getConstraintMask();
 
-	if ((ticks != K_FOREVER) && (ticks < pm_min_residency[0])) {
+	if ((ticks != K_TICKS_FOREVER) && (ticks < pm_min_residency[0])) {
 		LOG_DBG("Not enough time for PM operations: %d", ticks);
 		return SYS_POWER_STATE_ACTIVE;
 	}
@@ -60,7 +60,7 @@ enum power_states sys_pm_policy_next_state(s32_t ticks)
 			continue;
 		}
 #endif
-		if ((ticks == K_FOREVER) ||
+		if ((ticks == K_TICKS_FOREVER) ||
 		    (ticks >= pm_min_residency[i])) {
 			/* Verify if Power module has constraints set to
 			 * disallow a state
@@ -82,7 +82,7 @@ enum power_states sys_pm_policy_next_state(s32_t ticks)
 				    CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_2 > 1,
 				    "CONFIG_SYS_PM_MIN_RESIDENCY_SLEEP_2 must "
 				    "be greater than 1.");
-				if (ticks != K_FOREVER) {
+				if (ticks != K_TICKS_FOREVER) {
 					/* NOTE: Ideally we'd like to set a
 					 * timer to wake up just a little
 					 * earlier to take care of the wakeup
