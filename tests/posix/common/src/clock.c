@@ -63,6 +63,7 @@ void test_posix_realtime(void)
 	ret = clock_gettime(CLOCK_REALTIME, &rts);
 	zassert_equal(ret, 0, "Fail to get realtime clock");
 
+	printk("secs: mono: %ld, real: %ld\n", (long)mts.tv_sec, (long)rts.tv_sec);
 	zassert_equal(rts.tv_sec, mts.tv_sec, "Seconds not equal");
 	zassert_equal(rts.tv_nsec, mts.tv_nsec, "Nanoseconds not equal");
 
