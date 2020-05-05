@@ -96,7 +96,7 @@ int mqtt_client_websocket_write(struct mqtt_client *client, const u8_t *data,
 		ret = websocket_send_msg(client->transport.websocket.sock,
 					 data + offset, datalen - offset,
 					 WEBSOCKET_OPCODE_DATA_BINARY,
-					 true, true, NET_WAIT_FOREVER);
+					 true, true, SYS_FOREVER_MS);
 		if (ret < 0) {
 			return -errno;
 		}
@@ -125,7 +125,7 @@ int mqtt_client_websocket_write_msg(struct mqtt_client *client,
 		ret = websocket_send_msg(client->transport.websocket.sock,
 					 message->msg_iov[i].iov_base,
 					 message->msg_iov[i].iov_len, opcode,
-					 true, final, NET_WAIT_FOREVER);
+					 true, final, SYS_FOREVER_MS);
 		if (ret < 0) {
 			return ret;
 		}
@@ -140,7 +140,7 @@ int mqtt_client_websocket_write_msg(struct mqtt_client *client,
 int mqtt_client_websocket_read(struct mqtt_client *client, u8_t *data,
 			       u32_t buflen, bool shall_block)
 {
-	s32_t timeout = NET_WAIT_FOREVER;
+	s32_t timeout = SYS_FOREVER_MS;
 	u32_t message_type = 0U;
 	int ret;
 

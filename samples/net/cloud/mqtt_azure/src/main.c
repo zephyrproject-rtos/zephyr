@@ -309,7 +309,7 @@ static void poll_mqtt(void)
 	int rc;
 
 	while (mqtt_connected) {
-		rc = wait(NET_WAIT_FOREVER);
+		rc = wait(SYS_FOREVER_MS);
 		if (rc > 0) {
 			mqtt_input(&client_ctx);
 		}

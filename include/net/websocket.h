@@ -118,7 +118,7 @@ struct websocket_request {
  * @param req Websocket request. User should allocate and fill the request
  *        data.
  * @param timeout Max timeout to wait for the connection. The timeout value is
- *        in milliseconds. Value NET_WAIT_FOREVER means to wait forever.
+ *        in milliseconds. Value SYS_FOREVER_MS means to wait forever.
  * @param user_data User specified data that is passed to the callback.
  *
  * @return Websocket id to be used when sending/receiving Websocket data.
@@ -143,7 +143,7 @@ int websocket_connect(int http_sock, struct websocket_request *req,
  *        is the only message, then opcode should have proper opcode (text or
  *        binary) set.
  * @param timeout How long to try to send the message. The value is in
- *        milliseconds. Value NET_WAIT_FOREVER means to wait forever.
+ *        milliseconds. Value SYS_FOREVER_MS means to wait forever.
  *
  * @return <0 if error, >=0 amount of bytes sent
  */
@@ -163,7 +163,7 @@ int websocket_send_msg(int ws_sock, const u8_t *payload, size_t payload_len,
  * @param message_type Type of the message.
  * @param remaining How much there is data left in the message after this read.
  * @param timeout How long to try to receive the message.
- *        The value is in milliseconds. Value NET_WAIT_FOREVER means to wait
+ *        The value is in milliseconds. Value SYS_FOREVER_MS means to wait
  *        forever.
  *
  * @return <0 if error, >=0 amount of bytes received

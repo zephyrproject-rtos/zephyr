@@ -36,7 +36,7 @@ int sntp_simple(const char *server, u32_t timeout, struct sntp_time *time)
 		goto freeaddr;
 	}
 
-	if (timeout == NET_WAIT_FOREVER) {
+	if (timeout == SYS_FOREVER_MS) {
 		deadline = (u64_t)timeout;
 	} else {
 		deadline = k_uptime_get() + (u64_t)timeout;
