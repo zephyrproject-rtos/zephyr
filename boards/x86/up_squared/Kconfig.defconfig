@@ -8,16 +8,6 @@ config BOARD
 config BUILD_OUTPUT_STRIPPED
 	default y
 
-if I2C
-
-config I2C_0
-	default y
-
-config I2C_1
-	default y
-
-endif # I2C
-
 config APIC_TIMER
 	default y if !HPET_TIMER
 

@@ -12,16 +12,6 @@ config BOARD
 config BUILD_OUTPUT_STRIPPED
 	default y
 
-if I2C
-
-config I2C_0
-	default y
-
-config I2C_1
-	default y
-
-endif # I2C
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 19200000 if HPET_TIMER		# guess
 	default 1100000000 if LOAPIC_TIMER	# another guess

@@ -20,10 +20,6 @@ endchoice
 config I2C
 	default y if KSCAN
 
-config I2C_1
-	default y
-	depends on I2C_MCUX_LPI2C
-
 config KSCAN
 	default y if LVGL
 

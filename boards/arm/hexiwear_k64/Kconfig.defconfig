@@ -39,16 +39,6 @@ config PINMUX_MCUX_PORTE
 
 endif # PINMUX_MCUX
 
-if I2C
-
-config I2C_0
-	default y
-
-config I2C_1
-	default y
-
-endif # I2C
-
 if ADC
 
 config BATTERY_SENSE

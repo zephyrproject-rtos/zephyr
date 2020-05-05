@@ -30,10 +30,6 @@ config PINMUX_MCUX_PORTC
 
 endif # PINMUX_MCUX
 
-config I2C_1
-	default y
-	depends on I2C
-
 config FXOS8700_DRDY_INT1
 	default y
 	depends on FXOS8700
