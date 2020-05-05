@@ -57,10 +57,6 @@ config PINMUX_MCUX_PORTE
 
 endif # PINMUX_MCUX
 
-config PWM_3
-	default y
-	depends on PWM_MCUX_FTM
-
 config SPI_1
 	default y
 	depends on SPI
