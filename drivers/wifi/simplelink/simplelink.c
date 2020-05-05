@@ -111,7 +111,7 @@ static void simplelink_scan_work_handler(struct k_work *work)
 		if (delay > 0) {
 			LOG_DBG("Retrying scan...");
 		}
-		k_delayed_work_submit(&simplelink_data.work, delay);
+		k_delayed_work_submit(&simplelink_data.work, K_MSEC(delay));
 
 	} else {
 		/* Encountered an error, or max retries exceeded: */
@@ -145,7 +145,7 @@ static int simplelink_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 		simplelink_data.num_results_or_err = err;
 		simplelink_data.scan_retries = 0;
 
-		k_delayed_work_submit(&simplelink_data.work, delay);
+		k_delayed_work_submit(&simplelink_data.work, K_MSEC(delay));
 		status = 0;
 	} else {
 		status = -EIO;
