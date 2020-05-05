@@ -101,19 +101,19 @@ Not all nodes are usable
 Just because :ref:`zephyr.dts <dt-outputs>` has a node doesn't mean you can use
 it from a C or C++ source file. The node has to have a matching binding, and
 its ``status`` property must be ``"okay"`` (instead of, say, ``"disabled"``).
-Use :c:func:`DT_HAS_NODE` to check if a node identifier is valid for use. The
+Use :c:func:`DT_HAS_NODE_STATUS_OKAY` to check if a node identifier is valid for use. The
 value is 1 if yes, and 0 if no.
 
 Here are some examples from the :ref:`above devicetree <dt-node-main-ex>`:
 
 .. code-block:: c
 
-   DT_HAS_NODE(DT_PATH(soc, i2c_40002000))   /* 1: node has binding and is enabled */
-   DT_HAS_NODE(DT_ALIAS(sensor_controller))  /* 1: that's an alias for the same node */
-   DT_HAS_NODE(DT_NODELABEL(i2c1))           /* 1: that's also the same node */
+   DT_HAS_NODE_STATUS_OKAY(DT_PATH(soc, i2c_40002000))   /* 1: node has binding and is enabled */
+   DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(sensor_controller))  /* 1: that's an alias for the same node */
+   DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(i2c1))           /* 1: that's also the same node */
 
-   DT_HAS_NODE(DT_PATH(i2c_40002000))        /* 0: there's no such node */
-   DT_HAS_NODE(DT_PATH(soc))                 /* 0: the /soc node has no binding */
+   DT_HAS_NODE_STATUS_OKAY(DT_PATH(i2c_40002000))        /* 0: there's no such node */
+   DT_HAS_NODE_STATUS_OKAY(DT_PATH(soc))                 /* 0: the /soc node has no binding */
 
 Property access
 ***************

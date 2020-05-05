@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <string.h>
 
-#if DT_HAS_NODE(DT_INST(0, colorway_lpd8806))
+#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, colorway_lpd8806))
 #define DT_DRV_COMPAT colorway_lpd8806
 #else
 #define DT_DRV_COMPAT colorway_lpd8803

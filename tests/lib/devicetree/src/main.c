@@ -138,24 +138,30 @@ static void test_inst_props(void)
 
 static void test_has_path(void)
 {
-	zassert_equal(DT_HAS_NODE(DT_PATH(test, gpio_0)), 0, "gpio@0");
-	zassert_equal(DT_HAS_NODE(DT_PATH(test, gpio_deadbeef)), 1,
+	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_PATH(test, gpio_0)), 0,
+		      "gpio@0");
+	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_PATH(test, gpio_deadbeef)), 1,
 		      "gpio@deadbeef");
-	zassert_equal(DT_HAS_NODE(DT_PATH(test, gpio_abcd1234)), 1,
+	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_PATH(test, gpio_abcd1234)), 1,
 		      "gpio@abcd1234");
 }
 
 static void test_has_alias(void)
 {
-	zassert_equal(DT_HAS_NODE(DT_ALIAS(test_alias)), 1, "test-alias");
-	zassert_equal(DT_HAS_NODE(DT_ALIAS(test_undef)), 0, "test-undef");
+	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(test_alias)), 1,
+		      "test-alias");
+	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(test_undef)), 0,
+		      "test-undef");
 }
 
 static void test_inst_checks(void)
 {
-	zassert_equal(DT_HAS_NODE(DT_INST(0, vnd_gpio)), 1, "vnd,gpio #0");
-	zassert_equal(DT_HAS_NODE(DT_INST(1, vnd_gpio)), 1, "vnd,gpio #1");
-	zassert_equal(DT_HAS_NODE(DT_INST(2, vnd_gpio)), 0, "vnd,gpio #2");
+	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_INST(0, vnd_gpio)), 1,
+		      "vnd,gpio #0");
+	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_INST(1, vnd_gpio)), 1,
+		      "vnd,gpio #1");
+	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_INST(2, vnd_gpio)), 0,
+		      "vnd,gpio #2");
 
 	zassert_equal(DT_NUM_INST(vnd_gpio), 2, "num. vnd,gpio");
 	zassert_equal(DT_NUM_INST(xxxx), 0, "num. xxxx");
@@ -163,11 +169,12 @@ static void test_inst_checks(void)
 
 static void test_has_nodelabel(void)
 {
-	zassert_equal(DT_HAS_NODE(DT_NODELABEL(disabled_gpio)), 0,
+	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(disabled_gpio)), 0,
 		      "disabled_gpio");
-	zassert_equal(DT_HAS_NODE(DT_NODELABEL(test_nodelabel)), 1,
+	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(test_nodelabel)), 1,
 		      "test_nodelabel");
-	zassert_equal(DT_HAS_NODE(DT_NODELABEL(test_nodelabel_allcaps)), 1,
+	zassert_equal(DT_HAS_NODE_STATUS_OKAY(
+		      DT_NODELABEL(test_nodelabel_allcaps)), 1,
 		      "TEST_NODELABEL_ALLCAPS");
 }
 
@@ -1197,9 +1204,9 @@ static void test_devices(void)
 	struct device *dev_abcd;
 	unsigned int val;
 
-	zassert_true(DT_HAS_NODE(INST(0)), "inst 0 device");
-	zassert_true(DT_HAS_NODE(INST(1)), "inst 1 device");
-	zassert_false(DT_HAS_NODE(INST(2)), "inst 2 device");
+	zassert_true(DT_HAS_NODE_STATUS_OKAY(INST(0)), "inst 0 device");
+	zassert_true(DT_HAS_NODE_STATUS_OKAY(INST(1)), "inst 1 device");
+	zassert_false(DT_HAS_NODE_STATUS_OKAY(INST(2)), "inst 2 device");
 
 	zassert_equal(DT_NUM_INST(vnd_gpio), 2, "wrong number of gpio devs");
 

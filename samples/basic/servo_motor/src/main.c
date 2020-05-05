@@ -15,7 +15,7 @@
 #include <device.h>
 #include <drivers/pwm.h>
 
-#if !DT_HAS_NODE(DT_ALIAS(pwm_0))
+#if !DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(pwm_0))
 #error "Choose supported board or add new board for the application"
 #endif
 

@@ -23,7 +23,7 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_LPC_PORT1_NAME);
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(flexcomm0)) && \
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(flexcomm0)) && \
     DT_NODE_HAS_COMPAT(DT_NODELABEL(flexcomm0), nxp_lpc_usart)
 	/* USART0 RX,  TX */
 	const u32_t port0_pin29_config = (
@@ -89,7 +89,7 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 	pinmux_pin_set(port1, DT_GPIO_PIN(DT_ALIAS(sw2), gpios), sw2_config);
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(flexcomm4)) && \
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(flexcomm4)) && \
     DT_NODE_HAS_COMPAT(DT_NODELABEL(flexcomm4), nxp_lpc_i2c)
 	/* PORT1 PIN20 is configured as FC4_TXD_SCL_MISO_WS */
 	pinmux_pin_set(port1, 20, IOCON_PIO_FUNC5  |
@@ -118,7 +118,7 @@ static int lpcxpresso_55s69_pinmux_init(struct device *dev)
 				  IOCON_PIO_OPENDRAIN_DI);
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(hs_lspi))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(hs_lspi))
 	/* PORT0 PIN26 is configured as HS_SPI_MOSI */
 	pinmux_pin_set(port0, 26, IOCON_PIO_FUNC9 |
 				  IOCON_PIO_MODE_PULLUP |

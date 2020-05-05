@@ -43,7 +43,7 @@
  */
 #define CHECK_DT_REG(lbl, mdk_addr)					\
 	BUILD_ASSERT(							\
-		UTIL_OR(UTIL_NOT(DT_HAS_NODE(DT_NODELABEL(lbl))),	\
+		UTIL_OR(UTIL_NOT(DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lbl))),\
 			(DT_REG_ADDR(DT_NODELABEL(lbl)) ==		\
 			 (u32_t)(mdk_addr))))
 

@@ -33,17 +33,17 @@ static int frdm_k22f_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(uart0))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart0))
 #error "No UART0 is used"
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(uart1))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart1))
 	/* UART1 RX, TX */
 	pinmux_pin_set(porte, 0, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(porte, 1, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(uart2))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart2))
 	/* UART2 RX, TX */
 	pinmux_pin_set(portd, 2, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAlt3));
@@ -64,7 +64,7 @@ static int frdm_k22f_pinmux_init(struct device *dev)
 	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portd, 5, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#if DT_HAS_NODE(DT_NODELABEL(spi0))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(spi0))
 	/* SPI0 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(portd, 4, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portd, 1, PORT_PCR_MUX(kPORT_MuxAlt2));
@@ -73,7 +73,7 @@ static int frdm_k22f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(i2c0))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(i2c0))
 	/* I2C0 SCL, SDA */
 	pinmux_pin_set(portb, 2, PORT_PCR_MUX(kPORT_MuxAlt2)
 					| PORT_PCR_ODE_MASK);

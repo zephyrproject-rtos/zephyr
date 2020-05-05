@@ -885,8 +885,8 @@
  *
  * Example uses:
  *
- *     DT_HAS_NODE(DT_PATH(soc, i2c@12340000))
- *     DT_HAS_NODE(DT_ALIAS(an_alias_name))
+ *     DT_HAS_NODE_STATUS_OKAY(DT_PATH(soc, i2c@12340000))
+ *     DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(an_alias_name))
  *
  * Tests whether a node identifier refers to a node which:
  *
@@ -898,20 +898,20 @@
  * @return 1 if the node identifier refers to a usable node,
  *         0 otherwise.
  */
-#define DT_HAS_NODE(node_id) IS_ENABLED(DT_CAT(node_id, _EXISTS))
+#define DT_HAS_NODE_STATUS_OKAY(node_id) IS_ENABLED(DT_CAT(node_id, _EXISTS))
 
 /**
  * @brief Does the devicetree have any usable nodes with a compatible?
  *
  * Test for whether the devicetree has any usable nodes (as determined by
- * @ref DT_HAS_NODE()) with a given compatible, i.e. if there is at least one
- * "x" for which "DT_HAS_NODE(DT_INST(x, compat))" is 1.
+ * @ref DT_HAS_NODE_STATUS_OKAY()) with a given compatible, i.e. if there is at
+ * least one "x" for which "DT_HAS_NODE_STATUS_OKAY(DT_INST(x, compat))" is 1.
  *
  * @param compat lowercase-and-underscores version of a compatible
  * @return 0 if no nodes of the compatible are available for use,
  *         1 if at least one is enabled and has a matching binding
  */
-#define DT_HAS_COMPAT(compat) DT_HAS_NODE(DT_INST(0, compat))
+#define DT_HAS_COMPAT(compat) DT_HAS_NODE_STATUS_OKAY(DT_INST(0, compat))
 
 /**
  * @brief Get the number of enabled instances for a given compatible
@@ -1393,12 +1393,12 @@
 /**
  * @brief Does the devicetree have a particular instance number?
  *
- * This is equivalent to DT_HAS_NODE(DT_DRV_INST(inst)).
+ * This is equivalent to DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(inst)).
  * @param inst instance number
  * @return 1 if the devicetree has that numbered instance,
  *         0 otherwise.
  */
-#define DT_HAS_DRV_INST(inst) DT_HAS_NODE(DT_DRV_INST(inst))
+#define DT_HAS_DRV_INST(inst) DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(inst))
 
 /**
  * @brief Test if a DT_DRV_COMPAT's bus type is a given type

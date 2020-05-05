@@ -214,7 +214,7 @@ static void measure_temperature(struct k_work *work)
 
 #define TEMP_NODE DT_INST(0, nordic_nrf_temp)
 
-#if DT_HAS_NODE(TEMP_NODE)
+#if DT_HAS_NODE_STATUS_OKAY(TEMP_NODE)
 static inline struct device *temp_device(void)
 {
 	return device_get_binding(DT_LABEL(TEMP_NODE));
