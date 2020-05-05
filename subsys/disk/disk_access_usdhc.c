@@ -2684,7 +2684,7 @@ static int usdhc_board_access_init(struct usdhc_priv *priv)
 
 	gpio_level = ret;
 
-	if (gpio_level == 0) {
+	if (gpio_level != 0) {
 		priv->inserted = false;
 		LOG_ERR("NO SD inserted!\r\n");
 
