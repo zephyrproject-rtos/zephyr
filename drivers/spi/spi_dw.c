@@ -571,7 +571,7 @@ DEVICE_AND_API_INIT(spi_dw_port_0, DT_INST_LABEL(0),
 
 void spi_config_0_irq(void)
 {
-#ifdef CONFIG_SPI_DW_PORT_0_INTERRUPT_SINGLE_LINE
+#if DT_NUM_IRQS(DT_DRV_INST(0)) == 1
 #if DT_INST_IRQ_HAS_NAME(0, flags)
 #define INST_0_IRQ_FLAGS DT_INST_IRQ_BY_NAME(0, flags, irq)
 #else
@@ -637,7 +637,7 @@ DEVICE_AND_API_INIT(spi_dw_port_1, DT_INST_LABEL(1),
 
 void spi_config_1_irq(void)
 {
-#ifdef CONFIG_SPI_DW_PORT_1_INTERRUPT_SINGLE_LINE
+#if DT_NUM_IRQS(DT_DRV_INST(1)) == 1
 #if DT_INST_IRQ_HAS_NAME(1, flags)
 #define INST_1_IRQ_FLAGS DT_INST_IRQ_BY_NAME(1, flags, irq)
 #else
@@ -703,7 +703,7 @@ DEVICE_AND_API_INIT(spi_dw_port_2, DT_INST_LABEL(2),
 
 void spi_config_2_irq(void)
 {
-#ifdef CONFIG_SPI_DW_PORT_2_INTERRUPT_SINGLE_LINE
+#if DT_NUM_IRQS(DT_DRV_INST(2)) == 1
 #if DT_INST_IRQ_HAS_NAME(2, flags)
 #define INST_2_IRQ_FLAGS DT_INST_IRQ_BY_NAME(2, flags, irq)
 #else
@@ -769,7 +769,7 @@ DEVICE_AND_API_INIT(spi_dw_port_3, DT_INST_LABEL(3),
 
 void spi_config_3_irq(void)
 {
-#ifdef CONFIG_SPI_DW_PORT_3_INTERRUPT_SINGLE_LINE
+#if DT_NUM_IRQS(DT_DRV_INST(3)) == 1
 #if DT_INST_IRQ_HAS_NAME(3, flags)
 #define INST_3_IRQ_FLAGS DT_INST_IRQ_BY_NAME(3, flags, irq)
 #else
