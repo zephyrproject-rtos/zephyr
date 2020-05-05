@@ -10,6 +10,7 @@
 #include <drivers/lora.h>
 #include <drivers/spi.h>
 #include <zephyr.h>
+#include "sx12xx_common.h"
 
 /* LoRaMac-node specific includes */
 #include <sx1276/sx1276.h>
@@ -49,18 +50,12 @@ static const struct sx1276_dio sx1276_dios[] = { SX1276_DIO_GPIO_INIT(0) };
 
 #define SX1276_MAX_DIO ARRAY_SIZE(sx1276_dios)
 
-struct sx1276_data {
+static struct sx1276_data {
 	struct device *reset;
 	struct device *spi;
 	struct spi_config spi_cfg;
 	struct device *dio_dev[SX1276_MAX_DIO];
 	struct k_work dio_work[SX1276_MAX_DIO];
-	struct k_sem data_sem;
-	RadioEvents_t sx1276_event;
-	uint8_t *rx_buf;
-	uint8_t rx_len;
-	int8_t snr;
-	int16_t rssi;
 } dev_data;
 
 bool SX1276CheckRfFrequency(uint32_t frequency)
@@ -289,97 +284,6 @@ void SX1276SetRfTxPower(int8_t power)
 	}
 }
 
-static int sx1276_lora_send(struct device *dev, uint8_t *data, uint32_t data_len)
-{
-	Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
-
-	Radio.Send(data, data_len);
-
-	return 0;
-}
-
-static void sx1276_tx_done(void)
-{
-	Radio.Sleep();
-}
-
-static void sx1276_rx_done(uint8_t *payload, uint16_t size, int16_t rssi, int8_t snr)
-{
-	Radio.Sleep();
-
-	dev_data.rx_buf = payload;
-	dev_data.rx_len = size;
-	dev_data.rssi = rssi;
-	dev_data.snr = snr;
-
-	k_sem_give(&dev_data.data_sem);
-}
-
-static int sx1276_lora_recv(struct device *dev, uint8_t *data, uint8_t size,
-			    k_timeout_t timeout, int16_t *rssi, int8_t *snr)
-{
-	int ret;
-
-	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
-	Radio.Rx(0);
-
-	ret = k_sem_take(&dev_data.data_sem, timeout);
-	if (ret < 0) {
-		LOG_ERR("Receive timeout!");
-		return ret;
-	}
-
-	/* Only copy the bytes that can fit the buffer, drop the rest */
-	if (dev_data.rx_len > size)
-		dev_data.rx_len = size;
-
-	/*
-	 * FIXME: We are copying the global buffer here, so it might get
-	 * overwritten inbetween when a new packet comes in. Use some
-	 * wise method to fix this!
-	 */
-	memcpy(data, dev_data.rx_buf, dev_data.rx_len);
-
-	if (rssi != NULL) {
-		*rssi = dev_data.rssi;
-	}
-
-	if (snr != NULL) {
-		*snr = dev_data.snr;
-	}
-
-	return dev_data.rx_len;
-}
-
-static int sx1276_lora_config(struct device *dev,
-			      struct lora_modem_config *config)
-{
-
-	Radio.SetChannel(config->frequency);
-
-	if (config->tx) {
-		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
-				  config->bandwidth, config->datarate,
-				  config->coding_rate, config->preamble_len,
-				  false, true, 0, 0, false, 4000);
-	} else {
-		/* TODO: Get symbol timeout value from config parameters */
-		Radio.SetRxConfig(MODEM_LORA, config->bandwidth,
-				  config->datarate, config->coding_rate,
-				  0, config->preamble_len, 10, false, 0,
-				  false, 0, 0, false, true);
-	}
-
-	return 0;
-}
-
-static int sx1276_lora_test_cw(struct device *dev, uint32_t frequency,
-			       int8_t tx_power, uint16_t duration)
-{
-	Radio.SetTxContinuousWave(frequency, tx_power, duration);
-	return 0;
-}
-
 /* Initialize Radio driver callbacks */
 const struct Radio_s Radio = {
 	.Init = SX1276Init,
@@ -456,22 +360,22 @@ static int sx1276_lora_init(struct device *dev)
 		return -EIO;
 	}
 
-	k_sem_init(&dev_data.data_sem, 0, UINT_MAX);
-
-	dev_data.sx1276_event.TxDone = sx1276_tx_done;
-	dev_data.sx1276_event.RxDone = sx1276_rx_done;
-	Radio.Init(&dev_data.sx1276_event);
-
 	LOG_INF("SX1276 Version:%02x found", regval);
+
+	ret = sx12xx_init(dev);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize SX12xx common");
+		return ret;
+	}
 
 	return 0;
 }
 
 static const struct lora_driver_api sx1276_lora_api = {
-	.config = sx1276_lora_config,
-	.send = sx1276_lora_send,
-	.recv = sx1276_lora_recv,
-	.test_cw = sx1276_lora_test_cw,
+	.config = sx12xx_lora_config,
+	.send = sx12xx_lora_send,
+	.recv = sx12xx_lora_recv,
+	.test_cw = sx12xx_lora_test_cw,
 };
 
 DEVICE_AND_API_INIT(sx1276_lora, DT_INST_LABEL(0),
