@@ -18,10 +18,6 @@ config SPI_1
 
 endif # SPI_MCUX_LPSPI
 
-config CAN_0
-	default y
-	depends on CAN
-
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA

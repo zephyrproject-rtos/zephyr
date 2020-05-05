@@ -57,8 +57,4 @@ config ETH_MCUX_0
 
 endif # NETWORKING
 
-config CAN_0
-	default y
-	depends on CAN
-
 endif # BOARD_FRDM_K64F
