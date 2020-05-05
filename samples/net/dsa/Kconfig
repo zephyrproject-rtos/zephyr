@@ -1,0 +1,12 @@
+# Private config options for LLDP sample app
+
+# Copyright (c) 2018 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DSA sample application"
+
+source "Kconfig.zephyr"
+
+if NET_DSA
+
+endif

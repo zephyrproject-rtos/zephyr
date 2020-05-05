@@ -1,0 +1,6 @@
+common:
+  harness: net
+  tags: net dsa
+sample:
+  description: Test DSA functionality
+  name: DSA sample app
