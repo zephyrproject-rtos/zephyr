@@ -29,7 +29,7 @@ static int usb_kw24d512_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTD_NAME);
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(uart0))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart0))
 	/* UART0 RX, TX */
 	pinmux_pin_set(porta, 1, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAlt2));
@@ -42,7 +42,7 @@ static int usb_kw24d512_pinmux_init(struct device *dev)
 	pinmux_pin_set(portd, 4, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portd, 5, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#if DT_HAS_NODE(DT_NODELABEL(spi1))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(spi1))
 	/* SPI1 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portb, 11, PORT_PCR_MUX(kPORT_MuxAlt2));

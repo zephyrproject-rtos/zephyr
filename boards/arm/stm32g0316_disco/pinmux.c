@@ -11,7 +11,7 @@
 
 /* pin assignments for STM32G0316-DISCO board */
 static const struct pin_config pinconf[] = {
-#if DT_HAS_NODE(DT_NODELABEL(usart1))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(usart1))
 	{STM32_PIN_PA9, STM32G0_PINMUX_FUNC_PA9_USART1_TX},
 	{STM32_PIN_PB7, STM32G0_PINMUX_FUNC_PB7_USART1_RX},
 #endif
@@ -21,7 +21,7 @@ static int pinmux_stm32_init(struct device *port)
 {
 	ARG_UNUSED(port);
 
-#if DT_HAS_NODE(DT_NODELABEL(usart1))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(usart1))
 	/* Remap PA11 to PA9 */
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
 	LL_SYSCFG_EnablePinRemap(LL_SYSCFG_PIN_RMP_PA11);

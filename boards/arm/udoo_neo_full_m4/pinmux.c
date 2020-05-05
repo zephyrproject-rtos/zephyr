@@ -11,7 +11,7 @@ static int udoo_neo_full_m4_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#if DT_HAS_NODE(DT_NODELABEL(gpio4))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio4))
 	/* GPIO4_IO06 pin mux configuration (red LED) */
 	IOMUXC_SW_MUX_CTL_PAD_NAND_DATA02 =
 				IOMUXC_SW_MUX_CTL_PAD_NAND_DATA02_MUX_MODE(5);
@@ -22,7 +22,7 @@ static int udoo_neo_full_m4_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_NAND_DATA02_DSE(6);
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(uart5))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart5))
 	/* UART5 pin mux configuration */
 	IOMUXC_SW_MUX_CTL_PAD_SD4_DATA4 =
 				IOMUXC_SW_MUX_CTL_PAD_SD4_DATA4_MUX_MODE(2);

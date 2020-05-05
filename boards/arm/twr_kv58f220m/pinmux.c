@@ -49,7 +49,7 @@ static int twr_kv58f220m_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 18, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc, 19, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#if DT_HAS_NODE(DT_NODELABEL(i2c1))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(i2c1))
 	/* I2C1 SCL, SDA */
 	pinmux_pin_set(portd, 8, PORT_PCR_MUX(kPORT_MuxAlt2)
 					| PORT_PCR_ODE_MASK);
@@ -57,7 +57,7 @@ static int twr_kv58f220m_pinmux_init(struct device *dev)
 					| PORT_PCR_ODE_MASK);
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(uart0))
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart0))
 	/* UART0 RX, TX */
 	pinmux_pin_set(portb, 0, PORT_PCR_MUX(kPORT_MuxAlt7));
 	pinmux_pin_set(portb, 1, PORT_PCR_MUX(kPORT_MuxAlt7));

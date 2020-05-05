@@ -19,7 +19,7 @@
  * 'watchdog0' property, or one of the following watchdog compatibles
  * must have an enabled node.
  */
-#if DT_HAS_NODE(DT_ALIAS(watchdog0))
+#if DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(watchdog0))
 #define WDT_NODE DT_ALIAS(watchdog0)
 #elif DT_HAS_COMPAT(st_stm32_window_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_window_watchdog)

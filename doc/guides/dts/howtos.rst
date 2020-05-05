@@ -111,7 +111,7 @@ this:
 
    #define MY_SERIAL DT_NODELABEL(my_serial)
 
-   #if DT_HAS_NODE(MY_SERIAL)
+   #if DT_HAS_NODE_STATUS_OKAY(MY_SERIAL)
    struct device *uart_dev = device_get_binding(DT_LABEL(MY_SERIAL));
    #else
    #error "Node is disabled or has no matching binding"
@@ -498,7 +498,7 @@ Try checking the node by adding this to the file and recompiling:
 
 .. code-block:: c
 
-   #if DT_HAS_NODE(DT_NODELABEL(my_serial)) == 0
+   #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(my_serial)) == 0
    #error "whoops"
    #endif
 

@@ -14,23 +14,23 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #include <device.h>
 #include <drivers/display.h>
 
-#if DT_HAS_NODE(DT_INST(0, ilitek_ili9340))
+#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, ilitek_ili9340))
 #define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, ilitek_ili9340))
 #endif
 
-#if DT_HAS_NODE(DT_INST(0, solomon_ssd1306fb))
+#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, solomon_ssd1306fb))
 #define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, solomon_ssd1306fb))
 #endif
 
-#if DT_HAS_NODE(DT_INST(0, gooddisplay_gdeh0213b1))
+#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, gooddisplay_gdeh0213b1))
 #define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, gooddisplay_gdeh0213b1))
 #endif
 
-#if DT_HAS_NODE(DT_INST(0, sitronix_st7789v))
+#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, sitronix_st7789v))
 #define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, sitronix_st7789v))
 #endif
 
-#if DT_HAS_NODE(DT_INST(0, fsl_imx6sx_lcdif))
+#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, fsl_imx6sx_lcdif))
 #define DISPLAY_DEV_NAME DT_LABEL(DT_INST(0, fsl_imx6sx_lcdif))
 #endif
 
