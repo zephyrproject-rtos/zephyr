@@ -95,7 +95,7 @@ static int lpcxpresso_55s16_pinmux_init(struct device *dev)
 	pinmux_pin_set(port1, DT_GPIO_PIN(DT_ALIAS(led2), gpios), led2_config);
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(flexcomm0)) && \
+#if DT_HAS_NODELABEL_STATUS_OKAY(flexcomm0) && \
     DT_NODE_HAS_COMPAT(DT_NODELABEL(flexcomm0), nxp_lpc_usart)
 	/* USART0 RX, TX */
 	const u32_t port0_pin29_config = (

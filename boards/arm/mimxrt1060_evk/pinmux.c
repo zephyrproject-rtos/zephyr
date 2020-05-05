@@ -9,7 +9,7 @@
 #include <fsl_gpio.h>
 #include <soc.h>
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(enet))
+#if DT_HAS_NODELABEL_STATUS_OKAY(enet)
 static gpio_pin_config_t enet_gpio_config = {
 	.direction = kGPIO_DigitalOutput,
 	.outputLogic = 0,
@@ -33,7 +33,7 @@ static int mimxrt1060_evk_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if !DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(enet))
+#if !DT_HAS_NODELABEL_STATUS_OKAY(enet)
 	/* LED */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_09_GPIO1_IO09, 0);
 
@@ -46,7 +46,7 @@ static int mimxrt1060_evk_init(struct device *dev)
 	IOMUXC_SetPinMux(IOMUXC_SNVS_WAKEUP_GPIO5_IO00, 0);
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lpuart1))
+#if DT_HAS_NODELABEL_STATUS_OKAY(lpuart1)
 	/* LPUART1 TX/RX */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_12_LPUART1_TX, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_13_LPUART1_RX, 0);
@@ -62,7 +62,7 @@ static int mimxrt1060_evk_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lpuart3))
+#if DT_HAS_NODELABEL_STATUS_OKAY(lpuart3)
 	/* LPUART3 TX/RX */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_06_LPUART3_TX, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_07_LPUART3_RX, 0);
@@ -78,7 +78,7 @@ static int mimxrt1060_evk_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lpi2c1))
+#if DT_HAS_NODELABEL_STATUS_OKAY(lpi2c1)
 	/* LPI2C1 SCL, SDA */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_00_LPI2C1_SCL, 1);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_01_LPI2C1_SDA, 1);
@@ -98,7 +98,7 @@ static int mimxrt1060_evk_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(enet))
+#if DT_HAS_NODELABEL_STATUS_OKAY(enet)
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_09_GPIO1_IO09, 0U);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_10_GPIO1_IO10, 0U);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B1_04_ENET_RX_DATA00, 0);
@@ -136,7 +136,7 @@ static int mimxrt1060_evk_init(struct device *dev)
 	GPIO_WritePinOutput(GPIO1, 9, 0);
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lcdif))
+#if DT_HAS_NODELABEL_STATUS_OKAY(lcdif)
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B0_00_LCD_CLK, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B0_01_LCD_ENABLE, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B0_02_LCD_HSYNC, 0);
@@ -198,7 +198,7 @@ static int mimxrt1060_evk_init(struct device *dev)
 	return 0;
 }
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(enet))
+#if DT_HAS_NODELABEL_STATUS_OKAY(enet)
 static int mimxrt1060_evk_phy_reset(struct device *dev)
 {
 	/* RESET PHY chip. */
@@ -210,6 +210,6 @@ static int mimxrt1060_evk_phy_reset(struct device *dev)
 #endif
 
 SYS_INIT(mimxrt1060_evk_init, PRE_KERNEL_1, 0);
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(enet))
+#if DT_HAS_NODELABEL_STATUS_OKAY(enet)
 SYS_INIT(mimxrt1060_evk_phy_reset, PRE_KERNEL_2, 0);
 #endif

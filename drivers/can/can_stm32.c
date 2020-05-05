@@ -20,9 +20,9 @@ LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(can1)) && \
+#if DT_HAS_NODELABEL_STATUS_OKAY(can1) && \
 	DT_NODE_HAS_COMPAT(DT_NODELABEL(can1), st_stm32_can) && \
-	DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(can2)) && \
+	DT_HAS_NODELABEL_STATUS_OKAY(can2) && \
 	DT_NODE_HAS_COMPAT(DT_NODELABEL(can2), st_stm32_can)
 #error Simultaneous use of CAN_1 and CAN_2 not supported yet
 #endif
@@ -390,7 +390,7 @@ static int can_stm32_init(struct device *dev)
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
 	CAN_TypeDef *can = cfg->can;
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(can2))
+#if DT_HAS_NODELABEL_STATUS_OKAY(can2)
 	CAN_TypeDef *master_can = cfg->master_can;
 #endif
 	struct device *clock;
@@ -431,7 +431,7 @@ static int can_stm32_init(struct device *dev)
 		return ret;
 	}
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(can2))
+#if DT_HAS_NODELABEL_STATUS_OKAY(can2)
 	master_can->FMR &= ~CAN_FMR_CAN2SB; /* Assign all filters to CAN2 */
 #endif
 
@@ -1047,7 +1047,7 @@ static const struct can_driver_api can_api_funcs = {
 	.register_state_change_isr = can_stm32_register_state_change_isr
 };
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(can1)) && \
+#if DT_HAS_NODELABEL_STATUS_OKAY(can1) && \
 	DT_NODE_HAS_COMPAT(DT_NODELABEL(can1), st_stm32_can)
 
 static void config_can_1_irq(CAN_TypeDef *can);
@@ -1135,9 +1135,9 @@ NET_DEVICE_INIT(socket_can_stm32_1, SOCKET_CAN_NAME_1, socket_can_init_1,
 
 #endif /* CONFIG_NET_SOCKETS_CAN */
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(can1)) */
+#endif /* DT_HAS_NODELABEL_STATUS_OKAY(can1) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(can2)) && \
+#if DT_HAS_NODELABEL_STATUS_OKAY(can2) && \
 	DT_NODE_HAS_COMPAT(DT_NODELABEL(can2), st_stm32_can)
 
 static void config_can_2_irq(CAN_TypeDef *can);
@@ -1219,4 +1219,4 @@ NET_DEVICE_INIT(socket_can_stm32_2, SOCKET_CAN_NAME_2, socket_can_init_2,
 
 #endif /* CONFIG_NET_SOCKETS_CAN */
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(can2)) */
+#endif /* DT_HAS_NODELABEL_STATUS_OKAY(can2) */

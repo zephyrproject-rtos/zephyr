@@ -66,7 +66,7 @@ static ALWAYS_INLINE void clock_init(void)
 
 	CLOCK_SetSimConfig(&simConfig);
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lpuart0))
+#if DT_HAS_NODELABEL_STATUS_OKAY(lpuart0)
 	CLOCK_SetLpuartClock(LPUART0SRC_OSCERCLK);
 #endif
 }

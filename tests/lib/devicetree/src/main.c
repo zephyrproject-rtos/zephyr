@@ -169,9 +169,9 @@ static void test_inst_checks(void)
 
 static void test_has_nodelabel(void)
 {
-	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(disabled_gpio)), 0,
+	zassert_equal(DT_HAS_NODELABEL_STATUS_OKAY(disabled_gpio), 0,
 		      "disabled_gpio");
-	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(test_nodelabel)), 1,
+	zassert_equal(DT_HAS_NODELABEL_STATUS_OKAY(test_nodelabel), 1,
 		      "test_nodelabel");
 	zassert_equal(DT_HAS_NODE_STATUS_OKAY(
 		      DT_NODELABEL(test_nodelabel_allcaps)), 1,

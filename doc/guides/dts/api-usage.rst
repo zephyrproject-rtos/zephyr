@@ -110,7 +110,7 @@ Here are some examples from the :ref:`above devicetree <dt-node-main-ex>`:
 
    DT_HAS_NODE_STATUS_OKAY(DT_PATH(soc, i2c_40002000))   /* 1: node has binding and is enabled */
    DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(sensor_controller))  /* 1: that's an alias for the same node */
-   DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(i2c1))           /* 1: that's also the same node */
+   DT_HAS_NODELABEL_STATUS_OKAY(i2c1)           /* 1: that's also the same node */
 
    DT_HAS_NODE_STATUS_OKAY(DT_PATH(i2c_40002000))        /* 0: there's no such node */
    DT_HAS_NODE_STATUS_OKAY(DT_PATH(soc))                 /* 0: the /soc node has no binding */

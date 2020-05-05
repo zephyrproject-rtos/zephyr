@@ -498,7 +498,7 @@ Try checking the node by adding this to the file and recompiling:
 
 .. code-block:: c
 
-   #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(my_serial)) == 0
+   #if DT_HAS_NODELABEL_STATUS_OKAY(my_serial) == 0
    #error "whoops"
    #endif
 

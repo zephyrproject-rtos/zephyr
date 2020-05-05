@@ -901,6 +901,26 @@
 #define DT_HAS_NODE_STATUS_OKAY(node_id) IS_ENABLED(DT_CAT(node_id, _EXISTS))
 
 /**
+ * @brief Does a node label refer to a usable node?
+ *
+ * Example uses:
+ *
+ *     DT_HAS_NODELABEL_STATUS_OKAY(a_nodelabel)
+ *
+ * Tests whether a node label refers to a node which:
+ *
+ * - exists in the devicetree, and
+ * - is enabled (has status property "okay" or no status property), and
+ * - has a matching binding
+ *
+ * @param label lowercase-and-underscores node label name
+ * @return 1 if the node label refers to a usable node,
+ *         0 otherwise.
+ */
+#define DT_HAS_NODELABEL_STATUS_OKAY(label) \
+	DT_HAS_NODE_STATUS_OKAY(DT_LABEL(label))
+
+/**
  * @brief Does the devicetree have any usable nodes with a compatible?
  *
  * Test for whether the devicetree has any usable nodes (as determined by
