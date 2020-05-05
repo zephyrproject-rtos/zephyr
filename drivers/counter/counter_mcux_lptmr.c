@@ -200,7 +200,14 @@ static const struct counter_driver_api mcux_lptmr_driver_api = {
 #define LPTMR_GLITCH_32768 kLPTMR_Prescale_Glitch_15
 #define TO_LPTMR_GLITCH(val) _DO_CONCAT(LPTMR_GLITCH_, val)
 
-#if DT_HAS_DRV_INST(0)
+/*
+ * This driver is single-instance. If the devicetree contains multiple
+ * instances, this will fail and the driver needs to be revisited.
+ */
+BUILD_ASSERT(DT_NUM_INST(DT_DRV_COMPAT) <= 1,
+	     "unsupported lptmr instance");
+
+#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))
 static struct mcux_lptmr_data mcux_lptmr_data_0;
 
 static void mcux_lptmr_irq_config_0(struct device *dev);
@@ -247,4 +254,4 @@ static void mcux_lptmr_irq_config_0(struct device *dev)
 		    mcux_lptmr_isr, DEVICE_GET(mcux_lptmr_0), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
-#endif /* DT_HAS_DRV_INST(0) */
+#endif	/* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0)) */

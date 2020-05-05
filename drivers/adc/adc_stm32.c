@@ -682,6 +682,4 @@ static void adc_stm32_cfg_func_##index(void)				\
 	irq_enable(DT_INST_IRQN(index));		\
 }
 
-#if DT_HAS_DRV_INST(0)
-STM32_ADC_INIT(0);
-#endif /* DT_HAS_DRV_INST(0) */
+DT_INST_FOREACH(STM32_ADC_INIT)

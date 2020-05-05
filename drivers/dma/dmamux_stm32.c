@@ -210,8 +210,6 @@ DEVICE_AND_API_INIT(dmamux_##index, DT_INST_LABEL(index),	\
 		    &dmamux_stm32_init,				\
 		    &dmamux_stm32_data_##index, &dmamux_stm32_config_##index,\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,\
-		    &dma_funcs)
+		    &dma_funcs);
 
-#if DT_HAS_DRV_INST(0)
-DMAMUX_INIT(0);
-#endif /* DT_HAS_DRV_INST(0) */
+DT_INST_FOREACH(DMAMUX_INIT)

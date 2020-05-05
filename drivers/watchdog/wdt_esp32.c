@@ -270,10 +270,10 @@ static void wdt_esp32_isr(struct device *dev)
 }
 
 
-#if DT_HAS_DRV_INST(0)
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(wdt0))
 ESP32_WDT_INIT(0);
 #endif
 
-#if DT_HAS_DRV_INST(1)
+#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(wdt1))
 ESP32_WDT_INIT(1);
 #endif

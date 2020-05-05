@@ -295,10 +295,4 @@ static const struct wdt_driver_api wdt_gecko_driver_api = {
 		irq_enable(DT_INST_IRQN(index));	\
 	}
 
-#if DT_HAS_DRV_INST(0)
-GECKO_WDT_INIT(0)
-#endif /* DT_HAS_DRV_INST(0) */
-
-#if DT_HAS_DRV_INST(1)
-GECKO_WDT_INIT(1)
-#endif /* DT_HAS_DRV_INST(1) */
+DT_INST_FOREACH(GECKO_WDT_INIT)

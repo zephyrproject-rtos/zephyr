@@ -514,21 +514,6 @@ DEVICE_AND_API_INIT(gpio_pca95xx_##inst,				\
 	&gpio_pca95xx_##inst##_drvdata,					\
 	&gpio_pca95xx_##inst##_cfg,					\
 	POST_KERNEL, CONFIG_GPIO_PCA95XX_INIT_PRIORITY,			\
-	&gpio_pca95xx_drv_api_funcs)
+	&gpio_pca95xx_drv_api_funcs);
 
-
-#if DT_HAS_DRV_INST(0)
-GPIO_PCA95XX_DEVICE_INSTANCE(0);
-#endif /* DT_HAS_DRV_INST(0) */
-
-#if DT_HAS_DRV_INST(1)
-GPIO_PCA95XX_DEVICE_INSTANCE(1);
-#endif /* DT_HAS_DRV_INST(1) */
-
-#if DT_HAS_DRV_INST(2)
-GPIO_PCA95XX_DEVICE_INSTANCE(2);
-#endif /* DT_HAS_DRV_INST(2) */
-
-#if DT_HAS_DRV_INST(3)
-GPIO_PCA95XX_DEVICE_INSTANCE(3);
-#endif /* DT_HAS_DRV_INST(3) */
+DT_INST_FOREACH(GPIO_PCA95XX_DEVICE_INSTANCE)

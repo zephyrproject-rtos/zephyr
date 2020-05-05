@@ -347,6 +347,4 @@ static struct i2c_driver_api i2c_sifive_api = {
 			    CONFIG_I2C_INIT_PRIORITY, \
 			    &i2c_sifive_api)
 
-#if DT_HAS_DRV_INST(0)
-I2C_SIFIVE_INIT(0);
-#endif
+DT_INST_FOREACH(I2C_SIFIVE_INIT)
