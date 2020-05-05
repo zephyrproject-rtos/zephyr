@@ -69,6 +69,8 @@ enum {
 	 * controller.
 	 */
 	BT_ADV_PARAMS_SET,
+	/* Advertising data has been set in the controller. */
+	BT_ADV_DATA_SET,
 	/* Advertising random address pending to be set in the controller. */
 	BT_ADV_RANDOM_ADDR_PENDING,
 	/* The private random address of the advertiser is valid for this cycle
@@ -85,6 +87,8 @@ enum {
 	BT_ADV_INCLUDE_NAME,
 	/* Advertiser set is connectable */
 	BT_ADV_CONNECTABLE,
+	/* Advertiser set is scannable */
+	BT_ADV_SCANNABLE,
 	/* Advertiser set has disabled the use of private addresses and is using
 	 * the identity address instead.
 	 */

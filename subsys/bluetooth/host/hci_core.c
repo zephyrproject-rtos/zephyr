@@ -7116,60 +7116,60 @@ static inline bool ad_has_name(const struct bt_data *ad, size_t ad_len)
 static int le_adv_update(struct bt_le_ext_adv *adv,
 			 const struct bt_data *ad, size_t ad_len,
 			 const struct bt_data *sd, size_t sd_len,
-			 bool connectable, bool use_name)
+			 bool scannable, bool use_name)
 {
 	struct bt_ad d[2] = {};
 	struct bt_data data;
+	size_t d_len;
 	int err;
 
+	if (use_name) {
+		const char *name = bt_get_name();
+
+		if ((ad && ad_has_name(ad, ad_len)) ||
+		    (sd && ad_has_name(sd, sd_len))) {
+			/* Cannot use name if name is already set */
+			return -EINVAL;
+		}
+
+		data = (struct bt_data)BT_DATA(
+			BT_DATA_NAME_COMPLETE,
+			name, strlen(name));
+	}
+
+	d_len = 1;
 	d[0].data = ad;
 	d[0].len = ad_len;
 
-	err = set_ad(adv, d, 1);
+	if (use_name && !scannable) {
+		d[1].data = &data;
+		d[1].len = 1;
+		d_len = 2;
+	}
+
+	err = set_ad(adv, d, d_len);
 	if (err) {
 		return err;
 	}
 
-	d[0].data = sd;
-	d[0].len = sd_len;
+	if (scannable) {
+		d_len = 1;
+		d[0].data = sd;
+		d[0].len = sd_len;
 
-	if (use_name) {
-		const char *name;
-
-		if (sd) {
-			/* Cannot use name if name is already set */
-			if (ad_has_name(sd, sd_len)) {
-				return -EINVAL;
-			}
+		if (use_name) {
+			d[1].data = &data;
+			d[1].len = 1;
+			d_len = 2;
 		}
 
-		name = bt_get_name();
-		data = (struct bt_data)BT_DATA(
-			BT_DATA_NAME_COMPLETE,
-			name, strlen(name));
-
-		d[1].data = &data;
-		d[1].len = 1;
-	}
-
-	/*
-	 * We need to set SCAN_RSP when enabling advertising type that
-	 * allows for Scan Requests.
-	 *
-	 * If any data was not provided but we enable connectable
-	 * undirected advertising sd needs to be cleared from values set
-	 * by previous calls.
-	 * Clearing sd is done by calling set_sd() with NULL data and
-	 * zero len.
-	 * So following condition check is unusual but correct.
-	 */
-	if (d[0].data || d[1].data || connectable) {
-		err = set_sd(adv, d, 2);
+		err = set_sd(adv, d, d_len);
 		if (err) {
 			return err;
 		}
 	}
 
+	atomic_set_bit(adv->flags, BT_ADV_DATA_SET);
 	return 0;
 }
 
@@ -7177,7 +7177,7 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 			  const struct bt_data *sd, size_t sd_len)
 {
 	struct bt_le_ext_adv *adv = bt_adv_lookup_legacy();
-	bool connectable, use_name;
+	bool scannable, use_name;
 
 	if (!adv) {
 		return -EINVAL;
@@ -7187,10 +7187,10 @@ int bt_le_adv_update_data(const struct bt_data *ad, size_t ad_len,
 		return -EAGAIN;
 	}
 
-	connectable = atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE);
+	scannable = atomic_test_bit(adv->flags, BT_ADV_SCANNABLE);
 	use_name = atomic_test_bit(adv->flags, BT_ADV_INCLUDE_NAME);
 
-	return le_adv_update(adv, ad, ad_len, sd, sd_len, connectable,
+	return le_adv_update(adv, ad, ad_len, sd, sd_len, scannable,
 			     use_name);
 }
 
@@ -7355,7 +7355,7 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 	struct bt_hci_cp_le_set_adv_param set_param;
 	struct bt_conn *conn = NULL;
 	struct net_buf *buf;
-	bool dir_adv = (param->peer != NULL);
+	bool dir_adv = (param->peer != NULL), scannable;
 	int err;
 	struct bt_le_ext_adv *adv;
 
@@ -7403,6 +7403,8 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 	}
 
 	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
+		scannable = true;
+
 		if (dir_adv) {
 			if (param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) {
 				set_param.type = BT_HCI_ADV_DIRECT_IND_LOW_DUTY;
@@ -7415,11 +7417,10 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 			set_param.type = BT_HCI_ADV_IND;
 		}
 	} else {
-		if (sd || (param->options & BT_LE_ADV_OPT_USE_NAME)) {
-			set_param.type = BT_HCI_ADV_SCAN_IND;
-		} else {
-			set_param.type = BT_HCI_ADV_NONCONN_IND;
-		}
+		scannable = sd || (param->options & BT_LE_ADV_OPT_USE_NAME);
+
+		set_param.type = scannable ? BT_HCI_ADV_SCAN_IND :
+					     BT_HCI_ADV_NONCONN_IND;
 	}
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(set_param));
@@ -7435,8 +7436,7 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 	}
 
 	if (!dir_adv) {
-		err = le_adv_update(adv, ad, ad_len, sd, sd_len,
-				    param->options & BT_LE_ADV_OPT_CONNECTABLE,
+		err = le_adv_update(adv, ad, ad_len, sd, sd_len, scannable,
 				    param->options & BT_LE_ADV_OPT_USE_NAME);
 		if (err) {
 			return err;
@@ -7480,6 +7480,8 @@ int bt_le_adv_start_legacy(const struct bt_le_adv_param *param,
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE,
 			  param->options & BT_LE_ADV_OPT_CONNECTABLE);
 
+	atomic_set_bit_to(adv->flags, BT_ADV_SCANNABLE, scannable);
+
 	atomic_set_bit_to(adv->flags, BT_ADV_USE_IDENTITY,
 			  param->options & BT_LE_ADV_OPT_USE_IDENTITY);
 
@@ -7491,7 +7493,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 				bool  has_scan_data)
 {
 	struct bt_hci_cp_le_set_ext_adv_param *cp;
-	bool dir_adv = param->peer != NULL;
+	bool dir_adv = param->peer != NULL, scannable;
 	struct net_buf *buf, *rsp;
 	int err;
 
@@ -7568,6 +7570,8 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		cp->props |= BT_HCI_LE_ADV_PROP_SCAN;
 	}
 
+	scannable = !!(cp->props & BT_HCI_LE_ADV_PROP_SCAN);
+
 	if (dir_adv) {
 		cp->props |= BT_HCI_LE_ADV_PROP_DIRECT;
 		if (!(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
@@ -7604,11 +7608,13 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	/* Flag only used by bt_le_adv_start API. */
 	atomic_set_bit_to(adv->flags, BT_ADV_PERSIST, false);
 
-	/* Todo: need to handle setting advertising name in correct adv/scan */
-	atomic_set_bit_to(adv->flags, BT_ADV_INCLUDE_NAME, false);
+	atomic_set_bit_to(adv->flags, BT_ADV_INCLUDE_NAME,
+			  param->options & BT_LE_ADV_OPT_USE_NAME);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE,
 			  param->options & BT_LE_ADV_OPT_CONNECTABLE);
+
+	atomic_set_bit_to(adv->flags, BT_ADV_SCANNABLE, scannable);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_USE_IDENTITY,
 			  param->options & BT_LE_ADV_OPT_USE_IDENTITY);
@@ -7649,9 +7655,7 @@ int bt_le_adv_start_ext(struct bt_le_ext_adv *adv,
 	}
 
 	if (!dir_adv) {
-		err = le_adv_update(adv, ad, ad_len, sd, sd_len,
-				    param->options & BT_LE_ADV_OPT_CONNECTABLE,
-				    param->options & BT_LE_ADV_OPT_USE_NAME);
+		err = bt_le_ext_adv_set_data(adv, ad, ad_len, sd, sd_len);
 		if (err) {
 			return err;
 		}
@@ -7909,6 +7913,12 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 
 	le_adv_set_private_addr(adv);
 
+	if (atomic_test_bit(adv->flags, BT_ADV_INCLUDE_NAME) &&
+	    !atomic_test_bit(adv->flags, BT_ADV_DATA_SET)) {
+		/* Set the advertiser name */
+		bt_le_ext_adv_set_data(adv, NULL, 0, NULL, 0);
+	}
+
 	err = set_le_adv_enable_ext(adv, true, param);
 	if (err) {
 		BT_ERR("Failed to start advertiser");
@@ -7960,12 +7970,12 @@ int bt_le_ext_adv_set_data(struct bt_le_ext_adv *adv,
 			   const struct bt_data *ad, size_t ad_len,
 			   const struct bt_data *sd, size_t sd_len)
 {
-	bool connectable, use_name;
+	bool scannable, use_name;
 
-	connectable = atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE);
+	scannable = atomic_test_bit(adv->flags, BT_ADV_SCANNABLE);
 	use_name = atomic_test_bit(adv->flags, BT_ADV_INCLUDE_NAME);
 
-	return le_adv_update(adv, ad, ad_len, sd, sd_len, connectable,
+	return le_adv_update(adv, ad, ad_len, sd, sd_len, scannable,
 			     use_name);
 }
 
