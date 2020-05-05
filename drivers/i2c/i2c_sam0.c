@@ -36,6 +36,7 @@ struct i2c_sam0_dev_config {
 	void (*irq_config_func)(struct device *dev);
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
+	char *dma_dev;
 	u8_t write_dma_request;
 	u8_t read_dma_request;
 	u8_t dma_channel;
@@ -711,7 +712,7 @@ static int i2c_sam0_initialize(struct device *dev)
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
 
-	data->dma = device_get_binding(CONFIG_DMA_0_NAME);
+	data->dma = device_get_binding(cfg->dma_dev);
 
 #endif
 
@@ -733,6 +734,7 @@ static const struct i2c_driver_api i2c_sam0_driver_api = {
 
 #ifdef CONFIG_I2C_SAM0_DMA_DRIVEN
 #define I2C_SAM0_DMA_CHANNELS(n)					\
+	.dma_dev = ATMEL_SAM0_DT_INST_DMA_NAME(n, tx),			\
 	.write_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),	\
 	.read_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, rx),	\
 	.dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, rx),
