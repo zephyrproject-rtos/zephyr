@@ -98,6 +98,17 @@ static int cmd_demo_params(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_demo_hexdump(const struct shell *shell, size_t argc, char **argv)
+{
+	shell_print(shell, "argc = %d", argc);
+	for (size_t cnt = 0; cnt < argc; cnt++) {
+		shell_print(shell, "argv[%d]", cnt);
+		shell_hexdump(shell, argv[cnt], strlen(argv[cnt]));
+	}
+
+	return 0;
+}
+
 static int cmd_version(const struct shell *shell, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
@@ -109,6 +120,7 @@ static int cmd_version(const struct shell *shell, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_demo,
+	SHELL_CMD(hexdump, NULL, "Hexdump params command.", cmd_demo_hexdump),
 	SHELL_CMD(params, NULL, "Print params command.", cmd_demo_params),
 	SHELL_CMD(ping, NULL, "Ping command.", cmd_demo_ping),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
