@@ -15,6 +15,8 @@
 #include "shell_vt100.h"
 #include "shell_wildcard.h"
 
+#define HEXDUMP_BYTES_IN_LINE 16
+
 /* 2 == 1 char for cmd + 1 char for '\0' */
 #if (CONFIG_SHELL_CMD_BUFF_SIZE < 2)
 	#error too small CONFIG_SHELL_CMD_BUFF_SIZE
@@ -1331,25 +1333,58 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 	k_mutex_unlock(&shell->ctx->wr_mtx);
 }
 
-void shell_hexdump(const struct shell *shell, const u8_t *data, size_t len)
+static void shell_hexdump_line(const struct shell *shell, unsigned int offset,
+			       const u8_t *data, size_t len)
 {
-	int n = 0;
+	int i;
 
-	while (len--) {
-		if (n % 16 == 0) {
-			shell_fprintf(shell, SHELL_NORMAL, "%08X: ", n);
+	shell_fprintf(shell, SHELL_NORMAL, "%08X: ", offset);
+
+	for (i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+		if (i > 0 && !(i % 8)) {
+			shell_fprintf(shell, SHELL_NORMAL, " ");
 		}
 
-		shell_fprintf(shell, SHELL_NORMAL, "%02X ", *data++);
-
-		n++;
-		if (n % 16 == 0) {
-			shell_print(shell, "");
+		if (i < len) {
+			shell_fprintf(shell, SHELL_NORMAL, "%02x ",
+				      data[i] & 0xFF);
+		} else {
+			shell_fprintf(shell, SHELL_NORMAL, "   ");
 		}
 	}
 
-	if (n % 16) {
-		shell_print(shell, "");
+	shell_fprintf(shell, SHELL_NORMAL, "|");
+
+	for (i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+		if (i > 0 && !(i % 8)) {
+			shell_fprintf(shell, SHELL_NORMAL, " ");
+		}
+
+		if (i < len) {
+			char c = data[i];
+
+			shell_fprintf(shell, SHELL_NORMAL, "%c",
+				      isprint((int)c) ? c : '.');
+		} else {
+			shell_fprintf(shell, SHELL_NORMAL, " ");
+		}
+	}
+
+	shell_print(shell, "|");
+}
+
+void shell_hexdump(const struct shell *shell, const u8_t *data, size_t len)
+{
+	const u8_t *p = data;
+	size_t line_len;
+
+	while (len) {
+		line_len = MIN(len, HEXDUMP_BYTES_IN_LINE);
+
+		shell_hexdump_line(shell, p - data, p, line_len);
+
+		len -= line_len;
+		p += line_len;
 	}
 }
 
