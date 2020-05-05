@@ -8,10 +8,6 @@ if BOARD_96B_NITROGEN
 config BOARD
 	default "96b_nitrogen"
 
-config I2C_0
-	default y
-	depends on I2C
-
 config SPI_1
 	default y
 	depends on SPI

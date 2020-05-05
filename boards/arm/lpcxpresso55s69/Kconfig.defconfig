@@ -29,10 +29,6 @@ config GPIO_MCUX_LPC_PORT1
 
 endif # GPIO_MCUX_LPC
 
-config I2C_4
-	default y
-	depends on I2C
-
 config SPI_8
 	default y
 	depends on SPI

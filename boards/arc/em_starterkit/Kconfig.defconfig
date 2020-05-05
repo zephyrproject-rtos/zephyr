@@ -38,12 +38,6 @@ if I2C_DW
 config I2C_DW_CLOCK_SPEED
 	default 100
 
-config I2C_0
-	default y
-
-config I2C_1
-	default y
-
 endif # I2C_DW
 
 endif # I2C
