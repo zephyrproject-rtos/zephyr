@@ -1,6 +1,0 @@
-# Copyright (c) 2019 Linaro Limited
-# SPDX-License-Identifier: Apache-2.0
-
-config CAN_1
-	default y
-	depends on BOARD_NRF52DK_NRF52832
