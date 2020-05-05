@@ -39,45 +39,4 @@ config SPI_DW_ACCESS_WORD_ONLY
 	  DesignWare SPI only allows word access, byte access will raise
 	  exception.
 
-if SPI_0
-
-config SPI_DW_PORT_0_INTERRUPT_SINGLE_LINE
-	bool "Single interrupt line for all interrupts"
-	default y
-	help
-	  Only one line is used to trigger interrupts: RX, TX and ERROR
-	  interrupt go all through that line, undifferentiated.
-
-endif # SPI_0
-
-if SPI_1
-
-config SPI_DW_PORT_1_INTERRUPT_SINGLE_LINE
-	bool "Single interrupt line for all interrupts"
-	default y
-
-endif # SPI_1
-
-if SPI_2
-
-config SPI_DW_PORT_2_INTERRUPT_SINGLE_LINE
-	bool "Single interrupt line for all interrupts"
-	default y
-	help
-	  Only one line is used to trigger interrupts: RX, TX and ERROR
-	  interrupt go all through that line, undifferentiated.
-
-endif # SPI_2
-
-if SPI_3
-
-config SPI_DW_PORT_3_INTERRUPT_SINGLE_LINE
-	bool "Single interrupt line for all interrupts"
-	default y
-	help
-	  Only one line is used to trigger interrupts: RX, TX and ERROR
-	  interrupt go all through that line, undifferentiated.
-
-endif # SPI_3
-
 endif # SPI_DW
