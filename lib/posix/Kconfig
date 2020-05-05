@@ -12,7 +12,6 @@ config POSIX_MAX_FDS
 config POSIX_API
 	depends on !ARCH_POSIX
 	bool "POSIX APIs"
-	select LEGACY_TIMEOUT_API
 	help
 	  Enable mostly-standards-compliant implementations of
 	  various POSIX (IEEE 1003.1) APIs.
