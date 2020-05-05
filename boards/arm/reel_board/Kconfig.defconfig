@@ -12,10 +12,6 @@ config BOARD
 config I2C
 	default y
 
-config PWM_0
-	default y
-	depends on PWM
-
 config SPI_NRFX_RAM_BUFFER_SIZE
 	default 8
 	depends on SPI

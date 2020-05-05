@@ -8,10 +8,6 @@ if BOARD_BL652_DVK
 config BOARD
 	default "bl652_dvk"
 
-config PWM_0
-	default y
-	depends on PWM
-
 config BT_CTLR
 	default BT
 

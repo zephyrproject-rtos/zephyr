@@ -8,10 +8,6 @@ if BOARD_BL654_DVK
 config BOARD
 	default "bl654_dvk"
 
-config PWM_0
-	default y
-	depends on PWM
-
 if USB
 
 config USB_NRFX

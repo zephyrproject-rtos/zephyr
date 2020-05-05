@@ -25,8 +25,4 @@ config IEEE802154_NRF5
 config BT_CTLR
 	default BT
 
-config PWM_0
-	default y
-	depends on PWM
-
 endif # BOARD_NRF52840_BLIP
