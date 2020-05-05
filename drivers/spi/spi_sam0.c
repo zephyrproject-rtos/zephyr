@@ -33,6 +33,7 @@ struct spi_sam0_config {
 	u16_t gclk_clkctrl_id;
 #endif
 #ifdef CONFIG_SPI_ASYNC
+	char *dma_dev;
 	u8_t tx_dma_request;
 	u8_t tx_dma_channel;
 	u8_t rx_dma_request;
@@ -700,7 +701,7 @@ static int spi_sam0_init(struct device *dev)
 
 #ifdef CONFIG_SPI_ASYNC
 
-	data->dma = device_get_binding(CONFIG_DMA_0_NAME);
+	data->dma = device_get_binding(cfg->dma_dev);
 
 #endif
 
@@ -723,6 +724,7 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 
 #if CONFIG_SPI_ASYNC
 #define SPI_SAM0_DMA_CHANNELS(n)					\
+	.dma_dev = ATMEL_SAM0_DT_INST_DMA_NAME(n, tx),			\
 	.tx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),	\
 	.tx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, tx),	\
 	.rx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, rx),	\
