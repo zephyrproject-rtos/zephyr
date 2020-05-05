@@ -180,7 +180,10 @@ static int temp_kinetis_init(struct device *dev)
 	return 0;
 }
 
-#if DT_HAS_DRV_INST(0)
+BUILD_ASSERT(DT_NUM_INST(DT_DRV_COMPAT) <= 1,
+	     "unsupported temp instance");
+
+#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))
 BUILD_ASSERT(DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, sensor) <
 	     DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, bandgap),
 	     "This driver assumes sensor ADC channel to come before "
@@ -218,4 +221,4 @@ DEVICE_AND_API_INIT(temp_kinetis, DT_INST_LABEL(0),
 		    CONFIG_SENSOR_INIT_PRIORITY,
 		    &temp_kinetis_driver_api);
 
-#endif /* DT_HAS_DRV_INST(0) */
+#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0)) */

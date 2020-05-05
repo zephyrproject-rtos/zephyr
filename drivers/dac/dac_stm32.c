@@ -146,22 +146,6 @@ DEVICE_AND_API_INIT(dac_##index, DT_INST_LABEL(index),			\
 		    &dac_stm32_init, &dac_stm32_data_##index,		\
 		    &dac_stm32_cfg_##index, POST_KERNEL,		\
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,		\
-		    &api_stm32_driver_api)
+		    &api_stm32_driver_api);
 
-/* DT instance numbering starts from 0, STM DAC from 1 */
-
-#if DT_HAS_DRV_INST(0)
-STM32_DAC_INIT(0);
-#endif
-
-#if DT_HAS_DRV_INST(1)
-STM32_DAC_INIT(1);
-#endif
-
-#if DT_HAS_DRV_INST(2)
-STM32_DAC_INIT(2);
-#endif
-
-#if DT_HAS_DRV_INST(3)
-STM32_DAC_INIT(3);
-#endif
+DT_INST_FOREACH(STM32_DAC_INIT)

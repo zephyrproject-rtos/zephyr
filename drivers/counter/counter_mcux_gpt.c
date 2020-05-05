@@ -201,42 +201,37 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 	.get_max_relative_alarm = mcux_gpt_get_max_relative_alarm,
 };
 
-#define GPT_DEVICE_INIT_MCUX(n)							\
-	static struct mcux_gpt_data mcux_gpt_data_ ## n;			\
-										\
-	static const struct mcux_gpt_config mcux_gpt_config_ ## n = {		\
-		.base = (void *)DT_INST_REG_ADDR(n),				\
-		.clock_source = kCLOCK_PerClk,					\
-		.info = {							\
-			.max_top_value = UINT32_MAX,				\
-			.freq = 25000000,					\
-			.channels = 1,						\
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
-		},								\
-	};									\
-										\
-	static int mcux_gpt_## n ##_init(struct device *dev);			\
-	DEVICE_AND_API_INIT(mcux_gpt ## n,					\
-			    DT_INST_LABEL(n),					\
-			    mcux_gpt_## n ##_init,				\
-			    &mcux_gpt_data_ ## n,				\
-			    &mcux_gpt_config_ ## n,				\
-			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-			    &mcux_gpt_driver_api);				\
-										\
-	static int mcux_gpt_## n ##_init(struct device *dev)			\
-	{	 								\
-		IRQ_CONNECT(DT_INST_IRQN(n),					\
-			    DT_INST_IRQ(n, priority),				\
-			    mcux_gpt_isr, DEVICE_GET(mcux_gpt ## n), 0);	\
-		irq_enable(DT_INST_IRQN(n));					\
-		return mcux_gpt_init(dev);					\
-	}									\
+#define GPT_DEVICE_INIT_MCUX(n)						\
+	static struct mcux_gpt_data mcux_gpt_data_ ## n;		\
+									\
+	static const struct mcux_gpt_config mcux_gpt_config_ ## n = {	\
+		.base = (void *)DT_INST_REG_ADDR(n),			\
+		.clock_source = kCLOCK_PerClk,				\
+		.info = {						\
+			.max_top_value = UINT32_MAX,			\
+			.freq = 25000000,				\
+			.channels = 1,					\
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
+		},							\
+	};								\
+									\
+	static int mcux_gpt_## n ##_init(struct device *dev)		\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(n),				\
+			    DT_INST_IRQ(n, priority),			\
+			    mcux_gpt_isr,				\
+			    DEVICE_GET(mcux_gpt ## n), 0);		\
+		irq_enable(DT_INST_IRQN(n));				\
+		return mcux_gpt_init(dev);				\
+	}								\
+									\
+	DEVICE_AND_API_INIT(mcux_gpt ## n,				\
+			    DT_INST_LABEL(n),				\
+			    mcux_gpt_## n ##_init,			\
+			    &mcux_gpt_data_ ## n,			\
+			    &mcux_gpt_config_ ## n,			\
+			    POST_KERNEL,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &mcux_gpt_driver_api)
 
-#if DT_HAS_DRV_INST(0)
-GPT_DEVICE_INIT_MCUX(0)
-#endif
-
-#if DT_HAS_DRV_INST(1)
-GPT_DEVICE_INIT_MCUX(1)
-#endif
+DT_INST_FOREACH(GPT_DEVICE_INIT_MCUX)

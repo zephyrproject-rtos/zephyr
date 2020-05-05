@@ -427,24 +427,6 @@ static int i2c_xec_init(struct device *dev)
 		DT_INST_LABEL(n),			\
 		&i2c_xec_init, &i2c_xec_data_##n, &i2c_xec_config_##n,	\
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
-		&i2c_xec_driver_api)
+		&i2c_xec_driver_api);
 
-#if DT_HAS_DRV_INST(0)
-I2C_XEC_DEVICE(0);
-#endif
-
-#if DT_HAS_DRV_INST(1)
-I2C_XEC_DEVICE(1);
-#endif
-
-#if DT_HAS_DRV_INST(2)
-I2C_XEC_DEVICE(2);
-#endif
-
-#if DT_HAS_DRV_INST(3)
-I2C_XEC_DEVICE(3);
-#endif
-
-#if DT_HAS_DRV_INST(4)
-I2C_XEC_DEVICE(4);
-#endif
+DT_INST_FOREACH(I2C_XEC_DEVICE)
