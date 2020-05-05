@@ -43,7 +43,7 @@ out:
 #include <syscalls/i2s_configure_mrsh.c>
 
 static inline int z_vrfy_i2s_buf_read(struct device *dev,
-				      void *buf, size_t *size);
+				      void *buf, size_t *size)
 {
 	void *mem_block;
 	size_t data_size;
