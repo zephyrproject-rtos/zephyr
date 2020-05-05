@@ -59,7 +59,7 @@ static int sample_driver_foo_state_set(struct device *dev, bool active)
 
 	data->timer.user_data = dev;
 	if (active) {
-		k_timer_start(&data->timer, K_MSEC(1000), K_MSEC(1000));
+		k_timer_start(&data->timer, K_MSEC(100), K_MSEC(100));
 	} else {
 		k_timer_stop(&data->timer);
 	}
