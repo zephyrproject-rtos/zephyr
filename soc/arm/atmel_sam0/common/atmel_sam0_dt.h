@@ -32,8 +32,7 @@
 
 /* Use to check if a sercom 'n' is enabled for a given 'compat' */
 #define ATMEL_SAM0_DT_SERCOM_CHECK(n, compat) \
-	DT_HAS_NODELABEL_STATUS_OKAY(sercom##n) && \
-	DT_NODE_HAS_COMPAT(DT_NODELABEL(sercom##n), compat)
+	DT_HAS_NODE_STATUS_OKAY_AND_COMPAT(DT_NODELABEL(sercom##n), compat)
 
 /* Common macro for use to set HCLK_FREQ_HZ */
 #define ATMEL_SAM0_DT_CPU_CLK_FREQ_HZ \

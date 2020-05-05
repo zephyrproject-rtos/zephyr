@@ -29,9 +29,9 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(uart_stm32);
 
-#define HAS_LPUART_1 (DT_HAS_NODELABEL_STATUS_OKAY(lpuart1) && \
-		      DT_NODE_HAS_COMPAT(DT_NODELABEL(lpuart1), \
-					 st_stm32_lpuart))
+#define HAS_LPUART_1 \
+	DT_HAS_NODE_STATUS_OKAY_AND_COMPAT(DT_NODELABEL(lpuart1), \
+					   st_stm32_lpuart)
 
 /* convenience defines */
 #define DEV_CFG(dev)							\

@@ -900,6 +900,11 @@
  */
 #define DT_HAS_NODE_STATUS_OKAY(node_id) IS_ENABLED(DT_CAT(node_id, _EXISTS))
 
+#define DT_HAS_NODE_STATUS_OKAY_AND_COMPAT(node_id, compat) \
+	UTIL_AND(DT_HAS_NODE_STATUS_OKAY(node_id), \
+		 DT_NODE_HAS_COMPAT(node_id, compat))
+
+
 /**
  * @brief Does a node label refer to a usable node?
  *
