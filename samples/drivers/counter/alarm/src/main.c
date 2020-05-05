@@ -17,8 +17,10 @@ struct counter_alarm_cfg alarm_cfg;
 
 #if defined(CONFIG_BOARD_ATSAMD20_XPRO)
 #define TIMER DT_LABEL(DT_NODELABEL(tc4))
-#else
-#define TIMER DT_RTC_0_NAME
+#elif defined(CONFIG_COUNTER_RTC0)
+#define TIMER DT_LABEL(DT_NODELABEL(rtc0))
+#elif defined(CONFIG_COUNTER_RTC_STM32)
+#define TIMER DT_LABEL(DT_INST(0, st_stm32_rtc))
 #endif
 
 static void test_counter_interrupt_fn(struct device *counter_dev,
