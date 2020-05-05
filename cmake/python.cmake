@@ -24,10 +24,18 @@ foreach(PYTHON_PREFER ${PYTHON_PREFER} "python" "python3")
                        OUTPUT_STRIP_TRAILING_WHITESPACE)
 
      if(version VERSION_LESS PYTHON_MINIMUM_REQUIRED)
-       set_property (CACHE PYTHON_PREFER_EXECUTABLE PROPERTY VALUE "PYTHON_PREFER_EXECUTABLE-NOTFOUND")
+       set(PYTHON_PREFER_EXECUTABLE "PYTHON_PREFER_EXECUTABLE-NOTFOUND")
      else()
        set(PYTHON_MINIMUM_REQUIRED ${version})
        set(PYTHON_EXACT EXACT)
+       # Python3_ROOT_DIR ensures that location will be preferred by FindPython3.
+       # On Linux, this has no impact as it will usually be /usr/bin
+       # but on Windows it solve issues when both 32 and 64 bit versions are
+       # installed, as version is not enough and FindPython3 might pick the
+       # version not on %PATH%. Setting Python3_ROOT_DIR ensures we are using
+       # the version we just tested.
+       get_filename_component(PYTHON_PATH ${PYTHON_PREFER_EXECUTABLE} DIRECTORY)
+       set(Python3_ROOT_DIR ${PYTHON_PATH})
        break()
      endif()
   endif()
