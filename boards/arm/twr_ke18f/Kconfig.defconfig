@@ -55,14 +55,4 @@ config TEMP_KINETIS
 	default y if "$(dt_nodelabel_enabled,adc0)"
 	depends on SENSOR
 
-if PWM
-
-config PWM_0
-	default y
-
-config PWM_3
-	default y
-
-endif # PWM
-
 endif # BOARD_TWR_KE18F
