@@ -14,6 +14,6 @@ common:
 # "busy" loops in order for the interrupts to fire on time, and the
 # sample is designed to demonstrate completely arbitrary CPU work.
 tests:
-  sample.metairq_dispatch:
+  sample.kernel.metairq_dispatch:
     tags: introduction
     filter: not CONFIG_ARCH_POSIX

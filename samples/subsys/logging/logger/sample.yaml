@@ -3,7 +3,7 @@ sample:
     use of logging feature.
   name: logger sample
 tests:
-  sample.logger:
+  sample.logger.basic:
     tags: logging
     harness: console
     harness_config:
