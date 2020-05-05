@@ -538,7 +538,7 @@ int spi_dw_init(const struct device *dev)
 }
 
 
-#ifdef CONFIG_SPI_0
+#if DT_HAS_DRV_INST(0)
 void spi_config_0_irq(void);
 
 struct spi_dw_data spi_dw_data_port_0 = {
@@ -603,8 +603,9 @@ void spi_config_0_irq(void)
 
 #endif
 }
-#endif /* CONFIG_SPI_0 */
-#ifdef CONFIG_SPI_1
+#endif /* DT_HAS_DRV_INST(0) */
+
+#if DT_HAS_DRV_INST(1)
 void spi_config_1_irq(void);
 
 struct spi_dw_data spi_dw_data_port_1 = {
@@ -669,8 +670,9 @@ void spi_config_1_irq(void)
 
 #endif
 }
-#endif /* CONFIG_SPI_1 */
-#ifdef CONFIG_SPI_2
+#endif /* DT_HAS_DRV_INST(1) */
+
+#if DT_HAS_DRV_INST(2)
 void spi_config_2_irq(void);
 
 struct spi_dw_data spi_dw_data_port_2 = {
@@ -735,8 +737,9 @@ void spi_config_2_irq(void)
 
 #endif
 }
-#endif /* CONFIG_SPI_2 */
-#ifdef CONFIG_SPI_3
+#endif /* DT_HAS_DRV_INST(2) */
+
+#if DT_HAS_DRV_INST(3)
 void spi_config_3_irq(void);
 
 struct spi_dw_data spi_dw_data_port_3 = {
@@ -801,4 +804,4 @@ void spi_config_3_irq(void)
 
 #endif
 }
-#endif /* CONFIG_SPI_3 */
+#endif /* DT_HAS_DRV_INST(3) */
