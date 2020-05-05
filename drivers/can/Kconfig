@@ -56,23 +56,6 @@ config CAN_AUTO_BUS_OFF_RECOVERY
 	  recessive bits). When this option is enabled, the recovery API is not
 	  available.
 
-config CAN_0
-	bool "Enable CAN 0"
-	help
-	  Enable CAN controller 0
-
-config CAN_1
-	bool "Enable CAN 1"
-	help
-	  Enable CAN controller 1
-
-config CAN_2
-	bool "Enable CAN 2"
-	depends on SOC_SERIES_STM32F4X
-	help
-	  Enable CAN controller 2 on the STM32F4 series of processors.
-	  (Tested on the STM32F4 series, may also work on F7, F1, F2 and L4)
-
 source "drivers/can/Kconfig.stm32"
 source "drivers/can/Kconfig.mcux"
 source "drivers/can/Kconfig.mcp2515"
