@@ -441,5 +441,29 @@ static enum net_l2_flags openthread_flags(struct net_if *iface)
 	return NET_L2_MULTICAST;
 }
 
+struct otInstance *openthread_get_default_instance(void)
+{
+	struct otInstance *instance = NULL;
+	struct net_if *iface;
+	struct openthread_context *ot_context;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(OPENTHREAD));
+	if (!iface) {
+		NET_ERR("There is no net interface for OpenThread");
+		goto exit;
+	}
+
+	ot_context = net_if_l2_data(iface);
+	if (!ot_context) {
+		NET_ERR("There is no Openthread context in net interface data");
+		goto exit;
+	}
+
+	instance = ot_context->instance;
+
+exit:
+	return instance;
+}
+
 NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send,
 	    NULL, openthread_flags);
