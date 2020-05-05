@@ -911,7 +911,8 @@
  * @return 0 if no nodes of the compatible are available for use,
  *         1 if at least one is enabled and has a matching binding
  */
-#define DT_HAS_COMPAT(compat) DT_HAS_NODE_STATUS_OKAY(DT_INST(0, compat))
+#define DT_HAS_COMPAT_STATUS_OKAY(compat) \
+	DT_HAS_NODE_STATUS_OKAY(DT_INST(0, compat))
 
 /**
  * @brief Get the number of enabled instances for a given compatible
@@ -919,7 +920,7 @@
  * @return Number of enabled instances
  */
 #define DT_NUM_INST(compat)					\
-	UTIL_AND(DT_HAS_COMPAT(compat),				\
+	UTIL_AND(DT_HAS_COMPAT_STATUS_OKAY(compat),		\
 		 UTIL_CAT(DT_N_INST, DT_DASH(compat, NUM)))
 
 /**
@@ -1432,7 +1433,7 @@
  * Has to accept instance_number as only parameter.
  */
 #define DT_INST_FOREACH(inst_expr) \
-	COND_CODE_1(DT_HAS_COMPAT(DT_DRV_COMPAT), \
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT), \
 		    (UTIL_CAT(DT_FOREACH_INST_, DT_DRV_COMPAT)(inst_expr)), ())
 
 /**

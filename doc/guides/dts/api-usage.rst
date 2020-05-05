@@ -317,8 +317,8 @@ Here are pointers to some other available APIs.
 
 - :c:func:`DT_CHOSEN`, :c:func:`DT_HAS_CHOSEN`: for properties
   of the special ``/chosen`` node
-- :c:func:`DT_HAS_COMPAT`: test if a compatible has a binding and at least one
-  enabled node
+- :c:func:`DT_HAS_COMPAT_STATUS_OKAY`: test if a compatible has a binding and
+  at least one enabled node
 - :c:func:`DT_BUS`: get a node's bus controller, if there is one
 - :c:func:`DT_ENUM_IDX`: for properties whose values are among a fixed list of
   choices

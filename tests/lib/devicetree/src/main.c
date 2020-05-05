@@ -184,9 +184,9 @@ static void test_has_compat(void)
 {
 	unsigned int compats;
 
-	zassert_true(DT_HAS_COMPAT(vnd_gpio), "vnd,gpio");
-	zassert_true(DT_HAS_COMPAT(vnd_gpio), "vnd,i2c");
-	zassert_false(DT_HAS_COMPAT(vnd_disabled_compat),
+	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio), "vnd,gpio");
+	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio), "vnd,i2c");
+	zassert_false(DT_HAS_COMPAT_STATUS_OKAY(vnd_disabled_compat),
 		      "vnd,disabled-compat");
 
 	zassert_equal(TA_HAS_COMPAT(vnd_array_holder), 1, "vnd,array-holder");
