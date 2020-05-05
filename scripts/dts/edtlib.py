@@ -776,6 +776,11 @@ class Node:
     depends_on:
       A list with the nodes that the node directly depends on
 
+    status:
+      The node's status property value, as a string, or "okay" if the node
+      has no status property set. If the node's status property is "ok",
+      it is converted to "okay" for consistency.
+
     enabled:
       True unless the node has 'status = "disabled"'
 
@@ -917,10 +922,24 @@ class Node:
         return self.edt._graph.depends_on(self)
 
     @property
+    def status(self):
+        "See the class docstring"
+        status = self._node.props.get("status")
+
+        if status is None:
+            as_string = "okay"
+        else:
+            as_string = status.to_string()
+
+        if as_string == "ok":
+            as_string = "okay"
+
+        return as_string
+
+    @property
     def enabled(self):
         "See the class docstring"
-        return "status" not in self._node.props or \
-            self._node.props["status"].to_string() != "disabled"
+        return "status" not in self._node.props or self.status != "disabled"
 
     @property
     def read_only(self):
