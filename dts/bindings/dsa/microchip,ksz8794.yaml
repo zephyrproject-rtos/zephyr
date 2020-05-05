@@ -1,0 +1,33 @@
+# Copyright (c) 2020 DENX Software Engineering GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    KSZ8794 ethernet switch with SPI interface
+
+compatible: "microchip,ksz8794"
+
+include: [spi-device.yaml]
+properties:
+    dsa-master-port:
+       type: phandle
+       required: false
+       description: Phandle to master port.
+    dsa-slave-ports:
+       type: int
+       required: false
+       description: Number of slave ports on the switch
+    local-mac-address-port1:
+      type: uint8-array
+      required: false
+      description: |
+        Specifies the MAC address that was assigned to the port 1
+    local-mac-address-port2:
+      type: uint8-array
+      required: false
+      description: |
+        Specifies the MAC address that was assigned to the port 2
+    local-mac-address-port3:
+      type: uint8-array
+      required: false
+      description: |
+        Specifies the MAC address that was assigned to the port 3

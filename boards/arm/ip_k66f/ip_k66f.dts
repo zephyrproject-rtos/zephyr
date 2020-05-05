@@ -99,4 +99,19 @@
 
 	cs-gpios = <&gpiob 10 GPIO_ACTIVE_LOW>;
 	clock-frequency = <10000000>;
+
+	ksz8794: ksz8794@0 {
+		compatible = "microchip,ksz8794";
+		reg = <0>;
+
+		label = "DSA_0";
+		spi-max-frequency = <44000000>;
+
+		dsa-master-port = <&enet>;
+		dsa-slave-ports = <3>;
+
+		local-mac-address-port1 = [00 00 12 13 00 01];
+		local-mac-address-port2 = [00 00 12 13 00 02];
+		local-mac-address-port3 = [00 00 12 13 00 03];
+	};
 };
