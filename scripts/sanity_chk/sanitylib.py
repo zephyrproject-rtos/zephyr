@@ -42,6 +42,11 @@ try:
 except ImportError:
     print("Install tabulate python module with pip to use --device-testing option.")
 
+try:
+    import psutil
+except ImportError:
+    print("Install psutil python module with pip to use --qemu-testing option.")
+
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
     sys.exit("$ZEPHYR_BASE environment variable undefined")
@@ -709,6 +714,18 @@ class QEMUHandler(Handler):
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
 
     @staticmethod
+    def _get_cpu_time(pid):
+        """get process CPU time.
+
+        The guest virtual time in QEMU icount mode isn't host time and
+        it's maintained by counting guest instructions, so we use QEMU
+        process exection time to mostly simulate the time of guest OS.
+        """
+        proc = psutil.Process(pid)
+        cpu_time = proc.cpu_times()
+        return cpu_time.user + cpu_time.system
+
+    @staticmethod
     def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn, results, harness):
         fifo_in = fifo_fn + ".in"
         fifo_out = fifo_fn + ".out"
@@ -737,12 +754,29 @@ class QEMUHandler(Handler):
 
         line = ""
         timeout_extended = False
+
+        pid = 0
+        if os.path.exists(pid_fn):
+            pid = int(open(pid_fn).read())
+
         while True:
             this_timeout = int((timeout_time - time.time()) * 1000)
             if this_timeout < 0 or not p.poll(this_timeout):
+                if pid and this_timeout > 0:
+                    #there is possibility we polled nothing because
+                    #of host not scheduled QEMU process enough CPU
+                    #time during p.poll(this_timeout)
+                    cpu_time = QEMUHandler._get_cpu_time(pid)
+                    if cpu_time < timeout and not out_state:
+                        timeout_time = time.time() + (timeout - cpu_time)
+                        continue
+
                 if not out_state:
                     out_state = "timeout"
                 break
+
+            if pid == 0 and os.path.exists(pid_fn):
+                pid = int(open(pid_fn).read())
 
             try:
                 c = in_fp.read(1).decode("utf-8")
@@ -800,9 +834,7 @@ class QEMUHandler(Handler):
         log_out_fp.close()
         out_fp.close()
         in_fp.close()
-        if os.path.exists(pid_fn):
-            pid = int(open(pid_fn).read())
-
+        if pid:
             try:
                 if pid:
                     os.kill(pid, signal.SIGTERM)
