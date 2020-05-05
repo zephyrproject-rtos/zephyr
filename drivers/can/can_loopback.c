@@ -271,8 +271,6 @@ static int can_loopback_init(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_CAN_1
-
 static struct can_loopback_data can_loopback_dev_data_1;
 
 DEVICE_AND_API_INIT(can_loopback_1, CONFIG_CAN_LOOPBACK_DEV_NAME,
@@ -314,5 +312,3 @@ NET_DEVICE_INIT(socket_can_loopback_1, SOCKET_CAN_NAME_1, socket_can_init_1,
 		CANBUS_RAW_L2, NET_L2_GET_CTX_TYPE(CANBUS_RAW_L2), CAN_MTU);
 
 #endif /* CONFIG_NET_SOCKETS_CAN */
-
-#endif /*CONFIG_CAN_1*/
