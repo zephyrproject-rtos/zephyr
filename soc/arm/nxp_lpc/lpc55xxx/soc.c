@@ -61,21 +61,22 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Enables the clock for the I/O controller.: Enable Clock. */
     CLOCK_EnableClock(kCLOCK_Iocon);
 
-#ifdef CONFIG_I2C_4
+#if DT_HAS_NODE(DT_NODELABEL(flexcomm4)) && \
+    DT_NODE_HAS_COMPAT(DT_NODELABEL(flexcomm4), nxp_lpc_i2c)
 	/* attach 12 MHz clock to FLEXCOMM4 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
 
 	/* reset FLEXCOMM for I2C */
 	RESET_PeripheralReset(kFC4_RST_SHIFT_RSTn);
-#endif /* CONFIG_I2C_4 */
+#endif
 
-#ifdef CONFIG_SPI_8
-	/* Attach 12 MHz clock to FLEXCOMM8 */
+#if DT_HAS_NODE(DT_NODELABEL(hs_lspi))
+	/* Attach 12 MHz clock to HSLSPI */
 	CLOCK_AttachClk(kFRO12M_to_HSLSPI);
 
-	/* reset FLEXCOMM for SPI */
+	/* reset HSLSPI for SPI */
 	RESET_PeripheralReset(kHSLSPI_RST_SHIFT_RSTn);
-#endif /* CONFIG_SPI_8 */
+#endif
 
 #endif /* CONFIG_SOC_LPC55S69_CPU0 */
 }
