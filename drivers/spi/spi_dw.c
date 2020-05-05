@@ -520,9 +520,6 @@ int spi_dw_init(struct device *dev)
 	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 
-	clock_config(dev);
-	clock_on(dev);
-
 	info->config_func();
 
 	/* Masking interrupt and making sure controller is disabled */
@@ -556,10 +553,6 @@ struct spi_dw_data spi_dw_data_port_0 = {
 const struct spi_dw_config spi_dw_config_0 = {
 	.regs = DT_INST_REG_ADDR(0),
 	.clock_frequency = INST_0_SNPS_DESIGNWARE_SPI_CLOCK_FREQ,
-#ifdef CONFIG_SPI_DW_PORT_0_CLOCK_GATE
-	.clock_name = CONFIG_SPI_DW_PORT_1_CLOCK_GATE_DRV_NAME,
-	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_0_CLOCK_GATE_SUBSYS),
-#endif /* CONFIG_SPI_DW_PORT_0_CLOCK_GATE */
 	.config_func = spi_config_0_irq,
 	.op_modes = CONFIG_SPI_0_OP_MODES
 };
@@ -622,10 +615,6 @@ struct spi_dw_data spi_dw_data_port_1 = {
 static const struct spi_dw_config spi_dw_config_1 = {
 	.regs = DT_INST_REG_ADDR(1),
 	.clock_frequency = INST_1_SNPS_DESIGNWARE_SPI_CLOCK_FREQ,
-#ifdef CONFIG_SPI_DW_PORT_1_CLOCK_GATE
-	.clock_name = CONFIG_SPI_DW_PORT_1_CLOCK_GATE_DRV_NAME,
-	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_1_CLOCK_GATE_SUBSYS),
-#endif /* CONFIG_SPI_DW_PORT_1_CLOCK_GATE */
 	.config_func = spi_config_1_irq,
 	.op_modes = CONFIG_SPI_1_OP_MODES
 };
@@ -688,10 +677,6 @@ struct spi_dw_data spi_dw_data_port_2 = {
 static const struct spi_dw_config spi_dw_config_2 = {
 	.regs = DT_INST_REG_ADDR(2),
 	.clock_frequency = INST_2_SNPS_DESIGNWARE_SPI_CLOCK_FREQ,
-#ifdef CONFIG_SPI_DW_PORT_2_CLOCK_GATE
-	.clock_name = CONFIG_SPI_DW_PORT_2_CLOCK_GATE_DRV_NAME,
-	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_2_CLOCK_GATE_SUBSYS),
-#endif /* CONFIG_SPI_DW_PORT_2_CLOCK_GATE */
 	.config_func = spi_config_2_irq,
 	.op_modes = CONFIG_SPI_2_OP_MODES
 };
@@ -754,10 +739,6 @@ struct spi_dw_data spi_dw_data_port_3 = {
 static const struct spi_dw_config spi_dw_config_3 = {
 	.regs = DT_INST_REG_ADDR(3),
 	.clock_frequency = INST_3_SNPS_DESIGNWARE_SPI_CLOCK_FREQ,
-#ifdef CONFIG_SPI_DW_PORT_3_CLOCK_GATE
-	.clock_name = CONFIG_SPI_DW_PORT_3_CLOCK_GATE_DRV_NAME,
-	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_3_CLOCK_GATE_SUBSYS),
-#endif /* CONFIG_SPI_DW_PORT_3_CLOCK_GATE */
 	.config_func = spi_config_3_irq,
 	.op_modes = CONFIG_SPI_3_OP_MODES
 };
