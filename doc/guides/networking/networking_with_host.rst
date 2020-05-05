@@ -11,6 +11,7 @@ Networking with the host system
    qemu_eth_setup.rst
    qemu_setup.rst
    usbnet_setup.rst
+   qemu_user_setup.rst
 
 While developing networking software, it is usually necessary to connect and
 exchange data with the host system like a Linux desktop computer.
@@ -29,6 +30,15 @@ possible:
     built-in Ethernet driver. Not all QEMU boards support built-in Ethernet so
     in some cases, you might need to use the SLIP method for host connectivity.
     See :ref:`networking_with_eth_qemu` for details.
+
+* QEMU using SLIRP (Qemu User Networking).
+
+  * QEMU User Networking is implemented using "slirp", which provides a full TCP/IP
+    stack within QEMU and uses that stack to implement a virtual NAT'd network. As
+    this support is built into QEMU, it can be used with any model and requires no
+    admin privileges on the host machine, unlike TAP. However, it has several
+    limitations including performance which makes it less valuable for practical
+    purposes. See :ref:`networking_with_user_qemu` for details.
 
 * native_posix board.
 
