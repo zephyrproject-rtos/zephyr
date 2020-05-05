@@ -554,7 +554,7 @@ const struct spi_dw_config spi_dw_config_0 = {
 	.regs = DT_INST_REG_ADDR(0),
 	.clock_frequency = INST_0_SNPS_DESIGNWARE_SPI_CLOCK_FREQ,
 	.config_func = spi_config_0_irq,
-	.op_modes = CONFIG_SPI_0_OP_MODES
+	.op_modes = SPI_CTX_RUNTIME_OP_MODE_MASTER
 };
 
 DEVICE_DT_INST_DEFINE(0, spi_dw_init, device_pm_control_nop,
@@ -616,7 +616,7 @@ static const struct spi_dw_config spi_dw_config_1 = {
 	.regs = DT_INST_REG_ADDR(1),
 	.clock_frequency = INST_1_SNPS_DESIGNWARE_SPI_CLOCK_FREQ,
 	.config_func = spi_config_1_irq,
-	.op_modes = CONFIG_SPI_1_OP_MODES
+	.op_modes = SPI_CTX_RUNTIME_OP_MODE_MASTER
 };
 
 DEVICE_DT_INST_DEFINE(1, spi_dw_init, device_pm_control_nop,
@@ -678,7 +678,7 @@ static const struct spi_dw_config spi_dw_config_2 = {
 	.regs = DT_INST_REG_ADDR(2),
 	.clock_frequency = INST_2_SNPS_DESIGNWARE_SPI_CLOCK_FREQ,
 	.config_func = spi_config_2_irq,
-	.op_modes = CONFIG_SPI_2_OP_MODES
+	.op_modes = SPI_CTX_RUNTIME_OP_MODE_MASTER
 };
 
 DEVICE_DT_INST_DEFINE(2, spi_dw_init, device_pm_control_nop,
@@ -740,7 +740,7 @@ static const struct spi_dw_config spi_dw_config_3 = {
 	.regs = DT_INST_REG_ADDR(3),
 	.clock_frequency = INST_3_SNPS_DESIGNWARE_SPI_CLOCK_FREQ,
 	.config_func = spi_config_3_irq,
-	.op_modes = CONFIG_SPI_3_OP_MODES
+	.op_modes = SPI_CTX_RUNTIME_OP_MODE_MASTER
 };
 
 DEVICE_DT_INST_DEFINE(3, spi_dw_init, device_pm_control_nop,
