@@ -550,17 +550,19 @@ include(${BOARD_DIR}/board.cmake OPTIONAL)
 # The Qemu supported ethernet driver should define CONFIG_ETH_NIC_MODEL
 # string that tells what nic model Qemu should use.
 if(CONFIG_QEMU_TARGET)
-  if(CONFIG_NET_QEMU_ETHERNET)
-    if(CONFIG_ETH_NIC_MODEL)
-      list(APPEND QEMU_FLAGS_${ARCH}
-        -nic tap,model=${CONFIG_ETH_NIC_MODEL},script=no,downscript=no,ifname=${CONFIG_ETH_QEMU_IFACE_NAME}
-      )
-    else()
-      message(FATAL_ERROR "
-        No Qemu ethernet driver configured!
-        Enable Qemu supported ethernet driver like e1000 at drivers/ethernet"
-      )
-    endif()
+  if ((CONFIG_NET_QEMU_ETHERNET OR CONFIG_NET_QEMU_USER) AND NOT CONFIG_ETH_NIC_MODEL)
+    message(FATAL_ERROR "
+      No Qemu ethernet driver configured!
+      Enable Qemu supported ethernet driver like e1000 at drivers/ethernet"
+    )
+  elseif(CONFIG_NET_QEMU_ETHERNET)
+    list(APPEND QEMU_FLAGS_${ARCH}
+      -nic tap,model=${CONFIG_ETH_NIC_MODEL},script=no,downscript=no,ifname=${CONFIG_ETH_QEMU_IFACE_NAME}
+    )
+  elseif(CONFIG_NET_QEMU_USER)
+    list(APPEND QEMU_FLAGS_${ARCH}
+      -nic user,model=${CONFIG_ETH_NIC_MODEL},${CONFIG_NET_QEMU_USER_EXTRA_ARGS}
+    )
   else()
     list(APPEND QEMU_FLAGS_${ARCH}
       -net none
