@@ -781,7 +781,7 @@ static void net_ctx_recv_v6_timeout_forever(void)
 	recv_cb_timeout_called = false;
 
 	/* Start a thread that will send data to receiver. */
-	tid = start_timeout_v6_thread(NET_WAIT_FOREVER);
+	tid = start_timeout_v6_thread(SYS_FOREVER_MS);
 
 	/* Wait a bit so that we see if recv waited or not */
 	k_sleep(WAIT_TIME);
@@ -807,7 +807,7 @@ static void net_ctx_recv_v4_timeout_forever(void)
 	recv_cb_timeout_called = false;
 
 	/* Start a thread that will send data to receiver. */
-	tid = start_timeout_v4_thread(NET_WAIT_FOREVER);
+	tid = start_timeout_v4_thread(SYS_FOREVER_MS);
 
 	/* Wait a bit so that we see if recv waited or not */
 	k_sleep(WAIT_TIME);

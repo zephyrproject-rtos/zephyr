@@ -897,11 +897,7 @@ int dns_resolve_name(struct dns_resolve_context *ctx,
 		return -EINVAL;
 	}
 
-	if (timeout == NET_WAIT_FOREVER) {
-		tout = K_FOREVER;
-	} else {
-		tout = K_MSEC(timeout);
-	}
+	tout = SYS_TIMEOUT_MS(timeout);
 
 	/* Timeout cannot be 0 as we cannot resolve name that fast.
 	 */

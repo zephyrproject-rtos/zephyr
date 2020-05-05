@@ -175,7 +175,7 @@ static size_t how_much_to_send(size_t max_len)
 static ssize_t sendall_with_ws_api(int sock, const void *buf, size_t len)
 {
 	return websocket_send_msg(sock, buf, len, WEBSOCKET_OPCODE_DATA_TEXT,
-				  true, true, NET_WAIT_FOREVER);
+				  true, true, SYS_FOREVER_MS);
 }
 
 static ssize_t sendall_with_bsd_api(int sock, const void *buf, size_t len)
