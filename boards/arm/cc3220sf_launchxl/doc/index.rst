@@ -61,6 +61,9 @@ driver support.
 +-----------+------------+-----------------------+
 | SPI_0     | on-chip    | Wi-Fi host driver     |
 +-----------+------------+-----------------------+
+| SENSOR    | off-chip   | TMP116 [#sensor_revc]_|
+|           |            | BMA280 [#sensor_revc]_|
++-----------+------------+-----------------------+
 
 .. note::
 
@@ -68,8 +71,9 @@ driver support.
    the I2C driver defaults to I2C_BITRATE_FAST mode (400 kHz) bus speed
    on bootup.
 
-The accelerometer, temperature sensors, or other peripherals
-accessible through the BoosterPack, are not currently supported.
+The accelerometer and temperature sensors are only supported on the rev. c
+board. Peripherals accessible through the BoosterPack are not currently
+supported.
 
 Connections and IOs
 ====================
@@ -328,3 +332,7 @@ CC32xx Wiki:
 
 ..  _Simplelink Wi-Fi Certificates Handling:
    http://www.ti.com/lit/pdf/swpu332
+
+.. rubric:: Footnotes
+
+.. [#sensor_revc] Only on rev.c boards.
