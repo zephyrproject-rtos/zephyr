@@ -58,6 +58,27 @@ config NRF_802154_CCA_CORR_LIMIT
 	  Limit for occurrences above correlator threshold. When not equal to
 	  zero the correlator based signal detect is enabled.
 
+config NRF_802154_FEM_PRESENT
+	bool "Enable Front End Module (FEM) control"
+	default n
+	help
+	  Enable FEM control and its configuration options.
+
+choice
+	prompt "FEM interface type"
+	default NRF_802154_FEM_TYPE_3_PIN
+	depends on NRF_802154_FEM_PRESENT
+	help
+	  Set FEM interface type
+
+config NRF_802154_FEM_TYPE_2_PIN
+	bool "FEM with 2 pin (PA, LNA) interface"
+
+config NRF_802154_FEM_TYPE_3_PIN
+	bool "FEM with 3 pin (PA, LNA, PDN) interface"
+
+endchoice
+
 endif # NRF_802154_RADIO_DRIVER
 
 endmenu
