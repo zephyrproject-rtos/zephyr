@@ -149,10 +149,14 @@ static int dma_sam0_config(struct device *dev, uint32_t channel,
 		 */
 		chcfg->CHCTRLA.reg = DMAC_CHCTRLA_TRIGACT_TRANSACTION |
 				     DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
-	} else {
+	} else if ((config->channel_direction == MEMORY_TO_PERIPHERAL) ||
+		(config->channel_direction == PERIPHERAL_TO_MEMORY)) {
 		/* One peripheral trigger per beat */
 		chcfg->CHCTRLA.reg = DMAC_CHCTRLA_TRIGACT_BURST |
 				     DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
+	} else {
+		LOG_ERR("Direction error. %d", config->channel_direction);
+		goto inval;
 	}
 
 	/* Set the priority */
