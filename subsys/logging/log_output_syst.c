@@ -129,6 +129,10 @@ static void platform_handle_init(struct mipi_syst_handle *systh)
 #if defined(MIPI_SYST_PCFG_LENGTH_FIELD)
 	MIPI_SYST_ENABLE_HANDLE_LENGTH(systh, 1);
 #endif
+
+#if defined(MIPI_SYST_PCFG_ENABLE_TIMESTAMP)
+	MIPI_SYST_ENABLE_HANDLE_TIMESTAMP(systh, 1);
+#endif
 }
 
 static void platform_handle_release(struct mipi_syst_handle *systh)
