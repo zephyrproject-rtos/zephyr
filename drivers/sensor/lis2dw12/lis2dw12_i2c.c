@@ -16,7 +16,7 @@
 
 #include "lis2dw12.h"
 
-#if DT_ANY_INST_ON_BUS(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
 static u16_t lis2dw12_i2c_slave_addr = DT_INST_REG_ADDR(0);
 
@@ -50,4 +50,4 @@ int lis2dw12_i2c_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ANY_INST_ON_BUS(i2c) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */

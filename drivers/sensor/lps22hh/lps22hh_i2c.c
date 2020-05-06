@@ -16,7 +16,7 @@
 
 #include "lps22hh.h"
 
-#if DT_ANY_INST_ON_BUS(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
 LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -52,4 +52,4 @@ int lps22hh_i2c_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ANY_INST_ON_BUS(i2c) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */

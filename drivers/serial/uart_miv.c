@@ -382,7 +382,7 @@ static const struct uart_driver_api uart_miv_driver_api = {
 };
 
 /* This driver is single-instance. */
-BUILD_ASSERT(DT_NUM_INST(DT_DRV_COMPAT) <= 1,
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "unsupported uart_miv instance");
 
 #if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))

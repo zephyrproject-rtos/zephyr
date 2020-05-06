@@ -16,9 +16,9 @@
 #include <logging/log.h>
 #include <drivers/sensor.h>
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <drivers/spi.h>
-#elif DT_ANY_INST_ON_BUS(i2c)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #include <drivers/i2c.h>
 #endif
 
@@ -222,9 +222,9 @@ static int lis2dw12_init_interface(struct device *dev)
 		return -EINVAL;
 	}
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	lis2dw12_spi_init(dev);
-#elif DT_ANY_INST_ON_BUS(i2c)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	lis2dw12_i2c_init(dev);
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"

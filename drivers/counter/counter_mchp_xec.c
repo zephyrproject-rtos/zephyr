@@ -347,4 +347,4 @@ static int counter_xec_init(struct device *dev)
 		irq_enable(DT_INST_IRQN(inst));				\
 	}
 
-DT_INST_FOREACH(COUNTER_XEC_INIT)
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_XEC_INIT)

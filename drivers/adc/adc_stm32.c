@@ -738,4 +738,4 @@ static void adc_stm32_cfg_func_##index(void)				\
 	irq_enable(DT_INST_IRQN(index));		\
 }
 
-DT_INST_FOREACH(STM32_ADC_INIT)
+DT_INST_FOREACH_STATUS_OKAY(STM32_ADC_INIT)

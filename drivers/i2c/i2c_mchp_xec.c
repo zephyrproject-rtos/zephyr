@@ -429,4 +429,4 @@ static int i2c_xec_init(struct device *dev)
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
 		&i2c_xec_driver_api);
 
-DT_INST_FOREACH(I2C_XEC_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(I2C_XEC_DEVICE)

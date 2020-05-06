@@ -37,7 +37,7 @@ def main():
                          # Suppress this warning if it's suppressed in dtc
                          warn_reg_unit_address_mismatch=
                              "-Wno-simple_bus_reg" not in args.dtc_flags,
-                         default_prop_types=False)
+                         default_prop_types=True)
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 
@@ -81,14 +81,6 @@ def main():
                               f"DT_{node.parent.z_path_id}")
 
             write_child_functions(node)
-
-            if not node.enabled:
-                out_comment("No node macros: node is disabled")
-                continue
-            if not node.matching_compat:
-                out_comment("No node macros: node has no matching binding")
-                continue
-
             write_idents_and_existence(node)
             write_bus(node)
             write_special_props(node)
@@ -227,9 +219,7 @@ def write_idents_and_existence(node):
     idents = [f"N_ALIAS_{str2ident(alias)}" for alias in node.aliases]
     # Instances
     for compat in node.compats:
-        if not node.enabled:
-            continue
-        instance_no = node.edt.compat2enabled[compat].index(node)
+        instance_no = node.edt.compat2nodes[compat].index(node)
         idents.append(f"N_INST_{instance_no}_{str2ident(compat)}")
     # Node labels
     idents.extend(f"N_NODELABEL_{str2ident(label)}" for label in node.labels)
@@ -270,6 +260,7 @@ def write_special_props(node):
     write_regs(node)
     write_interrupts(node)
     write_compatibles(node)
+    write_status(node)
 
 
 def write_regs(node):
@@ -400,6 +391,10 @@ def write_child_functions(node):
         if functions:
             macro = f"{node.z_path_id}_FOREACH_CHILD(fn)"
             out_dt_define(macro, functions)
+
+
+def write_status(node):
+    out_dt_define(f"{node.z_path_id}_STATUS_{str2ident(node.status)}", 1)
 
 
 def write_vanilla_props(node):
@@ -582,38 +577,35 @@ def write_chosen(edt):
 
 def write_global_compat_info(edt):
     # Tree-wide information related to each compatible, such as number
-    # of instances, is printed here.
+    # of instances with status "okay", is printed here.
 
-    compat2numinst = {}
-    compat2buses = defaultdict(list)
-    for compat, enabled in edt.compat2enabled.items():
-        compat2numinst[compat] = len(enabled)
-
-        for node in enabled:
+    n_okay_macros = {}
+    for_each_macros = {}
+    compat2buses = defaultdict(list)  # just for "okay" nodes
+    for compat, okay_nodes in edt.compat2okay.items():
+        for node in okay_nodes:
             bus = node.on_bus
             if bus is not None and bus not in compat2buses[compat]:
                 compat2buses[compat].append(bus)
 
-    out_comment("Helpers for calling a macro/function a fixed number of times"
-                "\n")
-    for numinsts in range(1, max(compat2numinst.values(), default=0) + 1):
-        out_define(f"DT_FOREACH_IMPL_{numinsts}(fn)",
-                   " ".join([f"fn({i})" for i in range(numinsts)]))
-
-    out_comment("Macros for enabled instances of each compatible\n")
-    n_inst_macros = {}
-    for_each_macros = {}
-    for compat, numinst in compat2numinst.items():
         ident = str2ident(compat)
-        n_inst_macros[f"DT_N_INST_{ident}_NUM"] = numinst
-        for_each_macros[f"DT_FOREACH_INST_{ident}(fn)"] = \
-            f"DT_FOREACH_IMPL_{numinst}(fn)"
-    for macro, value in n_inst_macros.items():
+        n_okay_macros[f"DT_N_INST_{ident}_NUM_OKAY"] = len(okay_nodes)
+        for_each_macros[f"DT_FOREACH_OKAY_INST_{ident}(fn)"] = \
+            " ".join(f"fn({edt.compat2nodes[compat].index(node)})"
+                     for node in okay_nodes)
+
+    out_comment('Macros for compatibles with status "okay" nodes\n')
+    for compat, okay_nodes in edt.compat2okay.items():
+        if okay_nodes:
+            out_define(f"DT_COMPAT_HAS_OKAY_{str2ident(compat)}", 1)
+
+    out_comment('Macros for status "okay" instances of each compatible\n')
+    for macro, value in n_okay_macros.items():
         out_define(macro, value)
     for macro, value in for_each_macros.items():
         out_define(macro, value)
 
-    out_comment("Bus information for enabled nodes of each compatible\n")
+    out_comment('Bus information for status "okay" nodes of each compatible\n')
     for compat, buses in compat2buses.items():
         for bus in buses:
             out_define(

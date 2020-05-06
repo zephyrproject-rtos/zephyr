@@ -16,7 +16,7 @@
 
 #include "lis2dh.h"
 
-#if DT_ANY_INST_ON_BUS(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
 LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -91,4 +91,4 @@ int lis2dh_i2c_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ANY_INST_ON_BUS(i2c) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */

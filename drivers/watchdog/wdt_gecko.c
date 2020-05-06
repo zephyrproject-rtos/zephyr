@@ -295,4 +295,4 @@ static const struct wdt_driver_api wdt_gecko_driver_api = {
 		irq_enable(DT_INST_IRQN(index));	\
 	}
 
-DT_INST_FOREACH(GECKO_WDT_INIT)
+DT_INST_FOREACH_STATUS_OKAY(GECKO_WDT_INIT)

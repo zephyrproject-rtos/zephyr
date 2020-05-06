@@ -630,4 +630,4 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 			    CONFIG_SENSOR_INIT_PRIORITY,                       \
 			    &bq274xx_battery_driver_api);
 
-DT_INST_FOREACH(BQ274XX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(BQ274XX_INIT)

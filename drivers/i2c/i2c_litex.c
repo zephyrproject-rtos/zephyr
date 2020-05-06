@@ -136,4 +136,4 @@ static const struct i2c_driver_api i2c_litex_driver_api = {
 			   &i2c_litex_driver_api			       \
 			   );
 
-DT_INST_FOREACH(I2C_LITEX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(I2C_LITEX_INIT)

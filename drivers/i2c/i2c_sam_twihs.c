@@ -356,4 +356,4 @@ static const struct i2c_driver_api i2c_sam_twihs_driver_api = {
 			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
 			    &i2c_sam_twihs_driver_api);
 
-DT_INST_FOREACH(I2C_TWIHS_SAM_INIT)
+DT_INST_FOREACH_STATUS_OKAY(I2C_TWIHS_SAM_INIT)

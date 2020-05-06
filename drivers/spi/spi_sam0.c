@@ -770,4 +770,4 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &spi_sam0_driver_api);
 
-DT_INST_FOREACH(SPI_SAM0_DEVICE_INIT)
+DT_INST_FOREACH_STATUS_OKAY(SPI_SAM0_DEVICE_INIT)

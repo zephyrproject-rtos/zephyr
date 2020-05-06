@@ -15,7 +15,7 @@
 #include "iis2dlpc.h"
 #include <logging/log.h>
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 
 #define IIS2DLPC_SPI_READ		(1 << 7)
 
@@ -125,4 +125,4 @@ int iis2dlpc_spi_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ANY_INST_ON_BUS(spi) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */

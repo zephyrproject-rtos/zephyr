@@ -187,21 +187,22 @@
 /**
  * @brief Get a node identifier for an instance of a compatible
  *
- * Instance numbers are just indexes among enabled nodes with the same
+ * Instance numbers are just indexes among *all* nodes with the same
  * compatible. This complicates their use outside of device drivers.
  * The **only guarantees** are:
  *
  * - instance numbers start at 0,
  * - are contiguous, and
- * - exactly one is assigned for each enabled node with a matching
- *   compatible
+ * - exactly one is assigned for *each* node with a matching compatible,
+ *   **including disabled ones**
  *
  * Instance numbers **in no way reflect** any numbering scheme that
  * might exist in SoC documentation, node labels or unit addresses, or
- * properties of the /aliases node. There **is no guarantee** that the
- * same node will have the same instance number between builds, even
- * if you are building the same application again in the same build
- * directory.
+ * properties of the /aliases node.
+ *
+ * There **is no guarantee** that the same node will have the same
+ * instance number between builds, even if you are building the same
+ * application again in the same build directory.
  *
  * Example devicetree fragment:
  *
@@ -893,6 +894,45 @@
  */
 
 /**
+ * @brief Does a node identifier refer to a node?
+ *
+ * Tests whether a node identifier refers to a node which exists, i.e.
+ * is defined in the devicetree.
+ *
+ * It doesn't matter whether or not the node has a matching binding,
+ * or what the node's status value is. This is purely a check of
+ * whether the node exists at all.
+ *
+ * @param node_id a node identifier
+ * @return 1 if the node identifier refers to a node,
+ *         0 otherwise.
+ */
+#define DT_NODE_EXISTS(node_id) IS_ENABLED(DT_CAT(node_id, _EXISTS))
+
+/**
+ * @brief Does a node identifier refer to a node with a status?
+ *
+ * Example uses:
+ *
+ *     DT_NODE_HAS_STATUS(DT_PATH(soc, i2c_12340000), okay)
+ *     DT_NODE_HAS_STATUS(DT_PATH(soc, i2c_12340000), disabled)
+ *
+ * Tests whether a node identifier refers to a node which:
+ *
+ * - exists in the devicetree, and
+ * - has a status property matching the second argument
+ *   (except that either a missing status or an "ok" status
+ *   in the devicetree is treated as if it were "okay" instead)
+ *
+ * @param node_id a node identifier
+ * @param status a status as a token (not a string), e.g. okay or disabled
+ * @return 1 if the node identifier refers to a usable node,
+ *         0 otherwise.
+ */
+#define DT_NODE_HAS_STATUS(node_id, status) \
+	DT_HAS_NODE_STATUS_INTERNAL(node_id, status)
+
+/**
  * @brief Does a node identifier refer to a usable node?
  *
  * Example uses:
@@ -910,7 +950,7 @@
  * @return 1 if the node identifier refers to a usable node,
  *         0 otherwise.
  */
-#define DT_HAS_NODE_STATUS_OKAY(node_id) IS_ENABLED(DT_CAT(node_id, _EXISTS))
+#define DT_HAS_NODE_STATUS_OKAY(node_id) DT_NODE_HAS_STATUS(node_id, okay)
 
 /**
  * @brief Does the devicetree have any usable nodes with a compatible?
@@ -923,16 +963,18 @@
  * @return 0 if no nodes of the compatible are available for use,
  *         1 if at least one is enabled and has a matching binding
  */
-#define DT_HAS_COMPAT(compat) DT_HAS_NODE_STATUS_OKAY(DT_INST(0, compat))
+#define DT_HAS_COMPAT_STATUS_OKAY(compat) \
+	IS_ENABLED(DT_CAT(DT_COMPAT_HAS_OKAY_, compat))
 
 /**
- * @brief Get the number of enabled instances for a given compatible
+ * @brief Get the number of instances of a given compatible with
+ *        status "okay"
  * @param compat lowercase-and-underscores version of a compatible
- * @return Number of enabled instances
+ * @return Number of instances with status "okay"
  */
-#define DT_NUM_INST(compat)					\
-	UTIL_AND(DT_HAS_COMPAT(compat),				\
-		 UTIL_CAT(DT_N_INST, DT_DASH(compat, NUM)))
+#define DT_NUM_INST_STATUS_OKAY(compat)			\
+	UTIL_AND(DT_HAS_COMPAT_STATUS_OKAY(compat),		\
+		 UTIL_CAT(DT_N_INST, DT_DASH(compat, NUM_OKAY)))
 
 /**
  * @brief Test if the devicetree has a /chosen node
@@ -953,8 +995,8 @@
  *
  * Example usages which evaluate to 1:
  *
- *     DT_NODE_HAS_COMPAT(DT_NODELABEL(n), vnd_specific_device)
- *     DT_NODE_HAS_COMPAT(DT_NODELABEL(n), generic_device)
+ *     DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(n), vnd_specific_device)
+ *     DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(n), generic_device)
  *
  * This macro only uses the value of the compatible property. Whether
  * or not a particular compatible has a matching binding has no effect
@@ -965,7 +1007,7 @@
  * @return 1 if the node's compatible property contains compat,
  *         0 otherwise.
  */
-#define DT_NODE_HAS_COMPAT(node_id, compat) \
+#define DT_NODE_HAS_COMPAT_STATUS_OKAY(node_id, compat) \
 	IS_ENABLED(DT_CAT(node_id, _COMPAT_MATCHES_##compat))
 
 /**
@@ -1115,31 +1157,6 @@
  *         0 otherwise
  */
 #define DT_ON_BUS(node_id, bus) IS_ENABLED(DT_CAT(node_id, _BUS_##bus))
-
-/**
- * @brief Test if any node of a compatible is on a bus of a given type
- *
- * Example devicetree overlay:
- *
- *     &i2c0 {
- *            temp: temperature-sensor@76 {
- *                     compatible = "vnd,some-sensor";
- *                     reg = <0x76>;
- *            };
- *     };
- *
- * Example usage, assuming "i2c0" is an I2C bus controller node, and
- * therefore "temp" is on an I2C bus:
- *
- *     DT_COMPAT_ON_BUS(vnd_some_sensor, i2c) // 1
- *
- * @param compat lowercase-and-underscores version of a compatible
- * @param bus a binding's bus type as a C token, lowercased and without quotes
- * @return 1 if any enabled node with that compatible is on that bus type,
- *         0 otherwise
- */
-#define DT_COMPAT_ON_BUS(compat, bus) \
-	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
 
 /**
  * @}
@@ -1413,29 +1430,55 @@
 #define DT_INST_ON_BUS(inst, bus) DT_ON_BUS(DT_DRV_INST(inst), bus)
 
 /**
- * @brief Test if any node with compatible DT_DRV_COMPAT is on a bus
+ * @brief Test if any DT_DRV_COMPAT node is on a bus of a given type
+ *        and has status okay
  *
- * This is equivalent to DT_COMPAT_ON_BUS(DT_DRV_COMPAT, bus).
+ * Example devicetree overlay:
+ *
+ *     &i2c0 {
+ *            temp: temperature-sensor@76 {
+ *                     compatible = "vnd,some-sensor";
+ *                     reg = <0x76>;
+ *            };
+ *     };
+ *
+ * Example usage, assuming "i2c0" is an I2C bus controller node, and
+ * therefore "temp" is on an I2C bus:
+ *
+ *     #define DT_DRV_COMPAT vnd_some_sensor
+ *
+ *     DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) // 1
+ *
  * @param bus a binding's bus type as a C token, lowercased and without quotes
+ * @return 1 if any enabled node with that compatible is on that bus type,
+ *         0 otherwise
  */
-#define DT_ANY_INST_ON_BUS(bus) DT_COMPAT_ON_BUS(DT_DRV_COMPAT, bus)
+#define DT_ANY_INST_ON_BUS_STATUS_OKAY(bus) \
+	DT_COMPAT_ON_BUS_INTERNAL(DT_DRV_COMPAT, bus)
 
 /**
- * @def DT_INST_FOREACH
+ * @def DT_INST_FOREACH_STATUS_OKAY
  *
  * @brief Call specified macro for all nodes with compatible DT_DRV_COMPAT
+ *        and status "okay"
  *
- * @details This macro will scan for all DT_INST_ device nodes for that driver.
- * The macro then calls the supplied macro with the instance number.
+ * @details This macro will scan for all DT_INST_ device nodes for that
+ * compatible.
+ *
+ * The macro then calls the supplied inst_expr with the instance number
+ * for each instance which has status "okay".
+ *
  * This macro can be used for example to call the init macro of a driver
- * for each device specified in the device tree.
+ * for each device specified in the device tree with "okay" status.
  *
  * @param inst_expr Macro or function that is called for each device node.
  * Has to accept instance_number as only parameter.
  */
-#define DT_INST_FOREACH(inst_expr) \
-	COND_CODE_1(DT_HAS_COMPAT(DT_DRV_COMPAT), \
-		    (UTIL_CAT(DT_FOREACH_INST_, DT_DRV_COMPAT)(inst_expr)), ())
+#define DT_INST_FOREACH_STATUS_OKAY(inst_expr) \
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT),	\
+		    (UTIL_CAT(DT_FOREACH_OKAY_INST_,		\
+			      DT_DRV_COMPAT)(inst_expr)),	\
+		    ())
 
 /**
  * @brief Does a DT_DRV_COMPAT instance have a property?
@@ -1530,6 +1573,12 @@
 #define DT_DASH(...) MACRO_MAP_CAT(DT_DASH_PREFIX, __VA_ARGS__)
 /** @internal helper for DT_DASH(): prepends _ to a name */
 #define DT_DASH_PREFIX(name) _##name
+/** @internal helper for DT_HAS_NODE_STATUS */
+#define DT_HAS_NODE_STATUS_INTERNAL(node_id, status) \
+	IS_ENABLED(DT_CAT(node_id, _STATUS_ ## status))
+/** @internal helper for test cases and DT_ANY_INST_ON_BUS_STATUS_OKAY() */
+#define DT_COMPAT_ON_BUS_INTERNAL(compat, bus) \
+	IS_ENABLED(UTIL_CAT(DT_CAT(DT_COMPAT_, compat), _BUS_##bus))
 
 /* have these last so the have access to all previously defined macros */
 #include <devicetree/adc.h>

@@ -254,4 +254,4 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-DT_INST_FOREACH(I2C_MCUX_LPI2C_INIT)
+DT_INST_FOREACH_STATUS_OKAY(I2C_MCUX_LPI2C_INIT)

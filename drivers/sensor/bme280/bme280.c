@@ -22,12 +22,12 @@
 
 #define DT_DRV_COMPAT bosch_bme280
 
-#define BME280_BUS_SPI DT_ANY_INST_ON_BUS(spi)
-#define BME280_BUS_I2C DT_ANY_INST_ON_BUS(i2c)
+#define BME280_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BME280_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
 LOG_MODULE_REGISTER(BME280, CONFIG_SENSOR_LOG_LEVEL);
 
-#if DT_NUM_INST(DT_DRV_COMPAT) == 0
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #warning "BME280 driver enabled without any devices"
 #endif
 
@@ -595,7 +595,7 @@ done:
 			    &bme280_config_##inst,			\
 			    POST_KERNEL,				\
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &bme280_api_funcs)
+			    &bme280_api_funcs);
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
@@ -676,4 +676,4 @@ done:
 		    (BME280_DEFINE_SPI(inst)),				\
 		    (BME280_DEFINE_I2C(inst)))
 
-DT_INST_FOREACH(BME280_DEFINE);
+DT_INST_FOREACH_STATUS_OKAY(BME280_DEFINE)

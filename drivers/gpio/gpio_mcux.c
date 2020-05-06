@@ -318,4 +318,4 @@ static const struct gpio_driver_api gpio_mcux_driver_api = {
 		return 0;						\
 	}
 
-DT_INST_FOREACH(GPIO_DEVICE_INIT_MCUX)
+DT_INST_FOREACH_STATUS_OKAY(GPIO_DEVICE_INIT_MCUX)

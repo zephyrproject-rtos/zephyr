@@ -178,4 +178,4 @@ static int imx_epit_config_func_##idx(struct device *dev)		       \
 	return 0;							       \
 }
 
-DT_INST_FOREACH(COUNTER_IMX_EPIT_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_IMX_EPIT_DEVICE)

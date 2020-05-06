@@ -225,4 +225,4 @@ static const struct i2c_driver_api mcux_flexcomm_driver_api = {
 		irq_enable(DT_INST_IRQN(id));				\
 	}								\
 
-DT_INST_FOREACH(I2C_MCUX_FLEXCOMM_DEVICE);
+DT_INST_FOREACH_STATUS_OKAY(I2C_MCUX_FLEXCOMM_DEVICE)

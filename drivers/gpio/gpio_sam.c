@@ -357,4 +357,4 @@ int gpio_sam_init(struct device *dev)
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-DT_INST_FOREACH(GPIO_SAM_INIT)
+DT_INST_FOREACH_STATUS_OKAY(GPIO_SAM_INIT)

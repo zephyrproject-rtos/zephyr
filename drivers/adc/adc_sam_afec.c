@@ -379,4 +379,4 @@ static void adc_sam_isr(void *arg)
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-DT_INST_FOREACH(ADC_SAM_INIT)
+DT_INST_FOREACH_STATUS_OKAY(ADC_SAM_INIT)

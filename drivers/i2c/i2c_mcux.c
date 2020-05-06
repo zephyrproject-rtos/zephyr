@@ -232,4 +232,4 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-DT_INST_FOREACH(I2C_DEVICE_INIT_MCUX)
+DT_INST_FOREACH_STATUS_OKAY(I2C_DEVICE_INIT_MCUX)

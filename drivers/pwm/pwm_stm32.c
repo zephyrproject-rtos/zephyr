@@ -275,4 +275,4 @@ static int pwm_stm32_init(struct device *dev)
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,\
 			    &pwm_stm32_drv_api_funcs);
 
-DT_INST_FOREACH(PWM_DEVICE_INIT_STM32)
+DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT_STM32)

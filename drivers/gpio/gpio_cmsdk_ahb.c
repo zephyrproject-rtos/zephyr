@@ -306,4 +306,4 @@ static int gpio_cmsdk_ahb_init(struct device *dev)
 		irq_enable(DT_INST_IRQN(n));					\
 	}
 
-DT_INST_FOREACH(CMSDK_AHB_GPIO_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(CMSDK_AHB_GPIO_DEVICE)

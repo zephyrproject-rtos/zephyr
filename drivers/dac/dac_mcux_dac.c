@@ -110,4 +110,4 @@ static const struct dac_driver_api mcux_dac_driver_api = {
 			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,\
 			&mcux_dac_driver_api);
 
-DT_INST_FOREACH(MCUX_DAC_INIT)
+DT_INST_FOREACH_STATUS_OKAY(MCUX_DAC_INIT)

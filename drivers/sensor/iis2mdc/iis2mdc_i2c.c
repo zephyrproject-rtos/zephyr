@@ -16,7 +16,7 @@
 
 #include "iis2mdc.h"
 
-#if DT_ANY_INST_ON_BUS(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_DECLARE(IIS2MDC);
@@ -53,4 +53,4 @@ int iis2mdc_i2c_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ANY_INST_ON_BUS(i2c) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */

@@ -360,4 +360,4 @@ static int gpio_gecko_port##idx##_init(struct device *dev) \
 	return 0; \
 }
 
-DT_INST_FOREACH(GPIO_PORT_INIT)
+DT_INST_FOREACH_STATUS_OKAY(GPIO_PORT_INIT)

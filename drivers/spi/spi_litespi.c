@@ -182,4 +182,4 @@ static struct spi_driver_api spi_litespi_api = {
 			CONFIG_SPI_INIT_PRIORITY, \
 			&spi_litespi_api);
 
-DT_INST_FOREACH(SPI_INIT)
+DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

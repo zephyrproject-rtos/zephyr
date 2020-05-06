@@ -35,15 +35,15 @@ struct iis2mdc_config {
 	gpio_pin_t drdy_pin;
 	gpio_dt_flags_t drdy_flags;
 #endif  /* CONFIG_IIS2MDC_TRIGGER */
-#if DT_ANY_INST_ON_BUS(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	u16_t i2c_slv_addr;
-#elif DT_ANY_INST_ON_BUS(spi)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_config spi_conf;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
 	u8_t cs_gpio;
 #endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
-#endif /* DT_ANY_INST_ON_BUS(spi) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 };
 
 /* Sensor data */
@@ -55,9 +55,9 @@ struct iis2mdc_data {
 
 	stmdev_ctx_t *ctx;
 
-#if DT_ANY_INST_ON_BUS(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	stmdev_ctx_t ctx_i2c;
-#elif DT_ANY_INST_ON_BUS(spi)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	stmdev_ctx_t ctx_spi;
 #endif
 

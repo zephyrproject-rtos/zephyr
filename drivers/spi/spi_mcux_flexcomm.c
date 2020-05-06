@@ -295,4 +295,4 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		irq_enable(DT_INST_IRQN(id));				\
 	}
 
-DT_INST_FOREACH(SPI_MCUX_FLEXCOMM_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_FLEXCOMM_DEVICE)

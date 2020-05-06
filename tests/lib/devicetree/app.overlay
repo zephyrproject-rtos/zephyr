@@ -25,7 +25,7 @@
 		interrupt-parent = <&test_intc>;
 
 		test_arrays: array-holder {
-			/* vnd,undefined-compat is for DT_NODE_HAS_COMPAT() */
+			/* vnd,undefined-compat is for DT_NODE_HAS_COMPAT_STATUS_OKAY() */
 			compatible = "vnd,array-holder", "vnd,undefined-compat";
 			a = <1000 2000 3000>;
 			b = [aa bb cc dd];

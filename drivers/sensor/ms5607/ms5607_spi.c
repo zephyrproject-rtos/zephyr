@@ -15,7 +15,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(ms5607);
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 static struct spi_cs_control ms5607_cs_ctrl;

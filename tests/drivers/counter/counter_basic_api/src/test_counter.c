@@ -29,8 +29,8 @@ struct counter_alarm_cfg alarm_cfg2;
 #define INST_DT_COMPAT_LABEL(n, compat) DT_LABEL(DT_INST(n, compat)),
 /* Generate a list of LABELs for all instances of the "compat" */
 #define LABELS_FOR_DT_COMPAT(compat) \
-	COND_CODE_1(DT_HAS_COMPAT(compat), \
-		   (UTIL_LISTIFY(DT_NUM_INST(compat), \
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat), \
+		   (UTIL_LISTIFY(DT_NUM_INST_STATUS_OKAY(compat), \
 				 INST_DT_COMPAT_LABEL, compat)), ())
 
 static const char * const devices[] = {

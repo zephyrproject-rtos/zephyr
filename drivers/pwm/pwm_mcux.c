@@ -171,4 +171,4 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,\
 			    &pwm_mcux_driver_api);
 
-DT_INST_FOREACH(PWM_DEVICE_INIT_MCUX)
+DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT_MCUX)

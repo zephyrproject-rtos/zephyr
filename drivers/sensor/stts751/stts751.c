@@ -204,7 +204,7 @@ static const struct stts751_config stts751_config = {
 	.event_pin	= DT_INST_GPIO_PIN(0, drdy_gpios),
 	.int_flags	= DT_INST_GPIO_FLAGS(0, drdy_gpios),
 #endif
-#if DT_ANY_INST_ON_BUS(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	.bus_init = stts751_i2c_init,
 	.i2c_slv_addr = DT_INST_REG_ADDR(0),
 #else

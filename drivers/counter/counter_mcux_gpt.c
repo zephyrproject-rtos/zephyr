@@ -234,4 +234,4 @@ static const struct counter_driver_api mcux_gpt_driver_api = {
 		return mcux_gpt_init(dev);				\
 	}								\
 
-DT_INST_FOREACH(GPT_DEVICE_INIT_MCUX)
+DT_INST_FOREACH_STATUS_OKAY(GPT_DEVICE_INIT_MCUX)
