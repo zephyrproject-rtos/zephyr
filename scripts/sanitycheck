@@ -634,7 +634,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     parser.add_argument("-C", "--coverage", action="store_true",
                         help="Generate coverage reports. Implies "
-                             "--enable_coverage.")
+                             "--enable-coverage.")
 
     parser.add_argument("--coverage-platform", action="append", default=[],
                         help="Plarforms to run coverage reports on. "
