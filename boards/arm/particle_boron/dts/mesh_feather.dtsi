@@ -143,6 +143,8 @@ arduino_i2c: &i2c0 { /* feather I2C */
 		wp-gpios = <&gpio0 22 GPIO_ACTIVE_LOW>;
 		hold-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
 		size = <0x2000000>;
+		sfdp-basic-8 = <0x520f200c>;
+		sfdp-basic-9 = <0xff00d810>;
 		has-dpd;
 		t-enter-dpd = <10000>;
 		t-exit-dpd = <100000>;
