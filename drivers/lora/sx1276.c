@@ -64,6 +64,7 @@ struct sx1276_data {
 	u8_t rx_len;
 	s8_t snr;
 	s16_t rssi;
+	struct lora_modem_config modem_config;
 } dev_data;
 
 bool SX1276CheckRfFrequency(uint32_t frequency)
@@ -362,8 +363,61 @@ void SX1276SetRfTxPower(int8_t power)
 	}
 }
 
+static int sx1276_config_valid(const struct lora_modem_config *config)
+{
+	if (config->frequency == 0)
+		return -EINVAL;
+
+	return 0;
+}
+
+static int sx1276_apply_config(const struct lora_modem_config *config, bool tx)
+{
+	int ret;
+
+	ret = sx1276_config_valid(config);
+	if (ret < 0)
+		return ret;
+
+	Radio.SetChannel(config->frequency);
+
+	if (tx) {
+		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
+				  config->bandwidth, config->datarate,
+				  config->coding_rate, config->preamble_len,
+				  false /* fixLen */,
+				  true /* crcOn */,
+				  false /* freqHopOn */,
+				  0 /* hopPeriod */,
+				  false /* iqInverted */,
+				  4000 /* timeout */);
+	} else {
+		/* TODO: Get symbol timeout value from config parameters */
+		Radio.SetRxConfig(MODEM_LORA, config->bandwidth,
+				  config->datarate, config->coding_rate,
+				  0 /* bandwidthAfc */,
+				  config->preamble_len,
+				  10 /* symbTimeout */,
+				  false /* fixLen */,
+				  0 /* payloadLen */,
+				  false /* crcOn */,
+				  0 /* freqHopOn */,
+				  0 /* hopPeriod */,
+				  false /* iqInverted */,
+				  true /* rxContinuous */);
+	}
+
+	return 0;
+}
+
 static int sx1276_lora_send(struct device *dev, u8_t *data, u32_t data_len)
 {
+	int ret;
+
+	ret = sx1276_apply_config(&dev_data.modem_config, true);
+	if (ret)
+		return ret;
+
 	Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
 
 	Radio.Send(data, data_len);
@@ -392,6 +446,10 @@ static int sx1276_lora_recv(struct device *dev, u8_t *data, u8_t size,
 			    k_timeout_t timeout, s16_t *rssi, s8_t *snr)
 {
 	int ret;
+
+	ret = sx1276_apply_config(&dev_data.modem_config, false);
+	if (ret)
+		return ret;
 
 	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
 	Radio.Rx(0);
@@ -427,21 +485,13 @@ static int sx1276_lora_recv(struct device *dev, u8_t *data, u8_t size,
 static int sx1276_lora_config(struct device *dev,
 			      struct lora_modem_config *config)
 {
+	int ret;
 
-	Radio.SetChannel(config->frequency);
+	ret = sx1276_config_valid(config);
+	if (ret < 0)
+		return ret;
 
-	if (config->tx) {
-		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
-				  config->bandwidth, config->datarate,
-				  config->coding_rate, config->preamble_len,
-				  false, true, 0, 0, false, 4000);
-	} else {
-		/* TODO: Get symbol timeout value from config parameters */
-		Radio.SetRxConfig(MODEM_LORA, config->bandwidth,
-				  config->datarate, config->coding_rate,
-				  0, config->preamble_len, 10, false, 0,
-				  false, 0, 0, false, true);
-	}
+	dev_data.modem_config = *config;
 
 	return 0;
 }

@@ -45,7 +45,6 @@ struct lora_modem_config {
 	enum lora_coding_rate coding_rate;
 	u16_t preamble_len;
 	s8_t tx_power;
-	bool tx;
 };
 
 /**

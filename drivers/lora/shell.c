@@ -234,7 +234,6 @@ static int cmd_lora_send(const struct shell *shell,
 	int ret;
 	struct device *dev;
 
-	modem_config.tx = true;
 	dev = get_configured_modem(shell);
 	if (!dev) {
 		return -ENODEV;
@@ -258,7 +257,6 @@ static int cmd_lora_recv(const struct shell *shell, size_t argc, char **argv)
 	s16_t rssi;
 	s8_t snr;
 
-	modem_config.tx = false;
 	dev = get_configured_modem(shell);
 	if (!dev) {
 		return -ENODEV;
