@@ -73,22 +73,6 @@ tests:
   bluetooth.init.test_9:
     extra_args: CONF_FILE=prj_9.conf
     platform_whitelist: qemu_cortex_m3
-  bluetooth.init.test_controller:
-    extra_args: CONF_FILE=prj_controller.conf
-    platform_whitelist: nrf52840dk_nrf52840 nrf52dk_nrf52832
-      nrf51dk_nrf51422 96b_nitrogen
-  bluetooth.init.test_controller_4_0:
-    extra_args: CONF_FILE=prj_controller_4_0.conf
-    platform_whitelist: nrf52840dk_nrf52840 nrf52dk_nrf52832
-      nrf51dk_nrf51422
-  bluetooth.init.test_controller_tiny:
-    extra_args: CONF_FILE=prj_controller_tiny.conf
-    platform_whitelist: nrf52840dk_nrf52840 nrf52dk_nrf52832
-      nrf51dk_nrf51422
-  bluetooth.init.test_controller_dbg:
-    extra_args: CONF_FILE=prj_controller_dbg.conf
-    platform_whitelist: nrf52840dk_nrf52840 nrf52dk_nrf52832
-      nrf51dk_nrf51422 96b_nitrogen
   bluetooth.init.test_controller_ll_sw_split:
     extra_args: CONF_FILE=prj_controller_ll_sw_split.conf
     platform_whitelist: nrf52840dk_nrf52840 nrf52dk_nrf52832
