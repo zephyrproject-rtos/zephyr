@@ -805,3 +805,77 @@ void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
 				    bytes_to_write, K_FOREVER);
 }
 #endif
+
+size_t z_impl_k_pipe_read_avail(struct k_pipe *pipe)
+{
+	size_t res;
+	k_spinlock_key_t key;
+
+	/* Buffer and size are fixed. No need to spin. */
+	if (pipe->buffer == NULL || pipe->size == 0) {
+		res = 0;
+		goto out;
+	}
+
+	key = k_spin_lock(&pipe->lock);
+
+	if (pipe->read_index == pipe->write_index) {
+		res = pipe->bytes_used;
+	} else if (pipe->read_index < pipe->write_index) {
+		res = pipe->write_index - pipe->read_index;
+	} else {
+		res = pipe->size - (pipe->read_index - pipe->write_index);
+	}
+
+	k_spin_unlock(&pipe->lock, key);
+
+out:
+	return res;
+}
+
+#ifdef CONFIG_USERSPACE
+size_t z_vrfy_k_pipe_read_avail(struct k_pipe *pipe)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+
+	return z_impl_k_pipe_read_avail(pipe);
+}
+#include <syscalls/k_pipe_read_avail_mrsh.c>
+#endif
+
+size_t z_impl_k_pipe_write_avail(struct k_pipe *pipe)
+{
+	size_t res;
+	k_spinlock_key_t key;
+
+	/* Buffer and size are fixed. No need to spin. */
+	if (pipe->buffer == NULL || pipe->size == 0) {
+		res = 0;
+		goto out;
+	}
+
+	key = k_spin_lock(&pipe->lock);
+
+	if (pipe->write_index == pipe->read_index) {
+		res = pipe->size - pipe->bytes_used;
+	} else if (pipe->write_index < pipe->read_index) {
+		res = pipe->read_index - pipe->write_index;
+	} else {
+		res = pipe->size - (pipe->write_index - pipe->read_index);
+	}
+
+	k_spin_unlock(&pipe->lock, key);
+
+out:
+	return res;
+}
+
+#ifdef CONFIG_USERSPACE
+size_t z_vrfy_k_pipe_write_avail(struct k_pipe *pipe)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(pipe, K_OBJ_PIPE));
+
+	return z_impl_k_pipe_write_avail(pipe);
+}
+#include <syscalls/k_pipe_write_avail_mrsh.c>
+#endif
