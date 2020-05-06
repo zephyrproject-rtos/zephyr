@@ -129,7 +129,7 @@ These scripts:
 - adds some Zephyr-specific locations (such as zephyr's :file:`scripts`
   directory) to your :envvar:`PATH` environment variable
 - loads any settings from the ``zephyrrc`` files described above in
-  :file:`env_vars_zephyrrc`.
+  :ref:`env_vars_zephyrrc`.
 
 You can thus use them any time you need any of these settings.
 
