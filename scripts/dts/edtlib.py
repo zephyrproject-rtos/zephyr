@@ -771,7 +771,7 @@ class Node:
       A list with the nodes that the node directly depends on
 
     enabled:
-      True unless the node has 'status = "disabled"'
+      True if 'status = "okay"', 'status = "ok"', or no status property.
 
     read_only:
       True if the node has a 'read-only' property, and False otherwise
@@ -914,7 +914,8 @@ class Node:
     def enabled(self):
         "See the class docstring"
         return "status" not in self._node.props or \
-            self._node.props["status"].to_string() != "disabled"
+            self._node.props["status"].to_string() == "okay" or \
+            self._node.props["status"].to_string() == "ok"
 
     @property
     def read_only(self):
