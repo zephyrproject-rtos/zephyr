@@ -35,7 +35,7 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 #endif
 
 #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(ftm0)) && \
-    DT_NODE_HAS_COMPAT(DT_NODELABEL(ftm0), nxp_kinetis_ftm_pwm)
+    DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(ftm0), nxp_kinetis_ftm_pwm)
 	/* Tri-color LED as PWM */
 	pinmux_pin_set(portb, 5, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portd, 15, PORT_PCR_MUX(kPORT_MuxAlt2));
@@ -48,7 +48,7 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 #endif
 
 #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(ftm3)) && \
-    DT_NODE_HAS_COMPAT(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm)
+    DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm)
 	/* User LEDs as PWM */
 	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAlt2));

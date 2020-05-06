@@ -457,4 +457,4 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-DT_INST_FOREACH(COUNTER_SAM0_TC32_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_SAM0_TC32_DEVICE)

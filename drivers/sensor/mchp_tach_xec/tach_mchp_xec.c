@@ -133,4 +133,4 @@ static const struct sensor_driver_api tach_xec_driver_api = {
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &tach_xec_driver_api);
 
-DT_INST_FOREACH(TACH_XEC_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(TACH_XEC_DEVICE)

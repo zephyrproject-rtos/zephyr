@@ -335,4 +335,4 @@ static const struct mcux_flexcomm_config mcux_flexcomm_##n##_config = {	\
 									\
 	UART_MCUX_FLEXCOMM_INIT_CFG(n);
 
-DT_INST_FOREACH(UART_MCUX_FLEXCOMM_INIT)
+DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_INIT)

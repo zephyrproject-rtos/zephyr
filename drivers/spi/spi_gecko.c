@@ -321,4 +321,4 @@ static struct spi_driver_api spi_gecko_api = {
 
 #define SPI_INIT(n) SPI_INIT2(n, SPI_ID(n))
 
-DT_INST_FOREACH(SPI_INIT)
+DT_INST_FOREACH_STATUS_OKAY(SPI_INIT)

@@ -222,4 +222,4 @@ int spi_oc_simple_init(struct device *dev)
 			    CONFIG_SPI_INIT_PRIORITY,			\
 			    &spi_oc_simple_api);
 
-DT_INST_FOREACH(SPI_OC_INIT)
+DT_INST_FOREACH_STATUS_OKAY(SPI_OC_INIT)

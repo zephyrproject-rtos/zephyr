@@ -180,7 +180,7 @@ static int temp_kinetis_init(struct device *dev)
 	return 0;
 }
 
-BUILD_ASSERT(DT_NUM_INST(DT_DRV_COMPAT) <= 1,
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "unsupported temp instance");
 
 #define TEMP_KINETIS_INIT(inst)						\
@@ -221,4 +221,4 @@ BUILD_ASSERT(DT_NUM_INST(DT_DRV_COMPAT) <= 1,
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
 			    &temp_kinetis_driver_api);
 
-DT_INST_FOREACH(TEMP_KINETIS_INIT)
+DT_INST_FOREACH_STATUS_OKAY(TEMP_KINETIS_INIT)

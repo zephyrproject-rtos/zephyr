@@ -299,4 +299,4 @@ static const struct adc_driver_api mcux_adc12_driver_api = {
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-DT_INST_FOREACH(ACD12_MCUX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(ACD12_MCUX_INIT)

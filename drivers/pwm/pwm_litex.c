@@ -113,4 +113,4 @@ static const struct pwm_driver_api pwm_litex_driver_api = {
 			    &pwm_litex_driver_api			       \
 			   );
 
-DT_INST_FOREACH(PWM_LITEX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(PWM_LITEX_INIT)

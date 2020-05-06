@@ -239,7 +239,7 @@ static int ms5607_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	ms5607_spi_init(dev);
 #else
 	BUILD_ASSERT(1, "I2c interface not implemented yet");

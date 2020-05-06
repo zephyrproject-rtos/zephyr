@@ -27,9 +27,9 @@ static struct lis2ds12_data lis2ds12_data;
 
 static struct lis2ds12_config lis2ds12_config = {
 	.comm_master_dev_name = DT_INST_BUS_LABEL(0),
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	.bus_init = lis2ds12_spi_init,
-#elif DT_ANY_INST_ON_BUS(i2c)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	.bus_init = lis2ds12_i2c_init,
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"

@@ -296,4 +296,4 @@ static const struct i2c_driver_api rv32m1_lpi2c_driver_api = {
 		irq_enable(DT_INST_IRQN(id));                                  \
 	}                                                                      \
 
-DT_INST_FOREACH(RV32M1_LPI2C_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(RV32M1_LPI2C_DEVICE)

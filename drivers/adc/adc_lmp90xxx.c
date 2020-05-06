@@ -1116,55 +1116,55 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 /*
  * LMP90077: 16 bit, 2 diff/4 se (4 channels), 0 currents
  */
-#if DT_HAS_COMPAT(ti_lmp90077)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90077)
 LMP90XXX_DEVICE(90077, 0, 16, 4);
 #endif
 
 /*
  * LMP90078: 16 bit, 2 diff/4 se (4 channels), 2 currents
  */
-#if DT_HAS_COMPAT(ti_lmp90078)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90078)
 LMP90XXX_DEVICE(90078, 0, 16, 4);
 #endif
 
 /*
  * LMP90079: 16 bit, 4 diff/7 se (7 channels), 0 currents, has VIN3-5
  */
-#if DT_HAS_COMPAT(ti_lmp90079)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90079)
 LMP90XXX_DEVICE(90079, 0, 16, 7);
 #endif
 
 /*
  * LMP90080: 16 bit, 4 diff/7 se (7 channels), 2 currents, has VIN3-5
  */
-#if DT_HAS_COMPAT(ti_lmp90080)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90080)
 LMP90XXX_DEVICE(90080, 0, 16, 7);
 #endif
 
 /*
  * LMP90097: 24 bit, 2 diff/4 se (4 channels), 0 currents
  */
-#if DT_HAS_COMPAT(ti_lmp90097)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90097)
 LMP90XXX_DEVICE(90097, 0, 24, 4);
 #endif
 
 /*
  * LMP90098: 24 bit, 2 diff/4 se (4 channels), 2 currents
  */
-#if DT_HAS_COMPAT(ti_lmp90098)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90098)
 LMP90XXX_DEVICE(90098, 0, 24, 4);
 #endif
 
 /*
  * LMP90099: 24 bit, 4 diff/7 se (7 channels), 0 currents, has VIN3-5
  */
-#if DT_HAS_COMPAT(ti_lmp90099)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90099)
 LMP90XXX_DEVICE(90099, 0, 24, 7);
 #endif
 
 /*
  * LMP90100: 24 bit, 4 diff/7 se (7 channels), 2 currents, has VIN3-5
  */
-#if DT_HAS_COMPAT(ti_lmp90100)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90100)
 LMP90XXX_DEVICE(90100, 0, 24, 7);
 #endif

@@ -804,4 +804,4 @@ static const struct i2c_sam0_dev_config i2c_sam0_dev_config_##n = {	\
 			    &i2c_sam0_driver_api);			\
 	I2C_SAM0_IRQ_HANDLER(n)
 
-DT_INST_FOREACH(I2C_SAM0_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(I2C_SAM0_DEVICE)

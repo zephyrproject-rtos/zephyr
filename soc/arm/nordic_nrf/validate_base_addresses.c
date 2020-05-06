@@ -58,7 +58,7 @@
  * @param addr_if_no_match MDK address to return otherwise
  */
 #define NODE_ADDRESS(lbl, compat, addr_if_match, addr_if_no_match)	\
-	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_NODELABEL(lbl), compat),	\
+	COND_CODE_1(DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(lbl), compat),	\
 		    (addr_if_match), (addr_if_no_match))
 
 #define CHECK_SPI_REG(lbl, num)						\

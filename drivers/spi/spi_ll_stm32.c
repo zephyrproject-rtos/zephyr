@@ -423,7 +423,7 @@ static void spi_stm32_complete(struct spi_stm32_data *data, SPI_TypeDef *spi,
 
 	spi_context_cs_control(&data->ctx, false);
 
-#if DT_HAS_COMPAT(st_stm32_spi_fifo)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
 	while (ll_func_rx_is_not_empty(spi)) {
 		(void) LL_SPI_ReceiveData8(spi);
@@ -570,7 +570,7 @@ static int spi_stm32_configure(struct device *dev,
 		LL_SPI_SetDataWidth(spi, LL_SPI_DATAWIDTH_16BIT);
 	}
 
-#if DT_HAS_COMPAT(st_stm32_spi_fifo)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	ll_func_set_fifo_threshold_8bit(spi);
 #endif
 
@@ -645,7 +645,7 @@ static int transceive(struct device *dev,
 	/* Set buffers info */
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
-#if DT_HAS_COMPAT(st_stm32_spi_fifo)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
 	while (ll_func_rx_is_not_empty(spi)) {
 		(void) LL_SPI_ReceiveData8(spi);
@@ -898,4 +898,4 @@ DEVICE_AND_API_INIT(spi_stm32_##id, DT_INST_LABEL(id),	\
 									\
 STM32_SPI_IRQ_HANDLER(id)
 
-DT_INST_FOREACH(STM32_SPI_INIT)
+DT_INST_FOREACH_STATUS_OKAY(STM32_SPI_INIT)

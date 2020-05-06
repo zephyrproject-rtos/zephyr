@@ -312,4 +312,4 @@ static const struct gpio_driver_api api_funcs = {
 									     \
 	GPIO_CC32XX_DEVICE_INIT(n);
 
-DT_INST_FOREACH(GPIO_CC32XX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(GPIO_CC32XX_INIT)

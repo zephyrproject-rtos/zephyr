@@ -21,7 +21,7 @@
 #define LIS2DH_REG_WAI			0x0f
 #define LIS2DH_CHIP_ID			0x33
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <drivers/spi.h>
 
 #define LIS2DH_SPI_READ_BIT		BIT(7)
@@ -31,7 +31,7 @@
 /* LIS2DH supports only SPI mode 0, word size 8 bits, MSB first */
 #define LIS2DH_SPI_CFG			SPI_WORD_SET(8)
 
-#elif DT_ANY_INST_ON_BUS(i2c)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #include <drivers/i2c.h>
 #else
 #error "define bus type (I2C/SPI)"
@@ -200,15 +200,15 @@ union lis2dh_sample {
 struct lis2dh_config {
 	char *bus_name;
 	int (*bus_init)(struct device *dev);
-#if DT_ANY_INST_ON_BUS(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	u16_t i2c_slv_addr;
-#elif DT_ANY_INST_ON_BUS(spi)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_config spi_conf;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
 	u8_t cs_gpio;
 #endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
-#endif /* DT_ANY_INST_ON_BUS(spi) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
 };
 
@@ -259,7 +259,7 @@ struct lis2dh_data {
 #endif /* DT_SPI_DEV_HAS_CS_GPIOS(DT_INST(0, st_lis2mdl)) */
 };
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
 		      void *data, size_t length);
 #endif

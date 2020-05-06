@@ -172,4 +172,4 @@ static const struct pwm_driver_api mcux_ftm_driver_api = {
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 			    &mcux_ftm_driver_api);
 
-DT_INST_FOREACH(FTM_DEVICE);
+DT_INST_FOREACH_STATUS_OKAY(FTM_DEVICE)

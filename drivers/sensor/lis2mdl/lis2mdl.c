@@ -263,7 +263,7 @@ static const struct lis2mdl_config lis2mdl_dev_config = {
 	.gpio_pin = DT_INST_GPIO_PIN(0, irq_gpios),
 	.gpio_flags = DT_INST_GPIO_FLAGS(0, irq_gpios),
 #endif  /* CONFIG_LIS2MDL_TRIGGER */
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	.bus_init = lis2mdl_spi_init,
 	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
 	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
@@ -278,7 +278,7 @@ static const struct lis2mdl_config lis2mdl_dev_config = {
 #else
 	.spi_conf.cs        = NULL,
 #endif
-#elif DT_ANY_INST_ON_BUS(i2c)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	.bus_init = lis2mdl_i2c_init,
 	.i2c_slv_addr = DT_INST_REG_ADDR(0),
 #else

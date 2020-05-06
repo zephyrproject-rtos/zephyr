@@ -14,7 +14,7 @@
 #include "lis2dh.h"
 #include <logging/log.h>
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 
 LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -172,4 +172,4 @@ int lis2dh_spi_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ANY_INST_ON_BUS(spi) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */

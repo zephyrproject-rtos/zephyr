@@ -311,4 +311,4 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-DT_INST_FOREACH(SPI_RV32M1_INIT)
+DT_INST_FOREACH_STATUS_OKAY(SPI_RV32M1_INIT)

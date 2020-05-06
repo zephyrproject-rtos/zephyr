@@ -372,4 +372,4 @@ static const struct uart_driver_api usart_sam_driver_api = {
 									\
 	USART_SAM_INIT_CFG(n);
 
-DT_INST_FOREACH(USART_SAM_INIT)
+DT_INST_FOREACH_STATUS_OKAY(USART_SAM_INIT)

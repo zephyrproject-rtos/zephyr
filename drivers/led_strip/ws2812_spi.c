@@ -230,4 +230,4 @@ static const struct led_strip_driver_api ws2812_spi_api = {
 			    CONFIG_LED_STRIP_INIT_PRIORITY,		\
 			    &ws2812_spi_api);
 
-DT_INST_FOREACH(WS2812_SPI_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(WS2812_SPI_DEVICE)

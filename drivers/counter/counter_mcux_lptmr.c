@@ -204,7 +204,7 @@ static const struct counter_driver_api mcux_lptmr_driver_api = {
  * This driver is single-instance. If the devicetree contains multiple
  * instances, this will fail and the driver needs to be revisited.
  */
-BUILD_ASSERT(DT_NUM_INST(DT_DRV_COMPAT) <= 1,
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "unsupported lptmr instance");
 
 #if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))

@@ -152,4 +152,4 @@ static const struct irq_next_level_api cavs_apis = {
 			    DT_INST_IRQ(n, sense));			\
 	}
 
-DT_INST_FOREACH(CAVS_ICTL_INIT)
+DT_INST_FOREACH_STATUS_OKAY(CAVS_ICTL_INIT)

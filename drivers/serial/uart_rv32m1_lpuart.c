@@ -346,4 +346,4 @@ static const struct uart_driver_api rv32m1_lpuart_driver_api = {
 									\
 	RV32M1_LPUART_INIT_CFG(n);
 
-DT_INST_FOREACH(RV32M1_LPUART_INIT)
+DT_INST_FOREACH_STATUS_OKAY(RV32M1_LPUART_INIT)

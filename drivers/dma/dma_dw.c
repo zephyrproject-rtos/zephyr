@@ -425,4 +425,4 @@ static const struct dma_driver_api dw_dma_driver_api = {
 		irq_enable(DT_INST_IRQN(inst));				\
 	}
 
-DT_INST_FOREACH(DW_DMAC_INIT)
+DT_INST_FOREACH_STATUS_OKAY(DW_DMAC_INIT)

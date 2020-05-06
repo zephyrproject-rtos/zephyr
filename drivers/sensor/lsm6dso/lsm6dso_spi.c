@@ -14,7 +14,7 @@
 #include "lsm6dso.h"
 #include <logging/log.h>
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 
 #define LSM6DSO_SPI_READ		(1 << 7)
 
@@ -125,4 +125,4 @@ int lsm6dso_spi_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ANY_INST_ON_BUS(spi) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */

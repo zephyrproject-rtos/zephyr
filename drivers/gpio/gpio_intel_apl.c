@@ -602,4 +602,4 @@ DEVICE_AND_API_INIT(gpio_intel_apl_##n,					\
 		    &gpio_intel_apl_api);
 
 /* "sub" devices.  no more than GPIO_INTEL_APL_NR_SUBDEVS of these! */
-DT_INST_FOREACH(GPIO_INTEL_APL_DEV_CFG_DATA)
+DT_INST_FOREACH_STATUS_OKAY(GPIO_INTEL_APL_DEV_CFG_DATA)

@@ -61,7 +61,7 @@
 	#define MS5607_TEMP_OVER_DEFAULT 2048
 #endif
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 int ms5607_spi_init(struct device *dev);
 #else
 /* I2c Interface not implemented yet */

@@ -789,7 +789,7 @@ static int lsm6dsl_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	lsm6dsl_spi_init(dev);
 #else
 	lsm6dsl_i2c_init(dev);

@@ -340,4 +340,4 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {	\
 									\
 	LPUART_MCUX_INIT_CFG(n);
 
-DT_INST_FOREACH(LPUART_MCUX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(LPUART_MCUX_INIT)

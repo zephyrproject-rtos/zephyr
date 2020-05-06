@@ -78,4 +78,4 @@ static const struct pinmux_driver_api pinmux_rv32m1_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
 			    &pinmux_rv32m1_driver_api);
 
-DT_INST_FOREACH(PINMUX_RV32M1_INIT)
+DT_INST_FOREACH_STATUS_OKAY(PINMUX_RV32M1_INIT)

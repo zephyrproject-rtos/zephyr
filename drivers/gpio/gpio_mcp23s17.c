@@ -440,4 +440,4 @@ static int mcp23s17_init(struct device *dev)
 			    CONFIG_GPIO_MCP23S17_INIT_PRIORITY,		\
 			    &api_table);
 
-DT_INST_FOREACH(MCP23S17_INIT)
+DT_INST_FOREACH_STATUS_OKAY(MCP23S17_INIT)

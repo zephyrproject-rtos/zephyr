@@ -34,7 +34,7 @@ static int frdm_k82f_pinmux_init(struct device *dev)
 #endif
 
 #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(ftm3)) && \
-    DT_NODE_HAS_COMPAT(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm)
+    DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm)
 	/* Red, green, blue LEDs as PWM channels */
 	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));

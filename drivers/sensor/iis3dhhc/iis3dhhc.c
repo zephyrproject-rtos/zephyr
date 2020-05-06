@@ -232,7 +232,7 @@ static const struct iis3dhhc_config iis3dhhc_config = {
 	.int_flags	= DT_INST_GPIO_FLAGS_BY_IDX(0, irq_gpios, 1),
 #endif /* CONFIG_IIS3DHHC_DRDY_INT1 */
 #endif /* CONFIG_IIS3DHHC_TRIGGER */
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	.bus_init = iis3dhhc_spi_init,
 	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
 	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |

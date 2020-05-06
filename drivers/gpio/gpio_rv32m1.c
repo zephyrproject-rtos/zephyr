@@ -363,4 +363,4 @@ static const struct gpio_driver_api gpio_rv32m1_driver_api = {
 		return 0;						\
 	}
 
-DT_INST_FOREACH(GPIO_RV32M1_INIT)
+DT_INST_FOREACH_STATUS_OKAY(GPIO_RV32M1_INIT)

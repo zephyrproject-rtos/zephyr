@@ -30,7 +30,7 @@
 LOG_MODULE_REGISTER(uart_stm32);
 
 #define HAS_LPUART_1 (DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lpuart1)) && \
-		      DT_NODE_HAS_COMPAT(DT_NODELABEL(lpuart1), \
+		      DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(lpuart1), \
 					 st_stm32_lpuart))
 
 /* convenience defines */
@@ -779,4 +779,4 @@ DEVICE_AND_API_INIT(uart_stm32_##index, DT_INST_LABEL(index),\
 									\
 STM32_UART_IRQ_HANDLER(index)
 
-DT_INST_FOREACH(STM32_UART_INIT)
+DT_INST_FOREACH_STATUS_OKAY(STM32_UART_INIT)
