@@ -365,7 +365,10 @@ void SX1276SetRfTxPower(int8_t power)
 
 static int sx1276_config_valid(const struct lora_modem_config *config)
 {
-	if (config->frequency == 0)
+	if (config->frequency == 0 ||
+	    config->bandwidth < BW_MIN || config->bandwidth > BW_MAX ||
+	    config->datarate < SF_MIN || config->datarate > SF_MAX ||
+	    config->coding_rate < CR_MIN || config->coding_rate > CR_MAX)
 		return -EINVAL;
 
 	return 0;

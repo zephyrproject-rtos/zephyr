@@ -19,6 +19,9 @@ enum lora_signal_bandwidth {
 	BW_125_KHZ = 0,
 	BW_250_KHZ,
 	BW_500_KHZ,
+
+	BW_MIN = BW_125_KHZ,
+	BW_MAX = BW_500_KHZ,
 };
 
 enum lora_datarate {
@@ -29,6 +32,9 @@ enum lora_datarate {
 	SF_10,
 	SF_11,
 	SF_12,
+
+	SF_MIN = SF_6,
+	SF_MAX = SF_12,
 };
 
 enum lora_coding_rate {
@@ -36,6 +42,9 @@ enum lora_coding_rate {
 	CR_4_6 = 2,
 	CR_4_7 = 3,
 	CR_4_8 = 4,
+
+	CR_MIN = CR_4_5,
+	CR_MAX = CR_4_8,
 };
 
 struct lora_modem_config {
