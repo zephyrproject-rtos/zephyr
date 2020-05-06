@@ -120,6 +120,16 @@ class EDT:
                 ...
         };
 
+      This exists only for the sake of gen_legacy_defines.py. It will probably
+      be removed following the Zephyr 2.3 release.
+
+    compat2nodes:
+      A collections.defaultdict that maps each 'compatible' string that appears
+      on some Node to a list of Nodes with that compatible.
+
+    compat2okay:
+      Like compat2nodes, but just for nodes with status 'okay'.
+
     label2node:
       A collections.OrderedDict that maps a node label to the node with
       that label.
@@ -527,19 +537,25 @@ class EDT:
             node._init_pinctrls()
 
     def _init_luts(self):
-        # Initialize compat2enabled and label2node lookup tables
-        # (LUTs).
+        # Initialize node lookup tables (LUTs).
 
-        self.compat2enabled = defaultdict(list)
         self.label2node = OrderedDict()
+        self.compat2enabled = defaultdict(list)
+        self.compat2nodes = defaultdict(list)
+        self.compat2okay = defaultdict(list)
 
         for node in self.nodes:
             for label in node.labels:
                 self.label2node[label] = node
 
-            if node.enabled:
-                for compat in node.compats:
+            for compat in node.compats:
+                self.compat2nodes[compat].append(node)
+
+                if node.enabled:
                     self.compat2enabled[compat].append(node)
+
+                if node.status == "okay":
+                    self.compat2okay[compat].append(node)
 
     def _check_binding(self, binding, binding_path):
         # Does sanity checking on 'binding'. Only takes 'self' for the sake of
@@ -783,6 +799,9 @@ class Node:
 
     enabled:
       True unless the node has 'status = "disabled"'
+
+      This exists only for the sake of gen_legacy_defines.py. It will probably
+      be removed following the Zephyr 2.3 release.
 
     read_only:
       True if the node has a 'read-only' property, and False otherwise
