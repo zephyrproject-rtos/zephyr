@@ -67,8 +67,7 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Attach 12 MHz clock to FLEXCOMM0 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM0);
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(flexcomm4)) && \
-    DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(flexcomm4), nxp_lpc_i2c)
+#if DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(flexcomm4), nxp_lpc_i2c)
 	/* attach 12 MHz clock to FLEXCOMM4 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
 
@@ -76,8 +75,7 @@ static ALWAYS_INLINE void clock_init(void)
 	RESET_PeripheralReset(kFC4_RST_SHIFT_RSTn);
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(flexcomm5)) && \
-    DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(flexcomm5), nxp_lpc_spi)
+#if DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(flexcomm5), nxp_lpc_spi)
 	/* Attach 12 MHz clock to FLEXCOMM5 */
 	CLOCK_AttachClk(kFRO_HF_to_FLEXCOMM5);
 

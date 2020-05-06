@@ -61,8 +61,7 @@ static ALWAYS_INLINE void clock_init(void)
 	/* Enables the clock for the I/O controller.: Enable Clock. */
     CLOCK_EnableClock(kCLOCK_Iocon);
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(flexcomm4)) && \
-    DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(flexcomm4), nxp_lpc_i2c)
+#if DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(flexcomm4), nxp_lpc_i2c)
 	/* attach 12 MHz clock to FLEXCOMM4 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM4);
 

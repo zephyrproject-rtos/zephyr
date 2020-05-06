@@ -122,8 +122,7 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(ftm3)) && \
-    DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm)
+#if DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm)
 	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
