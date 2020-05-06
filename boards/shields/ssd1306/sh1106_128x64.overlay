@@ -5,7 +5,7 @@
  */
 
 &arduino_i2c {
-	status = "ok";
+	status = "okay";
 
 	ssd1306@3c {
 		compatible = "solomon,ssd1306fb";
