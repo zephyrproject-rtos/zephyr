@@ -472,6 +472,7 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
 
     string(TOUPPER ${module_name} MODULE_NAME_UPPER)
     set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path})
+    set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path} PARENT_SCOPE)
   endforeach()
 
   foreach(module_name ${module_names})
