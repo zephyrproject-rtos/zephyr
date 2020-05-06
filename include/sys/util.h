@@ -95,10 +95,12 @@ size_t ARRAY_SIZE(T(&)[N]) { return N; }
 #define ceiling_fraction(numerator, divider) \
 	(((numerator) + ((divider) - 1)) / (divider))
 
+#ifndef INLINE
 #ifdef INLINED
 #define INLINE inline
 #else
 #define INLINE
+#endif
 #endif
 
 /** @brief Return larger value of two provided expressions.
