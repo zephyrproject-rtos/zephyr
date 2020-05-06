@@ -694,7 +694,7 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 	}
 
 	/* Not handled by us */
-	return -ENOTSUP;
+	return -EINVAL;
 }
 
 static void dfu_interface_config(struct usb_desc_header *head,

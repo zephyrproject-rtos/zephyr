@@ -157,6 +157,10 @@ struct usb_interface_cfg_data {
 	 * The custom request handler gets a first chance at handling
 	 * the request before it is handed over to the 'chapter 9' request
 	 * handler.
+	 * return 0 on success, -EINVAL if the request has not been handled by
+	 *	  the custom handler and instead needs to be handled by the
+	 *	  core USB stack. Any other error code to denote failure within
+	 *	  the custom handler.
 	 */
 	usb_request_handler custom_handler;
 };
