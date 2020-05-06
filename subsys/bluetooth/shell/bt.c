@@ -1319,7 +1319,7 @@ static int cmd_per_adv_param(const struct shell *shell, size_t argc,
 
 	err = bt_le_per_adv_set_param(adv, &param);
 	if (err) {
-		shell_error(shell, "Failed to set periodic advertisement "
+		shell_error(shell, "Failed to set periodic advertising "
 			    "parameters (%d)", err);
 		return -ENOEXEC;
 	}
