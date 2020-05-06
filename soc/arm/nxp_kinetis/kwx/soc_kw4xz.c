@@ -72,9 +72,9 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 #if defined(CONFIG_PWM) && \
-	(DT_HAS_NODE(DT_NODELABEL(pwm0)) || \
-	 DT_HAS_NODE(DT_NODELABEL(pwm1)) || \
-	 DT_HAS_NODE(DT_NODELABEL(pwm2)))
+	(DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(pwm0)) || \
+	 DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(pwm1)) || \
+	 DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(pwm2)))
 	CLOCK_SetTpmClock(TPMSRC_MCGPLLCLK);
 #endif
 }
