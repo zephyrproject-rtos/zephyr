@@ -19,6 +19,8 @@
 #include <bluetooth/gatt.h>
 #include <sys/byteorder.h>
 
+static void start_scan(void);
+
 static struct bt_conn *default_conn;
 
 static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
@@ -53,6 +55,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 				BT_LE_CONN_PARAM_DEFAULT, &default_conn);
 	if (err) {
 		printk("Create conn to %s failed (%u)\n", addr_str, err);
+		start_scan();
 	}
 }
 

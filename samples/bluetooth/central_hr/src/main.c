@@ -19,6 +19,8 @@
 #include <bluetooth/gatt.h>
 #include <sys/byteorder.h>
 
+static void start_scan(void);
+
 static struct bt_conn *default_conn;
 
 static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
@@ -132,6 +134,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 						param, &default_conn);
 			if (err) {
 				printk("Create conn failed (err %d)\n", err);
+				start_scan();
 			}
 
 			return false;

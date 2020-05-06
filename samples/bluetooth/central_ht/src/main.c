@@ -196,6 +196,7 @@ static bool eir_found(struct bt_data *data, void *user_data)
 			if (err) {
 				printk("Create connection failed (err %d)\n",
 				       err);
+				scan_start();
 			}
 
 			return false;
