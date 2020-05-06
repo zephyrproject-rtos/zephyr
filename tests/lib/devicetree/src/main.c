@@ -203,6 +203,24 @@ static void test_has_compat(void)
 	zassert_equal(compats, 0x3, "as bit array");
 }
 
+static void test_has_status(void)
+{
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_gpio_1), okay),
+		      1, "vnd,gpio okay");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_gpio_1), disabled),
+		      0, "vnd,gpio not disabled");
+
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_no_status), okay),
+		      1, "vnd,gpio okay");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_no_status), disabled),
+		      0, "vnd,gpio not disabled");
+
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), disabled),
+		      1, "vnd,disabled-compat disabled");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), okay),
+		      0, "vnd,disabled-compat not okay");
+}
+
 #define TEST_I2C_DEV DT_PATH(test, i2c_11112222, test_i2c_dev_10)
 #define TEST_I2C_BUS DT_BUS(TEST_I2C_DEV)
 
@@ -1425,6 +1443,7 @@ void test_main(void)
 			 ztest_unit_test(test_inst_checks),
 			 ztest_unit_test(test_has_nodelabel),
 			 ztest_unit_test(test_has_compat),
+			 ztest_unit_test(test_has_status),
 			 ztest_unit_test(test_bus),
 			 ztest_unit_test(test_reg),
 			 ztest_unit_test(test_irq),
