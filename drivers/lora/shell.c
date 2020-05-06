@@ -89,6 +89,23 @@ static int parse_freq(u32_t *out, const struct shell *shell, const char *arg)
 	return 0;
 }
 
+
+static int parse_bool(bool *out, const struct shell *shell, const char *arg,
+		      const char *name)
+{
+	if (!strcmp(arg, "true") || !strcmp(arg, "1")) {
+		*out = true;
+	} else if (!strcmp(arg, "false") || !strcmp(arg, "0")) {
+		*out = false;
+	} else {
+		shell_error(shell, "Parameter '%s': '%s' is not a Boolean.",
+			    name, arg);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static struct device *get_modem(const struct shell *shell)
 {
 	struct device *dev;
@@ -141,6 +158,10 @@ static int lora_conf_dump(const struct shell *shell)
 		    (int)modem_config.coding_rate + 4);
 	shell_print(shell, "  Preamble length: %" PRIu16,
 		    modem_config.preamble_len);
+	shell_print(shell, "  Public network sync word: %s",
+		    modem_config.public_network ? "true" : "false");
+	shell_print(shell, "  I/Q inverted: %s",
+		    modem_config.iq_inverted ? "true" : "false");
 
 	return 0;
 }
@@ -195,6 +216,12 @@ static int lora_conf_set(const struct shell *shell, const char *param,
 			return -EINVAL;
 		}
 		modem_config.preamble_len = lval;
+	} else if (!strcmp("public", param)) {
+		return parse_bool(&modem_config.public_network, shell, value,
+				  "public");
+	} else if (!strcmp("iq-inv", param)) {
+		return parse_bool(&modem_config.iq_inverted, shell, value,
+				  "iq-inv");
 	} else {
 		shell_error(shell, "Unknown parameter '%s'", param);
 		return -EINVAL;
@@ -315,7 +342,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_lora,
 	SHELL_CMD(config, NULL,
 		  "Configure the LoRa radio\n"
 		  " Usage: config [freq <Hz>] [tx-power <dBm>] [bw <kHz>] "
-		  "[sf <int>] [cr <int>] [pre-len <int>]\n",
+		  "[sf <int>] [cr <int>] [pre-len <int>] [public <bool>] "
+		  "[iq-inv <bool>]\n",
 		  cmd_lora_conf),
 	SHELL_CMD_ARG(send, NULL,
 		      "Send LoRa packet\n"

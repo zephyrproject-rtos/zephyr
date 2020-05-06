@@ -382,6 +382,7 @@ static int sx1276_apply_config(const struct lora_modem_config *config, bool tx)
 	if (ret < 0)
 		return ret;
 
+	Radio.SetPublicNetwork(config->public_network);
 	Radio.SetChannel(config->frequency);
 
 	if (tx) {
@@ -392,7 +393,7 @@ static int sx1276_apply_config(const struct lora_modem_config *config, bool tx)
 				  true /* crcOn */,
 				  false /* freqHopOn */,
 				  0 /* hopPeriod */,
-				  false /* iqInverted */,
+				  config->iq_inverted,
 				  4000 /* timeout */);
 	} else {
 		/* TODO: Get symbol timeout value from config parameters */
@@ -406,7 +407,7 @@ static int sx1276_apply_config(const struct lora_modem_config *config, bool tx)
 				  false /* crcOn */,
 				  0 /* freqHopOn */,
 				  0 /* hopPeriod */,
-				  false /* iqInverted */,
+				  config->iq_inverted,
 				  true /* rxContinuous */);
 	}
 
@@ -529,6 +530,7 @@ const struct Radio_s Radio = {
 	.RxBoosted = NULL,
 	.SetRxDutyCycle = NULL,
 	.SetTxContinuousWave = SX1276SetTxContinuousWave,
+	.SetPublicNetwork = SX1276SetPublicNetwork,
 };
 
 static int sx1276_lora_init(struct device *dev)
