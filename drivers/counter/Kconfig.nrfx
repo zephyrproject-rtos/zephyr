@@ -10,7 +10,7 @@ config COUNTER_NRF_RTC
 config COUNTER_TIMER0
 	bool "Enable Counter on TIMER0"
 	depends on HAS_HW_NRF_TIMER0
-	depends on !BT_LL_SW_LEGACY && !BT_LL_SW_SPLIT
+	depends on !BT_LL_SW_SPLIT
 	select COUNTER_NRF_TIMER
 
 config COUNTER_TIMER1
@@ -36,7 +36,7 @@ config COUNTER_TIMER4
 config COUNTER_RTC0
 	bool "Enable Counter on RTC0"
 	depends on HAS_HW_NRF_RTC0
-	depends on !BT_LL_SW_LEGACY && !BT_LL_SW_SPLIT
+	depends on !BT_LL_SW_SPLIT
 	select COUNTER_NRF_RTC
 
 config COUNTER_RTC1

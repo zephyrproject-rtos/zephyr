@@ -115,9 +115,6 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 			buf = process_prio_evt(node_rx);
 			if (buf) {
-#if defined(CONFIG_BT_LL_SW_LEGACY)
-				radio_rx_fc_set(node_rx->hdr.handle, 0);
-#endif /* CONFIG_BT_LL_SW_LEGACY */
 
 				node_rx->hdr.next = NULL;
 				ll_rx_mem_release((void **)&node_rx);
@@ -183,10 +180,6 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		LL_ASSERT(0);
 		break;
 	}
-
-#if defined(CONFIG_BT_LL_SW_LEGACY)
-	radio_rx_fc_set(node_rx->hdr.handle, 0);
-#endif /* CONFIG_BT_LL_SW_LEGACY */
 
 	node_rx->hdr.next = NULL;
 	ll_rx_mem_release((void **)&node_rx);

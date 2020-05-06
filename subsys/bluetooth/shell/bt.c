@@ -2484,7 +2484,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	SHELL_CMD(mesh_adv, NULL, "<on, off>", cmd_mesh_adv),
 #endif /* CONFIG_BT_HCI_MESH_EXT */
-#if defined(CONFIG_BT_LL_SW_LEGACY) || defined(CONFIG_BT_LL_SW_SPLIT)
+#if defined(CONFIG_BT_LL_SW_SPLIT)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advx, NULL, "<on off> [coded] [anon] [txp]", cmd_advx,
@@ -2495,9 +2495,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      2, 1),
 #endif /* CONFIG_BT_OBSERVER */
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-#if defined(CONFIG_BT_LL_SW_LEGACY)
-	SHELL_CMD_ARG(ll-addr, NULL, "<random|public>", cmd_ll_addr_get, 2, 0),
-#endif
 #if defined(CONFIG_BT_CTLR_DTM)
 	SHELL_CMD_ARG(test_tx, NULL, "<chan> <len> <type> <phy>", cmd_test_tx,
 		      5, 0),
@@ -2505,7 +2502,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      4, 0),
 	SHELL_CMD_ARG(test_end, NULL, HELP_NONE, cmd_test_end, 1, 0),
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-#endif /* defined(CONFIG_BT_LL_SW_LEGACY) || defined(CONFIG_BT_LL_SW_SPLIT) */
+#endif /* defined(CONFIG_BT_LL_SW_SPLIT) */
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 	SHELL_CMD(ull_reset, NULL, HELP_NONE, cmd_ull_reset),
 #endif /* CONFIG_BT_LL_SW_SPLIT */
