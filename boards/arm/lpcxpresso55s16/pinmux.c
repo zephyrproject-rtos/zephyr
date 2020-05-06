@@ -95,8 +95,7 @@ static int lpcxpresso_55s16_pinmux_init(struct device *dev)
 	pinmux_pin_set(port1, DT_GPIO_PIN(DT_ALIAS(led2), gpios), led2_config);
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(flexcomm0)) && \
-    DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(flexcomm0), nxp_lpc_usart)
+#if DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(flexcomm0), nxp_lpc_usart)
 	/* USART0 RX, TX */
 	const u32_t port0_pin29_config = (
 			IOCON_PIO_FUNC1 |
@@ -118,8 +117,7 @@ static int lpcxpresso_55s16_pinmux_init(struct device *dev)
 	pinmux_pin_set(port0, 30, port0_pin30_config);
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(flexcomm4)) && \
-    DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(flexcomm4), nxp_lpc_i2c)
+#if DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(flexcomm4), nxp_lpc_i2c)
 	/* PORT1 PIN20 is configured as FC4_TXD_SCL_MISO_WS */
 	pinmux_pin_set(port1, 20, IOCON_PIO_FUNC5  |
 				  IOCON_PIO_MODE_INACT |
