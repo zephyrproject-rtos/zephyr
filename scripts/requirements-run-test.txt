@@ -13,3 +13,6 @@ tabulate
 
 # used by mcuboot
 cbor>=1.0.0
+
+# use for sanitycheck
+psutil
