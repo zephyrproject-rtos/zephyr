@@ -8,6 +8,7 @@
 #include <zephyr.h>
 
 #include <shell/shell.h>
+#include <sys/util.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -136,6 +137,8 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 {
 	struct device *flash_dev;
 	uint32_t addr;
+	int todo;
+	int upto;
 	int cnt;
 	int ret;
 
@@ -150,16 +153,17 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 		cnt = 1;
 	}
 
-	while (cnt--) {
-		uint32_t data;
+	for (upto = 0; upto < cnt; upto += todo) {
+		uint8_t data[SHELL_HEXDUMP_BYTES_IN_LINE];
 
-		ret = flash_read(flash_dev, addr, &data, sizeof(data));
+		todo = MIN(cnt - upto, SHELL_HEXDUMP_BYTES_IN_LINE);
+		ret = flash_read(flash_dev, addr, data, todo);
 		if (ret != 0) {
 			shell_error(shell, "Read ERROR!");
 			return -EIO;
 		}
-		shell_print(shell, "0x%08x ", data);
-		addr += sizeof(data);
+		shell_hexdump_line(shell, addr, data, todo);
+		addr += todo;
 	}
 
 	shell_print(shell, "");
