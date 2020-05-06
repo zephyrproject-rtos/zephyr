@@ -1244,9 +1244,13 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 			continue;
 		}
 
-		if ((iface->custom_handler) &&
+		/* An exception for AUDIO_CLASS is temporary and shall not be
+		 * considered as valid solution for other classes.
+		 */
+		if (iface->custom_handler &&
 		    (if_descr->bInterfaceNumber ==
-		     sys_le16_to_cpu(pSetup->wIndex))) {
+		    sys_le16_to_cpu(pSetup->wIndex) ||
+		    if_descr->bInterfaceClass == AUDIO_CLASS)) {
 			return iface->custom_handler(pSetup, len, data);
 		}
 	}
