@@ -16,7 +16,7 @@
  * started.  This can either be set via 'clock_settime', or could be
  * set from a real time clock, if such hardware is present.
  */
-static struct timespec rt_clock_base;
+struct timespec rt_clock_base;
 
 /**
  * @brief Get clock time specified by clock_id.
