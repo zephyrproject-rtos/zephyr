@@ -509,7 +509,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 		if (common == NULL) {
 			LOG_WRN("Device data not found for interface %u",
 				sys_le16_to_cpu(setup->wIndex));
-			return -ENODEV;
+			return -EINVAL;
 		}
 
 		dev_data = CONTAINER_OF(common, struct hid_device_info, common);
@@ -545,7 +545,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 		return 0;
 	}
 
-	return -ENOTSUP;
+	return -EINVAL;
 }
 
 static void hid_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)

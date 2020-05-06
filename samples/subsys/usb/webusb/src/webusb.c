@@ -89,12 +89,11 @@ int webusb_custom_handle_req(struct usb_setup_packet *pSetup,
 	LOG_DBG("");
 
 	/* Call the callback */
-	if ((req_handlers && req_handlers->custom_handler) &&
-		(!req_handlers->custom_handler(pSetup, len, data))) {
-		return 0;
+	if (req_handlers && req_handlers->custom_handler) {
+		return req_handlers->custom_handler(pSetup, len, data);
 	}
 
-	return -ENOTSUP;
+	return -EINVAL;
 }
 
 /**
@@ -110,12 +109,11 @@ int webusb_vendor_handle_req(struct usb_setup_packet *pSetup,
 			     s32_t *len, u8_t **data)
 {
 	/* Call the callback */
-	if ((req_handlers && req_handlers->vendor_handler) &&
-		(!req_handlers->vendor_handler(pSetup, len, data))) {
-		return 0;
+	if (req_handlers && req_handlers->vendor_handler) {
+		return req_handlers->vendor_handler(pSetup, len, data);
 	}
 
-	return -ENOTSUP;
+	return -EINVAL;
 }
 
 /**

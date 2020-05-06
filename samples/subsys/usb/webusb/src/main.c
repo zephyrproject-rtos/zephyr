@@ -212,7 +212,7 @@ int custom_handle_req(struct usb_setup_packet *pSetup,
 		return 0;
 	}
 
-	return -ENOTSUP;
+	return -EINVAL;
 }
 
 /**
