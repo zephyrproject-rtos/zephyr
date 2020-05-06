@@ -75,6 +75,13 @@
 			status = "disabled";
 		};
 
+		test_no_status: intc_no_status@0 {
+			compatible = "vnd,intc";
+			reg = <0x0 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+
 		test_nodelabel: TEST_NODELABEL_ALLCAPS: test_gpio_1: gpio@deadbeef {
 			compatible = "vnd,gpio";
 			gpio-controller;

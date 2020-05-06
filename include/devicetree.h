@@ -880,6 +880,38 @@
  * @{
  */
 
+/** @internal helper for DT_NODE_HAS_STATUS so we can additional
+ *  macro expansion
+ */
+#define DT_NODE_HAS_STATUS_(node_id, status) \
+	IS_ENABLED(DT_CAT(node_id, _STATUS_##status))
+
+/**
+ * @brief Does a devicetree node match a status?
+ *
+ * Example devicetree fragment:
+ *
+ *     n: node {
+ *             compatible = "generic-device";
+ *             status = "okay";
+ *     }
+ *
+ * Example usages which evaluate to 1:
+ *
+ *     DT_NODE_HAS_STATUS(DT_NODELABEL(n), okay)
+ *
+ * Example usages which evaluate to 0:
+ *
+ *     DT_NODE_HAS_STATUS(DT_NODELABEL(n), disabled)
+ *
+ * @param node_id node identifier
+ * @param status status value to check for
+ * @return 1 if the node's status property matches status,
+ *         0 otherwise.
+ */
+#define DT_NODE_HAS_STATUS(node_id, status) \
+	DT_NODE_HAS_STATUS_(node_id, status)
+
 /**
  * @brief Does a node identifier refer to a usable node?
  *
@@ -898,7 +930,7 @@
  * @return 1 if the node identifier refers to a usable node,
  *         0 otherwise.
  */
-#define DT_HAS_NODE_STATUS_OKAY(node_id) IS_ENABLED(DT_CAT(node_id, _EXISTS))
+#define DT_HAS_NODE_STATUS_OKAY(node_id) DT_NODE_HAS_STATUS(node_id, okay)
 
 /**
  * @brief Does the devicetree have any usable nodes with a compatible?

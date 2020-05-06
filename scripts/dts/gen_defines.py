@@ -241,6 +241,7 @@ def write_special_props(node):
     write_regs(node)
     write_interrupts(node)
     write_compatibles(node)
+    write_status(node)
 
 
 def write_regs(node):
@@ -354,6 +355,21 @@ def write_compatibles(node):
     for compat in node.compats:
         out_dt_define(
             f"{node.z_path_id}_COMPAT_MATCHES_{str2ident(compat)}", 1)
+
+
+def write_status(node):
+    # Writes a macro that we can utilize to test the "status" of a node
+    # We normalize status = "ok" to "okay", and if there is no "status"
+    # property we treat that as "okay"
+
+    if "status" in node.props:
+        status = node.props["status"].val
+        if status == "ok":
+            status = "okay"
+    else:
+        status = "okay"
+
+    out_dt_define(f"{node.z_path_id}_STATUS_{status}", 1)
 
 
 def write_vanilla_props(node):
