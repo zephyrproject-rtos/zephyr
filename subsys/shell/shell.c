@@ -15,8 +15,6 @@
 #include "shell_vt100.h"
 #include "shell_wildcard.h"
 
-#define HEXDUMP_BYTES_IN_LINE 16
-
 /* 2 == 1 char for cmd + 1 char for '\0' */
 #if (CONFIG_SHELL_CMD_BUFF_SIZE < 2)
 	#error too small CONFIG_SHELL_CMD_BUFF_SIZE
@@ -1389,14 +1387,14 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 	va_end(args);
 }
 
-static void shell_hexdump_line(const struct shell *shell, unsigned int offset,
-			       const uint8_t *data, size_t len)
+void shell_hexdump_line(const struct shell *shell, unsigned int offset,
+			const uint8_t *data, size_t len)
 {
 	int i;
 
 	shell_fprintf(shell, SHELL_NORMAL, "%08X: ", offset);
 
-	for (i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+	for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
 		if (i > 0 && !(i % 8)) {
 			shell_fprintf(shell, SHELL_NORMAL, " ");
 		}
@@ -1411,7 +1409,7 @@ static void shell_hexdump_line(const struct shell *shell, unsigned int offset,
 
 	shell_fprintf(shell, SHELL_NORMAL, "|");
 
-	for (i = 0; i < HEXDUMP_BYTES_IN_LINE; i++) {
+	for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
 		if (i > 0 && !(i % 8)) {
 			shell_fprintf(shell, SHELL_NORMAL, " ");
 		}
@@ -1435,7 +1433,7 @@ void shell_hexdump(const struct shell *shell, const uint8_t *data, size_t len)
 	size_t line_len;
 
 	while (len) {
-		line_len = MIN(len, HEXDUMP_BYTES_IN_LINE);
+		line_len = MIN(len, SHELL_HEXDUMP_BYTES_IN_LINE);
 
 		shell_hexdump_line(shell, p - data, p, line_len);
 
