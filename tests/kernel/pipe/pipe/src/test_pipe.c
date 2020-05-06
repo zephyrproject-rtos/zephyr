@@ -7,6 +7,9 @@
 
 #include <ztest.h>
 
+/**
+ * @brief Define and initialize test_pipe at compile time
+ */
 K_PIPE_DEFINE(test_pipe, 256, 4);
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define PIPE_SIZE (256)
@@ -18,7 +21,6 @@ K_SEM_DEFINE(put_sem, 1, 1);
 K_SEM_DEFINE(sync_sem, 0, 1);
 K_SEM_DEFINE(multiple_send_sem, 0, 1);
 
-
 ZTEST_BMEM uint8_t tx_buffer[PIPE_SIZE + 1];
 ZTEST_BMEM uint8_t rx_buffer[PIPE_SIZE + 1];
 
@@ -27,7 +29,6 @@ ZTEST_BMEM uint8_t rx_buffer[PIPE_SIZE + 1];
 			     sizeof(struct pipe_sequence))
 #define TOTAL_TIMEOUT_ELEMENTS (sizeof(timeout_elements) / \
 				sizeof(struct pipe_sequence))
-
 
 /* Minimum tx/rx size*/
 /* the pipe will always pass */
@@ -635,8 +636,6 @@ void pipe_get_forever_timeout(void *p1, void *p2, void *p3)
 	k_sem_give(&sync_sem);
 }
 
-
-
 /******************************************************************************/
 void pipe_put_get_timeout(void)
 {
@@ -687,6 +686,9 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 /* Test case entry points */
 /**
  * @brief Verify pipe with 1 element insert
+ * @details transfer sequences of bytes of data in whole.
+ * - Using a sub thread to get pipe data in whole
+ * - Using main thread to put data in whole
  * @ingroup kernel_pipe_tests
  * @see k_pipe_put()
  */
@@ -710,6 +712,9 @@ void test_pipe_on_single_elements(void)
 
 /**
  * @brief Test when multiple items are present in the pipe
+ * @details transfer sequences of bytes of data in part.
+ * - Using a sub thread to get data part.
+ * - Using main thread to put data part by part
  * @ingroup kernel_pipe_tests
  * @see k_pipe_put()
  */
@@ -746,6 +751,10 @@ void test_pipe_forever_wait(void)
 
 /**
  * @brief Test pipes with timeout
+ * @details Check if the kernel support supplying a timeout parameter
+ * indicating the maximum amount of time a process will wait.
+ * - Using a sub thread to get pipe data within TIMEOUT_VAL
+ * - Put the pipe data with a timeout TIMEOUT_VAL in main thread
  * @ingroup kernel_pipe_tests
  * @see k_pipe_put()
  */
@@ -873,4 +882,40 @@ void test_pipe_put_min_xfer(void)
 			 1 /* min_xfer */, K_FOREVER);
 	zassert_equal(res, 0, "did not write min_xfer");
 	zassert_true(bytes_written >= 1, "did not write min_xfer");
+}
+
+/**
+ * @brief Test defining and initializing pipes at run time
+ * @details Check if the kernel provided a mechanism for defining and
+ * initializing pipes at run time.
+ * - Define and initialize a pipe at run time
+ * - Using this pipe to transfer data and verify it
+ * @ingroup kernel_pipe_tests
+ * @see k_pipe_init()
+ */
+void test_pipe_define_at_runtime(void)
+{
+	unsigned char ring_buffer[PIPE_SIZE];
+	struct k_pipe pipe;
+	size_t written, read;
+
+	/*Define and initialize pipe at run time*/
+	k_pipe_init(&pipe, ring_buffer, sizeof(ring_buffer));
+
+	/* initialize the tx buffer */
+	for (int i = 0; i < sizeof(tx_buffer); i++) {
+		tx_buffer[i] = i;
+	}
+
+	/*Using test_pipe which define and initialize at run time*/
+	zassert_equal(k_pipe_put(&pipe, &tx_buffer,
+			PIPE_SIZE, &written,
+			PIPE_SIZE, K_NO_WAIT), RETURN_SUCCESS, NULL);
+
+	zassert_equal(k_pipe_get(&pipe, &rx_buffer,
+			PIPE_SIZE, &read,
+			PIPE_SIZE, K_NO_WAIT), RETURN_SUCCESS, NULL);
+
+	zassert_true(rx_buffer_check(rx_buffer, read) == read,
+			"Bytes read are not match.");
 }
