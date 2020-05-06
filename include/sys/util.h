@@ -95,12 +95,6 @@ size_t ARRAY_SIZE(T(&)[N]) { return N; }
 #define ceiling_fraction(numerator, divider) \
 	(((numerator) + ((divider) - 1)) / (divider))
 
-#ifdef INLINED
-#define INLINE inline
-#else
-#define INLINE
-#endif
-
 /** @brief Return larger value of two provided expressions.
  *
  * @note Arguments are evaluated twice. See Z_MAX for GCC only, single
