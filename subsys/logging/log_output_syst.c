@@ -126,7 +126,9 @@ static void update_systh_platform_data(struct mipi_syst_handle *handle,
  */
 static void platform_handle_init(struct mipi_syst_handle *systh)
 {
-	ARG_UNUSED(systh);
+#if defined(MIPI_SYST_PCFG_LENGTH_FIELD)
+	MIPI_SYST_ENABLE_HANDLE_LENGTH(systh, 1);
+#endif
 }
 
 static void platform_handle_release(struct mipi_syst_handle *systh)
