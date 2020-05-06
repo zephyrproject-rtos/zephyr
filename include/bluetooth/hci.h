@@ -143,7 +143,8 @@ struct bt_hci_cmd_hdr {
 						BT_LE_FEAT_BIT_PRIVACY)
 #define BT_FEAT_LE_EXT_ADV(feat)                BT_LE_FEAT_TEST(feat, \
 						BT_LE_FEAT_BIT_EXT_ADV)
-
+#define BT_FEAT_LE_EXT_PER_ADV(feat)            BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_PER_ADV)
 /* LE States */
 #define BT_LE_STATES_SLAVE_CONN_ADV(states)     (states & 0x0000004000000000)
 
@@ -1199,14 +1200,23 @@ struct bt_hci_cp_le_ext_create_conn {
 	struct bt_hci_ext_conn_phy p[0];
 } __packed;
 
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_USE_LIST               BIT(0)
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_FP_REPORTS_DISABLED       BIT(1)
+
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOA           BIT(0)
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_1US       BIT(1)
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_AOD_2US       BIT(2)
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_NO_CTE           BIT(3)
+#define BT_HCI_LE_PER_ADV_CREATE_SYNC_CTE_TYPE_ONLY_CTE         BIT(4)
+
 #define BT_HCI_OP_LE_PER_ADV_CREATE_SYNC        BT_OP(BT_OGF_LE, 0x0044)
 struct bt_hci_cp_le_per_adv_create_sync {
-	uint8_t      filter_policy;
+	uint8_t      options;
 	uint8_t      sid;
 	bt_addr_le_t addr;
 	uint16_t     skip;
 	uint16_t     sync_timeout;
-	uint8_t      unused;
+	uint8_t      cte_type;
 } __packed;
 
 #define BT_HCI_OP_LE_PER_ADV_CREATE_SYNC_CANCEL BT_OP(BT_OGF_LE, 0x0045)
@@ -1658,7 +1668,7 @@ struct bt_hci_evt_le_per_advertising_report {
 	uint16_t handle;
 	int8_t   tx_power;
 	int8_t   rssi;
-	uint8_t  unused;
+	uint8_t  cte_type;
 	uint8_t  data_status;
 	uint8_t  length;
 	uint8_t  data[0];
