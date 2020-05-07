@@ -1367,18 +1367,40 @@ static void test_parent(void)
 
 static void test_child_nodes_list(void)
 {
-	#define TEST_MKSTR(i) #i,
-	#define TEST_LIST DT_CHILDREN(DT_PATH(test, test_children))
-	static const char * const arr[] = {
-		FOR_EACH(TEST_MKSTR, TEST_LIST)
+	#define TEST_MKPAIR(parent, child) { #parent, #child },
+	#define TEST_MKSTR(a) _TEST_MKSTR(a)
+	#define _TEST_MKSTR(a) #a
+	#define TEST_PARENT DT_PATH(test, test_children)
+	static struct {
+		const char *parent;
+		const char *child;
+	} pairs[] = {
+		DT_FOR_EACH_CHILD(TEST_PARENT, TEST_MKPAIR)
 	};
 
-	zassert_equal(sizeof(arr) / sizeof(char *), 3,
+	zassert_equal(ARRAY_SIZE(pairs), 3,
 		      "Bad number of children");
 
-	zassert_equal(arr[0], "child_alpha", "Child 0 did not match");
-	zassert_equal(arr[1], "child_beta", "Child 1 did not match");
-	zassert_equal(arr[2], "child_charlie", "Child 2 did not match");
+	zassert_false(strlen(TEST_MKSTR(TEST_PARENT)) == 0,
+		      "TEST_PARENT evaluated to empty string");
+
+	zassert_equal(pairs[0].parent, TEST_MKSTR(TEST_PARENT),
+		      "Parent 0 did not match");
+	zassert_equal(pairs[1].parent, TEST_MKSTR(TEST_PARENT),
+		      "Parent 1 did not match");
+	zassert_equal(pairs[2].parent, TEST_MKSTR(TEST_PARENT),
+		      "Parent 2 did not match");
+	zassert_equal(pairs[0].child, "child_alpha",
+		      "Child 0 did not match");
+	zassert_equal(pairs[1].child, "child_beta",
+		      "Child 1 did not match");
+	zassert_equal(pairs[2].child, "child_charlie",
+		      "Child 2 did not match");
+
+	#undef TEST_MKSTR
+	#undef _TEST_MKSTR
+	#undef TEST_PARENT
+	#undef TEST_MKPAIR
 }
 
 void test_main(void)

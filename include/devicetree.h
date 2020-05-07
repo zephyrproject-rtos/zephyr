@@ -1525,6 +1525,79 @@
 	DT_IRQ_HAS_NAME(DT_DRV_INST(inst), name)
 
 /**
+ * @brief Invokes given macro for all child nodes of a parent.
+ *
+ * @param parent	parent node to iterate
+ * @param fun		macro to invoke
+ *
+ * Macro should be defined to take two parameters, where first will be
+ * the parent node, and second will be child node provided by the loop.
+ *
+ * Example:
+ *
+ *	#define PARENT DT_INST(0, fixed_partitions)
+ *	#define MKSTR(discard, a) #a,
+ *	const char *nodes[] {
+ *		DT_FOR_EACH_CHILD(PARENT, MKSTR)
+ *	};
+ *
+ * Would generate list of strings representing child nodes, partitions,
+ * of first instance of "fixed-partitions" compatible.
+ *
+ */
+#define DT_FOR_EACH_CHILD(parent, fun) DT_FOR_EACH_CHILD_(parent, fun)
+#define DT_FOR_EACH_CHILD_(parent, fun) \
+       DT_FOR_EACH_CHILD__(parent, fun, DT_CHILDREN(parent), ~)
+#define DT_FOR_EACH_CHILD__(parent, fun, ...) \
+       DT_FOR_EACH_CHILD___(fun, parent, NUM_VA_ARGS_LESS_1(__VA_ARGS__),\
+			    __VA_ARGS__)
+#define DT_FOR_EACH_CHILD___(fun, parent, N, ...) \
+       DT_FOR_EACH_CHILD____(fun, parent, N, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____(fun, parent, N, ...) \
+       DT_FOR_EACH_CHILD____##N(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____0(fun, parent, node)
+#define DT_FOR_EACH_CHILD____1(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____0(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____2(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____1(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____3(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____2(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____4(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____3(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____5(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____4(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____6(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____5(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____7(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____6(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____8(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____7(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____9(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____8(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____10(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____9(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____11(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____10(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____12(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____11(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____13(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____12(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____14(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____13(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____15(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____14(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____16(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____15(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____17(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____16(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____18(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____17(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____19(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____18(fun, parent, __VA_ARGS__)
+#define DT_FOR_EACH_CHILD____20(fun, parent, node, ...) \
+       fun(parent, node) DT_FOR_EACH_CHILD____19(fun, parent, __VA_ARGS__)
+
+/**
  * @}
  */
 
@@ -1539,6 +1612,7 @@
 #define DT_DASH(...) MACRO_MAP_CAT(DT_DASH_PREFIX, __VA_ARGS__)
 /** @internal helper for DT_DASH(): prepends _ to a name */
 #define DT_DASH_PREFIX(name) _##name
+
 
 /* have these last so the have access to all previously defined macros */
 #include <devicetree/adc.h>
