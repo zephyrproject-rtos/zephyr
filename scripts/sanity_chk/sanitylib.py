@@ -1336,6 +1336,12 @@ class TestCase(DisablePyTestCollectionMixin):
 
         # workdir can be "."
         unique = os.path.normpath(os.path.join(relative_tc_root, workdir, name))
+        check = name.split(".")
+        if len(check) < 2:
+            raise SanityCheckException(f"""bad test name '{name}' in {testcase_root}/{workdir}. \
+Tests should reference the category and subsystem with a dot as a separator.
+                    """
+                    )
         return unique
 
     @staticmethod
