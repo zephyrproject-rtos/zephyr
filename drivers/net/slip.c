@@ -338,7 +338,7 @@ static u8_t *recv_cb(u8_t *buf, size_t *off)
 				while (bytes && buf) {
 					char msg[8 + 1];
 
-					snprintf(msg, sizeof(msg),
+					snprintk(msg, sizeof(msg),
 						 ">slip %2d", count);
 
 					LOG_HEXDUMP_DBG(buf->data, buf->len,

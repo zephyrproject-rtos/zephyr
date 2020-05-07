@@ -247,7 +247,7 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 	eswifi_lock(eswifi);
 
 	/* Set SSID */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "C1=%s\r", eswifi->sta.ssid);
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "C1=%s\r", eswifi->sta.ssid);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to set SSID");
@@ -255,7 +255,7 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 	}
 
 	/* Set passphrase */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "C2=%s\r", eswifi->sta.pass);
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "C2=%s\r", eswifi->sta.pass);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to set passphrase");
@@ -263,7 +263,7 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 	}
 
 	/* Set Security type */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "C3=%u\r",
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "C3=%u\r",
 		 eswifi->sta.security);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
@@ -522,7 +522,7 @@ static int eswifi_mgmt_ap_enable(struct device *dev,
 	}
 
 	/* security */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "A1=%u\r",
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "A1=%u\r",
 		 eswifi->sta.security);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
@@ -532,7 +532,7 @@ static int eswifi_mgmt_ap_enable(struct device *dev,
 
 	/* Passkey */
 	if (eswifi->sta.security != ESWIFI_SEC_OPEN) {
-		snprintf(eswifi->buf, sizeof(eswifi->buf), "A2=%s\r",
+		snprintk(eswifi->buf, sizeof(eswifi->buf), "A2=%s\r",
 			 eswifi->sta.pass);
 		err = eswifi_at_cmd(eswifi, eswifi->buf);
 		if (err < 0) {
@@ -542,7 +542,7 @@ static int eswifi_mgmt_ap_enable(struct device *dev,
 	}
 
 	/* Set SSID (0=no MAC, 1=append MAC) */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "AS=0,%s\r",
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "AS=0,%s\r",
 		 eswifi->sta.ssid);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
@@ -551,7 +551,7 @@ static int eswifi_mgmt_ap_enable(struct device *dev,
 	}
 
 	/* Set Channel */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "AC=%u\r",
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "AC=%u\r",
 		 eswifi->sta.channel);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
@@ -573,7 +573,7 @@ static int eswifi_mgmt_ap_enable(struct device *dev,
 		goto error;
 	}
 
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "Z6=%s\r",
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "Z6=%s\r",
 		 net_sprint_ipv4_addr(&unicast->address.in_addr));
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
@@ -582,7 +582,7 @@ static int eswifi_mgmt_ap_enable(struct device *dev,
 	}
 
 	/* Enable AP */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "AD\r");
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "AD\r");
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to active access point");

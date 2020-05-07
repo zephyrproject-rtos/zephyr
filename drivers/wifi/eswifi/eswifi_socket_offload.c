@@ -171,7 +171,7 @@ static int map_credentials(int sd, const void *optval, socklen_t optlen)
 				return -EINVAL;
 			}
 
-			snprintf(eswifi->buf, sizeof(eswifi->buf),
+			snprintk(eswifi->buf, sizeof(eswifi->buf),
 				 "PG=%d,%d,%d\r", 0, id, cert->len);
 			bytes = strlen(eswifi->buf);
 			memcpy(&eswifi->buf[bytes], cert->buf, cert->len);
@@ -184,7 +184,7 @@ static int map_credentials(int sd, const void *optval, socklen_t optlen)
 				return ret;
 			}
 
-			snprintf(eswifi->buf, sizeof(eswifi->buf), "PF=0,0\r");
+			snprintk(eswifi->buf, sizeof(eswifi->buf), "PF=0,0\r");
 			ret = eswifi_at_cmd(eswifi, eswifi->buf);
 			if (ret < 0) {
 				return ret;
@@ -251,7 +251,7 @@ static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len,
 	__select_socket(eswifi, socket->index);
 
 	/* header */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "S3=%u\r", len);
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "S3=%u\r", len);
 	offset = strlen(eswifi->buf);
 
 	/* copy payload */
