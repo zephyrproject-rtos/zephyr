@@ -1,0 +1,80 @@
+/*
+ * Copyright 2020 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/** @file
+ *  @brief Interactive shell test suite for 'flash' command
+ *
+ */
+
+#include <zephyr.h>
+#include <ztest.h>
+#include <device.h>
+
+#include <drivers/flash.h>
+#include <shell/shell.h>
+#include <shell/shell_dummy.h>
+
+/* configuration derived from DT */
+#ifdef CONFIG_ARCH_POSIX
+#define SOC_NV_FLASH_NODE DT_CHILD(DT_INST(0, zephyr_sim_flash), flash_0)
+#else
+#define SOC_NV_FLASH_NODE DT_CHILD(DT_INST(0, zephyr_sim_flash), flash_sim_0)
+#endif /* CONFIG_ARCH_POSIX */
+#define FLASH_SIMULATOR_BASE_OFFSET DT_REG_ADDR(SOC_NV_FLASH_NODE)
+
+/* Test 'flash read' shell command */
+static void test_flash_read(void)
+{
+	/* To keep the test simple, just compare against known data */
+	char *const lines[] = {
+		"00000000: 41 42 43 44 45 46 47 48  49 4a 4b 4c 4d 4e 4f 50 |ABCDEFGH IJKLMNOP|",
+		"00000010: 51 52 53 54 55 56 57 58  59 5a 5b 5c 5d 5e 5f 60 |QRSTUVWX YZ[\\]^_`|",
+		"00000020: 61 62 63                                         |abc              |",
+	};
+	const struct shell *shell = shell_backend_dummy_get_ptr();
+	static struct device *flash_dev;
+	const char *buf, *ptr;
+	const int test_base = FLASH_SIMULATOR_BASE_OFFSET;
+	const int test_size = 0x24;  /* 32-alignment required */
+	uint8_t data[test_size];
+	size_t size;
+	int ret;
+	int i;
+
+	for (i = 0; i < test_size; i++) {
+		data[i] = 'A' + i;
+	}
+	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
+
+	zassert_true(flash_dev != NULL,
+		     "Simulated flash driver was not found!");
+
+	ret = flash_write_protection_set(flash_dev, false);
+	zassert_equal(0, ret, NULL);
+
+	ret = flash_write(flash_dev, test_base, data, test_size);
+	zassert_equal(0, ret, "flash_write() failed: %d", ret);
+
+	ret = shell_execute_cmd(NULL, "flash read 0 23");
+	zassert_equal(0, ret, "flash read failed: %d", ret);
+
+	buf = shell_backend_dummy_get_output(shell, &size);
+	for (i = 0, ptr = buf; i < ARRAY_SIZE(lines); i++) {
+		ptr += 2;  /* Skip \r\n */
+		zassert_false(strncmp(ptr, lines[i], strlen(lines[i])),
+			      "Incorrect line %d: %s", i, ptr);
+		ptr += strlen(lines[i]);  /* Skip to next line */
+	}
+}
+
+void test_main(void)
+{
+	ztest_test_suite(shell_flash_test_suite,
+			ztest_unit_test(test_flash_read)
+			);
+
+	ztest_run_test_suite(shell_flash_test_suite);
+}
