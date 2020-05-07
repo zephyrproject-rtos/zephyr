@@ -112,9 +112,9 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(i2c0))
 	/* I2C0 SCL, SDA */
 	pinmux_pin_set(porte, 24, PORT_PCR_MUX(kPORT_MuxAlt5)
-					| PORT_PCR_ODE_MASK);
+		       | PORT_PCR_ODE_MASK);
 	pinmux_pin_set(porte, 25, PORT_PCR_MUX(kPORT_MuxAlt5)
-					| PORT_PCR_ODE_MASK);
+		       | PORT_PCR_ODE_MASK);
 #endif
 
 #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(adc1))
@@ -123,7 +123,7 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 #endif
 
 #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(ftm3)) && \
-    DT_NODE_HAS_COMPAT(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm)
+	DT_NODE_HAS_COMPAT(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm)
 	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
@@ -139,14 +139,17 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(porta, 28, PORT_PCR_MUX(kPORT_MuxAlt4));
 
 	pinmux_pin_set(portb,  0, PORT_PCR_MUX(kPORT_MuxAlt4)
-		| PORT_PCR_ODE_MASK | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK);
+		       | PORT_PCR_ODE_MASK | PORT_PCR_PE_MASK | PORT_PCR_PS_MASK);
 
 	pinmux_pin_set(portb,  1, PORT_PCR_MUX(kPORT_MuxAlt4));
 
-	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt4));
-	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAlt4));
-	pinmux_pin_set(portc, 18, PORT_PCR_MUX(kPORT_MuxAlt4));
-	pinmux_pin_set(portc, 19, PORT_PCR_MUX(kPORT_MuxAlt4));
+	/* these pins are NOT needed by ethernet on FRDM-K64F
+	   - by setting them, they override UART3 TX/RX pins above
+	   pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt4));
+	   pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAlt4));
+	   pinmux_pin_set(portc, 18, PORT_PCR_MUX(kPORT_MuxAlt4));
+	   pinmux_pin_set(portc, 19, PORT_PCR_MUX(kPORT_MuxAlt4));
+	 */
 #endif
 
 #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(flexcan0))
