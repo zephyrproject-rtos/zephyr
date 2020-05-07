@@ -209,6 +209,18 @@ int flash_area_has_driver(const struct flash_area *fa);
  */
 struct device *flash_area_get_device(const struct flash_area *fa);
 
+#define FLASH_AREA_LABEL_EXISTS(label) \
+	DT_HAS_FIXED_PARTITION_LABEL(label)
+
+#define FLASH_AREA_ID(label) \
+	DT_FIXED_PARTITION_ID(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
+
+#define FLASH_AREA_OFFSET(label) \
+	DT_REG_ADDR(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
+
+#define FLASH_AREA_SIZE(label) \
+	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
+
 #ifdef __cplusplus
 }
 #endif
