@@ -27,7 +27,7 @@ void otPlatDiagProcess(otInstance *aInstance,
 	ARG_UNUSED(aInstance);
 
 	/* Add more plarform specific diagnostics features here. */
-	snprintf(aOutput, aOutputMaxLen,
+	snprintk(aOutput, aOutputMaxLen,
 		 "diag feature '%s' is not supported\r\n", argv[0]);
 }
 

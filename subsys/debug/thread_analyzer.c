@@ -61,7 +61,7 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 	name = k_thread_name_get((k_tid_t)thread);
 	if (!name || name[0] == '\0') {
 		name = hexname;
-		sprintf(hexname, "%p", (void *)thread);
+		snprintk(hexname, sizeof(hexname), "%p", (void *)thread);
 	}
 
 	err = k_thread_stack_space_get(thread, &unused);
