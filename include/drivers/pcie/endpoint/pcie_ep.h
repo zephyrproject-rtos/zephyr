@@ -30,6 +30,11 @@ enum pci_ep_irq_type {
 	PCIE_EP_IRQ_MSIX,	/**< Raise MSIX interrupt */
 };
 
+enum xfer_direction {
+	HOST_TO_DEVICE,		/**< Read from Host */
+	DEVICE_TO_HOST,		/**< Write to Host */
+};
+
 struct pcie_ep_driver_api {
 	int (*conf_read)(struct device *dev, uint32_t offset, uint32_t *data);
 	void (*conf_write)(struct device *dev, uint32_t offset, uint32_t data);
@@ -159,5 +164,16 @@ static inline int pcie_ep_raise_irq(struct device *dev,
 			(const struct pcie_ep_driver_api *)dev->driver_api;
 	return api->raise_irq(dev, irq_type, irq_num);
 }
+
+/**
+ * @brief Data transfer using memcpy
+ *
+ * @details Helper API to achieve data transfer with memcpy
+ *          through PCIe outbound memory
+ */
+int pcie_ep_xfer_data_memcpy(struct device *dev, uint64_t pcie_addr,
+			     uintptr_t *local_addr, uint32_t size,
+			     enum pcie_ob_mem_type ob_mem_type,
+			     enum xfer_direction dir);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_H_ */
