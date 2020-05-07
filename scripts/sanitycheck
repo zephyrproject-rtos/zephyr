@@ -830,15 +830,14 @@ def main():
 
         return
 
-    if options.export_tests:
-        cnt = 0
-        tests = suite.get_all_tests()
-        export_tests(options.export_tests, tests)
-        return
-
-    if options.list_tests or options.test_tree or options.list_test_duplicates or options.sub_test:
+    if options.list_tests or options.test_tree or options.list_test_duplicates \
+        or options.sub_test or options.export_tests:
         cnt = 0
         all_tests = suite.get_all_tests()
+
+        if options.export_tests:
+            export_tests(options.export_tests, all_tests)
+            return
 
         if options.list_test_duplicates:
             import collections
