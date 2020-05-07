@@ -3,6 +3,7 @@
  * Copyright (c) 2019 Nordic Semiconductor ASA
  * Copyright (c) 2019 Marc Reilly
  * Copyright (c) 2019 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2020 Endian Technologies AB
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,6 +52,9 @@ struct st7789v_data {
 	u16_t width;
 	u16_t x_offset;
 	u16_t y_offset;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	u32_t pm_state;
+#endif
 };
 
 #ifdef CONFIG_ST7789V_RGB565
@@ -370,6 +374,10 @@ static int st7789v_init(struct device *dev)
 	}
 #endif
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	data->pm_state = DEVICE_PM_ACTIVE_STATE;
+#endif
+
 	data->cmd_data_gpio = device_get_binding(
 			DT_INST_GPIO_LABEL(0, cmd_data_gpios));
 	if (data->cmd_data_gpio == NULL) {
@@ -393,6 +401,44 @@ static int st7789v_init(struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void st7789v_enter_sleep(struct st7789v_data *data)
+{
+	st7789v_transmit(data, ST7789V_CMD_SLEEP_IN, NULL, 0);
+}
+
+static int st7789v_pm_control(struct device *dev, u32_t ctrl_command,
+				 void *context, device_pm_cb cb, void *arg)
+{
+	int ret = 0;
+	struct st7789v_data *data = (struct st7789v_data *)dev->driver_data;
+
+	switch (ctrl_command) {
+	case DEVICE_PM_SET_POWER_STATE:
+		if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
+			st7789v_exit_sleep(data);
+			data->pm_state = DEVICE_PM_ACTIVE_STATE;
+			ret = 0;
+		} else {
+			st7789v_enter_sleep(data);
+			data->pm_state = DEVICE_PM_LOW_POWER_STATE;
+			ret = 0;
+		}
+		break;
+	case DEVICE_PM_GET_POWER_STATE:
+		*((u32_t *)context) = data->pm_state;
+		break;
+	default:
+		ret = -EINVAL;
+	}
+
+	if (cb != NULL) {
+		cb(dev, ret, context, arg);
+	}
+	return ret;
+}
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+
 static const struct display_driver_api st7789v_api = {
 	.blanking_on = st7789v_blanking_on,
 	.blanking_off = st7789v_blanking_off,
@@ -413,6 +459,12 @@ static struct st7789v_data st7789v_data = {
 	.y_offset = DT_INST_PROP(0, y_offset),
 };
 
+#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
 DEVICE_AND_API_INIT(st7789v, DT_INST_LABEL(0), &st7789v_init,
 		    &st7789v_data, NULL, APPLICATION,
 		    CONFIG_APPLICATION_INIT_PRIORITY, &st7789v_api);
+#else
+DEVICE_DEFINE(st7789v, DT_INST_LABEL(0), &st7789v_init,
+	      st7789v_pm_control, &st7789v_data, NULL, APPLICATION,
+	      CONFIG_APPLICATION_INIT_PRIORITY, &st7789v_api);
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
