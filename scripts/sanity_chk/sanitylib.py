@@ -2214,6 +2214,10 @@ class TestSuite(DisablePyTestCollectionMixin):
         # hardcoded for now
         self.connected_hardware = []
 
+    def get_platform_instances(self, platform):
+        filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + "/")}
+        return filtered_dict
+
     def config(self):
         logger.info("coverage platform: {}".format(self.coverage_platform))
 

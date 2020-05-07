@@ -170,6 +170,7 @@ import argparse
 import sys
 import logging
 import time
+import itertools
 import shutil
 from collections import OrderedDict
 import multiprocessing
@@ -177,6 +178,7 @@ from itertools import islice
 import csv
 from colorama import Fore
 from pathlib import Path
+
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -391,7 +393,10 @@ Artificially long but functional example:
 
     parser.add_argument("--export-tests", action="store",
                         metavar="FILENAME",
-                        help="Export tests case meta-data to a file in CSV format.")
+                        help="Export tests case meta-data to a file in CSV format."
+                             "Test instances can be exported per target by supplying "
+                             "the platform name using --platform option. (tests for only "
+                             " one platform can be exported at a time)")
 
     parser.add_argument("--timestamps",
                         action="store_true",
@@ -837,8 +842,8 @@ def main():
 
         return
 
-    if options.list_tests or options.test_tree or options.list_test_duplicates \
-        or options.sub_test or options.export_tests:
+    if not options.platform and (options.list_tests or options.test_tree or options.list_test_duplicates \
+        or options.sub_test or options.export_tests):
         cnt = 0
         all_tests = suite.get_all_tests()
 
@@ -944,6 +949,29 @@ def main():
             force_platform=options.force_platform
 
         )
+
+    if (options.export_tests or options.list_tests) and options.platform:
+        if len(options.platform) > 1:
+            logger.error("When exporting tests, only one platform "
+                         "should be specified.")
+            return
+
+        for p in options.platform:
+            inst = suite.get_platform_instances(p)
+            if options.export_tests:
+                tests = [x.testcase.cases for x in inst.values()]
+                merged = list(itertools.chain(*tests))
+                export_tests(options.export_tests, merged)
+                return
+
+            count = 0
+            for i in inst.values():
+                for c in i.testcase.cases:
+                    print(f"- {c}")
+                    count += 1
+
+            print(f"Tests found: {count}")
+        return
 
     if VERBOSE > 1 and discards:
         # if we are using command line platform filter, no need to list every
