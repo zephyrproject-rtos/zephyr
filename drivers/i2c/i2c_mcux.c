@@ -74,7 +74,8 @@ static int i2c_mcux_configure(struct device *dev, u32_t dev_config_raw)
 }
 
 static void i2c_mcux_master_transfer_callback(I2C_Type *base,
-					      i2c_master_handle_t *handle, status_t status, void *userData)
+					      i2c_master_handle_t *handle,
+					      status_t status, void *userData)
 {
 	struct device *dev = userData;
 	struct i2c_mcux_data *data = DEV_DATA(dev);
@@ -200,8 +201,7 @@ static int i2c_mcux_init(struct device *dev)
 	return 0;
 }
 
-static const struct i2c_driver_api i2c_mcux_driver_api =
-{
+static const struct i2c_driver_api i2c_mcux_driver_api = {
 	.configure = i2c_mcux_configure,
 	.transfer = i2c_mcux_transfer,
 };
