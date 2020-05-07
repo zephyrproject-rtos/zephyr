@@ -239,7 +239,7 @@ def export_tests(filename, tests):
                 }
                 cw.writerow(rowdict)
             else:
-                logger.info("{} can't be exported".format(test))
+                logger.error("{} can't be exported: ".format(test))
 
 
 def parse_arguments():
