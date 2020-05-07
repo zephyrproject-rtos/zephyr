@@ -271,7 +271,7 @@ static void test_double_write(void)
 
 	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 			 FLASH_SIMULATOR_ERASE_UNIT);
-	zassert_equal(0, rc, "flash_erase should succedd");
+	zassert_equal(0, rc, "flash_erase should succeed");
 
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 				 &data, sizeof(data));
