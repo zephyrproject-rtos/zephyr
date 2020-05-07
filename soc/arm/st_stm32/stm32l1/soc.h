@@ -55,6 +55,10 @@
 #include <stm32l1xx_ll_adc.h>
 #endif
 
+#ifdef CONFIG_DAC_STM32
+#include <stm32l1xx_ll_dac.h>
+#endif
+
 #if defined(CONFIG_COUNTER_RTC_STM32)
 #include <stm32l1xx_ll_rtc.h>
 #include <stm32l1xx_ll_exti.h>
