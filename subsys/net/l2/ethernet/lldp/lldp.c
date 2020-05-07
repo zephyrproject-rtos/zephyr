@@ -111,6 +111,8 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		goto out;
 	}
 
+	net_pkt_set_lldp(pkt, true);
+
 	if (net_pkt_write(pkt, (u8_t *)lldp->lldpdu,
 			  sizeof(struct net_lldpdu))) {
 		net_pkt_unref(pkt);
