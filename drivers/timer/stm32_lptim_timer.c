@@ -163,7 +163,7 @@ int z_clock_driver_init(struct device *device)
 
 	} else {
 		/* LPTIM1 is triggered on a Tick period */
-		LL_LPTIM_SetAutoReload(LPTIM1, COUNT_PER_TICK);
+		LL_LPTIM_SetAutoReload(LPTIM1, COUNT_PER_TICK - 1);
 	}
 
 	/* Start the LPTIM counter in continuous mode */
@@ -237,7 +237,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 			/ (CONFIG_SYS_CLOCK_TICKS_PER_SEC);
 	/* add count unit from the expected nb of Ticks */
 	next_arr = next_arr + ((u32_t)(ticks) * LPTIM_CLOCK)
-			/ CONFIG_SYS_CLOCK_TICKS_PER_SEC + 1;
+			/ CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1;
 
 	/* maximise to TIMEBASE */
 	if (next_arr > LPTIM_TIMEBASE) {
