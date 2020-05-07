@@ -252,7 +252,7 @@ static ssize_t send_socket_data(struct modem_socket *sock,
 	}
 
 	k_sem_reset(&mdata.sem_response);
-	ret = k_sem_take(&mdata.sem_response, timeout);
+	ret = k_sem_take(&mdata.sem_response, K_MSEC(timeout));
 
 	if (ret == 0) {
 		ret = modem_cmd_handler_get_error(&mdata.cmd_handler_data);
