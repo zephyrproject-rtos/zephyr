@@ -111,6 +111,6 @@ static const struct pwm_driver_api pwm_litex_driver_api = {
 			    POST_KERNEL,				       \
 			    CONFIG_PWM_LITEX_INIT_PRIORITY,		       \
 			    &pwm_litex_driver_api			       \
-			   )
+			   );
 
 DT_INST_FOREACH(PWM_LITEX_INIT)

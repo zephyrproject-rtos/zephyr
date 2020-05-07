@@ -315,7 +315,7 @@ static struct spi_driver_api spi_gecko_api = {
 			&spi_gecko_cfg_##n, \
 			POST_KERNEL, \
 			CONFIG_SPI_INIT_PRIORITY, \
-			&spi_gecko_api)
+			&spi_gecko_api);
 
 #define SPI_ID(n) DT_INST_PROP(n, peripheral_id)
 

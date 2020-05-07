@@ -77,6 +77,6 @@ static const struct clock_control_driver_api mcux_pcc_api = {
 			    NULL, &mcux_pcc##inst##_config,		\
 			    PRE_KERNEL_1,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,	\
-			    &mcux_pcc_api)
+			    &mcux_pcc_api);
 
 DT_INST_FOREACH(MCUX_PCC_INIT)

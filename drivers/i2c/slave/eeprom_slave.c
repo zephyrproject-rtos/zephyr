@@ -227,6 +227,6 @@ static int i2c_eeprom_slave_init(struct device *dev)
 			    &i2c_eeprom_slave_##inst##_cfg,		\
 			    POST_KERNEL,				\
 			    CONFIG_I2C_SLAVE_INIT_PRIORITY,		\
-			    &api_funcs)
+			    &api_funcs);
 
 DT_INST_FOREACH(I2C_EEPROM_INIT)

@@ -120,6 +120,6 @@ DEVICE_AND_API_INIT(i2c_sbcon_##_num, DT_INST_LABEL(_num), \
 	    i2c_sbcon_init,						\
 	    &i2c_sbcon_dev_data_##_num,					\
 	    &i2c_sbcon_dev_cfg_##_num,					\
-	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api)
+	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH(DEFINE_I2C_SBCON)

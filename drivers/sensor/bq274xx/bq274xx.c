@@ -628,6 +628,6 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 			    &bq274xx_gauge_init, &bq274xx_driver_##index,      \
 			    &bq274xx_config_##index, POST_KERNEL,              \
 			    CONFIG_SENSOR_INIT_PRIORITY,                       \
-			    &bq274xx_battery_driver_api)		       \
+			    &bq274xx_battery_driver_api);
 
 DT_INST_FOREACH(BQ274XX_INIT)

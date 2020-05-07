@@ -237,6 +237,6 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 			    POST_KERNEL, \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 			    &gpio_litex_driver_api \
-			   )
+			   );
 
 DT_INST_FOREACH(GPIO_LITEX_INIT)

@@ -330,6 +330,6 @@ static const struct mcux_lpsci_config mcux_lpsci_##n##_config = {	\
 									\
 	MCUX_LPSCI_CONFIG_FUNC(n)					\
 									\
-	MCUX_LPSCI_INIT_CFG(n)
+	MCUX_LPSCI_INIT_CFG(n);
 
 DT_INST_FOREACH(MCUX_LPSCI_INIT)

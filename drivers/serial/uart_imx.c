@@ -324,6 +324,6 @@ static const struct uart_driver_api uart_imx_driver_api = {
 									\
 	UART_IMX_CONFIG_FUNC(n)						\
 									\
-	UART_IMX_INIT_CFG(n)
+	UART_IMX_INIT_CFG(n);
 
 DT_INST_FOREACH(UART_IMX_INIT)

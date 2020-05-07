@@ -111,6 +111,6 @@ static const struct dac_driver_api mcux_dac32_driver_api = {
 			mcux_dac32_init, &mcux_dac32_data_##n,		\
 			&mcux_dac32_config_##n,				\
 			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,\
-			&mcux_dac32_driver_api)
+			&mcux_dac32_driver_api);
 
 DT_INST_FOREACH(MCUX_DAC32_INIT)

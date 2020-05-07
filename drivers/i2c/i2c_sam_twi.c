@@ -367,6 +367,6 @@ static const struct i2c_driver_api i2c_sam_twi_driver_api = {
 			    &i2c_sam_twi_initialize,			\
 			    &i2c##n##_sam_data, &i2c##n##_sam_config,	\
 			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
-			    &i2c_sam_twi_driver_api)
+			    &i2c_sam_twi_driver_api);
 
 DT_INST_FOREACH(I2C_TWI_SAM_INIT)

@@ -655,6 +655,6 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 		UART_CC13XX_CC26XX_INT_FIELDS			     \
 	};							     \
 								     \
-	UART_CC13XX_CC26XX_DEVICE_INIT(n)
+	UART_CC13XX_CC26XX_DEVICE_INIT(n);
 
 DT_INST_FOREACH(UART_CC13XX_CC26XX_INIT)

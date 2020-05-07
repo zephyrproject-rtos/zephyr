@@ -768,6 +768,6 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 			    &spi_sam0_init, &spi_sam0_dev_data_##n,	\
 			    &spi_sam0_config_##n, POST_KERNEL,		\
 			    CONFIG_SPI_INIT_PRIORITY,			\
-			    &spi_sam0_driver_api)
+			    &spi_sam0_driver_api);
 
 DT_INST_FOREACH(SPI_SAM0_DEVICE_INIT)
