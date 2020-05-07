@@ -8,7 +8,8 @@
 #include <sys/printk.h>
 #include <drivers/dac.h>
 
-#if defined(CONFIG_BOARD_NUCLEO_L073RZ)
+#if defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
+	defined(CONFIG_BOARD_NUCLEO_L152RE)
 #define DAC_DEVICE_NAME		DT_LABEL(DT_ALIAS(dac1))
 #define DAC_CHANNEL_ID		1
 #define DAC_RESOLUTION		12
