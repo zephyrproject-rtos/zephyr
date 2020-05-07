@@ -358,7 +358,6 @@ config MAKEFILE_EXPORTS
 
 config LEGACY_DEVICETREE_MACROS
 	bool "Allow use of legacy devicetree macros"
-	default y
 	help
 	  Allows use of legacy devicetree macros which were used in
 	  Zephyr 2.2 and previous versions, rather than the devicetree.h
