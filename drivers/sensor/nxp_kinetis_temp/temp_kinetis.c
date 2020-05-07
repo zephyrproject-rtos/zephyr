@@ -183,42 +183,42 @@ static int temp_kinetis_init(struct device *dev)
 BUILD_ASSERT(DT_NUM_INST(DT_DRV_COMPAT) <= 1,
 	     "unsupported temp instance");
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))
-BUILD_ASSERT(DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, sensor) <
-	     DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, bandgap),
-	     "This driver assumes sensor ADC channel to come before "
-	     "bandgap ADC channel");
+#define TEMP_KINETIS_INIT(inst)						\
+	BUILD_ASSERT(DT_INST_IO_CHANNELS_INPUT_BY_NAME(inst, sensor) <	\
+		     DT_INST_IO_CHANNELS_INPUT_BY_NAME(inst, bandgap),	\
+		     "This driver assumes sensor ADC channel to come before "\
+		     "bandgap ADC channel");				\
+									\
+	static struct temp_kinetis_data temp_kinetis_data_0;		\
+									\
+	static const struct temp_kinetis_config temp_kinetis_config_0 = {\
+		.adc_dev_name =						\
+			DT_INST_IO_CHANNELS_LABEL_BY_IDX(inst, 0),	\
+		.sensor_adc_ch =					\
+			DT_INST_IO_CHANNELS_INPUT_BY_NAME(inst, sensor),\
+		.bandgap_adc_ch =					\
+			DT_INST_IO_CHANNELS_INPUT_BY_NAME(inst, bandgap),\
+		.bandgap_mv = DT_INST_PROP(0, bandgap_voltage) / 1000,	\
+		.vtemp25_mv = DT_INST_PROP(0, vtemp25) / 1000,		\
+		.slope_cold_uv = DT_INST_PROP(0, sensor_slope_cold),	\
+		.slope_hot_uv = DT_INST_PROP(0, sensor_slope_hot),	\
+		.adc_seq = {						\
+			.options = NULL,				\
+			.channels =					\
+		BIT(DT_INST_IO_CHANNELS_INPUT_BY_NAME(inst, sensor)) |	\
+		BIT(DT_INST_IO_CHANNELS_INPUT_BY_NAME(inst, bandgap)),	\
+			.buffer = &temp_kinetis_data_0.buffer,		\
+			.buffer_size = sizeof(temp_kinetis_data_0.buffer),\
+			.resolution = CONFIG_TEMP_KINETIS_RESOLUTION,	\
+			.oversampling = CONFIG_TEMP_KINETIS_OVERSAMPLING,\
+			.calibrate = false,				\
+		},							\
+	};								\
+									\
+	DEVICE_AND_API_INIT(temp_kinetis, DT_INST_LABEL(inst),		\
+			    temp_kinetis_init, &temp_kinetis_data_0,	\
+			    &temp_kinetis_config_0, POST_KERNEL,	\
+			    CONFIG_SENSOR_INIT_PRIORITY,		\
+			    &temp_kinetis_driver_api);
 
-static struct temp_kinetis_data temp_kinetis_data_0;
-
-static const struct temp_kinetis_config temp_kinetis_config_0 = {
-	.adc_dev_name =
-		DT_INST_IO_CHANNELS_LABEL_BY_IDX(0, 0),
-	.sensor_adc_ch =
-		DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, sensor),
-	.bandgap_adc_ch =
-		DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, bandgap),
-	.bandgap_mv = DT_INST_PROP(0, bandgap_voltage) / 1000,
-	.vtemp25_mv = DT_INST_PROP(0, vtemp25) / 1000,
-	.slope_cold_uv = DT_INST_PROP(0, sensor_slope_cold),
-	.slope_hot_uv = DT_INST_PROP(0, sensor_slope_hot),
-	.adc_seq = {
-		.options = NULL,
-		.channels =
-	BIT(DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, sensor)) |
-	BIT(DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, bandgap)),
-		.buffer = &temp_kinetis_data_0.buffer,
-		.buffer_size = sizeof(temp_kinetis_data_0.buffer),
-		.resolution = CONFIG_TEMP_KINETIS_RESOLUTION,
-		.oversampling = CONFIG_TEMP_KINETIS_OVERSAMPLING,
-		.calibrate = false,
-	},
-};
-
-DEVICE_AND_API_INIT(temp_kinetis, DT_INST_LABEL(0),
-		    temp_kinetis_init, &temp_kinetis_data_0,
-		    &temp_kinetis_config_0, POST_KERNEL,
-		    CONFIG_SENSOR_INIT_PRIORITY,
-		    &temp_kinetis_driver_api);
-
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0)) */
+DT_INST_FOREACH(TEMP_KINETIS_INIT)
