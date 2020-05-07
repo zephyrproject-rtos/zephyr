@@ -86,10 +86,10 @@ manifest:
       revision: 821154171b246f64eaeef3ccc267f58d8274739a
       path: modules/crypto/mbedtls
     - name: mcuboot
-      revision: 5657d00e662adbd32addc8525862249b631334c5
+      revision: e88113bbebe34ff2ccc6627ffae885cfeed6fdfd
       path: bootloader/mcuboot
     - name: mcumgr
-      revision: ac6cc4f28fd3e7d138f319c9aef53dd4beb9c7ac
+      revision: 1f5234cad902aea6c4db073f22663fc8f003d12d
       path: modules/lib/mcumgr
     - name: net-tools
       revision: 1c4fdba512b268033a4cf926bddd323866c3261a
