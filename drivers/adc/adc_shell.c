@@ -465,7 +465,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_adc_cmds,
 );
 
 #define ADC_SHELL_COMMAND(inst) \
-	SHELL_CMD(ADC_##inst, &sub_adc_cmds, "ADC_" #inst, NULL),
+	SHELL_CMD(ADC_##inst, &sub_adc_cmds, "ADC_" #inst, NULL)
 
 /*
  * TODO generalize with a more flexible for-each macro that doesn't
