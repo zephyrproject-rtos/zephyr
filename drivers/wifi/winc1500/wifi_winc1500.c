@@ -401,7 +401,7 @@ static int winc1500_connect(struct net_context *context,
 	}
 
 	if (timeout != 0 &&
-	    k_sem_take(&w1500_data.socket_data[socket].wait_sem, timeout)) {
+	    k_sem_take(&w1500_data.socket_data[socket].wait_sem, K_MSEC(timeout))) {
 		return -ETIMEDOUT;
 	}
 

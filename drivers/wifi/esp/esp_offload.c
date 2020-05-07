@@ -586,7 +586,7 @@ static int esp_recv(struct net_context *context,
 		return 0;
 	}
 
-	ret = k_sem_take(&sock->sem_data_ready, timeout);
+	ret = k_sem_take(&sock->sem_data_ready, K_MSEC(timeout));
 
 	sock->recv_cb = NULL;
 
