@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2020 Amarula Solutions.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	tmp116: tmp116@49 {
+		compatible = "ti,tmp116";
+		reg = <0x49>;
+		label = "TMP116";
+	};
+
+	bma280: bma280@18 {
+		compatible = "bosch,bma280";
+		reg = <0x18>;
+		label = "BMA280";
+	};
+};
