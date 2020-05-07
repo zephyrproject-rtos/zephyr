@@ -52,7 +52,7 @@ static int ot_cmd(const struct shell *shell, size_t argc, char *argv[])
 			buf_ptr += arg_len + 1;
 		}
 
-		arg_len = snprintf(buf_ptr, buf_len, "%s", argv[i]);
+		arg_len = snprintk(buf_ptr, buf_len, "%s", argv[i]);
 
 		if (arg_len >= buf_len) {
 			shell_fprintf(shell, SHELL_WARNING,
