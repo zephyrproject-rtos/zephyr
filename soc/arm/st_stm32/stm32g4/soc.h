@@ -65,7 +65,7 @@
 #endif
 
 #ifdef CONFIG_WWDG_STM32
-#include <stm32l4xx_ll_wwdg.h>
+#include <stm32g4xx_ll_wwdg.h>
 #endif
 
 #ifdef CONFIG_ENTROPY_STM32_RNG
