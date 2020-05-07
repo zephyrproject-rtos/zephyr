@@ -75,11 +75,6 @@ static int gpio_xec_configure(struct device *dev,
 	mask |= MCHP_GPIO_CTRL_DIR_MASK;
 	mask |= MCHP_GPIO_CTRL_INPAD_DIS_MASK;
 	if ((flags & GPIO_OUTPUT) != 0U) {
-		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
-			*gpio_out_reg |= BIT(pin);
-		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
-			*gpio_out_reg &= ~BIT(pin);
-		}
 		pcr1 |= MCHP_GPIO_CTRL_DIR_OUTPUT;
 	} else {
 		/* GPIO_INPUT */
@@ -121,6 +116,14 @@ static int gpio_xec_configure(struct device *dev,
 	 */
 	current_pcr1 = config->pcr1_base + pin;
 	*current_pcr1 = (*current_pcr1 & ~mask) | pcr1;
+
+	if ((flags & GPIO_OUTPUT) != 0U) {
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0U) {
+			*gpio_out_reg |= BIT(pin);
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0U) {
+			*gpio_out_reg &= ~BIT(pin);
+		}
+	}
 
 	return 0;
 }
