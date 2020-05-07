@@ -57,32 +57,6 @@ struct usb_hid_descriptor {
 
 /* Public headers */
 
-typedef int (*hid_cb_t)(struct usb_setup_packet *setup, s32_t *len,
-			u8_t **data);
-typedef void (*hid_int_ready_callback)(void);
-typedef void (*hid_protocol_cb_t)(u8_t protocol);
-typedef void (*hid_idle_cb_t)(u16_t report_id);
-
-struct hid_ops {
-	hid_cb_t get_report;
-	hid_cb_t get_idle;
-	hid_cb_t get_protocol;
-	hid_cb_t set_report;
-	hid_cb_t set_idle;
-	hid_cb_t set_protocol;
-	hid_protocol_cb_t protocol_change;
-	hid_idle_cb_t on_idle;
-	/*
-	 * int_in_ready is an optional callback that is called when
-	 * the current interrupt IN transfer has completed.  This can
-	 * be used to wait for the endpoint to go idle or to trigger
-	 * the next transfer.
-	 */
-	hid_int_ready_callback int_in_ready;
-#ifdef CONFIG_ENABLE_HID_INT_OUT_EP
-	hid_int_ready_callback int_out_ready;
-#endif
-};
 
 /* HID Report Definitions */
 
@@ -430,6 +404,35 @@ enum hid_kbd_led {
 	HID_KBD_LED_KANA	= 0x10,
 };
 
+#if defined(CONFIG_USB_DEVICE_HID)
+
+typedef int (*hid_cb_t)(struct usb_setup_packet *setup, s32_t *len,
+			u8_t **data);
+typedef void (*hid_int_ready_callback)(void);
+typedef void (*hid_protocol_cb_t)(u8_t protocol);
+typedef void (*hid_idle_cb_t)(u16_t report_id);
+
+struct hid_ops {
+	hid_cb_t get_report;
+	hid_cb_t get_idle;
+	hid_cb_t get_protocol;
+	hid_cb_t set_report;
+	hid_cb_t set_idle;
+	hid_cb_t set_protocol;
+	hid_protocol_cb_t protocol_change;
+	hid_idle_cb_t on_idle;
+	/*
+	 * int_in_ready is an optional callback that is called when
+	 * the current interrupt IN transfer has completed.  This can
+	 * be used to wait for the endpoint to go idle or to trigger
+	 * the next transfer.
+	 */
+	hid_int_ready_callback int_in_ready;
+#ifdef CONFIG_ENABLE_HID_INT_OUT_EP
+	hid_int_ready_callback int_out_ready;
+#endif
+};
+
 /* Register HID device */
 void usb_hid_register_device(struct device *dev, const u8_t *desc, size_t size,
 			     const struct hid_ops *op);
@@ -444,6 +447,8 @@ int hid_int_ep_read(const struct device *dev, u8_t *data, u32_t max_data_len,
 
 /* Initialize USB HID */
 int usb_hid_init(const struct device *dev);
+
+#endif /* defined(CONFIG_USB_DEVICE_HID) */
 
 #ifdef __cplusplus
 }
