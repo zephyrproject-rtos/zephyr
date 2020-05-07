@@ -56,6 +56,9 @@ void test_posix_realtime(void)
 	struct timespec rts, mts;
 	struct timeval tv;
 
+	/* Minimal sleep to align us to the next tick interval */
+	k_usleep(1);
+
 	printk("POSIX clock set APIs\n");
 	ret = clock_gettime(CLOCK_MONOTONIC, &mts);
 	zassert_equal(ret, 0, "Fail to get monotonic clock");
