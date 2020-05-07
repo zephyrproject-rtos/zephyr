@@ -1214,10 +1214,15 @@ endif()
 if(CONFIG_OUTPUT_DISASSEMBLY)
   set(out_disassembly_cmd    "")
   set(out_disassembly_byprod "")
+  if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
+    set(disassembly_type DISASSEMBLE_ALL)
+  else()
+    set(disassembly_type DISASSEMBLE_SOURCE)
+  endif()
   bintools_objdump(
     RESULT_CMD_LIST    out_disassembly_cmd
     RESULT_BYPROD_LIST out_disassembly_byprod
-    DISASSEMBLE_SOURCE
+    ${disassembly_type}
     FILE_INPUT         ${KERNEL_ELF_NAME}
     FILE_OUTPUT        ${KERNEL_LST_NAME}
     )

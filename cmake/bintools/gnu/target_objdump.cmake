@@ -10,6 +10,7 @@
 #
 #      DISASSEMBLE        <Display the assembler mnemonics for the machine instructions from input>
 #      DISASSEMBLE_SOURCE < Display source code intermixed with disassembly, if possible>
+#      DISASSEMBLE_ALL    <Display disassembly of all sections not just the instruction sections>
 #
 #      FILE_INPUT         <The input file>
 #      FILE_OUTPUT        <The output file>
@@ -19,7 +20,7 @@ function(bintools_objdump)
     # Prefix of output variables
     BINTOOLS_OBJDUMP
     # List of argument names without values, hence boolean
-    "DISASSEMBLE;DISASSEMBLE_SOURCE"
+    "DISASSEMBLE;DISASSEMBLE_SOURCE;DISASSEMBLE_ALL"
     # List of argument names with one value
     "RESULT_CMD_LIST;RESULT_BYPROD_LIST;FILE_INPUT;FILE_OUTPUT"
     # List of argument names with multible values
@@ -41,6 +42,8 @@ function(bintools_objdump)
     set(obj_dump_disassemble "-S") # --source
   elseif(${BINTOOLS_OBJDUMP_DISASSEMBLE})
     set(obj_dump_disassemble "-d") # --disassemble
+  elseif(${BINTOOLS_OBJDUMP_DISASSEMBLE_ALL})
+    set(obj_dump_disassemble "-SDz") # --source --disassemble-all --disassemble-zeroes
   endif()
 
   # Handle output
