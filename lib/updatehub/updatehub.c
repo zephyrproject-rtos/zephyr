@@ -440,7 +440,7 @@ static enum updatehub_response install_update(void)
 	int verification_download = 0;
 	int attempts_download = 0;
 
-	if (boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID) != 0) {
+	if (boot_erase_img_bank(FLASH_AREA_ID(image_1)) != 0) {
 		LOG_ERR("Failed to init flash and erase second slot");
 		ctx.code_status = UPDATEHUB_FLASH_INIT_ERROR;
 		goto error;

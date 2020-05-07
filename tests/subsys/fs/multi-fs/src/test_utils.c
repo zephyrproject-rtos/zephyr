@@ -25,7 +25,7 @@ void test_clear_flash(void)
 	int rc;
 	const struct flash_area *fap;
 
-	rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
+	rc = flash_area_open(FLASH_AREA_ID(storage), &fap);
 	zassert_equal(rc, 0, "Opening flash area for erase [%d]\n", rc);
 
 	rc = flash_area_erase(fap, 0, fap->fa_size);

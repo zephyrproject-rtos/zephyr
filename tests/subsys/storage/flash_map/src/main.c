@@ -26,7 +26,7 @@ void test_flash_area_get_sectors(void)
 	u8_t rd[256];
 	struct device *flash_dev;
 
-	rc = flash_area_open(DT_FLASH_AREA_IMAGE_1_ID, &fa);
+	rc = flash_area_open(FLASH_AREA_ID(image_1), &fa);
 	zassert_true(rc == 0, "flash_area_open() fail");
 
 	/* First erase the area so it's ready for use. */
@@ -45,7 +45,7 @@ void test_flash_area_get_sectors(void)
 	(void)memset(wd, 0xa5, sizeof(wd));
 
 	sec_cnt = ARRAY_SIZE(fs_sectors);
-	rc = flash_area_get_sectors(DT_FLASH_AREA_IMAGE_1_ID, &sec_cnt,
+	rc = flash_area_get_sectors(FLASH_AREA_ID(image_1), &sec_cnt,
 				    fs_sectors);
 	zassert_true(rc == 0, "flash_area_get_sectors failed");
 
