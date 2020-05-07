@@ -32,6 +32,12 @@ extern void test_pipe_user_get_fail(void);
 extern void test_resource_pool_auto_free(void);
 #endif
 
+extern void test_pipe_avail_r_lt_w(void);
+extern void test_pipe_avail_w_lt_r(void);
+extern void test_pipe_avail_r_eq_w_full(void);
+extern void test_pipe_avail_r_eq_w_empty(void);
+extern void test_pipe_avail_no_buffer(void);
+
 /* k objects */
 extern struct k_pipe pipe, kpipe, khalfpipe, put_get_pipe;
 extern struct k_sem end_sema;
@@ -77,6 +83,11 @@ void test_main(void)
 			 ztest_unit_test(test_half_pipe_saturating_block_put),
 			 ztest_1cpu_unit_test(test_pipe_alloc),
 			 ztest_unit_test(test_pipe_reader_wait),
-			 ztest_1cpu_unit_test(test_pipe_block_writer_wait));
+			 ztest_1cpu_unit_test(test_pipe_block_writer_wait),
+			 ztest_unit_test(test_pipe_avail_r_lt_w),
+			 ztest_unit_test(test_pipe_avail_w_lt_r),
+			 ztest_unit_test(test_pipe_avail_r_eq_w_full),
+			 ztest_unit_test(test_pipe_avail_r_eq_w_empty),
+			 ztest_unit_test(test_pipe_avail_no_buffer));
 	ztest_run_test_suite(pipe_api);
 }
