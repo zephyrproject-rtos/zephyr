@@ -1,12 +1,12 @@
 // Copyright (c) 2019-2020 Nordic Semiconductor ASA
 // SPDX-License-Identifer: Apache-2.0
 
-// Replace integer constant timeouts with K_MSEC variants
+// Convert legacy integer timeouts to timeout API
 //
 // Some existing code assumes that timeout parameters are provided as
 // integer milliseconds, when they were intended to be timeout values
-// produced by specific constants and macros.  Convert the integer
-// literals to the desired equivalent.
+// produced by specific constants and macros.  Convert integer
+// literals and parameters to the desired equivalent
 //
 // A few expressions that are clearly integer values are also
 // converted.
@@ -167,6 +167,61 @@ fn << r_last_timeout.last_timeout;
 p << r_last_timeout_scaled_report_opt.p;
 @@
 msg = "NOTE: use K_SECONDS() for timeout in {}".format(fn)
+coccilib.report.print_report(p[0], msg);
+
+// ** Handle call sites where an integer parameter is used in a
+// ** position that requires a timeout value.
+
+@r_last_timeout_int_param_patch
+ extends r_last_timeout
+ depends on patch
+ @
+identifier FN;
+identifier P;
+typedef s32_t, u32_t;
+@@
+ FN(...,
+(int
+|s32_t
+|u32_t
+)
+ P, ...) {
+ ...
+ last_timeout(...,
+-P
++K_MSEC(P)
+ )
+ ...
+ }
+
+@r_last_timeout_int_param_report
+ extends r_last_timeout
+ depends on report
+ @
+identifier FN;
+identifier P;
+position p;
+typedef s32_t, u32_t;
+@@
+ FN(...,
+(int
+|s32_t
+|u32_t
+)
+ P, ...) {
+ ...
+ last_timeout@p(..., P)
+ ...
+ }
+
+@script:python
+ depends on report
+@
+param << r_last_timeout_int_param_report.P;
+fn << r_last_timeout.last_timeout;
+p << r_last_timeout_int_param_report.p;
+@@
+msg = "WARNING: replace integer parameter {} with timeout in {}".format(param, fn)
 coccilib.report.print_report(p[0], msg);
 
 // ** Convert timeout-valued delays in K_THREAD_DEFINE with durations
