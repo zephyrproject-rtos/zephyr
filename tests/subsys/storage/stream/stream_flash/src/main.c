@@ -322,6 +322,16 @@ static void test_stream_flash_erase_page(void)
 
 	VERIFY_ERASED(FLASH_BASE, page_size);
 }
+#else
+static void test_stream_flash_erase_page(void)
+{
+	ztest_test_skip();
+}
+
+static void test_stream_flash_buffered_write_whole_page(void)
+{
+	ztest_test_skip();
+}
 #endif
 
 void test_main(void)
@@ -340,10 +350,8 @@ void test_main(void)
 	     ztest_unit_test(test_stream_flash_buffered_write_multi_page),
 	     ztest_unit_test(test_stream_flash_buf_size_greater_than_page_size),
 	     ztest_unit_test(test_stream_flash_buffered_write_callback),
-#ifdef CONFIG_STREAM_FLASH_ERASE
 	     ztest_unit_test(test_stream_flash_buffered_write_whole_page),
 	     ztest_unit_test(test_stream_flash_erase_page),
-#endif
 	     ztest_unit_test(test_stream_flash_bytes_written)
 	 );
 
