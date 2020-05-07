@@ -1119,6 +1119,14 @@ class Node:
             # This is the root node
             return None
 
+        # Treat fixed-partitions as if they are not on any bus.  The reason is
+        # that flash nodes might be on a SPI or controller or SoC bus.  Having
+        # bus be None means we'll always match the binding for fixed-partitions
+        # also this means want processing the fixed-partitions node we wouldn't
+        # try to do anything bus specific with it.
+        if "fixed-partitions" in self.compats:
+            return None
+
         if self.parent.bus:
             # The parent node is a bus node
             return self.parent
