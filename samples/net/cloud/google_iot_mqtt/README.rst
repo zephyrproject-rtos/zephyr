@@ -33,6 +33,8 @@ The application includes a key creation script.
 
 Run the ``create_keys.py`` script in the
 ``samples/net/cloud/google_iot_mqtt/src/private_info/`` directory.
+Be sure that they key type generated (RSA or ECDSA) matches your
+config of either :code:`JWT_SIGN_RSA` or :code:`JWT_SIGN_ECDSA`.
 
 Users will also be required to configure the following Kconfig options
 based on their Google Cloud IOT project.  The following values come
