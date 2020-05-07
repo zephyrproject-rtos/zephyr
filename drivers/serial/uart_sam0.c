@@ -281,7 +281,7 @@ static void uart_sam0_dma_rx_done(void *arg, u32_t id, int error_code)
 	 * reception.  This also catches the case of DMA completion during
 	 * timeout handling.
 	 */
-	if (dev_data->rx_timeout_time != K_FOREVER) {
+	if (dev_data->rx_timeout_time != SYS_FOREVER_MS) {
 		dev_data->rx_waiting_for_irq = true;
 		regs->INTENSET.reg = SERCOM_USART_INTENSET_RXC;
 		irq_unlock(key);
@@ -684,11 +684,11 @@ static void uart_sam0_isr(void *arg)
 		 * If we have a timeout, restart the time remaining whenever
 		 * we see data.
 		 */
-		if (dev_data->rx_timeout_time != K_FOREVER) {
+		if (dev_data->rx_timeout_time != SYS_FOREVER_MS) {
 			dev_data->rx_timeout_from_isr = true;
 			dev_data->rx_timeout_start = k_uptime_get_32();
 			k_delayed_work_submit(&dev_data->rx_timeout_work,
-					      dev_data->rx_timeout_chunk);
+					      K_MSEC(dev_data->rx_timeout_chunk));
 		}
 
 		/* DMA will read the currently ready byte out */
