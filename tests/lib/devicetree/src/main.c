@@ -1365,6 +1365,37 @@ static void test_parent(void)
 		     "round trip through node with no compatible");
 }
 
+/* Partitions table parent */
+#define PAR_PAR(i) DT_PARENT(DT_INST(i, fixed_partitions))
+
+static void test_fixed_partitions(void)
+{
+	/*
+	 * In case of first fixed_partitions table, it is placed under
+	 * soc-nv-flash device, which is not a controller and requires
+	 * additional DT_PARENT invocation to get to controller node.
+	 *
+	 * The second partition table is placed on NOR flash that is
+	 * SPI device and is itself a flash controller, so there is no need
+	 * for additional DT_PARENT to get to the controller node.
+	 */
+
+	/* soc-nv-flash is not a controller */
+	zassert_true(!strcmp(DT_PROP_BY_IDX(PAR_PAR(0), compatible, 0),
+			     "soc-nv-flash"),
+		     "soc-nv-flash partitions");
+
+	/* Controller is above soc-nv-flash */
+	zassert_true(!strcmp(DT_LABEL(DT_PARENT(PAR_PAR(0))), "flash_ctrl"),
+		     "soc flash_ctrl");
+
+	/* TEST_SPI_NOR_CTRL is controller */
+	zassert_true(!strcmp(DT_LABEL(PAR_PAR(1)), "TEST_SPI_NOR_CTRL"),
+		     "spi connected NOR flash controller");
+}
+
+#undef PAR_PAR
+
 void test_main(void)
 {
 	ztest_test_suite(devicetree_api,
@@ -1392,7 +1423,8 @@ void test_main(void)
 			 ztest_unit_test(test_chosen),
 			 ztest_unit_test(test_enums),
 			 ztest_unit_test(test_clocks),
-			 ztest_unit_test(test_parent)
+			 ztest_unit_test(test_parent),
+			 ztest_unit_test(test_fixed_partitions)
 		);
 	ztest_run_test_suite(devicetree_api);
 }

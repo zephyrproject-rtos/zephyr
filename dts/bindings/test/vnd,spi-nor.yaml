@@ -1,0 +1,10 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test NOR Flash SPI device
+
+compatible: "vnd,spi-nor"
+
+on-bus: spi
+
+include: spi-device.yaml

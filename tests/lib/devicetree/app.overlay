@@ -10,6 +10,8 @@
  * (and be extended to test) real hardware.
  */
 
+/delete-node/ &storage_partition;
+
 / {
 	aliases {
 		test-alias = &test_nodelabel;
@@ -182,6 +184,8 @@
 				label = "TEST_EXPANDER_SPI";
 				spi-max-frequency = <(1 * 1000 * 1000)>;
 			};
+
+
 		};
 
 		test_spi_no_cs: spi@55556666 {
@@ -199,6 +203,32 @@
 				label = "TEST_SPI_DEV_NO_CS";
 				reg = <0>;
 				spi-max-frequency = < 2000000 >;
+			};
+
+		};
+
+		test_spi_flash: spi@66667777 {
+			#address-cells = < 1 >;
+			#size-cells = < 0 >;
+			compatible = "vnd,spi";
+			reg = < 0x66667777 0x1000 >;
+			label = "TEST_SPI_CTLR_FLASH";
+			status = "okay";
+			clock-frequency = < 2000000 >;
+			test-spi-nor@1 {
+				compatible = "vnd,spi-nor";
+				label = "TEST_SPI_NOR_CTRL";
+				reg = <1>;
+				spi-max-frequency = < 2000000 >;
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+					storage_partition: partition@0 {
+						label = "storage";
+						reg = <0x00000000 0x00010000>;
+					};
+				};
 			};
 		};
 
@@ -311,5 +341,6 @@
 			label = "TEST_PWM_CTRL_2";
 			status = "okay";
 		};
+
 	};
 };
