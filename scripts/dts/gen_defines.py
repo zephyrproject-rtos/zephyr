@@ -29,6 +29,7 @@ import edtlib
 
 def main():
     global header_file
+    global flash_area_num
 
     args = parse_args()
 
@@ -40,6 +41,8 @@ def main():
                          default_prop_types=True)
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
+
+    flash_area_num = 0
 
     # Save merged DTS source, as a debugging aid
     with open(args.dts_out, "w", encoding="utf-8") as f:
@@ -254,6 +257,8 @@ def write_special_props(node):
     # data cannot otherwise be obtained from write_vanilla_props()
     # results
 
+    global flash_area_num
+
     out_comment("Special property macros:")
 
     # Macros that are special to the devicetree specification
@@ -262,6 +267,10 @@ def write_special_props(node):
     write_compatibles(node)
     write_status(node)
 
+    if node.parent and "fixed-partitions" in node.parent.compats:
+        macro = f"{node.z_path_id}_PARTITION_ID"
+        out_dt_define(macro, flash_area_num)
+        flash_area_num += 1
 
 def write_regs(node):
     # reg property: edtlib knows the right #address-cells and
@@ -585,6 +594,18 @@ def write_global_compat_info(edt):
         for_each_macros[f"DT_FOREACH_OKAY_INST_{ident}(fn)"] = \
             " ".join(f"fn({edt.compat2nodes[compat].index(node)})"
                      for node in okay_nodes)
+
+    for compat, nodes in edt.compat2nodes.items():
+        for node in nodes:
+            if compat == "fixed-partitions":
+                for child in node.children.values():
+                    if "label" in child.props:
+                        label = child.props["label"].val
+                        macro = f"COMPAT_{str2ident(compat)}_LABEL_{str2ident(label)}"
+                        val = f"DT_{child.z_path_id}"
+
+                        out_dt_define(macro, val)
+                        out_dt_define(macro + "_EXISTS", 1)
 
     out_comment('Macros for compatibles with status "okay" nodes\n')
     for compat, okay_nodes in edt.compat2okay.items():

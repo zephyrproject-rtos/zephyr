@@ -1590,6 +1590,7 @@
 #include <devicetree/spi.h>
 #include <devicetree/dma.h>
 #include <devicetree/pwms.h>
+#include <devicetree/fixed-partitions.h>
 #include <devicetree/zephyr.h>
 
 #endif /* DEVICETREE_H */
