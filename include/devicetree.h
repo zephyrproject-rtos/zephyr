@@ -995,8 +995,8 @@
  *
  * Example usages which evaluate to 1:
  *
- *     DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(n), vnd_specific_device)
- *     DT_NODE_HAS_COMPAT_STATUS_OKAY(DT_NODELABEL(n), generic_device)
+ *     DT_NODE_HAS_COMPAT(DT_NODELABEL(n), vnd_specific_device)
+ *     DT_NODE_HAS_COMPAT(DT_NODELABEL(n), generic_device)
  *
  * This macro only uses the value of the compatible property. Whether
  * or not a particular compatible has a matching binding has no effect
@@ -1007,8 +1007,11 @@
  * @return 1 if the node's compatible property contains compat,
  *         0 otherwise.
  */
-#define DT_NODE_HAS_COMPAT_STATUS_OKAY(node_id, compat) \
+#define DT_NODE_HAS_COMPAT(node_id, compat) \
 	IS_ENABLED(DT_CAT(node_id, _COMPAT_MATCHES_##compat))
+
+#define DT_NODE_HAS_COMPAT_STATUS(node_id, compat, status) \
+	DT_NODE_HAS_COMPAT(node_id, compat) && DT_NODE_HAS_STATUS(node_id, status)
 
 /**
  * @brief Does a devicetree node have a property?
