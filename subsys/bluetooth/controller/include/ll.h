@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LL_VERSION_NUMBER BT_HCI_VERSION_5_1
+#define LL_VERSION_NUMBER BT_HCI_VERSION_5_2
 
 int ll_init(struct k_sem *sem_rx);
 void ll_reset(void);
