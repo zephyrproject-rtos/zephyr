@@ -39,6 +39,8 @@ node-macro =/ %s"DT_N" path-id %s"_IRQ_IDX_" DIGIT
               %s"_VAL_" dt-name [ %s"_EXISTS" ]
 node-macro =/ %s"DT_N" path-id %s"_IRQ_NAME_" dt-name
               %s"_VAL_" dt-name [ %s"_EXISTS" ]
+; For fixed-partitions give a unique ordinal value for each partition */
+node-macro =/ %s"DT_N" path-id %s"_PARTITION_ID" DIGIT
 ; Macros are generated for each of the node's compatibles.
 node-macro =/ %s"DT_N" path-id %s"_COMPAT_MATCHES_" dt-name
 ; The node identifier for the node's parent in the devicetree.
@@ -148,7 +150,8 @@ other-macro =/ %s"DT_CHOSEN_" dt-name
 other-macro =/ %s"DT_COMPAT_" dt-name %s"_BUS_" dt-name
 ;   #define DT_COMPAT_HAS_OKAY_vnd_dev 1
 other-macro =/ %s"DT_COMPAT_HAS_OKAY_" dt-name
-
+; Allows mapping a "label" property to a compatible node
+other-macro =/ %s"DT_COMPAT_" dt-name %s"_LABEL" dt-name
 ; --------------------------------------------------------------------
 ; alternate-id: another way to specify a node besides a path-id
 ;
