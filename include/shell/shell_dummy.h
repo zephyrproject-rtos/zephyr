@@ -24,7 +24,7 @@ struct shell_dummy {
 	size_t len;
 
 	/** output buffer to collect shell output */
-	char buf[100];
+	char buf[300];
 };
 
 #define SHELL_DUMMY_DEFINE(_name)					\
