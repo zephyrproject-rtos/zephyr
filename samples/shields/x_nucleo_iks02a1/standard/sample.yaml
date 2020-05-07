@@ -3,7 +3,7 @@ sample:
 common:
   min_ram: 16
 tests:
-  sample.shields.x_nucleo_iks02a1:
+  sample.shields.x_nucleo_iks02a1.standard:
     harness: shield
     tags: shield
     depends_on: arduino_i2c arduino_gpio
