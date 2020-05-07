@@ -50,7 +50,7 @@ static int eswifi_off_listen(struct net_context *context, int backlog)
 	__select_socket(eswifi, socket->index);
 
 	/* Set backlog */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P8=%d\r", backlog);
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P8=%d\r", backlog);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to start set listen backlog");
@@ -196,7 +196,7 @@ static int __eswifi_off_send_pkt(struct eswifi_dev *eswifi,
 	__select_socket(eswifi, socket->index);
 
 	/* header */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "S3=%u\r", bytes);
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "S3=%u\r", bytes);
 	offset = strlen(eswifi->buf);
 
 	/* copy payload */

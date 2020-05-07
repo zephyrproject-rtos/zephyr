@@ -41,7 +41,7 @@ static int __read_data(struct eswifi_dev *eswifi, size_t len, char **data)
 	int ret;
 
 	/* Set max read size */
-	snprintf(size, sizeof(size), "R1=%u\r", len);
+	snprintk(size, sizeof(size), "R1=%u\r", len);
 	ret = eswifi_at_cmd(eswifi, size);
 	if (ret < 0) {
 		LOG_ERR("Unable to set read size");
@@ -49,7 +49,7 @@ static int __read_data(struct eswifi_dev *eswifi, size_t len, char **data)
 	}
 
 	/* Set timeout */
-	snprintf(timeout, sizeof(timeout), "R2=%u\r", 30); /* 30 ms */
+	snprintk(timeout, sizeof(timeout), "R2=%u\r", 30); /* 30 ms */
 	ret = eswifi_at_cmd(eswifi, timeout);
 	if (ret < 0) {
 		LOG_ERR("Unable to set timeout");
@@ -73,7 +73,7 @@ int __eswifi_bind(struct eswifi_dev *eswifi, struct eswifi_off_socket *socket,
 	socket->port = sys_be16_to_cpu(net_sin(addr)->sin_port);
 
 	/* Set Local Port */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P2=%d\r", socket->port);
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P2=%d\r", socket->port);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to set local port");
@@ -161,7 +161,7 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 	__select_socket(eswifi, socket->index);
 
 	/* Set Remote IP */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P3=%u.%u.%u.%u\r",
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P3=%u.%u.%u.%u\r",
 		 sin_addr->s4_addr[0], sin_addr->s4_addr[1],
 		 sin_addr->s4_addr[2], sin_addr->s4_addr[3]);
 
@@ -172,7 +172,7 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 	}
 
 	/* Set Remote Port */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P4=%d\r",
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P4=%d\r",
 		(u16_t)sys_be16_to_cpu(net_sin(addr)->sin_port));
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
@@ -181,7 +181,7 @@ int __eswifi_off_start_client(struct eswifi_dev *eswifi,
 	}
 
 	/* Start TCP/UDP client */
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P6=1\r");
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P6=1\r");
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to start TCP/UDP client");
@@ -277,7 +277,7 @@ int __eswifi_socket_new(struct eswifi_dev *eswifi, int family, int type,
 		return -EIO;
 	}
 
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P1=%d\r", socket->type);
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P1=%d\r", socket->type);
 	err = eswifi_at_cmd(eswifi, eswifi->buf);
 	if (err < 0) {
 		LOG_ERR("Unable to set transport protocol");
