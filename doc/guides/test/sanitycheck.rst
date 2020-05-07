@@ -103,9 +103,9 @@ identifier:
   ``cmake``::
 
      # with west
-     west build -b tinytile
+     west build -b reel_board
      # with cmake
-     cmake -DBOARD=tinytile ..
+     cmake -DBOARD=reel_board ..
 
 name:
   The actual name of the board as it appears in marketing material.
