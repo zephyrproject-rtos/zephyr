@@ -521,6 +521,10 @@ class EDT:
             node = Node()
             node.edt = self
             node._node = dt_node
+            if "compatible" in node._node.props:
+                node.compats = node._node.props["compatible"].to_strings()
+            else:
+                node.compats = []
             node.bus_node = node._bus_node()
             node._init_binding()
             node._init_regs()
@@ -1058,8 +1062,7 @@ class Node:
         # initialized, which is guaranteed by going through the nodes in
         # node_iter() order.
 
-        if "compatible" in self._node.props:
-            self.compats = self._node.props["compatible"].to_strings()
+        if self.compats:
             on_bus = self.on_bus
 
             for compat in self.compats:
@@ -1074,8 +1077,6 @@ class Node:
             # No 'compatible' property. See if the parent binding has a
             # 'child-binding:' key that gives the binding (or a legacy
             # 'sub-node:' key).
-
-            self.compats = []
 
             binding_from_parent = self._binding_from_parent()
             if binding_from_parent:
