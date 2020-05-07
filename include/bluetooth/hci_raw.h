@@ -36,6 +36,8 @@ extern "C" {
 #define BT_HCI_ACL_COUNT 6
 #endif
 
+#define BT_BUF_TX_SIZE MAX(BT_BUF_RX_SIZE, BT_BUF_ACL_SIZE)
+
 /** @brief Send packet to the Bluetooth controller
  *
  * Send packet to the Bluetooth controller. Caller needs to
