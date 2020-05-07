@@ -1063,6 +1063,10 @@ class Node:
             on_bus = self.on_bus
 
             for compat in self.compats:
+                # Workaround for 'fixed-partitions' compatibles that are
+                # on non None bus.
+                if compat == 'fixed-partitions':
+                    on_bus = None
                 if (compat, on_bus) in self.edt._compat2binding:
                     # Binding found
                     self.matching_compat = compat
