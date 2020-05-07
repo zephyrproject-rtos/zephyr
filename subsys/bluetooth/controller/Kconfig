@@ -870,6 +870,15 @@ config BT_CTLR_USER_EVT_RANGE
 	  Number of event types reserved for proprietary use. The range
 	  is typically used when BT_CTLR_USER_EXT is in use.
 
+config BT_CTLR_USER_TICKER_ID_RANGE
+	int "Range of ticker id constants reserved for proprietary ticker nodes"
+	depends on BT_CTLR_USER_EXT
+	default 0
+	range 0 10
+	help
+	  Number of ticker ids reserved for proprietary use. The range
+	  is typically used when BT_CTLR_USER_EXT is in use.
+
 config BT_RX_USER_PDU_LEN
 	int "Maximum supported proprietary PDU buffer length"
 	depends on BT_CTLR_USER_EXT
