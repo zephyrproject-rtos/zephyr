@@ -100,3 +100,15 @@
 
 	clock-frequency = <44000000>;
 };
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
