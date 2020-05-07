@@ -276,9 +276,9 @@ static void test_stream_flash_buffered_write_callback(void)
 	zassert_equal(rc, -EFAULT, "expected failure from callback");
 }
 
-#ifdef CONFIG_STREAM_FLASH_ERASE
 static void test_stream_flash_buffered_write_whole_page(void)
 {
+#ifdef CONFIG_STREAM_FLASH_ERASE
 	int rc;
 
 	init_target();
@@ -305,10 +305,12 @@ static void test_stream_flash_buffered_write_whole_page(void)
 
 	/* Second page should not be erased */
 	VERIFY_WRITTEN(page_size, page_size);
+#endif
 }
 
 static void test_stream_flash_erase_page(void)
 {
+#ifdef CONFIG_STREAM_FLASH_ERASE
 	int rc;
 
 	init_target();
@@ -321,8 +323,8 @@ static void test_stream_flash_erase_page(void)
 	zassert_equal(rc, 0, "expected success");
 
 	VERIFY_ERASED(FLASH_BASE, page_size);
-}
 #endif
+}
 
 void test_main(void)
 {
@@ -340,10 +342,8 @@ void test_main(void)
 	     ztest_unit_test(test_stream_flash_buffered_write_multi_page),
 	     ztest_unit_test(test_stream_flash_buf_size_greater_than_page_size),
 	     ztest_unit_test(test_stream_flash_buffered_write_callback),
-#ifdef CONFIG_STREAM_FLASH_ERASE
 	     ztest_unit_test(test_stream_flash_buffered_write_whole_page),
 	     ztest_unit_test(test_stream_flash_erase_page),
-#endif
 	     ztest_unit_test(test_stream_flash_bytes_written)
 	 );
 
