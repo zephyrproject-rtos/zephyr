@@ -1416,10 +1416,12 @@ Tests should reference the category and subsystem with a dot as a separator.
                 _subcases, warnings = self.scan_file(filename)
                 if warnings:
                     logger.error("%s: %s" % (filename, warnings))
+                    raise SanityRuntimeError("%s: %s" % (filename, warnings))
                 if _subcases:
                     subcases += _subcases
             except ValueError as e:
                 logger.error("%s: can't find: %s" % (filename, e))
+
         for filename in glob.glob(os.path.join(path, "*.c")):
             try:
                 _subcases, warnings = self.scan_file(filename)
