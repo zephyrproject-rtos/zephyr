@@ -16,6 +16,10 @@
 static struct k_thread ztest_thread;
 #endif
 
+#ifdef CONFIG_ARCH_POSIX
+#include <unistd.h>
+#endif
+
 /* ZTEST_DMEM and ZTEST_BMEM are used for the application shared memory test  */
 
 ZTEST_DMEM enum {
@@ -26,6 +30,31 @@ ZTEST_DMEM enum {
 } phase = TEST_PHASE_FRAMEWORK;
 
 static ZTEST_BMEM int test_status;
+
+/**
+ * @brief Try to shorten a filename by removing the current directory
+ *
+ * This helps to reduce the very long filenames in assertion failures. It
+ * removes the current directory from the filename and returns the rest.
+ * This makes assertions a lot more readable, and sometimes they fit on one
+ * line.
+ *
+ * @param file Filename to check
+ * @returns Shortened filename, or @file if it could not be shortened
+ */
+const char *ztest_relative_filename(const char *file)
+{
+#ifdef CONFIG_ARCH_POSIX
+	const char *cwd;
+	char buf[200];
+
+	cwd = getcwd(buf, sizeof(buf));
+	if (cwd && strlen(file) > strlen(cwd) &&
+	    !strncmp(file, cwd, strlen(cwd)))
+		return file + strlen(cwd) + 1; /* move past the trailing '/' */
+#endif
+	return file;
+}
 
 static int cleanup_test(struct unit_test *test)
 {
