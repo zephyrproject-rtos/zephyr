@@ -437,6 +437,6 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 			    NULL,					\
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &adc_nrfx_driver_api)
+			    &adc_nrfx_driver_api);
 
 DT_INST_FOREACH(SAADC_INIT)

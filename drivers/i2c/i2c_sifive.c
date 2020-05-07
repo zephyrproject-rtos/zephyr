@@ -345,6 +345,6 @@ static struct i2c_driver_api i2c_sifive_api = {
 			    &i2c_sifive_cfg_##n, \
 			    POST_KERNEL, \
 			    CONFIG_I2C_INIT_PRIORITY, \
-			    &i2c_sifive_api)
+			    &i2c_sifive_api);
 
 DT_INST_FOREACH(I2C_SIFIVE_INIT)

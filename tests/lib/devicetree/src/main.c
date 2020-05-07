@@ -1179,9 +1179,9 @@ static const struct gpio_driver_api test_api;
 			    &gpio_info_##num,			\
 			    POST_KERNEL,			\
 			    CONFIG_APPLICATION_INIT_PRIORITY,	\
-			    &test_api)
+			    &test_api);
 
-DT_INST_FOREACH(TEST_GPIO_INIT);
+DT_INST_FOREACH(TEST_GPIO_INIT)
 
 static inline struct test_gpio_data *to_data(struct device *dev)
 {
@@ -1227,7 +1227,7 @@ static void test_devices(void)
 	 * using macros with side effects in the current scope.
 	 */
 #undef SET_BIT
-#define SET_BIT(i) do { unsigned int bit = BIT(i); val |= bit; } while (0)
+#define SET_BIT(i) do { unsigned int bit = BIT(i); val |= bit; } while (0);
 	val = 0;
 	DT_INST_FOREACH(SET_BIT);
 	zassert_equal(val, 0x3, "foreach vnd_gpio");

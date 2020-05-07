@@ -556,7 +556,7 @@ def write_global_compat_info(edt):
                 "\n")
     for numinsts in range(1, max(compat2numinst.values(), default=0) + 1):
         out_define(f"DT_FOREACH_IMPL_{numinsts}(fn)",
-                   " ".join([f"fn({i});" for i in range(numinsts)]))
+                   " ".join([f"fn({i})" for i in range(numinsts)]))
 
     out_comment("Macros for enabled instances of each compatible\n")
     n_inst_macros = {}

@@ -244,6 +244,6 @@ static const struct pwm_driver_api pwm_sifive_api = {
 			    &pwm_sifive_cfg_##n,	\
 			    POST_KERNEL,	\
 			    CONFIG_PWM_SIFIVE_INIT_PRIORITY,	\
-			    &pwm_sifive_api)
+			    &pwm_sifive_api);
 
 DT_INST_FOREACH(PWM_SIFIVE_INIT)

@@ -338,6 +338,6 @@ static const struct uart_mcux_config uart_mcux_##n##_config = {		\
 									\
 	UART_MCUX_CONFIG_FUNC(n)					\
 									\
-	UART_MCUX_INIT_CFG(n)
+	UART_MCUX_INIT_CFG(n);
 
 DT_INST_FOREACH(UART_MCUX_INIT)

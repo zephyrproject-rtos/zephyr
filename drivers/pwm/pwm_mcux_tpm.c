@@ -199,6 +199,6 @@ static const struct pwm_driver_api mcux_tpm_driver_api = {
 			    &mcux_tpm_init, &mcux_tpm_data_##n, \
 			    &mcux_tpm_config_##n, \
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
-			    &mcux_tpm_driver_api)
+			    &mcux_tpm_driver_api);
 
 DT_INST_FOREACH(TPM_DEVICE)

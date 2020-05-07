@@ -183,6 +183,6 @@ BUILD_ASSERT(CONFIG_GPIO_LMP90XXX_INIT_PRIORITY >
 			    &gpio_lmp90xxx_##id##_data,			\
 			    &gpio_lmp90xxx_##id##_cfg, POST_KERNEL,	\
 			    CONFIG_GPIO_LMP90XXX_INIT_PRIORITY,		\
-			    &gpio_lmp90xxx_api)
+			    &gpio_lmp90xxx_api);
 
 DT_INST_FOREACH(GPIO_LMP90XXX_DEVICE)

@@ -394,6 +394,6 @@ static struct pwm_driver_api pwm_xec_api = {
 			    &pwm_xec_dev_config_##inst,			\
 			    POST_KERNEL,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &pwm_xec_api)
+			    &pwm_xec_api);
 
 DT_INST_FOREACH(XEC_INST_INIT)

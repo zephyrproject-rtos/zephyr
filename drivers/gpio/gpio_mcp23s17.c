@@ -438,6 +438,6 @@ static int mcp23s17_init(struct device *dev)
 			    &mcp23s17_##inst##_config,			\
 			    POST_KERNEL,				\
 			    CONFIG_GPIO_MCP23S17_INIT_PRIORITY,		\
-			    &api_table)
+			    &api_table);
 
 DT_INST_FOREACH(MCP23S17_INIT)

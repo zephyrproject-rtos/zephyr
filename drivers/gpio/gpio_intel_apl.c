@@ -599,7 +599,7 @@ DEVICE_AND_API_INIT(gpio_intel_apl_##n,					\
 		    &gpio_intel_apl_data_##n,				\
 		    &gpio_intel_apl_cfg_##n,				\
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
-		    &gpio_intel_apl_api)
+		    &gpio_intel_apl_api);
 
 /* "sub" devices.  no more than GPIO_INTEL_APL_NR_SUBDEVS of these! */
 DT_INST_FOREACH(GPIO_INTEL_APL_DEV_CFG_DATA)

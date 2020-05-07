@@ -238,6 +238,6 @@ static const struct led_strip_driver_api ws2812_gpio_api = {
 			    &ws2812_gpio_##idx##_data,			\
 			    &ws2812_gpio_##idx##_cfg, POST_KERNEL,	\
 			    CONFIG_LED_STRIP_INIT_PRIORITY,		\
-			    &ws2812_gpio_api)
+			    &ws2812_gpio_api);
 
 DT_INST_FOREACH(WS2812_GPIO_DEVICE)
