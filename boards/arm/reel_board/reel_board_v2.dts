@@ -39,7 +39,7 @@
 		spi-max-frequency = <4000000>;
 		reg = <0>;
 		width = <250>;
-		height = <120>;
+		height = <122>;
 		pp-width-bits = <8>;
 		pp-height-bits = <16>;
 		reset-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
