@@ -24,7 +24,7 @@ static u32_t val32;
 #endif
 
 /* leverage that this area has to be embededd flash part */
-#ifdef DT_FLASH_AREA_IMAGE_0_ID
+#if FLASH_AREA_LABEL_EXISTS(image_0)
 #define FLASH_WRITE_BLOCK_SIZE \
 	DT_PROP(DT_CHOSEN(zephyr_flash), write_block_size)
 static const volatile __attribute__((section(".rodata")))
@@ -82,7 +82,7 @@ void test_init(void)
 
 void test_prepare_storage(void)
 {
-#ifdef DT_FLASH_AREA_IMAGE_0_ID
+#if FLASH_AREA_LABEL_EXISTS(image_0)
 /* This procedure uses mark which is stored inside SoC embedded program
  * flash. It will not work on devices on which read/write to them is not
  * possible.
@@ -94,13 +94,13 @@ void test_prepare_storage(void)
 
 	if (prepared_mark[0] == ERASED_VAL) {
 		TC_PRINT("First run: erasing the storage\r\n");
-		err = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fa);
+		err = flash_area_open(FLASH_AREA_ID(storage), &fa);
 		zassert_true(err == 0, "Can't open storage flash area");
 
 		err = flash_area_erase(fa, 0, fa->fa_size);
 		zassert_true(err == 0, "Can't erase storage flash area");
 
-		err = flash_area_open(DT_FLASH_AREA_IMAGE_0_ID, &fa);
+		err = flash_area_open(FLASH_AREA_ID(image_0), &fa);
 		zassert_true(err == 0, "Can't open storage flash area");
 
 		dev = flash_area_get_device(fa);

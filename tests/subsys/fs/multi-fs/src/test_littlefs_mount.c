@@ -18,7 +18,7 @@ FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 struct fs_mount_t littlefs_mnt = {
 	.type = FS_LITTLEFS,
 	.fs_data = &storage,
-	.storage_dev = (void *)DT_FLASH_AREA_STORAGE_ID,
+	.storage_dev = (void *)FLASH_AREA_ID(storage),
 	.mnt_point = "/littlefs"
 };
 

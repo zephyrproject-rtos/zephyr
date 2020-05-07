@@ -269,12 +269,12 @@ int settings_backend_init(void)
 	struct flash_sector hw_flash_sector;
 	u32_t sector_cnt = 1;
 
-	rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fa);
+	rc = flash_area_open(FLASH_AREA_ID(storage), &fa);
 	if (rc) {
 		return rc;
 	}
 
-	rc = flash_area_get_sectors(DT_FLASH_AREA_STORAGE_ID, &sector_cnt,
+	rc = flash_area_get_sectors(FLASH_AREA_ID(storage), &sector_cnt,
 				    &hw_flash_sector);
 	if (rc == -ENODEV) {
 		return rc;

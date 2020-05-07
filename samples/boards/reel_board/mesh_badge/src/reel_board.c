@@ -11,6 +11,7 @@
 #include <display/cfb.h>
 #include <sys/printk.h>
 #include <drivers/flash.h>
+#include <storage/flash_map.h>
 #include <drivers/sensor.h>
 
 #include <string.h>
@@ -585,8 +586,8 @@ static int erase_storage(void)
 
 	dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
-	return flash_erase(dev, DT_FLASH_AREA_STORAGE_OFFSET,
-			   DT_FLASH_AREA_STORAGE_SIZE);
+	return flash_erase(dev, FLASH_AREA_OFFSET(storage),
+			   FLASH_AREA_SIZE(storage));
 }
 
 void board_refresh_display(void)

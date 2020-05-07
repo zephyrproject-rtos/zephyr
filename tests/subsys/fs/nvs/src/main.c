@@ -25,7 +25,7 @@
 #include <fs/nvs.h>
 #include "nvs_priv.h"
 
-#define TEST_FLASH_AREA_STORAGE_OFFSET	DT_FLASH_AREA_STORAGE_OFFSET
+#define TEST_FLASH_AREA_STORAGE_OFFSET	FLASH_AREA_OFFSET(storage)
 #define TEST_DATA_ID			1
 #define TEST_SECTOR_COUNT		5U
 
@@ -63,7 +63,7 @@ void test_nvs_init(void)
 	const struct flash_area *fa;
 	struct flash_pages_info info;
 
-	err = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fa);
+	err = flash_area_open(FLASH_AREA_ID(storage), &fa);
 	zassert_true(err == 0, "flash_area_open() fail: %d", err);
 
 	fs.offset = TEST_FLASH_AREA_STORAGE_OFFSET;

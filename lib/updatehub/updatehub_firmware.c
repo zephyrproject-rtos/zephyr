@@ -10,7 +10,7 @@ bool updatehub_get_firmware_version(char *version, int version_len)
 {
 	struct mcuboot_img_header header;
 
-	if (boot_read_bank_header(DT_FLASH_AREA_IMAGE_0_ID, &header,
+	if (boot_read_bank_header(FLASH_AREA_ID(image_0), &header,
 				  version_len) != 0) {
 		return false;
 	}
