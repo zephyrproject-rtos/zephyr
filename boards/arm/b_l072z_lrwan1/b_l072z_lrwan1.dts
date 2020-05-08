@@ -86,3 +86,7 @@ arduino_i2c: &i2c1 {};
 &rtc {
 	status = "okay";
 };
+
+&rng {
+	status = "okay";
+};

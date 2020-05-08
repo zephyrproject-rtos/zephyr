@@ -135,6 +135,8 @@ The Zephyr B-L072Z-LRWAN1 Discovery board configuration supports the following h
 +-----------+------------+-------------------------------------+
 | RTC       | on-chip    | counter                             |
 +-----------+------------+-------------------------------------+
+| TRNG      | on-chip    | true random number generator        |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
