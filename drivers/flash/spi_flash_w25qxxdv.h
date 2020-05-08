@@ -13,12 +13,13 @@
 #ifndef ZEPHYR_DRIVERS_FLASH_SPI_FLASH_W25QXXDV_H_
 #define ZEPHYR_DRIVERS_FLASH_SPI_FLASH_W25QXXDV_H_
 
+#define DT_DRV_COMPAT winbond_w25q16
 
 struct spi_flash_data {
 	struct device *spi;
-#if defined(CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control cs_ctrl;
-#endif /* CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS */
+#endif
 	struct spi_config spi_cfg;
 #if defined(CONFIG_MULTITHREADING)
 	struct k_sem sem;

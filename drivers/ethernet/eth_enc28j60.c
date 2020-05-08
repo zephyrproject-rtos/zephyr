@@ -732,7 +732,7 @@ static int eth_enc28j60_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	context->spi_cs.gpio_dev =
 		device_get_binding((char *)config->spi_cs_port);
 	if (!context->spi_cs.gpio_dev) {
@@ -742,7 +742,7 @@ static int eth_enc28j60_init(struct device *dev)
 
 	context->spi_cs.gpio_pin = config->spi_cs_pin;
 	context->spi_cfg.cs = &context->spi_cs;
-#endif /* CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS */
+#endif
 
 	/* Initialize GPIO */
 	context->gpio = device_get_binding((char *)config->gpio_port);
@@ -823,10 +823,10 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.spi_port = DT_INST_BUS_LABEL(0),
 	.spi_freq  = DT_INST_PROP(0, spi_max_frequency),
 	.spi_slave = DT_INST_REG_ADDR(0),
-#ifdef CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-#endif /* CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS */
+#endif
 	.full_duplex = IS_ENABLED(CONFIG_ETH_ENC28J60_0_FULL_DUPLEX),
 	.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,
 };

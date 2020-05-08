@@ -20,16 +20,9 @@ config SPI_FLASH_W25QXXDV_INIT_PRIORITY
 	  Device is connected to SPI bus, it has to
 	  be initialized after SPI driver.
 
-config SPI_FLASH_W25QXXDV_GPIO_SPI_CS
-	bool "Manage SPI CS through a GPIO pin"
-	help
-	  This option is useful if one needs to manage SPI CS through a GPIO
-	  pin to by-pass the SPI controller's CS logic.
-
 config SPI_FLASH_W25QXXDV_GPIO_CS_WAIT_DELAY
 	int "Delay time in us"
 	default 0
-	depends on SPI_FLASH_W25QXXDV_GPIO_SPI_CS
 	help
 	  This is the wait delay (in us) to allow for CS switching to take effect
 
