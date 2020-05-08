@@ -47,32 +47,21 @@ static void lptim_irq_handler(struct device *unused)
 
 		k_spinlock_key_t key = k_spin_lock(&lock);
 
-		/* LPTIM1 CNT register is already reset after one autoreload */
-		volatile u32_t lp_time = LL_LPTIM_GetCounter(LPTIM1);
-
-		/* It should be noted that to read reliably the content
-		 * of the LPTIM_CNT register, two successive read accesses
-		 * must be performed and compared
-		 */
-
-		while (lp_time != LL_LPTIM_GetCounter(LPTIM1)) {
-			lp_time = LL_LPTIM_GetCounter(LPTIM1);
-		}
-		lp_time += LL_LPTIM_GetAutoReload(LPTIM1) + 1;
-
 		/* do not change ARR yet, z_clock_announce will do */
 		LL_LPTIM_ClearFLAG_ARRM(LPTIM1);
 
-		/* increase the total nb of lptim count
+		/* increase the total nb of autoreload count
 		 * used in the z_timer_cycle_get_32() function.
 		 * Reading the CNT register gives a reliable value
 		 */
-		accumulated_lptim_cnt += lp_time;
+		u32_t autoreload = LL_LPTIM_GetAutoReload(LPTIM1) + 1;
+
+		accumulated_lptim_cnt += autoreload;
 
 		k_spin_unlock(&lock, key);
 
 		/* announce the elapsed time in ms (count register is 16bit) */
-		u32_t dticks = (lp_time
+		u32_t dticks = (autoreload
 				* CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 				/ LPTIM_CLOCK;
 
