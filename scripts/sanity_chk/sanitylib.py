@@ -1778,7 +1778,8 @@ class FilterBuilder(CMake):
         if self.testcase and self.testcase.tc_filter:
             try:
                 if os.path.exists(dts_path):
-                    edt = edtlib.EDT(dts_path, [os.path.join(ZEPHYR_BASE, "dts", "bindings")])
+                    edt = edtlib.EDT(dts_path, [os.path.join(ZEPHYR_BASE, "dts", "bindings")],
+                            warn_reg_unit_address_mismatch=False)
                 else:
                     edt = None
                 res = expr_parser.parse(self.testcase.tc_filter, filter_data, edt)
