@@ -201,7 +201,7 @@ static int wait_for_input(int timeout)
 	return res;
 }
 
-#define ALIVE_TIME	K_SECONDS(60)
+#define ALIVE_TIME	(60 * MSEC_PER_SEC)
 
 static struct mqtt_utf8 password = {
 	.utf8 = token
@@ -316,17 +316,17 @@ void mqtt_startup(char *hostname, int port)
 			LOG_ERR("could not connect, error %d", err);
 			mqtt_disconnect(client);
 			retries--;
-			k_sleep(ALIVE_TIME);
+			k_msleep(ALIVE_TIME);
 			continue;
 		}
 
-		if (wait_for_input(5000) > 0) {
+		if (wait_for_input(5 * MSEC_PER_SEC) > 0) {
 			mqtt_input(client);
 			if (!connected) {
 				LOG_ERR("failed to connect to mqtt_broker");
 				mqtt_disconnect(client);
 				retries--;
-				k_sleep(ALIVE_TIME);
+				k_msleep(ALIVE_TIME);
 				continue;
 			} else {
 				break;
@@ -335,7 +335,7 @@ void mqtt_startup(char *hostname, int port)
 			LOG_ERR("failed to connect to mqtt broker");
 			mqtt_disconnect(client);
 			retries--;
-			k_sleep(ALIVE_TIME);
+			k_msleep(ALIVE_TIME);
 			continue;
 		}
 	}
@@ -385,7 +385,7 @@ void mqtt_startup(char *hostname, int port)
 		/* idle and process messages */
 		while (k_uptime_get() < next_alive) {
 			LOG_INF("... idling ...");
-			if (wait_for_input(5000) > 0) {
+			if (wait_for_input(5 * MSEC_PER_SEC) > 0) {
 				mqtt_input(client);
 			}
 		}
