@@ -150,6 +150,9 @@ static int gpio_xec_pin_interrupt_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
+	/* Disable interrupt in the EC aggregator */
+	MCHP_GIRQ_ENCLR(config->girq_id) = BIT(pin);
+
 	/* Assemble mask for level/edge triggered interrrupts */
 	mask |= MCHP_GPIO_CTRL_IDET_MASK;
 
@@ -158,9 +161,6 @@ static int gpio_xec_pin_interrupt_configure(struct device *dev,
 		 * results in level triggered/low interrupts
 		 */
 		pcr1 |= MCHP_GPIO_CTRL_IDET_DISABLE;
-
-		/* Disable interrupt in the EC aggregator */
-		MCHP_GIRQ_ENCLR(config->girq_id) = BIT(pin);
 	} else {
 		if (mode == GPIO_INT_MODE_LEVEL) {
 			/* Enable level interrupts */
@@ -187,12 +187,6 @@ static int gpio_xec_pin_interrupt_configure(struct device *dev,
 		}
 
 		pcr1 |= gpio_interrupt;
-
-		/* We enable the interrupts in the EC aggregator so that the
-		 * result can be forwarded to the ARM NVIC
-		 */
-		MCHP_GIRQ_SRC_CLR(config->girq_id, pin);
-		MCHP_GIRQ_ENSET(config->girq_id) = BIT(pin);
 	}
 
 	/* Now write contents of pcr1 variable to the PCR1 register that
@@ -205,6 +199,14 @@ static int gpio_xec_pin_interrupt_configure(struct device *dev,
 		drv_data->pin_callback_enables &= ~BIT(pin);
 	} else {
 		drv_data->pin_callback_enables |= BIT(pin);
+	}
+
+	if (mode != GPIO_INT_MODE_DISABLED) {
+		/* We enable the interrupts in the EC aggregator so that the
+		 * result can be forwarded to the ARM NVIC
+		 */
+		MCHP_GIRQ_SRC_CLR(config->girq_id, pin);
+		MCHP_GIRQ_ENSET(config->girq_id) = BIT(pin);
 	}
 
 	return 0;
