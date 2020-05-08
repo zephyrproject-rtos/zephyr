@@ -7,10 +7,14 @@
 import argparse
 import os
 
-import canopen
-from progress.bar import Bar
-
 from runners.core import ZephyrBinaryRunner, RunnerCaps
+
+try:
+    import canopen
+    from progress.bar import Bar
+    MISSING_REQUIREMENTS = False
+except ImportError:
+    MISSING_REQUIREMENTS = True
 
 # Default Python-CAN context to use, see python-can documentation for details
 DEFAULT_CAN_CONTEXT = 'default'
@@ -38,6 +42,11 @@ class CANopenBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg, node_id, can_context=DEFAULT_CAN_CONTEXT,
                  program_number=1, confirm=True,
                  confirm_only=True, timeout=10):
+        if MISSING_REQUIREMENTS:
+            raise RuntimeError('one or more Python dependencies were missing; '
+                               "see the getting started guide for details on "
+                               "how to fix")
+
         super(CANopenBinaryRunner, self).__init__(cfg)
         self.bin_file = cfg.bin_file
         self.confirm = confirm
