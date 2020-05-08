@@ -77,9 +77,14 @@ enum dma_addr_adj {
  *     reserved           [ 13 : 15 ]
  */
 struct dma_block_config {
+#ifdef CONFIG_DMA_64BIT
+	uint64_t source_address;
+	uint64_t dest_address;
+#else
 	uint32_t source_address;
-	uint32_t source_gather_interval;
 	uint32_t dest_address;
+#endif
+	uint32_t source_gather_interval;
 	uint32_t dest_scatter_interval;
 	uint16_t dest_scatter_count;
 	uint16_t source_gather_count;
@@ -186,8 +191,13 @@ struct dma_status {
 typedef int (*dma_api_config)(struct device *dev, uint32_t channel,
 			      struct dma_config *config);
 
+#ifdef CONFIG_DMA_64BIT
+typedef int (*dma_api_reload)(struct device *dev, uint32_t channel,
+		uint64_t src, uint64_t dst, size_t size);
+#else
 typedef int (*dma_api_reload)(struct device *dev, uint32_t channel,
 		uint32_t src, uint32_t dst, size_t size);
+#endif
 
 typedef int (*dma_api_start)(struct device *dev, uint32_t channel);
 
@@ -240,8 +250,13 @@ static inline int dma_config(struct device *dev, uint32_t channel,
  * @retval 0 if successful.
  * @retval Negative errno code if failure.
  */
+#ifdef CONFIG_DMA_64BIT
+static inline int dma_reload(struct device *dev, uint32_t channel,
+		uint64_t src, uint64_t dst, size_t size)
+#else
 static inline int dma_reload(struct device *dev, uint32_t channel,
 		uint32_t src, uint32_t dst, size_t size)
+#endif
 {
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->driver_api;
