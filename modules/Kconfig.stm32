@@ -3,6 +3,9 @@
 # Copyright (c) 2016 Linaro Limited.
 # SPDX-License-Identifier: Apache-2.0
 
+config HAS_STM32LIB
+	bool
+
 config HAS_STM32CUBE
 	bool
 	select HAS_CMSIS_CORE

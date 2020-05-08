@@ -49,7 +49,7 @@ config BT_SPI
 config BT_STM32_IPM
 	bool "IPM HCI"
 	select USE_STM32_HAL_CORTEX
-	select HAS_STLIB
+	select HAS_STM32LIB
 	help
 	  TODO
 
