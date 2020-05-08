@@ -13,7 +13,10 @@ from runners.core import ZephyrBinaryRunner, MissingProgram
 # Keep this list sorted by runner name.
 from runners import blackmagicprobe
 from runners import bossac
-from runners import canopen_program
+try:
+    from runners import canopen_program
+except ImportError:
+    pass
 from runners import dediprog
 from runners import dfu
 from runners import esp32
