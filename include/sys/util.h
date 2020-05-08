@@ -408,7 +408,7 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  * @param ... 		list to be processed
  */
 #define LIST_DROP_EMPTY(...) \
-	Z_LIST_DROP_FIRST(FOR_EACH(Z_LIST_NO_EMPTIES, __VA_ARGS__))
+	Z_LIST_DROP_FIRST(FOR_EACH(Z_LIST_NO_EMPTIES, (), __VA_ARGS__))
 
 /* Adding ',' after each element would add empty element at the end of
  * list, which is hard to remove, so instead precede each element with ',',
@@ -959,16 +959,16 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
 #define UTIL_LISTIFY(LEN, F, ...) UTIL_EVAL(UTIL_REPEAT(LEN, F, __VA_ARGS__))
 
 /* Set of internal macros used for FOR_EACH series of macros. */
-#define Z_FOR_EACH_IDX(count, n, macro, semicolon, fixed_arg0, fixed_arg1, ...)\
+#define Z_FOR_EACH_IDX(count, n, macro, sep, fixed_arg0, fixed_arg1, ...)\
 	UTIL_WHEN(count)						\
 	(								\
 		UTIL_OBSTRUCT(macro)					\
 		(							\
 			fixed_arg0, fixed_arg1, n, GET_ARG1(__VA_ARGS__)\
-		)semicolon						\
+		) COND_CODE_1(count, (), (__DEBRACKET sep))		\
 		UTIL_OBSTRUCT(Z_FOR_EACH_IDX_INDIRECT) ()		\
 		(							\
-			UTIL_DEC(count), UTIL_INC(n), macro, semicolon, \
+			UTIL_DEC(count), UTIL_INC(n), macro, sep,	\
 			fixed_arg0, fixed_arg1,				\
 			GET_ARGS_LESS_1(__VA_ARGS__)			\
 		)							\
@@ -992,10 +992,13 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  * @brief Calls macro F for each provided argument with index as first argument
  *	  and nth parameter as the second argument.
  *
+ * @note Separator argument must be in parentheses. It is required to enable
+ *	 providing comma as separator.
+ *
  * Example:
  *
- *     #define F(idx, x) int a##idx = x;
- *     FOR_EACH_IDX(F, 4, 5, 6)
+ *     #define F(idx, x) int a##idx = x
+ *     FOR_EACH_IDX(F, (;), 4, 5, 6);
  *
  * will result in following code:
  *
@@ -1005,11 +1008,12 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  *
  * @param F Macro takes index and first argument and nth variable argument as
  *	    the second one.
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses.
  * @param ... Variable list of argument. For each argument macro F is executed.
  */
-#define FOR_EACH_IDX(F, ...) \
+#define FOR_EACH_IDX(F, sep, ...) \
 	Z_FOR_EACH_IDX2(NUM_VA_ARGS_LESS_1(__VA_ARGS__, _), \
-			0, Z_FOR_EACH_SWALLOW_FIXED_ARG, /*no ;*/, \
+			0, Z_FOR_EACH_SWALLOW_FIXED_ARG, sep, \
 			F, 0, __VA_ARGS__)
 
 /**
@@ -1017,10 +1021,12 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  *	  and nth parameter as the second argument and fixed argument as the
  *	  third one.
  *
+ * @note Separator argument must be in parentheses. It is required to enable
+ *	 providing comma as separator.
  * Example:
  *
- *     #define F(idx, x, fixed_arg) int fixed_arg##idx = x;
- *     FOR_EACH_IDX_FIXED_ARG(F, a, 4, 5, 6)
+ *     #define F(idx, x, fixed_arg) int fixed_arg##idx = x
+ *     FOR_EACH_IDX_FIXED_ARG(F, (;), a, 4, 5, 6);
  *
  * will result in following code:
  *
@@ -1030,21 +1036,24 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  *
  * @param F Macro takes index and first argument and nth variable argument as
  *	    the second one and fixed argumnet as the third.
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses.
  * @param fixed_arg Fixed argument passed to F macro.
  * @param ... Variable list of argument. For each argument macro F is executed.
  */
-#define FOR_EACH_IDX_FIXED_ARG(F, fixed_arg, ...) \
+#define FOR_EACH_IDX_FIXED_ARG(F, sep, fixed_arg, ...) \
 	Z_FOR_EACH_IDX2(NUM_VA_ARGS_LESS_1(__VA_ARGS__, _), \
-			0, Z_FOR_EACH_SWALLOW_NOTHING, /*no ;*/, \
+			0, Z_FOR_EACH_SWALLOW_NOTHING, sep, \
 			F, fixed_arg, __VA_ARGS__)
 
 /**
  * @brief Calls macro F for each provided argument.
  *
+ * @note Separator argument must be in parentheses. It is required to enable
+ *	 providing comma as separator.
  * Example:
  *
- *     #define F(x) int a##x;
- *     FOR_EACH(F, 4, 5, 6)
+ *     #define F(x) int a##x
+ *     FOR_EACH(F, (;), 4, 5, 6);
  *
  * will result in following code:
  *
@@ -1053,23 +1062,25 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  *     int a6;
  *
  * @param F Macro takes nth variable argument as the argument.
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses.
  * @param ... Variable list of argument. For each argument macro F is executed.
  */
-#define FOR_EACH(F, ...) \
+#define FOR_EACH(F, sep, ...) \
 	Z_FOR_EACH_IDX2(NUM_VA_ARGS_LESS_1(__VA_ARGS__, _), \
-			0, Z_FOR_EACH_SWALLOW_INDEX_FIXED_ARG, /*no ;*/, \
+			0, Z_FOR_EACH_SWALLOW_INDEX_FIXED_ARG, sep, \
 			F, 0, __VA_ARGS__)
 
 /**
  * @brief Calls macro F for each provided argument with additional fixed
  *	  argument.
  *
- * After each iteration semicolon is added.
+ * @note Separator argument must be in parentheses. It is required to enable
+ *	 providing comma as separator.
  *
  * Example:
  *
  *     static void func(int val, void *dev);
- *     FOR_EACH_FIXED_ARG(func, dev, 4, 5, 6)
+ *     FOR_EACH_FIXED_ARG(func, (;), dev, 4, 5, 6);
  *
  * will result in following code:
  *
@@ -1079,12 +1090,13 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  *
  * @param F Macro takes nth variable argument as the first parameter and
  *	     fixed argument as the second parameter.
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses.
  * @param fixed_arg Fixed argument forward to macro execution for each argument.
  * @param ... Variable list of argument. For each argument macro F is executed.
  */
-#define FOR_EACH_FIXED_ARG(F, fixed_arg, ...) \
+#define FOR_EACH_FIXED_ARG(F, sep, fixed_arg, ...) \
 	Z_FOR_EACH_IDX2(NUM_VA_ARGS_LESS_1(__VA_ARGS__, _), \
-			0, Z_FOR_EACH_SWALLOW_INDEX, ;, \
+			0, Z_FOR_EACH_SWALLOW_INDEX, sep, \
 			F, fixed_arg, __VA_ARGS__)
 
 /**@brief Implementation details for NUM_VAR_ARGS */
@@ -1120,13 +1132,13 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  *
  * @deprecated Use FOR_EACH instead.
  *
- * @param ... Macro name to be used for argument processing followed by
- *            arguments to process. Macro should have following
- *            form: MACRO(argument).
+ * @param F   Macro name to be used for argument processing Macro should have
+ *	      following form: MACRO(argument).
+ * @param ... Arguments to process.
  *
  * @return All arguments processed by given macro
  */
-#define MACRO_MAP(...) __DEPRECATED_MACRO FOR_EACH(__VA_ARGS__)
+#define MACRO_MAP(F, ...) __DEPRECATED_MACRO FOR_EACH(F, (), __VA_ARGS__)
 
 /**
  * @brief Mapping macro that pastes results together

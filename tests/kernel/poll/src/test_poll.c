@@ -627,7 +627,7 @@ void test_poll_grant_access(void)
 			      &no_wait_signal, &wait_sem, &wait_fifo,
 			      &cancel_fifo, &non_cancel_fifo,
 			      &wait_signal, &test_thread,
-			      &test_stack, &multi_sem, &multi_reply)
+			      &test_stack, &multi_sem, &multi_reply);
 }
 
 void test_poll_zero_events(void)

@@ -830,7 +830,7 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  * @param ... list of kernel object pointers
  */
 #define k_thread_access_grant(thread, ...) \
-	FOR_EACH_FIXED_ARG(k_object_access_grant, thread, __VA_ARGS__)
+	FOR_EACH_FIXED_ARG(k_object_access_grant, (;), thread, __VA_ARGS__)
 
 /**
  * @brief Assign a resource memory pool to a thread
