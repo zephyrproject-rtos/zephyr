@@ -803,43 +803,43 @@ static bool reliable_cancel_capable(const char *dev_name)
 	 */
 #ifdef CONFIG_COUNTER_RTC0
 	/* Nordic RTC0 may be reserved for Bluetooth */
-	if (strcmp(dev_name, DT_NORDIC_NRF_RTC_RTC_0_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(rtc0))) == 0) {
 		return true;
 	}
 #endif
 
 #ifdef CONFIG_COUNTER_RTC2
-	if (strcmp(dev_name, DT_NORDIC_NRF_RTC_RTC_2_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(rtc2))) == 0) {
 		return true;
 	}
 #endif
 
 #ifdef CONFIG_COUNTER_TIMER0
-	if (strcmp(dev_name, DT_NORDIC_NRF_TIMER_TIMER_0_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(timer0))) == 0) {
 		return true;
 	}
 #endif
 
 #ifdef CONFIG_COUNTER_TIMER1
-	if (strcmp(dev_name, DT_NORDIC_NRF_TIMER_TIMER_1_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(timer1))) == 0) {
 		return true;
 	}
 #endif
 
 #ifdef CONFIG_COUNTER_TIMER2
-	if (strcmp(dev_name, DT_NORDIC_NRF_TIMER_TIMER_2_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(timer2))) == 0) {
 		return true;
 	}
 #endif
 
 #ifdef CONFIG_COUNTER_TIMER3
-	if (strcmp(dev_name, DT_NORDIC_NRF_TIMER_TIMER_3_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(timer3))) == 0) {
 		return true;
 	}
 #endif
 
 #ifdef CONFIG_COUNTER_TIMER4
-	if (strcmp(dev_name, DT_NORDIC_NRF_TIMER_TIMER_4_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(timer4))) == 0) {
 		return true;
 	}
 #endif
