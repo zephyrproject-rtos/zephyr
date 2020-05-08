@@ -29,7 +29,8 @@ def main():
                          # Suppress this warning if it's suppressed in dtc
                          warn_reg_unit_address_mismatch=
                              "-Wno-simple_bus_reg" not in args.dtc_flags,
-                         default_prop_types=False)
+                         default_prop_types=False,
+                         support_fixed_partitions_on_any_bus = False)
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 

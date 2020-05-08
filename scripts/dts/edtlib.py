@@ -153,7 +153,8 @@ class EDT:
     """
     def __init__(self, dts, bindings_dirs, warn_file=None,
                  warn_reg_unit_address_mismatch=True,
-                 default_prop_types=True):
+                 default_prop_types=True,
+                 support_fixed_partitions_on_any_bus=True):
         """
         EDT constructor. This is the top-level entry point to the library.
 
@@ -175,6 +176,11 @@ class EDT:
         default_prop_types (default: True):
           If True, default property types will be used when a node has no
           bindings.
+
+        support_fixed_partitions_on_any_bus (default True):
+          If True, set the Node.bus for 'fixed-partitions' compatible nodes
+          to None.  This allows 'fixed-partitions' binding to match regardless
+          of the bus the 'fixed-partition' is under.
         """
         # Do this indirection with None in case sys.stderr is deliberately
         # overridden
@@ -182,6 +188,7 @@ class EDT:
 
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
         self._default_prop_types = default_prop_types
+        self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
 
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
@@ -525,7 +532,7 @@ class EDT:
                 node.compats = node._node.props["compatible"].to_strings()
             else:
                 node.compats = []
-            node.bus_node = node._bus_node()
+            node.bus_node = node._bus_node(self._fixed_partitions_no_bus)
             node._init_binding()
             node._init_regs()
 
@@ -1111,7 +1118,7 @@ class Node:
 
         return None
 
-    def _bus_node(self):
+    def _bus_node(self, support_fixed_partitions_on_any_bus = True):
         # Returns the value for self.bus_node. Relies on parent nodes being
         # initialized before their children.
 
@@ -1119,12 +1126,12 @@ class Node:
             # This is the root node
             return None
 
-        # Treat fixed-partitions as if they are not on any bus.  The reason is
+        # Treat 'fixed-partitions' as if they are not on any bus.  The reason is
         # that flash nodes might be on a SPI or controller or SoC bus.  Having
         # bus be None means we'll always match the binding for fixed-partitions
         # also this means want processing the fixed-partitions node we wouldn't
         # try to do anything bus specific with it.
-        if "fixed-partitions" in self.compats:
+        if support_fixed_partitions_on_any_bus and "fixed-partitions" in self.compats:
             return None
 
         if self.parent.bus:
