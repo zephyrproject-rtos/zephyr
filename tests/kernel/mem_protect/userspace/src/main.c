@@ -1198,6 +1198,32 @@ void test_syscall_context(void)
 	check_syscall_context();
 }
 
+static void tls_leakage_user_part(void *p1, void *p2, void *p3)
+{
+	char *tls_area = p1;
+
+	for (int i = 0; i < sizeof(struct _thread_userspace_local_data); i++) {
+		zassert_false(tls_area[i] == 0xff,
+			      "TLS data leakage to user mode");
+	}
+}
+
+void test_tls_leakage(void)
+{
+	/* Tests two assertions:
+	 *
+	 * - That a user thread has full access to its TLS area
+	 * - That dropping to user mode doesn't allow any TLS data set in
+	 * supervisor mode to be leaked
+	 */
+
+	memset(_current->userspace_local_data, 0xff,
+	       sizeof(struct _thread_userspace_local_data));
+
+	k_thread_user_mode_enter(tls_leakage_user_part,
+				 _current->userspace_local_data, NULL, NULL);
+}
+
 void test_main(void)
 {
 	struct k_mem_partition *parts[] = {&part0, &part1,
@@ -1261,7 +1287,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_oops_maxint),
 			 ztest_user_unit_test(test_oops_stackcheck),
 			 ztest_unit_test(test_object_recycle),
-			 ztest_user_unit_test(test_syscall_context)
+			 ztest_user_unit_test(test_syscall_context),
+			 ztest_unit_test(test_tls_leakage)
 			 );
 	ztest_run_test_suite(userspace);
 }
