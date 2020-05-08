@@ -37,10 +37,10 @@
 
 #define TIMESRC_OSCERCLK        (2)
 
-#define SIM_OSC32KSEL_OSC32KCLK_CLK      0U  /*!< OSC32KSEL select: OSC32KCLK clock */
-#define SIM_PLLFLLSEL_IRC48MCLK_CLK      3U  /*!< PLLFLL select: IRC48MCLK clock */
-#define SIM_LPI2C_CLK_SEL_PLLFLLSEL_CLK  1U  /* LPI2C clock select: PLLFLLSEL output clock */
-#define SIM_USB_CLK_48000000HZ           48000000U  /*!< Input SIM frequency for USB: 48000000Hz */
+#define SIM_OSC32KSEL_OSC32KCLK_CLK      0U
+#define SIM_PLLFLLSEL_IRC48MCLK_CLK      3U
+#define SIM_LPI2C_CLK_SEL_PLLFLLSEL_CLK  1U
+#define SIM_USB_CLK_48000000HZ           48000000U
 
 // static const osc_config_t oscConfig = {
 // 	.freq = CONFIG_OSC_XTAL0_FREQ,
@@ -69,32 +69,29 @@
 // };
 
 static const sim_clock_config_t simConfig = {
-	.pllFllSel = SIM_PLLFLLSEL_IRC48MCLK_CLK, /* PLLFLLSEL select PLL. */
-	.er32kSrc = SIM_OSC32KSEL_OSC32KCLK_CLK,         /* OSC32KSEL select: OSC32KCLK clock */
-	//.clkdiv1 = 0x01030000U,                    /* SIM_CLKDIV1 - OUTDIV1: /1, OUTDIV2: /2, OUTDIV4: /4 */
-	
+	.pllFllSel = SIM_PLLFLLSEL_IRC48MCLK_CLK,
+	.er32kSrc = SIM_OSC32KSEL_OSC32KCLK_CLK,
+	//.clkdiv1 = 0x01030000U,
+
 	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CONFIG_KS22_CORE_CLOCK_DIVIDER - 1) |
-		   SIM_CLKDIV1_OUTDIV2(CONFIG_KS22_BUS_CLOCK_DIVIDER - 1) |
-		   SIM_CLKDIV1_OUTDIV4(CONFIG_KS22_FLASH_CLOCK_DIVIDER - 1),
+			SIM_CLKDIV1_OUTDIV2(CONFIG_KS22_BUS_CLOCK_DIVIDER - 1) |
+			SIM_CLKDIV1_OUTDIV4(CONFIG_KS22_FLASH_CLOCK_DIVIDER - 1),
 
 };
 
-/*******************************************************************************
- * Code
- ******************************************************************************/
-/*FUNCTION**********************************************************************
+
+/**
  *
- * Function Name : CLOCK_CONFIG_FllStableDelay
- * Description   : This function is used to delay for FLL stable.
+ * @brief This function is used to delay for FLL stable.
  *
- *END**************************************************************************/
+ * @return N/A
+ *
+ */
 static void CLOCK_CONFIG_FllStableDelay(void)
 {
     uint32_t i = 30000U;
     while (i--)
-    {
-        __NOP();
-    }
+		__NOP();
 }
 
 /**
@@ -128,28 +125,27 @@ static ALWAYS_INLINE void clock_init(void)
 
 	/* Set MCG to FEI mode. */
 #if FSL_CLOCK_DRIVER_VERSION >= MAKE_VERSION(2, 2, 0)
-    CLOCK_BootToFeiMode(kMCG_Dmx32Fine,
-                        kMCG_DrsMidHigh,
-                        CLOCK_CONFIG_FllStableDelay);
+    CLOCK_BootToFeiMode(kMCG_Dmx32Fine, kMCG_DrsMidHigh,
+		CLOCK_CONFIG_FllStableDelay);
 #else
-    CLOCK_BootToFeiMode(kMCG_DrsMidHigh,
-                        CLOCK_CONFIG_FllStableDelay);
+	CLOCK_BootToFeiMode(kMCG_DrsMidHigh, CLOCK_CONFIG_FllStableDelay);
 #endif
 
 	/* Selects 48 MHz IRC Oscillator */
-    CLOCK_SetExternalRefClkConfig(kMCG_OscselIrc); 
+	CLOCK_SetExternalRefClkConfig(kMCG_OscselIrc); 
     /* Set the clock configuration in SIM module. */
 	CLOCK_SetSimConfig(&simConfig);
 
 #if CONFIG_USB_KINETIS
-	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
+		CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 #endif
 
 	/* Enable USB FS clock. */
-    //CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcIrc48M, SIM_USB_CLK_48000000HZ);
-    //CLOCK_SetLpi2c0Clock(1);
+	//CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcIrc48M, SIM_USB_CLK_48000000HZ);
+	//CLOCK_SetLpi2c0Clock(1);
 	/* Set LPI2C0 clock source. */
-    CLOCK_SetLpi2c0Clock(SIM_LPI2C_CLK_SEL_PLLFLLSEL_CLK);
+	CLOCK_SetLpi2c0Clock(SIM_LPI2C_CLK_SEL_PLLFLLSEL_CLK);
 	//CLOCK_SetPllFllSelClock(3U); /* IRC48 MHz clock. */
 
 	CLOCK_SetLpuart0Clock(SIM_LPI2C_CLK_SEL_PLLFLLSEL_CLK);
