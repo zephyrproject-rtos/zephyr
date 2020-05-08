@@ -231,6 +231,9 @@ static void eswifi_scan(struct eswifi_dev *eswifi)
 		}
 	}
 
+	/* WiFi scan is done. */
+	eswifi->scan_cb(eswifi->iface, 0, NULL);
+
 	eswifi_unlock(eswifi);
 }
 
