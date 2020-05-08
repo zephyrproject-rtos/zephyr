@@ -556,8 +556,11 @@ if(CONFIG_QEMU_TARGET)
       Enable Qemu supported ethernet driver like e1000 at drivers/ethernet"
     )
   elseif(CONFIG_NET_QEMU_ETHERNET)
+    if(CONFIG_ETH_QEMU_EXTRA_ARGS)
+      set(NET_QEMU_ETH_EXTRA_ARGS ",${CONFIG_ETH_QEMU_EXTRA_ARGS}")
+    endif()
     list(APPEND QEMU_FLAGS_${ARCH}
-      -nic tap,model=${CONFIG_ETH_NIC_MODEL},script=no,downscript=no,ifname=${CONFIG_ETH_QEMU_IFACE_NAME}
+      -nic tap,model=${CONFIG_ETH_NIC_MODEL},script=no,downscript=no,ifname=${CONFIG_ETH_QEMU_IFACE_NAME}${NET_QEMU_ETH_EXTRA_ARGS}
     )
   elseif(CONFIG_NET_QEMU_USER)
     list(APPEND QEMU_FLAGS_${ARCH}
