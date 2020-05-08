@@ -273,6 +273,7 @@ config EXCEPTION_STACK_TRACE
 
 config OPENOCD_SUPPORT
 	bool "OpenOCD support [EXPERIMENTAL]"
+	depends on !SMP
 	select THREAD_MONITOR
 	select THREAD_NAME
 	help
