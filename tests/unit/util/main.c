@@ -317,6 +317,18 @@ static void test_LIST_DROP_EMPTY(void)
 	zassert_equal(strcmp(arr[2], "Case"), 0, "Failed at 0");
 }
 
+static void test_nested_FOR_EACH(void)
+{
+	#define FOO_1(x) a##x = x
+	#define FOO_2(x) int x
+
+	FOR_EACH(FOO_2, (;), FOR_EACH(FOO_1, (,), 0, 1, 2));
+
+	zassert_equal(a0, 0, NULL);
+	zassert_equal(a1, 1, NULL);
+	zassert_equal(a2, 2, NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_lib_sys_util_tests,
@@ -334,7 +346,8 @@ void test_main(void)
 			 ztest_unit_test(test_FOR_EACH_IDX),
 			 ztest_unit_test(test_FOR_EACH_IDX_FIXED_ARG),
 			 ztest_unit_test(test_IS_EMPTY),
-			 ztest_unit_test(test_LIST_DROP_EMPTY)
+			 ztest_unit_test(test_LIST_DROP_EMPTY),
+			 ztest_unit_test(test_nested_FOR_EACH)
 	);
 
 	ztest_run_test_suite(test_lib_sys_util_tests);
