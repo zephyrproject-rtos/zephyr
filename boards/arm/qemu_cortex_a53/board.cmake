@@ -11,4 +11,7 @@ set(QEMU_FLAGS_${ARCH}
   -machine virt
   )
 
+if(CONFIG_QEMU_ICOUNT)
+  list(APPEND QEMU_EXTRA_FLAGS -icount shift=4,align=off,sleep=off -rtc clock=vm)
+endif()
 board_set_debugger_ifnset(qemu)
