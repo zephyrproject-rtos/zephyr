@@ -32,6 +32,18 @@ config ETH_QEMU_IFACE_NAME
 	  script from net-tools project can be used to create the network
 	  interface.
 
+config ETH_QEMU_EXTRA_ARGS
+	string "Extra arguments to QEMU -nic option"
+	depends on NET_QEMU_ETHERNET
+	default ""
+	help
+	  Extra arguments passed to QEMU -nic option when Ethernet Networking
+	  is enabled. Typically this is used to set the network MAC address of
+	  Zephyr instance. This option can contain multiple QEMU option
+	  arguments. Each QEMU argument must be separated by comma "," and no
+	  spaces between arguments. Example: "mac=02:03:04:f0:0d:01" or
+	  "mac=02:03:04:f0:0d:01,downscript=no"
+
 source "drivers/ethernet/Kconfig.enc28j60"
 source "drivers/ethernet/Kconfig.enc424j600"
 source "drivers/ethernet/Kconfig.mcux"
