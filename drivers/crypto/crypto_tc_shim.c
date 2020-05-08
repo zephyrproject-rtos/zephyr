@@ -25,6 +25,59 @@ LOG_MODULE_REGISTER(tinycrypt);
 
 static struct tc_shim_drv_state tc_driver_state[CRYPTO_MAX_SESSION];
 
+static int do_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op)
+{
+	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
+
+	if (op->in_len != TC_AES_BLOCK_SIZE) {
+		LOG_ERR("ECB encryption only supported for a single "
+			"16 byte block");
+		return -EINVAL;
+	}
+
+	if (op->out_buf_max < TC_AES_BLOCK_SIZE) {
+		LOG_ERR("Output buffer too small for ECB operation");
+		return -EINVAL;
+	}
+
+	if (tc_aes_encrypt(op->out_buf,	op->in_buf,
+			   &data->session_key) == TC_CRYPTO_FAIL) {
+		LOG_ERR("TC internal error during ECB encryption");
+		return -EIO;
+	}
+
+	/* out_len is the same as in_len in ECB mode */
+	op->out_len = TC_AES_BLOCK_SIZE;
+
+	return 0;
+}
+
+static int do_ecb_decrypt(struct cipher_ctx *ctx, struct cipher_pkt *op)
+{
+	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
+
+	if (op->in_len != TC_AES_BLOCK_SIZE) {
+		LOG_ERR("ECB decryption only supported for a single "
+			"16 byte block");
+		return -EINVAL;
+	}
+
+	if (op->out_buf_max < TC_AES_BLOCK_SIZE) {
+		LOG_ERR("Output buffer too small for ECB operation");
+		return -EINVAL;
+	}
+
+	if (tc_aes_decrypt(op->out_buf, op->in_buf,
+			   &data->session_key) == TC_CRYPTO_FAIL) {
+		LOG_ERR("TC internal error during ECB decryption");
+		return -EIO;
+	}
+
+	op->out_len = TC_AES_BLOCK_SIZE;
+
+	return 0;
+}
+
 static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 			  uint8_t *iv)
 {
@@ -221,6 +274,9 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 
 	if (op_type == CRYPTO_CIPHER_OP_ENCRYPT) {
 		switch (mode) {
+		case CRYPTO_CIPHER_MODE_ECB:
+			ctx->ops.block_crypt_hndlr = do_ecb_encrypt;
+			break;
 		case CRYPTO_CIPHER_MODE_CBC:
 			ctx->ops.cbc_crypt_hndlr = do_cbc_encrypt;
 			break;
@@ -241,6 +297,9 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 		}
 	} else {
 		switch (mode) {
+		case CRYPTO_CIPHER_MODE_ECB:
+			ctx->ops.block_crypt_hndlr = do_ecb_decrypt;
+			break;
 		case CRYPTO_CIPHER_MODE_CBC:
 			ctx->ops.cbc_crypt_hndlr = do_cbc_decrypt;
 			break;
