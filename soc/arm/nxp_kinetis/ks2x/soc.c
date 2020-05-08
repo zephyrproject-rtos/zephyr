@@ -132,7 +132,7 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 	/* Selects 48 MHz IRC Oscillator */
-	CLOCK_SetExternalRefClkConfig(kMCG_OscselIrc); 
+	CLOCK_SetExternalRefClkConfig(kMCG_OscselIrc);
     /* Set the clock configuration in SIM module. */
 	CLOCK_SetSimConfig(&simConfig);
 

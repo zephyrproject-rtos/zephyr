@@ -16,8 +16,5 @@ config SOC_SERIES_KINETIS_KS2X
 	select SOC_FAMILY_KINETIS
 	select CPU_HAS_NXP_MPU
 	select CLOCK_CONTROL
-	select HAS_MCUX_LPI2C
-	select HAS_MCUX_LPUART
-	select HAS_MCUX_UART
 	help
 	  Enable support for Kinetis KS2x MCU series 
