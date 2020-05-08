@@ -751,6 +751,8 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 	_current->entry.parameter3 = p3;
 #endif
 #ifdef CONFIG_USERSPACE
+	memset(_current->userspace_local_data, 0,
+	       sizeof(struct _thread_userspace_local_data));
 	arch_user_mode_enter(entry, p1, p2, p3);
 #else
 	/* XXX In this case we do not reset the stack */
