@@ -67,8 +67,7 @@
 /* Used by IS_EMPTY() */
 #define Z_IS_EMPTY_(...) Z_IS_EMPTY__(__VA_ARGS__)
 #define Z_IS_EMPTY__(a, ...) Z_IS_EMPTY___(_ZZ##a##ZZ0, __VA_ARGS__)
-#define Z_IS_EMPTY___(...) Z_IS_EMPTY____(GET_ARGS_LESS_1(__VA_ARGS__))
-#define Z_IS_EMPTY____(...) GET_ARG2(__VA_ARGS__)
+#define Z_IS_EMPTY___(...) GET_ARG_N(3, __VA_ARGS__)
 
 /* Used by LIST_DROP_EMPTY() */
 /* Adding ',' after each element would add empty element at the end of
@@ -76,7 +75,7 @@
  * this way first element is empty, and this one is easy to drop.
  */
 #define Z_LIST_ADD_ELEM(e) EMPTY, e
-#define Z_LIST_DROP_FIRST(...) GET_ARGS_LESS_1(__VA_ARGS__)
+#define Z_LIST_DROP_FIRST(...) GET_ARGS_LESS_N(1, __VA_ARGS__)
 #define Z_LIST_NO_EMPTIES(e) \
 	COND_CODE_1(IS_EMPTY(e), (), (Z_LIST_ADD_ELEM(e)))
 
@@ -678,15 +677,18 @@
 	(								\
 		UTIL_OBSTRUCT(macro)					\
 		(							\
-			fixed_arg0, fixed_arg1, n, GET_ARG1(__VA_ARGS__)\
+			fixed_arg0, fixed_arg1, n, Z_GET_ARG1(__VA_ARGS__)\
 		) COND_CODE_1(count, (), (__DEBRACKET sep))		\
 		UTIL_OBSTRUCT(Z_FOR_EACH_IDX_INDIRECT) ()		\
 		(							\
 			UTIL_DEC(count), UTIL_INC(n), macro, sep,	\
 			fixed_arg0, fixed_arg1,				\
-			GET_ARGS_LESS_1(__VA_ARGS__)			\
+			Z_GET_ARGS_LESS_1(__VA_ARGS__)			\
 		)							\
 	)
+
+#define Z_GET_ARG1(arg1, ...) arg1
+#define Z_GET_ARGS_LESS_1(arg1, ...) __VA_ARGS__
 
 #define Z_FOR_EACH_IDX_INDIRECT() Z_FOR_EACH_IDX
 
@@ -701,6 +703,42 @@
 
 #define Z_FOR_EACH_SWALLOW_INDEX_FIXED_ARG(F, fixed_arg, index, arg) F(arg)
 #define Z_FOR_EACH_SWALLOW_INDEX(F, fixed_arg, index, arg) F(arg, fixed_arg)
+
+/* This is a workaround to enable mixing GET_ARG_N with FOR_EACH macros. If
+ * same UTIL_EVAL macro is used then macro is incorrectly resolved.
+ */
+#define Z_GET_ARG_N_EVAL(...) \
+	Z_GET_ARG_N_EVAL1(Z_GET_ARG_N_EVAL1(Z_GET_ARG_N_EVAL1(__VA_ARGS__)))
+#define Z_GET_ARG_N_EVAL1(...) \
+	Z_GET_ARG_N_EVAL2(Z_GET_ARG_N_EVAL2(Z_GET_ARG_N_EVAL2(__VA_ARGS__)))
+#define Z_GET_ARG_N_EVAL2(...) \
+	Z_GET_ARG_N_EVAL3(Z_GET_ARG_N_EVAL3(Z_GET_ARG_N_EVAL3(__VA_ARGS__)))
+#define Z_GET_ARG_N_EVAL3(...) \
+	Z_GET_ARG_N_EVAL4(Z_GET_ARG_N_EVAL4(Z_GET_ARG_N_EVAL4(__VA_ARGS__)))
+#define Z_GET_ARG_N_EVAL4(...) \
+	Z_GET_ARG_N_EVAL5(Z_GET_ARG_N_EVAL5(Z_GET_ARG_N_EVAL5(__VA_ARGS__)))
+#define Z_GET_ARG_N_EVAL5(...) __VA_ARGS__
+
+/* Set of internal macros used for GET_ARG_N of macros. */
+#define Z_GET_ARG_N(count, single_arg, ...)				\
+	UTIL_WHEN(count)						\
+	(								\
+		IF_ENABLED(count, (UTIL_OBSTRUCT(__DEBRACKET)		\
+		(							\
+			COND_CODE_1(single_arg,				\
+				(Z_GET_ARG1(__VA_ARGS__)), (__VA_ARGS__))\
+		)))							\
+		UTIL_OBSTRUCT(Z_GET_ARG_N_INDIRECT) ()			\
+		(							\
+			UTIL_DEC(count), single_arg,			\
+			Z_GET_ARGS_LESS_1(__VA_ARGS__)			\
+		)							\
+	)
+
+#define Z_GET_ARG_N_INDIRECT() Z_GET_ARG_N
+
+#define _Z_GET_ARG_N(N, single_arg, ...) \
+	Z_GET_ARG_N_EVAL(Z_GET_ARG_N(N, single_arg, __VA_ARGS__))
 
 /* Implementation details for NUM_VA_ARGS_LESS_1 */
 #define NUM_VA_ARGS_LESS_1_IMPL(				\

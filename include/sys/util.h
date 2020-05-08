@@ -534,8 +534,28 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  */
 #define EMPTY
 
+/**
+ * @brief Get nth argument from argument list.
+ *
+ * @param N Argument index to fetch. Counter from 1.
+ * @param ... Variable list of argments from which one argument is returned.
+ *
+ * @return Nth argument.
+ */
+#define GET_ARG_N(N, ...) _Z_GET_ARG_N(N, 1, __VA_ARGS__)
+
+/**
+ * @brief Strips n first arguments from the argument list.
+ *
+ * @param N Number of arguments to discard.
+ * @param ... Variable list of argments.
+ *
+ * @return argument list without N first arguments.
+ */
+#define GET_ARGS_LESS_N(N, ...) _Z_GET_ARG_N(UTIL_INC(N), 0, __VA_ARGS__)
+
 /** @brief Expands to @p arg1 */
-#define GET_ARG1(arg1, ...) arg1
+#define GET_ARG1(...) GET_ARG_N(1, )
 
 /** @brief Expands to @p arg2 */
 #define GET_ARG2(arg1, arg2, ...) arg2
