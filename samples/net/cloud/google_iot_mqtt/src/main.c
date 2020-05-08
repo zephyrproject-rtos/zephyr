@@ -43,7 +43,7 @@ void do_sntp(struct addrinfo *addr)
 		return;
 	}
 
-	rc = sntp_query(&ctx, K_FOREVER, &sntp_time);
+	rc = sntp_query(&ctx, SYS_FOREVER_MS, &sntp_time);
 	if (rc == 0) {
 		stamp = k_uptime_get();
 		time_base = sntp_time.seconds * MSEC_PER_SEC - stamp;
