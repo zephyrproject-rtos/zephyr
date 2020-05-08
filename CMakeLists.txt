@@ -410,6 +410,7 @@ set_ifndef(DTS_CAT_OF_FIXUP_FILES ${ZEPHYR_BINARY_DIR}/include/generated/devicet
 # Concatenate the fixups into a single header file for easy
 # #include'ing
 file(WRITE ${DTS_CAT_OF_FIXUP_FILES} "/* May only be included by devicetree.h */\n\n")
+set(DISCOVERED_FIXUP_FILES)
 foreach(fixup_file
     ${DTS_BOARD_FIXUP_FILE}
     ${DTS_SOC_FIXUP_FILE}
@@ -419,8 +420,13 @@ foreach(fixup_file
   if(EXISTS ${fixup_file})
     file(READ ${fixup_file} contents)
     file(APPEND ${DTS_CAT_OF_FIXUP_FILES} "${contents}")
+    string(APPEND DISCOVERED_FIXUP_FILES "- ${fixup_file}\n")
   endif()
 endforeach()
+
+if (DISCOVERED_FIXUP_FILES)
+  message(WARNING "One or more dts_fixup.h files detected:\n${DISCOVERED_FIXUP_FILES}Use of these files is deprecated; use the devicetree.h API instead.")
+endif()
 
 # Unfortunately, the order in which CMakeLists.txt code is processed
 # matters so we need to be careful about how we order the processing
