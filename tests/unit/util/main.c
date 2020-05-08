@@ -329,6 +329,61 @@ static void test_nested_FOR_EACH(void)
 	zassert_equal(a2, 2, NULL);
 }
 
+static void test_GET_ARG_N(void)
+{
+	int a = GET_ARG_N(1, 10, 100, 1000);
+	int b = GET_ARG_N(2, 10, 100, 1000);
+	int c = GET_ARG_N(3, 10, 100, 1000);
+
+	zassert_equal(a, 10, NULL);
+	zassert_equal(b, 100, NULL);
+	zassert_equal(c, 1000, NULL);
+}
+
+static void test_GET_ARGS_LESS_N(void)
+{
+	uint8_t a[] = { GET_ARGS_LESS_N(0, 1, 2, 3) };
+	uint8_t b[] = { GET_ARGS_LESS_N(1, 1, 2, 3) };
+	uint8_t c[] = { GET_ARGS_LESS_N(2, 1, 2, 3) };
+
+	zassert_equal(sizeof(a), 3, NULL);
+
+	zassert_equal(sizeof(b), 2, NULL);
+	zassert_equal(b[0], 2, NULL);
+	zassert_equal(b[1], 3, NULL);
+
+	zassert_equal(sizeof(c), 1, NULL);
+	zassert_equal(c[0], 3, NULL);
+}
+
+static void test_mixing_GET_ARG_and_FOR_EACH(void)
+{
+	#undef TEST_MACRO
+	#define TEST_MACRO(x) x,
+	int i;
+
+	i = GET_ARG_N(3, FOR_EACH(TEST_MACRO, (), 1, 2, 3, 4, 5));
+	zassert_equal(i, 3, NULL);
+
+	i = GET_ARG_N(2, 1, GET_ARGS_LESS_N(2, 1, 2, 3, 4, 5));
+	zassert_equal(i, 3, NULL);
+
+	#undef TEST_MACRO
+	#undef TEST_MACRO2
+	#define TEST_MACRO(x) GET_ARG_N(3, 1, 2, x),
+	#define TEST_MACRO2(...) FOR_EACH(TEST_MACRO, (), __VA_ARGS__)
+	int a[] = {
+		LIST_DROP_EMPTY(TEST_MACRO2(1, 2, 3, 4)), 5
+	};
+
+	zassert_equal(ARRAY_SIZE(a), 5, NULL);
+	zassert_equal(a[0], 1, NULL);
+	zassert_equal(a[1], 2, NULL);
+	zassert_equal(a[2], 3, NULL);
+	zassert_equal(a[3], 4, NULL);
+	zassert_equal(a[4], 5, NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_lib_sys_util_tests,
@@ -347,7 +402,10 @@ void test_main(void)
 			 ztest_unit_test(test_FOR_EACH_IDX_FIXED_ARG),
 			 ztest_unit_test(test_IS_EMPTY),
 			 ztest_unit_test(test_LIST_DROP_EMPTY),
-			 ztest_unit_test(test_nested_FOR_EACH)
+			 ztest_unit_test(test_nested_FOR_EACH),
+			 ztest_unit_test(test_GET_ARG_N),
+			 ztest_unit_test(test_GET_ARGS_LESS_N),
+			 ztest_unit_test(test_mixing_GET_ARG_and_FOR_EACH)
 	);
 
 	ztest_run_test_suite(test_lib_sys_util_tests);
