@@ -12,23 +12,22 @@
 #include <dt-bindings/i2c/i2c.h>
 
 / {
+	chosen {
+		zephyr,entropy = &rnga;
+		zephyr,flash-controller = &ftfe;
+	};
 
 	aliases {
 		adc-0 = &adc0;
 		can-0 = &can0;
 		can-1 = &can1;
-		gpio-a = &gpioa;
-		gpio-b = &gpiob;
-		gpio-c = &gpioc;
-		gpio-d = &gpiod;
-		gpio-e = &gpioe;
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
-		pinmux-a = &pinmux_a;
-		pinmux-b = &pinmux_b;
-		pinmux-c = &pinmux_c;
-		pinmux-d = &pinmux_d;
-		pinmux-e = &pinmux_e;
+		pinmux-a = &porta;
+		pinmux-b = &portb;
+		pinmux-c = &portc;
+		pinmux-d = &portd;
+		pinmux-e = &porte;
 		pwm-0 = &pwm0;
 		pwm-1 = &pwm1;
 		pwm-2 = &pwm2;
@@ -111,7 +110,7 @@
 			#clock-cells = <3>;
 		};
 
-		flash-controller@40020000 {
+		ftfe: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfe";
 			label = "FLASH_CTRL";
 			reg = <0x40020000 0x18>;
@@ -193,31 +192,31 @@
 			status = "disabled";
 		};
 
-		pinmux_a: pinmux@40049000 {
+		porta: pinmux@40049000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
 		};
 
-		pinmux_b: pinmux@4004a000 {
+		portb: pinmux@4004a000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
 		};
 
-		pinmux_c: pinmux@4004b000 {
+		portc: pinmux@4004b000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
 		};
 
-		pinmux_d: pinmux@4004c000 {
+		portd: pinmux@4004c000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
 		};
 
-		pinmux_e: pinmux@4004d000 {
+		porte: pinmux@4004d000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
@@ -225,51 +224,61 @@
 
 		gpioa: gpio@400ff000 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff000 0x40>;
 			interrupts = <59 2>;
 			label = "GPIO_0";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porta>;
 		};
 
 		gpiob: gpio@400ff040 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff040 0x40>;
 			interrupts = <60 2>;
 			label = "GPIO_1";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portb>;
 		};
 
 		gpioc: gpio@400ff080 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff080 0x40>;
 			interrupts = <61 2>;
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portc>;
 		};
 
 		gpiod: gpio@400ff0c0 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff0c0 0x40>;
 			interrupts = <62 2>;
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&portd>;
 		};
 
 		gpioe: gpio@400ff100 {
 			compatible = "nxp,kinetis-gpio";
+			status = "disabled";
 			reg = <0x400ff100 0x40>;
 			interrupts = <63 2>;
 			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
+			nxp,kinetis-port = <&porte>;
 		};
 
 		spi0: spi@4002c000 {
-			compatible = "nxp,imx-spi";
+			compatible = "nxp,kinetis-dspi";
 			reg = <0x4002c000 0x88>;
 			interrupts = <26 3>;
 			label = "SPI_0";
@@ -279,7 +288,7 @@
 		};
 
 		spi1: spi@4002d000 {
-			compatible = "nxp,imx-spi";
+			compatible = "nxp,kinetis-dspi";
 			reg = <0x4002d000 0x88>;
 			interrupts = <27 3>;
 			label = "SPI_1";

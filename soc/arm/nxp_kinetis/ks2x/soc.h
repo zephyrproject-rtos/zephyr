@@ -25,7 +25,7 @@ extern "C" {
 
 /* default system clock */
 
-#define SYSCLK_DEFAULT_IOSC_HZ MHZ(120)
+#define SYSCLK_DEFAULT_IOSC_HZ MHZ(48)
 #define BUSCLK_DEFAULT_IOSC_HZ (SYSCLK_DEFAULT_IOSC_HZ / \
 				CONFIG_KS22_BUS_CLOCK_DIVIDER)
 
@@ -36,12 +36,9 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 
 #include <fsl_common.h>
-//#include <device.h>
-//#include <sys/util.h>
-//#include <random/rand32.h>
-
-/* Add include for DTS generated information */
-//#include <devicetree.h>
+#include <device.h>
+#include <sys/util.h>
+#include <random/rand32.h>
 
 #endif /* !_ASMLANGUAGE */
 
