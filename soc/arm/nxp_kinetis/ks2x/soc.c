@@ -42,43 +42,14 @@
 #define SIM_LPI2C_CLK_SEL_PLLFLLSEL_CLK  1U
 #define SIM_USB_CLK_48000000HZ           48000000U
 
-// static const osc_config_t oscConfig = {
-// 	.freq = CONFIG_OSC_XTAL0_FREQ,
-// 	.capLoad = 0,
-
-// #if defined(CONFIG_OSC_EXTERNAL)
-// 	.workMode = kOSC_ModeExt,
-// #elif defined(CONFIG_OSC_LOW_POWER)
-// 	.workMode = kOSC_ModeOscLowPower,
-// #elif defined(CONFIG_OSC_HIGH_GAIN)
-// 	.workMode = kOSC_ModeOscHighGain,
-// #else
-// #error "An oscillator mode must be defined"
-// #endif
-
-// 	.oscerConfig = {
-// 		.enableMode = 0U, /* Disable external reference clock */
-// 		.erclkDiv = 0U,
-// 	},
-// };
-
-// static const mcg_pll_config_t pll0Config = {
-// 	.enableMode = 0U,
-// 	.prdiv = CONFIG_MCG_PRDIV0,
-// 	.vdiv = CONFIG_MCG_VDIV0,
-// };
-
 static const sim_clock_config_t simConfig = {
 	.pllFllSel = SIM_PLLFLLSEL_IRC48MCLK_CLK,
 	.er32kSrc = SIM_OSC32KSEL_OSC32KCLK_CLK,
-	//.clkdiv1 = 0x01030000U,
 
 	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CONFIG_KS22_CORE_CLOCK_DIVIDER - 1) |
 			SIM_CLKDIV1_OUTDIV2(CONFIG_KS22_BUS_CLOCK_DIVIDER - 1) |
 			SIM_CLKDIV1_OUTDIV4(CONFIG_KS22_FLASH_CLOCK_DIVIDER - 1),
-
 };
-
 
 /**
  *
