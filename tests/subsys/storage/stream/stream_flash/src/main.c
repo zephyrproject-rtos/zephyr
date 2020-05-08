@@ -16,7 +16,8 @@
 #define MAX_PAGE_SIZE 0x1000 /* Max supported page size to run test on */
 #define MAX_NUM_PAGES 4      /* Max number of pages used in these tests */
 #define TESTBUF_SIZE (MAX_PAGE_SIZE * MAX_NUM_PAGES)
-#define FLASH_SIZE DT_SOC_NV_FLASH_0_SIZE
+#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
+#define FLASH_SIZE DT_REG_SIZE(SOC_NV_FLASH_NODE)
 #define FLASH_NAME DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL
 
 /* so that we don't overwrite the application when running on hw */
