@@ -103,6 +103,11 @@ Stable API changes in this release
   * The video_dequeue() API call now takes a k_timeout_t for the timeout
     parameter. This reverts to s32_t if CONFIG_LEGACY_TIMEOUT_API is enabled.
 
+* Floating Point Services
+
+  * FLOAT and FP_SHARING Kconfig options have been renamed to FPU and FPU_SHARING,
+    respectively.
+
 Kernel
 ******
 
