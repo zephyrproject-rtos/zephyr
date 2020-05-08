@@ -412,7 +412,7 @@ static int spi_flash_wb_configure(struct device *dev)
 	data->spi_cfg.operation = SPI_WORD_SET(8);
 	data->spi_cfg.slave = DT_INST_REG_ADDR(0);
 
-#if defined(CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	data->cs_ctrl.gpio_dev = device_get_binding(
 		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!data->cs_ctrl.gpio_dev) {
@@ -423,7 +423,7 @@ static int spi_flash_wb_configure(struct device *dev)
 	data->cs_ctrl.delay = CONFIG_SPI_FLASH_W25QXXDV_GPIO_CS_WAIT_DELAY;
 
 	data->spi_cfg.cs = &data->cs_ctrl;
-#endif /* CONFIG_SPI_FLASH_W25QXXDV_GPIO_SPI_CS */
+#endif
 
 	return spi_flash_wb_id(dev);
 }

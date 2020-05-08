@@ -15,12 +15,6 @@ config WIFI_WINC1500_NAME
 	string "Driver name"
 	default "WINC1500"
 
-config WIFI_WINC1500_GPIO_SPI_CS
-	bool "Manage SPI CS through a GPIO pin"
-	help
-	  This option is useful if one needs to manage SPI CS through a GPIO
-	  pin to by-pass the SPI controller's CS logic.
-
 config WIFI_WINC1500_THREAD_STACK_SIZE
 	int "HAL callback handler thread stack size"
 	default 2048
