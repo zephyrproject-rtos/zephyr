@@ -41,7 +41,7 @@ K_SEM_DEFINE(expect_fault_sem, 0, 1);
  * ztest and this test suite. part1 is for
  * subsequent test specifically for this new implementation.
  */
-FOR_EACH(K_APPMEM_PARTITION_DEFINE, part0, part1);
+FOR_EACH(K_APPMEM_PARTITION_DEFINE, (;), part0, part1);
 
 /*
  * Create memory domains. dom0 is for the ztest and this

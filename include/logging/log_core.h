@@ -206,9 +206,9 @@ extern "C" {
 #define _LOG_INTERNAL_3(_src_level, _str, _arg0, _arg1, _arg2) \
 	log_3(_str, (log_arg_t)(_arg0), (log_arg_t)(_arg1), (log_arg_t)(_arg2), _src_level)
 
-#define __LOG_ARG_CAST(_x) (log_arg_t)(_x),
+#define __LOG_ARG_CAST(_x) (log_arg_t)(_x)
 
-#define __LOG_ARGUMENTS(...) FOR_EACH(__LOG_ARG_CAST, __VA_ARGS__)
+#define __LOG_ARGUMENTS(...) FOR_EACH(__LOG_ARG_CAST, (,), __VA_ARGS__)
 
 #define _LOG_INTERNAL_LONG(_src_level, _str, ...)		  \
 	do {							  \
