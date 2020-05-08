@@ -1411,7 +1411,7 @@ Tests should reference the category and subsystem with a dot as a separator.
 
     def scan_path(self, path):
         subcases = []
-        for filename in glob.glob(os.path.join(path, "src", "*.c")):
+        for filename in glob.glob(os.path.join(path, "src", "*.c*")):
             try:
                 _subcases, warnings = self.scan_file(filename)
                 if warnings:
