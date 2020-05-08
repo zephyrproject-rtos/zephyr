@@ -233,9 +233,6 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif
 #endif
 
-	/* Final init level before app starts */
-	z_sys_init_run_level(_SYS_INIT_LEVEL_APPLICATION);
-
 #ifdef CONFIG_CPLUSPLUS
 	/* Process the .ctors and .init_array sections */
 	extern void __do_global_ctors_aux(void);
@@ -243,6 +240,9 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	__do_global_ctors_aux();
 	__do_init_array_aux();
 #endif
+
+	/* Final init level before app starts */
+	z_sys_init_run_level(_SYS_INIT_LEVEL_APPLICATION);
 
 	z_init_static_threads();
 
