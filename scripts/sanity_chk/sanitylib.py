@@ -2298,6 +2298,7 @@ class TestSuite(DisablePyTestCollectionMixin):
 
     def summary(self, unrecognized_sections):
         failed = 0
+        run = 0
         for instance in self.instances.values():
             if instance.status == "failed":
                 failed += 1
@@ -2306,6 +2307,9 @@ class TestSuite(DisablePyTestCollectionMixin):
                              (Fore.RED, Fore.RESET, instance.name,
                               str(instance.metrics.get("unrecognized", []))))
                 failed += 1
+
+            if instance.metrics['handler_time']:
+                run += 1
 
         if self.total_tests and self.total_tests != self.total_skipped:
             pass_rate = (float(self.total_tests - self.total_failed - self.total_skipped) / float(
@@ -2337,6 +2341,9 @@ class TestSuite(DisablePyTestCollectionMixin):
                 self.total_platforms,
                 (100 * len(self.selected_platforms) / len(self.platforms))
             ))
+
+        logger.info(f"{Fore.GREEN}{run}{Fore.RESET} tests executed on platforms, \
+{Fore.RED}{self.total_tests - run}{Fore.RESET} tests were only built.")
 
     def save_reports(self, name, suffix, report_dir, no_update, release, only_failed):
         if not self.instances:
