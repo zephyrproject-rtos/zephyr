@@ -5,7 +5,7 @@ description: NXP Kinetis Ethernet
 
 compatible: "nxp,kinetis-ethernet"
 
-include: ethernet.yaml
+include: ["ethernet.yaml", "ethernet,fixed-link.yaml"]
 
 properties:
     reg:
