@@ -554,8 +554,11 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  */
 #define GET_ARGS_LESS_N(N, ...) _Z_GET_ARG_N(UTIL_INC(N), 0, __VA_ARGS__)
 
-/** @brief Expands to @p arg1 */
-#define GET_ARG1(...) GET_ARG_N(1, )
+/** Expands to the first argument.
+ *
+ * @deprecated Use GET_ARG_N instead.
+ */
+#define GET_ARG1(...) GET_ARG_N(1, __VA_ARGS__)
 
 /** @brief Expands to @p arg2 */
 #define GET_ARG2(arg1, arg2, ...) arg2
