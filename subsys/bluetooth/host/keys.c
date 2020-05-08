@@ -62,6 +62,7 @@ struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr)
 #if IS_ENABLED(CONFIG_BT_KEYS_OVERWRITE_OLDEST)
 	if (first_free_slot == ARRAY_SIZE(key_pool)) {
 		struct bt_keys *oldest = &key_pool[0];
+		bt_addr_le_t oldest_addr;
 
 		for (i = 1; i < ARRAY_SIZE(key_pool); i++) {
 			struct bt_keys *current = &key_pool[i];
@@ -71,7 +72,9 @@ struct bt_keys *bt_keys_get_addr(u8_t id, const bt_addr_le_t *addr)
 			}
 		}
 
-		bt_unpair(oldest->id, &oldest->addr);
+		/* Use a copy as bt_unpair will clear the oldest key. */
+		bt_addr_le_copy(&oldest_addr, &oldest->addr);
+		bt_unpair(oldest->id, &oldest_addr);
 		if (!bt_addr_le_cmp(&oldest->addr, BT_ADDR_LE_ANY)) {
 			first_free_slot = oldest - &key_pool[0];
 		}
