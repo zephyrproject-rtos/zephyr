@@ -15,11 +15,11 @@ config ADC_MCUX_ADC16
 
 config CLOCK_CONTROL_MCUX_SIM
 	default y
-	depends CLOCK_CONTROL
+	depends on CLOCK_CONTROL
 
 config PINMUX_MCUX
 	default y
-	depends PINMUX
+	depends on PINMUX
 
 config GPIO
 	default y
