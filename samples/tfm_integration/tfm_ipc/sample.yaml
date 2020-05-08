@@ -1,0 +1,15 @@
+sample:
+    description: This app provides an example of using TF-M on the secure
+        side, with Zephyr on the NS side, using IPC.
+    name: TF-M IPC example
+tests:
+    sample.tfm_ipc:
+        tags: introduction
+        platform_whitelist: mps2_an521_nonsecure
+        harness: console
+        harness_config:
+          type: multi_line
+          regex:
+            - "Booting TFM v1.0"
+            - "Booting Zephyr OS"
+            - "Connect success!"
