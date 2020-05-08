@@ -380,17 +380,9 @@ def write_child_functions(node):
     # Writes macro that are helpers that will call a macro/function
     # for each child node.
 
-    if node.children:
-        functions = ''
-        # For each subnode with non-empty list of labels add the
-        # first (non-alias) label to the string of ', ' separated
-        # list of labels.
-        for subnode in node.children.values():
-            functions = functions + f"fn(DT_{subnode.z_path_id}) "
-
-        if functions:
-            macro = f"{node.z_path_id}_FOREACH_CHILD(fn)"
-            out_dt_define(macro, functions)
+    out_dt_define(f"{node.z_path_id}_FOREACH_CHILD(fn)",
+            " ".join(f"fn(DT_{child.z_path_id})" for child in
+                node.children.values()))
 
 
 def write_status(node):
