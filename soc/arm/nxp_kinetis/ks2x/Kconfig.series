@@ -1,0 +1,23 @@
+# Kinetis KS2X MCU line
+
+# Copyright (c) 2018 Prevas A/S
+# Copyright (c) 2019 Thomas Burdick <thomas.burdick@gmail.com>
+# Copyright (c) 2020 Rick Talbott <rtalbott@fastmail.com>
+
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_KINETIS_KS2X
+	bool "Kinetis KS2x Series MCU"
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select SOC_FAMILY_KINETIS
+	select CPU_HAS_NXP_MPU
+	select CLOCK_CONTROL
+	select HAS_MCUX_LPI2C
+	select HAS_MCUX_LPUART
+	select HAS_MCUX_UART
+	help
+	  Enable support for Kinetis KS2x MCU series 

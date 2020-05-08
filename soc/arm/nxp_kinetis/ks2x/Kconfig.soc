@@ -1,0 +1,74 @@
+# Kinetis KS2X MCU line
+
+# Copyright (c) 2018 Prevas A/S
+# Copyright (c) 2019 Thomas Burdick <thomas.burdick@gmail.com>
+# Copyright (c) 2020 Rick Talbott <rtalbott@fastmail.com>
+
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+	prompt "Kinetis KS2x MCU Selection"
+	depends on SOC_SERIES_KINETIS_KS2X
+
+config SOC_MKS22F12
+	bool "SOC_MKS22F12"
+	select HAS_MCUX
+	select HAS_MCUX_SMC
+	select HAS_MCUX_ADC16
+	select HAS_MCUX_FTFX
+	select HAS_MCUX_TPM
+	select HAS_MCUX_RNGA
+	select HAS_MCUX_SIM
+	select HAS_OSC
+	select HAS_MCG
+	select CPU_HAS_FPU
+
+endchoice
+
+if SOC_SERIES_KINETIS_KS2X
+
+config SOC_PART_NUMBER_MKS22FN256VLH12
+	bool
+
+config SOC_PART_NUMBER_MKS22FX256AVLK12
+	bool
+
+config SOC_PART_NUMBER_KINETIS_KS2X
+	string
+	default "MKS22FN256VLH12" if SOC_PART_NUMBER_MKS22FN256VLH12
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+config KS22_CORE_CLOCK_DIVIDER
+	int "Freescale KS22 core clock divider"
+	default 1
+	help
+	  This option specifies the divide value for the KS22 processor core clock
+	  from the system clock.
+
+config KS22_BUS_CLOCK_DIVIDER
+	int "Freescale KS22 bus clock divider"
+	default 2
+	help
+	  This option specifies the divide value for the KS22 bus clock from the
+	  system clock.
+
+config KS22_FLEXBUS_CLOCK_DIVIDER
+	int "Freescale KS22 FlexBus clock divider"
+	default 2
+	help
+	  This option specifies the divide value for the KS22 FlexBus clock from the
+	  system clock.
+
+config KS22_FLASH_CLOCK_DIVIDER
+	int "Freescale KS22 flash clock divider"
+	default 4
+	help
+	  This option specifies the divide value for the KS64 flash clock from the
+	  system clock.
+
+endif # SOC_SERIES_KINETIS_KS2X
