@@ -111,10 +111,25 @@ void sys_pm_create_device_list(void)
 	 */
 	device_list_get(&pm_device_list, &count);
 
-	/* Reserve for 32KHz, 16MHz, system clock, etc... */
-	device_count = NUM_CORE_DEVICES;
+	for (i = 0; (i < count) && (device_count < MAX_PM_DEVICES); i++) {
+		if (device_is_initialized(&pm_device_list[i]) == false) {
+			continue;
+		}
+
+		/* Check if the device is core device */
+		for (j = 0, is_core_dev = false; j < NUM_CORE_DEVICES; j++) {
+			if (!strcmp(pm_device_list[i].config->name,
+						&core_devices[j][0])) {
+				device_ordered_list[device_count++] = i;
+				break;
+			}
+		}
+	}
 
 	for (i = 0; (i < count) && (device_count < MAX_PM_DEVICES); i++) {
+		if (device_is_initialized(&pm_device_list[i]) == false) {
+			continue;
+		}
 
 		/* Check if the device is core device */
 		for (j = 0, is_core_dev = false; j < NUM_CORE_DEVICES; j++) {
@@ -125,9 +140,7 @@ void sys_pm_create_device_list(void)
 			}
 		}
 
-		if (is_core_dev) {
-			device_ordered_list[j] = i;
-		} else {
+		if (!is_core_dev) {
 			device_ordered_list[device_count++] = i;
 		}
 	}
