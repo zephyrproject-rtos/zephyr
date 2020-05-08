@@ -82,6 +82,10 @@
 #include <stm32l0xx_ll_dma.h>
 #endif
 
+#ifdef CONFIG_ENTROPY_STM32_RNG
+#include <stm32l0xx_ll_rng.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L0_SOC_H_ */
