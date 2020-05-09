@@ -596,6 +596,140 @@ out:
 	cipher_free_session(dev, &ini);
 }
 
+static void test_cmac_mode(struct device *dev, int len, const u8_t *ref)
+{
+	u8_t tag[16];
+	struct cipher_ctx ini = {
+		.keylen = sizeof(key),
+		.key.bit_stream = key,
+		.flags = cap_flags,
+	};
+
+	struct cipher_mac_pkt update = {
+		.data.update.buf = plaintext,
+		.data.update.len = len,
+		.finalize = false,
+	};
+
+	struct cipher_mac_pkt finalize = {
+		.data.finalize.tag = tag,
+		.data.finalize.len = sizeof(tag),
+		.finalize = true,
+	};
+
+	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
+				 CRYPTO_CIPHER_MODE_CMAC,
+				 CRYPTO_CIPHER_OP_ENCRYPT)) {
+		return;
+	}
+
+	if (cipher_cmac_op(&ini, &update)) {
+		LOG_ERR("AES CMAC mode - update - Failed");
+		goto out;
+	}
+
+	if (cipher_cmac_op(&ini, &finalize)) {
+		LOG_ERR("AES CMAC mode - finalize - Failed");
+		goto out;
+	}
+
+	if (memcmp(tag, ref, sizeof(tag))) {
+		LOG_ERR("AES CMAC - Mismatch between plaintext and "
+			"decrypted cipher text");
+		goto out;
+	}
+
+	LOG_INF("AES CMAC %i - Match", len);
+
+out:
+	cipher_free_session(dev, &ini);
+}
+
+static void test_cmac_mode_multi(struct device *dev, int len, const u8_t *ref)
+{
+	u8_t tag[16];
+	int i;
+	struct cipher_ctx ini = {
+		.keylen = sizeof(key),
+		.key.bit_stream = key,
+		.flags = cap_flags,
+	};
+
+	struct cipher_mac_pkt finalize = {
+		.data.finalize.tag = tag,
+		.data.finalize.len = sizeof(tag),
+		.finalize = true,
+	};
+
+	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
+				 CRYPTO_CIPHER_MODE_CMAC,
+				 CRYPTO_CIPHER_OP_ENCRYPT)) {
+		return;
+	}
+
+	for (i = 0; i < len; i += 16) {
+		struct cipher_mac_pkt update = {
+			.data.update.buf = plaintext + i,
+			.data.update.len = MIN(16, len - i),
+			.finalize = false,
+		};
+
+		if (cipher_cmac_op(&ini, &update)) {
+			LOG_ERR("AES CMAC mode - update - Failed");
+			goto out;
+		}
+	}
+
+	if (cipher_cmac_op(&ini, &finalize)) {
+		LOG_ERR("AES CMAC mode - finalize - Failed");
+		goto out;
+	}
+
+	if (memcmp(tag, ref, sizeof(tag))) {
+		LOG_ERR("AES CMAC - Mismatch between plaintext and "
+			"decrypted cipher text");
+		goto out;
+	}
+
+	LOG_INF("AES CMAC %i - Match", len);
+
+out:
+	cipher_free_session(dev, &ini);
+}
+
+static void cmac_mode(struct device *dev)
+{
+	static const u8_t expected_0[] = {
+		0xbb, 0x1d, 0x69, 0x29, 0xe9, 0x59, 0x37, 0x28,
+		0x7f, 0xa3, 0x7d, 0x12, 0x9b, 0x75, 0x67, 0x46,
+	};
+
+	static const u8_t expected_16[] = {
+		0x07, 0x0a, 0x16, 0xb4, 0x6b, 0x4d, 0x41, 0x44,
+		0xf7, 0x9b, 0xdd, 0x9d, 0xd0, 0x4a, 0x28, 0x7c,
+	};
+
+	static const u8_t expected_40[] = {
+		0xdf, 0xa6, 0x67, 0x47, 0xde, 0x9a, 0xe6, 0x30,
+		0x30, 0xca, 0x32, 0x61, 0x14, 0x97, 0xc8, 0x27,
+	};
+
+	static const u8_t expected_64[] = {
+		0x51, 0xf0, 0xbe, 0xbf, 0x7e, 0x3b, 0x9d, 0x92,
+		0xfc, 0x49, 0x74, 0x17, 0x79, 0x36, 0x3c, 0xfe,
+	};
+
+	test_cmac_mode(dev, 0, expected_0);
+	test_cmac_mode(dev, 16, expected_16);
+	test_cmac_mode(dev, 40, expected_40);
+	test_cmac_mode(dev, 64, expected_64);
+
+	test_cmac_mode_multi(dev, 0, expected_0);
+	test_cmac_mode_multi(dev, 16, expected_16);
+	test_cmac_mode_multi(dev, 40, expected_40);
+	test_cmac_mode_multi(dev, 64, expected_64);
+}
+
 struct mode_test {
 	const char *mode;
 	void (*mode_func)(struct device *dev);
@@ -610,6 +744,7 @@ void main(void)
 		{ .mode = "CTR Mode", .mode_func = ctr_mode },
 		{ .mode = "CCM Mode", .mode_func = ccm_mode },
 		{ .mode = "GCM Mode", .mode_func = gcm_mode },
+		{ .mode = "CMAC Mode", .mode_func = cmac_mode },
 		{ },
 	};
 	int i;
