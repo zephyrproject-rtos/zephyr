@@ -47,12 +47,14 @@ enum cipher_mode {
 	CRYPTO_CIPHER_MODE_CTR = 3,
 	CRYPTO_CIPHER_MODE_CCM = 4,
 	CRYPTO_CIPHER_MODE_GCM = 5,
+	CRYPTO_CIPHER_MODE_CMAC = 6,
 };
 
 /* Forward declarations */
 struct cipher_aead_pkt;
 struct cipher_ctx;
 struct cipher_pkt;
+struct cipher_mac_pkt;
 
 typedef int (*block_op_t)(struct cipher_ctx *ctx, struct cipher_pkt *pkt);
 
@@ -71,6 +73,8 @@ typedef int (*ccm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
 typedef int (*gcm_op_t)(struct cipher_ctx *ctx, struct cipher_aead_pkt *pkt,
 			 u8_t *nonce);
 
+typedef int (*cmac_op_t)(struct cipher_ctx *ctx, struct cipher_mac_pkt *pkt);
+
 struct cipher_ops {
 
 	enum cipher_mode cipher_mode;
@@ -81,6 +85,7 @@ struct cipher_ops {
 		ctr_op_t	ctr_crypt_hndlr;
 		ccm_op_t	ccm_crypt_hndlr;
 		gcm_op_t	gcm_crypt_hndlr;
+		cmac_op_t	cmac_crypt_hndlr;
 	};
 };
 
@@ -262,6 +267,43 @@ struct cipher_aead_pkt {
 	 * For a decryption op this has to be supplied by the app.
 	 */
 	u8_t *tag;
+};
+
+/**
+ * Structure encoding IO parameters in MAC (Message Authentication
+ * Code) scenarios like in CMAC.
+ *
+ * App has to furnish valid contents prior to making cipher_mac_op() call.
+ */
+struct cipher_mac_pkt {
+	union {
+		struct {
+			/** Start address of input buffer */
+			const u8_t *buf;
+
+			/** Number of bytes to be operated upon */
+			int  len;
+		} update;
+		struct {
+			/** Start address of input buffer */
+			u8_t *tag;
+
+			/**
+			 * Size of the tag buffer. Must match the size
+			 * of the tag.
+			 */
+			int len;
+		} finalize;
+	} data;
+
+	/** Calculate the final MAC value return it. */
+	bool finalize;
+
+	/** Context this packet relates to. This can be useful to get the
+	 * session details, especially for async ops. Will be populated by the
+	 * cipher_xxx_op() API based on the ctx parameter.
+	 */
+	struct cipher_ctx *ctx;
 };
 
 /* Prototype for the application function to be invoked by the crypto driver

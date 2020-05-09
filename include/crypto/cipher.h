@@ -305,6 +305,26 @@ static inline int cipher_gcm_op(struct cipher_ctx *ctx,
 	return ctx->ops.gcm_crypt_hndlr(ctx, pkt, nonce);
 }
 
+/*
+ * @brief Perform CMAC operation
+ *
+ * @param[in]  ctx       Pointer to the crypto context of this op.
+ * @param[in/out]  pkt   Structure holding the Input/Output, Associated Data
+ *                       and tag buffer pointers.
+ *
+ * @return 0 on success, negative errno code on failure
+ */
+static inline int cipher_cmac_op(struct cipher_ctx *ctx,
+				 struct cipher_mac_pkt *pkt)
+{
+	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_CMAC,
+		 "MAC mode session invoking a different mode handler");
+
+	pkt->ctx = ctx;
+	return ctx->ops.cmac_crypt_hndlr(ctx, pkt);
+}
+
+
 /**
  * @}
  */
