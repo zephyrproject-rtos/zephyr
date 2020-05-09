@@ -1,0 +1,17 @@
+identifier: buildtest_ks22
+name: BUILDTEST_KS22
+type: mcu
+arch: arm
+ram: 64
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+  - i2c
+  - spi
+  - usb_device
+  - adc
+  - can

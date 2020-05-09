@@ -1,0 +1,138 @@
+/*
+ *
+ *
+ */
+
+/dts-v1/;
+#include <nxp/nxp_ks2x.dtsi>
+
+/ {
+	model = "BuildTest KS22";
+	compatible = "nxp,mks22f12", "nxp,ks22f", "nxp,ks2x";
+
+	aliases {
+		led0 = &green_led;
+		led1 = &red_led;
+		led2 = &blue_led;
+		sw0 = &user_button1;
+		sw1 = &user_button2;
+		sw2 = &user_button3;
+		sw3 = &user_button4;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
+		zephyr,uart-pipe = &lpuart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		red_led: led_1 {
+			gpios = <&gpiob 0 0>;
+			label = "User LD1";
+		};
+		green_led: led_2 {
+			gpios = <&gpiob 1 0>;
+			label = "User LD2";
+		};
+		blue_led: led_3 {
+			gpios = <&gpioc 6 0>;
+			label = "User LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button1: button_0 {
+			label = "button1";
+			gpios = <&gpiob 19 GPIO_INT_ACTIVE_HIGH>;
+		};
+		user_button2: button_1 {
+			label = "button2";
+			gpios = <&gpioc 0 GPIO_INT_ACTIVE_HIGH>;
+		};
+		user_button3: button_2 {
+			label = "button3";
+			gpios = <&gpioc 1 GPIO_INT_ACTIVE_HIGH>;
+		};
+		user_button4: button_3 {
+			label = "button4";
+			gpios = <&gpioc 2 GPIO_INT_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&lpuart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	bus-idle-timeout = <1000>;
+};
+
+&spi0 {
+	status = "okay";
+};
+
+&can0 {
+	status = "okay";
+	bus-speed = <125000>;
+};
+
+&adc0 {
+	status = "okay";
+};
+
+&usbotg {
+	status = "okay";
+	num-bidir-endpoints = <8>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&flash0 {
+	/* Flash size 256k */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 52K */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xD000>;
+			#read-only;
+		};
+		/* 204K */
+		slot0_partition: partition@D000 {
+			label = "image-0";
+			reg = <0x0000D000 0x33000>;
+		};
+
+	};
+};

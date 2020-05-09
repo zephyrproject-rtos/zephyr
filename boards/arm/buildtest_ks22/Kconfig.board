@@ -1,0 +1,9 @@
+# BOARD_BUILDTEST_KS22 board
+
+# Copyright (c) 2018, Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BUILDTEST_KS22
+	bool "BUILDTEST KS22"
+	depends on SOC_SERIES_KINETIS_KS2X
+	select SOC_PART_NUMBER_MKS22FN256VLH12

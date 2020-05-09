@@ -33,11 +33,11 @@
 		pwm-2 = &pwm2;
 		spi-0 = &spi0;
 		spi-1 = &spi1;
-		uart-0 = &uart0;
-		uart-1 = &uart1;
-		uart-2 = &uart2;
-		uart-3 = &uart3;
-		usbd-0 = &usbd;
+		uart-0 = &lpuart0;
+		uart-1 = &uart0;
+		uart-2 = &uart1;
+		uart-3 = &uart2;
+		usbd-0 = &usbotg;
 		watchdog0 = &wdog;
 	};
 
@@ -153,7 +153,7 @@
 			status = "disabled";
 		};
 
-		uart0: lpuart@4002a000 {
+		lpuart0: lpuart@4002a000 {
 			compatible = "nxp,kinetis-lpuart";
 			reg = <0x4002a000 0x18>;
 			interrupts = <30 0>;
@@ -162,7 +162,7 @@
 			status = "disabled";
 		};
 
-		uart1: uart@4006a000 {
+		uart0: uart@4006a000 {
 			compatible = "nxp,kinetis-uart";
 			reg = <0x4006a000 0x1000>;
 			interrupts = <31 0>, <32 0>;
@@ -172,7 +172,7 @@
 			status = "disabled";
 		};
 
-		uart2: uart@4006b000 {
+		uart1: uart@4006b000 {
 			compatible = "nxp,kinetis-uart";
 			reg = <0x4006b000 0x1000>;
 			interrupts = <33 0>, <34 0>;
@@ -182,7 +182,7 @@
 			status = "disabled";
 		};
 
-		uart3: uart@4006c000 {
+		uart2: uart@4006c000 {
 			compatible = "nxp,kinetis-uart";
 			reg = <0x4006c000 0x1000>;
 			interrupts = <35 0>, <36 0>;
@@ -342,7 +342,7 @@
 			#io-channel-cells = <1>;
 		};
 
-		usbd: usbd@40072000 {
+		usbotg: usbd@40072000 {
 			compatible = "nxp,kinetis-usbd";
 			reg = <0x40072000 0x1000>;
 			interrupts = <53 1>;
