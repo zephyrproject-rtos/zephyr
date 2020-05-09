@@ -11,6 +11,7 @@
 #include <tinycrypt/cbc_mode.h>
 #include <tinycrypt/ctr_mode.h>
 #include <tinycrypt/ccm_mode.h>
+#include <tinycrypt/cmac_mode.h>
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 #include <string.h>
@@ -24,6 +25,30 @@ LOG_MODULE_REGISTER(tinycrypt);
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_TINYCRYPT_SHIM_MAX_SESSION
 
 static struct tc_shim_drv_state tc_driver_state[CRYPTO_MAX_SESSION];
+
+static int do_cmac_op(struct cipher_ctx *ctx, struct cipher_mac_pkt *pkt)
+{
+	struct tc_shim_drv_state *data =  ctx->drv_sessn_state;
+	int ret;
+
+	if (pkt->finalize) {
+		if (pkt->data.finalize.len != TC_AES_BLOCK_SIZE) {
+			LOG_ERR("Illegal tag buffer size");
+			return -EIO;
+		}
+		ret = tc_cmac_final(pkt->data.finalize.tag, &data->cmac_state);
+	} else {
+		ret = tc_cmac_update(&data->cmac_state, pkt->data.update.buf,
+				     pkt->data.update.len);
+	}
+
+	if (ret != TC_CRYPTO_SUCCESS) {
+		LOG_ERR("TC internal error during CMAC operation");
+		return -EIO;
+	}
+
+	return 0;
+}
 
 static int do_cbc_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *op,
 			  u8_t *iv)
@@ -190,6 +215,34 @@ static int get_unused_session(void)
 	return i;
 }
 
+static int setup_session_cmac(struct cipher_ctx *ctx,
+			      struct tc_shim_drv_state *data)
+{
+	if (tc_cmac_setup(&data->cmac_state, ctx->key.bit_stream,
+			  &data->session_key) == TC_CRYPTO_FAIL) {
+		LOG_ERR("TC internal error in setting up CMAC session");
+		data->in_use = 0;
+		return -EIO;
+	}
+
+	ctx->drv_sessn_state = data;
+	return 0;
+}
+
+static int setup_session_aes(struct cipher_ctx *ctx,
+			     struct tc_shim_drv_state *data)
+{
+	if (tc_aes128_set_encrypt_key(&data->session_key,
+				      ctx->key.bit_stream) == TC_CRYPTO_FAIL) {
+		LOG_ERR("TC internal error in setting key");
+		data->in_use = 0;
+		return -EIO;
+	}
+
+	ctx->drv_sessn_state = data;
+	return 0;
+}
+
 static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 		     enum cipher_algo algo, enum cipher_mode mode,
 		     enum cipher_op op_type)
@@ -235,6 +288,9 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 		case CRYPTO_CIPHER_MODE_CCM:
 			ctx->ops.ccm_crypt_hndlr = do_ccm_encrypt_mac;
 			break;
+		case CRYPTO_CIPHER_MODE_CMAC:
+			ctx->ops.cmac_crypt_hndlr = do_cmac_op;
+			break;
 		default:
 			LOG_ERR("TC Shim Unsupported mode");
 			return -EINVAL;
@@ -256,6 +312,9 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 		case CRYPTO_CIPHER_MODE_CCM:
 			ctx->ops.ccm_crypt_hndlr = do_ccm_decrypt_auth;
 			break;
+		case CRYPTO_CIPHER_MODE_CMAC:
+			LOG_ERR("CMAC mode only supported for encryption");
+			return -EINVAL;
 		default:
 			LOG_ERR("TC Shim Unsupported mode");
 			return -EINVAL;
@@ -273,17 +332,12 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 
 	data = &tc_driver_state[idx];
 
-	if (tc_aes128_set_encrypt_key(&data->session_key, ctx->key.bit_stream)
-			 == TC_CRYPTO_FAIL) {
-		LOG_ERR("TC internal error in setting key");
-		tc_driver_state[idx].in_use = 0;
-
-		return -EIO;
+	switch (mode) {
+	case CRYPTO_CIPHER_MODE_CMAC:
+		return setup_session_cmac(ctx, data);
+	default:
+		return setup_session_aes(ctx, data);
 	}
-
-	ctx->drv_sessn_state = data;
-
-	return 0;
 }
 
 static int tc_query_caps(struct device *dev)
