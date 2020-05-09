@@ -93,11 +93,11 @@ static void thread_entry(void *p1, void *p2, void *p3)
 static void msgq_thread(struct k_msgq *pmsgq)
 {
 	/**TESTPOINT: thread-thread data passing via message queue*/
+	put_msgq(pmsgq);
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, pmsgq, NULL, NULL,
 				      K_PRIO_PREEMPT(0),
 				      K_USER | K_INHERIT_PERMS, K_NO_WAIT);
-	put_msgq(pmsgq);
 	k_sem_take(&end_sema, K_FOREVER);
 	k_thread_abort(tid);
 
