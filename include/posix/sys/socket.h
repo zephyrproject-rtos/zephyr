@@ -18,6 +18,11 @@ static inline int socket(int family, int type, int proto)
 	return zsock_socket(family, type, proto);
 }
 
+static inline int socketpair(int family, int type, int proto, int sv[2])
+{
+	return zsock_socketpair(family, type, proto, sv);
+}
+
 #define SHUT_RD ZSOCK_SHUT_RD
 #define SHUT_WR ZSOCK_SHUT_WR
 #define SHUT_RDWR ZSOCK_SHUT_RDWR

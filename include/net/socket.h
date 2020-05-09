@@ -160,6 +160,20 @@ struct zsock_addrinfo {
 __syscall int zsock_socket(int family, int type, int proto);
 
 /**
+ * @brief Create an unnamed pair of connected sockets
+ *
+ * @details
+ * @rst
+ * See `POSIX.1-2017 article
+ * <https://pubs.opengroup.org/onlinepubs/009695399/functions/socketpair.html>`__
+ * for normative description.
+ * This function is also exposed as ``socketpair()``
+ * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
+ * @endrst
+ */
+__syscall int zsock_socketpair(int family, int type, int proto, int *sv);
+
+/**
  * @brief Close a network socket
  *
  * @details
@@ -564,6 +578,11 @@ int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
 static inline int socket(int family, int type, int proto)
 {
 	return zsock_socket(family, type, proto);
+}
+
+static inline int socketpair(int family, int type, int proto, int sv[2])
+{
+	return zsock_socketpair(family, type, proto, sv);
 }
 
 static inline int close(int sock)
