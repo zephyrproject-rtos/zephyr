@@ -39,8 +39,6 @@
 		led0 = &green_led_0;
 		sw0 = &user_button;
 		eeprom-0 = &eeprom;
-		adc1 = &adc1;
-		dac1 = &dac1;
 	};
 };
 
