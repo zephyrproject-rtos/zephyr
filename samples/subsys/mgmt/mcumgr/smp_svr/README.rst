@@ -109,7 +109,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
 
    .. group-tab:: Serial
 
-      To build the serial sample:
+      To build the serial sample with file-system support:
 
       .. code-block:: console
 
@@ -117,7 +117,7 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
             -b frdm_k64f \
             samples/subsys/mgmt/mcumgr/smp_svr \
             -- \
-            -DOVERLAY_CONFIG=overlay-serial.conf
+            -DOVERLAY_CONFIG='overlay-serial.conf;overlay-fs.conf'
 
    .. group-tab:: UDP
 
