@@ -498,6 +498,7 @@
 /tests/net/lib/http_header_fields/        @jukkar @tbursztyka
 /tests/net/lib/mqtt_packet/               @jukkar @tbursztyka
 /tests/net/lib/coap/                      @rveerama1
+/tests/net/socket/socketpair/             @cfriedt
 /tests/net/socket/                        @jukkar @tbursztyka @pfalcon
 /tests/subsys/fs/                         @nashif @wentongwu
 /tests/subsys/settings/                   @nvlsianpu

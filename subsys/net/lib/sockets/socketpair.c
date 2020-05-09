@@ -568,7 +568,7 @@ out:
  */
 static ssize_t spair_read(void *obj, void *buffer, size_t count)
 {
-	ssize_t res;
+	int res;
 
 	bool is_connected;
 	size_t avail;
@@ -783,7 +783,7 @@ static int zsock_poll_update_ctx(struct spair *const spair,
 	if (pfd->events & ZSOCK_POLLOUT) {
 		if (!sock_is_connected(spair)) {
 			pfd->revents |= ZSOCK_POLLHUP;
-			goto check_pollin;
+			goto pollout_done;
 		}
 
 		remote = z_get_fd_obj(spair->remote,
@@ -850,7 +850,6 @@ pollin_done:
 
 	(*pev)++;
 
-out:
 	if (remote != NULL && have_remote_sem) {
 		k_sem_give(&remote->sem);
 	}
