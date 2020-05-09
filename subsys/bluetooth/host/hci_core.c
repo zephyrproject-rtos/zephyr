@@ -1261,7 +1261,8 @@ static int hci_le_read_max_data_len(u16_t *tx_octets, u16_t *tx_time)
 	return 0;
 }
 
-#if defined(CONFIG_BT_EXT_ADV) || defined(CONFIG_BT_USER_PHY_UPDATE)
+#if (defined(CONFIG_BT_OBSERVER) && defined(CONFIG_BT_EXT_ADV)) \
+	|| defined(CONFIG_BT_USER_PHY_UPDATE)
 static u8_t get_phy(u8_t hci_phy)
 {
 	switch (hci_phy) {
@@ -1275,7 +1276,7 @@ static u8_t get_phy(u8_t hci_phy)
 		return 0;
 	}
 }
-#endif /* defined(CONFIG_BT_EXT_ADV) || defined(CONFIG_BT_USER_PHY_UPDATE) */
+#endif /* (BT_OBSERVER && BT_EXT_ADV) || USER_PHY_UPDATE */
 
 #if defined(CONFIG_BT_CONN)
 static void hci_acl(struct net_buf *buf)
