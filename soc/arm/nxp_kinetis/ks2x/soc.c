@@ -85,14 +85,14 @@ static ALWAYS_INLINE void clock_init(void)
 {
 	CLOCK_SetSimSafeDivs();
 
-	//CLOCK_InitOsc0(&oscConfig);
-	//CLOCK_SetXtal0Freq(CONFIG_OSC_XTAL0_FREQ);
+	/* CLOCK_InitOsc0(&oscConfig); */
+	/* CLOCK_SetXtal0Freq(CONFIG_OSC_XTAL0_FREQ); */
 
 
 	CLOCK_SetInternalRefClkConfig(MCG_IRCLK_DISABLE, kMCG_IrcSlow, 1);
 
 	/* Configure FLL external reference divider (FRDIV). */
-	//CLOCK_SetFllExtRefDiv(0);
+	/* CLOCK_SetFllExtRefDiv(0); */
 
 	/* Set MCG to FEI mode. */
 #if FSL_CLOCK_DRIVER_VERSION >= MAKE_VERSION(2, 2, 0)
@@ -113,12 +113,9 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 
 	/* Enable USB FS clock. */
-	//CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcIrc48M, SIM_USB_CLK_48000000HZ);
-	//CLOCK_SetLpi2c0Clock(1);
+	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcIrc48M, SIM_USB_CLK_48000000HZ);
 	/* Set LPI2C0 clock source. */
 	CLOCK_SetLpi2c0Clock(SIM_LPI2C_CLK_SEL_PLLFLLSEL_CLK);
-	//CLOCK_SetPllFllSelClock(3U); /* IRC48 MHz clock. */
-
 	CLOCK_SetLpuart0Clock(SIM_LPI2C_CLK_SEL_PLLFLLSEL_CLK);
 }
 
