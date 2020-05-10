@@ -95,3 +95,7 @@ arduino_i2c: &i2c1 {};
 &eeprom {
 	status = "okay";
 };
+
+&usb {
+	status = "okay";
+};
