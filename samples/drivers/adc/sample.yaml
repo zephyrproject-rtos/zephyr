@@ -1,0 +1,12 @@
+sample:
+  name: ADC driver sample
+tests:
+  sample.drivers.adc:
+    tags: ADC
+    depends_on: adc
+    platform_allow: nucleo_l073rz
+    harness: console
+    harness_config:
+      type: single_line
+      regex:
+        - "ADC reading(s): (.*)"
