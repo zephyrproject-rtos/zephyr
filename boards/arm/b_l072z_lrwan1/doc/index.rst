@@ -99,7 +99,7 @@ The STM32L072CZ SoC provides the following hardware IPs:
         - 2x ultra-low-power comparators
 - 11x communication interfaces
 
-        - USB OTG 2.0 full-speed, LPM and BCD
+        - USB 2.0 full-speed device, LPM and BCD
         - 3x I2C FM+(1 Mbit/s), SMBus/PMBus
         - 4x USARTs (ISO 7816, LIN, IrDA, modem)
         - 6x SPIs (4x SPIs with the Quad SPI)
@@ -139,6 +139,8 @@ The Zephyr B-L072Z-LRWAN1 Discovery board configuration supports the following h
 +-----------+------------+-------------------------------------+
 | EEPROM    | on-chip    | eeprom                              |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | usb                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -176,6 +178,13 @@ Serial Port
 
 B-L072Z-LRWAN1 Discovery board has 2 U(S)ARTs. The Zephyr console output is assigned to UART2.
 Default settings are 115200 8N1.
+
+USB device
+----------
+
+B-L072Z-LRWAN1 Discovery board has 1 USB device controller. However,
+the USB data lines are not connected to the MCU by default. To connect
+the USB data lines to the MCU, short solder bridges SB15 and SB16.
 
 Programming and Debugging
 *************************
