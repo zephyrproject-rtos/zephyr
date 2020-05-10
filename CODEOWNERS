@@ -153,6 +153,7 @@
 /doc/reference/networking/can*            @alexanderwachter
 /doc/security/                            @ceolin @d3zd3z
 /drivers/debug/                           @nashif
+/drivers/*/*sam4l*                        @nandojve
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
 /drivers/*/*mcux*                         @MaureenHelm
 /drivers/*/*stm32*                        @erwango @ABOSTM @FRASTM
