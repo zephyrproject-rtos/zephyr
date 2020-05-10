@@ -18,3 +18,4 @@ supported:
   - gpio
   - pinmux
   - counter
+  - eeprom
