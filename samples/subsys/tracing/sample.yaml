@@ -20,6 +20,7 @@ tests:
       - CONFIG_TRACING_CPU_STATS=y
   tracing.backends.openocd:
     extra_configs:
+      - CONFIG_MP_NUM_CPUS=1
       - CONFIG_OPENOCD_SUPPORT=y
       - CONFIG_SMP=n
     arch_exclude: posix xtensa
