@@ -110,8 +110,9 @@ static int cmd_i2c_write(const struct shell *shell, size_t argc, char **argv)
 	dev_addr = strtol(argv[2], NULL, 16);
 	reg_addr = strtol(argv[3], NULL, 16);
 	num_bytes = argc - 4;
-	if (num_bytes < 0)
+	if (num_bytes < 0) {
 		return 0;
+	}
 	if (num_bytes > MAX_I2C_BYTES) {
 		num_bytes = MAX_I2C_BYTES;
 	}
