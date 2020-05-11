@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 BayLibre, SAS
  * Copyright (c) 2019 Linaro Limited
+ * Copyright (c) 2020 Andreas Sandberg
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,30 +18,113 @@ LOG_MODULE_REGISTER(flash_stm32generic, CONFIG_FLASH_LOG_LEVEL);
 
 #include "flash_stm32.h"
 
-/* offset and len must be aligned on 2 for write
- * positive and not beyond end of flash
- */
-bool flash_stm32_valid_range(struct device *dev, off_t offset, uint32_t len,
-			     bool write)
-{
-	return (!write || (offset % 2 == 0 && len % 2 == 0U)) &&
-		flash_stm32_range_exists(dev, offset, len);
-}
+#if FLASH_STM32_WRITE_BLOCK_SIZE == 8
+typedef uint64_t flash_prg_t;
+#elif FLASH_STM32_WRITE_BLOCK_SIZE == 4
+typedef uint32_t flash_prg_t;
+#elif FLASH_STM32_WRITE_BLOCK_SIZE == 2
+typedef uint16_t flash_prg_t;
+#else
+#error Unknown write block size
+#endif
+
+#if defined(FLASH_CR_PER)
+#define FLASH_ERASED_VALUE ((flash_prg_t)-1)
+#elif defined(FLASH_PECR_ERASE)
+#define FLASH_ERASED_VALUE 0
+#else
+#error Unknown erase value
+#endif
 
 static unsigned int get_page(off_t offset)
 {
 	return offset / FLASH_PAGE_SIZE;
 }
 
-static int write_hword(struct device *dev, off_t offset, uint16_t val)
+#if defined(FLASH_CR_PER)
+static int is_flash_locked(FLASH_TypeDef *regs)
 {
-	volatile uint16_t *flash = (uint16_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
+	return !!(regs->CR & FLASH_CR_LOCK);
+}
+
+static void write_enable(FLASH_TypeDef *regs)
+{
+	regs->CR |= FLASH_CR_PG;
+}
+
+static void write_disable(FLASH_TypeDef *regs)
+{
+	regs->CR &= (~FLASH_CR_PG);
+}
+
+static void erase_page_begin(FLASH_TypeDef *regs, unsigned int page)
+{
+	/* Set the PER bit and select the page you wish to erase */
+	regs->CR |= FLASH_CR_PER;
+	regs->AR = CONFIG_FLASH_BASE_ADDRESS + page * FLASH_PAGE_SIZE;
+
+	__DSB();
+
+	/* Set the STRT bit */
+	regs->CR |= FLASH_CR_STRT;
+}
+
+static void erase_page_end(FLASH_TypeDef *regs)
+{
+	regs->CR &= ~FLASH_CR_PER;
+}
+
+#else
+
+static int is_flash_locked(FLASH_TypeDef *regs)
+{
+	return !!(regs->PECR & FLASH_PECR_PRGLOCK);
+}
+
+static void write_enable(FLASH_TypeDef *regs)
+{
+	regs->PECR |= FLASH_PECR_PROG;
+}
+
+static void write_disable(FLASH_TypeDef *regs)
+{
+	/* Clear the PG bit */
+	regs->PECR &= ~FLASH_PECR_PROG;
+}
+
+static void erase_page_begin(FLASH_TypeDef *regs, unsigned int page)
+{
+	volatile flash_prg_t *page_base = (flash_prg_t *)(
+		CONFIG_FLASH_BASE_ADDRESS + page * FLASH_PAGE_SIZE);
+	/* Enable programming in erase mode. An erase is triggered by
+	 * writing 0 to the first word of a page.
+	 */
+	regs->PECR |= FLASH_PECR_ERASE;
+	regs->PECR |= FLASH_PECR_PROG;
+
+	__DSB();
+
+	*page_base = 0;
+}
+
+static void erase_page_end(FLASH_TypeDef *regs)
+{
+	/* Disable programming */
+	regs->PECR &= ~FLASH_PECR_PROG;
+	regs->PECR &= ~FLASH_PECR_ERASE;
+}
+#endif
+
+static int write_value(struct device *dev, off_t offset, flash_prg_t val)
+{
+	volatile flash_prg_t *flash = (flash_prg_t *)(
+		offset + CONFIG_FLASH_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	uint32_t tmp;
 	int rc;
 
 	/* if the control register is locked, do not fail silently */
-	if (regs->CR & FLASH_CR_LOCK) {
+	if (is_flash_locked(regs)) {
+		LOG_ERR("Flash is locked");
 		return -EIO;
 	}
 
@@ -51,15 +135,16 @@ static int write_hword(struct device *dev, off_t offset, uint16_t val)
 	}
 
 	/* Check if this half word is erased */
-	if (*flash != 0xFFFF) {
+	if (*flash != FLASH_ERASED_VALUE) {
+		LOG_DBG("Flash location not erased");
 		return -EIO;
 	}
 
-	/* Set the PG bit */
-	regs->CR |= FLASH_CR_PG;
+	/* Enable writing */
+	write_enable(regs);
 
-	/* Flush the register write */
-	tmp = regs->CR;
+	/* Make sure the register write has taken effect */
+	__DSB();
 
 	/* Perform the data write operation at the desired memory address */
 	*flash = val;
@@ -67,21 +152,31 @@ static int write_hword(struct device *dev, off_t offset, uint16_t val)
 	/* Wait until the BSY bit is cleared */
 	rc = flash_stm32_wait_flash_idle(dev);
 
-	/* Clear the PG bit */
-	regs->CR &= (~FLASH_CR_PG);
+	/* Disable writing */
+	write_disable(regs);
 
 	return rc;
 }
 
-static int erase_page(struct device *dev, unsigned int page)
+/* offset and len must be aligned on 2 for write
+ * positive and not beyond end of flash
+ */
+bool flash_stm32_valid_range(struct device *dev, off_t offset, uint32_t len,
+			     bool write)
+{
+	return (!write || (offset % 2 == 0 && len % 2 == 0U)) &&
+		flash_stm32_range_exists(dev, offset, len);
+}
+
+int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
+				 unsigned int len)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	uint32_t page_address = CONFIG_FLASH_BASE_ADDRESS;
-	uint32_t tmp;
-	int rc;
+	int i, rc = 0;
 
 	/* if the control register is locked, do not fail silently */
-	if (regs->CR & FLASH_CR_LOCK) {
+	if (is_flash_locked(regs)) {
+		LOG_ERR("Flash is locked");
 		return -EIO;
 	}
 
@@ -91,35 +186,12 @@ static int erase_page(struct device *dev, unsigned int page)
 		return rc;
 	}
 
-	/* Calculate the flash page address */
-	page_address += page * FLASH_PAGE_SIZE;
+	for (i = get_page(offset); i <= get_page(offset + len - 1); ++i) {
+		erase_page_begin(regs, i);
+		__DSB();
+		rc = flash_stm32_wait_flash_idle(dev);
+		erase_page_end(regs);
 
-	/* Set the PER bit and select the page you wish to erase */
-	regs->CR |= FLASH_CR_PER;
-	regs->AR = page_address;
-
-	/* Set the STRT bit */
-	regs->CR |= FLASH_CR_STRT;
-
-	/* flush the register write */
-	tmp = regs->CR;
-
-	/* Wait for the BSY bit */
-	rc = flash_stm32_wait_flash_idle(dev);
-
-	regs->CR &= ~FLASH_CR_PER;
-
-	return rc;
-}
-
-int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
-				 unsigned int len)
-{
-	int i, rc = 0;
-
-	i = get_page(offset);
-	for (; i <= get_page(offset + len - 1) ; ++i) {
-		rc = erase_page(dev, i);
 		if (rc < 0) {
 			break;
 		}
@@ -132,9 +204,11 @@ int flash_stm32_write_range(struct device *dev, unsigned int offset,
 			    const void *data, unsigned int len)
 {
 	int i, rc = 0;
+	const flash_prg_t *values = (const flash_prg_t *)data;
 
-	for (i = 0; i < len; i += 2, offset += 2U) {
-		rc = write_hword(dev, offset, ((const uint16_t *) data)[i>>1]);
+	for (i = 0; i < len / sizeof(flash_prg_t); i++) {
+		rc = write_value(dev, offset + i * sizeof(flash_prg_t),
+				 values[i]);
 		if (rc < 0) {
 			return rc;
 		}
