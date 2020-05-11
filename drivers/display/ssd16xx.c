@@ -54,6 +54,8 @@ LOG_MODULE_REGISTER(ssd16xx);
 #define SSD16XX_PANEL_LAST_GATE		(EPD_PANEL_NUMOF_COLUMS - 1)
 
 #define SSD16XX_PIXELS_PER_BYTE		8
+#define SSD16XX_DEFAULT_TR_VALUE	25U
+#define SSD16XX_TR_SCALE_FACTOR		256U
 
 struct ssd16xx_data {
 	struct device *reset;
@@ -65,23 +67,20 @@ struct ssd16xx_data {
 	struct spi_cs_control cs_ctrl;
 #endif
 	uint8_t scan_mode;
+	uint8_t update_cmd;
 };
 
+#if DT_INST_NODE_HAS_PROP(0, lut_initial)
 static uint8_t ssd16xx_lut_initial[] = DT_INST_PROP(0, lut_initial);
+#endif
+#if DT_INST_NODE_HAS_PROP(0, lut_default)
 static uint8_t ssd16xx_lut_default[] = DT_INST_PROP(0, lut_default);
+#endif
 #if DT_INST_NODE_HAS_PROP(0, softstart)
 static uint8_t ssd16xx_softstart[] = DT_INST_PROP(0, softstart);
 #endif
 static uint8_t ssd16xx_gdv[] = DT_INST_PROP(0, gdv);
 static uint8_t ssd16xx_sdv[] = DT_INST_PROP(0, sdv);
-
-#if !DT_INST_NODE_HAS_PROP(0, lut_initial)
-#error "No initial waveform look up table (LUT) selected!"
-#endif
-
-#if !DT_INST_NODE_HAS_PROP(0, lut_default)
-#error "No default waveform look up table (LUT) selected!"
-#endif
 
 static inline int ssd16xx_write_cmd(struct ssd16xx_data *driver,
 				    uint8_t cmd, uint8_t *data, size_t len)
@@ -211,16 +210,10 @@ static int ssd16xx_blanking_on(const struct device *dev)
 static int ssd16xx_update_display(const struct device *dev)
 {
 	struct ssd16xx_data *driver = dev->driver_data;
-	uint8_t tmp;
 	int err;
 
-	tmp = (SSD16XX_CTRL2_ENABLE_CLK |
-	       SSD16XX_CTRL2_ENABLE_ANALOG |
-	       SSD16XX_CTRL2_TO_PATTERN |
-	       SSD16XX_CTRL2_DISABLE_ANALOG |
-	       SSD16XX_CTRL2_DISABLE_CLK);
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_UPDATE_CTRL2, &tmp,
-				sizeof(tmp));
+	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_UPDATE_CTRL2,
+				&driver->update_cmd, 1);
 	if (err < 0) {
 		return err;
 	}
@@ -439,6 +432,89 @@ static int ssd16xx_clear_cntlr_mem(struct device *dev, uint8_t ram_cmd,
 	return 0;
 }
 
+static inline int ssd16xx_load_ws_from_otp(struct device *dev)
+{
+	struct ssd16xx_data *driver = dev->driver_data;
+	int16_t t = (SSD16XX_DEFAULT_TR_VALUE * SSD16XX_TR_SCALE_FACTOR);
+	uint8_t tmp[2];
+
+
+	LOG_INF("Load default WS (25 degrees Celsius) from OTP");
+
+	tmp[0] = SSD16XX_CTRL2_ENABLE_CLK;
+	if (ssd16xx_write_cmd(driver, SSD16XX_CMD_UPDATE_CTRL2,
+			      tmp, 1)) {
+		return -EIO;
+	}
+
+	if (ssd16xx_write_cmd(driver, SSD16XX_CMD_MASTER_ACTIVATION,
+			      NULL, 0)) {
+		return -EIO;
+	}
+
+	ssd16xx_busy_wait(driver);
+
+	/* Load temperature value */
+	sys_put_be16(t, tmp);
+	if (ssd16xx_write_cmd(driver, SSD16XX_CMD_TSENS_CTRL,
+			      tmp, 2)) {
+		return -EIO;
+	}
+
+	tmp[0] = SSD16XX_CTRL2_DISABLE_CLK;
+	if (ssd16xx_write_cmd(driver, SSD16XX_CMD_UPDATE_CTRL2,
+			      tmp, 1)) {
+		return -EIO;
+	}
+
+	if (ssd16xx_write_cmd(driver, SSD16XX_CMD_MASTER_ACTIVATION,
+			      NULL, 0)) {
+		return -EIO;
+	}
+
+	ssd16xx_busy_wait(driver);
+
+	driver->update_cmd |= SSD16XX_CTRL2_LOAD_LUT;
+
+	return 0;
+}
+
+static int ssd16xx_load_ws_initial(struct device *dev)
+{
+#if DT_INST_NODE_HAS_PROP(0, lut_initial)
+	struct ssd16xx_data *driver = dev->driver_data;
+
+	if (ssd16xx_write_cmd(driver, SSD16XX_CMD_UPDATE_LUT,
+			      ssd16xx_lut_initial,
+			      sizeof(ssd16xx_lut_initial))) {
+		return -EIO;
+	}
+
+	ssd16xx_busy_wait(driver);
+#else
+	ssd16xx_load_ws_from_otp(dev);
+#endif
+
+	return 0;
+}
+
+static int ssd16xx_load_ws_default(struct device *dev)
+{
+#if DT_INST_NODE_HAS_PROP(0, lut_default)
+	struct ssd16xx_data *driver = dev->driver_data;
+
+	if (ssd16xx_write_cmd(driver, SSD16XX_CMD_UPDATE_LUT,
+			      ssd16xx_lut_default,
+			      sizeof(ssd16xx_lut_default))) {
+		return -EIO;
+	}
+
+	ssd16xx_busy_wait(driver);
+#endif
+
+	return 0;
+}
+
 static int ssd16xx_controller_init(struct device *dev)
 {
 	int err;
@@ -512,12 +588,14 @@ static int ssd16xx_controller_init(struct device *dev)
 	}
 
 	ssd16xx_set_orientation_internall(driver);
+	driver->update_cmd = (SSD16XX_CTRL2_ENABLE_CLK |
+			      SSD16XX_CTRL2_ENABLE_ANALOG |
+			      SSD16XX_CTRL2_TO_PATTERN |
+			      SSD16XX_CTRL2_DISABLE_ANALOG |
+			      SSD16XX_CTRL2_DISABLE_CLK);
 
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_UPDATE_LUT,
-				ssd16xx_lut_initial,
-				sizeof(ssd16xx_lut_initial));
-	if (err < 0) {
-		return err;
+	if (ssd16xx_load_ws_initial(dev)) {
+		return -EIO;
 	}
 
 	err = ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RAM, true);
@@ -535,11 +613,8 @@ static int ssd16xx_controller_init(struct device *dev)
 
 	ssd16xx_busy_wait(driver);
 
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_UPDATE_LUT,
-				ssd16xx_lut_default,
-				sizeof(ssd16xx_lut_default));
-	if (err < 0) {
-		return err;
+	if (ssd16xx_load_ws_default(dev)) {
+		return -EIO;
 	}
 
 	return ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RAM, true);
