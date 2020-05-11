@@ -193,17 +193,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	 * treated identically: it simply indicates the kernel would like the
 	 * next tick announcement as soon as possible.
 	 */
-	if (ticks <= (s32_t)1) {
-		ticks = 1;
-	} else {
-		ticks = (ticks - 1);
-	}
-	/* maximise Tick to keep next_arr on 32bit values,
-	 * in anycase the ARR cannot exceed LPTIM_TIMEBASE
-	 */
-	if (ticks > (s32_t)0xFFFF) {
-		ticks = 0xFFFF;
-	}
+	ticks = MAX(MIN(ticks - 1, (s32_t)LPTIM_TIMEBASE), 1);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
