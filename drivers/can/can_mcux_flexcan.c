@@ -635,7 +635,8 @@ static int mcux_flexcan_init(const struct device *dev)
 	}
 
 	FLEXCAN_TransferCreateHandle(config->base, &data->handle,
-				     mcux_flexcan_transfer_callback, dev);
+				     mcux_flexcan_transfer_callback,
+				     (void *)dev);
 
 	config->irq_config_func(dev);
 

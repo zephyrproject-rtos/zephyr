@@ -175,7 +175,7 @@ static int init_twi(const struct device *dev)
 {
 	nrfx_err_t result = nrfx_twi_init(&get_dev_config(dev)->twi,
 					  &get_dev_config(dev)->config,
-					  event_handler, dev);
+					  event_handler, (void *)dev);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
 			    dev->name);

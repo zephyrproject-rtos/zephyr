@@ -304,7 +304,7 @@ static int init_spim(const struct device *dev)
 	nrfx_err_t result = nrfx_spim_init(&get_dev_config(dev)->spim,
 					   &get_dev_config(dev)->config,
 					   event_handler,
-					   dev);
+					   (void *)dev);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
 			    dev->name);

@@ -456,7 +456,7 @@ static int gpio_stm32_pin_interrupt_configure(const struct device *dev,
 		goto release_lock;
 	}
 
-	if (stm32_exti_set_callback(pin, gpio_stm32_isr, dev) != 0) {
+	if (stm32_exti_set_callback(pin, gpio_stm32_isr, (void *)dev) != 0) {
 		err = -EBUSY;
 		goto release_lock;
 	}

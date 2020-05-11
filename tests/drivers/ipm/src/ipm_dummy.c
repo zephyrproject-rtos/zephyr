@@ -69,7 +69,7 @@ static int ipm_dummy_send(const struct device *d, int wait, u32_t id,
 	driver_data->regs.id = id;
 	driver_data->regs.busy = 1U;
 
-	irq_offload(ipm_dummy_isr, d);
+	irq_offload(ipm_dummy_isr, (void *)d);
 
 	if (wait) {
 		while (driver_data->regs.busy) {
@@ -97,7 +97,7 @@ static int ipm_dummy_set_enabled(const struct device *d, int enable)
 	driver_data->regs.enabled = enable;
 	if (enable) {
 		/* In case there are pending messages */
-		irq_offload(ipm_dummy_isr, d);
+		irq_offload(ipm_dummy_isr, (void *)d);
 	}
 	return 0;
 }

@@ -44,7 +44,7 @@ static void log_backend_uart_init(void)
 	dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
 	assert(dev);
 
-	log_output_ctx_set(&log_output, dev);
+	log_output_ctx_set(&log_output, (void *)dev);
 }
 
 static void panic(struct log_backend const *const backend)

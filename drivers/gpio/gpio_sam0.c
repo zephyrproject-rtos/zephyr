@@ -231,7 +231,7 @@ static int gpio_sam0_pin_interrupt_configure(const struct device *dev,
 		if (rc == 0) {
 			rc = sam0_eic_acquire(config->id, pin, trigger,
 					      (DEV_DATA(dev)->debounce & BIT(pin)) != 0,
-					      gpio_sam0_isr, dev);
+					      gpio_sam0_isr, (void *)dev);
 		}
 		if (rc == 0) {
 			rc = sam0_eic_enable_interrupt(config->id, pin);

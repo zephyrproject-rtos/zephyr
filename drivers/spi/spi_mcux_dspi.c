@@ -185,7 +185,8 @@ static int spi_mcux_configure(const struct device *dev,
 	DSPI_MasterInit(base, &master_config, clock_freq);
 
 	DSPI_MasterTransferCreateHandle(base, &data->handle,
-					spi_mcux_master_transfer_callback, dev);
+					spi_mcux_master_transfer_callback,
+					(void *)dev);
 
 	DSPI_SetDummyData(base, 0);
 

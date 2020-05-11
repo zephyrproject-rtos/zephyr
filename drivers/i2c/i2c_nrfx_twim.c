@@ -147,7 +147,7 @@ static int init_twim(const struct device *dev)
 	nrfx_err_t result = nrfx_twim_init(&get_dev_config(dev)->twim,
 					   &get_dev_config(dev)->config,
 					   event_handler,
-					   dev);
+					   (void *)dev);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
 			dev->name);

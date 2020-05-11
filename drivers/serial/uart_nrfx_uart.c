@@ -717,11 +717,11 @@ void uart_nrfx_isr(void *arg)
 
 	if (nrf_uart_int_enable_check(uart0_addr, NRF_UART_INT_MASK_ERROR) &&
 	    nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_ERROR)) {
-		error_isr(uart);
+		error_isr((void *) uart);
 	} else if (nrf_uart_int_enable_check(uart0_addr,
 					     NRF_UART_INT_MASK_RXDRDY) &&
 		   nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_RXDRDY)) {
-		rx_isr(uart);
+		rx_isr((void *) uart);
 	}
 
 	if (nrf_uart_event_check(uart0_addr, NRF_UART_EVENT_TXDRDY)

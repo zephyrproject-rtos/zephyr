@@ -1073,7 +1073,7 @@ static inline void uart_irq_callback_set(const struct device *dev,
 					 uart_irq_callback_t cb)
 {
 	uart_irq_callback_user_data_set(dev, (uart_irq_callback_user_data_t)cb,
-					dev);
+					(void *)dev);
 }
 
 #endif

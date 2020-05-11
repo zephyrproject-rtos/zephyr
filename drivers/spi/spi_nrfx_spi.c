@@ -265,7 +265,7 @@ static int init_spi(const struct device *dev)
 	nrfx_err_t result = nrfx_spi_init(&get_dev_config(dev)->spi,
 					  &get_dev_config(dev)->config,
 					  event_handler,
-					  dev);
+					  (void *)dev);
 	if (result != NRFX_SUCCESS) {
 		LOG_ERR("Failed to initialize device: %s",
 			    dev->name);

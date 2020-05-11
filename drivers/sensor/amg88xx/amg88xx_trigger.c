@@ -131,7 +131,7 @@ static void amg88xx_work_cb(struct k_work *work)
 {
 	struct amg88xx_data *drv_data =
 		CONTAINER_OF(work, struct amg88xx_data, work);
-	amg88xx_thread_cb(drv_data->dev);
+	amg88xx_thread_cb((void *)drv_data->dev);
 }
 #endif
 

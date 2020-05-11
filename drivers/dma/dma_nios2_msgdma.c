@@ -140,7 +140,7 @@ static int nios2_msgdma_config(const struct device *dev, u32_t channel,
 			ALTERA_MSGDMA_CSR_GLOBAL_INTERRUPT_MASK |
 			ALTERA_MSGDMA_CSR_STOP_ON_ERROR_MASK |
 			ALTERA_MSGDMA_CSR_STOP_ON_EARLY_TERMINATION_MASK,
-			dev);
+			(void *)dev);
 
 	/* Clear the IRQ status */
 	IOWR_ALTERA_MSGDMA_CSR_STATUS(dev_cfg->msgdma_dev->csr_base,

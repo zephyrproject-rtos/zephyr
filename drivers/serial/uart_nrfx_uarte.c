@@ -925,35 +925,35 @@ static void uarte_nrfx_isr_async(const struct device *dev)
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ERROR)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ERROR);
-		error_isr(dev);
+		error_isr((void *) dev);
 	}
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
-		endrx_isr(dev);
+		endrx_isr((void *) dev);
 	}
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
-		rxstarted_isr(dev);
+		rxstarted_isr((void *) dev);
 	}
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
-		rxto_isr(dev);
+		rxto_isr((void *) dev);
 	}
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDTX)
 	    && nrf_uarte_int_enable_check(uarte, NRF_UARTE_INT_ENDTX_MASK)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
-		endtx_isr(dev);
+		endtx_isr((void *) dev);
 	}
 
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)
 	    && nrf_uarte_int_enable_check(uarte,
 					  NRF_UARTE_INT_TXSTOPPED_MASK)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_TXSTOPPED);
-		txstopped_isr(dev);
+		txstopped_isr((void *) dev);
 	}
 }
 

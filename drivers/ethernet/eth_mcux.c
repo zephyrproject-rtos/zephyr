@@ -998,7 +998,7 @@ static void eth_mcux_init(const struct device *dev)
 	/* handle PHY setup after SMI initialization */
 	eth_mcux_phy_setup(context);
 
-	ENET_SetCallback(&context->enet_handle, eth_callback, dev);
+	ENET_SetCallback(&context->enet_handle, eth_callback, (void *)dev);
 
 	eth_mcux_phy_start(context);
 }

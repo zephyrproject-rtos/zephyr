@@ -142,10 +142,11 @@ int ipm_console_receiver_init(const struct device *d)
 	ring_buf_init(&driver_data->rb, config_info->rb_size32,
 		      config_info->ring_buf_data);
 
-	ipm_register_callback(ipm, ipm_console_receive_callback, d);
+	ipm_register_callback(ipm, ipm_console_receive_callback, (void *)d);
 
 	k_thread_create(&driver_data->rx_thread, config_info->thread_stack,
-			CONFIG_IPM_CONSOLE_STACK_SIZE, ipm_console_thread, d,
+			CONFIG_IPM_CONSOLE_STACK_SIZE, ipm_console_thread,
+			(void *)d,
 			NULL, NULL, K_PRIO_COOP(IPM_CONSOLE_PRI), 0, K_NO_WAIT);
 	ipm_set_enabled(ipm, 1);
 

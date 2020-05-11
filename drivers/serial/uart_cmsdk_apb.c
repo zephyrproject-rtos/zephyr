@@ -268,7 +268,7 @@ static void uart_cmsdk_apb_irq_tx_enable(const struct device *dev)
 	 * processing going.
 	 */
 	key = irq_lock();
-	uart_cmsdk_apb_isr(dev);
+	uart_cmsdk_apb_isr((void *)dev);
 	irq_unlock(key);
 }
 
