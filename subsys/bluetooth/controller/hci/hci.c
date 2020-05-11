@@ -1837,20 +1837,36 @@ static void le_set_ext_scan_param(struct net_buf *buf, struct net_buf **evt)
 	phys = cmd->phys;
 	p = cmd->p;
 
+	/* Number of bits set indicate scan sets to be configured by calling
+	 * ll_scan_params_set function.
+	 */
 	phys_bitmask = BT_HCI_LE_EXT_SCAN_PHY_1M;
 	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
 		phys_bitmask |= BT_HCI_LE_EXT_SCAN_PHY_CODED;
 	}
 
+	/* Irrespective of enabled PHYs to scan for, ll_scan_params_set needs
+	 * to be called to initialise the scan sets.
+	 * Passing interval and window as 0, disable the particular scan set
+	 * from being enabled.
+	 */
 	do {
 		uint16_t interval;
 		uint16_t window;
 		uint8_t type;
 		uint8_t phy;
 
+		/* Get single PHY bit from the loop bitmask */
 		phy = BIT(find_lsb_set(phys_bitmask) - 1);
+
+		/* Pass the PHY (1M or Coded) of scan set in MSbits of type
+		 * parameter
+		 */
 		type = (phy << 1);
 
+		/* If current PHY is one of the PHY in the Scanning_PHYs,
+		 * pick the supplied scan type, interval and window.
+		 */
 		if (phys & phy) {
 			type |= (p->type & 0x01);
 			interval = sys_le16_to_cpu(p->interval);
@@ -1890,6 +1906,7 @@ static void le_set_ext_scan_enable(struct net_buf *buf, struct net_buf **evt)
 	}
 #endif
 
+	/* FIXME: Add implementation to use duration and period parameters. */
 	status = ll_scan_enable(cmd->enable);
 
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
@@ -1965,7 +1982,7 @@ static void le_ext_create_connection(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_status(status);
 }
 #endif /* CONFIG_BT_CENTRAL */
-#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 				 struct net_buf **evt, void **node_rx)

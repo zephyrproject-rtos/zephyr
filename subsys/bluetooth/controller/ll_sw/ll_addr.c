@@ -55,7 +55,9 @@ uint32_t ll_addr_set(uint8_t addr_type, uint8_t const *const bdaddr)
 		uint32_t status = ull_adv_is_enabled(0);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		if ((status & 5U) == 1U) {
+		if ((status & (ULL_ADV_ENABLED_BITMASK_ENABLED |
+			       ULL_ADV_ENABLED_BITMASK_EXTENDED)) ==
+		     ULL_ADV_ENABLED_BITMASK_ENABLED) {
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 		if (status) {
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */

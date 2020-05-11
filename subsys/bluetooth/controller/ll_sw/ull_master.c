@@ -145,7 +145,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 
 	conn_lll = &conn->lll;
 
-	err = util_aa_to_le32(conn_lll->access_addr);
+	err = util_aa_le32(conn_lll->access_addr);
 	LL_ASSERT(!err);
 
 	util_rand(conn_lll->crc_init, sizeof(conn_lll->crc_init));
@@ -414,6 +414,10 @@ uint8_t ll_connect_disable(void **rx)
 	return status;
 }
 
+/* FIXME: Refactor out this interface so that its usable by extended
+ * advertising channel classification, and also master role connections can
+ * perform channel map update control procedure.
+ */
 uint8_t ll_chm_update(uint8_t const *const chm)
 {
 	uint16_t handle;

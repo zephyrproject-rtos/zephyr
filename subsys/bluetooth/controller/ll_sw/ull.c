@@ -642,6 +642,9 @@ void ll_rx_dequeue(void)
 		if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
 			uint8_t bm;
 
+			/* FIXME: use the correct adv and scan set to get
+			 * enabled status bitmask
+			 */
 			bm = (IS_ENABLED(CONFIG_BT_OBSERVER) &&
 			      ull_scan_is_enabled(0) << 1) |
 			     (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
