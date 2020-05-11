@@ -32,6 +32,10 @@ enum bt_buf_type {
 	BT_BUF_ACL_OUT,
 	/** Incoming ACL data */
 	BT_BUF_ACL_IN,
+	/** Outgoing ISO data */
+	BT_BUF_ISO_OUT,
+	/** Incoming ISO data */
+	BT_BUF_ISO_IN,
 	/** H:4 data */
 	BT_BUF_H4,
 };
