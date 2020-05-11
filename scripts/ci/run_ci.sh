@@ -272,7 +272,7 @@ if [ -n "$main_ci" ]; then
 		--subset ${matrix}/${matrix_builds}
 
 	# Run a subset of tests based on matrix size
-	${sanitycheck} ${sanitycheck_options} --test-only --load-tests test_file.txt \
+	${sanitycheck} ${sanitycheck_options} --test-only \
 		--subset ${matrix}/${matrix_builds} --retry-failed 3
 
 	# Run module tests on matrix #1
