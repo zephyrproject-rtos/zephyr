@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2020, Seagate
+ * Copyright (c) 2020, Seagate Technology LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <arm/armv6-m.dtsi>
 #include <dt-bindings/clock/lpc11u6x_clock.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <mem.h>
 
 / {
 	cpus {
@@ -35,6 +36,18 @@
 	soc {
 		flash0:flash@0 {
 			compatible = "soc-nv-flash";
+		};
+
+		/* On-chip EEPROM. */
+		eeprom0: eeprom_0 {
+			compatible = "nxp,lpc11u6x-eeprom";
+			label = "EEPROM_0";
+			/*
+			 * For some reasons, the IAP commands don't allow to
+			 * reach the last 64 bytes of the EEPROM.
+			 */
+			size = <(DT_SIZE_K(4) - 64)>;
+			status = "okay";
 		};
 
 		/* PIO0_0 to PIO0_23. */
