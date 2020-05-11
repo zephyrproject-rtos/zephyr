@@ -61,9 +61,31 @@ static const char *e1000_reg_to_string(enum e1000_reg_t r)
 	return NULL;
 }
 
+static struct net_if *get_iface(struct e1000_dev *ctx, uint16_t vlan_tag)
+{
+#if defined(CONFIG_NET_VLAN)
+	struct net_if *iface;
+
+	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
+	if (!iface) {
+		return ctx->iface;
+	}
+
+	return iface;
+#else
+	ARG_UNUSED(vlan_tag);
+
+	return ctx->iface;
+#endif
+}
+
 static enum ethernet_hw_caps e1000_caps(struct device *dev)
 {
-	return  ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T | \
+	return
+#if IS_ENABLED(CONFIG_NET_VLAN)
+		ETHERNET_HW_VLAN |
+#endif
+		ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |
 		ETHERNET_LINK_1000BASE_T;
 }
 
@@ -142,6 +164,7 @@ static void e1000_isr(struct device *device)
 {
 	struct e1000_dev *dev = device->driver_data;
 	uint32_t icr = ior32(dev, ICR); /* Cleared upon read */
+	uint16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 
 	icr &= ~(ICR_TXDW | ICR_TXQE);
 
@@ -151,9 +174,31 @@ static void e1000_isr(struct device *device)
 		icr &= ~ICR_RXO;
 
 		if (pkt) {
-			net_recv_data(dev->iface, pkt);
+#if defined(CONFIG_NET_VLAN)
+			struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+			if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
+				struct net_eth_vlan_hdr *hdr_vlan =
+					(struct net_eth_vlan_hdr *)
+					NET_ETH_HDR(pkt);
+
+				net_pkt_set_vlan_tci(
+					pkt, ntohs(hdr_vlan->vlan.tci));
+				vlan_tag = net_pkt_vlan_tag(pkt);
+
+#if CONFIG_NET_TC_RX_COUNT > 1
+				enum net_priority prio;
+
+				prio = net_vlan2priority(
+						net_pkt_vlan_priority(pkt));
+				net_pkt_set_priority(pkt, prio);
+#endif
+			}
+#endif /* CONFIG_NET_VLAN */
+
+			net_recv_data(get_iface(dev, vlan_tag), pkt);
 		} else {
-			eth_stats_update_errors_rx(dev->iface);
+			eth_stats_update_errors_rx(get_iface(dev, vlan_tag));
 		}
 	}
 
@@ -165,11 +210,14 @@ static void e1000_isr(struct device *device)
 #define PCI_VENDOR_ID_INTEL	0x8086
 #define PCI_DEVICE_ID_I82540EM	0x100e
 
+DEVICE_DECLARE(eth_e1000);
+
 int e1000_probe(struct device *device)
 {
 	const pcie_bdf_t bdf = PCIE_BDF(0, 3, 0);
 	struct e1000_dev *dev = device->driver_data;
 	int retval = -ENODEV;
+	uint32_t ral, rah;
 
 	if (pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
 			    PCI_DEVICE_ID_I82540EM))) {
@@ -178,18 +226,6 @@ int e1000_probe(struct device *device)
 				  PCIE_CONF_CMDSTAT_MASTER, true);
 		retval = 0;
 	}
-
-	return retval;
-}
-
-DEVICE_DECLARE(eth_e1000);
-
-static void e1000_init(struct net_if *iface)
-{
-	struct e1000_dev *dev = net_if_get_device(iface)->driver_data;
-	uint32_t ral, rah;
-
-	dev->iface = iface;
 
 	/* Setup TX descriptor */
 
@@ -222,21 +258,35 @@ static void e1000_init(struct net_if *iface)
 	memcpy(dev->mac, &ral, 4);
 	memcpy(dev->mac + 4, &rah, 2);
 
-	ethernet_init(iface);
+	return retval;
+}
 
-	net_if_set_link_addr(iface, dev->mac, sizeof(dev->mac),
-				NET_LINK_ETHERNET);
+static void e1000_iface_init(struct net_if *iface)
+{
+	struct e1000_dev *dev = net_if_get_device(iface)->driver_data;
 
-	IRQ_CONNECT(DT_INST_IRQN(0),
+	/* For VLAN, this value is only used to get the correct L2 driver.
+	 * The iface pointer in device context should contain the main
+	 * interface if the VLANs are enabled.
+	 */
+	if (dev->iface == NULL) {
+		dev->iface = iface;
+
+		/* Do the phy link up only once */
+		IRQ_CONNECT(DT_INST_IRQN(0),
 			DT_INST_IRQ(0, priority),
 			e1000_isr, DEVICE_GET(eth_e1000),
 			DT_INST_IRQ(0, sense));
 
-	irq_enable(DT_INST_IRQN(0));
+		irq_enable(DT_INST_IRQN(0));
+		iow32(dev, CTRL, CTRL_SLU); /* Set link up */
+		iow32(dev, RCTL, RCTL_EN | RCTL_MPE);
+	}
 
-	iow32(dev, CTRL, CTRL_SLU); /* Set link up */
+	ethernet_init(iface);
 
-	iow32(dev, RCTL, RCTL_EN | RCTL_MPE);
+	net_if_set_link_addr(iface, dev->mac, sizeof(dev->mac),
+			     NET_LINK_ETHERNET);
 
 	LOG_DBG("done");
 }
@@ -244,19 +294,17 @@ static void e1000_init(struct net_if *iface)
 static struct e1000_dev e1000_dev;
 
 static const struct ethernet_api e1000_api = {
-	.iface_api.init		= e1000_init,
+	.iface_api.init		= e1000_iface_init,
 	.get_capabilities	= e1000_caps,
 	.send			= e1000_send,
 };
 
-NET_DEVICE_INIT(eth_e1000,
-		"ETH_0",
-		e1000_probe,
-		device_pm_control_nop,
-		&e1000_dev,
-		NULL,
-		CONFIG_ETH_INIT_PRIORITY,
-		&e1000_api,
-		ETHERNET_L2,
-		NET_L2_GET_CTX_TYPE(ETHERNET_L2),
-		NET_ETH_MTU);
+ETH_NET_DEVICE_INIT(eth_e1000,
+		    "ETH_0",
+		    e1000_probe,
+		    device_pm_control_nop,
+		    &e1000_dev,
+		    NULL,
+		    CONFIG_ETH_INIT_PRIORITY,
+		    &e1000_api,
+		    NET_ETH_MTU);
