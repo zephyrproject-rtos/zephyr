@@ -566,8 +566,11 @@ uint8_t u8_to_dec(char *buf, uint8_t buflen, uint8_t value);
  */
 #define GET_ARG2(...) __DEPRECATED GET_ARG_N(2, __VA_ARGS__)
 
-/** @brief Expands to all arguments except the first one (@p val) */
-#define GET_ARGS_LESS_1(val, ...) __VA_ARGS__
+/** Expands to all arguments except the first one.
+ *
+ * @deprecated Use GET_ARGS_LESS_N instead.
+ */
+#define GET_ARGS_LESS_1(...) __DEPRECATED GET_ARGS_LESS_N(1, __VA_ARGS__)
 
 /**
  * @brief Like <tt>a || b</tt>, but does evaluation and

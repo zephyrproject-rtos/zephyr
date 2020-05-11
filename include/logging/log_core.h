@@ -155,7 +155,7 @@ extern "C" {
 #define Z_LOG_STR(...) "%s: " GET_ARG_N(1, __VA_ARGS__), __func__\
 		COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__),\
 			    (),\
-			    (, GET_ARGS_LESS_1(__VA_ARGS__))\
+			    (, GET_ARGS_LESS_N(1, __VA_ARGS__))\
 			   )
 
 

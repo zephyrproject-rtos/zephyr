@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 	LOG_##lvl("%s: " GET_ARG_N(1, __VA_ARGS__), \
 		get_sub_config(dev, (enum clock_control_nrf_type)subsys)->name \
 		COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__),\
-				(), (, GET_ARGS_LESS_1(__VA_ARGS__))))
+				(), (, GET_ARGS_LESS_N(1, __VA_ARGS__))))
 #else
 #define CLOCK_LOG(...)
 #endif
