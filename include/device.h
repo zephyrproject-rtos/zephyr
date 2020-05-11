@@ -118,7 +118,7 @@ struct device_context;
 	static struct device_context _CONCAT(__dctx_, dev_name) = {	\
 	};								\
 	static Z_DECL_ALIGN(struct device)				\
-		DEVICE_NAME_GET(dev_name) __used			\
+		const DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
 		.name = drv_name,					\
 		.config_info = (cfg_info),				\
@@ -175,7 +175,7 @@ struct device_context;
 	static struct device_context _CONCAT(__dctx_, dev_name) = {	\
 	};								\
 	static Z_DECL_ALIGN(struct device)				\
-		DEVICE_NAME_GET(dev_name) __used			\
+		const DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
 		.name = drv_name,					\
 		.config_info = (cfg_info),				\
@@ -219,7 +219,7 @@ struct device_context;
  *
  * @param name Device name
  */
-#define DEVICE_DECLARE(name) static struct device DEVICE_NAME_GET(name)
+#define DEVICE_DECLARE(name) static struct device const DEVICE_NAME_GET(name)
 
 typedef void (*device_pm_cb)(struct device *dev,
 			     int status, void *context, void *arg);
