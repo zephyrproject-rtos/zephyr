@@ -1734,8 +1734,16 @@ static void le_set_ext_adv_enable(struct net_buf *buf, struct net_buf **evt)
 
 	set_num = cmd->set_num;
 	if (!set_num) {
+		if (cmd->enable) {
+			ccst = hci_cmd_complete(evt, sizeof(*ccst));
+			ccst->status = BT_HCI_ERR_INVALID_PARAM;
+
+			return;
+		}
+
+		/* FIXME: Implement disable of all advertising sets */
 		ccst = hci_cmd_complete(evt, sizeof(*ccst));
-		ccst->status = BT_HCI_ERR_INVALID_PARAM;
+		ccst->status = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
 
 		return;
 	}
