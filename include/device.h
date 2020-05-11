@@ -27,6 +27,8 @@ extern "C" {
 
 #define Z_DEVICE_MAX_NAME_LEN	48
 
+struct device_context;
+
 /**
  * @def DEVICE_NAME_GET
  *
@@ -113,6 +115,8 @@ extern "C" {
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api)				\
+	static struct device_context _CONCAT(__dctx_, dev_name) = {	\
+	};								\
 	static Z_DECL_ALIGN(struct device)				\
 		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
@@ -120,6 +124,7 @@ extern "C" {
 		.config_info = (cfg_info),				\
 		.driver_api = (api),					\
 		.driver_data = (data),					\
+		.driver_context = &_CONCAT(__dctx_, dev_name),		\
 	};								\
 	Z_INIT_ENTRY_DEFINE(_CONCAT(__device_, dev_name), init_fn,	\
 			    (&_CONCAT(__device_, dev_name)), level, prio)
@@ -167,6 +172,8 @@ extern "C" {
 			K_POLL_MODE_NOTIFY_ONLY,			\
 			&_CONCAT(__pm_, dev_name).signal),		\
 	};								\
+	static struct device_context _CONCAT(__dctx_, dev_name) = {	\
+	};								\
 	static Z_DECL_ALIGN(struct device)				\
 		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
@@ -174,6 +181,7 @@ extern "C" {
 		.config_info = (cfg_info),				\
 		.driver_api = (api),					\
 		.driver_data = (data),					\
+		.driver_context = &_CONCAT(__dctx_, dev_name),		\
 		.device_pm_control = (pm_control_fn),			\
 		.pm  = &_CONCAT(__pm_, dev_name),			\
 	};								\
@@ -239,6 +247,15 @@ struct device_pm {
 };
 
 /**
+ * @brief Runtime dynamic state for a driver instance.
+ *
+ * @note This may be embedded within a parent structure that provides
+ * driver-specific dynamic state.
+ */
+struct device_context {
+};
+
+/**
  * @brief Runtime device structure (in memory) per driver instance
  *
  * @param name name of the device
@@ -254,6 +271,7 @@ struct device {
 	const void *config_info;
 	const void *driver_api;
 	void * const driver_data;
+	struct device_context * const driver_context;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	int (*device_pm_control)(struct device *device, u32_t command,
 				 void *context, device_pm_cb cb, void *arg);
