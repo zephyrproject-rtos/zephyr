@@ -40,3 +40,8 @@ which provide out-of-the-box configuration for OpenThread. To enable OpenThread
 support in these samples, build them with ``overlay-ot.conf`` overlay config file.
 See :ref:`sockets-echo-server-sample` and :ref:`sockets-echo-client-sample` for
 details.
+
+Integration with Zephyr
+***********************
+
+To understand how exactly OpenThread L2 is integrated with the Zephyr RTOS please follow :ref:`openthread_integration`.
