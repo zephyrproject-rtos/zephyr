@@ -188,7 +188,7 @@ static const struct i2c_driver_api i2c_gecko_driver_api = {
 	.transfer = i2c_gecko_transfer,
 };
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
 #define PIN_I2C_0_SDA {DT_INST_PROP_BY_IDX(0, location_sda, 1), \
 		DT_INST_PROP_BY_IDX(0, location_sda, 2), gpioModeWiredAnd, 1}
@@ -220,9 +220,9 @@ DEVICE_AND_API_INIT(i2c_gecko_0, DT_INST_LABEL(0),
 		    &i2c_gecko_init, &i2c_gecko_data_0, &i2c_gecko_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_gecko_driver_api);
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 
 #define PIN_I2C_1_SDA {DT_INST_PROP_BY_IDX(1, location_sda, 1), \
 		DT_INST_PROP_BY_IDX(1, location_sda, 2), gpioModeWiredAnd, 1}
@@ -254,4 +254,4 @@ DEVICE_AND_API_INIT(i2c_gecko_1, DT_INST_LABEL(1),
 		    &i2c_gecko_init, &i2c_gecko_data_1, &i2c_gecko_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_gecko_driver_api);
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */

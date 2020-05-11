@@ -919,22 +919,22 @@ static void i2s_stm32_irq_config_func_##index(struct device *dev)	\
 	irq_enable(DT_IRQN(DT_NODELABEL(i2s##index)));			\
 }
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(i2s1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s1), okay)
 I2S_INIT(1, 2)
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(i2s2))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s2), okay)
 I2S_INIT(2, 1)
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(i2s3))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s3), okay)
 I2S_INIT(3, 1)
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(i2s4))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s4), okay)
 I2S_INIT(4, 2)
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(i2s5))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s5), okay)
 I2S_INIT(5, 2)
 #endif

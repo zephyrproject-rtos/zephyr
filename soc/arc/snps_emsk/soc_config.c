@@ -18,14 +18,14 @@ static int uart_ns16550_init(struct device *dev)
 	/* On ARC EM Starter kit board,
 	 * send the UART the command to clear the interrupt
 	 */
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, ns16550))
+#if DT_NODE_HAS_STATUS(DT_INST(0, ns16550), okay)
 	sys_write32(0, DT_REG_ADDR(DT_INST(0, ns16550))+0x4);
 	sys_write32(0, DT_REG_ADDR(DT_INST(0, ns16550))+0x10);
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_INST(0, ns16550)) */
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(1, ns16550))
+#endif /* DT_NODE_HAS_STATUS(DT_INST(0, ns16550), okay) */
+#if DT_NODE_HAS_STATUS(DT_INST(1, ns16550), okay)
 	sys_write32(0, DT_REG_ADDR(DT_INST(1, ns16550))+0x4);
 	sys_write32(0, DT_REG_ADDR(DT_INST(1, ns16550))+0x10);
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_INST(1, ns16550)) */
+#endif /* DT_NODE_HAS_STATUS(DT_INST(1, ns16550), okay) */
 
 	return 0;
 }

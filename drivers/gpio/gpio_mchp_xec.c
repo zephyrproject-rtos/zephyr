@@ -334,7 +334,7 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 	.disable_callback = gpio_xec_disable_callback,
 };
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio_000_036))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_000_036), okay)
 static int gpio_xec_port000_036_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port000_036_config = {
@@ -377,9 +377,9 @@ static int gpio_xec_port000_036_init(struct device *dev)
 #endif
 	return 0;
 }
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio_000_036)) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_000_036), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio_040_076))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_040_076), okay)
 static int gpio_xec_port040_076_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port040_076_config = {
@@ -422,9 +422,9 @@ static int gpio_xec_port040_076_init(struct device *dev)
 #endif
 	return 0;
 }
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio_040_076)) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_040_076), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio_100_136))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_100_136), okay)
 static int gpio_xec_port100_136_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port100_136_config = {
@@ -467,9 +467,9 @@ static int gpio_xec_port100_136_init(struct device *dev)
 #endif
 	return 0;
 }
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio_100_136)) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_100_136), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio_140_176))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_140_176), okay)
 static int gpio_xec_port140_176_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port140_176_config = {
@@ -512,9 +512,9 @@ static int gpio_xec_port140_176_init(struct device *dev)
 #endif
 	return 0;
 }
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio_140_176)) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_140_176), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio_200_236))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_200_236), okay)
 static int gpio_xec_port200_236_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port200_236_config = {
@@ -557,9 +557,9 @@ static int gpio_xec_port200_236_init(struct device *dev)
 #endif
 	return 0;
 }
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio_200_236)) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_200_236), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio_240_276))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_240_276), okay)
 static int gpio_xec_port240_276_init(struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port240_276_config = {
@@ -602,4 +602,4 @@ static int gpio_xec_port240_276_init(struct device *dev)
 #endif
 	return 0;
 }
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio_240_276)) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_240_276), okay) */

@@ -14,11 +14,12 @@
 /* NB: W25Q16DV is a JEDEC spi-nor device, but has a separate driver. */
 #define FLASH_DEVICE CONFIG_SPI_FLASH_W25QXXDV_DRV_NAME
 #define FLASH_NAME "W25QXXDV"
-#elif (CONFIG_SPI_NOR - 0) || DT_HAS_NODE_STATUS_OKAY(DT_INST(0, jedec_spi_nor))
+#elif (CONFIG_SPI_NOR - 0) ||				\
+	DT_NODE_HAS_STATUS(DT_INST(0, jedec_spi_nor), okay)
 #define FLASH_DEVICE DT_LABEL(DT_INST(0, jedec_spi_nor))
 #define FLASH_NAME "JEDEC SPI-NOR"
 #elif (CONFIG_NORDIC_QSPI_NOR - 0) || \
-	DT_HAS_NODE_STATUS_OKAY(DT_INST(0, nordic_qspi_nor))
+	DT_NODE_HAS_STATUS(DT_INST(0, nordic_qspi_nor), okay)
 #define FLASH_DEVICE DT_LABEL(DT_INST(0, nordic_qspi_nor))
 #define FLASH_NAME "JEDEC QSPI-NOR"
 #else

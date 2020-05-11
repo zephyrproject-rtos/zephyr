@@ -16,8 +16,8 @@ Zephyr shall obtain its hardware descriptions exclusively from devicetree.
 Examples
 ========
 
-- New device drivers shall use devicetree APIs such as :c:func:`DT_HAS_NODE_STATUS_OKAY` to
-  determine whether a device is available and enabled.
+- New device drivers shall use devicetree APIs to determine which :ref:`devices
+  to create <dt-create-devices>` if possible.
 
 - In-tree sample applications shall use :ref:`aliases <dt-alias-chosen>` to
   determine which of multiple possible generic devices of a given type will be

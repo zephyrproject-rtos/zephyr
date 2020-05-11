@@ -1047,7 +1047,7 @@ static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
 static int usb_vbus_set(bool on)
 {
 #define USB_DEV_NODE DT_CHOSEN(zephyr_usb_device)
-#if DT_HAS_NODE_STATUS_OKAY(USB_DEV_NODE) && \
+#if DT_NODE_HAS_STATUS(USB_DEV_NODE, okay) && \
     DT_NODE_HAS_PROP(USB_DEV_NODE, vbus_gpios)
 	int ret = 0;
 	struct device *gpio_dev;

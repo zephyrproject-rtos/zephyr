@@ -32,13 +32,13 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(pwm_0))
+#if DT_NODE_HAS_STATUS(DT_ALIAS(pwm_0), okay)
 #define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_0))
-#elif DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(pwm_1))
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_1), okay)
 #define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_1))
-#elif DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(pwm_2))
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_2), okay)
 #define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_2))
-#elif DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(pwm_3))
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(pwm_3), okay)
 #define PWM_DEV_NAME DT_LABEL(DT_ALIAS(pwm_3))
 #else
 #error "Define a PWM device"

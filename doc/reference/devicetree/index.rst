@@ -23,7 +23,7 @@ Node identifiers
 
 You can use node identifiers for devicetree nodes which are enabled (i.e. have
 ``status = "okay";`` properties) and have matching compatibles. This can be
-tested with :c:func:`DT_HAS_NODE_STATUS_OKAY()`.
+tested with :c:func:`DT_NODE_HAS_STATUS`.
 
 .. doxygengroup:: devicetree-generic-id
    :project: Zephyr

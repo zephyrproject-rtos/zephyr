@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(sdhc_spi, CONFIG_DISK_LOG_LEVEL);
 /* Clock speed used after initialisation */
 #define SDHC_SPI_SPEED 4000000
 
-#if !DT_HAS_NODE_STATUS_OKAY(DT_INST(0, zephyr_mmc_spi_slot))
+#if !DT_NODE_HAS_STATUS(DT_INST(0, zephyr_mmc_spi_slot), okay)
 #warning NO SDHC slot specified on board
 #else
 struct sdhc_spi_data {

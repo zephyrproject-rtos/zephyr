@@ -656,7 +656,7 @@ static const struct can_driver_api mcux_flexcan_driver_api = {
 	.register_state_change_isr = mcux_flexcan_register_state_change_isr
 };
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 static void mcux_flexcan_config_func_0(struct device *dev);
 
 static const struct mcux_flexcan_config mcux_flexcan_config_0 = {
@@ -756,9 +756,9 @@ NET_DEVICE_INIT(socket_can_flexcan_0, SOCKET_CAN_NAME_1, socket_can_init_0,
 
 #endif /* CONFIG_NET_SOCKETS_CAN */
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 static void mcux_flexcan_config_func_1(struct device *dev);
 
 static const struct mcux_flexcan_config mcux_flexcan_config_1 = {
@@ -806,4 +806,4 @@ static void mcux_flexcan_config_func_1(struct device *dev)
 	irq_enable(DT_INST_IRQ_BY_NAME(1, mb_0_15, irq));
 }
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */

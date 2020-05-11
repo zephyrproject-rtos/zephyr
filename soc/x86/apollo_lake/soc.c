@@ -31,22 +31,22 @@ MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(0, intel_hpet)), KB(4), MMU_ENTRY_WRITE);
 #endif  /* CONFIG_HPET_TIMER */
 
 /* for UARTs */
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, ns16550))
+#if DT_NODE_HAS_STATUS(DT_INST(0, ns16550), okay)
 MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(0, ns16550)), 0x1000,
 		(MMU_ENTRY_READ | MMU_ENTRY_WRITE));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(1, ns16550))
+#if DT_NODE_HAS_STATUS(DT_INST(1, ns16550), okay)
 MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(1, ns16550)), 0x1000,
 		(MMU_ENTRY_READ | MMU_ENTRY_WRITE));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(2, ns16550))
+#if DT_NODE_HAS_STATUS(DT_INST(2, ns16550), okay)
 MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(2, ns16550)), 0x1000,
 		(MMU_ENTRY_READ | MMU_ENTRY_WRITE));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(3, ns16550))
+#if DT_NODE_HAS_STATUS(DT_INST(3, ns16550), okay)
 MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(3, ns16550)), 0x1000,
 		(MMU_ENTRY_READ | MMU_ENTRY_WRITE));
 #endif
@@ -54,42 +54,42 @@ MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(3, ns16550)), 0x1000,
 /* for I2C controllers */
 #ifdef CONFIG_I2C
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, snps_designware_i2c))
+#if DT_NODE_HAS_STATUS(DT_INST(0, snps_designware_i2c), okay)
 MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(0, snps_designware_i2c)), 0x1000,
 		(MMU_ENTRY_READ | MMU_ENTRY_WRITE));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(1, snps_designware_i2c))
+#if DT_NODE_HAS_STATUS(DT_INST(1, snps_designware_i2c), okay)
 MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(1, snps_designware_i2c)), 0x1000,
 		(MMU_ENTRY_READ | MMU_ENTRY_WRITE));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(2, snps_designware_i2c))
+#if DT_NODE_HAS_STATUS(DT_INST(2, snps_designware_i2c), okay)
 MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(2, snps_designware_i2c)), 0x1000,
 		(MMU_ENTRY_READ | MMU_ENTRY_WRITE));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(3, snps_designware_i2c))
+#if DT_NODE_HAS_STATUS(DT_INST(3, snps_designware_i2c), okay)
 MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(3, snps_designware_i2c)), 0x1000,
 		(MMU_ENTRY_READ | MMU_ENTRY_WRITE));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(4, snps_designware_i2c))
+#if DT_NODE_HAS_STATUS(DT_INST(4, snps_designware_i2c), okay)
 MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(4, snps_designware_i2c)), 0x1000,
 		(MMU_ENTRY_READ | MMU_ENTRY_WRITE));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(5, snps_designware_i2c))
+#if DT_NODE_HAS_STATUS(DT_INST(5, snps_designware_i2c), okay)
 MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(5, snps_designware_i2c)), 0x1000,
 		(MMU_ENTRY_READ | MMU_ENTRY_WRITE));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(6, snps_designware_i2c))
+#if DT_NODE_HAS_STATUS(DT_INST(6, snps_designware_i2c), okay)
 MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(6, snps_designware_i2c)), 0x1000,
 		(MMU_ENTRY_READ | MMU_ENTRY_WRITE));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(7, snps_designware_i2c))
+#if DT_NODE_HAS_STATUS(DT_INST(7, snps_designware_i2c), okay)
 MMU_BOOT_REGION(DT_REG_ADDR(DT_INST(7, snps_designware_i2c)), 0x1000,
 		(MMU_ENTRY_READ | MMU_ENTRY_WRITE));
 #endif

@@ -50,7 +50,7 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio0), okay)
 	const u32_t port0_pin29_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |
@@ -93,7 +93,7 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
 	const u32_t port1_pin10_config = (
 			IOCON_PIO_FUNC0 |
 			IOCON_PIO_MODE_PULLUP |

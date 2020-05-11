@@ -12,7 +12,7 @@
 #include <sys/util.h>
 #include <ztest.h>
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, test_gpio_basic_api))
+#if DT_NODE_HAS_STATUS(DT_INST(0, test_gpio_basic_api), okay)
 
 /* Execution of the test requires hardware configuration described in
  * devicetree.  See the test,gpio_basic_api binding local to this test
@@ -25,11 +25,11 @@
 #define PIN_OUT DT_GPIO_PIN(DT_INST(0, test_gpio_basic_api), out_gpios)
 #define PIN_IN DT_GPIO_PIN(DT_INST(0, test_gpio_basic_api), in_gpios)
 
-#elif DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(gpio_0))
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(gpio_0), okay)
 #define DEV_NAME DT_LABEL(DT_ALIAS(gpio_0))
-#elif DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(gpio_1))
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(gpio_1), okay)
 #define DEV_NAME DT_LABEL(DT_ALIAS(gpio_1))
-#elif DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(gpio_3))
+#elif DT_NODE_HAS_STATUS(DT_ALIAS(gpio_3), okay)
 #define DEV_NAME DT_LABEL(DT_ALIAS(gpio_3))
 #else
 #error Unsupported board

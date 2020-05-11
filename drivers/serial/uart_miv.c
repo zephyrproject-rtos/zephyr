@@ -385,7 +385,7 @@ static const struct uart_driver_api uart_miv_driver_api = {
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "unsupported uart_miv instance");
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
 static struct uart_miv_data uart_miv_data_0;
 
@@ -418,4 +418,4 @@ static void uart_miv_irq_cfg_func_0(struct device *dev)
 }
 #endif
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */

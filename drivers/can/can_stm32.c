@@ -388,7 +388,7 @@ static int can_stm32_init(struct device *dev)
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
 	CAN_TypeDef *can = cfg->can;
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(can2))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay)
 	CAN_TypeDef *master_can = cfg->master_can;
 #endif
 	struct device *clock;
@@ -429,7 +429,7 @@ static int can_stm32_init(struct device *dev)
 		return ret;
 	}
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(can2))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay)
 	master_can->FMR &= ~CAN_FMR_CAN2SB; /* Assign all filters to CAN2 */
 #endif
 
@@ -1132,7 +1132,7 @@ NET_DEVICE_INIT(socket_can_stm32_1, SOCKET_CAN_NAME_1, socket_can_init_1,
 
 #endif /* CONFIG_NET_SOCKETS_CAN */
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(can1)) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(can1), okay) */
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can2), st_stm32_can, okay)
 
@@ -1215,4 +1215,4 @@ NET_DEVICE_INIT(socket_can_stm32_2, SOCKET_CAN_NAME_2, socket_can_init_2,
 
 #endif /* CONFIG_NET_SOCKETS_CAN */
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(can2)) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay) */

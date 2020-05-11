@@ -42,7 +42,7 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	pinmux_pin_set(portd,  0, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(i2c0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay)
 	/* I2C0 SCL, SDA - heart rate, light, humidity */
 	pinmux_pin_set(portb,  0, PORT_PCR_MUX(kPORT_MuxAlt2)
 					| PORT_PCR_ODE_MASK);
@@ -58,7 +58,7 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	gpio_pin_configure(gpiob, 12, GPIO_OUTPUT_LOW);
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(i2c1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
 	/* I2C1 SCL, SDA - accel/mag, gyro, pressure */
 	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt2)
 					| PORT_PCR_ODE_MASK);
@@ -71,19 +71,19 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	/* FXOS8700 INT2 */
 	pinmux_pin_set(portd, 13, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
 	/* UART0 RX, TX */
 	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart4))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay)
 	/* UART4 RX, TX - BLE */
 	pinmux_pin_set(porte, 24, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(porte, 25, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#if defined(CONFIG_MAX30101) && DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpioa))
+#if defined(CONFIG_MAX30101) && DT_NODE_HAS_STATUS(DT_NODELABEL(gpioa), okay)
 	struct device *porta =
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTA_NAME);
 

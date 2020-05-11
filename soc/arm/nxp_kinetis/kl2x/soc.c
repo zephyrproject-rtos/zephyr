@@ -63,7 +63,7 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetInternalRefClkConfig(kMCG_IrclkEnable, kMCG_IrcSlow, 0);
 	CLOCK_SetSimConfig(&simConfig);
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
 	CLOCK_SetLpsci0Clock(LPSCI0SRC_MCGFLLCLK);
 #endif
 #if CONFIG_USB_KINETIS
