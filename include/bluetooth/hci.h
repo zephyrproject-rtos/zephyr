@@ -66,9 +66,10 @@ struct bt_hci_acl_hdr {
 
 #define bt_iso_handle(h)                ((h) & 0x0fff)
 #define bt_iso_flags(h)                 ((h) >> 12)
-#define bt_iso_flags_pb(f)              (f & 0x0003)
-#define bt_iso_flags_ts(f)              ((f >> 2) & 0x0001)
-#define bt_iso_pack_flags(pb, ts)       ((pb & 0x0003) | ((ts & 0x0001) << 2))
+#define bt_iso_flags_pb(f)              ((f) & 0x0003)
+#define bt_iso_flags_ts(f)              (((f) >> 2) & 0x0001)
+#define bt_iso_pack_flags(pb, ts) \
+	(((pb) & 0x0003) | (((ts) & 0x0001) << 2))
 #define bt_iso_handle_pack(h, pb, ts) \
 	((h) | (bt_iso_pack_flags(pb, ts) << 12))
 
