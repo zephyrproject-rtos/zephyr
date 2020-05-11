@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2018-2020 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(ssd16xx);
 #include <display/cfb.h>
 
 /**
- * SSD1673, SSD1608 compatible EPD controller driver.
+ * SSD1673, SSD1608, SSD1681, ILI3897 compatible EPD controller driver.
  */
 
 #define SSD16XX_SPI_FREQ DT_INST_PROP(0, spi_max_frequency)
@@ -435,9 +435,28 @@ static int ssd16xx_clear_cntlr_mem(struct device *dev, uint8_t ram_cmd,
 static inline int ssd16xx_load_ws_from_otp(struct device *dev)
 {
 	struct ssd16xx_data *driver = dev->driver_data;
-	int16_t t = (SSD16XX_DEFAULT_TR_VALUE * SSD16XX_TR_SCALE_FACTOR);
 	uint8_t tmp[2];
 
+#if DT_INST_NODE_HAS_PROP(0, tssv)
+	/*
+	 * Controller has an integrated temperature sensor or external
+	 * temperature sensor is connected to the controller.
+	 */
+	LOG_INF("Select and load WS from OTP");
+
+	tmp[0] = DT_INST_PROP(0, tssv);
+	if (ssd16xx_write_cmd(driver,
+			      SSD16XX_CMD_TSENSOR_SELECTION,
+			      tmp, 1)) {
+		return -EIO;
+	}
+
+	driver->update_cmd |= SSD16XX_CTRL2_LOAD_LUT |
+			      SSD16XX_CTRL2_LOAD_TEMPERATURE;
+
+	return 0;
+#else
+	int16_t t = (SSD16XX_DEFAULT_TR_VALUE * SSD16XX_TR_SCALE_FACTOR);
 
 	LOG_INF("Load default WS (25 degrees Celsius) from OTP");
 
@@ -477,6 +496,7 @@ static inline int ssd16xx_load_ws_from_otp(struct device *dev)
 	driver->update_cmd |= SSD16XX_CTRL2_LOAD_LUT;
 
 	return 0;
+#endif
 }
 
 static int ssd16xx_load_ws_initial(struct device *dev)

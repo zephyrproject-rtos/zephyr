@@ -24,5 +24,6 @@
 		sdv = [41 a8 32];
 		vcom = <0x00>;
 		border-waveform = <0x05>;
+		tssv = <0x80>;
 	};
 };
