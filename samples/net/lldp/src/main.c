@@ -109,11 +109,18 @@ static struct ud ud;
 
 static int init_vlan(void)
 {
+	enum ethernet_hw_caps caps;
 	int ret;
 
 	(void)memset(&ud, 0, sizeof(ud));
 
 	net_if_foreach(iface_cb, &ud);
+
+	caps = net_eth_get_hw_capabilities(ud.first);
+	if (!(caps & ETHERNET_HW_VLAN)) {
+		LOG_DBG("Interface %p does not support %s", ud.first, "VLAN");
+		return -ENOENT;
+	}
 
 	/* This sample has two VLANs. For the second one we need to manually
 	 * create IP address for this test. But first the VLAN needs to be
@@ -188,8 +195,19 @@ static enum net_verdict parse_lldp(struct net_if *iface, struct net_pkt *pkt)
 
 static int init_app(void)
 {
-	if (init_vlan() < 0) {
-		LOG_ERR("Cannot setup VLAN");
+	enum ethernet_hw_caps caps;
+	int ret;
+
+	ret = init_vlan();
+	if (ret < 0) {
+		LOG_WRN("Cannot setup VLAN (%d)", ret);
+	}
+
+	caps = net_eth_get_hw_capabilities(ud.first);
+	if (!(caps & ETHERNET_LLDP)) {
+		LOG_ERR("Interface %p does not support %s", ud.first, "LLDP");
+		LOG_ERR("Cannot continue!");
+		return -ENOENT;
 	}
 
 	set_optional_tlv(ud.first);
