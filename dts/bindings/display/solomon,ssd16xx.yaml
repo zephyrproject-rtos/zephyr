@@ -92,3 +92,12 @@ properties:
     lut-default:
       type: uint8-array
       required: false
+
+    tssv:
+      type: int
+      required: false
+      description: Temperature Sensor Selection Value
+
+        Display controller can have integrated temperature sensor or
+        an external temperature sensor is connected to the controller.
+        The value selects which sensor should be used.
