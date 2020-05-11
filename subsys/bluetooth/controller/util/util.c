@@ -76,7 +76,7 @@ int util_rand(void *buf, size_t len)
  * - It shall have no more than eleven transitions in the least significant 16
  *   bits.
  */
-int util_aa_to_le32(u8_t *dst)
+int util_aa_le32(u8_t *dst)
 {
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 	u8_t transitions_lsb16;
@@ -97,7 +97,8 @@ again:
 	}
 	retry--;
 
-	util_rand((void *)&aa, sizeof(aa));
+	util_rand(dst, sizeof(u32_t));
+	aa = sys_get_le32(dst);
 
 	bit_idx = 31U;
 	transitions = 0U;

@@ -151,12 +151,13 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 		}
 
 		/* Mark the adv set as created by extended advertising cmd */
-		adv->is_created = 3U;
+		adv->is_created = ULL_ADV_CREATED_BITMASK_CREATED |
+				  ULL_ADV_CREATED_BITMASK_EXTENDED;
 	} else {
 		adv->lll.phy_p = BIT(0);
 
 		/* Mark the adv set as created by legacy advertising cmd */
-		adv->is_created = 1U;
+		adv->is_created = ULL_ADV_CREATED_BITMASK_CREATED;
 	}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
@@ -593,7 +594,9 @@ u8_t ll_adv_enable(u8_t enable)
 		if (!priv) {
 			u8_t const *tx_addr;
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-			if ((adv->is_created & BIT(1)) && pdu_adv->tx_addr) {
+			if ((adv->is_created &
+			     ULL_ADV_CREATED_BITMASK_EXTENDED) &&
+			    pdu_adv->tx_addr) {
 				tx_addr = ll_adv_aux_random_addr_get(adv, NULL);
 			} else
 #endif /* CONFIG_BT_CTLR_ADV_EXT */

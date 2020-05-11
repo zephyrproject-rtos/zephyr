@@ -17,4 +17,4 @@
 
 u8_t util_ones_count_get(u8_t *octets, u8_t octets_len);
 int util_rand(void *buf, size_t len);
-int util_aa_to_le32(u8_t *dst);
+int util_aa_le32(u8_t *dst);

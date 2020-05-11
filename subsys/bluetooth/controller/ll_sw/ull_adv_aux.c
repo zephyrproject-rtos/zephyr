@@ -80,7 +80,6 @@ u8_t const *ll_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
 	return adv->rnd_addr;
 }
 
-#if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 			    u8_t const *const data)
 {
@@ -105,7 +104,8 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 	 */
 
 	/* TODO: handle other op values */
-	if ((op != 0x03) && (op != 0x04)) {
+	if ((op != BT_HCI_LE_EXT_ADV_OP_COMPLETE_DATA) &&
+	    (op != BT_HCI_LE_EXT_ADV_OP_UNCHANGED_DATA)) {
 		/* FIXME: error code */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -496,7 +496,6 @@ u16_t ll_adv_aux_max_data_length_get(void)
 {
 	return CONFIG_BT_CTLR_ADV_DATA_LEN_MAX;
 }
-#endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
 u8_t ll_adv_aux_set_count_get(void)
 {
