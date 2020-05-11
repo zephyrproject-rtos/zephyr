@@ -347,6 +347,7 @@
 /dts/bindings/sensor/*bme680*             @BoschSensortec
 /dts/bindings/sensor/st*                  @avisconti
 /include/                                 @nashif @carlescufi @galak @MaureenHelm
+/include/drivers/*/*litex*                @mateusz-holenko @kgugala @pgielda
 /include/drivers/adc.h                    @anangl
 /include/drivers/can.h                    @alexanderwachter
 /include/drivers/counter.h                @nordic-krch
