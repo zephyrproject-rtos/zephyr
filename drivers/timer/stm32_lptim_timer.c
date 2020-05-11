@@ -178,11 +178,14 @@ int z_clock_driver_init(struct device *device)
 
 void z_clock_set_timeout(s32_t ticks, bool idle)
 {
-#ifdef CONFIG_TICKLESS_KERNEL
 	/* new LPTIM1 AutoReload value to set (aligned on Kernel ticks) */
 	u32_t next_arr = 0;
 
 	ARG_UNUSED(idle);
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
 
 	/* ARROK bit validates previous write operation to ARR register */
 	while (LL_LPTIM_IsActiveFlag_ARROK(LPTIM1) == 0) {
@@ -247,8 +250,6 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	LL_LPTIM_SetAutoReload(LPTIM1, next_arr);
 
 	k_spin_unlock(&lock, key);
-
-#endif /* CONFIG_TICKLESS_KERNEL */
 }
 
 u32_t z_clock_elapsed(void)
