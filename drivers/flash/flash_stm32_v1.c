@@ -1,13 +1,12 @@
 /*
  * Copyright (c) 2017 BayLibre, SAS
+ * Copyright (c) 2019 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_DOMAIN flash_stm32f0
-#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(LOG_DOMAIN);
+LOG_MODULE_REGISTER(flash_stm32generic, CONFIG_FLASH_LOG_LEVEL);
 
 #include <kernel.h>
 #include <device.h>
@@ -148,19 +147,24 @@ void flash_stm32_page_layout(struct device *dev,
 			     const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
-	static struct flash_pages_layout stm32f0_flash_layout = {
+	static struct flash_pages_layout flash_layout = {
 		.pages_count = 0,
 		.pages_size = 0,
 	};
 
 	ARG_UNUSED(dev);
 
-	if (stm32f0_flash_layout.pages_count == 0) {
-		stm32f0_flash_layout.pages_count = (CONFIG_FLASH_SIZE * 1024) /
-							FLASH_PAGE_SIZE;
-		stm32f0_flash_layout.pages_size = FLASH_PAGE_SIZE;
+	if (flash_layout.pages_count == 0) {
+#if defined(CONFIG_SOC_SERIES_STM32F3X)
+		flash_layout.pages_count =
+			DT_REG_SIZE(DT_INST(0, soc_nv_flash)) / FLASH_PAGE_SIZE;
+#else
+		flash_layout.pages_count = (CONFIG_FLASH_SIZE * 1024) /
+			FLASH_PAGE_SIZE;
+#endif
+		flash_layout.pages_size = FLASH_PAGE_SIZE;
 	}
 
-	*layout = &stm32f0_flash_layout;
+	*layout = &flash_layout;
 	*layout_size = 1;
 }
