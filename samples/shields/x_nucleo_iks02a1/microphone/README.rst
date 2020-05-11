@@ -74,14 +74,14 @@ One second of acquisition at a 1 channel 16KHz sampling rate yields 16,000 16-bi
 The microphone PDM requested clock should lead the MP34DT05 driver to select an
 oversampling/decimation factor to result in approximately a 2MHz bit clock.
 
-See PCM and PDM configuration in file :zephyr_file:`samples/shields/x_nucleo_iks02a1/src/main.c`.
+See PCM and PDM configuration in file :zephyr_file:`samples/shields/x_nucleo_iks02a1/microphone/src/main.c`.
 
 .. note:: It is possible to change the AUDIO_FREQ to 32000 acquiring only 500 ms.
 
 At the end of the acquisition the PCM data will be printed on the terminal
 emulator in either binary or ASCII format. The output is controlled by the
 :c:macro:`PCM_OUTPUT_IN_ASCII` macro, off by default, in
-:zephyr_file:`samples/shields/x_nucleo_iks02a1/src/main.c`.
+:zephyr_file:`samples/shields/x_nucleo_iks02a1/microphone/src/main.c`.
 
 Binary PCM Output
 -----------------
