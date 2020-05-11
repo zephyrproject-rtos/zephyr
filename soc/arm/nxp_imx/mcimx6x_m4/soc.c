@@ -21,55 +21,55 @@ static void SOC_RdcInit(void)
 			RDC_DOMAIN_PERM(M4_DOMAIN_ID, RDC_DOMAIN_PERM_RW),
 			false, false);
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart1), okay)
 	/* Set access to UART_1 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapUart1, RDC_DT_VAL(uart1), false, false);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart2))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
 	/* Set access to UART_2 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapUart2, RDC_DT_VAL(uart2), false, false);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart3))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay)
 	/* Set access to UART_3 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapUart3, RDC_DT_VAL(uart3), false, false);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart4))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart4), okay)
 	/* Set access to UART_4 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapUart4, RDC_DT_VAL(uart4), false, false);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart5))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart5), okay)
 	/* Set access to UART_5 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapUart5, RDC_DT_VAL(uart5), false, false);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(uart6))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart6), okay)
 	/* Set access to UART_6 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapUart6, RDC_DT_VAL(uart6), false, false);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio1), okay)
 	/* Set access to GPIO_1 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapGpio1, RDC_DT_VAL(gpio1), false, false);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio2))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio2), okay)
 	/* Set access to GPIO_2 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapGpio2, RDC_DT_VAL(gpio2), false, false);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio3))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio3), okay)
 	/* Set access to GPIO_3 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapGpio3, RDC_DT_VAL(gpio3), false, false);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio4))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio4), okay)
 	/* Set access to GPIO_4 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapGpio4, RDC_DT_VAL(gpio4), false, false);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio5))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio5), okay)
 	/* Set access to GPIO_5 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapGpio5, RDC_DT_VAL(gpio5), false, false);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio6))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio6), okay)
 	/* Set access to GPIO_6 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapGpio6, RDC_DT_VAL(gpio6), false, false);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(gpio7))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio7), okay)
 	/* Set access to GPIO_7 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapGpio7, RDC_DT_VAL(gpio7), false, false);
 #endif
@@ -79,11 +79,11 @@ static void SOC_RdcInit(void)
 	RDC_SetPdapAccess(RDC, rdcPdapMuB, RDC_DT_VAL(mub), false, false);
 #endif /* CONFIG_IPM_IMX */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(epit1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(epit1), okay)
 	/* Set access to EPIT_1 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapEpit1, RDC_DT_VAL(epit1), false, false);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(epit2))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(epit2), okay)
 	/* Set access to EPIT_2 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapEpit2, RDC_DT_VAL(epit2), false, false);
 #endif
@@ -151,10 +151,10 @@ static void SOC_ClockInit(void)
 	CCM_SetRootDivider(CCM, ccmRootPerclkPodf, 0);
 
 	/* Enable EPIT clocks */
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(epit1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(epit1), okay)
 	CCM_ControlGate(CCM, ccmCcgrGateEpit1Clk, ccmClockNeededAll);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(epit2))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(epit2), okay)
 	CCM_ControlGate(CCM, ccmCcgrGateEpit2Clk, ccmClockNeededAll);
 #endif
 #endif /* CONFIG_COUNTER_IMX_EPIT */

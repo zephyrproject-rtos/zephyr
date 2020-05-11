@@ -105,11 +105,11 @@ extern void idle(void *unused1, void *unused2, void *unused3);
 void z_bss_zero(void)
 {
 	(void)memset(__bss_start, 0, __bss_end - __bss_start);
-#if DT_HAS_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_ccm))
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
 	(void)memset(&__ccm_bss_start, 0,
 		     ((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 	(void)memset(&__dtcm_bss_start, 0,
 		     ((u32_t) &__dtcm_bss_end - (u32_t) &__dtcm_bss_start));
 #endif
@@ -146,11 +146,11 @@ void z_data_copy(void)
 	(void)memcpy(&_ramfunc_ram_start, &_ramfunc_rom_start,
 		 (uintptr_t) &_ramfunc_ram_size);
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
-#if DT_HAS_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_ccm))
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
 	(void)memcpy(&__ccm_data_start, &__ccm_data_rom_start,
 		 __ccm_data_end - __ccm_data_start);
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 	(void)memcpy(&__dtcm_data_start, &__dtcm_data_rom_start,
 		 __dtcm_data_end - __dtcm_data_start);
 #endif

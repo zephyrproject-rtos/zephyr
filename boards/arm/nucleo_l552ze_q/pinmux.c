@@ -14,7 +14,7 @@
 
 /* pin assignments for NUCLEO-L552ZE-Q board */
 static const struct pin_config pinconf[] = {
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lpuart1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay)
 	{STM32_PIN_PG7, STM32L5X_PINMUX_FUNC_PG7_LPUART1_TX},
 	{STM32_PIN_PG8, STM32L5X_PINMUX_FUNC_PG8_LPUART1_RX},
 #endif

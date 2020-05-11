@@ -303,7 +303,7 @@ static const struct uart_driver_api uart_gecko_driver_api = {
 
 #define DT_DRV_COMPAT silabs_gecko_uart
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
 #define PIN_UART0_RXD {DT_INST_PROP_BY_IDX(0, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(0, location_rx, 2), gpioModeInput, 1}
@@ -356,9 +356,9 @@ static void uart_gecko_config_func_0(struct device *dev)
 }
 #endif
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 
 #define PIN_UART1_RXD {DT_INST_PROP_BY_IDX(1, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(1, location_rx, 2), gpioModeInput, 1}
@@ -411,12 +411,12 @@ static void uart_gecko_config_func_1(struct device *dev)
 }
 #endif
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT silabs_gecko_usart
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
 #define PIN_USART0_RXD {DT_INST_PROP_BY_IDX(0, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(0, location_rx, 2), gpioModeInput, 1}
@@ -470,9 +470,9 @@ static void usart_gecko_config_func_0(struct device *dev)
 }
 #endif
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 
 #define PIN_USART1_RXD {DT_INST_PROP_BY_IDX(1, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(1, location_rx, 2), gpioModeInput, 1}
@@ -526,9 +526,9 @@ static void usart_gecko_config_func_1(struct device *dev)
 }
 #endif
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(2))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(2), okay)
 
 #define PIN_USART2_RXD {DT_INST_PROP_BY_IDX(2, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(2, location_rx, 2), gpioModeInput, 1}
@@ -582,9 +582,9 @@ static void usart_gecko_config_func_2(struct device *dev)
 }
 #endif
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(2)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(2), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(3))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(3), okay)
 
 #define PIN_USART3_RXD {DT_INST_PROP_BY_IDX(3, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(3, location_rx, 2), gpioModeInput, 1}
@@ -638,9 +638,9 @@ static void usart_gecko_config_func_3(struct device *dev)
 }
 #endif
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(3)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(3), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(4))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(4), okay)
 
 #define PIN_USART4_RXD {DT_INST_PROP_BY_IDX(4, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(4, location_rx, 2), gpioModeInput, 1}
@@ -694,9 +694,9 @@ static void usart_gecko_config_func_4(struct device *dev)
 }
 #endif
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(4)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(4), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(5))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(5), okay)
 
 #define PIN_USART5_RXD {DT_INST_PROP_BY_IDX(5, location_rx, 1), \
 		DT_INST_PROP_BY_IDX(5, location_rx, 2), gpioModeInput, 1}
@@ -750,4 +750,4 @@ static void usart_gecko_config_func_5(struct device *dev)
 }
 #endif
 
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(5)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(5), okay) */

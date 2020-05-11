@@ -566,7 +566,7 @@ static const struct i2c_driver_api i2c_esp32_driver_api = {
 	.transfer = i2c_esp32_transfer,
 };
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 DEVICE_DECLARE(i2c_esp32_0);
 
 static void i2c_esp32_connect_irq_0(void)
@@ -612,9 +612,9 @@ DEVICE_AND_API_INIT(i2c_esp32_0, DT_INST_LABEL(0), &i2c_esp32_init,
 		    &i2c_esp32_data_0, &i2c_esp32_config_0,
 		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		    &i2c_esp32_driver_api);
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 DEVICE_DECLARE(i2c_esp32_1);
 
 static void i2c_esp32_connect_irq_1(void)
@@ -660,7 +660,7 @@ DEVICE_AND_API_INIT(i2c_esp32_1, DT_INST_LABEL(1), &i2c_esp32_init,
 		    &i2c_esp32_data_1, &i2c_esp32_config_1,
 		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		    &i2c_esp32_driver_api);
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */
 
 static int i2c_esp32_init(struct device *dev)
 {

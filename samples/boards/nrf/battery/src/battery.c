@@ -57,7 +57,7 @@ struct divider_config {
 };
 
 static const struct divider_config divider_config = {
-#if DT_HAS_NODE_STATUS_OKAY(VBATT)
+#if DT_NODE_HAS_STATUS(VBATT, okay)
 	.io_channel = {
 		DT_IO_CHANNELS_LABEL(VBATT),
 		DT_IO_CHANNELS_INPUT(VBATT),

@@ -95,10 +95,10 @@ MEMORY
 #ifdef CONFIG_HAS_TI_CCFG
     FLASH_CCFG            (rwx): ORIGIN = CCFG_ADDR, LENGTH = CCFG_SIZE
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_ccm))
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
     CCM                   (rw) : ORIGIN = DT_REG_ADDR(DT_CHOSEN(zephyr_ccm)), LENGTH = DT_REG_SIZE(DT_CHOSEN(zephyr_ccm))
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
     DTCM                  (rw) : ORIGIN = DT_REG_ADDR(DT_CHOSEN(zephyr_dtcm)), LENGTH = DT_REG_SIZE(DT_CHOSEN(zephyr_dtcm))
 #endif
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
@@ -436,7 +436,7 @@ SECTIONS
 
     GROUP_END(RAMABLE_REGION)
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 GROUP_START(DTCM)
 
 	SECTION_PROLOGUE(_DTCM_BSS_SECTION_NAME, (NOLOAD),SUBALIGN(4))

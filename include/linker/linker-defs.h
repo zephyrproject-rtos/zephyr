@@ -24,13 +24,13 @@
 #include <sys/util.h>
 #include <offsets.h>
 
-/* We need to dummy out DT_HAS_NODE_STATUS_OKAY when building the unittests
- * since including devicetree.h would require generating dummy header files
- * to match what the generate creates, so its easier to just dummy out
- * DT_HAS_NODE_STATUS_OKAY.
+/* We need to dummy out DT_NODE_HAS_STATUS when building the unittests.
+ * Including devicetree.h would require generating dummy header files
+ * to match what gen_defines creates, so it's easier to just dummy out
+ * DT_NODE_HAS_STATUS.
  */
 #ifdef ZTEST_UNITTEST
-#define DT_HAS_NODE_STATUS_OKAY(x) 0
+#define DT_NODE_HAS_STATUS(node, status) 0
 #else
 #include <devicetree.h>
 #endif
@@ -232,7 +232,7 @@ extern char __gcov_bss_size[];
 /* end address of image, used by newlib for the heap */
 extern char _end[];
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_ccm))
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
 extern char __ccm_data_rom_start[];
 extern char __ccm_start[];
 extern char __ccm_data_start[];
@@ -244,7 +244,7 @@ extern char __ccm_noinit_end[];
 extern char __ccm_end[];
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 extern char __dtcm_data_start[];
 extern char __dtcm_data_end[];
 extern char __dtcm_bss_start[];

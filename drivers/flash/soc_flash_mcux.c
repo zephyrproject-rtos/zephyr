@@ -20,13 +20,13 @@
 #include "fsl_flash.h"
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, nxp_kinetis_ftfa))
+#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ftfa), okay)
 #define DT_DRV_COMPAT nxp_kinetis_ftfa
-#elif DT_HAS_NODE_STATUS_OKAY(DT_INST(0, nxp_kinetis_ftfe))
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ftfe), okay)
 #define DT_DRV_COMPAT nxp_kinetis_ftfe
-#elif DT_HAS_NODE_STATUS_OKAY(DT_INST(0, nxp_kinetis_ftfl))
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ftfl), okay)
 #define DT_DRV_COMPAT nxp_kinetis_ftfl
-#elif DT_HAS_NODE_STATUS_OKAY(DT_INST(0, nxp_lpc_iap))
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_lpc_iap), okay)
 #define DT_DRV_COMPAT nxp_lpc_iap
 #else
 #error No matching compatible for soc_flash_mcux.c

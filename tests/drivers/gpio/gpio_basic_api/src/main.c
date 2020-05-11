@@ -22,7 +22,7 @@
 
 static void board_setup(void)
 {
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, test_gpio_basic_api))
+#if DT_NODE_HAS_STATUS(DT_INST(0, test_gpio_basic_api), okay)
 	/* PIN_IN and PIN_OUT must be on same controller. */
 	if (strcmp(DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), out_gpios),
 		   DT_GPIO_LABEL(DT_INST(0, test_gpio_basic_api), in_gpios)) != 0) {

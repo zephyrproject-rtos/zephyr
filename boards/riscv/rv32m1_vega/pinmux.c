@@ -19,46 +19,46 @@ static int rv32m1_vega_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(porta))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(porta), okay)
 	__unused struct device *porta =
 		device_get_binding(DT_LABEL(DT_NODELABEL(porta)));
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(portb))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(portb), okay)
 	__unused struct device *portb =
 		device_get_binding(DT_LABEL(DT_NODELABEL(portb)));
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(portc))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(portc), okay)
 	__unused struct device *portc =
 		device_get_binding(DT_LABEL(DT_NODELABEL(portc)));
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(portd))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(portd), okay)
 	__unused struct device *portd =
 		device_get_binding(DT_LABEL(DT_NODELABEL(portd)));
 #endif
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(porte))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(porte), okay)
 	__unused struct device *porte =
 		device_get_binding(DT_LABEL(DT_NODELABEL(porte)));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lpuart0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
 	/* LPUART0 RX, TX */
 	pinmux_pin_set(portc, 7, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portc, 8, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lpuart1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart1), okay)
 	/* LPUART1 RX, TX */
 	pinmux_pin_set(portc, 29, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portc, 30, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lpi2c0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c0), okay)
 	/* LPI2C0 SCL, SDA - Arduino header */
 	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(portc, 9, PORT_PCR_MUX(kPORT_MuxAlt4));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lpi2c3))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c3), okay)
 	/* LPI2C3 SCL, SDA - FXOS8700 */
 	pinmux_pin_set(porte, 30, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(porte, 29, PORT_PCR_MUX(kPORT_MuxAlt3));
@@ -69,7 +69,7 @@ static int rv32m1_vega_pinmux_init(struct device *dev)
 	pinmux_pin_set(porte, 22, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porte, 27, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lpspi0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi0), okay)
 	/* LPSPI0 SCK, SOUT, PCS2, SIN */
 	pinmux_pin_set(portb,  4, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portb,  5, PORT_PCR_MUX(kPORT_MuxAlt2));
@@ -77,7 +77,7 @@ static int rv32m1_vega_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb,  7, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lpspi1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi1), okay)
 	/* LPSPI1 SCK, SIN, SOUT, CS */
 	pinmux_pin_set(portb, 20, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portb, 21, PORT_PCR_MUX(kPORT_MuxAlt2));
@@ -85,7 +85,7 @@ static int rv32m1_vega_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb, 22, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(tpm2))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay)
 	/* RGB LEDs as PWM */
 	pinmux_pin_set(porta, 22, PORT_PCR_MUX(kPORT_MuxAlt6));
 	pinmux_pin_set(porta, 23, PORT_PCR_MUX(kPORT_MuxAlt6));

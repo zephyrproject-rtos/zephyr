@@ -666,7 +666,7 @@ do {									\
 	data->max_streams++;						\
 } while (0)
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 DMA_INIT(0);
 
 static void dma_stm32_config_irq_0(struct device *dev)
@@ -689,10 +689,10 @@ static void dma_stm32_config_irq_0(struct device *dev)
 #endif /* DT_INST_IRQ_HAS_IDX(0, 7) */
 /* Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
 }
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */
 
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay)
 DMA_INIT(1);
 
 static void dma_stm32_config_irq_1(struct device *dev)
@@ -715,4 +715,4 @@ static void dma_stm32_config_irq_1(struct device *dev)
 #endif /* DT_INST_IRQ_HAS_IDX(1, 7) */
 /* Either 5 or 6 or 7 or 8 channels for DMA across all stm32 series. */
 }
-#endif /* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1)) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) */

@@ -7,7 +7,7 @@
  * This file is a template for cmake and is not meant to be used directly!
  */
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(@NUM@))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(@NUM@), okay)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void irq_config_func_@NUM@(struct device *port);

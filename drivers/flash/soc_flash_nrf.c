@@ -16,13 +16,13 @@
 #include <string.h>
 #include <nrfx_nvmc.h>
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, nordic_nrf51_flash_controller))
+#if DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf51_flash_controller), okay)
 #define DT_DRV_COMPAT nordic_nrf51_flash_controller
-#elif DT_HAS_NODE_STATUS_OKAY(DT_INST(0, nordic_nrf52_flash_controller))
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf52_flash_controller), okay)
 #define DT_DRV_COMPAT nordic_nrf52_flash_controller
-#elif DT_HAS_NODE_STATUS_OKAY(DT_INST(0, nordic_nrf53_flash_controller))
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf53_flash_controller), okay)
 #define DT_DRV_COMPAT nordic_nrf53_flash_controller
-#elif DT_HAS_NODE_STATUS_OKAY(DT_INST(0, nordic_nrf91_flash_controller))
+#elif DT_NODE_HAS_STATUS(DT_INST(0, nordic_nrf91_flash_controller), okay)
 #define DT_DRV_COMPAT nordic_nrf91_flash_controller
 #else
 #error No matching compatible for soc_flash_nrf.c

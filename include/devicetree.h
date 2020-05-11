@@ -930,34 +930,18 @@
  *         0 otherwise.
  */
 #define DT_NODE_HAS_STATUS(node_id, status) \
-	DT_HAS_NODE_STATUS_INTERNAL(node_id, status)
+	DT_NODE_HAS_STATUS_INTERNAL(node_id, status)
 
 /**
- * @brief Does a node identifier refer to a usable node?
+ * @brief Does the devicetree have an "okay" node with a compatible?
  *
- * Example uses:
+ * Test for whether the devicetree has any nodes with status "okay"
+ * and the given compatible. That is, this returns 1 if and only if
+ * there is at least one "node_id" for which both of these
+ * expressions return 1:
  *
- *     DT_HAS_NODE_STATUS_OKAY(DT_PATH(soc, i2c@12340000))
- *     DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(an_alias_name))
- *
- * Tests whether a node identifier refers to a node which:
- *
- * - exists in the devicetree, and
- * - is enabled (has status property "okay"), and
- * - has a matching binding
- *
- * @param node_id a node identifier
- * @return 1 if the node identifier refers to a usable node,
- *         0 otherwise.
- */
-#define DT_HAS_NODE_STATUS_OKAY(node_id) DT_NODE_HAS_STATUS(node_id, okay)
-
-/**
- * @brief Does the devicetree have any usable nodes with a compatible?
- *
- * Test for whether the devicetree has any usable nodes (as determined by
- * @ref DT_HAS_NODE_STATUS_OKAY()) with a given compatible, i.e. if there is at
- * least one "x" for which "DT_HAS_NODE_STATUS_OKAY(DT_INST(x, compat))" is 1.
+ *     DT_NODE_HAS_STATUS(node_id, okay)
+ *     DT_NODE_HAS_COMPAT(node_id, compat)
  *
  * @param compat lowercase-and-underscores version of a compatible
  * @return 0 if no nodes of the compatible are available for use,
@@ -1576,8 +1560,8 @@
 #define DT_DASH(...) MACRO_MAP_CAT(DT_DASH_PREFIX, __VA_ARGS__)
 /** @internal helper for DT_DASH(): prepends _ to a name */
 #define DT_DASH_PREFIX(name) _##name
-/** @internal helper for DT_HAS_NODE_STATUS */
-#define DT_HAS_NODE_STATUS_INTERNAL(node_id, status) \
+/** @internal helper for DT_NODE_HAS_STATUS */
+#define DT_NODE_HAS_STATUS_INTERNAL(node_id, status) \
 	IS_ENABLED(DT_CAT(node_id, _STATUS_ ## status))
 /** @internal helper for test cases and DT_ANY_INST_ON_BUS_STATUS_OKAY() */
 #define DT_COMPAT_ON_BUS_INTERNAL(compat, bus) \

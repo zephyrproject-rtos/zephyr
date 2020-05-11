@@ -15,7 +15,7 @@
 /* The devicetree node identifier for the "led0" alias. */
 #define LED0_NODE DT_ALIAS(led0)
 
-#if DT_HAS_NODE_STATUS_OKAY(LED0_NODE)
+#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
 #define LED0	DT_GPIO_LABEL(LED0_NODE, gpios)
 #define PIN	DT_GPIO_PIN(LED0_NODE, gpios)
 #if DT_PHA_HAS_CELL(LED0_NODE, gpios, flags)

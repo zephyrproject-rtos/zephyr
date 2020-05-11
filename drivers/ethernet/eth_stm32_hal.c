@@ -28,12 +28,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "eth_stm32_hal_priv.h"
 
 #if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
-	    !DT_HAS_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+	    !DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 #error DTCM for DMA buffer is activated but zephyr,dtcm is not present in dts
 #endif
 
 #if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
-	    DT_HAS_NODE_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+	    DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __dtcm_noinit_section;
 static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __dtcm_noinit_section;
 static u8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __dtcm_noinit_section;

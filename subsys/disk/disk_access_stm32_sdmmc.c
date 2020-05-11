@@ -387,7 +387,7 @@ err_card_detect:
 	return err;
 }
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 	.hsd = {
 		.Instance = (SDMMC_TypeDef *)DT_INST_REG_ADDR(0),

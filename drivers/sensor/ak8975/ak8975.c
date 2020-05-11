@@ -129,7 +129,7 @@ int ak8975_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, invensense_mpu9150))
+#if DT_NODE_HAS_STATUS(DT_INST(0, invensense_mpu9150), okay)
 	/* wake up MPU9150 chip */
 	if (i2c_reg_update_byte(drv_data->i2c, MPU9150_I2C_ADDR,
 				MPU9150_REG_PWR_MGMT1, MPU9150_SLEEP_EN,

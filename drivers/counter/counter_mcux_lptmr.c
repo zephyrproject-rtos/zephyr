@@ -207,7 +207,7 @@ static const struct counter_driver_api mcux_lptmr_driver_api = {
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "unsupported lptmr instance");
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0))
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 static struct mcux_lptmr_data mcux_lptmr_data_0;
 
 static void mcux_lptmr_irq_config_0(struct device *dev);
@@ -254,4 +254,4 @@ static void mcux_lptmr_irq_config_0(struct device *dev)
 		    mcux_lptmr_isr, DEVICE_GET(mcux_lptmr_0), 0);
 	irq_enable(DT_INST_IRQN(0));
 }
-#endif	/* DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(0)) */
+#endif	/* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */

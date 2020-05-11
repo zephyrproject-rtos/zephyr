@@ -53,7 +53,7 @@ static int mcux_sim_get_subsys_rate(struct device *dev,
 	return 0;
 }
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, nxp_kinetis_ke1xf_sim))
+#if DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ke1xf_sim), okay)
 #define NXP_KINETIS_SIM_LABEL DT_LABEL(DT_INST(0, nxp_kinetis_ke1xf_sim))
 #if DT_NODE_HAS_PROP(DT_INST(0, nxp_kinetis_ke1xf_sim), clkout_source)
 	#define NXP_KINETIS_SIM_CLKOUT_SOURCE \

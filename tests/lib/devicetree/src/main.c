@@ -141,19 +141,19 @@ static void test_inst_props(void)
 
 static void test_has_path(void)
 {
-	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_PATH(test, gpio_0)), 0,
+	zassert_equal(DT_NODE_HAS_STATUS(DT_PATH(test, gpio_0), okay), 0,
 		      "gpio@0");
-	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_PATH(test, gpio_deadbeef)), 1,
+	zassert_equal(DT_NODE_HAS_STATUS(DT_PATH(test, gpio_deadbeef), okay), 1,
 		      "gpio@deadbeef");
-	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_PATH(test, gpio_abcd1234)), 1,
+	zassert_equal(DT_NODE_HAS_STATUS(DT_PATH(test, gpio_abcd1234), okay), 1,
 		      "gpio@abcd1234");
 }
 
 static void test_has_alias(void)
 {
-	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(test_alias)), 1,
+	zassert_equal(DT_NODE_HAS_STATUS(DT_ALIAS(test_alias), okay), 1,
 		      "test-alias");
-	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_ALIAS(test_undef)), 0,
+	zassert_equal(DT_NODE_HAS_STATUS(DT_ALIAS(test_undef), okay), 0,
 		      "test-undef");
 }
 
@@ -172,12 +172,13 @@ static void test_inst_checks(void)
 
 static void test_has_nodelabel(void)
 {
-	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(disabled_gpio)), 0,
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), okay), 0,
 		      "disabled_gpio");
-	zassert_equal(DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(test_nodelabel)), 1,
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_nodelabel), okay), 1,
 		      "test_nodelabel");
-	zassert_equal(DT_HAS_NODE_STATUS_OKAY(
-		      DT_NODELABEL(test_nodelabel_allcaps)), 1,
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_nodelabel_allcaps),
+					 okay),
+		      1,
 		      "TEST_NODELABEL_ALLCAPS");
 }
 

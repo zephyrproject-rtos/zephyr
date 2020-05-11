@@ -69,7 +69,7 @@ static ALWAYS_INLINE void clock_init(void)
 	RESET_PeripheralReset(kFC4_RST_SHIFT_RSTn);
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(hs_lspi))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(hs_lspi), okay)
 	/* Attach 12 MHz clock to HSLSPI */
 	CLOCK_AttachClk(kFRO_HF_DIV_to_HSLSPI);
 

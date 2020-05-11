@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
  * multiplied by 100.
  */
 static const u32_t lis2dh_reg_val_to_scale[] = {
-#if DT_HAS_NODE_STATUS_OKAY(DT_INST(0, st_lsm303agr_accel))
+#if DT_NODE_HAS_STATUS(DT_INST(0, st_lsm303agr_accel), okay)
 	ACCEL_SCALE(1563),
 	ACCEL_SCALE(3126),
 	ACCEL_SCALE(6252),

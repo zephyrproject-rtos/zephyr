@@ -888,7 +888,8 @@ static void generate_random_mac(u8_t *mac_addr)
 #endif
 
 #if !DT_INST_NODE_HAS_PROP(0, local_mac_address) || \
-    DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1)) && !DT_INST_NODE_HAS_PROP(1, local_mac_address)
+	DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) && \
+	!DT_INST_NODE_HAS_PROP(1, local_mac_address)
 static void generate_eth0_unique_mac(u8_t *mac_addr)
 {
 	/* Trivially "hash" up to 128 bits of MCU unique identifier */
@@ -907,7 +908,7 @@ static void generate_eth0_unique_mac(u8_t *mac_addr)
 }
 #endif
 
-#if DT_HAS_NODE_STATUS_OKAY(DT_DRV_INST(1)) && !DT_INST_NODE_HAS_PROP(1, local_mac_address)
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) && !DT_INST_NODE_HAS_PROP(1, local_mac_address)
 static void generate_eth1_unique_mac(u8_t *mac_addr)
 {
 	generate_eth0_unique_mac(mac_addr);

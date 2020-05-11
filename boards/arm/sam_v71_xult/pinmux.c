@@ -7,7 +7,7 @@
 
 #include <init.h>
 
-#if defined CONFIG_PWM && DT_HAS_NODE_STATUS_OKAY(DT_INST(0, atmel_sam_pwm))
+#if defined CONFIG_PWM && DT_NODE_HAS_STATUS(DT_INST(0, atmel_sam_pwm), okay)
 /* PWM on EXT1 connector, pin 7, channel 0, inverted */
 static const struct soc_gpio_pin pwm_ext1_pin7 = {
 	PIO_PA0A_PWM0_PWMH0, PIOA, ID_PIOA, SOC_GPIO_FUNC_A
@@ -28,7 +28,7 @@ static int sam_v71_xplained_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#if defined CONFIG_PWM && DT_HAS_NODE_STATUS_OKAY(DT_INST(0, atmel_sam_pwm))
+#if defined CONFIG_PWM && DT_NODE_HAS_STATUS(DT_INST(0, atmel_sam_pwm), okay)
 	soc_gpio_configure(&pwm_ext1_pin7);
 	soc_gpio_configure(&pwm_ext2_pin7);
 	soc_gpio_configure(&pwm_ext2_pin8);

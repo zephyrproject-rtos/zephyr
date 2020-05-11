@@ -110,7 +110,7 @@ that the node is has ``status = "okay"`` and has a matching binding, like this:
 
    #define MY_SERIAL DT_NODELABEL(my_serial)
 
-   #if DT_HAS_NODE_STATUS_OKAY(MY_SERIAL)
+   #if DT_NODE_HAS_STATUS(MY_SERIAL, okay)
    struct device *uart_dev = device_get_binding(DT_LABEL(MY_SERIAL));
    #else
    #error "Node is disabled, has no matching binding, or initialization failed"
@@ -522,11 +522,11 @@ Finally, manually detect each enabled devicetree node and use
 
 .. code-block:: c
 
-   #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(mydevice0))
+   #if DT_NODE_HAS_STATUS(DT_NODELABEL(mydevice0), okay)
    CREATE_MY_DEVICE(0)
    #endif
 
-   #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(mydevice1))
+   #if DT_NODE_HAS_STATUS(DT_NODELABEL(mydevice1), okay)
    CREATE_MY_DEVICE(1)
    #endif
 
@@ -644,9 +644,9 @@ And if you're trying to **set** that property in a devicetree overlay:
 Validate properties
 ===================
 
-If you're getting a compile error reading a node property, remember
-:ref:`not-all-dt-nodes`, then check your node identifier and property.
-For example, if you get a build error on a line that looks like this:
+If you're getting a compile error reading a node property, check your node
+identifier and property. For example, if you get a build error on a line that
+looks like this:
 
 .. code-block:: c
 
@@ -656,7 +656,7 @@ Try checking the node by adding this to the file and recompiling:
 
 .. code-block:: c
 
-   #if DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(my_serial)) == 0
+   #if !DT_NODE_EXISTS(DT_NODELABEL(my_serial))
    #error "whoops"
    #endif
 
@@ -666,15 +666,9 @@ there.
 
 Some hints:
 
-- :ref:`dt-use-the-right-names`
-- Is the node's ``status`` property set to ``"okay"``? If not, it's disabled.
-  The generated header will tell you if the node is disabled.
-- Does the node have a matching binding? The generated header also tells you
-  this information for each node; see :ref:`dts-find-binding`.
-- Does the property exist? See :ref:`dt-checking-property-exists`.
-
-If you're sure the property is defined but ``DT_NODE_HAS_PROP()`` disagrees,
-check for a missing binding.
+- did you :ref:`dt-use-the-right-names`?
+- does the :ref:`property exist <dt-checking-property-exists>`?
+- does the node have a :ref:`matching binding <dt-bindings>`?
 
 .. _missing-dt-binding:
 

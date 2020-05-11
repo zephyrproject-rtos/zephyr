@@ -32,20 +32,19 @@
  * Check that a devicetree node's "reg" base address matches the
  * correct value from the MDK.
  *
- * This check will only happen if the node is enabled. Disabled or
- * nonexistent nodes are not checked.
+ * Node reg values are checked against MDK addresses regardless of
+ * their status.
  *
- * This allows the same file to work with multiple SoCs and devicetree
- * configurations.
+ * Using a node label allows the same file to work with multiple SoCs
+ * and devicetree configurations.
  *
  * @param lbl lowercase-and-underscores devicetree node label to check
  * @param mdk_addr expected address from the Nordic MDK.
  */
 #define CHECK_DT_REG(lbl, mdk_addr)					\
 	BUILD_ASSERT(							\
-		UTIL_OR(UTIL_NOT(DT_HAS_NODE_STATUS_OKAY(DT_NODELABEL(lbl))),\
-			(DT_REG_ADDR(DT_NODELABEL(lbl)) ==		\
-			 (u32_t)(mdk_addr))))
+		UTIL_OR(UTIL_NOT(DT_NODE_EXISTS(DT_NODELABEL(lbl))),	\
+			(DT_REG_ADDR(DT_NODELABEL(lbl)) == (u32_t)(mdk_addr))))
 
 /**
  * If a node label "lbl" might have different addresses depending on
