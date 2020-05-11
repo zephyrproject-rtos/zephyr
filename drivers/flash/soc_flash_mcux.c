@@ -20,6 +20,11 @@
 #include "fsl_flash.h"
 #endif
 
+#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(flash_mcux);
+
+
 #if DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ftfa), okay)
 #define DT_DRV_COMPAT nxp_kinetis_ftfa
 #elif DT_NODE_HAS_STATUS(DT_INST(0, nxp_kinetis_ftfe), okay)
@@ -33,6 +38,76 @@
 #endif
 
 #define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
+
+#ifdef CONFIG_CHECK_BEFORE_READING
+#define FMC_STATUS_FAIL	FLASH_INT_CLR_ENABLE_FAIL_MASK
+#define FMC_STATUS_ERR	FLASH_INT_CLR_ENABLE_ERR_MASK
+#define FMC_STATUS_DONE	FLASH_INT_CLR_ENABLE_DONE_MASK
+#define FMC_STATUS_ECC	FLASH_INT_CLR_ENABLE_ECC_ERR_MASK
+
+#define FMC_STATUS_FAILURES	\
+	(FMC_STATUS_FAIL | FMC_STATUS_ERR | FMC_STATUS_ECC)
+
+#define FMC_CMD_BLANK_CHECK		5
+#define FMC_CMD_MARGIN_CHECK	6
+
+/* Issue single command that uses an a start and stop address. */
+static uint32_t get_cmd_status(uint32_t cmd, uint32_t addr, size_t len)
+{
+	FLASH_Type *p_fmc = (FLASH_Type *)DT_INST_REG_ADDR(0);
+	uint32_t status;
+
+	/* issue low level command */
+	p_fmc->INT_CLR_STATUS = 0xF;
+	p_fmc->STARTA = (addr>>4) & 0x3FFFF;
+	p_fmc->STOPA = ((addr+len-1)>>4) & 0x3FFFF;
+	p_fmc->CMD = cmd;
+	__DSB();
+	__ISB();
+
+	/* wait for command to be done */
+	while (!(p_fmc->INT_STATUS & FMC_STATUS_DONE))
+		;
+
+	/* get read status and then clear it */
+	status = p_fmc->INT_STATUS;
+	p_fmc->INT_CLR_STATUS = 0xF;
+
+	return status;
+}
+
+/* This function prevents erroneous reading. Some ECC enabled devices will
+ * crash when reading an erased or wrongly programmed area.
+ */
+static status_t is_area_readable(uint32_t addr, size_t len)
+{
+	uint32_t key;
+	status_t status;
+
+	key = irq_lock();
+
+	/* Check if the are is correctly programmed and can be read. */
+	status = get_cmd_status(FMC_CMD_MARGIN_CHECK, addr, len);
+	if (status & FMC_STATUS_FAILURES) {
+		/* If the area was erased, ECC errors are triggered on read. */
+		status = get_cmd_status(FMC_CMD_BLANK_CHECK, addr, len);
+		if (!(status & FMC_STATUS_FAIL)) {
+			LOG_DBG("read request on erased addr:0x%08x size:%d",
+				addr, len);
+			irq_unlock(key);
+			return -ENODATA;
+		}
+		LOG_DBG("read request error for addr:0x%08x size:%d",
+			addr, len);
+		irq_unlock(key);
+		return -EIO;
+	}
+
+	irq_unlock(key);
+
+	return 0;
+}
+#endif /* CONFIG_CHECK_BEFORE_READING */
 
 struct flash_priv {
 	flash_config_t config;
@@ -83,11 +158,23 @@ static int flash_mcux_erase(struct device *dev, off_t offset, size_t len)
 	return (rc == kStatus_Success) ? 0 : -EINVAL;
 }
 
+
+/*
+ * @brief Read a flash memory area.
+ *
+ * @param dev Device struct
+ * @param offset The address's offset
+ * @param data The buffer to store or read the value
+ * @param length The size of the buffer
+ * @return 	0 on success,
+ * 			-EIO for erroneous area
+ */
 static int flash_mcux_read(struct device *dev, off_t offset,
 				void *data, size_t len)
 {
 	struct flash_priv *priv = dev->driver_data;
 	uint32_t addr;
+	status_t rc = 0;
 
 	/*
 	 * The MCUX supports different flash chips whose valid ranges are
@@ -96,9 +183,21 @@ static int flash_mcux_read(struct device *dev, off_t offset,
 	 */
 	addr = offset + priv->pflash_block_base;
 
-	memcpy(data, (void *) addr, len);
+#ifdef CONFIG_CHECK_BEFORE_READING
+	rc = is_area_readable(addr, len);
+#endif
 
-	return 0;
+	if (!rc) {
+		memcpy(data, (void *) addr, len);
+#ifdef CONFIG_CHECK_BEFORE_READING
+	} else if (rc == -ENODATA) {
+		/* Erased area, return dummy data as an erased page. */
+		memset(data, 0xFF, len);
+		rc = 0;
+#endif
+	}
+
+	return rc;
 }
 
 static int flash_mcux_write(struct device *dev, off_t offset,

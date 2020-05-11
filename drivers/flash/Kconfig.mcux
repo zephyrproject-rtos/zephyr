@@ -11,3 +11,15 @@ config SOC_FLASH_MCUX
 	  the duration of the flash erase/write operations. This will
 	  have an impact on the overall system performance - whether
 	  this is acceptable or not will depend on the use case.
+
+if SOC_FLASH_MCUX
+
+config CHECK_BEFORE_READING
+	bool "Verify area before reading it"
+	default y if SOC_SERIES_LPC55XXX
+	help
+	  Do a margin check flash command before reading an area.
+	  This feature prevents erroneous/forbidden reading. Some ECC enabled
+	  devices will crash when reading an erased or wrongly programmed area.
+
+endif # SOC_FLASH_MCUX
