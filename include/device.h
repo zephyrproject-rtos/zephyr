@@ -27,6 +27,22 @@ extern "C" {
 
 #define Z_DEVICE_MAX_NAME_LEN	48
 
+/**
+ * @def DEVICE_NAME_GET
+ *
+ * @brief Expands to the full name of a global device object
+ *
+ * @details Return the full name of a device object symbol created by
+ * DEVICE_INIT(), using the dev_name provided to DEVICE_INIT().
+ *
+ * It is meant to be used for declaring extern symbols pointing on device
+ * objects before using the DEVICE_GET macro to get the device object.
+ *
+ * @param name The same as dev_name provided to DEVICE_INIT()
+ *
+ * @return The expanded name of the device object created by DEVICE_INIT()
+ */
+#define DEVICE_NAME_GET(name) (_CONCAT(__device_, name))
 
 /**
  * @def SYS_DEVICE_DEFINE
@@ -98,7 +114,7 @@ extern "C" {
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api)				\
 	static Z_DECL_ALIGN(struct device)				\
-		_CONCAT(__device_, dev_name) __used			\
+		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
 		.name = drv_name,					\
 		.config_info = (cfg_info),				\
@@ -152,7 +168,7 @@ extern "C" {
 			&_CONCAT(__pm_, dev_name).signal),		\
 	};								\
 	static Z_DECL_ALIGN(struct device)				\
-		_CONCAT(__device_, dev_name) __used			\
+		DEVICE_NAME_GET(dev_name) __used			\
 	__attribute__((__section__(".device_" #level STRINGIFY(prio)))) = { \
 		.name = drv_name,					\
 		.config_info = (cfg_info),				\
@@ -165,23 +181,6 @@ extern "C" {
 			    (&_CONCAT(__device_, dev_name)), level, prio)
 
 #endif
-
-/**
- * @def DEVICE_NAME_GET
- *
- * @brief Expands to the full name of a global device object
- *
- * @details Return the full name of a device object symbol created by
- * DEVICE_INIT(), using the dev_name provided to DEVICE_INIT().
- *
- * It is meant to be used for declaring extern symbols pointing on device
- * objects before using the DEVICE_GET macro to get the device object.
- *
- * @param name The same as dev_name provided to DEVICE_INIT()
- *
- * @return The expanded name of the device object created by DEVICE_INIT()
- */
-#define DEVICE_NAME_GET(name) (_CONCAT(__device_, name))
 
 /**
  * @def DEVICE_GET
