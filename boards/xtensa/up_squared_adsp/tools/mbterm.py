@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from time import sleep
-from mmap import mmap
+from mmap import mmap, ACCESS_COPY
 from ctypes import c_uint8
 
 from lib.device import Device
@@ -14,8 +14,8 @@ import lib.registers as regs
 MBOX = 0x91281000
 LENGTH = 0x1000
 
-with open("/dev/mem", "r+b") as f:
-    mem_map = mmap(f.fileno(), LENGTH, offset=MBOX)
+with open("/dev/mem", "rb") as f:
+    mem_map = mmap(f.fileno(), LENGTH, access=ACCESS_COPY, offset=MBOX)
     mem = (c_uint8 * LENGTH).from_buffer(mem_map)
 
 def mailbox_poll_mem(dev):
