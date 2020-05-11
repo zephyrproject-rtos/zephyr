@@ -363,7 +363,7 @@ void test_i2s_state_error_neg(void)
 	}
 
 	/* Wait for transmission to finish */
-	k_sleep(TEST_I2S_STATE_ERROR_NEG_PAUSE_LENGTH_US);
+	k_sleep(K_USEC(TEST_I2S_STATE_ERROR_NEG_PAUSE_LENGTH_US));
 
 	/* Read all available data blocks in RX queue */
 	for (int i = 0; i < NUM_RX_BLOCKS; i++) {

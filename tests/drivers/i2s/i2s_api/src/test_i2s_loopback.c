@@ -319,7 +319,7 @@ void test_i2s_transfer_restart(void)
 	TC_PRINT("Stop transmission\n");
 
 	/* Keep interface inactive */
-	k_sleep(TEST_I2S_TRANSFER_RESTART_PAUSE_LENGTH_US);
+	k_sleep(K_USEC(TEST_I2S_TRANSFER_RESTART_PAUSE_LENGTH_US));
 
 	TC_PRINT("Start transmission\n");
 
@@ -396,7 +396,7 @@ void test_i2s_transfer_rx_overrun(void)
 	zassert_equal(ret, 0, "TX DRAIN trigger failed");
 
 	/* Wait for transmission to finish */
-	k_sleep(TEST_I2S_TRANSFER_RX_OVERRUN_PAUSE_LENGTH_US);
+	k_sleep(K_USEC(TEST_I2S_TRANSFER_RX_OVERRUN_PAUSE_LENGTH_US));
 
 	/* Read all available data blocks in RX queue */
 	for (int i = 0; i < NUM_RX_BLOCKS; i++) {
