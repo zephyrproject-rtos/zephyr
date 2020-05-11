@@ -781,7 +781,7 @@ static void test_busy_wait(void)
 			INT_TO_POINTER(timeout), NULL,
 			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, K_NO_WAIT);
 
-	rv = k_sem_take(&reply_timeout, K_MSEC(timeout * 2));
+	rv = k_sem_take(&reply_timeout, K_MSEC(timeout * 2 * 2));
 
 	zassert_false(rv, " *** thread timed out waiting for " "k_busy_wait()");
 }
