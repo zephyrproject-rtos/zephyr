@@ -298,8 +298,8 @@ static inline char *log_strdup(const char *str)
 #else
 #define _LOG_LEVEL_RESOLVE(...) \
 	Z_LOG_EVAL(LOG_LEVEL, \
-		  (GET_ARG2(__VA_ARGS__, LOG_LEVEL)), \
-		  (GET_ARG2(__VA_ARGS__, CONFIG_LOG_DEFAULT_LEVEL)))
+		  (GET_ARG_N(2, __VA_ARGS__, LOG_LEVEL)), \
+		  (GET_ARG_N(2, __VA_ARGS__, CONFIG_LOG_DEFAULT_LEVEL)))
 #endif
 
 /* Return first argument */
