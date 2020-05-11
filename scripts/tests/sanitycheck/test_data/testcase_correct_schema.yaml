@@ -1,6 +1,4 @@
 tests:
-  logging.log_core:
-    tags: log_core logging
-    platform_exclude: nucleo_l053r8 nucleo_f030r8
-      stm32f0_disco native_posix native_posix_64 nrf52_bsim
-      qemu_riscv64
+  testing.correct_schema:
+    tags: demo_correct correct_tags
+    platform_exclude: demo_board_1
