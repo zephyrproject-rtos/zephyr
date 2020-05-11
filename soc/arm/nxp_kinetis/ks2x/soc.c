@@ -26,26 +26,26 @@
 #include <arch/cpu.h>
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
-#define MCG_IRCLK_DISABLE    0U  /*!< MCGIRCLK disabled */
-#define PLLFLLSEL_MCGFLLCLK	(0)
-#define PLLFLLSEL_MCGPLLCLK	(1)
-#define PLLFLLSEL_IRC48MHZ	(3)
+#define MCG_IRCLK_DISABLE		(0)  /*!< MCGIRCLK disabled */
+#define PLLFLLSEL_MCGFLLCLK		(0)
+#define PLLFLLSEL_MCGPLLCLK		(1)
+#define PLLFLLSEL_IRC48MHZ		(3)
 
-#define ER32KSEL_OSC32KCLK	(0)
-#define ER32KSEL_RTC		(2)
-#define ER32KSEL_LPO1KHZ	(3)
+#define ER32KSEL_OSC32KCLK		(0)
+#define ER32KSEL_RTC			(2)
+#define ER32KSEL_LPO1KHZ		(3)
 
-#define TIMESRC_OSCERCLK        (2)
+#define TIMESRC_OSCERCLK		(2)
 
-#define SIM_OSC32KSEL_OSC32KCLK_CLK      0U
-#define SIM_PLLFLLSEL_IRC48MCLK_CLK      3U
-#define SIM_LPI2C_CLK_SEL_PLLFLLSEL_CLK  1U
-#define SIM_USB_CLK_48000000HZ           48000000U
+#define SIM_OSC32KSEL_OSC32KCLK_CLK			(0)
+#define SIM_PLLFLLSEL_IRC48MCLK_CLK			(3)
+#define SIM_LPI2C_CLK_SEL_PLLFLLSEL_CLK		(3)
+#define SIM_LPUART_CLK_SEL_PLLFLLSEL_CLK	(3)
+#define SIM_USB_CLK_48000000HZ				(48000000)
 
 static const sim_clock_config_t simConfig = {
 	.pllFllSel = SIM_PLLFLLSEL_IRC48MCLK_CLK,
 	.er32kSrc = SIM_OSC32KSEL_OSC32KCLK_CLK,
-
 	.clkdiv1 = SIM_CLKDIV1_OUTDIV1(CONFIG_KS22_CORE_CLOCK_DIVIDER - 1) |
 			SIM_CLKDIV1_OUTDIV2(CONFIG_KS22_BUS_CLOCK_DIVIDER - 1) |
 			SIM_CLKDIV1_OUTDIV4(CONFIG_KS22_FLASH_CLOCK_DIVIDER - 1),
@@ -72,11 +72,7 @@ static void CLOCK_CONFIG_FllStableDelay(void)
  * This routine will configure the multipurpose clock generator (MCG) to
  * set up the system clock.
  * The MCG has nine possible modes, including Stop mode.  This routine assumes
- * that the current MCG mode is FLL Engaged Internal (FEI), as from reset.
- * It transitions through the FLL Bypassed External (FBE) and
- * PLL Bypassed External (PBE) modes to get to the desired
- * PLL Engaged External (PEE) mode and generate the maximum 120 MHz system
- * clock.
+ * that the current MCG mode is FLL Engaged Internal (FEI).
  *
  * @return N/A
  *
@@ -84,15 +80,7 @@ static void CLOCK_CONFIG_FllStableDelay(void)
 static ALWAYS_INLINE void clock_init(void)
 {
 	CLOCK_SetSimSafeDivs();
-
-	/* CLOCK_InitOsc0(&oscConfig); */
-	/* CLOCK_SetXtal0Freq(CONFIG_OSC_XTAL0_FREQ); */
-
-
 	CLOCK_SetInternalRefClkConfig(MCG_IRCLK_DISABLE, kMCG_IrcSlow, 1);
-
-	/* Configure FLL external reference divider (FRDIV). */
-	/* CLOCK_SetFllExtRefDiv(0); */
 
 	/* Set MCG to FEI mode. */
 #if FSL_CLOCK_DRIVER_VERSION >= MAKE_VERSION(2, 2, 0)
@@ -110,13 +98,20 @@ static ALWAYS_INLINE void clock_init(void)
 #if CONFIG_USB_KINETIS
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
 		CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
-#endif
-
 	/* Enable USB FS clock. */
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcIrc48M, SIM_USB_CLK_48000000HZ);
-	/* Set LPI2C0 clock source. */
+#endif
+
+#ifdef I2C_MCUX_LPI2C
+	/* Set LPI2C clock source. */
 	CLOCK_SetLpi2c0Clock(SIM_LPI2C_CLK_SEL_PLLFLLSEL_CLK);
-	CLOCK_SetLpuart0Clock(SIM_LPI2C_CLK_SEL_PLLFLLSEL_CLK);
+	CLOCK_SetLpi2c1Clock(SIM_LPI2C_CLK_SEL_PLLFLLSEL_CLK);
+#endif
+
+#ifdef UART_MCUX_LPUART
+	/* Set LPUART clock source. */
+	CLOCK_SetLpuart0Clock(SIM_LPUART_CLK_SEL_PLLFLLSEL_CLK);
+#endif
 }
 
 /**
@@ -128,7 +123,6 @@ static ALWAYS_INLINE void clock_init(void)
  *
  * @return 0
  */
-
 static int fsl_frdm_ks22f_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
