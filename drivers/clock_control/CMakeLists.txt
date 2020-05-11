@@ -13,6 +13,7 @@ zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF                 clock_control_nrf.
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC_CALIBRATION nrf_clock_calibration.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_RV32M1_PCC          clock_control_rv32m1_pcc.c)
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_ESP32               clock_control_esp32.c)
+zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_LITEX               clock_control_litex.c)
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 if(CONFIG_SOC_SERIES_STM32MP1X)
