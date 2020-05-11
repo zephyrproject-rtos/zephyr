@@ -252,44 +252,68 @@ static void sc_store(struct gatt_sc_cfg *cfg)
 	       cfg->data.end);
 }
 
-static void sc_clear(struct gatt_sc_cfg *cfg)
+static void clear_sc_cfg(struct gatt_sc_cfg *cfg)
 {
-	BT_DBG("peer %s", bt_addr_le_str(&cfg->peer));
+	memset(cfg, 0, sizeof(*cfg));
+}
+
+static int bt_gatt_clear_sc(u8_t id, const bt_addr_le_t *addr)
+{
+
+	struct gatt_sc_cfg *cfg;
+
+	cfg = find_sc_cfg(id, (bt_addr_le_t *)addr);
+	if (!cfg) {
+		return 0;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bool modified = false;
+		char key[BT_SETTINGS_KEY_MAX];
+		int err;
 
-		if (cfg->data.start || cfg->data.end) {
-			modified = true;
+		if (cfg->id) {
+			char id_str[4];
+
+			u8_to_dec(id_str, sizeof(id_str), cfg->id);
+			bt_settings_encode_key(key, sizeof(key), "sc",
+					       &cfg->peer, id_str);
+		} else {
+			bt_settings_encode_key(key, sizeof(key), "sc",
+					       &cfg->peer, NULL);
 		}
 
-		if (modified && bt_addr_le_is_bonded(cfg->id, &cfg->peer)) {
-			char key[BT_SETTINGS_KEY_MAX];
-			int err;
-
-			if (cfg->id) {
-				char id_str[4];
-
-				u8_to_dec(id_str, sizeof(id_str), cfg->id);
-				bt_settings_encode_key(key, sizeof(key), "sc",
-						       &cfg->peer, id_str);
-			} else {
-				bt_settings_encode_key(key, sizeof(key), "sc",
-						       &cfg->peer, NULL);
-			}
-
-			err = settings_delete(key);
-			if (err) {
-				BT_ERR("failed to delete SC (err %d)", err);
-			} else {
-				BT_DBG("deleted SC for %s (%s)",
-				       bt_addr_le_str(&cfg->peer),
-				       log_strdup(key));
-			}
+		err = settings_delete(key);
+		if (err) {
+			BT_ERR("failed to delete SC (err %d)", err);
+		} else {
+			BT_DBG("deleted SC for %s (%s)",
+			       bt_addr_le_str(&cfg->peer),
+			       log_strdup(key));
 		}
 	}
 
-	memset(cfg, 0, sizeof(*cfg));
+	clear_sc_cfg(cfg);
+
+	return 0;
+}
+
+static void sc_clear(struct bt_conn *conn)
+{
+	if (bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		int err;
+
+		err = bt_gatt_clear_sc(conn->id, &conn->le.dst);
+		if (err) {
+			BT_ERR("Failed to clear SC %d", err);
+		}
+	} else {
+		struct gatt_sc_cfg *cfg;
+
+		cfg = find_sc_cfg(conn->id, &conn->le.dst);
+		if (cfg) {
+			clear_sc_cfg(cfg);
+		}
+	}
 }
 
 static void sc_reset(struct gatt_sc_cfg *cfg)
@@ -364,16 +388,6 @@ done:
 	}
 }
 
-static void sc_clear_by_conn(struct bt_conn *conn)
-{
-	struct gatt_sc_cfg *cfg;
-
-	cfg = find_sc_cfg(conn->id, &conn->le.dst);
-	if (cfg) {
-		sc_clear(cfg);
-	}
-}
-
 static ssize_t sc_ccc_cfg_write(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, u16_t value)
 {
@@ -383,8 +397,7 @@ static ssize_t sc_ccc_cfg_write(struct bt_conn *conn,
 		/* Create a new SC configuration entry if subscribed */
 		sc_save(conn->id, &conn->le.dst, 0, 0);
 	} else {
-		/* Clear SC configuration if unsubscribed */
-		sc_clear_by_conn(conn);
+		sc_clear(conn);
 	}
 
 	return sizeof(value);
@@ -2318,7 +2331,7 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 			/* Clear value if not paired */
 			if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 				if (ccc == &sc_ccc) {
-					sc_clear_by_conn(conn);
+					sc_clear(conn);
 				}
 
 				clear_ccc_cfg(cfg);
@@ -4773,19 +4786,6 @@ static int bt_gatt_clear_cf(u8_t id, const bt_addr_le_t *addr)
 
 }
 
-static int sc_clear_by_addr(u8_t id, const bt_addr_le_t *addr)
-{
-
-	struct gatt_sc_cfg *cfg;
-
-	cfg = find_sc_cfg(id, (bt_addr_le_t *)addr);
-	if (cfg) {
-		sc_clear(cfg);
-	}
-
-	return 0;
-}
-
 
 static struct gatt_sub *find_gatt_sub(u8_t id, const bt_addr_le_t *addr)
 {
@@ -4829,7 +4829,7 @@ int bt_gatt_clear(u8_t id, const bt_addr_le_t *addr)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
-		err = sc_clear_by_addr(id, addr);
+		err = bt_gatt_clear_sc(id, addr);
 		if (err < 0) {
 			return err;
 		}
