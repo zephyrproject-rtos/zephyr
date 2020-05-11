@@ -460,7 +460,9 @@ static inline int z_obj_validation_check(struct z_object *ko,
 		const struct device *_dev = (const struct device *)_device; \
 		Z_SYSCALL_OBJ(_dev, _dtype) || \
 			Z_SYSCALL_VERIFY_MSG(_dev->driver_api == _api, \
-					     "API structure mismatch"); \
+					     "API structure mismatch") || \
+			Z_SYSCALL_VERIFY_MSG(_dev->driver_context->init_ok, \
+					     "Driver not initialized"); \
 	})
 
 /**

@@ -249,10 +249,14 @@ struct device_pm {
 /**
  * @brief Runtime dynamic state for a driver instance.
  *
+ * @param init_ok indicates device initialization was successful
+ *
  * @note This may be embedded within a parent structure that provides
  * driver-specific dynamic state.
  */
 struct device_context {
+	/* Bitfield elements */
+	_Bool init_ok:1;
 };
 
 /**

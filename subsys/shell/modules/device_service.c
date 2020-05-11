@@ -39,7 +39,7 @@ static bool device_get_config_level(const struct shell *shell, int level)
 	bool devices = false;
 
 	for (dev = levels[level]; dev < levels[level+1]; dev++) {
-		if (dev->driver_api != NULL) {
+		if (dev->driver_context->init_ok) {
 			devices = true;
 
 			shell_fprintf(shell, SHELL_NORMAL, "- %s\n", dev->name);

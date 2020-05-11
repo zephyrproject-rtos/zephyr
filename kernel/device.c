@@ -64,14 +64,8 @@ void z_sys_init_run_level(s32_t level)
 		}
 
 		retval = entry->init(dev);
-		if (retval != 0) {
-			if (dev) {
-				/* Initialization failed. Clear the API struct
-				 * so that device_get_binding() will not succeed
-				 * for it.
-				 */
-				dev->driver_api = NULL;
-			}
+		if ((retval == 0) && (dev != NULL)) {
+			dev->driver_context->init_ok = true;
 		}
 	}
 }
