@@ -320,17 +320,16 @@
 		};
 
 		test_children: test-children {
-			test_child_alpha: child-alpha {
-				compatible = "vnd,enum-holder";
-				val = "zero";
+			compatible = "vnd,child-bindings";
+
+			test_child_a: child-a {
+				val = <0>;
 			};
-			test_child_beta: child-beta {
-				compatible = "vnd,enum-holder";
-				val = "one";
+			test_child_b: child-b {
+				val = <1>;
 			};
-			test_child_charlie: child-charlie {
-				compatible = "vnd,enum-holder";
-				val = "two";
+			test_child_c: child-c {
+				val = <2>;
 			};
 		};
 	};

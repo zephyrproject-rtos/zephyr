@@ -1180,6 +1180,17 @@
 #define DT_DRV_INST(inst) DT_INST(inst, DT_DRV_COMPAT)
 
 /**
+ * @brief Invokes given macro for all child nodes of DT_DRV_COMPAT instance.
+ *
+ * @param inst instance number
+ * @param fn macro to invoke
+ *
+ * @see DT_FOREACH_CHILD
+ */
+#define DT_INST_FOREACH_CHILD(inst, fn) \
+	DT_FOREACH_CHILD(DT_DRV_INST(inst), fn)
+
+/**
  * @brief Get a DT_DRV_COMPAT instance property
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
