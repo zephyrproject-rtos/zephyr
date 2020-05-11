@@ -36,6 +36,9 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 /* STM32F7: maximum erase time of 4s for a 256K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32F7X)
 #define STM32_FLASH_MAX_ERASE_TIME	4000
+/* STM32L0: maximum erase time of 3.2ms for a 128B page */
+#elif defined(CONFIG_SOC_SERIES_STM32L0X)
+#define STM32_FLASH_MAX_ERASE_TIME	4
 /* STM32L4: maximum erase time of 24.47ms for a 2K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 #define STM32_FLASH_MAX_ERASE_TIME	25
@@ -58,15 +61,14 @@ LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 #define CFG_HW_FLASH_SEMID	2
 
 static const struct flash_parameters flash_stm32_parameters = {
-#if DT_PROP(DT_INST(0, soc_nv_flash), write_block_size)
-	.write_block_size = DT_PROP(DT_INST(0, soc_nv_flash), write_block_size),
+	.write_block_size = FLASH_STM32_WRITE_BLOCK_SIZE,
+	/* Some SoCs (L0/L1) use an EEPROM under the hood. Distinguish
+	 * between them based on the presence of the PECR register. */
+#if defined(FLASH_PECR_ERASE)
+	.erase_value = 0,
 #else
-#error Flash write block size not available
-	/* Flash Write block size is extracted from device tree */
-	/* as flash node property 'write-block-size' */
-#endif
-	/* WARNING: This value may be not valid for L0/L1 chips */
 	.erase_value = 0xff,
+#endif
 };
 
 #if defined(CONFIG_MULTITHREADING)
@@ -278,13 +280,39 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 			flash_stm32_sem_give(dev);
 			return rc;
 		}
+	}
+
+#if defined(FLASH_CR_LOCK)
+	if (enable) {
 		regs->CR |= FLASH_CR_LOCK;
-		LOG_DBG("Enable write protection");
 	} else {
 		if (regs->CR & FLASH_CR_LOCK) {
 			regs->KEYR = FLASH_KEY1;
 			regs->KEYR = FLASH_KEY2;
 		}
+	}
+#else
+	if (enable) {
+		regs->PECR |= FLASH_PECR_PRGLOCK;
+		regs->PECR |= FLASH_PECR_PELOCK;
+	} else {
+		if (regs->PECR & FLASH_PECR_PRGLOCK) {
+			LOG_DBG("Disabling write protection");
+			regs->PEKEYR = FLASH_PEKEY1;
+			regs->PEKEYR = FLASH_PEKEY2;
+			regs->PRGKEYR = FLASH_PRGKEY1;
+			regs->PRGKEYR = FLASH_PRGKEY2;
+		}
+		if (FLASH->PECR & FLASH_PECR_PRGLOCK) {
+			LOG_ERR("Unlock failed");
+			rc = -EIO;
+		}
+	}
+#endif
+
+	if (enable) {
+		LOG_DBG("Enable write protection");
+	} else {
 		LOG_DBG("Disable write protection");
 	}
 

@@ -32,6 +32,15 @@ struct flash_stm32_priv {
 	struct k_sem sem;
 };
 
+#if DT_PROP(DT_INST(0, soc_nv_flash), write_block_size)
+#define FLASH_STM32_WRITE_BLOCK_SIZE \
+	DT_PROP(DT_INST(0, soc_nv_flash), write_block_size)
+#else
+#error Flash write block size not available
+	/* Flash Write block size is extracted from device tree */
+	/* as flash node property 'write-block-size' */
+#endif
+
 #define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->driver_data))
 #define FLASH_STM32_REGS(dev) (FLASH_STM32_PRIV(dev)->regs)
 
