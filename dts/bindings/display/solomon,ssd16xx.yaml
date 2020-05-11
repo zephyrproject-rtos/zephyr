@@ -87,8 +87,8 @@ properties:
 
     lut-initial:
       type: uint8-array
-      required: true
+      required: false
 
     lut-default:
       type: uint8-array
-      required: true
+      required: false
