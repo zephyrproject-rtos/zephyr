@@ -1,0 +1,113 @@
+# Copyright (c) 2020 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+include: base.yaml
+
+description: |
+  LiteX Mixed Mode Clock Manager
+  Common clock driver with MMCM unit for dynamic reconfiguration
+  of up to 7 clock outputs with ability to change frequency, duty
+  cycle and phase offset
+
+compatible: "litex,clk"
+
+clock-cells:
+  - id
+
+properties:
+
+  reg:
+    description: Base address and lengths of the register space
+
+  "#clock-cells":
+    required: true
+    type: int
+    description: |
+      Number of cells in a clock specifier;
+      Typically 0 for nodes with a single clock output
+      and 1 for nodes with multiple clock outputs.
+    const: 1
+
+  "#address-cells":
+    required: true
+    type: int
+    description: |
+      Number of cells that are needed to form the base address
+      part in the reg property.
+    default: 1
+
+  "#size-cells":
+    required: true
+    type: int
+    description: |
+      Used to state how many cells are in each field of a reg property
+    default: 0
+
+  clock-output-names:
+    required: true
+    type: string-array
+    description: |
+      List of strings of clock output signal names indexed
+      by the first cell in the clock specifier.
+
+  litex,lock-timeout:
+    required: true
+    type: int
+    description: |
+      Number of ms to wait for MMCM to assert LOCK signal
+  litex,drdy-timeout:
+    required: true
+    type: int
+    description: |
+      Number of ms to wait for MMCM to assert DRDY signal
+  litex,sys-clock-frequency:
+    required: true
+    type: int
+    description: |
+      System clock frequency
+  litex,divclk-divide-min:
+    required: true
+    type: int
+    description: |
+      minimal global divider
+  litex,divclk-divide-max:
+    required: true
+    type: int
+    description: |
+      maximal global divider
+  litex,clkfbout-mult-min:
+    required: true
+    type: int
+    description: |
+      minimal global multiplier
+  litex,clkfbout-mult-max:
+    required: true
+    type: int
+    description: |
+      maximal global multiplier
+  litex,vco-freq-min:
+    required: true
+    type: int
+    description: |
+      minimal frequency after global divider and multiplier
+  litex,vco-freq-max:
+    required: true
+    type: int
+    description: |
+      maximal frequency after global divider and multiplier
+  litex,clkout-divide-min:
+    required: true
+    type: int
+    description: |
+      minimal clock output divider
+  litex,clkout-divide-max:
+    required: true
+    type: int
+    description: |
+      maximal clock output divider
+  litex,vco-margin:
+    required: true
+    type: int
+    description: |
+      tolerancy for vco frequency
+    const: 0
