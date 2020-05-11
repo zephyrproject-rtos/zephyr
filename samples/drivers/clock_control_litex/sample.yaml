@@ -1,0 +1,6 @@
+sample:
+  name: Sample for the clock control driver
+tests:
+  sample.driver.clock_control_litex:
+    platform_allow: litex_vexriscv
+    tags: clock litex vexriscv mmcm
