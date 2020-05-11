@@ -16,7 +16,17 @@ The following sections provide detailed lists of changes by component.
 Security Vulnerability Related
 ******************************
 
-No security vulnerabilities received.
+The following CVEs are addressed by this release:
+
+* CVE-2020-10022: UpdateHub Module Copies a Variable-Sized Hash String
+  into a fixed-size array.
+* CVE-2020-10059: UpdateHub Module Explicitly Disables TLS
+  Verification
+* CVE-2020-10062: Under embargo until 2020/05/25
+* CVE-2020-10063: Under embargo until 2020/05/25
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
 
 API Changes
 ***********

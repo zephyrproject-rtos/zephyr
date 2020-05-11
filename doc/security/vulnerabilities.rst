@@ -360,6 +360,16 @@ This issue has not been fixed.
 - `Zephyr project bug tracker ZEPSEC-37
   <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-37>`_
 
+CVE-2020-10062
+--------------
+
+Under embargo until 2020/05/25
+
+CVE-2020-10063
+--------------
+
+Under embargo until 2020/05/25
+
 CVE-2020-10067
 --------------
 
