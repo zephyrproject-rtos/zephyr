@@ -1,0 +1,8 @@
+tests:
+  test_b.check_1:
+    min_ram: 32
+    tags: test_b
+  test_b.check_2:
+    min_ram: 32
+    extra_args: CONF_FILE="test.conf"
+    tags: test_b
