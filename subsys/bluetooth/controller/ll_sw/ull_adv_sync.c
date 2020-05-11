@@ -76,6 +76,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		uint8_t *_pp, *pp, *ps, *_ps;
 		uint8_t ip, is, ad_len;
 		struct lll_adv *lll;
+		int err;
 
 		sync = sync_acquire();
 		if (!sync) {
@@ -94,7 +95,9 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		/* NOTE: ull_hdr_init(&sync->ull); is done on start */
 		lll_hdr_init(lll_sync, sync);
 
-		util_aa_to_le32(lll_sync->access_addr);
+		err = util_aa_le32(lll_sync->access_addr);
+		LL_ASSERT(!err);
+
 		util_rand(lll_sync->crc_init, sizeof(lll_sync->crc_init));
 
 		lll_sync->latency_prepare = 0;

@@ -6,6 +6,16 @@
 
 #define ULL_ADV_RANDOM_DELAY HAL_TICKER_US_TO_TICKS(10000)
 
+/* Bitmask values used in is_created field of adv set */
+#define ULL_ADV_CREATED_BITMASK_CREATED  BIT(0)
+#define ULL_ADV_CREATED_BITMASK_EXTENDED BIT(1)
+
+/* Bitmask value returned by ull_adv_is_enabled() */
+#define ULL_ADV_ENABLED_BITMASK_ENABLED  BIT(0)
+#define ULL_ADV_ENABLED_BITMASK_CREATED  (ULL_ADV_CREATED_BITMASK_CREATED << 1)
+#define ULL_ADV_ENABLED_BITMASK_EXTENDED (ULL_ADV_CREATED_BITMASK_EXTENDED << 1)
+
+/* Helper functions to initialise and reset ull_adv module */
 int ull_adv_init(void);
 int ull_adv_reset(void);
 
@@ -36,6 +46,7 @@ uint8_t scan_rsp_set(struct ll_adv_set *adv, uint8_t len,
 		     uint8_t const *const data);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+/* Helper functions to initialise and reset ull_adv_aux module */
 int ull_adv_aux_init(void);
 int ull_adv_aux_reset(void);
 
