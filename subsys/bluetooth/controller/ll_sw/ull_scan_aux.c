@@ -72,7 +72,7 @@ int ull_scan_aux_reset(void)
 
 void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 {
-	struct ext_adv_aux_ptr *aux_ptr;
+	struct pdu_adv_aux_ptr *aux_ptr;
 	struct pdu_adv_com_ext_adv *p;
 	struct ll_scan_aux_set *aux;
 	uint32_t ticks_slot_overhead;
@@ -80,7 +80,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 	struct lll_scan_aux *lll;
 	struct node_rx_ftr *ftr;
 	uint32_t ticks_slot_offset;
-	struct ext_adv_hdr *h;
+	struct pdu_adv_hdr *h;
 	uint32_t ready_delay_us;
 	struct pdu_adv *pdu;
 	uint32_t aux_offset_us;
@@ -123,7 +123,7 @@ void ull_scan_aux_setup(memq_link_t *link, struct node_rx_hdr *rx, uint8_t phy)
 	}
 
 	if (h->adi) {
-		struct ext_adv_adi *adi;
+		struct pdu_adv_adi *adi;
 
 		adi = (void *)ptr;
 		ptr += sizeof(*adi);

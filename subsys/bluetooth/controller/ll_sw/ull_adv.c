@@ -125,23 +125,32 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 	/* extended adv param set */
 	if (adv_type == PDU_ADV_TYPE_EXT_IND) {
 		/* legacy */
-		if (evt_prop & BIT(4)) {
-			uint8_t const leg_adv_type[] = { 0x03, 0x04, 0x02, 0x00};
+		if (evt_prop & BT_HCI_LE_ADV_PROP_LEGACY) {
+			/* lookup evt_prop to PDU type in  pdu_adv_type[] */
+			uint8_t const leg_adv_type[] = {
+				0x03, /* PDU_ADV_TYPE_NONCONN_IND */
+				0x04, /* PDU_ADV_TYPE_DIRECT_IND */
+				0x02, /* PDU_ADV_TYPE_SCAN_IND */
+				0x00  /* PDU_ADV_TYPE_ADV_IND */
+			};
 
 			adv_type = leg_adv_type[evt_prop & 0x03];
 
 			/* high duty cycle directed */
-			if (evt_prop & BIT(3)) {
-				adv_type = 0x01;
+			if (evt_prop & BT_HCI_LE_ADV_PROP_HI_DC_CONN) {
+				adv_type = 0x01; /* PDU_ADV_TYPE_DIRECT_IND */
 			}
 
-			adv->lll.phy_p = BIT(0);
+			adv->lll.phy_p = PHY_1M;
 		} else {
 			/* - Connectable and scannable not allowed;
 			 * - High duty cycle directed connectable not allowed
 			 */
-			if (((evt_prop & 0x03) == 0x03) ||
-			    ((evt_prop & 0x0C) == 0x0C)) {
+			if (((evt_prop & (BT_HCI_LE_ADV_PROP_CONN |
+					 BT_HCI_LE_ADV_PROP_SCAN)) ==
+			     (BT_HCI_LE_ADV_PROP_CONN |
+			      BT_HCI_LE_ADV_PROP_SCAN)) ||
+			    (evt_prop & BT_HCI_LE_ADV_PROP_HI_DC_CONN)) {
 				return BT_HCI_ERR_INVALID_PARAM;
 			}
 
@@ -155,7 +164,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		adv->is_created = ULL_ADV_CREATED_BITMASK_CREATED |
 				  ULL_ADV_CREATED_BITMASK_EXTENDED;
 	} else {
-		adv->lll.phy_p = BIT(0);
+		adv->lll.phy_p = PHY_1M;
 
 		/* Mark the adv set as created by legacy advertising cmd */
 		adv->is_created = ULL_ADV_CREATED_BITMASK_CREATED;
@@ -249,7 +258,7 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
 		struct pdu_adv_com_ext_adv *p;
-		struct ext_adv_hdr *h, _h;
+		struct pdu_adv_hdr *h, _h;
 		uint8_t *_ptr, *ptr;
 		uint8_t len;
 
@@ -275,7 +284,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		}
 		if (!p->adv_mode &&
 		    (!_h.aux_ptr ||
-		     (!(evt_prop & BIT(5)) && (phy_p != BIT(2))))) {
+		     (!(evt_prop & BT_HCI_LE_ADV_PROP_ANON) &&
+		      (phy_p != PHY_CODED)))) {
 			/* TODO: optional on 1M with Aux Ptr */
 			h->adv_addr = 1;
 
@@ -295,14 +305,14 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		/* ADI flag */
 		if (_h.adi) {
 			h->adi = 1;
-			ptr += sizeof(struct ext_adv_adi);
+			ptr += sizeof(struct pdu_adv_adi);
 		}
 
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		/* AuxPtr flag */
 		if (_h.aux_ptr) {
 			h->aux_ptr = 1;
-			ptr += sizeof(struct ext_adv_aux_ptr);
+			ptr += sizeof(struct pdu_adv_aux_ptr);
 		}
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 
@@ -312,8 +322,8 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 		/* C1, Tx Power is optional on the LE 1M PHY, and reserved for
 		 * for future use on the LE Coded PHY.
 		 */
-		if (evt_prop & BIT(6) &&
-		    (!_h.aux_ptr || (phy_p != BIT(2)))) {
+		if ((evt_prop & BT_HCI_LE_ADV_PROP_TX_POWER) &&
+		    (!_h.aux_ptr || (phy_p != PHY_CODED))) {
 			h->tx_pwr = 1;
 			ptr++;
 		}
@@ -359,9 +369,9 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		/* AuxPtr */
 		if (h->aux_ptr) {
-			struct ext_adv_aux_ptr *aux;
+			struct pdu_adv_aux_ptr *aux;
 
-			ptr -= sizeof(struct ext_adv_aux_ptr);
+			ptr -= sizeof(struct pdu_adv_aux_ptr);
 
 			/* NOTE: Channel Index, CA, Offset Units and AUX Offset
 			 * will be set in Advertiser Event.
@@ -377,12 +387,12 @@ uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
 
 		/* ADI */
 		if (h->adi) {
-			struct ext_adv_adi *adi;
+			struct pdu_adv_adi *adi;
 
-			ptr -= sizeof(struct ext_adv_adi);
+			ptr -= sizeof(struct pdu_adv_adi);
 
 			/* NOTE: memcpy shall handle overlapping buffers */
-			memcpy(ptr, _ptr, sizeof(struct ext_adv_adi));
+			memcpy(ptr, _ptr, sizeof(struct pdu_adv_adi));
 
 			adi = (void *)ptr;
 			adi->sid = sid;
@@ -510,7 +520,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
 		struct pdu_adv_com_ext_adv *p;
-		struct ext_adv_hdr *h;
+		struct pdu_adv_hdr *h;
 		uint8_t *ptr;
 
 		p = (void *)&pdu_adv->adv_ext_ind;
@@ -534,7 +544,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		} else if (h->aux_ptr) {
 			struct pdu_adv_com_ext_adv *s;
 			struct pdu_adv *pdu_aux;
-			struct ext_adv_hdr *hs;
+			struct pdu_adv_hdr *hs;
 			uint8_t *ps;
 
 			pdu_aux = lll_adv_aux_data_peek(lll->aux);
@@ -1220,9 +1230,10 @@ uint32_t ull_adv_is_enabled(uint8_t handle)
 	}
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	return BIT(0) | ((uint32_t)adv->is_created << 1);
+	return ULL_ADV_ENABLED_BITMASK_ENABLED |
+	       ((uint32_t)adv->is_created << 1);
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
-	return BIT(0);
+	return ULL_ADV_ENABLED_BITMASK_ENABLED;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 }
 

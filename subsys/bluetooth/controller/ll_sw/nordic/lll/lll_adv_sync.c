@@ -89,8 +89,8 @@ void lll_adv_sync_offset_fill(uint32_t ticks_offset, uint32_t start_us,
 			     struct pdu_adv *pdu)
 {
 	struct pdu_adv_com_ext_adv *p;
-	struct ext_adv_sync_info *si;
-	struct ext_adv_hdr *h;
+	struct pdu_adv_sync_info *si;
+	struct pdu_adv_hdr *h;
 	uint8_t *ptr;
 
 	p = (void *)&pdu->adv_ext_ind;
@@ -102,11 +102,11 @@ void lll_adv_sync_offset_fill(uint32_t ticks_offset, uint32_t start_us,
 	}
 
 	if (h->adi) {
-		ptr += sizeof(struct ext_adv_adi);
+		ptr += sizeof(struct pdu_adv_adi);
 	}
 
 	if (h->aux_ptr) {
-		ptr += sizeof(struct ext_adv_aux_ptr);
+		ptr += sizeof(struct pdu_adv_aux_ptr);
 	}
 
 	si = (void *)ptr;

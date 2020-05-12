@@ -43,9 +43,9 @@
 				     ADVA_SIZE + \
 				     TARGETA_SIZE + \
 				     CTE_INFO_SIZE + \
-				     sizeof(struct ext_adv_adi) + \
-				     sizeof(struct ext_adv_aux_ptr) + \
-				     sizeof(struct ext_adv_sync_info) + \
+				     sizeof(struct pdu_adv_adi) + \
+				     sizeof(struct pdu_adv_aux_ptr) + \
+				     sizeof(struct pdu_adv_sync_info) + \
 				     TX_PWR_SIZE + \
 				     ACAD_SIZE)
 
@@ -216,13 +216,13 @@ struct pdu_adv_com_ext_adv {
 	uint8_t ext_hdr_adi_adv_data[254];
 } __packed;
 
-enum ext_adv_mode {
+enum pdu_adv_mode {
 	EXT_ADV_MODE_NON_CONN_NON_SCAN = 0x00,
 	EXT_ADV_MODE_CONN_NON_SCAN = 0x01,
 	EXT_ADV_MODE_NON_CONN_SCAN = 0x02,
 };
 
-struct ext_adv_hdr {
+struct pdu_adv_hdr {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint8_t adv_addr:1;
 	uint8_t tgt_addr:1;
@@ -246,7 +246,7 @@ struct ext_adv_hdr {
 #endif
 } __packed;
 
-struct ext_adv_adi {
+struct pdu_adv_adi {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint16_t did:12;
 	uint16_t sid:4;
@@ -258,7 +258,7 @@ struct ext_adv_adi {
 #endif
 } __packed;
 
-struct ext_adv_aux_ptr {
+struct pdu_adv_aux_ptr {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint8_t  chan_idx:6;
 	uint8_t  ca:1;
@@ -276,23 +276,23 @@ struct ext_adv_aux_ptr {
 #endif
 } __packed;
 
-enum ext_adv_aux_ptr_ca {
+enum pdu_adv_aux_ptr_ca {
 	EXT_ADV_AUX_PTR_CA_500_PPM = 0x00,
 	EXT_ADV_AUX_PTR_CA_50_PPM  = 0x01,
 };
 
-enum ext_adv_offs_units {
+enum pdu_adv_offs_units {
 	EXT_ADV_AUX_PTR_OFFS_UNITS_30  = 0x00,
 	EXT_ADV_AUX_PTR_OFFS_UNITS_300 = 0x01,
 };
 
-enum ext_adv_aux_phy {
+enum pdu_adv_aux_phy {
 	EXT_ADV_AUX_PHY_LE_1M  = 0x00,
 	EXT_ADV_AUX_PHY_LE_2M  = 0x01,
 	EXT_ADV_AUX_PHY_LE_COD = 0x02,
 };
 
-struct ext_adv_sync_info {
+struct pdu_adv_sync_info {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	uint16_t offs:13;
 	uint16_t offs_units:1;

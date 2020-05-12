@@ -55,7 +55,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 	struct lll_adv_sync *lll_sync;
 	struct pdu_adv_com_ext_adv *t;
 	struct ll_adv_sync_set *sync;
-	struct ext_adv_hdr *ht, _ht;
+	struct pdu_adv_hdr *ht, _ht;
 	struct ll_adv_set *adv;
 	struct pdu_adv *pdu;
 	uint8_t *_pt, *pt;
@@ -71,8 +71,8 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		struct pdu_adv_com_ext_adv *p, *_p, *s, *_s;
 		uint8_t pri_len, _pri_len, sec_len, _sec_len;
 		struct pdu_adv *_pri, *pri, *_sec, *sec;
-		struct ext_adv_hdr *hp, _hp, *hs, _hs;
-		struct ext_adv_sync_info *si;
+		struct pdu_adv_hdr *hp, _hp, *hs, _hs;
+		struct pdu_adv_sync_info *si;
 		struct lll_adv_aux *lll_aux;
 		uint8_t *_pp, *pp, *ps, *_ps;
 		uint8_t ip, is, ad_len;
@@ -184,27 +184,27 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 		/* ADI flag */
 		if (_hp.adi) {
-			_pp += sizeof(struct ext_adv_adi);
+			_pp += sizeof(struct pdu_adv_adi);
 		}
 		hp->adi = 1;
-		pp += sizeof(struct ext_adv_adi);
+		pp += sizeof(struct pdu_adv_adi);
 		if (_hs.adi) {
-			_ps += sizeof(struct ext_adv_adi);
+			_ps += sizeof(struct pdu_adv_adi);
 		}
 		hs->adi = 1;
-		ps += sizeof(struct ext_adv_adi);
+		ps += sizeof(struct pdu_adv_adi);
 
 		/* AuxPtr flag */
 		if (_hp.aux_ptr) {
-			_pp += sizeof(struct ext_adv_aux_ptr);
+			_pp += sizeof(struct pdu_adv_aux_ptr);
 		}
 		hp->aux_ptr = 1;
-		pp += sizeof(struct ext_adv_aux_ptr);
+		pp += sizeof(struct pdu_adv_aux_ptr);
 		if (_hs.aux_ptr) {
-			_ps += sizeof(struct ext_adv_aux_ptr);
+			_ps += sizeof(struct pdu_adv_aux_ptr);
 
 			hs->aux_ptr = 1;
-			ps += sizeof(struct ext_adv_aux_ptr);
+			ps += sizeof(struct pdu_adv_aux_ptr);
 		}
 
 		/* No SyncInfo flag in primary channel PDU */
@@ -219,7 +219,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 			/* C1, Tx Power is optional on the LE 1M PHY, and
 			 * reserved for future use on the LE Coded PHY.
 			 */
-			if (adv->lll.phy_p != BIT(2)) {
+			if (adv->lll.phy_p != PHY_CODED) {
 				hp->tx_pwr = 1;
 				pp++;
 			} else {
@@ -290,12 +290,12 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 		/* AuxPtr */
 		if (_hp.aux_ptr) {
-			_pp -= sizeof(struct ext_adv_aux_ptr);
+			_pp -= sizeof(struct pdu_adv_aux_ptr);
 		}
 		{
-			struct ext_adv_aux_ptr *aux;
+			struct pdu_adv_aux_ptr *aux;
 
-			pp -= sizeof(struct ext_adv_aux_ptr);
+			pp -= sizeof(struct pdu_adv_aux_ptr);
 
 			/* NOTE: Aux Offset will be set in advertiser LLL event
 			 */
@@ -310,10 +310,10 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		 * primary PDU
 		 */
 		if (_hs.aux_ptr) {
-			struct ext_adv_aux_ptr *aux;
+			struct pdu_adv_aux_ptr *aux;
 
-			_ps -= sizeof(struct ext_adv_aux_ptr);
-			ps -= sizeof(struct ext_adv_aux_ptr);
+			_ps -= sizeof(struct pdu_adv_aux_ptr);
+			ps -= sizeof(struct pdu_adv_aux_ptr);
 
 			/* NOTE: Aux Offset will be set in advertiser LLL event
 			 */
@@ -326,25 +326,25 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 		/* ADI */
 		{
-			struct ext_adv_adi *ap, *as;
+			struct pdu_adv_adi *ap, *as;
 			uint16_t did = UINT16_MAX;
 
-			pp -= sizeof(struct ext_adv_adi);
-			ps -= sizeof(struct ext_adv_adi);
+			pp -= sizeof(struct pdu_adv_adi);
+			ps -= sizeof(struct pdu_adv_adi);
 
 			ap = (void *)pp;
 			as = (void *)ps;
 
 			if (_hp.adi) {
-				struct ext_adv_adi *_adi;
+				struct pdu_adv_adi *_adi;
 
-				_pp -= sizeof(struct ext_adv_adi);
-				_ps -= sizeof(struct ext_adv_adi);
+				_pp -= sizeof(struct pdu_adv_adi);
+				_ps -= sizeof(struct pdu_adv_adi);
 
 				/* NOTE: memcpy shall handle overlapping buffers
 				 */
-				memcpy(pp, _pp, sizeof(struct ext_adv_adi));
-				memcpy(ps, _ps, sizeof(struct ext_adv_adi));
+				memcpy(pp, _pp, sizeof(struct pdu_adv_adi));
+				memcpy(ps, _ps, sizeof(struct pdu_adv_adi));
 
 				_adi = (void *)_pp;
 				did = sys_le16_to_cpu(_adi->did);
@@ -421,7 +421,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 	/* No SyncInfo */
 
 	/* TODO: TxPower */
-	if (flags & BIT(6)) {
+	if (flags & BT_HCI_LE_ADV_PROP_TX_POWER) {
 		/* TODO: add/remove Tx Power in AUX_SYNC_IND PDU */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -430,7 +430,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 	/* TODO: AdvData */
 
-	/* Calc primary PDU len */
+	/* Calc tertiary PDU len */
 	ter_len = pt - (uint8_t *)t;
 	if (ter_len >
 	    (offsetof(struct pdu_adv_com_ext_adv, ext_hdr_adi_adv_data) +
