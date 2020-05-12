@@ -202,7 +202,7 @@ struct device_context;
  *
  * @return A pointer to the device object created by DEVICE_INIT()
  */
-#define DEVICE_GET(name) (&DEVICE_NAME_GET(name))
+#define DEVICE_GET(name) ((struct device*)&DEVICE_NAME_GET(name))
 
 /** @def DEVICE_DECLARE
  *
