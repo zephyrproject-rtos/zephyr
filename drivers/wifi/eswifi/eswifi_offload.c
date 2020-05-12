@@ -484,10 +484,18 @@ void eswifi_offload_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
 			return;
 		}
 
-		sin_addr = &net_sin(&socket->peer_addr)->sin_addr;
+		struct sockaddr_in *peer = net_sin(&socket->peer_addr);
+
+		sin_addr = &peer->sin_addr;
 		memcpy(&sin_addr->s4_addr, ip, 4);
+		peer->sin_port = htons(port);
 		socket->state = ESWIFI_SOCKET_STATE_CONNECTED;
 		socket->usage++;
+
+		/* Save information about remote. */
+		socket->context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
+		memcpy(&socket->context->remote, &socket->peer_addr,
+		       sizeof(struct sockaddr));
 
 		LOG_DBG("%u.%u.%u.%u connected to port %u",
 			ip[0], ip[1], ip[2], ip[3], port);
