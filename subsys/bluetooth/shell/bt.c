@@ -1568,10 +1568,19 @@ static int cmd_conn_phy_update(const struct shell *shell, size_t argc,
 	int err;
 
 	param.pref_tx_phy = strtoul(argv[1], NULL, 16);
-	if (argc > 2) {
-		param.pref_rx_phy = strtoul(argv[2], NULL, 16);
-	} else {
-		param.pref_rx_phy = param.pref_tx_phy;
+	param.pref_rx_phy = param.pref_tx_phy;
+	param.options = BT_CONN_LE_PHY_OPT_NONE;
+
+	for (size_t argn = 2; argn < argc; argn++) {
+		const char *arg = argv[argn];
+
+		if (!strcmp(arg, "s2")) {
+			param.options |= BT_CONN_LE_PHY_OPT_CODED_S2;
+		} else if (!strcmp(arg, "s8")) {
+			param.options |= BT_CONN_LE_PHY_OPT_CODED_S8;
+		} else {
+			param.pref_rx_phy = strtoul(arg, NULL, 16);
+		}
 	}
 
 	err = bt_conn_le_phy_update(default_conn, &param);
@@ -2431,8 +2440,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 		      cmd_conn_data_len_update, 2, 1),
 #endif
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
-	SHELL_CMD_ARG(phy-update, NULL, "<tx_phy> [rx_phy]",
-		      cmd_conn_phy_update, 2, 1),
+	SHELL_CMD_ARG(phy-update, NULL, "<tx_phy> [rx_phy] [s2] [s8]",
+		      cmd_conn_phy_update, 2, 3),
 #endif
 #if defined(CONFIG_BT_CENTRAL)
 	SHELL_CMD_ARG(channel-map, NULL, "<channel-map: XXXXXXXXXX> (36-0)",
