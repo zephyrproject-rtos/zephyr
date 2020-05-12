@@ -20,7 +20,7 @@ int check_file_dir_exists(const char *fpath)
 	return !res;
 }
 
-void clear_flash(void)
+void test_clear_flash(void)
 {
 	int rc;
 	const struct flash_area *fap;

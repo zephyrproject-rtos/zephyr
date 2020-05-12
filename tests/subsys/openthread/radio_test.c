@@ -283,7 +283,7 @@ void otPlatRadioTxStarted(otInstance *aInstance, otRadioFrame *aFrame)
  * Tests for case when radio energy scan returns success at the first call.
  *
  */
-static void energy_scan_immediate_test(void)
+static void test_energy_scan_immediate_test(void)
 {
 	const u8_t chan = 10;
 	const u8_t dur = 100;
@@ -315,7 +315,7 @@ static void energy_scan_immediate_test(void)
  * the scan should be sheduled for later.
  *
  */
-static void energy_scan_delayed_test(void)
+static void test_energy_scan_delayed_test(void)
 {
 	const u8_t chan = 10;
 	const u8_t dur = 100;
@@ -380,7 +380,7 @@ static void create_ack_frame(void)
  * Additionally verifies ACK frame passing back to the OT.
  *
  */
-static void tx_test(void)
+static void test_tx_test(void)
 {
 	const u8_t chan = 20;
 	u8_t chan2 = chan - 1;
@@ -453,7 +453,7 @@ static void tx_test(void)
  * Tests if tx power requested by the OT is correctly passed to the radio.
  *
  */
-static void tx_power_test(void)
+static void test_tx_power_test(void)
 {
 	s8_t out_power = 0;
 
@@ -473,7 +473,7 @@ static void tx_power_test(void)
  * sense.
  *
  */
-static void sensitivity_test(void)
+static void test_sensitivity_test(void)
 {
 	/*
 	 * Nothing to test actually as this is constant 100.
@@ -516,7 +516,7 @@ static void set_expected_match_values(enum ieee802154_config_type type,
  * radio driver correctly.
  *
  */
-static void source_match_test(void)
+static void test_source_match_test(void)
 {
 	otExtAddress ext_addr;
 
@@ -571,7 +571,7 @@ static void source_match_test(void)
  * Tests if OT can successfully enable or disable promiscuous mode.
  *
  */
-static void promiscuous_mode_set_test(void)
+static void test_promiscuous_mode_set_test(void)
 {
 	rapi.configure = configure_promiscuous_mock;
 
@@ -597,7 +597,7 @@ static void promiscuous_mode_set_test(void)
  * capability
  *
  */
-static void get_caps_test(void)
+static void test_get_caps_test(void)
 {
 	rapi.get_capabilities = get_capabilities_caps_mock;
 
@@ -665,7 +665,7 @@ static void get_caps_test(void)
  * Tests if correct value is returned from the otPlatRadioGetRssi function.
  *
  */
-static void get_rssi_test(void)
+static void test_get_rssi_test(void)
 {
 	const s8_t rssi = -103;
 
@@ -683,7 +683,7 @@ static void get_rssi_test(void)
  * Tests if radio is correctly switched between states.
  *
  */
-static void radio_state_test(void)
+static void test_radio_state_test(void)
 {
 	const u8_t channel = 12;
 	const u8_t power = 10;
@@ -725,7 +725,7 @@ static void radio_state_test(void)
  * driver.
  *
  */
-static void address_test(void)
+static void test_address_test(void)
 {
 	const u16_t pan_id = 0xDEAD;
 	const u16_t short_add = 0xCAFE;
@@ -757,7 +757,7 @@ static void address_test(void)
  * Tests if received frames are properly passed to the OpenThread
  *
  */
-static void receive_test(void)
+static void test_receive_test(void)
 {
 	struct net_pkt *packet;
 	struct net_buf *buf;
@@ -808,18 +808,18 @@ void test_main(void)
 	platformRadioInit();
 
 	ztest_test_suite(openthread_radio,
-		ztest_unit_test(energy_scan_immediate_test),
-		ztest_unit_test(energy_scan_delayed_test),
-		ztest_unit_test(tx_test),
-		ztest_unit_test(tx_power_test),
-		ztest_unit_test(sensitivity_test),
-		ztest_unit_test(source_match_test),
-		ztest_unit_test(promiscuous_mode_set_test),
-		ztest_unit_test(get_caps_test),
-		ztest_unit_test(get_rssi_test),
-		ztest_unit_test(radio_state_test),
-		ztest_unit_test(address_test),
-		ztest_unit_test(receive_test));
+		ztest_unit_test(test_energy_scan_immediate_test),
+		ztest_unit_test(test_energy_scan_delayed_test),
+		ztest_unit_test(test_tx_test),
+		ztest_unit_test(test_tx_power_test),
+		ztest_unit_test(test_sensitivity_test),
+		ztest_unit_test(test_source_match_test),
+		ztest_unit_test(test_promiscuous_mode_set_test),
+		ztest_unit_test(test_get_caps_test),
+		ztest_unit_test(test_get_rssi_test),
+		ztest_unit_test(test_radio_state_test),
+		ztest_unit_test(test_address_test),
+		ztest_unit_test(test_receive_test));
 
 	ztest_run_test_suite(openthread_radio);
 }

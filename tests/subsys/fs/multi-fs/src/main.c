@@ -13,7 +13,7 @@
 void test_main(void)
 {
 	ztest_test_suite(multifs_fs_test,
-			 ztest_unit_test(clear_flash),
+			 ztest_unit_test(test_clear_flash),
 			 ztest_unit_test(test_fat_mount),
 			 ztest_unit_test(test_littlefs_mount),
 			 ztest_unit_test(test_fat_mkdir),

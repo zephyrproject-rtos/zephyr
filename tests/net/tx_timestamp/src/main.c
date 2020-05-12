@@ -181,7 +181,7 @@ static void timestamp_callback(struct net_pkt *pkt)
 	}
 }
 
-static void timestamp_setup(void)
+static void test_timestamp_setup(void)
 {
 	struct net_if *iface;
 	struct net_pkt *pkt;
@@ -227,7 +227,7 @@ static void timestamp_callback_2(struct net_pkt *pkt)
 	}
 }
 
-static void timestamp_setup_2nd_iface(void)
+static void test_timestamp_setup_2nd_iface(void)
 {
 	struct net_if *iface;
 	struct net_pkt *pkt;
@@ -249,7 +249,7 @@ static void timestamp_setup_2nd_iface(void)
 	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
 }
 
-static void timestamp_setup_all(void)
+static void test_timestamp_setup_all(void)
 {
 	struct net_pkt *pkt;
 
@@ -276,7 +276,7 @@ static void timestamp_setup_all(void)
 	net_if_unregister_timestamp_cb(&timestamp_cb_3);
 }
 
-static void timestamp_cleanup(void)
+static void test_timestamp_cleanup(void)
 {
 	struct net_if *iface;
 	struct net_pkt *pkt;
@@ -340,7 +340,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	ud->total_if_count++;
 }
 
-static void address_setup(void)
+static void test_address_setup(void)
 {
 	struct net_if_addr *ifaddr;
 	struct net_if *iface1, *iface2;
@@ -463,7 +463,7 @@ static void send_some_data(struct net_if *iface)
 	net_context_unref(udp_v6_ctx);
 }
 
-static void check_timestamp_before_enabling(void)
+static void test_check_timestamp_before_enabling(void)
 {
 	test_started = true;
 	do_timestamp = false;
@@ -476,7 +476,7 @@ static void check_timestamp_before_enabling(void)
 	}
 }
 
-static void check_timestamp_after_enabling(void)
+static void test_check_timestamp_after_enabling(void)
 {
 	test_started = true;
 	do_timestamp = true;
@@ -492,13 +492,13 @@ static void check_timestamp_after_enabling(void)
 void test_main(void)
 {
 	ztest_test_suite(net_tx_timestamp_test,
-			 ztest_unit_test(address_setup),
-			 ztest_unit_test(check_timestamp_before_enabling),
-			 ztest_unit_test(timestamp_setup),
-			 ztest_unit_test(timestamp_setup_2nd_iface),
-			 ztest_unit_test(timestamp_setup_all),
-			 ztest_unit_test(check_timestamp_after_enabling),
-			 ztest_unit_test(timestamp_cleanup)
+			 ztest_unit_test(test_address_setup),
+			 ztest_unit_test(test_check_timestamp_before_enabling),
+			 ztest_unit_test(test_timestamp_setup),
+			 ztest_unit_test(test_timestamp_setup_2nd_iface),
+			 ztest_unit_test(test_timestamp_setup_all),
+			 ztest_unit_test(test_check_timestamp_after_enabling),
+			 ztest_unit_test(test_timestamp_cleanup)
 			 );
 
 	ztest_run_test_suite(net_tx_timestamp_test);

@@ -36,7 +36,7 @@ NET_DEVICE_OFFLOAD_INIT(net_offload, "net_offload",
 			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			&offload_if_api, 0);
 
-static void ok(void)
+static void test_ok(void)
 {
 	zassert_true(true, "This test should never fail");
 }
@@ -44,7 +44,7 @@ static void ok(void)
 void test_main(void)
 {
 	ztest_test_suite(net_compile_all_test,
-			 ztest_unit_test(ok)
+			 ztest_unit_test(test_ok)
 			 );
 
 	ztest_run_test_suite(net_compile_all_test);

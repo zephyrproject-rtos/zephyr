@@ -313,7 +313,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	ud->total_if_count++;
 }
 
-static void check_interfaces(void)
+static void test_check_interfaces(void)
 {
 	struct user_data ud = { 0 };
 
@@ -333,7 +333,7 @@ static void check_interfaces(void)
  * relevant for this testing. Anyway, set the IP addresses to the interfaces so
  * we have a real life scenario.
  */
-static void address_setup(void)
+static void test_address_setup(void)
 {
 	struct net_if_addr *ifaddr;
 	struct net_if *iface1, *iface2, *iface3;
@@ -556,8 +556,8 @@ void test_main(void)
 	}
 
 	ztest_test_suite(ptp_clock_test,
-			 ztest_unit_test(check_interfaces),
-			 ztest_unit_test(address_setup),
+			 ztest_unit_test(test_check_interfaces),
+			 ztest_unit_test(test_address_setup),
 			 ztest_unit_test(test_ptp_clock_interfaces),
 			 ztest_unit_test(test_ptp_clock_iface_1),
 			 ztest_unit_test(test_ptp_clock_iface_2),
