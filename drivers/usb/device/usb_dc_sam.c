@@ -256,6 +256,12 @@ static void usb_dc_isr(void)
 			usb_dc_ep_enable_interrupts(0);
 		}
 
+		/* Free all endpoint memory */
+		for (int idx = 1; idx < NUM_OF_EP_MAX; idx++) {
+			usb_dc_ep_disable(idx);
+			USBHS->USBHS_DEVEPTCFG[idx] &= ~USBHS_DEVEPTCFG_ALLOC;
+		}
+
 		/* Callback function */
 		dev_data.status_cb(USB_DC_RESET, NULL);
 	}
