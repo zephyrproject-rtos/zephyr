@@ -20,7 +20,7 @@ extern "C" {
 #define MPXXDTYY_MAX_PDM_FREQ		3250000 /* 3.25MHz */
 
 #define DEV_CFG(dev) \
-	((struct mpxxdtyy_config *const)(dev)->config_info)
+	((const struct mpxxdtyy_config *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct mpxxdtyy_data *const)(dev)->driver_data)
 

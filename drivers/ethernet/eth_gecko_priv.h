@@ -96,7 +96,7 @@ struct eth_gecko_dev_data {
 
 #define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((struct eth_gecko_dev_cfg *)(dev)->config_info)
+	((const struct eth_gecko_dev_cfg *)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct eth_gecko_dev_data *)(dev)->driver_data)
 

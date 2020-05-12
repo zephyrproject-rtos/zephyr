@@ -370,7 +370,7 @@ static void generate_mac(u8_t *mac_addr)
 static int eth_initialize(struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data;
-	struct eth_stm32_hal_dev_cfg *cfg;
+	const struct eth_stm32_hal_dev_cfg *cfg;
 	ETH_HandleTypeDef *heth;
 	u8_t hal_ret;
 	int ret = 0;

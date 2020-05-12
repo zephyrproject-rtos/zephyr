@@ -272,7 +272,7 @@ static void eth_stellaris_isr(void *arg)
 static void eth_stellaris_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
-	struct eth_stellaris_config *dev_conf = DEV_CFG(dev);
+	const struct eth_stellaris_config *dev_conf = DEV_CFG(dev);
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 
 	dev_data->iface = iface;
