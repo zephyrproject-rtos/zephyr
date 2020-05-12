@@ -49,7 +49,11 @@ features:
 +-----------+------------+------------------------------------------+
 | USART     | on-chip    | Serial ports                             |
 +-----------+------------+------------------------------------------+
+| I2C       | on-chip    | I2C ports                                |
++-----------+------------+------------------------------------------+
 | SPI       | on-chip    | Serial Peripheral Interface ports        |
++-----------+------------+------------------------------------------+
+| USB       | on-chip    | Universal Serial Bus device ports        |
 +-----------+------------+------------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
@@ -77,11 +81,15 @@ Default Zephyr Peripheral Mapping:
 - SERCOM0 USART RX : PA11
 - SERCOM1 USART TX : PA16
 - SERCOM1 USART RX : PA19
+- SERCOM2 I2C SDA  : PA08
+- SERCOM2 I2C SCL  : PA09
 - SERCOM3 USART TX : PA22
 - SERCOM3 USART RX : PA23
 - SERCOM5 SPI MISO : PB16
 - SERCOM5 SPI MOSI : PB22
 - SERCOM5 SPI SCK  : PB23
+- USB DP           : PA25
+- USB DM           : PA24
 - GPIO SPI CS      : PB17
 - GPIO LED0        : PB30
 
@@ -151,7 +159,7 @@ Flashing
       :goals: flash
       :compact:
 
-   You should see "Hello World! arm" in your terminal.
+   You should see "Hello World! atsamd21_xpro" in your terminal.
 
 References
 **********
