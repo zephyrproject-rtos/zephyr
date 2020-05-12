@@ -24,6 +24,7 @@ extern void test_queue_alloc_append_user(void);
 #endif
 extern void test_queue_alloc(void);
 extern void test_queue_poll_race(void);
+extern void test_multiple_queues(void);
 
 extern struct k_mem_pool test_pool;
 
