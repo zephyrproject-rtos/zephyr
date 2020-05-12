@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(updatehub);
 #include <net/tls_credentials.h>
 #endif
 
-#define NETWORK_TIMEOUT K_SECONDS(2)
+#define NETWORK_TIMEOUT (2 * MSEC_PER_SEC)
 #define UPDATEHUB_POLL_INTERVAL K_MINUTES(CONFIG_UPDATEHUB_POLL_INTERVAL)
 #define MAX_PATH_SIZE 255
 /* MAX_PAYLOAD_SIZE must reflect size COAP_BLOCK_x option */
