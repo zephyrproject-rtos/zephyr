@@ -175,7 +175,7 @@ void test_pre_kernel_detection(void)
  *
  * @see device_list_get()
  */
-static void build_suspend_device_list(void)
+static void test_build_suspend_device_list(void)
 {
 	int devcount;
 	struct device *devices;
@@ -228,10 +228,10 @@ void test_dummy_device_pm(void)
 			DEVICE_PM_FORCE_SUSPEND_STATE, NULL, NULL);
 	zassert_true((ret == 0), "Unable to force suspend device");
 
-	build_suspend_device_list();
+	test_build_suspend_device_list();
 }
 #else
-static void build_suspend_device_list(void)
+static void test_build_suspend_device_list(void)
 {
 	ztest_test_skip();
 }
@@ -250,7 +250,7 @@ void test_main(void)
 {
 	ztest_test_suite(device,
 			 ztest_unit_test(test_dummy_device_pm),
-			 ztest_unit_test(build_suspend_device_list),
+			 ztest_unit_test(test_build_suspend_device_list),
 			 ztest_unit_test(test_dummy_device),
 			 ztest_unit_test(test_pre_kernel_detection),
 			 ztest_user_unit_test(test_bogus_dynamic_name),

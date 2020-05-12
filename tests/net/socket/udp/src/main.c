@@ -812,7 +812,7 @@ ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, device_pm_control_nop,
 		    &eth_fake_data, NULL, CONFIG_ETH_INIT_PRIORITY,
 		    &eth_fake_api_funcs, NET_ETH_MTU);
 
-static void setup_eth(void)
+static void test_setup_eth(void)
 {
 	struct net_if_addr *ifaddr;
 	int ret;
@@ -922,7 +922,7 @@ void test_main(void)
 			 ztest_unit_test(test_v6_sendmsg_recvfrom),
 			 ztest_unit_test(test_v4_sendmsg_recvfrom_connected),
 			 ztest_unit_test(test_v6_sendmsg_recvfrom_connected),
-			 ztest_unit_test(setup_eth),
+			 ztest_unit_test(test_setup_eth),
 			 ztest_unit_test(test_v6_sendmsg_with_txtime),
 			 ztest_user_unit_test(test_v6_sendmsg_with_txtime)
 		);

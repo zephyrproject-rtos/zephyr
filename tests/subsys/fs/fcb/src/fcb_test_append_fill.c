@@ -7,7 +7,7 @@
 
 #include "fcb_test.h"
 
-void fcb_test_append_fill(void)
+void test_fcb_append_fill(void)
 {
 	struct fcb *fcb;
 	int rc;

@@ -30,7 +30,7 @@ struct append_arg {
 	int *elem_cnts;
 };
 
-void fcb_test_wipe(void);
+void test_fcb_wipe(void);
 int fcb_test_empty_walk_cb(struct fcb_entry_ctx *entry_ctx, void *arg);
 uint8_t fcb_test_append_data(int msg_len, int off);
 int fcb_test_data_walk_cb(struct fcb_entry_ctx *entry_ctx, void *arg);

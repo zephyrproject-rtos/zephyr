@@ -314,7 +314,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 }
 
-static void iface_setup(void)
+static void test_iface_setup(void)
 {
 	struct net_if_mcast_addr *maddr;
 	struct net_if_addr *ifaddr;
@@ -448,7 +448,7 @@ static bool send_iface(struct net_if *iface, int val, bool expect_fail)
 	return true;
 }
 
-static void send_iface1(void)
+static void test_send_iface1(void)
 {
 	bool ret;
 
@@ -459,7 +459,7 @@ static void send_iface1(void)
 	zassert_true(ret, "iface 1");
 }
 
-static void send_iface2(void)
+static void test_send_iface2(void)
 {
 	bool ret;
 
@@ -470,7 +470,7 @@ static void send_iface2(void)
 	zassert_true(ret, "iface 2");
 }
 
-static void send_iface3(void)
+static void test_send_iface3(void)
 {
 	bool ret;
 
@@ -481,7 +481,7 @@ static void send_iface3(void)
 	zassert_true(ret, "iface 3");
 }
 
-static void send_iface1_down(void)
+static void test_send_iface1_down(void)
 {
 	bool ret;
 
@@ -494,7 +494,7 @@ static void send_iface1_down(void)
 	zassert_true(ret, "iface 1 down");
 }
 
-static void send_iface1_up(void)
+static void test_send_iface1_up(void)
 {
 	bool ret;
 
@@ -507,7 +507,7 @@ static void send_iface1_up(void)
 	zassert_true(ret, "iface 1 up again");
 }
 
-static void select_src_iface(void)
+static void test_select_src_iface(void)
 {
 	struct in6_addr dst_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x2 } } };
@@ -570,7 +570,7 @@ static void select_src_iface(void)
 			  iface, iface1);
 }
 
-static void check_promisc_mode_off(void)
+static void test_check_promisc_mode_off(void)
 {
 	bool ret;
 
@@ -581,7 +581,7 @@ static void check_promisc_mode_off(void)
 	zassert_false(ret, "iface 1 promiscuous mode ON");
 }
 
-static void check_promisc_mode_on(void)
+static void test_check_promisc_mode_on(void)
 {
 	bool ret;
 
@@ -592,7 +592,7 @@ static void check_promisc_mode_on(void)
 	zassert_true(ret, "iface 1 promiscuous mode OFF");
 }
 
-static void set_promisc_mode_on_again(void)
+static void test_set_promisc_mode_on_again(void)
 {
 	int ret;
 
@@ -603,7 +603,7 @@ static void set_promisc_mode_on_again(void)
 	zassert_equal(ret, -EALREADY, "iface 1 promiscuous mode OFF");
 }
 
-static void set_promisc_mode_on(void)
+static void test_set_promisc_mode_on(void)
 {
 	bool ret;
 
@@ -614,7 +614,7 @@ static void set_promisc_mode_on(void)
 	zassert_equal(ret, 0, "iface 1 promiscuous mode set failed");
 }
 
-static void set_promisc_mode_off(void)
+static void test_set_promisc_mode_off(void)
 {
 	DBG("Setting promiscuous mode OFF (%p)\n", iface4);
 
@@ -624,7 +624,7 @@ static void set_promisc_mode_off(void)
 static struct in_addr my_ipv4_addr_test = { { { 10, 0, 0, 1 } } };
 static struct in_addr my_ipv4_addr_not_found = { { { 1, 2, 3, 4 } } };
 
-static void v4_addr_add(void)
+static void test_v4_addr_add(void)
 {
 	bool ret;
 
@@ -633,7 +633,7 @@ static void v4_addr_add(void)
 	zassert_true(ret, "Cannot add IPv4 address");
 }
 
-static void v4_addr_lookup(void)
+static void test_v4_addr_lookup(void)
 {
 	int ret;
 
@@ -644,7 +644,7 @@ static void v4_addr_lookup(void)
 	zassert_not_equal(ret, 1, "IPv4 address found");
 }
 
-static void v4_addr_rm(void)
+static void test_v4_addr_rm(void)
 {
 	bool ret;
 
@@ -655,7 +655,7 @@ static void v4_addr_rm(void)
 #define MY_ADDR_V4_USER      { { { 10, 0, 0, 2 } } }
 #define UNKNOWN_ADDR_V4_USER { { { 5, 6, 7, 8 } } }
 
-static void v4_addr_add_user(void)
+static void test_v4_addr_add_user(void)
 {
 	struct in_addr my_addr = MY_ADDR_V4_USER;
 	bool ret;
@@ -670,7 +670,7 @@ static void v4_addr_add_user(void)
 	}
 }
 
-static void v4_addr_lookup_user(void)
+static void test_v4_addr_lookup_user(void)
 {
 	struct in_addr my_addr = MY_ADDR_V4_USER;
 	struct in_addr unknown_addr = UNKNOWN_ADDR_V4_USER;
@@ -685,7 +685,7 @@ static void v4_addr_lookup_user(void)
 	zassert_equal(ret, 0, "IPv4 address found");
 }
 
-static void v4_addr_rm_user(void)
+static void test_v4_addr_rm_user(void)
 {
 	struct in_addr my_addr = MY_ADDR_V4_USER;
 	bool ret;
@@ -704,7 +704,7 @@ static
 struct in6_addr my_ipv6_addr_not_found = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0,
 					    0, 0, 0, 0, 0, 0, 0, 0, 0x64 } } };
 
-static void v6_addr_add(void)
+static void test_v6_addr_add(void)
 {
 	bool ret;
 
@@ -713,7 +713,7 @@ static void v6_addr_add(void)
 	zassert_true(ret, "Cannot add IPv6 address");
 }
 
-static void v6_addr_lookup(void)
+static void test_v6_addr_lookup(void)
 {
 	int ret;
 
@@ -724,7 +724,7 @@ static void v6_addr_lookup(void)
 	zassert_not_equal(ret, 1, "IPv6 address found");
 }
 
-static void v6_addr_rm(void)
+static void test_v6_addr_rm(void)
 {
 	bool ret;
 
@@ -738,7 +738,7 @@ static void v6_addr_rm(void)
 #define UNKNOWN_ADDR_V6_USER { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
 			      0, 0, 0, 0, 0, 0, 0, 0x66 } } }
 
-static void v6_addr_add_user(void)
+static void test_v6_addr_add_user(void)
 {
 	struct in6_addr my_addr = MY_ADDR_V6_USER;
 	bool ret;
@@ -753,7 +753,7 @@ static void v6_addr_add_user(void)
 	}
 }
 
-static void v6_addr_lookup_user(void)
+static void test_v6_addr_lookup_user(void)
 {
 	struct in6_addr my_addr = MY_ADDR_V6_USER;
 	struct in6_addr unknown_addr = UNKNOWN_ADDR_V6_USER;
@@ -768,7 +768,7 @@ static void v6_addr_lookup_user(void)
 	}
 }
 
-static void v6_addr_rm_user(void)
+static void test_v6_addr_rm_user(void)
 {
 	struct in6_addr my_addr = MY_ADDR_V6_USER;
 	bool ret;
@@ -782,7 +782,7 @@ static void v6_addr_rm_user(void)
 	}
 }
 
-static void netmask_addr_add(void)
+static void test_netmask_addr_add(void)
 {
 	struct in_addr my_netmask = { { { 255, 255, 255, 0 } } };
 	bool ret;
@@ -793,7 +793,7 @@ static void netmask_addr_add(void)
 	}
 }
 
-static void gw_addr_add(void)
+static void test_gw_addr_add(void)
 {
 	struct in_addr my_gw = { { { 192, 0, 2, 254 } } };
 	bool ret;
@@ -807,35 +807,35 @@ static void gw_addr_add(void)
 void test_main(void)
 {
 	ztest_test_suite(net_iface_test,
-			 ztest_unit_test(iface_setup),
-			 ztest_unit_test(send_iface1),
-			 ztest_unit_test(send_iface2),
-			 ztest_unit_test(send_iface3),
-			 ztest_unit_test(send_iface1_down),
-			 ztest_unit_test(send_iface1_up),
-			 ztest_unit_test(select_src_iface),
-			 ztest_unit_test(check_promisc_mode_off),
-			 ztest_unit_test(set_promisc_mode_on),
-			 ztest_unit_test(check_promisc_mode_on),
-			 ztest_unit_test(set_promisc_mode_on_again),
-			 ztest_unit_test(set_promisc_mode_off),
-			 ztest_unit_test(check_promisc_mode_off),
-			 ztest_unit_test(v4_addr_add),
-			 ztest_unit_test(v4_addr_lookup),
-			 ztest_unit_test(v4_addr_rm),
-			 ztest_user_unit_test(v4_addr_add_user),
-			 ztest_user_unit_test(v4_addr_lookup_user),
-			 ztest_user_unit_test(v4_addr_rm_user),
-			 ztest_unit_test(v6_addr_add),
-			 ztest_unit_test(v6_addr_lookup),
-			 ztest_unit_test(v6_addr_rm),
-			 ztest_user_unit_test(v6_addr_add_user),
-			 ztest_user_unit_test(v6_addr_lookup_user),
-			 ztest_user_unit_test(v6_addr_rm_user),
-			 ztest_unit_test(netmask_addr_add),
-			 ztest_user_unit_test(netmask_addr_add),
-			 ztest_unit_test(gw_addr_add),
-			 ztest_user_unit_test(gw_addr_add)
+			 ztest_unit_test(test_iface_setup),
+			 ztest_unit_test(test_send_iface1),
+			 ztest_unit_test(test_send_iface2),
+			 ztest_unit_test(test_send_iface3),
+			 ztest_unit_test(test_send_iface1_down),
+			 ztest_unit_test(test_send_iface1_up),
+			 ztest_unit_test(test_select_src_iface),
+			 ztest_unit_test(test_check_promisc_mode_off),
+			 ztest_unit_test(test_set_promisc_mode_on),
+			 ztest_unit_test(test_check_promisc_mode_on),
+			 ztest_unit_test(test_set_promisc_mode_on_again),
+			 ztest_unit_test(test_set_promisc_mode_off),
+			 ztest_unit_test(test_check_promisc_mode_off),
+			 ztest_unit_test(test_v4_addr_add),
+			 ztest_unit_test(test_v4_addr_lookup),
+			 ztest_unit_test(test_v4_addr_rm),
+			 ztest_user_unit_test(test_v4_addr_add_user),
+			 ztest_user_unit_test(test_v4_addr_lookup_user),
+			 ztest_user_unit_test(test_v4_addr_rm_user),
+			 ztest_unit_test(test_v6_addr_add),
+			 ztest_unit_test(test_v6_addr_lookup),
+			 ztest_unit_test(test_v6_addr_rm),
+			 ztest_user_unit_test(test_v6_addr_add_user),
+			 ztest_user_unit_test(test_v6_addr_lookup_user),
+			 ztest_user_unit_test(test_v6_addr_rm_user),
+			 ztest_unit_test(test_netmask_addr_add),
+			 ztest_user_unit_test(test_netmask_addr_add),
+			 ztest_unit_test(test_gw_addr_add),
+			 ztest_user_unit_test(test_gw_addr_add)
 		);
 
 	ztest_run_test_suite(net_iface_test);
