@@ -27,7 +27,7 @@ void *xtensa_init_stack(int *stack_top,
 	 * start will decrement the stack pointer by 16.
 	 */
 	const int bsasz = BASE_SAVE_AREA_SIZE - 16;
-	void **bsa = (void **) (((char *) stack_top) - bsasz);
+	void *ret, **bsa = (void **) (((char *) stack_top) - bsasz);
 
 	(void)memset(bsa, 0, bsasz);
 
@@ -53,7 +53,12 @@ void *xtensa_init_stack(int *stack_top,
 	 * as the handle
 	 */
 	bsa[-9] = bsa;
-	return &bsa[-9];
+	ret = &bsa[-9];
+
+#ifdef CONFIG_KERNEL_COHERENCE
+	xthal_dcache_region_writeback(ret, (char *)stack_top - (char *)ret);
+#endif
+	return ret;
 }
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,

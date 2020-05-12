@@ -202,16 +202,7 @@ _memmap_cacheattr_bp_allvalid = 0x22222222;
  * as cacheattr_set macro sets them both to the same set of
  * attributes.
  */
-#ifndef CONFIG_SMP
 _memmap_cacheattr_intel_cavs15_adsp = 0xFF42FFF2;
-#else
-/*
- * FIXME: Make 0xA0000000 - 0xBFFFFFFF to bypass cache under SMP
- * since there is no data cache manipulation for spinlock, kernel
- * object, scheduler, etc...
- */
-_memmap_cacheattr_intel_cavs15_adsp = 0xFF22FFF2;
-#endif
 
 PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_intel_cavs15_adsp);
 SECTIONS
@@ -426,7 +417,7 @@ SECTIONS
     *(.noinit.*)
   } >ram :ram_phdr
 
-  .lit4 SEGSTART_CACHED : ALIGN(4)
+  .lit4 : ALIGN(4)
   {
     _lit4_start = ABSOLUTE(.);
     *(*.lit4)
@@ -466,11 +457,13 @@ SECTIONS
 #define ROMABLE_REGION ucram :ucram_phdr
 #include <linker/common-ram.ld>
 
-  /* ANDY TEST */
-  .ucram SEGSTART_UNCACHED :
+  /* This section is cached.  By default it contains only declared
+   * thread stacks, but applications can put symbols here too.
+   */
+  .cached SEGSTART_CACHED :
   {
-    *(.ucram)
-  } >ucram :ucram_phdr
+    *(.cached .cached.*)
+  } >ram :ram_phdr
 
   .bss SEGSTART_UNCACHED (NOLOAD) : ALIGN(4096)
   {
