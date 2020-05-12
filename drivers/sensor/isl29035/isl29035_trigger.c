@@ -52,7 +52,7 @@ static u16_t isl29035_lux_processed_to_raw(struct sensor_value const *val)
 	return raw_val / ISL29035_LUX_RANGE;
 }
 
-int isl29035_attr_set(struct device *dev,
+int isl29035_attr_set(const struct device *dev,
 		      enum sensor_channel chan,
 		      enum sensor_attribute attr,
 		      const struct sensor_value *val)
@@ -84,7 +84,7 @@ int isl29035_attr_set(struct device *dev,
 	return 0;
 }
 
-static void isl29035_gpio_callback(struct device *dev,
+static void isl29035_gpio_callback(const struct device *dev,
 				   struct gpio_callback *cb, u32_t pins)
 {
 	struct isl29035_driver_data *drv_data =
@@ -95,7 +95,7 @@ static void isl29035_gpio_callback(struct device *dev,
 	handle_int(drv_data);
 }
 
-static void isl29035_thread_cb(struct device *dev)
+static void isl29035_thread_cb(const struct device *dev)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
 	u8_t val;
@@ -117,7 +117,7 @@ static void isl29035_thread_cb(struct device *dev)
 #ifdef CONFIG_ISL29035_TRIGGER_OWN_THREAD
 static void isl29035_thread(int ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(ptr);
+	const struct device *dev = INT_TO_POINTER(ptr);
 	struct isl29035_driver_data *drv_data = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -139,7 +139,7 @@ static void isl29035_work_cb(struct k_work *work)
 }
 #endif
 
-int isl29035_trigger_set(struct device *dev,
+int isl29035_trigger_set(const struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
@@ -161,7 +161,7 @@ int isl29035_trigger_set(struct device *dev,
 	return 0;
 }
 
-int isl29035_init_interrupt(struct device *dev)
+int isl29035_init_interrupt(const struct device *dev)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
 

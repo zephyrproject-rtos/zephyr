@@ -155,7 +155,7 @@ size_t stream_flash_bytes_written(struct stream_flash_ctx *ctx)
 	return ctx->bytes_written;
 }
 
-int stream_flash_init(struct stream_flash_ctx *ctx, struct device *fdev,
+int stream_flash_init(struct stream_flash_ctx *ctx, const struct device *fdev,
 		      u8_t *buf, size_t buf_len, size_t offset, size_t size,
 		      stream_flash_callback_t cb)
 {

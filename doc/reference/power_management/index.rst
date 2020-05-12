@@ -279,7 +279,7 @@ Default Initializer Function
 
 .. code-block:: c
 
-   int device_pm_control_nop(struct device *unused_device, u32_t unused_ctrl_command, void *unused_context);
+   int device_pm_control_nop(const struct device *unused_device, u32_t unused_ctrl_command, void *unused_context);
 
 
 If the driver doesn't implement any power control operations, the driver can
@@ -299,7 +299,7 @@ Get Device List
 
 .. code-block:: c
 
-   void device_list_get(struct device **device_list, int *device_count);
+   void device_list_get(const struct device **device_list, int *device_count);
 
 The Zephyr RTOS kernel internally maintains a list of all devices in the system.
 The SOC interface uses this API to get the device list. The SOC interface can use the list to
@@ -315,7 +315,7 @@ Device Set Power State
 
 .. code-block:: c
 
-   int device_set_power_state(struct device *device, u32_t device_power_state, device_pm_cb cb, void *arg);
+   int device_set_power_state(const struct device *device, u32_t device_power_state, device_pm_cb cb, void *arg);
 
 Calls the :c:func:`device_pm_control()` handler function implemented by the
 device driver with DEVICE_PM_SET_POWER_STATE command.
@@ -325,7 +325,7 @@ Device Get Power State
 
 .. code-block:: c
 
-   int device_get_power_state(struct device *device, u32_t * device_power_state);
+   int device_get_power_state(const struct device *device, u32_t * device_power_state);
 
 Calls the :c:func:`device_pm_control()` handler function implemented by the
 device driver with DEVICE_PM_GET_POWER_STATE command.
@@ -364,7 +364,7 @@ Indicate Busy Status API
 
 .. code-block:: c
 
-   void device_busy_set(struct device *busy_dev);
+   void device_busy_set(const struct device *busy_dev);
 
 Sets a bit corresponding to the device, in a data structure maintained by the
 kernel, to indicate whether or not it is in the middle of a transaction.
@@ -374,7 +374,7 @@ Clear Busy Status API
 
 .. code-block:: c
 
-   void device_busy_clear(struct device *busy_dev);
+   void device_busy_clear(const struct device *busy_dev);
 
 Clears the bit corresponding to the device in a data structure
 maintained by the kernel to indicate that the device is not in the middle of
@@ -385,7 +385,7 @@ Check Busy Status of Single Device API
 
 .. code-block:: c
 
-   int device_busy_check(struct device *chk_dev);
+   int device_busy_check(const struct device *chk_dev);
 
 Checks whether a device is busy. The API returns 0 if the device
 is not busy.
@@ -425,7 +425,7 @@ Enable Device Idle Power Management of a Device API
 
 .. code-block:: c
 
-   void device_pm_enable(struct device *dev);
+   void device_pm_enable(const struct device *dev);
 
 Enbles Idle Power Management of the device.
 
@@ -434,7 +434,7 @@ Disable Device Idle Power Management of a Device API
 
 .. code-block:: c
 
-   void device_pm_disable(struct device *dev);
+   void device_pm_disable(const struct device *dev);
 
 Disables Idle Power Management of the device.
 
@@ -443,7 +443,7 @@ Resume Device asynchronously API
 
 .. code-block:: c
 
-   int device_pm_get(struct device *dev);
+   int device_pm_get(const struct device *dev);
 
 Marks the device as being used. This API will asynchronously
 bring the device to resume state. The API returns 0 on success.
@@ -453,7 +453,7 @@ Resume Device synchronously API
 
 .. code-block:: c
 
-   int device_pm_get_sync(struct device *dev);
+   int device_pm_get_sync(const struct device *dev);
 
 Marks the device as being used. It will bring up or resume
 the device if it is in suspended state based on the device
@@ -465,7 +465,7 @@ Suspend Device asynchronously API
 
 .. code-block:: c
 
-   int device_pm_put(struct device *dev);
+   int device_pm_put(const struct device *dev);
 
 Marks the device as being released. This API asynchronously put
 the device to suspend state if not already in suspend state.
@@ -476,7 +476,7 @@ Suspend Device synchronously API
 
 .. code-block:: c
 
-   int device_pm_put_sync(struct device *dev);
+   int device_pm_put_sync(const struct device *dev);
 
 Marks the device as being released. It will put the device to
 suspended state if is is in active state based on the device

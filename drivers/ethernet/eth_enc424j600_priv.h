@@ -293,8 +293,8 @@ struct enc424j600_runtime {
 
 	struct k_thread thread;
 	u8_t mac_address[6];
-	struct device *gpio;
-	struct device *spi;
+	const struct device *gpio;
+	const struct device *spi;
 	struct spi_cs_control spi_cs;
 	struct spi_config spi_cfg;
 	struct gpio_callback gpio_cb;

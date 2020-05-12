@@ -19,7 +19,8 @@
 
 LOG_MODULE_REGISTER(ISL29035, CONFIG_SENSOR_LOG_LEVEL);
 
-static int isl29035_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int isl29035_sample_fetch(const struct device *dev,
+				 enum sensor_channel chan)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
 	u8_t msb, lsb;
@@ -41,7 +42,7 @@ static int isl29035_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int isl29035_channel_get(struct device *dev,
+static int isl29035_channel_get(const struct device *dev,
 				enum sensor_channel chan,
 				struct sensor_value *val)
 {
@@ -72,7 +73,7 @@ static const struct sensor_driver_api isl29035_api = {
 	.channel_get = &isl29035_channel_get,
 };
 
-static int isl29035_init(struct device *dev)
+static int isl29035_init(const struct device *dev)
 {
 	struct isl29035_driver_data *drv_data = dev->driver_data;
 

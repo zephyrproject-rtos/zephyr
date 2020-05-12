@@ -49,14 +49,14 @@ K_THREAD_STACK_DEFINE(writeback_stack, 2048);
  * we ensure all this gets linked into the continuous region denoted by
  * app_a_partition.
  */
-APP_A_BSS struct device *sample_device;
+APP_A_BSS const struct device *sample_device;
 APP_A_BSS unsigned int pending_count;
 
 /* ISR-level callback function. Runs in supervisor mode. Does what's needed
  * to get the data into this application's accessible memory and have the
  * worker thread running in user mode do the rest.
  */
-void sample_callback(struct device *dev, void *context, void *data)
+void sample_callback(const struct device *dev, void *context, void *data)
 {
 	int ret;
 

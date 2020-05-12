@@ -370,7 +370,7 @@ void log_output_hexdump_syst_process(const struct log_output *log_output,
 	MIPI_SYST_WRITE(&log_syst_handle, severity, 0x1A, data, length);
 }
 
-static int syst_init(struct device *arg)
+static int syst_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

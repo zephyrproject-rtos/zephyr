@@ -24,7 +24,7 @@ void main(void)
 	struct video_buffer *buffers[2], *vbuf;
 	struct video_format fmt;
 	struct video_caps caps;
-	struct device *video;
+	const struct device *video;
 	unsigned int frame = 0;
 	size_t bsize;
 	int i = 0;
@@ -39,7 +39,7 @@ void main(void)
 	/* But would be better to use a real video device if any */
 #ifdef VIDEO_DEV
 	{
-		struct device *dev = device_get_binding(VIDEO_DEV);
+		const struct device *dev = device_get_binding(VIDEO_DEV);
 
 		if (dev == NULL) {
 			LOG_ERR("Video device %s not found, "

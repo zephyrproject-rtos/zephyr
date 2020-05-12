@@ -50,7 +50,8 @@ struct spi_gecko_config {
 
 
 /* Helper Functions */
-static int spi_config(struct device *dev, const struct spi_config *config,
+static int spi_config(const struct device *dev,
+		      const struct spi_config *config,
 		      u16_t *control)
 {
 	const struct spi_gecko_config *gecko_config = dev->config_info;
@@ -163,8 +164,8 @@ static int spi_gecko_shift_frames(USART_TypeDef *usart,
 }
 
 
-static void spi_gecko_xfer(struct device *dev,
-		const struct spi_config *config)
+static void spi_gecko_xfer(const struct device *dev,
+			   const struct spi_config *config)
 {
 	int ret;
 	struct spi_context *ctx = &DEV_DATA(dev)->ctx;
@@ -181,7 +182,7 @@ static void spi_gecko_xfer(struct device *dev,
 	spi_context_complete(ctx, 0);
 }
 
-static void spi_gecko_init_pins(struct device *dev)
+static void spi_gecko_init_pins(const struct device *dev)
 {
 	const struct spi_gecko_config *config = dev->config_info;
 
@@ -206,7 +207,7 @@ static void spi_gecko_init_pins(struct device *dev)
 
 /* API Functions */
 
-static int spi_gecko_init(struct device *dev)
+static int spi_gecko_init(const struct device *dev)
 {
 	const struct spi_gecko_config *config = dev->config_info;
 	USART_InitSync_TypeDef usartInit = USART_INITSYNC_DEFAULT;
@@ -242,10 +243,10 @@ static int spi_gecko_init(struct device *dev)
 	return 0;
 }
 
-static int spi_gecko_transceive(struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs)
+static int spi_gecko_transceive(const struct device *dev,
+				const struct spi_config *config,
+				const struct spi_buf_set *tx_bufs,
+				const struct spi_buf_set *rx_bufs)
 {
 	u16_t control = 0;
 
@@ -256,17 +257,17 @@ static int spi_gecko_transceive(struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_gecko_transceive_async(struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs,
-			  struct k_poll_signal *async)
+static int spi_gecko_transceive_async(const struct device *dev,
+				      const struct spi_config *config,
+				      const struct spi_buf_set *tx_bufs,
+				      const struct spi_buf_set *rx_bufs,
+				      struct k_poll_signal *async)
 {
 	return -ENOTSUP;
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_gecko_release(struct device *dev,
+static int spi_gecko_release(const struct device *dev,
 			     const struct spi_config *config)
 {
 	const struct spi_gecko_config *gecko_config = dev->config_info;

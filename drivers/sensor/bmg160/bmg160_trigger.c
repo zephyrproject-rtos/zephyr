@@ -18,7 +18,7 @@ extern struct bmg160_device_data bmg160_data;
 #include <logging/log.h>
 LOG_MODULE_DECLARE(BMG160, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline void setup_int(struct device *dev,
+static inline void setup_int(const struct device *dev,
 			      bool enable)
 {
 	struct bmg160_device_data *data = dev->driver_data;
@@ -32,7 +32,8 @@ static inline void setup_int(struct device *dev,
 				     : GPIO_INT_DISABLE);
 }
 
-static void bmg160_gpio_callback(struct device *port, struct gpio_callback *cb,
+static void bmg160_gpio_callback(const struct device *port,
+				 struct gpio_callback *cb,
 				 u32_t pin)
 {
 	struct bmg160_device_data *bmg160 =
@@ -48,7 +49,7 @@ static void bmg160_gpio_callback(struct device *port, struct gpio_callback *cb,
 #endif
 }
 
-static int bmg160_anymotion_set(struct device *dev,
+static int bmg160_anymotion_set(const struct device *dev,
 				sensor_trigger_handler_t handler)
 {
 	struct bmg160_device_data *bmg160 = dev->driver_data;
@@ -70,7 +71,8 @@ static int bmg160_anymotion_set(struct device *dev,
 	return 0;
 }
 
-static int bmg160_drdy_set(struct device *dev, sensor_trigger_handler_t handler)
+static int bmg160_drdy_set(const struct device *dev,
+			   sensor_trigger_handler_t handler)
 {
 	struct bmg160_device_data *bmg160 = dev->driver_data;
 
@@ -85,7 +87,7 @@ static int bmg160_drdy_set(struct device *dev, sensor_trigger_handler_t handler)
 	return 0;
 }
 
-int bmg160_slope_config(struct device *dev, enum sensor_attribute attr,
+int bmg160_slope_config(const struct device *dev, enum sensor_attribute attr,
 			const struct sensor_value *val)
 {
 	struct bmg160_device_data *bmg160 = dev->driver_data;
@@ -120,7 +122,7 @@ int bmg160_slope_config(struct device *dev, enum sensor_attribute attr,
 	return -ENOTSUP;
 }
 
-int bmg160_trigger_set(struct device *dev,
+int bmg160_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
@@ -133,7 +135,7 @@ int bmg160_trigger_set(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int bmg160_handle_anymotion_int(struct device *dev)
+static int bmg160_handle_anymotion_int(const struct device *dev)
 {
 	struct bmg160_device_data *bmg160 = dev->driver_data;
 	struct sensor_trigger any_trig = {
@@ -148,7 +150,7 @@ static int bmg160_handle_anymotion_int(struct device *dev)
 	return 0;
 }
 
-static int bmg160_handle_dataready_int(struct device *dev)
+static int bmg160_handle_dataready_int(const struct device *dev)
 {
 	struct bmg160_device_data *bmg160 = dev->driver_data;
 	struct sensor_trigger drdy_trig = {
@@ -165,7 +167,7 @@ static int bmg160_handle_dataready_int(struct device *dev)
 
 static void bmg160_handle_int(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	u8_t status_int[4];
 
 	if (bmg160_read(dev, BMG160_REG_INT_STATUS0, status_int, 4) < 0) {
@@ -185,7 +187,7 @@ static struct k_thread bmg160_thread;
 
 static void bmg160_thread_main(void *arg1, void *arg2, void *arg3)
 {
-	struct device *dev = (struct device *)arg1;
+	const struct device *dev = (const struct device *)arg1;
 	struct bmg160_device_data *bmg160 = dev->driver_data;
 
 	while (true) {
@@ -206,7 +208,7 @@ static void bmg160_work_cb(struct k_work *work)
 }
 #endif
 
-int bmg160_trigger_init(struct device *dev)
+int bmg160_trigger_init(const struct device *dev)
 {
 	const struct bmg160_device_config *cfg = dev->config_info;
 	struct bmg160_device_data *bmg160 = dev->driver_data;

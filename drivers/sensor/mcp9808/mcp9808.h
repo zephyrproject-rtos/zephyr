@@ -56,15 +56,15 @@
 #define MCP9808_TEMP_CRT_BIT		BIT(15)
 
 struct mcp9808_data {
-	struct device *i2c_master;
+	const struct device *i2c_master;
 
 	u16_t reg_val;
 
 #ifdef CONFIG_MCP9808_TRIGGER
-	struct device *alert_gpio;
+	const struct device *alert_gpio;
 	struct gpio_callback alert_cb;
 
-	struct device *dev;
+	const struct device *dev;
 
 	struct sensor_trigger trig;
 	sensor_trigger_handler_t trigger_handler;
@@ -89,16 +89,16 @@ struct mcp9808_config {
 #endif /* CONFIG_MCP9808_TRIGGER */
 };
 
-int mcp9808_reg_read(struct device *dev, u8_t reg, u16_t *val);
+int mcp9808_reg_read(const struct device *dev, u8_t reg, u16_t *val);
 
 #ifdef CONFIG_MCP9808_TRIGGER
-int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
+int mcp9808_attr_set(const struct device *dev, enum sensor_channel chan,
 		     enum sensor_attribute attr,
 		     const struct sensor_value *val);
-int mcp9808_trigger_set(struct device *dev,
+int mcp9808_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
-int mcp9808_setup_interrupt(struct device *dev);
+int mcp9808_setup_interrupt(const struct device *dev);
 #endif /* CONFIG_MCP9808_TRIGGER */
 
 /* Encode a signed temperature in scaled Celsius to the format used in

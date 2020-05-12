@@ -131,7 +131,7 @@ extern "C" {
  *    transmission and before releasing the CS line
  */
 struct spi_cs_control {
-	struct device	*gpio_dev;
+	const struct device	*gpio_dev;
 	u32_t		gpio_pin;
 	u32_t		delay;
 };
@@ -194,7 +194,7 @@ struct spi_buf_set {
  * @brief Callback API for I/O
  * See spi_transceive() for argument descriptions
  */
-typedef int (*spi_api_io)(struct device *dev,
+typedef int (*spi_api_io)(const struct device *dev,
 			  const struct spi_config *config,
 			  const struct spi_buf_set *tx_bufs,
 			  const struct spi_buf_set *rx_bufs);
@@ -204,7 +204,7 @@ typedef int (*spi_api_io)(struct device *dev,
  * @brief Callback API for asynchronous I/O
  * See spi_transceive_async() for argument descriptions
  */
-typedef int (*spi_api_io_async)(struct device *dev,
+typedef int (*spi_api_io_async)(const struct device *dev,
 				const struct spi_config *config,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs,
@@ -215,7 +215,7 @@ typedef int (*spi_api_io_async)(struct device *dev,
  * @brief Callback API for unlocking SPI device.
  * See spi_release() for argument descriptions
  */
-typedef int (*spi_api_release)(struct device *dev,
+typedef int (*spi_api_release)(const struct device *dev,
 			       const struct spi_config *config);
 
 
@@ -247,15 +247,15 @@ __subsystem struct spi_driver_api {
  *         transaction: if successful it will return the amount of frames
  *         received, negative errno code otherwise.
  */
-__syscall int spi_transceive(struct device *dev,
+__syscall int spi_transceive(const struct device *dev,
 			     const struct spi_config *config,
 			     const struct spi_buf_set *tx_bufs,
 			     const struct spi_buf_set *rx_bufs);
 
-static inline int z_impl_spi_transceive(struct device *dev,
-				       const struct spi_config *config,
-				       const struct spi_buf_set *tx_bufs,
-				       const struct spi_buf_set *rx_bufs)
+static inline int z_impl_spi_transceive(const struct device *dev,
+					const struct spi_config *config,
+					const struct spi_buf_set *tx_bufs,
+					const struct spi_buf_set *rx_bufs)
 {
 	const struct spi_driver_api *api =
 		(const struct spi_driver_api *)dev->driver_api;
@@ -276,7 +276,7 @@ static inline int z_impl_spi_transceive(struct device *dev,
  *
  * @note This function is an helper function calling spi_transceive.
  */
-static inline int spi_read(struct device *dev,
+static inline int spi_read(const struct device *dev,
 			   const struct spi_config *config,
 			   const struct spi_buf_set *rx_bufs)
 {
@@ -296,7 +296,7 @@ static inline int spi_read(struct device *dev,
  *
  * @note This function is an helper function calling spi_transceive.
  */
-static inline int spi_write(struct device *dev,
+static inline int spi_write(const struct device *dev,
 			    const struct spi_config *config,
 			    const struct spi_buf_set *tx_bufs)
 {
@@ -324,7 +324,7 @@ static inline int spi_write(struct device *dev,
  *         transaction: if successful it will return the amount of frames
  *         received, negative errno code otherwise.
  */
-static inline int spi_transceive_async(struct device *dev,
+static inline int spi_transceive_async(const struct device *dev,
 				       const struct spi_config *config,
 				       const struct spi_buf_set *tx_bufs,
 				       const struct spi_buf_set *rx_bufs,
@@ -353,7 +353,7 @@ static inline int spi_transceive_async(struct device *dev,
  *
  * @note This function is an helper function calling spi_transceive_async.
  */
-static inline int spi_read_async(struct device *dev,
+static inline int spi_read_async(const struct device *dev,
 				 const struct spi_config *config,
 				 const struct spi_buf_set *rx_bufs,
 				 struct k_poll_signal *async)
@@ -378,7 +378,7 @@ static inline int spi_read_async(struct device *dev,
  *
  * @note This function is an helper function calling spi_transceive_async.
  */
-static inline int spi_write_async(struct device *dev,
+static inline int spi_write_async(const struct device *dev,
 				  const struct spi_config *config,
 				  const struct spi_buf_set *tx_bufs,
 				  struct k_poll_signal *async)
@@ -400,11 +400,11 @@ static inline int spi_write_async(struct device *dev,
  * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
  */
-__syscall int spi_release(struct device *dev,
+__syscall int spi_release(const struct device *dev,
 			  const struct spi_config *config);
 
-static inline int z_impl_spi_release(struct device *dev,
-				    const struct spi_config *config)
+static inline int z_impl_spi_release(const struct device *dev,
+				     const struct spi_config *config)
 {
 	const struct spi_driver_api *api =
 		(const struct spi_driver_api *)dev->driver_api;

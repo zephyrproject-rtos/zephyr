@@ -84,7 +84,7 @@ static void dma_callback(void *arg, u32_t channel, int status)
 	}
 }
 
-static int spi_stm32_dma_tx_load(struct device *dev, const u8_t *buf,
+static int spi_stm32_dma_tx_load(const struct device *dev, const u8_t *buf,
 				 size_t len)
 {
 	const struct spi_stm32_config *cfg = DEV_CFG(dev);
@@ -144,7 +144,8 @@ static int spi_stm32_dma_tx_load(struct device *dev, const u8_t *buf,
 	return dma_start(data->dev_dma_tx, data->dma_tx.channel);
 }
 
-static int spi_stm32_dma_rx_load(struct device *dev, u8_t *buf, size_t len)
+static int spi_stm32_dma_rx_load(const struct device *dev, u8_t *buf,
+				 size_t len)
 {
 	const struct spi_stm32_config *cfg = DEV_CFG(dev);
 	struct spi_stm32_data *data = DEV_DATA(dev);
@@ -195,7 +196,7 @@ static int spi_stm32_dma_rx_load(struct device *dev, u8_t *buf, size_t len)
 	return dma_start(data->dev_dma_rx, data->dma_rx.channel);
 }
 
-static int spi_dma_move_buffers(struct device *dev)
+static int spi_dma_move_buffers(const struct device *dev)
 {
 	struct spi_stm32_data *data = DEV_DATA(dev);
 	int ret;
@@ -409,7 +410,7 @@ static void spi_stm32_complete(struct spi_stm32_data *data, SPI_TypeDef *spi,
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 static void spi_stm32_isr(void *arg)
 {
-	struct device * const dev = (struct device *) arg;
+	const struct device * const dev = (const struct device *) arg;
 	const struct spi_stm32_config *cfg = dev->config_info;
 	struct spi_stm32_data *data = dev->driver_data;
 	SPI_TypeDef *spi = cfg->spi;
@@ -431,7 +432,7 @@ static void spi_stm32_isr(void *arg)
 }
 #endif
 
-static int spi_stm32_configure(struct device *dev,
+static int spi_stm32_configure(const struct device *dev,
 			       const struct spi_config *config)
 {
 	const struct spi_stm32_config *cfg = DEV_CFG(dev);
@@ -563,7 +564,7 @@ static int spi_stm32_configure(struct device *dev,
 	return 0;
 }
 
-static int spi_stm32_release(struct device *dev,
+static int spi_stm32_release(const struct device *dev,
 			     const struct spi_config *config)
 {
 	struct spi_stm32_data *data = DEV_DATA(dev);
@@ -573,7 +574,7 @@ static int spi_stm32_release(struct device *dev,
 	return 0;
 }
 
-static int transceive(struct device *dev,
+static int transceive(const struct device *dev,
 		      const struct spi_config *config,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
@@ -647,11 +648,11 @@ static int transceive(struct device *dev,
 }
 
 #ifdef CONFIG_SPI_STM32_DMA
-static int transceive_dma(struct device *dev,
-		      const struct spi_config *config,
-		      const struct spi_buf_set *tx_bufs,
-		      const struct spi_buf_set *rx_bufs,
-		      bool asynchronous, struct k_poll_signal *signal)
+static int transceive_dma(const struct device *dev,
+			  const struct spi_config *config,
+			  const struct spi_buf_set *tx_bufs,
+			  const struct spi_buf_set *rx_bufs,
+			  bool asynchronous, struct k_poll_signal *signal)
 {
 	const struct spi_stm32_config *cfg = DEV_CFG(dev);
 	struct spi_stm32_data *data = DEV_DATA(dev);
@@ -752,7 +753,7 @@ static int transceive_dma(struct device *dev,
 }
 #endif /* CONFIG_SPI_STM32_DMA */
 
-static int spi_stm32_transceive(struct device *dev,
+static int spi_stm32_transceive(const struct device *dev,
 				const struct spi_config *config,
 				const struct spi_buf_set *tx_bufs,
 				const struct spi_buf_set *rx_bufs)
@@ -770,7 +771,7 @@ static int spi_stm32_transceive(struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_stm32_transceive_async(struct device *dev,
+static int spi_stm32_transceive_async(const struct device *dev,
 				      const struct spi_config *config,
 				      const struct spi_buf_set *tx_bufs,
 				      const struct spi_buf_set *rx_bufs,
@@ -788,7 +789,7 @@ static const struct spi_driver_api api_funcs = {
 	.release = spi_stm32_release,
 };
 
-static int spi_stm32_init(struct device *dev)
+static int spi_stm32_init(const struct device *dev)
 {
 	struct spi_stm32_data *data __attribute__((unused)) = dev->driver_data;
 	const struct spi_stm32_config *cfg = dev->config_info;
@@ -830,11 +831,11 @@ static int spi_stm32_init(struct device *dev)
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 #define STM32_SPI_IRQ_HANDLER_DECL(id)					\
-	static void spi_stm32_irq_config_func_##id(struct device *dev)
+	static void spi_stm32_irq_config_func_##id(const struct device *dev)
 #define STM32_SPI_IRQ_HANDLER_FUNC(id)					\
 	.irq_config = spi_stm32_irq_config_func_##id,
 #define STM32_SPI_IRQ_HANDLER(id)					\
-static void spi_stm32_irq_config_func_##id(struct device *dev)		\
+static void spi_stm32_irq_config_func_##id(const struct device *dev)		\
 {									\
 	IRQ_CONNECT(DT_INST_IRQN(id),			\
 		    DT_INST_IRQ(id, priority),		\

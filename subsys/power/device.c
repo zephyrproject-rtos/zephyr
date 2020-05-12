@@ -51,7 +51,7 @@ typedef u16_t device_idx_t;
 #define DEVICE_IDX_MAX ((device_idx_t)(-1))
 
 /* An array of all devices in the application. */
-static struct device *all_devices;
+static const struct device *all_devices;
 
 /* Indexes into all_devices for devices that support pm,
  * in dependency order (later may depend on earlier).
@@ -88,7 +88,7 @@ static int _sys_pm_devices(u32_t state)
 
 	for (int i = num_pm - 1; i >= 0; i--) {
 		device_idx_t idx = pm_devices[i];
-		struct device *dev = &all_devices[idx];
+		const struct device *dev = &all_devices[idx];
 		int rc;
 
 		/* TODO: Improve the logic by checking device status

@@ -62,15 +62,15 @@ struct wdog_cmsdk_apb {
 	((volatile struct wdog_cmsdk_apb *)(DT_INST_REG_ADDR(0)))
 
 /* Keep reference of the device to pass it to the callback */
-struct device *wdog_r;
+const struct device *wdog_r;
 
 /* watchdog reload value in sec */
 static unsigned int reload_s = CMSDK_APB_WDOG_RELOAD;
 static u8_t flags;
 
-static void (*user_cb)(struct device *dev, int channel_id);
+static void (*user_cb)(const struct device *dev, int channel_id);
 
-static void wdog_cmsdk_apb_unlock(struct device *dev)
+static void wdog_cmsdk_apb_unlock(const struct device *dev)
 {
 	volatile struct wdog_cmsdk_apb *wdog = WDOG_STRUCT;
 
@@ -79,7 +79,7 @@ static void wdog_cmsdk_apb_unlock(struct device *dev)
 	wdog->lock = CMSDK_APB_WDOG_UNLOCK_VALUE;
 }
 
-static int wdog_cmsdk_apb_setup(struct device *dev, u8_t options)
+static int wdog_cmsdk_apb_setup(const struct device *dev, u8_t options)
 {
 	volatile struct wdog_cmsdk_apb *wdog = WDOG_STRUCT;
 
@@ -92,7 +92,7 @@ static int wdog_cmsdk_apb_setup(struct device *dev, u8_t options)
 	return 0;
 }
 
-static int wdog_cmsdk_apb_disable(struct device *dev)
+static int wdog_cmsdk_apb_disable(const struct device *dev)
 {
 	volatile struct wdog_cmsdk_apb *wdog = WDOG_STRUCT;
 
@@ -104,7 +104,7 @@ static int wdog_cmsdk_apb_disable(struct device *dev)
 	return 0;
 }
 
-static int wdog_cmsdk_apb_install_timeout(struct device *dev,
+static int wdog_cmsdk_apb_install_timeout(const struct device *dev,
 					  const struct wdt_timeout_cfg *config)
 {
 	volatile struct wdog_cmsdk_apb *wdog = WDOG_STRUCT;
@@ -124,7 +124,7 @@ static int wdog_cmsdk_apb_install_timeout(struct device *dev,
 	return 0;
 }
 
-static int wdog_cmsdk_apb_feed(struct device *dev, int channel_id)
+static int wdog_cmsdk_apb_feed(const struct device *dev, int channel_id)
 {
 	volatile struct wdog_cmsdk_apb *wdog = WDOG_STRUCT;
 
@@ -175,7 +175,7 @@ static void wdog_cmsdk_apb_isr(void)
 }
 #endif /* CONFIG_RUNTIME_NMI */
 
-static int wdog_cmsdk_apb_init(struct device *dev)
+static int wdog_cmsdk_apb_init(const struct device *dev)
 {
 	volatile struct wdog_cmsdk_apb *wdog = WDOG_STRUCT;
 

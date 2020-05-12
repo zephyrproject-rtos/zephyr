@@ -60,7 +60,7 @@ struct eth_stellaris_runtime {
 #endif
 };
 
-typedef void (*eth_stellaris_config_irq_t)(struct device *dev);
+typedef void (*eth_stellaris_config_irq_t)(const struct device *dev);
 
 struct eth_stellaris_config {
 	u32_t mac_base;

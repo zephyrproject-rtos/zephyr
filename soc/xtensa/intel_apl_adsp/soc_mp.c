@@ -49,7 +49,7 @@ LOG_MODULE_REGISTER(soc_mp, CONFIG_SOC_LOG_LEVEL);
 
 #define IDC_MSG_POWER_UP_EXT(x)	IDC_EXTENSION((x) >> 2)
 
-static struct device *idc;
+static const struct device *idc;
 #endif
 
 extern void __start(void);

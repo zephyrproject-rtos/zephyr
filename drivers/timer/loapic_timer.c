@@ -553,7 +553,7 @@ void z_clock_idle_exit(void)
  *
  * @return 0
  */
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 
@@ -586,7 +586,7 @@ int z_clock_driver_init(struct device *device)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int sys_clock_suspend(struct device *dev)
+static int sys_clock_suspend(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -597,7 +597,7 @@ static int sys_clock_suspend(struct device *dev)
 	return 0;
 }
 
-static int sys_clock_resume(struct device *dev)
+static int sys_clock_resume(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -637,7 +637,7 @@ static int sys_clock_resume(struct device *dev)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-int z_clock_device_ctrl(struct device *port, u32_t ctrl_command,
+int z_clock_device_ctrl(const struct device *port, u32_t ctrl_command,
 			  void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;

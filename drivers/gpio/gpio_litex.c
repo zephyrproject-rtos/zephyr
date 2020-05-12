@@ -78,7 +78,7 @@ static inline u32_t get_port(const struct gpio_litex_cfg *config)
 
 /* Driver functions */
 
-static int gpio_litex_init(struct device *dev)
+static int gpio_litex_init(const struct device *dev)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
 
@@ -91,7 +91,7 @@ static int gpio_litex_init(struct device *dev)
 	return 0;
 }
 
-static int gpio_litex_configure(struct device *dev,
+static int gpio_litex_configure(const struct device *dev,
 				gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
@@ -129,7 +129,8 @@ static int gpio_litex_configure(struct device *dev,
 	return 0;
 }
 
-static int gpio_litex_port_get_raw(struct device *dev, gpio_port_value_t *value)
+static int gpio_litex_port_get_raw(const struct device *dev,
+				   gpio_port_value_t *value)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
 
@@ -137,7 +138,7 @@ static int gpio_litex_port_get_raw(struct device *dev, gpio_port_value_t *value)
 	return 0;
 }
 
-static int gpio_litex_port_set_masked_raw(struct device *dev,
+static int gpio_litex_port_set_masked_raw(const struct device *dev,
 					  gpio_port_pins_t mask,
 					  gpio_port_value_t value)
 {
@@ -151,7 +152,7 @@ static int gpio_litex_port_set_masked_raw(struct device *dev,
 	return 0;
 }
 
-static int gpio_litex_port_set_bits_raw(struct device *dev,
+static int gpio_litex_port_set_bits_raw(const struct device *dev,
 					gpio_port_pins_t pins)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
@@ -164,7 +165,7 @@ static int gpio_litex_port_set_bits_raw(struct device *dev,
 	return 0;
 }
 
-static int gpio_litex_port_clear_bits_raw(struct device *dev,
+static int gpio_litex_port_clear_bits_raw(const struct device *dev,
 					  gpio_port_pins_t pins)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
@@ -177,7 +178,7 @@ static int gpio_litex_port_clear_bits_raw(struct device *dev,
 	return 0;
 }
 
-static int gpio_litex_port_toggle_bits(struct device *dev,
+static int gpio_litex_port_toggle_bits(const struct device *dev,
 				       gpio_port_pins_t pins)
 {
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
@@ -190,10 +191,10 @@ static int gpio_litex_port_toggle_bits(struct device *dev,
 	return 0;
 }
 
-static int gpio_litex_pin_interrupt_configure(struct device *dev,
-				   gpio_pin_t pin,
-				   enum gpio_int_mode mode,
-				   enum gpio_int_trig trig)
+static int gpio_litex_pin_interrupt_configure(const struct device *dev,
+					      gpio_pin_t pin,
+					      enum gpio_int_mode mode,
+					      enum gpio_int_trig trig)
 {
 	int ret = 0;
 

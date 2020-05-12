@@ -74,7 +74,8 @@ static int spi_config(const struct spi_config *config, u16_t *control)
 	return 0;
 }
 
-static void spi_litespi_send(struct device *dev, u8_t frame, u16_t control)
+static void spi_litespi_send(const struct device *dev, u8_t frame,
+		             u16_t control)
 {
 	/* Write frame to register */
 	litex_write8(frame, SPI_MOSI_DATA_REG);
@@ -91,8 +92,8 @@ static u8_t spi_litespi_recv(void)
 	return litex_read8(SPI_MISO_DATA_REG);
 }
 
-static void spi_litespi_xfer(struct device *dev,
-		const struct spi_config *config, u16_t control)
+static void spi_litespi_xfer(const struct device *dev,
+			     const struct spi_config *config, u16_t control)
 {
 	struct spi_context *ctx = &SPI_DATA(dev)->ctx;
 	u32_t send_len = spi_context_longest_current_buf(ctx);
@@ -118,15 +119,15 @@ static void spi_litespi_xfer(struct device *dev,
 
 /* API Functions */
 
-static int spi_litespi_init(struct device *dev)
+static int spi_litespi_init(const struct device *dev)
 {
 	return 0;
 }
 
-static int spi_litespi_transceive(struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs)
+static int spi_litespi_transceive(const struct device *dev,
+				  const struct spi_config *config,
+				  const struct spi_buf_set *tx_bufs,
+				  const struct spi_buf_set *rx_bufs)
 {
 	u16_t control = 0;
 
@@ -137,18 +138,18 @@ static int spi_litespi_transceive(struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_litespi_transceive_async(struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs,
-			  struct k_poll_signal *async)
+static int spi_litespi_transceive_async(const struct device *dev,
+					const struct spi_config *config,
+					const struct spi_buf_set *tx_bufs,
+					const struct spi_buf_set *rx_bufs,
+					struct k_poll_signal *async)
 {
 	return -ENOTSUP;
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_litespi_release(struct device *dev,
-		const struct spi_config *config)
+static int spi_litespi_release(const struct device *dev,
+			       const struct spi_config *config)
 {
 	if (!(litex_read8(SPI_STATUS_REG))) {
 		return -EBUSY;

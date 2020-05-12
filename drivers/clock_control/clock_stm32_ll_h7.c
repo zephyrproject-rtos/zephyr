@@ -61,7 +61,7 @@ static u32_t get_bus_clock(u32_t clock, u32_t prescaler)
 	return clock / prescaler;
 }
 
-static inline int stm32_clock_control_on(struct device *dev,
+static inline int stm32_clock_control_on(const struct device *dev,
 					 clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
@@ -106,7 +106,7 @@ static inline int stm32_clock_control_on(struct device *dev,
 	return 0;
 }
 
-static inline int stm32_clock_control_off(struct device *dev,
+static inline int stm32_clock_control_off(const struct device *dev,
 					  clock_control_subsys_t sub_system)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
@@ -151,9 +151,9 @@ static inline int stm32_clock_control_off(struct device *dev,
 	return 0;
 }
 
-static int stm32_clock_control_get_subsys_rate(struct device *clock,
-					clock_control_subsys_t sub_system,
-						u32_t *rate)
+static int stm32_clock_control_get_subsys_rate(const struct device *clock,
+					       clock_control_subsys_t sub_system,
+					       u32_t *rate)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
 	/*
@@ -212,7 +212,7 @@ static struct clock_control_driver_api stm32_clock_control_api = {
 	.get_rate = stm32_clock_control_get_subsys_rate,
 };
 
-static int stm32_clock_control_init(struct device *dev)
+static int stm32_clock_control_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

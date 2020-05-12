@@ -131,7 +131,7 @@ volatile uint32_t m_testcase_index __attribute__((section(".noinit.test_wdt")));
 volatile uint32_t m_testvalue __attribute__((section(".noinit.test_wdt")));
 
 #if TEST_WDT_CALLBACK_1
-static void wdt_int_cb0(struct device *wdt_dev, int channel_id)
+static void wdt_int_cb0(const struct device *wdt_dev, int channel_id)
 {
 	ARG_UNUSED(wdt_dev);
 	ARG_UNUSED(channel_id);
@@ -140,7 +140,7 @@ static void wdt_int_cb0(struct device *wdt_dev, int channel_id)
 #endif
 
 #if TEST_WDT_CALLBACK_2
-static void wdt_int_cb1(struct device *wdt_dev, int channel_id)
+static void wdt_int_cb1(const struct device *wdt_dev, int channel_id)
 {
 	ARG_UNUSED(wdt_dev);
 	ARG_UNUSED(channel_id);
@@ -151,7 +151,7 @@ static void wdt_int_cb1(struct device *wdt_dev, int channel_id)
 static int test_wdt_no_callback(void)
 {
 	int err;
-	struct device *wdt = device_get_binding(WDT_DEV_NAME);
+	const struct device *wdt = device_get_binding(WDT_DEV_NAME);
 
 	if (!wdt) {
 		TC_PRINT("Cannot get WDT device\n");
@@ -192,7 +192,7 @@ static int test_wdt_no_callback(void)
 static int test_wdt_callback_1(void)
 {
 	int err;
-	struct device *wdt = device_get_binding(WDT_DEV_NAME);
+	const struct device *wdt = device_get_binding(WDT_DEV_NAME);
 
 	if (!wdt) {
 		TC_PRINT("Cannot get WDT device\n");
@@ -241,7 +241,7 @@ static int test_wdt_callback_1(void)
 static int test_wdt_callback_2(void)
 {
 	int err;
-	struct device *wdt = device_get_binding(WDT_DEV_NAME);
+	const struct device *wdt = device_get_binding(WDT_DEV_NAME);
 
 	if (!wdt) {
 		TC_PRINT("Cannot get WDT device\n");
@@ -302,7 +302,7 @@ static int test_wdt_callback_2(void)
 static int test_wdt_bad_window_max(void)
 {
 	int err;
-	struct device *wdt = device_get_binding(WDT_DEV_NAME);
+	const struct device *wdt = device_get_binding(WDT_DEV_NAME);
 
 	if (!wdt) {
 		TC_PRINT("Cannot get WDT device\n");

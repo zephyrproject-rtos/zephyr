@@ -73,7 +73,7 @@ static u8_t bat_status = LWM2M_DEVICE_BATTERY_STATUS_CHARGING;
 static int mem_free = 15;
 static int mem_total = 25;
 
-static struct device *led_dev;
+static const struct device *led_dev;
 static u32_t led_state;
 
 static struct lwm2m_ctx client;
@@ -188,7 +188,7 @@ static void *temperature_get_buf(u16_t obj_inst_id, u16_t res_id,
 {
 	/* Last read temperature value, will use 25.5C if no sensor available */
 	static struct float32_value v = { 25, 500000 };
-	struct device *dev = NULL;
+	const struct device *dev = NULL;
 
 #if defined(CONFIG_FXOS8700_TEMP)
 	dev = device_get_binding(DT_LABEL(DT_INST(0, nxp_fxos8700)));

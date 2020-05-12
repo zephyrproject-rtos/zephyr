@@ -64,7 +64,7 @@ struct k_queue *_trace_list_k_queue;
 /*
  * Complete initialization of statically defined queues.
  */
-static int init_queue_module(struct device *dev)
+static int init_queue_module(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

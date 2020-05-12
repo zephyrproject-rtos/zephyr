@@ -14,7 +14,7 @@ enum cpu_id_t {
 	MHU_CPU_MAX,
 };
 
-struct device *mhu0;
+const struct device *mhu0;
 
 static void main_cpu_0(void)
 {

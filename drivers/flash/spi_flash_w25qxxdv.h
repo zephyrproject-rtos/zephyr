@@ -16,7 +16,7 @@
 #define DT_DRV_COMPAT winbond_w25q16
 
 struct spi_flash_data {
-	struct device *spi;
+	const struct device *spi;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control cs_ctrl;
 #endif

@@ -40,7 +40,7 @@ static inline void handle_irq(struct lsm6dsl_data *drv_data)
 #endif
 }
 
-int lsm6dsl_trigger_set(struct device *dev,
+int lsm6dsl_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
@@ -65,7 +65,7 @@ int lsm6dsl_trigger_set(struct device *dev,
 	return 0;
 }
 
-static void lsm6dsl_gpio_callback(struct device *dev,
+static void lsm6dsl_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
 	struct lsm6dsl_data *drv_data =
@@ -78,7 +78,7 @@ static void lsm6dsl_gpio_callback(struct device *dev,
 
 static void lsm6dsl_thread_cb(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct lsm6dsl_data *drv_data = dev->driver_data;
 
 	if (drv_data->data_ready_handler != NULL) {
@@ -92,7 +92,7 @@ static void lsm6dsl_thread_cb(void *arg)
 #ifdef CONFIG_LSM6DSL_TRIGGER_OWN_THREAD
 static void lsm6dsl_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct lsm6dsl_data *drv_data = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -114,7 +114,7 @@ static void lsm6dsl_work_cb(struct k_work *work)
 }
 #endif
 
-int lsm6dsl_init_interrupt(struct device *dev)
+int lsm6dsl_init_interrupt(const struct device *dev)
 {
 	struct lsm6dsl_data *drv_data = dev->driver_data;
 

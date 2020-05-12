@@ -37,7 +37,8 @@ struct flash_priv {
  *
  */
 
-static int flash_mcux_erase(struct device *dev, off_t offset, size_t len)
+static int flash_mcux_erase(const struct device *dev, off_t offset,
+			    size_t len)
 {
 	struct flash_priv *priv = dev->driver_data;
 	u32_t addr;
@@ -59,7 +60,7 @@ static int flash_mcux_erase(struct device *dev, off_t offset, size_t len)
 	return (rc == kStatus_Success) ? 0 : -EINVAL;
 }
 
-static int flash_mcux_read(struct device *dev, off_t offset,
+static int flash_mcux_read(const struct device *dev, off_t offset,
 				void *data, size_t len)
 {
 	struct flash_priv *priv = dev->driver_data;
@@ -77,7 +78,7 @@ static int flash_mcux_read(struct device *dev, off_t offset,
 	return 0;
 }
 
-static int flash_mcux_write(struct device *dev, off_t offset,
+static int flash_mcux_write(const struct device *dev, off_t offset,
 				const void *data, size_t len)
 {
 	struct flash_priv *priv = dev->driver_data;
@@ -100,7 +101,7 @@ static int flash_mcux_write(struct device *dev, off_t offset,
 	return (rc == kStatus_Success) ? 0 : -EINVAL;
 }
 
-static int flash_mcux_write_protection(struct device *dev, bool enable)
+static int flash_mcux_write_protection(const struct device *dev, bool enable)
 {
 	struct flash_priv *priv = dev->driver_data;
 	int rc = 0;
@@ -122,7 +123,7 @@ static const struct flash_pages_layout dev_layout = {
 };
 
 static void flash_mcux_pages_layout(
-	struct device *dev,
+	const struct device *dev,
 	const struct flash_pages_layout **layout,
 	size_t *layout_size)
 {
@@ -144,7 +145,7 @@ static const struct flash_driver_api flash_mcux_api = {
 	.write_block_size = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE,
 };
 
-static int flash_mcux_init(struct device *dev)
+static int flash_mcux_init(const struct device *dev)
 {
 	struct flash_priv *priv = dev->driver_data;
 	u32_t pflash_block_base;

@@ -42,7 +42,7 @@ static void set_wake(struct ccs811_data *drv_data, bool enable)
  * in bits 8..15.  These registers are available in both boot and
  * application mode.
  */
-static int fetch_status(struct device *i2c)
+static int fetch_status(const struct device *i2c)
 {
 	u8_t status;
 	int rv;
@@ -74,14 +74,14 @@ static inline u8_t error_from_status(int status)
 	return status >> 8;
 }
 
-const struct ccs811_result_type *ccs811_result(struct device *dev)
+const struct ccs811_result_type *ccs811_result(const struct device *dev)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
 
 	return &drv_data->result;
 }
 
-int ccs811_configver_fetch(struct device *dev,
+int ccs811_configver_fetch(const struct device *dev,
 			   struct ccs811_configver_type *ptr)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
@@ -126,7 +126,7 @@ int ccs811_configver_fetch(struct device *dev,
 	return rc;
 }
 
-int ccs811_baseline_fetch(struct device *dev)
+int ccs811_baseline_fetch(const struct device *dev)
 {
 	const u8_t cmd = CCS811_REG_BASELINE;
 	struct ccs811_data *drv_data = dev->driver_data;
@@ -146,7 +146,7 @@ int ccs811_baseline_fetch(struct device *dev)
 	return rc;
 }
 
-int ccs811_baseline_update(struct device *dev,
+int ccs811_baseline_update(const struct device *dev,
 			   u16_t baseline)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
@@ -161,7 +161,7 @@ int ccs811_baseline_update(struct device *dev,
 	return rc;
 }
 
-int ccs811_envdata_update(struct device *dev,
+int ccs811_envdata_update(const struct device *dev,
 			  const struct sensor_value *temperature,
 			  const struct sensor_value *humidity)
 {
@@ -229,7 +229,8 @@ int ccs811_envdata_update(struct device *dev,
 	return rc;
 }
 
-static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int ccs811_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
 	struct ccs811_result_type *rp = &drv_data->result;
@@ -266,7 +267,7 @@ static int ccs811_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return (status & CCS811_STATUS_DATA_READY) ? 0 : -EAGAIN;
 }
 
-static int ccs811_channel_get(struct device *dev,
+static int ccs811_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
@@ -322,7 +323,7 @@ static const struct sensor_driver_api ccs811_driver_api = {
 	.channel_get = ccs811_channel_get,
 };
 
-static int switch_to_app_mode(struct device *i2c)
+static int switch_to_app_mode(const struct device *i2c)
 {
 	u8_t buf;
 	int status;
@@ -372,7 +373,7 @@ static int switch_to_app_mode(struct device *i2c)
 
 #ifdef CONFIG_CCS811_TRIGGER
 
-int ccs811_mutate_meas_mode(struct device *dev,
+int ccs811_mutate_meas_mode(const struct device *dev,
 			    u8_t set,
 			    u8_t clear)
 {
@@ -409,7 +410,7 @@ int ccs811_mutate_meas_mode(struct device *dev,
 	return rc;
 }
 
-int ccs811_set_thresholds(struct device *dev)
+int ccs811_set_thresholds(const struct device *dev)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
 	const u8_t buf[5] = {
@@ -429,7 +430,7 @@ int ccs811_set_thresholds(struct device *dev)
 
 #endif /* CONFIG_CCS811_TRIGGER */
 
-static int ccs811_init(struct device *dev)
+static int ccs811_init(const struct device *dev)
 {
 	struct ccs811_data *drv_data = dev->driver_data;
 	int ret = 0;

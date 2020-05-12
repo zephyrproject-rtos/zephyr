@@ -68,18 +68,18 @@ struct wdt_esp32_config {
  * magic value of TIMG_WDT_WKEY_VALUE.  The datasheet recommends unsealing,
  * making modifications, and sealing for every watchdog modification.
  */
-static inline void wdt_esp32_seal(struct device *dev)
+static inline void wdt_esp32_seal(const struct device *dev)
 {
 	DEV_BASE(dev)->wprotect = 0U;
 
 }
 
-static inline void wdt_esp32_unseal(struct device *dev)
+static inline void wdt_esp32_unseal(const struct device *dev)
 {
 	DEV_BASE(dev)->wprotect = TIMG_WDT_WKEY_VALUE;
 }
 
-static void wdt_esp32_enable(struct device *dev)
+static void wdt_esp32_enable(const struct device *dev)
 {
 	wdt_esp32_unseal(dev);
 	DEV_BASE(dev)->config0 |= BIT(TIMG_WDT_EN_S);
@@ -87,7 +87,7 @@ static void wdt_esp32_enable(struct device *dev)
 
 }
 
-static int wdt_esp32_disable(struct device *dev)
+static int wdt_esp32_disable(const struct device *dev)
 {
 	wdt_esp32_unseal(dev);
 	DEV_BASE(dev)->config0 &= ~BIT(TIMG_WDT_EN_S);
@@ -96,7 +96,7 @@ static int wdt_esp32_disable(struct device *dev)
 	return 0;
 }
 
-static void adjust_timeout(struct device *dev, u32_t timeout)
+static void adjust_timeout(const struct device *dev, u32_t timeout)
 {
 	/* MWDT ticks every 12.5ns.  Set the prescaler to 40000, so the
 	 * counter for each watchdog stage is decremented every 0.5ms.
@@ -106,9 +106,9 @@ static void adjust_timeout(struct device *dev, u32_t timeout)
 	DEV_BASE(dev)->config3 = timeout;
 }
 
-static void wdt_esp32_isr(struct device *dev);
+static void wdt_esp32_isr(const struct device *dev);
 
-static int wdt_esp32_feed(struct device *dev, int channel_id)
+static int wdt_esp32_feed(const struct device *dev, int channel_id)
 {
 	wdt_esp32_unseal(dev);
 	DEV_BASE(dev)->feed = 0xABAD1DEA; /* Writing any value to WDTFEED will reload it. */
@@ -117,7 +117,7 @@ static int wdt_esp32_feed(struct device *dev, int channel_id)
 	return 0;
 }
 
-static void set_interrupt_enabled(struct device *dev, bool setting)
+static void set_interrupt_enabled(const struct device *dev, bool setting)
 {
 	*DEV_CFG(dev)->irq_regs.timer_int_clr |= TIMG_WDT_INT_CLR;
 
@@ -130,7 +130,7 @@ static void set_interrupt_enabled(struct device *dev, bool setting)
 	}
 }
 
-static int wdt_esp32_set_config(struct device *dev, u8_t options)
+static int wdt_esp32_set_config(const struct device *dev, u8_t options)
 {
 	struct wdt_esp32_data *data = DEV_DATA(dev);
 	u32_t v = DEV_BASE(dev)->config0;
@@ -177,7 +177,7 @@ static int wdt_esp32_set_config(struct device *dev, u8_t options)
 	return 0;
 }
 
-static int wdt_esp32_install_timeout(struct device *dev,
+static int wdt_esp32_install_timeout(const struct device *dev,
 				     const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_esp32_data *data = DEV_DATA(dev);
@@ -200,7 +200,7 @@ static int wdt_esp32_install_timeout(struct device *dev,
 	return 0;
 }
 
-static int wdt_esp32_init(struct device *dev)
+static int wdt_esp32_init(const struct device *dev)
 {
 #ifdef CONFIG_WDT_DISABLE_AT_BOOT
 	wdt_esp32_disable(dev);
@@ -258,7 +258,7 @@ static const struct wdt_driver_api wdt_api = {
 			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,				   \
 			    &wdt_api)
 
-static void wdt_esp32_isr(struct device *dev)
+static void wdt_esp32_isr(const struct device *dev)
 {
 	struct wdt_esp32_data *data = DEV_DATA(dev);
 

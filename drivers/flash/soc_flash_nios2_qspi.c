@@ -61,7 +61,8 @@ struct flash_nios2_qspi_config {
 	struct k_sem sem_lock;
 };
 
-static int flash_nios2_qspi_erase(struct device *dev, off_t offset, size_t len)
+static int flash_nios2_qspi_erase(const struct device *dev, off_t offset,
+				  size_t len)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->driver_data;
 	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
@@ -155,7 +156,8 @@ qspi_erase_err:
 
 }
 
-static int flash_nios2_qspi_write_block(struct device *dev, int block_offset,
+static int flash_nios2_qspi_write_block(const struct device *dev,
+					int block_offset,
 					int mem_offset, const void *data,
 					size_t len)
 {
@@ -253,7 +255,7 @@ qspi_write_block_err:
 	return rc;
 }
 
-static int flash_nios2_qspi_write(struct device *dev, off_t offset,
+static int flash_nios2_qspi_write(const struct device *dev, off_t offset,
 				  const void *data, size_t len)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->driver_data;
@@ -319,7 +321,7 @@ qspi_write_err:
 	return rc;
 }
 
-static int flash_nios2_qspi_read(struct device *dev, off_t offset,
+static int flash_nios2_qspi_read(const struct device *dev, off_t offset,
 				 void *data, size_t len)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->driver_data;
@@ -386,7 +388,8 @@ static int flash_nios2_qspi_read(struct device *dev, off_t offset,
 	return rc;
 }
 
-static int flash_nios2_qspi_write_protection(struct device *dev, bool enable)
+static int flash_nios2_qspi_write_protection(const struct device *dev,
+					     bool enable)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->driver_data;
 	alt_qspi_controller2_dev *qspi_dev = &flash_cfg->qspi_dev;
@@ -461,7 +464,7 @@ static const struct flash_driver_api flash_nios2_qspi_api = {
 	.write_block_size = NIOS2_WRITE_BLOCK_SIZE,
 };
 
-static int flash_nios2_qspi_init(struct device *dev)
+static int flash_nios2_qspi_init(const struct device *dev)
 {
 	struct flash_nios2_qspi_config *flash_cfg = dev->driver_data;
 

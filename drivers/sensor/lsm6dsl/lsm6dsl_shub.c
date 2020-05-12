@@ -361,7 +361,8 @@ static int lsm6dsl_shub_set_data_channel(struct lsm6dsl_data *data)
 	return 0;
 }
 
-int lsm6dsl_shub_read_external_chip(struct device *dev, u8_t *buf, u8_t len)
+int lsm6dsl_shub_read_external_chip(const struct device *dev, u8_t *buf,
+				    u8_t len)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
 
@@ -370,7 +371,7 @@ int lsm6dsl_shub_read_external_chip(struct device *dev, u8_t *buf, u8_t len)
 	return 0;
 }
 
-int lsm6dsl_shub_init_external_chip(struct device *dev)
+int lsm6dsl_shub_init_external_chip(const struct device *dev)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
 	u8_t i;

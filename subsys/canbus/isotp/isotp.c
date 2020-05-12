@@ -547,7 +547,7 @@ static inline int attach_ff_filter(struct isotp_recv_ctx *ctx)
 	return 0;
 }
 
-int isotp_bind(struct isotp_recv_ctx *ctx, struct device *can_dev,
+int isotp_bind(struct isotp_recv_ctx *ctx, const struct device *can_dev,
 	       const struct isotp_msg_id *rx_addr,
 	       const struct isotp_msg_id *tx_addr,
 	       const struct isotp_fc_opts *opts,
@@ -1096,7 +1096,7 @@ static inline int attach_fc_filter(struct isotp_send_ctx *ctx)
 	return 0;
 }
 
-static int send(struct isotp_send_ctx *ctx, struct device *can_dev,
+static int send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 		const struct isotp_msg_id *tx_addr,
 		const struct isotp_msg_id *rx_addr,
 		isotp_tx_callback_t complete_cb, void *cb_arg)
@@ -1159,7 +1159,7 @@ static int send(struct isotp_send_ctx *ctx, struct device *can_dev,
 	return ISOTP_N_OK;
 }
 
-int isotp_send(struct isotp_send_ctx *ctx, struct device *can_dev,
+int isotp_send(struct isotp_send_ctx *ctx, const struct device *can_dev,
 	       const u8_t *data, size_t len,
 	       const struct isotp_msg_id *tx_addr,
 	       const struct isotp_msg_id *rx_addr,
@@ -1175,7 +1175,7 @@ int isotp_send(struct isotp_send_ctx *ctx, struct device *can_dev,
 
 #ifdef CONFIG_ISOTP_ENABLE_CONTEXT_BUFFERS
 
-int isotp_send_ctx_buf(struct device *can_dev,
+int isotp_send_ctx_buf(const struct device *can_dev,
 		       const u8_t *data, size_t len,
 		       const struct isotp_msg_id *tx_addr,
 		       const struct isotp_msg_id *rx_addr,
@@ -1199,7 +1199,7 @@ int isotp_send_ctx_buf(struct device *can_dev,
 	return send(ctx, can_dev, tx_addr, rx_addr, complete_cb, cb_arg);
 }
 
-int isotp_send_net_ctx_buf(struct device *can_dev,
+int isotp_send_net_ctx_buf(const struct device *can_dev,
 			   struct net_buf *data,
 			   const struct isotp_msg_id *tx_addr,
 			   const struct isotp_msg_id *rx_addr,
@@ -1223,7 +1223,7 @@ int isotp_send_net_ctx_buf(struct device *can_dev,
 }
 
 #ifdef CONFIG_ISOTP_USE_TX_BUF
-int isotp_send_buf(struct device *can_dev,
+int isotp_send_buf(const struct device *can_dev,
 		   const u8_t *data, size_t len,
 		   const struct isotp_msg_id *tx_addr,
 		   const struct isotp_msg_id *rx_addr,
@@ -1257,7 +1257,7 @@ int isotp_send_buf(struct device *can_dev,
 #endif  /*CONFIG_ISOTP_USE_TX_BUF*/
 #endif  /*CONFIG_ISOTP_ENABLE_CONTEXT_BUFFERS*/
 
-static int isotp_workq_init(struct device *dev)
+static int isotp_workq_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	LOG_DBG("Starting workqueue");

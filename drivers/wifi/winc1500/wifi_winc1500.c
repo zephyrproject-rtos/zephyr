@@ -957,7 +957,7 @@ static void winc1500_thread(void)
 	}
 }
 
-static int winc1500_mgmt_scan(struct device *dev, scan_result_cb_t cb)
+static int winc1500_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
 {
 	if (w1500_data.scan_cb) {
 		return -EALREADY;
@@ -974,7 +974,7 @@ static int winc1500_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 	return 0;
 }
 
-static int winc1500_mgmt_connect(struct device *dev,
+static int winc1500_mgmt_connect(const struct device *dev,
 				 struct wifi_connect_req_params *params)
 {
 	u8_t ssid[M2M_MAX_SSID_LEN];
@@ -1020,7 +1020,7 @@ static int winc1500_mgmt_connect(struct device *dev,
 	return 0;
 }
 
-static int winc1500_mgmt_disconnect(struct device *device)
+static int winc1500_mgmt_disconnect(const struct device *device)
 {
 	if (!w1500_data.connected) {
 		return -EALREADY;
@@ -1055,7 +1055,7 @@ static const struct net_wifi_mgmt_offload winc1500_api = {
 	.disconnect	= winc1500_mgmt_disconnect,
 };
 
-static int winc1500_init(struct device *dev)
+static int winc1500_init(const struct device *dev)
 {
 	tstrWifiInitParam param = {
 		.pfAppWifiCb = winc1500_wifi_cb,

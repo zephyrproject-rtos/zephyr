@@ -8,7 +8,7 @@ A kernel object can be one of three classes of data:
 * A core kernel object, such as a semaphore, thread, pipe, etc.
 * A thread stack, which is an array of :c:type:`struct z_thread_stack_element`
   and declared with :c:macro:`K_THREAD_STACK_DEFINE()`
-* A device driver instance (struct device) that belongs to one of a defined
+* A device driver instance (const struct device) that belongs to one of a defined
   set of subsystems
 
 The set of known kernel objects and driver subsystems is defined in

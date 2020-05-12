@@ -111,14 +111,14 @@ static const u16_t lis3mdl_magn_gain[] = {
 };
 
 struct lis3mdl_data {
-	struct device *i2c;
+	const struct device *i2c;
 	s16_t x_sample;
 	s16_t y_sample;
 	s16_t z_sample;
 	s16_t temp_sample;
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -130,20 +130,20 @@ struct lis3mdl_data {
 	struct k_thread thread;
 #elif defined(CONFIG_LIS3MDL_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
+	const struct device *dev;
 #endif
 
 #endif /* CONFIG_LIS3MDL_TRIGGER */
 };
 
 #ifdef CONFIG_LIS3MDL_TRIGGER
-int lis3mdl_trigger_set(struct device *dev,
+int lis3mdl_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
-int lis3mdl_sample_fetch(struct device *dev, enum sensor_channel chan);
+int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan);
 
-int lis3mdl_init_interrupt(struct device *dev);
+int lis3mdl_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* __SENSOR_LIS3MDL__ */

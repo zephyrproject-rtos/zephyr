@@ -21,7 +21,7 @@ struct i2c_virtual_data {
 	sys_slist_t slaves;
 };
 
-int i2c_virtual_runtime_configure(struct device *dev, u32_t config)
+int i2c_virtual_runtime_configure(const struct device *dev, u32_t config)
 {
 	return 0;
 }
@@ -47,7 +47,7 @@ static struct i2c_slave_config *find_address(struct i2c_virtual_data *data,
 }
 
 /* Attach I2C slaves */
-int i2c_virtual_slave_register(struct device *dev,
+int i2c_virtual_slave_register(const struct device *dev,
 			       struct i2c_slave_config *config)
 {
 	struct i2c_virtual_data *data = DEV_DATA(dev);
@@ -68,7 +68,7 @@ int i2c_virtual_slave_register(struct device *dev,
 }
 
 
-int i2c_virtual_slave_unregister(struct device *dev,
+int i2c_virtual_slave_unregister(const struct device *dev,
 				 struct i2c_slave_config *config)
 {
 	struct i2c_virtual_data *data = DEV_DATA(dev);
@@ -84,7 +84,8 @@ int i2c_virtual_slave_unregister(struct device *dev,
 	return 0;
 }
 
-static int i2c_virtual_msg_write(struct device *dev, struct i2c_msg *msg,
+static int i2c_virtual_msg_write(const struct device *dev,
+				 struct i2c_msg *msg,
 				 struct i2c_slave_config *config,
 				 bool prev_write)
 {
@@ -118,7 +119,7 @@ error:
 	return -EIO;
 }
 
-static int i2c_virtual_msg_read(struct device *dev, struct i2c_msg *msg,
+static int i2c_virtual_msg_read(const struct device *dev, struct i2c_msg *msg,
 				struct i2c_slave_config *config)
 {
 	unsigned int len = msg->len;
@@ -147,8 +148,8 @@ static int i2c_virtual_msg_read(struct device *dev, struct i2c_msg *msg,
 
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
 
-static int i2c_virtual_transfer(struct device *dev, struct i2c_msg *msg,
-			      u8_t num_msgs, u16_t slave)
+static int i2c_virtual_transfer(const struct device *dev, struct i2c_msg *msg,
+				u8_t num_msgs, u16_t slave)
 {
 	struct i2c_virtual_data *data = DEV_DATA(dev);
 	struct i2c_msg *current, *next;
@@ -212,7 +213,7 @@ static const struct i2c_driver_api api_funcs = {
 	.slave_unregister = i2c_virtual_slave_unregister,
 };
 
-static int i2c_virtual_init(struct device *dev)
+static int i2c_virtual_init(const struct device *dev)
 {
 	struct i2c_virtual_data *data = DEV_DATA(dev);
 

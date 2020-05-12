@@ -60,7 +60,7 @@ enum eth_mcux_phy_state {
 	eth_mcux_phy_state_closing
 };
 
-static void eth_mcux_init(struct device *dev);
+static void eth_mcux_init(const struct device *dev);
 
 static const char *
 phy_state_name(enum eth_mcux_phy_state state)  __attribute__((unused));
@@ -106,11 +106,11 @@ struct eth_context {
 #ifdef CONFIG_NET_POWER_MANAGEMENT
 	const char *clock_name;
 	clock_ip_name_t clock;
-	struct device *clock_dev;
+	const struct device *clock_dev;
 #endif
 	enet_handle_t enet_handle;
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-	struct device *ptp_clock;
+	const struct device *ptp_clock;
 	enet_ptp_config_t ptp_config;
 	float clk_ratio;
 #endif
@@ -187,7 +187,7 @@ tx_buffer[CONFIG_ETH_MCUX_TX_BUFFERS][ETH_MCUX_BUFFER_SIZE];
 static void eth_mcux_phy_enter_reset(struct eth_context *context);
 void eth_mcux_phy_stop(struct eth_context *context);
 
-static int eth_mcux_device_pm_control(struct device *dev, u32_t command,
+static int eth_mcux_device_pm_control(const struct device *dev, u32_t command,
 				      void *context, device_pm_cb cb, void *arg)
 {
 	struct eth_context *eth_ctx = (struct eth_context *)dev->driver_data;
@@ -626,7 +626,7 @@ static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt,
 }
 #endif /* CONFIG_PTP_CLOCK_MCUX */
 
-static int eth_tx(struct device *dev, struct net_pkt *pkt)
+static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_context *context = dev->driver_data;
 	u16_t total_len = net_pkt_get_len(pkt);
@@ -688,7 +688,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static void eth_rx(struct device *iface)
+static void eth_rx(const struct device *iface)
 {
 	struct eth_context *context = iface->driver_data;
 	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
@@ -845,7 +845,7 @@ static inline void ts_register_tx_event(struct eth_context *context)
 static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 			 enet_event_t event, void *param)
 {
-	struct device *iface = param;
+	const struct device *iface = param;
 	struct eth_context *context = iface->driver_data;
 
 	switch (event) {
@@ -916,7 +916,7 @@ static void generate_eth1_unique_mac(u8_t *mac_addr)
 }
 #endif
 
-static void eth_mcux_init(struct device *dev)
+static void eth_mcux_init(const struct device *dev)
 {
 	struct eth_context *context = dev->driver_data;
 	enet_config_t enet_config;
@@ -1003,7 +1003,7 @@ static void eth_mcux_init(struct device *dev)
 	eth_mcux_phy_start(context);
 }
 
-static int eth_init(struct device *dev)
+static int eth_init(const struct device *dev)
 {
 	struct eth_context *context = dev->driver_data;
 
@@ -1049,7 +1049,7 @@ static void net_if_mcast_cb(struct net_if *iface,
 			    const struct in6_addr *addr,
 			    bool is_joined)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct eth_context *context = dev->driver_data;
 	struct net_eth_addr mac_addr;
 
@@ -1065,7 +1065,7 @@ static void net_if_mcast_cb(struct net_if *iface,
 
 static void eth_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct eth_context *context = dev->driver_data;
 
 #if defined(CONFIG_NET_IPV6)
@@ -1092,7 +1092,7 @@ static void eth_iface_init(struct net_if *iface)
 	context->config_func();
 }
 
-static enum ethernet_hw_caps eth_mcux_get_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_mcux_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -1109,7 +1109,7 @@ static enum ethernet_hw_caps eth_mcux_get_capabilities(struct device *dev)
 }
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-static struct device *eth_mcux_get_ptp_clock(struct device *dev)
+static const struct device *eth_mcux_get_ptp_clock(const struct device *dev)
 {
 	struct eth_context *context = dev->driver_data;
 
@@ -1129,7 +1129,7 @@ static const struct ethernet_api api_funcs = {
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 static void eth_mcux_ptp_isr(void *p)
 {
-	struct device *dev = p;
+	const struct device *dev = p;
 	struct eth_context *context = dev->driver_data;
 
 	ENET_Ptp1588TimerIRQHandler(context->base, &context->enet_handle);
@@ -1139,7 +1139,7 @@ static void eth_mcux_ptp_isr(void *p)
 #if DT_INST_IRQ_HAS_NAME(0, common)
 static void eth_mcux_dispacher_isr(void *p)
 {
-	struct device *dev = p;
+	const struct device *dev = p;
 	struct eth_context *context = dev->driver_data;
 	u32_t EIR = ENET_GetInterruptStatus(context->base);
 	int irq_lock_key = irq_lock();
@@ -1162,7 +1162,7 @@ static void eth_mcux_dispacher_isr(void *p)
 #if DT_INST_IRQ_HAS_NAME(0, rx)
 static void eth_mcux_rx_isr(void *p)
 {
-	struct device *dev = p;
+	const struct device *dev = p;
 	struct eth_context *context = dev->driver_data;
 
 	ENET_ReceiveIRQHandler(context->base, &context->enet_handle);
@@ -1172,7 +1172,7 @@ static void eth_mcux_rx_isr(void *p)
 #if DT_INST_IRQ_HAS_NAME(0, tx)
 static void eth_mcux_tx_isr(void *p)
 {
-	struct device *dev = p;
+	const struct device *dev = p;
 	struct eth_context *context = dev->driver_data;
 
 	ENET_TransmitIRQHandler(context->base, &context->enet_handle);
@@ -1182,7 +1182,7 @@ static void eth_mcux_tx_isr(void *p)
 #if DT_INST_IRQ_HAS_NAME(0, err_misc)
 static void eth_mcux_error_isr(void *p)
 {
-	struct device *dev = p;
+	const struct device *dev = p;
 	struct eth_context *context = dev->driver_data;
 	u32_t pending = ENET_GetInterruptStatus(context->base);
 
@@ -1311,7 +1311,8 @@ struct ptp_context {
 
 static struct ptp_context ptp_mcux_0_context;
 
-static int ptp_clock_mcux_set(struct device *dev, struct net_ptp_time *tm)
+static int ptp_clock_mcux_set(const struct device *dev,
+			      struct net_ptp_time *tm)
 {
 	struct ptp_context *ptp_context = dev->driver_data;
 	struct eth_context *context = ptp_context->eth_context;
@@ -1324,7 +1325,8 @@ static int ptp_clock_mcux_set(struct device *dev, struct net_ptp_time *tm)
 	return 0;
 }
 
-static int ptp_clock_mcux_get(struct device *dev, struct net_ptp_time *tm)
+static int ptp_clock_mcux_get(const struct device *dev,
+			      struct net_ptp_time *tm)
 {
 	struct ptp_context *ptp_context = dev->driver_data;
 	struct eth_context *context = ptp_context->eth_context;
@@ -1337,7 +1339,7 @@ static int ptp_clock_mcux_get(struct device *dev, struct net_ptp_time *tm)
 	return 0;
 }
 
-static int ptp_clock_mcux_adjust(struct device *dev, int increment)
+static int ptp_clock_mcux_adjust(const struct device *dev, int increment)
 {
 	struct ptp_context *ptp_context = dev->driver_data;
 	struct eth_context *context = ptp_context->eth_context;
@@ -1364,7 +1366,7 @@ static int ptp_clock_mcux_adjust(struct device *dev, int increment)
 	return ret;
 }
 
-static int ptp_clock_mcux_rate_adjust(struct device *dev, float ratio)
+static int ptp_clock_mcux_rate_adjust(const struct device *dev, float ratio)
 {
 	const int hw_inc = NSEC_PER_SEC / CONFIG_ETH_MCUX_PTP_CLOCK_SRC_HZ;
 	struct ptp_context *ptp_context = dev->driver_data;
@@ -1422,9 +1424,9 @@ static const struct ptp_clock_driver_api api = {
 	.rate_adjust = ptp_clock_mcux_rate_adjust,
 };
 
-static int ptp_mcux_init(struct device *port)
+static int ptp_mcux_init(const struct device *port)
 {
-	struct device *eth_dev = DEVICE_GET(eth_mcux_0);
+	const struct device *eth_dev = DEVICE_GET(eth_mcux_0);
 	struct eth_context *context = eth_dev->driver_data;
 	struct ptp_context *ptp_context = port->driver_data;
 

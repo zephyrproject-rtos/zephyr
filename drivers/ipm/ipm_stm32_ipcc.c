@@ -88,7 +88,7 @@ LOG_MODULE_REGISTER(ipm_stm32_ipcc, CONFIG_IPM_LOG_LEVEL);
 #endif
 
 struct stm32_ipcc_mailbox_config {
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 	IPCC_TypeDef *ipcc;
 	struct stm32_pclken pclken;
 };
@@ -103,7 +103,7 @@ static struct stm32_ipcc_mbx_data stm32_IPCC_data;
 
 static void stm32_ipcc_mailbox_rx_isr(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct stm32_ipcc_mbx_data *data = DEV_DATA(dev);
 	const struct stm32_ipcc_mailbox_config *cfg = DEV_CFG(dev);
 	unsigned int value = 0;
@@ -132,7 +132,7 @@ static void stm32_ipcc_mailbox_rx_isr(void *arg)
 
 static void stm32_ipcc_mailbox_tx_isr(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct stm32_ipcc_mbx_data *data = DEV_DATA(dev);
 	const struct stm32_ipcc_mailbox_config *cfg = DEV_CFG(dev);
 	u32_t mask, i;
@@ -152,7 +152,8 @@ static void stm32_ipcc_mailbox_tx_isr(void *arg)
 	}
 }
 
-static int stm32_ipcc_mailbox_ipm_send(struct device *dev, int wait, u32_t id,
+static int stm32_ipcc_mailbox_ipm_send(const struct device *dev, int wait,
+				       u32_t id,
 				       const void *buff, int size)
 {
 	struct stm32_ipcc_mbx_data *data = dev->driver_data;
@@ -186,7 +187,7 @@ static int stm32_ipcc_mailbox_ipm_send(struct device *dev, int wait, u32_t id,
 	return 0;
 }
 
-static int stm32_ipcc_mailbox_ipm_max_data_size_get(struct device *dev)
+static int stm32_ipcc_mailbox_ipm_max_data_size_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -194,14 +195,14 @@ static int stm32_ipcc_mailbox_ipm_max_data_size_get(struct device *dev)
 	return 0;
 }
 
-static u32_t stm32_ipcc_mailbox_ipm_max_id_val_get(struct device *d)
+static u32_t stm32_ipcc_mailbox_ipm_max_id_val_get(const struct device *d)
 {
 	struct stm32_ipcc_mbx_data *data = DEV_DATA(d);
 
 	return data->num_ch - 1;
 }
 
-static void stm32_ipcc_mailbox_ipm_register_callback(struct device *d,
+static void stm32_ipcc_mailbox_ipm_register_callback(const struct device *d,
 						     ipm_callback_t cb,
 						     void *context)
 {
@@ -211,7 +212,8 @@ static void stm32_ipcc_mailbox_ipm_register_callback(struct device *d,
 	data->callback_ctx = context;
 }
 
-static int stm32_ipcc_mailbox_ipm_set_enabled(struct device *dev, int enable)
+static int stm32_ipcc_mailbox_ipm_set_enabled(const struct device *dev,
+					      int enable)
 {
 	struct stm32_ipcc_mbx_data *data = DEV_DATA(dev);
 	const struct stm32_ipcc_mailbox_config *cfg = DEV_CFG(dev);
@@ -238,12 +240,12 @@ static int stm32_ipcc_mailbox_ipm_set_enabled(struct device *dev, int enable)
 	return 0;
 }
 
-static int stm32_ipcc_mailbox_init(struct device *dev)
+static int stm32_ipcc_mailbox_init(const struct device *dev)
 {
 
 	struct stm32_ipcc_mbx_data *data = DEV_DATA(dev);
 	const struct stm32_ipcc_mailbox_config *cfg = DEV_CFG(dev);
-	struct device *clk;
+	const struct device *clk;
 	u32_t i;
 
 	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
@@ -282,7 +284,7 @@ static const struct ipm_driver_api stm32_ipcc_mailbox_driver_api = {
 	.set_enabled = stm32_ipcc_mailbox_ipm_set_enabled,
 };
 
-static void stm32_ipcc_mailbox_config_func(struct device *dev);
+static void stm32_ipcc_mailbox_config_func(const struct device *dev);
 
 /* Config MAILBOX 0 */
 static const struct stm32_ipcc_mailbox_config stm32_ipcc_mailbox_0_config = {
@@ -300,7 +302,7 @@ DEVICE_AND_API_INIT(mailbox_0, DT_INST_LABEL(0),
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &stm32_ipcc_mailbox_driver_api);
 
-static void stm32_ipcc_mailbox_config_func(struct device *dev)
+static void stm32_ipcc_mailbox_config_func(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, rxo, irq),
 		    DT_INST_IRQ_BY_NAME(0, rxo, priority),

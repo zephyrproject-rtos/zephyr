@@ -56,10 +56,10 @@ LOG_MODULE_REGISTER(gd7965, CONFIG_DISPLAY_LOG_LEVEL);
 
 
 struct gd7965_data {
-	struct device *reset;
-	struct device *dc;
-	struct device *busy;
-	struct device *spi_dev;
+	const struct device *reset;
+	const struct device *dc;
+	const struct device *busy;
+	const struct device *spi_dev;
 	struct spi_config spi_config;
 #if defined(GD7965_CS_CNTRL)
 	struct spi_cs_control cs_ctrl;
@@ -279,7 +279,7 @@ static int gd7965_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int gd7965_clear_and_write_buffer(struct device *dev,
+static int gd7965_clear_and_write_buffer(const struct device *dev,
 					 u8_t pattern, bool update)
 {
 	struct display_buffer_descriptor desc = {
@@ -311,7 +311,7 @@ static int gd7965_clear_and_write_buffer(struct device *dev,
 	return 0;
 }
 
-static int gd7965_controller_init(struct device *dev)
+static int gd7965_controller_init(const struct device *dev)
 {
 	struct gd7965_data *driver = dev->driver_data;
 	u8_t tmp[GD7965_TRES_REG_LENGTH];
@@ -389,7 +389,7 @@ static int gd7965_controller_init(struct device *dev)
 	return 0;
 }
 
-static int gd7965_init(struct device *dev)
+static int gd7965_init(const struct device *dev)
 {
 	struct gd7965_data *driver = dev->driver_data;
 

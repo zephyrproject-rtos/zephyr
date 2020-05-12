@@ -55,7 +55,7 @@ static struct k_mem_slab i2s_mem_slab;
 void test_i2s_bidirectional_transfer_configure(void)
 {
 	int ret;
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	struct i2s_config i2s_cfg;
 
 	k_mem_slab_init(&i2s_mem_slab, audio_buffers, BLOCK_SIZE_BYTES,
@@ -96,7 +96,7 @@ void test_i2s_bidirectional_transfer_configure(void)
  */
 void test_i2s_bidirectional_transfer(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 	int frames = 0;
 	void *buffer;
 	size_t size;

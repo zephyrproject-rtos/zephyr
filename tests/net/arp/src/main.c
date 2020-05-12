@@ -49,7 +49,7 @@ struct net_arp_context {
 	struct net_linkaddr ll_addr;
 };
 
-int net_arp_dev_init(struct device *dev)
+int net_arp_dev_init(const struct device *dev)
 {
 	struct net_arp_context *net_arp_context = dev->driver_data;
 
@@ -58,7 +58,7 @@ int net_arp_dev_init(struct device *dev)
 	return 0;
 }
 
-static u8_t *net_arp_get_mac(struct device *dev)
+static u8_t *net_arp_get_mac(const struct device *dev)
 {
 	struct net_arp_context *context = dev->driver_data;
 
@@ -82,7 +82,7 @@ static void net_arp_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_eth_hdr *hdr;
 

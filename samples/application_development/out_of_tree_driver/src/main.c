@@ -12,7 +12,7 @@ void main(void)
 {
 	printk("Hello World from the app!\n");
 
-	struct device *dev = device_get_binding("CUSTOM_DRIVER");
+	const struct device *dev = device_get_binding("CUSTOM_DRIVER");
 
 	__ASSERT(dev, "Failed to get device binding");
 

@@ -209,7 +209,7 @@ static void print_frame(struct zcan_frame *frame, void *arg)
 
 static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *can_dev;
+	const struct device *can_dev;
 	int pos = 1;
 	bool silent = false, loopback = false;
 	enum can_mode mode;
@@ -257,7 +257,7 @@ static int cmd_config(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *can_dev;
+	const struct device *can_dev;
 	int pos = 1;
 	bool rtr = false, ext = false;
 	struct zcan_frame frame;
@@ -308,7 +308,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *can_dev;
+	const struct device *can_dev;
 	int pos = 1;
 	bool rtr = false, ext = false, rtr_mask = false;
 	struct zcan_filter filter;
@@ -384,7 +384,7 @@ static int cmd_attach(const struct shell *shell, size_t argc, char **argv)
 
 static int cmd_detach(const struct shell *shell, size_t argc, char **argv)
 {
-	struct device *can_dev;
+	const struct device *can_dev;
 	char *end_ptr;
 	long id;
 

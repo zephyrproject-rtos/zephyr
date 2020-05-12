@@ -106,7 +106,7 @@ struct iis2dlpc_device_config {
 
 /* sensor data */
 struct iis2dlpc_data {
-	struct device *bus;
+	const struct device *bus;
 	s16_t acc[3];
 
 	 /* save sensitivity */
@@ -114,7 +114,7 @@ struct iis2dlpc_data {
 
 	stmdev_ctx_t *ctx;
 #ifdef CONFIG_IIS2DLPC_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	u8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
@@ -128,7 +128,7 @@ struct iis2dlpc_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_IIS2DLPC_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
+	const struct device *dev;
 #endif /* CONFIG_IIS2DLPC_TRIGGER_GLOBAL_THREAD */
 #endif /* CONFIG_IIS2DLPC_TRIGGER */
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
@@ -136,12 +136,12 @@ struct iis2dlpc_data {
 #endif
 };
 
-int iis2dlpc_i2c_init(struct device *dev);
-int iis2dlpc_spi_init(struct device *dev);
+int iis2dlpc_i2c_init(const struct device *dev);
+int iis2dlpc_spi_init(const struct device *dev);
 
 #ifdef CONFIG_IIS2DLPC_TRIGGER
-int iis2dlpc_init_interrupt(struct device *dev);
-int iis2dlpc_trigger_set(struct device *dev,
+int iis2dlpc_init_interrupt(const struct device *dev);
+int iis2dlpc_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler);
 #endif /* CONFIG_IIS2DLPC_TRIGGER */

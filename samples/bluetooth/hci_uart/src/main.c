@@ -30,7 +30,7 @@
 #define LOG_MODULE_NAME hci_uart
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-static struct device *hci_uart_dev;
+static const struct device *hci_uart_dev;
 static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread tx_thread_data;
 static K_FIFO_DEFINE(tx_queue);
@@ -49,7 +49,7 @@ static K_FIFO_DEFINE(tx_queue);
  */
 #define H4_DISCARD_LEN 33
 
-static int h4_read(struct device *uart, u8_t *buf,
+static int h4_read(const struct device *uart, u8_t *buf,
 		   size_t len, size_t min)
 {
 	int total = 0;
@@ -75,7 +75,7 @@ static int h4_read(struct device *uart, u8_t *buf,
 	return total;
 }
 
-static size_t h4_discard(struct device *uart, size_t len)
+static size_t h4_discard(const struct device *uart, size_t len)
 {
 	u8_t buf[H4_DISCARD_LEN];
 
@@ -110,7 +110,7 @@ static void h4_acl_recv(struct net_buf *buf, int *remaining)
 	LOG_DBG("len %u", *remaining);
 }
 
-static void bt_uart_isr(struct device *unused)
+static void bt_uart_isr(const struct device *unused)
 {
 	static struct net_buf *buf;
 	static int remaining;
@@ -276,7 +276,7 @@ void bt_ctlr_assert_handle(char *file, u32_t line)
 }
 #endif /* CONFIG_BT_CTLR_ASSERT_HANDLER */
 
-static int hci_uart_init(struct device *unused)
+static int hci_uart_init(const struct device *unused)
 {
 	LOG_DBG("");
 

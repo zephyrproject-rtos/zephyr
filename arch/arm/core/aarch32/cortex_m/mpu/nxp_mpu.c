@@ -578,7 +578,7 @@ void arm_core_mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
  * This function provides the default configuration mechanism for the Memory
  * Protection Unit (MPU).
  */
-static int nxp_mpu_init(struct device *arg)
+static int nxp_mpu_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

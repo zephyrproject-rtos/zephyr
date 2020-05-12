@@ -17,7 +17,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(BMA280, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline void setup_int1(struct device *dev,
+static inline void setup_int1(const struct device *dev,
 			      bool enable)
 {
 	struct bma280_data *data = dev->driver_data;
@@ -29,7 +29,7 @@ static inline void setup_int1(struct device *dev,
 				      : GPIO_INT_DISABLE));
 }
 
-int bma280_attr_set(struct device *dev,
+int bma280_attr_set(const struct device *dev,
 		    enum sensor_channel chan,
 		    enum sensor_attribute attr,
 		    const struct sensor_value *val)
@@ -67,7 +67,7 @@ int bma280_attr_set(struct device *dev,
 	return 0;
 }
 
-static void bma280_gpio_callback(struct device *dev,
+static void bma280_gpio_callback(const struct device *dev,
 				 struct gpio_callback *cb, u32_t pins)
 {
 	struct bma280_data *drv_data =
@@ -86,7 +86,7 @@ static void bma280_gpio_callback(struct device *dev,
 
 static void bma280_thread_cb(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct bma280_data *drv_data = dev->driver_data;
 	u8_t status = 0U;
 	int err = 0;
@@ -128,7 +128,7 @@ static void bma280_thread_cb(void *arg)
 #ifdef CONFIG_BMA280_TRIGGER_OWN_THREAD
 static void bma280_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct bma280_data *drv_data = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -150,7 +150,7 @@ static void bma280_work_cb(struct k_work *work)
 }
 #endif
 
-int bma280_trigger_set(struct device *dev,
+int bma280_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
@@ -209,7 +209,7 @@ int bma280_trigger_set(struct device *dev,
 	return 0;
 }
 
-int bma280_init_interrupt(struct device *dev)
+int bma280_init_interrupt(const struct device *dev)
 {
 	struct bma280_data *drv_data = dev->driver_data;
 

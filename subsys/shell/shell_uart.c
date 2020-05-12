@@ -95,7 +95,7 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 
 static void uart_tx_handle(const struct shell_uart *sh_uart)
 {
-	struct device *dev = sh_uart->ctrl_blk->dev;
+	const struct device *dev = sh_uart->ctrl_blk->dev;
 	u32_t len;
 	int err;
 	const u8_t *data;
@@ -118,7 +118,7 @@ static void uart_tx_handle(const struct shell_uart *sh_uart)
 static void uart_callback(void *user_data)
 {
 	const struct shell_uart *sh_uart = (struct shell_uart *)user_data;
-	struct device *dev = sh_uart->ctrl_blk->dev;
+	const struct device *dev = sh_uart->ctrl_blk->dev;
 
 	uart_irq_update(dev);
 
@@ -135,7 +135,7 @@ static void uart_callback(void *user_data)
 static void uart_irq_init(const struct shell_uart *sh_uart)
 {
 #ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
-	struct device *dev = sh_uart->ctrl_blk->dev;
+	const struct device *dev = sh_uart->ctrl_blk->dev;
 
 	uart_irq_callback_user_data_set(dev, uart_callback, (void *)sh_uart);
 	uart_irq_rx_enable(dev);
@@ -164,7 +164,7 @@ static int init(const struct shell_transport *transport,
 {
 	const struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
 
-	sh_uart->ctrl_blk->dev = (struct device *)config;
+	sh_uart->ctrl_blk->dev = (const struct device *)config;
 	sh_uart->ctrl_blk->handler = evt_handler;
 	sh_uart->ctrl_blk->context = context;
 
@@ -264,10 +264,10 @@ const struct shell_transport_api shell_uart_transport_api = {
 #endif /* CONFIG_MCUMGR_SMP_SHELL */
 };
 
-static int enable_shell_uart(struct device *arg)
+static int enable_shell_uart(const struct device *arg)
 {
 	ARG_UNUSED(arg);
-	struct device *dev =
+	const struct device *dev =
 			device_get_binding(CONFIG_UART_SHELL_ON_DEV_NAME);
 	bool log_backend = CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > 0;
 	u32_t level =

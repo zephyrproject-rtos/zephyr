@@ -22,7 +22,7 @@
  *
  * @return 0
  */
-static int stm32l5_init(struct device *arg)
+static int stm32l5_init(const struct device *arg)
 {
 	u32_t key;
 

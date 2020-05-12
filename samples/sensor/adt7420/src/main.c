@@ -39,7 +39,8 @@ static const char *now_str(void)
 		 h, min, s, ms);
 	return buf;
 }
-static void trigger_handler(struct device *dev, struct sensor_trigger *trigger)
+static void trigger_handler(const struct device *dev,
+			    struct sensor_trigger *trigger)
 {
 	k_sem_give(&sem);
 }
@@ -47,7 +48,8 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trigger)
 static int low_ucel;
 static int high_ucel;
 
-static int sensor_set_attribute(struct device *dev, enum sensor_channel chan,
+static int sensor_set_attribute(const struct device *dev,
+				enum sensor_channel chan,
 				enum sensor_attribute attr, int value)
 {
 	struct sensor_value sensor_val;
@@ -71,7 +73,7 @@ static bool temp_in_window(const struct sensor_value *val)
 	return (temp_ucel >= low_ucel) && (temp_ucel <= high_ucel);
 }
 
-static int sensor_set_window(struct device *dev,
+static int sensor_set_window(const struct device *dev,
 			     const struct sensor_value *val)
 {
 	int temp_ucel = val->val1 * UCEL_PER_CEL + val->val2;
@@ -96,7 +98,7 @@ static int sensor_set_window(struct device *dev,
 	return rc;
 }
 
-static void process(struct device *dev)
+static void process(const struct device *dev)
 {
 	struct sensor_value temp_val;
 	int ret;
@@ -169,7 +171,7 @@ static void process(struct device *dev)
 
 void main(void)
 {
-	struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, adi_adt7420)));
+	const struct device *dev = device_get_binding(DT_LABEL(DT_INST(0, adi_adt7420)));
 
 	if (dev == NULL) {
 		printf("Failed to get device binding\n");

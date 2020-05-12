@@ -82,7 +82,7 @@ static u32_t wdt_sam0_timeout_to_wdt_period(u32_t timeout_ms)
 	return find_msb_set(next_pow2 >> 4);
 }
 
-static void wdt_sam0_isr(struct device *dev)
+static void wdt_sam0_isr(const struct device *dev)
 {
 	struct wdt_sam0_dev_data *data = dev->driver_data;
 
@@ -93,7 +93,7 @@ static void wdt_sam0_isr(struct device *dev)
 	}
 }
 
-static int wdt_sam0_setup(struct device *dev, u8_t options)
+static int wdt_sam0_setup(const struct device *dev, u8_t options)
 {
 	struct wdt_sam0_dev_data *data = dev->driver_data;
 
@@ -124,7 +124,7 @@ static int wdt_sam0_setup(struct device *dev, u8_t options)
 	return 0;
 }
 
-static int wdt_sam0_disable(struct device *dev)
+static int wdt_sam0_disable(const struct device *dev)
 {
 	if (!wdt_sam0_is_enabled()) {
 		return -EFAULT;
@@ -136,8 +136,8 @@ static int wdt_sam0_disable(struct device *dev)
 	return 0;
 }
 
-static int wdt_sam0_install_timeout(struct device *dev,
-				const struct wdt_timeout_cfg *cfg)
+static int wdt_sam0_install_timeout(const struct device *dev,
+				    const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_sam0_dev_data *data = dev->driver_data;
 	u32_t window, per;
@@ -222,7 +222,7 @@ timeout_invalid:
 	return -EINVAL;
 }
 
-static int wdt_sam0_feed(struct device *dev, int channel_id)
+static int wdt_sam0_feed(const struct device *dev, int channel_id)
 {
 	struct wdt_sam0_dev_data *data = dev->driver_data;
 
@@ -243,7 +243,7 @@ static const struct wdt_driver_api wdt_sam0_api = {
 	.feed = wdt_sam0_feed,
 };
 
-static int wdt_sam0_init(struct device *dev)
+static int wdt_sam0_init(const struct device *dev)
 {
 #ifdef CONFIG_WDT_DISABLE_AT_BOOT
 	/* Ignore any errors */

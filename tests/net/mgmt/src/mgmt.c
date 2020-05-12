@@ -65,7 +65,7 @@ static int test_mgmt_request(u32_t mgmt_request,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(TEST_MGMT_REQUEST, test_mgmt_request);
 
-int fake_dev_init(struct device *dev)
+int fake_dev_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -79,7 +79,7 @@ static void fake_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_DUMMY);
 }
 
-static int fake_iface_send(struct device *dev, struct net_pkt *pkt)
+static int fake_iface_send(const struct device *dev, struct net_pkt *pkt)
 {
 	return 0;
 }

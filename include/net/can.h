@@ -99,15 +99,15 @@ struct net_can_api {
 	struct net_if_api iface_api;
 
 	/** Send a single CAN frame */
-	int (*send)(struct device *dev, const struct zcan_frame *frame,
+	int (*send)(const struct device *dev, const struct zcan_frame *frame,
 		    can_tx_callback_t cb, void *cb_arg, k_timeout_t timeout);
 	/** Attach a filter with it's callback */
-	int (*attach_filter)(struct device *dev, can_rx_callback_t cb,
+	int (*attach_filter)(const struct device *dev, can_rx_callback_t cb,
 			     void *cb_arg, const struct zcan_filter *filter);
 	/** Detach a filter */
-	void (*detach_filter)(struct device *dev, int filter_id);
+	void (*detach_filter)(const struct device *dev, int filter_id);
 	/** Enable or disable the reception of frames for net CAN */
-	int (*enable)(struct device *dev, bool enable);
+	int (*enable)(const struct device *dev, bool enable);
 };
 
 /* Make sure that the network interface API is properly setup inside

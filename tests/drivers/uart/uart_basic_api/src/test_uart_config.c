@@ -36,7 +36,7 @@ const struct uart_config uart_cfg = {
 
 static int test_configure(void)
 {
-	struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
+	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
 
 	if (!uart_dev) {
 		TC_PRINT("Cannot get UART device\n");
@@ -58,7 +58,7 @@ static int test_configure(void)
 /* test UART configure get (retrieve configuration) */
 static int test_config_get(void)
 {
-	struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
+	const struct device *uart_dev = device_get_binding(UART_DEVICE_NAME);
 
 	if (!uart_dev) {
 		TC_PRINT("Cannot get UART device\n");

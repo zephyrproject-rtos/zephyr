@@ -49,7 +49,7 @@ static void remoteproc_mgr_config(void)
 }
 #endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
-static int remoteproc_mgr_boot(struct device *dev)
+static int remoteproc_mgr_boot(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

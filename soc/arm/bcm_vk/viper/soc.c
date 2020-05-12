@@ -17,7 +17,7 @@
  *
  * @return 0
  */
-static int viper_init(struct device *arg)
+static int viper_init(const struct device *arg)
 {
 	u32_t key;
 

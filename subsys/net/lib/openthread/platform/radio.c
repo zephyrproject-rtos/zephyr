@@ -67,7 +67,7 @@ static u8_t ack_psdu[ACK_PKT_LENGTH];
 static struct net_pkt *tx_pkt;
 static struct net_buf *tx_payload;
 
-static struct device *radio_dev;
+static const struct device *radio_dev;
 static struct ieee802154_radio_api *radio_api;
 
 static s8_t tx_power;
@@ -106,7 +106,7 @@ static inline void clear_pending_events(void)
 	atomic_clear(pending_events);
 }
 
-void energy_detected(struct device *dev, s16_t max_ed)
+void energy_detected(const struct device *dev, s16_t max_ed)
 {
 	if (dev == radio_dev) {
 		energy_detected_value = max_ed;
@@ -146,7 +146,7 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 	return NET_OK;
 }
 
-void handle_radio_event(struct device *dev, enum ieee802154_event evt,
+void handle_radio_event(const struct device *dev, enum ieee802154_event evt,
 			void *event_params)
 {
 	ARG_UNUSED(event_params);
@@ -497,7 +497,7 @@ otRadioFrame *otPlatRadioGetTransmitBuffer(otInstance *aInstance)
 	return &sTransmitFrame;
 }
 
-static void get_rssi_energy_detected(struct device *dev, s16_t max_ed)
+static void get_rssi_energy_detected(const struct device *dev, s16_t max_ed)
 {
 	ARG_UNUSED(dev);
 	energy_detected_value = max_ed;

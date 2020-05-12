@@ -22,7 +22,7 @@
 
 LOG_MODULE_REGISTER(LSM9DS0_GYRO, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline int lsm9ds0_gyro_power_ctrl(struct device *dev, int power,
+static inline int lsm9ds0_gyro_power_ctrl(const struct device *dev, int power,
 					  int x_en, int y_en, int z_en)
 {
 	struct lsm9ds0_gyro_data *data = dev->driver_data;
@@ -41,7 +41,7 @@ static inline int lsm9ds0_gyro_power_ctrl(struct device *dev, int power,
 				   state);
 }
 
-static int lsm9ds0_gyro_set_fs_raw(struct device *dev, u8_t fs)
+static int lsm9ds0_gyro_set_fs_raw(const struct device *dev, u8_t fs)
 {
 	struct lsm9ds0_gyro_data *data = dev->driver_data;
 	const struct lsm9ds0_gyro_config *config = dev->config_info;
@@ -68,7 +68,7 @@ static const struct {
 			      {500, 1},
 			      {2000, 2} };
 
-static int lsm9ds0_gyro_set_fs(struct device *dev, int fs)
+static int lsm9ds0_gyro_set_fs(const struct device *dev, int fs)
 {
 	int i;
 
@@ -82,7 +82,7 @@ static int lsm9ds0_gyro_set_fs(struct device *dev, int fs)
 }
 #endif
 
-static inline int lsm9ds0_gyro_set_odr_raw(struct device *dev, u8_t odr)
+static inline int lsm9ds0_gyro_set_odr_raw(const struct device *dev, u8_t odr)
 {
 	struct lsm9ds0_gyro_data *data = dev->driver_data;
 	const struct lsm9ds0_gyro_config *config = dev->config_info;
@@ -102,7 +102,7 @@ static const struct {
 				     {380, 2},
 				     {760, 3} };
 
-static int lsm9ds0_gyro_set_odr(struct device *dev, int odr)
+static int lsm9ds0_gyro_set_odr(const struct device *dev, int odr)
 {
 	int i;
 
@@ -118,7 +118,7 @@ static int lsm9ds0_gyro_set_odr(struct device *dev, int odr)
 }
 #endif
 
-static int lsm9ds0_gyro_sample_fetch(struct device *dev,
+static int lsm9ds0_gyro_sample_fetch(const struct device *dev,
 				     enum sensor_channel chan)
 {
 	struct lsm9ds0_gyro_data *data = dev->driver_data;
@@ -192,7 +192,7 @@ static inline int lsm9ds0_gyro_get_channel(enum sensor_channel chan,
 	return 0;
 }
 
-static int lsm9ds0_gyro_channel_get(struct device *dev,
+static int lsm9ds0_gyro_channel_get(const struct device *dev,
 				    enum sensor_channel chan,
 				    struct sensor_value *val)
 {
@@ -218,7 +218,7 @@ static int lsm9ds0_gyro_channel_get(struct device *dev,
 }
 
 #if defined(LSM9DS0_GYRO_SET_ATTR)
-static int lsm9ds0_gyro_attr_set(struct device *dev,
+static int lsm9ds0_gyro_attr_set(const struct device *dev,
 				 enum sensor_channel chan,
 				 enum sensor_attribute attr,
 				 const struct sensor_value *val)
@@ -259,7 +259,7 @@ static const struct sensor_driver_api lsm9ds0_gyro_api_funcs = {
 #endif
 };
 
-static int lsm9ds0_gyro_init_chip(struct device *dev)
+static int lsm9ds0_gyro_init_chip(const struct device *dev)
 {
 	struct lsm9ds0_gyro_data *data = dev->driver_data;
 	const struct lsm9ds0_gyro_config *config = dev->config_info;
@@ -315,7 +315,7 @@ err_poweroff:
 	return -EIO;
 }
 
-static int lsm9ds0_gyro_init(struct device *dev)
+static int lsm9ds0_gyro_init(const struct device *dev)
 {
 	const struct lsm9ds0_gyro_config * const config =
 					   dev->config_info;

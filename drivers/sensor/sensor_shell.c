@@ -54,7 +54,8 @@ const char *sensor_channel_name[SENSOR_CHAN_ALL] = {
 	[SENSOR_CHAN_ROTATION] =	"rotation",
 };
 
-static int handle_channel_by_name(const struct shell *shell, struct device *dev,
+static int handle_channel_by_name(const struct shell *shell,
+					const struct device *dev,
 					const char *channel_name)
 {
 	int i;
@@ -97,7 +98,7 @@ static int handle_channel_by_name(const struct shell *shell, struct device *dev,
 }
 static int cmd_get_sensor(const struct shell *shell, size_t argc, char *argv[])
 {
-	struct device *dev;
+	const struct device *dev;
 	int err;
 
 	dev = device_get_binding(argv[1]);
@@ -163,7 +164,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	int device_idx = 0;
-	struct device *dev;
+	const struct device *dev;
 
 	entry->syntax = NULL;
 	entry->handler = NULL;

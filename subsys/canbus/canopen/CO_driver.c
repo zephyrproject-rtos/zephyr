@@ -463,7 +463,7 @@ void CO_CANverifyErrors(CO_CANmodule_t *CANmodule)
 	}
 }
 
-static int canopen_init(struct device *dev)
+static int canopen_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

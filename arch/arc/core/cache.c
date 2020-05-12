@@ -155,7 +155,7 @@ static void init_dcache_line_size(void)
 }
 #endif
 
-static int init_dcache(struct device *unused)
+static int init_dcache(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

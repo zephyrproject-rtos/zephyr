@@ -58,7 +58,8 @@ int tmp007_reg_update(struct tmp007_data *drv_data, u8_t reg,
 	return tmp007_reg_write(drv_data, reg, new_val);
 }
 
-static int tmp007_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int tmp007_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
 	struct tmp007_data *drv_data = dev->driver_data;
 	u16_t val;
@@ -78,7 +79,7 @@ static int tmp007_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int tmp007_channel_get(struct device *dev,
+static int tmp007_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
@@ -105,7 +106,7 @@ static const struct sensor_driver_api tmp007_driver_api = {
 	.channel_get = tmp007_channel_get,
 };
 
-int tmp007_init(struct device *dev)
+int tmp007_init(const struct device *dev)
 {
 	struct tmp007_data *drv_data = dev->driver_data;
 

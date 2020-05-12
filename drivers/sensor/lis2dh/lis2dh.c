@@ -52,7 +52,7 @@ static void lis2dh_convert(s16_t raw_val, u32_t scale,
 	val->val2 = converted_val % 1000000;
 }
 
-static int lis2dh_channel_get(struct device *dev,
+static int lis2dh_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
@@ -85,7 +85,8 @@ static int lis2dh_channel_get(struct device *dev,
 	return 0;
 }
 
-static int lis2dh_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int lis2dh_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 	size_t i;
@@ -143,7 +144,7 @@ static int lis2dh_freq_to_odr_val(u16_t freq)
 	return -EINVAL;
 }
 
-static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
+static int lis2dh_acc_odr_set(const struct device *dev, u16_t freq)
 {
 	int odr;
 	int status;
@@ -195,7 +196,7 @@ static int lis2dh_range_to_reg_val(u16_t range)
 	return -EINVAL;
 }
 
-static int lis2dh_acc_range_set(struct device *dev, s32_t range)
+static int lis2dh_acc_range_set(const struct device *dev, s32_t range)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 	int fs;
@@ -213,9 +214,10 @@ static int lis2dh_acc_range_set(struct device *dev, s32_t range)
 }
 #endif
 
-static int lis2dh_acc_config(struct device *dev, enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int lis2dh_acc_config(const struct device *dev,
+			     enum sensor_channel chan,
+			     enum sensor_attribute attr,
+			     const struct sensor_value *val)
 {
 	switch (attr) {
 #ifdef CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
@@ -239,7 +241,7 @@ static int lis2dh_acc_config(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int lis2dh_attr_set(struct device *dev, enum sensor_channel chan,
+static int lis2dh_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
@@ -266,7 +268,7 @@ static const struct sensor_driver_api lis2dh_driver_api = {
 	.channel_get = lis2dh_channel_get,
 };
 
-int lis2dh_init(struct device *dev)
+int lis2dh_init(const struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 	const struct lis2dh_config *cfg = dev->config_info;

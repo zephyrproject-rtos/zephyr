@@ -18,7 +18,7 @@
 
 #define FRAM_I2C_ADDR	0x50
 
-static int write_bytes(struct device *i2c_dev, u16_t addr,
+static int write_bytes(const struct device *i2c_dev, u16_t addr,
 		       u8_t *data, u32_t num_bytes)
 {
 	u8_t wr_addr[2];
@@ -43,7 +43,7 @@ static int write_bytes(struct device *i2c_dev, u16_t addr,
 	return i2c_transfer(i2c_dev, &msgs[0], 2, FRAM_I2C_ADDR);
 }
 
-static int read_bytes(struct device *i2c_dev, u16_t addr,
+static int read_bytes(const struct device *i2c_dev, u16_t addr,
 		      u8_t *data, u32_t num_bytes)
 {
 	u8_t wr_addr[2];
@@ -72,7 +72,7 @@ static int read_bytes(struct device *i2c_dev, u16_t addr,
 
 void main(void)
 {
-	struct device *i2c_dev;
+	const struct device *i2c_dev;
 	u8_t cmp_data[16];
 	u8_t data[16];
 	int i, ret;

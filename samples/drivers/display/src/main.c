@@ -201,7 +201,7 @@ void main(void)
 	size_t grey_count;
 	u8_t *buf;
 	s32_t grey_scale_sleep;
-	struct device *display_dev;
+	const struct device *display_dev;
 	struct display_capabilities capabilities;
 	struct display_buffer_descriptor buf_desc;
 	size_t buf_size = 0;

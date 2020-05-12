@@ -88,7 +88,7 @@ static int ism330dhcx_gyro_range_to_fs_val(s32_t range)
 }
 #endif
 
-static inline int ism330dhcx_reboot(struct device *dev)
+static inline int ism330dhcx_reboot(const struct device *dev)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
 
@@ -102,7 +102,7 @@ static inline int ism330dhcx_reboot(struct device *dev)
 	return 0;
 }
 
-static int ism330dhcx_accel_set_fs_raw(struct device *dev, u8_t fs)
+static int ism330dhcx_accel_set_fs_raw(const struct device *dev, u8_t fs)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
 
@@ -115,7 +115,7 @@ static int ism330dhcx_accel_set_fs_raw(struct device *dev, u8_t fs)
 	return 0;
 }
 
-static int ism330dhcx_accel_set_odr_raw(struct device *dev, u8_t odr)
+static int ism330dhcx_accel_set_odr_raw(const struct device *dev, u8_t odr)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
 
@@ -128,7 +128,7 @@ static int ism330dhcx_accel_set_odr_raw(struct device *dev, u8_t odr)
 	return 0;
 }
 
-static int ism330dhcx_gyro_set_fs_raw(struct device *dev, u8_t fs)
+static int ism330dhcx_gyro_set_fs_raw(const struct device *dev, u8_t fs)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
 
@@ -139,7 +139,7 @@ static int ism330dhcx_gyro_set_fs_raw(struct device *dev, u8_t fs)
 	return 0;
 }
 
-static int ism330dhcx_gyro_set_odr_raw(struct device *dev, u8_t odr)
+static int ism330dhcx_gyro_set_odr_raw(const struct device *dev, u8_t odr)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
 
@@ -151,7 +151,7 @@ static int ism330dhcx_gyro_set_odr_raw(struct device *dev, u8_t odr)
 }
 
 #ifdef ISM330DHCX_ACCEL_ODR_RUNTIME
-static int ism330dhcx_accel_odr_set(struct device *dev, u16_t freq)
+static int ism330dhcx_accel_odr_set(const struct device *dev, u16_t freq)
 {
 	int odr;
 
@@ -170,7 +170,7 @@ static int ism330dhcx_accel_odr_set(struct device *dev, u16_t freq)
 #endif
 
 #ifdef ISM330DHCX_ACCEL_FS_RUNTIME
-static int ism330dhcx_accel_range_set(struct device *dev, s32_t range)
+static int ism330dhcx_accel_range_set(const struct device *dev, s32_t range)
 {
 	int fs;
 	struct ism330dhcx_data *data = dev->driver_data;
@@ -190,7 +190,8 @@ static int ism330dhcx_accel_range_set(struct device *dev, s32_t range)
 }
 #endif
 
-static int ism330dhcx_accel_config(struct device *dev, enum sensor_channel chan,
+static int ism330dhcx_accel_config(const struct device *dev,
+				   enum sensor_channel chan,
 				   enum sensor_attribute attr,
 				   const struct sensor_value *val)
 {
@@ -212,7 +213,7 @@ static int ism330dhcx_accel_config(struct device *dev, enum sensor_channel chan,
 }
 
 #ifdef ISM330DHCX_GYRO_ODR_RUNTIME
-static int ism330dhcx_gyro_odr_set(struct device *dev, u16_t freq)
+static int ism330dhcx_gyro_odr_set(const struct device *dev, u16_t freq)
 {
 	int odr;
 
@@ -231,7 +232,7 @@ static int ism330dhcx_gyro_odr_set(struct device *dev, u16_t freq)
 #endif
 
 #ifdef ISM330DHCX_GYRO_FS_RUNTIME
-static int ism330dhcx_gyro_range_set(struct device *dev, s32_t range)
+static int ism330dhcx_gyro_range_set(const struct device *dev, s32_t range)
 {
 	int fs;
 	struct ism330dhcx_data *data = dev->driver_data;
@@ -251,7 +252,8 @@ static int ism330dhcx_gyro_range_set(struct device *dev, s32_t range)
 }
 #endif
 
-static int ism330dhcx_gyro_config(struct device *dev, enum sensor_channel chan,
+static int ism330dhcx_gyro_config(const struct device *dev,
+				  enum sensor_channel chan,
 				  enum sensor_attribute attr,
 				  const struct sensor_value *val)
 {
@@ -272,7 +274,8 @@ static int ism330dhcx_gyro_config(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int ism330dhcx_attr_set(struct device *dev, enum sensor_channel chan,
+static int ism330dhcx_attr_set(const struct device *dev,
+			       enum sensor_channel chan,
 			       enum sensor_attribute attr,
 			       const struct sensor_value *val)
 {
@@ -295,7 +298,7 @@ static int ism330dhcx_attr_set(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int ism330dhcx_sample_fetch_accel(struct device *dev)
+static int ism330dhcx_sample_fetch_accel(const struct device *dev)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
 	union axis3bit16_t buf;
@@ -312,7 +315,7 @@ static int ism330dhcx_sample_fetch_accel(struct device *dev)
 	return 0;
 }
 
-static int ism330dhcx_sample_fetch_gyro(struct device *dev)
+static int ism330dhcx_sample_fetch_gyro(const struct device *dev)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
 	union axis3bit16_t buf;
@@ -330,7 +333,7 @@ static int ism330dhcx_sample_fetch_gyro(struct device *dev)
 }
 
 #if defined(CONFIG_ISM330DHCX_ENABLE_TEMP)
-static int ism330dhcx_sample_fetch_temp(struct device *dev)
+static int ism330dhcx_sample_fetch_temp(const struct device *dev)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
 	union axis1bit16_t buf;
@@ -347,7 +350,7 @@ static int ism330dhcx_sample_fetch_temp(struct device *dev)
 #endif
 
 #if defined(CONFIG_ISM330DHCX_SENSORHUB)
-static int ism330dhcx_sample_fetch_shub(struct device *dev)
+static int ism330dhcx_sample_fetch_shub(const struct device *dev)
 {
 	if (ism330dhcx_shub_fetch_external_devs(dev) < 0) {
 		LOG_DBG("failed to read ext shub devices");
@@ -358,7 +361,8 @@ static int ism330dhcx_sample_fetch_shub(struct device *dev)
 }
 #endif /* CONFIG_ISM330DHCX_SENSORHUB */
 
-static int ism330dhcx_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int ism330dhcx_sample_fetch(const struct device *dev,
+				   enum sensor_channel chan)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -625,7 +629,7 @@ static inline void ism330dhcx_temp_convert(struct sensor_value *val,
 }
 #endif
 
-static int ism330dhcx_channel_get(struct device *dev,
+static int ism330dhcx_channel_get(const struct device *dev,
 				  enum sensor_channel chan,
 				  struct sensor_value *val)
 {
@@ -685,7 +689,7 @@ static const struct sensor_driver_api ism330dhcx_api_funcs = {
 	.channel_get = ism330dhcx_channel_get,
 };
 
-static int ism330dhcx_init_chip(struct device *dev)
+static int ism330dhcx_init_chip(const struct device *dev)
 {
 	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
 	u8_t chip_id;
@@ -802,7 +806,7 @@ static const struct ism330dhcx_config ism330dhcx_config = {
 #endif /* CONFIG_ISM330DHCX_TRIGGER */
 };
 
-static int ism330dhcx_init(struct device *dev)
+static int ism330dhcx_init(const struct device *dev)
 {
 	const struct ism330dhcx_config * const config = dev->config_info;
 	struct ism330dhcx_data *data = dev->driver_data;

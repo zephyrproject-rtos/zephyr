@@ -22,7 +22,7 @@ LOG_MODULE_DECLARE(STTS751, CONFIG_SENSOR_LOG_LEVEL);
 /**
  * stts751_enable_int - enable selected int pin to generate interrupt
  */
-static int stts751_enable_int(struct device *dev, int enable)
+static int stts751_enable_int(const struct device *dev, int enable)
 {
 	struct stts751_data *stts751 = dev->driver_data;
 	u8_t en = (enable) ? 0 : 1;
@@ -33,7 +33,7 @@ static int stts751_enable_int(struct device *dev, int enable)
 /**
  * stts751_trigger_set - link external trigger to event data ready
  */
-int stts751_trigger_set(struct device *dev,
+int stts751_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
@@ -57,7 +57,7 @@ int stts751_trigger_set(struct device *dev,
  */
 static void stts751_handle_interrupt(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct stts751_data *stts751 = dev->driver_data;
 	const struct stts751_config *cfg = dev->config_info;
 	struct sensor_trigger thsld_trigger = {
@@ -76,7 +76,7 @@ static void stts751_handle_interrupt(void *arg)
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void stts751_gpio_callback(struct device *dev,
+static void stts751_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
 	const struct stts751_config *cfg = dev->config_info;
@@ -97,7 +97,7 @@ static void stts751_gpio_callback(struct device *dev,
 #ifdef CONFIG_STTS751_TRIGGER_OWN_THREAD
 static void stts751_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct stts751_data *stts751 = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -119,7 +119,7 @@ static void stts751_work_cb(struct k_work *work)
 }
 #endif /* CONFIG_STTS751_TRIGGER_GLOBAL_THREAD */
 
-int stts751_init_interrupt(struct device *dev)
+int stts751_init_interrupt(const struct device *dev)
 {
 	struct stts751_data *stts751 = dev->driver_data;
 	const struct stts751_config *cfg = dev->config_info;

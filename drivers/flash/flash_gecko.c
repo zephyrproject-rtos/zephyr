@@ -32,7 +32,8 @@ static bool write_range_is_valid(off_t offset, u32_t size);
 static bool read_range_is_valid(off_t offset, u32_t size);
 static int erase_flash_block(off_t offset, size_t size);
 
-static int flash_gecko_read(struct device *dev, off_t offset, void *data,
+static int flash_gecko_read(const struct device *dev, off_t offset,
+			    void *data,
 			    size_t size)
 {
 	if (!read_range_is_valid(offset, size)) {
@@ -48,7 +49,7 @@ static int flash_gecko_read(struct device *dev, off_t offset, void *data,
 	return 0;
 }
 
-static int flash_gecko_write(struct device *dev, off_t offset,
+static int flash_gecko_write(const struct device *dev, off_t offset,
 			     const void *data, size_t size)
 {
 	struct flash_gecko_data *const dev_data = DEV_DATA(dev);
@@ -77,7 +78,8 @@ static int flash_gecko_write(struct device *dev, off_t offset,
 	return ret;
 }
 
-static int flash_gecko_erase(struct device *dev, off_t offset, size_t size)
+static int flash_gecko_erase(const struct device *dev, off_t offset,
+			     size_t size)
 {
 	struct flash_gecko_data *const dev_data = DEV_DATA(dev);
 	int ret;
@@ -109,7 +111,7 @@ static int flash_gecko_erase(struct device *dev, off_t offset, size_t size)
 	return ret;
 }
 
-static int flash_gecko_write_protection(struct device *dev, bool enable)
+static int flash_gecko_write_protection(const struct device *dev, bool enable)
 {
 	struct flash_gecko_data *const dev_data = DEV_DATA(dev);
 
@@ -169,7 +171,7 @@ static const struct flash_pages_layout flash_gecko_0_pages_layout = {
 	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 };
 
-void flash_gecko_page_layout(struct device *dev,
+void flash_gecko_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
@@ -178,7 +180,7 @@ void flash_gecko_page_layout(struct device *dev,
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-static int flash_gecko_init(struct device *dev)
+static int flash_gecko_init(const struct device *dev)
 {
 	struct flash_gecko_data *const dev_data = DEV_DATA(dev);
 

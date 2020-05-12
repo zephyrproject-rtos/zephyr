@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "ieee802154_rf2xx_regs.h"
 #include "ieee802154_rf2xx_iface.h"
 
-void rf2xx_iface_phy_rst(struct device *dev)
+void rf2xx_iface_phy_rst(const struct device *dev)
 {
 	const struct rf2xx_config *conf = dev->config_info;
 	const struct rf2xx_context *ctx = dev->driver_data;
@@ -39,7 +39,7 @@ void rf2xx_iface_phy_rst(struct device *dev)
 	k_busy_wait(10);
 	gpio_pin_set(ctx->reset_gpio, conf->reset.pin, 0);
 }
-void rf2xx_iface_phy_tx_start(struct device *dev)
+void rf2xx_iface_phy_tx_start(const struct device *dev)
 {
 	const struct rf2xx_config *conf = dev->config_info;
 	const struct rf2xx_context *ctx = dev->driver_data;
@@ -52,7 +52,7 @@ void rf2xx_iface_phy_tx_start(struct device *dev)
 	gpio_pin_set(ctx->slptr_gpio, conf->slptr.pin, 0);
 }
 
-u8_t rf2xx_iface_reg_read(struct device *dev,
+u8_t rf2xx_iface_reg_read(const struct device *dev,
 			  u8_t addr)
 {
 	const struct rf2xx_context *ctx = dev->driver_data;
@@ -95,7 +95,7 @@ u8_t rf2xx_iface_reg_read(struct device *dev,
 	return regval;
 }
 
-void rf2xx_iface_reg_write(struct device *dev,
+void rf2xx_iface_reg_write(const struct device *dev,
 			   u8_t addr,
 			   u8_t data)
 {
@@ -136,7 +136,7 @@ void rf2xx_iface_reg_write(struct device *dev,
 		(addr & ~(RF2XX_RF_CMD_REG_W)), status, data);
 }
 
-u8_t rf2xx_iface_bit_read(struct device *dev,
+u8_t rf2xx_iface_bit_read(const struct device *dev,
 			  u8_t addr,
 			  u8_t mask,
 			  u8_t pos)
@@ -150,7 +150,7 @@ u8_t rf2xx_iface_bit_read(struct device *dev,
 	return ret;
 }
 
-void rf2xx_iface_bit_write(struct device *dev,
+void rf2xx_iface_bit_write(const struct device *dev,
 			   u8_t reg_addr,
 			   u8_t mask,
 			   u8_t pos,
@@ -166,7 +166,7 @@ void rf2xx_iface_bit_write(struct device *dev,
 	rf2xx_iface_reg_write(dev, reg_addr, new_value);
 }
 
-void rf2xx_iface_frame_read(struct device *dev,
+void rf2xx_iface_frame_read(const struct device *dev,
 			    u8_t *data,
 			    u8_t length)
 {
@@ -198,7 +198,7 @@ void rf2xx_iface_frame_read(struct device *dev,
 	LOG_HEXDUMP_DBG(data + RX2XX_FRAME_HEADER_SIZE, length, "payload");
 }
 
-void rf2xx_iface_frame_write(struct device *dev,
+void rf2xx_iface_frame_write(const struct device *dev,
 			     u8_t *data,
 			     u8_t length)
 {
@@ -249,7 +249,7 @@ void rf2xx_iface_frame_write(struct device *dev,
 	LOG_HEXDUMP_DBG(data, length, "payload");
 }
 
-void rf2xx_iface_sram_read(struct device *dev,
+void rf2xx_iface_sram_read(const struct device *dev,
 			    u8_t address,
 			    u8_t *data,
 			    u8_t length)

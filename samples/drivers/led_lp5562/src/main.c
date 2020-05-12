@@ -66,7 +66,7 @@ static inline u8_t scale_color_to_percent(u8_t hex)
  *
  * @return 0 if successful, -ERRNO otherwise.
  */
-static int set_static_color(struct device *dev, u8_t r, u8_t g, u8_t b)
+static int set_static_color(const struct device *dev, u8_t r, u8_t g, u8_t b)
 {
 	int ret;
 
@@ -110,8 +110,8 @@ static int set_static_color(struct device *dev, u8_t r, u8_t g, u8_t b)
  *
  * @return 0 if successful, -ERRNO otherwise.
  */
-static int blink_color(struct device *dev, bool r, bool g, bool b,
-		u32_t delay_on, u32_t delay_off)
+static int blink_color(const struct device *dev, bool r, bool g, bool b,
+		       u32_t delay_on, u32_t delay_off)
 {
 	int ret;
 
@@ -149,7 +149,7 @@ static int blink_color(struct device *dev, bool r, bool g, bool b,
  *
  * @return 0 if successful, -ERRNO otherwise.
  */
-static int turn_off_all_leds(struct device *dev)
+static int turn_off_all_leds(const struct device *dev)
 {
 	for (int i = 0; i < NUM_LEDS; i++) {
 		int ret = led_off(dev, i);
@@ -164,7 +164,7 @@ static int turn_off_all_leds(struct device *dev)
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	int i, ret;
 
 	dev = device_get_binding(LED_DEV_NAME);

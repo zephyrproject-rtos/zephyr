@@ -656,7 +656,7 @@ void log_output_dropped_process(const struct log_output *log_output, u32_t cnt)
 	static const char postfix[] =
 			" messages dropped ---\r\n" DROPPED_COLOR_POSTFIX;
 	log_output_func_t outf = log_output->func;
-	struct device *dev = (struct device *)log_output->control_block->ctx;
+	const struct device *dev = (const struct device *)log_output->control_block->ctx;
 
 	cnt = MIN(cnt, 9999);
 	len = snprintk(buf, sizeof(buf), "%d", cnt);

@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(mcp2515_can);
 
 #include "can_mcp2515.h"
 
-static int mcp2515_cmd_soft_reset(struct device *dev)
+static int mcp2515_cmd_soft_reset(const struct device *dev)
 {
 	u8_t cmd_buf[] = { MCP2515_OPCODE_RESET };
 
@@ -31,7 +31,8 @@ static int mcp2515_cmd_soft_reset(struct device *dev)
 	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
 }
 
-static int mcp2515_cmd_bit_modify(struct device *dev, u8_t reg_addr, u8_t mask,
+static int mcp2515_cmd_bit_modify(const struct device *dev, u8_t reg_addr,
+				  u8_t mask,
 				  u8_t data)
 {
 	u8_t cmd_buf[] = { MCP2515_OPCODE_BIT_MODIFY, reg_addr, mask, data };
@@ -46,7 +47,7 @@ static int mcp2515_cmd_bit_modify(struct device *dev, u8_t reg_addr, u8_t mask,
 	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
 }
 
-static int mcp2515_cmd_write_reg(struct device *dev, u8_t reg_addr,
+static int mcp2515_cmd_write_reg(const struct device *dev, u8_t reg_addr,
 				 u8_t *buf_data, u8_t buf_len)
 {
 	u8_t cmd_buf[] = { MCP2515_OPCODE_WRITE, reg_addr };
@@ -76,8 +77,8 @@ static int mcp2515_cmd_write_reg(struct device *dev, u8_t reg_addr,
  *   4: TX Buffer 2, Start at TXB2SIDH (0x51)
  *   5: TX Buffer 2, Start at TXB2D0 (0x56)
  */
-static int mcp2515_cmd_load_tx_buffer(struct device *dev, u8_t abc,
-				 u8_t *buf_data, u8_t buf_len)
+static int mcp2515_cmd_load_tx_buffer(const struct device *dev, u8_t abc,
+				      u8_t *buf_data, u8_t buf_len)
 {
 	__ASSERT(abc <= 5, "abc <= 5");
 
@@ -101,7 +102,7 @@ static int mcp2515_cmd_load_tx_buffer(struct device *dev, u8_t abc,
  * opcode that respectively initiate transmission for buffers TXB0, TXB1 and
  * TXB2.
  */
-static int mcp2515_cmd_rts(struct device *dev, u8_t nnn)
+static int mcp2515_cmd_rts(const struct device *dev, u8_t nnn)
 {
 	__ASSERT(nnn < BIT(MCP2515_TX_CNT), "nnn < BIT(MCP2515_TX_CNT)");
 
@@ -117,7 +118,7 @@ static int mcp2515_cmd_rts(struct device *dev, u8_t nnn)
 	return spi_write(DEV_DATA(dev)->spi, &DEV_DATA(dev)->spi_cfg, &tx);
 }
 
-static int mcp2515_cmd_read_reg(struct device *dev, u8_t reg_addr,
+static int mcp2515_cmd_read_reg(const struct device *dev, u8_t reg_addr,
 				u8_t *buf_data, u8_t buf_len)
 {
 	u8_t cmd_buf[] = { MCP2515_OPCODE_READ, reg_addr };
@@ -152,8 +153,8 @@ static int mcp2515_cmd_read_reg(struct device *dev, u8_t reg_addr,
  *   2: Receive Buffer 1, Start at RXB1SIDH (0x71)
  *   3: Receive Buffer 1, Start at RXB1D0 (0x76)
  */
-static int mcp2515_cmd_read_rx_buffer(struct device *dev, u8_t nm,
-				u8_t *buf_data, u8_t buf_len)
+static int mcp2515_cmd_read_rx_buffer(const struct device *dev, u8_t nm,
+				      u8_t *buf_data, u8_t buf_len)
 {
 	__ASSERT(nm <= 0x03, "nm <= 0x03");
 
@@ -253,7 +254,7 @@ static void mcp2515_convert_mcp2515frame_to_zcanframe(const u8_t *source,
 	}
 }
 
-const int mcp2515_set_mode(struct device *dev, u8_t mcp2515_mode)
+const int mcp2515_set_mode(const struct device *dev, u8_t mcp2515_mode)
 {
 	u8_t canstat;
 
@@ -271,7 +272,7 @@ const int mcp2515_set_mode(struct device *dev, u8_t mcp2515_mode)
 	return 0;
 }
 
-static int mcp2515_configure(struct device *dev, enum can_mode mode,
+static int mcp2515_configure(const struct device *dev, enum can_mode mode,
 			     u32_t bitrate)
 {
 	const struct mcp2515_config *dev_cfg = DEV_CFG(dev);
@@ -381,9 +382,10 @@ done:
 	return ret;
 }
 
-static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
-		 k_timeout_t timeout, can_tx_callback_t callback,
-		 void *callback_arg)
+static int mcp2515_send(const struct device *dev,
+			const struct zcan_frame *msg,
+			k_timeout_t timeout, can_tx_callback_t callback,
+			void *callback_arg)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	u8_t tx_idx = 0U;
@@ -443,7 +445,8 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 	return 0;
 }
 
-static int mcp2515_attach_isr(struct device *dev, can_rx_callback_t rx_cb,
+static int mcp2515_attach_isr(const struct device *dev,
+			      can_rx_callback_t rx_cb,
 			      void *cb_arg,
 			      const struct zcan_filter *filter)
 {
@@ -477,7 +480,7 @@ static int mcp2515_attach_isr(struct device *dev, can_rx_callback_t rx_cb,
 	return filter_idx;
 }
 
-static void mcp2515_detach(struct device *dev, int filter_nr)
+static void mcp2515_detach(const struct device *dev, int filter_nr)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 
@@ -486,7 +489,7 @@ static void mcp2515_detach(struct device *dev, int filter_nr)
 	k_mutex_unlock(&dev_data->mutex);
 }
 
-static void mcp2515_register_state_change_isr(struct device *dev,
+static void mcp2515_register_state_change_isr(const struct device *dev,
 						can_state_change_isr_t isr)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
@@ -518,7 +521,8 @@ static u8_t mcp2515_filter_match(struct zcan_frame *msg,
 	return 1;
 }
 
-static void mcp2515_rx_filter(struct device *dev, struct zcan_frame *msg)
+static void mcp2515_rx_filter(const struct device *dev,
+			      struct zcan_frame *msg)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	u8_t filter_idx = 0U;
@@ -547,7 +551,7 @@ static void mcp2515_rx_filter(struct device *dev, struct zcan_frame *msg)
 	k_mutex_unlock(&dev_data->mutex);
 }
 
-static void mcp2515_rx(struct device *dev, u8_t rx_idx)
+static void mcp2515_rx(const struct device *dev, u8_t rx_idx)
 {
 	__ASSERT(rx_idx < MCP2515_RX_CNT, "rx_idx < MCP2515_RX_CNT");
 
@@ -564,7 +568,7 @@ static void mcp2515_rx(struct device *dev, u8_t rx_idx)
 	mcp2515_rx_filter(dev, &msg);
 }
 
-static void mcp2515_tx_done(struct device *dev, u8_t tx_idx)
+static void mcp2515_tx_done(const struct device *dev, u8_t tx_idx)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 
@@ -580,7 +584,7 @@ static void mcp2515_tx_done(struct device *dev, u8_t tx_idx)
 	k_sem_give(&dev_data->tx_sem);
 }
 
-static enum can_state mcp2515_get_state(struct device *dev,
+static enum can_state mcp2515_get_state(const struct device *dev,
 					struct can_bus_err_cnt *err_cnt)
 {
 	u8_t eflg;
@@ -616,7 +620,7 @@ static enum can_state mcp2515_get_state(struct device *dev,
 	return CAN_ERROR_ACTIVE;
 }
 
-static void mcp2515_handle_errors(struct device *dev)
+static void mcp2515_handle_errors(const struct device *dev)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	can_state_change_isr_t state_change_isr = dev_data->state_change_isr;
@@ -632,14 +636,14 @@ static void mcp2515_handle_errors(struct device *dev)
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static void mcp2515_recover(struct device *dev, k_timeout_t timeout)
+static void mcp2515_recover(const struct device *dev, k_timeout_t timeout)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(timeout);
 }
 #endif
 
-static void mcp2515_handle_interrupts(struct device *dev)
+static void mcp2515_handle_interrupts(const struct device *dev)
 {
 	const struct mcp2515_config *dev_cfg = DEV_CFG(dev);
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
@@ -707,7 +711,7 @@ static void mcp2515_handle_interrupts(struct device *dev)
 	}
 }
 
-static void mcp2515_int_thread(struct device *dev)
+static void mcp2515_int_thread(const struct device *dev)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 
@@ -717,7 +721,7 @@ static void mcp2515_int_thread(struct device *dev)
 	}
 }
 
-static void mcp2515_int_gpio_callback(struct device *dev,
+static void mcp2515_int_gpio_callback(const struct device *dev,
 				      struct gpio_callback *cb, u32_t pins)
 {
 	struct mcp2515_data *dev_data =
@@ -739,7 +743,7 @@ static const struct can_driver_api can_api_funcs = {
 };
 
 
-static int mcp2515_init(struct device *dev)
+static int mcp2515_init(const struct device *dev)
 {
 	const struct mcp2515_config *dev_cfg = DEV_CFG(dev);
 	struct mcp2515_data *dev_data = DEV_DATA(dev);

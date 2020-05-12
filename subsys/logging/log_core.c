@@ -1163,7 +1163,7 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 K_THREAD_STACK_DEFINE(logging_stack, CONFIG_LOG_PROCESS_THREAD_STACK_SIZE);
 struct k_thread logging_thread;
 
-static int enable_logger(struct device *arg)
+static int enable_logger(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

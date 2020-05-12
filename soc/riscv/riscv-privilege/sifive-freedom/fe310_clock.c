@@ -11,7 +11,7 @@
 /* Selects the 16MHz oscilator on the HiFive1 board, which provides a clock
  * that's accurate enough to actually drive serial ports off of.
  */
-static int fe310_clock_init(struct device *dev)
+static int fe310_clock_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

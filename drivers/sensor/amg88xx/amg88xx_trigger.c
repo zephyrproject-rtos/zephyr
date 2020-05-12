@@ -30,7 +30,7 @@ static inline void amg88xx_setup_int(struct amg88xx_data *drv_data,
 				     flags);
 }
 
-int amg88xx_attr_set(struct device *dev,
+int amg88xx_attr_set(const struct device *dev,
 		     enum sensor_channel chan,
 		     enum sensor_attribute attr,
 		     const struct sensor_value *val)
@@ -73,7 +73,7 @@ int amg88xx_attr_set(struct device *dev,
 	return 0;
 }
 
-static void amg88xx_gpio_callback(struct device *dev,
+static void amg88xx_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
 	struct amg88xx_data *drv_data =
@@ -90,7 +90,7 @@ static void amg88xx_gpio_callback(struct device *dev,
 
 static void amg88xx_thread_cb(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct amg88xx_data *drv_data = dev->driver_data;
 	const struct amg88xx_config *config = dev->config_info;
 	u8_t status;
@@ -114,7 +114,7 @@ static void amg88xx_thread_cb(void *arg)
 #ifdef CONFIG_AMG88XX_TRIGGER_OWN_THREAD
 static void amg88xx_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct amg88xx_data *drv_data = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -135,7 +135,7 @@ static void amg88xx_work_cb(struct k_work *work)
 }
 #endif
 
-int amg88xx_trigger_set(struct device *dev,
+int amg88xx_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
@@ -167,7 +167,7 @@ int amg88xx_trigger_set(struct device *dev,
 	return 0;
 }
 
-int amg88xx_init_interrupt(struct device *dev)
+int amg88xx_init_interrupt(const struct device *dev)
 {
 	struct amg88xx_data *drv_data = dev->driver_data;
 	const struct amg88xx_config *config = dev->config_info;

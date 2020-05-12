@@ -118,7 +118,7 @@ static bool should_bail(const struct flash_pages_info *info,
 static int flash_area_layout(int idx, u32_t *cnt, void *ret,
 flash_page_cb cb, struct layout_data *cb_data)
 {
-	struct device *flash_dev;
+	const struct device *flash_dev;
 
 	cb_data->area_idx = idx;
 
@@ -180,7 +180,7 @@ int flash_area_get_sectors(int idx, u32_t *cnt, struct flash_sector *ret)
 int flash_area_read(const struct flash_area *fa, off_t off, void *dst,
 		    size_t len)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	if (!is_in_flash_area_bounds(fa, off, len)) {
 		return -EINVAL;
@@ -194,7 +194,7 @@ int flash_area_read(const struct flash_area *fa, off_t off, void *dst,
 int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
 		     size_t len)
 {
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	int rc;
 
 	if (!is_in_flash_area_bounds(fa, off, len)) {
@@ -218,7 +218,7 @@ int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
 
 int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
 {
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	int rc;
 
 	if (!is_in_flash_area_bounds(fa, off, len)) {
@@ -242,7 +242,7 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
 
 u8_t flash_area_align(const struct flash_area *fa)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	dev = device_get_binding(fa->fa_dev_name);
 
@@ -258,7 +258,7 @@ int flash_area_has_driver(const struct flash_area *fa)
 	return 1;
 }
 
-struct device *flash_area_get_device(const struct flash_area *fa)
+const struct device *flash_area_get_device(const struct flash_area *fa)
 {
 	return device_get_binding(fa->fa_dev_name);
 }

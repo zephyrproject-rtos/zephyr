@@ -78,7 +78,7 @@ static const u8_t usb_transport_hid_report_desc[] = {
 
 static usb_transport_receive_callback_t receive_data_cb;
 
-static struct device *hid_device;
+static const struct device *hid_device;
 
 int usb_transport_init(usb_transport_receive_callback_t callback)
 {

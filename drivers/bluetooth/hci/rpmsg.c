@@ -207,7 +207,7 @@ static const struct bt_hci_driver drv = {
 	.bus		= BT_HCI_DRIVER_BUS_IPM,
 };
 
-static int bt_rpmsg_init(struct device *unused)
+static int bt_rpmsg_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

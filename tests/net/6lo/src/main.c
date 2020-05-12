@@ -245,7 +245,7 @@ struct net_6lo_data {
 } __packed;
 
 
-int net_6lo_dev_init(struct device *dev)
+int net_6lo_dev_init(const struct device *dev)
 {
 	struct net_6lo_context *net_6lo_context = dev->driver_data;
 
@@ -259,7 +259,7 @@ static void net_6lo_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, src_mac, 8, NET_LINK_IEEE802154);
 }
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	return 0;
 }

@@ -83,7 +83,7 @@ static void pipe_async_finish(struct k_pipe_async *async_desc)
 /*
  * Do run-time initialization of pipe object subsystem.
  */
-static int init_pipes_module(struct device *dev)
+static int init_pipes_module(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

@@ -209,7 +209,7 @@ static struct lwm2m_engine_obj_inst *server_create(u16_t obj_inst_id)
 	return &inst[index];
 }
 
-static int lwm2m_server_init(struct device *dev)
+static int lwm2m_server_init(const struct device *dev)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	int ret = 0;

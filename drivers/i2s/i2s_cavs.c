@@ -151,7 +151,7 @@ struct i2s_cavs_config {
 /* Device run time data */
 struct i2s_cavs_dev_data {
 	struct i2s_config cfg;
-	struct device *dev_dma;
+	const struct device *dev_dma;
 	struct stream tx;
 	struct stream rx;
 };
@@ -168,9 +168,9 @@ I2S_DEVICE_OBJECT_DECLARE(3);
 
 static void i2s_dma_tx_callback(void *, u32_t, int);
 static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *,
-		volatile struct i2s_cavs_ssp *const, struct device *);
+		volatile struct i2s_cavs_ssp *const, const struct device *);
 static void i2s_rx_stream_disable(struct i2s_cavs_dev_data *,
-		volatile struct i2s_cavs_ssp *const, struct device *);
+		volatile struct i2s_cavs_ssp *const, const struct device *);
 
 static inline void i2s_purge_stream_buffers(struct stream *strm,
 	struct k_mem_slab *mem_slab)
@@ -189,7 +189,7 @@ static inline void i2s_purge_stream_buffers(struct stream *strm,
 static void i2s_dma_tx_callback(void *arg, u32_t channel,
 		int status)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
 
@@ -244,7 +244,7 @@ static void i2s_dma_tx_callback(void *arg, u32_t channel,
 
 static void i2s_dma_rx_callback(void *arg, u32_t channel, int status)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
 	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
@@ -300,7 +300,7 @@ static void i2s_dma_rx_callback(void *arg, u32_t channel, int status)
 	}
 }
 
-static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
+static int i2s_cavs_configure(const struct device *dev, enum i2s_dir dir,
 			      struct i2s_config *i2s_cfg)
 {
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
@@ -565,7 +565,7 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 
 static int i2s_tx_stream_start(struct i2s_cavs_dev_data *dev_data,
 			   volatile struct i2s_cavs_ssp *const ssp,
-			   struct device *dev_dma)
+			   const struct device *dev_dma)
 {
 	int ret = 0;
 	void *buffer;
@@ -610,7 +610,8 @@ static int i2s_tx_stream_start(struct i2s_cavs_dev_data *dev_data,
 }
 
 static int i2s_rx_stream_start(struct i2s_cavs_dev_data *dev_data,
-		volatile struct i2s_cavs_ssp *const ssp, struct device *dev_dma)
+		volatile struct i2s_cavs_ssp *const ssp,
+		const struct device *dev_dma)
 {
 	int ret = 0;
 	void *buffer;
@@ -659,7 +660,7 @@ static int i2s_rx_stream_start(struct i2s_cavs_dev_data *dev_data,
 
 static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *dev_data,
 			      volatile struct i2s_cavs_ssp *const ssp,
-			      struct device *dev_dma)
+			      const struct device *dev_dma)
 {
 	struct stream *strm = &dev_data->tx;
 	unsigned int key;
@@ -682,7 +683,7 @@ static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *dev_data,
 
 static void i2s_rx_stream_disable(struct i2s_cavs_dev_data *dev_data,
 			      volatile struct i2s_cavs_ssp *const ssp,
-			      struct device *dev_dma)
+			      const struct device *dev_dma)
 {
 	struct stream *strm = &dev_data->rx;
 	u32_t data;
@@ -705,7 +706,7 @@ static void i2s_rx_stream_disable(struct i2s_cavs_dev_data *dev_data,
 	i2s_purge_stream_buffers(strm, dev_data->cfg.mem_slab);
 }
 
-static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
+static int i2s_cavs_trigger(const struct device *dev, enum i2s_dir dir,
 			    enum i2s_trigger_cmd cmd)
 {
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
@@ -767,7 +768,8 @@ static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
 	return ret;
 }
 
-static int i2s_cavs_read(struct device *dev, void **mem_block, size_t *size)
+static int i2s_cavs_read(const struct device *dev, void **mem_block,
+			 size_t *size)
 {
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
 	struct stream *strm = &dev_data->rx;
@@ -790,7 +792,8 @@ static int i2s_cavs_read(struct device *dev, void **mem_block, size_t *size)
 	return 0;
 }
 
-static int i2s_cavs_write(struct device *dev, void *mem_block, size_t size)
+static int i2s_cavs_write(const struct device *dev, void *mem_block,
+			  size_t size)
 {
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
 	struct stream *strm = &dev_data->tx;
@@ -817,7 +820,7 @@ static int i2s_cavs_write(struct device *dev, void *mem_block, size_t size)
 /* clear IRQ sources atm */
 static void i2s_cavs_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
@@ -839,7 +842,7 @@ static void i2s_cavs_isr(void *arg)
 	}
 }
 
-static int i2s_cavs_initialize(struct device *dev)
+static int i2s_cavs_initialize(const struct device *dev)
 {
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);

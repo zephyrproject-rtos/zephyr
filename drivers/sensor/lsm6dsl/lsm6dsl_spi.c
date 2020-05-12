@@ -142,7 +142,7 @@ static const struct lsm6dsl_transfer_function lsm6dsl_spi_transfer_fn = {
 	.update_reg = lsm6dsl_spi_update_reg,
 };
 
-int lsm6dsl_spi_init(struct device *dev)
+int lsm6dsl_spi_init(const struct device *dev)
 {
 	struct lsm6dsl_data *data = dev->driver_data;
 

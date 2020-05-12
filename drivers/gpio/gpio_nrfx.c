@@ -37,12 +37,12 @@ struct gpio_nrfx_cfg {
 	u8_t port_num;
 };
 
-static inline struct gpio_nrfx_data *get_port_data(struct device *port)
+static inline struct gpio_nrfx_data *get_port_data(const struct device *port)
 {
 	return port->driver_data;
 }
 
-static inline const struct gpio_nrfx_cfg *get_port_cfg(struct device *port)
+static inline const struct gpio_nrfx_cfg *get_port_cfg(const struct device *port)
 {
 	return port->config_info;
 }
@@ -90,7 +90,7 @@ static inline u32_t sense_for_pin(const struct gpio_nrfx_data *data,
 	return NRF_GPIO_PIN_SENSE_LOW;
 }
 
-static int gpiote_pin_int_cfg(struct device *port, u32_t pin)
+static int gpiote_pin_int_cfg(const struct device *port, u32_t pin)
 {
 	struct gpio_nrfx_data *data = get_port_data(port);
 	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
@@ -127,7 +127,7 @@ static int gpiote_pin_int_cfg(struct device *port, u32_t pin)
 	return res;
 }
 
-static int gpio_nrfx_config(struct device *port,
+static int gpio_nrfx_config(const struct device *port,
 			    gpio_pin_t pin, gpio_flags_t flags)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
@@ -199,7 +199,7 @@ static int gpio_nrfx_config(struct device *port,
 	return 0;
 }
 
-static int gpio_nrfx_port_get_raw(struct device *port, u32_t *value)
+static int gpio_nrfx_port_get_raw(const struct device *port, u32_t *value)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
 
@@ -208,7 +208,8 @@ static int gpio_nrfx_port_get_raw(struct device *port, u32_t *value)
 	return 0;
 }
 
-static int gpio_nrfx_port_set_masked_raw(struct device *port, u32_t mask,
+static int gpio_nrfx_port_set_masked_raw(const struct device *port,
+					 u32_t mask,
 					 u32_t value)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
@@ -220,7 +221,7 @@ static int gpio_nrfx_port_set_masked_raw(struct device *port, u32_t mask,
 	return 0;
 }
 
-static int gpio_nrfx_port_set_bits_raw(struct device *port, u32_t mask)
+static int gpio_nrfx_port_set_bits_raw(const struct device *port, u32_t mask)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
 
@@ -229,7 +230,8 @@ static int gpio_nrfx_port_set_bits_raw(struct device *port, u32_t mask)
 	return 0;
 }
 
-static int gpio_nrfx_port_clear_bits_raw(struct device *port, u32_t mask)
+static int gpio_nrfx_port_clear_bits_raw(const struct device *port,
+					 u32_t mask)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
 
@@ -238,7 +240,7 @@ static int gpio_nrfx_port_clear_bits_raw(struct device *port, u32_t mask)
 	return 0;
 }
 
-static int gpio_nrfx_port_toggle_bits(struct device *port, u32_t mask)
+static int gpio_nrfx_port_toggle_bits(const struct device *port, u32_t mask)
 {
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
 	u32_t value;
@@ -249,9 +251,10 @@ static int gpio_nrfx_port_toggle_bits(struct device *port, u32_t mask)
 	return 0;
 }
 
-static int gpio_nrfx_pin_interrupt_configure(struct device *port,
-		gpio_pin_t pin, enum gpio_int_mode mode,
-		enum gpio_int_trig trig)
+static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
+					     gpio_pin_t pin,
+					     enum gpio_int_mode mode,
+					     enum gpio_int_trig trig)
 {
 	struct gpio_nrfx_data *data = get_port_data(port);
 	u32_t abs_pin = NRF_GPIO_PIN_MAP(get_port_cfg(port)->port_num, pin);
@@ -276,7 +279,7 @@ static int gpio_nrfx_pin_interrupt_configure(struct device *port,
 	return gpiote_pin_int_cfg(port, pin);
 }
 
-static int gpio_nrfx_manage_callback(struct device *port,
+static int gpio_nrfx_manage_callback(const struct device *port,
 				     struct gpio_callback *callback,
 				     bool set)
 {
@@ -284,7 +287,7 @@ static int gpio_nrfx_manage_callback(struct device *port,
 				     callback, set);
 }
 
-static int gpio_nrfx_pin_manage_callback(struct device *port,
+static int gpio_nrfx_pin_manage_callback(const struct device *port,
 					 u32_t pin,
 					 bool enable)
 {
@@ -295,13 +298,13 @@ static int gpio_nrfx_pin_manage_callback(struct device *port,
 	return gpiote_pin_int_cfg(port, pin);
 }
 
-static inline int gpio_nrfx_pin_enable_callback(struct device *port,
+static inline int gpio_nrfx_pin_enable_callback(const struct device *port,
 						gpio_pin_t pin)
 {
 	return gpio_nrfx_pin_manage_callback(port, pin, true);
 }
 
-static inline int gpio_nrfx_pin_disable_callback(struct device *port,
+static inline int gpio_nrfx_pin_disable_callback(const struct device *port,
 						 gpio_pin_t pin)
 {
 	return gpio_nrfx_pin_manage_callback(port, pin, false);
@@ -320,7 +323,7 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 	.disable_callback = gpio_nrfx_pin_disable_callback
 };
 
-static inline u32_t get_level_pins(struct device *port)
+static inline u32_t get_level_pins(const struct device *port)
 {
 	struct gpio_nrfx_data *data = get_port_data(port);
 
@@ -339,7 +342,7 @@ static inline u32_t get_level_pins(struct device *port)
 	return out;
 }
 
-static void cfg_level_pins(struct device *port)
+static void cfg_level_pins(const struct device *port)
 {
 	const struct gpio_nrfx_data *data = get_port_data(port);
 	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
@@ -368,7 +371,7 @@ static void cfg_level_pins(struct device *port)
  *
  * @return Bitmask where 1 marks pin as trigger source.
  */
-static u32_t check_level_trigger_pins(struct device *port)
+static u32_t check_level_trigger_pins(const struct device *port)
 {
 	struct gpio_nrfx_data *data = get_port_data(port);
 	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
@@ -403,7 +406,7 @@ static u32_t check_level_trigger_pins(struct device *port)
 	return out;
 }
 
-static inline void fire_callbacks(struct device *port, u32_t pins)
+static inline void fire_callbacks(const struct device *port, u32_t pins)
 {
 	struct gpio_nrfx_data *data = get_port_data(port);
 	sys_slist_t *list = &data->callbacks;
@@ -495,7 +498,7 @@ static void gpiote_event_handler(void)
 
 #define GPIOTE_NODE DT_INST(0, nordic_nrf_gpiote)
 
-static int gpio_nrfx_init(struct device *port)
+static int gpio_nrfx_init(const struct device *port)
 {
 	static bool gpio_initialized;
 

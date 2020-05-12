@@ -55,7 +55,7 @@ typedef bool (*test_capability_check_t)(const char *dev_name,
 
 static void setup_instance(const char *dev_name, clock_control_subsys_t subsys)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	int err;
 
 	k_busy_wait(1000);
@@ -68,7 +68,7 @@ static void setup_instance(const char *dev_name, clock_control_subsys_t subsys)
 static void tear_down_instance(const char *dev_name,
 				clock_control_subsys_t subsys)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 
 	clock_control_on(dev, subsys);
 }
@@ -107,7 +107,7 @@ static void test_on_off_status_instance(const char *dev_name,
 					clock_control_subsys_t subsys,
 					u32_t startup_us)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	enum clock_control_status status;
 	int err;
 
@@ -153,7 +153,7 @@ static void test_multiple_users_instance(const char *dev_name,
 					 clock_control_subsys_t subsys,
 					 u32_t startup_us)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	enum clock_control_status status;
 	int users = 5;
 	int err;
@@ -192,7 +192,7 @@ static void test_multiple_users(void)
 
 static bool async_capable(const char *dev_name, clock_control_subsys_t subsys)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 
 	if (clock_control_async_on(dev, subsys, NULL) != 0) {
 		return false;
@@ -206,7 +206,7 @@ static bool async_capable(const char *dev_name, clock_control_subsys_t subsys)
 /*
  * Test checks that callbacks are called after clock is started.
  */
-static void clock_on_callback(struct device *dev,
+static void clock_on_callback(const struct device *dev,
 				clock_control_subsys_t subsys,
 				void *user_data)
 {
@@ -219,7 +219,7 @@ static void test_async_on_instance(const char *dev_name,
 				   clock_control_subsys_t subsys,
 				   u32_t startup_us)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	enum clock_control_status status;
 	int err;
 	bool executed1 = false;
@@ -263,7 +263,7 @@ static void test_async_on_stopped_on_instance(const char *dev_name,
 					      clock_control_subsys_t subsys,
 					      u32_t startup_us)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	enum clock_control_status status;
 	int err;
 	int key;
@@ -305,7 +305,7 @@ static void test_immediate_cb_when_clock_on_on_instance(const char *dev_name,
 						clock_control_subsys_t subsys,
 						u32_t startup_us)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	enum clock_control_status status;
 	int err;
 	bool executed1 = false;

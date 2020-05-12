@@ -69,7 +69,8 @@ static int max44009_reg_update(struct max44009_data *drv_data, u8_t reg,
 	return max44009_reg_write(drv_data, reg, new_val);
 }
 
-static int max44009_attr_set(struct device *dev, enum sensor_channel chan,
+static int max44009_attr_set(const struct device *dev,
+			     enum sensor_channel chan,
 			     enum sensor_attribute attr,
 			     const struct sensor_value *val)
 {
@@ -111,7 +112,8 @@ static int max44009_attr_set(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int max44009_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int max44009_sample_fetch(const struct device *dev,
+				 enum sensor_channel chan)
 {
 	struct max44009_data *drv_data = dev->driver_data;
 	u8_t val_h, val_l;
@@ -136,7 +138,8 @@ static int max44009_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int max44009_channel_get(struct device *dev, enum sensor_channel chan,
+static int max44009_channel_get(const struct device *dev,
+				enum sensor_channel chan,
 				struct sensor_value *val)
 {
 	struct max44009_data *drv_data = dev->driver_data;
@@ -169,7 +172,7 @@ static const struct sensor_driver_api max44009_driver_api = {
 	.channel_get = max44009_channel_get,
 };
 
-int max44009_init(struct device *dev)
+int max44009_init(const struct device *dev)
 {
 	struct max44009_data *drv_data = dev->driver_data;
 

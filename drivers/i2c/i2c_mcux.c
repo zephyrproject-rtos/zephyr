@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(i2c_mcux);
 struct i2c_mcux_config {
 	I2C_Type *base;
 	clock_name_t clock_source;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 	u32_t bitrate;
 };
 
@@ -38,7 +38,7 @@ struct i2c_mcux_data {
 	status_t callback_status;
 };
 
-static int i2c_mcux_configure(struct device *dev, u32_t dev_config_raw)
+static int i2c_mcux_configure(const struct device *dev, u32_t dev_config_raw)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	const struct i2c_mcux_config *config = DEV_CFG(dev);
@@ -76,7 +76,7 @@ static int i2c_mcux_configure(struct device *dev, u32_t dev_config_raw)
 static void i2c_mcux_master_transfer_callback(I2C_Type *base,
 		i2c_master_handle_t *handle, status_t status, void *userData)
 {
-	struct device *dev = userData;
+	const struct device *dev = userData;
 	struct i2c_mcux_data *data = DEV_DATA(dev);
 
 	ARG_UNUSED(handle);
@@ -101,8 +101,8 @@ static u32_t i2c_mcux_convert_flags(int msg_flags)
 	return flags;
 }
 
-static int i2c_mcux_transfer(struct device *dev, struct i2c_msg *msgs,
-		u8_t num_msgs, u16_t addr)
+static int i2c_mcux_transfer(const struct device *dev, struct i2c_msg *msgs,
+			     u8_t num_msgs, u16_t addr)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_mcux_data *data = DEV_DATA(dev);
@@ -162,14 +162,14 @@ static int i2c_mcux_transfer(struct device *dev, struct i2c_msg *msgs,
 
 static void i2c_mcux_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_mcux_data *data = DEV_DATA(dev);
 
 	I2C_MasterTransferHandleIRQ(base, &data->handle);
 }
 
-static int i2c_mcux_init(struct device *dev)
+static int i2c_mcux_init(const struct device *dev)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	const struct i2c_mcux_config *config = DEV_CFG(dev);
@@ -204,7 +204,7 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 };
 
 #define I2C_DEVICE_INIT_MCUX(n)			\
-	static void i2c_mcux_config_func_ ## n(struct device *dev);	\
+	static void i2c_mcux_config_func_ ## n(const struct device *dev);	\
 									\
 	static const struct i2c_mcux_config i2c_mcux_config_ ## n = {	\
 		.base = (I2C_Type *)DT_INST_REG_ADDR(n),\
@@ -222,7 +222,7 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			&i2c_mcux_driver_api);				\
 									\
-	static void i2c_mcux_config_func_ ## n(struct device *dev)	\
+	static void i2c_mcux_config_func_ ## n(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			DT_INST_IRQ(n, priority),			\

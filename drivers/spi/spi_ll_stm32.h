@@ -9,7 +9,7 @@
 
 #include "spi_context.h"
 
-typedef void (*irq_config_func_t)(struct device *port);
+typedef void (*irq_config_func_t)(const struct device *port);
 
 struct spi_stm32_config {
 	struct stm32_pclken pclken;
@@ -35,8 +35,8 @@ struct stream {
 struct spi_stm32_data {
 	struct spi_context ctx;
 #ifdef CONFIG_SPI_STM32_DMA
-	struct device *dev_dma_tx;
-	struct device *dev_dma_rx;
+	const struct device *dev_dma_tx;
+	const struct device *dev_dma_rx;
 	struct stream dma_rx;
 	struct stream dma_tx;
 	size_t dma_segment_len;

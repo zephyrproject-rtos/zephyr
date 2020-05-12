@@ -35,7 +35,7 @@ static const u16_t mpu6050_gyro_sensitivity_x10[] = {
 };
 
 struct mpu6050_data {
-	struct device *i2c;
+	const struct device *i2c;
 
 	s16_t accel_x;
 	s16_t accel_y;
@@ -50,8 +50,8 @@ struct mpu6050_data {
 	u16_t gyro_sensitivity_x10;
 
 #ifdef CONFIG_MPU6050_TRIGGER
-	struct device *dev;
-	struct device *gpio;
+	const struct device *dev;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -79,11 +79,11 @@ struct mpu6050_config {
 };
 
 #ifdef CONFIG_MPU6050_TRIGGER
-int mpu6050_trigger_set(struct device *dev,
+int mpu6050_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
-int mpu6050_init_interrupt(struct device *dev);
+int mpu6050_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* __SENSOR_MPU6050__ */

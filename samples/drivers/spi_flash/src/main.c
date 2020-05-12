@@ -38,7 +38,7 @@ void main(void)
 	const u8_t expected[] = { 0x55, 0xaa, 0x66, 0x99 };
 	const size_t len = sizeof(expected);
 	u8_t buf[sizeof(expected)];
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	int rc;
 
 	printf("\n" FLASH_NAME " SPI flash testing\n");

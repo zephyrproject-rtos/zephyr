@@ -61,7 +61,7 @@ static struct arc_v2_irq_unit_ctx ctx;
  *
  * @return 0 for success
  */
-static int arc_v2_irq_unit_init(struct device *unused)
+static int arc_v2_irq_unit_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 	int irq; /* the interrupt index */
@@ -98,7 +98,7 @@ static int arc_v2_irq_unit_init(struct device *unused)
  *
  * @return 0 for success
  */
-static int arc_v2_irq_unit_suspend(struct device *dev)
+static int arc_v2_irq_unit_suspend(const struct device *dev)
 {
 	u8_t irq;
 
@@ -134,7 +134,7 @@ static int arc_v2_irq_unit_suspend(struct device *dev)
  *
  * @return 0 for success
  */
-static int arc_v2_irq_unit_resume(struct device *dev)
+static int arc_v2_irq_unit_resume(const struct device *dev)
 {
 	u8_t irq;
 
@@ -177,7 +177,7 @@ static int arc_v2_irq_unit_resume(struct device *dev)
  *
  * @return the power state of interrupt unit
  */
-static int arc_v2_irq_unit_get_state(struct device *dev)
+static int arc_v2_irq_unit_get_state(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -192,8 +192,9 @@ static int arc_v2_irq_unit_get_state(struct device *dev)
  *
  * @return operation result
  */
-static int arc_v2_irq_unit_device_ctrl(struct device *device,
-		u32_t ctrl_command, void *context, device_pm_cb cb, void *arg)
+static int arc_v2_irq_unit_device_ctrl(const struct device *device,
+				       u32_t ctrl_command, void *context,
+				       device_pm_cb cb, void *arg)
 {
 	int ret = 0;
 	unsigned int key = arch_irq_lock();

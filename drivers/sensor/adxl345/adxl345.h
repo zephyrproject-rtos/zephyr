@@ -37,7 +37,7 @@
 
 struct adxl345_dev_data {
 	unsigned int sample_number;
-	struct device *i2c_master;
+	const struct device *i2c_master;
 	u8_t i2c_addr;
 
 	s16_t bufx[ADXL345_MAX_FIFO_SIZE];

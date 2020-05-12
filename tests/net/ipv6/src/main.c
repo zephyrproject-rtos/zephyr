@@ -138,12 +138,12 @@ struct net_test_ipv6 {
 	struct net_linkaddr ll_addr;
 };
 
-int net_test_dev_init(struct device *dev)
+int net_test_dev_init(const struct device *dev)
 {
 	return 0;
 }
 
-static u8_t *net_test_get_mac(struct device *dev)
+static u8_t *net_test_get_mac(const struct device *dev)
 {
 	struct net_test_ipv6 *context = dev->driver_data;
 
@@ -225,7 +225,7 @@ out:
 }
 
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_icmp_hdr *icmp;
 

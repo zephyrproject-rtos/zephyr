@@ -24,7 +24,7 @@ void test_flash_area_get_sectors(void)
 	off_t off;
 	u8_t wd[256];
 	u8_t rd[256];
-	struct device *flash_dev;
+	const struct device *flash_dev;
 
 	rc = flash_area_open(FLASH_AREA_ID(image_1), &fa);
 	zassert_true(rc == 0, "flash_area_open() fail");

@@ -31,7 +31,7 @@ static nrfx_adc_channel_t m_channels[CONFIG_ADC_NRFX_ADC_CHANNEL_COUNT];
 
 
 /* Implementation of the ADC driver API function: adc_channel_setup. */
-static int adc_nrfx_channel_setup(struct device *dev,
+static int adc_nrfx_channel_setup(const struct device *dev,
 				  const struct adc_channel_cfg *channel_cfg)
 {
 	u8_t channel_id = channel_cfg->channel_id;
@@ -136,7 +136,8 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	return 0;
 }
 
-static int start_read(struct device *dev, const struct adc_sequence *sequence)
+static int start_read(const struct device *dev,
+		      const struct adc_sequence *sequence)
 {
 	int error;
 	u32_t selected_channels = sequence->channels;
@@ -210,7 +211,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 }
 
 /* Implementation of the ADC driver API function: adc_read. */
-static int adc_nrfx_read(struct device *dev,
+static int adc_nrfx_read(const struct device *dev,
 			 const struct adc_sequence *sequence)
 {
 	int error;
@@ -224,7 +225,7 @@ static int adc_nrfx_read(struct device *dev,
 
 #ifdef CONFIG_ADC_ASYNC
 /* Implementation of the ADC driver API function: adc_read_sync. */
-static int adc_nrfx_read_async(struct device *dev,
+static int adc_nrfx_read_async(const struct device *dev,
 			       const struct adc_sequence *sequence,
 			       struct k_poll_signal *async)
 {
@@ -242,14 +243,14 @@ DEVICE_DECLARE(adc_0);
 
 static void event_handler(const nrfx_adc_evt_t *p_event)
 {
-	struct device *dev = DEVICE_GET(adc_0);
+	const struct device *dev = DEVICE_GET(adc_0);
 
 	if (p_event->type == NRFX_ADC_EVT_DONE) {
 		adc_context_on_sampling_done(&m_data.ctx, dev);
 	}
 }
 
-static int init_adc(struct device *dev)
+static int init_adc(const struct device *dev)
 {
 	const nrfx_adc_config_t config = NRFX_ADC_DEFAULT_CONFIG;
 

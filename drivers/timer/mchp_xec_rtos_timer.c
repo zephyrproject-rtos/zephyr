@@ -324,7 +324,7 @@ void sys_clock_disable(void)
 	TIMER_REGS->CTRL = 0U;
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 

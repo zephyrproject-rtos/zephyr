@@ -133,7 +133,7 @@ static struct _dmic_pdata {
 	u8_t num_streams;
 	u8_t reserved;
 	struct _stream_data streams[DMIC_MAX_STREAMS];
-	struct device *dma_dev;
+	const struct device *dma_dev;
 } dmic_private;
 
 static inline void dmic_parse_channel_map(u32_t channel_map_lo,
@@ -714,8 +714,9 @@ static int source_ipm_helper(struct pdm_chan_cfg *config, u32_t *source_mask,
 	return ipm;
 }
 
-static int configure_registers(struct device *dev,
-		struct dmic_configuration *hw_cfg, struct dmic_cfg *config)
+static int configure_registers(const struct device *dev,
+			       struct dmic_configuration *hw_cfg,
+			       struct dmic_cfg *config)
 {
 	u8_t skew;
 	u8_t swap_mask;
@@ -1004,7 +1005,7 @@ static void dmic_dma_callback(void *arg, u32_t chan, int err_code)
 	}
 }
 
-static int dmic_set_config(struct device *dev, struct dmic_cfg *config)
+static int dmic_set_config(const struct device *dev, struct dmic_cfg *config)
 {
 	struct decim_modes modes_a;
 	struct decim_modes modes_b;
@@ -1107,7 +1108,7 @@ static int dmic_set_config(struct device *dev, struct dmic_cfg *config)
 }
 
 /* start the DMIC for capture */
-static void dmic_start(struct device *dev)
+static void dmic_start(const struct device *dev)
 {
 	struct _stream_data *stream;
 	unsigned int key;
@@ -1257,7 +1258,8 @@ static void dmic_stop(void)
 	}
 }
 
-static int dmic_trigger_device(struct device *dev, enum dmic_trigger cmd)
+static int dmic_trigger_device(const struct device *dev,
+			       enum dmic_trigger cmd)
 {
 	unsigned int key;
 
@@ -1292,7 +1294,7 @@ static inline u8_t dmic_parse_clk_skew_map(u32_t skew_map, u8_t pdm)
 	return (u8_t)((skew_map >> ((pdm & BIT_MASK(3)) * 4U)) & BIT_MASK(4));
 }
 
-static int dmic_initialize_device(struct device *dev)
+static int dmic_initialize_device(const struct device *dev)
 {
 	int stream;
 	struct _stream_data *stream_data;
@@ -1315,7 +1317,8 @@ static int dmic_initialize_device(struct device *dev)
 	return 0;
 }
 
-static int dmic_configure_device(struct device *dev, struct dmic_cfg *config)
+static int dmic_configure_device(const struct device *dev,
+				 struct dmic_cfg *config)
 {
 	int ret = 0;
 
@@ -1333,8 +1336,8 @@ static int dmic_configure_device(struct device *dev, struct dmic_cfg *config)
 	return ret;
 }
 
-static int dmic_read_device(struct device *dev, u8_t stream,
-		void **buffer, size_t *size, s32_t timeout)
+static int dmic_read_device(const struct device *dev, u8_t stream,
+			    void **buffer, size_t *size, s32_t timeout)
 {
 	int ret;
 

@@ -188,7 +188,8 @@ static u8_t bme680_calc_gas_wait(u16_t dur)
 	return durval;
 }
 
-static int bme680_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int bme680_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
 	struct bme680_data *data = dev->driver_data;
 	u8_t buff[BME680_LEN_FIELD] = { 0 };
@@ -233,7 +234,8 @@ static int bme680_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int bme680_channel_get(struct device *dev, enum sensor_channel chan,
+static int bme680_channel_get(const struct device *dev,
+			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct bme680_data *data = dev->driver_data;
@@ -339,7 +341,7 @@ static int bme680_read_compensation(struct bme680_data *data)
 	return 0;
 }
 
-static int bme680_chip_init(struct device *dev)
+static int bme680_chip_init(const struct device *dev)
 {
 	struct bme680_data *data = (struct bme680_data *)dev->driver_data;
 	int err;
@@ -398,7 +400,7 @@ static int bme680_chip_init(struct device *dev)
 	return 0;
 }
 
-static int bme680_init(struct device *dev)
+static int bme680_init(const struct device *dev)
 {
 	struct bme680_data *data = dev->driver_data;
 

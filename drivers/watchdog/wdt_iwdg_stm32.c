@@ -63,7 +63,7 @@ static void iwdg_stm32_convert_timeout(u32_t timeout,
 	*reload = (u32_t)(m_timeout / divider) - 1;
 }
 
-static int iwdg_stm32_setup(struct device *dev, u8_t options)
+static int iwdg_stm32_setup(const struct device *dev, u8_t options)
 {
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 
@@ -85,7 +85,7 @@ static int iwdg_stm32_setup(struct device *dev, u8_t options)
 	return 0;
 }
 
-static int iwdg_stm32_disable(struct device *dev)
+static int iwdg_stm32_disable(const struct device *dev)
 {
 	/* watchdog cannot be stopped once started */
 	ARG_UNUSED(dev);
@@ -93,7 +93,7 @@ static int iwdg_stm32_disable(struct device *dev)
 	return -EPERM;
 }
 
-static int iwdg_stm32_install_timeout(struct device *dev,
+static int iwdg_stm32_install_timeout(const struct device *dev,
 				      const struct wdt_timeout_cfg *config)
 {
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
@@ -134,7 +134,7 @@ static int iwdg_stm32_install_timeout(struct device *dev,
 	return 0;
 }
 
-static int iwdg_stm32_feed(struct device *dev, int channel_id)
+static int iwdg_stm32_feed(const struct device *dev, int channel_id)
 {
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);
 
@@ -151,7 +151,7 @@ static const struct wdt_driver_api iwdg_stm32_api = {
 	.feed = iwdg_stm32_feed,
 };
 
-static int iwdg_stm32_init(struct device *dev)
+static int iwdg_stm32_init(const struct device *dev)
 {
 #ifndef CONFIG_WDT_DISABLE_AT_BOOT
 	IWDG_TypeDef *iwdg = IWDG_STM32_STRUCT(dev);

@@ -61,11 +61,11 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 	(ABS_DIFF_UINT(__TIMEOUT_GOLDEN__, __TIMEOUT__) < \
 	 WWDG_TIMEOUT_ERROR_MARGIN)
 
-static void wwdg_stm32_irq_config(struct device *dev);
+static void wwdg_stm32_irq_config(const struct device *dev);
 
-static u32_t wwdg_stm32_get_pclk(struct device *dev)
+static u32_t wwdg_stm32_get_pclk(const struct device *dev)
 {
-	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	const struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	const struct wwdg_stm32_config *cfg = WWDG_STM32_CFG(dev);
 	u32_t pclk_rate;
 
@@ -88,7 +88,7 @@ static u32_t wwdg_stm32_get_pclk(struct device *dev)
  * @param counter The counter value.
  * @return The timeout calculated in microseconds.
  */
-static u32_t wwdg_stm32_get_timeout(struct device *dev, u32_t prescaler,
+static u32_t wwdg_stm32_get_timeout(const struct device *dev, u32_t prescaler,
 				    u32_t counter)
 {
 	u32_t divider = WWDG_INTERNAL_DIVIDER * (1 << (prescaler >> 7));
@@ -105,7 +105,8 @@ static u32_t wwdg_stm32_get_timeout(struct device *dev, u32_t prescaler,
  * @param prescaler Pointer to prescaler value.
  * @param counter Pointer to counter value.
  */
-static void wwdg_stm32_convert_timeout(struct device *dev, u32_t timeout,
+static void wwdg_stm32_convert_timeout(const struct device *dev,
+				       u32_t timeout,
 				       u32_t *prescaler,
 				       u32_t *counter)
 {
@@ -135,7 +136,7 @@ static void wwdg_stm32_convert_timeout(struct device *dev, u32_t timeout,
 	}
 }
 
-static int wwdg_stm32_setup(struct device *dev, u8_t options)
+static int wwdg_stm32_setup(const struct device *dev, u8_t options)
 {
 	WWDG_TypeDef *wwdg = WWDG_STM32_STRUCT(dev);
 
@@ -162,7 +163,7 @@ static int wwdg_stm32_setup(struct device *dev, u8_t options)
 	return 0;
 }
 
-static int wwdg_stm32_disable(struct device *dev)
+static int wwdg_stm32_disable(const struct device *dev)
 {
 	/* watchdog cannot be stopped once started unless SOC gets a reset */
 	ARG_UNUSED(dev);
@@ -170,7 +171,7 @@ static int wwdg_stm32_disable(struct device *dev)
 	return -EPERM;
 }
 
-static int wwdg_stm32_install_timeout(struct device *dev,
+static int wwdg_stm32_install_timeout(const struct device *dev,
 				      const struct wdt_timeout_cfg *config)
 {
 	struct wwdg_stm32_data *data = WWDG_STM32_DATA(dev);
@@ -208,7 +209,7 @@ static int wwdg_stm32_install_timeout(struct device *dev,
 	return 0;
 }
 
-static int wwdg_stm32_feed(struct device *dev, int channel_id)
+static int wwdg_stm32_feed(const struct device *dev, int channel_id)
 {
 	WWDG_TypeDef *wwdg = WWDG_STM32_STRUCT(dev);
 	struct wwdg_stm32_data *data = WWDG_STM32_DATA(dev);
@@ -221,7 +222,7 @@ static int wwdg_stm32_feed(struct device *dev, int channel_id)
 
 void wwdg_stm32_isr(void *arg)
 {
-	struct device *const dev = (struct device *)arg;
+	const struct device *const dev = (const struct device *)arg;
 	struct wwdg_stm32_data *data = WWDG_STM32_DATA(dev);
 	WWDG_TypeDef *wwdg = WWDG_STM32_STRUCT(dev);
 
@@ -240,9 +241,9 @@ static const struct wdt_driver_api wwdg_stm32_api = {
 	.feed = wwdg_stm32_feed,
 };
 
-static int wwdg_stm32_init(struct device *dev)
+static int wwdg_stm32_init(const struct device *dev)
 {
-	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	const struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	const struct wwdg_stm32_config *cfg = WWDG_STM32_CFG(dev);
 
 	__ASSERT_NO_MSG(clk);
@@ -272,7 +273,7 @@ DEVICE_AND_API_INIT(wwdg_stm32, DT_INST_LABEL(0),
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &wwdg_stm32_api);
 
-static void wwdg_stm32_irq_config(struct device *dev)
+static void wwdg_stm32_irq_config(const struct device *dev)
 {
 	WWDG_TypeDef *wwdg = WWDG_STM32_STRUCT(dev);
 

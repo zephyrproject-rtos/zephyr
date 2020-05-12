@@ -66,12 +66,12 @@ struct net_test_mld {
 	struct net_linkaddr ll_addr;
 };
 
-int net_test_dev_init(struct device *dev)
+int net_test_dev_init(const struct device *dev)
 {
 	return 0;
 }
 
-static u8_t *net_test_get_mac(struct device *dev)
+static u8_t *net_test_get_mac(const struct device *dev)
 {
 	struct net_test_mld *context = dev->driver_data;
 
@@ -106,7 +106,7 @@ static struct net_icmp_hdr *get_icmp_hdr(struct net_pkt *pkt)
 	return (struct net_icmp_hdr *)net_pkt_cursor_get_pos(pkt);
 }
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_icmp_hdr *icmp;
 

@@ -20,7 +20,7 @@ struct uart_xmc4xxx_data {
 #define DEV_DATA(dev) \
 	((struct uart_xmc4xxx_data * const)(dev)->driver_data)
 
-static int uart_xmc4xxx_poll_in(struct device *dev, unsigned char *c)
+static int uart_xmc4xxx_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 
@@ -30,14 +30,14 @@ static int uart_xmc4xxx_poll_in(struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void uart_xmc4xxx_poll_out(struct device *dev, unsigned char c)
+static void uart_xmc4xxx_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 
 	XMC_UART_CH_Transmit((XMC_USIC_CH_t *)config->base, (uint16_t)c);
 }
 
-static int uart_xmc4xxx_init(struct device *dev)
+static int uart_xmc4xxx_init(const struct device *dev)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 	struct uart_xmc4xxx_data *data = DEV_DATA(dev);

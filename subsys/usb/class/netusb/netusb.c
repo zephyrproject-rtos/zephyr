@@ -26,7 +26,7 @@ static struct __netusb {
 	const struct netusb_function *func;
 } netusb;
 
-static int netusb_send(struct device *dev, struct net_pkt *pkt)
+static int netusb_send(const struct device *dev, struct net_pkt *pkt)
 {
 	int ret;
 
@@ -154,7 +154,7 @@ static const struct ethernet_api netusb_api_funcs = {
 	.send = netusb_send,
 };
 
-static int netusb_init_dev(struct device *dev)
+static int netusb_init_dev(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return 0;

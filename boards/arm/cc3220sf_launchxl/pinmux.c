@@ -91,7 +91,7 @@
 #define I2C_CC32XX_PIN_16_I2C_SCL  0x90F  /*!< PIN 16 is used for I2C_SCL */
 #define I2C_CC32XX_PIN_17_I2C_SDA  0x910  /*!< PIN 17 is used for I2C_SDA */
 
-int pinmux_initialize(struct device *port)
+int pinmux_initialize(const struct device *port)
 {
 	ARG_UNUSED(port);
 

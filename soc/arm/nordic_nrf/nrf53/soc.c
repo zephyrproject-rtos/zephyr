@@ -36,7 +36,7 @@ extern void z_arm_nmi_init(void);
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
-static int nordicsemi_nrf53_init(struct device *arg)
+static int nordicsemi_nrf53_init(const struct device *arg)
 {
 	u32_t key;
 
@@ -102,7 +102,7 @@ bool nrf53_has_erratum19(void)
 }
 
 #ifndef CONFIG_NRF5340_CPUAPP_ERRATUM19
-static int check_erratum19(struct device *arg)
+static int check_erratum19(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 	if (nrf53_has_erratum19()) {

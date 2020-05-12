@@ -326,7 +326,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(wifi_commands,
 
 SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wifi commands", NULL);
 
-static int wifi_shell_init(struct device *unused)
+static int wifi_shell_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

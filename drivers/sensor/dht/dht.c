@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(DHT, CONFIG_SENSOR_LOG_LEVEL);
  * @return duration in usec of signal being measured,
  *         -1 if duration exceeds DHT_SIGNAL_MAX_WAIT_DURATION
  */
-static s8_t dht_measure_signal_duration(struct device *dev,
+static s8_t dht_measure_signal_duration(const struct device *dev,
 					bool active)
 {
 	struct dht_data *drv_data = dev->driver_data;
@@ -57,7 +57,8 @@ static s8_t dht_measure_signal_duration(struct device *dev,
 	       (u64_t)sys_clock_hw_cycles_per_sec();
 }
 
-static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int dht_sample_fetch(const struct device *dev,
+			    enum sensor_channel chan)
 {
 	struct dht_data *drv_data = dev->driver_data;
 	const struct dht_config *cfg = dev->config_info;
@@ -164,7 +165,7 @@ cleanup:
 	return ret;
 }
 
-static int dht_channel_get(struct device *dev,
+static int dht_channel_get(const struct device *dev,
 			   enum sensor_channel chan,
 			   struct sensor_value *val)
 {
@@ -221,7 +222,7 @@ static const struct sensor_driver_api dht_api = {
 	.channel_get = &dht_channel_get,
 };
 
-static int dht_init(struct device *dev)
+static int dht_init(const struct device *dev)
 {
 	int rc = 0;
 	struct dht_data *drv_data = dev->driver_data;

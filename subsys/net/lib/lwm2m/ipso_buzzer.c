@@ -243,7 +243,7 @@ static struct lwm2m_engine_obj_inst *buzzer_create(u16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int ipso_buzzer_init(struct device *dev)
+static int ipso_buzzer_init(const struct device *dev)
 {
 	buzzer.obj_id = IPSO_OBJECT_BUZZER_ID;
 	buzzer.fields = fields;

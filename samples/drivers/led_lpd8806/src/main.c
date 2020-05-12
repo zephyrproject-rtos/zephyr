@@ -52,7 +52,7 @@ const struct led_rgb *color_at(size_t time, size_t i)
 
 void main(void)
 {
-	struct device *strip;
+	const struct device *strip;
 	size_t i, time;
 
 	strip = device_get_binding(STRIP_DEV_NAME);

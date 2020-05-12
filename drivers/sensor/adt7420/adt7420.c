@@ -19,7 +19,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(ADT7420, CONFIG_SENSOR_LOG_LEVEL);
 
-static int adt7420_temp_reg_read(struct device *dev, u8_t reg, s16_t *val)
+static int adt7420_temp_reg_read(const struct device *dev, u8_t reg,
+				 s16_t *val)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
 	const struct adt7420_dev_config *cfg = dev->config_info;
@@ -34,7 +35,8 @@ static int adt7420_temp_reg_read(struct device *dev, u8_t reg, s16_t *val)
 	return 0;
 }
 
-static int adt7420_temp_reg_write(struct device *dev, u8_t reg, s16_t val)
+static int adt7420_temp_reg_write(const struct device *dev, u8_t reg,
+				  s16_t val)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
 	const struct adt7420_dev_config *cfg = dev->config_info;
@@ -43,10 +45,10 @@ static int adt7420_temp_reg_write(struct device *dev, u8_t reg, s16_t val)
 	return i2c_write(drv_data->i2c, buf, sizeof(buf), cfg->i2c_addr);
 }
 
-static int adt7420_attr_set(struct device *dev,
-			   enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+static int adt7420_attr_set(const struct device *dev,
+			    enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
 	const struct adt7420_dev_config *cfg = dev->config_info;
@@ -110,7 +112,8 @@ static int adt7420_attr_set(struct device *dev,
 	return 0;
 }
 
-static int adt7420_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int adt7420_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
 	s16_t value;
@@ -127,9 +130,9 @@ static int adt7420_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int adt7420_channel_get(struct device *dev,
-		enum sensor_channel chan,
-		struct sensor_value *val)
+static int adt7420_channel_get(const struct device *dev,
+			       enum sensor_channel chan,
+			       struct sensor_value *val)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
 	s32_t value;
@@ -154,7 +157,7 @@ static const struct sensor_driver_api adt7420_driver_api = {
 #endif
 };
 
-static int adt7420_probe(struct device *dev)
+static int adt7420_probe(const struct device *dev)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
 	const struct adt7420_dev_config *cfg = dev->config_info;
@@ -200,7 +203,7 @@ static int adt7420_probe(struct device *dev)
 	return 0;
 }
 
-static int adt7420_init(struct device *dev)
+static int adt7420_init(const struct device *dev)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
 	const struct adt7420_dev_config *cfg = dev->config_info;

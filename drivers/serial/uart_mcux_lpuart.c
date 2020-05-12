@@ -19,7 +19,7 @@ struct mcux_lpuart_config {
 	clock_control_subsys_t clock_subsys;
 	u32_t baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 #endif
 };
 
@@ -30,7 +30,7 @@ struct mcux_lpuart_data {
 #endif
 };
 
-static int mcux_lpuart_poll_in(struct device *dev, unsigned char *c)
+static int mcux_lpuart_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u32_t flags = LPUART_GetStatusFlags(config->base);
@@ -44,7 +44,7 @@ static int mcux_lpuart_poll_in(struct device *dev, unsigned char *c)
 	return ret;
 }
 
-static void mcux_lpuart_poll_out(struct device *dev, unsigned char c)
+static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 
@@ -55,7 +55,7 @@ static void mcux_lpuart_poll_out(struct device *dev, unsigned char c)
 	LPUART_WriteByte(config->base, c);
 }
 
-static int mcux_lpuart_err_check(struct device *dev)
+static int mcux_lpuart_err_check(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u32_t flags = LPUART_GetStatusFlags(config->base);
@@ -81,8 +81,9 @@ static int mcux_lpuart_err_check(struct device *dev)
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static int mcux_lpuart_fifo_fill(struct device *dev, const u8_t *tx_data,
-			       int len)
+static int mcux_lpuart_fifo_fill(const struct device *dev,
+				 const u8_t *tx_data,
+				 int len)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u8_t num_tx = 0U;
@@ -97,8 +98,8 @@ static int mcux_lpuart_fifo_fill(struct device *dev, const u8_t *tx_data,
 	return num_tx;
 }
 
-static int mcux_lpuart_fifo_read(struct device *dev, u8_t *rx_data,
-			       const int len)
+static int mcux_lpuart_fifo_read(const struct device *dev, u8_t *rx_data,
+				 const int len)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u8_t num_rx = 0U;
@@ -113,7 +114,7 @@ static int mcux_lpuart_fifo_read(struct device *dev, u8_t *rx_data,
 	return num_rx;
 }
 
-static void mcux_lpuart_irq_tx_enable(struct device *dev)
+static void mcux_lpuart_irq_tx_enable(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u32_t mask = kLPUART_TxDataRegEmptyInterruptEnable;
@@ -121,7 +122,7 @@ static void mcux_lpuart_irq_tx_enable(struct device *dev)
 	LPUART_EnableInterrupts(config->base, mask);
 }
 
-static void mcux_lpuart_irq_tx_disable(struct device *dev)
+static void mcux_lpuart_irq_tx_disable(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u32_t mask = kLPUART_TxDataRegEmptyInterruptEnable;
@@ -129,7 +130,7 @@ static void mcux_lpuart_irq_tx_disable(struct device *dev)
 	LPUART_DisableInterrupts(config->base, mask);
 }
 
-static int mcux_lpuart_irq_tx_complete(struct device *dev)
+static int mcux_lpuart_irq_tx_complete(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u32_t flags = LPUART_GetStatusFlags(config->base);
@@ -137,7 +138,7 @@ static int mcux_lpuart_irq_tx_complete(struct device *dev)
 	return (flags & kLPUART_TxDataRegEmptyFlag) != 0U;
 }
 
-static int mcux_lpuart_irq_tx_ready(struct device *dev)
+static int mcux_lpuart_irq_tx_ready(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u32_t mask = kLPUART_TxDataRegEmptyInterruptEnable;
@@ -146,7 +147,7 @@ static int mcux_lpuart_irq_tx_ready(struct device *dev)
 		&& mcux_lpuart_irq_tx_complete(dev);
 }
 
-static void mcux_lpuart_irq_rx_enable(struct device *dev)
+static void mcux_lpuart_irq_rx_enable(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u32_t mask = kLPUART_RxDataRegFullInterruptEnable;
@@ -154,7 +155,7 @@ static void mcux_lpuart_irq_rx_enable(struct device *dev)
 	LPUART_EnableInterrupts(config->base, mask);
 }
 
-static void mcux_lpuart_irq_rx_disable(struct device *dev)
+static void mcux_lpuart_irq_rx_disable(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u32_t mask = kLPUART_RxDataRegFullInterruptEnable;
@@ -162,7 +163,7 @@ static void mcux_lpuart_irq_rx_disable(struct device *dev)
 	LPUART_DisableInterrupts(config->base, mask);
 }
 
-static int mcux_lpuart_irq_rx_full(struct device *dev)
+static int mcux_lpuart_irq_rx_full(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u32_t flags = LPUART_GetStatusFlags(config->base);
@@ -170,7 +171,7 @@ static int mcux_lpuart_irq_rx_full(struct device *dev)
 	return (flags & kLPUART_RxDataRegFullFlag) != 0U;
 }
 
-static int mcux_lpuart_irq_rx_ready(struct device *dev)
+static int mcux_lpuart_irq_rx_ready(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u32_t mask = kLPUART_RxDataRegFullInterruptEnable;
@@ -179,7 +180,7 @@ static int mcux_lpuart_irq_rx_ready(struct device *dev)
 		&& mcux_lpuart_irq_rx_full(dev);
 }
 
-static void mcux_lpuart_irq_err_enable(struct device *dev)
+static void mcux_lpuart_irq_err_enable(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u32_t mask = kLPUART_NoiseErrorInterruptEnable |
@@ -189,7 +190,7 @@ static void mcux_lpuart_irq_err_enable(struct device *dev)
 	LPUART_EnableInterrupts(config->base, mask);
 }
 
-static void mcux_lpuart_irq_err_disable(struct device *dev)
+static void mcux_lpuart_irq_err_disable(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	u32_t mask = kLPUART_NoiseErrorInterruptEnable |
@@ -199,20 +200,20 @@ static void mcux_lpuart_irq_err_disable(struct device *dev)
 	LPUART_DisableInterrupts(config->base, mask);
 }
 
-static int mcux_lpuart_irq_is_pending(struct device *dev)
+static int mcux_lpuart_irq_is_pending(const struct device *dev)
 {
 	return (mcux_lpuart_irq_tx_ready(dev)
 		|| mcux_lpuart_irq_rx_ready(dev));
 }
 
-static int mcux_lpuart_irq_update(struct device *dev)
+static int mcux_lpuart_irq_update(const struct device *dev)
 {
 	return 1;
 }
 
-static void mcux_lpuart_irq_callback_set(struct device *dev,
-				       uart_irq_callback_user_data_t cb,
-				       void *cb_data)
+static void mcux_lpuart_irq_callback_set(const struct device *dev,
+					 uart_irq_callback_user_data_t cb,
+					 void *cb_data)
 {
 	struct mcux_lpuart_data *data = dev->driver_data;
 
@@ -222,7 +223,7 @@ static void mcux_lpuart_irq_callback_set(struct device *dev,
 
 static void mcux_lpuart_isr(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct mcux_lpuart_data *data = dev->driver_data;
 
 	if (data->callback) {
@@ -231,11 +232,11 @@ static void mcux_lpuart_isr(void *arg)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static int mcux_lpuart_init(struct device *dev)
+static int mcux_lpuart_init(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config_info;
 	lpuart_config_t uart_config;
-	struct device *clock_dev;
+	const struct device *clock_dev;
 	u32_t clock_freq;
 
 	clock_dev = device_get_binding(config->clock_name);
@@ -295,7 +296,7 @@ static const struct uart_driver_api mcux_lpuart_driver_api = {
 		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		\
 	} while (0)
 #define LPUART_MCUX_CONFIG_FUNC(n)					\
-	static void mcux_lpuart_config_func_##n(struct device *dev)	\
+	static void mcux_lpuart_config_func_##n(const struct device *dev)	\
 	{								\
 		MCUX_LPUART_IRQ_INIT(n, 0);				\
 									\

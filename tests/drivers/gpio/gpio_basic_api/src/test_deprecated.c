@@ -18,7 +18,7 @@
 static struct drv_data data;
 static int cb_cnt;
 
-static void callback(struct device *dev,
+static void callback(const struct device *dev,
 		     struct gpio_callback *gpio_cb, u32_t pins)
 {
 	int rc;
@@ -53,7 +53,7 @@ static void callback(struct device *dev,
 
 static int test_callback(gpio_flags_t int_flags)
 {
-	struct device *dev = device_get_binding(DEV_NAME);
+	const struct device *dev = device_get_binding(DEV_NAME);
 	struct drv_data *drv_data = &data;
 	bool active_level = (int_flags & GPIO_INT_ACTIVE_HIGH) != 0;
 	int rc;

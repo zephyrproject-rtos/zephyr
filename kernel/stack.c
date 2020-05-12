@@ -27,7 +27,7 @@ struct k_stack *_trace_list_k_stack;
 /*
  * Complete initialization of statically defined stacks.
  */
-static int init_stack_module(struct device *dev)
+static int init_stack_module(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

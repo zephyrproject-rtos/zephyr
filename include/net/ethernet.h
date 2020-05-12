@@ -224,25 +224,25 @@ struct ethernet_api {
 	 * should be set by driver if statistics needs to be collected
 	 * for that driver.
 	 */
-	struct net_stats_eth *(*get_stats)(struct device *dev);
+	struct net_stats_eth *(*get_stats)(const struct device *dev);
 #endif
 
 	/** Start the device */
-	int (*start)(struct device *dev);
+	int (*start)(const struct device *dev);
 
 	/** Stop the device */
-	int (*stop)(struct device *dev);
+	int (*stop)(const struct device *dev);
 
 	/** Get the device capabilities */
-	enum ethernet_hw_caps (*get_capabilities)(struct device *dev);
+	enum ethernet_hw_caps (*get_capabilities)(const struct device *dev);
 
 	/** Set specific hardware configuration */
-	int (*set_config)(struct device *dev,
+	int (*set_config)(const struct device *dev,
 			  enum ethernet_config_type type,
 			  const struct ethernet_config *config);
 
 	/** Get hardware specific configuration */
-	int (*get_config)(struct device *dev,
+	int (*get_config)(const struct device *dev,
 			  enum ethernet_config_type type,
 			  struct ethernet_config *config);
 
@@ -252,17 +252,17 @@ struct ethernet_api {
 	 * if it is false then the tag was removed. The driver can utilize
 	 * this information if needed.
 	 */
-	int (*vlan_setup)(struct device *dev, struct net_if *iface,
+	int (*vlan_setup)(const struct device *dev, struct net_if *iface,
 			  u16_t tag, bool enable);
 #endif /* CONFIG_NET_VLAN */
 
 #if defined(CONFIG_PTP_CLOCK)
 	/** Return ptp_clock device that is tied to this ethernet device */
-	struct device *(*get_ptp_clock)(struct device *dev);
+	const struct device *(*get_ptp_clock)(const struct device *dev);
 #endif /* CONFIG_PTP_CLOCK */
 
 	/** Send a network packet */
-	int (*send)(struct device *dev, struct net_pkt *pkt);
+	int (*send)(const struct device *dev, struct net_pkt *pkt);
 };
 
 /* Make sure that the network interface API is properly setup inside
@@ -680,9 +680,9 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable);
  * ethernet interface does not support PTP.
  */
 #if defined(CONFIG_PTP_CLOCK)
-struct device *net_eth_get_ptp_clock(struct net_if *iface);
+const struct device *net_eth_get_ptp_clock(struct net_if *iface);
 #else
-static inline struct device *net_eth_get_ptp_clock(struct net_if *iface)
+static inline const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 
@@ -699,7 +699,7 @@ static inline struct device *net_eth_get_ptp_clock(struct net_if *iface)
  * @return Pointer to PTP clock if found, NULL if not found or if this
  * ethernet interface index does not support PTP.
  */
-__syscall struct device *net_eth_get_ptp_clock_by_index(int index);
+__syscall const struct device *net_eth_get_ptp_clock_by_index(int index);
 
 /**
  * @brief Return gPTP port number attached to this interface.

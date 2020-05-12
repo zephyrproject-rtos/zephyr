@@ -92,7 +92,7 @@ static inline void disable_mcast_filter(ETH_HandleTypeDef *heth)
 	heth->Instance->MACFFR = tmp;
 }
 
-static int eth_tx(struct device *dev, struct net_pkt *pkt)
+static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_stm32_hal_dev_data *dev_data = DEV_DATA(dev);
 	ETH_HandleTypeDef *heth;
@@ -173,7 +173,7 @@ static struct net_if *get_iface(struct eth_stm32_hal_dev_data *ctx,
 #endif
 }
 
-static struct net_pkt *eth_rx(struct device *dev, u16_t *vlan_tag)
+static struct net_pkt *eth_rx(const struct device *dev, u16_t *vlan_tag)
 {
 	struct eth_stm32_hal_dev_data *dev_data;
 	ETH_HandleTypeDef *heth;
@@ -268,7 +268,7 @@ release_desc:
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
-	struct device *dev;
+	const struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
 	struct net_pkt *pkt;
 	int res;
@@ -278,7 +278,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
 
-	dev = (struct device *)arg1;
+	dev = (const struct device *)arg1;
 	dev_data = DEV_DATA(dev);
 
 	__ASSERT_NO_MSG(dev_data != NULL);
@@ -329,13 +329,13 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 
 static void eth_isr(void *arg)
 {
-	struct device *dev;
+	const struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
 	ETH_HandleTypeDef *heth;
 
 	__ASSERT_NO_MSG(arg != NULL);
 
-	dev = (struct device *)arg;
+	dev = (const struct device *)arg;
 	dev_data = DEV_DATA(dev);
 
 	__ASSERT_NO_MSG(dev_data != NULL);
@@ -367,7 +367,7 @@ static void generate_mac(u8_t *mac_addr)
 }
 #endif
 
-static int eth_initialize(struct device *dev)
+static int eth_initialize(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data;
 	const struct eth_stm32_hal_dev_cfg *cfg;
@@ -463,7 +463,7 @@ static int eth_initialize(struct device *dev)
 
 static void eth_iface_init(struct net_if *iface)
 {
-	struct device *dev;
+	const struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
 
 	__ASSERT_NO_MSG(iface != NULL);
@@ -492,7 +492,7 @@ static void eth_iface_init(struct net_if *iface)
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 }
 
-static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -503,7 +503,7 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)
 		;
 }
 
-static int eth_stm32_hal_set_config(struct device *dev,
+static int eth_stm32_hal_set_config(const struct device *dev,
 				    enum ethernet_config_type type,
 				    const struct ethernet_config *config)
 {

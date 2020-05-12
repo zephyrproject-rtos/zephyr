@@ -85,7 +85,7 @@ MODEM_CMD_DEFINE(on_cmd_error)
 }
 
 /* RX thread */
-static void esp_rx(struct device *dev)
+static void esp_rx(const struct device *dev)
 {
 	struct esp_data *data = dev->driver_data;
 
@@ -527,7 +527,7 @@ static void esp_mgmt_scan_work(struct k_work *work)
 	dev->scan_cb = NULL;
 }
 
-static int esp_mgmt_scan(struct device *dev, scan_result_cb_t cb)
+static int esp_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
 {
 	struct esp_data *data = dev->driver_data;
 
@@ -590,7 +590,7 @@ static void esp_mgmt_connect_work(struct k_work *work)
 	esp_flag_clear(dev, EDF_STA_CONNECTING);
 }
 
-static int esp_mgmt_connect(struct device *dev,
+static int esp_mgmt_connect(const struct device *dev,
 			    struct wifi_connect_req_params *params)
 {
 	struct esp_data *data = dev->driver_data;
@@ -627,7 +627,7 @@ static int esp_mgmt_connect(struct device *dev,
 	return 0;
 }
 
-static int esp_mgmt_disconnect(struct device *dev)
+static int esp_mgmt_disconnect(const struct device *dev)
 {
 	struct esp_data *data = dev->driver_data;
 	int ret;
@@ -639,7 +639,7 @@ static int esp_mgmt_disconnect(struct device *dev)
 	return ret;
 }
 
-static int esp_mgmt_ap_enable(struct device *dev,
+static int esp_mgmt_ap_enable(const struct device *dev,
 			      struct wifi_connect_req_params *params)
 {
 	char cmd[sizeof("AT+"_CWSAP"=\"\",\"\",xx,x") + WIFI_SSID_MAX_LEN +
@@ -678,7 +678,7 @@ static int esp_mgmt_ap_enable(struct device *dev,
 	return ret;
 }
 
-static int esp_mgmt_ap_disable(struct device *dev)
+static int esp_mgmt_ap_disable(const struct device *dev)
 {
 	struct esp_data *data = dev->driver_data;
 	int ret;
@@ -776,7 +776,7 @@ static void esp_reset(struct esp_data *dev)
 
 static void esp_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct esp_data *data = dev->driver_data;
 
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
@@ -794,7 +794,7 @@ static const struct net_wifi_mgmt_offload esp_api = {
 	.ap_disable	= esp_mgmt_ap_disable,
 };
 
-static int esp_init(struct device *dev)
+static int esp_init(const struct device *dev)
 {
 	struct esp_data *data = dev->driver_data;
 	int ret = 0;

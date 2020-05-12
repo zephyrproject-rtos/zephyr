@@ -32,7 +32,7 @@ struct k_msgq *_trace_list_k_msgq;
 /*
  * Complete initialization of statically defined message queues.
  */
-static int init_msgq_module(struct device *dev)
+static int init_msgq_module(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

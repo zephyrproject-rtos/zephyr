@@ -46,7 +46,7 @@ struct gpio_xec_config {
 	u32_t flags;
 };
 
-static int gpio_xec_configure(struct device *dev,
+static int gpio_xec_configure(const struct device *dev,
 			      gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_xec_config *config = dev->config_info;
@@ -128,9 +128,10 @@ static int gpio_xec_configure(struct device *dev,
 	return 0;
 }
 
-static int gpio_xec_pin_interrupt_configure(struct device *dev,
-		gpio_pin_t pin, enum gpio_int_mode mode,
-		enum gpio_int_trig trig)
+static int gpio_xec_pin_interrupt_configure(const struct device *dev,
+					    gpio_pin_t pin,
+					    enum gpio_int_mode mode,
+					    enum gpio_int_trig trig)
 {
 	const struct gpio_xec_config *config = dev->config_info;
 	struct gpio_xec_data *drv_data = dev->driver_data;
@@ -212,7 +213,7 @@ static int gpio_xec_pin_interrupt_configure(struct device *dev,
 	return 0;
 }
 
-static int gpio_xec_port_set_masked_raw(struct device *dev, u32_t mask,
+static int gpio_xec_port_set_masked_raw(const struct device *dev, u32_t mask,
 					u32_t value)
 {
 	const struct gpio_xec_config *config = dev->config_info;
@@ -225,7 +226,7 @@ static int gpio_xec_port_set_masked_raw(struct device *dev, u32_t mask,
 	return 0;
 }
 
-static int gpio_xec_port_set_bits_raw(struct device *dev, u32_t mask)
+static int gpio_xec_port_set_bits_raw(const struct device *dev, u32_t mask)
 {
 	const struct gpio_xec_config *config = dev->config_info;
 
@@ -237,7 +238,7 @@ static int gpio_xec_port_set_bits_raw(struct device *dev, u32_t mask)
 	return 0;
 }
 
-static int gpio_xec_port_clear_bits_raw(struct device *dev, u32_t mask)
+static int gpio_xec_port_clear_bits_raw(const struct device *dev, u32_t mask)
 {
 	const struct gpio_xec_config *config = dev->config_info;
 
@@ -249,7 +250,7 @@ static int gpio_xec_port_clear_bits_raw(struct device *dev, u32_t mask)
 	return 0;
 }
 
-static int gpio_xec_port_toggle_bits(struct device *dev, u32_t mask)
+static int gpio_xec_port_toggle_bits(const struct device *dev, u32_t mask)
 {
 	const struct gpio_xec_config *config = dev->config_info;
 
@@ -261,7 +262,7 @@ static int gpio_xec_port_toggle_bits(struct device *dev, u32_t mask)
 	return 0;
 }
 
-static int gpio_xec_port_get_raw(struct device *dev, u32_t *value)
+static int gpio_xec_port_get_raw(const struct device *dev, u32_t *value)
 {
 	const struct gpio_xec_config *config = dev->config_info;
 
@@ -273,7 +274,7 @@ static int gpio_xec_port_get_raw(struct device *dev, u32_t *value)
 	return 0;
 }
 
-static int gpio_xec_manage_callback(struct device *dev,
+static int gpio_xec_manage_callback(const struct device *dev,
 				    struct gpio_callback *callback, bool set)
 {
 	struct gpio_xec_data *data = dev->driver_data;
@@ -283,7 +284,7 @@ static int gpio_xec_manage_callback(struct device *dev,
 	return 0;
 }
 
-static int gpio_xec_enable_callback(struct device *dev,
+static int gpio_xec_enable_callback(const struct device *dev,
 				    gpio_pin_t pin)
 {
 	struct gpio_xec_data *data = dev->driver_data;
@@ -293,7 +294,7 @@ static int gpio_xec_enable_callback(struct device *dev,
 	return 0;
 }
 
-static int gpio_xec_disable_callback(struct device *dev,
+static int gpio_xec_disable_callback(const struct device *dev,
 				     gpio_pin_t pin)
 {
 	struct gpio_xec_data *data = dev->driver_data;
@@ -305,7 +306,7 @@ static int gpio_xec_disable_callback(struct device *dev,
 
 static void gpio_gpio_xec_port_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct gpio_xec_config *config = dev->config_info;
 	struct gpio_xec_data *data = dev->driver_data;
 	u32_t girq_result;
@@ -337,7 +338,7 @@ static const struct gpio_driver_api gpio_xec_driver_api = {
 };
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_000_036), okay)
-static int gpio_xec_port000_036_init(struct device *dev);
+static int gpio_xec_port000_036_init(const struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port000_036_config = {
 	.common = {
@@ -363,7 +364,7 @@ DEVICE_AND_API_INIT(gpio_xec_port000_036,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&gpio_xec_driver_api);
 
-static int gpio_xec_port000_036_init(struct device *dev)
+static int gpio_xec_port000_036_init(const struct device *dev)
 {
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_000_036), irq)
 	const struct gpio_xec_config *config = dev->config_info;
@@ -382,7 +383,7 @@ static int gpio_xec_port000_036_init(struct device *dev)
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_000_036), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_040_076), okay)
-static int gpio_xec_port040_076_init(struct device *dev);
+static int gpio_xec_port040_076_init(const struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port040_076_config = {
 	.common = {
@@ -408,7 +409,7 @@ DEVICE_AND_API_INIT(gpio_xec_port040_076,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&gpio_xec_driver_api);
 
-static int gpio_xec_port040_076_init(struct device *dev)
+static int gpio_xec_port040_076_init(const struct device *dev)
 {
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_040_076), irq)
 	const struct gpio_xec_config *config = dev->config_info;
@@ -427,7 +428,7 @@ static int gpio_xec_port040_076_init(struct device *dev)
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_040_076), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_100_136), okay)
-static int gpio_xec_port100_136_init(struct device *dev);
+static int gpio_xec_port100_136_init(const struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port100_136_config = {
 	.common = {
@@ -453,7 +454,7 @@ DEVICE_AND_API_INIT(gpio_xec_port100_136,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&gpio_xec_driver_api);
 
-static int gpio_xec_port100_136_init(struct device *dev)
+static int gpio_xec_port100_136_init(const struct device *dev)
 {
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_100_136), irq)
 	const struct gpio_xec_config *config = dev->config_info;
@@ -472,7 +473,7 @@ static int gpio_xec_port100_136_init(struct device *dev)
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_100_136), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_140_176), okay)
-static int gpio_xec_port140_176_init(struct device *dev);
+static int gpio_xec_port140_176_init(const struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port140_176_config = {
 	.common = {
@@ -498,7 +499,7 @@ DEVICE_AND_API_INIT(gpio_xec_port140_176,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&gpio_xec_driver_api);
 
-static int gpio_xec_port140_176_init(struct device *dev)
+static int gpio_xec_port140_176_init(const struct device *dev)
 {
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_140_176), irq)
 	const struct gpio_xec_config *config = dev->config_info;
@@ -517,7 +518,7 @@ static int gpio_xec_port140_176_init(struct device *dev)
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_140_176), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_200_236), okay)
-static int gpio_xec_port200_236_init(struct device *dev);
+static int gpio_xec_port200_236_init(const struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port200_236_config = {
 	.common = {
@@ -543,7 +544,7 @@ DEVICE_AND_API_INIT(gpio_xec_port200_236,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&gpio_xec_driver_api);
 
-static int gpio_xec_port200_236_init(struct device *dev)
+static int gpio_xec_port200_236_init(const struct device *dev)
 {
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_200_236), irq)
 	const struct gpio_xec_config *config = dev->config_info;
@@ -562,7 +563,7 @@ static int gpio_xec_port200_236_init(struct device *dev)
 #endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_200_236), okay) */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(gpio_240_276), okay)
-static int gpio_xec_port240_276_init(struct device *dev);
+static int gpio_xec_port240_276_init(const struct device *dev);
 
 static const struct gpio_xec_config gpio_xec_port240_276_config = {
 	.common = {
@@ -588,7 +589,7 @@ DEVICE_AND_API_INIT(gpio_xec_port240_276,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&gpio_xec_driver_api);
 
-static int gpio_xec_port240_276_init(struct device *dev)
+static int gpio_xec_port240_276_init(const struct device *dev)
 {
 #if DT_IRQ_HAS_CELL(DT_NODELABEL(gpio_240_276), irq)
 	const struct gpio_xec_config *config = dev->config_info;

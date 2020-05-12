@@ -120,7 +120,7 @@
 #define BME680_CONCAT_BYTES(msb, lsb) (((u16_t)msb << 8) | (u16_t)lsb)
 
 struct bme680_data {
-	struct device *i2c_master;
+	const struct device *i2c_master;
 	u16_t i2c_slave_addr;
 
 	/* Compensation parameters. */

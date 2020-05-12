@@ -228,7 +228,7 @@ extern "C" {
  * @param user_data the corresponding parameter from
  * maxim_ds3231_alarm::user_data.
  */
-typedef void (*maxim_ds3231_alarm_callback_handler_t)(struct device *dev,
+typedef void (*maxim_ds3231_alarm_callback_handler_t)(const struct device *dev,
 						      u8_t id,
 						      u32_t syncclock,
 						      void *user_data);
@@ -245,7 +245,7 @@ typedef void (*maxim_ds3231_alarm_callback_handler_t)(struct device *dev,
  *
  * @param res the result of the operation.
  */
-typedef void (*maxim_ds3231_notify_callback)(struct device *dev,
+typedef void (*maxim_ds3231_notify_callback)(const struct device *dev,
 					     struct sys_notify *notify,
 					     int res);
 
@@ -358,7 +358,7 @@ struct maxim_ds3231_syncpoint {
  *
  * @return the current value of the synchronization clock.
  */
-static inline u32_t maxim_ds3231_read_syncclock(struct device *dev)
+static inline u32_t maxim_ds3231_read_syncclock(const struct device *dev)
 {
 	return k_uptime_get_32();
 }
@@ -371,7 +371,7 @@ static inline u32_t maxim_ds3231_read_syncclock(struct device *dev)
  *
  * @return the frequency of the selected synchronization clock.
  */
-static inline u32_t maxim_ds3231_syncclock_frequency(struct device *dev)
+static inline u32_t maxim_ds3231_syncclock_frequency(const struct device *dev)
 {
 	return 1000U;
 }
@@ -393,7 +393,7 @@ static inline u32_t maxim_ds3231_syncclock_frequency(struct device *dev)
  * @return the non-negative updated value of the register, or a
  * negative error code from an I2C transaction.
  */
-int maxim_ds3231_ctrl_update(struct device *dev,
+int maxim_ds3231_ctrl_update(const struct device *dev,
 			     u8_t set_bits,
 			     u8_t clear_bits);
 
@@ -426,7 +426,7 @@ int maxim_ds3231_ctrl_update(struct device *dev,
  * (disregarding the effect of clears and sets), or a negative error
  * code from an I2C transaction.
  */
-int maxim_ds3231_stat_update(struct device *dev,
+int maxim_ds3231_stat_update(const struct device *dev,
 			     u8_t set_bits,
 			     u8_t clear_bits);
 
@@ -448,7 +448,7 @@ int maxim_ds3231_stat_update(struct device *dev,
  * @return a non-negative value indicating successful conversion, or a
  * negative error code from an I2C transaction or invalid parameter.
  */
-int maxim_ds3231_get_alarm(struct device *dev,
+int maxim_ds3231_get_alarm(const struct device *dev,
 			   u8_t id,
 			   struct maxim_ds3231_alarm *cfg);
 
@@ -472,7 +472,7 @@ int maxim_ds3231_get_alarm(struct device *dev,
  * @return a non-negative value on success, or a negative error code
  * from an I2C transaction or an invalid parameter.
  */
-int maxim_ds3231_set_alarm(struct device *dev,
+int maxim_ds3231_set_alarm(const struct device *dev,
 			   u8_t id,
 			   const struct maxim_ds3231_alarm *cfg);
 
@@ -502,7 +502,7 @@ int maxim_ds3231_set_alarm(struct device *dev,
  * @retval -EINVAL if notify is not provided
  * @retval -ENOTSUP if the required interrupt is not configured
  */
-int maxim_ds3231_synchronize(struct device *dev,
+int maxim_ds3231_synchronize(const struct device *dev,
 			     struct sys_notify *notify);
 
 /** @brief Request to update the synchronization point.
@@ -520,7 +520,7 @@ int maxim_ds3231_synchronize(struct device *dev,
  * @retval -EBUSY if a synchronization or set is currently in progress
  * @retval -ENOTSUP if the required interrupt is not configured
  */
-__syscall int maxim_ds3231_req_syncpoint(struct device *dev,
+__syscall int maxim_ds3231_req_syncpoint(const struct device *dev,
 					 struct k_poll_signal *signal);
 
 /** @brief Retrieve the most recent synchronization point.
@@ -535,7 +535,7 @@ __syscall int maxim_ds3231_req_syncpoint(struct device *dev,
  * @retval non-negative on success
  * @retval -ENOENT if no syncpoint has been captured
  */
-__syscall int maxim_ds3231_get_syncpoint(struct device *dev,
+__syscall int maxim_ds3231_get_syncpoint(const struct device *dev,
 					 struct maxim_ds3231_syncpoint *syncpoint);
 
 /** @brief Set the RTC to a time consistent with the provided
@@ -565,7 +565,7 @@ __syscall int maxim_ds3231_get_syncpoint(struct device *dev,
  * @retval -ENOTSUP if the required interrupt signal is not configured
  * @retval -EBUSY if a synchronization or set is currently in progress
  */
-int maxim_ds3231_set(struct device *dev,
+int maxim_ds3231_set(const struct device *dev,
 		     const struct maxim_ds3231_syncpoint *syncpoint,
 		     struct sys_notify *notify);
 
@@ -586,7 +586,7 @@ int maxim_ds3231_set(struct device *dev,
  * @return a non-negative value that may have MAXIM_DS3231_ALARM1 and/or
  * MAXIM_DS3231_ALARM2 set, or a negative error code.
  */
-int maxim_ds3231_check_alarms(struct device *dev);
+int maxim_ds3231_check_alarms(const struct device *dev);
 
 /**
  * @}

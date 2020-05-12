@@ -20,7 +20,8 @@
 #define TEST_GPIO_MAX_SINGLE_ENDED_RISE_FALL_TIME_MS    100
 #define TEST_POINT(n)   (n)
 
-static void pin_get_raw_and_verify(struct device *port, unsigned int pin,
+static void pin_get_raw_and_verify(const struct device *port,
+				   unsigned int pin,
 				   int val_expected, int idx)
 {
 	int val_actual;
@@ -32,7 +33,8 @@ static void pin_get_raw_and_verify(struct device *port, unsigned int pin,
 		      "Test point %d: invalid pin get value", idx);
 }
 
-static void pin_set_raw_and_verify(struct device *port, unsigned int pin,
+static void pin_set_raw_and_verify(const struct device *port,
+				   unsigned int pin,
 				   int val, int idx)
 {
 	zassert_equal(gpio_pin_set_raw(port, pin, val), 0,
@@ -53,7 +55,7 @@ static void pin_set_raw_and_verify(struct device *port, unsigned int pin,
  */
 void test_gpio_pin_configure_push_pull(void)
 {
-	struct device *port;
+	const struct device *port;
 	int ret;
 
 	port = device_get_binding(TEST_DEV);
@@ -166,7 +168,7 @@ void test_gpio_pin_configure_push_pull(void)
  */
 void test_gpio_pin_configure_single_ended(void)
 {
-	struct device *port;
+	const struct device *port;
 	int pin_in_val;
 	int pin_val;
 	unsigned int cfg_flag;

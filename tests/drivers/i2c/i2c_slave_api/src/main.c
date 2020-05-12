@@ -43,7 +43,8 @@ static void to_display_format(const u8_t *src, size_t size, char *dst)
 	}
 }
 
-static void run_full_read(struct device *i2c, u8_t addr, u8_t *comp_buffer)
+static void run_full_read(const struct device *i2c, u8_t addr,
+			  u8_t *comp_buffer)
 {
 	int ret;
 
@@ -69,7 +70,8 @@ static void run_full_read(struct device *i2c, u8_t addr, u8_t *comp_buffer)
 	}
 }
 
-static void run_partial_read(struct device *i2c, u8_t addr, u8_t *comp_buffer,
+static void run_partial_read(const struct device *i2c, u8_t addr,
+			     u8_t *comp_buffer,
 			     unsigned int offset)
 {
 	int ret;
@@ -95,7 +97,8 @@ static void run_partial_read(struct device *i2c, u8_t addr, u8_t *comp_buffer,
 	}
 }
 
-static void run_program_read(struct device *i2c, u8_t addr, unsigned int offset)
+static void run_program_read(const struct device *i2c, u8_t addr,
+			     unsigned int offset)
 {
 	int ret, i;
 
@@ -131,10 +134,10 @@ static void run_program_read(struct device *i2c, u8_t addr, unsigned int offset)
 
 void test_eeprom_slave(void)
 {
-	struct device *eeprom_0;
-	struct device *eeprom_1;
-	struct device *i2c_0;
-	struct device *i2c_1;
+	const struct device *eeprom_0;
+	const struct device *eeprom_1;
+	const struct device *i2c_0;
+	const struct device *i2c_1;
 	int ret, offset;
 
 

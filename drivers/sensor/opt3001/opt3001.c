@@ -61,7 +61,8 @@ static int opt3001_reg_update(struct opt3001_data *drv_data, u8_t reg,
 	return opt3001_reg_write(drv_data, reg, new_val);
 }
 
-static int opt3001_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int opt3001_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
 	struct opt3001_data *drv_data = dev->driver_data;
 	u16_t value;
@@ -79,7 +80,8 @@ static int opt3001_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int opt3001_channel_get(struct device *dev, enum sensor_channel chan,
+static int opt3001_channel_get(const struct device *dev,
+			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	struct opt3001_data *drv_data = dev->driver_data;
@@ -110,7 +112,7 @@ static const struct sensor_driver_api opt3001_driver_api = {
 	.channel_get = opt3001_channel_get,
 };
 
-static int opt3001_chip_init(struct device *dev)
+static int opt3001_chip_init(const struct device *dev)
 {
 	struct opt3001_data *drv_data = dev->driver_data;
 	u16_t value;
@@ -152,7 +154,7 @@ static int opt3001_chip_init(struct device *dev)
 	return 0;
 }
 
-int opt3001_init(struct device *dev)
+int opt3001_init(const struct device *dev)
 {
 	if (opt3001_chip_init(dev) < 0) {
 		return -EINVAL;

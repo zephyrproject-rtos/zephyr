@@ -621,7 +621,7 @@ struct lsm6dsl_transfer_function {
 };
 
 struct lsm6dsl_data {
-	struct device *comm_master;
+	const struct device *comm_master;
 	int accel_sample_x;
 	int accel_sample_y;
 	int accel_sample_z;
@@ -650,7 +650,7 @@ struct lsm6dsl_data {
 	u8_t gyro_fs;
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -662,25 +662,26 @@ struct lsm6dsl_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LSM6DSL_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
+	const struct device *dev;
 #endif
 
 #endif /* CONFIG_LSM6DSL_TRIGGER */
 };
 
-int lsm6dsl_spi_init(struct device *dev);
-int lsm6dsl_i2c_init(struct device *dev);
+int lsm6dsl_spi_init(const struct device *dev);
+int lsm6dsl_i2c_init(const struct device *dev);
 #if defined(CONFIG_LSM6DSL_SENSORHUB)
-int lsm6dsl_shub_init_external_chip(struct device *dev);
-int lsm6dsl_shub_read_external_chip(struct device *dev, u8_t *buf, u8_t len);
+int lsm6dsl_shub_init_external_chip(const struct device *dev);
+int lsm6dsl_shub_read_external_chip(const struct device *dev, u8_t *buf,
+				    u8_t len);
 #endif
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
-int lsm6dsl_trigger_set(struct device *dev,
+int lsm6dsl_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
-int lsm6dsl_init_interrupt(struct device *dev);
+int lsm6dsl_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_LSM6DSL_LSM6DSL_H_ */

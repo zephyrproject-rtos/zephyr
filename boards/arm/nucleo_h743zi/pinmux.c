@@ -30,7 +30,7 @@ static const struct pin_config pinconf[] = {
 #endif
 };
 
-static int pinmux_stm32_init(struct device *port)
+static int pinmux_stm32_init(const struct device *port)
 {
 	ARG_UNUSED(port);
 

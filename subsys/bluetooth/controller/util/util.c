@@ -40,7 +40,7 @@ u8_t util_ones_count_get(u8_t *octets, u8_t octets_len)
 
 int util_rand(void *buf, size_t len)
 {
-	static struct device *dev;
+	static const struct device *dev;
 
 	if (unlikely(!dev)) {
 		/* Only one entropy device exists, so this is safe even

@@ -79,7 +79,7 @@ extern void *_heap_sentry;
 #ifdef CONFIG_USERSPACE
 struct k_mem_partition z_malloc_partition;
 
-static int malloc_prepare(struct device *unused)
+static int malloc_prepare(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

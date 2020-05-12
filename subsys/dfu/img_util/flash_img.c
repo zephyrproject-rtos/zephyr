@@ -64,7 +64,7 @@ size_t flash_img_bytes_written(struct flash_img_context *ctx)
 int flash_img_init_id(struct flash_img_context *ctx, u8_t area_id)
 {
 	int rc;
-	struct device *flash_dev;
+	const struct device *flash_dev;
 
 	rc = flash_area_open(area_id,
 			       (const struct flash_area **)&(ctx->flash_area));

@@ -136,7 +136,7 @@ void ataes132a_atmel_crc(u8_t *input, u8_t length,
 	*(u16_t *)output = crc << 8 | crc >> 8;
 }
 
-static inline int burst_write_i2c(struct device *dev, u16_t dev_addr,
+static inline int burst_write_i2c(const struct device *dev, u16_t dev_addr,
 				  u16_t start_addr, u8_t *buf,
 				  u8_t num_bytes)
 {
@@ -158,7 +158,7 @@ static inline int burst_write_i2c(struct device *dev, u16_t dev_addr,
 }
 
 
-static inline int burst_read_i2c(struct device *dev, u16_t dev_addr,
+static inline int burst_read_i2c(const struct device *dev, u16_t dev_addr,
 				 u16_t start_addr, u8_t *buf,
 				 u8_t num_bytes)
 {
@@ -179,13 +179,13 @@ static inline int burst_read_i2c(struct device *dev, u16_t dev_addr,
 	return api->transfer(dev, msg, 2, dev_addr);
 }
 
-static inline int read_reg_i2c(struct device *dev, u16_t dev_addr,
+static inline int read_reg_i2c(const struct device *dev, u16_t dev_addr,
 			       u16_t reg_addr, u8_t *value)
 {
 	return burst_read_i2c(dev, dev_addr, reg_addr, value, 1);
 }
 
-static inline int write_reg_i2c(struct device *dev, u16_t dev_addr,
+static inline int write_reg_i2c(const struct device *dev, u16_t dev_addr,
 				u16_t reg_addr, u8_t value)
 {
 	return burst_write_i2c(dev, dev_addr, reg_addr, &value, 1);
@@ -198,7 +198,7 @@ struct ataes132a_device_config {
 };
 
 struct ataes132a_device_data {
-	struct device *i2c;
+	const struct device *i2c;
 	u8_t command_buffer[64];
 	struct k_sem device_sem;
 };
@@ -252,7 +252,7 @@ struct ataes132a_mac_mode {
  *
  * @return Returns 0 in case of success and an error code otherwise.
  */
-int ataes132a_init(struct device *i2c_dev);
+int ataes132a_init(const struct device *i2c_dev);
 
 /**
  * @brief ATAES132A CCM decrypt function
@@ -311,7 +311,7 @@ int ataes132a_init(struct device *i2c_dev);
  *
  * @return Returns 0 in case of success and an error code otherwise.
  */
-int ataes132a_aes_ccm_decrypt(struct device *i2c_dev,
+int ataes132a_aes_ccm_decrypt(const struct device *i2c_dev,
 			      u8_t key_id,
 			      struct ataes132a_mac_mode *mac_mode,
 			      struct ataes132a_mac_packet *mac_packet,
@@ -359,7 +359,7 @@ int ataes132a_aes_ccm_decrypt(struct device *i2c_dev,
   *
   * @return Returns 0 in case of success and an error code otherwise.
   */
-int ataes132a_aes_ccm_encrypt(struct device *i2c_dev,
+int ataes132a_aes_ccm_encrypt(const struct device *i2c_dev,
 			      u8_t key_id,
 			      struct ataes132a_mac_mode *mac_mode,
 			      struct cipher_aead_pkt *aead_op,
@@ -387,7 +387,7 @@ int ataes132a_aes_ccm_encrypt(struct device *i2c_dev,
  *
  * @return Returns 0 in case of success and an error code otherwise.
  */
-int ataes132a_aes_ecb_block(struct device *i2c_dev,
+int ataes132a_aes_ecb_block(const struct device *i2c_dev,
 			    u8_t key_id,
 			    struct cipher_pkt *pkt);
 

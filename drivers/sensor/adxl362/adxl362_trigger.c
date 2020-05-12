@@ -19,7 +19,7 @@ LOG_MODULE_DECLARE(ADXL362, CONFIG_SENSOR_LOG_LEVEL);
 
 static void adxl362_thread_cb(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct adxl362_data *drv_data = dev->driver_data;
 	u8_t status_buf;
 
@@ -44,7 +44,7 @@ static void adxl362_thread_cb(void *arg)
 	k_mutex_unlock(&drv_data->trigger_mutex);
 }
 
-static void adxl362_gpio_callback(struct device *dev,
+static void adxl362_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
 	struct adxl362_data *drv_data =
@@ -60,7 +60,7 @@ static void adxl362_gpio_callback(struct device *dev,
 #if defined(CONFIG_ADXL362_TRIGGER_OWN_THREAD)
 static void adxl362_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct adxl362_data *drv_data = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -80,7 +80,7 @@ static void adxl362_work_cb(struct k_work *work)
 }
 #endif
 
-int adxl362_trigger_set(struct device *dev,
+int adxl362_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
@@ -120,7 +120,7 @@ int adxl362_trigger_set(struct device *dev,
 	return adxl362_reg_write_mask(dev, ADXL362_REG_INTMAP1, int_mask, int_en);
 }
 
-int adxl362_init_interrupt(struct device *dev)
+int adxl362_init_interrupt(const struct device *dev)
 {
 	struct adxl362_data *drv_data = dev->driver_data;
 	const struct adxl362_config *cfg = dev->config_info;

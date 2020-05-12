@@ -34,13 +34,13 @@
 #define TMP007_TEMP_TH_SCALE		500000
 
 struct tmp007_data {
-	struct device *i2c;
+	const struct device *i2c;
 	s16_t sample;
 
 #ifdef CONFIG_TMP007_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
-	struct device *dev;
+	const struct device *dev;
 
 	sensor_trigger_handler_t drdy_handler;
 	struct sensor_trigger drdy_trigger;
@@ -67,16 +67,16 @@ int tmp007_reg_write(struct tmp007_data *drv_data, u8_t reg, u16_t val);
 int tmp007_reg_update(struct tmp007_data *drv_data, u8_t reg,
 		      u16_t mask, u16_t val);
 
-int tmp007_attr_set(struct device *dev,
+int tmp007_attr_set(const struct device *dev,
 		    enum sensor_channel chan,
 		    enum sensor_attribute attr,
 		    const struct sensor_value *val);
 
-int tmp007_trigger_set(struct device *dev,
+int tmp007_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 
-int tmp007_init_interrupt(struct device *dev);
+int tmp007_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* _SENSOR_TMP007_ */

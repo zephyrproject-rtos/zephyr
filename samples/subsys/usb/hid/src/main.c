@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(main);
 
 static struct k_delayed_work delayed_report_send;
 
-static struct device *hdev;
+static const struct device *hdev;
 
 #define REPORT_TIMEOUT K_SECONDS(2)
 
@@ -128,7 +128,7 @@ void main(void)
 	k_delayed_work_init(&delayed_report_send, send_report);
 }
 
-static int composite_pre_init(struct device *dev)
+static int composite_pre_init(const struct device *dev)
 {
 	hdev = device_get_binding("HID_0");
 	if (hdev == NULL) {

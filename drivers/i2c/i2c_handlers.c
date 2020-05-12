@@ -8,14 +8,15 @@
 #include <string.h>
 #include <syscall_handler.h>
 
-static inline int z_vrfy_i2c_configure(struct device *dev, u32_t dev_config)
+static inline int z_vrfy_i2c_configure(const struct device *dev,
+				       u32_t dev_config)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_I2C(dev, configure));
-	return z_impl_i2c_configure((struct device *)dev, dev_config);
+	return z_impl_i2c_configure((const struct device *)dev, dev_config);
 }
 #include <syscalls/i2c_configure_mrsh.c>
 
-static u32_t copy_msgs_and_transfer(struct device *dev,
+static u32_t copy_msgs_and_transfer(const struct device *dev,
 				    const struct i2c_msg *msgs,
 				    u8_t num_msgs,
 				    u16_t addr)
@@ -37,9 +38,9 @@ static u32_t copy_msgs_and_transfer(struct device *dev,
 	return z_impl_i2c_transfer(dev, copy, num_msgs, addr);
 }
 
-static inline int z_vrfy_i2c_transfer(struct device *dev,
-				     struct i2c_msg *msgs, u8_t num_msgs,
-				     u16_t addr)
+static inline int z_vrfy_i2c_transfer(const struct device *dev,
+				      struct i2c_msg *msgs, u8_t num_msgs,
+				      u16_t addr)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
 
@@ -54,27 +55,27 @@ static inline int z_vrfy_i2c_transfer(struct device *dev,
 	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(msgs, num_msgs,
 					   sizeof(struct i2c_msg)));
 
-	return copy_msgs_and_transfer((struct device *)dev,
+	return copy_msgs_and_transfer((const struct device *)dev,
 				      (struct i2c_msg *)msgs,
 				      (u8_t)num_msgs, (u16_t)addr);
 }
 #include <syscalls/i2c_transfer_mrsh.c>
 
-static inline int z_vrfy_i2c_slave_driver_register(struct device *dev)
+static inline int z_vrfy_i2c_slave_driver_register(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
 	return z_impl_i2c_slave_driver_register(dev);
 }
 #include <syscalls/i2c_slave_driver_register_mrsh.c>
 
-static inline int z_vrfy_i2c_slave_driver_unregister(struct device *dev)
+static inline int z_vrfy_i2c_slave_driver_unregister(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
 	return z_vrfy_i2c_slave_driver_unregister(dev);
 }
 #include <syscalls/i2c_slave_driver_unregister_mrsh.c>
 
-static inline int z_vrfy_i2c_recover_bus(struct device *dev)
+static inline int z_vrfy_i2c_recover_bus(const struct device *dev)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C));
 	return z_impl_i2c_recover_bus(dev);

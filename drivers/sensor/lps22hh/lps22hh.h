@@ -32,7 +32,7 @@ union axis1bit16_t {
 
 struct lps22hh_config {
 	char *master_dev_name;
-	int (*bus_init)(struct device *dev);
+	int (*bus_init)(const struct device *dev);
 #ifdef CONFIG_LPS22HH_TRIGGER
 	const char *drdy_port;
 	u8_t drdy_pin;
@@ -50,7 +50,7 @@ struct lps22hh_config {
 };
 
 struct lps22hh_data {
-	struct device *bus;
+	const struct device *bus;
 	s32_t sample_press;
 	s16_t sample_temp;
 
@@ -63,7 +63,7 @@ struct lps22hh_data {
 #endif
 
 #ifdef CONFIG_LPS22HH_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	u32_t pin;
 	struct gpio_callback gpio_cb;
 
@@ -76,7 +76,7 @@ struct lps22hh_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
+	const struct device *dev;
 #endif
 
 #endif /* CONFIG_LPS22HH_TRIGGER */
@@ -85,15 +85,15 @@ struct lps22hh_data {
 #endif
 };
 
-int lps22hh_i2c_init(struct device *dev);
-int lps22hh_spi_init(struct device *dev);
+int lps22hh_i2c_init(const struct device *dev);
+int lps22hh_spi_init(const struct device *dev);
 
 #ifdef CONFIG_LPS22HH_TRIGGER
-int lps22hh_trigger_set(struct device *dev,
+int lps22hh_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
-int lps22hh_init_interrupt(struct device *dev);
+int lps22hh_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_LPS22HH_LPS22HH_H_ */

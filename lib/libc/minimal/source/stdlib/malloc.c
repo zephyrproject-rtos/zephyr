@@ -42,7 +42,7 @@ void *malloc(size_t size)
 	return ret;
 }
 
-static int malloc_prepare(struct device *unused)
+static int malloc_prepare(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

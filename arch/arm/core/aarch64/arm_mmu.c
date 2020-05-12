@@ -432,7 +432,7 @@ static void enable_mmu_el1(unsigned int flags)
  * This function provides the default configuration mechanism for the Memory
  * Management Unit (MMU).
  */
-static int arm_mmu_init(struct device *arg)
+static int arm_mmu_init(const struct device *arg)
 {
 	u64_t val;
 	unsigned int idx, flags = 0;

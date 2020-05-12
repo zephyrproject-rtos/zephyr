@@ -24,7 +24,7 @@ struct mcux_dac_data {
 	bool configured;
 };
 
-static int mcux_dac_channel_setup(struct device *dev,
+static int mcux_dac_channel_setup(const struct device *dev,
 				    const struct dac_channel_cfg *channel_cfg)
 {
 	const struct mcux_dac_config *config = dev->config_info;
@@ -52,7 +52,8 @@ static int mcux_dac_channel_setup(struct device *dev,
 	return 0;
 }
 
-static int mcux_dac_write_value(struct device *dev, u8_t channel, u32_t value)
+static int mcux_dac_write_value(const struct device *dev, u8_t channel,
+				u32_t value)
 {
 	const struct mcux_dac_config *config = dev->config_info;
 	struct mcux_dac_data *data = dev->driver_data;
@@ -81,7 +82,7 @@ static int mcux_dac_write_value(struct device *dev, u8_t channel, u32_t value)
 	return 0;
 }
 
-static int mcux_dac_init(struct device *dev)
+static int mcux_dac_init(const struct device *dev)
 {
 	return 0;
 }

@@ -19,10 +19,11 @@
 #define LFCLOCK_TIMEOUT_MS 500
 #define HFCLOCK_TIMEOUT_MS 2
 
-static void clock_ready(struct device *dev, clock_control_subsys_t subsys,
+static void clock_ready(const struct device *dev,
+			clock_control_subsys_t subsys,
 			void *user_data);
 
-static struct device *dev;
+static const struct device *dev;
 
 int lll_clock_init(void)
 {
@@ -117,7 +118,8 @@ int lll_hfclock_off(void)
 	return err;
 }
 
-static void clock_ready(struct device *dev, clock_control_subsys_t subsys,
+static void clock_ready(const struct device *dev,
+			clock_control_subsys_t subsys,
 			void *user_data)
 {
 	k_sem_give(user_data);

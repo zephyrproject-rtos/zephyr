@@ -657,7 +657,7 @@ int usb_hid_init(const struct device *dev)
 	return 0;
 }
 
-void usb_hid_register_device(struct device *dev, const u8_t *desc,
+void usb_hid_register_device(const struct device *dev, const u8_t *desc,
 			     size_t size, const struct hid_ops *ops)
 {
 	struct hid_device_info *dev_data = dev->driver_data;
@@ -700,7 +700,7 @@ static const struct usb_hid_device_api {
 	void (*init)(void);
 } hid_api;
 
-static int usb_hid_device_init(struct device *dev)
+static int usb_hid_device_init(const struct device *dev)
 {
 	LOG_DBG("Init HID Device: dev %p (%s)", dev, dev->name);
 

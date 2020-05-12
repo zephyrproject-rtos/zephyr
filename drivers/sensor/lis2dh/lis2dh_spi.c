@@ -18,7 +18,7 @@
 
 LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 
-static int lis2dh_raw_read(struct device *dev, u8_t reg_addr,
+static int lis2dh_raw_read(const struct device *dev, u8_t reg_addr,
 			    u8_t *value, u8_t len)
 {
 	struct lis2dh_data *data = dev->driver_data;
@@ -64,7 +64,7 @@ static int lis2dh_raw_read(struct device *dev, u8_t reg_addr,
 	return 0;
 }
 
-static int lis2dh_raw_write(struct device *dev, u8_t reg_addr,
+static int lis2dh_raw_write(const struct device *dev, u8_t reg_addr,
 			     u8_t *value, u8_t len)
 {
 	struct lis2dh_data *data = dev->driver_data;
@@ -102,25 +102,25 @@ static int lis2dh_raw_write(struct device *dev, u8_t reg_addr,
 	return 0;
 }
 
-static int lis2dh_spi_read_data(struct device *dev, u8_t reg_addr,
+static int lis2dh_spi_read_data(const struct device *dev, u8_t reg_addr,
 				 u8_t *value, u8_t len)
 {
 	return lis2dh_raw_read(dev, reg_addr, value, len);
 }
 
-static int lis2dh_spi_write_data(struct device *dev, u8_t reg_addr,
+static int lis2dh_spi_write_data(const struct device *dev, u8_t reg_addr,
 				  u8_t *value, u8_t len)
 {
 	return lis2dh_raw_write(dev, reg_addr, value, len);
 }
 
-static int lis2dh_spi_read_reg(struct device *dev, u8_t reg_addr,
+static int lis2dh_spi_read_reg(const struct device *dev, u8_t reg_addr,
 				u8_t *value)
 {
 	return lis2dh_raw_read(dev, reg_addr, value, 1);
 }
 
-static int lis2dh_spi_write_reg(struct device *dev, u8_t reg_addr,
+static int lis2dh_spi_write_reg(const struct device *dev, u8_t reg_addr,
 				u8_t value)
 {
 	u8_t tmp_val = value;
@@ -128,7 +128,7 @@ static int lis2dh_spi_write_reg(struct device *dev, u8_t reg_addr,
 	return lis2dh_raw_write(dev, reg_addr, &tmp_val, 1);
 }
 
-static int lis2dh_spi_update_reg(struct device *dev, u8_t reg_addr,
+static int lis2dh_spi_update_reg(const struct device *dev, u8_t reg_addr,
 				  u8_t mask, u8_t value)
 {
 	u8_t tmp_val;
@@ -147,7 +147,7 @@ static const struct lis2dh_transfer_function lis2dh_spi_transfer_fn = {
 	.update_reg = lis2dh_spi_update_reg,
 };
 
-int lis2dh_spi_init(struct device *dev)
+int lis2dh_spi_init(const struct device *dev)
 {
 	struct lis2dh_data *data = dev->driver_data;
 

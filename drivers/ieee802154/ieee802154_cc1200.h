@@ -30,7 +30,7 @@ enum cc1200_gpio_index {
 };
 
 struct cc1200_gpio_configuration {
-	struct device *dev;
+	const struct device *dev;
 	u32_t pin;
 };
 
@@ -43,7 +43,7 @@ struct cc1200_context {
 	/**************************/
 	struct cc1200_gpio_configuration gpios[CC1200_GPIO_IDX_MAX];
 	struct gpio_callback rx_tx_cb;
-	struct device *spi;
+	const struct device *spi;
 	struct spi_config spi_cfg;
 	u8_t mac_addr[8];
 	/************RF************/

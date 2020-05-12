@@ -602,7 +602,7 @@ static struct bt_conn_cb conn_callbacks = {
 };
 #endif /* CONFIG_NET_L2_BT_MGMT */
 
-static int net_bt_init(struct device *dev)
+static int net_bt_init(const struct device *dev)
 {
 	NET_DBG("dev %p driver_data %p", dev, dev->driver_data);
 

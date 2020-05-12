@@ -15,7 +15,7 @@
 #include <ztest.h>
 
 extern void test_dac_write_value(void);
-extern struct device *get_dac_device(void);
+extern const struct device *get_dac_device(void);
 
 void test_main(void)
 {

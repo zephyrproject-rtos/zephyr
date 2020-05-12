@@ -16,7 +16,7 @@
 
 #define SECTOR_SIZE 512
 
-static struct device *flash_dev;
+static const struct device *flash_dev;
 
 /* flash read-copy-erase-write operation */
 static u8_t __aligned(4) read_copy_buf[CONFIG_DISK_ERASE_BLOCK_SIZE];
@@ -289,7 +289,7 @@ static struct disk_info flash_disk = {
 	.ops = &flash_disk_ops,
 };
 
-static int disk_flash_init(struct device *dev)
+static int disk_flash_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

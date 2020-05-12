@@ -23,7 +23,7 @@ LOG_MODULE_DECLARE(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 /**
  * lsm6dso_enable_t_int - TEMP enable selected int pin to generate interrupt
  */
-static int lsm6dso_enable_t_int(struct device *dev, int enable)
+static int lsm6dso_enable_t_int(const struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config_info;
 	struct lsm6dso_data *lsm6dso = dev->driver_data;
@@ -51,7 +51,7 @@ static int lsm6dso_enable_t_int(struct device *dev, int enable)
 /**
  * lsm6dso_enable_xl_int - XL enable selected int pin to generate interrupt
  */
-static int lsm6dso_enable_xl_int(struct device *dev, int enable)
+static int lsm6dso_enable_xl_int(const struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config_info;
 	struct lsm6dso_data *lsm6dso = dev->driver_data;
@@ -87,7 +87,7 @@ static int lsm6dso_enable_xl_int(struct device *dev, int enable)
 /**
  * lsm6dso_enable_g_int - Gyro enable selected int pin to generate interrupt
  */
-static int lsm6dso_enable_g_int(struct device *dev, int enable)
+static int lsm6dso_enable_g_int(const struct device *dev, int enable)
 {
 	const struct lsm6dso_config *cfg = dev->config_info;
 	struct lsm6dso_data *lsm6dso = dev->driver_data;
@@ -122,7 +122,7 @@ static int lsm6dso_enable_g_int(struct device *dev, int enable)
 /**
  * lsm6dso_trigger_set - link external trigger to event data ready
  */
-int lsm6dso_trigger_set(struct device *dev,
+int lsm6dso_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
@@ -163,7 +163,7 @@ int lsm6dso_trigger_set(struct device *dev,
  */
 static void lsm6dso_handle_interrupt(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct lsm6dso_data *lsm6dso = dev->driver_data;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
@@ -204,7 +204,7 @@ static void lsm6dso_handle_interrupt(void *arg)
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void lsm6dso_gpio_callback(struct device *dev,
+static void lsm6dso_gpio_callback(const struct device *dev,
 				    struct gpio_callback *cb, u32_t pins)
 {
 	struct lsm6dso_data *lsm6dso =
@@ -226,7 +226,7 @@ static void lsm6dso_gpio_callback(struct device *dev,
 #ifdef CONFIG_LSM6DSO_TRIGGER_OWN_THREAD
 static void lsm6dso_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct lsm6dso_data *lsm6dso = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -248,7 +248,7 @@ static void lsm6dso_work_cb(struct k_work *work)
 }
 #endif /* CONFIG_LSM6DSO_TRIGGER_GLOBAL_THREAD */
 
-int lsm6dso_init_interrupt(struct device *dev)
+int lsm6dso_init_interrupt(const struct device *dev)
 {
 	struct lsm6dso_data *lsm6dso = dev->driver_data;
 	const struct lsm6dso_config *cfg = dev->config_info;

@@ -172,7 +172,7 @@ static void dividers_init(void)
 	/* TODO(mlhx): enable clock failure detection? */
 }
 
-static int atmel_samd_init(struct device *arg)
+static int atmel_samd_init(const struct device *arg)
 {
 	u32_t key;
 

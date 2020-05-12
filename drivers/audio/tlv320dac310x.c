@@ -25,10 +25,10 @@ LOG_MODULE_REGISTER(tlv320dac310x);
 #define CODEC_OUTPUT_VOLUME_MIN		(-78 * 2)
 
 struct codec_driver_config {
-	struct device	*i2c_device;
+	const struct device	*i2c_device;
 	const char	*i2c_dev_name;
 	u8_t		i2c_address;
-	struct device	*gpio_device;
+	const struct device	*gpio_device;
 	const char	*gpio_dev_name;
 	u32_t		gpio_pin;
 	int		gpio_flags;
@@ -55,25 +55,28 @@ static struct codec_driver_data codec_device_data;
 #define DEV_DATA(dev) \
 	((struct codec_driver_data *const)(dev)->driver_data)
 
-static void codec_write_reg(struct device *dev, struct reg_addr reg, u8_t val);
-static void codec_read_reg(struct device *dev, struct reg_addr reg, u8_t *val);
-static void codec_soft_reset(struct device *dev);
-static int codec_configure_dai(struct device *dev, audio_dai_cfg_t *cfg);
-static int codec_configure_clocks(struct device *dev,
-		struct audio_codec_cfg *cfg);
-static int codec_configure_filters(struct device *dev, audio_dai_cfg_t *cfg);
+static void codec_write_reg(const struct device *dev, struct reg_addr reg,
+			    u8_t val);
+static void codec_read_reg(const struct device *dev, struct reg_addr reg,
+			   u8_t *val);
+static void codec_soft_reset(const struct device *dev);
+static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg);
+static int codec_configure_clocks(const struct device *dev,
+				  struct audio_codec_cfg *cfg);
+static int codec_configure_filters(const struct device *dev,
+				   audio_dai_cfg_t *cfg);
 static enum osr_multiple codec_get_osr_multiple(audio_dai_cfg_t *cfg);
-static void codec_configure_output(struct device *dev);
-static int codec_set_output_volume(struct device *dev, int vol);
+static void codec_configure_output(const struct device *dev);
+static int codec_set_output_volume(const struct device *dev, int vol);
 
 #if (LOG_LEVEL >= LOG_LEVEL_DEBUG)
-static void codec_read_all_regs(struct device *dev);
+static void codec_read_all_regs(const struct device *dev);
 #define CODEC_DUMP_REGS(dev)	codec_read_all_regs((dev))
 #else
 #define CODEC_DUMP_REGS(dev)
 #endif
 
-static int codec_initialize(struct device *dev)
+static int codec_initialize(const struct device *dev)
 {
 	struct codec_driver_config *const dev_cfg = DEV_CFG(dev);
 
@@ -96,8 +99,8 @@ static int codec_initialize(struct device *dev)
 	return 0;
 }
 
-static int codec_configure(struct device *dev,
-		struct audio_codec_cfg *cfg)
+static int codec_configure(const struct device *dev,
+			   struct audio_codec_cfg *cfg)
 {
 	struct codec_driver_config *const dev_cfg = DEV_CFG(dev);
 	int ret;
@@ -127,7 +130,7 @@ static int codec_configure(struct device *dev,
 	return ret;
 }
 
-static void codec_start_output(struct device *dev)
+static void codec_start_output(const struct device *dev)
 {
 	/* powerup DAC channels */
 	codec_write_reg(dev, DATA_PATH_SETUP_ADDR, DAC_LR_POWERUP_DEFAULT);
@@ -138,7 +141,7 @@ static void codec_start_output(struct device *dev)
 	CODEC_DUMP_REGS(dev);
 }
 
-static void codec_stop_output(struct device *dev)
+static void codec_stop_output(const struct device *dev)
 {
 	/* mute DAC channels */
 	codec_write_reg(dev, VOL_CTRL_ADDR, VOL_CTRL_MUTE_DEFAULT);
@@ -147,21 +150,22 @@ static void codec_stop_output(struct device *dev)
 	codec_write_reg(dev, DATA_PATH_SETUP_ADDR, DAC_LR_POWERDN_DEFAULT);
 }
 
-static void codec_mute_output(struct device *dev)
+static void codec_mute_output(const struct device *dev)
 {
 	/* mute DAC channels */
 	codec_write_reg(dev, VOL_CTRL_ADDR, VOL_CTRL_MUTE_DEFAULT);
 }
 
-static void codec_unmute_output(struct device *dev)
+static void codec_unmute_output(const struct device *dev)
 {
 	/* unmute DAC channels */
 	codec_write_reg(dev, VOL_CTRL_ADDR, VOL_CTRL_UNMUTE_DEFAULT);
 }
 
-static int codec_set_property(struct device *dev,
-		audio_property_t property, audio_channel_t channel,
-		audio_property_value_t val)
+static int codec_set_property(const struct device *dev,
+			      audio_property_t property,
+			      audio_channel_t channel,
+			      audio_property_value_t val)
 {
 	/* individual channel control not currently supported */
 	if (channel != AUDIO_CHANNEL_ALL) {
@@ -189,13 +193,14 @@ static int codec_set_property(struct device *dev,
 	return -EINVAL;
 }
 
-static int codec_apply_properties(struct device *dev)
+static int codec_apply_properties(const struct device *dev)
 {
 	/* nothing to do because there is nothing cached */
 	return 0;
 }
 
-static void codec_write_reg(struct device *dev, struct reg_addr reg, u8_t val)
+static void codec_write_reg(const struct device *dev, struct reg_addr reg,
+			    u8_t val)
 {
 	struct codec_driver_data *const dev_data = DEV_DATA(dev);
 	struct codec_driver_config *const dev_cfg = DEV_CFG(dev);
@@ -213,7 +218,8 @@ static void codec_write_reg(struct device *dev, struct reg_addr reg, u8_t val)
 			reg.page, reg.reg_addr, val);
 }
 
-static void codec_read_reg(struct device *dev, struct reg_addr reg, u8_t *val)
+static void codec_read_reg(const struct device *dev, struct reg_addr reg,
+			   u8_t *val)
 {
 	struct codec_driver_data *const dev_data = DEV_DATA(dev);
 	struct codec_driver_config *const dev_cfg = DEV_CFG(dev);
@@ -231,13 +237,13 @@ static void codec_read_reg(struct device *dev, struct reg_addr reg, u8_t *val)
 			reg.page, reg.reg_addr, *val);
 }
 
-static void codec_soft_reset(struct device *dev)
+static void codec_soft_reset(const struct device *dev)
 {
 	/* soft reset the DAC */
 	codec_write_reg(dev, SOFT_RESET_ADDR, SOFT_RESET_ASSERT);
 }
 
-static int codec_configure_dai(struct device *dev, audio_dai_cfg_t *cfg)
+static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg)
 {
 	u8_t val;
 
@@ -274,8 +280,8 @@ static int codec_configure_dai(struct device *dev, audio_dai_cfg_t *cfg)
 	return 0;
 }
 
-static int codec_configure_clocks(struct device *dev,
-		struct audio_codec_cfg *cfg)
+static int codec_configure_clocks(const struct device *dev,
+				  struct audio_codec_cfg *cfg)
 {
 	int dac_clk, mod_clk;
 	struct i2s_config *i2s;
@@ -373,7 +379,8 @@ static int codec_configure_clocks(struct device *dev,
 	return 0;
 }
 
-static int codec_configure_filters(struct device *dev, audio_dai_cfg_t *cfg)
+static int codec_configure_filters(const struct device *dev,
+				   audio_dai_cfg_t *cfg)
 {
 	enum proc_block proc_blk;
 
@@ -413,7 +420,7 @@ static enum osr_multiple codec_get_osr_multiple(audio_dai_cfg_t *cfg)
 	return osr;
 }
 
-static void codec_configure_output(struct device *dev)
+static void codec_configure_output(const struct device *dev)
 {
 	u8_t val;
 
@@ -453,7 +460,7 @@ static void codec_configure_output(struct device *dev)
 	codec_write_reg(dev, HEADPHONE_DRV_ADDR, val);
 }
 
-static int codec_set_output_volume(struct device *dev, int vol)
+static int codec_set_output_volume(const struct device *dev, int vol)
 {
 	u8_t vol_val;
 	int vol_index;
@@ -492,7 +499,7 @@ static int codec_set_output_volume(struct device *dev, int vol)
 }
 
 #if (LOG_LEVEL >= LOG_LEVEL_DEBUG)
-static void codec_read_all_regs(struct device *dev)
+static void codec_read_all_regs(const struct device *dev)
 {
 	u8_t val;
 

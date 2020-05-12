@@ -8,12 +8,12 @@
 #include <drivers/pinmux.h>
 #include <soc.h>
 
-static int board_pinmux_init(struct device *dev)
+static int board_pinmux_init(const struct device *dev)
 {
-	struct device *muxa = device_get_binding("PINMUX_A");
-	struct device *muxb = device_get_binding("PINMUX_B");
-	struct device *muxc = device_get_binding("PINMUX_C");
-	struct device *muxd = device_get_binding("PINMUX_D");
+	const struct device *muxa = device_get_binding("PINMUX_A");
+	const struct device *muxb = device_get_binding("PINMUX_B");
+	const struct device *muxc = device_get_binding("PINMUX_C");
+	const struct device *muxd = device_get_binding("PINMUX_D");
 
 	ARG_UNUSED(dev);
 	ARG_UNUSED(muxa);

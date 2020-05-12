@@ -16,7 +16,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(ADT7420, CONFIG_SENSOR_LOG_LEVEL);
 
-static void setup_int(struct device *dev,
+static void setup_int(const struct device *dev,
 		      bool enable)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
@@ -28,7 +28,7 @@ static void setup_int(struct device *dev,
 	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_pin, flags);
 }
 
-static void handle_int(struct device *dev)
+static void handle_int(const struct device *dev)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
 
@@ -41,7 +41,7 @@ static void handle_int(struct device *dev)
 #endif
 }
 
-static void process_int(struct device *dev)
+static void process_int(const struct device *dev)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
 	const struct adt7420_dev_config *cfg = dev->config_info;
@@ -67,7 +67,7 @@ static void process_int(struct device *dev)
 	}
 }
 
-static void adt7420_gpio_callback(struct device *dev,
+static void adt7420_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
 	struct adt7420_data *drv_data =
@@ -79,7 +79,7 @@ static void adt7420_gpio_callback(struct device *dev,
 #if defined(CONFIG_ADT7420_TRIGGER_OWN_THREAD)
 static void adt7420_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct adt7420_data *drv_data = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -100,7 +100,7 @@ static void adt7420_work_cb(struct k_work *work)
 }
 #endif
 
-int adt7420_trigger_set(struct device *dev,
+int adt7420_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
@@ -131,7 +131,7 @@ int adt7420_trigger_set(struct device *dev,
 	return 0;
 }
 
-int adt7420_init_interrupt(struct device *dev)
+int adt7420_init_interrupt(const struct device *dev)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
 	const struct adt7420_dev_config *cfg = dev->config_info;

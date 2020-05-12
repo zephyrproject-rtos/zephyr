@@ -45,7 +45,7 @@ static u8_t right_channel(u8_t a, u8_t b)
 	return ch_demux[a & CHANNEL_MASK] | (ch_demux[b & CHANNEL_MASK] << 4);
 }
 
-u16_t sw_filter_lib_init(struct device *dev, struct dmic_cfg *cfg)
+u16_t sw_filter_lib_init(const struct device *dev, struct dmic_cfg *cfg)
 {
 	struct mpxxdtyy_data *const data = DEV_DATA(dev);
 	TPDMFilter_InitStruct *pdm_filter = &data->pdm_filter[0];
@@ -148,7 +148,7 @@ static const struct _dmic_ops mpxxdtyy_driver_api = {
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2s) */
 };
 
-static int mpxxdtyy_initialize(struct device *dev)
+static int mpxxdtyy_initialize(const struct device *dev)
 {
 	struct mpxxdtyy_data *const data = DEV_DATA(dev);
 

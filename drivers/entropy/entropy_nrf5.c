@@ -227,7 +227,8 @@ static void isr(void *arg)
 	}
 }
 
-static int entropy_nrf5_get_entropy(struct device *device, u8_t *buf, u16_t len)
+static int entropy_nrf5_get_entropy(const struct device *device, u8_t *buf,
+				    u16_t len)
 {
 	/* Check if this API is called on correct driver instance. */
 	__ASSERT_NO_MSG(&entropy_nrf5_data == DEV_DATA(device));
@@ -253,7 +254,8 @@ static int entropy_nrf5_get_entropy(struct device *device, u8_t *buf, u16_t len)
 	return 0;
 }
 
-static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len,
+static int entropy_nrf5_get_entropy_isr(const struct device *dev, u8_t *buf,
+					u16_t len,
 					u32_t flags)
 {
 	u16_t cnt = len;
@@ -306,7 +308,7 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 	return cnt;
 }
 
-static int entropy_nrf5_init(struct device *device);
+static int entropy_nrf5_init(const struct device *device);
 
 static const struct entropy_driver_api entropy_nrf5_api_funcs = {
 	.get_entropy = entropy_nrf5_get_entropy,
@@ -318,7 +320,7 @@ DEVICE_AND_API_INIT(entropy_nrf5, DT_INST_LABEL(0),
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_nrf5_api_funcs);
 
-static int entropy_nrf5_init(struct device *device)
+static int entropy_nrf5_init(const struct device *device)
 {
 	/* Check if this API is called on correct driver instance. */
 	__ASSERT_NO_MSG(&entropy_nrf5_data == DEV_DATA(device));

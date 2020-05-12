@@ -29,7 +29,7 @@ struct cavs_idc_data {
 DEVICE_DECLARE(cavs_idc);
 static struct cavs_idc_data cavs_idc_device_data;
 
-static void cavs_idc_isr(struct device *dev)
+static void cavs_idc_isr(const struct device *dev)
 {
 	struct cavs_idc_data *drv_data = dev->driver_data;
 
@@ -84,7 +84,7 @@ static void cavs_idc_isr(struct device *dev)
 #endif
 }
 
-static int cavs_idc_send(struct device *dev, int wait, u32_t id,
+static int cavs_idc_send(const struct device *dev, int wait, u32_t id,
 			 const void *data, int size)
 {
 	u32_t curr_cpu_id = arch_curr_cpu()->id;
@@ -134,7 +134,7 @@ static int cavs_idc_send(struct device *dev, int wait, u32_t id,
 	return 0;
 }
 
-static int cavs_idc_max_data_size_get(struct device *dev)
+static int cavs_idc_max_data_size_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -149,14 +149,15 @@ static int cavs_idc_max_data_size_get(struct device *dev)
 	return 0;
 }
 
-static u32_t cavs_idc_max_id_val_get(struct device *dev)
+static u32_t cavs_idc_max_id_val_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return IPM_CAVS_IDC_ID_MASK;
 }
 
-static void cavs_idc_register_callback(struct device *dev, ipm_callback_t cb,
+static void cavs_idc_register_callback(const struct device *dev,
+				       ipm_callback_t cb,
 				       void *context)
 {
 	struct cavs_idc_data *drv_data = dev->driver_data;
@@ -165,7 +166,7 @@ static void cavs_idc_register_callback(struct device *dev, ipm_callback_t cb,
 	drv_data->ctx = context;
 }
 
-static int cavs_idc_set_enabled(struct device *dev, int enable)
+static int cavs_idc_set_enabled(const struct device *dev, int enable)
 {
 	int i, j;
 	u32_t mask;
@@ -201,7 +202,7 @@ static int cavs_idc_set_enabled(struct device *dev, int enable)
 	return 0;
 }
 
-static int cavs_idc_init(struct device *dev)
+static int cavs_idc_init(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
@@ -227,7 +228,7 @@ DEVICE_AND_API_INIT(IPM_CAVS_IDC_DEV_NAME,
 		    &cavs_idc_driver_api);
 
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
-static int cavs_idc_smp_init(struct device *dev)
+static int cavs_idc_smp_init(const struct device *dev)
 {
 	/* Enable IDC for scheduler IPI */
 	cavs_idc_set_enabled(dev, 1);

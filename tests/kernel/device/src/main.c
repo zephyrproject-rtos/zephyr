@@ -39,7 +39,7 @@
  */
 void test_dummy_device(void)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	dev = device_get_binding(DUMMY_PORT_1);
 	zassert_equal(dev, NULL, NULL);
@@ -65,7 +65,7 @@ void test_dummy_device(void)
  */
 static void test_dynamic_name(void)
 {
-	struct device *mux;
+	const struct device *mux;
 	char name[sizeof(DUMMY_PORT_2)];
 
 	snprintk(name, sizeof(name), "%s", DUMMY_PORT_2);
@@ -83,7 +83,7 @@ static void test_dynamic_name(void)
  */
 static void test_bogus_dynamic_name(void)
 {
-	struct device *mux;
+	const struct device *mux;
 	char name[64];
 
 	snprintk(name, sizeof(name), "ANOTHER_BOGUS_NAME");
@@ -108,22 +108,22 @@ static int add_init_record(bool pre_kernel)
 	return 0;
 }
 
-static int pre1_fn(struct device *dev)
+static int pre1_fn(const struct device *dev)
 {
 	return add_init_record(true);
 }
 
-static int pre2_fn(struct device *dev)
+static int pre2_fn(const struct device *dev)
 {
 	return add_init_record(true);
 }
 
-static int post_fn(struct device *dev)
+static int post_fn(const struct device *dev)
 {
 	return add_init_record(false);
 }
 
-static int app_fn(struct device *dev)
+static int app_fn(const struct device *dev)
 {
 	return add_init_record(false);
 }
@@ -178,7 +178,7 @@ void test_pre_kernel_detection(void)
 static void test_build_suspend_device_list(void)
 {
 	int devcount;
-	struct device *devices;
+	const struct device *devices;
 
 	device_list_get(&devices, &devcount);
 	zassert_false((devcount == 0), NULL);
@@ -197,7 +197,7 @@ static void test_build_suspend_device_list(void)
  */
 void test_dummy_device_pm(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	int busy, ret;
 
 	dev = device_get_binding(DUMMY_PORT_2);

@@ -85,10 +85,10 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 	return 0;
 }
 
-int spi_oc_simple_transceive(struct device *dev,
-			  const struct spi_config *config,
-			  const struct spi_buf_set *tx_bufs,
-			  const struct spi_buf_set *rx_bufs)
+int spi_oc_simple_transceive(const struct device *dev,
+			     const struct spi_config *config,
+			     const struct spi_buf_set *tx_bufs,
+			     const struct spi_buf_set *rx_bufs)
 {
 	const struct spi_oc_simple_cfg *info = dev->config_info;
 	struct spi_oc_simple_data *spi = SPI_OC_SIMPLE_DATA(dev);
@@ -158,17 +158,18 @@ int spi_oc_simple_transceive(struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_oc_simple_transceive_async(struct device *dev,
-				       const struct spi_config *config,
-				       const struct spi_buf_set *tx_bufs,
-				       const struct spi_buf_set *rx_bufs,
-				       struct k_poll_signal *async)
+static int spi_oc_simple_transceive_async(const struct device *dev,
+					  const struct spi_config *config,
+					  const struct spi_buf_set *tx_bufs,
+					  const struct spi_buf_set *rx_bufs,
+					  struct k_poll_signal *async)
 {
 	return -ENOTSUP;
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-int spi_oc_simple_release(struct device *dev, const struct spi_config *config)
+int spi_oc_simple_release(const struct device *dev,
+			  const struct spi_config *config)
 {
 	spi_context_unlock_unconditionally(&SPI_OC_SIMPLE_DATA(dev)->ctx);
 	return 0;
@@ -182,7 +183,7 @@ static struct spi_driver_api spi_oc_simple_api = {
 #endif /* CONFIG_SPI_ASYNC */
 };
 
-int spi_oc_simple_init(struct device *dev)
+int spi_oc_simple_init(const struct device *dev)
 {
 	const struct spi_oc_simple_cfg *info = dev->config_info;
 

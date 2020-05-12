@@ -42,7 +42,7 @@ LOG_MODULE_REGISTER(BME280, CONFIG_SENSOR_LOG_LEVEL);
  */
 
 struct bme280_data {
-	struct device *bus;
+	const struct device *bus;
 #if BME280_BUS_SPI
 	struct spi_cs_control spi_cs;
 #endif
@@ -98,10 +98,10 @@ struct bme280_config {
 	const union bme280_bus_config bus_config;
 };
 
-typedef int (*bme280_reg_read_fn)(struct device *bus,
+typedef int (*bme280_reg_read_fn)(const struct device *bus,
 				  const union bme280_bus_config *bus_config,
 				  u8_t start, u8_t *buf, int size);
-typedef int (*bme280_reg_write_fn)(struct device *bus,
+typedef int (*bme280_reg_write_fn)(const struct device *bus,
 				   const union bme280_bus_config *bus_config,
 				   u8_t reg, u8_t val);
 
@@ -110,22 +110,22 @@ struct bme280_reg_io {
 	bme280_reg_write_fn write;
 };
 
-static inline struct bme280_data *to_data(struct device *dev)
+static inline struct bme280_data *to_data(const struct device *dev)
 {
 	return dev->driver_data;
 }
 
-static inline const struct bme280_config *to_config(struct device *dev)
+static inline const struct bme280_config *to_config(const struct device *dev)
 {
 	return dev->config_info;
 }
 
-static inline struct device *to_bus(struct device *dev)
+static inline const struct device *to_bus(const struct device *dev)
 {
 	return to_data(dev)->bus;
 }
 
-static inline const union bme280_bus_config *to_bus_config(struct device *dev)
+static inline const union bme280_bus_config *to_bus_config(const struct device *dev)
 {
 	return &to_config(dev)->bus_config;
 }
@@ -137,7 +137,7 @@ to_spi_config(const union bme280_bus_config *bus_config)
 	return &bus_config->spi_cfg->spi_cfg;
 }
 
-static int bme280_reg_read_spi(struct device *bus,
+static int bme280_reg_read_spi(const struct device *bus,
 			       const union bme280_bus_config *bus_config,
 			       u8_t start, u8_t *buf, int size)
 {
@@ -178,7 +178,7 @@ static int bme280_reg_read_spi(struct device *bus,
 	return 0;
 }
 
-static int bme280_reg_write_spi(struct device *bus,
+static int bme280_reg_write_spi(const struct device *bus,
 				const union bme280_bus_config *bus_config,
 				u8_t reg, u8_t val)
 {
@@ -208,7 +208,7 @@ static const struct bme280_reg_io bme280_reg_io_spi = {
 #endif /* BME280_BUS_SPI */
 
 #if BME280_BUS_I2C
-static int bme280_reg_read_i2c(struct device *bus,
+static int bme280_reg_read_i2c(const struct device *bus,
 			       const union bme280_bus_config *bus_config,
 			       u8_t start, u8_t *buf, int size)
 {
@@ -216,7 +216,7 @@ static int bme280_reg_read_i2c(struct device *bus,
 			      start, buf, size);
 }
 
-static int bme280_reg_write_i2c(struct device *bus,
+static int bme280_reg_write_i2c(const struct device *bus,
 				const union bme280_bus_config *bus_config,
 				u8_t reg, u8_t val)
 {
@@ -230,14 +230,15 @@ static const struct bme280_reg_io bme280_reg_io_i2c = {
 };
 #endif /* BME280_BUS_I2C */
 
-static inline int bme280_reg_read(struct device *dev,
+static inline int bme280_reg_read(const struct device *dev,
 				  u8_t start, u8_t *buf, int size)
 {
 	return to_config(dev)->reg_io->read(to_bus(dev), to_bus_config(dev),
 					    start, buf, size);
 }
 
-static inline int bme280_reg_write(struct device *dev, u8_t reg, u8_t val)
+static inline int bme280_reg_write(const struct device *dev, u8_t reg,
+				   u8_t val)
 {
 	return to_config(dev)->reg_io->write(to_bus(dev), to_bus_config(dev),
 					     reg, val);
@@ -306,7 +307,8 @@ static void bme280_compensate_humidity(struct bme280_data *data,
 	data->comp_humidity = (u32_t)(h >> 12);
 }
 
-static int bme280_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int bme280_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
 	struct bme280_data *data = to_data(dev);
 	u8_t buf[8];
@@ -353,7 +355,7 @@ static int bme280_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int bme280_channel_get(struct device *dev,
+static int bme280_channel_get(const struct device *dev,
 			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
@@ -399,7 +401,7 @@ static const struct sensor_driver_api bme280_api_funcs = {
 	.channel_get = bme280_channel_get,
 };
 
-static int bme280_read_compensation(struct device *dev)
+static int bme280_read_compensation(const struct device *dev)
 {
 	struct bme280_data *data = to_data(dev);
 	u16_t buf[12];
@@ -452,7 +454,7 @@ static int bme280_read_compensation(struct device *dev)
 	return 0;
 }
 
-static int bme280_chip_init(struct device *dev)
+static int bme280_chip_init(const struct device *dev)
 {
 	struct bme280_data *data = to_data(dev);
 	int err;
@@ -505,12 +507,12 @@ static int bme280_chip_init(struct device *dev)
 }
 
 #if BME280_BUS_SPI
-static inline int bme280_is_on_spi(struct device *dev)
+static inline int bme280_is_on_spi(const struct device *dev)
 {
 	return to_config(dev)->reg_io == &bme280_reg_io_spi;
 }
 
-static inline int bme280_spi_init(struct device *dev)
+static inline int bme280_spi_init(const struct device *dev)
 {
 	struct bme280_data *data = to_data(dev);
 	const struct bme280_spi_cfg *spi_cfg = to_bus_config(dev)->spi_cfg;
@@ -530,18 +532,18 @@ static inline int bme280_spi_init(struct device *dev)
 	return 0;
 }
 #else
-static inline int bme280_is_on_spi(struct device *dev)
+static inline int bme280_is_on_spi(const struct device *dev)
 {
 	return 0;
 }
 
-static inline int bme280_spi_init(struct device *dev)
+static inline int bme280_spi_init(const struct device *dev)
 {
 	return 0;
 }
 #endif
 
-int bme280_init(struct device *dev)
+int bme280_init(const struct device *dev)
 {
 	const char *name = dev->name;
 	struct bme280_data *data = to_data(dev);

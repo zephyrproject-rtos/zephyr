@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth_stats.h>
 #include "eth_stellaris_priv.h"
 
-static void eth_stellaris_assign_mac(struct device *dev)
+static void eth_stellaris_assign_mac(const struct device *dev)
 {
 	u8_t mac_addr[6] = DT_INST_PROP(0, local_mac_address);
 	u32_t value = 0x0;
@@ -37,7 +37,7 @@ static void eth_stellaris_assign_mac(struct device *dev)
 	sys_write32(value, REG_MACIA1);
 }
 
-static void eth_stellaris_flush(struct device *dev)
+static void eth_stellaris_flush(const struct device *dev)
 {
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 
@@ -48,7 +48,7 @@ static void eth_stellaris_flush(struct device *dev)
 	}
 }
 
-static void eth_stellaris_send_byte(struct device *dev, u8_t byte)
+static void eth_stellaris_send_byte(const struct device *dev, u8_t byte)
 {
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 
@@ -61,7 +61,7 @@ static void eth_stellaris_send_byte(struct device *dev, u8_t byte)
 	}
 }
 
-static int eth_stellaris_send(struct device *dev, struct net_pkt *pkt)
+static int eth_stellaris_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 	struct net_buf *frag;
@@ -104,7 +104,7 @@ static int eth_stellaris_send(struct device *dev, struct net_pkt *pkt)
 
 static void eth_stellaris_rx_error(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	u32_t val;
 
 	eth_stats_update_errors_rx(iface);
@@ -118,7 +118,7 @@ static void eth_stellaris_rx_error(struct net_if *iface)
 	sys_write32(val, REG_MACRCTL);
 }
 
-static struct net_pkt *eth_stellaris_rx_pkt(struct device *dev,
+static struct net_pkt *eth_stellaris_rx_pkt(const struct device *dev,
 					    struct net_if *iface)
 {
 	int frame_len, bytes_left;
@@ -201,7 +201,7 @@ error:
 	return NULL;
 }
 
-static void eth_stellaris_rx(struct device *dev)
+static void eth_stellaris_rx(const struct device *dev)
 {
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 	struct net_if *iface = dev_data->iface;
@@ -230,7 +230,7 @@ err_mem:
 static void eth_stellaris_isr(void *arg)
 {
 	/* Read the interrupt status */
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 	int isr_val = sys_read32(REG_MACRIS);
 	u32_t lock;
@@ -271,7 +271,7 @@ static void eth_stellaris_isr(void *arg)
 
 static void eth_stellaris_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	const struct eth_stellaris_config *dev_conf = DEV_CFG(dev);
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 
@@ -291,13 +291,13 @@ static void eth_stellaris_init(struct net_if *iface)
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *eth_stellaris_stats(struct device *dev)
+static struct net_stats_eth *eth_stellaris_stats(const struct device *dev)
 {
 	return &(DEV_DATA(dev)->stats);
 }
 #endif
 
-static int eth_stellaris_dev_init(struct device *dev)
+static int eth_stellaris_dev_init(const struct device *dev)
 {
 	u32_t value;
 
@@ -322,7 +322,7 @@ static int eth_stellaris_dev_init(struct device *dev)
 
 DEVICE_DECLARE(eth_stellaris);
 
-static void eth_stellaris_irq_config(struct device *dev)
+static void eth_stellaris_irq_config(const struct device *dev)
 {
 	/* Enable Interrupt. */
 	IRQ_CONNECT(DT_INST_IRQN(0),

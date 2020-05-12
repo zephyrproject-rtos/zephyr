@@ -25,7 +25,8 @@
 
 static unsigned int seed = 0x5678;
 
-static int entropy_native_posix_get_entropy(struct device *dev, u8_t *buffer,
+static int entropy_native_posix_get_entropy(const struct device *dev,
+					    u8_t *buffer,
 					    u16_t length)
 {
 	ARG_UNUSED(dev);
@@ -47,7 +48,8 @@ static int entropy_native_posix_get_entropy(struct device *dev, u8_t *buffer,
 	return 0;
 }
 
-static int entropy_native_posix_get_entropy_isr(struct device *dev, u8_t *buf,
+static int entropy_native_posix_get_entropy_isr(const struct device *dev,
+						u8_t *buf,
 						u16_t len, u32_t flags)
 {
 	ARG_UNUSED(flags);
@@ -59,7 +61,7 @@ static int entropy_native_posix_get_entropy_isr(struct device *dev, u8_t *buf,
 	return entropy_native_posix_get_entropy(dev, buf, len);
 }
 
-static int entropy_native_posix_init(struct device *dev)
+static int entropy_native_posix_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	srandom(seed);

@@ -88,7 +88,7 @@ static u8_t pwm_channel_map(struct pwm_data *data, u8_t map_size,
 	return i;
 }
 
-static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
+static int pwm_nrf5_sw_pin_set(const struct device *dev, u32_t pwm,
 			       u32_t period_cycles, u32_t pulse_cycles,
 			       pwm_flags_t flags)
 {
@@ -213,7 +213,7 @@ pin_set_pwm_off:
 	return 0;
 }
 
-static int pwm_nrf5_sw_get_cycles_per_sec(struct device *dev, u32_t pwm,
+static int pwm_nrf5_sw_get_cycles_per_sec(const struct device *dev, u32_t pwm,
 					  u64_t *cycles)
 {
 	const struct pwm_config *config;
@@ -231,7 +231,7 @@ static const struct pwm_driver_api pwm_nrf5_sw_drv_api_funcs = {
 	.get_cycles_per_sec = pwm_nrf5_sw_get_cycles_per_sec,
 };
 
-static int pwm_nrf5_sw_init(struct device *dev)
+static int pwm_nrf5_sw_init(const struct device *dev)
 {
 	const struct pwm_config *config;
 	NRF_TIMER_Type *timer;

@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(openamp_rsc_table, LOG_LEVEL_DBG);
 K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
 static struct k_thread thread_data;
 
-static struct device *ipm_handle;
+static const struct device *ipm_handle;
 
 static metal_phys_addr_t shm_physmap = SHM_START_ADDR;
 

@@ -22,7 +22,7 @@ LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 /**
  * lps22hh_enable_int - enable selected int pin to generate interrupt
  */
-static int lps22hh_enable_int(struct device *dev, int enable)
+static int lps22hh_enable_int(const struct device *dev, int enable)
 {
 	struct lps22hh_data *lps22hh = dev->driver_data;
 	lps22hh_reg_t int_route;
@@ -38,7 +38,7 @@ static int lps22hh_enable_int(struct device *dev, int enable)
 /**
  * lps22hh_trigger_set - link external trigger to event data ready
  */
-int lps22hh_trigger_set(struct device *dev,
+int lps22hh_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
@@ -69,7 +69,7 @@ int lps22hh_trigger_set(struct device *dev,
  */
 static void lps22hh_handle_interrupt(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct lps22hh_data *lps22hh = dev->driver_data;
 	const struct lps22hh_config *cfg = dev->config_info;
 	struct sensor_trigger drdy_trigger = {
@@ -84,7 +84,7 @@ static void lps22hh_handle_interrupt(void *arg)
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void lps22hh_gpio_callback(struct device *dev,
+static void lps22hh_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
 	const struct lps22hh_config *cfg = dev->config_info;
@@ -106,7 +106,7 @@ static void lps22hh_gpio_callback(struct device *dev,
 #ifdef CONFIG_LPS22HH_TRIGGER_OWN_THREAD
 static void lps22hh_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct lps22hh_data *lps22hh = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -128,7 +128,7 @@ static void lps22hh_work_cb(struct k_work *work)
 }
 #endif /* CONFIG_LPS22HH_TRIGGER_GLOBAL_THREAD */
 
-int lps22hh_init_interrupt(struct device *dev)
+int lps22hh_init_interrupt(const struct device *dev)
 {
 	struct lps22hh_data *lps22hh = dev->driver_data;
 	const struct lps22hh_config *cfg = dev->config_info;

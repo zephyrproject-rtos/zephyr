@@ -75,7 +75,7 @@ struct eth_context {
 	u8_t mac_addr[6];
 
 	struct net_ptp_time time;
-	struct device *ptp_clock;
+	const struct device *ptp_clock;
 };
 
 static struct eth_context eth_context_1;
@@ -84,7 +84,7 @@ static struct eth_context eth_context_3;
 
 static void eth_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct eth_context *context = dev->driver_data;
 
 	net_if_set_link_addr(iface, context->mac_addr,
@@ -94,7 +94,7 @@ static void eth_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static int eth_tx(struct device *dev, struct net_pkt *pkt)
+static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_context *context = dev->driver_data;
 
@@ -115,12 +115,12 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_capabilities(const struct device *dev)
 {
 	return ETHERNET_PTP;
 }
 
-static struct device *eth_get_ptp_clock(struct device *dev)
+static const struct device *eth_get_ptp_clock(const struct device *dev)
 {
 	struct eth_context *context = dev->driver_data;
 
@@ -146,7 +146,7 @@ static void generate_mac(u8_t *mac_addr)
 	mac_addr[5] = sys_rand32_get();
 }
 
-static int eth_init(struct device *dev)
+static int eth_init(const struct device *dev)
 {
 	struct eth_context *context = dev->driver_data;
 
@@ -180,7 +180,7 @@ struct ptp_context {
 	struct eth_context *eth_context;
 };
 
-static int my_ptp_clock_set(struct device *dev, struct net_ptp_time *tm)
+static int my_ptp_clock_set(const struct device *dev, struct net_ptp_time *tm)
 {
 	struct ptp_context *ptp_ctx = dev->driver_data;
 	struct eth_context *eth_ctx = ptp_ctx->eth_context;
@@ -194,7 +194,7 @@ static int my_ptp_clock_set(struct device *dev, struct net_ptp_time *tm)
 	return 0;
 }
 
-static int my_ptp_clock_get(struct device *dev, struct net_ptp_time *tm)
+static int my_ptp_clock_get(const struct device *dev, struct net_ptp_time *tm)
 {
 	struct ptp_context *ptp_ctx = dev->driver_data;
 	struct eth_context *eth_ctx = ptp_ctx->eth_context;
@@ -204,7 +204,7 @@ static int my_ptp_clock_get(struct device *dev, struct net_ptp_time *tm)
 	return 0;
 }
 
-static int my_ptp_clock_adjust(struct device *dev, int increment)
+static int my_ptp_clock_adjust(const struct device *dev, int increment)
 {
 	struct ptp_context *ptp_ctx = dev->driver_data;
 	struct eth_context *eth_ctx = ptp_ctx->eth_context;
@@ -214,7 +214,7 @@ static int my_ptp_clock_adjust(struct device *dev, int increment)
 	return 0;
 }
 
-static int my_ptp_clock_rate_adjust(struct device *dev, float ratio)
+static int my_ptp_clock_rate_adjust(const struct device *dev, float ratio)
 {
 	return 0;
 }
@@ -229,9 +229,9 @@ static const struct ptp_clock_driver_api api = {
 	.rate_adjust = my_ptp_clock_rate_adjust,
 };
 
-static int ptp_test_1_init(struct device *port)
+static int ptp_test_1_init(const struct device *port)
 {
-	struct device *eth_dev = DEVICE_GET(eth_test_1);
+	const struct device *eth_dev = DEVICE_GET(eth_test_1);
 	struct eth_context *context = eth_dev->driver_data;
 	struct ptp_context *ptp_context = port->driver_data;
 
@@ -245,9 +245,9 @@ DEVICE_AND_API_INIT(ptp_clock_1, PTP_CLOCK_NAME, ptp_test_1_init,
 		    &ptp_test_1_context, NULL, POST_KERNEL,
 		    CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
-static int ptp_test_2_init(struct device *port)
+static int ptp_test_2_init(const struct device *port)
 {
-	struct device *eth_dev = DEVICE_GET(eth_test_2);
+	const struct device *eth_dev = DEVICE_GET(eth_test_2);
 	struct eth_context *context = eth_dev->driver_data;
 	struct ptp_context *ptp_context = port->driver_data;
 
@@ -288,7 +288,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		static int ptp_iface_idx;
-		struct device *clk;
+		const struct device *clk;
 
 		if (ud->eth_if_count >= ARRAY_SIZE(eth_interfaces)) {
 			DBG("Invalid interface %p\n", iface);
@@ -394,8 +394,8 @@ static void test_address_setup(void)
 
 static void test_ptp_clock_interfaces(void)
 {
-	struct device *clk_by_index;
-	struct device *clk;
+	const struct device *clk_by_index;
+	const struct device *clk;
 	int idx;
 
 	idx = ptp_interface[0];
@@ -425,7 +425,7 @@ static void test_ptp_clock_iface(int idx)
 		.second = 1,
 		.nanosecond = 1,
 	};
-	struct device *clk;
+	const struct device *clk;
 	u64_t orig, new_value;
 
 	clk = net_eth_get_ptp_clock(eth_interfaces[idx]);
@@ -464,12 +464,12 @@ static void test_ptp_clock_iface_2(void)
 	test_ptp_clock_iface(ptp_interface[1]);
 }
 
-static ZTEST_BMEM struct device *clk0;
-static ZTEST_BMEM struct device *clk1;
+static ZTEST_BMEM const struct device *clk0;
+static ZTEST_BMEM const struct device *clk1;
 
 static void test_ptp_clock_get_by_index(void)
 {
-	struct device *clk, *clk_by_index;
+	const struct device *clk, *clk_by_index;
 	int idx;
 
 	idx = ptp_interface[0];
@@ -499,7 +499,7 @@ static void test_ptp_clock_get_by_index(void)
 
 static void test_ptp_clock_get_by_index_user(void)
 {
-	struct device *clk_by_index;
+	const struct device *clk_by_index;
 
 	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[0]);
 	zassert_not_null(clk_by_index, "PTP 0 not found");
@@ -515,7 +515,7 @@ static ZTEST_BMEM struct net_ptp_time empty;
 
 static void test_ptp_clock_get_by_xxx(const char *who)
 {
-	struct device *clk_by_index;
+	const struct device *clk_by_index;
 	int ret;
 
 	clk_by_index = net_eth_get_ptp_clock_by_index(ptp_clocks[0]);
@@ -531,7 +531,7 @@ static void test_ptp_clock_get_by_xxx(const char *who)
 
 static void test_ptp_clock_get_kernel(void)
 {
-	struct device *clk;
+	const struct device *clk;
 
 	/* Make sure that this function is really run in kernel mode by
 	 * calling a function that will not work in user mode.
@@ -548,7 +548,7 @@ static void test_ptp_clock_get_user(void)
 
 void test_main(void)
 {
-	struct device *clk;
+	const struct device *clk;
 
 	clk = device_get_binding(PTP_CLOCK_NAME);
 	if (clk != NULL) {

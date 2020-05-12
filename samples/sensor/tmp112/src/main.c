@@ -10,7 +10,7 @@
 #include <sys/printk.h>
 #include <sys/__assert.h>
 
-static void do_main(struct device *dev)
+static void do_main(const struct device *dev)
 {
 	int ret;
 	struct sensor_value temp_value;
@@ -56,7 +56,7 @@ static void do_main(struct device *dev)
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	dev = device_get_binding("TMP112");
 	__ASSERT(dev != NULL, "Failed to get device binding");

@@ -23,7 +23,8 @@ struct iis2mdc_data iis2mdc_data;
 LOG_MODULE_REGISTER(IIS2MDC, CONFIG_SENSOR_LOG_LEVEL);
 
 #ifdef CONFIG_IIS2MDC_MAG_ODR_RUNTIME
-static int iis2mdc_set_odr(struct device *dev, const struct sensor_value *val)
+static int iis2mdc_set_odr(const struct device *dev,
+			   const struct sensor_value *val)
 {
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
 	iis2mdc_odr_t odr;
@@ -53,7 +54,8 @@ static int iis2mdc_set_odr(struct device *dev, const struct sensor_value *val)
 }
 #endif /* CONFIG_IIS2MDC_MAG_ODR_RUNTIME */
 
-static int iis2mdc_set_hard_iron(struct device *dev, enum sensor_channel chan,
+static int iis2mdc_set_hard_iron(const struct device *dev,
+				   enum sensor_channel chan,
 				   const struct sensor_value *val)
 {
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
@@ -68,7 +70,7 @@ static int iis2mdc_set_hard_iron(struct device *dev, enum sensor_channel chan,
 	return iis2mdc_mag_user_offset_set(iis2mdc->ctx, offset.u8bit);
 }
 
-static void iis2mdc_channel_get_mag(struct device *dev,
+static void iis2mdc_channel_get_mag(const struct device *dev,
 				      enum sensor_channel chan,
 				      struct sensor_value *val)
 {
@@ -102,7 +104,7 @@ static void iis2mdc_channel_get_mag(struct device *dev,
 }
 
 /* read internal temperature */
-static void iis2mdc_channel_get_temp(struct device *dev,
+static void iis2mdc_channel_get_temp(const struct device *dev,
 				       struct sensor_value *val)
 {
 	struct iis2mdc_data *drv_data = dev->driver_data;
@@ -111,7 +113,8 @@ static void iis2mdc_channel_get_temp(struct device *dev,
 	val->val2 = (drv_data->temp_sample % 100) * 10000;
 }
 
-static int iis2mdc_channel_get(struct device *dev, enum sensor_channel chan,
+static int iis2mdc_channel_get(const struct device *dev,
+				 enum sensor_channel chan,
 				 struct sensor_value *val)
 {
 	switch (chan) {
@@ -132,7 +135,7 @@ static int iis2mdc_channel_get(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int iis2mdc_config(struct device *dev, enum sensor_channel chan,
+static int iis2mdc_config(const struct device *dev, enum sensor_channel chan,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
@@ -151,7 +154,7 @@ static int iis2mdc_config(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int iis2mdc_attr_set(struct device *dev,
+static int iis2mdc_attr_set(const struct device *dev,
 			      enum sensor_channel chan,
 			      enum sensor_attribute attr,
 			      const struct sensor_value *val)
@@ -171,7 +174,7 @@ static int iis2mdc_attr_set(struct device *dev,
 	return 0;
 }
 
-static int iis2mdc_sample_fetch_mag(struct device *dev)
+static int iis2mdc_sample_fetch_mag(const struct device *dev)
 {
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
 	union axis3bit16_t raw_mag;
@@ -189,7 +192,7 @@ static int iis2mdc_sample_fetch_mag(struct device *dev)
 	return 0;
 }
 
-static int iis2mdc_sample_fetch_temp(struct device *dev)
+static int iis2mdc_sample_fetch_temp(const struct device *dev)
 {
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
 	union axis1bit16_t raw_temp;
@@ -208,7 +211,8 @@ static int iis2mdc_sample_fetch_temp(struct device *dev)
 	return 0;
 }
 
-static int iis2mdc_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int iis2mdc_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
@@ -240,7 +244,7 @@ static const struct sensor_driver_api iis2mdc_driver_api = {
 	.channel_get = iis2mdc_channel_get,
 };
 
-static int iis2mdc_init_interface(struct device *dev)
+static int iis2mdc_init_interface(const struct device *dev)
 {
 	const struct iis2mdc_config *const config =
 						dev->config_info;
@@ -286,7 +290,7 @@ static const struct iis2mdc_config iis2mdc_dev_config = {
 #endif
 };
 
-static int iis2mdc_init(struct device *dev)
+static int iis2mdc_init(const struct device *dev)
 {
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
 	u8_t wai;

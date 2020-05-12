@@ -104,7 +104,7 @@ static void compare_isr(void *arg)
 	z_clock_announce(dticks);
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	u64_t curr = count();
 

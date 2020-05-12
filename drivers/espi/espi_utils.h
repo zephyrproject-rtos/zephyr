@@ -49,7 +49,7 @@ static int espi_manage_callback(sys_slist_t *callbacks,
  * @param pins The details on the event that triggered the callback.
  */
 static inline void espi_send_callbacks(sys_slist_t *list,
-				       struct device *device,
+				       const struct device *device,
 				       struct espi_event evt)
 {
 	struct espi_callback *cb, *tmp;

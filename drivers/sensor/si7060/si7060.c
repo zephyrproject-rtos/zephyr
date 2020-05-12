@@ -18,7 +18,7 @@
 LOG_MODULE_REGISTER(si7060, CONFIG_SENSOR_LOG_LEVEL);
 
 struct si7060_data {
-	struct device *i2c_dev;
+	const struct device *i2c_dev;
 	u16_t temperature;
 };
 
@@ -40,7 +40,8 @@ static int si7060_reg_write(struct si7060_data *drv_data, u8_t reg,
 		DT_INST_REG_ADDR(0), reg, val);
 }
 
-static int si7060_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int si7060_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
 	struct si7060_data *drv_data = dev->driver_data;
 
@@ -70,7 +71,8 @@ static int si7060_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return retval;
 }
 
-static int si7060_channel_get(struct device *dev, enum sensor_channel chan,
+static int si7060_channel_get(const struct device *dev,
+			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	struct si7060_data *drv_data = dev->driver_data;
@@ -94,7 +96,7 @@ static const struct sensor_driver_api si7060_api = {
 	.channel_get = &si7060_channel_get,
 };
 
-static int si7060_chip_init(struct device *dev)
+static int si7060_chip_init(const struct device *dev)
 {
 	struct si7060_data *drv_data = dev->driver_data;
 	u8_t value;
@@ -121,7 +123,7 @@ static int si7060_chip_init(struct device *dev)
 	return 0;
 }
 
-static int si7060_init(struct device *dev)
+static int si7060_init(const struct device *dev)
 {
 	if (si7060_chip_init(dev) < 0) {
 		return -EINVAL;

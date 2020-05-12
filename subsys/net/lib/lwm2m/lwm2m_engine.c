@@ -4393,7 +4393,7 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 	return lwm2m_socket_start(client_ctx);
 }
 
-static int lwm2m_engine_init(struct device *dev)
+static int lwm2m_engine_init(const struct device *dev)
 {
 	int ret = 0;
 

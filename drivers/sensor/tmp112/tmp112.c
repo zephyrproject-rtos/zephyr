@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(TMP112, CONFIG_SENSOR_LOG_LEVEL);
 #define TMP112_TEMP_SCALE		62500
 
 struct tmp112_data {
-	struct device *i2c;
+	const struct device *i2c;
 	s16_t sample;
 };
 
@@ -73,7 +73,7 @@ static int tmp112_reg_update(struct tmp112_data *drv_data, u8_t reg,
 	return tmp112_reg_write(drv_data, reg, new_val);
 }
 
-static int tmp112_attr_set(struct device *dev,
+static int tmp112_attr_set(const struct device *dev,
 			   enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
@@ -149,7 +149,8 @@ static int tmp112_attr_set(struct device *dev,
 	return 0;
 }
 
-static int tmp112_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int tmp112_sample_fetch(const struct device *dev,
+			       enum sensor_channel chan)
 {
 	struct tmp112_data *drv_data = dev->driver_data;
 	u16_t val;
@@ -169,9 +170,9 @@ static int tmp112_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int tmp112_channel_get(struct device *dev,
-		enum sensor_channel chan,
-		struct sensor_value *val)
+static int tmp112_channel_get(const struct device *dev,
+			      enum sensor_channel chan,
+			      struct sensor_value *val)
 {
 	struct tmp112_data *drv_data = dev->driver_data;
 	s32_t uval;
@@ -193,7 +194,7 @@ static const struct sensor_driver_api tmp112_driver_api = {
 	.channel_get = tmp112_channel_get,
 };
 
-int tmp112_init(struct device *dev)
+int tmp112_init(const struct device *dev)
 {
 	struct tmp112_data *drv_data = dev->driver_data;
 

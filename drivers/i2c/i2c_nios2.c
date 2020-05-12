@@ -28,7 +28,7 @@ struct i2c_nios2_config {
 	struct k_sem		sem_lock;
 };
 
-static int i2c_nios2_configure(struct device *dev, u32_t dev_config)
+static int i2c_nios2_configure(const struct device *dev, u32_t dev_config)
 {
 	struct i2c_nios2_config *config = DEV_CFG(dev);
 	s32_t rc = 0;
@@ -59,7 +59,7 @@ i2c_cfg_err:
 	return rc;
 }
 
-static int i2c_nios2_transfer(struct device *dev, struct i2c_msg *msgs,
+static int i2c_nios2_transfer(const struct device *dev, struct i2c_msg *msgs,
 			      u8_t num_msgs, u16_t addr)
 {
 	struct i2c_nios2_config *config = DEV_CFG(dev);
@@ -143,14 +143,14 @@ i2c_transfer_err:
 
 static void i2c_nios2_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct i2c_nios2_config *config = DEV_CFG(dev);
 
 	/* Call Altera HAL driver ISR */
 	alt_handle_irq(&config->i2c_dev, I2C_0_IRQ);
 }
 
-static int i2c_nios2_init(struct device *dev);
+static int i2c_nios2_init(const struct device *dev);
 
 static struct i2c_driver_api i2c_nios2_driver_api = {
 	.configure = i2c_nios2_configure,
@@ -171,7 +171,7 @@ DEVICE_AND_API_INIT(i2c_nios2_0, DT_INST_LABEL(0), &i2c_nios2_init,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_nios2_driver_api);
 
-static int i2c_nios2_init(struct device *dev)
+static int i2c_nios2_init(const struct device *dev)
 {
 	struct i2c_nios2_config *config = DEV_CFG(dev);
 	int rc;

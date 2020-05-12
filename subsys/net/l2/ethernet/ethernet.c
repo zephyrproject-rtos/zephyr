@@ -144,7 +144,7 @@ static void ethernet_update_rx_stats(struct net_if *iface,
 
 static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = dev->driver_api;
 
 	return (api->get_capabilities(dev) & ETHERNET_HW_VLAN_TAG_STRIP);
@@ -1021,9 +1021,9 @@ void net_eth_carrier_off(struct net_if *iface)
 }
 
 #if defined(CONFIG_PTP_CLOCK)
-struct device *net_eth_get_ptp_clock(struct net_if *iface)
+const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = dev->driver_api;
 
 	if (!api) {
@@ -1043,7 +1043,7 @@ struct device *net_eth_get_ptp_clock(struct net_if *iface)
 #endif /* CONFIG_PTP_CLOCK */
 
 #if defined(CONFIG_PTP_CLOCK)
-struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
+const struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
 {
 	struct net_if *iface;
 
@@ -1056,14 +1056,14 @@ struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline struct device *z_vrfy_net_eth_get_ptp_clock_by_index(int index)
+static inline const struct device *z_vrfy_net_eth_get_ptp_clock_by_index(int index)
 {
 	return z_impl_net_eth_get_ptp_clock_by_index(index);
 }
 #include <syscalls/net_eth_get_ptp_clock_by_index_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 #else /* CONFIG_PTP_CLOCK */
-struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
+const struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
 {
 	ARG_UNUSED(index);
 

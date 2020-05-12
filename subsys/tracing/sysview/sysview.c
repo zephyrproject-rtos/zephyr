@@ -98,7 +98,7 @@ const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI = {
 };
 
 
-static int sysview_init(struct device *arg)
+static int sysview_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

@@ -11,7 +11,7 @@ struct pinmux_sam0_config {
 	PortGroup *regs;
 };
 
-static int pinmux_sam0_set(struct device *dev, u32_t pin, u32_t func)
+static int pinmux_sam0_set(const struct device *dev, u32_t pin, u32_t func)
 {
 	const struct pinmux_sam0_config *cfg = dev->config_info;
 	bool odd_pin = pin & 1;
@@ -31,7 +31,7 @@ static int pinmux_sam0_set(struct device *dev, u32_t pin, u32_t func)
 	return 0;
 }
 
-static int pinmux_sam0_get(struct device *dev, u32_t pin, u32_t *func)
+static int pinmux_sam0_get(const struct device *dev, u32_t pin, u32_t *func)
 {
 	const struct pinmux_sam0_config *cfg = dev->config_info;
 	bool odd_pin = pin & 1;
@@ -46,17 +46,17 @@ static int pinmux_sam0_get(struct device *dev, u32_t pin, u32_t *func)
 	return 0;
 }
 
-static int pinmux_sam0_pullup(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_sam0_pullup(const struct device *dev, u32_t pin, u8_t func)
 {
 	return -ENOTSUP;
 }
 
-static int pinmux_sam0_input(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_sam0_input(const struct device *dev, u32_t pin, u8_t func)
 {
 	return -ENOTSUP;
 }
 
-static int pinmux_sam0_init(struct device *dev)
+static int pinmux_sam0_init(const struct device *dev)
 {
 	/* Nothing to do.  The GPIO clock is enabled at reset. */
 	return 0;

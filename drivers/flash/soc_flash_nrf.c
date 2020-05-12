@@ -163,7 +163,7 @@ static void nvmc_wait_ready(void)
 	}
 }
 
-static int flash_nrf_read(struct device *dev, off_t addr,
+static int flash_nrf_read(const struct device *dev, off_t addr,
 			    void *data, size_t len)
 {
 	if (is_regular_addr_valid(addr, len)) {
@@ -181,7 +181,7 @@ static int flash_nrf_read(struct device *dev, off_t addr,
 	return 0;
 }
 
-static int flash_nrf_write(struct device *dev, off_t addr,
+static int flash_nrf_write(const struct device *dev, off_t addr,
 			     const void *data, size_t len)
 {
 	int ret;
@@ -218,7 +218,7 @@ static int flash_nrf_write(struct device *dev, off_t addr,
 	return ret;
 }
 
-static int flash_nrf_erase(struct device *dev, off_t addr, size_t size)
+static int flash_nrf_erase(const struct device *dev, off_t addr, size_t size)
 {
 	u32_t pg_size = nrfx_nvmc_flash_page_size_get();
 	u32_t n_pages = size / pg_size;
@@ -261,7 +261,7 @@ static int flash_nrf_erase(struct device *dev, off_t addr, size_t size)
 	return ret;
 }
 
-static int flash_nrf_write_protection(struct device *dev, bool enable)
+static int flash_nrf_write_protection(const struct device *dev, bool enable)
 {
 	return 0;
 }
@@ -269,7 +269,7 @@ static int flash_nrf_write_protection(struct device *dev, bool enable)
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static struct flash_pages_layout dev_layout;
 
-static void flash_nrf_pages_layout(struct device *dev,
+static void flash_nrf_pages_layout(const struct device *dev,
 				     const struct flash_pages_layout **layout,
 				     size_t *layout_size)
 {
@@ -293,7 +293,7 @@ static const struct flash_driver_api flash_nrf_api = {
 #endif
 };
 
-static int nrf_flash_init(struct device *dev)
+static int nrf_flash_init(const struct device *dev)
 {
 	SYNC_INIT();
 

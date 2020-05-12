@@ -183,7 +183,7 @@ static void startDevice(void)
 	irq_unlock(key);
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 

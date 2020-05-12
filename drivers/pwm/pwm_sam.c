@@ -25,7 +25,7 @@ struct sam_pwm_config {
 #define DEV_CFG(dev) \
 	((const struct sam_pwm_config * const)(dev)->config_info)
 
-static int sam_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
+static int sam_pwm_get_cycles_per_sec(const struct device *dev, u32_t pwm,
 				      u64_t *cycles)
 {
 	u8_t prescaler = DEV_CFG(dev)->prescaler;
@@ -37,7 +37,7 @@ static int sam_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int sam_pwm_pin_set(struct device *dev, u32_t ch,
+static int sam_pwm_pin_set(const struct device *dev, u32_t ch,
 			   u32_t period_cycles, u32_t pulse_cycles,
 			   pwm_flags_t flags)
 {
@@ -75,7 +75,7 @@ static int sam_pwm_pin_set(struct device *dev, u32_t ch,
 	return 0;
 }
 
-static int sam_pwm_init(struct device *dev)
+static int sam_pwm_init(const struct device *dev)
 {
 	Pwm *const pwm = DEV_CFG(dev)->regs;
 	u32_t id = DEV_CFG(dev)->id;

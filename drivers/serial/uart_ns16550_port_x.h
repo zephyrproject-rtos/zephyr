@@ -10,7 +10,7 @@
 #if DT_NODE_HAS_STATUS(DT_DRV_INST(@NUM@), okay)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void irq_config_func_@NUM@(struct device *port);
+static void irq_config_func_@NUM@(const struct device *port);
 #endif
 
 static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_@NUM@ = {
@@ -62,7 +62,7 @@ DEVICE_AND_API_INIT(uart_ns16550_@NUM@, DT_INST_LABEL(@NUM@),
 #endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void irq_config_func_@NUM@(struct device *dev)
+static void irq_config_func_@NUM@(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

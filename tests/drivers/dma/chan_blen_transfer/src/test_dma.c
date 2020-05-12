@@ -42,7 +42,7 @@ static int test_task(u32_t chan_id, u32_t blen)
 {
 	struct dma_config dma_cfg = {0};
 	struct dma_block_config dma_block_cfg = {0};
-	struct device *dma = device_get_binding(DMA_DEVICE_NAME);
+	const struct device *dma = device_get_binding(DMA_DEVICE_NAME);
 
 	if (!dma) {
 		TC_PRINT("Cannot get dma controller\n");

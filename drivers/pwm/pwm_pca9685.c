@@ -43,11 +43,11 @@
  * @param dev Device struct.
  * @return 1 if I2C master is identified, 0 if not.
  */
-static inline int has_i2c_master(struct device *dev)
+static inline int has_i2c_master(const struct device *dev)
 {
 	struct pwm_pca9685_drv_data * const drv_data =
 		(struct pwm_pca9685_drv_data * const)dev->driver_data;
-	struct device * const i2c_master = drv_data->i2c_master;
+	const struct device * const i2c_master = drv_data->i2c_master;
 
 	if (i2c_master) {
 		return 1;
@@ -60,7 +60,7 @@ static inline int has_i2c_master(struct device *dev)
  * period_count is always taken as 4095. To control the on period send
  * value to pulse_count
  */
-static int pwm_pca9685_pin_set_cycles(struct device *dev, u32_t pwm,
+static int pwm_pca9685_pin_set_cycles(const struct device *dev, u32_t pwm,
 				      u32_t period_count, u32_t pulse_count,
 				      pwm_flags_t flags)
 {
@@ -68,7 +68,7 @@ static int pwm_pca9685_pin_set_cycles(struct device *dev, u32_t pwm,
 		dev->config_info;
 	struct pwm_pca9685_drv_data * const drv_data =
 		(struct pwm_pca9685_drv_data * const)dev->driver_data;
-	struct device * const i2c_master = drv_data->i2c_master;
+	const struct device * const i2c_master = drv_data->i2c_master;
 	u16_t i2c_addr = config->i2c_slave_addr;
 	u8_t buf[] = { 0, 0, 0, 0, 0};
 
@@ -125,13 +125,13 @@ static const struct pwm_driver_api pwm_pca9685_drv_api_funcs = {
  * @param dev Device struct
  * @return 0 if successful, failed otherwise.
  */
-int pwm_pca9685_init(struct device *dev)
+int pwm_pca9685_init(const struct device *dev)
 {
 	const struct pwm_pca9685_config * const config =
 		dev->config_info;
 	struct pwm_pca9685_drv_data * const drv_data =
 		(struct pwm_pca9685_drv_data * const)dev->driver_data;
-	struct device *i2c_master;
+	const struct device *i2c_master;
 	u8_t buf[] = {0, 0};
 	int ret;
 

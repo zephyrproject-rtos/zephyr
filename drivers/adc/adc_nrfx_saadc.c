@@ -28,7 +28,7 @@ static struct driver_data m_data = {
 
 
 /* Implementation of the ADC driver API function: adc_channel_setup. */
-static int adc_nrfx_channel_setup(struct device *dev,
+static int adc_nrfx_channel_setup(const struct device *dev,
 				  const struct adc_channel_cfg *channel_cfg)
 {
 	nrf_saadc_channel_config_t config = {
@@ -253,7 +253,8 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	return 0;
 }
 
-static int start_read(struct device *dev, const struct adc_sequence *sequence)
+static int start_read(const struct device *dev,
+		      const struct adc_sequence *sequence)
 {
 	int error;
 	u32_t selected_channels = sequence->channels;
@@ -337,7 +338,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 }
 
 /* Implementation of the ADC driver API function: adc_read. */
-static int adc_nrfx_read(struct device *dev,
+static int adc_nrfx_read(const struct device *dev,
 			 const struct adc_sequence *sequence)
 {
 	int error;
@@ -351,7 +352,7 @@ static int adc_nrfx_read(struct device *dev,
 
 #ifdef CONFIG_ADC_ASYNC
 /* Implementation of the ADC driver API function: adc_read_async. */
-static int adc_nrfx_read_async(struct device *dev,
+static int adc_nrfx_read_async(const struct device *dev,
 			       const struct adc_sequence *sequence,
 			       struct k_poll_signal *async)
 {
@@ -367,7 +368,7 @@ static int adc_nrfx_read_async(struct device *dev,
 
 static void saadc_irq_handler(void *param)
 {
-	struct device *dev = (struct device *)param;
+	const struct device *dev = (const struct device *)param;
 
 	if (nrf_saadc_event_check(NRF_SAADC, NRF_SAADC_EVENT_END)) {
 		nrf_saadc_event_clear(NRF_SAADC, NRF_SAADC_EVENT_END);
@@ -393,7 +394,7 @@ static void saadc_irq_handler(void *param)
 
 DEVICE_DECLARE(adc_0);
 
-static int init_saadc(struct device *dev)
+static int init_saadc(const struct device *dev)
 {
 	nrf_saadc_event_clear(NRF_SAADC, NRF_SAADC_EVENT_END);
 	nrf_saadc_event_clear(NRF_SAADC, NRF_SAADC_EVENT_CALIBRATEDONE);

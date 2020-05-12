@@ -96,7 +96,7 @@ struct max30101_config {
 };
 
 struct max30101_data {
-	struct device *i2c;
+	const struct device *i2c;
 	u32_t raw[MAX30101_MAX_NUM_CHANNELS];
 	u8_t map[MAX30101_MAX_NUM_CHANNELS];
 	u8_t num_channels;

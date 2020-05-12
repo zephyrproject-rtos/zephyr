@@ -57,7 +57,7 @@ struct counter_xec_data {
 #define COUNTER_XEC_DATA(_dev)				\
 	((struct counter_xec_data *)dev->driver_data)
 
-static int counter_xec_start(struct device *dev)
+static int counter_xec_start(const struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 
@@ -72,7 +72,7 @@ static int counter_xec_start(struct device *dev)
 	return 0;
 }
 
-static int counter_xec_stop(struct device *dev)
+static int counter_xec_stop(const struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 	uint32_t reg;
@@ -98,7 +98,7 @@ static int counter_xec_stop(struct device *dev)
 	return 0;
 }
 
-static int counter_xec_get_value(struct device *dev, u32_t *ticks)
+static int counter_xec_get_value(const struct device *dev, u32_t *ticks)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 
@@ -106,7 +106,7 @@ static int counter_xec_get_value(struct device *dev, u32_t *ticks)
 	return 0;
 }
 
-static int counter_xec_set_alarm(struct device *dev, u8_t chan_id,
+static int counter_xec_set_alarm(const struct device *dev, u8_t chan_id,
 				 const struct counter_alarm_cfg *alarm_cfg)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
@@ -151,7 +151,7 @@ static int counter_xec_set_alarm(struct device *dev, u8_t chan_id,
 }
 
 
-static int counter_xec_cancel_alarm(struct device *dev, u8_t chan_id)
+static int counter_xec_cancel_alarm(const struct device *dev, u8_t chan_id)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 	struct counter_xec_data *data = COUNTER_XEC_DATA(dev);
@@ -172,21 +172,21 @@ static int counter_xec_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static u32_t counter_xec_get_pending_int(struct device *dev)
+static u32_t counter_xec_get_pending_int(const struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 
 	return counter->STS;
 }
 
-static u32_t counter_xec_get_top_value(struct device *dev)
+static u32_t counter_xec_get_top_value(const struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 
 	return counter->PRLD;
 }
 
-static int counter_xec_set_top_value(struct device *dev,
+static int counter_xec_set_top_value(const struct device *dev,
 				     const struct counter_top_cfg *cfg)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
@@ -241,14 +241,14 @@ static int counter_xec_set_top_value(struct device *dev,
 	return ret;
 }
 
-static u32_t counter_xec_get_max_relative_alarm(struct device *dev)
+static u32_t counter_xec_get_max_relative_alarm(const struct device *dev)
 {
 	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
 
 	return counter_cfg->info.max_top_value;
 }
 
-static void counter_xec_isr(struct device *dev)
+static void counter_xec_isr(const struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
@@ -287,7 +287,7 @@ static const struct counter_driver_api counter_xec_api = {
 		.get_max_relative_alarm = counter_xec_get_max_relative_alarm,
 };
 
-static int counter_xec_init(struct device *dev)
+static int counter_xec_init(const struct device *dev)
 {
 	BTMR_Type *counter = COUNTER_XEC_REG_BASE(dev);
 	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);

@@ -20,8 +20,8 @@
 
 LOG_MODULE_DECLARE(ISM330DHCX, CONFIG_SENSOR_LOG_LEVEL);
 
-static int ism330dhcx_spi_read(struct device *dev, u8_t reg_addr,
-			    u8_t *value, u8_t len)
+static int ism330dhcx_spi_read(const struct device *dev, u8_t reg_addr,
+			       u8_t *value, u8_t len)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
 	const struct ism330dhcx_config *cfg = dev->config_info;
@@ -62,8 +62,8 @@ static int ism330dhcx_spi_read(struct device *dev, u8_t reg_addr,
 	return 0;
 }
 
-static int ism330dhcx_spi_write(struct device *dev, u8_t reg_addr,
-			     u8_t *value, u8_t len)
+static int ism330dhcx_spi_write(const struct device *dev, u8_t reg_addr,
+				u8_t *value, u8_t len)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
 	const struct ism330dhcx_config *cfg = dev->config_info;
@@ -96,7 +96,7 @@ static int ism330dhcx_spi_write(struct device *dev, u8_t reg_addr,
 	return 0;
 }
 
-int ism330dhcx_spi_init(struct device *dev)
+int ism330dhcx_spi_init(const struct device *dev)
 {
 	struct ism330dhcx_data *data = dev->driver_data;
 

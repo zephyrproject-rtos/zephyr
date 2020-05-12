@@ -22,19 +22,19 @@ static const clock_name_t lpspi_clocks[] = {
 	kCLOCK_SysPllPfd2Clk,
 };
 
-static int mcux_ccm_on(struct device *dev,
+static int mcux_ccm_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
 {
 	return 0;
 }
 
-static int mcux_ccm_off(struct device *dev,
+static int mcux_ccm_off(const struct device *dev,
 			       clock_control_subsys_t sub_system)
 {
 	return 0;
 }
 
-static int mcux_ccm_get_subsys_rate(struct device *dev,
+static int mcux_ccm_get_subsys_rate(const struct device *dev,
 				    clock_control_subsys_t sub_system,
 				    u32_t *rate)
 {
@@ -94,7 +94,7 @@ static int mcux_ccm_get_subsys_rate(struct device *dev,
 	return 0;
 }
 
-static int mcux_ccm_init(struct device *dev)
+static int mcux_ccm_init(const struct device *dev)
 {
 	return 0;
 }

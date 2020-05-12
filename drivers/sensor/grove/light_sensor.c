@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(grove_light, CONFIG_SENSOR_LOG_LEVEL);
 
 
 struct gls_data {
-	struct device *adc;
+	const struct device *adc;
 	struct adc_channel_cfg ch_cfg;
 	u16_t raw;
 };
@@ -47,14 +47,15 @@ static struct adc_sequence adc_table = {
 	.options = &options,
 };
 
-static int gls_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int gls_sample_fetch(const struct device *dev,
+			    enum sensor_channel chan)
 {
 	struct gls_data *drv_data = dev->driver_data;
 
 	return adc_read(drv_data->adc, &adc_table);
 }
 
-static int gls_channel_get(struct device *dev,
+static int gls_channel_get(const struct device *dev,
 			   enum sensor_channel chan,
 			   struct sensor_value *val)
 {
@@ -81,7 +82,7 @@ static const struct sensor_driver_api gls_api = {
 	.channel_get = &gls_channel_get,
 };
 
-static int gls_init(struct device *dev)
+static int gls_init(const struct device *dev)
 {
 	struct gls_data *drv_data = dev->driver_data;
 	const struct gls_config *cfg = dev->config_info;

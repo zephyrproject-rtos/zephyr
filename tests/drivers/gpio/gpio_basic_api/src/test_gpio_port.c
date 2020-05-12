@@ -16,7 +16,7 @@
 
 #define ALL_BITS ((gpio_port_value_t)-1)
 
-static struct device *dev;
+static const struct device *dev;
 
 /* Short-hand for a checked read of PIN_IN raw state */
 static bool raw_in(void)

@@ -26,7 +26,7 @@ static void lis3mdl_convert(struct sensor_value *val, s16_t raw_val,
 	val->val2 = (((s64_t)raw_val % divider) * 1000000L) / divider;
 }
 
-static int lis3mdl_channel_get(struct device *dev,
+static int lis3mdl_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
@@ -58,7 +58,7 @@ static int lis3mdl_channel_get(struct device *dev,
 	return 0;
 }
 
-int lis3mdl_sample_fetch(struct device *dev, enum sensor_channel chan)
+int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct lis3mdl_data *drv_data = dev->driver_data;
 	s16_t buf[4];
@@ -100,7 +100,7 @@ static const struct sensor_driver_api lis3mdl_driver_api = {
 	.channel_get = lis3mdl_channel_get,
 };
 
-int lis3mdl_init(struct device *dev)
+int lis3mdl_init(const struct device *dev)
 {
 	struct lis3mdl_data *drv_data = dev->driver_data;
 	u8_t chip_cfg[6];

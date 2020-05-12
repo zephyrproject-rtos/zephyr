@@ -22,7 +22,7 @@ extern const struct shell_transport_api shell_uart_transport_api;
 
 /** @brief Shell UART transport instance control block (RW data). */
 struct shell_uart_ctrl_blk {
-	struct device *dev;
+	const struct device *dev;
 	shell_transport_handler_t handler;
 	void *context;
 	atomic_t tx_busy;

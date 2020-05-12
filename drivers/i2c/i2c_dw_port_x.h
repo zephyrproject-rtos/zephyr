@@ -6,7 +6,7 @@
  * This file is a template for cmake and is not meant to be used directly!
  */
 
-static void i2c_config_@NUM@(struct device *port);
+static void i2c_config_@NUM@(const struct device *port);
 
 static const struct i2c_dw_rom_config i2c_config_dw_@NUM@ = {
 	.config_func = i2c_config_@NUM@,
@@ -35,7 +35,7 @@ DEVICE_AND_API_INIT(i2c_@NUM@, DT_INST_LABEL(@NUM@),
 #else
 #define INST_@NUM@_IRQ_FLAGS  0
 #endif
-static void i2c_config_@NUM@(struct device *port)
+static void i2c_config_@NUM@(const struct device *port)
 {
 	ARG_UNUSED(port);
 

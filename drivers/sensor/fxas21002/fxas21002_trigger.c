@@ -10,9 +10,9 @@
 
 LOG_MODULE_DECLARE(FXAS21002, CONFIG_SENSOR_LOG_LEVEL);
 
-static void fxas21002_gpio_callback(struct device *dev,
-				   struct gpio_callback *cb,
-				   u32_t pin_mask)
+static void fxas21002_gpio_callback(const struct device *dev,
+				    struct gpio_callback *cb,
+				    u32_t pin_mask)
 {
 	struct fxas21002_data *data =
 		CONTAINER_OF(cb, struct fxas21002_data, gpio_cb);
@@ -31,7 +31,7 @@ static void fxas21002_gpio_callback(struct device *dev,
 #endif
 }
 
-static int fxas21002_handle_drdy_int(struct device *dev)
+static int fxas21002_handle_drdy_int(const struct device *dev)
 {
 	struct fxas21002_data *data = dev->driver_data;
 
@@ -49,7 +49,7 @@ static int fxas21002_handle_drdy_int(struct device *dev)
 
 static void fxas21002_handle_int(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct fxas21002_config *config = dev->config_info;
 	struct fxas21002_data *data = dev->driver_data;
 	u8_t int_source;
@@ -76,7 +76,7 @@ static void fxas21002_handle_int(void *arg)
 #ifdef CONFIG_FXAS21002_TRIGGER_OWN_THREAD
 static void fxas21002_thread_main(void *arg1, void *unused1, void *unused2)
 {
-	struct device *dev = (struct device *)arg1;
+	const struct device *dev = (const struct device *)arg1;
 	struct fxas21002_data *data = dev->driver_data;
 
 	ARG_UNUSED(unused1);
@@ -99,9 +99,9 @@ static void fxas21002_work_handler(struct k_work *work)
 }
 #endif
 
-int fxas21002_trigger_set(struct device *dev,
-			 const struct sensor_trigger *trig,
-			 sensor_trigger_handler_t handler)
+int fxas21002_trigger_set(const struct device *dev,
+			  const struct sensor_trigger *trig,
+			  sensor_trigger_handler_t handler)
 {
 	const struct fxas21002_config *config = dev->config_info;
 	struct fxas21002_data *data = dev->driver_data;
@@ -169,7 +169,7 @@ exit:
 	return ret;
 }
 
-int fxas21002_trigger_init(struct device *dev)
+int fxas21002_trigger_init(const struct device *dev)
 {
 	const struct fxas21002_config *config = dev->config_info;
 	struct fxas21002_data *data = dev->driver_data;

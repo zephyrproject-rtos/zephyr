@@ -20,7 +20,7 @@
 
 LOG_MODULE_DECLARE(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 
-static int lsm6dso_i2c_read(struct device *dev, u8_t reg_addr,
+static int lsm6dso_i2c_read(const struct device *dev, u8_t reg_addr,
 			    u8_t *value, u8_t len)
 {
 	struct lsm6dso_data *data = dev->driver_data;
@@ -30,7 +30,7 @@ static int lsm6dso_i2c_read(struct device *dev, u8_t reg_addr,
 			      reg_addr, value, len);
 }
 
-static int lsm6dso_i2c_write(struct device *dev, u8_t reg_addr,
+static int lsm6dso_i2c_write(const struct device *dev, u8_t reg_addr,
 			     u8_t *value, u8_t len)
 {
 	struct lsm6dso_data *data = dev->driver_data;
@@ -40,7 +40,7 @@ static int lsm6dso_i2c_write(struct device *dev, u8_t reg_addr,
 			       reg_addr, value, len);
 }
 
-int lsm6dso_i2c_init(struct device *dev)
+int lsm6dso_i2c_init(const struct device *dev)
 {
 	struct lsm6dso_data *data = dev->driver_data;
 

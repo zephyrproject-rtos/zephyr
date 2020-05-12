@@ -171,7 +171,8 @@ static void config_print(void)
 		IS_ENABLED(CONFIG_BOARD_NRF9160DK_SWITCH1_ARDUINO));
 }
 
-static int pins_configure(struct device *port, const struct pin_config cfg[],
+static int pins_configure(const struct device *port,
+			  const struct pin_config cfg[],
 			  size_t pins)
 {
 	int err;
@@ -197,7 +198,7 @@ static int pins_configure(struct device *port, const struct pin_config cfg[],
 	return 0;
 }
 
-static void chip_reset(struct device *gpio,
+static void chip_reset(const struct device *gpio,
 		       struct gpio_callback *cb, u32_t pins)
 {
 	const u32_t stamp = k_cycle_get_32();
@@ -208,7 +209,7 @@ static void chip_reset(struct device *gpio,
 	NVIC_SystemReset();
 }
 
-static void reset_pin_wait_low(struct device *port, u32_t pin)
+static void reset_pin_wait_low(const struct device *port, u32_t pin)
 {
 	int val;
 
@@ -218,11 +219,12 @@ static void reset_pin_wait_low(struct device *port, u32_t pin)
 	} while (val > 0);
 }
 
-static int reset_pin_configure(struct device *p0, struct device *p1)
+static int reset_pin_configure(const struct device *p0,
+			       const struct device *p1)
 {
 	int err;
 	u32_t pin = 0;
-	struct device *port = NULL;
+	const struct device *port = NULL;
 
 	static struct gpio_callback gpio_ctx;
 
@@ -283,11 +285,11 @@ static int reset_pin_configure(struct device *p0, struct device *p1)
 	return 0;
 }
 
-static int init(struct device *dev)
+static int init(const struct device *dev)
 {
 	int rc;
-	struct device *p0;
-	struct device *p1;
+	const struct device *p0;
+	const struct device *p1;
 
 	p0 = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));
 	if (!p0) {

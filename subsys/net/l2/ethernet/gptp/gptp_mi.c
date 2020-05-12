@@ -279,7 +279,7 @@ void gptp_mi_init_state_machine(void)
 
 u64_t gptp_get_current_time_nanosecond(int port)
 {
-	struct device *clk;
+	const struct device *clk;
 
 	clk = net_eth_get_ptp_clock(GPTP_PORT_IFACE(port));
 	if (clk) {
@@ -688,7 +688,7 @@ static void gptp_update_local_port_clock(void)
 	int port;
 	s64_t nanosecond_diff;
 	s64_t second_diff;
-	struct device *clk;
+	const struct device *clk;
 	struct net_ptp_time tm;
 	int key;
 

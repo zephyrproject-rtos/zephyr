@@ -946,7 +946,7 @@ static void mass_thread_main(int arg1, int unused)
  *
  * @return negative errno code on fatal failure, 0 otherwise
  */
-static int mass_storage_init(struct device *dev)
+static int mass_storage_init(const struct device *dev)
 {
 	u32_t block_size = 0U;
 

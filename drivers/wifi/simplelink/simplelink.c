@@ -122,7 +122,7 @@ static void simplelink_scan_work_handler(struct k_work *work)
 	}
 }
 
-static int simplelink_mgmt_scan(struct device *dev, scan_result_cb_t cb)
+static int simplelink_mgmt_scan(const struct device *dev, scan_result_cb_t cb)
 {
 	int err;
 	int status;
@@ -154,7 +154,7 @@ static int simplelink_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 	return status;
 }
 
-static int simplelink_mgmt_connect(struct device *dev,
+static int simplelink_mgmt_connect(const struct device *dev,
 				   struct wifi_connect_req_params *params)
 {
 	int ret;
@@ -164,7 +164,7 @@ static int simplelink_mgmt_connect(struct device *dev,
 	return ret ? -EIO : ret;
 }
 
-static int simplelink_mgmt_disconnect(struct device *dev)
+static int simplelink_mgmt_disconnect(const struct device *dev)
 {
 	int ret;
 
@@ -248,7 +248,7 @@ static const struct net_wifi_mgmt_offload simplelink_api = {
 	.disconnect	= simplelink_mgmt_disconnect,
 };
 
-static int simplelink_init(struct device *dev)
+static int simplelink_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

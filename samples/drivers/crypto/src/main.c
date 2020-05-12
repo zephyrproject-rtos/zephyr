@@ -75,7 +75,7 @@ static void print_buffer_comparison(const u8_t *wanted_result,
 	printk("\n");
 }
 
-int validate_hw_compatibility(struct device *dev)
+int validate_hw_compatibility(const struct device *dev)
 {
 	u32_t flags = 0U;
 
@@ -104,7 +104,7 @@ int validate_hw_compatibility(struct device *dev)
 
 }
 
-void ecb_mode(struct device *dev)
+void ecb_mode(const struct device *dev)
 {
 	/* from FIPS-197 test vectors */
 	u8_t ecb_key[16] = {
@@ -200,7 +200,7 @@ static const u8_t cbc_ciphertext[80] = {
 	0x12, 0x0e, 0xca, 0x30, 0x75, 0x86, 0xe1, 0xa7
 };
 
-void cbc_mode(struct device *dev)
+void cbc_mode(const struct device *dev)
 {
 	u8_t encrypted[80] = {0};
 	u8_t decrypted[64] = {0};
@@ -289,7 +289,7 @@ static const u8_t ctr_ciphertext[64] = {
 	0xa3, 0x5c, 0x85, 0x3a, 0xb9, 0x2c, 0x6, 0xbb
 };
 
-void ctr_mode(struct device *dev)
+void ctr_mode(const struct device *dev)
 {
 	u8_t encrypted[64] = {0};
 	u8_t decrypted[64] = {0};
@@ -389,7 +389,7 @@ static const u8_t ccm_expected[31] = {
 	0xe8, 0xd1, 0x2c, 0xfd, 0xf9, 0x26, 0xe0
 };
 
-void ccm_mode(struct device *dev)
+void ccm_mode(const struct device *dev)
 {
 	u8_t encrypted[50];
 	u8_t decrypted[25];
@@ -506,7 +506,7 @@ static const u8_t gcm_expected[58] = {
 	0x96, 0x04, 0x94, 0xc3
 };
 
-void gcm_mode(struct device *dev)
+void gcm_mode(const struct device *dev)
 {
 	u8_t encrypted[60] = {0};
 	u8_t decrypted[44] = {0};
@@ -598,12 +598,12 @@ out:
 
 struct mode_test {
 	const char *mode;
-	void (*mode_func)(struct device *dev);
+	void (*mode_func)(const struct device *dev);
 };
 
 void main(void)
 {
-	struct device *dev = device_get_binding(CRYPTO_DRV_NAME);
+	const struct device *dev = device_get_binding(CRYPTO_DRV_NAME);
 	const struct mode_test modes[] = {
 		{ .mode = "ECB Mode", .mode_func = ecb_mode },
 		{ .mode = "CBC Mode", .mode_func = cbc_mode },

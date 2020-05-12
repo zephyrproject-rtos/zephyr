@@ -14,7 +14,7 @@
 
 LOG_MODULE_DECLARE(MPU6050, CONFIG_SENSOR_LOG_LEVEL);
 
-int mpu6050_trigger_set(struct device *dev,
+int mpu6050_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
@@ -41,7 +41,7 @@ int mpu6050_trigger_set(struct device *dev,
 	return 0;
 }
 
-static void mpu6050_gpio_callback(struct device *dev,
+static void mpu6050_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
 	struct mpu6050_data *drv_data =
@@ -62,7 +62,7 @@ static void mpu6050_gpio_callback(struct device *dev,
 
 static void mpu6050_thread_cb(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct mpu6050_data *drv_data = dev->driver_data;
 	const struct mpu6050_config *cfg = dev->config_info;
 
@@ -79,7 +79,7 @@ static void mpu6050_thread_cb(void *arg)
 #ifdef CONFIG_MPU6050_TRIGGER_OWN_THREAD
 static void mpu6050_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct mpu6050_data *drv_data = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -101,7 +101,7 @@ static void mpu6050_work_cb(struct k_work *work)
 }
 #endif
 
-int mpu6050_init_interrupt(struct device *dev)
+int mpu6050_init_interrupt(const struct device *dev)
 {
 	struct mpu6050_data *drv_data = dev->driver_data;
 	const struct mpu6050_config *cfg = dev->config_info;

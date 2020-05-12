@@ -437,11 +437,11 @@ struct usdhc_client_info {
 };
 
 struct usdhc_board_config {
-	struct device *pwr_gpio;
+	const struct device *pwr_gpio;
 	u32_t pwr_pin;
 	gpio_dt_flags_t pwr_flags;
 
-	struct device *detect_gpio;
+	const struct device *detect_gpio;
 	u32_t detect_pin;
 	gpio_dt_flags_t detect_flags;
 	struct gpio_callback detect_cb;
@@ -457,7 +457,7 @@ struct usdhc_priv {
 	enum host_detect_type detect_type;
 	bool inserted;
 
-	struct device *clock_dev;
+	const struct device *clock_dev;
 	clock_control_subsys_t clock_sys;
 
 	struct usdhc_config host_config;
@@ -2219,7 +2219,7 @@ static void usdhc_host_hw_init(USDHC_Type *base,
 
 }
 
-static void usdhc_cd_gpio_cb(struct device *dev,
+static void usdhc_cd_gpio_cb(const struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
 	struct usdhc_board_config *board_cfg =
@@ -2229,9 +2229,9 @@ static void usdhc_cd_gpio_cb(struct device *dev,
 				     GPIO_INT_DISABLE);
 }
 
-static int usdhc_cd_gpio_init(struct device *detect_gpio,
-	u32_t pin, gpio_dt_flags_t flags,
-	struct gpio_callback *callback)
+static int usdhc_cd_gpio_init(const struct device *detect_gpio,
+			      u32_t pin, gpio_dt_flags_t flags,
+			      struct gpio_callback *callback)
 {
 	int ret;
 
@@ -2779,7 +2779,7 @@ static int usdhc_access_init(const struct device *dev)
 
 static int disk_usdhc_access_status(struct disk_info *disk)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct usdhc_priv *priv = dev->driver_data;
 
 	return priv->status;
@@ -2788,7 +2788,7 @@ static int disk_usdhc_access_status(struct disk_info *disk)
 static int disk_usdhc_access_read(struct disk_info *disk, u8_t *buf,
 				 u32_t sector, u32_t count)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct usdhc_priv *priv = dev->driver_data;
 
 	LOG_DBG("sector=%u count=%u", sector, count);
@@ -2799,7 +2799,7 @@ static int disk_usdhc_access_read(struct disk_info *disk, u8_t *buf,
 static int disk_usdhc_access_write(struct disk_info *disk, const u8_t *buf,
 				  u32_t sector, u32_t count)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct usdhc_priv *priv = dev->driver_data;
 
 	LOG_DBG("sector=%u count=%u", sector, count);
@@ -2809,7 +2809,7 @@ static int disk_usdhc_access_write(struct disk_info *disk, const u8_t *buf,
 
 static int disk_usdhc_access_ioctl(struct disk_info *disk, u8_t cmd, void *buf)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct usdhc_priv *priv = dev->driver_data;
 	int err;
 
@@ -2839,7 +2839,7 @@ static int disk_usdhc_access_ioctl(struct disk_info *disk, u8_t cmd, void *buf)
 
 static int disk_usdhc_access_init(struct disk_info *disk)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct usdhc_priv *priv = dev->driver_data;
 
 	if (priv->status == DISK_STATUS_OK) {
@@ -2863,7 +2863,7 @@ static struct disk_info usdhc_disk = {
 	.ops = &usdhc_disk_ops,
 };
 
-static int disk_usdhc_init(struct device *dev)
+static int disk_usdhc_init(const struct device *dev)
 {
 	struct usdhc_priv *priv = dev->driver_data;
 

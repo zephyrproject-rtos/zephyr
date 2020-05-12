@@ -78,7 +78,7 @@ clock_control_subsys_t stm32_get_port_clock(int port);
  * for the port
  */
 int z_pinmux_stm32_set(u32_t pin, u32_t func,
-		      struct device *clk);
+		      const struct device *clk);
 
 /**
  * @brief helper for obtaining pin configuration for the board

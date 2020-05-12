@@ -21,7 +21,7 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_DECLARE(LIS2MDL);
 
-static int lis2mdl_spi_read(struct device *dev, u8_t reg_addr,
+static int lis2mdl_spi_read(const struct device *dev, u8_t reg_addr,
 			    u8_t *value, u8_t len)
 {
 	struct lis2mdl_data *data = dev->driver_data;
@@ -63,7 +63,7 @@ static int lis2mdl_spi_read(struct device *dev, u8_t reg_addr,
 	return 0;
 }
 
-static int lis2mdl_spi_write(struct device *dev, u8_t reg_addr,
+static int lis2mdl_spi_write(const struct device *dev, u8_t reg_addr,
 			     u8_t *value, u8_t len)
 {
 	struct lis2mdl_data *data = dev->driver_data;
@@ -97,7 +97,7 @@ static int lis2mdl_spi_write(struct device *dev, u8_t reg_addr,
 	return 0;
 }
 
-int lis2mdl_spi_init(struct device *dev)
+int lis2mdl_spi_init(const struct device *dev)
 {
 	struct lis2mdl_data *data = dev->driver_data;
 

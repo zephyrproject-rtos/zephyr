@@ -20,7 +20,7 @@
 
 LOG_MODULE_REGISTER(LPS25HB, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline int lps25hb_power_ctrl(struct device *dev, u8_t value)
+static inline int lps25hb_power_ctrl(const struct device *dev, u8_t value)
 {
 	struct lps25hb_data *data = dev->driver_data;
 	const struct lps25hb_config *config = dev->config_info;
@@ -31,7 +31,7 @@ static inline int lps25hb_power_ctrl(struct device *dev, u8_t value)
 				   value << LPS25HB_SHIFT_CTRL_REG1_PD);
 }
 
-static inline int lps25hb_set_odr_raw(struct device *dev, u8_t odr)
+static inline int lps25hb_set_odr_raw(const struct device *dev, u8_t odr)
 {
 	struct lps25hb_data *data = dev->driver_data;
 	const struct lps25hb_config *config = dev->config_info;
@@ -42,7 +42,7 @@ static inline int lps25hb_set_odr_raw(struct device *dev, u8_t odr)
 				   odr << LPS25HB_SHIFT_CTRL_REG1_ODR);
 }
 
-static int lps25hb_sample_fetch(struct device *dev,
+static int lps25hb_sample_fetch(const struct device *dev,
 				enum sensor_channel chan)
 {
 	struct lps25hb_data *data = dev->driver_data;
@@ -89,7 +89,7 @@ static inline void lps25hb_temp_convert(struct sensor_value *val,
 	val->val2 = uval % 1000000;
 }
 
-static int lps25hb_channel_get(struct device *dev,
+static int lps25hb_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
@@ -111,7 +111,7 @@ static const struct sensor_driver_api lps25hb_api_funcs = {
 	.channel_get = lps25hb_channel_get,
 };
 
-static int lps25hb_init_chip(struct device *dev)
+static int lps25hb_init_chip(const struct device *dev)
 {
 	struct lps25hb_data *data = dev->driver_data;
 	const struct lps25hb_config *config = dev->config_info;
@@ -160,7 +160,7 @@ err_poweroff:
 	return -EIO;
 }
 
-static int lps25hb_init(struct device *dev)
+static int lps25hb_init(const struct device *dev)
 {
 	const struct lps25hb_config * const config = dev->config_info;
 	struct lps25hb_data *data = dev->driver_data;

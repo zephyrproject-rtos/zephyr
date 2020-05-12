@@ -49,7 +49,7 @@ u32_t z_clock_elapsed(void)
 	return 0;
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 	IRQ_CONNECT(TIMER_IRQ, DT_INST_IRQ(0, priority),

@@ -22,7 +22,8 @@
 
 static u8_t data[MAX_USER_DATA_LENGTH], cmp_data[MAX_USER_DATA_LENGTH];
 
-static int mb85rs64v_access(struct device *spi, struct spi_config *spi_cfg,
+static int mb85rs64v_access(const struct device *spi,
+			    struct spi_config *spi_cfg,
 			    u8_t cmd, u16_t addr, void *data, size_t len)
 {
 	u8_t access[3];
@@ -64,7 +65,8 @@ static int mb85rs64v_access(struct device *spi, struct spi_config *spi_cfg,
 }
 
 
-static int mb85rs64v_read_id(struct device *spi, struct spi_config *spi_cfg)
+static int mb85rs64v_read_id(const struct device *spi,
+			     struct spi_config *spi_cfg)
 {
 	u8_t id[4];
 	int err;
@@ -95,7 +97,7 @@ static int mb85rs64v_read_id(struct device *spi, struct spi_config *spi_cfg)
 	return 0;
 }
 
-static int write_bytes(struct device *spi, struct spi_config *spi_cfg,
+static int write_bytes(const struct device *spi, struct spi_config *spi_cfg,
 		       u16_t addr, u8_t *data, u32_t num_bytes)
 {
 	int err;
@@ -119,7 +121,7 @@ static int write_bytes(struct device *spi, struct spi_config *spi_cfg,
 	return 0;
 }
 
-static int read_bytes(struct device *spi, struct spi_config *spi_cfg,
+static int read_bytes(const struct device *spi, struct spi_config *spi_cfg,
 		      u16_t addr, u8_t *data, u32_t num_bytes)
 {
 	int err;
@@ -137,7 +139,7 @@ static int read_bytes(struct device *spi, struct spi_config *spi_cfg,
 
 void main(void)
 {
-	struct device *spi;
+	const struct device *spi;
 	struct spi_config spi_cfg;
 	int err;
 

@@ -43,7 +43,7 @@ static void nrfx_ipc_handler(u32_t event_mask, void *p_context)
 	}
 }
 
-static int ipm_nrf_send(struct device *dev, int wait, u32_t id,
+static int ipm_nrf_send(const struct device *dev, int wait, u32_t id,
 			const void *data, int size)
 {
 	if (id > NRFX_IPC_ID_MAX_VALUE) {
@@ -58,21 +58,21 @@ static int ipm_nrf_send(struct device *dev, int wait, u32_t id,
 	return 0;
 }
 
-static int ipm_nrf_max_data_size_get(struct device *dev)
+static int ipm_nrf_max_data_size_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return 0;
 }
 
-static u32_t ipm_nrf_max_id_val_get(struct device *dev)
+static u32_t ipm_nrf_max_id_val_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return NRFX_IPC_ID_MAX_VALUE;
 }
 
-static void ipm_nrf_register_callback(struct device *dev,
+static void ipm_nrf_register_callback(const struct device *dev,
 				      ipm_callback_t cb,
 				      void *context)
 {
@@ -80,7 +80,7 @@ static void ipm_nrf_register_callback(struct device *dev,
 	nrfx_ipm_data.callback_ctx = context;
 }
 
-static int ipm_nrf_set_enabled(struct device *dev, int enable)
+static int ipm_nrf_set_enabled(const struct device *dev, int enable)
 {
 	/* Enable configured channels */
 	if (enable) {
@@ -93,7 +93,7 @@ static int ipm_nrf_set_enabled(struct device *dev, int enable)
 	return 0;
 }
 
-static int ipm_nrf_init(struct device *dev)
+static int ipm_nrf_init(const struct device *dev)
 {
 	gipm_init();
 	return 0;
@@ -118,7 +118,7 @@ struct vipm_nrf_data {
 	ipm_callback_t callback[NRFX_IPC_ID_MAX_VALUE];
 	void *callback_ctx[NRFX_IPC_ID_MAX_VALUE];
 	bool ipm_init;
-	struct device *ipm_device;
+	const struct device *ipm_device;
 };
 
 static struct vipm_nrf_data nrfx_vipm_data;
@@ -140,19 +140,19 @@ static void vipm_dispatcher(u32_t event_mask, void *p_context)
 	}
 }
 
-static int vipm_nrf_max_data_size_get(struct device *dev)
+static int vipm_nrf_max_data_size_get(const struct device *dev)
 {
 	return ipm_max_data_size_get(dev);
 }
 
-static u32_t vipm_nrf_max_id_val_get(struct device *dev)
+static u32_t vipm_nrf_max_id_val_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return 0;
 }
 
-static int vipm_nrf_init(struct device *dev)
+static int vipm_nrf_init(const struct device *dev)
 {
 	if (!nrfx_vipm_data.ipm_init) {
 		gipm_init();
@@ -162,7 +162,7 @@ static int vipm_nrf_init(struct device *dev)
 }
 
 #define VIPM_DEVICE_1(_idx)						\
-static int vipm_nrf_##_idx##_send(struct device *dev, int wait,		\
+static int vipm_nrf_##_idx##_send(const struct device *dev, int wait,		\
 				  u32_t id, const void *data, int size)	\
 {									\
 	if (!IS_ENABLED(CONFIG_IPM_MSG_CH_##_idx##_TX)) {		\
@@ -188,7 +188,7 @@ static int vipm_nrf_##_idx##_send(struct device *dev, int wait,		\
 	return 0;							\
 }									\
 									\
-static void vipm_nrf_##_idx##_register_callback(struct device *dev,	\
+static void vipm_nrf_##_idx##_register_callback(const struct device *dev,	\
 						ipm_callback_t cb,	\
 						void *context)		\
 {									\
@@ -201,7 +201,7 @@ static void vipm_nrf_##_idx##_register_callback(struct device *dev,	\
 	}								\
 }									\
 									\
-static int vipm_nrf_##_idx##_set_enabled(struct device *dev, int enable)\
+static int vipm_nrf_##_idx##_set_enabled(const struct device *dev, int enable)\
 {									\
 	if (!IS_ENABLED(CONFIG_IPM_MSG_CH_##_idx##_RX)) {		\
 		LOG_ERR("IPM_" #_idx " is TX message channel");		\

@@ -28,7 +28,7 @@ volatile u8_t transfer_count;
 static struct dma_config dma_cfg = {0};
 static struct dma_block_config dma_block_cfg = {0};
 
-static void test_transfer(struct device *dev, u32_t id)
+static void test_transfer(const struct device *dev, u32_t id)
 {
 	int ret;
 
@@ -52,7 +52,7 @@ static void test_error(void)
 
 static void dma_user_callback(void *arg, u32_t id, int error_code)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 
 	if (error_code == 0) {
 		test_transfer(dev, id);
@@ -63,7 +63,7 @@ static void dma_user_callback(void *arg, u32_t id, int error_code)
 
 void main(void)
 {
-	struct device *dma;
+	const struct device *dma;
 	static u32_t chan_id;
 
 	printk("DMA memory to memory transfer started on %s\n",

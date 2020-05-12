@@ -28,7 +28,7 @@ struct uart_stm32_data {
 	/* Baud rate */
 	u32_t baud_rate;
 	/* clock device */
-	struct device *clock;
+	const struct device *clock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_callback_user_data_t user_cb;
 	void *user_data;

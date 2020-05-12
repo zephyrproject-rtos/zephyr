@@ -56,7 +56,7 @@ struct nvs_fs {
 	bool ready;		/* is the filesystem initialized ? */
 
 	struct k_mutex nvs_lock;
-	struct device *flash_device;
+	const struct device *flash_device;
 };
 
 /**

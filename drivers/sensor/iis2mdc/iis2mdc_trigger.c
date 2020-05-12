@@ -18,7 +18,7 @@
 
 LOG_MODULE_DECLARE(IIS2MDC, CONFIG_SENSOR_LOG_LEVEL);
 
-static int iis2mdc_enable_int(struct device *dev, int enable)
+static int iis2mdc_enable_int(const struct device *dev, int enable)
 {
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
 
@@ -27,7 +27,7 @@ static int iis2mdc_enable_int(struct device *dev, int enable)
 }
 
 /* link external trigger to event data ready */
-int iis2mdc_trigger_set(struct device *dev,
+int iis2mdc_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
@@ -52,7 +52,7 @@ int iis2mdc_trigger_set(struct device *dev,
 /* handle the drdy event: read data and call handler if registered any */
 static void iis2mdc_handle_interrupt(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
 	const struct iis2mdc_config *const config =
 						dev->config_info;
@@ -68,7 +68,7 @@ static void iis2mdc_handle_interrupt(void *arg)
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void iis2mdc_gpio_callback(struct device *dev,
+static void iis2mdc_gpio_callback(const struct device *dev,
 				    struct gpio_callback *cb, u32_t pins)
 {
 	struct iis2mdc_data *iis2mdc =
@@ -89,7 +89,7 @@ static void iis2mdc_gpio_callback(struct device *dev,
 #ifdef CONFIG_IIS2MDC_TRIGGER_OWN_THREAD
 static void iis2mdc_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -111,7 +111,7 @@ static void iis2mdc_work_cb(struct k_work *work)
 }
 #endif
 
-int iis2mdc_init_interrupt(struct device *dev)
+int iis2mdc_init_interrupt(const struct device *dev)
 {
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
 	const struct iis2mdc_config *const config = dev->config_info;

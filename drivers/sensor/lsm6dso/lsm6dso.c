@@ -88,7 +88,7 @@ static int lsm6dso_gyro_range_to_fs_val(s32_t range)
 }
 #endif
 
-static inline int lsm6dso_reboot(struct device *dev)
+static inline int lsm6dso_reboot(const struct device *dev)
 {
 	struct lsm6dso_data *data = dev->driver_data;
 
@@ -102,7 +102,7 @@ static inline int lsm6dso_reboot(struct device *dev)
 	return 0;
 }
 
-static int lsm6dso_accel_set_fs_raw(struct device *dev, u8_t fs)
+static int lsm6dso_accel_set_fs_raw(const struct device *dev, u8_t fs)
 {
 	struct lsm6dso_data *data = dev->driver_data;
 
@@ -115,7 +115,7 @@ static int lsm6dso_accel_set_fs_raw(struct device *dev, u8_t fs)
 	return 0;
 }
 
-static int lsm6dso_accel_set_odr_raw(struct device *dev, u8_t odr)
+static int lsm6dso_accel_set_odr_raw(const struct device *dev, u8_t odr)
 {
 	struct lsm6dso_data *data = dev->driver_data;
 
@@ -128,7 +128,7 @@ static int lsm6dso_accel_set_odr_raw(struct device *dev, u8_t odr)
 	return 0;
 }
 
-static int lsm6dso_gyro_set_fs_raw(struct device *dev, u8_t fs)
+static int lsm6dso_gyro_set_fs_raw(const struct device *dev, u8_t fs)
 {
 	struct lsm6dso_data *data = dev->driver_data;
 
@@ -139,7 +139,7 @@ static int lsm6dso_gyro_set_fs_raw(struct device *dev, u8_t fs)
 	return 0;
 }
 
-static int lsm6dso_gyro_set_odr_raw(struct device *dev, u8_t odr)
+static int lsm6dso_gyro_set_odr_raw(const struct device *dev, u8_t odr)
 {
 	struct lsm6dso_data *data = dev->driver_data;
 
@@ -151,7 +151,7 @@ static int lsm6dso_gyro_set_odr_raw(struct device *dev, u8_t odr)
 }
 
 #ifdef LSM6DSO_ACCEL_ODR_RUNTIME
-static int lsm6dso_accel_odr_set(struct device *dev, u16_t freq)
+static int lsm6dso_accel_odr_set(const struct device *dev, u16_t freq)
 {
 	int odr;
 
@@ -170,7 +170,7 @@ static int lsm6dso_accel_odr_set(struct device *dev, u16_t freq)
 #endif
 
 #ifdef LSM6DSO_ACCEL_FS_RUNTIME
-static int lsm6dso_accel_range_set(struct device *dev, s32_t range)
+static int lsm6dso_accel_range_set(const struct device *dev, s32_t range)
 {
 	int fs;
 	struct lsm6dso_data *data = dev->driver_data;
@@ -190,9 +190,10 @@ static int lsm6dso_accel_range_set(struct device *dev, s32_t range)
 }
 #endif
 
-static int lsm6dso_accel_config(struct device *dev, enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int lsm6dso_accel_config(const struct device *dev,
+				enum sensor_channel chan,
+				enum sensor_attribute attr,
+				const struct sensor_value *val)
 {
 	switch (attr) {
 #ifdef LSM6DSO_ACCEL_FS_RUNTIME
@@ -212,7 +213,7 @@ static int lsm6dso_accel_config(struct device *dev, enum sensor_channel chan,
 }
 
 #ifdef LSM6DSO_GYRO_ODR_RUNTIME
-static int lsm6dso_gyro_odr_set(struct device *dev, u16_t freq)
+static int lsm6dso_gyro_odr_set(const struct device *dev, u16_t freq)
 {
 	int odr;
 
@@ -231,7 +232,7 @@ static int lsm6dso_gyro_odr_set(struct device *dev, u16_t freq)
 #endif
 
 #ifdef LSM6DSO_GYRO_FS_RUNTIME
-static int lsm6dso_gyro_range_set(struct device *dev, s32_t range)
+static int lsm6dso_gyro_range_set(const struct device *dev, s32_t range)
 {
 	int fs;
 	struct lsm6dso_data *data = dev->driver_data;
@@ -251,9 +252,10 @@ static int lsm6dso_gyro_range_set(struct device *dev, s32_t range)
 }
 #endif
 
-static int lsm6dso_gyro_config(struct device *dev, enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int lsm6dso_gyro_config(const struct device *dev,
+			       enum sensor_channel chan,
+			       enum sensor_attribute attr,
+			       const struct sensor_value *val)
 {
 	switch (attr) {
 #ifdef LSM6DSO_GYRO_FS_RUNTIME
@@ -272,9 +274,10 @@ static int lsm6dso_gyro_config(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int lsm6dso_attr_set(struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+static int lsm6dso_attr_set(const struct device *dev,
+			    enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -295,7 +298,7 @@ static int lsm6dso_attr_set(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int lsm6dso_sample_fetch_accel(struct device *dev)
+static int lsm6dso_sample_fetch_accel(const struct device *dev)
 {
 	struct lsm6dso_data *data = dev->driver_data;
 	union axis3bit16_t buf;
@@ -312,7 +315,7 @@ static int lsm6dso_sample_fetch_accel(struct device *dev)
 	return 0;
 }
 
-static int lsm6dso_sample_fetch_gyro(struct device *dev)
+static int lsm6dso_sample_fetch_gyro(const struct device *dev)
 {
 	struct lsm6dso_data *data = dev->driver_data;
 	union axis3bit16_t buf;
@@ -330,7 +333,7 @@ static int lsm6dso_sample_fetch_gyro(struct device *dev)
 }
 
 #if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
-static int lsm6dso_sample_fetch_temp(struct device *dev)
+static int lsm6dso_sample_fetch_temp(const struct device *dev)
 {
 	struct lsm6dso_data *data = dev->driver_data;
 	union axis1bit16_t buf;
@@ -347,7 +350,7 @@ static int lsm6dso_sample_fetch_temp(struct device *dev)
 #endif
 
 #if defined(CONFIG_LSM6DSO_SENSORHUB)
-static int lsm6dso_sample_fetch_shub(struct device *dev)
+static int lsm6dso_sample_fetch_shub(const struct device *dev)
 {
 	if (lsm6dso_shub_fetch_external_devs(dev) < 0) {
 		LOG_DBG("failed to read ext shub devices");
@@ -358,7 +361,8 @@ static int lsm6dso_sample_fetch_shub(struct device *dev)
 }
 #endif /* CONFIG_LSM6DSO_SENSORHUB */
 
-static int lsm6dso_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int lsm6dso_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -625,7 +629,7 @@ static inline void lsm6dso_temp_convert(struct sensor_value *val,
 }
 #endif
 
-static int lsm6dso_channel_get(struct device *dev,
+static int lsm6dso_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
@@ -685,7 +689,7 @@ static const struct sensor_driver_api lsm6dso_api_funcs = {
 	.channel_get = lsm6dso_channel_get,
 };
 
-static int lsm6dso_init_chip(struct device *dev)
+static int lsm6dso_init_chip(const struct device *dev)
 {
 	struct lsm6dso_data *lsm6dso = dev->driver_data;
 	u8_t chip_id;
@@ -786,7 +790,7 @@ static const struct lsm6dso_config lsm6dso_config = {
 #endif /* CONFIG_LSM6DSO_TRIGGER */
 };
 
-static int lsm6dso_init(struct device *dev)
+static int lsm6dso_init(const struct device *dev)
 {
 	const struct lsm6dso_config * const config = dev->config_info;
 	struct lsm6dso_data *data = dev->driver_data;

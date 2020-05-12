@@ -42,7 +42,7 @@ struct tach_xec_data {
 	((struct tach_xec_data *)dev->driver_data)
 
 
-int tach_xec_sample_fetch(struct device *dev, enum sensor_channel chan)
+int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	ARG_UNUSED(chan);
 
@@ -76,7 +76,7 @@ int tach_xec_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int tach_xec_channel_get(struct device *dev,
+static int tach_xec_channel_get(const struct device *dev,
 				enum sensor_channel chan,
 				struct sensor_value *val)
 {
@@ -99,7 +99,7 @@ static int tach_xec_channel_get(struct device *dev,
 	return 0;
 }
 
-static int tach_xec_init(struct device *dev)
+static int tach_xec_init(const struct device *dev)
 {
 	TACH_Type *tach = TACH_XEC_REG_BASE(dev);
 

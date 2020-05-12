@@ -84,7 +84,7 @@ static const u32_t ports_enable[STM32_PORTS_MAX] = {
  *
  * @return 0 on success, error otherwise
  */
-static int enable_port(u32_t port, struct device *clk)
+static int enable_port(u32_t port, const struct device *clk)
 {
 	/* enable port clock */
 	if (!clk) {
@@ -126,7 +126,7 @@ static int stm32_pin_configure(int pin, int func, int altf)
  * @return 0 on success, error otherwise
  */
 int z_pinmux_stm32_set(u32_t pin, u32_t func,
-				struct device *clk)
+				const struct device *clk)
 {
 	/* make sure to enable port clock first */
 	if (enable_port(STM32_PORT(pin), clk)) {
@@ -145,7 +145,7 @@ int z_pinmux_stm32_set(u32_t pin, u32_t func,
 void stm32_setup_pins(const struct pin_config *pinconf,
 		      size_t pins)
 {
-	struct device *clk;
+	const struct device *clk;
 	int i;
 
 	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);

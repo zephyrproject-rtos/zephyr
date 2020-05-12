@@ -28,7 +28,7 @@
 
 static K_SEM_DEFINE(state_sem, 1, 1);
 
-static struct device *entropy_driver;
+static const struct device *entropy_driver;
 static const unsigned char drbg_seed[] = CONFIG_CS_CTR_DRBG_PERSONALIZATION;
 
 #if defined(CONFIG_MBEDTLS)

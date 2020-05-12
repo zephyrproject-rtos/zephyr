@@ -17,7 +17,7 @@
 
 LOG_MODULE_DECLARE(LIS3MDL, CONFIG_SENSOR_LOG_LEVEL);
 
-int lis3mdl_trigger_set(struct device *dev,
+int lis3mdl_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
@@ -52,7 +52,7 @@ int lis3mdl_trigger_set(struct device *dev,
 	return 0;
 }
 
-static void lis3mdl_gpio_callback(struct device *dev,
+static void lis3mdl_gpio_callback(const struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
 	struct lis3mdl_data *drv_data =
@@ -73,7 +73,7 @@ static void lis3mdl_gpio_callback(struct device *dev,
 
 static void lis3mdl_thread_cb(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct lis3mdl_data *drv_data = dev->driver_data;
 
 	if (drv_data->data_ready_handler != NULL) {
@@ -89,7 +89,7 @@ static void lis3mdl_thread_cb(void *arg)
 #ifdef CONFIG_LIS3MDL_TRIGGER_OWN_THREAD
 static void lis3mdl_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct lis3mdl_data *drv_data = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -111,7 +111,7 @@ static void lis3mdl_work_cb(struct k_work *work)
 }
 #endif
 
-int lis3mdl_init_interrupt(struct device *dev)
+int lis3mdl_init_interrupt(const struct device *dev)
 {
 	struct lis3mdl_data *drv_data = dev->driver_data;
 

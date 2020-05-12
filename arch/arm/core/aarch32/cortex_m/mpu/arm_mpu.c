@@ -299,7 +299,7 @@ void arm_core_mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
  * This function provides the default configuration mechanism for the Memory
  * Protection Unit (MPU).
  */
-static int arm_mpu_init(struct device *arg)
+static int arm_mpu_init(const struct device *arg)
 {
 	u32_t r_index;
 

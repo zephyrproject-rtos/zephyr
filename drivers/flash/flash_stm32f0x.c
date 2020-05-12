@@ -21,7 +21,8 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 /* offset and len must be aligned on 2 for write
  * positive and not beyond end of flash
  */
-bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
+bool flash_stm32_valid_range(const struct device *dev, off_t offset,
+			     u32_t len,
 			     bool write)
 {
 	return (!write || (offset % 2 == 0 && len % 2 == 0U)) &&
@@ -33,7 +34,7 @@ static unsigned int get_page(off_t offset)
 	return offset / FLASH_PAGE_SIZE;
 }
 
-static int write_hword(struct device *dev, off_t offset, u16_t val)
+static int write_hword(const struct device *dev, off_t offset, u16_t val)
 {
 	volatile u16_t *flash = (u16_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
@@ -74,7 +75,7 @@ static int write_hword(struct device *dev, off_t offset, u16_t val)
 	return rc;
 }
 
-static int erase_page(struct device *dev, unsigned int page)
+static int erase_page(const struct device *dev, unsigned int page)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	u32_t page_address = CONFIG_FLASH_BASE_ADDRESS;
@@ -113,7 +114,8 @@ static int erase_page(struct device *dev, unsigned int page)
 	return rc;
 }
 
-int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
+int flash_stm32_block_erase_loop(const struct device *dev,
+				 unsigned int offset,
 				 unsigned int len)
 {
 	int i, rc = 0;
@@ -129,7 +131,7 @@ int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
 	return rc;
 }
 
-int flash_stm32_write_range(struct device *dev, unsigned int offset,
+int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 			    const void *data, unsigned int len)
 {
 	int i, rc = 0;
@@ -144,7 +146,7 @@ int flash_stm32_write_range(struct device *dev, unsigned int offset,
 	return rc;
 }
 
-void flash_stm32_page_layout(struct device *dev,
+void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {

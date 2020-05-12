@@ -9,7 +9,7 @@
 
 #define NR_SAMPLES 10	/* sample timer 10 times */
 
-static u32_t sync(struct device *cmos)
+static u32_t sync(const struct device *cmos)
 {
 	u32_t this, last;
 	int err;
@@ -34,7 +34,7 @@ static u32_t sync(struct device *cmos)
 
 void timer(void)
 {
-	struct device *cmos;
+	const struct device *cmos;
 
 #if defined(CONFIG_LOAPIC_TIMER)
 	printk("TIMER: legacy local APIC");

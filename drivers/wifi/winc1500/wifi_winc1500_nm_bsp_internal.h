@@ -30,14 +30,14 @@ enum winc1500_gpio_index {
 };
 
 struct winc1500_gpio_configuration {
-	struct device *dev;
+	const struct device *dev;
 	u32_t pin;
 };
 
 struct winc1500_device {
 	struct winc1500_gpio_configuration	*gpios;
 	struct gpio_callback			gpio_cb;
-	struct device				*spi;
+	const struct device				*spi;
 	struct spi_config			spi_cfg;
 };
 

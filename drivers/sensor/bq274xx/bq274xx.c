@@ -132,7 +132,8 @@ static int bq274xx_get_device_type(struct bq274xx_data *bq274xx, u16_t *val)
  *
  * @return -ENOTSUP for unsupported channels
  */
-static int bq274xx_channel_get(struct device *dev, enum sensor_channel chan,
+static int bq274xx_channel_get(const struct device *dev,
+			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
 	struct bq274xx_data *bq274xx = dev->driver_data;
@@ -209,7 +210,8 @@ static int bq274xx_channel_get(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int bq274xx_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int bq274xx_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
 	struct bq274xx_data *bq274xx = dev->driver_data;
 	int status = 0;
@@ -348,7 +350,7 @@ static int bq274xx_sample_fetch(struct device *dev, enum sensor_channel chan)
  *
  * @return 0 for success
  */
-static int bq274xx_gauge_init(struct device *dev)
+static int bq274xx_gauge_init(const struct device *dev)
 {
 	struct bq274xx_data *bq274xx = dev->driver_data;
 	const struct bq274xx_config *const config = dev->config_info;

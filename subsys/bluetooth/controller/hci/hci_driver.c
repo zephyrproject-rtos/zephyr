@@ -495,7 +495,7 @@ static const struct bt_hci_driver drv = {
 	.send	= hci_driver_send,
 };
 
-static int hci_driver_init(struct device *unused)
+static int hci_driver_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

@@ -109,7 +109,8 @@ static int ms5607_get_measurement(const struct ms5607_data *data,
 	return 0;
 }
 
-static int ms5607_sample_fetch(struct device *dev, enum sensor_channel channel)
+static int ms5607_sample_fetch(const struct device *dev,
+			       enum sensor_channel channel)
 {
 	struct ms5607_data *data = dev->driver_data;
 	int err;
@@ -137,7 +138,8 @@ static int ms5607_sample_fetch(struct device *dev, enum sensor_channel channel)
 	return 0;
 }
 
-static int ms5607_channel_get(struct device *dev, enum sensor_channel chan,
+static int ms5607_channel_get(const struct device *dev,
+			      enum sensor_channel chan,
 			      struct sensor_value *val)
 {
 	const struct ms5607_data *data = dev->driver_data;
@@ -158,7 +160,7 @@ static int ms5607_channel_get(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int ms5607_attr_set(struct device *dev, enum sensor_channel chan,
+static int ms5607_attr_set(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
@@ -226,7 +228,7 @@ static const struct ms5607_config ms5607_config = {
 	.ms5607_device_name = DT_INST_BUS_LABEL(0),
 };
 
-static int ms5607_init(struct device *dev)
+static int ms5607_init(const struct device *dev)
 {
 	const struct ms5607_config *const config = dev->config_info;
 	struct ms5607_data *data = dev->driver_data;

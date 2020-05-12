@@ -39,18 +39,18 @@ struct spi_cc13xx_cc26xx_data {
 
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
 
-static inline struct spi_cc13xx_cc26xx_data *get_dev_data(struct device *dev)
+static inline struct spi_cc13xx_cc26xx_data *get_dev_data(const struct device *dev)
 {
 	return dev->driver_data;
 }
 
 static inline const struct spi_cc13xx_cc26xx_config *
-get_dev_config(struct device *dev)
+get_dev_config(const struct device *dev)
 {
 	return dev->config_info;
 }
 
-static int spi_cc13xx_cc26xx_configure(struct device *dev,
+static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 				       const struct spi_config *config)
 {
 	const struct spi_cc13xx_cc26xx_config *cfg = get_dev_config(dev);
@@ -136,7 +136,7 @@ static int spi_cc13xx_cc26xx_configure(struct device *dev,
 	return 0;
 }
 
-static int spi_cc13xx_cc26xx_transceive(struct device *dev,
+static int spi_cc13xx_cc26xx_transceive(const struct device *dev,
 					const struct spi_config *config,
 					const struct spi_buf_set *tx_bufs,
 					const struct spi_buf_set *rx_bufs)
@@ -193,7 +193,7 @@ done:
 	return err;
 }
 
-static int spi_cc13xx_cc26xx_release(struct device *dev,
+static int spi_cc13xx_cc26xx_release(const struct device *dev,
 				     const struct spi_config *config)
 {
 	struct spi_context *ctx = &get_dev_data(dev)->ctx;
@@ -212,8 +212,8 @@ static int spi_cc13xx_cc26xx_release(struct device *dev,
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int spi_cc13xx_cc26xx_set_power_state(struct device *dev,
-	u32_t new_state)
+static int spi_cc13xx_cc26xx_set_power_state(const struct device *dev,
+					     u32_t new_state)
 {
 	int ret = 0;
 
@@ -251,8 +251,10 @@ static int spi_cc13xx_cc26xx_set_power_state(struct device *dev,
 	return ret;
 }
 
-static int spi_cc13xx_cc26xx_pm_control(struct device *dev, u32_t ctrl_command,
-	void *context, device_pm_cb cb, void *arg)
+static int spi_cc13xx_cc26xx_pm_control(const struct device *dev,
+					u32_t ctrl_command,
+					void *context, device_pm_cb cb,
+					void *arg)
 {
 	int ret = 0;
 
@@ -340,7 +342,7 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 #endif
 
 #define SPI_CC13XX_CC26XX_INIT_FUNC(n)					    \
-	static int spi_cc13xx_cc26xx_init_##n(struct device *dev)	    \
+	static int spi_cc13xx_cc26xx_init_##n(const struct device *dev)	    \
 	{								    \
 		SPI_CC13XX_CC26XX_INIT_PM_STATE;			    \
 									    \

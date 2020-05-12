@@ -31,7 +31,7 @@ struct imx_uart_config {
 	u32_t baud_rate;
 	u8_t modem_mode;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 #endif
 };
 
@@ -52,7 +52,7 @@ struct imx_uart_data {
  *
  * @return 0
  */
-static int uart_imx_init(struct device *dev)
+static int uart_imx_init(const struct device *dev)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 	const struct imx_uart_config *config = dev->config_info;
@@ -95,7 +95,7 @@ static int uart_imx_init(struct device *dev)
 	return 0;
 }
 
-static void uart_imx_poll_out(struct device *dev, unsigned char c)
+static void uart_imx_poll_out(const struct device *dev, unsigned char c)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 
@@ -104,7 +104,7 @@ static void uart_imx_poll_out(struct device *dev, unsigned char c)
 	UART_Putchar(uart, c);
 }
 
-static int uart_imx_poll_in(struct device *dev, unsigned char *c)
+static int uart_imx_poll_in(const struct device *dev, unsigned char *c)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 
@@ -121,7 +121,7 @@ static int uart_imx_poll_in(struct device *dev, unsigned char *c)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_imx_fifo_fill(struct device *dev, const u8_t *tx_data,
+static int uart_imx_fifo_fill(const struct device *dev, const u8_t *tx_data,
 				  int size)
 {
 	UART_Type *uart = UART_STRUCT(dev);
@@ -137,7 +137,7 @@ static int uart_imx_fifo_fill(struct device *dev, const u8_t *tx_data,
 	return (int)num_tx;
 }
 
-static int uart_imx_fifo_read(struct device *dev, u8_t *rx_data,
+static int uart_imx_fifo_read(const struct device *dev, u8_t *rx_data,
 				  const int size)
 {
 	UART_Type *uart = UART_STRUCT(dev);
@@ -156,49 +156,49 @@ static int uart_imx_fifo_read(struct device *dev, u8_t *rx_data,
 	return num_rx;
 }
 
-static void uart_imx_irq_tx_enable(struct device *dev)
+static void uart_imx_irq_tx_enable(const struct device *dev)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 
 	UART_SetIntCmd(uart, uartIntTxReady, true);
 }
 
-static void uart_imx_irq_tx_disable(struct device *dev)
+static void uart_imx_irq_tx_disable(const struct device *dev)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 
 	UART_SetIntCmd(uart, uartIntTxReady, false);
 }
 
-static int uart_imx_irq_tx_ready(struct device *dev)
+static int uart_imx_irq_tx_ready(const struct device *dev)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 
 	return UART_GetStatusFlag(uart, uartStatusTxReady);
 }
 
-static void uart_imx_irq_rx_enable(struct device *dev)
+static void uart_imx_irq_rx_enable(const struct device *dev)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 
 	UART_SetIntCmd(uart, uartIntRxReady, true);
 }
 
-static void uart_imx_irq_rx_disable(struct device *dev)
+static void uart_imx_irq_rx_disable(const struct device *dev)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 
 	UART_SetIntCmd(uart, uartIntRxReady, false);
 }
 
-static int uart_imx_irq_rx_ready(struct device *dev)
+static int uart_imx_irq_rx_ready(const struct device *dev)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 
 	return UART_GetStatusFlag(uart, uartStatusRxReady);
 }
 
-static void uart_imx_irq_err_enable(struct device *dev)
+static void uart_imx_irq_err_enable(const struct device *dev)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 
@@ -206,7 +206,7 @@ static void uart_imx_irq_err_enable(struct device *dev)
 	UART_SetIntCmd(uart, uartIntFrameError, true);
 }
 
-static void uart_imx_irq_err_disable(struct device *dev)
+static void uart_imx_irq_err_disable(const struct device *dev)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 
@@ -214,7 +214,7 @@ static void uart_imx_irq_err_disable(struct device *dev)
 	UART_SetIntCmd(uart, uartIntFrameError, false);
 }
 
-static int uart_imx_irq_is_pending(struct device *dev)
+static int uart_imx_irq_is_pending(const struct device *dev)
 {
 	UART_Type *uart = UART_STRUCT(dev);
 
@@ -222,14 +222,14 @@ static int uart_imx_irq_is_pending(struct device *dev)
 		UART_GetStatusFlag(uart, uartStatusTxReady);
 }
 
-static int uart_imx_irq_update(struct device *dev)
+static int uart_imx_irq_update(const struct device *dev)
 {
 	return 1;
 }
 
-static void uart_imx_irq_callback_set(struct device *dev,
-		uart_irq_callback_user_data_t cb,
-		void *cb_data)
+static void uart_imx_irq_callback_set(const struct device *dev,
+				      uart_irq_callback_user_data_t cb,
+				      void *cb_data)
 {
 	struct imx_uart_data *data = dev->driver_data;
 
@@ -251,7 +251,7 @@ static void uart_imx_irq_callback_set(struct device *dev,
  */
 void uart_imx_isr(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct imx_uart_data *data = dev->driver_data;
 
 	if (data->callback) {
@@ -292,7 +292,7 @@ static const struct uart_driver_api uart_imx_driver_api = {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 #define UART_IMX_CONFIG_FUNC(n)						\
-	static void irq_config_func_##n(struct device *dev)		\
+	static void irq_config_func_##n(const struct device *dev)		\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 				DT_INST_IRQ(n, priority),		\

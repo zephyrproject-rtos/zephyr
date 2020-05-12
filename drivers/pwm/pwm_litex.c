@@ -40,7 +40,7 @@ static void litex_set_reg(volatile u32_t *reg, u32_t reg_size, u32_t val)
 	}
 }
 
-int pwm_litex_init(struct device *dev)
+int pwm_litex_init(const struct device *dev)
 {
 	const struct pwm_litex_cfg *cfg = GET_PWM_CFG(dev);
 
@@ -48,7 +48,8 @@ int pwm_litex_init(struct device *dev)
 	return 0;
 }
 
-int pwm_litex_pin_set(struct device *dev, u32_t pwm, u32_t period_cycles,
+int pwm_litex_pin_set(const struct device *dev, u32_t pwm,
+		      u32_t period_cycles,
 		      u32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_litex_cfg *cfg = GET_PWM_CFG(dev);
@@ -65,7 +66,8 @@ int pwm_litex_pin_set(struct device *dev, u32_t pwm, u32_t period_cycles,
 	return 0;
 }
 
-int pwm_litex_get_cycles_per_sec(struct device *dev, u32_t pwm, u64_t *cycles)
+int pwm_litex_get_cycles_per_sec(const struct device *dev, u32_t pwm,
+				 u64_t *cycles)
 {
 	if (pwm >= NUMBER_OF_CHANNELS) {
 		return -EINVAL;

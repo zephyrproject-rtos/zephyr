@@ -122,7 +122,7 @@ static bool any_other_channel_is_active(u8_t channel,
 	return false;
 }
 
-static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
+static int pwm_nrfx_pin_set(const struct device *dev, u32_t pwm,
 			    u32_t period_cycles, u32_t pulse_cycles,
 			    pwm_flags_t flags)
 {
@@ -248,7 +248,7 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int pwm_nrfx_get_cycles_per_sec(struct device *dev, u32_t pwm,
+static int pwm_nrfx_get_cycles_per_sec(const struct device *dev, u32_t pwm,
 				       u64_t *cycles)
 {
 	/* TODO: Since this function might be removed, we will always return
@@ -265,7 +265,7 @@ static const struct pwm_driver_api pwm_nrfx_drv_api_funcs = {
 	.get_cycles_per_sec = pwm_nrfx_get_cycles_per_sec,
 };
 
-static int pwm_nrfx_init(struct device *dev)
+static int pwm_nrfx_init(const struct device *dev)
 {
 	const struct pwm_nrfx_config *config = dev->config_info;
 
@@ -283,7 +283,7 @@ static int pwm_nrfx_init(struct device *dev)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 
-static void pwm_nrfx_uninit(struct device *dev)
+static void pwm_nrfx_uninit(const struct device *dev)
 {
 	const struct pwm_nrfx_config *config = dev->config_info;
 
@@ -292,7 +292,7 @@ static void pwm_nrfx_uninit(struct device *dev)
 
 static int pwm_nrfx_set_power_state(u32_t new_state,
 				    u32_t current_state,
-				    struct device *dev)
+				    const struct device *dev)
 {
 	int err = 0;
 
@@ -315,7 +315,7 @@ static int pwm_nrfx_set_power_state(u32_t new_state,
 	return err;
 }
 
-static int pwm_nrfx_pm_control(struct device *dev,
+static int pwm_nrfx_pm_control(const struct device *dev,
 			       u32_t ctrl_command,
 			       void *context,
 			       u32_t *current_state)
@@ -342,7 +342,7 @@ static int pwm_nrfx_pm_control(struct device *dev,
 }
 
 #define PWM_NRFX_PM_CONTROL(idx)					\
-	static int pwm_##idx##_nrfx_pm_control(struct device *dev,	\
+	static int pwm_##idx##_nrfx_pm_control(const struct device *dev,	\
 					       u32_t ctrl_command,	\
 					       void *context,		\
 					       device_pm_cb cb,		\

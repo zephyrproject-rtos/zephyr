@@ -28,7 +28,7 @@ static struct sensor_value press_out, temp_out;
 #endif
 
 #ifdef CONFIG_LSM6DSL_TRIGGER
-static void lsm6dsl_trigger_handler(struct device *dev,
+static void lsm6dsl_trigger_handler(const struct device *dev,
 				    struct sensor_trigger *trig)
 {
 	static struct sensor_value accel_x, accel_y, accel_z;
@@ -100,7 +100,7 @@ void main(void)
 	int cnt = 0;
 	char out_str[64];
 	struct sensor_value odr_attr;
-	struct device *lsm6dsl_dev = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dsl)));
+	const struct device *lsm6dsl_dev = device_get_binding(DT_LABEL(DT_INST(0, st_lsm6dsl)));
 
 	if (lsm6dsl_dev == NULL) {
 		printk("Could not get LSM6DSL device\n");

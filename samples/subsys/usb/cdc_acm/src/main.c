@@ -28,7 +28,7 @@ u8_t ring_buffer[RING_BUF_SIZE];
 
 struct ring_buf ringbuf;
 
-static void interrupt_handler(struct device *dev)
+static void interrupt_handler(const struct device *dev)
 {
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
 		if (uart_irq_rx_ready(dev)) {
@@ -72,7 +72,7 @@ static void interrupt_handler(struct device *dev)
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	u32_t baudrate, dtr = 0U;
 	int ret;
 

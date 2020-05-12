@@ -19,8 +19,8 @@
 
 LOG_MODULE_DECLARE(LIS2DS12, CONFIG_SENSOR_LOG_LEVEL);
 
-static void lis2ds12_gpio_callback(struct device *dev,
-				  struct gpio_callback *cb, u32_t pins)
+static void lis2ds12_gpio_callback(const struct device *dev,
+				   struct gpio_callback *cb, u32_t pins)
 {
 	struct lis2ds12_data *data =
 		CONTAINER_OF(cb, struct lis2ds12_data, gpio_cb);
@@ -38,7 +38,7 @@ static void lis2ds12_gpio_callback(struct device *dev,
 #endif
 }
 
-static void lis2ds12_handle_drdy_int(struct device *dev)
+static void lis2ds12_handle_drdy_int(const struct device *dev)
 {
 	struct lis2ds12_data *data = dev->driver_data;
 
@@ -49,7 +49,7 @@ static void lis2ds12_handle_drdy_int(struct device *dev)
 
 static void lis2ds12_handle_int(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct lis2ds12_data *data = dev->driver_data;
 	const struct lis2ds12_config *cfg = dev->config_info;
 	u8_t status;
@@ -70,7 +70,7 @@ static void lis2ds12_handle_int(void *arg)
 #ifdef CONFIG_LIS2DS12_TRIGGER_OWN_THREAD
 static void lis2ds12_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct lis2ds12_data *data = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -92,7 +92,7 @@ static void lis2ds12_work_cb(struct k_work *work)
 }
 #endif
 
-static int lis2ds12_init_interrupt(struct device *dev)
+static int lis2ds12_init_interrupt(const struct device *dev)
 {
 	struct lis2ds12_data *data = dev->driver_data;
 
@@ -117,7 +117,7 @@ static int lis2ds12_init_interrupt(struct device *dev)
 	return 0;
 }
 
-int lis2ds12_trigger_init(struct device *dev)
+int lis2ds12_trigger_init(const struct device *dev)
 {
 	struct lis2ds12_data *data = dev->driver_data;
 	const struct lis2ds12_config *cfg = dev->config_info;
@@ -160,9 +160,9 @@ int lis2ds12_trigger_init(struct device *dev)
 	return 0;
 }
 
-int lis2ds12_trigger_set(struct device *dev,
-			const struct sensor_trigger *trig,
-			sensor_trigger_handler_t handler)
+int lis2ds12_trigger_set(const struct device *dev,
+			 const struct sensor_trigger *trig,
+			 sensor_trigger_handler_t handler)
 {
 	struct lis2ds12_data *data = dev->driver_data;
 	const struct lis2ds12_config *cfg = dev->config_info;

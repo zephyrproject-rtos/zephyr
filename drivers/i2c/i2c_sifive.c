@@ -67,14 +67,14 @@ struct i2c_sifive_cfg {
 
 /* Helper functions */
 
-static inline bool i2c_sifive_busy(struct device *dev)
+static inline bool i2c_sifive_busy(const struct device *dev)
 {
 	const struct i2c_sifive_cfg *config = dev->config_info;
 
 	return IS_SET(config, REG_STATUS, SF_STATUS_TIP);
 }
 
-static int i2c_sifive_send_addr(struct device *dev,
+static int i2c_sifive_send_addr(const struct device *dev,
 				u16_t addr,
 				u16_t rw_flag)
 {
@@ -105,7 +105,7 @@ static int i2c_sifive_send_addr(struct device *dev,
 	return 0;
 }
 
-static int i2c_sifive_write_msg(struct device *dev,
+static int i2c_sifive_write_msg(const struct device *dev,
 				struct i2c_msg *msg,
 				u16_t addr)
 {
@@ -154,7 +154,7 @@ static int i2c_sifive_write_msg(struct device *dev,
 	return 0;
 }
 
-static int i2c_sifive_read_msg(struct device *dev,
+static int i2c_sifive_read_msg(const struct device *dev,
 			       struct i2c_msg *msg,
 			       u16_t addr)
 {
@@ -197,7 +197,7 @@ static int i2c_sifive_read_msg(struct device *dev,
 
 /* API Functions */
 
-static int i2c_sifive_configure(struct device *dev, u32_t dev_config)
+static int i2c_sifive_configure(const struct device *dev, u32_t dev_config)
 {
 	const struct i2c_sifive_cfg *config = NULL;
 	u32_t i2c_speed = 0U;
@@ -262,7 +262,7 @@ static int i2c_sifive_configure(struct device *dev, u32_t dev_config)
 	return 0;
 }
 
-static int i2c_sifive_transfer(struct device *dev,
+static int i2c_sifive_transfer(const struct device *dev,
 			       struct i2c_msg *msgs,
 			       u8_t num_msgs,
 			       u16_t addr)
@@ -298,7 +298,7 @@ static int i2c_sifive_transfer(struct device *dev,
 	return 0;
 };
 
-static int i2c_sifive_init(struct device *dev)
+static int i2c_sifive_init(const struct device *dev)
 {
 	const struct i2c_sifive_cfg *config = dev->config_info;
 	u32_t dev_config = 0U;

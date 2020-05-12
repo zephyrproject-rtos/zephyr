@@ -66,7 +66,7 @@ static int check_bus_idle(PECI_Type *base)
 	return 0;
 }
 
-static int peci_xec_configure(struct device *dev, u32_t bitrate)
+static int peci_xec_configure(const struct device *dev, u32_t bitrate)
 {
 	ARG_UNUSED(dev);
 
@@ -88,7 +88,7 @@ static int peci_xec_configure(struct device *dev, u32_t bitrate)
 	return 0;
 }
 
-static int peci_xec_disable(struct device *dev)
+static int peci_xec_disable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	int ret;
@@ -109,7 +109,7 @@ static int peci_xec_disable(struct device *dev)
 	return 0;
 }
 
-static int peci_xec_enable(struct device *dev)
+static int peci_xec_enable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	PECI_Type *base = peci_xec_config.base;
@@ -122,7 +122,7 @@ static int peci_xec_enable(struct device *dev)
 	return 0;
 }
 
-static int peci_xec_write(struct device *dev, struct peci_msg *msg)
+static int peci_xec_write(const struct device *dev, struct peci_msg *msg)
 {
 	ARG_UNUSED(dev);
 	int i;
@@ -189,7 +189,7 @@ static int peci_xec_write(struct device *dev, struct peci_msg *msg)
 	return 0;
 }
 
-static int peci_xec_read(struct device *dev, struct peci_msg *msg)
+static int peci_xec_read(const struct device *dev, struct peci_msg *msg)
 {
 	ARG_UNUSED(dev);
 	int i;
@@ -239,7 +239,7 @@ static int peci_xec_read(struct device *dev, struct peci_msg *msg)
 	return 0;
 }
 
-static int peci_xec_transfer(struct device *dev, struct peci_msg *msg)
+static int peci_xec_transfer(const struct device *dev, struct peci_msg *msg)
 {
 	ARG_UNUSED(dev);
 	int ret;
@@ -322,7 +322,7 @@ static const struct peci_driver_api peci_xec_driver_api = {
 	.transfer = peci_xec_transfer,
 };
 
-static int peci_xec_init(struct device *dev)
+static int peci_xec_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

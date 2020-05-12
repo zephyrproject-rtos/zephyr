@@ -46,7 +46,7 @@ static int cmd_write_mcux(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	u32_t value[2];
 	u32_t offset;
 
@@ -79,7 +79,7 @@ static int cmd_write_stm32(const struct shell *shell, size_t argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	struct device *flash_dev;
+	const struct device *flash_dev;
 
 	flash_dev =
 		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);

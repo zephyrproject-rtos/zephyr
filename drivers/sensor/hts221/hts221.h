@@ -29,7 +29,7 @@
 #define HTS221_REG_CONVERSION_START	0x30
 
 struct hts221_data {
-	struct device *i2c;
+	const struct device *i2c;
 	s16_t rh_sample;
 	s16_t t_sample;
 
@@ -43,8 +43,8 @@ struct hts221_data {
 	s16_t t1_out;
 
 #ifdef CONFIG_HTS221_TRIGGER
-	struct device *dev;
-	struct device *drdy_dev;
+	const struct device *dev;
+	const struct device *drdy_dev;
 	struct gpio_callback drdy_cb;
 
 	struct sensor_trigger data_ready_trigger;
@@ -72,11 +72,11 @@ struct hts221_config {
 };
 
 #ifdef CONFIG_HTS221_TRIGGER
-int hts221_trigger_set(struct device *dev,
+int hts221_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
-int hts221_init_interrupt(struct device *dev);
+int hts221_init_interrupt(const struct device *dev);
 #endif
 
 #endif /* __SENSOR_HTS221__ */

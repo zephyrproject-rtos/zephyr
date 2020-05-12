@@ -68,8 +68,8 @@
 static u8_t rxmsg[SPI_MAX_MSG_LEN];
 static u8_t txmsg[SPI_MAX_MSG_LEN];
 
-static struct device		*irq_dev;
-static struct device		*rst_dev;
+static const struct device		*irq_dev;
+static const struct device		*rst_dev;
 
 static struct gpio_callback	gpio_cb;
 
@@ -105,7 +105,7 @@ void spi_dump_message(const u8_t *pre, u8_t *buf, u8_t size) {}
 #endif
 
 #if defined(CONFIG_BT_SPI_BLUENRG)
-static struct device *cs_dev;
+static const struct device *cs_dev;
 /* Define a limit when reading IRQ high */
 /* It can be required to be increased for */
 /* some particular cases. */
@@ -126,7 +126,7 @@ struct bluenrg_aci_cmd_ll_param {
 static int bt_spi_send_aci_config_data_controller_mode(void);
 #endif /* CONFIG_BT_BLUENRG_ACI */
 
-static struct device *spi_dev;
+static const struct device *spi_dev;
 
 static struct spi_config spi_conf = {
 	.frequency = DT_INST_PROP(0, spi_max_frequency),
@@ -166,7 +166,8 @@ static inline u16_t bt_spi_get_evt(u8_t *rxmsg)
 	return (rxmsg[EVT_VENDOR_CODE_MSB] << 8) | rxmsg[EVT_VENDOR_CODE_LSB];
 }
 
-static void bt_spi_isr(struct device *unused1, struct gpio_callback *unused2,
+static void bt_spi_isr(const struct device *unused1,
+		       struct gpio_callback *unused2,
 		       u32_t unused3)
 {
 	BT_DBG("");
@@ -531,7 +532,7 @@ static const struct bt_hci_driver drv = {
 	.send		= bt_spi_send,
 };
 
-static int bt_spi_init(struct device *unused)
+static int bt_spi_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

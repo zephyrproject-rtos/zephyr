@@ -18,7 +18,7 @@
 static struct drv_data data;
 static int cb_cnt;
 
-static void callback(struct device *dev,
+static void callback(const struct device *dev,
 		     struct gpio_callback *gpio_cb, u32_t pins)
 {
 	const struct drv_data *dd = CONTAINER_OF(gpio_cb,
@@ -41,7 +41,7 @@ static void callback(struct device *dev,
 
 static int test_callback(int mode)
 {
-	struct device *dev = device_get_binding(DEV_NAME);
+	const struct device *dev = device_get_binding(DEV_NAME);
 	struct drv_data *drv_data = &data;
 
 	gpio_pin_interrupt_configure(dev, PIN_IN, GPIO_INT_DISABLE);

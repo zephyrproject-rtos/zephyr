@@ -10,7 +10,7 @@
 
 #define DUMMY_DRIVER_NAME	"dummy_driver"
 
-typedef int (*dummy_api_configure_t)(struct device *dev,
+typedef int (*dummy_api_configure_t)(const struct device *dev,
 				     u32_t dev_config);
 
 
@@ -18,7 +18,7 @@ struct dummy_driver_api {
 	dummy_api_configure_t configure;
 };
 
-static int dummy_configure(struct device *dev, u32_t config)
+static int dummy_configure(const struct device *dev, u32_t config)
 {
 	return 0;
 }
@@ -27,7 +27,7 @@ static const struct dummy_driver_api funcs = {
 	.configure = dummy_configure,
 };
 
-int dummy_init(struct device *dev)
+int dummy_init(const struct device *dev)
 {
 	return 0;
 }

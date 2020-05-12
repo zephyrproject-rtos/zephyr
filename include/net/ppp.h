@@ -45,20 +45,20 @@ struct ppp_api {
 	struct net_if_api iface_api;
 
 	/** Start the device */
-	int (*start)(struct device *dev);
+	int (*start)(const struct device *dev);
 
 	/** Stop the device */
-	int (*stop)(struct device *dev);
+	int (*stop)(const struct device *dev);
 
 	/** Send a network packet */
-	int (*send)(struct device *dev, struct net_pkt *pkt);
+	int (*send)(const struct device *dev, struct net_pkt *pkt);
 
 #if defined(CONFIG_NET_STATISTICS_PPP)
 	/** Collect optional PPP specific statistics. This pointer
 	 * should be set by driver if statistics needs to be collected
 	 * for that driver.
 	 */
-	struct net_stats_ppp *(*get_stats)(struct device *dev);
+	struct net_stats_ppp *(*get_stats)(const struct device *dev);
 #endif
 };
 

@@ -21,7 +21,7 @@
 
 LOG_MODULE_REGISTER(MPR, CONFIG_SENSOR_LOG_LEVEL);
 
-static int mpr_init(struct device *dev)
+static int mpr_init(const struct device *dev)
 {
 	struct mpr_data *data = dev->driver_data;
 	const struct mpr_config *cfg = dev->config_info;
@@ -34,7 +34,7 @@ static int mpr_init(struct device *dev)
 	return 0;
 }
 
-static int mpr_read_reg(struct device *dev)
+static int mpr_read_reg(const struct device *dev)
 {
 	struct mpr_data *data = dev->driver_data;
 	const struct mpr_config *cfg = dev->config_info;
@@ -96,14 +96,15 @@ static inline void mpr_convert_reg(const u32_t *reg, s64_t *value)
 	*value += MPR_P_MIN;
 }
 
-static int mpr_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int mpr_sample_fetch(const struct device *dev,
+			    enum sensor_channel chan)
 {
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_PRESS);
 
 	return mpr_read_reg(dev);
 }
 
-static int mpr_channel_get(struct device *dev,
+static int mpr_channel_get(const struct device *dev,
 			   enum sensor_channel chan,
 			   struct sensor_value *val)
 {

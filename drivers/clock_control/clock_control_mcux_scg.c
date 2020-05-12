@@ -18,17 +18,19 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(clock_control_scg);
 
-static int mcux_scg_on(struct device *dev, clock_control_subsys_t sub_system)
+static int mcux_scg_on(const struct device *dev,
+		       clock_control_subsys_t sub_system)
 {
 	return 0;
 }
 
-static int mcux_scg_off(struct device *dev, clock_control_subsys_t sub_system)
+static int mcux_scg_off(const struct device *dev,
+			clock_control_subsys_t sub_system)
 {
 	return 0;
 }
 
-static int mcux_scg_get_rate(struct device *dev,
+static int mcux_scg_get_rate(const struct device *dev,
 			     clock_control_subsys_t sub_system,
 			     u32_t *rate)
 {
@@ -92,7 +94,7 @@ static int mcux_scg_get_rate(struct device *dev,
 	return 0;
 }
 
-static int mcux_scg_init(struct device *dev)
+static int mcux_scg_init(const struct device *dev)
 {
 #if DT_INST_NODE_HAS_PROP(0, clkout_source)
 	CLOCK_SetClkOutSel(DT_INST_PROP(0, clkout_source));

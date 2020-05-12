@@ -33,7 +33,7 @@ static struct mdm_receiver_context *contexts[MAX_MDM_CTX];
  *
  * @retval Receiver context or NULL.
  */
-static struct mdm_receiver_context *context_from_dev(struct device *dev)
+static struct mdm_receiver_context *context_from_dev(const struct device *dev)
 {
 	int i;
 
@@ -101,7 +101,7 @@ static void mdm_receiver_flush(struct mdm_receiver_context *ctx)
  *
  * @retval None.
  */
-static void mdm_receiver_isr(struct device *uart_dev)
+static void mdm_receiver_isr(const struct device *uart_dev)
 {
 	struct mdm_receiver_context *ctx;
 	int rx, ret;

@@ -80,7 +80,7 @@ struct uart_sifive_data {
  * @param dev UART device struct
  * @param c Character to send
  */
-static void uart_sifive_poll_out(struct device *dev,
+static void uart_sifive_poll_out(const struct device *dev,
 					 unsigned char c)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
@@ -100,7 +100,7 @@ static void uart_sifive_poll_out(struct device *dev,
  *
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
-static int uart_sifive_poll_in(struct device *dev, unsigned char *c)
+static int uart_sifive_poll_in(const struct device *dev, unsigned char *c)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 	u32_t val = uart->rx;
@@ -125,9 +125,9 @@ static int uart_sifive_poll_in(struct device *dev, unsigned char *c)
  *
  * @return Number of bytes sent
  */
-static int uart_sifive_fifo_fill(struct device *dev,
-				const u8_t *tx_data,
-				int size)
+static int uart_sifive_fifo_fill(const struct device *dev,
+				 const u8_t *tx_data,
+				 int size)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 	int i;
@@ -147,9 +147,9 @@ static int uart_sifive_fifo_fill(struct device *dev,
  *
  * @return Number of bytes read
  */
-static int uart_sifive_fifo_read(struct device *dev,
-				u8_t *rx_data,
-				const int size)
+static int uart_sifive_fifo_read(const struct device *dev,
+				 u8_t *rx_data,
+				 const int size)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 	int i;
@@ -174,7 +174,7 @@ static int uart_sifive_fifo_read(struct device *dev,
  *
  * @return N/A
  */
-static void uart_sifive_irq_tx_enable(struct device *dev)
+static void uart_sifive_irq_tx_enable(const struct device *dev)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
@@ -188,7 +188,7 @@ static void uart_sifive_irq_tx_enable(struct device *dev)
  *
  * @return N/A
  */
-static void uart_sifive_irq_tx_disable(struct device *dev)
+static void uart_sifive_irq_tx_disable(const struct device *dev)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
@@ -202,7 +202,7 @@ static void uart_sifive_irq_tx_disable(struct device *dev)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-static int uart_sifive_irq_tx_ready(struct device *dev)
+static int uart_sifive_irq_tx_ready(const struct device *dev)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
@@ -216,7 +216,7 @@ static int uart_sifive_irq_tx_ready(struct device *dev)
  *
  * @return 1 if nothing remains to be transmitted, 0 otherwise
  */
-static int uart_sifive_irq_tx_complete(struct device *dev)
+static int uart_sifive_irq_tx_complete(const struct device *dev)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
@@ -234,7 +234,7 @@ static int uart_sifive_irq_tx_complete(struct device *dev)
  *
  * @return N/A
  */
-static void uart_sifive_irq_rx_enable(struct device *dev)
+static void uart_sifive_irq_rx_enable(const struct device *dev)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
@@ -248,7 +248,7 @@ static void uart_sifive_irq_rx_enable(struct device *dev)
  *
  * @return N/A
  */
-static void uart_sifive_irq_rx_disable(struct device *dev)
+static void uart_sifive_irq_rx_disable(const struct device *dev)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
@@ -262,7 +262,7 @@ static void uart_sifive_irq_rx_disable(struct device *dev)
  *
  * @return 1 if an IRQ is ready, 0 otherwise
  */
-static int uart_sifive_irq_rx_ready(struct device *dev)
+static int uart_sifive_irq_rx_ready(const struct device *dev)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
@@ -270,12 +270,12 @@ static int uart_sifive_irq_rx_ready(struct device *dev)
 }
 
 /* No error interrupt for this controller */
-static void uart_sifive_irq_err_enable(struct device *dev)
+static void uart_sifive_irq_err_enable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
 
-static void uart_sifive_irq_err_disable(struct device *dev)
+static void uart_sifive_irq_err_disable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
@@ -287,14 +287,14 @@ static void uart_sifive_irq_err_disable(struct device *dev)
  *
  * @return 1 if an IRQ is pending, 0 otherwise
  */
-static int uart_sifive_irq_is_pending(struct device *dev)
+static int uart_sifive_irq_is_pending(const struct device *dev)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	return !!(uart->ip & (IE_RXWM | IE_TXWM));
 }
 
-static int uart_sifive_irq_update(struct device *dev)
+static int uart_sifive_irq_update(const struct device *dev)
 {
 	return 1;
 }
@@ -307,9 +307,9 @@ static int uart_sifive_irq_update(struct device *dev)
  *
  * @return N/A
  */
-static void uart_sifive_irq_callback_set(struct device *dev,
-					uart_irq_callback_user_data_t cb,
-					void *cb_data)
+static void uart_sifive_irq_callback_set(const struct device *dev,
+					 uart_irq_callback_user_data_t cb,
+					 void *cb_data)
 {
 	struct uart_sifive_data *data = DEV_DATA(dev);
 
@@ -319,7 +319,7 @@ static void uart_sifive_irq_callback_set(struct device *dev,
 
 static void uart_sifive_irq_handler(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct uart_sifive_data *data = DEV_DATA(dev);
 
 	if (data->callback)
@@ -329,7 +329,7 @@ static void uart_sifive_irq_handler(void *arg)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 
-static int uart_sifive_init(struct device *dev)
+static int uart_sifive_init(const struct device *dev)
 {
 	const struct uart_sifive_device_config * const cfg = DEV_CFG(dev);
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);

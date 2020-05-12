@@ -109,7 +109,7 @@ struct lis2dw12_data;
 
 /* sensor data */
 struct lis2dw12_data {
-	struct device *bus;
+	const struct device *bus;
 	s16_t acc[3];
 
 	 /* save sensitivity */
@@ -117,7 +117,7 @@ struct lis2dw12_data {
 
 	stmdev_ctx_t *ctx;
 #ifdef CONFIG_LIS2DW12_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	u8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
@@ -131,7 +131,7 @@ struct lis2dw12_data {
 	struct k_sem gpio_sem;
 #elif defined(CONFIG_LIS2DW12_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
+	const struct device *dev;
 #endif /* CONFIG_LIS2DW12_TRIGGER_GLOBAL_THREAD */
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
@@ -139,12 +139,12 @@ struct lis2dw12_data {
 #endif
 };
 
-int lis2dw12_i2c_init(struct device *dev);
-int lis2dw12_spi_init(struct device *dev);
+int lis2dw12_i2c_init(const struct device *dev);
+int lis2dw12_spi_init(const struct device *dev);
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
-int lis2dw12_init_interrupt(struct device *dev);
-int lis2dw12_trigger_set(struct device *dev,
+int lis2dw12_init_interrupt(const struct device *dev);
+int lis2dw12_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler);
 #endif /* CONFIG_LIS2DW12_TRIGGER */

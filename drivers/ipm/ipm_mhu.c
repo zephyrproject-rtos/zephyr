@@ -57,7 +57,7 @@ static u32_t ipm_mhu_get_status(const struct device *d,
 	return IPM_MHU_ERR_NONE;
 }
 
-static int ipm_mhu_send(struct device *d, int wait, u32_t cpu_id,
+static int ipm_mhu_send(const struct device *d, int wait, u32_t cpu_id,
 			  const void *data, int size)
 {
 	ARG_UNUSED(wait);
@@ -108,14 +108,14 @@ static void ipm_mhu_clear_val(const struct device *d,
 	}
 }
 
-static u32_t ipm_mhu_max_id_val_get(struct device *d)
+static u32_t ipm_mhu_max_id_val_get(const struct device *d)
 {
 	ARG_UNUSED(d);
 
 	return IPM_MHU_MAX_ID_VAL;
 }
 
-static int ipm_mhu_init(struct device *d)
+static int ipm_mhu_init(const struct device *d)
 {
 	const struct ipm_mhu_device_config *config = DEV_CFG(d);
 
@@ -126,7 +126,7 @@ static int ipm_mhu_init(struct device *d)
 
 static void ipm_mhu_isr(void *arg)
 {
-	struct device *d = arg;
+	const struct device *d = arg;
 	struct ipm_mhu_data *driver_data = DEV_DATA(d);
 	enum ipm_mhu_cpu_id_t cpu_id;
 	u32_t ipm_mhu_status;
@@ -142,21 +142,21 @@ static void ipm_mhu_isr(void *arg)
 	}
 }
 
-static int ipm_mhu_set_enabled(struct device *d, int enable)
+static int ipm_mhu_set_enabled(const struct device *d, int enable)
 {
 	ARG_UNUSED(d);
 	ARG_UNUSED(enable);
 	return 0;
 }
 
-static int ipm_mhu_max_data_size_get(struct device *d)
+static int ipm_mhu_max_data_size_get(const struct device *d)
 {
 	ARG_UNUSED(d);
 
 	return IPM_MHU_MAX_DATA_SIZE;
 }
 
-static void ipm_mhu_register_cb(struct device *d,
+static void ipm_mhu_register_cb(const struct device *d,
 						ipm_callback_t cb,
 						void *context)
 {
@@ -174,7 +174,7 @@ static const struct ipm_driver_api ipm_mhu_driver_api = {
 	.set_enabled = ipm_mhu_set_enabled,
 };
 
-static void ipm_mhu_irq_config_func_0(struct device *d);
+static void ipm_mhu_irq_config_func_0(const struct device *d);
 
 static const struct ipm_mhu_device_config ipm_mhu_cfg_0 = {
 	.base = (u8_t *)DT_INST_REG_ADDR(0),
@@ -194,7 +194,7 @@ DEVICE_AND_API_INIT(mhu_0,
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			&ipm_mhu_driver_api);
 
-static void ipm_mhu_irq_config_func_0(struct device *d)
+static void ipm_mhu_irq_config_func_0(const struct device *d)
 {
 	ARG_UNUSED(d);
 	IRQ_CONNECT(DT_INST_IRQN(0),
@@ -205,7 +205,7 @@ static void ipm_mhu_irq_config_func_0(struct device *d)
 	irq_enable(DT_INST_IRQN(0));
 }
 
-static void ipm_mhu_irq_config_func_1(struct device *d);
+static void ipm_mhu_irq_config_func_1(const struct device *d);
 
 static const struct ipm_mhu_device_config ipm_mhu_cfg_1 = {
 	.base = (u8_t *)DT_INST_REG_ADDR(1),
@@ -225,7 +225,7 @@ DEVICE_AND_API_INIT(mhu_1,
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 			&ipm_mhu_driver_api);
 
-static void ipm_mhu_irq_config_func_1(struct device *d)
+static void ipm_mhu_irq_config_func_1(const struct device *d)
 {
 	ARG_UNUSED(d);
 	IRQ_CONNECT(DT_INST_IRQN(1),

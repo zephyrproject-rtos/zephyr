@@ -50,7 +50,7 @@ static inline u64_t rotl(const u64_t x, int k)
 	return (x << k) | (x >> (64 - k));
 }
 
-static int xoroshiro128_initialize(struct device *dev)
+static int xoroshiro128_initialize(const struct device *dev)
 {
 	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
 	if (!dev) {

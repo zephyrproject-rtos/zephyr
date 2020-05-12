@@ -7,18 +7,20 @@
 #include <syscall_handler.h>
 #include <drivers/can.h>
 
-static inline int z_vrfy_can_configure(struct device *dev, enum can_mode mode,
+static inline int z_vrfy_can_configure(const struct device *dev,
+				       enum can_mode mode,
 				       u32_t bitrate)
 {
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, configure));
 
-	return z_impl_can_configure((struct device *)dev, (enum can_mode)mode,
-				   (u32_t)bitrate);
+	return z_impl_can_configure((const struct device *)dev,
+				    (enum can_mode)mode,
+				    (u32_t)bitrate);
 }
 #include <syscalls/can_configure_mrsh.c>
 
-static inline int z_vrfy_can_send(struct device *dev,
+static inline int z_vrfy_can_send(const struct device *dev,
 				  const struct zcan_frame *msg,
 				  k_timeout_t timeout,
 				  can_tx_callback_t callback_isr,
@@ -35,15 +37,15 @@ static inline int z_vrfy_can_send(struct device *dev,
 
 	Z_OOPS(Z_SYSCALL_MEMORY_READ((void *)callback_arg, sizeof(void *)));
 
-	return z_impl_can_send((struct device *)dev,
-			      (const struct zcan_frame *)msg,
-			      (k_timeout_t)timeout,
-			      (can_tx_callback_t) callback_isr,
-			      (void *)callback_arg);
+	return z_impl_can_send((const struct device *)dev,
+			       (const struct zcan_frame *)msg,
+			       (k_timeout_t)timeout,
+			       (can_tx_callback_t) callback_isr,
+			       (void *)callback_arg);
 }
 #include <syscalls/can_send_mrsh.c>
 
-static inline int z_vrfy_can_attach_msgq(struct device *dev,
+static inline int z_vrfy_can_attach_msgq(const struct device *dev,
 					 struct k_msgq *msgq,
 					 const struct zcan_filter *filter)
 {
@@ -53,23 +55,23 @@ static inline int z_vrfy_can_attach_msgq(struct device *dev,
 				     sizeof(struct zcan_filter)));
 	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
 
-	return z_impl_can_attach_msgq((struct device *)dev,
-				     (struct k_msgq *)msgq,
-				     (const struct zcan_filter *) filter);
+	return z_impl_can_attach_msgq((const struct device *)dev,
+				      (struct k_msgq *)msgq,
+				      (const struct zcan_filter *) filter);
 }
 #include <syscalls/can_attach_msgq_mrsh.c>
 
-static inline void z_vrfy_can_detach(struct device *dev, int filter_id)
+static inline void z_vrfy_can_detach(const struct device *dev, int filter_id)
 {
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, detach));
 
-	z_impl_can_detach((struct device *)dev, (int)filter_id);
+	z_impl_can_detach((const struct device *)dev, (int)filter_id);
 }
 #include <syscalls/can_detach_mrsh.c>
 
 static inline
-enum can_state z_vrfy_can_get_state(struct device *dev,
+enum can_state z_vrfy_can_get_state(const struct device *dev,
 				    struct can_bus_err_cnt *err_cnt)
 {
 
@@ -85,7 +87,8 @@ enum can_state z_vrfy_can_get_state(struct device *dev,
 
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-static inline int z_vrfy_can_recover(struct device *dev, k_timeout_t timeout)
+static inline int z_vrfy_can_recover(const struct device *dev,
+				     k_timeout_t timeout)
 {
 
 	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));

@@ -12,7 +12,7 @@
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	struct sensor_value temp_value;
 	int ret;
 

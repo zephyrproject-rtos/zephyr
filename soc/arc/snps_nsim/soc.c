@@ -17,7 +17,7 @@
 #include "soc.h"
 
 #ifdef CONFIG_SMP
-static int arc_nsim_init(struct device *dev)
+static int arc_nsim_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

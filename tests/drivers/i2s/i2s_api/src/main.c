@@ -19,7 +19,7 @@
 
 void test_main(void)
 {
-	struct device *dev_i2s;
+	const struct device *dev_i2s;
 
 	k_thread_access_grant(k_current_get(),
 			      &rx_0_mem_slab, &tx_0_mem_slab,

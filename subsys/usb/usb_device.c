@@ -1050,7 +1050,7 @@ static int usb_vbus_set(bool on)
 #if DT_NODE_HAS_STATUS(USB_DEV_NODE, okay) && \
     DT_NODE_HAS_PROP(USB_DEV_NODE, vbus_gpios)
 	int ret = 0;
-	struct device *gpio_dev;
+	const struct device *gpio_dev;
 
 	gpio_dev = device_get_binding(DT_LABEL(USB_DEV_NODE));
 	if (!gpio_dev) {
@@ -1419,7 +1419,7 @@ out:
  * This function configures the USB device stack based on USB descriptor and
  * usb_cfg_data.
  */
-static int usb_device_init(struct device *dev)
+static int usb_device_init(const struct device *dev)
 {
 	u8_t *device_descriptor;
 

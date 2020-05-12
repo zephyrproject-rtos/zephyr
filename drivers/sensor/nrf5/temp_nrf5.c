@@ -25,16 +25,18 @@ LOG_MODULE_REGISTER(temp_nrf5, CONFIG_SENSOR_LOG_LEVEL);
 struct temp_nrf5_data {
 	struct k_sem device_sync_sem;
 	s32_t sample;
-	struct device *clk_dev;
+	const struct device *clk_dev;
 };
 
-static void hfclk_on_callback(struct device *dev, clock_control_subsys_t subsys,
+static void hfclk_on_callback(const struct device *dev,
+			      clock_control_subsys_t subsys,
 			      void *user_data)
 {
 	nrf_temp_task_trigger(NRF_TEMP, NRF_TEMP_TASK_START);
 }
 
-static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int temp_nrf5_sample_fetch(const struct device *dev,
+				  enum sensor_channel chan)
 {
 	struct temp_nrf5_data *data = dev->driver_data;
 	struct clock_control_async_data clk_data = {
@@ -68,9 +70,9 @@ static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int temp_nrf5_channel_get(struct device *dev,
-				enum sensor_channel chan,
-				struct sensor_value *val)
+static int temp_nrf5_channel_get(const struct device *dev,
+				 enum sensor_channel chan,
+				 struct sensor_value *val)
 {
 	struct temp_nrf5_data *data = dev->driver_data;
 	s32_t uval;
@@ -91,7 +93,7 @@ static int temp_nrf5_channel_get(struct device *dev,
 
 static void temp_nrf5_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct temp_nrf5_data *data = dev->driver_data;
 
 	nrf_temp_event_clear(NRF_TEMP, NRF_TEMP_EVENT_DATARDY);
@@ -105,7 +107,7 @@ static const struct sensor_driver_api temp_nrf5_driver_api = {
 
 DEVICE_DECLARE(temp_nrf5);
 
-static int temp_nrf5_init(struct device *dev)
+static int temp_nrf5_init(const struct device *dev)
 {
 	struct temp_nrf5_data *data = dev->driver_data;
 

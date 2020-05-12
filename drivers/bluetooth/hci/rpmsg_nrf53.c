@@ -24,8 +24,8 @@ static K_THREAD_STACK_DEFINE(bt_rpmsg_rx_thread_stack,
 			     CONFIG_BT_RPMSG_NRF53_RX_STACK_SIZE);
 static struct k_thread bt_rpmsg_rx_thread_data;
 
-static struct device *ipm_tx_handle;
-static struct device *ipm_rx_handle;
+static const struct device *ipm_tx_handle;
+static const struct device *ipm_rx_handle;
 
 /* Configuration defines */
 

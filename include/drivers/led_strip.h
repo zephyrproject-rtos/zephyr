@@ -57,7 +57,8 @@ struct led_rgb {
  *
  * @see led_strip_update_rgb() for argument descriptions.
  */
-typedef int (*led_api_update_rgb)(struct device *dev, struct led_rgb *pixels,
+typedef int (*led_api_update_rgb)(const struct device *dev,
+				  struct led_rgb *pixels,
 				  size_t num_pixels);
 
 /**
@@ -66,7 +67,8 @@ typedef int (*led_api_update_rgb)(struct device *dev, struct led_rgb *pixels,
  *
  * @see led_strip_update_channels() for argument descriptions.
  */
-typedef int (*led_api_update_channels)(struct device *dev, u8_t *channels,
+typedef int (*led_api_update_channels)(const struct device *dev,
+				       u8_t *channels,
 				       size_t num_channels);
 
 /**
@@ -94,7 +96,7 @@ struct led_strip_driver_api {
  * @return 0 on success, negative on error
  * @warning May overwrite @a pixels
  */
-static inline int led_strip_update_rgb(struct device *dev,
+static inline int led_strip_update_rgb(const struct device *dev,
 				       struct led_rgb *pixels,
 				       size_t num_pixels) {
 	const struct led_strip_driver_api *api =
@@ -120,7 +122,7 @@ static inline int led_strip_update_rgb(struct device *dev,
  * @return 0 on success, negative on error
  * @warning May overwrite @a channels
  */
-static inline int led_strip_update_channels(struct device *dev,
+static inline int led_strip_update_channels(const struct device *dev,
 					    u8_t *channels,
 					    size_t num_channels) {
 	const struct led_strip_driver_api *api =

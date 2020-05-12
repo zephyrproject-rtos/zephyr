@@ -20,7 +20,7 @@
 
 void main(void)
 {
-	struct device *dev = device_get_binding(BME280_LABEL);
+	const struct device *dev = device_get_binding(BME280_LABEL);
 
 	if (dev == NULL) {
 		printk("No device \"%s\" found; did initialization fail?\n",

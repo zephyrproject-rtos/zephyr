@@ -14,7 +14,7 @@ static volatile u32_t *iomux_ctrl_regs = (volatile u32_t *)DT_INST_REG_ADDR(0);
 
 #define PINMUX_CTRL_REG_COUNT (DT_INST_REG_SIZE(0) / 4)
 
-static int pinmux_set(struct device *dev, u32_t pin, u32_t func)
+static int pinmux_set(const struct device *dev, u32_t pin, u32_t func)
 {
 	u32_t lsb, msb;
 	u32_t index;
@@ -43,7 +43,7 @@ static int pinmux_set(struct device *dev, u32_t pin, u32_t func)
 	return 0;
 }
 
-static int pinmux_get(struct device *dev, u32_t pin, u32_t *func)
+static int pinmux_get(const struct device *dev, u32_t pin, u32_t *func)
 {
 	u32_t lsb, msb;
 	u32_t index;
@@ -71,12 +71,12 @@ static int pinmux_get(struct device *dev, u32_t pin, u32_t *func)
 	return 0;
 }
 
-static int pinmux_pullup(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_pullup(const struct device *dev, u32_t pin, u8_t func)
 {
 	return -ENOSYS;
 }
 
-static int pinmux_input(struct device *dev, u32_t pin, u8_t func)
+static int pinmux_input(const struct device *dev, u32_t pin, u8_t func)
 {
 	return -ENOSYS;
 }
@@ -88,7 +88,7 @@ static struct pinmux_driver_api apis = {
 	.input = pinmux_input
 };
 
-static int pinmux_init(struct device *device)
+static int pinmux_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 	return 0;

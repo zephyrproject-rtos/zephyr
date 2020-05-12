@@ -18,7 +18,7 @@ K_THREAD_STACK_DEFINE(sys_work_q_stack, CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q k_sys_work_q;
 
-static int k_sys_work_q_init(struct device *dev)
+static int k_sys_work_q_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

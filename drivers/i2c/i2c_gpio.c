@@ -51,8 +51,8 @@ struct i2c_gpio_config {
 /* Driver instance data */
 struct i2c_gpio_context {
 	struct i2c_bitbang bitbang;	/* Bit-bang library data */
-	struct device *scl_gpio;	/* GPIO used for I2C SCL line */
-	struct device *sda_gpio;	/* GPIO used for I2C SDA line */
+	const struct device *scl_gpio;	/* GPIO used for I2C SCL line */
+	const struct device *sda_gpio;	/* GPIO used for I2C SDA line */
 	gpio_pin_t scl_pin;		/* Pin on gpio used for SCL line */
 	gpio_pin_t sda_pin;		/* Pin on gpio used for SDA line */
 };
@@ -86,14 +86,14 @@ static const struct i2c_bitbang_io io_fns = {
 	.get_sda = &i2c_gpio_get_sda,
 };
 
-static int i2c_gpio_configure(struct device *dev, u32_t dev_config)
+static int i2c_gpio_configure(const struct device *dev, u32_t dev_config)
 {
 	struct i2c_gpio_context *context = dev->driver_data;
 
 	return i2c_bitbang_configure(&context->bitbang, dev_config);
 }
 
-static int i2c_gpio_transfer(struct device *dev, struct i2c_msg *msgs,
+static int i2c_gpio_transfer(const struct device *dev, struct i2c_msg *msgs,
 				u8_t num_msgs, u16_t slave_address)
 {
 	struct i2c_gpio_context *context = dev->driver_data;
@@ -102,7 +102,7 @@ static int i2c_gpio_transfer(struct device *dev, struct i2c_msg *msgs,
 				    slave_address);
 }
 
-static int i2c_gpio_recover_bus(struct device *dev)
+static int i2c_gpio_recover_bus(const struct device *dev)
 {
 	struct i2c_gpio_context *context = dev->driver_data;
 
@@ -115,7 +115,7 @@ static struct i2c_driver_api api = {
 	.recover_bus = i2c_gpio_recover_bus,
 };
 
-static int i2c_gpio_init(struct device *dev)
+static int i2c_gpio_init(const struct device *dev)
 {
 	struct i2c_gpio_context *context = dev->driver_data;
 	const struct i2c_gpio_config *config = dev->config_info;

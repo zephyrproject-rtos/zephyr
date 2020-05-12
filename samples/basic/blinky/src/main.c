@@ -34,7 +34,7 @@
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	bool led_is_on = true;
 	int ret;
 

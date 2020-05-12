@@ -124,7 +124,7 @@ struct uart_miv_regs_t {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-typedef void (*irq_cfg_func_t)(struct device *dev);
+typedef void (*irq_cfg_func_t)(const struct device *dev);
 #endif
 
 struct uart_miv_device_config {
@@ -152,7 +152,7 @@ struct uart_miv_data {
 #define DEV_DATA(dev)						\
 	((struct uart_miv_data * const)(dev)->driver_data)
 
-static void uart_miv_poll_out(struct device *dev,
+static void uart_miv_poll_out(const struct device *dev,
 				       unsigned char c)
 {
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
@@ -163,7 +163,7 @@ static void uart_miv_poll_out(struct device *dev,
 	uart->tx = c;
 }
 
-static int uart_miv_poll_in(struct device *dev, unsigned char *c)
+static int uart_miv_poll_in(const struct device *dev, unsigned char *c)
 {
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
 
@@ -175,7 +175,7 @@ static int uart_miv_poll_in(struct device *dev, unsigned char *c)
 	return -1;
 }
 
-static int uart_miv_err_check(struct device *dev)
+static int uart_miv_err_check(const struct device *dev)
 {
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
 	u32_t flags = uart->status;
@@ -199,7 +199,7 @@ static int uart_miv_err_check(struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_miv_fifo_fill(struct device *dev,
+static int uart_miv_fifo_fill(const struct device *dev,
 			      const u8_t *tx_data,
 			      int size)
 {
@@ -213,7 +213,7 @@ static int uart_miv_fifo_fill(struct device *dev,
 	return i;
 }
 
-static int uart_miv_fifo_read(struct device *dev,
+static int uart_miv_fifo_read(const struct device *dev,
 			      u8_t *rx_data,
 			      const int size)
 {
@@ -231,72 +231,72 @@ static int uart_miv_fifo_read(struct device *dev,
 	return i;
 }
 
-static void uart_miv_irq_tx_enable(struct device *dev)
+static void uart_miv_irq_tx_enable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
 
-static void uart_miv_irq_tx_disable(struct device *dev)
+static void uart_miv_irq_tx_disable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
 
-static int uart_miv_irq_tx_ready(struct device *dev)
+static int uart_miv_irq_tx_ready(const struct device *dev)
 {
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
 
 	return !(uart->status & STATUS_TXRDY_MASK);
 }
 
-static int uart_miv_irq_tx_complete(struct device *dev)
+static int uart_miv_irq_tx_complete(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return 1;
 }
 
-static void uart_miv_irq_rx_enable(struct device *dev)
+static void uart_miv_irq_rx_enable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
 
-static void uart_miv_irq_rx_disable(struct device *dev)
+static void uart_miv_irq_rx_disable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
 
-static int uart_miv_irq_rx_ready(struct device *dev)
+static int uart_miv_irq_rx_ready(const struct device *dev)
 {
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
 
 	return !!(uart->status & STATUS_RXFULL_MASK);
 }
 
-static void uart_miv_irq_err_enable(struct device *dev)
+static void uart_miv_irq_err_enable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
 
-static void uart_miv_irq_err_disable(struct device *dev)
+static void uart_miv_irq_err_disable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 }
 
-static int uart_miv_irq_is_pending(struct device *dev)
+static int uart_miv_irq_is_pending(const struct device *dev)
 {
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
 
 	return !!(uart->status & STATUS_RXFULL_MASK);
 }
 
-static int uart_miv_irq_update(struct device *dev)
+static int uart_miv_irq_update(const struct device *dev)
 {
 	return 1;
 }
 
 static void uart_miv_irq_handler(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct uart_miv_data *data = DEV_DATA(dev);
 
 	if (data->callback) {
@@ -312,7 +312,7 @@ static void uart_miv_irq_handler(void *arg)
  */
 void uart_miv_rx_thread(void *arg1, void *arg2, void *arg3)
 {
-	struct device *dev = (struct device *)arg1;
+	const struct device *dev = (const struct device *)arg1;
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
 	const struct uart_miv_device_config *const cfg = DEV_CFG(dev);
 	/* Make it go to sleep for a period no longer than
@@ -328,7 +328,7 @@ void uart_miv_rx_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static void uart_miv_irq_callback_set(struct device *dev,
+static void uart_miv_irq_callback_set(const struct device *dev,
 				      uart_irq_callback_user_data_t cb,
 				      void *cb_data)
 {
@@ -340,7 +340,7 @@ static void uart_miv_irq_callback_set(struct device *dev,
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static int uart_miv_init(struct device *dev)
+static int uart_miv_init(const struct device *dev)
 {
 	const struct uart_miv_device_config *const cfg = DEV_CFG(dev);
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
@@ -390,7 +390,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 static struct uart_miv_data uart_miv_data_0;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_miv_irq_cfg_func_0(struct device *dev);
+static void uart_miv_irq_cfg_func_0(const struct device *dev);
 #endif
 
 static const struct uart_miv_device_config uart_miv_dev_cfg_0 = {
@@ -409,7 +409,7 @@ DEVICE_AND_API_INIT(uart_miv_0, DT_INST_LABEL(0),
 		    (void *)&uart_miv_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_miv_irq_cfg_func_0(struct device *dev)
+static void uart_miv_irq_cfg_func_0(const struct device *dev)
 {
 	/* Create a thread which will poll for data - replacement for IRQ */
 	k_thread_create(&rx_thread, rx_stack, 500,

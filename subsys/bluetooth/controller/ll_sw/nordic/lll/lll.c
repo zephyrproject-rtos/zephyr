@@ -49,7 +49,7 @@ static struct {
 } event;
 
 /* Entropy device */
-static struct device *dev_entropy;
+static const struct device *dev_entropy;
 
 static int init_reset(void);
 static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,

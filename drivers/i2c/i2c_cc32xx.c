@@ -82,7 +82,8 @@ struct i2c_cc32xx_data {
 static void configure_i2c_irq(const struct i2c_cc32xx_config *config);
 
 #define I2C_CLK_FREQ(n) DT_PROP(DT_INST_PHANDLE(n, clocks), clock_frequency)
-static int i2c_cc32xx_configure(struct device *dev, u32_t dev_config_raw)
+static int i2c_cc32xx_configure(const struct device *dev,
+				u32_t dev_config_raw)
 {
 	u32_t base = DEV_BASE(dev);
 	u32_t bitrate_id;
@@ -111,7 +112,8 @@ static int i2c_cc32xx_configure(struct device *dev, u32_t dev_config_raw)
 	return 0;
 }
 
-static void i2c_cc32xx_prime_transfer(struct device *dev, struct i2c_msg *msg,
+static void i2c_cc32xx_prime_transfer(const struct device *dev,
+				      struct i2c_msg *msg,
 				      u16_t addr)
 {
 	struct i2c_cc32xx_data *data = DEV_DATA(dev);
@@ -156,7 +158,7 @@ static void i2c_cc32xx_prime_transfer(struct device *dev, struct i2c_msg *msg,
 	}
 }
 
-static int i2c_cc32xx_transfer(struct device *dev, struct i2c_msg *msgs,
+static int i2c_cc32xx_transfer(const struct device *dev, struct i2c_msg *msgs,
 			       u8_t num_msgs, u16_t addr)
 {
 	struct i2c_cc32xx_data *data = DEV_DATA(dev);
@@ -261,7 +263,7 @@ static void i2c_cc32xx_isr_handle_read(u32_t base,
 
 static void i2c_cc32xx_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	u32_t base = DEV_BASE(dev);
 	struct i2c_cc32xx_data *data = DEV_DATA(dev);
 	u32_t err_status;
@@ -322,7 +324,7 @@ static void i2c_cc32xx_isr(void *arg)
 	}
 }
 
-static int i2c_cc32xx_init(struct device *dev)
+static int i2c_cc32xx_init(const struct device *dev)
 {
 	u32_t base = DEV_BASE(dev);
 	const struct i2c_cc32xx_config *config = DEV_CFG(dev);

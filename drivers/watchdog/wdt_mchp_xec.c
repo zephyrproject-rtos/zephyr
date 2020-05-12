@@ -28,7 +28,7 @@ struct wdt_xec_data {
 
 DEVICE_DECLARE(wdt_xec);
 
-static int wdt_xec_setup(struct device *dev, u8_t options)
+static int wdt_xec_setup(const struct device *dev, u8_t options)
 {
 	WDT_Type *wdt_regs = WDT_XEC_REG_BASE;
 	struct wdt_xec_data *data = dev->driver_data;
@@ -60,7 +60,7 @@ static int wdt_xec_setup(struct device *dev, u8_t options)
 	return 0;
 }
 
-static int wdt_xec_disable(struct device *dev)
+static int wdt_xec_disable(const struct device *dev)
 {
 	WDT_Type *wdt_regs = WDT_XEC_REG_BASE;
 	struct wdt_xec_data *data = dev->driver_data;
@@ -77,7 +77,7 @@ static int wdt_xec_disable(struct device *dev)
 	return 0;
 }
 
-static int wdt_xec_install_timeout(struct device *dev,
+static int wdt_xec_install_timeout(const struct device *dev,
 				   const struct wdt_timeout_cfg *config)
 {
 	WDT_Type *wdt_regs = WDT_XEC_REG_BASE;
@@ -121,7 +121,7 @@ static int wdt_xec_install_timeout(struct device *dev,
 	return 0;
 }
 
-static int wdt_xec_feed(struct device *dev, int channel_id)
+static int wdt_xec_feed(const struct device *dev, int channel_id)
 {
 	WDT_Type *wdt_regs = WDT_XEC_REG_BASE;
 
@@ -139,7 +139,7 @@ static int wdt_xec_feed(struct device *dev, int channel_id)
 	return 0;
 }
 
-static void wdt_xec_isr(struct device *dev)
+static void wdt_xec_isr(const struct device *dev)
 {
 	WDT_Type *wdt_regs = WDT_XEC_REG_BASE;
 	struct wdt_xec_data *data = dev->driver_data;
@@ -161,7 +161,7 @@ static const struct wdt_driver_api wdt_xec_api = {
 	.feed = wdt_xec_feed,
 };
 
-static int wdt_xec_init(struct device *dev)
+static int wdt_xec_init(const struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_WDT_DISABLE_AT_BOOT)) {
 		wdt_xec_disable(dev);

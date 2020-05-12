@@ -70,10 +70,10 @@ struct fxas21002_config {
 };
 
 struct fxas21002_data {
-	struct device *i2c;
+	const struct device *i2c;
 	struct k_sem sem;
 #ifdef CONFIG_FXAS21002_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	u8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
@@ -85,21 +85,21 @@ struct fxas21002_data {
 #endif
 #ifdef CONFIG_FXAS21002_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
-	struct device *dev;
+	const struct device *dev;
 #endif
 	s16_t raw[FXAS21002_MAX_NUM_CHANNELS];
 };
 
-int fxas21002_get_power(struct device *dev, enum fxas21002_power *power);
-int fxas21002_set_power(struct device *dev, enum fxas21002_power power);
+int fxas21002_get_power(const struct device *dev, enum fxas21002_power *power);
+int fxas21002_set_power(const struct device *dev, enum fxas21002_power power);
 
 u32_t fxas21002_get_transition_time(enum fxas21002_power start,
 				       enum fxas21002_power end,
 				       u8_t dr);
 
 #if CONFIG_FXAS21002_TRIGGER
-int fxas21002_trigger_init(struct device *dev);
-int fxas21002_trigger_set(struct device *dev,
-			 const struct sensor_trigger *trig,
-			 sensor_trigger_handler_t handler);
+int fxas21002_trigger_init(const struct device *dev);
+int fxas21002_trigger_set(const struct device *dev,
+			  const struct sensor_trigger *trig,
+			  sensor_trigger_handler_t handler);
 #endif

@@ -81,7 +81,7 @@ u32_t sse_200_platform_get_cpu_id(void)
  *
  * @return 0
  */
-static int arm_mps2_init(struct device *arg)
+static int arm_mps2_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

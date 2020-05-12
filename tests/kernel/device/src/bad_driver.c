@@ -10,7 +10,7 @@
 
 #define BAD_DRIVER_NAME	"bad_driver"
 
-typedef int (*bad_api_configure_t)(struct device *dev,
+typedef int (*bad_api_configure_t)(const struct device *dev,
 				     u32_t dev_config);
 
 
@@ -18,7 +18,7 @@ struct bad_driver_api {
 	bad_api_configure_t configure;
 };
 
-static int bad_configure(struct device *dev, u32_t config)
+static int bad_configure(const struct device *dev, u32_t config)
 {
 	return 0;
 }
@@ -27,7 +27,7 @@ static const struct bad_driver_api funcs = {
 	.configure = bad_configure,
 };
 
-int bad_driver_init(struct device *dev)
+int bad_driver_init(const struct device *dev)
 {
 	return -EINVAL;
 }

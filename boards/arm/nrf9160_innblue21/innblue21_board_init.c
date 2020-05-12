@@ -11,7 +11,7 @@
 #define VDD_5V0_PWR_CTRL_GPIO_PIN  21   /* ENABLE_5V0_BOOST  --> speed sensor */
 
 /* Configures the pin as output and sets them high. */
-static void config_pin(struct device *gpio, int pin)
+static void config_pin(const struct device *gpio, int pin)
 {
 	int err;
 
@@ -26,9 +26,9 @@ static void config_pin(struct device *gpio, int pin)
 	k_sleep(K_MSEC(10));
 }
 
-static int pwr_ctrl_init(struct device *dev)
+static int pwr_ctrl_init(const struct device *dev)
 {
-	struct device *gpio;
+	const struct device *gpio;
 
 	/* Get handle of the GPIO device. */
 	gpio = device_get_binding(DT_LABEL(DT_NODELABEL(gpio0)));

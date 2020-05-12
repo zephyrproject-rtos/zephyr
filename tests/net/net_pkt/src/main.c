@@ -40,12 +40,12 @@ static void fake_dev_iface_init(struct net_if *iface)
 	eth_if = iface;
 }
 
-static int fake_dev_send(struct device *dev, struct net_pkt *pkt)
+static int fake_dev_send(const struct device *dev, struct net_pkt *pkt)
 {
 	return 0;
 }
 
-int fake_dev_init(struct device *dev)
+int fake_dev_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

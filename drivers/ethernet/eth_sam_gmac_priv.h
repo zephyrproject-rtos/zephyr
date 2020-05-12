@@ -272,7 +272,7 @@ struct eth_sam_dev_cfg {
 struct eth_sam_dev_data {
 	struct net_if *iface;
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-	struct device *ptp_clock;
+	const struct device *ptp_clock;
 #endif
 	u8_t mac_addr[6];
 	struct k_delayed_work monitor_work;

@@ -221,7 +221,7 @@ USBD_CFG_DATA_DEFINE(primary, hci_h4) struct usb_cfg_data bt_h4_config = {
 	.endpoint = bt_h4_ep_data,
 };
 
-static int bt_h4_init(struct device *dev)
+static int bt_h4_init(const struct device *dev)
 {
 	int ret;
 

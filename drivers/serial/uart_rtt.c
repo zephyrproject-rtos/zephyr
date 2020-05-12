@@ -15,12 +15,12 @@ struct uart_rtt_config {
 	u8_t channel;
 };
 
-static inline const struct uart_rtt_config *get_dev_config(struct device *dev)
+static inline const struct uart_rtt_config *get_dev_config(const struct device *dev)
 {
 	return dev->config_info;
 }
 
-static int uart_rtt_init(struct device *dev)
+static int uart_rtt_init(const struct device *dev)
 {
 	/*
 	 * Channel 0 is initialized at compile-time, Kconfig ensures that
@@ -49,7 +49,7 @@ static int uart_rtt_init(struct device *dev)
  * @return 0 if a character arrived, -1 if the input buffer if empty.
  */
 
-static int uart_rtt_poll_in(struct device *dev, unsigned char *c)
+static int uart_rtt_poll_in(const struct device *dev, unsigned char *c)
 {
 	unsigned int ch =
 		get_dev_config(dev) ? get_dev_config(dev)->channel : 0;
@@ -64,7 +64,7 @@ static int uart_rtt_poll_in(struct device *dev, unsigned char *c)
  * @param dev UART device struct
  * @param c Character to send
  */
-static void uart_rtt_poll_out(struct device *dev, unsigned char c)
+static void uart_rtt_poll_out(const struct device *dev, unsigned char c)
 {
 	unsigned int ch =
 		get_dev_config(dev) ? get_dev_config(dev)->channel : 0;

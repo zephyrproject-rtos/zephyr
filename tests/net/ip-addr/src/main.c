@@ -104,7 +104,7 @@ struct net_test_context {
 	struct net_linkaddr ll_addr;
 };
 
-int net_test_init(struct device *dev)
+int net_test_init(const struct device *dev)
 {
 	struct net_test_context *net_test_context = dev->driver_data;
 
@@ -113,7 +113,7 @@ int net_test_init(struct device *dev)
 	return 0;
 }
 
-static u8_t *net_test_get_mac(struct device *dev)
+static u8_t *net_test_get_mac(const struct device *dev)
 {
 	struct net_test_context *context = dev->driver_data;
 
@@ -137,7 +137,7 @@ static void net_test_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
 }
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	return 0;
 }

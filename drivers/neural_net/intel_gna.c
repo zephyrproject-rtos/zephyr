@@ -31,8 +31,8 @@ LOG_MODULE_REGISTER(neural_net);
 	((struct intel_gna_data *const)(dev)->driver_data)
 
 #if LOG_LEVEL >= LOG_LEVEL_DBG
-static void intel_gna_regs_dump(struct device *dev);
-static void intel_gna_config_desc_dump(struct device *dev);
+static void intel_gna_regs_dump(const struct device *dev);
+static void intel_gna_config_desc_dump(const struct device *dev);
 #define INTEL_GNA_REGS_DUMP(dev)	intel_gna_regs_dump((dev))
 #define INTEL_GNA_CONFIG_DESC_DUMP(dev)	intel_gna_config_desc_dump((dev))
 #else
@@ -48,7 +48,7 @@ static struct intel_gna_config_desc __aligned(GNA_PG_SIZE_IN_BYTES)
 static struct intel_gna_page_table __aligned(GNA_PG_SIZE_IN_BYTES)
 	gna_page_table[GNA_NUM_PG_TABLES_NEEDED];
 
-static void intel_gna_interrupt_handler(struct device *dev)
+static void intel_gna_interrupt_handler(const struct device *dev)
 {
 	struct intel_gna_data *const gna = DEV_DATA(dev);
 
@@ -165,7 +165,7 @@ static int intel_gna_setup_page_table(void *physical, size_t size,
 	return 0;
 }
 
-static int intel_gna_initialize(struct device *dev)
+static int intel_gna_initialize(const struct device *dev)
 {
 	struct intel_gna_data *const gna = DEV_DATA(dev);
 	u32_t page_dir_entry;
@@ -219,7 +219,8 @@ static int intel_gna_initialize(struct device *dev)
 	return 0;
 }
 
-static int intel_gna_configure(struct device *dev, struct gna_config *cfg)
+static int intel_gna_configure(const struct device *dev,
+			       struct gna_config *cfg)
 {
 	const struct intel_gna_config *const dev_cfg = DEV_CFG(dev);
 	struct intel_gna_data *const gna = DEV_DATA(dev);
@@ -275,8 +276,9 @@ static int intel_gna_configure(struct device *dev, struct gna_config *cfg)
 	return 0;
 }
 
-static int intel_gna_register_model(struct device *dev,
-		struct gna_model_info *model, void **model_handle)
+static int intel_gna_register_model(const struct device *dev,
+				    struct gna_model_info *model,
+				    void **model_handle)
 {
 	struct intel_gna_data *const gna = DEV_DATA(dev);
 	struct intel_gna_model *gna_model;
@@ -380,7 +382,8 @@ static int intel_gna_register_model(struct device *dev,
 	return 0;
 }
 
-static int intel_gna_deregister_model(struct device *dev, void *model_handle)
+static int intel_gna_deregister_model(const struct device *dev,
+				      void *model_handle)
 {
 	struct intel_gna_data *const gna = DEV_DATA(dev);
 	struct intel_gna_model *gna_model;
@@ -397,8 +400,9 @@ static int intel_gna_deregister_model(struct device *dev, void *model_handle)
 	return 0;
 }
 
-static int intel_gna_infer(struct device *dev, struct gna_inference_req *req,
-		gna_callback callback)
+static int intel_gna_infer(const struct device *dev,
+			   struct gna_inference_req *req,
+			   gna_callback callback)
 {
 	struct intel_gna_data *const gna = DEV_DATA(dev);
 	volatile struct intel_gna_regs *regs = gna->regs;
@@ -475,7 +479,7 @@ static int intel_gna_infer(struct device *dev, struct gna_inference_req *req,
 }
 
 #if LOG_LEVEL >= LOG_LEVEL_DBG
-static void intel_gna_regs_dump(struct device *dev)
+static void intel_gna_regs_dump(const struct device *dev)
 {
 	struct intel_gna_data *const gna = DEV_DATA(dev);
 	volatile struct intel_gna_regs *regs = gna->regs;
@@ -496,7 +500,7 @@ static void intel_gna_regs_dump(struct device *dev)
 	LOG_DBG("gnaversion :%08x", regs->gnaversion);
 }
 
-static void intel_gna_config_desc_dump(struct device *dev)
+static void intel_gna_config_desc_dump(const struct device *dev)
 {
 	struct intel_gna_data *const gna = DEV_DATA(dev);
 	volatile struct intel_gna_regs *regs = gna->regs;

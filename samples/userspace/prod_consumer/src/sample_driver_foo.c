@@ -30,16 +30,16 @@ struct sample_driver_foo_dev_data {
 	u32_t count;
 };
 
-static int sample_driver_foo_write(struct device *dev, void *buf)
+static int sample_driver_foo_write(const struct device *dev, void *buf)
 {
 	LOG_DBG("%s(%p, %p)", __func__, dev, buf);
 
 	return 0;
 }
 
-static int sample_driver_foo_set_callback(struct device *dev,
-				       sample_driver_callback_t cb,
-				       void *context)
+static int sample_driver_foo_set_callback(const struct device *dev,
+					  sample_driver_callback_t cb,
+					  void *context)
 {
 	struct sample_driver_foo_dev_data *data = DEV_DATA(dev);
 	int key = irq_lock();
@@ -51,7 +51,7 @@ static int sample_driver_foo_set_callback(struct device *dev,
 	return 0;
 }
 
-static int sample_driver_foo_state_set(struct device *dev, bool active)
+static int sample_driver_foo_state_set(const struct device *dev, bool active)
 {
 	struct sample_driver_foo_dev_data *data = DEV_DATA(dev);
 
@@ -75,7 +75,7 @@ static struct sample_driver_api sample_driver_foo_api = {
 
 static void sample_driver_foo_isr(void *param)
 {
-	struct device *dev = param;
+	const struct device *dev = param;
 	struct sample_driver_foo_dev_data *data = DEV_DATA(dev);
 
 	char data_payload[SAMPLE_DRIVER_MSG_SIZE];
@@ -96,7 +96,7 @@ static void sample_driver_timer_cb(struct k_timer *timer)
 	sample_driver_foo_isr(timer->user_data);
 }
 
-static int sample_driver_foo_init(struct device *dev)
+static int sample_driver_foo_init(const struct device *dev)
 {
 	struct sample_driver_foo_dev_data *data = DEV_DATA(dev);
 

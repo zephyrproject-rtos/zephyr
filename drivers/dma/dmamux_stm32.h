@@ -9,7 +9,7 @@
 
 /* this is the configuration of one dmamux channel */
 struct dmamux_stm32_channel {
-	struct device *dev_dma; /* pointer to the associated dma instance */
+	const struct device *dev_dma; /* pointer to the associated dma instance */
 	u8_t dma_id; /* ref of the associated dma stream for this instance */
 };
 

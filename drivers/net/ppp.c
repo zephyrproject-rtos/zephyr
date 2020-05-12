@@ -49,7 +49,7 @@ enum ppp_driver_state {
 K_THREAD_STACK_DEFINE(ppp_workq, PPP_WORKQ_STACK_SIZE);
 
 struct ppp_driver_context {
-	struct device *dev;
+	const struct device *dev;
 	struct net_if *iface;
 
 	/* This net_pkt contains pkt that is being read */
@@ -535,7 +535,7 @@ static u16_t ppp_escape_byte(u8_t byte, int *offset)
 	return byte;
 }
 
-static int ppp_send(struct device *dev, struct net_pkt *pkt)
+static int ppp_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct ppp_driver_context *ppp = dev->driver_data;
 	struct net_buf *buf = pkt->buffer;
@@ -671,7 +671,7 @@ static void ppp_isr_cb_work(struct k_work *work)
 }
 #endif /* !CONFIG_NET_TEST */
 
-static int ppp_driver_init(struct device *dev)
+static int ppp_driver_init(const struct device *dev)
 {
 	struct ppp_driver_context *ppp = dev->driver_data;
 
@@ -755,7 +755,7 @@ use_random_mac:
 }
 
 #if defined(CONFIG_NET_STATISTICS_PPP)
-static struct net_stats_ppp *ppp_get_stats(struct device *dev)
+static struct net_stats_ppp *ppp_get_stats(const struct device *dev)
 {
 	struct ppp_driver_context *context = dev->driver_data;
 
@@ -764,7 +764,7 @@ static struct net_stats_ppp *ppp_get_stats(struct device *dev)
 #endif
 
 #if !defined(CONFIG_NET_TEST)
-static void ppp_uart_flush(struct device *dev)
+static void ppp_uart_flush(const struct device *dev)
 {
 	u8_t c;
 
@@ -776,7 +776,7 @@ static void ppp_uart_flush(struct device *dev)
 static void ppp_uart_isr(void *user_data)
 {
 	struct ppp_driver_context *context = user_data;
-	struct device *uart = context->dev;
+	const struct device *uart = context->dev;
 	int rx = 0, ret;
 
 	/* get all of the data off UART as fast as we can */
@@ -799,7 +799,7 @@ static void ppp_uart_isr(void *user_data)
 }
 #endif /* !CONFIG_NET_TEST */
 
-static int ppp_start(struct device *dev)
+static int ppp_start(const struct device *dev)
 {
 	struct ppp_driver_context *context = dev->driver_data;
 
@@ -817,7 +817,7 @@ static int ppp_start(struct device *dev)
 		 * then use our own config.
 		 */
 #if IS_ENABLED(CONFIG_GSM_MUX)
-		struct device *mux;
+		const struct device *mux;
 
 		mux = uart_mux_find(CONFIG_GSM_MUX_DLCI_PPP);
 		if (mux == NULL) {
@@ -859,7 +859,7 @@ static int ppp_start(struct device *dev)
 	return 0;
 }
 
-static int ppp_stop(struct device *dev)
+static int ppp_stop(const struct device *dev)
 {
 	struct ppp_driver_context *context = dev->driver_data;
 

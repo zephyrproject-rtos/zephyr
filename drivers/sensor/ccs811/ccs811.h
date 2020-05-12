@@ -48,11 +48,11 @@
 #define CCS811_CO2_MAX_PPM              32767
 
 struct ccs811_data {
-	struct device *i2c;
+	const struct device *i2c;
 #if DT_INST_NODE_HAS_PROP(0, irq_gpios)
-	struct device *irq_gpio;
+	const struct device *irq_gpio;
 #ifdef CONFIG_CCS811_TRIGGER
-	struct device *dev;
+	const struct device *dev;
 
 	/*
 	 * DATARDY is configured through SENSOR_CHAN_ALL.
@@ -73,10 +73,10 @@ struct ccs811_data {
 #endif /* CONFIG_CCS811_TRIGGER */
 #endif
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	struct device *reset_gpio;
+	const struct device *reset_gpio;
 #endif
 #if DT_INST_NODE_HAS_PROP(0, wake_gpios)
-	struct device *wake_gpio;
+	const struct device *wake_gpio;
 #endif
 	struct ccs811_result_type result;
 	u8_t mode;
@@ -85,22 +85,22 @@ struct ccs811_data {
 
 #ifdef CONFIG_CCS811_TRIGGER
 
-int ccs811_mutate_meas_mode(struct device *dev,
+int ccs811_mutate_meas_mode(const struct device *dev,
 			    u8_t set,
 			    u8_t clear);
 
-int ccs811_set_thresholds(struct device *dev);
+int ccs811_set_thresholds(const struct device *dev);
 
-int ccs811_attr_set(struct device *dev,
+int ccs811_attr_set(const struct device *dev,
 		    enum sensor_channel chan,
 		    enum sensor_attribute attr,
 		    const struct sensor_value *val);
 
-int ccs811_trigger_set(struct device *dev,
+int ccs811_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 
-int ccs811_init_interrupt(struct device *dev);
+int ccs811_init_interrupt(const struct device *dev);
 
 #endif  /* CONFIG_CCS811_TRIGGER */
 

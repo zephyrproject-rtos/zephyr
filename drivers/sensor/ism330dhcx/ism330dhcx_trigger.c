@@ -23,7 +23,7 @@ LOG_MODULE_DECLARE(ISM330DHCX, CONFIG_SENSOR_LOG_LEVEL);
 /**
  * ism330dhcx_enable_t_int - TEMP enable selected int pin to generate interrupt
  */
-static int ism330dhcx_enable_t_int(struct device *dev, int enable)
+static int ism330dhcx_enable_t_int(const struct device *dev, int enable)
 {
 	const struct ism330dhcx_config *cfg = dev->config_info;
 	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
@@ -51,7 +51,7 @@ static int ism330dhcx_enable_t_int(struct device *dev, int enable)
 /**
  * ism330dhcx_enable_xl_int - XL enable selected int pin to generate interrupt
  */
-static int ism330dhcx_enable_xl_int(struct device *dev, int enable)
+static int ism330dhcx_enable_xl_int(const struct device *dev, int enable)
 {
 	const struct ism330dhcx_config *cfg = dev->config_info;
 	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
@@ -87,7 +87,7 @@ static int ism330dhcx_enable_xl_int(struct device *dev, int enable)
 /**
  * ism330dhcx_enable_g_int - Gyro enable selected int pin to generate interrupt
  */
-static int ism330dhcx_enable_g_int(struct device *dev, int enable)
+static int ism330dhcx_enable_g_int(const struct device *dev, int enable)
 {
 	const struct ism330dhcx_config *cfg = dev->config_info;
 	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
@@ -122,9 +122,9 @@ static int ism330dhcx_enable_g_int(struct device *dev, int enable)
 /**
  * ism330dhcx_trigger_set - link external trigger to event data ready
  */
-int ism330dhcx_trigger_set(struct device *dev,
-			  const struct sensor_trigger *trig,
-			  sensor_trigger_handler_t handler)
+int ism330dhcx_trigger_set(const struct device *dev,
+			   const struct sensor_trigger *trig,
+			   sensor_trigger_handler_t handler)
 {
 	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
 
@@ -163,7 +163,7 @@ int ism330dhcx_trigger_set(struct device *dev,
  */
 static void ism330dhcx_handle_interrupt(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
@@ -204,8 +204,8 @@ static void ism330dhcx_handle_interrupt(void *arg)
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void ism330dhcx_gpio_callback(struct device *dev,
-				    struct gpio_callback *cb, u32_t pins)
+static void ism330dhcx_gpio_callback(const struct device *dev,
+				     struct gpio_callback *cb, u32_t pins)
 {
 	struct ism330dhcx_data *ism330dhcx =
 		CONTAINER_OF(cb, struct ism330dhcx_data, gpio_cb);
@@ -226,7 +226,7 @@ static void ism330dhcx_gpio_callback(struct device *dev,
 #ifdef CONFIG_ISM330DHCX_TRIGGER_OWN_THREAD
 static void ism330dhcx_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -248,7 +248,7 @@ static void ism330dhcx_work_cb(struct k_work *work)
 }
 #endif /* CONFIG_ISM330DHCX_TRIGGER_GLOBAL_THREAD */
 
-int ism330dhcx_init_interrupt(struct device *dev)
+int ism330dhcx_init_interrupt(const struct device *dev)
 {
 	struct ism330dhcx_data *ism330dhcx = dev->driver_data;
 	const struct ism330dhcx_config *cfg = dev->config_info;

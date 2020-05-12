@@ -26,7 +26,7 @@ struct sdl_display_data {
 
 static struct sdl_display_data sdl_display_data;
 
-static int sdl_display_init(struct device *dev)
+static int sdl_display_init(const struct device *dev)
 {
 	struct sdl_display_data *disp_data =
 	    (struct sdl_display_data *)dev->driver_data;

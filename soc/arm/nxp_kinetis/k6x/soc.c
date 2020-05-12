@@ -120,7 +120,7 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int k6x_init(struct device *arg)
+static int k6x_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

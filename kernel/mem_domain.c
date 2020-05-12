@@ -247,7 +247,7 @@ void k_mem_domain_remove_thread(k_tid_t thread)
 	k_spin_unlock(&lock, key);
 }
 
-static int init_mem_domain_module(struct device *arg)
+static int init_mem_domain_module(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

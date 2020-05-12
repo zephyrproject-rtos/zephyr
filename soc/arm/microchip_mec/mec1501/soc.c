@@ -132,7 +132,7 @@ static int soc_ecia_init(void)
 	return 0;
 }
 
-static int soc_init(struct device *dev)
+static int soc_init(const struct device *dev)
 {
 	u32_t isave;
 

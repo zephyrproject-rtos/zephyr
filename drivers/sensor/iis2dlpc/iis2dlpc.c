@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(IIS2DLPC, CONFIG_SENSOR_LOG_LEVEL);
  * @dev: Pointer to instance of struct device (I2C or SPI)
  * @range: Full scale range (2, 4, 8 and 16 G)
  */
-static int iis2dlpc_set_range(struct device *dev, u16_t range)
+static int iis2dlpc_set_range(const struct device *dev, u16_t range)
 {
 	int err;
 	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
@@ -60,7 +60,7 @@ static int iis2dlpc_set_range(struct device *dev, u16_t range)
  * @dev: Pointer to instance of struct device (I2C or SPI)
  * @odr: Output data rate
  */
-static int iis2dlpc_set_odr(struct device *dev, u16_t odr)
+static int iis2dlpc_set_odr(const struct device *dev, u16_t odr)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
 	u8_t val;
@@ -92,7 +92,7 @@ static inline void iis2dlpc_convert(struct sensor_value *val, int raw_val,
 	val->val2 = dval % 1000000LL;
 }
 
-static inline void iis2dlpc_channel_get_acc(struct device *dev,
+static inline void iis2dlpc_channel_get_acc(const struct device *dev,
 					     enum sensor_channel chan,
 					     struct sensor_value *val)
 {
@@ -121,7 +121,7 @@ static inline void iis2dlpc_channel_get_acc(struct device *dev,
 	}
 }
 
-static int iis2dlpc_channel_get(struct device *dev,
+static int iis2dlpc_channel_get(const struct device *dev,
 				 enum sensor_channel chan,
 				 struct sensor_value *val)
 {
@@ -140,7 +140,7 @@ static int iis2dlpc_channel_get(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int iis2dlpc_config(struct device *dev, enum sensor_channel chan,
+static int iis2dlpc_config(const struct device *dev, enum sensor_channel chan,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
@@ -157,7 +157,8 @@ static int iis2dlpc_config(struct device *dev, enum sensor_channel chan,
 	return -ENOTSUP;
 }
 
-static int iis2dlpc_attr_set(struct device *dev, enum sensor_channel chan,
+static int iis2dlpc_attr_set(const struct device *dev,
+			      enum sensor_channel chan,
 			      enum sensor_attribute attr,
 			      const struct sensor_value *val)
 {
@@ -175,7 +176,8 @@ static int iis2dlpc_attr_set(struct device *dev, enum sensor_channel chan,
 	return -ENOTSUP;
 }
 
-static int iis2dlpc_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int iis2dlpc_sample_fetch(const struct device *dev,
+				 enum sensor_channel chan)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
 	const struct iis2dlpc_device_config *cfg = dev->config_info;
@@ -211,7 +213,7 @@ static const struct sensor_driver_api iis2dlpc_driver_api = {
 	.channel_get = iis2dlpc_channel_get,
 };
 
-static int iis2dlpc_init_interface(struct device *dev)
+static int iis2dlpc_init_interface(const struct device *dev)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
 	const struct iis2dlpc_device_config *cfg = dev->config_info;
@@ -253,7 +255,7 @@ static int iis2dlpc_set_power_mode(struct iis2dlpc_data *iis2dlpc,
 	return iis2dlpc_write_reg(iis2dlpc->ctx, IIS2DLPC_CTRL1, &regval, 1);
 }
 
-static int iis2dlpc_init(struct device *dev)
+static int iis2dlpc_init(const struct device *dev)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
 	const struct iis2dlpc_device_config *cfg = dev->config_info;

@@ -13,7 +13,7 @@
 
 #include "pinmux/pinmux.h"
 
-static int pinmux_init(struct device *port)
+static int pinmux_init(const struct device *port)
 {
 	ARG_UNUSED(port);
 

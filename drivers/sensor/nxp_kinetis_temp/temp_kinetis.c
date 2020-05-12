@@ -36,11 +36,11 @@ struct temp_kinetis_config {
 };
 
 struct temp_kinetis_data {
-	struct device *adc;
+	const struct device *adc;
 	u16_t buffer[TEMP_KINETIS_ADC_SAMPLES];
 };
 
-static int temp_kinetis_sample_fetch(struct device *dev,
+static int temp_kinetis_sample_fetch(const struct device *dev,
 				     enum sensor_channel chan)
 {
 	const struct temp_kinetis_config *config = dev->config_info;
@@ -84,7 +84,7 @@ static int temp_kinetis_sample_fetch(struct device *dev,
 	return 0;
 }
 
-static int temp_kinetis_channel_get(struct device *dev,
+static int temp_kinetis_channel_get(const struct device *dev,
 				    enum sensor_channel chan,
 				    struct sensor_value *val)
 {
@@ -137,7 +137,7 @@ static const struct sensor_driver_api temp_kinetis_driver_api = {
 	.channel_get = temp_kinetis_channel_get,
 };
 
-static int temp_kinetis_init(struct device *dev)
+static int temp_kinetis_init(const struct device *dev)
 {
 	const struct temp_kinetis_config *config = dev->config_info;
 	struct temp_kinetis_data *data = dev->driver_data;

@@ -24,7 +24,7 @@
 K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
 static struct k_thread thread_data;
 
-static struct device *ipm_handle;
+static const struct device *ipm_handle;
 
 static metal_phys_addr_t shm_physmap[] = { SHM_START_ADDR };
 static struct metal_device shm_device = {
@@ -299,7 +299,7 @@ void main(void)
 /* Make sure we clear out the status flag very early (before we bringup the
  * secondary core) so the secondary core see's the proper status
  */
-int init_status_flag(struct device *arg)
+int init_status_flag(const struct device *arg)
 {
 	virtio_set_status(NULL, 0);
 

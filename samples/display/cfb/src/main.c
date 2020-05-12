@@ -23,7 +23,7 @@
 
 void main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	u16_t rows;
 	u8_t ppt;
 	u8_t font_width;

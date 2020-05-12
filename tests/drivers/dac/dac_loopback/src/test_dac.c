@@ -90,10 +90,10 @@ static const struct adc_channel_cfg adc_ch_cfg = {
 	.channel_id       = ADC_CHANNEL_ID,
 };
 
-static struct device *init_dac(void)
+static const struct device *init_dac(void)
 {
 	int ret;
-	struct device *dac_dev = device_get_binding(DAC_DEVICE_NAME);
+	const struct device *dac_dev = device_get_binding(DAC_DEVICE_NAME);
 
 	zassert_not_null(dac_dev, "Cannot get DAC device");
 
@@ -105,10 +105,10 @@ static struct device *init_dac(void)
 }
 
 /* ADC necessary to read back the value from DAC */
-static struct device *init_adc(void)
+static const struct device *init_adc(void)
 {
 	int ret;
-	struct device *adc_dev = device_get_binding(ADC_DEVICE_NAME);
+	const struct device *adc_dev = device_get_binding(ADC_DEVICE_NAME);
 
 	zassert_not_null(adc_dev, "Cannot get ADC device");
 
@@ -126,8 +126,8 @@ static int test_task_loopback(void)
 {
 	int ret;
 
-	struct device *dac_dev = init_dac();
-	struct device *adc_dev = init_adc();
+	const struct device *dac_dev = init_dac();
+	const struct device *adc_dev = init_adc();
 
 	if (!dac_dev || !adc_dev) {
 		return TC_FAIL;

@@ -17,7 +17,7 @@
 #error Unsupported board
 #endif
 
-struct device *display;
+const struct device *display;
 
 void main(void)
 {

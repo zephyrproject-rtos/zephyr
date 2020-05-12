@@ -134,7 +134,7 @@ static int cmd_modem_send(const struct shell *shell, size_t argc,
 }
 
 #if defined(CONFIG_GSM_MUX)
-static void uart_mux_cb(struct device *uart, struct device *dev,
+static void uart_mux_cb(const struct device *uart, const struct device *dev,
 			int dlci_address, void *user_data)
 {
 	struct modem_shell_user_data *data = user_data;

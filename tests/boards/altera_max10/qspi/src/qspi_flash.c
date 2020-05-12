@@ -17,7 +17,7 @@
 
 void test_qspi_flash(void)
 {
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	u32_t i, offset, rd_val, wr_val;
 	u8_t wr_buf[4] = {0xAA, 0xBB, 0xCC, 0xDD};
 	u8_t rd_buf[2];

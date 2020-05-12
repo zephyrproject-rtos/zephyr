@@ -536,7 +536,7 @@ void usb_dc_nrfx_power_event_callback(nrf_power_event_t event)
 static int hf_clock_enable(bool on, bool blocking)
 {
 	int ret = -ENODEV;
-	struct device *clock;
+	const struct device *clock;
 	static bool clock_requested;
 
 	clock = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));

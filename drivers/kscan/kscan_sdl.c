@@ -18,7 +18,7 @@ struct sdl_data {
 
 static int sdl_filter(void *arg, SDL_Event *event)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct sdl_data *data = dev->driver_data;
 	u32_t row = 0;
 	u32_t column = 0;
@@ -52,7 +52,7 @@ static int sdl_filter(void *arg, SDL_Event *event)
 	return 1;
 }
 
-static int sdl_configure(struct device *dev, kscan_callback_t callback)
+static int sdl_configure(const struct device *dev, kscan_callback_t callback)
 {
 	struct sdl_data *data = dev->driver_data;
 
@@ -67,7 +67,7 @@ static int sdl_configure(struct device *dev, kscan_callback_t callback)
 	return 0;
 }
 
-static int sdl_enable_callback(struct device *dev)
+static int sdl_enable_callback(const struct device *dev)
 {
 	struct sdl_data *data = dev->driver_data;
 
@@ -76,7 +76,7 @@ static int sdl_enable_callback(struct device *dev)
 	return 0;
 }
 
-static int sdl_disable_callback(struct device *dev)
+static int sdl_disable_callback(const struct device *dev)
 {
 	struct sdl_data *data = dev->driver_data;
 
@@ -85,7 +85,7 @@ static int sdl_disable_callback(struct device *dev)
 	return 0;
 }
 
-static int sdl_init(struct device *dev)
+static int sdl_init(const struct device *dev)
 {
 	LOG_INF("Init '%s' device", dev->name);
 	SDL_AddEventWatch(sdl_filter, dev);

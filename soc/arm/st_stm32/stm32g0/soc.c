@@ -25,7 +25,7 @@
  *
  * @return 0
  */
-static int stm32g0_init(struct device *arg)
+static int stm32g0_init(const struct device *arg)
 {
 	u32_t key;
 

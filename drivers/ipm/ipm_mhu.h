@@ -59,7 +59,7 @@ enum ipm_mhu_cpu_id_t {
 
 struct ipm_mhu_device_config {
 	u8_t *base;
-	void (*irq_config_func)(struct device *d);
+	void (*irq_config_func)(const struct device *d);
 };
 
 /* Device data structure */

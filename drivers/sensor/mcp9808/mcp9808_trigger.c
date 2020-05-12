@@ -14,7 +14,7 @@
 
 LOG_MODULE_DECLARE(MCP9808, CONFIG_SENSOR_LOG_LEVEL);
 
-static int mcp9808_reg_write(struct device *dev, u8_t reg, u16_t val)
+static int mcp9808_reg_write(const struct device *dev, u8_t reg, u16_t val)
 {
 	const struct mcp9808_data *data = dev->driver_data;
 	const struct mcp9808_config *cfg = dev->config_info;
@@ -27,7 +27,7 @@ static int mcp9808_reg_write(struct device *dev, u8_t reg, u16_t val)
 	return i2c_write(data->i2c_master, buf, sizeof(buf), cfg->i2c_addr);
 }
 
-int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
+int mcp9808_attr_set(const struct device *dev, enum sensor_channel chan,
 		     enum sensor_attribute attr,
 		     const struct sensor_value *val)
 {
@@ -57,7 +57,7 @@ int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
 				 mcp9808_temp_reg_from_signed(temp));
 }
 
-static inline void setup_int(struct device *dev,
+static inline void setup_int(const struct device *dev,
 			     bool enable)
 {
 	const struct mcp9808_data *data = dev->driver_data;
@@ -69,7 +69,7 @@ static inline void setup_int(struct device *dev,
 	gpio_pin_interrupt_configure(data->alert_gpio, cfg->alert_pin, flags);
 }
 
-static void handle_int(struct device *dev)
+static void handle_int(const struct device *dev)
 {
 	struct mcp9808_data *data = dev->driver_data;
 
@@ -82,7 +82,7 @@ static void handle_int(struct device *dev)
 #endif
 }
 
-static void process_int(struct device *dev)
+static void process_int(const struct device *dev)
 {
 	struct mcp9808_data *data = dev->driver_data;
 
@@ -95,7 +95,7 @@ static void process_int(struct device *dev)
 	}
 }
 
-int mcp9808_trigger_set(struct device *dev,
+int mcp9808_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
@@ -121,7 +121,8 @@ int mcp9808_trigger_set(struct device *dev,
 	return rv;
 }
 
-static void alert_cb(struct device *dev, struct gpio_callback *cb, u32_t pins)
+static void alert_cb(const struct device *dev, struct gpio_callback *cb,
+		     u32_t pins)
 {
 	struct mcp9808_data *data =
 		CONTAINER_OF(cb, struct mcp9808_data, alert_cb);
@@ -135,7 +136,7 @@ static void alert_cb(struct device *dev, struct gpio_callback *cb, u32_t pins)
 
 static void mcp9808_thread_main(int arg1, int arg2)
 {
-	struct device *dev = INT_TO_POINTER(arg1);
+	const struct device *dev = INT_TO_POINTER(arg1);
 	struct mcp9808_data *data = dev->driver_data;
 
 	ARG_UNUSED(arg2);
@@ -160,11 +161,11 @@ static void mcp9808_gpio_thread_cb(struct k_work *work)
 
 #endif /* CONFIG_MCP9808_TRIGGER_GLOBAL_THREAD */
 
-int mcp9808_setup_interrupt(struct device *dev)
+int mcp9808_setup_interrupt(const struct device *dev)
 {
 	struct mcp9808_data *data = dev->driver_data;
 	const struct mcp9808_config *cfg = dev->config_info;
-	struct device *gpio;
+	const struct device *gpio;
 	int rc = mcp9808_reg_write(dev, MCP9808_REG_CRITICAL,
 				   MCP9808_TEMP_ABS_MASK);
 	if (rc == 0) {

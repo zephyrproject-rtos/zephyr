@@ -92,7 +92,7 @@ static const cy_stc_scb_uart_config_t uartConfig = {
  *  Peforms hardware initialization: debug UART.
  *
  */
-static int uart_psoc6_init(struct device *dev)
+static int uart_psoc6_init(const struct device *dev)
 {
 	const struct cypress_psoc6_config *config = dev->config_info;
 
@@ -123,7 +123,7 @@ static int uart_psoc6_init(struct device *dev)
 	return 0;
 }
 
-static int uart_psoc6_poll_in(struct device *dev, unsigned char *c)
+static int uart_psoc6_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct cypress_psoc6_config *config = dev->config_info;
 	u32_t rec;
@@ -134,7 +134,7 @@ static int uart_psoc6_poll_in(struct device *dev, unsigned char *c)
 	return ((rec == CY_SCB_UART_RX_NO_DATA) ? -1 : 0);
 }
 
-static void uart_psoc6_poll_out(struct device *dev, unsigned char c)
+static void uart_psoc6_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct cypress_psoc6_config *config = dev->config_info;
 

@@ -104,7 +104,7 @@ split into read-only and runtime-mutable parts. At a high level we have:
 
   struct device_config {
 	char    *name;
-	int (*init)(struct device *device);
+	int (*init)(const struct device *device);
 	const void *config_info;
     [...]
   };
@@ -134,15 +134,15 @@ A subsystem API definition typically looks like this:
 
 .. code-block:: C
 
-  typedef int (*subsystem_do_this_t)(struct device *device, int foo, int bar);
-  typedef void (*subsystem_do_that_t)(struct device *device, void *baz);
+  typedef int (*subsystem_do_this_t)(const struct device *device, int foo, int bar);
+  typedef void (*subsystem_do_that_t)(const struct device *device, void *baz);
 
   struct subsystem_api {
         subsystem_do_this_t do_this;
         subsystem_do_that_t do_that;
   };
 
-  static inline int subsystem_do_this(struct device *device, int foo, int bar)
+  static inline int subsystem_do_this(const struct device *device, int foo, int bar)
   {
         struct subsystem_api *api;
 
@@ -150,7 +150,7 @@ A subsystem API definition typically looks like this:
         return api->do_this(device, foo, bar);
   }
 
-  static inline void subsystem_do_that(struct device *device, void *baz)
+  static inline void subsystem_do_that(const struct device *device, void *baz)
   {
         struct subsystem_api *api;
 
@@ -163,12 +163,12 @@ of these APIs, and populate an instance of subsystem_api structure:
 
 .. code-block:: C
 
-  static int my_driver_do_this(struct device *device, int foo, int bar)
+  static int my_driver_do_this(const struct device *device, int foo, int bar)
   {
         ...
   }
 
-  static void my_driver_do_that(struct device *device, void *baz)
+  static void my_driver_do_that(const struct device *device, void *baz)
   {
         ...
   }
@@ -205,19 +205,19 @@ A device-specific API definition typically looks like this:
 
    #include <drivers/subsystem.h>
 
-   int specific_do_this(struct device *device, int foo);
+   int specific_do_this(const struct device *device, int foo);
 
 A driver implementing extensions to the subsystem will define the real
 implementation of both the subsystem API and the specific APIs:
 
 .. code-block:: C
 
-   static int generic_do_whatever(struct device *device, void *arg)
+   static int generic_do_whatever(const struct device *device, void *arg)
    {
       ...
    }
 
-   static int specific_do_this(struct device *device, int foo)
+   static int specific_do_this(const struct device *device, int foo)
    {
       ...
    }
@@ -242,7 +242,7 @@ with a different interrupt line. In ``drivers/subsystem/subsystem_my_driver.h``:
 
 .. code-block:: C
 
-  typedef void (*my_driver_config_irq_t)(struct device *device);
+  typedef void (*my_driver_config_irq_t)(const struct device *device);
 
   struct my_driver_config {
         u32_t base_addr;
@@ -253,13 +253,13 @@ In the implementation of the common init function:
 
 .. code-block:: C
 
-  void my_driver_isr(struct device *device)
+  void my_driver_isr(const struct device *device)
   {
         /* Handle interrupt */
         ...
   }
 
-  int my_driver_init(struct device *device)
+  int my_driver_init(const struct device *device)
   {
         const struct my_driver_config *config = device->config_info;
 

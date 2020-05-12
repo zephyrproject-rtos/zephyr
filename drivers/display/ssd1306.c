@@ -47,8 +47,8 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #endif
 
 struct ssd1306_data {
-	struct device *reset;
-	struct device *i2c;
+	const struct device *reset;
+	const struct device *i2c;
 	u8_t contrast;
 	u8_t scan_mode;
 };
@@ -77,7 +77,7 @@ static inline int ssd1306_reg_update(struct ssd1306_data *driver, u8_t reg,
 				   reg, mask, val);
 }
 
-static inline int ssd1306_set_panel_orientation(struct device *dev)
+static inline int ssd1306_set_panel_orientation(const struct device *dev)
 {
 	struct ssd1306_data *driver = dev->driver_data;
 	u8_t cmd_buf[] = {
@@ -95,7 +95,7 @@ static inline int ssd1306_set_panel_orientation(struct device *dev)
 			 DT_INST_REG_ADDR(0));
 }
 
-static inline int ssd1306_set_timing_setting(struct device *dev)
+static inline int ssd1306_set_timing_setting(const struct device *dev)
 {
 	struct ssd1306_data *driver = dev->driver_data;
 	u8_t cmd_buf[] = {
@@ -117,7 +117,7 @@ static inline int ssd1306_set_timing_setting(struct device *dev)
 			 DT_INST_REG_ADDR(0));
 }
 
-static inline int ssd1306_set_hardware_config(struct device *dev)
+static inline int ssd1306_set_hardware_config(const struct device *dev)
 {
 	struct ssd1306_data *driver = dev->driver_data;
 	u8_t cmd_buf[] = {
@@ -350,7 +350,7 @@ static int ssd1306_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int ssd1306_init_device(struct device *dev)
+static int ssd1306_init_device(const struct device *dev)
 {
 	struct ssd1306_data *driver = dev->driver_data;
 
@@ -410,7 +410,7 @@ static int ssd1306_init_device(struct device *dev)
 	return 0;
 }
 
-static int ssd1306_init(struct device *dev)
+static int ssd1306_init(const struct device *dev)
 {
 	struct ssd1306_data *driver = dev->driver_data;
 

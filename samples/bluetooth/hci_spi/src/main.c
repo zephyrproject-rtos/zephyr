@@ -71,11 +71,11 @@ const static struct spi_buf_set tx_bufs = {
 /* HCI buffer pools */
 #define CMD_BUF_SIZE BT_BUF_RX_SIZE
 
-static struct device *spi_hci_dev;
+static const struct device *spi_hci_dev;
 static struct spi_config spi_cfg = {
 	.operation = SPI_WORD_SET(8) | SPI_OP_MODE_SLAVE,
 };
-static struct device *gpio_dev;
+static const struct device *gpio_dev;
 static K_THREAD_STACK_DEFINE(bt_tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread bt_tx_thread_data;
 
@@ -235,7 +235,7 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int hci_spi_init(struct device *unused)
+static int hci_spi_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

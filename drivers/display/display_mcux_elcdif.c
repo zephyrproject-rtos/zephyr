@@ -25,7 +25,7 @@ K_MEM_POOL_DEFINE(mcux_elcdif_pool,
 
 struct mcux_elcdif_config {
 	LCDIF_Type *base;
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 	elcdif_rgb_mode_config_t rgb_mode;
 	enum display_pixel_format pixel_format;
 	u8_t bits_per_pixel;
@@ -166,7 +166,7 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 
 static void mcux_elcdif_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct mcux_elcdif_config *config = dev->config_info;
 	struct mcux_elcdif_data *data = dev->driver_data;
 	u32_t status;
@@ -177,7 +177,7 @@ static void mcux_elcdif_isr(void *arg)
 	k_sem_give(&data->sem);
 }
 
-static int mcux_elcdif_init(struct device *dev)
+static int mcux_elcdif_init(const struct device *dev)
 {
 	const struct mcux_elcdif_config *config = dev->config_info;
 	struct mcux_elcdif_data *data = dev->driver_data;
@@ -225,7 +225,7 @@ static const struct display_driver_api mcux_elcdif_api = {
 	.set_orientation = mcux_elcdif_set_orientation,
 };
 
-static void mcux_elcdif_config_func_1(struct device *dev);
+static void mcux_elcdif_config_func_1(const struct device *dev);
 
 static struct mcux_elcdif_config mcux_elcdif_config_1 = {
 	.base = (LCDIF_Type *) DT_INST_REG_ADDR(0),
@@ -260,7 +260,7 @@ DEVICE_AND_API_INIT(mcux_elcdif_1, DT_INST_LABEL(0),
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_elcdif_api);
 
-static void mcux_elcdif_config_func_1(struct device *dev)
+static void mcux_elcdif_config_func_1(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),

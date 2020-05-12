@@ -130,7 +130,7 @@ struct gpio_intel_apl_data {
  *
  * @return true if host owns the GPIO pin, false otherwise
  */
-static bool check_perm(struct device *dev, u32_t raw_pin)
+static bool check_perm(const struct device *dev, u32_t raw_pin)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
@@ -171,9 +171,9 @@ static bool check_perm(struct device *dev, u32_t raw_pin)
 
 static int nr_isr_devs;
 
-static struct device *isr_devs[GPIO_INTEL_APL_NR_SUBDEVS];
+static const struct device *isr_devs[GPIO_INTEL_APL_NR_SUBDEVS];
 
-static int gpio_intel_apl_isr(struct device *dev)
+static int gpio_intel_apl_isr(const struct device *dev)
 {
 	const struct gpio_intel_apl_config *cfg;
 	struct gpio_intel_apl_data *data;
@@ -207,7 +207,7 @@ static int gpio_intel_apl_isr(struct device *dev)
 	return 0;
 }
 
-static int gpio_intel_apl_config(struct device *dev,
+static int gpio_intel_apl_config(const struct device *dev,
 				 gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config_info;
@@ -281,9 +281,10 @@ static int gpio_intel_apl_config(struct device *dev,
 	return 0;
 }
 
-static int gpio_intel_apl_pin_interrupt_configure(struct device *dev,
-		gpio_pin_t pin, enum gpio_int_mode mode,
-		enum gpio_int_trig trig)
+static int gpio_intel_apl_pin_interrupt_configure(const struct device *dev,
+						  gpio_pin_t pin,
+						  enum gpio_int_mode mode,
+						  enum gpio_int_trig trig)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
@@ -361,7 +362,7 @@ static int gpio_intel_apl_pin_interrupt_configure(struct device *dev,
 	return 0;
 }
 
-static int gpio_intel_apl_manage_callback(struct device *dev,
+static int gpio_intel_apl_manage_callback(const struct device *dev,
 					  struct gpio_callback *callback,
 					  bool set)
 {
@@ -370,7 +371,7 @@ static int gpio_intel_apl_manage_callback(struct device *dev,
 	return gpio_manage_callback(&data->cb, callback, set);
 }
 
-static int gpio_intel_apl_enable_callback(struct device *dev,
+static int gpio_intel_apl_enable_callback(const struct device *dev,
 					  gpio_pin_t pin)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config_info;
@@ -395,7 +396,7 @@ static int gpio_intel_apl_enable_callback(struct device *dev,
 	return 0;
 }
 
-static int gpio_intel_apl_disable_callback(struct device *dev,
+static int gpio_intel_apl_disable_callback(const struct device *dev,
 					   gpio_pin_t pin)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config_info;
@@ -416,7 +417,7 @@ static int gpio_intel_apl_disable_callback(struct device *dev,
 	return 0;
 }
 
-static int port_get_raw(struct device *dev, u32_t mask, u32_t *value,
+static int port_get_raw(const struct device *dev, u32_t mask, u32_t *value,
 			bool read_tx)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config_info;
@@ -456,7 +457,7 @@ static int port_get_raw(struct device *dev, u32_t mask, u32_t *value,
 	return 0;
 }
 
-static int port_set_raw(struct device *dev, u32_t mask, u32_t value)
+static int port_set_raw(const struct device *dev, u32_t mask, u32_t value)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
@@ -492,7 +493,8 @@ static int port_set_raw(struct device *dev, u32_t mask, u32_t value)
 	return 0;
 }
 
-static int gpio_intel_apl_port_set_masked_raw(struct device *dev, u32_t mask,
+static int gpio_intel_apl_port_set_masked_raw(const struct device *dev,
+					      u32_t mask,
 					      u32_t value)
 {
 	u32_t port_val;
@@ -506,17 +508,20 @@ static int gpio_intel_apl_port_set_masked_raw(struct device *dev, u32_t mask,
 	return 0;
 }
 
-static int gpio_intel_apl_port_set_bits_raw(struct device *dev, u32_t mask)
+static int gpio_intel_apl_port_set_bits_raw(const struct device *dev,
+					    u32_t mask)
 {
 	return gpio_intel_apl_port_set_masked_raw(dev, mask, mask);
 }
 
-static int gpio_intel_apl_port_clear_bits_raw(struct device *dev, u32_t mask)
+static int gpio_intel_apl_port_clear_bits_raw(const struct device *dev,
+					      u32_t mask)
 {
 	return gpio_intel_apl_port_set_masked_raw(dev, mask, 0);
 }
 
-static int gpio_intel_apl_port_toggle_bits(struct device *dev, u32_t mask)
+static int gpio_intel_apl_port_toggle_bits(const struct device *dev,
+					   u32_t mask)
 {
 	u32_t port_val;
 
@@ -529,7 +534,7 @@ static int gpio_intel_apl_port_toggle_bits(struct device *dev, u32_t mask)
 	return 0;
 }
 
-static int gpio_intel_apl_port_get_raw(struct device *dev, u32_t *value)
+static int gpio_intel_apl_port_get_raw(const struct device *dev, u32_t *value)
 {
 	return port_get_raw(dev, 0xFFFFFFFF, value, false);
 }
@@ -547,7 +552,7 @@ static const struct gpio_driver_api gpio_intel_apl_api = {
 	.pin_interrupt_configure = gpio_intel_apl_pin_interrupt_configure,
 };
 
-int gpio_intel_apl_init(struct device *dev)
+int gpio_intel_apl_init(const struct device *dev)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;

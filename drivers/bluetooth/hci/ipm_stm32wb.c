@@ -532,7 +532,7 @@ static const struct bt_hci_driver drv = {
 	.send           = bt_ipm_send,
 };
 
-static int _bt_ipm_init(struct device *unused)
+static int _bt_ipm_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

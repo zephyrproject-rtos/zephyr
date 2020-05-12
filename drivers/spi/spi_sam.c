@@ -48,7 +48,7 @@ static int spi_slave_to_mr_pcs(int slave)
 	return pcs[slave];
 }
 
-static int spi_sam_configure(struct device *dev,
+static int spi_sam_configure(const struct device *dev,
 			     const struct spi_config *config)
 {
 	const struct spi_sam_config *cfg = dev->config_info;
@@ -267,7 +267,7 @@ static void spi_sam_fast_txrx(Spi *regs,
 }
 
 /* Fast path where every overlapping tx and rx buffer is the same length */
-static void spi_sam_fast_transceive(struct device *dev,
+static void spi_sam_fast_transceive(const struct device *dev,
 				    const struct spi_config *config,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs)
@@ -356,7 +356,7 @@ static bool spi_sam_is_regular(const struct spi_buf_set *tx_bufs,
 	return true;
 }
 
-static int spi_sam_transceive(struct device *dev,
+static int spi_sam_transceive(const struct device *dev,
 			      const struct spi_config *config,
 			      const struct spi_buf_set *tx_bufs,
 			      const struct spi_buf_set *rx_bufs)
@@ -397,7 +397,7 @@ done:
 	return err;
 }
 
-static int spi_sam_transceive_sync(struct device *dev,
+static int spi_sam_transceive_sync(const struct device *dev,
 				    const struct spi_config *config,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs)
@@ -406,7 +406,7 @@ static int spi_sam_transceive_sync(struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_sam_transceive_async(struct device *dev,
+static int spi_sam_transceive_async(const struct device *dev,
 				     const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
@@ -417,7 +417,7 @@ static int spi_sam_transceive_async(struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_sam_release(struct device *dev,
+static int spi_sam_release(const struct device *dev,
 			   const struct spi_config *config)
 {
 	struct spi_sam_data *data = dev->driver_data;
@@ -427,7 +427,7 @@ static int spi_sam_release(struct device *dev,
 	return 0;
 }
 
-static int spi_sam_init(struct device *dev)
+static int spi_sam_init(const struct device *dev)
 {
 	const struct spi_sam_config *cfg = dev->config_info;
 	struct spi_sam_data *data = dev->driver_data;

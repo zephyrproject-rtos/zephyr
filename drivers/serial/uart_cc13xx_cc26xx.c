@@ -40,17 +40,18 @@ struct uart_cc13xx_cc26xx_data {
 #endif
 };
 
-static inline struct uart_cc13xx_cc26xx_data *get_dev_data(struct device *dev)
+static inline struct uart_cc13xx_cc26xx_data *get_dev_data(const struct device *dev)
 {
 	return dev->driver_data;
 }
 
-static inline const struct uart_device_config *get_dev_conf(struct device *dev)
+static inline const struct uart_device_config *get_dev_conf(const struct device *dev)
 {
 	return dev->config_info;
 }
 
-static int uart_cc13xx_cc26xx_poll_in(struct device *dev, unsigned char *c)
+static int uart_cc13xx_cc26xx_poll_in(const struct device *dev,
+				      unsigned char *c)
 {
 	if (!UARTCharsAvail(get_dev_conf(dev)->regs)) {
 		return -1;
@@ -61,7 +62,8 @@ static int uart_cc13xx_cc26xx_poll_in(struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void uart_cc13xx_cc26xx_poll_out(struct device *dev, unsigned char c)
+static void uart_cc13xx_cc26xx_poll_out(const struct device *dev,
+					unsigned char c)
 {
 	UARTCharPut(get_dev_conf(dev)->regs, c);
 	/*
@@ -72,7 +74,7 @@ static void uart_cc13xx_cc26xx_poll_out(struct device *dev, unsigned char c)
 	}
 }
 
-static int uart_cc13xx_cc26xx_err_check(struct device *dev)
+static int uart_cc13xx_cc26xx_err_check(const struct device *dev)
 {
 	u32_t flags = UARTRxErrorGet(get_dev_conf(dev)->regs);
 
@@ -86,7 +88,7 @@ static int uart_cc13xx_cc26xx_err_check(struct device *dev)
 	return error;
 }
 
-static int uart_cc13xx_cc26xx_configure(struct device *dev,
+static int uart_cc13xx_cc26xx_configure(const struct device *dev,
 					const struct uart_config *cfg)
 {
 	u32_t line_ctrl = 0;
@@ -184,7 +186,7 @@ static int uart_cc13xx_cc26xx_configure(struct device *dev,
 	return 0;
 }
 
-static int uart_cc13xx_cc26xx_config_get(struct device *dev,
+static int uart_cc13xx_cc26xx_config_get(const struct device *dev,
 					 struct uart_config *cfg)
 {
 	*cfg = get_dev_data(dev)->uart_config;
@@ -193,7 +195,8 @@ static int uart_cc13xx_cc26xx_config_get(struct device *dev,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_cc13xx_cc26xx_fifo_fill(struct device *dev, const u8_t *buf,
+static int uart_cc13xx_cc26xx_fifo_fill(const struct device *dev,
+					const u8_t *buf,
 					int len)
 {
 	int n = 0;
@@ -208,7 +211,7 @@ static int uart_cc13xx_cc26xx_fifo_fill(struct device *dev, const u8_t *buf,
 	return n;
 }
 
-static int uart_cc13xx_cc26xx_fifo_read(struct device *dev, u8_t *buf,
+static int uart_cc13xx_cc26xx_fifo_read(const struct device *dev, u8_t *buf,
 					const int len)
 {
 	int c, n;
@@ -225,7 +228,7 @@ static int uart_cc13xx_cc26xx_fifo_read(struct device *dev, u8_t *buf,
 	return n;
 }
 
-static void uart_cc13xx_cc26xx_irq_tx_enable(struct device *dev)
+static void uart_cc13xx_cc26xx_irq_tx_enable(const struct device *dev)
 {
 #if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
 	defined(CONFIG_SYS_POWER_SLEEP_STATES)
@@ -248,7 +251,7 @@ static void uart_cc13xx_cc26xx_irq_tx_enable(struct device *dev)
 	UARTIntEnable(get_dev_conf(dev)->regs, UART_INT_TX);
 }
 
-static void uart_cc13xx_cc26xx_irq_tx_disable(struct device *dev)
+static void uart_cc13xx_cc26xx_irq_tx_disable(const struct device *dev)
 {
 	UARTIntDisable(get_dev_conf(dev)->regs, UART_INT_TX);
 
@@ -261,12 +264,12 @@ static void uart_cc13xx_cc26xx_irq_tx_disable(struct device *dev)
 #endif
 }
 
-static int uart_cc13xx_cc26xx_irq_tx_ready(struct device *dev)
+static int uart_cc13xx_cc26xx_irq_tx_ready(const struct device *dev)
 {
 	return UARTSpaceAvail(get_dev_conf(dev)->regs) ? 1 : 0;
 }
 
-static void uart_cc13xx_cc26xx_irq_rx_enable(struct device *dev)
+static void uart_cc13xx_cc26xx_irq_rx_enable(const struct device *dev)
 {
 #if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
 	defined(CONFIG_SYS_POWER_SLEEP_STATES)
@@ -284,7 +287,7 @@ static void uart_cc13xx_cc26xx_irq_rx_enable(struct device *dev)
 	UARTIntEnable(get_dev_conf(dev)->regs, UART_INT_RX);
 }
 
-static void uart_cc13xx_cc26xx_irq_rx_disable(struct device *dev)
+static void uart_cc13xx_cc26xx_irq_rx_disable(const struct device *dev)
 {
 #if defined(CONFIG_SYS_POWER_MANAGEMENT) && \
 	defined(CONFIG_SYS_POWER_SLEEP_STATES)
@@ -297,45 +300,46 @@ static void uart_cc13xx_cc26xx_irq_rx_disable(struct device *dev)
 	UARTIntDisable(get_dev_conf(dev)->regs, UART_INT_RX);
 }
 
-static int uart_cc13xx_cc26xx_irq_tx_complete(struct device *dev)
+static int uart_cc13xx_cc26xx_irq_tx_complete(const struct device *dev)
 {
 	return UARTBusy(get_dev_conf(dev)->regs) ? 0 : 1;
 }
 
-static int uart_cc13xx_cc26xx_irq_rx_ready(struct device *dev)
+static int uart_cc13xx_cc26xx_irq_rx_ready(const struct device *dev)
 {
 	return UARTCharsAvail(get_dev_conf(dev)->regs) ? 1 : 0;
 }
 
-static void uart_cc13xx_cc26xx_irq_err_enable(struct device *dev)
+static void uart_cc13xx_cc26xx_irq_err_enable(const struct device *dev)
 {
 	return UARTIntEnable(get_dev_conf(dev)->regs,
 			     UART_INT_OE | UART_INT_BE | UART_INT_PE |
 				     UART_INT_FE);
 }
 
-static void uart_cc13xx_cc26xx_irq_err_disable(struct device *dev)
+static void uart_cc13xx_cc26xx_irq_err_disable(const struct device *dev)
 {
 	return UARTIntDisable(get_dev_conf(dev)->regs,
 			      UART_INT_OE | UART_INT_BE | UART_INT_PE |
 				      UART_INT_FE);
 }
 
-static int uart_cc13xx_cc26xx_irq_is_pending(struct device *dev)
+static int uart_cc13xx_cc26xx_irq_is_pending(const struct device *dev)
 {
 	u32_t status = UARTIntStatus(get_dev_conf(dev)->regs, true);
 
 	return status & (UART_INT_TX | UART_INT_RX) ? 1 : 0;
 }
 
-static int uart_cc13xx_cc26xx_irq_update(struct device *dev)
+static int uart_cc13xx_cc26xx_irq_update(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return 1;
 }
 
 static void uart_cc13xx_cc26xx_irq_callback_set(
-	struct device *dev, uart_irq_callback_user_data_t cb, void *user_data)
+	const struct device *dev, uart_irq_callback_user_data_t cb,
+	void *user_data)
 {
 	struct uart_cc13xx_cc26xx_data *data = get_dev_data(dev);
 
@@ -366,7 +370,7 @@ static void uart_cc13xx_cc26xx_isr(void *arg)
 static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 	uintptr_t clientArg)
 {
-	struct device *dev = (struct device *)clientArg;
+	const struct device *dev = (const struct device *)clientArg;
 	int ret = Power_NOTIFYDONE;
 	s16_t res_id;
 
@@ -396,8 +400,8 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 #endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int uart_cc13xx_cc26xx_set_power_state(struct device *dev,
-	u32_t new_state)
+static int uart_cc13xx_cc26xx_set_power_state(const struct device *dev,
+					      u32_t new_state)
 {
 	int ret = 0;
 
@@ -441,8 +445,10 @@ static int uart_cc13xx_cc26xx_set_power_state(struct device *dev,
 	return ret;
 }
 
-static int uart_cc13xx_cc26xx_pm_control(struct device *dev, u32_t ctrl_command,
-	void *context, device_pm_cb cb, void *arg)
+static int uart_cc13xx_cc26xx_pm_control(const struct device *dev,
+					 u32_t ctrl_command,
+					 void *context, device_pm_cb cb,
+					 void *arg)
 {
 	int ret = 0;
 
@@ -606,7 +612,7 @@ static const struct uart_driver_api uart_cc13xx_cc26xx_driver_api = {
 #endif
 
 #define UART_CC13XX_CC26XX_INIT_FUNC(n)					    \
-	static int uart_cc13xx_cc26xx_init_##n(struct device *dev)	    \
+	static int uart_cc13xx_cc26xx_init_##n(const struct device *dev)	    \
 	{								    \
 		int ret;						    \
 									    \

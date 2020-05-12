@@ -102,7 +102,7 @@ static void mimxrt1050_evk_usdhc_pinmux(
 }
 #endif
 
-static int mimxrt1050_evk_init(struct device *dev)
+static int mimxrt1050_evk_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -317,7 +317,7 @@ static int mimxrt1050_evk_init(struct device *dev)
 }
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
-static int mimxrt1050_evk_phy_reset(struct device *dev)
+static int mimxrt1050_evk_phy_reset(const struct device *dev)
 {
 	/* RESET PHY chip. */
 	k_busy_wait(USEC_PER_MSEC * 10U);

@@ -24,7 +24,7 @@ extern "C" {
  * @param dev Device struct
  * @return 0 if successful, failed otherwise
  */
-extern int pwm_pca9685_init(struct device *dev);
+extern int pwm_pca9685_init(const struct device *dev);
 
 /** Configuration data */
 struct pwm_pca9685_config {
@@ -39,7 +39,7 @@ struct pwm_pca9685_config {
 /** Runtime driver data */
 struct pwm_pca9685_drv_data {
 	/** Master I2C device */
-	struct device *i2c_master;
+	const struct device *i2c_master;
 };
 
 #ifdef __cplusplus

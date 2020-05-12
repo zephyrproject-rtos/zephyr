@@ -63,7 +63,7 @@ static void link_configure(ETH_TypeDef *eth, u32_t flags)
 	eth->NETWORKCTRL |= (ETH_NETWORKCTRL_ENBTX | ETH_NETWORKCTRL_ENBRX);
 }
 
-static void eth_gecko_setup_mac(struct device *dev)
+static void eth_gecko_setup_mac(const struct device *dev)
 {
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
 	ETH_TypeDef *eth = cfg->regs;
@@ -134,7 +134,7 @@ static void rx_error_handler(ETH_TypeDef *eth)
 	ETH_RX_ENABLE(eth);
 }
 
-static struct net_pkt *frame_get(struct device *dev)
+static struct net_pkt *frame_get(const struct device *dev)
 {
 	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
@@ -234,7 +234,7 @@ static struct net_pkt *frame_get(struct device *dev)
 	return rx_frame;
 }
 
-static void eth_rx(struct device *dev)
+static void eth_rx(const struct device *dev)
 {
 	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
 	struct net_pkt *rx_frame;
@@ -260,7 +260,7 @@ static void eth_rx(struct device *dev)
 	}
 }
 
-static int eth_tx(struct device *dev, struct net_pkt *pkt)
+static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
@@ -324,7 +324,7 @@ error:
 
 static void rx_thread(void *arg1, void *unused1, void *unused2)
 {
-	struct device *dev = (struct device *)arg1;
+	const struct device *dev = (const struct device *)arg1;
 	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
 	int res;
@@ -369,7 +369,7 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 
 static void eth_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
 	ETH_TypeDef *eth = cfg->regs;
@@ -421,7 +421,7 @@ static void eth_isr(void *arg)
 	eth->IFCR = int_clr;
 }
 
-static void eth_init_clocks(struct device *dev)
+static void eth_init_clocks(const struct device *dev)
 {
 	__ASSERT_NO_MSG(dev != NULL);
 
@@ -429,7 +429,7 @@ static void eth_init_clocks(struct device *dev)
 	CMU_ClockEnable(cmuClock_ETH, true);
 }
 
-static void eth_init_pins(struct device *dev)
+static void eth_init_pins(const struct device *dev)
 {
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
 	ETH_TypeDef *eth = cfg->regs;
@@ -461,7 +461,7 @@ static void eth_init_pins(struct device *dev)
 
 }
 
-static int eth_init(struct device *dev)
+static int eth_init(const struct device *dev)
 {
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
 	ETH_TypeDef *eth = cfg->regs;
@@ -497,7 +497,7 @@ static void generate_mac(u8_t mac_addr[6])
 
 static void eth_iface_init(struct net_if *iface)
 {
-	struct device *const dev = net_if_get_device(iface);
+	const struct device *const dev = net_if_get_device(iface);
 	struct eth_gecko_dev_data *const dev_data = DEV_DATA(dev);
 	const struct eth_gecko_dev_cfg *const cfg = DEV_CFG(dev);
 	ETH_TypeDef *eth = cfg->regs;
@@ -617,7 +617,7 @@ static void eth_iface_init(struct net_if *iface)
 			0, K_NO_WAIT);
 }
 
-static enum ethernet_hw_caps eth_gecko_get_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_gecko_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

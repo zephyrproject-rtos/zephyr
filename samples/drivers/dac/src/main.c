@@ -31,7 +31,7 @@ static const struct dac_channel_cfg dac_ch_cfg = {
 
 void main(void)
 {
-	struct device *dac_dev = device_get_binding(DAC_DEVICE_NAME);
+	const struct device *dac_dev = device_get_binding(DAC_DEVICE_NAME);
 
 	if (!dac_dev) {
 		printk("Cannot get DAC device\n");

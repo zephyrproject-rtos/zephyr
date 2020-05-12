@@ -50,9 +50,9 @@ enum ieee802154_event {
 	IEEE802154_EVENT_TX_STARTED /* Data transmission started */
 };
 
-typedef void (*energy_scan_done_cb_t)(struct device *dev, s16_t max_ed);
+typedef void (*energy_scan_done_cb_t)(const struct device *dev, s16_t max_ed);
 
-typedef void (*ieee802154_event_cb_t)(struct device *dev,
+typedef void (*ieee802154_event_cb_t)(const struct device *dev,
 				      enum ieee802154_event evt,
 				      void *event_params);
 
@@ -167,48 +167,48 @@ struct ieee802154_radio_api {
 	struct net_if_api iface_api;
 
 	/** Get the device capabilities */
-	enum ieee802154_hw_caps (*get_capabilities)(struct device *dev);
+	enum ieee802154_hw_caps (*get_capabilities)(const struct device *dev);
 
 	/** Clear Channel Assesment - Check channel's activity */
-	int (*cca)(struct device *dev);
+	int (*cca)(const struct device *dev);
 
 	/** Set current channel */
-	int (*set_channel)(struct device *dev, u16_t channel);
+	int (*set_channel)(const struct device *dev, u16_t channel);
 
 	/** Set/Unset filters (for IEEE802154_HW_FILTER ) */
-	int (*filter)(struct device *dev,
+	int (*filter)(const struct device *dev,
 		      bool set,
 		      enum ieee802154_filter_type type,
 		      const struct ieee802154_filter *filter);
 
 	/** Set TX power level in dbm */
-	int (*set_txpower)(struct device *dev, s16_t dbm);
+	int (*set_txpower)(const struct device *dev, s16_t dbm);
 
 	/** Transmit a packet fragment */
-	int (*tx)(struct device *dev, enum ieee802154_tx_mode mode,
+	int (*tx)(const struct device *dev, enum ieee802154_tx_mode mode,
 		  struct net_pkt *pkt, struct net_buf *frag);
 
 	/** Start the device */
-	int (*start)(struct device *dev);
+	int (*start)(const struct device *dev);
 
 	/** Stop the device */
-	int (*stop)(struct device *dev);
+	int (*stop)(const struct device *dev);
 
 	/** Set specific radio driver configuration. */
-	int (*configure)(struct device *dev,
+	int (*configure)(const struct device *dev,
 			 enum ieee802154_config_type type,
 			 const struct ieee802154_config *config);
 
 #ifdef CONFIG_NET_L2_IEEE802154_SUB_GHZ
 	/** Get the available amount of Sub-GHz channels */
-	u16_t (*get_subg_channel_count)(struct device *dev);
+	u16_t (*get_subg_channel_count)(const struct device *dev);
 #endif /* CONFIG_NET_L2_IEEE802154_SUB_GHZ */
 
 	/** Run an energy detection scan.
 	 *  Note: channel must be set prior to request this function.
 	 *  duration parameter is in ms.
 	 */
-	int (*ed_scan)(struct device *dev,
+	int (*ed_scan)(const struct device *dev,
 		       u16_t duration,
 		       energy_scan_done_cb_t done_cb);
 };

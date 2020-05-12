@@ -78,12 +78,12 @@ struct net_if_test {
 	u8_t mac_addr[sizeof(struct net_eth_addr)];
 };
 
-static int net_iface_dev_init(struct device *dev)
+static int net_iface_dev_init(const struct device *dev)
 {
 	return 0;
 }
 
-static u8_t *net_iface_get_mac(struct device *dev)
+static u8_t *net_iface_get_mac(const struct device *dev)
 {
 	struct net_if_test *data = dev->driver_data;
 
@@ -108,7 +108,7 @@ static void net_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
-static int sender_iface(struct device *dev, struct net_pkt *pkt)
+static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		DBG("No data to send!\n");

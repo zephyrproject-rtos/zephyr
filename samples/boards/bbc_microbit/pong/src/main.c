@@ -111,7 +111,7 @@ static s64_t b_timestamp;
 #define SOUND_PERIOD_PADDLE  200
 #define SOUND_PERIOD_WALL    1000
 
-static struct device *pwm;
+static const struct device *pwm;
 
 static enum sound_state {
 	SOUND_IDLE,    /* No sound */
@@ -392,7 +392,7 @@ void pong_ball_received(s8_t x_pos, s8_t y_pos, s8_t x_vel, s8_t y_vel)
 	k_delayed_work_submit(&refresh, K_NO_WAIT);
 }
 
-static void button_pressed(struct device *dev, struct gpio_callback *cb,
+static void button_pressed(const struct device *dev, struct gpio_callback *cb,
 			   u32_t pins)
 {
 	/* Filter out spurious presses */
@@ -485,7 +485,7 @@ void pong_remote_lost(void)
 static void configure_buttons(void)
 {
 	static struct gpio_callback button_cb_data;
-	struct device *gpio;
+	const struct device *gpio;
 
 	gpio = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
 

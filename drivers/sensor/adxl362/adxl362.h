@@ -188,7 +188,7 @@ struct adxl362_config {
 };
 
 struct adxl362_data {
-	struct device *spi;
+	const struct device *spi;
 	struct spi_config spi_cfg;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control adxl362_cs_ctrl;
@@ -200,7 +200,7 @@ struct adxl362_data {
 	u8_t selected_range;
 
 #if defined(CONFIG_ADXL362_TRIGGER)
-	struct device *gpio;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 	struct k_mutex trigger_mutex;
 
@@ -215,7 +215,7 @@ struct adxl362_data {
 	struct k_thread thread;
 #elif defined(CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
+	const struct device *dev;
 #endif
 #endif /* CONFIG_ADXL362_TRIGGER */
 };
@@ -245,22 +245,22 @@ struct adxl362_data {
 #endif
 
 #ifdef CONFIG_ADXL362_TRIGGER
-int adxl362_reg_write_mask(struct device *dev,
+int adxl362_reg_write_mask(const struct device *dev,
 			   u8_t reg_addr, u8_t mask, u8_t data);
 
-int adxl362_get_status(struct device *dev, u8_t *status);
+int adxl362_get_status(const struct device *dev, u8_t *status);
 
-int adxl362_interrupt_activity_enable(struct device *dev);
+int adxl362_interrupt_activity_enable(const struct device *dev);
 
-int adxl362_trigger_set(struct device *dev,
+int adxl362_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler);
 
-int adxl362_init_interrupt(struct device *dev);
+int adxl362_init_interrupt(const struct device *dev);
 
-int adxl362_set_interrupt_mode(struct device *dev, u8_t mode);
+int adxl362_set_interrupt_mode(const struct device *dev, u8_t mode);
 
-int adxl362_clear_data_ready(struct device *dev);
+int adxl362_clear_data_ready(const struct device *dev);
 #endif /* CONFIG_ADT7420_TRIGGER */
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADXL362_ADXL362_H_ */

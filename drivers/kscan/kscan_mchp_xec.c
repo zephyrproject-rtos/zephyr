@@ -326,7 +326,7 @@ void polling_task(void *dev, void *dummy2, void *dummy3)
 	}
 }
 
-static int kscan_xec_configure(struct device *dev,
+static int kscan_xec_configure(const struct device *dev,
 				 kscan_callback_t callback)
 {
 	ARG_UNUSED(dev);
@@ -342,7 +342,7 @@ static int kscan_xec_configure(struct device *dev,
 	return 0;
 }
 
-static int kscan_xec_inhibit_interface(struct device *dev)
+static int kscan_xec_inhibit_interface(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -351,7 +351,7 @@ static int kscan_xec_inhibit_interface(struct device *dev)
 	return 0;
 }
 
-static int kscan_xec_enable_interface(struct device *dev)
+static int kscan_xec_enable_interface(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -366,7 +366,7 @@ static const struct kscan_driver_api kscan_xec_driver_api = {
 	.enable_callback = kscan_xec_enable_interface,
 };
 
-static int kscan_xec_init(struct device *dev);
+static int kscan_xec_init(const struct device *dev);
 
 DEVICE_AND_API_INIT(kscan_xec, DT_INST_LABEL(0),
 		    &kscan_xec_init,
@@ -375,7 +375,7 @@ DEVICE_AND_API_INIT(kscan_xec, DT_INST_LABEL(0),
 		    &kscan_xec_driver_api);
 
 
-static int kscan_xec_init(struct device *dev)
+static int kscan_xec_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

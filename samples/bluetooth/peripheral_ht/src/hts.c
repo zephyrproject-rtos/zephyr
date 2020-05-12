@@ -25,7 +25,7 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 
-static struct device *temp_dev;
+static const struct device *temp_dev;
 
 static u8_t simulate_htm;
 static u8_t indicating;

@@ -47,7 +47,7 @@ static void modem_iface_uart_flush(struct modem_iface *iface)
  *
  * @retval None.
  */
-static void modem_iface_uart_isr(struct device *uart_dev)
+static void modem_iface_uart_isr(const struct device *uart_dev)
 {
 	struct modem_context *ctx;
 	struct modem_iface_uart_data *data;

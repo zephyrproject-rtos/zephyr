@@ -77,7 +77,7 @@ struct gsm_mux {
 	/* UART device to use. This device is the real UART, not the
 	 * muxed one.
 	 */
-	struct device *uart;
+	const struct device *uart;
 
 	/* Buf to use when TX mux packet (hdr + data). For RX it only contains
 	 * the data (not hdr).
@@ -136,7 +136,7 @@ struct gsm_dlci {
 	dlci_command_cb_t command_cb;
 	gsm_mux_dlci_created_cb_t dlci_created_cb;
 	void *user_data;
-	struct device *uart;
+	const struct device *uart;
 	enum gsm_dlci_state state;
 	enum gsm_dlci_mode mode;
 	int num;
@@ -977,7 +977,8 @@ static struct gsm_dlci *gsm_dlci_get_free(void)
 }
 
 static struct gsm_dlci *gsm_dlci_alloc(struct gsm_mux *mux, u8_t address,
-		struct device *uart, gsm_mux_dlci_created_cb_t dlci_created_cb,
+		const struct device *uart,
+		gsm_mux_dlci_created_cb_t dlci_created_cb,
 		void *user_data)
 {
 	struct gsm_dlci *dlci;
@@ -1039,7 +1040,7 @@ static int gsm_mux_process_pkt(struct gsm_mux *mux)
 		}
 
 		if (dlci == NULL) {
-			struct device *uart;
+			const struct device *uart;
 
 			uart = uart_mux_find(dlci_address);
 			if (uart == NULL) {
@@ -1400,7 +1401,7 @@ static void dlci_done(struct gsm_dlci *dlci, bool connected)
 }
 
 int gsm_dlci_create(struct gsm_mux *mux,
-		    struct device *uart,
+		    const struct device *uart,
 		    int dlci_address,
 		    gsm_mux_dlci_created_cb_t dlci_created_cb,
 		    void *user_data,
@@ -1440,7 +1441,7 @@ int gsm_dlci_id(struct gsm_dlci *dlci)
 	return dlci->num;
 }
 
-struct gsm_mux *gsm_mux_create(struct device *uart)
+struct gsm_mux *gsm_mux_create(const struct device *uart)
 {
 	struct gsm_mux *mux = NULL;
 	int i;

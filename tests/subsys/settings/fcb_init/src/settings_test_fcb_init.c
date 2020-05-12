@@ -89,7 +89,7 @@ void test_prepare_storage(void)
  */
 	int err;
 	const struct flash_area *fa;
-	struct device *dev;
+	const struct device *dev;
 	u8_t new_val[FLASH_WRITE_BLOCK_SIZE];
 
 	if (prepared_mark[0] == ERASED_VAL) {

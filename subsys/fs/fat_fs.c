@@ -387,7 +387,7 @@ static struct fs_file_system_t fatfs_fs = {
 	.statvfs = fatfs_statvfs,
 };
 
-static int fatfs_init(struct device *dev)
+static int fatfs_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

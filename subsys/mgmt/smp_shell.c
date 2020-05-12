@@ -155,7 +155,7 @@ static int smp_shell_tx_pkt(struct zephyr_smp_transport *zst,
 	return rc;
 }
 
-static int smp_shell_init(struct device *dev)
+static int smp_shell_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

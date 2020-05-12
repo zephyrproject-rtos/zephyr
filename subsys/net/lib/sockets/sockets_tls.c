@@ -251,13 +251,13 @@ static int dtls_timing_get_delay(void *data)
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 /* Initialize TLS internals. */
-static int tls_init(struct device *unused)
+static int tls_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 
 	int ret;
 	static const unsigned char drbg_seed[] = "zephyr";
-	struct device *dev = NULL;
+	const struct device *dev = NULL;
 
 #if defined(CONFIG_ENTROPY_HAS_DRIVER)
 	dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);

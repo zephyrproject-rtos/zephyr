@@ -30,7 +30,8 @@ struct ps2_xec_data {
 	struct k_sem tx_lock;
 };
 
-static int ps2_xec_configure(struct device *dev, ps2_callback_t callback_isr)
+static int ps2_xec_configure(const struct device *dev,
+			     ps2_callback_t callback_isr)
 {
 	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
@@ -67,7 +68,7 @@ static int ps2_xec_configure(struct device *dev, ps2_callback_t callback_isr)
 }
 
 
-static int ps2_xec_write(struct device *dev, u8_t value)
+static int ps2_xec_write(const struct device *dev, u8_t value)
 {
 	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
@@ -116,7 +117,7 @@ static int ps2_xec_write(struct device *dev, u8_t value)
 	return 0;
 }
 
-static int ps2_xec_inhibit_interface(struct device *dev)
+static int ps2_xec_inhibit_interface(const struct device *dev)
 {
 	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
@@ -135,7 +136,7 @@ static int ps2_xec_inhibit_interface(struct device *dev)
 	return 0;
 }
 
-static int ps2_xec_enable_interface(struct device *dev)
+static int ps2_xec_enable_interface(const struct device *dev)
 {
 	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
@@ -150,7 +151,7 @@ static int ps2_xec_enable_interface(struct device *dev)
 }
 static void ps2_xec_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
@@ -188,7 +189,7 @@ static const struct ps2_driver_api ps2_xec_driver_api = {
 };
 
 #ifdef CONFIG_PS2_XEC_0
-static int ps2_xec_init_0(struct device *dev);
+static int ps2_xec_init_0(const struct device *dev);
 
 static const struct ps2_xec_config ps2_xec_config_0 = {
 	.base = (PS2_Type *) DT_INST_REG_ADDR(0),
@@ -206,7 +207,7 @@ DEVICE_AND_API_INIT(ps2_xec_0, DT_INST_LABEL(0),
 		    &ps2_xec_driver_api);
 
 
-static int ps2_xec_init_0(struct device *dev)
+static int ps2_xec_init_0(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -225,7 +226,7 @@ static int ps2_xec_init_0(struct device *dev)
 #endif /* CONFIG_PS2_XEC_0 */
 
 #ifdef CONFIG_PS2_XEC_1
-static int ps2_xec_init_1(struct device *dev);
+static int ps2_xec_init_1(const struct device *dev);
 
 static const struct ps2_xec_config ps2_xec_config_1 = {
 	.base = (PS2_Type *) DT_INST_REG_ADDR(1),
@@ -243,7 +244,7 @@ DEVICE_AND_API_INIT(ps2_xec_1, DT_INST_LABEL(1),
 		    POST_KERNEL, CONFIG_PS2_INIT_PRIORITY,
 		    &ps2_xec_driver_api);
 
-static int ps2_xec_init_1(struct device *dev)
+static int ps2_xec_init_1(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

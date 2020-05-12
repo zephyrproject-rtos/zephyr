@@ -203,7 +203,7 @@ static const u32_t table_samp_time[] = {
 
 struct adc_stm32_data {
 	struct adc_context ctx;
-	struct device *dev;
+	const struct device *dev;
 	u16_t *buffer;
 	u16_t *repeat_buffer;
 
@@ -220,7 +220,7 @@ struct adc_stm32_cfg {
 	void (*irq_cfg_func)(void);
 
 	struct stm32_pclken pclken;
-	struct device *p_dev;
+	const struct device *p_dev;
 };
 
 static int check_buffer_size(const struct adc_sequence *sequence,
@@ -243,7 +243,7 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 	return 0;
 }
 
-static void adc_stm32_start_conversion(struct device *dev)
+static void adc_stm32_start_conversion(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config = dev->config_info;
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
@@ -263,7 +263,8 @@ static void adc_stm32_start_conversion(struct device *dev)
 #endif
 }
 
-static int start_read(struct device *dev, const struct adc_sequence *sequence)
+static int start_read(const struct device *dev,
+		      const struct adc_sequence *sequence)
 {
 	const struct adc_stm32_cfg *config = dev->config_info;
 	struct adc_stm32_data *data = dev->driver_data;
@@ -387,7 +388,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 
 static void adc_stm32_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct adc_stm32_data *data = (struct adc_stm32_data *)dev->driver_data;
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config_info;
@@ -400,7 +401,7 @@ static void adc_stm32_isr(void *arg)
 	LOG_DBG("ISR triggered.");
 }
 
-static int adc_stm32_read(struct device *dev,
+static int adc_stm32_read(const struct device *dev,
 			  const struct adc_sequence *sequence)
 {
 	struct adc_stm32_data *data = dev->driver_data;
@@ -414,7 +415,7 @@ static int adc_stm32_read(struct device *dev,
 }
 
 #ifdef CONFIG_ADC_ASYNC
-static int adc_stm32_read_async(struct device *dev,
+static int adc_stm32_read_async(const struct device *dev,
 				 const struct adc_sequence *sequence,
 				 struct k_poll_signal *async)
 {
@@ -446,7 +447,7 @@ static int adc_stm32_check_acq_time(u16_t acq_time)
 	return -EINVAL;
 }
 
-static void adc_stm32_setup_speed(struct device *dev, u8_t id,
+static void adc_stm32_setup_speed(const struct device *dev, u8_t id,
 				  u8_t acq_time_index)
 {
 	const struct adc_stm32_cfg *config =
@@ -463,8 +464,8 @@ static void adc_stm32_setup_speed(struct device *dev, u8_t id,
 #endif
 }
 
-static int adc_stm32_channel_setup(struct device *dev,
-			    const struct adc_channel_cfg *channel_cfg)
+static int adc_stm32_channel_setup(const struct device *dev,
+				   const struct adc_channel_cfg *channel_cfg)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32L0X)
 	struct adc_stm32_data *data = dev->driver_data;
@@ -520,7 +521,7 @@ static int adc_stm32_channel_setup(struct device *dev,
 	!defined(CONFIG_SOC_SERIES_STM32F7X) && \
 	!defined(CONFIG_SOC_SERIES_STM32F1X) && \
 	!defined(CONFIG_SOC_SERIES_STM32L1X)
-static void adc_stm32_calib(struct device *dev)
+static void adc_stm32_calib(const struct device *dev)
 {
 	const struct adc_stm32_cfg *config =
 		(const struct adc_stm32_cfg *)dev->config_info;
@@ -542,11 +543,11 @@ static void adc_stm32_calib(struct device *dev)
 }
 #endif
 
-static int adc_stm32_init(struct device *dev)
+static int adc_stm32_init(const struct device *dev)
 {
 	struct adc_stm32_data *data = dev->driver_data;
 	const struct adc_stm32_cfg *config = dev->config_info;
-	struct device *clk =
+	const struct device *clk =
 		device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	ADC_TypeDef *adc = (ADC_TypeDef *)config->base;
 

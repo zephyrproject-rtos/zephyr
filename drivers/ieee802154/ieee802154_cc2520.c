@@ -67,7 +67,7 @@ static struct spi_cs_control cs_ctrl;
  * DEBUG *
  ********/
 #if LOG_LEVEL == LOG_LEVEL_DBG
-static inline void cc2520_print_gpio_config(struct device *dev)
+static inline void cc2520_print_gpio_config(const struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -277,7 +277,7 @@ static bool verify_osc_stabilization(struct cc2520_context *cc2520)
 }
 
 
-static inline u8_t *get_mac(struct device *dev)
+static inline u8_t *get_mac(const struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -302,7 +302,7 @@ static inline u8_t *get_mac(struct device *dev)
 	return cc2520->mac_addr;
 }
 
-static int cc2520_set_pan_id(struct device *dev, u16_t pan_id)
+static int cc2520_set_pan_id(const struct device *dev, u16_t pan_id)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -318,7 +318,7 @@ static int cc2520_set_pan_id(struct device *dev, u16_t pan_id)
 	return 0;
 }
 
-static int cc2520_set_short_addr(struct device *dev, u16_t short_addr)
+static int cc2520_set_short_addr(const struct device *dev, u16_t short_addr)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -334,7 +334,8 @@ static int cc2520_set_short_addr(struct device *dev, u16_t short_addr)
 	return 0;
 }
 
-static int cc2520_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
+static int cc2520_set_ieee_addr(const struct device *dev,
+				const u8_t *ieee_addr)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -353,7 +354,7 @@ static int cc2520_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 /******************
  * GPIO functions *
  *****************/
-static inline void set_reset(struct device *dev, u32_t value)
+static inline void set_reset(const struct device *dev, u32_t value)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -361,7 +362,7 @@ static inline void set_reset(struct device *dev, u32_t value)
 			 cc2520->gpios[CC2520_GPIO_IDX_RESET].pin, value);
 }
 
-static inline void set_vreg_en(struct device *dev, u32_t value)
+static inline void set_vreg_en(const struct device *dev, u32_t value)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -399,7 +400,7 @@ static inline u32_t get_cca(struct cc2520_context *cc2520)
 	return pin_value;
 }
 
-static inline void sfd_int_handler(struct device *port,
+static inline void sfd_int_handler(const struct device *port,
 				   struct gpio_callback *cb, u32_t pins)
 {
 	struct cc2520_context *cc2520 =
@@ -411,7 +412,7 @@ static inline void sfd_int_handler(struct device *port,
 	}
 }
 
-static inline void fifop_int_handler(struct device *port,
+static inline void fifop_int_handler(const struct device *port,
 				     struct gpio_callback *cb, u32_t pins)
 {
 	struct cc2520_context *cc2520 =
@@ -447,7 +448,7 @@ static void enable_sfd_interrupt(struct cc2520_context *cc2520,
 		enable ? GPIO_INT_EDGE_TO_ACTIVE : GPIO_INT_DISABLE);
 }
 
-static inline void setup_gpio_callbacks(struct device *dev)
+static inline void setup_gpio_callbacks(const struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -607,7 +608,7 @@ static inline bool verify_rxfifo_validity(struct cc2520_context *ctx,
 
 static void cc2520_rx(int arg)
 {
-	struct device *dev = INT_TO_POINTER(arg);
+	const struct device *dev = INT_TO_POINTER(arg);
 	struct cc2520_context *cc2520 = dev->driver_data;
 	struct net_pkt *pkt;
 	u8_t pkt_len;
@@ -679,7 +680,7 @@ out:
 /********************
  * Radio device API *
  *******************/
-static enum ieee802154_hw_caps cc2520_get_capabilities(struct device *dev)
+static enum ieee802154_hw_caps cc2520_get_capabilities(const struct device *dev)
 {
 	/* ToDo: Add support for IEEE802154_HW_PROMISC */
 	return IEEE802154_HW_FCS |
@@ -687,7 +688,7 @@ static enum ieee802154_hw_caps cc2520_get_capabilities(struct device *dev)
 		IEEE802154_HW_FILTER;
 }
 
-static int cc2520_cca(struct device *dev)
+static int cc2520_cca(const struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -699,7 +700,7 @@ static int cc2520_cca(struct device *dev)
 	return 0;
 }
 
-static int cc2520_set_channel(struct device *dev, u16_t channel)
+static int cc2520_set_channel(const struct device *dev, u16_t channel)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -720,7 +721,7 @@ static int cc2520_set_channel(struct device *dev, u16_t channel)
 	return 0;
 }
 
-static int cc2520_filter(struct device *dev,
+static int cc2520_filter(const struct device *dev,
 			 bool set,
 			 enum ieee802154_filter_type type,
 			 const struct ieee802154_filter *filter)
@@ -742,7 +743,7 @@ static int cc2520_filter(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int cc2520_set_txpower(struct device *dev, s16_t dbm)
+static int cc2520_set_txpower(const struct device *dev, s16_t dbm)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 	u8_t pwr;
@@ -792,7 +793,7 @@ error:
 	return -EIO;
 }
 
-static int cc2520_tx(struct device *dev,
+static int cc2520_tx(const struct device *dev,
 		     enum ieee802154_tx_mode mode,
 		     struct net_pkt *pkt,
 		     struct net_buf *frag)
@@ -864,7 +865,7 @@ error:
 	return -EIO;
 }
 
-static int cc2520_start(struct device *dev)
+static int cc2520_start(const struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -883,7 +884,7 @@ static int cc2520_start(struct device *dev)
 	return 0;
 }
 
-static int cc2520_stop(struct device *dev)
+static int cc2520_stop(const struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -904,7 +905,7 @@ static int cc2520_stop(struct device *dev)
 /******************
  * Initialization *
  *****************/
-static int power_on_and_setup(struct device *dev)
+static int power_on_and_setup(const struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -970,10 +971,10 @@ static int power_on_and_setup(struct device *dev)
 	return 0;
 }
 
-static struct cc2520_gpio_configuration *configure_gpios(struct device *dev)
+static struct cc2520_gpio_configuration *configure_gpios(const struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
-	struct device *gpio;
+	const struct device *gpio;
 
 	/* VREG_EN */
 	gpio = device_get_binding(DT_INST_GPIO_LABEL(0, vreg_en_gpios));
@@ -1045,7 +1046,7 @@ static struct cc2520_gpio_configuration *configure_gpios(struct device *dev)
 }
 
 
-static inline int configure_spi(struct device *dev)
+static inline int configure_spi(const struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -1080,7 +1081,7 @@ static inline int configure_spi(struct device *dev)
 	return 0;
 }
 
-static int cc2520_init(struct device *dev)
+static int cc2520_init(const struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
 
@@ -1121,7 +1122,7 @@ static int cc2520_init(struct device *dev)
 
 static void cc2520_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct cc2520_context *cc2520 = dev->driver_data;
 	u8_t *mac = get_mac(dev);
 
@@ -1424,12 +1425,12 @@ static int cc2520_crypto_uccm(struct cipher_ctx *ctx,
 	return 0;
 }
 
-static int cc2520_crypto_hw_caps(struct device *dev)
+static int cc2520_crypto_hw_caps(const struct device *dev)
 {
 	return CAP_RAW_KEY | CAP_INPLACE_OPS | CAP_SYNC_OPS;
 }
 
-static int cc2520_crypto_begin_session(struct device *dev,
+static int cc2520_crypto_begin_session(const struct device *dev,
 				       struct cipher_ctx *ctx,
 				       enum cipher_algo algo,
 				       enum cipher_mode mode,
@@ -1458,7 +1459,7 @@ static int cc2520_crypto_begin_session(struct device *dev,
 	return 0;
 }
 
-static int cc2520_crypto_free_session(struct device *dev,
+static int cc2520_crypto_free_session(const struct device *dev,
 				      struct cipher_ctx *ctx)
 {
 	ARG_UNUSED(dev);
@@ -1469,7 +1470,7 @@ static int cc2520_crypto_free_session(struct device *dev,
 	return 0;
 }
 
-static int cc2520_crypto_init(struct device *dev)
+static int cc2520_crypto_init(const struct device *dev)
 {
 	LOG_INF("CC2520 crypto part initialized");
 

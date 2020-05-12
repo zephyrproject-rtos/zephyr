@@ -106,7 +106,7 @@ static void send_fw_ready(void)
 	ipc_write(IPC_DIPCI, (0x80000000 | ADSP_IPC_FW_READY));
 }
 
-static int adsp_init(struct device *dev)
+static int adsp_init(const struct device *dev)
 {
 	prepare_host_windows();
 

@@ -23,7 +23,7 @@
 
 LOG_MODULE_REGISTER(ethdrv, CONFIG_ETHERNET_LOG_LEVEL);
 
-static void enc424j600_write_sbc(struct device *dev, u8_t cmd)
+static void enc424j600_write_sbc(const struct device *dev, u8_t cmd)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
 	u8_t buf[2] = { cmd, 0xFF };
@@ -39,7 +39,7 @@ static void enc424j600_write_sbc(struct device *dev, u8_t cmd)
 	spi_write(context->spi, &context->spi_cfg, &tx);
 }
 
-static void enc424j600_write_sfru(struct device *dev, u8_t addr,
+static void enc424j600_write_sfru(const struct device *dev, u8_t addr,
 				      u16_t value)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
@@ -61,7 +61,7 @@ static void enc424j600_write_sfru(struct device *dev, u8_t addr,
 	spi_write(context->spi, &context->spi_cfg, &tx);
 }
 
-static void enc424j600_read_sfru(struct device *dev, u8_t addr,
+static void enc424j600_read_sfru(const struct device *dev, u8_t addr,
 				     u16_t *value)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
@@ -94,7 +94,7 @@ static void enc424j600_read_sfru(struct device *dev, u8_t addr,
 	}
 }
 
-static void enc424j600_modify_sfru(struct device *dev, u8_t opcode,
+static void enc424j600_modify_sfru(const struct device *dev, u8_t opcode,
 				   u16_t addr, u16_t value)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
@@ -123,7 +123,8 @@ static void enc424j600_modify_sfru(struct device *dev, u8_t opcode,
 	enc424j600_modify_sfru(dev, ENC424J600_NBC_BFCU, addr, value)
 
 
-static void enc424j600_write_phy(struct device *dev, u16_t addr, u16_t data)
+static void enc424j600_write_phy(const struct device *dev, u16_t addr,
+				 u16_t data)
 {
 	u16_t mistat;
 
@@ -136,7 +137,8 @@ static void enc424j600_write_phy(struct device *dev, u16_t addr, u16_t data)
 	} while ((mistat & ENC424J600_MISTAT_BUSY));
 }
 
-static void enc424j600_read_phy(struct device *dev, u16_t addr, u16_t *data)
+static void enc424j600_read_phy(const struct device *dev, u16_t addr,
+				u16_t *data)
 {
 	u16_t mistat;
 
@@ -153,7 +155,7 @@ static void enc424j600_read_phy(struct device *dev, u16_t addr, u16_t *data)
 	enc424j600_read_sfru(dev, ENC424J600_SFR3_MIRDL, data);
 }
 
-static void enc424j600_write_mem(struct device *dev, u8_t opcode,
+static void enc424j600_write_mem(const struct device *dev, u8_t opcode,
 				 u8_t *data_buffer, u16_t buf_len)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
@@ -179,7 +181,7 @@ static void enc424j600_write_mem(struct device *dev, u8_t opcode,
 	}
 }
 
-static void enc424j600_read_mem(struct device *dev, u8_t opcode,
+static void enc424j600_read_mem(const struct device *dev, u8_t opcode,
 				u8_t *data_buffer, u16_t buf_len)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
@@ -213,7 +215,7 @@ static void enc424j600_read_mem(struct device *dev, u8_t opcode,
 	}
 }
 
-static void enc424j600_gpio_callback(struct device *dev,
+static void enc424j600_gpio_callback(const struct device *dev,
 				       struct gpio_callback *cb,
 				       u32_t pins)
 {
@@ -223,7 +225,7 @@ static void enc424j600_gpio_callback(struct device *dev,
 	k_sem_give(&context->int_sem);
 }
 
-static void enc424j600_init_filters(struct device *dev)
+static void enc424j600_init_filters(const struct device *dev)
 {
 	u16_t tmp;
 
@@ -239,7 +241,7 @@ static void enc424j600_init_filters(struct device *dev)
 	}
 }
 
-static void enc424j600_init_phy(struct device *dev)
+static void enc424j600_init_phy(const struct device *dev)
 {
 	u16_t tmp;
 
@@ -261,7 +263,7 @@ static void enc424j600_init_phy(struct device *dev)
 	enc424j600_write_phy(dev, ENC424J600_PSFR_PHCON1, tmp);
 }
 
-static void enc424j600_setup_mac(struct device *dev)
+static void enc424j600_setup_mac(const struct device *dev)
 {
 	u16_t tmp;
 	u16_t macon2;
@@ -302,7 +304,7 @@ static void enc424j600_setup_mac(struct device *dev)
 	}
 }
 
-static int enc424j600_tx(struct device *dev, struct net_pkt *pkt)
+static int enc424j600_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
 	u16_t len = net_pkt_get_len(pkt);
@@ -341,7 +343,7 @@ static int enc424j600_tx(struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static int enc424j600_rx(struct device *dev)
+static int enc424j600_rx(const struct device *dev)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
 	const struct enc424j600_config *config = dev->config_info;
@@ -439,7 +441,7 @@ done:
 	return 0;
 }
 
-static void enc424j600_rx_thread(struct device *dev)
+static void enc424j600_rx_thread(const struct device *dev)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
 	u16_t eir;
@@ -493,7 +495,7 @@ done:
 	}
 }
 
-static enum ethernet_hw_caps enc424j600_get_capabilities(struct device *dev)
+static enum ethernet_hw_caps enc424j600_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -502,7 +504,7 @@ static enum ethernet_hw_caps enc424j600_get_capabilities(struct device *dev)
 
 static void enc424j600_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct enc424j600_runtime *context = dev->driver_data;
 
 	net_if_set_link_addr(iface, context->mac_address,
@@ -515,7 +517,7 @@ static void enc424j600_iface_init(struct net_if *iface)
 	context->iface_initialized = true;
 }
 
-static int enc424j600_start_device(struct device *dev)
+static int enc424j600_start_device(const struct device *dev)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
 	u16_t tmp;
@@ -545,7 +547,7 @@ static int enc424j600_start_device(struct device *dev)
 	return 0;
 }
 
-static int enc424j600_stop_device(struct device *dev)
+static int enc424j600_stop_device(const struct device *dev)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
 	u16_t tmp;
@@ -594,7 +596,7 @@ static const struct ethernet_api api_funcs = {
 	.stop			= enc424j600_stop_device,
 };
 
-static int enc424j600_init(struct device *dev)
+static int enc424j600_init(const struct device *dev)
 {
 	const struct enc424j600_config *config = dev->config_info;
 	struct enc424j600_runtime *context = dev->driver_data;

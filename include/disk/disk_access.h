@@ -58,7 +58,7 @@ struct disk_info {
 	const struct disk_operations *ops;
 	/* Disk device associated to this disk.
 	 */
-	struct device *dev;
+	const struct device *dev;
 };
 
 struct disk_operations {

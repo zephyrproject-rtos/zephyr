@@ -146,10 +146,10 @@ struct fxos8700_config {
 };
 
 struct fxos8700_data {
-	struct device *i2c;
+	const struct device *i2c;
 	struct k_sem sem;
 #ifdef CONFIG_FXOS8700_TRIGGER
-	struct device *gpio;
+	const struct device *gpio;
 	u8_t gpio_pin;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t drdy_handler;
@@ -168,7 +168,7 @@ struct fxos8700_data {
 #endif
 #ifdef CONFIG_FXOS8700_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
-	struct device *dev;
+	const struct device *dev;
 #endif
 	s16_t raw[FXOS8700_MAX_NUM_CHANNELS];
 #ifdef CONFIG_FXOS8700_TEMP
@@ -177,12 +177,12 @@ struct fxos8700_data {
 	u8_t whoami;
 };
 
-int fxos8700_get_power(struct device *dev, enum fxos8700_power *power);
-int fxos8700_set_power(struct device *dev, enum fxos8700_power power);
+int fxos8700_get_power(const struct device *dev, enum fxos8700_power *power);
+int fxos8700_set_power(const struct device *dev, enum fxos8700_power power);
 
 #if CONFIG_FXOS8700_TRIGGER
-int fxos8700_trigger_init(struct device *dev);
-int fxos8700_trigger_set(struct device *dev,
+int fxos8700_trigger_init(const struct device *dev);
+int fxos8700_trigger_set(const struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler);
 #endif

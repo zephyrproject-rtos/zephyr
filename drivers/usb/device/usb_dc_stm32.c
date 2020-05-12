@@ -222,7 +222,7 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 
 static int usb_dc_stm32_clock_enable(void)
 {
-	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	const struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	struct stm32_pclken pclken = {
 		.bus = USB_CLOCK_BUS,
 		.enr = USB_CLOCK_BITS,
@@ -1047,7 +1047,7 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, u8_t epnum)
 #if defined(USB) && defined(CONFIG_USB_DC_STM32_DISCONN_ENABLE)
 void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 {
-	struct device *usb_disconnect;
+	const struct device *usb_disconnect;
 
 	usb_disconnect = device_get_binding(
 				DT_GPIO_LABEL(DT_INST(0, st_stm32_usb), disconnect_gpios));

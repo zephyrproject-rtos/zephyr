@@ -33,7 +33,7 @@ static const char *now_str(void)
 void main(void)
 {
 	const char *const label = DT_LABEL(DT_INST(0, aosong_dht));
-	struct device *dht22 = device_get_binding(label);
+	const struct device *dht22 = device_get_binding(label);
 
 	if (!dht22) {
 		printf("Failed to find sensor %s\n", label);

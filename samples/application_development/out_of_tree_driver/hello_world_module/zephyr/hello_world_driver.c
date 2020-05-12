@@ -16,14 +16,14 @@ static struct hello_world_dev_data {
 	u32_t foo;
 } data;
 
-static int init(struct device *dev)
+static int init(const struct device *dev)
 {
 	data.foo = 5;
 
 	return 0;
 }
 
-static void print_impl(struct device *dev)
+static void print_impl(const struct device *dev)
 {
 	printk("Hello World from the kernel: %d\n", data.foo);
 

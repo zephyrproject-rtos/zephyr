@@ -221,7 +221,7 @@ static void nxp_mcimx7_mu_config(void)
 }
 #endif /* CONFIG_IPM_IMX */
 
-static int nxp_mcimx7_init(struct device *arg)
+static int nxp_mcimx7_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

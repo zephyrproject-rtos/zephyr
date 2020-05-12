@@ -32,7 +32,7 @@ struct pwm_stm32_data {
 	 */
 	u32_t pwm_prescaler;
 	/* clock device */
-	struct device *clock;
+	const struct device *clock;
 };
 
 #ifdef __cplusplus

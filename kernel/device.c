@@ -56,7 +56,7 @@ void z_sys_init_run_level(s32_t level)
 	const struct init_entry *entry;
 
 	for (entry = levels[level]; entry < levels[level+1]; entry++) {
-		struct device *dev = entry->dev;
+		const struct device *dev = entry->dev;
 		int retval;
 
 		if (dev != NULL) {
@@ -76,9 +76,9 @@ void z_sys_init_run_level(s32_t level)
 	}
 }
 
-struct device *z_impl_device_get_binding(const char *name)
+const struct device *z_impl_device_get_binding(const char *name)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	/* Split the search into two loops: in the common scenario, where
 	 * device names are stored in ROM (and are referenced by the user
@@ -103,7 +103,7 @@ struct device *z_impl_device_get_binding(const char *name)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline struct device *z_vrfy_device_get_binding(const char *name)
+static inline const struct device *z_vrfy_device_get_binding(const char *name)
 {
 	char name_copy[Z_DEVICE_MAX_NAME_LEN];
 
@@ -118,16 +118,16 @@ static inline struct device *z_vrfy_device_get_binding(const char *name)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-int device_pm_control_nop(struct device *unused_device,
-		       u32_t unused_ctrl_command,
-		       void *unused_context,
-		       device_pm_cb cb,
-		       void *unused_arg)
+int device_pm_control_nop(const struct device *unused_device,
+			  u32_t unused_ctrl_command,
+			  void *unused_context,
+			  device_pm_cb cb,
+			  void *unused_arg)
 {
 	return 0;
 }
 
-void device_list_get(struct device **device_list, int *device_count)
+void device_list_get(const struct device **device_list, int *device_count)
 {
 
 	*device_list = __device_start;
@@ -147,7 +147,7 @@ int device_any_busy_check(void)
 	return 0;
 }
 
-int device_busy_check(struct device *chk_dev)
+int device_busy_check(const struct device *chk_dev)
 {
 	if (atomic_test_bit((const atomic_t *)__device_busy_start,
 			    (chk_dev - __device_start))) {
@@ -158,7 +158,7 @@ int device_busy_check(struct device *chk_dev)
 
 #endif
 
-void device_busy_set(struct device *busy_dev)
+void device_busy_set(const struct device *busy_dev)
 {
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	atomic_set_bit((atomic_t *) __device_busy_start,
@@ -168,7 +168,7 @@ void device_busy_set(struct device *busy_dev)
 #endif
 }
 
-void device_busy_clear(struct device *busy_dev)
+void device_busy_clear(const struct device *busy_dev)
 {
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	atomic_clear_bit((atomic_t *) __device_busy_start,

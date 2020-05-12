@@ -28,7 +28,7 @@ struct mcux_pcc_config {
 #define MAKE_PCC_REGADDR(base, offset) ((base) + (offset))
 #endif
 
-static inline clock_ip_name_t clock_ip(struct device *dev,
+static inline clock_ip_name_t clock_ip(const struct device *dev,
 				       clock_control_subsys_t sub_system)
 {
 	u32_t offset = POINTER_TO_UINT(sub_system);
@@ -36,19 +36,21 @@ static inline clock_ip_name_t clock_ip(struct device *dev,
 	return MAKE_PCC_REGADDR(DEV_BASE(dev), offset);
 }
 
-static int mcux_pcc_on(struct device *dev, clock_control_subsys_t sub_system)
+static int mcux_pcc_on(const struct device *dev,
+		       clock_control_subsys_t sub_system)
 {
 	CLOCK_EnableClock(clock_ip(dev, sub_system));
 	return 0;
 }
 
-static int mcux_pcc_off(struct device *dev, clock_control_subsys_t sub_system)
+static int mcux_pcc_off(const struct device *dev,
+			clock_control_subsys_t sub_system)
 {
 	CLOCK_DisableClock(clock_ip(dev, sub_system));
 	return 0;
 }
 
-static int mcux_pcc_get_rate(struct device *dev,
+static int mcux_pcc_get_rate(const struct device *dev,
 			       clock_control_subsys_t sub_system,
 			       u32_t *rate)
 {
@@ -56,7 +58,7 @@ static int mcux_pcc_get_rate(struct device *dev,
 	return 0;
 }
 
-static int mcux_pcc_init(struct device *dev)
+static int mcux_pcc_init(const struct device *dev)
 {
 	return 0;
 }

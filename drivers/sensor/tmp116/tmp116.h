@@ -25,7 +25,7 @@
 #define TMP117_DEVICE_ID		0x0117
 
 struct tmp116_data {
-	struct device *i2c;
+	const struct device *i2c;
 	u16_t sample;
 };
 

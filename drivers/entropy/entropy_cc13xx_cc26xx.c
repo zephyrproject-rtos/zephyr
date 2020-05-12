@@ -26,12 +26,13 @@ struct entropy_cc13xx_cc26xx_data {
 DEVICE_DECLARE(entropy_cc13xx_cc26xx);
 
 static inline struct entropy_cc13xx_cc26xx_data *
-get_dev_data(struct device *dev)
+get_dev_data(const struct device *dev)
 {
 	return dev->driver_data;
 }
 
-static int entropy_cc13xx_cc26xx_get_entropy(struct device *dev, u8_t *buf,
+static int entropy_cc13xx_cc26xx_get_entropy(const struct device *dev,
+					     u8_t *buf,
 					     u16_t len)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
@@ -97,7 +98,7 @@ static void entropy_cc13xx_cc26xx_isr(void *arg)
 	}
 }
 
-static int entropy_cc13xx_cc26xx_init(struct device *dev)
+static int entropy_cc13xx_cc26xx_init(const struct device *dev)
 {
 	struct entropy_cc13xx_cc26xx_data *data = get_dev_data(dev);
 

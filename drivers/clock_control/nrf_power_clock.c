@@ -58,7 +58,7 @@ struct nrf_clock_control_config {
 					subsys[CLOCK_CONTROL_NRF_TYPE_COUNT];
 };
 
-static void clkstarted_handle(struct device *dev,
+static void clkstarted_handle(const struct device *dev,
 			      enum clock_control_nrf_type type);
 
 /* Return true if given event has enabled interrupt and is triggered. Event
@@ -100,8 +100,8 @@ static void clock_irqs_enable(void)
 				(0))));
 }
 
-static struct nrf_clock_control_sub_data *get_sub_data(struct device *dev,
-					      enum clock_control_nrf_type type)
+static struct nrf_clock_control_sub_data *get_sub_data(const struct device *dev,
+						       enum clock_control_nrf_type type)
 {
 	struct nrf_clock_control_data *data = dev->driver_data;
 
@@ -109,7 +109,7 @@ static struct nrf_clock_control_sub_data *get_sub_data(struct device *dev,
 }
 
 static const struct nrf_clock_control_sub_config *get_sub_config(
-					struct device *dev,
+					const struct device *dev,
 					enum clock_control_nrf_type type)
 {
 	const struct nrf_clock_control_config *config =
@@ -118,7 +118,7 @@ static const struct nrf_clock_control_sub_config *get_sub_config(
 	return &config->subsys[type];
 }
 
-static enum clock_control_status get_status(struct device *dev,
+static enum clock_control_status get_status(const struct device *dev,
 					    clock_control_subsys_t subsys)
 {
 	enum clock_control_nrf_type type = (enum clock_control_nrf_type)subsys;
@@ -137,7 +137,7 @@ static enum clock_control_status get_status(struct device *dev,
 	return CLOCK_CONTROL_STATUS_OFF;
 }
 
-static int clock_stop(struct device *dev, clock_control_subsys_t subsys)
+static int clock_stop(const struct device *dev, clock_control_subsys_t subsys)
 {
 	enum clock_control_nrf_type type = (enum clock_control_nrf_type)subsys;
 	const struct nrf_clock_control_sub_config *config;
@@ -226,7 +226,7 @@ static inline void anomaly_132_workaround(void)
 #endif
 }
 
-static int clock_async_start(struct device *dev,
+static int clock_async_start(const struct device *dev,
 			     clock_control_subsys_t subsys,
 			     struct clock_control_async_data *data)
 {
@@ -285,7 +285,8 @@ static int clock_async_start(struct device *dev,
 	return 0;
 }
 
-static int clock_start(struct device *dev, clock_control_subsys_t sub_system)
+static int clock_start(const struct device *dev,
+		       clock_control_subsys_t sub_system)
 {
 	return clock_async_start(dev, sub_system, NULL);
 }
@@ -300,7 +301,7 @@ static int clock_start(struct device *dev, clock_control_subsys_t sub_system)
  */
 void nrf_power_clock_isr(void *arg);
 
-static int clk_init(struct device *dev)
+static int clk_init(const struct device *dev)
 {
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    nrf_power_clock_isr, 0, 0);
@@ -353,7 +354,7 @@ DEVICE_AND_API_INIT(clock_nrf, DT_INST_LABEL(0),
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &clock_control_api);
 
-static void clkstarted_handle(struct device *dev,
+static void clkstarted_handle(const struct device *dev,
 			      enum clock_control_nrf_type type)
 {
 	struct nrf_clock_control_sub_data *sub_data = get_sub_data(dev, type);
@@ -407,7 +408,7 @@ static void usb_power_isr(void)
 void nrf_power_clock_isr(void *arg)
 {
 	ARG_UNUSED(arg);
-	struct device *dev = DEVICE_GET(clock_nrf);
+	const struct device *dev = DEVICE_GET(clock_nrf);
 
 	if (clock_event_check_and_clean(NRF_CLOCK_EVENT_HFCLKSTARTED,
 					NRF_CLOCK_INT_HF_STARTED_MASK)) {

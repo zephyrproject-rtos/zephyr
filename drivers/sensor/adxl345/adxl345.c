@@ -17,7 +17,7 @@
 
 LOG_MODULE_REGISTER(ADXL345, CONFIG_SENSOR_LOG_LEVEL);
 
-static int adxl345_read_sample(struct device *dev,
+static int adxl345_read_sample(const struct device *dev,
 			       struct adxl345_sample *sample)
 {
 	struct adxl345_dev_data *data = dev->driver_data;
@@ -56,7 +56,8 @@ static void adxl345_accel_convert(struct sensor_value *val, s16_t sample)
 	val->val2 = 0;
 }
 
-static int adxl345_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int adxl345_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
 	struct adxl345_dev_data *data = dev->driver_data;
 	struct adxl345_sample sample;
@@ -87,7 +88,7 @@ static int adxl345_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return samples_count;
 }
 
-static int adxl345_channel_get(struct device *dev,
+static int adxl345_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
@@ -128,7 +129,7 @@ static const struct sensor_driver_api adxl345_api_funcs = {
 	.channel_get = adxl345_channel_get,
 };
 
-static int adxl345_init(struct device *dev)
+static int adxl345_init(const struct device *dev)
 {
 	int rc;
 	struct adxl345_dev_data *data = dev->driver_data;

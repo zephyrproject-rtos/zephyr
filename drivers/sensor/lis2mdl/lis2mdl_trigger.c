@@ -18,7 +18,7 @@
 
 LOG_MODULE_DECLARE(LIS2MDL, CONFIG_SENSOR_LOG_LEVEL);
 
-static int lis2mdl_enable_int(struct device *dev, int enable)
+static int lis2mdl_enable_int(const struct device *dev, int enable)
 {
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
 
@@ -27,7 +27,7 @@ static int lis2mdl_enable_int(struct device *dev, int enable)
 }
 
 /* link external trigger to event data ready */
-int lis2mdl_trigger_set(struct device *dev,
+int lis2mdl_trigger_set(const struct device *dev,
 			  const struct sensor_trigger *trig,
 			  sensor_trigger_handler_t handler)
 {
@@ -52,7 +52,7 @@ int lis2mdl_trigger_set(struct device *dev,
 /* handle the drdy event: read data and call handler if registered any */
 static void lis2mdl_handle_interrupt(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
 	const struct lis2mdl_config *const config =
 						dev->config_info;
@@ -68,7 +68,7 @@ static void lis2mdl_handle_interrupt(void *arg)
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void lis2mdl_gpio_callback(struct device *dev,
+static void lis2mdl_gpio_callback(const struct device *dev,
 				    struct gpio_callback *cb, u32_t pins)
 {
 	struct lis2mdl_data *lis2mdl =
@@ -89,7 +89,7 @@ static void lis2mdl_gpio_callback(struct device *dev,
 #ifdef CONFIG_LIS2MDL_TRIGGER_OWN_THREAD
 static void lis2mdl_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -111,7 +111,7 @@ static void lis2mdl_work_cb(struct k_work *work)
 }
 #endif
 
-int lis2mdl_init_interrupt(struct device *dev)
+int lis2mdl_init_interrupt(const struct device *dev)
 {
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
 	const struct lis2mdl_config *const config = dev->config_info;

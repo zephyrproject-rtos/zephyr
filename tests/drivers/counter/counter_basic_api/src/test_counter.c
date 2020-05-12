@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(test);
 static struct k_sem top_cnt_sem;
 static struct k_sem alarm_cnt_sem;
 
-static void top_handler(struct device *dev, void *user_data);
+static void top_handler(const struct device *dev, void *user_data);
 
 void *exp_user_data = (void *)199;
 
@@ -84,7 +84,7 @@ static void counter_setup_instance(const char *dev_name)
 static void counter_tear_down_instance(const char *dev_name)
 {
 	int err;
-	struct device *dev;
+	const struct device *dev;
 	struct counter_top_cfg top_cfg = {
 		.callback = NULL,
 		.user_data = NULL,
@@ -129,7 +129,7 @@ static void test_all_instances(counter_test_func_t func,
 
 static bool set_top_value_capable(const char *dev_name)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	struct counter_top_cfg cfg = {
 		.ticks = counter_get_top_value(dev) - 1
 	};
@@ -149,7 +149,7 @@ static bool set_top_value_capable(const char *dev_name)
 	return true;
 }
 
-static void top_handler(struct device *dev, void *user_data)
+static void top_handler(const struct device *dev, void *user_data)
 {
 	zassert_true(user_data == exp_user_data,
 			"%s: Unexpected callback", dev->name);
@@ -158,7 +158,7 @@ static void top_handler(struct device *dev, void *user_data)
 
 void test_set_top_value_with_alarm_instance(const char *dev_name)
 {
-	struct device *dev;
+	const struct device *dev;
 	int err;
 	u32_t cnt;
 	u32_t top_cnt;
@@ -208,7 +208,7 @@ void test_set_top_value_with_alarm(void)
 
 void test_set_top_value_without_alarm_instance(const char *dev_name)
 {
-	struct device *dev;
+	const struct device *dev;
 	int err;
 	u32_t cnt;
 	u32_t top_cnt;
@@ -251,7 +251,8 @@ void test_set_top_value_without_alarm(void)
 			   set_top_value_capable);
 }
 
-static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
+static void alarm_handler(const struct device *dev, u8_t chan_id,
+			  u32_t counter,
 			  void *user_data)
 {
 	/* Arbitrary limit for alarm processing - time between hw expiration
@@ -294,7 +295,7 @@ static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
 
 void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 {
-	struct device *dev;
+	const struct device *dev;
 	int err;
 	u32_t ticks;
 	u32_t alarm_cnt;
@@ -384,7 +385,7 @@ void test_single_shot_alarm_top_instance(const char *dev_name)
 
 static bool single_channel_alarm_capable(const char *dev_name)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 
 	return (counter_get_num_of_channels(dev) > 0);
 }
@@ -409,7 +410,8 @@ void test_single_shot_alarm_top(void)
 
 static void *clbk_data[10];
 
-static void alarm_handler2(struct device *dev, u8_t chan_id, u32_t counter,
+static void alarm_handler2(const struct device *dev, u8_t chan_id,
+			   u32_t counter,
 			   void *user_data)
 {
 	clbk_data[k_sem_count_get(&alarm_cnt_sem)] = user_data;
@@ -424,7 +426,7 @@ static void alarm_handler2(struct device *dev, u8_t chan_id, u32_t counter,
  */
 void test_multiple_alarms_instance(const char *dev_name)
 {
-	struct device *dev;
+	const struct device *dev;
 	int err;
 	u32_t ticks;
 	u32_t alarm_cnt;
@@ -493,7 +495,7 @@ void test_multiple_alarms_instance(const char *dev_name)
 
 static bool multiple_channel_alarm_capable(const char *dev_name)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 
 	return (counter_get_num_of_channels(dev) > 1);
 }
@@ -506,7 +508,7 @@ void test_multiple_alarms(void)
 
 void test_all_channels_instance(const char *dev_name)
 {
-	struct device *dev;
+	const struct device *dev;
 	int err;
 	const int n = 10;
 	int nchan = 0;
@@ -570,7 +572,7 @@ void test_late_alarm_instance(const char *dev_name)
 {
 	int err;
 	u32_t alarm_cnt;
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	u32_t tick_us = (u32_t)counter_ticks_to_us(dev, 1);
 	u32_t guard = counter_us_to_ticks(dev, 200);
 	struct counter_alarm_cfg alarm_cfg = {
@@ -621,7 +623,7 @@ void test_late_alarm_instance(const char *dev_name)
 void test_late_alarm_error_instance(const char *dev_name)
 {
 	int err;
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	u32_t tick_us = (u32_t)counter_ticks_to_us(dev, 1);
 	u32_t guard = counter_us_to_ticks(dev, 200);
 	struct counter_alarm_cfg alarm_cfg = {
@@ -657,7 +659,7 @@ void test_late_alarm_error_instance(const char *dev_name)
 
 static bool late_detection_capable(const char *dev_name)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	u32_t guard = counter_get_guard_period(dev,
 					COUNTER_GUARD_PERIOD_LATE_TO_SET);
 	int err = counter_set_guard_period(dev, guard,
@@ -685,7 +687,7 @@ static void test_short_relative_alarm_instance(const char *dev_name)
 {
 	int err;
 	u32_t alarm_cnt;
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	u32_t tick_us = (u32_t)counter_ticks_to_us(dev, 1);
 	struct counter_alarm_cfg alarm_cfg = {
 		.callback = alarm_handler,
@@ -720,7 +722,7 @@ static void test_short_relative_alarm_instance(const char *dev_name)
  */
 static bool short_relative_capable(const char *dev_name)
 {
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	struct counter_alarm_cfg alarm_cfg = {
 		.callback = alarm_handler,
 		.flags = 0,
@@ -776,7 +778,7 @@ static void test_cancelled_alarm_does_not_expire_instance(const char *dev_name)
 {
 	int err;
 	u32_t alarm_cnt;
-	struct device *dev = device_get_binding(dev_name);
+	const struct device *dev = device_get_binding(dev_name);
 	u32_t us = 1000;
 	u32_t ticks = counter_us_to_ticks(dev, us);
 	u32_t top = counter_get_top_value(dev);
@@ -887,7 +889,7 @@ void test_cancelled_alarm_does_not_expire(void)
 
 void test_main(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	int i;
 
 	/* Give required clocks some time to stabilize. In particular, nRF SoCs

@@ -199,7 +199,7 @@ static struct lwm2m_engine_obj_inst *light_control_create(u16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int ipso_light_control_init(struct device *dev)
+static int ipso_light_control_init(const struct device *dev)
 {
 	light_control.obj_id = IPSO_OBJECT_LIGHT_CONTROL_ID;
 	light_control.fields = fields;

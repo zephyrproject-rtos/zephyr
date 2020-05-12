@@ -10,7 +10,7 @@
 
 static void test_size(void)
 {
-	struct device *eeprom;
+	const struct device *eeprom;
 	size_t size;
 
 	eeprom = device_get_binding(DT_LABEL(DT_ALIAS(eeprom_0)));
@@ -22,7 +22,7 @@ static void test_size(void)
 static void test_out_of_bounds(void)
 {
 	const u8_t data[4] = { 0x01, 0x02, 0x03, 0x03 };
-	struct device *eeprom;
+	const struct device *eeprom;
 	size_t size;
 	int rc;
 
@@ -38,7 +38,7 @@ static void test_write_and_verify(void)
 	const u8_t wr_buf1[4] = { 0xFF, 0xEE, 0xDD, 0xCC };
 	const u8_t wr_buf2[sizeof(wr_buf1)] = { 0xAA, 0xBB, 0xCC, 0xDD };
 	u8_t rd_buf[sizeof(wr_buf1)];
-	struct device *eeprom;
+	const struct device *eeprom;
 	int rc;
 
 	eeprom = device_get_binding(DT_LABEL(DT_ALIAS(eeprom_0)));
@@ -67,7 +67,7 @@ static void test_zero_length_write(void)
 	const u8_t wr_buf1[4] = { 0x10, 0x20, 0x30, 0x40 };
 	const u8_t wr_buf2[sizeof(wr_buf1)] = { 0xAA, 0xBB, 0xCC, 0xDD };
 	u8_t rd_buf[sizeof(wr_buf1)];
-	struct device *eeprom;
+	const struct device *eeprom;
 	int rc;
 
 	eeprom = device_get_binding(DT_LABEL(DT_ALIAS(eeprom_0)));
@@ -93,7 +93,7 @@ static void test_zero_length_write(void)
 
 void test_main(void)
 {
-	static struct device *eeprom;
+	static const struct device *eeprom;
 
 	eeprom = device_get_binding(DT_LABEL(DT_ALIAS(eeprom_0)));
 	zassert_not_null(eeprom, "Unable to get EEPROM device");

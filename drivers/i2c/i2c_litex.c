@@ -81,7 +81,7 @@ static const struct i2c_bitbang_io i2c_litex_bitbang_io = {
 	.get_sda = i2c_litex_bitbang_get_sda,
 };
 
-static int i2c_litex_init(struct device *dev)
+static int i2c_litex_init(const struct device *dev)
 {
 	const struct i2c_litex_cfg *config = GET_I2C_CFG(dev);
 	struct i2c_bitbang *bitbang = GET_I2C_BITBANG(dev);
@@ -92,15 +92,15 @@ static int i2c_litex_init(struct device *dev)
 	return 0;
 }
 
-static int i2c_litex_configure(struct device *dev, u32_t dev_config)
+static int i2c_litex_configure(const struct device *dev, u32_t dev_config)
 {
 	struct i2c_bitbang *bitbang = GET_I2C_BITBANG(dev);
 
 	return i2c_bitbang_configure(bitbang, dev_config);
 }
 
-static int i2c_litex_transfer(struct device *dev,  struct i2c_msg *msgs,
-		       u8_t num_msgs, u16_t addr)
+static int i2c_litex_transfer(const struct device *dev,  struct i2c_msg *msgs,
+			      u8_t num_msgs, u16_t addr)
 {
 	struct i2c_bitbang *bitbang = GET_I2C_BITBANG(dev);
 

@@ -169,7 +169,7 @@ static struct ll_conn conn_pool[CONFIG_BT_MAX_CONN];
 static struct ll_conn *conn_upd_curr;
 static void *conn_free;
 
-static struct device *entropy;
+static const struct device *entropy;
 
 struct ll_conn *ll_conn_acquire(void)
 {

@@ -104,7 +104,7 @@ static int i2c_clk_set(Twihs *const twihs, u32_t speed)
 	return 0;
 }
 
-static int i2c_sam_twihs_configure(struct device *dev, u32_t config)
+static int i2c_sam_twihs_configure(const struct device *dev, u32_t config)
 {
 	const struct i2c_sam_twihs_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	Twihs *const twihs = dev_cfg->regs;
@@ -180,8 +180,9 @@ static void read_msg_start(Twihs *const twihs, struct twihs_msg *msg,
 	twihs->TWIHS_CR = TWIHS_CR_START | twihs_cr_stop;
 }
 
-static int i2c_sam_twihs_transfer(struct device *dev, struct i2c_msg *msgs,
-			      u8_t num_msgs, u16_t addr)
+static int i2c_sam_twihs_transfer(const struct device *dev,
+				  struct i2c_msg *msgs,
+				  u8_t num_msgs, u16_t addr)
 {
 	const struct i2c_sam_twihs_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2c_sam_twihs_dev_data *const dev_data = DEV_DATA(dev);
@@ -223,7 +224,7 @@ static int i2c_sam_twihs_transfer(struct device *dev, struct i2c_msg *msgs,
 
 static void i2c_sam_twihs_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct i2c_sam_twihs_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2c_sam_twihs_dev_data *const dev_data = DEV_DATA(dev);
 	Twihs *const twihs = dev_cfg->regs;
@@ -281,7 +282,7 @@ tx_comp:
 	k_sem_give(&dev_data->sem);
 }
 
-static int i2c_sam_twihs_initialize(struct device *dev)
+static int i2c_sam_twihs_initialize(const struct device *dev)
 {
 	const struct i2c_sam_twihs_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2c_sam_twihs_dev_data *const dev_data = DEV_DATA(dev);

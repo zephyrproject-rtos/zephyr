@@ -18,7 +18,8 @@ static const u32_t sample_period[] = {
 	1250, 2500, 5000, 10000, 20000, 40000, 80000, 80000
 };
 
-static int fxas21002_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int fxas21002_sample_fetch(const struct device *dev,
+				  enum sensor_channel chan)
 {
 	const struct fxas21002_config *config = dev->config_info;
 	struct fxas21002_data *data = dev->driver_data;
@@ -70,7 +71,8 @@ static void fxas21002_convert(struct sensor_value *val, s16_t raw,
 	val->val2 = micro_rad % 1000000;
 }
 
-static int fxas21002_channel_get(struct device *dev, enum sensor_channel chan,
+static int fxas21002_channel_get(const struct device *dev,
+				 enum sensor_channel chan,
 				 struct sensor_value *val)
 {
 	const struct fxas21002_config *config = dev->config_info;
@@ -130,7 +132,7 @@ static int fxas21002_channel_get(struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
-int fxas21002_get_power(struct device *dev, enum fxas21002_power *power)
+int fxas21002_get_power(const struct device *dev, enum fxas21002_power *power)
 {
 	const struct fxas21002_config *config = dev->config_info;
 	struct fxas21002_data *data = dev->driver_data;
@@ -148,7 +150,7 @@ int fxas21002_get_power(struct device *dev, enum fxas21002_power *power)
 	return 0;
 }
 
-int fxas21002_set_power(struct device *dev, enum fxas21002_power power)
+int fxas21002_set_power(const struct device *dev, enum fxas21002_power power)
 {
 	const struct fxas21002_config *config = dev->config_info;
 	struct fxas21002_data *data = dev->driver_data;
@@ -184,7 +186,7 @@ u32_t fxas21002_get_transition_time(enum fxas21002_power start,
 	return transition_time;
 }
 
-static int fxas21002_init(struct device *dev)
+static int fxas21002_init(const struct device *dev)
 {
 	const struct fxas21002_config *config = dev->config_info;
 	struct fxas21002_data *data = dev->driver_data;

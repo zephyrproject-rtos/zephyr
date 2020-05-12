@@ -24,7 +24,7 @@ static K_THREAD_STACK_DEFINE(sx9500_thread_stack, CONFIG_SX9500_THREAD_STACK_SIZ
 static struct k_thread sx9500_thread;
 #endif
 
-int sx9500_trigger_set(struct device *dev,
+int sx9500_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
@@ -64,7 +64,7 @@ int sx9500_trigger_set(struct device *dev,
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 
-static void sx9500_gpio_cb(struct device *port,
+static void sx9500_gpio_cb(const struct device *port,
 			   struct gpio_callback *cb, u32_t pins)
 {
 	struct sx9500_data *data =
@@ -77,7 +77,7 @@ static void sx9500_gpio_cb(struct device *port,
 
 static void sx9500_thread_main(int arg1, int unused)
 {
-	struct device *dev = INT_TO_POINTER(arg1);
+	const struct device *dev = INT_TO_POINTER(arg1);
 	struct sx9500_data *data = dev->driver_data;
 	u8_t reg_val;
 
@@ -104,7 +104,7 @@ static void sx9500_thread_main(int arg1, int unused)
 
 #else /* CONFIG_SX9500_TRIGGER_GLOBAL_THREAD */
 
-static void sx9500_gpio_cb(struct device *port,
+static void sx9500_gpio_cb(const struct device *port,
 			   struct gpio_callback *cb, u32_t pins)
 {
 	struct sx9500_data *data =
@@ -117,7 +117,7 @@ static void sx9500_gpio_cb(struct device *port,
 
 static void sx9500_gpio_thread_cb(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct sx9500_data *data = dev->driver_data;
 	u8_t reg_val;
 
@@ -147,10 +147,10 @@ static void sx9500_work_cb(struct k_work *work)
 }
 #endif
 
-int sx9500_setup_interrupt(struct device *dev)
+int sx9500_setup_interrupt(const struct device *dev)
 {
 	struct sx9500_data *data = dev->driver_data;
-	struct device *gpio;
+	const struct device *gpio;
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
 	k_sem_init(&data->sem, 0, UINT_MAX);

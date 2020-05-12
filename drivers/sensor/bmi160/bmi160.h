@@ -428,10 +428,10 @@ struct bmi160_scale {
 };
 
 struct bmi160_device_data {
-	struct device *spi;
+	const struct device *spi;
 	struct spi_config spi_cfg;
 #if defined(CONFIG_BMI160_TRIGGER)
-	struct device *gpio;
+	const struct device *gpio;
 	struct gpio_callback gpio_cb;
 #endif
 	union bmi160_pmu_status pmu_sts;
@@ -444,7 +444,7 @@ struct bmi160_device_data {
 
 #ifdef CONFIG_BMI160_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
-	struct device *dev;
+	const struct device *dev;
 #endif
 
 #ifdef CONFIG_BMI160_TRIGGER
@@ -458,23 +458,24 @@ struct bmi160_device_data {
 #endif /* CONFIG_BMI160_TRIGGER */
 };
 
-int bmi160_read(struct device *dev, u8_t reg_addr,
+int bmi160_read(const struct device *dev, u8_t reg_addr,
 		u8_t *data, u8_t len);
-int bmi160_byte_read(struct device *dev, u8_t reg_addr, u8_t *byte);
-int bmi160_byte_write(struct device *dev, u8_t reg_addr, u8_t byte);
-int bmi160_word_write(struct device *dev, u8_t reg_addr, u16_t word);
-int bmi160_reg_field_update(struct device *dev, u8_t reg_addr,
+int bmi160_byte_read(const struct device *dev, u8_t reg_addr, u8_t *byte);
+int bmi160_byte_write(const struct device *dev, u8_t reg_addr, u8_t byte);
+int bmi160_word_write(const struct device *dev, u8_t reg_addr, u16_t word);
+int bmi160_reg_field_update(const struct device *dev, u8_t reg_addr,
 			    u8_t pos, u8_t mask, u8_t val);
-static inline int bmi160_reg_update(struct device *dev, u8_t reg_addr,
+static inline int bmi160_reg_update(const struct device *dev, u8_t reg_addr,
 				    u8_t mask, u8_t val)
 {
 	return bmi160_reg_field_update(dev, reg_addr, 0, mask, val);
 }
-int bmi160_trigger_mode_init(struct device *dev);
-int bmi160_trigger_set(struct device *dev,
+int bmi160_trigger_mode_init(const struct device *dev);
+int bmi160_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
-int bmi160_acc_slope_config(struct device *dev, enum sensor_attribute attr,
+int bmi160_acc_slope_config(const struct device *dev,
+			    enum sensor_attribute attr,
 			    const struct sensor_value *val);
 s32_t bmi160_acc_reg_val_to_range(u8_t reg_val);
 s32_t bmi160_gyr_reg_val_to_range(u8_t reg_val);

@@ -35,7 +35,7 @@ struct eth_stm32_hal_dev_data {
 	u8_t mac_addr[6];
 	ETH_HandleTypeDef heth;
 	/* clock device */
-	struct device *clock;
+	const struct device *clock;
 	struct k_mutex tx_mutex;
 	struct k_sem rx_int_sem;
 	K_THREAD_STACK_MEMBER(rx_thread_stack,

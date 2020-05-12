@@ -178,7 +178,7 @@ static void plic_irq_handler(void *arg)
  * @brief Initialize the Platform Level Interrupt Controller
  * @return N/A
  */
-static int plic_init(struct device *dev)
+static int plic_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

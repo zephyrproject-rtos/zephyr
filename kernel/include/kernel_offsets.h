@@ -80,7 +80,7 @@ GEN_OFFSET_SYM(_thread_t, custom_data);
 GEN_ABSOLUTE_SYM(K_THREAD_SIZEOF, sizeof(struct k_thread));
 
 /* size of the device structure. Used by linker scripts */
-GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_SIZEOF, sizeof(struct device));
+GEN_ABSOLUTE_SYM(_DEVICE_STRUCT_SIZEOF, sizeof(const struct device));
 
 /* LCOV_EXCL_STOP */
 #endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_OFFSETS_H_ */

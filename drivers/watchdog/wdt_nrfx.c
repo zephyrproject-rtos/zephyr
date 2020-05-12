@@ -22,18 +22,18 @@ struct wdt_nrfx_config {
 	nrfx_wdt_config_t config;
 };
 
-static inline struct wdt_nrfx_data *get_dev_data(struct device *dev)
+static inline struct wdt_nrfx_data *get_dev_data(const struct device *dev)
 {
 	return dev->driver_data;
 }
 
-static inline const struct wdt_nrfx_config *get_dev_config(struct device *dev)
+static inline const struct wdt_nrfx_config *get_dev_config(const struct device *dev)
 {
 	return dev->config_info;
 }
 
 
-static int wdt_nrf_setup(struct device *dev, u8_t options)
+static int wdt_nrf_setup(const struct device *dev, u8_t options)
 {
 	nrf_wdt_behaviour_t behaviour;
 
@@ -64,14 +64,14 @@ static int wdt_nrf_setup(struct device *dev, u8_t options)
 	return 0;
 }
 
-static int wdt_nrf_disable(struct device *dev)
+static int wdt_nrf_disable(const struct device *dev)
 {
 	/* Started watchdog cannot be stopped on nRF devices. */
 	ARG_UNUSED(dev);
 	return -EPERM;
 }
 
-static int wdt_nrf_install_timeout(struct device *dev,
+static int wdt_nrf_install_timeout(const struct device *dev,
 				   const struct wdt_timeout_cfg *cfg)
 {
 	nrfx_err_t err_code;
@@ -117,7 +117,7 @@ static int wdt_nrf_install_timeout(struct device *dev,
 	return channel_id;
 }
 
-static int wdt_nrf_feed(struct device *dev, int channel_id)
+static int wdt_nrf_feed(const struct device *dev, int channel_id)
 {
 	if (channel_id > get_dev_data(dev)->m_allocated_channels) {
 		return -EINVAL;
@@ -136,7 +136,7 @@ static const struct wdt_driver_api wdt_nrfx_driver_api = {
 	.feed = wdt_nrf_feed,
 };
 
-static void wdt_event_handler(struct device *dev)
+static void wdt_event_handler(const struct device *dev)
 {
 	int i;
 
@@ -158,7 +158,7 @@ static void wdt_event_handler(struct device *dev)
 	{								       \
 		wdt_event_handler(DEVICE_GET(wdt_##idx));		       \
 	}								       \
-	static int wdt_##idx##_init(struct device *dev)			       \
+	static int wdt_##idx##_init(const struct device *dev)			       \
 	{								       \
 		nrfx_err_t err_code;					       \
 		IRQ_CONNECT(DT_IRQN(WDT(idx)), DT_IRQ(WDT(idx), priority),     \

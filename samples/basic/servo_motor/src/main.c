@@ -33,7 +33,7 @@
 
 void main(void)
 {
-	struct device *pwm;
+	const struct device *pwm;
 	u32_t pulse_width = MIN_PULSE_USEC;
 	u8_t dir = 0U;
 

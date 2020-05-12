@@ -775,7 +775,7 @@ static int audio_class_handle_req(struct usb_setup_packet *pSetup,
 	}
 }
 
-static int usb_audio_device_init(struct device *dev)
+static int usb_audio_device_init(const struct device *dev)
 {
 	LOG_DBG("Init Audio Device: dev %p (%s)", dev, dev->name);
 
@@ -897,7 +897,7 @@ static void audio_receive_cb(u8_t ep, enum usb_dc_ep_cb_status_code status)
 	}
 }
 
-void usb_audio_register(struct device *dev,
+void usb_audio_register(const struct device *dev,
 			const struct usb_audio_ops *ops)
 {
 	struct usb_audio_dev_data *audio_dev_data = dev->driver_data;

@@ -33,7 +33,7 @@ extern "C" {
 #define I2C_DW_MAGIC_KEY			0x44570140
 
 
-typedef void (*i2c_isr_cb_t)(struct device *port);
+typedef void (*i2c_isr_cb_t)(const struct device *port);
 
 
 #define IC_ACTIVITY                     (1 << 0)

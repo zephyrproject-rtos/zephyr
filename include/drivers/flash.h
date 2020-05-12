@@ -36,12 +36,15 @@ struct flash_pages_layout {
 };
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-typedef int (*flash_api_read)(struct device *dev, off_t offset, void *data,
+typedef int (*flash_api_read)(const struct device *dev, off_t offset,
+			      void *data,
 			      size_t len);
-typedef int (*flash_api_write)(struct device *dev, off_t offset,
+typedef int (*flash_api_write)(const struct device *dev, off_t offset,
 			       const void *data, size_t len);
-typedef int (*flash_api_erase)(struct device *dev, off_t offset, size_t size);
-typedef int (*flash_api_write_protection)(struct device *dev, bool enable);
+typedef int (*flash_api_erase)(const struct device *dev, off_t offset,
+			       size_t size);
+typedef int (*flash_api_write_protection)(const struct device *dev,
+					  bool enable);
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 /**
@@ -65,7 +68,7 @@ typedef int (*flash_api_write_protection)(struct device *dev, bool enable);
  * @param layout      The flash layout will be returned in this argument.
  * @param layout_size The number of elements in the returned layout.
  */
-typedef void (*flash_api_pages_layout)(struct device *dev,
+typedef void (*flash_api_pages_layout)(const struct device *dev,
 				       const struct flash_pages_layout **layout,
 				       size_t *layout_size);
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
@@ -95,11 +98,12 @@ __subsystem struct flash_driver_api {
  *
  *  @return  0 on success, negative errno code on fail.
  */
-__syscall int flash_read(struct device *dev, off_t offset, void *data,
+__syscall int flash_read(const struct device *dev, off_t offset, void *data,
 			 size_t len);
 
-static inline int z_impl_flash_read(struct device *dev, off_t offset, void *data,
-			     size_t len)
+static inline int z_impl_flash_read(const struct device *dev, off_t offset,
+				    void *data,
+				    size_t len)
 {
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->driver_api;
@@ -120,11 +124,12 @@ static inline int z_impl_flash_read(struct device *dev, off_t offset, void *data
  *
  *  @return  0 on success, negative errno code on fail.
  */
-__syscall int flash_write(struct device *dev, off_t offset, const void *data,
+__syscall int flash_write(const struct device *dev, off_t offset,
+			  const void *data,
 			  size_t len);
 
-static inline int z_impl_flash_write(struct device *dev, off_t offset,
-				    const void *data, size_t len)
+static inline int z_impl_flash_write(const struct device *dev, off_t offset,
+				     const void *data, size_t len)
 {
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->driver_api;
@@ -153,10 +158,10 @@ static inline int z_impl_flash_write(struct device *dev, off_t offset,
  *  @see flash_get_page_info_by_offs()
  *  @see flash_get_page_info_by_idx()
  */
-__syscall int flash_erase(struct device *dev, off_t offset, size_t size);
+__syscall int flash_erase(const struct device *dev, off_t offset, size_t size);
 
-static inline int z_impl_flash_erase(struct device *dev, off_t offset,
-				    size_t size)
+static inline int z_impl_flash_erase(const struct device *dev, off_t offset,
+				     size_t size)
 {
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->driver_api;
@@ -197,10 +202,11 @@ static inline int z_impl_flash_erase(struct device *dev, off_t offset,
  *
  *  @return  0 on success, negative errno code on fail.
  */
-__syscall int flash_write_protection_set(struct device *dev, bool enable);
+__syscall int flash_write_protection_set(const struct device *dev,
+					 bool enable);
 
-static inline int z_impl_flash_write_protection_set(struct device *dev,
-						   bool enable)
+static inline int z_impl_flash_write_protection_set(const struct device *dev,
+						    bool enable)
 {
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->driver_api;
@@ -224,7 +230,8 @@ struct flash_pages_info {
  *
  *  @return  0 on success, -EINVAL if page of the offset doesn't exist.
  */
-__syscall int flash_get_page_info_by_offs(struct device *dev, off_t offset,
+__syscall int flash_get_page_info_by_offs(const struct device *dev,
+					  off_t offset,
 					  struct flash_pages_info *info);
 
 /**
@@ -236,7 +243,8 @@ __syscall int flash_get_page_info_by_offs(struct device *dev, off_t offset,
  *
  *  @return  0 on success, -EINVAL  if page of the index doesn't exist.
  */
-__syscall int flash_get_page_info_by_idx(struct device *dev, u32_t page_index,
+__syscall int flash_get_page_info_by_idx(const struct device *dev,
+					 u32_t page_index,
 					 struct flash_pages_info *info);
 
 /**
@@ -246,7 +254,7 @@ __syscall int flash_get_page_info_by_idx(struct device *dev, u32_t page_index,
  *
  *  @return  Number of flash pages.
  */
-__syscall size_t flash_get_page_count(struct device *dev);
+__syscall size_t flash_get_page_count(const struct device *dev);
 
 /**
  * @brief Callback type for iterating over flash pages present on a device.
@@ -272,7 +280,8 @@ typedef bool (*flash_page_cb)(const struct flash_pages_info *info, void *data);
  * @param cb Callback to invoke for each flash page
  * @param data Private data for callback function
  */
-void flash_page_foreach(struct device *dev, flash_page_cb cb, void *data);
+void flash_page_foreach(const struct device *dev, flash_page_cb cb,
+			void *data);
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 /**
@@ -286,9 +295,9 @@ void flash_page_foreach(struct device *dev, flash_page_cb cb, void *data);
  *
  *  @return  write block size in bytes.
  */
-__syscall size_t flash_get_write_block_size(struct device *dev);
+__syscall size_t flash_get_write_block_size(const struct device *dev);
 
-static inline size_t z_impl_flash_get_write_block_size(struct device *dev)
+static inline size_t z_impl_flash_get_write_block_size(const struct device *dev)
 {
 	const struct flash_driver_api *api =
 		(const struct flash_driver_api *)dev->driver_api;

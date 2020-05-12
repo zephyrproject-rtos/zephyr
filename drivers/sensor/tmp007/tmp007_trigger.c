@@ -19,7 +19,7 @@ extern struct tmp007_data tmp007_driver;
 #include <logging/log.h>
 LOG_MODULE_DECLARE(TMP007, CONFIG_SENSOR_LOG_LEVEL);
 
-static inline void setup_int(struct device *dev,
+static inline void setup_int(const struct device *dev,
 			     bool enable)
 {
 	struct tmp007_data *data = dev->driver_data;
@@ -31,7 +31,7 @@ static inline void setup_int(struct device *dev,
 				     : GPIO_INT_DISABLE);
 }
 
-int tmp007_attr_set(struct device *dev,
+int tmp007_attr_set(const struct device *dev,
 		    enum sensor_channel chan,
 		    enum sensor_attribute attr,
 		    const struct sensor_value *val)
@@ -63,7 +63,7 @@ int tmp007_attr_set(struct device *dev,
 	return 0;
 }
 
-static void tmp007_gpio_callback(struct device *dev,
+static void tmp007_gpio_callback(const struct device *dev,
 				 struct gpio_callback *cb, u32_t pins)
 {
 	struct tmp007_data *drv_data =
@@ -80,7 +80,7 @@ static void tmp007_gpio_callback(struct device *dev,
 
 static void tmp007_thread_cb(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct tmp007_data *drv_data = dev->driver_data;
 	u16_t status;
 
@@ -104,7 +104,7 @@ static void tmp007_thread_cb(void *arg)
 #ifdef CONFIG_TMP007_TRIGGER_OWN_THREAD
 static void tmp007_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct tmp007_data *drv_data = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -126,7 +126,7 @@ static void tmp007_work_cb(struct k_work *work)
 }
 #endif
 
-int tmp007_trigger_set(struct device *dev,
+int tmp007_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler)
 {
@@ -147,7 +147,7 @@ int tmp007_trigger_set(struct device *dev,
 	return 0;
 }
 
-int tmp007_init_interrupt(struct device *dev)
+int tmp007_init_interrupt(const struct device *dev)
 {
 	struct tmp007_data *drv_data = dev->driver_data;
 

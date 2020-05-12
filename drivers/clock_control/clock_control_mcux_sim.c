@@ -15,7 +15,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(clock_control);
 
-static int mcux_sim_on(struct device *dev, clock_control_subsys_t sub_system)
+static int mcux_sim_on(const struct device *dev,
+		       clock_control_subsys_t sub_system)
 {
 	clock_ip_name_t clock_ip_name = (clock_ip_name_t) sub_system;
 
@@ -24,7 +25,8 @@ static int mcux_sim_on(struct device *dev, clock_control_subsys_t sub_system)
 	return 0;
 }
 
-static int mcux_sim_off(struct device *dev, clock_control_subsys_t sub_system)
+static int mcux_sim_off(const struct device *dev,
+			clock_control_subsys_t sub_system)
 {
 	clock_ip_name_t clock_ip_name = (clock_ip_name_t) sub_system;
 
@@ -33,7 +35,7 @@ static int mcux_sim_off(struct device *dev, clock_control_subsys_t sub_system)
 	return 0;
 }
 
-static int mcux_sim_get_subsys_rate(struct device *dev,
+static int mcux_sim_get_subsys_rate(const struct device *dev,
 				    clock_control_subsys_t sub_system,
 				    u32_t *rate)
 {
@@ -75,7 +77,7 @@ static int mcux_sim_get_subsys_rate(struct device *dev,
 #endif
 #endif
 
-static int mcux_sim_init(struct device *dev)
+static int mcux_sim_init(const struct device *dev)
 {
 #ifdef NXP_KINETIS_SIM_CLKOUT_DIVIDER
 	SIM->CHIPCTL = (SIM->CHIPCTL & ~SIM_CHIPCTL_CLKOUTDIV_MASK)

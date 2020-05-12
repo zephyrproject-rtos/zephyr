@@ -61,7 +61,7 @@ struct eth_context {
 	struct net_stats_eth stats;
 #endif
 #if defined(CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK)
-	struct device *ptp_clock;
+	const struct device *ptp_clock;
 #endif
 };
 
@@ -174,7 +174,7 @@ static void update_gptp(struct net_if *iface, struct net_pkt *pkt,
 #define update_gptp(iface, pkt, send)
 #endif /* CONFIG_NET_GPTP */
 
-static int eth_send(struct device *dev, struct net_pkt *pkt)
+static int eth_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_context *ctx = dev->driver_data;
 	int count = net_pkt_get_len(pkt);
@@ -197,7 +197,7 @@ static int eth_send(struct device *dev, struct net_pkt *pkt)
 	return ret < 0 ? ret : 0;
 }
 
-static int eth_init(struct device *dev)
+static int eth_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return 0;
@@ -456,7 +456,7 @@ static void eth_iface_init(struct net_if *iface)
 }
 
 static
-enum ethernet_hw_caps eth_posix_native_get_capabilities(struct device *dev)
+enum ethernet_hw_caps eth_posix_native_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -477,7 +477,7 @@ enum ethernet_hw_caps eth_posix_native_get_capabilities(struct device *dev)
 }
 
 #if defined(CONFIG_ETH_NATIVE_POSIX_PTP_CLOCK)
-static struct device *eth_get_ptp_clock(struct device *dev)
+static const struct device *eth_get_ptp_clock(const struct device *dev)
 {
 	struct eth_context *context = dev->driver_data;
 
@@ -486,7 +486,7 @@ static struct device *eth_get_ptp_clock(struct device *dev)
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *get_stats(struct device *dev)
+static struct net_stats_eth *get_stats(const struct device *dev)
 {
 	struct eth_context *context = dev->driver_data;
 
@@ -494,7 +494,7 @@ static struct net_stats_eth *get_stats(struct device *dev)
 }
 #endif
 
-static int set_config(struct device *dev,
+static int set_config(const struct device *dev,
 		      enum ethernet_config_type type,
 		      const struct ethernet_config *config)
 {
@@ -526,7 +526,7 @@ static int set_config(struct device *dev,
 }
 
 #if defined(CONFIG_NET_VLAN)
-static int vlan_setup(struct device *dev, struct net_if *iface,
+static int vlan_setup(const struct device *dev, struct net_if *iface,
 		      u16_t tag, bool enable)
 {
 	if (enable) {
@@ -539,7 +539,7 @@ static int vlan_setup(struct device *dev, struct net_if *iface,
 }
 #endif /* CONFIG_NET_VLAN */
 
-static int eth_start_device(struct device *dev)
+static int eth_start_device(const struct device *dev)
 {
 	struct eth_context *context = dev->driver_data;
 	int ret;
@@ -553,7 +553,7 @@ static int eth_start_device(struct device *dev)
 	return ret;
 }
 
-static int eth_stop_device(struct device *dev)
+static int eth_stop_device(const struct device *dev)
 {
 	struct eth_context *context = dev->driver_data;
 
@@ -595,7 +595,7 @@ struct ptp_context {
 static struct ptp_context ptp_0_context;
 
 
-static int ptp_clock_set_native_posix(struct device *clk,
+static int ptp_clock_set_native_posix(const struct device *clk,
 				      struct net_ptp_time *tm)
 {
 	ARG_UNUSED(clk);
@@ -608,7 +608,7 @@ static int ptp_clock_set_native_posix(struct device *clk,
 	return 0;
 }
 
-static int ptp_clock_get_native_posix(struct device *clk,
+static int ptp_clock_get_native_posix(const struct device *clk,
 				      struct net_ptp_time *tm)
 {
 	ARG_UNUSED(clk);
@@ -616,7 +616,7 @@ static int ptp_clock_get_native_posix(struct device *clk,
 	return eth_clock_gettime(tm);
 }
 
-static int ptp_clock_adjust_native_posix(struct device *clk,
+static int ptp_clock_adjust_native_posix(const struct device *clk,
 					 int increment)
 {
 	ARG_UNUSED(clk);
@@ -629,7 +629,7 @@ static int ptp_clock_adjust_native_posix(struct device *clk,
 	return 0;
 }
 
-static int ptp_clock_rate_adjust_native_posix(struct device *clk,
+static int ptp_clock_rate_adjust_native_posix(const struct device *clk,
 					      float ratio)
 {
 	ARG_UNUSED(clk);
@@ -649,9 +649,9 @@ static const struct ptp_clock_driver_api api = {
 	.rate_adjust = ptp_clock_rate_adjust_native_posix,
 };
 
-static int ptp_init(struct device *port)
+static int ptp_init(const struct device *port)
 {
-	struct device *eth_dev = DEVICE_GET(eth_native_posix);
+	const struct device *eth_dev = DEVICE_GET(eth_native_posix);
 	struct eth_context *context = eth_dev->driver_data;
 	struct ptp_context *ptp_context = port->driver_data;
 

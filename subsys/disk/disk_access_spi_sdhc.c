@@ -24,9 +24,9 @@ LOG_MODULE_REGISTER(sdhc_spi, CONFIG_DISK_LOG_LEVEL);
 #warning NO SDHC slot specified on board
 #else
 struct sdhc_spi_data {
-	struct device *spi;
+	const struct device *spi;
 	struct spi_config cfg;
-	struct device *cs;
+	const struct device *cs;
 	u32_t pin;
 	gpio_dt_flags_t flags;
 
@@ -760,9 +760,9 @@ error:
 	return err;
 }
 
-static int disk_spi_sdhc_init(struct device *dev);
+static int disk_spi_sdhc_init(const struct device *dev);
 
-static int sdhc_spi_init(struct device *dev)
+static int sdhc_spi_init(const struct device *dev)
 {
 	struct sdhc_spi_data *data = dev->driver_data;
 
@@ -786,7 +786,7 @@ static int sdhc_spi_init(struct device *dev)
 
 static int disk_spi_sdhc_access_status(struct disk_info *disk)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct sdhc_spi_data *data = dev->driver_data;
 
 	return data->status;
@@ -795,7 +795,7 @@ static int disk_spi_sdhc_access_status(struct disk_info *disk)
 static int disk_spi_sdhc_access_read(struct disk_info *disk,
 	u8_t *buf, u32_t sector, u32_t count)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct sdhc_spi_data *data = dev->driver_data;
 	int err;
 
@@ -813,7 +813,7 @@ static int disk_spi_sdhc_access_read(struct disk_info *disk,
 static int disk_spi_sdhc_access_write(struct disk_info *disk,
 	const u8_t *buf, u32_t sector, u32_t count)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct sdhc_spi_data *data = dev->driver_data;
 	int err;
 
@@ -831,7 +831,7 @@ static int disk_spi_sdhc_access_write(struct disk_info *disk,
 static int disk_spi_sdhc_access_ioctl(struct disk_info *disk,
 	u8_t cmd, void *buf)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct sdhc_spi_data *data = dev->driver_data;
 	int err;
 
@@ -861,7 +861,7 @@ static int disk_spi_sdhc_access_ioctl(struct disk_info *disk,
 
 static int disk_spi_sdhc_access_init(struct disk_info *disk)
 {
-	struct device *dev = disk->dev;
+	const struct device *dev = disk->dev;
 	struct sdhc_spi_data *data = dev->driver_data;
 	int err;
 
@@ -884,7 +884,7 @@ static struct disk_info spi_sdhc_disk = {
 	.ops = &spi_sdhc_disk_ops,
 };
 
-static int disk_spi_sdhc_init(struct device *dev)
+static int disk_spi_sdhc_init(const struct device *dev)
 {
 	struct sdhc_spi_data *data = dev->driver_data;
 

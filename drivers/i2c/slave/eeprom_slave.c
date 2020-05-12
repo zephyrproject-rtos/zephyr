@@ -18,7 +18,7 @@
 LOG_MODULE_REGISTER(i2c_slave);
 
 struct i2c_eeprom_slave_data {
-	struct device *i2c_controller;
+	const struct device *i2c_controller;
 	struct i2c_slave_config config;
 	u32_t buffer_size;
 	u8_t *buffer;
@@ -40,7 +40,7 @@ struct i2c_eeprom_slave_config {
 #define DEV_DATA(dev)							\
 	((struct i2c_eeprom_slave_data * const)(dev)->driver_data)
 
-int eeprom_slave_program(struct device *dev, u8_t *eeprom_data,
+int eeprom_slave_program(const struct device *dev, u8_t *eeprom_data,
 			 unsigned int length)
 {
 	struct i2c_eeprom_slave_data *data = dev->driver_data;
@@ -54,7 +54,7 @@ int eeprom_slave_program(struct device *dev, u8_t *eeprom_data,
 	return 0;
 }
 
-int eeprom_slave_read(struct device *dev, u8_t *eeprom_data,
+int eeprom_slave_read(const struct device *dev, u8_t *eeprom_data,
 		      unsigned int offset)
 {
 	struct i2c_eeprom_slave_data *data = dev->driver_data;
@@ -157,14 +157,14 @@ static int eeprom_slave_stop(struct i2c_slave_config *config)
 	return 0;
 }
 
-static int eeprom_slave_register(struct device *dev)
+static int eeprom_slave_register(const struct device *dev)
 {
 	struct i2c_eeprom_slave_data *data = dev->driver_data;
 
 	return i2c_slave_register(data->i2c_controller, &data->config);
 }
 
-static int eeprom_slave_unregister(struct device *dev)
+static int eeprom_slave_unregister(const struct device *dev)
 {
 	struct i2c_eeprom_slave_data *data = dev->driver_data;
 
@@ -184,7 +184,7 @@ static const struct i2c_slave_callbacks eeprom_callbacks = {
 	.stop = eeprom_slave_stop,
 };
 
-static int i2c_eeprom_slave_init(struct device *dev)
+static int i2c_eeprom_slave_init(const struct device *dev)
 {
 	struct i2c_eeprom_slave_data *data = DEV_DATA(dev);
 	const struct i2c_eeprom_slave_config *cfg = DEV_CFG(dev);

@@ -53,7 +53,7 @@ static struct eth_fake_context eth_fake_data;
 
 static void eth_fake_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct eth_fake_context *ctx = dev->driver_data;
 
 	ctx->iface = iface;
@@ -65,7 +65,7 @@ static void eth_fake_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static int eth_fake_send(struct device *dev,
+static int eth_fake_send(const struct device *dev,
 			 struct net_pkt *pkt)
 {
 	ARG_UNUSED(dev);
@@ -120,7 +120,7 @@ static void eth_fake_recalc_qav_idle_slopes(struct eth_fake_context *ctx)
 	}
 }
 
-static int eth_fake_set_config(struct device *dev,
+static int eth_fake_set_config(const struct device *dev,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {
@@ -167,7 +167,7 @@ static int eth_fake_set_config(struct device *dev,
 	return 0;
 }
 
-static int eth_fake_get_config(struct device *dev,
+static int eth_fake_get_config(const struct device *dev,
 			       enum ethernet_config_type type,
 			       struct ethernet_config *config)
 {
@@ -217,7 +217,7 @@ static int eth_fake_get_config(struct device *dev,
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_fake_get_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev)
 {
 	return ETHERNET_AUTO_NEGOTIATION_SET | ETHERNET_LINK_10BASE_T |
 		ETHERNET_LINK_100BASE_T | ETHERNET_DUPLEX_SET | ETHERNET_QAV |
@@ -233,7 +233,7 @@ static struct ethernet_api eth_fake_api_funcs = {
 	.send = eth_fake_send,
 };
 
-static int eth_fake_init(struct device *dev)
+static int eth_fake_init(const struct device *dev)
 {
 	struct eth_fake_context *ctx = dev->driver_data;
 	int i;

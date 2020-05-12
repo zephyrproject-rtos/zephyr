@@ -57,9 +57,9 @@ static struct gsm_modem {
 	size_t ppp_recv_buf_len;
 
 	enum setup_state state;
-	struct device *ppp_dev;
-	struct device *at_dev;
-	struct device *control_dev;
+	const struct device *ppp_dev;
+	const struct device *at_dev;
+	const struct device *control_dev;
 
 	bool mux_enabled : 1;
 	bool mux_setup_done : 1;
@@ -243,7 +243,7 @@ static int gsm_setup_mccmno(struct gsm_modem *gsm)
 
 static void set_ppp_carrier_on(struct gsm_modem *gsm)
 {
-	struct device *ppp_dev = device_get_binding(CONFIG_NET_PPP_DRV_NAME);
+	const struct device *ppp_dev = device_get_binding(CONFIG_NET_PPP_DRV_NAME);
 	const struct ppp_api *api =
 				(const struct ppp_api *)ppp_dev->driver_api;
 
@@ -392,7 +392,7 @@ static void mux_setup_next(struct gsm_modem *gsm)
 	(void)k_delayed_work_submit(&gsm->gsm_configure_work, K_MSEC(1));
 }
 
-static void mux_attach_cb(struct device *mux, int dlci_address,
+static void mux_attach_cb(const struct device *mux, int dlci_address,
 			  bool connected, void *user_data)
 {
 	LOG_DBG("DLCI %d to %s %s", dlci_address, mux->name,
@@ -406,7 +406,7 @@ static void mux_attach_cb(struct device *mux, int dlci_address,
 	mux_setup_next(user_data);
 }
 
-static int mux_attach(struct device *mux, struct device *uart,
+static int mux_attach(const struct device *mux, const struct device *uart,
 		      int dlci_address, void *user_data)
 {
 	int ret = uart_mux_attach(mux, uart, dlci_address, mux_attach_cb,
@@ -424,7 +424,7 @@ static void mux_setup(struct k_work *work)
 {
 	struct gsm_modem *gsm = CONTAINER_OF(work, struct gsm_modem,
 					     gsm_configure_work);
-	struct device *uart = device_get_binding(CONFIG_MODEM_GSM_UART_NAME);
+	const struct device *uart = device_get_binding(CONFIG_MODEM_GSM_UART_NAME);
 	int ret;
 
 	switch (gsm->state) {
@@ -559,7 +559,7 @@ static void gsm_configure(struct k_work *work)
 	gsm_finalize_connection(gsm);
 }
 
-static int gsm_init(struct device *device)
+static int gsm_init(const struct device *device)
 {
 	struct gsm_modem *gsm = device->driver_data;
 	int r;

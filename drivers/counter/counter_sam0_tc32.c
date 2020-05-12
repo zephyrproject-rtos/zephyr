@@ -38,7 +38,7 @@ struct counter_sam0_tc32_config {
 #endif
 	u16_t prescaler;
 
-	void (*irq_config_func)(struct device *dev);
+	void (*irq_config_func)(const struct device *dev);
 };
 
 #define DEV_CFG(dev) ((const struct counter_sam0_tc32_config *const) \
@@ -76,7 +76,7 @@ static void read_synchronize_count(TcCount32 *regs)
 #endif
 }
 
-static int counter_sam0_tc32_start(struct device *dev)
+static int counter_sam0_tc32_start(const struct device *dev)
 {
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
@@ -90,7 +90,7 @@ static int counter_sam0_tc32_start(struct device *dev)
 	return 0;
 }
 
-static int counter_sam0_tc32_stop(struct device *dev)
+static int counter_sam0_tc32_stop(const struct device *dev)
 {
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
@@ -106,7 +106,7 @@ static int counter_sam0_tc32_stop(struct device *dev)
 	return 0;
 }
 
-static u32_t counter_sam0_tc32_read(struct device *dev)
+static u32_t counter_sam0_tc32_read(const struct device *dev)
 {
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
@@ -115,13 +115,14 @@ static u32_t counter_sam0_tc32_read(struct device *dev)
 	return tc->COUNT.reg;
 }
 
-static int counter_sam0_tc32_get_value(struct device *dev, u32_t *ticks)
+static int counter_sam0_tc32_get_value(const struct device *dev, u32_t *ticks)
 {
 	*ticks = counter_sam0_tc32_read(dev);
 	return 0;
 }
 
-static void counter_sam0_tc32_relative_alarm(struct device *dev, u32_t ticks)
+static void counter_sam0_tc32_relative_alarm(const struct device *dev,
+					     u32_t ticks)
 {
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
@@ -179,7 +180,7 @@ out_future:
 	tc->INTENSET.reg = TC_INTFLAG_MC1;
 }
 
-static int counter_sam0_tc32_set_alarm(struct device *dev, u8_t chan_id,
+static int counter_sam0_tc32_set_alarm(const struct device *dev, u8_t chan_id,
 				       const struct counter_alarm_cfg *alarm_cfg)
 {
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
@@ -216,7 +217,8 @@ static int counter_sam0_tc32_set_alarm(struct device *dev, u8_t chan_id,
 	return 0;
 }
 
-static int counter_sam0_tc32_cancel_alarm(struct device *dev, u8_t chan_id)
+static int counter_sam0_tc32_cancel_alarm(const struct device *dev,
+					  u8_t chan_id)
 {
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
@@ -234,8 +236,8 @@ static int counter_sam0_tc32_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static int counter_sam0_tc32_set_top_value(struct device *dev,
-					 const struct counter_top_cfg *top_cfg)
+static int counter_sam0_tc32_set_top_value(const struct device *dev,
+					   const struct counter_top_cfg *top_cfg)
 {
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
@@ -280,7 +282,7 @@ static int counter_sam0_tc32_set_top_value(struct device *dev,
 	return err;
 }
 
-static u32_t counter_sam0_tc32_get_pending_int(struct device *dev)
+static u32_t counter_sam0_tc32_get_pending_int(const struct device *dev)
 {
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
@@ -288,7 +290,7 @@ static u32_t counter_sam0_tc32_get_pending_int(struct device *dev)
 	return tc->INTFLAG.reg & (TC_INTFLAG_MC0 | TC_INTFLAG_MC1);
 }
 
-static u32_t counter_sam0_tc32_get_top_value(struct device *dev)
+static u32_t counter_sam0_tc32_get_top_value(const struct device *dev)
 {
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
@@ -301,14 +303,14 @@ static u32_t counter_sam0_tc32_get_top_value(struct device *dev)
 	return tc->CC[0].reg;
 }
 
-static u32_t counter_sam0_tc32_get_max_relative_alarm(struct device *dev)
+static u32_t counter_sam0_tc32_get_max_relative_alarm(const struct device *dev)
 {
 	return counter_sam0_tc32_get_top_value(dev) - 1;
 }
 
 static void counter_sam0_tc32_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	struct counter_sam0_tc32_data *data = DEV_DATA(dev);
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
@@ -335,7 +337,7 @@ static void counter_sam0_tc32_isr(void *arg)
 	}
 }
 
-static int counter_sam0_tc32_initialize(struct device *dev)
+static int counter_sam0_tc32_initialize(const struct device *dev)
 {
 	const struct counter_sam0_tc32_config *const cfg = DEV_CFG(dev);
 	TcCount32 *tc = cfg->regs;
@@ -419,7 +421,7 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 		    (DT_INST_PROP(n, prescaler)), (1))
 
 #define COUNTER_SAM0_TC32_DEVICE(n)					\
-	static void counter_sam0_tc32_config_##n(struct device *dev);	\
+	static void counter_sam0_tc32_config_##n(const struct device *dev);	\
 	static const struct counter_sam0_tc32_config			\
 									\
 	counter_sam0_tc32_dev_config_##n = {				\
@@ -448,7 +450,7 @@ static const struct counter_driver_api counter_sam0_tc32_driver_api = {
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			    &counter_sam0_tc32_driver_api);		\
 									\
-	static void counter_sam0_tc32_config_##n(struct device *dev)	\
+	static void counter_sam0_tc32_config_##n(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    DT_INST_IRQ(n, priority),			\

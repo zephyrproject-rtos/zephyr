@@ -28,7 +28,7 @@ void main(void)
 {
 	printk("DataFlash sample on %s\n", CONFIG_BOARD);
 
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	int i;
 	int err;
 	u8_t data;

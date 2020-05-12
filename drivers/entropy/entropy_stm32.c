@@ -25,7 +25,7 @@ struct entropy_stm32_rng_dev_cfg {
 
 struct entropy_stm32_rng_dev_data {
 	RNG_TypeDef *rng;
-	struct device *clock;
+	const struct device *clock;
 };
 
 #define DEV_DATA(dev) \
@@ -99,7 +99,8 @@ static int entropy_stm32_wait_ready(RNG_TypeDef *rng)
 	}
 }
 
-static int entropy_stm32_rng_get_entropy(struct device *dev, u8_t *buffer,
+static int entropy_stm32_rng_get_entropy(const struct device *dev,
+					 u8_t *buffer,
 					 u16_t length)
 {
 	struct entropy_stm32_rng_dev_data *dev_data;
@@ -141,7 +142,7 @@ static int entropy_stm32_rng_get_entropy(struct device *dev, u8_t *buffer,
 	return 0;
 }
 
-static int entropy_stm32_rng_init(struct device *dev)
+static int entropy_stm32_rng_init(const struct device *dev)
 {
 	struct entropy_stm32_rng_dev_data *dev_data;
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg;

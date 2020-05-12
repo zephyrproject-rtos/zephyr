@@ -668,7 +668,7 @@ unreg_err:
 	return rc;
 }
 
-static int fs_init(struct device *dev)
+static int fs_init(const struct device *dev)
 {
 	k_mutex_init(&mutex);
 	sys_dlist_init(&fs_mnt_list);

@@ -43,15 +43,15 @@ static const struct dac_channel_cfg dac_ch_cfg = {
 	.resolution  = DAC_RESOLUTION
 };
 
-struct device *get_dac_device(void)
+const struct device *get_dac_device(void)
 {
 	return device_get_binding(DAC_DEVICE_NAME);
 }
 
-static struct device *init_dac(void)
+static const struct device *init_dac(void)
 {
 	int ret;
-	struct device *dac_dev = device_get_binding(DAC_DEVICE_NAME);
+	const struct device *dac_dev = device_get_binding(DAC_DEVICE_NAME);
 
 	zassert_not_null(dac_dev, "Cannot get DAC device");
 
@@ -69,7 +69,7 @@ static int test_task_write_value(void)
 {
 	int ret;
 
-	struct device *dac_dev = init_dac();
+	const struct device *dac_dev = init_dac();
 
 	if (!dac_dev) {
 		return TC_FAIL;

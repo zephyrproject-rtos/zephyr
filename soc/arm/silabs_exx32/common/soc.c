@@ -132,7 +132,7 @@ static void swo_init(void)
  *
  * @return 0
  */
-static int silabs_exx32_init(struct device *arg)
+static int silabs_exx32_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 

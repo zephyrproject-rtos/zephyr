@@ -233,7 +233,7 @@ static struct xec_params *xec_compare_params(u32_t target_freq,
 	return params;
 }
 
-static void xec_compute_and_set_parameters(struct device *dev,
+static void xec_compute_and_set_parameters(const struct device *dev,
 					   u32_t target_freq,
 					   u32_t on, u32_t off)
 {
@@ -306,7 +306,7 @@ done:
 	pwm_regs->CONFIG = reg;
 }
 
-static int pwm_xec_pin_set(struct device *dev, u32_t pwm,
+static int pwm_xec_pin_set(const struct device *dev, u32_t pwm,
 			   u32_t period_cycles, u32_t pulse_cycles,
 			   pwm_flags_t flags)
 {
@@ -351,7 +351,7 @@ static int pwm_xec_pin_set(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int pwm_xec_get_cycles_per_sec(struct device *dev, u32_t pwm,
+static int pwm_xec_get_cycles_per_sec(const struct device *dev, u32_t pwm,
 				      u64_t *cycles)
 {
 	ARG_UNUSED(dev);
@@ -370,7 +370,7 @@ static int pwm_xec_get_cycles_per_sec(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int pwm_xec_init(struct device *dev)
+static int pwm_xec_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

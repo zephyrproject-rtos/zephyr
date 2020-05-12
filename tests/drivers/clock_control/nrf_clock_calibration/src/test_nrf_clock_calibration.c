@@ -19,7 +19,8 @@ LOG_MODULE_REGISTER(test);
 
 extern void mock_temp_nrf5_value_set(struct sensor_value *val);
 
-static void turn_on_clock(struct device *dev, clock_control_subsys_t subsys)
+static void turn_on_clock(const struct device *dev,
+			  clock_control_subsys_t subsys)
 {
 	clock_control_on(dev, subsys);
 	while (clock_control_get_status(dev, subsys) !=
@@ -28,7 +29,8 @@ static void turn_on_clock(struct device *dev, clock_control_subsys_t subsys)
 	}
 }
 
-static void turn_off_clock(struct device *dev, clock_control_subsys_t subsys)
+static void turn_off_clock(const struct device *dev,
+			   clock_control_subsys_t subsys)
 {
 	int err;
 
@@ -98,7 +100,7 @@ static void test_basic_clock_calibration(void)
 /* Test checks if calibration happens just after clock is enabled. */
 static void test_calibration_after_enabling_lfclk(void)
 {
-	struct device *clk_dev =
+	const struct device *clk_dev =
 		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_clock)));
 	struct sensor_value value = { .val1 = 0, .val2 = 0 };
 

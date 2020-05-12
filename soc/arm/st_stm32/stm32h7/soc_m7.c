@@ -17,7 +17,7 @@
 #include <arch/arm/aarch32/cortex_m/cmsis.h>
 
 #if defined(CONFIG_STM32H7_DUAL_CORE)
-static int stm32h7_m4_wakeup(struct device *arg)
+static int stm32h7_m4_wakeup(const struct device *arg)
 {
 
 	/*HW semaphore Clock enable*/
@@ -60,7 +60,7 @@ static int stm32h7_m4_wakeup(struct device *arg)
  *
  * @return 0
  */
-static int stm32h7_init(struct device *arg)
+static int stm32h7_init(const struct device *arg)
 {
 	u32_t key;
 

@@ -104,7 +104,7 @@ static int i2c_clk_set(Twi *const twi, u32_t speed)
 	return 0;
 }
 
-static int i2c_sam_twi_configure(struct device *dev, u32_t config)
+static int i2c_sam_twi_configure(const struct device *dev, u32_t config)
 {
 	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	Twi *const twi = dev_cfg->regs;
@@ -178,7 +178,8 @@ static void read_msg_start(Twi *const twi, struct twi_msg *msg, u8_t daddr)
 	twi->TWI_IER = TWI_IER_RXRDY | TWI_IER_TXCOMP | TWI_IER_NACK;
 }
 
-static int i2c_sam_twi_transfer(struct device *dev, struct i2c_msg *msgs,
+static int i2c_sam_twi_transfer(const struct device *dev,
+				struct i2c_msg *msgs,
 				u8_t num_msgs, u16_t addr)
 {
 	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
@@ -236,7 +237,7 @@ static int i2c_sam_twi_transfer(struct device *dev, struct i2c_msg *msgs,
 
 static void i2c_sam_twi_isr(void *arg)
 {
-	struct device *dev = (struct device *)arg;
+	const struct device *dev = (const struct device *)arg;
 	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);
 	Twi *const twi = dev_cfg->regs;
@@ -294,7 +295,7 @@ tx_comp:
 	k_sem_give(&dev_data->sem);
 }
 
-static int i2c_sam_twi_initialize(struct device *dev)
+static int i2c_sam_twi_initialize(const struct device *dev)
 {
 	const struct i2c_sam_twi_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2c_sam_twi_dev_data *const dev_data = DEV_DATA(dev);

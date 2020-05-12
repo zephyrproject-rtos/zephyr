@@ -39,7 +39,7 @@ static void can_msgq_put(struct zcan_frame *frame, void *arg)
 	}
 }
 
-int z_impl_can_attach_msgq(struct device *dev, struct k_msgq *msg_q,
+int z_impl_can_attach_msgq(const struct device *dev, struct k_msgq *msg_q,
 			   const struct zcan_filter *filter)
 {
 	const struct can_driver_api *api = dev->driver_api;
@@ -128,7 +128,7 @@ static void can_work_isr_put(struct zcan_frame *frame, void *arg)
 	k_work_submit_to_queue(work->work_queue, &work->work_item);
 }
 
-int can_attach_workq(struct device *dev, struct k_work_q *work_q,
+int can_attach_workq(const struct device *dev, struct k_work_q *work_q,
 			    struct zcan_work *work,
 			    can_rx_callback_t callback, void *callback_arg,
 			    const struct zcan_filter *filter)

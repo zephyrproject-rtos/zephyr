@@ -9,7 +9,7 @@
 #include <device.h>
 #include <drivers/ipm.h>
 
-struct device *ipm;
+const struct device *ipm;
 
 void ping_ipm_callback(void *context, u32_t id, volatile void *data)
 {

@@ -48,7 +48,7 @@ static const struct bmc150_magn_preset {
 	[HIGH_ACCURACY_PRESET] = {47, 83, 20}
 };
 
-static int bmc150_magn_set_power_mode(struct device *dev,
+static int bmc150_magn_set_power_mode(const struct device *dev,
 				      enum bmc150_magn_power_modes mode,
 				      int state)
 {
@@ -88,7 +88,7 @@ static int bmc150_magn_set_power_mode(struct device *dev,
 	return -ENOTSUP;
 }
 
-static int bmc150_magn_set_odr(struct device *dev, u8_t val)
+static int bmc150_magn_set_odr(const struct device *dev, u8_t val)
 {
 	struct bmc150_magn_data *data = dev->driver_data;
 	const struct bmc150_magn_config *config = dev->config_info;
@@ -110,7 +110,7 @@ static int bmc150_magn_set_odr(struct device *dev, u8_t val)
 }
 
 #if defined(BMC150_MAGN_SET_ATTR)
-static int bmc150_magn_read_rep_xy(struct device *dev)
+static int bmc150_magn_read_rep_xy(const struct device *dev)
 {
 	struct bmc150_magn_data *data = dev->driver_data;
 	const struct bmc150_magn_config *config = dev->config_info;
@@ -126,7 +126,7 @@ static int bmc150_magn_read_rep_xy(struct device *dev)
 	return 0;
 }
 
-static int bmc150_magn_read_rep_z(struct device *dev)
+static int bmc150_magn_read_rep_z(const struct device *dev)
 {
 	struct bmc150_magn_data *data = dev->driver_data;
 	const struct bmc150_magn_config *config = dev->config_info;
@@ -142,7 +142,7 @@ static int bmc150_magn_read_rep_z(struct device *dev)
 	return 0;
 }
 
-static int bmc150_magn_compute_max_odr(struct device *dev, int rep_xy,
+static int bmc150_magn_compute_max_odr(const struct device *dev, int rep_xy,
 				       int rep_z, int *max_odr)
 {
 	struct bmc150_magn_data *data = dev->driver_data;
@@ -172,7 +172,7 @@ static int bmc150_magn_compute_max_odr(struct device *dev, int rep_xy,
 #endif
 
 #if defined(BMC150_MAGN_SET_ATTR_REP)
-static int bmc150_magn_read_odr(struct device *dev)
+static int bmc150_magn_read_odr(const struct device *dev)
 {
 	struct bmc150_magn_data *data = dev->driver_data;
 	const struct bmc150_magn_config *config = dev->config_info;
@@ -197,7 +197,7 @@ static int bmc150_magn_read_odr(struct device *dev)
 #endif
 
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_REP_XY)
-static int bmc150_magn_write_rep_xy(struct device *dev, int val)
+static int bmc150_magn_write_rep_xy(const struct device *dev, int val)
 {
 	struct bmc150_magn_data *data = dev->driver_data;
 	const struct bmc150_magn_config *config = dev->config_info;
@@ -216,7 +216,7 @@ static int bmc150_magn_write_rep_xy(struct device *dev, int val)
 #endif
 
 #if defined(CONFIG_BMC150_MAGN_SAMPLING_REP_Z)
-static int bmc150_magn_write_rep_z(struct device *dev, int val)
+static int bmc150_magn_write_rep_z(const struct device *dev, int val)
 {
 	struct bmc150_magn_data *data = dev->driver_data;
 	const struct bmc150_magn_config *config = dev->config_info;
@@ -288,7 +288,7 @@ static s32_t bmc150_magn_compensate_z(struct bmc150_magn_trim_regs *tregs,
 	return val;
 }
 
-static int bmc150_magn_sample_fetch(struct device *dev,
+static int bmc150_magn_sample_fetch(const struct device *dev,
 				    enum sensor_channel chan)
 {
 	struct bmc150_magn_data *data = dev->driver_data;
@@ -332,7 +332,7 @@ static void bmc150_magn_convert(struct sensor_value *val, int raw_val)
 	val->val2 = ((s32_t)raw_val * (1000000 / 1600)) % 1000000;
 }
 
-static int bmc150_magn_channel_get(struct device *dev,
+static int bmc150_magn_channel_get(const struct device *dev,
 				   enum sensor_channel chan,
 				   struct sensor_value *val)
 {
@@ -361,7 +361,7 @@ static int bmc150_magn_channel_get(struct device *dev,
 }
 
 #if defined(BMC150_MAGN_SET_ATTR_REP)
-static inline int bmc150_magn_attr_set_rep(struct device *dev,
+static inline int bmc150_magn_attr_set_rep(const struct device *dev,
 					   enum sensor_channel chan,
 					   const struct sensor_value *val)
 {
@@ -431,7 +431,7 @@ static inline int bmc150_magn_attr_set_rep(struct device *dev,
 #endif
 
 #if defined(BMC150_MAGN_SET_ATTR)
-static int bmc150_magn_attr_set(struct device *dev,
+static int bmc150_magn_attr_set(const struct device *dev,
 				enum sensor_channel chan,
 				enum sensor_attribute attr,
 				const struct sensor_value *val)
@@ -482,7 +482,7 @@ static const struct sensor_driver_api bmc150_magn_api_funcs = {
 #endif
 };
 
-static int bmc150_magn_init_chip(struct device *dev)
+static int bmc150_magn_init_chip(const struct device *dev)
 {
 	struct bmc150_magn_data *data = dev->driver_data;
 	const struct bmc150_magn_config *config = dev->config_info;
@@ -568,7 +568,7 @@ err_poweroff:
 	return -EIO;
 }
 
-static int bmc150_magn_init(struct device *dev)
+static int bmc150_magn_init(const struct device *dev)
 {
 	const struct bmc150_magn_config * const config =
 					  dev->config_info;

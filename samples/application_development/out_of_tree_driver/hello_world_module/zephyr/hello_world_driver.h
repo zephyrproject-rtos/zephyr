@@ -28,11 +28,11 @@ struct hello_world_driver_api {
 	 * pointer to a function that takes 'struct device *dev' as an
 	 * argument and returns 'void'.
 	 */
-	void (*print)(struct device *dev);
+	void (*print)(const struct device *dev);
 };
 
-__syscall     void        hello_world_print(struct device *dev);
-static inline void z_impl_hello_world_print(struct device *dev)
+__syscall     void        hello_world_print(const struct device *dev);
+static inline void z_impl_hello_world_print(const struct device *dev)
 {
 	const struct hello_world_driver_api *api = dev->driver_api;
 

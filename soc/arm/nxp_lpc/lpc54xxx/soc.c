@@ -96,7 +96,7 @@ static ALWAYS_INLINE void clock_init(void)
  * @return 0
  */
 
-static int nxp_lpc54114_init(struct device *arg)
+static int nxp_lpc54114_init(const struct device *arg)
 {
 	ARG_UNUSED(arg);
 
@@ -145,7 +145,7 @@ static const char core_m0[] = {
  * @return N/A
  */
 /* This function is also called at deep sleep resume. */
-int _slave_init(struct device *arg)
+int _slave_init(const struct device *arg)
 {
 	s32_t temp;
 

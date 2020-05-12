@@ -183,7 +183,7 @@ void net_conn_mgr_resend_status(void)
 	}
 }
 
-static int conn_mgr_init(struct device *dev)
+static int conn_mgr_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

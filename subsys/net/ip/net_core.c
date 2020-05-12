@@ -446,7 +446,7 @@ static inline int services_init(void)
 	return status;
 }
 
-static int net_init(struct device *unused)
+static int net_init(const struct device *unused)
 {
 	net_hostname_init();
 

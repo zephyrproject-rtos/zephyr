@@ -40,7 +40,7 @@ static const char *now_str(void)
 
 static struct sensor_trigger trig;
 
-static int set_window(struct device *dev,
+static int set_window(const struct device *dev,
 		      const struct sensor_value *temp)
 {
 	const int temp_ucel = temp->val1 * UCEL_PER_CEL + temp->val2;
@@ -68,8 +68,8 @@ static int set_window(struct device *dev,
 	return rc;
 }
 
-static inline int set_window_ucel(struct device *dev,
-				 int temp_ucel)
+static inline int set_window_ucel(const struct device *dev,
+				  int temp_ucel)
 {
 	struct sensor_value val = {
 		.val1 = temp_ucel / UCEL_PER_CEL,
@@ -79,7 +79,8 @@ static inline int set_window_ucel(struct device *dev,
 	return set_window(dev, &val);
 }
 
-static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
+static void trigger_handler(const struct device *dev,
+			    struct sensor_trigger *trig)
 {
 	struct sensor_value temp;
 	static size_t cnt;
@@ -97,7 +98,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
 void main(void)
 {
 	const char *const devname = DT_LABEL(DT_INST(0, microchip_mcp9808));
-	struct device *dev = device_get_binding(devname);
+	const struct device *dev = device_get_binding(devname);
 	int rc;
 
 	if (dev == NULL) {

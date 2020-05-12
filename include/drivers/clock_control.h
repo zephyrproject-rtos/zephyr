@@ -72,7 +72,7 @@ typedef void *clock_control_subsys_t;
  * @param subsys	Opaque data representing the clock.
  * @param user_data	User data.
  */
-typedef void (*clock_control_cb_t)(struct device *dev,
+typedef void (*clock_control_cb_t)(const struct device *dev,
 				   clock_control_subsys_t subsys,
 				   void *user_data);
 
@@ -100,18 +100,19 @@ struct clock_control_async_data {
 	void *user_data;
 };
 
-typedef int (*clock_control)(struct device *dev, clock_control_subsys_t sys);
+typedef int (*clock_control)(const struct device *dev,
+			     clock_control_subsys_t sys);
 
-typedef int (*clock_control_get)(struct device *dev,
+typedef int (*clock_control_get)(const struct device *dev,
 				 clock_control_subsys_t sys,
 				 u32_t *rate);
 
-typedef int (*clock_control_async_on_fn)(struct device *dev,
-				   clock_control_subsys_t sys,
-				   struct clock_control_async_data *data);
+typedef int (*clock_control_async_on_fn)(const struct device *dev,
+					 clock_control_subsys_t sys,
+					 struct clock_control_async_data *data);
 
 typedef enum clock_control_status (*clock_control_get_status_fn)(
-						struct device *dev,
+						const struct device *dev,
 						clock_control_subsys_t sys);
 
 struct clock_control_driver_api {
@@ -135,7 +136,7 @@ struct clock_control_driver_api {
  * @param sys Opaque data representing the clock.
  * @return 0 on success, negative errno on failure.
  */
-static inline int clock_control_on(struct device *dev,
+static inline int clock_control_on(const struct device *dev,
 				   clock_control_subsys_t sys)
 {
 	const struct clock_control_driver_api *api =
@@ -154,7 +155,7 @@ static inline int clock_control_on(struct device *dev,
  * @param sys Opaque data representing the clock
  * @return 0 on success, negative errno on failure.
  */
-static inline int clock_control_off(struct device *dev,
+static inline int clock_control_off(const struct device *dev,
 				    clock_control_subsys_t sys)
 {
 	const struct clock_control_driver_api *api =
@@ -181,7 +182,7 @@ static inline int clock_control_off(struct device *dev,
  * @retval -EBUSY if same request already scheduled and not yet completed.
  * @retval -ENOTSUP if not supported.
  */
-static inline int clock_control_async_on(struct device *dev,
+static inline int clock_control_async_on(const struct device *dev,
 					 clock_control_subsys_t sys,
 					 struct clock_control_async_data *data)
 {
@@ -204,7 +205,7 @@ static inline int clock_control_async_on(struct device *dev,
  * @return Status.
  */
 static inline enum clock_control_status clock_control_get_status(
-						struct device *dev,
+						const struct device *dev,
 						clock_control_subsys_t sys)
 {
 	const struct clock_control_driver_api *api =
@@ -224,7 +225,7 @@ static inline enum clock_control_status clock_control_get_status(
  * @param sys A pointer to an opaque data representing the sub-system
  * @param[out] rate Subsystem clock rate
  */
-static inline int clock_control_get_rate(struct device *dev,
+static inline int clock_control_get_rate(const struct device *dev,
 					 clock_control_subsys_t sys,
 					 u32_t *rate)
 {

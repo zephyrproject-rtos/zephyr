@@ -21,10 +21,10 @@ LOG_MODULE_REGISTER(display_ili9340);
 
 struct ili9340_data {
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	struct device *reset_gpio;
+	const struct device *reset_gpio;
 #endif
-	struct device *command_data_gpio;
-	struct device *spi_dev;
+	const struct device *command_data_gpio;
+	const struct device *spi_dev;
 	struct spi_config spi_config;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	struct spi_cs_control cs_ctrl;
@@ -47,7 +47,7 @@ static void ili9340_exit_sleep(struct ili9340_data *data)
 	k_sleep(K_MSEC(120));
 }
 
-static int ili9340_init(struct device *dev)
+static int ili9340_init(const struct device *dev)
 {
 	struct ili9340_data *data = (struct ili9340_data *)dev->driver_data;
 

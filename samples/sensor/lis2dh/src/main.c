@@ -9,7 +9,7 @@
 #include <device.h>
 #include <drivers/sensor.h>
 
-static void fetch_and_display(struct device *sensor)
+static void fetch_and_display(const struct device *sensor)
 {
 	static unsigned int count;
 	struct sensor_value accel[3];
@@ -41,7 +41,7 @@ static void fetch_and_display(struct device *sensor)
 }
 
 #ifdef CONFIG_LIS2DH_TRIGGER
-static void trigger_handler(struct device *dev,
+static void trigger_handler(const struct device *dev,
 			    struct sensor_trigger *trig)
 {
 	fetch_and_display(dev);
@@ -50,7 +50,7 @@ static void trigger_handler(struct device *dev,
 
 void main(void)
 {
-	struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dh)));
+	const struct device *sensor = device_get_binding(DT_LABEL(DT_INST(0, st_lis2dh)));
 
 	if (sensor == NULL) {
 		printf("Could not get %s device\n",

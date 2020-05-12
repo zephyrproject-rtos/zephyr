@@ -240,7 +240,7 @@ static struct lwm2m_engine_obj_inst *switch_create(u16_t obj_inst_id)
 	return &inst[avail];
 }
 
-static int ipso_switch_init(struct device *dev)
+static int ipso_switch_init(const struct device *dev)
 {
 	onoff_switch.obj_id = IPSO_OBJECT_ONOFF_SWITCH_ID;
 	onoff_switch.fields = fields;

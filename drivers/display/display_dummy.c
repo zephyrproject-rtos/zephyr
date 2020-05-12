@@ -14,7 +14,7 @@ struct dummy_display_data {
 
 static struct dummy_display_data dummy_display_data;
 
-static int dummy_display_init(struct device *dev)
+static int dummy_display_init(const struct device *dev)
 {
 	struct dummy_display_data *disp_data =
 	    (struct dummy_display_data *)dev->driver_data;

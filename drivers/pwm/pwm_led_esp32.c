@@ -213,7 +213,7 @@ static int pwm_led_esp32_channel_set(int pin, bool speed_mode, int channel,
 	const int pin_mode = GPIO_OUTPUT;
 
 	const char *device_name;
-	struct device *gpio;
+	const struct device *gpio;
 	int ret;
 	u32_t sig_out_idx;
 
@@ -311,7 +311,7 @@ static int pwm_led_esp32_timer_set(int speed_mode, int timer,
 }
 
 /* period_cycles is not used, set frequency on menuconfig instead. */
-static int pwm_led_esp32_pin_set_cycles(struct device *dev,
+static int pwm_led_esp32_pin_set_cycles(const struct device *dev,
 					u32_t pwm, u32_t period_cycles,
 					u32_t pulse_cycles, pwm_flags_t flags)
 {
@@ -365,7 +365,8 @@ static int pwm_led_esp32_pin_set_cycles(struct device *dev,
 	return ret;
 }
 
-static int pwm_led_esp32_get_cycles_per_sec(struct device *dev, u32_t pwm,
+static int pwm_led_esp32_get_cycles_per_sec(const struct device *dev,
+					    u32_t pwm,
 					    u64_t *cycles)
 {
 	const struct pwm_led_esp32_config *config;
@@ -394,7 +395,7 @@ static const struct pwm_driver_api pwm_led_esp32_api = {
 	.get_cycles_per_sec = pwm_led_esp32_get_cycles_per_sec,
 };
 
-int pwm_led_esp32_init(struct device *dev)
+int pwm_led_esp32_init(const struct device *dev)
 {
 	return 0;
 }

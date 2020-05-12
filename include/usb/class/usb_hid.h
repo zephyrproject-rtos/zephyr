@@ -431,7 +431,8 @@ enum hid_kbd_led {
 };
 
 /* Register HID device */
-void usb_hid_register_device(struct device *dev, const u8_t *desc, size_t size,
+void usb_hid_register_device(const struct device *dev, const u8_t *desc,
+			     size_t size,
 			     const struct hid_ops *op);
 
 /* Write to hid interrupt endpoint */

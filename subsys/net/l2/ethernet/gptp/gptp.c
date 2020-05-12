@@ -563,7 +563,7 @@ static void gptp_thread(void)
 static void gptp_add_port(struct net_if *iface, void *user_data)
 {
 	int *num_ports = user_data;
-	struct device *clk;
+	const struct device *clk;
 
 	if (*num_ports >= CONFIG_NET_GPTP_NUM_PORTS) {
 		return;
@@ -827,7 +827,7 @@ struct port_user_data {
 static void gptp_get_port(struct net_if *iface, void *user_data)
 {
 	struct port_user_data *ud = user_data;
-	struct device *clk;
+	const struct device *clk;
 
 	/* Check if interface has a PTP clock. */
 	clk = net_eth_get_ptp_clock(iface);

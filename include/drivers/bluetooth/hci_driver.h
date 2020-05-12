@@ -192,7 +192,7 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv);
  *
  * @return 0 on success, negative error value on failure
  */
-int bt_hci_transport_setup(struct device *dev);
+int bt_hci_transport_setup(const struct device *dev);
 
 /** Allocate an HCI event buffer.
  *

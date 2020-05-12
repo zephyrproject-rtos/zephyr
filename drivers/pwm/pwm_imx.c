@@ -40,7 +40,7 @@ static bool imx_pwm_is_enabled(PWM_Type *base)
 	return PWM_PWMCR_REG(base) & PWM_PWMCR_EN_MASK;
 }
 
-static int imx_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
+static int imx_pwm_get_cycles_per_sec(const struct device *dev, u32_t pwm,
 				       u64_t *cycles)
 {
 	PWM_Type *base = DEV_BASE(dev);
@@ -51,7 +51,7 @@ static int imx_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
+static int imx_pwm_pin_set(const struct device *dev, u32_t pwm,
 			   u32_t period_cycles, u32_t pulse_cycles,
 			   pwm_flags_t flags)
 {
@@ -143,7 +143,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static int imx_pwm_init(struct device *dev)
+static int imx_pwm_init(const struct device *dev)
 {
 	struct imx_pwm_data *data = DEV_DATA(dev);
 	PWM_Type *base = DEV_BASE(dev);

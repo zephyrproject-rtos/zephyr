@@ -101,7 +101,7 @@ struct ens210_sens_stat {
 } __packed;
 
 struct ens210_data {
-	struct device *i2c;
+	const struct device *i2c;
 	struct ens210_value_data temp;
 	struct ens210_value_data humidity;
 };

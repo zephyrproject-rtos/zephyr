@@ -14,17 +14,19 @@
 
 static u8_t rambuf[FLASH_AREA_SIZE(storage)];
 
-static int test_ram_flash_init(struct device *dev)
+static int test_ram_flash_init(const struct device *dev)
 {
 	return 0;
 }
 
-static int test_flash_ram_write_protection(struct device *dev, bool enable)
+static int test_flash_ram_write_protection(const struct device *dev,
+					   bool enable)
 {
 	return 0;
 }
 
-static int test_flash_ram_erase(struct device *dev, off_t offset, size_t len)
+static int test_flash_ram_erase(const struct device *dev, off_t offset,
+				size_t len)
 {
 	struct flash_pages_info info;
 	off_t end_offset = offset + len;
@@ -42,7 +44,7 @@ static int test_flash_ram_erase(struct device *dev, off_t offset, size_t len)
 	return 0;
 }
 
-static int test_flash_ram_write(struct device *dev, off_t offset,
+static int test_flash_ram_write(const struct device *dev, off_t offset,
 						const void *data, size_t len)
 {
 	zassert_true(offset >= 0, "invalid offset");
@@ -54,7 +56,8 @@ static int test_flash_ram_write(struct device *dev, off_t offset,
 	return 0;
 }
 
-static int test_flash_ram_read(struct device *dev, off_t offset, void *data,
+static int test_flash_ram_read(const struct device *dev, off_t offset,
+								void *data,
 								size_t len)
 {
 	zassert_true(offset >= 0, "invalid offset");
@@ -66,9 +69,9 @@ static int test_flash_ram_read(struct device *dev, off_t offset, void *data,
 	return 0;
 }
 
-static void test_flash_ram_pages_layout(struct device *dev,
-				const struct flash_pages_layout **layout,
-				size_t *layout_size)
+static void test_flash_ram_pages_layout(const struct device *dev,
+					const struct flash_pages_layout **layout,
+					size_t *layout_size)
 {
 	/* Same as used in Mynewt native "flash" backend */
 	static struct flash_pages_layout dev_layout[] = {

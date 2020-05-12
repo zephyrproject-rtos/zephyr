@@ -213,7 +213,7 @@ u32_t z_timer_cycle_get_32(void)
 
 #endif
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	u32_t val;
 

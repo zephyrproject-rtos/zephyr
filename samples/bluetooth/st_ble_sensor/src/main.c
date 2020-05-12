@@ -28,7 +28,7 @@
 LOG_MODULE_REGISTER(main);
 
 extern u16_t but_val;
-extern struct device *led_dev;
+extern const struct device *led_dev;
 extern bool led_state;
 
 /* Prototype */

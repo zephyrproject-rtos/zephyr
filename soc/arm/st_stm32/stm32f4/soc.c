@@ -23,7 +23,7 @@
  *
  * @return 0
  */
-static int st_stm32f4_init(struct device *arg)
+static int st_stm32f4_init(const struct device *arg)
 {
 	u32_t key;
 

@@ -38,20 +38,20 @@ static volatile int total_cnt; /* Total number of calibrations. */
 static volatile int total_skips_cnt; /* Total number of skipped calibrations. */
 
 /* Callback called on hfclk started. */
-static void cal_hf_on_callback(struct device *dev,
+static void cal_hf_on_callback(const struct device *dev,
 				clock_control_subsys_t subsys,
 				void *user_data);
 static struct clock_control_async_data cal_hf_on_data = {
 	.cb = cal_hf_on_callback
 };
-static void cal_lf_on_callback(struct device *dev,
+static void cal_lf_on_callback(const struct device *dev,
 				clock_control_subsys_t subsys, void *user_data);
 static struct clock_control_async_data cal_lf_on_data = {
 	.cb = cal_lf_on_callback
 };
 
-static struct device *clk_dev;
-static struct device *temp_sensor;
+static const struct device *clk_dev;
+static const struct device *temp_sensor;
 
 static void measure_temperature(struct k_work *work);
 static K_WORK_DEFINE(temp_measure_work, measure_temperature);
@@ -81,7 +81,7 @@ static void lf_release(void)
 	clock_control_off(clk_dev, CLOCK_CONTROL_NRF_SUBSYS_LF);
 }
 
-static void cal_lf_on_callback(struct device *dev,
+static void cal_lf_on_callback(const struct device *dev,
 				clock_control_subsys_t subsys, void *user_data)
 {
 	hf_request();
@@ -132,7 +132,7 @@ static void timeout_handler(struct k_timer *timer)
 /* Called when HFCLK XTAL is on. Schedules temperature measurement or triggers
  * calibration.
  */
-static void cal_hf_on_callback(struct device *dev,
+static void cal_hf_on_callback(const struct device *dev,
 				clock_control_subsys_t subsys, void *user_data)
 {
 	if ((temp_sensor == NULL) || !IS_ENABLED(CONFIG_MULTITHREADING)) {
@@ -215,7 +215,7 @@ static void measure_temperature(struct k_work *work)
 #define TEMP_NODE DT_INST(0, nordic_nrf_temp)
 
 #if DT_NODE_HAS_STATUS(TEMP_NODE, okay)
-static inline struct device *temp_device(void)
+static inline const struct device *temp_device(void)
 {
 	return device_get_binding(DT_LABEL(TEMP_NODE));
 }
@@ -223,7 +223,7 @@ static inline struct device *temp_device(void)
 #define temp_device() NULL
 #endif
 
-void z_nrf_clock_calibration_init(struct device *dev)
+void z_nrf_clock_calibration_init(const struct device *dev)
 {
 	/* Anomaly 36: After watchdog timeout reset, CPU lockup reset, soft
 	 * reset, or pin reset EVENTS_DONE and EVENTS_CTTO are not reset.

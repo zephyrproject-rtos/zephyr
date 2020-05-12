@@ -25,7 +25,7 @@
 #define TEST_SIM_FLASH_END (TEST_SIM_FLASH_SIZE +\
 			   FLASH_SIMULATOR_BASE_OFFSET)
 
-static struct device *flash_dev;
+static const struct device *flash_dev;
 static u8_t test_read_buf[TEST_SIM_FLASH_SIZE];
 
 static u32_t p32_inc;

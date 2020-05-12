@@ -65,7 +65,7 @@ static int ticks_to_sleep(int ticks)
 }
 
 
-static int test_early_sleep_post_kernel(struct device *unused)
+static int test_early_sleep_post_kernel(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 	actual_post_kernel_sleep_ticks = ticks_to_sleep(TEST_TICKS_TO_SLEEP);
@@ -75,7 +75,7 @@ static int test_early_sleep_post_kernel(struct device *unused)
 SYS_INIT(test_early_sleep_post_kernel,
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
-static int test_early_sleep_app(struct device *unused)
+static int test_early_sleep_app(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 	actual_app_sleep_ticks = ticks_to_sleep(TEST_TICKS_TO_SLEEP);

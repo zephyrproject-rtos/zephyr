@@ -46,7 +46,7 @@ struct k_sem *_trace_list_k_sem;
 /*
  * Complete initialization of statically defined semaphores.
  */
-static int init_sem_module(struct device *dev)
+static int init_sem_module(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

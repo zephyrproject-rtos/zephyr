@@ -52,10 +52,10 @@ static const struct sx1276_dio sx1276_dios[] = { SX1276_DIO_GPIO_INIT(0) };
 #define SX1276_MAX_DIO ARRAY_SIZE(sx1276_dios)
 
 struct sx1276_data {
-	struct device *reset;
-	struct device *spi;
+	const struct device *reset;
+	const struct device *spi;
 	struct spi_config spi_cfg;
-	struct device *dio_dev[SX1276_MAX_DIO];
+	const struct device *dio_dev[SX1276_MAX_DIO];
 	struct k_work dio_work[SX1276_MAX_DIO];
 	struct k_sem data_sem;
 	struct k_timer timer;
@@ -176,7 +176,7 @@ static void sx1276_dio_work_handle(struct k_work *work)
 	(*DioIrq[dio])(NULL);
 }
 
-static void sx1276_irq_callback(struct device *dev,
+static void sx1276_irq_callback(const struct device *dev,
 				struct gpio_callback *cb, u32_t pins)
 {
 	unsigned int i, pin;
@@ -362,7 +362,8 @@ void SX1276SetRfTxPower(int8_t power)
 	}
 }
 
-static int sx1276_lora_send(struct device *dev, u8_t *data, u32_t data_len)
+static int sx1276_lora_send(const struct device *dev, u8_t *data,
+			    u32_t data_len)
 {
 	Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
 
@@ -388,7 +389,7 @@ static void sx1276_rx_done(u8_t *payload, u16_t size, int16_t rssi, int8_t snr)
 	k_sem_give(&dev_data.data_sem);
 }
 
-static int sx1276_lora_recv(struct device *dev, u8_t *data, u8_t size,
+static int sx1276_lora_recv(const struct device *dev, u8_t *data, u8_t size,
 			    k_timeout_t timeout, s16_t *rssi, s8_t *snr)
 {
 	int ret;
@@ -424,7 +425,7 @@ static int sx1276_lora_recv(struct device *dev, u8_t *data, u8_t size,
 	return dev_data.rx_len;
 }
 
-static int sx1276_lora_config(struct device *dev,
+static int sx1276_lora_config(const struct device *dev,
 			      struct lora_modem_config *config)
 {
 
@@ -446,7 +447,7 @@ static int sx1276_lora_config(struct device *dev,
 	return 0;
 }
 
-static int sx1276_lora_test_cw(struct device *dev, u32_t frequency,
+static int sx1276_lora_test_cw(const struct device *dev, u32_t frequency,
 			       s8_t tx_power, u16_t duration)
 {
 	Radio.SetTxContinuousWave(frequency, tx_power, duration);
@@ -478,7 +479,7 @@ const struct Radio_s Radio = {
 	.SetTxContinuousWave = SX1276SetTxContinuousWave,
 };
 
-static int sx1276_lora_init(struct device *dev)
+static int sx1276_lora_init(const struct device *dev)
 {
 	static struct spi_cs_control spi_cs;
 	int ret;

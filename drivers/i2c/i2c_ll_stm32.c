@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(i2c_ll_stm32);
 
 #include "i2c-priv.h"
 
-int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
+int i2c_stm32_runtime_configure(const struct device *dev, u32_t config)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
@@ -60,7 +60,7 @@ int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
 
-static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
+static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			      u8_t num_msgs, u16_t slave)
 {
 	struct i2c_stm32_data *data = DEV_DATA(dev);
@@ -174,9 +174,9 @@ static const struct i2c_driver_api api_funcs = {
 #endif
 };
 
-static int i2c_stm32_init(struct device *dev)
+static int i2c_stm32_init(const struct device *dev)
 {
-	struct device *clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	const struct device *clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	u32_t bitrate_cfg;
 	int ret;
@@ -273,11 +273,11 @@ static int i2c_stm32_init(struct device *dev)
 #endif /* CONFIG_I2C_STM32_COMBINED_INTERRUPT */
 
 #define STM32_I2C_IRQ_HANDLER_DECL(name)				\
-static void i2c_stm32_irq_config_func_##name(struct device *dev)
+static void i2c_stm32_irq_config_func_##name(const struct device *dev)
 #define STM32_I2C_IRQ_HANDLER_FUNCTION(name)				\
 	.irq_config_func = i2c_stm32_irq_config_func_##name,
 #define STM32_I2C_IRQ_HANDLER(name)					\
-static void i2c_stm32_irq_config_func_##name(struct device *dev)	\
+static void i2c_stm32_irq_config_func_##name(const struct device *dev)	\
 {									\
 	STM32_I2C_IRQ_CONNECT_AND_ENABLE(name);				\
 }

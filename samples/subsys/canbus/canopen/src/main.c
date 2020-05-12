@@ -41,7 +41,7 @@ static struct gpio_callback button_callback;
 #endif
 
 struct led_indicator {
-	struct device *dev;
+	const struct device *dev;
 	gpio_pin_t pin;
 };
 
@@ -145,7 +145,8 @@ static CO_SDO_abortCode_t odf_2102(CO_ODF_arg_t *odf_arg)
  * @param pins GPIO pin mask that triggered the interrupt.
  */
 #ifdef BUTTON_PORT
-static void button_isr_callback(struct device *port, struct gpio_callback *cb,
+static void button_isr_callback(const struct device *port,
+				struct gpio_callback *cb,
 				u32_t pins)
 {
 	counter++;
@@ -160,7 +161,7 @@ static void button_isr_callback(struct device *port, struct gpio_callback *cb,
 static void config_button(void)
 {
 #ifdef BUTTON_PORT
-	struct device *dev;
+	const struct device *dev;
 	int err;
 
 	dev = device_get_binding(BUTTON_PORT);
@@ -201,7 +202,7 @@ void main(void)
 {
 	CO_NMT_reset_cmd_t reset = CO_RESET_NOT;
 	CO_ReturnError_t err;
-	struct device *can;
+	const struct device *can;
 	u16_t timeout;
 	u32_t elapsed;
 	s64_t timestamp;

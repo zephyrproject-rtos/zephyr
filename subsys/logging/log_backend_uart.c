@@ -15,7 +15,7 @@
 
 static int char_out(u8_t *data, size_t length, void *ctx)
 {
-	struct device *dev = (struct device *)ctx;
+	const struct device *dev = (const struct device *)ctx;
 
 	for (size_t i = 0; i < length; i++) {
 		uart_poll_out(dev, data[i]);
@@ -39,7 +39,7 @@ static void put(const struct log_backend *const backend,
 
 static void log_backend_uart_init(void)
 {
-	struct device *dev;
+	const struct device *dev;
 
 	dev = device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
 	assert(dev);

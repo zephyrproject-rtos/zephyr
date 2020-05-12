@@ -109,7 +109,7 @@ static struct framebuf_dev_data multiboot_framebuf_data = {
 	.height = CONFIG_MULTIBOOT_FRAMEBUF_Y
 };
 
-static int multiboot_framebuf_init(struct device *dev)
+static int multiboot_framebuf_init(const struct device *dev)
 {
 	struct framebuf_dev_data *data = FRAMEBUF_DATA(dev);
 	struct multiboot_info *info = &multiboot_info;

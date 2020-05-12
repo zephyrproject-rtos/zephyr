@@ -30,8 +30,9 @@ static void entropy_gecko_trng_read(u8_t *output, size_t len)
 	}
 }
 
-static int entropy_gecko_trng_get_entropy(struct device *dev, u8_t *buffer,
-					 u16_t length)
+static int entropy_gecko_trng_get_entropy(const struct device *dev,
+					  u8_t *buffer,
+					  u16_t length)
 {
 	size_t count = 0;
 	size_t available;
@@ -53,8 +54,9 @@ static int entropy_gecko_trng_get_entropy(struct device *dev, u8_t *buffer,
 	return 0;
 }
 
-static int entropy_gecko_trng_get_entropy_isr(struct device *dev, u8_t *buf,
-					u16_t len, u32_t flags)
+static int entropy_gecko_trng_get_entropy_isr(const struct device *dev,
+					      u8_t *buf,
+					      u16_t len, u32_t flags)
 {
 
 	if ((flags & ENTROPY_BUSYWAIT) == 0U) {
@@ -82,7 +84,7 @@ static int entropy_gecko_trng_get_entropy_isr(struct device *dev, u8_t *buf,
 	}
 }
 
-static int entropy_gecko_trng_init(struct device *device)
+static int entropy_gecko_trng_init(const struct device *device)
 {
 	/* Enable the TRNG0 clock. */
 	CMU_ClockEnable(cmuClock_TRNG0, true);

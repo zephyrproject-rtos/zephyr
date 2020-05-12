@@ -19,7 +19,8 @@
 
 LOG_MODULE_REGISTER(IAQ_CORE, CONFIG_SENSOR_LOG_LEVEL);
 
-static int iaqcore_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int iaqcore_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
 	struct iaq_core_data *drv_data = dev->driver_data;
 	struct iaq_registers buf;
@@ -66,7 +67,7 @@ static int iaqcore_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return -EIO;
 }
 
-static int iaqcore_channel_get(struct device *dev,
+static int iaqcore_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
@@ -97,7 +98,7 @@ static const struct sensor_driver_api iaq_core_driver_api = {
 	.channel_get = iaqcore_channel_get,
 };
 
-static int iaq_core_init(struct device *dev)
+static int iaq_core_init(const struct device *dev)
 {
 	struct iaq_core_data *drv_data = dev->driver_data;
 

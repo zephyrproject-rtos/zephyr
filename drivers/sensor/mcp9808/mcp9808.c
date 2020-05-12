@@ -20,7 +20,7 @@
 
 LOG_MODULE_REGISTER(MCP9808, CONFIG_SENSOR_LOG_LEVEL);
 
-int mcp9808_reg_read(struct device *dev, u8_t reg, u16_t *val)
+int mcp9808_reg_read(const struct device *dev, u8_t reg, u16_t *val)
 {
 	const struct mcp9808_data *data = dev->driver_data;
 	const struct mcp9808_config *cfg = dev->config_info;
@@ -35,7 +35,8 @@ int mcp9808_reg_read(struct device *dev, u8_t reg, u16_t *val)
 	return rc;
 }
 
-static int mcp9808_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int mcp9808_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
 	struct mcp9808_data *data = dev->driver_data;
 
@@ -44,7 +45,7 @@ static int mcp9808_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return mcp9808_reg_read(dev, MCP9808_REG_TEMP_AMB, &data->reg_val);
 }
 
-static int mcp9808_channel_get(struct device *dev,
+static int mcp9808_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
@@ -69,7 +70,7 @@ static const struct sensor_driver_api mcp9808_api_funcs = {
 #endif /* CONFIG_MCP9808_TRIGGER */
 };
 
-int mcp9808_init(struct device *dev)
+int mcp9808_init(const struct device *dev)
 {
 	struct mcp9808_data *data = dev->driver_data;
 	const struct mcp9808_config *cfg = dev->config_info;

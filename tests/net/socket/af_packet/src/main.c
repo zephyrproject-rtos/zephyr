@@ -35,7 +35,7 @@ static struct eth_fake_context eth_fake_data2 = {
 	.mac_address = lladdr2
 };
 
-static int eth_fake_send(struct device *dev, struct net_pkt *pkt)
+static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(pkt);
@@ -45,7 +45,7 @@ static int eth_fake_send(struct device *dev, struct net_pkt *pkt)
 
 static void eth_fake_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct eth_fake_context *ctx = dev->driver_data;
 
 	ctx->iface = iface;
@@ -60,7 +60,7 @@ static struct ethernet_api eth_fake_api_funcs = {
 	.send = eth_fake_send,
 };
 
-static int eth_fake_init(struct device *dev)
+static int eth_fake_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

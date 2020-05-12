@@ -31,9 +31,9 @@
 
 #include <drivers/gpio.h>
 
-extern struct device *vega_debug_portb;
-extern struct device *vega_debug_portc;
-extern struct device *vega_debug_portd;
+extern const struct device *vega_debug_portb;
+extern const struct device *vega_debug_portc;
+extern const struct device *vega_debug_portd;
 
 #define DEBUG0_PIN       5
 #define DEBUG0_PORT		 vega_debug_portd

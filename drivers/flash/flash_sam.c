@@ -53,18 +53,19 @@ struct flash_sam_dev_data {
 	((struct flash_sam_dev_data *const)(dev)->driver_data)
 
 
-static inline void flash_sam_sem_take(struct device *dev)
+static inline void flash_sam_sem_take(const struct device *dev)
 {
 	k_sem_take(&DEV_DATA(dev)->sem, K_FOREVER);
 }
 
-static inline void flash_sam_sem_give(struct device *dev)
+static inline void flash_sam_sem_give(const struct device *dev)
 {
 	k_sem_give(&DEV_DATA(dev)->sem);
 }
 
 /* Check that the offset is within the flash */
-static bool flash_sam_valid_range(struct device *dev, off_t offset, size_t len)
+static bool flash_sam_valid_range(const struct device *dev, off_t offset,
+				  size_t len)
 {
 	if (offset > CONFIG_FLASH_SIZE * 1024) {
 		return false;
@@ -87,7 +88,7 @@ static off_t flash_sam_get_page(off_t offset)
  * This function checks for errors and waits for the end of the
  * previous command.
  */
-static int flash_sam_wait_ready(struct device *dev)
+static int flash_sam_wait_ready(const struct device *dev)
 {
 	Efc *const efc = DEV_CFG(dev)->regs;
 
@@ -125,7 +126,7 @@ static int flash_sam_wait_ready(struct device *dev)
 }
 
 /* This function writes a single page, either fully or partially. */
-static int flash_sam_write_page(struct device *dev, off_t offset,
+static int flash_sam_write_page(const struct device *dev, off_t offset,
 				const void *data, size_t len)
 {
 	Efc *const efc = DEV_CFG(dev)->regs;
@@ -151,7 +152,7 @@ static int flash_sam_write_page(struct device *dev, off_t offset,
 }
 
 /* Write data to the flash, page by page */
-static int flash_sam_write(struct device *dev, off_t offset,
+static int flash_sam_write(const struct device *dev, off_t offset,
 			    const void *data, size_t len)
 {
 	int rc;
@@ -210,7 +211,7 @@ done:
 }
 
 /* Read data from flash */
-static int flash_sam_read(struct device *dev, off_t offset, void *data,
+static int flash_sam_read(const struct device *dev, off_t offset, void *data,
 			  size_t len)
 {
 	LOG_DBG("offset = 0x%lx, len = %zu", (long)offset, len);
@@ -225,7 +226,7 @@ static int flash_sam_read(struct device *dev, off_t offset, void *data,
 }
 
 /* Erase a single 8KiB block */
-static int flash_sam_erase_block(struct device *dev, off_t offset)
+static int flash_sam_erase_block(const struct device *dev, off_t offset)
 {
 	Efc *const efc = DEV_CFG(dev)->regs;
 
@@ -240,7 +241,7 @@ static int flash_sam_erase_block(struct device *dev, off_t offset)
 }
 
 /* Erase multiple blocks */
-static int flash_sam_erase(struct device *dev, off_t offset, size_t len)
+static int flash_sam_erase(const struct device *dev, off_t offset, size_t len)
 {
 	int rc = 0;
 	off_t i;
@@ -289,7 +290,7 @@ done:
 }
 
 /* Enable or disable the write protection */
-static int flash_sam_write_protection(struct device *dev, bool enable)
+static int flash_sam_write_protection(const struct device *dev, bool enable)
 {
 	Efc *const efc = DEV_CFG(dev)->regs;
 	int rc = 0;
@@ -321,7 +322,7 @@ static const struct flash_pages_layout flash_sam_pages_layout = {
 	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 };
 
-void flash_sam_page_layout(struct device *dev,
+void flash_sam_page_layout(const struct device *dev,
 			   const struct flash_pages_layout **layout,
 			   size_t *layout_size)
 {
@@ -330,7 +331,7 @@ void flash_sam_page_layout(struct device *dev,
 }
 #endif
 
-static int flash_sam_init(struct device *dev)
+static int flash_sam_init(const struct device *dev)
 {
 	struct flash_sam_dev_data *const data = DEV_DATA(dev);
 

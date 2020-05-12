@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 struct openthread_uart {
 	struct ring_buf *tx_ringbuf;
 	struct ring_buf *rx_ringbuf;
-	struct device *dev;
+	const struct device *dev;
 	atomic_t tx_busy;
 	atomic_t tx_finished;
 };

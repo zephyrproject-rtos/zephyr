@@ -58,7 +58,8 @@ static int adxl362_reg_access(struct adxl362_data *ctx, u8_t cmd,
 	return spi_write(ctx->spi, &ctx->spi_cfg, &tx);
 }
 
-static inline int adxl362_set_reg(struct device *dev, u16_t register_value,
+static inline int adxl362_set_reg(const struct device *dev,
+				  u16_t register_value,
 				  u8_t register_address, u8_t count)
 {
 	struct adxl362_data *adxl362_data = dev->driver_data;
@@ -70,7 +71,7 @@ static inline int adxl362_set_reg(struct device *dev, u16_t register_value,
 				  count);
 }
 
-int adxl362_reg_write_mask(struct device *dev, u8_t register_address,
+int adxl362_reg_write_mask(const struct device *dev, u8_t register_address,
 			   u8_t mask, u8_t data)
 {
 	int ret;
@@ -97,7 +98,7 @@ int adxl362_reg_write_mask(struct device *dev, u8_t register_address,
 				  1);
 }
 
-static inline int adxl362_get_reg(struct device *dev, u8_t *read_buf,
+static inline int adxl362_get_reg(const struct device *dev, u8_t *read_buf,
 				  u8_t register_address, u8_t count)
 {
 	struct adxl362_data *adxl362_data = dev->driver_data;
@@ -109,9 +110,9 @@ static inline int adxl362_get_reg(struct device *dev, u8_t *read_buf,
 }
 
 #if defined(CONFIG_ADXL362_TRIGGER)
-static int adxl362_interrupt_config(struct device *dev,
-				 u8_t int1,
-				 u8_t int2)
+static int adxl362_interrupt_config(const struct device *dev,
+				    u8_t int1,
+				    u8_t int2)
 {
 	int ret;
 	struct adxl362_data *adxl362_data = dev->driver_data;
@@ -133,12 +134,12 @@ static int adxl362_interrupt_config(struct device *dev,
 					1);
 }
 
-int adxl362_get_status(struct device *dev, u8_t *status)
+int adxl362_get_status(const struct device *dev, u8_t *status)
 {
 	return adxl362_get_reg(dev, status, ADXL362_REG_STATUS, 1);
 }
 
-int adxl362_clear_data_ready(struct device *dev)
+int adxl362_clear_data_ready(const struct device *dev)
 {
 	u8_t buf;
 	/* Reading any data register clears the data ready interrupt */
@@ -146,13 +147,13 @@ int adxl362_clear_data_ready(struct device *dev)
 }
 #endif
 
-static int adxl362_software_reset(struct device *dev)
+static int adxl362_software_reset(const struct device *dev)
 {
 	return adxl362_set_reg(dev, ADXL362_RESET_KEY,
 			       ADXL362_REG_SOFT_RESET, 1);
 }
 
-static int adxl362_set_power_mode(struct device *dev, u8_t mode)
+static int adxl362_set_power_mode(const struct device *dev, u8_t mode)
 {
 	u8_t old_power_ctl;
 	u8_t new_power_ctl;
@@ -233,7 +234,7 @@ static s32_t adxl362_range_to_reg_val(u16_t range)
 	return -EINVAL;
 }
 
-static int adxl362_set_range(struct device *dev, u8_t range)
+static int adxl362_set_range(const struct device *dev, u8_t range)
 {
 	struct adxl362_data *adxl362_data = dev->driver_data;
 	u8_t old_filter_ctl;
@@ -256,7 +257,7 @@ static int adxl362_set_range(struct device *dev, u8_t range)
 	return 0;
 }
 
-static int adxl362_set_output_rate(struct device *dev, u8_t out_rate)
+static int adxl362_set_output_rate(const struct device *dev, u8_t out_rate)
 {
 	u8_t old_filter_ctl;
 	u8_t new_filter_ctl;
@@ -270,7 +271,8 @@ static int adxl362_set_output_rate(struct device *dev, u8_t out_rate)
 }
 
 
-static int axl362_acc_config(struct device *dev, enum sensor_channel chan,
+static int axl362_acc_config(const struct device *dev,
+			     enum sensor_channel chan,
 			     enum sensor_attribute attr,
 			     const struct sensor_value *val)
 {
@@ -314,9 +316,10 @@ static int axl362_acc_config(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int adxl362_attr_set_thresh(struct device *dev, enum sensor_channel chan,
-			    enum sensor_attribute attr,
-			    const struct sensor_value *val)
+static int adxl362_attr_set_thresh(const struct device *dev,
+				   enum sensor_channel chan,
+				   enum sensor_attribute attr,
+				   const struct sensor_value *val)
 {
 	u8_t reg;
 	u16_t threshold = val->val1;
@@ -344,8 +347,10 @@ static int adxl362_attr_set_thresh(struct device *dev, enum sensor_channel chan,
 	return ret;
 }
 
-static int adxl362_attr_set(struct device *dev, enum sensor_channel chan,
-		    enum sensor_attribute attr, const struct sensor_value *val)
+static int adxl362_attr_set(const struct device *dev,
+			    enum sensor_channel chan,
+			    enum sensor_attribute attr,
+			    const struct sensor_value *val)
 {
 	switch (attr) {
 	case SENSOR_ATTR_UPPER_THRESH:
@@ -370,7 +375,7 @@ static int adxl362_attr_set(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int adxl362_fifo_setup(struct device *dev, u8_t mode,
+static int adxl362_fifo_setup(const struct device *dev, u8_t mode,
 			      u16_t water_mark_lvl, u8_t en_temp_read)
 {
 	u8_t write_val;
@@ -392,7 +397,7 @@ static int adxl362_fifo_setup(struct device *dev, u8_t mode,
 	return 0;
 }
 
-static int adxl362_setup_activity_detection(struct device *dev,
+static int adxl362_setup_activity_detection(const struct device *dev,
 					    u8_t ref_or_abs,
 					    u16_t threshold,
 					    u8_t time)
@@ -450,7 +455,7 @@ static int adxl362_setup_activity_detection(struct device *dev,
 	return 0;
 }
 
-static int adxl362_setup_inactivity_detection(struct device *dev,
+static int adxl362_setup_inactivity_detection(const struct device *dev,
 					      u8_t ref_or_abs,
 					      u16_t threshold,
 					      u16_t time)
@@ -493,7 +498,7 @@ static int adxl362_setup_inactivity_detection(struct device *dev,
 	return 0;
 }
 
-int adxl362_set_interrupt_mode(struct device *dev, u8_t mode)
+int adxl362_set_interrupt_mode(const struct device *dev, u8_t mode)
 {
 	u8_t old_act_inact_reg;
 	u8_t new_act_inact_reg;
@@ -530,7 +535,8 @@ int adxl362_set_interrupt_mode(struct device *dev, u8_t mode)
 	return 0;
 }
 
-static int adxl362_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int adxl362_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
 	struct adxl362_data *data = dev->driver_data;
 	s16_t buf[4];
@@ -588,7 +594,7 @@ static void adxl362_temp_convert(struct sensor_value *val, int temp)
 	val->val2 = (milli_c % 1000) * 1000;
 }
 
-static int adxl362_channel_get(struct device *dev,
+static int adxl362_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
@@ -623,7 +629,7 @@ static const struct sensor_driver_api adxl362_api_funcs = {
 #endif
 };
 
-static int adxl362_chip_init(struct device *dev)
+static int adxl362_chip_init(const struct device *dev)
 {
 	int ret;
 
@@ -719,7 +725,7 @@ static int adxl362_chip_init(struct device *dev)
  *         -1 - an error occurred.
  *
  */
-static int adxl362_init(struct device *dev)
+static int adxl362_init(const struct device *dev)
 {
 	const struct adxl362_config *config = dev->config_info;
 	struct adxl362_data *data = dev->driver_data;

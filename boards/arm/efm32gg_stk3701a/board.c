@@ -11,9 +11,9 @@
 #include <sys/printk.h>
 #include "em_cmu.h"
 
-static int efm32gg_stk3701a_init(struct device *dev)
+static int efm32gg_stk3701a_init(const struct device *dev)
 {
-	struct device *cur_dev;
+	const struct device *cur_dev;
 
 	ARG_UNUSED(dev);
 

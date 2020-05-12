@@ -125,7 +125,7 @@ static const u8_t conf_rsp[] = { 0x04, 0x7b };
 #define SIG_BUF_SIZE (BT_BUF_RESERVE + MAX_SIG_LEN)
 NET_BUF_POOL_DEFINE(h5_pool, SIGNAL_COUNT, SIG_BUF_SIZE, 0, NULL);
 
-static struct device *h5_dev;
+static const struct device *h5_dev;
 
 static void h5_reset_rx(void)
 {
@@ -411,7 +411,7 @@ static inline struct net_buf *get_evt_buf(u8_t evt)
 	return bt_buf_get_evt(evt, false, K_NO_WAIT);
 }
 
-static void bt_uart_isr(struct device *unused)
+static void bt_uart_isr(const struct device *unused)
 {
 	static int remaining;
 	u8_t byte;
@@ -752,7 +752,7 @@ static const struct bt_hci_driver drv = {
 	.send		= h5_queue,
 };
 
-static int bt_uart_init(struct device *unused)
+static int bt_uart_init(const struct device *unused)
 {
 	ARG_UNUSED(unused);
 

@@ -20,7 +20,7 @@
 
 LOG_MODULE_DECLARE(LSM6DSO, CONFIG_SENSOR_LOG_LEVEL);
 
-static int lsm6dso_spi_read(struct device *dev, u8_t reg_addr,
+static int lsm6dso_spi_read(const struct device *dev, u8_t reg_addr,
 			    u8_t *value, u8_t len)
 {
 	struct lsm6dso_data *data = dev->driver_data;
@@ -62,7 +62,7 @@ static int lsm6dso_spi_read(struct device *dev, u8_t reg_addr,
 	return 0;
 }
 
-static int lsm6dso_spi_write(struct device *dev, u8_t reg_addr,
+static int lsm6dso_spi_write(const struct device *dev, u8_t reg_addr,
 			     u8_t *value, u8_t len)
 {
 	struct lsm6dso_data *data = dev->driver_data;
@@ -96,7 +96,7 @@ static int lsm6dso_spi_write(struct device *dev, u8_t reg_addr,
 	return 0;
 }
 
-int lsm6dso_spi_init(struct device *dev)
+int lsm6dso_spi_init(const struct device *dev)
 {
 	struct lsm6dso_data *data = dev->driver_data;
 

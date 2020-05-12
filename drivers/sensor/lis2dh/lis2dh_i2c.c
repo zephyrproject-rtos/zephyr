@@ -20,7 +20,7 @@
 
 LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 
-static int lis2dh_i2c_read_data(struct device *dev, u8_t reg_addr,
+static int lis2dh_i2c_read_data(const struct device *dev, u8_t reg_addr,
 				 u8_t *value, u8_t len)
 {
 	struct lis2dh_data *data = dev->driver_data;
@@ -31,7 +31,7 @@ static int lis2dh_i2c_read_data(struct device *dev, u8_t reg_addr,
 			      value, len);
 }
 
-static int lis2dh_i2c_write_data(struct device *dev, u8_t reg_addr,
+static int lis2dh_i2c_write_data(const struct device *dev, u8_t reg_addr,
 				  u8_t *value, u8_t len)
 {
 	struct lis2dh_data *data = dev->driver_data;
@@ -42,7 +42,7 @@ static int lis2dh_i2c_write_data(struct device *dev, u8_t reg_addr,
 			       value, len);
 }
 
-static int lis2dh_i2c_read_reg(struct device *dev, u8_t reg_addr,
+static int lis2dh_i2c_read_reg(const struct device *dev, u8_t reg_addr,
 				u8_t *value)
 {
 	struct lis2dh_data *data = dev->driver_data;
@@ -53,7 +53,7 @@ static int lis2dh_i2c_read_reg(struct device *dev, u8_t reg_addr,
 				 reg_addr, value);
 }
 
-static int lis2dh_i2c_write_reg(struct device *dev, u8_t reg_addr,
+static int lis2dh_i2c_write_reg(const struct device *dev, u8_t reg_addr,
 				u8_t value)
 {
 	struct lis2dh_data *data = dev->driver_data;
@@ -64,7 +64,7 @@ static int lis2dh_i2c_write_reg(struct device *dev, u8_t reg_addr,
 				  reg_addr, value);
 }
 
-static int lis2dh_i2c_update_reg(struct device *dev, u8_t reg_addr,
+static int lis2dh_i2c_update_reg(const struct device *dev, u8_t reg_addr,
 				  u8_t mask, u8_t value)
 {
 	struct lis2dh_data *data = dev->driver_data;
@@ -83,7 +83,7 @@ static const struct lis2dh_transfer_function lis2dh_i2c_transfer_fn = {
 	.update_reg = lis2dh_i2c_update_reg,
 };
 
-int lis2dh_i2c_init(struct device *dev)
+int lis2dh_i2c_init(const struct device *dev)
 {
 	struct lis2dh_data *data = dev->driver_data;
 

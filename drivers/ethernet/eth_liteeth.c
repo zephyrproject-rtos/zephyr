@@ -72,7 +72,7 @@ struct eth_liteeth_config {
 	void (*config_func)(void);
 };
 
-static int eth_initialize(struct device *dev)
+static int eth_initialize(const struct device *dev)
 {
 	const struct eth_liteeth_config *config = dev->config_info;
 
@@ -81,7 +81,7 @@ static int eth_initialize(struct device *dev)
 	return 0;
 }
 
-static int eth_tx(struct device *dev, struct net_pkt *pkt)
+static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	int key;
 	u16_t len;
@@ -113,7 +113,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static void eth_rx(struct device *port)
+static void eth_rx(const struct device *port)
 {
 	struct net_pkt *pkt;
 	struct eth_liteeth_dev_data *context = port->driver_data;
@@ -158,7 +158,7 @@ out:
 	irq_unlock(key);
 }
 
-static void eth_irq_handler(struct device *port)
+static void eth_irq_handler(const struct device *port)
 {
 	/* check sram reader events (tx) */
 	if (sys_read8(LITEETH_TX_EV_PENDING) & LITEETH_EV_TX) {
@@ -190,7 +190,7 @@ static const struct eth_liteeth_config eth_config = {
 
 static void eth_iface_init(struct net_if *iface)
 {
-	struct device *port = net_if_get_device(iface);
+	const struct device *port = net_if_get_device(iface);
 	struct eth_liteeth_dev_data *context = port->driver_data;
 	static bool init_done;
 
@@ -231,7 +231,7 @@ static void eth_iface_init(struct net_if *iface)
 	init_done = true;
 }
 
-static enum ethernet_hw_caps eth_caps(struct device *dev)
+static enum ethernet_hw_caps eth_caps(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T |

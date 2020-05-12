@@ -44,18 +44,19 @@ struct i2c_cc13xx_cc26xx_config {
 	u32_t sda_pin;
 };
 
-static inline struct i2c_cc13xx_cc26xx_data *get_dev_data(struct device *dev)
+static inline struct i2c_cc13xx_cc26xx_data *get_dev_data(const struct device *dev)
 {
 	return dev->driver_data;
 }
 
 static inline const struct i2c_cc13xx_cc26xx_config *
-get_dev_config(struct device *dev)
+get_dev_config(const struct device *dev)
 {
 	return dev->config_info;
 }
 
-static int i2c_cc13xx_cc26xx_transmit(struct device *dev, const u8_t *buf,
+static int i2c_cc13xx_cc26xx_transmit(const struct device *dev,
+				      const u8_t *buf,
 				      u32_t len, u16_t addr)
 {
 	const u32_t base = get_dev_config(dev)->base;
@@ -123,7 +124,8 @@ send_error_stop:
 	return -EIO;
 }
 
-static int i2c_cc13xx_cc26xx_receive(struct device *dev, u8_t *buf, u32_t len,
+static int i2c_cc13xx_cc26xx_receive(const struct device *dev, u8_t *buf,
+				     u32_t len,
 				     u16_t addr)
 {
 	const u32_t base = get_dev_config(dev)->base;
@@ -195,7 +197,8 @@ recv_error_stop:
 	return -EIO;
 }
 
-static int i2c_cc13xx_cc26xx_transfer(struct device *dev, struct i2c_msg *msgs,
+static int i2c_cc13xx_cc26xx_transfer(const struct device *dev,
+				      struct i2c_msg *msgs,
 				      u8_t num_msgs, u16_t addr)
 {
 	int ret = 0;
@@ -242,7 +245,8 @@ static int i2c_cc13xx_cc26xx_transfer(struct device *dev, struct i2c_msg *msgs,
 }
 
 #define CPU_FREQ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
-static int i2c_cc13xx_cc26xx_configure(struct device *dev, u32_t dev_config)
+static int i2c_cc13xx_cc26xx_configure(const struct device *dev,
+				       u32_t dev_config)
 {
 	bool fast;
 
@@ -304,7 +308,7 @@ static void i2c_cc13xx_cc26xx_isr(void *arg)
 static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 	uintptr_t clientArg)
 {
-	struct device *dev = (struct device *)clientArg;
+	const struct device *dev = (const struct device *)clientArg;
 	int ret = Power_NOTIFYDONE;
 	s16_t res_id;
 
@@ -328,8 +332,8 @@ static int postNotifyFxn(unsigned int eventType, uintptr_t eventArg,
 #endif
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int i2c_cc13xx_cc26xx_set_power_state(struct device *dev,
-	u32_t new_state)
+static int i2c_cc13xx_cc26xx_set_power_state(const struct device *dev,
+					     u32_t new_state)
 {
 	int ret = 0;
 
@@ -366,8 +370,10 @@ static int i2c_cc13xx_cc26xx_set_power_state(struct device *dev,
 	return ret;
 }
 
-static int i2c_cc13xx_cc26xx_pm_control(struct device *dev, u32_t ctrl_command,
-	void *context, device_pm_cb cb, void *arg)
+static int i2c_cc13xx_cc26xx_pm_control(const struct device *dev,
+					u32_t ctrl_command,
+					void *context, device_pm_cb cb,
+					void *arg)
 {
 	int ret = 0;
 
@@ -391,7 +397,7 @@ static int i2c_cc13xx_cc26xx_pm_control(struct device *dev, u32_t ctrl_command,
 }
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
-static int i2c_cc13xx_cc26xx_init(struct device *dev)
+static int i2c_cc13xx_cc26xx_init(const struct device *dev)
 {
 	u32_t cfg;
 	int err;

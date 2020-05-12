@@ -25,7 +25,7 @@ char data[MAX_DATA_LEN] = {'h', 'e', 'l', 'l', 'o', 'w', 'o', 'r', 'l', 'd'};
 
 void main(void)
 {
-	struct device *lora_dev;
+	const struct device *lora_dev;
 	struct lora_modem_config config;
 	int ret;
 

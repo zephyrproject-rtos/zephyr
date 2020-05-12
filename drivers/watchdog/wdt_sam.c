@@ -48,7 +48,7 @@ static struct wdt_sam_dev_data wdt_sam_data = { 0 };
 #define DEV_CFG(dev) \
 	((const struct wdt_sam_dev_cfg *const)(dev)->config_info)
 
-static void wdt_sam_isr(struct device *dev)
+static void wdt_sam_isr(const struct device *dev)
 {
 	u32_t wdt_sr;
 	Wdt *const wdt = DEV_CFG(dev)->regs;
@@ -83,7 +83,7 @@ int wdt_sam_convert_timeout(u32_t timeout, u32_t sclk)
 	return WDT_MR_WDV(timeout / min);
 }
 
-static int wdt_sam_disable(struct device *dev)
+static int wdt_sam_disable(const struct device *dev)
 {
 	Wdt *const wdt = DEV_CFG(dev)->regs;
 	struct wdt_sam_dev_data *data = dev->driver_data;
@@ -106,7 +106,7 @@ static int wdt_sam_disable(struct device *dev)
 	return 0;
 }
 
-static int wdt_sam_setup(struct device *dev, u8_t options)
+static int wdt_sam_setup(const struct device *dev, u8_t options)
 {
 
 	Wdt *const wdt = DEV_CFG(dev)->regs;
@@ -139,7 +139,7 @@ static int wdt_sam_setup(struct device *dev, u8_t options)
 	return 0;
 }
 
-static int wdt_sam_install_timeout(struct device *dev,
+static int wdt_sam_install_timeout(const struct device *dev,
 				   const struct wdt_timeout_cfg *cfg)
 {
 	u32_t wdt_mode = 0U;
@@ -208,7 +208,7 @@ static int wdt_sam_install_timeout(struct device *dev,
 	return 0;
 }
 
-static int wdt_sam_feed(struct device *dev, int channel_id)
+static int wdt_sam_feed(const struct device *dev, int channel_id)
 {
 	/*
 	 * On watchdog restart the Watchdog counter is immediately
@@ -241,7 +241,7 @@ static void wdt_sam_irq_config(void)
 	irq_enable(DT_INST_IRQN(0));
 }
 
-static int wdt_sam_init(struct device *dev)
+static int wdt_sam_init(const struct device *dev)
 {
 #ifdef CONFIG_WDT_DISABLE_AT_BOOT
 	wdt_sam_disable(dev);

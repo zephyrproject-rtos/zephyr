@@ -54,12 +54,12 @@ struct oob_response {
 };
 
 #ifdef CONFIG_ESPI_GPIO_DEV_NEEDED
-static struct device *gpio_dev0;
-static struct device *gpio_dev1;
+static const struct device *gpio_dev0;
+static const struct device *gpio_dev1;
 #define PWR_SEQ_TIMEOUT    3000u
 #endif
 
-static struct device *espi_dev;
+static const struct device *espi_dev;
 static struct espi_callback espi_bus_cb;
 static struct espi_callback vw_rdy_cb;
 static struct espi_callback vw_cb;
@@ -98,7 +98,7 @@ static void host_warn_handler(u32_t signal, u32_t status)
 }
 
 /* eSPI bus event handler */
-static void espi_reset_handler(struct device *dev,
+static void espi_reset_handler(const struct device *dev,
 			       struct espi_callback *cb,
 			       struct espi_event event)
 {
@@ -109,7 +109,8 @@ static void espi_reset_handler(struct device *dev,
 }
 
 /* eSPI logical channels enable/disable event handler */
-static void espi_ch_handler(struct device *dev, struct espi_callback *cb,
+static void espi_ch_handler(const struct device *dev,
+			    struct espi_callback *cb,
 			    struct espi_event event)
 {
 	if (event.evt_type == ESPI_BUS_EVENT_CHANNEL_READY) {
@@ -122,7 +123,7 @@ static void espi_ch_handler(struct device *dev, struct espi_callback *cb,
 }
 
 /* eSPI vwire received event handler */
-static void vwire_handler(struct device *dev, struct espi_callback *cb,
+static void vwire_handler(const struct device *dev, struct espi_callback *cb,
 			  struct espi_event event)
 {
 	if (event.evt_type == ESPI_BUS_EVENT_VWIRE_RECEIVED) {
@@ -145,7 +146,7 @@ static void vwire_handler(struct device *dev, struct espi_callback *cb,
 }
 
 /* eSPI peripheral channel notifications handler */
-static void periph_handler(struct device *dev, struct espi_callback *cb,
+static void periph_handler(const struct device *dev, struct espi_callback *cb,
 			   struct espi_event event)
 {
 	u8_t periph_type;
@@ -217,7 +218,7 @@ int espi_init(void)
 	return ret;
 }
 
-static int wait_for_pin(struct device *dev, u8_t pin, u16_t timeout,
+static int wait_for_pin(const struct device *dev, u8_t pin, u16_t timeout,
 			int exp_level)
 {
 	u16_t loop_cnt = timeout;
@@ -247,7 +248,7 @@ static int wait_for_pin(struct device *dev, u8_t pin, u16_t timeout,
 	return 0;
 }
 
-static int wait_for_vwire(struct device *espi_dev,
+static int wait_for_vwire(const struct device *espi_dev,
 			  enum espi_vwire_signal signal,
 			  u16_t timeout, u8_t exp_level)
 {
@@ -455,7 +456,7 @@ static int espi_flash_test(u32_t start_flash_addr, u8_t blocks)
 }
 #endif /* CONFIG_ESPI_FLASH_CHANNEL */
 
-int get_pch_temp(struct device *dev)
+int get_pch_temp(const struct device *dev)
 {
 	struct espi_oob_packet req_pckt;
 	struct espi_oob_packet resp_pckt;

@@ -42,20 +42,20 @@ static u32_t overrides[] = {
 };
 
 static inline struct ieee802154_cc13xx_cc26xx_data *
-get_dev_data(struct device *dev)
+get_dev_data(const struct device *dev)
 {
 	return dev->driver_data;
 }
 
 static enum ieee802154_hw_caps
-ieee802154_cc13xx_cc26xx_get_capabilities(struct device *dev)
+ieee802154_cc13xx_cc26xx_get_capabilities(const struct device *dev)
 {
 	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ |
 	       IEEE802154_HW_FILTER | IEEE802154_HW_TX_RX_ACK |
 	       IEEE802154_HW_CSMA;
 }
 
-static int ieee802154_cc13xx_cc26xx_cca(struct device *dev)
+static int ieee802154_cc13xx_cc26xx_cca(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 	u32_t status;
@@ -78,7 +78,7 @@ static int ieee802154_cc13xx_cc26xx_cca(struct device *dev)
 	}
 }
 
-static int ieee802154_cc13xx_cc26xx_set_channel(struct device *dev,
+static int ieee802154_cc13xx_cc26xx_set_channel(const struct device *dev,
 						u16_t channel)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
@@ -112,7 +112,7 @@ static int ieee802154_cc13xx_cc26xx_set_channel(struct device *dev,
 }
 
 static int
-ieee802154_cc13xx_cc26xx_filter(struct device *dev, bool set,
+ieee802154_cc13xx_cc26xx_filter(const struct device *dev, bool set,
 				enum ieee802154_filter_type type,
 				const struct ieee802154_filter *filter)
 {
@@ -137,7 +137,8 @@ ieee802154_cc13xx_cc26xx_filter(struct device *dev, bool set,
 	return 0;
 }
 
-static int ieee802154_cc13xx_cc26xx_set_txpower(struct device *dev, s16_t dbm)
+static int ieee802154_cc13xx_cc26xx_set_txpower(const struct device *dev,
+						s16_t dbm)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 	u32_t status;
@@ -188,7 +189,7 @@ static int ieee802154_cc13xx_cc26xx_set_txpower(struct device *dev, s16_t dbm)
 }
 
 /* See IEEE 802.15.4 section 6.2.5.1 and TRM section 25.5.4.3 */
-static int ieee802154_cc13xx_cc26xx_tx(struct device *dev,
+static int ieee802154_cc13xx_cc26xx_tx(const struct device *dev,
 				       enum ieee802154_tx_mode mode,
 				       struct net_pkt *pkt,
 				       struct net_buf *frag)
@@ -268,7 +269,7 @@ static inline u8_t ieee802154_cc13xx_cc26xx_convert_rssi(s8_t rssi)
 	       CC13XX_CC26XX_RSSI_DYNAMIC_RANGE;
 }
 
-static void ieee802154_cc13xx_cc26xx_rx_done(struct device *dev)
+static void ieee802154_cc13xx_cc26xx_rx_done(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 	struct net_pkt *pkt;
@@ -335,14 +336,14 @@ static void ieee802154_cc13xx_cc26xx_rx(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static int ieee802154_cc13xx_cc26xx_start(struct device *dev)
+static int ieee802154_cc13xx_cc26xx_start(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return 0;
 }
 
-static int ieee802154_cc13xx_cc26xx_stop(struct device *dev)
+static int ieee802154_cc13xx_cc26xx_stop(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -352,7 +353,7 @@ static int ieee802154_cc13xx_cc26xx_stop(struct device *dev)
 }
 
 static int
-ieee802154_cc13xx_cc26xx_configure(struct device *dev,
+ieee802154_cc13xx_cc26xx_configure(const struct device *dev,
 				   enum ieee802154_config_type type,
 				   const struct ieee802154_config *config)
 {
@@ -393,7 +394,7 @@ static void ieee802154_cc13xx_cc26xx_cpe1_isr(void *arg)
 	}
 }
 
-static void ieee802154_cc13xx_cc26xx_data_init(struct device *dev)
+static void ieee802154_cc13xx_cc26xx_data_init(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 	u8_t *mac;
@@ -437,7 +438,7 @@ static void ieee802154_cc13xx_cc26xx_data_init(struct device *dev)
 
 static void ieee802154_cc13xx_cc26xx_iface_init(struct net_if *iface)
 {
-	struct device *dev = net_if_get_device(iface);
+	const struct device *dev = net_if_get_device(iface);
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 
 	net_if_set_link_addr(iface, drv_data->mac, sizeof(drv_data->mac),
@@ -462,7 +463,7 @@ static struct ieee802154_radio_api ieee802154_cc13xx_cc26xx_radio_api = {
 	.configure = ieee802154_cc13xx_cc26xx_configure,
 };
 
-static int ieee802154_cc13xx_cc26xx_init(struct device *dev)
+static int ieee802154_cc13xx_cc26xx_init(const struct device *dev)
 {
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 	bool set_osc_hf;

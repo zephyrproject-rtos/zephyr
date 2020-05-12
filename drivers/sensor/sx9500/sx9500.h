@@ -25,7 +25,7 @@
 #define SX9500_NEAR_FAR_IRQ		((1 << 5) | (1 << 6))
 
 struct sx9500_data {
-	struct device *i2c_master;
+	const struct device *i2c_master;
 	u16_t i2c_slave_addr;
 	u8_t prox_stat;
 
@@ -37,7 +37,7 @@ struct sx9500_data {
 
 #ifdef CONFIG_SX9500_TRIGGER_GLOBAL_THREAD
 	struct k_work work;
-	struct device *dev;
+	const struct device *dev;
 #endif
 
 #ifdef CONFIG_SX9500_TRIGGER
@@ -50,12 +50,12 @@ struct sx9500_data {
 };
 
 #ifdef CONFIG_SX9500_TRIGGER
-int sx9500_setup_interrupt(struct device *dev);
-int sx9500_trigger_set(struct device *dev,
+int sx9500_setup_interrupt(const struct device *dev);
+int sx9500_trigger_set(const struct device *dev,
 		       const struct sensor_trigger *trig,
 		       sensor_trigger_handler_t handler);
 #else
-static inline int sx9500_setup_interrupt(struct device *dev)
+static inline int sx9500_setup_interrupt(const struct device *dev)
 {
 	return 0;
 }

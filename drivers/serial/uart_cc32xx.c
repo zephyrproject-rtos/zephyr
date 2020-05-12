@@ -56,7 +56,7 @@ static struct uart_cc32xx_dev_data_t uart_cc32xx_dev_data_0 = {
  *  Keeping with this assumption, this driver leaves the FIFOs disabled,
  *  and at depth 1.
  */
-static int uart_cc32xx_init(struct device *dev)
+static int uart_cc32xx_init(const struct device *dev)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 
@@ -92,7 +92,7 @@ static int uart_cc32xx_init(struct device *dev)
 	return 0;
 }
 
-static int uart_cc32xx_poll_in(struct device *dev, unsigned char *c)
+static int uart_cc32xx_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 
@@ -104,14 +104,14 @@ static int uart_cc32xx_poll_in(struct device *dev, unsigned char *c)
 	return 0;
 }
 
-static void uart_cc32xx_poll_out(struct device *dev, unsigned char c)
+static void uart_cc32xx_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 
 	MAP_UARTCharPut((unsigned long)config->base, c);
 }
 
-static int uart_cc32xx_err_check(struct device *dev)
+static int uart_cc32xx_err_check(const struct device *dev)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 	unsigned long cc32xx_errs = 0L;
@@ -133,7 +133,8 @@ static int uart_cc32xx_err_check(struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-static int uart_cc32xx_fifo_fill(struct device *dev, const u8_t *tx_data,
+static int uart_cc32xx_fifo_fill(const struct device *dev,
+				 const u8_t *tx_data,
 				 int size)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
@@ -152,7 +153,7 @@ static int uart_cc32xx_fifo_fill(struct device *dev, const u8_t *tx_data,
 	return (int)num_tx;
 }
 
-static int uart_cc32xx_fifo_read(struct device *dev, u8_t *rx_data,
+static int uart_cc32xx_fifo_read(const struct device *dev, u8_t *rx_data,
 				 const int size)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
@@ -169,21 +170,21 @@ static int uart_cc32xx_fifo_read(struct device *dev, u8_t *rx_data,
 	return num_rx;
 }
 
-static void uart_cc32xx_irq_tx_enable(struct device *dev)
+static void uart_cc32xx_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 
 	MAP_UARTIntEnable((unsigned long)config->base, UART_INT_TX);
 }
 
-static void uart_cc32xx_irq_tx_disable(struct device *dev)
+static void uart_cc32xx_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 
 	MAP_UARTIntDisable((unsigned long)config->base, UART_INT_TX);
 }
 
-static int uart_cc32xx_irq_tx_ready(struct device *dev)
+static int uart_cc32xx_irq_tx_ready(const struct device *dev)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 	unsigned int int_status;
@@ -193,7 +194,7 @@ static int uart_cc32xx_irq_tx_ready(struct device *dev)
 	return (int_status & UART_INT_TX);
 }
 
-static void uart_cc32xx_irq_rx_enable(struct device *dev)
+static void uart_cc32xx_irq_rx_enable(const struct device *dev)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 
@@ -201,21 +202,21 @@ static void uart_cc32xx_irq_rx_enable(struct device *dev)
 	MAP_UARTIntEnable((unsigned long)config->base, UART_INT_RX);
 }
 
-static void uart_cc32xx_irq_rx_disable(struct device *dev)
+static void uart_cc32xx_irq_rx_disable(const struct device *dev)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 
 	MAP_UARTIntDisable((unsigned long)config->base, UART_INT_RX);
 }
 
-static int uart_cc32xx_irq_tx_complete(struct device *dev)
+static int uart_cc32xx_irq_tx_complete(const struct device *dev)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 
 	return (!MAP_UARTBusy((unsigned long)config->base));
 }
 
-static int uart_cc32xx_irq_rx_ready(struct device *dev)
+static int uart_cc32xx_irq_rx_ready(const struct device *dev)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 	unsigned int int_status;
@@ -225,17 +226,17 @@ static int uart_cc32xx_irq_rx_ready(struct device *dev)
 	return (int_status & UART_INT_RX);
 }
 
-static void uart_cc32xx_irq_err_enable(struct device *dev)
+static void uart_cc32xx_irq_err_enable(const struct device *dev)
 {
 	/* Not yet used in zephyr */
 }
 
-static void uart_cc32xx_irq_err_disable(struct device *dev)
+static void uart_cc32xx_irq_err_disable(const struct device *dev)
 {
 	/* Not yet used in zephyr */
 }
 
-static int uart_cc32xx_irq_is_pending(struct device *dev)
+static int uart_cc32xx_irq_is_pending(const struct device *dev)
 {
 	const struct uart_device_config *config = DEV_CFG(dev);
 	unsigned int int_status;
@@ -245,12 +246,12 @@ static int uart_cc32xx_irq_is_pending(struct device *dev)
 	return (int_status & (UART_INT_TX | UART_INT_RX));
 }
 
-static int uart_cc32xx_irq_update(struct device *dev)
+static int uart_cc32xx_irq_update(const struct device *dev)
 {
 	return 1;
 }
 
-static void uart_cc32xx_irq_callback_set(struct device *dev,
+static void uart_cc32xx_irq_callback_set(const struct device *dev,
 					 uart_irq_callback_user_data_t cb,
 					 void *cb_data)
 {
@@ -274,7 +275,7 @@ static void uart_cc32xx_irq_callback_set(struct device *dev,
  */
 static void uart_cc32xx_isr(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	const struct uart_device_config *config = DEV_CFG(dev);
 	struct uart_cc32xx_dev_data_t * const dev_data = DEV_DATA(dev);
 

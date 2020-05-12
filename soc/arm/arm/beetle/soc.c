@@ -30,7 +30,7 @@
  *
  * @return 0
  */
-static int arm_beetle_init(struct device *arg)
+static int arm_beetle_init(const struct device *arg)
 {
 	u32_t key;
 

@@ -92,12 +92,12 @@ struct net_route_test {
 	struct net_linkaddr ll_addr;
 };
 
-int net_route_dev_init(struct device *dev)
+int net_route_dev_init(const struct device *dev)
 {
 	return 0;
 }
 
-static u8_t *net_route_get_mac(struct device *dev)
+static u8_t *net_route_get_mac(const struct device *dev)
 {
 	struct net_route_test *route = dev->driver_data;
 
@@ -125,7 +125,7 @@ static void net_route_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
@@ -163,7 +163,7 @@ out:
 	return 0;
 }
 
-static int tester_send_peer(struct device *dev, struct net_pkt *pkt)
+static int tester_send_peer(const struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");

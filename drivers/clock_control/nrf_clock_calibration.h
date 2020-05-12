@@ -17,7 +17,7 @@ extern "C" {
  *
  * @param hfclk_dev HFCLK device.
  */
-void z_nrf_clock_calibration_init(struct device *hfclk_dev);
+void z_nrf_clock_calibration_init(const struct device *hfclk_dev);
 
 /**
  * @brief Calibration interrupts handler

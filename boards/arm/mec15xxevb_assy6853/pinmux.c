@@ -13,22 +13,22 @@
 
 struct pinmux_ports_t {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_000_036), okay)
-	struct device *porta;
+	const struct device *porta;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_040_076), okay)
-	struct device *portb;
+	const struct device *portb;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_100_136), okay)
-	struct device *portc;
+	const struct device *portc;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_140_176), okay)
-	struct device *portd;
+	const struct device *portd;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_200_236), okay)
-	struct device *porte;
+	const struct device *porte;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_240_276), okay)
-	struct device *portf;
+	const struct device *portf;
 #endif
 };
 
@@ -98,38 +98,38 @@ static void i2c_pinmux(struct pinmux_ports_t *p, uint8_t port_sel)
 	}
 }
 
-static int board_pinmux_init(struct device *dev)
+static int board_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	struct pinmux_ports_t pinmux_ports;
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_000_036), okay)
-	struct device *porta =
+	const struct device *porta =
 		device_get_binding(DT_LABEL(DT_NODELABEL(pinmux_000_036)));
 	pinmux_ports.porta = porta;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_040_076), okay)
-	struct device *portb =
+	const struct device *portb =
 		device_get_binding(DT_LABEL(DT_NODELABEL(pinmux_040_076)));
 	pinmux_ports.portb = portb;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_100_136), okay)
-	struct device *portc =
+	const struct device *portc =
 		device_get_binding(DT_LABEL(DT_NODELABEL(pinmux_100_136)));
 	pinmux_ports.portc = portc;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_140_176), okay)
-	struct device *portd =
+	const struct device *portd =
 		device_get_binding(DT_LABEL(DT_NODELABEL(pinmux_140_176)));
 	pinmux_ports.portd = portd;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_200_236), okay)
-	struct device *porte =
+	const struct device *porte =
 		device_get_binding(DT_LABEL(DT_NODELABEL(pinmux_200_236)));
 	pinmux_ports.porte = porte;
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pinmux_240_276), okay)
-	struct device *portf =
+	const struct device *portf =
 		device_get_binding(DT_LABEL(DT_NODELABEL(pinmux_240_276)));
 	pinmux_ports.portf = portf;
 #endif

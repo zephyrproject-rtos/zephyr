@@ -11,7 +11,7 @@
 #define VIDEO_PATTERN_FPS	30
 
 struct video_sw_generator_data {
-	struct device *dev;
+	const struct device *dev;
 	struct video_format fmt;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
@@ -22,7 +22,7 @@ struct video_sw_generator_data {
 	struct k_poll_signal *signal;
 };
 
-static int video_sw_generator_set_fmt(struct device *dev,
+static int video_sw_generator_set_fmt(const struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct video_format *fmt)
 {
@@ -37,7 +37,7 @@ static int video_sw_generator_set_fmt(struct device *dev,
 	return 0;
 }
 
-static int video_sw_generator_get_fmt(struct device *dev,
+static int video_sw_generator_get_fmt(const struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct video_format *fmt)
 {
@@ -52,14 +52,14 @@ static int video_sw_generator_get_fmt(struct device *dev,
 	return 0;
 }
 
-static int video_sw_generator_stream_start(struct device *dev)
+static int video_sw_generator_stream_start(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->driver_data;
 
 	return k_delayed_work_submit(&data->buf_work, K_MSEC(33));
 }
 
-static int video_sw_generator_stream_stop(struct device *dev)
+static int video_sw_generator_stream_stop(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->driver_data;
 
@@ -123,7 +123,7 @@ static void __buffer_work(struct k_work *work)
 	k_yield();
 }
 
-static int video_sw_generator_enqueue(struct device *dev,
+static int video_sw_generator_enqueue(const struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct video_buffer *vbuf)
 {
@@ -138,7 +138,7 @@ static int video_sw_generator_enqueue(struct device *dev,
 	return 0;
 }
 
-static int video_sw_generator_dequeue(struct device *dev,
+static int video_sw_generator_dequeue(const struct device *dev,
 				      enum video_endpoint_id ep,
 				      struct video_buffer **vbuf,
 				      k_timeout_t timeout)
@@ -157,7 +157,7 @@ static int video_sw_generator_dequeue(struct device *dev,
 	return 0;
 }
 
-static int video_sw_generator_flush(struct device *dev,
+static int video_sw_generator_flush(const struct device *dev,
 				    enum video_endpoint_id ep,
 				    bool cancel)
 {
@@ -195,7 +195,7 @@ static const struct video_format_cap fmts[] = {
 	{ 0 }
 };
 
-static int video_sw_generator_get_caps(struct device *dev,
+static int video_sw_generator_get_caps(const struct device *dev,
 				       enum video_endpoint_id ep,
 				       struct video_caps *caps)
 {
@@ -206,7 +206,7 @@ static int video_sw_generator_get_caps(struct device *dev,
 }
 
 #ifdef CONFIG_POLL
-static int video_sw_generator_set_signal(struct device *dev,
+static int video_sw_generator_set_signal(const struct device *dev,
 					 enum video_endpoint_id ep,
 					 struct k_poll_signal *signal)
 {
@@ -222,7 +222,7 @@ static int video_sw_generator_set_signal(struct device *dev,
 }
 #endif
 
-static inline int video_sw_generator_set_ctrl(struct device *dev,
+static inline int video_sw_generator_set_ctrl(const struct device *dev,
 					      unsigned int cid,
 					      void *value)
 {
@@ -261,7 +261,7 @@ static struct video_sw_generator_data video_sw_generator_data_0 = {
 	.fmt.pixelformat = VIDEO_PIX_FMT_RGB565,
 };
 
-static int video_sw_generator_init(struct device *dev)
+static int video_sw_generator_init(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->driver_data;
 

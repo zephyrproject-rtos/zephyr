@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(soc);
 
 #define SCG_LPFLL_DISABLE 0U
 
-static struct device *dev_intmux;
+static const struct device *dev_intmux;
 
 /*
  * Run-mode configuration for the fast internal reference clock (FIRC).
@@ -218,7 +218,7 @@ static void rv32m1_setup_peripheral_clocks(void)
  *
  * @return 0
  */
-static int soc_rv32m1_init(struct device *arg)
+static int soc_rv32m1_init(const struct device *arg)
 {
 	unsigned int key;
 

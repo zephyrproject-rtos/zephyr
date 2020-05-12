@@ -23,7 +23,7 @@ extern struct device __device_end[];
 static u8_t test_arr[TEST_ARR_SIZE];
 
 static int parse_helper(const struct shell *shell, size_t *argc,
-		char **argv[], struct device **flash_dev, u32_t *addr)
+		char **argv[], const struct device **flash_dev, u32_t *addr)
 {
 	char *endptr;
 
@@ -49,7 +49,7 @@ static int parse_helper(const struct shell *shell, size_t *argc,
 
 static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 {
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	u32_t page_addr;
 	int result;
 	u32_t size;
@@ -92,7 +92,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 {
 	u32_t check_array[BUF_ARRAY_CNT];
 	u32_t buf_array[BUF_ARRAY_CNT];
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	u32_t w_addr;
 	int ret;
 	int j = 0;
@@ -137,7 +137,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 {
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	u32_t addr;
 	int cnt;
 	int ret;
@@ -168,7 +168,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 
 static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 {
-	struct device *flash_dev;
+	const struct device *flash_dev;
 	u32_t repeat;
 	int result;
 	u32_t addr;
@@ -222,7 +222,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	int device_idx = 0;
-	struct device *dev;
+	const struct device *dev;
 
 	entry->syntax = NULL;
 	entry->handler = NULL;

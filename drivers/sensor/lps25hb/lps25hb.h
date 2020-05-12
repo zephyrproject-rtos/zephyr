@@ -152,7 +152,7 @@ struct lps25hb_config {
 };
 
 struct lps25hb_data {
-	struct device *i2c_master;
+	const struct device *i2c_master;
 
 	s32_t sample_press;
 	s16_t sample_temp;

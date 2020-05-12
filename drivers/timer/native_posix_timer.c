@@ -52,7 +52,7 @@ static void np_timer_isr(void *arg)
  *
  * Enable the hw timer, setting its tick period, and setup its interrupt
  */
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
 	ARG_UNUSED(device);
 

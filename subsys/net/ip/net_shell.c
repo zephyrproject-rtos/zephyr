@@ -4048,7 +4048,7 @@ static int cmd_net_suspend(const struct shell *shell, size_t argc,
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	if (argv[1]) {
 		struct net_if *iface = NULL;
-		struct device *dev;
+		const struct device *dev;
 		int idx;
 		int ret;
 
@@ -4093,7 +4093,7 @@ static int cmd_net_resume(const struct shell *shell, size_t argc,
 #if defined(CONFIG_NET_POWER_MANAGEMENT)
 	if (argv[1]) {
 		struct net_if *iface = NULL;
-		struct device *dev;
+		const struct device *dev;
 		int idx;
 		int ret;
 

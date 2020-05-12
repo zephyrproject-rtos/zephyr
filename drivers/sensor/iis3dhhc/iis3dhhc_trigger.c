@@ -22,7 +22,7 @@ LOG_MODULE_DECLARE(IIS3DHHC, CONFIG_SENSOR_LOG_LEVEL);
 /**
  * iis3dhhc_enable_int - enable selected int pin to generate interrupt
  */
-static int iis3dhhc_enable_int(struct device *dev, int enable)
+static int iis3dhhc_enable_int(const struct device *dev, int enable)
 {
 	struct iis3dhhc_data *iis3dhhc = dev->driver_data;
 
@@ -37,7 +37,7 @@ static int iis3dhhc_enable_int(struct device *dev, int enable)
 /**
  * iis3dhhc_trigger_set - link external trigger to event data ready
  */
-int iis3dhhc_trigger_set(struct device *dev,
+int iis3dhhc_trigger_set(const struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
@@ -64,7 +64,7 @@ int iis3dhhc_trigger_set(struct device *dev,
  */
 static void iis3dhhc_handle_interrupt(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct iis3dhhc_data *iis3dhhc = dev->driver_data;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
@@ -79,7 +79,7 @@ static void iis3dhhc_handle_interrupt(void *arg)
 				     GPIO_INT_EDGE_TO_ACTIVE);
 }
 
-static void iis3dhhc_gpio_callback(struct device *dev,
+static void iis3dhhc_gpio_callback(const struct device *dev,
 				    struct gpio_callback *cb, u32_t pins)
 {
 	struct iis3dhhc_data *iis3dhhc =
@@ -101,7 +101,7 @@ static void iis3dhhc_gpio_callback(struct device *dev,
 #ifdef CONFIG_IIS3DHHC_TRIGGER_OWN_THREAD
 static void iis3dhhc_thread(int dev_ptr, int unused)
 {
-	struct device *dev = INT_TO_POINTER(dev_ptr);
+	const struct device *dev = INT_TO_POINTER(dev_ptr);
 	struct iis3dhhc_data *iis3dhhc = dev->driver_data;
 
 	ARG_UNUSED(unused);
@@ -123,7 +123,7 @@ static void iis3dhhc_work_cb(struct k_work *work)
 }
 #endif /* CONFIG_IIS3DHHC_TRIGGER_GLOBAL_THREAD */
 
-int iis3dhhc_init_interrupt(struct device *dev)
+int iis3dhhc_init_interrupt(const struct device *dev)
 {
 	struct iis3dhhc_data *iis3dhhc = dev->driver_data;
 	const struct iis3dhhc_config *cfg = dev->config_info;

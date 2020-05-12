@@ -104,7 +104,7 @@ const struct isotp_msg_id tx_addr_ext = {
 	.ext_addr = EXT_ADDR
 };
 
-struct device *can_dev;
+const struct device *can_dev;
 struct isotp_recv_ctx recv_ctx;
 struct isotp_send_ctx send_ctx;
 u8_t data_buf[128];

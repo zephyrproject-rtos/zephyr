@@ -20,7 +20,7 @@
 struct gpio_callback gpio_cb;
 static int cb_count;
 
-static void callback_edge(struct device *port, struct gpio_callback *cb,
+static void callback_edge(const struct device *port, struct gpio_callback *cb,
 			  gpio_port_pins_t pins)
 {
 	zassert_equal(pins, BIT(TEST_PIN),
@@ -28,7 +28,8 @@ static void callback_edge(struct device *port, struct gpio_callback *cb,
 	cb_count++;
 }
 
-static void callback_level(struct device *port, struct gpio_callback *cb,
+static void callback_level(const struct device *port,
+			   struct gpio_callback *cb,
 			   gpio_port_pins_t pins)
 {
 	int ret;
@@ -43,7 +44,8 @@ static void callback_level(struct device *port, struct gpio_callback *cb,
 	cb_count++;
 }
 
-static void pin_set_and_verify(struct device *port, unsigned int pin, int val,
+static void pin_set_and_verify(const struct device *port, unsigned int pin,
+			       int val,
 			       int idx)
 {
 	zassert_equal(gpio_pin_set(port, pin, val), 0,
@@ -54,7 +56,7 @@ static void pin_set_and_verify(struct device *port, unsigned int pin, int val,
 void test_gpio_pin_interrupt_edge(unsigned int cfg_flags,
 				  unsigned int int_flags)
 {
-	struct device *port;
+	const struct device *port;
 	int cb_count_expected;
 	unsigned int cfg_out_flag;
 	int ret;
@@ -127,7 +129,7 @@ void test_gpio_pin_interrupt_edge(unsigned int cfg_flags,
 void test_gpio_pin_interrupt_level(unsigned int cfg_flags,
 				   unsigned int int_flags)
 {
-	struct device *port;
+	const struct device *port;
 	int cb_count_expected;
 	unsigned int cfg_out_flag;
 	int pin_out_val;

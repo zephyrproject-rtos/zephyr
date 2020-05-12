@@ -28,12 +28,12 @@ struct spi_nrfx_config {
 	nrfx_spi_config_t config;
 };
 
-static inline struct spi_nrfx_data *get_dev_data(struct device *dev)
+static inline struct spi_nrfx_data *get_dev_data(const struct device *dev)
 {
 	return dev->driver_data;
 }
 
-static inline const struct spi_nrfx_config *get_dev_config(struct device *dev)
+static inline const struct spi_nrfx_config *get_dev_config(const struct device *dev)
 {
 	return dev->config_info;
 }
@@ -85,7 +85,7 @@ static inline nrf_spi_bit_order_t get_nrf_spi_bit_order(u16_t operation)
 	}
 }
 
-static int configure(struct device *dev,
+static int configure(const struct device *dev,
 		     const struct spi_config *spi_cfg)
 {
 	struct spi_context *ctx = &get_dev_data(dev)->ctx;
@@ -135,7 +135,7 @@ static int configure(struct device *dev,
 	return 0;
 }
 
-static void transfer_next_chunk(struct device *dev)
+static void transfer_next_chunk(const struct device *dev)
 {
 	struct spi_nrfx_data *dev_data = get_dev_data(dev);
 	struct spi_context *ctx = &dev_data->ctx;
@@ -169,7 +169,7 @@ static void transfer_next_chunk(struct device *dev)
 	dev_data->busy = false;
 }
 
-static int transceive(struct device *dev,
+static int transceive(const struct device *dev,
 		      const struct spi_config *spi_cfg,
 		      const struct spi_buf_set *tx_bufs,
 		      const struct spi_buf_set *rx_bufs,
@@ -198,7 +198,7 @@ static int transceive(struct device *dev,
 	return error;
 }
 
-static int spi_nrfx_transceive(struct device *dev,
+static int spi_nrfx_transceive(const struct device *dev,
 			       const struct spi_config *spi_cfg,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
@@ -207,7 +207,7 @@ static int spi_nrfx_transceive(struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int spi_nrfx_transceive_async(struct device *dev,
+static int spi_nrfx_transceive_async(const struct device *dev,
 				     const struct spi_config *spi_cfg,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
@@ -217,7 +217,7 @@ static int spi_nrfx_transceive_async(struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static int spi_nrfx_release(struct device *dev,
+static int spi_nrfx_release(const struct device *dev,
 			    const struct spi_config *spi_cfg)
 {
 	struct spi_nrfx_data *dev_data = get_dev_data(dev);
@@ -246,7 +246,7 @@ static const struct spi_driver_api spi_nrfx_driver_api = {
 
 static void event_handler(const nrfx_spi_evt_t *p_event, void *p_context)
 {
-	struct device *dev = p_context;
+	const struct device *dev = p_context;
 	struct spi_nrfx_data *dev_data = get_dev_data(dev);
 
 	if (p_event->type == NRFX_SPI_EVENT_DONE) {
@@ -257,7 +257,7 @@ static void event_handler(const nrfx_spi_evt_t *p_event, void *p_context)
 	}
 }
 
-static int init_spi(struct device *dev)
+static int init_spi(const struct device *dev)
 {
 	/* This sets only default values of frequency, mode and bit order.
 	 * The proper ones are set in configure() when a transfer is started.
@@ -281,7 +281,7 @@ static int init_spi(struct device *dev)
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-static int spi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
+static int spi_nrfx_pm_control(const struct device *dev, u32_t ctrl_command,
 				void *context, device_pm_cb cb, void *arg)
 {
 	int ret = 0;
@@ -352,7 +352,7 @@ static int spi_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		!SPI_PROP(idx, miso_pull_up) || !SPI_PROP(idx, miso_pull_down),\
 		"SPI"#idx						       \
 		": cannot enable both pull-up and pull-down on MISO line");    \
-	static int spi_##idx##_init(struct device *dev)			       \
+	static int spi_##idx##_init(const struct device *dev)			       \
 	{								       \
 		IRQ_CONNECT(DT_IRQN(SPI(idx)), DT_IRQ(SPI(idx), priority),     \
 			    nrfx_isr, nrfx_spi_##idx##_irq_handler, 0);	       \

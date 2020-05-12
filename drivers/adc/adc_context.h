@@ -206,7 +206,7 @@ static inline void adc_context_start_read(struct adc_context *ctx,
  * function if required and takes further actions accordingly.
  */
 static inline void adc_context_on_sampling_done(struct adc_context *ctx,
-						struct device *dev)
+						const struct device *dev)
 {
 	if (ctx->sequence.options) {
 		adc_sequence_callback callback = ctx->options.callback;

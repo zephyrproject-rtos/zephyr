@@ -43,12 +43,12 @@ static const struct gpio_driver_config gpio_cc13xx_cc26xx_cfg_0 = {
 	.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
 };
 
-static int gpio_cc13xx_cc26xx_port_set_bits_raw(struct device *port,
-	u32_t mask);
-static int gpio_cc13xx_cc26xx_port_clear_bits_raw(struct device *port,
-	u32_t mask);
+static int gpio_cc13xx_cc26xx_port_set_bits_raw(const struct device *port,
+						u32_t mask);
+static int gpio_cc13xx_cc26xx_port_clear_bits_raw(const struct device *port,
+						  u32_t mask);
 
-static int gpio_cc13xx_cc26xx_config(struct device *port,
+static int gpio_cc13xx_cc26xx_config(const struct device *port,
 				     gpio_pin_t pin,
 				     gpio_flags_t flags)
 {
@@ -108,7 +108,8 @@ static int gpio_cc13xx_cc26xx_config(struct device *port,
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_port_get_raw(struct device *port, u32_t *value)
+static int gpio_cc13xx_cc26xx_port_get_raw(const struct device *port,
+					   u32_t *value)
 {
 	__ASSERT_NO_MSG(value != NULL);
 
@@ -117,8 +118,8 @@ static int gpio_cc13xx_cc26xx_port_get_raw(struct device *port, u32_t *value)
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_port_set_masked_raw(struct device *port,
-	u32_t mask, u32_t value)
+static int gpio_cc13xx_cc26xx_port_set_masked_raw(const struct device *port,
+						  u32_t mask, u32_t value)
 {
 	GPIO_setMultiDio(mask & value);
 	GPIO_clearMultiDio(mask & ~value);
@@ -126,31 +127,34 @@ static int gpio_cc13xx_cc26xx_port_set_masked_raw(struct device *port,
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_port_set_bits_raw(struct device *port, u32_t mask)
+static int gpio_cc13xx_cc26xx_port_set_bits_raw(const struct device *port,
+						u32_t mask)
 {
 	GPIO_setMultiDio(mask);
 
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_port_clear_bits_raw(struct device *port,
-	u32_t mask)
+static int gpio_cc13xx_cc26xx_port_clear_bits_raw(const struct device *port,
+						  u32_t mask)
 {
 	GPIO_clearMultiDio(mask);
 
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_port_toggle_bits(struct device *port, u32_t mask)
+static int gpio_cc13xx_cc26xx_port_toggle_bits(const struct device *port,
+					       u32_t mask)
 {
 	GPIO_toggleMultiDio(mask);
 
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_pin_interrupt_configure(struct device *port,
-		gpio_pin_t pin, enum gpio_int_mode mode,
-		enum gpio_int_trig trig)
+static int gpio_cc13xx_cc26xx_pin_interrupt_configure(const struct device *port,
+						      gpio_pin_t pin,
+						      enum gpio_int_mode mode,
+						      enum gpio_int_trig trig)
 {
 	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
 	u32_t config = 0;
@@ -182,7 +186,7 @@ static int gpio_cc13xx_cc26xx_pin_interrupt_configure(struct device *port,
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_manage_callback(struct device *port,
+static int gpio_cc13xx_cc26xx_manage_callback(const struct device *port,
 					      struct gpio_callback *callback,
 					      bool set)
 {
@@ -191,7 +195,7 @@ static int gpio_cc13xx_cc26xx_manage_callback(struct device *port,
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static int gpio_cc13xx_cc26xx_enable_callback(struct device *port,
+static int gpio_cc13xx_cc26xx_enable_callback(const struct device *port,
 					      gpio_pin_t pin)
 {
 	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
@@ -202,7 +206,7 @@ static int gpio_cc13xx_cc26xx_enable_callback(struct device *port,
 	return 0;
 }
 
-static int gpio_cc13xx_cc26xx_disable_callback(struct device *port,
+static int gpio_cc13xx_cc26xx_disable_callback(const struct device *port,
 					       gpio_pin_t pin)
 {
 	struct gpio_cc13xx_cc26xx_data *data = port->driver_data;
@@ -213,7 +217,7 @@ static int gpio_cc13xx_cc26xx_disable_callback(struct device *port,
 	return 0;
 }
 
-static u32_t gpio_cc13xx_cc26xx_get_pending_int(struct device *dev)
+static u32_t gpio_cc13xx_cc26xx_get_pending_int(const struct device *dev)
 {
 	return GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
 }
@@ -222,7 +226,7 @@ DEVICE_DECLARE(gpio_cc13xx_cc26xx);
 
 static void gpio_cc13xx_cc26xx_isr(void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct gpio_cc13xx_cc26xx_data *data = dev->driver_data;
 
 	u32_t status = GPIO_getEventMultiDio(GPIO_DIO_ALL_MASK);
@@ -233,7 +237,7 @@ static void gpio_cc13xx_cc26xx_isr(void *arg)
 	gpio_fire_callbacks(&data->callbacks, dev, enabled);
 }
 
-static int gpio_cc13xx_cc26xx_init(struct device *dev)
+static int gpio_cc13xx_cc26xx_init(const struct device *dev)
 {
 	struct gpio_cc13xx_cc26xx_data *data = dev->driver_data;
 

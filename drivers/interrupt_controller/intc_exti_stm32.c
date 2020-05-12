@@ -216,7 +216,7 @@ void stm32_exti_trigger(int line, int trigger)
  */
 static void __stm32_exti_isr(int min, int max, void *arg)
 {
-	struct device *dev = arg;
+	const struct device *dev = arg;
 	struct stm32_exti_data *data = dev->driver_data;
 	int line;
 
@@ -382,12 +382,12 @@ static inline void __stm32_exti_isr_23(void *arg)
 #endif
 #endif /* CONFIG_SOC_SERIES_STM32F0X */
 
-static void __stm32_exti_connect_irqs(struct device *dev);
+static void __stm32_exti_connect_irqs(const struct device *dev);
 
 /**
  * @brief initialize EXTI device driver
  */
-static int stm32_exti_init(struct device *dev)
+static int stm32_exti_init(const struct device *dev)
 {
 	__stm32_exti_connect_irqs(dev);
 
@@ -404,7 +404,7 @@ DEVICE_INIT(exti_stm32, STM32_EXTI_NAME, stm32_exti_init,
  */
 int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 {
-	struct device *dev = DEVICE_GET(exti_stm32);
+	const struct device *dev = DEVICE_GET(exti_stm32);
 	struct stm32_exti_data *data = dev->driver_data;
 
 	if (data->cb[line].cb) {
@@ -419,7 +419,7 @@ int stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
 
 void stm32_exti_unset_callback(int line)
 {
-	struct device *dev = DEVICE_GET(exti_stm32);
+	const struct device *dev = DEVICE_GET(exti_stm32);
 	struct stm32_exti_data *data = dev->driver_data;
 
 	data->cb[line].cb = NULL;
@@ -429,7 +429,7 @@ void stm32_exti_unset_callback(int line)
 /**
  * @brief connect all interrupts
  */
-static void __stm32_exti_connect_irqs(struct device *dev)
+static void __stm32_exti_connect_irqs(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 

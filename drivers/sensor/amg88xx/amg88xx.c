@@ -21,7 +21,8 @@
 
 LOG_MODULE_REGISTER(AMG88XX, CONFIG_SENSOR_LOG_LEVEL);
 
-static int amg88xx_sample_fetch(struct device *dev, enum sensor_channel chan)
+static int amg88xx_sample_fetch(const struct device *dev,
+				enum sensor_channel chan)
 {
 	struct amg88xx_data *drv_data = dev->driver_data;
 	const struct amg88xx_config *config = dev->config_info;
@@ -38,7 +39,7 @@ static int amg88xx_sample_fetch(struct device *dev, enum sensor_channel chan)
 	return 0;
 }
 
-static int amg88xx_channel_get(struct device *dev,
+static int amg88xx_channel_get(const struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
 {
@@ -63,7 +64,7 @@ static int amg88xx_channel_get(struct device *dev,
 	return 0;
 }
 
-static int amg88xx_init_device(struct device *dev)
+static int amg88xx_init_device(const struct device *dev)
 {
 	struct amg88xx_data *drv_data = dev->driver_data;
 	const struct amg88xx_config *config = dev->config_info;
@@ -103,7 +104,7 @@ static int amg88xx_init_device(struct device *dev)
 	return 0;
 }
 
-int amg88xx_init(struct device *dev)
+int amg88xx_init(const struct device *dev)
 {
 	struct amg88xx_data *drv_data = dev->driver_data;
 	const struct amg88xx_config *config = dev->config_info;

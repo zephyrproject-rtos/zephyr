@@ -56,7 +56,7 @@ DEVICE_DECLARE(intmux);
  * <irq_nextlevel.h> API
  */
 
-static void rv32m1_intmux_irq_enable(struct device *dev, u32_t irq)
+static void rv32m1_intmux_irq_enable(const struct device *dev, u32_t irq)
 {
 	INTMUX_Type *regs = DEV_REGS(dev);
 	u32_t channel = rv32m1_intmux_channel(irq);
@@ -65,7 +65,7 @@ static void rv32m1_intmux_irq_enable(struct device *dev, u32_t irq)
 	regs->CHANNEL[channel].CHn_IER_31_0 |= BIT(line);
 }
 
-static void rv32m1_intmux_irq_disable(struct device *dev, u32_t irq)
+static void rv32m1_intmux_irq_disable(const struct device *dev, u32_t irq)
 {
 	INTMUX_Type *regs = DEV_REGS(dev);
 	u32_t channel = rv32m1_intmux_channel(irq);
@@ -74,7 +74,7 @@ static void rv32m1_intmux_irq_disable(struct device *dev, u32_t irq)
 	regs->CHANNEL[channel].CHn_IER_31_0 &= ~BIT(line);
 }
 
-static u32_t rv32m1_intmux_get_state(struct device *dev)
+static u32_t rv32m1_intmux_get_state(const struct device *dev)
 {
 	INTMUX_Type *regs = DEV_REGS(dev);
 	size_t i;
@@ -88,7 +88,8 @@ static u32_t rv32m1_intmux_get_state(struct device *dev)
 	return 0;
 }
 
-static int rv32m1_intmux_get_line_state(struct device *dev, unsigned int irq)
+static int rv32m1_intmux_get_line_state(const struct device *dev,
+					unsigned int irq)
 {
 	INTMUX_Type *regs = DEV_REGS(dev);
 	u32_t channel = rv32m1_intmux_channel(irq);
@@ -110,7 +111,7 @@ static int rv32m1_intmux_get_line_state(struct device *dev, unsigned int irq)
 
 static void rv32m1_intmux_isr(void *arg)
 {
-	struct device *dev = DEVICE_GET(intmux);
+	const struct device *dev = DEVICE_GET(intmux);
 	INTMUX_Type *regs = DEV_REGS(dev);
 	u32_t channel = POINTER_TO_UINT(arg);
 	u32_t line = (regs->CHANNEL[channel].CHn_VEC >> 2);
@@ -151,11 +152,11 @@ static const struct rv32m1_intmux_config rv32m1_intmux_cfg = {
 	.isr_base = &_sw_isr_table[CONFIG_2ND_LVL_ISR_TBL_OFFSET],
 };
 
-static int rv32m1_intmux_init(struct device *dev)
+static int rv32m1_intmux_init(const struct device *dev)
 {
 	const struct rv32m1_intmux_config *config = DEV_CFG(dev);
 	INTMUX_Type *regs = DEV_REGS(dev);
-	struct device *clock_dev = device_get_binding(config->clock_name);
+	const struct device *clock_dev = device_get_binding(config->clock_name);
 	size_t i;
 
 	if (!clock_dev) {

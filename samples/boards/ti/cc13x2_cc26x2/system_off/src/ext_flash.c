@@ -21,7 +21,7 @@
 /*
  *  ======== CC1352R1_LAUNCHXL_sendExtFlashByte ========
  */
-void CC1352R1_LAUNCHXL_sendExtFlashByte(struct device *dev, u8_t byte)
+void CC1352R1_LAUNCHXL_sendExtFlashByte(const struct device *dev, u8_t byte)
 {
 	u8_t i;
 
@@ -56,7 +56,7 @@ void CC1352R1_LAUNCHXL_sendExtFlashByte(struct device *dev, u8_t byte)
 /*
  *  ======== CC1352R1_LAUNCHXL_wakeUpExtFlash ========
  */
-void CC1352R1_LAUNCHXL_wakeUpExtFlash(struct device *dev)
+void CC1352R1_LAUNCHXL_wakeUpExtFlash(const struct device *dev)
 {
 	/*
 	 *  To wake up we need to toggle the chip select at
@@ -77,7 +77,7 @@ void CC1352R1_LAUNCHXL_wakeUpExtFlash(struct device *dev)
  */
 void CC1352R1_LAUNCHXL_shutDownExtFlash(void)
 {
-	struct device *dev;
+	const struct device *dev;
 	u8_t extFlashShutdown = 0xB9;
 
 	dev = device_get_binding(GPIO_PORT);

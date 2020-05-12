@@ -93,7 +93,8 @@ static const char default_eeprom_file_path[] = "eeprom.bin";
 static u8_t mock_eeprom[DT_INST_PROP(0, size)];
 #endif /* CONFIG_ARCH_POSIX */
 
-static int eeprom_range_is_valid(struct device *dev, off_t offset, size_t len)
+static int eeprom_range_is_valid(const struct device *dev, off_t offset,
+				 size_t len)
 {
 	const struct eeprom_sim_config *config = DEV_CONFIG(dev);
 
@@ -104,7 +105,7 @@ static int eeprom_range_is_valid(struct device *dev, off_t offset, size_t len)
 	return 0;
 }
 
-static int eeprom_sim_read(struct device *dev, off_t offset, void *data,
+static int eeprom_sim_read(const struct device *dev, off_t offset, void *data,
 			   size_t len)
 {
 	if (!len) {
@@ -133,7 +134,8 @@ static int eeprom_sim_read(struct device *dev, off_t offset, void *data,
 	return 0;
 }
 
-static int eeprom_sim_write(struct device *dev, off_t offset, const void *data,
+static int eeprom_sim_write(const struct device *dev, off_t offset,
+			    const void *data,
 			    size_t len)
 {
 	const struct eeprom_sim_config *config = DEV_CONFIG(dev);
@@ -192,7 +194,7 @@ end:
 	return 0;
 }
 
-static size_t eeprom_sim_size(struct device *dev)
+static size_t eeprom_sim_size(const struct device *dev)
 {
 	const struct eeprom_sim_config *config = DEV_CONFIG(dev);
 
@@ -212,7 +214,7 @@ static const struct eeprom_sim_config eeprom_sim_config_0 = {
 
 #ifdef CONFIG_ARCH_POSIX
 
-static int eeprom_mock_init(struct device *dev)
+static int eeprom_mock_init(const struct device *dev)
 {
 	if (eeprom_file_path == NULL) {
 		eeprom_file_path = default_eeprom_file_path;
@@ -247,7 +249,7 @@ static int eeprom_mock_init(struct device *dev)
 
 #else
 
-static int eeprom_mock_init(struct device *dev)
+static int eeprom_mock_init(const struct device *dev)
 {
 	memset(mock_eeprom, 0xFF, ARRAY_SIZE(mock_eeprom));
 	return 0;
@@ -255,7 +257,7 @@ static int eeprom_mock_init(struct device *dev)
 
 #endif /* CONFIG_ARCH_POSIX */
 
-static int eeprom_sim_init(struct device *dev)
+static int eeprom_sim_init(const struct device *dev)
 {
 	SYNC_INIT();
 	STATS_INIT_AND_REG(eeprom_sim_stats, STATS_SIZE_32, "eeprom_sim_stats");

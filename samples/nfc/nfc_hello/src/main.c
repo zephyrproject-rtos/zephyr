@@ -14,7 +14,7 @@
 #define BUF_MAXSIZE	256
 #define SLEEP_TIME	500
 
-static struct device *uart1_dev;
+static const struct device *uart1_dev;
 static u8_t rx_buf[BUF_MAXSIZE];
 static u8_t tx_buf[BUF_MAXSIZE];
 static u8_t nci_reset[] = {0x20, 0x00, 0x01, 0x00};
@@ -30,7 +30,7 @@ static void msg_dump(const char *s, u8_t *data, unsigned len)
 	printf("(%u bytes)\n", len);
 }
 
-static void uart1_isr(struct device *x)
+static void uart1_isr(const struct device *x)
 {
 	int len = uart_fifo_read(uart1_dev, rx_buf, BUF_MAXSIZE);
 

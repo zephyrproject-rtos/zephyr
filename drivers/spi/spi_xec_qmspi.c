@@ -165,7 +165,7 @@ static u32_t qmspi_config_get_lines(const struct spi_config *config)
  * Configure QMSPI.
  * NOTE: QMSPI can control two chip selects. At this time we use CS0# only.
  */
-static int qmspi_configure(struct device *dev,
+static int qmspi_configure(const struct device *dev,
 			   const struct spi_config *config)
 {
 	const struct spi_qmspi_config *cfg = dev->config_info;
@@ -503,7 +503,7 @@ static int qmspi_rx(QMSPI_Type *regs, const struct spi_buf *rx_buf,
 	return 0;
 }
 
-static int qmspi_transceive(struct device *dev,
+static int qmspi_transceive(const struct device *dev,
 			    const struct spi_config *config,
 			    const struct spi_buf_set *tx_bufs,
 			    const struct spi_buf_set *rx_bufs)
@@ -570,7 +570,7 @@ done:
 	return err;
 }
 
-static int qmspi_transceive_sync(struct device *dev,
+static int qmspi_transceive_sync(const struct device *dev,
 				 const struct spi_config *config,
 				 const struct spi_buf_set *tx_bufs,
 				 const struct spi_buf_set *rx_bufs)
@@ -579,7 +579,7 @@ static int qmspi_transceive_sync(struct device *dev,
 }
 
 #ifdef CONFIG_SPI_ASYNC
-static int qmspi_transceive_async(struct device *dev,
+static int qmspi_transceive_async(const struct device *dev,
 				  const struct spi_config *config,
 				  const struct spi_buf_set *tx_bufs,
 				  const struct spi_buf_set *rx_bufs,
@@ -589,7 +589,7 @@ static int qmspi_transceive_async(struct device *dev,
 }
 #endif
 
-static int qmspi_release(struct device *dev,
+static int qmspi_release(const struct device *dev,
 			 const struct spi_config *config)
 {
 	struct spi_qmspi_data *data = dev->driver_data;
@@ -614,7 +614,7 @@ static int qmspi_release(struct device *dev,
  * Initialize SPI context.
  * QMSPI will be configured and enabled when the transceive API is called.
  */
-static int qmspi_init(struct device *dev)
+static int qmspi_init(const struct device *dev)
 {
 	const struct spi_qmspi_config *cfg = dev->config_info;
 	struct spi_qmspi_data *data = dev->driver_data;

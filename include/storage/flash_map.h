@@ -207,7 +207,7 @@ int flash_area_has_driver(const struct flash_area *fa);
  *
  * @return device driver.
  */
-struct device *flash_area_get_device(const struct flash_area *fa);
+const struct device *flash_area_get_device(const struct flash_area *fa);
 
 #define FLASH_AREA_LABEL_EXISTS(label) \
 	DT_HAS_FIXED_PARTITION_LABEL(label)

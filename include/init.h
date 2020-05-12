@@ -41,8 +41,8 @@ struct device;
  * if the init entry is not used for a device driver but a service.
  */
 struct init_entry {
-	int (*init)(struct device *dev);
-	struct device *dev;
+	int (*init)(const struct device *dev);
+	const struct device *dev;
 };
 
 void z_sys_init_run_level(s32_t level);

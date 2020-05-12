@@ -856,12 +856,12 @@ struct net_context_test {
 	struct net_linkaddr ll_addr;
 };
 
-int net_context_dev_init(struct device *dev)
+int net_context_dev_init(const struct device *dev)
 {
 	return 0;
 }
 
-static u8_t *net_context_get_mac(struct device *dev)
+static u8_t *net_context_get_mac(const struct device *dev)
 {
 	struct net_context_test *context = dev->driver_data;
 
@@ -886,7 +886,7 @@ static void net_context_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
-static int tester_send(struct device *dev, struct net_pkt *pkt)
+static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_udp_hdr hdr, *udp_hdr;
 

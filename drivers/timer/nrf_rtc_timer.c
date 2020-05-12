@@ -180,9 +180,9 @@ void rtc1_nrf_isr(void *arg)
 	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
 }
 
-int z_clock_driver_init(struct device *device)
+int z_clock_driver_init(const struct device *device)
 {
-	struct device *clock;
+	const struct device *clock;
 
 	ARG_UNUSED(device);
 

@@ -38,9 +38,11 @@
  * emulator to it, if set so from command line.
  */
 
-static int np_uart_stdin_poll_in(struct device *dev, unsigned char *p_char);
-static int np_uart_tty_poll_in(struct device *dev, unsigned char *p_char);
-static void np_uart_poll_out(struct device *dev,
+static int np_uart_stdin_poll_in(const struct device *dev,
+				 unsigned char *p_char);
+static int np_uart_tty_poll_in(const struct device *dev,
+			       unsigned char *p_char);
+static void np_uart_poll_out(const struct device *dev,
 				      unsigned char out_char);
 
 static bool auto_attach;
@@ -196,7 +198,7 @@ static int open_tty(struct native_uart_status *driver_data,
  *
  * @return 0 (if it fails catastrophically, the execution is terminated)
  */
-static int np_uart_0_init(struct device *dev)
+static int np_uart_0_init(const struct device *dev)
 {
 	struct native_uart_status *d;
 
@@ -233,7 +235,7 @@ static int np_uart_0_init(struct device *dev)
  * Initialize the 2nd UART port.
  * This port will be always attached to its own new pseudoterminal.
  */
-static int np_uart_1_init(struct device *dev)
+static int np_uart_1_init(const struct device *dev)
 {
 	struct native_uart_status *d;
 	int tty_fn;
@@ -255,7 +257,7 @@ static int np_uart_1_init(struct device *dev)
  * @param dev UART device struct
  * @param out_char Character to send.
  */
-static void np_uart_poll_out(struct device *dev,
+static void np_uart_poll_out(const struct device *dev,
 				      unsigned char out_char)
 {
 	int ret;
@@ -278,7 +280,8 @@ static void np_uart_poll_out(struct device *dev,
  * @retval 0 If a character arrived and was stored in p_char
  * @retval -1 If no character was available to read
  */
-static int np_uart_stdin_poll_in(struct device *dev, unsigned char *p_char)
+static int np_uart_stdin_poll_in(const struct device *dev,
+				 unsigned char *p_char)
 {
 	static bool disconnected;
 
@@ -326,7 +329,8 @@ static int np_uart_stdin_poll_in(struct device *dev, unsigned char *p_char)
  * @retval 0 If a character arrived and was stored in p_char
  * @retval -1 If no character was available to read
  */
-static int np_uart_tty_poll_in(struct device *dev, unsigned char *p_char)
+static int np_uart_tty_poll_in(const struct device *dev,
+			       unsigned char *p_char)
 {
 	int n = -1;
 	int in_f = ((struct native_uart_status *)dev->driver_data)->in_fd;

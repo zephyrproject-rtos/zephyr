@@ -8,12 +8,12 @@
 #include <drivers/pinmux.h>
 #include <fsl_port.h>
 
-static int ip_k66f_pinmux_init(struct device *dev)
+static int ip_k66f_pinmux_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 #ifdef CONFIG_PINMUX_MCUX_PORTA
-	struct device *porta =
+	const struct device *porta =
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTA_NAME);
 #endif
 
