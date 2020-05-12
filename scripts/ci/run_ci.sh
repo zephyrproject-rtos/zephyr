@@ -229,6 +229,8 @@ if [ -n "$main_ci" ]; then
 		# Now let's pray this script is being run from a
 		# different location
 # https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
+		echo "GIT REBASE $remote/${branch}"
+		git config -l
 		git rebase $remote/${branch}
 	else
 		SC="full"
