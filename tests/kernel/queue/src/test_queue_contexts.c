@@ -136,8 +136,18 @@ static void tqueue_isr_thread(struct k_queue *pqueue)
 /*test cases*/
 /**
  * @brief Verify data passing between threads using queue
+ *
+ * @details Static define and Dynamic define queues,
+ * Then initialize them.
+ * Create a new thread to wait for reading data.
+ * Current thread will append item into queue.
+ * Verify if rx_data is equal insert-data address.
+ * Verify queue can be define at compile time.
+ *
  * @ingroup kernel_queue_tests
+ *
  * @see k_queue_init(), k_queue_insert(), k_queue_append()
+ * K_THREAD_STACK_DEFINE()
  */
 void test_queue_thread2thread(void)
 {
@@ -151,7 +161,16 @@ void test_queue_thread2thread(void)
 
 /**
  * @brief Verify data passing between thread and ISR
+ *
+ * @details Create a new ISR to insert data
+ * And current thread is used for getting data
+ * Verify if the rx_data is equal insert-data address.
+ * If the received data address is the same as
+ * the created array, prove that the queue data structures
+ * are stored within the provided data items.
+ *
  * @ingroup kernel_queue_tests
+ *
  * @see k_queue_init(), k_queue_insert(), k_queue_append()
  */
 void test_queue_thread2isr(void)
@@ -166,9 +185,15 @@ void test_queue_thread2isr(void)
 
 /**
  * @brief Verify data passing between ISR and thread
+ *
+ * @details Create a new ISR and ready for getting data
+ * And current thread is used for inserting data
+ * Verify if the rx_data is equal insert-data address.
+ *
+ * @ingroup kernel_queue_tests
+ *
  * @see k_queue_init(), k_queue_insert(), k_queue_get(),
  * k_queue_append(), k_queue_remove()
- * @ingroup kernel_queue_tests
  */
 void test_queue_isr2thread(void)
 {
@@ -346,4 +371,30 @@ void test_queue_poll_race(void)
 
 	k_thread_abort(&tdata);
 	k_thread_abort(&tdata1);
+}
+
+/**
+ * @brief Verify that multiple queues can be defined
+ * simultaneously
+ *
+ * @details define multiple queues to verify
+ * they can work.
+ *
+ * @ingroup kernel_queue_tests
+ *
+ * @see k_queue_init()
+ */
+#define QUEUE_NUM 10
+void test_multiple_queues(void)
+{
+	/*define multiple queues*/
+	struct k_queue queues[QUEUE_NUM];
+
+	for (int i = 0; i < QUEUE_NUM; i++) {
+		k_queue_init(&queues[i]);
+
+		/*Indicating that they are working*/
+		tqueue_append(&queues[i]);
+		tqueue_get(&queues[i]);
+	}
 }
