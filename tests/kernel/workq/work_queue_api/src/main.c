@@ -154,7 +154,7 @@ void test_sched_delayed_work_item(void)
 {
 	s32_t ms_remain, ms_spent, start_time, stop_time, cycles_spent;
 
-	s32_t ms_delta = 10;
+	s32_t ms_delta = 15;
 
 	k_sem_reset(&sync_sema);
 
@@ -164,6 +164,7 @@ void test_sched_delayed_work_item(void)
 	start_time = k_cycle_get_32();
 	k_delayed_work_submit_to_queue(&workq, &work_item_delayed, TIMEOUT);
 	ms_remain = k_delayed_work_remaining_get(&work_item_delayed);
+	printk("\nmy test time remain %d\n", ms_remain);
 
 	k_sem_take(&sync_sema, K_FOREVER);
 	stop_time = k_cycle_get_32();
@@ -288,6 +289,7 @@ static void tdelayed_work_submit_1(struct k_work_q *work_q,
 {
 	int32_t time_remaining;
 	int32_t timeout_ticks;
+	u64_t tick_to_ms;
 
 	/**TESTPOINT: init via k_delayed_work_init*/
 	k_delayed_work_init(w, handler);
@@ -306,16 +308,25 @@ static void tdelayed_work_submit_1(struct k_work_q *work_q,
 	}
 
 	time_remaining = k_delayed_work_remaining_get(w);
+	printk("\ntime_remaining %d\n", time_remaining);
+
 	timeout_ticks = z_ms_to_ticks(TIMEOUT_MS);
+	printk("\ntimeout_ticks %d\n", timeout_ticks);
+
+	tick_to_ms = k_ticks_to_ms_floor64(timeout_ticks +  _TICK_ALIGN);
+	printk("\ntick_to_ms %lld\n", tick_to_ms);
 
 	/**TESTPOINT: check remaining timeout after submit */
-	zassert_true(time_remaining <= k_ticks_to_ms_floor64(timeout_ticks +
-							     _TICK_ALIGN),
+	zassert_true(time_remaining <= tick_to_ms,
 			NULL);
 
 	timeout_ticks -= z_ms_to_ticks(15);
+	printk("\nz_ms_to_ticks(15) %d\n", z_ms_to_ticks(15));
 
-	zassert_true(time_remaining >= k_ticks_to_ms_floor64(timeout_ticks),
+	tick_to_ms = k_ticks_to_ms_floor64(timeout_ticks);
+	printk("\ntick_to_ms %lld\n\n", k_ticks_to_ms_floor64(timeout_ticks));
+
+	zassert_true(time_remaining >= tick_to_ms,
 		     NULL);
 
 	/**TESTPOINT: check pending after delayed work submit*/
