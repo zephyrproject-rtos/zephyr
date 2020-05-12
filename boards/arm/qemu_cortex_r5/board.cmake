@@ -9,9 +9,12 @@ set(QEMU_CPU_TYPE_${ARCH} cortex-r5)
 set(QEMU_FLAGS_${ARCH}
   -nographic
   -machine arm-generic-fdt
-  -icount shift=3,align=off,sleep=off -rtc clock=vm
   -dtb ${ZEPHYR_BASE}/boards/${ARCH}/${BOARD}/fdt-single_arch-zcu102-arm.dtb
   )
+
+if(CONFIG_QEMU_ICOUNT)
+  list(APPEND QEMU_EXTRA_FLAGS -icount shift=3,align=off,sleep=off -rtc clock=vm)
+endif()
 
 set(QEMU_KERNEL_OPTION
   "-device;loader,file=\$<TARGET_FILE:\${logical_target_for_zephyr_elf}>,cpu-num=4"

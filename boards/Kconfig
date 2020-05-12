@@ -28,6 +28,15 @@ endchoice
 rsource "shields/*/Kconfig.shield"
 
 menu "Board Options"
+config QEMU_ICOUNT
+	bool "QEMU icount mode"
+	depends on QEMU_TARGET
+	default y if !NETWORKING
+	help
+	  Enable QEMU virtual instruction counter. The virtual cpu will
+	  execute one instruction every 2^N ns of virtual time. This will
+	  give deterministic execution times from the guest point of view.
+
 # There might not be any board options, hence the optional source
 osource "$(BOARD_DIR)/Kconfig"
 endmenu
