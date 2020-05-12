@@ -41,7 +41,7 @@ struct counter_gecko_data {
 
 #define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((struct counter_gecko_config * const)(dev)->config_info)
+	((const struct counter_gecko_config * const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct counter_gecko_data *const)(dev)->driver_data)
 

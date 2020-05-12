@@ -389,8 +389,8 @@ static void adc_stm32_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	struct adc_stm32_data *data = (struct adc_stm32_data *)dev->driver_data;
-	struct adc_stm32_cfg *config =
-		(struct adc_stm32_cfg *)dev->config_info;
+	const struct adc_stm32_cfg *config =
+		(const struct adc_stm32_cfg *)dev->config_info;
 	ADC_TypeDef *adc = config->base;
 
 	*data->buffer++ = LL_ADC_REG_ReadConversionData32(adc);
@@ -449,8 +449,8 @@ static int adc_stm32_check_acq_time(u16_t acq_time)
 static void adc_stm32_setup_speed(struct device *dev, u8_t id,
 				  u8_t acq_time_index)
 {
-	struct adc_stm32_cfg *config =
-		(struct adc_stm32_cfg *)dev->config_info;
+	const struct adc_stm32_cfg *config =
+		(const struct adc_stm32_cfg *)dev->config_info;
 	ADC_TypeDef *adc = config->base;
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32L0X)
@@ -522,8 +522,8 @@ static int adc_stm32_channel_setup(struct device *dev,
 	!defined(CONFIG_SOC_SERIES_STM32L1X)
 static void adc_stm32_calib(struct device *dev)
 {
-	struct adc_stm32_cfg *config =
-		(struct adc_stm32_cfg *)dev->config_info;
+	const struct adc_stm32_cfg *config =
+		(const struct adc_stm32_cfg *)dev->config_info;
 	ADC_TypeDef *adc = config->base;
 
 #if defined(CONFIG_SOC_SERIES_STM32F3X) || \

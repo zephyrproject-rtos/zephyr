@@ -36,7 +36,7 @@ struct wdt_gecko_data {
 #define DEV_DATA(dev) \
 	((struct wdt_gecko_data *)(dev)->driver_data)
 #define DEV_CFG(dev) \
-	((struct wdt_gecko_cfg *)(dev)->config_info)
+	((const struct wdt_gecko_cfg *)(dev)->config_info)
 
 static u32_t wdt_gecko_get_timeout_from_persel(int perSel)
 {

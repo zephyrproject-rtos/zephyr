@@ -104,7 +104,7 @@ static inline void sleep(u32_t sleep_in_ms)
  *******************************************/
 void glcd_print(struct device *port, char *data, u32_t size)
 {
-	const struct glcd_driver * const rom = (struct glcd_driver *)
+	const struct glcd_driver * const rom = (const struct glcd_driver *)
 						port->config_info;
 	struct glcd_data *dev = port->driver_data;
 	u8_t buf[] = { GLCD_CMD_SET_CGRAM_ADDR, 0 };
@@ -119,7 +119,7 @@ void glcd_print(struct device *port, char *data, u32_t size)
 
 void glcd_cursor_pos_set(struct device *port, u8_t col, u8_t row)
 {
-	const struct glcd_driver * const rom = (struct glcd_driver *)
+	const struct glcd_driver * const rom = (const struct glcd_driver *)
 						port->config_info;
 	struct glcd_data *dev = port->driver_data;
 
@@ -140,7 +140,7 @@ void glcd_cursor_pos_set(struct device *port, u8_t col, u8_t row)
 
 void glcd_clear(struct device *port)
 {
-	const struct glcd_driver * const rom = (struct glcd_driver *)
+	const struct glcd_driver * const rom = (const struct glcd_driver *)
 						port->config_info;
 	struct glcd_data *dev = port->driver_data;
 	u8_t clear[] = { 0, GLCD_CMD_SCREEN_CLEAR };
@@ -153,7 +153,7 @@ void glcd_clear(struct device *port)
 
 void glcd_display_state_set(struct device *port, u8_t opt)
 {
-	const struct glcd_driver * const rom = (struct glcd_driver *)
+	const struct glcd_driver * const rom = (const struct glcd_driver *)
 						port->config_info;
 	struct glcd_data *dev = port->driver_data;
 	u8_t data[] = { 0, 0 };
