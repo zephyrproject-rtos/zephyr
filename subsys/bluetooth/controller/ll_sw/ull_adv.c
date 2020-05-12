@@ -135,6 +135,7 @@ u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 			}
 
 			adv->lll.phy_p = BIT(0);
+
 		} else {
 			/* - Connectable and scannable not allowed;
 			 * - High duty cycle directed connectable not allowed
@@ -655,6 +656,34 @@ u8_t ll_adv_enable(u8_t enable)
 
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		if (adv->is_created & BIT(1)) {
+			struct node_rx_pdu *node_rx_adv_term;
+			void *link_adv_term;
+
+			/* The alloc here used for connection complete event */
+			link_adv_term = ll_rx_link_alloc();
+			if (!link_adv_term) {
+				 /* TODO: figure out right return value */
+				return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+			}
+
+			node_rx_adv_term = ll_rx_alloc();
+			if (!node_rx_adv_term) {
+				ll_rx_link_release(link_adv_term);
+
+				/* TODO: figure out right return value */
+				return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+			}
+
+			node_rx_adv_term->hdr.link =
+				(memq_link_t*)link_adv_term;
+
+			adv->node_rx_adv_term =
+				(struct node_rx_hdr*)node_rx_adv_term;
+		}
+#endif
 
 		conn = ll_conn_acquire();
 		if (!conn) {

@@ -222,16 +222,35 @@ static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 #define BT_CTLR_MAX_CONN        0
 #endif
 
+#if defined(CONFIG_BT_CTLR_ADV_SET)
+#define BT_CTLR_ADV_SET CONFIG_BT_CTLR_ADV_SET
+#else
+#define BT_CTLR_ADV_SET 1
+#endif
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * \
+			  (RX_CNT + BT_CTLR_MAX_CONNECTABLE + \
+			   BT_CTLR_ADV_SET))
+#else
 #define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * \
 			  (RX_CNT + BT_CTLR_MAX_CONNECTABLE))
+#endif
 
 static struct {
 	void *free;
 	u8_t pool[PDU_RX_POOL_SIZE];
 } mem_pdu_rx;
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+#define LINK_RX_POOL_SIZE (sizeof(memq_link_t) * (RX_CNT + 2 + \
+						  BT_CTLR_MAX_CONN + \
+						  CONFIG_BT_CTLR_ADV_SET))
+#else
 #define LINK_RX_POOL_SIZE (sizeof(memq_link_t) * (RX_CNT + 2 + \
 						  BT_CTLR_MAX_CONN))
+#endif
+
 static struct {
 	u8_t quota_pdu; /* Number of un-utilized buffers */
 
@@ -665,6 +684,11 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_REPORT:
 #endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	/* fallthrough */
+	case NODE_RX_TYPE_EXT_ADV_TERMINATE:
+#endif  /* CONFIG_BT_CTLR_ADV_EXT */
+
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
@@ -824,6 +848,7 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_EXT_1M_REPORT:
 		case NODE_RX_TYPE_EXT_2M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
+		case NODE_RX_TYPE_EXT_ADV_TERMINATE:
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
