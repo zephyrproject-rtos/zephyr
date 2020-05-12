@@ -90,10 +90,10 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	uint32_t aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
 	uint32_t ticks_at_event, ticks_at_start;
 	struct pdu_adv_com_ext_adv *p;
-	struct ext_adv_aux_ptr *aux;
+	struct pdu_adv_aux_ptr *aux;
 	struct pdu_adv *pri, *sec;
 	struct lll_adv *lll_adv;
-	struct ext_adv_hdr *h;
+	struct pdu_adv_hdr *h;
 	struct evt_hdr *evt;
 	uint32_t remainder;
 	uint32_t start_us;
@@ -123,7 +123,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 	/* traverse through adi, if present */
 	if (h->adi) {
-		ptr += sizeof(struct ext_adv_adi);
+		ptr += sizeof(struct pdu_adv_adi);
 	}
 
 	aux = (void *)ptr;
