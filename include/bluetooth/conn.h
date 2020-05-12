@@ -81,10 +81,23 @@ struct bt_conn_le_phy_info {
 	uint8_t rx_phy; /** Connection receive PHY */
 };
 
+/** Connection PHY options */
+enum {
+	/** Convenience value when no options are specified. */
+	BT_CONN_LE_PHY_OPT_NONE = 0,
+
+	/** LE Coded using S=2 coding preferred when transmitting. */
+	BT_CONN_LE_PHY_OPT_CODED_S2  = BIT(0),
+
+	/** LE Coded using S=8 coding preferred when transmitting. */
+	BT_CONN_LE_PHY_OPT_CODED_S8  = BIT(1),
+};
+
 /** Preferred PHY parameters for LE connections */
 struct bt_conn_le_phy_param {
-	uint8_t pref_tx_phy; /** Bitmask of preferred transmit PHYs */
-	uint8_t pref_rx_phy; /** Bitmask of preferred receive PHYs */
+	uint16_t options;     /** Connection PHY options. */
+	uint8_t  pref_tx_phy; /** Bitmask of preferred transmit PHYs */
+	uint8_t  pref_rx_phy; /** Bitmask of preferred receive PHYs */
 };
 
 /** Initialize PHY parameters
@@ -94,6 +107,7 @@ struct bt_conn_le_phy_param {
  */
 #define BT_CONN_LE_PHY_PARAM_INIT(_pref_tx_phy, _pref_rx_phy) \
 { \
+	.option = BT_CONN_LE_PHY_OPT_NONE, \
 	.pref_tx_phy = (_pref_tx_phy), \
 	.pref_rx_phy = (_pref_rx_phy), \
 }
@@ -398,6 +412,9 @@ int bt_conn_le_data_len_update(struct bt_conn *conn,
 			       const struct bt_conn_le_data_len_param *param);
 
 /** @brief Update the connection PHY parameters.
+ *
+ *  Update the preferred transmit and receive PHYs of the connection.
+ *  Use @ref BT_GAP_LE_PHY_NONE to indicate no preference.
  *
  *  @param conn Connection object.
  *  @param param Updated connection parameters.

@@ -1788,7 +1788,8 @@ static int hci_le_read_phy(struct bt_conn *conn)
 }
 #endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
 
-int bt_le_set_phy(struct bt_conn *conn, uint8_t pref_tx_phy, uint8_t pref_rx_phy)
+int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
+		  uint8_t pref_tx_phy, uint8_t pref_rx_phy, uint8_t phy_opts)
 {
 	struct bt_hci_cp_le_set_phy *cp;
 	struct net_buf *buf;
@@ -1800,10 +1801,10 @@ int bt_le_set_phy(struct bt_conn *conn, uint8_t pref_tx_phy, uint8_t pref_rx_phy
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
-	cp->all_phys = 0U;
+	cp->all_phys = all_phys;
 	cp->tx_phys = pref_tx_phy;
 	cp->rx_phys = pref_rx_phy;
-	cp->phy_opts = BT_HCI_LE_PHY_CODED_ANY;
+	cp->phy_opts = phy_opts;
 
 	return bt_hci_cmd_send(BT_HCI_OP_LE_SET_PHY, buf);
 }
@@ -1929,9 +1930,9 @@ static void conn_auto_initiate(struct bt_conn *conn)
 	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
 	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_PHY_COMPLETE) &&
 	    BT_FEAT_LE_PHY_2M(bt_dev.le.features)) {
-		err = bt_le_set_phy(conn,
+		err = bt_le_set_phy(conn, 0U, BT_HCI_LE_PHY_PREFER_2M,
 				    BT_HCI_LE_PHY_PREFER_2M,
-				    BT_HCI_LE_PHY_PREFER_2M);
+				    BT_HCI_LE_PHY_CODED_ANY);
 		if (!err) {
 			atomic_set_bit(conn->flags, BT_CONN_AUTO_PHY_UPDATE);
 			return;
