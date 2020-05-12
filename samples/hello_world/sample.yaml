@@ -5,10 +5,11 @@ sample:
 common:
     tags: introduction
     harness: console
+    timeout: 5
     harness_config:
       type: one_line
       regex:
-        - "Hello World! (.*)"
+        - "xHello World! (.*)"
 tests:
   sample.basic.helloworld:
     tags: introduction

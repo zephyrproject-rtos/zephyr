@@ -1471,6 +1471,8 @@ class TestInstance(DisablePyTestCollectionMixin):
 
         self.build_only = True
         self.run = False
+        self.built = False
+        self.executed = False
 
         self.results = {}
 
@@ -1922,6 +1924,8 @@ class ProjectBuilder(FilterBuilder):
             logger.debug("build test: %s" % self.instance.name)
             results = self.build()
 
+            self.instance.built = True
+
             if not results:
                 self.instance.status = "failed"
                 self.instance.reason = "Build Failure"
@@ -1946,6 +1950,8 @@ class ProjectBuilder(FilterBuilder):
                 "status": self.instance.status,
                 "reason": self.instance.reason}
             )
+            if self.instance.status == 'passed':
+                self.instance.executed = True
 
         # Report results and output progress to screen
         elif op == "report":
@@ -2723,8 +2729,10 @@ class TestSuite(DisablePyTestCollectionMixin):
     def add_tasks_to_queue(self, test_only=False):
         for instance in self.instances.values():
             if test_only:
-                if instance.run:
+                if instance.run and not instance.executed:
                     pipeline.put({"op": "run", "test": instance, "status": "built"})
+                #else:
+                #    pipeline.put({"op": "report", "test": instance, "status": "built"})
             else:
                 if instance.status not in ['passed', 'skipped']:
                     instance.status = None

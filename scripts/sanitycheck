@@ -1055,8 +1055,8 @@ def main():
         completed += 1
 
         if completed > 1:
-            logger.info("%d Iteration:" % (completed))
-            time.sleep(60)  # waiting for the system to settle down
+            logger.info(f"Starting {completed}. iteration")
+            time.sleep(10)  # waiting for the system to settle down
             suite.total_done = suite.total_tests - suite.total_failed
             suite.total_failed = 0
 
