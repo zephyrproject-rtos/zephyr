@@ -26,6 +26,9 @@ build:
 
     ci:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
+      - export
+      - find .git/refs/
+      - git log -n 5 --oneline --decorate --abbrev=12
       - >
         if [ "$IS_PULL_REQUEST" = "true" ]; then
           ./scripts/ci/run_ci.sh -c -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -p ${PULL_REQUEST};
