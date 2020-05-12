@@ -10,7 +10,9 @@ set(QEMU_FLAGS_${ARCH}
   -nographic
   -m 16
   -vga none
-  -icount shift=7,align=off,sleep=off -rtc clock=vm
   )
 
+if(CONFIG_QEMU_ICOUNT)
+  list(APPEND QEMU_EXTRA_FLAGS -icount shift=7,align=off,sleep=off -rtc clock=vm)
+endif()
 board_set_debugger_ifnset(qemu)
