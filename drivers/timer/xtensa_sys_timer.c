@@ -44,8 +44,7 @@ static void ccompare_isr(void *arg)
 
 	last_count += dticks * CYC_PER_TICK;
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) ||
-	    IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND)) {
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		u32_t next = last_count + CYC_PER_TICK;
 
 		if ((s32_t)(next - curr) < MIN_DELAY) {
@@ -70,7 +69,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
+#if defined(CONFIG_TICKLESS_KERNEL)
 	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
 	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
 
