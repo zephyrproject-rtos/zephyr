@@ -79,6 +79,11 @@ static void mp_entry2(void)
 	volatile int ie;
 	uint32_t idc_reg;
 
+	/* We don't know what the boot ROM might have touched and we
+	 * don't care.  Make sure it's not in our local cache.
+	 */
+	xthal_dcache_all_writeback_inv();
+
 	/* Copy over VECBASE from the main CPU for an initial value
 	 * (will need to revisit this if we ever allow a user API to
 	 * change interrupt vectors at runtime).
