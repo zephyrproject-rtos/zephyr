@@ -123,7 +123,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	 */
 	_pri = lll_adv_data_peek(lll);
 	if (_pri->type != PDU_ADV_TYPE_EXT_IND) {
-		return adv_data_set(adv, len, data);
+		return ull_adv_data_set(adv, len, data);
 	}
 
 	/* Allocate or existing Auxiliary channel instance */
@@ -479,7 +479,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	 */
 	_pri = lll_adv_data_peek(lll);
 	if (_pri->type != PDU_ADV_TYPE_EXT_IND) {
-		return scan_rsp_set(adv, len, data);
+		return ull_scan_rsp_set(adv, len, data);
 	}
 
 	/* FIXME: Workaround to not fail when no data is supplied */
@@ -640,6 +640,36 @@ void ull_adv_aux_offset_get(struct ll_adv_set *adv)
 	LL_ASSERT(!ret);
 }
 
+struct ext_adv_aux_ptr *ull_adv_aux_lll_offset_fill(uint32_t ticks_offset,
+						    uint32_t start_us,
+						    struct pdu_adv *pdu)
+{
+	struct pdu_adv_com_ext_adv *p;
+	struct ext_adv_aux_ptr *aux;
+	struct ext_adv_hdr *h;
+	uint8_t *ptr;
+
+	p = (void *)&pdu->adv_ext_ind;
+	h = (void *)p->ext_hdr_adi_adv_data;
+	ptr = (uint8_t *)h + sizeof(*h);
+
+	if (h->adv_addr) {
+		ptr += BDADDR_SIZE;
+	}
+
+	if (h->adi) {
+		ptr += sizeof(struct ext_adv_adi);
+	}
+
+	aux = (void *)ptr;
+	aux->offs = (HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us) / 30;
+	if (aux->offs_units) {
+		aux->offs /= 10;
+	}
+
+	return aux;
+}
+
 static int init_reset(void)
 {
 	/* Initialize adv aux pool. */
@@ -725,7 +755,7 @@ static void mfy_aux_offset_get(void *param)
 
 	/* FIXME: we are in ULL_LOW context, fill offset in LLL context */
 	pdu = lll_adv_data_curr_get(&adv->lll);
-	lll_adv_aux_offset_fill(ticks_to_expire, 0, pdu);
+	ull_adv_aux_lll_offset_fill(ticks_to_expire, 0, pdu);
 }
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder,

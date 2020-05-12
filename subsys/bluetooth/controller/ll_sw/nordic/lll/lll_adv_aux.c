@@ -75,33 +75,6 @@ void lll_adv_aux_prepare(void *param)
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
-void lll_adv_aux_offset_fill(uint32_t ticks_offset, uint32_t start_us,
-			     struct pdu_adv *pdu)
-{
-	struct pdu_adv_com_ext_adv *p;
-	struct ext_adv_aux_ptr *aux;
-	struct ext_adv_hdr *h;
-	uint8_t *ptr;
-
-	p = (void *)&pdu->adv_ext_ind;
-	h = (void *)p->ext_hdr_adi_adv_data;
-	ptr = (uint8_t *)h + sizeof(*h);
-
-	if (h->adv_addr) {
-		ptr += BDADDR_SIZE;
-	}
-
-	if (h->adi) {
-		ptr += sizeof(struct ext_adv_adi);
-	}
-
-	aux = (void *)ptr;
-	aux->offs = (HAL_TICKER_TICKS_TO_US(ticks_offset) - start_us) / 30;
-	if (aux->offs_units) {
-		aux->offs /= 10;
-	}
-}
-
 void lll_adv_aux_pback_prepare(void *param)
 {
 }
