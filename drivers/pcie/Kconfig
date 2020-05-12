@@ -5,7 +5,6 @@
 
 menuconfig PCIE
 	bool "Enable new PCI/PCIe support"
-	depends on X86
 	help
 	  This option enables support for new PCI(e) drivers.
 
