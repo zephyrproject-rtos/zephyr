@@ -2118,17 +2118,35 @@ int bt_conn_le_data_len_update(struct bt_conn *conn,
 int bt_conn_le_phy_update(struct bt_conn *conn,
 			  const struct bt_conn_le_phy_param *param)
 {
-	if (conn->le.phy.tx_phy == param->pref_tx_phy &&
-	    conn->le.phy.rx_phy == param->pref_rx_phy) {
-		return -EALREADY;
-	}
+	uint8_t phy_opts, all_phys;
 
 	if (IS_ENABLED(CONFIG_BT_AUTO_PHY_UPDATE) &&
 	    !atomic_test_bit(conn->flags, BT_CONN_AUTO_PHY_COMPLETE)) {
 		return -EAGAIN;
 	}
 
-	return bt_le_set_phy(conn, param->pref_tx_phy, param->pref_rx_phy);
+	if ((param->options & BT_CONN_LE_PHY_OPT_CODED_S2) &&
+	    (param->options & BT_CONN_LE_PHY_OPT_CODED_S8)) {
+		phy_opts = BT_HCI_LE_PHY_CODED_ANY;
+	} else if (param->options & BT_CONN_LE_PHY_OPT_CODED_S2) {
+		phy_opts = BT_HCI_LE_PHY_CODED_S2;
+	} else if (param->options & BT_CONN_LE_PHY_OPT_CODED_S8) {
+		phy_opts = BT_HCI_LE_PHY_CODED_S8;
+	} else {
+		phy_opts = BT_HCI_LE_PHY_CODED_ANY;
+	}
+
+	all_phys = 0U;
+	if (param->pref_tx_phy == BT_GAP_LE_PHY_NONE) {
+		all_phys |= BT_HCI_LE_PHY_TX_ANY;
+	}
+
+	if (param->pref_rx_phy == BT_GAP_LE_PHY_NONE) {
+		all_phys |= BT_HCI_LE_PHY_RX_ANY;
+	}
+
+	return bt_le_set_phy(conn, all_phys, param->pref_tx_phy,
+			     param->pref_rx_phy, phy_opts);
 }
 #endif
 

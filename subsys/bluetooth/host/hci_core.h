@@ -255,7 +255,8 @@ int bt_hci_disconnect(uint16_t handle, uint8_t reason);
 
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_time);
-int bt_le_set_phy(struct bt_conn *conn, uint8_t tx_phy, uint8_t rx_phy);
+int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
+		  uint8_t pref_tx_phy, uint8_t pref_rx_phy, uint8_t phy_opts);
 
 int bt_le_scan_update(bool fast_scan);
 
