@@ -61,7 +61,6 @@ static void dma_callback(void *arg, u32_t channel, int status)
 {
 	/* callback_arg directly holds the client data */
 	struct spi_stm32_data *data = arg;
-	u32_t periph_addr;
 
 	if (status != 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
@@ -72,51 +71,11 @@ static void dma_callback(void *arg, u32_t channel, int status)
 
 	/* identify the origin of this callback */
 	if (channel == data->dma_tx.channel) {
-		/* spi tx direction has mem as source and periph as dest */
-		if (data->ctx.tx_count <= 1) {
-			/* if it was the last count, then we are done */
-			data->dma_tx.transfer_complete = true;
-		} else {
-			/* this part of the transfer ends */
-			data->dma_tx.transfer_complete = false;
-			/*
-			 * Update the current Tx buffer, decreasing length of
-			 * data->ctx.tx_count,  by its own length
-			 */
-			spi_context_update_tx(&data->ctx, 1, data->ctx.tx_len);
-			/* keep the same dest (peripheral) */
-			periph_addr =
-				data->dma_tx.dma_cfg.head_block->dest_address;
-			/* and reload dma with a new source (memory) buffer */
-			dma_reload(data->dev_dma_tx,
-				data->dma_tx.channel,
-				(u32_t)data->ctx.tx_buf,
-				periph_addr,
-				data->ctx.tx_len);
-		}
+		/* this part of the transfer ends */
+		data->dma_tx.transfer_complete = true;
 	} else if (channel == data->dma_rx.channel) {
-		/* spi rx direction has periph as source and mem as dest */
-		if (data->ctx.rx_count <= 1) {
-			/* if it was the last count, then we are done */
-			data->dma_rx.transfer_complete = true;
-		} else {
-			/* this part of the transfer ends */
-			data->dma_rx.transfer_complete = false;
-			/*
-			 * Update the current Rx buffer, decreasing length of
-			 * data->ctx.rx_count,  by its own length
-			 */
-			spi_context_update_rx(&data->ctx, 1, data->ctx.rx_len);
-			/* keep the same source (peripheral) */
-			periph_addr =
-				data->dma_rx.dma_cfg.head_block->dest_address;
-			/* and reload dma with a new dest (memory) buffer */
-			dma_reload(data->dev_dma_rx,
-				data->dma_rx.channel,
-				periph_addr,
-				(u32_t)data->ctx.rx_buf,
-				data->ctx.rx_len);
-		}
+		/* this part of the transfer ends */
+		data->dma_rx.transfer_complete = true;
 	} else {
 		LOG_ERR("DMA callback channel %d is not valid.", channel);
 		data->dma_tx.transfer_complete = true;
