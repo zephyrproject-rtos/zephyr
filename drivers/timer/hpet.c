@@ -59,8 +59,7 @@ static void hpet_isr(void *arg)
 
 	last_count += dticks * cyc_per_tick;
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) ||
-	    IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND)) {
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		u32_t next = last_count + cyc_per_tick;
 
 		if ((s32_t)(next - now) < MIN_DELAY) {
@@ -128,7 +127,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
+#if defined(CONFIG_TICKLESS_KERNEL)
 	if (ticks == K_TICKS_FOREVER && idle) {
 		GENERAL_CONF_REG &= ~GCONF_ENABLE;
 		return;
