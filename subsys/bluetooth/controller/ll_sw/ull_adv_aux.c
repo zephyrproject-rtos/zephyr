@@ -710,11 +710,20 @@ static void mfy_aux_offset_get(void *param)
 		LL_ASSERT(id != TICKER_NULL);
 	} while (id != ticker_id);
 
-	/* NOTE: as remainder not used in scheduling primary PDU
-	 * packet timer starts transmission after 1 tick hence the +1.
+	/* Store the ticks offset for population in other advertising primary
+	 * channel PDUs.
 	 */
-	aux->lll.ticks_offset = ticks_to_expire + 1;
+	aux->lll.ticks_offset = ticks_to_expire;
 
+	/* NOTE: as remainder used in scheduling primary PDU not available,
+	 * compensate with a probable jitter of one ticker resolution unit that
+	 * would be included in the packet timer capture when scheduling next
+	 * advertising primary channel PDU.
+	 */
+	aux->lll.ticks_offset +=
+		HAL_TICKER_US_TO_TICKS(EVENT_TICKER_RES_MARGIN_US);
+
+	/* FIXME: we are in ULL_LOW context, fill offset in LLL context */
 	pdu = lll_adv_data_curr_get(&adv->lll);
 	lll_adv_aux_offset_fill(ticks_to_expire, 0, pdu);
 }
