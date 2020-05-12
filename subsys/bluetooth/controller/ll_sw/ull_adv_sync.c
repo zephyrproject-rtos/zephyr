@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/types.h>
+#include <sys/byteorder.h>
 #include <bluetooth/hci.h>
 
 #include "hal/ticker.h"
@@ -279,7 +280,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		si = (void *)ps;
 		si->offs = 0; /* NOTE: Filled by secondary prepare */
 		si->offs_units = 0;
-		si->interval = interval;
+		si->interval = sys_cpu_to_le16(interval);
 		memcpy(si->sca_chm, lll_sync->data_chan_map,
 		       sizeof(si->sca_chm));
 		memcpy(&si->aa, lll_sync->access_addr, sizeof(si->aa));
@@ -346,7 +347,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 				memcpy(ps, _ps, sizeof(struct ext_adv_adi));
 
 				_adi = (void *)_pp;
-				did = _adi->did;
+				did = sys_le16_to_cpu(_adi->did);
 			} else {
 				ap->sid = adv->sid;
 				as->sid = adv->sid;
@@ -354,8 +355,8 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 			did++;
 
-			ap->did = did;
-			as->did = did;
+			ap->did = sys_cpu_to_le16(did);
+			as->did = sys_cpu_to_le16(did);
 		}
 
 		/* No CTEInfo field in primary channel PDU */
