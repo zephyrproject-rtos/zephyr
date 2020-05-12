@@ -38,6 +38,7 @@ config X86
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
+	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN if !X86_64
 	help
 	  x86 architecture
 
