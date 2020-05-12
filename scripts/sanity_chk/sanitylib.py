@@ -1626,11 +1626,13 @@ class CMake():
         if self.cwd:
             kwargs['cwd'] = self.cwd
 
+        start_time = time.time()
         p = subprocess.Popen(cmd, **kwargs)
         out, _ = p.communicate()
 
         results = {}
         if p.returncode == 0:
+            self.instance.metrics["handler_time"] = time.time() - start_time
             msg = "Finished building %s for %s" % (self.source_dir, self.platform.name)
 
             self.instance.status = "passed"
@@ -2024,6 +2026,9 @@ class ProjectBuilder(FilterBuilder):
                         more_info += " {:.3f}s".format(htime)
                 else:
                     more_info = "build"
+                    htime = instance.metrics.get('handler_time')
+                    if htime:
+                        more_info += " {:.3f}s".format(htime)
 
             logger.info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
                 self.suite.total_done, total_tests_width, self.suite.total_tests, instance.platform.name,
