@@ -505,7 +505,8 @@ static int tcp_finalize_pkt(struct net_pkt *pkt)
 	return -EINVAL;
 }
 
-static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, u8_t flags)
+static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, u8_t flags,
+			  u32_t seq)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct tcphdr);
 	struct tcphdr *th;
@@ -523,7 +524,7 @@ static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, u8_t flags)
 	th->th_off = 5;
 	th->th_flags = flags;
 	th->th_win = htons(conn->win);
-	th->th_seq = htonl(conn->seq);
+	th->th_seq = htonl(seq);
 
 	if (ACK & flags) {
 		th->th_ack = htonl(conn->ack);
@@ -549,49 +550,40 @@ static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
 	return -EINVAL;
 }
 
-static void tcp_out(struct tcp *conn, u8_t flags, ...)
+static void tcp_out_ext(struct tcp *conn, u8_t flags, struct net_pkt *data,
+			u32_t seq)
 {
 	struct net_pkt *pkt;
-	size_t len = 0;
-	int r;
+	int ret;
 
 	pkt = tcp_pkt_alloc(conn, sizeof(struct tcphdr));
 	if (!pkt) {
-		goto fail;
+		goto out;
 	}
 
-	if (PSH & flags) {
-		struct net_pkt *data_pkt;
-		va_list ap;
-		va_start(ap, flags);
-		data_pkt = va_arg(ap, struct net_pkt *);
-		va_end(ap);
-
-		len = net_pkt_get_len(data_pkt);
-		/* Append the data buffer to pkt */
-		net_pkt_append_buffer(pkt, data_pkt->buffer);
-
-		data_pkt->buffer = NULL;
-		tcp_pkt_unref(data_pkt);
+	if (data) {
+		/* Append the data buffer to the pkt */
+		net_pkt_append_buffer(pkt, data->buffer);
+		data->buffer = NULL;
+		tcp_pkt_unref(data);
 	}
 
-	r = ip_header_add(conn, pkt);
-	if (r < 0) {
-		goto fail;
+	ret = ip_header_add(conn, pkt);
+	if (ret < 0) {
+		tcp_pkt_unref(pkt);
+		goto out;
 	}
 
-	r = tcp_header_add(conn, pkt, flags);
-	if (r < 0) {
-		goto fail;
+	ret = tcp_header_add(conn, pkt, flags, seq);
+	if (ret < 0) {
+		tcp_pkt_unref(pkt);
+		goto out;
 	}
 
-	r = tcp_finalize_pkt(pkt);
-	if (r < 0) {
-		goto fail;
-	}
-
-	if (len) {
-		conn_seq(conn, + len);
+	ret = tcp_finalize_pkt(pkt);
+	if (ret < 0) {
+		tcp_pkt_unref(pkt);
+		goto out;
 	}
 
 	NET_DBG("%s", log_strdup(tcp_th(pkt)));
@@ -606,11 +598,11 @@ static void tcp_out(struct tcp *conn, u8_t flags, ...)
 	tcp_send_process((struct k_work *)&conn->send_timer);
 out:
 	return;
+}
 
-fail:
-	if (pkt) {
-		tcp_pkt_unref(pkt);
-	}
+static void tcp_out(struct tcp *conn, u8_t flags)
+{
+	tcp_out_ext(conn, flags, NULL /* no data */, conn->seq);
 }
 
 static void tcp_timewait_timeout(struct k_work *work)
