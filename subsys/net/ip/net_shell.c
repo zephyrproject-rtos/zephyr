@@ -733,6 +733,170 @@ static void print_ppp_stats(struct net_if *iface, struct net_stats_ppp *data,
 #define GET_STAT(a, b) 0
 #endif
 
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL) || \
+	defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
+#if (NET_TC_TX_COUNT > 1) || (NET_TC_RX_COUNT > 1)
+static char *get_net_pkt_tc_stats_detail(struct net_if *iface, int i,
+					  bool is_tx)
+{
+	static char extra_stats[sizeof("\t[0=xxxx us]") +
+				sizeof("->xxxx") *
+				NET_PKT_DETAIL_STATS_COUNT];
+	int j, total = 0, pos = 0;
+
+	pos += snprintk(extra_stats, sizeof(extra_stats), "\t[0");
+
+	for (j = 0; j < NET_PKT_DETAIL_STATS_COUNT; j++) {
+		net_stats_t count = 0;
+		uint32_t avg;
+
+		if (is_tx) {
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL) && (NET_TC_TX_COUNT > 1)
+			count = GET_STAT(iface,
+					 tc.sent[i].tx_time_detail[j].count);
+#endif
+		} else {
+#if defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL) && (NET_TC_RX_COUNT > 1)
+			count = GET_STAT(iface,
+					 tc.recv[i].rx_time_detail[j].count);
+#endif
+		}
+
+		if (count == 0) {
+			break;
+		}
+
+		if (is_tx) {
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL) && (NET_TC_TX_COUNT > 1)
+			avg = (uint32_t)(GET_STAT(iface,
+					   tc.sent[i].tx_time_detail[j].sum) /
+				      (uint64_t)count);
+#endif
+		} else {
+#if defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL) && (NET_TC_RX_COUNT > 1)
+			avg = (uint32_t)(GET_STAT(iface,
+					   tc.recv[i].rx_time_detail[j].sum) /
+				      (uint64_t)count);
+#endif
+		}
+
+		if (avg == 0) {
+			continue;
+		}
+
+		total += avg;
+
+		pos += snprintk(extra_stats + pos, sizeof(extra_stats) - pos,
+				"->%u", avg);
+	}
+
+	if (total == 0U) {
+		return "\0";
+	}
+
+	pos += snprintk(extra_stats + pos, sizeof(extra_stats) - pos,
+				"=%u us]", total);
+
+	return extra_stats;
+}
+#endif /* (NET_TC_TX_COUNT > 1) || (NET_TC_RX_COUNT > 1) */
+
+#if (NET_TC_TX_COUNT == 1) || (NET_TC_RX_COUNT == 1)
+static char *get_net_pkt_stats_detail(struct net_if *iface, bool is_tx)
+{
+	static char extra_stats[sizeof("\t[0=xxxx us]") + sizeof("->xxxx") *
+				NET_PKT_DETAIL_STATS_COUNT];
+	int j, total = 0, pos = 0;
+
+	pos += snprintk(extra_stats, sizeof(extra_stats), "\t[0");
+
+	for (j = 0; j < NET_PKT_DETAIL_STATS_COUNT; j++) {
+		net_stats_t count;
+		uint32_t avg;
+
+		if (is_tx) {
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
+			count = GET_STAT(iface, tx_time_detail[j].count);
+#endif
+		} else {
+#if defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
+			count = GET_STAT(iface, rx_time_detail[j].count);
+#endif
+		}
+
+		if (count == 0) {
+			break;
+		}
+
+		if (is_tx) {
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
+			avg = (uint32_t)(GET_STAT(iface,
+					       tx_time_detail[j].sum) /
+				      (uint64_t)count);
+#endif
+		} else {
+#if defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
+			avg = (uint32_t)(GET_STAT(iface,
+					       rx_time_detail[j].sum) /
+				      (uint64_t)count);
+#endif
+		}
+
+		if (avg == 0) {
+			continue;
+		}
+
+		total += avg;
+
+		pos += snprintk(extra_stats + pos,
+				sizeof(extra_stats) - pos,
+				"->%u", avg);
+	}
+
+	if (total == 0U) {
+		return "\0";
+	}
+
+	pos += snprintk(extra_stats + pos, sizeof(extra_stats) - pos,
+			"=%u us]", total);
+
+	return extra_stats;
+}
+#endif /* (NET_TC_TX_COUNT == 1) || (NET_TC_RX_COUNT == 1) */
+
+#else /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
+	 CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
+
+#if defined(CONFIG_NET_PKT_TXTIME_STATS) || \
+	defined(CONFIG_NET_PKT_RXTIME_STATS) || \
+	defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+
+#if (NET_TC_TX_COUNT > 1) || (NET_TC_RX_COUNT > 1)
+static char *get_net_pkt_tc_stats_detail(struct net_if *iface, int i,
+					 bool is_tx)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(i);
+	ARG_UNUSED(is_tx);
+
+	return "\0";
+}
+#endif
+
+#if (NET_TC_TX_COUNT == 1) || (NET_TC_RX_COUNT == 1)
+static char *get_net_pkt_stats_detail(struct net_if *iface, bool is_tx)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(is_tx);
+
+	return "\0";
+}
+#endif
+#endif /* CONFIG_NET_PKT_TXTIME_STATS) || CONFIG_NET_PKT_RXTIME_STATS ||
+	  CONFIG_NET_CONTEXT_TIMESTAMP */
+#endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
+	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
+
 static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 {
 #if NET_TC_TX_COUNT > 1
@@ -754,42 +918,6 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 			   GET_STAT(iface, tc.sent[i].pkts),
 			   GET_STAT(iface, tc.sent[i].bytes));
 		} else {
-#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
-			char extra_stats[sizeof("\t[0=xxxx us]") +
-					 sizeof("->xxxx") *
-					 NET_PKT_DETAIL_STATS_COUNT];
-			int j, total = 0, pos = 0;
-
-			pos += snprintk(extra_stats, sizeof(extra_stats),
-					"\t[0");
-
-			for (j = 0; j < NET_PKT_DETAIL_STATS_COUNT; j++) {
-				net_stats_t count2 = GET_STAT(iface,
-				      tc.sent[i].tx_time_detail[j].count);
-
-				if (count2 != 0) {
-					uint32_t avg;
-
-					avg = (uint32_t)(GET_STAT(iface,
-					    tc.sent[i].tx_time_detail[j].sum) /
-					    (uint64_t)count2);
-
-					total += avg;
-
-					pos += snprintk(
-						extra_stats + pos,
-						sizeof(extra_stats) - pos,
-						"->%u", avg);
-				}
-			}
-
-			pos += snprintk(extra_stats + pos,
-					sizeof(extra_stats) - pos,
-					"=%u us]", total);
-#else
-			const char *extra_stats = "\0";
-#endif
-
 			PR("[%d] %s (%d)\t%d\t\t%d\t%lu us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
 			   GET_STAT(iface, tc.sent[i].priority),
@@ -797,8 +925,8 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 			   GET_STAT(iface, tc.sent[i].bytes),
 			   (uint32_t)(GET_STAT(iface,
 					    tc.sent[i].tx_time.sum) /
-				      (uint64_t)count),
-			   extra_stats);
+				   (uint64_t)count),
+			   get_net_pkt_tc_stats_detail(iface, i, true));
 		}
 	}
 #else
@@ -819,40 +947,9 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 	net_stats_t count = GET_STAT(iface, tx_time.count);
 
 	if (count != 0) {
-#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
-		char extra_stats[sizeof("\t[0=xxxx us]") + sizeof("->xxxx") *
-				 NET_PKT_DETAIL_STATS_COUNT];
-		int j, total = 0, pos = 0;
-
-		pos += snprintk(extra_stats, sizeof(extra_stats), "\t[0");
-
-		for (j = 0; j < NET_PKT_DETAIL_STATS_COUNT; j++) {
-			net_stats_t count2 =
-				GET_STAT(iface, tx_time_detail[j].count);
-
-			if (count2 != 0) {
-				uint32_t avg = (uint32_t)
-					(GET_STAT(iface,
-						  tx_time_detail[j].sum) /
-					 (uint64_t)count2);
-
-				total += avg;
-
-				pos += snprintk(extra_stats + pos,
-						sizeof(extra_stats) - pos,
-						"->%u", avg);
-			}
-		}
-
-		pos += snprintk(extra_stats + pos, sizeof(extra_stats) - pos,
-				"=%u us]", total);
-#else
-		const char *extra_stats = "\0";
-#endif
-
 		PR("Avg %s net_pkt (%u) time %lu us%s\n", "TX", count,
 		   (uint32_t)(GET_STAT(iface, tx_time.sum) / (uint64_t)count),
-		   extra_stats);
+		   get_net_pkt_stats_detail(iface, true));
 	}
 #else
 	ARG_UNUSED(iface);
@@ -880,14 +977,15 @@ static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
 			   GET_STAT(iface, tc.recv[i].pkts),
 			   GET_STAT(iface, tc.recv[i].bytes));
 		} else {
-			PR("[%d] %s (%d)\t%d\t\t%d\t%lu us\n", i,
+			PR("[%d] %s (%d)\t%d\t\t%d\t%lu us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
 			   GET_STAT(iface, tc.recv[i].bytes),
 			   (uint32_t)(GET_STAT(iface,
 					    tc.recv[i].rx_time.sum) /
-				   (uint64_t)count));
+				   (uint64_t)count),
+			   get_net_pkt_tc_stats_detail(iface, i, false));
 		}
 	}
 #else
@@ -908,8 +1006,9 @@ static void print_tc_rx_stats(const struct shell *shell, struct net_if *iface)
 	net_stats_t count = GET_STAT(iface, rx_time.count);
 
 	if (count != 0) {
-		PR("Avg %s net_pkt (%u) time %lu us\n", "RX", count,
-		   (uint32_t)(GET_STAT(iface, rx_time.sum) / (uint64_t)count));
+		PR("Avg %s net_pkt (%u) time %lu us%s\n", "RX", count,
+		   (uint32_t)(GET_STAT(iface, rx_time.sum) / (uint64_t)count),
+		   get_net_pkt_stats_detail(iface, false));
 	}
 #else
 	ARG_UNUSED(iface);
