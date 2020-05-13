@@ -25,9 +25,26 @@ OUTPUT_ARCH(xtensa)
 PROVIDE(__memctl_default = 0x00000000);
 PROVIDE(_MemErrorHandler = 0x00000000);
 
-#define RAMABLE_REGION ram :ram_phdr
-#define ROMABLE_REGION ram :ram_phdr
 #define LPRAM_REGION lpram
+
+/* DSP RAM regions (all of them) are mapped twice on the DSP: once in
+ * a 512MB region from 0x80000000-0x9fffffff and again from
+ * 0xa0000000-0xbfffffff.  The first mapping is set up to bypass the
+ * L1 cache, so it must be used when multiprocessor coherence is
+ * desired, where the latter mapping is best used for processor-local
+ * data (e.g. stacks) or shared data that is managed with explicit
+ * cache flush/invalidate operations.
+ *
+ * These macros will set up a segment start address correctly,
+ * including alignment to a cache line.  Be sure to also emit the
+ * section to ">ram :ram_phdr" or ">ucram :ucram_phdr" as
+ * appropriate. (Forgetting the correct PHDR will actually work, as
+ * the output tooling ignores it, but it will cause the linker to emit
+ * 512MB of unused data into the output file!)
+ *
+ */
+#define SEGSTART_CACHED   (ALIGN(64) | 0x20000000)
+#define SEGSTART_UNCACHED (ALIGN(64) & ~0x20000000)
 
 MEMORY
 {
@@ -97,6 +114,9 @@ MEMORY
   ram :
 	org = RAM_BASE,
 	len = RAM_SIZE
+  ucram :
+	org = RAM_BASE - 0x20000000,
+	len = RAM_SIZE
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST :
 	org = IDT_BASE,
@@ -138,7 +158,7 @@ PHDRS
   vector_double_lit_phdr PT_LOAD;
   vector_double_text_phdr PT_LOAD;
   ram_phdr PT_LOAD;
-
+  ucram_phdr PT_LOAD;
   static_uuid_entries_phdr PT_NOTE;
   static_log_entries_phdr PT_NOTE;
 }
@@ -390,6 +410,8 @@ SECTIONS
     _module_init_end = ABSOLUTE(.);
   } >ram :ram_phdr
 
+#define RAMABLE_REGION ram :ram_phdr
+#define ROMABLE_REGION ram :ram_phdr
 #include <linker/common-rom.ld>
 
   .fw_ready : ALIGN(4)
@@ -404,7 +426,16 @@ SECTIONS
     *(.noinit.*)
   } >ram :ram_phdr
 
-  .data : ALIGN(4)
+  .lit4 SEGSTART_CACHED : ALIGN(4)
+  {
+    _lit4_start = ABSOLUTE(.);
+    *(*.lit4)
+    *(.lit4.*)
+    *(.gnu.linkonce.lit4.*)
+    _lit4_end = ABSOLUTE(.);
+  } >ram :ram_phdr
+
+  .data SEGSTART_UNCACHED : ALIGN(4)
   {
     _data_start = ABSOLUTE(.);
     *(.data)
@@ -423,18 +454,25 @@ SECTIONS
     *(.gna_model)
     _data_end = ABSOLUTE(.);
     . = ALIGN(4096);
-  } >ram :ram_phdr
-  .lit4 : ALIGN(4)
-  {
-    _lit4_start = ABSOLUTE(.);
-    *(*.lit4)
-    *(.lit4.*)
-    *(.gnu.linkonce.lit4.*)
-    _lit4_end = ABSOLUTE(.);
-  } >ram :ram_phdr
+  } >ucram :ucram_phdr
+
+/* These values need to change in our scheme, where the common-ram
+ * sections need to be linked in safe/uncached memory but common-rom
+ * wants to use the cache
+  */
+#undef RAMABLE_REGION
+#undef ROMABLE_REGION
+#define RAMABLE_REGION ucram :ucram_phdr
+#define ROMABLE_REGION ucram :ucram_phdr
 #include <linker/common-ram.ld>
 
-  .bss (NOLOAD) : ALIGN(4096)
+  /* ANDY TEST */
+  .ucram SEGSTART_UNCACHED :
+  {
+    *(.ucram)
+  } >ucram :ucram_phdr
+
+  .bss SEGSTART_UNCACHED (NOLOAD) : ALIGN(4096)
   {
     . = ALIGN(4096);
     _bss_start = ABSOLUTE(.);
@@ -453,7 +491,10 @@ SECTIONS
     *(COMMON)
     . = ALIGN(8);
     _bss_end = ABSOLUTE(.);
-  } >ram :ram_phdr
+  } >ucram :ucram_phdr
+
+  /* Re-adjust to the upper mapping for the final symbols below */
+  . = SEGSTART_CACHED;
 
   /* stack */
   _end = ALIGN(8);
