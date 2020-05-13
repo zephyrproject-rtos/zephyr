@@ -340,7 +340,7 @@
 		};
 
 		lptim1: timers@40007c00 {
-			compatible = "st,stm32-timers";
+			compatible = "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
