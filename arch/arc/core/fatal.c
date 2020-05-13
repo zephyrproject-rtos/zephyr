@@ -20,7 +20,7 @@ LOG_MODULE_DECLARE(os);
 
 void z_arc_fatal_error(unsigned int reason, const z_arch_esf_t *esf)
 {
-	if (reason == K_ERR_CPU_EXCEPTION) {
+	if (reason == K_ERR_CPU_EXCEPTION || reason == K_ERR_STACK_CHK_FAIL) {
 		LOG_ERR("Faulting instruction address = 0x%lx",
 			z_arc_v2_aux_reg_read(_ARC_V2_ERET));
 	}
