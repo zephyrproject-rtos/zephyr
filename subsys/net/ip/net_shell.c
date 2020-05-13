@@ -754,14 +754,51 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 			   GET_STAT(iface, tc.sent[i].pkts),
 			   GET_STAT(iface, tc.sent[i].bytes));
 		} else {
-			PR("[%d] %s (%d)\t%d\t\t%d\t%lu us\n", i,
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
+			char extra_stats[sizeof("\t[0=xxxx us]") +
+					 sizeof("->xxxx") *
+					 NET_PKT_DETAIL_STATS_COUNT];
+			int j, total = 0, pos = 0;
+
+			pos += snprintk(extra_stats, sizeof(extra_stats),
+					"\t[0");
+
+			for (j = 0; j < NET_PKT_DETAIL_STATS_COUNT; j++) {
+				net_stats_t count2 = GET_STAT(iface,
+				      tc.sent[i].tx_time_detail[j].count);
+
+				if (count2 != 0) {
+					uint32_t avg;
+
+					avg = (uint32_t)(GET_STAT(iface,
+					    tc.sent[i].tx_time_detail[j].sum) /
+					    (uint64_t)count2);
+
+					total += avg;
+
+					pos += snprintk(
+						extra_stats + pos,
+						sizeof(extra_stats) - pos,
+						"->%u", avg);
+				}
+			}
+
+			pos += snprintk(extra_stats + pos,
+					sizeof(extra_stats) - pos,
+					"=%u us]", total);
+#else
+			const char *extra_stats = "\0";
+#endif
+
+			PR("[%d] %s (%d)\t%d\t\t%d\t%lu us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.sent[i].priority)),
 			   GET_STAT(iface, tc.sent[i].priority),
 			   GET_STAT(iface, tc.sent[i].pkts),
 			   GET_STAT(iface, tc.sent[i].bytes),
 			   (uint32_t)(GET_STAT(iface,
 					    tc.sent[i].tx_time.sum) /
-				   (uint64_t)count));
+				      (uint64_t)count),
+			   extra_stats);
 		}
 	}
 #else
@@ -782,8 +819,40 @@ static void print_tc_tx_stats(const struct shell *shell, struct net_if *iface)
 	net_stats_t count = GET_STAT(iface, tx_time.count);
 
 	if (count != 0) {
-		PR("Avg %s net_pkt (%u) time %lu us\n", "TX", count,
-		   (uint32_t)(GET_STAT(iface, tx_time.sum) / (uint64_t)count));
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
+		char extra_stats[sizeof("\t[0=xxxx us]") + sizeof("->xxxx") *
+				 NET_PKT_DETAIL_STATS_COUNT];
+		int j, total = 0, pos = 0;
+
+		pos += snprintk(extra_stats, sizeof(extra_stats), "\t[0");
+
+		for (j = 0; j < NET_PKT_DETAIL_STATS_COUNT; j++) {
+			net_stats_t count2 =
+				GET_STAT(iface, tx_time_detail[j].count);
+
+			if (count2 != 0) {
+				uint32_t avg = (uint32_t)
+					(GET_STAT(iface,
+						  tx_time_detail[j].sum) /
+					 (uint64_t)count2);
+
+				total += avg;
+
+				pos += snprintk(extra_stats + pos,
+						sizeof(extra_stats) - pos,
+						"->%u", avg);
+			}
+		}
+
+		pos += snprintk(extra_stats + pos, sizeof(extra_stats) - pos,
+				"=%u us]", total);
+#else
+		const char *extra_stats = "\0";
+#endif
+
+		PR("Avg %s net_pkt (%u) time %lu us%s\n", "TX", count,
+		   (uint32_t)(GET_STAT(iface, tx_time.sum) / (uint64_t)count),
+		   extra_stats);
 	}
 #else
 	ARG_UNUSED(iface);
