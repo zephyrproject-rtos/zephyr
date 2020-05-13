@@ -31,8 +31,6 @@ static K_MEM_SLAB_DEFINE(tcp_conns_slab, sizeof(struct tcp),
 				CONFIG_NET_MAX_CONTEXTS, 4);
 
 static void tcp_in(struct tcp *conn, struct net_pkt *pkt);
-static size_t tcp_data_len(struct net_pkt *pkt);
-int net_tcp_finalize(struct net_pkt *pkt);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 size_t (*tcp_recv_cb)(struct tcp *conn, struct net_pkt *pkt) = NULL;
@@ -142,6 +140,16 @@ static const char *tcp_flags(u8_t flags)
 	}
 #undef BUF_SIZE
 	return buf;
+}
+
+static size_t tcp_data_len(struct net_pkt *pkt)
+{
+	struct tcphdr *th = th_get(pkt);
+	size_t tcp_options_len = (th->th_off - 5) * 4;
+	ssize_t len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
+		net_pkt_ip_opts_len(pkt) - sizeof(*th) - tcp_options_len;
+
+	return len > 0 ? len : 0;
 }
 
 static const char *tcp_th(struct net_pkt *pkt)
@@ -441,16 +449,6 @@ end:
 	}
 
 	return result;
-}
-
-static size_t tcp_data_len(struct net_pkt *pkt)
-{
-	struct tcphdr *th = th_get(pkt);
-	size_t tcp_options_len = (th->th_off - 5) * 4;
-	ssize_t len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
-		net_pkt_ip_opts_len(pkt) - sizeof(*th) - tcp_options_len;
-
-	return len > 0 ? len : 0;
 }
 
 static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
