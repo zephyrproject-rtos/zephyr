@@ -116,7 +116,8 @@ struct net_pkt {
 			/** Timestamp if available. */
 			struct net_ptp_time timestamp;
 
-#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL) || \
+	defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
 			/** Collect extra statistics for net_pkt processing
 			 * from various points in the IP stack. See networking
 			 * documentation where these points are located and how
@@ -126,7 +127,8 @@ struct net_pkt {
 				uint32_t stat[NET_PKT_DETAIL_STATS_COUNT];
 				int count;
 			} detail;
-#endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL */
+#endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
+	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 		};
 #endif /* CONFIG_NET_PKT_TIMESTAMP */
 #if defined(CONFIG_NET_PKT_TXTIME)
@@ -843,7 +845,8 @@ static inline void net_pkt_set_txtime(struct net_pkt *pkt, uint64_t txtime)
 }
 #endif /* CONFIG_NET_PKT_TXTIME */
 
-#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL) || \
+	defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
 static inline uint32_t *net_pkt_stats_tick(struct net_pkt *pkt)
 {
 	return pkt->detail.stat;
@@ -872,6 +875,7 @@ static ALWAYS_INLINE void net_pkt_set_stats_tick(struct net_pkt *pkt,
 }
 
 #define net_pkt_set_tx_stats_tick(pkt, tick) net_pkt_set_stats_tick(pkt, tick)
+#define net_pkt_set_rx_stats_tick(pkt, tick) net_pkt_set_stats_tick(pkt, tick)
 #else
 static inline uint32_t *net_pkt_stats_tick(struct net_pkt *pkt)
 {
@@ -899,7 +903,9 @@ static inline void net_pkt_set_stats_tick(struct net_pkt *pkt, uint32_t tick)
 }
 
 #define net_pkt_set_tx_stats_tick(pkt, tick)
-#endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL */
+#define net_pkt_set_rx_stats_tick(pkt, tick)
+#endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
+	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
 
 static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 {

@@ -236,10 +236,11 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 		return -1;
 	}
 
-	net_stats_update_tc_rx_time(net_pkt_iface(pkt),
-				    net_pkt_priority(pkt),
-				    net_pkt_timestamp(pkt)->nanosecond,
-				    k_cycle_get_32());
+
+	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) &&
+	    !(flags & ZSOCK_MSG_PEEK)) {
+		net_socket_update_tc_rx_time(pkt, k_cycle_get_32());
+	}
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
 		net_pkt_unref(pkt);

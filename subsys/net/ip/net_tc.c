@@ -44,6 +44,8 @@ bool net_tc_submit_to_tx_queue(uint8_t tc, struct net_pkt *pkt)
 
 void net_tc_submit_to_rx_queue(uint8_t tc, struct net_pkt *pkt)
 {
+	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
+
 	k_work_submit_to_queue(&rx_classes[tc].work_q, net_pkt_work(pkt));
 }
 

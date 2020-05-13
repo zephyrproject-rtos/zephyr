@@ -350,6 +350,8 @@ static void process_rx_packet(struct k_work *work)
 
 	pkt = CONTAINER_OF(work, struct net_pkt, work);
 
+	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
+
 	net_rx(net_pkt_iface(pkt), pkt);
 }
 

@@ -694,7 +694,7 @@ config NET_PKT_RXTIME_STATS
 	bool "Enable network packet RX time statistics"
 	select NET_PKT_TIMESTAMP
 	select NET_STATISTICS
-	depends on (NET_UDP || NET_TCP)
+	depends on (NET_UDP || NET_TCP || NET_SOCKETS_PACKET) && NET_NATIVE
 	help
 	  Enable network packet RX time statistics support. This is used to
 	  calculate how long on average it takes for a packet to travel from
@@ -702,6 +702,16 @@ config NET_PKT_RXTIME_STATS
 	  timing information can then be seen in network interface statistics
 	  in net-shell.
 	  The RX statistics are only calculated for UDP and TCP packets.
+
+config NET_PKT_RXTIME_STATS_DETAIL
+	bool "Get extra receive detail statistics in RX path"
+	depends on NET_PKT_RXTIME_STATS
+	help
+	  Store receive statistics detail information in certain key points
+	  in RX path. This is very special configuration and will increase
+	  the size of net_pkt so in typical cases you should not enable it.
+	  The extra statistics can be seen in net-shell using "net stats"
+	  command.
 
 config NET_PKT_TXTIME_STATS
 	bool "Enable network packet TX time statistics"
