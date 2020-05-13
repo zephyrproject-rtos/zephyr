@@ -224,6 +224,10 @@ static void lr_execute_fsm(struct ull_cp_conn *conn, u8_t evt, void *param)
 		/* Unknown state */
 		LL_ASSERT(0);
 	}
+	/*
+	 * EGON TODO: is this the right place to release ctx
+	 * if we received the LR_EVT_COMPLETE event?
+	 */
 }
 
 void ull_cp_priv_lr_init(struct ull_cp_conn *conn)
