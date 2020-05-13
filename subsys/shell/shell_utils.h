@@ -15,11 +15,6 @@ extern "C" {
 
 #define SHELL_MSG_SPECIFY_SUBCOMMAND	"Please specify a subcommand.\n"
 
-#define SHELL_DEFAULT_TERMINAL_WIDTH	(80u) /* Default PuTTY width. */
-#define SHELL_DEFAULT_TERMINAL_HEIGHT	(24u) /* Default PuTTY height. */
-
-
-
 s32_t row_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
 				       u16_t offset1,
 				       u16_t offset2);
