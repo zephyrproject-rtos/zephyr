@@ -523,7 +523,7 @@ static int tcp_header_add(struct tcp *conn, struct net_pkt *pkt, u8_t flags,
 
 	th->th_off = 5;
 	th->th_flags = flags;
-	th->th_win = htons(conn->win);
+	th->th_win = htons(conn->recv_win);
 	th->th_seq = htonl(seq);
 
 	if (ACK & flags) {
@@ -637,7 +637,7 @@ static struct tcp *tcp_conn_alloc(void)
 
 	conn->state = TCP_LISTEN;
 
-	conn->win = tcp_window;
+	conn->recv_win = tcp_window;
 
 	conn->seq = (IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) ||
 		     IS_ENABLED(CONFIG_NET_TEST)) ? 0 : sys_rand32_get();
@@ -861,6 +861,10 @@ static void tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		tcp_out(conn, RST);
 		conn_state(conn, TCP_CLOSED);
 		goto next_state;
+	}
+
+	if (th) {
+		conn->send_win = ntohs(th->th_win);
 	}
 
 	if (FL(&fl, &, RST)) {

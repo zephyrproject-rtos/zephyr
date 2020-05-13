@@ -160,7 +160,8 @@ struct tcp { /* TCP connection */
 	u32_t ack;
 	union tcp_endpoint src;
 	union tcp_endpoint dst;
-	u16_t win;
+	u16_t recv_win;
+	u16_t send_win;
 	struct tcp_options recv_options;
 	struct k_delayed_work send_timer;
 	sys_slist_t send_queue;
