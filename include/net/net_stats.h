@@ -235,6 +235,10 @@ struct net_stats_tc {
 
 	struct {
 		struct net_stats_rx_time rx_time;
+#if defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
+		struct net_stats_rx_time
+				rx_time_detail[NET_PKT_DETAIL_STATS_COUNT];
+#endif
 		net_stats_t pkts;
 		net_stats_t bytes;
 		uint8_t priority;
@@ -322,6 +326,10 @@ struct net_stats {
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
 	/** Network packet TX time detail statistics */
 	struct net_stats_tx_time tx_time_detail[NET_PKT_DETAIL_STATS_COUNT];
+#endif
+#if defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
+	/** Network packet RX time detail statistics */
+	struct net_stats_tx_time rx_time_detail[NET_PKT_DETAIL_STATS_COUNT];
 #endif
 #endif
 
