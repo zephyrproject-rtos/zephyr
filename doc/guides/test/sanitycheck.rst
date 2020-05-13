@@ -12,7 +12,7 @@ boards and will run in an emulated environment if available for the
 architecture or configuration being tested.
 
 In normal use, sanitycheck runs a limited set of kernel tests (inside
-an emulator).  Because of its limited text execution coverage, sanitycheck
+an emulator).  Because of its limited test execution coverage, sanitycheck
 cannot guarantee local changes will succeed in the full build
 environment, but it does sufficient testing by building samples and
 tests for different boards and different configurations to help keep the
