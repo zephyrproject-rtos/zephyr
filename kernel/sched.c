@@ -413,6 +413,10 @@ static void update_cache(int preempt_ok)
 
 static void ready_thread(struct k_thread *thread)
 {
+#ifdef KERNEL_COHERENCE
+	__ASSERT_NO_MSG(arch_mem_coherent(thread));
+#endif
+
 	if (z_is_thread_ready(thread)) {
 		sys_trace_thread_ready(thread);
 		_priq_run_add(&_kernel.ready_q.runq, thread);
@@ -656,6 +660,10 @@ static void add_thread_timeout(struct k_thread *thread, k_timeout_t timeout)
 static void pend(struct k_thread *thread, _wait_q_t *wait_q,
 		 k_timeout_t timeout)
 {
+#ifdef KERNEL_COHERENCE
+	__ASSERT_NO_MSG(arch_mem_coherent(wait_q));
+#endif
+
 	LOCKED(&sched_spinlock) {
 		add_to_waitq_locked(thread, wait_q);
 	}
@@ -897,22 +905,26 @@ static inline void set_current(struct k_thread *new_thread)
 #ifdef CONFIG_USE_SWITCH
 void *z_get_next_switch_handle(void *interrupted)
 {
-	_current->switch_handle = interrupted;
-
 	z_check_stack_sentinel();
 
 #ifdef CONFIG_SMP
 	LOCKED(&sched_spinlock) {
-		struct k_thread *thread = next_up();
+		struct k_thread *old_thread = _current, *new_thread;
 
-		if (_current != thread) {
-			update_metairq_preempt(thread);
+		old_thread->switch_handle = NULL;
+		new_thread = next_up();
+
+		if (old_thread != new_thread) {
+			update_metairq_preempt(new_thread);
+			wait_for_switch(new_thread);
+			arch_cohere_stacks(old_thread, interrupted, new_thread);
 
 #ifdef CONFIG_TIMESLICING
 			z_reset_time_slice();
 #endif
 			_current_cpu->swap_ok = 0;
-			set_current(thread);
+			set_current(new_thread);
+
 #ifdef CONFIG_SPIN_VALIDATE
 			/* Changed _current!  Update the spinlock
 			 * bookeeping so the validation doesn't get
@@ -922,15 +934,12 @@ void *z_get_next_switch_handle(void *interrupted)
 			z_spin_lock_set_owner(&sched_spinlock);
 #endif
 		}
+		old_thread->switch_handle = interrupted;
 	}
 #else
-	struct k_thread *thread = z_get_next_ready_thread();
-	if (_current != thread) {
-		set_current(thread);
-	}
+	_current->switch_handle = interrupted;
+	set_current(z_get_next_ready_thread());
 #endif
-
-	wait_for_switch(_current);
 	return _current->switch_handle;
 }
 #endif
