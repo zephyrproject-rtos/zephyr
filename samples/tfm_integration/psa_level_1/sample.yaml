@@ -12,6 +12,7 @@ tests:
         harness_config:
           type: multi_line
           regex:
-            - "Creating new config file with UID"
-            - "System IAT size is"
-            - "Generating 256 bytes of random data"
+            - "Retrieving public key for key #1"
+            - "Signature verified"
+            - "Destroyed persistent key #1"
+            - "Generating 256 bytes of random data."
