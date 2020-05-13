@@ -137,13 +137,44 @@ SECTIONS
     *(.init)
     _init_end = ABSOLUTE(.);
 
+    /* see below in CONFIG_CPLUSPLUS for why these are here */
+    . = ALIGN(4);
+    __init_array_start = .;
+    KEEP(*(SORT_BY_NAME(".init_array*")))
+    __init_array_end = .;
+
     /* This goes here, not at top of linker script, so addr2line finds it last,
        and uses it in preference to the first symbol in IRAM */
     _iram_start = ABSOLUTE(0);
   } GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <linker/common-ram.ld>
-#include <linker/common-rom.ld>
+
+/* esptool only copies PROGBITS sections from ELF to binary image.
+ * However, init_array is of type INIT_ARRAY and thus not being copied.
+ * This breaks C++ applications where init arrays are needed.
+ * So workaround this by defining our own C++ section.
+ */
+#ifdef CONFIG_CPLUSPLUS
+#  undef CONFIG_CPLUSPLUS
+#  include <linker/common-rom.ld>
+#  define CONFIG_CPLUSPLUS
+#else
+#  include <linker/common-rom.ld>
+#endif
+
+#ifdef CONFIG_CPLUSPLUS
+  SECTION_PROLOGUE(_CTOR_SECTION_NAME,,)
+  {
+    . = ALIGN(4);
+    __CTOR_LIST__ = .;
+    LONG((__CTOR_END__ - __CTOR_LIST__) / 4 - 2)
+    KEEP(*(SORT_BY_NAME(".ctors*")))
+    LONG(0)
+    __CTOR_END__ = .;
+  } GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+
 
   SECTION_PROLOGUE(_TEXT_SECTION_NAME, , ALIGN(4))
   {
