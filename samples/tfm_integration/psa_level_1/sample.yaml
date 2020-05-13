@@ -3,13 +3,13 @@ sample:
         side, with Zephyr on the NS side, using IPC mode.
     name: TF-M PSA Level 1 example
 tests:
-    sample.tfm_ipc:
+    sample.psa_level_1:
         tags: introduction
         platform_whitelist: mps2_an521_nonsecure
         harness: console
         harness_config:
           type: multi_line
           regex:
-            - "Creating new config file with UID"
-            - "System IAT size is"
-            - "Generating 256 bytes of random data"
+            - "Retrieving public key for key #1"
+            - "Signature verified"
+            - "Destroyed persistent key #1"

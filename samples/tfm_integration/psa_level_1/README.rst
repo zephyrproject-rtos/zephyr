@@ -25,6 +25,32 @@ multi-thread application.
 .. _PSA Certified Level 1:
   https://www.psacertified.org/security-certification/psa-certified-level-1/
 
+Key Files
+*********
+
+``psa_crypto.c``
+================
+
+Demonstrates the following workflow:
+
+- Generate a permanent persistent key (prime256v1 or ecdsa-with-SHA256)
+- Display the public key based on the private key data above
+- Calculates the SHA256 hash of a payload
+- Signs the hash with the persistent key
+- Verifies the signature using the public key
+- Destroys the key
+
+``psa_attestation.c``
+=====================
+
+Demonstrates how to request an initial attestation token (IAT) from the TF-M
+secure processing environment (SPE).
+
+``tfm_ipc.c``
+=============
+
+Mutex handler required to enable safe use of the TF-M IPC mechanism in Zephyr.
+
 Building and Running
 ********************
 
@@ -132,19 +158,19 @@ Sample Output
    .. code-block:: console
 
       [INF] Starting bootloader
-      [INF] Swap type: none
-      [INF] Swap type: none
+      [INF] Image 0: version=0.0.0+1, magic= good, image_ok=0x3
+      [INF] Image 1: No valid image
+      [INF] Booting image from the primary slot
       [INF] Bootloader chainload address offset: 0x80000
-
       [INF] Jumping to the first image slot
       [Sec Thread] Secure image initializing!
       TF-M isolation level is: 1
       Booting TFM v1.0
-      *** Booting Zephyr OS build v1.12.0-rc1-19787-g7bf29820769f  ***
+      *** Booting Zephyr OS build v2.3.0-rc1  ***
       [00:00:00.003,000] <inf> app: app_cfg: Creating new config file with UID 0x155cfda7a
-      [00:00:03.517,000] <inf> app: att: System IAT size is: 545 bytes.
-      [00:00:03.517,000] <inf> app: att: Requesting IAT with 64 byte challenge.
-      [00:00:06.925,000] <inf> app: att: IAT data received: 545 bytes.
+      [00:00:03.515,000] <inf> app: att: System IAT size is: 453 bytes.
+      [00:00:03.515,000] <inf> app: att: Requesting IAT with 64 byte challenge.
+      [00:00:06.920,000] <inf> app: att: IAT data received: 453 bytes.
                 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
       00000000 D2 84 43 A1 01 26 A0 59 01 D5 AA 3A 00 01 24 FF ..C..&.Y...:..$.
       00000010 58 40 00 11 22 33 44 55 66 77 88 99 AA BB CC DD X@.."3DUfw......
@@ -152,7 +178,6 @@ Sample Output
       00000030 EE FF 00 11 22 33 44 55 66 77 88 99 AA BB CC DD ...."3DUfw......
       00000040 EE FF 00 11 22 33 44 55 66 77 88 99 AA BB CC DD ...."3DUfw......
       00000050 EE FF 3A 00 01 24 FB 58 20 A0 A1 A2 A3 A4 A5 A6 ..:..$.X .......
-
       00000060 A7 A8 A9 AA AB AC AD AE AF B0 B1 B2 B3 B4 B5 B6 ................
       00000070 B7 B8 B9 BA BB BC BD BE BF 3A 00 01 25 00 58 21 .........:..%.X!
       00000080 01 FA 58 75 5F 65 86 27 CE 54 60 F2 9B 75 29 67 ..Xu_e.'.T`..u)g
@@ -182,25 +207,29 @@ Sample Output
       00000200 12 B4 2E 09 13 5B BF 35 1F ED 66 E3 36 CF DA CE .....[.5..f.6...
       00000210 06 03 69 DF C0 DC 4D 2F 17 33 D7 5E BE 73 B9 0E ..i...M/.3.^.s..
       00000220 08                                              .
-      [00:00:06.982,000] <inf> app: Generating 256 bytes of random data.
+      [00:00:06.962,000] <inf> app: Persisting SECP256R1 key as #1
+      [00:00:09.400,000] <inf> app: Retrieving public key for key #1
                 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
-      00000000 0C 90 D8 0C FA 0F 97 00 29 B2 AE 5C 90 48 3D 39 ........)..\.H=9
-      00000010 00 14 6C A3 84 E2 C0 C9 82 F5 8B A6 E9 38 66 16 ..l..........8f.
-      00000020 EA B7 E7 78 91 0D 6D 87 5B B8 04 0B 8B E0 74 23 ...x..m.[.....t#
-      00000030 7D 11 E2 17 32 34 1A 01 71 24 29 D5 7C 05 B1 11 }...24..q$).|...
-      00000040 A0 97 20 82 03 FF D6 76 9D 6F D5 52 45 C9 E1 17 .. ....v.o.RE...
-      00000050 69 DF 18 B6 8E 0C AA 3B 74 B4 EF 97 D9 0E 82 25 i......;t......%
-      00000060 E1 97 0E 6E 4F 0F DE B9 20 60 34 A4 EA 0D 9A B3 ...nO... `4.....
-      00000070 3F C4 9A CF F3 5E F2 2C 78 96 6F 0E DD E3 E6 CB ?....^.,x.o.....
-      00000080 DC 19 26 A3 E8 8E 07 0E 1E 5B DB 59 B0 05 41 E2 ..&......[.Y..A.
-      00000090 A4 ED 90 35 8B AB 1C B8 00 7E BB 2D 22 FE 7A EA ...5.....~.-".z.
-      000000A0 CF A0 BB DF 4F 2B 32 55 C9 07 0D 3D CE B8 43 78 ....O+2U...=..Cx
-      000000B0 63 33 6C 79 CA 43 3A 4F 0B 93 33 2B B1 D2 B0 A7 c3ly.C:O..3+....
-      000000C0 44 A0 E9 E8 BF FB FD 89 2A 44 7A 60 2D 9B 0F 9E D.......*Dz`-...
-      000000D0 0D B1 0E 9D 5C 60 5D E6 92 78 36 79 68 37 24 C5 ....\`]..x6yh7$.
-      000000E0 57 7F 2E DF 53 D2 7B 3F EE 56 9B 9E BB 39 2C B6 W...S.{?.V...9,.
-      000000F0 AA FF B5 3B 59 4E 40 1D E0 34 50 05 D0 E0 95 12 ...;YN@..4P.....
-      [00:00:07.004,000] <inf> app: Calculating SHA-256 hash of value.
+      00000000 04 47 EA AE D9 D6 6D 2E 1D 65 05 F5 04 FE CC 21 .G....m..e.....!
+      00000010 99 BE 5E 5A 56 6B 4F 1E 0C 43 E2 5B CE 1B 7D 06 ..^ZVkO..C.[..}.
+      00000020 D7 B3 71 E2 0A 3C 47 ED 84 9F 65 0E DB F9 3D D2 ..q..<G...e...=.
+
+      00000030 07 BB 81 A6 73 E6 3B 16 95 19 AC 01 02 CB 1C F5 ....s.;.........
+      00000040 35                                              5
+      [00:00:11.831,000] <inf> app: Calculating SHA-256 hash of value
                 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
-      00000000 E3 B0 C4 42 98 FC 1C 14 9A FB F4 C8 99 6F B9 24
-      00000010 27 AE 41 E4 64 9B 93 4C A4 95 99 1B 78 52 B8 55
+      00000000 50 6C 65 61 73 65 20 68 61 73 68 20 61 6E 64 20 Please hash and
+      00000010 73 69 67 6E 20 74 68 69 73 20 6D 65 73 73 61 67 sign this messag
+      00000020 65 2E                                           e.
+                0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+      00000000 9D 08 E3 E6 DB 1C 12 39 C0 9B 9A 83 84 83 72 7A .......9......rz
+      00000010 EA 96 9E 1D 13 72 1E 4D 35 75 CC D4 C8 01 41 9C .....r.M5u....A.
+      [00:00:11.851,000] <inf> app: Signing SHA-256 hash
+                0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+      00000000 81 FC CE C2 02 96 79 E0 60 A8 0C 53 22 58 F3 17 ......y.`..S"X..
+      00000010 7A AC 46 60 7E 30 7F 60 03 53 1C 43 CA 31 97 B8 z.F`~0.`.S.C.1..
+      00000020 47 47 56 E9 19 45 F9 E2 DC 38 68 8D F1 A7 C7 48 GGV..E...8h....H
+      00000030 96 26 F6 0C 0F 94 D8 E3 9E 66 82 76 A6 BC B4 FC .&.......f.v....
+      [00:00:15.199,000] <inf> app: Verifying signature for SHA-256 hash
+      [00:00:20.985,000] <inf> app: Signature verified.
+      [00:00:23.439,000] <inf> app: Destroyed persistent key #1
