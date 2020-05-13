@@ -231,16 +231,12 @@ static void lp_comm_send_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 		}
 		break;
 	case PROC_FEATURE_EXCHANGE:
-		if (!conn->llcp.fex.sent) {
-			if (!tx_alloc_is_available() || ctx->pause) {
-				ctx->state = LP_COMMON_STATE_WAIT_TX;
-			} else {
-				lp_comm_tx(conn, ctx);
-				conn->llcp.fex.sent = 1;
-				ctx->state = LP_COMMON_STATE_WAIT_RX;
-			}
+		if (!tx_alloc_is_available() || ctx->pause) {
+			ctx->state = LP_COMMON_STATE_WAIT_TX;
 		} else {
-			lp_comm_complete(conn, ctx, evt, param);
+			lp_comm_tx(conn, ctx);
+			conn->llcp.fex.sent = 1;
+			ctx->state = LP_COMMON_STATE_WAIT_RX;
 		}
 		break;
 	case PROC_VERSION_EXCHANGE:
@@ -372,6 +368,7 @@ void ull_cp_priv_lp_comm_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, voi
 static void rp_comm_rx_decode(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct pdu_data *pdu)
 {
 	ctx->response_opcode = pdu->llctrl.opcode;
+
 	switch (pdu->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_PING_REQ:
 		/* ping_req has no data */
