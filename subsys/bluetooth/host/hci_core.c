@@ -830,11 +830,6 @@ static int le_adv_set_private_addr(struct bt_le_ext_adv *adv)
 	bt_addr_t nrpa;
 	int err;
 
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	    BT_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		return le_set_private_addr(adv->id);
-	}
-
 	err = bt_rand(nrpa.val, sizeof(nrpa.val));
 	if (err) {
 		return err;
