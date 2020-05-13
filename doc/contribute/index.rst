@@ -340,7 +340,8 @@ following exceptions:
 * Use C89-style single line comments, ``/*  */``. The C99-style single line
   comment, ``//``, is not allowed.
 * Use ``/**  */`` for doxygen comments that need to appear in the documentation.
-
+* Use the ``u|s<size>_t`` types defined in ``include/zephyr/types.h`` instead of
+  the ``[u]int<size>_t`` standard types defined in ``stdint.h``.
 
 The Linux kernel GPL-licensed tool ``checkpatch`` is used to check
 coding style conformity.
