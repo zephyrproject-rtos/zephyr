@@ -1562,6 +1562,7 @@ class TestInstance(DisablePyTestCollectionMixin):
                     content = content + "\nCONFIG_ASAN=y"
 
             f.write(content)
+            return content
 
     def calculate_sizes(self):
         """Get the RAM/ROM sizes of a test case.

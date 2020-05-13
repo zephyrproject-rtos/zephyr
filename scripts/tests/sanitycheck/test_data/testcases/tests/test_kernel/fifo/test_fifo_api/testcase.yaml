@@ -1,0 +1,6 @@
+tests:
+  kernel.fifo:
+    tags: kernel
+  kernel.fifo.poll:
+    extra_args: CONF_FILE="prj_poll.conf"
+    tags: kernel
