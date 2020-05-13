@@ -2,14 +2,13 @@
 # Copyright (c) 2020 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
-# pylint: disable=redefined-outer-name
+#
 # pylint: disable=line-too-long
 '''Common fixtures for use in testing the sanitycheck tool.'''
 
 import os
 import sys
 import pytest
-import yaml
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
