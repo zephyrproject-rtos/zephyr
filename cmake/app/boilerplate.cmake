@@ -89,6 +89,8 @@ if((NOT DEFINED ZEPHYR_BASE) AND (DEFINED ENV_ZEPHYR_BASE))
   set(ZEPHYR_BASE ${ENV_ZEPHYR_BASE} CACHE PATH "Zephyr base")
 endif()
 
+find_package(ZephyrBuildConfiguration NAMES ZephyrBuild PATHS ${ZEPHYR_BASE}/../* QUIET NO_DEFAULT_PATH NO_POLICY_SCOPE)
+
 # Note any later project() resets PROJECT_SOURCE_DIR
 file(TO_CMAKE_PATH "${ZEPHYR_BASE}" PROJECT_SOURCE_DIR)
 
