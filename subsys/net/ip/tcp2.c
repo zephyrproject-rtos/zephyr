@@ -299,6 +299,12 @@ static void tcp_send_process(struct k_work *work)
 
 		pkt = forget ? tcp_slist(&conn->send_queue, get, struct net_pkt,
 						next) : tcp_pkt_clone(pkt);
+		if (!pkt) {
+			NET_ERR("net_pkt alloc failure");
+			tcp_conn_unref(conn);
+			return;
+		}
+
 		tcp_send(pkt);
 
 		if (forget == false && !k_delayed_work_remaining_get(
