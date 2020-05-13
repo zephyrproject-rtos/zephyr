@@ -707,7 +707,7 @@ config NET_PKT_TXTIME_STATS
 	bool "Enable network packet TX time statistics"
 	select NET_PKT_TIMESTAMP
 	select NET_STATISTICS
-	depends on (NET_UDP || NET_TCP) && !NET_PKT_TXTIME
+	depends on (NET_UDP || NET_TCP || NET_SOCKETS_PACKET) && !NET_PKT_TXTIME && NET_NATIVE
 	help
 	  Enable network packet TX time statistics support. This is used to
 	  calculate how long on average it takes for a packet to travel from
@@ -719,6 +719,16 @@ config NET_PKT_TXTIME_STATS
 	  network protocol packets.
 	  Note that CONFIG_NET_PKT_TXTIME cannot be set at the same time
 	  because net_pkt shares the time variable for statistics and TX time.
+
+config NET_PKT_TXTIME_STATS_DETAIL
+	bool "Get extra transmit detail statistics in TX path"
+	depends on NET_PKT_TXTIME_STATS
+	help
+	  Store receive statistics detail information in certain key points
+	  in TX path. This is very special configuration and will increase
+	  the size of net_pkt so in typical cases you should not enable it.
+	  The extra statistics can be seen in net-shell using "net stats"
+	  command.
 
 config NET_PROMISCUOUS_MODE
 	bool "Enable promiscuous mode support [EXPERIMENTAL]"

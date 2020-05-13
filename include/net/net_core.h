@@ -57,6 +57,13 @@ extern "C" {
 
 #define NET_ASSERT(cond, ...) __ASSERT(cond, "" __VA_ARGS__)
 
+/* This needs to be here in order to avoid circular include dependency */
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
+#if !defined(NET_PKT_DETAIL_STATS_COUNT)
+#define NET_PKT_DETAIL_STATS_COUNT 3
+#endif
+#endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL */
+
 /** @endcond */
 
 struct net_buf;

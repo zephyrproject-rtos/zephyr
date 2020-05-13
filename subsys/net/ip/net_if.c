@@ -183,6 +183,23 @@ static inline void net_context_send_cb(struct net_context *context,
 	}
 }
 
+static void update_txtime_stats_detail(struct net_pkt *pkt,
+				       uint32_t start_time, uint32_t stop_time)
+{
+	uint32_t val, prev = start_time;
+	int i;
+
+	for (i = 0; i < net_pkt_stats_tick_count(pkt); i++) {
+		if (!net_pkt_stats_tick(pkt)[i]) {
+			break;
+		}
+
+		val = net_pkt_stats_tick(pkt)[i] - prev;
+		prev = net_pkt_stats_tick(pkt)[i];
+		net_pkt_stats_tick(pkt)[i] = val;
+	}
+}
+
 static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_linkaddr ll_dst = {
@@ -240,6 +257,13 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			memcpy(&start_timestamp, net_pkt_timestamp(pkt),
 			       sizeof(start_timestamp));
 			pkt_priority = net_pkt_priority(pkt);
+
+			if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
+				/* Make sure the statistics information is not
+				 * lost by keeping the net_pkt over L2 send.
+				 */
+				net_pkt_ref(pkt);
+			}
 		}
 
 		status = net_if_l2(iface)->send(iface, pkt);
@@ -251,11 +275,35 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 			}
 		}
 
-		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS) && status >= 0) {
+		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+			uint32_t end_tick = k_cycle_get_32();
+
+			net_pkt_set_tx_stats_tick(pkt, end_tick);
+
 			net_stats_update_tc_tx_time(iface,
 						    pkt_priority,
 						    start_timestamp.nanosecond,
-						    k_cycle_get_32());
+						    end_tick);
+
+			if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)) {
+				update_txtime_stats_detail(
+					pkt,
+					start_timestamp.nanosecond,
+					end_tick);
+
+				net_stats_update_tc_tx_time_detail(
+					iface, pkt_priority,
+					net_pkt_stats_tick(pkt));
+
+				/* For TCP connections, we might keep the pkt
+				 * longer so that we can resend it if needed.
+				 * Because of that we need to clear the
+				 * statistics here.
+				 */
+				net_pkt_stats_tick_reset(pkt);
+
+				net_pkt_unref(pkt);
+			}
 		}
 
 	} else {
@@ -302,6 +350,8 @@ static void process_tx_packet(struct k_work *work)
 	struct net_pkt *pkt;
 
 	pkt = CONTAINER_OF(work, struct net_pkt, work);
+
+	net_pkt_set_tx_stats_tick(pkt, k_cycle_get_32());
 
 	iface = net_pkt_iface(pkt);
 

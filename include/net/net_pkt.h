@@ -112,8 +112,22 @@ struct net_pkt {
 #if defined(CONFIG_NET_PKT_TIMESTAMP) || \
 				defined(CONFIG_NET_PKT_RXTIME_STATS) ||	\
 				defined(CONFIG_NET_PKT_TXTIME_STATS)
-		/** Timestamp if available. */
-		struct net_ptp_time timestamp;
+		struct {
+			/** Timestamp if available. */
+			struct net_ptp_time timestamp;
+
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
+			/** Collect extra statistics for net_pkt processing
+			 * from various points in the IP stack. See networking
+			 * documentation where these points are located and how
+			 * to interpret the results.
+			 */
+			struct {
+				uint32_t stat[NET_PKT_DETAIL_STATS_COUNT];
+				int count;
+			} detail;
+#endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL */
+		};
 #endif /* CONFIG_NET_PKT_TIMESTAMP */
 #if defined(CONFIG_NET_PKT_TXTIME)
 		/** Network packet TX time in the future (in nanoseconds) */
@@ -828,6 +842,64 @@ static inline void net_pkt_set_txtime(struct net_pkt *pkt, uint64_t txtime)
 	ARG_UNUSED(txtime);
 }
 #endif /* CONFIG_NET_PKT_TXTIME */
+
+#if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL)
+static inline uint32_t *net_pkt_stats_tick(struct net_pkt *pkt)
+{
+	return pkt->detail.stat;
+}
+
+static inline int net_pkt_stats_tick_count(struct net_pkt *pkt)
+{
+	return pkt->detail.count;
+}
+
+static inline void net_pkt_stats_tick_reset(struct net_pkt *pkt)
+{
+	memset(&pkt->detail, 0, sizeof(pkt->detail));
+}
+
+static ALWAYS_INLINE void net_pkt_set_stats_tick(struct net_pkt *pkt,
+						 uint32_t tick)
+{
+	if (pkt->detail.count >= NET_PKT_DETAIL_STATS_COUNT) {
+		NET_ERR("Detail stats count overflow (%d >= %d)",
+			pkt->detail.count, NET_PKT_DETAIL_STATS_COUNT);
+		return;
+	}
+
+	pkt->detail.stat[pkt->detail.count++] = tick;
+}
+
+#define net_pkt_set_tx_stats_tick(pkt, tick) net_pkt_set_stats_tick(pkt, tick)
+#else
+static inline uint32_t *net_pkt_stats_tick(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return NULL;
+}
+
+static inline int net_pkt_stats_tick_count(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_stats_tick_reset(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+}
+
+static inline void net_pkt_set_stats_tick(struct net_pkt *pkt, uint32_t tick)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(tick);
+}
+
+#define net_pkt_set_tx_stats_tick(pkt, tick)
+#endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL */
 
 static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 {
