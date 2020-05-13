@@ -305,11 +305,21 @@ static void dump_page_fault(z_arch_esf_t *esf)
 FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
 				     const z_arch_esf_t *esf)
 {
-#ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
+#ifdef CONFIG_EXCEPTION_DEBUG
 		dump_regs(esf);
-	}
 #endif
+#if defined(CONFIG_ASSERT) && defined(CONFIG_X86_64)
+		if (esf->rip == 0xb9) {
+			/* See implementation of __resume in locore.S. This is
+			 * never a valid RIP value. Treat this as a kernel
+			 * panic.
+			 */
+			LOG_ERR("Attempt to resume un-suspended thread object");
+			reason = K_ERR_KERNEL_PANIC;
+		}
+#endif
+	}
 	z_fatal_error(reason, esf);
 	CODE_UNREACHABLE;
 }
