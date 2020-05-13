@@ -462,7 +462,13 @@ static size_t tcp_data_get(struct tcp *conn, struct net_pkt *pkt)
 
 	if (len > 0) {
 		if (conn->context->recv_cb) {
-			struct net_pkt *up = net_pkt_clone(pkt, K_NO_WAIT);
+			struct net_pkt *up =
+				net_pkt_clone(pkt, TCP_PKT_ALLOC_TIMEOUT);
+
+			if (!up) {
+				len = -ENOBUFS;
+				goto out;
+			}
 
 			net_pkt_cursor_init(up);
 			net_pkt_set_overwrite(up, true);
@@ -886,7 +892,9 @@ next_state:
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
 			if (len) {
-				tcp_data_get(conn, pkt);
+				if (tcp_data_get(conn, pkt) < 0) {
+					break;
+				}
 				conn_ack(conn, + len);
 				tcp_out(conn, ACK);
 			}
@@ -903,7 +911,9 @@ next_state:
 			net_context_set_state(conn->context,
 					      NET_CONTEXT_CONNECTED);
 			if (FL(&fl, &, PSH)) {
-				tcp_data_get(conn, pkt);
+				if (tcp_data_get(conn, pkt) < 0) {
+					break;
+				}
 			}
 			if (FL(&fl, &, SYN)) {
 				conn_ack(conn, th_seq(th) + 1);
@@ -927,7 +937,9 @@ next_state:
 
 		if (len) {
 			if (th_seq(th) == conn->ack) {
-				tcp_data_get(conn, pkt);
+				if (tcp_data_get(conn, pkt) < 0) {
+					break;
+				}
 				conn_ack(conn, + len);
 				tcp_out(conn, ACK);
 			} else if (net_tcp_seq_greater(conn->ack, th_seq(th))) {
