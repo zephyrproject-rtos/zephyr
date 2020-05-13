@@ -27,4 +27,7 @@ config CACHE_FLUSHING
 config FP_FPU_DA
 	default y
 
+config NUM_IRQS
+	default 112
+
 endif # SOC_EMSDP_EM7D_ESP
