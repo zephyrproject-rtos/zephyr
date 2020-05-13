@@ -1,0 +1,3 @@
+tests:
+  driver.sensor:
+    tags: driver sensor subsys
