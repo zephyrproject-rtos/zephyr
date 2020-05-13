@@ -91,7 +91,7 @@ static void feature_filter(u8_t *featuresin, u64_t *featuresout)
 
 	feat = ~LL_FEAT_BIT_MASK_VALID;
 	feat |= sys_get_le64(featuresin);
-	feat &= LL_FEAT_BIT_MASK_VALID;
+	feat &= LL_FEAT_BIT_MASK;
 
 	*featuresout = feat;
 }
@@ -163,8 +163,7 @@ void ull_cp_priv_pdu_decode_feature_req(struct ull_cp_conn *conn,
 
 	feature_filter(pdu->llctrl.feature_req.features, &featureset);
 
-	conn->llcp.fex.features = featureset;
-
+	conn->llcp.fex.features &= featureset;
 	conn->llcp.fex.valid = 1;
 }
 
@@ -176,8 +175,7 @@ void ull_cp_priv_pdu_decode_feature_rsp(struct ull_cp_conn *conn,
 
 	feature_filter(pdu->llctrl.feature_rsp.features, &featureset);
 
-	conn->llcp.fex.features = featureset;
-
+	conn->llcp.fex.features &= featureset;
 	conn->llcp.fex.valid = 1;
 }
 
