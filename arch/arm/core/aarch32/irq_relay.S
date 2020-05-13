@@ -75,37 +75,10 @@ SECTION_FUNC(vector_relay_table, __vector_relay_table)
 	.word __vector_relay_handler
 	/* End of system exception */
 
+	.rept CONFIG_NUM_IRQS
 	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
-	.word __vector_relay_handler
+	.endr
+
+GTEXT(__vector_relay_table)
 
 #endif
