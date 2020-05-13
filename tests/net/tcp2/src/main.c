@@ -380,7 +380,6 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 		zassert_true(false, "Undefined test case");
 	}
 
-	net_pkt_unref(pkt);
 	return 0;
 fail:
 	zassert_true(false, "%s failed", __func__);
