@@ -47,6 +47,16 @@ config SHELL_PRINTF_BUFF_SIZE
 	  It is working like stdio buffering in Linux systems
 	  to limit number of peripheral access calls.
 
+config SHELL_DEFAULT_TERMINAL_WIDTH
+	int "Default terminal width"
+	default 80
+	help
+	  Default terminal width is used to break lines.
+
+config SHELL_DEFAULT_TERMINAL_HEIGHT
+	int "Default terminal height"
+	default 24
+
 config SHELL_ARGC_MAX
 	int "Maximum arguments in shell command"
 	default 12

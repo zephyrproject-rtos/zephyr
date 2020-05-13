@@ -1118,8 +1118,10 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	flag_mode_delete_set(shell,
 			     IS_ENABLED(CONFIG_SHELL_BACKSPACE_MODE_DELETE));
 	shell->ctx->state = SHELL_STATE_INITIALIZED;
-	shell->ctx->vt100_ctx.cons.terminal_wid = SHELL_DEFAULT_TERMINAL_WIDTH;
-	shell->ctx->vt100_ctx.cons.terminal_hei = SHELL_DEFAULT_TERMINAL_HEIGHT;
+	shell->ctx->vt100_ctx.cons.terminal_wid =
+					CONFIG_SHELL_DEFAULT_TERMINAL_WIDTH;
+	shell->ctx->vt100_ctx.cons.terminal_hei =
+					CONFIG_SHELL_DEFAULT_TERMINAL_HEIGHT;
 	shell->ctx->vt100_ctx.cons.name_len = shell_strlen(shell->ctx->prompt);
 	flag_use_colors_set(shell, IS_ENABLED(CONFIG_SHELL_VT100_COLORS));
 
