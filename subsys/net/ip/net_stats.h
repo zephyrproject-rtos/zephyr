@@ -372,11 +372,12 @@ static inline void net_stats_update_tc_sent_priority(struct net_if *iface,
 	defined(CONFIG_NET_PKT_TXTIME_STATS)) && \
 	defined(CONFIG_NET_STATISTICS) && defined(CONFIG_NET_NATIVE)
 static inline void net_stats_update_tc_tx_time(struct net_if *iface,
-					       uint8_t tc,
+					       uint8_t priority,
 					       uint32_t start_time,
 					       uint32_t end_time)
 {
 	uint32_t diff = end_time - start_time;
+	int tc = net_tx_priority2tc(priority);
 
 	UPDATE_STAT(iface, stats.tc.sent[tc].tx_time.sum +=
 		    k_cyc_to_ns_floor64(diff) / 1000);
@@ -391,11 +392,12 @@ static inline void net_stats_update_tc_tx_time(struct net_if *iface,
 #if defined(CONFIG_NET_PKT_RXTIME_STATS) && defined(CONFIG_NET_STATISTICS) \
 	&& defined(CONFIG_NET_NATIVE)
 static inline void net_stats_update_tc_rx_time(struct net_if *iface,
-					       uint8_t tc,
+					       uint8_t priority,
 					       uint32_t start_time,
 					       uint32_t end_time)
 {
 	uint32_t diff = end_time - start_time;
+	int tc = net_rx_priority2tc(priority);
 
 	UPDATE_STAT(iface, stats.tc.recv[tc].rx_time.sum +=
 		    k_cyc_to_ns_floor64(diff) / 1000);
