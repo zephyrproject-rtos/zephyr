@@ -5,4 +5,4 @@ tests:
     tags: drivers pwm
     depends_on: pwm
     harness: motor
-    filter: dt_alias_exists("pwm-servo")
+    platform_whitelist: bbc_microbit

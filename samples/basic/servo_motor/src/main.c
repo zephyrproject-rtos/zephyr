@@ -31,11 +31,17 @@
 #define MIN_PULSE_USEC	700
 #define MAX_PULSE_USEC	2300
 
+enum direction {
+	DOWN,
+	UP,
+};
+
 void main(void)
 {
 	struct device *pwm;
 	u32_t pulse_width = MIN_PULSE_USEC;
-	u8_t dir = 0U;
+	enum direction dir = UP;
+	int ret;
 
 	printk("Servomotor control\n");
 
@@ -46,14 +52,15 @@ void main(void)
 	}
 
 	while (1) {
-		if (pwm_pin_set_usec(pwm, 0, PERIOD_USEC, pulse_width, 0)) {
+		ret = pwm_pin_set_usec(pwm, 0, PERIOD_USEC, pulse_width, 0);
+		if (ret < 0) {
 			printk("Error %d: failed to set pulse width\n", ret);
 			return;
 		}
 
-		if (dir) {
+		if (dir == DOWN) {
 			if (pulse_width <= MIN_PULSE_USEC) {
-				dir = 0U;
+				dir = UP;
 				pulse_width = MIN_PULSE_USEC;
 			} else {
 				pulse_width -= STEP_USEC;
@@ -62,7 +69,7 @@ void main(void)
 			pulse_width += STEP_USEC;
 
 			if (pulse_width >= MAX_PULSE_USEC) {
-				dir = 1U;
+				dir = DOWN;
 				pulse_width = MAX_PULSE_USEC;
 			}
 		}
