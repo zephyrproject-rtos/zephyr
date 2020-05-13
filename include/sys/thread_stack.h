@@ -319,7 +319,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_DEFINE(sym, size) \
-	struct z_thread_stack_element Z_GENERIC_SECTION(.user_stacks) \
+	struct z_thread_stack_element __stackmem \
 		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
 		sym[Z_THREAD_STACK_SIZE_ADJUST(size)]
 
@@ -354,7 +354,7 @@ static inline char *Z_KERNEL_STACK_BUFFER(k_thread_stack_t *sym)
  * @param size Size of the stack memory region
  */
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct z_thread_stack_element Z_GENERIC_SECTION(.user_stacks) \
+	struct z_thread_stack_element __stackmem \
 		__aligned(Z_THREAD_STACK_OBJ_ALIGN(size)) \
 		sym[nmemb][K_THREAD_STACK_LEN(size)]
 

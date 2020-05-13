@@ -420,6 +420,13 @@ config ARCH_HAS_EXTRA_EXCEPTION_INFO
 config ARCH_HAS_GDBSTUB
 	bool
 
+config ARCH_HAS_COHERENCE
+	bool
+	help
+	  When selected, the architecture supports the
+	  arch_mem_coherent() API and can link into incoherent/cached
+	  memory using the ".cached" linker section.
+
 #
 # Other architecture related options
 #
