@@ -19,4 +19,20 @@ config PSA_SHELL
 	help
 	  Enabling this option will make the 'psa' shell command available.
 
+choice
+	prompt "Private Key"
+	default PRIVATE_KEY_RANDOM
+
+config PRIVATE_KEY_STATIC
+	bool "Static"
+	help
+	  A static key value will be used for the private key.
+
+config PRIVATE_KEY_RANDOM
+	bool "Random"
+	help
+	  A randomly generated value will be used for the private key.
+
+endchoice
+
 source "Kconfig.zephyr"

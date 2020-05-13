@@ -18,3 +18,10 @@ target_sources(app PRIVATE src/util_sformat.c)
 target_include_directories(app PRIVATE
   ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/trusted-firmware-m/interface/include
 )
+
+# In TF-M, default value of CRYPTO_ENGINE_BUF_SIZE is 0x2080. It causes
+# insufficient memory failure while verifying signature. Increase it to 0x2400.
+set_property(TARGET zephyr_property_target
+             APPEND PROPERTY TFM_CMAKE_OPTIONS
+             -DCRYPTO_ENGINE_BUF_SIZE=0x2400
+)
