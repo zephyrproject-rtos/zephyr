@@ -491,16 +491,22 @@ static inline int qspi_nor_read_id(struct device *dev,
 static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 			 size_t size)
 {
-	if (!dest) {
+	void *dptr = dest;
+	size_t dlen = size;
+
+	u8_t __aligned(4) buf[4];
+
+	if (!dest || (size == 0)) {
 		return -EINVAL;
 	}
 
-	/* read size must be non-zero multiple of 4 bytes */
-	if (((size % 4U) != 0) || (size == 0)) {
-		return -EINVAL;
-	}
-	/* address must be 4-byte aligned */
-	if ((addr % 4U) != 0) {
+	/* Since the QSPI driver requires data to be at least 4 bytes we need
+	 * to use a 4 byte buffer for reads smaller than 4 bytes.
+	 */
+	if (size < 4U) {
+		dest = buf;
+		size = sizeof(buf);
+	} else if ((size % 4U) != 0) {
 		return -EINVAL;
 	}
 
@@ -523,7 +529,13 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 
 	qspi_wait_for_completion(dev, res);
 
-	return qspi_get_zephyr_ret_code(res);
+	int rc = qspi_get_zephyr_ret_code(res);
+
+	if ((rc == 0) && (dest != dptr)) {
+		memcpy(dptr, dest, dlen);
+	}
+
+	return rc;
 }
 
 static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
