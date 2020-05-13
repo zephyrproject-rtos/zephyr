@@ -15,7 +15,7 @@
 
 /* pin assignments for STM32F030 DEMO board */
 static const struct pin_config pinconf[] = {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart1), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart1), okay) && CONFIG_SERIAL
 	{STM32_PIN_PA9, STM32F0_PINMUX_FUNC_PA9_USART1_TX},
 	{STM32_PIN_PA10, STM32F0_PINMUX_FUNC_PA10_USART1_RX},
 #endif

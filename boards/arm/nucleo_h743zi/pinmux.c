@@ -14,7 +14,7 @@
 
 /* NUCLEO-H743ZI pin configurations */
 static const struct pin_config pinconf[] = {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart3), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart3), okay) && CONFIG_SERIAL
 	{ STM32_PIN_PD8, STM32H7_PINMUX_FUNC_PD8_USART3_TX },
 	{ STM32_PIN_PD9, STM32H7_PINMUX_FUNC_PD9_USART3_RX },
 #endif
