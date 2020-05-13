@@ -77,6 +77,10 @@
 #define conn_ack(_conn, _req) (_conn)->ack += (_req)
 #endif
 
+#define conn_mss(_conn)					\
+	((_conn)->recv_options.mss_found ?		\
+	 (_conn)->recv_options.mss : NET_IPV6_MTU)
+
 #define conn_state(_conn, _s)						\
 ({									\
 	NET_DBG("%s->%s",						\
