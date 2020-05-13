@@ -9,6 +9,9 @@ jobs:
     steps:
     - name: Checkout the code
       uses: actions/checkout@v1
+    - name: log
+      run: |
+        git log -n 5 --oneline --decorate --abbrev=12 
     - name: Scan the code
       id: scancode
       uses: zephyrproject-rtos/action_scancode@v3

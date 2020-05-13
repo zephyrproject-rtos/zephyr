@@ -226,10 +226,15 @@ if [ -n "$main_ci" ]; then
 
 	if [ -n "$pull_request_nr" ]; then
 		$short_git_log $remote/${branch}
-		# Now let's pray this script is being run from a
-		# different location
-# https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
-		git rebase $remote/${branch}
+
+		is_merge_commit=$((`git rev-list --no-walk --count --merges HEAD`))
+		if [ ${is_merge_commit} = 1 ]; then
+			echo "Rebase $remote/${branch}"
+			# Now let's pray this script is being run from a
+			# different location
+			# https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
+			git rebase $remote/${branch}
+		fi
 	else
 		SC="full"
 	fi
