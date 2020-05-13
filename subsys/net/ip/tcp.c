@@ -245,6 +245,20 @@ static void tcp_retry_expired(struct k_work *work)
 			return;
 		}
 
+		if (IS_ENABLED(CONFIG_NET_PKT_TXTIME_STATS)) {
+			/* If we have enabled net_pkt TXTIME statistics, and we
+			 * about to re-send already sent net_pkt, then reset
+			 * the net_pkt start time as otherwise the TX average
+			 * will be wrong (as it would be calculated from when
+			 * the packet was created).
+			 */
+			struct net_ptp_time tp = {
+				.nanosecond = k_cycle_get_32(),
+			};
+
+			net_pkt_set_timestamp(pkt, &tp);
+		}
+
 		net_pkt_set_queued(pkt, true);
 		net_pkt_set_tcp_1st_msg(pkt, false);
 
