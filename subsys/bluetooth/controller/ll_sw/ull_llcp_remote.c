@@ -376,6 +376,10 @@ static void rr_execute_fsm(struct ull_cp_conn *conn, u8_t evt, void *param)
 		/* Unknown state */
 		LL_ASSERT(0);
 	}
+	/*
+	 * EGON TODO: is this the right place to release the ctx if we
+	 * received the RR_EVT_COMPLETE?
+	 */
 }
 
 void ull_cp_priv_rr_init(struct ull_cp_conn *conn)
