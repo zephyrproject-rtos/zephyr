@@ -267,21 +267,16 @@ config DYNAMIC_DIRECT_INTERRUPTS
 
 config SW_VECTOR_RELAY
 	bool "Enable Software Vector Relay"
-	depends on ARMV6_M_ARMV8_M_BASELINE && !(CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP || CPU_CORTEX_M_HAS_VTOR)
 	help
-	  When building bootloader firmware this option adds a
-	  Vector Table relay handler and relay vector table, to
+	  When building a bootloader firmware this option adds a
+	  vector table relay handler and a vector relay table, to
 	  relay interrupts based on a vector table pointer.
-	  This is only
-	  required for Cortex-M0 (or an Armv8-M baseline core) with no hardware
-	  vector table relocation mechanisms or for Cortex-M0+
-	  (or an Armv8-M baseline core) with no VTOR and no other hardware
-	  relocation table mechanisms.
+	  This is only required but not limited to Cortex-M Baseline CPUs
+	  with no hardware vector table relocation mechanisms (e.g. VTOR).
 
 config SW_VECTOR_RELAY_CLIENT
 	bool "Enable Software Vector Relay (client)"
-	default y if BOOTLOADER_MCUBOOT
-	depends on ARMV6_M_ARMV8_M_BASELINE && !(CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP || CPU_CORTEX_M_HAS_VTOR)
+	default y if BOOTLOADER_MCUBOOT && !(CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP || CPU_CORTEX_M_HAS_VTOR)
 	help
 	  Another image has enabled SW_VECTOR_RELAY, and will relay interrupts
 	  to this image. Enable this to make sure the vector table pointer in

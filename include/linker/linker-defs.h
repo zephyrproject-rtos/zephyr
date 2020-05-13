@@ -163,6 +163,10 @@ extern char _image_rodata_size[];
 extern char _vector_start[];
 extern char _vector_end[];
 
+#ifdef CONFIG_SW_VECTOR_RELAY
+extern char __vector_relay_table[];
+#endif
+
 #ifdef CONFIG_COVERAGE_GCOV
 extern char __gcov_bss_start[];
 extern char __gcov_bss_end[];
