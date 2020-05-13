@@ -34,6 +34,7 @@
 #include "helper_pdu.h"
 #include "helper_util.h"
 
+static u32_t event_active;
 static u16_t lazy;
 sys_slist_t ut_rx_q;
 static sys_slist_t lt_tx_q;
@@ -119,6 +120,7 @@ void test_setup(struct ull_cp_conn *conn)
 	/* Initialize the connection object */
 	ull_cp_conn_init(conn);
 
+	event_active = 0;
 	lazy = 0;
 }
 
@@ -131,6 +133,10 @@ void test_set_role(struct ull_cp_conn *conn, u8_t role)
 void event_prepare(struct ull_cp_conn *conn)
 {
 	struct mocked_lll_conn *lll;
+
+	/* Can only be called with no active event */
+	zassert_equal(event_active, 0, "Called inside an active event");
+	event_active = 1;
 
 	/*** ULL Prepare ***/
 
@@ -159,6 +165,10 @@ void event_done(struct ull_cp_conn *conn)
 {
 	struct node_rx_pdu *rx;
 
+	/* Can only be called with active event */
+	zassert_equal(event_active, 1, "Called outside an active event");
+	event_active = 0;
+
 	while ((rx = (struct node_rx_pdu *) sys_slist_get(&lt_tx_q))) {
 		ull_cp_rx(conn, rx);
 		free(rx);
@@ -176,6 +186,12 @@ u16_t event_counter(struct ull_cp_conn *conn)
 
 	/* Calculate current event counter */
 	event_counter = lll->event_counter + lll->latency_prepare + lazy;
+
+	/* If event_counter is called inside an event_prepare()/event_done() pair
+	 * return the current event counter value (i.e. -1);
+	 * otherwise return the next event counter value */
+	if (event_active)
+		event_counter--;
 
 	return event_counter;
 }
