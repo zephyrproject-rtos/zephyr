@@ -21,7 +21,10 @@
 #define ROMABLE_REGION iram0_0_seg :iram0_0_phdr
 
 PROVIDE ( __stack = 0x3ffe3f20 );
+PROVIDE ( _heap_sentry = 0x40000000 );
 
+PROVIDE ( abort = 0x4000bba4 );
+PROVIDE ( __getreent = 0x4000be8c );
 PROVIDE ( esp32_rom_uart_tx_one_char = 0x40009200 );
 PROVIDE ( esp32_rom_uart_rx_one_char = 0x400092d0 );
 PROVIDE ( esp32_rom_uart_attach = 0x40008fd0 );
@@ -261,6 +264,7 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     __bss_end = ABSOLUTE(.);
+    _end = ALIGN (8);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
 
@@ -282,6 +286,28 @@ SECTIONS
     . = ALIGN (8);
     _heap_start = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
+
+  .xt.insn 0 :
+  {
+    KEEP (*(.xt.insn))
+    KEEP (*(.gnu.linkonce.x.*))
+  }
+  .xt.prop 0 :
+  {
+    KEEP (*(.xt.prop))
+    KEEP (*(.xt.prop.*))
+    KEEP (*(.gnu.linkonce.prop.*))
+  }
+  .xt.lit 0 :
+  {
+    KEEP (*(.xt.lit))
+    KEEP (*(.xt.lit.*))
+    KEEP (*(.gnu.linkonce.p.*))
+  }
+  .debug.xt.callgraph 0 :
+  {
+    KEEP (*(.debug.xt.callgraph .debug.xt.callgraph.* .gnu.linkonce.xt.callgraph.*))
+  }
 
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <linker/intlist.ld>
