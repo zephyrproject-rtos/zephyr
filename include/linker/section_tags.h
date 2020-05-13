@@ -38,6 +38,14 @@
 #define __nocache
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+#if defined(CONFIG_KERNEL_COHERENCE)
+#define __incoherent __in_section_unique(cached)
+#define __stackmem __incoherent
+#else
+#define __incoherent Z_GENERIC_SECTION(.user_stacks)
+#define __stackmem __incoherent
+#endif /* CONFIG_KERNEL_COHERENCE */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_LINKER_SECTION_TAGS_H_ */
