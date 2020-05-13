@@ -7,6 +7,8 @@
 #include <ztest.h>
 extern void test_mbox_kinit(void);
 extern void test_mbox_kdefine(void);
+extern void test_enhance_capability(void);
+extern void test_define_multi_mbox(void);
 extern void test_mbox_put_get_null(void);
 extern void test_mbox_put_get_buffer(void);
 extern void test_mbox_async_put_get_buffer(void);
@@ -33,6 +35,8 @@ void test_main(void)
 	ztest_test_suite(mbox_api,
 			 ztest_1cpu_unit_test(test_mbox_kinit),/*keep init first!*/
 			 ztest_1cpu_unit_test(test_mbox_kdefine),
+			 ztest_unit_test(test_enhance_capability),
+			 ztest_unit_test(test_define_multi_mbox),
 			 ztest_1cpu_unit_test(test_mbox_put_get_null),
 			 ztest_unit_test(test_mbox_put_get_buffer),
 			 ztest_1cpu_unit_test(test_mbox_async_put_get_buffer),
