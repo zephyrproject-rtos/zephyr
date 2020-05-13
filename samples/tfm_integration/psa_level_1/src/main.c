@@ -35,15 +35,9 @@ void main(void)
 	att_test();
 
 	/* Crypto tests */
+	crp_test();
 	crp_test_rng();
-	crp_test_sha256();
 
 	/* Dump any queued log messages, and wait for system events. */
-	while (1) {
-		al_dump_log();
-	}
-
-	while (1) {
-
-	}
+	al_dump_log();
 }
