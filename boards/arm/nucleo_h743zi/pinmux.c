@@ -25,7 +25,7 @@ static const struct pin_config pinconf[] = {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm12), okay) && CONFIG_PWM
 	{ STM32_PIN_PB14, STM32H7_PINMUX_FUNC_PB14_PWM12_CH1 },
 #endif
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1_2), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1_2), okay) && CONFIG_ADC
 	{ STM32_PIN_PA3, STM32H7_PINMUX_FUNC_PA3_ADC12_INP15 },
 #endif
 };
