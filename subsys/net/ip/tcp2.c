@@ -930,7 +930,7 @@ next_state:
 				tcp_data_get(conn, pkt);
 				conn_ack(conn, + len);
 				tcp_out(conn, ACK);
-			} else if (th_seq(th) < conn->ack) {
+			} else if (net_tcp_seq_greater(conn->ack, th_seq(th))) {
 				tcp_out(conn, ACK); /* peer has resent */
 			}
 		}
