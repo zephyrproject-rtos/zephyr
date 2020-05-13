@@ -637,6 +637,11 @@ static void ep_ctx_reset(struct nrf_usbd_ep_ctx *ep_ctx)
 	ep_ctx->buf.curr = ep_ctx->buf.data;
 	ep_ctx->buf.len  = 0U;
 
+	/* Abort ongoing write operation. */
+	if (ep_ctx->write_in_progress) {
+		nrfx_usbd_ep_abort(ep_addr_to_nrfx(ep_ctx->cfg.addr));
+	}
+
 	ep_ctx->read_complete = true;
 	ep_ctx->read_pending = false;
 	ep_ctx->write_in_progress = false;
@@ -1053,6 +1058,12 @@ static void usbd_event_transfer_data(nrfx_usbd_evt_t const *const p_event)
 			ev->evt.ep_evt.ep = ep_ctx;
 			usbd_evt_put(ev);
 			usbd_work_schedule();
+		}
+		break;
+
+		case NRFX_USBD_EP_ABORTED: {
+			LOG_DBG("Endpoint 0x%02x write aborted",
+				p_event->data.eptransfer.ep);
 		}
 		break;
 
