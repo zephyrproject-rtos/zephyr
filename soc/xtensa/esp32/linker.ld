@@ -244,7 +244,7 @@ SECTIONS
   SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
   {
     . = ALIGN (8);
-    _bss_start = ABSOLUTE(.);
+    __bss_start = ABSOLUTE(.);
     *(.dynsbss)
     *(.sbss)
     *(.sbss.*)
@@ -260,7 +260,7 @@ SECTIONS
     *(.gnu.linkonce.b.*)
     *(COMMON)
     . = ALIGN (8);
-    _bss_end = ABSOLUTE(.);
+    __bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
 

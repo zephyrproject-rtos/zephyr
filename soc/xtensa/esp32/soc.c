@@ -13,6 +13,7 @@
 
 #include <kernel_structs.h>
 #include <string.h>
+#include <linker/linker-defs.h>
 #include <toolchain/gcc.h>
 #include <zephyr/types.h>
 
@@ -29,8 +30,6 @@ void __attribute__((section(".iram1"))) __start(void)
 	volatile uint32_t *wdt_timg_reg = (uint32_t *)TIMG_WDTCONFIG0_REG(0);
 	volatile uint32_t *app_cpu_config_reg = (uint32_t *)DPORT_APPCPU_CTRL_B_REG;
 	extern uint32_t _init_start;
-	extern uint32_t _bss_start;
-	extern uint32_t _bss_end;
 
 	/* Move the exception vector table to IRAM. */
 	__asm__ __volatile__ (
@@ -39,12 +38,11 @@ void __attribute__((section(".iram1"))) __start(void)
 		: "r"(&_init_start));
 
 	/* Zero out BSS.  Clobber _bss_start to avoid memset() elision. */
-	(void)memset(&_bss_start, 0,
-		     (&_bss_end - &_bss_start) * sizeof(_bss_start));
+	(void)memset(__bss_start, 0, __bss_end - __bss_start);
 	__asm__ __volatile__ (
 		""
 		:
-		: "g"(&_bss_start)
+		: "g"(__bss_start)
 		: "memory");
 
 	/* The watchdog timer is enabled in the bootloader.  We're done booting,
