@@ -13,9 +13,6 @@
 #define ULL_LLCP_UNITTEST
 
 
-#define TX_CTRL_BUF_NUM 2
-#define NTF_BUF_NUM 2
-
 #include <bluetooth/hci.h>
 #include <sys/byteorder.h>
 #include <sys/slist.h>
@@ -142,83 +139,141 @@ void test_feature_exchange_mas_loc_2(void)
  *   |        |------------------------>|
  *   |        |                         |
  */
+#define MAS_REM_NR_OF_EVENTS 2
 void test_feature_exchange_mas_rem(void)
 {
-	u64_t featureset;
+	u64_t set_featureset[] = {
+		DEFAULT_FEATURE,
+		LL_FEAT_BIT_MASK_VALID,
+		EXPECTED_FEAT_EXCH_VALID,
+		0xFFFFFFFFFFFFFFFF,
+		0x0 };
+	u64_t exp_featureset[] = {
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		0x0 };
+	int feat_to_test = ARRAY_SIZE(set_featureset);
 	struct node_tx *tx;
 
 	struct pdu_data_llctrl_feature_req remote_feature_req;
 	struct pdu_data_llctrl_feature_rsp local_feature_rsp;
 
-	featureset = DEFAULT_FEATURE;
-
-	sys_put_le64(featureset, remote_feature_req.features);
-	sys_put_le64(featureset, local_feature_rsp.features);
-
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
+	/* Connect */
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	event_prepare(&conn);
+	for (int feat_count = 0; feat_count < feat_to_test; feat_count++) {
+		sys_put_le64(set_featureset[feat_count],
+			     remote_feature_req.features);
+		sys_put_le64(exp_featureset[feat_count],
+			     local_feature_rsp.features);
 
-	lt_tx(LL_SLAVE_FEATURE_REQ, &conn, &remote_feature_req);
+		event_prepare(&conn);
 
-	event_done(&conn);
+		lt_tx(LL_SLAVE_FEATURE_REQ, &conn, &remote_feature_req);
 
-	event_prepare(&conn);
+		event_done(&conn);
 
-	lt_rx(LL_FEATURE_RSP, &conn, &tx, &local_feature_rsp);
-	lt_rx_q_is_empty(&conn);
+		event_prepare(&conn);
 
-	event_done(&conn);
+		lt_rx(LL_FEATURE_RSP, &conn, &tx, &local_feature_rsp);
+		lt_rx_q_is_empty(&conn);
 
-	ut_rx_q_is_empty();
-	zassert_equal(conn.lll.event_counter, 2,
+		event_done(&conn);
+
+		ut_rx_q_is_empty();
+
+		ull_cp_release_tx(tx);
+	}
+	zassert_equal(conn.lll.event_counter,
+		      MAS_REM_NR_OF_EVENTS*(feat_to_test),
 		      "Wrong event-count %d\n", conn.lll.event_counter);
 }
 
+#define MAS_REM_2_NR_OF_EVENTS 3
 void test_feature_exchange_mas_rem_2(void)
 {
-	u64_t featureset;
+	u64_t set_featureset[] = {
+		DEFAULT_FEATURE,
+		LL_FEAT_BIT_MASK_VALID,
+		EXPECTED_FEAT_EXCH_VALID,
+		0xFFFFFFFFFFFFFFFF,
+		0x0 };
+	u64_t exp_featureset[] = {
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		0x0 };
+	u64_t ut_featureset[] = {
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE };
+
+	int feat_to_test = ARRAY_SIZE(set_featureset);
 	u64_t err;
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
 	struct pdu_data_llctrl_feature_req remote_feature_req;
 	struct pdu_data_llctrl_feature_rsp local_feature_rsp;
-
-	featureset = DEFAULT_FEATURE;
-
-	sys_put_le64(featureset, remote_feature_req.features);
-	sys_put_le64(featureset, local_feature_rsp.features);
+	struct pdu_data_llctrl_feature_req ut_feature_req;
 
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
+	for (int feat_count = 0; feat_count < feat_to_test; feat_count++) {
+		sys_put_le64(set_featureset[feat_count],
+			     remote_feature_req.features);
+		sys_put_le64(exp_featureset[feat_count],
+			     local_feature_rsp.features);
+		sys_put_le64(ut_featureset[feat_count],
+			     ut_feature_req.features);
 
-	event_prepare(&conn);
-	lt_tx(LL_SLAVE_FEATURE_REQ, &conn, &remote_feature_req);
+		/*
+		 * at the start of a loop all queues should be empty
+		 */
+		ut_rx_q_is_empty();
+		lt_rx_q_is_empty(&conn);
+
+		err = ull_cp_feature_exchange(&conn);
+		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+
+		event_prepare(&conn);
+		lt_tx(LL_SLAVE_FEATURE_REQ, &conn, &remote_feature_req);
+		event_done(&conn);
+
+		event_prepare(&conn);
+		lt_rx(LL_FEATURE_REQ, &conn, &tx, &ut_feature_req);
+		lt_tx(LL_FEATURE_RSP, &conn,  &local_feature_rsp);
+		event_done(&conn);
+
+		ull_cp_release_tx(tx);
+
+		event_prepare(&conn);
+		lt_rx(LL_FEATURE_RSP, &conn, &tx, &local_feature_rsp);
+		event_done(&conn);
+
+		ut_rx_pdu(LL_FEATURE_RSP, &ntf, &local_feature_rsp);
+
+		/*
+		 * at the end of a loop all queues should be empty
+		 */
+		ut_rx_q_is_empty();
+		lt_rx_q_is_empty(&conn);
+
+		ull_cp_release_tx(tx);
+		ull_cp_release_ntf(ntf);
+
+	}
 
 
-	err = ull_cp_feature_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
-	event_done(&conn);
-
-
-
-	event_prepare(&conn);
-	lt_rx(LL_FEATURE_RSP, &conn, &tx, &local_feature_rsp);
-	lt_rx_q_is_empty(&conn);
-
-
-	lt_tx(LL_FEATURE_RSP, &conn,  &local_feature_rsp);
-
-
-	ut_rx_pdu(LL_SLAVE_FEATURE_REQ, &ntf, &remote_feature_req);
-	ut_rx_q_is_empty();
-
-	event_done(&conn);
-
-	zassert_equal(conn.lll.event_counter, 2,
+	zassert_equal(conn.lll.event_counter,
+		      MAS_REM_2_NR_OF_EVENTS*(feat_to_test),
 		      "Wrong event-count %d\n", conn.lll.event_counter);
 }
 
