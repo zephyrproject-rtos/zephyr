@@ -32,6 +32,14 @@ extern u32_t _irq_vector_table[];
 #define ISR5_OFFSET	4
 #define ISR6_OFFSET	5
 
+#if defined(CONFIG_SOC_ARC_EMSDP)
+/* ARC EMSDP' console will use irq 108 / irq 107, will conflict
+ * with isr used here, so add a workaround
+ */
+#undef CONFIG_NUM_IRQS
+#define CONFIG_NUM_IRQS 105
+#endif
+
 #define IRQ_LINE(offset)	(CONFIG_NUM_IRQS - ((offset) + 1))
 #define TABLE_INDEX(offset)	(IRQ_TABLE_SIZE - ((offset) + 1))
 #define TRIG_CHECK_SIZE         6
