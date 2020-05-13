@@ -635,6 +635,9 @@ static struct tcp *tcp_conn_alloc(void)
 
 	conn->win = tcp_window;
 
+	conn->seq = (IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) ||
+		     IS_ENABLED(CONFIG_NET_TEST)) ? 0 : sys_rand32_get();
+
 	sys_slist_init(&conn->send_queue);
 
 	k_delayed_work_init(&conn->send_timer, tcp_send_process);
