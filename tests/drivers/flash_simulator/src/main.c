@@ -71,16 +71,31 @@ static void test_check_pattern32(off_t start, uint32_t (*pattern_gen)(void),
 	}
 }
 
-static void test_int(void)
+/* Get access to the device and erase it ready for testing*/
+static void test_init(void)
 {
 	int rc;
-	off_t i;
 
-	flash_dev =
-		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
+	flash_dev = device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL);
 
 	zassert_true(flash_dev != NULL,
 		     "Simulated flash driver was not found!");
+
+	rc = flash_write_protection_set(flash_dev, false);
+	zassert_equal(0, rc, NULL);
+
+	rc = flash_erase(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
+			 FLASH_SIMULATOR_FLASH_SIZE);
+	zassert_equal(0, rc, "flash_erase should succeed");
+
+	rc = flash_write_protection_set(flash_dev, false);
+	zassert_equal(0, rc, NULL);
+}
+
+static void test_read(void)
+{
+	off_t i;
+	int rc;
 
 	rc = flash_read(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 			test_read_buf, sizeof(test_read_buf));
@@ -294,13 +309,14 @@ static void test_get_erase_value(void)
 void test_main(void)
 {
 	ztest_test_suite(flash_sim_api,
-			 ztest_unit_test(test_int),
-			 ztest_unit_test(test_get_erase_value),
+			 ztest_unit_test(test_init),
+			 ztest_unit_test(test_read),
 			 ztest_unit_test(test_write_read),
 			 ztest_unit_test(test_erase),
 			 ztest_unit_test(test_access),
 			 ztest_unit_test(test_out_of_bounds),
 			 ztest_unit_test(test_align),
+			 ztest_unit_test(test_get_erase_value),
 			 ztest_unit_test(test_double_write));
 
 	ztest_run_test_suite(flash_sim_api);
