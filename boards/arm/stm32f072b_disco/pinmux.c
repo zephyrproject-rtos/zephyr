@@ -15,7 +15,7 @@
 
 /* pin assignments for STM32F072B-DISCO board */
 static const struct pin_config pinconf[] = {
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart1), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart1), okay) && CONFIG_SERIAL
 	{STM32_PIN_PB6, STM32F0_PINMUX_FUNC_PB6_USART1_TX},
 	{STM32_PIN_PB7, STM32F0_PINMUX_FUNC_PB7_USART1_RX},
 #endif
