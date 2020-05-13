@@ -2164,6 +2164,9 @@ class TestSuite(DisablePyTestCollectionMixin):
     RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                             "sanity_last_release.csv")
 
+    SAMPLE_FILENAME = 'sample.yaml'
+    TESTCASE_FILENAME = 'testcase.yaml'
+
     def __init__(self, board_root_list=[], testcase_roots=[], outdir=None):
 
         self.roots = testcase_roots
@@ -2436,10 +2439,10 @@ class TestSuite(DisablePyTestCollectionMixin):
 
             for dirpath, dirnames, filenames in os.walk(root, topdown=True):
                 logger.debug("scanning %s" % dirpath)
-                if 'sample.yaml' in filenames:
-                    filename = 'sample.yaml'
-                elif 'testcase.yaml' in filenames:
-                    filename = 'testcase.yaml'
+                if self.SAMPLE_FILENAME in filenames:
+                    filename = self.SAMPLE_FILENAME
+                elif self.TESTCASE_FILENAME in filenames:
+                    filename = self.TESTCASE_FILENAME
                 else:
                     continue
 
