@@ -9,10 +9,33 @@
 #include <errno.h>
 #include <drivers/led_strip.h>
 #include <drivers/spi.h>
+#include <drivers/gpio.h>
+#include <sys/util.h>
+
+/*
+ * Devicetree helper macros which gets the 'flags' cell from a 'cs_gpios'
+ * property on the spi bus, or returns 0 if the property has no 'flags' cell.
+ *
+ * Hopefully these helpers will be removed once #25827 is resolved.
+ */
+#define HAS_FLAGS(spi_dev, spi_reg)					\
+	DT_PHA_HAS_CELL_AT_IDX(spi_dev, cs_gpios, spi_reg, flags)
+
+#define INST_SPI_DEV_CS_GPIOS_HAS_FLAGS(node)			\
+	HAS_FLAGS(DT_BUS(node), DT_REG_ADDR(node))
+
+#define FLAGS_OR_ZERO(inst)						\
+	COND_CODE_1(							\
+		INST_SPI_DEV_CS_GPIOS_HAS_FLAGS(DT_DRV_INST(inst)),	\
+		(DT_INST_SPI_DEV_CS_GPIOS_FLAGS(inst)),			\
+		(0x0))
 
 struct apa102_data {
 	struct device *spi;
 	struct spi_config cfg;
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	struct spi_cs_control cs_ctl;
+#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 };
 
 static int apa102_update(struct device *dev, void *buf, size_t size)
@@ -92,6 +115,21 @@ static int apa102_init(struct device *dev)
 	data->cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	data->cfg.operation =
 		SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8);
+
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
+	data->cs_ctl.gpio_dev =
+		device_get_binding(DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
+	if (!data->cs_ctl.gpio_dev) {
+		return -ENODEV;
+	}
+	data->cs_ctl.gpio_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0);
+	data->cs_ctl.delay = 0;
+
+	data->cfg.cs = &data->cs_ctl;
+
+	gpio_pin_configure(data->cs_ctl.gpio_dev, data->cs_ctl.gpio_pin,
+			   GPIO_OUTPUT_INACTIVE | FLAGS_OR_ZERO(0));
+#endif /* DT_INST_SPI_DEV_HAS_CS_GPIOS(0) */
 
 	return 0;
 }
