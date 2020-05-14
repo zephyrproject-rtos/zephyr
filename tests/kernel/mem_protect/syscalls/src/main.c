@@ -119,6 +119,34 @@ static inline int z_vrfy_syscall_arg64(uint64_t arg)
 }
 #include <syscalls/syscall_arg64_mrsh.c>
 
+ /* System call made for test test_system_call_separate_stack */
+int z_impl_syscall_separate_stack(void)
+{
+	/* Test that syscall is running on a separate stack, not accessible
+	 * to the calling thread.
+	 */
+	int syscall_var = 10;
+	int *var_ptr = &syscall_var;
+	intptr_t ptr_int = (intptr_t)var_ptr;
+
+	struct k_thread *thread = _current;
+	unsigned int start_addr = thread->stack_info.start;
+	size_t size_addr = thread->stack_info.size;
+
+	if ((ptr_int >= (start_addr + size_addr)) || (ptr_int <= start_addr)) {
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
+static inline int z_vrfy_syscall_separate_stack(void)
+{
+	return z_impl_syscall_separate_stack();
+}
+#include <syscalls/syscall_separate_stack_mrsh.c>
+
+
 /* Bigger 64 bit arg syscall to exercise marshalling 7+ words of
  * arguments (this one happens to need 9), and to test generation of
  * 64 bit return values.
@@ -379,6 +407,28 @@ void test_syscall_context(void)
 
 K_MEM_POOL_DEFINE(test_pool, BUF_SIZE, BUF_SIZE, 4 * NR_THREADS, 4);
 
+/**
+ * @brief Test to demonstrate system call is handled on a separate stack
+ *
+ * @details - Created a syscall with name test_syscall_separate_stack()
+ * - Inside of that syscall was created a local variable,
+ * and then using thread->stack_info was taken start address
+ * and size of stack of the caller thread
+ * - Then inside of the system call address of the local variable
+ * checked that it is not within the bounds of the caller thread stack
+ * - If that test is running in user mode, verify that
+ * system call is handled on a private stack,
+ * which is not accessible to the calling user mode thread.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_syscall_separate_stack(void)
+{
+	zassert_true(syscall_separate_stack() == 0,
+		"System call wasn't handled by a kernel "
+		"on a separate stack");
+}
+
 void test_main(void)
 {
 	sprintf(kernel_string, "this is a kernel string");
@@ -392,6 +442,7 @@ void test_main(void)
 			 ztest_user_unit_test(test_user_string_copy),
 			 ztest_user_unit_test(test_user_string_alloc_copy),
 			 ztest_user_unit_test(test_arg64),
+			 ztest_user_unit_test(test_syscall_separate_stack),
 			 ztest_unit_test(test_syscall_torture),
 			 ztest_unit_test(test_syscall_context)
 			 );

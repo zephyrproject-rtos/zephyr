@@ -8,6 +8,8 @@
 #define _TEST_SYSCALLS_H_
 #include <zephyr.h>
 
+__syscall void stack_info_get(char **start_addr, size_t *size);
+
 __syscall int string_alloc_copy(char *src);
 
 __syscall int string_copy(char *src);
@@ -22,6 +24,8 @@ __syscall uint64_t syscall_arg64_big(uint32_t arg1, uint32_t arg2, uint64_t arg3
 				  uint32_t arg4, uint32_t arg5, uint64_t arg6);
 
 __syscall bool syscall_context(void);
+
+__syscall int syscall_separate_stack(void);
 
 #include <syscalls/test_syscalls.h>
 
