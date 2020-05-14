@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2017, 2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "test_syscalls.h"
 
 #define BUF_SIZE	32
+#define SLEEP_MS_LONG	15000
 
 #if defined(CONFIG_BOARD_NUCLEO_F429ZI) || defined(CONFIG_BOARD_NUCLEO_F207ZG)
 #define FAULTY_ADDRESS 0x0FFFFFFF
@@ -325,10 +326,11 @@ void test_syscall_torture(void)
 	}
 
 	/* Let the torture threads hog the system for 15 seconds before we
-	 * abort them. They will all be hammering the cpu(s) with system calls,
+	 * abort them.
+	 * They will all be hammering the cpu(s) with system calls,
 	 * hopefully smoking out any issues and causing a crash.
 	 */
-	k_msleep(15000);
+	k_sleep(K_MSEC(SLEEP_MS_LONG));
 
 	for (i = 0; i < NR_THREADS; i++) {
 		k_thread_abort(&torture_threads[i]);
