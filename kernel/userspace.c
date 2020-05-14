@@ -118,7 +118,7 @@ struct dyn_obj {
 	uint8_t data[]; /* The object itself */
 };
 
-extern struct z_object *z_object_gperf_find(void *obj);
+extern struct z_object *z_object_gperf_find(const void *obj);
 extern void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func,
 					     void *context);
 
@@ -357,7 +357,7 @@ void k_object_free(void *obj)
 	}
 }
 
-struct z_object *z_object_find(void *obj)
+struct z_object *z_object_find(const void *obj)
 {
 	struct z_object *ret;
 
@@ -366,7 +366,11 @@ struct z_object *z_object_find(void *obj)
 	if (ret == NULL) {
 		struct dyn_obj *dynamic_obj;
 
-		dynamic_obj = dyn_object_find(obj);
+		/* The cast to pointer-to-non-const violates MISRA
+		 * 11.8 but is justified since we know dynamic objects
+		 * were not declared with a const qualifier.
+		 */
+		dynamic_obj = dyn_object_find((void *)obj);
 		if (dynamic_obj != NULL) {
 			ret = &dynamic_obj->kobj;
 		}
@@ -533,7 +537,7 @@ static void dump_permission_error(struct z_object *ko)
 	LOG_HEXDUMP_ERR(ko->perms, sizeof(ko->perms), "permission bitmap");
 }
 
-void z_dump_object_error(int retval, void *obj, struct z_object *ko,
+void z_dump_object_error(int retval, const void *obj, struct z_object *ko,
 			enum k_objects otype)
 {
 	switch (retval) {
@@ -561,7 +565,7 @@ void z_dump_object_error(int retval, void *obj, struct z_object *ko,
 	}
 }
 
-void z_impl_k_object_access_grant(void *object, struct k_thread *thread)
+void z_impl_k_object_access_grant(const void *object, struct k_thread *thread)
 {
 	struct z_object *ko = z_object_find(object);
 
@@ -570,7 +574,7 @@ void z_impl_k_object_access_grant(void *object, struct k_thread *thread)
 	}
 }
 
-void k_object_access_revoke(void *object, struct k_thread *thread)
+void k_object_access_revoke(const void *object, struct k_thread *thread)
 {
 	struct z_object *ko = z_object_find(object);
 
@@ -579,12 +583,12 @@ void k_object_access_revoke(void *object, struct k_thread *thread)
 	}
 }
 
-void z_impl_k_object_release(void *object)
+void z_impl_k_object_release(const void *object)
 {
 	k_object_access_revoke(object, _current);
 }
 
-void k_object_access_all_grant(void *object)
+void k_object_access_all_grant(const void *object)
 {
 	struct z_object *ko = z_object_find(object);
 
@@ -626,7 +630,7 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
 	return 0;
 }
 
-void z_object_init(void *obj)
+void z_object_init(const void *obj)
 {
 	struct z_object *ko;
 
@@ -651,7 +655,7 @@ void z_object_init(void *obj)
 	ko->flags |= K_OBJ_FLAG_INITIALIZED;
 }
 
-void z_object_recycle(void *obj)
+void z_object_recycle(const void *obj)
 {
 	struct z_object *ko = z_object_find(obj);
 
@@ -662,7 +666,7 @@ void z_object_recycle(void *obj)
 	}
 }
 
-void z_object_uninit(void *obj)
+void z_object_uninit(const void *obj)
 {
 	struct z_object *ko;
 

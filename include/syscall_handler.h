@@ -89,8 +89,8 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
  * @param ko If retval=-EPERM, struct z_object * that was looked up, or NULL
  * @param otype Expected type of the kernel object
  */
-extern void z_dump_object_error(int retval, void *obj, struct z_object *ko,
-				enum k_objects otype);
+extern void z_dump_object_error(int retval, const void *obj,
+				struct z_object *ko, enum k_objects otype);
 
 /**
  * Kernel object validation function
@@ -102,7 +102,7 @@ extern void z_dump_object_error(int retval, void *obj, struct z_object *ko,
  * @return Kernel object's metadata, or NULL if the parameter wasn't the
  * memory address of a kernel object
  */
-extern struct z_object *z_object_find(void *obj);
+extern struct z_object *z_object_find(const void *obj);
 
 typedef void (*_wordlist_cb_func_t)(struct z_object *ko, void *context);
 
@@ -157,7 +157,7 @@ extern void z_thread_perms_all_clear(struct k_thread *thread);
  *
  * @param object Address of the kernel object
  */
-void z_object_uninit(void *obj);
+void z_object_uninit(const void *obj);
 
 /**
  * Initialize and reset permissions to only access by the caller
@@ -176,7 +176,7 @@ void z_object_uninit(void *obj);
  *
  * @param object Address of the kernel object
  */
-void z_object_recycle(void *obj);
+void z_object_recycle(const void *obj);
 
 /**
  * @brief Obtain the size of a C string passed from user mode
@@ -426,7 +426,7 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 	Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1)
 
 static inline int z_obj_validation_check(struct z_object *ko,
-					 void *obj,
+					 const void *obj,
 					 enum k_objects otype,
 					 enum _obj_init_check init)
 {
@@ -446,8 +446,10 @@ static inline int z_obj_validation_check(struct z_object *ko,
 }
 
 #define Z_SYSCALL_IS_OBJ(ptr, type, init) \
-	Z_SYSCALL_VERIFY_MSG(z_obj_validation_check(z_object_find((void *)ptr), (void *)ptr, \
-				   type, init) == 0, "access denied")
+	Z_SYSCALL_VERIFY_MSG(z_obj_validation_check(			\
+				     z_object_find((const void *)ptr),	\
+				     (const void *)ptr,			\
+				     type, init) == 0, "access denied")
 
 /**
  * @brief Runtime check driver object pointer for presence of operation
