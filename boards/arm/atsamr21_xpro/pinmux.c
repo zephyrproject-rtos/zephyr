@@ -43,19 +43,19 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(muxa, 23, PINMUX_FUNC_D);
 #endif
 
-#if ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_spi)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(0, atmel_sam0_spi) && CONFIG_SPI_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_spi)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(1, atmel_sam0_spi) && CONFIG_SPI_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_spi)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(2, atmel_sam0_spi) && CONFIG_SPI_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_spi)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(3, atmel_sam0_spi) && CONFIG_SPI_SAM0)
 #warning Pin mapping may not be configured
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_spi)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(4, atmel_sam0_spi) && CONFIG_SPI_SAM0)
 	/**
 	 * SPI SERCOM4 on
 	 *  MISO = PC19/pad 0,
@@ -68,7 +68,7 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(muxb, 30, PINMUX_FUNC_F);
 	pinmux_pin_set(muxc, 18, PINMUX_FUNC_F);
 #endif
-#if ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_spi)
+#if (ATMEL_SAM0_DT_SERCOM_CHECK(5, atmel_sam0_spi) && CONFIG_SPI_SAM0)
 	pinmux_pin_set(muxb,  2, PINMUX_FUNC_D);
 	pinmux_pin_set(muxb, 22, PINMUX_FUNC_D);
 	pinmux_pin_set(muxb, 23, PINMUX_FUNC_D);
