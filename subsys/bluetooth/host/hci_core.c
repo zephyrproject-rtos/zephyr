@@ -1775,7 +1775,7 @@ static int hci_le_read_phy(struct bt_conn *conn)
 	cp->handle = sys_cpu_to_le16(conn->handle);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_PHY, buf, &rsp);
-	if (!buf) {
+	if (err) {
 		return err;
 	}
 
