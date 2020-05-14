@@ -110,8 +110,6 @@ int z_clock_driver_init(struct device *device)
 #endif /* LL_APB1_GRP1_PERIPH_PWR */
 	/* enable backup domain */
 	LL_PWR_EnableBkUpAccess();
-	LL_RCC_ForceBackupDomainReset();
-	LL_RCC_ReleaseBackupDomainReset();
 
 	/* enable LSE clock */
 	LL_RCC_LSE_DisableBypass();
