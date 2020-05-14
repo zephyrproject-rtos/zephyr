@@ -305,7 +305,7 @@ static const struct gpio_driver_api api_funcs = {
 		.port_num = n						     \
 	};								     \
 									     \
-	static struct device DEVICE_NAME_GET(gpio_cc32xx_a##n);		     \
+	DEVICE_DECLARE(gpio_cc32xx_a##n);		     \
 	static struct gpio_cc32xx_data gpio_cc32xx_a##n##_data;		     \
 									     \
 	GPIO_CC32XX_INIT_FUNC(n)					     \

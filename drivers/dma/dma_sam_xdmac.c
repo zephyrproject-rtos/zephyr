@@ -348,7 +348,7 @@ static const struct dma_driver_api sam_xdmac_driver_api = {
 
 /* DMA0 */
 
-static struct device DEVICE_NAME_GET(dma0_sam);
+DEVICE_DECLARE(dma0_sam);
 
 static void dma0_sam_irq_config(void)
 {

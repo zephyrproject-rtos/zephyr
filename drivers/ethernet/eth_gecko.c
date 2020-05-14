@@ -631,7 +631,7 @@ static const struct ethernet_api eth_api = {
 	.send = eth_tx,
 };
 
-static struct device DEVICE_NAME_GET(eth_gecko);
+DEVICE_DECLARE(eth_gecko);
 
 static void eth0_irq_config(void)
 {
