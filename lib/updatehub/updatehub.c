@@ -32,7 +32,6 @@ LOG_MODULE_REGISTER(updatehub);
 #include <net/tls_credentials.h>
 #endif
 
-#define MAX_BLOCK_RECEIVER_WINDOW 250  /* maximum block number expected from the server, is to be adapted based upon size of the firmware */
 #define NETWORK_TIMEOUT K_SECONDS(2)
 #define UPDATEHUB_POLL_INTERVAL K_MINUTES(CONFIG_UPDATEHUB_POLL_INTERVAL)
 #define MAX_PATH_SIZE 255
@@ -57,27 +56,9 @@ LOG_MODULE_REGISTER(updatehub);
 
 #define GET_NUM_2(v) ((v) >> 4)  /* a define to get block number from block2 from the coap packet */
 
-int attempts_download = 0;		/* has been moved here so as to increase scope and be manageable in different functions */ 
-static int receiver_window[MAX_BLOCK_RECEIVER_WINDOW];	/* array holding the CoAP block number for handling delayed data packets from the server, Every new incoming block no. of coap data block is saved here */
+static int attempts_download;		/* has been moved here so as to increase scope and be manageable in different functions */ 
+static int expected_block_num = 0;	/* this variable helps detect duplicates so that memory write operation is performed only once */ 
 
-/* The function checks if the new received block is duplicate or not 
-	@bool  returns true if the input block_num is already found in receiver_window otherwise fills up storage for block number and in this way even delayed data packets are also handled.
-*/
-bool check_duplicate(int block_num);
-bool check_duplicate(int block_num){
-	bool ret;
-	for(uint16_t i = 0;i < MAX_BLOCK_RECEIVER_WINDOW; i++){
-		if(receiver_window[i] == -1){			/* if space is available */ 
-			receiver_window[i] = block_num;         /* add new incoming block num to the array */
-			return false;		
-		}
-		else if(receiver_window[i] == block_num){       /* else if new block num is already found return "true" */
-			return true;
-		}
-	}
-	LOG_ERR("array index out of bound");
-	return false;
-}
 
 static int get_block_option_1(const struct coap_packet *cpkt, u16_t code);
 static int get_block_option_1(const struct coap_packet *cpkt, u16_t code)  /* function to get block option for CoAP, please refer to coap.c  */
@@ -96,6 +77,7 @@ static int get_block_option_1(const struct coap_packet *cpkt, u16_t code)  /* fu
 	return val;
 
 }
+
 static int get_num_block(struct coap_packet *cpkt); /* function to get block number from COAP Block 2 fields, return block number */
 
 static int get_num_block(struct coap_packet *cpkt){
@@ -469,13 +451,11 @@ static void install_update_cb(void)
 		goto cleanup;			
 	}
 
-		/* check the block number of received packet if it is non negative, check for duplicate */
-	if(block_num >= 0){
-		if(check_duplicate(block_num)){
-			// duplicate found and do cleanup
-			goto cleanup;
-		}
-
+	if(block_num == expected_block_num){
+		expected_block_num ++;		
+	}
+	else{
+		goto cleanup;		// duplicate and ignore the packet
 	}
 
 	k_timer_stop(&timer);  /* correct packet is received so stop the timer and allow further transmission */
@@ -533,9 +513,7 @@ static enum updatehub_response install_update(void)
 	int verification_download = 0;	
 	int i;
 	k_timer_init(&timer, timer_expire,timer_stop);		// initialize the timer for stop and wait for GET Requests
-	for (i = 0; i < MAX_BLOCK_RECEIVER_WINDOW; i++)
-  		receiver_window[i] = -1;		// initialize to -1 indicating fee space available
-	
+
 	if (boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID) != 0) {
 		LOG_ERR("Failed to init flash and erase second slot");
 		ctx.code_status = UPDATEHUB_FLASH_INIT_ERROR;
