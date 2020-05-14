@@ -288,7 +288,7 @@ Drivers and Sensors
 
 * USB
 
-  * <TBD>
+  * Add experimental USB Audio implementation.
 
 * Video
 
@@ -356,7 +356,7 @@ Documentation
 Tests and Samples
 *****************
 
-* <TBD>
+* Added samples for USB Audio Class.
 
 Issue Related Items
 *******************
