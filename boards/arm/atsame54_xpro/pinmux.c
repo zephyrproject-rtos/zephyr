@@ -111,7 +111,7 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(muxa, 24, PINMUX_FUNC_H);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(gmac), okay)
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(gmac), okay) && CONFIG_ETH_SAM_GMAC)
 	pinmux_pin_set(muxa, 14, PINMUX_FUNC_L);	/* PA14 = GTXCK */
 	pinmux_pin_set(muxa, 17, PINMUX_FUNC_L);	/* PA17 = GTXEN */
 	pinmux_pin_set(muxa, 18, PINMUX_FUNC_L);	/* PA18 = GTX0 */
