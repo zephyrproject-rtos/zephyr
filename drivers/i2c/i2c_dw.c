@@ -621,7 +621,6 @@ static int i2c_dw_initialize(struct device *dev)
 
 	/* verify that we have a valid DesignWare register first */
 	if (regs->ic_comp_type != I2C_DW_MAGIC_KEY) {
-		dev->driver_api = NULL;
 		LOG_DBG("I2C: DesignWare magic key not found, check base "
 			    "address. Stopping initialization");
 		return -EIO;
