@@ -43,6 +43,7 @@ static struct k_delayed_work retx_work;
 #define HCI_ACLDATA_PKT		0x02
 #define HCI_SCODATA_PKT		0x03
 #define HCI_EVENT_PKT		0x04
+#define HCI_ISODATA_PKT		0x05
 #define HCI_3WIRE_LINK_PKT	0x0f
 #define HCI_VENDOR_PKT		0xff
 
@@ -52,6 +53,7 @@ static bool reliable_packet(uint8_t type)
 	case HCI_COMMAND_PKT:
 	case HCI_ACLDATA_PKT:
 	case HCI_EVENT_PKT:
+	case HCI_ISODATA_PKT:
 		return true;
 	default:
 		return false;
@@ -394,6 +396,7 @@ static void h5_process_complete_packet(uint8_t *hdr)
 		break;
 	case HCI_EVENT_PKT:
 	case HCI_ACLDATA_PKT:
+	case HCI_ISODATA_PKT:
 		hexdump("=> ", buf->data, buf->len);
 		bt_recv(buf);
 		break;
@@ -472,6 +475,17 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 				break;
 			case HCI_ACLDATA_PKT:
 				h5.rx_buf = bt_buf_get_rx(BT_BUF_ACL_IN,
+							  K_NO_WAIT);
+				if (!h5.rx_buf) {
+					BT_WARN("No available data buffers");
+					h5_reset_rx();
+					continue;
+				}
+
+				h5.rx_state = PAYLOAD;
+				break;
+			case HCI_ISODATA_PKT:
+				h5.rx_buf = bt_buf_get_rx(BT_BUF_ISO_IN,
 							  K_NO_WAIT);
 				if (!h5.rx_buf) {
 					BT_WARN("No available data buffers");
@@ -572,6 +586,9 @@ static int h5_queue(struct net_buf *buf)
 		break;
 	case BT_BUF_ACL_OUT:
 		type = HCI_ACLDATA_PKT;
+		break;
+	case BT_BUF_ISO_OUT:
+		type = HCI_ISODATA_PKT;
 		break;
 	default:
 		BT_ERR("Unknown packet type %u", bt_buf_get_type(buf));
