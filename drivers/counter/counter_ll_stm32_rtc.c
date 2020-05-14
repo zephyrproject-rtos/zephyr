@@ -143,7 +143,12 @@ static int rtc_stm32_set_alarm(struct device *dev, u8_t chan_id,
 	data->user_data = alarm_cfg->user_data;
 
 	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
-		ticks += now;
+		/* Add +1 in order to compensate the partially started tick.
+		 * Alarm will expire between requested ticks and ticks+1.
+		 * In case only 1 tick is requested, it will avoid
+		 * that tick+1 event occurs before alarm setting is finished.
+		 */
+		ticks += now + 1;
 	}
 
 	LOG_DBG("Set Alarm: %d\n", ticks);
