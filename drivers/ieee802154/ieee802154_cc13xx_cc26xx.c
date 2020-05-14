@@ -18,6 +18,8 @@ LOG_MODULE_REGISTER(ieee802154_cc13xx_cc26xx);
 #include <string.h>
 #include <sys/sys_io.h>
 
+#include <ti/drivers/dpl/HwiP.h>
+
 #include <driverlib/aon_rtc.h>
 #include <driverlib/osc.h>
 #include <driverlib/prcm.h>
@@ -40,6 +42,8 @@ static u32_t overrides[] = {
 	0x000F8883,
 	0xFFFFFFFF
 };
+
+static HwiP_Struct RF_hwiCpe0Obj;
 
 static inline struct ieee802154_cc13xx_cc26xx_data *
 get_dev_data(struct device *dev)
@@ -467,6 +471,7 @@ static int ieee802154_cc13xx_cc26xx_init(struct device *dev)
 	struct ieee802154_cc13xx_cc26xx_data *drv_data = get_dev_data(dev);
 	bool set_osc_hf;
 	u32_t key, status;
+	HwiP_Params params;
 
 	/* Apply RF patches */
 	rf_patch_cpe_ieee_802_15_4();
@@ -513,10 +518,16 @@ static int ieee802154_cc13xx_cc26xx_init(struct device *dev)
 	RFCCpeIntDisable(0xFFFFFFFF);
 
 	/* Enable CPE0 interrupts */
-	IRQ_CONNECT(CC13XX_CC26XX_CPE0_IRQ, 0,
-		    ieee802154_cc13xx_cc26xx_cpe0_isr,
-		    DEVICE_GET(ieee802154_cc13xx_cc26xx), 0);
-	irq_enable(CC13XX_CC26XX_CPE0_IRQ);
+	/*
+	 * Use HwiP_construct() to connect the irq for CPE0. IRQ_CONNECT() can
+	 * only be called once for a given irq, and we need to keep it within
+	 * HwiP so that TI's RF driver can plug the same interrupt.
+	 */
+	HwiP_Params_init(&params);
+	params.priority = INT_PRI_LEVEL1;
+	params.arg = (uintptr_t)DEVICE_GET(ieee802154_cc13xx_cc26xx);
+	HwiP_construct(&RF_hwiCpe0Obj, INT_RFC_CPE_0,
+		(HwiP_Fxn)ieee802154_cc13xx_cc26xx_cpe0_isr, &params);
 	RFCCpe0IntSelectClearEnable(IRQ_RX_ENTRY_DONE |
 				    IRQ_LAST_FG_COMMAND_DONE);
 
