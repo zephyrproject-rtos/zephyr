@@ -42,7 +42,7 @@ static void intel_gna_config_desc_dump(struct device *dev);
 
 #define GNA_MODEL_VIRT_BASE_DEFAULT	0
 
-static struct device DEVICE_NAME_GET(gna);
+DEVICE_DECLARE(gna);
 static struct intel_gna_config_desc __aligned(GNA_PG_SIZE_IN_BYTES)
 	gna_config_desc;
 static struct intel_gna_page_table __aligned(GNA_PG_SIZE_IN_BYTES)

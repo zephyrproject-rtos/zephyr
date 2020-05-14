@@ -882,7 +882,7 @@ static struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 }
 
 #define I2S_INIT(index, clk_sel)					\
-static struct device DEVICE_NAME_GET(i2s_stm32_##index);		\
+DEVICE_DECLARE(i2s_stm32_##index);		\
 									\
 static void i2s_stm32_irq_config_func_##index(struct device *dev);	\
 									\
