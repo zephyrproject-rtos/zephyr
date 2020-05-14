@@ -49,6 +49,7 @@ config EEPROM_AT25
 	help
 	  Enable support for Atmel AT25 (and compatible) SPI EEPROMs.
 
+source "drivers/eeprom/Kconfig.lpc11u6x"
 source "drivers/eeprom/Kconfig.stm32"
 
 config EEPROM_SIMULATOR
