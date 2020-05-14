@@ -184,6 +184,28 @@
 			label = "UART_4";
 			status = "disabled";
 		};
+
+		i2c0: i2c@40000000 {
+			compatible = "nxp,lpc11u6x-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40000000 0x40>;
+			clocks = <&syscon LPC11U6X_CLOCK_I2C0>;
+			interrupts = <15 0>;
+			status = "disabled";
+			label = "I2C_0";
+		};
+
+		i2c1: i2c@40020000 {
+			compatible = "nxp,lpc11u6x-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40020000 0x40>;
+			clocks = <&syscon LPC11U6X_CLOCK_I2C1>;
+			interrupts = <10 0>;
+			status = "disabled";
+			label = "I2C_1";
+		};
 	};
 };
 
