@@ -64,14 +64,15 @@ enum uart_line_ctrl {
  *    UART_RX_DISABLED event is generated. After that whole process can be
  *    repeated.
  *
- * Any time during reception UART_RX_STOPPED event can occur. It will be
- * followed by UART_RX_BUF_RELEASED event for every buffer currently passed to
- * driver and finally by UART_RX_DISABLED event.
+ * Any time during reception UART_RX_STOPPED event can occur. if there is any
+ * data received, UART_RX_RDY event will be generated. It will be followed by
+ * UART_RX_BUF_RELEASED event for every buffer currently passed to driver and
+ * finally by UART_RX_DISABLED event.
  *
  * Receiving can be disabled using uart_rx_disable, after calling that
- * function any data received will be lost, UART_RX_BUF_RELEASED event will be
- * generated for every buffer currently passed to driver and UART_RX_DISABLED
- * event will occur.
+ * function, if there is any data received, UART_RX_RDY event will be generated.
+ * UART_RX_BUF_RELEASED event will be generated for every buffer currently
+ * passed to driver and finally UART_RX_DISABLED event will occur.
  *
  * Transmitting:
  * 1. Transmitting starts by uart_tx function.
@@ -96,10 +97,12 @@ enum uart_event_type {
 	/**
 	 * @brief Received data is ready for processing.
 	 *
-	 * This event is generated in two cases:
+	 * This event is generated in the following cases:
 	 * - When RX timeout occurred, and data was stored in provided buffer.
 	 *   This can happen multiple times in the same buffer.
 	 * - When provided buffer is full.
+	 * - After uart_rx_disable().
+	 * - After stopping due to external event (UART_RX_STOPPED).
 	 */
 	UART_RX_RDY,
 	/**
@@ -210,7 +213,7 @@ struct uart_event {
 	/** @brief Type of event */
 	enum uart_event_type type;
 	/** @brief Event data */
-	union {
+	union uart_event_data {
 		/** @brief UART_TX_DONE and UART_TX_ABORTED events data. */
 		struct uart_event_tx tx;
 		/** @brief UART_RX_RDY event data. */
@@ -552,7 +555,9 @@ static inline int uart_rx_buf_rsp(struct device *dev, uint8_t *buf, size_t len)
  * @brief Disable RX
  *
  * UART_RX_BUF_RELEASED event will be generated for every buffer scheduled,
- * after that UART_RX_DISABLED event will be generated.
+ * after that UART_RX_DISABLED event will be generated. Additionally, if there
+ * is any pending received data, the UART_RX_RDY event for that data will be
+ * generated before the UART_RX_BUF_RELEASED events.
  *
  * @param dev UART device structure.
  *
@@ -569,7 +574,7 @@ static inline int z_impl_uart_rx_disable(struct device *dev)
 	return api->rx_disable(dev);
 }
 
-#endif
+#endif /* CONFIG_UART_ASYNC_API */
 
 /**
  * @brief Check whether an error was detected.
