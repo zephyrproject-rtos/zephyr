@@ -276,7 +276,7 @@ static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
 			(counter + top - now) : (counter - now);
 	}
 
-	zassert_true(diff < counter_us_to_ticks(dev, processing_limit_us),
+	zassert_true(diff <= counter_us_to_ticks(dev, processing_limit_us),
 			"Unexpected distance between reported alarm value(%u) "
 			"and actual counter value (%u), top:%d (processing "
 			"time limit (%d us) might be exceeded?",
