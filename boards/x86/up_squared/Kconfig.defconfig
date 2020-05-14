@@ -8,7 +8,4 @@ config BOARD
 config BUILD_OUTPUT_STRIPPED
 	default y
 
-config APIC_TIMER
-	default y if !HPET_TIMER
-
 endif # BOARD_UP_SQUARED
