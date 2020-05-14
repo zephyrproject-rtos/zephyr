@@ -343,7 +343,7 @@ SECTIONS
 
 #endif  /* CONFIG_USERSPACE */
 
-    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
+    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME, ALIGN(4),)
 	{
 	__data_ram_start = .;
 	*(.data)
