@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Seagate Technology LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_LPC11U6X
+	bool "LPC11U6X I2C driver"
+	depends on SOC_SERIES_LPC11U6X
+	help
+	  Enable I2C support on the LPC11U6X SoCs
