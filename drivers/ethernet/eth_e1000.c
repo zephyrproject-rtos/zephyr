@@ -182,7 +182,7 @@ int e1000_probe(struct device *device)
 	return retval;
 }
 
-static struct device DEVICE_NAME_GET(eth_e1000);
+DEVICE_DECLARE(eth_e1000);
 
 static void e1000_init(struct net_if *iface)
 {

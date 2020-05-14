@@ -339,7 +339,7 @@ static const struct i2c_driver_api i2c_sam_twi_driver_api = {
 };
 
 #define I2C_TWI_SAM_INIT(n)						\
-	static struct device DEVICE_NAME_GET(i2c##n##_sam);		\
+	DEVICE_DECLARE(i2c##n##_sam);		\
 									\
 	static void i2c##n##_sam_irq_config(void)			\
 	{								\

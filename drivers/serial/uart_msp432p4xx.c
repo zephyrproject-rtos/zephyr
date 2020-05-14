@@ -33,7 +33,7 @@ struct uart_msp432p4xx_dev_data_t {
 #define DEV_DATA(dev) \
 	((struct uart_msp432p4xx_dev_data_t * const)(dev)->driver_data)
 
-static struct device DEVICE_NAME_GET(uart_msp432p4xx_0);
+DEVICE_DECLARE(uart_msp432p4xx_0);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_msp432p4xx_isr(void *arg);

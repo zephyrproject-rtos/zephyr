@@ -204,7 +204,7 @@ static const struct dma_driver_api nios2_msgdma_driver_api = {
 };
 
 /* DMA0 */
-static struct device DEVICE_NAME_GET(dma0_nios2);
+DEVICE_DECLARE(dma0_nios2);
 
 static int nios2_msgdma0_initialize(struct device *dev)
 {

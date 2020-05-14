@@ -32,7 +32,7 @@ struct uart_cc32xx_dev_data_t {
 #define PRIME_CHAR '\r'
 
 /* Forward decls: */
-static struct device DEVICE_NAME_GET(uart_cc32xx_0);
+DEVICE_DECLARE(uart_cc32xx_0);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_cc32xx_isr(void *arg);

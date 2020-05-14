@@ -34,7 +34,7 @@ struct wdt_sam_dev_cfg {
 	Wdt *regs;
 };
 
-static struct device DEVICE_NAME_GET(wdt_sam);
+DEVICE_DECLARE(wdt_sam);
 
 struct wdt_sam_dev_data {
 	wdt_callback_t cb;

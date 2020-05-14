@@ -361,7 +361,7 @@ static const struct dma_driver_api dw_dma_driver_api = {
 
 #define DW_DMAC_INIT(inst)						\
 									\
-	static struct device DEVICE_NAME_GET(dw_dma##inst);		\
+	DEVICE_DECLARE(dw_dma##inst);		\
 									\
 	static struct dw_drv_plat_data dmac##inst = {			\
 		.chan[0] = {						\

@@ -320,7 +320,7 @@ static int eth_stellaris_dev_init(struct device *dev)
 	return 0;
 }
 
-static struct device DEVICE_NAME_GET(eth_stellaris);
+DEVICE_DECLARE(eth_stellaris);
 
 static void eth_stellaris_irq_config(struct device *dev)
 {

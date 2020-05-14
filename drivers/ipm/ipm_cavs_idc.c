@@ -26,7 +26,7 @@ struct cavs_idc_data {
 	void		*ctx;
 };
 
-static struct device DEVICE_NAME_GET(cavs_idc);
+DEVICE_DECLARE(cavs_idc);
 static struct cavs_idc_data cavs_idc_device_data;
 
 static void cavs_idc_isr(struct device *dev)

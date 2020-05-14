@@ -955,7 +955,7 @@ static const struct i2s_driver_api i2s_sam_driver_api = {
 
 /* I2S0 */
 
-static struct device DEVICE_NAME_GET(i2s0_sam);
+DEVICE_DECLARE(i2s0_sam);
 
 static struct device *get_dev_from_dma_channel(u32_t dma_channel)
 {

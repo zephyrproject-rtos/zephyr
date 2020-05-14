@@ -31,7 +31,7 @@ struct wdt_sam0_dev_data {
 	bool timeout_valid;
 };
 
-static struct device DEVICE_NAME_GET(wdt_sam0);
+DEVICE_DECLARE(wdt_sam0);
 
 static struct wdt_sam0_dev_data wdt_sam0_data = { 0 };
 
