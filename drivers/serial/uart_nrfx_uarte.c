@@ -762,8 +762,8 @@ static void endrx_isr(struct device *dev)
 				.type = UART_RX_DISABLED,
 			};
 			user_callback(dev, &evt);
+			return;
 		}
-		return;
 	}
 
 	data->async->is_in_irq = true;
@@ -811,6 +811,11 @@ static void endrx_isr(struct device *dev)
 			.data.rx.offset = data->async->rx_offset,
 		};
 		user_callback(dev, &evt);
+	}
+
+	if (!data->async->rx_enabled) {
+		data->async->is_in_irq = false;
+		return;
 	}
 
 	struct uart_event evt = {
@@ -1262,6 +1267,7 @@ static int uarte_instance_init(struct device *dev,
 	int err;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	struct uarte_nrfx_data *data = get_dev_data(dev);
+
 
 	nrf_gpio_pin_write(config->pseltxd, 1);
 	nrf_gpio_cfg_output(config->pseltxd);
