@@ -1,0 +1,28 @@
+# Copyright (c) 2020 Seagate Technology LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC11U6X I2C Controller
+
+compatible: "nxp,lpc11u6x-i2c"
+
+include: i2c-controller.yaml
+
+properties:
+    reg:
+      required: true
+
+    interrupts:
+      required: true
+
+    clocks:
+      required: true
+
+    pinmuxs:
+      type: phandle-array
+      required: true
+      description: SDA and SCL pins
+
+    pinmux-names:
+      type: string-array
+      required: true
+      description: Pin names for SDA and SCL
