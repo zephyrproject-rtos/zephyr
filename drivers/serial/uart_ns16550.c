@@ -469,7 +469,12 @@ static int uart_ns16550_config_get(struct device *dev, struct uart_config *cfg)
  */
 static int uart_ns16550_init(struct device *dev)
 {
-	uart_ns16550_configure(dev, &DEV_DATA(dev)->uart_config);
+	int ret;
+
+	ret = uart_ns16550_configure(dev, &DEV_DATA(dev)->uart_config);
+	if (ret != 0) {
+		return ret;
+	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	DEV_CFG(dev)->devconf.irq_config_func(dev);
