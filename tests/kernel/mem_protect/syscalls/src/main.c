@@ -11,6 +11,7 @@
 
 #define BUF_SIZE	32
 #define SLEEP_MS_LONG	15000
+#define DB_VAL 0xDEADBEEF
 
 #if defined(CONFIG_BOARD_NUCLEO_F429ZI) || defined(CONFIG_BOARD_NUCLEO_F207ZG)
 #define FAULTY_ADDRESS 0x0FFFFFFF
@@ -42,6 +43,65 @@ static inline size_t z_vrfy_string_nlen(char *src, size_t maxlen, int *err)
 	return ret;
 }
 #include <syscalls/string_nlen_mrsh.c>
+
+size_t z_impl_string_nlen_reg(char *src, size_t maxlen, int *err)
+{
+	size_t ret;
+
+	ret = z_user_string_nlen(src, maxlen, err);
+
+/* Part below is made to test that kernel scrubs CPU registers
+ * after returning from the system call
+ */
+#if defined(CONFIG_X86)
+	__asm__ volatile (
+		"movl $0xDEADBEEF, %ebx;\n\t"
+		"movl $0xDEADBEEF, %ecx;\n\t"
+		"movl $0xDEADBEEF, %edx;\n\t"
+		);
+#ifdef CONFIG_X86_64
+	__asm__ volatile (
+		"movq $0xDEADBEEF, %rbx;\n\t"
+		"movq $0xDEADBEEF, %rcx;\n\t"
+		"movq $0xDEADBEEF, %rdx;\n\t"
+		"movq $0xDEADBEEF, %r8;\n\t"
+		"movq $0xDEADBEEF, %r9;\n\t"
+		"movq $0xDEADBEEF, %r10;\n\t"
+		"movq $0xDEADBEEF, %r11;\n\t"
+		);
+#endif
+#elif defined(CONFIG_ARM)
+	__asm__ volatile (
+		"ldr r1, =0xDEADBEEF;\n\t"
+		"ldr r2, =0xDEADBEEF;\n\t"
+		"ldr r3, =0xDEADBEEF;\n\t"
+		"ldr r12, =0xDEADBEEF;\n\t"
+		);
+#elif defined(CONFIG_ARC)
+    /* ARC currently not implemented */
+#else
+#error "Not implemented for this architecture"
+	zassert_unreachable("Write to control register fault");
+#endif
+
+	return ret;
+}
+
+static inline size_t z_vrfy_string_nlen_reg(char *src, size_t maxlen, int *err)
+{
+	int err_copy;
+	size_t ret;
+
+	ret = z_impl_string_nlen_reg((char *)src, maxlen, &err_copy);
+	if (!err_copy && Z_SYSCALL_MEMORY_READ(src, ret + 1)) {
+		err_copy = -1;
+	}
+
+	Z_OOPS(z_user_to_copy((int *)err, &err_copy, sizeof(err_copy)));
+
+	return ret;
+}
+#include <syscalls/string_nlen_reg_mrsh.c>
 
 int z_impl_string_alloc_copy(char *src)
 {
@@ -379,6 +439,95 @@ void test_syscall_context(void)
 
 K_MEM_POOL_DEFINE(test_pool, BUF_SIZE, BUF_SIZE, 4 * NR_THREADS, 4);
 
+/**
+ * @brief Test CPU scrubs registers after system call
+ *
+ * @details - Call string nlen and right before exit from
+ * the system call function write into registers 0xDEADBEEF value
+ * - Then in main test function below check registers values,
+ * if no 0xDEADBEEF value detected, that means CPU scrubbed registers
+ * before exit from the system call.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_syscall_cpu_scrubs_regs(void)
+{
+#if CONFIG_X86
+#if CONFIG_X86_64
+	int err;
+	size_t ret;
+	long x86_64_reg_val[7];
+
+	ret = string_nlen_reg(user_string, BUF_SIZE, &err);
+	__asm__ volatile(
+		"\t movq %%rbx,%0" : "=r"(x86_64_reg_val[0]));
+	__asm__ volatile(
+		"\t movq %%rcx,%0" : "=r"(x86_64_reg_val[1]));
+	__asm__ volatile(
+		"\t movq %%rdx,%0" : "=r"(x86_64_reg_val[2]));
+	__asm__ volatile(
+		"\t movq %%r8,%0" : "=r"(x86_64_reg_val[3]));
+	__asm__ volatile(
+		"\t movq %%r9,%0" : "=r"(x86_64_reg_val[4]));
+	__asm__ volatile(
+		"\t movq %%r10,%0" : "=r"(x86_64_reg_val[5]));
+	__asm__ volatile(
+		"\t movq %%r11,%0" : "=r"(x86_64_reg_val[6]));
+
+	for (int i = 0; i < 7; i++) {
+		zassert_true(x86_64_reg_val[i] != DB_VAL,
+				"register value is 0xDEADBEEF, "
+				"not scrubbed after system call.");
+	}
+#endif
+#endif
+#if CONFIG_X86
+#ifndef CONFIG_X86_64
+	int err;
+	size_t ret;
+	int x86_reg_val[3];
+
+	ret = string_nlen_reg(user_string, BUF_SIZE, &err);
+	__asm__ volatile (
+		"\t movl %%ebx,%0" : "=r"(x86_reg_val[0]));
+	__asm__ volatile (
+		"\t movl %%ecx,%0" : "=r"(x86_reg_val[1]));
+	__asm__ volatile (
+		"\t movl %%edx,%0" : "=r"(x86_reg_val[2]));
+
+	for (int i = 0; i < 3; i++) {
+		zassert_true(x86_reg_val[i] != DB_VAL, "reg val is 0xDEADBEEF, "
+				"not scrubbed after system call.");
+	}
+#endif
+#elif defined(CONFIG_ARM)
+	int err;
+	size_t ret;
+	long arm_reg_val[4];
+
+	ret = string_nlen_reg(user_string, BUF_SIZE, &err);
+	__asm__ volatile (
+		"\t ldr %%r1,=0" : "=r"(arm_reg_val[0]));
+	__asm__ volatile (
+		"\t ldr %%r2,=0" : "=r"(arm_reg_val[1]));
+	__asm__ volatile (
+		"\t ldr %%r3,=0" : "=r"(arm_reg_val[2]));
+	__asm__ volatile (
+		"\t ldr %%r12,=0" : "=r"(arm_reg_val[3]));
+
+	for (int i = 0; i < 4; i++) {
+		zassert_true(arm_reg_val[i] != DB_VAL,
+				"register value is 0xDEADBEEF, "
+				"not scrubbed after system call.");
+	}
+#elif defined(CONFIG_ARC)
+	zassert_unreachable("ARC currently not supported");
+#else
+#error "Not implemented for this architecture"
+	zassert_unreachable("Write to control register fault");
+#endif
+}
+
 void test_main(void)
 {
 	sprintf(kernel_string, "this is a kernel string");
@@ -393,7 +542,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_user_string_alloc_copy),
 			 ztest_user_unit_test(test_arg64),
 			 ztest_unit_test(test_syscall_torture),
-			 ztest_unit_test(test_syscall_context)
+			 ztest_unit_test(test_syscall_context),
+			 ztest_user_unit_test(test_syscall_cpu_scrubs_regs)
 			 );
 	ztest_run_test_suite(syscalls);
 }

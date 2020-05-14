@@ -23,6 +23,8 @@ __syscall uint64_t syscall_arg64_big(uint32_t arg1, uint32_t arg2, uint64_t arg3
 
 __syscall bool syscall_context(void);
 
+__syscall size_t string_nlen_reg(char *src, size_t maxlen, int *err);
+
 #include <syscalls/test_syscalls.h>
 
 #endif /* _TEST_SYSCALLS_H_ */
