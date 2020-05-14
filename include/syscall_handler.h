@@ -57,7 +57,7 @@ int z_object_validate(struct z_object *ko, enum k_objects otype,
  * @param ko If retval=-EPERM, struct z_object * that was looked up, or NULL
  * @param otype Expected type of the kernel object
  */
-extern void z_dump_object_error(int retval, void *obj, struct z_object *ko,
+extern void z_dump_object_error(int retval, const void *obj, struct z_object *ko,
 				enum k_objects otype);
 
 /**
@@ -70,7 +70,7 @@ extern void z_dump_object_error(int retval, void *obj, struct z_object *ko,
  * @return Kernel object's metadata, or NULL if the parameter wasn't the
  * memory address of a kernel object
  */
-extern struct z_object *z_object_find(void *obj);
+extern struct z_object *z_object_find(const void *obj);
 
 typedef void (*_wordlist_cb_func_t)(struct z_object *ko, void *context);
 
@@ -414,7 +414,7 @@ static inline int z_obj_validation_check(struct z_object *ko,
 }
 
 #define Z_SYSCALL_IS_OBJ(ptr, type, init) \
-	Z_SYSCALL_VERIFY_MSG(z_obj_validation_check(z_object_find((void *)ptr), (void *)ptr, \
+	Z_SYSCALL_VERIFY_MSG(z_obj_validation_check(z_object_find((const void *)ptr), (void *)ptr, \
 				   type, init) == 0, "access denied")
 
 /**
