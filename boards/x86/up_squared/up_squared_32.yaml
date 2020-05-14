@@ -1,10 +1,10 @@
-identifier: up_squared
-name: UP Squared (x86_64)
+identifier: up_squared_32
+name: UP Squared (x86)
 type: mcu
 arch: x86
 toolchain:
   - zephyr
-ram: 256
+ram: 2048
 testing:
   ignore_tags:
      - net
