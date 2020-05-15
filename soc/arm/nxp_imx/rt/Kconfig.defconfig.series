@@ -136,6 +136,10 @@ config VIDEO_MCUX_CSI
 	default y if HAS_MCUX_CSI
 	depends on VIDEO
 
+config DMA_MCUX_EDMA
+	default y if HAS_MCUX_EDMA
+	depends on DMA
+
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 
 endif # SOC_SERIES_IMX_RT
