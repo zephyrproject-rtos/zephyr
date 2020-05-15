@@ -425,6 +425,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 	}
 
 	tx->seg_o = 0U;
+	tx->attempts--;
 
 end:
 	if (!tx->seg_pending) {
@@ -433,7 +434,6 @@ end:
 	}
 
 	tx->sending = 0U;
-	tx->attempts--;
 }
 
 static void seg_retransmit(struct k_work *work)
