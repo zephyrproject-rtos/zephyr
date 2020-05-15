@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(updatehub);
 #include <power/reboot.h>
 #include <tinycrypt/sha256.h>
 #include <data/json.h>
+#include <storage/flash_map.h>
 
 #include "include/updatehub.h"
 #include "updatehub_priv.h"
