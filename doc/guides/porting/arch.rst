@@ -460,8 +460,99 @@ be derived from the linker scripts of other architectures. Some sections might
 be specific to the new architecture, for example the SCB section on ARM and the
 IDT section on x86.
 
-Hardware Stack Protection
-=========================
+Memory Management
+*****************
+
+If the target platform enables paging and requires drivers to memory-map
+their I/O regions, :option:`CONFIG_MMU` needs to be enabled and the
+:cpp:func:`arch_mem_map()` API implemented.
+
+Stack Objects
+*************
+
+The presence of memory protection hardware affects how stack objects are
+created. All architecture ports must specify the required alignment of the
+stack pointer, which is some combination of CPU and ABI requirements. This
+is defined in architecture headers with :c:macro:`ARCH_STACK_PTR_ALIGN` and
+is typically something small like 4, 8, or 16 bytes.
+
+Two types of thread stacks exist:
+
+- "kernel" stacks defined with :c:macro:`K_KERNEL_STACK_DEFINE()` and related
+  APIs, which can host kernel threads running in supervisor mode or
+  used as the stack for interrupt/exception handling. These have significantly
+  relaxed alignment requirements and use less reserved data. No memory is
+  reserved for prvilege elevation stacks.
+
+- "thread" stacks which typically use more memory, but are capable of hosting
+  thread running in user mode, as well as any use-cases for kernel stacks.
+
+If :c:option:`CONFIG_USERSPACE` is not enabled, "thread" and "kernel" stacks
+are equivalent.
+
+Additional macros may be defined in the architecture layer to specify
+the alignment of the base of stack objects, any reserved data inside the
+stack object not used for the thread's stack buffer, and how to round up
+stack sizes to support user mode threads. In the absence of definitions
+some defaults are assumed:
+
+- :c:macro:`ARCH_KERNEL_STACK_RESERVED`: default no reserved space
+- :c:macro:`ARCH_THREAD_STACK_RESERVED`: default no reserved space
+- :c:macro:`ARCH_KERNEL_STACK_OBJ_ALIGN`: default align to
+  :c:macro:`ARCH_STACK_PTR_ALIGN`
+- :c:macro:`ARCH_THREAD_STACK_OBJ_ALIGN`: default align to
+  :c:macro:`ARCH_STACK_PTR_ALIGN`
+- :c:macro:`ARCH_THREAD_STACK_SIZE_ALIGN(size)`: default round up to
+  :c:macro:`ARCH_STACK_PTR_ALIGN`
+
+All stack creation macros are defined in terms of these.
+
+Stack objects all have the following layout, with some regions potentially
+zero-sized depending on configuration. There are always two main parts:
+reserved memory at the beginning, and then the stack buffer itself. The
+bounds of some areas can only be determined at runtime in the context of
+its associated thread object. Other areas are entirely computable at build
+time.
+
+Some architectures may need to carve-out reserved memory at runtime from the
+stack buffer, instead of unconditionally reserving it at build time, or to
+supplement an existing reserved area (as is the case with the ARM FPU).
+Such carve-outs will always be tracked in ``thread.stack_info.start``.
+The region specified by	``thread.stack_info.start`` and
+``thread.stack_info.size`` is always fully accessible by a user mode thread.
+``thread.stack_info.delta`` denotes an offset which can be used to compute
+the initial stack pointer from the very end of the stack object, taking into
+account storage for TLS and ASLR random offsets.
+
+::
+
+	+---------------------+ <- thread.stack_obj
+	| Reserved Memory     | } K_(THREAD|KERNEL)_STACK_RESERVED
+	+---------------------+
+	| Carved-out memory   |
+	|.....................| <- thread.stack_info.start
+	| Unused stack buffer |
+	|                     |
+	|.....................| <- thread's current stack pointer
+	| Used stack buffer   |
+	|                     |
+	|.....................| <- Initial stack pointer. Computable
+	| ASLR Random offset  |      with thread.stack_info.delta
+	+---------------------| <- thread.userspace_local_data
+	| Thread-local data   |
+	+---------------------+ <- thread.stack_info.start +
+	                             thread.stack_info.size
+
+
+At present, Zephyr does not support stacks that grow upward.
+
+No Memory Protection
+====================
+
+If no memory protection is in use, then the defaults are sufficient.
+
+HW-based stack overflow detection
+=================================
 
 This option uses hardware features to generate a fatal error if a thread
 in supervisor mode overflows its stack. This is useful for debugging, although
@@ -470,6 +561,7 @@ of the system after this happens:
 
 * The kernel could have been inside a critical section when the overflow
   occurs, leaving important global data structures in a corrupted state.
+
 * For systems that implement stack protection using a guard memory region,
   it's possible to overshoot the guard and corrupt adjacent data structures
   before the hardware detects this situation.
@@ -478,38 +570,194 @@ To enable the :option:`CONFIG_HW_STACK_PROTECTION` feature, the system must
 provide some kind of hardware-based stack overflow protection, and enable the
 :option:`CONFIG_ARCH_HAS_STACK_PROTECTION` option.
 
-There are no C APIs that need to be implemented to support stack protection,
-and it's entirely implemented within the ``arch/`` code.  However in most cases
-(such as if a guard region needs to be defined) the architecture will need to
-declare its own versions of the K_THREAD_STACK macros in ``arch/cpu.h``:
+Two forms of HW-based stack overflow detection are supported: dedicated
+CPU features for this purpose, or special read-only guard regions immediately
+preceding stack buffers.
 
-* :c:macro:`_ARCH_THREAD_STACK_DEFINE()`
-* :c:macro:`_ARCH_THREAD_STACK_ARRAY_DEFINE()`
-* :c:macro:`_ARCH_THREAD_STACK_MEMBER()`
-* :c:macro:`_ARCH_THREAD_STACK_SIZEOF()`
+:option:`CONFIG_HW_STACK_PROTECTION` only catches stack overflows for
+supervisor threads. This is not required to catch stack overflow from user
+threads; :option:`CONFIG_USERSPACE` is orthogonal.
 
-For systems that implement stack protection using a Memory Protection Unit
-(MPU) or Memory Management Unit (MMU), this is typically done by declaring a
-guard memory region immediately before the stack area.
+This feature only detects supervisor mode stack overflows, including stack
+overflows when handling system calls. It doesn't guarantee that the kernel has
+not been corrupted. Any stack overflow in supervisor mode should be treated as
+a fatal error, with no assertions about the integrity of the overall system
+possible.
 
-* On MMU systems, this guard area is an entire page whose permissions in the
-  page table will generate a fault on writes. This page needs to be
-  configured in the arch's _new_thread() function.
+Stack overflows in user mode are recoverable (from the kernel's perspective)
+and require no special configuration; :option:`CONFIG_HW_STACK_PROTECTION`
+only applies to catching overflows when the CPU is in sueprvisor mode.
 
-* On MPU systems, one of the MPU regions needs to be reserved for the thread
-  stack guard area, whose size should be minimized. The region in the MPU
-  should be reconfigured on context switch such that the guard region
-  for the incoming thread is not writable.
+CPU-based stack overflow detection
+----------------------------------
 
-Memory Management
+If we are detecting stack overflows in supervisor mode via special CPU
+registers (like ARM's SPLIM), then the defaults are sufficient.
+
+
+
+Guard-based stack overflow detection
+------------------------------------
+
+We are detecting supervisor mode stack overflows via special memory protection
+region located immediately before the stack buffer that generates an exception
+on write. Reserved memory will be used for the guard region.
+
+:c:macro:`ARCH_KERNEL_STACK_RESERVED` should be defined to the minimum size
+of a memory protection region. On most ARM CPUs this is 32 bytes.
+:c:macro:`ARCH_KERNEL_STACK_OBJ_ALIGN` should also be set to the required
+alignment for this region.
+
+MMU-based systems should not reserve RAM for the guard region and instead
+simply leave an non-present virtual page below every stack when it is mapped
+into the address space. The stack object will still need to be properly aligned
+and sized to page granularity.
+
+::
+
+   +-----------------------------+ <- thread.stack_obj
+   | Guard reserved memory       | } K_KERNEL_STACK_RESERVED
+   +-----------------------------+
+   | Guard carve-out             |
+   |.............................| <- thread.stack_info.start
+   | Stack buffer                |
+   .                             .
+
+Guard carve-outs for kernel stacks are uncommon and should be avoided if
+possible. They tend to be needed for two situations:
+
+* The same stack may be re-purposed to host a user thread, in which case
+  the guard is unnecessary and shouldn't be unconditionally reserved.
+  This is the case when privilege elevation stacks are not inside the stack
+  object.
+
+* The required guard size is variable and depends on context. For example, some
+  ARM CPUs have lazy floating point stacking during exceptions and may
+  decrement the stack pointer by a large value without writing anything,
+  completely overshooting a minimally-sized guard and corrupting adjacent
+  memory. Rather than unconditionally reserving a larger guard, the extra
+  memory is carved out if the thread uses floating point.
+
+User mode enabled
 =================
 
-If the target platform enables paging and requires drivers to memory-map
-their I/O regions, :option:`CONFIG_MMU` needs to be enabled and the
-:cpp:func:`arch_mem_map()` API implemented.
+Enabling user mode activates two new requirements:
+
+* A separate fixed-sized privilege mode stack, specified by
+  :option:`CONFIG_PRIVILEGED_STACK_SIZE`, must be allocated that the user
+  thread cannot access. It is used as the stack by the kernel when handling
+  system calls. If stack guards are implemented, a stack guard region must
+  be able to be placed before it, with support for carve-outs if necessary.
+
+* The memory protection hardware must be able to program a region that exactly
+  covers the thread's stack buffer, tracked in ``thread.stack_info``. This
+  implies that :c:macro:`ARCH_THREAD_STACK_SIZE_ADJUST()` will need to round
+  up the requested stack size so that a region may cover it, and that
+  :c:macro:`ARCH_THREAD_STACK_OBJ_ALIGN()` is also specified per the
+  granularity of the memory protection hardware.
+
+This becomes more complicated if the memory protection hardware requires that
+all memory regions be sized to a power of two, and aligned to their own size.
+This is common on older MPUs and is known with
+:option:`CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT`.
+
+``thread.stack_info`` always tracks the user-accessible part of the stack
+object, it must always be correct to program a memory protection region with
+user access using the range stored within.
+
+Non power-of-two memory region requirements
+-------------------------------------------
+
+On systems without power-of-two region requirements, the reserved memory area
+for threads stacks defined by :c:macro:`K_THREAD_STACK_RESERVED` may be used to
+contain the privilege mode stack. The layout could be something like:
+
+::
+
+   +------------------------------+ <- thread.stack_obj
+   | Other platform data          |
+   +------------------------------+
+   | Guard region (if enabled)    |
+   +------------------------------+
+   | Guard carve-out (if needed)  |
+   |..............................|
+   | Privilege elevation stack    |
+   +------------------------------| <- thread.stack_obj +
+   | Stack buffer                 |      K_THREAD_STACK_RESERVED =
+   .                              .      thread.stack_info.start
+
+The guard region, and any carve-out (if needed) would be configured as a
+read-only region when the thread is created.
+
+* If the thread is a supervisor thread, the privilege elevation region is just
+  extra stack memory. An overflow will eventually crash into the guard region.
+
+* If the thread is running in user mode, a memory protection region will be
+  configured to allow user threads access to the stack buffer, but nothing
+  before or after it. An overflow in user mode will crash into the privilege
+  elevation stack, which the user thread has no access to. An overflow when
+  handling a system call will crash into the guard region.
+
+On an MMU system there should be no physical guards; the privilege mode stack
+will be mapped into kernel memory, and the stack buffer in the user part of
+memory, each with non-present virtual guard pages below them to catch runtime
+stack overflows.
+
+Other platform data may be stored before the guard region, but this is highly
+discouraged if such data could be stored in ``thread.arch`` somewhere.
+
+:c:macro:`ARCH_THREAD_STACK_RESERVED` will need to be defined to capture
+the size of the reserved region containing platform data, privilege elevation
+stacks, and guards. It must be appropriately sized such that an MPU region
+to grant user mode access to the stack buffer can be placed immediately
+after it.
+
+Power-of-two memory region requirements
+---------------------------------------
+
+Thread stack objects must be sized and aligned to the same power of two,
+without any reserved memory to allow efficient packing in memory. Thus,
+any guards in the thread stack must be completely carved out, and the
+privilege elevation stack must be allocated elsewhere.
+
+:c:macro:`ARCH_THREAD_STACK_SIZE_ADJUST(size)` and
+:c:macro:`ARCH_THREAD_STACK_OBJ_ALIGN(size)` should both be defined to
+:c:macro:`Z_POW2_CEIL(size)`. :c:macro:`K_THREAD_STACK_RESERVED` must be 0.
+
+For the privilege stacks, the :option:`CONFIG_GEN_PRIV_STACKS` must be,
+enabled. For every thread stack found in the system, a corresponding fixed-
+size kernel stack used for handling system calls is generated. The address
+of the privilege stacks can be looked up quickly at runtime based on the
+thread stack address using :c:func:`z_priv_stack_find()`. These stacks are
+laid out the same way as other kernel-only stacks.
+
+::
+
+   +-----------------------------+ <- z_priv_stack_find(thread.stack_obj)
+   | Reserved memory             | } K_KERNEL_STACK_RESERVED
+   +-----------------------------+
+   | Guard carve-out (if needed) |
+   |.............................|
+   | Privilege elevation stack   |
+   |                             |
+   +-----------------------------+ <- z_priv_stack_find(thread.stack_obj) +
+                                        K_KERNEL_STACK_RESERVED +
+                                        CONFIG_PRIVILEGED_STACK_SIZE
+
+   +-----------------------------+ <- thread.stack_obj
+   | MPU guard carve-out         |
+   | (supervisor mode only)      |
+   |.............................| <- thread.stack_info.start
+   | Stack buffer                |
+   .                             .
+
+The guard carve-out in the thread stack object is only used if the thread is
+running in supervisor mode. If the thread drops to user mode, there is no guard
+and the entire object is used as the stack buffer, with full access to the
+associated user mode thread and ``thread.stack_info`` updated appropriately.
 
 User Mode Threads
-=================
+*****************
 
 To support user mode threads, several kernel-to-arch APIs need to be
 implemented, and the system must enable the :option:`CONFIG_ARCH_HAS_USERSPACE`
