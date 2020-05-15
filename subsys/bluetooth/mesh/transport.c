@@ -85,11 +85,13 @@ static struct seg_tx {
 				 ctl:1,
 				 aszmic:1,
 				 friend_cred:1;
-	u8_t                     seg_o:5,
+	u8_t                     seg_o:6,       /* Segment being sent. 6 bits to
+						 * prevent overflow in loop.
+						 */
 				 started:1,     /* Start cb called */
-				 sending:1,     /* Sending is in progress */
+				 sending:1;     /* Sending is in progress */
+	u8_t                     nack_count:5,  /* Number of unacked segs */
 				 blocked:1;     /* Blocked by ongoing tx */
-	u8_t                     nack_count;    /* Number of unacked segs */
 	u8_t                     ttl;
 	u8_t                     seg_pending:5, /* Number of segments pending */
 				 attempts:3;
