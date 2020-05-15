@@ -22,6 +22,7 @@ config SOC_MK64F12
 	select CPU_HAS_FPU
 	select HAS_MCUX_RTC
 	select HAS_MCUX_DAC
+	select HAS_MCUX_EDMA
 
 config SOC_MK66F18
 	bool "SOC_MK66F18"
@@ -37,6 +38,7 @@ config SOC_MK66F18
 	select HAS_MCG
 	select CPU_HAS_FPU
 	select HAS_MCUX_RTC
+	select HAS_MCUX_EDMA
 
 endchoice
 

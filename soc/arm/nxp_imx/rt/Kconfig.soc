@@ -25,6 +25,7 @@ config SOC_MIMXRT1011
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
+	select HAS_MCUX_EDMA
 
 config SOC_MIMXRT1015
 	bool "SOC_MIMXRT1015"
@@ -45,6 +46,7 @@ config SOC_MIMXRT1015
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
+	select HAS_MCUX_EDMA
 
 config SOC_MIMXRT1021
 	bool "SOC_MIMXRT1021"
@@ -66,6 +68,7 @@ config SOC_MIMXRT1021
 	select HAS_MCUX_USB_EHCI
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
+	select HAS_MCUX_EDMA
 
 config SOC_MIMXRT1051
 	bool "SOC_MIMXRT1051"
@@ -88,6 +91,7 @@ config SOC_MIMXRT1051
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_CSI
+	select HAS_MCUX_EDMA
 
 config SOC_MIMXRT1052
 	bool "SOC_MIMXRT1052"
@@ -113,6 +117,7 @@ config SOC_MIMXRT1052
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_CSI
+	select HAS_MCUX_EDMA
 
 config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"
@@ -134,6 +139,7 @@ config SOC_MIMXRT1061
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_CSI
+	select HAS_MCUX_EDMA
 
 config SOC_MIMXRT1062
 	bool "SOC_MIMXRT1062"
@@ -159,6 +165,7 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_CSI
+	select HAS_MCUX_EDMA
 
 config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
@@ -184,6 +191,7 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_USDHC1
 	select HAS_MCUX_USDHC2
 	select HAS_MCUX_CSI
+	select HAS_MCUX_EDMA
 
 endchoice
 
