@@ -169,6 +169,11 @@ struct tcp { /* TCP connection */
 	struct tcp_options recv_options;
 	struct k_delayed_work send_timer;
 	sys_slist_t send_queue;
+	struct k_delayed_work send_data_timer;
+	struct net_pkt *send_data;
+	size_t send_data_total;
+	u8_t send_data_retries;
+	int unacked_len;
 	bool in_retransmission;
 	size_t send_retries;
 	struct k_delayed_work timewait_timer;
