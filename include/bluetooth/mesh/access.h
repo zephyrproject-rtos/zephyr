@@ -489,6 +489,10 @@ struct bt_mesh_model_cb {
 	 *
 	 *  Called on every model instance during mesh initialization.
 	 *
+	 *  If any of the model init callbacks return an error, the Mesh
+	 *  subsystem initialization will be aborted, and the error will be
+	 *  returned to the caller of @ref bt_mesh_init.
+	 *
 	 *  @param model Model to be initialized.
 	 *
 	 *  @return 0 on success, error otherwise.

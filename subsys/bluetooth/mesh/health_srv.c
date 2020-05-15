@@ -389,10 +389,6 @@ static int health_srv_init(struct bt_mesh_model *model)
 	struct bt_mesh_health_srv *srv = model->user_data;
 
 	if (!srv) {
-		if (!bt_mesh_model_in_primary(model)) {
-			return 0;
-		}
-
 		BT_ERR("No Health Server context provided");
 		return -EINVAL;
 	}
