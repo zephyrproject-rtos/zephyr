@@ -173,8 +173,9 @@ static int nr_isr_devs;
 
 static struct device *isr_devs[GPIO_INTEL_APL_NR_SUBDEVS];
 
-static int gpio_intel_apl_isr(struct device *dev)
+static void gpio_intel_apl_isr(void *arg)
 {
+	struct device *dev = (struct device *)arg;
 	const struct gpio_intel_apl_config *cfg;
 	struct gpio_intel_apl_data *data;
 	struct gpio_callback *cb, *tmp;
@@ -203,8 +204,6 @@ static int gpio_intel_apl_isr(struct device *dev)
 		/* clear handled interrupt bits */
 		sys_write32(acc_mask, reg);
 	}
-
-	return 0;
 }
 
 static int gpio_intel_apl_config(struct device *dev,
