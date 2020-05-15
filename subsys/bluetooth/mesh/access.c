@@ -283,6 +283,11 @@ static void mod_init(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		     bool vnd, bool primary, void *user_data)
 {
 	int i;
+	int *err = user_data;
+
+	if (*err) {
+		return;
+	}
 
 	if (mod->pub) {
 		mod->pub->mod = mod;
@@ -301,12 +306,14 @@ static void mod_init(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 	}
 
 	if (mod->cb && mod->cb->init) {
-		mod->cb->init(mod);
+		*err = mod->cb->init(mod);
 	}
 }
 
 int bt_mesh_comp_register(const struct bt_mesh_comp *comp)
 {
+	int err;
+
 	/* There must be at least one element */
 	if (!comp->elem_count) {
 		return -EINVAL;
@@ -314,9 +321,10 @@ int bt_mesh_comp_register(const struct bt_mesh_comp *comp)
 
 	dev_comp = comp;
 
-	bt_mesh_model_foreach(mod_init, NULL);
+	err = 0;
+	bt_mesh_model_foreach(mod_init, &err);
 
-	return 0;
+	return err;
 }
 
 void bt_mesh_comp_provision(u16_t addr)
@@ -342,8 +350,6 @@ void bt_mesh_comp_unprovision(void)
 	BT_DBG("");
 
 	dev_primary_addr = BT_MESH_ADDR_UNASSIGNED;
-
-	bt_mesh_model_foreach(mod_init, NULL);
 }
 
 u16_t bt_mesh_primary_addr(void)

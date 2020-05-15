@@ -645,9 +645,7 @@ static void beacon_set(struct bt_mesh_model *model,
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
 	       bt_hex(buf->data, buf->len));
 
-	if (!cfg) {
-		BT_WARN("No Configuration Server context available");
-	} else if (buf->data[0] == 0x00 || buf->data[0] == 0x01) {
+	if (buf->data[0] == 0x00 || buf->data[0] == 0x01) {
 		if (buf->data[0] != cfg->beacon) {
 			cfg->beacon = buf->data[0];
 
@@ -703,9 +701,7 @@ static void default_ttl_set(struct bt_mesh_model *model,
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
 	       bt_hex(buf->data, buf->len));
 
-	if (!cfg) {
-		BT_WARN("No Configuration Server context available");
-	} else if (buf->data[0] <= BT_MESH_TTL_MAX && buf->data[0] != 0x01) {
+	if (buf->data[0] <= BT_MESH_TTL_MAX && buf->data[0] != 0x01) {
 		if (cfg->default_ttl != buf->data[0]) {
 			cfg->default_ttl = buf->data[0];
 
@@ -770,11 +766,6 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	if (!cfg) {
-		BT_WARN("No Configuration Server context available");
-		goto send_status;
-	}
-
 	BT_DBG("GATT Proxy 0x%02x -> 0x%02x", cfg->gatt_proxy, buf->data[0]);
 
 	if (cfg->gatt_proxy == buf->data[0]) {
@@ -828,14 +819,10 @@ static void net_transmit_set(struct bt_mesh_model *model,
 	       BT_MESH_TRANSMIT_COUNT(buf->data[0]),
 	       BT_MESH_TRANSMIT_INT(buf->data[0]));
 
-	if (!cfg) {
-		BT_WARN("No Configuration Server context available");
-	} else {
-		cfg->net_transmit = buf->data[0];
+	cfg->net_transmit = buf->data[0];
 
-		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			bt_mesh_store_cfg();
-		}
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_mesh_store_cfg();
 	}
 
 	bt_mesh_model_msg_init(&msg, OP_NET_TRANSMIT_STATUS);
@@ -876,9 +863,7 @@ static void relay_set(struct bt_mesh_model *model,
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
 	       bt_hex(buf->data, buf->len));
 
-	if (!cfg) {
-		BT_WARN("No Configuration Server context available");
-	} else if (buf->data[0] == 0x00 || buf->data[0] == 0x01) {
+	if (buf->data[0] == 0x00 || buf->data[0] == 0x01) {
 		bool change;
 
 		if (cfg->relay == BT_MESH_RELAY_NOT_SUPPORTED) {
@@ -2693,11 +2678,6 @@ static void friend_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	if (!cfg) {
-		BT_WARN("No Configuration Server context available");
-		goto send_status;
-	}
-
 	BT_DBG("Friend 0x%02x -> 0x%02x", cfg->frnd, buf->data[0]);
 
 	if (cfg->frnd == buf->data[0]) {
@@ -3243,6 +3223,14 @@ static bool conf_is_valid(struct bt_mesh_cfg_srv *cfg)
 		return false;
 	}
 
+	if (cfg->frnd > 0x02) {
+		return false;
+	}
+
+	if (cfg->gatt_proxy > 0x02) {
+		return false;
+	}
+
 	if (cfg->beacon > 0x01) {
 		return false;
 	}
@@ -3339,10 +3327,6 @@ void bt_mesh_cfg_reset(void)
 
 	BT_DBG("");
 
-	if (!cfg) {
-		return;
-	}
-
 	bt_mesh_set_hb_sub_dst(BT_MESH_ADDR_UNASSIGNED);
 
 	cfg->hb_sub.src = BT_MESH_ADDR_UNASSIGNED;
@@ -3368,11 +3352,6 @@ void bt_mesh_cfg_reset(void)
 void bt_mesh_heartbeat(u16_t src, u16_t dst, u8_t hops, u16_t feat)
 {
 	struct bt_mesh_cfg_srv *cfg = conf;
-
-	if (!cfg) {
-		BT_WARN("No configuaration server context available");
-		return;
-	}
 
 	if (src != cfg->hb_sub.src || dst != cfg->hb_sub.dst) {
 		BT_WARN("No subscription for received heartbeat");
@@ -3420,10 +3399,8 @@ u8_t bt_mesh_relay_get(void)
 
 u8_t bt_mesh_friend_get(void)
 {
-	BT_DBG("conf %p conf->frnd 0x%02x", conf,
-	       conf ? conf->frnd : BT_MESH_FRIEND_NOT_SUPPORTED);
-
 	if (conf) {
+		BT_DBG("conf %p conf->frnd 0x%02x", conf, conf->frnd);
 		return conf->frnd;
 	}
 
@@ -3487,18 +3464,12 @@ u8_t *bt_mesh_label_uuid_get(u16_t addr)
 
 struct bt_mesh_hb_pub *bt_mesh_hb_pub_get(void)
 {
-	if (!conf) {
-		return NULL;
-	}
-
 	return &conf->hb_pub;
 }
 
 void bt_mesh_hb_pub_disable(void)
 {
-	if (conf) {
-		hb_pub_disable(conf);
-	}
+	hb_pub_disable(conf);
 }
 
 struct bt_mesh_cfg_srv *bt_mesh_cfg_get(void)
@@ -3512,7 +3483,7 @@ void bt_mesh_subnet_del(struct bt_mesh_subnet *sub, bool store)
 
 	BT_DBG("NetIdx 0x%03x store %u", sub->net_idx, store);
 
-	if (conf && conf->hb_pub.net_idx == sub->net_idx) {
+	if (conf->hb_pub.net_idx == sub->net_idx) {
 		hb_pub_disable(conf);
 
 		if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
