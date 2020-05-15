@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <storage/flash_map.h>
+
 #include "updatehub_firmware.h"
 
 bool updatehub_get_firmware_version(char *version, int version_len)
