@@ -582,7 +582,7 @@ int gpio_intel_apl_init(struct device *dev)
 
 	/* route to IRQ 14 */
 
-	sys_bitfield_clear_bit(data->pad_base + REG_MISCCFG,
+	sys_bitfield_clear_bit(cfg->reg_base + REG_MISCCFG,
 			       MISCCFG_IRQ_ROUTE_POS);
 
 	dev->driver_api = &gpio_intel_apl_api;
