@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2020 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,13 +17,13 @@
  *
  * @ingroup kernel_heap_tests
  *
- * @see k_malloc(), k_free()
- *
  * @details The 8 blocks of memory of size 16 bytes are allocated
  * by k_calloc() API. When allocated using k_calloc() the memory buffers
  * have to be zeroed. Check is done, if the blocks are memset to 0 and
  * read/write is allowed. The test is then teared up by freeing all the
  * blocks allocated.
+ *
+ * @see k_malloc(), k_free()
  */
 void test_mheap_malloc_align4(void)
 {
