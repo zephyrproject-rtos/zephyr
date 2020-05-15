@@ -207,21 +207,21 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define DEV_DATA(dev) \
 	((struct uart_ns16550_dev_data_t *)(dev)->driver_data)
 
-#define THR(dev) (DEV_CFG(dev)->devconf.port + REG_THR * UART_REG_ADDR_INTERVAL)
-#define RDR(dev) (DEV_CFG(dev)->devconf.port + REG_RDR * UART_REG_ADDR_INTERVAL)
+#define THR(dev) (get_port(dev) + REG_THR * UART_REG_ADDR_INTERVAL)
+#define RDR(dev) (get_port(dev) + REG_RDR * UART_REG_ADDR_INTERVAL)
 #define BRDL(dev) \
-	(DEV_CFG(dev)->devconf.port + REG_BRDL * UART_REG_ADDR_INTERVAL)
+	(get_port(dev) + REG_BRDL * UART_REG_ADDR_INTERVAL)
 #define BRDH(dev) \
-	(DEV_CFG(dev)->devconf.port + REG_BRDH * UART_REG_ADDR_INTERVAL)
-#define IER(dev) (DEV_CFG(dev)->devconf.port + REG_IER * UART_REG_ADDR_INTERVAL)
-#define IIR(dev) (DEV_CFG(dev)->devconf.port + REG_IIR * UART_REG_ADDR_INTERVAL)
-#define FCR(dev) (DEV_CFG(dev)->devconf.port + REG_FCR * UART_REG_ADDR_INTERVAL)
-#define LCR(dev) (DEV_CFG(dev)->devconf.port + REG_LCR * UART_REG_ADDR_INTERVAL)
-#define MDC(dev) (DEV_CFG(dev)->devconf.port + REG_MDC * UART_REG_ADDR_INTERVAL)
-#define LSR(dev) (DEV_CFG(dev)->devconf.port + REG_LSR * UART_REG_ADDR_INTERVAL)
-#define MSR(dev) (DEV_CFG(dev)->devconf.port + REG_MSR * UART_REG_ADDR_INTERVAL)
-#define DLF(dev) (DEV_CFG(dev)->devconf.port + REG_DLF)
-#define PCP(dev) (DEV_CFG(dev)->devconf.port + REG_PCP)
+	(get_port(dev) + REG_BRDH * UART_REG_ADDR_INTERVAL)
+#define IER(dev) (get_port(dev) + REG_IER * UART_REG_ADDR_INTERVAL)
+#define IIR(dev) (get_port(dev) + REG_IIR * UART_REG_ADDR_INTERVAL)
+#define FCR(dev) (get_port(dev) + REG_FCR * UART_REG_ADDR_INTERVAL)
+#define LCR(dev) (get_port(dev) + REG_LCR * UART_REG_ADDR_INTERVAL)
+#define MDC(dev) (get_port(dev) + REG_MDC * UART_REG_ADDR_INTERVAL)
+#define LSR(dev) (get_port(dev) + REG_LSR * UART_REG_ADDR_INTERVAL)
+#define MSR(dev) (get_port(dev) + REG_MSR * UART_REG_ADDR_INTERVAL)
+#define DLF(dev) (get_port(dev) + REG_DLF)
+#define PCP(dev) (get_port(dev) + REG_PCP)
 
 #define IIRC(dev) (DEV_DATA(dev)->iir_cache)
 
@@ -257,6 +257,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 /* device config */
 struct uart_ns16550_device_config {
 	struct uart_device_config devconf;
+
 #ifdef UART_NS16550_PCP_ENABLED
 	u32_t pcp;
 #endif
@@ -270,6 +271,9 @@ struct uart_ns16550_device_config {
 
 /** Device data structure */
 struct uart_ns16550_dev_data_t {
+#ifdef UART_NS16550_PCIE_ENABLED
+	struct uart_device_config devconf;
+#endif
 	struct uart_config uart_config;
 	struct k_spinlock lock;
 
@@ -285,6 +289,17 @@ struct uart_ns16550_dev_data_t {
 };
 
 static const struct uart_driver_api uart_ns16550_driver_api;
+
+static inline u32_t get_port(struct device *dev)
+{
+#ifdef UART_NS16550_PCIE_ENABLED
+	if (DEV_CFG(dev)->pcie) {
+		return DEV_DATA(dev)->devconf.port;
+	}
+#endif /* UART_NS16550_PCIE_ENABLED */
+
+	return DEV_CFG(dev)->devconf.port;
+}
 
 static void set_baud_rate(struct device *dev, u32_t baud_rate)
 {
@@ -337,7 +352,7 @@ static int uart_ns16550_configure(struct device *dev,
 			goto out;
 		}
 
-		dev_cfg->devconf.port = pcie_get_mbar(dev_cfg->pcie_bdf, 0);
+		dev_data->devconf.port = pcie_get_mbar(dev_cfg->pcie_bdf, 0);
 		pcie_set_cmd(dev_cfg->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
 	}
 #endif
