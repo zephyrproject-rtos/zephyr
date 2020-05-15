@@ -75,3 +75,4 @@ add_subdirectory_ifdef(CONFIG_ITDS		wsen_itds)
 
 zephyr_sources_ifdef(CONFIG_USERSPACE sensor_handlers.c)
 zephyr_sources_ifdef(CONFIG_SENSOR_SHELL sensor_shell.c)
+zephyr_sources_ifdef(CONFIG_SENSOR_SHELL_BATTERY shell_battery.c)
