@@ -97,46 +97,33 @@ struct net_pkt {
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
-	/* We do not support combination of TXTIME and TXTIME_STATS as the
-	 * same variable is shared in net_pkt.h
-	 */
-#if defined(CONFIG_NET_PKT_TXTIME) && defined(CONFIG_NET_PKT_TXTIME_STATS)
-#error \
-"Cannot define both CONFIG_NET_PKT_TXTIME and CONFIG_NET_PKT_TXTIME_STATS"
-#endif
-
-#if defined(CONFIG_NET_PKT_TIMESTAMP) || defined(CONFIG_NET_PKT_TXTIME) || \
-				defined(CONFIG_NET_PKT_RXTIME_STATS) || \
-				defined(CONFIG_NET_PKT_TXTIME_STATS)
-	union {
 #if defined(CONFIG_NET_PKT_TIMESTAMP) || \
 				defined(CONFIG_NET_PKT_RXTIME_STATS) ||	\
 				defined(CONFIG_NET_PKT_TXTIME_STATS)
-		struct {
-			/** Timestamp if available. */
-			struct net_ptp_time timestamp;
+	struct {
+		/** Timestamp if available. */
+		struct net_ptp_time timestamp;
 
 #if defined(CONFIG_NET_PKT_TXTIME_STATS_DETAIL) || \
 	defined(CONFIG_NET_PKT_RXTIME_STATS_DETAIL)
-			/** Collect extra statistics for net_pkt processing
-			 * from various points in the IP stack. See networking
-			 * documentation where these points are located and how
-			 * to interpret the results.
-			 */
-			struct {
-				uint32_t stat[NET_PKT_DETAIL_STATS_COUNT];
-				int count;
-			} detail;
+		/** Collect extra statistics for net_pkt processing
+		 * from various points in the IP stack. See networking
+		 * documentation where these points are located and how
+		 * to interpret the results.
+		 */
+		struct {
+			uint32_t stat[NET_PKT_DETAIL_STATS_COUNT];
+			int count;
+		} detail;
 #endif /* CONFIG_NET_PKT_TXTIME_STATS_DETAIL ||
 	  CONFIG_NET_PKT_RXTIME_STATS_DETAIL */
-		};
-#endif /* CONFIG_NET_PKT_TIMESTAMP */
-#if defined(CONFIG_NET_PKT_TXTIME)
-		/** Network packet TX time in the future (in nanoseconds) */
-		uint64_t txtime;
-#endif /* CONFIG_NET_PKT_TXTIME */
 	};
-#endif /* CONFIG_NET_PKT_TIMESTAMP || CONFIG_NET_PKT_TXTIME */
+#endif /* CONFIG_NET_PKT_TIMESTAMP */
+
+#if defined(CONFIG_NET_PKT_TXTIME)
+	/** Network packet TX time in the future (in nanoseconds) */
+	uint64_t txtime;
+#endif /* CONFIG_NET_PKT_TXTIME */
 
 	/** Reference counter */
 	atomic_t atomic_ref;
