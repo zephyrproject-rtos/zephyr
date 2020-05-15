@@ -402,10 +402,10 @@ int net_config_init(const char *app_info, uint32_t flags, int32_t timeout)
 	 * to wait multiple events, sleep smaller amounts of data.
 	 */
 	while (count--) {
-		if (k_sem_take(&waiter, K_MSEC(loop))) {
-			if (!k_sem_count_get(&counter)) {
-				break;
-			}
+		k_sem_take(&waiter, K_MSEC(loop));
+
+		if (!k_sem_count_get(&counter)) {
+			break;
 		}
 	}
 
