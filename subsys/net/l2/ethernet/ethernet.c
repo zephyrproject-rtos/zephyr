@@ -1038,6 +1038,10 @@ struct device *net_eth_get_ptp_clock(struct net_if *iface)
 		return NULL;
 	}
 
+	if (!api->get_ptp_clock) {
+		return NULL;
+	}
+
 	return api->get_ptp_clock(net_if_get_device(iface));
 }
 #endif /* CONFIG_PTP_CLOCK */
