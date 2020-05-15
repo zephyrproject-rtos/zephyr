@@ -129,7 +129,7 @@ static int cmd_get_sensor(const struct shell *shell, size_t argc, char *argv[])
 
 	err = sensor_sample_fetch(dev);
 	if (err < 0) {
-		shell_error(shell, "Failed to read sensor");
+		shell_error(shell, "Failed to read sensor: %d", err);
 	}
 
 	if (argc == 2) {
