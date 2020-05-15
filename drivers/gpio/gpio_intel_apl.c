@@ -333,6 +333,17 @@ static int gpio_intel_apl_pin_interrupt_configure(struct device *dev,
 			return -ENOTSUP;
 		}
 
+		/*
+		 * Do not enable interrupt with pin as output.
+		 * Hardware does not seem to support triggering
+		 * interrupt by setting line as both input/output
+		 * and then setting output to desired level.
+		 * So just say not supported.
+		 */
+		if ((cfg0 & PAD_CFG0_TXDIS) == 0U) {
+			return -ENOTSUP;
+		}
+
 		if (mode == GPIO_INT_MODE_LEVEL) {
 			/* level trigger */
 			cfg0 |= PAD_CFG0_RXEVCFG_LEVEL;
