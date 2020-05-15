@@ -1,9 +1,14 @@
 # STM32 CAN configuration options
-if CAN_MCAN && SOC_SERIES_STM32G4X
+
+DT_COMPAT_STM32_FDCAN := st,stm32-fdcan
 
 config CAN_STM32FD
 	bool
-	default y
+	default $(dt_compat_enabled,$(DT_COMPAT_STM32_FDCAN))
+	select CAN_MCAN
+	select USE_STM32_LL_RCC
+
+if CAN_STM32FD
 
 config CAN_MAX_STD_ID_FILTER
 	int "Maximum number of std ID filters"
@@ -32,4 +37,4 @@ config CAN_CKDIV
 	  The values of the register are multiplied by two and zero corresponds
 	  to one. The value six, for example results in a clock divided by 12.
 
-endif #CAN_MCAN
+endif #CAN_STM32FD

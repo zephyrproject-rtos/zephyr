@@ -110,13 +110,15 @@
 &can1 {
 	bus-speed = <125000>;
 	sjw = <1>;
-	prop-seg = <0>;
-	phase-seg1 = <13>;
-	phase-seg2 = <6>;
+	sample-point = <875>;
+	/*prop-seg = <0>;
+	phase-seg1 = <21>;
+	phase-seg2 = <3>;*/
 	bus-speed-data = <1000000>;
 	sjw-data = <1>;
-	prop-seg-data = <0>;
-	phase-seg1-data = <9>;
-	phase-seg2-data = <5>;
+	/*prop-seg-data = <0>;
+	phase-seg1-data = <21>;
+	phase-seg2-data = <3>;*/
+	sample-point-data = <875>;
 	status = "okay";
 };

@@ -295,7 +295,7 @@
 			tx-buffer-elements = <3>;
 
 			can1: can@40006400 {
-				compatible = "bosch,m-can";
+				compatible = "st,stm32-fdcan";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <0x40006400 0x400>, <0x4000B400 0x350>;
@@ -307,7 +307,7 @@
 			};
 
 			can2: can@40006800 {
-				compatible = "bosch,m-can";
+				compatible = "st,stm32-fdcan";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <0x40006800 0x400>, <0x4000B750 0x350>;
@@ -319,7 +319,7 @@
 			};
 
 			can3: can@40006C00 {
-				compatible = "bosch,m-can";
+				compatible = "st,stm32-fdcan";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				reg = <0x40006C00 0x400>, <0x4000BAA0 0x350>;
