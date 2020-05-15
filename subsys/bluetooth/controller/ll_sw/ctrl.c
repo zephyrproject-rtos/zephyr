@@ -4535,6 +4535,14 @@ static inline void isr_close_conn(void)
 			_radio.conn_curr->slave.window_widening_event_us = 0U;
 			_radio.conn_curr->slave.window_size_event_us = 0U;
 
+			/* If no tx buffers in connection context, check for any
+			 * new enqueued tx buffers and route them into
+			 * connection context.
+			 */
+			if (!_radio.conn_curr->pkt_tx_head) {
+				packet_tx_enqueue(0xFF);
+			}
+
 			/* apply latency if no more data */
 			if (_radio.conn_curr->pkt_tx_head) {
 				struct pdu_data *pdu_data_tx;
