@@ -1,0 +1,33 @@
+#
+# Copyright 2020 Google LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Maxim MAX17055 Fuel Gauge
+
+compatible: "maxim,max17055"
+
+include: i2c-device.yaml
+
+properties:
+    design-voltage:
+      type: int
+      required: true
+      description: Battery Design Voltage in mV (3300 to 4400)
+
+    desired-voltage:
+      type: int
+      required: true
+      description: Battery Desired Voltage in mV (3300 to 4400)
+
+    desired-charging-current:
+      type: int
+      required: true
+      description: Battery Design Charging Current in mA (e.g. 2000)
+
+    rsense-mohms:
+      type: int
+      required: true
+      description: >
+        Value of Rsense resistor in milliohms (e.g. 5). It cannot be 0.
