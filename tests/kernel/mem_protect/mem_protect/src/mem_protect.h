@@ -30,6 +30,15 @@ static inline void set_fault_valid(bool valid)
 #define MSG_Q_SIZE (10)
 #define MSG_Q_MAX_NUM_MSGS (10)
 #define MSG_Q_ALIGN (2)
+#define PRIORITY 5
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define BLK_SIZE_MIN 16
+#define BLK_SIZE_MAX 64
+#define BLK_NUM_MIN 8
+#define BLK_NUM_MAX 2
+#define BLK_ALIGN BLK_SIZE_MIN
+#define SEM_INIT_VAL (0U)
+#define SEM_MAX_VAL (1U)
 
 /* For mem_domain.c  */
 #define MEM_DOMAIN_STACK_SIZE CONFIG_MAIN_STACK_SIZE
@@ -48,3 +57,12 @@ static inline void set_fault_valid(bool valid)
 
 /* for kobject.c */
 #define KOBJECT_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+
+#ifndef _TEST_SYSCALLS_H_
+#define _TEST_SYSCALLS_H_
+
+__syscall struct k_mem_pool *ret_resource_pool_ptr(void);
+
+#include <syscalls/mem_protect.h>
+
+#endif /* _TEST_SYSCALLS_H_ */
