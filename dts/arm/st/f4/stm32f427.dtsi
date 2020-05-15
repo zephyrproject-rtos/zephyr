@@ -35,6 +35,9 @@
 			reg = <0x40007800 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x40000000>;
 			interrupts = <82 0>;
+			dmas = <&dma1 1 5 0x440 0x3
+				&dma1 3 5 0x480 0x3>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 			label = "UART_7";
 		};
@@ -44,6 +47,9 @@
 			reg = <0x40007c00 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x80000000>;
 			interrupts = <83 0>;
+			dmas = <&dma1 0 5 0x440 0x3
+				&dma1 6 5 0x480 0x3>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 			label = "UART_8";
 		};
