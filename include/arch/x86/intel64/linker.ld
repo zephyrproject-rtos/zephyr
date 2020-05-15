@@ -32,6 +32,8 @@ SECTIONS
 	*(.locore)
 	*(.locore.*)
 	MMU_PAGE_ALIGN
+	_locore_end = .;
+
 	_lorodata_start = .;
 	*(.lorodata)
 	MMU_PAGE_ALIGN
