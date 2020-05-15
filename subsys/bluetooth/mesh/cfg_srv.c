@@ -2660,7 +2660,8 @@ static void send_friend_status(struct bt_mesh_model *model,
 	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	bt_mesh_model_msg_init(&msg, OP_FRIEND_STATUS);
-	net_buf_simple_add_u8(&msg, cfg->frnd);
+	net_buf_simple_add_u8(&msg,
+			      cfg ? cfg->frnd : BT_MESH_FRIEND_NOT_SUPPORTED);
 
 	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		BT_ERR("Unable to send Friend Status");
