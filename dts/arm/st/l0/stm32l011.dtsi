@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2019-2020 Grinn
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l0/stm32l0.dtsi>
+
+/ {
+	soc {
+		eeprom: eeprom@8080000{
+			reg = <0x08080000 512>;
+		};
+	};
+};
