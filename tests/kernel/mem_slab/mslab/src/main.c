@@ -199,7 +199,9 @@ void test_slab_free_all_blocks(void **p)
  *
  * @ingroup kernel_memory_slab_tests
  *
- * @details This routine calls test_slab_get_all_blocks() to get all
+ * @details Verify that system allows for the definitions of boot-time
+ * memory regions.
+ * This routine calls test_slab_get_all_blocks() to get all
  * memory blocks from the map and calls test_slab_free_all_blocks()
  * to free all memory blocks. It also tries to wait (with and without
  * timeout) for a memory block.
