@@ -1058,6 +1058,10 @@ void ull_conn_done(struct node_rx_event_done *done)
 			ull_slave_done(done, &ticks_drift_plus,
 				       &ticks_drift_minus);
 
+			if (!conn->tx_head) {
+				ull_conn_tx_demux(UINT8_MAX);
+			}
+
 			if (conn->tx_head || memq_peek(lll->memq_tx.head,
 						       lll->memq_tx.tail,
 						       NULL)) {
