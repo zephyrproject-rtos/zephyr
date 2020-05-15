@@ -161,6 +161,18 @@ enum sensor_channel {
 	SENSOR_CHAN_GAUGE_AVG_POWER,
 	/** State of health measurement in % **/
 	SENSOR_CHAN_GAUGE_STATE_OF_HEALTH,
+	/** Time to empty in minutes **/
+	SENSOR_CHAN_GAUGE_TIME_TO_EMPTY,
+	/** Time to full in minutes **/
+	SENSOR_CHAN_GAUGE_TIME_TO_FULL,
+	/** Cycle count (total number of charge/discharge cycles) **/
+	SENSOR_CHAN_GAUGE_CYCLE_COUNT,
+	/** Design voltage of cell in V (max voltage)*/
+	SENSOR_CHAN_GAUGE_DESIGN_VOLTAGE,
+	/** Desired voltage of cell in V (nominal voltage) */
+	SENSOR_CHAN_GAUGE_DESIRED_VOLTAGE,
+	/** Desired charging current in mA */
+	SENSOR_CHAN_GAUGE_DESIRED_CHARGING_CURRENT,
 
 	/** All channels. */
 	SENSOR_CHAN_ALL,
