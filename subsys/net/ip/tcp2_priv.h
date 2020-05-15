@@ -8,6 +8,10 @@
 
 #define is(_a, _b) (strcmp((_a), (_b)) == 0)
 
+#ifndef MIN3
+#define MIN3(_a, _b, _c) MIN((_a), MIN((_b), (_c)))
+#endif
+
 #define th_seq(_x) ntohl((_x)->th_seq)
 #define th_ack(_x) ntohl((_x)->th_ack)
 
@@ -89,6 +93,19 @@
 	(_conn)->state = _s;						\
 })
 
+#define conn_send_data_dump(_conn)					\
+({									\
+	NET_DBG("conn: %p total=%zd, unacked_len=%d, "			\
+		"send_win=%hu, mss=%hu",				\
+		(_conn), net_pkt_get_len((_conn)->send_data),		\
+		conn->unacked_len, conn->send_win,			\
+		conn_mss((_conn)));					\
+	NET_DBG("conn: %p send_data_timer=%hu, send_data_retries=%hu",	\
+		(_conn),						\
+		(bool)k_delayed_work_remaining_get(&(_conn)->send_data_timer),\
+		(_conn)->send_data_retries);				\
+})
+
 #define TCPOPT_END	0
 #define TCPOPT_NOP	1
 #define TCPOPT_MAXSEG	2
@@ -141,6 +158,11 @@ enum tcp_state {
 	TCP_CLOSED
 };
 
+enum tcp_data_mode {
+	TCP_DATA_MODE_SEND = 0,
+	TCP_DATA_MODE_RESEND = 1
+};
+
 union tcp_endpoint {
 	struct sockaddr sa;
 	struct sockaddr_in sin;
@@ -174,6 +196,7 @@ struct tcp { /* TCP connection */
 	size_t send_data_total;
 	u8_t send_data_retries;
 	int unacked_len;
+	enum tcp_data_mode data_mode;
 	bool in_retransmission;
 	size_t send_retries;
 	struct k_delayed_work timewait_timer;
