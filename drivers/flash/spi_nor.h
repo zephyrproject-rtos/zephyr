@@ -35,6 +35,7 @@ struct spi_nor_config {
 #define SPI_NOR_CMD_PP          0x02    /* Page program */
 #define SPI_NOR_CMD_SE          0x20    /* Sector erase */
 #define SPI_NOR_CMD_BE_32K      0x52    /* Block erase 32KB */
+#define SPI_NOR_CMD_RSFDP       0x5A    /* Read Serial Flash Discovery Parameter */
 #define SPI_NOR_CMD_BE          0xD8    /* Block erase */
 #define SPI_NOR_CMD_CE          0xC7    /* Chip erase */
 #define SPI_NOR_CMD_RDID        0x9F    /* Read JEDEC ID */
@@ -52,10 +53,17 @@ struct spi_nor_config {
  */
 #define SPI_NOR_BLOCK32_SIZE 0x8000
 
+/* The clock frequency supported by all compliant flash devices for the read
+ * SFDP instruction. To get the valid result the controller needs to configure
+ * the bus at the specified value (50 MHz) or less.
+ */
+#define SPI_NOR_SFDP_READ_CLOCK_FREQUENCY   50000000
+
 /* Test whether offset is aligned. */
 #define SPI_NOR_IS_PAGE_ALIGNED(_ofs) (((_ofs) & (SPI_NOR_PAGE_SIZE - 1U)) == 0)
 #define SPI_NOR_IS_SECTOR_ALIGNED(_ofs) (((_ofs) & (SPI_NOR_SECTOR_SIZE - 1U)) == 0)
 #define SPI_NOR_IS_BLOCK_ALIGNED(_ofs) (((_ofs) & (SPI_NOR_BLOCK_SIZE - 1U)) == 0)
 #define SPI_NOR_IS_BLOCK32_ALIGNED(_ofs) (((_ofs) & (SPI_NOR_BLOCK32_SIZE - 1U)) == 0)
+#define SPI_NOR_IS_ADDR_ALIGNED(_ofs, _size) (((_ofs) & (_size - 1U)) == 0)
 
 #endif /*__SPI_NOR_H__*/
