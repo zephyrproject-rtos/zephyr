@@ -99,6 +99,7 @@
 /boards/arm/sam_v71_xult/                 @nandojve
 /boards/arm/v2m_beetle/                   @fvincenzo
 /boards/arm/olimexino_stm32/              @ydamigos
+/boards/arm/olimex_stm32_p103/            @Sturla22
 /boards/arm/sensortile_box/               @avisconti
 /boards/arm/steval_fcu001v1/              @Navin-Sankar
 /boards/arm/stm32l1_disco/                @karlp

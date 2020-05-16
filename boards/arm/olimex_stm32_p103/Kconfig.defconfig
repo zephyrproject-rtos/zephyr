@@ -1,0 +1,11 @@
+# OLIMEX-STM32-P103 board configuration
+
+# Copyright 2020, Sturla Lange
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_OLIMEX_STM32_P103
+
+config BOARD
+	default "olimex_stm32_p103"
+
+endif # BOARD_OLIMEX_STM32_P103

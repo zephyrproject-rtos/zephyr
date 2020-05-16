@@ -1,0 +1,8 @@
+# OLIMEX-STM32-P103 board configuration
+
+# Copyright 2020, Sturla Lange
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_OLIMEX_STM32_P103
+	bool "OLIMEX-STM32-P103 Development Board"
+	depends on SOC_STM32F103XB
