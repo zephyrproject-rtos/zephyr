@@ -5,6 +5,8 @@
  */
 #include "updatehub_device.h"
 
+#include <string.h>
+
 bool updatehub_get_device_identity(char *id, int id_max_len)
 {
 	u8_t hwinfo_id[DEVICE_ID_BIN_MAX_SIZE];
