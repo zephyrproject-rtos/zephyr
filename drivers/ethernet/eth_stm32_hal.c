@@ -401,10 +401,6 @@ static int eth_initialize(struct device *dev)
 		return -EIO;
 	}
 
-	__ASSERT_NO_MSG(cfg->config_func != NULL);
-
-	cfg->config_func();
-
 	heth = &dev_data->heth;
 
 #if defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC)
@@ -480,6 +476,10 @@ static void eth_iface_init(struct net_if *iface)
 	 */
 	if (dev_data->iface == NULL) {
 		dev_data->iface = iface;
+
+		/* Now that the iface is setup, we are safe to enable IRQs. */
+		__ASSERT_NO_MSG(DEV_CFG(dev)->config_func() != NULL);
+		DEV_CFG(dev)->config_func();
 	}
 
 	/* Register Ethernet MAC Address with the upper layer */
