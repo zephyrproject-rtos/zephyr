@@ -98,6 +98,16 @@ static inline int stm32_clock_control_on(struct device *dev,
 		LL_AHB2_GRP1_EnableClock(pclken->enr);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32_* */
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32F7X) || \
+	defined(CONFIG_SOC_SERIES_STM32F2X) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X)
+	case STM32_CLOCK_BUS_AHB3:
+		LL_AHB3_GRP1_EnableClock(pclken->enr);
+		break;
+#endif /* CONFIG_SOC_SERIES_STM32_* */
 	case STM32_CLOCK_BUS_APB1:
 		LL_APB1_GRP1_EnableClock(pclken->enr);
 		break;
@@ -203,6 +213,7 @@ static int stm32_clock_control_get_subsys_rate(struct device *clock,
 	switch (pclken->bus) {
 	case STM32_CLOCK_BUS_AHB1:
 	case STM32_CLOCK_BUS_AHB2:
+	case STM32_CLOCK_BUS_AHB3:
 #ifdef CONFIG_SOC_SERIES_STM32L0X
 	case STM32_CLOCK_BUS_IOP:
 #endif /* CONFIG_SOC_SERIES_STM32L0X */
