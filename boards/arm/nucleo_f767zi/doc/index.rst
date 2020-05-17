@@ -120,6 +120,8 @@ features:
 +-----------+------------+-------------------------------------+
 | ADC       | on-chip    | ADC Controller                      |
 +-----------+------------+-------------------------------------+
+| RNG       | on-chip    | True Random number generator        |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
