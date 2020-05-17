@@ -279,6 +279,7 @@
 			reg = <0x40038000 0x1000>;
 			interrupts = <42 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
+			prescaler = <16>;
 			label = "FTM_0";
 			status = "disabled";
 		};
@@ -288,6 +289,7 @@
 			reg = <0x40039000 0x1000>;
 			interrupts = <43 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
+			prescaler = <16>;
 			label = "FTM_1";
 			status = "disabled";
 		};
@@ -297,6 +299,7 @@
 			reg = <0x4003a000 0x1000>;
 			interrupts = <44 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
+			prescaler = <16>;
 			label = "FTM_2";
 			status = "disabled";
 		};
@@ -306,6 +309,7 @@
 			reg = <0x400b9000 0x1000>;
 			interrupts = <71 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
+			prescaler = <16>;
 			label = "FTM_3";
 			status = "disabled";
 		};
