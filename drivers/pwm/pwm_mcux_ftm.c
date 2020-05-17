@@ -153,6 +153,8 @@ static const struct pwm_driver_api mcux_ftm_driver_api = {
 	.get_cycles_per_sec = mcux_ftm_get_cycles_per_sec,
 };
 
+#define TO_FTM_PRESCALE_DIVIDE(val) _DO_CONCAT(kFTM_Prescale_Divide_, val)
+
 #define FTM_DEVICE(n) \
 	static const struct mcux_ftm_config mcux_ftm_config_##n = { \
 		.base = (FTM_Type *)DT_INST_REG_ADDR(n),\
@@ -160,7 +162,7 @@ static const struct pwm_driver_api mcux_ftm_driver_api = {
 		.clock_subsys = (clock_control_subsys_t) \
 			DT_INST_CLOCKS_CELL(n, name), \
 		.ftm_clock_source = kFTM_FixedClock, \
-		.prescale = kFTM_Prescale_Divide_16, \
+		.prescale = TO_FTM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),\
 		.channel_count = FSL_FEATURE_FTM_CHANNEL_COUNTn((FTM_Type *) \
 			DT_INST_REG_ADDR(n)), \
 		.mode = kFTM_EdgeAlignedPwm, \
