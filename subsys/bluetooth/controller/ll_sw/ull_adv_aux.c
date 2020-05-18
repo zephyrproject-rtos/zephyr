@@ -83,16 +83,19 @@ uint8_t const *ll_adv_aux_random_addr_get(struct ll_adv_set const *const adv,
 uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, uint8_t len,
 			    uint8_t const *const data)
 {
-	struct pdu_adv_com_ext_adv *p, *_p, *s, *_s;
-	uint8_t pri_len, _pri_len, sec_len, _sec_len;
-	struct pdu_adv *_pri, *pri, *_sec, *sec;
-	struct pdu_adv_hdr *hp, _hp, *hs, _hs;
+	struct pdu_adv *pri_pdu, *pri_pdu_prev, *sec_pdu, *sec_pdu_prev;
+	struct pdu_adv_com_ext_adv *pri_com_hdr, *pri_com_hdr_prev;
+	struct pdu_adv_com_ext_adv *sec_com_hdr, *sec_com_hdr_prev;
+	uint8_t pri_len, pri_len_prev, sec_len, sec_len_prev;
+	struct pdu_adv_hdr *pri_hdr, pri_hdr_prev;
+	struct pdu_adv_hdr *sec_hdr, sec_hdr_prev;
+	uint8_t *pri_dptr, *pri_dptr_prev;
+	uint8_t *sec_dptr, *sec_dptr_prev;
 	struct lll_adv_aux *lll_aux;
 	struct ll_adv_aux_set *aux;
-	uint8_t *_pp, *pp, *ps, *_ps;
 	struct ll_adv_set *adv;
 	struct lll_adv *lll;
-	uint8_t ip, is;
+	uint8_t pri_idx, sec_idx;
 
 	/* op param definitions:
 	 * 0x00 - Intermediate fragment of fragmented extended advertising data
@@ -121,8 +124,8 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	/* Do not use Common Extended Advertising Header Format if not extended
 	 * advertising.
 	 */
-	_pri = lll_adv_data_peek(lll);
-	if (_pri->type != PDU_ADV_TYPE_EXT_IND) {
+	pri_pdu_prev = lll_adv_data_peek(lll);
+	if (pri_pdu_prev->type != PDU_ADV_TYPE_EXT_IND) {
 		return ull_adv_data_set(adv, len, data);
 	}
 
@@ -147,160 +150,162 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	}
 
 	/* Get reference to previous primary PDU data */
-	_p = (void *)&_pri->adv_ext_ind;
-	hp = (void *)_p->ext_hdr_adi_adv_data;
-	*(uint8_t *)&_hp = *(uint8_t *)hp;
-	_pp = (uint8_t *)hp + sizeof(*hp);
+	pri_com_hdr_prev = (void *)&pri_pdu_prev->adv_ext_ind;
+	pri_hdr = (void *)pri_com_hdr_prev->ext_hdr_adi_adv_data;
+	pri_hdr_prev = *pri_hdr;
+	pri_dptr_prev = (uint8_t *)pri_hdr + sizeof(*pri_hdr);
 
 	/* Get reference to new primary PDU data buffer */
-	pri = lll_adv_data_alloc(lll, &ip);
-	pri->type = _pri->type;
-	pri->rfu = 0U;
-	pri->chan_sel = 0U;
-	p = (void *)&pri->adv_ext_ind;
-	p->adv_mode = _p->adv_mode;
-	hp = (void *)p->ext_hdr_adi_adv_data;
-	pp = (uint8_t *)hp + sizeof(*hp);
-	*(uint8_t *)hp = 0U;
+	pri_pdu = lll_adv_data_alloc(lll, &pri_idx);
+	pri_pdu->type = pri_pdu_prev->type;
+	pri_pdu->rfu = 0U;
+	pri_pdu->chan_sel = 0U;
+	pri_com_hdr = (void *)&pri_pdu->adv_ext_ind;
+	pri_com_hdr->adv_mode = pri_com_hdr_prev->adv_mode;
+	pri_hdr = (void *)pri_com_hdr->ext_hdr_adi_adv_data;
+	pri_dptr = (uint8_t *)pri_hdr + sizeof(*pri_hdr);
+	*(uint8_t *)pri_hdr = 0U;
 
 	/* Get reference to previous secondary PDU data */
-	_sec = lll_adv_aux_data_peek(lll_aux);
-	_s = (void *)&_sec->adv_ext_ind;
-	hs = (void *)_s->ext_hdr_adi_adv_data;
-	*(uint8_t *)&_hs = *(uint8_t *)hs;
-	_ps = (uint8_t *)hs + sizeof(*hs);
+	sec_pdu_prev = lll_adv_aux_data_peek(lll_aux);
+	sec_com_hdr_prev = (void *)&sec_pdu_prev->adv_ext_ind;
+	sec_hdr = (void *)sec_com_hdr_prev->ext_hdr_adi_adv_data;
+	sec_hdr_prev = *sec_hdr;
+	sec_dptr_prev = (uint8_t *)sec_hdr + sizeof(*sec_hdr);
 
 	/* Get reference to new secondary PDU data buffer */
-	sec = lll_adv_aux_data_alloc(lll_aux, &is);
-	sec->type = pri->type;
-	sec->rfu = 0U;
+	sec_pdu = lll_adv_aux_data_alloc(lll_aux, &sec_idx);
+	sec_pdu->type = pri_pdu->type;
+	sec_pdu->rfu = 0U;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
-		sec->chan_sel = _sec->chan_sel;
+		sec_pdu->chan_sel = sec_pdu_prev->chan_sel;
 	} else {
-		sec->chan_sel = 0U;
+		sec_pdu->chan_sel = 0U;
 	}
 
-	sec->tx_addr = _sec->tx_addr;
-	sec->rx_addr = _sec->rx_addr;
+	sec_pdu->tx_addr = sec_pdu_prev->tx_addr;
+	sec_pdu->rx_addr = sec_pdu_prev->rx_addr;
 
-	s = (void *)&sec->adv_ext_ind;
-	s->adv_mode = p->adv_mode;
-	hs = (void *)s->ext_hdr_adi_adv_data;
-	ps = (uint8_t *)hs + sizeof(*hs);
-	*(uint8_t *)hs = 0U;
+	sec_com_hdr = (void *)&sec_pdu->adv_ext_ind;
+	sec_com_hdr->adv_mode = pri_com_hdr->adv_mode;
+	sec_hdr = (void *)sec_com_hdr->ext_hdr_adi_adv_data;
+	sec_dptr = (uint8_t *)sec_hdr + sizeof(*sec_hdr);
+	*(uint8_t *)sec_hdr = 0U;
 
 	/* AdvA flag */
 	/* NOTE: as we will use auxiliary packet, we remove AdvA in primary
 	 * channel. i.e. Do nothing to add AdvA in the primary PDU.
 	 */
-	if (_hp.adv_addr) {
-		_pp += BDADDR_SIZE;
+	if (pri_hdr_prev.adv_addr) {
+		pri_dptr_prev += BDADDR_SIZE;
 
 		/* Prepare to add AdvA in secondary PDU */
-		hs->adv_addr = 1;
+		sec_hdr->adv_addr = 1;
 
 		/* NOTE: AdvA is filled at enable */
-		sec->tx_addr = _pri->tx_addr;
+		sec_pdu->tx_addr = pri_pdu_prev->tx_addr;
 	}
-	pri->tx_addr = 0U;
-	pri->rx_addr = 0U;
+	pri_pdu->tx_addr = 0U;
+	pri_pdu->rx_addr = 0U;
 
-	if (_hs.adv_addr) {
-		_ps += BDADDR_SIZE;
+	if (sec_hdr_prev.adv_addr) {
+		sec_dptr_prev += BDADDR_SIZE;
 
 		/* Prepare to copy AdvA from previous double buffered PDU */
-		hs->adv_addr = 1;
+		sec_hdr->adv_addr = 1;
 	}
-	if (hs->adv_addr) {
-		ps += BDADDR_SIZE;
+	if (sec_hdr->adv_addr) {
+		sec_dptr += BDADDR_SIZE;
 	}
 
 	/* No TargetA in primary and secondary channel for undirected */
 	/* No CTEInfo flag in primary and secondary channel PDU */
 
 	/* ADI flag */
-	if (_hp.adi) {
-		_pp += sizeof(struct pdu_adv_adi);
+	if (pri_hdr_prev.adi) {
+		pri_dptr_prev += sizeof(struct pdu_adv_adi);
 	}
-	hp->adi = 1;
-	pp += sizeof(struct pdu_adv_adi);
-	if (_hs.adi) {
-		_ps += sizeof(struct pdu_adv_adi);
+	pri_hdr->adi = 1;
+	pri_dptr += sizeof(struct pdu_adv_adi);
+	if (sec_hdr_prev.adi) {
+		sec_dptr_prev += sizeof(struct pdu_adv_adi);
 	}
-	hs->adi = 1;
-	ps += sizeof(struct pdu_adv_adi);
+	sec_hdr->adi = 1;
+	sec_dptr += sizeof(struct pdu_adv_adi);
 
 	/* AuxPtr flag */
-	if (_hp.aux_ptr) {
-		_pp += sizeof(struct pdu_adv_aux_ptr);
+	if (pri_hdr_prev.aux_ptr) {
+		pri_dptr_prev += sizeof(struct pdu_adv_aux_ptr);
 	}
-	hp->aux_ptr = 1;
-	pp += sizeof(struct pdu_adv_aux_ptr);
-	if (_hs.aux_ptr) {
-		_ps += sizeof(struct pdu_adv_aux_ptr);
+	pri_hdr->aux_ptr = 1;
+	pri_dptr += sizeof(struct pdu_adv_aux_ptr);
+	if (sec_hdr_prev.aux_ptr) {
+		sec_dptr_prev += sizeof(struct pdu_adv_aux_ptr);
 
-		hs->aux_ptr = 1;
-		ps += sizeof(struct pdu_adv_aux_ptr);
+		sec_hdr->aux_ptr = 1;
+		sec_dptr += sizeof(struct pdu_adv_aux_ptr);
 	}
 
 	/* No SyncInfo flag in primary channel PDU */
 	/* SyncInfo flag in secondary channel PDU */
-	if (_hs.sync_info) {
-		_ps += sizeof(struct pdu_adv_sync_info);
+	if (sec_hdr_prev.sync_info) {
+		sec_dptr_prev += sizeof(struct pdu_adv_sync_info);
 
-		hs->sync_info = 1;
-		ps += sizeof(struct pdu_adv_sync_info);
+		sec_hdr->sync_info = 1;
+		sec_dptr += sizeof(struct pdu_adv_sync_info);
 	}
 
 	/* Tx Power flag */
-	if (_hp.tx_pwr) {
-		_pp++;
+	if (pri_hdr_prev.tx_pwr) {
+		pri_dptr_prev++;
 
 		/* C1, Tx Power is optional on the LE 1M PHY, and reserved for
 		 * for future use on the LE Coded PHY.
 		 */
 		if (lll->phy_p != PHY_CODED) {
-			hp->tx_pwr = 1;
-			pp++;
+			pri_hdr->tx_pwr = 1;
+			pri_dptr++;
 		} else {
-			hs->tx_pwr = 1;
+			sec_hdr->tx_pwr = 1;
 		}
 	}
-	if (_hs.tx_pwr) {
-		_ps++;
+	if (sec_hdr_prev.tx_pwr) {
+		sec_dptr_prev++;
 
-		hs->tx_pwr = 1;
+		sec_hdr->tx_pwr = 1;
 	}
-	if (hs->tx_pwr) {
-		ps++;
+	if (sec_hdr->tx_pwr) {
+		sec_dptr++;
 	}
 
 	/* No ACAD in Primary channel PDU */
 	/* TODO: ACAD in Secondary channel PDU */
 
 	/* Calc primary PDU len */
-	_pri_len = _pp - (uint8_t *)_p;
-	pri_len = pp - (uint8_t *)p;
-	p->ext_hdr_len = pri_len - offsetof(struct pdu_adv_com_ext_adv,
+	pri_len_prev = pri_dptr_prev - (uint8_t *)pri_com_hdr_prev;
+	pri_len = pri_dptr - (uint8_t *)pri_com_hdr;
+	pri_com_hdr->ext_hdr_len = pri_len -
+				   offsetof(struct pdu_adv_com_ext_adv,
 					    ext_hdr_adi_adv_data);
 
 	/* set the primary PDU len */
-	pri->len = pri_len;
+	pri_pdu->len = pri_len;
 
 	/* Calc secondary PDU len */
-	_sec_len = _ps - (uint8_t *)_s;
-	sec_len = ps - (uint8_t *)s;
-	s->ext_hdr_len = sec_len - offsetof(struct pdu_adv_com_ext_adv,
+	sec_len_prev = sec_dptr_prev - (uint8_t *)sec_com_hdr_prev;
+	sec_len = sec_dptr - (uint8_t *)sec_com_hdr;
+	sec_com_hdr->ext_hdr_len = sec_len -
+				   offsetof(struct pdu_adv_com_ext_adv,
 					    ext_hdr_adi_adv_data);
 
 	/* TODO: Check AdvData overflow */
 
 	/* Fill AdvData in secondary PDU */
-	memcpy(ps, data, len);
+	memcpy(sec_dptr, data, len);
 
 	/* set the secondary PDU len */
-	sec->len = sec_len + len;
+	sec_pdu->len = sec_len + len;
 
 	/* Start filling primary PDU extended header  based on flags */
 
@@ -309,86 +314,95 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	/* No ACAD in primary channel PDU */
 
 	/* Tx Power */
-	if (hp->tx_pwr) {
-		*--pp = *--_pp;
-	} else if (hs->tx_pwr) {
-		*--ps = *--_ps;
+	if (pri_hdr->tx_pwr) {
+		*--pri_dptr = *--pri_dptr_prev;
+	} else if (sec_hdr->tx_pwr) {
+		*--sec_dptr = *--sec_dptr_prev;
 	}
 
 	/* No SyncInfo in primary channel PDU */
 	/* SyncInfo in secondary channel PDU */
-	if (hs->sync_info) {
-		_ps -= sizeof(struct pdu_adv_sync_info);
-		ps -= sizeof(struct pdu_adv_sync_info);
+	if (sec_hdr->sync_info) {
+		sec_dptr_prev -= sizeof(struct pdu_adv_sync_info);
+		sec_dptr -= sizeof(struct pdu_adv_sync_info);
 
-		memcpy(ps, _ps, sizeof(struct pdu_adv_sync_info));
+		memcpy(sec_dptr, sec_dptr_prev,
+		       sizeof(struct pdu_adv_sync_info));
 	}
 
 	/* AuxPtr */
-	if (_hp.aux_ptr) {
-		_pp -= sizeof(struct pdu_adv_aux_ptr);
+	if (pri_hdr_prev.aux_ptr) {
+		pri_dptr_prev -= sizeof(struct pdu_adv_aux_ptr);
 	}
 	{
-		struct pdu_adv_aux_ptr *aux;
+		struct pdu_adv_aux_ptr *aux_ptr;
 
-		pp -= sizeof(struct pdu_adv_aux_ptr);
+		pri_dptr -= sizeof(struct pdu_adv_aux_ptr);
 
 		/* NOTE: Aux Offset will be set in advertiser LLL event */
-		aux = (void *)pp;
-		aux->chan_idx = 0; /* FIXME: implementation defined */
-		aux->ca = 0; /* FIXME: implementation defined */
-		aux->offs_units = 0; /* FIXME: implementation defined */
-		aux->phy = find_lsb_set(lll->phy_s) - 1;
+		aux_ptr = (void *)pri_dptr;
+
+		/* FIXME: implementation defined */
+		aux_ptr->chan_idx = 0;
+		aux_ptr->ca = 0;
+		aux_ptr->offs_units = 0;
+
+		aux_ptr->phy = find_lsb_set(lll->phy_s) - 1;
 	}
-	if (_hs.aux_ptr) {
-		struct pdu_adv_aux_ptr *aux;
+	if (sec_hdr_prev.aux_ptr) {
+		struct pdu_adv_aux_ptr *aux_ptr;
 
-		_ps -= sizeof(struct pdu_adv_aux_ptr);
-		ps -= sizeof(struct pdu_adv_aux_ptr);
+		sec_dptr_prev -= sizeof(struct pdu_adv_aux_ptr);
+		sec_dptr -= sizeof(struct pdu_adv_aux_ptr);
 
 		/* NOTE: Aux Offset will be set in advertiser LLL event */
-		aux = (void *)ps;
-		aux->chan_idx = 0; /* FIXME: implementation defined */
-		aux->ca = 0; /* FIXME: implementation defined */
-		aux->offs_units = 0; /* FIXME: implementation defined */
-		aux->phy = find_lsb_set(lll->phy_s) - 1;
+		aux_ptr = (void *)sec_dptr;
+
+		/* FIXME: implementation defined */
+		aux_ptr->chan_idx = 0;
+		aux_ptr->ca = 0;
+		aux_ptr->offs_units = 0;
+
+		aux_ptr->phy = find_lsb_set(lll->phy_s) - 1;
 	}
 
 	/* ADI */
 	{
-		struct pdu_adv_adi *ap, *as;
+		struct pdu_adv_adi *pri_adi, *sec_adi;
 		uint16_t did = UINT16_MAX;
 
-		pp -= sizeof(struct pdu_adv_adi);
-		ps -= sizeof(struct pdu_adv_adi);
+		pri_dptr -= sizeof(struct pdu_adv_adi);
+		sec_dptr -= sizeof(struct pdu_adv_adi);
 
-		ap = (void *)pp;
-		as = (void *)ps;
+		pri_adi = (void *)pri_dptr;
+		sec_adi = (void *)sec_dptr;
 
-		if (_hp.adi) {
-			struct pdu_adv_adi *_adi;
+		if (pri_hdr_prev.adi) {
+			struct pdu_adv_adi *pri_adi_prev;
 
-			_pp -= sizeof(struct pdu_adv_adi);
-			_ps -= sizeof(struct pdu_adv_adi);
+			pri_dptr_prev -= sizeof(struct pdu_adv_adi);
+			sec_dptr_prev -= sizeof(struct pdu_adv_adi);
 
 			/* NOTE: memcpy shall handle overlapping buffers */
-			memcpy(pp, _pp, sizeof(struct pdu_adv_adi));
-			memcpy(ps, _ps, sizeof(struct pdu_adv_adi));
+			memcpy(pri_dptr, pri_dptr_prev,
+			       sizeof(struct pdu_adv_adi));
+			memcpy(sec_dptr, sec_dptr_prev,
+			       sizeof(struct pdu_adv_adi));
 
-			_adi = (void *)_pp;
-			did = sys_le16_to_cpu(_adi->did);
+			pri_adi_prev = (void *)pri_dptr_prev;
+			did = sys_le16_to_cpu(pri_adi_prev->did);
 		} else {
-			ap->sid = adv->sid;
-			as->sid = adv->sid;
+			pri_adi->sid = adv->sid;
+			sec_adi->sid = adv->sid;
 		}
 
-		if ((op == 0x04) || len || (_pri_len != pri_len) ||
-		    (_sec->len != sec->len)) {
+		if ((op == 0x04) || len || (pri_len_prev != pri_len) ||
+		    (sec_pdu_prev->len != sec_pdu->len)) {
 			did++;
 		}
 
-		ap->did = sys_cpu_to_le16(did);
-		as->did = sys_cpu_to_le16(did);
+		pri_adi->did = sys_cpu_to_le16(did);
+		sec_adi->did = sys_cpu_to_le16(did);
 	}
 
 	/* No CTEInfo field in primary channel PDU */
@@ -398,24 +412,24 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	/* No AdvA in primary channel due to AuxPtr being added */
 
 	/* NOTE: AdvA in aux channel is also filled at enable and RPA timeout */
-	if (hs->adv_addr) {
+	if (sec_hdr->adv_addr) {
 		void *bdaddr;
 
-		if (_hs.adv_addr) {
-			_ps -= BDADDR_SIZE;
-			bdaddr = _ps;
+		if (sec_hdr_prev.adv_addr) {
+			sec_dptr_prev -= BDADDR_SIZE;
+			bdaddr = sec_dptr_prev;
 		} else {
-			_pp -= BDADDR_SIZE;
-			bdaddr = _pp;
+			pri_dptr_prev -= BDADDR_SIZE;
+			bdaddr = pri_dptr_prev;
 		}
 
-		ps -= BDADDR_SIZE;
+		sec_dptr -= BDADDR_SIZE;
 
-		memcpy(ps, bdaddr, BDADDR_SIZE);
+		memcpy(sec_dptr, bdaddr, BDADDR_SIZE);
 	}
 
-	lll_adv_aux_data_enqueue(lll_aux, is);
-	lll_adv_data_enqueue(lll, ip);
+	lll_adv_aux_data_enqueue(lll_aux, sec_idx);
+	lll_adv_data_enqueue(lll, pri_idx);
 
 	if (adv->is_enabled && !aux->is_started) {
 		volatile uint32_t ret_cb;
@@ -448,7 +462,7 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 			    uint8_t const *const data)
 {
 	struct ll_adv_set *adv;
-	struct pdu_adv *_pri;
+	struct pdu_adv *pri_pdu_prev;
 	struct lll_adv *lll;
 
 	/* op param definitions:
@@ -477,8 +491,8 @@ uint8_t ll_adv_aux_sr_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	/* Do not use Common Extended Advertising Header Format if not extended
 	 * advertising.
 	 */
-	_pri = lll_adv_data_peek(lll);
-	if (_pri->type != PDU_ADV_TYPE_EXT_IND) {
+	pri_pdu_prev = lll_adv_data_peek(lll);
+	if (pri_pdu_prev->type != PDU_ADV_TYPE_EXT_IND) {
 		return ull_scan_rsp_set(adv, len, data);
 	}
 
@@ -644,13 +658,13 @@ struct pdu_adv_aux_ptr *ull_adv_aux_lll_offset_fill(uint32_t ticks_offset,
 						    uint32_t start_us,
 						    struct pdu_adv *pdu)
 {
-	struct pdu_adv_com_ext_adv *p;
+	struct pdu_adv_com_ext_adv *pri_com_hdr;
 	struct pdu_adv_aux_ptr *aux;
 	struct pdu_adv_hdr *h;
 	uint8_t *ptr;
 
-	p = (void *)&pdu->adv_ext_ind;
-	h = (void *)p->ext_hdr_adi_adv_data;
+	pri_com_hdr = (void *)&pdu->adv_ext_ind;
+	h = (void *)pri_com_hdr->ext_hdr_adi_adv_data;
 	ptr = (uint8_t *)h + sizeof(*h);
 
 	if (h->adv_addr) {
