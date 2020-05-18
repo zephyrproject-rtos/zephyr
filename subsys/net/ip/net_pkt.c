@@ -1202,10 +1202,22 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, k_timeout_t timeout)
 		net_pkt_set_ipv6_next_hdr(pkt, 255);
 	}
 
+#if IS_ENABLED(CONFIG_NET_TX_DEFAULT_PRIORITY)
+#define TX_DEFAULT_PRIORITY CONFIG_NET_TX_DEFAULT_PRIORITY
+#else
+#define TX_DEFAULT_PRIORITY 0
+#endif
+
+#if IS_ENABLED(CONFIG_NET_RX_DEFAULT_PRIORITY)
+#define RX_DEFAULT_PRIORITY CONFIG_NET_RX_DEFAULT_PRIORITY
+#else
+#define RX_DEFAULT_PRIORITY 0
+#endif
+
 	if (&tx_pkts == slab) {
-		net_pkt_set_priority(pkt, CONFIG_NET_TX_DEFAULT_PRIORITY);
+		net_pkt_set_priority(pkt, TX_DEFAULT_PRIORITY);
 	} else if (&rx_pkts == slab) {
-		net_pkt_set_priority(pkt, CONFIG_NET_RX_DEFAULT_PRIORITY);
+		net_pkt_set_priority(pkt, RX_DEFAULT_PRIORITY);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_PKT_RXTIME_STATS) ||
