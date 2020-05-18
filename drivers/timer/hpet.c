@@ -39,7 +39,14 @@ static unsigned int last_count;
 static void hpet_isr(void *arg)
 {
 	ARG_UNUSED(arg);
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_start_of_tick_handler(void);
+	read_timer_start_of_tick_handler();
+#endif
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
+
 	u32_t now = MAIN_COUNTER_REG;
 
 	if (IS_ENABLED(CONFIG_SMP) &&
@@ -70,6 +77,11 @@ static void hpet_isr(void *arg)
 
 	k_spin_unlock(&lock, key);
 	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_end_of_tick_handler(void);
+	read_timer_end_of_tick_handler();
+#endif
 }
 
 static void set_timer0_irq(unsigned int irq)
