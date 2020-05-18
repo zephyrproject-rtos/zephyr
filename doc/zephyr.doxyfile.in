@@ -220,8 +220,8 @@ TAB_SIZE               = 8
 # "Side Effects:". You can put \n's in the value part of an alias to insert
 # newlines.
 
-ALIASES                = "rst=\verbatim embed:rst:leading-asterisk" \
-                         "endrst=\endverbatim"
+ALIASES  = "rst=\verbatim embed:rst:leading-asterisk" "endrst=\endverbatim"
+ALIASES += "prop=\note @b Properties: @b"
 
 ALIASES += req{1}="\ref ZEPH_\1 \"ZEPH-\1\" "
 ALIASES += satisfy{1}="\xrefitem satisfy \"Satisfies requirement\" \"Requirement Implementation\" \1"
