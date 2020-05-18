@@ -85,16 +85,14 @@ static struct seg_tx {
 				 ctl:1,
 				 aszmic:1,
 				 friend_cred:1;
-	u8_t                     seg_o:6,       /* Segment being sent. 6 bits to
-						 * prevent overflow in loop.
-						 */
-				 started:1,     /* Start cb called */
-				 sending:1;     /* Sending is in progress */
-	u8_t                     nack_count:5,  /* Number of unacked segs */
-				 blocked:1;     /* Blocked by ongoing tx */
+	u8_t                     seg_o;         /* Segment being sent. */
+	u8_t                     nack_count;    /* Number of unacked segs */
 	u8_t                     ttl;
-	u8_t                     seg_pending:5, /* Number of segments pending */
-				 attempts:3;
+	u8_t                     seg_pending;   /* Number of segments pending */
+	u8_t			 attempts;      /* Transmit attempts */
+	u8_t			 started:1,     /* Start cb called */
+				 sending:1,     /* Sending is in progress */
+				 blocked:1;     /* Blocked by ongoing tx */
 	const struct bt_mesh_send_cb *cb;
 	void                    *cb_data;
 	struct k_delayed_work    retransmit;    /* Retransmit timer */
