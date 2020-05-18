@@ -121,6 +121,16 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 		}
 	}
 
+	if (tls_config->session_cache == ZSOCK_TLS_SESSION_CACHE_ENABLED) {
+		ret = zsock_setsockopt(client->transport.tls.sock, ZSOCK_SOL_TLS,
+				       ZSOCK_TLS_SESSION_CACHE,
+				       &tls_config->session_cache,
+				       sizeof(tls_config->session_cache));
+		if (ret < 0) {
+			goto error;
+		}
+	}
+
 	if (tls_config->cert_nocopy != ZSOCK_TLS_CERT_NOCOPY_NONE) {
 		ret = zsock_setsockopt(client->transport.tls.sock, ZSOCK_SOL_TLS,
 				       ZSOCK_TLS_CERT_NOCOPY, &tls_config->cert_nocopy,
