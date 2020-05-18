@@ -21,6 +21,10 @@ static const struct pin_config pinconf[] = {
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(pwm4), okay) && CONFIG_PWM
 	{STM32_PIN_PD12, STM32F4_PINMUX_FUNC_PD12_PWM4_CH1 },
 #endif
+#ifdef CONFIG_USB_DC_STM32
+	{STM32_PIN_PA11, STM32F4_PINMUX_FUNC_PA11_OTG_FS_DM},
+	{STM32_PIN_PA12, STM32F4_PINMUX_FUNC_PA12_OTG_FS_DP},
+#endif	/* CONFIG_USB_DC_STM32 */
 };
 
 static int pinmux_stm32_init(struct device *port)
