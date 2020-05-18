@@ -516,12 +516,10 @@ breathe_projects = {
 }
 breathe_default_project = "Zephyr"
 
-# Changing breathe configuration to force "c" domain doesn't work
-# see https://github.com/michaeljones/breathe/issues/282
-#breathe_domain_by_extension = {
-#    "h" : "c",
-#    "c" : "c",
-#    }
+breathe_domain_by_extension = {
+    "h": "c",
+    "c": "c",
+}
 
 # Qualifiers to a function are causing Sphihx/Breathe to warn about
 # Error when parsing function declaration and more.  This is a list
