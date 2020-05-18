@@ -354,6 +354,9 @@ struct mqtt_sec_config {
 	 *  May be NULL to skip hostname verification.
 	 */
 	const char *hostname;
+
+	/** Indicates the preference for enabling TLS session caching. */
+	int session_cache;
 };
 
 /** @brief MQTT transport type. */
