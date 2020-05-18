@@ -13,13 +13,52 @@ choice BT_HCI_BUS_TYPE
 
 config BT_H4
 	bool "H:4 UART"
-	select UART_INTERRUPT_DRIVEN
 	select BT_UART
 	select BT_RECV_IS_RX_THREAD
 	depends on SERIAL
 	help
 	  Bluetooth H:4 UART driver. Requires hardware flow control
 	  lines to be available.
+
+if BT_H4
+
+choice
+	prompt "UART API"
+	default BT_H4_UART_INTERRUPT_DRIVEN
+
+config BT_H4_UART_INTERRUPT_DRIVEN
+	bool "Interrupt (UART_INTERRUPT_DRIVEN)"
+	select UART_INTERRUPT_DRIVEN
+
+config BT_H4_UART_ASYNC
+	bool "Interrupt (UART_ASYNC_API)"
+	depends on SERIAL_SUPPORT_ASYNC
+	select UART_ASYNC_API
+
+endchoice
+
+if BT_H4_UART_ASYNC
+
+config BT_H4_UART_ASYNC_RX_POOL_BUF_SIZE
+	int "Single buffer size in the RX pool"
+	default 64
+	help
+	  If UART is using DMA with double buffering it may be even possible to not
+	  use HW flow control by increasing buffer size.
+
+config BT_H4_UART_ASYNC_RX_POOL_BUF_COUNT
+	int "Number of buffers in the RX pool"
+	default 3
+
+config BT_H4_UART_ASYNC_TX_TIMEOUT
+	int "TX timeout in milliseconds"
+	default 1000
+	help
+	  Valid when flow control is used.
+
+endif # BT_H4_UART_ASYNC
+
+endif # BT_H4
 
 config BT_H5
 	bool "H:5 UART [EXPERIMENTAL]"
