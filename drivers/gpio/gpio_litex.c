@@ -83,7 +83,7 @@ static int gpio_litex_init(const struct device *dev)
 	const struct gpio_litex_cfg *gpio_config = DEV_GPIO_CFG(dev);
 
 	/* each 4-byte register is able to handle 8 GPIO pins */
-	if (gpio_config->nr_gpios > (gpio_config->reg_size / 4) * 8) {
+	if (gpio_config->nr_gpios > (gpio_config->reg_size * 8)) {
 		LOG_ERR("%s", LITEX_LOG_REG_SIZE_NGPIOS_MISMATCH);
 		return -EINVAL;
 	}
@@ -224,7 +224,7 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 	static const struct gpio_litex_cfg gpio_litex_cfg_##n = { \
 		.reg_addr = \
 		(volatile uint32_t *) DT_INST_REG_ADDR(n), \
-		.reg_size = DT_INST_REG_SIZE(n), \
+		.reg_size = DT_INST_REG_SIZE(n) / 4, \
 		.nr_gpios = DT_INST_PROP(n, ngpios), \
 		.port_is_output = DT_INST_PROP(n, port_is_output), \
 	}; \
