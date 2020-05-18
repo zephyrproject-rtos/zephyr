@@ -40,8 +40,11 @@ struct proc_ctx {
 	/* Procedure pause */
 	int pause;
 
-	/* TX node awaiting ack */
-	struct node_tx * tx_ack;
+	/*
+	 * This flag is set to 1 when we are finished with the control
+	 * procedure and it is safe to release the context ctx
+	 */
+	int release_ctx;
 
 	/* Procedure data */
 	union {
@@ -678,6 +681,15 @@ static inline void pdu_decode_phy_update_ind(struct proc_ctx *ctx, struct pdu_da
 {
 	return ull_cp_priv_pdu_decode_phy_update_ind(ctx, pdu);
 }
+
+
+void ull_cp_priv_proc_ctx_release(struct proc_ctx *ctx);
+
+static inline void proc_ctx_release(struct proc_ctx *ctx)
+{
+	ull_cp_priv_proc_ctx_release(ctx);
+}
+
 
 #ifdef ZTEST_UNITTEST
 bool lr_is_disconnected(struct ull_cp_conn *conn);

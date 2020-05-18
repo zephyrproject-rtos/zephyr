@@ -130,36 +130,56 @@ static void lr_act_run(struct ull_cp_conn *conn)
 	struct proc_ctx *ctx;
 
 	ctx = lr_peek(conn);
+	LL_ASSERT(ctx != NULL);
+	/*
+	 * normally release_ctx equals 0, but it can
+	 * be non-zero when we received a REJECT_IND
+	 */
+	if (ctx->release_ctx == 0) {
+		switch (ctx->proc) {
+		case PROC_LE_PING:
+			lp_comm_run(conn, ctx, NULL);
+			break;
+		case PROC_FEATURE_EXCHANGE:
+			lp_comm_run(conn, ctx, NULL);
+			break;
+		case PROC_VERSION_EXCHANGE:
+			lp_comm_run(conn, ctx, NULL);
+			break;
+		case PROC_ENCRYPTION_START:
+			lp_enc_run(conn, ctx, NULL);
+			break;
+		case PROC_PHY_UPDATE:
+			lp_pu_run(conn, ctx, NULL);
+			break;
+		default:
+			/* Unknown procedure */
+			LL_ASSERT(0);
+		}
+	}
 
-	switch (ctx->proc) {
-	case PROC_LE_PING:
-		lp_comm_run(conn, ctx, NULL);
-		break;
-	case PROC_FEATURE_EXCHANGE:
-		lp_comm_run(conn, ctx, NULL);
-		break;
-	case PROC_MIN_USED_CHANS:
-		lp_comm_run(conn, ctx, NULL);
-		break;
-	case PROC_VERSION_EXCHANGE:
-		lp_comm_run(conn, ctx, NULL);
-		break;
-	case PROC_ENCRYPTION_START:
-		lp_enc_run(conn, ctx, NULL);
-		break;
-	case PROC_PHY_UPDATE:
-		lp_pu_run(conn, ctx, NULL);
-		break;
-	default:
-		/* Unknown procedure */
-		LL_ASSERT(0);
+	if ((ctx != NULL) && ctx->release_ctx) {
+		ctx = lr_dequeue(conn);
+		LL_ASSERT(ctx != NULL);
+		proc_ctx_release(ctx);
 	}
 }
 
 static void lr_act_complete(struct ull_cp_conn *conn)
 {
-	/* Dequeue pending request that just completed */
-	(void) lr_dequeue(conn);
+	struct proc_ctx *ctx;
+
+	ctx = lr_peek(conn);
+	LL_ASSERT(ctx != NULL);
+
+	/*
+	 * TODO: EGON: memset should be guarded by conditional compile
+	 * but we haven't got a good KConfig yet for this
+	 * Note: we can not overwrite the sys_snode_t member because
+	 * then we lose the list-information
+	 */
+	memset(&(ctx->proc), 0xFF, sizeof(struct proc_ctx)-sizeof(sys_snode_t));
+	ctx->release_ctx = 1;
 }
 
 static void lr_act_connect(struct ull_cp_conn *conn)
@@ -169,7 +189,19 @@ static void lr_act_connect(struct ull_cp_conn *conn)
 
 static void lr_act_disconnect(struct ull_cp_conn *conn)
 {
-	lr_dequeue(conn);
+	struct proc_ctx *ctx;
+
+	ctx = lr_dequeue(conn);
+
+	/*
+	 * we may have been disconnected in the
+	 * middle of a control procedure, in
+	 * which case we need to release context
+	 */
+	while (ctx != NULL) {
+		proc_ctx_release(ctx);
+		ctx = lr_dequeue(conn);
+	}
 }
 
 static void lr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
@@ -187,6 +219,14 @@ static void lr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
 
 static void lr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 {
+	struct proc_ctx *ctx;
+
+	ctx = lr_peek(conn);
+	if ((ctx != NULL) && (ctx->release_ctx)) {
+		ctx = lr_dequeue(conn);
+		proc_ctx_release(ctx);
+	}
+
 	switch (evt) {
 	case LR_EVT_RUN:
 		if (lr_peek(conn)) {

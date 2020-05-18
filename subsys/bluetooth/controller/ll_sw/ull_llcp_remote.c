@@ -180,29 +180,38 @@ static void rr_act_run(struct ull_cp_conn *conn)
 	struct proc_ctx *ctx;
 
 	ctx = rr_peek(conn);
+	LL_ASSERT(ctx != NULL);
+	/*
+	 * normally release_ctx equals 0, but it can
+	 * be non-zero when we received a REJECT_IND
+	 */
+	if (ctx->release_ctx == 0) {
+		switch (ctx->proc) {
+		case PROC_LE_PING:
+			rp_comm_run(conn, ctx, NULL);
+			break;
+		case PROC_FEATURE_EXCHANGE:
+			rp_comm_run(conn, ctx, NULL);
+			break;
+		case PROC_VERSION_EXCHANGE:
+			rp_comm_run(conn, ctx, NULL);
+			break;
+		case PROC_ENCRYPTION_START:
+			rp_enc_run(conn, ctx, NULL);
+			break;
+		case PROC_PHY_UPDATE:
+			rp_pu_run(conn, ctx, NULL);
+			break;
+		default:
+			/* Unknown procedure */
+			LL_ASSERT(0);
+		}
+	}
 
-	switch (ctx->proc) {
-	case PROC_LE_PING:
-		rp_comm_run(conn, ctx, NULL);
-		break;
-	case PROC_FEATURE_EXCHANGE:
-		rp_comm_run(conn, ctx, NULL);
-		break;
-	case PROC_MIN_USED_CHANS:
-		rp_comm_run(conn, ctx, NULL);
-		break;
-	case PROC_VERSION_EXCHANGE:
-		rp_comm_run(conn, ctx, NULL);
-		break;
-	case PROC_ENCRYPTION_START:
-		rp_enc_run(conn, ctx, NULL);
-		break;
-	case PROC_PHY_UPDATE:
-		rp_pu_run(conn, ctx, NULL);
-		break;
-	default:
-		/* Unknown procedure */
-		LL_ASSERT(0);
+	if (ctx->release_ctx) {
+		ctx = rr_dequeue(conn);
+		LL_ASSERT(ctx != NULL);
+		proc_ctx_release(ctx);
 	}
 }
 
@@ -240,21 +249,26 @@ static void rr_act_reject(struct ull_cp_conn *conn)
 	} else {
 		struct proc_ctx *ctx = rr_peek(conn);
 
+		LL_ASSERT(ctx != NULL);
 		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
 
-		/* Dequeue pending request that just completed */
-		(void) rr_dequeue(conn);
-
+		/* The pending request is dequeued later */
 		rr_set_state(conn, RR_STATE_IDLE);
 	}
 }
 
 static void rr_act_complete(struct ull_cp_conn *conn)
 {
+	struct proc_ctx *ctx;
+
 	rr_set_collision(conn, 0U);
 
 	/* Dequeue pending request that just completed */
-	(void) rr_dequeue(conn);
+	ctx = rr_peek(conn);
+	LL_ASSERT(ctx != NULL);
+
+	memset(&(ctx->proc), 0xFF, sizeof(struct proc_ctx)-sizeof(sys_snode_t));
+	ctx->release_ctx = 1;
 }
 
 static void rr_act_connect(struct ull_cp_conn *conn)
@@ -264,7 +278,20 @@ static void rr_act_connect(struct ull_cp_conn *conn)
 
 static void rr_act_disconnect(struct ull_cp_conn *conn)
 {
-	rr_dequeue(conn);
+	struct proc_ctx *ctx;
+
+	/*
+	 * we disconnected; if this happened in the middle of
+	 * a control procedure we need to release the context
+	 *
+	 * TODO: verify that it is sufficient to set state to RR_STATE_IDLE
+	 */
+	ctx = rr_dequeue(conn);
+
+	while (ctx != NULL) {
+		proc_ctx_release(ctx);
+		ctx = rr_dequeue(conn);
+	}
 }
 
 static void rr_st_disconnect(struct ull_cp_conn *conn, u8_t evt, void *param)
@@ -284,6 +311,14 @@ static void rr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 {
 	struct proc_ctx *ctx;
 
+	/*
+	 * check if we need to release the context
+	 */
+	ctx = rr_peek(conn);
+	if (ctx != NULL && ctx->release_ctx) {
+		ctx = rr_dequeue(conn);
+		proc_ctx_release(ctx);
+	}
 	switch (evt) {
 	case RR_EVT_PREPARE:
 		if ((ctx = rr_peek(conn))){
@@ -304,7 +339,7 @@ static void rr_st_idle(struct ull_cp_conn *conn, u8_t evt, void *param)
 
 				/* Run remote procedure */
 				rr_act_run(conn);
-				conn->llcp.remote.state = RR_STATE_ACTIVE;
+				rr_set_state(conn, RR_STATE_ACTIVE);
 			} else if (slave && incompat == INCOMPAT_RESOLVABLE) {
 				/* Slave collision
 				 * => Run procedure

@@ -88,8 +88,9 @@ static struct proc_ctx *proc_ctx_acquire(void)
 	return ctx;
 }
 
-static void proc_ctx_release(struct proc_ctx *ctx)
+void ull_cp_priv_proc_ctx_release(struct proc_ctx *ctx)
 {
+	memset(ctx, 0xFF, sizeof(struct proc_ctx));
 	mem_release(ctx, &mem_ctx.free);
 }
 
@@ -108,6 +109,7 @@ struct node_tx *ull_cp_priv_tx_alloc(void)
 
 static void tx_release(struct node_tx *tx)
 {
+	memset(tx, 0xFF, sizeof(struct node_tx));
 	mem_release(tx, &mem_tx.free);
 }
 
@@ -126,6 +128,7 @@ struct node_rx_pdu *ull_cp_priv_ntf_alloc(void)
 
 static void ntf_release(struct node_rx_pdu *ntf)
 {
+	memset(ntf, 0xFF, sizeof(struct node_rx_pdu));
 	mem_release(ntf, &mem_ntf.free);
 }
 
@@ -164,7 +167,7 @@ static struct proc_ctx *create_procedure(enum llcp_proc proc)
 	ctx->proc = proc;
 	ctx->collision = 0U;
 	ctx->pause = 0U;
-
+	ctx->release_ctx = 0U;
 	return ctx;
 }
 
@@ -488,12 +491,26 @@ void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 }
 
 #ifdef ZTEST_UNITTEST
+
+int ctx_buffers_free(void)
+{
+	int nr_of_free_ctx;
+
+	nr_of_free_ctx = mem_free_count_get(mem_ctx.free);
+
+	return nr_of_free_ctx;
+}
+
 void test_int_mem_proc_ctx(void)
 {
 	struct proc_ctx *ctx1;
 	struct proc_ctx *ctx2;
+	int nr_of_free_ctx;
 
 	ull_cp_init();
+
+	nr_of_free_ctx = ctx_buffers_free();
+	zassert_equal(nr_of_free_ctx, PROC_CTX_BUF_NUM, NULL);
 
 	for (int i = 0U; i < PROC_CTX_BUF_NUM; i++) {
 		ctx1 = proc_ctx_acquire();
@@ -502,12 +519,18 @@ void test_int_mem_proc_ctx(void)
 		zassert_not_null(ctx1, NULL);
 	}
 
+	nr_of_free_ctx = ctx_buffers_free();
+	zassert_equal(nr_of_free_ctx, 0, NULL);
+
 	ctx2 = proc_ctx_acquire();
 
 	/* The last acquire should fail */
 	zassert_is_null(ctx2, NULL);
 
 	proc_ctx_release(ctx1);
+	nr_of_free_ctx = ctx_buffers_free();
+	zassert_equal(nr_of_free_ctx, 1, NULL);
+
 	ctx1 = proc_ctx_acquire();
 
 	/* Releasing returns the context to the avilable pool */
