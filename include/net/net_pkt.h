@@ -203,12 +203,10 @@ struct net_pkt {
 #endif
 	};
 
-#if NET_TC_COUNT > 1
 	/** Network packet priority, can be left out in which case packet
 	 * is not prioritised.
 	 */
 	uint8_t priority;
-#endif
 
 #if defined(CONFIG_NET_VLAN)
 	/* VLAN TCI (Tag Control Information). This contains the Priority
@@ -673,7 +671,6 @@ static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
-#if NET_TC_COUNT > 1
 static inline uint8_t net_pkt_priority(struct net_pkt *pkt)
 {
 	return pkt->priority;
@@ -684,15 +681,6 @@ static inline void net_pkt_set_priority(struct net_pkt *pkt,
 {
 	pkt->priority = priority;
 }
-#else /* NET_TC_COUNT == 1 */
-static inline uint8_t net_pkt_priority(struct net_pkt *pkt)
-{
-	return 0;
-}
-
-#define net_pkt_set_priority(...)
-
-#endif /* NET_TC_COUNT > 1 */
 
 #if defined(CONFIG_NET_VLAN)
 static inline uint16_t net_pkt_vlan_tag(struct net_pkt *pkt)
