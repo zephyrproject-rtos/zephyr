@@ -93,6 +93,17 @@ static void tstack_thread_isr(struct k_stack *pstack)
 
 /**
  * @brief Test to verify data passing between threads via stack
+ *
+ * @details Static define and Dynamic define stacks,
+ * Then initialize them.
+ * Current thread push or pop data item into the stack.
+ * Create a new thread pop or push data item into the stack.
+ * Controlled by semaphore.
+ * Verify data passing between threads via stack
+ * And verify stack can be define at compile time.
+ *
+ * @ingroup kernel_stack_tests
+ *
  * @see k_stack_init(), k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
  */
 void test_stack_thread2thread(void)

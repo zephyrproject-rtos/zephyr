@@ -76,6 +76,7 @@ extern void test_stack_thread2thread(void);
 extern void test_stack_thread2isr(void);
 extern void test_stack_pop_fail(void);
 extern void test_stack_alloc_thread2thread(void);
+extern void test_stack_pop_can_wait(void);
 #ifdef CONFIG_USERSPACE
 extern void test_stack_user_thread2thread(void);
 extern void test_stack_user_pop_fail(void);
@@ -269,6 +270,56 @@ static void test_isr_stack_play(void)
 	k_thread_abort(tid);
 }
 
+/* the thread entry */
+void thread_entry_wait(void *p1, void *p2, void *p3)
+{
+	stack_data_t *txdata = p3;
+
+	k_stack_push(p1, *(txdata + 2));
+	k_stack_push(p1, *(txdata + 3));
+}
+
+/**
+ * @brief Test that the stack pop can be waited
+ * if no item availablle
+ *
+ * @details Create and initialize a new stack
+ * Set two timeout parameters to indicate
+ * the maximum amount of time the thread will wait.
+ *
+ * @ingroup kernel_stack_tests
+ *
+ * @see k_stack_push(), #K_STACK_DEFINE(x), k_stack_pop()
+ */
+void test_stack_pop_can_wait(void)
+{
+	struct k_stack stack3;
+	stack_data_t tx_data[STACK_LEN] = { 0xaa, 0xbb, 0xcc, 0xdd };
+	stack_data_t rx_data[STACK_LEN] = { 0 };
+
+	k_stack_alloc_init(&stack3, 2);
+	k_tid_t tid = k_thread_create(&thread_data, threadstack,
+			TSTACK_SIZE, thread_entry_wait, &stack3,
+			NULL, tx_data, K_PRIO_PREEMPT(0), 0,
+			K_NO_WAIT);
+
+	for (int i = 0; i < 2; i++) {
+		k_stack_push(&stack3, tx_data[i]);
+	}
+
+	for (int i = 0; i < 3; i++) {
+		k_stack_pop(&stack3, &rx_data[i], K_FOREVER);
+	}
+
+	zassert_true(rx_data[2] == tx_data[2], "wait foreve and pop failed\n");
+	k_stack_pop(&stack3, &rx_data[3], K_MSEC(50));
+	zassert_true(rx_data[3] == tx_data[3], "Wait maxmum time pop failed\n");
+	/* Clear the spawn thread to avoid side effect */
+	k_thread_abort(tid);
+	/*free the buffer allocated*/
+	k_stack_cleanup(&stack3);
+}
+
 /**
  * @}
  */
@@ -295,6 +346,7 @@ void test_main(void)
 			 ztest_unit_test(test_stack_alloc_thread2thread),
 			 ztest_user_unit_test(test_single_stack_play),
 			 ztest_1cpu_user_unit_test(test_dual_stack_play),
-			 ztest_1cpu_unit_test(test_isr_stack_play));
+			 ztest_1cpu_unit_test(test_isr_stack_play),
+			 ztest_unit_test(test_stack_pop_can_wait));
 	ztest_run_test_suite(test_stack_usage);
 }
