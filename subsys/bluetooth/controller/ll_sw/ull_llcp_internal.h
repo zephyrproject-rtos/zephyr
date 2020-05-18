@@ -45,7 +45,13 @@ struct proc_ctx {
 	int pause;
 
 	/* TX node awaiting ack */
-	struct node_tx * tx_ack;
+	struct node_tx *tx_ack;
+
+	/*
+	 * This flag is set to 1 when we are finished with the control
+	 * procedure and it is safe to release the context ctx
+	 */
+	int done;
 
 	/* Procedure data */
 	union {
@@ -896,6 +902,13 @@ static inline void pdu_decode_conn_update_ind(struct proc_ctx *ctx, struct pdu_d
 	return ull_cp_priv_pdu_decode_conn_update_ind(ctx, pdu);
 }
 
+void ull_cp_priv_proc_ctx_release(struct proc_ctx *ctx);
+
+static inline void proc_ctx_release(struct proc_ctx *ctx)
+{
+	ull_cp_priv_proc_ctx_release(ctx);
+}
+
 /*
  * Remote Channel Map Update Procedure Helper
  */
@@ -938,4 +951,5 @@ bool lr_is_disconnected(struct ll_conn *conn);
 bool lr_is_idle(struct ll_conn *conn);
 bool rr_is_disconnected(struct ll_conn *conn);
 bool rr_is_idle(struct ll_conn *conn);
+int ctx_buffers_free(void);
 #endif
