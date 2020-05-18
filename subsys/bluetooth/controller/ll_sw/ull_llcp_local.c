@@ -35,6 +35,9 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
+static struct proc_ctx *lr_dequeue(struct ll_conn *conn);
+
 /* LLCP Local Request FSM State */
 enum lr_state {
 	LR_STATE_IDLE,
@@ -57,6 +60,19 @@ enum {
 	LR_EVT_DISCONNECT,
 };
 
+
+static void lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	if (ctx->done) {
+		struct proc_ctx *ctx_header;
+
+		ctx_header = lr_peek(conn);
+		LL_ASSERT(ctx_header == ctx);
+
+		lr_dequeue(conn);
+		ull_cp_priv_proc_ctx_release(ctx);
+	}
+}
 /*
  * LLCP Local Request FSM
  */
@@ -118,6 +134,8 @@ void ull_cp_priv_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 		/* Unknown procedure */
 		LL_ASSERT(0);
 	}
+
+	lr_check_done(conn, ctx);
 }
 
 void ull_cp_priv_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
@@ -133,6 +151,7 @@ void ull_cp_priv_lr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct no
 		break;
 		/* Ignore tx_ack */
 	}
+	lr_check_done(conn, ctx);
 }
 
 static void lr_act_run(struct ll_conn *conn)
@@ -173,12 +192,17 @@ static void lr_act_run(struct ll_conn *conn)
 		/* Unknown procedure */
 		LL_ASSERT(0);
 	}
+
+	lr_check_done(conn, ctx);
 }
 
 static void lr_act_complete(struct ll_conn *conn)
 {
-	/* Dequeue pending request that just completed */
-	(void) lr_dequeue(conn);
+	struct proc_ctx *ctx;
+
+	ctx = lr_peek(conn);
+
+	ctx->done = 1U;
 }
 
 static void lr_act_connect(struct ll_conn *conn)
@@ -188,7 +212,19 @@ static void lr_act_connect(struct ll_conn *conn)
 
 static void lr_act_disconnect(struct ll_conn *conn)
 {
-	lr_dequeue(conn);
+	struct proc_ctx *ctx;
+
+	ctx = lr_dequeue(conn);
+
+	/*
+	 * we may have been disconnected in the
+	 * middle of a control procedure, in
+	 * which case we need to release context
+	 */
+	while (ctx != NULL) {
+		proc_ctx_release(ctx);
+		ctx = lr_dequeue(conn);
+	}
 }
 
 static void lr_st_disconnect(struct ll_conn *conn, uint8_t evt, void *param)
