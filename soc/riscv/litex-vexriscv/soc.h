@@ -36,6 +36,18 @@ static inline unsigned int litex_read32(unsigned long addr)
 		| sys_read8(addr + 0xc);
 }
 
+static inline u64_t litex_read64(unsigned long addr)
+{
+	return (((u64_t)sys_read8(addr)) << 56)
+		| ((u64_t)sys_read8(addr + 0x4) << 48)
+		| ((u64_t)sys_read8(addr + 0x8) << 40)
+		| ((u64_t)sys_read8(addr + 0xc) << 32)
+		| ((u64_t)sys_read8(addr + 0x10) << 24)
+		| ((u64_t)sys_read8(addr + 0x14) << 16)
+		| ((u64_t)sys_read8(addr + 0x18) << 8)
+		| (u64_t)sys_read8(addr + 0x1c);
+}
+
 static inline void litex_write8(unsigned char value, unsigned long addr)
 {
 	sys_write8(value, addr);
