@@ -478,7 +478,7 @@ static void eth_iface_init(struct net_if *iface)
 		dev_data->iface = iface;
 
 		/* Now that the iface is setup, we are safe to enable IRQs. */
-		__ASSERT_NO_MSG(DEV_CFG(dev)->config_func() != NULL);
+		__ASSERT_NO_MSG(DEV_CFG(dev)->config_func != NULL);
 		DEV_CFG(dev)->config_func();
 	}
 
