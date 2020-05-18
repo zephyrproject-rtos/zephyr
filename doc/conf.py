@@ -565,8 +565,8 @@ linkcheck_workers = 10
 linkcheck_anchors = False
 
 def setup(app):
-    app.add_stylesheet("zephyr-custom.css")
+    app.add_css_file("zephyr-custom.css")
 
-    app.add_javascript("https://www.googletagmanager.com/gtag/js?id=UA-831873-47")
-    app.add_javascript("ga-tracker.js")
-    app.add_javascript("zephyr-custom.js")
+    app.add_js_file("https://www.googletagmanager.com/gtag/js?id=UA-831873-47")
+    app.add_js_file("ga-tracker.js")
+    app.add_js_file("zephyr-custom.js")
