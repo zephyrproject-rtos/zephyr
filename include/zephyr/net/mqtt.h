@@ -350,6 +350,9 @@ struct mqtt_sec_config {
 	/** Indicates the list of security tags to be used for the session. */
 	sec_tag_t *sec_tag_list;
 
+	/** Indicates the preference for enabling TLS session caching. */
+	int session_cache;
+
 	/** Peer hostname for ceritificate verification.
 	 *  May be NULL to skip hostname verification.
 	 */
