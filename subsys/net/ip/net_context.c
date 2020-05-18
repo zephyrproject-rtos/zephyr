@@ -1428,6 +1428,21 @@ static int context_sendto(struct net_context *context,
 		struct sockaddr_ll *ll_addr = (struct sockaddr_ll *)dst_addr;
 		struct net_if *iface;
 
+		if (msghdr) {
+			ll_addr = msghdr->msg_name;
+			addrlen = msghdr->msg_namelen;
+
+			if (!ll_addr) {
+				ll_addr = (struct sockaddr_ll *)
+							(&context->remote);
+				addrlen = sizeof(struct sockaddr_ll);
+			}
+
+			/* For sendmsg(), the dst_addr is NULL so set it here.
+			 */
+			dst_addr = (const struct sockaddr *)ll_addr;
+		}
+
 		if (addrlen < sizeof(struct sockaddr_ll)) {
 			return -EINVAL;
 		}
