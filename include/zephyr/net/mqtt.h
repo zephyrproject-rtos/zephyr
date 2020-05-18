@@ -372,6 +372,9 @@ struct mqtt_sec_config {
 	uint32_t alpn_protocol_name_count;
 #endif
 
+	/** Indicates the preference for enabling TLS session caching. */
+	int session_cache;
+
 	/** Peer hostname for ceritificate verification.
 	 *  May be NULL to skip hostname verification.
 	 */
