@@ -8,7 +8,7 @@
 #include <cmsis_os2.h>
 
 #define ONESHOT_TIME_TICKS      100
-#define PERIOD_TICKS            50
+#define PERIOD_TICKS            MAX(50, k_ms_to_ticks_ceil32(5))
 #define NUM_PERIODS             5
 
 u32_t num_oneshots_executed;
