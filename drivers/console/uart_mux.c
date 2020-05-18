@@ -704,6 +704,14 @@ struct device *uart_mux_alloc(void)
 	return NULL;
 }
 
+#ifdef CONFIG_USERSPACE
+static inline struct device *z_vrfy_uart_mux_find(int dlci_address)
+{
+	return z_impl_uart_mux_find(dlci_address);
+}
+#include <syscalls/uart_mux_find_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 struct device *z_impl_uart_mux_find(int dlci_address)
 {
 	sys_snode_t *sn, *sns;
