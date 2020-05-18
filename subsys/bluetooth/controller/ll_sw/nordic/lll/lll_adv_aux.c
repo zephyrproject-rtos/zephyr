@@ -88,48 +88,48 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 {
 	struct lll_adv_aux *lll = prepare_param->param;
 	uint32_t aa = sys_cpu_to_le32(PDU_AC_ACCESS_ADDR);
+	struct pdu_adv_com_ext_adv *pri_com_hdr;
 	uint32_t ticks_at_event, ticks_at_start;
-	struct pdu_adv_com_ext_adv *p;
-	struct pdu_adv_aux_ptr *aux;
-	struct pdu_adv *pri, *sec;
+	struct pdu_adv *pri_pdu, *sec_pdu;
+	struct pdu_adv_aux_ptr *aux_ptr;
+	struct pdu_adv_hdr *pri_hdr;
 	struct lll_adv *lll_adv;
-	struct pdu_adv_hdr *h;
 	struct evt_hdr *evt;
 	uint32_t remainder;
 	uint32_t start_us;
+	uint8_t *pri_dptr;
 	uint8_t phy_s;
-	uint8_t *ptr;
 	uint8_t upd;
 
 	DEBUG_RADIO_START_A(1);
 
 	/* FIXME: get latest only when primary PDU without Aux PDUs */
-	sec = lll_adv_aux_data_latest_get(lll, &upd);
+	sec_pdu = lll_adv_aux_data_latest_get(lll, &upd);
 
 	/* Get reference to primary PDU */
 	lll_adv = lll->adv;
-	pri = lll_adv_data_curr_get(lll_adv);
-	LL_ASSERT(pri->type == PDU_ADV_TYPE_EXT_IND);
+	pri_pdu = lll_adv_data_curr_get(lll_adv);
+	LL_ASSERT(pri_pdu->type == PDU_ADV_TYPE_EXT_IND);
 
 	/* Get reference to extended header */
-	p = (void *)&pri->adv_ext_ind;
-	h = (void *)p->ext_hdr_adi_adv_data;
-	ptr = (uint8_t *)h + sizeof(*h);
+	pri_com_hdr = (void *)&pri_pdu->adv_ext_ind;
+	pri_hdr = (void *)pri_com_hdr->ext_hdr_adi_adv_data;
+	pri_dptr = (uint8_t *)pri_hdr + sizeof(*pri_hdr);
 
 	/* traverse through adv_addr, if present */
-	if (h->adv_addr) {
-		ptr += BDADDR_SIZE;
+	if (pri_hdr->adv_addr) {
+		pri_dptr += BDADDR_SIZE;
 	}
 
 	/* traverse through adi, if present */
-	if (h->adi) {
-		ptr += sizeof(struct pdu_adv_adi);
+	if (pri_hdr->adi) {
+		pri_dptr += sizeof(struct pdu_adv_adi);
 	}
 
-	aux = (void *)ptr;
+	aux_ptr = (void *)pri_dptr;
 
 	/* Abort if no aux_ptr filled */
-	if (!h->aux_ptr || !aux->offs) {
+	if (!pri_hdr->aux_ptr || !aux_ptr->offs) {
 		radio_isr_set(lll_isr_abort, lll);
 		radio_disable();
 	}
@@ -159,10 +159,10 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 #endif  /* !BT_CTLR_ADV_EXT_PBACK */
 
 	/* Use channel idx in aux_ptr */
-	lll_chan_set(aux->chan_idx);
+	lll_chan_set(aux_ptr->chan_idx);
 
 	/* Set the Radio Tx Packet */
-	radio_pkt_tx_set(sec);
+	radio_pkt_tx_set(sec_pdu);
 
 	/* TODO: Based on adv_mode switch to Rx, if needed */
 	radio_isr_set(lll_isr_done, lll);
