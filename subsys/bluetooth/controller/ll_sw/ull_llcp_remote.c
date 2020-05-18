@@ -35,6 +35,10 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+
+static void rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
+static struct proc_ctx *rr_dequeue(struct ll_conn *conn);
+
 /* LLCP Remote Request FSM State */
 enum rr_state {
 	RR_STATE_IDLE,
@@ -97,6 +101,18 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 	return 0U;
 }
 
+static void rr_check_done(struct ll_conn *conn, struct proc_ctx *ctx)
+{
+	if (ctx->done) {
+		struct proc_ctx *ctx_header;
+
+		ctx_header = rr_peek(conn);
+		LL_ASSERT(ctx_header == ctx);
+
+		rr_dequeue(conn);
+		ull_cp_priv_proc_ctx_release(ctx);
+	}
+}
 /*
  * LLCP Remote Request FSM
  */
@@ -181,6 +197,7 @@ void ull_cp_priv_rr_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_r
 		/* Unknown procedure */
 		LL_ASSERT(0);
 	}
+	rr_check_done(conn, ctx);
 }
 
 void ull_cp_priv_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
@@ -190,6 +207,8 @@ void ull_cp_priv_rr_tx_ack(struct ll_conn *conn, struct proc_ctx *ctx, struct no
 		/* Ignore tx_ack */
 		break;
 	}
+
+	rr_check_done(conn, ctx);
 }
 
 static void rr_act_run(struct ll_conn *conn)
@@ -230,6 +249,8 @@ static void rr_act_run(struct ll_conn *conn)
 		/* Unknown procedure */
 		LL_ASSERT(0);
 	}
+
+	rr_check_done(conn, ctx);
 }
 
 static void rr_tx(struct ll_conn *conn, struct proc_ctx *ctx, uint8_t opcode)
@@ -266,21 +287,25 @@ static void rr_act_reject(struct ll_conn *conn)
 	} else {
 		struct proc_ctx *ctx = rr_peek(conn);
 
+		LL_ASSERT(ctx != NULL);
 		rr_tx(conn, ctx, PDU_DATA_LLCTRL_TYPE_REJECT_IND);
 
-		/* Dequeue pending request that just completed */
-		(void) rr_dequeue(conn);
-
+		ctx->done = 1U;
 		rr_set_state(conn, RR_STATE_IDLE);
 	}
 }
 
 static void rr_act_complete(struct ll_conn *conn)
 {
+	struct proc_ctx *ctx;
+
 	rr_set_collision(conn, 0U);
 
 	/* Dequeue pending request that just completed */
-	(void) rr_dequeue(conn);
+	ctx = rr_peek(conn);
+	LL_ASSERT(ctx != NULL);
+
+	ctx->done = 1U;
 }
 
 static void rr_act_connect(struct ll_conn *conn)
@@ -290,7 +315,19 @@ static void rr_act_connect(struct ll_conn *conn)
 
 static void rr_act_disconnect(struct ll_conn *conn)
 {
-	rr_dequeue(conn);
+	struct proc_ctx *ctx;
+
+	ctx = rr_dequeue(conn);
+
+	/*
+	 * we may have been disconnected in the
+	 * middle of a control procedure, in  which
+	 * case we need to release all contexts
+	 */
+	while (ctx != NULL) {
+		proc_ctx_release(ctx);
+		ctx = rr_dequeue(conn);
+	}
 }
 
 static void rr_st_disconnect(struct ll_conn *conn, uint8_t evt, void *param)
@@ -330,7 +367,7 @@ static void rr_st_idle(struct ll_conn *conn, uint8_t evt, void *param)
 
 				/* Run remote procedure */
 				rr_act_run(conn);
-				conn->llcp.remote.state = RR_STATE_ACTIVE;
+				rr_set_state(conn, RR_STATE_ACTIVE);
 			} else if (slave && incompat == INCOMPAT_RESOLVABLE) {
 				/* Slave collision
 				 * => Run procedure
