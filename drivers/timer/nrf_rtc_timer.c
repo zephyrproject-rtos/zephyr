@@ -177,7 +177,7 @@ void rtc1_nrf_isr(void *arg)
 		set_absolute_ticks(last_count + CYC_PER_TICK);
 	}
 
-	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
+	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : (dticks > 0));
 }
 
 int z_clock_driver_init(struct device *device)
