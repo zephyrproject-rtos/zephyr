@@ -40,6 +40,11 @@ static const char *const core_devices[] = {
 static const char *const core_devices[] = {
 	DT_LABEL(DT_INST(0, nxp_kinetis_ethernet)),
 };
+#elif defined(CONFIG_NET_TEST)
+#define MAX_PM_DEVICES		1
+static const char *const core_devices[] = {
+	"",
+};
 #else
 #error "Add SoC's core devices list for PM"
 #endif
