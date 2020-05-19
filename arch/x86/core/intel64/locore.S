@@ -11,6 +11,16 @@
 #include <drivers/interrupt_controller/loapic.h>
 #include <arch/cpu.h>
 
+.macro read_tsc var_name
+	push %rax
+	push %rdx
+	rdtsc
+	mov %eax,\var_name
+	mov %edx,\var_name+4
+	pop %rdx
+	pop %rax
+.endm
+
 .section .locore,"ax"
 .code32
 
@@ -196,6 +206,10 @@ mxcsr:	.long X86_MXCSR_SANE
 
 .globl z_x86_switch
 z_x86_switch:
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	read_tsc arch_timing_swap_start
+#endif
+
 	/* RSI contains the switch_handle field to which we are
 	 * notionally supposed to store.  Offset it to get back to the
 	 * thread handle instead.
@@ -319,6 +333,17 @@ __resume:
 	/* swapgs variant of Spectre V1. Disable speculation past this point */
 	lfence
 #endif /* CONFIG_X86_BOUNDS_CHECK_BYPASS_MITIGATION */
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	cmp $0x1,arch_timing_value_swap_end
+	jne time_read_not_needed
+	movw $0x2,arch_timing_value_swap_end
+	read_tsc arch_timing_value_swap_common
+	pushq arch_timing_swap_start
+	popq arch_timing_value_swap_temp
+time_read_not_needed:
+#endif
+
 	iretq
 
 
@@ -486,6 +511,10 @@ EXCEPT(Z_X86_OOPS_VECTOR);
 .globl x86_irq_args	/* .. for these definitions */
 
 irq:
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	read_tsc arch_timing_irq_start
+#endif
+
 	pushq %rsi
 
 #ifdef CONFIG_USERSPACE
@@ -601,6 +630,10 @@ irq_enter_unnested: /* Not nested: dump state to thread struct for __resume */
 #endif
 
 irq_dispatch:
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	read_tsc arch_timing_irq_end
+#endif
+
 	movq x86_irq_funcs(,%rcx,8), %rbx
 	movq x86_irq_args(,%rcx,8), %rdi
 	call *%rbx
@@ -615,6 +648,7 @@ irq_dispatch:
 #endif
 
 	movq %gs:__x86_tss64_t_cpu_OFFSET, %rsi
+
 	cli
 	addq $CONFIG_ISR_SUBSTACK_SIZE, %gs:__x86_tss64_t_ist1_OFFSET
 	decl ___cpu_t_nested_OFFSET(%rsi)
