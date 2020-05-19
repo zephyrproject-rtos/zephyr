@@ -85,7 +85,7 @@ static int rv32m1_vega_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb, 22, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay) && CONFIG_PWM
 	/* RGB LEDs as PWM */
 	pinmux_pin_set(porta, 22, PORT_PCR_MUX(kPORT_MuxAlt6));
 	pinmux_pin_set(porta, 23, PORT_PCR_MUX(kPORT_MuxAlt6));
