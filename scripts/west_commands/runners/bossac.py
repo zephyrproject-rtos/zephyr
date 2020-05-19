@@ -5,6 +5,8 @@
 '''bossac-specific runner (flash only) for Atmel SAM microcontrollers.'''
 
 import platform
+from time import sleep
+from subprocess import CalledProcessError
 
 from runners.core import ZephyrBinaryRunner, RunnerCaps
 
@@ -51,13 +53,26 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
             raise NotImplementedError(msg)
 
         self.require(self.bossac)
-
         if platform.system() == 'Linux':
             self.require('stty')
             cmd_stty = ['stty', '-F', self.port, 'raw', 'ispeed', '1200',
                         'ospeed', '1200', 'cs8', '-cstopb', 'ignpar', 'eol', '255',
                         'eof', '255']
             self.check_call(cmd_stty)
+
+            # Wait until target reboots
+            sleep(0.250)
+            # Wait until port re-enumerates
+            retries = 0
+            while retries < 3:
+                try:
+                    self.check_call(cmd_stty)
+                    break
+                except CalledProcessError as e:
+                    if e.returncode == 1:
+                        retries += 1
+                        self.logger.info("Retrying...")
+                        sleep(1)
 
         cmd_flash = [self.bossac, '-p', self.port, '-R', '-e', '-w', '-v',
                      '-b', self.cfg.bin_file]
