@@ -12,11 +12,6 @@
  *         Joel Hoglund <joel@sics.se>
  */
 
-/*
- * TODO:
- * - Handle Resource ObjLink type
- */
-
 #define LOG_MODULE_NAME net_lwm2m_engine
 #define LOG_LEVEL CONFIG_LWM2M_LOG_LEVEL
 
@@ -1501,6 +1496,11 @@ static int lwm2m_engine_set(char *pathstr, void *value, uint16_t len)
 				((float64_value_t *)value)->val2;
 		break;
 
+	case LWM2M_RES_TYPE_OBJLNK:
+		*((struct lwm2m_objlnk *)data_ptr) =
+				*(struct lwm2m_objlnk *)value;
+		break;
+
 	default:
 		LOG_ERR("unknown obj data_type %d", obj_field->data_type);
 		return -EINVAL;
@@ -1585,6 +1585,11 @@ int lwm2m_engine_set_float32(char *pathstr, float32_value_t *value)
 int lwm2m_engine_set_float64(char *pathstr, float64_value_t *value)
 {
 	return lwm2m_engine_set(pathstr, value, sizeof(float64_value_t));
+}
+
+int lwm2m_engine_set_objlnk(char *pathstr, struct lwm2m_objlnk *value)
+{
+	return lwm2m_engine_set(pathstr, value, sizeof(struct lwm2m_objlnk));
 }
 
 /* user data getter functions */
@@ -1739,6 +1744,11 @@ static int lwm2m_engine_get(char *pathstr, void *buf, uint16_t buflen)
 				((float64_value_t *)data_ptr)->val2;
 			break;
 
+		case LWM2M_RES_TYPE_OBJLNK:
+			*(struct lwm2m_objlnk *)buf =
+				*(struct lwm2m_objlnk *)data_ptr;
+			break;
+
 		default:
 			LOG_ERR("unknown obj data_type %d",
 				obj_field->data_type);
@@ -1821,6 +1831,11 @@ int lwm2m_engine_get_float32(char *pathstr, float32_value_t *buf)
 int lwm2m_engine_get_float64(char *pathstr, float64_value_t *buf)
 {
 	return lwm2m_engine_get(pathstr, buf, sizeof(float64_value_t));
+}
+
+int lwm2m_engine_get_objlnk(char *pathstr, struct lwm2m_objlnk *buf)
+{
+	return lwm2m_engine_get(pathstr, buf, sizeof(struct lwm2m_objlnk));
 }
 
 int lwm2m_engine_get_resource(char *pathstr, struct lwm2m_engine_res **res)
@@ -2159,6 +2174,11 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 				(float64_value_t *)data_ptr);
 			break;
 
+		case LWM2M_RES_TYPE_OBJLNK:
+			engine_put_objlnk(&msg->out, &msg->path,
+					  (struct lwm2m_objlnk *)data_ptr);
+			break;
+
 		default:
 			LOG_ERR("unknown obj data_type %d",
 				obj_field->data_type);
@@ -2384,6 +2404,12 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			engine_get_float64fix(&msg->in,
 					      (float64_value_t *)data_ptr);
 			len = sizeof(float64_value_t);
+			break;
+
+		case LWM2M_RES_TYPE_OBJLNK:
+			engine_get_objlnk(&msg->in,
+					  (struct lwm2m_objlnk *)data_ptr);
+			len = sizeof(struct lwm2m_objlnk);
 			break;
 
 		default:

@@ -342,6 +342,19 @@ typedef struct float64_value {
 } float64_value_t;
 
 /**
+ * @brief Maximum value for ObjLnk resource fields
+ */
+#define LWM2M_OBJLNK_MAX_ID USHRT_MAX
+
+/**
+ * @brief LWM2M ObjLnk resource type structure
+ */
+struct lwm2m_objlnk {
+	uint16_t obj_id;
+	uint16_t obj_inst;
+};
+
+/**
  * @brief Create an LwM2M object instance.
  *
  * LwM2M clients use this function to create non-default LwM2M objects:
@@ -486,6 +499,16 @@ int lwm2m_engine_set_float32(char *pathstr, float32_value_t *value);
 int lwm2m_engine_set_float64(char *pathstr, float64_value_t *value);
 
 /**
+ * @brief Set resource (instance) value (ObjLnk)
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
+ * @param[in] value pointer to the lwm2m_objlnk structure
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_set_objlnk(char *pathstr, struct lwm2m_objlnk *value);
+
+/**
  * @brief Get resource (instance) value (opaque buffer)
  *
  * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
@@ -616,6 +639,17 @@ int lwm2m_engine_get_float32(char *pathstr, float32_value_t *buf);
  * @return 0 for success or negative in case of error.
  */
 int lwm2m_engine_get_float64(char *pathstr, float64_value_t *buf);
+
+/**
+ * @brief Get resource (instance) value (ObjLnk)
+ *
+ * @param[in] pathstr LwM2M path string "obj/obj-inst/res(/res-inst)"
+ * @param[out] buf lwm2m_objlnk buffer to copy data into
+ *
+ * @return 0 for success or negative in case of error.
+ */
+int lwm2m_engine_get_objlnk(char *pathstr, struct lwm2m_objlnk *buf);
+
 
 /**
  * @brief Set resource (instance) read callback

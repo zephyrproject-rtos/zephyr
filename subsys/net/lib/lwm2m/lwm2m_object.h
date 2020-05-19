@@ -124,6 +124,7 @@
 #define LWM2M_RES_TYPE_TIME	12
 #define LWM2M_RES_TYPE_FLOAT32	13
 #define LWM2M_RES_TYPE_FLOAT64	14
+#define LWM2M_RES_TYPE_OBJLNK	15
 
 /* remember that we have already output a value - can be between two block's */
 #define WRITER_OUTPUT_VALUE      1
@@ -470,6 +471,9 @@ struct lwm2m_writer {
 	size_t (*put_opaque)(struct lwm2m_output_context *out,
 			     struct lwm2m_obj_path *path,
 			     char *buf, size_t buflen);
+	size_t (*put_objlnk)(struct lwm2m_output_context *out,
+			     struct lwm2m_obj_path *path,
+			     struct lwm2m_objlnk *value);
 };
 
 struct lwm2m_reader {
@@ -487,6 +491,8 @@ struct lwm2m_reader {
 			   bool *value);
 	size_t (*get_opaque)(struct lwm2m_input_context *in,
 			     uint8_t *buf, size_t buflen, bool *last_block);
+	size_t (*get_objlnk)(struct lwm2m_input_context *in,
+			     struct lwm2m_objlnk *value);
 };
 
 /* output user_data management functions */
@@ -674,6 +680,13 @@ static inline size_t engine_put_opaque(struct lwm2m_output_context *out,
 	return 0;
 }
 
+static inline size_t engine_put_objlnk(struct lwm2m_output_context *out,
+				       struct lwm2m_obj_path *path,
+				       struct lwm2m_objlnk *value)
+{
+	return out->writer->put_objlnk(out, path, value);
+}
+
 static inline size_t engine_get_s32(struct lwm2m_input_context *in,
 				    int32_t *value)
 {
@@ -719,6 +732,12 @@ static inline size_t engine_get_opaque(struct lwm2m_input_context *in,
 	}
 
 	return 0;
+}
+
+static inline size_t engine_get_objlnk(struct lwm2m_input_context *in,
+				       struct lwm2m_objlnk *value)
+{
+	return in->reader->get_objlnk(in, value);
 }
 
 #endif /* LWM2M_OBJECT_H_ */

@@ -194,6 +194,14 @@ static size_t put_bool(struct lwm2m_output_context *out,
 	}
 }
 
+static size_t put_objlnk(struct lwm2m_output_context *out,
+			 struct lwm2m_obj_path *path,
+			 struct lwm2m_objlnk *value)
+{
+	return plain_text_put_format(out, "%u:%u", value->obj_id,
+				     value->obj_inst);
+}
+
 static int get_length_left(struct lwm2m_input_context *in)
 {
 	return in->in_cpkt->offset - in->offset;
@@ -330,6 +338,26 @@ static size_t get_opaque(struct lwm2m_input_context *in,
 	return lwm2m_engine_get_opaque_more(in, value, buflen, last_block);
 }
 
+
+static size_t get_objlnk(struct lwm2m_input_context *in,
+			 struct lwm2m_objlnk *value)
+{
+	int64_t tmp;
+	size_t len;
+
+	len = plain_text_read_number(in, &tmp, NULL, false, false);
+	value->obj_id = (uint16_t)tmp;
+
+	/* Skip ':' delimeter. */
+	in->offset++;
+	len++;
+
+	len += plain_text_read_number(in, &tmp, NULL, false, false);
+	value->obj_inst = (uint16_t)tmp;
+
+	return len;
+}
+
 const struct lwm2m_writer plain_text_writer = {
 	.put_s8 = put_s8,
 	.put_s16 = put_s16,
@@ -339,6 +367,7 @@ const struct lwm2m_writer plain_text_writer = {
 	.put_float32fix = plain_text_put_float32fix,
 	.put_float64fix = plain_text_put_float64fix,
 	.put_bool = put_bool,
+	.put_objlnk = put_objlnk,
 };
 
 const struct lwm2m_reader plain_text_reader = {
@@ -349,6 +378,7 @@ const struct lwm2m_reader plain_text_reader = {
 	.get_float64fix = get_float64fix,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
+	.get_objlnk = get_objlnk,
 };
 
 int do_read_op_plain_text(struct lwm2m_message *msg, int content_format)
