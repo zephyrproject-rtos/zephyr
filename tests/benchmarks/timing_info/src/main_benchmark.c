@@ -16,16 +16,24 @@
 #include <ksched.h>
 #include "timing_info.h"
 
+void __weak calibrate_timer(void)
+{
+}
+
 void main(void)
 {
-	u32_t freq = get_core_freq_MHz();
+	u32_t freq;
+
+	calibrate_timer();
+
+	freq = get_core_freq_MHz();
 
 	/* Configure and start timer */
 	benchmark_timer_init();
 	benchmark_timer_start();
 
 	TC_START("Time Measurement");
-	TC_PRINT("Timing Results: Clock Frequency: %d MHz\n", freq);
+	TC_PRINT("Timing Results: Clock Frequency: %u MHz\n", freq);
 
 	/*******************************************************************/
 	/* System parameters and thread Benchmarking*/
