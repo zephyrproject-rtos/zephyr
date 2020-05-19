@@ -18,6 +18,9 @@
 #include <kernel.h>
 #include <sys/fdtable.h>
 #include <sys/speculation.h>
+#ifdef CONFIG_POSIX_API
+#include <posix/unistd.h>
+#endif
 #include <syscall_handler.h>
 
 struct fd_entry {
@@ -167,7 +170,7 @@ int z_alloc_fd(void *obj, const struct fd_op_vtable *vtable)
 
 #ifdef CONFIG_POSIX_API
 
-ssize_t read(int fd, void *buf, size_t sz)
+ssize_t z_impl_sys_read(int fd, void *buf, size_t sz)
 {
 	if (_check_fd(fd) < 0) {
 		return -1;
@@ -175,9 +178,30 @@ ssize_t read(int fd, void *buf, size_t sz)
 
 	return fdtable[fd].vtable->read(fdtable[fd].obj, buf, sz);
 }
+
+#ifdef CONFIG_USERSPACE
+ssize_t z_vrfy_sys_read(int fd, void *buf, size_t sz)
+{
+	if (Z_SYSCALL_MEMORY_WRITE(buf, sz)) {
+		errno = EFAULT;
+		return -1;
+	}
+
+	return z_impl_sys_read(fd, buf, sz);
+}
+#include <syscalls/sys_read_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+/* Normal C function wrapping a corresponding syscall. Required to ensure
+ * classic C linkage.
+ */
+ssize_t read(int fd, void *buf, size_t sz)
+{
+	return sys_read(fd, buf, sz);
+}
 FUNC_ALIAS(read, _read, ssize_t);
 
-ssize_t write(int fd, const void *buf, size_t sz)
+ssize_t z_impl_sys_write(int fd, const void *buf, size_t sz)
 {
 	if (_check_fd(fd) < 0) {
 		return -1;
@@ -185,9 +209,27 @@ ssize_t write(int fd, const void *buf, size_t sz)
 
 	return fdtable[fd].vtable->write(fdtable[fd].obj, buf, sz);
 }
+
+#ifdef CONFIG_USERSPACE
+ssize_t z_vrfy_sys_write(int fd, const void *buf, size_t sz)
+{
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(buf, sz));
+
+	return z_impl_sys_write(fd, buf, sz);
+}
+#include <syscalls/sys_write_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+/* Normal C function wrapping a corresponding syscall. Required to ensure
+ * classic C linkage.
+ */
+ssize_t write(int fd, const void *buf, size_t sz)
+{
+	return sys_write(fd, buf, sz);
+}
 FUNC_ALIAS(write, _write, ssize_t);
 
-int close(int fd)
+int z_impl_sys_close(int fd)
 {
 	int res;
 
@@ -199,6 +241,19 @@ int close(int fd)
 	z_free_fd(fd);
 
 	return res;
+}
+
+#ifdef CONFIG_USERSPACE
+ssize_t z_vrfy_sys_close(int fd)
+{
+	return z_impl_sys_close(fd);
+}
+#include <syscalls/sys_close_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+int close(int fd)
+{
+	return sys_close(fd);
 }
 FUNC_ALIAS(close, _close, int);
 
