@@ -216,7 +216,7 @@ Example LwM2M object and resources: Device
      - R
      - Multiple
      - Optional
-     - ObjLink
+     - ObjLnk
 
 The server could query the ``Manufacturer`` resource for ``Device`` object
 instance 0 (the default and only instance) by sending a ``READ 3/0/0``

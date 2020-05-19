@@ -566,6 +566,15 @@ static size_t put_opaque(struct lwm2m_output_context *out,
 	return put_string(out, path, buf, buflen);
 }
 
+static size_t put_objlnk(struct lwm2m_output_context *out,
+			 struct lwm2m_obj_path *path,
+			 struct lwm2m_objlnk *value)
+{
+	int32_t value_s32 = (value->obj_id << 16) | value->obj_inst;
+
+	return put_s32(out, path, value_s32);
+}
+
 static size_t get_number(struct lwm2m_input_context *in, int64_t *value,
 			 uint8_t max_len)
 {
@@ -758,6 +767,20 @@ static size_t get_opaque(struct lwm2m_input_context *in,
 	return lwm2m_engine_get_opaque_more(in, value, buflen, last_block);
 }
 
+static size_t get_objlnk(struct lwm2m_input_context *in,
+			 struct lwm2m_objlnk *value)
+{
+	int32_t value_s32;
+	size_t size;
+
+	size = get_s32(in, &value_s32);
+
+	value->obj_id = (value_s32 >> 16) & 0xFFFF;
+	value->obj_inst = value_s32 && 0xFFFF;
+
+	return size;
+}
+
 const struct lwm2m_writer oma_tlv_writer = {
 	.put_begin_oi = put_begin_oi,
 	.put_end_oi = put_end_oi,
@@ -772,6 +795,7 @@ const struct lwm2m_writer oma_tlv_writer = {
 	.put_float64fix = put_float64fix,
 	.put_bool = put_bool,
 	.put_opaque = put_opaque,
+	.put_objlnk = put_objlnk,
 };
 
 const struct lwm2m_reader oma_tlv_reader = {
@@ -782,6 +806,7 @@ const struct lwm2m_reader oma_tlv_reader = {
 	.get_float64fix = get_float64fix,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
+	.get_objlnk = get_objlnk,
 };
 
 int do_read_op_tlv(struct lwm2m_message *msg, int content_format)

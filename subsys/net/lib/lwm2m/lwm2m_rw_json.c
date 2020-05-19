@@ -526,6 +526,20 @@ static size_t put_bool(struct lwm2m_output_context *out,
 	return (size_t)len;
 }
 
+static size_t put_objlnk(struct lwm2m_output_context *out,
+			 struct lwm2m_obj_path *path,
+			 struct lwm2m_objlnk *value)
+{
+	size_t len;
+
+	len = put_json_prefix(out, path, "\"ov\"");
+	len += plain_text_put_format(out, "\"%u:%u\"", value->obj_id,
+				     value->obj_inst);
+	len += put_json_postfix(out);
+
+	return len;
+}
+
 static size_t read_number(struct lwm2m_input_context *in,
 			  int64_t *value1, int64_t *value2,
 			  bool accept_sign, bool accept_dot)
@@ -676,6 +690,37 @@ static size_t get_opaque(struct lwm2m_input_context *in,
 	return 0;
 }
 
+static size_t get_objlnk(struct lwm2m_input_context *in,
+			 struct lwm2m_objlnk *value)
+{
+	int64_t tmp;
+	size_t len;
+	uint16_t value_offset;
+	struct json_in_formatter_data *fd;
+
+	fd = engine_get_in_user_data(in);
+	if (!fd) {
+		return 0;
+	}
+
+	/* Store the original value offset. */
+	value_offset = fd->value_offset;
+
+	len = read_number(in, &tmp, NULL, false, false);
+	value->obj_id = (uint16_t)tmp;
+
+	len++;  /* +1 for ':' delimeter. */
+	fd->value_offset += len;
+
+	len += read_number(in, &tmp, NULL, false, false);
+	value->obj_inst = (uint16_t)tmp;
+
+	/* Restore the original value offset. */
+	fd->value_offset = value_offset;
+
+	return len;
+}
+
 const struct lwm2m_writer json_writer = {
 	.put_begin = put_begin,
 	.put_end = put_end,
@@ -689,6 +734,7 @@ const struct lwm2m_writer json_writer = {
 	.put_float32fix = put_float32fix,
 	.put_float64fix = put_float64fix,
 	.put_bool = put_bool,
+	.put_objlnk = put_objlnk,
 };
 
 const struct lwm2m_reader json_reader = {
@@ -699,6 +745,7 @@ const struct lwm2m_reader json_reader = {
 	.get_float64fix = get_float64fix,
 	.get_bool = get_bool,
 	.get_opaque = get_opaque,
+	.get_objlnk = get_objlnk,
 };
 
 int do_read_op_json(struct lwm2m_message *msg, int content_format)
