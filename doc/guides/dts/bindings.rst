@@ -148,4 +148,6 @@ This should now be written like this:
        - cells
 
 The legacy syntax is still supported for backwards compatibility, but generates
-deprecation warnings. Support will be dropped in the Zephyr 2.3 release.
+deprecation warnings. Support for the legacy bindings syntax was originally
+scheduled to be dropped in the Zephyr 2.3 release, but will now be maintained
+until Zephyr 2.4.
