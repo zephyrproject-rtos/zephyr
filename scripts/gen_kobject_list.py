@@ -131,6 +131,14 @@ def error(text):
     sys.exit("%s ERROR: %s" % (scr, text))
 
 def debug_die(die, text):
+    if 'DW_AT_decl_file' not in die.attributes:
+        abs_orig_val = die.attributes["DW_AT_abstract_origin"].value
+        offset = abs_orig_val + die.cu.cu_offset
+        for var in variables:
+            if var.offset == offset:
+                die = var
+                break
+
     lp_header = die.dwarfinfo.line_program_for_CU(die.cu).header
     files = lp_header["file_entry"]
     includes = lp_header["include_directory"]
@@ -159,6 +167,7 @@ stack_counter = 0
 # Global type environment. Populated by pass 1.
 type_env = {}
 extern_env = {}
+variables = []
 
 class KobjectInstance:
     def __init__(self, type_obj, addr):
@@ -504,8 +513,6 @@ def find_kobjects(elf, syms):
     app_smem_end = syms["_app_smem_end"]
 
     di = elf.get_dwarf_info()
-
-    variables = []
 
     # Step 1: collect all type information.
     for CU in di.iter_CUs():
