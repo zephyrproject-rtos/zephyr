@@ -54,6 +54,56 @@ LOG_MODULE_REGISTER(updatehub);
 #define UPDATEHUB_SERVER "coap.updatehub.io"
 #endif
 
+
+#define GET_NUM_2(v) ((v) >> 4)  /* a define to get block number from block2 from the coap packet */
+
+static int attempts_download;		/* has been moved here so as to increase scope and be manageable in different functions */ 
+static int expected_block_num = 0;	/* this variable helps detect duplicates so that memory write operation is performed only once */ 
+
+
+static int get_block_option_1(const struct coap_packet *cpkt, u16_t code);
+static int get_block_option_1(const struct coap_packet *cpkt, u16_t code)  /* function to get block option for CoAP, please refer to coap.c  */
+{
+	struct coap_option option;
+	unsigned int val;
+	int count = 1;
+
+	count = coap_find_options(cpkt, code, &option, count);
+	if (count <= 0) {
+		return -ENOENT;
+	}
+
+	val = coap_option_value_to_int(&option);
+
+	return val;
+
+}
+
+static int get_num_block(struct coap_packet *cpkt); /* function to get block number from COAP Block 2 fields, return block number */
+
+static int get_num_block(struct coap_packet *cpkt){
+	int block2 = get_block_option_1(cpkt, COAP_OPTION_BLOCK2);
+	if(block2)
+		return GET_NUM_2(block2);
+	return -ENOENT;
+}
+
+static struct k_timer timer;   /* timer to handle stop and wait protocol for GET requests. */
+bool is_transmission_allowed = true;  /* variable to stop or allow transmission */
+
+static void timer_expire(struct k_timer *timer){
+	is_transmission_allowed = true;   	
+}
+/* no transmission is allowed when the timer is running 
+** when timer is expired, timer is now ready for next transmission   */
+
+static void timer_stop(struct k_timer *timer){		/* manual stop */
+	is_transmission_allowed = true;   	
+}
+
+// no transmission is allowed when the timer is running 
+// when timer is stopped manually, when reply (CoAP data packet) arrives resulting in allowing next request transmission thus implementing Stop and Wait protocol.
+
 static struct updatehub_context {
 	struct coap_block_context block;
 	struct k_sem semaphore;
@@ -389,6 +439,28 @@ static void install_update_cb(void)
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		goto cleanup;
 	}
+	
+	/* check for the duplicate packet based upon block number if duplicate discard the packet otherwise process it and add it to buffer  */
+
+
+	int block_num = get_num_block(&response_packet); 		/* calculate the block number of coap data packet  */
+ 	
+	if ((response_packet.max_len - response_packet.offset) <= 0 || (block_num < 0)){ 	/* ignore the rubbish packets */
+		LOG_ERR("Invalid data received or block number is < 0");
+		ctx.code_status = UPDATEHUB_OK;
+		goto cleanup;			
+	}
+
+	if(block_num == expected_block_num){
+		expected_block_num ++;		
+	}
+	else{
+		goto cleanup;		// duplicate and ignore the packet
+	}
+
+	k_timer_stop(&timer);  /* correct packet is received so stop the timer and allow further transmission */
+	is_transmission_allowed = true;
+	attempts_download = 0;  /* reset the retransmission counter */
 
 	ctx.downloaded_size = ctx.downloaded_size +
 			      (response_packet.max_len - response_packet.offset);
@@ -438,10 +510,18 @@ cleanup:
 
 static enum updatehub_response install_update(void)
 {
+
 	int verification_download = 0;
 	int attempts_download = 0;
 
 	if (boot_erase_img_bank(FLASH_AREA_ID(image_1)) != 0) {
+
+	int verification_download = 0;	
+	int i;
+	k_timer_init(&timer, timer_expire,timer_stop);		// initialize the timer for stop and wait for GET Requests
+
+	if (boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID) != 0) {
+
 		LOG_ERR("Failed to init flash and erase second slot");
 		ctx.code_status = UPDATEHUB_FLASH_INIT_ERROR;
 		goto error;

@@ -1862,6 +1862,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 			struct usbd_event *ev = usbd_evt_alloc();
 
 			if (!ev) {
+				k_mutex_unlock(&ctx->drv_lock);
 				return -ENOMEM;
 			}
 

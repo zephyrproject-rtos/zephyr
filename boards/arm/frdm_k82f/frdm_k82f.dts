@@ -106,6 +106,10 @@
 	};
 };
 
+&adc0 {
+	status = "okay";
+};
+
 &gpioa {
 	status = "okay";
 };

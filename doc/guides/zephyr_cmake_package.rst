@@ -382,48 +382,6 @@ Such a CMakeLists.txt could look as:
 
    project(my_first_app)
 
-.. _cmake_extension_package:
-
-Zephyr Extension CMake package
-******************************
-
-The Zephyr Extension CMake package provides a possibility for a Zephyr based system to control
-Zephyr build settings in a generic way.
-The Zephyr Extension CMake package will be loaded in the Zephyr boilerplate code after initial
-properties and ``ZEPHYR_BASE`` has been defined, but before CMake code execution.
-This allows the Zephyr Extension CMake package to setup or extend properties such as: ``DTS_ROOT``,
-``BOARD_ROOT``, Fixed overlays, and any other property that can be controlled.
-
-To provide a Zephyr Extension CMake package, create ``ZephyrExtensionConfig.cmake`` and place it in
-a Zephyr workspace top-level folder as:
-
-.. code-block:: none
-
-   <projects>/zephyr-workspace
-   ├── zephyr
-   ├── ...
-   └── zephyr_extension_project (can be named anything)
-        └── share/zephyrextension-package/cmake/ZephyrExtensionConfig.cmake
-
-The Zephyr Extension CMake package will not search in any CMake default search paths, and thus
-cannot be installed in the CMake package registry. There will be no version checking on the Zephyr
-Extension package, as it is the responsibility of the project to ensure that the Zephyr project and
-the ``zephyr_extension_project`` matches in the Zephyr workspace.
-
-A sample ``ZephyrExtensionConfig.cmake`` can be seen below.
-
-.. code-block:: cmake
-
-   # ZephyrExtensionConfig.cmake sample code
-
-   # To ensure final path is absolute and does not contain ../.. in variable.
-   get_filename_component(EXTENSION_PROJECT_DIR
-                          ${CMAKE_CURRENT_LIST_DIR}/../../..
-                          ABSOLUTE
-   )
-
-   list(APPEND BOARD_ROOT ${EXTENSION_PROJECT_DIR})
-
 Zephyr CMake package source code
 ********************************
 
