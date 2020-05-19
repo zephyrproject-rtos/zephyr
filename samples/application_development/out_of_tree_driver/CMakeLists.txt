@@ -8,11 +8,6 @@ list(APPEND ZEPHYR_EXTRA_MODULES
 
 cmake_minimum_required(VERSION 3.13.1)
 
-# Add an absolute directory path to the CMake variable
-# SYSCALL_INCLUDE_DIRS. This ensures that the syscall machinery will
-# be able to find the module's syscalls.
-list(APPEND SYSCALL_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/hello_world_module/zephyr)
-
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(out_of_tree_driver)
 
