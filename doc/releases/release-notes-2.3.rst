@@ -212,7 +212,20 @@ Drivers and Sensors
 
 * Ethernet
 
-  * <TBD>
+  * Add SAM E54 max queue count referencing
+  * Add SAM0 family support to gmac driver
+  * Add sam4e support to queue in gmac
+  * Add network power management support to mcux
+  * Add VLAN support to enc28j60
+  * Add VLAN support to stm32
+  * Add Ethernet cable link status support to gmac
+  * Add support for i.MXRT1060 family to mcux
+  * Add support for getting manual MAC address from devicetree
+  * Add support for enabling random MAC address from devicetree
+  * Various fixes to setup and cache handling in gmac
+  * Fix how unique MAC address is determined in mcux
+  * Fix Ethernet cable link detection in gecko
+  * Fix stm32 when receiving data during initialization
 
 * Flash
 
@@ -236,7 +249,15 @@ Drivers and Sensors
 
 * IEEE 802.15.4
 
-  * <TBD>
+  * Add Decawave DW1000 driver
+  * Add "no auto start" option and local MAC address support to rf2xx
+  * Add support for Frame Pending Bit (FPB) handling in nrf5
+  * Add CSMA CA transmit capability to nrf5
+  * Add PAN coordinator mode support to nrf5
+  * Add support for promiscuous mode to nrf5
+  * Add support for energy scan function to nrf5
+  * Fix RX timestamp handling in nrf5
+  * Various fixes to rf2xx
 
 * Interrupt Controller
 
@@ -256,7 +277,15 @@ Drivers and Sensors
 
 * Modem
 
-  * <TBD>
+  * Add support for GSM 07.10 muxing protocol to generic GSM modem
+  * Add support for modem commands that do not have a line ending
+  * Add automatic detection of ublox-sara-r4 modem type
+  * Add automatic setting of APN for ublox-sara-r4
+  * Add sendmsg() support to ublox-sara-r4
+  * Fix UDP socket closing in ublox-sara-r4
+  * Fix RSSI calculation for Sara U201
+  * Fix TCP context release and RX socket src/dst port assignment in wncm14a2a
+  * Change PPP driver connection to generic GSM modem
 
 * Pinmux
 
@@ -276,7 +305,7 @@ Drivers and Sensors
 
 * Serial
 
-  * <TBD>
+  * Add uart_mux driver that is used in GSM 07.10 muxing protocol
 
 * SPI
 
@@ -300,12 +329,48 @@ Drivers and Sensors
 
 * WiFi
 
-  * <TBD>
+  * Add scan completion indication to eswifi
+  * Add support to ESP8266 and ESP32
+
 
 Networking
 **********
 
-* <TBD>
+* Convert networking to use new k_timeout_t infrastructure
+* Enhance new TCP stack support
+* Add minimal support for TFTP client (RFC 1350)
+* Add support for network device driver power management
+* Add support for socketpair() BSD socket API
+* Add support for QEMU user networking (SLIRP)
+* Add support to disable automatic network attachment in OpenThread
+* Add support for Frame Pending Bit handling in OpenThread
+* Add support for RX frame handling in OpenThread
+* Add support for TX started notification in OpenThread
+* Add support for HW CSMA CA in OpenThread
+* Add support for promiscuous mode in OpenThread
+* Add support for reading OPAQUE resources with OMA TLV in LWM2M
+* Add config to enable PAN coordinator mode in IEEE 802.15.4
+* Add config to enable promiscuous mode in IEEE 802.15.4
+* Add support for subscribe in Azure cloud sample
+* Add support for queue mode in lwm2m_client sample
+* Add support to allow change of the QEMU Ethernet interface name
+* Add support for PPP IPCP to negotiate used DNS servers
+* Add support for setting hostname in DHCPv4 request
+* Fix binding AF_PACKET socket type multiple times
+* Fix LLDPDU data in sent LLDP packets
+* Fix and enhance Google IoT sample application documentation
+* Fix MQTT cloud sample when polling incoming messages
+* Fix LWM2M socket error handling, and pending and reply handling during start
+* Fix LWM2M retransmission logic
+* Fix LWM2M Cell ID resource initialization
+* Fix COAP pending and reply handling
+* Fix wpan_serial sample application and enable USB during initialization
+* Fix HTTP client payload issue on HTTP upload
+* Fix MQTT Websocket incoming data handling and accept packets only in RX
+* Fix MQTT Publish message length validation
+* Fix IEEE 802.15.4 received frame length validation
+* Fix IEEE 802.15.4 and avoid ACK processing when not needed
+* Fix IEEE 802.15.4 and allow energy detection scan unconditionally
 
 Bluetooth
 *********
