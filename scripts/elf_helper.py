@@ -44,6 +44,7 @@ type_env = {}
 extern_env = {}
 kobjects = {}
 subsystems = {}
+variables = []
 
 # --- debug stuff ---
 
@@ -350,6 +351,15 @@ def device_get_api_addr(elf, addr):
 
 
 def get_filename_lineno(die):
+    if 'DW_AT_decl_file' not in die.attributes:
+        abs_orig_val = die.attributes["DW_AT_abstract_origin"].value
+        offset = abs_orig_val + die.cu.cu_offset
+
+        for var in variables:
+            if var.offset == offset:
+                die = var
+                break
+
     lp_header = die.dwarfinfo.line_program_for_CU(die.cu).header
     files = lp_header["file_entry"]
     includes = lp_header["include_directory"]
@@ -386,8 +396,6 @@ class ElfHelper:
         krom_end = syms["_image_rom_end"]
 
         di = self.elf.get_dwarf_info()
-
-        variables = []
 
         # Step 1: collect all type information.
         for CU in di.iter_CUs():
