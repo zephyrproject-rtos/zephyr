@@ -1,0 +1,10 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/*
+
+&uart0 {
+	/delete-property/ rx-pin;
+	/delete-property/ rts-pin;
+	/delete-property/ cts-pin;
+};
+*/

@@ -1,0 +1,23 @@
+# HCI over Asynchronous UART sample configuration
+
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "HCI over UART asynchronous"
+
+config BT_HCI_UART_ASYNC_RX_POOL_BUF_SIZE
+	int "Single buffer size in the RX pool"
+	default 64
+	help
+	  If UART is using DMA with double buffering it may be even possible to not
+	  use HW flow control by increasing buffer size.
+
+config BT_HCI_UART_ASYNC_RX_POOL_BUF_COUNT
+	int "Number of buffers in the RX pool"
+	default 3
+
+endmenu
+
+menu "Zephyr Kernel"
+source "Kconfig.zephyr"
+endmenu
