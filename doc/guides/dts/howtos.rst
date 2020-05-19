@@ -168,9 +168,9 @@ Set devicetree overlays
 ***********************
 
 Devicetree overlays are explained in :ref:`devicetree-intro`. The CMake
-variable :makevar:`DTC_OVERLAY_FILE` contains a space- or colon-separated list
-of overlays. If :makevar:`DTC_OVERLAY_FILE` specifies multiple files, they are
-included in that order by the C preprocessor.
+variable :makevar:`DTC_OVERLAY_FILE` contains a space- or semicolon-separated
+list of overlays. If :makevar:`DTC_OVERLAY_FILE` specifies multiple files, they
+are included in that order by the C preprocessor.
 
 Here are some ways to set it:
 
@@ -676,7 +676,7 @@ Check for missing bindings
 ==========================
 
 If the build fails to :ref:`dts-find-binding` for a node, then either the
-node's ``compatible`` property is missing, or its value has no matching
+node's ``compatible`` property is not defined, or its value has no matching
 binding. If the property is set, check for typos in its name. In a devicetree
 source file, ``compatible`` should look like ``"vnd,some-device"`` --
 :ref:`dt-use-the-right-names`.

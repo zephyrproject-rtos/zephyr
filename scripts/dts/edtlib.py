@@ -2342,6 +2342,8 @@ _BindingLoader.add_constructor(
     yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
     lambda loader, node: OrderedDict(loader.construct_pairs(node)))
 
+# Zephyr: do not change this list without updating the documentation
+# for the DT_PROP() macro in include/devicetree.h.
 _DEFAULT_PROP_TYPES = {
     "compatible": "string-array",
     "status": "string",
