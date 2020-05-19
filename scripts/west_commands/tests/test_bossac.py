@@ -17,6 +17,7 @@ if platform.system() != 'Linux':
 
 TEST_BOSSAC_PORT = 'test-bossac-serial'
 TEST_OFFSET = 1234
+STTY_RETRIES = 3
 EXPECTED_COMMANDS = [
     ['stty', '-F', TEST_BOSSAC_PORT, 'raw', 'ispeed', '1200', 'ospeed', '1200',
      'cs8', '-cstopb', 'ignpar', 'eol', '255', 'eof', '255'],
@@ -40,7 +41,17 @@ def test_bossac_init(cc, req, runner_config):
     runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT,
                                 offset=TEST_OFFSET)
     runner.run('flash')
-    assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_OFFSET]
+    # The stty call can appear up to STTY_RETRIES times so pass if any of those
+    # matches the actual call_arg_list
+    matched = False
+    for i in range(STTY_RETRIES):
+        arg_list = EXPECTED_COMMANDS_WITH_OFFSET[0:1]
+        arg_list += [EXPECTED_COMMANDS_WITH_OFFSET[0] for x in range(i)]
+        arg_list += EXPECTED_COMMANDS_WITH_OFFSET[1:]
+        if cc.call_args_list == [call(x) for x in arg_list]:
+            matched = True
+            break
+    assert matched
 
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
@@ -52,7 +63,17 @@ def test_bossac_create(cc, req, runner_config):
     arg_namespace = parser.parse_args(args)
     runner = BossacBinaryRunner.create(runner_config, arg_namespace)
     runner.run('flash')
-    assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS]
+    # The stty call can appear up to STTY_RETRIES times so pass if any of those
+    # matches the actual call_arg_list
+    matched = False
+    for i in range(STTY_RETRIES):
+        arg_list = EXPECTED_COMMANDS[0:1]
+        arg_list += [EXPECTED_COMMANDS[0] for x in range(i)]
+        arg_list += EXPECTED_COMMANDS[1:]
+        if cc.call_args_list == [call(x) for x in arg_list]:
+            matched = True
+            break
+    assert matched
 
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
@@ -65,4 +86,14 @@ def test_bossac_create_with_offset(cc, req, runner_config):
     arg_namespace = parser.parse_args(args)
     runner = BossacBinaryRunner.create(runner_config, arg_namespace)
     runner.run('flash')
-    assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_OFFSET]
+    # The stty call can appear up to STTY_RETRIES times so pass if any of those
+    # matches the actual call_arg_list
+    matched = False
+    for i in range(STTY_RETRIES):
+        arg_list = EXPECTED_COMMANDS_WITH_OFFSET[0:1]
+        arg_list += [EXPECTED_COMMANDS_WITH_OFFSET[0] for x in range(i)]
+        arg_list += EXPECTED_COMMANDS_WITH_OFFSET[1:]
+        if cc.call_args_list == [call(x) for x in arg_list]:
+            matched = True
+            break
+    assert matched
