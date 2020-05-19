@@ -7,3 +7,4 @@ tests:
   lib.heap:
     tags: heap
     platform_exclude: m2gl025_miv qemu_riscv32
+    timeout: 120
