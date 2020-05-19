@@ -16,13 +16,13 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <ztest_assert.h>
 
+#include "test_socketpair_thread.h"
+
 #undef read
 #define read(fd, buf, len) zsock_recv(fd, buf, len, 0)
 
 #undef write
 #define write(fd, buf, len) zsock_send(fd, buf, len, 0)
-
-#define TIMEOUT K_FOREVER
 
 struct ctx {
 	/* true if test is write_block(), false if test is read_block() */
@@ -31,32 +31,16 @@ struct ctx {
 	int fd;
 	/* the count of the main thread */
 	atomic_t m;
-	/* the count of the secondary thread */
-	size_t n;
-	/* true when secondary thread is done */
-	bool done;
-	/* true if both main and secondary thread should immediately quit */
-	bool fail;
-	/* thread id of the secondary thread */
-	k_tid_t tid;
 };
-ZTEST_BMEM struct ctx ctx;
-#define STACK_SIZE 512
-/* thread structure for secondary thread */
-ZTEST_BMEM struct k_thread th;
-/* stack for the secondary thread */
-static K_THREAD_STACK_DEFINE(th_stack, STACK_SIZE);
+static ZTEST_BMEM struct ctx ctx;
+static ZTEST_BMEM struct k_work work;
 
-static void th_fun(void *arg0, void *arg1, void *arg2)
+static void work_handler(struct k_work *work)
 {
-	(void) arg0;
-	(void) arg1;
-	(void) arg2;
-
 	int res;
 	char c = '\0';
 
-	LOG_DBG("secondary thread running");
+	LOG_DBG("doing work");
 
 	while (true) {
 		if (ctx.write) {
@@ -74,7 +58,7 @@ static void th_fun(void *arg0, void *arg1, void *arg2)
 		break;
 	}
 
-	LOG_DBG("%sing 1 byte %s fd %d", ctx.write ? "read" : "write",
+	LOG_DBG("%sing 1 byte %s fd %d", ctx.write ? "read" : "writ",
 		ctx.write ? "from" : "to", ctx.fd);
 	if (ctx.write) {
 		res = read(ctx.fd, &c, 1);
@@ -84,15 +68,9 @@ static void th_fun(void *arg0, void *arg1, void *arg2)
 	if (-1 == res || 1 != res) {
 		LOG_DBG("%s(2) failed: %d", ctx.write ? "read" : "write",
 			errno);
-		goto out;
+	} else {
+		LOG_DBG("%s 1 byte", ctx.write ? "read" : "wrote");
 	}
-	LOG_DBG("%s 1 byte", ctx.write ? "read" : "wrote");
-	ctx.n = 1;
-
-out:
-	ctx.done = true;
-
-	LOG_DBG("terminating..");
 }
 
 void test_socketpair_write_block(void)
@@ -113,13 +91,12 @@ void test_socketpair_write_block(void)
 		ctx.write = true;
 		ctx.fd = sv[(!i) & 1];
 
-		LOG_DBG("creating secondary thread");
-		ctx.tid = k_thread_create(&th, th_stack,
-			STACK_SIZE, th_fun,
-			NULL, NULL, NULL,
-			CONFIG_MAIN_THREAD_PRIORITY,
-			K_INHERIT_PERMS, K_NO_WAIT);
-		LOG_DBG("created secondary thread %p", ctx.tid);
+		LOG_DBG("queueing work");
+		k_work_init(&work, work_handler);
+		res = k_work_submit_to_user_queue(&test_socketpair_work_q,
+			&work);
+		zassert_equal(res, 0,
+			"k_work_submit_to_user_queue() failed: %d", res);
 
 		/* fill up the buffer */
 		for (ctx.m = 0; atomic_get(&ctx.m)
@@ -142,8 +119,6 @@ void test_socketpair_write_block(void)
 		zassert_equal(res, 1, "wrote %d bytes instead of 1", res);
 
 		LOG_DBG("success!");
-
-		k_thread_join(&th, K_MSEC(1000));
 	}
 
 	close(sv[0]);
@@ -153,8 +128,8 @@ void test_socketpair_write_block(void)
 void test_socketpair_read_block(void)
 {
 	int res;
-	int sv[2] = {-1, -1};
 	char x;
+	int sv[2] = {-1, -1};
 
 	LOG_DBG("creating socketpair..");
 	res = socketpair(AF_UNIX, SOCK_STREAM, 0, sv);
@@ -162,20 +137,19 @@ void test_socketpair_read_block(void)
 
 	for (size_t i = 0; i < 2; ++i) {
 
-		LOG_DBG("data direction %d -> %d", sv[i], sv[(!i) & 1]);
+		LOG_DBG("data direction %d <- %d", sv[i], sv[(!i) & 1]);
 
 		LOG_DBG("setting up context");
 		memset(&ctx, 0, sizeof(ctx));
 		ctx.write = false;
 		ctx.fd = sv[(!i) & 1];
 
-		LOG_DBG("creating secondary thread");
-		ctx.tid = k_thread_create(&th, th_stack,
-			STACK_SIZE, th_fun,
-			NULL, NULL, NULL,
-			CONFIG_MAIN_THREAD_PRIORITY,
-			K_INHERIT_PERMS, K_NO_WAIT);
-		LOG_DBG("created secondary thread %p", ctx.tid);
+		LOG_DBG("queueing work");
+		k_work_init(&work, work_handler);
+		res = k_work_submit_to_user_queue(&test_socketpair_work_q,
+			&work);
+		zassert_equal(res, 0,
+			"k_work_submit_to_user_queue() failed: %d", res);
 
 		/* try to read one byte */
 		LOG_DBG("reading from fd %d", sv[i]);
@@ -185,8 +159,6 @@ void test_socketpair_read_block(void)
 		zassert_equal(res, 1, "read %d bytes instead of 1", res);
 
 		LOG_DBG("success!");
-
-		k_thread_join(&th, K_MSEC(1000));
 	}
 
 	close(sv[0]);
