@@ -174,6 +174,24 @@ static inline u32_t get_core_freq_MHz(void)
 	return CYCLES_PER_SEC;
 }
 
+#elif defined(CONFIG_X86)
+
+static inline void benchmark_timer_init(void)  {       }
+static inline void benchmark_timer_stop(void)  {       }
+static inline void benchmark_timer_start(void) {       }
+
+extern u32_t x86_cyc_to_ns_floor64(u64_t cyc);
+extern u32_t x86_get_timer_freq_MHz(void);
+
+#define CYCLES_TO_NS(x) x86_cyc_to_ns_floor64(x)
+
+static inline u32_t get_core_freq_MHz(void)
+{
+	return x86_get_timer_freq_MHz();
+}
+
+#define PRINT_STATS(x, y, z)   PRINT_F(x, y, z)
+
 #else  /* All other architectures */
 /* Done because weak attribute doesn't work on static inline. */
 static inline void benchmark_timer_init(void)  {       }
