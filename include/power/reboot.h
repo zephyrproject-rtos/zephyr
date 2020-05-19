@@ -35,6 +35,15 @@ extern "C" {
 
 extern void sys_reboot(int type);
 
+
+#ifdef CONFIG_ARDUINO_LIKE_UPGRADE
+#ifdef CONFIG_SOC_SERIES_SAMD21
+
+void sys_reboot_to_upgrade(int delay_ms);
+
+#endif	// CONFIG_SOC_SERIES_SAMD21
+#endif	// CONFIG_ARDUINO_LIKE_UPGRADE
+
 #ifdef __cplusplus
 }
 #endif

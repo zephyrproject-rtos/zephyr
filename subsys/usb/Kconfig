@@ -106,6 +106,15 @@ config USB_MAX_POWER
 	  Set bMaxPower value in the Standard Configuration Descriptor,
 	  the result is 2mA times the value provided.
 
+config ARDUINO_LIKE_UPGRADE
+	bool "Enable triggering ofupgrade mode on Arduino-compatible boards"
+	select REBOOT
+	depends on BOARD_ADAFRUIT_FEATHER_M0_BASIC_PROTO
+	help
+	  WARNING - Using this functionality might soft-brick boards with
+	  non-stock bootloaders. This option enables host-triggering of upgrade
+	  mode on Arduino-compatible boards.
+
 source "subsys/usb/class/Kconfig"
 
 endif # USB_DEVICE_STACK

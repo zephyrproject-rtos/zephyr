@@ -48,6 +48,10 @@
 #include <usb/usb_common.h>
 #include <usb_descriptor.h>
 
+#ifdef CONFIG_ARDUINO_LIKE_UPGRADE
+#include <power/reboot.h>
+#endif
+
 #ifndef CONFIG_UART_INTERRUPT_DRIVEN
 #error "CONFIG_UART_INTERRUPT_DRIVEN must be set for CDC ACM driver"
 #endif
@@ -239,6 +243,13 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 		dev_data->line_state = (u8_t)sys_le16_to_cpu(pSetup->wValue);
 		LOG_DBG("CDC_SET_CONTROL_LINE_STATE 0x%x",
 			dev_data->line_state);
+#ifdef CONFIG_ARDUINO_LIKE_UPGRADE
+		if (sys_le32_to_cpu(dev_data->line_coding.dwDTERate) == 1200 &&
+			dev_data->line_state == 0) {
+			LOG_INF("Detected 1200");
+			sys_reboot_to_upgrade(250);
+		}
+#endif
 		break;
 
 	case GET_LINE_CODING:
