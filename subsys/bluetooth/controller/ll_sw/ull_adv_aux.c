@@ -94,8 +94,9 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	struct lll_adv_aux *lll_aux;
 	struct ll_adv_aux_set *aux;
 	struct ll_adv_set *adv;
-	struct lll_adv *lll;
 	uint8_t pri_idx, sec_idx;
+	struct lll_adv *lll;
+	uint8_t is_aux_new;
 
 	/* op param definitions:
 	 * 0x00 - Intermediate fragment of fragmented extended advertising data
@@ -144,9 +145,13 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 		/* NOTE: ull_hdr_init(&aux->ull); is done on start */
 		lll_hdr_init(lll_aux, aux);
 
-		aux->is_started = 0;
+		aux->is_started = 0U;
+
+		is_aux_new = 1U;
 	} else {
 		aux = (void *)HDR_LLL2EVT(lll_aux);
+
+		is_aux_new = 0U;
 	}
 
 	/* Get reference to previous primary PDU data */
@@ -170,7 +175,11 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	sec_pdu_prev = lll_adv_aux_data_peek(lll_aux);
 	sec_com_hdr_prev = (void *)&sec_pdu_prev->adv_ext_ind;
 	sec_hdr = (void *)sec_com_hdr_prev->ext_hdr_adi_adv_data;
-	sec_hdr_prev = *sec_hdr;
+	if (!is_aux_new) {
+		sec_hdr_prev = *sec_hdr;
+	} else {
+		*(uint8_t *)&sec_hdr_prev = 0U;
+	}
 	sec_dptr_prev = (uint8_t *)sec_hdr + sizeof(*sec_hdr);
 
 	/* Get reference to new secondary PDU data buffer */
