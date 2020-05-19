@@ -2636,7 +2636,8 @@ int bt_unpair(u8_t id, const bt_addr_le_t *addr)
 		return -EINVAL;
 	}
 
-	if (!addr || !bt_addr_le_cmp(addr, BT_ADDR_LE_ANY)) {
+	if (IS_ENABLED(CONFIG_BT_SMP) &&
+	    (!addr || !bt_addr_le_cmp(addr, BT_ADDR_LE_ANY))) {
 		bt_foreach_bond(id, unpair_remote, &id);
 		return 0;
 	}
