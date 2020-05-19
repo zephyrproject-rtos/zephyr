@@ -8,6 +8,13 @@
 #include <stdio.h>
 #include <zephyr.h>
 
+static void user_entry(void *p1, void *p2, void *p3)
+{
+	struct device *dev = p1;
+
+	hello_world_print(dev);
+}
+
 void main(void)
 {
 	printk("Hello World from the app!\n");
@@ -18,5 +25,6 @@ void main(void)
 
 	printk("device is %p, name is %s\n", dev, dev->name);
 
-	hello_world_print(dev);
+	k_object_access_grant(dev, k_current_get());
+	k_thread_user_mode_enter(user_entry, dev, NULL, NULL);
 }

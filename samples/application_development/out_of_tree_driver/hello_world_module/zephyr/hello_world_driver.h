@@ -22,8 +22,7 @@ extern "C" {
  * The driver exists to demonstrate (and test) custom drivers that are
  * maintained outside of Zephyr.
  */
-
-struct hello_world_driver_api {
+__subsystem struct hello_world_driver_api {
 	/* This struct has a member called 'print'. 'print' is function
 	 * pointer to a function that takes 'struct device *dev' as an
 	 * argument and returns 'void'.
