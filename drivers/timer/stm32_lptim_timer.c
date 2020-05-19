@@ -74,7 +74,7 @@ static void lptim_irq_handler(struct device *unused)
 				/ LPTIM_CLOCK;
 
 		z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL)
-				? dticks : 1);
+				? dticks : (dticks > 0));
 	}
 }
 
