@@ -6,6 +6,9 @@ set_ifndef(C++ g++)
 # GCC-based toolchains
 
 find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC} PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+if(${CMAKE_C_COMPILER} STREQUAL CMAKE_C_COMPILER-NOTFOUND)
+  message(FATAL_ERROR "C compiler ${CROSS_COMPILE}${CC} not found - Please check your toolchain installation")
+endif()
 
 if(CONFIG_CPLUSPLUS)
   set(cplusplus_compiler ${CROSS_COMPILE}${C++})
