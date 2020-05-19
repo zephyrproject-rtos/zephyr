@@ -1,11 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
+if(DEFINED TOOLCHAIN_HOME)
+  set(find_program_gcc_args PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+endif()
+
 set_ifndef(C++ g++)
 
 # Configures CMake for using GCC, this script is re-used by several
 # GCC-based toolchains
 
-find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC} PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC} ${find_program_gcc_args})
 if(${CMAKE_C_COMPILER} STREQUAL CMAKE_C_COMPILER-NOTFOUND)
   message(FATAL_ERROR "C compiler ${CROSS_COMPILE}${CC} not found - Please check your toolchain installation")
 endif()
@@ -22,7 +26,7 @@ else()
     set(cplusplus_compiler ${CMAKE_C_COMPILER})
   endif()
 endif()
-find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler} PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler} ${find_program_gcc_args})
 
 set(NOSTDINC "")
 
