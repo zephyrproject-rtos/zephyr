@@ -7,8 +7,8 @@
 #include "shell_utils.h"
 #include "shell_wildcard.h"
 
-extern const struct shell_cmd_entry __shell_root_cmds_start[0];
-extern const struct shell_cmd_entry __shell_root_cmds_end[0];
+extern const struct shell_cmd_entry __shell_root_cmds_start[];
+extern const struct shell_cmd_entry __shell_root_cmds_end[];
 
 static inline const struct shell_cmd_entry *shell_root_cmd_get(uint32_t id)
 {
