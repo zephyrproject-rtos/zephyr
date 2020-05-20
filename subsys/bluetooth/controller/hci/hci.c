@@ -1819,6 +1819,50 @@ static void le_clear_adv_sets(struct net_buf *buf, struct net_buf **evt)
 	ccst = hci_cmd_complete(evt, sizeof(*ccst));
 	ccst->status = status;
 }
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+static void le_set_per_adv_param(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_per_adv_param *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	uint16_t interval;
+	uint16_t flags;
+	uint8_t status;
+
+	interval = sys_le16_to_cpu(cmd->max_interval);
+	flags = sys_le16_to_cpu(cmd->props);
+
+	status = ll_adv_sync_param_set(cmd->handle, interval, flags);
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+
+static void le_set_per_adv_data(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_per_adv_data *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	uint8_t status;
+
+	status = ll_adv_sync_ad_data_set(cmd->handle, cmd->op, cmd->len,
+					 cmd->data);
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+
+static void le_set_per_adv_enable(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_le_set_per_adv_enable *cmd = (void *)buf->data;
+	struct bt_hci_evt_cc_status *ccst;
+	uint8_t status;
+
+	status = ll_adv_sync_enable(cmd->handle, cmd->enable);
+
+	ccst = hci_cmd_complete(evt, sizeof(*ccst));
+	ccst->status = status;
+}
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -2201,6 +2245,20 @@ static int controller_cmd_handle(uint16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_CLEAR_ADV_SETS):
 		le_clear_adv_sets(cmd, evt);
 		break;
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
+	case BT_OCF(BT_HCI_OP_LE_SET_PER_ADV_PARAM):
+		le_set_per_adv_param(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_SET_PER_ADV_DATA):
+		le_set_per_adv_data(cmd, evt);
+		break;
+
+	case BT_OCF(BT_HCI_OP_LE_SET_PER_ADV_ENABLE):
+		le_set_per_adv_enable(cmd, evt);
+		break;
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 #endif /* CONFIG_BT_BROADCASTER */
 
 #if defined(CONFIG_BT_OBSERVER)
