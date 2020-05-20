@@ -182,7 +182,21 @@ __weak FUNC_ALIAS(_read, read, int);
 
 int _write(int fd, const void *buf, int nbytes)
 {
-	ARG_UNUSED(fd);
+	static const char msg[] = "Warning: write() called with fd!=STDOUT/ERR"
+				  ", consider enabling CONFIG_POSIX_API\n";
+
+	/* As we alias write() to _write() below, unsuspecting users may call
+	 * it e.g. on a socket. This won't work, it requires CONFIG_POSIX_API
+	 * to work properly. And the reason we define write() (by aliasing it)
+	 * in the first place, is because some (prebuilt) Newlib variants
+	 * for some architectures call into it (while other, well-behaving
+	 * Newlib builds for other architectures, call into _write(), as
+	 * expected and desired). Until that's fixed (on Newlib/Zephyr SDK
+	 * side), warn unsuspecting users of the issue.
+	 */
+	if (fd != 1 && fd != 2) {
+		z_impl_zephyr_write_stdout(msg, sizeof(msg) - 1);
+	}
 
 	return z_impl_zephyr_write_stdout(buf, nbytes);
 }
