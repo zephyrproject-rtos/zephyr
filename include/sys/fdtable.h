@@ -138,10 +138,15 @@ enum {
 	ZFD_IOCTL_CLOSE = 0x100,
 	ZFD_IOCTL_FSYNC,
 	ZFD_IOCTL_LSEEK,
-	ZFD_IOCTL_POLL_PREPARE,
+	ZFD_IOCTL_GETSOCKNAME,
+
+	/* Codes above 0xff00 are private kernel-only requests, not
+	 * available from userspace.
+	 */
+	ZFD_IOCTL_PRIVATE = 0xff00,
+	ZFD_IOCTL_POLL_PREPARE = ZFD_IOCTL_PRIVATE,
 	ZFD_IOCTL_POLL_UPDATE,
 	ZFD_IOCTL_POLL_OFFLOAD,
-	ZFD_IOCTL_GETSOCKNAME,
 };
 
 #ifdef __cplusplus

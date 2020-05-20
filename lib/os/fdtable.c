@@ -20,6 +20,7 @@
 #include <sys/speculation.h>
 #ifdef CONFIG_POSIX_API
 #include <posix/unistd.h>
+#include <posix/sys/ioctl.h>
 #endif
 #include <syscall_handler.h>
 
@@ -277,17 +278,46 @@ off_t lseek(int fd, off_t offset, int whence)
 }
 FUNC_ALIAS(lseek, _lseek, off_t);
 
+int z_impl_sys_ioctl(int fd, unsigned long request, va_list args)
+{
+	if (_check_fd(fd) < 0) {
+		return -1;
+	}
+
+	return fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
+}
+
+#ifdef CONFIG_USERSPACE
+ssize_t z_vrfy_sys_ioctl(int fd, unsigned long request, va_list args)
+{
+/* This doesn't work so far, until we start to fish inside a particular
+ * va_list structure for a particular arch. Maybe later.
+ */
+#if 0
+	/* Check that we can access 4 words of arguments. This is very
+	 * generic check, implementation of specific ioctl's are
+	 * expected to perform their own detailed argument checking.
+	 */
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(args, sizeof(uintptr_t) * 4));
+#endif
+
+	if (request >= ZFD_IOCTL_PRIVATE) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	return z_impl_sys_ioctl(fd, request, args);
+}
+#include <syscalls/sys_ioctl_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 int ioctl(int fd, unsigned long request, ...)
 {
 	va_list args;
 	int res;
 
-	if (_check_fd(fd) < 0) {
-		return -1;
-	}
-
 	va_start(args, request);
-	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
+	res = sys_ioctl(fd, request, args);
 	va_end(args);
 
 	return res;
@@ -304,10 +334,6 @@ int fcntl(int fd, int cmd, ...)
 	va_list args;
 	int res;
 
-	if (_check_fd(fd) < 0) {
-		return -1;
-	}
-
 	/* Handle fdtable commands. */
 	switch (cmd) {
 	case F_DUPFD:
@@ -318,7 +344,7 @@ int fcntl(int fd, int cmd, ...)
 
 	/* The rest of commands are per-fd, handled by ioctl vmethod. */
 	va_start(args, cmd);
-	res = fdtable[fd].vtable->ioctl(fdtable[fd].obj, cmd, args);
+	res = sys_ioctl(fd, cmd, args);
 	va_end(args);
 
 	return res;
