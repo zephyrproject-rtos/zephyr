@@ -37,6 +37,12 @@
 #include "hal/debug.h"
 
 /*
+ * we need to filter on octet 0; the following mask has 7 octets
+ * with all bits set to 1, the last octet is 0x00
+ */
+#define FEAT_FILT_OCTET0 0xFFFFFFFFFFFFFF00
+
+/*
  * LE Ping Procedure Helpers
  */
 
@@ -80,17 +86,17 @@ void ull_cp_priv_ntf_encode_unknown_rsp(struct proc_ctx *ctx,
 /*
  * Feature Exchange Procedure Helper
  */
-static void pdu_encode_set_features(struct ull_cp_conn *conn, u8_t *features)
-{
-	sys_put_le64(conn->llcp.fex.features, features);
-}
 
 static void feature_filter(u8_t *featuresin, u64_t *featuresout)
 {
 	u64_t feat;
 
-	feat = ~LL_FEAT_BIT_MASK_VALID;
-	feat |= sys_get_le64(featuresin);
+	/*
+	 * Note that in the split controller invalid bits are set
+	 * to 1, in LLCP we set them to 0; the spec. does not
+	 * define which value they should have
+	 */
+	feat = sys_get_le64(featuresin);
 	feat &= LL_FEAT_BIT_MASK;
 
 	*featuresout = feat;
@@ -111,13 +117,14 @@ void ull_cp_priv_pdu_encode_feature_req(struct ull_cp_conn *conn,
 	}
 
 	p = &pdu->llctrl.feature_req;
-	pdu_encode_set_features(conn,  p->features);
+	sys_put_le64(LL_FEAT, p->features);
 }
 
 void ull_cp_priv_pdu_encode_feature_rsp(struct ull_cp_conn *conn,
 					struct pdu_data *pdu)
 {
 	struct pdu_data_llctrl_feature_rsp *p;
+	u64_t feature_rsp = LL_FEAT;
 
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, feature_rsp) +
@@ -125,7 +132,14 @@ void ull_cp_priv_pdu_encode_feature_rsp(struct ull_cp_conn *conn,
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 
 	p = &pdu->llctrl.feature_rsp;
-	pdu_encode_set_features(conn, p->features);
+
+	/*
+	 * we only filter on octet 0, remaining 7 octets are the features
+	 * we support, as defined in LL_FEAT
+	 */
+	feature_rsp &= (FEAT_FILT_OCTET0 | conn->llcp.fex.features_used);
+
+	sys_put_le64(feature_rsp, p->features);
 }
 
 void ull_cp_priv_ntf_encode_feature_rsp(struct ull_cp_conn *conn,
@@ -139,21 +153,7 @@ void ull_cp_priv_ntf_encode_feature_rsp(struct ull_cp_conn *conn,
 	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 	p = &pdu->llctrl.feature_rsp;
 
-	pdu_encode_set_features(conn, p->features);
-}
-
-void ull_cp_priv_ntf_encode_feature_req(struct ull_cp_conn *conn,
-					      struct pdu_data *pdu)
-{
-	struct pdu_data_llctrl_slave_feature_req *p;
-
-	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, slave_feature_req) +
-		sizeof(struct pdu_data_llctrl_slave_feature_req);
-	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
-
-	p = &pdu->llctrl.slave_feature_req;
-	pdu_encode_set_features(conn, p->features);
+	sys_put_le64(conn->llcp.fex.features_peer, p->features);
 }
 
 void ull_cp_priv_pdu_decode_feature_req(struct ull_cp_conn *conn,
@@ -162,8 +162,11 @@ void ull_cp_priv_pdu_decode_feature_req(struct ull_cp_conn *conn,
 	u64_t featureset;
 
 	feature_filter(pdu->llctrl.feature_req.features, &featureset);
+	conn->llcp.fex.features_used = LL_FEAT & featureset;
 
-	conn->llcp.fex.features &= featureset;
+	featureset &= (FEAT_FILT_OCTET0 | conn->llcp.fex.features_used);
+	conn->llcp.fex.features_peer = featureset;
+
 	conn->llcp.fex.valid = 1;
 }
 
@@ -172,10 +175,10 @@ void ull_cp_priv_pdu_decode_feature_rsp(struct ull_cp_conn *conn,
 {
 	u64_t featureset;
 
-
 	feature_filter(pdu->llctrl.feature_rsp.features, &featureset);
+	conn->llcp.fex.features_used = LL_FEAT & featureset;
 
-	conn->llcp.fex.features &= featureset;
+	conn->llcp.fex.features_peer = featureset;
 	conn->llcp.fex.valid = 1;
 }
 
