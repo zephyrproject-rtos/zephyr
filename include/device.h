@@ -387,7 +387,7 @@ void device_busy_clear(struct device *busy_dev);
  * @param cb Unused
  * @param unused_arg Unused
  *
- * @retval 0 Always returns 0
+ * @retval -ENOTSUP for all operations.
  */
 int device_pm_control_nop(struct device *unused_device,
 			  u32_t unused_ctrl_command,
