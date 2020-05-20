@@ -466,6 +466,12 @@ static void install_update_cb(void)
 	}
 #endif
 
+	LOG_DBG("Flash: Address: 0x%08x, Size: %d, Flush: %s",
+		ctx.flash_ctx.stream.bytes_written,
+		response_packet.max_len - response_packet.offset,
+		(ctx.downloaded_size == ctx.block.total_size ?
+			"True" : "False"));
+
 	if (flash_img_buffered_write(&ctx.flash_ctx,
 				     response_packet.data + response_packet.offset,
 				     response_packet.max_len - response_packet.offset,
@@ -861,7 +867,8 @@ enum updatehub_response updatehub_probe(void)
 		       metadata_any_boards.objects[1].objects.sha256sum,
 		       SHA256_HEX_DIGEST_SIZE);
 		update_info.image_size = metadata_any_boards.objects[1].objects.size;
-		LOG_DBG("metadata_any: %s", update_info.sha256sum_image);
+		LOG_DBG("metadata_any: %s",
+			log_strdup(update_info.sha256sum_image));
 	} else {
 		if (metadata_some_boards.objects_len != 2) {
 			LOG_ERR("Could not parse json");
@@ -890,7 +897,8 @@ enum updatehub_response updatehub_probe(void)
 		       SHA256_HEX_DIGEST_SIZE);
 		update_info.image_size =
 			metadata_some_boards.objects[1].objects.size;
-		LOG_DBG("metadata_some: %s", update_info.sha256sum_image);
+		LOG_DBG("metadata_some: %s",
+			log_strdup(update_info.sha256sum_image));
 	}
 
 	ctx.code_status = UPDATEHUB_HAS_UPDATE;
@@ -965,12 +973,14 @@ static void autohandler(struct k_work *work)
 		LOG_ERR("Image is unconfirmed. Rebooting to revert back to previous"
 			"confirmed image.");
 
+		LOG_PANIC();
 		sys_reboot(SYS_REBOOT_WARM);
 		break;
 
 	case UPDATEHUB_HAS_UPDATE:
 		switch (updatehub_update()) {
 		case UPDATEHUB_OK:
+			LOG_PANIC();
 			sys_reboot(SYS_REBOOT_WARM);
 			break;
 
