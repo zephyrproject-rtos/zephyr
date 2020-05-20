@@ -160,14 +160,14 @@ static void cpu_stats_log_fn(struct k_work *item)
 	cpu_stats_display();
 	cpu_stats_reset_counters();
 	k_delayed_work_submit(&cpu_stats_log,
-			      CONFIG_TRACING_CPU_STATS_INTERVAL);
+			      K_MSEC(CONFIG_TRACING_CPU_STATS_INTERVAL));
 }
 
 static int cpu_stats_log_init(struct device *dev)
 {
 	k_delayed_work_init(&cpu_stats_log, cpu_stats_log_fn);
 	k_delayed_work_submit(&cpu_stats_log,
-			      CONFIG_TRACING_CPU_STATS_INTERVAL);
+			      K_MSEC(CONFIG_TRACING_CPU_STATS_INTERVAL));
 
 	return 0;
 }
