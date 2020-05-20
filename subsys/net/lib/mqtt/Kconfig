@@ -35,4 +35,16 @@ config MQTT_LIB_WEBSOCKET
 	help
 	  Enable Websocket support for socket MQTT Library.
 
+config MQTT_CLEAN_SESSION
+	bool "MQTT Clean Session Flag."
+	help
+	  When a client connects to a MQTT broker using a persistent session,
+	  the message broker saves all subscriptions. When the client
+	  disconnects, the message broker stores unacknowledged QoS 1 messages
+	  and new QoS 1 messages published to topics to which the client is
+	  subscribed. When the client reconnects to the persistent session,
+	  all subscriptions are reinstated and all stored messages are sent to
+	  the client. Setting this flag to 0 allows the client to create a
+	  persistent session.
+
 endif # MQTT_LIB
