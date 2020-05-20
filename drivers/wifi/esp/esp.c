@@ -38,7 +38,7 @@ static struct modem_pin modem_pins[] = {
 #if DT_INST_NODE_HAS_PROP(0, wifi_reset_gpios)
 	MODEM_PIN(DT_INST_GPIO_LABEL(0, wifi_reset_gpios),
 		  DT_INST_GPIO_PIN(0, wifi_reset_gpios),
-		  GPIO_OUTPUT),
+		  DT_INST_GPIO_FLAGS(0, wifi_reset_gpios) | GPIO_OUTPUT),
 #endif
 };
 
