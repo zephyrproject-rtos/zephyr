@@ -6,15 +6,9 @@
 #include <timestamp.h>
 #include <kernel_internal.h>
 
-#define CALCULATE_TIME(special_char, profile, name)			     \
-	{								     \
-		total_##profile##_##name##_time = CYCLES_TO_NS( \
-			special_char##profile##_##name##_end_time -	     \
-			special_char##profile##_##name##_start_time);	     \
-	}
-
-#define DECLARE_VAR(profile, name) \
-	uint64_t total_##profile##_##name##_time;
+#define CALCULATE_CYCLES(profile, name)					\
+	((profile##_##name##_end_time) -				\
+	 (profile##_##name##_start_time))
 
 /* Stack size for all the threads created in this benchmark */
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -103,8 +97,9 @@
 #define CYCLES_PER_SEC   (16000000/(1 << NRF_TIMER2->PRESCALER))
 
 #define CYCLES_TO_NS(x)        ((x) * (NANOSECS_PER_SEC/CYCLES_PER_SEC))
-#define PRINT_STATS(x, y, z)   PRINT_F(x, (y*((SystemCoreClock)/	\
-					      CYCLES_PER_SEC)), z)
+#define PRINT_STATS(x, y) \
+	PRINT_F(x, (y * ((SystemCoreClock) / CYCLES_PER_SEC)), \
+		CYCLES_TO_NS(y))
 
 /* Configure Timer parameters */
 static inline void benchmark_timer_init(void)
@@ -138,7 +133,7 @@ static inline uint32_t get_core_freq_MHz(void)
 #define NANOSECS_PER_SEC	(1000000000)
 #define CYCLES_PER_SEC		(48000000)
 #define CYCLES_TO_NS(x)		((x) * (NANOSECS_PER_SEC/CYCLES_PER_SEC))
-#define PRINT_STATS(x, y, z)   PRINT_F(x, y, z)
+#define PRINT_STATS(x, y)	PRINT_F(x, y, CYCLES_TO_NS(y))
 
 /* Configure Timer parameters */
 static inline void benchmark_timer_init(void)
@@ -190,7 +185,7 @@ static inline uint32_t get_core_freq_MHz(void)
 	return x86_get_timer_freq_MHz();
 }
 
-#define PRINT_STATS(x, y, z)   PRINT_F(x, y, z)
+#define PRINT_STATS(x, y)	PRINT_F(x, y, CYCLES_TO_NS(y))
 
 #else  /* All other architectures */
 /* Done because weak attribute doesn't work on static inline. */
@@ -206,7 +201,7 @@ static inline uint32_t get_core_freq_MHz(void)
 	return  (sys_clock_hw_cycles_per_sec() / 1000000);
 }
 
-#define PRINT_STATS(x, y, z)   PRINT_F(x, y, z)
+#define PRINT_STATS(x, y)	PRINT_F(x, y, CYCLES_TO_NS(y))
 #endif /* CONFIG_NRF_RTC_TIMER */
 
 /******************************************************************************/

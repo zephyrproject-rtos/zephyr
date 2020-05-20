@@ -22,8 +22,7 @@ struct k_mem_domain bench_domain;
 extern char sline[256];
 extern uint64_t arch_timing_enter_user_mode_end;
 
-uint32_t drop_to_user_mode_end_time, drop_to_user_mode_start_time;
-uint32_t user_thread_creation_end_time, user_thread_creation_start_time;
+uint64_t drop_to_user_mode_start_time;
 
 struct k_thread my_thread_user;
 K_THREAD_STACK_EXTERN(my_stack_area);
@@ -104,30 +103,17 @@ void drop_to_user_mode(void)
 
 	k_yield();
 
-	drop_to_user_mode_end_time = (uint32_t)
-		SUBTRACT_CLOCK_CYCLES(arch_timing_enter_user_mode_end);
-
-	uint32_t tmp_start_time =
+	uint32_t total_cycles =
+		SUBTRACT_CLOCK_CYCLES(arch_timing_enter_user_mode_end) -
 		SUBTRACT_CLOCK_CYCLES(drop_to_user_mode_start_time);
 
-	uint32_t total_drop_to_user_mode_time =
-		CYCLES_TO_NS((uint32_t)
-			     ((drop_to_user_mode_end_time - tmp_start_time) &
-			      0xFFFFFFFFULL));
-
-	PRINT_STATS("Drop to user mode",
-		    (uint32_t)((drop_to_user_mode_end_time - tmp_start_time) &
-		     0xFFFFFFFFULL),
-		    (uint32_t) (total_drop_to_user_mode_time  & 0xFFFFFFFFULL));
-
-
-
+	PRINT_STATS("Drop to user mode", total_cycles);
 }
 
 /******************************************************************************/
 void user_thread_creation(void)
 {
-	uint32_t total_user_thread_creation_time;
+	uint64_t user_thread_creation_end_time, user_thread_creation_start_time;
 
 	TIMING_INFO_PRE_READ();
 	user_thread_creation_start_time = TIMING_INFO_GET_TIMER_VALUE();
@@ -135,28 +121,22 @@ void user_thread_creation(void)
 	k_thread_create(&my_thread_user, my_stack_area, STACK_SIZE,
 			test_drop_to_user_mode_1,
 			NULL, NULL, NULL,
-			0 /*priority*/, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
+			0 /*priority*/, K_INHERIT_PERMS | K_USER, K_FOREVER);
 
 	TIMING_INFO_PRE_READ();
 	user_thread_creation_end_time = TIMING_INFO_GET_TIMER_VALUE();
 	k_thread_abort(&my_thread_user);
 
-	uint32_t total_cycles = (uint32_t)
-		((SUBTRACT_CLOCK_CYCLES(user_thread_creation_end_time) -
-		  SUBTRACT_CLOCK_CYCLES(user_thread_creation_start_time)) &
-		 0xFFFFFFFFULL);
+	uint32_t total_cycles =
+		SUBTRACT_CLOCK_CYCLES(user_thread_creation_end_time) -
+		SUBTRACT_CLOCK_CYCLES(user_thread_creation_start_time);
 
-	total_user_thread_creation_time = CYCLES_TO_NS(total_cycles);
-
-	PRINT_STATS("User thread creation",
-		    total_cycles,
-		    (uint32_t) (total_user_thread_creation_time  & 0xFFFFFFFFULL));
-
+	PRINT_STATS("User thread creation", total_cycles);
 }
 
 /******************************************************************************/
 /* dummy syscalls creation */
-K_APP_BMEM(bench_ptn) uint32_t syscall_overhead_start_time,
+K_APP_BMEM(bench_ptn) uint64_t syscall_overhead_start_time,
 	syscall_overhead_end_time;
 
 int z_impl_k_dummy_syscall(void)
@@ -184,25 +164,16 @@ void syscall_overhead_user_thread(void *p1, void *p2, void *p3)
 
 void syscall_overhead(void)
 {
-	uint32_t total_syscall_overhead_time;
-
 	k_thread_create(&my_thread_user, my_stack_area_0, STACK_SIZE,
 			syscall_overhead_user_thread,
 			NULL, NULL, NULL,
 			-1 /*priority*/, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
+	uint32_t total_cycles =
+		SUBTRACT_CLOCK_CYCLES(syscall_overhead_end_time) -
+		SUBTRACT_CLOCK_CYCLES(syscall_overhead_start_time);
 
-	uint32_t total_cycles = (uint32_t)
-		((SUBTRACT_CLOCK_CYCLES(syscall_overhead_end_time) -
-		  SUBTRACT_CLOCK_CYCLES(syscall_overhead_start_time)) &
-		 0xFFFFFFFFULL);
-
-	total_syscall_overhead_time = CYCLES_TO_NS(total_cycles);
-
-	PRINT_STATS("Syscall overhead",
-		    total_cycles,
-		    (uint32_t) (total_syscall_overhead_time  & 0xFFFFFFFFULL));
-
+	PRINT_STATS("Syscall overhead", total_cycles);
 }
 
 /******************************************************************************/
@@ -249,38 +220,23 @@ void validation_overhead(void)
 {
 	k_thread_access_grant(k_current_get(), &test_sema);
 
-
 	k_thread_create(&my_thread_user, my_stack_area, STACK_SIZE,
 			validation_overhead_user_thread,
 			NULL, NULL, NULL,
 			-1 /*priority*/, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
-	uint32_t total_cycles_obj_init = (uint32_t)
-		((SUBTRACT_CLOCK_CYCLES(validation_overhead_obj_init_end_time) -
-		  SUBTRACT_CLOCK_CYCLES(validation_overhead_obj_init_start_time)
-		  ) & 0xFFFFFFFFULL);
+	uint32_t total_cycles_obj_init =
+		SUBTRACT_CLOCK_CYCLES(validation_overhead_obj_init_end_time) -
+		SUBTRACT_CLOCK_CYCLES(validation_overhead_obj_init_start_time);
 
-	uint32_t total_cycles_obj = (uint32_t)
-		((SUBTRACT_CLOCK_CYCLES(validation_overhead_obj_end_time) -
-		  SUBTRACT_CLOCK_CYCLES(validation_overhead_obj_start_time)) &
-		 0xFFFFFFFFULL);
-
-	uint32_t total_validation_overhead_obj_init_time =
-		CYCLES_TO_NS(total_cycles_obj_init);
-
-	uint32_t  total_validation_overhead_obj_time =
-		CYCLES_TO_NS(total_cycles_obj);
+	uint32_t total_cycles_obj =
+		SUBTRACT_CLOCK_CYCLES(validation_overhead_obj_end_time) -
+		SUBTRACT_CLOCK_CYCLES(validation_overhead_obj_start_time);
 
 	PRINT_STATS("Validation overhead k_object init",
-		    total_cycles_obj_init,
-		    (uint32_t) (total_validation_overhead_obj_init_time  &
-			     0xFFFFFFFFULL));
+		    total_cycles_obj_init);
 
 	PRINT_STATS("Validation overhead k_object permission",
-		    total_cycles_obj,
-		    (uint32_t) (total_validation_overhead_obj_time  &
-			     0xFFFFFFFFULL));
-
-
+		    total_cycles_obj);
 }
