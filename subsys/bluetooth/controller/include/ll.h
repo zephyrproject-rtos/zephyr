@@ -35,8 +35,8 @@ uint8_t ll_adv_aux_set_remove(uint8_t handle);
 uint8_t ll_adv_aux_set_clear(void);
 uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval,
 			      uint16_t flags);
-uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref,
-				uint8_t len, uint8_t const *const data);
+uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
+				uint8_t const *const data);
 uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable);
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 uint8_t ll_adv_params_set(uint16_t interval, uint8_t adv_type,
