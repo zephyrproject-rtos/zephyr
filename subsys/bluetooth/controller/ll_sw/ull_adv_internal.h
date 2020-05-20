@@ -61,6 +61,9 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 /* helper function to stop auxiliary advertising */
 uint8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux);
 
+/* helper function to acquire and initialize auxiliary advertising instance */
+struct ll_adv_aux_set *ull_adv_aux_acquire(struct lll_adv *lll);
+
 /* helper function to release auxiliary advertising instance */
 void ull_adv_aux_release(struct ll_adv_aux_set *aux);
 

@@ -133,19 +133,12 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	/* Allocate or existing Auxiliary channel instance */
 	lll_aux = lll->aux;
 	if (!lll_aux) {
-		aux = aux_acquire();
+		aux = ull_adv_aux_acquire(lll);
 		if (!aux) {
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
 		lll_aux = &aux->lll;
-		lll->aux = lll_aux;
-		lll_aux->adv = lll;
-
-		/* NOTE: ull_hdr_init(&aux->ull); is done on start */
-		lll_hdr_init(lll_aux, aux);
-
-		aux->is_started = 0U;
 
 		is_aux_new = 1U;
 	} else {
@@ -644,6 +637,28 @@ uint8_t ull_adv_aux_stop(struct ll_adv_aux_set *aux)
 	aux->is_started = 0U;
 
 	return 0;
+}
+
+struct ll_adv_aux_set *ull_adv_aux_acquire(struct lll_adv *lll)
+{
+	struct lll_adv_aux *lll_aux;
+	struct ll_adv_aux_set *aux;
+
+	aux = aux_acquire();
+	if (!aux) {
+		return aux;
+	}
+
+	lll_aux = &aux->lll;
+	lll->aux = lll_aux;
+	lll_aux->adv = lll;
+
+	/* NOTE: ull_hdr_init(&aux->ull); is done on start */
+	lll_hdr_init(lll_aux, aux);
+
+	aux->is_started = 0U;
+
+	return aux;
 }
 
 void ull_adv_aux_release(struct ll_adv_aux_set *aux)

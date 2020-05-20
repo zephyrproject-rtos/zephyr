@@ -81,6 +81,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		struct lll_adv_aux *lll_aux;
 		uint8_t pri_idx, sec_idx, ad_len;
 		struct lll_adv *lll;
+		uint8_t is_aux_new;
 		int err;
 
 		sync = sync_acquire();
@@ -91,6 +92,18 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		lll = &adv->lll;
 		lll_aux = lll->aux;
 		if (!lll_aux) {
+			struct ll_adv_aux_set *aux;
+
+			aux = ull_adv_aux_acquire(lll);
+			if (!aux) {
+				return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+			}
+
+			lll_aux = &aux->lll;
+
+			is_aux_new = 1U;
+		} else {
+			is_aux_new = 0U;
 		}
 
 		lll_sync = &sync->lll;
@@ -135,7 +148,11 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		sec_pdu_prev = lll_adv_aux_data_peek(lll_aux);
 		sec_com_hdr_prev = (void *)&sec_pdu_prev->adv_ext_ind;
 		sec_hdr = (void *)sec_com_hdr_prev->ext_hdr_adi_adv_data;
-		sec_hdr_prev = *sec_hdr;
+		if (!is_aux_new) {
+			sec_hdr_prev = *sec_hdr;
+		} else {
+			*(uint8_t *)&sec_hdr_prev = 0U;
+		}
 		sec_dptr_prev = (uint8_t *)sec_hdr + sizeof(*sec_hdr);
 
 		/* Get reference to new secondary PDU data buffer */
