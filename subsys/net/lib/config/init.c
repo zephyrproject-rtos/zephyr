@@ -33,10 +33,22 @@ extern int net_init_clock_via_sntp(void);
 
 static K_SEM_DEFINE(waiter, 0, 1);
 static struct k_sem counter;
+static atomic_t services_flags;
 
 #if defined(CONFIG_NET_NATIVE)
 static struct net_mgmt_event_callback mgmt_iface_cb;
 #endif
+
+static inline void services_notify_ready(int flags)
+{
+	atomic_or(&services_flags, flags);
+	k_sem_give(&waiter);
+}
+
+static inline bool services_are_ready(int flags)
+{
+	return (atomic_get(&services_flags) & flags) == flags;
+}
 
 #if defined(CONFIG_NET_DHCPV4) && defined(CONFIG_NET_NATIVE_IPV4)
 static struct net_mgmt_event_callback mgmt4_cb;
@@ -81,8 +93,7 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 		break;
 	}
 
-	k_sem_take(&counter, K_NO_WAIT);
-	k_sem_give(&waiter);
+	services_notify_ready(NET_CONFIG_NEED_IPV4);
 }
 
 static void setup_dhcpv4(struct net_if *iface)
@@ -168,8 +179,7 @@ static void setup_ipv4(struct net_if *iface)
 		}
 	}
 
-	k_sem_take(&counter, K_NO_WAIT);
-	k_sem_give(&waiter);
+	services_notify_ready(NET_CONFIG_NEED_IPV4);
 }
 
 #else
@@ -225,13 +235,11 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 						  NET_IPV6_ADDR_LEN)));
 #endif
 
-		k_sem_take(&counter, K_NO_WAIT);
-		k_sem_give(&waiter);
+		services_notify_ready(NET_CONFIG_NEED_IPV6);
 	}
 
 	if (mgmt_event == NET_EVENT_IPV6_ROUTER_ADD) {
-		k_sem_take(&counter, K_NO_WAIT);
-		k_sem_give(&waiter);
+		services_notify_ready(NET_CONFIG_NEED_ROUTER);
 	}
 }
 
@@ -275,8 +283,7 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 	}
 
 #if !defined(CONFIG_NET_IPV6_DAD)
-	k_sem_take(&counter, K_NO_WAIT);
-	k_sem_give(&waiter);
+	services_notify_ready(NET_CONFIG_NEED_IPV6);
 #endif
 
 	return;
@@ -329,7 +336,7 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 #define LOOP_DIVIDER 10
 	struct net_if *iface = net_if_get_default();
 	int loop = timeout / LOOP_DIVIDER;
-	int count, need = 0;
+	int count;
 
 	if (app_info) {
 		NET_INFO("%s", log_strdup(app_info));
@@ -384,16 +391,6 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 		return -ENETDOWN;
 	}
 
-	if (flags & NET_CONFIG_NEED_IPV6) {
-		need++;
-	}
-
-	if (flags & NET_CONFIG_NEED_IPV4) {
-		need++;
-	}
-
-	k_sem_init(&counter, need, UINT_MAX);
-
 	setup_ipv4(iface);
 	setup_dhcpv4(iface);
 	setup_ipv6(iface, flags);
@@ -401,12 +398,8 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 	/* Loop here until we are ready to continue. As we might need
 	 * to wait multiple events, sleep smaller amounts of data.
 	 */
-	while (count--) {
+	while (!services_are_ready(flags) && count--) {
 		k_sem_take(&waiter, K_MSEC(loop));
-
-		if (!k_sem_count_get(&counter)) {
-			break;
-		}
 	}
 
 	if (!count && timeout) {
