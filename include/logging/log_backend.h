@@ -62,8 +62,8 @@ struct log_backend {
 	bool autostart;
 };
 
-extern const struct log_backend __log_backends_start[0];
-extern const struct log_backend __log_backends_end[0];
+extern const struct log_backend __log_backends_start[];
+extern const struct log_backend __log_backends_end[];
 
 /**
  * @brief Macro for creating a logger backend instance.

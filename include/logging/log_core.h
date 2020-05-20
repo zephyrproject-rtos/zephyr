@@ -413,8 +413,8 @@ static inline char z_log_minimal_level_to_char(int level)
  */
 #define LOG_LEVEL_INTERNAL_RAW_STRING LOG_LEVEL_NONE
 
-extern struct log_source_const_data __log_const_start[0];
-extern struct log_source_const_data __log_const_end[0];
+extern struct log_source_const_data __log_const_start[];
+extern struct log_source_const_data __log_const_end[];
 
 /** @brief Get name of the log source.
  *
@@ -456,8 +456,8 @@ static inline u32_t log_sources_count(void)
 	return log_const_source_id(__log_const_end);
 }
 
-extern struct log_source_dynamic_data __log_dynamic_start[0];
-extern struct log_source_dynamic_data __log_dynamic_end[0];
+extern struct log_source_dynamic_data __log_dynamic_start[];
+extern struct log_source_dynamic_data __log_dynamic_end[];
 
 /** @brief Creates name of variable and section for runtime log data.
  *
