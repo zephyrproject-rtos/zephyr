@@ -131,7 +131,10 @@ static void lp_comm_ntf_feature_exchange(struct ull_cp_conn *conn, struct proc_c
 		break;
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
-		ntf_encode_feature_req(conn, pdu);
+		/*
+		 * No notification on feature-request or slave-feature request
+		 * TODO: probably handle as an unexpected call
+		 */
 		break;
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		ntf_encode_unknown_rsp(ctx, pdu);

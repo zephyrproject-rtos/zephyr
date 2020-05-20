@@ -192,7 +192,10 @@
 /* All defined feature bits */
 #define LL_FEAT_BIT_MASK         0xFFFFFFFFFULL
 
-/* Feature bits that are valid from controller to controller */
+/*
+ * LL_FEAT_BIT_MASK_VALID is defined as per
+ * Core Spec V5.2 Volume 6, Part B, chapter 4.6
+ */
 #define LL_FEAT_BIT_MASK_VALID   0xFF787CF2FULL
 
 /* Mask to filter away octet 0 for feature exchange */
