@@ -124,7 +124,7 @@ int device_pm_control_nop(struct device *unused_device,
 		       device_pm_cb cb,
 		       void *unused_arg)
 {
-	return 0;
+	return -ENOTSUP;
 }
 
 void device_list_get(struct device **device_list, int *device_count)
