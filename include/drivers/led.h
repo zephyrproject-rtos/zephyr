@@ -66,6 +66,15 @@ typedef int (*led_api_get_info)(struct device *dev, uint32_t led,
 typedef int (*led_api_set_brightness)(struct device *dev, uint32_t led,
 				      uint8_t value);
 /**
+ * @typedef led_api_set_color()
+ * @brief Optional API callback to set the colors of a LED.
+ *
+ * @see led_set_color() for argument descriptions.
+ */
+typedef int (*led_api_set_color)(struct device *dev, uint32_t led,
+				 uint8_t num_colors, const uint8_t *color);
+
+/**
  * @typedef led_api_on()
  * @brief Callback API for turning on an LED
  *
@@ -83,8 +92,6 @@ typedef int (*led_api_off)(struct device *dev, uint32_t led);
 
 /**
  * @brief LED driver API
- *
- * This is the mandatory API any LED driver needs to expose.
  */
 __subsystem struct led_driver_api {
 	/* Mandatory callbacks. */
@@ -94,6 +101,7 @@ __subsystem struct led_driver_api {
 	led_api_off off;
 	/* Optional callbacks. */
 	led_api_get_info get_info;
+	led_api_set_color set_color;
 };
 
 /**
@@ -166,6 +174,37 @@ static inline int z_impl_led_set_brightness(struct device *dev, uint32_t led,
 		(const struct led_driver_api *)dev->api;
 
 	return api->set_brightness(dev, led, value);
+}
+
+/**
+ * @brief Set LED color
+ *
+ * This routine configures all the color channels of a LED with the given
+ * color array.
+ *
+ * Calling this function after led_blink() won't affect blinking.
+ *
+ * @param dev LED device
+ * @param led LED number
+ * @param num_colors Number of colors in the array.
+ * @param color Array of colors. It must be ordered following the color
+ *        mapping of the LED controller. See the the color_mapping member
+ *        in struct led_info.
+ * @return 0 on success, negative on error
+ */
+__syscall int led_set_color(struct device *dev, uint32_t led,
+			    uint8_t num_colors, const uint8_t *color);
+
+static inline int z_impl_led_set_color(struct device *dev, uint32_t led,
+				       uint8_t num_colors, const uint8_t *color)
+{
+	const struct led_driver_api *api =
+		(const struct led_driver_api *)dev->api;
+
+	if (!api->set_color) {
+		return -ENOTSUP;
+	}
+	return api->set_color(dev, led, num_colors, color);
 }
 
 /**
