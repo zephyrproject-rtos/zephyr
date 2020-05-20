@@ -1,0 +1,3 @@
+config BOARD_WAVESHARE_OPEN103Z
+	bool "Waveshare OPEN103Z Development Board"
+	depends on SOC_STM32F103XE

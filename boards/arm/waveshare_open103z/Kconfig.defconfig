@@ -1,0 +1,6 @@
+if BOARD_WAVESHARE_OPEN103Z
+
+config BOARD
+	default "waveshare_open103z"
+
+endif # BOARD_WAVESHARE_OPEN103Z
