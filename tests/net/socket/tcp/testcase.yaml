@@ -1,6 +1,11 @@
 common:
   depends_on: netif
+  min_ram: 32
+  tags: net socket userspace
 tests:
   net.socket.tcp:
-    min_ram: 32
-    tags: net socket userspace
+    extra_configs:
+      - CONFIG_POSIX_API=n
+  net.socket.tcp.posix:
+    extra_configs:
+      - CONFIG_POSIX_API=y

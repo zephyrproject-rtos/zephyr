@@ -6,7 +6,12 @@
 
 #include <ztest_assert.h>
 
+#ifdef CONFIG_POSIX_API
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#else
 #include <net/socket.h>
+#endif
 
 #define clear_buf(buf) memset(buf, 0, sizeof(buf))
 

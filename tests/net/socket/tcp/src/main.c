@@ -11,6 +11,10 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <fcntl.h>
 #include <net/socket.h>
 
+#ifdef CONFIG_POSIX_API
+#include <unistd.h>
+#endif
+
 #include "../../socket_helpers.h"
 
 #define TEST_STR_SMALL "test"
@@ -49,6 +53,15 @@ static void test_send(int sock, const void *buf, size_t len, int flags)
 		      len,
 		      "send failed");
 }
+
+#ifdef CONFIG_POSIX_API
+static void test_write(int sock, const void *buf, size_t len)
+{
+	zassert_equal(write(sock, buf, len),
+		      len,
+		      "write failed");
+}
+#endif
 
 static void test_sendto(int sock, const void *buf, size_t len, int flags,
 			const struct sockaddr *addr, socklen_t addrlen)
@@ -95,6 +108,22 @@ static void test_recv(int sock, int flags)
 		      0,
 		      "unexpected data");
 }
+
+#ifdef CONFIG_POSIX_API
+static void test_read(int sock)
+{
+	ssize_t recved = 0;
+	char rx_buf[30] = {0};
+
+	recved = read(sock, rx_buf, sizeof(rx_buf));
+	zassert_equal(recved,
+		      strlen(TEST_STR_SMALL),
+		      "unexpected received bytes");
+	zassert_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
+		      0,
+		      "unexpected data");
+}
+#endif
 
 static void test_recvfrom(int sock,
 			  int flags,
@@ -147,6 +176,7 @@ static void test_eof(int sock)
 	zassert_equal(recved, 0, "");
 }
 
+/* Keep in sync with test_v4_write_read() below. */
 void test_v4_send_recv(void)
 {
 	/* Test if send() and recv() work on a ipv4 stream socket. */
@@ -182,6 +212,47 @@ void test_v4_send_recv(void)
 	test_close(s_sock);
 
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+/* Keep in sync with test_v4_send_recv() above. */
+void test_v4_write_read(void)
+{
+#ifndef CONFIG_POSIX_API
+	ztest_test_skip();
+#else
+	/* Test if send() and recv() work on a ipv4 stream socket. */
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct sockaddr_in c_saddr;
+	struct sockaddr_in s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
+
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, ANY_PORT,
+			    &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(CONFIG_NET_CONFIG_MY_IPV4_ADDR, SERVER_PORT,
+			    &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_write(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL));
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+
+	test_read(new_sock);
+
+	test_close(c_sock);
+	test_eof(new_sock);
+
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+#endif
 }
 
 void test_v6_send_recv(void)
@@ -516,6 +587,7 @@ void test_main(void)
 	ztest_test_suite(
 		socket_tcp,
 		ztest_user_unit_test(test_v4_send_recv),
+		ztest_user_unit_test(test_v4_write_read),
 		ztest_user_unit_test(test_v6_send_recv),
 		ztest_user_unit_test(test_v4_sendto_recvfrom),
 		ztest_user_unit_test(test_v6_sendto_recvfrom),
