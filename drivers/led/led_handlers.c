@@ -33,6 +33,15 @@ static inline int z_vrfy_led_set_brightness(struct device *dev, uint32_t led,
 }
 #include <syscalls/led_set_brightness_mrsh.c>
 
+static inline int z_impl_led_set_color(struct device *dev, uint32_t led,
+				       uint8_t num_colors, const uint8_t *color)
+{
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_LED));
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(color, num_colors));
+	return z_impl_led_set_color(dev, led, num_colors, color);
+}
+#include <syscalls/led_set_color_mrsh.c>
+
 static inline int z_vrfy_led_on(struct device *dev, uint32_t led)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_LED(dev, on));
