@@ -36,11 +36,16 @@ struct ull_cp_conn {
 		/*
 		 * As of today only 36 feature bits are in use,
 		 * so some optimisation is possible
+		 * we also need to keep track of the features of the
+		 * other node, so that we can send a proper
+		 * reply over HCI to the host
+		 * see BT Core spec 5.2 Vol 6, Part B, sec. 5.1.4
 		 */
 		struct {
 			u8_t sent;
 			u8_t valid;
-			u64_t features;
+			u64_t features_peer;
+			u64_t features_used;
 		} fex;
 	} llcp;
 
