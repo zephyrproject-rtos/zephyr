@@ -31,7 +31,7 @@ int __weak z_clock_driver_init(struct device *device)
 int __weak z_clock_device_ctrl(struct device *device, u32_t ctrl_command,
 			       void *context, device_pm_cb cb, void *arg)
 {
-	return 0;
+	return -ENOTSUP;
 }
 
 void __weak z_clock_set_timeout(s32_t ticks, bool idle)
