@@ -94,6 +94,7 @@
 			interrupts = <39 0>;
 			label = "ADC_0";
 			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 
 		gpioa: gpio@400ff000 {
