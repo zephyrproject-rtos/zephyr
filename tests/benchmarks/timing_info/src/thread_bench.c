@@ -114,26 +114,15 @@ void main_msg_bench(void);
 
 void system_thread_bench(void)
 {
+	uint32_t total_cycles;
+
 	/*Thread create*/
 	uint64_t thread_create_start_time;
 	uint64_t thread_create_end_time;
 
-	DECLARE_VAR(thread, create)
-
 	/*Thread cancel*/
 	uint64_t thread_cancel_start_time;
 	uint64_t thread_cancel_end_time;
-	DECLARE_VAR(thread, cancel)
-
-	/* Thread Abort*/
-	DECLARE_VAR(thread, abort)
-
-	/* Thread Suspend*/
-	DECLARE_VAR(thread, suspend)
-
-	/* Thread Resume*/
-	DECLARE_VAR(thread, resume)
-
 
 	/* to measure context switch time */
 	k_thread_create(&my_thread_0, my_stack_area_0, STACK_SIZE,
@@ -151,14 +140,17 @@ void system_thread_bench(void)
 	 * arch_timing_swap_start.
 	 */
 #endif
-	uint32_t total_swap_cycles = arch_timing_swap_end - arch_timing_swap_start;
+	uint32_t total_swap_cycles =
+		arch_timing_swap_end -
+		arch_timing_swap_start;
 
 	/* Interrupt latency*/
 	uint64_t local_end_intr_time = arch_timing_irq_end;
 	uint64_t local_start_intr_time = arch_timing_irq_start;
 
 	/*******************************************************************/
-	/* thread create*/
+
+	/* thread create */
 	TIMING_INFO_PRE_READ();
 	thread_create_start_time = TIMING_INFO_OS_GET_TIME();
 
@@ -170,7 +162,7 @@ void system_thread_bench(void)
 	TIMING_INFO_PRE_READ();
 	thread_create_end_time = TIMING_INFO_OS_GET_TIME();
 
-	/* thread Termination*/
+	/* thread Termination */
 	TIMING_INFO_PRE_READ();
 	thread_cancel_start_time = TIMING_INFO_OS_GET_TIME();
 	k_thread_abort(my_tid);
@@ -178,7 +170,7 @@ void system_thread_bench(void)
 	TIMING_INFO_PRE_READ();
 	thread_cancel_end_time = TIMING_INFO_OS_GET_TIME();
 
-	/* Thread suspend*/
+	/* Thread suspend */
 	k_tid_t sus_res_tid = k_thread_create(&my_thread, my_stack_area,
 					      STACK_SIZE,
 					      thread_suspend_test,
@@ -190,79 +182,46 @@ void system_thread_bench(void)
 	/* At this point test for resume*/
 	k_thread_resume(sus_res_tid);
 
-	/* calculation for creation */
-	CALCULATE_TIME(, thread, create)
-
-	/* calculation for cancel */
-	CALCULATE_TIME(, thread, cancel)
-
-	/* calculation for abort */
-	CALCULATE_TIME(, thread, abort)
-
-	/* calculation for suspend */
-	CALCULATE_TIME(, thread, suspend)
-
 	/* calculation for resume */
 	thread_resume_start_time = thread_suspend_end_time;
-	CALCULATE_TIME(, thread, resume)
 
 	/*******************************************************************/
 
 	/* Only print lower 32bit of time result */
-	PRINT_STATS("Context switch",
-		(uint32_t)(total_swap_cycles & 0xFFFFFFFFULL),
-		(uint32_t) CYCLES_TO_NS(total_swap_cycles));
+	PRINT_STATS("Context switch", total_swap_cycles);
 
-	/*TC_PRINT("Swap Overhead:%d cycles\n", benchmarking_overhead_swap());*/
-
-	/*Interrupt latency */
+	/* Interrupt latency */
 	uint32_t intr_latency_cycles = SUBTRACT_CLOCK_CYCLES(local_end_intr_time) -
 		SUBTRACT_CLOCK_CYCLES(local_start_intr_time);
 
-	PRINT_STATS("Interrupt latency",
-		(uint32_t)(intr_latency_cycles),
-		(uint32_t) (CYCLES_TO_NS(intr_latency_cycles)));
+	PRINT_STATS("Interrupt latency", intr_latency_cycles);
 
-	/*tick overhead*/
-	uint32_t tick_overhead_cycles =
+	/* tick overhead */
+	total_cycles =
 		SUBTRACT_CLOCK_CYCLES(arch_timing_tick_end) -
 		SUBTRACT_CLOCK_CYCLES(arch_timing_tick_start);
 
-	PRINT_STATS("Tick overhead",
-		(uint32_t)(tick_overhead_cycles),
-		(uint32_t) (CYCLES_TO_NS(tick_overhead_cycles)));
+	PRINT_STATS("Tick overhead", total_cycles);
 
-	/*thread creation*/
-	PRINT_STATS("Thread creation",
-		(uint32_t)((thread_create_end_time - thread_create_start_time) &
-			   0xFFFFFFFFULL),
-		(uint32_t) ((total_thread_create_time) & 0xFFFFFFFFULL));
+	/* thread creation */
+	total_cycles = CALCULATE_CYCLES(thread, create);
+	PRINT_STATS("Thread creation", total_cycles);
 
-	/*thread cancel*/
-	PRINT_STATS("Thread cancel",
-		(uint32_t)((thread_cancel_end_time - thread_cancel_start_time) &
-			   0xFFFFFFFFULL),
-		(uint32_t) (total_thread_cancel_time  & 0xFFFFFFFFULL));
+	/* thread cancel */
+	total_cycles = CALCULATE_CYCLES(thread, cancel);
+	PRINT_STATS("Thread cancel", total_cycles);
 
-	/*thread abort*/
-	PRINT_STATS("Thread abort",
-		(uint32_t)((thread_abort_end_time - thread_abort_start_time) &
-			   0xFFFFFFFFULL),
-		(uint32_t) (total_thread_abort_time  & 0xFFFFFFFFULL));
+	/* thread abort */
+	total_cycles = CALCULATE_CYCLES(thread, abort);
+	PRINT_STATS("Thread abort", total_cycles);
 
-	/*thread suspend*/
-	PRINT_STATS("Thread suspend",
-		(uint32_t)((thread_suspend_end_time - thread_suspend_start_time) &
-			   0xFFFFFFFFULL),
-		(uint32_t) (total_thread_suspend_time  & 0xFFFFFFFFULL));
+	/* thread suspend */
+	total_cycles = CALCULATE_CYCLES(thread, suspend);
+	PRINT_STATS("Thread suspend", total_cycles);
 
-	/*thread resume*/
-	PRINT_STATS("Thread resume",
-		(uint32_t)((thread_resume_end_time - thread_suspend_end_time)
-			   & 0xFFFFFFFFULL),
-		(uint32_t) (total_thread_resume_time  & 0xFFFFFFFFULL));
-
-
+	/* thread resume */
+	total_cycles = CALCULATE_CYCLES(thread, resume);
+	PRINT_STATS("Thread resume", total_cycles);
 }
 
 void thread_suspend_test(void *p1, void *p2, void *p3)
@@ -274,12 +233,12 @@ void thread_suspend_test(void *p1, void *p2, void *p3)
 	/* comes to this line once its resumed*/
 	TIMING_INFO_PRE_READ();
 	thread_resume_end_time = TIMING_INFO_OS_GET_TIME();
-
-	/* k_thread_suspend(_current); */
 }
 
 void heap_malloc_free_bench(void)
 {
+	uint32_t total_cycles;
+
 	/* heap malloc*/
 	uint64_t heap_malloc_start_time = 0U;
 	uint64_t heap_malloc_end_time = 0U;
@@ -288,7 +247,7 @@ void heap_malloc_free_bench(void)
 	uint64_t heap_free_start_time = 0U;
 	uint64_t heap_free_end_time = 0U;
 
-	int32_t count = 0;
+	uint32_t count = 0;
 	uint32_t sum_malloc = 0U;
 	uint32_t sum_free = 0U;
 
@@ -311,15 +270,13 @@ void heap_malloc_free_bench(void)
 
 		TIMING_INFO_PRE_READ();
 		heap_free_end_time = TIMING_INFO_OS_GET_TIME();
-		sum_malloc += heap_malloc_end_time - heap_malloc_start_time;
-		sum_free += heap_free_end_time - heap_free_start_time;
+		sum_malloc += CALCULATE_CYCLES(heap, malloc);
+		sum_free += CALCULATE_CYCLES(heap, free);
 	}
 
-	PRINT_STATS("Heap malloc",
-		(uint32_t)((sum_malloc / count) & 0xFFFFFFFFULL),
-		(uint32_t)(CYCLES_TO_NS(sum_malloc / count)));
-	PRINT_STATS("Heap free",
-		(uint32_t)((sum_free / count) & 0xFFFFFFFFULL),
-		(uint32_t)(CYCLES_TO_NS(sum_free / count)));
+	total_cycles = sum_malloc / count;
+	PRINT_STATS("Heap malloc", total_cycles);
 
+	total_cycles = sum_free / count;
+	PRINT_STATS("Heap free", total_cycles);
 }
