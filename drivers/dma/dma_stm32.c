@@ -620,11 +620,34 @@ static int dma_stm32_init(struct device *dev)
 	return 0;
 }
 
+static int dma_stm32_get_status(struct device *dev, uint32_t id,
+				struct dma_status *stat)
+{
+	const struct dma_stm32_config *config = dev->config_info;
+	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+	struct dma_stm32_data *data = dev->driver_data;
+	struct dma_stm32_stream *stream;
+
+	/* give channel from index 0 */
+	id = id - STREAM_OFFSET;
+	if (id >= data->max_streams) {
+		return -EINVAL;
+	}
+
+	stream = &data->streams[id];
+	stat->pending_length = LL_DMA_GetDataLength(dma, table_ll_stream[id]);
+	stat->dir = stream->direction;
+	stat->busy = stream->busy;
+
+	return 0;
+}
+
 static const struct dma_driver_api dma_funcs = {
 	.reload		 = dma_stm32_reload,
 	.config		 = dma_stm32_configure,
 	.start		 = dma_stm32_start,
 	.stop		 = dma_stm32_stop,
+	.get_status	 = dma_stm32_get_status,
 };
 
 #define DMA_INIT(index)							\
