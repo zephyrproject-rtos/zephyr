@@ -70,42 +70,54 @@ static void setup(void)
 void test_feature_exchange_mas_loc(void)
 {
 	u64_t err;
-	u64_t featureset;
+	u64_t set_featureset[] = {
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE };
+	u64_t rsp_featureset[] = {
+		(LL_FEAT_BIT_MASK_VALID & FEAT_FILTER_OCTET0) | DEFAULT_FEATURE,
+		0x0 };
+	int feat_to_test = ARRAY_SIZE(set_featureset);
+
 	struct node_tx *tx;
 	struct node_rx_pdu *ntf;
 
 	struct pdu_data_llctrl_feature_req local_feature_req;
 	struct pdu_data_llctrl_feature_rsp remote_feature_rsp;
+	int feat_counter;
 
-	featureset = DEFAULT_FEATURE;
+	for (feat_counter = 0; feat_counter < feat_to_test; feat_counter++) {
 
-	sys_put_le64(featureset, local_feature_req.features);
-	sys_put_le64(featureset, remote_feature_rsp.features);
+		sys_put_le64(set_featureset[feat_counter], local_feature_req.features);
 
-	test_set_role(&conn, BT_HCI_ROLE_MASTER);
-	/* Connect */
-	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+		sys_put_le64(rsp_featureset[feat_counter], remote_feature_rsp.features);
 
-	/* Initiate a Feature Exchange Procedure */
-	err = ull_cp_feature_exchange(&conn);
-	zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
+		test_set_role(&conn, BT_HCI_ROLE_MASTER);
+		/* Connect */
+		ull_cp_state_set(&conn, ULL_CP_CONNECTED);
 
-	event_prepare(&conn);
-	/* Tx Queue should have one LL Control PDU */
-	lt_rx(LL_FEATURE_REQ, &conn, &tx, &local_feature_req);
-	lt_rx_q_is_empty(&conn);
+		/* Initiate a Feature Exchange Procedure */
+		err = ull_cp_feature_exchange(&conn);
+		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
 
-	/* Rx */
-	lt_tx(LL_FEATURE_RSP, &conn, &remote_feature_rsp);
+		event_prepare(&conn);
+		/* Tx Queue should have one LL Control PDU */
+		lt_rx(LL_FEATURE_REQ, &conn, &tx, &local_feature_req);
+		lt_rx_q_is_empty(&conn);
 
-	event_done(&conn);
-	/* There should be one host notification */
+		/* Rx */
+		lt_tx(LL_FEATURE_RSP, &conn, &remote_feature_rsp);
 
-	ut_rx_pdu(LL_FEATURE_RSP, &ntf,  &remote_feature_rsp);
+		event_done(&conn);
+		/* There should be one host notification */
 
-	ut_rx_q_is_empty();
+		ut_rx_pdu(LL_FEATURE_RSP, &ntf,  &remote_feature_rsp);
 
-	zassert_equal(conn.lll.event_counter, 1,
+		ut_rx_q_is_empty();
+
+		ull_cp_release_tx(tx);
+		ull_cp_release_ntf(ntf);
+	}
+	zassert_equal(conn.lll.event_counter, feat_to_test,
 		      "Wrong event-count %d\n", conn.lll.event_counter);
 }
 
@@ -195,6 +207,11 @@ void test_feature_exchange_mas_rem(void)
 #define MAS_REM_2_NR_OF_EVENTS 3
 void test_feature_exchange_mas_rem_2(void)
 {
+	/*
+	 * we could combine some of the following,
+	 * but in reality we should add some more
+	 * test cases
+	 */
 	u64_t set_featureset[] = {
 		DEFAULT_FEATURE,
 		LL_FEAT_BIT_MASK_VALID,
@@ -213,6 +230,12 @@ void test_feature_exchange_mas_rem_2(void)
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE,
 		DEFAULT_FEATURE };
+	u64_t ut_exp_featureset[] = {
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		DEFAULT_FEATURE,
+		0x00 };
 
 	int feat_to_test = ARRAY_SIZE(set_featureset);
 	u64_t err;
@@ -222,6 +245,7 @@ void test_feature_exchange_mas_rem_2(void)
 	struct pdu_data_llctrl_feature_req remote_feature_req;
 	struct pdu_data_llctrl_feature_rsp local_feature_rsp;
 	struct pdu_data_llctrl_feature_req ut_feature_req;
+	struct pdu_data_llctrl_feature_req ut_feature_rsp;
 
 	test_set_role(&conn, BT_HCI_ROLE_MASTER);
 	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
@@ -233,12 +257,8 @@ void test_feature_exchange_mas_rem_2(void)
 			     local_feature_rsp.features);
 		sys_put_le64(ut_featureset[feat_count],
 			     ut_feature_req.features);
-
-		/*
-		 * at the start of a loop all queues should be empty
-		 */
-		ut_rx_q_is_empty();
-		lt_rx_q_is_empty(&conn);
+		sys_put_le64(ut_exp_featureset[feat_count],
+			     ut_feature_rsp.features);
 
 		err = ull_cp_feature_exchange(&conn);
 		zassert_equal(err, BT_HCI_ERR_SUCCESS, NULL);
@@ -258,7 +278,7 @@ void test_feature_exchange_mas_rem_2(void)
 		lt_rx(LL_FEATURE_RSP, &conn, &tx, &local_feature_rsp);
 		event_done(&conn);
 
-		ut_rx_pdu(LL_FEATURE_RSP, &ntf, &local_feature_rsp);
+		ut_rx_pdu(LL_FEATURE_RSP, &ntf, &ut_feature_rsp);
 
 		/*
 		 * at the end of a loop all queues should be empty
@@ -270,7 +290,6 @@ void test_feature_exchange_mas_rem_2(void)
 		ull_cp_release_ntf(ntf);
 
 	}
-
 
 	zassert_equal(conn.lll.event_counter,
 		      MAS_REM_2_NR_OF_EVENTS*(feat_to_test),
@@ -289,7 +308,6 @@ void test_slave_feature_exchange_sla_loc(void)
 	struct pdu_data_llctrl_feature_rsp remote_feature_rsp;
 
 	featureset = DEFAULT_FEATURE;
-
 	sys_put_le64(featureset, local_feature_req.features);
 	sys_put_le64(featureset, remote_feature_rsp.features);
 

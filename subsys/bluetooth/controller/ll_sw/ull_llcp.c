@@ -266,7 +266,6 @@ void ull_cp_conn_init(struct ull_cp_conn *conn)
 	 *
 	 */
 	memset(&conn->llcp.fex, 0, sizeof(conn->llcp.fex));
-	conn->llcp.fex.features = LL_FEAT;
 
 	/* Reset encryption related state */
 	conn->lll.enc_tx = 0U;
