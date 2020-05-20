@@ -95,7 +95,7 @@ static int _sys_pm_devices(u32_t state)
 		 * and set the device states accordingly.
 		 */
 		rc = device_set_power_state(dev, state, NULL, NULL);
-		if (rc != 0) {
+		if ((rc != -ENOTSUP) && (rc != 0)) {
 			LOG_DBG("%s did not enter %s state: %d",
 				dev->name, device_pm_state_str(state), rc);
 			return rc;
