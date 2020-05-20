@@ -208,6 +208,11 @@ void test_dummy_device_pm(void)
 
 	/* Set device state to DEVICE_PM_ACTIVE_STATE */
 	ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
+	if (ret == -ENOTSUP) {
+		zassert_true((ret == -ENOTSUP),
+			     "Power management not supported on device");
+		return;
+	}
 	zassert_true((ret == 0), "Unable to set active state to device");
 
 	device_busy_set(dev);
