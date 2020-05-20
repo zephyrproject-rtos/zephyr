@@ -5,8 +5,7 @@
  */
 
 #include <logging/log.h>
-
-LOG_MODULE_REGISTER(updatehub);
+LOG_MODULE_REGISTER(updatehub, CONFIG_UPDATEHUB_LOG_LEVEL);
 
 #include <zephyr.h>
 
