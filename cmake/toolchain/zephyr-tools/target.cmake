@@ -1,0 +1,41 @@
+# Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+set(CROSS_COMPILE_TARGET_arc_CPU        arc)
+set(CROSS_COMPILE_TARGET_arc_SYS        elf)
+if(CONFIG_ARM64)
+  set(CROSS_COMPILE_TARGET_arm_CPU      aarch64)
+  set(CROSS_COMPILE_TARGET_arm_SYS      elf)
+else()
+  set(CROSS_COMPILE_TARGET_arm_CPU      arm)
+  set(CROSS_COMPILE_TARGET_arm_SYS      eabi)
+endif()
+set(CROSS_COMPILE_TARGET_nios2_CPU      nios2)
+set(CROSS_COMPILE_TARGET_nios2_SYS      elf)
+set(CROSS_COMPILE_TARGET_riscv_CPU      riscv64)
+set(CROSS_COMPILE_TARGET_riscv_SYS      elf)
+set(CROSS_COMPILE_TARGET_x86_CPU        x86_64)
+set(CROSS_COMPILE_TARGET_x86_SYS        elf)
+set(CROSS_COMPILE_TARGET_xtensa_CPU     xtensa)
+set(CROSS_COMPILE_TARGET_xtensa_SYS     elf)
+
+set(CROSS_COMPILE_TARGET_CPU ${CROSS_COMPILE_TARGET_${ARCH}_CPU})
+set(CROSS_COMPILE_TARGET_SYS ${CROSS_COMPILE_TARGET_${ARCH}_SYS})
+
+if("${ARCH}" STREQUAL "xtensa")
+  set(CROSS_COMPILE ${CROSS_COMPILE_TARGET_CPU}-${SOC_NAME}_zephyr-${CROSS_COMPILE_TARGET_SYS}-)
+else()
+  set(CROSS_COMPILE ${CROSS_COMPILE_TARGET_CPU}-zephyr-${CROSS_COMPILE_TARGET_SYS}-)
+endif()
+
+if("${ARCH}" STREQUAL "x86")
+  if(CONFIG_X86_64)
+    list(APPEND TOOLCHAIN_C_FLAGS -m64)
+    list(APPEND TOOLCHAIN_LD_FLAGS -m64)
+  else()
+    list(APPEND TOOLCHAIN_C_FLAGS -m32)
+    list(APPEND TOOLCHAIN_LD_FLAGS -m32)
+  endif()
+endif()
+
+set(QEMU_BIN_PREFIX zephyr)

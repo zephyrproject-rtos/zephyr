@@ -1,0 +1,6 @@
+# Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+config TOOLCHAIN_ZEPHYR_TOOLS
+	def_bool y
+	select HAS_NEWLIB_LIBC_NANO if (ARC || (ARM && !ARM64) || RISCV)
