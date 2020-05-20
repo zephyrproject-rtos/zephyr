@@ -483,6 +483,11 @@ static void install_update_cb(void)
 	}
 #endif
 
+	LOG_DBG("Flash: Address: 0x%08x, Size: %d, Flush: %d",
+		ctx.flash_ctx.stream.bytes_written,
+		response_packet.max_len - response_packet.offset,
+		ctx.downloaded_size == ctx.block.total_size);
+
 	if (flash_img_buffered_write(&ctx.flash_ctx,
 				     response_packet.data + response_packet.offset,
 				     response_packet.max_len - response_packet.offset,
