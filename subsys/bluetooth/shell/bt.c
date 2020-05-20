@@ -56,6 +56,12 @@ static struct bt_le_oob oob_remote;
 
 #define KEY_STR_LEN 33
 
+/*
+ * Based on the maximum number of parameters for HCI_LE_Generate_DHKey
+ * See BT Core Spec V5.2 Vol. 4, Part E, section 7.8.37
+ */
+#define HCI_CMD_MAX_PARAM 65
+
 #if defined(CONFIG_BT_EXT_ADV)
 static uint8_t selected_adv;
 struct bt_le_ext_adv *adv_sets[CONFIG_BT_EXT_ADV_MAX_ADV_SET];
@@ -455,18 +461,30 @@ static int cmd_hci_cmd(const struct shell *shell, size_t argc, char *argv[])
 	uint16_t ocf;
 	struct net_buf *buf = NULL, *rsp;
 	int err;
+	static uint8_t hex_data[HCI_CMD_MAX_PARAM];
+	int hex_data_len;
 
+	hex_data_len = 0;
 	ogf = strtoul(argv[1], NULL, 16);
 	ocf = strtoul(argv[2], NULL, 16);
 
 	if (argc > 3) {
-		size_t i;
+		size_t len;
 
-		buf = bt_hci_cmd_create(BT_OP(ogf, ocf), argc - 3);
-
-		for (i = 3; i < argc; i++) {
-			net_buf_add_u8(buf, strtoul(argv[i], NULL, 16));
+		if (strlen(argv[3]) > 2 * HCI_CMD_MAX_PARAM) {
+			shell_error(shell, "Data field too large\n");
+			return -ENOEXEC;
 		}
+
+		len = hex2bin(argv[3], strlen(argv[3]), &hex_data[hex_data_len],
+			      sizeof(hex_data) - hex_data_len);
+		if (!len) {
+			shell_error(shell, "HCI command illegal data field\n");
+			return -ENOEXEC;
+		}
+
+		buf = bt_hci_cmd_create(BT_OP(ogf, ocf), len);
+		net_buf_add_mem(buf, hex_data, len);
 	}
 
 	err = bt_hci_cmd_send_sync(BT_OP(ogf, ocf), buf, &rsp);
