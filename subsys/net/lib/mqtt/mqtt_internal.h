@@ -26,6 +26,11 @@ extern "C" {
  */
 #define MQTT_KEEPALIVE CONFIG_MQTT_KEEPALIVE
 
+/**@brief Clean session on every connect (1) or keep subscriptions and messages
+ *        between connects (0)
+ */
+#define MQTT_CLEAN_SESSION (IS_ENABLED(CONFIG_MQTT_CLEAN_SESSION) ? 1U : 0U)
+
 /**@brief Minimum mandatory size of fixed header. */
 #define MQTT_FIXED_HEADER_MIN_SIZE 2
 
