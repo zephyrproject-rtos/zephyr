@@ -107,7 +107,7 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 	pinmux_pin_set(port1, 10, port1_pin10_config);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm4), nxp_lpc_i2c, okay) && CONFIG_I2C
 	/* PORT0 PIN25 is configured as FC4_RTS_SCL_SSEL1 */
 	pinmux_pin_set(port0, 25, IOCON_PIO_FUNC1 |
 				  IOCON_PIO_I2CSLEW_I2C |

@@ -42,7 +42,7 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	pinmux_pin_set(portd,  0, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay) && CONFIG_I2C
 	/* I2C0 SCL, SDA - heart rate, light, humidity */
 	pinmux_pin_set(portb,  0, PORT_PCR_MUX(kPORT_MuxAlt2)
 					| PORT_PCR_ODE_MASK);
@@ -58,7 +58,7 @@ static int hexiwear_k64_pinmux_init(struct device *dev)
 	gpio_pin_configure(gpiob, 12, GPIO_OUTPUT_LOW);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay) && CONFIG_I2C
 	/* I2C1 SCL, SDA - accel/mag, gyro, pressure */
 	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt2)
 					| PORT_PCR_ODE_MASK);
