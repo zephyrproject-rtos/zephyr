@@ -18,6 +18,14 @@ struct timer_data {
 #define EXPIRE_TIMES 4
 #define WITHIN_ERROR(var, target, epsilon)       \
 		(((var) >= (target)) && ((var) <= (target) + (epsilon)))
+/* ms can be converted precisely to ticks only when a ms is exactly
+ * represented by an integral number of ticks.  If the conversion is
+ * not precise, then the reverse conversion of a difference in ms can
+ * end up being off by a tick depending on the relative error between
+ * the first and second ms conversion, and we need to adjust the
+ * tolerance interval.
+ */
+#define INEXACT_MS_CONVERT ((CONFIG_SYS_CLOCK_TICKS_PER_SEC % MSEC_PER_SEC) != 0)
 
 static void duration_expire(struct k_timer *timer);
 static void duration_stop(struct k_timer *timer);
@@ -61,9 +69,13 @@ static void duration_expire(struct k_timer *timer)
 
 	tdata.expire_cnt++;
 	if (tdata.expire_cnt == 1) {
-		TIMER_ASSERT(interval >= DURATION, timer);
+		TIMER_ASSERT((interval >= DURATION)
+			     || (INEXACT_MS_CONVERT
+				 && (interval == DURATION - 1)), timer);
 	} else {
-		TIMER_ASSERT(interval >= PERIOD, timer);
+		TIMER_ASSERT((interval >= PERIOD)
+			     || (INEXACT_MS_CONVERT
+				 && (interval == PERIOD - 1)), timer);
 	}
 
 	if (tdata.expire_cnt >= EXPIRE_TIMES) {
@@ -234,6 +246,7 @@ static void tick_sync(void)
  */
 void test_timer_periodicity(void)
 {
+	u64_t period_ms = k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(PERIOD));
 	s64_t delta;
 
 	/* Start at a tick boundary, otherwise a tick expiring between
@@ -270,10 +283,14 @@ void test_timer_periodicity(void)
 		 * one requested, as the kernel uses the ticks to manage
 		 * time. The actual perioid will be equal to [tick time]
 		 * multiplied by k_ms_to_ticks_ceil32(PERIOD).
+		 *
+		 * In the case of inexact conversion the delta will
+		 * occasionally be one less than the expected number.
 		 */
-		TIMER_ASSERT(WITHIN_ERROR(delta,
-				k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(PERIOD)), 1),
-				&periodicity_timer);
+		TIMER_ASSERT(WITHIN_ERROR(delta, period_ms, 1)
+			     || (INEXACT_MS_CONVERT
+				 && (delta == period_ms - 1)),
+			     &periodicity_timer);
 	}
 
 	/* cleanup environment */
