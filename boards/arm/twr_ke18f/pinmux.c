@@ -142,7 +142,7 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 14, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac0), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(dac0), okay) && CONFIG_DAC
 	pinmux_pin_set(porte, 9, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
 
