@@ -26,7 +26,8 @@ config PINMUX_MCUX_PORTB
 	default y if "$(dt_nodelabel_enabled,adc0)"
 
 config PINMUX_MCUX_PORTC
-	default y if "$(dt_nodelabel_enabled,lpuart0)" || "$(dt_nodelabel_enabled,i2c1)"
+	default y if "$(dt_nodelabel_enabled,lpuart0)" && SERIAL
+	default y if "$(dt_nodelabel_enabled,i2c1)"
 
 endif # PINMUX_MCUX
 

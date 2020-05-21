@@ -22,7 +22,7 @@ static int udoo_neo_full_m4_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_NAND_DATA02_DSE(6);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart5), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart5), okay) && CONFIG_SERIAL
 	/* UART5 pin mux configuration */
 	IOMUXC_SW_MUX_CTL_PAD_SD4_DATA4 =
 				IOMUXC_SW_MUX_CTL_PAD_SD4_DATA4_MUX_MODE(2);

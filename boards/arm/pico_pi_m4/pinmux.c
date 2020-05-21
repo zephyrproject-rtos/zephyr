@@ -12,7 +12,7 @@ static int pico_pi_m4_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
- #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay) && CONFIG_SERIAL
 	IOMUXC_SW_MUX_CTL_PAD_UART2_RX_DATA =
 		IOMUXC_SW_MUX_CTL_PAD_UART2_RX_DATA_MUX_MODE(0);
 	IOMUXC_SW_MUX_CTL_PAD_UART2_TX_DATA =
@@ -34,7 +34,7 @@ static int pico_pi_m4_pinmux_init(struct device *dev)
  #endif
 
 
- #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart5), okay)
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart5), okay) && CONFIG_SERIAL
 	IOMUXC_SW_MUX_CTL_PAD_I2C4_SCL =
 		IOMUXC_SW_MUX_CTL_PAD_I2C4_SCL_MUX_MODE(1);
 	IOMUXC_SW_MUX_CTL_PAD_I2C4_SDA =
@@ -58,7 +58,7 @@ static int pico_pi_m4_pinmux_init(struct device *dev)
  #endif
 
 
- #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart6), okay)
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart6), okay) && CONFIG_SERIAL
 	IOMUXC_SW_MUX_CTL_PAD_EPDC_DATA08 =
 		IOMUXC_SW_MUX_CTL_PAD_EPDC_DATA08_MUX_MODE(3);
 	IOMUXC_SW_MUX_CTL_PAD_EPDC_DATA09 =
