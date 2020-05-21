@@ -219,6 +219,10 @@ enum lpc_peripheral_opcode {
 	E8042_RESUME_IRQ,
 	E8042_PAUSE_IRQ,
 	E8042_CLEAR_OBF,
+	/* Status transactions */
+	E8042_READ_KB_STS,
+	E8042_SET_FLAG,
+	E8042_CLEAR_FLAG,
 };
 
 /**

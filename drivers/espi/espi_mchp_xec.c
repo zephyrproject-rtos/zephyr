@@ -329,10 +329,13 @@ static int espi_xec_read_lpc_request(struct device *dev,
 			 * automatically cleared after host reads
 			 * the data
 			 */
-			*data = KBC_REGS->EC_KBC_STS & (1 << 0U) ? 1 : 0;
+			*data = KBC_REGS->EC_KBC_STS & MCHP_KBC_STS_OBF ? 1 : 0;
 			break;
 		case E8042_IBF_HAS_CHAR:
-			*data = KBC_REGS->EC_KBC_STS & (1 << 1U) ? 1 : 0;
+			*data = KBC_REGS->EC_KBC_STS & MCHP_KBC_STS_IBF ? 1 : 0;
+			break;
+		case E8042_READ_KB_STS:
+			*data = KBC_REGS->EC_KBC_STS;
 			break;
 		default:
 			return -EINVAL;
@@ -375,6 +378,18 @@ static int espi_xec_write_lpc_request(struct device *dev,
 			break;
 		case E8042_CLEAR_OBF:
 			dummy = KBC_REGS->HOST_AUX_DATA;
+			break;
+		case E8042_SET_FLAG:
+			/* FW shouldn't modify these flags directly */
+			*data &= ~(MCHP_KBC_STS_OBF | MCHP_KBC_STS_IBF |
+				   MCHP_KBC_STS_AUXOBF);
+			KBC_REGS->EC_KBC_STS |= *data;
+			break;
+		case E8042_CLEAR_FLAG:
+			/* FW shouldn't modify these flags directly */
+			*data |= (MCHP_KBC_STS_OBF | MCHP_KBC_STS_IBF |
+				  MCHP_KBC_STS_AUXOBF);
+			KBC_REGS->EC_KBC_STS &= ~(*data);
 			break;
 		default:
 			return -EINVAL;
