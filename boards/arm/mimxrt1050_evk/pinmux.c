@@ -249,7 +249,7 @@ static int mimxrt1050_evk_init(struct device *dev)
 	GPIO_WritePinOutput(GPIO1, 9, 0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lcdif), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lcdif), okay) && CONFIG_DISPLAY
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B0_00_LCD_CLK, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B0_01_LCD_ENABLE, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B0_02_LCD_HSYNC, 0);
