@@ -404,6 +404,7 @@ config BT_CTLR_ADV_PERIODIC
 	bool "LE Periodic Advertising"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_PERIODIC_SUPPORT
 	select BT_CTLR_CHAN_SEL_2
+	default y if BT_PER_ADV
 	help
 	  Enable support for Bluetooth 5.0 LE Periodic Advertising in the
 	  Controller.
