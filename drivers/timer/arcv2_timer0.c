@@ -67,7 +67,7 @@ static u32_t last_load;
 
 /*
  * This local variable holds the amount of timer cycles elapsed
- * and it is updated in z_clock_isr() and z_clock_set_timeout().
+ * and it is updated in z_timer_int_handler and z_clock_set_timeout().
  *
  * Note:
  *  At an arbitrary point in time the "current" value of the
@@ -90,10 +90,10 @@ static u32_t announced_cycles;
  * in elapsed() function, as well as in the updates to cycle_count.
  *
  * Note:
- * Each time cycle_count is updated with the value from overflow_cyc,
- * the overflow_cyc must be reset to zero.
+ * Each time cycle_count is updated with the value from overflow_cycles,
+ * the overflow_cycles must be reset to zero.
  */
-static volatile u32_t overflow_cyc;
+static volatile u32_t overflow_cycles;
 #endif
 
 /**
@@ -168,13 +168,13 @@ static ALWAYS_INLINE void timer0_limit_register_set(u32_t count)
  * updated. 'cycle_count' may be updated either by the ISR, or
  * in z_clock_set_timeout().
  *
- * Additionally, the function updates the 'overflow_cyc' counter, that
+ * Additionally, the function updates the 'overflow_cycles' counter, that
  * holds the amount of elapsed HW cycles due to (possibly) multiple
  * timer wraps (overflows).
  *
  * Prerequisites:
  * - reprogramming of LIMIT must be clearing the COUNT
- * - ISR must be clearing the 'overflow_cyc' counter.
+ * - ISR must be clearing the 'overflow_cycles' counter.
  * - no more than one counter-wrap has occurred between
  *     - the timer reset or the last time the function was called
  *     - and until the current call of the function is completed.
@@ -190,13 +190,13 @@ static u32_t elapsed(void)
 	} while (timer0_count_register_get() < val);
 
 	if (ctrl & _ARC_V2_TMR_CTRL_IP) {
-		overflow_cyc += last_load;
+		overflow_cycles += last_load;
 		/* clear the IP bit of the control register */
 		timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
 					    _ARC_V2_TMR_CTRL_IE);
 	}
 
-	return val + overflow_cyc;
+	return val + overflow_cycles;
 }
 #endif
 
@@ -232,8 +232,8 @@ static void timer_int_handler(void *unused)
 	z_clock_announce(dticks);
 #else
 	elapsed();
-	cycle_count += overflow_cyc;
-	overflow_cyc = 0;
+	cycle_count += overflow_cycles;
+	overflow_cycles = 0;
 
 
 	dticks = (cycle_count - announced_cycles) / CYC_PER_TICK;
@@ -270,7 +270,7 @@ int z_clock_driver_init(struct device *device)
 	start_time = last_time;
 #else
 	last_load = CYC_PER_TICK;
-	overflow_cyc = 0;
+	overflow_cycles = 0;
 	announced_cycles = 0;
 
 	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
@@ -322,7 +322,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	ticks = MIN(MAX_TICKS, ticks);
 
 	/* Desired delay in the future */
-	delay = (ticks == 0) ? CYC_PER_TICK : ticks * CYC_PER_TICK;
+	delay = MAX(CYC_PER_TICK, ticks * CYC_PER_TICK);
 
 	key = arch_irq_lock();
 
@@ -358,7 +358,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	 * to loss
 	 */
 	timer0_count_register_set(0);
-	overflow_cyc = 0U;
+	overflow_cycles = 0U;
 
 
 	/* normal case */
@@ -384,11 +384,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 		delay -= unannounced;
 		delay = MAX(delay, MIN_DELAY);
 
-		if (delay > MAX_CYCLES) {
-			last_load = MAX_CYCLES;
-		} else {
-			last_load = delay;
-		}
+		last_load = MIN(delay, MAX_CYCLES);
 	}
 
 	timer0_limit_register_set(last_load - 1);
