@@ -127,7 +127,7 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 	pinmux_pin_set(porta,  5, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(porta, 12, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(porta, 13, PORT_PCR_MUX(kPORT_MuxAlt4));
