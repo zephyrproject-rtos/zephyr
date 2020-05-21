@@ -60,7 +60,7 @@ static int frdm_k82f_pinmux_init(struct device *dev)
 					| PORT_PCR_ODE_MASK);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi1), okay) && CONFIG_SPI
 	/* SPI1 SCK, SOUT, SIN, PCS0 */
 	pinmux_pin_set(porte, 1, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(porte, 2, PORT_PCR_MUX(kPORT_MuxAlt2));

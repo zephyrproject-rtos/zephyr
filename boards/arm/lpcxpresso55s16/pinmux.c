@@ -145,7 +145,7 @@ static int lpcxpresso_55s16_pinmux_init(struct device *dev)
 				  IOCON_PIO_OPENDRAIN_DI);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(hs_lspi), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(hs_lspi), okay) && CONFIG_SPI
 	/* PORT0 PIN26 is configured as HS_SPI_MOSI */
 	pinmux_pin_set(port0, 26, IOCON_PIO_FUNC9 |
 				  IOCON_PIO_MODE_PULLUP |

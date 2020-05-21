@@ -187,7 +187,7 @@ static int mm_swiftio_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi3), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpspi3), okay) && CONFIG_SPI
 	/* LPSPI3 SCK, SDO, SDI, PCS0 */
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_00_LPSPI3_SCK, 0);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_01_LPSPI3_SDO, 0);

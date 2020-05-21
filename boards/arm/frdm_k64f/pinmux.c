@@ -101,7 +101,7 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb,  9, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay) && CONFIG_SPI
 	/* SPI0 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(portd,  0, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portd,  1, PORT_PCR_MUX(kPORT_MuxAlt2));
