@@ -62,6 +62,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define DEVICE_PWRSRC_MAX	5
 #endif
 
+#ifdef CONFIG_LWM2M_DEVICE_EXT_DEV_INFO_MAX
+#define DEVICE_EXT_DEV_INFO_MAX CONFIG_LWM2M_DEVICE_EXT_DEV_INFO_MAX
+#else
+#define DEVICE_EXT_DEV_INFO_MAX	1
+#endif
+
 #define DEVICE_STRING_SHORT	8
 
 #define DEVICE_SERVICE_INTERVAL_MS (MSEC_PER_SEC * 10)
@@ -70,12 +76,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  * Calculate resource instances as follows:
  * start with DEVICE_MAX_ID
  * subtract EXEC resources (3)
- * subtract MULTI resources because their counts include 0 resource (4)
+ * subtract MULTI resources because their counts include 0 resource (5)
  * add 3x DEVICE_PWRSRC_MAX for POWER SOURCES resource instances
  * add DEVICE_ERROR_CODE_MAX for ERROR CODE resource instances
+ * add DEVICE_EXT_DEV_INFO_MAX for EXT DEV INFO  resource instances
  */
-#define RESOURCE_INSTANCE_COUNT	(DEVICE_MAX_ID - 3 - 4 + \
-				DEVICE_PWRSRC_MAX*3 + DEVICE_ERROR_CODE_MAX)
+#define RESOURCE_INSTANCE_COUNT	(DEVICE_MAX_ID - 3 - 5 + \
+				 DEVICE_PWRSRC_MAX*3 + DEVICE_ERROR_CODE_MAX + \
+				 DEVICE_EXT_DEV_INFO_MAX)
 
 /* resource state variables */
 static uint8_t  error_code_list[DEVICE_ERROR_CODE_MAX];
@@ -108,7 +116,7 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(DEVICE_SOFTWARE_VERSION_ID, R_OPT, STRING),
 	OBJ_FIELD_DATA(DEVICE_BATTERY_STATUS_ID, R_OPT, U8),
 	OBJ_FIELD_DATA(DEVICE_MEMORY_TOTAL_ID, R_OPT, S32),
-	OBJ_FIELD_DATA(DEVICE_EXT_DEV_INFO_ID, R_OPT, S32)
+	OBJ_FIELD_DATA(DEVICE_EXT_DEV_INFO_ID, R_OPT, OBJLNK)
 };
 
 static struct lwm2m_engine_obj_inst inst;
@@ -231,6 +239,8 @@ static struct lwm2m_engine_obj_inst *device_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES_OPTDATA(DEVICE_SOFTWARE_VERSION_ID, res, i, res_inst, j);
 	INIT_OBJ_RES_OPTDATA(DEVICE_BATTERY_STATUS_ID, res, i, res_inst, j);
 	INIT_OBJ_RES_OPTDATA(DEVICE_MEMORY_TOTAL_ID, res, i, res_inst, j);
+	INIT_OBJ_RES_MULTI_OPTDATA(DEVICE_EXT_DEV_INFO_ID, res, i, res_inst, j,
+				   DEVICE_EXT_DEV_INFO_MAX, false);
 
 	inst.resources = res;
 	inst.resource_count = i;
