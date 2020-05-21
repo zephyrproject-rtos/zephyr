@@ -886,7 +886,7 @@ static void le_rand(struct net_buf *buf, struct net_buf **evt)
 	rp = hci_cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
 
-	util_rand(rp->rand, count);
+	lll_csrand_get(rp->rand, count);
 }
 
 static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt)

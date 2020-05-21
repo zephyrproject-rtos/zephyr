@@ -1390,7 +1390,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t remainder, uint16_t laz
 		uint32_t random_delay;
 		uint32_t ret;
 
-		lll_entropy_get(sizeof(random_delay), &random_delay);
+		lll_rand_isr_get(&random_delay, sizeof(random_delay));
 		random_delay %= ULL_ADV_RANDOM_DELAY;
 		random_delay += 1;
 

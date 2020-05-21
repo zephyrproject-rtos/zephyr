@@ -461,7 +461,7 @@ static int hci_driver_open(void)
 
 	err = ll_init(&sem_prio_recv);
 	if (err) {
-		BT_ERR("LL initialization failed: %u", err);
+		BT_ERR("LL initialization failed: %d", err);
 		return err;
 	}
 

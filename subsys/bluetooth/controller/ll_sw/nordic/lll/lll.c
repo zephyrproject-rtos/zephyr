@@ -131,8 +131,7 @@ int lll_init(void)
 	int err;
 
 	/* Get reference to entropy device */
-	dev_entropy =
-		device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_rng)));
+	dev_entropy = device_get_binding(DT_LABEL(DT_NODELABEL(rng)));
 	if (!dev_entropy) {
 		return -ENODEV;
 	}
@@ -179,9 +178,24 @@ int lll_init(void)
 	return 0;
 }
 
-uint8_t lll_entropy_get(uint8_t len, void *rand)
+int lll_csrand_get(void *buf, size_t len)
 {
-	return entropy_get_entropy_isr(dev_entropy, rand, len, 0);
+	return entropy_get_entropy(dev_entropy, buf, len);
+}
+
+int lll_csrand_isr_get(void *buf, size_t len)
+{
+	return entropy_get_entropy_isr(dev_entropy, buf, len, 0);
+}
+
+int lll_rand_get(void *buf, size_t len)
+{
+	return entropy_get_entropy(dev_entropy, buf, len);
+}
+
+int lll_rand_isr_get(void *buf, size_t len)
+{
+	return entropy_get_entropy_isr(dev_entropy, buf, len, 0);
 }
 
 int lll_reset(void)
