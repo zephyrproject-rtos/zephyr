@@ -149,7 +149,7 @@ static int mm_swiftio_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c1), okay) && CONFIG_I2C
 		IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_00_LPI2C1_SCL, 1);
 		IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_01_LPI2C1_SDA, 1);
 
@@ -168,7 +168,7 @@ static int mm_swiftio_init(struct device *dev)
 				IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c3), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpi2c3), okay) && CONFIG_I2C
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_07_LPI2C3_SCL, 1);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B1_06_LPI2C3_SDA, 1);
 

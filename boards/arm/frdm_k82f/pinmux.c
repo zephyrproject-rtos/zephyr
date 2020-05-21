@@ -52,7 +52,7 @@ static int frdm_k82f_pinmux_init(struct device *dev)
 	/* FXOS8700 INT1 */
 	pinmux_pin_set(portc, 13, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c3), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c3), okay) && CONFIG_I2C
 	/* I2C3 SDA, SCL */
 	pinmux_pin_set(porta, 1, PORT_PCR_MUX(kPORT_MuxAlt4)
 					| PORT_PCR_ODE_MASK);
