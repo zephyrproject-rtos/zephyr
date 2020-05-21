@@ -185,7 +185,7 @@ typedef void (*vth)(void); /* Vector Table Handler */
  *
  * Note: qemu_cortex_m0 uses TIMER0 to implement system timer.
  */
-void rtc1_nrf_isr(void);
+void rtc_nrf_isr(void);
 void nrf_power_clock_isr(void);
 #if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
 #if defined(CONFIG_BOARD_QEMU_CORTEX_M0)
@@ -198,7 +198,7 @@ vth __irq_vector_table _irq_vector_table[] = {
 	nrf_power_clock_isr,
 	isr0, isr1, isr2,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	rtc1_nrf_isr
+	rtc_nrf_isr
 };
 #endif /* CONFIG_BOARD_QEMU_CORTEX_M0 */
 #elif defined(CONFIG_SOC_SERIES_NRF53X) || defined(CONFIG_SOC_SERIES_NRF91X)
@@ -207,14 +207,14 @@ vth __irq_vector_table _irq_vector_table[] = {
 	0, 0, 0, 0, 0, nrf_power_clock_isr, 0, 0,
 	isr0, isr1, isr2,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	rtc1_nrf_isr
+	rtc_nrf_isr
 };
 #else
 vth __irq_vector_table _irq_vector_table[] = {
 	0, 0, 0, 0, 0, nrf_power_clock_isr, 0, 0,
 	isr0, isr1, isr2,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	rtc1_nrf_isr
+	rtc_nrf_isr
 };
 #endif
 #endif
