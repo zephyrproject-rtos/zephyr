@@ -247,7 +247,7 @@ static int mimxrt1064_evk_init(struct device *dev)
 	GPIO_WritePinOutput(GPIO1, 9, 0);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexpwm2_pwm3), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexpwm2_pwm3), okay) && CONFIG_PWM
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_09_FLEXPWM2_PWMA03, 0);
 #endif
 
