@@ -774,7 +774,7 @@ def main():
     suite.test_only = options.test_only
     suite.enable_slow = options.enable_slow
     suite.device_testing = options.device_testing
-    suite.fixture = options.fixture
+    suite.fixtures = options.fixture
     suite.enable_asan = options.enable_asan
     suite.enable_lsan = options.enable_lsan
     suite.enable_coverage = options.enable_coverage

@@ -149,3 +149,6 @@ class Test(Harness):
             self.capture_coverage = False
 
         self.process_test(line)
+
+class Ztest(Test):
+    pass
