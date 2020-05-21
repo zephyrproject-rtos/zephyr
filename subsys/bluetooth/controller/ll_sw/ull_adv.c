@@ -570,11 +570,6 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 				memcpy(sec_dptr, tx_addr, BDADDR_SIZE);
 			}
-
-			if (pri_hdr->sync_info) {
-				/* TODO: allocate periodic advertising context
-				 */
-			}
 #endif /* (CONFIG_BT_CTLR_ADV_AUX_SET > 0) */
 		}
 
