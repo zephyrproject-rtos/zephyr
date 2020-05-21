@@ -9,7 +9,7 @@
 #include <fsl_gpio.h>
 #include <soc.h>
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 static gpio_pin_config_t enet_gpio_config = {
 	.direction = kGPIO_DigitalOutput,
 	.outputLogic = 0,
@@ -211,7 +211,7 @@ static int mimxrt1050_evk_init(struct device *dev)
 			    IOMUXC_SW_PAD_CTL_PAD_DSE(6));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_09_GPIO1_IO09, 0U);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_AD_B0_10_GPIO1_IO10, 0U);
 	IOMUXC_SetPinMux(IOMUXC_GPIO_B1_04_ENET_RX_DATA00, 0);
@@ -316,7 +316,7 @@ static int mimxrt1050_evk_init(struct device *dev)
 	return 0;
 }
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 static int mimxrt1050_evk_phy_reset(struct device *dev)
 {
 	/* RESET PHY chip. */
@@ -328,6 +328,6 @@ static int mimxrt1050_evk_phy_reset(struct device *dev)
 #endif
 
 SYS_INIT(mimxrt1050_evk_init, PRE_KERNEL_1, 0);
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay) && CONFIG_NET_L2_ETHERNET
 SYS_INIT(mimxrt1050_evk_phy_reset, PRE_KERNEL_2, 0);
 #endif
