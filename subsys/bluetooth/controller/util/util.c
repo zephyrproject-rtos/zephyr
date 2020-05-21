@@ -37,21 +37,3 @@ u8_t util_ones_count_get(u8_t *octets, u8_t octets_len)
 
 	return one_count;
 }
-
-int util_rand(void *buf, size_t len)
-{
-	static struct device *dev;
-
-	if (unlikely(!dev)) {
-		/* Only one entropy device exists, so this is safe even
-		 * if the whole operation isn't atomic.
-		 */
-		dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-		__ASSERT((dev != NULL),
-			"Device driver for %s (DT_CHOSEN_ZEPHYR_ENTROPY_LABEL) not found. "
-			"Check your build configuration!",
-			DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-	}
-
-	return entropy_get_entropy(dev, (u8_t *)buf, len);
-}

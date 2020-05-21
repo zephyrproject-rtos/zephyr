@@ -16,5 +16,3 @@
 #include <stddef.h>
 
 u8_t util_ones_count_get(u8_t *octets, u8_t octets_len);
-
-int util_rand(void *buf, size_t len);

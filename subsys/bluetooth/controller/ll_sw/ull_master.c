@@ -103,7 +103,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	access_addr_get(access_addr);
 	memcpy(conn_lll->access_addr, &access_addr,
 	       sizeof(conn_lll->access_addr));
-	util_rand(&conn_lll->crc_init[0], 3);
+	lll_trng_get(&conn_lll->crc_init[0], 3);
 
 	conn_lll->handle = 0xFFFF;
 	conn_lll->interval = interval;
@@ -160,7 +160,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 	conn_lll->data_chan_count =
 		ull_conn_chan_map_cpy(conn_lll->data_chan_map);
-	util_rand(&hop, sizeof(u8_t));
+	lll_trng_get(&hop, sizeof(u8_t));
 	conn_lll->data_chan_hop = 5 + (hop % 12);
 	conn_lll->data_chan_sel = 0;
 	conn_lll->data_chan_use = 0;
@@ -400,8 +400,8 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 			memcpy(enc_req->rand, rand, sizeof(enc_req->rand));
 			enc_req->ediv[0] = ediv[0];
 			enc_req->ediv[1] = ediv[1];
-			util_rand(enc_req->skdm, sizeof(enc_req->skdm));
-			util_rand(enc_req->ivm, sizeof(enc_req->ivm));
+			lll_trng_get(enc_req->skdm, sizeof(enc_req->skdm));
+			lll_trng_get(enc_req->ivm, sizeof(enc_req->ivm));
 		} else if (conn->lll.enc_rx && conn->lll.enc_tx) {
 			memcpy(&conn->llcp_enc.rand[0], rand,
 			       sizeof(conn->llcp_enc.rand));
@@ -725,7 +725,7 @@ again:
 	LL_ASSERT(retry);
 	retry--;
 
-	util_rand(access_addr, 4);
+	lll_trng_get(access_addr, 4);
 	aa = sys_get_le32(access_addr);
 
 	bit_idx = 31U;
