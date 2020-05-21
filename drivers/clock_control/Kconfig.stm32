@@ -39,7 +39,7 @@ config CLOCK_STM32_SYSCLK_SRC_HSI
 
 config CLOCK_STM32_SYSCLK_SRC_MSI
 	bool "MSI"
-	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
+	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32L5X || SOC_SERIES_STM32WBX
 	help
 	  Use MSI as source of SYSCLK
 
@@ -65,7 +65,7 @@ config CLOCK_STM32_HSE_CLOCK
 
 config CLOCK_STM32_MSI_RANGE
 	int "MSI frequency range"
-	depends on CLOCK_STM32_SYSCLK_SRC_MSI
+	depends on CLOCK_STM32_SYSCLK_SRC_MSI || CLOCK_STM32_PLL_SRC_MSI
 	default 8
 	help
 	  Frequency range of MSI when MSI range is provided in RCC_CR register
@@ -89,7 +89,7 @@ choice
 
 config CLOCK_STM32_PLL_SRC_MSI
 	bool "MSI"
-	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
+	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32L5X || SOC_SERIES_STM32WBX
 	help
 	  Use MSI as source of PLL
 
@@ -120,7 +120,7 @@ source "drivers/clock_control/Kconfig.stm32f1"
 source "drivers/clock_control/Kconfig.stm32f2_f4_f7"
 source "drivers/clock_control/Kconfig.stm32h7"
 source "drivers/clock_control/Kconfig.stm32l0_l1"
-source "drivers/clock_control/Kconfig.stm32l4_wb"
+source "drivers/clock_control/Kconfig.stm32l4_l5_wb"
 source "drivers/clock_control/Kconfig.stm32g0"
 source "drivers/clock_control/Kconfig.stm32g4"
 

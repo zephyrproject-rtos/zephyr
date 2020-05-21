@@ -35,8 +35,8 @@ __weak enum x86_memmap_source x86_memmap_source = X86_MEMMAP_SOURCE_DEFAULT;
 
 __weak struct x86_memmap_entry x86_memmap[CONFIG_X86_MEMMAP_ENTRIES] = {
 	{
-		DT_PHYS_RAM_ADDR,
-		DT_RAM_SIZE * 1024ULL,
+		DT_REG_ADDR(DT_CHOSEN(zephyr_sram)),
+		DT_REG_SIZE(DT_CHOSEN(zephyr_sram)),
 		X86_MEMMAP_ENTRY_RAM
 	}
 };

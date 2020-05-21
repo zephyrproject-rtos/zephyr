@@ -1,7 +1,7 @@
 .. _stm32373c_eval_board:
 
-STM32373C-EVAL
-##############
+ST STM32373C Evaluation
+#######################
 
 Overview
 ********

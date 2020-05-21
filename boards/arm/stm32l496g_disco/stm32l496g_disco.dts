@@ -78,7 +78,7 @@ arduino_serial: &lpuart1 {};
 &timers2 {
 	status = "okay";
 
-	pwm {
+	pwm2: pwm {
 		status = "okay";
 	};
 };
@@ -93,5 +93,9 @@ arduino_serial: &lpuart1 {};
 };
 
 &rtc {
+	status = "okay";
+};
+
+&sdmmc1 {
 	status = "okay";
 };

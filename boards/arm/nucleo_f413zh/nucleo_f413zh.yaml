@@ -1,5 +1,5 @@
 identifier: nucleo_f413zh
-name: NUCLEO-F413zh
+name: ST Nucleo F413ZH
 type: mcu
 arch: arm
 toolchain:

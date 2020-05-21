@@ -12,8 +12,8 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(nrfx_sample, LOG_LEVEL_INF);
 
-#define INPUT_PIN	DT_ALIAS_SW0_GPIOS_PIN
-#define OUTPUT_PIN	DT_ALIAS_LED0_GPIOS_PIN
+#define INPUT_PIN	DT_GPIO_PIN(DT_ALIAS(sw0), gpios)
+#define OUTPUT_PIN	DT_GPIO_PIN(DT_ALIAS(led0), gpios)
 
 static void button_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
@@ -27,8 +27,8 @@ void main(void)
 	nrfx_err_t err;
 
 	/* Connect GPIOTE_0 IRQ to nrfx_gpiote_irq_handler */
-	IRQ_CONNECT(DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ_0,
-		    DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(gpiote)),
+		    DT_IRQ(DT_NODELABEL(gpiote), priority),
 		    nrfx_isr, nrfx_gpiote_irq_handler, 0);
 
 	/* Initialize GPIOTE (the interrupt priority passed as the parameter

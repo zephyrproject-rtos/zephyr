@@ -104,12 +104,12 @@ int sem_timedwait(sem_t *semaphore, struct timespec *abstime)
 	abstime_ms = (s64_t)_ts_to_ms(abstime);
 
 	if (abstime_ms <= current_ms) {
-		timeout = K_NO_WAIT;
+		timeout = 0;
 	} else {
 		timeout = (s32_t)(abstime_ms - current_ms);
 	}
 
-	if (k_sem_take(semaphore, timeout)) {
+	if (k_sem_take(semaphore, K_MSEC(timeout))) {
 		errno = ETIMEDOUT;
 		return -1;
 	}

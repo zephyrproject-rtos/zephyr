@@ -6,8 +6,7 @@
 
 / {
 	model = "Nordic nRF9160 DK NRF9160";
-	compatible = "nordic,nrf9160-dk-nrf9160", "nordic,nrf9160-sica",
-		     "nordic,nrf9160";
+	compatible = "nordic,nrf9160-dk-nrf9160";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -181,14 +180,23 @@
 };
 
 / {
-	/* SRAM allocated and used by the BSD library */
-	sram0_bsd: memory@20010000 {
-		compatible = "mmio-sram";
-	};
 
-	/* SRAM allocated to the Non-Secure image */
-	sram0_ns: memory@20020000 {
-		compatible = "mmio-sram";
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_s: image_s@20000000 {
+			/* Secure image memory */
+		};
+
+		sram0_bsd: image_bsd@20010000 {
+			/* BSD (shared) memory */
+		};
+
+		sram0_ns: image_ns@20020000 {
+			/* Non-Secure image memory */
+		};
 	};
 };
 

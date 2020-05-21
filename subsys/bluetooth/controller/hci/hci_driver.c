@@ -115,9 +115,6 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 			buf = process_prio_evt(node_rx);
 			if (buf) {
-#if defined(CONFIG_BT_LL_SW_LEGACY)
-				radio_rx_fc_set(node_rx->hdr.handle, 0);
-#endif /* CONFIG_BT_LL_SW_LEGACY */
 
 				node_rx->hdr.next = NULL;
 				ll_rx_mem_release((void **)&node_rx);
@@ -183,10 +180,6 @@ static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 		LL_ASSERT(0);
 		break;
 	}
-
-#if defined(CONFIG_BT_LL_SW_LEGACY)
-	radio_rx_fc_set(node_rx->hdr.handle, 0);
-#endif /* CONFIG_BT_LL_SW_LEGACY */
 
 	node_rx->hdr.next = NULL;
 	ll_rx_mem_release((void **)&node_rx);
@@ -355,7 +348,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 			events[0].signal->signaled = 0U;
 		} else if (events[1].state ==
 			   K_POLL_STATE_FIFO_DATA_AVAILABLE) {
-			node_rx = k_fifo_get(events[1].fifo, 0);
+			node_rx = k_fifo_get(events[1].fifo, K_NO_WAIT);
 		}
 
 		events[0].state = K_POLL_STATE_NOT_READY;

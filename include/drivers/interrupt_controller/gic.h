@@ -175,8 +175,6 @@
  * Helper Constants
  */
 
-#define	GIC_SPI_INT_BASE	32
-
 /* GICC_CTLR */
 #define GICC_CTLR_ENABLEGRP0	BIT(0)
 #define GICC_CTLR_ENABLEGRP1	BIT(1)
@@ -197,13 +195,6 @@
 
 #endif /* CONFIG_GIC_V2 */
 
-/* GICC_IAR */
-#define	GICC_IAR_SPURIOUS	1023
-
-/* GICD_ICFGR */
-#define GICD_ICFGR_MASK		BIT_MASK(2)
-#define GICD_ICFGR_TYPE		BIT(1)
-
 /* GICD_SGIR */
 #define GICD_SGIR_TGTFILT(x)		(x << 24)
 #define GICD_SGIR_TGTFILT_CPULIST	GICD_SGIR_TGTFILT(0b00)
@@ -218,6 +209,48 @@
 #define GICD_SGIR_SGIINTID(x)		(x)
 
 #endif /* CONFIG_GIC_VER <= 2 */
+
+/* GICD_ICFGR */
+#define GICD_ICFGR_MASK			BIT_MASK(2)
+#define GICD_ICFGR_TYPE			BIT(1)
+
+/* GICD_TYPER.ITLinesNumber 0:4 */
+#define GICD_TYPER_ITLINESNUM_MASK	0x1f
+
+/*
+ * Common Helper Constants
+ */
+
+#define GIC_SPI_INT_BASE		32
+
+#define GIC_NUM_INTR_PER_REG		32
+
+#define GIC_NUM_CFG_PER_REG		16
+
+#define GIC_NUM_PRI_PER_REG		4
+
+/* GIC idle priority : value '0xff' will allow all interrupts */
+#define GIC_IDLE_PRIO			0xff
+
+/* Priority levels 0:255 */
+#define GIC_PRI_MASK			0xff
+
+/*
+ * '0xa0'is used to initialize each interrtupt default priority.
+ * This is an arbitrary value in current context.
+ * Any value '0x80' to '0xff' will work for both NS and S state.
+ * The values of individual interrupt and default has to be chosen
+ * carefully if PMR and BPR based nesting and preemption has to be done.
+ */
+#define GIC_INT_DEF_PRI_X4		0xa0a0a0a0
+
+/* GIC special interrupt id */
+#define GIC_INTID_SPURIOUS		1023
+
+/* Fixme: update from platform specific define or dt */
+#define GIC_NUM_CPU_IF			1
+/* Fixme: arch support need to provide api/macro in SMP implementation */
+#define GET_CPUID			0
 
 #ifndef _ASMLANGUAGE
 

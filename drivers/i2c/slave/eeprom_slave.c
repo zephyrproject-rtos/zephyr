@@ -36,7 +36,7 @@ struct i2c_eeprom_slave_config {
 /* convenience defines */
 #define DEV_CFG(dev)							\
 	((const struct i2c_eeprom_slave_config * const)			\
-		(dev)->config->config_info)
+		(dev)->config_info)
 #define DEV_DATA(dev)							\
 	((struct i2c_eeprom_slave_data * const)(dev)->driver_data)
 
@@ -205,44 +205,28 @@ static int i2c_eeprom_slave_init(struct device *dev)
 	return 0;
 }
 
-#if DT_HAS_DRV_INST(0)
+#define I2C_EEPROM_INIT(inst)						\
+	static struct i2c_eeprom_slave_data				\
+		i2c_eeprom_slave_##inst##_dev_data;			\
+									\
+	static u8_t							\
+	i2c_eeprom_slave_##inst##_buffer[(DT_INST_PROP(inst, size))];	\
+									\
+	static const struct i2c_eeprom_slave_config			\
+		i2c_eeprom_slave_##inst##_cfg = {			\
+		.controller_dev_name = DT_INST_BUS_LABEL(inst),		\
+		.address = DT_INST_REG_ADDR(inst),			\
+		.buffer_size = DT_INST_PROP(inst, size),		\
+		.buffer = i2c_eeprom_slave_##inst##_buffer		\
+	};								\
+									\
+	DEVICE_AND_API_INIT(i2c_eeprom_slave_##inst,			\
+			    DT_INST_LABEL(inst),			\
+			    &i2c_eeprom_slave_init,			\
+			    &i2c_eeprom_slave_##inst##_dev_data,	\
+			    &i2c_eeprom_slave_##inst##_cfg,		\
+			    POST_KERNEL,				\
+			    CONFIG_I2C_SLAVE_INIT_PRIORITY,		\
+			    &api_funcs);
 
-static struct i2c_eeprom_slave_data i2c_eeprom_slave_0_dev_data;
-
-static u8_t i2c_eeprom_slave_0_buffer[(DT_INST_PROP(0, size))];
-
-static const struct i2c_eeprom_slave_config i2c_eeprom_slave_0_cfg = {
-	.controller_dev_name = DT_INST_BUS_LABEL(0),
-	.address = DT_INST_REG_ADDR(0),
-	.buffer_size = DT_INST_PROP(0, size),
-	.buffer = i2c_eeprom_slave_0_buffer
-};
-
-DEVICE_AND_API_INIT(i2c_eeprom_slave_0, DT_INST_LABEL(0),
-		    &i2c_eeprom_slave_init,
-		    &i2c_eeprom_slave_0_dev_data, &i2c_eeprom_slave_0_cfg,
-		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
-		    &api_funcs);
-
-#endif /* DT_HAS_DRV_INST(0) */
-
-#if DT_HAS_DRV_INST(1)
-
-static struct i2c_eeprom_slave_data i2c_eeprom_slave_1_dev_data;
-
-static u8_t i2c_eeprom_slave_1_buffer[(DT_INST_PROP(1, size))];
-
-static const struct i2c_eeprom_slave_config i2c_eeprom_slave_1_cfg = {
-	.controller_dev_name = DT_INST_BUS_LABEL(1),
-	.address = DT_INST_REG_ADDR(1),
-	.buffer_size = DT_INST_PROP(1, size),
-	.buffer = i2c_eeprom_slave_1_buffer
-};
-
-DEVICE_AND_API_INIT(i2c_eeprom_slave_1, DT_INST_LABEL(1),
-		    &i2c_eeprom_slave_init,
-		    &i2c_eeprom_slave_1_dev_data, &i2c_eeprom_slave_1_cfg,
-		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
-		    &api_funcs);
-
-#endif /* DT_HAS_DRV_INST(1) */
+DT_INST_FOREACH_STATUS_OKAY(I2C_EEPROM_INIT)

@@ -32,7 +32,7 @@ struct stts751_config {
 	u8_t event_pin;
 	u8_t int_flags;
 #endif
-#if DT_ANY_INST_ON_BUS(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	u16_t i2c_slv_addr;
 #endif
 };
@@ -43,7 +43,7 @@ struct stts751_data {
 
 	stmdev_ctx_t *ctx;
 
-#if DT_ANY_INST_ON_BUS(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	stmdev_ctx_t ctx_i2c;
 #endif
 

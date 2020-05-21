@@ -228,7 +228,7 @@ static const struct ms5607_config ms5607_config = {
 
 static int ms5607_init(struct device *dev)
 {
-	const struct ms5607_config *const config = dev->config->config_info;
+	const struct ms5607_config *const config = dev->config_info;
 	struct ms5607_data *data = dev->driver_data;
 	struct sensor_value val;
 	int err;
@@ -239,7 +239,7 @@ static int ms5607_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	ms5607_spi_init(dev);
 #else
 	BUILD_ASSERT(1, "I2c interface not implemented yet");

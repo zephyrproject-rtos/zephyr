@@ -32,6 +32,11 @@ config MODEM_UBLOX_SARA_U2
 	help
 	  Enable support for SARA-U2 modem
 
+config MODEM_UBLOX_SARA_AUTODETECT_VARIANT
+	bool "detect automatically"
+	help
+	  Enable automatic detection of modem variant (SARA-R4 or SARA-U2)
+
 endchoice
 
 config MODEM_UBLOX_SARA_R4_NAME
@@ -59,6 +64,19 @@ config MODEM_UBLOX_SARA_R4_APN
 	  This setting is used in the AT+CGDCONT command to set the APN name
 	  for the network connection context.  This value is specific to
 	  the network provider and may need to be changed.
+
+config MODEM_UBLOX_SARA_AUTODETECT_APN
+	bool "detect APN automatically"
+	help
+	  Enable automatic detection of the APN, based on the IMSI
+	  If the detection fails, the configured APN will be used
+
+config MODEM_UBLOX_SARA_AUTODETECT_APN_PROFILES
+	string "list of profiles to search when autodetecting APN"
+	default "hologram=23450, wm=20601 29505 29509 23450 53703 90143"
+	help
+	  Set a comma separated list of profiles, each containing of:
+	  <apn>=<IMSI_1> ... <IMSI_n>
 
 config MODEM_UBLOX_SARA_R4_MANUAL_MCCMNO
 	string "MCC/MNOfor establishing network connection"

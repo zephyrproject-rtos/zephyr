@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT atmel_sam_ssc
+
 /** @file
  * @brief I2S bus (SSC) driver for Atmel SAM MCU family.
  *
@@ -93,9 +95,9 @@ struct i2s_sam_dev_data {
 	struct stream tx;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct i2s_sam_dev_cfg *const)(dev)->config->config_info)
+	((const struct i2s_sam_dev_cfg *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct i2s_sam_dev_data *const)(dev)->driver_data)
 
@@ -840,7 +842,8 @@ static int i2s_sam_read(struct device *dev, void **mem_block, size_t *size)
 	}
 
 	if (dev_data->rx.state != I2S_STATE_ERROR) {
-		ret = k_sem_take(&dev_data->rx.sem, dev_data->rx.cfg.timeout);
+		ret = k_sem_take(&dev_data->rx.sem,
+				 SYS_TIMEOUT_MS(dev_data->rx.cfg.timeout));
 		if (ret < 0) {
 			return ret;
 		}
@@ -866,7 +869,8 @@ static int i2s_sam_write(struct device *dev, void *mem_block, size_t size)
 		return -EIO;
 	}
 
-	ret = k_sem_take(&dev_data->tx.sem, dev_data->tx.cfg.timeout);
+	ret = k_sem_take(&dev_data->tx.sem,
+			 SYS_TIMEOUT_MS(dev_data->tx.cfg.timeout));
 	if (ret < 0) {
 		return ret;
 	}
@@ -918,9 +922,9 @@ static int i2s_sam_initialize(struct device *dev)
 	k_sem_init(&dev_data->tx.sem, CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT,
 		   CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT);
 
-	dev_data->dev_dma = device_get_binding(CONFIG_I2S_SAM_SSC_DMA_NAME);
+	dev_data->dev_dma = device_get_binding(DT_INST_DMAS_LABEL_BY_NAME(0, tx));
 	if (!dev_data->dev_dma) {
-		LOG_ERR("%s device not found", CONFIG_I2S_SAM_SSC_DMA_NAME);
+		LOG_ERR("%s device not found", DT_INST_DMAS_LABEL_BY_NAME(0, tx));
 		return -ENODEV;
 	}
 
@@ -960,28 +964,17 @@ static struct device *get_dev_from_dma_channel(u32_t dma_channel)
 
 static void i2s0_sam_irq_config(void)
 {
-	IRQ_CONNECT(SSC_IRQn, CONFIG_I2S_SAM_SSC_0_IRQ_PRI, i2s_sam_isr,
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), i2s_sam_isr,
 		    DEVICE_GET(i2s0_sam), 0);
 }
 
-static const struct soc_gpio_pin i2s0_pins[] = {
-	PIN_SSC0_TK,
-	PIN_SSC0_TF,
-	PIN_SSC0_TD,
-#ifdef CONFIG_I2S_SAM_SSC_0_PIN_RK_EN
-	PIN_SSC0_RK,
-#endif
-#ifdef CONFIG_I2S_SAM_SSC_0_PIN_RF_EN
-	PIN_SSC0_RF,
-#endif
-	PIN_SSC0_RD,
-};
+static const struct soc_gpio_pin i2s0_pins[] = ATMEL_SAM_DT_PINS(0);
 
 static const struct i2s_sam_dev_cfg i2s0_sam_config = {
-	.regs = SSC,
+	.regs = (Ssc *)DT_INST_REG_ADDR(0),
 	.irq_config = i2s0_sam_irq_config,
-	.periph_id = ID_SSC,
-	.irq_id = SSC_IRQn,
+	.periph_id = DT_INST_PROP(0, peripheral_id),
+	.irq_id = DT_INST_IRQN(0),
 	.pin_list = i2s0_pins,
 	.pin_list_size = ARRAY_SIZE(i2s0_pins),
 };
@@ -991,10 +984,10 @@ struct queue_item tx_0_ring_buf[CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT + 1];
 
 static struct i2s_sam_dev_data i2s0_sam_data = {
 	.rx = {
-		.dma_channel = CONFIG_I2S_SAM_SSC_0_DMA_RX_CHANNEL,
+		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, rx, channel),
 		.dma_cfg = {
 			.block_count = 1,
-			.dma_slot = DMA_PERID_SSC_RX,
+			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(0, rx, perid),
 			.channel_direction = PERIPHERAL_TO_MEMORY,
 			.source_burst_length = 1,
 			.dest_burst_length = 1,
@@ -1008,10 +1001,10 @@ static struct i2s_sam_dev_data i2s0_sam_data = {
 		.set_data_format = set_rx_data_format,
 	},
 	.tx = {
-		.dma_channel = CONFIG_I2S_SAM_SSC_0_DMA_TX_CHANNEL,
+		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(0, tx, channel),
 		.dma_cfg = {
 			.block_count = 1,
-			.dma_slot = DMA_PERID_SSC_TX,
+			.dma_slot = DT_INST_DMAS_CELL_BY_NAME(0, tx, perid),
 			.channel_direction = MEMORY_TO_PERIPHERAL,
 			.source_burst_length = 1,
 			.dest_burst_length = 1,
@@ -1026,6 +1019,6 @@ static struct i2s_sam_dev_data i2s0_sam_data = {
 	},
 };
 
-DEVICE_AND_API_INIT(i2s0_sam, CONFIG_I2S_SAM_SSC_0_NAME, &i2s_sam_initialize,
+DEVICE_AND_API_INIT(i2s0_sam, DT_INST_LABEL(0), &i2s_sam_initialize,
 		    &i2s0_sam_data, &i2s0_sam_config, POST_KERNEL,
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_sam_driver_api);

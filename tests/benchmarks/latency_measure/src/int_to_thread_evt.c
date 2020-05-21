@@ -18,12 +18,13 @@
 #include <zephyr.h>
 #include <irq_offload.h>
 
-#include "timestamp.h"
 #include "utils.h"
+#include "timing_info.h"
 
 #include <arch/cpu.h>
 
-static u32_t timestamp;
+static u32_t timestamp_start;
+static u32_t timestamp_end;
 static struct k_work work;
 
 K_SEM_DEFINE(INTSEMA, 0, 1);
@@ -43,13 +44,18 @@ static void latency_test_isr(void *unused)
 	ARG_UNUSED(unused);
 
 	k_work_submit(&work);
-	timestamp = TIME_STAMP_DELTA_GET(0);
+
+	TIMING_INFO_PRE_READ();
+	timestamp_start = TIMING_INFO_OS_GET_TIME();
 }
 
 static void worker(struct k_work *item)
 {
 	(void)item;
-	timestamp = TIME_STAMP_DELTA_GET(timestamp);
+
+	TIMING_INFO_PRE_READ();
+	timestamp_end = TIMING_INFO_OS_GET_TIME();
+
 	k_sem_give(&WORKSEMA);
 }
 
@@ -83,15 +89,21 @@ K_THREAD_DEFINE(int_thread_id, 512,
  */
 int int_to_thread_evt(void)
 {
+	u32_t diff;
+
 	PRINT_FORMAT(" 2 - Measure time from ISR to executing a different thread"
 		     " (rescheduled)");
 	k_work_init(&work, worker);
 
+	benchmark_timer_start();
 	TICK_SYNCH();
 	k_sem_give(&INTSEMA);
 	k_sem_take(&WORKSEMA, K_FOREVER);
+	benchmark_timer_stop();
+
+	diff = TIMING_INFO_GET_DELTA(timestamp_start, timestamp_end);
 
 	PRINT_FORMAT(" switch time is %u tcs = %u nsec",
-		     timestamp, (u32_t)k_cyc_to_ns_floor64(timestamp));
+		     diff, CYCLES_TO_NS(diff));
 	return 0;
 }

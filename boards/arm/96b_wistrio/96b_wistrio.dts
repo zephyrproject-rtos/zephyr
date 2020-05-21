@@ -34,6 +34,7 @@
 	aliases {
 		led0 = &green_led_0;
 		eeprom-0 = &eeprom;
+		lora0 = &lora;
 	};
 };
 
@@ -61,7 +62,7 @@
 	status = "okay";
 	cs-gpios = <&gpiob 0 0>;
 
-	sx1276@0 {
+	lora: sx1276@0 {
 		compatible = "semtech,sx1276";
 		reg = <0>;
 		label = "sx1276";

@@ -39,7 +39,7 @@ struct spi_mcux_data {
 
 static void spi_mcux_transfer_next_packet(struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config->config_info;
+	const struct spi_mcux_config *config = dev->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
 	LPSPI_Type *base = config->base;
 	struct spi_context *ctx = &data->ctx;
@@ -106,7 +106,7 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 static void spi_mcux_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct spi_mcux_config *config = dev->config->config_info;
+	const struct spi_mcux_config *config = dev->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
 	LPSPI_Type *base = config->base;
 
@@ -128,7 +128,7 @@ static void spi_mcux_master_transfer_callback(LPSPI_Type *base,
 static int spi_mcux_configure(struct device *dev,
 			      const struct spi_config *spi_cfg)
 {
-	const struct spi_mcux_config *config = dev->config->config_info;
+	const struct spi_mcux_config *config = dev->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
 	LPSPI_Type *base = config->base;
 	lpspi_master_config_t master_config;
@@ -258,7 +258,7 @@ static int spi_mcux_release(struct device *dev,
 
 static int spi_mcux_init(struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config->config_info;
+	const struct spi_mcux_config *config = dev->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
 
 	CLOCK_SetIpSrc(config->clock_ip_name, config->clock_ip_src);
@@ -311,4 +311,4 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-DT_INST_FOREACH(SPI_RV32M1_INIT)
+DT_INST_FOREACH_STATUS_OKAY(SPI_RV32M1_INIT)

@@ -203,7 +203,7 @@ static void test_init(void)
 	net_mgmt_add_event_callback(&mgmt_cb);
 }
 
-static void dns_do_not_add_add_callback6(void)
+static void test_dns_do_not_add_add_callback6(void)
 {
 #if defined(CONFIG_NET_IPV6)
 	/* Wait for DNS added callback without adding DNS */
@@ -218,7 +218,7 @@ static void dns_do_not_add_add_callback6(void)
 }
 
 /* Wait for DNS added callback after adding DNS */
-static void dns_add_callback6(void)
+static void test_dns_add_callback6(void)
 {
 #if defined(CONFIG_NET_IPV6)
 
@@ -243,7 +243,7 @@ static void dns_add_callback6(void)
 #endif
 }
 
-static void dns_remove_callback6(void)
+static void test_dns_remove_callback6(void)
 {
 #if defined(CONFIG_NET_IPV6)
 	/* Wait for DNS removed callback after removing DNS */
@@ -263,7 +263,7 @@ static void dns_remove_callback6(void)
 #endif
 }
 
-static void dns_remove_none_callback6(void)
+static void test_dns_remove_none_callback6(void)
 {
 #if defined(CONFIG_NET_IPV6)
 	/* Wait for DNS removed callback without removing DNS */
@@ -282,7 +282,7 @@ static void dns_remove_none_callback6(void)
 #endif
 }
 
-static void dns_add_remove_two_callback6(void)
+static void test_dns_add_remove_two_callback6(void)
 {
 #if defined(CONFIG_NET_IPV6)
 	struct dns_resolve_context *dnsCtx = &resv_ipv6;
@@ -372,7 +372,7 @@ static void dns_add_remove_two_callback6(void)
 #endif
 }
 
-static void dns_do_not_add_add_callback(void)
+static void test_dns_do_not_add_add_callback(void)
 {
 #if defined(CONFIG_NET_IPV4)
 	/* Wait for DNS added callback without adding DNS */
@@ -386,7 +386,7 @@ static void dns_do_not_add_add_callback(void)
 #endif
 }
 
-static void dns_add_callback(void)
+static void test_dns_add_callback(void)
 {
 #if defined(CONFIG_NET_IPV4)
 	/* Wait for DNS added callback after adding DNS */
@@ -411,7 +411,7 @@ static void dns_add_callback(void)
 #endif
 }
 
-static void dns_remove_callback(void)
+static void test_dns_remove_callback(void)
 {
 #if defined(CONFIG_NET_IPV4)
 	/* Wait for DNS removed callback after removing DNS */
@@ -430,7 +430,7 @@ static void dns_remove_callback(void)
 #endif
 }
 
-static void dns_remove_none_callback(void)
+static void test_dns_remove_none_callback(void)
 {
 #if defined(CONFIG_NET_IPV4)
 	/* Wait for DNS removed callback without removing DNS */
@@ -449,7 +449,7 @@ static void dns_remove_none_callback(void)
 #endif
 }
 
-static void dns_add_remove_two_callback(void)
+static void test_dns_add_remove_two_callback(void)
 {
 #if defined(CONFIG_NET_IPV4)
 	struct dns_resolve_context *dnsCtx = &resv_ipv4;
@@ -543,16 +543,16 @@ void test_main(void)
 {
 	ztest_test_suite(dns_tests,
 			 ztest_unit_test(test_init),
-			 ztest_unit_test(dns_do_not_add_add_callback6),
-			 ztest_unit_test(dns_add_callback6),
-			 ztest_unit_test(dns_remove_callback6),
-			 ztest_unit_test(dns_remove_none_callback6),
-			 ztest_unit_test(dns_add_remove_two_callback6),
-			 ztest_unit_test(dns_do_not_add_add_callback),
-			 ztest_unit_test(dns_add_callback),
-			 ztest_unit_test(dns_remove_callback),
-			 ztest_unit_test(dns_remove_none_callback),
-			 ztest_unit_test(dns_add_remove_two_callback)
+			 ztest_unit_test(test_dns_do_not_add_add_callback6),
+			 ztest_unit_test(test_dns_add_callback6),
+			 ztest_unit_test(test_dns_remove_callback6),
+			 ztest_unit_test(test_dns_remove_none_callback6),
+			 ztest_unit_test(test_dns_add_remove_two_callback6),
+			 ztest_unit_test(test_dns_do_not_add_add_callback),
+			 ztest_unit_test(test_dns_add_callback),
+			 ztest_unit_test(test_dns_remove_callback),
+			 ztest_unit_test(test_dns_remove_none_callback),
+			 ztest_unit_test(test_dns_add_remove_two_callback)
 
 );
 

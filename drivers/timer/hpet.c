@@ -39,7 +39,14 @@ static unsigned int last_count;
 static void hpet_isr(void *arg)
 {
 	ARG_UNUSED(arg);
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_start_of_tick_handler(void);
+	read_timer_start_of_tick_handler();
+#endif
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
+
 	u32_t now = MAIN_COUNTER_REG;
 
 	if (IS_ENABLED(CONFIG_SMP) &&
@@ -59,8 +66,7 @@ static void hpet_isr(void *arg)
 
 	last_count += dticks * cyc_per_tick;
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) ||
-	    IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND)) {
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		u32_t next = last_count + cyc_per_tick;
 
 		if ((s32_t)(next - now) < MIN_DELAY) {
@@ -71,6 +77,11 @@ static void hpet_isr(void *arg)
 
 	k_spin_unlock(&lock, key);
 	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	extern void read_timer_end_of_tick_handler(void);
+	read_timer_end_of_tick_handler();
+#endif
 }
 
 static void set_timer0_irq(unsigned int irq)
@@ -128,7 +139,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
+#if defined(CONFIG_TICKLESS_KERNEL)
 	if (ticks == K_TICKS_FOREVER && idle) {
 		GENERAL_CONF_REG &= ~GCONF_ENABLE;
 		return;

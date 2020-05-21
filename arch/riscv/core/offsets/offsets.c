@@ -43,7 +43,7 @@ GEN_OFFSET_SYM(_callee_saved_t, s9);
 GEN_OFFSET_SYM(_callee_saved_t, s10);
 GEN_OFFSET_SYM(_callee_saved_t, s11);
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 GEN_OFFSET_SYM(_callee_saved_t, fcsr);
 GEN_OFFSET_SYM(_callee_saved_t, fs0);
 GEN_OFFSET_SYM(_callee_saved_t, fs1);
@@ -82,7 +82,7 @@ GEN_OFFSET_SYM(z_arch_esf_t, a7);
 GEN_OFFSET_SYM(z_arch_esf_t, mepc);
 GEN_OFFSET_SYM(z_arch_esf_t, mstatus);
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 GEN_OFFSET_SYM(z_arch_esf_t, fp_state);
 GEN_OFFSET_SYM(z_arch_esf_t, ft0);
 GEN_OFFSET_SYM(z_arch_esf_t, ft1);

@@ -16,9 +16,9 @@
 #include <logging/log.h>
 #include <drivers/sensor.h>
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <drivers/spi.h>
-#elif DT_ANY_INST_ON_BUS(i2c)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #include <drivers/i2c.h>
 #endif
 
@@ -35,7 +35,7 @@ static int iis2dlpc_set_range(struct device *dev, u16_t range)
 {
 	int err;
 	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
-	const struct iis2dlpc_device_config *cfg = dev->config->config_info;
+	const struct iis2dlpc_device_config *cfg = dev->config_info;
 	u8_t shift_gain = 0U;
 	u8_t fs = IIS2DLPC_FS_TO_REG(range);
 
@@ -178,7 +178,7 @@ static int iis2dlpc_attr_set(struct device *dev, enum sensor_channel chan,
 static int iis2dlpc_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
-	const struct iis2dlpc_device_config *cfg = dev->config->config_info;
+	const struct iis2dlpc_device_config *cfg = dev->config_info;
 	u8_t shift;
 	union axis3bit16_t buf;
 
@@ -214,7 +214,7 @@ static const struct sensor_driver_api iis2dlpc_driver_api = {
 static int iis2dlpc_init_interface(struct device *dev)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
-	const struct iis2dlpc_device_config *cfg = dev->config->config_info;
+	const struct iis2dlpc_device_config *cfg = dev->config_info;
 
 	iis2dlpc->bus = device_get_binding(cfg->bus_name);
 	if (!iis2dlpc->bus) {
@@ -222,9 +222,9 @@ static int iis2dlpc_init_interface(struct device *dev)
 		return -EINVAL;
 	}
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	iis2dlpc_spi_init(dev);
-#elif DT_ANY_INST_ON_BUS(i2c)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	iis2dlpc_i2c_init(dev);
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
@@ -256,7 +256,7 @@ static int iis2dlpc_set_power_mode(struct iis2dlpc_data *iis2dlpc,
 static int iis2dlpc_init(struct device *dev)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
-	const struct iis2dlpc_device_config *cfg = dev->config->config_info;
+	const struct iis2dlpc_device_config *cfg = dev->config_info;
 	u8_t wai;
 
 	if (iis2dlpc_init_interface(dev)) {

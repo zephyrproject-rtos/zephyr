@@ -10,8 +10,7 @@
 
 / {
 	model = "nRF52832-MDK Micro Dev Kit";
-	compatible = "nrf52832-mdk", "nordic,nrf52832-qfaa",
-		     "nordic,nrf52832";
+	compatible = "nrf52832-mdk";
 
 	chosen {
 		zephyr,console = &uart0;

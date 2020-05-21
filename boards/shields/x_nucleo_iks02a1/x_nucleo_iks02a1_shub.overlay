@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2020 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Mode 2: SensorHub Mode
+ *
+ *   JP7 => 2-3 (I2C1 = I2Cx)
+ *   JP8 => 2-3 (I2C1 = I2Cx)
+ *
+ * Only ISM330DHCX and IIS2DLPC sensors are accessible from the main board mcu.
+ * IIS2MDC is connected directly to ISM330DHCX SCx/SDX (I2Cx) pins, so it is not
+ * declared in DTS file.
+ */
+
+&arduino_i2c {
+
+	iis2dlpc@19 {
+		compatible = "st,iis2dlpc";
+		reg = <0x19>;
+		drdy-gpios =  <&arduino_header 4 GPIO_ACTIVE_HIGH>; /* A4 - INT2 */
+		label = "IIS2DLPC";
+	};
+
+	ism330dhcx@6b {
+		compatible = "st,ism330dhcx";
+		reg = <0x6b>;
+		drdy-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 - INT2 */
+		label = "ISM330DHCX";
+	};
+};

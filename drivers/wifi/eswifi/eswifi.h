@@ -114,7 +114,7 @@ static inline void eswifi_unlock(struct eswifi_dev *eswifi)
 int eswifi_at_cmd(struct eswifi_dev *eswifi, char *cmd);
 static inline int __select_socket(struct eswifi_dev *eswifi, u8_t idx)
 {
-	snprintf(eswifi->buf, sizeof(eswifi->buf), "P0=%d\r", idx);
+	snprintk(eswifi->buf, sizeof(eswifi->buf), "P0=%d\r", idx);
 	return eswifi_at_cmd(eswifi, eswifi->buf);
 }
 

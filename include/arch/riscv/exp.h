@@ -41,7 +41,7 @@ struct soc_esf {
 };
 #endif
 
-#if !defined(RV_FP_TYPE) && defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if !defined(RV_FP_TYPE) && defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 #ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
 #define RV_FP_TYPE u64_t
 #else
@@ -74,7 +74,7 @@ struct __esf {
 	ulong_t mepc;		/* machine exception program counter */
 	ulong_t mstatus;	/* machine status register */
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	ulong_t fp_state;	/* Floating-point saved context state. */
 	RV_FP_TYPE ft0;		/* Caller-saved temporary floating register */
 	RV_FP_TYPE ft1;		/* Caller-saved temporary floating register */

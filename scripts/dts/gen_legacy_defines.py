@@ -28,7 +28,9 @@ def main():
         edt = edtlib.EDT(args.dts, args.bindings_dirs,
                          # Suppress this warning if it's suppressed in dtc
                          warn_reg_unit_address_mismatch=
-                             "-Wno-simple_bus_reg" not in args.dtc_flags)
+                             "-Wno-simple_bus_reg" not in args.dtc_flags,
+                         default_prop_types=False,
+                         support_fixed_partitions_on_any_bus = False)
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 
@@ -298,8 +300,11 @@ def node_ident(node):
     ident = ""
 
     if node.bus_node:
-        ident += "{}_{:X}_".format(
-            str2ident(node.bus_node.matching_compat), node.bus_node.unit_addr)
+        if node.bus_node.unit_addr is not None:
+            ident += "{}_{:X}_".format(
+                str2ident(node.bus_node.matching_compat), node.bus_node.unit_addr)
+        else:
+            ident += str2ident(node.bus_node.matching_compat)
 
     ident += f"{str2ident(node.matching_compat)}_"
 

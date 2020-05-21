@@ -34,57 +34,6 @@ config ETH_GECKO_RX_THREAD_PRIO
 	help
 	  RX thread priority
 
-choice ETH_GECKO_MAC_SELECT
-	prompt "MAC address"
-	help
-	  Choose how to configure MAC address.
-
-config ETH_GECKO_RANDOM_MAC
-	bool "Random MAC address"
-	help
-	  Generate a random MAC address dynamically.
-
-config ETH_GECKO_MAC_MANUAL
-	bool "Manual"
-	help
-	  Assign an arbitrary MAC address.
-
-endchoice # ETH_GECKO_MAC_SELECT
-
-if ETH_GECKO_MAC_MANUAL
-
-config ETH_GECKO_MAC0
-	hex "MAC Address Byte 0"
-	default 0
-	range 0 0xff
-
-config ETH_GECKO_MAC1
-	hex "MAC Address Byte 1"
-	default 0
-	range 0 0xff
-
-config ETH_GECKO_MAC2
-	hex "MAC Address Byte 2"
-	default 0
-	range 0 0xff
-
-config ETH_GECKO_MAC3
-	hex "MAC Address Byte 3"
-	default 0
-	range 0 0xff
-
-config ETH_GECKO_MAC4
-	hex "MAC Address Byte 4"
-	default 0
-	range 0 0xff
-
-config ETH_GECKO_MAC5
-	hex "MAC Address Byte 5"
-	default 0
-	range 0 0xff
-
-endif # ETH_GECKO_MAC_MANUAL
-
 config ETH_GECKO_CARRIER_CHECK_RX_IDLE_TIMEOUT_MS
 	int "Carrier check timeout period (ms)"
 	default 500

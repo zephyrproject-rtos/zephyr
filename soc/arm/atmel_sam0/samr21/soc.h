@@ -13,6 +13,9 @@
 
 #include <zephyr/types.h>
 
+/* Add include for DTS generated information */
+#include <devicetree.h>
+
 #if defined(CONFIG_SOC_PART_NUMBER_SAMR21E16A)
 #include <samr21e16a.h>
 #elif defined(CONFIG_SOC_PART_NUMBER_SAMR21E17A)

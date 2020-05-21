@@ -360,7 +360,7 @@ static const struct gpio_driver_api api_table = {
 static int mcp23s17_init(struct device *dev)
 {
 	const struct mcp23s17_config *const config =
-		dev->config->config_info;
+		dev->config_info;
 	struct mcp23s17_drv_data *const drv_data =
 		(struct mcp23s17_drv_data *const)dev->driver_data;
 
@@ -399,80 +399,45 @@ static int mcp23s17_init(struct device *dev)
 	return 0;
 }
 
-/* Initialization for MCP23S17_0 */
-#if DT_HAS_DRV_INST(0)
-static struct mcp23s17_config mcp23s17_0_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
-	},
-	.spi_dev_name = DT_INST_BUS_LABEL(0),
-	.slave = DT_INST_REG_ADDR(0),
-	.freq = DT_INST_PROP(0, spi_max_frequency),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.cs_dev = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
-#endif
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	.cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-#endif
-};
+#define MCP23S17_INIT(inst)						\
+	static struct mcp23s17_config mcp23s17_##inst##_config = {	\
+		.common = {						\
+			.port_pin_mask =				\
+			GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),		\
+		},							\
+		.spi_dev_name = DT_INST_BUS_LABEL(inst),		\
+		.slave = DT_INST_REG_ADDR(inst),			\
+		.freq = DT_INST_PROP(inst, spi_max_frequency),		\
+									\
+		IF_ENABLED(DT_INST_SPI_DEV_HAS_CS_GPIOS(inst),		\
+			   (.cs_dev =					\
+			    DT_INST_SPI_DEV_CS_GPIOS_LABEL(inst),))	\
+		IF_ENABLED(DT_INST_SPI_DEV_HAS_CS_GPIOS(inst),		\
+			   (.cs_pin =					\
+			    DT_INST_SPI_DEV_CS_GPIOS_PIN(inst),))	\
+	};								\
+									\
+	static struct mcp23s17_drv_data mcp23s17_##inst##_drvdata = {	\
+		/* Default for registers according to datasheet */	\
+		.reg_cache.iodir = 0xFFFF,				\
+		.reg_cache.ipol = 0x0,					\
+		.reg_cache.gpinten = 0x0,				\
+		.reg_cache.defval = 0x0,				\
+		.reg_cache.intcon = 0x0,				\
+		.reg_cache.iocon = 0x0,					\
+		.reg_cache.gppu = 0x0,					\
+		.reg_cache.intf = 0x0,					\
+		.reg_cache.intcap = 0x0,				\
+		.reg_cache.gpio = 0x0,					\
+		.reg_cache.olat = 0x0,					\
+	};								\
+									\
+	/* This has to init after SPI master */				\
+	DEVICE_AND_API_INIT(mcp23s17_##inst, DT_INST_LABEL(inst),	\
+			    mcp23s17_init, &mcp23s17_##inst##_drvdata,	\
+			    &mcp23s17_##inst##_config,			\
+			    POST_KERNEL,				\
+			    CONFIG_GPIO_MCP23S17_INIT_PRIORITY,		\
+			    &api_table);
 
-static struct mcp23s17_drv_data mcp23s17_0_drvdata = {
-	/* Default for registers according to datasheet */
-	.reg_cache.iodir = 0xFFFF,
-	.reg_cache.ipol = 0x0,
-	.reg_cache.gpinten = 0x0,
-	.reg_cache.defval = 0x0,
-	.reg_cache.intcon = 0x0,
-	.reg_cache.iocon = 0x0,
-	.reg_cache.gppu = 0x0,
-	.reg_cache.intf = 0x0,
-	.reg_cache.intcap = 0x0,
-	.reg_cache.gpio = 0x0,
-	.reg_cache.olat = 0x0,
-};
-
-/* This has to init after SPI master */
-DEVICE_AND_API_INIT(mcp23s17_0, DT_INST_LABEL(0),
-		    mcp23s17_init, &mcp23s17_0_drvdata, &mcp23s17_0_config,
-		    POST_KERNEL, CONFIG_GPIO_MCP23S17_INIT_PRIORITY,
-		    &api_table);
-#endif  /* DT_HAS_DRV_INST(0) */
-
-/* Initialization for MCP23S17_1 */
-#if DT_HAS_DRV_INST(1)
-static struct mcp23s17_config mcp23s17_1_config = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
-	},
-	.spi_dev_name = DT_INST_BUS_LABEL(1),
-	.slave = DT_INST_REG_ADDR(1),
-	.freq = DT_INST_PROP(1, spi_max_frequency),
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(1)
-	.cs_dev = DT_INST_SPI_DEV_CS_GPIOS_LABEL(1),
-#endif
-#if DT_INST_SPI_DEV_HAS_CS_GPIOS(1)
-	.cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(1),
-#endif
-};
-
-static struct mcp23s17_drv_data mcp23s17_1_drvdata = {
-	/* Default for registers according to datasheet */
-	.reg_cache.iodir = 0xFFFF,
-	.reg_cache.ipol = 0x0,
-	.reg_cache.gpinten = 0x0,
-	.reg_cache.defval = 0x0,
-	.reg_cache.intcon = 0x0,
-	.reg_cache.iocon = 0x0,
-	.reg_cache.gppu = 0x0,
-	.reg_cache.intf = 0x0,
-	.reg_cache.intcap = 0x0,
-	.reg_cache.gpio = 0x0,
-	.reg_cache.olat = 0x0,
-};
-
-/* This has to init after SPI master */
-DEVICE_AND_API_INIT(mcp23s17_1, DT_INST_LABEL(1),
-		    mcp23s17_init, &mcp23s17_1_drvdata, &mcp23s17_1_config,
-		    POST_KERNEL, CONFIG_GPIO_MCP23S17_INIT_PRIORITY,
-		    &api_table);
-#endif  /* DT_HAS_DRV_INST(0) */
+DT_INST_FOREACH_STATUS_OKAY(MCP23S17_INIT)

@@ -16,22 +16,32 @@ sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
 import scl
 from sanitylib import SanityConfigParser
 
-@pytest.fixture(name='test_data')
-def _test_data():
-    """ Pytest fixture to set the path of test_data"""
-    data = ZEPHYR_BASE + "/scripts/tests/sanitycheck/test_data/"
-    return data
-
 def test_yamlload():
     """ Test to check if loading the non-existent files raises the errors """
     filename = 'testcase_nc.yaml'
     with pytest.raises(FileNotFoundError):
         scl.yaml_load(filename)
 
-def test_correct_testcase_schema(test_data):
+
+@pytest.mark.parametrize("filename, schema",
+                         [("testcase_correct_schema.yaml", "testcase-schema.yaml"),
+                          ("platform_correct_schema.yaml", "platform-schema.yaml")])
+def test_correct_schema(filename, schema, test_data):
     """ Test to validate the testcase schema"""
-    filename = test_data + 'testcase_correct_schema.yaml'
-    schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/sanity_chk/testcase-schema.yaml')
+    filename = test_data + filename
+    schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/sanity_chk/' + schema)
     data = SanityConfigParser(filename, schema)
     data.load()
     assert data
+
+
+@pytest.mark.parametrize("filename, schema",
+                         [("testcase_incorrect_schema.yaml", "testcase-schema.yaml"),
+                          ("platform_incorrect_schema.yaml", "platform-schema.yaml")])
+def test_incorrect_schema(filename, schema, test_data):
+    """ Test to validate the exception is raised for incorrect testcase schema"""
+    filename = test_data + filename
+    schema = scl.yaml_load(ZEPHYR_BASE +'/scripts/sanity_chk/' + schema)
+    with pytest.raises(Exception) as exception:
+        scl.yaml_load_verify(filename, schema)
+        assert str(exception.value) == "Schema validation failed"

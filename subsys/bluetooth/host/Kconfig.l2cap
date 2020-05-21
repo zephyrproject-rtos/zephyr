@@ -8,8 +8,10 @@ menu "L2CAP Options"
 config BT_L2CAP_RX_MTU
 	int "Maximum supported L2CAP MTU for incoming data"
 	default 200 if BT_BREDR
+	default BT_EATT_RX_MTU if BT_EATT
 	default 65 if BT_SMP
 	default 23
+	range 70 1300 if BT_EATT
 	range 65 1300 if BT_SMP
 	range 23 1300
 	depends on BT_HCI_ACL_FLOW_CONTROL

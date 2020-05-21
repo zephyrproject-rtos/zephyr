@@ -39,29 +39,12 @@ config PINMUX_MCUX_PORTE
 
 endif # PINMUX_MCUX
 
-if I2C
-
-config I2C_0
-	default y
-
-config I2C_1
-	default y
-
-endif # I2C
-
 if ADC
-
-config ADC_0
-	default y
 
 config BATTERY_SENSE
 	default y
 
 endif # ADC
-
-config PWM_3
-	default y
-	depends on PWM_MCUX_FTM
 
 if SPI
 

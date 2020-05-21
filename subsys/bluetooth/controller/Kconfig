@@ -75,40 +75,6 @@ config BT_LL_SW_SPLIT
 	help
 	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
 
-config BT_LL_SW_LEGACY
-	# NOTE: This OLD architecture implementation will be deprecated, with
-	#       no further new feature development.
-	bool "Software-based BLE Link Layer (deprecated)"
-	select BT_RECV_IS_RX_THREAD
-	select BT_HAS_HCI_VS
-	select ENTROPY_GENERATOR
-	select ENTROPY_NRF5_RNG if SOC_COMPATIBLE_NRF
-	select ENTROPY_NRF5_BIAS_CORRECTION if SOC_COMPATIBLE_NRF
-	depends on SOC_COMPATIBLE_NRF
-
-	select BT_CTLR_LE_ENC_SUPPORT if !BT_CTLR_DATA_LENGTH_CLEAR && \
-					 !BT_CTLR_PHY_2M_NRF
-	select BT_CTLR_CONN_PARAM_REQ_SUPPORT
-	select BT_CTLR_EXT_REJ_IND_SUPPORT
-	select BT_CTLR_SLAVE_FEAT_REQ_SUPPORT
-	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if !SOC_SERIES_NRF51X || \
-						  BT_CTLR_DATA_LENGTH_CLEAR
-	select BT_CTLR_PRIVACY_SUPPORT if !SOC_SERIES_NRF51X
-	select BT_CTLR_EXT_SCAN_FP_SUPPORT
-	select BT_CTLR_PHY_UPDATE_SUPPORT if !SOC_SERIES_NRF51X || \
-					      BT_CTLR_PHY_2M_NRF
-	select BT_CTLR_ADV_EXT_SUPPORT
-	select BT_CTLR_CHAN_SEL_2_SUPPORT
-	select BT_CTLR_MIN_USED_CHAN_SUPPORT
-	select BT_CTLR_DTM_HCI_SUPPORT
-
-	select BT_CTLR_XTAL_ADVANCED_SUPPORT
-	select BT_CTLR_SCHED_ADVANCED_SUPPORT
-	select BT_CTLR_TIFS_HW_SUPPORT
-
-	help
-	  Use Zephyr software BLE Link Layer implementation.
-
 endchoice
 
 config BT_LLL_VENDOR_NORDIC
@@ -393,7 +359,7 @@ config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
 	depends on BT_CTLR_PRIVACY_SUPPORT
 	default y
-	select BT_CTLR_FILTER if (BT_LL_SW_SPLIT || BT_LL_SW_LEGACY)
+	select BT_CTLR_FILTER if BT_LL_SW_SPLIT
 	select BT_RPA
 	help
 	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature
@@ -519,7 +485,7 @@ config BT_CTLR_SMI_TX_SETTING
 	help
 	  Enable support for Bluetooth 5.0 SMI TX through a system setting.
 
-if BT_LL_SW_SPLIT || BT_LL_SW_LEGACY
+if BT_LL_SW_SPLIT
 
 config BT_CTLR_ADVANCED_FEATURES
 	bool "Show advanced features"
@@ -581,28 +547,6 @@ config BT_CTLR_OPTIMIZE_FOR_SPEED
 	default y if BT_CTLR_LE_ENC
 	help
 	  Optimize compilation of controller for execution speed.
-
-if BT_LL_SW_LEGACY
-
-config BT_CTLR_WORKER_PRIO
-	int "Radio and Ticker's Worker IRQ priority"
-	range 0 3 if SOC_SERIES_NRF51X
-	range 0 6 if SOC_COMPATIBLE_NRF52X
-	default 0
-	help
-	  The interrupt priority for event preparation and radio IRQ. This value
-	  shall be less than or equal to the Ticker's Job priority value.
-
-config BT_CTLR_JOB_PRIO
-	int "Ticker's JOB IRQ priority"
-	range BT_CTLR_WORKER_PRIO 3 if SOC_SERIES_NRF51X
-	range BT_CTLR_WORKER_PRIO 6 if SOC_COMPATIBLE_NRF52X
-	default 0
-	help
-	  The interrupt priority for Ticker's Job (SWI4) IRQ. This value shall
-	  be greater than or equal to the Ticker's Worker IRQ priority value.
-
-endif # BT_LL_SW_LEGACY
 
 config BT_CTLR_XTAL_ADVANCED
 	bool "Advanced event preparation"
@@ -807,6 +751,12 @@ config BT_CTLR_CONN_RSSI
 	help
 	  Enable connection RSSI measurement.
 
+config BT_CTLR_CONN_RSSI_EVENT
+	bool "Connection RSSI event"
+	depends on BT_CTLR_CONN_RSSI
+	help
+	  Generate events for connection RSSI measurement.
+
 endif # BT_CONN
 
 config BT_CTLR_ADV_INDICATION
@@ -843,7 +793,7 @@ config BT_MAYFLY_YIELD_AFTER_CALL
 
 config BT_TICKER_COMPATIBILITY_MODE
 	bool "Ticker compatibility mode"
-	default y if SOC_SERIES_NRF51X || BT_LL_SW_LEGACY
+	default y if SOC_SERIES_NRF51X
 	help
 	  This option enables legacy ticker scheduling which defers overlapping
 	  ticker node timeouts and thereby prevents ticker interrupts during
@@ -874,6 +824,15 @@ config BT_CTLR_USER_EVT_RANGE
 	range 0 10
 	help
 	  Number of event types reserved for proprietary use. The range
+	  is typically used when BT_CTLR_USER_EXT is in use.
+
+config BT_CTLR_USER_TICKER_ID_RANGE
+	int "Range of ticker id constants reserved for proprietary ticker nodes"
+	depends on BT_CTLR_USER_EXT
+	default 0
+	range 0 10
+	help
+	  Number of ticker ids reserved for proprietary use. The range
 	  is typically used when BT_CTLR_USER_EXT is in use.
 
 config BT_RX_USER_PDU_LEN
@@ -979,7 +938,7 @@ config BT_CTLR_DEBUG_PINS
 	  when debugging with a logic analyzer or profiling certain sections of
 	  the code.
 
-endif # BT_LL_SW_SPLIT || BT_LL_SW_LEGACY
+endif # BT_LL_SW_SPLIT
 
 config BT_CTLR_ASSERT_HANDLER
 	bool "Application Defined Assertion Handler"

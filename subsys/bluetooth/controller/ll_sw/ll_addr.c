@@ -17,17 +17,10 @@
 #include "pdu.h"
 #include "lll.h"
 
-#if defined(CONFIG_BT_LL_SW_LEGACY)
-#include <sys/slist.h>
-#include "ctrl.h"
-#define ull_adv_is_enabled  ll_adv_is_enabled
-#define ull_scan_is_enabled ll_scan_is_enabled
-#elif defined(CONFIG_BT_LL_SW_SPLIT)
 #include "lll_scan.h"
 #include "ull_scan_types.h"
 #include "ull_adv_internal.h"
 #include "ull_scan_internal.h"
-#endif
 
 static u8_t pub_addr[BDADDR_SIZE];
 static u8_t rnd_addr[BDADDR_SIZE];

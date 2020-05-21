@@ -7,9 +7,8 @@
 # Top-level configuration file for LORA drivers.
 
 menuconfig LORA
-	bool "LoRa support"
+	bool "LoRa support [EXPERIMENTAL]"
 	depends on NEWLIB_LIBC
-	select LEGACY_TIMEOUT_API
 	help
 	  Include LoRa drivers in the system configuration.
 
@@ -18,6 +17,12 @@ if LORA
 module = LORA
 module-str = lora
 source "subsys/logging/Kconfig.template.log_config"
+
+config LORA_SHELL
+	bool "Enable LoRa Shell"
+	depends on SHELL
+	help
+	  Enable LoRa Shell for testing.
 
 config LORA_INIT_PRIORITY
 	int "LoRa initialization priority"

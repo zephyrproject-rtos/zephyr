@@ -101,7 +101,7 @@ static struct i2c_driver_api api = {
 static int i2c_sbcon_init(struct device *dev)
 {
 	struct i2c_sbcon_context *context = dev->driver_data;
-	const struct i2c_sbcon_config *config = dev->config->config_info;
+	const struct i2c_sbcon_config *config = dev->config_info;
 
 	i2c_bitbang_init(&context->bitbang, &io_fns, config->sbcon);
 
@@ -120,20 +120,6 @@ DEVICE_AND_API_INIT(i2c_sbcon_##_num, DT_INST_LABEL(_num), \
 	    i2c_sbcon_init,						\
 	    &i2c_sbcon_dev_data_##_num,					\
 	    &i2c_sbcon_dev_cfg_##_num,					\
-	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api)
+	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api);
 
-#if DT_HAS_DRV_INST(0)
-DEFINE_I2C_SBCON(0);
-#endif
-
-#if DT_HAS_DRV_INST(1)
-DEFINE_I2C_SBCON(1);
-#endif
-
-#if DT_HAS_DRV_INST(2)
-DEFINE_I2C_SBCON(2);
-#endif
-
-#if DT_HAS_DRV_INST(3)
-DEFINE_I2C_SBCON(3);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_I2C_SBCON)

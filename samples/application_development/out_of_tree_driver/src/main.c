@@ -16,7 +16,7 @@ void main(void)
 
 	__ASSERT(dev, "Failed to get device binding");
 
-	printk("device is %p, name is %s\n", dev, dev->config->name);
+	printk("device is %p, name is %s\n", dev, dev->name);
 
 	hello_world_print(dev);
 }

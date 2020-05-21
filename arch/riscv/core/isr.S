@@ -144,7 +144,7 @@ SECTION_FUNC(exception.entry, __irq_wrapper)
 	RV_OP_STOREREG a6, __z_arch_esf_t_a6_OFFSET(sp)
 	RV_OP_STOREREG a7, __z_arch_esf_t_a7_OFFSET(sp)
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Assess whether floating-point registers need to be saved. */
 	la t0, _kernel
 	RV_OP_LOADREG t0, _kernel_offset_to_current(t0)
@@ -270,7 +270,7 @@ is_interrupt:
 	RV_OP_STOREREG t0, 0x00(sp)
 
 on_irq_stack:
-	/* Increment _kernel.nested variable */
+	/* Increment _kernel.cpus[0].nested variable */
 	lw t3, _kernel_offset_to_nested(t2)
 	addi t3, t3, 1
 	sw t3, _kernel_offset_to_nested(t2)
@@ -337,7 +337,7 @@ on_thread_stack:
 	/* Get reference to _kernel */
 	la t1, _kernel
 
-	/* Decrement _kernel.nested variable */
+	/* Decrement _kernel.cpus[0].nested variable */
 	lw t2, _kernel_offset_to_nested(t1)
 	addi t2, t2, -1
 	sw t2, _kernel_offset_to_nested(t1)
@@ -396,7 +396,7 @@ reschedule:
 	RV_OP_STOREREG s10, _thread_offset_to_s10(t1)
 	RV_OP_STOREREG s11, _thread_offset_to_s11(t1)
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Assess whether floating-point registers need to be saved. */
 	RV_OP_LOADREG t2, _thread_offset_to_user_options(t1)
 	andi t2, t2, K_FP_REGS
@@ -440,7 +440,7 @@ skip_store_fp_callee_saved:
 	RV_OP_LOADREG s10, _thread_offset_to_s10(t1)
 	RV_OP_LOADREG s11, _thread_offset_to_s11(t1)
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Determine if we need to restore floating-point registers. */
 	RV_OP_LOADREG t2, _thread_offset_to_user_options(t1)
 	andi t2, t2, K_FP_REGS
@@ -482,7 +482,7 @@ skip_load_fp_callee_saved:
 	RV_OP_STOREREG a6, __z_arch_esf_t_a6_OFFSET(sp)
 	RV_OP_STOREREG a7, __z_arch_esf_t_a7_OFFSET(sp)
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Assess whether floating-point registers need to be saved. */
 	RV_OP_LOADREG t2, _thread_offset_to_user_options(sp)
 	andi t2, t2, K_FP_REGS
@@ -495,7 +495,7 @@ skip_store_fp_caller_saved_benchmark:
 
 	call read_timer_end_of_swap
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/* Determine if we need to restore floating-point registers. */
 	RV_OP_LOADREG t2, __z_arch_esf_t_fp_state_OFFSET(sp)
 	beqz t2, skip_load_fp_caller_saved_benchmark
@@ -542,7 +542,7 @@ no_reschedule:
 	RV_OP_LOADREG t0, __z_arch_esf_t_mstatus_OFFSET(sp)
 	csrw mstatus, t0
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	/*
 	 * Determine if we need to restore floating-point registers. This needs
 	 * to happen before restoring integer registers to avoid stomping on

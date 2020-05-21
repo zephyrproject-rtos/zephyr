@@ -31,7 +31,6 @@
 		blue-pwm-led = &tri_blue_pwm_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_2;
-		can-primary = &flexcan0;
 	};
 
 	chosen {
@@ -41,6 +40,7 @@
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
 		zephyr,uart-pipe = &lpuart0;
+		zephyr,can-primary = &flexcan0;
 	};
 
 	leds {
@@ -162,10 +162,14 @@
 
 &ftm0 {
 	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
 };
 
 &ftm3 {
 	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
 };
 
 &lpi2c0 {
@@ -188,6 +192,10 @@
 };
 
 &lpspi1 {
+	status = "okay";
+};
+
+&dac0 {
 	status = "okay";
 };
 

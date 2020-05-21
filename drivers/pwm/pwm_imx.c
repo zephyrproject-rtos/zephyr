@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(pwm_imx);
 				<<PWM_PWMCR_SWR_SHIFT))&PWM_PWMCR_SWR_MASK)
 
 #define DEV_CFG(dev) \
-	((const struct imx_pwm_config * const)(dev)->config->config_info)
+	((const struct imx_pwm_config * const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct imx_pwm_data * const)(dev)->driver_data)
 #define DEV_BASE(dev) \
@@ -128,7 +128,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 	if (data->period_cycles != period_cycles) {
 		LOG_WRN("Changing period cycles from %d to %d in %s",
 			    data->period_cycles, period_cycles,
-			    dev->config->name);
+			    dev->name);
 
 		data->period_cycles = period_cycles;
 		PWM_PWMPR_REG(base) = period_cycles;
@@ -170,9 +170,9 @@ static const struct pwm_driver_api imx_pwm_driver_api = {
 			    &imx_pwm_init, &imx_pwm_data_##n,		\
 			    &imx_pwm_config_##n, POST_KERNEL,		\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &imx_pwm_driver_api)
+			    &imx_pwm_driver_api);
 
-#if DT_HAS_COMPAT(fsl_imx7d_pwm)
+#if DT_HAS_COMPAT_STATUS_OKAY(fsl_imx7d_pwm)
 #define DT_DRV_COMPAT fsl_imx7d_pwm
-DT_INST_FOREACH(PWM_IMX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(PWM_IMX_INIT)
 #endif

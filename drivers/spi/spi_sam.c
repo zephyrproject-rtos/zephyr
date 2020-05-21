@@ -51,7 +51,7 @@ static int spi_slave_to_mr_pcs(int slave)
 static int spi_sam_configure(struct device *dev,
 			     const struct spi_config *config)
 {
-	const struct spi_sam_config *cfg = dev->config->config_info;
+	const struct spi_sam_config *cfg = dev->config_info;
 	struct spi_sam_data *data = dev->driver_data;
 	Spi *regs = cfg->regs;
 	u32_t spi_mr = 0U, spi_csr = 0U;
@@ -272,7 +272,7 @@ static void spi_sam_fast_transceive(struct device *dev,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_sam_config *cfg = dev->config->config_info;
+	const struct spi_sam_config *cfg = dev->config_info;
 	size_t tx_count = 0;
 	size_t rx_count = 0;
 	Spi *regs = cfg->regs;
@@ -361,7 +361,7 @@ static int spi_sam_transceive(struct device *dev,
 			      const struct spi_buf_set *tx_bufs,
 			      const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_sam_config *cfg = dev->config->config_info;
+	const struct spi_sam_config *cfg = dev->config_info;
 	struct spi_sam_data *data = dev->driver_data;
 	Spi *regs = cfg->regs;
 	int err;
@@ -429,7 +429,7 @@ static int spi_sam_release(struct device *dev,
 
 static int spi_sam_init(struct device *dev)
 {
-	const struct spi_sam_config *cfg = dev->config->config_info;
+	const struct spi_sam_config *cfg = dev->config_info;
 	struct spi_sam_data *data = dev->driver_data;
 
 	soc_pmc_peripheral_enable(cfg->periph_id);
@@ -471,6 +471,6 @@ static const struct spi_driver_api spi_sam_driver_api = {
 			    DT_INST_LABEL(n),				\
 			    &spi_sam_init, &spi_sam_dev_data_##n,	\
 			    &spi_sam_config_##n, POST_KERNEL,		\
-			    CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api)
+			    CONFIG_SPI_INIT_PRIORITY, &spi_sam_driver_api);
 
-DT_INST_FOREACH(SPI_SAM_DEVICE_INIT)
+DT_INST_FOREACH_STATUS_OKAY(SPI_SAM_DEVICE_INIT)

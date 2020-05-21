@@ -17,7 +17,7 @@ struct uart_rtt_config {
 
 static inline const struct uart_rtt_config *get_dev_config(struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config_info;
 }
 
 static int uart_rtt_init(struct device *dev)
@@ -30,10 +30,10 @@ static int uart_rtt_init(struct device *dev)
 	if (get_dev_config(dev)) {
 		const struct uart_rtt_config *cfg = get_dev_config(dev);
 
-		SEGGER_RTT_ConfigUpBuffer(cfg->channel, dev->config->name,
+		SEGGER_RTT_ConfigUpBuffer(cfg->channel, dev->name,
 					  cfg->up_buffer, cfg->up_size,
 					  SEGGER_RTT_MODE_NO_BLOCK_SKIP);
-		SEGGER_RTT_ConfigDownBuffer(cfg->channel, dev->config->name,
+		SEGGER_RTT_ConfigDownBuffer(cfg->channel, dev->name,
 					    cfg->down_buffer, cfg->down_size,
 					    SEGGER_RTT_MODE_NO_BLOCK_SKIP);
 	}

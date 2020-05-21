@@ -36,6 +36,7 @@ struct uart_sam0_dev_cfg {
 	void (*irq_config_func)(struct device *dev);
 #endif
 #if CONFIG_UART_ASYNC_API
+	char *dma_dev;
 	u8_t tx_dma_request;
 	u8_t tx_dma_channel;
 	u8_t rx_dma_request;
@@ -76,7 +77,7 @@ struct uart_sam0_dev_data {
 };
 
 #define DEV_CFG(dev) \
-	((const struct uart_sam0_dev_cfg *const)(dev)->config->config_info)
+	((const struct uart_sam0_dev_cfg *const)(dev)->config_info)
 #define DEV_DATA(dev) ((struct uart_sam0_dev_data * const)(dev)->driver_data)
 
 static void wait_synchronization(SercomUsart *const usart)
@@ -280,7 +281,7 @@ static void uart_sam0_dma_rx_done(void *arg, u32_t id, int error_code)
 	 * reception.  This also catches the case of DMA completion during
 	 * timeout handling.
 	 */
-	if (dev_data->rx_timeout_time != K_FOREVER) {
+	if (dev_data->rx_timeout_time != SYS_FOREVER_MS) {
 		dev_data->rx_waiting_for_irq = true;
 		regs->INTENSET.reg = SERCOM_USART_INTENSET_RXC;
 		irq_unlock(key);
@@ -353,7 +354,7 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 	if (dev_data->rx_timeout_from_isr) {
 		dev_data->rx_timeout_from_isr = false;
 		k_delayed_work_submit(&dev_data->rx_timeout_work,
-				      dev_data->rx_timeout_chunk);
+				      K_MSEC(dev_data->rx_timeout_chunk));
 		irq_unlock(key);
 		return;
 	}
@@ -374,7 +375,8 @@ static void uart_sam0_rx_timeout(struct k_work *work)
 		u32_t remaining = MIN(dev_data->rx_timeout_time - elapsed,
 				      dev_data->rx_timeout_chunk);
 
-		k_delayed_work_submit(&dev_data->rx_timeout_work, remaining);
+		k_delayed_work_submit(&dev_data->rx_timeout_work,
+				      K_MSEC(remaining));
 	}
 
 	irq_unlock(key);
@@ -555,7 +557,7 @@ static int uart_sam0_init(struct device *dev)
 
 #ifdef CONFIG_UART_ASYNC_API
 	dev_data->cfg = cfg;
-	dev_data->dma = device_get_binding(CONFIG_DMA_0_NAME);
+	dev_data->dma = device_get_binding(cfg->dma_dev);
 
 	k_delayed_work_init(&dev_data->tx_timeout_work, uart_sam0_tx_timeout);
 	k_delayed_work_init(&dev_data->rx_timeout_work, uart_sam0_rx_timeout);
@@ -682,11 +684,11 @@ static void uart_sam0_isr(void *arg)
 		 * If we have a timeout, restart the time remaining whenever
 		 * we see data.
 		 */
-		if (dev_data->rx_timeout_time != K_FOREVER) {
+		if (dev_data->rx_timeout_time != SYS_FOREVER_MS) {
 			dev_data->rx_timeout_from_isr = true;
 			dev_data->rx_timeout_start = k_uptime_get_32();
 			k_delayed_work_submit(&dev_data->rx_timeout_work,
-					      dev_data->rx_timeout_chunk);
+					      K_MSEC(dev_data->rx_timeout_chunk));
 		}
 
 		/* DMA will read the currently ready byte out */
@@ -838,8 +840,9 @@ static int uart_sam0_tx(struct device *dev, const u8_t *buf, size_t len,
 		return retval;
 	}
 
-	if (timeout != K_FOREVER) {
-		k_delayed_work_submit(&dev_data->tx_timeout_work, timeout);
+	if (timeout != SYS_FOREVER_MS) {
+		k_delayed_work_submit(&dev_data->tx_timeout_work,
+				      K_MSEC(timeout));
 	}
 
 	return dma_start(dev_data->dma, cfg->tx_dma_channel);
@@ -1084,6 +1087,7 @@ static void uart_sam0_irq_config_##n(struct device *dev)		\
 
 #if CONFIG_UART_ASYNC_API
 #define UART_SAM0_DMA_CHANNELS(n)					\
+	.dma_dev = ATMEL_SAM0_DT_INST_DMA_NAME(n, tx),			\
 	.tx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),	\
 	.tx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, tx),	\
 	.rx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, rx),	\
@@ -1132,4 +1136,4 @@ DEVICE_AND_API_INIT(uart_sam0_##n, DT_INST_LABEL(n),			\
 		    &uart_sam0_driver_api);				\
 UART_SAM0_IRQ_HANDLER(n)
 
-DT_INST_FOREACH(UART_SAM0_DEVICE_INIT)
+DT_INST_FOREACH_STATUS_OKAY(UART_SAM0_DEVICE_INIT)

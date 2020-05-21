@@ -786,7 +786,7 @@ void gptp_update_sync_interval(int port, s8_t log_val)
 	}
 
 	k_timer_start(&state_pss_send->half_sync_itv_timer, K_MSEC(new_itv),
-		      period);
+		      K_MSEC(period));
 }
 
 void gptp_update_announce_interval(int port, s8_t log_val)

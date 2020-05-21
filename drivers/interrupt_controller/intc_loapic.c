@@ -18,7 +18,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <drivers/interrupt_controller/loapic.h> /* public API declarations */
-#include <init.h>
+#include <device.h>
 #include <drivers/interrupt_controller/sysapic.h>
 
 /* Local APIC Version Register Bits */
@@ -71,9 +71,26 @@ static u32_t loapic_device_power_state = DEVICE_PM_ACTIVE_STATE;
  * Called from early assembly layer (e.g., crt0.S).
  */
 
-void z_loapic_enable(void)
+void z_loapic_enable(unsigned char cpu_number)
 {
 	s32_t loApicMaxLvt; /* local APIC Max LVT */
+
+#ifndef CONFIG_X2APIC
+	/*
+	 * in xAPIC and flat model, bits 24-31 in LDR (Logical APIC ID) are
+	 * bitmap of target logical APIC ID and it supports maximum 8 local
+	 * APICs.
+	 *
+	 * The logical APIC ID could be arbitrarily selected by system software
+	 * and is different from local APIC ID in local APIC ID register.
+	 *
+	 * We choose 0 for BSP, and the index to x86_cpuboot[] for secondary
+	 * CPUs.
+	 *
+	 * in X2APIC, LDR is read-only.
+	 */
+	x86_write_xapic(LOAPIC_LDR, 1 << (cpu_number + 24));
+#endif
 
 	/*
 	 * enable the local APIC. note that we use xAPIC mode here, since
@@ -99,6 +116,7 @@ void z_loapic_enable(void)
 	/* reset the DFR, TPR, TIMER_CONFIG, and TIMER_ICR */
 
 #ifndef CONFIG_X2APIC
+	/* Flat model */
 	x86_write_loapic(LOAPIC_DFR, 0xffffffff);  /* no DFR in x2APIC mode */
 #endif
 

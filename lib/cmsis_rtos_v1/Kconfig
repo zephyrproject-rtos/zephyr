@@ -5,7 +5,6 @@ config CMSIS_RTOS_V1
 	bool "CMSIS RTOS v1 API"
 	depends on THREAD_CUSTOM_DATA
 	depends on POLL
-	select LEGACY_TIMEOUT_API
 	help
 	  This enables CMSIS RTOS v1 API support. This is an OS-integration
 	  layer which allows applications using CMSIS RTOS APIs to build on

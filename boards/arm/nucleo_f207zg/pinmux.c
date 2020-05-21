@@ -14,11 +14,11 @@
 
 /* pin assignments for NUCLEO-F207ZG board */
 static const struct pin_config pinconf[] = {
-#if DT_HAS_NODE(DT_NODELABEL(usart3))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart3), okay) && CONFIG_SERIAL
 	{STM32_PIN_PD8, STM32F2_PINMUX_FUNC_PD8_USART3_TX},
 	{STM32_PIN_PD9, STM32F2_PINMUX_FUNC_PD9_USART3_RX},
 #endif
-#if DT_HAS_NODE(DT_NODELABEL(usart6))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart6), okay) && CONFIG_SERIAL
 	{STM32_PIN_PG14, STM32F2_PINMUX_FUNC_PG14_USART6_TX},
 	{STM32_PIN_PG9, STM32F2_PINMUX_FUNC_PG9_USART6_RX},
 #endif
@@ -39,9 +39,9 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PA11, STM32F2_PINMUX_FUNC_PA11_OTG_FS_DM},
 	{STM32_PIN_PA12, STM32F2_PINMUX_FUNC_PA12_OTG_FS_DP},
 #endif	/* CONFIG_USB_DC_STM32 */
-#ifdef CONFIG_ADC_1
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay) && CONFIG_ADC
 	{STM32_PIN_PA0, STM32F2_PINMUX_FUNC_PA0_ADC123_IN0},
-#endif /* CONFIG_ADC_1 */
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)

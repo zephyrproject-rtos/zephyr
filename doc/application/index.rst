@@ -123,11 +123,6 @@ subdirectories which are not described here.
     :ref:`devicetree <dt-guide>` source files used to describe non-discoverable
     board-specific hardware details.
 
-:file:`ext`
-    Externally created code that has been integrated into Zephyr
-    from other sources and that must live inside the zephyr repository unlike
-    `external projects <modules>`_
-
 :file:`include`
     Include files for all public APIs, except those defined under :file:`lib`.
 
@@ -981,8 +976,8 @@ Create a Debugger Configuration
 
    - In the SVD Path tab:
 
-     - File path: :file:`<zephyr
-       base>\\ext\\hal\\nxp\\mcux\\devices\\MK64F12\\MK64F12.xml`
+     - File path: :file:`<workspace
+       top>\\modules\\hal\\nxp\\mcux\\devices\\MK64F12\\MK64F12.xml`
 
      .. note::
 	This is optional. It provides the SoC's memory-mapped register

@@ -39,7 +39,7 @@ static struct ws2812_gpio_data *dev_data(struct device *dev)
 
 static const struct ws2812_gpio_cfg *dev_cfg(struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config_info;
 }
 
 /*
@@ -148,7 +148,7 @@ static int send_buf(struct device *dev, u8_t *buf, size_t len)
 static int ws2812_gpio_update_rgb(struct device *dev, struct led_rgb *pixels,
 				  size_t num_pixels)
 {
-	const struct ws2812_gpio_cfg *config = dev->config->config_info;
+	const struct ws2812_gpio_cfg *config = dev->config_info;
 	const bool has_white = config->has_white;
 	u8_t *ptr = (u8_t *)pixels;
 	size_t i;
@@ -238,6 +238,6 @@ static const struct led_strip_driver_api ws2812_gpio_api = {
 			    &ws2812_gpio_##idx##_data,			\
 			    &ws2812_gpio_##idx##_cfg, POST_KERNEL,	\
 			    CONFIG_LED_STRIP_INIT_PRIORITY,		\
-			    &ws2812_gpio_api)
+			    &ws2812_gpio_api);
 
-DT_INST_FOREACH(WS2812_GPIO_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(WS2812_GPIO_DEVICE)

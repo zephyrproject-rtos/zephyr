@@ -60,7 +60,7 @@ struct gpio_sifive_data {
 
 /* Helper Macros for GPIO */
 #define DEV_GPIO_CFG(dev)						\
-	((const struct gpio_sifive_config * const)(dev)->config->config_info)
+	((const struct gpio_sifive_config * const)(dev)->config_info)
 #define DEV_GPIO(dev)							\
 	((volatile struct gpio_sifive_t *)(DEV_GPIO_CFG(dev))->gpio_base_addr)
 #define DEV_GPIO_DATA(dev)				\

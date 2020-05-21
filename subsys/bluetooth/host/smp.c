@@ -454,7 +454,7 @@ static struct net_buf *smp_create_pdu(struct bt_smp *smp, u8_t op, size_t len)
 {
 	struct bt_smp_hdr *hdr;
 	struct net_buf *buf;
-	s32_t timeout;
+	k_timeout_t timeout;
 
 	/* Don't if session had already timed out */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_TIMEOUT)) {
@@ -1139,7 +1139,7 @@ static struct net_buf *smp_br_create_pdu(struct bt_smp_br *smp, u8_t op,
 {
 	struct bt_smp_hdr *hdr;
 	struct net_buf *buf;
-	s32_t timeout;
+	k_timeout_t timeout;
 
 	/* Don't if session had already timed out */
 	if (atomic_test_bit(smp->flags, SMP_FLAG_TIMEOUT)) {

@@ -15,9 +15,9 @@
 #include <driverlib/ioc.h>
 
 
-#define PORT    DT_ALIAS_SW0_GPIOS_CONTROLLER
-#define PIN     DT_ALIAS_SW0_GPIOS_PIN
-#define PULL_UP DT_ALIAS_SW0_GPIOS_FLAGS
+#define PORT    DT_GPIO_LABEL(DT_ALIAS(sw0), gpios)
+#define PIN     DT_GPIO_PIN(DT_ALIAS(sw0), gpios)
+#define PULL_UP DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios)
 
 #define BUSY_WAIT_S 5U
 #define SLEEP_US 2000U

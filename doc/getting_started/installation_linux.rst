@@ -78,7 +78,7 @@ need one.
 
          sudo apt-get install --no-install-recommends git cmake ninja-build gperf \
            ccache dfu-util device-tree-compiler wget \
-           python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
+           python3-dev python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
            make gcc gcc-multilib g++-multilib libsdl2-dev
 
    .. group-tab:: Fedora
@@ -190,8 +190,7 @@ DTC (Device Tree Compiler)
 A recent DTC version (1.4.6 or higher) is required. Check what version you
 have by using ``dtc --version``. If you have an older version, either install a
 more recent one by building from source, or use the one that is bundled in
-the :ref:`Zephyr SDK <zephyr_sdk>` by installing it and setting the
-:envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable.
+the :ref:`Zephyr SDK <zephyr_sdk>` by installing it.
 
 Python
 ======
@@ -239,32 +238,55 @@ Follow these steps to install the Zephyr SDK:
 
    .. code-block:: console
 
-      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.11.2/zephyr-sdk-0.11.2-setup.run
+      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.11.3/zephyr-sdk-0.11.3-setup.run
 
-   (You can change *0.11.2* to another version if needed; the `Zephyr
+   (You can change *0.11.3* to another version if needed; the `Zephyr
    Downloads`_ page contains all available SDK releases.)
 
 #. Run the installation binary, installing the SDK at
-   :file:`~/zephyr-sdk-0.11.2`:
+   :file:`~/zephyr-sdk-0.11.3`:
 
    .. code-block:: console
 
       cd <sdk download directory>
-      chmod +x zephyr-sdk-0.11.2-setup.run
-      ./zephyr-sdk-0.11.2-setup.run -- -d ~/zephyr-sdk-0.11.2
+      chmod +x zephyr-sdk-0.11.3-setup.run
+      ./zephyr-sdk-0.11.3-setup.run -- -d ~/zephyr-sdk-0.11.3
 
    You can pick another directory if you want. If this fails, make sure
    Zephyr's dependencies were installed as described in `Install Requirements
    and Dependencies`_.
 
-#. Set these :ref:`environment variables <env_vars>`:
-
-   - set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``zephyr``
-   - set :envvar:`ZEPHYR_SDK_INSTALL_DIR` to :file:`$HOME/zephyr-sdk-0.11.2`
-     (or wherever you chose to install the SDK)
-
 If you ever want to uninstall the SDK, just remove the directory where you
-installed it and unset these environment variables.
+installed it.
+
+.. note::
+   It is recommended to install the Zephyr SDK at one of the following locations:
+
+   * ``$HOME/zephyr-sdk[-x.y.z]``
+   * ``$HOME/.local/zephyr-sdk[-x.y.z]``
+   * ``$HOME/.local/opt/zephyr-sdk[-x.y.z]``
+   * ``$HOME/bin/zephyr-sdk[-x.y.z]``
+   * ``/opt/zephyr-sdk[-x.y.z]``
+   * ``/usr/zephyr-sdk[-x.y.z]``
+   * ``/usr/local/zephyr-sdk[-x.y.z]``
+
+   where ``[-x.y.z]`` is optional text, and can be any text, for example ``-0.11.3``.
+
+   If you install the Zephyr SDK outside any of those locations, then it is
+   required to register the Zephyr SDK in the CMake package registry during
+   installation or set :envvar:`ZEPHYR_SDK_INSTALL_DIR` to point to the Zephyr
+   SDK installation folder.
+
+   :envvar:`ZEPHYR_SDK_INSTALL_DIR` can also be used for pointing to a folder
+   containing multiple Zephyr SDKs, allowing for automatic toolchain selection,
+   for example: ``ZEPHYR_SDK_INSTALL_DIR=/company/tools``
+
+   * ``/company/tools/zephyr-sdk-0.11.3``
+   * ``/company/tools/zephyr-sdk-a.b.c``
+   * ``/company/tools/zephyr-sdk-x.y.z``
+
+   this allow Zephyr to pick the right toolchain, while allowing multiple Zephyr
+   SDKs to be grouped together at a custom location.
 
 .. _sdkless_builds:
 
@@ -279,8 +301,8 @@ however, possible to build without the SDK's toolchain by using another
 toolchain as as described in the main :ref:`getting_started` document.
 
 As already noted above, the SDK also includes prebuilt host tools.  To use the
-SDK's prebuilt host tools with a toolchain from another source, keep the
-:envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable set to the Zephyr SDK
+SDK's prebuilt host tools with a toolchain from another source, you must set the
+:envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable to the Zephyr SDK
 installation directory. To build without the Zephyr SDK's prebuilt host tools,
 the :envvar:`ZEPHYR_SDK_INSTALL_DIR` environment variable must be unset.
 

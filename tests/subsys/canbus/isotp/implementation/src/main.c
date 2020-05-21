@@ -15,7 +15,7 @@
 #if defined(CONFIG_CAN_LOOPBACK_DEV_NAME)
 #define CAN_DEVICE_NAME CONFIG_CAN_LOOPBACK_DEV_NAME
 #else
-#define CAN_DEVICE_NAME DT_ALIAS_CAN_PRIMARY_LABEL
+#define CAN_DEVICE_NAME DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL
 #endif
 
 /*
@@ -154,7 +154,7 @@ static void receive_test_data_net(struct isotp_recv_ctx *recv_ctx,
 		data_ptr = check_frag(buf, data_ptr);
 
 		if (delay) {
-			k_sleep(delay);
+			k_msleep(delay);
 		}
 		memset(buf->data, 0, buf->len);
 		net_buf_unref(buf);
@@ -199,7 +199,7 @@ static void receive_test_data(struct isotp_recv_ctx *recv_ctx,
 		remaining_len -= ret;
 
 		if (delay) {
-			k_sleep(delay);
+			k_msleep(delay);
 		}
 	} while (remaining_len);
 
@@ -392,7 +392,7 @@ static void test_buffer_allocation(void)
 	zassert_equal(ret, 0, "Binding failed (%d)", ret);
 
 	send_test_data(can_dev, random_data, send_data_length);
-	k_sleep(K_MSEC(100));
+	k_msleep(100);
 	receive_test_data_net(&recv_ctx, random_data, send_data_length, 200);
 	isotp_unbind(&recv_ctx);
 }

@@ -65,7 +65,7 @@ static int pwm_pca9685_pin_set_cycles(struct device *dev, u32_t pwm,
 				      pwm_flags_t flags)
 {
 	const struct pwm_pca9685_config * const config =
-		dev->config->config_info;
+		dev->config_info;
 	struct pwm_pca9685_drv_data * const drv_data =
 		(struct pwm_pca9685_drv_data * const)dev->driver_data;
 	struct device * const i2c_master = drv_data->i2c_master;
@@ -128,7 +128,7 @@ static const struct pwm_driver_api pwm_pca9685_drv_api_funcs = {
 int pwm_pca9685_init(struct device *dev)
 {
 	const struct pwm_pca9685_config * const config =
-		dev->config->config_info;
+		dev->config_info;
 	struct pwm_pca9685_drv_data * const drv_data =
 		(struct pwm_pca9685_drv_data * const)dev->driver_data;
 	struct device *i2c_master;

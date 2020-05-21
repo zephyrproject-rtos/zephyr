@@ -113,7 +113,7 @@ static const struct nrf_clock_control_sub_config *get_sub_config(
 					enum clock_control_nrf_type type)
 {
 	const struct nrf_clock_control_config *config =
-						dev->config->config_info;
+						dev->config_info;
 
 	return &config->subsys[type];
 }

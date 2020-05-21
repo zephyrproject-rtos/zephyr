@@ -40,10 +40,29 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define OT_STACK_SIZE (CONFIG_OPENTHREAD_THREAD_STACK_SIZE)
 #define OT_PRIORITY K_PRIO_COOP(CONFIG_OPENTHREAD_THREAD_PRIORITY)
 
+#if defined(CONFIG_OPENTHREAD_NETWORK_NAME)
 #define OT_NETWORK_NAME CONFIG_OPENTHREAD_NETWORK_NAME
+#else
+#define OT_NETWORK_NAME ""
+#endif
+
+#if defined(CONFIG_OPENTHREAD_CHANNEL)
 #define OT_CHANNEL CONFIG_OPENTHREAD_CHANNEL
+#else
+#define OT_CHANNEL 0
+#endif
+
+#if defined(CONFIG_OPENTHREAD_PANID)
 #define OT_PANID CONFIG_OPENTHREAD_PANID
+#else
+#define OT_PANID 0
+#endif
+
+#if defined(CONFIG_OPENTHREAD_XPANID)
 #define OT_XPANID CONFIG_OPENTHREAD_XPANID
+#else
+#define OT_XPANID ""
+#endif
 
 #if defined(CONFIG_OPENTHREAD_JOINER_PSKD)
 #define OT_JOINER_PSKD CONFIG_OPENTHREAD_JOINER_PSKD
@@ -315,6 +334,11 @@ static void openthread_start(struct openthread_context *ot_context)
 	otInstance *ot_instance = ot_context->instance;
 	otError error;
 
+	if (IS_ENABLED(CONFIG_OPENTHREAD_MANUAL_START)) {
+		NET_DBG("OpenThread manual start.");
+		return;
+	}
+
 	/* Sleepy End Device specific configuration. */
 	if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
 		otLinkModeConfig ot_mode = otThreadGetLinkMode(ot_instance);
@@ -328,11 +352,7 @@ static void openthread_start(struct openthread_context *ot_context)
 		otLinkSetPollPeriod(ot_context->instance, OT_POLL_PERIOD);
 	}
 
-	if (IS_ENABLED(CONFIG_OPENTHREAD_NCP)) {
-		/* In NCP mode wpantund will instruct what to do. */
-		NET_DBG("OpenThread NCP.");
-		return;
-	} else if (otDatasetIsCommissioned(ot_instance)) {
+	if (otDatasetIsCommissioned(ot_instance)) {
 		/* OpenThread already has dataset stored - skip the
 		 * configuration.
 		 */
@@ -439,6 +459,30 @@ void ieee802154_init(struct net_if *iface)
 static enum net_l2_flags openthread_flags(struct net_if *iface)
 {
 	return NET_L2_MULTICAST;
+}
+
+struct otInstance *openthread_get_default_instance(void)
+{
+	struct otInstance *instance = NULL;
+	struct net_if *iface;
+	struct openthread_context *ot_context;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(OPENTHREAD));
+	if (!iface) {
+		NET_ERR("There is no net interface for OpenThread");
+		goto exit;
+	}
+
+	ot_context = net_if_l2_data(iface);
+	if (!ot_context) {
+		NET_ERR("There is no Openthread context in net interface data");
+		goto exit;
+	}
+
+	instance = ot_context->instance;
+
+exit:
+	return instance;
 }
 
 NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send,

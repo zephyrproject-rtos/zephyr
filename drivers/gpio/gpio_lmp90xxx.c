@@ -138,7 +138,7 @@ static int gpio_lmp90xxx_pin_interrupt_configure(struct device *dev,
 
 static int gpio_lmp90xxx_init(struct device *dev)
 {
-	const struct gpio_lmp90xxx_config *config = dev->config->config_info;
+	const struct gpio_lmp90xxx_config *config = dev->config_info;
 	struct gpio_lmp90xxx_data *data = dev->driver_data;
 
 	data->parent = device_get_binding(config->parent_dev_name);
@@ -183,8 +183,6 @@ BUILD_ASSERT(CONFIG_GPIO_LMP90XXX_INIT_PRIORITY >
 			    &gpio_lmp90xxx_##id##_data,			\
 			    &gpio_lmp90xxx_##id##_cfg, POST_KERNEL,	\
 			    CONFIG_GPIO_LMP90XXX_INIT_PRIORITY,		\
-			    &gpio_lmp90xxx_api)
+			    &gpio_lmp90xxx_api);
 
-#if DT_HAS_DRV_INST(0)
-GPIO_LMP90XXX_DEVICE(0);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(GPIO_LMP90XXX_DEVICE)

@@ -47,7 +47,7 @@ static inline struct spi_cc13xx_cc26xx_data *get_dev_data(struct device *dev)
 static inline const struct spi_cc13xx_cc26xx_config *
 get_dev_config(struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config_info;
 }
 
 static int spi_cc13xx_cc26xx_configure(struct device *dev,
@@ -277,14 +277,10 @@ static int spi_cc13xx_cc26xx_pm_control(struct device *dev, u32_t ctrl_command,
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 
-#if defined(CONFIG_SPI_0) || defined(CONFIG_SPI_1)
 static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 	.transceive = spi_cc13xx_cc26xx_transceive,
 	.release = spi_cc13xx_cc26xx_release,
 };
-#else
-#warning "No SPI port configured"
-#endif
 
 #define SPI_CC13XX_CC26XX_DOMAIN_0 PRCM_DOMAIN_SERIAL
 #define SPI_CC13XX_CC26XX_DOMAIN_1 PRCM_DOMAIN_PERIPH
@@ -374,6 +370,6 @@ static const struct spi_driver_api spi_cc13xx_cc26xx_driver_api = {
 		SPI_CONTEXT_INIT_SYNC(spi_cc13xx_cc26xx_data_##n, ctx),	  \
 	};								  \
 									  \
-	SPI_CC13XX_CC26XX_DEVICE_INIT(n)
+	SPI_CC13XX_CC26XX_DEVICE_INIT(n);
 
-DT_INST_FOREACH(SPI_CC13XX_CC26XX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(SPI_CC13XX_CC26XX_INIT)

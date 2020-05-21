@@ -8,7 +8,6 @@ config MICROBIT_DISPLAY
 	depends on BOARD_BBC_MICROBIT
 	depends on PRINTK
 	depends on GPIO
-	select LEGACY_TIMEOUT_API
 	help
 	  Enable this to be able to display images and text on the 5x5
 	  LED matrix display on the BBC micro:bit.

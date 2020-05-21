@@ -145,7 +145,7 @@ static int esp_connect(struct net_context *context,
 	sock->connect_cb = cb;
 	sock->conn_user_data = user_data;
 
-	if (timeout == K_NO_WAIT) {
+	if (timeout == 0) {
 		k_work_submit_to_queue(&dev->workq, &sock->connect_work);
 		return 0;
 	}
@@ -358,7 +358,7 @@ static int esp_sendto(struct net_pkt *pkt,
 			 * have a valid link id before proceeding.
 			 */
 			ret = esp_connect(context, dst_addr, addrlen, NULL,
-					  K_SECONDS(5), NULL);
+					  (5 * MSEC_PER_SEC), NULL);
 			if (ret < 0) {
 				return ret;
 			}
@@ -374,7 +374,7 @@ static int esp_sendto(struct net_pkt *pkt,
 	sock->send_cb = cb;
 	sock->send_user_data = user_data;
 
-	if (timeout == K_NO_WAIT) {
+	if (timeout == 0) {
 		k_work_submit_to_queue(&dev->workq, &sock->send_work);
 		return 0;
 	}
@@ -582,11 +582,11 @@ static int esp_recv(struct net_context *context,
 	sock->recv_user_data = user_data;
 	k_sem_reset(&sock->sem_data_ready);
 
-	if (timeout == K_NO_WAIT) {
+	if (timeout == 0) {
 		return 0;
 	}
 
-	ret = k_sem_take(&sock->sem_data_ready, timeout);
+	ret = k_sem_take(&sock->sem_data_ready, K_MSEC(timeout));
 
 	sock->recv_cb = NULL;
 

@@ -779,7 +779,7 @@ static struct lsm6dsl_config lsm6dsl_config = {
 
 static int lsm6dsl_init(struct device *dev)
 {
-	const struct lsm6dsl_config * const config = dev->config->config_info;
+	const struct lsm6dsl_config * const config = dev->config_info;
 	struct lsm6dsl_data *data = dev->driver_data;
 
 	data->comm_master = device_get_binding(config->comm_master_dev_name);
@@ -789,7 +789,7 @@ static int lsm6dsl_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	lsm6dsl_spi_init(dev);
 #else
 	lsm6dsl_i2c_init(dev);

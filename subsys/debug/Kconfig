@@ -8,7 +8,7 @@ menu "System Monitoring Options"
 
 config BOOT_TIME_MEASUREMENT
 	bool "Boot time measurements"
-	depends on ARCH_POSIX || ARM || (X86 && APIC_TIMER && APIC_TIMER_TSC)
+	depends on ARCH_POSIX || ARM || X86
 	help
 	  This option enables the recording of timestamps during system boot.
 
@@ -273,6 +273,7 @@ config EXCEPTION_STACK_TRACE
 
 config OPENOCD_SUPPORT
 	bool "OpenOCD support [EXPERIMENTAL]"
+	depends on !SMP
 	select THREAD_MONITOR
 	select THREAD_NAME
 	help

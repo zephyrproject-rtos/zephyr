@@ -72,6 +72,7 @@ config USB_NUMOF_EP_WRITE_RETRIES
 
 config USB_DEVICE_SOF
 	bool "Enable Start of Frame processing in events"
+	default y if (USB_DEVICE_AUDIO && NRFX_USBD)
 
 config USB_DEVICE_REMOTE_WAKEUP
 	bool "Enable support for remote wakeup"

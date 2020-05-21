@@ -69,6 +69,8 @@ enum {
 	 * controller.
 	 */
 	BT_ADV_PARAMS_SET,
+	/* Advertising data has been set in the controller. */
+	BT_ADV_DATA_SET,
 	/* Advertising random address pending to be set in the controller. */
 	BT_ADV_RANDOM_ADDR_PENDING,
 	/* The private random address of the advertiser is valid for this cycle
@@ -85,6 +87,8 @@ enum {
 	BT_ADV_INCLUDE_NAME,
 	/* Advertiser set is connectable */
 	BT_ADV_CONNECTABLE,
+	/* Advertiser set is scannable */
+	BT_ADV_SCANNABLE,
 	/* Advertiser set has disabled the use of private addresses and is using
 	 * the identity address instead.
 	 */
@@ -250,6 +254,8 @@ extern const struct bt_conn_auth_cb *bt_auth;
 int bt_hci_disconnect(u16_t handle, u8_t reason);
 
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
+int bt_le_set_data_len(struct bt_conn *conn, u16_t tx_octets, u16_t tx_time);
+int bt_le_set_phy(struct bt_conn *conn, u8_t tx_phy, u8_t rx_phy);
 
 int bt_le_scan_update(bool fast_scan);
 

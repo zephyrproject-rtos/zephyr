@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(eth_gecko, CONFIG_ETHERNET_LOG_LEVEL);
 #include "phy_gecko.h"
 #include "eth_gecko_priv.h"
 
+#include "eth.h"
 
 static u8_t dma_tx_buffer[ETH_TX_BUF_COUNT][ETH_TX_BUF_SIZE]
 __aligned(ETH_BUF_ALIGNMENT);
@@ -487,31 +488,10 @@ static int eth_init(struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_ETH_GECKO_RANDOM_MAC)
-static void generate_random_mac(u8_t mac_addr[6])
-{
-	u32_t entropy;
-
-	entropy = sys_rand32_get();
-
-	/* SiLabs' OUI */
-	mac_addr[0] = SILABS_OUI_B0;
-	mac_addr[1] = SILABS_OUI_B1;
-	mac_addr[2] = SILABS_OUI_B2;
-
-	mac_addr[3] = entropy >> 0;
-	mac_addr[4] = entropy >> 8;
-	mac_addr[5] = entropy >> 16;
-
-	/* Set MAC address locally administered, unicast (LAA) */
-	mac_addr[0] |= 0x02;
-}
-#endif
-
 static void generate_mac(u8_t mac_addr[6])
 {
-#if defined(CONFIG_ETH_GECKO_RANDOM_MAC)
-	generate_random_mac(mac_addr);
+#if DT_INST_PROP(0, zephyr_random_mac_address)
+	gen_random_mac(mac_addr, SILABS_OUI_B0, SILABS_OUI_B1, SILABS_OUI_B2);
 #endif
 }
 
@@ -679,15 +659,8 @@ static const struct eth_gecko_dev_cfg eth0_config = {
 };
 
 static struct eth_gecko_dev_data eth0_data = {
-#ifdef CONFIG_ETH_GECKO_MAC_MANUAL
-	.mac_addr = {
-		CONFIG_ETH_GECKO_MAC0,
-		CONFIG_ETH_GECKO_MAC1,
-		CONFIG_ETH_GECKO_MAC2,
-		CONFIG_ETH_GECKO_MAC3,
-		CONFIG_ETH_GECKO_MAC4,
-		CONFIG_ETH_GECKO_MAC5,
-	},
+#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
+	.mac_addr = DT_INST_PROP(0, local_mac_address),
 #endif
 };
 

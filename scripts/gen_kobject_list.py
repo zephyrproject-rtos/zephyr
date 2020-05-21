@@ -131,6 +131,14 @@ def error(text):
     sys.exit("%s ERROR: %s" % (scr, text))
 
 def debug_die(die, text):
+    if 'DW_AT_decl_file' not in die.attributes:
+        abs_orig_val = die.attributes["DW_AT_abstract_origin"].value
+        offset = abs_orig_val + die.cu.cu_offset
+        for var in variables:
+            if var.offset == offset:
+                die = var
+                break
+
     lp_header = die.dwarfinfo.line_program_for_CU(die.cu).header
     files = lp_header["file_entry"]
     includes = lp_header["include_directory"]
@@ -159,6 +167,7 @@ stack_counter = 0
 # Global type environment. Populated by pass 1.
 type_env = {}
 extern_env = {}
+variables = []
 
 class KobjectInstance:
     def __init__(self, type_obj, addr):
@@ -491,8 +500,8 @@ def addr_deref(elf, addr):
 
 
 def device_get_api_addr(elf, addr):
-    # Read device->driver API
-    offset = 4 if elf.elfclass == 32 else 8
+    # See include/device.h for a description of struct device
+    offset = 8 if elf.elfclass == 32 else 16
     return addr_deref(elf, addr + offset)
 
 
@@ -504,8 +513,6 @@ def find_kobjects(elf, syms):
     app_smem_end = syms["_app_smem_end"]
 
     di = elf.get_dwarf_info()
-
-    variables = []
 
     # Step 1: collect all type information.
     for CU in di.iter_CUs():
@@ -543,7 +550,7 @@ def find_kobjects(elf, syms):
         if not name:
             continue
 
-        if name.startswith("__device_sys_init"):
+        if name.startswith("__init_sys_init"):
             # Boot-time initialization function; not an actual device
             continue
 

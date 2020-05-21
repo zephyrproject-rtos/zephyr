@@ -8,10 +8,6 @@ if BOARD_NRF52DK_NRF52832
 config BOARD
 	default "nrf52dk_nrf52832"
 
-config PWM_0
-	default y
-	depends on PWM
-
 config BT_CTLR
 	default BT
 

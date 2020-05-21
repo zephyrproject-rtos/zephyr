@@ -30,6 +30,35 @@
 
 #define _UNDEFINED_SECTION_NAME undefined
 
+/* Interrupts */
+#define _IRQ_VECTOR_TABLE_SECTION_NAME	.gnu.linkonce.irq_vector_table
+#define _SW_ISR_TABLE_SECTION_NAME	.gnu.linkonce.sw_isr_table
+
+/* Architecture-specific sections */
+#if defined(CONFIG_ARM)
+#define _KINETIS_FLASH_CONFIG_SECTION_NAME  kinetis_flash_config
+#define _TI_CCFG_SECTION_NAME	.ti_ccfg
+
+#define _CCM_DATA_SECTION_NAME		.ccm_data
+#define _CCM_BSS_SECTION_NAME		.ccm_bss
+#define _CCM_NOINIT_SECTION_NAME	.ccm_noinit
+
+#define _DTCM_DATA_SECTION_NAME	.dtcm_data
+#define _DTCM_BSS_SECTION_NAME		.dtcm_bss
+#define _DTCM_NOINIT_SECTION_NAME	.dtcm_noinit
+#endif
+
+#define _IMX_BOOT_CONF_SECTION_NAME	.boot_hdr.conf
+#define _IMX_BOOT_DATA_SECTION_NAME	.boot_hdr.data
+#define _IMX_BOOT_IVT_SECTION_NAME	.boot_hdr.ivt
+#define _IMX_BOOT_DCD_SECTION_NAME	.boot_hdr.dcd_data
+
+#ifdef CONFIG_NOCACHE_MEMORY
+#define _NOCACHE_SECTION_NAME nocache
+#endif
+
+/* Short section references for use in ASM files */
+#if defined(_ASMLANGUAGE)
 /* Various text section names */
 #define TEXT text
 #if defined(CONFIG_X86)
@@ -43,33 +72,7 @@
 #define RODATA rodata
 #define DATA data
 #define NOINIT noinit
-
-/* Interrupts */
-#define IRQ_VECTOR_TABLE	.gnu.linkonce.irq_vector_table
-#define SW_ISR_TABLE		.gnu.linkonce.sw_isr_table
-
-/* Architecture-specific sections */
-#if defined(CONFIG_ARM)
-#define KINETIS_FLASH_CONFIG  kinetis_flash_config
-#define TI_CCFG	.ti_ccfg
-
-#define _CCM_DATA_SECTION_NAME		.ccm_data
-#define _CCM_BSS_SECTION_NAME		.ccm_bss
-#define _CCM_NOINIT_SECTION_NAME	.ccm_noinit
-
-#define _DTCM_DATA_SECTION_NAME	.dtcm_data
-#define _DTCM_BSS_SECTION_NAME		.dtcm_bss
-#define _DTCM_NOINIT_SECTION_NAME	.dtcm_noinit
-#endif
-
-#define IMX_BOOT_CONF	.boot_hdr.conf
-#define IMX_BOOT_DATA	.boot_hdr.data
-#define IMX_BOOT_IVT	.boot_hdr.ivt
-#define IMX_BOOT_DCD	.boot_hdr.dcd_data
-
-#ifdef CONFIG_NOCACHE_MEMORY
-#define _NOCACHE_SECTION_NAME nocache
-#endif
+#endif /* _ASMLANGUAGE */
 
 #include <linker/section_tags.h>
 

@@ -1,0 +1,20 @@
+tests:
+  kernel.fpu_sharing.float_disable.arm:
+    arch_whitelist: arm
+    filter: CONFIG_ARMV7_M_ARMV8_M_FP
+    extra_configs:
+      - CONFIG_DYNAMIC_INTERRUPTS=y
+    tags: kernel userspace
+  kernel.fpu_sharing.float_disable.riscv32:
+    filter: CONFIG_CPU_HAS_FPU
+    arch_whitelist: riscv32
+    tags: kernel userspace
+    build_only: true
+  kernel.fpu_sharing.float_disable.riscv64:
+    filter: CONFIG_CPU_HAS_FPU
+    arch_whitelist: riscv64
+    tags: kernel userspace
+  kernel.fpu_sharing.float_disable.x86:
+    extra_args: CONF_FILE=prj_x86.conf
+    platform_whitelist: qemu_x86
+    tags: kernel userspace

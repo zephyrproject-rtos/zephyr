@@ -22,12 +22,12 @@
 
 #define DT_DRV_COMPAT bosch_bme280
 
-#define BME280_BUS_SPI DT_ANY_INST_ON_BUS(spi)
-#define BME280_BUS_I2C DT_ANY_INST_ON_BUS(i2c)
+#define BME280_BUS_SPI DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define BME280_BUS_I2C DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
 LOG_MODULE_REGISTER(BME280, CONFIG_SENSOR_LOG_LEVEL);
 
-#if DT_NUM_INST(DT_DRV_COMPAT) == 0
+#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #warning "BME280 driver enabled without any devices"
 #endif
 
@@ -117,7 +117,7 @@ static inline struct bme280_data *to_data(struct device *dev)
 
 static inline const struct bme280_config *to_config(struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config_info;
 }
 
 static inline struct device *to_bus(struct device *dev)
@@ -543,7 +543,7 @@ static inline int bme280_spi_init(struct device *dev)
 
 int bme280_init(struct device *dev)
 {
-	const char *name = dev->config->name;
+	const char *name = dev->name;
 	struct bme280_data *data = to_data(dev);
 	const struct bme280_config *config = to_config(dev);
 	int rc;
@@ -595,7 +595,7 @@ done:
 			    &bme280_config_##inst,			\
 			    POST_KERNEL,				\
 			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &bme280_api_funcs)
+			    &bme280_api_funcs);
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
@@ -676,4 +676,4 @@ done:
 		    (BME280_DEFINE_SPI(inst)),				\
 		    (BME280_DEFINE_I2C(inst)))
 
-DT_INST_FOREACH(BME280_DEFINE);
+DT_INST_FOREACH_STATUS_OKAY(BME280_DEFINE)

@@ -33,10 +33,19 @@
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Configuration defines */
+#if !DT_HAS_CHOSEN(zephyr_ipc_shm)
+#error "Sample requires definition of shared memory for rpmsg"
+#endif
 
-#define SHM_START_ADDR      (DT_IPC_SHM_BASE_ADDRESS + 0x400)
+#define SHM_NODE            DT_CHOSEN(zephyr_ipc_shm)
+#define SHM_BASE_ADDRESS    DT_REG_ADDR(SHM_NODE)
+#define SHM_START_ADDR      (SHM_BASE_ADDRESS + 0x400)
 #define SHM_SIZE            0x7c00
 #define SHM_DEVICE_NAME     "sram0.shm"
+
+BUILD_ASSERT((SHM_START_ADDR + SHM_SIZE - SHM_BASE_ADDRESS)
+		<= DT_REG_SIZE(SHM_NODE),
+	"Allocated size exceeds available shared memory reserved for IPC");
 
 #define VRING_COUNT         2
 #define VRING_TX_ADDRESS    (SHM_START_ADDR + SHM_SIZE - 0x400)
@@ -44,7 +53,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define VRING_ALIGNMENT     4
 #define VRING_SIZE          16
 
-#define VDEV_STATUS_ADDR    DT_IPC_SHM_BASE_ADDRESS
+#define VDEV_STATUS_ADDR    SHM_BASE_ADDRESS
 
 /* End of configuration defines */
 

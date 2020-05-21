@@ -349,7 +349,7 @@ static void eth_enc28j60_init_buffers(struct device *dev)
 
 static void eth_enc28j60_init_mac(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	u8_t data_macon;
 
@@ -399,7 +399,7 @@ static void eth_enc28j60_init_mac(struct device *dev)
 
 static void eth_enc28j60_init_phy(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config_info;
 
 	if (config->full_duplex) {
 		eth_enc28j60_write_phy(dev, ENC28J60_PHY_PHCON1,
@@ -506,7 +506,7 @@ static int eth_enc28j60_tx(struct device *dev, struct net_pkt *pkt)
 
 static int eth_enc28j60_rx(struct device *dev, u16_t *vlan_tag)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 	u16_t lengthfr;
 	u8_t counter;
@@ -564,7 +564,7 @@ static int eth_enc28j60_rx(struct device *dev, u16_t *vlan_tag)
 		/* Get the frame from the buffer */
 		pkt = net_pkt_rx_alloc_with_buffer(
 			get_iface(context, *vlan_tag), frm_len,
-			AF_UNSPEC, 0, config->timeout);
+			AF_UNSPEC, 0, K_MSEC(config->timeout));
 		if (!pkt) {
 			LOG_ERR("Could not allocate rx buffer");
 			eth_stats_update_errors_rx(get_iface(context,
@@ -717,7 +717,7 @@ static const struct ethernet_api api_funcs = {
 
 static int eth_enc28j60_init(struct device *dev)
 {
-	const struct eth_enc28j60_config *config = dev->config->config_info;
+	const struct eth_enc28j60_config *config = dev->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
 
 	/* SPI config */
@@ -732,7 +732,7 @@ static int eth_enc28j60_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	context->spi_cs.gpio_dev =
 		device_get_binding((char *)config->spi_cs_port);
 	if (!context->spi_cs.gpio_dev) {
@@ -742,7 +742,7 @@ static int eth_enc28j60_init(struct device *dev)
 
 	context->spi_cs.gpio_pin = config->spi_cs_pin;
 	context->spi_cfg.cs = &context->spi_cs;
-#endif /* CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS */
+#endif
 
 	/* Initialize GPIO */
 	context->gpio = device_get_binding((char *)config->gpio_port);
@@ -823,10 +823,10 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 	.spi_port = DT_INST_BUS_LABEL(0),
 	.spi_freq  = DT_INST_PROP(0, spi_max_frequency),
 	.spi_slave = DT_INST_REG_ADDR(0),
-#ifdef CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-#endif /* CONFIG_ETH_ENC28J60_0_GPIO_SPI_CS */
+#endif
 	.full_duplex = IS_ENABLED(CONFIG_ETH_ENC28J60_0_FULL_DUPLEX),
 	.timeout = CONFIG_ETH_ENC28J60_TIMEOUT,
 };

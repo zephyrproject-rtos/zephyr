@@ -581,7 +581,7 @@ config LEGACY_TIMEOUT_API
 	  not being able to use new features.
 
 config TIMEOUT_64BIT
-	bool
+	bool "Store kernel timeouts in 64 bit precision"
 	depends on !LEGACY_TIMEOUT_API
 	default y
 	help

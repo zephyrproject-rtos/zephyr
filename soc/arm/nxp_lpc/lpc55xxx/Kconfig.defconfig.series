@@ -12,6 +12,9 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 60
 
+config ENTROPY_MCUX_RNG
+	default y if HAS_MCUX_RNG
+
 source "soc/arm/nxp_lpc/lpc55xxx/Kconfig.defconfig.lp*"
 
 endif # SOC_SERIES_LPC55XXX

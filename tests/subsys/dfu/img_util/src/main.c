@@ -17,7 +17,7 @@ void test_init_id(void)
 	ret = flash_img_init(&ctx_no_id);
 	zassert_true(ret == 0, "Flash img init");
 
-	ret = flash_img_init_id(&ctx_id, DT_FLASH_AREA_IMAGE_1_ID);
+	ret = flash_img_init_id(&ctx_id, FLASH_AREA_ID(image_1));
 	zassert_true(ret == 0, "Flash img init id");
 
 	/* Verify that the default partition ID is IMAGE_1 */
@@ -25,10 +25,10 @@ void test_init_id(void)
 		      "Default partition ID is incorrect");
 
 	/* Note: IMAGE_0, not IMAGE_1 as above */
-	ret = flash_img_init_id(&ctx_id, DT_FLASH_AREA_IMAGE_0_ID);
+	ret = flash_img_init_id(&ctx_id, FLASH_AREA_ID(image_0));
 	zassert_true(ret == 0, "Flash img init id");
 
-	zassert_equal(ctx_id.flash_area->fa_id, DT_FLASH_AREA_IMAGE_0_ID,
+	zassert_equal(ctx_id.flash_area->fa_id, FLASH_AREA_ID(image_0),
 		      "Partition ID is not set correctly");
 }
 
@@ -47,7 +47,7 @@ void test_collecting(void)
 	u8_t erase_buf[8];
 	(void)memset(erase_buf, 0xff, sizeof(erase_buf));
 
-	ret = flash_area_open(DT_FLASH_AREA_IMAGE_1_ID, &fa);
+	ret = flash_area_open(FLASH_AREA_ID(image_1), &fa);
 	if (ret) {
 		printf("Flash driver was not found!\n");
 		return;
@@ -84,7 +84,7 @@ void test_collecting(void)
 					 "fail");
 
 
-	ret = flash_area_open(DT_FLASH_AREA_IMAGE_1_ID, &fa);
+	ret = flash_area_open(FLASH_AREA_ID(image_1), &fa);
 	if (ret) {
 		printf("Flash driver was not found!\n");
 		return;

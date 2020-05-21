@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+# Author: Parthiban Nallathambi <parthiban@linumiz.com>
+
+config SOC_FAMILY_XMC
+	bool
+	select HAS_SEGGER_RTT
+	select PLATFORM_SPECIFIC_INIT
+
+if SOC_FAMILY_XMC
+
+config SOC_FAMILY
+	string
+	default "infineon_xmc"
+
+source "soc/arm/infineon_xmc/*/Kconfig.soc"
+
+config SOC_PART_NUMBER
+	default SOC_PART_NUMBER_XMC_4XXX if SOC_SERIES_XMC_4XXX
+
+endif # SOC_FAMILY_XMC

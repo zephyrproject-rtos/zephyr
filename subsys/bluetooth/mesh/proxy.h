@@ -25,7 +25,7 @@ void bt_mesh_proxy_beacon_send(struct bt_mesh_subnet *sub);
 
 struct net_buf_simple *bt_mesh_proxy_get_buf(void);
 
-s32_t bt_mesh_proxy_adv_start(void);
+k_timeout_t bt_mesh_proxy_adv_start(void);
 void bt_mesh_proxy_adv_stop(void);
 
 void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub);

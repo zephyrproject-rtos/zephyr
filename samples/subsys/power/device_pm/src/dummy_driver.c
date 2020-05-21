@@ -34,12 +34,12 @@ static int dummy_open(struct device *dev)
 
 	do {
 		(void)k_poll(&async_evt, 1, K_FOREVER);
-		k_poll_signal_check(&dev->config->pm->signal,
+		k_poll_signal_check(&dev->pm->signal,
 						&signaled, &result);
 	} while (!signaled);
 
 	async_evt.state = K_POLL_STATE_NOT_READY;
-	k_poll_signal_reset(&dev->config->pm->signal);
+	k_poll_signal_reset(&dev->pm->signal);
 
 	if (result == DEVICE_PM_ACTIVE_STATE) {
 		printk("Dummy device resumed\n");
@@ -158,7 +158,7 @@ int dummy_init(struct device *dev)
 	device_power_state = DEVICE_PM_ACTIVE_STATE;
 
 	k_poll_event_init(&async_evt, K_POLL_TYPE_SIGNAL,
-			K_POLL_MODE_NOTIFY_ONLY, &dev->config->pm->signal);
+			K_POLL_MODE_NOTIFY_ONLY, &dev->pm->signal);
 	return 0;
 }
 

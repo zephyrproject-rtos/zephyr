@@ -46,7 +46,7 @@
 #if defined(CONFIG_CAN_LOOPBACK_DEV_NAME)
 #define CAN_DEVICE_NAME CONFIG_CAN_LOOPBACK_DEV_NAME
 #else
-#define CAN_DEVICE_NAME DT_ALIAS_CAN_PRIMARY_LABEL
+#define CAN_DEVICE_NAME DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL
 #endif
 
 /*
@@ -205,7 +205,7 @@ static void receive_test_data(struct isotp_recv_ctx *recv_ctx,
 		remaining_len -= recv_len;
 
 		if (delay) {
-			k_sleep(delay);
+			k_msleep(delay);
 		}
 	} while (remaining_len);
 

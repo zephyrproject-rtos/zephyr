@@ -410,6 +410,7 @@ set_ifndef(DTS_CAT_OF_FIXUP_FILES ${ZEPHYR_BINARY_DIR}/include/generated/devicet
 # Concatenate the fixups into a single header file for easy
 # #include'ing
 file(WRITE ${DTS_CAT_OF_FIXUP_FILES} "/* May only be included by devicetree.h */\n\n")
+set(DISCOVERED_FIXUP_FILES)
 foreach(fixup_file
     ${DTS_BOARD_FIXUP_FILE}
     ${DTS_SOC_FIXUP_FILE}
@@ -419,8 +420,13 @@ foreach(fixup_file
   if(EXISTS ${fixup_file})
     file(READ ${fixup_file} contents)
     file(APPEND ${DTS_CAT_OF_FIXUP_FILES} "${contents}")
+    string(APPEND DISCOVERED_FIXUP_FILES "- ${fixup_file}\n")
   endif()
 endforeach()
+
+if (DISCOVERED_FIXUP_FILES)
+  message(WARNING "One or more dts_fixup.h files detected:\n${DISCOVERED_FIXUP_FILES}Use of these files is deprecated; use the devicetree.h API instead.")
+endif()
 
 # Unfortunately, the order in which CMakeLists.txt code is processed
 # matters so we need to be careful about how we order the processing
@@ -472,6 +478,7 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
 
     string(TOUPPER ${module_name} MODULE_NAME_UPPER)
     set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path})
+    set(ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR ${module_path} PARENT_SCOPE)
   endforeach()
 
   foreach(module_name ${module_names})
@@ -1213,10 +1220,15 @@ endif()
 if(CONFIG_OUTPUT_DISASSEMBLY)
   set(out_disassembly_cmd    "")
   set(out_disassembly_byprod "")
+  if(CONFIG_OUTPUT_DISASSEMBLE_ALL)
+    set(disassembly_type DISASSEMBLE_ALL)
+  else()
+    set(disassembly_type DISASSEMBLE_SOURCE)
+  endif()
   bintools_objdump(
     RESULT_CMD_LIST    out_disassembly_cmd
     RESULT_BYPROD_LIST out_disassembly_byprod
-    DISASSEMBLE_SOURCE
+    ${disassembly_type}
     FILE_INPUT         ${KERNEL_ELF_NAME}
     FILE_OUTPUT        ${KERNEL_LST_NAME}
     )

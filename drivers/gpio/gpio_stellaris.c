@@ -31,7 +31,7 @@ struct gpio_stellaris_runtime {
 
 #define DEV_CFG(dev)                                     \
 	((const struct gpio_stellaris_config *const)     \
-	(dev)->config->config_info)
+	(dev)->config_info)
 
 #define DEV_DATA(dev)					 \
 	((struct gpio_stellaris_runtime *const)          \
@@ -287,4 +287,4 @@ static const struct gpio_driver_api gpio_stellaris_driver_api = {
 		irq_enable(DT_INST_IRQN(n));			\
 	}
 
-DT_INST_FOREACH(STELLARIS_GPIO_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(STELLARIS_GPIO_DEVICE)

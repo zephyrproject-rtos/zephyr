@@ -33,13 +33,13 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(uart0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
 	/* UART0 RX, TX */
 	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(uart2))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
 	/* UART2 RX, TX */
 	pinmux_pin_set(portd, 0, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portd, 1, PORT_PCR_MUX(kPORT_MuxAlt3));
@@ -47,7 +47,7 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(uart3))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart3), okay)
 	/* UART3 RX, TX */
 	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
@@ -101,7 +101,7 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb,  9, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(spi0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay)
 	/* SPI0 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(portd,  0, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portd,  1, PORT_PCR_MUX(kPORT_MuxAlt2));
@@ -109,7 +109,7 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portd,  3, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(i2c0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c0), okay)
 	/* I2C0 SCL, SDA */
 	pinmux_pin_set(porte, 24, PORT_PCR_MUX(kPORT_MuxAlt5)
 					| PORT_PCR_ODE_MASK);
@@ -117,17 +117,17 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 					| PORT_PCR_ODE_MASK);
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(adc1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
 	/* ADC1_SE14 */
 	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(ftm3))
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(ftm3), nxp_kinetis_ftm_pwm, okay)
 	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(enet))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(enet), okay)
 	pinmux_pin_set(porta,  5, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(porta, 12, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(porta, 13, PORT_PCR_MUX(kPORT_MuxAlt4));
@@ -148,7 +148,7 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 19, PORT_PCR_MUX(kPORT_MuxAlt4));
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(flexcan0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay)
 	/* FlexCAN0 RX, TX */
 	pinmux_pin_set(portb, 18, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portb, 19, PORT_PCR_MUX(kPORT_MuxAlt2) |

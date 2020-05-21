@@ -15,28 +15,28 @@
 LOG_MODULE_REGISTER(app);
 
 
-#define CAN_INTERFACE DT_ALIAS_CAN_PRIMARY_LABEL
-#define CAN_BITRATE (DT_ALIAS_CAN_PRIMARY_BUS_SPEED / 1000)
-#if !defined(DT_ALIAS_CAN_PRIMARY_LABEL)
+#define CAN_INTERFACE DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL
+#define CAN_BITRATE (DT_PROP(DT_CHOSEN(zephyr_can_primary), bus_speed) / 1000)
+#if !defined(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL)
 #error CANopen CAN interface not set
 #endif
 
-#ifdef DT_ALIAS_GREEN_LED_GPIOS_CONTROLLER
-#define LED_GREEN_PORT  DT_ALIAS_GREEN_LED_GPIOS_CONTROLLER
-#define LED_GREEN_PIN   DT_ALIAS_GREEN_LED_GPIOS_PIN
-#define LED_GREEN_FLAGS DT_ALIAS_GREEN_LED_GPIOS_FLAGS
+#if DT_NODE_HAS_PROP(DT_ALIAS(green_led), gpios)
+#define LED_GREEN_PORT  DT_GPIO_LABEL(DT_ALIAS(green_led), gpios)
+#define LED_GREEN_PIN   DT_GPIO_PIN(DT_ALIAS(green_led), gpios)
+#define LED_GREEN_FLAGS DT_GPIO_FLAGS(DT_ALIAS(green_led), gpios)
 #endif
 
-#ifdef DT_ALIAS_RED_LED_GPIOS_CONTROLLER
-#define LED_RED_PORT  DT_ALIAS_RED_LED_GPIOS_CONTROLLER
-#define LED_RED_PIN   DT_ALIAS_RED_LED_GPIOS_PIN
-#define LED_RED_FLAGS DT_ALIAS_RED_LED_GPIOS_FLAGS
+#if DT_NODE_HAS_PROP(DT_ALIAS(red_led), gpios)
+#define LED_RED_PORT  DT_GPIO_LABEL(DT_ALIAS(red_led), gpios)
+#define LED_RED_PIN   DT_GPIO_PIN(DT_ALIAS(red_led), gpios)
+#define LED_RED_FLAGS DT_GPIO_FLAGS(DT_ALIAS(red_led), gpios)
 #endif
 
-#ifdef DT_ALIAS_SW0_GPIOS_CONTROLLER
-#define BUTTON_PORT  DT_ALIAS_SW0_GPIOS_CONTROLLER
-#define BUTTON_PIN   DT_ALIAS_SW0_GPIOS_PIN
-#define BUTTON_FLAGS DT_ALIAS_SW0_GPIOS_FLAGS
+#if DT_NODE_HAS_PROP(DT_ALIAS(sw0), gpios)
+#define BUTTON_PORT  DT_GPIO_LABEL(DT_ALIAS(sw0), gpios)
+#define BUTTON_PIN   DT_GPIO_PIN(DT_ALIAS(sw0), gpios)
+#define BUTTON_FLAGS DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios)
 static struct gpio_callback button_callback;
 #endif
 
@@ -245,6 +245,11 @@ void main(void)
 		config_leds(CO->NMT);
 		CO_OD_configure(CO->SDO[0], OD_2102_buttonPressCounter,
 				odf_2102, NULL, 0U, 0U);
+
+		if (IS_ENABLED(CONFIG_CANOPEN_PROGRAM_DOWNLOAD)) {
+			canopen_program_download_attach(CO->NMT, CO->SDO[0],
+							CO->em);
+		}
 
 		CO_CANsetNormalMode(CO->CANmodule[0]);
 

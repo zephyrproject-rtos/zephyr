@@ -63,7 +63,7 @@ static s8_t nm_i2c_write_special(u8_t *wb1, u16_t sz1,
 
 #ifdef CONF_WINC_USE_SPI
 
-#ifdef CONFIG_WIFI_WINC1500_GPIO_SPI_CS
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 struct spi_cs_control cs_ctrl;
 #endif
 
@@ -146,7 +146,7 @@ s8_t nm_bus_init(void *pvinit)
 	winc1500.spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	winc1500.spi_cfg.slave = DT_INST_REG_ADDR(0);
 
-#ifdef CONFIG_WIFI_WINC1500_GPIO_SPI_CS
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	cs_ctrl.gpio_dev = device_get_binding(
 		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!cs_ctrl.gpio_dev) {
@@ -162,7 +162,7 @@ s8_t nm_bus_init(void *pvinit)
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
 		    DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 		    DT_INST_SPI_DEV_CS_GPIOS_PIN(0));
-#endif /* CONFIG_WIFI_WINC1500_GPIO_SPI_CS */
+#endif
 
 	nm_bsp_reset();
 	nm_bsp_sleep(1);

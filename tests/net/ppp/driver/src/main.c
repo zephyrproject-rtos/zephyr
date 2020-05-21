@@ -206,7 +206,7 @@ static enum net_verdict ppp_l2_recv(struct net_if *iface, struct net_pkt *pkt)
 	return NET_DROP;
 }
 
-static void iface_setup(void)
+static void test_iface_setup(void)
 {
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
 	zassert_not_null(iface, "PPP interface not found!");
@@ -241,7 +241,7 @@ static bool send_iface(struct net_if *iface,
 	return true;
 }
 
-static void send_ppp_pkt_with_escapes(void)
+static void test_send_ppp_pkt_with_escapes(void)
 {
 	bool ret;
 
@@ -253,7 +253,7 @@ static void send_ppp_pkt_with_escapes(void)
 	zassert_true(ret, "iface");
 }
 
-static void send_ppp_pkt_with_full_and_partial(void)
+static void test_send_ppp_pkt_with_full_and_partial(void)
 {
 	bool ret;
 
@@ -352,7 +352,7 @@ static void ppp_verify_fcs(u8_t *buf, int len)
 	net_pkt_unref(pkt);
 }
 
-static void ppp_verify_fcs_1(void)
+static void test_ppp_verify_fcs_1(void)
 {
 	ppp_verify_fcs(ppp_recv_data1, sizeof(ppp_recv_data1));
 }
@@ -431,17 +431,17 @@ static void ppp_calc_fcs(u8_t *buf, int len)
 	net_pkt_unref(pkt);
 }
 
-static void ppp_calc_fcs_1(void)
+static void test_ppp_calc_fcs_1(void)
 {
 	ppp_calc_fcs(ppp_recv_data1, sizeof(ppp_recv_data1));
 }
 
-static void ppp_verify_fcs_3(void)
+static void test_ppp_verify_fcs_3(void)
 {
 	ppp_verify_fcs(ppp_recv_data3, sizeof(ppp_recv_data3));
 }
 
-static void send_ppp_3(void)
+static void test_send_ppp_3(void)
 {
 	bool ret;
 
@@ -457,7 +457,7 @@ static void send_ppp_3(void)
 	}
 }
 
-static void send_ppp_4(void)
+static void test_send_ppp_4(void)
 {
 	bool ret;
 
@@ -473,7 +473,7 @@ static void send_ppp_4(void)
 	}
 }
 
-static void send_ppp_5(void)
+static void test_send_ppp_5(void)
 {
 	bool ret;
 
@@ -489,7 +489,7 @@ static void send_ppp_5(void)
 	}
 }
 
-static void send_ppp_6(void)
+static void test_send_ppp_6(void)
 {
 	bool ret;
 
@@ -505,7 +505,7 @@ static void send_ppp_6(void)
 	}
 }
 
-static void send_ppp_7(void)
+static void test_send_ppp_7(void)
 {
 	bool ret;
 
@@ -521,7 +521,7 @@ static void send_ppp_7(void)
 	}
 }
 
-static void send_ppp_8(void)
+static void test_send_ppp_8(void)
 {
 	bool ret;
 
@@ -540,18 +540,18 @@ static void send_ppp_8(void)
 void test_main(void)
 {
 	ztest_test_suite(net_ppp_test,
-			 ztest_unit_test(iface_setup),
-			 ztest_unit_test(send_ppp_pkt_with_escapes),
-			 ztest_unit_test(send_ppp_pkt_with_full_and_partial),
-			 ztest_unit_test(ppp_verify_fcs_1),
-			 ztest_unit_test(ppp_calc_fcs_1),
-			 ztest_unit_test(ppp_verify_fcs_3),
-			 ztest_unit_test(send_ppp_3),
-			 ztest_unit_test(send_ppp_4),
-			 ztest_unit_test(send_ppp_5),
-			 ztest_unit_test(send_ppp_6),
-			 ztest_unit_test(send_ppp_7),
-			 ztest_unit_test(send_ppp_8)
+			 ztest_unit_test(test_iface_setup),
+			 ztest_unit_test(test_send_ppp_pkt_with_escapes),
+			 ztest_unit_test(test_send_ppp_pkt_with_full_and_partial),
+			 ztest_unit_test(test_ppp_verify_fcs_1),
+			 ztest_unit_test(test_ppp_calc_fcs_1),
+			 ztest_unit_test(test_ppp_verify_fcs_3),
+			 ztest_unit_test(test_send_ppp_3),
+			 ztest_unit_test(test_send_ppp_4),
+			 ztest_unit_test(test_send_ppp_5),
+			 ztest_unit_test(test_send_ppp_6),
+			 ztest_unit_test(test_send_ppp_7),
+			 ztest_unit_test(test_send_ppp_8)
 		);
 
 	ztest_run_test_suite(net_ppp_test);

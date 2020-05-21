@@ -100,7 +100,7 @@ static int ht16k33_led_blink(struct device *dev, u32_t led,
 	/* The HT16K33 blinks all LEDs at the same frequency */
 	ARG_UNUSED(led);
 
-	const struct ht16k33_cfg *config = dev->config->config_info;
+	const struct ht16k33_cfg *config = dev->config_info;
 	struct ht16k33_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
 	u32_t period;
@@ -135,7 +135,7 @@ static int ht16k33_led_set_brightness(struct device *dev, u32_t led,
 {
 	ARG_UNUSED(led);
 
-	const struct ht16k33_cfg *config = dev->config->config_info;
+	const struct ht16k33_cfg *config = dev->config_info;
 	struct ht16k33_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
 	u8_t dim;
@@ -159,7 +159,7 @@ static int ht16k33_led_set_brightness(struct device *dev, u32_t led,
 
 static int ht16k33_led_set_state(struct device *dev, u32_t led, bool on)
 {
-	const struct ht16k33_cfg *config = dev->config->config_info;
+	const struct ht16k33_cfg *config = dev->config_info;
 	struct ht16k33_data *data = dev->driver_data;
 	u8_t cmd[2];
 	u8_t addr;
@@ -206,7 +206,7 @@ static int ht16k33_led_off(struct device *dev, u32_t led)
 #ifdef CONFIG_HT16K33_KEYSCAN
 u32_t ht16k33_get_pending_int(struct device *dev)
 {
-	const struct ht16k33_cfg *config = dev->config->config_info;
+	const struct ht16k33_cfg *config = dev->config_info;
 	struct ht16k33_data *data = dev->driver_data;
 	u8_t cmd;
 	u8_t flag;
@@ -225,7 +225,7 @@ u32_t ht16k33_get_pending_int(struct device *dev)
 
 static bool ht16k33_process_keyscan_data(struct device *dev)
 {
-	const struct ht16k33_cfg *config = dev->config->config_info;
+	const struct ht16k33_cfg *config = dev->config_info;
 	struct ht16k33_data *data = dev->driver_data;
 	u8_t keys[HT16K33_KEYSCAN_DATA_SIZE];
 	bool pressed = false;
@@ -321,7 +321,7 @@ int ht16k33_register_keyscan_device(struct device *parent,
 
 static int ht16k33_init(struct device *dev)
 {
-	const struct ht16k33_cfg *config = dev->config->config_info;
+	const struct ht16k33_cfg *config = dev->config_info;
 	struct ht16k33_data *data = dev->driver_data;
 	struct led_data *dev_data = &data->dev_data;
 	u8_t cmd[1 + HT16K33_DISP_DATA_SIZE]; /* 1 byte command + data */
@@ -463,103 +463,44 @@ static const struct led_driver_api ht16k33_leds_api = {
 
 #define HT16K33_DEVICE(id)						\
 	static const struct ht16k33_cfg ht16k33_##id##_cfg = {		\
-		.i2c_dev_name = DT_INST_BUS_LABEL(id),	\
-		.i2c_addr     = DT_INST_REG_ADDR(id),	\
+		.i2c_dev_name = DT_INST_BUS_LABEL(id),			\
+		.i2c_addr     = DT_INST_REG_ADDR(id),			\
 		.irq_enabled  = false,					\
 	};								\
 									\
-static struct ht16k33_data ht16k33_##id##_data;				\
+	static struct ht16k33_data ht16k33_##id##_data;			\
 									\
-DEVICE_AND_API_INIT(ht16k33_##id, DT_INST_LABEL(id),	\
-		    &ht16k33_init, &ht16k33_##id##_data,		\
-		    &ht16k33_##id##_cfg, POST_KERNEL,			\
-		    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
+	DEVICE_AND_API_INIT(ht16k33_##id, DT_INST_LABEL(id),		\
+			    &ht16k33_init, &ht16k33_##id##_data,	\
+			    &ht16k33_##id##_cfg, POST_KERNEL,		\
+			    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
 
 #ifdef CONFIG_HT16K33_KEYSCAN
 #define HT16K33_DEVICE_WITH_IRQ(id)					\
 	static const struct ht16k33_cfg ht16k33_##id##_cfg = {		\
-		.i2c_dev_name = DT_INST_BUS_LABEL(id),	\
-		.i2c_addr     = DT_INST_REG_ADDR(id),	\
+		.i2c_dev_name = DT_INST_BUS_LABEL(id),			\
+		.i2c_addr     = DT_INST_REG_ADDR(id),			\
 		.irq_enabled  = true,					\
 		.irq_dev_name =						\
-			DT_INST_GPIO_LABEL(id, irq_gpios),	\
+		DT_INST_GPIO_LABEL(id, irq_gpios),			\
 		.irq_pin      = DT_INST_GPIO_PIN(id, irq_gpios),	\
 		.irq_flags    =						\
-			DT_INST_GPIO_FLAGS(id, irq_gpios),	\
+		DT_INST_GPIO_FLAGS(id, irq_gpios),			\
 	};								\
 									\
-static struct ht16k33_data ht16k33_##id##_data;				\
+	static struct ht16k33_data ht16k33_##id##_data;			\
 									\
-DEVICE_AND_API_INIT(ht16k33_##id, DT_INST_LABEL(id),	\
-		    &ht16k33_init, &ht16k33_##id##_data,		\
-		    &ht16k33_##id##_cfg, POST_KERNEL,			\
-		    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
+	DEVICE_AND_API_INIT(ht16k33_##id, DT_INST_LABEL(id),		\
+			    &ht16k33_init, &ht16k33_##id##_data,	\
+			    &ht16k33_##id##_cfg, POST_KERNEL,		\
+			    CONFIG_LED_INIT_PRIORITY, &ht16k33_leds_api)
 #else /* ! CONFIG_HT16K33_KEYSCAN */
 #define HT16K33_DEVICE_WITH_IRQ(id) HT16K33_DEVICE(id)
 #endif /* ! CONFIG_HT16K33_KEYSCAN */
 
-/* Support up to eight HT16K33 devices */
+#define HT16K33_INSTANTIATE(id)					\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, irq_gpios),	\
+		    (HT16K33_DEVICE_WITH_IRQ(id)),		\
+		    (HT16K33_DEVICE(id)));
 
-#if DT_HAS_DRV_INST(0)
-#if DT_INST_NODE_HAS_PROP(0, irq_gpios)
-HT16K33_DEVICE_WITH_IRQ(0);
-#else
-HT16K33_DEVICE(0);
-#endif
-#endif
-
-#if DT_HAS_DRV_INST(1)
-#if DT_INST_NODE_HAS_PROP(1, irq_gpios)
-HT16K33_DEVICE_WITH_IRQ(1);
-#else
-HT16K33_DEVICE(1);
-#endif
-#endif
-
-#if DT_HAS_DRV_INST(2)
-#if DT_INST_NODE_HAS_PROP(2, irq_gpios)
-HT16K33_DEVICE_WITH_IRQ(2);
-#else
-HT16K33_DEVICE(2);
-#endif
-#endif
-
-#if DT_HAS_DRV_INST(3)
-#if DT_INST_NODE_HAS_PROP(3, irq_gpios)
-HT16K33_DEVICE_WITH_IRQ(3);
-#else
-HT16K33_DEVICE(3);
-#endif
-#endif
-
-#if DT_HAS_DRV_INST(4)
-#if DT_INST_NODE_HAS_PROP(4, irq_gpios)
-HT16K33_DEVICE_WITH_IRQ(4);
-#else
-HT16K33_DEVICE(4);
-#endif
-#endif
-
-#if DT_HAS_DRV_INST(5)
-#if DT_INST_NODE_HAS_PROP(5, irq_gpios)
-HT16K33_DEVICE_WITH_IRQ(5);
-#else
-HT16K33_DEVICE(5);
-#endif
-#endif
-
-#if DT_HAS_DRV_INST(6)
-#if DT_INST_NODE_HAS_PROP(6, irq_gpios)
-HT16K33_DEVICE_WITH_IRQ(6);
-#else
-HT16K33_DEVICE(6);
-#endif
-#endif
-
-#if DT_HAS_DRV_INST(7)
-#if DT_INST_NODE_HAS_PROP(7, irq_gpios)
-HT16K33_DEVICE_WITH_IRQ(7);
-#else
-HT16K33_DEVICE(7);
-#endif
-#endif
+DT_INST_FOREACH_STATUS_OKAY(HT16K33_INSTANTIATE)

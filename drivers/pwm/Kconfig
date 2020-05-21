@@ -20,21 +20,6 @@ config PWM_SHELL
 	help
 	  Enable the PWM related shell commands.
 
-config PWM_0
-	bool "Enable PWM port 0"
-
-config PWM_1
-	bool "Enable PWM port 1"
-
-config PWM_2
-	bool "Enable PWM port 2"
-
-config PWM_3
-	bool "Enable PWM port 3"
-
-config PWM_4
-	bool "Enable PWM port 4"
-
 source "drivers/pwm/Kconfig.pca9685"
 
 source "drivers/pwm/Kconfig.dw"
@@ -62,5 +47,7 @@ source "drivers/pwm/Kconfig.xec"
 source "drivers/pwm/Kconfig.litex"
 
 source "drivers/pwm/Kconfig.rv32m1_tpm"
+
+source "drivers/pwm/Kconfig.mcux_tpm"
 
 endif # PWM

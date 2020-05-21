@@ -19,12 +19,9 @@
 LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_INIT_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
-#define CAN_BOFF_RECOVER_TIMEOUT  (10 * sys_clock_hw_cycles_per_sec() / MSEC_PER_SEC)
 
-#if DT_HAS_NODE(DT_NODELABEL(can1)) && \
-	DT_NODE_HAS_COMPAT(DT_NODELABEL(can1), st_stm32_can) && \
-	DT_HAS_NODE(DT_NODELABEL(can2)) && \
-	DT_NODE_HAS_COMPAT(DT_NODELABEL(can2), st_stm32_can)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can1), st_stm32_can, okay) && \
+    DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can2), st_stm32_can, okay)
 #error Simultaneous use of CAN_1 and CAN_2 not supported yet
 #endif
 
@@ -379,7 +376,7 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 		goto done;
 	}
 
-	LOG_DBG("Runtime configure of %s done", dev->config->name);
+	LOG_DBG("Runtime configure of %s done", dev->name);
 	ret = 0;
 done:
 	k_mutex_unlock(&data->inst_mutex);
@@ -391,7 +388,7 @@ static int can_stm32_init(struct device *dev)
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
 	CAN_TypeDef *can = cfg->can;
-#if DT_HAS_NODE(DT_NODELABEL(can2))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay)
 	CAN_TypeDef *master_can = cfg->master_can;
 #endif
 	struct device *clock;
@@ -432,7 +429,7 @@ static int can_stm32_init(struct device *dev)
 		return ret;
 	}
 
-#if DT_HAS_NODE(DT_NODELABEL(can2))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay)
 	master_can->FMR &= ~CAN_FMR_CAN2SB; /* Assign all filters to CAN2 */
 #endif
 
@@ -457,7 +454,7 @@ static int can_stm32_init(struct device *dev)
 
 	cfg->config_irq(can);
 	can->IER |= CAN_IER_TMEIE;
-	LOG_INF("Init of %s done", dev->config->name);
+	LOG_INF("Init of %s done", dev->name);
 	return 0;
 }
 
@@ -503,13 +500,13 @@ static enum can_state can_stm32_get_state(struct device *dev,
 }
 
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-int can_stm32_recover(struct device *dev, s32_t timeout)
+int can_stm32_recover(struct device *dev, k_timeout_t timeout)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
 	CAN_TypeDef *can = cfg->can;
 	int ret = CAN_TIMEOUT;
-	u32_t start_time;
+	s64_t start_time;
 
 	if (!(can->ESR & CAN_ESR_BOFF)) {
 		return 0;
@@ -526,10 +523,11 @@ int can_stm32_recover(struct device *dev, s32_t timeout)
 
 	can_leave_init_mode(can);
 
-	start_time = k_cycle_get_32();
+	start_time = k_uptime_ticks();
 
 	while (can->ESR & CAN_ESR_BOFF) {
-		if (k_cycle_get_32() - start_time >= CAN_BOFF_RECOVER_TIMEOUT) {
+		if (timeout != K_FOREVER &&
+		    k_uptime_ticks() - start_time >= timeout.ticks) {
 			goto done;
 		}
 	}
@@ -544,7 +542,8 @@ done:
 
 
 int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
-		   s32_t timeout, can_tx_callback_t callback, void *callback_arg)
+		   k_timeout_t timeout, can_tx_callback_t callback,
+		   void *callback_arg)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
@@ -557,7 +556,7 @@ int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
 		    "Id: 0x%x, "
 		    "ID type: %s, "
 		    "Remote Frame: %s"
-		    , msg->dlc, dev->config->name
+		    , msg->dlc, dev->name
 		    , msg->id_type == CAN_STANDARD_IDENTIFIER ?
 				      msg->std_id :  msg->ext_id
 		    , msg->id_type == CAN_STANDARD_IDENTIFIER ?
@@ -578,8 +577,7 @@ int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
 	k_mutex_lock(&data->inst_mutex, K_FOREVER);
 	while (!(transmit_status_register & CAN_TSR_TME)) {
 		k_mutex_unlock(&data->inst_mutex);
-		LOG_DBG("Transmit buffer full. Wait with timeout (%dms)",
-			    timeout);
+		LOG_DBG("Transmit buffer full");
 		if (k_sem_take(&data->tx_int_sem, timeout)) {
 			return CAN_TIMEOUT;
 		}
@@ -1047,8 +1045,7 @@ static const struct can_driver_api can_api_funcs = {
 	.register_state_change_isr = can_stm32_register_state_change_isr
 };
 
-#if DT_HAS_NODE(DT_NODELABEL(can1)) && \
-	DT_NODE_HAS_COMPAT(DT_NODELABEL(can1), st_stm32_can)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can1), st_stm32_can, okay)
 
 static void config_can_1_irq(CAN_TypeDef *can);
 
@@ -1112,7 +1109,7 @@ static int socket_can_init_1(struct device *dev)
 	struct socket_can_context *socket_context = dev->driver_data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
-		dev, dev->config->name, can_dev, can_dev->config->name);
+		dev, dev->name, can_dev, can_dev->name);
 
 	socket_context->can_dev = can_dev;
 	socket_context->msgq = &socket_can_msgq;
@@ -1135,10 +1132,9 @@ NET_DEVICE_INIT(socket_can_stm32_1, SOCKET_CAN_NAME_1, socket_can_init_1,
 
 #endif /* CONFIG_NET_SOCKETS_CAN */
 
-#endif /* DT_HAS_NODE(DT_NODELABEL(can1)) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(can1), okay) */
 
-#if DT_HAS_NODE(DT_NODELABEL(can2)) && \
-	DT_NODE_HAS_COMPAT(DT_NODELABEL(can2), st_stm32_can)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(can2), st_stm32_can, okay)
 
 static void config_can_2_irq(CAN_TypeDef *can);
 
@@ -1196,7 +1192,7 @@ static int socket_can_init_2(struct device *dev)
 	struct socket_can_context *socket_context = dev->driver_data;
 
 	LOG_DBG("Init socket CAN device %p (%s) for dev %p (%s)",
-		dev, dev->config->name, can_dev, can_dev->config->name);
+		dev, dev->name, can_dev, can_dev->name);
 
 	socket_context->can_dev = can_dev;
 	socket_context->msgq = &socket_can_msgq;
@@ -1219,4 +1215,4 @@ NET_DEVICE_INIT(socket_can_stm32_2, SOCKET_CAN_NAME_2, socket_can_init_2,
 
 #endif /* CONFIG_NET_SOCKETS_CAN */
 
-#endif /* DT_HAS_NODE(DT_NODELABEL(can2)) */
+#endif /* DT_NODE_HAS_STATUS(DT_NODELABEL(can2), okay) */

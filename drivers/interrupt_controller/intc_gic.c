@@ -7,17 +7,12 @@
  */
 
 /*
- * NOTE: This driver currently implements the GICv1 and GICv2 interfaces. The
- *       GICv3 interface is not supported.
+ * NOTE: This driver implements the GICv1 and GICv2 interfaces.
  */
 
 #include <sw_isr_table.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <drivers/interrupt_controller/gic.h>
-
-#if CONFIG_GIC_VER >= 3
-#error "GICv3 and above are not supported"
-#endif
 
 void arm_gic_irq_enable(unsigned int irq)
 {

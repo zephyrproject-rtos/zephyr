@@ -11,6 +11,8 @@ Some of these require a special macro named ``DT_DRV_COMPAT`` to be defined
 before they can be used; these are discussed individually below. These macros
 are generally meant for use within device drivers.
 
+.. _devicetree-generic-apis:
+
 Generic APIs
 ************
 
@@ -21,7 +23,7 @@ Node identifiers
 
 You can use node identifiers for devicetree nodes which are enabled (i.e. have
 ``status = "okay";`` properties) and have matching compatibles. This can be
-tested with :c:func:`DT_HAS_NODE()`.
+tested with :c:func:`DT_NODE_HAS_STATUS`.
 
 .. doxygengroup:: devicetree-generic-id
    :project: Zephyr
@@ -84,6 +86,8 @@ Clocks
 
 .. doxygengroup:: devicetree-clocks
    :project: Zephyr
+
+.. _devicetree-gpio-api:
 
 GPIO
 ====

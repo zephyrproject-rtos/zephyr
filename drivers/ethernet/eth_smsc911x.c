@@ -36,9 +36,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "eth_smsc911x_priv.h"
 
-#define RESET_TIMEOUT     K_MSEC(10)
+#define RESET_TIMEOUT     10
 #define PHY_RESET_TIMEOUT K_MSEC(100)
-#define REG_WRITE_TIMEOUT K_MSEC(50)
+#define REG_WRITE_TIMEOUT 50
 
 /* Controller has only one PHY with address 1 */
 #define PHY_ADDR 1

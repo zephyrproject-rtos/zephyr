@@ -269,7 +269,7 @@ typedef int (*can_configure_t)(struct device *dev, enum can_mode mode,
 				u32_t bitrate);
 
 typedef int (*can_send_t)(struct device *dev, const struct zcan_frame *msg,
-			  s32_t timeout, can_tx_callback_t callback_isr,
+			  k_timeout_t timeout, can_tx_callback_t callback_isr,
 			  void *callback_arg);
 
 
@@ -282,7 +282,7 @@ typedef int (*can_attach_isr_t)(struct device *dev, can_rx_callback_t isr,
 
 typedef void (*can_detach_t)(struct device *dev, int filter_id);
 
-typedef int (*can_recover_t)(struct device *dev, s32_t timeout);
+typedef int (*can_recover_t)(struct device *dev, k_timeout_t timeout);
 
 typedef enum can_state (*can_get_state_t)(struct device *dev,
 					  struct can_bus_err_cnt *err_cnt);
@@ -333,7 +333,7 @@ __subsystem struct can_driver_api {
  * *
  * @param dev          Pointer to the device structure for the driver instance.
  * @param msg          Message to transfer.
- * @param timeout      Waiting for empty tx mailbox timeout in ms or K_FOREVER.
+ * @param timeout      Waiting for empty tx mailbox timeout or K_FOREVER.
  * @param callback_isr Is called when message was sent or a transmission error
  *                     occurred. If NULL, this function is blocking until
  *                     message is sent. This must be NULL if called from user
@@ -344,12 +344,13 @@ __subsystem struct can_driver_api {
  * @retval CAN_TX_* on failure.
  */
 __syscall int can_send(struct device *dev, const struct zcan_frame *msg,
-		       s32_t timeout, can_tx_callback_t callback_isr,
+		       k_timeout_t timeout, can_tx_callback_t callback_isr,
 		       void *callback_arg);
 
 static inline int z_impl_can_send(struct device *dev,
 				 const struct zcan_frame *msg,
-				 s32_t timeout, can_tx_callback_t callback_isr,
+				 k_timeout_t timeout,
+				 can_tx_callback_t callback_isr,
 				 void *callback_arg)
 {
 	const struct can_driver_api *api =
@@ -372,14 +373,14 @@ static inline int z_impl_can_send(struct device *dev,
  * @param length Number of bytes to write (max. 8).
  * @param id  Identifier of the can message.
  * @param rtr Send remote transmission request or data frame
- * @param timeout Waiting for empty tx mailbox timeout in ms or K_FOREVER
+ * @param timeout Waiting for empty tx mailbox timeout or K_FOREVER
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  * @retval -EINVAL if length > 8.
  */
 static inline int can_write(struct device *dev, const u8_t *data, u8_t length,
-			    u32_t id, enum can_rtr rtr, s32_t timeout)
+			    u32_t id, enum can_rtr rtr, k_timeout_t timeout)
 {
 	struct zcan_frame msg;
 
@@ -554,15 +555,15 @@ enum can_state z_impl_can_get_state(struct device *dev,
  * Recover the CAN controller from bus-off state to error-active state.
  *
  * @param dev     Pointer to the device structure for the driver instance.
- * @param timeout Timeout for waiting for the recovery.
+ * @param timeout Timeout for waiting for the recovery or K_FOREVER.
  *
  * @retval 0 on success.
  * @retval CAN_TIMEOUT on timeout.
  */
 #ifndef CONFIG_CAN_AUTO_BUS_OFF_RECOVERY
-__syscall int can_recover(struct device *dev, s32_t timeout);
+__syscall int can_recover(struct device *dev, k_timeout_t timeout);
 
-static inline int z_impl_can_recover(struct device *dev, s32_t timeout)
+static inline int z_impl_can_recover(struct device *dev, k_timeout_t timeout)
 {
 	const struct can_driver_api *api =
 		(const struct can_driver_api *)dev->driver_api;
@@ -571,7 +572,7 @@ static inline int z_impl_can_recover(struct device *dev, s32_t timeout)
 }
 #else
 /* This implementation prevents inking errors for auto recovery */
-static inline int z_impl_can_recover(struct device *dev, s32_t timeout)
+static inline int z_impl_can_recover(struct device *dev, k_timeout_t timeout)
 {
 	return 0;
 }

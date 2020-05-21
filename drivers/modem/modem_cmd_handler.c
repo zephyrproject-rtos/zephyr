@@ -98,7 +98,8 @@ static bool starts_with(struct net_buf *buf, const char *str)
  * Cmd Handler Functions
  */
 
-static inline struct net_buf *read_rx_allocator(s32_t timeout, void *user_data)
+static inline struct net_buf *read_rx_allocator(k_timeout_t timeout,
+						void *user_data)
 {
 	return net_buf_alloc((struct net_buf_pool *)user_data, timeout);
 }
@@ -439,8 +440,8 @@ static int _modem_cmd_send(struct modem_iface *iface,
 			   struct modem_cmd_handler *handler,
 			   struct modem_cmd *handler_cmds,
 			   size_t handler_cmds_len,
-			   const u8_t *buf, struct k_sem *sem, int timeout,
-			   bool no_tx_lock)
+			   const u8_t *buf, struct k_sem *sem,
+			   k_timeout_t timeout, bool no_tx_lock)
 {
 	struct modem_cmd_handler_data *data;
 	int ret;
@@ -477,7 +478,7 @@ static int _modem_cmd_send(struct modem_iface *iface,
 	iface->write(iface, buf, strlen(buf));
 	iface->write(iface, data->eol, data->eol_len);
 
-	if (timeout == K_NO_WAIT) {
+	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		ret = 0;
 		goto exit;
 	}
@@ -510,7 +511,8 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
 			  struct modem_cmd_handler *handler,
 			  struct modem_cmd *handler_cmds,
 			  size_t handler_cmds_len,
-			  const u8_t *buf, struct k_sem *sem, int timeout)
+			  const u8_t *buf, struct k_sem *sem,
+			  k_timeout_t timeout)
 {
 	return _modem_cmd_send(iface, handler, handler_cmds, handler_cmds_len,
 			       buf, sem, timeout, true);
@@ -519,7 +521,7 @@ int modem_cmd_send_nolock(struct modem_iface *iface,
 int modem_cmd_send(struct modem_iface *iface,
 		   struct modem_cmd_handler *handler,
 		   struct modem_cmd *handler_cmds, size_t handler_cmds_len,
-		   const u8_t *buf, struct k_sem *sem, int timeout)
+		   const u8_t *buf, struct k_sem *sem, k_timeout_t timeout)
 {
 	return _modem_cmd_send(iface, handler, handler_cmds, handler_cmds_len,
 			       buf, sem, timeout, false);
@@ -529,7 +531,7 @@ int modem_cmd_send(struct modem_iface *iface,
 int modem_cmd_handler_setup_cmds(struct modem_iface *iface,
 				 struct modem_cmd_handler *handler,
 				 struct setup_cmd *cmds, size_t cmds_len,
-				 struct k_sem *sem, int timeout)
+				 struct k_sem *sem, k_timeout_t timeout)
 {
 	int ret = 0, i;
 

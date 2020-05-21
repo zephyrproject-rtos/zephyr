@@ -58,12 +58,12 @@
  * We use 400 since 300 is a common send duration for standard HCI, and we
  * need to have a timeout that's bigger than that.
  */
-#define SEG_RETRANSMIT_TIMEOUT_UNICAST(tx) (K_MSEC(400) + 50 * (tx)->ttl)
+#define SEG_RETRANSMIT_TIMEOUT_UNICAST(tx) (400 + 50 * (tx)->ttl)
 /* When sending to a group, the messages are not acknowledged, and there's no
  * reason to delay the repetitions significantly. Delaying by more than 0 ms
  * to avoid flooding the network.
  */
-#define SEG_RETRANSMIT_TIMEOUT_GROUP K_MSEC(50)
+#define SEG_RETRANSMIT_TIMEOUT_GROUP 50
 
 #define SEG_RETRANSMIT_TIMEOUT(tx)                                             \
 	(BT_MESH_ADDR_IS_UNICAST(tx->dst) ?                                    \
@@ -85,14 +85,14 @@ static struct seg_tx {
 				 ctl:1,
 				 aszmic:1,
 				 friend_cred:1;
-	u8_t                     seg_o:5,
-				 started:1,     /* Start cb called */
-				 sending:1,     /* Sending is in progress */
-				 blocked:1;     /* Blocked by ongoing tx */
+	u8_t                     seg_o;         /* Segment being sent. */
 	u8_t                     nack_count;    /* Number of unacked segs */
 	u8_t                     ttl;
-	u8_t                     seg_pending:5, /* Number of segments pending */
-				 attempts:3;
+	u8_t                     seg_pending;   /* Number of segments pending */
+	u8_t			 attempts;      /* Transmit attempts */
+	u8_t			 started:1,     /* Start cb called */
+				 sending:1,     /* Sending is in progress */
+				 blocked:1;     /* Blocked by ongoing tx */
 	const struct bt_mesh_send_cb *cb;
 	void                    *cb_data;
 	struct k_delayed_work    retransmit;    /* Retransmit timer */
@@ -317,8 +317,8 @@ static void schedule_retransmit(struct seg_tx *tx)
 	 */
 	k_delayed_work_submit(&tx->retransmit,
 			      (tx->sending || !tx->seg_o) ?
-				      SEG_RETRANSMIT_TIMEOUT(tx) :
-				      0);
+				      K_MSEC(SEG_RETRANSMIT_TIMEOUT(tx)) :
+				      K_NO_WAIT);
 }
 
 static void seg_send_start(u16_t duration, int err, void *user_data)
@@ -425,15 +425,15 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 	}
 
 	tx->seg_o = 0U;
+	tx->attempts--;
 
 end:
 	if (!tx->seg_pending) {
 		k_delayed_work_submit(&tx->retransmit,
-					  SEG_RETRANSMIT_TIMEOUT(tx));
+				      K_MSEC(SEG_RETRANSMIT_TIMEOUT(tx)));
 	}
 
 	tx->sending = 0U;
-	tx->attempts--;
 }
 
 static void seg_retransmit(struct k_work *work)
@@ -911,9 +911,11 @@ static int sdu_recv_unseg(struct bt_mesh_net_rx *rx, u8_t hdr,
 		return 0;
 	}
 
-	BT_WARN("No matching AppKey");
+	if (rx->local_match) {
+		BT_WARN("No matching AppKey");
+	}
 
-	return -EINVAL;
+	return 0;
 }
 
 static int sdu_recv_seg(struct seg_rx *seg, u8_t hdr, u8_t aszmic,
@@ -1005,9 +1007,11 @@ static int sdu_recv_seg(struct seg_rx *seg, u8_t hdr, u8_t aszmic,
 		return 0;
 	}
 
-	BT_WARN("No matching AppKey");
+	if (rx->local_match) {
+		BT_WARN("No matching AppKey");
+	}
 
-	return -EINVAL;
+	return 0;
 }
 
 static struct seg_tx *seg_tx_lookup(u16_t seq_zero, u8_t obo, u16_t addr)
@@ -1255,15 +1259,15 @@ static inline s32_t ack_timeout(struct seg_rx *rx)
 	/* The acknowledgment timer shall be set to a minimum of
 	 * 150 + 50 * TTL milliseconds.
 	 */
-	to = K_MSEC(150 + (ttl * 50U));
+	to = 150 + (ttl * 50U);
 
 	/* 100 ms for every not yet received segment */
-	to += K_MSEC(((rx->seg_n + 1) - popcount(rx->block)) * 100U);
+	to += ((rx->seg_n + 1) - popcount(rx->block)) * 100U;
 
 	/* Make sure we don't send more frequently than the duration for
 	 * each packet (default is 300ms).
 	 */
-	return MAX(to, K_MSEC(400));
+	return MAX(to, 400);
 }
 
 int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
@@ -1375,7 +1379,7 @@ static void seg_ack(struct k_work *work)
 
 	BT_DBG("rx %p", rx);
 
-	if (k_uptime_get_32() - rx->last > K_SECONDS(60)) {
+	if (k_uptime_get_32() - rx->last > (60 * MSEC_PER_SEC)) {
 		BT_WARN("Incomplete timer expired");
 		seg_rx_reset(rx, false);
 
@@ -1389,7 +1393,7 @@ static void seg_ack(struct k_work *work)
 	send_ack(rx->sub, rx->dst, rx->src, rx->ttl, &rx->seq_auth,
 		 rx->block, rx->obo);
 
-	k_delayed_work_submit(&rx->ack, ack_timeout(rx));
+	k_delayed_work_submit(&rx->ack, K_MSEC(ack_timeout(rx)));
 }
 
 static inline bool sdu_len_is_ok(bool ctl, u8_t seg_n)
@@ -1671,7 +1675,7 @@ found_rx:
 
 	if (!k_delayed_work_remaining_get(&rx->ack) &&
 	    !bt_mesh_lpn_established()) {
-		k_delayed_work_submit(&rx->ack, ack_timeout(rx));
+		k_delayed_work_submit(&rx->ack, K_MSEC(ack_timeout(rx)));
 	}
 
 	/* Allocated segment here */

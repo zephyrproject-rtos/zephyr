@@ -21,15 +21,17 @@ memory address.
 
 A timer has the following key properties:
 
-* A :dfn:`duration` specifying the time interval before the timer expires
-  for the first time, measured in milliseconds. It must be greater than zero.
+* A :dfn:`duration` specifying the time interval before the timer
+  expires for the first time.  This is a ``k_timeout_t`` value that
+  may be initialized via different units.
 
-* A :dfn:`period` specifying the time interval between all timer expirations
-  after the first one, measured in milliseconds. It must be non-negative.
-  A period of zero means that the timer is a one shot timer that stops
-  after a single expiration. (For example then, if a timer is started with a
-  duration of 200 and a period of 75, it will first expire after 200ms and
-  then every 75ms after that.)
+* A :dfn:`period` specifying the time interval between all timer
+  expirations after the first one, also a ``k_timeout_t``. It must be
+  non-negative.  A period of ``K_NO_WAIT`` (i.e. zero) or
+  ``K_FOREVER`` means that the timer is a one shot timer that stops
+  after a single expiration. (For example then, if a timer is started
+  with a duration of 200 and a period of 75, it will first expire
+  after 200ms and then every 75ms after that.)
 
 * An :dfn:`expiry function` that is executed each time the timer expires.
   The function is executed by the system clock interrupt handler.
@@ -49,6 +51,13 @@ and puts the timer into the **stopped** state.
 A timer is **started** by specifying a duration and a period.
 The timer's status is reset to zero, then the timer enters
 the **running** state and begins counting down towards expiry.
+
+Note that the timer's duration and period parameters specify
+**minimum** delays that will elapse.  Because of internal system timer
+precision (and potentially runtime interractions like interrupt delay)
+it is possible that more time may have passed as measured by reads
+from the relevant system time APIs.  But at least this much time is
+guaranteed to have elapsed.
 
 When a running timer expires its status is incremented
 and the timer executes its expiry function, if one exists;
@@ -87,13 +96,6 @@ returns the timer's status and resets it to zero.
     Similarly, only a single thread at a time should synchronize
     with a given timer. ISRs are not permitted to synchronize with timers,
     since ISRs are not allowed to block.
-
-Timer Limitations
-=================
-
-Since timers are based on the system clock, the delay values specified
-when using a timer are **minimum** values.
-(See :ref:`clock_limitations`.)
 
 Implementation
 **************
@@ -165,7 +167,7 @@ if the timer has expired on not.
     ...
 
     /* start one shot timer that expires after 200 ms */
-    k_timer_start(&my_status_timer, K_MSEC(200), 0);
+    k_timer_start(&my_status_timer, K_MSEC(200), K_NO_WAIT);
 
     /* do work */
     ...
@@ -196,7 +198,7 @@ are separated by the specified time interval.
     ...
 
     /* start one shot timer that expires after 500 ms */
-    k_timer_start(&my_sync_timer, K_MSEC(500), 0);
+    k_timer_start(&my_sync_timer, K_MSEC(500), K_NO_WAIT);
 
     /* do other work */
     ...
@@ -217,17 +219,17 @@ Suggested Uses
 Use a timer to initiate an asynchronous operation after a specified
 amount of time.
 
-Use a timer to determine whether or not a specified amount of time
-has elapsed.
+Use a timer to determine whether or not a specified amount of time has
+elapsed.  In particular, timers should be used when higher precision
+and/or unit control is required than that afforded by the simpler
+``k_sleep()`` and ``k_usleep()`` calls.
 
 Use a timer to perform other work while carrying out operations
 involving time limits.
 
 .. note::
-   If a thread has no other work to perform while waiting for time to pass
-   it should call :cpp:func:`k_sleep()`.
    If a thread needs to measure the time required to perform an operation
-   it can read the :ref:`system clock or the hardware clock <clocks_v2>`
+   it can read the :ref:`system clock or the hardware clock <kernel_timing>`
    directly, rather than using a timer.
 
 Configuration Options

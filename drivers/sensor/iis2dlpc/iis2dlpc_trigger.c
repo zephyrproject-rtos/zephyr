@@ -25,7 +25,7 @@ LOG_MODULE_DECLARE(IIS2DLPC, CONFIG_SENSOR_LOG_LEVEL);
 static int iis2dlpc_enable_int(struct device *dev,
 			       enum sensor_trigger_type type, int enable)
 {
-	const struct iis2dlpc_device_config *cfg = dev->config->config_info;
+	const struct iis2dlpc_device_config *cfg = dev->config_info;
 	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
 	iis2dlpc_reg_t int_route;
 
@@ -165,7 +165,7 @@ static void iis2dlpc_handle_interrupt(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
-	const struct iis2dlpc_device_config *cfg = dev->config->config_info;
+	const struct iis2dlpc_device_config *cfg = dev->config_info;
 	iis2dlpc_all_sources_t sources;
 
 	iis2dlpc_all_sources_get(iis2dlpc->ctx, &sources);
@@ -234,7 +234,7 @@ static void iis2dlpc_work_cb(struct k_work *work)
 int iis2dlpc_init_interrupt(struct device *dev)
 {
 	struct iis2dlpc_data *iis2dlpc = dev->driver_data;
-	const struct iis2dlpc_device_config *cfg = dev->config->config_info;
+	const struct iis2dlpc_device_config *cfg = dev->config_info;
 	int ret;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */

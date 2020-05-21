@@ -2,7 +2,7 @@
 
 include(${ZEPHYR_BASE}/cmake/toolchain/zephyr/host-tools.cmake)
 
-# west is optional
+# west is an optional dependency
 find_program(
   WEST
   west
@@ -46,33 +46,33 @@ else()
       )
 endif()
 
-# dtc is an optional dependency. Search for it on PATH and in
-# TOOLCHAIN_HOME. Usually DTC will be provided by an SDK, but for
-# SDK-less projects like gnuarmemb, it is up to the user to install
-# dtc.
+# dtc is an optional dependency
 find_program(
   DTC
   dtc
   )
 
 if(DTC)
-# Parse the 'dtc --version' and make sure it is at least MIN_DTC_VERSION
-set(MIN_DTC_VERSION 1.4.6)
-execute_process(
-  COMMAND
-  ${DTC} --version
-  OUTPUT_VARIABLE dtc_version_output
-  )
-string(REGEX MATCH "Version: DTC ([0-9]+\.[0-9]+.[0-9]+).*" out_var ${dtc_version_output})
-if(${CMAKE_MATCH_1} VERSION_LESS ${MIN_DTC_VERSION})
-  assert(0 "The detected dtc version is unsupported.                                 \n\
-    The version was found to be ${CMAKE_MATCH_1}                                   \n\
-    But the minimum supported version is ${MIN_DTC_VERSION}                        \n\
-    See https://docs.zephyrproject.org/latest/getting_started/                     \n\
-    for how to use the SDK's dtc alongside a custom toolchain."
-  )
+  # Parse the 'dtc --version' output to find the installed version.
+  set(MIN_DTC_VERSION 1.4.6)
+  execute_process(
+    COMMAND
+    ${DTC} --version
+    OUTPUT_VARIABLE dtc_version_output
+    )
+  string(REGEX MATCH "Version: DTC ([0-9]+[.][0-9]+[.][0-9]+).*" out_var ${dtc_version_output})
+
+  # Since it is optional, an outdated version is not an error. If an
+  # outdated version is discovered, print a warning and proceed as if
+  # DTC were not installed.
+  if(${CMAKE_MATCH_1} VERSION_GREATER ${MIN_DTC_VERSION})
+    message(STATUS "Found dtc: ${DTC} (found suitable version \"${CMAKE_MATCH_1}\", minimum required is \"${MIN_DTC_VERSION}\")")
+  else()
+    message(WARNING
+      "Could NOT find dtc: Found unsuitable version \"${CMAKE_MATCH_1}\", but required is at least \"${MIN_DTC_VERSION}\" (found ${DTC}). Optional devicetree error checking with dtc will not be performed.")
+    set(DTC DTC-NOTFOUND)
+  endif()
 endif()
-endif(DTC)
 
 # gperf is an optional dependency
 find_program(

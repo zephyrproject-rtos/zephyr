@@ -8,7 +8,7 @@
  * This file is included by both nRF5340 CPUAPP (Application MCU)
  * and nRF5340 CPUNET (Network MCU).
  * - 64 kB SRAM allocated as Shared memory (sram0_shared)
- * - Region defined after the secure SRAM partition of CPUAPP
+ * - Region defined after the image SRAM of Application MCU
  */
 
 / {
@@ -17,10 +17,14 @@
 		zephyr,ipc_shm = &sram0_shared;
 	};
 
-	/* SRAM allocated to shared memory */
-	sram0_shared: memory@20070000 {
-		device_type = "memory";
-		compatible = "mmio-sram";
-		reg = <0x20070000 DT_SIZE_K(64)>;
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		sram0_shared: memory@20070000 {
+			/* SRAM allocated to shared memory */
+			reg = <0x20070000 0x10000>;
+		};
 	};
 };

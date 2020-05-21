@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/lldp.h>
 
 #include "eth_native_posix_priv.h"
+#include "eth.h"
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
 
@@ -415,12 +416,10 @@ static void eth_iface_init(struct net_if *iface)
 
 #if defined(CONFIG_ETH_NATIVE_POSIX_RANDOM_MAC)
 	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
-	ctx->mac_addr[0] = 0x00;
-	ctx->mac_addr[1] = 0x00;
-	ctx->mac_addr[2] = 0x5E;
+	gen_random_mac(ctx->mac_addr, 0x00, 0x00, 0x5E);
+
 	ctx->mac_addr[3] = 0x00;
 	ctx->mac_addr[4] = 0x53;
-	ctx->mac_addr[5] = sys_rand32_get();
 
 	/* The TUN/TAP setup script will by default set the MAC address of host
 	 * interface to 00:00:5E:00:53:FF so do not allow that.

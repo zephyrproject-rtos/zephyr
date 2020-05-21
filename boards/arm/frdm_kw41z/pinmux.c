@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, NXP
+ * Copyright 2017, 2020 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,11 +28,17 @@ static int frdm_kw41z_pinmux_init(struct device *dev)
 	/* Red, green, blue LEDs. Note the red LED and accel INT1 are both
 	 * wired to PTC1.
 	 */
+#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(pwm0), okay)
+	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAlt5));
+	pinmux_pin_set(porta, 19, PORT_PCR_MUX(kPORT_MuxAlt5));
+	pinmux_pin_set(porta, 18, PORT_PCR_MUX(kPORT_MuxAlt5));
+#else
 	pinmux_pin_set(portc,  1, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porta, 19, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(porta, 18, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
 
-#if DT_HAS_NODE(DT_NODELABEL(i2c1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
 	/* I2C1 SCL, SDA */
 	pinmux_pin_set(portc,  2, PORT_PCR_MUX(kPORT_MuxAlt3)
 					| PORT_PCR_PS_MASK);
@@ -40,7 +46,7 @@ static int frdm_kw41z_pinmux_init(struct device *dev)
 					| PORT_PCR_PS_MASK);
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(adc0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc0), okay)
 	/* ADC0_SE3 */
 	pinmux_pin_set(portb,  2, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
@@ -49,18 +55,28 @@ static int frdm_kw41z_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc,  4, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc,  5, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#if DT_HAS_NODE(DT_NODELABEL(lpuart0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
 	/* UART0 RX, TX */
 	pinmux_pin_set(portc,  6, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(portc,  7, PORT_PCR_MUX(kPORT_MuxAlt4));
 #endif
 
-#if DT_HAS_NODE(DT_NODELABEL(spi0))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(spi0), okay)
 	/* SPI0 CS0, SCK, SOUT, SIN */
 	pinmux_pin_set(portc, 16, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portc, 18, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portc, 19, PORT_PCR_MUX(kPORT_MuxAlt2));
+#endif
+
+#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(pwm1), okay)
+	pinmux_pin_set(porta,  0, PORT_PCR_MUX(kPORT_MuxAlt4));
+	pinmux_pin_set(porta,  1, PORT_PCR_MUX(kPORT_MuxAlt4));
+#endif
+
+#if defined(CONFIG_PWM) && DT_NODE_HAS_STATUS(DT_NODELABEL(pwm2), okay)
+	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt4));
+	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt4));
 #endif
 
 	return 0;

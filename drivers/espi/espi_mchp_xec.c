@@ -32,7 +32,6 @@
 
 /* OOB Rx length */
 #define ESPI_XEC_OOB_RX_LEN         0x7F00ul
-#define ESPI_XEC_OOB_RX_LEN_MASK    0x7F00ul
 
 /* BARs as defined in LPC spec chapter 11 */
 #define ESPI_XEC_KBC_BAR_ADDRESS    0x00600000
@@ -282,7 +281,7 @@ static int espi_xec_configure(struct device *dev, struct espi_cfg *cfg)
 	 * de-assertion and after pinmux
 	 */
 	ESPI_EIO_BAR_REGS->IO_ACTV = 1;
-	LOG_DBG("eSPI block activated successfully\n");
+	LOG_DBG("eSPI block activated successfully");
 
 	return 0;
 }
@@ -350,7 +349,7 @@ static int espi_xec_write_lpc_request(struct device *dev,
 				      u32_t *data)
 {
 	struct espi_xec_config *config =
-		(struct espi_xec_config *) (dev->config->config_info);
+		(struct espi_xec_config *) (dev->config_info);
 
 	volatile u32_t __attribute__((unused)) dummy;
 
@@ -459,7 +458,7 @@ static int espi_xec_send_oob(struct device *dev, struct espi_oob_packet *pckt)
 			MCHP_ESPI_OOB_TX_STS_OVRUN |
 			MCHP_ESPI_OOB_TX_STS_BADREQ;
 
-	LOG_DBG("%s\n", __func__);
+	LOG_DBG("%s", __func__);
 
 	if (!(ESPI_OOB_REGS->TX_STS & MCHP_ESPI_OOB_TX_STS_CHEN)) {
 		LOG_ERR("OOB channel is disabled");
@@ -489,6 +488,8 @@ static int espi_xec_send_oob(struct device *dev, struct espi_oob_packet *pckt)
 	}
 
 	if (ESPI_OOB_REGS->TX_STS & err_mask) {
+		LOG_ERR("Tx failed %x", ESPI_OOB_REGS->TX_STS);
+		ESPI_OOB_REGS->TX_STS = err_mask;
 		return -EIO;
 	}
 
@@ -514,7 +515,7 @@ static int espi_xec_receive_oob(struct device *dev,
 	}
 
 	/* Check if buffer passed to driver can fit the received buffer */
-	u32_t rcvd_len = ESPI_OOB_REGS->RX_LEN & ESPI_XEC_OOB_RX_LEN_MASK;
+	u32_t rcvd_len = ESPI_OOB_REGS->RX_LEN & MCHP_ESPI_OOB_RX_LEN_MASK;
 
 	if (rcvd_len > pckt->len) {
 		LOG_ERR("space rcvd %d vs %d", rcvd_len, pckt->len);
@@ -650,7 +651,7 @@ static void send_slave_bootdone(struct device *dev)
 static void espi_init_oob(struct device *dev)
 {
 	struct espi_xec_config *config =
-		(struct espi_xec_config *) (dev->config->config_info);
+		(struct espi_xec_config *) (dev->config_info);
 
 	/* Enable OOB Tx/Rx interrupts */
 	MCHP_GIRQ_ENSET(config->bus_girq_id) = (MCHP_ESPI_OOB_UP_GIRQ_VAL |
@@ -674,7 +675,7 @@ static void espi_init_oob(struct device *dev)
 static void espi_init_flash(struct device *dev)
 {
 	struct espi_xec_config *config =
-	    (struct espi_xec_config *)(dev->config->config_info);
+	    (struct espi_xec_config *)(dev->config_info);
 
 	LOG_DBG("%s", __func__);
 
@@ -690,7 +691,7 @@ static void espi_init_flash(struct device *dev)
 
 static void espi_bus_init(struct device *dev)
 {
-	const struct espi_xec_config *config = dev->config->config_info;
+	const struct espi_xec_config *config = dev->config_info;
 
 	/* Enable bus interrupts */
 	MCHP_GIRQ_ENSET(config->bus_girq_id) = MCHP_ESPI_ESPI_RST_GIRQ_VAL |
@@ -706,7 +707,7 @@ static void espi_rst_isr(struct device *dev)
 	rst_sts = ESPI_CAP_REGS->ERST_STS;
 
 	/* eSPI reset status register is clear on write register */
-	ESPI_CAP_REGS->ERST_STS |= MCHP_ESPI_RST_ISTS;
+	ESPI_CAP_REGS->ERST_STS = MCHP_ESPI_RST_ISTS;
 
 	if (rst_sts & MCHP_ESPI_RST_ISTS) {
 		if (rst_sts & MCHP_ESPI_RST_ISTS_PIN_RO_HI) {
@@ -795,7 +796,7 @@ static void setup_espi_io_config(struct device *dev, u16_t host_address)
 	config_sub_devices(dev);
 	configure_sirq();
 
-	ESPI_PC_REGS->PC_STATUS |= (MCHP_ESPI_PC_STS_EN_CHG |
+	ESPI_PC_REGS->PC_STATUS = (MCHP_ESPI_PC_STS_EN_CHG |
 				    MCHP_ESPI_PC_STS_BM_EN_CHG_POS);
 	ESPI_PC_REGS->PC_IEN |= MCHP_ESPI_PC_IEN_EN_CHG;
 	ESPI_CAP_REGS->PC_RDY = 1;
@@ -817,7 +818,7 @@ static void espi_pc_isr(struct device *dev)
 static void espi_vwire_chanel_isr(struct device *dev)
 {
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
-	const struct espi_xec_config *config = dev->config->config_info;
+	const struct espi_xec_config *config = dev->config_info;
 	struct espi_event evt = { .evt_type = ESPI_BUS_EVENT_CHANNEL_READY,
 				  .evt_details = 0,
 				  .evt_data = 0 };
@@ -846,9 +847,10 @@ static void espi_oob_down_isr(struct device *dev)
 
 	status = ESPI_OOB_REGS->RX_STS;
 
-	LOG_DBG("%s %x\n", __func__, status);
+	LOG_DBG("%s %x", __func__, status);
 	if (status & MCHP_ESPI_OOB_RX_STS_DONE) {
-		ESPI_OOB_REGS->RX_STS |= MCHP_ESPI_OOB_RX_STS_DONE;
+		/* Register is write-on-clear, ensure only 1 bit is affected */
+		ESPI_OOB_REGS->RX_STS = MCHP_ESPI_OOB_RX_STS_DONE;
 
 		k_sem_give(&data->rx_lock);
 	}
@@ -860,10 +862,11 @@ static void espi_oob_up_isr(struct device *dev)
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
 
 	status = ESPI_OOB_REGS->TX_STS;
-	LOG_DBG("%s sts:%x\n", __func__, status);
+	LOG_DBG("%s sts:%x", __func__, status);
 
 	if (status & MCHP_ESPI_OOB_TX_STS_DONE) {
-		ESPI_OOB_REGS->TX_STS |= MCHP_ESPI_OOB_TX_STS_DONE;
+		/* Register is write-on-clear, ensure only 1 bit is affected */
+		ESPI_OOB_REGS->TX_STS = MCHP_ESPI_OOB_TX_STS_DONE;
 		k_sem_give(&data->tx_lock);
 	}
 
@@ -875,7 +878,8 @@ static void espi_oob_up_isr(struct device *dev)
 						MCHP_ESPI_OOB_TX_IEN_DONE;
 			ESPI_OOB_REGS->RX_IEN |= MCHP_ESPI_OOB_RX_IEN;
 		}
-		ESPI_OOB_REGS->TX_STS |= MCHP_ESPI_OOB_TX_STS_CHG_EN;
+
+		ESPI_OOB_REGS->TX_STS = MCHP_ESPI_OOB_TX_STS_CHG_EN;
 	}
 }
 #endif
@@ -1128,7 +1132,7 @@ static u8_t periph_isr_cnt = sizeof(peripherals_isr) / sizeof(struct espi_isr);
 static void espi_xec_bus_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct espi_xec_config *config = dev->config->config_info;
+	const struct espi_xec_config *config = dev->config_info;
 	u32_t girq_result;
 
 	girq_result = MCHP_GIRQ_RESULT(config->bus_girq_id);
@@ -1149,7 +1153,7 @@ static void espi_xec_bus_isr(void *arg)
 static void espi_xec_vw_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct espi_xec_config *config = dev->config->config_info;
+	const struct espi_xec_config *config = dev->config_info;
 	u32_t girq_result;
 
 	girq_result = MCHP_GIRQ_RESULT(config->vw_girq_id);
@@ -1170,7 +1174,7 @@ static void espi_xec_vw_isr(void *arg)
 static void espi_xec_periph_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct espi_xec_config *config = dev->config->config_info;
+	const struct espi_xec_config *config = dev->config_info;
 	u32_t girq_result;
 
 	girq_result = MCHP_GIRQ_RESULT(config->pc_girq_id);
@@ -1220,7 +1224,7 @@ DEVICE_AND_API_INIT(espi_xec_0, DT_INST_LABEL(0),
 
 static int espi_xec_init(struct device *dev)
 {
-	const struct espi_xec_config *config = dev->config->config_info;
+	const struct espi_xec_config *config = dev->config_info;
 	struct espi_xec_data *data = (struct espi_xec_data *)(dev->driver_data);
 
 	data->plt_rst_asserted = 0;
@@ -1259,9 +1263,9 @@ static int espi_xec_init(struct device *dev)
 #endif
 
 	/* Clear reset interrupt status and enable interrupts */
-	ESPI_CAP_REGS->ERST_STS |= MCHP_ESPI_RST_ISTS;
+	ESPI_CAP_REGS->ERST_STS = MCHP_ESPI_RST_ISTS;
 	ESPI_CAP_REGS->ERST_IEN |= MCHP_ESPI_RST_IEN;
-	ESPI_PC_REGS->PC_STATUS |= MCHP_ESPI_PC_STS_EN_CHG;
+	ESPI_PC_REGS->PC_STATUS = MCHP_ESPI_PC_STS_EN_CHG;
 	ESPI_PC_REGS->PC_IEN |= MCHP_ESPI_PC_IEN_EN_CHG;
 
 	/* Enable VWires interrupts */

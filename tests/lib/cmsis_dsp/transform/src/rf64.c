@@ -29,7 +29,7 @@ static void test_arm_rfft_f64_real_backend(
 	output = malloc(length * sizeof(float64_t));
 	zassert_not_null(output, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
-	scratch = malloc(length * sizeof(float64_t));
+	scratch = calloc(length + 2, sizeof(float64_t)); /* see #24701 */
 	zassert_not_null(scratch, ASSERT_MSG_BUFFER_ALLOC_FAILED);
 
 	/* Load data in place */

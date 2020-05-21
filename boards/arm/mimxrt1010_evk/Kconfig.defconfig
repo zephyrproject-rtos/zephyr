@@ -12,8 +12,4 @@ choice CODE_LOCATION
 	default CODE_FLEXSPI
 endchoice
 
-config I2C_1
-	default y
-	depends on I2C_MCUX_LPI2C
-
 endif # BOARD_MIMXRT1010_EVK

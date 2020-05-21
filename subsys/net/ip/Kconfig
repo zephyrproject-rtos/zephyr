@@ -86,7 +86,23 @@ config NET_QEMU_ETHERNET
 	  Connect to host system via Qemu ethernet driver support. One such
 	  driver that Zephyr supports is Intel e1000 ethernet driver.
 
+config NET_QEMU_USER
+	bool "SLIRP"
+	help
+	  Connect to host system via Qemu's built-in User Networking support. This
+	  is implemented using "slirp", which provides a full TCP/IP stack within
+	  QEMU and uses that stack to implement a virtual NAT'd network.
+
 endchoice
+
+config NET_QEMU_USER_EXTRA_ARGS
+	string "Qemu User Networking Args"
+	depends on NET_QEMU_USER
+	default ""
+	help
+	  Extra arguments passed to QEMU when User Networking is enabled. This may
+	  include host / guest port forwarding, device id, Network address
+	  information etc. This string is appended to the QEMU "-net user" option.
 
 config NET_INIT_PRIO
 	int

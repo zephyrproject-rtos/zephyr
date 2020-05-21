@@ -509,14 +509,14 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 		if (common == NULL) {
 			LOG_WRN("Device data not found for interface %u",
 				sys_le16_to_cpu(setup->wIndex));
-			return -ENODEV;
+			return -EINVAL;
 		}
 
 		dev_data = CONTAINER_OF(common, struct hid_device_info, common);
 
 		switch (value) {
 		case HID_CLASS_DESCRIPTOR_HID:
-			cfg = common->dev->config->config_info;
+			cfg = common->dev->config_info;
 			hid_desc = cfg->interface_descriptor;
 
 			LOG_DBG("Return HID Descriptor");
@@ -545,7 +545,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 		return 0;
 	}
 
-	return -ENOTSUP;
+	return -EINVAL;
 }
 
 static void hid_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
@@ -644,7 +644,7 @@ static void hid_interface_config(struct usb_desc_header *head,
 
 int usb_hid_init(const struct device *dev)
 {
-	struct usb_cfg_data *cfg = (void *)dev->config->config_info;
+	struct usb_cfg_data *cfg = (void *)dev->config_info;
 	struct hid_device_info *dev_data = dev->driver_data;
 
 	LOG_DBG("Initializing HID Device: dev %p", dev);
@@ -677,7 +677,7 @@ void usb_hid_register_device(struct device *dev, const u8_t *desc,
 int hid_int_ep_write(const struct device *dev, const u8_t *data, u32_t data_len,
 		     u32_t *bytes_ret)
 {
-	const struct usb_cfg_data *cfg = dev->config->config_info;
+	const struct usb_cfg_data *cfg = dev->config_info;
 
 	return usb_write(cfg->endpoint[HID_INT_IN_EP_IDX].ep_addr, data,
 			 data_len, bytes_ret);
@@ -687,7 +687,7 @@ int hid_int_ep_read(const struct device *dev, u8_t *data, u32_t max_data_len,
 		    u32_t *ret_bytes)
 {
 #ifdef CONFIG_ENABLE_HID_INT_OUT_EP
-	const struct usb_cfg_data *cfg = dev->config->config_info;
+	const struct usb_cfg_data *cfg = dev->config_info;
 
 	return usb_read(cfg->endpoint[HID_INT_OUT_EP_IDX].ep_addr,
 			data, max_data_len, ret_bytes);
@@ -702,7 +702,7 @@ static const struct usb_hid_device_api {
 
 static int usb_hid_device_init(struct device *dev)
 {
-	LOG_DBG("Init HID Device: dev %p (%s)", dev, dev->config->name);
+	LOG_DBG("Init HID Device: dev %p (%s)", dev, dev->name);
 
 	return 0;
 }

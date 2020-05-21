@@ -30,7 +30,7 @@ More information about the board can be found at the `MPS2 FPGA Website`_.
    This board configuration makes no claims about its suitability for use
    with actual MPS2 hardware systems using AN521, or any other hardware
    system. It has been tested on actual hardware, but its primary purpose is
-   for use with QEMU and unit tests.
+   for use with QEMU and unit tests for the ARM Cortex-M33.
 
 Hardware
 ********
@@ -266,7 +266,7 @@ Peripheral Mapping:
    - I2C_4_SDA : D40
    - I2C_4_SCL : D41
 
-For mode details please refer to `MPS2+ AN521 Technical Reference Manual (TRM)`_.
+For mode details refer to `MPS2+ AN521 Technical Reference Manual (TRM)`_.
 
 LED
 ============
@@ -333,7 +333,7 @@ secure firmware:
 - AHB5 TrustZone Peripheral Protection Controller (PPC)
 - Implementation-Defined Attribution Unit (IDAU)
 
-For more details please refer to `Corelink SSE-200 Subsystem`_.
+For more details refer to `Corelink SSE-200 Subsystem`_.
 
 Flashing
 ========
@@ -380,33 +380,27 @@ The process requires five steps:
 4. Merge the two binaries together and sign them.
 5. Concatenate the bootloader with the signed image blob.
 
-In order to build tfm please refer to `Trusted Firmware M Guide`_.
-Follow the build steps for AN521 target while replacing the platform with
-``-DTARGET_PLATFORM=AN521`` and compiler (if required) with ``-DCOMPILER=GNUARM``
+To build tfm, refer to `Trusted Firmware M Guide`_. Follow the build steps
+for the AN521 target while replacing the platform with
+``-DTARGET_PLATFORM=AN521`` and the compiler (if required) with
+``-DCOMPILER=GNUARM``.
 
 Copy over tfm as a library to the Zephyr project source and create a shortcut
-for the secure veneers.
-
-.. code-block:: bash
-
-   cp -r install/ $ZEPHYR_PROJECT/src/ext
-   cp $ZEPHYR_PROJECT/src/ext/install/export/tfm/veneers/s_veneers.o $ZEPHYR_PROJECT/src/ext
-
-
-Build the Zephyr app in the usual way.
+for the secure veneers and necessary header files. All files are in the install
+folder after TF-M has been built.
 
 Uploading an application to MPS2+ AN521
 ---------------------------------------
 
-Applications can be elf, hex or bin format. The binaries were flashed while
-the board boot up, all files were stored in the on-board Micro SD card in
-advance. The Motherboard Configuration Controller (MCC) will responsible for
-loading the FPGA image and binaries.
+Applications can be in elf, hex or bin format. The binaries are flashed when
+the board boots up, using files stored on the on-board Micro SD card. The
+Motherboard Configuration Controller (MCC) is responsible for loading the FPGA
+image and binaries.
 
 Connect the MPS2+ to your host computer using the USB port. You should see a
 USB connection exposing a Mass Storage (``V2M_MPS2`` by default).
 
-The update needs 3 steps:
+The update requires 3 steps:
 
 1. Copy application files to ``<MPS2 device name>/SOFTWARE/``.
 2. Open ``<MPS2 device name>/MB/HBI0263C/AN521/images.txt``.
@@ -430,6 +424,8 @@ serial port:
 .. code-block:: console
 
    Hello World! mps2_an521
+
+.. note:: Refer to the tfm_integration sample for more details about integrating with TF-M and multiple images scenario.
 
 
 .. _MPS2 FPGA Website:

@@ -172,7 +172,7 @@ static int lps22hh_init_chip(struct device *dev)
 
 static int lps22hh_init(struct device *dev)
 {
-	const struct lps22hh_config * const config = dev->config->config_info;
+	const struct lps22hh_config * const config = dev->config_info;
 	struct lps22hh_data *data = dev->driver_data;
 
 	data->bus = device_get_binding(config->master_dev_name);
@@ -207,7 +207,7 @@ static const struct lps22hh_config lps22hh_config = {
 	.drdy_pin	= DT_INST_GPIO_PIN(0, drdy_gpios),
 	.drdy_flags	= DT_INST_GPIO_FLAGS(0, drdy_gpios),
 #endif
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	.bus_init = lps22hh_spi_init,
 	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
 	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
@@ -222,7 +222,7 @@ static const struct lps22hh_config lps22hh_config = {
 #else
 	.spi_conf.cs        = NULL,
 #endif
-#elif DT_ANY_INST_ON_BUS(i2c)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	.bus_init = lps22hh_i2c_init,
 	.i2c_slv_addr = DT_INST_REG_ADDR(0),
 #else

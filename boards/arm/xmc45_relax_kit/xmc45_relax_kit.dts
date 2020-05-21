@@ -1,0 +1,42 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2020 Linumiz
+ * Author: Parthiban Nallathambi <parthiban@linumiz.com>
+ *
+ */
+
+/dts-v1/;
+
+#include <infineon/xmc4500.dtsi>
+
+/ {
+	model = "Infineon XMC4500 Relax Kit";
+	compatible = "infineon,xm4500-relax-kit", "infineon,xmc4500",
+						"infineon,xmc4xxx";
+
+	chosen {
+		zephyr,sram = &dsram1;
+		zephyr,flash = &flash0;
+		zephyr,console = &usic1ch1;
+		zephyr,shell-uart = &usic1ch1;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
+&usic1ch0 {
+	compatible = "infineon,xmc4xxx-uart";
+	current-speed = <115200>;
+	label = "UART_4";
+	status = "okay";
+};
+
+&usic1ch1 {
+	compatible = "infineon,xmc4xxx-uart";
+	current-speed = <115200>;
+	label = "UART_0";
+	status = "okay";
+};

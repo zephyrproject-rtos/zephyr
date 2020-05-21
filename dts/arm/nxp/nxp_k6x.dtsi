@@ -25,10 +25,6 @@
 		pinmux-c = &portc;
 		pinmux-d = &portd;
 		pinmux-e = &porte;
-		pwm-0 = &ftm0;
-		pwm-1 = &ftm1;
-		pwm-2 = &ftm2;
-		pwm-3 = &ftm3;
 		spi-0 = &spi0;
 		spi-1 = &spi1;
 		spi-2 = &spi2;
@@ -387,44 +383,44 @@
 			label = "WDT_0";
 		};
 
-		ftm0: pwm@40038000{
+		ftm0: ftm@40038000{
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40038000 0x98>;
 			interrupts = <42 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
-			label = "PWM_0";
+			prescaler = <16>;
+			label = "FTM_0";
 			status = "disabled";
-			#pwm-cells = <3>;
 		};
 
-		ftm1: pwm@40039000{
+		ftm1: ftm@40039000{
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40039000 0x98>;
 			interrupts = <43 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
-			label = "PWM_1";
+			prescaler = <16>;
+			label = "FTM_1";
 			status = "disabled";
-			#pwm-cells = <3>;
 		};
 
-		ftm2: pwm@4003a000{
+		ftm2: ftm@4003a000{
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x4003a000 0x98>;
 			interrupts = <44 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
-			label = "PWM_2";
+			prescaler = <16>;
+			label = "FTM_2";
 			status = "disabled";
-			#pwm-cells = <3>;
 		};
 
-		ftm3: pwm@400b9000{
+		ftm3: ftm@400b9000{
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x400b9000 0x98>;
 			interrupts = <71 0>;
 			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
-			label = "PWM_3";
+			prescaler = <16>;
+			label = "FTM_3";
 			status = "disabled";
-			#pwm-cells = <3>;
 		};
 
 		adc0: adc@4003b000{
@@ -445,6 +441,26 @@
 			#io-channel-cells = <1>;
 		};
 
+		dac0: dac@400cc000 {
+			compatible = "nxp,kinetis-dac";
+			reg = <0x400cc000 0x1000>;
+			interrupts = <56 0>;
+			voltage-reference = <1>;
+			label = "DAC_0";
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
+		dac1: dac@400cd000 {
+			compatible = "nxp,kinetis-dac";
+			reg = <0x400cd000 0x1000>;
+			interrupts = <72 0>;
+			voltage-reference = <1>;
+			label = "DAC_1";
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
+
 		usbotg: usbd@40072000 {
 			compatible = "nxp,kinetis-usbd";
 			reg = <0x40072000 0x1000>;
@@ -461,7 +477,6 @@
 			interrupts = <83 0>, <84 0>, <85 0>;
 			interrupt-names = "TX", "RX", "ERR_MISC";
 			status = "disabled";
-			local-mac-address = [00 00 00 00 00 00];
 			label = "ETH_0";
 			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0 0>;
 			ptp {

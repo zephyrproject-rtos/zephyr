@@ -71,7 +71,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	stackSize -= MPU_GUARD_ALIGN_AND_SIZE;
 #endif
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING) \
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) \
 	&& defined(CONFIG_MPU_STACK_GUARD)
 	/* For a thread which intends to use the FP services, it is required to
 	 * allocate a wider MPU guard region, to always successfully detect an
@@ -137,7 +137,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	thread->arch.basepri = 0;
 
-#if defined(CONFIG_USERSPACE) || defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)
 	thread->arch.mode = 0;
 #if defined(CONFIG_USERSPACE)
 	thread->arch.priv_stack_start = 0;
@@ -166,13 +166,13 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	 * privileged stack. Adjust the available (writable) stack
 	 * buffer area accordingly.
 	 */
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	_current->arch.priv_stack_start +=
 		(_current->base.user_options & K_FP_REGS) ?
 		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
 #else
 	_current->arch.priv_stack_start += MPU_GUARD_ALIGN_AND_SIZE;
-#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 #endif /* CONFIG_MPU_STACK_GUARD */
 
 	z_arm_userspace_enter(user_entry, p1, p2, p3,
@@ -285,12 +285,12 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
 		return 0;
 	}
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	u32_t guard_len = (thread->base.user_options & K_FP_REGS) ?
 		MPU_GUARD_ALIGN_AND_SIZE_FLOAT : MPU_GUARD_ALIGN_AND_SIZE;
 #else
 	u32_t guard_len = MPU_GUARD_ALIGN_AND_SIZE;
-#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 #if defined(CONFIG_USERSPACE)
 	if (thread->arch.priv_stack_start) {
@@ -333,7 +333,7 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
 }
 #endif /* CONFIG_MPU_STACK_GUARD || CONFIG_USERSPACE */
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 int arch_float_disable(struct k_thread *thread)
 {
 	if (thread != _current) {
@@ -365,7 +365,7 @@ int arch_float_disable(struct k_thread *thread)
 
 	return 0;
 }
-#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */
 
 void arch_switch_to_main_thread(struct k_thread *main_thread,
 				k_thread_stack_t *main_stack,
@@ -378,11 +378,11 @@ void arch_switch_to_main_thread(struct k_thread *main_thread,
 	 * initialized at thread creation for threads that make use of the FP).
 	 */
 	__set_FPSCR(0);
-#if defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU_SHARING)
 	/* In Sharing mode clearing FPSCR may set the CONTROL.FPCA flag. */
 	__set_CONTROL(__get_CONTROL() & (~(CONTROL_FPCA_Msk)));
 	__ISB();
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU_SHARING */
 #endif /* CONFIG_FPU */
 
 #ifdef CONFIG_ARM_MPU

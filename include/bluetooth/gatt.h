@@ -39,33 +39,33 @@ enum {
 	/** Attribute write permission. */
 	BT_GATT_PERM_WRITE = BIT(1),
 
-	/** Attribute read permission with encryption.
+	/** @brief Attribute read permission with encryption.
 	 *
 	 *  If set, requires encryption for read access.
 	 */
 	BT_GATT_PERM_READ_ENCRYPT = BIT(2),
 
-	/** Attribute write permission with encryption.
+	/** @brief Attribute write permission with encryption.
 	 *
 	 *  If set, requires encryption for write access.
 	 */
 	BT_GATT_PERM_WRITE_ENCRYPT = BIT(3),
 
-	/** Attribute read permission with authentication.
+	/** @brief Attribute read permission with authentication.
 	 *
 	 *  If set, requires encryption using authenticated link-key for read
 	 *  access.
 	 */
 	BT_GATT_PERM_READ_AUTHEN = BIT(4),
 
-	/** Attribute write permission with authentication.
+	/** @brief Attribute write permission with authentication.
 	 *
 	 *  If set, requires encryption using authenticated link-key for write
 	 *  access.
 	 */
 	BT_GATT_PERM_WRITE_AUTHEN = BIT(5),
 
-	/** Attribute prepare write permission.
+	/** @brief Attribute prepare write permission.
 	 *
 	 *  If set, allows prepare writes with use of BT_GATT_WRITE_FLAG_PREPARE
 	 *  passed to write callback.
@@ -84,14 +84,14 @@ enum {
 
 /** GATT attribute write flags */
 enum {
-	/** Attribute prepare write flag
+	/** @brief Attribute prepare write flag
 	 *
 	 * If set, write callback should only check if the device is
 	 * authorized but no data shall be written.
 	 */
 	BT_GATT_WRITE_FLAG_PREPARE = BIT(0),
 
-	/** Attribute write command flag
+	/** @brief Attribute write command flag
 	 *
 	 * If set, indicates that write operation is a command (Write without
 	 * response) which doesn't generate any response.
@@ -104,7 +104,7 @@ struct bt_gatt_attr {
 	/** Attribute UUID */
 	const struct bt_uuid	*uuid;
 
-	/** Attribute read callback
+	/** @brief Attribute read callback
 	 *
 	 *  The callback can also be used locally to read the contents of the
 	 *  attribute in which case no connection will be set.
@@ -123,7 +123,7 @@ struct bt_gatt_attr {
 					void *buf, u16_t len,
 					u16_t offset);
 
-	/** Attribute write callback
+	/** @brief Attribute write callback
 	 *
 	 *  The callback can also be used locally to read the contents of the
 	 *  attribute in which case no connection will be set.
@@ -584,14 +584,14 @@ struct _bt_gatt_ccc {
 	/** Highest value of all connected peer's subscriptions */
 	u16_t value;
 
-	/** CCC attribute changed callback
+	/** @brief CCC attribute changed callback
 	 *
 	 *  @param attr   The attribute that's changed value
 	 *  @param value  New value
 	 */
 	void (*cfg_changed)(const struct bt_gatt_attr *attr, u16_t value);
 
-	/** CCC attribute write validation callback
+	/** @brief CCC attribute write validation callback
 	 *
 	 *  @param conn   The connection that is requesting to write
 	 *  @param attr   The attribute that's being written
@@ -603,7 +603,7 @@ struct _bt_gatt_ccc {
 	ssize_t (*cfg_write)(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, u16_t value);
 
-	/** CCC attribute match handler
+	/** @brief CCC attribute match handler
 	 *
 	 *  Indicate if it is OK to send a notification or indication
 	 *  to the subscriber.
@@ -872,6 +872,17 @@ struct bt_gatt_notify_params {
 int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params);
 
+/** @brief Notify multiple attribute value change.
+ *
+ *  @param conn Connection object.
+ *  @param num_params Number of notification parameters.
+ *  @param params Array of notification parameters.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_gatt_notify_multiple(struct bt_conn *conn, u16_t num_params,
+			    struct bt_gatt_notify_params *params);
+
 /** @brief Notify attribute value change.
  *
  *  Send notification of attribute value change, if connection is NULL notify
@@ -1053,12 +1064,12 @@ enum {
 	BT_GATT_DISCOVER_SECONDARY,
 	/** Discover Included Services. */
 	BT_GATT_DISCOVER_INCLUDE,
-	/** Discover Characteristic Values.
+	/** @brief Discover Characteristic Values.
 	 *
 	 *  Discover Characteristic Value and its properties.
 	 */
 	BT_GATT_DISCOVER_CHARACTERISTIC,
-	/** Discover Descriptors.
+	/** @brief Discover Descriptors.
 	 *
 	 *  Discover Attributes which are not services or characteristics.
 	 *
@@ -1067,7 +1078,7 @@ enum {
 	 *        as it may incur in extra round trips.
 	 */
 	BT_GATT_DISCOVER_DESCRIPTOR,
-	/** Discover Attributes.
+	/** @brief Discover Attributes.
 	 *
 	 *  Discover Attributes of any type.
 	 *
@@ -1309,7 +1320,7 @@ typedef u8_t (*bt_gatt_notify_func_t)(struct bt_conn *conn,
 
 /** Subscription flags */
 enum {
-	/** Persistence flag
+	/** @brief Persistence flag
 	 *
 	 *  If set, indicates that the subscription is not saved
 	 *  on the GATT server side. Therefore, upon disconnection,
@@ -1320,7 +1331,7 @@ enum {
 	 */
 	BT_GATT_SUBSCRIBE_FLAG_VOLATILE,
 
-	/** No resubscribe flag
+	/** @brief No resubscribe flag
 	 *
 	 *  By default when BT_GATT_SUBSCRIBE_FLAG_VOLATILE is unset, the
 	 *  subscription will be automatically renewed when the client
@@ -1334,7 +1345,7 @@ enum {
 	 */
 	BT_GATT_SUBSCRIBE_FLAG_NO_RESUB,
 
-	/** Write pending flag
+	/** @brief Write pending flag
 	 *
 	 *  If set, indicates write operation is pending waiting remote end to
 	 *  respond.

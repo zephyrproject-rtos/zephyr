@@ -34,6 +34,49 @@ config BT_ATT_TX_MAX
 	  amount the calls will block until an existing queued PDU gets
 	  sent.
 
+config BT_EATT
+	bool "Enhanced ATT Bearers support [EXPERIMENTAL]"
+	depends on BT_L2CAP_DYNAMIC_CHANNEL
+	help
+	  This option enables support for Enhanced ATT bearers support. When
+	  enabled additional L2CAP channels can be connected as bearers enabling
+	  multiple outstanding request.
+
+if BT_EATT
+
+config BT_EATT_MAX
+	int "Maximum number of Enhanced ATT bearers"
+	default 3
+	range 1 16
+
+	help
+	  Number of Enhanced ATT bearers available.
+
+config BT_EATT_RX_MTU
+	int "Maximum supported Enhanced ATT MTU for incoming data"
+	default 70
+	range 70 519
+	depends on BT_EATT
+	help
+	  Maximum size incoming PDUs on EATT bearers, value shall include L2CAP
+	  headers and SDU length, maximum is limited to 512 bytes payload, which
+	  is the maximum size for a GATT attribute, plus 1 byte for ATT opcode.
+	  This option influences the stack buffer size and by that may also
+	  limit the outgoing MTU.
+
+config BT_EATT_SEC_LEVEL
+	int "Enhanced ATT bearer security level"
+	default 1
+	range 1 4
+	help
+	  L2CAP server required security level of EATT bearers:
+	  Level 1 (BT_SECURITY_L1) = No encryption or authentication required
+	  Level 2 (BT_SECURITY_L2) = Only encryption required
+	  Level 3 (BT_SECURITY_L3) = Encryption and authentication required
+	  Level 4 (BT_SECURITY_L4) = Secure connection required
+
+endif # BT_EATT
+
 config BT_GATT_SERVICE_CHANGED
 	bool "GATT Service Changed support"
 	default y
@@ -59,6 +102,16 @@ config BT_GATT_CACHING
 	  characteristics which can be used by clients to detect if anything has
 	  changed on the GATT database.
 
+if BT_GATT_CACHING
+
+config BT_GATT_NOTIFY_MULTIPLE
+	bool "GATT Notify Multiple Characteristic Values support"
+	depends on BT_GATT_CACHING
+	default y
+	help
+	  This option enables support for the GATT Notify Multiple
+	  Characteristic Values procedure.
+
 config BT_GATT_ENFORCE_CHANGE_UNAWARE
 	bool "GATT Enforce change-unaware state"
 	depends on BT_GATT_CACHING
@@ -70,6 +123,8 @@ config BT_GATT_ENFORCE_CHANGE_UNAWARE
 	  a client until it becomes change-aware."
 	  In case the service cannot deal with sudden errors (-EAGAIN) then it
 	  shall not use this option.
+
+endif # BT_GATT_CACHING
 
 config BT_GATT_CLIENT
 	bool "GATT client support"

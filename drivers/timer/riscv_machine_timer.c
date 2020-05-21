@@ -14,8 +14,7 @@
 #define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
 
-#define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL) &&		\
-		  !IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND))
+#define TICKLESS IS_ENABLED(CONFIG_TICKLESS_KERNEL)
 
 static struct k_spinlock lock;
 static u64_t last_count;
@@ -93,7 +92,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
+#if defined(CONFIG_TICKLESS_KERNEL)
 	/* RISCV has no idle handler yet, so if we try to spin on the
 	 * logic below to reset the comparator, we'll always bump it
 	 * forward to the "next tick" due to MIN_DELAY handling and

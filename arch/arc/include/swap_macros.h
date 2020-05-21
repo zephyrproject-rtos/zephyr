@@ -63,7 +63,7 @@
 	st r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
 #endif
 
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_FPU_SHARING
 	ld_s r13, [r2, ___thread_base_t_user_options_OFFSET]
 	/* K_FP_REGS is bit 1 */
 	bbit0 r13, 1, 1f
@@ -99,7 +99,7 @@
 	ld r59, [sp, ___callee_saved_stack_t_r59_OFFSET]
 #endif
 
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_FPU_SHARING
 	ld_s r13, [r2, ___thread_base_t_user_options_OFFSET]
 	/* K_FP_REGS is bit 1 */
 	bbit0 r13, 1, 2f
@@ -307,13 +307,13 @@
 	ld \reg2, [\reg1, ___cpu_t_nested_OFFSET]
 #else
 	mov \reg1, _kernel
-	ld \reg2, [\reg1, ___kernel_t_nested_OFFSET]
+	ld \reg2, [\reg1, _kernel_offset_to_nested]
 #endif
 	add \reg2, \reg2, 1
 #ifdef CONFIG_SMP
 	st \reg2, [\reg1, ___cpu_t_nested_OFFSET]
 #else
-	st \reg2, [\reg1, ___kernel_t_nested_OFFSET]
+	st \reg2, [\reg1, _kernel_offset_to_nested]
 #endif
 	cmp \reg2, 1
 .endm
@@ -329,13 +329,13 @@
 	ld \reg2, [\reg1, ___cpu_t_nested_OFFSET]
 #else
 	mov \reg1, _kernel
-	ld \reg2, [\reg1, ___kernel_t_nested_OFFSET]
+	ld \reg2, [\reg1, _kernel_offset_to_nested]
 #endif
 	sub \reg2, \reg2, 1
 #ifdef CONFIG_SMP
 	st \reg2, [\reg1, ___cpu_t_nested_OFFSET]
 #else
-	st \reg2, [\reg1, ___kernel_t_nested_OFFSET]
+	st \reg2, [\reg1, _kernel_offset_to_nested]
 #endif
 .endm
 

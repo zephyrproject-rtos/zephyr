@@ -28,7 +28,7 @@
 #define SHELL_HELP_STATISTICS_RESET	\
 	"Reset shell statistics for the Logger module."
 #define SHELL_HELP_RESIZE						\
-	"Console gets terminal screen size or assumes 80 in case"	\
+	"Console gets terminal screen size or assumes default in case"	\
 	" the readout fails. It must be executed after each terminal"	\
 	" width change to ensure correct text display."
 #define SHELL_HELP_RESIZE_DEFAULT				\
@@ -55,6 +55,9 @@
 
 /* 10 == {esc, [, 2, 5, 0, ;, 2, 5, 0, '\0'} */
 #define SHELL_CURSOR_POSITION_BUFFER	(10u)
+
+#define SHELL_DEFAULT_TERMINAL_WIDTH 80
+#define SHELL_DEFAULT_TERMINAL_HEIGHT 24
 
 /* Function reads cursor position from terminal. */
 static int cursor_position_get(const struct shell *shell, u16_t *x, u16_t *y)
@@ -350,7 +353,7 @@ static int cmd_resize_default(const struct shell *shell,
 	ARG_UNUSED(argv);
 
 	SHELL_VT100_CMD(shell, SHELL_VT100_SETCOL_80);
-	shell->ctx->vt100_ctx.cons.terminal_wid =  SHELL_DEFAULT_TERMINAL_WIDTH;
+	shell->ctx->vt100_ctx.cons.terminal_wid = SHELL_DEFAULT_TERMINAL_WIDTH;
 	shell->ctx->vt100_ctx.cons.terminal_hei = SHELL_DEFAULT_TERMINAL_HEIGHT;
 
 	return 0;
@@ -369,9 +372,9 @@ static int cmd_resize(const struct shell *shell, size_t argc, char **argv)
 	err = terminal_size_get(shell);
 	if (err != 0) {
 		shell->ctx->vt100_ctx.cons.terminal_wid =
-				SHELL_DEFAULT_TERMINAL_WIDTH;
+				CONFIG_SHELL_DEFAULT_TERMINAL_WIDTH;
 		shell->ctx->vt100_ctx.cons.terminal_hei =
-				SHELL_DEFAULT_TERMINAL_HEIGHT;
+				CONFIG_SHELL_DEFAULT_TERMINAL_HEIGHT;
 		shell_warn(shell, "No response from the terminal, assumed 80x24"
 			   " screen size");
 		return -ENOEXEC;
@@ -393,8 +396,9 @@ static int cmd_select(const struct shell *shell, size_t argc, char **argv)
 
 	argc--;
 	argv = argv + 1;
-	candidate = shell_get_last_command(shell, argc, argv, &matching_argc,
-					   &entry, true);
+	candidate = shell_get_last_command(shell->ctx->selected_cmd,
+					   argc, (const char **)argv,
+					   &matching_argc, &entry, true);
 
 	if ((candidate != NULL) && !no_args(candidate)
 	    && (argc == matching_argc)) {
@@ -453,10 +457,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_resize,
 
 SHELL_CMD_ARG_REGISTER(clear, NULL, SHELL_HELP_CLEAR, cmd_clear, 1, 0);
 SHELL_CMD_REGISTER(shell, &m_sub_shell, SHELL_HELP_SHELL, NULL);
-SHELL_CMD_ARG_REGISTER(help, NULL, SHELL_HELP_HELP, cmd_help, 1, 255);
+SHELL_CMD_ARG_REGISTER(help, NULL, SHELL_HELP_HELP, cmd_help,
+			1, SHELL_OPT_ARG_CHECK_SKIP);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_HISTORY, history, NULL,
 			SHELL_HELP_HISTORY, cmd_history, 1, 0);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_CMDS_RESIZE, resize, &m_sub_resize,
 			SHELL_HELP_RESIZE, cmd_resize, 1, 1);
 SHELL_COND_CMD_ARG_REGISTER(CONFIG_SHELL_CMDS_SELECT, select, NULL,
-			    SHELL_HELP_SELECT, cmd_select, 2, 255);
+			    SHELL_HELP_SELECT, cmd_select, 2,
+			    SHELL_OPT_ARG_CHECK_SKIP);

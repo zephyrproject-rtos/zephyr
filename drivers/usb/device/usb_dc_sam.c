@@ -256,6 +256,12 @@ static void usb_dc_isr(void)
 			usb_dc_ep_enable_interrupts(0);
 		}
 
+		/* Free all endpoint memory */
+		for (int idx = 1; idx < NUM_OF_EP_MAX; idx++) {
+			usb_dc_ep_disable(idx);
+			USBHS->USBHS_DEVEPTCFG[idx] &= ~USBHS_DEVEPTCFG_ALLOC;
+		}
+
 		/* Callback function */
 		dev_data.status_cb(USB_DC_RESET, NULL);
 	}
@@ -469,7 +475,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		return -EBUSY;
 	}
 
-	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
+	LOG_INF("Configure ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
 		cfg->ep_type);
 
 	/* Reset the endpoint */
@@ -531,6 +537,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 		ep_enabled[i] = usb_dc_ep_is_enabled(i);
 
 		if (ep_enabled[i]) {
+			LOG_INF("Temporary disable ep idx %x", i);
 			usb_dc_ep_disable(i);
 		}
 		if (ep_configured[i]) {
@@ -640,7 +647,8 @@ int usb_dc_ep_enable(u8_t ep)
 	/* Enable SETUP, IN or OUT endpoint interrupts */
 	usb_dc_ep_enable_interrupts(ep_idx);
 
-	LOG_DBG("ep 0x%x", ep);
+	LOG_INF("Enable ep 0x%x", ep);
+
 	return 0;
 }
 
@@ -660,7 +668,8 @@ int usb_dc_ep_disable(u8_t ep)
 	/* Disable endpoint and SETUP, IN or OUT interrupts */
 	USBHS->USBHS_DEVEPT &= ~BIT(USBHS_DEVEPT_EPEN0_Pos + ep_idx);
 
-	LOG_DBG("ep 0x%x", ep);
+	LOG_INF("Disable ep 0x%x", ep);
+
 	return 0;
 }
 

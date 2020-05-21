@@ -11,19 +11,19 @@ tests:
       - CONFIG_IDLE_STACK_SIZE=512
     tags: arm
     min_flash: 192
-  arch.arm.swap.common.fp_sharing:
+  arch.arm.swap.common.fpu_sharing:
     arch_whitelist: arm
     filter: CONFIG_ARMV7_M_ARMV8_M_FP
     extra_configs:
       - CONFIG_FPU=y
-      - CONFIG_FP_SHARING=y
+      - CONFIG_FPU_SHARING=y
     tags: arm
-  arch.arm.swap.common.fp_sharing.no_optimizations:
+  arch.arm.swap.common.fpu_sharing.no_optimizations:
     arch_whitelist: arm
     filter: CONFIG_ARMV7_M_ARMV8_M_FP
     extra_configs:
       - CONFIG_FPU=y
-      - CONFIG_FP_SHARING=y
+      - CONFIG_FPU_SHARING=y
       - CONFIG_NO_OPTIMIZATIONS=y
       - CONFIG_IDLE_STACK_SIZE=512
     tags: arm

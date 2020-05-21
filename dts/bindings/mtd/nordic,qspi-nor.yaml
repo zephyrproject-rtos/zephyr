@@ -39,7 +39,7 @@ properties:
       - "pp4o"          # Dual data line SPI, PP4O (0x32)
       - "pp4io"         # Quad data line SPI, PP4IO (0x38)
     description: |
-      Specify the number of data lines and opcode used for reading.
+      Specify the number of data lines and opcode used for writing.
       If not provided pp will be selected.
 
   address-size-32:

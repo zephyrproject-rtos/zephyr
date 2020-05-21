@@ -42,6 +42,11 @@ try:
 except ImportError:
     print("Install tabulate python module with pip to use --device-testing option.")
 
+try:
+    import psutil
+except ImportError:
+    print("Install psutil python module with pip to use --qemu-testing option.")
+
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
     sys.exit("$ZEPHYR_BASE environment variable undefined")
@@ -709,6 +714,18 @@ class QEMUHandler(Handler):
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
 
     @staticmethod
+    def _get_cpu_time(pid):
+        """get process CPU time.
+
+        The guest virtual time in QEMU icount mode isn't host time and
+        it's maintained by counting guest instructions, so we use QEMU
+        process exection time to mostly simulate the time of guest OS.
+        """
+        proc = psutil.Process(pid)
+        cpu_time = proc.cpu_times()
+        return cpu_time.user + cpu_time.system
+
+    @staticmethod
     def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn, results, harness):
         fifo_in = fifo_fn + ".in"
         fifo_out = fifo_fn + ".out"
@@ -737,12 +754,29 @@ class QEMUHandler(Handler):
 
         line = ""
         timeout_extended = False
+
+        pid = 0
+        if os.path.exists(pid_fn):
+            pid = int(open(pid_fn).read())
+
         while True:
             this_timeout = int((timeout_time - time.time()) * 1000)
             if this_timeout < 0 or not p.poll(this_timeout):
+                if pid and this_timeout > 0:
+                    #there is possibility we polled nothing because
+                    #of host not scheduled QEMU process enough CPU
+                    #time during p.poll(this_timeout)
+                    cpu_time = QEMUHandler._get_cpu_time(pid)
+                    if cpu_time < timeout and not out_state:
+                        timeout_time = time.time() + (timeout - cpu_time)
+                        continue
+
                 if not out_state:
                     out_state = "timeout"
                 break
+
+            if pid == 0 and os.path.exists(pid_fn):
+                pid = int(open(pid_fn).read())
 
             try:
                 c = in_fp.read(1).decode("utf-8")
@@ -800,10 +834,7 @@ class QEMUHandler(Handler):
         log_out_fp.close()
         out_fp.close()
         in_fp.close()
-        if os.path.exists(pid_fn):
-            pid = int(open(pid_fn).read())
-            os.unlink(pid_fn)
-
+        if pid:
             try:
                 if pid:
                     os.kill(pid, signal.SIGTERM)
@@ -848,8 +879,29 @@ class QEMUHandler(Handler):
 
         with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=self.build_dir) as proc:
             logger.debug("Spawning QEMUHandler Thread for %s" % self.name)
-            proc.wait()
-            self.returncode = proc.returncode
+            try:
+                proc.wait(self.timeout)
+            except subprocess.TimeoutExpired:
+                #sometimes QEMU can't handle SIGTERM signal correctly
+                #in that case kill -9 QEMU process directly and leave
+                #sanitycheck judge testing result by console output
+                if os.path.exists(self.pid_fn):
+                    qemu_pid = int(open(self.pid_fn).read())
+                    try:
+                        os.kill(qemu_pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    proc.wait()
+                    self.returncode = 0
+                else:
+                    proc.terminate()
+                    proc.kill()
+                    self.returncode = proc.returncode
+            else:
+                self.returncode = proc.returncode
+
+            if os.path.exists(self.pid_fn):
+                os.unlink(self.pid_fn)
 
         if self.returncode != 0:
             self.set_state("failed", 0)
@@ -1263,11 +1315,15 @@ class Platform:
         return "<%s on %s>" % (self.name, self.arch)
 
 
-class TestCase(object):
+class DisablePyTestCollectionMixin(object):
+    __test__ = False
+
+
+class TestCase(DisablePyTestCollectionMixin):
     """Class representing a test application
     """
 
-    def __init__(self):
+    def __init__(self, testcase_root, workdir, name):
         """TestCase constructor.
 
         This gets called by TestSuite as it finds and reads test yaml files.
@@ -1286,23 +1342,22 @@ class TestCase(object):
             define one test, can be anything and is usually "test". This is
             really only used to distinguish between different cases when
             the testcase.yaml defines multiple tests
-        @param tc_dict Dictionary with test values for this test case
-            from the testcase.yaml file
         """
 
-        self.id = ""
+
         self.source_dir = ""
         self.yamlfile = ""
         self.cases = []
-        self.name = ""
+        self.name = self.get_unique(testcase_root, workdir, name)
+        self.id = name
 
         self.type = None
-        self.tags = None
+        self.tags = set()
         self.extra_args = None
         self.extra_configs = None
         self.arch_whitelist = None
         self.arch_exclude = None
-        self.skip = None
+        self.skip = False
         self.platform_exclude = None
         self.platform_whitelist = None
         self.toolchain_exclude = None
@@ -1314,9 +1369,9 @@ class TestCase(object):
         self.build_only = True
         self.build_on_all = False
         self.slow = False
-        self.min_ram = None
+        self.min_ram = -1
         self.depends_on = None
-        self.min_flash = None
+        self.min_flash = -1
         self.extra_sections = None
 
     @staticmethod
@@ -1333,6 +1388,12 @@ class TestCase(object):
 
         # workdir can be "."
         unique = os.path.normpath(os.path.join(relative_tc_root, workdir, name))
+        check = name.split(".")
+        if len(check) < 2:
+            raise SanityCheckException(f"""bad test name '{name}' in {testcase_root}/{workdir}. \
+Tests should reference the category and subsystem with a dot as a separator.
+                    """
+                    )
         return unique
 
     @staticmethod
@@ -1397,20 +1458,25 @@ class TestCase(object):
                 _matches = re.findall(
                     stc_regex,
                     main_c[suite_regex_match.end():suite_run_match.start()])
+                for match in _matches:
+                    if not match.decode().startswith("test_"):
+                        warnings = "Found a test that does not start with test_"
                 matches = [match.decode().replace("test_", "") for match in _matches]
                 return matches, warnings
 
     def scan_path(self, path):
         subcases = []
-        for filename in glob.glob(os.path.join(path, "src", "*.c")):
+        for filename in glob.glob(os.path.join(path, "src", "*.c*")):
             try:
                 _subcases, warnings = self.scan_file(filename)
                 if warnings:
                     logger.error("%s: %s" % (filename, warnings))
+                    raise SanityRuntimeError("%s: %s" % (filename, warnings))
                 if _subcases:
                     subcases += _subcases
             except ValueError as e:
                 logger.error("%s: can't find: %s" % (filename, e))
+
         for filename in glob.glob(os.path.join(path, "*.c")):
             try:
                 _subcases, warnings = self.scan_file(filename)
@@ -1435,7 +1501,7 @@ class TestCase(object):
         return self.name
 
 
-class TestInstance:
+class TestInstance(DisablePyTestCollectionMixin):
     """Class representing the execution of a particular TestCase on a platform
 
     @param test The TestCase object we want to build/execute
@@ -1466,6 +1532,7 @@ class TestInstance:
     def __lt__(self, other):
         return self.name < other.name
 
+    # Global testsuite parameters
     def check_build_or_run(self, build_only=False, enable_slow=False, device_testing=False, fixture=[]):
 
         # right now we only support building on windows. running is still work
@@ -1766,7 +1833,8 @@ class FilterBuilder(CMake):
         if self.testcase and self.testcase.tc_filter:
             try:
                 if os.path.exists(dts_path):
-                    edt = edtlib.EDT(dts_path, [os.path.join(ZEPHYR_BASE, "dts", "bindings")])
+                    edt = edtlib.EDT(dts_path, [os.path.join(ZEPHYR_BASE, "dts", "bindings")],
+                            warn_reg_unit_address_mismatch=False)
                 else:
                     edt = None
                 res = expr_parser.parse(self.testcase.tc_filter, filter_data, edt)
@@ -1854,6 +1922,8 @@ class ProjectBuilder(FilterBuilder):
         elif instance.testcase.type == "unit":
             instance.handler = BinaryHandler(instance, "unit")
             instance.handler.binary = os.path.join(instance.build_dir, "testbinary")
+            if self.coverage:
+                args.append("COVERAGE=1")
         elif instance.platform.type == "native":
             handler = BinaryHandler(instance, "native")
 
@@ -2111,7 +2181,7 @@ class BoundedExecutor(concurrent.futures.ThreadPoolExecutor):
             return future
 
 
-class TestSuite:
+class TestSuite(DisablePyTestCollectionMixin):
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
     dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
@@ -2146,7 +2216,10 @@ class TestSuite:
     RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                             "sanity_last_release.csv")
 
-    def __init__(self, board_root_list, testcase_roots, outdir):
+    SAMPLE_FILENAME = 'sample.yaml'
+    TESTCASE_FILENAME = 'testcase.yaml'
+
+    def __init__(self, board_root_list=[], testcase_roots=[], outdir=None):
 
         self.roots = testcase_roots
         if not isinstance(board_root_list, list):
@@ -2180,7 +2253,7 @@ class TestSuite:
         self.selected_platforms = []
         self.default_platforms = []
         self.outdir = os.path.abspath(outdir)
-        self.discards = None
+        self.discards = {}
         self.load_errors = 0
         self.instances = dict()
 
@@ -2198,6 +2271,10 @@ class TestSuite:
 
         # hardcoded for now
         self.connected_hardware = []
+
+    def get_platform_instances(self, platform):
+        filtered_dict = {k:v for k,v in self.instances.items() if k.startswith(platform + "/")}
+        return filtered_dict
 
     def config(self):
         logger.info("coverage platform: {}".format(self.coverage_platform))
@@ -2279,6 +2356,7 @@ class TestSuite:
 
     def summary(self, unrecognized_sections):
         failed = 0
+        run = 0
         for instance in self.instances.values():
             if instance.status == "failed":
                 failed += 1
@@ -2287,6 +2365,9 @@ class TestSuite:
                              (Fore.RED, Fore.RESET, instance.name,
                               str(instance.metrics.get("unrecognized", []))))
                 failed += 1
+
+            if instance.metrics['handler_time']:
+                run += 1
 
         if self.total_tests and self.total_tests != self.total_skipped:
             pass_rate = (float(self.total_tests - self.total_failed - self.total_skipped) / float(
@@ -2318,6 +2399,9 @@ class TestSuite:
                 self.total_platforms,
                 (100 * len(self.selected_platforms) / len(self.platforms))
             ))
+
+        logger.info(f"{Fore.GREEN}{run}{Fore.RESET} tests executed on platforms, \
+{Fore.RED}{self.total_tests - run}{Fore.RESET} tests were only built.")
 
     def save_reports(self, name, suffix, report_dir, no_update, release, only_failed):
         if not self.instances:
@@ -2407,10 +2491,10 @@ class TestSuite:
 
             for dirpath, dirnames, filenames in os.walk(root, topdown=True):
                 logger.debug("scanning %s" % dirpath)
-                if 'sample.yaml' in filenames:
-                    filename = 'sample.yaml'
-                elif 'testcase.yaml' in filenames:
-                    filename = 'testcase.yaml'
+                if self.SAMPLE_FILENAME in filenames:
+                    filename = self.SAMPLE_FILENAME
+                elif self.TESTCASE_FILENAME in filenames:
+                    filename = self.TESTCASE_FILENAME
                 else:
                     continue
 
@@ -2427,15 +2511,13 @@ class TestSuite:
                     workdir = os.path.relpath(tc_path, root)
 
                     for name in parsed_data.tests.keys():
-                        tc = TestCase()
-                        tc.name = tc.get_unique(root, workdir, name)
+                        tc = TestCase(root, workdir, name)
 
                         tc_dict = parsed_data.get_test(name, self.testcase_valid_keys)
 
                         tc.source_dir = tc_path
                         tc.yamlfile = tc_path
 
-                        tc.id = name
                         tc.type = tc_dict["type"]
                         tc.tags = tc_dict["tags"]
                         tc.extra_args = tc_dict["extra_args"]
@@ -2451,6 +2533,8 @@ class TestSuite:
                         tc.timeout = tc_dict["timeout"]
                         tc.harness = tc_dict["harness"]
                         tc.harness_config = tc_dict["harness_config"]
+                        if tc.harness == 'console' and not tc.harness_config:
+                            raise Exception('Harness config error: console harness defined without a configuration.')
                         tc.build_only = tc_dict["build_only"]
                         tc.build_on_all = tc_dict["build_on_all"]
                         tc.slow = tc_dict["slow"]
@@ -2516,14 +2600,15 @@ class TestSuite:
 
         discards = {}
         platform_filter = kwargs.get('platform')
-        exclude_platform = kwargs.get('exclude_platform')
-        testcase_filter = kwargs.get('run_individual_tests')
+        exclude_platform = kwargs.get('exclude_platform', [])
+        testcase_filter = kwargs.get('run_individual_tests', [])
         arch_filter = kwargs.get('arch')
         tag_filter = kwargs.get('tag')
         exclude_tag = kwargs.get('exclude_tag')
         all_filter = kwargs.get('all')
         device_testing_filter = kwargs.get('device_testing')
         force_toolchain = kwargs.get('force_toolchain')
+        force_platform = kwargs.get('force_platform')
 
         logger.debug("platform filter: " + str(platform_filter))
         logger.debug("    arch_filter: " + str(arch_filter))
@@ -2558,7 +2643,7 @@ class TestSuite:
                     self.device_testing,
                     self.fixture
                 )
-                if plat.name in exclude_platform:
+                if not force_platform and plat.name in exclude_platform:
                     discards[instance] = "Platform is excluded on command line."
                     continue
 
@@ -2593,17 +2678,19 @@ class TestSuite:
                     discards[instance] = "Command line testcase arch filter"
                     continue
 
-                if tc.arch_whitelist and plat.arch not in tc.arch_whitelist:
-                    discards[instance] = "Not in test case arch whitelist"
-                    continue
+                if not force_platform:
 
-                if tc.arch_exclude and plat.arch in tc.arch_exclude:
-                    discards[instance] = "In test case arch exclude"
-                    continue
+                    if tc.arch_whitelist and plat.arch not in tc.arch_whitelist:
+                        discards[instance] = "Not in test case arch whitelist"
+                        continue
 
-                if tc.platform_exclude and plat.name in tc.platform_exclude:
-                    discards[instance] = "In test case platform exclude"
-                    continue
+                    if tc.arch_exclude and plat.arch in tc.arch_exclude:
+                        discards[instance] = "In test case arch exclude"
+                        continue
+
+                    if tc.platform_exclude and plat.name in tc.platform_exclude:
+                        discards[instance] = "In test case platform exclude"
+                        continue
 
                 if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
                     discards[instance] = "In test case toolchain exclude"
@@ -2673,7 +2760,7 @@ class TestSuite:
                     instances = list(filter(lambda tc: tc.platform.default, instance_list))
                     self.add_instances(instances)
 
-                for instance in list(filter(lambda tc: not tc.platform.default, instance_list)):
+                for instance in list(filter(lambda inst: not inst.platform.default, instance_list)):
                     discards[instance] = "Not a default test platform"
 
             else:

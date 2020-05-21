@@ -140,7 +140,7 @@ static inline struct uarte_nrfx_data *get_dev_data(struct device *dev)
 
 static inline const struct uarte_nrfx_config *get_dev_config(struct device *dev)
 {
-	return dev->config->config_info;
+	return dev->config_info;
 }
 
 static inline NRF_UARTE_Type *get_uarte_instance(struct device *dev)
@@ -496,8 +496,8 @@ static int uarte_nrfx_tx(struct device *dev, const u8_t *buf, size_t len,
 			     NRF_UARTE_INT_TXSTOPPED_MASK);
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTTX);
 	if (data->uart_config.flow_ctrl == UART_CFG_FLOW_CTRL_RTS_CTS
-	    && timeout != K_FOREVER) {
-		k_timer_start(&data->async->tx_timeout_timer, timeout,
+	    && timeout != SYS_FOREVER_MS) {
+		k_timer_start(&data->async->tx_timeout_timer, K_MSEC(timeout),
 			      K_NO_WAIT);
 	}
 	return 0;
@@ -733,11 +733,11 @@ static void rxstarted_isr(struct device *dev)
 		.type = UART_RX_BUF_REQUEST,
 	};
 	user_callback(dev, &evt);
-	if (data->async->rx_timeout != K_FOREVER) {
+	if (data->async->rx_timeout != SYS_FOREVER_MS) {
 		data->async->rx_timeout_left = data->async->rx_timeout;
 		k_timer_start(&data->async->rx_timeout_timer,
-			      data->async->rx_timeout_slab,
-			      data->async->rx_timeout_slab);
+			      K_MSEC(data->async->rx_timeout_slab),
+			      K_MSEC(data->async->rx_timeout_slab));
 	}
 }
 

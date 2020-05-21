@@ -15,10 +15,13 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
+#define PHYS_RAM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define PHYS_RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+
 /* Despite our use of PAE page tables, we do not (and will never) actually
  * support PAE. Use a 64-bit x86 target if you have that much RAM.
  */
-BUILD_ASSERT(DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024ULL) - 1ULL <=
+BUILD_ASSERT(PHYS_RAM_ADDR + PHYS_RAM_SIZE - 1ULL <=
 				 (unsigned long long)UINTPTR_MAX);
 
 /* Common regions for all x86 processors.
@@ -665,10 +668,10 @@ static inline bool is_within_system_ram(uintptr_t addr)
 {
 #ifdef CONFIG_X86_64
 	/* FIXME: locore not included in CONFIG_SRAM_BASE_ADDRESS */
-	return addr < (DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024U));
+	return addr < (PHYS_RAM_ADDR + PHYS_RAM_SIZE);
 #else
-	return (addr >= DT_PHYS_RAM_ADDR) &&
-		(addr < (DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024U)));
+	return (addr >= PHYS_RAM_ADDR) &&
+		(addr < (PHYS_RAM_ADDR + PHYS_RAM_SIZE));
 #endif
 }
 
@@ -814,6 +817,25 @@ static void add_mmu_region(struct x86_page_tables *ptables,
 	}
 }
 
+
+void z_x86_add_mmu_region(uintptr_t addr, size_t size, u64_t flags)
+{
+	struct mmu_region rgn = {
+		.address = addr,
+		.size = size,
+		.flags = flags,
+	};
+
+	add_mmu_region(&z_x86_kernel_ptables, &rgn, false);
+#ifdef CONFIG_X86_KPTI
+	add_mmu_region(&z_x86_user_ptables, &rgn, true);
+#endif
+}
+
+void __weak z_x86_soc_add_mmu_regions(void)
+{
+}
+
 /* Called from x86's arch_kernel_init() */
 void z_x86_paging_init(void)
 {
@@ -825,6 +847,8 @@ void z_x86_paging_init(void)
 		add_mmu_region(&z_x86_user_ptables, rgn, true);
 #endif
 	}
+
+	z_x86_soc_add_mmu_regions();
 
 	pages_free = (page_pos - page_pool) / MMU_PAGE_SIZE;
 
@@ -1069,15 +1093,15 @@ static void apply_mem_partition(struct x86_page_tables *ptables,
 		mask = K_MEM_PARTITION_PERM_MASK;
 	}
 
-	__ASSERT(partition->start >= DT_PHYS_RAM_ADDR,
+	__ASSERT(partition->start >= PHYS_RAM_ADDR,
 		 "region at %08lx[%zu] extends below system ram start 0x%08x",
-		 partition->start, partition->size, DT_PHYS_RAM_ADDR);
+		 partition->start, partition->size, PHYS_RAM_ADDR);
 	__ASSERT(((partition->start + partition->size) <=
-		  (DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024U))),
-		 "region at %08lx[%zu] end at %08lx extends beyond system ram end 0x%08x",
+		  (PHYS_RAM_ADDR + PHYS_RAM_SIZE)),
+		 "region at %08lx[%zu] end at %08lx extends beyond system ram end 0x%08lx",
 		 partition->start, partition->size,
 		 partition->start + partition->size,
-		 (DT_PHYS_RAM_ADDR + (DT_RAM_SIZE * 1024U)));
+		 ((uintptr_t)PHYS_RAM_ADDR) + (size_t)PHYS_RAM_SIZE);
 
 	z_x86_mmu_set_flags(ptables, (void *)partition->start, partition->size,
 			    x86_attr, mask, false);

@@ -22,6 +22,7 @@
 	aliases {
 		led0 = &led0;
 		sw0 = &user_button;
+		i2c-0 = &sercom1;
 	};
 
 	leds {

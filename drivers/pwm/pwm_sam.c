@@ -23,7 +23,7 @@ struct sam_pwm_config {
 };
 
 #define DEV_CFG(dev) \
-	((const struct sam_pwm_config * const)(dev)->config->config_info)
+	((const struct sam_pwm_config * const)(dev)->config_info)
 
 static int sam_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
 				      u64_t *cycles)
@@ -98,30 +98,19 @@ static const struct pwm_driver_api sam_pwm_driver_api = {
 	.get_cycles_per_sec = sam_pwm_get_cycles_per_sec,
 };
 
-#if DT_HAS_DRV_INST(0)
-static const struct sam_pwm_config sam_pwm_config_0 = {
-	.regs = (Pwm *)DT_INST_REG_ADDR(0),
-	.id = DT_INST_PROP(0, peripheral_id),
-	.prescaler = DT_INST_PROP(0, prescaler),
-	.divider = DT_INST_PROP(0, divider),
-};
+#define SAM_INST_INIT(inst)						\
+	static const struct sam_pwm_config sam_pwm_config_##inst = {	\
+		.regs = (Pwm *)DT_INST_REG_ADDR(inst),			\
+		.id = DT_INST_PROP(inst, peripheral_id),		\
+		.prescaler = DT_INST_PROP(inst, prescaler),		\
+		.divider = DT_INST_PROP(inst, divider),			\
+	};								\
+									\
+	DEVICE_AND_API_INIT(sam_pwm_##inst, DT_INST_LABEL(inst),	\
+			    &sam_pwm_init,				\
+			    NULL, &sam_pwm_config_##inst,		\
+			    POST_KERNEL,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &sam_pwm_driver_api);
 
-DEVICE_AND_API_INIT(sam_pwm_0, DT_INST_LABEL(0), &sam_pwm_init,
-		    NULL, &sam_pwm_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &sam_pwm_driver_api);
-#endif /* DT_HAS_DRV_INST(0) */
-
-#if DT_HAS_DRV_INST(1)
-static const struct sam_pwm_config sam_pwm_config_1 = {
-	.regs = (Pwm *)DT_INST_REG_ADDR(1),
-	.id = DT_INST_PROP(1, peripheral_id),
-	.prescaler = DT_INST_PROP(1, prescaler),
-	.divider = DT_INST_PROP(1, divider),
-};
-
-DEVICE_AND_API_INIT(sam_pwm_1, DT_INST_LABEL(1), &sam_pwm_init,
-		    NULL, &sam_pwm_config_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &sam_pwm_driver_api);
-#endif /* DT_HAS_DRV_INST(1) */
+DT_INST_FOREACH_STATUS_OKAY(SAM_INST_INIT)

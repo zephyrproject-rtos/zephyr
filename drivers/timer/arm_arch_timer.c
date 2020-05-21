@@ -30,8 +30,7 @@ static void arm_arch_timer_compare_isr(void *arg)
 
 	last_cycle += delta_ticks * CYC_PER_TICK;
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) ||
-	     IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND)) {
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		u64_t next_cycle = last_cycle + CYC_PER_TICK;
 
 		if ((s64_t)(next_cycle - curr_cycle) < MIN_DELAY) {
@@ -49,8 +48,8 @@ int z_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
 
-	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, 0, arm_arch_timer_compare_isr, 0,
-		    ARM_TIMER_FLAGS);
+	IRQ_CONNECT(ARM_ARCH_TIMER_IRQ, ARM_ARCH_TIMER_PRIO,
+		    arm_arch_timer_compare_isr, NULL, ARM_ARCH_TIMER_FLAGS);
 	arm_arch_timer_set_compare(arm_arch_timer_count() + CYC_PER_TICK);
 	arm_arch_timer_enable(true);
 	irq_enable(ARM_ARCH_TIMER_IRQ);
@@ -62,7 +61,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-#if defined(CONFIG_TICKLESS_KERNEL) && !defined(CONFIG_QEMU_TICKLESS_WORKAROUND)
+#if defined(CONFIG_TICKLESS_KERNEL)
 
 	if (idle) {
 		return;

@@ -25,10 +25,6 @@
 		pinmux-c = &portc;
 		pinmux-d = &portd;
 		pinmux-e = &porte;
-		pwm-0 = &ftm0;
-		pwm-1 = &ftm1;
-		pwm-2 = &ftm2;
-		pwm-3 = &ftm3;
 		spi-0 = &spi0;
 		spi-1 = &spi1;
 		uart-0 = &uart0;
@@ -308,40 +304,40 @@
 			label = "WDT_0";
 		};
 
-		ftm0: pwm@40038000{
+		ftm0: ftm@40038000{
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40038000 0x98>;
 			interrupts = <42 0>;
-			label = "PWM_0";
+			prescaler = <16>;
+			label = "FTM_0";
 			status = "disabled";
-			#pwm-cells = <3>;
 		};
 
-		ftm1: pwm@40039000{
+		ftm1: ftm@40039000{
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40039000 0x98>;
 			interrupts = <43 0>;
-			label = "PWM_1";
+			prescaler = <16>;
+			label = "FTM_1";
 			status = "disabled";
-			#pwm-cells = <3>;
 		};
 
-		ftm2: pwm@4003a000{
+		ftm2: ftm@4003a000{
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x4003a000 0x98>;
 			interrupts = <44 0>;
-			label = "PWM_2";
+			prescaler = <16>;
+			label = "FTM_2";
 			status = "disabled";
-			#pwm-cells = <3>;
 		};
 
-		ftm3: pwm@400b9000{
+		ftm3: ftm@400b9000{
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x400b9000 0x98>;
 			interrupts = <71 0>;
-			label = "PWM_3";
+			prescaler = <16>;
+			label = "FTM_3";
 			status = "disabled";
-			#pwm-cells = <3>;
 		};
 
 		adc0: adc@4003b000{

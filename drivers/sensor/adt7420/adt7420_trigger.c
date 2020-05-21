@@ -20,7 +20,7 @@ static void setup_int(struct device *dev,
 		      bool enable)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config->config_info;
+	const struct adt7420_dev_config *cfg = dev->config_info;
 	gpio_flags_t flags = enable
 		? GPIO_INT_EDGE_TO_ACTIVE
 		: GPIO_INT_DISABLE;
@@ -44,7 +44,7 @@ static void handle_int(struct device *dev)
 static void process_int(struct device *dev)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config->config_info;
+	const struct adt7420_dev_config *cfg = dev->config_info;
 	u8_t status;
 
 	/* Clear the status */
@@ -105,7 +105,7 @@ int adt7420_trigger_set(struct device *dev,
 			sensor_trigger_handler_t handler)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config->config_info;
+	const struct adt7420_dev_config *cfg = dev->config_info;
 
 	setup_int(dev, false);
 
@@ -134,7 +134,7 @@ int adt7420_trigger_set(struct device *dev,
 int adt7420_init_interrupt(struct device *dev)
 {
 	struct adt7420_data *drv_data = dev->driver_data;
-	const struct adt7420_dev_config *cfg = dev->config->config_info;
+	const struct adt7420_dev_config *cfg = dev->config_info;
 
 	drv_data->gpio = device_get_binding(cfg->int_name);
 	if (drv_data->gpio == NULL) {

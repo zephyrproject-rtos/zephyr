@@ -13,8 +13,9 @@
 
 #include <zephyr.h>
 #include <stdlib.h>
-#include <timestamp.h>  /* reading time */
+#include "timestamp.h"
 #include "utils.h"      /* PRINT () and other macros */
+#include "timing_info.h"
 
 /* context switch enough time so our measurement is precise */
 #define NB_OF_YIELD     1000
@@ -51,11 +52,14 @@ void thread_switch_yield(void)
 {
 	u32_t iterations = 0U;
 	s32_t delta;
-	u32_t timestamp;
+	u32_t timestamp_start;
+	u32_t timestamp_end;
+	u32_t ts_diff;
 
 	PRINT_FORMAT(" 5 - Measure average context switch time between threads"
 		     " using (k_yield)");
 
+	benchmark_timer_start();
 	bench_test_start();
 
 	/* launch helper thread of the same priority than this routine */
@@ -64,7 +68,8 @@ void thread_switch_yield(void)
 			Y_PRIORITY, 0, K_NO_WAIT);
 
 	/* get initial timestamp */
-	timestamp = TIME_STAMP_DELTA_GET(0);
+	TIMING_INFO_PRE_READ();
+	timestamp_start = TIMING_INFO_OS_GET_TIME();
 
 	/* loop until either helper or this routine reaches number of yields */
 	while (iterations < NB_OF_YIELD &&
@@ -74,7 +79,8 @@ void thread_switch_yield(void)
 	}
 
 	/* get the number of cycles it took to do the test */
-	timestamp = TIME_STAMP_DELTA_GET(timestamp);
+	TIMING_INFO_PRE_READ();
+	timestamp_end = TIMING_INFO_OS_GET_TIME();
 
 	/* Ensure both helper and this routine were context switching back &
 	 * forth.
@@ -98,10 +104,13 @@ void thread_switch_yield(void)
 		/* thread_yield is called (iterations + helper_thread_iterations)
 		 * times in total.
 		 */
+		ts_diff = TIMING_INFO_GET_DELTA(timestamp_start, timestamp_end);
 		PRINT_FORMAT(" Average thread context switch using "
 			     "yield %u tcs = %u nsec",
-			     timestamp / (iterations + helper_thread_iterations),
-			     SYS_CLOCK_HW_CYCLES_TO_NS_AVG(timestamp,
+			     ts_diff / (iterations + helper_thread_iterations),
+			     CYCLES_TO_NS_AVG(ts_diff,
 							   (iterations + helper_thread_iterations)));
 	}
+
+	benchmark_timer_stop();
 }

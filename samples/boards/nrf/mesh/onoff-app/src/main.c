@@ -179,10 +179,10 @@ struct onoff_state {
  */
 
 static struct onoff_state onoff_state[] = {
-	{ .led_gpio_pin = DT_ALIAS_LED0_GPIOS_PIN },
-	{ .led_gpio_pin = DT_ALIAS_LED1_GPIOS_PIN },
-	{ .led_gpio_pin = DT_ALIAS_LED2_GPIOS_PIN },
-	{ .led_gpio_pin = DT_ALIAS_LED3_GPIOS_PIN },
+	{ .led_gpio_pin = DT_GPIO_PIN(DT_ALIAS(led0), gpios) },
+	{ .led_gpio_pin = DT_GPIO_PIN(DT_ALIAS(led1), gpios) },
+	{ .led_gpio_pin = DT_GPIO_PIN(DT_ALIAS(led2), gpios) },
+	{ .led_gpio_pin = DT_GPIO_PIN(DT_ALIAS(led3), gpios) },
 };
 
 /*
@@ -416,10 +416,10 @@ static u8_t dev_uuid[16] = { 0xdd, 0xdd };
 static uint8_t pin_to_sw(uint32_t pin_pos)
 {
 	switch (pin_pos) {
-	case BIT(DT_ALIAS_SW0_GPIOS_PIN): return 0;
-	case BIT(DT_ALIAS_SW1_GPIOS_PIN): return 1;
-	case BIT(DT_ALIAS_SW2_GPIOS_PIN): return 2;
-	case BIT(DT_ALIAS_SW3_GPIOS_PIN): return 3;
+	case BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios)): return 0;
+	case BIT(DT_GPIO_PIN(DT_ALIAS(sw1), gpios)): return 1;
+	case BIT(DT_GPIO_PIN(DT_ALIAS(sw2), gpios)): return 2;
+	case BIT(DT_GPIO_PIN(DT_ALIAS(sw3), gpios)): return 3;
 	}
 
 	printk("No match for GPIO pin 0x%08x\n", pin_pos);
@@ -608,37 +608,51 @@ void main(void)
 	/* Initialize button count timer */
 	k_timer_init(&sw.button_timer, button_cnt_timer, NULL);
 
-	sw_device = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
-	gpio_pin_configure(sw_device, DT_ALIAS_SW0_GPIOS_PIN,
-			   GPIO_INPUT | DT_ALIAS_SW0_GPIOS_FLAGS);
-	gpio_pin_configure(sw_device, DT_ALIAS_SW1_GPIOS_PIN,
-			   GPIO_INPUT | DT_ALIAS_SW1_GPIOS_FLAGS);
-	gpio_pin_configure(sw_device, DT_ALIAS_SW2_GPIOS_PIN,
-			   GPIO_INPUT | DT_ALIAS_SW2_GPIOS_FLAGS);
-	gpio_pin_configure(sw_device, DT_ALIAS_SW3_GPIOS_PIN,
-			   GPIO_INPUT | DT_ALIAS_SW3_GPIOS_FLAGS);
-	gpio_pin_interrupt_configure(sw_device, DT_ALIAS_SW0_GPIOS_PIN,
+	sw_device = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
+	gpio_pin_configure(sw_device, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
+			   GPIO_INPUT |
+			   DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios));
+	gpio_pin_configure(sw_device, DT_GPIO_PIN(DT_ALIAS(sw1), gpios),
+			   GPIO_INPUT |
+			   DT_GPIO_FLAGS(DT_ALIAS(sw1), gpios));
+	gpio_pin_configure(sw_device, DT_GPIO_PIN(DT_ALIAS(sw2), gpios),
+			   GPIO_INPUT |
+			   DT_GPIO_FLAGS(DT_ALIAS(sw2), gpios));
+	gpio_pin_configure(sw_device, DT_GPIO_PIN(DT_ALIAS(sw3), gpios),
+			   GPIO_INPUT |
+			   DT_GPIO_FLAGS(DT_ALIAS(sw3), gpios));
+	gpio_pin_interrupt_configure(sw_device,
+				     DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
-	gpio_pin_interrupt_configure(sw_device, DT_ALIAS_SW1_GPIOS_PIN,
+	gpio_pin_interrupt_configure(sw_device,
+				     DT_GPIO_PIN(DT_ALIAS(sw1), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
-	gpio_pin_interrupt_configure(sw_device, DT_ALIAS_SW2_GPIOS_PIN,
+	gpio_pin_interrupt_configure(sw_device,
+				     DT_GPIO_PIN(DT_ALIAS(sw2), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
-	gpio_pin_interrupt_configure(sw_device, DT_ALIAS_SW3_GPIOS_PIN,
+	gpio_pin_interrupt_configure(sw_device,
+				     DT_GPIO_PIN(DT_ALIAS(sw3), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
 	gpio_init_callback(&button_cb, button_pressed,
-			   BIT(DT_ALIAS_SW0_GPIOS_PIN) | BIT(DT_ALIAS_SW1_GPIOS_PIN) |
-			   BIT(DT_ALIAS_SW2_GPIOS_PIN) | BIT(DT_ALIAS_SW3_GPIOS_PIN));
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios)) |
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw1), gpios)) |
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw2), gpios)) |
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw3), gpios)));
 	gpio_add_callback(sw_device, &button_cb);
 
 	/* Initialize LED's */
-	init_led(0, DT_ALIAS_LED0_GPIOS_CONTROLLER, DT_ALIAS_LED0_GPIOS_PIN,
-		 DT_ALIAS_LED0_GPIOS_FLAGS);
-	init_led(1, DT_ALIAS_LED1_GPIOS_CONTROLLER, DT_ALIAS_LED1_GPIOS_PIN,
-		 DT_ALIAS_LED1_GPIOS_FLAGS);
-	init_led(2, DT_ALIAS_LED2_GPIOS_CONTROLLER, DT_ALIAS_LED2_GPIOS_PIN,
-		 DT_ALIAS_LED2_GPIOS_FLAGS);
-	init_led(3, DT_ALIAS_LED3_GPIOS_CONTROLLER, DT_ALIAS_LED3_GPIOS_PIN,
-		 DT_ALIAS_LED3_GPIOS_FLAGS);
+	init_led(0, DT_GPIO_LABEL(DT_ALIAS(led0), gpios),
+		 DT_GPIO_PIN(DT_ALIAS(led0), gpios),
+		 DT_GPIO_FLAGS(DT_ALIAS(led0), gpios));
+	init_led(1, DT_GPIO_LABEL(DT_ALIAS(led1), gpios),
+		 DT_GPIO_PIN(DT_ALIAS(led1), gpios),
+		 DT_GPIO_FLAGS(DT_ALIAS(led1), gpios));
+	init_led(2, DT_GPIO_LABEL(DT_ALIAS(led2), gpios),
+		 DT_GPIO_PIN(DT_ALIAS(led2), gpios),
+		 DT_GPIO_FLAGS(DT_ALIAS(led2), gpios));
+	init_led(3, DT_GPIO_LABEL(DT_ALIAS(led3), gpios),
+		 DT_GPIO_PIN(DT_ALIAS(led3), gpios),
+		 DT_GPIO_FLAGS(DT_ALIAS(led3), gpios));
 
 	/* Initialize the Bluetooth Subsystem */
 	err = bt_enable(bt_ready);

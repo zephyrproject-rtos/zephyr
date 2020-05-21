@@ -17,6 +17,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,can-primary = &can1;
 	};
 
 	leds {
@@ -38,7 +39,6 @@
 	aliases {
 		led0 = &green_led;
 		sw0 = &user_button;
-		can-primary = &can1;
 	};
 };
 
@@ -58,7 +58,7 @@
 &timers2 {
 	status = "okay";
 
-	pwm {
+	pwm2: pwm {
 		status = "okay";
 	};
 };

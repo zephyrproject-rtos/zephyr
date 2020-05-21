@@ -295,10 +295,10 @@ Several macros exist to validate arguments:
 * :c:macro:`Z_SYSCALL_SPECIFIC_DRIVER()` is a runtime check to verify that
   a provided pointer is a valid instance of a specific device driver, that
   the calling thread has permissions on it, and that the driver has been
-  initialized. It does this by checking the init function pointer that
+  initialized. It does this by checking the API structure pointer that
   is stored within the driver instance and ensuring that it matches the
   provided value, which should be the address of the specific driver's
-  init function.
+  API structure.
 
 If any check fails, the macros will return a nonzero value. The macro
 :c:macro:`Z_OOPS()` can be used to induce a kernel oops which will kill the

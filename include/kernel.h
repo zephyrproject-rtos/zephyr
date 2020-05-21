@@ -698,7 +698,7 @@ extern void k_thread_foreach_unlocked(
  * */
 #define K_ESSENTIAL (BIT(0))
 
-#if defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU_SHARING)
 /**
  * @brief thread uses floating point registers
  */
@@ -726,7 +726,7 @@ extern void k_thread_foreach_unlocked(
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
 
-#if defined(CONFIG_FP_SHARING) && defined(CONFIG_SSE)
+#if defined(CONFIG_FPU_SHARING) && defined(CONFIG_SSE)
 /* thread uses SSEx (and also FP) registers */
 #define K_SSE_REGS (BIT(7))
 #endif
@@ -813,9 +813,9 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  * Changing a thread's resource pool will not migrate allocations from the
  * previous pool.
  *
- * @param thread Target thread to assign a memory pool for resource requests,
- *               or NULL if the thread should no longer have a memory pool.
- * @param pool Memory pool to use for resources.
+ * @param thread Target thread to assign a memory pool for resource requests.
+ * @param pool Memory pool to use for resources,
+ *             or NULL if the thread should no longer have a memory pool.
  */
 static inline void k_thread_resource_pool_assign(struct k_thread *thread,
 						 struct k_mem_pool *pool)
@@ -4429,6 +4429,26 @@ __syscall int k_pipe_get(struct k_pipe *pipe, void *data,
  */
 extern void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
 			     size_t size, struct k_sem *sem);
+
+/**
+ * @brief Query the number of bytes that may be read from @a pipe.
+ *
+ * @param pipe Address of the pipe.
+ *
+ * @retval a number n such that 0 <= n <= @ref k_pipe.size; the
+ *         result is zero for unbuffered pipes.
+ */
+__syscall size_t k_pipe_read_avail(struct k_pipe *pipe);
+
+/**
+ * @brief Query the number of bytes that may be written to @a pipe
+ *
+ * @param pipe Address of the pipe.
+ *
+ * @retval a number n such that 0 <= n <= @ref k_pipe.size; the
+ *         result is zero for unbuffered pipes.
+ */
+__syscall size_t k_pipe_write_avail(struct k_pipe *pipe);
 
 /** @} */
 

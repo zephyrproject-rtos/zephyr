@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2020 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Mode 1: Standard Mode
+ *
+ *   JP7 => 1-2, 3-4 (I2C1 = I2C2, I2Cx=GND)
+ *   JP8 => 1-2, 3-4 (I2C1 = I2C2, I2Cx=GND)
+ *
+ * ISM330DHCX, IIS2MDC and IIS2DLPC sensors are accessible from the main board mcu.
+ */
+
+&arduino_i2c {
+
+	iis2dlpc@19 {
+		compatible = "st,iis2dlpc";
+		reg = <0x19>;
+		drdy-gpios =  <&arduino_header 4 GPIO_ACTIVE_HIGH>; /* A4 - INT2 */
+		label = "IIS2DLPC";
+	};
+
+	iis2mdc@1e {
+		compatible = "st,iis2mdc";
+		reg = <0x1e>;
+		drdy-gpios =  <&arduino_header 2 GPIO_ACTIVE_HIGH>; /* A2 */
+		label = "IIS2MDC";
+	};
+
+	ism330dhcx@6b {
+		compatible = "st,ism330dhcx";
+		reg = <0x6b>;
+		drdy-gpios =  <&arduino_header 11 GPIO_ACTIVE_HIGH>; /* D5 - INT2 */
+		label = "ISM330DHCX";
+	};
+};

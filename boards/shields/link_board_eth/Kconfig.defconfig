@@ -14,8 +14,6 @@ config NET_L2_ETHERNET
 config ETH_ENC424J600
 	default y
 
-rsource "boards/*.defconfig"
-
 endif # NETWORKING
 
 endif # SHIELD_LINK_BOARD_ETH

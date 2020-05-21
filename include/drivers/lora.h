@@ -73,12 +73,22 @@ typedef int (*lora_api_send)(struct device *dev,
  * @see lora_recv() for argument descriptions.
  */
 typedef int (*lora_api_recv)(struct device *dev, u8_t *data, u8_t size,
-			     s32_t timeout, s16_t *rssi, s8_t *snr);
+			     k_timeout_t timeout, s16_t *rssi, s8_t *snr);
+
+/**
+ * @typedef lora_api_test_cw()
+ * @brief Callback API for transmitting a continuous wave
+ *
+ * @see lora_test_cw() for argument descriptions.
+ */
+typedef int (*lora_api_test_cw)(struct device *dev, u32_t frequency,
+				s8_t tx_power, u16_t duration);
 
 struct lora_driver_api {
 	lora_api_config config;
 	lora_api_send	send;
 	lora_api_recv	recv;
+	lora_api_test_cw test_cw;
 };
 
 /**
@@ -124,19 +134,43 @@ static inline int lora_send(struct device *dev,
  * @param data      Buffer to hold received data
  * @param size      Size of the buffer to hold the received data. Max size
 		    allowed is 255.
- * @param timeout   Timeout value in milliseconds. API also accepts, K_NO_WAIT
-		    for no wait time and K_FOREVER for blocking until
+ * @param timeout   Timeout value in milliseconds. API also accepts, 0
+		    for no wait time and SYS_FOREVER_MS for blocking until
 		    data arrives.
  * @param rssi      RSSI of received data
  * @param snr       SNR of received data
  * @return Length of the data received on success, negative on error
  */
 static inline int lora_recv(struct device *dev, u8_t *data, u8_t size,
-			    s32_t timeout, s16_t *rssi, s8_t *snr)
+			    k_timeout_t timeout, s16_t *rssi, s8_t *snr)
 {
 	const struct lora_driver_api *api = dev->driver_api;
 
 	return api->recv(dev, data, size, timeout, rssi, snr);
+}
+
+/**
+ * @brief Transmit an unmodulated continuous wave at a given frequency
+ *
+ * @note Only use this functionality in a test setup where the
+ * transmission does not interfere with other devices.
+ *
+ * @param dev       LoRa device
+ * @param frequency Output frequency (Hertz)
+ * @param tx_power  TX power (dBm)
+ * @param duration  Transmission duration in seconds.
+ * @return 0 on success, negative on error
+ */
+static inline int lora_test_cw(struct device *dev, u32_t frequency,
+			       s8_t tx_power, u16_t duration)
+{
+	const struct lora_driver_api *api = dev->driver_api;
+
+	if (!api->test_cw) {
+		return -ENOTSUP;
+	}
+
+	return api->test_cw(dev, frequency, tx_power, duration);
 }
 
 #endif	/* ZEPHYR_INCLUDE_DRIVERS_LORA_H_ */

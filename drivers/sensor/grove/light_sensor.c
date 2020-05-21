@@ -84,7 +84,7 @@ static const struct sensor_driver_api gls_api = {
 static int gls_init(struct device *dev)
 {
 	struct gls_data *drv_data = dev->driver_data;
-	const struct gls_config *cfg = dev->config->config_info;
+	const struct gls_config *cfg = dev->config_info;
 
 	drv_data->adc = device_get_binding(cfg->adc_label);
 

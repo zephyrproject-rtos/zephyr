@@ -14,6 +14,7 @@
 #include <spinlock.h>
 
 #define RTC NRF_RTC1
+#define RTC_IRQn NRFX_IRQ_NUMBER_GET(RTC)
 
 #define COUNTER_SPAN BIT(24)
 #define COUNTER_MAX (COUNTER_SPAN - 1U)
@@ -88,6 +89,11 @@ static void prevent_false_prev_evt(void)
 		k_busy_wait(15);
 		event_clear();
 	}
+
+	/* Clear interrupt that may have fired as we were setting the
+	 * comparator.
+	 */
+	NVIC_ClearPendingIRQ(RTC_IRQn);
 }
 
 /* If settings is next tick from now, function attempts to set next tick. If
@@ -160,7 +166,7 @@ static void set_protected_absolute_ticks(u32_t ticks)
  * it by pointer at runtime, maybe?) so we don't have this leaky
  * symbol.
  */
-void rtc1_nrf_isr(void *arg)
+void rtc_nrf_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 	event_clear();
@@ -177,7 +183,7 @@ void rtc1_nrf_isr(void *arg)
 		set_absolute_ticks(last_count + CYC_PER_TICK);
 	}
 
-	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
+	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : (dticks > 0));
 }
 
 int z_clock_driver_init(struct device *device)
@@ -196,11 +202,11 @@ int z_clock_driver_init(struct device *device)
 	/* TODO: replace with counter driver to access RTC */
 	nrf_rtc_prescaler_set(RTC, 0);
 	event_clear();
-	NVIC_ClearPendingIRQ(RTC1_IRQn);
+	NVIC_ClearPendingIRQ(RTC_IRQn);
 	int_enable();
 
-	IRQ_CONNECT(RTC1_IRQn, 1, rtc1_nrf_isr, 0, 0);
-	irq_enable(RTC1_IRQn);
+	IRQ_CONNECT(RTC_IRQn, 1, rtc_nrf_isr, 0, 0);
+	irq_enable(RTC_IRQn);
 
 	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_CLEAR);
 	nrf_rtc_task_trigger(RTC, NRF_RTC_TASK_START);

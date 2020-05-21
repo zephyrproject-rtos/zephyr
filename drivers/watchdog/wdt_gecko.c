@@ -32,11 +32,11 @@ struct wdt_gecko_data {
 	bool timeout_installed;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_DATA(dev) \
 	((struct wdt_gecko_data *)(dev)->driver_data)
 #define DEV_CFG(dev) \
-	((struct wdt_gecko_cfg *)(dev)->config->config_info)
+	((const struct wdt_gecko_cfg *)(dev)->config_info)
 
 static u32_t wdt_gecko_get_timeout_from_persel(int perSel)
 {
@@ -295,10 +295,4 @@ static const struct wdt_driver_api wdt_gecko_driver_api = {
 		irq_enable(DT_INST_IRQN(index));	\
 	}
 
-#if DT_HAS_DRV_INST(0)
-GECKO_WDT_INIT(0)
-#endif /* DT_HAS_DRV_INST(0) */
-
-#if DT_HAS_DRV_INST(1)
-GECKO_WDT_INIT(1)
-#endif /* DT_HAS_DRV_INST(1) */
+DT_INST_FOREACH_STATUS_OKAY(GECKO_WDT_INIT)

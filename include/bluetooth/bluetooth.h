@@ -262,9 +262,9 @@ int bt_id_reset(u8_t id, bt_addr_le_t *addr, u8_t *irk);
  */
 int bt_id_delete(u8_t id);
 
-/** Advertising API */
-
-/** Description of different data types that can be encoded into
+/** @brief Bluetooth data.
+ *
+ *  Description of different data types that can be encoded into
  *  advertising data. Used to form arrays that are passed to the
  *  bt_le_adv_start() function.
  */
@@ -277,7 +277,7 @@ struct bt_data {
 /** @brief Helper to declare elements of bt_data arrays
  *
  *  This macro is mainly for creating an array of struct bt_data
- *  elements which is then passed to bt_le_adv_start().
+ *  elements which is then passed to e.g. @ref bt_le_adv_start().
  *
  *  @param _type Type of advertising data field
  *  @param _data Pointer to the data field payload
@@ -293,7 +293,7 @@ struct bt_data {
 /** @brief Helper to declare elements of bt_data arrays
  *
  *  This macro is mainly for creating an array of struct bt_data
- *  elements which is then passed to bt_le_adv_start().
+ *  elements which is then passed to e.g. @ref bt_le_adv_start().
  *
  *  @param _type Type of advertising data field
  *  @param _bytes Variable number of single-byte parameters
@@ -307,26 +307,33 @@ enum {
 	/** Convenience value when no options are specified. */
 	BT_LE_ADV_OPT_NONE = 0,
 
-	/** Advertise as connectable. If not connectable then the type of
+	/** @brief Advertise as connectable.
+	 *
+	 *  Advertise as connectable. If not connectable then the type of
 	 *  advertising is determined by providing scan response data.
 	 *  The advertiser address is determined by the type of advertising
 	 *  and/or enabling privacy :option:`CONFIG_BT_PRIVACY`.
 	 */
 	BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
 
-	/** Don't try to resume connectable advertising after a connection.
+	/** @brief Advertise one time.
+	 *
+	 *  Don't try to resume connectable advertising after a connection.
 	 *  This option is only meaningful when used together with
 	 *  BT_LE_ADV_OPT_CONNECTABLE. If set the advertising will be stopped
 	 *  when bt_le_adv_stop() is called or when an incoming (slave)
 	 *  connection happens. If this option is not set the stack will
 	 *  take care of keeping advertising enabled even as connections
 	 *  occur.
-	 *  If Advertising directed and connectable then this behaviour is
-	 *  the default behaviour and this flag has no effect.
+	 *  If Advertising directed or the advertiser was started with
+	 *  @ref bt_le_ext_adv_start then this behavior is the default behavior
+	 *  and this flag has no effect.
 	 */
 	BT_LE_ADV_OPT_ONE_TIME = BIT(1),
 
-	/** Advertise using the identity address as the advertiser address.
+	/** @brief Advertise using identity address.
+	 *
+	 *  Advertise using the identity address as the advertiser address.
 	 *  @warning This will compromise the privacy of the device, so care
 	 *           must be taken when using this option.
 	 *  @note The address used for advertising will not be the same as
@@ -338,12 +345,16 @@ enum {
 	/** Advertise using GAP device name */
 	BT_LE_ADV_OPT_USE_NAME = BIT(3),
 
-	/** Use low duty directed advertising mode, otherwise high duty mode
+	/** @brief Low duty cycle directed advertising.
+	 *
+	 *  Use low duty directed advertising mode, otherwise high duty mode
 	 *  will be used.
 	 */
 	BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY = BIT(4),
 
-	/** Enable use of Resolvable Private Address (RPA) as the target address
+	/** @brief Directed advertising to privacy-enabled peer.
+	 *
+	 *  Enable use of Resolvable Private Address (RPA) as the target address
 	 *  in directed advertisements when :option:`CONFIG_BT_PRIVACY` is not
 	 *  enabled.
 	 *  This is required if the remote device is privacy-enabled and
@@ -355,8 +366,7 @@ enum {
 	 */
 	BT_LE_ADV_OPT_DIR_ADDR_RPA = BIT(5),
 
-	/** Use whitelist to filter devices that can request scan response
-	 *  data.
+	/** Use whitelist to filter devices that can request scan response data.
 	 */
 	BT_LE_ADV_OPT_FILTER_SCAN_REQ = BIT(6),
 
@@ -368,7 +378,7 @@ enum {
 	 */
 	BT_LE_ADV_OPT_NOTIFY_SCAN_REQ = BIT(8),
 
-	/** Support scan response data.
+	/** @brief Support scan response data.
 	 *
 	 *  When used together with @ref BT_LE_ADV_OPT_EXT_ADV then this option
 	 *  cannot be used together with the @ref BT_LE_ADV_OPT_CONNECTABLE
@@ -378,7 +388,7 @@ enum {
 	 */
 	BT_LE_ADV_OPT_SCANNABLE = BIT(9),
 
-	/** Advertise with extended advertising.
+	/** @brief Advertise with extended advertising.
 	 *
 	 *  This options enables extended advertising in the advertising set.
 	 *  In extended advertising the advertising set will send a small header
@@ -387,6 +397,7 @@ enum {
 	 *  the 37 secondary advertising channels.
 	 *  The advertiser will send primary advertising on LE 1M PHY, and
 	 *  secondary advertising on LE 2M PHY.
+	 *  Connections will be established on LE 2M PHY.
 	 *
 	 *  Without this option the advertiser will send advertising data on the
 	 *  three primary advertising channels.
@@ -396,12 +407,14 @@ enum {
 	 */
 	BT_LE_ADV_OPT_EXT_ADV = BIT(10),
 
-	/** Disable use of LE 2M PHY on the secondary advertising channel.
+	/** @brief Disable use of LE 2M PHY on the secondary advertising
+	 *  channel.
 	 *
 	 *  Disabling the use of LE 2M PHY could be necessary if scanners don't
 	 *  support the LE 2M PHY.
 	 *  The advertiser will send primary advertising on LE 1M PHY, and
 	 *  secondary advertising on LE 1M PHY.
+	 *  Connections will be established on LE 1M PHY.
 	 *
 	 *  @note Cannot be set if BT_LE_ADV_OPT_CODED is set.
 	 *
@@ -409,23 +422,24 @@ enum {
 	 */
 	BT_LE_ADV_OPT_NO_2M = BIT(11),
 
-	/** Advertise on the LE Coded PHY (Long Range).
+	/** @brief Advertise on the LE Coded PHY (Long Range).
 	 *
 	 *  The advertiser will send both primary and secondary advertising
 	 *  on the LE Coded PHY. This gives the advertiser increased range with
 	 *  the trade-off of lower data rate and higher power consumption.
+	 *  Connections will be established on LE Coded PHY.
 	 *
 	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
 	 */
 	BT_LE_ADV_OPT_CODED = BIT(12),
 
-	/** Advertise without a device address (identity or RPA).
+	/** @brief Advertise without a device address (identity or RPA).
 	 *
 	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
 	 */
 	BT_LE_ADV_OPT_ANONYMOUS = BIT(13),
 
-	/** Advertise with transmit power.
+	/** @brief Advertise with transmit power.
 	 *
 	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
 	 */
@@ -434,7 +448,7 @@ enum {
 
 /** LE Advertising Parameters. */
 struct bt_le_adv_param {
-	/** Local identity.
+	/** @brief Local identity.
 	 *
 	 *  @note When extended advertising :option:`CONFIG_BT_EXT_ADV` is not
 	 *        enabled or not supported by the controller it is not possible
@@ -446,13 +460,15 @@ struct bt_le_adv_param {
 	 */
 	u8_t  id;
 
-	/** Advertising Set Identifier, valid range 0x00 - 0x0f.
+	/** @brief Advertising Set Identifier, valid range 0x00 - 0x0f.
 	 *
 	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
 	 **/
 	u8_t  sid;
 
-	/** Maximum advertising events the advertiser can skip before it must
+	/** @brief Secondary channel maximum skip count.
+	 *
+	 *  Maximum advertising events the advertiser can skip before it must
 	 *  send advertising data on the secondary advertising channel.
 	 *
 	 *  @note Requires @ref BT_LE_ADV_OPT_EXT_ADV
@@ -468,7 +484,7 @@ struct bt_le_adv_param {
 	/** Maximum Advertising Interval (N * 0.625) */
 	u32_t interval_max;
 
-	/** Directed advertising to peer
+	/** @brief Directed advertising to peer
 	 *
 	 *  When this parameter is set the advertiser will send directed
 	 *  advertising to the remote device.
@@ -483,7 +499,26 @@ struct bt_le_adv_param {
 	const bt_addr_le_t *peer;
 };
 
-/** Helper to declare advertising parameters inline
+/** @brief Initialize advertising parameters
+ *
+ *  @param _options   Advertising Options
+ *  @param _int_min   Minimum advertising interval
+ *  @param _int_max   Maximum advertising interval
+ *  @param _peer      Peer address, set to NULL for undirected advertising or
+ *                    address of peer for directed advertising.
+ */
+#define BT_LE_ADV_PARAM_INIT(_options, _int_min, _int_max, _peer) \
+{ \
+	.id = BT_ID_DEFAULT, \
+	.sid = 0, \
+	.secondary_max_skip = 0, \
+	.options = (_options), \
+	.interval_min = (_int_min), \
+	.interval_max = (_int_max), \
+	.peer = (_peer), \
+}
+
+/** @brief Helper to declare advertising parameters inline
  *
  *  @param _options   Advertising Options
  *  @param _int_min   Minimum advertising interval
@@ -492,15 +527,9 @@ struct bt_le_adv_param {
  *                    address of peer for directed advertising.
  */
 #define BT_LE_ADV_PARAM(_options, _int_min, _int_max, _peer) \
-		((struct bt_le_adv_param[]) { { \
-			.id = BT_ID_DEFAULT, \
-			.sid = 0, \
-			.secondary_max_skip = 0, \
-			.options = (_options), \
-			.interval_min = (_int_min), \
-			.interval_max = (_int_max), \
-			.peer = (_peer), \
-		 } })
+	((struct bt_le_adv_param[]) { \
+		BT_LE_ADV_PARAM_INIT(_options, _int_min, _int_max, _peer) \
+	 })
 
 #define BT_LE_ADV_CONN_DIR(_peer) BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE |  \
 						  BT_LE_ADV_OPT_ONE_TIME, 0, 0,\
@@ -599,7 +628,7 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 			 struct bt_le_ext_adv **adv);
 
 struct bt_le_ext_adv_start_param {
-	/** Advertiser timeout (N * 10 ms).
+	/** @brief Advertiser timeout (N * 10 ms).
 	 *
 	 *  Application will be notified by the advertiser sent callback.
 	 *  Set to zero for no timeout.
@@ -612,7 +641,7 @@ struct bt_le_ext_adv_start_param {
 	 *  must be less than :option:`CONFIG_BT_RPA_TIMEOUT`.
 	 */
 	u16_t timeout;
-	/** Number of advertising events.
+	/** @brief Number of advertising events.
 	 *
 	 *  Application will be notified by the advertiser sent callback.
 	 *  Set to zero for no limit.
@@ -620,7 +649,7 @@ struct bt_le_ext_adv_start_param {
 	u8_t  num_events;
 };
 
-/** Start advertising with the given advertising set
+/** @brief Start advertising with the given advertising set
  *
  *  If the advertiser is limited by either the timeout or number of advertising
  *  events the application will be notified by the advertiser sent callback once
@@ -635,7 +664,7 @@ struct bt_le_ext_adv_start_param {
 int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 			struct bt_le_ext_adv_start_param *param);
 
-/** Stop advertising with the given advertising set
+/** @brief Stop advertising with the given advertising set
  *
  *  Stop advertising with a specific advertising set. When using this function
  *  the advertising sent callback will not be called.
@@ -646,7 +675,7 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
  */
 int bt_le_ext_adv_stop(struct bt_le_ext_adv *adv);
 
-/** Set an advertising set's advertising or scan response data.
+/** @brief Set an advertising set's advertising or scan response data.
  *
  *  Set advertisement data or scan response data. If the advertising set is
  *  currently advertising then the advertising data will be updated in
@@ -692,7 +721,7 @@ int bt_le_ext_adv_set_data(struct bt_le_ext_adv *adv,
 int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
 			       const struct bt_le_adv_param *param);
 
-/** Delete advertising set.
+/** @brief Delete advertising set.
  *
  *  Delete advertising set. This will free up the advertising set and make it
  *  possible to create a new advertising set.
@@ -759,7 +788,7 @@ enum {
 	/** Enable scan on coded PHY (Long Range).*/
 	BT_LE_SCAN_OPT_CODED = BIT(2),
 
-	/** Disable scan on 1M phy.
+	/** @brief Disable scan on 1M phy.
 	 *
 	 *  @note Requires @ref BT_LE_SCAN_OPT_CODED.
 	 */
@@ -798,20 +827,20 @@ struct bt_le_scan_param {
 	/** Scan window (N * 0.625 ms) */
 	u16_t window;
 
-	/** Scan timeout (N * 10 ms)
+	/** @brief Scan timeout (N * 10 ms)
 	 *
 	 *  Application will be notified by the scan timeout callback.
 	 *  Set zero to disable timeout.
 	 */
 	u16_t timeout;
 
-	/** Scan interval LE Coded PHY (N * 0.625 MS)
+	/** @brief Scan interval LE Coded PHY (N * 0.625 MS)
 	 *
 	 *  Set zero to use same as LE 1M PHY scan interval.
 	 */
 	u16_t interval_coded;
 
-	/** Scan window LE Coded PHY (N * 0.625 MS)
+	/** @brief Scan window LE Coded PHY (N * 0.625 MS)
 	 *
 	 *  Set zero to use same as LE 1M PHY scan window.
 	 */
@@ -820,14 +849,14 @@ struct bt_le_scan_param {
 
 /** LE advertisement packet information */
 struct bt_le_scan_recv_info {
-	/** Advertiser LE address and type.
+	/** @brief Advertiser LE address and type.
 	 *
 	 *  If advertiser is anonymous then this address will be
 	 *  @ref BT_ADDR_LE_ANY.
 	 */
 	const bt_addr_le_t *addr;
 
-	/* Advertising Set Identifier. */
+	/** Advertising Set Identifier. */
 	u8_t sid;
 
 	/** Strength of advertiser signal. */
@@ -842,10 +871,10 @@ struct bt_le_scan_recv_info {
 	/** Advertising packet properties. */
 	u16_t adv_props;
 
-	/* Primary advertising channel PHY. */
+	/** Primary advertising channel PHY. */
 	u8_t primary_phy;
 
-	/* Secondary advertising channel PHY. */
+	/** Secondary advertising channel PHY. */
 	u8_t secondary_phy;
 };
 
@@ -866,7 +895,26 @@ struct bt_le_scan_cb {
 	sys_snode_t node;
 };
 
-/** Helper to declare scan parameters inline
+/** @brief Initialize scan parameters
+ *
+ *  @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
+ *                   BT_LE_SCAN_TYPE_PASSIVE.
+ *  @param _options  Scan options
+ *  @param _interval Scan Interval (N * 0.625 ms)
+ *  @param _window   Scan Window (N * 0.625 ms)
+ */
+#define BT_LE_SCAN_PARAM_INIT(_type, _options, _interval, _window) \
+{ \
+	.type = (_type), \
+	.options = (_options), \
+	.interval = (_interval), \
+	.window = (_window), \
+	.timeout = 0, \
+	.interval_coded = 0, \
+	.window_coded = 0, \
+}
+
+/** @brief Helper to declare scan parameters inline
  *
  *  @param _type     Scan Type, BT_LE_SCAN_TYPE_ACTIVE or
  *                   BT_LE_SCAN_TYPE_PASSIVE.
@@ -875,15 +923,9 @@ struct bt_le_scan_cb {
  *  @param _window   Scan Window (N * 0.625 ms)
  */
 #define BT_LE_SCAN_PARAM(_type, _options, _interval, _window) \
-		((struct bt_le_scan_param[]) { { \
-			.type = (_type), \
-			.options = (_options), \
-			.interval = (_interval), \
-			.window = (_window), \
-			.timeout = 0, \
-			.interval_coded = 0, \
-			.window_coded = 0, \
-		 } })
+	((struct bt_le_scan_param[]) { \
+		BT_LE_SCAN_PARAM_INIT(_type, _options, _interval, _window) \
+	 })
 
 /** Helper macro to enable active scanning to discover new devices. */
 #define BT_LE_SCAN_ACTIVE BT_LE_SCAN_PARAM(BT_LE_SCAN_TYPE_ACTIVE, \
@@ -891,7 +933,7 @@ struct bt_le_scan_cb {
 					   BT_GAP_SCAN_FAST_INTERVAL, \
 					   BT_GAP_SCAN_FAST_WINDOW)
 
-/** Helper macro to enable passive scanning to discover new devices.
+/** @brief Helper macro to enable passive scanning to discover new devices.
  *
  *  This macro should be used if information required for device identification
  *  (e.g., UUID) are known to be placed in Advertising Data.
@@ -1295,14 +1337,14 @@ int bt_br_set_discoverable(bool enable);
  */
 int bt_br_set_connectable(bool enable);
 
-/** Clear pairing information.
-  *
-  * @param id    Local identity (mostly just BT_ID_DEFAULT).
-  * @param addr  Remote address, NULL or BT_ADDR_LE_ANY to clear all remote
-  *              devices.
-  *
-  * @return 0 on success or negative error value on failure.
-  */
+/** @brief Clear pairing information.
+ *
+ *  @param id    Local identity (mostly just BT_ID_DEFAULT).
+ *  @param addr  Remote address, NULL or BT_ADDR_LE_ANY to clear all remote
+ *               devices.
+ *
+ *  @return 0 on success or negative error value on failure.
+ */
 int bt_unpair(u8_t id, const bt_addr_le_t *addr);
 
 /** Information about a bond with a remote device. */
@@ -1311,12 +1353,12 @@ struct bt_bond_info {
 	bt_addr_le_t addr;
 };
 
-/** Iterate through all existing bonds.
-  *
-  * @param id         Local identity (mostly just BT_ID_DEFAULT).
-  * @param func       Function to call for each bond.
-  * @param user_data  Data to pass to the callback function.
-  */
+/** @brief Iterate through all existing bonds.
+ *
+ *  @param id         Local identity (mostly just BT_ID_DEFAULT).
+ *  @param func       Function to call for each bond.
+ *  @param user_data  Data to pass to the callback function.
+ */
 void bt_foreach_bond(u8_t id, void (*func)(const struct bt_bond_info *info,
 					   void *user_data),
 		     void *user_data);

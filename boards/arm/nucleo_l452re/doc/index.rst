@@ -21,7 +21,7 @@ some highlights of the Nucleo L452RE board:
 - Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
 - One push-button: RESET
 
-.. image:: img/nucleo-l452re.jpg
+.. image:: img/nucleo_l452re.jpg
   :width: 250px
   :align: center
   :height: 188px

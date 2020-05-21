@@ -39,10 +39,17 @@ node-macro =/ %s"DT_N" path-id %s"_IRQ_IDX_" DIGIT
               %s"_VAL_" dt-name [ %s"_EXISTS" ]
 node-macro =/ %s"DT_N" path-id %s"_IRQ_NAME_" dt-name
               %s"_VAL_" dt-name [ %s"_EXISTS" ]
+; For fixed-partitions give a unique ordinal value for each partition */
+node-macro =/ %s"DT_N" path-id %s"_PARTITION_ID" DIGIT
 ; Macros are generated for each of the node's compatibles.
 node-macro =/ %s"DT_N" path-id %s"_COMPAT_MATCHES_" dt-name
 ; The node identifier for the node's parent in the devicetree.
 node-macro =/ %s"DT_N" path-id %s"_PARENT"
+; These are used internally by DT_FOREACH_CHILD, which iterates over
+; each child node.
+node-macro =/ %s"DT_N" path-id %s"_FOREACH_CHILD"
+; The node's status macro
+node-macro =/ %s"DT_N" path-id %s"_STATUS_" dt-name
 
 ; --------------------------------------------------------------------
 ; property-macro: a macro related to a node property
@@ -129,11 +136,10 @@ prop-suf = 1*( "_" gen-name ["_" dt-name] )
 ; See examples below.
 other-macro =  %s"DT_N_" alternate-id
 ; Total count of enabled instances of a compatible.
-other-macro =/ %s"DT_N_INST_" dt-name %s"_NUM"
+other-macro =/ %s"DT_N_INST_" dt-name %s"_NUM_OKAY"
 ; These are used internally by DT_INST_FOREACH, which iterates over
 ; each enabled instance of a compatible.
-other-macro =/ %s"DT_FOREACH_INST_" dt-name
-other-macro =/ %s"DT_FOREACH_IMPL_" DIGIT
+other-macro =/ %s"DT_FOREACH_OKAY_INST_" dt-name
 ; E.g.: #define DT_CHOSEN_zephyr_flash
 other-macro =/ %s"DT_CHOSEN_" dt-name
 ; Declares that a compatible has at least one node on a bus.
@@ -142,7 +148,10 @@ other-macro =/ %s"DT_CHOSEN_" dt-name
 ;
 ;   #define DT_COMPAT_vnd_dev_BUS_spi 1
 other-macro =/ %s"DT_COMPAT_" dt-name %s"_BUS_" dt-name
-
+;   #define DT_COMPAT_HAS_OKAY_vnd_dev 1
+other-macro =/ %s"DT_COMPAT_HAS_OKAY_" dt-name
+; Allows mapping a "label" property to a compatible node
+other-macro =/ %s"DT_COMPAT_" dt-name %s"_LABEL" dt-name
 ; --------------------------------------------------------------------
 ; alternate-id: another way to specify a node besides a path-id
 ;

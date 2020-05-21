@@ -54,7 +54,6 @@ static struct addrinfo *haddr;
 #endif
 
 static K_SEM_DEFINE(mqtt_start, 0, 1);
-static K_SEM_DEFINE(publish_msg, 0, 1);
 
 /* Application TLS configuration details */
 #define TLS_SNI_HOSTNAME CONFIG_SAMPLE_CLOUD_AZURE_HOSTNAME
@@ -305,6 +304,18 @@ static int publish(struct mqtt_client *client, enum mqtt_qos qos)
 	return mqtt_publish(client, &param);
 }
 
+static void poll_mqtt(void)
+{
+	int rc;
+
+	while (mqtt_connected) {
+		rc = wait(SYS_FOREVER_MS);
+		if (rc > 0) {
+			mqtt_input(&client_ctx);
+		}
+	}
+}
+
 /* Random time between 10 - 15 seconds
  * If you prefer to have this value more than CONFIG_MQTT_KEEPALIVE,
  * then keep the application connection live by calling mqtt_live()
@@ -317,34 +328,21 @@ static u8_t timeout_for_publish(void)
 
 static void publish_timeout(struct k_work *work)
 {
-	k_sem_give(&publish_msg);
-}
+	int rc;
 
-static void publish_message(void)
-{
-	while (mqtt_connected) {
-		int rc;
-
-		rc = publish(&client_ctx, MQTT_QOS_1_AT_LEAST_ONCE);
-		if (rc) {
-			LOG_ERR("mqtt_publish ERROR");
-			goto end;
-		}
-
-		LOG_DBG("mqtt_publish OK");
-
-		rc = wait(APP_SLEEP_MSECS);
-		if (rc <= 0) {
-			goto end;
-		}
-
-		mqtt_input(&client_ctx);
-
-end:
-		k_delayed_work_submit(&pub_message,
-				      K_SECONDS(timeout_for_publish()));
-		k_sem_take(&publish_msg, K_FOREVER);
+	if (!mqtt_connected) {
+		return;
 	}
+
+	rc = publish(&client_ctx, MQTT_QOS_1_AT_LEAST_ONCE);
+	if (rc) {
+		LOG_ERR("mqtt_publish ERROR");
+		goto end;
+	}
+
+	LOG_DBG("mqtt_publish OK");
+end:
+	k_delayed_work_submit(&pub_message, K_SECONDS(timeout_for_publish()));
 }
 
 static int try_to_connect(struct mqtt_client *client)
@@ -375,6 +373,8 @@ static int try_to_connect(struct mqtt_client *client)
 
 		if (mqtt_connected) {
 			subscribe(client);
+			k_delayed_work_submit(&pub_message,
+					      K_SECONDS(timeout_for_publish()));
 			return 0;
 		}
 
@@ -435,7 +435,7 @@ static void connect_to_cloud_and_publish(void)
 			return;
 		}
 
-		publish_message();
+		poll_mqtt();
 #if defined(CONFIG_NET_DHCPV4)
 	}
 #endif
@@ -499,7 +499,6 @@ static void l4_event_handler(struct net_mgmt_event_callback *cb,
 	}
 
 	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
-		k_sem_give(&publish_msg);
 		abort_mqtt_connection();
 		k_delayed_work_cancel(&check_network_conn);
 

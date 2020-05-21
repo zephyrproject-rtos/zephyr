@@ -9,8 +9,7 @@
 
 / {
 	model = "Redbear BLE Nano 2";
-	compatible = "redbear,blenano2", "nordic,nrf52832-qfaa",
-		     "nordic,nrf52832";
+	compatible = "redbear,blenano2";
 
 	chosen {
 		zephyr,console = &uart0;

@@ -14,3 +14,4 @@ API reference
 
 .. doxygengroup:: bt_mesh_proxy
    :project: Zephyr
+   :members:

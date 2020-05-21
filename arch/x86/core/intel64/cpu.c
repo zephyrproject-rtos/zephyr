@@ -86,7 +86,8 @@ struct x86_cpuboot x86_cpuboot[] = {
 	{
 		.tr = X86_KERNEL_CPU0_TR,
 		.gs_base = &tss0,
-		.sp = (u64_t) z_interrupt_stacks[0] + CONFIG_ISR_STACK_SIZE,
+		.sp = (u64_t) (z_interrupt_stacks[0] + CONFIG_ISR_STACK_SIZE +
+			       ARCH_THREAD_STACK_RESERVED),
 		.fn = z_x86_prep_c,
 #ifdef CONFIG_X86_MMU
 		.ptables = &z_x86_flat_ptables,
@@ -145,7 +146,8 @@ FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 {
 	x86_sse_init(NULL);
 
-	z_loapic_enable();
+	/* The internal cpu_number is the index to x86_cpuboot[] */
+	z_loapic_enable((unsigned char)(cpuboot - x86_cpuboot));
 
 #ifdef CONFIG_USERSPACE
 	/* Set landing site for 'syscall' instruction */

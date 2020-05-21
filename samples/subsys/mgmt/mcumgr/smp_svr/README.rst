@@ -107,6 +107,18 @@ Zephyr. The ``smp_svr`` sample comes in different flavours.
             -- \
             -DOVERLAY_CONFIG=overlay-bt-tiny.conf
 
+   .. group-tab:: Serial
+
+      To build the serial sample with file-system support:
+
+      .. code-block:: console
+
+         west build \
+            -b frdm_k64f \
+            samples/subsys/mgmt/mcumgr/smp_svr \
+            -- \
+            -DOVERLAY_CONFIG='overlay-serial.conf;overlay-fs.conf'
+
    .. group-tab:: UDP
 
       The UDP transport for SMP supports both IPv4 and IPv6.

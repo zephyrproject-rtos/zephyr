@@ -99,7 +99,7 @@ static void timer_restart(u32_t countdown)
  * is 0 and the START bit is set then the timer has been started and is in the
  * process of moving the preload register value into the count register.
  */
-static INLINE u32_t timer_count(void)
+static inline u32_t timer_count(void)
 {
 	u32_t ccr = TIMER_REGS->CNT;
 

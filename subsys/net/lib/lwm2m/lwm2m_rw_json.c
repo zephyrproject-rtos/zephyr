@@ -823,7 +823,7 @@ int do_write_op_json(struct lwm2m_message *msg)
 			}
 
 			/* combine base_name + name */
-			snprintf(full_name, sizeof(full_name), "%s%s",
+			snprintk(full_name, sizeof(full_name), "%s%s",
 				 base_name, value);
 
 			/* parse full_name into path */

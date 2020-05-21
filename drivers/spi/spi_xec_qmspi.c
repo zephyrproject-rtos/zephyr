@@ -168,7 +168,7 @@ static u32_t qmspi_config_get_lines(const struct spi_config *config)
 static int qmspi_configure(struct device *dev,
 			   const struct spi_config *config)
 {
-	const struct spi_qmspi_config *cfg = dev->config->config_info;
+	const struct spi_qmspi_config *cfg = dev->config_info;
 	struct spi_qmspi_data *data = dev->driver_data;
 	QMSPI_Type *regs = cfg->regs;
 	u32_t smode;
@@ -508,7 +508,7 @@ static int qmspi_transceive(struct device *dev,
 			    const struct spi_buf_set *tx_bufs,
 			    const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_qmspi_config *cfg = dev->config->config_info;
+	const struct spi_qmspi_config *cfg = dev->config_info;
 	struct spi_qmspi_data *data = dev->driver_data;
 	QMSPI_Type *regs = cfg->regs;
 	const struct spi_buf *ptx;
@@ -593,7 +593,7 @@ static int qmspi_release(struct device *dev,
 			 const struct spi_config *config)
 {
 	struct spi_qmspi_data *data = dev->driver_data;
-	const struct spi_qmspi_config *cfg = dev->config->config_info;
+	const struct spi_qmspi_config *cfg = dev->config_info;
 	QMSPI_Type *regs = cfg->regs;
 
 	/* Force CS# to de-assert on next unit boundary */
@@ -616,7 +616,7 @@ static int qmspi_release(struct device *dev,
  */
 static int qmspi_init(struct device *dev)
 {
-	const struct spi_qmspi_config *cfg = dev->config->config_info;
+	const struct spi_qmspi_config *cfg = dev->config_info;
 	struct spi_qmspi_data *data = dev->driver_data;
 	QMSPI_Type *regs = cfg->regs;
 
@@ -656,7 +656,7 @@ static const struct spi_driver_api spi_qmspi_driver_api = {
 				DT_INST_PROP(0, dldh),			\
 				DT_INST_PROP(0, dcsda))
 
-#if DT_HAS_NODE(DT_INST(0, microchip_xec_qmspi))
+#if DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_qmspi), okay)
 
 static const struct spi_qmspi_config spi_qmspi_0_config = {
 	.regs = (QMSPI_Type *)DT_INST_REG_ADDR(0),
@@ -680,4 +680,4 @@ DEVICE_AND_API_INIT(spi_xec_qmspi_0,
 		    &spi_qmspi_0_config, POST_KERNEL,
 		    CONFIG_SPI_INIT_PRIORITY, &spi_qmspi_driver_api);
 
-#endif /* DT_HAS_NODE(DT_INST(0, microchip_xec_qmspi)) */
+#endif /* DT_NODE_HAS_STATUS(DT_INST(0, microchip_xec_qmspi), okay) */

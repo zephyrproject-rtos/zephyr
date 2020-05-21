@@ -43,6 +43,7 @@
 #include <device.h>
 #include <string.h>
 #include <drivers/flash.h>
+#include <storage/flash_map.h>
 #include <fs/nvs.h>
 
 static struct nvs_fs fs;
@@ -71,9 +72,9 @@ void main(void)
 	/* define the nvs file system by settings with:
 	 *	sector_size equal to the pagesize,
 	 *	3 sectors
-	 *	starting at DT_FLASH_AREA_STORAGE_OFFSET
+	 *	starting at FLASH_AREA_OFFSET(storage)
 	 */
-	fs.offset = DT_FLASH_AREA_STORAGE_OFFSET;
+	fs.offset = FLASH_AREA_OFFSET(storage);
 	rc = flash_get_page_info_by_offs(
 		device_get_binding(DT_CHOSEN_ZEPHYR_FLASH_CONTROLLER_LABEL),
 		fs.offset, &info);

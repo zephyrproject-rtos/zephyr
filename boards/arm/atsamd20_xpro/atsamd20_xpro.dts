@@ -14,6 +14,7 @@
 	aliases {
 		led0 = &yellow_led;
 		sw0 = &user_button;
+		i2c-0 = &sercom2;
 	};
 
 	chosen {
@@ -52,6 +53,14 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	cs-gpios = <&porta 5 0>;
+};
+
+&sercom2 {
+	status = "okay";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	#address-cells = <1>;
+	#size-cells = <0>;
 };
 
 &sercom3 {

@@ -13,24 +13,25 @@
 
 #include <autoconf.h>
 #include <devicetree.h>
-/* physical address where the kernel is loaded */
-#define PHYS_LOAD_ADDR DT_PHYS_LOAD_ADDR
 
+
+/* physical address where the kernel is loaded */
 /* physical address of RAM */
+#define PHYS_RAM_ADDR		DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define PHYS_RAM_SIZE		DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+
 #ifdef CONFIG_XIP
-  #define PHYS_RAM_ADDR    DT_PHYS_RAM_ADDR
+  #define PHYS_LOAD_ADDR	DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
 #else  /* !CONFIG_XIP */
-  #define PHYS_RAM_ADDR    PHYS_LOAD_ADDR
+  #define PHYS_LOAD_ADDR	PHYS_RAM_ADDR
 #endif /* CONFIG_XIP */
 
 MEMORY
     {
 #ifdef CONFIG_XIP
-    ROM (rx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = DT_ROM_SIZE*1K
-    RAM (wx)        : ORIGIN = PHYS_RAM_ADDR, LENGTH = DT_RAM_SIZE*1K
-#else  /* !CONFIG_XIP */
-    RAM (wx)	    : ORIGIN = PHYS_LOAD_ADDR, LENGTH = DT_RAM_SIZE*1K
+    ROM (rx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
 #endif /* CONFIG_XIP */
+    RAM (wx)        : ORIGIN = PHYS_RAM_ADDR, LENGTH = PHYS_RAM_SIZE
 
     /*
      * It doesn't matter where this region goes as it is stripped from the

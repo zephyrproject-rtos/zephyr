@@ -141,11 +141,11 @@ int sw_filter_lib_run(TPDMFilter_InitStruct *pdm_filter,
 }
 
 static const struct _dmic_ops mpxxdtyy_driver_api = {
-#if DT_ANY_INST_ON_BUS(i2s)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2s)
 	.configure		= mpxxdtyy_i2s_configure,
 	.trigger		= mpxxdtyy_i2s_trigger,
 	.read			= mpxxdtyy_i2s_read,
-#endif /* DT_ANY_INST_ON_BUS(i2s) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2s) */
 };
 
 static int mpxxdtyy_initialize(struct device *dev)

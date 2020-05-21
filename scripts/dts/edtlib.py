@@ -120,6 +120,16 @@ class EDT:
                 ...
         };
 
+      This exists only for the sake of gen_legacy_defines.py. It will probably
+      be removed following the Zephyr 2.3 release.
+
+    compat2nodes:
+      A collections.defaultdict that maps each 'compatible' string that appears
+      on some Node to a list of Nodes with that compatible.
+
+    compat2okay:
+      Like compat2nodes, but just for nodes with status 'okay'.
+
     label2node:
       A collections.OrderedDict that maps a node label to the node with
       that label.
@@ -142,7 +152,9 @@ class EDT:
       The bindings directory paths passed to __init__()
     """
     def __init__(self, dts, bindings_dirs, warn_file=None,
-                 warn_reg_unit_address_mismatch=True):
+                 warn_reg_unit_address_mismatch=True,
+                 default_prop_types=True,
+                 support_fixed_partitions_on_any_bus=True):
         """
         EDT constructor. This is the top-level entry point to the library.
 
@@ -160,12 +172,23 @@ class EDT:
           If True, a warning is printed if a node has a 'reg' property where
           the address of the first entry does not match the unit address of the
           node
+
+        default_prop_types (default: True):
+          If True, default property types will be used when a node has no
+          bindings.
+
+        support_fixed_partitions_on_any_bus (default True):
+          If True, set the Node.bus for 'fixed-partitions' compatible nodes
+          to None.  This allows 'fixed-partitions' binding to match regardless
+          of the bus the 'fixed-partition' is under.
         """
         # Do this indirection with None in case sys.stderr is deliberately
         # overridden
         self._warn_file = sys.stderr if warn_file is None else warn_file
 
         self._warn_reg_unit_address_mismatch = warn_reg_unit_address_mismatch
+        self._default_prop_types = default_prop_types
+        self._fixed_partitions_no_bus = support_fixed_partitions_on_any_bus
 
         self.dts_path = dts
         self.bindings_dirs = bindings_dirs
@@ -505,7 +528,11 @@ class EDT:
             node = Node()
             node.edt = self
             node._node = dt_node
-            node.bus_node = node._bus_node()
+            if "compatible" in node._node.props:
+                node.compats = node._node.props["compatible"].to_strings()
+            else:
+                node.compats = []
+            node.bus_node = node._bus_node(self._fixed_partitions_no_bus)
             node._init_binding()
             node._init_regs()
 
@@ -516,24 +543,30 @@ class EDT:
             # These depend on all Node objects having been created, because
             # they (either always or sometimes) reference other nodes, so we
             # run them separately
-            node._init_props()
+            node._init_props(default_prop_types=self._default_prop_types)
             node._init_interrupts()
             node._init_pinctrls()
 
     def _init_luts(self):
-        # Initialize compat2enabled and label2node lookup tables
-        # (LUTs).
+        # Initialize node lookup tables (LUTs).
 
-        self.compat2enabled = defaultdict(list)
         self.label2node = OrderedDict()
+        self.compat2enabled = defaultdict(list)
+        self.compat2nodes = defaultdict(list)
+        self.compat2okay = defaultdict(list)
 
         for node in self.nodes:
             for label in node.labels:
                 self.label2node[label] = node
 
-            if node.enabled:
-                for compat in node.compats:
+            for compat in node.compats:
+                self.compat2nodes[compat].append(node)
+
+                if node.enabled:
                     self.compat2enabled[compat].append(node)
+
+                if node.status == "okay":
+                    self.compat2okay[compat].append(node)
 
     def _check_binding(self, binding, binding_path):
         # Does sanity checking on 'binding'. Only takes 'self' for the sake of
@@ -770,8 +803,16 @@ class Node:
     depends_on:
       A list with the nodes that the node directly depends on
 
+    status:
+      The node's status property value, as a string, or "okay" if the node
+      has no status property set. If the node's status property is "ok",
+      it is converted to "okay" for consistency.
+
     enabled:
       True unless the node has 'status = "disabled"'
+
+      This exists only for the sake of gen_legacy_defines.py. It will probably
+      be removed following the Zephyr 2.3 release.
 
     read_only:
       True if the node has a 'read-only' property, and False otherwise
@@ -911,10 +952,24 @@ class Node:
         return self.edt._graph.depends_on(self)
 
     @property
+    def status(self):
+        "See the class docstring"
+        status = self._node.props.get("status")
+
+        if status is None:
+            as_string = "okay"
+        else:
+            as_string = status.to_string()
+
+        if as_string == "ok":
+            as_string = "okay"
+
+        return as_string
+
+    @property
     def enabled(self):
         "See the class docstring"
-        return "status" not in self._node.props or \
-            self._node.props["status"].to_string() != "disabled"
+        return "status" not in self._node.props or self.status != "disabled"
 
     @property
     def read_only(self):
@@ -1014,8 +1069,7 @@ class Node:
         # initialized, which is guaranteed by going through the nodes in
         # node_iter() order.
 
-        if "compatible" in self._node.props:
-            self.compats = self._node.props["compatible"].to_strings()
+        if self.compats:
             on_bus = self.on_bus
 
             for compat in self.compats:
@@ -1030,8 +1084,6 @@ class Node:
             # No 'compatible' property. See if the parent binding has a
             # 'child-binding:' key that gives the binding (or a legacy
             # 'sub-node:' key).
-
-            self.compats = []
 
             binding_from_parent = self._binding_from_parent()
             if binding_from_parent:
@@ -1066,12 +1118,20 @@ class Node:
 
         return None
 
-    def _bus_node(self):
+    def _bus_node(self, support_fixed_partitions_on_any_bus = True):
         # Returns the value for self.bus_node. Relies on parent nodes being
         # initialized before their children.
 
         if not self.parent:
             # This is the root node
+            return None
+
+        # Treat 'fixed-partitions' as if they are not on any bus.  The reason is
+        # that flash nodes might be on a SPI or controller or SoC bus.  Having
+        # bus be None means we'll always match the binding for fixed-partitions
+        # also this means want processing the fixed-partitions node we wouldn't
+        # try to do anything bus specific with it.
+        if support_fixed_partitions_on_any_bus and "fixed-partitions" in self.compats:
             return None
 
         if self.parent.bus:
@@ -1081,21 +1141,37 @@ class Node:
         # Same bus node as parent (possibly None)
         return self.parent.bus_node
 
-    def _init_props(self):
+    def _init_props(self, default_prop_types=False):
         # Creates self.props. See the class docstring. Also checks that all
         # properties on the node are declared in its binding.
 
         self.props = OrderedDict()
 
-        if not self._binding:
-            return
+        node = self._node
+        if self._binding:
+            binding_props = self._binding.get("properties")
+        else:
+            binding_props = None
 
         # Initialize self.props
-        if "properties" in self._binding:
-            for name, options in self._binding["properties"].items():
+        if binding_props:
+            for name, options in binding_props.items():
                 self._init_prop(name, options)
-
-        self._check_undeclared_props()
+            self._check_undeclared_props()
+        elif default_prop_types:
+            for name in node.props:
+                if name in _DEFAULT_PROP_TYPES:
+                    prop_type = _DEFAULT_PROP_TYPES[name]
+                    val = self._prop_val(name, prop_type, False, None)
+                    prop = Property()
+                    prop.node = self
+                    prop.name = name
+                    prop.description = None
+                    prop.val = val
+                    prop.type = prop_type
+                    # We don't set enum_index for "compatible"
+                    prop.enum_index = None
+                    self.props[name] = prop
 
     def _init_prop(self, name, options):
         # _init_props() helper for initializing a single property
@@ -2265,3 +2341,15 @@ _BindingLoader.add_constructor("!include", _binding_include)
 _BindingLoader.add_constructor(
     yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
     lambda loader, node: OrderedDict(loader.construct_pairs(node)))
+
+_DEFAULT_PROP_TYPES = {
+    "compatible": "string-array",
+    "status": "string",
+    "reg": "array",
+    "reg-names": "string-array",
+    "label": "string",
+    "interrupts": "array",
+    "interrupts-extended": "compound",
+    "interrupt-names": "string-array",
+    "interrupt-controller": "boolean",
+}

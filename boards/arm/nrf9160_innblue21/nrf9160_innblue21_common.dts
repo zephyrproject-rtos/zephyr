@@ -6,8 +6,7 @@
 
 / {
 	model = "innblue v21 Dev Kit";
-	compatible = "innblue,innblue21",
-				 "nordic,nrf9160-sica", "nordic,nrf9160";
+	compatible = "innblue,innblue21";
 
 	chosen {
 		zephyr,console = &uart0;

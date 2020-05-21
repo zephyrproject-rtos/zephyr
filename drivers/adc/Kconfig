@@ -37,15 +37,6 @@ module = ADC
 module-str = ADC
 source "subsys/logging/Kconfig.template.log_config"
 
-config ADC_0
-	bool "Enable ADC 0"
-
-config ADC_1
-	bool "Enable ADC 1"
-
-config ADC_2
-	bool "Enable ADC 2"
-
 source "drivers/adc/Kconfig.mcux"
 
 source "drivers/adc/Kconfig.nrfx"

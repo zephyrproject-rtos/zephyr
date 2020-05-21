@@ -25,7 +25,7 @@ struct imx_epit_data {
 
 static inline const struct imx_epit_config *get_epit_config(struct device *dev)
 {
-	return CONTAINER_OF(dev->config->config_info, struct imx_epit_config,
+	return CONTAINER_OF(dev->config_info, struct imx_epit_config,
 			    info);
 }
 
@@ -178,4 +178,4 @@ static int imx_epit_config_func_##idx(struct device *dev)		       \
 	return 0;							       \
 }
 
-DT_INST_FOREACH(COUNTER_IMX_EPIT_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_IMX_EPIT_DEVICE)

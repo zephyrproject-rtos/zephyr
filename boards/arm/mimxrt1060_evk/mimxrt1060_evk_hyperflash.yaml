@@ -21,4 +21,5 @@ supported:
   - gpio
   - i2c
   - netif:eth
+  - sdhc
   - usb_device

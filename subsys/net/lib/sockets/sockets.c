@@ -1066,7 +1066,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 
 	if (poll_timeout < 0) {
 		timeout = K_FOREVER;
-		poll_timeout = NET_WAIT_FOREVER;
+		poll_timeout = SYS_FOREVER_MS;
 	} else {
 		timeout = K_MSEC(poll_timeout);
 	}

@@ -177,6 +177,10 @@ struct bt_uuid_128 {
  *  @brief IP Support Service
  */
 #define BT_UUID_IPSS                      BT_UUID_DECLARE_16(0x1820)
+/** @def BT_UUID_OTS
+ *  @brief Object Transfer Service
+ */
+#define BT_UUID_OTS                       BT_UUID_DECLARE_16(0x1825)
 /** @def BT_UUID_MESH_PROV
  *  @brief Mesh Provisioning Service
  */
@@ -453,6 +457,54 @@ struct bt_uuid_128 {
  *  @brief Central Address Resolution Characteristic
  */
 #define BT_UUID_CENTRAL_ADDR_RES          BT_UUID_DECLARE_16(0x2aa6)
+/** @def BT_UUID_OTS_FEATURE
+ *  @brief OTS Feature Characteristic
+ */
+#define BT_UUID_OTS_FEATURE               BT_UUID_DECLARE_16(0x2abd)
+/** @def BT_UUID_OTS_NAME
+ *  @brief OTS Object Name Characteristic
+ */
+#define BT_UUID_OTS_NAME                  BT_UUID_DECLARE_16(0x2abe)
+/** @def BT_UUID_OTS_TYPE
+ *  @brief OTS Object Type Characteristic
+ */
+#define BT_UUID_OTS_TYPE                  BT_UUID_DECLARE_16(0x2abf)
+/** @def BT_UUID_OTS_SIZE
+ *  @brief OTS Object Size Characteristic
+ */
+#define BT_UUID_OTS_SIZE                  BT_UUID_DECLARE_16(0x2ac0)
+/** @def BT_UUID_OTS_FIRST_CREATED
+ *  @brief OTS Object First-Created Characteristic
+ */
+#define BT_UUID_OTS_FIRST_CREATED         BT_UUID_DECLARE_16(0x2ac1)
+/** @def BT_UUID_OTS_LAST_MODIFIED
+ *  @brief OTS Object Last-Modified Characteristic
+ */
+#define BT_UUID_OTS_LAST_MODIFIED         BT_UUID_DECLARE_16(0x2ac2)
+/** @def BT_UUID_OTS_ID
+ *  @brief OTS Object ID Characteristic
+ */
+#define BT_UUID_OTS_ID                    BT_UUID_DECLARE_16(0x2ac3)
+/** @def BT_UUID_OTS_PROPERTIES
+ *  @brief OTS Object Properties Characteristic
+ */
+#define BT_UUID_OTS_PROPERTIES            BT_UUID_DECLARE_16(0x2ac4)
+/** @def BT_UUID_OTS_ACTION_CP
+ *  @brief OTS Object Action Control Point Characteristic
+ */
+#define BT_UUID_OTS_ACTION_CP             BT_UUID_DECLARE_16(0x2ac5)
+/** @def BT_UUID_OTS_LIST_CP
+ *  @brief OTS Object List Control Point Characteristic
+ */
+#define BT_UUID_OTS_LIST_CP               BT_UUID_DECLARE_16(0x2ac6)
+/** @def BT_UUID_OTS_LIST_FILTER
+ *  @brief OTS Object List Filter Characteristic
+ */
+#define BT_UUID_OTS_LIST_FILTER           BT_UUID_DECLARE_16(0x2ac7)
+/** @def BT_UUID_OTS_CHANGED
+ *  @brief OTS Object Changed Characteristic
+ */
+#define BT_UUID_OTS_CHANGED               BT_UUID_DECLARE_16(0x2ac8)
 /** @def BT_UUID_MESH_PROV_DATA_IN
  *  @brief Mesh Provisioning Data In
  */
@@ -477,6 +529,10 @@ struct bt_uuid_128 {
  *  @brief Database Hash
  */
 #define BT_UUID_GATT_DB_HASH              BT_UUID_DECLARE_16(0x2b2a)
+/** @def BT_UUID_GATT_SERVER_FEATURES
+ *  @brief Server Supported Features
+ */
+#define BT_UUID_GATT_SERVER_FEATURES      BT_UUID_DECLARE_16(0x2b3a)
 
 /*
  * Protocol UUIDs

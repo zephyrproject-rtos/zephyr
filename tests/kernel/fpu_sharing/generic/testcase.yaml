@@ -1,0 +1,38 @@
+tests:
+  kernel.fpu_sharing.generic.arc:
+    extra_args: PI_NUM_ITERATIONS=500
+    filter: CONFIG_CPU_ARCV2 and CONFIG_CPU_HAS_FPU
+    slow: true
+    tags: kernel
+    timeout: 600
+    min_ram: 16
+  kernel.fpu_sharing.generic.arm:
+    extra_args: PI_NUM_ITERATIONS=70000
+    filter: CONFIG_ARMV7_M_ARMV8_M_FP
+    slow: true
+    tags: kernel
+    timeout: 600
+    min_ram: 16
+  kernel.fpu_sharing.generic.riscv32:
+    extra_args: PI_NUM_ITERATIONS=500
+    filter: CONFIG_CPU_HAS_FPU
+    slow: true
+    arch_whitelist: riscv32
+    tags: kernel
+    timeout: 600
+    min_ram: 16
+    build_only: true
+  kernel.fpu_sharing.generic.riscv64:
+    extra_args: PI_NUM_ITERATIONS=500
+    filter: CONFIG_CPU_HAS_FPU
+    slow: true
+    arch_whitelist: riscv64
+    tags: kernel
+    timeout: 600
+    min_ram: 16
+  kernel.fpu_sharing.generic.x86:
+    extra_args: CONF_FILE=prj_x86.conf
+    platform_whitelist: qemu_x86
+    slow: true
+    tags: kernel
+    timeout: 600

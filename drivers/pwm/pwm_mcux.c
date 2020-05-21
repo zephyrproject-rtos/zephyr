@@ -35,7 +35,7 @@ static int mcux_pwm_pin_set(struct device *dev, u32_t pwm,
 			    u32_t period_cycles, u32_t pulse_cycles,
 			    pwm_flags_t flags)
 {
-	const struct pwm_mcux_config *config = dev->config->config_info;
+	const struct pwm_mcux_config *config = dev->config_info;
 	struct pwm_mcux_data *data = dev->driver_data;
 	u8_t duty_cycle;
 
@@ -111,7 +111,7 @@ static int mcux_pwm_pin_set(struct device *dev, u32_t pwm,
 static int mcux_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
 				       u64_t *cycles)
 {
-	const struct pwm_mcux_config *config = dev->config->config_info;
+	const struct pwm_mcux_config *config = dev->config_info;
 
 	*cycles = CLOCK_GetFreq(config->clock_source) >> config->prescale;
 
@@ -120,7 +120,7 @@ static int mcux_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
 
 static int pwm_mcux_init(struct device *dev)
 {
-	const struct pwm_mcux_config *config = dev->config->config_info;
+	const struct pwm_mcux_config *config = dev->config_info;
 	struct pwm_mcux_data *data = dev->driver_data;
 	pwm_config_t pwm_config;
 	status_t status;
@@ -171,4 +171,4 @@ static const struct pwm_driver_api pwm_mcux_driver_api = {
 			    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,\
 			    &pwm_mcux_driver_api);
 
-DT_INST_FOREACH(PWM_DEVICE_INIT_MCUX)
+DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT_MCUX)

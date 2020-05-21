@@ -8,17 +8,24 @@ config BOARD
 config BUILD_OUTPUT_STRIPPED
 	default y
 
-if I2C
+config MP_NUM_CPUS
+	default 2
 
-config I2C_0
-	default y
-
-config I2C_1
-	default y
-
-endif # I2C
-
-config APIC_TIMER
-	default y if !HPET_TIMER
+config X86_MMU_PAGE_POOL_PAGES
+	default 3072 if X86_MMU
 
 endif # BOARD_UP_SQUARED
+
+
+if BOARD_UP_SQUARED_32
+
+config BOARD
+	default "up_squared_32"
+
+config BUILD_OUTPUT_STRIPPED
+	default y
+
+config X86_MMU_PAGE_POOL_PAGES
+	default 3072 if X86_MMU
+
+endif # BOARD_UP_SQUARED_32

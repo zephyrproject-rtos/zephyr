@@ -161,7 +161,7 @@ static u32_t gpio_ht16k33_get_pending_int(struct device *dev)
 
 static int gpio_ht16k33_init(struct device *dev)
 {
-	const struct gpio_ht16k33_cfg *config = dev->config->config_info;
+	const struct gpio_ht16k33_cfg *config = dev->config_info;
 	struct gpio_ht16k33_data *data = dev->driver_data;
 
 	if (config->keyscan_idx >= HT16K33_KEYSCAN_ROWS) {
@@ -215,102 +215,6 @@ static const struct gpio_driver_api gpio_ht16k33_api = {
 			    &gpio_ht16k33_##id##_data,			\
 			    &gpio_ht16k33_##id##_cfg, POST_KERNEL,	\
 			    CONFIG_GPIO_HT16K33_INIT_PRIORITY,		\
-			    &gpio_ht16k33_api)
+			    &gpio_ht16k33_api);
 
-/* Support up to eight HT16K33 devices, each with three keyscan devices */
-
-#if DT_HAS_DRV_INST(0)
-GPIO_HT16K33_DEVICE(0);
-#endif
-
-#if DT_HAS_DRV_INST(1)
-GPIO_HT16K33_DEVICE(1);
-#endif
-
-#if DT_HAS_DRV_INST(2)
-GPIO_HT16K33_DEVICE(2);
-#endif
-
-#if DT_HAS_DRV_INST(3)
-GPIO_HT16K33_DEVICE(3);
-#endif
-
-#if DT_HAS_DRV_INST(4)
-GPIO_HT16K33_DEVICE(4);
-#endif
-
-#if DT_HAS_DRV_INST(5)
-GPIO_HT16K33_DEVICE(5);
-#endif
-
-#if DT_HAS_DRV_INST(6)
-GPIO_HT16K33_DEVICE(6);
-#endif
-
-#if DT_HAS_DRV_INST(7)
-GPIO_HT16K33_DEVICE(7);
-#endif
-
-#if DT_HAS_DRV_INST(8)
-GPIO_HT16K33_DEVICE(8);
-#endif
-
-#if DT_HAS_DRV_INST(9)
-GPIO_HT16K33_DEVICE(9);
-#endif
-
-#if DT_HAS_DRV_INST(10)
-GPIO_HT16K33_DEVICE(10);
-#endif
-
-#if DT_HAS_DRV_INST(11)
-GPIO_HT16K33_DEVICE(11);
-#endif
-
-#if DT_HAS_DRV_INST(12)
-GPIO_HT16K33_DEVICE(12);
-#endif
-
-#if DT_HAS_DRV_INST(13)
-GPIO_HT16K33_DEVICE(13);
-#endif
-
-#if DT_HAS_DRV_INST(14)
-GPIO_HT16K33_DEVICE(14);
-#endif
-
-#if DT_HAS_DRV_INST(15)
-GPIO_HT16K33_DEVICE(15);
-#endif
-
-#if DT_HAS_DRV_INST(16)
-GPIO_HT16K33_DEVICE(16);
-#endif
-
-#if DT_HAS_DRV_INST(17)
-GPIO_HT16K33_DEVICE(17);
-#endif
-
-#if DT_HAS_DRV_INST(18)
-GPIO_HT16K33_DEVICE(18);
-#endif
-
-#if DT_HAS_DRV_INST(19)
-GPIO_HT16K33_DEVICE(19);
-#endif
-
-#if DT_HAS_DRV_INST(20)
-GPIO_HT16K33_DEVICE(20);
-#endif
-
-#if DT_HAS_DRV_INST(21)
-GPIO_HT16K33_DEVICE(21);
-#endif
-
-#if DT_HAS_DRV_INST(22)
-GPIO_HT16K33_DEVICE(22);
-#endif
-
-#if DT_HAS_DRV_INST(23)
-GPIO_HT16K33_DEVICE(23);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(GPIO_HT16K33_DEVICE)

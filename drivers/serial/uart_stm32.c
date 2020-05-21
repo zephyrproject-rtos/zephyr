@@ -29,13 +29,12 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(uart_stm32);
 
-#define HAS_LPUART_1 (DT_HAS_NODE(DT_NODELABEL(lpuart1)) && \
-		      DT_NODE_HAS_COMPAT(DT_NODELABEL(lpuart1), \
-					 st_stm32_lpuart))
+#define HAS_LPUART_1 (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpuart1), \
+					 st_stm32_lpuart, okay))
 
 /* convenience defines */
 #define DEV_CFG(dev)							\
-	((const struct uart_stm32_config * const)(dev)->config->config_info)
+	((const struct uart_stm32_config * const)(dev)->config_info)
 #define DEV_DATA(dev)							\
 	((struct uart_stm32_data * const)(dev)->driver_data)
 #define UART_STRUCT(dev)					\
@@ -661,6 +660,8 @@ static int uart_stm32_init(struct device *dev)
 	const struct uart_stm32_config *config = DEV_CFG(dev);
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	u32_t ll_parity;
+	u32_t ll_datawidth;
 
 	__uart_stm32_get_clock(dev);
 	/* enable clock */
@@ -675,10 +676,31 @@ static int uart_stm32_init(struct device *dev)
 	LL_USART_SetTransferDirection(UartInstance,
 				      LL_USART_DIRECTION_TX_RX);
 
-	/* 8 data bit, 1 start bit, 1 stop bit, no parity */
+	/* Determine the datawidth and parity. If we use other parity than
+	 * 'none' we must use datawidth = 9 (to get 8 databit + 1 parity bit).
+	 */
+	if (config->parity == 2) {
+		/* 8 databit, 1 parity bit, parity even */
+		ll_parity = LL_USART_PARITY_EVEN;
+		ll_datawidth = LL_USART_DATAWIDTH_9B;
+	} else if (config->parity == 1) {
+		/* 8 databit, 1 parity bit, parity odd */
+		ll_parity = LL_USART_PARITY_ODD;
+		ll_datawidth = LL_USART_DATAWIDTH_9B;
+	} else {  /* Default to 8N0, but show warning if invalid value */
+		if (config->parity != 0) {
+			LOG_WRN("Invalid parity setting '%d'."
+				"Defaulting to 'none'.", config->parity);
+		}
+		/* 8 databit, parity none */
+		ll_parity = LL_USART_PARITY_NONE;
+		ll_datawidth = LL_USART_DATAWIDTH_8B;
+	}
+
+	/* Set datawidth and parity, 1 start bit, 1 stop bit  */
 	LL_USART_ConfigCharacter(UartInstance,
-				 LL_USART_DATAWIDTH_8B,
-				 LL_USART_PARITY_NONE,
+				 ll_datawidth,
+				 ll_parity,
 				 LL_USART_STOPBITS_1);
 
 	if (config->hw_flow_control) {
@@ -740,7 +762,8 @@ static const struct uart_stm32_config uart_stm32_cfg_##index = {	\
 	.pclken = { .bus = DT_INST_CLOCKS_CELL(index, bus),	\
 		    .enr = DT_INST_CLOCKS_CELL(index, bits)	\
 	},								\
-	.hw_flow_control = DT_INST_PROP(index, hw_flow_control)\
+	.hw_flow_control = DT_INST_PROP(index, hw_flow_control),\
+	.parity = DT_INST_PROP(index, parity)\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##index = {		\
@@ -755,46 +778,4 @@ DEVICE_AND_API_INIT(uart_stm32_##index, DT_INST_LABEL(index),\
 									\
 STM32_UART_IRQ_HANDLER(index)
 
-#if DT_HAS_DRV_INST(0)
-STM32_UART_INIT(0)
-#endif	/* DT_HAS_DRV_INST(0) */
-
-#if DT_HAS_DRV_INST(1)
-STM32_UART_INIT(1)
-#endif	/* DT_HAS_DRV_INST(1) */
-
-#if DT_HAS_DRV_INST(2)
-STM32_UART_INIT(2)
-#endif	/* DT_HAS_DRV_INST(2) */
-
-#if DT_HAS_DRV_INST(3)
-STM32_UART_INIT(3)
-#endif	/* DT_HAS_DRV_INST(3) */
-
-#if DT_HAS_DRV_INST(4)
-STM32_UART_INIT(4)
-#endif /* DT_HAS_DRV_INST(4) */
-
-#if DT_HAS_DRV_INST(5)
-STM32_UART_INIT(5)
-#endif /* DT_HAS_DRV_INST(5) */
-
-#if DT_HAS_DRV_INST(6)
-STM32_UART_INIT(6)
-#endif /* DT_HAS_DRV_INST(6) */
-
-#if DT_HAS_DRV_INST(7)
-STM32_UART_INIT(7)
-#endif /* DT_HAS_DRV_INST(7) */
-
-#if DT_HAS_DRV_INST(8)
-STM32_UART_INIT(8)
-#endif /* DT_HAS_DRV_INST(8) */
-
-#if DT_HAS_DRV_INST(9)
-STM32_UART_INIT(9)
-#endif /* DT_HAS_DRV_INST(9) */
-
-#if DT_HAS_DRV_INST(10)
-STM32_UART_INIT(10)
-#endif /* DT_HAS_DRV_INST(10) */
+DT_INST_FOREACH_STATUS_OKAY(STM32_UART_INIT)

@@ -133,25 +133,7 @@ struct _cpu {
 typedef struct _cpu _cpu_t;
 
 struct z_kernel {
-	/* For compatibility with pre-SMP code, union the first CPU
-	 * record with the legacy fields so code can continue to use
-	 * the "_kernel.XXX" expressions and assembly offsets.
-	 */
-	union {
-		struct _cpu cpus[CONFIG_MP_NUM_CPUS];
-#ifndef CONFIG_SMP
-		struct {
-			/* nested interrupt count */
-			u32_t nested;
-
-			/* interrupt stack pointer base */
-			char *irq_stack;
-
-			/* currently scheduled thread */
-			struct k_thread *current;
-		};
-#endif
-	};
+	struct _cpu cpus[CONFIG_MP_NUM_CPUS];
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	/* queue of timeouts */
@@ -168,7 +150,7 @@ struct z_kernel {
 	 */
 	struct _ready_q ready_q;
 
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_FPU_SHARING
 	/*
 	 * A 'current_sse' field does not exist in addition to the 'current_fp'
 	 * field since it's not possible to divide the IA-32 non-integer
@@ -204,7 +186,7 @@ bool z_smp_cpu_mobile(void);
 
 #else
 #define _current_cpu (&_kernel.cpus[0])
-#define _current _kernel.current
+#define _current _kernel.cpus[0].current
 #endif
 
 #define _timeout_q _kernel.timeout_q

@@ -1961,6 +1961,8 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_BT_BREDR" \
                          "CONFIG_BT_MESH_MODEL_EXTENSIONS" \
                          "CONFIG_BT_REMOTE_INFO" \
+                         "CONFIG_BT_USER_DATA_LEN_UPDATE" \
+                         "CONFIG_BT_USER_PHY_UPDATE" \
                          "CONFIG_BT_SMP" \
                          "CONFIG_BT_SMP_APP_PAIRING_ACCEPT" \
                          "CONFIG_DEVICE_POWER_MANAGEMENT" \
@@ -1968,7 +1970,7 @@ PREDEFINED             = "CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT" \
                          "CONFIG_EXECUTION_BENCHMARKING" \
                          "CONFIG_FLASH_PAGE_LAYOUT" \
                          "CONFIG_FPU" \
-                         "CONFIG_FP_SHARING" \
+                         "CONFIG_FPU_SHARING" \
                          "CONFIG_NET_L2_ETHERNET_MGMT" \
                          "CONFIG_NET_MGMT_EVENT" \
                          "CONFIG_NET_TCP" \

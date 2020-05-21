@@ -1,5 +1,5 @@
 identifier: stm32l476g_disco
-name: STM32L476GDISCOVERY
+name: ST STM32L476G Discovery
 type: mcu
 arch: arm
 toolchain:

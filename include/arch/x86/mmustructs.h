@@ -419,6 +419,9 @@ void z_x86_mmu_set_flags(struct x86_page_tables *ptables, void *ptr,
 
 int z_x86_mmu_validate(struct x86_page_tables *ptables, void *addr, size_t size,
 		       bool write);
+
+void z_x86_add_mmu_region(uintptr_t addr, size_t size, u64_t flags);
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_X86_MMUSTRUCTS_H_ */

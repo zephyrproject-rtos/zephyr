@@ -16,6 +16,7 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,can-primary = &can1;
 	};
 
 	leds {
@@ -42,7 +43,6 @@
 		led0 = &green_led_1;
 		led1 = &yellow_led_2;
 		sw0 = &user_button;
-		can-primary = &can1;
 	};
 };
 
@@ -98,7 +98,7 @@ uext_serial: &usart1 {};
 &timers1 {
 	status = "okay";
 
-	pwm {
+	pwm1: pwm {
 		status = "okay";
 	};
 };

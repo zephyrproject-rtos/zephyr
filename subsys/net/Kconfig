@@ -68,7 +68,6 @@ config NETWORKING
 	select NET_BUF
 	select POLL
 	select ENTROPY_GENERATOR
-	select LEGACY_TIMEOUT_API
 	help
 	  This option enabled generic link layer and IP networking support.
 

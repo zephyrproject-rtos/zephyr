@@ -476,7 +476,7 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 #else
 	k_timeout_t tout = K_FOREVER;
 
-	if (timeout != NET_WAIT_FOREVER) {
+	if (timeout != SYS_FOREVER_MS) {
 		tout = K_MSEC(timeout);
 	}
 
@@ -666,7 +666,7 @@ int websocket_recv_msg(int ws_sock, u8_t *buf, size_t buf_len,
 	int ret;
 	k_timeout_t tout = K_FOREVER;
 
-	if (timeout != NET_WAIT_FOREVER) {
+	if (timeout != SYS_FOREVER_MS) {
 		tout = K_MSEC(timeout);
 	}
 
@@ -913,13 +913,13 @@ static int websocket_recv(struct websocket_context *ctx, u8_t *buf,
 
 static ssize_t websocket_read_vmeth(void *obj, void *buffer, size_t count)
 {
-	return (ssize_t)websocket_recv(obj, buffer, count, NET_WAIT_FOREVER);
+	return (ssize_t)websocket_recv(obj, buffer, count, SYS_FOREVER_MS);
 }
 
 static ssize_t websocket_write_vmeth(void *obj, const void *buffer,
 				     size_t count)
 {
-	return (ssize_t)websocket_send(obj, buffer, count, NET_WAIT_FOREVER);
+	return (ssize_t)websocket_send(obj, buffer, count, SYS_FOREVER_MS);
 }
 
 static ssize_t websocket_sendto_ctx(void *obj, const void *buf, size_t len,
@@ -928,7 +928,7 @@ static ssize_t websocket_sendto_ctx(void *obj, const void *buf, size_t len,
 				    socklen_t addrlen)
 {
 	struct websocket_context *ctx = obj;
-	s32_t timeout = NET_WAIT_FOREVER;
+	s32_t timeout = SYS_FOREVER_MS;
 
 	if (flags & ZSOCK_MSG_DONTWAIT) {
 		timeout = 0;
@@ -945,7 +945,7 @@ static ssize_t websocket_recvfrom_ctx(void *obj, void *buf, size_t max_len,
 				      socklen_t *addrlen)
 {
 	struct websocket_context *ctx = obj;
-	s32_t timeout = NET_WAIT_FOREVER;
+	s32_t timeout = SYS_FOREVER_MS;
 
 	if (flags & ZSOCK_MSG_DONTWAIT) {
 		timeout = 0;

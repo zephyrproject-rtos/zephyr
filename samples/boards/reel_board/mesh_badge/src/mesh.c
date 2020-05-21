@@ -144,7 +144,7 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 
 	now = k_uptime_get();
 	if (state->last_tid == tid && state->last_tx_addr == ctx->addr &&
-	    (now - state->last_msg_timestamp <= K_SECONDS(6))) {
+	    (now - state->last_msg_timestamp <= (6 * MSEC_PER_SEC))) {
 		printk("Already received message\n");
 	}
 

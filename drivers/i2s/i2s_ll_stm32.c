@@ -384,7 +384,7 @@ static int i2s_stm32_read(struct device *dev, void **mem_block, size_t *size)
 
 	if (dev_data->rx.state != I2S_STATE_ERROR) {
 		ret = k_sem_take(&dev_data->rx.sem,
-				 K_MSEC(dev_data->rx.cfg.timeout));
+				 SYS_TIMEOUT_MS(dev_data->rx.cfg.timeout));
 		if (ret < 0) {
 			return ret;
 		}
@@ -410,7 +410,8 @@ static int i2s_stm32_write(struct device *dev, void *mem_block, size_t size)
 		return -EIO;
 	}
 
-	ret = k_sem_take(&dev_data->tx.sem, K_MSEC(dev_data->tx.cfg.timeout));
+	ret = k_sem_take(&dev_data->tx.sem,
+			 SYS_TIMEOUT_MS(dev_data->tx.cfg.timeout));
 	if (ret < 0) {
 		return ret;
 	}
@@ -680,7 +681,7 @@ static int i2s_stm32_initialize(struct device *dev)
 		return -ENODEV;
 	}
 
-	LOG_INF("%s inited", dev->config->name);
+	LOG_INF("%s inited", dev->name);
 
 	return 0;
 }
@@ -918,22 +919,22 @@ static void i2s_stm32_irq_config_func_##index(struct device *dev)	\
 	irq_enable(DT_IRQN(DT_NODELABEL(i2s##index)));			\
 }
 
-#if DT_HAS_NODE(DT_NODELABEL(i2s1))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s1), okay)
 I2S_INIT(1, 2)
-#endif /* CONFIG_I2S_1 */
+#endif
 
-#if DT_HAS_NODE(DT_NODELABEL(i2s2))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s2), okay)
 I2S_INIT(2, 1)
-#endif /* CONFIG_I2S_2 */
+#endif
 
-#if DT_HAS_NODE(DT_NODELABEL(i2s3))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s3), okay)
 I2S_INIT(3, 1)
-#endif /* CONFIG_I2S_3 */
+#endif
 
-#if DT_HAS_NODE(DT_NODELABEL(i2s4))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s4), okay)
 I2S_INIT(4, 2)
-#endif /* CONFIG_I2S_4 */
+#endif
 
-#if DT_HAS_NODE(DT_NODELABEL(i2s5))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(i2s5), okay)
 I2S_INIT(5, 2)
-#endif /* CONFIG_I2S_5 */
+#endif

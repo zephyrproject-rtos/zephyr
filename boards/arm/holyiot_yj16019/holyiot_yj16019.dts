@@ -9,8 +9,7 @@
 
 / {
 	model = "Holyiot YJ-16019";
-	compatible = "holyiot,yj-16019", "nordic,nrf52832-qfaa",
-		     "nordic,nrf52832";
+	compatible = "holyiot,yj-16019";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -70,11 +69,11 @@
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x000067000>;
+			reg = <0x0000C000 0x00067000>;
 		};
 		slot1_partition: partition@73000 {
 			label = "image-1";
-			reg = <0x00073000 0x000067000>;
+			reg = <0x00073000 0x00067000>;
 		};
 		scratch_partition: partition@da000 {
 			label = "image-scratch";

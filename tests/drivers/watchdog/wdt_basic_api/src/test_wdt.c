@@ -67,21 +67,21 @@
  * 'watchdog0' property, or one of the following watchdog compatibles
  * must have an enabled node.
  */
-#if DT_HAS_NODE(DT_ALIAS(watchdog0))
+#if DT_NODE_HAS_STATUS(DT_ALIAS(watchdog0), okay)
 #define WDT_NODE DT_ALIAS(watchdog0)
-#elif DT_HAS_COMPAT(st_stm32_window_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_window_watchdog)
-#elif DT_HAS_COMPAT(st_stm32_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_watchdog)
-#elif DT_HAS_COMPAT(nordic_nrf_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_watchdog)
 #define WDT_NODE DT_INST(0, nordic_nrf_watchdog)
-#elif DT_HAS_COMPAT(espressif_esp32_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_watchdog)
 #define WDT_NODE DT_INST(0, espressif_esp32_watchdog)
-#elif DT_HAS_COMPAT(silabs_gecko_wdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(silabs_gecko_wdog)
 #define WDT_NODE DT_INST(0, silabs_gecko_wdog)
-#elif DT_HAS_COMPAT(nxp_kinetis_wdog32)
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_kinetis_wdog32)
 #define WDT_NODE DT_INST(0, nxp_kinetis_wdog32)
-#elif DT_HAS_COMPAT(microchip_xec_watchdog)
+#elif DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_watchdog)
 #define WDT_NODE DT_INST(0, microchip_xec_watchdog)
 #endif
 

@@ -110,14 +110,14 @@ SECTION_FUNC(TEXT, z_x86_trampoline_to_user_always)
 	/* Stash EDI, need a free register */
 	pushl	%edi
 
-	/* Store old stack pointer and switch to trampoline stack */
-	movl	%esp, %edi
-	movl	$z_trampoline_stack_end, %esp
-
-	/* Lock IRQs until we get out, we don't want anyone else using the
-	 * trampoline stack
+	/* Store old stack pointer and switch to trampoline stack.
+	 * Lock IRQs before changing stack pointer to the trampoline stack,
+	 * we don't want any interrupts also using the trampoline stack
+	 * during this time.
 	 */
+	movl	%esp, %edi
 	cli
+	movl	$z_trampoline_stack_end, %esp
 
 	/* Copy context */
 	pushl	20(%edi)	/* SS */

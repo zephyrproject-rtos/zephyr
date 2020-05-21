@@ -20,7 +20,7 @@ static void adxl372_thread_cb(void *arg)
 {
 	struct device *dev = arg;
 	struct adxl372_data *drv_data = dev->driver_data;
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 	u8_t status1, status2;
 
 	/* Clear the status */
@@ -56,7 +56,7 @@ static void adxl372_gpio_callback(struct device *dev,
 {
 	struct adxl372_data *drv_data =
 		CONTAINER_OF(cb, struct adxl372_data, gpio_cb);
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 
 	gpio_pin_interrupt_configure(drv_data->gpio, cfg->int_gpio,
 				     GPIO_INT_DISABLE);
@@ -97,7 +97,7 @@ int adxl372_trigger_set(struct device *dev,
 			sensor_trigger_handler_t handler)
 {
 	struct adxl372_data *drv_data = dev->driver_data;
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 	u8_t int_mask, int_en, status1, status2;
 	int ret;
 
@@ -141,7 +141,7 @@ out:
 int adxl372_init_interrupt(struct device *dev)
 {
 	struct adxl372_data *drv_data = dev->driver_data;
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 
 	drv_data->gpio = device_get_binding(cfg->gpio_port);
 	if (drv_data->gpio == NULL) {

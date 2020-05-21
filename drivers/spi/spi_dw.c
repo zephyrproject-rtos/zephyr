@@ -55,7 +55,7 @@ static inline bool spi_dw_is_slave(struct spi_dw_data *spi)
 
 static void completed(struct device *dev, int error)
 {
-	const struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 
 	if (error) {
@@ -87,7 +87,7 @@ out:
 
 static void push_data(struct device *dev)
 {
-	const struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 	u32_t data = 0U;
 	u32_t f_tx;
@@ -156,7 +156,7 @@ static void push_data(struct device *dev)
 
 static void pull_data(struct device *dev)
 {
-	const struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 
 	DBG_COUNTER_INIT();
@@ -336,7 +336,7 @@ static int transceive(struct device *dev,
 		      bool asynchronous,
 		      struct k_poll_signal *signal)
 {
-	const struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 	u32_t tmod = DW_SPI_CTRLR0_TMOD_TX_RX;
 	u32_t reg_data;
@@ -478,7 +478,7 @@ static int spi_dw_release(struct device *dev, const struct spi_config *config)
 
 void spi_dw_isr(struct device *dev)
 {
-	const struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config_info;
 	u32_t int_status;
 	int error;
 
@@ -517,7 +517,7 @@ static const struct spi_driver_api dw_spi_api = {
 
 int spi_dw_init(struct device *dev)
 {
-	const struct spi_dw_config *info = dev->config->config_info;
+	const struct spi_dw_config *info = dev->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 
 	clock_config(dev);

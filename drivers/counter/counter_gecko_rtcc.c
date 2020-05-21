@@ -39,9 +39,9 @@ struct counter_gecko_data {
 	void *top_user_data;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((struct counter_gecko_config * const)(dev)->config->config_info)
+	((const struct counter_gecko_config * const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct counter_gecko_data *const)(dev)->driver_data)
 

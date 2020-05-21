@@ -3,8 +3,8 @@
 # Configures binary toos as llvm binary tool set
 
 if(DEFINED TOOLCHAIN_HOME)
-  set(find_program_clang_args PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-  set(find_program_binutils_args PATH ${TOOLCHAIN_HOME})
+  set(find_program_clang_args PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+  set(find_program_binutils_args PATHS ${TOOLCHAIN_HOME})
 endif()
 
 find_program(CMAKE_AR      llvm-ar      ${find_program_clang_args}   )

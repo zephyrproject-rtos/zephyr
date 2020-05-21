@@ -89,7 +89,7 @@ SECTION_FUNC(TEXT, z_arm_pendsv)
     stmea r0!, {r3-r7}
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     stmia r0, {v1-v8, ip}
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_FPU_SHARING
     /* Assess whether switched-out thread had been using the FP registers. */
     ldr r0, =0x10 /* EXC_RETURN.F_Type Mask */
     tst lr, r0    /* EXC_RETURN & EXC_RETURN.F_Type_Msk */
@@ -108,7 +108,7 @@ out_fp_active:
 
 out_fp_endif:
     str r0, [r2, #_thread_offset_to_mode]
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU_SHARING */
 #elif defined(CONFIG_ARMV7_R)
     /* Store rest of process context */
     cps #MODE_SYS
@@ -248,7 +248,7 @@ _thread_irq_disabled:
     /* restore BASEPRI for the incoming thread */
     msr BASEPRI, r0
 
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_FPU_SHARING
     /* Assess whether switched-in thread had been using the FP registers. */
     ldr r0, [r2, #_thread_offset_to_mode]
     tst r0, #0x04 /* thread.arch.mode & CONTROL.FPCA Msk */

@@ -2,7 +2,7 @@ sample:
   description: Sample that uses an out-of-tree driver
   name: Out-of-tree driver
 tests:
-  drivers.out_of_tree:
+  sample.drivers.out_of_tree:
     tags: out_of_tree
     harness: console
     harness_config:

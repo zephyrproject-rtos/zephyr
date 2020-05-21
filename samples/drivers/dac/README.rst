@@ -13,7 +13,43 @@ Building and Running
 
 The DAC output is defined in the board's devicetree and pinmux file.
 
-Only board nucleo_l073rz is supported for now.
+Building and Running for ST Nucleo L073RZ
+=========================================
+The sample can be built and executed for the
+:ref:`nucleo_l073rz_board` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: nucleo_l073rz
+   :goals: build flash
+   :compact:
+
+Building and Running for NXP TWR-KE18F
+======================================
+The sample can be built and executed for the :ref:`twr_ke18f` as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: twr_ke18f
+   :goals: build flash
+   :compact:
+
+DAC output is available on pin A32 of the primary TWR elevator
+connector.
+
+Building and Running for NXP FRDM-K64F
+======================================
+The sample can be built and executed for the :ref:`frdm_k64f` as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: frdm_k64f
+   :goals: build flash
+   :compact:
+
+DAC output is available on connector J4 pin 11.
 
 Sample output
 =============
@@ -26,7 +62,6 @@ The following output is printed:
 
 .. code-block:: console
 
-   DAC internal reference voltage: 3300 mV
    Generating sawtooth signal at DAC channel 1.
 
 .. note:: If the DAC is not supported, the output will be an error message.

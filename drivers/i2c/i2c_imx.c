@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(i2c_imx);
 #include "i2c-priv.h"
 
 #define DEV_CFG(dev) \
-	((const struct i2c_imx_config * const)(dev)->config->config_info)
+	((const struct i2c_imx_config * const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct i2c_imx_data * const)(dev)->driver_data)
 #define DEV_BASE(dev) \
@@ -387,4 +387,4 @@ static const struct i2c_driver_api i2c_imx_driver_api = {
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-DT_INST_FOREACH(I2C_IMX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(I2C_IMX_INIT)

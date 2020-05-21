@@ -54,71 +54,11 @@ config ETH_MCUX_0
 	help
 	  Include port 0 driver
 
-if ETH_MCUX_0
-
-choice ETH_MCUX_0_MAC_SELECT
-	prompt "MAC address"
-	help
-	  Choose how to configure MAC address.
-
-config ETH_MCUX_0_UNIQUE_MAC
-	bool "Stable MAC address"
-	help
-	  Generate MAC address from MCU's unique identification register.
-
-config ETH_MCUX_0_RANDOM_MAC
-	bool "Random MAC address"
-	help
-	  Generate a random MAC address dynamically on each reboot.
-	  Note that using this choice and rebooting a board may leave
-	  stale MAC address in peers' ARP caches and lead to issues and
-	  delays in communication. (Use "ip neigh flush all" on Linux
-	  peers to clear ARP cache.)
-
-config ETH_MCUX_0_MANUAL_MAC
-	bool "Manual MAC address"
-	help
-	  Get MAC address from the device tree.
-
-endchoice
-
-endif # ETH_MCUX_0
-
 config ETH_MCUX_1
 	bool "MCUX Ethernet port 1"
 	depends on SOC_MIMXRT1062 || SOC_MIMXRT1064
 	help
 	  Include port 1 driver
-
-if ETH_MCUX_1
-
-choice ETH_MCUX_1_MAC_SELECT
-	prompt "MAC address"
-	help
-	  Choose how to configure MAC address.
-
-config ETH_MCUX_1_UNIQUE_MAC
-	bool "Stable MAC address"
-	help
-	  Generate MAC address from MCU's unique identification register.
-
-config ETH_MCUX_1_RANDOM_MAC
-	bool "Random MAC address"
-	help
-	  Generate a random MAC address dynamically on each reboot.
-	  Note that using this choice and rebooting a board may leave
-	  stale MAC address in peers' ARP caches and lead to issues and
-	  delays in communication. (Use "ip neigh flush all" on Linux
-	  peers to clear ARP cache.)
-
-config ETH_MCUX_1_MANUAL_MAC
-	bool "Manual MAC address"
-	help
-	  Get MAC address from the device tree.
-
-endchoice
-
-endif # ETH_MCUX_1
 
 config ETH_MCUX_HW_ACCELERATION
 	bool "Enable hardware acceleration"

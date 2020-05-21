@@ -263,7 +263,8 @@ static void model_resume(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		s32_t period_ms = bt_mesh_model_pub_period_get(mod);
 
 		if (period_ms) {
-			k_delayed_work_submit(&mod->pub->timer, period_ms);
+			k_delayed_work_submit(&mod->pub->timer,
+					      K_MSEC(period_ms));
 		}
 	}
 }

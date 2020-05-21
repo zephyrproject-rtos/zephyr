@@ -288,6 +288,14 @@ config OUTPUT_DISASSEMBLY
 	help
 	  Create an .lst file with the assembly listing of the firmware.
 
+config OUTPUT_DISASSEMBLE_ALL
+	bool "Disassemble all sections with source. Fill zeros."
+	default n
+	depends on OUTPUT_DISASSEMBLY
+	help
+	  The .lst file will contain complete disassembly of the firmware
+	  not just those expected to contain instructions including zeros
+
 config OUTPUT_PRINT_MEMORY_USAGE
 	bool "Print memory usage to stdout"
 	default y
@@ -350,7 +358,6 @@ config MAKEFILE_EXPORTS
 
 config LEGACY_DEVICETREE_MACROS
 	bool "Allow use of legacy devicetree macros"
-	default y
 	help
 	  Allows use of legacy devicetree macros which were used in
 	  Zephyr 2.2 and previous versions, rather than the devicetree.h

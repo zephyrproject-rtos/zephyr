@@ -180,7 +180,7 @@ static const struct sensor_driver_api sht3xd_driver_api = {
 static int sht3xd_init(struct device *dev)
 {
 	struct sht3xd_data *data = dev->driver_data;
-	const struct sht3xd_config *cfg = dev->config->config_info;
+	const struct sht3xd_config *cfg = dev->config_info;
 	struct device *i2c = device_get_binding(cfg->bus_name);
 
 	if (i2c == NULL) {

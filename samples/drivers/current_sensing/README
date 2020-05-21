@@ -1,8 +1,0 @@
-This is a sample app to interface with
-TI INA219 power monitor. The values
-used in the app are for use on Adafruit's
-breakout board
-(https://www.adafruit.com/products/904).
-
-This assumes the slave address is 0x40,
-where A0 and A1 are all tied to ground.

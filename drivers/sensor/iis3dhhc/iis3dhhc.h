@@ -32,7 +32,7 @@ struct iis3dhhc_config {
 	u8_t int_pin;
 	u8_t int_flags;
 #endif
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_config spi_conf;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
@@ -47,7 +47,7 @@ struct iis3dhhc_data {
 
 	stmdev_ctx_t *ctx;
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	stmdev_ctx_t ctx_spi;
 #endif
 

@@ -55,10 +55,10 @@ int tty_init(struct tty_serial *tty, struct device *uart_dev);
  * @brief Set receive timeout for tty device.
  *
  * Set timeout for getchar() operation. Default timeout after
- * device initialization is K_FOREVER.
+ * device initialization is SYS_FOREVER_MS.
  *
  * @param tty tty device structure
- * @param timeout timeout in milliseconds, or K_FOREVER, or K_NO_WAIT
+ * @param timeout timeout in milliseconds, or 0, or SYS_FOREVER_MS.
  */
 static inline void tty_set_rx_timeout(struct tty_serial *tty, s32_t timeout)
 {
@@ -69,10 +69,10 @@ static inline void tty_set_rx_timeout(struct tty_serial *tty, s32_t timeout)
  * @brief Set transmit timeout for tty device.
  *
  * Set timeout for putchar() operation, for a case when output buffer is full.
- * Default timeout after device initialization is K_FOREVER.
+ * Default timeout after device initialization is SYS_FOREVER_MS.
  *
  * @param tty tty device structure
- * @param timeout timeout in milliseconds, or K_FOREVER, or K_NO_WAIT
+ * @param timeout timeout in milliseconds, or 0, or SYS_FOREVER_MS.
  */
 static inline void tty_set_tx_timeout(struct tty_serial *tty, s32_t timeout)
 {
@@ -97,7 +97,7 @@ int tty_set_rx_buf(struct tty_serial *tty, void *buf, size_t size);
  *
  * Set transmit buffer or switch to unbuffered operation for transmit.
  * Note that unbuffered mode is implicitly blocking, i.e. behaves as
- * if tty_set_tx_timeout(K_FOREVER) was set.
+ * if tty_set_tx_timeout(SYS_FOREVER_MS) was set.
  *
  * @param tty tty device structure
  * @param buf buffer, or NULL for unbuffered operation

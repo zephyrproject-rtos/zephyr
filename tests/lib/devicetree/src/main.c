@@ -105,12 +105,14 @@ static void test_inst_props(void)
 	 * Careful:
 	 *
 	 * We can only test properties that are shared across all
-	 * instances of this compatible here.
+	 * instances of this compatible here. This includes instances
+	 * with status "disabled".
 	 */
 
 	zassert_equal(DT_PROP(TEST_INST, gpio_controller), 1,
 		      "gpio-controller");
-	zassert_true(!strcmp(DT_PROP(TEST_INST, status), "okay"),
+	zassert_true(!strcmp(DT_PROP(TEST_INST, status), "okay") ||
+		     !strcmp(DT_PROP(TEST_INST, status), "disabled"),
 		     "status");
 	zassert_equal(DT_PROP_LEN(TEST_INST, compatible), 1,
 		      "compatible len");
@@ -124,7 +126,8 @@ static void test_inst_props(void)
 		      "inst 0 gpio-controller is not 1");
 	zassert_equal(DT_INST_NODE_HAS_PROP(0, xxxx), 0,
 		      "inst 0 has xxxx prop");
-	zassert_true(!strcmp(DT_INST_PROP(0, status), "okay"),
+	zassert_true(!strcmp(DT_INST_PROP(0, status), "okay") ||
+		     !strcmp(DT_PROP(TEST_INST, status), "disabled"),
 		     "inst 0 status");
 	zassert_equal(DT_INST_PROP_LEN(0, compatible), 1,
 		      "inst 0 compatible len");
@@ -138,36 +141,44 @@ static void test_inst_props(void)
 
 static void test_has_path(void)
 {
-	zassert_equal(DT_HAS_NODE(DT_PATH(test, gpio_0)), 0, "gpio@0");
-	zassert_equal(DT_HAS_NODE(DT_PATH(test, gpio_deadbeef)), 1,
+	zassert_equal(DT_NODE_HAS_STATUS(DT_PATH(test, gpio_0), okay), 0,
+		      "gpio@0");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_PATH(test, gpio_deadbeef), okay), 1,
 		      "gpio@deadbeef");
-	zassert_equal(DT_HAS_NODE(DT_PATH(test, gpio_abcd1234)), 1,
+	zassert_equal(DT_NODE_HAS_STATUS(DT_PATH(test, gpio_abcd1234), okay), 1,
 		      "gpio@abcd1234");
 }
 
 static void test_has_alias(void)
 {
-	zassert_equal(DT_HAS_NODE(DT_ALIAS(test_alias)), 1, "test-alias");
-	zassert_equal(DT_HAS_NODE(DT_ALIAS(test_undef)), 0, "test-undef");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_ALIAS(test_alias), okay), 1,
+		      "test-alias");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_ALIAS(test_undef), okay), 0,
+		      "test-undef");
 }
 
 static void test_inst_checks(void)
 {
-	zassert_equal(DT_HAS_NODE(DT_INST(0, vnd_gpio)), 1, "vnd,gpio #0");
-	zassert_equal(DT_HAS_NODE(DT_INST(1, vnd_gpio)), 1, "vnd,gpio #1");
-	zassert_equal(DT_HAS_NODE(DT_INST(2, vnd_gpio)), 0, "vnd,gpio #2");
+	zassert_equal(DT_NODE_EXISTS(DT_INST(0, vnd_gpio)), 1,
+		      "vnd,gpio #0");
+	zassert_equal(DT_NODE_EXISTS(DT_INST(1, vnd_gpio)), 1,
+		      "vnd,gpio #1");
+	zassert_equal(DT_NODE_EXISTS(DT_INST(2, vnd_gpio)), 1,
+		      "vnd,gpio #2");
 
-	zassert_equal(DT_NUM_INST(vnd_gpio), 2, "num. vnd,gpio");
-	zassert_equal(DT_NUM_INST(xxxx), 0, "num. xxxx");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(vnd_gpio), 2, "num. vnd,gpio");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(xxxx), 0, "num. xxxx");
 }
 
 static void test_has_nodelabel(void)
 {
-	zassert_equal(DT_HAS_NODE(DT_NODELABEL(disabled_gpio)), 0,
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), okay), 0,
 		      "disabled_gpio");
-	zassert_equal(DT_HAS_NODE(DT_NODELABEL(test_nodelabel)), 1,
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_nodelabel), okay), 1,
 		      "test_nodelabel");
-	zassert_equal(DT_HAS_NODE(DT_NODELABEL(test_nodelabel_allcaps)), 1,
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_nodelabel_allcaps),
+					 okay),
+		      1,
 		      "TEST_NODELABEL_ALLCAPS");
 }
 
@@ -177,9 +188,9 @@ static void test_has_compat(void)
 {
 	unsigned int compats;
 
-	zassert_true(DT_HAS_COMPAT(vnd_gpio), "vnd,gpio");
-	zassert_true(DT_HAS_COMPAT(vnd_gpio), "vnd,i2c");
-	zassert_false(DT_HAS_COMPAT(vnd_disabled_compat),
+	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio), "vnd,gpio");
+	zassert_true(DT_HAS_COMPAT_STATUS_OKAY(vnd_gpio), "vnd,i2c");
+	zassert_false(DT_HAS_COMPAT_STATUS_OKAY(vnd_disabled_compat),
 		      "vnd,disabled-compat");
 
 	zassert_equal(TA_HAS_COMPAT(vnd_array_holder), 1, "vnd,array-holder");
@@ -191,6 +202,24 @@ static void test_has_compat(void)
 		   (TA_HAS_COMPAT(vnd_undefined_compat) << 1) |
 		   (TA_HAS_COMPAT(vnd_not_a_test_array_compat) << 2));
 	zassert_equal(compats, 0x3, "as bit array");
+}
+
+static void test_has_status(void)
+{
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_gpio_1), okay),
+		      1, "vnd,gpio okay");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_gpio_1), disabled),
+		      0, "vnd,gpio not disabled");
+
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_no_status), okay),
+		      1, "vnd,gpio okay");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_no_status), disabled),
+		      0, "vnd,gpio not disabled");
+
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), disabled),
+		      1, "vnd,disabled-compat disabled");
+	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(disabled_gpio), okay),
+		      0, "vnd,disabled-compat not okay");
 }
 
 #define TEST_I2C_DEV DT_PATH(test, i2c_11112222, test_i2c_dev_10)
@@ -262,15 +291,14 @@ static void test_bus(void)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_spi_device
-	zassert_equal(DT_HAS_DRV_INST(0), 1, "missing spi inst 0");
-	zassert_equal(DT_HAS_DRV_INST(1), 1, "missing spi inst 1");
-	zassert_equal(DT_HAS_DRV_INST(2), 0, "unexpected spi inst 2");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 2,
+		      "spi device count");
 
 	zassert_equal(DT_INST_ON_BUS(0, spi), 1, "spi inst 0 not on spi");
 	zassert_equal(DT_INST_ON_BUS(0, i2c), 0, "spi inst 0 on i2c");
 
-	zassert_equal(DT_ANY_INST_ON_BUS(spi), 1, "no spi is on spi");
-	zassert_equal(DT_ANY_INST_ON_BUS(i2c), 0, "a spi is on i2c");
+	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(spi), 1, "no spi is on spi");
+	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c), 0, "a spi is on i2c");
 
 	zassert_true(!strncmp(spi_dev, DT_INST_LABEL(0), strlen(spi_dev)),
 		     "inst 0 spi dev label");
@@ -279,14 +307,14 @@ static void test_bus(void)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_i2c_device
-	zassert_equal(DT_HAS_DRV_INST(0), 1, "missing i2c inst 0");
-	zassert_equal(DT_HAS_DRV_INST(1), 0, "unexpected i2c inst 1");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 2,
+		      "i2c device count");
 
 	zassert_equal(DT_INST_ON_BUS(0, i2c), 1, "i2c inst 0 not on i2c");
 	zassert_equal(DT_INST_ON_BUS(0, spi), 0, "i2c inst 0 on spi");
 
-	zassert_equal(DT_ANY_INST_ON_BUS(i2c), 1, "no i2c is on i2c");
-	zassert_equal(DT_ANY_INST_ON_BUS(spi), 0, "an i2c is on spi");
+	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c), 1, "no i2c is on i2c");
+	zassert_equal(DT_ANY_INST_ON_BUS_STATUS_OKAY(spi), 0, "an i2c is on spi");
 
 	zassert_true(!strncmp(i2c_dev, DT_INST_LABEL(0), strlen(i2c_dev)),
 		     "inst 0 i2c dev label");
@@ -295,17 +323,19 @@ static void test_bus(void)
 
 #undef DT_DRV_COMPAT
 	/*
-	 * Make sure the underlying DT_COMPAT_ON_BUS used by
+	 * Make sure the underlying DT_COMPAT_ON_BUS_INTERNAL used by
 	 * DT_ANY_INST_ON_BUS works without DT_DRV_COMPAT defined.
 	 */
-	zassert_equal(DT_COMPAT_ON_BUS(vnd_spi_device, spi), 1, NULL);
-	zassert_equal(DT_COMPAT_ON_BUS(vnd_spi_device, i2c), 0, NULL);
+	zassert_equal(DT_COMPAT_ON_BUS_INTERNAL(vnd_spi_device, spi), 1, NULL);
+	zassert_equal(DT_COMPAT_ON_BUS_INTERNAL(vnd_spi_device, i2c), 0, NULL);
 
-	zassert_equal(DT_COMPAT_ON_BUS(vnd_i2c_device, i2c), 1, NULL);
-	zassert_equal(DT_COMPAT_ON_BUS(vnd_i2c_device, spi), 0, NULL);
+	zassert_equal(DT_COMPAT_ON_BUS_INTERNAL(vnd_i2c_device, i2c), 1, NULL);
+	zassert_equal(DT_COMPAT_ON_BUS_INTERNAL(vnd_i2c_device, spi), 0, NULL);
 
-	zassert_equal(DT_COMPAT_ON_BUS(vnd_gpio_expander, i2c), 1, NULL);
-	zassert_equal(DT_COMPAT_ON_BUS(vnd_gpio_expander, spi), 1, NULL);
+	zassert_equal(DT_COMPAT_ON_BUS_INTERNAL(vnd_gpio_expander, i2c), 1,
+		      NULL);
+	zassert_equal(DT_COMPAT_ON_BUS_INTERNAL(vnd_gpio_expander, spi), 1,
+		      NULL);
 }
 
 #undef DT_DRV_COMPAT
@@ -350,7 +380,8 @@ static void test_reg(void)
 		      "abcd1234 reg[two] size");
 
 	/* DT_INST */
-	zassert_equal(DT_NUM_INST(DT_DRV_COMPAT), 1, "one instance");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1,
+		      "one instance");
 
 	/* DT_INST_REG_HAS_IDX */
 	zassert_true(DT_INST_REG_HAS_IDX(0, 0), "has idx 0");
@@ -459,7 +490,8 @@ static void test_irq(void)
 	zassert_equal(DT_IRQN(TEST_I2C_BUS), 6, "irqn");
 
 	/* DT_INST */
-	zassert_equal(DT_NUM_INST(DT_DRV_COMPAT), 1, "one instance");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1,
+		      "one instance");
 
 	/* DT_INST_IRQ_HAS_IDX */
 	zassert_equal(DT_INST_IRQ_HAS_IDX(0, 0), 1, "inst 0 irq 0 missing");
@@ -667,7 +699,8 @@ static void test_phandles(void)
 	zassert_equal(gps[1].flags, 40, "gps[1].flags");
 
 	/* DT_INST */
-	zassert_equal(DT_NUM_INST(DT_DRV_COMPAT), 1, "one instance");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1,
+		      "one instance");
 
 	/* DT_INST_PROP_BY_PHANDLE */
 	zassert_true(!strcmp(DT_INST_PROP_BY_PHANDLE(0, ph, label),
@@ -797,7 +830,8 @@ static void test_gpio(void)
 	zassert_equal(DT_GPIO_FLAGS(TEST_PH, gpios), 20, "gpio 0 flags");
 
 	/* DT_INST */
-	zassert_equal(DT_NUM_INST(DT_DRV_COMPAT), 1, "one instance");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1,
+		      "one instance");
 
 	/* DT_INST_GPIO_LABEL_BY_IDX */
 	zassert_true(!strcmp(DT_INST_GPIO_LABEL_BY_IDX(0, gpios, 0),
@@ -948,6 +982,112 @@ static void test_dma(void)
 		      "Idx 2 dma channel not available");
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_phandle_holder
+static void test_pwms(void)
+{
+	/* DT_PWMS_LABEL_BY_IDX */
+	zassert_true(!strcmp(DT_PWMS_LABEL_BY_IDX(TEST_PH, 0),
+			     "TEST_PWM_CTRL_1"),
+		     "label 0");
+
+	/* DT_PWMS_LABEL_BY_NAME */
+	zassert_true(!strcmp(DT_PWMS_LABEL_BY_NAME(TEST_PH, red),
+			     "TEST_PWM_CTRL_1"),
+		     "label red");
+
+	/* DT_PWMS_LABEL */
+	zassert_true(!strcmp(DT_PWMS_LABEL(TEST_PH), "TEST_PWM_CTRL_1"),
+		     "label 0");
+
+	/* DT_PWMS_CELL_BY_IDX */
+	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, channel, 1), 5,
+		      "pwm 2 channel");
+	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, flags, 1), 1,
+		      "pwm 2 flags");
+
+	/* DT_PWMS_CELL_BY_NAME */
+	zassert_equal(DT_PWMS_CELL_BY_NAME(TEST_PH, red, channel), 8,
+		      "pwm-red channel");
+	zassert_equal(DT_PWMS_CELL_BY_NAME(TEST_PH, red, flags), 3,
+		      "pwm-red flags");
+
+	/* DT_PWMS_CELL */
+	zassert_equal(DT_PWMS_CELL(TEST_PH, channel), 8, "pwm channel");
+	zassert_equal(DT_PWMS_CELL(TEST_PH, flags), 3, "pwm flags");
+
+	/* DT_PWMS_CHANNEL_BY_IDX */
+	zassert_equal(DT_PWMS_CHANNEL_BY_IDX(TEST_PH, 1), 5, "pwm channel");
+
+	/* DT_PWMS_CHANNEL_BY_NAME */
+	zassert_equal(DT_PWMS_CHANNEL_BY_NAME(TEST_PH, green), 5,
+		      "pwm channel");
+
+	/* DT_PWMS_CHANNEL */
+	zassert_equal(DT_PWMS_CHANNEL(TEST_PH), 8, "pwm channel");
+
+	/* DT_PWMS_FLAGS_BY_IDX */
+	zassert_equal(DT_PWMS_FLAGS_BY_IDX(TEST_PH, 1), 1, "pwm channel");
+
+	/* DT_PWMS_FLAGS_BY_NAME */
+	zassert_equal(DT_PWMS_FLAGS_BY_NAME(TEST_PH, green), 1,
+		      "pwm channel");
+
+	/* DT_PWMS_FLAGS */
+	zassert_equal(DT_PWMS_FLAGS(TEST_PH), 3, "pwm channel");
+
+	/* DT_INST */
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1,
+		      "one instance");
+
+	/* DT_INST_PWMS_LABEL_BY_IDX */
+	zassert_true(!strcmp(DT_INST_PWMS_LABEL_BY_IDX(0, 0),
+			     "TEST_PWM_CTRL_1"),
+		     "label 0");
+
+	/* DT_INST_PWMS_LABEL_BY_NAME */
+	zassert_true(!strcmp(DT_INST_PWMS_LABEL_BY_NAME(0, green),
+			     "TEST_PWM_CTRL_2"),
+		     "label green");
+
+	/* DT_INST_PWMS_LABEL */
+	zassert_true(!strcmp(DT_INST_PWMS_LABEL(0), "TEST_PWM_CTRL_1"),
+		     "label 0");
+
+	/* DT_INST_PWMS_CELL_BY_IDX */
+	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, channel, 1), 5,
+		      "pwm 2 channel");
+	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, flags, 1), 1, "pwm 2 flags");
+
+	/* DT_INST_PWMS_CELL_BY_NAME */
+	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, channel), 5,
+		      "pwm-green channel");
+	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, flags), 1,
+		      "pwm-green flags");
+
+	/* DT_INST_PWMS_CELL */
+	zassert_equal(DT_INST_PWMS_CELL(0, channel), 8, "pwm channel");
+	zassert_equal(DT_INST_PWMS_CELL(0, flags), 3, "pwm flags");
+
+	/* DT_INST_PWMS_CHANNEL_BY_IDX */
+	zassert_equal(DT_INST_PWMS_CHANNEL_BY_IDX(0, 1), 5, "pwm channel");
+
+	/* DT_INST_PWMS_CHANNEL_BY_NAME */
+	zassert_equal(DT_INST_PWMS_CHANNEL_BY_NAME(0, green), 5, "pwm channel");
+
+	/* DT_INST_PWMS_CHANNEL */
+	zassert_equal(DT_INST_PWMS_CHANNEL(0), 8, "pwm channel");
+
+	/* DT_INST_PWMS_FLAGS_BY_IDX */
+	zassert_equal(DT_INST_PWMS_FLAGS_BY_IDX(0, 1), 1, "pwm channel");
+
+	/* DT_INST_PWMS_FLAGS_BY_NAME */
+	zassert_equal(DT_INST_PWMS_FLAGS_BY_NAME(0, red), 3, "pwm channel");
+
+	/* DT_INST_PWMS_FLAGS */
+	zassert_equal(DT_INST_PWMS_FLAGS(0), 3, "pwm channel");
+}
+
 #define TO_STRING(x) TO_STRING_(x)
 #define TO_STRING_(x) #x
 
@@ -1070,9 +1210,9 @@ static const struct gpio_driver_api test_api;
 			    &gpio_info_##num,			\
 			    POST_KERNEL,			\
 			    CONFIG_APPLICATION_INIT_PRIORITY,	\
-			    &test_api)
+			    &test_api);
 
-DT_INST_FOREACH(TEST_GPIO_INIT);
+DT_INST_FOREACH_STATUS_OKAY(TEST_GPIO_INIT)
 
 static inline struct test_gpio_data *to_data(struct device *dev)
 {
@@ -1081,32 +1221,40 @@ static inline struct test_gpio_data *to_data(struct device *dev)
 
 static inline const struct test_gpio_info *to_info(struct device *dev)
 {
-	return (struct test_gpio_info *)dev->config->config_info;
+	return (const struct test_gpio_info *)dev->config_info;
 }
 
 static void test_devices(void)
 {
-	struct device *dev0;
-	struct device *dev1;
+	struct device *devs[3];
+	int i = 0;
 	struct device *dev_abcd;
 	unsigned int val;
 
-	zassert_true(DT_HAS_NODE(INST(0)), "inst 0 device");
-	zassert_true(DT_HAS_NODE(INST(1)), "inst 1 device");
-	zassert_false(DT_HAS_NODE(INST(2)), "inst 2 device");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(vnd_gpio), 2,
+		      "wrong number of gpio devs");
 
-	zassert_equal(DT_NUM_INST(vnd_gpio), 2, "wrong number of gpio devs");
+	devs[i] = device_get_binding(DT_LABEL(INST(0)));
+	if (devs[i]) {
+		i++;
+	}
+	devs[i] = device_get_binding(DT_LABEL(INST(1)));
+	if (devs[i]) {
+		i++;
+	}
+	devs[i] = device_get_binding(DT_LABEL(INST(2)));
+	if (devs[i]) {
+		i++;
+	}
 
-	dev0 = device_get_binding(DT_LABEL(INST(0)));
-	dev1 = device_get_binding(DT_LABEL(INST(1)));
+	zassert_not_null(devs[0], "null devs[0]");
+	zassert_not_null(devs[1], "null devs[1]");
+	zassert_true(devs[2] == NULL, "non-null devs[2]");
 
-	zassert_not_null(dev0, "null device " DT_LABEL(INST(0)));
-	zassert_not_null(dev1, "null device " DT_LABEL(INST(1)));
-
-	zassert_true(to_data(dev0)->is_gpio_ctlr, "dev0 not a gpio");
-	zassert_true(to_data(dev1)->is_gpio_ctlr, "dev1 not a gpio");
-	zassert_true(to_data(dev0)->init_called, "dev0 not initialized");
-	zassert_true(to_data(dev1)->init_called, "dev1 not initialized");
+	zassert_true(to_data(devs[0])->is_gpio_ctlr, "devs[0] not a gpio");
+	zassert_true(to_data(devs[1])->is_gpio_ctlr, "devs[1] not a gpio");
+	zassert_true(to_data(devs[0])->init_called, "devs[0] not initialized");
+	zassert_true(to_data(devs[1])->init_called, "devs[1] not initialized");
 
 	dev_abcd = device_get_binding(DT_LABEL(TEST_ABCD1234));
 	zassert_not_null(dev_abcd, "abcd");
@@ -1114,23 +1262,22 @@ static void test_devices(void)
 	zassert_equal(to_info(dev_abcd)->reg_len, 0x500, "abcd len");
 
 	/*
-	 * Make sure DT_INST_FOREACH can be called from functions
+	 * Make sure DT_INST_FOREACH_STATUS_OKAY can be called from functions
 	 * using macros with side effects in the current scope.
 	 */
-#undef SET_BIT
-#define SET_BIT(i) do { unsigned int bit = BIT(i); val |= bit; } while (0)
 	val = 0;
-	DT_INST_FOREACH(SET_BIT);
-	zassert_equal(val, 0x3, "foreach vnd_gpio");
+#define INC(inst_ignored) do { val++; } while (0);
+	DT_INST_FOREACH_STATUS_OKAY(INC)
+	zassert_equal(val, 2, "foreach okay vnd_gpio");
 
 	/*
-	 * Make sure DT_INST_FOREACH works with 0 instances, and does
+	 * Make sure DT_INST_FOREACH_STATUS_OKAY works with 0 instances, and does
 	 * not expand its argument at all.
 	 */
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT xxxx
 #define BUILD_BUG_ON_EXPANSION (there is a bug in devicetree.h)
-	DT_INST_FOREACH(BUILD_BUG_ON_EXPANSION);
+	DT_INST_FOREACH_STATUS_OKAY(BUILD_BUG_ON_EXPANSION)
 }
 
 static void test_cs_gpios(void)
@@ -1203,7 +1350,8 @@ static void test_clocks(void)
 		      "fixed clk freq");
 
 	/* DT_INST */
-	zassert_equal(DT_NUM_INST(DT_DRV_COMPAT), 1, "one instance");
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1,
+		      "one instance");
 
 	/* DT_INST_CLOCKS_LABEL_BY_IDX */
 	zassert_true(!strcmp(DT_INST_CLOCKS_LABEL_BY_IDX(0, 0),
@@ -1256,6 +1404,44 @@ static void test_parent(void)
 		     "round trip through node with no compatible");
 }
 
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_child_bindings
+static void test_child_nodes_list(void)
+{
+	#define TEST_FUNC(child) { DT_PROP(child, val) },
+	#define TEST_PARENT DT_PARENT(DT_NODELABEL(test_child_a))
+
+	struct vnd_child_binding {
+		int val;
+	};
+
+	struct vnd_child_binding vals[] = {
+		DT_FOREACH_CHILD(TEST_PARENT, TEST_FUNC)
+	};
+
+	struct vnd_child_binding vals_inst[] = {
+		DT_INST_FOREACH_CHILD(0, TEST_FUNC)
+	};
+
+	zassert_equal(ARRAY_SIZE(vals), 3,
+		      "Bad number of children");
+	zassert_equal(ARRAY_SIZE(vals_inst), 3,
+		      "Bad number of children");
+
+	zassert_false(strlen(STRINGIFY(TEST_PARENT)) == 0,
+		      "TEST_PARENT evaluated to empty string");
+
+	zassert_equal(vals[0].val, 0, "Child 0 did not match");
+	zassert_equal(vals[1].val, 1, "Child 1 did not match");
+	zassert_equal(vals[2].val, 2, "Child 2 did not match");
+	zassert_equal(vals_inst[0].val, 0, "Child 0 did not match");
+	zassert_equal(vals_inst[1].val, 1, "Child 1 did not match");
+	zassert_equal(vals_inst[2].val, 2, "Child 2 did not match");
+
+	#undef TEST_PARENT
+	#undef TEST_FUNC
+}
+
 void test_main(void)
 {
 	ztest_test_suite(devicetree_api,
@@ -1268,6 +1454,7 @@ void test_main(void)
 			 ztest_unit_test(test_inst_checks),
 			 ztest_unit_test(test_has_nodelabel),
 			 ztest_unit_test(test_has_compat),
+			 ztest_unit_test(test_has_status),
 			 ztest_unit_test(test_bus),
 			 ztest_unit_test(test_reg),
 			 ztest_unit_test(test_irq),
@@ -1275,6 +1462,7 @@ void test_main(void)
 			 ztest_unit_test(test_gpio),
 			 ztest_unit_test(test_io_channels),
 			 ztest_unit_test(test_dma),
+			 ztest_unit_test(test_pwms),
 			 ztest_unit_test(test_macro_names),
 			 ztest_unit_test(test_arrays),
 			 ztest_unit_test(test_devices),
@@ -1282,7 +1470,8 @@ void test_main(void)
 			 ztest_unit_test(test_chosen),
 			 ztest_unit_test(test_enums),
 			 ztest_unit_test(test_clocks),
-			 ztest_unit_test(test_parent)
+			 ztest_unit_test(test_parent),
+			 ztest_unit_test(test_child_nodes_list)
 		);
 	ztest_run_test_suite(devicetree_api);
 }

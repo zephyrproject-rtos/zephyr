@@ -26,51 +26,51 @@ void *exp_user_data = (void *)199;
 struct counter_alarm_cfg alarm_cfg;
 struct counter_alarm_cfg alarm_cfg2;
 
+#define INST_DT_COMPAT_LABEL(n, compat) DT_LABEL(DT_INST(n, compat)),
+/* Generate a list of LABELs for all instances of the "compat" */
+#define LABELS_FOR_DT_COMPAT(compat) \
+	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(compat), \
+		   (UTIL_LISTIFY(DT_NUM_INST_STATUS_OKAY(compat), \
+				 INST_DT_COMPAT_LABEL, compat)), ())
+
 static const char * const devices[] = {
 #ifdef CONFIG_COUNTER_TIMER0
 	/* Nordic TIMER0 may be reserved for Bluetooth */
-	DT_NORDIC_NRF_TIMER_TIMER_0_LABEL,
+	DT_LABEL(DT_NODELABEL(timer0)),
 #endif
 #ifdef CONFIG_COUNTER_TIMER1
-	DT_NORDIC_NRF_TIMER_TIMER_1_LABEL,
+	DT_LABEL(DT_NODELABEL(timer1)),
 #endif
 #ifdef CONFIG_COUNTER_TIMER2
-	DT_NORDIC_NRF_TIMER_TIMER_2_LABEL,
+	DT_LABEL(DT_NODELABEL(timer2)),
 #endif
 #ifdef CONFIG_COUNTER_TIMER3
-	DT_NORDIC_NRF_TIMER_TIMER_3_LABEL,
+	DT_LABEL(DT_NODELABEL(timer3)),
 #endif
 #ifdef CONFIG_COUNTER_TIMER4
-	DT_NORDIC_NRF_TIMER_TIMER_4_LABEL,
+	DT_LABEL(DT_NODELABEL(timer4)),
 #endif
 #ifdef CONFIG_COUNTER_RTC0
 	/* Nordic RTC0 may be reserved for Bluetooth */
-	DT_NORDIC_NRF_RTC_RTC_0_LABEL,
+	DT_LABEL(DT_NODELABEL(rtc0)),
 #endif
 	/* Nordic RTC1 is used for the system clock */
 #ifdef CONFIG_COUNTER_RTC2
-	DT_NORDIC_NRF_RTC_RTC_2_LABEL,
+	DT_LABEL(DT_NODELABEL(rtc2)),
 #endif
-#if DT_HAS_NODE(DT_INST(0, nxp_imx_epit))
-	DT_LABEL(DT_INST(0, nxp_imx_epit)),
-#endif
-#if DT_HAS_NODE(DT_INST(1, nxp_imx_epit))
-	DT_LABEL(DT_INST(1, nxp_imx_epit)),
-#endif
-#if DT_HAS_NODE(DT_INST(0, arm_cmsdk_timer))
-	DT_LABEL(DT_INST(0, arm_cmsdk_timer)),
-#endif
-#if DT_HAS_NODE(DT_INST(1, arm_cmsdk_timer))
-	DT_LABEL(DT_INST(1, arm_cmsdk_timer)),
-#endif
-#if DT_HAS_NODE(DT_INST(0, arm_cmsdk_dtimer))
-	DT_LABEL(DT_INST(0, arm_cmsdk_dtimer)),
-#endif
-#ifdef DT_RTC_0_NAME
-	DT_RTC_0_NAME,
-#endif
-
+	/* NOTE: there is no trailing comma, as the DT_LABELS_FOR_COMPAT
+	 * handles it.
+	 */
+	LABELS_FOR_DT_COMPAT(arm_cmsdk_timer)
+	LABELS_FOR_DT_COMPAT(arm_cmsdk_dtimer)
+	LABELS_FOR_DT_COMPAT(microchip_xec_timer)
+	LABELS_FOR_DT_COMPAT(nxp_imx_epit)
+	LABELS_FOR_DT_COMPAT(nxp_imx_gpt)
+	LABELS_FOR_DT_COMPAT(nxp_kinetis_rtc)
+	LABELS_FOR_DT_COMPAT(silabs_gecko_rtcc)
+	LABELS_FOR_DT_COMPAT(st_stm32_rtc)
 };
+
 typedef void (*counter_test_func_t)(const char *dev_name);
 
 typedef bool (*counter_capability_func_t)(const char *dev_name);
@@ -152,7 +152,7 @@ static bool set_top_value_capable(const char *dev_name)
 static void top_handler(struct device *dev, void *user_data)
 {
 	zassert_true(user_data == exp_user_data,
-			"%s: Unexpected callback", dev->config->name);
+			"%s: Unexpected callback", dev->name);
 	k_sem_give(&top_cnt_sem);
 }
 
@@ -265,7 +265,7 @@ static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
 
 	err = counter_get_value(dev, &now);
 	zassert_true(err == 0, "%s: Counter read failed (err: %d)",
-		     dev->config->name, err);
+		     dev->name, err);
 
 	top = counter_get_top_value(dev);
 	if (counter_is_counting_up(dev)) {
@@ -276,7 +276,7 @@ static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
 			(counter + top - now) : (counter - now);
 	}
 
-	zassert_true(diff < counter_us_to_ticks(dev, processing_limit_us),
+	zassert_true(diff <= counter_us_to_ticks(dev, processing_limit_us),
 			"Unexpected distance between reported alarm value(%u) "
 			"and actual counter value (%u), top:%d (processing "
 			"time limit (%d us) might be exceeded?",
@@ -284,11 +284,11 @@ static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
 
 	if (user_data) {
 		zassert_true(&alarm_cfg == user_data,
-			"%s: Unexpected callback", dev->config->name);
+			"%s: Unexpected callback", dev->name);
 	}
 
 	zassert_true(k_is_in_isr(), "%s: Expected interrupt context",
-			dev->config->name);
+			dev->name);
 	k_sem_give(&alarm_cnt_sem);
 }
 
@@ -836,43 +836,43 @@ static bool reliable_cancel_capable(const char *dev_name)
 	 */
 #ifdef CONFIG_COUNTER_RTC0
 	/* Nordic RTC0 may be reserved for Bluetooth */
-	if (strcmp(dev_name, DT_NORDIC_NRF_RTC_RTC_0_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(rtc0))) == 0) {
 		return true;
 	}
 #endif
 
 #ifdef CONFIG_COUNTER_RTC2
-	if (strcmp(dev_name, DT_NORDIC_NRF_RTC_RTC_2_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(rtc2))) == 0) {
 		return true;
 	}
 #endif
 
 #ifdef CONFIG_COUNTER_TIMER0
-	if (strcmp(dev_name, DT_NORDIC_NRF_TIMER_TIMER_0_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(timer0))) == 0) {
 		return true;
 	}
 #endif
 
 #ifdef CONFIG_COUNTER_TIMER1
-	if (strcmp(dev_name, DT_NORDIC_NRF_TIMER_TIMER_1_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(timer1))) == 0) {
 		return true;
 	}
 #endif
 
 #ifdef CONFIG_COUNTER_TIMER2
-	if (strcmp(dev_name, DT_NORDIC_NRF_TIMER_TIMER_2_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(timer2))) == 0) {
 		return true;
 	}
 #endif
 
 #ifdef CONFIG_COUNTER_TIMER3
-	if (strcmp(dev_name, DT_NORDIC_NRF_TIMER_TIMER_3_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(timer3))) == 0) {
 		return true;
 	}
 #endif
 
 #ifdef CONFIG_COUNTER_TIMER4
-	if (strcmp(dev_name, DT_NORDIC_NRF_TIMER_TIMER_4_LABEL) == 0) {
+	if (strcmp(dev_name, DT_LABEL(DT_NODELABEL(timer4))) == 0) {
 		return true;
 	}
 #endif

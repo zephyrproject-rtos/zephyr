@@ -541,7 +541,7 @@ static int simplelink_poll(struct pollfd *fds, int nfds, int msecs)
 	}
 
 	/* Convert time to SlTimeval struct values: */
-	if (msecs == K_FOREVER) {
+	if (msecs == SYS_FOREVER_MS) {
 		ptv = NULL;
 	} else {
 		tv.tv_sec = msecs / ONE_THOUSAND;

@@ -563,7 +563,7 @@ static void enqueue_sub_cfm(struct bt_mesh_friend *frnd, u8_t xact)
 static void friend_recv_delay(struct bt_mesh_friend *frnd)
 {
 	frnd->pending_req = 1U;
-	k_delayed_work_submit(&frnd->timer, recv_delay(frnd));
+	k_delayed_work_submit(&frnd->timer, K_MSEC(recv_delay(frnd)));
 	BT_DBG("Waiting RecvDelay of %d ms", recv_delay(frnd));
 }
 
@@ -895,11 +895,7 @@ static s32_t offer_delay(struct bt_mesh_friend *frnd, s8_t rssi, u8_t crit)
 
 	BT_DBG("Local Delay calculated as %d ms", delay);
 
-	if (delay < 100) {
-		return K_MSEC(100);
-	}
-
-	return K_MSEC(delay);
+	return MAX(delay, 100);
 }
 
 int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
@@ -986,8 +982,8 @@ init_friend:
 	}
 
 	k_delayed_work_submit(&frnd->timer,
-			      offer_delay(frnd, rx->ctx.recv_rssi,
-					  msg->criteria));
+			      K_MSEC(offer_delay(frnd, rx->ctx.recv_rssi,
+						 msg->criteria)));
 
 	friend_cred_create(rx->sub, frnd->lpn, frnd->lpn_counter,
 			   frnd->counter);
@@ -1107,7 +1103,7 @@ static void buf_send_end(int err, void *user_data)
 	}
 
 	if (frnd->established) {
-		k_delayed_work_submit(&frnd->timer, frnd->poll_to);
+		k_delayed_work_submit(&frnd->timer, K_MSEC(frnd->poll_to));
 		BT_DBG("Waiting %u ms for next poll", frnd->poll_to);
 	} else {
 		/* Friend offer timeout is 1 second */

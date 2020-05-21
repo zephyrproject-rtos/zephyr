@@ -1,5 +1,5 @@
 identifier: stm3210c_eval
-name: STM3210C-EVAL
+name: ST STM3210C Evaluation
 type: mcu
 arch: arm
 toolchain:

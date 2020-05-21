@@ -108,25 +108,22 @@ static void i2c_start(struct i2c_bitbang *context)
 
 static void i2c_repeated_start(struct i2c_bitbang *context)
 {
+	i2c_set_sda(context, 1);
+	i2c_set_scl(context, 1);
+	i2c_delay(context->delays[T_HIGH]);
+
 	i2c_delay(context->delays[T_SU_STA]);
 	i2c_start(context);
 }
 
 static void i2c_stop(struct i2c_bitbang *context)
 {
+	i2c_set_sda(context, 0);
+	i2c_delay(context->delays[T_LOW]);
+
 	i2c_set_scl(context, 1);
 	i2c_delay(context->delays[T_HIGH]);
 
-	if (i2c_get_sda(context)) {
-		/*
-		 * SDA is already high, so we need to make it low so that
-		 * we can create a rising edge. This means we're effectively
-		 * doing a START.
-		 */
-		i2c_delay(context->delays[T_SU_STA]);
-		i2c_set_sda(context, 0);
-		i2c_delay(context->delays[T_HD_STA]);
-	}
 	i2c_delay(context->delays[T_SU_STP]);
 	i2c_set_sda(context, 1);
 	i2c_delay(context->delays[T_BUF]); /* In case we start again too soon */
@@ -262,6 +259,46 @@ finish:
 	i2c_stop(context);
 
 	return result;
+}
+
+int i2c_bitbang_recover_bus(struct i2c_bitbang *context)
+{
+	int i;
+
+	/*
+	 * The I2C-bus specification and user manual (NXP UM10204
+	 * rev. 6, section 3.1.16) suggests the master emit 9 SCL
+	 * clock pulses to recover the bus.
+	 *
+	 * The Linux kernel I2C bitbang recovery functionality issues
+	 * a START condition followed by 9 STOP conditions.
+	 *
+	 * Other I2C slave devices (e.g. Microchip ATSHA204a) suggest
+	 * issuing a START condition followed by 9 SCL clock pulses
+	 * with SDA held high/floating, a REPEATED START condition,
+	 * and a STOP condition.
+	 *
+	 * The latter is what is implemented here.
+	 */
+
+	/* Start condition */
+	i2c_start(context);
+
+	/* 9 cycles of SCL with SDA held high */
+	for (i = 0; i < 9; i++) {
+		i2c_write_bit(context, 1);
+	}
+
+	/* Another start condition followed by a stop condition */
+	i2c_repeated_start(context);
+	i2c_stop(context);
+
+	/* Check if bus is clear */
+	if (i2c_get_sda(context)) {
+		return 0;
+	} else {
+		return -EBUSY;
+	}
 }
 
 void i2c_bitbang_init(struct i2c_bitbang *context,

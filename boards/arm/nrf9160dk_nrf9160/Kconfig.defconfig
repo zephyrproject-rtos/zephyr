@@ -8,10 +8,6 @@ if BOARD_NRF9160DK_NRF9160 || BOARD_NRF9160DK_NRF9160NS
 config BOARD
 	default "nrf9160dk_nrf9160"
 
-config PWM_0
-	default y
-	depends on PWM
-
 # For the secure version of the board the firmware is linked at the beginning
 # of the flash, or into the code-partition defined in DT if it is intended to
 # be loaded by MCUboot. If the secure firmware is to be combined with a non-

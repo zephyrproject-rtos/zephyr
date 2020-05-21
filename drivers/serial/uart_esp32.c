@@ -95,7 +95,7 @@ struct uart_esp32_data {
 };
 
 #define DEV_CFG(dev) \
-	((const struct uart_esp32_config *const)(dev)->config->config_info)
+	((const struct uart_esp32_config *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct uart_esp32_data *)(dev)->driver_data)
 #define DEV_BASE(dev) \
@@ -539,14 +539,4 @@ DEVICE_AND_API_INIT(uart_esp32_##idx,					       \
 									       \
 ESP32_UART_IRQ_HANDLER(idx)
 
-#if DT_HAS_DRV_INST(0)
-ESP32_UART_INIT(0);
-#endif
-
-#if DT_HAS_DRV_INST(1)
-ESP32_UART_INIT(1);
-#endif
-
-#if DT_HAS_DRV_INST(2)
-ESP32_UART_INIT(2);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(ESP32_UART_INIT)

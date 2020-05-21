@@ -18,6 +18,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,dtcm = &dtcm;
+		zephyr,can-primary = &can1;
 	};
 
 	leds {
@@ -49,7 +50,6 @@
 		led1 = &blue_led;
 		led2 = &red_led;
 		sw0 = &user_button;
-		can-primary = &can1;
 	};
 };
 
@@ -75,7 +75,7 @@
 &timers1 {
 	status = "okay";
 
-	pwm {
+	pwm1: pwm {
 		status = "okay";
 	};
 };

@@ -76,7 +76,7 @@ static int gpio_gecko_configure(struct device *dev,
 				gpio_pin_t pin,
 				gpio_flags_t flags)
 {
-	const struct gpio_gecko_config *config = dev->config->config_info;
+	const struct gpio_gecko_config *config = dev->config_info;
 	GPIO_Port_TypeDef gpio_index = config->gpio_index;
 	GPIO_Mode_TypeDef mode;
 	unsigned int out = 0U;
@@ -127,7 +127,7 @@ static int gpio_gecko_configure(struct device *dev,
 
 static int gpio_gecko_port_get_raw(struct device *dev, u32_t *value)
 {
-	const struct gpio_gecko_config *config = dev->config->config_info;
+	const struct gpio_gecko_config *config = dev->config_info;
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
 
 	*value = gpio_base->DIN;
@@ -138,7 +138,7 @@ static int gpio_gecko_port_get_raw(struct device *dev, u32_t *value)
 static int gpio_gecko_port_set_masked_raw(struct device *dev, u32_t mask,
 					  u32_t value)
 {
-	const struct gpio_gecko_config *config = dev->config->config_info;
+	const struct gpio_gecko_config *config = dev->config_info;
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
 
 	gpio_base->DOUT = (gpio_base->DOUT & ~mask) | (mask & value);
@@ -148,7 +148,7 @@ static int gpio_gecko_port_set_masked_raw(struct device *dev, u32_t mask,
 
 static int gpio_gecko_port_set_bits_raw(struct device *dev, u32_t mask)
 {
-	const struct gpio_gecko_config *config = dev->config->config_info;
+	const struct gpio_gecko_config *config = dev->config_info;
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
 
 #if defined(_GPIO_P_DOUTSET_MASK)
@@ -162,7 +162,7 @@ static int gpio_gecko_port_set_bits_raw(struct device *dev, u32_t mask)
 
 static int gpio_gecko_port_clear_bits_raw(struct device *dev, u32_t mask)
 {
-	const struct gpio_gecko_config *config = dev->config->config_info;
+	const struct gpio_gecko_config *config = dev->config_info;
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
 
 #if defined(_GPIO_P_DOUTCLR_MASK)
@@ -176,7 +176,7 @@ static int gpio_gecko_port_clear_bits_raw(struct device *dev, u32_t mask)
 
 static int gpio_gecko_port_toggle_bits(struct device *dev, u32_t mask)
 {
-	const struct gpio_gecko_config *config = dev->config->config_info;
+	const struct gpio_gecko_config *config = dev->config_info;
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
 
 	gpio_base->DOUTTGL = mask;
@@ -188,7 +188,7 @@ static int gpio_gecko_pin_interrupt_configure(struct device *dev,
 		gpio_pin_t pin, enum gpio_int_mode mode,
 		enum gpio_int_trig trig)
 {
-	const struct gpio_gecko_config *config = dev->config->config_info;
+	const struct gpio_gecko_config *config = dev->config_info;
 	struct gpio_gecko_data *data = dev->driver_data;
 
 	/* Interrupt on static level is not supported by the hardware */
@@ -360,4 +360,4 @@ static int gpio_gecko_port##idx##_init(struct device *dev) \
 	return 0; \
 }
 
-DT_INST_FOREACH(GPIO_PORT_INIT)
+DT_INST_FOREACH_STATUS_OKAY(GPIO_PORT_INIT)

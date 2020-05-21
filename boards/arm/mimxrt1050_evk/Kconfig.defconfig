@@ -23,10 +23,6 @@ config DISK_ACCESS_USDHC1
 config I2C
 	default y if KSCAN
 
-config I2C_1
-	default y
-	depends on I2C_MCUX_LPI2C
-
 config SPI_3
 	default y
 	depends on SPI_MCUX_LPSPI
@@ -37,6 +33,9 @@ config KSCAN
 if KSCAN
 
 config KSCAN_FT5336
+	default y
+
+config KSCAN_FT5336_INTERRUPT
 	default y
 
 config KSCAN_INIT_PRIORITY

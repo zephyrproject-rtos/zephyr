@@ -1,0 +1,5 @@
+common:
+  tags: net socket userspace
+tests:
+  net.socket.socketpair:
+    min_ram: 21

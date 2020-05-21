@@ -16,12 +16,12 @@ choice DATA_LOCATION
 	default DATA_SEMC
 endchoice
 
+config DISK_ACCESS_USDHC1
+	default y
+	depends on DISK_ACCESS_USDHC
+
 config I2C
 	default y if KSCAN
-
-config I2C_1
-	default y
-	depends on I2C_MCUX_LPI2C
 
 config KSCAN
 	default y if LVGL
@@ -29,6 +29,9 @@ config KSCAN
 if KSCAN
 
 config KSCAN_FT5336
+	default y
+
+config KSCAN_FT5336_INTERRUPT
 	default y
 
 config KSCAN_INIT_PRIORITY

@@ -491,12 +491,7 @@ int http_client_req(int sock, struct http_request *req,
 	req->internal.response.recv_buf_len = req->recv_buf_len;
 	req->internal.user_data = user_data;
 	req->internal.sock = sock;
-
-	if (timeout == NET_WAIT_FOREVER) {
-		req->internal.timeout = K_FOREVER;
-	} else {
-		req->internal.timeout = K_MSEC(timeout);
-	}
+	req->internal.timeout = SYS_TIMEOUT_MS(timeout);
 
 	method = http_method_str(req->method);
 

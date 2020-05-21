@@ -24,15 +24,16 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <drivers/clock_control.h>
 #include <drivers/clock_control/stm32_clock_control.h>
 
+#include "eth.h"
 #include "eth_stm32_hal_priv.h"
 
 #if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
-	    !DT_HAS_NODE(DT_CHOSEN(zephyr_dtcm))
+	    !DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 #error DTCM for DMA buffer is activated but zephyr,dtcm is not present in dts
 #endif
 
 #if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) && \
-	    DT_HAS_NODE(DT_CHOSEN(zephyr_dtcm))
+	    DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 static ETH_DMADescTypeDef dma_rx_desc_tab[ETH_RXBUFNB] __dtcm_noinit_section;
 static ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB] __dtcm_noinit_section;
 static u8_t dma_rx_buffer[ETH_RXBUFNB][ETH_RX_BUF_SIZE] __dtcm_noinit_section;
@@ -362,22 +363,14 @@ void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth_handle)
 #if defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC)
 static void generate_mac(u8_t *mac_addr)
 {
-	u32_t entropy;
-
-	entropy = sys_rand32_get();
-
-	mac_addr[0] |= 0x02; /* force LAA bit */
-
-	mac_addr[3] = entropy >> 16;
-	mac_addr[4] = entropy >> 8;
-	mac_addr[5] = entropy >> 0;
+	gen_random_mac(mac_addr, ST_OUI_B0, ST_OUI_B1, ST_OUI_B2);
 }
 #endif
 
 static int eth_initialize(struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data;
-	struct eth_stm32_hal_dev_cfg *cfg;
+	const struct eth_stm32_hal_dev_cfg *cfg;
 	ETH_HandleTypeDef *heth;
 	u8_t hal_ret;
 	int ret = 0;
@@ -407,10 +400,6 @@ static int eth_initialize(struct device *dev)
 		LOG_ERR("Failed to enable ethernet clock");
 		return -EIO;
 	}
-
-	__ASSERT_NO_MSG(cfg->config_func != NULL);
-
-	cfg->config_func();
 
 	heth = &dev_data->heth;
 
@@ -487,6 +476,10 @@ static void eth_iface_init(struct net_if *iface)
 	 */
 	if (dev_data->iface == NULL) {
 		dev_data->iface = iface;
+
+		/* Now that the iface is setup, we are safe to enable IRQs. */
+		__ASSERT_NO_MSG(DEV_CFG(dev)->config_func != NULL);
+		DEV_CFG(dev)->config_func();
 	}
 
 	/* Register Ethernet MAC Address with the upper layer */

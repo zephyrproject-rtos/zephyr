@@ -28,10 +28,6 @@ config NET_L2_ETHERNET
 config ETH_SAM_GMAC
 	default y if NET_L2_ETHERNET
 
-choice ETH_SAM_GMAC_MAC_SELECT
-	default ETH_SAM_GMAC_RANDOM_MAC
-endchoice
-
 endif # NETWORKING
 
 endif # BOARD_SAM4E_XPRO

@@ -14,6 +14,12 @@
 		led2 = &red_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_4;
+		pwm-led0 = &blue_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &red_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
+		green-pwm-led = &green_pwm_led;
+		red-pwm-led = &red_pwm_led;
 	};
 
 	chosen {
@@ -36,6 +42,22 @@
 		blue_led: led_2 {
 			gpios = <&gpioa 18 GPIO_ACTIVE_LOW>;
 			label = "User LD3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		blue_pwm_led: pwm_led_0 {
+			pwms = <&tpm2 0 0 0>;
+			label = "User PWM LD1";
+		};
+		green_pwm_led: pwm_led_1 {
+			pwms = <&tpm2 1 0 0>;
+			label = "User PWM LD2";
+		};
+		red_pwm_led: pwm_led_2 {
+			pwms = <&tpm0 2 0 0>;
+			label = "User PWM LD3";
 		};
 	};
 
@@ -105,5 +127,17 @@
 };
 
 &gpioc {
+	status = "okay";
+};
+
+&tpm0 {
+	status = "okay";
+};
+
+&tpm1 {
+	status = "disabled";
+};
+
+&tpm2 {
 	status = "okay";
 };

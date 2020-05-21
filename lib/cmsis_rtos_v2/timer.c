@@ -80,7 +80,6 @@ osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type,
 osStatus_t osTimerStart(osTimerId_t timer_id, uint32_t ticks)
 {
 	struct cv2_timer *timer = (struct cv2_timer *)timer_id;
-	u32_t millisec = k_ticks_to_ms_floor64(ticks);
 
 	if (timer == NULL) {
 		return osErrorParameter;
@@ -91,9 +90,10 @@ osStatus_t osTimerStart(osTimerId_t timer_id, uint32_t ticks)
 	}
 
 	if (timer->type == osTimerOnce) {
-		k_timer_start(&timer->z_timer, millisec, K_NO_WAIT);
+		k_timer_start(&timer->z_timer, K_TICKS(ticks), K_NO_WAIT);
 	} else if (timer->type == osTimerPeriodic) {
-		k_timer_start(&timer->z_timer, millisec, millisec);
+		k_timer_start(&timer->z_timer,
+			      K_TICKS(ticks), K_TICKS(ticks));
 	}
 
 	timer->status = ACTIVE;

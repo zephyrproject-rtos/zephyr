@@ -116,9 +116,9 @@ static const struct mdm_control_pinconfig pinconfig[] = {
 #define MDM_SEND_OK_ENABLED		0
 #define MDM_SEND_OK_DISABLED		1
 
-#define MDM_CMD_TIMEOUT			K_SECONDS(5)
-#define MDM_CMD_SEND_TIMEOUT		K_SECONDS(10)
-#define MDM_CMD_CONN_TIMEOUT		K_SECONDS(31)
+#define MDM_CMD_TIMEOUT			(5 * MSEC_PER_SEC)
+#define MDM_CMD_SEND_TIMEOUT		(10 * MSEC_PER_SEC)
+#define MDM_CMD_CONN_TIMEOUT		(31 * MSEC_PER_SEC)
 
 #define MDM_MAX_DATA_LENGTH		1500
 
@@ -354,16 +354,16 @@ static int send_at_cmd(struct wncm14a2a_socket *sock,
 	mdm_receiver_send(&ictx.mdm_ctx, data, strlen(data));
 	mdm_receiver_send(&ictx.mdm_ctx, "\r\n", 2);
 
-	if (timeout == K_NO_WAIT) {
+	if (timeout == 0) {
 		return 0;
 	}
 
 	if (!sock) {
 		k_sem_reset(&ictx.response_sem);
-		ret = k_sem_take(&ictx.response_sem, timeout);
+		ret = k_sem_take(&ictx.response_sem, K_MSEC(timeout));
 	} else {
 		k_sem_reset(&sock->sock_send_sem);
-		ret = k_sem_take(&sock->sock_send_sem, timeout);
+		ret = k_sem_take(&sock->sock_send_sem, K_MSEC(timeout));
 	}
 
 	if (ret == 0) {
@@ -402,7 +402,7 @@ static int send_data(struct wncm14a2a_socket *sock, struct net_pkt *pkt)
 
 	mdm_receiver_send(&ictx.mdm_ctx, "\r\n", 2);
 	k_sem_reset(&sock->sock_send_sem);
-	ret = k_sem_take(&sock->sock_send_sem, MDM_CMD_SEND_TIMEOUT);
+	ret = k_sem_take(&sock->sock_send_sem, K_MSEC(MDM_CMD_SEND_TIMEOUT));
 	if (ret == 0) {
 		ret = ictx.last_error;
 	} else if (ret == -EAGAIN) {
@@ -962,7 +962,7 @@ static void on_cmd_sockdataind(struct net_buf **buf, u16_t len)
 		 * send_at_cmd().  Instead, when the resulting response is
 		 * received, we trigger on_cmd_sockread() to handle it.
 		 */
-		send_at_cmd(sock, sendbuf, K_NO_WAIT);
+		send_at_cmd(sock, sendbuf, 0);
 	}
 }
 
@@ -1049,7 +1049,8 @@ static int net_buf_ncmp(struct net_buf *buf, const u8_t *s2, size_t n)
 	return (n == 0) ? 0 : (*(frag->data + offset) - *s2);
 }
 
-static inline struct net_buf *read_rx_allocator(s32_t timeout, void *user_data)
+static inline struct net_buf *read_rx_allocator(k_timeout_t timeout,
+						void *user_data)
 {
 	return net_buf_alloc((struct net_buf_pool *)user_data, timeout);
 }
@@ -1792,6 +1793,14 @@ static int offload_put(struct net_context *context)
 	sock->context->send_cb = NULL;
 	socket_put(sock);
 	net_context_unref(context);
+	if (sock->type == SOCK_STREAM) {
+		/* TCP contexts are referenced twice,
+		 *  once for the app and once for the stack.
+		 *  Since TCP stack is not used for offload,
+		 *  unref a second time.
+		 */
+		net_context_unref(context);
+	}
 
 	return 0;
 }

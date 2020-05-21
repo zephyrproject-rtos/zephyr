@@ -1,9 +1,0 @@
-/* SPDX-License-Identifier: Apache-2.0 */
-
-#define _RAM_ADDR				CONFIG_SRAM_BASE_ADDRESS
-
-#define _RAM_SIZE				(CONFIG_SRAM_SIZE * 1024)
-
-#define _ROM_ADDR				CONFIG_FLASH_BASE_ADDRESS
-
-#define _ROM_SIZE				(CONFIG_FLASH_SIZE *1024)

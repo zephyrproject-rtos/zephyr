@@ -58,7 +58,7 @@ static int adxl372_bus_access(struct device *dev, u8_t reg,
 
 	return spi_write(adxl372_data->bus, &adxl372_data->spi_cfg, &tx);
 #elif CONFIG_ADXL372_I2C
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 
 	if (reg & ADXL372_READ) {
 		return i2c_burst_read(adxl372_data->bus, cfg->i2c_addr,
@@ -637,7 +637,7 @@ static int adxl372_attr_set_thresh(struct device *dev, enum sensor_channel chan,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val)
 {
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 	struct adxl372_activity_threshold threshold;
 	s32_t value;
 	s64_t micro_ms2 = val->val1 * 1000000LL + val->val2;
@@ -692,7 +692,7 @@ static int adxl372_attr_set(struct device *dev, enum sensor_channel chan,
 static int adxl372_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct adxl372_data *data = dev->driver_data;
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 
 	return adxl372_get_accel_data(dev, cfg->max_peak_detect_mode,
 				      &data->sample);
@@ -750,7 +750,7 @@ static const struct sensor_driver_api adxl372_api_funcs = {
 
 static int adxl372_probe(struct device *dev)
 {
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 	u8_t dev_id, part_id;
 	int ret;
 
@@ -878,7 +878,7 @@ static int adxl372_probe(struct device *dev)
 static int adxl372_init(struct device *dev)
 {
 	struct adxl372_data *data = dev->driver_data;
-	const struct adxl372_dev_config *cfg = dev->config->config_info;
+	const struct adxl372_dev_config *cfg = dev->config_info;
 
 #ifdef CONFIG_ADXL372_I2C
 	data->bus  = device_get_binding(cfg->i2c_port);

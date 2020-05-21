@@ -17,6 +17,14 @@ module = DAC
 module-str = DAC
 source "subsys/logging/Kconfig.template.log_config"
 
+config DAC_SHELL
+	bool "Enable DAC shell"
+	depends on SHELL
+	help
+	  Enable DAC related shell commands.
+
+source "drivers/dac/Kconfig.mcux"
+
 source "drivers/dac/Kconfig.stm32"
 
 endif # DAC

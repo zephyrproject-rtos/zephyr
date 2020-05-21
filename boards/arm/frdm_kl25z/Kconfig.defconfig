@@ -42,12 +42,4 @@ config PINMUX_MCUX_PORTE
 
 endif # PINMUX_MCUX
 
-config I2C_0
-	default y
-	depends on I2C
-
-config ADC_0
-	default y
-	depends on ADC
-
 endif # BOARD_FRDM_KL25Z

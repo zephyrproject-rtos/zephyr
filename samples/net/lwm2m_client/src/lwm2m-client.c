@@ -51,19 +51,16 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define ENDPOINT_LEN		32
 
-#ifndef DT_ALIAS_LED0_GPIOS_CONTROLLER
-#ifdef LED0_GPIO_PORT
-#define DT_ALIAS_LED0_GPIOS_CONTROLLER 	LED0_GPIO_PORT
+#if DT_NODE_HAS_STATUS(DT_ALIAS(led0), okay)
+#define LED_GPIO_PORT	DT_GPIO_LABEL(DT_ALIAS(led0), gpios)
+#define LED_GPIO_PIN	DT_GPIO_PIN(DT_ALIAS(led0), gpios)
+#define LED_GPIO_FLAGS	DT_GPIO_FLAGS(DT_ALIAS(led0), gpios)
 #else
-#define DT_ALIAS_LED0_GPIOS_CONTROLLER "(fail)"
-#define DT_ALIAS_LED0_GPIOS_PIN 0
-#define DT_ALIAS_LED0_GPIOS_FLAGS 0
+/* Not an error; the relevant IPSO object will simply not be created. */
+#define LED_GPIO_PORT	""
+#define LED_GPIO_PIN	0
+#define LED_GPIO_FLAGS	0
 #endif
-#endif
-
-#define LED_GPIO_PORT DT_ALIAS_LED0_GPIOS_CONTROLLER
-#define LED_GPIO_PIN DT_ALIAS_LED0_GPIOS_PIN
-#define LED_GPIO_FLAGS DT_ALIAS_LED0_GPIOS_FLAGS
 
 static u8_t bat_idx = LWM2M_DEVICE_PWR_SRC_TYPE_BAT_INT;
 static int bat_mv = 3800;

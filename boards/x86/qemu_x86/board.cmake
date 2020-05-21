@@ -11,6 +11,9 @@ if(CONFIG_X86_64)
   set(QEMU_CPU_TYPE_${ARCH} qemu64,+x2apic)
 else()
   set(QEMU_CPU_TYPE_${ARCH} qemu32,+nx,+pae)
+if(CONFIG_QEMU_ICOUNT)
+  list(APPEND QEMU_EXTRA_FLAGS -icount shift=5,align=off,sleep=off -rtc clock=vm)
+endif()
 endif()
 
 set(QEMU_FLAGS_${ARCH}

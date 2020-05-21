@@ -1872,14 +1872,15 @@ int net_pkt_update_length(struct net_pkt *pkt, size_t length)
 int net_pkt_pull(struct net_pkt *pkt, size_t length)
 {
 	struct net_pkt_cursor *c_op = &pkt->cursor;
-	struct net_pkt_cursor backup;
-
-	net_pkt_cursor_backup(pkt, &backup);
 
 	while (length) {
 		size_t left, rem;
 
 		pkt_cursor_advance(pkt, false);
+
+		if (!c_op->buf) {
+			break;
+		}
 
 		left = c_op->buf->len - (c_op->pos - c_op->buf->data);
 		if (!left) {
@@ -1895,19 +1896,22 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 		left -= rem;
 		if (left) {
 			memmove(c_op->pos, c_op->pos+rem, left);
-		}
+		} else {
+			struct net_buf *buf = pkt->buffer;
 
-		/* For now, empty buffer are not freed, and there is no
-		 * compaction done either.
-		 * net_pkt_pull() is currently used only in very specific
-		 * places where such memory optimization would not make
-		 * that much sense. Let's see in future if it's worth do to it.
-		 */
+			if (buf) {
+				pkt->buffer = buf->frags;
+				buf->frags = NULL;
+				net_buf_unref(buf);
+			}
+
+			net_pkt_cursor_init(pkt);
+		}
 
 		length -= rem;
 	}
 
-	net_pkt_cursor_restore(pkt, &backup);
+	net_pkt_cursor_init(pkt);
 
 	if (length) {
 		NET_DBG("Still some length to go %zu", length);

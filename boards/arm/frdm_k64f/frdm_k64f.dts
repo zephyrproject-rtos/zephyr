@@ -14,7 +14,6 @@
 		led2 = &red_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_2;
-		can-primary = &flexcan0;
 	};
 
 	chosen {
@@ -24,6 +23,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
+		zephyr,can-primary = &flexcan0;
 	};
 
 	leds {
@@ -108,6 +108,11 @@ arduino_serial: &uart3 {
 	status = "okay";
 };
 
+&dac0 {
+	status = "okay";
+	voltage-reference = <2>;
+};
+
 arduino_i2c: &i2c0 {
 	status = "okay";
 
@@ -126,6 +131,8 @@ arduino_spi: &spi0 {
 
 &ftm3 {
 	status = "okay";
+	compatible = "nxp,kinetis-ftm-pwm";
+	#pwm-cells = <3>;
 };
 
 &uart0 {

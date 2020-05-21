@@ -16,10 +16,4 @@ config ETH_LITEETH_0_IRQ_PRI
 	help
 	  IRQ priority
 
-config ETH_LITEETH_0_RANDOM_MAC
-	bool "Random MAC address"
-	depends on ENTROPY_GENERATOR
-	help
-	  Generate a random MAC address dynamically.
-
 endif # ETH_LITEETH_0

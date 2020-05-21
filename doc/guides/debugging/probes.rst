@@ -236,6 +236,24 @@ If you get no RTT output you might need to disable other consoles which conflict
 with the RTT one if they are enabled by default in the particular sample or
 application you are running, such as disable UART_CONSOLE in menucon
 
+Updating or restoring ST-Link firmware
+======================================
+
+ST-Link firmware can be updated using `STM32CubeProgrammer Tool`_.
+It is usually useful when facing flashing issues, for instance when using
+sanitycheck's device-testing option.
+
+Once installed, you can update attached board ST-Link firmware with the
+following command
+
+  .. code-block:: console
+
+     s java -jar ~/STMicroelectronics/STM32Cube/STM32CubeProgrammer/Drivers/FirmwareUpgrade/STLinkUpgrade.jar -sn <board_uid>
+
+Where board_uid can be obtained using sanitycheck's generate-hardware-map
+option. For more information about sanitycheck and available options, see
+:ref:`sanitycheck_script`.
+
 .. _jlink-external-debug-probe:
 
 J-Link External Debug Probe
@@ -275,3 +293,6 @@ Install the debug host tools before you program the firmware.
 
 .. _Segger RTT:
     https://www.segger.com/jlink-rtt.html
+
+.. _STM32CubeProgrammer Tool:
+    https://www.st.com/en/development-tools/stm32cubeprog.html

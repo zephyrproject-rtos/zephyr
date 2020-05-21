@@ -74,6 +74,10 @@
 #include <stm32h7xx_ll_i2c.h>
 #endif /* CONFIG_I2C_STM32 */
 
+#ifdef CONFIG_ADC_STM32
+#include <stm32h7xx_ll_adc.h>
+#endif /* CONFIG_ADC_STM32 */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F7_SOC_H7_ */

@@ -79,7 +79,7 @@ void rx_8_0_thread(void *arg1, void *arg2, void *arg3)
 			rem_len = isotp_recv_net(&recv_ctx_8_0, &buf,
 						 K_MSEC(2000));
 			if (rem_len < 0) {
-				printk("Receiving erreor [%d]\n", rem_len);
+				printk("Receiving error [%d]\n", rem_len);
 				break;
 			}
 
@@ -148,7 +148,7 @@ void main(void)
 	static struct isotp_send_ctx send_ctx_0_5;
 	int ret = 0;
 
-	can_dev = device_get_binding(DT_ALIAS_CAN_PRIMARY_LABEL);
+	can_dev = device_get_binding(DT_CHOSEN_ZEPHYR_CAN_PRIMARY_LABEL);
 	if (!can_dev) {
 		printk("CAN: Device driver not found.\n");
 		return;
@@ -173,7 +173,7 @@ void main(void)
 	printk("Start sending data\n");
 
 	while (1) {
-		k_sleep(K_MSEC(1000));
+		k_msleep(1000);
 		ret = isotp_send(&send_ctx_0_5, can_dev,
 				 tx_data_small, sizeof(tx_data_small),
 				 &tx_addr_0_5, &rx_addr_0_5,

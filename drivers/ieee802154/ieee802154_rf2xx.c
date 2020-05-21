@@ -307,7 +307,7 @@ static void rf2xx_thread_main(void *arg)
 
 static inline u8_t *get_mac(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config->config_info;
+	const struct rf2xx_config *conf = dev->config_info;
 	struct rf2xx_context *ctx = dev->driver_data;
 	u32_t *ptr = (u32_t *)(ctx->mac_addr);
 
@@ -534,7 +534,7 @@ static int rf2xx_tx(struct device *dev,
 
 static int rf2xx_start(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config->config_info;
+	const struct rf2xx_config *conf = dev->config_info;
 	struct rf2xx_context *ctx = dev->driver_data;
 
 	rf2xx_trx_set_state(dev, RF2XX_TRX_PHY_STATE_CMD_TRX_OFF);
@@ -548,7 +548,7 @@ static int rf2xx_start(struct device *dev)
 
 static int rf2xx_stop(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config->config_info;
+	const struct rf2xx_config *conf = dev->config_info;
 	struct rf2xx_context *ctx = dev->driver_data;
 
 	gpio_pin_interrupt_configure(ctx->irq_gpio, conf->irq.pin,
@@ -571,7 +571,7 @@ int rf2xx_configure(struct device *dev, enum ieee802154_config_type type,
 
 static int power_on_and_setup(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config->config_info;
+	const struct rf2xx_config *conf = dev->config_info;
 	struct rf2xx_context *ctx = dev->driver_data;
 	u8_t config;
 
@@ -641,7 +641,7 @@ static int power_on_and_setup(struct device *dev)
 
 static inline int configure_gpios(struct device *dev)
 {
-	const struct rf2xx_config *conf = dev->config->config_info;
+	const struct rf2xx_config *conf = dev->config_info;
 	struct rf2xx_context *ctx = dev->driver_data;
 
 	/* Chip IRQ line */
@@ -702,7 +702,7 @@ static inline int configure_gpios(struct device *dev)
 static inline int configure_spi(struct device *dev)
 {
 	struct rf2xx_context *ctx = dev->driver_data;
-	const struct rf2xx_config *conf = dev->config->config_info;
+	const struct rf2xx_config *conf = dev->config_info;
 
 	/* Get SPI Driver Instance*/
 	ctx->spi = device_get_binding(conf->spi.devname);
@@ -744,7 +744,7 @@ static inline int configure_spi(struct device *dev)
 static int rf2xx_init(struct device *dev)
 {
 	struct rf2xx_context *ctx = dev->driver_data;
-	const struct rf2xx_config *conf = dev->config->config_info;
+	const struct rf2xx_config *conf = dev->config_info;
 	char thread_name[20];
 
 	LOG_DBG("\nInitialize RF2XX Transceiver\n");
@@ -922,24 +922,12 @@ static struct ieee802154_radio_api rf2xx_radio_api = {
 		L2_CTX_TYPE,			   \
 		MTU)
 
-#if DT_HAS_DRV_INST(0)
-	IEEE802154_RF2XX_DEVICE_CONFIG(0);
-	IEEE802154_RF2XX_DEVICE_DATA(0);
+#define IEEE802154_RF2XX_INIT(inst)				\
+	IEEE802154_RF2XX_DEVICE_CONFIG(inst);			\
+	IEEE802154_RF2XX_DEVICE_DATA(inst);			\
+								\
+	COND_CODE_1(CONFIG_IEEE802154_RAW_MODE,			\
+		    (IEEE802154_RF2XX_RAW_DEVICE_INIT(inst);),	\
+		    (IEEE802154_RF2XX_NET_DEVICE_INIT(inst);))
 
-	#if defined(CONFIG_IEEE802154_RAW_MODE)
-		IEEE802154_RF2XX_RAW_DEVICE_INIT(0);
-	#else
-		IEEE802154_RF2XX_NET_DEVICE_INIT(0);
-	#endif /* CONFIG_IEEE802154_RAW_MODE */
-#endif
-
-#if DT_HAS_DRV_INST(1)
-	IEEE802154_RF2XX_DEVICE_CONFIG(1);
-	IEEE802154_RF2XX_DEVICE_DATA(1);
-
-	#if defined(CONFIG_IEEE802154_RAW_MODE)
-		IEEE802154_RF2XX_RAW_DEVICE_INIT(1);
-	#else
-		IEEE802154_RF2XX_NET_DEVICE_INIT(1);
-	#endif /* CONFIG_IEEE802154_RAW_MODE */
-#endif
+DT_INST_FOREACH_STATUS_OKAY(IEEE802154_RF2XX_INIT)

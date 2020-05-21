@@ -11,8 +11,6 @@ config SPI
 config CAN_MCP2515
 	default y
 
-rsource "boards/*.defconfig"
-
 endif # CAN
 
 endif # SHIELD_DFROBOT_CAN_BUS_V2_0

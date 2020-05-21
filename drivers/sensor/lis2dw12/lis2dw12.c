@@ -16,9 +16,9 @@
 #include <logging/log.h>
 #include <drivers/sensor.h>
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <drivers/spi.h>
-#elif DT_ANY_INST_ON_BUS(i2c)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 #include <drivers/i2c.h>
 #endif
 
@@ -35,7 +35,7 @@ static int lis2dw12_set_range(struct device *dev, u16_t range)
 {
 	int err;
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	const struct lis2dw12_device_config *cfg = dev->config->config_info;
+	const struct lis2dw12_device_config *cfg = dev->config_info;
 	u8_t shift_gain = 0U;
 	u8_t fs = LIS2DW12_FS_TO_REG(range);
 
@@ -178,7 +178,7 @@ static int lis2dw12_attr_set(struct device *dev, enum sensor_channel chan,
 static int lis2dw12_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	const struct lis2dw12_device_config *cfg = dev->config->config_info;
+	const struct lis2dw12_device_config *cfg = dev->config_info;
 	u8_t shift;
 	union axis3bit16_t buf;
 
@@ -214,7 +214,7 @@ static const struct sensor_driver_api lis2dw12_driver_api = {
 static int lis2dw12_init_interface(struct device *dev)
 {
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	const struct lis2dw12_device_config *cfg = dev->config->config_info;
+	const struct lis2dw12_device_config *cfg = dev->config_info;
 
 	lis2dw12->bus = device_get_binding(cfg->bus_name);
 	if (!lis2dw12->bus) {
@@ -222,9 +222,9 @@ static int lis2dw12_init_interface(struct device *dev)
 		return -EINVAL;
 	}
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	lis2dw12_spi_init(dev);
-#elif DT_ANY_INST_ON_BUS(i2c)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	lis2dw12_i2c_init(dev);
 #else
 #error "BUS MACRO NOT DEFINED IN DTS"
@@ -256,7 +256,7 @@ static int lis2dw12_set_power_mode(struct lis2dw12_data *lis2dw12,
 static int lis2dw12_init(struct device *dev)
 {
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	const struct lis2dw12_device_config *cfg = dev->config->config_info;
+	const struct lis2dw12_device_config *cfg = dev->config_info;
 	u8_t wai;
 
 	if (lis2dw12_init_interface(dev)) {

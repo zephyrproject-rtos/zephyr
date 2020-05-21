@@ -49,11 +49,11 @@ struct pwm_xec_config {
 #define PWM_XEC_REG_BASE(_dev)				\
 	((PWM_Type *)			\
 	 ((const struct pwm_xec_config * const)		\
-	  _dev->config->config_info)->base_address)
+	  _dev->config_info)->base_address)
 
 #define PWM_XEC_CONFIG(_dev)				\
 	(((const struct pwm_xec_config * const)		\
-	  _dev->config->config_info))
+	  _dev->config_info))
 
 struct xec_params {
 	u32_t on;
@@ -382,119 +382,18 @@ static struct pwm_driver_api pwm_xec_api = {
 	.get_cycles_per_sec = pwm_xec_get_cycles_per_sec
 };
 
-#if DT_HAS_DRV_INST(0)
+#define XEC_INST_INIT(inst)						\
+	static struct pwm_xec_config pwm_xec_dev_config_##inst = {	\
+		.base_address = DT_INST_REG_ADDR(inst)			\
+	};								\
+									\
+	DEVICE_AND_API_INIT(pwm_xec_##inst,				\
+			    DT_INST_LABEL(inst),			\
+			    pwm_xec_init,				\
+			    NULL,					\
+			    &pwm_xec_dev_config_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &pwm_xec_api);
 
-static struct pwm_xec_config pwm_xec_dev_config_0 = {
-	.base_address = DT_INST_REG_ADDR(0)
-};
-
-DEVICE_AND_API_INIT(pwm_xec_0, DT_INST_LABEL(0),
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_0,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_HAS_DRV_INST(0) */
-
-#if DT_HAS_DRV_INST(1)
-
-static struct pwm_xec_config pwm_xec_dev_config_1 = {
-	.base_address = DT_INST_REG_ADDR(1)
-};
-
-DEVICE_AND_API_INIT(pwm_xec_1, DT_INST_LABEL(1),
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_1,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_HAS_DRV_INST(1) */
-
-#if DT_HAS_DRV_INST(2)
-
-static struct pwm_xec_config pwm_xec_dev_config_2 = {
-	.base_address = DT_INST_REG_ADDR(2)
-};
-
-DEVICE_AND_API_INIT(pwm_xec_2, DT_INST_LABEL(2),
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_2,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_HAS_DRV_INST(2) */
-
-#if DT_HAS_DRV_INST(3)
-
-static struct pwm_xec_config pwm_xec_dev_config_3 = {
-	.base_address = DT_INST_REG_ADDR(3)
-};
-
-DEVICE_AND_API_INIT(pwm_xec_3, DT_INST_LABEL(3),
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_3,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_HAS_DRV_INST(3) */
-
-#if DT_HAS_DRV_INST(4)
-
-static struct pwm_xec_config pwm_xec_dev_config_4 = {
-	.base_address = DT_INST_REG_ADDR(4)
-};
-
-DEVICE_AND_API_INIT(pwm_xec_4, DT_INST_LABEL(4),
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_4,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_HAS_DRV_INST(4) */
-
-#if DT_HAS_DRV_INST(5)
-
-static struct pwm_xec_config pwm_xec_dev_config_5 = {
-	.base_address = DT_INST_REG_ADDR(5)
-};
-
-DEVICE_AND_API_INIT(pwm_xec_5, DT_INST_LABEL(5),
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_5,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_HAS_DRV_INST(5) */
-
-#if DT_HAS_DRV_INST(6)
-
-static struct pwm_xec_config pwm_xec_dev_config_6 = {
-	.base_address = DT_INST_REG_ADDR(6)
-};
-
-DEVICE_AND_API_INIT(pwm_xec_6, DT_INST_LABEL(6),
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_6,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_HAS_DRV_INST(6) */
-
-#if DT_HAS_DRV_INST(7)
-
-static struct pwm_xec_config pwm_xec_dev_config_7 = {
-	.base_address = DT_INST_REG_ADDR(7)
-};
-
-DEVICE_AND_API_INIT(pwm_xec_7, DT_INST_LABEL(7),
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_7,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_HAS_DRV_INST(7) */
-
-#if DT_HAS_DRV_INST(8)
-
-static struct pwm_xec_config pwm_xec_dev_config_8 = {
-	.base_address = DT_INST_REG_ADDR(8)
-};
-
-DEVICE_AND_API_INIT(pwm_xec_8, DT_INST_LABEL(8),
-		    pwm_xec_init, NULL, &pwm_xec_dev_config_8,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_xec_api);
-
-#endif /* DT_HAS_DRV_INST(8) */
+DT_INST_FOREACH_STATUS_OKAY(XEC_INST_INIT)

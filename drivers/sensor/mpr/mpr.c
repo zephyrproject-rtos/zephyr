@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(MPR, CONFIG_SENSOR_LOG_LEVEL);
 static int mpr_init(struct device *dev)
 {
 	struct mpr_data *data = dev->driver_data;
-	const struct mpr_config *cfg = dev->config->config_info;
+	const struct mpr_config *cfg = dev->config_info;
 
 	data->i2c_master = device_get_binding(cfg->i2c_bus);
 	if (!data->i2c_master) {
@@ -37,7 +37,7 @@ static int mpr_init(struct device *dev)
 static int mpr_read_reg(struct device *dev)
 {
 	struct mpr_data *data = dev->driver_data;
-	const struct mpr_config *cfg = dev->config->config_info;
+	const struct mpr_config *cfg = dev->config_info;
 
 	u8_t write_buf[] = { MPR_OUTPUT_MEASUREMENT_COMMAND, 0x00, 0x00 };
 	u8_t read_buf[4] = { 0x0 };

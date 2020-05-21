@@ -83,7 +83,7 @@ void sys_pm_force_power_state(enum power_states state)
 #ifdef CONFIG_SYS_PM_DIRECT_FORCE_MODE
 	(void)arch_irq_lock();
 	forced_pm_state = state;
-	_sys_suspend(K_FOREVER);
+	_sys_suspend(K_TICKS_FOREVER);
 #else
 	forced_pm_state = state;
 #endif

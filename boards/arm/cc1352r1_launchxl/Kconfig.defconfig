@@ -8,10 +8,6 @@ if BOARD_CC1352R1_LAUNCHXL
 config BOARD
 	default "cc1352r1_launchxl"
 
-config SPI_0
-	default y
-	depends on SPI
-
 if SYS_POWER_MANAGEMENT
 
 # Ideally this value could be made to less than 1 ms, as there is

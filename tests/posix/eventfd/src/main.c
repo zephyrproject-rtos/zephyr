@@ -103,7 +103,7 @@ static void test_eventfd_poll_timeout(void)
 	pfd.fd = fd;
 	pfd.events = POLLIN;
 
-	ret = poll(&pfd, 1, K_MSEC(500));
+	ret = poll(&pfd, 1, 500);
 	zassert_true(ret == 0, "poll ret %d", ret);
 
 	close(fd);
@@ -152,7 +152,7 @@ static void test_eventfd_poll_event(void)
 	pfd.fd = fd;
 	pfd.events = POLLIN;
 
-	ret = poll(&pfd, 1, K_SECONDS(3));
+	ret = poll(&pfd, 1, 3000);
 	zassert_true(ret == 1, "poll ret %d %d", ret, pfd.revents);
 	zassert_equal(pfd.revents, POLLIN, "POLLIN not set");
 

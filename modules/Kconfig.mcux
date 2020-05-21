@@ -104,6 +104,12 @@ config HAS_MCUX_GPT
 	help
 	  Set if the general purpose timer (GPT) module is present in the SoC.
 
+config HAS_MCUX_RNG
+	bool
+	help
+	  Set if the LPC specific random number generator (RNG) module is
+	  present in the SoC.
+
 config HAS_MCUX_RNGA
 	bool
 	help
@@ -172,5 +178,20 @@ config HAS_MCUX_LPTMR
 	bool
 	help
 	  Set if the Low Power Timer (LPTMR) module is present in the SoC.
+
+config HAS_MCUX_DAC
+	bool
+	help
+	  Set if the Digital-to-Analog (DAC) module is present in the SoC.
+
+config HAS_MCUX_DAC32
+	bool
+	help
+	  Set if the Digital-to-Analog (DAC32) module is present in the SoC.
+
+config HAS_MCUX_TPM
+	bool
+	help
+	  Set if the Timer/PWM Module is present in the SoC
 
 endif # HAS_MCUX

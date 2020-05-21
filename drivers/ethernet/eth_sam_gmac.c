@@ -41,6 +41,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "phy_sam_gmac.h"
 #include "eth_sam_gmac_priv.h"
 
+#include "eth.h"
+
 #ifdef CONFIG_SOC_FAMILY_SAM0
 #include "eth_sam0_gmac.h"
 #endif
@@ -1103,7 +1105,7 @@ static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 	/* Setup Network Configuration Register */
 	gmac->GMAC_NCFGR = gmac_ncfgr_val | mck_divisor;
 
-	gmac->GMAC_UR = DT_ENUM_IDX(DT_NODELABEL(gmac), phy_connection_type);
+	gmac->GMAC_UR = DT_ENUM_IDX(DT_DRV_INST(0), phy_connection_type);
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	/* Initialize PTP Clock Registers */
@@ -1797,29 +1799,12 @@ static void get_mac_addr_from_i2c_eeprom(u8_t mac_addr[6])
 }
 #endif
 
-#if defined(CONFIG_ETH_SAM_GMAC_RANDOM_MAC)
-static void generate_random_mac(u8_t mac_addr[6])
-{
-	u32_t entropy;
-
-	entropy = sys_rand32_get();
-
-	mac_addr[0] = ATMEL_OUI_B0 | 0x02; /* force LAA bit */
-	mac_addr[1] = ATMEL_OUI_B1;
-	mac_addr[2] = ATMEL_OUI_B2;
-
-	mac_addr[3] = entropy >> 8;
-	mac_addr[4] = entropy >> 16;
-	mac_addr[5] = entropy >> 0;
-}
-#endif
-
 static void generate_mac(u8_t mac_addr[6])
 {
 #if defined(CONFIG_ETH_SAM_GMAC_MAC_I2C_EEPROM)
 	get_mac_addr_from_i2c_eeprom(mac_addr);
-#elif defined(CONFIG_ETH_SAM_GMAC_RANDOM_MAC)
-	generate_random_mac(mac_addr);
+#elif DT_INST_PROP(0, zephyr_random_mac_address)
+	gen_random_mac(mac_addr, ATMEL_OUI_B0, ATMEL_OUI_B1, ATMEL_OUI_B2);
 #endif
 }
 
@@ -1863,7 +1848,7 @@ static void monitor_work_handler(struct k_work *work)
 finally:
 	/* Submit delayed work */
 	k_delayed_work_submit(&dev_data->monitor_work,
-			      CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD);
+			      K_MSEC(CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD));
 }
 
 static void eth0_iface_init(struct net_if *iface)
@@ -1982,7 +1967,7 @@ static void eth0_iface_init(struct net_if *iface)
 	/* Initialise monitor */
 	k_delayed_work_init(&dev_data->monitor_work, monitor_work_handler);
 	k_delayed_work_submit(&dev_data->monitor_work,
-			      CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD);
+			      K_MSEC(CONFIG_ETH_SAM_GMAC_MONITOR_PERIOD));
 
 	/* Do not start the interface until PHY link is up */
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
@@ -2201,7 +2186,7 @@ static void eth0_irq_config(void)
 }
 
 #ifdef CONFIG_SOC_FAMILY_SAM
-static const struct soc_gpio_pin pins_eth0[] = PINS_GMAC0;
+static const struct soc_gpio_pin pins_eth0[] = ATMEL_SAM_DT_PINS(0);
 #endif
 
 static const struct eth_sam_dev_cfg eth0_config = {
@@ -2216,7 +2201,7 @@ static const struct eth_sam_dev_cfg eth0_config = {
 };
 
 static struct eth_sam_dev_data eth0_data = {
-#ifdef CONFIG_ETH_SAM_GMAC_MAC_MANUAL
+#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
 	.mac_addr = DT_INST_PROP(0, local_mac_address),
 #endif
 	.queue_list = {

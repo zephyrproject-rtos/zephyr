@@ -721,8 +721,9 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		NET_DBG("Context %p binding to %d iface[%d] %p addr %s",
 			context, net_context_get_ip_proto(context),
 			ll_addr->sll_ifindex, iface,
-			net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
-					   net_if_get_link_addr(iface)->len));
+			log_strdup(net_sprint_ll_addr(
+					   net_if_get_link_addr(iface)->addr,
+					   net_if_get_link_addr(iface)->len)));
 
 		return 0;
 	}

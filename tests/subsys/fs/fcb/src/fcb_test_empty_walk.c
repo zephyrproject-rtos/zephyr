@@ -7,7 +7,7 @@
 
 #include "fcb_test.h"
 
-void fcb_test_empty_walk(void)
+void test_fcb_empty_walk(void)
 {
 	int rc;
 	struct fcb *fcb;

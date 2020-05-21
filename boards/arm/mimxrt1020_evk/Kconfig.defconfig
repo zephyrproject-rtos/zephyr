@@ -16,16 +16,6 @@ choice DATA_LOCATION
 	default DATA_SEMC
 endchoice
 
-if I2C_MCUX_LPI2C
-
-config I2C_1
-	default y
-
-config I2C_4
-	default y
-
-endif # I2C_MCUX_LPI2C
-
 if NETWORKING
 
 config NET_L2_ETHERNET

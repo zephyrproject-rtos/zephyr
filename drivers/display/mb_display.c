@@ -79,7 +79,7 @@
 #define SCROLL_OFF   0
 #define SCROLL_START 1
 
-#define SCROLL_DEFAULT_DURATION K_MSEC(80)
+#define SCROLL_DEFAULT_DURATION_MS 80
 
 struct mb_display {
 	struct device  *dev;         /* GPIO device */
@@ -160,8 +160,8 @@ static void start_image(struct mb_display *disp, const struct mb_image *img)
 
 	disp->cur = 0U;
 
-	if (disp->duration == K_FOREVER) {
-		disp->expiry = K_FOREVER;
+	if (disp->duration == SYS_FOREVER_MS) {
+		disp->expiry = SYS_FOREVER_MS;
 	} else {
 		disp->expiry = k_uptime_get() + disp->duration;
 	}
@@ -308,7 +308,7 @@ static void show_row(struct k_timer *timer)
 	update_pins(disp, disp->row[disp->cur]);
 	disp->cur = (disp->cur + 1) % DISPLAY_ROWS;
 
-	if (disp->cur == 0U && disp->expiry != K_FOREVER &&
+	if (disp->cur == 0U && disp->expiry != SYS_FOREVER_MS &&
 	    k_uptime_get() > disp->expiry) {
 		if (disp->scroll) {
 			update_scroll(disp);
@@ -335,7 +335,7 @@ static void start_scroll(struct mb_display *disp, s32_t duration)
 	if (duration) {
 		disp->duration = duration / scroll_steps(disp);
 	} else {
-		disp->duration = SCROLL_DEFAULT_DURATION;
+		disp->duration = SCROLL_DEFAULT_DURATION_MS;
 	}
 
 	disp->scroll = SCROLL_START;

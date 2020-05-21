@@ -57,7 +57,7 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 
 	beep_active = true;
 
-	if (pins & BIT(DT_ALIAS_SW0_GPIOS_PIN)) {
+	if (pins & BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios))) {
 		printk("A pressed\n");
 		if (period < PERIOD_MAX) {
 			period += 50U;
@@ -72,7 +72,7 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 	printk("Period is %u us (%u Hz)\n", period, US_TO_HZ(period));
 
 	disp = mb_display_get();
-	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT, K_MSEC(500), "%uHz",
+	mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT, 500, "%uHz",
 			 US_TO_HZ(period));
 
 	k_work_submit(&beep_work);
@@ -82,22 +82,22 @@ void main(void)
 {
 	static struct gpio_callback button_cb_data;
 
-	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
 
-	gpio_pin_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-			   DT_ALIAS_SW0_GPIOS_FLAGS | GPIO_INPUT);
-	gpio_pin_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
-			   DT_ALIAS_SW1_GPIOS_FLAGS | GPIO_INPUT);
+	gpio_pin_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
+			   DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios) | GPIO_INPUT);
+	gpio_pin_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw1), gpios),
+			   DT_GPIO_FLAGS(DT_ALIAS(sw1), gpios) | GPIO_INPUT);
 
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
+	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
+	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw1), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	gpio_init_callback(&button_cb_data, button_pressed,
-			   BIT(DT_ALIAS_SW0_GPIOS_PIN) |
-			   BIT(DT_ALIAS_SW1_GPIOS_PIN));
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios)) |
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw1), gpios)));
 
 	pwm = device_get_binding(DT_LABEL(DT_INST(0, nordic_nrf_sw_pwm)));
 

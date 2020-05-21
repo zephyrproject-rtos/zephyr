@@ -16,7 +16,7 @@
 #include "lis2ds12.h"
 #include <logging/log.h>
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 
 #define LIS2DS12_SPI_READ		(1 << 7)
 
@@ -178,4 +178,4 @@ int lis2ds12_spi_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ANY_INST_ON_BUS(spi) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */

@@ -27,7 +27,7 @@ static struct gpio_callback ks_cb[KEYSCAN_DEVICES];
 static void keyscan_callback(struct device *gpiob,
 			     struct gpio_callback *cb, u32_t pins)
 {
-	LOG_INF("%s: 0x%08x", gpiob->config->name, pins);
+	LOG_INF("%s: 0x%08x", gpiob->name, pins);
 }
 
 void main(void)

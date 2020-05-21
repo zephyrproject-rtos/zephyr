@@ -7,7 +7,7 @@
 """Generate Interrupt Descriptor Table for x86 CPUs.
 
 This script generates the interrupt descriptor table (IDT) for x86.
-Please consule the IA Architecture SW Developer Manual, volume 3,
+Please consult the IA Architecture SW Developer Manual, volume 3,
 for more details on this data structure.
 
 This script accepts as input the zephyr_prebuilt.elf binary,

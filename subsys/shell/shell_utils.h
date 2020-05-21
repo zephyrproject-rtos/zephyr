@@ -15,11 +15,6 @@ extern "C" {
 
 #define SHELL_MSG_SPECIFY_SUBCOMMAND	"Please specify a subcommand.\n"
 
-#define SHELL_DEFAULT_TERMINAL_WIDTH	(80u) /* Default PuTTY width. */
-#define SHELL_DEFAULT_TERMINAL_HEIGHT	(24u) /* Default PuTTY height. */
-
-
-
 s32_t row_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
 				       u16_t offset1,
 				       u16_t offset2);
@@ -36,7 +31,8 @@ static inline u16_t shell_strlen(const char *str)
 	return str == NULL ? 0U : (u16_t)strlen(str);
 }
 
-char shell_make_argv(size_t *argc, char **argv, char *cmd, uint8_t max_argc);
+char shell_make_argv(size_t *argc, const char **argv,
+		     char *cmd, uint8_t max_argc);
 
 /** @brief Removes pattern and following space
  *
@@ -56,11 +52,15 @@ const struct shell_static_entry *shell_cmd_get(
 					size_t idx,
 					struct shell_static_entry *dloc);
 
+const struct shell_static_entry *shell_find_cmd(
+					const struct shell_static_entry *parent,
+					const char *cmd_str,
+					struct shell_static_entry *dloc);
 
 /* @internal @brief Function returns pointer to a shell's subcommands array
  * for a level given by argc and matching command patter provided in argv.
  *
- * @param shell		Shell instance.
+ * @param shell		Entry. NULL for root entry.
  * @param argc		Number of arguments.
  * @param argv		Pointer to an array with arguments.
  * @param match_arg	Subcommand level of last matching argument.
@@ -70,12 +70,12 @@ const struct shell_static_entry *shell_cmd_get(
  * @return		Pointer to found command.
  */
 const struct shell_static_entry *shell_get_last_command(
-					     const struct shell *shell,
-					     size_t argc,
-					     char *argv[],
-					     size_t *match_arg,
-					     struct shell_static_entry *d_entry,
-					     bool only_static);
+					const struct shell_static_entry *entry,
+					size_t argc,
+					const char *argv[],
+					size_t *match_arg,
+					struct shell_static_entry *dloc,
+					bool only_static);
 
 int shell_command_add(char *buff, u16_t *buff_len,
 		      const char *new_cmd, const char *pattern);

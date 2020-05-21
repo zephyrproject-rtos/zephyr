@@ -16,7 +16,7 @@
 
 #include "lps22hh.h"
 
-#if DT_ANY_INST_ON_BUS(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 
 LOG_MODULE_DECLARE(LPS22HH, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -24,7 +24,7 @@ static int lps22hh_i2c_read(struct device *dev, u8_t reg_addr,
 				 u8_t *value, u16_t len)
 {
 	struct lps22hh_data *data = dev->driver_data;
-	const struct lps22hh_config *cfg = dev->config->config_info;
+	const struct lps22hh_config *cfg = dev->config_info;
 
 	return i2c_burst_read(data->bus, cfg->i2c_slv_addr,
 			      reg_addr, value, len);
@@ -34,7 +34,7 @@ static int lps22hh_i2c_write(struct device *dev, u8_t reg_addr,
 				  u8_t *value, u16_t len)
 {
 	struct lps22hh_data *data = dev->driver_data;
-	const struct lps22hh_config *cfg = dev->config->config_info;
+	const struct lps22hh_config *cfg = dev->config_info;
 
 	return i2c_burst_write(data->bus, cfg->i2c_slv_addr,
 			       reg_addr, value, len);
@@ -52,4 +52,4 @@ int lps22hh_i2c_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ANY_INST_ON_BUS(i2c) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */

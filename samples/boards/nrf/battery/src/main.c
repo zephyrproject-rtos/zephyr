@@ -14,7 +14,7 @@
 
 /** A discharge curve specific to the power source. */
 static const struct battery_level_point levels[] = {
-#ifdef DT_VOLTAGE_DIVIDER_VBATT_IO_CHANNELS
+#if DT_NODE_HAS_PROP(DT_INST(0, voltage_divider), io_channels)
 	/* "Curve" here eyeballed from captured data for the [Adafruit
 	 * 3.7v 2000 mAh](https://www.adafruit.com/product/2011) LIPO
 	 * under full load that started with a charge of 3.96 V and

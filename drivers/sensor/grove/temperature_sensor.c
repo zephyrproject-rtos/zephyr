@@ -59,7 +59,7 @@ static int gts_channel_get(struct device *dev,
 			   struct sensor_value *val)
 {
 	struct gts_data *drv_data = dev->driver_data;
-	const struct gts_config *cfg = dev->config->config_info;
+	const struct gts_config *cfg = dev->config_info;
 	double dval;
 
 	/*
@@ -87,7 +87,7 @@ static const struct sensor_driver_api gts_api = {
 static int gts_init(struct device *dev)
 {
 	struct gts_data *drv_data = dev->driver_data;
-	const struct gts_config *cfg = dev->config->config_info;
+	const struct gts_config *cfg = dev->config_info;
 
 	drv_data->adc = device_get_binding(cfg->adc_label);
 	if (drv_data->adc == NULL) {

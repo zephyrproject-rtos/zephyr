@@ -31,7 +31,7 @@
 		compatible = "pwm-leds";
 
 		green_pwm_led: green_pwm_led {
-			pwms = <&{/soc/timers@40000000/pwm} 1 4>;
+			pwms = <&pwm2 1 4>;
 		};
 	};
 
@@ -55,11 +55,6 @@
 	status = "okay";
 };
 
-&usart2 {
-	current-speed = <115200>;
-	status = "okay";
-};
-
 &lpuart1 {
 	current-speed = <115200>;
 	status = "okay";
@@ -76,7 +71,7 @@
 &timers2 {
 	status = "okay";
 
-	pwm {
+	pwm2: pwm {
 		status = "okay";
 	};
 };

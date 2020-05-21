@@ -63,7 +63,7 @@ struct adc_sam_cfg {
 };
 
 #define DEV_CFG(dev) \
-	((const struct adc_sam_cfg *const)(dev)->config->config_info)
+	((const struct adc_sam_cfg *const)(dev)->config_info)
 
 #define DEV_DATA(dev) \
 	((struct adc_sam_data *)(dev)->driver_data)
@@ -379,4 +379,4 @@ static void adc_sam_isr(void *arg)
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-DT_INST_FOREACH(ADC_SAM_INIT)
+DT_INST_FOREACH_STATUS_OKAY(ADC_SAM_INIT)

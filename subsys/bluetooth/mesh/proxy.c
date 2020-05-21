@@ -1010,7 +1010,7 @@ static const struct bt_data prov_ad[] = {
 #define NODE_ID_LEN  19
 #define NET_ID_LEN   11
 
-#define NODE_ID_TIMEOUT K_SECONDS(CONFIG_BT_MESH_NODE_ID_TIMEOUT)
+#define NODE_ID_TIMEOUT (CONFIG_BT_MESH_NODE_ID_TIMEOUT * MSEC_PER_SEC)
 
 static u8_t proxy_svc_data[NODE_ID_LEN] = { 0x28, 0x18, };
 
@@ -1130,21 +1130,21 @@ static int sub_count(void)
 	return count;
 }
 
-static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
+static k_timeout_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 {
-	s32_t remaining = K_FOREVER;
+	s32_t remaining = SYS_FOREVER_MS;
 	int subnet_count;
 
 	BT_DBG("");
 
 	if (conn_count == CONFIG_BT_MAX_CONN) {
 		BT_DBG("Connectable advertising deferred (max connections)");
-		return remaining;
+		return K_FOREVER;
 	}
 
 	if (!sub) {
 		BT_WARN("No subnets to advertise on");
-		return remaining;
+		return K_FOREVER;
 	}
 
 	if (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING) {
@@ -1176,16 +1176,16 @@ static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 		 * second long (to avoid excessive rotation).
 		 */
 		max_timeout = NODE_ID_TIMEOUT / MAX(subnet_count, 6);
-		max_timeout = MAX(max_timeout, K_SECONDS(1));
+		max_timeout = MAX(max_timeout, 1 * MSEC_PER_SEC);
 
-		if (remaining > max_timeout || remaining < 0) {
+		if (remaining > max_timeout || remaining == SYS_FOREVER_MS) {
 			remaining = max_timeout;
 		}
 	}
 
 	BT_DBG("Advertising %d ms for net_idx 0x%04x", remaining, sub->net_idx);
 
-	return remaining;
+	return SYS_TIMEOUT_MS(remaining);
 }
 #endif /* GATT_PROXY */
 
@@ -1235,7 +1235,7 @@ static size_t gatt_prov_adv_create(struct bt_data prov_sd[2])
 }
 #endif /* CONFIG_BT_MESH_PB_GATT */
 
-s32_t bt_mesh_proxy_adv_start(void)
+k_timeout_t bt_mesh_proxy_adv_start(void)
 {
 	BT_DBG("");
 

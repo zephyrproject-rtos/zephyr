@@ -294,8 +294,7 @@ enum i2s_trigger_cmd {
  * @param mem_slab memory slab to store RX/TX data.
  * @param block_size Size of one RX/TX memory block (buffer) in bytes.
  * @param timeout Read/Write timeout. Number of milliseconds to wait in case TX
- *        queue is full, RX queue is empty or one of the special values
- *        K_NO_WAIT, K_FOREVER.
+ *        queue is full or RX queue is empty, or 0, or SYS_FOREVER_MS.
  */
 struct i2s_config {
 	u8_t word_size;

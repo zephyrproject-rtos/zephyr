@@ -351,7 +351,7 @@ static int bq274xx_sample_fetch(struct device *dev, enum sensor_channel chan)
 static int bq274xx_gauge_init(struct device *dev)
 {
 	struct bq274xx_data *bq274xx = dev->driver_data;
-	const struct bq274xx_config *const config = dev->config->config_info;
+	const struct bq274xx_config *const config = dev->config_info;
 	int status = 0;
 	u8_t tmp_checksum = 0, checksum_old = 0, checksum_new = 0;
 	u16_t flags = 0, designenergy_mwh = 0, taperrate = 0, id;
@@ -628,6 +628,6 @@ static const struct sensor_driver_api bq274xx_battery_driver_api = {
 			    &bq274xx_gauge_init, &bq274xx_driver_##index,      \
 			    &bq274xx_config_##index, POST_KERNEL,              \
 			    CONFIG_SENSOR_INIT_PRIORITY,                       \
-			    &bq274xx_battery_driver_api)		       \
+			    &bq274xx_battery_driver_api);
 
-DT_INST_FOREACH(BQ274XX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(BQ274XX_INIT)

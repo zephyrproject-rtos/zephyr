@@ -24,19 +24,12 @@ config PINMUX_MCUX_PORTA
 
 config PINMUX_MCUX_PORTB
 	default y if "$(dt_nodelabel_enabled,adc0)"
+	default y if "$(dt_nodelabel_enabled,tpm1)"
 
 config PINMUX_MCUX_PORTC
 	default y
 
 endif # PINMUX_MCUX
-
-config I2C_1
-	default y
-	depends on I2C
-
-config ADC_0
-	default y
-	depends on ADC
 
 config FXOS8700_DRDY_INT1
 	default y

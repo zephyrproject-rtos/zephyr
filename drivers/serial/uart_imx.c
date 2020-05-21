@@ -22,7 +22,7 @@
 #include <uart_imx.h>
 
 #define DEV_CFG(dev) \
-	((const struct imx_uart_config *const)(dev)->config->config_info)
+	((const struct imx_uart_config *const)(dev)->config_info)
 #define UART_STRUCT(dev) \
 	((UART_Type *)(DEV_CFG(dev))->base)
 
@@ -55,7 +55,7 @@ struct imx_uart_data {
 static int uart_imx_init(struct device *dev)
 {
 	UART_Type *uart = UART_STRUCT(dev);
-	const struct imx_uart_config *config = dev->config->config_info;
+	const struct imx_uart_config *config = dev->config_info;
 	unsigned int old_level;
 
 	/* disable interrupts */
@@ -324,6 +324,6 @@ static const struct uart_driver_api uart_imx_driver_api = {
 									\
 	UART_IMX_CONFIG_FUNC(n)						\
 									\
-	UART_IMX_INIT_CFG(n)
+	UART_IMX_INIT_CFG(n);
 
-DT_INST_FOREACH(UART_IMX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(UART_IMX_INIT)

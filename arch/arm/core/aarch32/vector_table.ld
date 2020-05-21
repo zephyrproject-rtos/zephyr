@@ -8,7 +8,7 @@ _vector_start = .;
 KEEP(*(.exc_vector_table))
 KEEP(*(".exc_vector_table.*"))
 
-KEEP(*(IRQ_VECTOR_TABLE))
+KEEP(*(_IRQ_VECTOR_TABLE_SECTION_NAME))
 
 KEEP(*(.vectors))
 

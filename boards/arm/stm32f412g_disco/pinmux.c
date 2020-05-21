@@ -14,7 +14,7 @@
 
 /* pin assignments for STM32F412G-DISCO board */
 static const struct pin_config pinconf[] = {
-#if DT_HAS_NODE(DT_NODELABEL(usart2))
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(usart2), okay) && CONFIG_SERIAL
 	{STM32_PIN_PA2, STM32F4_PINMUX_FUNC_PA2_USART2_TX},
 	{STM32_PIN_PA3, STM32F4_PINMUX_FUNC_PA3_USART2_RX},
 #endif

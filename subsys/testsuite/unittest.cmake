@@ -71,6 +71,10 @@ if(COVERAGE)
     -fprofile-arcs
     -ftest-coverage
     )
+
+  target_link_libraries(testbinary PRIVATE
+    -lgcov
+    )
 endif()
 
 if(LIBS)

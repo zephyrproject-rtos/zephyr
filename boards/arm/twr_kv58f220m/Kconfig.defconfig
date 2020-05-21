@@ -20,10 +20,6 @@ config MCG_VDIV0
 config MCG_FCRDIV
 	default 1
 
-config I2C_1
-	default y
-	depends on I2C
-
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA

@@ -90,7 +90,7 @@ int spi_oc_simple_transceive(struct device *dev,
 			  const struct spi_buf_set *tx_bufs,
 			  const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_oc_simple_cfg *info = dev->config->config_info;
+	const struct spi_oc_simple_cfg *info = dev->config_info;
 	struct spi_oc_simple_data *spi = SPI_OC_SIMPLE_DATA(dev);
 	struct spi_context *ctx = &spi->ctx;
 
@@ -184,7 +184,7 @@ static struct spi_driver_api spi_oc_simple_api = {
 
 int spi_oc_simple_init(struct device *dev)
 {
-	const struct spi_oc_simple_cfg *info = dev->config->config_info;
+	const struct spi_oc_simple_cfg *info = dev->config_info;
 
 	/* Clear chip selects */
 	sys_write8(0, SPI_OC_SIMPLE_SPSS(info));
@@ -203,42 +203,23 @@ int spi_oc_simple_init(struct device *dev)
 	return 0;
 }
 
-#if DT_HAS_DRV_INST(0)
-static struct spi_oc_simple_cfg spi_oc_simple_cfg_0 = {
-	.base = DT_INST_REG_ADDR_BY_NAME(0, control),
-};
+#define SPI_OC_INIT(inst)						\
+	static struct spi_oc_simple_cfg spi_oc_simple_cfg_##inst = {	\
+		.base = DT_INST_REG_ADDR_BY_NAME(inst, control),	\
+	};								\
+									\
+	static struct spi_oc_simple_data spi_oc_simple_data_##inst = {	\
+		SPI_CONTEXT_INIT_LOCK(spi_oc_simple_data_##inst, ctx),	\
+		SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_##inst, ctx),	\
+	};								\
+									\
+	DEVICE_AND_API_INIT(spi_oc_simple_##inst,			\
+			    DT_INST_LABEL(inst),			\
+			    spi_oc_simple_init,				\
+			    &spi_oc_simple_data_##inst,			\
+			    &spi_oc_simple_cfg_##inst,			\
+			    POST_KERNEL,				\
+			    CONFIG_SPI_INIT_PRIORITY,			\
+			    &spi_oc_simple_api);
 
-static struct spi_oc_simple_data spi_oc_simple_data_0 = {
-	SPI_CONTEXT_INIT_LOCK(spi_oc_simple_data_0, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_0, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_oc_simple_0,
-		    DT_INST_LABEL(0),
-		    spi_oc_simple_init,
-		    &spi_oc_simple_data_0,
-		    &spi_oc_simple_cfg_0,
-		    POST_KERNEL,
-		    CONFIG_SPI_INIT_PRIORITY,
-		    &spi_oc_simple_api);
-#endif
-
-#if DT_HAS_DRV_INST(1)
-static struct spi_oc_simple_cfg spi_oc_simple_cfg_1 = {
-	.base = DT_INST_REG_ADDR_BY_NAME(1, control),
-};
-
-static struct spi_oc_simple_data spi_oc_simple_data_1 = {
-	SPI_CONTEXT_INIT_LOCK(spi_oc_simple_data_1, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_oc_simple_data_1, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_oc_simple_1,
-		    DT_INST_LABEL(1),
-		    spi_oc_simple_init,
-		    &spi_oc_simple_data_1,
-		    &spi_oc_simple_cfg_1,
-		    POST_KERNEL,
-		    CONFIG_SPI_INIT_PRIORITY,
-		    &spi_oc_simple_api);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(SPI_OC_INIT)

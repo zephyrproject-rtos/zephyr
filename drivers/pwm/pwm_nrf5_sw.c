@@ -92,7 +92,7 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 			       u32_t period_cycles, u32_t pulse_cycles,
 			       pwm_flags_t flags)
 {
-	struct pwm_config *config;
+	const struct pwm_config *config;
 	NRF_TIMER_Type *timer;
 	struct pwm_data *data;
 	u8_t ppi_index;
@@ -100,7 +100,7 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	u16_t div;
 	u32_t ret;
 
-	config = (struct pwm_config *)dev->config->config_info;
+	config = (const struct pwm_config *)dev->config_info;
 	timer = config->timer;
 	data = dev->driver_data;
 
@@ -216,9 +216,9 @@ pin_set_pwm_off:
 static int pwm_nrf5_sw_get_cycles_per_sec(struct device *dev, u32_t pwm,
 					  u64_t *cycles)
 {
-	struct pwm_config *config;
+	const struct pwm_config *config;
 
-	config = (struct pwm_config *)dev->config->config_info;
+	config = (const struct pwm_config *)dev->config_info;
 
 	/* HF timer frequency is derived from 16MHz source with a prescaler */
 	*cycles = 16000000UL / BIT(config->prescaler);
@@ -233,10 +233,10 @@ static const struct pwm_driver_api pwm_nrf5_sw_drv_api_funcs = {
 
 static int pwm_nrf5_sw_init(struct device *dev)
 {
-	struct pwm_config *config;
+	const struct pwm_config *config;
 	NRF_TIMER_Type *timer;
 
-	config = (struct pwm_config *)dev->config->config_info;
+	config = (const struct pwm_config *)dev->config_info;
 	timer = config->timer;
 
 	/* setup HF timer */

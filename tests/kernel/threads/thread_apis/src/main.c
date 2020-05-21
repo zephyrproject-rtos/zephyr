@@ -282,6 +282,7 @@ enum control_method {
 	NO_WAIT,
 	SELF_ABORT,
 	OTHER_ABORT,
+	OTHER_ABORT_TIMEOUT,
 	ALREADY_EXIT,
 	ISR_ALREADY_EXIT,
 	ISR_RUNNING
@@ -295,6 +296,7 @@ void join_entry(void *p1, void *p2, void *p3)
 	case TIMEOUT:
 	case NO_WAIT:
 	case OTHER_ABORT:
+	case OTHER_ABORT_TIMEOUT:
 	case ISR_RUNNING:
 		printk("join_thread: sleeping forever\n");
 		k_sleep(K_FOREVER);
@@ -322,6 +324,8 @@ void do_join_from_isr(void *arg)
 	printk("isr: k_thread_join() returned with %d\n", *ret);
 }
 
+#define JOIN_TIMEOUT_MS	100
+
 int join_scenario(enum control_method m)
 {
 	k_timeout_t timeout = K_FOREVER;
@@ -338,6 +342,9 @@ int join_scenario(enum control_method m)
 		/* Let join_thread run first */
 		k_msleep(50);
 		break;
+	case OTHER_ABORT_TIMEOUT:
+		timeout = K_MSEC(JOIN_TIMEOUT_MS);
+		/* Fall through */
 	case OTHER_ABORT:
 		printk("ztest_thread: create control_thread\n");
 		k_thread_create(&control_thread, control_stack, STACK_SIZE,
@@ -366,12 +373,17 @@ int join_scenario(enum control_method m)
 	if (ret != 0) {
 		k_thread_abort(&join_thread);
 	}
+	if (m == OTHER_ABORT || m == OTHER_ABORT_TIMEOUT) {
+		k_thread_join(&control_thread, K_FOREVER);
+	}
 
 	return ret;
 }
 
 void test_thread_join(void)
 {
+	s64_t interval;
+
 #ifdef CONFIG_USERSPACE
 	/* scenario: thread never started */
 	zassert_equal(k_thread_join(&join_thread, K_FOREVER), 0,
@@ -381,6 +393,13 @@ void test_thread_join(void)
 	zassert_equal(join_scenario(NO_WAIT), -EBUSY, "failed no-wait case");
 	zassert_equal(join_scenario(SELF_ABORT), 0, "failed self-abort case");
 	zassert_equal(join_scenario(OTHER_ABORT), 0, "failed other-abort case");
+
+	interval = k_uptime_get();
+	zassert_equal(join_scenario(OTHER_ABORT_TIMEOUT), 0,
+		      "failed other-abort case with timeout");
+	interval = k_uptime_get() - interval;
+	zassert_true(interval < JOIN_TIMEOUT_MS, "join took too long (%lld ms)",
+		     interval);
 	zassert_equal(join_scenario(ALREADY_EXIT), 0,
 		      "failed already exit case");
 

@@ -25,7 +25,7 @@
  * system where top-left is (0, 0) and bottom-right is (49, 49).
  */
 
-#define SCROLL_SPEED      K_MSEC(400)  /* Text scrolling speed */
+#define SCROLL_SPEED      400          /* Text scrolling speed */
 
 #define PIXEL_SIZE        10           /* Virtual coordinates per real pixel */
 
@@ -42,8 +42,10 @@
 #define BALL_POS_Y_MIN    0            /* Maximum ball Y coordinate */
 #define BALL_POS_Y_MAX    39           /* Maximum ball Y coordinate */
 
-#define START_THRESHOLD   K_MSEC(100)  /* Max time between A & B press */
-#define RESTART_THRESHOLD K_SECONDS(2) /* Time before restart is allowed */
+#define START_THRESHOLD   100          /* Max time between A & B press */
+#define RESTART_THRESHOLD (2 * MSEC_PER_SEC) /* Time before restart is
+					      *	allowed
+					      */
 
 #define REAL_TO_VIRT(r)  ((r) * 10)
 #define VIRT_TO_REAL(v)  ((v) / 10)
@@ -295,7 +297,7 @@ static void game_ended(bool won)
 		printk("You lost!\n");
 	}
 
-	k_delayed_work_submit(&refresh, RESTART_THRESHOLD);
+	k_delayed_work_submit(&refresh, K_MSEC(RESTART_THRESHOLD));
 }
 
 static void game_stack_dump(const struct k_thread *thread, void *user_data)
@@ -394,15 +396,15 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 			   u32_t pins)
 {
 	/* Filter out spurious presses */
-	if (pins & BIT(DT_ALIAS_SW0_GPIOS_PIN)) {
+	if (pins & BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios))) {
 		printk("A pressed\n");
-		if (k_uptime_delta(&a_timestamp) < K_MSEC(100)) {
+		if (k_uptime_delta(&a_timestamp) < 100) {
 			printk("Too quick A presses\n");
 			return;
 		}
 	} else {
 		printk("B pressed\n");
-		if (k_uptime_delta(&b_timestamp) < K_MSEC(100)) {
+		if (k_uptime_delta(&b_timestamp) < 100) {
 			printk("Too quick B presses\n");
 			return;
 		}
@@ -422,7 +424,7 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 		return;
 	}
 
-	if (pins & BIT(DT_ALIAS_SW0_GPIOS_PIN)) {
+	if (pins & BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios))) {
 		if (select) {
 			pong_select_change();
 			return;
@@ -485,22 +487,22 @@ static void configure_buttons(void)
 	static struct gpio_callback button_cb_data;
 	struct device *gpio;
 
-	gpio = device_get_binding(DT_ALIAS_SW0_GPIOS_CONTROLLER);
+	gpio = device_get_binding(DT_GPIO_LABEL(DT_ALIAS(sw0), gpios));
 
-	gpio_pin_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
-			   DT_ALIAS_SW0_GPIOS_FLAGS | GPIO_INPUT);
-	gpio_pin_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
-			   DT_ALIAS_SW1_GPIOS_FLAGS | GPIO_INPUT);
+	gpio_pin_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
+			   DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios) | GPIO_INPUT);
+	gpio_pin_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw1), gpios),
+			   DT_GPIO_FLAGS(DT_ALIAS(sw1), gpios) | GPIO_INPUT);
 
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW0_GPIOS_PIN,
+	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw0), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
-	gpio_pin_interrupt_configure(gpio, DT_ALIAS_SW1_GPIOS_PIN,
+	gpio_pin_interrupt_configure(gpio, DT_GPIO_PIN(DT_ALIAS(sw1), gpios),
 				     GPIO_INT_EDGE_TO_ACTIVE);
 
 	gpio_init_callback(&button_cb_data, button_pressed,
-			   BIT(DT_ALIAS_SW0_GPIOS_PIN) |
-			   BIT(DT_ALIAS_SW1_GPIOS_PIN));
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw0), gpios)) |
+			   BIT(DT_GPIO_PIN(DT_ALIAS(sw1), gpios)));
 
 	gpio_add_callback(gpio, &button_cb_data);
 }
@@ -538,6 +540,6 @@ void main(void)
 		}
 
 		mb_display_image(disp, MB_DISPLAY_MODE_SINGLE,
-				 K_FOREVER, &img, 1);
+				 SYS_FOREVER_MS, &img, 1);
 	}
 }

@@ -146,7 +146,7 @@ struct uart_miv_data {
 
 #define DEV_CFG(dev)						\
 	((const struct uart_miv_device_config * const)		\
-	 (dev)->config->config_info)
+	 (dev)->config_info)
 #define DEV_UART(dev)						\
 	((struct uart_miv_regs_t *)(DEV_CFG(dev))->uart_addr)
 #define DEV_DATA(dev)						\
@@ -381,7 +381,11 @@ static const struct uart_driver_api uart_miv_driver_api = {
 #endif
 };
 
-#if DT_HAS_DRV_INST(0)
+/* This driver is single-instance. */
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
+	     "unsupported uart_miv instance");
+
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay)
 
 static struct uart_miv_data uart_miv_data_0;
 
@@ -414,4 +418,4 @@ static void uart_miv_irq_cfg_func_0(struct device *dev)
 }
 #endif
 
-#endif /* DT_HAS_DRV_INST(0) */
+#endif /* DT_NODE_HAS_STATUS(DT_DRV_INST(0), okay) */

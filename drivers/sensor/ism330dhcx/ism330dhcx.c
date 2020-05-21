@@ -752,7 +752,7 @@ static struct ism330dhcx_data ism330dhcx_data;
 
 static const struct ism330dhcx_config ism330dhcx_config = {
 	.bus_name = DT_INST_BUS_LABEL(0),
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	.bus_init = ism330dhcx_spi_init,
 	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
 	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
@@ -767,7 +767,7 @@ static const struct ism330dhcx_config ism330dhcx_config = {
 #else
 	.spi_conf.cs        = NULL,
 #endif
-#elif DT_ANY_INST_ON_BUS(i2c)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	.bus_init = ism330dhcx_i2c_init,
 	.i2c_slv_addr = DT_INST_REG_ADDR(0),
 #else
@@ -804,7 +804,7 @@ static const struct ism330dhcx_config ism330dhcx_config = {
 
 static int ism330dhcx_init(struct device *dev)
 {
-	const struct ism330dhcx_config * const config = dev->config->config_info;
+	const struct ism330dhcx_config * const config = dev->config_info;
 	struct ism330dhcx_data *data = dev->driver_data;
 
 	data->bus = device_get_binding(config->bus_name);

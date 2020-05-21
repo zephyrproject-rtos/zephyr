@@ -149,7 +149,7 @@ static bool check_lines(u32_t ba)
 static int i2c_xec_configure(struct device *dev, u32_t dev_config_raw)
 {
 	const struct i2c_xec_config *config =
-		(const struct i2c_xec_config *const) (dev->config->config_info);
+		(const struct i2c_xec_config *const) (dev->config_info);
 	u32_t ba = config->base_addr;
 	u8_t port_sel = config->port_sel;
 	u32_t speed_id;
@@ -229,7 +229,7 @@ static int i2c_xec_poll_write(struct device *dev, struct i2c_msg msg,
 			      u16_t addr)
 {
 	const struct i2c_xec_config *config =
-		(const struct i2c_xec_config *const) (dev->config->config_info);
+		(const struct i2c_xec_config *const) (dev->config_info);
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->driver_data);
 	u32_t ba = config->base_addr;
@@ -292,7 +292,7 @@ static int i2c_xec_poll_read(struct device *dev, struct i2c_msg msg,
 			     u16_t addr)
 {
 	const struct i2c_xec_config *config =
-		(const struct i2c_xec_config *const) (dev->config->config_info);
+		(const struct i2c_xec_config *const) (dev->config_info);
 	struct i2c_xec_data *data =
 		(struct i2c_xec_data *const) (dev->driver_data);
 	u32_t ba = config->base_addr;
@@ -427,24 +427,6 @@ static int i2c_xec_init(struct device *dev)
 		DT_INST_LABEL(n),			\
 		&i2c_xec_init, &i2c_xec_data_##n, &i2c_xec_config_##n,	\
 		POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,			\
-		&i2c_xec_driver_api)
+		&i2c_xec_driver_api);
 
-#if DT_HAS_DRV_INST(0)
-I2C_XEC_DEVICE(0);
-#endif
-
-#if DT_HAS_DRV_INST(1)
-I2C_XEC_DEVICE(1);
-#endif
-
-#if DT_HAS_DRV_INST(2)
-I2C_XEC_DEVICE(2);
-#endif
-
-#if DT_HAS_DRV_INST(3)
-I2C_XEC_DEVICE(3);
-#endif
-
-#if DT_HAS_DRV_INST(4)
-I2C_XEC_DEVICE(4);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(I2C_XEC_DEVICE)

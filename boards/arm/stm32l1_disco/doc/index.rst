@@ -1,7 +1,7 @@
 .. _stm32l1_disco_board:
 
-ST STM32LDISCOVERY and 32L152CDISCOVERY
-#######################################
+ST STM32L1 Discovery
+####################
 
 Overview
 ********

@@ -253,7 +253,7 @@ static inline void arch_isr_direct_header(void)
 	/* We're not going to unlock IRQs, but we still need to increment this
 	 * so that arch_is_in_isr() works
 	 */
-	++_kernel.nested;
+	++_kernel.cpus[0].nested;
 }
 
 /*
@@ -269,7 +269,7 @@ static inline void arch_isr_direct_footer(int swap)
 #if defined(CONFIG_TRACING)
 	sys_trace_isr_exit();
 #endif
-	--_kernel.nested;
+	--_kernel.cpus[0].nested;
 
 	/* Call swap if all the following is true:
 	 *
@@ -277,7 +277,7 @@ static inline void arch_isr_direct_footer(int swap)
 	 * 2) We are not in a nested interrupt
 	 * 3) Next thread to run in the ready queue is not this thread
 	 */
-	if (swap != 0 && _kernel.nested == 0 &&
+	if (swap != 0 && _kernel.cpus[0].nested == 0 &&
 	    _kernel.ready_q.cache != _current) {
 		unsigned int flags;
 

@@ -98,7 +98,7 @@ config SSE_FP_MATH
 	  Disabling this option means that the compiler utilizes only the
 	  x87 instruction set for floating point operations.
 
-config EAGER_FP_SHARING
+config EAGER_FPU_SHARING
 	bool
 	depends on FPU
 	depends on USERSPACE
@@ -113,11 +113,11 @@ config EAGER_FP_SHARING
 	  FPU register set, should be used any time CONFIG_FPU is
 	  enabled, regardless if the FPU is used by one thread or multiple.
 
-config LAZY_FP_SHARING
+config LAZY_FPU_SHARING
 	bool
 	depends on FPU
-	depends on !EAGER_FP_SHARING
-	depends on FP_SHARING
+	depends on !EAGER_FPU_SHARING
+	depends on FPU_SHARING
 	default y if X86_NO_LAZY_FP || !USERSPACE
 	help
 	  This hidden option allows multiple threads to use the floating point

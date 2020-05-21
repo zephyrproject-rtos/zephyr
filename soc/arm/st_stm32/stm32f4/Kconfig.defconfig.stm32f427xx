@@ -1,0 +1,21 @@
+# ST STM32F427XX MCU configuration options
+
+# Copyright (c) 2020 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F427XX
+
+config SOC
+	default "stm32f427xx"
+
+config NUM_IRQS
+	default 91
+
+if ENTROPY_GENERATOR
+
+config ENTROPY_STM32_RNG
+	default y
+
+endif # ENTROPY_GENERATOR
+
+endif # SOC_STM32F427XX

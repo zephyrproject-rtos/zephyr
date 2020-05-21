@@ -44,7 +44,7 @@ extern "C" {
 #define BT_HCI_ERR_UNSUPP_REMOTE_FEATURE        0x1a
 #define BT_HCI_ERR_SCO_OFFSET_REJECTED          0x1b
 #define BT_HCI_ERR_SCO_INTERVAL_REJECTED        0x1c
-#define BT_HIC_ERR_SCO_AIR_MODE_REJECTED        0x1d
+#define BT_HCI_ERR_SCO_AIR_MODE_REJECTED        0x1d
 #define BT_HCI_ERR_INVALID_LL_PARAM             0x1e
 #define BT_HCI_ERR_UNSPECIFIED                  0x1f
 #define BT_HCI_ERR_UNSUPP_LL_PARAM_VAL          0x20

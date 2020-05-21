@@ -3,16 +3,16 @@
 TSC Project Roles
 *****************
 
-Overview
-########
+Main Roles
+##########
 
 TSC projects generally will involve *Maintainers*, *Collaborators*, and
 *Contributors*:
 
 **Maintainer**: lead Collaborators on an area identified by the TSC (e.g.
 Architecture, code subsystems, etc.). Maintainers shall also serve as the
-area’s representative on the TSC as needed.  Maintainers may become voting
-members of the TSC by approval of the existing TSC voting members.
+area’s representative on the TSC as needed. Maintainers may become voting
+members of the TSC under the guidelines stated in the project Charter.
 
 **Collaborator**: A highly involved Contributor in one or more areas.
 May become a Maintainer with approval of existing TSC voting members.
@@ -89,6 +89,21 @@ in addition to those listed for Contributors and Collaborators:
 * Responsibility to enforce the code of conduct.
 
 
+Role Retirement
+###############
+
+* Individuals elected to the following Project roles, including, Maintainer,
+  Release Engineering Team member, Release Manager, but are no longer engaged
+  in the project as described by the rights and responsibilities of that role,
+  may be requested by the TSC to retire from the role they are elected.
+* Such a request needs to be raised as a motion in the TSC and be
+  approved by the TSC voting members.
+  By approval of the TSC the individual is considered to be retired
+  from the role they have been elected.
+* The above applies to elected TSC Project roles that may be defined
+  in addition.
+
+
 Teams and Supporting Activities
 *******************************
 
@@ -113,7 +128,13 @@ Release Engineering Team
 ########################
 
 A team of active Maintainers involved in multiple areas.
-The team is appointed by the TSC and reports directly into the TSC.
+
+* The members of the Release Engineering team are expected to fill
+  the Release Manager role based on a defined cadence and selection process.
+* The cadence and selection process are defined by the Release Engineering
+  team and are approved by the TSC.
+* The team reports directly into the TSC.
+
 Release Engineering team has the following rights and responsibilities:
 
 * Right to merge code changes to the zephyr tree following the project rules.
@@ -127,6 +148,18 @@ Release Engineering team has the following rights and responsibilities:
 * Responsibility to keep the Zephyr code base in a working and passing state
   (as per CI)
 
+Joining the Release Engineering team
+
+* Maintainers highly involved in the project may be nominated
+  by a TSC voting member to join the Release Engineering team.
+  Nominees may become members of the team by approval of the
+  existing TSC voting members.
+* To ensure a functional Release Engineering team the TSC shall
+  periodically review the team’s followed processes,
+  the appropriate size, and the membership
+  composition (ensure, for example, that team members are
+  geographically distributed across multiple locations and
+  time-zones).
 
 Release Activity
 ################
@@ -250,7 +283,7 @@ project for this specific release.
 
 * TSC has to approve a release manager.
 
-A Release Manager joins the release engineering team and has
+A Release Manager is a member of the Release Engineering team and has
 the rights and responsibilities of that team in addition to
 the following:
 

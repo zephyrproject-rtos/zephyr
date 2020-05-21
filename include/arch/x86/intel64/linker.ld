@@ -32,6 +32,8 @@ SECTIONS
 	*(.locore)
 	*(.locore.*)
 	MMU_PAGE_ALIGN
+	_locore_end = .;
+
 	_lorodata_start = .;
 	*(.lorodata)
 	MMU_PAGE_ALIGN
@@ -188,7 +190,7 @@ SECTIONS
 	_end = .;
 
 	/* All unused memory also owned by the kernel for heaps */
-	__kernel_ram_end = PHYS_RAM_ADDR + KB(DT_RAM_SIZE);
+	__kernel_ram_end = PHYS_RAM_ADDR + PHYS_RAM_SIZE;
 	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
 #include <linker/debug-sections.ld>

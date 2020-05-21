@@ -29,7 +29,8 @@ static void test_shell_execute_cmd(const char *cmd, int result)
 
 	TC_PRINT("shell_execute_cmd(%s): %d\n", cmd, ret);
 
-	zassert_true(ret == result, cmd);
+	zassert_true(ret == result, "cmd: %s, got:%d, expected:%d",
+							cmd, ret, result);
 }
 
 static void test_cmd_help(void)
@@ -206,7 +207,6 @@ SHELL_CMD_ARG_REGISTER(test_shell_cmd, NULL, "help", cmd_test_module, 1, 0);
 static int cmd_wildcard(const struct shell *shell, size_t argc, char **argv)
 {
 	int valid_arguments = 0;
-
 	for (size_t i = 1; i < argc; i++) {
 		if (!strcmp("argument_1", argv[i])) {
 			valid_arguments++;
@@ -306,7 +306,7 @@ static void test_set_root_cmd(void)
 	err = shell_set_root_cmd("shell");
 	zassert_equal(err, 0, "Unexpected error %d", err);
 
-	test_shell_execute_cmd("shell colors", -ENOEXEC);
+	test_shell_execute_cmd("shell colors", 1);
 	test_shell_execute_cmd("colors on", 0);
 
 	err = shell_set_root_cmd(NULL);
@@ -314,6 +314,62 @@ static void test_set_root_cmd(void)
 
 	test_shell_execute_cmd("colors", -ENOEXEC);
 	test_shell_execute_cmd("shell colors on", 0);
+}
+
+static void test_shell_fprintf(void)
+{
+	static const char expect[] = "testing 1 2 3";
+	const struct shell *shell;
+	const char *buf;
+	size_t size;
+
+	shell = shell_backend_dummy_get_ptr();
+	zassert_not_null(shell, "Failed to get shell");
+
+	/* Clear the output buffer */
+	shell_backend_dummy_get_output(shell, &size);
+
+	shell_fprintf(shell, SHELL_VT100_COLOR_DEFAULT, "testing %d %s %c",
+		      1, "2", '3');
+	buf = shell_backend_dummy_get_output(shell, &size);
+	zassert_true(size >= sizeof(expect), "Expected size > %u, got %d",
+		     sizeof(expect), size);
+
+	/*
+	 * There are prompts and various ANSI characters in the output, so just
+	 * check that the string is in there somewhere.
+	 */
+	zassert_true(strstr(buf, expect),
+		     "Expected string to contain '%s', got '%s'", expect, buf);
+}
+
+#define RAW_ARG "aaa \"\" bbb"
+#define CMD_NAME test_cmd_raw_arg
+
+static int cmd_raw_arg(const struct shell *shell, size_t argc, char **argv)
+{
+	if (argc == 2) {
+		if (strcmp(argv[0], STRINGIFY(CMD_NAME))) {
+			return -1;
+		}
+		if (strcmp(argv[1], RAW_ARG)) {
+			return -1;
+		}
+	} else if (argc > 2) {
+		return -1;
+	}
+
+	return 0;
+}
+
+SHELL_CMD_ARG_REGISTER(CMD_NAME, NULL, NULL, cmd_raw_arg, 1, SHELL_OPT_ARG_RAW);
+
+static void test_raw_arg(void)
+{
+	test_shell_execute_cmd("test_cmd_raw_arg aaa \"\" bbb", 0);
+	test_shell_execute_cmd("test_cmd_raw_arg", 0);
+	test_shell_execute_cmd("select test_cmd_raw_arg", 0);
+	test_shell_execute_cmd("aaa \"\" bbb", 0);
 }
 
 void test_main(void)
@@ -324,11 +380,14 @@ void test_main(void)
 			ztest_unit_test(test_cmd_shell),
 			ztest_unit_test(test_cmd_history),
 			ztest_unit_test(test_cmd_select),
-			ztest_unit_test(test_set_root_cmd),
 			ztest_unit_test(test_cmd_resize),
 			ztest_unit_test(test_shell_module),
 			ztest_unit_test(test_shell_wildcards_static),
-			ztest_unit_test(test_shell_wildcards_dynamic));
+			ztest_unit_test(test_shell_wildcards_dynamic),
+			ztest_unit_test(test_shell_fprintf),
+			ztest_unit_test(test_set_root_cmd),
+			ztest_unit_test(test_raw_arg)
+			);
 
 	ztest_run_test_suite(shell_test_suite);
 }

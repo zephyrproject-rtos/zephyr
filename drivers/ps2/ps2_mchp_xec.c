@@ -32,7 +32,7 @@ struct ps2_xec_data {
 
 static int ps2_xec_configure(struct device *dev, ps2_callback_t callback_isr)
 {
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 
@@ -69,7 +69,7 @@ static int ps2_xec_configure(struct device *dev, ps2_callback_t callback_isr)
 
 static int ps2_xec_write(struct device *dev, u8_t value)
 {
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 	int i = 0;
@@ -86,7 +86,7 @@ static int ps2_xec_write(struct device *dev, u8_t value)
 	 * FSM.
 	 */
 	while (((base->STATUS &
-		(MCHP_PS2_STATUS_RXD_RDY | MCHP_PS2_STATUS_TX_IDLE))
+		(MCHP_PS2_STATUS_RX_BUSY | MCHP_PS2_STATUS_TX_IDLE))
 		!= MCHP_PS2_STATUS_TX_IDLE) && (i < PS2_TIMEOUT)) {
 		k_busy_wait(50);
 		i++;
@@ -102,8 +102,9 @@ static int ps2_xec_write(struct device *dev, u8_t value)
 
 	/* Read to clear data ready bit in the status register*/
 	dummy = base->TRX_BUFF;
-
+	k_sleep(K_MSEC(1));
 	base->STATUS = MCHP_PS2_STATUS_RW1C_MASK;
+
 	/* Switch the interface to TX mode and enable state machine */
 	base->CTRL = MCHP_PS2_CTRL_TR_TX | MCHP_PS2_CTRL_EN;
 
@@ -117,7 +118,7 @@ static int ps2_xec_write(struct device *dev, u8_t value)
 
 static int ps2_xec_inhibit_interface(struct device *dev)
 {
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 
@@ -136,7 +137,7 @@ static int ps2_xec_inhibit_interface(struct device *dev)
 
 static int ps2_xec_enable_interface(struct device *dev)
 {
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 
@@ -150,7 +151,7 @@ static int ps2_xec_enable_interface(struct device *dev)
 static void ps2_xec_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct ps2_xec_config *config = dev->config->config_info;
+	const struct ps2_xec_config *config = dev->config_info;
 	struct ps2_xec_data *data = dev->driver_data;
 	PS2_Type *base = config->base;
 	u32_t status;
@@ -169,7 +170,7 @@ static void ps2_xec_isr(void *arg)
 		    (MCHP_PS2_STATUS_TX_TMOUT | MCHP_PS2_STATUS_TX_ST_TMOUT)) {
 		/* Clear sticky bits and go to read mode */
 		base->STATUS = MCHP_PS2_STATUS_RW1C_MASK;
-		LOG_ERR("TX time out");
+		LOG_ERR("TX time out: %0x", status);
 	}
 
 	/* The control register reverts to RX automatically after

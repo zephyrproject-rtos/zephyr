@@ -20,6 +20,7 @@ menuconfig NET_L2_OPENTHREAD
 	select MBEDTLS_CIPHER_CCM_ENABLED
 	select MBEDTLS_MAC_SHA256_ENABLED
 	select MBEDTLS_ENTROPY_ENABLED
+	select MBEDTLS_MAC_CMAC_ENABLED
 
 if NET_L2_OPENTHREAD
 
@@ -31,7 +32,6 @@ config OPENTHREAD_DTLS
 	select MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 	select MBEDTLS_ECP_DP_SECP256R1_ENABLED
 	select MBEDTLS_ECP_NIST_OPTIM
-	select MBEDTLS_MAC_CMAC_ENABLED
 	select MBEDTLS_SSL_EXPORT_KEYS
 	select MBEDTLS_CTR_DRBG_ENABLED
 	select MBEDTLS_HMAC_DRBG_ENABLED
@@ -109,6 +109,19 @@ config OPENTHREAD_PKT_LIST_SIZE
 	int "List size for Ip6 packet buffering"
 	default 10
 
+config OPENTHREAD_MANUAL_START
+	bool "Start OpenThread stack manually"
+	help
+	  If enabled, OpenThread stack will have to be configured and
+	  started manually, with respective API calls or CLI/NCP commands.
+	  Otherwise, OpenThread will configure the network parametrs and try to
+	  join the Thread network automatically during initialization (using
+	  credentials stored in persistend storage, obtained during
+	  commissioning or pre-commissioned with other Kconfig options,
+	  depending on configuration used).
+
+if !OPENTHREAD_MANUAL_START
+
 config OPENTHREAD_PANID
 	int "Default PAN ID"
 	default 43981
@@ -129,6 +142,8 @@ config OPENTHREAD_XPANID
 	help
 	  Extended PAN ID for OpenThread with
 	  format "de:ad:00:be:ef:00:ca:fe"
+
+endif
 
 choice
 	prompt "OpenThread device type"
@@ -181,6 +196,7 @@ config OPENTHREAD_JOINER
 config OPENTHREAD_JOINER_AUTOSTART
 	bool "Support for automatic joiner start"
 	depends on OPENTHREAD_JOINER
+	depends on !OPENTHREAD_MANUAL_START
 	help
 	  Enable automatic joiner start
 
@@ -233,6 +249,7 @@ config OPENTHREAD_COAP
 
 config OPENTHREAD_NCP
 	bool "Network Co-Processor"
+	select OPENTHREAD_MANUAL_START
 	select RING_BUFFER
 	select UART_INTERRUPT_DRIVEN
 	help
@@ -243,7 +260,6 @@ config OPENTHREAD_NCP_RADIO
 	depends on OPENTHREAD_NCP
 	help
 	  Enable NCP in OpenThread stack as radio-only
-
 
 config OPENTHREAD_NCP_SPINEL_ON_UART_DEV_NAME
 	string "UART device to use for NCP SPINEL"

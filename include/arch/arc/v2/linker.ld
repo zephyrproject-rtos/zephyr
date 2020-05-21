@@ -62,16 +62,16 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 
 MEMORY {
 #ifdef FLASH_START
-	FLASH (rx)  : ORIGIN = FLASH_START, LENGTH = FLASH_SIZE*1k
+	FLASH (rx)  : ORIGIN = FLASH_START, LENGTH = FLASH_SIZE
 #endif
 #ifdef ICCM_START
-	ICCM  (rwx)  : ORIGIN = ICCM_START,  LENGTH = ICCM_SIZE*1k
+	ICCM  (rwx)  : ORIGIN = ICCM_START,  LENGTH = ICCM_SIZE
 #endif
 #ifdef SRAM_START
-	SRAM  (rwx) : ORIGIN = SRAM_START,  LENGTH = SRAM_SIZE*1k
+	SRAM  (rwx) : ORIGIN = SRAM_START,  LENGTH = SRAM_SIZE
 #endif
 #ifdef DCCM_START
-	DCCM  (rw)  : ORIGIN = DCCM_START,  LENGTH = DCCM_SIZE*1k
+	DCCM  (rw)  : ORIGIN = DCCM_START,  LENGTH = DCCM_SIZE
 #endif
 	/* Used by and documented in include/linker/intlist.ld */
 	IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K

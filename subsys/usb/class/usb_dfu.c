@@ -300,7 +300,7 @@ struct dfu_data_t {
 static struct dfu_data_t dfu_data = {
 	.state = appIDLE,
 	.status = statusOK,
-	.flash_area_id = DT_FLASH_AREA_IMAGE_1_ID,
+	.flash_area_id = FLASH_AREA_ID(image_1),
 	.alt_setting = 0,
 	.bwPollTimeout = CONFIG_USB_DFU_DEFAULT_POLLTIMEOUT,
 };
@@ -444,7 +444,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			k_poll_signal_reset(&dfu_signal);
 
 			if (dfu_data.flash_area_id !=
-			    DT_FLASH_AREA_IMAGE_1_ID) {
+			    FLASH_AREA_ID(image_1)) {
 				dfu_data.status = errWRITE;
 				dfu_data.state = dfuERROR;
 				LOG_ERR("This area can not be overwritten");
@@ -669,11 +669,11 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 			switch (pSetup->wValue) {
 			case 0:
 				dfu_data.flash_area_id =
-				    DT_FLASH_AREA_IMAGE_0_ID;
+				    FLASH_AREA_ID(image_0);
 				break;
 			case 1:
 				dfu_data.flash_area_id =
-				    DT_FLASH_AREA_IMAGE_1_ID;
+				    FLASH_AREA_ID(image_1);
 				break;
 			default:
 				LOG_WRN("Invalid DFU alternate setting");
@@ -694,7 +694,7 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 	}
 
 	/* Not handled by us */
-	return -ENOTSUP;
+	return -EINVAL;
 }
 
 static void dfu_interface_config(struct usb_desc_header *head,
@@ -745,7 +745,7 @@ static void dfu_work_handler(struct k_work *item)
  * image collection, so not erase whole bank at DFU beginning
  */
 #ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
-		if (boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID)) {
+		if (boot_erase_img_bank(FLASH_AREA_ID(image_1))) {
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errERASE;
 			break;

@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2019 Infineon Technologies AG
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Infineon DPS310 temperature and pressure sensor
+
+include: i2c-device.yaml
+
+compatible: "infineon,dps310"

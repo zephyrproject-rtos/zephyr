@@ -49,10 +49,4 @@ config ETH_ENC28J60_0_FULL_DUPLEX
 	  Enable Full Duplex. Device is configured half duplex
 	  when disabled.
 
-config ETH_ENC28J60_0_GPIO_SPI_CS
-	bool "Manage SPI CS through a GPIO pin"
-	help
-	  This option is useful if one needs to manage SPI CS through a GPIO
-	  pin to by-pass the SPI controller's CS logic.
-
 endif # ETH_ENC28J60 && ETH_ENC28J60_0

@@ -27,8 +27,8 @@
 
 LOG_MODULE_REGISTER(button_svc);
 
-#define BUT_PORT    DT_ALIAS_SW0_GPIOS_CONTROLLER
-#define BUT_PIN     DT_ALIAS_SW0_GPIOS_PIN
+#define BUT_PORT    DT_GPIO_LABEL(DT_ALIAS(sw0), gpios)
+#define BUT_PIN     DT_GPIO_PIN(DT_ALIAS(sw0), gpios)
 
 extern struct bt_conn *conn;
 extern struct bt_gatt_service_static stsensor_svc[];
@@ -72,10 +72,11 @@ int button_init(void)
 	}
 
 	ret = gpio_pin_configure(button_dev, BUT_PIN,
-				 DT_ALIAS_SW0_GPIOS_FLAGS | GPIO_INPUT);
+				 DT_GPIO_FLAGS(DT_ALIAS(sw0), gpios) |
+				 GPIO_INPUT);
 	if (ret != 0) {
 		LOG_ERR("Error %d: failed to configure pin %d '%s'\n",
-			ret, BUT_PIN, DT_ALIAS_SW0_LABEL);
+			ret, BUT_PIN, DT_LABEL(DT_ALIAS(sw0)));
 		return ret;
 
 	}
@@ -87,7 +88,7 @@ int button_init(void)
 					   GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
 		LOG_ERR("Error %d: failed to configure interrupt on pin "
-			"%d '%s'\n", ret, BUT_PIN, DT_ALIAS_SW0_LABEL);
+			"%d '%s'\n", ret, BUT_PIN, DT_LABEL(DT_ALIAS(sw0)));
 		return ret;
 	}
 	but_val = 0;

@@ -58,7 +58,7 @@ static struct nrf5_802154_data nrf5_data;
 	((struct nrf5_802154_data * const)(dev)->driver_data)
 
 #define NRF5_802154_CFG(dev) \
-	((struct nrf5_802154_config * const)(dev)->config->config_info)
+	((const struct nrf5_802154_config * const)(dev)->config_info)
 
 static void nrf5_get_eui64(u8_t *mac)
 {

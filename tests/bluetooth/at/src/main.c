@@ -44,7 +44,7 @@ int at_resp(struct at_client *hf_at, struct net_buf *buf)
 }
 
 
-static void at_test1(void)
+static void test_at(void)
 {
 	struct net_buf *buf;
 	int len;
@@ -69,7 +69,7 @@ static void at_test1(void)
 void test_main(void)
 {
 	ztest_test_suite(at_tests,
-		ztest_unit_test(at_test1)
+		ztest_unit_test(test_at)
 	);
 
 	ztest_run_test_suite(at_tests);

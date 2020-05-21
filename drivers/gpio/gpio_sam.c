@@ -32,7 +32,7 @@ struct gpio_sam_runtime {
 };
 
 #define DEV_CFG(dev) \
-	((const struct gpio_sam_config * const)(dev)->config->config_info)
+	((const struct gpio_sam_config * const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct gpio_sam_runtime * const)(dev)->driver_data)
 
@@ -357,4 +357,4 @@ int gpio_sam_init(struct device *dev)
 		irq_enable(DT_INST_IRQN(n));				\
 	}
 
-DT_INST_FOREACH(GPIO_SAM_INIT)
+DT_INST_FOREACH_STATUS_OKAY(GPIO_SAM_INIT)

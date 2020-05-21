@@ -13,10 +13,6 @@ config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
 
-config PWM_STM32_2
-	default y
-	depends on PWM
-
 if WATCHDOG
 
 config WWDG_STM32
@@ -26,9 +22,5 @@ config IWDG_STM32
 	default n
 
 endif # WATCHDOG
-
-config ADC_1
-	default y
-	depends on ADC
 
 endif # BOARD_NUCLEO_F401RE

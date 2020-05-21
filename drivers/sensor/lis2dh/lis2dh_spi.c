@@ -14,7 +14,7 @@
 #include "lis2dh.h"
 #include <logging/log.h>
 
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 
 LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -22,7 +22,7 @@ static int lis2dh_raw_read(struct device *dev, u8_t reg_addr,
 			    u8_t *value, u8_t len)
 {
 	struct lis2dh_data *data = dev->driver_data;
-	const struct lis2dh_config *cfg = dev->config->config_info;
+	const struct lis2dh_config *cfg = dev->config_info;
 	const struct spi_config *spi_cfg = &cfg->spi_conf;
 	u8_t buffer_tx[2] = { reg_addr | LIS2DH_SPI_READ_BIT, 0 };
 	const struct spi_buf tx_buf = {
@@ -68,7 +68,7 @@ static int lis2dh_raw_write(struct device *dev, u8_t reg_addr,
 			     u8_t *value, u8_t len)
 {
 	struct lis2dh_data *data = dev->driver_data;
-	const struct lis2dh_config *cfg = dev->config->config_info;
+	const struct lis2dh_config *cfg = dev->config_info;
 	const struct spi_config *spi_cfg = &cfg->spi_conf;
 	u8_t buffer_tx[1] = { reg_addr & ~LIS2DH_SPI_READ_BIT };
 	const struct spi_buf tx_buf[2] = {
@@ -154,7 +154,7 @@ int lis2dh_spi_init(struct device *dev)
 	data->hw_tf = &lis2dh_spi_transfer_fn;
 
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
-	const struct lis2dh_config *cfg = dev->config->config_info;
+	const struct lis2dh_config *cfg = dev->config_info;
 
 	/* handle SPI CS thru GPIO if it is the case */
 	data->cs_ctrl.gpio_dev = device_get_binding(cfg->gpio_cs_port);
@@ -172,4 +172,4 @@ int lis2dh_spi_init(struct device *dev)
 
 	return 0;
 }
-#endif /* DT_ANY_INST_ON_BUS(spi) */
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */

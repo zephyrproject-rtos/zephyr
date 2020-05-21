@@ -208,7 +208,7 @@ extern "C" {
 
 #define __LOG_ARG_CAST(_x) (log_arg_t)(_x),
 
-#define __LOG_ARGUMENTS(...) MACRO_MAP(__LOG_ARG_CAST, __VA_ARGS__)
+#define __LOG_ARGUMENTS(...) FOR_EACH(__LOG_ARG_CAST, __VA_ARGS__)
 
 #define _LOG_INTERNAL_LONG(_src_level, _str, ...)		  \
 	do {							  \

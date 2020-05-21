@@ -43,7 +43,7 @@ struct gpio_litex_data {
 /* Helper macros for GPIO */
 
 #define DEV_GPIO_CFG(dev)						\
-	((const struct gpio_litex_cfg *)(dev)->config->config_info)
+	((const struct gpio_litex_cfg *)(dev)->config_info)
 
 /* Helper functions for bit / port access */
 
@@ -237,6 +237,6 @@ static const struct gpio_driver_api gpio_litex_driver_api = {
 			    POST_KERNEL, \
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 			    &gpio_litex_driver_api \
-			   )
+			   );
 
-DT_INST_FOREACH(GPIO_LITEX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(GPIO_LITEX_INIT)

@@ -243,7 +243,7 @@ static const struct sensor_driver_api iis2mdc_driver_api = {
 static int iis2mdc_init_interface(struct device *dev)
 {
 	const struct iis2mdc_config *const config =
-						dev->config->config_info;
+						dev->config_info;
 	struct iis2mdc_data *iis2mdc = dev->driver_data;
 
 	iis2mdc->bus = device_get_binding(config->master_dev_name);
@@ -263,7 +263,7 @@ static const struct iis2mdc_config iis2mdc_dev_config = {
 	.drdy_pin = DT_INST_GPIO_PIN(0, drdy_gpios),
 	.drdy_flags = DT_INST_GPIO_FLAGS(0, drdy_gpios),
 #endif  /* CONFIG_IIS2MDC_TRIGGER */
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	.bus_init = iis2mdc_spi_init,
 	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
 	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
@@ -278,7 +278,7 @@ static const struct iis2mdc_config iis2mdc_dev_config = {
 #else
 	.spi_conf.cs        = NULL,
 #endif
-#elif DT_ANY_INST_ON_BUS(i2c)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	.bus_init = iis2mdc_i2c_init,
 	.i2c_slv_addr = DT_INST_REG_ADDR(0),
 #else

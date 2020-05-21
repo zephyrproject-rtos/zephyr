@@ -37,9 +37,10 @@ static u8_t raw_mode;
 
 NET_BUF_POOL_FIXED_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
 			  BT_BUF_RX_SIZE, NULL);
-
-NET_BUF_POOL_FIXED_DEFINE(hci_tx_pool, CONFIG_BT_HCI_CMD_COUNT + BT_BUF_TX_SIZE,
-			  BT_BUF_TX_SIZE, NULL);
+NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, CONFIG_BT_HCI_CMD_COUNT,
+			  BT_BUF_RX_SIZE, NULL);
+NET_BUF_POOL_FIXED_DEFINE(hci_acl_pool, BT_HCI_ACL_COUNT,
+			  BT_BUF_ACL_SIZE, NULL);
 
 struct bt_dev_raw bt_dev;
 struct bt_hci_raw_cmd_ext *cmd_ext;
@@ -65,7 +66,7 @@ int bt_hci_driver_register(const struct bt_hci_driver *drv)
 	return 0;
 }
 
-struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
+struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 {
 	struct net_buf *buf;
 
@@ -89,14 +90,18 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 	return buf;
 }
 
-struct net_buf *bt_buf_get_tx(enum bt_buf_type type, s32_t timeout,
+struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 			      const void *data, size_t size)
 {
+	struct net_buf_pool *pool;
 	struct net_buf *buf;
 
 	switch (type) {
 	case BT_BUF_CMD:
+		pool = &hci_cmd_pool;
+		break;
 	case BT_BUF_ACL_OUT:
+		pool = &hci_acl_pool;
 		break;
 	case BT_BUF_H4:
 		if (IS_ENABLED(CONFIG_BT_HCI_RAW_H4) &&
@@ -104,9 +109,11 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, s32_t timeout,
 			switch (((u8_t *)data)[0]) {
 			case H4_CMD:
 				type = BT_BUF_CMD;
+				pool = &hci_cmd_pool;
 				break;
 			case H4_ACL:
 				type = BT_BUF_ACL_OUT;
+				pool = &hci_acl_pool;
 				break;
 			default:
 				LOG_ERR("Unknown H4 type %u", type);
@@ -124,7 +131,7 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, s32_t timeout,
 		return NULL;
 	}
 
-	buf = net_buf_alloc(&hci_tx_pool, timeout);
+	buf = net_buf_alloc(pool, timeout);
 	if (!buf) {
 		return buf;
 	}
@@ -139,12 +146,12 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, s32_t timeout,
 	return buf;
 }
 
-struct net_buf *bt_buf_get_cmd_complete(s32_t timeout)
+struct net_buf *bt_buf_get_cmd_complete(k_timeout_t timeout)
 {
 	return bt_buf_get_rx(BT_BUF_EVT, timeout);
 }
 
-struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, s32_t timeout)
+struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, k_timeout_t timeout)
 {
 	return bt_buf_get_rx(BT_BUF_EVT, timeout);
 }

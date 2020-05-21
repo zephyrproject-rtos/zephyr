@@ -55,9 +55,9 @@ LOG_MODULE_REGISTER(spi_nor, CONFIG_FLASH_LOG_LEVEL);
 #define T_RES1_MS ceiling_fraction(DT_INST_PROP(0, t_exit_dpd), NSEC_PER_MSEC)
 #endif /* T_EXIT_DPD */
 #if DT_INST_NODE_HAS_PROP(0, dpd_wakeup_sequence)
-#define T_DPDD_MS ceiling_fraction(DT_INST_PROP(0, dpd_wakeup_sequence_0), NSEC_PER_MSEC)
-#define T_CRDP_MS ceiling_fraction(DT_INST_PROP(0, dpd_wakeup_sequence_1), NSEC_PER_MSEC)
-#define T_RDP_MS ceiling_fraction(DT_INST_PROP(0, dpd_wakeup_sequence_2), NSEC_PER_MSEC)
+#define T_DPDD_MS ceiling_fraction(DT_PROP_BY_IDX(DT_DRV_INST(0), dpd_wakeup_sequence, 0), NSEC_PER_MSEC)
+#define T_CRDP_MS ceiling_fraction(DT_PROP_BY_IDX(DT_DRV_INST(0), dpd_wakeup_sequence, 1), NSEC_PER_MSEC)
+#define T_RDP_MS ceiling_fraction(DT_PROP_BY_IDX(DT_DRV_INST(0), dpd_wakeup_sequence, 2), NSEC_PER_MSEC)
 #else /* DPD_WAKEUP_SEQUENCE */
 #define T_DPDD_MS 0
 #endif /* DPD_WAKEUP_SEQUENCE */
@@ -316,7 +316,7 @@ static int spi_nor_wait_until_ready(struct device *dev)
 static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 			size_t size)
 {
-	const struct spi_nor_config *params = dev->config->config_info;
+	const struct spi_nor_config *params = dev->config_info;
 	int ret;
 
 	/* should be between 0 and flash size */
@@ -337,7 +337,7 @@ static int spi_nor_read(struct device *dev, off_t addr, void *dest,
 static int spi_nor_write(struct device *dev, off_t addr, const void *src,
 			 size_t size)
 {
-	const struct spi_nor_config *params = dev->config->config_info;
+	const struct spi_nor_config *params = dev->config_info;
 	int ret = 0;
 
 	/* should be between 0 and flash size */
@@ -382,7 +382,7 @@ out:
 
 static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 {
-	const struct spi_nor_config *params = dev->config->config_info;
+	const struct spi_nor_config *params = dev->config_info;
 	int ret = 0;
 
 	/* should be between 0 and flash size */
@@ -471,7 +471,7 @@ static int spi_nor_write_protection_set(struct device *dev, bool write_protect)
 static int spi_nor_configure(struct device *dev)
 {
 	struct spi_nor_data *data = dev->driver_data;
-	const struct spi_nor_config *params = dev->config->config_info;
+	const struct spi_nor_config *params = dev->config_info;
 
 	data->spi = device_get_binding(DT_INST_BUS_LABEL(0));
 	if (!data->spi) {

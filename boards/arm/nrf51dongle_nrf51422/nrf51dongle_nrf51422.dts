@@ -9,8 +9,7 @@
 
 / {
 	model = "Nordic nRF51 Dongle NRF51422";
-	compatible = "nordic,nrf51-dongle-nrf51422", "nordic,nrf51822-qfac",
-		     "nordic,nrf51822";
+	compatible = "nordic,nrf51-dongle-nrf51422";
 
 	chosen {
 		zephyr,console = &uart0;

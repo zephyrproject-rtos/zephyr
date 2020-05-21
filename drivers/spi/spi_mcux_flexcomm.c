@@ -32,7 +32,7 @@ struct spi_mcux_data {
 
 static void spi_mcux_transfer_next_packet(struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config->config_info;
+	const struct spi_mcux_config *config = dev->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
 	SPI_Type *base = config->base;
 	struct spi_context *ctx = &data->ctx;
@@ -99,7 +99,7 @@ static void spi_mcux_transfer_next_packet(struct device *dev)
 static void spi_mcux_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct spi_mcux_config *config = dev->config->config_info;
+	const struct spi_mcux_config *config = dev->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
 	SPI_Type *base = config->base;
 
@@ -121,7 +121,7 @@ static void spi_mcux_master_transfer_callback(SPI_Type *base,
 static int spi_mcux_configure(struct device *dev,
 			      const struct spi_config *spi_cfg)
 {
-	const struct spi_mcux_config *config = dev->config->config_info;
+	const struct spi_mcux_config *config = dev->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
 	SPI_Type *base = config->base;
 	spi_master_config_t master_config;
@@ -169,13 +169,11 @@ static int spi_mcux_configure(struct device *dev,
 
 	master_config.baudRate_Bps = spi_cfg->frequency;
 
-	/* The clock frequency is currently hardcoded until we can support a
-	 * proper clock_control driver for lpc socs. This requires a new
-	 * MCUXpresso SDK release for lpcxpresso55s69 to fix conflicting
-	 * definitions of kCLOCK_Flexcomm0 in enum clock_name_t and enum
-	 * clock_ip_name_t.
+	/* The clock frequency is hardcoded CPU's speed to allow SPI to
+	 * function at high speeds. The core clock and flexcomm should
+	 * use the same clock source.
 	 */
-	clock_freq = MHZ(12);
+	clock_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
 	SPI_MasterInit(base, &master_config, clock_freq);
 
@@ -251,7 +249,7 @@ static int spi_mcux_release(struct device *dev,
 
 static int spi_mcux_init(struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config->config_info;
+	const struct spi_mcux_config *config = dev->config_info;
 	struct spi_mcux_data *data = dev->driver_data;
 
 	config->irq_config_func(dev);
@@ -297,4 +295,4 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 		irq_enable(DT_INST_IRQN(id));				\
 	}
 
-DT_INST_FOREACH(SPI_MCUX_FLEXCOMM_DEVICE)
+DT_INST_FOREACH_STATUS_OKAY(SPI_MCUX_FLEXCOMM_DEVICE)

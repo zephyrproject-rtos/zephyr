@@ -137,10 +137,12 @@ static int test_callback(gpio_flags_t int_flags)
 
 pass_exit:
 	gpio_remove_callback(dev, &drv_data->gpio_cb);
+	gpio_pin_configure(dev, PIN_IN, GPIO_INT_DISABLE);
 	return TC_PASS;
 
 err_exit:
 	gpio_remove_callback(dev, &drv_data->gpio_cb);
+	gpio_pin_configure(dev, PIN_IN, GPIO_INT_DISABLE);
 	return TC_FAIL;
 }
 

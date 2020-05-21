@@ -15,7 +15,7 @@ CANopen protocol stack.
 
 Apart from the CANopen protocol stack integration, this sample also
 demonstrates the use of non-volatile storage for the CANopen object
-dictionary.
+dictionary and optionally program download over CANopen.
 
 Requirements
 ************
@@ -73,14 +73,29 @@ python-can backend as follows:
 
    pip3 install --user canopen python-can
 
-Next, bring up the CAN interface on the test PC. On GNU/Linux, this
+Next, configure python-can to use your CAN adapter through its
+configuration file. On GNU/Linux, the configuration looks similar to
+this:
+
+.. code-block:: console
+
+   cat << EOF > ~/.canrc
+   [default]
+   interface = socketcan
+   channel = can0
+   bitrate = 125000
+   EOF
+
+Please refer to the `python-can`_ documentation for further details
+and instructions.
+
+Finally, bring up the CAN interface on the test PC. On GNU/Linux, this
 can be done as follows:
 
 .. code-block:: console
 
    sudo ip link set can0 type can bitrate 125000 restart-ms 100
    sudo ip link set up can0
-
 
 To better understand the communication taking place in the following
 examples, you can monitor the CAN traffic from the host PC. On
@@ -109,8 +124,7 @@ accomplished using the following Python code:
 
    network = canopen.Network()
 
-   # 'can0' and 'socketcan' is for GNU/Linux, please see the python-can documentation for other platforms:
-   network.connect(channel='can0', bustype='socketcan')
+   network.connect()
 
    node = network.add_node(NODEID, EDS)
 
@@ -157,8 +171,7 @@ name) can be accomplished using the following Python code:
 
    network = canopen.Network()
 
-   # 'can0' and 'socketcan' is for GNU/Linux, please see the python-can documentation for other platforms:
-   network.connect(channel='can0', bustype='socketcan')
+   network.connect()
 
    node = network.add_node(NODEID, EDS)
    name = node.sdo['Manufacturer device name']
@@ -191,8 +204,7 @@ can be accomplished using the following Python code:
 
    network = canopen.Network()
 
-   # 'can0' and 'socketcan' is for GNU/Linux, please see the python-can documentation for other platforms:
-   network.connect(channel='can0', bustype='socketcan')
+   network.connect()
 
    node = network.add_node(NODEID, EDS)
    heartbeat = node.sdo['Producer heartbeat time']
@@ -265,8 +277,7 @@ press counter) can be accomplished using the following Python code:
 
    network = canopen.Network()
 
-   # 'can0' and 'socketcan' is for GNU/Linux, please see the python-can documentation for other platforms:
-   network.connect(channel='can0', bustype='socketcan')
+   network.connect()
 
    node = network.add_node(NODEID, EDS)
    button = node.sdo['Button press counter']
@@ -316,6 +327,57 @@ Running the above Python code should produce the following output:
    Button press counter: 9
    Button press counter: 10
 
+Testing CANopen Program Download
+********************************
+
+Building and Running for FRDM-K64F
+==================================
+The sample can be rebuilt with MCUboot and program download support
+for the FRDM-K64F as follows:
+
+#. Build and flash MCUboot by following the instructions in the
+   :ref:`mcuboot` documentation page.
+
+#. Rebuild the CANopen sample with MCUboot support:
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/subsys/canbus/canopen
+      :board: frdm_k64f
+      :goals: build
+      :gen-args: -DCONFIG_BOOTLOADER_MCUBOOT=y
+      :compact:
+
+#. Sign the newly rebuilt CANopen sample binary (using either the
+   demonstration-only RSA key from MCUboot or any other key used when
+   building MCUboot itself):
+
+   .. code-block:: console
+
+      west sign -t imgtool --bin --no-hex -- --key mcuboot/root-rsa-2048.pem \
+              --version 1.0.0
+
+#. Flash the newly signed CANopen sample binary using west:
+
+   .. code-block:: console
+
+      west flash --skip-rebuild --bin-file zephyr/zephyr.signed.bin
+
+#. Confirm the newly flashed firmware image using west:
+
+   .. code-block:: console
+
+      west flash --skip-rebuild --runner canopen --confirm-only
+
+#. Finally, resign the CANopen sample binary with a new version number
+   and perform a program download over CANopen:
+
+   .. code-block:: console
+
+      west sign -t imgtool --bin --no-hex  -- --key mcuboot/root-rsa-2048.pem \
+              --version 1.0.1
+      west flash --skip-rebuild --bin-file zephyr/zephyr.signed.bin \
+              --runner canopen
+
 Modifying the Object Dictionary
 *******************************
 The CANopen object dictionary used in this sample application can be
@@ -345,6 +407,9 @@ Sheet (EDS) file
 
 .. _CANopen for Python:
    https://github.com/christiansandberg/canopen
+
+.. _python-can:
+   https://python-can.readthedocs.io/
 
 .. _can-utils:
    https://github.com/linux-can/can-utils

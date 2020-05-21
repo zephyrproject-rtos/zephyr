@@ -175,7 +175,7 @@ static inline u8_t lmp90xxx_inst2_sz(size_t len)
 static int lmp90xxx_read_reg(struct device *dev, u8_t addr, u8_t *dptr,
 			     size_t len)
 {
-	const struct lmp90xxx_config *config = dev->config->config_info;
+	const struct lmp90xxx_config *config = dev->config_info;
 	struct lmp90xxx_data *data = dev->driver_data;
 	u8_t ura = LMP90XXX_URA(addr);
 	u8_t inst1_uab[2] = { LMP90XXX_INST1_WAB, ura };
@@ -249,7 +249,7 @@ static int lmp90xxx_read_reg8(struct device *dev, u8_t addr, u8_t *val)
 static int lmp90xxx_write_reg(struct device *dev, u8_t addr, u8_t *dptr,
 			      size_t len)
 {
-	const struct lmp90xxx_config *config = dev->config->config_info;
+	const struct lmp90xxx_config *config = dev->config_info;
 	struct lmp90xxx_data *data = dev->driver_data;
 	u8_t ura = LMP90XXX_URA(addr);
 	u8_t inst1_uab[2] = { LMP90XXX_INST1_WAB, ura };
@@ -327,7 +327,7 @@ static int lmp90xxx_soft_reset(struct device *dev)
 
 static inline bool lmp90xxx_has_channel(struct device *dev, u8_t channel)
 {
-	const struct lmp90xxx_config *config = dev->config->config_info;
+	const struct lmp90xxx_config *config = dev->config_info;
 
 	if (channel >= config->channels) {
 		return false;
@@ -338,7 +338,7 @@ static inline bool lmp90xxx_has_channel(struct device *dev, u8_t channel)
 
 static inline bool lmp90xxx_has_input(struct device *dev, u8_t input)
 {
-	const struct lmp90xxx_config *config = dev->config->config_info;
+	const struct lmp90xxx_config *config = dev->config_info;
 
 	if (input >= LMP90XXX_MAX_INPUTS) {
 		return false;
@@ -496,7 +496,7 @@ static int lmp90xxx_validate_buffer_size(const struct adc_sequence *sequence)
 static int lmp90xxx_adc_start_read(struct device *dev,
 				   const struct adc_sequence *sequence)
 {
-	const struct lmp90xxx_config *config = dev->config->config_info;
+	const struct lmp90xxx_config *config = dev->config_info;
 	struct lmp90xxx_data *data = dev->driver_data;
 	int err;
 
@@ -569,7 +569,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 static int lmp90xxx_adc_read_channel(struct device *dev, u8_t channel,
 				     s32_t *result)
 {
-	const struct lmp90xxx_config *config = dev->config->config_info;
+	const struct lmp90xxx_config *config = dev->config_info;
 	struct lmp90xxx_data *data = dev->driver_data;
 	u8_t adc_done;
 	u8_t ch_scan;
@@ -913,7 +913,7 @@ int lmp90xxx_gpio_port_toggle_bits(struct device *dev, gpio_port_pins_t pins)
 
 static int lmp90xxx_init(struct device *dev)
 {
-	const struct lmp90xxx_config *config = dev->config->config_info;
+	const struct lmp90xxx_config *config = dev->config_info;
 	struct lmp90xxx_data *data = dev->driver_data;
 	struct device *drdyb_dev;
 	int err;
@@ -1116,55 +1116,55 @@ static const struct adc_driver_api lmp90xxx_adc_api = {
 /*
  * LMP90077: 16 bit, 2 diff/4 se (4 channels), 0 currents
  */
-#if DT_HAS_COMPAT(ti_lmp90077)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90077)
 LMP90XXX_DEVICE(90077, 0, 16, 4);
 #endif
 
 /*
  * LMP90078: 16 bit, 2 diff/4 se (4 channels), 2 currents
  */
-#if DT_HAS_COMPAT(ti_lmp90078)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90078)
 LMP90XXX_DEVICE(90078, 0, 16, 4);
 #endif
 
 /*
  * LMP90079: 16 bit, 4 diff/7 se (7 channels), 0 currents, has VIN3-5
  */
-#if DT_HAS_COMPAT(ti_lmp90079)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90079)
 LMP90XXX_DEVICE(90079, 0, 16, 7);
 #endif
 
 /*
  * LMP90080: 16 bit, 4 diff/7 se (7 channels), 2 currents, has VIN3-5
  */
-#if DT_HAS_COMPAT(ti_lmp90080)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90080)
 LMP90XXX_DEVICE(90080, 0, 16, 7);
 #endif
 
 /*
  * LMP90097: 24 bit, 2 diff/4 se (4 channels), 0 currents
  */
-#if DT_HAS_COMPAT(ti_lmp90097)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90097)
 LMP90XXX_DEVICE(90097, 0, 24, 4);
 #endif
 
 /*
  * LMP90098: 24 bit, 2 diff/4 se (4 channels), 2 currents
  */
-#if DT_HAS_COMPAT(ti_lmp90098)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90098)
 LMP90XXX_DEVICE(90098, 0, 24, 4);
 #endif
 
 /*
  * LMP90099: 24 bit, 4 diff/7 se (7 channels), 0 currents, has VIN3-5
  */
-#if DT_HAS_COMPAT(ti_lmp90099)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90099)
 LMP90XXX_DEVICE(90099, 0, 24, 7);
 #endif
 
 /*
  * LMP90100: 24 bit, 4 diff/7 se (7 channels), 2 currents, has VIN3-5
  */
-#if DT_HAS_COMPAT(ti_lmp90100)
+#if DT_HAS_COMPAT_STATUS_OKAY(ti_lmp90100)
 LMP90XXX_DEVICE(90100, 0, 24, 7);
 #endif

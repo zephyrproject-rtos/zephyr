@@ -12,6 +12,6 @@ set *(0x81C14) = 0x0202
 
 set pagination off
 set confirm off
-load zephyr/zephyr.elf
 file zephyr/zephyr.elf
+load zephyr/zephyr.elf
 c

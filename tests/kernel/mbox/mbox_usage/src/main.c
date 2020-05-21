@@ -114,7 +114,7 @@ void test_send_un(void *p1, void *p2, void *p3)
 }
 
 /* Receive message from thread tid1 */
-void msg_receiver_unlimited(void)
+void test_msg_receiver_unlimited(void)
 {
 	info_type = PUT_GET_NULL;
 
@@ -133,6 +133,6 @@ void test_main(void)
 	test_mbox_init();
 	ztest_test_suite(test_mbox,
 			 ztest_unit_test(test_msg_receiver),
-			 ztest_unit_test(msg_receiver_unlimited));
+			 ztest_unit_test(test_msg_receiver_unlimited));
 	ztest_run_test_suite(test_mbox);
 }

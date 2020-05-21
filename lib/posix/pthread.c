@@ -24,7 +24,7 @@ static const pthread_attr_t init_pthread_attrs = {
 	.stack = NULL,
 	.stacksize = 0,
 	.flags = PTHREAD_INIT_FLAGS,
-	.delayedstart = K_NO_WAIT,
+	.delayedstart = 0,
 #if defined(CONFIG_PREEMPT_ENABLED)
 	.schedpolicy = SCHED_RR,
 #else
@@ -190,7 +190,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 						 (void *)arg, NULL,
 						 threadroutine, prio,
 						 (~K_ESSENTIAL & attr->flags),
-						 attr->delayedstart);
+						 K_MSEC(attr->delayedstart));
 	return 0;
 }
 

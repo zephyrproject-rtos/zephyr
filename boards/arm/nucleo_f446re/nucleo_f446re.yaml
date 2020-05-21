@@ -1,5 +1,5 @@
 identifier: nucleo_f446re
-name: NUCLEO-F446RE
+name: ST Nucleo F446RE
 type: mcu
 arch: arm
 toolchain:

@@ -1,0 +1,7 @@
+sample:
+  name: USB audio headset sample
+tests:
+  sample.usb.audio.headset:
+    depends_on: usb_device
+    tags: usb
+    platform_whitelist: nrf52840dk_nrf52840

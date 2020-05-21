@@ -74,6 +74,7 @@ argument.
 .. toctree::
    :maxdepth: 1
 
+   data_passing/queues.rst
    data_passing/fifos.rst
    data_passing/lifos.rst
    data_passing/stacks.rst
@@ -89,9 +90,9 @@ These pages cover memory allocation and management services.
 .. toctree::
    :maxdepth: 1
 
+   memory/heap.rst
    memory/slabs.rst
    memory/pools.rst
-   memory/heap.rst
 
 Timing
 ******

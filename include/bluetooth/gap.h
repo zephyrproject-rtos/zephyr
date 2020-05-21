@@ -15,6 +15,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Bluetooth Generic Access Profile defines and Assigned Numbers.
+ * @defgroup bt_gap_defines Defines and Assigned Numbers
+ * @ingroup bluetooth
+ * @{
+ */
+
 /** Company Identifiers (see Bluetooth Assigned Numbers) */
 #define BT_COMP_ID_LF           0x05f1 /* The Linux Foundation */
 
@@ -79,7 +86,7 @@ enum {
 	BT_GAP_LE_PHY_CODED                   = BIT(2),
 };
 
-/* Advertising PDU types */
+/** Advertising PDU types */
 enum {
 	/** Scannable and connectable advertising. */
 	BT_GAP_ADV_TYPE_ADV_IND               = 0x00,
@@ -95,7 +102,7 @@ enum {
 	BT_GAP_ADV_TYPE_EXT_ADV               = 0x05,
 };
 
-/* Advertising PDU properties */
+/** Advertising PDU properties */
 enum {
 	/** Connectable advertising. */
 	BT_GAP_ADV_PROP_CONNECTABLE           = BIT(0),
@@ -111,7 +118,7 @@ enum {
 
 /** Maximum advertising data length. */
 #define BT_GAP_ADV_MAX_ADV_DATA_LEN             31
-/** Maximum extendend advertising data length.
+/** Maximum extended advertising data length.
  *
  *  @note The maximum advertising data length that can be sent by an extended
  *        advertiser is defined by the controller.
@@ -127,6 +134,16 @@ enum {
  * seconds in 10 ms unit.
  */
 #define BT_GAP_ADV_HIGH_DUTY_CYCLE_MAX_TIMEOUT  128
+
+#define BT_GAP_DATA_LEN_DEFAULT                 0x001b /* 27 bytes */
+#define BT_GAP_DATA_LEN_MAX                     0x00fb /* 251 bytes */
+
+#define BT_GAP_DATA_TIME_DEFAULT                0x0148 /* 328 us */
+#define BT_GAP_DATA_TIME_MAX                    0x4290 /* 17040 us */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

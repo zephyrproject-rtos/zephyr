@@ -544,7 +544,7 @@ void test_timer_remaining(void)
 	zassert_true(rem_ms <= (DURATION / 2) + k_ticks_to_ms_floor64(1),
 		     NULL);
 
-	zassert_true(rem_ticks <= dur_ticks / 2, NULL);
+	zassert_true(rem_ticks <= ((dur_ticks / 2) + 1), NULL);
 
 	/* Note +1 tick precision: even though we're calcluating in
 	 * ticks, we're waiting in k_busy_wait(), not for a timer

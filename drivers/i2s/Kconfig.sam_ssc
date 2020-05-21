@@ -21,46 +21,6 @@ config I2S_SAM_SSC_TX_BLOCK_COUNT
 	int "TX queue length"
 	default 4
 
-config I2S_SAM_SSC_0_NAME
-	string "I2S 0 device name"
-	default "I2S_0"
-
-config I2S_SAM_SSC_0_IRQ_PRI
-	int "Interrupt priority"
-	default 0
-
-config I2S_SAM_SSC_DMA_NAME
-	string "DMA device name"
-	default "DMA_0"
-	help
-	  Name of the DMA device this device driver can use.
-
-config I2S_SAM_SSC_0_DMA_RX_CHANNEL
-	int "DMA RX channel"
-	help
-	  DMA channel number to use for RX transfers.
-
-config I2S_SAM_SSC_0_DMA_TX_CHANNEL
-	int "DMA TX channel"
-	help
-	  DMA channel number to use for TX transfers.
-
-choice I2S_SAM_SSC_0_PIN_TD_SELECT
-	prompt "TD pin"
-	depends on SOC_SERIES_SAME70 || \
-		   SOC_SERIES_SAMV71
-
-	config I2S_SAM_SSC_0_PIN_TD_PB5
-		bool "PB5"
-
-	config I2S_SAM_SSC_0_PIN_TD_PD10
-		bool "PD10"
-
-	config I2S_SAM_SSC_0_PIN_TD_PD26
-		bool "PD26"
-
-endchoice # I2S_SAM_SSC_0_PIN_TD_SELECT
-
 config I2S_SAM_SSC_0_PIN_RF_EN
 	bool "RF pin enabled"
 	default y

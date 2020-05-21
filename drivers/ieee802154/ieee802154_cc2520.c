@@ -59,7 +59,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CC2520_TX_THRESHOLD		(0x7F)
 #define CC2520_FCS_LENGTH		(2)
 
-#if defined(CONFIG_IEEE802154_CC2520_GPIO_SPI_CS)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 static struct spi_cs_control cs_ctrl;
 #endif
 
@@ -1055,7 +1055,7 @@ static inline int configure_spi(struct device *dev)
 		return -ENODEV;
 	}
 
-#if defined(CONFIG_IEEE802154_CC2520_GPIO_SPI_CS)
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	cs_ctrl.gpio_dev = device_get_binding(
 		DT_INST_SPI_DEV_CS_GPIOS_LABEL(0));
 	if (!cs_ctrl.gpio_dev) {
@@ -1071,7 +1071,7 @@ static inline int configure_spi(struct device *dev)
 	LOG_DBG("SPI GPIO CS configured on %s:%u",
 		    DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 		    DT_INST_SPI_DEV_CS_GPIOS_PIN(0));
-#endif /* CONFIG_IEEE802154_CC2520_GPIO_SPI_CS */
+#endif
 
 	cc2520->spi_cfg.frequency = DT_INST_PROP(0, spi_max_frequency);
 	cc2520->spi_cfg.operation = SPI_WORD_SET(8);

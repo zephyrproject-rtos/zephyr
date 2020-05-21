@@ -57,11 +57,11 @@ enum bt_buf_type {
  *
  *  @param type    Type of buffer. Only BT_BUF_EVT and BT_BUF_ACL_IN are
  *                 allowed.
- *  @param timeout Timeout in milliseconds, or one of the special values
- *                 K_NO_WAIT and K_FOREVER.
+ *  @param timeout Non-negative waiting period to obtain a buffer or one of the
+ *                 special values K_NO_WAIT and K_FOREVER.
  *  @return A new buffer.
  */
-struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout);
+struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout);
 
 /** Allocate a buffer for outgoing data
  *
@@ -70,13 +70,13 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout);
  *
  *  @param type    Type of buffer. Only BT_BUF_CMD, BT_BUF_ACL_OUT or
  *                 BT_BUF_H4, when operating on H:4 mode, are allowed.
- *  @param timeout Timeout in milliseconds, or one of the special values
- *                 K_NO_WAIT and K_FOREVER.
+ *  @param timeout Non-negative waiting period to obtain a buffer or one of the
+ *                 special values K_NO_WAIT and K_FOREVER.
  *  @param data    Initial data to append to buffer.
  *  @param size    Initial data size.
  *  @return A new buffer.
  */
-struct net_buf *bt_buf_get_tx(enum bt_buf_type type, s32_t timeout,
+struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 			      const void *data, size_t size);
 
 /** Allocate a buffer for an HCI Command Complete/Status Event
@@ -84,11 +84,11 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, s32_t timeout,
  *  This will set the buffer type so bt_buf_set_type() does not need to
  *  be explicitly called before bt_recv_prio().
  *
- *  @param timeout Timeout in milliseconds, or one of the special values
- *                 K_NO_WAIT and K_FOREVER.
+ *  @param timeout Non-negative waiting period to obtain a buffer or one of the
+ *                 special values K_NO_WAIT and K_FOREVER.
  *  @return A new buffer.
  */
-struct net_buf *bt_buf_get_cmd_complete(s32_t timeout);
+struct net_buf *bt_buf_get_cmd_complete(k_timeout_t timeout);
 
 /** Allocate a buffer for an HCI Event
  *
@@ -97,11 +97,11 @@ struct net_buf *bt_buf_get_cmd_complete(s32_t timeout);
  *
  *  @param evt          HCI event code
  *  @param discardable  Whether the driver considers the event discardable.
- *  @param timeout      Timeout in milliseconds, or one of the special values
- *                      K_NO_WAIT and K_FOREVER.
+ *  @param timeout      Non-negative waiting period to obtain a buffer or one of
+ *                      the special values K_NO_WAIT and K_FOREVER.
  *  @return A new buffer.
  */
-struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, s32_t timeout);
+struct net_buf *bt_buf_get_evt(u8_t evt, bool discardable, k_timeout_t timeout);
 
 /** Set the buffer type
  *

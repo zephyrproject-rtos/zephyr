@@ -1,5 +1,5 @@
 identifier: nucleo_h743zi
-name: NUCLEO-H743ZI
+name: ST Nucleo H743ZI
 type: mcu
 arch: arm
 toolchain:
@@ -16,3 +16,4 @@ supported:
   - counter
   - i2c
   - pwm
+  - adc

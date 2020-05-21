@@ -321,7 +321,7 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 	if (IS_ENABLED(CONFIG_GSM_MUX) && gsm->mux_enabled) {
 		/* Re-use the original iface for AT channel */
 		ret = modem_iface_uart_init_dev(&gsm->context.iface,
-						gsm->at_dev->config->name);
+						gsm->at_dev->name);
 		if (ret < 0) {
 			LOG_DBG("iface %suart error %d", "AT ", ret);
 		} else {
@@ -337,7 +337,7 @@ static void gsm_finalize_connection(struct gsm_modem *gsm)
 					ret, "AT cmds failed");
 			} else {
 				LOG_INF("AT channel %d connected to %s",
-					DLCI_AT, gsm->at_dev->config->name);
+					DLCI_AT, gsm->at_dev->name);
 			}
 		}
 	}
@@ -395,7 +395,7 @@ static void mux_setup_next(struct gsm_modem *gsm)
 static void mux_attach_cb(struct device *mux, int dlci_address,
 			  bool connected, void *user_data)
 {
-	LOG_DBG("DLCI %d to %s %s", dlci_address, mux->config->name,
+	LOG_DBG("DLCI %d to %s %s", dlci_address, mux->name,
 		connected ? "connected" : "disconnected");
 
 	if (connected) {
@@ -413,7 +413,7 @@ static int mux_attach(struct device *mux, struct device *uart,
 				  user_data);
 	if (ret < 0) {
 		LOG_ERR("Cannot attach DLCI %d (%s) to %s (%d)", dlci_address,
-			mux->config->name, uart->config->name, ret);
+			mux->name, uart->name, ret);
 		return ret;
 	}
 
@@ -486,7 +486,7 @@ static void mux_setup(struct k_work *work)
 		 * to the modem.
 		 */
 		ret = modem_iface_uart_init_dev(&gsm->context.iface,
-						gsm->ppp_dev->config->name);
+						gsm->ppp_dev->name);
 		if (ret < 0) {
 			LOG_DBG("iface %suart error %d", "PPP ", ret);
 			gsm->mux_enabled = false;
@@ -494,7 +494,7 @@ static void mux_setup(struct k_work *work)
 		}
 
 		LOG_INF("PPP channel %d connected to %s",
-			DLCI_PPP, gsm->ppp_dev->config->name);
+			DLCI_PPP, gsm->ppp_dev->name);
 
 		gsm_finalize_connection(gsm);
 		break;

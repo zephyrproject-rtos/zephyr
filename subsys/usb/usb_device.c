@@ -1025,32 +1025,50 @@ static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
 /**
  * @brief turn on/off USB VBUS voltage
  *
+ * To utilize this in the devicetree the chosen node should have a
+ * zephyr,usb-device property that points to the usb device controller node.
+ * Additionally the usb device controller node should have a vbus-gpios
+ * property that has the GPIO details.
+ *
+ * Something like:
+ *
+ * chosen {
+ *      zephyr,usb-device = &usbd;
+ * };
+ *
+ * usbd: usbd {
+ *      vbus-gpios = <&gpio1 5 GPIO_ACTIVE_HIGH>;
+ * };
+ *
  * @param on Set to false to turn off and to true to turn on VBUS
  *
  * @return 0 on success, negative errno code on fail
  */
 static int usb_vbus_set(bool on)
 {
-#ifdef DT_ALIAS_USBD_0_VBUS_GPIOS_CONTROLLER
+#define USB_DEV_NODE DT_CHOSEN(zephyr_usb_device)
+#if DT_NODE_HAS_STATUS(USB_DEV_NODE, okay) && \
+    DT_NODE_HAS_PROP(USB_DEV_NODE, vbus_gpios)
 	int ret = 0;
 	struct device *gpio_dev;
 
-	gpio_dev = device_get_binding(DT_ALIAS_USBD_0_VBUS_GPIOS_CONTROLLER);
+	gpio_dev = device_get_binding(DT_LABEL(USB_DEV_NODE));
 	if (!gpio_dev) {
 		LOG_DBG("USB requires GPIO. Cannot find %s!",
-			DT_ALIAS_USBD_0_VBUS_GPIOS_CONTROLLER);
+			DT_LABEL(USB_DEV_NODE));
 		return -ENODEV;
 	}
 
 	/* Enable USB IO */
-	ret = gpio_pin_configure(gpio_dev, DT_ALIAS_USBD_0_VBUS_GPIOS_PIN,
+	ret = gpio_pin_configure(gpio_dev,
+				 DT_GPIO_PIN(USB_DEV_NODE, vbus_gpios),
 				 GPIO_OUTPUT |
-				 DT_ALIAS_USBD_0_VBUS_GPIOS_FLAGS);
+				 DT_GPIO_FLAGS(USB_DEV_NODE, vbus_gpios));
 	if (ret) {
 		return ret;
 	}
 
-	ret = gpio_pin_set(gpio_dev, DT_ALIAS_USBD_0_VBUS_GPIOS_PIN,
+	ret = gpio_pin_set(gpio_dev, DT_GPIO_PIN(USB_DEV_NODE, vbus_gpios),
 			   on == true ? 1 : 0);
 	if (ret) {
 		return ret;
@@ -1226,9 +1244,13 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 			continue;
 		}
 
-		if ((iface->custom_handler) &&
+		/* An exception for AUDIO_CLASS is temporary and shall not be
+		 * considered as valid solution for other classes.
+		 */
+		if (iface->custom_handler &&
 		    (if_descr->bInterfaceNumber ==
-		     sys_le16_to_cpu(pSetup->wIndex))) {
+		    sys_le16_to_cpu(pSetup->wIndex) ||
+		    if_descr->bInterfaceClass == AUDIO_CLASS)) {
 			return iface->custom_handler(pSetup, len, data);
 		}
 	}

@@ -32,7 +32,7 @@ struct entropy_stm32_rng_dev_data {
 	((struct entropy_stm32_rng_dev_data *)(dev)->driver_data)
 
 #define DEV_CFG(dev) \
-	((struct entropy_stm32_rng_dev_cfg *)(dev)->config->config_info)
+	((const struct entropy_stm32_rng_dev_cfg *)(dev)->config_info)
 
 static void entropy_stm32_rng_reset(RNG_TypeDef *rng)
 {
@@ -144,7 +144,7 @@ static int entropy_stm32_rng_get_entropy(struct device *dev, u8_t *buffer,
 static int entropy_stm32_rng_init(struct device *dev)
 {
 	struct entropy_stm32_rng_dev_data *dev_data;
-	struct entropy_stm32_rng_dev_cfg *dev_cfg;
+	const struct entropy_stm32_rng_dev_cfg *dev_cfg;
 	int res;
 
 	__ASSERT_NO_MSG(dev != NULL);

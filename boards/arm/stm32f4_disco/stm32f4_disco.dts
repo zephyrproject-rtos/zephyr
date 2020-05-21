@@ -17,6 +17,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
+		zephyr,can-primary = &can2;
 	};
 
 	leds {
@@ -48,7 +49,6 @@
 	};
 
 	aliases {
-		can-primary = &can2;
 		led0 = &green_led_4;
 		led1 = &orange_led_3;
 		led2 = &red_led_5;
@@ -70,7 +70,7 @@
 &timers2 {
 	status = "okay";
 
-	pwm {
+	pwm2: pwm {
 		status = "okay";
 	};
 };

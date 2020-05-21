@@ -66,9 +66,9 @@ struct i2c_sam_twi_dev_data {
 	struct twi_msg msg;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct i2c_sam_twi_dev_cfg *const)(dev)->config->config_info)
+	((const struct i2c_sam_twi_dev_cfg *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct i2c_sam_twi_dev_data *const)(dev)->driver_data)
 
@@ -367,6 +367,6 @@ static const struct i2c_driver_api i2c_sam_twi_driver_api = {
 			    &i2c_sam_twi_initialize,			\
 			    &i2c##n##_sam_data, &i2c##n##_sam_config,	\
 			    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	\
-			    &i2c_sam_twi_driver_api)
+			    &i2c_sam_twi_driver_api);
 
-DT_INST_FOREACH(I2C_TWI_SAM_INIT)
+DT_INST_FOREACH_STATUS_OKAY(I2C_TWI_SAM_INIT)

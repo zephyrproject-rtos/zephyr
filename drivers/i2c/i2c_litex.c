@@ -26,7 +26,7 @@ struct i2c_litex_cfg {
 };
 
 #define GET_I2C_CFG(dev)						     \
-	((const struct i2c_litex_cfg *) dev->config->config_info)
+	((const struct i2c_litex_cfg *) dev->config_info)
 
 #define GET_I2C_BITBANG(dev)						     \
 	((struct i2c_bitbang *) dev->driver_data)
@@ -134,6 +134,6 @@ static const struct i2c_driver_api i2c_litex_driver_api = {
 			   POST_KERNEL,					       \
 			   CONFIG_I2C_INIT_PRIORITY,			       \
 			   &i2c_litex_driver_api			       \
-			   )
+			   );
 
-DT_INST_FOREACH(I2C_LITEX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(I2C_LITEX_INIT)

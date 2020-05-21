@@ -347,7 +347,7 @@ static void test_send_and_recv_lorem_ipsum(void)
 	ret = websocket_send_msg(POINTER_TO_INT(&ctx),
 				 lorem_ipsum, test_msg_len,
 				 WEBSOCKET_OPCODE_DATA_TEXT, true, true,
-				 NET_WAIT_FOREVER);
+				 SYS_FOREVER_MS);
 	zassert_equal(ret, test_msg_len,
 		      "Should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);
@@ -367,7 +367,7 @@ static void test_recv_two_large_split_msg(void)
 
 	ret = websocket_send_msg(POINTER_TO_INT(&ctx), lorem_ipsum,
 				 test_msg_len, WEBSOCKET_OPCODE_DATA_TEXT,
-				 false, true, NET_WAIT_FOREVER);
+				 false, true, SYS_FOREVER_MS);
 	zassert_equal(ret, test_msg_len,
 		      "1st should have sent %zd bytes but sent %d instead",
 		      test_msg_len, ret);

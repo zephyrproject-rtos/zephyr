@@ -37,11 +37,6 @@ Symbols without prompts are called *hidden* or *invisible* symbols, because
 they don't show up in ``menuconfig`` and ``guiconfig``. Symbols that have
 prompts can also be invisible, when their dependencies are not satisfied.
 
-In Zephyr, Kconfig configuration is done after selecting a machine, so in
-general, it does not make sense to put a prompt on a symbol that corresponds to
-a fixed machine-specific setting. Usually, such settings should be handled via
-devicetree (``.dts``) files instead.
-
 Symbols without prompts can't be configured directly by the user (they derive
 their value from other symbols), so less restrictions apply to them. If some
 derived setting is easier to calculate in Kconfig than e.g. during the build,
@@ -51,6 +46,52 @@ without prompts in mind.
 See the `optional prompts`_ section for a way to deal with settings that are
 fixed on some machines and configurable on other machines.
 
+What not to turn into Kconfig options
+*************************************
+
+In Zephyr, Kconfig configuration is done after selecting a target board. In
+general, it does not make sense to use Kconfig for a value that corresponds to
+a fixed machine-specific setting. Usually, such settings should be handled via
+:ref:`devicetree <dt-guide>` instead.
+
+In particular, avoid adding new Kconfig options of the following types:
+
+Options enabling individual devices
+===================================
+
+Existing examples like :option:`CONFIG_SPI_0` and :option:`CONFIG_I2C_1` were
+introduced before Zephyr supported devicetree, and new cases are discouraged.
+See :ref:`dt-create-devices` for details on how to do this with devicetree
+instead.
+
+Options that specify a device in the system by name
+===================================================
+
+For example, if you are writing an I2C device driver, avoid creating an option
+named ``MY_DEVICE_I2C_BUS_NAME`` for specifying the bus node your device is
+controlled by. See :ref:`dt-drivers-that-depend` for alternatives.
+
+Similarly, if your application depends on a hardware-specific PWM device to
+control an RGB LED, avoid creating an option like ``MY_PWM_DEVICE_NAME``. See
+:ref:`dt-apps-that-depend` for alternatives.
+
+Options that specify fixed hardware configuration
+=================================================
+
+For example, avoid Kconfig options specifying a GPIO pin.
+
+An alternative applicable to device drivers is to define a GPIO specifier with
+type phandle-array in the device binding, and using the
+:ref:`devicetree-gpio-api` devicetree API from C. Similar advice applies to
+other cases where devicetree.h provides :ref:`devicetree-hw-api` for referring
+to other nodes in the system. Search the source code for drivers using these
+APIs for examples.
+
+An application-specific devicetree :ref:`binding <dt-bindings>` to identify
+board specific properties may be appropriate. See
+:zephyr_file:`tests/drivers/gpio/gpio_basic_api` for an example.
+
+For applications, see :ref:`blinky-sample` for a devicetree-based alternative.
 
 ``select`` statements
 *********************

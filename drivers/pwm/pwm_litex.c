@@ -26,7 +26,7 @@ struct pwm_litex_cfg {
 };
 
 #define GET_PWM_CFG(dev)				       \
-	((const struct pwm_litex_cfg *) dev->config->config_info)
+	((const struct pwm_litex_cfg *) dev->config_info)
 
 static void litex_set_reg(volatile u32_t *reg, u32_t reg_size, u32_t val)
 {
@@ -111,6 +111,6 @@ static const struct pwm_driver_api pwm_litex_driver_api = {
 			    POST_KERNEL,				       \
 			    CONFIG_PWM_LITEX_INIT_PRIORITY,		       \
 			    &pwm_litex_driver_api			       \
-			   )
+			   );
 
-DT_INST_FOREACH(PWM_LITEX_INIT)
+DT_INST_FOREACH_STATUS_OKAY(PWM_LITEX_INIT)

@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
  * multiplied by 100.
  */
 static const u32_t lis2dh_reg_val_to_scale[] = {
-#if DT_HAS_NODE(DT_INST(0, st_lsm303agr_accel))
+#if DT_NODE_HAS_STATUS(DT_INST(0, st_lsm303agr_accel), okay)
 	ACCEL_SCALE(1563),
 	ACCEL_SCALE(3126),
 	ACCEL_SCALE(6252),
@@ -269,7 +269,7 @@ static const struct sensor_driver_api lis2dh_driver_api = {
 int lis2dh_init(struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
-	const struct lis2dh_config *cfg = dev->config->config_info;
+	const struct lis2dh_config *cfg = dev->config_info;
 	int status;
 	u8_t id;
 	u8_t raw[6];
@@ -350,7 +350,7 @@ static struct lis2dh_data lis2dh_data;
 
 static const struct lis2dh_config lis2dh_config = {
 	.bus_name = DT_INST_BUS_LABEL(0),
-#if DT_ANY_INST_ON_BUS(spi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	.bus_init = lis2dh_spi_init,
 	.spi_conf.frequency = DT_INST_PROP(0, spi_max_frequency),
 	.spi_conf.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
@@ -364,7 +364,7 @@ static const struct lis2dh_config lis2dh_config = {
 #else
 	.spi_conf.cs        = NULL,
 #endif
-#elif DT_ANY_INST_ON_BUS(i2c)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	.bus_init = lis2dh_i2c_init,
 	.i2c_slv_addr = DT_INST_REG_ADDR(0),
 #else

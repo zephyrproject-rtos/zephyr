@@ -84,7 +84,7 @@ struct __esf {
 		sys_define_gpr_with_alias(pc, r15);
 		u32_t xpsr;
 	} basic;
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	float s[16];
 	u32_t fpscr;
 	u32_t undefined;

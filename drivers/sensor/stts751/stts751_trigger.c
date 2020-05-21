@@ -59,7 +59,7 @@ static void stts751_handle_interrupt(void *arg)
 {
 	struct device *dev = arg;
 	struct stts751_data *stts751 = dev->driver_data;
-	const struct stts751_config *cfg = dev->config->config_info;
+	const struct stts751_config *cfg = dev->config_info;
 	struct sensor_trigger thsld_trigger = {
 		.type = SENSOR_TRIG_THRESHOLD,
 	};
@@ -79,7 +79,7 @@ static void stts751_handle_interrupt(void *arg)
 static void stts751_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
-	const struct stts751_config *cfg = dev->config->config_info;
+	const struct stts751_config *cfg = dev->config_info;
 	struct stts751_data *stts751 =
 		CONTAINER_OF(cb, struct stts751_data, gpio_cb);
 
@@ -122,7 +122,7 @@ static void stts751_work_cb(struct k_work *work)
 int stts751_init_interrupt(struct device *dev)
 {
 	struct stts751_data *stts751 = dev->driver_data;
-	const struct stts751_config *cfg = dev->config->config_info;
+	const struct stts751_config *cfg = dev->config_info;
 	int ret;
 
 	/* setup data ready gpio interrupt */

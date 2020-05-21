@@ -9,8 +9,7 @@
 
 / {
 	model = "Decawave DWM1001-DEV";
-	compatible = "decawave,dwm1001", "nordic,nrf52832-qfaa",
-		     "nordic,nrf52832";
+	compatible = "decawave,dwm1001";
 
 	chosen {
 		zephyr,console        = &uart0;
@@ -96,10 +95,18 @@
 };
 
 &i2c0 {
-	compatible = "nordic,nrf-twi";
+	compatible = "nordic,nrf-twim";
 	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-pin = <29>;
 	scl-pin = <28>;
+
+	lis2dh12: lis2dh12@19 {
+		compatible = "st,lis2dh12", "st,lis2dh";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		label = "LIS2DH12-ACCEL";
+	};
 };
 
 &spi1 {
@@ -118,6 +125,16 @@
 	mosi-pin = <20>;
 	miso-pin = <18>;
 	cs-gpios = <&gpio0 17 0>;
+
+	dw1000@0 {
+		compatible = "decawave,dw1000";
+		spi-max-frequency = <8000000>;
+		int-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;	/* P0.19 */
+		reset-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;	/* P0.24 */
+		status = "okay";
+		label = "DW1000";
+		reg = <0>;
+	};
 };
 
 &pwm0 {

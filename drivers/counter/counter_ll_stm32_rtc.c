@@ -54,7 +54,7 @@ struct rtc_stm32_data {
 
 #define DEV_DATA(dev) ((struct rtc_stm32_data *)(dev)->driver_data)
 #define DEV_CFG(dev)	\
-((const struct rtc_stm32_config * const)(dev)->config->config_info)
+((const struct rtc_stm32_config * const)(dev)->config_info)
 
 
 static void rtc_stm32_irq_config(struct device *dev);
@@ -143,7 +143,12 @@ static int rtc_stm32_set_alarm(struct device *dev, u8_t chan_id,
 	data->user_data = alarm_cfg->user_data;
 
 	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
-		ticks += now;
+		/* Add +1 in order to compensate the partially started tick.
+		 * Alarm will expire between requested ticks and ticks+1.
+		 * In case only 1 tick is requested, it will avoid
+		 * that tick+1 event occurs before alarm setting is finished.
+		 */
+		ticks += now + 1;
 	}
 
 	LOG_DBG("Set Alarm: %d\n", ticks);
@@ -202,7 +207,7 @@ static u32_t rtc_stm32_get_pending_int(struct device *dev)
 
 static u32_t rtc_stm32_get_top_value(struct device *dev)
 {
-	const struct counter_config_info *info = dev->config->config_info;
+	const struct counter_config_info *info = dev->config_info;
 
 	return info->max_top_value;
 }
@@ -211,7 +216,7 @@ static u32_t rtc_stm32_get_top_value(struct device *dev)
 static int rtc_stm32_set_top_value(struct device *dev,
 				   const struct counter_top_cfg *cfg)
 {
-	const struct counter_config_info *info = dev->config->config_info;
+	const struct counter_config_info *info = dev->config_info;
 
 	if ((cfg->ticks != info->max_top_value) ||
 		!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
@@ -226,7 +231,7 @@ static int rtc_stm32_set_top_value(struct device *dev,
 
 static u32_t rtc_stm32_get_max_relative_alarm(struct device *dev)
 {
-	const struct counter_config_info *info = dev->config->config_info;
+	const struct counter_config_info *info = dev->config_info;
 
 	return info->max_top_value;
 }
@@ -254,7 +259,11 @@ void rtc_stm32_isr(void *arg)
 		}
 	}
 
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
+	LL_C2_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
+#else
 	LL_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
+#endif
 }
 
 
@@ -333,7 +342,11 @@ static int rtc_stm32_init(struct device *dev)
 	LL_RTC_EnableWriteProtection(RTC);
 #endif /* RTC_CR_BYPSHAD */
 
+#if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
+	LL_C2_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
+#else
 	LL_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
+#endif
 	LL_EXTI_EnableRisingTrig_0_31(RTC_EXTI_LINE);
 
 	rtc_stm32_irq_config(dev);

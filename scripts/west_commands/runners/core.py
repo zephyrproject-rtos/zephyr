@@ -313,7 +313,13 @@ class ZephyrBinaryRunner(abc.ABC):
     3. Give your runner's name to the Zephyr build system in your
        board's board.cmake.
 
-    Some advice on input and output:
+    Additional advice:
+
+    - If you need to import any non-standard-library modules, make sure
+      to catch ImportError and defer complaints about it to a RuntimeError
+      if one is missing. This avoids affecting users that don't require your
+      runner, while still making it clear what went wrong to users that do
+      require it that don't have the necessary modules installed.
 
     - If you need to ask the user something (e.g. using input()), do it
       in your create() classmethod, not do_run(). That ensures your

@@ -34,10 +34,10 @@ LOG_MODULE_REGISTER(dma_dw);
 /* default initial setup register values */
 #define DW_CFG_LOW_DEF			0x0
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_DATA(dev) ((struct dw_dma_dev_data *const)(dev)->driver_data)
 #define DEV_CFG(dev) \
-	((const struct dw_dma_dev_cfg *const)(dev)->config->config_info)
+	((const struct dw_dma_dev_cfg *const)(dev)->config_info)
 
 /* number of tries to wait for reset */
 #define DW_DMA_CFG_TRIES	10000
@@ -359,189 +359,70 @@ static const struct dma_driver_api dw_dma_driver_api = {
 	.stop = dw_dma_transfer_stop,
 };
 
-#if DT_HAS_DRV_INST(0)
+#define DW_DMAC_INIT(inst)						\
+									\
+	static struct device DEVICE_NAME_GET(dw_dma##inst);		\
+									\
+	static struct dw_drv_plat_data dmac##inst = {			\
+		.chan[0] = {						\
+			.class  = 6,					\
+			.weight = 0,					\
+		},							\
+		.chan[1] = {						\
+			.class  = 6,					\
+			.weight = 0,					\
+		},							\
+		.chan[2] = {						\
+			.class  = 6,					\
+			.weight = 0,					\
+		},							\
+		.chan[3] = {						\
+			.class  = 6,					\
+			.weight = 0,					\
+		},							\
+		.chan[4] = {						\
+			.class  = 6,					\
+			.weight = 0,					\
+		},							\
+		.chan[5] = {						\
+			.class  = 6,					\
+			.weight = 0,					\
+		},							\
+		.chan[6] = {						\
+			.class  = 6,					\
+			.weight = 0,					\
+		},							\
+		.chan[7] = {						\
+			.class  = 6,					\
+			.weight = 0,					\
+		},							\
+	};								\
+									\
+	static void dw_dma##inst##_irq_config(void);			\
+									\
+	static const struct dw_dma_dev_cfg dw_dma##inst##_config = {	\
+		.base = DT_INST_REG_ADDR(inst),				\
+		.irq_config = dw_dma##inst##_irq_config			\
+	};								\
+									\
+	static struct dw_dma_dev_data dw_dma##inst##_data = {		\
+		.channel_data = &dmac##inst,				\
+	};								\
+									\
+	DEVICE_AND_API_INIT(dw_dma##inst, DT_INST_LABEL(inst),		\
+			    &dw_dma_init,				\
+			    &dw_dma##inst##_data,			\
+			    &dw_dma##inst##_config, POST_KERNEL,	\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &dw_dma_driver_api);			\
+									\
+	static void dw_dma##inst##_irq_config(void)			\
+	{								\
+		IRQ_CONNECT(DT_INST_IRQN(inst),				\
+			    DT_INST_IRQ(inst, priority), dw_dma_isr,	\
+			    DEVICE_GET(dw_dma##inst),			\
+			    DT_INST_IRQ(inst, sense));			\
+		irq_enable(DT_INST_IRQN(inst));				\
+	}
 
-static struct device DEVICE_NAME_GET(dw_dma0);
-
-static void dw_dma0_irq_config(void)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority), dw_dma_isr,
-		    DEVICE_GET(dw_dma0),
-		    DT_INST_IRQ(0, sense));
-	irq_enable(DT_INST_IRQN(0));
-}
-
-static struct dw_drv_plat_data dmac0 = {
-	.chan[0] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[1] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[2] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[3] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[4] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[5] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[6] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[7] = {
-		.class  = 6,
-		.weight = 0,
-	},
-};
-
-static const struct dw_dma_dev_cfg dw_dma0_config = {
-	.base = DT_INST_REG_ADDR(0),
-	.irq_config = dw_dma0_irq_config
-};
-
-static struct dw_dma_dev_data dw_dma0_data = {
-	.channel_data = &dmac0,
-};
-
-DEVICE_AND_API_INIT(dw_dma0, DT_INST_LABEL(0), &dw_dma_init,
-		    &dw_dma0_data, &dw_dma0_config, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_dma_driver_api);
-#endif /* DT_HAS_DRV_INST(0) */
-
-
-#if DT_HAS_DRV_INST(1)
-
-static struct device DEVICE_NAME_GET(dw_dma2);
-
-static void dw_dma1_irq_config(void)
-{
-	IRQ_CONNECT(DT_INST_IRQN(1),
-		    DT_INST_IRQ(1, priority), dw_dma_isr,
-		    DEVICE_GET(dw_dma0),
-		    DT_INST_IRQ(1, sense));
-	irq_enable(DT_INST_IRQN(1));
-}
-
-static struct dw_drv_plat_data dmac1 = {
-	.chan[0] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[1] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[2] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[3] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[4] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[5] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[6] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[7] = {
-		.class  = 6,
-		.weight = 0,
-	},
-};
-
-static const struct dw_dma_dev_cfg dw_dma1_config = {
-	.base = DT_INST_REG_ADDR(1),
-	.irq_config = dw_dma1_irq_config
-};
-
-static struct dw_dma_dev_data dw_dma1_data = {
-	.channel_data = &dmac1,
-};
-
-DEVICE_AND_API_INIT(dw_dma1, DT_INST_LABEL(1), &dw_dma_init,
-		    &dw_dma1_data, &dw_dma1_config, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_dma_driver_api);
-#endif /* DT_HAS_DRV_INST(1) */
-
-#if DT_HAS_DRV_INST(2)
-
-static struct device DEVICE_NAME_GET(dw_dma2);
-
-static void dw_dma2_irq_config(void)
-{
-	IRQ_CONNECT(DT_INST_IRQN(2),
-		    DT_INST_IRQ(2, priority), dw_dma_isr,
-		    DEVICE_GET(dw_dma0),
-		    DT_INST_IRQ(2, sense));
-	irq_enable(DT_INST_IRQN(2));
-}
-
-static struct dw_drv_plat_data dmac2 = {
-	.chan[0] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[1] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[2] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[3] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[4] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[5] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[6] = {
-		.class  = 6,
-		.weight = 0,
-	},
-	.chan[7] = {
-		.class  = 6,
-		.weight = 0,
-	},
-};
-
-static const struct dw_dma_dev_cfg dw_dma2_config = {
-	.base = DT_INST_REG_ADDR(2),
-	.irq_config = dw_dma2_irq_config
-};
-
-static struct dw_dma_dev_data dw_dma2_data = {
-	.channel_data = &dmac2,
-};
-
-DEVICE_AND_API_INIT(dw_dma2, DT_INST_LABEL(2), &dw_dma_init,
-		    &dw_dma2_data, &dw_dma2_config, POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_dma_driver_api);
-#endif /* DT_HAS_DRV_INST(2) */
+DT_INST_FOREACH_STATUS_OKAY(DW_DMAC_INIT)

@@ -152,7 +152,7 @@ struct uart_xlnx_ps_dev_data_t {
 
 #define DEV_CFG(dev) \
 	((const struct uart_xlnx_ps_dev_config * const) \
-	 (dev)->config->config_info)
+	 (dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct uart_xlnx_ps_dev_data_t *)(dev)->driver_data)
 
@@ -1213,16 +1213,10 @@ DEVICE_AND_API_INIT(uart_xlnx_ps_##port, DT_INST_LABEL(port), \
 	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
 	&uart_xlnx_ps_driver_api)
 
-#if DT_HAS_DRV_INST(0)
-UART_XLNX_PS_IRQ_CONF_FUNC(0);
-UART_XLNX_PS_DEV_DATA(0);
-UART_XLNX_PS_DEV_CFG(0);
-UART_XLNX_PS_INIT(0);
-#endif
+#define UART_XLNX_INSTANTIATE(inst)		\
+	UART_XLNX_PS_IRQ_CONF_FUNC(inst);	\
+	UART_XLNX_PS_DEV_DATA(inst);		\
+	UART_XLNX_PS_DEV_CFG(inst);		\
+	UART_XLNX_PS_INIT(inst);
 
-#if DT_HAS_DRV_INST(1)
-UART_XLNX_PS_IRQ_CONF_FUNC(1);
-UART_XLNX_PS_DEV_DATA(1);
-UART_XLNX_PS_DEV_CFG(1);
-UART_XLNX_PS_INIT(1);
-#endif
+DT_INST_FOREACH_STATUS_OKAY(UART_XLNX_INSTANTIATE)

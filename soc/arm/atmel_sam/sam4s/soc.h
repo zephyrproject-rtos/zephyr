@@ -19,6 +19,9 @@
 
 #ifndef _ASMLANGUAGE
 
+/* Add include for DTS generated information */
+#include <devicetree.h>
+
 #define DONT_USE_CMSIS_INIT
 #define DONT_USE_PREDEFINED_CORE_HANDLERS
 #define DONT_USE_PREDEFINED_PERIPHERALS_HANDLERS
@@ -46,8 +49,6 @@
 #else
 #error Library does not support the specified device.
 #endif
-
-#include "soc_pinmap.h"
 
 #include "../common/soc_pmc.h"
 #include "../common/soc_gpio.h"

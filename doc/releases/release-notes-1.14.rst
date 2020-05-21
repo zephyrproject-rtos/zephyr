@@ -3,6 +3,196 @@
 .. _zephyr_1.14:
 .. _zephyr_1.14.1:
 
+Zephyr 1.14.2
+####################
+
+This is an LTS maintenance release with fixes.
+
+Security Vulnerability Related
+******************************
+
+The following security vulnerabilities (CVEs) were addressed in this
+release:
+
+* CVE-2020-10019
+* CVE-2020-10021
+* CVE-2020-10022
+* CVE-2020-10023
+* CVE-2020-10024
+* CVE-2020-10027
+* CVE-2020-10028
+
+More detailed information can be found in:
+https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+Issues Fixed
+************
+
+These GitHub issues were addressed since the previous 1.14.0 tagged
+release:
+
+.. comment  List derived from GitHub Issue query: ...
+   * :github:`issuenumber` - issue title
+
+* :github:`11617` - net: ipv4: udp: broadcast delivery not supported
+* :github:`11743` - logging: add user mode access
+* :github:`14459` - usb: samples: mass: doesn't build with FLASH overlay
+* :github:`15119` - GPIO callback not disabled from an interrupt
+* :github:`15339` - RISC-V: RV32M1: Load access fault when accessing GPIO port E
+* :github:`15354` - counter: stm32: Issue with LSE clock source selection
+* :github:`15373` - IPv4 link local packets are not sent with ARP ethernet type
+* :github:`15443` - usb_dc_stm32: Missing semaphore initialization and missing pin remapping configuration
+* :github:`15444` - Error initiating sdhc disk
+* :github:`15497` - USB DFU: STM32: usb dfu mode doesn't work
+* :github:`15507` - NRF52840: usb composite MSC + HID (with CONFIG_ENABLE_HID_INT_OUT_EP)
+* :github:`15526` - Unhandled identity in bt_conn_create_slave_le
+* :github:`15558` - support for power-of-two MPUs on non-XIP systems
+* :github:`15601` - pwm: nRF default prescalar value is wrong
+* :github:`15603` - Unable to use C++ Standard Library
+* :github:`15605` - Unaligned memory access by ldrd
+* :github:`15678` - Watchdog peripheral api docs aren't generated correctly.
+* :github:`15698` - bluetooth: bt_conn: No proper ID handling
+* :github:`15733` - Bluetooth: controller: Central Encryption setup overlaps Length Request procedure
+* :github:`15794` - mps2_an385 crashes if CONFIG_INIT_STACKS=y and CONFIG_COVERAGE=y
+* :github:`15817` - nrf52: HFXO is not turned off as expected
+* :github:`15904` - concerns with use of CONFIG_BT_MESH_RPL_STORE_TIMEOUT in examples
+* :github:`15911` - Stack size is smaller than it should be
+* :github:`15975` - Openthread - fault with dual network interfaces
+* :github:`16001` - ARC iotdk supports MPU and fpu in hardware but not enabled in kconfig
+* :github:`16002` - the spi base reg address in arc_iot.dtsi has an error
+* :github:`16010` - Coverage reporting fails on many tests
+* :github:`16012` - Source IP address for DHCP renewal messages is unset
+* :github:`16046` - modules are being processed too late.
+* :github:`16080` - Zephyr UART shell crashes on start if main() is blocked
+* :github:`16089` - Mcux Ethernet driver does not detect carrier anymore (it's alway on)
+* :github:`16090` - mpu align support for code relocation on non-XIP system
+* :github:`16143` - posix: clock_settime calculates the base time incorrectly
+* :github:`16155` - drivers: can: wrong value used for filter mode set
+* :github:`16257` - net: icmpv4: Zephyr sends echo reply with multicast source address
+* :github:`16307` - cannot move location counter backwards error happen
+* :github:`16323` - net: ipv6: tcp: unexpected reply to malformed HBH in TCP/IPv6 SYN
+* :github:`16339` - openthread: off-by-one error when calculating ot_flash_offset for settings
+* :github:`16354` - net: ipv6: Zephyr does not reply to fragmented packet
+* :github:`16375` - net: ipv4: udp: Zephyr does not reply to a valid datagram with checksum zero
+* :github:`16379` - net: ipv6: udp: Zephyr replies with illegal UDP checksum zero
+* :github:`16411` - bad regex for west version check in host-tools.cmake
+* :github:`16412` - on reel_board the consumption increases because TX pin is floating
+* :github:`16413` - Missing dependency in cmake
+* :github:`16414` - Backport west build --pristine
+* :github:`16415` - Build errors with C++
+* :github:`16416` - sram size for RT1015 and RT1020 needs to be update.
+* :github:`16417` - issues with can filter mode set
+* :github:`16418` - drivers: watchdog: sam0: check if timeout is valid
+* :github:`16419` - Bluetooth: XTAL feature regression
+* :github:`16478` - Bluetooth: Improper bonded peers handling
+* :github:`16570` - [Coverity CID :198877]Null pointer dereferences in /subsys/net/ip/net_if.c
+* :github:`16577` - [Coverity CID :198870]Error handling issues in /subsys/net/lib/lwm2m/lwm2m_obj_firmware_pull.c
+* :github:`16581` - [Coverity CID :198866]Null pointer dereferences in /subsys/net/lib/dns/llmnr_responder.c
+* :github:`16584` - [Coverity CID :198863]Error handling issues in /subsys/net/lib/sntp/sntp.c
+* :github:`16600` - Bluetooth: Mesh: Proxy SAR timeout is not implemented
+* :github:`16602` - Bluetooth: GATT Discovery: Descriptor Discovery by range Seg Fault
+* :github:`16639` - eth: pinging frdm k64f eventually leads to unresponsive ethernet device
+* :github:`16678` - LPN establishment of Friendship never completes if there is no response to the initial Friend Poll
+* :github:`16711` - Settings reworked to const char processing
+* :github:`16734` - Bluetooth: GATT: Writing 1 byte to a CCC access invalid memory
+* :github:`16745` - PTHREAD_MUTEX_DEFINE(): don't store into the _k_mutex section
+* :github:`16746` - boards: nrf52840_pca10059: Configure NFC pins as GPIOs by default
+* :github:`16749` - IRQ_CONNECT and irq_enable calls in the SiFive UART driver is misconfigured
+* :github:`16750` - counter:  lack of interrupt when CC=0
+* :github:`16760` - K_THREAD_STACK_EXTERN() confuses gen_kobject_list.py
+* :github:`16779` - [Zephyr v1.14] ARM: fix the start address of MPU guard in stack-fail checking (when building with no user mode)
+* :github:`16799` - Bluetooth: L2CAP: Interpretation of SCID and DCID in Disconnect is wrong
+* :github:`16861` - nRF52: UARTE: Data corruption right after resuming device
+* :github:`16864` - Bluetooth: Mesh: Rx buffer exhaustion causes deadlock
+* :github:`16893` - Bluetooth: Multiple local IDs, privacy problem
+* :github:`16943` - Missing test coverage for lib/os/crc*.c
+* :github:`16944` - Insufficient test coverage for lib/os/json.c
+* :github:`17031` - Compiler warnings in settings module in Zephyr 1.14
+* :github:`17038` - code relocation generating different memory layout cause user mode not working
+* :github:`17041` - [1.14] Bluetooth: Mesh: RPL handling is not in line with the spec
+* :github:`17055` - net: Incorrect data length after the connection is established
+* :github:`17057` - Bluetooth: Mesh: Implementation doesn't conform to latest errata and 1.0.1 version
+* :github:`17092` - Bluetooth: GAP/IDLE/NAMP/BV-01-C requires Read by UUID
+* :github:`17170` - x86_64 crash with spinning child thread
+* :github:`17171` - Insufficient code coverage for lib/os/fdtable.c
+* :github:`17177` - ARM: userspace/test_bad_syscall fails on ARMv8-M
+* :github:`17190` - net-mgmt should pass info element size to callback
+* :github:`17250` - After first GC operation the 1st sector had become scratch and the 2nd sector had became write sector.
+* :github:`17251` - w25q: erase operations must be erase-size aligned
+* :github:`17262` - insufficient code coverage for lib/os/base64.c
+* :github:`17288` - Bluetooth: controller: Fix handling of L2CAP start frame with zero PDU length
+* :github:`17294` - DB corruption when adding/removing service
+* :github:`17337` - ArmV7-M mpu sub region alignment
+* :github:`17338` - kernel objects address check in elf_helper.py
+* :github:`17368` - Time Slicing cause system sleep short time
+* :github:`17399` - LwM2M: Can't use an alternate mbedtls implementation
+* :github:`17401` - LwM2M: requires that CONFIG_NET_IPV* be enabled (can't use 100% offloaded IP stack)
+* :github:`17415` - Settings Module - settings_line_val_read() returning -EINVAL instead of 0 for deleted setting entries
+* :github:`17427` - net: IPv4/UDP datagram with zero src addr and TTL causes Zephyr to segfault
+* :github:`17450` - net: IPv6/UDP datagram with unspecified addr and zero hop limit causes Zephyr to quit
+* :github:`17463` - Bluetooth: API limits usage of MITM flags in Pairing Request
+* :github:`17534` - Race condition in GATT API.
+* :github:`17595` - two userspace tests fail if stack canaries are enabled in board configuration
+* :github:`17600` - Enable Mesh Friend support in Bluetooth tester application
+* :github:`17613` - POSIX arch: occasional failures of tests/kernel/sched/schedule_api on CI
+* :github:`17630` - efr32mg_sltb004a tick clock error
+* :github:`17723` - Advertiser never clears state flags
+* :github:`17732` - cannot use bt_conn_security in connected callback
+* :github:`17764` - Broken link to latest development version of docs
+* :github:`17802` - [zephyr 1.14] Address type 0x02 is used by LE Create Connection in device privacy mode
+* :github:`17820` - Mesh  bug report In access.c
+* :github:`17838` - state DEVICE_PM_LOW_POWER_STATE of Device Power Management
+* :github:`17843` - Bluetooth: controller: v1.14.x release conformance test failures
+* :github:`17857` - GATT: Incorrect byte order for GATT database hash
+* :github:`17861` - Tester application lacks BTP Discover All Primary Services handler
+* :github:`17880` - Unable to re-connect to privacy enabled peer when using stack generated Identity
+* :github:`17944` - [zephyr 1.14]  LE Enhanced Connection Complete indicates Resolved Public once connected to Public peer address
+* :github:`17948` - Bluetooth: privacy: Reconnection issue
+* :github:`17967` - drivers/pwm/pwm_api test failed on frdm_k64f board.
+* :github:`17971` - [zephyr 1.14] Unable to register GATT service that was unregistered before
+* :github:`17979` - Security level cannot be elevated after re-connection with privacy
+* :github:`18021` - Socket vtable can access null pointer callback function
+* :github:`18090` - [zephyr 1.14][MESH/NODE/FRND/FN/BV-08-C] Mesh Friend queues more messages than indicates it's Friend Cache
+* :github:`18178` - BLE Mesh When Provisioning Use Input OOB Method
+* :github:`18183` - [zephyr 1.14][GATT/SR/GAS/BV-07-C] GATT Server does not inform change-unaware client about DB changes
+* :github:`18297` - Bluetooth: SMP: Pairing issues
+* :github:`18306` - Unable to reconnect paired devices with controller privacy disabled (host privacy enabled)
+* :github:`18308` - net: TCP/IPv6 set of fragmented packets causes Zephyr to quit
+* :github:`18394` - [Coverity CID :203464]Memory - corruptions in /subsys/net/l2/ethernet/gptp/gptp_mi.c
+* :github:`18462` - potential buffer overrun in logging infrastructure
+* :github:`18580` - Bluetooth: Security fail on initial pairing
+* :github:`18658` - Bluetooth BR/EDR encryption key negotiation vulnerability
+* :github:`18739` - k_uptime_get_32() does not behave as documented
+* :github:`18935` - [Zephyr 1.14] drivers: flash: spi_nor: Problematic write with page boundaries
+* :github:`18961` - [Coverity CID :203912]Error handling issues in /samples/net/sockets/coap_client/src/coap-client.c
+* :github:`19015` - Bluetooth: Mesh: Node doesn't respond to "All Proxies" address
+* :github:`19038` - [zephyr branch 1.14 and master -stm32-netusb]:errors when i view RNDIS Device‘s properties on Windows 10
+* :github:`19059` - i2c_ll_stm32_v2: nack on write is not handled correctly
+* :github:`19103` - zsock_accept_ctx blocks even when O_NONBLOCK is specified
+* :github:`19165` - zephyr_file generates bad links on branches
+* :github:`19263` - Bluetooth: Mesh: Friend Clear Procedure Timeout
+* :github:`19515` - Bluetooth: Controller: assertion failed
+* :github:`19612` - ICMPv6 packet is routed to wrong interface when peer is not found in neighbor cache
+* :github:`19678` - Noticeable delay between processing multiple client connection requests (200ms+)
+* :github:`19889` - Buffer leak in GATT for Write Without Response and Notifications
+* :github:`19982` - Periodically wake up log process thread consume more power
+* :github:`20042` - Telnet can connect only once
+* :github:`20100` - Slave PTP clock time is updated with large value when Master PTP Clock time has changed
+* :github:`20229` - cmake: add --divide to GNU assembler options for x86
+* :github:`20299` - bluetooth: host: Connection not being unreferenced when using CCC match callback
+* :github:`20313` - Zperf documentation points to wrong iPerf varsion
+* :github:`20811` - spi driver
+* :github:`20970` - Bluetooth: Mesh: seg_tx_reset in the transport layer
+* :github:`21131` - Bluetooth: host: Subscriptions not removed upon unpair
+* :github:`21306` - ARC: syscall register save/restore needs backport to 1.14
+* :github:`21431` - missing async uart.h system calls
+* :github:`21432` - watchdog subsystem has no system calls
+* :github:`22275` - arm: cortex-R & M: CONFIG_USERSPACE: intermittent Memory region write access failures
+* :github:`22280` - incorrect linker routing
+* :github:`23153` - Binding AF_PACKET socket second time will fail with multiple network interfaces
+* :github:`23339` - tests/kernel/sched/schedule_api failed on mps2_an385 with v1.14 branch.
+* :github:`23346` - bl65x_dvk boards do not reset after flashing
+
 Zephyr 1.14.1
 #############
 

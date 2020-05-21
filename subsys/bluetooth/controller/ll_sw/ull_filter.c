@@ -1022,13 +1022,13 @@ static int rl_access_check(bool check_ar)
 static void rpa_timeout(struct k_work *work)
 {
 	ull_filter_rpa_update(true);
-	k_delayed_work_submit(&rpa_work, rpa_timeout_ms);
+	k_delayed_work_submit(&rpa_work, K_MSEC(rpa_timeout_ms));
 }
 
 static void rpa_refresh_start(void)
 {
 	BT_DBG("");
-	k_delayed_work_submit(&rpa_work, rpa_timeout_ms);
+	k_delayed_work_submit(&rpa_work, K_MSEC(rpa_timeout_ms));
 }
 
 static void rpa_refresh_stop(void)

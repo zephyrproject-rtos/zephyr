@@ -38,8 +38,11 @@
 #define _ARC_V2_TMR_CTRL_IP 0x8 /* interrupt pending flag */
 
 /* Minimum cycles in the future to try to program. */
-#define MIN_DELAY 512
-#define COUNTER_MAX 0xffffffff
+#define MIN_DELAY 1024
+/* arc timer has 32 bit, here use 31 bit to avoid the possible
+ * overflow,e.g, 0xffffffff + any value will cause overflow
+ */
+#define COUNTER_MAX 0x7fffffff
 #define TIMER_STOPPED 0x0
 #define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
 		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
@@ -61,7 +64,36 @@ volatile static u64_t start_time;
 #else
 static u32_t last_load;
 
+
+/*
+ * This local variable holds the amount of timer cycles elapsed
+ * and it is updated in z_timer_int_handler and z_clock_set_timeout().
+ *
+ * Note:
+ *  At an arbitrary point in time the "current" value of the
+ *  HW timer is calculated as:
+ *
+ * t = cycle_counter + elapsed();
+ */
 static u32_t cycle_count;
+
+/*
+ * This local variable holds the amount of elapsed HW cycles
+ * that have been announced to the kernel.
+ */
+static u32_t announced_cycles;
+
+
+/*
+ * This local variable holds the amount of elapsed HW cycles due to
+ * timer wraps ('overflows') and is used in the calculation
+ * in elapsed() function, as well as in the updates to cycle_count.
+ *
+ * Note:
+ * Each time cycle_count is updated with the value from overflow_cycles,
+ * the overflow_cycles must be reset to zero.
+ */
+static volatile u32_t overflow_cycles;
 #endif
 
 /**
@@ -131,17 +163,49 @@ static ALWAYS_INLINE void timer0_limit_register_set(u32_t count)
 }
 
 #if !SMP_TIMER_DRIVER
+/* This internal function calculates the amount of HW cycles that have
+ * elapsed since the last time the absolute HW cycles counter has been
+ * updated. 'cycle_count' may be updated either by the ISR, or
+ * in z_clock_set_timeout().
+ *
+ * Additionally, the function updates the 'overflow_cycles' counter, that
+ * holds the amount of elapsed HW cycles due to (possibly) multiple
+ * timer wraps (overflows).
+ *
+ * Prerequisites:
+ * - reprogramming of LIMIT must be clearing the COUNT
+ * - ISR must be clearing the 'overflow_cycles' counter.
+ * - no more than one counter-wrap has occurred between
+ *     - the timer reset or the last time the function was called
+ *     - and until the current call of the function is completed.
+ * - the function is invoked with interrupts disabled.
+ */
 static u32_t elapsed(void)
 {
-	u32_t val, ov, ctrl;
+	u32_t val, ctrl;
 
 	do {
 		val =  timer0_count_register_get();
 		ctrl = timer0_control_register_get();
 	} while (timer0_count_register_get() < val);
 
-	ov = (ctrl & _ARC_V2_TMR_CTRL_IP) ? last_load : 0;
-	return val + ov;
+	if (ctrl & _ARC_V2_TMR_CTRL_IP) {
+		overflow_cycles += last_load;
+		/* clear the IP bit of the control register */
+		timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
+					    _ARC_V2_TMR_CTRL_IE);
+		/* use sw triggered irq to remember the timer irq request
+		 * which may be cleared by the above operation. when elapsed ()
+		 * is called in z_timer_int_handler, no need to do this.
+		 */
+		if (!z_arc_v2_irq_unit_is_in_isr() ||
+		    z_arc_v2_aux_reg_read(_ARC_V2_ICAUSE) != IRQ_TIMER0) {
+			z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT,
+					       IRQ_TIMER0);
+		}
+	}
+
+	return val + overflow_cycles;
 }
 #endif
 
@@ -160,26 +224,44 @@ static void timer_int_handler(void *unused)
 	ARG_UNUSED(unused);
 	u32_t dticks;
 
-	/* clear the interrupt by writing 0 to IP bit of the control register */
-	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
-
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	u64_t curr_time;
 	k_spinlock_key_t key;
 
+	/* clear the IP bit of the control register */
+	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
+				    _ARC_V2_TMR_CTRL_IE);
 	key = k_spin_lock(&lock);
 	/* gfrc is the wall clock */
 	curr_time = z_arc_connect_gfrc_read();
 
 	dticks = (curr_time - last_time) / CYC_PER_TICK;
-	last_time = curr_time;
+	/* last_time should be aligned to ticks */
+	last_time += dticks * CYC_PER_TICK;
 
 	k_spin_unlock(&lock, key);
 
 	z_clock_announce(dticks);
 #else
-	cycle_count += last_load;
-	dticks = last_load / CYC_PER_TICK;
+	/* timer_int_handler may be triggered by timer irq or
+	 * software helper irq
+	 */
+
+	/* irq with higher priority may call z_clock_set_timeout
+	 * so need a lock here
+	 */
+	u32_t key;
+
+	key = arch_irq_lock();
+
+	elapsed();
+	cycle_count += overflow_cycles;
+	overflow_cycles = 0;
+
+	arch_irq_unlock(key);
+
+	dticks = (cycle_count - announced_cycles) / CYC_PER_TICK;
+	announced_cycles += dticks * CYC_PER_TICK;
 	z_clock_announce(TICKLESS ? dticks : 1);
 #endif
 
@@ -211,6 +293,8 @@ int z_clock_driver_init(struct device *device)
 	start_time = last_time;
 #else
 	last_load = CYC_PER_TICK;
+	overflow_cycles = 0;
+	announced_cycles = 0;
 
 	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
 		    timer_int_handler, NULL, 0);
@@ -255,8 +339,12 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 	ticks = MIN(MAX_TICKS, ticks);
 
-	/* Desired delay in the future */
-	delay = (ticks == 0) ? CYC_PER_TICK : ticks * CYC_PER_TICK;
+	/* Desired delay in the future
+	 * use MIN_DEALY here can trigger the timer
+	 * irq more soon, no need to go to CYC_PER_TICK
+	 * later.
+	 */
+	delay = MAX(ticks * CYC_PER_TICK, MIN_DELAY);
 
 	key = arch_irq_lock();
 
@@ -279,28 +367,50 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 	u32_t delay;
+	u32_t unannounced;
 
-	ticks = MIN(MAX_TICKS, MAX(ticks - 1, 0));
-
-	/* Desired delay in the future */
-	delay = (ticks == 0) ? MIN_DELAY : ticks * CYC_PER_TICK;
+	ticks = MIN(MAX_TICKS, (u32_t)(MAX((s32_t)(ticks - 1), 0)));
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	delay += elapsed();
 
-	/* Round delay up to next tick boundary */
-	delay = ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
+	cycle_count += elapsed();
+	/* clear counter early to avoid cycle loss as few as possible,
+	 * between cycle_count and clearing 0, few cycles are possible
+	 * to loss
+	 */
+	timer0_count_register_set(0);
+	overflow_cycles = 0U;
 
-	if (last_load != delay) {
-		if (timer0_control_register_get() & _ARC_V2_TMR_CTRL_IP) {
-			delay -= last_load;
-		}
-		timer0_limit_register_set(delay - 1);
-		last_load = delay;
-		timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
-							 _ARC_V2_TMR_CTRL_IE);
+
+	/* normal case */
+	unannounced = cycle_count - announced_cycles;
+
+	if ((s32_t)unannounced < 0) {
+		/* We haven't announced for more than half the 32-bit
+		 * wrap duration, because new timeouts keep being set
+		 * before the existing one fires. Force an announce
+		 * to avoid loss of a wrap event, making sure the
+		 * delay is at least the minimum delay possible.
+		 */
+		last_load = MIN_DELAY;
+	} else {
+		/* Desired delay in the future */
+		delay = ticks * CYC_PER_TICK;
+
+		/* Round delay up to next tick boundary */
+		delay += unannounced;
+		delay =
+		 ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
+
+		delay -= unannounced;
+		delay = MAX(delay, MIN_DELAY);
+
+		last_load = MIN(delay, MAX_CYCLES);
 	}
+
+	timer0_limit_register_set(last_load - 1);
+	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 
 	k_spin_unlock(&lock, key);
 #endif
@@ -317,14 +427,14 @@ u32_t z_clock_elapsed(void)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 #if SMP_TIMER_DRIVER
-	cyc = (z_arc_connect_gfrc_read() - last_time) / CYC_PER_TICK;
+	cyc = (z_arc_connect_gfrc_read() - last_time);
 #else
-	cyc = elapsed() / CYC_PER_TICK;
+	cyc =  elapsed() + cycle_count - announced_cycles;
 #endif
 
 	k_spin_unlock(&lock, key);
 
-	return cyc;
+	return cyc / CYC_PER_TICK;
 }
 
 u32_t z_timer_cycle_get_32(void)

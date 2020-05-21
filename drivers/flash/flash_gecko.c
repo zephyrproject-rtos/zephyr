@@ -24,7 +24,7 @@ struct flash_gecko_data {
 	struct k_sem mutex;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_DATA(dev) \
 	((struct flash_gecko_data *const)(dev)->driver_data)
 

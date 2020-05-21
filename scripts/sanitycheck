@@ -170,6 +170,7 @@ import argparse
 import sys
 import logging
 import time
+import itertools
 import shutil
 from collections import OrderedDict
 import multiprocessing
@@ -177,6 +178,7 @@ from itertools import islice
 import csv
 from colorama import Fore
 from pathlib import Path
+
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
@@ -239,7 +241,7 @@ def export_tests(filename, tests):
                 }
                 cw.writerow(rowdict)
             else:
-                logger.info("{} can't be exported".format(test))
+                logger.error("{} can't be exported: ".format(test))
 
 
 def parse_arguments():
@@ -391,7 +393,10 @@ Artificially long but functional example:
 
     parser.add_argument("--export-tests", action="store",
                         metavar="FILENAME",
-                        help="Export tests case meta-data to a file in CSV format.")
+                        help="Export tests case meta-data to a file in CSV format."
+                             "Test instances can be exported per target by supplying "
+                             "the platform name using --platform option. (tests for only "
+                             " one platform can be exported at a time)")
 
     parser.add_argument("--timestamps",
                         action="store_true",
@@ -519,6 +524,13 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
         "-S", "--enable-slow", action="store_true",
         help="Execute time-consuming test cases that have been marked "
              "as 'slow' in testcase.yaml. Normally these are only built.")
+
+    parser.add_argument(
+        "-K", "--force-platform", action="store_true",
+        help="""Force testing on selected platforms,
+        even if they are excluded in the test configuration"""
+    )
+
     parser.add_argument(
         "--disable-unrecognized-section-test", action="store_true",
         default=False,
@@ -634,7 +646,7 @@ structure in the main Zephyr tree: boards/<arch>/<board_name>/""")
 
     parser.add_argument("-C", "--coverage", action="store_true",
                         help="Generate coverage reports. Implies "
-                             "--enable_coverage.")
+                             "--enable-coverage.")
 
     parser.add_argument("--coverage-platform", action="append", default=[],
                         help="Plarforms to run coverage reports on. "
@@ -830,15 +842,14 @@ def main():
 
         return
 
-    if options.export_tests:
-        cnt = 0
-        tests = suite.get_all_tests()
-        export_tests(options.export_tests, tests)
-        return
-
-    if options.list_tests or options.test_tree or options.list_test_duplicates or options.sub_test:
+    if not options.platform and (options.list_tests or options.test_tree or options.list_test_duplicates \
+        or options.sub_test or options.export_tests):
         cnt = 0
         all_tests = suite.get_all_tests()
+
+        if options.export_tests:
+            export_tests(options.export_tests, all_tests)
+            return
 
         if options.list_test_duplicates:
             import collections
@@ -934,9 +945,33 @@ def main():
             force_toolchain=options.force_toolchain,
             all=options.all,
             run_individual_tests=run_individual_tests,
-            device_testing=options.device_testing
+            device_testing=options.device_testing,
+            force_platform=options.force_platform
 
         )
+
+    if (options.export_tests or options.list_tests) and options.platform:
+        if len(options.platform) > 1:
+            logger.error("When exporting tests, only one platform "
+                         "should be specified.")
+            return
+
+        for p in options.platform:
+            inst = suite.get_platform_instances(p)
+            if options.export_tests:
+                tests = [x.testcase.cases for x in inst.values()]
+                merged = list(itertools.chain(*tests))
+                export_tests(options.export_tests, merged)
+                return
+
+            count = 0
+            for i in inst.values():
+                for c in i.testcase.cases:
+                    print(f"- {c}")
+                    count += 1
+
+            print(f"Tests found: {count}")
+        return
 
     if VERBOSE > 1 and discards:
         # if we are using command line platform filter, no need to list every

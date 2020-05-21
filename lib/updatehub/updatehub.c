@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(updatehub);
 #include <power/reboot.h>
 #include <tinycrypt/sha256.h>
 #include <data/json.h>
+#include <storage/flash_map.h>
 
 #include "include/updatehub.h"
 #include "updatehub_priv.h"
@@ -32,7 +33,7 @@ LOG_MODULE_REGISTER(updatehub);
 #include <net/tls_credentials.h>
 #endif
 
-#define NETWORK_TIMEOUT K_SECONDS(2)
+#define NETWORK_TIMEOUT (2 * MSEC_PER_SEC)
 #define UPDATEHUB_POLL_INTERVAL K_MINUTES(CONFIG_UPDATEHUB_POLL_INTERVAL)
 #define MAX_PATH_SIZE 255
 /* MAX_PAYLOAD_SIZE must reflect size COAP_BLOCK_x option */
@@ -514,7 +515,7 @@ static enum updatehub_response install_update(void)
 	int i;
 	k_timer_init(&timer, timer_expire,timer_stop);		// initialize the timer for stop and wait for GET Requests
 
-	if (boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID) != 0) {
+	if (boot_erase_img_bank(FLASH_AREA_ID(image_1)) != 0) {
 		LOG_ERR("Failed to init flash and erase second slot");
 		ctx.code_status = UPDATEHUB_FLASH_INIT_ERROR;
 		goto error;

@@ -43,6 +43,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <drivers/clock_control.h>
 #endif
 
+#include "eth.h"
+
 #define FREESCALE_OUI_B0 0x00
 #define FREESCALE_OUI_B1 0x04
 #define FREESCALE_OUI_B2 0x9f
@@ -446,18 +448,18 @@ static void eth_mcux_phy_event(struct eth_context *context)
 			/* Network interface might be NULL at this point */
 			if (context->iface) {
 				net_eth_carrier_on(context->iface);
-				k_sleep(USEC_PER_MSEC);
+				k_msleep(USEC_PER_MSEC);
 			}
 		} else if (!link_up && context->link_up) {
 			LOG_INF("%s link down", eth_name(context->base));
 			context->link_up = link_up;
 			k_delayed_work_submit(&context->delayed_phy_work,
-					      CONFIG_ETH_MCUX_PHY_TICK_MS);
+					K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
 			context->phy_state = eth_mcux_phy_state_wait;
 			net_eth_carrier_off(context->iface);
 		} else {
 			k_delayed_work_submit(&context->delayed_phy_work,
-					      CONFIG_ETH_MCUX_PHY_TICK_MS);
+					K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
 			context->phy_state = eth_mcux_phy_state_wait;
 		}
 
@@ -482,7 +484,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 			(phy_speed ? "100" : "10"),
 			(phy_duplex ? "full" : "half"));
 		k_delayed_work_submit(&context->delayed_phy_work,
-				      CONFIG_ETH_MCUX_PHY_TICK_MS);
+				      K_MSEC(CONFIG_ETH_MCUX_PHY_TICK_MS));
 		context->phy_state = eth_mcux_phy_state_wait;
 		break;
 	}
@@ -876,24 +878,18 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 	}
 }
 
-#if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC) || \
-    defined(CONFIG_ETH_MCUX_1_RANDOM_MAC)
+#if DT_INST_PROP(0, zephyr_random_mac_address) || \
+    DT_INST_PROP(1, zephyr_random_mac_address)
 static void generate_random_mac(u8_t *mac_addr)
 {
-	u32_t entropy;
-
-	entropy = sys_rand32_get();
-
-	mac_addr[0] |= 0x02; /* force LAA bit */
-
-	mac_addr[3] = entropy >> 8;
-	mac_addr[4] = entropy >> 16;
-	mac_addr[5] = entropy >> 0;
+	gen_random_mac(mac_addr, FREESCALE_OUI_B0,
+		       FREESCALE_OUI_B1, FREESCALE_OUI_B2);
 }
 #endif
 
-#if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC) || \
-    defined(CONFIG_ETH_MCUX_1_UNIQUE_MAC)
+#if !DT_INST_NODE_HAS_PROP(0, local_mac_address) || \
+	DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) && \
+	!DT_INST_NODE_HAS_PROP(1, local_mac_address)
 static void generate_eth0_unique_mac(u8_t *mac_addr)
 {
 	/* Trivially "hash" up to 128 bits of MCU unique identifier */
@@ -912,7 +908,7 @@ static void generate_eth0_unique_mac(u8_t *mac_addr)
 }
 #endif
 
-#if defined(CONFIG_ETH_MCUX_1_UNIQUE_MAC)
+#if DT_NODE_HAS_STATUS(DT_DRV_INST(1), okay) && !DT_INST_NODE_HAS_PROP(1, local_mac_address)
 static void generate_eth1_unique_mac(u8_t *mac_addr)
 {
 	generate_eth0_unique_mac(mac_addr);
@@ -1209,15 +1205,14 @@ static struct eth_context eth_0_context = {
 	.phy_addr = 0U,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
-#if defined(CONFIG_ETH_MCUX_0_UNIQUE_MAC)
-	.generate_mac = generate_eth0_unique_mac,
-#endif
-#if defined(CONFIG_ETH_MCUX_0_RANDOM_MAC)
+#if DT_INST_PROP(0, zephyr_random_mac_address)
 	.generate_mac = generate_random_mac,
 #endif
-#if defined(CONFIG_ETH_MCUX_0_MANUAL_MAC)
+#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(0))
 	.mac_addr = DT_INST_PROP(0, local_mac_address),
 	.generate_mac = NULL,
+#else
+	.generate_mac = generate_eth0_unique_mac,
 #endif
 };
 
@@ -1276,15 +1271,14 @@ static struct eth_context eth_1_context = {
 	.phy_addr = 0U,
 	.phy_duplex = kPHY_FullDuplex,
 	.phy_speed = kPHY_Speed100M,
-#if defined(CONFIG_ETH_MCUX_1_UNIQUE_MAC)
-	.generate_mac = generate_eth1_unique_mac,
-#endif
-#if defined(CONFIG_ETH_MCUX_1_RANDOM_MAC)
+#if DT_INST_PROP(1, zephyr_random_mac_address)
 	.generate_mac = generate_random_mac,
 #endif
-#if defined(CONFIG_ETH_MCUX_1_MANUAL_MAC)
+#if NODE_HAS_VALID_MAC_ADDR(DT_DRV_INST(1))
 	.mac_addr = DT_INST_PROP(1, local_mac_address),
 	.generate_mac = NULL,
+#else
+	.generate_mac = generate_eth1_unique_mac,
 #endif
 };
 

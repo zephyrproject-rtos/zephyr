@@ -129,7 +129,7 @@ size_t plain_text_put_float32fix(struct lwm2m_output_context *out,
 	char buf[sizeof("000000")];
 
 	/* value of 123 -> "000123" -- ignore sign */
-	len = snprintf(buf, sizeof(buf), "%06d", abs(value->val2));
+	len = snprintk(buf, sizeof(buf), "%06d", abs(value->val2));
 	if (len != 6U) {
 		strcpy(buf, "0");
 	} else {

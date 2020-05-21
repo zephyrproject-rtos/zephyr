@@ -20,6 +20,12 @@
 			DT_ATMEL_PIN(spi0, npcs3, a, 31, a);
 			DT_ATMEL_PIN(spi0, npcs3, b, 23, b);
 			DT_ATMEL_PIN(spi0, spck, a, 27, a);
+			DT_ATMEL_PIN(ssc, rd, b, 18, a);
+			DT_ATMEL_PIN(ssc, rf, b, 17, a);
+			DT_ATMEL_PIN(ssc, rk, b, 19, a);
+			DT_ATMEL_PIN(ssc, td, a, 16, b);
+			DT_ATMEL_PIN(ssc, tf, a, 15, b);
+			DT_ATMEL_PIN(ssc, tk, a, 14, b);
 			DT_ATMEL_PIN(twi0, twck0, a, 18, a);
 			DT_ATMEL_PIN(twi0, twd0, a, 17, a);
 			DT_ATMEL_PIN(twi1, twck1, b, 13, a);

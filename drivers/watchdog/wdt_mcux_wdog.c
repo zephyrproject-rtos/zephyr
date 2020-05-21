@@ -32,7 +32,7 @@ struct mcux_wdog_data {
 
 static int mcux_wdog_setup(struct device *dev, u8_t options)
 {
-	const struct mcux_wdog_config *config = dev->config->config_info;
+	const struct mcux_wdog_config *config = dev->config_info;
 	struct mcux_wdog_data *data = dev->driver_data;
 	WDOG_Type *base = config->base;
 
@@ -55,7 +55,7 @@ static int mcux_wdog_setup(struct device *dev, u8_t options)
 
 static int mcux_wdog_disable(struct device *dev)
 {
-	const struct mcux_wdog_config *config = dev->config->config_info;
+	const struct mcux_wdog_config *config = dev->config_info;
 	struct mcux_wdog_data *data = dev->driver_data;
 	WDOG_Type *base = config->base;
 
@@ -69,7 +69,7 @@ static int mcux_wdog_disable(struct device *dev)
 static int mcux_wdog_install_timeout(struct device *dev,
 				     const struct wdt_timeout_cfg *cfg)
 {
-	const struct mcux_wdog_config *config = dev->config->config_info;
+	const struct mcux_wdog_config *config = dev->config_info;
 	struct mcux_wdog_data *data = dev->driver_data;
 	struct device *clock_dev;
 	u32_t clock_freq;
@@ -118,7 +118,7 @@ static int mcux_wdog_install_timeout(struct device *dev,
 
 static int mcux_wdog_feed(struct device *dev, int channel_id)
 {
-	const struct mcux_wdog_config *config = dev->config->config_info;
+	const struct mcux_wdog_config *config = dev->config_info;
 	WDOG_Type *base = config->base;
 
 	if (channel_id != 0) {
@@ -135,7 +135,7 @@ static int mcux_wdog_feed(struct device *dev, int channel_id)
 static void mcux_wdog_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct mcux_wdog_config *config = dev->config->config_info;
+	const struct mcux_wdog_config *config = dev->config_info;
 	struct mcux_wdog_data *data = dev->driver_data;
 	WDOG_Type *base = config->base;
 	u32_t flags;
@@ -150,7 +150,7 @@ static void mcux_wdog_isr(void *arg)
 
 static int mcux_wdog_init(struct device *dev)
 {
-	const struct mcux_wdog_config *config = dev->config->config_info;
+	const struct mcux_wdog_config *config = dev->config_info;
 
 	config->irq_config_func(dev);
 

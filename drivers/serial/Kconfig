@@ -34,7 +34,6 @@ config SERIAL_SUPPORT_INTERRUPT
 config UART_ASYNC_API
 	bool "Enable new asynchronous UART API [EXPERIMENTAL]"
 	depends on SERIAL_SUPPORT_ASYNC
-	select LEGACY_TIMEOUT_API
 	help
 	  This option enables new asynchronous UART API.
 
@@ -124,5 +123,7 @@ source "drivers/serial/Kconfig.litex"
 source "drivers/serial/Kconfig.rtt"
 
 source "drivers/serial/Kconfig.xlnx"
+
+source "drivers/serial/Kconfig.xmc4xxx"
 
 endif # SERIAL

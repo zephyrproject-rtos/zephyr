@@ -76,27 +76,10 @@ config ETH_SAM_GMAC_MONITOR_PERIOD
 	  periodically executed to detect and report any changes in the PHY
 	  link status to the operating system.
 
-choice ETH_SAM_GMAC_MAC_SELECT
-	prompt "MAC address"
-	help
-	  Choose how to configure MAC address.
-
-config ETH_SAM_GMAC_MAC_MANUAL
-	bool "Manual"
-	help
-	  Assign the MAC address specified in the device tree.
-
 config ETH_SAM_GMAC_MAC_I2C_EEPROM
 	bool "Read from an I2C EEPROM"
 	help
 	  Read MAC address from an I2C EEPROM.
-
-config ETH_SAM_GMAC_RANDOM_MAC
-	bool "Random MAC address"
-	help
-	  Generate a random MAC address dynamically.
-
-endchoice
 
 if ETH_SAM_GMAC_MAC_I2C_EEPROM
 

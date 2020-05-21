@@ -10,9 +10,6 @@ config BOARD
 
 if I2S
 
-config I2S_STM32
-	default y
-
 # configure PLLI2S to generate a I2SxCLK=128MHz
 config I2S_STM32_USE_PLLI2S_ENABLE
 	default y
@@ -26,26 +23,10 @@ config I2S_STM32_PLLI2S_PLLN
 config I2S_STM32_PLLI2S_PLLR
 	default 3
 
-config I2S_2
-	default y
-
 endif # I2S
 
 config SPI_STM32_INTERRUPT
 	default y
 	depends on SPI
-
-if PWM
-
-config PWM_STM32_3
-	default y
-
-config PWM_STM32_4
-	default y
-
-config PWM_STM32_9
-	default y
-
-endif # PWM
 
 endif # BOARD_96B_STM32_SENSOR_MEZ

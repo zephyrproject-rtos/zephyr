@@ -289,7 +289,7 @@ int modem_socket_poll(struct modem_socket_config *cfg,
 		return found_count;
 	}
 
-	ret = k_sem_take(&cfg->sem_poll, msecs);
+	ret = k_sem_take(&cfg->sem_poll, K_MSEC(msecs));
 	for (i = 0; i < nfds; i++) {
 		sock = modem_socket_from_fd(cfg, fds[i].fd);
 		if (!sock) {

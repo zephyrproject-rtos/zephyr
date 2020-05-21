@@ -156,9 +156,9 @@ struct i2s_cavs_dev_data {
 	struct stream rx;
 };
 
-#define DEV_NAME(dev) ((dev)->config->name)
+#define DEV_NAME(dev) ((dev)->name)
 #define DEV_CFG(dev) \
-	((const struct i2s_cavs_config *const)(dev)->config->config_info)
+	((const struct i2s_cavs_config *const)(dev)->config_info)
 #define DEV_DATA(dev) \
 	((struct i2s_cavs_dev_data *const)(dev)->driver_data)
 
@@ -779,7 +779,8 @@ static int i2s_cavs_read(struct device *dev, void **mem_block, size_t *size)
 		return -EIO;
 	}
 
-	ret = k_msgq_get(&strm->out_queue, &buffer, dev_data->cfg.timeout);
+	ret = k_msgq_get(&strm->out_queue, &buffer,
+			 SYS_TIMEOUT_MS(dev_data->cfg.timeout));
 	if (ret != 0) {
 		return -EAGAIN;
 	}
@@ -803,7 +804,8 @@ static int i2s_cavs_write(struct device *dev, void *mem_block, size_t size)
 
 	SOC_DCACHE_FLUSH(mem_block, size);
 
-	ret = k_msgq_put(&strm->in_queue, &mem_block, dev_data->cfg.timeout);
+	ret = k_msgq_put(&strm->in_queue, &mem_block,
+			 SYS_TIMEOUT_MS(dev_data->cfg.timeout));
 	if (ret) {
 		LOG_ERR("k_msgq_put failed %d", ret);
 		return ret;

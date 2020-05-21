@@ -57,7 +57,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 *    thread stack.
 	 */
 	stack_init->mstatus = MSTATUS_DEF_RESTORE;
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	if ((thread->base.user_options & K_FP_REGS) != 0) {
 		stack_init->mstatus |= MSTATUS_FS_INIT;
 	}
@@ -68,7 +68,7 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->callee_saved.sp = (ulong_t)stack_init;
 }
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 int arch_float_disable(struct k_thread *thread)
 {
 	unsigned int key;
@@ -131,4 +131,4 @@ int arch_float_enable(struct k_thread *thread)
 
 	return 0;
 }
-#endif /* CONFIG_FPU && CONFIG_FP_SHARING */
+#endif /* CONFIG_FPU && CONFIG_FPU_SHARING */

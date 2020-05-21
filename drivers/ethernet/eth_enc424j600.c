@@ -344,7 +344,7 @@ static int enc424j600_tx(struct device *dev, struct net_pkt *pkt)
 static int enc424j600_rx(struct device *dev)
 {
 	struct enc424j600_runtime *context = dev->driver_data;
-	const struct enc424j600_config *config = dev->config->config_info;
+	const struct enc424j600_config *config = dev->config_info;
 	u8_t info[ENC424J600_RSV_SIZE + ENC424J600_PTR_NXP_PKT_SIZE];
 	struct net_buf *pkt_buf = NULL;
 	struct net_pkt *pkt;
@@ -385,7 +385,7 @@ static int enc424j600_rx(struct device *dev)
 	/* Get the frame from the buffer */
 	pkt = net_pkt_rx_alloc_with_buffer(context->iface, frm_len,
 					   AF_UNSPEC, 0,
-					   config->timeout);
+					   K_MSEC(config->timeout));
 	if (!pkt) {
 		LOG_ERR("Could not allocate rx buffer");
 		eth_stats_update_errors_rx(context->iface);
@@ -596,7 +596,7 @@ static const struct ethernet_api api_funcs = {
 
 static int enc424j600_init(struct device *dev)
 {
-	const struct enc424j600_config *config = dev->config->config_info;
+	const struct enc424j600_config *config = dev->config_info;
 	struct enc424j600_runtime *context = dev->driver_data;
 	u8_t retries = ENC424J600_DEFAULT_NUMOF_RETRIES;
 	u16_t tmp;
@@ -612,7 +612,7 @@ static int enc424j600_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_ETH_ENC424J600_0_GPIO_SPI_CS
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	context->spi_cs.gpio_dev =
 		device_get_binding((char *)config->spi_cs_port);
 	if (!context->spi_cs.gpio_dev) {
@@ -622,7 +622,7 @@ static int enc424j600_init(struct device *dev)
 
 	context->spi_cs.gpio_pin = config->spi_cs_pin;
 	context->spi_cfg.cs = &context->spi_cs;
-#endif /* CONFIG_ETH_ENC424J600_0_GPIO_SPI_CS */
+#endif
 
 	/* Initialize GPIO */
 	context->gpio = device_get_binding((char *)config->gpio_port);
@@ -760,10 +760,10 @@ static const struct enc424j600_config enc424j600_0_config = {
 	.spi_port = DT_INST_BUS_LABEL(0),
 	.spi_freq  = DT_INST_PROP(0, spi_max_frequency),
 	.spi_slave = DT_INST_REG_ADDR(0),
-#ifdef CONFIG_ETH_ENC424J600_0_GPIO_SPI_CS
+#if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	.spi_cs_port = DT_INST_SPI_DEV_CS_GPIOS_LABEL(0),
 	.spi_cs_pin = DT_INST_SPI_DEV_CS_GPIOS_PIN(0),
-#endif /* CONFIG_ETH_ENC424J600_0_GPIO_SPI_CS */
+#endif
 	.timeout = CONFIG_ETH_ENC424J600_TIMEOUT,
 };
 

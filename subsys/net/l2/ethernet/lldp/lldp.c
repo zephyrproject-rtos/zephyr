@@ -104,6 +104,10 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		len = sizeof(struct net_lldpdu);
 	}
 
+	if (IS_ENABLED(CONFIG_NET_LLDP_END_LLDPDU_TLV_ENABLED)) {
+		len += sizeof(u16_t);
+	}
+
 	pkt = net_pkt_alloc_with_buffer(lldp->iface, len, AF_UNSPEC, 0,
 					BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
@@ -111,18 +115,20 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		goto out;
 	}
 
-	if (net_pkt_write(pkt, (u8_t *)lldp->lldpdu,
-			  sizeof(struct net_lldpdu))) {
+	net_pkt_set_lldp(pkt, true);
+
+	ret = net_pkt_write(pkt, (u8_t *)lldp->lldpdu,
+			    sizeof(struct net_lldpdu));
+	if (ret < 0) {
 		net_pkt_unref(pkt);
-		ret = -ENOMEM;
 		goto out;
 	}
 
 	if (lldp->optional_du && lldp->optional_len) {
-		if (!net_pkt_write(pkt, (u8_t *)lldp->optional_du,
-				   lldp->optional_len)) {
+		ret = net_pkt_write(pkt, (u8_t *)lldp->optional_du,
+				    lldp->optional_len);
+		if (ret < 0) {
 			net_pkt_unref(pkt);
-			ret = -ENOMEM;
 			goto out;
 		}
 	}
@@ -130,9 +136,9 @@ static int lldp_send(struct ethernet_lldp *lldp)
 	if (IS_ENABLED(CONFIG_NET_LLDP_END_LLDPDU_TLV_ENABLED)) {
 		u16_t tlv_end = htons(NET_LLDP_END_LLDPDU_VALUE);
 
-		if (!net_pkt_write(pkt, (u8_t *)&tlv_end, sizeof(tlv_end))) {
+		ret = net_pkt_write(pkt, (u8_t *)&tlv_end, sizeof(tlv_end));
+		if (ret < 0) {
 			net_pkt_unref(pkt);
-			ret = -ENOMEM;
 			goto out;
 		}
 	}

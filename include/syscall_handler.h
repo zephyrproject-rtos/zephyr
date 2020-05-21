@@ -442,9 +442,8 @@ static inline int z_obj_validation_check(struct z_object *ko,
  *
  * Checks that the driver object passed in is initialized, the caller has
  * correct permissions, and that it belongs to the specified driver
- * subsystems. Additionally, all devices store a function pointer to the
- * driver's init function. If this doesn't match the value provided, the
- * check will fail.
+ * subsystems. Additionally, all devices store a structure pointer of the
+ * driver's API. If this doesn't match the value provided, the check will fail.
  *
  * This provides an easy way to determine if a device object not only
  * belongs to a particular subsystem, but is of a specific device driver
@@ -453,15 +452,15 @@ static inline int z_obj_validation_check(struct z_object *ko,
  *
  * @param _device Untrusted device pointer
  * @param _dtype Expected kernel object type for the provided device pointer
- * @param _init_fn Expected init function memory address
+ * @param _api Expected driver API structure memory address
  * @return 0 on success, nonzero on failure
  */
-#define Z_SYSCALL_SPECIFIC_DRIVER(_device, _dtype, _init_fn) \
+#define Z_SYSCALL_SPECIFIC_DRIVER(_device, _dtype, _api) \
 	({ \
 		struct device *_dev = (struct device *)_device; \
 		Z_SYSCALL_OBJ(_dev, _dtype) || \
-			Z_SYSCALL_VERIFY_MSG(_dev->config->init == _init_fn, \
-					     "init function mismatch"); \
+			Z_SYSCALL_VERIFY_MSG(_dev->driver_api == _api, \
+					     "API structure mismatch"); \
 	})
 
 /**

@@ -418,9 +418,25 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 	.ref_internal  = 600,
 };
 
-#if DT_HAS_DRV_INST(0)
-DEVICE_AND_API_INIT(adc_0, DT_INST_LABEL(0),
-		    init_saadc, NULL, NULL,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &adc_nrfx_driver_api);
-#endif
+/*
+ * There is only one instance on supported SoCs, so inst is guaranteed
+ * to be 0 if any instance is okay. (We use adc_0 above, so the driver
+ * is relying on the numeric instance value in a way that happens to
+ * be safe.)
+ *
+ * Just in case that assumption becomes invalid in the future, we use
+ * a BUILD_ASSERT().
+ */
+#define SAADC_INIT(inst)						\
+	BUILD_ASSERT((inst) == 0,					\
+		     "multiple instances not supported");		\
+	DEVICE_AND_API_INIT(adc_0,					\
+			    DT_INST_LABEL(0),				\
+			    init_saadc,					\
+			    NULL,					\
+			    NULL,					\
+			    POST_KERNEL,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &adc_nrfx_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(SAADC_INIT)

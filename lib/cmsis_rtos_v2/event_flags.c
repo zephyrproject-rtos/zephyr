@@ -133,7 +133,8 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags,
 			retval = k_poll(&events->poll_event, 1, K_FOREVER);
 			break;
 		default:
-			retval = k_poll(&events->poll_event, 1, timeout_ms);
+			retval = k_poll(&events->poll_event, 1,
+					K_MSEC(timeout_ms));
 			break;
 		}
 

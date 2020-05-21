@@ -71,7 +71,7 @@ static void lps22hh_handle_interrupt(void *arg)
 {
 	struct device *dev = arg;
 	struct lps22hh_data *lps22hh = dev->driver_data;
-	const struct lps22hh_config *cfg = dev->config->config_info;
+	const struct lps22hh_config *cfg = dev->config_info;
 	struct sensor_trigger drdy_trigger = {
 		.type = SENSOR_TRIG_DATA_READY,
 	};
@@ -87,7 +87,7 @@ static void lps22hh_handle_interrupt(void *arg)
 static void lps22hh_gpio_callback(struct device *dev,
 				  struct gpio_callback *cb, u32_t pins)
 {
-	const struct lps22hh_config *cfg = dev->config->config_info;
+	const struct lps22hh_config *cfg = dev->config_info;
 	struct lps22hh_data *lps22hh =
 		CONTAINER_OF(cb, struct lps22hh_data, gpio_cb);
 
@@ -131,7 +131,7 @@ static void lps22hh_work_cb(struct k_work *work)
 int lps22hh_init_interrupt(struct device *dev)
 {
 	struct lps22hh_data *lps22hh = dev->driver_data;
-	const struct lps22hh_config *cfg = dev->config->config_info;
+	const struct lps22hh_config *cfg = dev->config_info;
 	int ret;
 
 	/* setup data ready gpio interrupt */

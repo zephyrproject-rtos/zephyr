@@ -1,5 +1,5 @@
 identifier: nucleo_f103rb
-name: NUCLEO-F103RB
+name: ST Nucleo F103RB
 type: mcu
 arch: arm
 toolchain:

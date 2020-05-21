@@ -67,11 +67,15 @@
 &timers1 {
 	status = "okay";
 
-	pwm {
+	pwm1: pwm {
 		status = "okay";
 	};
 };
 
 &usb {
+	status = "okay";
+};
+
+&adc1 {
 	status = "okay";
 };

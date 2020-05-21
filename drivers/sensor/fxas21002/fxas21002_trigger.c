@@ -50,7 +50,7 @@ static int fxas21002_handle_drdy_int(struct device *dev)
 static void fxas21002_handle_int(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct fxas21002_config *config = dev->config->config_info;
+	const struct fxas21002_config *config = dev->config_info;
 	struct fxas21002_data *data = dev->driver_data;
 	u8_t int_source;
 
@@ -103,7 +103,7 @@ int fxas21002_trigger_set(struct device *dev,
 			 const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
-	const struct fxas21002_config *config = dev->config->config_info;
+	const struct fxas21002_config *config = dev->config_info;
 	struct fxas21002_data *data = dev->driver_data;
 	enum fxas21002_power power = FXAS21002_POWER_STANDBY;
 	u32_t transition_time;
@@ -171,7 +171,7 @@ exit:
 
 int fxas21002_trigger_init(struct device *dev)
 {
-	const struct fxas21002_config *config = dev->config->config_info;
+	const struct fxas21002_config *config = dev->config_info;
 	struct fxas21002_data *data = dev->driver_data;
 	u8_t ctrl_reg2;
 

@@ -81,6 +81,10 @@ config ADC_MCUX_ADC12
 	default y
 	depends on ADC
 
+config DAC_MCUX_DAC32
+	default y
+	depends on DAC
+
 source "soc/arm/nxp_kinetis/ke1xf/Kconfig.defconfig.mke*"
 
 endif # SOC_SERIES_KINETIS_KE1XF

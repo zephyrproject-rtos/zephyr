@@ -12,6 +12,7 @@
  */
 
 #include <soc.h>
+#include <devicetree.h>
 
 #include <autoconf.h>
 #include <linker/sections.h>
@@ -33,7 +34,19 @@
 MEMORY
 {
 #ifdef CONFIG_XIP
-    ROM (rx)  : ORIGIN = DT_FLASH_BASE_ADDRESS, LENGTH = KB(DT_FLASH_SIZE)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), soc_nv_flash, okay)
+#define ROM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
+#define ROM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
+#elif DT_NODE_HAS_COMPAT_STATUS(DT_CHOSEN(zephyr_flash), jedec_spi_nor, okay)
+/* For jedec,spi-nor we expect the spi controller to memory map the flash
+ * and for that mapping to be the second register property of the spi
+ * controller.
+ */
+#define SPI_CTRL DT_PARENT(DT_CHOSEN(zephyr_flash))
+#define ROM_BASE DT_REG_ADDR_BY_IDX(SPI_CTRL, 1)
+#define ROM_SIZE DT_REG_SIZE_BY_IDX(SPI_CTRL, 1)
+#endif
+    ROM (rx)  : ORIGIN = ROM_BASE, LENGTH = ROM_SIZE
 #endif
     RAM (rwx) : ORIGIN = CONFIG_SRAM_BASE_ADDRESS, LENGTH = KB(CONFIG_SRAM_SIZE)
     /* Used by and documented in include/linker/intlist.ld */

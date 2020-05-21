@@ -163,9 +163,9 @@ a mailbox. When a transmitting mailbox is assigned, sending cannot be canceled.
 
 This example shows how to send a frame with extended identifier 0x1234567 and
 two bytes of data. The provided callback is called when the message is sent, or
-an error occurred. Passing `K_FOREVER` to the timeout causes the function to block
-until a transfer mailbox is assigned to the frame or an error occurred. It does
-not block until the message is sent like the example above.
+an error occurred. Passing :c:macro:`K_FOREVER` to the timeout causes the
+function to block until a transfer mailbox is assigned to the frame or an error
+occurred. It does not block until the message is sent like the example above.
 
 .. code-block:: C
 

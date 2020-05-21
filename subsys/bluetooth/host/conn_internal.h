@@ -36,6 +36,7 @@ enum {
 	BT_CONN_AUTO_PHY_COMPLETE,      /* Auto-initiated PHY procedure done */
 	BT_CONN_AUTO_FEATURE_EXCH,	/* Auto-initiated LE Feat done */
 	BT_CONN_AUTO_VERSION_INFO,      /* Auto-initiated LE version done */
+	BT_CONN_AUTO_DATA_LEN_COMPLETE, /* Auto-initiated Data Length done */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
@@ -59,6 +60,14 @@ struct bt_conn_le {
 	u8_t			features[8];
 
 	struct bt_keys		*keys;
+
+#if defined(CONFIG_BT_USER_PHY_UPDATE)
+	struct bt_conn_le_phy_info      phy;
+#endif
+
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+	struct bt_conn_le_data_len_info data_len;
+#endif
 };
 
 #if defined(CONFIG_BT_BREDR)
@@ -230,6 +239,10 @@ void notify_remote_info(struct bt_conn *conn);
 
 void notify_le_param_updated(struct bt_conn *conn);
 
+void notify_le_data_len_updated(struct bt_conn *conn);
+
+void notify_le_phy_updated(struct bt_conn *conn);
+
 bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param);
 
 #if defined(CONFIG_BT_SMP)
@@ -249,7 +262,8 @@ void bt_conn_security_changed(struct bt_conn *conn, enum bt_security_err err);
 /* Prepare a PDU to be sent over a connection */
 #if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *bt_conn_create_pdu_timeout_debug(struct net_buf_pool *pool,
-						 size_t reserve, s32_t timeout,
+						 size_t reserve,
+						 k_timeout_t timeout,
 						 const char *func, int line);
 #define bt_conn_create_pdu_timeout(_pool, _reserve, _timeout) \
 	bt_conn_create_pdu_timeout_debug(_pool, _reserve, _timeout, \
@@ -260,7 +274,7 @@ struct net_buf *bt_conn_create_pdu_timeout_debug(struct net_buf_pool *pool,
 					 __func__, __line__)
 #else
 struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
-					   size_t reserve, s32_t timeout);
+					   size_t reserve, k_timeout_t timeout);
 
 #define bt_conn_create_pdu(_pool, _reserve) \
 	bt_conn_create_pdu_timeout(_pool, _reserve, K_FOREVER)
@@ -268,7 +282,8 @@ struct net_buf *bt_conn_create_pdu_timeout(struct net_buf_pool *pool,
 
 /* Prepare a PDU to be sent over a connection */
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *bt_conn_create_frag_timeout_debug(size_t reserve, s32_t timeout,
+struct net_buf *bt_conn_create_frag_timeout_debug(size_t reserve,
+						  k_timeout_t timeout,
 						  const char *func, int line);
 
 #define bt_conn_create_frag_timeout(_reserve, _timeout) \
@@ -279,7 +294,8 @@ struct net_buf *bt_conn_create_frag_timeout_debug(size_t reserve, s32_t timeout,
 	bt_conn_create_frag_timeout_debug(_reserve, K_FOREVER, \
 					  __func__, __LINE__)
 #else
-struct net_buf *bt_conn_create_frag_timeout(size_t reserve, s32_t timeout);
+struct net_buf *bt_conn_create_frag_timeout(size_t reserve,
+					    k_timeout_t timeout);
 
 #define bt_conn_create_frag(_reserve) \
 	bt_conn_create_frag_timeout(_reserve, K_FOREVER)

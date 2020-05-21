@@ -6,9 +6,9 @@ config PWM_NRFX
 	default y
 	depends on HAS_HW_NRF_PWM0 || HAS_HW_NRF_PWM1 || \
 		   HAS_HW_NRF_PWM2 || HAS_HW_NRF_PWM3
-	select NRFX_PWM0 if PWM_0
-	select NRFX_PWM1 if PWM_1
-	select NRFX_PWM2 if PWM_2
-	select NRFX_PWM3 if PWM_3
+	select NRFX_PWM0 if "$(dt_nodelabel_enabled,pwm0)"
+	select NRFX_PWM1 if "$(dt_nodelabel_enabled,pwm1)"
+	select NRFX_PWM2 if "$(dt_nodelabel_enabled,pwm2)"
+	select NRFX_PWM3 if "$(dt_nodelabel_enabled,pwm3)"
 	help
 	  Enable support for nrfx Hardware PWM driver for nRF52 MCU series.

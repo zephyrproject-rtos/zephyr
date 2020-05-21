@@ -241,6 +241,8 @@ static int ssd16xx_write(const struct device *dev, const u16_t x,
 	u16_t x_end;
 	u16_t y_start;
 	u16_t y_end;
+	u16_t panel_h = EPD_PANEL_HEIGHT -
+			EPD_PANEL_HEIGHT % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 
 	if (desc->pitch < desc->width) {
 		LOG_ERR("Pitch is smaller than width");
@@ -258,7 +260,7 @@ static int ssd16xx_write(const struct device *dev, const u16_t x,
 		return -ENOTSUP;
 	}
 
-	if ((y + desc->height) > EPD_PANEL_HEIGHT) {
+	if ((y + desc->height) > panel_h) {
 		LOG_ERR("Buffer out of bounds (height)");
 		return -EINVAL;
 	}
@@ -289,8 +291,8 @@ static int ssd16xx_write(const struct device *dev, const u16_t x,
 		break;
 
 	case SSD16XX_DATA_ENTRY_XDYIY:
-		x_start = (EPD_PANEL_HEIGHT - 1 - y) / SSD16XX_PIXELS_PER_BYTE;
-		x_end = (EPD_PANEL_HEIGHT - 1 - (y + desc->height - 1)) /
+		x_start = (panel_h - 1 - y) / SSD16XX_PIXELS_PER_BYTE;
+		x_end = (panel_h - 1 - (y + desc->height - 1)) /
 			SSD16XX_PIXELS_PER_BYTE;
 		y_start = x;
 		y_end = (x + desc->width - 1);
@@ -359,7 +361,8 @@ static void ssd16xx_get_capabilities(const struct device *dev,
 {
 	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = EPD_PANEL_WIDTH;
-	caps->y_resolution = EPD_PANEL_HEIGHT;
+	caps->y_resolution = EPD_PANEL_HEIGHT -
+			     EPD_PANEL_HEIGHT % EPD_PANEL_NUMOF_ROWS_PER_PAGE;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
 	caps->screen_info = SCREEN_INFO_MONO_VTILED |
@@ -387,55 +390,45 @@ static int ssd16xx_set_pixel_format(const struct device *dev,
 	return -ENOTSUP;
 }
 
-static int ssd16xx_clear_and_write_buffer(struct device *dev, u8_t ram_cmd,
-					  bool update)
+static int ssd16xx_clear_cntlr_mem(struct device *dev, u8_t ram_cmd,
+				   bool update)
 {
-	int err;
-	u8_t clear_page[EPD_PANEL_WIDTH];
-	u8_t page;
-	struct spi_buf sbuf;
-	struct spi_buf_set buf_set = {.buffers = &sbuf, .count = 1};
 	struct ssd16xx_data *driver = dev->driver_data;
-	u8_t tmp;
+	u8_t clear_page[EPD_PANEL_WIDTH];
+	u16_t panel_h = EPD_PANEL_HEIGHT /
+			EPD_PANEL_NUMOF_ROWS_PER_PAGE;
+	u8_t scan_mode = SSD16XX_DATA_ENTRY_XIYDY;
 
-	tmp = SSD16XX_DATA_ENTRY_XIYDY;
-	err = ssd16xx_write_cmd(driver, SSD16XX_CMD_ENTRY_MODE, &tmp, 1);
-	if (err < 0) {
-		return err;
+	/*
+	 * Clear unusable memory area when the resolution of the panel is not
+	 * multiple of an octet.
+	 */
+	if (EPD_PANEL_HEIGHT % EPD_PANEL_NUMOF_ROWS_PER_PAGE) {
+		panel_h += 1;
 	}
 
-	err = ssd16xx_set_ram_param(driver, SSD16XX_PANEL_FIRST_PAGE,
-				SSD16XX_PANEL_LAST_PAGE + 1,
-				SSD16XX_PANEL_LAST_GATE,
-				SSD16XX_PANEL_FIRST_GATE);
-	if (err < 0) {
-		return err;
+	if (ssd16xx_write_cmd(driver, SSD16XX_CMD_ENTRY_MODE, &scan_mode, 1)) {
+		return -EIO;
 	}
 
-	err = ssd16xx_set_ram_ptr(driver, SSD16XX_PANEL_FIRST_PAGE,
-				SSD16XX_PANEL_LAST_GATE);
-	if (err < 0) {
-		return err;
+	if (ssd16xx_set_ram_param(driver, SSD16XX_PANEL_FIRST_PAGE,
+				  panel_h - 1,
+				  SSD16XX_PANEL_LAST_GATE,
+				  SSD16XX_PANEL_FIRST_GATE)) {
+		return -EIO;
 	}
 
-	gpio_pin_set(driver->dc, SSD16XX_DC_PIN, 1);
-
-	sbuf.buf = &ram_cmd;
-	sbuf.len = 1;
-	err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
-	if (err < 0) {
-		return err;
+	if (ssd16xx_set_ram_ptr(driver, SSD16XX_PANEL_FIRST_PAGE,
+				SSD16XX_PANEL_LAST_GATE)) {
+		return -EIO;
 	}
 
-	gpio_pin_set(driver->dc, SSD16XX_DC_PIN, 0);
 
 	memset(clear_page, 0xff, sizeof(clear_page));
-	sbuf.buf = clear_page;
-	sbuf.len = sizeof(clear_page);
-	for (page = 0U; page <= (SSD16XX_PANEL_LAST_PAGE + 1); ++page) {
-		err = spi_write(driver->spi_dev, &driver->spi_config, &buf_set);
-		if (err < 0) {
-			return err;
+	for (int i = 0; i < panel_h; i++) {
+		if (ssd16xx_write_cmd(driver, ram_cmd, clear_page,
+				      sizeof(clear_page))) {
+			return -EIO;
 		}
 	}
 
@@ -527,14 +520,14 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-	err = ssd16xx_clear_and_write_buffer(dev, SSD16XX_CMD_WRITE_RAM, true);
+	err = ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RAM, true);
 	if (err < 0) {
 		return err;
 	}
 
 	ssd16xx_busy_wait(driver);
 
-	err = ssd16xx_clear_and_write_buffer(dev, SSD16XX_CMD_WRITE_RED_RAM,
+	err = ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RED_RAM,
 					     false);
 	if (err < 0) {
 		return err;
@@ -549,7 +542,7 @@ static int ssd16xx_controller_init(struct device *dev)
 		return err;
 	}
 
-	return ssd16xx_clear_and_write_buffer(dev, SSD16XX_CMD_WRITE_RAM, true);
+	return ssd16xx_clear_cntlr_mem(dev, SSD16XX_CMD_WRITE_RAM, true);
 }
 
 static int ssd16xx_init(struct device *dev)

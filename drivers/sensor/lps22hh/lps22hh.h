@@ -38,9 +38,9 @@ struct lps22hh_config {
 	u8_t drdy_pin;
 	u8_t drdy_flags;
 #endif
-#if DT_ANY_INST_ON_BUS(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	u16_t i2c_slv_addr;
-#elif DT_ANY_INST_ON_BUS(spi)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	struct spi_config spi_conf;
 #if DT_INST_SPI_DEV_HAS_CS_GPIOS(0)
 	const char *gpio_cs_port;
@@ -56,9 +56,9 @@ struct lps22hh_data {
 
 	stmdev_ctx_t *ctx;
 
-#if DT_ANY_INST_ON_BUS(i2c)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	stmdev_ctx_t ctx_i2c;
-#elif DT_ANY_INST_ON_BUS(spi)
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	stmdev_ctx_t ctx_spi;
 #endif
 

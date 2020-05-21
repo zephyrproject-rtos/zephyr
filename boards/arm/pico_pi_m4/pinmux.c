@@ -12,7 +12,7 @@ static int pico_pi_m4_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
- #if DT_HAS_NODE(DT_NODELABEL(uart2))
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart2), okay)
 	IOMUXC_SW_MUX_CTL_PAD_UART2_RX_DATA =
 		IOMUXC_SW_MUX_CTL_PAD_UART2_RX_DATA_MUX_MODE(0);
 	IOMUXC_SW_MUX_CTL_PAD_UART2_TX_DATA =
@@ -34,7 +34,7 @@ static int pico_pi_m4_pinmux_init(struct device *dev)
  #endif
 
 
- #if DT_HAS_NODE(DT_NODELABEL(uart5))
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart5), okay)
 	IOMUXC_SW_MUX_CTL_PAD_I2C4_SCL =
 		IOMUXC_SW_MUX_CTL_PAD_I2C4_SCL_MUX_MODE(1);
 	IOMUXC_SW_MUX_CTL_PAD_I2C4_SDA =
@@ -58,7 +58,7 @@ static int pico_pi_m4_pinmux_init(struct device *dev)
  #endif
 
 
- #if DT_HAS_NODE(DT_NODELABEL(uart6))
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(uart6), okay)
 	IOMUXC_SW_MUX_CTL_PAD_EPDC_DATA08 =
 		IOMUXC_SW_MUX_CTL_PAD_EPDC_DATA08_MUX_MODE(3);
 	IOMUXC_SW_MUX_CTL_PAD_EPDC_DATA09 =
@@ -81,7 +81,7 @@ static int pico_pi_m4_pinmux_init(struct device *dev)
  #endif
 
 
- #if DT_HAS_NODE(DT_NODELABEL(i2c1))
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c1), okay)
 	IOMUXC_SW_MUX_CTL_PAD_UART1_RX_DATA =
 		IOMUXC_SW_MUX_CTL_PAD_UART1_RX_DATA_MUX_MODE(1) |
 		IOMUXC_SW_MUX_CTL_PAD_UART1_RX_DATA_SION_MASK;
@@ -106,7 +106,7 @@ static int pico_pi_m4_pinmux_init(struct device *dev)
  #endif
 
 
- #if DT_HAS_NODE(DT_NODELABEL(i2c2))
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c2), okay)
 	IOMUXC_SW_MUX_CTL_PAD_I2C2_SCL =
 		IOMUXC_SW_MUX_CTL_PAD_I2C2_SCL_MUX_MODE(0) |
 		IOMUXC_SW_MUX_CTL_PAD_I2C2_SCL_SION_MASK;
@@ -127,11 +127,11 @@ static int pico_pi_m4_pinmux_init(struct device *dev)
 		IOMUXC_SW_PAD_CTL_PAD_I2C2_SDA_PE_MASK  |
 		IOMUXC_SW_PAD_CTL_PAD_I2C2_SDA_PS(3)    |
 		IOMUXC_SW_PAD_CTL_PAD_I2C2_SDA_DSE(0)   |
-		IOMUXC_SW_PAD_CTL_PAD_I2C2_SDA_HYS_
+		IOMUXC_SW_PAD_CTL_PAD_I2C2_SDA_HYS_MASK;
  #endif
 
 
- #if DT_HAS_NODE(DT_NODELABEL(i2c3))
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c3), okay)
 	IOMUXC_SW_MUX_CTL_PAD_I2C3_SCL =
 		IOMUXC_SW_MUX_CTL_PAD_I2C3_SCL_MUX_MODE(0) |
 		IOMUXC_SW_MUX_CTL_PAD_I2C3_SCL_SION_MASK;
@@ -156,7 +156,7 @@ static int pico_pi_m4_pinmux_init(struct device *dev)
  #endif
 
 
- #if DT_HAS_NODE(DT_NODELABEL(i2c4))
+ #if DT_NODE_HAS_STATUS(DT_NODELABEL(i2c4), okay)
 	IOMUXC_SW_MUX_CTL_PAD_SAI1_RX_SYNC =
 		IOMUXC_SW_MUX_CTL_PAD_SAI1_RX_SYNC_MUX_MODE(3) |
 		IOMUXC_SW_MUX_CTL_PAD_SAI1_RX_SYNC_SION_MASK;

@@ -94,7 +94,7 @@ osStatus_t osMutexAcquire(osMutexId_t mutex_id, uint32_t timeout)
 		status = k_mutex_lock(&mutex->z_mutex, K_NO_WAIT);
 	} else {
 		status = k_mutex_lock(&mutex->z_mutex,
-				      k_ticks_to_ms_floor64(timeout));
+				      K_TICKS(timeout));
 	}
 
 	if (status == -EBUSY) {

@@ -41,7 +41,7 @@
 	pwmleds {
 		compatible = "pwm-leds";
 		green_pwm_led: green_pwm_led {
-			pwms = <&{/soc/timers@40000800/pwm} 1 0>;
+			pwms = <&pwm4 1 0>;
 		};
 	};
 
@@ -66,7 +66,7 @@
 &timers4 {
 	status = "okay";
 
-	pwm {
+	pwm4: pwm {
 		status = "okay";
 	};
 };

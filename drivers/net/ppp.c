@@ -649,7 +649,7 @@ static void ppp_isr_cb_work(struct k_work *work)
 
 	/* This will print too much data, enable only if really needed */
 	if (0) {
-		LOG_HEXDUMP_DBG(data, len, ppp->dev->config->name);
+		LOG_HEXDUMP_DBG(data, len, ppp->dev->name);
 	}
 
 	tmp = len;
@@ -826,7 +826,7 @@ static int ppp_start(struct device *dev)
 			return -ENOENT;
 		}
 
-		dev_name = mux->config->name;
+		dev_name = mux->name;
 #elif IS_ENABLED(CONFIG_MODEM_GSM_PPP)
 		dev_name = CONFIG_MODEM_GSM_UART_NAME;
 #else

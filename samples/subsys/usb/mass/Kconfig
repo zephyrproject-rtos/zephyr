@@ -4,4 +4,9 @@
 config USB_DEVICE_PID
 	default USB_PID_MASS_SAMPLE
 
+config APP_WIPE_STORAGE
+	bool "Option to clear the flash area before mounting"
+	help
+	  Use this to force an existing file system to be created.
+
 source "Kconfig.zephyr"

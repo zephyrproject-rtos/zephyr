@@ -153,7 +153,7 @@ config ARC_STACK_PROTECTION
 	bool
 	default y if HW_STACK_PROTECTION
 	select ARC_STACK_CHECKING if ARC_HAS_STACK_CHECKING
-	select MPU_STACK_GUARD if (!ARC_STACK_CHECKING && ARC_MPU)
+	select MPU_STACK_GUARD if (!ARC_STACK_CHECKING && ARC_MPU && ARC_MPU_VER !=2)
 	select THREAD_STACK_INFO
 	help
 	  This option enables either:

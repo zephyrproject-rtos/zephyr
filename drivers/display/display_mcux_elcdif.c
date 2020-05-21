@@ -44,7 +44,7 @@ static int mcux_elcdif_write(const struct device *dev, const u16_t x,
 			     const struct display_buffer_descriptor *desc,
 			     const void *buf)
 {
-	const struct mcux_elcdif_config *config = dev->config->config_info;
+	const struct mcux_elcdif_config *config = dev->config_info;
 	struct mcux_elcdif_data *data = dev->driver_data;
 
 	u8_t write_idx = data->write_idx;
@@ -132,7 +132,7 @@ static int mcux_elcdif_set_pixel_format(const struct device *dev,
 					const enum display_pixel_format
 					pixel_format)
 {
-	const struct mcux_elcdif_config *config = dev->config->config_info;
+	const struct mcux_elcdif_config *config = dev->config_info;
 
 	if (pixel_format == config->pixel_format) {
 		return 0;
@@ -154,7 +154,7 @@ static int mcux_elcdif_set_orientation(const struct device *dev,
 static void mcux_elcdif_get_capabilities(const struct device *dev,
 		struct display_capabilities *capabilities)
 {
-	const struct mcux_elcdif_config *config = dev->config->config_info;
+	const struct mcux_elcdif_config *config = dev->config_info;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = config->rgb_mode.panelWidth;
@@ -167,7 +167,7 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 static void mcux_elcdif_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
-	const struct mcux_elcdif_config *config = dev->config->config_info;
+	const struct mcux_elcdif_config *config = dev->config_info;
 	struct mcux_elcdif_data *data = dev->driver_data;
 	u32_t status;
 
@@ -179,7 +179,7 @@ static void mcux_elcdif_isr(void *arg)
 
 static int mcux_elcdif_init(struct device *dev)
 {
-	const struct mcux_elcdif_config *config = dev->config->config_info;
+	const struct mcux_elcdif_config *config = dev->config_info;
 	struct mcux_elcdif_data *data = dev->driver_data;
 	int i;
 

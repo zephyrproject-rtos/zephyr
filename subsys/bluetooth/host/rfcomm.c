@@ -531,7 +531,7 @@ static void rfcomm_check_fc(struct bt_rfcomm_dlc *dlc)
 static void rfcomm_dlc_tx_thread(void *p1, void *p2, void *p3)
 {
 	struct bt_rfcomm_dlc *dlc = p1;
-	s32_t timeout = K_FOREVER;
+	k_timeout_t timeout = K_FOREVER;
 	struct net_buf *buf;
 
 	BT_DBG("Started for dlc %p", dlc);

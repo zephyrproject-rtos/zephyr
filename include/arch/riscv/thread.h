@@ -22,7 +22,7 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 
-#if !defined(RV_FP_TYPE) && defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if !defined(RV_FP_TYPE) && defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 #ifdef CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION
 #define RV_FP_TYPE u64_t
 #else
@@ -50,7 +50,7 @@ struct _callee_saved {
 	ulong_t s10;	/* saved register */
 	ulong_t s11;	/* saved register */
 
-#if defined(CONFIG_FPU) && defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	u32_t fcsr;		/* Control and status register */
 	RV_FP_TYPE fs0;		/* saved floating-point register */
 	RV_FP_TYPE fs1;		/* saved floating-point register */

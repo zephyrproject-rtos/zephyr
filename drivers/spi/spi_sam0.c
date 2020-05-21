@@ -33,6 +33,7 @@ struct spi_sam0_config {
 	u16_t gclk_clkctrl_id;
 #endif
 #ifdef CONFIG_SPI_ASYNC
+	char *dma_dev;
 	u8_t tx_dma_request;
 	u8_t tx_dma_channel;
 	u8_t rx_dma_request;
@@ -67,7 +68,7 @@ static void wait_synchronization(SercomSpi *regs)
 static int spi_sam0_configure(struct device *dev,
 			      const struct spi_config *config)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	SercomSpi *regs = cfg->regs;
 	SERCOM_SPI_CTRLA_Type ctrla = {.reg = 0};
@@ -269,17 +270,15 @@ static void spi_sam0_fast_txrx(SercomSpi *regs,
 	regs->DATA.reg = *tx++;
 
 	while (tx != txend) {
-		/* Load byte N+1 into the transmit register.  TX is
-		 * single buffered and we have at most one byte in
-		 * flight so skip the DRE check.
-		 */
-		regs->DATA.reg = *tx++;
 
 		/* Read byte N+0 from the receive register */
 		while (!regs->INTFLAG.bit.RXC) {
 		}
 
 		*rx++ = regs->DATA.reg;
+
+		/* We just received the response, send the next byte */
+		regs->DATA.reg = *tx++;
 	}
 
 	/* Read the final incoming byte */
@@ -297,7 +296,7 @@ static void spi_sam0_fast_transceive(struct device *dev,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	size_t tx_count = 0;
 	size_t rx_count = 0;
 	SercomSpi *regs = cfg->regs;
@@ -388,7 +387,7 @@ static int spi_sam0_transceive(struct device *dev,
 			       const struct spi_buf_set *tx_bufs,
 			       const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	SercomSpi *regs = cfg->regs;
 	int err;
@@ -439,7 +438,7 @@ static void spi_sam0_dma_rx_done(void *arg, u32_t id, int error_code);
 static int spi_sam0_dma_rx_load(struct device *dev, u8_t *buf,
 				size_t len)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	SercomSpi *regs = cfg->regs;
 	struct dma_config dma_cfg = { 0 };
@@ -481,7 +480,7 @@ static int spi_sam0_dma_rx_load(struct device *dev, u8_t *buf,
 static int spi_sam0_dma_tx_load(struct device *dev, const u8_t *buf,
 				size_t len)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	SercomSpi *regs = cfg->regs;
 	struct dma_config dma_cfg = { 0 };
@@ -583,7 +582,7 @@ static int spi_sam0_dma_advance_buffers(struct device *dev)
 static void spi_sam0_dma_rx_done(void *arg, u32_t id, int error_code)
 {
 	struct device *dev = arg;
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	int retval;
 
@@ -617,7 +616,7 @@ static int spi_sam0_transceive_async(struct device *dev,
 				     const struct spi_buf_set *rx_bufs,
 				     struct k_poll_signal *async)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	int retval;
 
@@ -676,7 +675,7 @@ static int spi_sam0_release(struct device *dev,
 
 static int spi_sam0_init(struct device *dev)
 {
-	const struct spi_sam0_config *cfg = dev->config->config_info;
+	const struct spi_sam0_config *cfg = dev->config_info;
 	struct spi_sam0_data *data = dev->driver_data;
 	SercomSpi *regs = cfg->regs;
 
@@ -702,7 +701,7 @@ static int spi_sam0_init(struct device *dev)
 
 #ifdef CONFIG_SPI_ASYNC
 
-	data->dma = device_get_binding(CONFIG_DMA_0_NAME);
+	data->dma = device_get_binding(cfg->dma_dev);
 
 #endif
 
@@ -725,6 +724,7 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 
 #if CONFIG_SPI_ASYNC
 #define SPI_SAM0_DMA_CHANNELS(n)					\
+	.dma_dev = ATMEL_SAM0_DT_INST_DMA_NAME(n, tx),			\
 	.tx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, tx),	\
 	.tx_dma_channel = ATMEL_SAM0_DT_INST_DMA_CHANNEL(n, tx),	\
 	.rx_dma_request = ATMEL_SAM0_DT_INST_DMA_TRIGSRC(n, rx),	\
@@ -768,6 +768,6 @@ static const struct spi_sam0_config spi_sam0_config_##n = {		\
 			    &spi_sam0_init, &spi_sam0_dev_data_##n,	\
 			    &spi_sam0_config_##n, POST_KERNEL,		\
 			    CONFIG_SPI_INIT_PRIORITY,			\
-			    &spi_sam0_driver_api)
+			    &spi_sam0_driver_api);
 
-DT_INST_FOREACH(SPI_SAM0_DEVICE_INIT)
+DT_INST_FOREACH_STATUS_OKAY(SPI_SAM0_DEVICE_INIT)
