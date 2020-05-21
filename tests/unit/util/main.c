@@ -319,6 +319,68 @@ static void test_LIST_DROP_EMPTY(void)
 	zassert_equal(strcmp(arr[2], "Case"), 0, "Failed at 0");
 }
 
+static void test_ARRAY_SIZE(void)
+{
+	#define TEST_SIZE	5
+	int int_arr[TEST_SIZE] = { 0 };
+
+	zassert_equal(ARRAY_SIZE(int_arr), TEST_SIZE, "Unexpected size");
+	#undef	TEST_SIZE
+}
+
+static void test_ARRAY_INDEX(void)
+{
+	#define TEST_SIZE	5
+	#define TEST_INDEX_A	0
+	#define TEST_INDEX_B	2
+	#define TEST_INDEX_C	4
+	struct strange {
+		int a;
+		float c;
+	} test_arr[TEST_SIZE] = { 0 }, *pa = &test_arr[TEST_INDEX_A],
+	  *pb = &test_arr[TEST_INDEX_B],
+	  /* Unaligned pointer */
+	  *pc = (void *)&test_arr[TEST_INDEX_C].c;
+
+	zassert_equal(ARRAY_INDEX(test_arr, pa), TEST_INDEX_A,
+		      "Unexpected index A");
+	zassert_equal(ARRAY_INDEX(test_arr, pb), TEST_INDEX_B,
+		      "Unexpected index B");
+	zassert_equal(ARRAY_INDEX(test_arr, pc), TEST_INDEX_C,
+		      "Unexpected index C");
+
+	#undef	TEST_SIZE
+	#undef	TEST_INDEX_A
+	#undef	TEST_INDEX_B
+	#undef	TEST_INDEX_C
+}
+
+static void test_ARRAY_ELEM(void)
+{
+	#define TEST_SIZE	5
+	#define TEST_INDEX_A	0
+	#define TEST_INDEX_B	3
+	struct strange {
+		int a;
+		float c;
+	} test_arr[TEST_SIZE] = { 0 }, *pa = &test_arr[TEST_INDEX_A],
+	  *pb = &test_arr[TEST_INDEX_B],
+	  /* Unaligned pointer */
+	  *pc = (void *)&test_arr[TEST_INDEX_B].c;
+
+
+	zassert_equal(ARRAY_ELEM(test_arr, pa), test_arr,
+		      "Unexpected index A");
+	zassert_equal(ARRAY_ELEM(test_arr, pb), &test_arr[TEST_INDEX_B],
+		      "Unexpected index B");
+	zassert_equal(ARRAY_ELEM(test_arr, pc), &test_arr[TEST_INDEX_B],
+		      "Unexpected index B");
+
+	#undef	TEST_SIZE
+	#undef	TEST_INDEX_A
+	#undef	TEST_INDEX_B
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_lib_sys_util_tests,
@@ -336,7 +398,10 @@ void test_main(void)
 			 ztest_unit_test(test_FOR_EACH_IDX),
 			 ztest_unit_test(test_FOR_EACH_IDX_FIXED_ARG),
 			 ztest_unit_test(test_IS_EMPTY),
-			 ztest_unit_test(test_LIST_DROP_EMPTY)
+			 ztest_unit_test(test_LIST_DROP_EMPTY),
+			 ztest_unit_test(test_ARRAY_SIZE),
+			 ztest_unit_test(test_ARRAY_INDEX),
+			 ztest_unit_test(test_ARRAY_ELEM)
 	);
 
 	ztest_run_test_suite(test_lib_sys_util_tests);

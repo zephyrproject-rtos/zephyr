@@ -81,6 +81,29 @@ size_t ARRAY_SIZE(T(&)[N]) { return N; }
 #define CONTAINER_OF(ptr, type, field) \
 	((type *)(((char *)(ptr)) - offsetof(type, field)))
 
+/* Given array name and pointer, it will evaluate to index of an array
+ * element pointed by that pointer or will cause compiler error if "array"
+ * is not array or "ptr" is beyond "array", e.g.:
+ *  ARRAY_INDEX(array, &array[3])
+ *  ARRAY_INDEX(array, &array[3].c)
+ * would both evaluate to:
+ *  3
+ */
+#define ARRAY_INDEX(array, ptr) \
+	((void)(IS_ARRAY(array)), \
+	 (void)(PART_OF_ARRAY(array, ptr)), \
+	 (((char *)ptr - (char *)array) / sizeof(array[0])))
+
+
+/* Align "ptr" to "array" elements, the pointer is within, e.g:
+ *  p = &array[5].c;
+ *  ARRAY_ELEM(array, &p)
+ * would evaluate to address equivalent of:
+ *  &array[5]
+ */
+#define ARRAY_ELEM(array, ptr) \
+	((__typeof__(&array[0]))&array[ARRAY_INDEX(array, ptr)])
+
 /* round "x" up/down to next multiple of "align" (which must be a power of 2) */
 #define ROUND_UP(x, align)                                   \
 	(((unsigned long)(x) + ((unsigned long)(align) - 1)) & \
