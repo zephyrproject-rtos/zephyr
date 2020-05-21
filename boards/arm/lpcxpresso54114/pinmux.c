@@ -127,7 +127,7 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 				  IOCON_PIO_I2CFILTER_EN);
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_spi, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm5), nxp_lpc_spi, okay) && CONFIG_SPI
 	/* PORT0 PIN18 is configured as FC5_TXD_SCL_MISO */
 	pinmux_pin_set(port0, 18, IOCON_PIO_FUNC1 |
 				  IOCON_PIO_MODE_PULLUP |
