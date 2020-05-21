@@ -611,8 +611,8 @@ def find_kobjects(elf, syms):
 
         _, user_ram_allowed = kobjects[ko.type_obj.name]
         if not user_ram_allowed and app_smem_start <= addr < app_smem_end:
-            debug_die(die, "object '%s' found in invalid location %s"
-                      % (name, hex(addr)))
+            debug("object '%s' found in invalid location %s"
+                  % (ko.type_obj.name, hex(addr)))
             continue
 
         if ko.type_obj.name != "device":
