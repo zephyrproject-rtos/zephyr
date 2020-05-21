@@ -126,6 +126,9 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 			ull_chan_map_get(lll_sync->data_chan_map);
 		lll_sync->data_chan_id = 0;
 
+		sync->is_enabled = 0U;
+		sync->is_started = 0U;
+
 		/* Get reference to previous primary PDU data */
 		pri_pdu_prev = lll_adv_data_peek(lll);
 		pri_com_hdr_prev = (void *)&pri_pdu_prev->adv_ext_ind;
@@ -507,10 +510,25 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 	if (!enable) {
 		uint8_t err;
 
+		if (!sync->is_enabled) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		if (!sync->is_started) {
+			sync->is_enabled = 0U;
+
+			return 0;
+		}
+
+		/* TODO: remove sync_info from auxiliary PDU */
+
 		err = sync_stop(sync);
 		if (err) {
 			return err;
 		}
+
+		sync->is_started = 0U;
+		sync->is_enabled = 0U;
 
 		return 0;
 	}
@@ -527,7 +545,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 		sync->is_enabled = 1U;
 	}
 
-	if (!sync->is_started) {
+	if (adv->is_enabled && !sync->is_started) {
 		/* TODO: */
 	}
 
@@ -674,8 +692,6 @@ static inline uint8_t sync_stop(struct ll_adv_sync_set *sync)
 
 	mark = ull_disable_unmark(sync);
 	LL_ASSERT(mark == sync);
-
-	sync->is_started = 0U;
 
 	return 0;
 }
