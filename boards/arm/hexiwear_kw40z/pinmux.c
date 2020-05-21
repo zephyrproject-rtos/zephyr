@@ -36,7 +36,7 @@ static int hexiwear_kw40z_pinmux_init(struct device *dev)
 					| PORT_PCR_PS_MASK);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc0), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc0), okay) && CONFIG_ADC
 	/* ADC0_SE1 */
 	pinmux_pin_set(portb,  1, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif

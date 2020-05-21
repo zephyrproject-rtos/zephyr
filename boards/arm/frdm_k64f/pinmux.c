@@ -117,7 +117,7 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 					| PORT_PCR_ODE_MASK);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(adc1), okay) && CONFIG_ADC
 	/* ADC1_SE14 */
 	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
 #endif
