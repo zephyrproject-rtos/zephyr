@@ -88,6 +88,11 @@ static void prevent_false_prev_evt(void)
 		k_busy_wait(15);
 		event_clear();
 	}
+
+	/* Clear interrupt that may have fired as we were setting the
+	 * comparator.
+	 */
+	NVIC_ClearPendingIRQ(RTC1_IRQn);
 }
 
 /* If settings is next tick from now, function attempts to set next tick. If
