@@ -194,6 +194,15 @@ static u32_t elapsed(void)
 		/* clear the IP bit of the control register */
 		timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
 					    _ARC_V2_TMR_CTRL_IE);
+		/* use sw triggered irq to remember the timer irq request
+		 * which may be cleared by the above operation. when elapsed ()
+		 * is called in z_timer_int_handler, no need to do this.
+		 */
+		if (!z_arc_v2_irq_unit_is_in_isr() ||
+		    z_arc_v2_aux_reg_read(_ARC_V2_ICAUSE) != IRQ_TIMER0) {
+			z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT,
+					       IRQ_TIMER0);
+		}
 	}
 
 	return val + overflow_cycles;
@@ -215,7 +224,6 @@ static void timer_int_handler(void *unused)
 	ARG_UNUSED(unused);
 	u32_t dticks;
 
-
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	u64_t curr_time;
 	k_spinlock_key_t key;
@@ -231,13 +239,24 @@ static void timer_int_handler(void *unused)
 
 	z_clock_announce(dticks);
 #else
+	/* timer_int_handler may be triggered by timer irq or
+	 * software helper irq
+	 */
+
+	/* irq with higher priority may call z_clock_set_timeout
+	 * so need a lock here
+	 */
+	u32_t key;
+
+	key = arch_irq_lock();
+
 	elapsed();
 	cycle_count += overflow_cycles;
 	overflow_cycles = 0;
 
+	arch_irq_unlock(key);
 
 	dticks = (cycle_count - announced_cycles) / CYC_PER_TICK;
-
 	announced_cycles += dticks * CYC_PER_TICK;
 	z_clock_announce(TICKLESS ? dticks : 1);
 #endif
@@ -277,11 +296,6 @@ int z_clock_driver_init(struct device *device)
 		    timer_int_handler, NULL, 0);
 
 	timer0_limit_register_set(last_load - 1);
-	/* make timer irq pulse sensitive, and self-clear when it's handled
-	 * then we can clear the IP bit of CTRL in non-interrupt context,
-	 * without missing timer irq.
-	 */
-	z_arc_v2_irq_unit_sensitivity_set(IRQ_TIMER0, 1);
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	cycle_count = timer0_count_register_get();
 #endif
