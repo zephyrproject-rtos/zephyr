@@ -578,6 +578,9 @@ void test_timeout_abs(void)
 {
 #ifdef CONFIG_TIMEOUT_64BIT
 	const u64_t exp_ms = 10000000;
+	u64_t cap_ticks;
+	u64_t rem_ticks;
+	u64_t cap2_ticks;
 	u64_t exp_ticks = k_ms_to_ticks_ceil64(exp_ms);
 	k_timeout_t t = K_TIMEOUT_ABS_TICKS(exp_ticks), t2;
 
@@ -602,12 +605,21 @@ void test_timeout_abs(void)
 	 * convention (i.e. a timer of "1 tick" will expire at "now
 	 * plus 2 ticks", because "now plus one" will always be
 	 * somewhat less than a tick).
+	 *
+	 * However, if the timer clock runs relatively fast the tick
+	 * clock may advance before or after reading the remaining
+	 * ticks, so we have to check that at least one case is
+	 * satisfied.
 	 */
 	k_usleep(1); /* align to tick */
 	k_timer_start(&remain_timer, t, K_FOREVER);
-	zassert_true(k_timer_remaining_ticks(&remain_timer)
-		     + k_uptime_ticks() + 1 == exp_ticks, NULL);
+	cap_ticks = k_uptime_ticks();
+	rem_ticks = k_timer_remaining_ticks(&remain_timer);
+	cap2_ticks = k_uptime_ticks();
 	k_timer_stop(&remain_timer);
+	zassert_true((cap_ticks + rem_ticks + 1 == exp_ticks)
+		     || (rem_ticks + cap2_ticks + 1 == exp_ticks),
+		     NULL);
 #endif
 }
 
