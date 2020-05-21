@@ -12,6 +12,9 @@ sequence:
       "id":
         type: str
         required: true
+      "notes":
+        type: str
+        required: false
       "platform":
         type: str
         required: true
