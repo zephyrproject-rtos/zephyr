@@ -33,3 +33,8 @@ sequence:
       "pre_script":
         type: str
         required: false
+      "fixtures":
+        type: seq
+        required: no
+        sequence:
+          - type: str
