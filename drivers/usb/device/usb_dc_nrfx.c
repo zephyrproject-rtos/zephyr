@@ -847,7 +847,7 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 	usbd_setup->wLength = nrf_usbd_setup_wlength_get(NRF_USBD);
 	ep_ctx->buf.len = sizeof(struct usb_setup_packet);
 
-	LOG_DBG("SETUP: r:%d rt:%d v:%d i:%d l:%d",
+	LOG_DBG("SETUP: bR:0x%02x bmRT:0x%02x wV:0x%04x wI:0x%04x wL:%d",
 		(u32_t)usbd_setup->bRequest,
 		(u32_t)usbd_setup->bmRequestType,
 		(u32_t)usbd_setup->wValue,
@@ -862,9 +862,8 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 	if ((REQTYPE_GET_DIR(usbd_setup->bmRequestType)
 	     == REQTYPE_DIR_TO_DEVICE)
 	    && (usbd_setup->wLength)) {
-		struct nrf_usbd_ctx *ctx = get_usbd_ctx();
-
-		ctx->ctrl_read_len -= usbd_setup->wLength;
+		ctx->ctrl_read_len = usbd_setup->wLength;
+		/* Allow data chunk on EP0 OUT */
 		nrfx_usbd_setup_data_clear();
 	} else {
 		ctx->ctrl_read_len = 0U;
@@ -1015,6 +1014,7 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 
 			if (ctx->ctrl_read_len > ep_ctx->buf.len) {
 				ctx->ctrl_read_len -= ep_ctx->buf.len;
+				/* Allow next data chunk on EP0 OUT */
 				nrfx_usbd_setup_data_clear();
 			} else {
 				ctx->ctrl_read_len = 0U;
