@@ -10,6 +10,8 @@
 #include <drivers/entropy.h>
 
 #include "util.h"
+#include "util/memq.h"
+#include "lll.h"
 
 #include "pdu.h"
 
@@ -40,24 +42,6 @@ uint8_t util_ones_count_get(uint8_t *octets, uint8_t octets_len)
 	}
 
 	return one_count;
-}
-
-int util_rand(void *buf, size_t len)
-{
-	static struct device *dev;
-
-	if (unlikely(!dev)) {
-		/* Only one entropy device exists, so this is safe even
-		 * if the whole operation isn't atomic.
-		 */
-		dev = device_get_binding(DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-		__ASSERT((dev != NULL),
-			"Device driver for %s (DT_CHOSEN_ZEPHYR_ENTROPY_LABEL) not found. "
-			"Check your build configuration!",
-			DT_CHOSEN_ZEPHYR_ENTROPY_LABEL);
-	}
-
-	return entropy_get_entropy(dev, (uint8_t *)buf, len);
 }
 
 /** @brief Prepare access address as per BT Spec.
@@ -97,7 +81,7 @@ again:
 	}
 	retry--;
 
-	util_rand(dst, sizeof(uint32_t));
+	lll_csrand_get(dst, sizeof(uint32_t));
 	aa = sys_get_le32(dst);
 
 	bit_idx = 31U;

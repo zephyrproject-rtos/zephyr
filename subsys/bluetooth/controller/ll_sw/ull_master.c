@@ -148,7 +148,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	err = util_aa_le32(conn_lll->access_addr);
 	LL_ASSERT(!err);
 
-	util_rand(conn_lll->crc_init, sizeof(conn_lll->crc_init));
+	lll_csrand_get(conn_lll->crc_init, sizeof(conn_lll->crc_init));
 
 	conn_lll->handle = 0xFFFF;
 	conn_lll->interval = interval;
@@ -204,7 +204,7 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	conn_lll->event_counter = 0;
 
 	conn_lll->data_chan_count = ull_chan_map_get(conn_lll->data_chan_map);
-	util_rand(&hop, sizeof(uint8_t));
+	lll_csrand_get(&hop, sizeof(uint8_t));
 	conn_lll->data_chan_hop = 5 + (hop % 12);
 	conn_lll->data_chan_sel = 0;
 	conn_lll->data_chan_use = 0;
@@ -491,8 +491,8 @@ uint8_t ll_enc_req_send(uint16_t handle, uint8_t const *const rand,
 			memcpy(enc_req->rand, rand, sizeof(enc_req->rand));
 			enc_req->ediv[0] = ediv[0];
 			enc_req->ediv[1] = ediv[1];
-			util_rand(enc_req->skdm, sizeof(enc_req->skdm));
-			util_rand(enc_req->ivm, sizeof(enc_req->ivm));
+			lll_csrand_get(enc_req->skdm, sizeof(enc_req->skdm));
+			lll_csrand_get(enc_req->ivm, sizeof(enc_req->ivm));
 		} else if (conn->lll.enc_rx && conn->lll.enc_tx) {
 			memcpy(&conn->llcp_enc.rand[0], rand,
 			       sizeof(conn->llcp_enc.rand));

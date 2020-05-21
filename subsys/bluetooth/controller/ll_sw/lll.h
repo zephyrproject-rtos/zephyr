@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include <stddef.h>
 #if defined(CONFIG_BT_CTLR_RX_PDU_META)
 #include "lll_meta.h"
 #endif /* CONFIG_BT_CTLR_RX_PDU_META */
@@ -334,6 +336,11 @@ uint32_t lll_radio_rx_ready_delay_get(uint8_t phy, uint8_t flags);
 int8_t lll_radio_tx_pwr_min_get(void);
 int8_t lll_radio_tx_pwr_max_get(void);
 int8_t lll_radio_tx_pwr_floor(int8_t tx_pwr_lvl);
+
+int lll_csrand_get(void *buf, size_t len);
+int lll_csrand_isr_get(void *buf, size_t len);
+int lll_rand_get(void *buf, size_t len);
+int lll_rand_isr_get(void *buf, size_t len);
 
 int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 			       lll_abort_cb_t abort_cb,

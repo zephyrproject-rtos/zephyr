@@ -31,7 +31,7 @@ static int internal_rand(void *buf, size_t len)
 {
 /* Force using controller rand function. */
 #if defined(CONFIG_BT_CTLR) && defined(CONFIG_BT_HOST_CRYPTO)
-	return util_rand(buf, len);
+	return lll_csrand_get(buf, len);
 #else
 	return bt_rand(buf, len);
 #endif
