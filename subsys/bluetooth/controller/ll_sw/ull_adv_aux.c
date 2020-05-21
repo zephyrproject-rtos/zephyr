@@ -171,6 +171,13 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	if (!is_aux_new) {
 		sec_hdr_prev = *sec_hdr;
 	} else {
+		/* Initialize only those fields used to copy into new PDU
+		 * buffer.
+		 */
+		sec_pdu_prev->tx_addr = 0U;
+		sec_pdu_prev->rx_addr = 0U;
+		sec_pdu_prev->len = offsetof(struct pdu_adv_com_ext_adv,
+					     ext_hdr_adi_adv_data);
 		*(uint8_t *)&sec_hdr_prev = 0U;
 	}
 	sec_dptr_prev = (uint8_t *)sec_hdr + sizeof(*sec_hdr);
@@ -179,12 +186,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	sec_pdu = lll_adv_aux_data_alloc(lll_aux, &sec_idx);
 	sec_pdu->type = pri_pdu->type;
 	sec_pdu->rfu = 0U;
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
-		sec_pdu->chan_sel = sec_pdu_prev->chan_sel;
-	} else {
-		sec_pdu->chan_sel = 0U;
-	}
+	sec_pdu->chan_sel = 0U;
 
 	sec_pdu->tx_addr = sec_pdu_prev->tx_addr;
 	sec_pdu->rx_addr = sec_pdu_prev->rx_addr;
@@ -296,18 +298,45 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 	/* Calc secondary PDU len */
 	sec_len_prev = sec_dptr_prev - (uint8_t *)sec_com_hdr_prev;
+	if (sec_len_prev <= (offsetof(struct pdu_adv_com_ext_adv,
+				      ext_hdr_adi_adv_data) +
+			     sizeof(sec_hdr_prev))) {
+		sec_len_prev = offsetof(struct pdu_adv_com_ext_adv,
+					ext_hdr_adi_adv_data);
+	}
+
+	/* Did we parse beyond PDU length? */
+	if (sec_len_prev > sec_pdu_prev->len) {
+		/* we should not encounter invalid length */
+		/* FIXME: release allocations */
+		return BT_HCI_ERR_UNSPECIFIED;
+	}
+
+	/* Calc current secondary PDU len */
 	sec_len = sec_dptr - (uint8_t *)sec_com_hdr;
-	sec_com_hdr->ext_hdr_len = sec_len -
-				   offsetof(struct pdu_adv_com_ext_adv,
-					    ext_hdr_adi_adv_data);
-
-	/* TODO: Check AdvData overflow */
-
-	/* Fill AdvData in secondary PDU */
-	memcpy(sec_dptr, data, len);
+	if (sec_len > (offsetof(struct pdu_adv_com_ext_adv,
+				ext_hdr_adi_adv_data) +
+		       sizeof(*sec_hdr))) {
+		sec_com_hdr->ext_hdr_len =
+			sec_len - offsetof(struct pdu_adv_com_ext_adv,
+					   ext_hdr_adi_adv_data);
+	} else {
+		sec_com_hdr->ext_hdr_len = 0;
+		sec_len = offsetof(struct pdu_adv_com_ext_adv,
+				   ext_hdr_adi_adv_data);
+	}
 
 	/* set the secondary PDU len */
 	sec_pdu->len = sec_len + len;
+
+	/* Check AdvData overflow */
+	if (sec_pdu->len > CONFIG_BT_CTLR_ADV_DATA_LEN_MAX) {
+		/* FIXME: release allocations */
+		return BT_HCI_ERR_PACKET_TOO_LONG;
+	}
+
+	/* Fill AdvData in secondary PDU */
+	memcpy(sec_dptr, data, len);
 
 	/* Start filling primary PDU extended header  based on flags */
 
