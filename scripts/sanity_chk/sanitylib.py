@@ -45,7 +45,7 @@ except ImportError:
 try:
     import psutil
 except ImportError:
-    print("Install psutil python module with pip to use --qemu-testing option.")
+    print("Install psutil python module with pip to run in Qemu.")
 
 ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 if not ZEPHYR_BASE:
