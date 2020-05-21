@@ -57,8 +57,8 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 	uint8_t *ter_dptr_prev, *ter_dptr;
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_sync_set *sync;
+	struct pdu_adv *ter_pdu;
 	struct ll_adv_set *adv;
-	struct pdu_adv *pdu;
 	uint8_t ter_len;
 
 	adv = ull_adv_is_created_get(handle);
@@ -423,22 +423,22 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 
 	sync->interval = interval;
 
-	pdu = lll_adv_sync_data_peek(lll_sync);
-	pdu->type = PDU_ADV_TYPE_AUX_SYNC_IND;
-	pdu->rfu = 0U;
-	pdu->chan_sel = 0U;
-	pdu->tx_addr = 0U;
-	pdu->rx_addr = 0U;
+	ter_pdu = lll_adv_sync_data_peek(lll_sync);
+	ter_pdu->type = PDU_ADV_TYPE_AUX_SYNC_IND;
+	ter_pdu->rfu = 0U;
+	ter_pdu->chan_sel = 0U;
+	ter_pdu->tx_addr = 0U;
+	ter_pdu->rx_addr = 0U;
 
-	ter_com_hdr = (void *)&pdu->adv_ext_ind;
+	ter_com_hdr = (void *)&ter_pdu->adv_ext_ind;
 	ter_hdr = (void *)ter_com_hdr->ext_hdr_adi_adv_data;
 	ter_dptr = (uint8_t *)ter_hdr + sizeof(*ter_hdr);
 	ter_hdr_prev = *ter_hdr;
-	*(uint8_t *)ter_hdr = 0;
+	*(uint8_t *)ter_hdr = 0U;
 	ter_dptr_prev = ter_dptr;
 
 	/* Non-connectable and Non-scannable adv mode */
-	ter_com_hdr->adv_mode = 0;
+	ter_com_hdr->adv_mode = 0U;
 
 	/* No AdvA */
 	/* No TargetA */
@@ -469,10 +469,10 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		ter_com_hdr->ext_hdr_len = ter_len -
 					   offsetof(struct pdu_adv_com_ext_adv,
 						    ext_hdr_adi_adv_data);
-		pdu->len = ter_len;
+		ter_pdu->len = ter_len;
 	} else {
-		ter_com_hdr->ext_hdr_len = 0;
-		pdu->len = offsetof(struct pdu_adv_com_ext_adv,
+		ter_com_hdr->ext_hdr_len = 0U;
+		ter_pdu->len = offsetof(struct pdu_adv_com_ext_adv,
 				    ext_hdr_adi_adv_data);
 	}
 
