@@ -228,12 +228,16 @@ static void timer_int_handler(void *unused)
 	u64_t curr_time;
 	k_spinlock_key_t key;
 
+	/* clear the IP bit of the control register */
+	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH |
+				    _ARC_V2_TMR_CTRL_IE);
 	key = k_spin_lock(&lock);
 	/* gfrc is the wall clock */
 	curr_time = z_arc_connect_gfrc_read();
 
 	dticks = (curr_time - last_time) / CYC_PER_TICK;
-	last_time = curr_time;
+	/* last_time should be aligned to ticks */
+	last_time += dticks * CYC_PER_TICK;
 
 	k_spin_unlock(&lock, key);
 
@@ -335,8 +339,12 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 	ticks = MIN(MAX_TICKS, ticks);
 
-	/* Desired delay in the future */
-	delay = MAX(CYC_PER_TICK, ticks * CYC_PER_TICK);
+	/* Desired delay in the future
+	 * use MIN_DEALY here can trigger the timer
+	 * irq more soon, no need to go to CYC_PER_TICK
+	 * later.
+	 */
+	delay = MAX(ticks * CYC_PER_TICK, MIN_DELAY);
 
 	key = arch_irq_lock();
 
