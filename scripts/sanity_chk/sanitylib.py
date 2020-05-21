@@ -1533,7 +1533,7 @@ class TestInstance(DisablePyTestCollectionMixin):
         return self.name < other.name
 
     # Global testsuite parameters
-    def check_build_or_run(self, build_only=False, enable_slow=False, device_testing=False, fixture=[]):
+    def check_build_or_run(self, build_only=False, enable_slow=False, device_testing=False, fixtures=[]):
 
         # right now we only support building on windows. running is still work
         # in progress.
@@ -1571,13 +1571,13 @@ class TestInstance(DisablePyTestCollectionMixin):
                 runnable = False
 
         # console harness allows us to run the test and capture data.
-        if self.testcase.harness == 'console':
+        if self.testcase.harness in [ 'console', 'ztest']:
 
             # if we have a fixture that is also being supplied on the
             # command-line, then we need to run the test, not just build it.
-            if "fixture" in self.testcase.harness_config:
-                fixture_cfg = self.testcase.harness_config['fixture']
-                if fixture_cfg in fixture:
+            fixture = self.testcase.harness_config.get('fixture')
+            if fixture:
+                if fixture in fixtures:
                     _build_only = False
                 else:
                     _build_only = True
@@ -2234,7 +2234,7 @@ class TestSuite(DisablePyTestCollectionMixin):
         self.cleanup = False
         self.enable_slow = False
         self.device_testing = False
-        self.fixture = []
+        self.fixtures = []
         self.enable_coverage = False
         self.enable_lsan = False
         self.enable_asan = False
@@ -2580,7 +2580,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                         self.build_only,
                         self.enable_slow,
                         self.device_testing,
-                        self.fixture
+                        self.fixtures
                     )
                     instance.create_overlay(platform, self.enable_asan, self.enable_coverage, self.coverage_platform)
                     instance_list.append(instance)
@@ -2641,7 +2641,7 @@ class TestSuite(DisablePyTestCollectionMixin):
                     self.build_only,
                     self.enable_slow,
                     self.device_testing,
-                    self.fixture
+                    self.fixtures
                 )
                 if not force_platform and plat.name in exclude_platform:
                     discards[instance] = "Platform is excluded on command line."
