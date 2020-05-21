@@ -22,6 +22,7 @@ zephyr_library_sources(
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD		ia32/irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_X86_USERSPACE	ia32/userspace.S)
 zephyr_library_sources_ifdef(CONFIG_LAZY_FPU_SHARING	ia32/float.c)
+zephyr_library_sources_ifdef(CONFIG_GDBSTUB		ia32/gdbstub.c)
 
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP	ia32/coredump.c)
 

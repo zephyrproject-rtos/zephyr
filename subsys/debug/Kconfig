@@ -343,5 +343,34 @@ config OPENOCD_SUPPORT
 	  selects CONFIG_THREAD_MONITOR, so all of its caveats are implied.)
 
 rsource "coredump/Kconfig"
-
 endmenu
+
+config GDBSTUB
+	bool "GDB remote serial protocol support [EXPERIMENTAL]"
+	depends on ARCH_HAS_GDBSTUB
+	help
+	  This option enable support the target using GDB, or any other
+	  application that supports GDB protocol.
+
+if GDBSTUB
+
+choice
+	prompt "GDB backend"
+
+config GDBSTUB_SERIAL_BACKEND
+	bool "Use serial backend"
+	depends on SERIAL
+	help
+	  Use serial as backenf for GDB
+
+endchoice
+
+config GDBSTUB_SERIAL_BACKEND_NAME
+	string "Serial Name"
+	depends on GDBSTUB_SERIAL_BACKEND
+	default "UART_0"
+	help
+	  Use serial as backenf for GDB
+
+
+endif
