@@ -33,3 +33,19 @@ def class_testsuite(test_data, testcases_dir):
     outdir = test_data +'sanity_out_demo'
     suite = TestSuite(board_root, testcase_root, outdir)
     return suite
+
+@pytest.fixture
+def all_testcases_dict(class_testsuite):
+    """ Pytest fixture to call add_testcase function of Testsuite class and return the testcases in kernel"""
+    class_testsuite.SAMPLE_FILENAME = 'test_sample_app.yaml'
+    class_testsuite.TESTCASE_FILENAME = 'test_data.yaml'
+    class_testsuite.add_testcases()
+    return class_testsuite.testcases
+
+@pytest.fixture
+def platforms_list(test_data, class_testsuite):
+    """ Pytest fixture to call add_configurations function of Testsuite class and return the Platforms list"""
+    class_testsuite.board_roots = os.path.abspath(test_data + "board_config")
+    suite = TestSuite(class_testsuite.board_roots, class_testsuite.roots, class_testsuite.outdir)
+    suite.add_configurations()
+    return suite.platforms
