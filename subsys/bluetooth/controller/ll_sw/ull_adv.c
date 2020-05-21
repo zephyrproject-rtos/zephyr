@@ -990,6 +990,19 @@ uint8_t ll_adv_enable(uint8_t enable)
 
 #if (CONFIG_BT_CTLR_ADV_AUX_SET > 0)
 		if (lll->aux) {
+			struct lll_adv_aux *lll_aux = lll->aux;
+			uint32_t ticks_slot_overhead_aux;
+			uint32_t ticks_anchor_aux;
+
+			aux = (void *)HDR_LLL2EVT(lll_aux);
+
+			/* schedule auxiliary PDU after primary channel PDUs */
+			ticks_anchor_aux =
+				ticks_anchor + ticks_slot +
+				HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
+
+			ticks_slot_overhead_aux = ull_adv_aux_evt_init(aux);
+
 #if defined(CONFIG_BT_CTLR_ADV_PERIODIC)
 			if (lll->sync) {
 				struct lll_adv_sync *lll_sync = lll->sync;
@@ -997,10 +1010,18 @@ uint8_t ll_adv_enable(uint8_t enable)
 				sync = (void *)HDR_LLL2EVT(lll_sync);
 
 				if (sync->is_enabled && !sync->is_started) {
+					const uint32_t ticks_slot_aux =
+						aux->evt.ticks_slot +
+						ticks_slot_overhead_aux;
+					uint32_t ticks_anchor_sync =
+						ticks_anchor_aux +
+						ticks_slot_aux +
+						HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
+
 					ull_hdr_init(&sync->ull);
 
 					ret = ull_adv_sync_start(sync,
-								 ticks_anchor,
+								 ticks_anchor_sync,
 								 &ret_cb);
 					if (ret) {
 						goto failure_cleanup;
@@ -1011,10 +1032,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 			}
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC */
 
-			struct lll_adv_aux *lll_aux = lll->aux;
-
 			/* Initialise ULL header */
-			aux = (void *)HDR_LLL2EVT(lll_aux);
 			ull_hdr_init(&aux->ull);
 
 			/* Keep aux interval equal or higher than primary PDU
@@ -1025,11 +1043,9 @@ uint8_t ll_adv_enable(uint8_t enable)
 				(HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY) /
 				 625U);
 
-			/* schedule after primary channel PDUs */
-			uint32_t ticks_anchor_aux = ticks_anchor + ticks_slot +
-				HAL_TICKER_US_TO_TICKS(EVENT_MAFS_US);
-
-			ret = ull_adv_aux_start(aux, ticks_anchor_aux, &ret_cb);
+			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
+						ticks_slot_overhead_aux,
+						&ret_cb);
 			if (ret) {
 				goto failure_cleanup;
 			}

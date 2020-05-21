@@ -434,6 +434,7 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 	lll_adv_data_enqueue(lll, pri_idx);
 
 	if (adv->is_enabled && !aux->is_started) {
+		uint32_t ticks_slot_overhead;
 		volatile uint32_t ret_cb;
 		uint32_t ticks_anchor;
 		uint32_t ret;
@@ -446,7 +447,10 @@ uint8_t ll_adv_aux_ad_data_set(uint8_t handle, uint8_t op, uint8_t frag_pref, ui
 
 		ticks_anchor = ticker_ticks_now_get();
 
-		ret = ull_adv_aux_start(aux, ticks_anchor, &ret_cb);
+		ticks_slot_overhead = ull_adv_aux_evt_init(aux);
+
+		ret = ull_adv_aux_start(aux, ticks_anchor, ticks_slot_overhead,
+					&ret_cb);
 
 		ret = ull_ticker_status_take(ret, &ret_cb);
 		if (ret != TICKER_STATUS_SUCCESS) {
@@ -562,13 +566,10 @@ uint8_t ull_adv_aux_lll_handle_get(struct lll_adv_aux *lll)
 	return aux_handle_get((void *)lll->hdr.parent);
 }
 
-uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
-			uint32_t volatile *ret_cb)
+uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux)
 {
 	uint32_t slot_us = EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	uint32_t ticks_slot_overhead;
-	uint8_t aux_handle;
-	uint32_t ret;
 
 	/* TODO: Calc AUX_ADV_IND slot_us */
 	slot_us += 1000;
@@ -587,6 +588,16 @@ uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
 	} else {
 		ticks_slot_overhead = 0;
 	}
+
+	return ticks_slot_overhead;
+}
+
+uint32_t ull_adv_aux_start(struct ll_adv_aux_set *aux, uint32_t ticks_anchor,
+			   uint32_t ticks_slot_overhead,
+			   uint32_t volatile *ret_cb)
+{
+	uint8_t aux_handle;
+	uint32_t ret;
 
 	aux_handle = aux_handle_get(aux);
 
