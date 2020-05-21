@@ -56,6 +56,10 @@ static void thread_func(void *p1, void *p2, void *p3)
  */
 static void test_log_immediate_preemption(void)
 {
+	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
+		LOG_INF("CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT not enabled."
+			" Text output will be garbled.");
+	}
 	for (intptr_t i = 0; i < NUM_THREADS; i++) {
 		tids[i] = k_thread_create(&threads[i], stacks[i], STACK_SIZE,
 				thread_func, (void *)i, NULL, NULL,
