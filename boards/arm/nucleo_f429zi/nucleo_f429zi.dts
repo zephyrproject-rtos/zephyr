@@ -87,6 +87,15 @@
 	status = "okay";
 };
 
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+
 &iwdg {
 	status = "okay";
 };
