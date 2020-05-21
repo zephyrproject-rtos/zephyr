@@ -504,14 +504,19 @@ class DeviceHandler(Handler):
 
         log_out_fp.close()
 
-    def device_is_available(self, device):
+    def device_is_available(self, instance):
+        device = instance.platform.name
+        fixture = instance.testcase.harness_config.get("fixture")
         for i in self.suite.connected_hardware:
+            if fixture and fixture not in i.get('fixtures', []):
+                continue
             if i['platform'] == device and i['available'] and i['serial']:
                 return True
 
         return False
 
-    def get_available_device(self, device):
+    def get_available_device(self, instance):
+        device = instance.platform.name
         for i in self.suite.connected_hardware:
             if i['platform'] == device and i['available'] and i['serial']:
                 i['available'] = False
@@ -559,13 +564,14 @@ class DeviceHandler(Handler):
         else:
             command = [self.generator_cmd, "-C", self.build_dir, "flash"]
 
-        while not self.device_is_available(self.instance.platform.name):
+        while not self.device_is_available(self.instance):
             logger.debug("Waiting for device {} to become available".format(self.instance.platform.name))
             time.sleep(1)
 
-        hardware = self.get_available_device(self.instance.platform.name)
+        hardware = self.get_available_device(self.instance)
 
-        runner = hardware.get('runner', None)
+        if hardware:
+            runner = hardware.get('runner', None)
         if runner:
             board_id = hardware.get("probe_id", hardware.get("id", None))
             product = hardware.get("product", None)
@@ -1583,6 +1589,7 @@ class TestInstance(DisablePyTestCollectionMixin):
                     _build_only = True
             else:
                 _build_only = False
+
         elif self.testcase.harness:
             _build_only = True
         else:
@@ -2643,6 +2650,14 @@ class TestSuite(DisablePyTestCollectionMixin):
                     self.device_testing,
                     self.fixtures
                 )
+
+                if device_testing_filter:
+                    for h in self.connected_hardware:
+                        if h['platform'] == plat.name:
+                            if tc.harness_config.get('fixture') in h.get('fixtures', []):
+                                instance.build_only = False
+                                instance.run = True
+
                 if not force_platform and plat.name in exclude_platform:
                     discards[instance] = "Platform is excluded on command line."
                     continue
