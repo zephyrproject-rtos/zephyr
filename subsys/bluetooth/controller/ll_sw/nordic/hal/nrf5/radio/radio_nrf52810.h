@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <nrf_erratas.h>
+
 /* NRF Radio HW timing constants
  * - provided in US and NS (for higher granularity)
  * - based on empirical measurements and sniffer logs
@@ -193,8 +195,15 @@
 
 static inline void hal_radio_reset(void)
 {
-	/* TODO: Add any required setup for each radio event
+	/* nRF52810 itself is not affected with these anomalies but it might be
+	 * needed to address them when DEVELOP_IN_NRF52832 is used.
 	 */
+	if (nrf52_errata_102() || nrf52_errata_106() || nrf52_errata_107()) {
+		/* Workaround for nRF52 anomalies 102, 106, and 107. */
+		*(volatile uint32_t *)0x40001774 =
+			((*(volatile uint32_t *)0x40001774) & 0xfffffffe)
+			| 0x01000000;
+	}
 }
 
 static inline void hal_radio_stop(void)
