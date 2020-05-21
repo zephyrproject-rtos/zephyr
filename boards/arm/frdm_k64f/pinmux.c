@@ -148,7 +148,7 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 19, PORT_PCR_MUX(kPORT_MuxAlt4));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(flexcan0), okay) && CONFIG_CAN
 	/* FlexCAN0 RX, TX */
 	pinmux_pin_set(portb, 18, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portb, 19, PORT_PCR_MUX(kPORT_MuxAlt2) |
