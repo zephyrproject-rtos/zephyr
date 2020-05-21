@@ -43,7 +43,7 @@ LOG_MODULE_REGISTER(updatehub);
  * otherwise download size will be less than real size.
  */
 #define MAX_DOWNLOAD_DATA (MAX_PAYLOAD_SIZE + 32)
-#define COAP_MAX_RETRY 3
+#define COAP_MAX_RETRY 5		/* increased to 5 from 3 due to wireless channel */
 #define MAX_IP_SIZE 30
 
 #define SHA256_HEX_DIGEST_SIZE	((TC_SHA256_DIGEST_SIZE * 2) + 1)
@@ -503,7 +503,7 @@ static void install_update_cb(void)
 	}
 
 	ctx.code_status = UPDATEHUB_OK;
-
+	
 cleanup:
 	k_free(data);
 }
@@ -511,8 +511,14 @@ cleanup:
 static enum updatehub_response install_update(void)
 {
 
+
 	int verification_download = 0;
 	int attempts_download = 0;
+
+	int verification_download = 0;	
+	int i;
+	k_timer_init(&timer, timer_expire,timer_stop);		// initialize the timer for stop and wait for GET Requests
+
 
 	if (boot_erase_img_bank(FLASH_AREA_ID(image_1)) != 0) {
 
@@ -538,9 +544,9 @@ static enum updatehub_response install_update(void)
 		goto error;
 	}
 
-	if (coap_block_transfer_init(&ctx.block, COAP_BLOCK_1024,
+	if (coap_block_transfer_init(&ctx.block, COAP_BLOCK_512,		
 				     update_info.image_size) < 0) {
-		LOG_ERR("Unable init block transfer");
+		LOG_ERR("Unable init block transfer");			/* here block size is reduced to 512 Bytes due to the reason that modem has limitation of 1024 bytes so we want packets intact*/
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
 		goto cleanup;
 	}
@@ -551,27 +557,33 @@ static enum updatehub_response install_update(void)
 
 	while (ctx.downloaded_size != ctx.block.total_size) {
 		verification_download = ctx.downloaded_size;
-
-		if (send_request(COAP_TYPE_CON, COAP_METHOD_GET,
-				 UPDATEHUB_DOWNLOAD) < 0) {
-			ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
-			goto cleanup;
-		}
-
-		install_update_cb();
-
-		if (ctx.code_status != UPDATEHUB_OK) {
-			goto cleanup;
-		}
-
-		if (verification_download == ctx.downloaded_size) {
-			if (attempts_download == COAP_MAX_RETRY) {
-				LOG_ERR("Could not get the packet");
-				ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
+		if(is_transmission_allowed){  /* no transmission is allowed if the reply (data packet) is not received before timeout
+			*** going to send the request */
+			if (send_request(COAP_TYPE_CON, COAP_METHOD_GET,
+					 UPDATEHUB_DOWNLOAD) < 0) {
+				ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
 				goto cleanup;
-			}
-			attempts_download++;
+			}	
+			is_transmission_allowed = false;
+			k_timer_start(&timer, K_SECONDS(4), 0);  /* adjust the delay, 4s is taken as a good estimate for now considering also modem */
+			attempts_download++;   /* this targets stop and wait mechanism, each transmission increases this counter unless reset by successful reception of data packet */
+		}	
+
+		install_update_cb();		
+
+		if(ctx.code_status == UPDATEHUB_DOWNLOAD_ERROR){	/* if some unknown packets are received then stop the transfer */
+			LOG_ERR("install_update(): download is not successful \n");
+			goto cleanup;
 		}
+
+/*		if (verification_download == ctx.downloaded_size) { 			*/
+		if (attempts_download == COAP_MAX_RETRY) {
+			LOG_ERR("Could not get the packet");
+			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
+			goto cleanup;
+		}
+/*			attempts_download++;  this is now handled by retransmission counter contrary to Fixed LAN scheme  */
+/*		}  now the check is on attempts_download rather than verification_download etc.	*/
 	}
 
 cleanup:
@@ -665,7 +677,7 @@ error:
 	k_free(firmware_version);
 	k_free(device_id);
 
-	return ret;
+	return ret; 
 }
 
 static void probe_cb(char *metadata, size_t metadata_size)
@@ -689,7 +701,6 @@ static void probe_cb(char *metadata, size_t metadata_size)
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		return;
 	}
-
 	if (COAP_RESPONSE_CODE_NOT_FOUND == coap_header_get_code(&reply)) {
 		LOG_INF("No update available");
 		ctx.code_status = UPDATEHUB_NO_UPDATE;
@@ -702,7 +713,6 @@ static void probe_cb(char *metadata, size_t metadata_size)
 		ctx.code_status = UPDATEHUB_METADATA_ERROR;
 		return;
 	}
-
 	memcpy(metadata, reply.data + reply.offset,
 	       reply.max_len - reply.offset);
 
@@ -718,7 +728,7 @@ static void probe_cb(char *metadata, size_t metadata_size)
 
 	ctx.code_status = UPDATEHUB_OK;
 
-	LOG_INF("Probe metadata received");
+	LOG_INF("Probe metadata received"); 
 }
 
 enum updatehub_response updatehub_probe(void)
@@ -777,7 +787,7 @@ enum updatehub_response updatehub_probe(void)
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
 		goto error;
 	}
-
+	
 	if (send_request(COAP_TYPE_CON, COAP_METHOD_POST, UPDATEHUB_PROBE) < 0) {
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
 		goto cleanup;
@@ -795,13 +805,11 @@ enum updatehub_response updatehub_probe(void)
 		ctx.code_status = UPDATEHUB_METADATA_ERROR;
 		goto cleanup;
 	}
-
 	memcpy(metadata_copy, metadata, strlen(metadata));
 	if (json_obj_parse(metadata, strlen(metadata),
 			   recv_probe_sh_array_descr,
 			   ARRAY_SIZE(recv_probe_sh_array_descr),
 			   &metadata_some_boards) < 0) {
-
 		if (json_obj_parse(metadata_copy, strlen(metadata_copy),
 				   recv_probe_sh_string_descr,
 				   ARRAY_SIZE(recv_probe_sh_string_descr),
@@ -810,7 +818,6 @@ enum updatehub_response updatehub_probe(void)
 			ctx.code_status = UPDATEHUB_METADATA_ERROR;
 			goto cleanup;
 		}
-
 		sha256size = strlen(
 			metadata_any_boards.objects[1].objects.sha256sum) + 1;
 
@@ -831,23 +838,19 @@ enum updatehub_response updatehub_probe(void)
 				UPDATEHUB_INCOMPATIBLE_HARDWARE;
 			goto cleanup;
 		}
-
 		sha256size = strlen(
-			metadata_any_boards.objects[1].objects.sha256sum) + 1;
-
+			metadata_some_boards.objects[1].objects.sha256sum) + 1;   /* fixes the issue #24853 replace metadata_any_boards by metadata_some_boards */
 		if (sha256size != SHA256_HEX_DIGEST_SIZE) {
 			LOG_ERR("SHA256 size is invalid");
 			ctx.code_status = UPDATEHUB_METADATA_ERROR;
 			goto cleanup;
 		}
-
 		memcpy(update_info.sha256sum_image,
 		       metadata_some_boards.objects[1].objects.sha256sum,
 		       SHA256_HEX_DIGEST_SIZE);
 		update_info.image_size =
 			metadata_some_boards.objects[1].objects.size;
 	}
-
 	ctx.code_status = UPDATEHUB_HAS_UPDATE;
 
 cleanup:
