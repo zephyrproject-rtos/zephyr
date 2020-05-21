@@ -566,8 +566,11 @@ void test_mem_domain_remove_thread(void *p1, void *p2, void *p3)
 
 }
 /****************************************************************************/
+
 /**
- * @brief Test k_mem_domain_destroy API
+ * @brief Test memory domain destroy, which removes all thread assignments to it
+ *
+ * @details Test k_mem_domain_destroy API
  *
  * @ingroup kernel_memprotect_tests
  *
