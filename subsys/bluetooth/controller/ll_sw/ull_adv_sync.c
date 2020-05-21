@@ -243,7 +243,7 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 			/* C1, Tx Power is optional on the LE 1M PHY, and
 			 * reserved for future use on the LE Coded PHY.
 			 */
-			if (adv->lll.phy_p != PHY_CODED) {
+			if (lll->phy_p != PHY_CODED) {
 				pri_hdr->tx_pwr = 1;
 				pri_dptr++;
 			} else {
@@ -304,15 +304,15 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		/* Fill SyncInfo in secondary channel PDU */
 		sec_dptr -= sizeof(*si);
 		si = (void *)sec_dptr;
-		si->offs = 0; /* NOTE: Filled by secondary prepare */
-		si->offs_units = 0;
+		si->offs = 0U; /* NOTE: Filled by secondary prepare */
+		si->offs_units = 0U;
 		si->interval = sys_cpu_to_le16(interval);
 		memcpy(si->sca_chm, lll_sync->data_chan_map,
 		       sizeof(si->sca_chm));
 		memcpy(&si->aa, lll_sync->access_addr, sizeof(si->aa));
 		memcpy(si->crc_init, lll_sync->crc_init, sizeof(si->crc_init));
 
-		si->evt_cntr = 0; /* TODO: Implementation defined */
+		si->evt_cntr = 0U; /* TODO: Implementation defined */
 
 		/* AuxPtr */
 		if (pri_hdr_prev.aux_ptr) {
@@ -328,11 +328,11 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 			aux_ptr = (void *)pri_dptr;
 
 			/* FIXME: implementation defined */
-			aux_ptr->chan_idx = 0;
-			aux_ptr->ca = 0;
-			aux_ptr->offs_units = 0;
+			aux_ptr->chan_idx = 0U;
+			aux_ptr->ca = 0U;
+			aux_ptr->offs_units = 0U;
 
-			aux_ptr->phy = find_lsb_set(adv->lll.phy_s) - 1;
+			aux_ptr->phy = find_lsb_set(lll->phy_s) - 1;
 		}
 
 		/* TODO: reduce duplicate code if below remains similar to
@@ -349,11 +349,11 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 			aux_ptr = (void *)sec_dptr;
 
 			/* FIXME: implementation defined */
-			aux_ptr->chan_idx = 0;
-			aux_ptr->ca = 0;
-			aux_ptr->offs_units = 0;
+			aux_ptr->chan_idx = 0U;
+			aux_ptr->ca = 0U;
+			aux_ptr->offs_units = 0U;
 
-			aux_ptr->phy = find_lsb_set(adv->lll.phy_s) - 1;
+			aux_ptr->phy = find_lsb_set(lll->phy_s) - 1;
 		}
 
 		/* ADI */
