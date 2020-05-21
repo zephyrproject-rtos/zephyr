@@ -15,6 +15,9 @@ sequence:
       "platform":
         type: str
         required: true
+      "probe_id":
+        type: str
+        required: false
       "product":
         type: str
         required: true
