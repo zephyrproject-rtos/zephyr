@@ -499,9 +499,8 @@ class ElfHelper:
                     (addr < kram_start or addr >= kram_end) and
                     (addr < krom_start or addr >= krom_end)):
 
-                self.debug_die(die,
-                               "object '%s' found in invalid location %s"
-                               % (name, hex(addr)))
+                self.debug("object '%s' found in invalid location %s"
+                            % (ko.type_obj.name, hex(addr)))
                 continue
 
             if ko.type_obj.name != "device":
