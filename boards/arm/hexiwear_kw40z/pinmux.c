@@ -22,7 +22,7 @@ static int hexiwear_kw40z_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTC_NAME);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay) && CONFIG_SERIAL
 	/* UART0 RX, TX */
 	pinmux_pin_set(portc,  6, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(portc,  7, PORT_PCR_MUX(kPORT_MuxAlt4));

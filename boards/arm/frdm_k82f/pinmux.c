@@ -71,7 +71,7 @@ static int frdm_k82f_pinmux_init(struct device *dev)
 	pinmux_pin_set(porte, 3, PORT_PCR_MUX(kPORT_MuxAsGpio));
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart4), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart4), okay) && CONFIG_SERIAL
 	/* LPUART4 RX, TX */
 	pinmux_pin_set(portc, 14, PORT_PCR_MUX(kPORT_MuxAlt3));
 	pinmux_pin_set(portc, 15, PORT_PCR_MUX(kPORT_MuxAlt3));

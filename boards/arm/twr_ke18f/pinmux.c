@@ -64,7 +64,7 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portd, 6, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(lpuart0), okay) && CONFIG_SERIAL
 	/* UART0 RX, TX */
 	pinmux_pin_set(portb, 0, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(portb, 1, PORT_PCR_MUX(kPORT_MuxAlt2));

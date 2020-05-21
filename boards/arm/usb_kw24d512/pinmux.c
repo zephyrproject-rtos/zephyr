@@ -29,7 +29,7 @@ static int usb_kw24d512_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTD_NAME);
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay)
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(uart0), okay) && CONFIG_SERIAL
 	/* UART0 RX, TX */
 	pinmux_pin_set(porta, 1, PORT_PCR_MUX(kPORT_MuxAlt2));
 	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAlt2));
