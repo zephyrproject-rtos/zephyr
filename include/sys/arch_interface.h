@@ -715,6 +715,44 @@ extern uint64_t arch_timing_value_swap_temp;
 /** @} */
 
 /**
+ * @defgroup arch-gdbstub Architecture-specific gdbstub APIs
+ * @ingroup arch-interface
+ * @{
+ */
+
+/**
+ * @def ARCH_GDB_NUM_REGISTERS
+ *
+ * ARCH_GDB_NUM_REGISTERS is architecure specific and
+ * this symbol must be defined in architecure specific header
+ */
+
+#ifdef CONFIG_GDBSTUB
+/**
+ * @brief Architecture layer debug start
+ *
+ * This function is called by @c gdb_init()
+ */
+void arch_gdb_init(void);
+
+/**
+ * @brief Continue running program
+ *
+ * Continue software execution.
+ */
+void arch_gdb_continue(void);
+
+/**
+ * @brief Continue with one step
+ *
+ * Continue software execution until reaches the next statement.
+ */
+void arch_gdb_step(void);
+
+#endif
+/** @} */
+
+/**
  * @defgroup arch_cache Architecture-specific cache functions
  * @ingroup arch-interface
  * @{

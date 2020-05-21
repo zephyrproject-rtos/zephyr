@@ -128,6 +128,16 @@ extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 bool z_stack_is_user_capable(k_thread_stack_t *stack);
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_GDBSTUB
+struct gdb_ctx;
+
+/* Should be called by the arch layer. This is the gdbstub main loop
+ * and synchronously communicate with gdb on host.
+ */
+extern int z_gdb_main_loop(struct gdb_ctx *ctx, bool start);
+#endif
+
+
 #ifdef __cplusplus
 }
 #endif

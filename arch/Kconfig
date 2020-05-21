@@ -44,6 +44,7 @@ config X86
 	select ARCH_SUPPORTS_COREDUMP
 	select CPU_HAS_MMU
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select ARCH_HAS_GDBSTUB if !X86_64
 	help
 	  x86 architecture
 
@@ -409,6 +410,9 @@ config ARCH_SUPPORTS_COREDUMP
 	bool
 
 config ARCH_HAS_EXTRA_EXCEPTION_INFO
+	bool
+
+config ARCH_HAS_GDBSTUB
 	bool
 
 #

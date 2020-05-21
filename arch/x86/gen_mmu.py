@@ -521,10 +521,14 @@ def main():
     if is_perm_regions:
         # Need to accomplish the following things:
         # - Text regions need the XD flag cleared and RW flag removed
+        #   if not built with gdbstub support
         # - Rodata regions need the RW flag cleared
         # - User mode needs access as we currently do not separate application
         #   text/rodata from kernel text/rodata
-        pt.set_region_perms("_image_text", FLAG_P | FLAG_US)
+        if isdef("CONFIG_GDBSTUB"):
+            pt.set_region_perms("_image_text", FLAG_P | FLAG_US | FLAG_RW)
+        else:
+            pt.set_region_perms("_image_text", FLAG_P | FLAG_US)
         pt.set_region_perms("_image_rodata", FLAG_P | FLAG_US | FLAG_XD)
 
         if isdef("CONFIG_COVERAGE_GCOV") and isdef("CONFIG_USERSPACE"):
