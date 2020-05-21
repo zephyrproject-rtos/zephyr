@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <ztest.h>
 #include <zephyr/types.h>
 
@@ -538,6 +539,7 @@ void test_timer_user_data(void)
 void test_timer_remaining(void)
 {
 	u32_t dur_ticks = k_ms_to_ticks_ceil32(DURATION);
+	u32_t target_rem_ticks = k_ms_to_ticks_ceil32(DURATION / 2) + 1;
 	u32_t rem_ms, rem_ticks, exp_ticks;
 	u64_t now;
 
@@ -561,7 +563,19 @@ void test_timer_remaining(void)
 	zassert_true(rem_ms <= (DURATION / 2) + k_ticks_to_ms_floor64(1),
 		     NULL);
 
-	zassert_true(rem_ticks <= ((dur_ticks / 2) + 1), NULL);
+	/* Half the value of DURATION in ticks may not be the value of
+	 * half DURATION in ticks, when DURATION/2 is not an integer
+	 * multiple of ticks, so target_rem_ticks is used rather than
+	 * dur_ticks/2.
+	 *
+	 * Also if the tick clock is faster or slower than the
+	 * busywait clock the remaining time in ticks will be larger
+	 * or smaller than expected, so relax the tolerance.  3 ticks
+	 * variance has been observed on hardware where the busywait
+	 * clock is 0.7% slow and the 32 KiHz tick clock is 60 ppm
+	 * fast relative to a stable external clock.
+	 */
+	zassert_true(abs((s32_t)(rem_ticks - target_rem_ticks)) <= 3, NULL);
 
 	/* Note +1 tick precision: even though we're calcluating in
 	 * ticks, we're waiting in k_busy_wait(), not for a timer
