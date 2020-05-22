@@ -1003,17 +1003,22 @@ static void test_pwms(void)
 	/* DT_PWMS_CELL_BY_IDX */
 	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, 1, channel), 5,
 		      "pwm 2 channel");
+	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, 1, period), 100,
+		      "pwm 2 period");
 	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, 1, flags), 1,
 		      "pwm 2 flags");
 
 	/* DT_PWMS_CELL_BY_NAME */
 	zassert_equal(DT_PWMS_CELL_BY_NAME(TEST_PH, red, channel), 8,
 		      "pwm-red channel");
+	zassert_equal(DT_PWMS_CELL_BY_NAME(TEST_PH, red, period), 200,
+		      "pwm-red period");
 	zassert_equal(DT_PWMS_CELL_BY_NAME(TEST_PH, red, flags), 3,
 		      "pwm-red flags");
 
 	/* DT_PWMS_CELL */
 	zassert_equal(DT_PWMS_CELL(TEST_PH, channel), 8, "pwm channel");
+	zassert_equal(DT_PWMS_CELL(TEST_PH, period), 200, "pwm period");
 	zassert_equal(DT_PWMS_CELL(TEST_PH, flags), 3, "pwm flags");
 
 	/* DT_PWMS_CHANNEL_BY_IDX */
@@ -1026,15 +1031,25 @@ static void test_pwms(void)
 	/* DT_PWMS_CHANNEL */
 	zassert_equal(DT_PWMS_CHANNEL(TEST_PH), 8, "pwm channel");
 
+	/* DT_PWMS_PERIOD_BY_IDX */
+	zassert_equal(DT_PWMS_PERIOD_BY_IDX(TEST_PH, 1), 100, "pwm period");
+
+	/* DT_PWMS_PERIOD_BY_NAME */
+	zassert_equal(DT_PWMS_PERIOD_BY_NAME(TEST_PH, green), 100,
+		      "pwm period");
+
+	/* DT_PWMS_PERIOD */
+	zassert_equal(DT_PWMS_PERIOD(TEST_PH), 200, "pwm period");
+
 	/* DT_PWMS_FLAGS_BY_IDX */
-	zassert_equal(DT_PWMS_FLAGS_BY_IDX(TEST_PH, 1), 1, "pwm channel");
+	zassert_equal(DT_PWMS_FLAGS_BY_IDX(TEST_PH, 1), 1, "pwm flags");
 
 	/* DT_PWMS_FLAGS_BY_NAME */
 	zassert_equal(DT_PWMS_FLAGS_BY_NAME(TEST_PH, green), 1,
-		      "pwm channel");
+		      "pwm flags");
 
 	/* DT_PWMS_FLAGS */
-	zassert_equal(DT_PWMS_FLAGS(TEST_PH), 3, "pwm channel");
+	zassert_equal(DT_PWMS_FLAGS(TEST_PH), 3, "pwm flags");
 
 	/* DT_INST */
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1,
@@ -1057,16 +1072,22 @@ static void test_pwms(void)
 	/* DT_INST_PWMS_CELL_BY_IDX */
 	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, 1, channel), 5,
 		      "pwm 2 channel");
-	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, 1, flags), 1, "pwm 2 flags");
+	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, 1, period), 100,
+		      "pwm 2 period");
+	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, 1, flags), 1,
+		      "pwm 2 flags");
 
 	/* DT_INST_PWMS_CELL_BY_NAME */
 	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, channel), 5,
 		      "pwm-green channel");
+	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, period), 100,
+		      "pwm-green period");
 	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, flags), 1,
 		      "pwm-green flags");
 
 	/* DT_INST_PWMS_CELL */
 	zassert_equal(DT_INST_PWMS_CELL(0, channel), 8, "pwm channel");
+	zassert_equal(DT_INST_PWMS_CELL(0, period), 200, "pwm period");
 	zassert_equal(DT_INST_PWMS_CELL(0, flags), 3, "pwm flags");
 
 	/* DT_INST_PWMS_CHANNEL_BY_IDX */
@@ -1077,6 +1098,15 @@ static void test_pwms(void)
 
 	/* DT_INST_PWMS_CHANNEL */
 	zassert_equal(DT_INST_PWMS_CHANNEL(0), 8, "pwm channel");
+
+	/* DT_INST_PWMS_PERIOD_BY_IDX */
+	zassert_equal(DT_INST_PWMS_PERIOD_BY_IDX(0, 1), 100, "pwm period");
+
+	/* DT_INST_PWMS_PERIOD_BY_NAME */
+	zassert_equal(DT_INST_PWMS_PERIOD_BY_NAME(0, red), 200, "pwm periodx");
+
+	/* DT_INST_PWMS_PERIOD */
+	zassert_equal(DT_INST_PWMS_PERIOD(0), 200, "pwm period");
 
 	/* DT_INST_PWMS_FLAGS_BY_IDX */
 	zassert_equal(DT_INST_PWMS_FLAGS_BY_IDX(0, 1), 1, "pwm channel");
