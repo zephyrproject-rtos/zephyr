@@ -6,8 +6,7 @@
 
 / {
 	model = "Nordic NRF5340 PDK NRF5340 Application";
-	compatible = "nordic,nrf5340-pdk-nrf5340-cpuapp",
-		"nordic,nrf5340-cpuapp-qkaa", "nordic,nrf5340-cpuapp";
+	compatible = "nordic,nrf5340-pdk-nrf5340-cpuapp";
 
 	chosen {
 		zephyr,console = &uart0;
