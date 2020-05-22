@@ -49,6 +49,9 @@ static int mcux_dac32_channel_setup(struct device *dev,
 	DAC32_Init(config->base, &dac32_config);
 	DAC32_EnableBufferOutput(config->base, config->buffered);
 
+	DAC32_EnableTestOutput(config->base,
+			       IS_ENABLED(CONFIG_DAC_MCUX_DAC32_TESTOUT));
+
 	data->configured = true;
 
 	return 0;
