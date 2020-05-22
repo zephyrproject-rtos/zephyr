@@ -35,6 +35,27 @@ enum xfer_direction {
 	DEVICE_TO_HOST,		/**< Write to Host */
 };
 
+enum pcie_reset {
+	PCIE_PERST,	/**< Cold reset */
+	PCIE_PERST_INB,	/**< Inband hot reset */
+	PCIE_FLR,	/**< Functional Level Reset */
+	PCIE_RESET_MAX
+};
+
+/**
+ * @typedef pcie_ep_reset_callback_t
+ * @brief Callback API for PCIe reset interrupts
+ *
+ * These callbacks execute in interrupt context. Therefore, use only
+ * interrupt-safe APIS. Registration of callbacks is done via
+ * @a pcie_ep_register_reset_cb
+ *
+ * @param arg Pointer provided at registration time, later to be
+ *	  passed back as argument to callback function
+ */
+
+typedef void (*pcie_ep_reset_callback_t)(void *arg);
+
 struct pcie_ep_driver_api {
 	int (*conf_read)(struct device *dev, uint32_t offset, uint32_t *data);
 	void (*conf_write)(struct device *dev, uint32_t offset, uint32_t data);
@@ -44,6 +65,8 @@ struct pcie_ep_driver_api {
 	void (*unmap_addr)(struct device *dev, uint64_t mapped_addr);
 	int (*raise_irq)(struct device *dev, enum pci_ep_irq_type irq_type,
 			 uint32_t irq_num);
+	int (*register_reset_cb)(struct device *dev, enum pcie_reset reset,
+				 pcie_ep_reset_callback_t cb, void *arg);
 };
 
 /**
@@ -163,6 +186,36 @@ static inline int pcie_ep_raise_irq(struct device *dev,
 	const struct pcie_ep_driver_api *api =
 			(const struct pcie_ep_driver_api *)dev->driver_api;
 	return api->raise_irq(dev, irq_type, irq_num);
+}
+
+/**
+ * @brief Register callback function for reset interrupts
+ *
+ * @details If reset interrupts are handled by device, this API can be
+ *	    used to register callback function, which will be
+ *	    executed part of corresponding PCIe reset handler
+ *
+ * @param   dev   Pointer to the device structure for the driver instance
+ * @param   reset Reset interrupt type
+ * @param   cb    Callback function being registered
+ * @param   arg   Argument to be passed back to callback function
+ *
+ * @return 0 if successful, negative errno code if failure.
+ */
+
+static inline int pcie_ep_register_reset_cb(struct device *dev,
+					    enum pcie_reset reset,
+					    pcie_ep_reset_callback_t cb,
+					    void *arg)
+{
+	const struct pcie_ep_driver_api *api =
+			(const struct pcie_ep_driver_api *)dev->driver_api;
+
+	if (api->register_reset_cb) {
+		return api->register_reset_cb(dev, reset, cb, arg);
+	}
+
+	return -ENOTSUP;
 }
 
 /**
