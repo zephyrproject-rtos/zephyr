@@ -8,7 +8,7 @@
 
 #include <stdarg.h>
 
-__syscall int sys_ioctl(int fd, unsigned long request, va_list args);
+__syscall int sys_ioctl(int fd, unsigned long request, long n_args, uintptr_t *args);
 int ioctl(int fd, unsigned long request, ...);
 
 #define FIONBIO 0x5421

@@ -302,8 +302,8 @@ static ssize_t net_mgmt_sock_write(void *obj, const void *buffer,
 	return znet_mgmt_sendto(obj, buffer, count, 0, NULL, 0);
 }
 
-static int net_mgmt_sock_ioctl(void *obj, unsigned int request,
-			       va_list args)
+static int net_mgmt_sock_ioctl(void *obj, unsigned long request,
+			       long n_args, uintptr_t *args)
 {
 	return 0;
 }

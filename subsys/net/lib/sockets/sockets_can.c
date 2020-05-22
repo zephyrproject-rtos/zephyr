@@ -407,7 +407,8 @@ static int can_close_socket(struct net_context *ctx)
 	return 0;
 }
 
-static int can_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int can_sock_ioctl_vmeth(void *obj, unsigned long request,
+				long n_args, uintptr_t *args)
 {
 	if (request == ZFD_IOCTL_CLOSE) {
 		int ret;
@@ -418,7 +419,7 @@ static int can_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		}
 	}
 
-	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
+	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, n_args, args);
 }
 
 /*

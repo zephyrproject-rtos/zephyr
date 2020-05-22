@@ -417,7 +417,8 @@ int websocket_disconnect(int ws_sock)
 	return ret;
 }
 
-static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int websocket_ioctl_vmeth(void *obj, unsigned long request,
+				 long n_args, uintptr_t *args)
 {
 	if (request == ZFD_IOCTL_CLOSE) {
 		struct websocket_context *ctx = obj;
@@ -434,7 +435,7 @@ static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		return ret;
 	}
 
-	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
+	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, n_args, args);
 }
 
 static int websocket_prepare_and_send(struct websocket_context *ctx,

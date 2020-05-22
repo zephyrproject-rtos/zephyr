@@ -133,7 +133,8 @@ static ssize_t eventfd_write_op(void *obj, const void *buf, size_t sz)
 	return sizeof(eventfd_t);
 }
 
-static int eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
+static int eventfd_ioctl_op(void *obj, unsigned long request,
+			    long n_args, uintptr_t *args)
 {
 	struct eventfd *efd = (struct eventfd *)obj;
 
@@ -144,7 +145,7 @@ static int eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 	case F_SETFL: {
 		int flags;
 
-		flags = va_arg(args, int);
+		flags = (int)args[0];
 
 		if (flags & ~EFD_FLAGS_SET) {
 			errno = EINVAL;
@@ -165,9 +166,9 @@ static int eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 		struct k_poll_event **pev;
 		struct k_poll_event *pev_end;
 
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
+		pfd = (struct zsock_pollfd *)args[0];
+		pev = (struct k_poll_event **)args[1];
+		pev_end = (struct k_poll_event *)args[2];
 
 		return eventfd_poll_prepare(obj, pfd, pev, pev_end);
 	}
@@ -176,8 +177,8 @@ static int eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 		struct zsock_pollfd *pfd;
 		struct k_poll_event **pev;
 
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
+		pfd = (struct zsock_pollfd *)args[0];
+		pev = (struct k_poll_event **)args[1];
 
 		return eventfd_poll_update(obj, pfd, pev);
 	}

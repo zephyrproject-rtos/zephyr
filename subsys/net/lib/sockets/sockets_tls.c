@@ -1936,7 +1936,8 @@ static ssize_t tls_sock_write_vmeth(void *obj, const void *buffer,
 	return ztls_sendto_ctx(obj, buffer, count, 0, NULL, 0);
 }
 
-static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int tls_sock_ioctl_vmeth(void *obj, unsigned long request,
+				long n_args, uintptr_t *args)
 {
 	switch (request) {
 
@@ -1945,7 +1946,8 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	case F_SETFL:
 	case ZFD_IOCTL_GETSOCKNAME:
 		/* Pass the call to the core socket implementation. */
-		return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
+		return sock_fd_op_vtable.fd_vtable.ioctl(obj, request,
+							 n_args, args);
 
 	case ZFD_IOCTL_CLOSE:
 		return ztls_close_ctx(obj);
@@ -1955,9 +1957,9 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		struct k_poll_event **pev;
 		struct k_poll_event *pev_end;
 
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
+		pfd = (struct zsock_pollfd *)args[0];
+		pev = (struct k_poll_event **)args[1];
+		pev_end = (struct k_poll_event *)args[2];
 
 		return ztls_poll_prepare_ctx(obj, pfd, pev, pev_end);
 	}
@@ -1966,8 +1968,8 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		struct zsock_pollfd *pfd;
 		struct k_poll_event **pev;
 
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
+		pfd = (struct zsock_pollfd *)args[0];
+		pev = (struct k_poll_event **)args[1];
 
 		return ztls_poll_update_ctx(obj, pfd, pev);
 	}

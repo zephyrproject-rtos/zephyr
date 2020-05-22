@@ -22,7 +22,8 @@ extern "C" {
 struct fd_op_vtable {
 	ssize_t (*read)(void *obj, void *buf, size_t sz);
 	ssize_t (*write)(void *obj, const void *buf, size_t sz);
-	int (*ioctl)(void *obj, unsigned int request, va_list args);
+	int (*ioctl)(void *obj, unsigned long request,
+		     long n_args, uintptr_t *args);
 };
 
 /**
@@ -113,14 +114,20 @@ void *z_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable);
  * @param ... Variadic arguments to ioctl
  */
 static inline int z_fdtable_call_ioctl(const struct fd_op_vtable *vtable, void *obj,
-				       unsigned long request, ...)
+				       unsigned long request, int n_args, ...)
 {
-	va_list args;
-	int res;
+	va_list varargs;
+	int i, res;
+	uintptr_t args[3];
 
-	va_start(args, request);
-	res = vtable->ioctl(obj, request, args);
-	va_end(args);
+	__ASSERT_NO_MSG(n_args <= ARRAY_SIZE(args));
+
+	va_start(varargs, n_args);
+	for (i = 0; i < n_args; i++) {
+		args[i] = va_arg(varargs, uintptr_t);
+	}
+	res = vtable->ioctl(obj, request, n_args, args);
+	va_end(varargs);
 
 	return res;
 }

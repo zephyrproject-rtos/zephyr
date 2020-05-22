@@ -280,10 +280,10 @@ static ssize_t packet_sock_write_vmeth(void *obj, const void *buffer,
 	return zpacket_sendto_ctx(obj, buffer, count, 0, NULL, 0);
 }
 
-static int packet_sock_ioctl_vmeth(void *obj, unsigned int request,
-				   va_list args)
+static int packet_sock_ioctl_vmeth(void *obj, unsigned long request,
+				   long n_args, uintptr_t *args)
 {
-	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
+	return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, n_args, args);
 }
 
 /*

@@ -93,7 +93,8 @@ int open(const char *name, int flags)
 	return fd;
 }
 
-static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int fs_ioctl_vmeth(void *obj, unsigned long request,
+			  long n_args, uintptr_t *args)
 {
 	int rc;
 	struct posix_fs_desc *ptr = obj;
@@ -108,8 +109,8 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		off_t offset;
 		int whence;
 
-		offset = va_arg(args, off_t);
-		whence = va_arg(args, int);
+		offset = (off_t)args[0];
+		whence = (int)args[1];
 
 		rc = fs_seek(&ptr->file, offset, whence);
 		break;

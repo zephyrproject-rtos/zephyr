@@ -879,7 +879,8 @@ pollin_done:
 	return res;
 }
 
-static int spair_ioctl(void *obj, unsigned int request, va_list args)
+static int spair_ioctl(void *obj, unsigned long request,
+		       long n_args, uintptr_t *args)
 {
 	int res;
 	struct zsock_pollfd *pfd;
@@ -915,7 +916,7 @@ static int spair_ioctl(void *obj, unsigned int request, va_list args)
 		}
 
 		case F_SETFL: {
-			flags = va_arg(args, int);
+			flags = (int)args[0];
 
 			if (flags & O_NONBLOCK) {
 				spair->flags |= SPAIR_FLAG_NONBLOCK;
@@ -936,17 +937,17 @@ static int spair_ioctl(void *obj, unsigned int request, va_list args)
 		}
 
 		case ZFD_IOCTL_POLL_PREPARE: {
-			pfd = va_arg(args, struct zsock_pollfd *);
-			pev = va_arg(args, struct k_poll_event **);
-			pev_end = va_arg(args, struct k_poll_event *);
+			pfd = (struct zsock_pollfd *)args[0];
+			pev = (struct k_poll_event **)args[1];
+			pev_end = (struct k_poll_event *)args[2];
 
 			res = zsock_poll_prepare_ctx(obj, pfd, pev, pev_end);
 			goto out;
 		}
 
 		case ZFD_IOCTL_POLL_UPDATE: {
-			pfd = va_arg(args, struct zsock_pollfd *);
-			pev = va_arg(args, struct k_poll_event **);
+			pfd = (struct zsock_pollfd *)args[0];
+			pev = (struct k_poll_event **)args[1];
 
 			res = zsock_poll_update_ctx(obj, pfd, pev);
 			goto out;

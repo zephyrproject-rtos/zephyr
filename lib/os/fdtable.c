@@ -24,6 +24,15 @@
 #endif
 #include <syscall_handler.h>
 
+/* Number of arguments which can be passed to public ioctl calls
+ * (i.e. from userspace to kernel space).
+ * Arbitrary value is supported (at the expense of stack usage). Can
+ * be increased when ioctl's with more arguments are added.
+ * Note that kernelspace-kernelspace ioctl calls are handled
+ * differently (in z_fdtable_call_ioctl()).
+ */
+#define MAX_USERSPACE_IOCTL_ARGS 1
+
 struct fd_entry {
 	void *obj;
 	const struct fd_op_vtable *vtable;
@@ -238,7 +247,7 @@ int z_impl_sys_close(int fd)
 		return -1;
 	}
 
-	res = z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_CLOSE);
+	res = z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_CLOSE, 0);
 	z_free_fd(fd);
 
 	return res;
@@ -264,7 +273,8 @@ int fsync(int fd)
 		return -1;
 	}
 
-	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_FSYNC);
+	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj,
+				    ZFD_IOCTL_FSYNC, 0);
 }
 
 off_t lseek(int fd, off_t offset, int whence)
@@ -273,43 +283,70 @@ off_t lseek(int fd, off_t offset, int whence)
 		return -1;
 	}
 
-	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj, ZFD_IOCTL_LSEEK,
-			  offset, whence);
+	return z_fdtable_call_ioctl(fdtable[fd].vtable, fdtable[fd].obj,
+				    ZFD_IOCTL_LSEEK,
+				    2, offset, whence);
 }
 FUNC_ALIAS(lseek, _lseek, off_t);
 
-int z_impl_sys_ioctl(int fd, unsigned long request, va_list args)
+int z_impl_sys_ioctl(int fd, unsigned long request, long n_args, uintptr_t *args)
 {
 	if (_check_fd(fd) < 0) {
 		return -1;
 	}
 
-	return fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, args);
+	return fdtable[fd].vtable->ioctl(fdtable[fd].obj, request, n_args, args);
 }
 
 #ifdef CONFIG_USERSPACE
-ssize_t z_vrfy_sys_ioctl(int fd, unsigned long request, va_list args)
+ssize_t z_vrfy_sys_ioctl(int fd, unsigned long request, long n_args, uintptr_t *args)
 {
-/* This doesn't work so far, until we start to fish inside a particular
- * va_list structure for a particular arch. Maybe later.
- */
-#if 0
-	/* Check that we can access 4 words of arguments. This is very
-	 * generic check, implementation of specific ioctl's are
-	 * expected to perform their own detailed argument checking.
-	 */
-	Z_OOPS(Z_SYSCALL_MEMORY_READ(args, sizeof(uintptr_t) * 4));
-#endif
+	Z_OOPS(Z_SYSCALL_MEMORY_READ(args, sizeof(*args) * n_args));
 
 	if (request >= ZFD_IOCTL_PRIVATE) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	return z_impl_sys_ioctl(fd, request, args);
+	return z_impl_sys_ioctl(fd, request, n_args, args);
 }
 #include <syscalls/sys_ioctl_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+static int _vioctl(int fd, unsigned long request, va_list args)
+{
+	int i, n_args;
+	/* We assume that for argument passing [on stack], natural word size
+	 * of the plaform is used. So for example, for LP64 platform, where
+	 * int is 32-bit, it's still pushed as 64-bit value on stack.
+	 */
+	uintptr_t marshalled_args[MAX_USERSPACE_IOCTL_ARGS];
+
+	/* Calculate number of arguments for individual ioctl requests. */
+	switch (request) {
+	case F_GETFL:
+		n_args = 0;
+		break;
+	case F_SETFL:
+		n_args = 1;
+		break;
+	default:
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (n_args > ARRAY_SIZE(marshalled_args)) {
+		/* Use distinguishable error code. */
+		errno = EDOM;
+		return -1;
+	}
+
+	for (i = 0; i < n_args; i++) {
+		marshalled_args[i] = va_arg(args, uintptr_t);
+	}
+
+	return sys_ioctl(fd, request, n_args, marshalled_args);
+}
 
 int ioctl(int fd, unsigned long request, ...)
 {
@@ -317,7 +354,7 @@ int ioctl(int fd, unsigned long request, ...)
 	int res;
 
 	va_start(args, request);
-	res = sys_ioctl(fd, request, args);
+	res = _vioctl(fd, request, args);
 	va_end(args);
 
 	return res;
@@ -344,7 +381,7 @@ int fcntl(int fd, int cmd, ...)
 
 	/* The rest of commands are per-fd, handled by ioctl vmethod. */
 	va_start(args, cmd);
-	res = sys_ioctl(fd, cmd, args);
+	res = _vioctl(fd, cmd, args);
 	va_end(args);
 
 	return res;
@@ -373,7 +410,8 @@ static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 #endif
 }
 
-static int stdinout_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int stdinout_ioctl_vmeth(void *obj, unsigned long request,
+				long n_args, uintptr_t *args)
 {
 	errno = EINVAL;
 	return -1;
