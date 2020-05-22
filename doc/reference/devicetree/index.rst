@@ -169,6 +169,8 @@ controllers or channels, and properties related to them.
 .. doxygengroup:: devicetree-dmas
    :project: Zephyr
 
+.. _devicetree-flash-api:
+
 Fixed flash partitions
 ======================
 

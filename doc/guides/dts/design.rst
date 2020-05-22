@@ -78,9 +78,8 @@ Example remaining work
   dtschema does not yet meet Zephyr's needs, we should try to follow what it is
   capable of representing in Zephyr's own bindings.
 
-- Due to namespace collisions and inflexibility in the bindings language,
-  Zephyr cannot support the full set of possible node paths and bindings
-  supported by Linux.
+- Due to inflexibility in the bindings language, Zephyr cannot support the full
+  set of bindings supported by Linux.
 
 - Devicetree source sharing between Zephyr and Linux is not done.
 
