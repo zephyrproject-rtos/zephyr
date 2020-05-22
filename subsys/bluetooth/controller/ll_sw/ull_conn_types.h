@@ -140,7 +140,8 @@ struct ll_conn {
 	struct {
 		u8_t  req;
 		u8_t  ack;
-		u32_t features;
+		u32_t features_conn;
+		u32_t features_peer;
 	} llcp_feature;
 
 	struct {
