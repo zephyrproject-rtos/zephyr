@@ -4303,8 +4303,11 @@ static int cf_set(const char *name, size_t len_rd, settings_read_cb read_cb,
 		cfg = find_cf_cfg(NULL);
 		if (!cfg) {
 			BT_ERR("Unable to restore CF: no cfg left");
-			return 0;
+			return -ENOMEM;
 		}
+
+		cfg->id = id;
+		bt_addr_le_copy(&cfg->peer, &addr);
 	}
 
 	if (len_rd) {
