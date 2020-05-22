@@ -57,19 +57,27 @@ const char *sensor_channel_name[SENSOR_CHAN_ALL] = {
 static int handle_channel_by_name(const struct shell *shell, struct device *dev,
 					const char *channel_name)
 {
-	int i;
 	struct sensor_value value[3];
+	char *endptr;
 	int err;
+	int i;
 
-	for (i = 0; i < ARRAY_SIZE(sensor_channel_name); i++) {
-		if (strcmp(channel_name, sensor_channel_name[i]) == 0) {
-			break;
+	/* Attempt to parse channel name as a number first */
+	i = strtoul(channel_name, &endptr, 0);
+
+	if (*endptr != '\0') {
+		/* Channel name is not a number, look it up */
+		for (i = 0; i < ARRAY_SIZE(sensor_channel_name); i++) {
+			if (strcmp(channel_name, sensor_channel_name[i]) == 0) {
+				break;
+			}
 		}
-	}
 
-	if (i == ARRAY_SIZE(sensor_channel_name)) {
-		shell_error(shell, "Channel not supported (%s)", channel_name);
-		return -ENOTSUP;
+		if (i == ARRAY_SIZE(sensor_channel_name)) {
+			shell_error(shell, "Channel not supported (%s)",
+				    channel_name);
+			return -ENOTSUP;
+		}
 	}
 
 	err = sensor_channel_get(dev, i, value);
@@ -77,7 +85,10 @@ static int handle_channel_by_name(const struct shell *shell, struct device *dev,
 		return err;
 	}
 
-	if (i != SENSOR_CHAN_ACCEL_XYZ &&
+	if (i >= ARRAY_SIZE(sensor_channel_name)) {
+		shell_print(shell, "channel idx=%d value = %10.6f", i,
+			    sensor_value_to_double(&value[0]));
+	} else if (i != SENSOR_CHAN_ACCEL_XYZ &&
 		i != SENSOR_CHAN_GYRO_XYZ &&
 		i != SENSOR_CHAN_MAGN_XYZ) {
 		shell_print(shell,
