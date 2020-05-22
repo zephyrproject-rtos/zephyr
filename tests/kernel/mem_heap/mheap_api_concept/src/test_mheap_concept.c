@@ -133,3 +133,37 @@ void test_mheap_block_desc(void)
 		k_free(block[i]);
 	}
 }
+
+void test_mheap_block_release(void)
+{
+	void *block[BLK_NUM_MAX], *block_fail;
+
+	if (IS_ENABLED(CONFIG_MEM_POOL_HEAP_BACKEND)) {
+		ztest_test_skip();
+	}
+
+	/**
+	 * TESTPOINT: When the blocks in the heap memory pool are free by
+	 * the function k_free, the region would be released back to the
+	 * heap memory pool.
+	 */
+	for (int i = 0; i < BLK_NUM_MAX; i++) {
+		block[i] = k_malloc(BLK_SIZE_EXCLUDE_DESC);
+		zassert_not_null(block[i], NULL);
+	}
+
+	/* verify no more free blocks available*/
+	block_fail = k_malloc(BLK_SIZE_EXCLUDE_DESC);
+	zassert_is_null(block_fail, NULL);
+
+	k_free(block[0]);
+
+	/* one free block is available*/
+	block[0] = k_malloc(BLK_SIZE_EXCLUDE_DESC);
+	zassert_not_null(block[0], NULL);
+
+	/* test case tear down*/
+	for (int i = 0; i < BLK_NUM_MAX; i++) {
+		k_free(block[i]);
+	}
+}
