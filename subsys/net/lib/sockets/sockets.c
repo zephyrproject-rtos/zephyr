@@ -258,7 +258,7 @@ int z_impl_zsock_close(int sock)
 	NET_DBG("close: ctx=%p, fd=%d", ctx, sock);
 
 	return z_fdtable_call_ioctl((const struct fd_op_vtable *)vtable,
-				    ctx, ZFD_IOCTL_CLOSE);
+				    ctx, ZFD_IOCTL_CLOSE, 0);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1095,7 +1095,7 @@ int z_impl_zsock_fcntl(int sock, int cmd, int flags)
 	}
 
 	return z_fdtable_call_ioctl((const struct fd_op_vtable *)vtable,
-				    obj, cmd, flags);
+				    obj, cmd, 1, flags);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1206,7 +1206,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 
 		result = z_fdtable_call_ioctl(vtable, ctx,
 					      ZFD_IOCTL_POLL_PREPARE,
-					      pfd, &pev, pev_end);
+					      3, pfd, &pev, pev_end);
 		if (result == -EALREADY) {
 			/* If POLL_PREPARE returned with EALREADY, it means
 			 * it already detected that some socket is ready. In
@@ -1224,7 +1224,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 			 */
 			return z_fdtable_call_ioctl(vtable, ctx,
 						    ZFD_IOCTL_POLL_OFFLOAD,
-						    fds, nfds, poll_timeout);
+						    3, fds, nfds, poll_timeout);
 		} else if (result != 0) {
 			errno = -result;
 			return -1;
@@ -1274,7 +1274,7 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int poll_timeout)
 
 			result = z_fdtable_call_ioctl(vtable, ctx,
 						      ZFD_IOCTL_POLL_UPDATE,
-						      pfd, &pev);
+						      2, pfd, &pev);
 			if (result == -EAGAIN) {
 				retry = true;
 				continue;
@@ -1633,7 +1633,7 @@ int z_impl_zsock_getsockname(int sock, struct sockaddr *addr,
 	NET_DBG("getsockname: ctx=%p, fd=%d", ctx, sock);
 
 	return z_fdtable_call_ioctl((const struct fd_op_vtable *)vtable, ctx,
-				    ZFD_IOCTL_GETSOCKNAME, addr, addrlen);
+				    ZFD_IOCTL_GETSOCKNAME, 2, addr, addrlen);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1676,7 +1676,7 @@ static ssize_t sock_write_vmeth(void *obj, const void *buffer, size_t count)
 	return zsock_sendto_ctx(obj, buffer, count, 0, NULL, 0);
 }
 
-static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+static int sock_ioctl_vmeth(void *obj, unsigned long request, long n_args, uintptr_t *args)
 {
 	switch (request) {
 
@@ -1691,7 +1691,7 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	case F_SETFL: {
 		int flags;
 
-		flags = va_arg(args, int);
+		flags = (int)args[0];
 
 		if (flags & O_NONBLOCK) {
 			sock_set_flag(obj, SOCK_NONBLOCK, SOCK_NONBLOCK);
@@ -1710,9 +1710,9 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		struct k_poll_event **pev;
 		struct k_poll_event *pev_end;
 
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
-		pev_end = va_arg(args, struct k_poll_event *);
+		pfd = (struct zsock_pollfd *)args[0];
+		pev = (struct k_poll_event **)args[1];
+		pev_end = (struct k_poll_event *)args[2];
 
 		return zsock_poll_prepare_ctx(obj, pfd, pev, pev_end);
 	}
@@ -1721,8 +1721,8 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		struct zsock_pollfd *pfd;
 		struct k_poll_event **pev;
 
-		pfd = va_arg(args, struct zsock_pollfd *);
-		pev = va_arg(args, struct k_poll_event **);
+		pfd = (struct zsock_pollfd *)args[0];
+		pev = (struct k_poll_event **)args[1];
 
 		return zsock_poll_update_ctx(obj, pfd, pev);
 	}
@@ -1731,8 +1731,8 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		struct sockaddr *addr;
 		socklen_t *addrlen;
 
-		addr = va_arg(args, struct sockaddr *);
-		addrlen = va_arg(args, socklen_t *);
+		addr = (struct sockaddr *)args[0];
+		addrlen = (socklen_t *)args[1];
 
 		return zsock_getsockname_ctx(obj, addr, addrlen);
 	}

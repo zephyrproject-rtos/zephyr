@@ -1197,7 +1197,7 @@ int ztls_close_ctx(struct net_context *ctx)
 		err = -EBADF;
 	}
 
-	ret = z_fdtable_call_ioctl(&sock_fd_op_vtable.fd_vtable, ctx, ZFD_IOCTL_CLOSE);
+	ret = z_fdtable_call_ioctl(&sock_fd_op_vtable.fd_vtable, ctx, ZFD_IOCTL_CLOSE, 0);
 
 	/* In case close fails, we propagate errno value set by close.
 	 * In case close succeeds, but tls_release fails, set errno
@@ -1331,7 +1331,7 @@ error:
 		__ASSERT(err == 0, "TLS context release failed");
 	}
 
-	err = z_fdtable_call_ioctl(&sock_fd_op_vtable.fd_vtable, child, ZFD_IOCTL_CLOSE);
+	err = z_fdtable_call_ioctl(&sock_fd_op_vtable.fd_vtable, child, ZFD_IOCTL_CLOSE, 0);
 	__ASSERT(err == 0, "Child socket close failed");
 
 	z_free_fd(fd);
