@@ -103,6 +103,7 @@
 
 #define LL_FEAT_BIT_MASK         0x1FFFF
 #define LL_FEAT_BIT_MASK_VALID   0x1CF2F
+#define LL_FEAT_FILTER_OCTET0    0x1FF00
 #define LL_FEAT                  (LL_FEAT_BIT_ENC | \
 				  LL_FEAT_BIT_CONN_PARAM_REQ | \
 				  LL_FEAT_BIT_EXT_REJ_IND | \
