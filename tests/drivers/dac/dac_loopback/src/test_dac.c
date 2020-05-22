@@ -47,7 +47,10 @@
 
 #elif defined(CONFIG_BOARD_TWR_KE18F)
 
-/* DAC0 output on PTE9, ADC input read from ADC0_SE12 */
+/*
+ * DAC0 output is internally available on ADC0_SE23 when test output
+ * is enabled.
+ */
 
 #define DAC_DEVICE_NAME		DT_LABEL(DT_NODELABEL(dac0))
 #define DAC_RESOLUTION		12
@@ -58,7 +61,7 @@
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
-#define ADC_CHANNEL_ID		12
+#define ADC_CHANNEL_ID		23
 
 #elif defined(CONFIG_BOARD_FRDM_K64F)
 
