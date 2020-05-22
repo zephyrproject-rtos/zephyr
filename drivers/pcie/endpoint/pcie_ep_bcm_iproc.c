@@ -240,10 +240,28 @@ static int iproc_pcie_raise_irq(struct device *dev,
 	return ret;
 }
 
+static int iproc_pcie_register_reset_cb(struct device *dev,
+					enum pcie_reset reset,
+					pcie_ep_reset_callback_t cb, void *arg)
+{
+	struct iproc_pcie_ep_ctx *ctx = dev->driver_data;
+
+	if (reset < PCIE_PERST || reset >= PCIE_RESET_MAX)
+		return -EINVAL;
+
+	LOG_DBG("Registering the callback for reset %d", reset);
+	ctx->reset_cb[reset] = cb;
+	ctx->reset_data[reset] = arg;
+
+	return 0;
+}
+
 #if DT_INST_IRQ_HAS_NAME(0, perst)
 static void iproc_pcie_perst(void *arg)
 {
 	struct device *dev = arg;
+	struct iproc_pcie_ep_ctx *ctx = dev->driver_data;
+	void *reset_data;
 	uint32_t data;
 
 	data = sys_read32(CRMU_MCU_EXTRA_EVENT_STATUS);
@@ -251,6 +269,11 @@ static void iproc_pcie_perst(void *arg)
 	if (data & PCIE0_PERST_INTR) {
 		LOG_DBG("PERST interrupt [0x%x]", data);
 		sys_write32(PCIE0_PERST_INTR, CRMU_MCU_EXTRA_EVENT_CLEAR);
+
+		if (ctx->reset_cb[PCIE_PERST] != NULL) {
+			reset_data = ctx->reset_data[PCIE_PERST];
+			ctx->reset_cb[PCIE_PERST](reset_data);
+		}
 	}
 }
 #endif
@@ -259,6 +282,8 @@ static void iproc_pcie_perst(void *arg)
 static void iproc_pcie_hot_reset(void *arg)
 {
 	struct device *dev = arg;
+	struct iproc_pcie_ep_ctx *ctx = dev->driver_data;
+	void *reset_data;
 	uint32_t data;
 
 	data = sys_read32(CRMU_MCU_EXTRA_EVENT_STATUS);
@@ -266,6 +291,11 @@ static void iproc_pcie_hot_reset(void *arg)
 	if (data & PCIE0_PERST_INB_INTR) {
 		LOG_DBG("INBAND PERST interrupt [0x%x]", data);
 		sys_write32(PCIE0_PERST_INB_INTR, CRMU_MCU_EXTRA_EVENT_CLEAR);
+
+		if (ctx->reset_cb[PCIE_PERST_INB] != NULL) {
+			reset_data = ctx->reset_data[PCIE_PERST_INB];
+			ctx->reset_cb[PCIE_PERST_INB](reset_data);
+		}
 	}
 }
 #endif
@@ -275,6 +305,8 @@ static void iproc_pcie_flr(void *arg)
 {
 	struct device *dev = arg;
 	const struct iproc_pcie_ep_config *cfg = dev->config_info;
+	struct iproc_pcie_ep_ctx *ctx = dev->driver_data;
+	void *reset_data;
 	uint32_t data;
 
 	data = pcie_read32(&cfg->base->paxb_paxb_intr_status);
@@ -282,6 +314,11 @@ static void iproc_pcie_flr(void *arg)
 	if (data & PCIE0_FLR_INTR) {
 		LOG_DBG("FLR interrupt[0x%x]", data);
 		pcie_write32(PCIE0_FLR_INTR, &cfg->base->paxb_paxb_intr_clear);
+
+		if (ctx->reset_cb[PCIE_FLR] != NULL) {
+			reset_data = ctx->reset_data[PCIE_FLR];
+			ctx->reset_cb[PCIE_FLR](reset_data);
+		}
 	} else {
 		/*
 		 * Other interrupts like PAXB ECC Error interrupt
@@ -442,6 +479,7 @@ static struct pcie_ep_driver_api iproc_pcie_ep_api = {
 	.map_addr = iproc_pcie_map_addr,
 	.unmap_addr = iproc_pcie_unmap_addr,
 	.raise_irq = iproc_pcie_raise_irq,
+	.register_reset_cb = iproc_pcie_register_reset_cb,
 };
 
 DEVICE_AND_API_INIT(iproc_pcie_ep_0, DT_INST_LABEL(0),
