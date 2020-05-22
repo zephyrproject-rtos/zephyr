@@ -354,8 +354,9 @@ harness_config: <harness configuration options>
         specific test setup and board selection logic to pick the particular
         board(s) out of multiple boards that fulfill the dependency in an
         automation setup based on "fixture" keyword. Some sample fixture names
-        are fixture_i2c_hts221, fixture_i2c_bme280, fixture_i2c_FRAM,
-        fixture_ble_fw and fixture_gpio_loop.
+        are i2c_hts221, i2c_bme280, i2c_FRAM, ble_fw and gpio_loop.
+
+        Only one fixture can be defined per testcase.
 
     The following is an example yaml file with a few harness_config options.
 
@@ -372,7 +373,7 @@ harness_config: <harness configuration options>
              regex:
                - "Temperature:(.*)C"
                - "Relative Humidity:(.*)%"
-             fixture: fixture_i2c_hts221
+             fixture: i2c_hts221
          tests:
            test:
              tags: sensors
@@ -545,6 +546,30 @@ on those platforms.
   with the hardware map features. Boards that require other runners to flash the
   Zephyr binary are still work in progress.
 
-To produce test reports, use the ``--detailed-report FILENAME`` option which will
-generate an XML file using the JUNIT syntax. This file can be used to generate
-other reports, for example using ``junit2html`` which can be installed via PIP.
+Fixtures
++++++++++
+
+Some tests require additional setup or special wiring specific to the test.
+Running the tests without this setup or test fixture may fail. A testcase can
+specify the fixture it needs which can then be matched with hardware capability
+of a board and the fixtures it supports via the command line or using the hardware
+map file.
+
+Fixtures are defined in the hardware map file as a list::
+
+      - available: true
+        connected: true
+        fixtures:
+          - gpio_loopback
+        id: 0240000026334e450015400f5e0e000b4eb1000097969900
+        platform: frdm_k64f
+        product: DAPLink CMSIS-DAP
+        runner: pyocd
+        serial: /dev/ttyACM9
+
+When running `sanitycheck` with ``--device-testing``, the configured fixture
+in the hardware map file will be matched to testcases requesting the same fixtures
+and these tests will be executed on the boards that provide this fixture.
+
+.. figure:: fixtures.svg
+   :figclass: align-center
