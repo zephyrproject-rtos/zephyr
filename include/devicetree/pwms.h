@@ -119,22 +119,25 @@ extern "C" {
  *     };
  *
  *     n: node {
- *             pwms = <&pwm1 1 PWM_POLARITY_NORMAL>,
- *                    <&pwm2 3 PWM_POLARITY_INVERTED>;
+ *             pwms = <&pwm1 1 200000 PWM_POLARITY_NORMAL>,
+ *                    <&pwm2 3 100000 PWM_POLARITY_INVERTED>;
  *     };
  *
  * Bindings fragment for the "vnd,pwm" compatible:
  *
  *     pwm-cells:
  *       - channel
+ *       - period
  *       - flags
  *
  * Example usage:
  *
  *     DT_PWMS_CELL_BY_IDX(DT_NODELABEL(n), 0, channel) // 1
  *     DT_PWMS_CELL_BY_IDX(DT_NODELABEL(n), 1, channel) // 3
- *     DT_PWMS_CELL_BY_IDX(DT_NODELABEL(n), 0, flags) // PWM_POLARITY_NORMAL
- *     DT_PWMS_CELL_BY_IDX(DT_NODELABEL(n), 1, flags) // PWM_POLARITY_INVERTED
+ *     DT_PWMS_CELL_BY_IDX(DT_NODELABEL(n), 0, period)  // 200000
+ *     DT_PWMS_CELL_BY_IDX(DT_NODELABEL(n), 1, period)  // 100000
+ *     DT_PWMS_CELL_BY_IDX(DT_NODELABEL(n), 0, flags)   // PWM_POLARITY_NORMAL
+ *     DT_PWMS_CELL_BY_IDX(DT_NODELABEL(n), 1, flags)   // PWM_POLARITY_INVERTED
  *
  * @param node_id node identifier for a node with a pwms property
  * @param idx logical index into pwms property
@@ -163,8 +166,8 @@ extern "C" {
  *     };
  *
  *     n: node {
- *             pwms = <&pwm1 1 PWM_POLARITY_NORMAL>,
- *                    <&pwm2 3 PWM_POLARITY_INVERTED>;
+ *             pwms = <&pwm1 1 200000 PWM_POLARITY_NORMAL>,
+ *                    <&pwm2 3 100000 PWM_POLARITY_INVERTED>;
  *             pwm-names = "alpha", "beta";
  *     };
  *
@@ -172,12 +175,15 @@ extern "C" {
  *
  *     pwm-cells:
  *       - channel
+ *       - period
  *       - flags
  *
  * Example usage:
  *
  *     DT_PWMS_CELL_BY_NAME(DT_NODELABEL(n), alpha, channel) // 1
  *     DT_PWMS_CELL_BY_NAME(DT_NODELABEL(n), beta, channel)  // 3
+ *     DT_PWMS_CELL_BY_NAME(DT_NODELABEL(n), alpha, period)  // 200000
+ *     DT_PWMS_CELL_BY_NAME(DT_NODELABEL(n), beta, period)   // 100000
  *     DT_PWMS_CELL_BY_NAME(DT_NODELABEL(n), alpha, flags)   // PWM_POLARITY_NORMAL
  *     DT_PWMS_CELL_BY_NAME(DT_NODELABEL(n), beta, flags)    // PWM_POLARITY_INVERTED
  *
@@ -240,6 +246,47 @@ extern "C" {
  * @see DT_PWMS_CHANNEL_BY_IDX()
  */
 #define DT_PWMS_CHANNEL(node_id) DT_PWMS_CHANNEL_BY_IDX(node_id, 0)
+
+/**
+ * @brief Get PWM specifier's period cell value at an index
+ *
+ * This macro only works for PWM specifiers with cells named "period".
+ * Refer to the node's binding to check if necessary.
+ *
+ * This is equivalent to DT_PWMS_CELL_BY_IDX(node_id, idx, period).
+ *
+ * @param node_id node identifier for a node with a pwms property
+ * @param idx logical index into pwms property
+ * @return the period cell value at index "idx"
+ * @see DT_PWMS_CELL_BY_IDX()
+ */
+#define DT_PWMS_PERIOD_BY_IDX(node_id, idx) \
+	DT_PWMS_CELL_BY_IDX(node_id, idx, period)
+
+/**
+ * @brief Get a PWM specifier's period cell value by name
+ *
+ * This macro only works for PWM specifiers with cells named "period".
+ * Refer to the node's binding to check if necessary.
+ *
+ * This is equivalent to DT_PWMS_CELL_BY_NAME(node_id, name, period).
+ *
+ * @param node_id node identifier for a node with a pwms property
+ * @param name lowercase-and-underscores name of a pwms element
+ *             as defined by the node's pwm-names property
+ * @return the period cell value in the specifier at the named element
+ * @see DT_PWMS_CELL_BY_NAME()
+ */
+#define DT_PWMS_PERIOD_BY_NAME(node_id, name) \
+	DT_PWMS_CELL_BY_NAME(node_id, name, period)
+
+/**
+ * @brief Equivalent to DT_PWMS_PERIOD_BY_IDX(node_id, 0)
+ * @param node_id node identifier for a node with a pwms property
+ * @return the period cell value at index 0
+ * @see DT_PWMS_PERIOD_BY_IDX()
+ */
+#define DT_PWMS_PERIOD(node_id) DT_PWMS_PERIOD_BY_IDX(node_id, 0)
 
 /**
  * @brief Get a PWM specifier's flags cell value at an index
@@ -373,6 +420,35 @@ extern "C" {
  * @see DT_INST_PWMS_CHANNEL_BY_IDX()
  */
 #define DT_INST_PWMS_CHANNEL(inst) DT_INST_PWMS_CHANNEL_BY_IDX(inst, 0)
+
+/**
+ * @brief Equivalent to DT_INST_PWMS_CELL_BY_IDX(inst, idx, period)
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx logical index into pwms property
+ * @return the period cell value at index "idx"
+ * @see DT_INST_PWMS_CELL_BY_IDX()
+ */
+#define DT_INST_PWMS_PERIOD_BY_IDX(inst, idx) \
+	DT_INST_PWMS_CELL_BY_IDX(inst, idx, period)
+
+/**
+ * @brief Equivalent to DT_INST_PWMS_CELL_BY_NAME(inst, name, period)
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of a pwms element
+ *             as defined by the node's pwm-names property
+ * @return the period cell value in the specifier at the named element
+ * @see DT_INST_PWMS_CELL_BY_NAME()
+ */
+#define DT_INST_PWMS_PERIOD_BY_NAME(inst, name) \
+	DT_INST_PWMS_CELL_BY_NAME(inst, name, period)
+
+/**
+ * @brief Equivalent to DT_INST_PWMS_PERIOD_BY_IDX(inst, 0)
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the period cell value at index 0
+ * @see DT_INST_PWMS_PERIOD_BY_IDX()
+ */
+#define DT_INST_PWMS_PERIOD(inst) DT_INST_PWMS_PERIOD_BY_IDX(inst, 0)
 
 /**
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_IDX(inst, idx, flags)
