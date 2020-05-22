@@ -275,7 +275,7 @@ u8_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		if (!conn->llcp_conn_param.disabled &&
 		    (!conn->common.fex_valid ||
-		     (conn->llcp_feature.features &
+		     (conn->llcp_feature.features_conn &
 		      BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ)))) {
 			cmd++;
 		} else if (conn->lll.role) {
@@ -427,7 +427,7 @@ u32_t ll_length_req_send(u16_t handle, u16_t tx_octets, u16_t tx_time)
 
 	if (conn->llcp_length.disabled ||
 	    (conn->common.fex_valid &&
-	     !(conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_DLE)))) {
+	     !(conn->llcp_feature.features_conn & BIT(BT_LE_FEAT_BIT_DLE)))) {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 
@@ -534,8 +534,9 @@ u8_t ll_phy_req_send(u16_t handle, u8_t tx, u8_t flags, u8_t rx)
 
 	if (conn->llcp_phy.disabled ||
 	    (conn->common.fex_valid &&
-	     !(conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_PHY_2M)) &&
-	     !(conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_PHY_CODED)))) {
+	     !(conn->llcp_feature.features_conn & BIT(BT_LE_FEAT_BIT_PHY_2M)) &&
+	     !(conn->llcp_feature.features_conn &
+	       BIT(BT_LE_FEAT_BIT_PHY_CODED)))) {
 		return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 	}
 
@@ -2512,7 +2513,8 @@ static inline void event_enc_reject_prep(struct ll_conn *conn,
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 
 	if (conn->common.fex_valid &&
-	    (conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_EXT_REJ_IND))) {
+	    (conn->llcp_feature.features_conn &
+	     BIT(BT_LE_FEAT_BIT_EXT_REJ_IND))) {
 		struct pdu_data_llctrl_reject_ext_ind *p;
 
 		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
@@ -2740,7 +2742,7 @@ static inline void event_fex_prep(struct ll_conn *conn)
 		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 		(void)memset(&pdu->llctrl.feature_rsp.features[0], 0x00,
 			sizeof(pdu->llctrl.feature_rsp.features));
-		sys_put_le24(conn->llcp_feature.features,
+		sys_put_le24(conn->llcp_feature.features_peer,
 			     pdu->llctrl.feature_req.features);
 
 		/* enqueue feature rsp structure into rx queue */
@@ -2758,7 +2760,7 @@ static inline void event_fex_prep(struct ll_conn *conn)
 		conn->llcp_feature.ack--;
 
 		/* use initial feature bitmap */
-		conn->llcp_feature.features = LL_FEAT;
+		conn->llcp_feature.features_conn = LL_FEAT;
 
 		/* place the feature exchange req packet as next in tx queue */
 		pdu->ll_id = PDU_DATA_LLID_CTRL;
@@ -2770,7 +2772,7 @@ static inline void event_fex_prep(struct ll_conn *conn)
 		(void)memset(&pdu->llctrl.feature_req.features[0],
 			     0x00,
 			     sizeof(pdu->llctrl.feature_req.features));
-		sys_put_le24(conn->llcp_feature.features,
+		sys_put_le24(conn->llcp_feature.features_conn,
 			     pdu->llctrl.feature_req.features);
 
 		ctrl_tx_enqueue(conn, tx);
@@ -3175,14 +3177,14 @@ static inline void dle_max_time_get(const struct ll_conn *conn,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	feature_coded_phy = (conn->llcp_feature.features &
+	feature_coded_phy = (conn->llcp_feature.features_conn &
 			     BIT(BT_LE_FEAT_BIT_PHY_CODED));
 #else
 	feature_coded_phy = 0;
 #endif
 
 #if defined(CONFIG_BT_CTLR_PHY_2M)
-	feature_phy_2m = (conn->llcp_feature.features &
+	feature_phy_2m = (conn->llcp_feature.features_conn &
 			  BIT(BT_LE_FEAT_BIT_PHY_2M));
 #else
 	feature_phy_2m = 0;
@@ -4020,12 +4022,28 @@ static inline u32_t feat_get(u8_t *features)
 	return feat;
 }
 
+/*
+ * Perform a logical and on octet0 and keep the remaining bits of the
+ * first input parameter
+ */
+static inline u32_t feat_land_octet0(u32_t feat_to_keep, u32_t feat_octet0)
+{
+	u32_t feat_result;
+
+	feat_result = feat_to_keep & feat_octet0;
+	feat_result &= 0xFF;
+	feat_result |= feat_to_keep & LL_FEAT_FILTER_OCTET0;
+
+	return feat_result;
+}
+
 static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 			    struct pdu_data *pdu_rx)
 {
 	struct pdu_data_llctrl_feature_req *req;
 	struct node_tx *tx;
 	struct pdu_data *pdu_tx;
+	u32_t feat;
 
 	/* acquire tx mem */
 	tx = mem_acquire(&mem_conn_tx_ctrl.free);
@@ -4035,7 +4053,14 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 
 	/* AND the feature set to get Feature USED */
 	req = &pdu_rx->llctrl.feature_req;
-	conn->llcp_feature.features &= feat_get(&req->features[0]);
+	conn->llcp_feature.features_conn &= feat_get(&req->features[0]);
+	/*
+	 * Get all the features of peer, except octet 0.
+	 * Octet 0 is the actual features used on the link
+	 * See BTCore V5.2, Vol. 6, Part B, chapter 5.1.4
+	 */
+	conn->llcp_feature.features_peer =
+		feat_land_octet0(feat_get(&req->features[0]), LL_FEAT);
 
 	/* features exchanged */
 	conn->common.fex_valid = 1U;
@@ -4044,12 +4069,16 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	pdu_tx = (void *)tx->pdu;
 	pdu_tx->ll_id = PDU_DATA_LLID_CTRL;
 	pdu_tx->len = offsetof(struct pdu_data_llctrl, feature_rsp) +
-		      sizeof(struct pdu_data_llctrl_feature_rsp);
+		sizeof(struct pdu_data_llctrl_feature_rsp);
 	pdu_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
 	(void)memset(&pdu_tx->llctrl.feature_rsp.features[0], 0x00,
 		     sizeof(pdu_tx->llctrl.feature_rsp.features));
-	sys_put_le24(conn->llcp_feature.features,
-		     pdu_tx->llctrl.feature_req.features);
+	/*
+	 * On feature response we send the local supported features.
+	 * See BTCore V5.2 VOl 6 Part B, chapter 5.1.4
+	 */
+	feat = feat_land_octet0(LL_FEAT, conn->llcp_feature.features_conn);
+	sys_put_le24(feat, pdu_tx->llctrl.feature_rsp.features);
 
 	ctrl_tx_sec_enqueue(conn, tx);
 
@@ -4066,7 +4095,14 @@ static void feature_rsp_recv(struct ll_conn *conn, struct pdu_data *pdu_rx)
 	rsp = &pdu_rx->llctrl.feature_rsp;
 
 	/* AND the feature set to get Feature USED */
-	conn->llcp_feature.features &= feat_get(&rsp->features[0]);
+	conn->llcp_feature.features_conn &= feat_get(&rsp->features[0]);
+	/*
+	 * Get all the features of peer, except octet 0.
+	 * Octet 0 is the actual features used on the link
+	 * See BTCore V5.2, Vol. 6, Part B, chapter 5.1.4
+	 */
+	conn->llcp_feature.features_peer =
+		feat_land_octet0(feat_get(&rsp->features[0]), LL_FEAT);
 
 	/* features exchanged */
 	conn->common.fex_valid = 1U;
