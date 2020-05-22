@@ -933,6 +933,12 @@ __syscall s32_t k_usleep(s32_t us);
  * This routine causes the current thread to execute a "do nothing" loop for
  * @a usec_to_wait microseconds.
  *
+ * @note The clock used for the microsecond-resolution delay here may
+ * be skewed relative to the clock used for system timeouts like
+ * k_sleep().  For example k_busy_wait(1000) may take slightly more or
+ * less time than k_sleep(K_MSEC(1)), with the offset dependent on
+ * clock tolerances.
+ *
  * @return N/A
  */
 __syscall void k_busy_wait(u32_t usec_to_wait);
