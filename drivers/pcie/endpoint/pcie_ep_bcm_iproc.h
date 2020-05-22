@@ -72,6 +72,10 @@ struct iproc_pcie_ep_ctx {
 	struct k_spinlock raise_irq_lock;
 	bool highmem_in_use;
 	bool lowmem_in_use;
+	/* Callback function for reset interrupt */
+	pcie_ep_reset_callback_t reset_cb[PCIE_RESET_MAX];
+	/* Callback data for reset interrupt */
+	void *reset_data[PCIE_RESET_MAX];
 };
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_BCM_IPROC_H_ */
