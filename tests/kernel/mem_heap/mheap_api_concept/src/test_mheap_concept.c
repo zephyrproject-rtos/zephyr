@@ -133,3 +133,56 @@ void test_mheap_block_desc(void)
 		k_free(block[i]);
 	}
 }
+
+#define NMEMB   8
+#define SIZE    16
+/**
+ * @brief Verify a region would be released back to
+ * heap memory pool using k_free function.
+ *
+ * @ingroup kernel_heap_tests
+ *
+ * @see k_calloc(), k_free()
+ */
+void test_mheap_block_release(void)
+{
+	void *block[4 * BLK_NUM_MAX], *block_fail;
+	int nb;
+
+	/**
+	 * TESTPOINT: When the blocks in the heap memory pool are free by
+	 * the function k_free, the region would be released back to the
+	 * heap memory pool.
+	 */
+	for (nb = 0; nb < ARRAY_SIZE(block); nb++) {
+		/**
+		 * TESTPOINT: This routine provides traditional malloc()
+		 * semantics. Memory is allocated from the heap memory pool.
+		 */
+		block[nb] = k_calloc(NMEMB, SIZE);
+		if (block[nb] == NULL) {
+			break;
+		}
+	}
+
+	/* verify no more free blocks available*/
+	block_fail = k_calloc(NMEMB, SIZE);
+	zassert_is_null(block_fail, NULL);
+
+	k_free(block[0]);
+
+	/* one free block is available*/
+	block[0] = k_calloc(NMEMB, SIZE);
+	zassert_not_null(block[0], NULL);
+
+	for (int i = 0; i < nb; i++) {
+		/**
+		 * TESTPOINT: This routine provides traditional free()
+		 * semantics. The memory being returned must have been allocated
+		 * from the heap memory pool.
+		 */
+		k_free(block[i]);
+	}
+	/** TESTPOINT: If ptr is NULL, no operation is performed.*/
+	k_free(NULL);
+}
