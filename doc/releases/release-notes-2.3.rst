@@ -153,13 +153,19 @@ Boards & SoC Support
 
 .. rst-class:: rst-columns
 
-   * <TBD>
+   * STM32L5 series of Ultra-low-power MCUs
 
 * Added support for these ARM boards:
 
   .. rst-class:: rst-columns
 
-     * <TBD>
+     * 96Boards AeroCore 2
+     * Adafruit Feather STM32F405 Express
+     * Black STM32 F407VE Development Board
+     * Black STM32 F407ZG Pro Development Board
+     * ST Nucleo H743ZI
+     * ST Nucleo F303RE
+     * ST Nucleo L552ZE-Q
 
 * Added support for these following shields:
 
@@ -175,11 +181,12 @@ Drivers and Sensors
 
 * ADC
 
-  * <TBD>
+  * Add support for STM32G4, STM32L1 and STM32H7 series
+  * Enable internal voltage reference source on stm32
 
 * Bluetooth
 
-  * <TBD>
+  * Add an RX thread on stm32wb hci wrapper
 
 * CAN
 
@@ -187,7 +194,8 @@ Drivers and Sensors
 
 * Clock Control
 
-  * <TBD>
+  * Enable MSI range config in PLL mode on stm32
+  * Fix AHB clock computation based on core on stm32h7
 
 * Console
 
@@ -195,7 +203,12 @@ Drivers and Sensors
 
 * Counter
 
-  * <TBD>
+  * Add support on stm32h7 and stm32l0
+  * Fix alarm tick count on stm32
+
+* DAC
+
+  * Add stm32l0 series support
 
 * Display
 
@@ -203,7 +216,8 @@ Drivers and Sensors
 
 * DMA
 
-  * <TBD>
+  * Enable use of DMAMUX on stm32l4+ and stm32wb
+  * Various fixes on stm32 dma management
 
 * EEPROM
 
@@ -232,7 +246,8 @@ Drivers and Sensors
 
 * Flash
 
-  * <TBD>
+  * Add logs on stm32
+  * Fix wrong bank erasing on stm32g4
 
 * GPIO
 
@@ -244,7 +259,7 @@ Drivers and Sensors
 
 * I2C
 
-  * <TBD>
+  * Add support to stm32h7
 
 * I2S
 
@@ -300,7 +315,7 @@ Drivers and Sensors
 
 * PWM
 
-  * <TBD>
+  * Add support to stm32h7
 
 * Sensor
 
@@ -309,10 +324,12 @@ Drivers and Sensors
 * Serial
 
   * Add uart_mux driver that is used in GSM 07.10 muxing protocol
+  * Add support for parity setting from dts on stm32
+  * Add support for stm32l5
 
 * SPI
 
-  * <TBD>
+  * Add support for DMA client on stm32
 
 * Timer
 
@@ -321,6 +338,8 @@ Drivers and Sensors
 * USB
 
   * Add experimental USB Audio implementation.
+  * Add support to stm32wb
+  * Fix PMA leak at reset on stm32
 
 * Video
 
@@ -328,7 +347,8 @@ Drivers and Sensors
 
 * Watchdog
 
-  * <TBD>
+  * Add support on stm32g0
+  * Disable iwdg at boot on stm32
 
 * WiFi
 
@@ -405,6 +425,10 @@ Build and Infrastructure
 
 Libraries / Subsystems
 **********************
+
+* Disk
+
+  * Add stm32 sdmmc disk access driver, supports stm32f7 and stm32l4
 
 * Random
 
