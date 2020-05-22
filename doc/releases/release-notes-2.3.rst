@@ -165,7 +165,10 @@ Boards & SoC Support
 
   .. rst-class:: rst-columns
 
-     * <TBD>
+     * Espressif ESP-8266 Module
+     * MikroElektronika ADC Click
+     * MikroElectronica Eth Click
+     * ST X-NUCLEO-IKS02A1: MEMS Inertial and Environmental Multi sensor shield
 
 Drivers and Sensors
 *******************
