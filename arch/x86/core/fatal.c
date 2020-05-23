@@ -134,6 +134,21 @@ static void unwind_stack(uintptr_t base_ptr, u16_t cs)
 }
 #endif /* CONFIG_X86_EXCEPTION_STACK_TRACE */
 
+static inline struct x86_page_tables *get_ptables(const z_arch_esf_t *esf)
+{
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_X86_KPTI)
+	/* If the interrupted thread was in user mode, we did a page table
+	 * switch when we took the exception via z_x86_trampoline_to_kernel
+	 */
+	if ((esf->cs & 0x3) != 0) {
+		return z_x86_thread_page_tables_get(_current);
+	}
+#else
+	ARG_UNUSED(esf);
+#endif
+	return z_x86_page_tables_get();
+}
+
 #ifdef CONFIG_X86_64
 static void dump_regs(const z_arch_esf_t *esf)
 {
@@ -146,7 +161,7 @@ static void dump_regs(const z_arch_esf_t *esf)
 	LOG_ERR("R12: 0x%016lx R13: 0x%016lx R14: 0x%016lx R15: 0x%016lx",
 		esf->r12, esf->r13, esf->r14, esf->r15);
 	LOG_ERR("RSP: 0x%016lx RFLAGS: 0x%016lx CS: 0x%04lx CR3: %p", esf->rsp,
-		esf->rflags, esf->cs & 0xFFFFU, z_x86_page_tables_get());
+		esf->rflags, esf->cs & 0xFFFFU, get_ptables(esf));
 
 #ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
 	LOG_ERR("call trace:");
@@ -164,7 +179,7 @@ static void dump_regs(const z_arch_esf_t *esf)
 	LOG_ERR("ESI: 0x%08x, EDI: 0x%08x, EBP: 0x%08x, ESP: 0x%08x",
 		esf->esi, esf->edi, esf->ebp, esf->esp);
 	LOG_ERR("EFLAGS: 0x%08x CS: 0x%04x CR3: %p", esf->eflags,
-		esf->cs & 0xFFFFU, z_x86_page_tables_get());
+		esf->cs & 0xFFFFU, get_ptables(esf));
 
 #ifdef CONFIG_X86_EXCEPTION_STACK_TRACE
 	LOG_ERR("call trace:");
@@ -282,7 +297,7 @@ static void dump_page_fault(z_arch_esf_t *esf)
 	}
 
 #ifdef CONFIG_X86_MMU
-	z_x86_dump_mmu_flags(z_x86_thread_page_tables_get(_current), cr2);
+	z_x86_dump_mmu_flags(get_ptables(esf), cr2);
 #endif /* CONFIG_X86_MMU */
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
