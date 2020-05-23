@@ -40,3 +40,9 @@
 &uart1 {
 	interrupts = <197 3>;
 };
+
+&pcie0_ep {
+	interrupt-parent = <&nvic>;
+	interrupts = <44 3>, <46 3>, <98 3>;
+	interrupt-names = "perst", "perst_inband", "flr";
+};
