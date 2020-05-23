@@ -43,7 +43,7 @@ LOG_MODULE_REGISTER(updatehub);
  * otherwise download size will be less than real size.
  */
 #define MAX_DOWNLOAD_DATA (MAX_PAYLOAD_SIZE + 32)
-#define COAP_MAX_RETRY 3
+#define COAP_MAX_RETRY 10
 #define MAX_IP_SIZE 30
 
 #define SHA256_HEX_DIGEST_SIZE	((TC_SHA256_DIGEST_SIZE * 2) + 1)
@@ -53,6 +53,67 @@ LOG_MODULE_REGISTER(updatehub);
 #else
 #define UPDATEHUB_SERVER "coap.updatehub.io"
 #endif
+
+/* please refer to coap.c */
+
+#define GET_NUM_2(v) ((v) >> 4)
+
+static int get_block_option_1(const struct coap_packet *cpkt, u16_t code);
+static int get_block_option_1(const struct coap_packet *cpkt, u16_t code)
+/* please refer to coap.c for implementation */
+{
+	struct coap_option option;
+	unsigned int val;
+	int count = 1;
+
+	count = coap_find_options(cpkt, code, &option, count);
+	if (count <= 0) {
+		return -ENOENT;
+	}
+
+	val = coap_option_value_to_int(&option);
+
+	return val;
+
+}
+
+static int get_num_block(struct coap_packet *cpkt);
+/* function to get block number from COAP Block 2 fields, return block number */
+
+static int get_num_block(struct coap_packet *cpkt)
+{
+	int block2 = get_block_option_1(cpkt, COAP_OPTION_BLOCK2);
+
+	if (block2) {
+		return GET_NUM_2(block2);
+	}
+	return -ENOENT;
+}
+
+static struct k_timer timer;
+/* timer to handle stop and wait protocol for GET requests. */
+bool is_transmission_allowed = true;
+/* variable to stop or allow transmission */
+
+static void timer_expire(struct k_timer *timer)
+{
+	is_transmission_allowed = true;
+}
+/* no transmission is allowed when the timer is running
+ * when timer has expired, timer is now ready for next transmission
+ */
+
+static void timer_stop(struct k_timer *timer)
+{
+	/* manual stop */
+	is_transmission_allowed = true;
+}
+
+/* no transmission is allowed when the timer is running
+ * when timer is stopped manually, when reply (CoAP data packet) arrives
+ * resulting in allowing next request transmission thus implementing
+ * Stop and Wait protocol.
+ */
 
 static struct updatehub_context {
 	struct coap_block_context block;
@@ -67,6 +128,14 @@ static struct updatehub_context {
 	int sock;
 	int nfds;
 } ctx;
+
+
+static int attempts_download;
+
+/* has been moved here so as to increase scope */
+
+static int expected_block_num;
+/* this variable helps detect duplicates */
 
 static struct update_info {
 	char package_uid[SHA256_HEX_DIGEST_SIZE];
@@ -153,6 +222,8 @@ static bool start_coap_client(void)
 	struct addrinfo hints;
 	int resolve_attempts = 10;
 	int ret = -1;
+
+	memset(&hints, 0, sizeof(hints));
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		hints.ai_family = AF_INET6;
@@ -368,6 +439,7 @@ static void install_update_cb(void)
 	struct coap_packet response_packet;
 	u8_t *data = k_malloc(MAX_DOWNLOAD_DATA);
 	int rcvd = -1;
+	int block_num;
 
 	if (data == NULL) {
 		LOG_ERR("Could not alloc data memory");
@@ -384,12 +456,49 @@ static void install_update_cb(void)
 		goto cleanup;
 	}
 
+
+	/* start making check on corrupted packets */
+
+
 	if (coap_packet_parse(&response_packet, data, rcvd, NULL, 0) < 0) {
-		LOG_ERR("Invalid data received");
+	/* if the packet is corrupt or is not CoAP */
+		LOG_INF("Invalid data received");
 		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 		goto cleanup;
 	}
 
+	block_num = get_num_block(&response_packet);
+	/*  calculate the block number of coap data packet  */
+	if ((response_packet.max_len - response_packet.offset) <= 0
+							|| (block_num < 0)) {
+	/* ignore the rubbish packets */
+		LOG_INF("Invalid data received or block number is < 0");
+		ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
+		goto cleanup;
+	}
+
+	if (block_num == expected_block_num) {
+		expected_block_num++;
+	} else {
+		goto cleanup;
+	/* duplicate and ignore the packet */
+	}
+
+
+
+	/* If everything works fine uptil now we should process the received
+	 * packet and put it to the flash
+	 */
+
+
+
+	k_timer_stop(&timer);
+	/* correct packet is received so stop the timer and allow
+	 * further transmission
+	 */
+	is_transmission_allowed = true;
+	attempts_download = 0;
+	/* reset the retransmission counter */
 	ctx.downloaded_size = ctx.downloaded_size +
 			      (response_packet.max_len - response_packet.offset);
 
@@ -402,9 +511,9 @@ static void install_update_cb(void)
 	}
 
 	if (flash_img_buffered_write(&ctx.flash_ctx,
-				     response_packet.data + response_packet.offset,
-				     response_packet.max_len - response_packet.offset,
-				     ctx.downloaded_size == ctx.block.total_size) < 0) {
+			    response_packet.data + response_packet.offset,
+			    response_packet.max_len - response_packet.offset,
+			    ctx.downloaded_size == ctx.block.total_size) < 0) {
 		LOG_ERR("Error to write on the flash");
 		ctx.code_status = UPDATEHUB_INSTALL_ERROR;
 		goto cleanup;
@@ -438,8 +547,9 @@ cleanup:
 
 static enum updatehub_response install_update(void)
 {
-	int verification_download = 0;
-	int attempts_download = 0;
+	expected_block_num = 0;
+	k_timer_init(&timer, timer_expire, timer_stop);
+	/* initialize the timer for stop and wait for GET Requests */
 
 	if (boot_erase_img_bank(FLASH_AREA_ID(image_1)) != 0) {
 		LOG_ERR("Failed to init flash and erase second slot");
@@ -458,9 +568,10 @@ static enum updatehub_response install_update(void)
 		goto error;
 	}
 
-	if (coap_block_transfer_init(&ctx.block, COAP_BLOCK_1024,
+	if (coap_block_transfer_init(&ctx.block, COAP_BLOCK_512,
 				     update_info.image_size) < 0) {
 		LOG_ERR("Unable init block transfer");
+		/* modem has limitation of 1024 bytes. */
 		ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
 		goto cleanup;
 	}
@@ -470,28 +581,45 @@ static enum updatehub_response install_update(void)
 	ctx.downloaded_size = 0;
 
 	while (ctx.downloaded_size != ctx.block.total_size) {
-		verification_download = ctx.downloaded_size;
+		if (is_transmission_allowed) {
+		/* no transmission is allowed if the reply (data packet) is
+		 * not received before timeout and going to send the request
+		 */
+			if (send_request(COAP_TYPE_CON, COAP_METHOD_GET,
+					 UPDATEHUB_DOWNLOAD) < 0) {
+				ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
+				goto cleanup;
+			}
+			is_transmission_allowed = false;
 
-		if (send_request(COAP_TYPE_CON, COAP_METHOD_GET,
-				 UPDATEHUB_DOWNLOAD) < 0) {
-			ctx.code_status = UPDATEHUB_NETWORKING_ERROR;
-			goto cleanup;
+			k_timer_start(&timer, K_SECONDS(4), K_SECONDS(0));
+
+		/* adjust the delay, 4s is taken as a good estimate for modem */
+			attempts_download++;
+		/* this targets stop and wait mechanism, each transmission
+		 * increases this counter unless reset by successful
+		 * reception of data packet
+		 */
 		}
 
 		install_update_cb();
 
-		if (ctx.code_status != UPDATEHUB_OK) {
+		if (ctx.code_status == UPDATEHUB_DOWNLOAD_ERROR) {
+		/* if some corrupted/unknown packets are received just ignore
+		 * and process further
+		 */
+			LOG_INF("!Corrupted Packet is received");
+		}
+
+		if (attempts_download == COAP_MAX_RETRY) {
+			LOG_ERR("Could not get the packet");
+			ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
 			goto cleanup;
 		}
 
-		if (verification_download == ctx.downloaded_size) {
-			if (attempts_download == COAP_MAX_RETRY) {
-				LOG_ERR("Could not get the packet");
-				ctx.code_status = UPDATEHUB_DOWNLOAD_ERROR;
-				goto cleanup;
-			}
-			attempts_download++;
-		}
+		/* now the check is on attempts_download rather
+		 * than verification_download etc.
+		 */
 	}
 
 cleanup:
