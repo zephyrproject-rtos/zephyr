@@ -54,17 +54,6 @@
 
 #define APP_SMEM_SECTION() KEEP(*(SORT("data_smem_*")))
 
-/*
- * If image is loaded via kexec Linux system call, then program
- * headers need to be page aligned.
- * This can be done by section page aligning.
- */
-#ifdef CONFIG_BOOTLOADER_KEXEC
-#define KEXEC_PGALIGN_PAD(x) . = ALIGN(x);
-#else
-#define KEXEC_PGALIGN_PAD(x)
-#endif
-
 #elif defined(_ASMLANGUAGE)
 
 /* Assembly FILES: declaration defined by the linker script */
