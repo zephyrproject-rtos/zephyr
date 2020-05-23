@@ -1,0 +1,10 @@
+# ESP32 Clock Driver configuration options
+
+# Copyright (c) 2020 Mohamed ElShahawi
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_ESP32
+	bool "ESP32 Clock driver"
+	depends on SOC_ESP32
+	help
+	  Enable support for ESP32 clock driver.

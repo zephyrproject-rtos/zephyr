@@ -24,11 +24,11 @@
 };
 
 &cpu0 {
-	clock-frequency = <40000000>;
+	clock-frequency = <ESP32_CLK_CPU_40M>;
 };
 
 &cpu1 {
-	clock-frequency = <40000000>;
+	clock-frequency = <ESP32_CLK_CPU_40M>;
 };
 
 &uart0 {
