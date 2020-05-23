@@ -20,6 +20,7 @@
 #define ZEPHYR_INCLUDE_LINKER_LINKER_DEFS_H_
 
 #include <toolchain.h>
+#include <toolchain/common.h>
 #include <linker/sections.h>
 #include <sys/util.h>
 #include <offsets.h>
@@ -36,6 +37,35 @@
 #endif
 
 #ifdef _LINKER
+#define Z_LINK_ITERABLE(struct_type) \
+	_CONCAT(_##struct_type, _list_start) = .; \
+	KEEP(*(SORT_BY_NAME(._##struct_type##.static.*))); \
+	_CONCAT(_##struct_type, _list_end) = .
+
+/* Define an output section which will set up an iterable area
+ * of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.
+ * Input sections will be sorted by name, per ld's SORT_BY_NAME.
+ *
+ * This macro should be used for read-only data.
+ */
+#define Z_ITERABLE_SECTION_ROM(struct_type, subalign) \
+	SECTION_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
+	{ \
+		Z_LINK_ITERABLE(struct_type); \
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
+/* Define an output section which will set up an iterable area
+ * of equally-sized data structures. For use with Z_STRUCT_SECTION_ITERABLE.
+ * Input sections will be sorted by name, per ld's SORT_BY_NAME.
+ *
+ * This macro should be used for read-write data that is modified at runtime.
+ */
+#define Z_ITERABLE_SECTION_RAM(struct_type, subalign) \
+	SECTION_DATA_PROLOGUE(struct_type##_area,,SUBALIGN(subalign)) \
+	{ \
+		Z_LINK_ITERABLE(struct_type); \
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 /*
  * generate a symbol to mark the start of the objects array for
  * the specified object and level, then link all of those objects

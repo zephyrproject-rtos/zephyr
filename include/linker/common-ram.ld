@@ -68,12 +68,7 @@
 		__log_dynamic_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(_static_thread_area,,SUBALIGN(4))
-	{
-		__static_thread_data_list_start = .;
-		KEEP(*(SORT_BY_NAME(".__static_thread_data.static.*")))
-		__static_thread_data_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	Z_ITERABLE_SECTION_RAM(_static_thread_data, 4)
 
 #ifdef CONFIG_USERSPACE
 	/* All kernel objects within are assumed to be either completely
@@ -86,85 +81,17 @@
 	_static_kernel_objects_begin = .;
 #endif /* CONFIG_USERSPACE */
 
-	SECTION_DATA_PROLOGUE(_k_timer_area,,SUBALIGN(4))
-	{
-		_k_timer_list_start = .;
-		KEEP(*("._k_timer.static.*"))
-		_k_timer_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_mem_slab_area,,SUBALIGN(4))
-	{
-		_k_mem_slab_list_start = .;
-		KEEP(*("._k_mem_slab.static.*"))
-		_k_mem_slab_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_mem_pool_area,,SUBALIGN(4))
-	{
-		_k_mem_pool_list_start = .;
-		KEEP(*("._k_mem_pool.static.*"))
-		_k_mem_pool_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_heap_area,,SUBALIGN(4))
-	{
-		_k_heap_list_start = .;
-		KEEP(*("._k_heap.static.*"))
-		_k_heap_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_sem_area,,SUBALIGN(4))
-	{
-		_k_sem_list_start = .;
-		KEEP(*("._k_sem.static.*"))
-		KEEP(*("._sys_sem.static.*"))
-		_k_sem_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_mutex_area,,SUBALIGN(4))
-	{
-		_k_mutex_list_start = .;
-		KEEP(*("._k_mutex.static.*"))
-		_k_mutex_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_queue_area,,SUBALIGN(4))
-	{
-		_k_queue_list_start = .;
-		KEEP(*("._k_queue.static.*"))
-		KEEP(*("._k_fifo.static.*"))
-		KEEP(*("._k_lifo.static.*"))
-		_k_queue_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_stack_area,,SUBALIGN(4))
-	{
-		_k_stack_list_start = .;
-		KEEP(*("._k_stack.static.*"))
-		_k_stack_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_msgq_area,,SUBALIGN(4))
-	{
-		_k_msgq_list_start = .;
-		KEEP(*("._k_msgq.static.*"))
-		_k_msgq_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_mbox_area,,SUBALIGN(4))
-	{
-		_k_mbox_list_start = .;
-		KEEP(*("._k_mbox.static.*"))
-		_k_mbox_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_pipe_area,,SUBALIGN(4))
-	{
-		_k_pipe_list_start = .;
-		KEEP(*("._k_pipe.static.*"))
-		_k_pipe_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+	Z_ITERABLE_SECTION_RAM(k_timer, 4)
+	Z_ITERABLE_SECTION_RAM(k_mem_slab, 4)
+	Z_ITERABLE_SECTION_RAM(k_mem_pool, 4)
+	Z_ITERABLE_SECTION_RAM(k_heap, 4)
+	Z_ITERABLE_SECTION_RAM(k_mutex, 4)
+	Z_ITERABLE_SECTION_RAM(k_stack, 4)
+	Z_ITERABLE_SECTION_RAM(k_msgq, 4)
+	Z_ITERABLE_SECTION_RAM(k_mbox, 4)
+	Z_ITERABLE_SECTION_RAM(k_pipe, 4)
+	Z_ITERABLE_SECTION_RAM(k_sem, 4)
+	Z_ITERABLE_SECTION_RAM(k_queue, 4)
 
 	SECTION_DATA_PROLOGUE(_net_buf_pool_area,,SUBALIGN(4))
 	{
