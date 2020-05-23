@@ -52,11 +52,16 @@ extern int esp32_rom_gpio_matrix_out(uint32_t gpio, uint32_t signal_index,
 				     bool out_enabled_inverted);
 
 extern void esp32_rom_uart_attach(void);
+extern void esp32_rom_uart_tx_wait_idle(uint8_t uart_no);
 extern STATUS esp32_rom_uart_tx_one_char(uint8_t chr);
 extern STATUS esp32_rom_uart_rx_one_char(uint8_t *chr);
 
 extern void esp32_rom_Cache_Flush(int cpu);
 extern void esp32_rom_Cache_Read_Enable(int cpu);
 extern void esp32_rom_ets_set_appcpu_boot_addr(void *addr);
+
+/* ROM functions which read/write internal i2c control bus for PLL, APLL */
+extern uint8_t esp32_rom_i2c_readReg(uint8_t block, uint8_t host_id, uint8_t reg_add);
+extern void esp32_rom_i2c_writeReg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data);
 
 #endif /* __SOC_H__ */
