@@ -2,7 +2,19 @@
 
 	SECTION_PROLOGUE(initlevel,,)
 	{
-		INIT_SECTIONS()
+		/*
+		 * link in initialization objects for all objects that are
+		 * automatically initialized by the kernel; the objects are
+		 * sorted in the order they will be initialized (i.e. ordered
+		 * by level, sorted by priority within a level)
+		 */
+		__init_start = .;
+		CREATE_OBJ_LEVEL(init, PRE_KERNEL_1)
+		CREATE_OBJ_LEVEL(init, PRE_KERNEL_2)
+		CREATE_OBJ_LEVEL(init, POST_KERNEL)
+		CREATE_OBJ_LEVEL(init, APPLICATION)
+		CREATE_OBJ_LEVEL(init, SMP)
+		__init_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
@@ -21,7 +33,7 @@
 	/* verify we don't have rogue .init_<something> initlevel sections */
 	SECTION_PROLOGUE(initlevel_error,,)
 	{
-		INIT_UNDEFINED_SECTION()
+		KEEP(*(SORT(.init_[_A-Z0-9]*)))
 	}
 	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
