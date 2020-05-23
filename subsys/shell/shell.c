@@ -687,6 +687,14 @@ static int execute(const struct shell *shell)
 					  &cmd_with_handler_lvl, &args_left);
 			parent = entry;
 		} else {
+			if (cmd_lvl == 0 &&
+				(!shell_in_select_mode(shell) ||
+				 shell->ctx->selected_cmd->handler == NULL)) {
+				shell_internal_fprintf(shell, SHELL_ERROR,
+						       "%s%s\n", argv[0],
+						       SHELL_MSG_CMD_NOT_FOUND);
+			}
+
 			/* last handler found - no need to search commands in
 			 * the next iteration.
 			 */
