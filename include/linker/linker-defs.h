@@ -54,15 +54,6 @@
 
 #define APP_SMEM_SECTION() KEEP(*(SORT("data_smem_*")))
 
-#ifdef CONFIG_X86 /* LINKER FILES: defines used by linker script */
-/* Should be moved to linker-common-defs.h */
-#if defined(CONFIG_XIP)
-#define ROMABLE_REGION ROM
-#else
-#define ROMABLE_REGION RAM
-#endif
-#endif
-
 /*
  * If image is loaded via kexec Linux system call, then program
  * headers need to be page aligned.
