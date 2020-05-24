@@ -1090,7 +1090,7 @@ enum {
 /** @brief GATT Discover Attributes parameters */
 struct bt_gatt_discover_params {
 	/** Discover UUID type */
-	struct bt_uuid *uuid;
+	const struct bt_uuid *uuid;
 	/** Discover attribute callback */
 	bt_gatt_discover_func_t func;
 	union {
@@ -1184,7 +1184,7 @@ struct bt_gatt_read_params {
 		struct {
 			uint16_t start_handle;
 			uint16_t end_handle;
-			struct bt_uuid *uuid;
+			const struct bt_uuid *uuid;
 		} by_uuid;
 	};
 };
