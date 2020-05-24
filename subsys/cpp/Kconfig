@@ -62,6 +62,14 @@ config RTTI
 	help
 	  This option enables support of C++ RTTI.
 
+config STD_THREAD
+	bool "Support for std::thread"
+	default y if !STD_CPP98
+	depends on !STD_CPP98
+	select PTHREAD_IPC
+	help
+	  This option enables support for std::thread and std::this_thread.
+
 endif # LIB_CPLUSPLUS
 
 endif # CPLUSPLUS

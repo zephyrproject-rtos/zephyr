@@ -15,3 +15,12 @@ zephyr_sources(
   cpp_new.cpp
 )
 endif()
+
+if(CONFIG_STD_THREAD)
+  if(NOT (CONFIG_BOARD_NATIVE_POSIX OR CONFIG_BOARD_NATIVE_POSIX_64BIT OR CONFIG_BOARD_NRF52_BSIM))
+    #zephyr_compile_options(
+    #  $<$<COMPILE_LANGUAGE:CXX>:-include${PROJECT_SOURCE_DIR}/include/bits/gthr-zephyr.h>
+    #)
+    zephyr_sources(std_thread.cpp)
+  endif()
+endif()
