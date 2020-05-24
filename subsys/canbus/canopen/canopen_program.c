@@ -9,6 +9,7 @@
 #include <canbus/canopen.h>
 #include <dfu/flash_img.h>
 #include <dfu/mcuboot.h>
+#include <storage/flash_map.h>
 #include <sys/crc.h>
 
 #define LOG_LEVEL CONFIG_CANOPEN_LOG_LEVEL
