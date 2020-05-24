@@ -1,0 +1,21 @@
+identifier: ruuvi_ruuvitag
+name: Ruuvi_Ruuvitag
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512
+supported:
+  - ble
+  - adc
+  - gpio
+  - i2c
+  - spi
+  - counter
+  - nvs
+  - watchdog
+  - bme280
+  - lis2dh12

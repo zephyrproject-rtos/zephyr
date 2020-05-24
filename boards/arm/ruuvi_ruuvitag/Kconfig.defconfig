@@ -1,0 +1,16 @@
+# Ruuvi Ruuvitag configuration
+
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RUUVI_RUUVITAG
+
+config BOARD
+	default "ruuvi_ruuvitag"
+
+config SPI_0
+	default y
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_RUUVI_RUUVITAG
