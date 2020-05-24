@@ -923,8 +923,6 @@ static inline int bt_gatt_notify(struct bt_conn *conn,
  *  @param conn Connection object.
  *  @param attr Attribute object.
  *  @param err ATT error code
- *
- *  @return 0 in case of success or negative value in case of error.
  */
 typedef void (*bt_gatt_indicate_func_t)(struct bt_conn *conn,
 					const struct bt_gatt_attr *attr,
@@ -1151,6 +1149,9 @@ struct bt_gatt_read_params;
  *  @param params Read parameters used.
  *  @param data Attribute value data. NULL means read has completed.
  *  @param length Attribute value length.
+ *
+ *  @return BT_GATT_ITER_CONTINUE if should continue to the next attribute.
+ *  @return BT_GATT_ITER_STOP to stop.
  */
 typedef u8_t (*bt_gatt_read_func_t)(struct bt_conn *conn, u8_t err,
 				    struct bt_gatt_read_params *params,
