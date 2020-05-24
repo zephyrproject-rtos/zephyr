@@ -99,6 +99,43 @@ static inline void trigger_irq(int irq)
 	printk("Triggering irq : %d\n", irq);
 	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
 }
+
+/*
+ * Trigger an interrupt of x86 need a immediate number, so hard code the
+ * irq here, for dynamic and static isr testing.
+ */
+#elif defined(CONFIG_X86)
+static inline void trigger_irq(int irq)
+{
+	int vector = irq + 32;
+
+	__asm__ volatile("int %0" :: "i"(vector));
+}
+
+#elif defined(CONFIG_ARCH_POSIX)
+#include "irq_ctrl.h"
+
+static inline void trigger_irq(int irq)
+{
+	hw_irq_ctrl_raise_im_from_sw(irq);
+}
+
+#elif defined(CONFIG_RISCV)
+static inline void trigger_irq(int irq)
+{
+	uint32_t mip;
+
+	__asm__ volatile ("csrrs %0, mip, %1\n"
+			  : "=r" (mip)
+			  : "r" (1 << irq));
+}
+
+#elif defined(CONFIG_XTENSA)
+static inline void trigger_irq(int irq)
+{
+	z_xt_set_intset(BIT((unsigned int)irq));
+}
+
 #else
 /* for not supported architecture */
 #define NO_TRIGGER_FROM_SW
