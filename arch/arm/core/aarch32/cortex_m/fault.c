@@ -266,6 +266,14 @@ static u32_t mem_manage_fault(z_arch_esf_t *esf, int from_hard_fault,
 		 * process the error further if the stack frame is on
 		 * PSP. For always-banked MemManage Fault, this is
 		 * equivalent to inspecting the RETTOBASE flag.
+		 *
+		 * Note:
+		 * It is possible that MMFAR address is not written by the
+		 * Cortex-M core; this occurs when the stacking error is
+		 * not accompanied by a data access violation error (i.e.
+		 * when stack overflows due to the exception entry frame
+		 * stacking): z_check_thread_stack_fail() shall be able to
+		 * handle the case of 'mmfar' holding the -EINVAL value.
 		 */
 		if (SCB->ICSR & SCB_ICSR_RETTOBASE_Msk) {
 			u32_t min_stack_ptr = z_check_thread_stack_fail(mmfar,
