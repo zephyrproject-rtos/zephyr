@@ -1,5 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
+if(DEFINED QEMU_BIN_PREFIX)
+  set_ifndef(QEMU_binary_name ${QEMU_BIN_PREFIX}-qemu-system)
+else()
+  set_ifndef(QEMU_binary_name qemu-system)
+endif()
+
 if("${ARCH}" STREQUAL "x86")
   set_ifndef(QEMU_binary_suffix i386)
 elseif(DEFINED QEMU_ARCH)
@@ -14,12 +20,12 @@ find_program(
   QEMU
   PATHS ${qemu_alternate_path}
   NO_DEFAULT_PATH
-  NAMES qemu-system-${QEMU_binary_suffix}
+  NAMES ${QEMU_binary_name}-${QEMU_binary_suffix}
   )
 else()
 find_program(
   QEMU
-  qemu-system-${QEMU_binary_suffix}
+  ${QEMU_binary_name}-${QEMU_binary_suffix}
   )
 endif()
 
