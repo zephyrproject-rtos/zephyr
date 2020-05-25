@@ -100,6 +100,10 @@ static void lp_comm_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 
 	/* Encode LL Control PDU */
 	switch (ctx->proc) {
+	case PROC_LE_PING:
+		pdu_encode_ping_req(pdu);
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PING_RSP;
+		break;
 	case PROC_FEATURE_EXCHANGE:
 		pdu_encode_feature_req(conn, pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
@@ -180,6 +184,17 @@ static void lp_comm_ntf(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 static void lp_comm_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	switch (ctx->proc) {
+	case PROC_LE_PING:
+		if (ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP || ctx->response_opcode == PDU_DATA_LLCTRL_TYPE_PING_RSP) {
+			lr_complete(conn);
+			ctx->state = LP_COMMON_STATE_IDLE;
+		}
+		else
+		{
+			/* Illegal response opcode */
+			LL_ASSERT(0);
+		}
+		break;
 	case PROC_FEATURE_EXCHANGE:
 		if (!ntf_alloc_is_available()) {
 			ctx->state = LP_COMMON_STATE_WAIT_NTF;
@@ -207,6 +222,14 @@ static void lp_comm_complete(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_
 static void lp_comm_send_req(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	switch (ctx->proc) {
+	case PROC_LE_PING:
+		if (!tx_alloc_is_available() || ctx->pause) {
+			ctx->state = LP_COMMON_STATE_WAIT_TX;
+		} else {
+			lp_comm_tx(conn, ctx);
+			ctx->state = LP_COMMON_STATE_WAIT_RX;
+		}
+		break;
 	case PROC_FEATURE_EXCHANGE:
 		if (!conn->llcp.fex.sent) {
 			if (!tx_alloc_is_available() || ctx->pause) {
@@ -266,6 +289,9 @@ static void lp_comm_rx_decode(struct ull_cp_conn *conn, struct proc_ctx *ctx, st
 	ctx->response_opcode = pdu->llctrl.opcode;
 
 	switch (pdu->llctrl.opcode) {
+	case PDU_DATA_LLCTRL_TYPE_PING_RSP:
+		/* ping_rsp has no data */
+		break;
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
 		pdu_decode_feature_rsp(conn, pdu);
 		break;
@@ -347,6 +373,9 @@ static void rp_comm_rx_decode(struct ull_cp_conn *conn, struct proc_ctx *ctx, st
 {
 	ctx->response_opcode = pdu->llctrl.opcode;
 	switch (pdu->llctrl.opcode) {
+	case PDU_DATA_LLCTRL_TYPE_PING_REQ:
+		/* ping_req has no data */
+		break;
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
 		pdu_decode_feature_req(conn, pdu);
@@ -373,6 +402,10 @@ static void rp_comm_tx(struct ull_cp_conn *conn, struct proc_ctx *ctx)
 
 	/* Encode LL Control PDU */
 	switch (ctx->proc) {
+	case PROC_LE_PING:
+		pdu_encode_ping_rsp(pdu);
+		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP;
+		break;
 	case PROC_FEATURE_EXCHANGE:
 		pdu_encode_feature_rsp(conn, pdu);
 		ctx->rx_opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
@@ -407,6 +440,16 @@ static void rp_comm_st_idle(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t
 static void rp_comm_send_rsp(struct ull_cp_conn *conn, struct proc_ctx *ctx, u8_t evt, void *param)
 {
 	switch (ctx->proc) {
+	case PROC_LE_PING:
+		/* Always respond on remote ping */
+		if (!tx_alloc_is_available() || ctx->pause) {
+			ctx->state = RP_COMMON_STATE_WAIT_TX;
+		} else {
+			rp_comm_tx(conn, ctx);
+			rr_complete(conn);
+			ctx->state = RP_COMMON_STATE_IDLE;
+		}
+		break;
 	case PROC_FEATURE_EXCHANGE:
 		/* Always respond on remote feature exchange */
 		if (!tx_alloc_is_available() || ctx->pause) {

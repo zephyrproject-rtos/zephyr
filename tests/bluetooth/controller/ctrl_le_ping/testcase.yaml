@@ -1,0 +1,6 @@
+common:
+    tags: test_framework bluetooth le_ping ull_llcp
+tests:
+  bluetooth.controller.ctrl_le_ping.test:
+     type: unit
+
