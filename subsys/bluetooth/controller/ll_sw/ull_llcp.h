@@ -99,6 +99,11 @@ void ull_cp_run(struct ull_cp_conn *conn);
 void ull_cp_rx(struct ull_cp_conn *conn, struct node_rx_pdu *rx);
 
 /**
+ * @brief Initiate a LE Ping Procedure.
+ */
+u8_t ull_cp_le_ping(struct ull_cp_conn *conn);
+
+/**
  * @brief Initiate a Version Exchange Procedure.
  */
 u8_t ull_cp_version_exchange(struct ull_cp_conn *conn);
