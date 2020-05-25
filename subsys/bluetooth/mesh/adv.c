@@ -55,13 +55,6 @@ static K_FIFO_DEFINE(adv_queue);
 static struct k_thread adv_thread_data;
 static K_THREAD_STACK_DEFINE(adv_thread_stack, ADV_STACK_SIZE);
 
-static const u8_t adv_type[] = {
-	[BT_MESH_ADV_PROV]   = BT_DATA_MESH_PROV,
-	[BT_MESH_ADV_DATA]   = BT_DATA_MESH_MESSAGE,
-	[BT_MESH_ADV_BEACON] = BT_DATA_MESH_BEACON,
-	[BT_MESH_ADV_URI]    = BT_DATA_URI,
-};
-
 NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BT_MESH_ADV_BUF_COUNT,
 		    BT_MESH_ADV_DATA_SIZE, BT_MESH_ADV_USER_DATA_SIZE, NULL);
 
@@ -91,6 +84,12 @@ static inline void adv_send_end(int err, const struct bt_mesh_send_cb *cb,
 
 static inline void adv_send(struct net_buf *buf)
 {
+	static const u8_t adv_type[] = {
+		[BT_MESH_ADV_PROV]   = BT_DATA_MESH_PROV,
+		[BT_MESH_ADV_DATA]   = BT_DATA_MESH_MESSAGE,
+		[BT_MESH_ADV_BEACON] = BT_DATA_MESH_BEACON,
+		[BT_MESH_ADV_URI]    = BT_DATA_URI,
+	};
 	const s32_t adv_int_min = ((bt_dev.hci_version >= BT_HCI_VERSION_5_0) ?
 				   ADV_INT_FAST_MS : ADV_INT_DEFAULT_MS);
 	const struct bt_mesh_send_cb *cb = BT_MESH_ADV(buf)->cb;
