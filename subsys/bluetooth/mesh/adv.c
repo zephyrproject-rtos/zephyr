@@ -256,51 +256,43 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 static void bt_mesh_scan_cb(const bt_addr_le_t *addr, s8_t rssi,
 			    u8_t adv_type, struct net_buf_simple *buf)
 {
+	u8_t len, type;
+
 	if (adv_type != BT_GAP_ADV_TYPE_ADV_NONCONN_IND) {
 		return;
 	}
 
 	BT_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
-	while (buf->len > 1) {
-		struct net_buf_simple_state state;
-		u8_t len, type;
+	len = net_buf_simple_pull_u8(buf);
+	/* Check for early termination */
+	if (len == 0U) {
+		return;
+	}
 
-		len = net_buf_simple_pull_u8(buf);
-		/* Check for early termination */
-		if (len == 0U) {
-			return;
-		}
+	if (len > buf->len) {
+		BT_WARN("AD malformed");
+		return;
+	}
 
-		if (len > buf->len) {
-			BT_WARN("AD malformed");
-			return;
-		}
+	type = net_buf_simple_pull_u8(buf);
 
-		net_buf_simple_save(buf, &state);
+	buf->len = len - 1;
 
-		type = net_buf_simple_pull_u8(buf);
-
-		buf->len = len - 1;
-
-		switch (type) {
-		case BT_DATA_MESH_MESSAGE:
-			bt_mesh_net_recv(buf, rssi, BT_MESH_NET_IF_ADV);
-			break;
+	switch (type) {
+	case BT_DATA_MESH_MESSAGE:
+		bt_mesh_net_recv(buf, rssi, BT_MESH_NET_IF_ADV);
+		break;
 #if defined(CONFIG_BT_MESH_PB_ADV)
-		case BT_DATA_MESH_PROV:
-			bt_mesh_pb_adv_recv(buf);
-			break;
+	case BT_DATA_MESH_PROV:
+		bt_mesh_pb_adv_recv(buf);
+		break;
 #endif
-		case BT_DATA_MESH_BEACON:
-			bt_mesh_beacon_recv(buf);
-			break;
-		default:
-			break;
-		}
-
-		net_buf_simple_restore(buf, &state);
-		net_buf_simple_pull(buf, len);
+	case BT_DATA_MESH_BEACON:
+		bt_mesh_beacon_recv(buf);
+		break;
+	default:
+		break;
 	}
 }
 
