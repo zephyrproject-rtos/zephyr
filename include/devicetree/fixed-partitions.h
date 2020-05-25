@@ -23,26 +23,48 @@ extern "C" {
  */
 
 /**
- * @brief Get fixed partition with "label" property that matches label
- * @param label lowercase-and-underscores value for "label" property
- * @return a node identifier for the partition that matches label
+ * @brief Get a node identifier for a fixed partition with
+ *        a given label property
+ *
+ * Example devicetree fragment:
+ *
+ *     flash@... {
+ *              partitions {
+ *                      compatible = "fixed-partitions";
+ *                      boot_partition: partition@0 {
+ *                              label = "mcuboot";
+ *                      };
+ *                      slot0_partition: partition@c000 {
+ *                              label = "image-0";
+ *                      };
+ *                      ...
+ *              };
+ *     };
+ *
+ * Example usage:
+ *
+ *     DT_NODE_BY_FIXED_PARTITION_LABEL(mcuboot) // node identifier for boot_partition
+ *     DT_NODE_BY_FIXED_PARTITION_LABEL(image_0) // node identifier for slot0_partition
+ *
+ * @param label lowercase-and-underscores label property value
+ * @return a node identifier for the partition with that label property
  */
 #define DT_NODE_BY_FIXED_PARTITION_LABEL(label) \
 	DT_CAT(DT_COMPAT_fixed_partitions_LABEL_, label)
 
 /**
- * @brief Test if a fixed partition with the "label" property exists
- * @param label lowercase-and-underscores value for "label" property
- * @return 1 if the label exists across all 'fixed-partitions' nodes
+ * @brief Test if a fixed partition with a given label property exists
+ * @param label lowercase-and-underscores label property value
+ * @return 1 if any "fixed-partitions" child node has the given label,
  *         0 otherwise.
  */
 #define DT_HAS_FIXED_PARTITION_LABEL(label) \
 	IS_ENABLED(DT_COMPAT_fixed_partitions_LABEL_##label##_EXISTS)
 
 /**
- * @brief 'fixed-partitions' ID
- * @param node_id node identifier
- * @return unique fixed partition id for given partition referenced by node_id
+ * @brief Get a numeric identifier for a fixed partition
+ * @param node_id node identifier for a fixed-partitions child node
+ * @return the partition's ID, a unique zero-based index number
  */
 #define DT_FIXED_PARTITION_ID(node_id) DT_CAT(node_id, _PARTITION_ID)
 
