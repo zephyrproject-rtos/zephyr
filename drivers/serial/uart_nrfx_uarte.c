@@ -1030,7 +1030,7 @@ static void uarte_nrfx_poll_out(struct device *dev, unsigned char c)
 			 */
 			k_msleep(1);
 			if (--safety_cnt == 0) {
-				return;
+				break;
 			}
 		}
 	} else {
