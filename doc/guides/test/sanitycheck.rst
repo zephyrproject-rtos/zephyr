@@ -595,3 +595,21 @@ example::
       product: J-Link
       runner: jlink
       serial: null
+
+Overriding Board Identifier
++++++++++++++++++++++++++++
+
+When (re-)generated the hardware map file will contain an "id" keyword
+that serves as the argument to ``--board-id`` when flashing.  In some
+cases the detected ID is not the correct one to use, for example when
+using an external J-Link probe.  The "probe_id" keyword overrides the
+"id" keyword for this purpose.   For example::
+
+    - available: true
+      connected: false
+      id: 0229000005d9ebc600000000000000000000000097969905
+      platform: mimxrt1060_evk
+      probe_id: 000609301751
+      product: DAPLink CMSIS-DAP
+      runner: jlink
+      serial: null
