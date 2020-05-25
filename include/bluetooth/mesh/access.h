@@ -460,6 +460,7 @@ struct bt_mesh_model_cb {
 	 *  @sa settings_handler::h_set
 	 *
 	 *  @param model   Model to set the persistent data of.
+	 *  @param name    Name/key of the settings item.
 	 *  @param len_rd  The size of the data found in the backend.
 	 *  @param read_cb Function provided to read the data from the backend.
 	 *  @param cb_arg  Arguments for the read function provided by the
@@ -468,8 +469,8 @@ struct bt_mesh_model_cb {
 	 *  @return 0 on success, error otherwise.
 	 */
 	int (*const settings_set)(struct bt_mesh_model *model,
-				  size_t len_rd, settings_read_cb read_cb,
-				  void *cb_arg);
+				  const char *name, size_t len_rd,
+				  settings_read_cb read_cb, void *cb_arg);
 
 	/** @brief Callback called when the mesh is started.
 	 *
@@ -503,6 +504,9 @@ struct bt_mesh_model_cb {
 	 *
 	 *  Called when the mesh node is reset. All model data is deleted on
 	 *  reset, and the model should clear its state.
+	 *
+	 *  @note If the model stores any persistent data, this needs to be
+	 *  erased manually.
 	 *
 	 *  @param model Model this callback belongs to.
 	 */
@@ -662,13 +666,15 @@ static inline bool bt_mesh_model_in_primary(const struct bt_mesh_model *mod)
  *
  *  @param mod      Mesh model.
  *  @param vnd      This is a vendor model.
+ *  @param name     Name/key of the settings item.
  *  @param data     Model data to store, or NULL to delete any model data.
  *  @param data_len Length of the model data.
  *
  *  @return 0 on success, or (negative) error code on failure.
  */
 int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
-			     const void *data, size_t data_len);
+			 const char *name, const void *data,
+			 size_t data_len);
 
 /** @brief Let a model extend another.
  *

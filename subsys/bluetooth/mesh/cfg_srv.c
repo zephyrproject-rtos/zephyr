@@ -3311,8 +3311,6 @@ static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		if (clear_count) {
 			bt_mesh_store_mod_sub(mod);
 		}
-
-		bt_mesh_model_data_store(mod, vnd, NULL, 0);
 	}
 
 	if (mod->cb && mod->cb->reset) {
