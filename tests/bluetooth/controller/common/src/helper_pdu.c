@@ -35,6 +35,19 @@
 #include "helper_pdu.h"
 #include "helper_features.h"
 
+void helper_pdu_encode_ping_req(struct pdu_data *pdu, void *param)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, ping_req) + sizeof(struct pdu_data_llctrl_ping_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PING_REQ;
+}
+
+void helper_pdu_encode_ping_rsp(struct pdu_data *pdu, void *param)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, ping_rsp) + sizeof(struct pdu_data_llctrl_ping_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PING_RSP;
+}
 
 void helper_pdu_encode_feature_req(struct pdu_data *pdu, void *param)
 {
@@ -183,6 +196,18 @@ void helper_pdu_verify_version_ind(const char *file, u32_t line, struct pdu_data
 	zassert_equal(pdu->llctrl.version_ind.version_number, p->version_number, "Wrong version number.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.version_ind.company_id, p->company_id, "Wrong company id.\nCalled at %s:%d\n", file, line);
 	zassert_equal(pdu->llctrl.version_ind.sub_version_number, p->sub_version_number, "Wrong sub version number.\nCalled at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_ping_req(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+{
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PING_REQ, "Not a LL_PING_REQ. Called at %s:%d\n", file, line);
+}
+
+void helper_pdu_verify_ping_rsp(const char *file, u32_t line, struct pdu_data *pdu, void *param)
+{
+	zassert_equal(pdu->ll_id, PDU_DATA_LLID_CTRL, "Not a Control PDU.\nCalled at %s:%d\n", file, line);
+	zassert_equal(pdu->llctrl.opcode, PDU_DATA_LLCTRL_TYPE_PING_RSP, "Not a LL_PING_RSP.\nCalled at %s:%d\n", file, line);
 }
 
 
