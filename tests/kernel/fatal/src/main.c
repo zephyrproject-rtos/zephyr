@@ -48,6 +48,13 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *pEsf)
 {
 	TC_PRINT("Caught system error -- reason %d\n", reason);
 
+#ifndef CONFIG_BOARD_NATIVE_POSIX
+	if (pEsf == NULL) {
+		printk("cannot get architecture-specific struct pointer\n");
+		k_fatal_halt(reason);
+	}
+#endif
+
 	if (expected_reason == -1) {
 		printk("Was not expecting a crash\n");
 		k_fatal_halt(reason);
