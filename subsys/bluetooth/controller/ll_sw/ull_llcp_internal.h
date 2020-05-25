@@ -7,6 +7,7 @@
 /* LLCP Procedure */
 enum llcp_proc {
 	PROC_UNKNOWN,
+	PROC_LE_PING,
 	PROC_FEATURE_EXCHANGE,
 	PROC_VERSION_EXCHANGE,
 	PROC_ENCRYPTION_START,
@@ -431,6 +432,23 @@ void ull_cp_priv_rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx);
 static inline void rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 {
 	return ull_cp_priv_rr_new(conn, rx);
+}
+
+/*
+ * LE Ping Procedure Helper
+ */
+void ull_cp_priv_pdu_encode_ping_req(struct pdu_data *pdu);
+
+static inline void pdu_encode_ping_req(struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_ping_req(pdu);
+}
+
+void ull_cp_priv_pdu_encode_ping_rsp(struct pdu_data *pdu);
+
+static inline void pdu_encode_ping_rsp(struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_ping_rsp(pdu);
 }
 
 /*

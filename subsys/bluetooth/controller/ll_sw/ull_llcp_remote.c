@@ -66,6 +66,9 @@ static bool proc_with_instant(struct proc_ctx *ctx)
 	case PROC_FEATURE_EXCHANGE:
 		return 0U;
 		break;
+	case PROC_LE_PING:
+		return 0U;
+		break;
 	case PROC_VERSION_EXCHANGE:
 		return 0U;
 		break;
@@ -136,6 +139,9 @@ struct proc_ctx *rr_peek(struct ull_cp_conn *conn)
 void ull_cp_priv_rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
 {
 	switch (ctx->proc) {
+	case PROC_LE_PING:
+		rp_comm_rx(conn, ctx, rx);
+		break;
 	case PROC_FEATURE_EXCHANGE:
 		rp_comm_rx(conn, ctx, rx);
 		break;
@@ -161,6 +167,9 @@ static void rr_act_run(struct ull_cp_conn *conn)
 	ctx = rr_peek(conn);
 
 	switch (ctx->proc) {
+	case PROC_LE_PING:
+		rp_comm_run(conn, ctx, NULL);
+		break;
 	case PROC_FEATURE_EXCHANGE:
 		rp_comm_run(conn, ctx, NULL);
 		break;
@@ -411,6 +420,9 @@ void ull_cp_priv_rr_new(struct ull_cp_conn *conn, struct node_rx_pdu *rx)
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
 		proc = PROC_FEATURE_EXCHANGE;
+		break;
+	case PDU_DATA_LLCTRL_TYPE_PING_REQ:
+		proc = PROC_LE_PING;
 		break;
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
 		proc = PROC_VERSION_EXCHANGE;

@@ -178,6 +178,9 @@ struct proc_ctx *ull_cp_priv_create_local_procedure(enum llcp_proc proc)
 	}
 
 	switch (ctx->proc) {
+	case PROC_LE_PING:
+		lp_comm_init_proc(ctx);
+		break;
 	case PROC_FEATURE_EXCHANGE:
 		lp_comm_init_proc(ctx);
 		break;
@@ -208,6 +211,9 @@ struct proc_ctx *ull_cp_priv_create_remote_procedure(enum llcp_proc proc)
 	}
 
 	switch (ctx->proc) {
+	case PROC_LE_PING:
+		rp_comm_init_proc(ctx);
+		break;
 	case PROC_FEATURE_EXCHANGE:
 		rp_comm_init_proc(ctx);
 		break;
@@ -297,6 +303,20 @@ void ull_cp_state_set(struct ull_cp_conn *conn, u8_t state)
 	default:
 		break;
 	}
+}
+
+u8_t ull_cp_le_ping(struct ull_cp_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	ctx = create_local_procedure(PROC_LE_PING);
+	if (!ctx) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	lr_enqueue(conn, ctx);
+
+	return BT_HCI_ERR_SUCCESS;
 }
 
 u8_t ull_cp_feature_exchange(struct ull_cp_conn *conn)

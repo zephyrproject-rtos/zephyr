@@ -48,6 +48,8 @@ static sys_slist_t lt_tx_q;
 
 helper_pdu_encode_func_t * const helper_pdu_encode[] = {
 	helper_pdu_encode_version_ind,
+	helper_pdu_encode_ping_req,
+	helper_pdu_encode_ping_rsp,
 	helper_pdu_encode_feature_req,
 	helper_pdu_encode_slave_feature_req,
 	helper_pdu_encode_feature_rsp,
@@ -65,6 +67,8 @@ helper_pdu_encode_func_t * const helper_pdu_encode[] = {
 
 helper_pdu_verify_func_t *const helper_pdu_verify[] = {
 	helper_pdu_verify_version_ind,
+	helper_pdu_verify_ping_req,
+	helper_pdu_verify_ping_rsp,
 	helper_pdu_verify_feature_req,
 	helper_pdu_verify_slave_feature_req,
 	helper_pdu_verify_feature_rsp,
