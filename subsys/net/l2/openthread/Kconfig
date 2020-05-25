@@ -303,4 +303,9 @@ config OT_PLAT_FLASH_PAGES_COUNT
 	help
 	  This option sets flash pages count used by OpenThread to store its settings. They are located at the end of flash.
 
+config OPENTHREAD_REFERENCE_DEVICE
+	bool "Reference device support"
+	help
+	  Enable Thread Certification reference device support in OpenThread stack
+
 endif
