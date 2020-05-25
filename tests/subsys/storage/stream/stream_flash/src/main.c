@@ -178,6 +178,35 @@ static void test_stream_flash_buffered_write_cross_buf_border(void)
 	VERIFY_WRITTEN(0, BUF_LEN * 2 + BUF_LEN / 2);
 }
 
+static void test_stream_flash_buffered_write_unaligned(void)
+{
+	int rc;
+
+	if (flash_get_write_block_size(fdev) == 1) {
+		ztest_test_skip();
+	}
+
+	init_target();
+
+	/* Test unaligned data size */
+	rc = stream_flash_buffered_write(&ctx, write_buf, 1, true);
+	zassert_equal(rc, 0, "expected success (%d)", rc);
+
+	/* 1 byte should be dumped to flash */
+	VERIFY_WRITTEN(0, 1);
+
+	rc = stream_flash_init(&ctx, fdev, buf, BUF_LEN, FLASH_BASE + BUF_LEN,
+			       0, stream_flash_callback);
+	zassert_equal(rc, 0, "expected success");
+
+	/* Test unaligned data size */
+	rc = stream_flash_buffered_write(&ctx, write_buf, BUF_LEN - 1, true);
+	zassert_equal(rc, 0, "expected success");
+
+	/* BUF_LEN-1 bytes should be dumped to flash */
+	VERIFY_WRITTEN(BUF_LEN, BUF_LEN - 1);
+}
+
 static void test_stream_flash_buffered_write_multi_page(void)
 {
 	int rc;
@@ -348,6 +377,7 @@ void test_main(void)
 	     ztest_unit_test(test_stream_flash_init),
 	     ztest_unit_test(test_stream_flash_buffered_write),
 	     ztest_unit_test(test_stream_flash_buffered_write_cross_buf_border),
+	     ztest_unit_test(test_stream_flash_buffered_write_unaligned),
 	     ztest_unit_test(test_stream_flash_buffered_write_multi_page),
 	     ztest_unit_test(test_stream_flash_buf_size_greater_than_page_size),
 	     ztest_unit_test(test_stream_flash_buffered_write_callback),
