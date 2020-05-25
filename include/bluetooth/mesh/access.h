@@ -51,8 +51,8 @@ extern "C" {
 {                                                   \
 	.loc              = (_loc),                 \
 	.model_count      = ARRAY_SIZE(_mods),      \
-	.models           = (_mods),                \
 	.vnd_model_count  = ARRAY_SIZE(_vnd_mods),  \
+	.models           = (_mods),                \
 	.vnd_models       = (_vnd_mods),            \
 }
 
@@ -449,8 +449,8 @@ struct bt_mesh_model_pub {
 #define BT_MESH_MODEL_PUB_DEFINE(_name, _update, _msg_len) \
 	NET_BUF_SIMPLE_DEFINE_STATIC(bt_mesh_pub_msg_##_name, _msg_len); \
 	static struct bt_mesh_model_pub _name = { \
-		.update = _update, \
 		.msg = &bt_mesh_pub_msg_##_name, \
+		.update = _update, \
 	}
 
 /** Model callback functions. */
