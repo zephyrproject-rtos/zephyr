@@ -480,7 +480,7 @@ static bool model_has_dst(struct bt_mesh_model *mod, u16_t dst)
 	if (BT_MESH_ADDR_IS_UNICAST(dst)) {
 		return (dev_comp->elem[mod->elem_idx].addr == dst);
 	} else if (BT_MESH_ADDR_IS_GROUP(dst) || BT_MESH_ADDR_IS_VIRTUAL(dst)) {
-		return bt_mesh_model_find_group(&mod, dst);
+		return !!bt_mesh_model_find_group(&mod, dst);
 	}
 
 	return (mod->elem_idx == 0 && bt_mesh_fixed_group_match(dst));
