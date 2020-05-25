@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+void helper_pdu_encode_ping_req(struct pdu_data *pdu, void *param);
+void helper_pdu_encode_ping_rsp(struct pdu_data *pdu, void *param);
+
 void helper_pdu_encode_feature_req(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_slave_feature_req(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_feature_rsp(struct pdu_data *pdu, void *param);
@@ -28,6 +31,8 @@ void helper_pdu_encode_phy_rsp(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_phy_update_ind(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_unknown_rsp(struct pdu_data *pdu, void *param);
 
+void helper_pdu_verify_ping_req(const char *file, u32_t line, struct pdu_data *pdu, void *param);
+void helper_pdu_verify_ping_rsp(const char *file, u32_t line, struct pdu_data *pdu, void *param);
 
 
 void helper_pdu_verify_feature_req(const char *file, u32_t line,
@@ -63,6 +68,8 @@ void helper_node_verify_phy_update(const char *file, u32_t line,
 
 typedef enum {
 	LL_VERSION_IND,
+	LL_LE_PING_REQ,
+	LL_LE_PING_RSP,
 	LL_FEATURE_REQ,
 	LL_SLAVE_FEATURE_REQ,
 	LL_FEATURE_RSP,
