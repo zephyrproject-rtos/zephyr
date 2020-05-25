@@ -1302,7 +1302,7 @@
 #define DT_BUS_LABEL(node_id) DT_PROP(DT_BUS(node_id), label)
 
 /**
- * @brief Test if a node's bus type is a given type
+ * @brief Is a node on a bus of a given type?
  *
  * Example devicetree overlay:
  *
@@ -1320,7 +1320,8 @@
  *     DT_ON_BUS(DT_NODELABEL(temp), spi) // 0
  *
  * @param node_id node identifier
- * @param bus a binding's bus type as a C token, lowercased and without quotes
+ * @param bus lowercase-and-underscores bus type as a C token (i.e.
+ *            without quotes)
  * @return 1 if the node is on a bus of the given type,
  *         0 otherwise
  */
@@ -1345,10 +1346,13 @@
 #define DT_DRV_INST(inst) DT_INST(inst, DT_DRV_COMPAT)
 
 /**
- * @brief Invokes given macro for all child nodes of DT_DRV_COMPAT instance.
+ * @brief Call "fn" on all child nodes of DT_DRV_INST(inst).
+ *
+ * The macro "fn" should take one argument, which is the node
+ * identifier for the child node.
  *
  * @param inst instance number
- * @param fn macro to invoke
+ * @param fn macro to invoke on each child node identifier
  *
  * @see DT_FOREACH_CHILD
  */
@@ -1537,7 +1541,6 @@
 
 /**
  * @brief Get a DT_DRV_COMPAT's (only) register block address
- * Equivalent to DT_INST_REG_ADDR_BY_IDX(inst, 0).
  * @param inst instance number
  * @return instance's register block address
  */
@@ -1545,7 +1548,6 @@
 
 /**
  * @brief Get a DT_DRV_COMPAT's (only) register block size
- * Equivalent to DT_INST_REG_SIZE_BY_IDX(inst, 0).
  * @param inst instance number
  * @return instance's register block size
  */
@@ -1553,7 +1555,6 @@
 
 /**
  * @brief Get a DT_DRV_COMPAT interrupt specifier value at an index
- *        (see @ref DT_IRQ_BY_IDX)
  * @param inst instance number
  * @param idx logical index into the interrupt specifier array
  * @param cell cell name specifier
@@ -1564,7 +1565,6 @@
 
 /**
  * @brief Get a DT_DRV_COMPAT interrupt specifier value by name
- *        (see @ref DT_IRQ_BY_NAME)
  * @param inst instance number
  * @param name lowercase-and-underscores interrupt specifier name
  * @param cell cell name specifier
@@ -1574,8 +1574,7 @@
 	DT_IRQ_BY_NAME(DT_DRV_INST(inst), name, cell)
 
 /**
- * @brief Get a DT_DRV_COMAPT interrupt specifier's value
- * Equivalent to DT_INST_IRQ_BY_IDX(inst, 0, cell).
+ * @brief Get a DT_DRV_COMPAT interrupt specifier's value
  * @param inst instance number
  * @param cell cell name specifier
  * @return the named value at that index
@@ -1584,7 +1583,6 @@
 
 /**
  * @brief Get a DT_DRV_COMPAT's (only) irq number
- * Equivalent to DT_INST_IRQ(inst, irq).
  * @param inst instance number
  * @return the interrupt number for the node's only interrupt
  */
@@ -1592,7 +1590,6 @@
 
 /**
  * @brief Get a DT_DRV_COMPAT's bus node's label property
- * Equivalent to DT_BUS_LABEL(DT_DRV_INST(inst))
  * @param inst instance number
  * @return the label property of the instance's bus controller
  */
@@ -1600,7 +1597,6 @@
 
 /**
  * @brief Test if a DT_DRV_COMPAT's bus type is a given type
- * This is equivalent to DT_ON_BUS(DT_DRV_INST(inst), bus).
  * @param inst instance number
  * @param bus a binding's bus type as a C token, lowercased and without quotes
  * @return 1 if the given instance is on a bus of the given type,
@@ -1611,6 +1607,10 @@
 /**
  * @brief Test if any DT_DRV_COMPAT node is on a bus of a given type
  *        and has status okay
+ *
+ * This is a special-purpose macro which can be useful when writing
+ * drivers for devices which can appear on multiple buses. One example
+ * is a sensor device which may be wired on an I2C or SPI bus.
  *
  * Example devicetree overlay:
  *
@@ -1636,32 +1636,72 @@
 	DT_COMPAT_ON_BUS_INTERNAL(DT_DRV_COMPAT, bus)
 
 /**
- * @def DT_INST_FOREACH_STATUS_OKAY
- *
- * @brief Call specified macro for all nodes with compatible DT_DRV_COMPAT
+ * @brief Call "fn" on all nodes with compatible DT_DRV_COMPAT
  *        and status "okay"
  *
- * @details This macro will scan for all DT_INST_ device nodes for that
- * compatible.
+ * This macro calls "fn(inst)" on each "inst" number that refers to a
+ * node with status "okay". Whitespace is added between invocations.
  *
- * The macro then calls the supplied inst_expr with the instance number
- * for each instance which has status "okay".
+ * Example devicetree fragment:
  *
- * This macro can be used for example to call the init macro of a driver
- * for each device specified in the device tree with "okay" status.
+ *     a {
+ *             compatible = "vnd,device";
+ *             status = "okay";
+ *             label = "DEV_A";
+ *     };
  *
- * @param inst_expr Macro or function that is called for each device node.
- * Has to accept instance_number as only parameter.
+ *     b {
+ *             compatible = "vnd,device";
+ *             status = "okay";
+ *             label = "DEV_B";
+ *     };
+ *
+ *     c {
+ *             compatible = "vnd,device";
+ *             status = "disabled";
+ *             label = "DEV_C";
+ *     };
+ *
+ * Example usage:
+ *
+ *     #define DT_DRV_COMPAT vnd_device
+ *     #define MY_FN(inst) DT_INST_LABEL(inst),
+ *
+ *     DT_INST_FOREACH_STATUS_OKAY(MY_FN)
+ *
+ * This expands to:
+ *
+ *     MY_FN(0) MY_FN(1)
+ *
+ * and from there, to either this:
+ *
+ *     "DEV_A", "DEV_B",
+ *
+ * or this:
+ *
+ *     "DEV_B", "DEV_A",
+ *
+ * No guarantees are made about the order that a and b appear in the
+ * expansion.
+ *
+ * Note that "fn" is responsible for adding commas, semicolons, or
+ * other separators or terminators.
+ *
+ * Device drivers should use this macro whenever possible to
+ * instantiate a struct device for each enabled node in the devicetree
+ * of the driver's compatible DT_DRV_COMPAT.
+ *
+ * @param fn Macro to call for each enabled node. Must accept an
+ *           instance number as its only parameter.
  */
-#define DT_INST_FOREACH_STATUS_OKAY(inst_expr) \
+#define DT_INST_FOREACH_STATUS_OKAY(fn) \
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT),	\
 		    (UTIL_CAT(DT_FOREACH_OKAY_INST_,		\
-			      DT_DRV_COMPAT)(inst_expr)),	\
+			      DT_DRV_COMPAT)(fn)),		\
 		    ())
 
 /**
  * @brief Does a DT_DRV_COMPAT instance have a property?
- * Equivalent to DT_NODE_HAS_PROP(DT_DRV_INST(inst), prop)
  * @param inst instance number
  * @param prop lowercase-and-underscores property name
  * @return 1 if the instance has the property, 0 otherwise.
@@ -1670,8 +1710,8 @@
 	DT_NODE_HAS_PROP(DT_DRV_INST(inst), prop)
 
 /**
- * @brief Does a phandle array have a named cell specifier at an index?
- *        for a DT_DRV_COMPAT instance
+ * @brief Does a phandle array have a named cell specifier at an index
+ *        for a DT_DRV_COMPAT instance?
  * @param inst instance number
  * @param pha lowercase-and-underscores property with type "phandle-array"
  * @param idx index to check
@@ -1696,7 +1736,6 @@
 
 /**
  * @brief is index valid for interrupt property on a DT_DRV_COMPAT instance?
- * Equivalent to DT_IRQ_HAS_IDX(DT_DRV_INST(inst), idx).
  * @param inst instance number
  * @param idx logical index into the interrupt specifier array
  * @return 1 if the idx is valid for the interrupt property
@@ -1706,7 +1745,6 @@
 
 /**
  * @brief Does a DT_DRV_COMPAT instance have an interrupt named cell specifier?
- * Equivalent to DT_IRQ_HAS_CELL_AT_IDX(DT_DRV_INST(inst), idx, cell).
  * @param inst instance number
  * @param idx index to check
  * @param cell named cell value whose existence to check
@@ -1718,7 +1756,6 @@
 
 /**
  * @brief Does a DT_DRV_COMPAT instance have an interrupt value?
- * Equivalent to DT_INST_IRQ_HAS_IDX(DT_DRV_INST(inst), 0, cell).
  * @param inst instance number
  * @param cell named cell value whose existence to check
  * @return 1 if the named cell exists in the interrupt specifier at index 0
@@ -1729,7 +1766,6 @@
 
 /**
  * @brief Does a DT_DRV_COMPAT instance have an interrupt value?
- * Equivalent to DT_INST_IRQ_HAS_NAME(DT_DRV_INST(inst), name).
  * @param inst instance number
  * @param name lowercase-and-underscores interrupt specifier name
  * @return 1 if "name" is a valid named specifier
