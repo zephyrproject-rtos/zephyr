@@ -5,6 +5,6 @@
 
 config TEMP_NRF5
 	bool "nRF5 Temperature Sensor"
-	depends on SOC_FAMILY_NRF
+	depends on HAS_HW_NRF_TEMP
 	help
 	  Enable driver for nRF5 temperature sensor.
