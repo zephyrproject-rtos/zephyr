@@ -22,19 +22,19 @@ To run USB tests:
 
    .. code-block:: console
 
-      $ sudo modprobe usbtest vendor=0x2fe3 product=0x0100
+      $ sudo modprobe usbtest vendor=0x2fe3 product=0x0009
 
    The ``usbtest`` module should claim the device:
 
    .. code-block:: console
 
       [21746.128743] usb 9-1: new full-speed USB device number 16 using uhci_hcd
-      [21746.303051] usb 9-1: New USB device found, idVendor=2fe3, idProduct=0100
+      [21746.303051] usb 9-1: New USB device found, idVendor=2fe3, idProduct=0009, bcdDevice= 2.03
       [21746.303055] usb 9-1: New USB device strings: Mfr=1, Product=2, SerialNumber=3
       [21746.303058] usb 9-1: Product: Zephyr testusb sample
       [21746.303060] usb 9-1: Manufacturer: ZEPHYR
-      [21746.303063] usb 9-1: SerialNumber: 0.01
-      [21746.306149] usbtest 9-1:1.0: matched module params, vend=0x2fe3 prod=0x0100
+      [21746.303063] usb 9-1: SerialNumber: 86FE679A598AC47A
+      [21746.306149] usbtest 9-1:1.0: matched module params, vend=0x2fe3 prod=0x0009
       [21746.306153] usbtest 9-1:1.0: Generic USB device
       [21746.306156] usbtest 9-1:1.0: full-speed {control} tests
 
@@ -57,7 +57,7 @@ To run USB tests:
 
    .. code-block:: console
 
-      $ sudo sh -c "echo 0x2fe3 0x0100 0 0x0525 0xa4a0 > /sys/bus/usb/drivers/usbtest/new_id"
+      $ sudo sh -c "echo 0x2fe3 0x0009 0 0x0525 0xa4a0 > /sys/bus/usb/drivers/usbtest/new_id"
 
 #. Use the ``testusb`` tool in ``linux/tools/usb`` inside Linux kernel source directory
    to start the tests.
