@@ -112,6 +112,8 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const u8_t *data,
 	int processed = 0;
 	int rc = 0;
 	int buf_empty_bytes;
+	size_t fill_length;
+	u8_t filler;
 
 	if (!ctx || !data) {
 		return -EFAULT;
@@ -144,6 +146,27 @@ int stream_flash_buffered_write(struct stream_flash_ctx *ctx, const u8_t *data,
 	}
 
 	if (flush && ctx->buf_bytes > 0) {
+		fill_length = flash_get_write_block_size(ctx->fdev);
+		if (ctx->buf_bytes % fill_length) {
+			fill_length -= ctx->buf_bytes % fill_length;
+			/*
+			 * Leverage the fact that unwritten memory
+			 * should be erased in order to get the erased
+			 * byte-value.
+			 */
+			rc = flash_read(ctx->fdev,
+					ctx->offset + ctx->bytes_written,
+					(void *)&filler,
+					1);
+
+			if (rc != 0) {
+				return rc;
+			}
+
+			memset(ctx->buf + ctx->buf_bytes, filler, fill_length);
+			ctx->buf_bytes += fill_length;
+		}
+
 		rc = flash_sync(ctx);
 	}
 
@@ -167,6 +190,11 @@ int stream_flash_init(struct stream_flash_ctx *ctx, struct device *fdev,
 	size_t total_size = 0;
 	const struct flash_pages_layout *layout;
 	const struct flash_driver_api *api = fdev->driver_api;
+
+	if (buf_len % flash_get_write_block_size(fdev)) {
+		LOG_ERR("Buffer size is not aligned to minimal write-block-size");
+		return -EFAULT;
+	}
 
 	/* Calculate the total size of the flash device */
 	api->page_layout(fdev, &layout, &layout_size);
