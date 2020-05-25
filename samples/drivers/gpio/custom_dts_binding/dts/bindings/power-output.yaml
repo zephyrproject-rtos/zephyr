@@ -1,0 +1,11 @@
+# Copyright (c) 2020 Martin Jäger / Libre Solar
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO pin to switch a power output on or off
+
+compatible: "power-output"
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
