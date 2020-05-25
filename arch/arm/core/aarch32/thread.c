@@ -234,7 +234,7 @@ void configure_builtin_stack_guard(struct k_thread *thread)
 #if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 
 #define IS_MPU_GUARD_VIOLATION(guard_start, guard_len, fault_addr, stack_ptr) \
-	((fault_addr == -EINVAL) ? \
+	((fault_addr != -EINVAL) ? \
 	((fault_addr >= guard_start) && \
 	(fault_addr < (guard_start + guard_len)) && \
 	(stack_ptr < (guard_start + guard_len))) \
