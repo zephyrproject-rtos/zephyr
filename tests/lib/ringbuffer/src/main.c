@@ -49,6 +49,20 @@ RING_BUF_ITEM_DECLARE_POW2(ring_buf1, 8);
 #define POW 2
 
 
+/**
+ * @brief test APIs of ring buffer
+ *
+ * @details define and initialize a ring buffer
+ * the ring buffer copy data out of the array by
+ * ring_buf_item_put(), and then ring buffer data
+ * is copied into the array by ring_buf_item_get()
+ * return error when full/empty.
+ *
+ * @ingroup lib_ringbuffer_tests
+ *
+ * @see ring_buf_item_put(), ring_buf_item_get()
+ *
+ */
 void test_ring_buffer_main(void)
 {
 	int ret, put_count, i;
@@ -56,6 +70,7 @@ void test_ring_buffer_main(void)
 	uint8_t getsize, getval;
 	uint16_t gettype;
 	int dsize = INITIAL_SIZE;
+
 	__aligned(sizeof(uint32_t)) char rb_data[] = "ABCDEFGHIJKLMNOPQRSTUVWX";
 	put_count = 0;
 
@@ -91,8 +106,8 @@ void test_ring_buffer_main(void)
 			    getsize, gettype, getval,
 			    ring_buf_space_get(&ring_buf1));
 
-		zassert_true((memcmp((char *)getdata, rb_data, getsize * sizeof(uint32_t)) == 0),
-			     "data corrupted");
+		zassert_true((memcmp((char *)getdata, rb_data,
+			getsize * sizeof(uint32_t)) == 0), "data corrupted");
 		zassert_true((gettype == TYPE), "type information corrupted");
 		zassert_true((getval == VALUE), "value information corrupted");
 	}
@@ -107,6 +122,11 @@ void test_ring_buffer_main(void)
 RING_BUF_ITEM_DECLARE_POW2(ringbuf_pow2, POW);
 
 /**TESTPOINT: init via RING_BUF_ITEM_DECLARE_SIZE*/
+/**
+ * @brief define a ring buffer with arbitrary size
+ *
+ * @see RING_BUF_ITEM_DECLARE_SIZE(),RING_BUF_DECLARE()
+ */
 RING_BUF_ITEM_DECLARE_SIZE(ringbuf_size, RINGBUFFER_SIZE);
 
 RING_BUF_DECLARE(ringbuf_raw, RINGBUFFER_SIZE);
@@ -234,6 +254,18 @@ void test_ringbuffer_size_put_get_thread_isr(void)
 	irq_offload(tringbuf_get, (void *)2);
 }
 
+/**
+ * @brief verify data is passed between ring buffer and array
+ *
+ * @details The ringbuffer is defined and initialized.
+ * put data of type u8_t to a ring buffer from inbuf array.
+ * get data to outbuf array from ring buffer.
+ * verify if the data put is equal to the data got.
+ *
+ * @ingroup lib_ringbuffer_tests
+ *
+ * @see ring_buf_put(), ring_buf_get(),#RING_BUF_DECLARE()
+ */
 void test_ringbuffer_raw(void)
 {
 	int i;
@@ -260,6 +292,7 @@ void test_ringbuffer_raw(void)
 			     NULL);
 	}
 
+	memset(outbuf, 0, sizeof(outbuf));
 	in_size = ring_buf_put(&ringbuf_raw, inbuf,
 				       RINGBUFFER_SIZE);
 	zassert_equal(in_size, RINGBUFFER_SIZE - 1, NULL);
@@ -443,6 +476,58 @@ void test_reset(void)
 	zassert_true(granted == RINGBUFFER_SIZE - 1, NULL);
 }
 
+#ifdef CONFIG_64BIT
+static uint64_t ringbuf_stored[RINGBUFFER_SIZE];
+#else
+static uint32_t ringbuf_stored[RINGBUFFER_SIZE];
+#endif
+
+/**
+ * @brief verify the array stored by ringbuf
+ *
+ * @details Define a buffer stored by ringbuffer
+ * and keep that the buffer's size is always
+ * equal to the pointer's size.
+ * And also verify that the address of the buffer
+ * is contiguous.
+ *
+ * @ingroup lib_ringbuffer_tests
+ *
+ * @see ring_buf_item_put(), ring_buf_item_get()
+ */
+void test_ringbuffer_array_perf(void)
+{
+	struct ring_buf buf_ii;
+	uint32_t input[3] = {0xaa, 0xbb, 0xcc};
+	uint32_t output[3] = {0};
+	uint16_t type = 0;
+	uint8_t value = 0, size = 3;
+	void *tp;
+
+	ring_buf_init(&buf_ii, RINGBUFFER_SIZE, ringbuf_stored);
+
+	/*Data from the beginning of the array can be copied into the ringbuf*/
+	zassert_true(ring_buf_item_put(&buf_ii, 1, 2, input, 3) == 0, NULL);
+
+	/*Verify the address stored by ringbuf is contiguous*/
+	for (int i = 0; i < 3; i++) {
+		zassert_equal(input[i], buf_ii.buf.buf32[i+1], NULL);
+	}
+
+	/*Data from the end of the ringbuf can be copied into the array*/
+	zassert_true(ring_buf_item_get(&buf_ii, &type, &value,
+				output, &size) == 0, NULL);
+
+	/*Verify the ringbuf defined is working*/
+	for (int i = 0; i < 3; i++) {
+		zassert_equal(input[i], output[i], NULL);
+	}
+
+	/*The size of array stored by ringbuf is equal to the size of pointer*/
+	zassert_equal(sizeof(tp), sizeof(ringbuf_stored[0]), NULL);
+}
+
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -455,6 +540,7 @@ void test_main(void)
 			 ztest_unit_test(test_ringbuffer_put_get_thread_isr),
 			 ztest_unit_test(test_ringbuffer_pow2_put_get_thread_isr),
 			 ztest_unit_test(test_ringbuffer_size_put_get_thread_isr),
+			 ztest_unit_test(test_ringbuffer_array_perf),
 			 ztest_unit_test(test_ring_buffer_main),
 			 ztest_unit_test(test_ringbuffer_raw),
 			 ztest_unit_test(test_ringbuffer_alloc_put),
