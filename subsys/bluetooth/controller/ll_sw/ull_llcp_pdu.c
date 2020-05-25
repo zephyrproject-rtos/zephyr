@@ -37,6 +37,24 @@
 #include "hal/debug.h"
 
 /*
+ * LE Ping Procedure Helpers
+ */
+
+void ull_cp_priv_pdu_encode_ping_req(struct pdu_data *pdu)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, ping_req) + sizeof(struct pdu_data_llctrl_ping_req);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PING_REQ;
+}
+
+void ull_cp_priv_pdu_encode_ping_rsp(struct pdu_data *pdu)
+{
+	pdu->ll_id = PDU_DATA_LLID_CTRL;
+	pdu->len = offsetof(struct pdu_data_llctrl, ping_rsp) + sizeof(struct pdu_data_llctrl_ping_rsp);
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PING_RSP;
+}
+
+/*
  * Unknown response helper
  */
 
