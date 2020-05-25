@@ -1,6 +1,6 @@
-.. _nrf52_ruuvi:
+.. _ruuvi_ruuvitag:
 
-nRF52-ruuvi
+RuuviTag
 ##############
 
 Overview
@@ -8,14 +8,14 @@ Overview
 
 RuuviTag is an advanced battery-operated open-source Bluetooth
 enabled sensor beacon platform capable of sending temperature, humidity,
-pressure, and motion information.
+pressure, and motion information over Bluetooth Low Energy.
 
-.. figure:: img/ruuvitag-pcb.jpg
+.. figure:: img/ruuvitag.jpg
      :width: 442px
      :align: center
-     :alt: RUUVI Tag
+     :alt: RUUVI RuuviTag
 
-     RUUVI Tag
+     RUUVI RuuviTag (Credit: https://ruuvi.com/)
 
 More information about the board can be found at the
 `ruuvitag website`_.
@@ -23,21 +23,18 @@ More information about the board can be found at the
 Hardware
 ********
 
-RuuviTag is built from the ground up using the latest technology available.
+RuuviTag's have the following physical features:
 
 * Nordic Semiconductor nRF52832 System-on-Chip
 * STMicroelectronics LIS2DH12 accelerometer
 * Bosch BME 280 temperature + relative air humidity + air pressure sensor
 * NFC™-A tag antenna
 * 1000mAh CR2477 battery
-* Recommended -20ºC to +65ºC (max -40ºC to +85ºC)
 * 2 buttons
-* 2 LEDs
-* 45 mm diameter (PCB)
-* 52 mm diameter (enclosure)
+* 1 Green LED
+* 1 Red LED
+* IP67 Enclosure
 * Long range RF antenna
-
-`ruuvitag datasheet`_
 
 Supported Features
 ==================
@@ -45,25 +42,34 @@ Supported Features
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
 +===========+============+======================+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
+| ADC       | on-chip    | adc                  |
 +-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
+| CLOCK     | on-chip    | clock_control        |
 +-----------+------------+----------------------+
 | FLASH     | on-chip    | flash                |
 +-----------+------------+----------------------+
+| GPIO      | on-chip    | gpio                 |
++-----------+------------+----------------------+
+| MPU       | on-chip    | arch/arm             |
++-----------+------------+----------------------+
+| NVIC      | on-chip    | arch/arm             |
++-----------+------------+----------------------+
 | RADIO     | on-chip    | Bluetooth            |
 +-----------+------------+----------------------+
-| RTT       | on-chip    | console              |
+| RTC       | on-chip    | system clock         |
 +-----------+------------+----------------------+
-
-Other hardware features are not supported by the Zephyr kernel.
-See `nRF52 DK website`_ and `Nordic Semiconductor Infocenter`_
-for a complete list of nRF52 Development Kit board hardware features.
+| SPI       | on-chip    | spi                  |
++-----------+------------+----------------------+
+| UART      | on-chip    | serial               |
++-----------+------------+----------------------+
+| WDT       | on-chip    | watchdog             |
++-----------+------------+----------------------+
+| Humidity, | on-board   | bme280               |
+| Temp & Air|            |                      |
+| Pressure  |            |                      |
++-----------+------------+----------------------+
+| Acc       | on-board   | lis2dh12             |
++-----------+------------+----------------------+
 
 Connections and IOs
 ===================
@@ -137,18 +143,25 @@ Programming and Debugging
 Flashing
 ========
 
-.. code-block:: console
+Build and flash applications as usual (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
-  nrfjprog --family nrf52 --eraseall
-  nrfjprog --family nrf52 --program zephyr.hex
-  nrfjprog --family nrf52 --reset
+Flashing Zephyr onto a RuuviTag requires an external Ruuvi DEVKIT. 
 
+Once your tag is conencted to the DEVKIT and conencted to your PC, build and flash the application in the usual way.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: ruuvi_ruuvitag
+   :goals: build flash
 
 Debugging
 =========
 
+If using the Ruuvi DEVKIT refer to the :ref:`nordic_segger` page to learn about debugging Nordic boards with a
+Segger IC.
 
-Testing the LEDs and buttons in the nRF52 DK
+Testing the LEDs and buttons on the RuuviTag
 ********************************************
 
 There are 2 samples that allow you to test that the buttons (switches) and LEDs on
@@ -158,7 +171,7 @@ the board are working properly with Zephyr:
 * :ref:`button-sample`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
-your board. The button and LED definitions can be found in :file:`boards/arm/nrf52_pca10040/board.h`.
+your board. The button and LED definitions can be found in :file:`boards/arm/ruuvi_ruuvitag/ruuvi_ruuvitag.dts`.
 
 References
 **********
@@ -166,6 +179,4 @@ References
 .. target-notes::
 
 .. _ruuvitag website: https://ruuvi.com
-.. _ruuvitag datasheet: https://blog.ruuvi.com/datasheet-52fb00265c60
-.. _nRF52 DK website: http://www.nordicsemi.com/eng/Products/Bluetooth-low-energy/nRF52-DK
-.. _Nordic Semiconductor Infocenter: http://infocenter.nordicsemi.com/
+.. _ruuvitag datasheet: https://ruuvi.com/files/ruuvitag-tech-spec-2019-7.pdf
