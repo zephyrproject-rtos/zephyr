@@ -48,29 +48,31 @@ extern "C" {
 /* Evaluates to 0 if cond is true-ish; compile error otherwise */
 #define ZERO_OR_COMPILE_ERROR(cond) ((int) sizeof(char[1 - 2 * !(cond)]) - 1)
 
-/* Evaluates to 0 if array is an array; compile error if not array (e.g.
- * pointer)
+#if defined(__cplusplus)
+
+/* Evaluates to number of elements in an array.  Due to language
+ * limitations this will accept (though perhaps not do something
+ * meaningful) when array is a type that implements operator[].
+ */
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+
+#else /* __cplusplus */
+
+/* Evaluates to 0 if array is an array; compile error if not array
+ * (e.g.  pointer).  The built-in function used for type checking is
+ * not supported by GNU C++.
  */
 #define IS_ARRAY(array) \
 	ZERO_OR_COMPILE_ERROR( \
 		!__builtin_types_compatible_p(__typeof__(array), \
 					      __typeof__(&(array)[0])))
-
-#if defined(__cplusplus)
-extern "C++" {
-template < class T, size_t N >
-#if __cplusplus >= 201103L
-constexpr
-#endif /* >= C++11 */
-size_t ARRAY_SIZE(T(&)[N]) { return N; }
-}
-#else
 /* Evaluates to number of elements in an array; compile error if not
  * an array (e.g. pointer)
  */
 #define ARRAY_SIZE(array) \
 	((long) (IS_ARRAY(array) + (sizeof(array) / sizeof((array)[0]))))
-#endif
+
+#endif /* __cplusplus */
 
 /* Evaluates to 1 if ptr is part of array, 0 otherwise; compile error if
  * "array" argument is not an array (e.g. "ptr" and "array" mixed up)
