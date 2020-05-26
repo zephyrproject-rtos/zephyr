@@ -332,5 +332,17 @@
 				val = <2>;
 			};
 		};
+
+		test-great-grandchildren {
+			compatible = "vnd,great-grandchild-bindings";
+
+			child {
+				grandchild {
+					test_ggc: great-grandchild {
+						ggc-prop = <42>;
+					};
+				};
+			};
+		};
 	};
 };

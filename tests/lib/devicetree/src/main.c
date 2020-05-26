@@ -1442,6 +1442,12 @@ static void test_child_nodes_list(void)
 	#undef TEST_FUNC
 }
 
+static void test_great_grandchild(void)
+{
+	zassert_equal(DT_PROP(DT_NODELABEL(test_ggc), ggc_prop),
+		      42, "great-grandchild bindings returned wrong value");
+}
+
 void test_main(void)
 {
 	ztest_test_suite(devicetree_api,
@@ -1471,7 +1477,8 @@ void test_main(void)
 			 ztest_unit_test(test_enums),
 			 ztest_unit_test(test_clocks),
 			 ztest_unit_test(test_parent),
-			 ztest_unit_test(test_child_nodes_list)
+			 ztest_unit_test(test_child_nodes_list),
+			 ztest_unit_test(test_great_grandchild)
 		);
 	ztest_run_test_suite(devicetree_api);
 }
