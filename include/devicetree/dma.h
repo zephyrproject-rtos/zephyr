@@ -141,30 +141,30 @@ extern "C" {
  *
  * Example usage:
  *
- *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), channel, 0) // 1
- *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), channel, 1) // 6
- *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), config, 0) // 0x400
- *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), config, 1) // 0x404
+ *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), 0, channel) // 1
+ *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), 1, channel) // 6
+ *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), 0, config) // 0x400
+ *     DT_DMAS_CELL_BY_IDX(DT_NODELABEL(n), 1, config) // 0x404
  *
  * @param node_id node identifier for a node with a dmas property
- * @param cell lowercase-and-underscores cell name
  * @param idx logical index into dmas property
+ * @param cell lowercase-and-underscores cell name
  * @return the cell value at index "idx"
  * @see DT_PHA_BY_IDX()
  */
-#define DT_DMAS_CELL_BY_IDX(node_id, cell, idx) \
-	DT_PHA_BY_IDX(node_id, dmas, cell, idx)
+#define DT_DMAS_CELL_BY_IDX(node_id, idx, cell) \
+	DT_PHA_BY_IDX(node_id, dmas, idx, cell)
 
 /**
  * @brief Get a DT_DRV_COMPAT instance's DMA specifier's cell value at an index
  * @param inst DT_DRV_COMPAT instance number
- * @param cell lowercase-and-underscores cell name
  * @param idx logical index into dmas property
+ * @param cell lowercase-and-underscores cell name
  * @return the cell value at index "idx"
  * @see DT_DMAS_CELL_BY_IDX()
  */
-#define DT_INST_DMAS_CELL_BY_IDX(inst, cell, idx) \
-	DT_PHA_BY_IDX(DT_DRV_INST(inst), dmas, cell, idx)
+#define DT_INST_DMAS_CELL_BY_IDX(inst, idx, cell) \
+	DT_PHA_BY_IDX(DT_DRV_INST(inst), dmas, idx, cell)
 
 /**
  * @brief Get a DMA specifier's cell value by name
