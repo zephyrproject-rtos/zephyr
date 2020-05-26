@@ -24,6 +24,7 @@ extern void test_mem_domain_add_partitions_invalid(void);
 extern void test_mem_domain_add_partitions_simple(void);
 extern void test_mem_domain_remove_partitions_simple(void);
 extern void test_mem_domain_remove_partitions(void);
+extern void test_mem_part_assert_data_correct(void);
 extern void test_kobject_access_grant(void);
 extern void test_syscall_invalid_kobject(void);
 extern void test_thread_without_kobject_permission(void);
@@ -66,6 +67,7 @@ void test_main(void)
 			 ztest_unit_test(test_mem_domain_remove_partitions_simple),
 			 ztest_unit_test(test_mem_domain_remove_partitions),
 			 ztest_unit_test(test_mark_thread_exit_uninitialized),
+			 ztest_unit_test(test_mem_part_assert_data_correct),
 			 ztest_unit_test(test_kobject_access_grant),
 			 ztest_unit_test(test_syscall_invalid_kobject),
 			 ztest_unit_test(test_thread_without_kobject_permission),

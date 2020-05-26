@@ -15,6 +15,15 @@ K_THREAD_STACK_DEFINE(mem_domain_2_stack, MEM_DOMAIN_STACK_SIZE);
 K_THREAD_STACK_DEFINE(mem_domain_6_stack, MEM_DOMAIN_STACK_SIZE);
 struct k_thread mem_domain_1_tid, mem_domain_2_tid, mem_domain_6_tid;
 
+#if defined(CONFIG_X86)
+K_MEM_PARTITION_DEFINE(wrong_part, 1, 0, K_MEM_PARTITION_P_RW_U_RW);
+#elif defined(CONFIG_ARM)
+K_MEM_PARTITION_DEFINE(wrong_part, 64, 32, K_MEM_PARTITION_P_RW_U_RW);
+#elif defined(CONFIG_ARC)
+K_MEM_PARTITION_DEFINE(wrong_part, 64, 32, K_MEM_PARTITION_P_RW_U_RW);
+#else
+#error "Test suite not compatible for the given architecture"
+#endif
 /****************************************************************************/
 /* The mem domains needed.*/
 uint8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf[MEM_REGION_ALLOC];
@@ -61,6 +70,7 @@ struct k_mem_partition *mem_domain_memory_partition_array1[] = {
 };
 struct k_mem_domain mem_domain_mem_domain;
 struct k_mem_domain mem_domain1;
+struct k_mem_domain test_domain;
 
 /****************************************************************************/
 /* Common init functions */
@@ -517,4 +527,26 @@ void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 			-1, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 	k_thread_join(&mem_domain_6_tid, K_FOREVER);
+}
+
+/**
+ * @brief Test system assert if not correct memory partition size and address
+ *
+ * @details
+ * - Define memory partition where start address is 1 and size is 0
+ * - It will make assert, because summ of the (part->start+part->size) must be
+ *   more then (part->start), but in our case that condition will fail.
+ * - That way we check system assertion for that case.
+ * - That test works only in x86.
+ * - It can't test ASSERTION fail on ARM and ARC, on that boards that test will
+ *   just pass without any assertion.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+void test_mem_part_assert_data_correct(void)
+{
+	valid_fault = true;
+
+	k_mem_domain_init(&test_domain, 0, NULL);
+	k_mem_domain_add_partition(&test_domain, &wrong_part);
 }
