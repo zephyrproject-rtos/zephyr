@@ -140,7 +140,9 @@ Architectures
 
 * RISC-V:
 
-  * <TBD>
+  * Add support for hard floating point for RISC-V
+  * Add march and mabi options to Kconfig
+  * Fix compilation warning for platforms without PLIC
 
 * x86:
 
@@ -187,6 +189,12 @@ Drivers and Sensors
 * Bluetooth
 
   * Add an RX thread on stm32wb hci wrapper
+  * Improve BLE support for rv32m1_vega:
+
+    - Add Resolvable Private Address support
+    - Enable power saving support
+    - Add 2 Mbps support
+    - Enable controller-based privacy
 
 * CAN
 
@@ -279,6 +287,7 @@ Drivers and Sensors
 
 * Interrupt Controller
 
+  * Fix PLIC register space
   * <TBD>
 
 * IPM
@@ -307,6 +316,7 @@ Drivers and Sensors
 
 * Pinmux
 
+  * Fix compilation errors in rv32m1_vega pinmux
   * <TBD>
 
 * PS/2
