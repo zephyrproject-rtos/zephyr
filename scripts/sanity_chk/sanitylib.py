@@ -1958,6 +1958,27 @@ class ProjectBuilder(FilterBuilder):
             instance.handler.generator_cmd = self.generator_cmd
             instance.handler.generator = self.generator
 
+    def verify_if_results_filled(self):
+        """
+        Verifies if results for all test cases in the instance exist.
+        It can happen that some (or all) test cases are missing in
+        the instance.results dictionary (due to the instance being filtered,
+        test code not following sanitycheck's rules etc). It is required for
+        the full report to be filled correctly.
+        """
+        if self.instance.status == 'passed':
+            for case in self.instance.testcase.cases:
+                if case not in self.instance.results:
+                    self.instance.results[case] = 'PASS'
+        if self.instance.status == 'failed':
+            for case in self.instance.testcase.cases:
+                if case not in self.instance.results:
+                    self.instance.results[case] = 'FAIL'
+        if self.instance.status == 'skipped':
+            for case in self.instance.testcase.cases:
+                if case not in self.instance.results:
+                    self.instance.results[case] = 'SKIP'
+
     def process(self, message):
         op = message.get('op')
 
@@ -1976,8 +1997,6 @@ class ProjectBuilder(FilterBuilder):
                     logger.debug("filtering %s" % self.instance.name)
                     self.instance.status = "skipped"
                     self.instance.reason = "filter"
-                    for case in self.instance.testcase.cases:
-                        self.instance.results.update({case: 'SKIP'})
                     pipeline.put({"op": "report", "test": self.instance})
                 else:
                     pipeline.put({"op": "build", "test": self.instance})
@@ -2013,6 +2032,7 @@ class ProjectBuilder(FilterBuilder):
 
         # Report results and output progress to screen
         elif op == "report":
+            self.verify_if_results_filled()
             with report_lock:
                 self.report_out()
 
