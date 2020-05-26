@@ -338,6 +338,11 @@ void ieee802154_init(struct net_if *iface)
 	ctx->channel = IEEE802154_NO_CHANNEL;
 	ctx->flags = NET_L2_MULTICAST;
 
+	if (IS_ENABLED(CONFIG_IEEE802154_NET_IF_NO_AUTO_START)) {
+		LOG_DBG("Interface auto start disabled.");
+		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	}
+
 	ieee802154_mgmt_init(iface);
 
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
