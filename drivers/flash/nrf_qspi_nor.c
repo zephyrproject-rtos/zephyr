@@ -574,6 +574,7 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 		return -EINVAL;
 	}
 
+
 	struct qspi_nor_data *const driver_data = dev->driver_data;
 	const struct qspi_nor_config *params = dev->config_info;
 
@@ -592,11 +593,33 @@ static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 		return -EINVAL;
 	}
 
-	qspi_lock(dev);
 
-	nrfx_err_t res = nrfx_qspi_write(src, size, addr);
+	nrfx_err_t res;
 
-	qspi_wait_for_completion(dev, res);
+	/* if the data smaller than a whole word the function already copies
+	 * the data in ram
+	 */
+	if (res != NRFX_SUCCESS) {
+		/* pre-read failed */
+	} else if (IS_ENABLED(CONFIG_NORDIC_QSPI_NOR_FLASH_ALLOW_STACK_USAGE_FOR_DATA_IN_FLASH) &&
+	    ((u32_t)sptr < CONFIG_SRAM_BASE_ADDRESS) && !(size < 4U)) {
+		for (size_t bytes_written = 0; bytes_written < dlen;) {
+			memcpy(buf, ((u8_t *)sptr + bytes_written),
+			       sizeof(buf));
+			qspi_lock(dev);
+			res = nrfx_qspi_write(buf, sizeof(buf),
+					      addr + bytes_written);
+			qspi_wait_for_completion(dev, res);
+			if (res != NRFX_SUCCESS) {
+				return qspi_get_zephyr_ret_code(res);
+			}
+			bytes_written += sizeof(buf);
+		}
+	} else {
+		qspi_lock(dev);
+		res = nrfx_qspi_write(src, size, addr);
+		qspi_wait_for_completion(dev, res);
+	}
 
 	return qspi_get_zephyr_ret_code(res);
 }
