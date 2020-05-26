@@ -329,6 +329,7 @@ Drivers and Sensors
 
 * Sensor
 
+  * Add support for Analog Devices ADXL345 3-axis I2C accelerometer
   * <TBD>
 
 * Serial
