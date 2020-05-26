@@ -49,8 +49,6 @@
 #define _TIMESTAMP_MAX ((uint32_t)0x7FFFFFFF)
 #define _TIMESTAMP_EXT ((uint32_t)0x80000000)
 
-#define TICKS_TO_MS  (MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-
 /**
  *
  * @brief Timestamp initialization
@@ -68,7 +66,7 @@ void _timestamp_open(void)
 	_CLKGATECTRL |= _CLKGATECTRL_TIMESTAMP_EN;
 
 	/* minimum 3 clk delay is required before timer register access */
-	k_sleep(3 * TICKS_TO_MS);
+	k_sleep(K_TICKS(3));
 
 	_TIMESTAMP_CTRL = 0x0;                  /* disable/reset timer */
 	_TIMESTAMP_CFG = 0x0;                   /* 32-bit timer */
