@@ -319,6 +319,13 @@ config BOOT_DELAY
 	  achieved by waiting for DCD on the serial port--however, not
 	  all serial ports have DCD.
 
+config BOOT_DELAY_RANDOM
+	bool "Randomize boot delay"
+	help
+	  This option randomizes the bootup delay between 0 and the
+	  value of BOOT_DELAY. This can be used e.g., to jitter boot-up
+	  of wireless network devices.
+
 config EXECUTION_BENCHMARKING
 	bool "Timing metrics"
 	help
