@@ -38,7 +38,7 @@ static K_FIFO_DEFINE(tx_queue);
 #define BLUETOOTH_INT_EP_MPS            MIN(BT_BUF_RX_SIZE, USB_MAX_FS_INT_MPS)
 
 /* HCI RX/TX threads */
-static K_THREAD_STACK_DEFINE(rx_thread_stack, 512);
+static K_THREAD_STACK_DEFINE(rx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread rx_thread_data;
 static K_THREAD_STACK_DEFINE(tx_thread_stack, 512);
 static struct k_thread tx_thread_data;
