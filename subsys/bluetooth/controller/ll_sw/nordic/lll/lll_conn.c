@@ -308,6 +308,20 @@ lll_conn_isr_rx_exit:
 	}
 
 	if (is_rx_enqueue) {
+#if defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+	defined(CONFIG_BT_CTLR_LE_ENC) && \
+	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
+	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < (HAL_RADIO_PDU_LEN_MAX - 4)))
+		if (lll->enc_rx) {
+			u8_t *pkt_decrypt_data;
+
+			pkt_decrypt_data = (u8_t *)radio_pkt_decrypt_get() +
+					   offsetof(struct pdu_data, lldata);
+			memcpy((void *)pdu_data_rx->lldata,
+			       (void *)pkt_decrypt_data, pdu_data_rx->len);
+		}
+#endif
+
 		ull_pdu_rx_alloc();
 
 		node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
@@ -467,8 +481,15 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 	} else if (lll->enc_rx) {
 		radio_pkt_configure(8, (max_rx_octets + 4), (phy << 1) | 0x01);
 
+#if defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
+	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < (HAL_RADIO_PDU_LEN_MAX - 4)))
+		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->ccm_rx, phy,
+						      radio_pkt_decrypt_get()));
+#else
 		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&lll->ccm_rx, phy,
 						      node_rx->pdu));
+#endif
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 	} else {
 		radio_pkt_configure(8, max_rx_octets, (phy << 1) | 0x01);
@@ -663,6 +684,19 @@ static inline bool ctrl_pdu_len_check(u8_t len)
 static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 		      struct node_tx **tx_release, u8_t *is_rx_enqueue)
 {
+#if defined(CONFIG_SOC_COMPATIBLE_NRF52832) && \
+	defined(CONFIG_BT_CTLR_LE_ENC) && \
+	(!defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX) || \
+	 (CONFIG_BT_CTLR_DATA_LENGTH_MAX < (HAL_RADIO_PDU_LEN_MAX - 4)))
+	if (lll->enc_rx) {
+		u8_t *pkt_decrypt;
+
+		pkt_decrypt = radio_pkt_decrypt_get();
+		memcpy((void *)pdu_data_rx, (void *)pkt_decrypt,
+		       offsetof(struct pdu_data, lldata));
+	}
+#endif
+
 	/* Ack for tx-ed data */
 	if (pdu_data_rx->nesn != lll->sn) {
 		struct node_tx *tx;
