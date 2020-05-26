@@ -407,6 +407,11 @@ Libraries / Subsystems
 
   * <TBD>
 
+* POSIX subsystem:
+
+  * socketpair() function implemented.
+  * eventfd() function (Linux-like extension) implemented.
+
 HALs
 ****
 
@@ -422,6 +427,7 @@ Tests and Samples
 *****************
 
 * Added samples for USB Audio Class.
+* Added sample for using POSIX read()/write() with network sockets.
 
 Issue Related Items
 *******************
