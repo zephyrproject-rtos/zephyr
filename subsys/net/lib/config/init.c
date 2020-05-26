@@ -359,7 +359,7 @@ int net_config_init(const char *app_info, uint32_t flags, int32_t timeout)
 	if (check_interface(iface) == false) {
 		k_sem_init(&counter, 1, UINT_MAX);
 
-		while (count--) {
+		while (count-- > 0) {
 			if (!k_sem_count_get(&counter)) {
 				break;
 			}
@@ -398,7 +398,7 @@ int net_config_init(const char *app_info, uint32_t flags, int32_t timeout)
 	/* Loop here until we are ready to continue. As we might need
 	 * to wait multiple events, sleep smaller amounts of data.
 	 */
-	while (!services_are_ready(flags) && count--) {
+	while (!services_are_ready(flags) && count-- > 0) {
 		k_sem_take(&waiter, K_MSEC(loop));
 	}
 
