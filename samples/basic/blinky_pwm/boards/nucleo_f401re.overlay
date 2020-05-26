@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2020 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		fixture_pwm_led: fixture_pwm_led {
+			/* pwm device should match a PWM configured board pin */
+			/* Ex: On nucleo_401re: PA0: pwm2 */
+			pwms = <&pwm2 1 4>;
+		};
+	};
+
+
+	aliases {
+		pwm-led0 = &fixture_pwm_led;
+	};
+
+};

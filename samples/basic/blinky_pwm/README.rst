@@ -23,10 +23,10 @@ supported by the hardware is found.
 Requirements
 ************
 
-The board must have an LED connected to a PWM output channel. The PWM
-controlling this LED must be configured using the ``pwm_led0`` :ref:`devicetree
-<dt-guide>` alias, usually in the :ref:`BOARD.dts file
-<devicetree-in-out-files>`.
+This application requires an LED connected to a PWM output channel.
+If this is the case already on your board, the PWM controlling this LED must
+be configured using the ``pwm_led0`` :ref:`devicetree <dt-guide>` alias,
+usually in the :ref:`BOARD.dts file <devicetree-in-out-files>`.
 
 You will see this error if you try to build this sample for an unsupported
 board:
@@ -35,29 +35,11 @@ board:
 
    Unsupported board: pwm_led0 devicetree alias is not defined
 
-Wiring
-******
-
-No additional wiring is necessary if ``pwm_led0`` refers to hardware that is
-already connected to an LED on the board.
-
-In these other cases, however, manual wiring is necessary:
-
-.. list-table::
-   :header-rows: 1
-
-   * - Board
-     - Wiring
-   * - :ref:`nucleo_f401re_board`
-     - connect PWM2 (PA0) to an LED
-   * - :ref:`nucleo_l476rg_board`
-     - connect PWM2 (PA0) to an LED
-   * - :ref:`stm32f4_disco_board`
-     - connect PWM2 (PA0) to an LED
-   * - :ref:`nucleo_f302r8_board`
-     - connect PWM2 (PA0) to an LED
-   * - :ref:`nucleo_f103rb_board`
-     - connect PWM1 (PA8) to an LED
+In this case, you can still make this application work on your board by
+wiring an LED manually to a PWM enabled pin and using a devicetree overlay to
+reflect this configuration.
+An example of .overlay file is available in the boards/ folder and works with
+nucleo_f401re. See :ref:`set-devicetree-overlays` for more information.
 
 Building and Running
 ********************
