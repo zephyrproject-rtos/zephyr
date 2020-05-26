@@ -20,6 +20,7 @@ void test_main(void)
 	k_thread_priority_set(k_current_get(), -1);
 
 	ztest_test_suite(memory_protection_test_suite,
+			 ztest_unit_test(test_krnl_obj_static_alloc_build_time),
 			 ztest_unit_test(test_permission_inheritance),
 			 ztest_unit_test(test_mem_domain_valid_access),
 			 ztest_unit_test(test_mem_domain_invalid_access),
