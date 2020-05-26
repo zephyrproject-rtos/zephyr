@@ -5,6 +5,7 @@
  */
 #include <ztest.h>
 #include <sys/rb.h>
+#include "time.h"
 
 #include "../../../lib/os/rb.c"
 
@@ -17,10 +18,15 @@ static struct rbtree tree;
 
 static struct rbnode nodes[MAX_NODES];
 
+struct container_node {
+	struct rbnode node;
+	int value;
+};
+
 /* Bit is set if node is in the tree */
 static unsigned int node_mask[(MAX_NODES + 31)/32];
 
-/* Array of nodes dumed via rb_walk */
+/* Array of nodes dumped via rb_walk */
 static struct rbnode *walked_nodes[MAX_NODES];
 
 /* Node currently being inserted, for testing lessthan() argument order */
@@ -245,9 +251,137 @@ void test_rbtree_spam(void)
 	} while (size < MAX_NODES);
 }
 
+/**
+ * @brief Test whether rbtree node struct is embedded
+ * in any user struct
+ *
+ * @details
+ * Initialize a user defined struct contains rbtree node
+ * Add into a rbtree
+ * Enumerate the rbtree node
+ *
+ * @ingroup lib_rbtree_tests
+ *
+ * @see RB_FOR_EACH(),RB_FOR_EACH_CONTAINER()
+ */
+void test_rbtree_container(void)
+{
+	int count = 0;
+	static struct rbtree test_tree_l;
+	struct container_node tree_node[10];
+	struct container_node *c_foreach_node;
+	struct rbnode *foreach_node;
+
+	memset(&test_tree_l, 0, sizeof(test_tree_l));
+	test_tree_l.lessthan_fn = node_lessthan;
+	memset(tree_node, 0, sizeof(tree_node));
+	for (unsigned int i = 0; i < 10; i++) {
+		tree_node[i].value = i;
+		rb_insert(&test_tree_l, &tree_node[i].node);
+	}
+
+	/*"for each" style iteration to verify node*/
+	RB_FOR_EACH(&test_tree_l, foreach_node) {
+		zassert_true(((struct container_node *)foreach_node)->value
+				== count, "RB_FOR_EACH failed");
+		count++;
+	}
+
+	count = 0;
+	/*"for each" style iteration to verify node*/
+	RB_FOR_EACH_CONTAINER(&test_tree_l, c_foreach_node, node) {
+		zassert_true(c_foreach_node->value == count,
+				"RB_FOR_EACH_CONTAINER failed");
+		count++;
+	}
+}
+
+
+
+static enum rbtree_perf_stats {
+	GET_MIN_MAX, INSERT_REMOVE, NO_OPERATION} operation;
+static clock_t time_spent[2][3];
+static int nodes_ii[2];
+clock_t check_rbtree_perf(struct rbtree *test_tree)
+{
+	struct rbnode node_test;
+	clock_t start = 0, finish = 0;
+
+	start = clock();
+	for (int i = 0; i < 10000; i++) {
+		switch (operation) {
+		case GET_MIN_MAX:
+			rb_get_min(test_tree);
+			rb_get_max(test_tree);
+			break;
+		case INSERT_REMOVE:
+			rb_insert(test_tree, &node_test);
+			rb_remove(test_tree, &node_test);
+			break;
+		default:
+			/*record the time of no operations running*/
+			break;
+		}
+	}
+	finish = clock();
+
+	return finish - start;
+}
+
+int repeat_operation(int nodes_, int index_)
+{
+	struct rbnode *node;
+	int nodes_real = 0;
+
+	test_tree(nodes_);
+	RB_FOR_EACH(&tree, node) {
+		nodes_real++;
+	}
+	operation = GET_MIN_MAX;
+	time_spent[index_][0] = check_rbtree_perf(&tree);
+	operation = INSERT_REMOVE;
+	time_spent[index_][1] = check_rbtree_perf(&tree);
+	operation = NO_OPERATION;
+	time_spent[index_][2] = check_rbtree_perf(&tree);
+
+	time_spent[index_][0] -= time_spent[index_][2];
+	time_spent[index_][1] -= time_spent[index_][2];
+
+	return nodes_real;
+}
+
+
+/**
+ * @brief Test rbtree some operations in logarithmic time
+ * complex
+ *
+ * @ingroup lib_rbtree_tests
+ *
+ * @see rb_get_min(),rb_get_max(),rb_insert(),rb_remove()
+ */
+void test_check_rbtree_perf(void)
+{
+	double log_N = 0, get_max_min = 0, insert_remove = 0;
+
+	nodes_ii[0] = repeat_operation(32, 0);
+	nodes_ii[1] = repeat_operation(256, 1);
+
+	/*log nodes_ii[1]/nodes_ii[0] = 2.736*/
+	log_N = 2.736;
+
+	get_max_min = (double)time_spent[1][0]/time_spent[0][0];
+	insert_remove = (double)time_spent[1][1]/time_spent[0][1];
+
+	zassert_within(get_max_min, log_N/2, 0.5, NULL);
+	zassert_within(insert_remove, log_N/2, 0.5, NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_rbtree,
-			 ztest_unit_test(test_rbtree_spam));
+			 ztest_unit_test(test_rbtree_spam),
+			 ztest_1cpu_unit_test(test_rbtree_container),
+			 ztest_unit_test(test_check_rbtree_perf)
+			 );
 	ztest_run_test_suite(test_rbtree);
 }
