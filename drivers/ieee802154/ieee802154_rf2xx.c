@@ -776,7 +776,8 @@ static int rf2xx_init(struct device *dev)
 			dev, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 
-	sprintf(thread_name, "802.15.4 main [%d]", conf->inst);
+	snprintk(thread_name, sizeof(thread_name),
+		 "rf2xx_trx [%d]", conf->inst);
 	k_thread_name_set(&ctx->trx_thread, thread_name);
 
 	return 0;
