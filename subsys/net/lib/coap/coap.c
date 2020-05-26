@@ -493,11 +493,7 @@ static int parse_option(uint8_t *data, uint16_t offset, uint16_t *pos,
 		return -EINVAL;
 	}
 
-	if (r == 0) {
-		if (len == 0U) {
-			return r;
-		}
-
+	if (r == 0 && len != 0U) {
 		/* r == 0 means no more data to read from fragment, but len
 		 * field shows that packet should contain more data, it must
 		 * be a malformed packet.
