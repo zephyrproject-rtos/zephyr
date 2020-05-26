@@ -121,16 +121,16 @@ extern "C" {
  *
  * Example usage:
  *
- *     DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(n), bus, 0) // 10
- *     DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(n), bits, 1) // 40
+ *     DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(n), 0, bus) // 10
+ *     DT_CLOCKS_CELL_BY_IDX(DT_NODELABEL(n), 1, bits) // 40
  *
  * @param node_id node identifier for a node with a clocks property
- * @param cell lowercase-and-underscores cell name
  * @param idx logical index into clocks property
+ * @param cell lowercase-and-underscores cell name
  * @return the cell value at index "idx"
  * @see DT_PHA_BY_IDX()
  */
-#define DT_CLOCKS_CELL_BY_IDX(node_id, cell, idx) \
+#define DT_CLOCKS_CELL_BY_IDX(node_id, idx, cell) \
 	DT_PHA_BY_IDX(node_id, clocks, idx, cell)
 
 /**
@@ -170,13 +170,13 @@ extern "C" {
 	DT_PHA_BY_NAME(node_id, clocks, name, cell)
 
 /**
- * @brief Equivalent to DT_CLOCKS_CELL_BY_IDX(node_id, cell, 0)
+ * @brief Equivalent to DT_CLOCKS_CELL_BY_IDX(node_id, 0, cell)
  * @param node_id node identifier for a node with a clocks property
  * @param cell lowercase-and-underscores cell name
  * @return the cell value at index 0
  * @see DT_CLOCKS_CELL_BY_IDX()
  */
-#define DT_CLOCKS_CELL(node_id, cell) DT_CLOCKS_CELL_BY_IDX(node_id, cell, 0)
+#define DT_CLOCKS_CELL(node_id, cell) DT_CLOCKS_CELL_BY_IDX(node_id, 0, cell)
 
 /**
  * @brief Get a label property from a DT_DRV_COMPAT instance's clocks
@@ -213,13 +213,13 @@ extern "C" {
  * @brief Get a DT_DRV_COMPAT instance's clock specifier's cell value
  *        at an index
  * @param inst DT_DRV_COMPAT instance number
- * @param cell lowercase-and-underscores cell name
  * @param idx logical index into clocks property
+ * @param cell lowercase-and-underscores cell name
  * @return the cell value at index "idx"
  * @see DT_CLOCKS_CELL_BY_IDX()
  */
-#define DT_INST_CLOCKS_CELL_BY_IDX(inst, cell, idx) \
-	DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(inst), cell, idx)
+#define DT_INST_CLOCKS_CELL_BY_IDX(inst, idx, cell) \
+	DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(inst), idx, cell)
 
 /**
  * @brief Get a DT_DRV_COMPAT instance's clock specifier's cell value by name
@@ -234,13 +234,13 @@ extern "C" {
 	DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), name, cell)
 
 /**
- * @brief Equivalent to DT_INST_CLOCKS_CELL_BY_IDX(inst, cell, 0)
+ * @brief Equivalent to DT_INST_CLOCKS_CELL_BY_IDX(inst, 0, cell)
  * @param inst DT_DRV_COMPAT instance number
  * @param cell lowercase-and-underscores cell name
  * @return the value of the cell inside the specifier at index 0
  */
 #define DT_INST_CLOCKS_CELL(inst, cell) \
-	DT_INST_CLOCKS_CELL_BY_IDX(inst, cell, 0)
+	DT_INST_CLOCKS_CELL_BY_IDX(inst, 0, cell)
 
 /**
  * @}

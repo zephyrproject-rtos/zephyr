@@ -1001,9 +1001,9 @@ static void test_pwms(void)
 		     "label 0");
 
 	/* DT_PWMS_CELL_BY_IDX */
-	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, channel, 1), 5,
+	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, 1, channel), 5,
 		      "pwm 2 channel");
-	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, flags, 1), 1,
+	zassert_equal(DT_PWMS_CELL_BY_IDX(TEST_PH, 1, flags), 1,
 		      "pwm 2 flags");
 
 	/* DT_PWMS_CELL_BY_NAME */
@@ -1055,9 +1055,9 @@ static void test_pwms(void)
 		     "label 0");
 
 	/* DT_INST_PWMS_CELL_BY_IDX */
-	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, channel, 1), 5,
+	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, 1, channel), 5,
 		      "pwm 2 channel");
-	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, flags, 1), 1, "pwm 2 flags");
+	zassert_equal(DT_INST_PWMS_CELL_BY_IDX(0, 1, flags), 1, "pwm 2 flags");
 
 	/* DT_INST_PWMS_CELL_BY_NAME */
 	zassert_equal(DT_INST_PWMS_CELL_BY_NAME(0, green, channel), 5,
@@ -1330,9 +1330,9 @@ static void test_clocks(void)
 		     "label 0");
 
 	/* DT_CLOCKS_CELL_BY_IDX */
-	zassert_equal(DT_CLOCKS_CELL_BY_IDX(TEST_TEMP, bits, 2), 2,
+	zassert_equal(DT_CLOCKS_CELL_BY_IDX(TEST_TEMP, 2, bits), 2,
 		      "clk 2 bits");
-	zassert_equal(DT_CLOCKS_CELL_BY_IDX(TEST_TEMP, bus, 2), 8, "clk 2 bus");
+	zassert_equal(DT_CLOCKS_CELL_BY_IDX(TEST_TEMP, 2, bus), 8, "clk 2 bus");
 
 	/* DT_CLOCKS_CELL_BY_NAME */
 	zassert_equal(DT_CLOCKS_CELL_BY_NAME(TEST_TEMP, clk_a, bits), 7,
@@ -1368,9 +1368,9 @@ static void test_clocks(void)
 		     "label 0");
 
 	/* DT_INST_CLOCKS_CELL_BY_IDX */
-	zassert_equal(DT_INST_CLOCKS_CELL_BY_IDX(0, bits, 2), 2,
+	zassert_equal(DT_INST_CLOCKS_CELL_BY_IDX(0, 2, bits), 2,
 		      "clk 2 bits");
-	zassert_equal(DT_INST_CLOCKS_CELL_BY_IDX(0, bus, 2), 8, "clk 2 bus");
+	zassert_equal(DT_INST_CLOCKS_CELL_BY_IDX(0, 2, bus), 8, "clk 2 bus");
 
 	/* DT_INST_CLOCKS_CELL_BY_NAME */
 	zassert_equal(DT_INST_CLOCKS_CELL_BY_NAME(0, clk_a, bits), 7,
