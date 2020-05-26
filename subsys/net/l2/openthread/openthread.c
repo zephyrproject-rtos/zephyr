@@ -453,6 +453,11 @@ static int openthread_init(struct net_if *iface)
 
 void ieee802154_init(struct net_if *iface)
 {
+	if (IS_ENABLED(CONFIG_IEEE802154_NET_IF_NO_AUTO_START)) {
+		LOG_DBG("Interface auto start disabled.");
+		net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+	}
+
 	openthread_init(iface);
 }
 

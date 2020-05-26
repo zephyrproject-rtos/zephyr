@@ -18,18 +18,6 @@ config IEEE802154_RF2XX_DRV_NAME
 	help
 	  This option sets the driver name
 
-config IEEE802154_RF2XX_NET_IF_NO_AUTO_START
-	bool "RF2X must wait configuration before change to operational mode"
-	help
-	  This option allows user to set any configuration and/or filter before
-	  radio became operational. For instance, the EUI-64 value can be
-	  configured using NET_REQUEST_IEEE802154_SET_EXT_ADDR available from
-	  ieee802154 management interface. When all configurations are done
-	  net_if_up() can be invoked to bring interface up.
-
-	  This option can be useful when using OpenThread or Zigbee. If you
-	  have any doubt about this option leave it as default value.
-
 config IEEE802154_RF2XX_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"
 	default 800
