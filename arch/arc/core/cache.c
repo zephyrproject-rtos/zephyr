@@ -67,24 +67,7 @@ static void dcache_enable(void)
 	dcache_dc_ctrl(DC_CTRL_DC_ENABLE);
 }
 
-
-/**
- *
- * @brief Flush multiple d-cache lines to memory
- *
- * No alignment is required for either <start_addr> or <size>, but since
- * dcache_flush_mlines() iterates on the d-cache lines, a cache line
- * alignment for both is optimal.
- *
- * The d-cache line size is specified either via the CONFIG_CACHE_LINE_SIZE
- * kconfig option or it is detected at runtime.
- *
- * @param start_addr the pointer to start the multi-line flush
- * @param size the number of bytes that are to be flushed
- *
- * @return N/A
- */
-static void dcache_flush_mlines(u32_t start_addr, u32_t size)
+void arch_cache_flush(void *start_addr, size_t size)
 {
 	u32_t end_addr;
 	unsigned int key;
@@ -93,8 +76,9 @@ static void dcache_flush_mlines(u32_t start_addr, u32_t size)
 		return;
 	}
 
-	end_addr = start_addr + size - 1;
-	start_addr &= (u32_t)(~(DCACHE_LINE_SIZE - 1));
+	end_addr = (u32_t)start_addr + size - 1;
+	start_addr = (void *)(((u32_t)start_addr) &
+							 (u32_t)(~(DCACHE_LINE_SIZE - 1)));
 
 	key = arch_irq_lock(); /* --enter critical section-- */
 
@@ -110,34 +94,11 @@ static void dcache_flush_mlines(u32_t start_addr, u32_t size)
 				break;
 			}
 		} while (1);
-		start_addr += DCACHE_LINE_SIZE;
-	} while (start_addr <= end_addr);
+		start_addr = (void *)((u32_t)start_addr + DCACHE_LINE_SIZE);
+	} while ((u32_t)start_addr <= end_addr);
 
 	arch_irq_unlock(key); /* --exit critical section-- */
 
-}
-
-
-/**
- *
- * @brief Flush d-cache lines to main memory
- *
- * No alignment is required for either <virt> or <size>, but since
- * sys_cache_flush() iterates on the d-cache lines, a d-cache line alignment for
- * both is optimal.
- *
- * The d-cache line size is specified either via the CONFIG_CACHE_LINE_SIZE
- * kconfig option or it is detected at runtime.
- *
- * @param start_addr the pointer to start the multi-line flush
- * @param size the number of bytes that are to be flushed
- *
- * @return N/A
- */
-
-void sys_cache_flush(vaddr_t start_addr, size_t size)
-{
-	dcache_flush_mlines((u32_t)start_addr, (u32_t)size);
 }
 
 
