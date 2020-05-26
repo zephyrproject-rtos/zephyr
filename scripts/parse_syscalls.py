@@ -118,7 +118,7 @@ def parse_args():
                         -i topdir1 -i topdir2 ...''')
     parser.add_argument(
         "-j", "--json-file", required=True,
-        help="Write system call prototype information as json to file")
+        help="Write system call prototype information as JSON to file")
     parser.add_argument(
         "-t", "--tag-struct-file", required=True,
         help="Write tagged struct name information as json to file")

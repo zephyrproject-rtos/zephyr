@@ -13,7 +13,7 @@ given configuration path(s), of the format:
   MULTILINEPYTHONREGEX
   MULTILINEPYTHONREGEX
   #
-  # Comments for multiline regex 2...
+  # Comments for multi-line regex 2...
   #
   #WARNING
   MULTILINEPYTHONREGEX2
@@ -26,7 +26,7 @@ Anything matched by MULTILINEPYHONREGEX with a #WARNING tag in the
 comment means (optional) means that it describes something that is
 considered to be a warning. Print it to stderr.
 
-Anything leftover is considred to be errors, printed to stdout.
+Anything leftover is considered to be errors, printed to stdout.
 
 """
 import argparse
@@ -41,7 +41,7 @@ import traceback
 exclude_regexs = []
 
 # first is a list of one or more comment lines
-# followed by a list of non-comments which describe a multiline regex
+# followed by a list of non-comments which describe a multi-line regex
 config_regex = \
     b"(?P<comment>(^\\s*#.*\n)+)" \
     b"(?P<regex>(^[^#].*\n)+)"

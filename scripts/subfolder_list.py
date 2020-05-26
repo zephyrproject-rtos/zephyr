@@ -80,7 +80,7 @@ def main():
         with open(args.out_file, 'w', encoding="utf-8") as fp:
             fp.write(new)
 
-    # Always touch trigger file to ensure json files are updated
+    # Always touch trigger file to ensure JSON files are updated
     touch(args.trigger_file)
 
 

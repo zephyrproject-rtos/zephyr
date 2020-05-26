@@ -153,7 +153,7 @@ def union_decl(type):
 
 def wrapper_defs(func_name, func_type, args):
     ret64 = need_split(func_type)
-    mrsh_args = [] # List of rvalue expressions for the marshalled invocation
+    mrsh_args = [] # List of rvalue expressions for the marshaled invocation
     split_args = []
     nsplit = 0
     for argtype, argname in args:
@@ -205,7 +205,7 @@ def wrapper_defs(func_name, func_type, args):
     wrap += "\t" + "}\n"
     wrap += "#endif\n"
 
-    # Otherwise fall through to direct invocation of the impl func.
+    # Otherwise fall through to direct invocation of the impl function.
     # Note the compiler barrier: that is required to prevent code from
     # the impl call from being hoisted above the check for user
     # context.
@@ -219,7 +219,7 @@ def wrapper_defs(func_name, func_type, args):
 
     return wrap
 
-# Returns an expression for the specified (zero-indexed!) marshalled
+# Returns an expression for the specified (zero-indexed!) marshaled
 # parameter to a syscall, with handling for a final "more" parameter.
 def mrsh_rval(mrsh_num, total):
     if mrsh_num < 5 or total <= 6:
@@ -230,7 +230,7 @@ def mrsh_rval(mrsh_num, total):
 def marshall_defs(func_name, func_type, args):
     mrsh_name = "z_mrsh_" + func_name
 
-    nmrsh = 0        # number of marshalled uintptr_t parameter
+    nmrsh = 0        # number of marshaled uintptr_t parameter
     vrfy_parms = []  # list of (arg_num, mrsh_or_parm_num, bool_is_split)
     split_parms = [] # list of a (arg_num, mrsh_num) for each split
     for i, (argtype, _) in enumerate(args):

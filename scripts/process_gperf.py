@@ -7,7 +7,7 @@
 """
 gperf C file post-processor
 
-We use gperf to build up a perfect hashtable of pointer values. The way gperf
+We use gperf to build up a perfect hash table of pointer values. The way gperf
 does this is to create a table 'wordlist' indexed by a string repreesentation
 of a pointer address, and then doing memcmp() on a string passed in for
 comparison
