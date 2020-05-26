@@ -541,16 +541,36 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 static int qspi_nor_write(struct device *dev, off_t addr, const void *src,
 			  size_t size)
 {
-	if (!src) {
+	u8_t __aligned(4) buf[4];
+
+	const void *sptr = src;
+	size_t dlen = size;
+
+	if (!src || (size == 0)) {
 		return -EINVAL;
 	}
 
-	/* write size must be non-zero multiple of 4 bytes */
-	if (((size % 4U) != 0) || (size == 0)) {
-		return -EINVAL;
-	}
 	/* address must be 4-byte aligned */
 	if ((addr % 4U) != 0) {
+		return -EINVAL;
+	}
+
+	/* Since the QSPI driver requires data to be at least 4 bytes we need
+	 * to use a 4 byte buffer for writes smaller than 4 bytes.
+	 */
+	if (size < 4U) {
+		src = buf;
+		size = sizeof(buf);
+		/* read out the whole word so that unchanged data can be
+		 * written back
+		 */
+		nrfx_err_t res = nrfx_qspi_read(buf, size, addr);
+
+		if (res != 0) {
+			return qspi_get_zephyr_ret_code(res);
+		}
+		memcpy(buf, sptr, dlen);
+	} else if ((size % 4U) != 0) {
 		return -EINVAL;
 	}
 
