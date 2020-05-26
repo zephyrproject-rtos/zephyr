@@ -5,10 +5,13 @@ Legacy devicetree macros
 
 .. warning::
 
-   You can still use the macros documented in this file, but support
-   for them will be removed eventually.
+   As of Zephyr v2.3, you can still use these macros if you set
+   ``CONFIG_LEGACY_DEVICETREE_MACROS=y`` in your application's :ref:`kconfig`.
+   Legacy macro support will be maintained for at least two releases, including
+   v2.3 itself.
 
-   See :ref:`dt-from-c` for a usage guide for the new API.
+   See :ref:`dt-from-c` for a usage guide for the new API, and
+   :ref:`dt-migrate-legacy` for a migration guide for existing code.
 
 This page describes legacy C preprocessor macros which Zephyr's :ref:`build
 system <build_overview>` generates from a devicetree. It assumes you're
