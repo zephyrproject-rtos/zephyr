@@ -1224,6 +1224,43 @@ void test_tls_leakage(void)
 				 _current->userspace_local_data, NULL, NULL);
 }
 
+#define TLS_SIZE	4096
+struct k_thread tls_thread;
+K_THREAD_STACK_DEFINE(tls_stack, TLS_SIZE);
+
+void tls_entry(void *p1, void *p2, void *p3)
+{
+	printk("tls_entry\n");
+}
+
+void test_tls_pointer(void)
+{
+	k_thread_create(&tls_thread, tls_stack, TLS_SIZE, tls_entry,
+			NULL, NULL, NULL, 1, K_USER, K_FOREVER);
+
+	printk("tls pointer for thread %p: %p\n",
+	       &tls_thread, (void *)tls_thread.userspace_local_data);
+
+	printk("stack buffer reported bounds: [%p, %p)\n",
+	       (void *)tls_thread.stack_info.start,
+	       (void *)(tls_thread.stack_info.start +
+			tls_thread.stack_info.size));
+
+	printk("stack object bounds: [%p, %p)\n",
+	       tls_stack, tls_stack + sizeof(tls_stack));
+
+	uintptr_t tls_start = (uintptr_t)tls_thread.userspace_local_data;
+	uintptr_t tls_end = tls_start +
+		sizeof(struct _thread_userspace_local_data);
+
+	if ((tls_start < (uintptr_t)tls_stack) ||
+	    (tls_end > (uintptr_t)tls_stack + sizeof(tls_stack))) {
+		printk("tls area out of bounds\n");
+		ztest_test_fail();
+	}
+}
+
+
 void test_main(void)
 {
 	struct k_mem_partition *parts[] = {&part0, &part1,
@@ -1288,7 +1325,8 @@ void test_main(void)
 			 ztest_user_unit_test(test_oops_stackcheck),
 			 ztest_unit_test(test_object_recycle),
 			 ztest_user_unit_test(test_syscall_context),
-			 ztest_unit_test(test_tls_leakage)
+			 ztest_unit_test(test_tls_leakage),
+			 ztest_unit_test(test_tls_pointer)
 			 );
 	ztest_run_test_suite(userspace);
 }
