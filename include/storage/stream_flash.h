@@ -70,7 +70,8 @@ struct stream_flash_ctx {
  * @param ctx context to be initialized
  * @param fdev Flash device to operate on
  * @param buf Write buffer
- * @param buf_len Length of write buffer. Can not be larger than the page size
+ * @param buf_len Length of write buffer. Can not be larger than the page size.
+ *                Must be multiple of the flash device write-block-size.
  * @param offset Offset within flash device to start writing to
  * @param size Number of bytes available for performing buffered write.
  *             If this is '0', the size will be set to the total size
