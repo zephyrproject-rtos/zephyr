@@ -753,7 +753,7 @@ enum updatehub_response updatehub_probe(void)
 		}
 
 		sha256size = strlen(
-			metadata_any_boards.objects[1].objects.sha256sum) + 1;
+			metadata_some_boards.objects[1].objects.sha256sum) + 1;
 
 		if (sha256size != SHA256_HEX_DIGEST_SIZE) {
 			LOG_ERR("SHA256 size is invalid");
