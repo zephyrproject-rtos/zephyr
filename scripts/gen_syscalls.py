@@ -14,7 +14,7 @@ parse_syscalls.py to create several files:
   as well as the system call dispatch table, which maps system call type IDs
   to their handler functions.
 
-- A header file defing the system call type IDs, as well as function
+- A header file defining the system call type IDs, as well as function
   prototypes for all system call handler functions.
 
 - A directory containing header files. Each header corresponds to a header
