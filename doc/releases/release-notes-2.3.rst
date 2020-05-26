@@ -34,8 +34,19 @@ The following CVEs are addressed by this release:
   into a fixed-size array.
 * CVE-2020-10059: UpdateHub Module Explicitly Disables TLS
   Verification
-* CVE-2020-10062: Under embargo until 2020/05/25
-* CVE-2020-10063: Under embargo until 2020/05/25
+* CVE-2020-10061: Improper handling of the full-buffer case in the
+  Zephyr Bluetooth implementation can result in memory corruption.
+* CVE-2020-10062: Packet length decoding error in MQTT
+* CVE-2020-10063: Remote Denial of Service in CoAP Option Parsing Due
+  To Integer Overflow
+* CVE-2020-10068: In the Zephyr project Bluetooth subsystem, certain
+  duplicate and back-to-back packets can cause incorrect behavior,
+  resulting in a denial of service.
+* CVE-2020-10069: An unchecked parameter in bluetooth data can result
+  in an assertion failure, or division by zero, resulting in a denial
+  of service attack.
+* CVE-2020-10070: MQTT buffer overflow on receive buffer
+* CVE-2020-10071: Insufficient publish message length validation in MQTT
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html

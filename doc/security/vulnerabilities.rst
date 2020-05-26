@@ -360,15 +360,90 @@ This issue has not been fixed.
 - `Zephyr project bug tracker ZEPSEC-37
   <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-37>`_
 
+CVE-2020-10061
+--------------
+
+Error handling invalid packet sequence
+
+Improper handling of the full-buffer case in the Zephyr Bluetooth
+implementation can result in memory corruption.
+
+This has been fixed in branches for v1.14.0, v2.2.0, and will be
+included in v2.3.0.
+
+- `CVE-2020-10061 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10061>`_
+
+- `Zephyr project bug tracker ZEPSEC-75
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-75>`_
+
+- `PR23516 fix for v2.3 (split driver)
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23516>`_
+
+- `PR23517 fix for v2.3 (legacy driver)
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23517>`_
+
+- `PR23091 fix for branch from v1.14.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23091>`_
+
+- `PR23547 fix for branch from v2.2.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23547>`_
+
 CVE-2020-10062
 --------------
 
-Under embargo until 2020/05/25
+Packet length decoding error in MQTT
+
+CVE: An off-by-one error in the Zephyr project MQTT packet length
+decoder can result in memory corruption and possible remote code
+execution. NCC-ZEP-031
+
+The MQTT packet header length can be 1 to 4 bytes. An off-by-one error
+in the code can result in this being interpreted as 5 bytes, which can
+cause an integer overflow, resulting in memory corruption.
+
+This has been fixed in master for v2.3.
+
+- `CVE-2020-10062 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10062>`_
+
+- `Zephyr project bug tracker ZEPSEC-84
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-84>`_
+
+- `commit 11b7a37d for v2.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23821/commits/11b7a37d9a0b438270421b224221d91929843de4>`_
+
+- `NCC-ZEP report`_ (NCC-ZEP-031)
+
+.. _NCC-ZEP report: https://research.nccgroup.com/2020/05/26/research-report-zephyr-and-mcuboot-security-assessment
 
 CVE-2020-10063
 --------------
 
-Under embargo until 2020/05/25
+Remote Denial of Service in CoAP Option Parsing Due To Integer
+Overflow
+
+A remote adversary with the ability to send arbitrary CoAP packets to
+be parsed by Zephyr is able to cause a denial of service.
+
+This has been fixed in master for v2.3.
+
+- `CVE-2020-10063 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10063>`_
+
+- `Zephyr project bug tracker ZEPSEC-55
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-55>`_
+
+- `PR24435 fix in master for v2.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/24435>`_
+
+- `PR24531 fix for branch from v2.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/24531>`_
+
+- `PR24535 fix for branch from v2.1
+  <https://github.com/zephyrproject-rtos/zephyr/pull/24535>`_
+
+- `PR24530 fix for branch from v1.14
+  <https://github.com/zephyrproject-rtos/zephyr/pull/24530>`_
+
+- `NCC-ZEP report`_ (NCC-ZEP-032)
 
 CVE-2020-10067
 --------------
@@ -398,3 +473,105 @@ This has been fixed in releases v1.14.2, and v2.2.0.
 
 - `PR23239 fix for v2.2.0
   <https://github.com/zephyrproject-rtos/zephyr/pull/23239>`_
+
+CVE-2020-10068
+--------------
+
+Zephyr Bluetooth DLE duplicate requests vulnerability
+
+In the Zephyr project Bluetooth subsystem, certain duplicate and
+back-to-back packets can cause incorrect behavior, resulting in a
+denial of service.
+
+This has been fixed in branches for v1.14.0, v2.2.0, and will be
+included in v2.3.0.
+
+- `CVE-2020-10068 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10068>`_
+
+- `Zephyr project bug tracker ZEPSEC-78
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-78>`_
+
+- `PR23707 fix for v2.3 (split driver)
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23707>`_
+
+- `PR23708 fix for v2.3 (legacy driver)
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23708>`_
+
+- `PR23091 fix for branch from v1.14.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23091>`_
+
+- `PR23964 fix for v2.2.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23964>`_
+
+CVE-2020-10069
+--------------
+
+Zephyr Bluetooth unchecked packet data results in denial of service
+
+An unchecked parameter in bluetooth data can result in an assertion
+failure, or division by zero, resulting in a denial of service attack.
+
+This has been fixed in branches for v1.14.0, v2.2.0, and will be
+included in v2.3.0.
+
+- `CVE-2020-10069 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10069>`_
+
+- `Zephyr project bug tracker ZEPSEC-81
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-81>`_
+
+- `PR23705 fix for v2.3 (split driver)
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23705>`_
+
+- `PR23706 fix for v2.3 (legacy driver)
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23706>`_
+
+- `PR23091 fix for branch from v1.14.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23091>`_
+
+- `PR23963 fix for branch from v2.2.0
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23963>`_
+
+CVE-2020-10070
+--------------
+
+MQTT buffer overflow on receive buffer
+
+In the Zephyr Project MQTT code, improper bounds checking can result
+in memory corruption and possibly remote code execution.  NCC-ZEP-031
+
+When calculating the packet length, arithmetic overflow can result in
+accepting a receive buffer larger than the available buffer space,
+resulting in user data being written beyond this buffer.
+
+This has been fixed in master for v2.3.
+
+- `CVE-2020-10070 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10070>`_
+
+- `Zephyr project bug tracker ZEPSEC-85
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-85>`_
+
+- `commit 0b39cbf3 for v2.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23821/commits/0b39cbf3c01d7feec9d0dd7cc7e0e374b6113542>`_
+
+- `NCC-ZEP report`_ (NCC-ZEP-031)
+
+CVE-2020-10071
+--------------
+
+Insufficient publish message length validation in MQTT
+
+The Zephyr MQTT parsing code performs insufficient checking of the
+length field on publish messages, allowing a buffer overflow and
+potentially remote code execution. NCC-ZEP-031
+
+This has been fixed in master for v2.3.
+
+- `CVE-2020-10071 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2020-10071>`_
+
+- `Zephyr project bug tracker ZEPSEC-86
+  <https://zephyrprojectsec.atlassian.net/browse/ZEPSEC-86>`_
+
+- `commit 989c4713 fix for v2.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/23821/commits/989c4713ba429aa5105fe476b4d629718f3e6082>`_
+
+- `NCC-ZEP report`_ (NCC-ZEP-031)
