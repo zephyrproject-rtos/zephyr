@@ -95,6 +95,9 @@ void ull_cp_priv_lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct no
 	case PROC_FEATURE_EXCHANGE:
 		lp_comm_rx(conn, ctx, rx);
 		break;
+	case PROC_MIN_USED_CHANS:
+		lp_comm_rx(conn, ctx, rx);
+		break;
 	case PROC_VERSION_EXCHANGE:
 		lp_comm_rx(conn, ctx, rx);
 		break;
@@ -110,6 +113,18 @@ void ull_cp_priv_lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct no
 	}
 }
 
+void ull_cp_priv_lr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+{
+	switch (ctx->proc) {
+	case PROC_MIN_USED_CHANS:
+		lp_comm_tx_ack(conn, ctx, tx);
+		break;
+	default:
+		break;
+		/* Ignore tx_ack */
+	}
+}
+
 static void lr_act_run(struct ull_cp_conn *conn)
 {
 	struct proc_ctx *ctx;
@@ -121,6 +136,9 @@ static void lr_act_run(struct ull_cp_conn *conn)
 		lp_comm_run(conn, ctx, NULL);
 		break;
 	case PROC_FEATURE_EXCHANGE:
+		lp_comm_run(conn, ctx, NULL);
+		break;
+	case PROC_MIN_USED_CHANS:
 		lp_comm_run(conn, ctx, NULL);
 		break;
 	case PROC_VERSION_EXCHANGE:
