@@ -3610,6 +3610,8 @@ __syscall int k_mutex_init(struct k_mutex *mutex);
  * A thread is permitted to lock a mutex it has already locked. The operation
  * completes immediately and the lock count is increased by 1.
  *
+ * Mutexes may not be locked in ISRs.
+ *
  * @param mutex Address of the mutex.
  * @param timeout Waiting period to lock the mutex,
  *                or one of the special values K_NO_WAIT and
@@ -3630,6 +3632,9 @@ __syscall int k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout);
  * The mutex cannot be claimed by another thread until it has been unlocked by
  * the calling thread as many times as it was previously locked by that
  * thread.
+ *
+ * Mutexes may not be unlocked in ISRs, as mutexes must only be manipulated
+ * in thread context due to ownership and priority inheritance semantics.
  *
  * @param mutex Address of the mutex.
  *

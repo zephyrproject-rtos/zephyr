@@ -122,6 +122,8 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	k_spinlock_key_t key;
 	bool resched = false;
 
+	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
+
 	sys_trace_void(SYS_TRACE_ID_MUTEX_LOCK);
 	key = k_spin_lock(&lock);
 
@@ -210,6 +212,8 @@ static inline int z_vrfy_k_mutex_lock(struct k_mutex *mutex,
 int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 {
 	struct k_thread *new_owner;
+
+	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	CHECKIF(mutex->owner == NULL) {
 		return -EINVAL;
