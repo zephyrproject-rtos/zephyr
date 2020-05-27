@@ -493,7 +493,7 @@ static int qspi_nor_read(struct device *dev, off_t addr, void *dest,
 {
 	void *dptr = dest;
 	size_t dlen = size;
-	u8_t buf[4];
+	u8_t __aligned(4) buf[4];
 
 	if (!dest) {
 		return -EINVAL;
