@@ -155,6 +155,7 @@
 /drivers/debug/                           @nashif
 /drivers/*/*sam4l*                        @nandojve
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
+/drivers/*/*litex*                        @mateusz-holenko @kgugala @pgielda
 /drivers/*/*mcux*                         @MaureenHelm
 /drivers/*/*stm32*                        @erwango @ABOSTM @FRASTM
 /drivers/*/*native_posix*                 @aescolar @daor-oti
@@ -200,9 +201,7 @@
 /drivers/gpio/*lmp90xxx*                  @henrikbrixandersen
 /drivers/gpio/*stm32*                     @erwango
 /drivers/gpio/*sx1509b*                   @pabigot
-/drivers/gpio/*litex*                     @mateusz-holenko @kgugala @pgielda
 /drivers/hwinfo/                          @alexanderwachter
-/drivers/i2c/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/i2c/i2c_common.c                 @sjg20
 /drivers/i2c/i2c_emul.c                   @sjg20
@@ -214,7 +213,6 @@
 /drivers/ieee802154/ieee802154_cc13xx*    @bwitherspoon @cfriedt
 /drivers/interrupt_controller/            @andrewboie
 /drivers/interrupt_controller/intc_gic.c  @stephanosio
-/drivers/*/intc_vexriscv_litex.c          @mateusz-holenko @kgugala @pgielda
 /drivers/ipm/ipm_mhu*                     @karl-zh
 /drivers/ipm/Kconfig.nrfx                 @masz-nordic @ioannisg
 /drivers/ipm/Kconfig.nrfx_ipc_channel     @masz-nordic @ioannisg
@@ -237,7 +235,6 @@
 /drivers/pinmux/*hsdk*                    @iriszzw
 /drivers/pinmux/*npcx*                    @MulinChao
 /drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
-/drivers/pwm/*litex*                      @mateusz-holenko @kgugala @pgielda
 /drivers/pwm/*npcx*                       @MulinChao
 /drivers/pwm/*sam0*                       @nzmichaelh
 /drivers/pwm/*stm32*                      @gmarull
@@ -255,7 +252,6 @@
 /drivers/serial/uart_altera_jtag_hal.c    @wentongwu
 /drivers/serial/*ns16550*                 @andrewboie @jenmwms @aasthagr
 /drivers/serial/*nrfx*                    @Mierunski @anangl
-/drivers/serial/Kconfig.litex             @mateusz-holenko @kgugala @pgielda
 /drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
 /drivers/serial/Kconfig.mcux_iuart        @Mani-Sadhasivam
 /drivers/serial/uart_mcux_iuart.c         @Mani-Sadhasivam
@@ -279,7 +275,6 @@
 /drivers/timer/cortex_m_systick.c         @ioannisg
 /drivers/timer/altera_avalon_timer_hal.c  @wentongwu
 /drivers/timer/riscv_machine_timer.c      @nategraff-sifive @kgugala @pgielda
-/drivers/timer/litex_timer.c              @mateusz-holenko @kgugala @pgielda
 /drivers/timer/xlnx_psttc_timer*          @wjliang @stephanosio
 /drivers/timer/cc13x2_cc26x2_rtc_timer.c  @vanti
 /drivers/timer/cavs_timer.c               @dcpleung
