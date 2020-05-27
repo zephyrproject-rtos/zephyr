@@ -180,6 +180,14 @@ static ALWAYS_INLINE void clock_init(void)
 	CLOCK_SetDiv(kCLOCK_LcdifDiv, 1);
 #endif
 
+#ifdef CONFIG_NXP_QSPI_NOR
+	/* Switch to PLL2 for XIP to avoid hardfault during re-initialize clock. */
+	CLOCK_InitSysPfd(kCLOCK_Pfd2, 24);    /* Set PLL2 PFD2 clock 396MHZ. */
+	/* Choose PLL2 PFD2 clock as flexspi source clock. */
+	CLOCK_SetMux(kCLOCK_FlexspiMux, 0x2);
+	CLOCK_SetDiv(kCLOCK_FlexspiDiv, 2);   /* flexspi clock 133M. */
+#endif
+
 #if CONFIG_USB_DC_NXP_EHCI
 	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usb480M,
 				DT_PROP_BY_PHANDLE(DT_INST(0, nxp_kinetis_usbd), clocks, clock_frequency));

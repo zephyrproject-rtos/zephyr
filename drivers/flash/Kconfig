@@ -82,4 +82,6 @@ source "drivers/flash/Kconfig.rv32m1"
 
 source "drivers/flash/Kconfig.nordic_qspi_nor"
 
+source "drivers/flash/Kconfig.nxp_qspi_nor"
+
 endif # FLASH

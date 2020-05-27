@@ -1,0 +1,29 @@
+# Copyright (c) 2020 Softube AB
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NXP_QSPI_NOR
+		bool "NXP QSPI NOR Flash"
+		select FLASH_HAS_DRIVER_ENABLED
+		select FLASH_HAS_PAGE_LAYOUT
+		help
+			Enable support for NXP QSPI NOR Flash driver using FlexSPI.
+
+if NXP_QSPI_NOR
+
+config NXP_QSPI_NOR_QE_BIT
+	bool "Quad Enable bit number in Status Register"
+	default true
+
+config NXP_QSPI_NOR_INIT_PRIORITY
+	int
+	default 80
+	help
+	  Device driver initialization priority.
+
+config NXP_QSPI_NOR_RAM_WRITE_BUFFER_SIZE
+	int "Size of a ram-based buffer to support non-blocking writes"
+	default 0
+	help
+	  Copy write data to static ram buffer to support non-blocking writes
+
+endif # NXP_QSPI_NOR

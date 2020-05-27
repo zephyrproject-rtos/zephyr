@@ -13,3 +13,9 @@ properties:
 
     interrupts:
       required: true
+
+    zephyr,ram-buffer-size:
+      type: int
+      required: false
+      default: 256
+      description: flash write ram buffer size
