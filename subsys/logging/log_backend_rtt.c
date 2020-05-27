@@ -257,8 +257,8 @@ static void log_backend_rtt_init(void)
 
 static void panic(struct log_backend const *const backend)
 {
-	log_backend_std_panic(&log_output);
 	panic_mode = true;
+	log_backend_std_panic(&log_output);
 }
 
 static void dropped(const struct log_backend *const backend, u32_t cnt)
