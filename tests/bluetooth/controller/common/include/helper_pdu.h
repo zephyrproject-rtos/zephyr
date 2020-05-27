@@ -12,7 +12,7 @@ void helper_pdu_encode_feature_req(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_slave_feature_req(struct pdu_data *pdu, void *param);
 void helper_pdu_encode_feature_rsp(struct pdu_data *pdu, void *param);
 
-
+void helper_pdu_encode_min_used_chans_ind(struct pdu_data *pdu, void *param);
 
 void helper_pdu_encode_version_ind(struct pdu_data *pdu, void *param);
 
@@ -41,6 +41,8 @@ void helper_pdu_verify_slave_feature_req(const char *file, u32_t line,
 					 struct pdu_data *pdu, void *param);
 void helper_pdu_verify_feature_rsp(const char *file, u32_t line,
 				   struct pdu_data *pdu, void *param);
+
+void helper_pdu_verify_min_used_chans_ind(const char *file, u32_t line, struct pdu_data *pdu, void *param);
 
 void helper_pdu_verify_version_ind(const char *file, u32_t line, struct pdu_data *pdu, void *param);
 
@@ -73,6 +75,7 @@ typedef enum {
 	LL_FEATURE_REQ,
 	LL_SLAVE_FEATURE_REQ,
 	LL_FEATURE_RSP,
+	LL_MIN_USED_CHANS_IND,
 	LL_REJECT_IND,
 	LL_REJECT_EXT_IND,
 	LL_ENC_REQ,

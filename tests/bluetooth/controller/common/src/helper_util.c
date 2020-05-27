@@ -53,6 +53,7 @@ helper_pdu_encode_func_t * const helper_pdu_encode[] = {
 	helper_pdu_encode_feature_req,
 	helper_pdu_encode_slave_feature_req,
 	helper_pdu_encode_feature_rsp,
+	helper_pdu_encode_min_used_chans_ind,
 	NULL,
 	helper_pdu_encode_reject_ext_ind,
 	helper_pdu_encode_enc_req,
@@ -72,6 +73,7 @@ helper_pdu_verify_func_t *const helper_pdu_verify[] = {
 	helper_pdu_verify_feature_req,
 	helper_pdu_verify_slave_feature_req,
 	helper_pdu_verify_feature_rsp,
+	helper_pdu_verify_min_used_chans_ind,
 	helper_pdu_verify_reject_ind,
 	helper_pdu_verify_reject_ext_ind,
 	helper_pdu_verify_enc_req,
@@ -163,6 +165,14 @@ void event_prepare(struct ull_cp_conn *conn)
 
 	/* Rest lazy */
 	lazy = 0;
+}
+void event_tx_ack(struct ull_cp_conn *conn, struct node_tx* tx)
+{
+	/* Can only be called with active event */
+	zassert_equal(event_active, 1, "Called outside an active event");
+
+	ull_cp_tx_ack(conn, tx);
+
 }
 
 void event_done(struct ull_cp_conn *conn)
