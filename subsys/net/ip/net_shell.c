@@ -1985,7 +1985,7 @@ static void gptp_print_port_info(const struct shell *shell, int port)
 	}
 
 	PR("Port id    : %d\n", port_ds->port_id.port_number);
-
+	PR("Interface  : %p [%d]\n", iface, net_if_get_by_iface(iface));
 	PR("Clock id   : ");
 	for (i = 0; i < sizeof(port_ds->port_id.clk_id); i++) {
 		PR("%02x", port_ds->port_id.clk_id[i]);
