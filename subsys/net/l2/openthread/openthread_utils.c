@@ -121,10 +121,31 @@ void add_ipv6_addr_to_zephyr(struct openthread_context *context)
 				       buf, sizeof(buf))));
 		}
 
-		if_addr = net_if_ipv6_addr_add(
+		/* Thread and SLAAC are clearly AUTOCONF, handle
+		 * manual/NCP addresses in the same way
+		 */
+		if ((address->mAddressOrigin == OT_ADDRESS_ORIGIN_THREAD) ||
+		    (address->mAddressOrigin == OT_ADDRESS_ORIGIN_SLAAC)) {
+			if_addr = net_if_ipv6_addr_add(
 					context->iface,
 					(struct in6_addr *)(&address->mAddress),
 					NET_ADDR_AUTOCONF, 0);
+		} else if (address->mAddressOrigin ==
+			   OT_ADDRESS_ORIGIN_DHCPV6) {
+			if_addr = net_if_ipv6_addr_add(
+					context->iface,
+					(struct in6_addr *)(&address->mAddress),
+					NET_ADDR_DHCP, 0);
+		} else if (address->mAddressOrigin ==
+			  OT_ADDRESS_ORIGIN_MANUAL) {
+			if_addr = net_if_ipv6_addr_add(
+					context->iface,
+					(struct in6_addr *)(&address->mAddress),
+					NET_ADDR_MANUAL, 0);
+		} else {
+			NET_ERR("Unknown OpenThread address origin ignored.");
+			continue;
+		}
 
 		if (if_addr == NULL) {
 			NET_ERR("Cannot add OpenThread unicast address");
@@ -166,6 +187,17 @@ void add_ipv6_addr_to_ot(struct openthread_context *context)
 	addr.mValid = true;
 	addr.mPreferred = true;
 	addr.mPrefixLength = 64;
+
+	if (ipv6->unicast[i].addr_type == NET_ADDR_AUTOCONF) {
+		addr.mAddressOrigin = OT_ADDRESS_ORIGIN_SLAAC;
+	} else if (ipv6->unicast[i].addr_type == NET_ADDR_DHCP) {
+		addr.mAddressOrigin = OT_ADDRESS_ORIGIN_DHCPV6;
+	} else if (ipv6->unicast[i].addr_type == NET_ADDR_MANUAL) {
+		addr.mAddressOrigin = OT_ADDRESS_ORIGIN_MANUAL;
+	} else {
+		NET_ERR("Unknown address type");
+		return;
+	}
 
 	otIp6AddUnicastAddress(context->instance, &addr);
 
