@@ -11,6 +11,12 @@
 
 #define BUF_SIZE	32
 
+#if defined(CONFIG_BOARD_NUCLEO_F429ZI) || defined(CONFIG_BOARD_NUCLEO_F207ZG)
+#define FAULTY_ADDRESS 0x0FFFFFFF
+#else
+#define FAULTY_ADDRESS 0xFFFFFFF0
+#endif
+
 char kernel_string[BUF_SIZE];
 char kernel_buf[BUF_SIZE];
 ZTEST_BMEM char user_string[BUF_SIZE];
@@ -175,7 +181,7 @@ void test_string_nlen(void)
 	 */
 #if !(defined(CONFIG_BOARD_NSIM) && defined(CONFIG_SOC_NSIM_SEM))
 	/* Try to blow up the kernel */
-	ret = string_nlen((char *)0xFFFFFFF0, BUF_SIZE, &err);
+	ret = string_nlen((char *)FAULTY_ADDRESS, BUF_SIZE, &err);
 	zassert_equal(err, -1, "nonsense string address did not fault");
 #endif
 }
