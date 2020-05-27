@@ -46,6 +46,8 @@ The efm32wg_stk3800oard configuration supports the following hardware features:
 +-----------+------------+-------------------------------------+
 | Interface | Controller | Driver/Component                    |
 +===========+============+=====================================+
+| MPU       | on-chip    | memory protection unit              |
++-----------+------------+-------------------------------------+
 | NVIC      | on-chip    | nested vector interrupt controller  |
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
