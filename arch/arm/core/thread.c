@@ -62,6 +62,15 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	Z_ASSERT_VALID_PRIO(priority, pEntry);
 
+#if CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT && CONFIG_USERSPACE
+	/* This is required to work-around the case where the thread
+	 * is created without using K_THREAD_STACK_SIZEOF() macro in
+	 * k_thread_create(). If K_THREAD_STACK_SIZEOF() is used, the
+	 * Guard size has already been take out of stackSize.
+	 */
+	stackSize -= MPU_GUARD_ALIGN_AND_SIZE;
+#endif
+
 #if defined(CONFIG_USERSPACE)
 	/* Truncate the stack size to align with the MPU region granularity.
 	 * This is done proactively to account for the case when the thread
@@ -85,14 +94,6 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
 #endif /* CONFIG_USERSPACE */
 
-#if CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT && CONFIG_USERSPACE
-	/* This is required to work-around the case where the thread
-	 * is created without using K_THREAD_STACK_SIZEOF() macro in
-	 * k_thread_create(). If K_THREAD_STACK_SIZEOF() is used, the
-	 * Guard size has already been take out of stackSize.
-	 */
-	stackSize -= MPU_GUARD_ALIGN_AND_SIZE;
-#endif
 	stackEnd = pStackMem + stackSize;
 
 	struct __esf *pInitCtx;
