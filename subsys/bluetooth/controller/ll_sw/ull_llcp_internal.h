@@ -9,6 +9,7 @@ enum llcp_proc {
 	PROC_UNKNOWN,
 	PROC_LE_PING,
 	PROC_FEATURE_EXCHANGE,
+	PROC_MIN_USED_CHANS,
 	PROC_VERSION_EXCHANGE,
 	PROC_ENCRYPTION_START,
 	PROC_PHY_UPDATE,
@@ -39,8 +40,17 @@ struct proc_ctx {
 	/* Procedure pause */
 	int pause;
 
+	/* TX node awaiting ack */
+	struct node_tx * tx_ack;
+
 	/* Procedure data */
 	union {
+		/* Used by Minimum Used Channels Procedure */
+		struct {
+			u8_t phys;
+			u8_t min_used_chans;
+		} muc;
+
 		/* Used by Encryption Procedure */
 		struct {
 			u8_t error;
@@ -145,6 +155,13 @@ static inline void tx_flush(struct ull_cp_conn *conn)
 /*
  * LLCP Local Procedure Common
  */
+void ull_cp_priv_lp_comm_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+
+static inline void lp_comm_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+{
+	return ull_cp_priv_lp_comm_tx_ack(conn, ctx, tx);
+}
+
 void ull_cp_priv_lp_comm_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
 static inline void lp_comm_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
@@ -165,7 +182,6 @@ static inline void lp_comm_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, v
 {
 	return ull_cp_priv_lp_comm_run(conn, ctx, param);
 }
-
 
 /*
  * LLCP Remote Procedure Common
@@ -310,6 +326,13 @@ static inline void rp_pu_run(struct ull_cp_conn *conn, struct proc_ctx *ctx, voi
  * LLCP Local Request
  */
 struct proc_ctx *lr_peek(struct ull_cp_conn *conn);
+void ull_cp_priv_lr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+
+static inline void lr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+{
+	return ull_cp_priv_lr_tx_ack(conn, ctx, tx);
+}
+
 void ull_cp_priv_lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
 static inline void lr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
@@ -378,6 +401,13 @@ static inline bool rr_get_collision(struct ull_cp_conn *conn)
 }
 
 struct proc_ctx *rr_peek(struct ull_cp_conn *conn);
+void ull_cp_priv_rr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx);
+
+static inline void rr_tx_ack(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_tx *tx)
+{
+	return ull_cp_priv_rr_tx_ack(conn, ctx, tx);
+}
+
 void ull_cp_priv_rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx);
 
 static inline void rr_rx(struct ull_cp_conn *conn, struct proc_ctx *ctx, struct node_rx_pdu *rx)
@@ -530,7 +560,22 @@ static inline void pdu_decode_feature_rsp(struct ull_cp_conn *conn,
 	return ull_cp_priv_pdu_decode_feature_rsp(conn, pdu);
 }
 
+/*
+ * Minimum number of used channels Procedure Helper
+ */
+void ull_cp_priv_pdu_encode_min_used_chans_ind(struct proc_ctx *ctx, struct pdu_data *pdu);
 
+static inline void pdu_encode_min_used_chans_ind(struct proc_ctx *ctx, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_encode_min_used_chans_ind(ctx, pdu);
+}
+
+void ull_cp_priv_pdu_decode_min_used_chans_ind(struct ull_cp_conn *conn, struct pdu_data *pdu);
+
+static inline void pdu_decode_min_used_chans_ind(struct ull_cp_conn *conn, struct pdu_data *pdu)
+{
+	return ull_cp_priv_pdu_decode_min_used_chans_ind(conn, pdu);
+}
 
 /*
  * Version Exchange Procedure Helper
