@@ -483,6 +483,7 @@ enum pdu_data_llctrl_type {
 	PDU_DATA_LLCTRL_TYPE_CIS_RSP = 0x20,
 	PDU_DATA_LLCTRL_TYPE_CIS_IND = 0x21,
 	PDU_DATA_LLCTRL_TYPE_CIS_TERMINATE_IND = 0x22,
+	PDU_DATA_LLCTRL_TYPE_UNUSED = 0xFF
 };
 
 struct pdu_data_llctrl_conn_update_ind {
