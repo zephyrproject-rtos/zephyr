@@ -231,14 +231,21 @@ void z_nrf_clock_calibration_init(struct device *dev)
 	nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_DONE);
 	nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_DONE_MASK);
 
-	if (CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP != 0) {
-		temp_sensor = temp_device();
-	}
-
 	clk_dev = dev;
 	total_cnt = 0;
 	total_skips_cnt = 0;
 }
+
+#if CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP
+static int temp_sensor_init(struct device *arg)
+{
+	temp_sensor = temp_device();
+
+	return 0;
+}
+
+SYS_INIT(temp_sensor_init, APPLICATION, 0);
+#endif /* CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP */
 
 static void start_unconditional_cal_process(void)
 {
